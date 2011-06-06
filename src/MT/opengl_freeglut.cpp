@@ -14,10 +14,12 @@
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/> */
 
+#define FREEGLUT_STATIC
+#include <GL/freeglut.h>
+#include <X11/Xlib.h>
+
 #include "opengl.h"
 #include "ors.h"
-
-#include <X11/Xlib.h>
 
 
 //===========================================================================

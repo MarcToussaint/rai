@@ -19,6 +19,27 @@
 
 #include <FL/fl_draw.H>
 
+extern uint nrWins;
+
+//===========================================================================
+//
+// OpenGL hidden self
+//
+
+struct sOpenGL:public Fl_Gl_Window{
+  sOpenGL(OpenGL *_gl,const char* title,int w,int h,int posx,int posy)
+  :Fl_Gl_Window(posx, posy, w, h, title){
+    gl=_gl;
+  };
+
+  OpenGL *gl;
+  ors::Vector downVec,downPos,downFoc;
+  ors::Quaternion downRot;
+  
+  void draw();
+  int handle(int event);
+};
+
 
 //===========================================================================
 //
@@ -26,39 +47,24 @@
 //
 
 
-bool loopExit;
-void MTprocessEvents(){ Fl::check(); }
-void MTenterLoop(){     loopExit=false; while(!loopExit){ Fl::check(); MT::wait(.1); } }
-void MTexitLoop(){      loopExit=true; }
-
 
 //===========================================================================
 //
 // OpenGL implementations
 //
 
+void fltk_callback(Fl_Widget*, void*);
+
 //! constructor
-OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy)
-  : Fl_Gl_Window(posx, posy, w, h, title){
+OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy){
+  s = new sOpenGL(this,title,w,h,posx,posy);
+
   init();
-  show();
+  s->show();
   
-  if(!nrWins){
-    int argc=1;
-    char *argv[1]={(char*)"x"};
-  }
   nrWins++;
 
-  //OpenGL initialization
-  //two optional thins:
-  /*glEnable(GL_DEPTH_TEST);
-  glEnable(GL_BLEND);
-  glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glEnable(GL_CULL_FACE); glFrontFace(GL_CCW);
-  //glDisable(GL_CULL_FACE);
-  glDepthFunc(GL_LESS);
-  glShadeModel(GL_SMOOTH);
-  glShadeModel(GL_FLAT);*/
+  windowID = nrWins;
       
   if(glwins.N<(uint)windowID+1) glwins.resizeCopy(windowID+1);
   glwins(windowID) = this;
@@ -85,29 +91,39 @@ OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy)
 OpenGL::~OpenGL(){
   glwins(windowID)=0;
   nrWins--;
-  delete WS;
+  delete s;
 }
 
-void OpenGL::draw(){
-  Draw(width(),height());
-}
-
-//! update the view (in Qt: also starts displaying the window)
-bool OpenGL::update(const char *txt){
-  pressedkey=0;
-  if(txt) text.clr() <<txt;
-  redraw();
-  Fl::check();
-  return !pressedkey;
-}
+void OpenGL::redrawEvent(){  s->redraw(); } 
+void OpenGL::processEvents(){ Fl::check(); }
+void OpenGL::enterEventLoop(){     loopExit=false; while(!loopExit){ Fl::check(); MT::wait(.1); } }
+void OpenGL::exitEventLoop(){      loopExit=true; }
 
 //! resize the window
 void OpenGL::resize(int w,int h){
   NIY;
 }
 
-int OpenGL::width(){  return glutGet(GLUT_WINDOW_WIDTH); }
-int OpenGL::height(){ return glutGet(GLUT_WINDOW_HEIGHT); }
+int OpenGL::width(){  return s->w(); }
+int OpenGL::height(){ return s->h(); }
+
+void sOpenGL::draw(){
+  gl->Draw(w(),h());
+}
+
+int sOpenGL::handle(int event){
+  switch(event){
+    case FL_PUSH:    gl->Mouse(Fl::event_button()-1, false, Fl::event_x(), Fl::event_y());  break;
+    case FL_DRAG:    gl->Motion(Fl::event_x(), Fl::event_y());  break;
+    case FL_RELEASE: gl->Mouse(Fl::event_button()-1, true, Fl::event_x(), Fl::event_y());  break;
+    case FL_MOVE:    gl->PassiveMotion(Fl::event_x(), Fl::event_y());  break;
+    case FL_MOUSEWHEEL:  break; // MouseWheel(int wheel, int direction, Fl::event_x(), Fl::event_y());  break;
+
+    case FL_FOCUS: return 1;
+    
+    case FL_KEYDOWN: gl->Key(Fl::event_key(), Fl::event_x(), Fl::event_y());  break;
+  }
+}
 
 
 //===========================================================================
