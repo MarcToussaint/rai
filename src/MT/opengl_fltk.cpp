@@ -14,12 +14,12 @@
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/> */
 
+#include <FL/glut.H>
+#include <FL/fl_draw.H>
+
 #include "opengl.h"
 #include "ors.h"
 
-#include <FL/fl_draw.H>
-
-extern uint nrWins;
 
 //===========================================================================
 //
@@ -33,6 +33,7 @@ struct sOpenGL:public Fl_Gl_Window{
   };
 
   OpenGL *gl;
+  int w_old,h_old;
   ors::Vector downVec,downPos,downFoc;
   ors::Quaternion downRot;
   
@@ -43,72 +44,40 @@ struct sOpenGL:public Fl_Gl_Window{
 
 //===========================================================================
 //
-// special trick for the event loop
-//
-
-
-
-//===========================================================================
-//
 // OpenGL implementations
 //
 
-void fltk_callback(Fl_Widget*, void*);
-
-//! constructor
 OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy){
   s = new sOpenGL(this,title,w,h,posx,posy);
-
+  s->w_old=w; s->h_old=h;
   init();
+  s->size_range(100,50);
   s->show();
-  
-  nrWins++;
-
-  windowID = nrWins;
-      
-  if(glwins.N<(uint)windowID+1) glwins.resizeCopy(windowID+1);
-  glwins(windowID) = this;
-
-  /*glutDisplayFunc( _Draw );
-  glutKeyboardFunc( _Key );
-  glutMouseFunc ( _Mouse ) ;
-  glutMotionFunc ( _Motion ) ;
-  glutPassiveMotionFunc ( _PassiveMotion ) ;
-  glutCloseFunc ( _Close ) ;
-  glutReshapeFunc( _Reshape );
-  glutSpecialFunc( _Special );
-  glutMouseWheelFunc ( _MouseWheel ) ;
-  */
-
-  //  glutVisibilityFunc( Visibility );
-  //  glutKeyboardUpFunc( KeyUp );
-  //  glutSpecialUpFunc( SpecialUp );
-  //  glutJoystickFunc( Joystick, 100 );
-  //  glutEntryFunc ( Entry ) ;
 }
 
-// freeglut destructor
 OpenGL::~OpenGL(){
-  glwins(windowID)=0;
-  nrWins--;
   delete s;
 }
 
-void OpenGL::redrawEvent(){  s->redraw(); } 
-void OpenGL::processEvents(){ Fl::check(); }
-void OpenGL::enterEventLoop(){     loopExit=false; while(!loopExit){ Fl::check(); MT::wait(.1); } }
-void OpenGL::exitEventLoop(){      loopExit=true; }
+void OpenGL::redrawEvent(){    s->redraw(); } 
+void OpenGL::processEvents(){  Fl::check(); }
+void OpenGL::enterEventLoop(){ loopExit=false; while(!loopExit) Fl::wait(); }
+void OpenGL::exitEventLoop(){  loopExit=true; }
 
 //! resize the window
 void OpenGL::resize(int w,int h){
-  NIY;
+  s->size(w,h);
 }
 
 int OpenGL::width(){  return s->w(); }
 int OpenGL::height(){ return s->h(); }
 
 void sOpenGL::draw(){
-  gl->Draw(w(),h());
+  if(w_old!=w() || h_old!=h()){ //resized
+    w_old=w();  h_old=h();
+    gl->Reshape(w_old,h_old);
+  }
+  gl->Draw(w_old,h_old);
 }
 
 int sOpenGL::handle(int event){
@@ -120,20 +89,9 @@ int sOpenGL::handle(int event){
     case FL_MOUSEWHEEL:  break; // MouseWheel(int wheel, int direction, Fl::event_x(), Fl::event_y());  break;
 
     case FL_FOCUS: return 1;
+    case FL_HIDE:  gl->loopExit=true;  break;
     
     case FL_KEYDOWN: gl->Key(Fl::event_key(), Fl::event_x(), Fl::event_y());  break;
   }
+  return 0;
 }
-
-
-//===========================================================================
-//
-// callbacks
-//
-
-#if 1
-#  define CALLBACK_DEBUG(x) if(reportEvents) x
-#else
-#  define CALLBACK_DEBUG(x)
-#endif
-
