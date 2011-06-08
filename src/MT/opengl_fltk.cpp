@@ -73,11 +73,13 @@ int OpenGL::width(){  return s->w(); }
 int OpenGL::height(){ return s->h(); }
 
 void sOpenGL::draw(){
+    Fl::lock();
   if(w_old!=w() || h_old!=h()){ //resized
     w_old=w();  h_old=h();
     gl->Reshape(w_old,h_old);
   }
   gl->Draw(w_old,h_old);
+    Fl::unlock();
 }
 
 int sOpenGL::handle(int event){
