@@ -23,14 +23,19 @@
 #include <algorithm>
 
 #define maxRank 30
-
+  /*!\brief if flexiMem is true (which is default!) the resize method will
+    (1) at the first call allocate the exact amount of memory, (2)
+    at further calls of increasing memory allocate twice the memory
+    needed or (3) at further calls of decreasing memory only free
+    the memory if the new size is smaller than a fourth */
+#define ARRAY_flexiMem true
 
 //===========================================================================
 //
 // Array class
 //
 
-template<class T> char MT::Array<T>::memMoveInit=-1;
+template<class T> char MT::Array<T>::memMove=-1;
 template<class T> int MT::Array<T>::sizeT=-1;
 
 /*!\brief Simple array container to store arbitrary-dimensional arrays
@@ -47,11 +52,10 @@ template<class T> int MT::Array<T>::sizeT=-1;
 
 template<class T> void MT::Array<T>::init() {
   reference=false;
-  memMove=false;
   if(sizeT==-1) sizeT=sizeof(T);
-  if(memMoveInit==-1) {
-    memMoveInit=0;
-    if(typeid(T)==typeid(bool) ||
+  if(memMove==-1) {
+    memMove=0;
+    if (typeid(T)==typeid(bool) ||
         typeid(T)==typeid(char) ||
         typeid(T)==typeid(unsigned char) ||
         typeid(T)==typeid(int) ||
@@ -61,17 +65,13 @@ template<class T> void MT::Array<T>::init() {
         typeid(T)==typeid(long) ||
         typeid(T)==typeid(unsigned long) ||
         typeid(T)==typeid(float) ||
-        typeid(T)==typeid(double)) memMoveInit=1;
+        typeid(T)==typeid(double)) memMove=1;
   }
-  memMove=(memMoveInit==1);
-  flexiMem=true;
-  p=pstop=NULL;
+  p=NULL;
   M=N=nd=d0=d1=d2=0;
-  pp=NULL;
-  sparse=NULL;
-  p_device=NULL;
   d=&d0;
-  mtype=fullMT;
+  special=noneST;
+  aux=NULL;
 }
 
 
@@ -268,11 +268,12 @@ template<class T> double MT::Array<T>::sparsity() {
 
 //! make sparse: create the \ref sparse index
 template<class T> void MT::Array<T>::makeSparse() {
-  CHECK(!sparse, "only once yet");
+  CHECK(special!=sparseST, "only once yet");
+  uintA* sparse;
   uint n=0;
   if(nd==1) {
     uint i;
-    sparse=new Array<uint> [2];
+    aux=sparse=new Array<uint> [2];
     sparse[1].resize(d0); sparse[1]=-1;
     for(i=0; i<d0; i++) if(p[i]) {
         sparse[0].append(i); //list of entries (maps n->i)
@@ -286,7 +287,7 @@ template<class T> void MT::Array<T>::makeSparse() {
   if(nd==2) {
     uint i, j;
     Array<uint> pair(2);
-    sparse=new Array<uint> [1+d1+d0];
+    aux=sparse=new Array<uint> [1+d1+d0];
     for(i=0; i<d0; i++) for(j=0; j<d1; j++) if(p[i*d1+j]) {
           pair(0)=i; pair(1)=j; sparse[0].append(pair);   sparse[0].reshape(n+1, 2);
           permute(i*d1+j, n);
@@ -311,7 +312,7 @@ template<class T> void MT::Array<T>::resizeMEM(uint n, bool copy) {
   T *pold=p;
   uint Mold=M, Mnew;
   //determine a new M (number of allocated items)
-  if(!flexiMem) {
+  if(!ARRAY_flexiMem) {
     Mnew=n;
   } else {
     if(n>0 && Mold==0) {
@@ -351,8 +352,8 @@ template<class T> void MT::Array<T>::resizeMEM(uint n, bool copy) {
       p=new T [Mnew];      //p=(T*)malloc(M*sizeT);
       if(!p) { p=pold; M=Mold; HALT("memory allocation failed! Wanted size = " <<Mnew*sizeT <<"bytes"); }
       M=Mnew;
-      if(copy && !memMove) for(i=N<n?N:n; i--;) p[i]=pold[i];
-      if(copy && memMove) memmove(p, pold, sizeT*(N<n?N:n));
+      if(copy && memMove==0) for(i=N<n?N:n; i--;) p[i]=pold[i];
+      if(copy && memMove==1) memmove(p, pold, sizeT*(N<n?N:n));
     } else {
       p=0;
     }
@@ -360,8 +361,6 @@ template<class T> void MT::Array<T>::resizeMEM(uint n, bool copy) {
     if(Mold) delete[] pold;  //if(Mold) free(pold);
   }
   N=n;
-  pstop=p+N;
-  if(pp) { delete[] pp; pp=0; }
 }
 
 //! free all memory and reset all pointers and sizes
@@ -371,14 +370,12 @@ template<class T> void MT::Array<T>::freeMEM() {
 #endif
   if(M) delete[] p;
   //if(M) free(p);
-  if(pp) delete[] pp;
-  if(sparse) delete[] sparse;
+  //if(aux) delete[] aux;
   if(d && d!=&d0) delete[] d;
-  p=pstop=NULL;
+  p=NULL;
   M=N=nd=d0=d1=d2=0;
-  pp=NULL;
-  sparse=NULL;
   d=&d0;
+  //aux=NULL;
   reference=false;
 }
 
@@ -407,17 +404,21 @@ template<class T> T& MT::Array<T>::append(const T& x) { append()=x; return p[N-1
 //! append another array to the array (by copying it) -- the array might become 1D!
 template<class T> void MT::Array<T>::append(const MT::Array<T>& x) {
   uint oldN=N, xN=x.N, i;
+<<<<<<< HEAD
+  if(!xN) return;
   if(!oldN)
     resizeAs(x);
   else if(nd==2 && x.nd==1 && d1==x.d0)
+=======
+  if(nd==2 && x.nd==1 && d1==x.d0)
+>>>>>>> newArchitecture
     resizeCopy(d0+1, d1);
   else if(nd==2 && x.nd==2 && d1==x.d1)
     resizeCopy(d0+x.d0, d1);
   else
     resizeCopy(N+xN);
-  if(!memMove) {
-    for(i=0; i<xN; i++) p[oldN+i]=x.p[i];
-  } else memmove(p+oldN, x.p, sizeT*xN);
+  if(memMove==1) memmove(p+oldN, x.p, sizeT*xN);
+  else for(i=0; i<xN; i++) p[oldN+i]=x.p[i];
 }
 
 //! append a C array to the array (by copying it) -- the array might become 1D!
@@ -427,9 +428,8 @@ template<class T> void MT::Array<T>::append(const T *q, uint n) {
     resizeCopy(d0+1, d1);
   else
     resizeCopy(N+n);
-  if(!memMove) {
-    for(i=0; i<n; i++) p[n+i]=q[i];
-  } else memmove(p+oldN, q, sizeT*n);
+  if(memMove==1) memmove(p+oldN, q, sizeT*n);
+  else for(i=0; i<n; i++) p[n+i]=q[i];
 }
 
 //! append an element to the array if it is not included yet -- the array becomes 1D! [TL]
@@ -466,10 +466,10 @@ template<class T> void MT::Array<T>::replicate(uint copies) {
   if(copies<2) return;
   uint i, oldN=N;
   resizeCopy(copies*N);
-  if(!memMove) {
-    NIY;
-  } else {
+  if(memMove==1) {
     for(i=0; i<copies; i++) memmove(p+i*oldN, p, sizeT*oldN);
+  } else {
+    NIY;
   }
 }
 
@@ -489,11 +489,7 @@ template<class T> void MT::Array<T>::remove(uint i, uint n) {
     if(N>i+n) memmove(p+i, p+i+n, sizeT*(N-i-n));
     resizeCopy(N-n);
   } else {
-<<<<<<< HEAD
     //MT_MSG("don't use this!");
-=======
-    //WARN("don't use this!");
->>>>>>> al-paper
     reshape(N);
     for(uint j=i+n; j<N; j++) p[j-n] = p[j];
     resizeCopy(N-n);
@@ -672,14 +668,14 @@ template<class T> T& MT::Array<T>::operator()(uint i) const {
 
 //! 2D access
 template<class T> T& MT::Array<T>::operator()(uint i, uint j) const {
-  CHECK(nd==2 && i<d0 && j<d1 && !sparse,
+  CHECK(nd==2 && i<d0 && j<d1 && special!=sparseST,
         "2D range error (" <<nd <<"=2, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<")");
   return p[i*d1+j];
 }
 
 //! 3D access
 template<class T> T& MT::Array<T>::operator()(uint i, uint j, uint k) const {
-  CHECK(nd==3 && i<d0 && j<d1 && k<d2 && !sparse,
+  CHECK(nd==3 && i<d0 && j<d1 && k<d2 && special!=sparseST,
         "3D range error (" <<nd <<"=3, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<", " <<k <<"<" <<d2 <<")");
   return p[(i*d1+j)*d2+k];
 }
@@ -903,8 +899,10 @@ template<class T> MT::Array<T> MT::Array<T>::sub(int i, int I, Array<uint> cols)
 //! allocates, sets and returns the \c Array::pp pointer (of type \c T**)
 template<class T> T** MT::Array<T>::getCarray() const {
   CHECK(nd>=2, "only 2D or higher-D arrays gives C-array of type T**");
-  if(pp) return pp;
-  ((MT::Array<T>*)this)->pp=new T* [d0];
+  if(special==hasCarrayST) return (T**) aux;
+  T** pp;
+  ((MT::Array<T>*)this)->special = hasCarrayST;
+  ((MT::Array<T>*)this)->aux = pp = new T* [d0];
   uint skip;
   if(nd==2) skip=d1; else skip=N/d0;
   for(uint i=0; i<d0; i++) pp[i]=p+i*skip;
@@ -917,7 +915,6 @@ template<class T> void MT::Array<T>::referTo(const T *buffer, uint n) {
   reference=true;
   nd=1; d0=n; d1=d2=0; N=n;
   p=(T*)buffer;
-  pstop=p+N;
 }
 
 #if 0
@@ -1165,10 +1162,9 @@ template<class T> void MT::Array<T>::copyInto2D(T **buffer) const {
 //! make this array a reference to the array \c a
 template<class T> void MT::Array<T>::referTo(const MT::Array<T>& a) {
   freeMEM();
-  reference=true; memMove=a.memMove; flexiMem=a.flexiMem;
+  reference=true; memMove=a.memMove;
   N=a.N; nd=a.nd; d0=a.d0; d1=a.d1; d2=a.d2;
   p=a.p;
-  pstop=a.pstop;
 }
 
 //! make this array a subarray reference to \c a
@@ -1176,7 +1172,7 @@ template<class T> void MT::Array<T>::referToSubRange(const MT::Array<T>& a, uint
   CHECK(a.nd<=3, "not implemented yet");
   freeMEM();
   resetD();
-  reference=true; memMove=a.memMove; flexiMem=a.flexiMem;
+  reference=true; memMove=a.memMove;
   if(I==-1) I=a.d0-1;
   CHECK(i<a.d0 && (uint)I<a.d0, "SubRange range error (" <<i <<"<" <<a.d0 <<", " <<I <<"<" <<a.d0 <<")");
   if(a.nd==1) {
@@ -1191,7 +1187,6 @@ template<class T> void MT::Array<T>::referToSubRange(const MT::Array<T>& a, uint
     nd=3;  d0=I+1-i; d1=a.d1; d2=a.d2;  N=d0*d1*d2;
     p=a.p+i*d1*d2;
   }
-  pstop=p+N;
 }
 
 //! make this array a subarray reference to \c a
@@ -1199,7 +1194,7 @@ template<class T> void MT::Array<T>::referToSubDim(const MT::Array<T>& a, uint d
   CHECK(a.nd>1, "can't create subarray of array less than 2 dimensions");
   CHECK(dim<a.d0, "SubDim range error (" <<dim <<"<" <<a.d0 <<")");
   freeMEM();
-  reference=true; memMove=a.memMove; flexiMem=a.flexiMem;
+  reference=true; memMove=a.memMove;
   if(a.nd==2) {
     nd=1; d0=a.d1; d1=d2=0; N=d0;
   }
@@ -1212,7 +1207,6 @@ template<class T> void MT::Array<T>::referToSubDim(const MT::Array<T>& a, uint d
     if(nd>3) { d=new uint[nd];  memmove(d, a.d+1, nd*sizeof(uint)); }
   }
   p=a.p+dim*N;
-  pstop=p+N;
 }
 
 //! make this array a subarray reference to \c a
@@ -1220,11 +1214,10 @@ template<class T> void MT::Array<T>::referToSubDim(const MT::Array<T>& a, uint i
   CHECK(a.nd>2, "can't create subsubarray of array less than 3 dimensions");
   CHECK(i<a.d0 && j<a.d1, "SubDim range error (" <<i <<"<" <<a.d0 <<", " <<j <<"<" <<a.d1 <<")");
   freeMEM();
-  reference=true; memMove=a.memMove; flexiMem=a.flexiMem;
+  reference=true; memMove=a.memMove;
   if(a.nd==3) {
     nd=1; d0=a.d2; d1=0; d2=0; N=d0;
     p=&a(i, j, 0);
-    pstop=p+N;
   } else {
     NIY;
   }
@@ -1235,10 +1228,9 @@ template<class T> void MT::Array<T>::referToSubDim(const MT::Array<T>& a, uint i
   memory */
 template<class T> void MT::Array<T>::takeOver(MT::Array<T>& a) {
   freeMEM();
-  memMove=a.memMove; flexiMem=a.flexiMem;
+  memMove=a.memMove;
   N=a.N; nd=a.nd; d0=a.d0; d1=a.d1; d2=a.d2;
   p=a.p;
-  pstop=a.pstop;
   M=a.M;
   a.reference=true;
   a.M=0;
@@ -1282,6 +1274,7 @@ MT::Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
 //----- sorting etc
 //! sort this list
 template<class T> void MT::Array<T>::sort(ElemCompare comp) {
+  T *pstop=p+N;
   std::sort(p, pstop, comp);
 }
 
@@ -1418,7 +1411,8 @@ template<class T> void MT::Array<T>::write(std::ostream& os, const char *ELEMSEP
     os.put(0);
     os <<std::endl;
   } else {
-    if(dimTag) { writeDim(os); if(nd>=2) os <<'\n'; else os <<' '; }
+    if(dimTag) { writeDim(os); os <<' '; }
+    if(nd>=2) os <<'\n';
     os <<BRACKETS[0];
     if(nd==0 && N==0) { os <<']'; return; }
     if(nd==0 && N==1) { os <<scalar() <<']'; return; }
@@ -1645,10 +1639,22 @@ template<class T> bool MT::Array<T>::readTagged(const char* filename, const char
   return readTagged(fil, tag);
 }
 
+//! gdb pretty printing
+template<class T> const char* MT::Array<T>::prt() {
+  static MT::String tmp;
+  tmp.clear();
+  tmp <<"GDB Array<" <<typeid(T).name() <<"> dim=";
+  writeDim(tmp);
+  write(tmp);
+  tmp <<endl;
+  return tmp.p;
+}
+
 
 
 //! x = y^T
 template<class T> void transpose(MT::Array<T>& x, const MT::Array<T>& y) {
+  CHECK(&x!=&y,"can't transpose matrix into itself");
   CHECK(y.nd<=3, "can only transpose up to 3D arrays");
   if(y.nd==3) {
     uint i, j, k, d0=y.d2, d1=y.d1, d2=y.d0;
@@ -2790,15 +2796,15 @@ BinaryOperator(/ , div)
   template<class T> Array<T>& operator op (Array<T>& x, const Array<T>& y){ \
     CHECK(x.N==y.N,             \
           "binary operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
-    T *xp=x.p;              \
+    T *xp=x.p, *xstop=xp+x.N;              \
     const T *yp=y.p;              \
-    for(; xp!=x.pstop; xp++, yp++) *xp op *yp;       \
+    for(; xp!=xstop; xp++, yp++) *xp op *yp;       \
     return x;           \
   }                 \
   \
   template<class T> Array<T>& operator op ( Array<T>& x, T y ){ \
-    T *xp=x.p;              \
-    for(; xp!=x.pstop; xp++) *xp op y;        \
+    T *xp=x.p, *xstop=xp+x.N;              \
+    for(; xp!=xstop; xp++) *xp op y;        \
     return x;           \
   }
 
@@ -2836,17 +2842,17 @@ template<class T> void checkNan(const MT::Array<T>& x) {
 //! equal in size and all elements
 template<class T> bool operator==(const MT::Array<T>& v, const MT::Array<T>& w) {
   if(!samedim(v, w)) return false;
-  const T *iv, *iw;
-  for(iv=v.p, iw=w.p; iv!=v.pstop; iv++, iw++)
-    if(*iv != *iw) return false;
+  const T *vp=v.p, *wp=w.p, *vstop=vp+v.N;
+  for(; vp!=vstop; vp++, wp++)
+    if(*vp != *wp) return false;
   return true;
 }
 
 //! equal in size and all elements
 template<class T> bool operator==(const MT::Array<T>& v, const T *w) {
-  const T *iv, *iw;
-  for(iv=v.p, iw=w; iv!=v.pstop; iv++, iw++)
-    if(*iv != *iw) return false;
+  const T *vp=v.p, *wp=w, *vstop=vp+v.N;
+  for(; vp!=vstop; vp++, wp++)
+    if(*vp != *wp) return false;
   return true;
 }
 
@@ -2881,8 +2887,8 @@ template<class T> bool operator<(const MT::Array<T>& v, const MT::Array<T>& w) {
   MT::Array<T>& name (MT::Array<T>& x, const MT::Array<T>& y){ \
     x.resizeAs(y);              \
     T *xp=x.p;                \
-    const T *iy=y.p;              \
-    for(; iy!=y.pstop; iy++, xp++) *xp= op *iy;        \
+    const T *yp=y.p, *ystop=yp+y.N;              \
+    for(; yp!=ystop; yp++, xp++) *xp= op *yp;        \
     return x;               \
   }
 
@@ -2897,27 +2903,27 @@ UnaryOperation(negative, -);
     CHECK(y.N==z.N,             \
           "binary operator on different array dimensions (" <<y.N <<", " <<z.N <<")"); \
     if(&x!=&y) x.resizeAs(y);             \
-    T *xp=x.p;                \
+    T *xp=x.p, *xstop=xp+x.N;                \
     const T *zp=z.p, *yp=y.p;            \
-    for(; xp!=x.pstop; xp++, yp++, zp++) *xp = *yp op *zp;    \
+    for(; xp!=xstop; xp++, yp++, zp++) *xp = *yp op *zp;    \
     return x;               \
   }                 \
   \
   template<class T>             \
   MT::Array<T>& name##S(MT::Array<T>& x, const MT::Array<T>& y, T z){ \
     if(&x!=&y) x.resizeAs(y);             \
-    T *xp=x.p;                \
+    T *xp=x.p, *xstop=xp+x.N;                \
     const T *yp=y.p;              \
-    for(; xp!=x.pstop; xp++, yp++) *xp = *yp op z;     \
+    for(; xp!=xstop; xp++, yp++) *xp = *yp op z;     \
     return x;               \
   }                 \
   \
   template<class T>             \
   MT::Array<T>& name##S(MT::Array<T>& x, T y, const MT::Array<T>& z){ \
     if(&x!=&z) x.resizeAs(z);             \
-    T *xp=x.p;                \
+    T *xp=x.p, *xstop=xp+x.N;                \
     const T *zp=z.p;              \
-    for(; xp!=x.pstop; xp++, zp++) *xp = y op *zp;     \
+    for(; xp!=xstop; xp++, zp++) *xp = y op *zp;     \
     return x;               \
   }
 
@@ -2932,25 +2938,25 @@ BinaryOperation(mult , *);
 template<class T> MT::Array<T>& div(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z) {
   CHECK(y.N==z.N, "binary operator on different array dimensions (" <<y.N <<", " <<z.N <<")");
   if(&x!=&y) x.resizeAs(y);
-  T *xp=x.p;
+  T *xp=x.p, *xstop=xp+x.N;
   const T *zp=z.p, *yp=y.p;
-  for(; xp!=x.pstop; xp++, yp++, zp++) *xp = MT::DIV(*yp, *zp, true);
+  for(; xp!=xstop; xp++, yp++, zp++) *xp = MT::DIV(*yp, *zp, true);
   return x;
 }
 
 template<class T> MT::Array<T>& divS(MT::Array<T>& x, const MT::Array<T>& y, T z) {
   if(&x!=&y) x.resizeAs(y);
-  T *xp=x.p;
+  T *xp=x.p, *xstop=xp+x.N;
   const T *yp=y.p;
-  for(; xp!=x.pstop; xp++, yp++) *xp = MT::DIV(*yp, z, true);
+  for(; xp!=xstop; xp++, yp++) *xp = MT::DIV(*yp, z, true);
   return x;
 }
 
 template<class T> MT::Array<T>& divS(MT::Array<T>& x, T y, const MT::Array<T>& z) {
   if(&x!=&z) x.resizeAs(z);
-  T *xp=x.p;
+  T *xp=x.p, *xstop=xp+x.N;
   const T *zp=z.p;
-  for(; xp!=x.pstop; xp++, zp++) *xp = MT::DIV(y, *zp, true);
+  for(; xp!=xstop; xp++, zp++) *xp = MT::DIV(y, *zp, true);
   return x;
 }
 
@@ -2969,9 +2975,9 @@ template<class T> MT::Array<T>& divS(MT::Array<T>& x, T y, const MT::Array<T>& z
   MT::Array<T> func (const MT::Array<T>& y){    \
     MT::Array<T> x;           \
     if(&x!=&y) x.resizeAs(y);         \
-    T *xp=x.p;            \
+    T *xp=x.p, *xstop=xp+x.N;            \
     const T *yp=y.p;            \
-    for(; xp!=x.pstop; xp++, yp++) *xp = ::func( (double) *yp );  \
+    for(; xp!=xstop; xp++, yp++) *xp = ::func( (double) *yp );  \
     return x;         \
   }
 
@@ -3062,13 +3068,13 @@ for(i=0;i<n;i++) x.p[i]=a*y.p[i]+b*z.p[i];
 #define IMPLEMENT_Array(x) void implement_Array_##x(){ MT::Array<x> dummy; }
 #define IMPLEMENT_Array_(x, key) void implement_Array_##key(){ MT::Array<x> dummy; }
 
-template class MT::Array<double>;
-template class MT::Array<int>;
-template class MT::Array<uint>;
-template class MT::Array<float>;
-template class MT::Array<byte>;
-template class MT::Array<char>;
-template class MT::Array<bool>;
+template struct MT::Array<double>;
+template struct MT::Array<int>;
+template struct MT::Array<uint>;
+template struct MT::Array<float>;
+template struct MT::Array<byte>;
+template struct MT::Array<char>;
+template struct MT::Array<bool>;
 #define T double
 #  include "array_instantiate.cpp"
 #define T int
@@ -3139,7 +3145,7 @@ template<class T> T* listFindByName(const MT::Array<T*>& L, const char* name) {
   uint i;
   T *e;
   for_list(i, e, L) if(!strcmp(e->name, name)) return e;
-  //std::cerr <<"\n*** name '" <<name <<"' not in this list!" <<std::endl;
+  std::cerr <<"\n*** name '" <<name <<"' not in this list!" <<std::endl;
   return NULL;
 }
 
