@@ -17,8 +17,8 @@
     -----------------------------------------------------------------  */
 
 
-#include <Array/util_t.h>
-#include <Array/array_t.h>
+#include <Core/util_t.h>
+#include <Core/array_t.h>
 #include "gtk.h"
 #include <sys/syscall.h>
 

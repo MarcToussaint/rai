@@ -17,20 +17,14 @@
     -----------------------------------------------------------------  */
 
 
-#ifndef MT_gtk_h
-#define MT_gtk_h
+#include <Core/keyValueGraph.h>
 
-#include <Core/array.h>
-
-typedef struct _GtkWidget GtkWidget;
-
-void gtkLock(bool checkInitialized=true);
-void gtkUnlock();
-void gtkCheckInitialized();
-void gtkEnterCallback();
-void gtkLeaveCallback();
-
-int gtkPopupMenuChoice(StringL& choices);
-GtkWidget *gtkTopWindow(const char* title);
-
-#endif
+struct GraphView{
+  struct sGraphView *s;
+  
+  GraphView(KeyValueGraph& G, const char* title="MT::GraphvizGtk", void *container=NULL);
+  ~GraphView();
+  
+  void update();
+  void watch();
+};

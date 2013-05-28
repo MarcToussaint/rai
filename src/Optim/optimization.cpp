@@ -455,7 +455,7 @@ uint optRprop(arr& x, ScalarFunction& f, optOptions o) {
   return Rprop().loop(x, f, o.fmin_return, o.stopTolerance, o.initStep, o.stopEvals, o.verbose);
 }
 
-/** \brief Minimizes \f$f(x) = \phi(x)^T \phi(x)$ using the Jacobian. The optional _user arguments specify,
+/** @brief Minimizes \f$f(x) = \phi(x)^T \phi(x)$ using the Jacobian. The optional _user arguments specify,
  * if f has already been evaluated at x (another initial evaluation is then omitted
  * to increase performance) and the evaluation of the returned x is also returned */
 uint optGaussNewton(arr& x, VectorFunction& f, optOptions o, arr *addRegularizer, arr *fx_user, arr *Jx_user) {
@@ -558,7 +558,7 @@ uint optGaussNewton(arr& x, VectorFunction& f, optOptions o, arr *addRegularizer
   return evals;
 }
 
-/** \brief Minimizes \f$f(x) = A(x)^T x A^T(x) - 2 a(x)^T x + c(x)\f$. The optional _user arguments specify,
+/** @brief Minimizes \f$f(x) = A(x)^T x A^T(x) - 2 a(x)^T x + c(x)\f$. The optional _user arguments specify,
  * if f has already been evaluated at x (another initial evaluation is then omitted
  * to increase performance) and the evaluation of the returned x is also returned */
 uint optNewton(arr& x, QuadraticFunction& f,  optOptions o, double *fx_user, SqrPotential *S_user) {

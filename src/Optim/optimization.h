@@ -24,8 +24,8 @@
 #ifndef MT_optimization_h
 #define MT_optimization_h
 
-#include <Array/array.h>
-#include <Array/util.h>
+#include <Core/array.h>
+#include <Core/util.h>
 
 // function evaluation counter (used only for performance meassurements, global for simplicity)
 extern uint eval_cost;

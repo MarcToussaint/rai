@@ -18,8 +18,8 @@
 
 
 
-/** \file opengl.h
-    \brief defines the OpenGL interface to freeglut or Qt */
+/** @file opengl.h
+    @brief defines the OpenGL interface to freeglut or Qt */
 
 #ifndef MT_opengl_h
 #define MT_opengl_h
@@ -31,10 +31,6 @@
 #ifdef MT_FREEGLUT
 #  define FREEGLUT_STATIC
 #  include <GL/freeglut.h>
-#endif
-
-#if defined MT_FREEGLUT || defined MT_GTKGL || defined MT_FLTK || defined MT_QTGL
-#  define MT_GL
 #endif
 
 #ifdef MT_GL
@@ -50,8 +46,8 @@
 #  include<gl2ps.h>
 #endif
 
-#include <Array/array.h>
-#include <Array/util.h>
+#include <Core/array.h>
+#include <Core/util.h>
 
 
 //===========================================================================
@@ -155,14 +151,14 @@ struct Camera {
 // OpenGL class
 //
 
-/** \brief A class to display and control 3D scenes using OpenGL and Qt.
+/** @brief A class to display and control 3D scenes using OpenGL and Qt.
 
     Minimal use: call \ref add to add routines or objects to be drawn
     and \ref update or \ref watch to start the display. */
 struct OpenGL {
   struct sOpenGL *s;
   
-  //!@name little structs to store objects and callbacks
+  /// @name little structs to store objects and callbacks
   struct GLDrawer   { void *classP; void (*call)(void*); };
   struct GLInitCall { void *classP; bool (*call)(void*, OpenGL*); };
   //struct GLHoverCall { void *classP; bool (*call)(void*, OpenGL*); };
@@ -175,7 +171,7 @@ struct OpenGL {
   struct GLSelect   { int name; double dmin, dmax, x,y,z; };
   struct GLView     { double le, ri, bo, to;  MT::Array<GLDrawer> drawers;  ors::Camera camera;  byteA *img;  MT::String text;  GLView() { img=NULL; le=bo=0.; ri=to=1.; } };
   
-  //!@name data fields
+  /// @name data fields
   MT::Array<GLView> views;            ///< list of draw routines
   MT::Array<GLDrawer> drawers;        ///< list of draw routines
   MT::Array<GLInitCall> initCalls;    ///< list of initialization routines
@@ -201,7 +197,7 @@ struct OpenGL {
   double backgroundZoom;
   arr P; //camera projection matrix
   
-  //!@name constructors & destructors
+  /// @name constructors & destructors
   OpenGL(const char* title="MT::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
   //OpenGL(void *parent, const char* title="MT::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
   OpenGL(void *container); //special constructor: used when the underlying system-dependent class exists already
@@ -209,7 +205,7 @@ struct OpenGL {
   OpenGL *newClone() const;
   ~OpenGL();
   
-  //!@name adding drawing routines and callbacks
+  /// @name adding drawing routines and callbacks
   void add(void (*call)(void*), const void* classP=0);
   void remove(void (*call)(void*), const void* classP=0);
   template<class T> void add(const T& x) { add(x.staticDraw, &x); } ///< add a class or struct with a staticDraw routine
@@ -223,11 +219,11 @@ struct OpenGL {
   void addView(uint view, void (*call)(void*), const void* classP=0);
   void setViewPort(uint view, double l, double r, double b, double t);
   
-  //!@name the core draw routines (actually only for internal use)
+  /// @name the core draw routines (actually only for internal use)
   void Draw(int w, int h, ors::Camera *cam=NULL);
   void Select();
   
-  //!@name showing, updating, and watching
+  /// @name showing, updating, and watching
   bool update(const char *text=NULL);
   int  watch(const char *text=NULL);
   int  timedupdate(double sec);
@@ -235,18 +231,18 @@ struct OpenGL {
   void setClearColors(float r, float g, float b, float a);
   void unproject(double &x, double &y, double &z, bool resetCamera=false);
   
-  //!@name info & I/O
+  /// @name info & I/O
   void reportSelection();
   void saveEPS(const char *filename);
   void about(std::ostream& os=std::cout);
   
-  //!@name to display image data (kind of misuse)
+  /// @name to display image data (kind of misuse)
   void watchImage(const byteA &img, bool wait, float backgroundZoom);
   void watchImage(const floatA &img, bool wait, float backgroundZoom);
   void displayGrey(const arr &x, bool wait, float backgroundZoom);
   void displayRedBlue(const arr &x, bool wait, float backgroundZoom);
   
-  //!@name capture routines
+  /// @name capture routines
   void capture(byteA &img, int w, int h, ors::Camera *cam=NULL);
   void captureDepth(byteA &depth, int w, int h, ors::Camera *cam=NULL);
   void captureDepth(floatA &depth, int w, int h, ors::Camera *cam=NULL);

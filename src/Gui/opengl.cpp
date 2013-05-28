@@ -17,9 +17,9 @@
     -----------------------------------------------------------------  */
 
 
-#include <Array/array_t.h>
+#include <Core/array_t.h>
+#include <Core/geo.h>
 #include "opengl.h"
-#include "geo.h"
 
 #ifdef MT_FREEGLUT
 #  include "opengl_freeglut.cxx"
@@ -57,7 +57,7 @@ template MT::Array<glUI::Button>::~Array();
 // camera class
 //
 
-/** \brief constructor; specify a frame if the camera is to be attached
+/** @brief constructor; specify a frame if the camera is to be attached
    to an existing frame. Otherwise the camera creates its own
       frame */
 ors::Camera::Camera() {
@@ -95,25 +95,25 @@ void ors::Camera::setZero() {
   zFar=1000.;
 }
 
-//! the height angle (in degrees) of the camera perspective; set it 0 for orthogonal projection
+/// the height angle (in degrees) of the camera perspective; set it 0 for orthogonal projection
 void ors::Camera::setHeightAngle(float a) { heightAngle=a; }
-//! the absolute height of the camera perspective (automatically also sets heightAngle=0)
+/// the absolute height of the camera perspective (automatically also sets heightAngle=0)
 void ors::Camera::setHeightAbs(float h) { heightAngle=0; heightAbs=h; }
-//! the z-range (depth range) visible for the camera
+/// the z-range (depth range) visible for the camera
 void ors::Camera::setZRange(float znear, float zfar) { zNear=znear; zFar=zfar; }
-//! set the width/height ratio of your viewport to see a non-distorted picture
+/// set the width/height ratio of your viewport to see a non-distorted picture
 void ors::Camera::setWHRatio(float ratio) { whRatio=ratio; }
-//! the frame's position
+/// the frame's position
 void ors::Camera::setPosition(float x, float y, float z) { X->pos.set(x, y, z); }
-//! rotate the frame to focus the absolute coordinate origin (0, 0, 0)
+/// rotate the frame to focus the absolute coordinate origin (0, 0, 0)
 void ors::Camera::focusOrigin() { foc->setZero(); focus(); }
-//! rotate the frame to focus the point (x, y, z)
+/// rotate the frame to focus the point (x, y, z)
 void ors::Camera::focus(float x, float y, float z) { foc->set(x, y, z); focus(); }
-//! rotate the frame to focus the point given by the vector
+/// rotate the frame to focus the point given by the vector
 void ors::Camera::focus(const Vector& v) { *foc=v; focus(); }
-//! rotate the frame to focus (again) the previously given focus
+/// rotate the frame to focus (again) the previously given focus
 void ors::Camera::focus() { watchDirection((*foc)-X->pos); } //X->Z=X->pos; X->Z-=foc; X->Z.normalize(); upright(); }
-//! rotate the frame to watch in the direction vector D
+/// rotate the frame to watch in the direction vector D
 void ors::Camera::watchDirection(const Vector& d) {
   Vector tmp;
   if(d.x==0. && d.y==0.) {
@@ -125,7 +125,7 @@ void ors::Camera::watchDirection(const Vector& d) {
   r.setDiff(-X->rot.getZ(tmp), d);
   X->rot=r*X->rot;
 }
-//! rotate the frame to set it upright (i.e. camera's y aligned with 's z)
+/// rotate the frame to set it upright (i.e. camera's y aligned with 's z)
 void ors::Camera::upright() {
 #if 1
   //construct desired X:
@@ -185,12 +185,12 @@ void ors::Camera::glSetProjectionMatrix() {
 #endif
 }
 
-//! convert from gluPerspective's non-linear [0, 1] depth to the true [zNear, zFar] depth
+/// convert from gluPerspective's non-linear [0, 1] depth to the true [zNear, zFar] depth
 void ors::Camera::glConvertToTrueDepth(double &d) {
   d = zNear + (zFar-zNear)*d/(zFar/zNear*(1.-d)+1.);
 }
 
-//! convert from gluPerspective's non-linear [0, 1] depth to the linear [0, 1] depth
+/// convert from gluPerspective's non-linear [0, 1] depth to the linear [0, 1] depth
 void ors::Camera::glConvertToLinearDepth(double &d) {
   d = d/(zFar/zNear*(1.-d)+1.);
 }
@@ -837,7 +837,7 @@ void glDrawTexQuad(uint texture,
 }
 
 #ifdef MT_GLUT
-/** \brief return the RGBA-image of scenery drawn just before; the image
+/** @brief return the RGBA-image of scenery drawn just before; the image
   buffer has to have either 2 dimensions [width, height] for a
   gray-scale luminance image or 3 dimensions [width, height, 4] for an
   RGBA-image. */
@@ -884,7 +884,7 @@ void glGrabImage(byteA& image) {
 void glGrabImage(byteA& image) { NICO }
 #endif
 
-/** \brief return the depth map of the scenery drawn just before; the depth
+/** @brief return the depth map of the scenery drawn just before; the depth
     buffer has to be a 2-dimensional [width, height] and is filled with
     depth values between 0 and 1. */
 void glGrabDepth(byteA& depth) {
@@ -894,7 +894,7 @@ void glGrabDepth(byteA& depth) {
   glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, depth.p);
 }
 
-/** \brief return the depth map of the scenery drawn just before; the depth
+/** @brief return the depth map of the scenery drawn just before; the depth
     buffer has to be a 2-dimensional [width, height] and is filled with
     depth values between 0 and 1. */
 void glGrabDepth(floatA& depth) {
@@ -1016,7 +1016,7 @@ void glSelectWin(uint win) {
 }
 #endif
 
-#else //! MT_GL
+#else /// MT_GL
 void glColor(float, float, float, float) { NICO }
 void glDrawDiamond(float, float, float, float, float, float) { NICO }
 // void glStandardLight(void*) { NICO }   // TOBIAS: das hier wird doch schon ueber opengl_void.cxx definiert
@@ -1116,7 +1116,7 @@ void OpenGL::init() {
   backgroundZoom=1;
 };
 
-//! add a draw routine
+/// add a draw routine
 void OpenGL::add(void (*call)(void*), const void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
   GLDrawer d; d.classP=(void*)classP; d.call=call;
@@ -1135,7 +1135,7 @@ void OpenGL::setViewPort(uint v, double l, double r, double b, double t) {
   views(v).le=l;  views(v).ri=r;  views(v).bo=b;  views(v).to=t;
 }
 
-//! remove a draw routine
+/// remove a draw routine
 void OpenGL::remove(void (*call)(void*), const void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
   uint i;
@@ -1144,43 +1144,43 @@ void OpenGL::remove(void (*call)(void*), const void* classP) {
   drawers.remove(i, 1);
 }
 
-//! clear the list of all draw routines
+/// clear the list of all draw routines
 void OpenGL::clear() {
   drawers.resize(0);
 }
 
-//! add a hover callback
+/// add a hover callback
 void OpenGL::addHoverCall(GLHoverCall *c) {
   //CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
   //GLHoverCall c; c.classP=(void*)classP; c.call=call;
   hoverCalls.append(c);
 }
 
-//! clear hover callbacks
+/// clear hover callbacks
 void OpenGL::clearHoverCalls() {
   hoverCalls.clear();
 }
 
-//! add a click callback
+/// add a click callback
 void OpenGL::addClickCall(GLClickCall *c) {
   //CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
   //GLClickCall c; c.classP=(void*)classP; c.call=call;
   clickCalls.append(c);
 }
 
-//! clear click callbacks
+/// clear click callbacks
 void OpenGL::clearClickCalls() {
   clickCalls.clear();
 }
 
-//! add a click callback
+/// add a click callback
 void OpenGL::addKeyCall(GLKeyCall *c) {
   //CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
   //GLKeyCall c; c.classP=(void*)classP; c.call=call;
   keyCalls.append(c);
 }
 
-//! clear click callbacks
+/// clear click callbacks
 void OpenGL::clearKeyCalls() {
   keyCalls.clear();
 }
@@ -1427,7 +1427,7 @@ void OpenGL::Select(){
 #endif
 }
 
-/** \brief watch in interactive mode and wait for an exiting event
+/** @brief watch in interactive mode and wait for an exiting event
   (key pressed or right mouse) */
 int OpenGL::watch(const char *txt) {
   update(txt);
@@ -1436,7 +1436,7 @@ int OpenGL::watch(const char *txt) {
   return pressedkey;
 }
 
-//! update the view (in Qt: also starts displaying the window)
+/// update the view (in Qt: also starts displaying the window)
 bool OpenGL::update(const char *txt) {
   pressedkey=0;
   if(txt) text.clear() <<txt;
@@ -1445,7 +1445,7 @@ bool OpenGL::update(const char *txt) {
   return !pressedkey;
 }
 
-//! waits some msecons before updating
+/// waits some msecons before updating
 int OpenGL::timedupdate(double sec) {
   static double lasttime=-1;
   double now;
@@ -1463,12 +1463,12 @@ int OpenGL::timedupdate(double sec) {
 #endif
 }
 
-//! set the four clear colors
+/// set the four clear colors
 void OpenGL::setClearColors(float r, float g, float b, float a) {
   clearR=r; clearG=g; clearB=b; clearA=a;
 }
 
-/** \brief inverse projection: given a 2D+depth coordinates in the
+/** @brief inverse projection: given a 2D+depth coordinates in the
   camera view (e.g. as a result of selection) computes the world 3D
   coordinates */
 void OpenGL::unproject(double &x, double &y, double &z,bool resetCamera) {
@@ -1561,7 +1561,7 @@ void OpenGL::captureStereo(byteA &imgL, byteA &imgR, int w, int h, ors::Camera *
 
 
 
-//! print some info on the selection buffer
+/// print some info on the selection buffer
 void OpenGL::reportSelection() {
   uint i;
   std::cout <<"selection report: mouse=" <<mouseposx <<" " <<mouseposy <<" -> #selections=" <<selection.N <<std::endl;
@@ -1576,7 +1576,7 @@ void OpenGL::reportSelection() {
 }
 
 #ifdef MT_GL2PS
-/** \brief generates a ps from the current OpenGL display, using gl2ps */
+/** @brief generates a ps from the current OpenGL display, using gl2ps */
 void OpenGL::saveEPS(const char *filename) {
   FILE *fp = fopen(filename, "wb");
   GLint buffsize = 0, state = GL2PS_OVERFLOW;
@@ -1602,7 +1602,7 @@ void OpenGL::saveEPS(const char*) {
 #endif
 
 #ifndef MT_QTGL
-/** \brief report on the OpenGL capabilities (the QGLFormat) */
+/** @brief report on the OpenGL capabilities (the QGLFormat) */
 void OpenGL::about(std::ostream& os) { MT_MSG("NICO"); }
 #endif
 
