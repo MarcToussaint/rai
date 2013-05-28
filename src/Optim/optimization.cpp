@@ -928,8 +928,8 @@ uint Rprop::loop(arr& _x,
                  uint verbose) {
                  
   if(!s->stepSize.N) init(initialStepSize);
-  arr x, J(_x.N), xmin;
-  double fx, fxmin=0;
+  arr x, J(_x.N), x_min, J_min;
+  double fx, fx_min=0;
   uint rejects=0, small_steps=0;
   x=_x;
   
@@ -942,18 +942,33 @@ uint Rprop::loop(arr& _x,
     //checkGradient(p, x, stoppingTolerance);
     //compute value and gradient at x
     fx = f.fs(J, NoArr, x);  evals++;
+
+    //infeasible point! undo the previous step
+    if(fx==NAN){
+      if(!evals) HALT("can't start Rprop with unfeasible point");
+      s->stepSize*=(double).1;
+      s->lastGrad=(double)0.;
+      x=x_min;
+      fx=fx_min;
+      J=J_min;
+      rejects=0;
+    }
     
     //update best-so-far
-    if(evals<=1) { fxmin= fx; xmin=x; }
-    if(fx<=fxmin) {
-      fxmin=fx; xmin=x;
+    if(evals<=1) { fx_min= fx; x_min=x; }
+    if(fx<=fx_min) {
+      x_min=x;
+      fx_min=fx;
+      J_min=J;
       rejects=0;
     } else {
       rejects++;
       if(rejects>10) {
         s->stepSize*=(double).1;
         s->lastGrad=(double)0.;
-        x=xmin;
+        x=x_min;
+        fx=fx_min;
+        J=J_min;
         rejects=0;
       }
     }
@@ -962,7 +977,7 @@ uint Rprop::loop(arr& _x,
     s->step(x, J, NULL);
     
     //check stopping criterion based on step-length in x
-    double diff=maxDiff(x, xmin);
+    double diff=maxDiff(x, x_min);
     if(verbose>0) fil <<evals <<' ' <<eval_cost <<' ' << fx <<' ' <<diff <<' ' <<x <<endl;
     if(verbose>1) cout <<"optRprop " <<evals <<' ' <<eval_cost <<" \tf(x)=" <<fx <<" \tdiff=" <<diff <<" \tx=" <<x <<endl;
 
@@ -972,8 +987,8 @@ uint Rprop::loop(arr& _x,
   }
   if(verbose>0) fil.close();
   if(verbose>1) gnuplot("plot 'z.grad' us 1:3 w l", NULL, true);
-  if(fmin_return) *fmin_return= fxmin;
-  _x=xmin;
+  if(fmin_return) *fmin_return= fx_min;
+  _x=x_min;
   return evals;
 }
 
