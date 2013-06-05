@@ -120,7 +120,7 @@ struct Convert{
 //
 
 bool checkGradient(ScalarFunction &f, const arr& x, double tolerance);
-bool checkHessian(ScalarFunction &f, const arr& x, double tolerance); //TODO! NIY!
+bool checkHessian(ScalarFunction &f, const arr& x, double tolerance);
 bool checkJacobian(VectorFunction &f, const arr& x, double tolerance);
 bool checkDirectionalGradient(ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(VectorFunction &f, const arr& x, const arr& delta, double tolerance);
@@ -166,7 +166,7 @@ extern optOptions globalOptOptions;
 #define OPT6(a,b,c,d,e,f) (globalOptOptions.a, globalOptOptions.b, globalOptOptions.c, globalOptOptions.d, globalOptOptions.e, globalOptOptions.f, globalOptOptions)
 
 uint optGaussNewton(arr& x, VectorFunction& phi, optOptions opt, arr *addRegularizer=NULL, arr *fx_user=NULL, arr *Jx_user=NULL);
-uint optNewton(arr& x, QuadraticFunction& f, optOptions opt, double *fx_user=NULL, SqrPotential *Sx_user=NULL);
+uint optNewton(arr& x, ScalarFunction& f, optOptions opt, double *f_user=NULL, arr *g_user=NULL, arr *H_user=NULL);
 uint optRprop(arr& x, ScalarFunction& f, optOptions opt);
 uint optGradDescent(arr& x, ScalarFunction& f, optOptions opt);
 uint optDynamicProgramming(arr& x, QuadraticChainFunction& f, optOptions opt);
