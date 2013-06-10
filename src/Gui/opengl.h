@@ -1,5 +1,5 @@
 /*  ---------------------------------------------------------------------
-    Copyright 2012 Marc Toussaint
+    Copyright 2013 Marc Toussaint
     email: mtoussai@cs.tu-berlin.de
     
     This program is free software: you can redistribute it and/or modify
@@ -15,6 +15,7 @@
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
+
 
 
 
