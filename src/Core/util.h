@@ -16,12 +16,10 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
 
+/// @file
+/// @ingroup Core
+/// @{
 
-
-
-/** @file util.h
-    @brief many utilities: contains a bunch of standard includes, macros, operators,
-    etc. that are used by most of my code */
 #ifndef MT_util_h
 #define MT_util_h
 
@@ -671,3 +669,5 @@ using MT::String;
 
 
 #endif
+
+/// @} //end group

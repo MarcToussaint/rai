@@ -16,7 +16,6 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
 
-
 /// @file
 /// @ingroup group_array
 /// @addtogroup group_array
@@ -815,4 +814,4 @@ void linkArray();
 
 // (note: http://www.informit.com/articles/article.aspx?p=31783&seqNum=2)
 
-/// @}
+/// @} //end group

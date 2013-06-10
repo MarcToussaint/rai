@@ -1,5 +1,5 @@
 /*  ---------------------------------------------------------------------
-    Copyright 2012 Marc Toussaint
+    Copyright 2013 Marc Toussaint
     email: mtoussai@cs.tu-berlin.de
     
     This program is free software: you can redistribute it and/or modify
@@ -16,11 +16,6 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
 
-/** @file
- * @ingroup group_optim
- * @addtogroup group_optim
- * @{ */
-
 #include "optimization.h"
 
 #ifndef CHECK_EPS
@@ -29,7 +24,6 @@
 
 bool sanityCheck=false; //true;
 uint eval_cost=0;
-arr& NoGrad=*((arr*)NULL);
 SqrPotential& NoPot=*((SqrPotential*)NULL);
 PairSqrPotential& NoPairPot=*((PairSqrPotential*)NULL);
 optOptions globalOptOptions;
@@ -195,6 +189,7 @@ Tmp convert_ScalarFunction(ScalarGraphFunction& f){
   return tmp;
 }*/
 
+/// numeric (finite difference) check of the gradient of f at x
 bool checkGradient(ScalarFunction &f,
                    const arr& x, double tolerance) {
   arr J, dx, JJ;
@@ -1026,5 +1021,3 @@ uint Rprop::loop(arr& _x,
   _x=x_min;
   return evals;
 }
-
-/** @} */

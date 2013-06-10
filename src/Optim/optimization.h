@@ -1,5 +1,5 @@
 /*  ---------------------------------------------------------------------
-    Copyright 2012 Marc Toussaint
+    Copyright 2013 Marc Toussaint
     email: mtoussai@cs.tu-berlin.de
     
     This program is free software: you can redistribute it and/or modify
@@ -16,10 +16,11 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
 
-/** @file
- * @ingroup group_optim
- * @addtogroup group_optim
- * @{ */
+
+/// @file
+/// @ingroup group_Optim
+/// @addtogroup group_Optim
+/// @{
 
 #ifndef MT_optimization_h
 #define MT_optimization_h
@@ -39,7 +40,6 @@ extern uint eval_cost;
 //-- return types
 struct     SqrPotential { arr A, a;          double c; }; ///< return type representing \f$x'A x - 2x'a + c\f$
 struct PairSqrPotential { arr A, B, C, a, b; double c; }; ///< return type representing \f$(x,y)' [A C, C' B] (x,y) - 2(x,y)'(a,b) + c\f$
-extern arr& NoGrad; ///< reference to NULL! used for optional arguments
 extern SqrPotential& NoPot; ///< reference to NULL! used for optional arguments
 extern PairSqrPotential& NoPairPot; ///< reference to NULL! used for optional arguments
 
@@ -120,8 +120,8 @@ struct Convert{
 //
 
 bool checkGradient(ScalarFunction &f, const arr& x, double tolerance);
-bool checkHessian(ScalarFunction &f, const arr& x, double tolerance);
 bool checkJacobian(VectorFunction &f, const arr& x, double tolerance);
+bool checkHessian(ScalarFunction &f, const arr& x, double tolerance);
 bool checkDirectionalGradient(ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(VectorFunction &f, const arr& x, const arr& delta, double tolerance);
 
@@ -198,4 +198,4 @@ struct Rprop {
 
 #endif
 
-/** @} */
+/// @} //end group
