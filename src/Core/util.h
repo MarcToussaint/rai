@@ -17,7 +17,8 @@
     -----------------------------------------------------------------  */
 
 /// @file
-/// @ingroup Core
+/// @ingroup group_Core
+/// @addtogroup group_Core
 /// @{
 
 #ifndef MT_util_h
@@ -456,8 +457,6 @@ public:/// @name access
     \c mean; is case \c mean>100, a (positive) gauss number
     \c floor(mean+gauss(sqrt(mean))+.5) is returned */
   uint32_t poisson(double mean);
-  // @}
-  
   
 private:
   int32_t rnd250() {

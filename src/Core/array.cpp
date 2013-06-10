@@ -16,11 +16,6 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
 
-
-
-/// @addtogroup group_array
-/// @{
-
 #include "array.h"
 #include "util.h"
 
@@ -35,8 +30,6 @@ static double MT_SIGN_SVD(double a, double b) { return b>0 ? ::fabs(a) : -::fabs
 
 namespace MT {
 //===========================================================================
-/// @addtogroup group_array
-/// @{
 
 bool useLapack=true;
 #ifdef MT_LAPACK
@@ -50,7 +43,6 @@ const char* arrayElemsep=" ";
 const char* arrayLinesep="\n ";
 const char* arrayBrackets="[]";
 
-/// @}
 //===========================================================================
 }
 
@@ -1415,8 +1407,6 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
   
   E.reshape(E.N/2,2);
 }
-
-/// @}
 
 //===========================================================================
 //
