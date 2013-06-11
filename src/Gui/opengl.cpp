@@ -1,17 +1,17 @@
 /*  ---------------------------------------------------------------------
     Copyright 2013 Marc Toussaint
     email: mtoussai@cs.tu-berlin.de
-    
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-    
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-    
+
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
@@ -176,7 +176,7 @@ void ors::Camera::glSetProjectionMatrix() {
   {
     if(heightAngle==0) {
       glOrtho(-whRatio*heightAbs/2, whRatio*heightAbs/2,
-              -heightAbs/2, heightAbs/2, zNear, zFar);
+      -heightAbs/2, heightAbs/2, zNear, zFar);
     } else
       gluPerspective(heightAngle, whRatio, zNear, zFar);
     double m[16];
@@ -1335,7 +1335,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
       glDrawText(vi->text, -.95, .85, 0.);
     }
   }
-
+  
   //byteA img(h,w,3);
   //glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, img.p);
   //write_ppm(img,"z.opengl.ppm");
@@ -1345,17 +1345,17 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &s);
   if(s!=1) MT_MSG("OpenGL name stack has not depth 1 (pushs>pops) in DRAW mode:" <<s);
   //CHECK(s<=1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
-
+  
   //this->s->endGlContext();
 #endif
 }
 
-void OpenGL::Select(){
+void OpenGL::Select() {
 #ifdef MT_GL
   uint i, j, k;
   
   s->beginGlContext();
-
+  
   glSelectBuffer(1000, selectionBuffer);
   glRenderMode(GL_SELECT);
   
@@ -1424,7 +1424,7 @@ void OpenGL::Select(){
   }
   
   if(reportSelects) reportSelection();
-
+  
   s->endGlContext();
 #endif
 }

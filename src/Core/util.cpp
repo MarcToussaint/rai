@@ -1,22 +1,47 @@
 /*  ---------------------------------------------------------------------
     Copyright 2013 Marc Toussaint
     email: mtoussai@cs.tu-berlin.de
-    
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-    
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-    
+
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
 
 #include "util.h"
+#include <math.h>
+#if defined MT_Linux || defined MT_Cygwin || defined MT_Darwin
+#  include <sys/time.h>
+#  include <sys/times.h>
+#  include <sys/resource.h>
+#endif
+#if defined MT_MSVC
+#  include <time.h>
+#  include <sys/timeb.h>
+#  include <windows.h>
+#  undef min
+#  undef max
+#  define MT_TIMEB
+#  ifdef MT_QT
+#    undef  NOUNICODE
+#    define NOUNICODE
+#  endif
+#  pragma warning(disable: 4305 4244 4250 4355 4786 4996)
+#endif
+#if defined MT_MinGW
+#  include <unistd.h>
+#  include <sys/time.h>
+#  include <sys/timeb.h>
+#  define MT_TIMEB
+#endif
 
 #ifdef MT_QT
 #  undef scroll
@@ -171,7 +196,7 @@ char skip(std::istream& is, const char *skipchars, bool skipCommentLines) {
   for(;;) {
     c=is.get();
     if(skipCommentLines && c=='#') { skipRestOfLine(is); continue; }
-    if(!contains(skipchars, c)){ is.putback(c); break; }
+    if(!contains(skipchars, c)) { is.putback(c); break; }
     if(c=='\n') lineCount++;
   }
   return c;
@@ -233,7 +258,7 @@ bool parse(std::istream& is, const char *str, bool silent) {
     for(i=n; i--;) is.putback(buf[i]);
     is.setstate(std::ios::failbit);
     if(!silent)  MT_MSG("(LINE=" <<MT::lineCount <<") parsing of constant string `" <<str
-           <<"' failed! (read instead: `" <<buf <<"')");
+                          <<"' failed! (read instead: `" <<buf <<"')");
     return false;
   }
   delete[] buf;
@@ -812,10 +837,10 @@ void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDF
     else         MT_gp=popen("env gnuplot -noraise -persist -geometry 600x600-0-0", "w");
     CHECK(MT_gp, "could not open gnuplot pipe");
   }
-
+  
   MT::String cmd;
   cmd <<"set style data lines\n";
-
+  
   // run standard files
   if(!access("~/gnuplot.cfg", R_OK)) cmd <<"load '~/gnuplot.cfg'\n";
   if(!access("gnuplot.cfg", R_OK)) cmd <<"load 'gnuplot.cfg'\n";
@@ -825,12 +850,12 @@ void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDF
       
   if(PDFfile) {
     cmd <<"set terminal push\n"
-	<<"set terminal pdfcairo\n"
+        <<"set terminal pdfcairo\n"
         <<"set output '" <<PDFfile <<"'\n"
         <<command <<std::endl
         <<"\nset terminal pop\n";
   }
-
+  
   if(pauseMouse) cmd <<"\n pause mouse" <<std::endl;
   ofstream gcmd("z.plotcmd"); gcmd <<cmd; gcmd.close(); //for debugging..
   fputs(cmd.p, MT_gp);
@@ -945,9 +970,9 @@ int ConditionVariable::incrementValue(bool signalOnlyFirstInQueue) {
 }
 
 void ConditionVariable::broadcast(bool signalOnlyFirstInQueue) {
-  if(!signalOnlyFirstInQueue){
+  if(!signalOnlyFirstInQueue) {
     int rc = pthread_cond_signal(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  }else{
+  } else {
     int rc = pthread_cond_broadcast(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
 }
@@ -991,7 +1016,7 @@ void ConditionVariable::waitForSignal(double seconds, bool userHasLocked) {
 
 void ConditionVariable::waitForValueEq(int i, bool userHasLocked) {
   if(!userHasLocked) mutex.lock(); else CHECK(mutex.state==syscall(SYS_gettid),"user must have locked before calling this!");
-  while (value!=i) {
+  while(value!=i) {
     int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
   if(!userHasLocked) mutex.unlock();
@@ -999,7 +1024,7 @@ void ConditionVariable::waitForValueEq(int i, bool userHasLocked) {
 
 void ConditionVariable::waitForValueNotEq(int i, bool userHasLocked) {
   if(!userHasLocked) mutex.lock(); else CHECK(mutex.state==syscall(SYS_gettid),"user must have locked before calling this!");
-  while (value==i) {
+  while(value==i) {
     int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
   if(!userHasLocked) mutex.unlock();
@@ -1007,7 +1032,7 @@ void ConditionVariable::waitForValueNotEq(int i, bool userHasLocked) {
 
 void ConditionVariable::waitForValueGreaterThan(int i, bool userHasLocked) {
   if(!userHasLocked) mutex.lock(); else CHECK(mutex.state==syscall(SYS_gettid),"user must have locked before calling this!");
-  while (value<=i) {
+  while(value<=i) {
     int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
   if(!userHasLocked) mutex.unlock();
@@ -1015,7 +1040,7 @@ void ConditionVariable::waitForValueGreaterThan(int i, bool userHasLocked) {
 
 void ConditionVariable::waitForValueSmallerThan(int i, bool userHasLocked) {
   if(!userHasLocked) mutex.lock(); else CHECK(mutex.state==syscall(SYS_gettid),"user must have locked before calling this!");
-  while (value>=i) {
+  while(value>=i) {
     int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
   if(!userHasLocked) mutex.unlock();
@@ -1043,16 +1068,16 @@ void ConditionVariable::waitUntil(double absTime, bool userHasLocked) {
 //
 
 #if 1//ndef MT_QT
-void* Thread_staticMain(void *_self){
+void* Thread_staticMain(void *_self) {
   Thread *th=(Thread*)_self;
   th->main();
   return NULL;
 }
 
-Thread::Thread():thread(0){
+Thread::Thread():thread(0) {
 }
 
-void Thread::open(const char* name){
+void Thread::open(const char* name) {
   int rc;
   pthread_attr_t atts;
   rc = pthread_attr_init(&atts); if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
@@ -1070,40 +1095,40 @@ void Thread::open(const char* name){
   if(name) pthread_setname_np(thread, name);
 }
 
-Thread::~Thread(){
+Thread::~Thread() {
   close();
 }
 
-void Thread::close(){
+void Thread::close() {
   if(!thread) return;
   int rc;
   rc = pthread_join(thread, NULL);     if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   thread=0;
 }
 
-bool Thread::isOpen(){
+bool Thread::isOpen() {
   return thread!=0;
 }
 
 #else
 
-struct sThread:QThread{
+struct sThread:QThread {
   Thread *th;
-  void run(){  th->main();  }
+  void run() {  th->main();  }
 };
 
-Thread::Thread():s(NULL){
+Thread::Thread():s(NULL) {
   s = new sThread;
   s->th=this;
 }
 
-void Thread::open(){ s->setObjectName("hallo");  s->start(); }
+void Thread::open() { s->setObjectName("hallo");  s->start(); }
 
-Thread::~Thread(){ close(); delete s; }
+Thread::~Thread() { close(); delete s; }
 
-void Thread::close(){ s->quit(); }
+void Thread::close() { s->quit(); }
 
-bool Thread::isOpen(){ return s->isRunning(); }
+bool Thread::isOpen() { return s->isRunning(); }
 
 #endif
 
@@ -1131,7 +1156,7 @@ void Metronome::reset(long _targetDt=0) {
 void Metronome::waitForTic() {
   //compute target time
   ticTime.tv_nsec+=1000000l*targetDt;
-  while (ticTime.tv_nsec>1000000000l) {
+  while(ticTime.tv_nsec>1000000000l) {
     ticTime.tv_sec+=1;
     ticTime.tv_nsec-=1000000000l;
   }

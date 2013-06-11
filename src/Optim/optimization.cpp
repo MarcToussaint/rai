@@ -1,17 +1,17 @@
 /*  ---------------------------------------------------------------------
     Copyright 2013 Marc Toussaint
     email: mtoussai@cs.tu-berlin.de
-    
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-    
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-    
+
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
@@ -223,11 +223,11 @@ bool checkGradient(ScalarFunction &f,
   return true;
 }
 
-bool checkHessian(ScalarFunction &f, const arr& x, double tolerance){
+bool checkHessian(ScalarFunction &f, const arr& x, double tolerance) {
   arr g, H, dx, dy, Jg;
   f.fs(g, H, x);
   if(H.special==arr::RowShiftedPackedMatrixST) H = unpack(H);
-
+  
   Jg.resize(g.N, x.N);
   double eps=CHECK_EPS;
   uint i, k;
@@ -320,7 +320,7 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
     uint *evals;
     void fv(arr& y, arr& J, const arr& x) {
       arr yij,Ji,Jj;
-      f->fv_i(y, J, t, x);  (*evals)++;
+      f->fv_i(y, J, t, x); (*evals)++;
       if(t>0) {
         f->fv_ij(yij, (&J?Ji:NoArr), (&J?Jj:NoArr), t-1, t, x_ref[t-1], x);
         y.append(yij);
@@ -494,7 +494,7 @@ uint optGaussNewton(arr& x, VectorFunction& f, OptOptions o, arr *addRegularizer
   uint evals=0;
   
   if(fx_user) NIY;
-
+  
   //compute initial costs
   arr phi;
   arr J;
@@ -502,31 +502,31 @@ uint optGaussNewton(arr& x, VectorFunction& f, OptOptions o, arr *addRegularizer
   fx = sumOfSqr(phi);
   if(addRegularizer)  fx += scalarProduct(x,(*addRegularizer)*vectorShaped(x));
   if(o.verbose>1) cout <<"*** optGaussNewton: starting point f(x)=" <<fx <<" alpha=" <<alpha <<" lambda=" <<lambda <<endl;
-  if(o.verbose>2) cout <<"\nx=" <<x <<endl; 
+  if(o.verbose>2) cout <<"\nx=" <<x <<endl;
   ofstream fil;
   if(o.verbose>0) fil.open("z.opt");
   if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<' ' <<x <<endl;
-
   
-  for(uint it=1;;it++) { //iterations and lambda adaptation loop
+  
+  for(uint it=1;; it++) { //iterations and lambda adaptation loop
     if(o.verbose>1) cout <<"optGaussNewton it=" <<it << " lambda=" <<lambda <<flush;
     //compute Delta
 #if 1
     arr R=comp_At_A(J);
-    if(lambda){ //Levenberg Marquardt damping
-      if(R.special==arr::RowShiftedPackedMatrixST) for(uint i=0;i<R.d0;i++) R(i,0) += lambda;  //(R(i,0) is the diagonal in the packed matrix!!)
-      else for(uint i=0;i<R.d0;i++) R(i,i) += lambda;
+    if(lambda) { //Levenberg Marquardt damping
+      if(R.special==arr::RowShiftedPackedMatrixST) for(uint i=0; i<R.d0; i++) R(i,0) += lambda; //(R(i,0) is the diagonal in the packed matrix!!)
+      else for(uint i=0; i<R.d0; i++) R(i,i) += lambda;
     }
-    if(addRegularizer){
+    if(addRegularizer) {
       if(R.special==arr::RowShiftedPackedMatrixST) R = unpack(R);
 //      cout <<*addRegularizer <<R <<endl;
       lapack_Ainv_b_sym(Delta, R + (*addRegularizer), -(comp_At_x(J, phi)+(*addRegularizer)*vectorShaped(x)));
-    }else{
+    } else {
       lapack_Ainv_b_sym(Delta, R, -comp_At_x(J, phi));
     }
 #else //this uses lapack's LLS minimizer - but is really slow!!
     x.reshape(x.N);
-    if(lambda){
+    if(lambda) {
       arr D; D.setDiag(sqrt(lambda),x.N);
       J.append(D);
       phi.append(zeros(x.N,1));
@@ -536,7 +536,7 @@ uint optGaussNewton(arr& x, VectorFunction& f, OptOptions o, arr *addRegularizer
 #endif
     if(o.maxStep>0. && absMax(Delta)>o.maxStep)  Delta *= o.maxStep/absMax(Delta);
     if(o.verbose>1) cout <<" \t|Delta|=" <<absMax(Delta) <<flush;
-
+    
     for(;;) { //stepsize adaptation loop -- doesn't iterate for useDamping option
       y = x + alpha*Delta;
       f.fv(phi, J, y);  evals++;
@@ -550,32 +550,32 @@ uint optGaussNewton(arr& x, VectorFunction& f, OptOptions o, arr *addRegularizer
         //adopt new point and adapt stepsize|damping
         x = y;
         fx = fy;
-	if(o.useAdaptiveDamping){ //Levenberg-Marquardt type damping
-  	  lambda = .2*lambda;
-	}else{
-	  alpha = pow(alpha, 0.5);
-	}
+        if(o.useAdaptiveDamping) { //Levenberg-Marquardt type damping
+          lambda = .2*lambda;
+        } else {
+          alpha = pow(alpha, 0.5);
+        }
         break;
       } else {
         if(o.verbose>1) cout <<" - reject" <<endl;
         //reject new points and adapte stepsize|damping
-	if(o.useAdaptiveDamping){ //Levenberg-Marquardt type damping
-  	  lambda = 10.*lambda;
-	  break;
-	}else{
-	  if(alpha*absMax(Delta)<1e-3*o.stopTolerance || evals>o.stopEvals) break; //WARNING: this may lead to non-monotonicity -> make evals high!
+        if(o.useAdaptiveDamping) { //Levenberg-Marquardt type damping
+          lambda = 10.*lambda;
+          break;
+        } else {
+          if(alpha*absMax(Delta)<1e-3*o.stopTolerance || evals>o.stopEvals) break; //WARNING: this may lead to non-monotonicity -> make evals high!
           alpha = .1*alpha;
-	}
+        }
       }
     }
     
     if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<' ' <<x <<endl;
-
+    
     //stopping criterion
     if((lambda<1. && absMax(Delta)<o.stopTolerance) ||
-       (lambda<1. && alpha*absMax(Delta)<1e-3*o.stopTolerance) ||
-       evals>=o.stopEvals ||
-       it>=o.stopIters) break;
+        (lambda<1. && alpha*absMax(Delta)<1e-3*o.stopTolerance) ||
+        evals>=o.stopEvals ||
+        it>=o.stopIters) break;
   }
   if(o.fmin_return) *o.fmin_return=fx;
   if(o.verbose>0) fil.close();
@@ -619,7 +619,7 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, double *f_user, arr *g_
     //compute Delta
     //cout <<gx <<endl;
     arr R=Hx;
-    if(lambda) for(uint i=0;i<R.d0;i++) R(i,i) += lambda;
+    if(lambda) for(uint i=0; i<R.d0; i++) R(i,i) += lambda;
     lapack_Ainv_b_sym(Delta, R, -gx);
     if(o.maxStep>0. && norm(Delta)>o.maxStep)  Delta *= o.maxStep/norm(Delta);
     
@@ -679,10 +679,10 @@ uint optGradDescent(arr& x, ScalarFunction& f, OptOptions o) {
   ofstream fil;
   if(o.verbose>0) fil.open("z.opt");
   if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<a <<' ' <<x <<endl;
-
+  
   grad_x /= norm(grad_x);
   
-  for(uint k=0;;k++) {
+  for(uint k=0;; k++) {
     y = x - a*grad_x;
     fy = f.fs(grad_y, NoArr, y);  evals++;
     CHECK(fy==fy, "cost seems to be NAN: fy=" <<fy);
@@ -967,19 +967,19 @@ uint Rprop::loop(arr& _x,
   if(verbose>1) cout <<"*** optRprop: starting point x=" <<x <<endl;
   ofstream fil;
   if(verbose>0) fil.open("z.opt");
-
+  
   uint evals=0;
   double diff=0.;
   for(;;) {
     //checkGradient(p, x, stoppingTolerance);
     //compute value and gradient at x
     fx = f.fs(J, NoArr, x);  evals++;
-
+    
     if(verbose>0) fil <<evals <<' ' <<eval_cost <<' ' << fx <<' ' <<diff <<' ' <<x <<endl;
     if(verbose>1) cout <<"optRprop " <<evals <<' ' <<eval_cost <<" \tf(x)=" <<fx <<" \tdiff=" <<diff <<" \tx=" <<x <<endl;
-
+    
     //infeasible point! undo the previous step
-    if(fx==NAN){
+    if(fx==NAN) {
       if(!evals) HALT("can't start Rprop with unfeasible point");
       s->stepSize*=(double).1;
       s->lastGrad=(double)0.;
@@ -1013,7 +1013,7 @@ uint Rprop::loop(arr& _x,
     
     //check stopping criterion based on step-length in x
     diff=maxDiff(x, x_min);
-
+    
     if(diff<stoppingTolerance) { small_steps++; } else { small_steps=0; }
     if(small_steps>3)  break;
     if(evals>maxEvals) break;

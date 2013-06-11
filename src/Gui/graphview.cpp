@@ -1,17 +1,17 @@
 /*  ---------------------------------------------------------------------
     Copyright 2013 Marc Toussaint
     email: mtoussai@cs.tu-berlin.de
-    
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-    
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-    
+
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
@@ -37,7 +37,7 @@
 
 #define INFO(x) //printf("CALLBACK: %s\n",#x);
 
-extern "C"{
+extern "C" {
   GVJ_t *gvjobs_first(GVC_t * gvc);
 }
 
@@ -48,13 +48,13 @@ struct sGraphView {
   
   // on gtk side
   GtkWidget *drawingarea,*container;
-
+  
   // on graphviz side
   graph_t *gvGraph;
   MT::Array<Agnode_t *> gvNodes;
   GVC_t *gvContext;
-  GVJ_t *gvJob(){ return gvjobs_first(gvContext); }
-
+  GVJ_t *gvJob() { return gvjobs_first(gvContext); }
+  
   void init();
   void updateGraphvizGraph();
   
@@ -84,7 +84,7 @@ GraphView::~GraphView() {
 }
 
 
-void GraphView::update(){
+void GraphView::update() {
   gtkLock();
   s->updateGraphvizGraph();
   gvLayoutJobs(s->gvContext, s->gvGraph);
@@ -92,20 +92,20 @@ void GraphView::update(){
   gtkUnlock();
 }
 
-void GraphView::watch(){
+void GraphView::watch() {
   update();
   gtk_main();
 }
 
 #define STR(s) (char*)s
 
-void sGraphView::updateGraphvizGraph(){
+void sGraphView::updateGraphvizGraph() {
   aginit();
   //gvGraph = agopen(STR("new_graph"), Agdirected, NULL);
   gvGraph = agopen(STR("new_graph"), AGDIGRAPH);
   agraphattr(gvGraph, STR("rankdir"), STR("LR"));
   agraphattr(gvGraph, STR("ranksep"), STR("0.05"));
-
+  
   agnodeattr(gvGraph, STR("label"), STR(""));
   agnodeattr(gvGraph, STR("shape"), STR(""));
   agnodeattr(gvGraph, STR("fontsize"), STR("11"));
@@ -116,46 +116,46 @@ void sGraphView::updateGraphvizGraph(){
   agedgeattr(gvGraph, STR("arrowhead"), STR("none"));
   agedgeattr(gvGraph, STR("arrowsize"), STR(".5"));
   agedgeattr(gvGraph, STR("fontsize"), STR("6"));
-
+  
   uint i,j;
   Item *e, *n;
   gvNodes.resize(G->N);
-
+  
   //first add `nodes' (items without links)
-  for_list(i, e, (*G)){
+  for_list(i, e, (*G)) {
     e->index=i;
     CHECK(i==e->index,"");
     MT::String label;
-    if(e->keys.N){
+    if(e->keys.N) {
       label <<e->keys(0);
-      for(uint j=1;j<e->keys.N;j++) label <<'\n' <<e->keys(j);
-    }else{
+      for(uint j=1; j<e->keys.N; j++) label <<'\n' <<e->keys(j);
+    } else {
       label <<'-';
     }
     gvNodes(i) = agnode(gvGraph, STRING(e->index <<'_' <<label)); //, true);
     if(e->keys.N) agset(gvNodes(i), STR("label"), label);
-    if(e->parents.N){
+    if(e->parents.N) {
       agset(gvNodes(i), STR("shape"), STR("box"));
       agset(gvNodes(i), STR("fontsize"), STR("6"));
       agset(gvNodes(i), STR("width"), STR(".1"));
       agset(gvNodes(i), STR("height"), STR(".1"));
-    }else{
+    } else {
       agset(gvNodes(i), STR("shape"), STR("ellipse"));
     }
   }
-
+  
   //now all others
-  for_list(i, e, (*G)){
+  for_list(i, e, (*G)) {
     /*if(e->parents.N==2){ //is an edge
       gvNodes(i) = (Agnode_t*)agedge(gvGraph, gvNodes(e->parents(0)->id), gvNodes(e->parents(1)->id)); //, STRING(i <<"_" <<e->name), true);
-    }else*/ if(e->parents.N){
-      for_list(j, n, e->parents){
-	Agedge_t *ge;
-	if(n->index<e->index)
-	  ge=agedge(gvGraph, gvNodes(n->index), gvNodes(e->index)); //, STRING(n->name <<"--" <<e->name), true);
-	else
-	  ge=agedge(gvGraph, gvNodes(e->index), gvNodes(n->index)); //, STRING(e->name <<"--" <<n->name), true);
-	agset(ge, STR("label"), STRING(j));
+    }else*/ if(e->parents.N) {
+      for_list(j, n, e->parents) {
+        Agedge_t *ge;
+        if(n->index<e->index)
+          ge=agedge(gvGraph, gvNodes(n->index), gvNodes(e->index)); //, STRING(n->name <<"--" <<e->name), true);
+        else
+          ge=agedge(gvGraph, gvNodes(e->index), gvNodes(n->index)); //, STRING(e->name <<"--" <<n->name), true);
+        agset(ge, STR("label"), STRING(j));
       }
     }
   }
@@ -168,7 +168,7 @@ void sGraphView::init() {
   gvContext = ::gvContext();
   char *bla[] = {STR("dot"), STR("-Tx11"), NULL};
   gvParseArgs(gvContext, 2, bla);
-
+  
   if(!container) {
     container = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     g_object_set_data(G_OBJECT(container), "GraphvizGtk", (gpointer) this);
@@ -213,27 +213,27 @@ bool sGraphView::on_drawingarea_expose_event(GtkWidget *widget, GdkEventExpose  
     (job->callbacks->refresh)(job);
   else
     (job->callbacks->refresh)(job);
-  
+    
   cairo_destroy(cr);
   
-  if(job->current_obj){
-    if(agobjkind(job->current_obj)==AGNODE || agobjkind(job->current_obj)==AGEDGE){
+  if(job->current_obj) {
+    if(agobjkind(job->current_obj)==AGNODE || agobjkind(job->current_obj)==AGEDGE) {
       int i=gv->gvNodes.findValue((Agnode_t*)job->current_obj);
-      if(i<0){
-	MT_MSG("???");
-      }else{
-	cout <<"current object:" <<i <<' ' <<*(*gv->G)(i) <<endl;
+      if(i<0) {
+        MT_MSG("???");
+      } else {
+        cout <<"current object:" <<i <<' ' <<*(*gv->G)(i) <<endl;
       }
     }
   }
-  if(job->selected_obj){
-    if(agobjkind(job->selected_obj)==AGNODE){
+  if(job->selected_obj) {
+    if(agobjkind(job->selected_obj)==AGNODE) {
       int i=gv->gvNodes.findValue((Agnode_t*)job->selected_obj);
-      if(i<0){
-	MT_MSG("???");
-      }else{
-	
-	cout <<"selected object:" <<i <<' ' <<*(*gv->G)(i) <<endl;
+      if(i<0) {
+        MT_MSG("???");
+      } else {
+      
+        cout <<"selected object:" <<i <<' ' <<*(*gv->G)(i) <<endl;
       }
     }
   }
@@ -257,7 +257,7 @@ bool sGraphView::on_drawingarea_motion_notify_event(GtkWidget       *widget,    
   (job->callbacks->motion)(job, job->pointer);
   
   gtk_widget_queue_draw(widget);
-    
+  
   return FALSE;
 }
 
@@ -318,9 +318,9 @@ bool sGraphView::on_drawingarea_button_press_event(GtkWidget       *widget,     
   pointer.x = event->x;
   pointer.y = event->y;
   (job->callbacks->button_press)(job, event->button, pointer);
-
+  
   gtk_widget_queue_draw(widget);
-
+  
   return FALSE;
 }
 
@@ -378,8 +378,8 @@ bool sGraphView::on_drawingarea_scroll_event(GtkWidget       *widget,           
 
 #include "graphview.h"
 GraphView::GraphView(KeyValueGraph& G, const char* title, void *container) { NICO }
-GraphView::~GraphView(){ NICO }
-void GraphView::watch(){ NICO }
+GraphView::~GraphView() { NICO }
+void GraphView::watch() { NICO }
 
 #endif
 

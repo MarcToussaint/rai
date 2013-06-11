@@ -1,17 +1,17 @@
 /*  ---------------------------------------------------------------------
     Copyright 2013 Marc Toussaint
     email: mtoussai@cs.tu-berlin.de
-    
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-    
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-    
+
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
@@ -24,45 +24,14 @@
 #ifndef MT_util_h
 #define MT_util_h
 
+#include <iostream>
+#include <fstream>
+#include <typeinfo>
+#include <stdint.h>
+
 //----- if no system flag, I assume Linux
 #if !defined MT_MSVC && !defined MT_Cygwin && !defined MT_Linux && !defined MT_MinGW && !defined MT_Darwin
 #  define MT_Linux
-#endif
-
-//----- standard includes:
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <sstream>
-#include <typeinfo>
-#include <math.h>
-#include <string.h>
-#include <cmath>
-#include <stdint.h>
-#if defined MT_Linux || defined MT_Cygwin || defined MT_Darwin
-#  include <stdint.h>
-#  include <sys/time.h>
-#  include <sys/times.h>
-#  include <sys/resource.h>
-#endif
-#if defined MT_MSVC
-#  include <time.h>
-#  include <sys/timeb.h>
-#  include <windows.h>
-#  undef min
-#  undef max
-#  define MT_TIMEB
-#  ifdef MT_QT
-#    undef  NOUNICODE
-#    define NOUNICODE
-#  endif
-#  pragma warning(disable: 4305 4244 4250 4355 4786 4996)
-#endif
-#if defined MT_MinGW
-#  include <unistd.h>
-#  include <sys/time.h>
-#  include <sys/timeb.h>
-#  define MT_TIMEB
 #endif
 
 
@@ -196,7 +165,7 @@ uint getVerboseLevel();
 }
 
 //----- stream parsing
-struct PARSE{ const char *str; PARSE(const char* _str):str(_str){} };
+struct PARSE { const char *str; PARSE(const char* _str):str(_str) {} };
 std::istream& operator>>(std::istream& is, const PARSE&);
 
 
@@ -268,7 +237,7 @@ public:
   
   /// @name misc
   bool contains(const String& substring) const;
-
+  
   /// @name I/O
   void write(std::ostream& os) const;
   uint read(std::istream& is, const char* skipSymbols=NULL, const char *stopSymbols=NULL, int eatStopSymbol=-1);
@@ -295,11 +264,12 @@ inline void breakPoint() {
 }
 
 //----- error handling:
-#ifdef MT_MSVC
-#  define MT_HERE "@" <<(strrchr(__FILE__, '\\')?strrchr(__FILE__, '\\')+1:__FILE__) <<':' <<__LINE__ <<':' <<__FUNCTION__ <<": "
-#else
-#  define MT_HERE "@" <<(strrchr(__FILE__, '/')?strrchr(__FILE__, '/')+1:__FILE__) <<':' <<__LINE__ <<':' <<__FUNCTION__ <<": "
-#endif
+#  define MT_HERE "@" << __FILE__<<':' <<__LINE__ <<':' <<__FUNCTION__ <<": "
+/* #ifdef MT_MSVC */
+/* (strrchr(__FILE__, '\\')?strrchr(__FILE__, '\\')+1:__FILE__) */
+/* #else */
+/* #  define MT_HERE "@" <<(strrchr(__FILE__, '/')?strrchr(__FILE__, '/')+1:__FILE__) <<':' <<__LINE__ <<':' <<__FUNCTION__ <<": " */
+/* #endif */
 #ifndef MT_MSG
 #  define MT_MSG(msg){ std::cerr <<MT_HERE <<msg <<std::endl; MT::breakPoint(); }
 #endif
@@ -516,10 +486,10 @@ struct ConditionVariable {
   int value;
   Mutex mutex;
   pthread_cond_t  cond;
-
+  
   ConditionVariable(int initialState=0);
   ~ConditionVariable();
-
+  
   void setValue(int i, bool signalOnlyFirstInQueue=false); ///< sets state and broadcasts
   int  incrementValue(bool signalOnlyFirstInQueue=false);   ///< increase value by 1
   void broadcast(bool signalOnlyFirstInQueue=false);       ///< just broadcast
@@ -554,15 +524,15 @@ struct Thread {
 
 /// a generic singleton
 template<class T>
-struct Singleton{
-  struct SingletonFields{ //class cannot have own members: everything in the singleton which is created on first demand
+struct Singleton {
+  struct SingletonFields { //class cannot have own members: everything in the singleton which is created on first demand
     T obj;
     RWLock lock;
   };
-
+  
   static SingletonFields *singleton;
-
-  SingletonFields& getSingleton() const{
+  
+  SingletonFields& getSingleton() const {
     static bool currentlyCreating=false;
     if(currentlyCreating) return *((SingletonFields*) NULL);
     if(!singleton) {
@@ -577,8 +547,8 @@ struct Singleton{
     }
     return *singleton;
   }
-
-  T& obj(){ return getSingleton().obj; }
+  
+  T& obj() { return getSingleton().obj; }
 };
 template<class T> typename Singleton<T>::SingletonFields *Singleton<T>::singleton=NULL;
 
@@ -620,23 +590,23 @@ struct CycleTimer {
 #else //MT_MSVC
 struct Mutex {
   int state;
-  Mutex(){};
-  ~Mutex(){};
-  void lock(){ MT_MSG("fake MSVC Mutex"); }
-  void unlock(){ MT_MSG("fake MSVC Mutex"); }
+  Mutex() {};
+  ~Mutex() {};
+  void lock() { MT_MSG("fake MSVC Mutex"); }
+  void unlock() { MT_MSG("fake MSVC Mutex"); }
 };
 struct ConditionVariable {
   int value;
-  ConditionVariable(int initialState=0){}
-  ~ConditionVariable(){}
+  ConditionVariable(int initialState=0) {}
+  ~ConditionVariable() {}
 
-  void setValue(int i, bool signalOnlyFirstInQueue=false){} ///< sets state and broadcasts
-  int  incrementValue(bool signalOnlyFirstInQueue=false){}   ///< increase value by 1
-  void broadcast(bool signalOnlyFirstInQueue=false){}       ///< just broadcast
-  
-  void lock(){}
-  void unlock(){}
-  
+  void setValue(int i, bool signalOnlyFirstInQueue=false) {} ///< sets state and broadcasts
+  int  incrementValue(bool signalOnlyFirstInQueue=false) {}  ///< increase value by 1
+  void broadcast(bool signalOnlyFirstInQueue=false) {}      ///< just broadcast
+
+  void lock() {}
+  void unlock() {}
+
 };
 #endif //MT_MSVC
 

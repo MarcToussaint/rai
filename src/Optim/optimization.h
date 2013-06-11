@@ -1,21 +1,20 @@
 /*  ---------------------------------------------------------------------
     Copyright 2013 Marc Toussaint
     email: mtoussai@cs.tu-berlin.de
-    
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-    
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-    
+
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
-
 
 /// @file
 /// @ingroup group_Optim
@@ -26,7 +25,6 @@
 #define MT_optimization_h
 
 #include <Core/array.h>
-#include <Core/util.h>
 
 // function evaluation counter (used only for performance meassurements, global for simplicity)
 extern uint eval_cost;
@@ -68,17 +66,17 @@ struct QuadraticChainFunction {
 /// functions \f$\phi_t:(x_{t-k},..,x_t) \mapsto y\f$ over a chain \f$x_0,..,x_T\f$ of variables
 struct KOrderMarkovFunction { //TODO: rename KOrderChainFunction
   virtual void phi_t(arr& phi, arr& J, uint t, const arr& x_bar) = 0;
-
+  
   //functions to get the parameters $T$, $k$ and $n$ of the $k$-order Markov Process
   virtual uint get_T() = 0;
   virtual uint get_k() = 0;
   virtual uint get_n() = 0; ///< the dimensionality of \f$x_t\f$
   virtual uint get_m(uint t) = 0; ///< the dimensionality of \f$\phi_t\f$
-  virtual arr get_prefix(){ return NoArr; }
-
+  virtual arr get_prefix() { return NoArr; }
+  
   //optional: kernel costs
-  virtual bool hasKernel(){ return false; }
-  virtual double kernel(uint t0,uint t1){ NIY; } ///< a kernal add additional costs: neg-log-likelihoods of a Gaussian Process
+  virtual bool hasKernel() { return false; }
+  virtual double kernel(uint t0,uint t1) { NIY; } ///< a kernal add additional costs: neg-log-likelihoods of a Gaussian Process
 };
 
 /*
@@ -96,7 +94,7 @@ struct VectorGraphFunction {
 //
 
 /// A struct that allows to convert one function type into another, even when given as argument
-struct Convert{
+struct Convert {
   struct sConvert* s;
   Convert(ScalarFunction&);
   Convert(VectorFunction&);

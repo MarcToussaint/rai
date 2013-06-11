@@ -1,27 +1,25 @@
 /*  ---------------------------------------------------------------------
     Copyright 2013 Marc Toussaint
     email: mtoussai@cs.tu-berlin.de
-    
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-    
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-    
+
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
 
-
-
-
-
-/** @file opengl.h
-    @brief defines the OpenGL interface to freeglut or Qt */
+/// @file
+/// @ingroup group_Gui
+/// @addtogroup group_Gui
+/// @{
 
 #ifndef MT_opengl_h
 #define MT_opengl_h
@@ -49,7 +47,6 @@
 #endif
 
 #include <Core/array.h>
-#include <Core/util.h>
 
 
 //===========================================================================
@@ -306,9 +303,6 @@ struct glUI:OpenGL::GLHoverCall,OpenGL::GLClickCall {
 
 void glDrawUI(void *p);
 
-
-#ifdef  MT_IMPLEMENTATION
-#  include "opengl.cpp"
-#endif
+/// @}
 
 #endif

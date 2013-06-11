@@ -1,17 +1,17 @@
 /*  ---------------------------------------------------------------------
     Copyright 2013 Marc Toussaint
     email: mtoussai@cs.tu-berlin.de
-    
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-    
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-    
+
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
@@ -962,7 +962,7 @@ void make_RGB(byteA &img) {
   img=tmp;
 }
 
-void make_RGB2BGRA(byteA &img){
+void make_RGB2BGRA(byteA &img) {
   CHECK(img.nd==3 && img.d2==3, "make_RGB2RGBA requires color image as input");
   byteA tmp;
   tmp.resize(img.d0, img.d1, 4);
@@ -1160,16 +1160,16 @@ void scanArrFile(const char* name) {
 // RowShiftedPackedMatrix
 //
 
-RowShiftedPackedMatrix::RowShiftedPackedMatrix(arr& X):Z(X),real_d1(0), symmetric(false){
+RowShiftedPackedMatrix::RowShiftedPackedMatrix(arr& X):Z(X),real_d1(0), symmetric(false) {
   Z.special = arr::RowShiftedPackedMatrixST;
   Z.aux = this;
 }
 
-RowShiftedPackedMatrix *auxRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1){
+RowShiftedPackedMatrix *auxRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1) {
   RowShiftedPackedMatrix *Zaux;
-  if(Z.special==arr::noneST){
+  if(Z.special==arr::noneST) {
     Zaux = new RowShiftedPackedMatrix(Z);
-  }else{
+  } else {
     CHECK(Z.special==arr::RowShiftedPackedMatrixST,"");
     Zaux = (RowShiftedPackedMatrix*) Z.aux;
   }
@@ -1179,30 +1179,30 @@ RowShiftedPackedMatrix *auxRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d
   Zaux->rowShift.resize(d0);
   Zaux->rowShift.setZero();
   Zaux->colPatches.resize(real_d1, 2);
-  for(uint i=0;i<real_d1;i++){
+  for(uint i=0; i<real_d1; i++) {
     Zaux->colPatches(i,0)=0;
     Zaux->colPatches(i,1)=d0;
   }
   return Zaux;
 }
 
-RowShiftedPackedMatrix::~RowShiftedPackedMatrix(){
+RowShiftedPackedMatrix::~RowShiftedPackedMatrix() {
   Z.special = arr::noneST;
   Z.aux = NULL;
 }
 
-double RowShiftedPackedMatrix::acc(uint i, uint j){
+double RowShiftedPackedMatrix::acc(uint i, uint j) {
   uint rs=rowShift(i);
   if(j<rs || j>=rs+Z.d1) return 0.;
   return Z(i, j-rs);
 }
 
-arr packRowShifted(const arr& X){
+arr packRowShifted(const arr& X) {
   arr Z;
   RowShiftedPackedMatrix *Zaux = auxRowShifted(Z, X.d0, 0, X.d1);
   //-- compute rowShifts and d0:
   uint len=0;
-  for(uint i=0;i<X.d0;i++){
+  for(uint i=0; i<X.d0; i++) {
     uint j=0,rs;
     while(j<X.d1 && X(i,j)==0.) j++;
     Zaux->rowShift(i)=rs=j;
@@ -1213,21 +1213,21 @@ arr packRowShifted(const arr& X){
   
   Z.resize(X.d0,len);
   Z.setZero();
-  for(uint i=0;i<Z.d0;i++) for(uint j=0;j<Z.d1 && Zaux->rowShift(i)+j<X.d1;j++)
-    Z(i,j) = X(i,Zaux->rowShift(i)+j);
+  for(uint i=0; i<Z.d0; i++) for(uint j=0; j<Z.d1 && Zaux->rowShift(i)+j<X.d1; j++)
+      Z(i,j) = X(i,Zaux->rowShift(i)+j);
   Zaux->computeColPatches(false);
   return Z;
 }
 
-arr unpackRowShifted(const arr& Z){
+arr unpackRowShifted(const arr& Z) {
   CHECK(Z.special==arr::RowShiftedPackedMatrixST,"");
   RowShiftedPackedMatrix *Zaux = (RowShiftedPackedMatrix*)Z.aux;
   arr X(Z.d0, Zaux->real_d1);
   CHECK(!Zaux->symmetric || Z.d0==Zaux->real_d1,"cannot be symmetric!");
   X.setZero();
-  for(uint i=0;i<Z.d0;i++){
+  for(uint i=0; i<Z.d0; i++) {
     uint rs=Zaux->rowShift(i);
-    for(uint j=0;j<Z.d1 && rs+j<X.d1;j++){
+    for(uint j=0; j<Z.d1 && rs+j<X.d1; j++) {
       X(i,j+rs) = Z(i,j);
       if(Zaux->symmetric) X(j+rs,i) = Z(i,j);
     }
@@ -1235,11 +1235,11 @@ arr unpackRowShifted(const arr& Z){
   return X;
 }
 
-void RowShiftedPackedMatrix::computeColPatches(bool assumeMonotonic){
+void RowShiftedPackedMatrix::computeColPatches(bool assumeMonotonic) {
   colPatches.resize(real_d1,2);
   uint a=0,b=Z.d0;
-  if(!assumeMonotonic){
-    for(uint j=0;j<real_d1;j++){
+  if(!assumeMonotonic) {
+    for(uint j=0; j<real_d1; j++) {
       a=0;
       while(a<Z.d0 && acc(a,j)==0) a++;
       b=Z.d0;
@@ -1247,48 +1247,48 @@ void RowShiftedPackedMatrix::computeColPatches(bool assumeMonotonic){
       colPatches(j,0)=a;
       colPatches(j,1)=b;
     }
-  }else{
-    for(uint j=0;j<real_d1;j++){
+  } else {
+    for(uint j=0; j<real_d1; j++) {
       while(a<Z.d0 && j>=rowShift(a)+Z.d1) a++;
       colPatches(j,0)=a;
     }
-    for(uint j=real_d1;j--;){
+    for(uint j=real_d1; j--;) {
       while(b>0 && j<rowShift(b-1)) b--;
       colPatches(j,1)=b;
     }
   }
 }
 
-arr RowShiftedPackedMatrix::At_A(){
+arr RowShiftedPackedMatrix::At_A() {
   arr R;
   RowShiftedPackedMatrix *Raux = auxRowShifted(R, real_d1, Z.d1, real_d1);
-  for(uint i=0;i<R.d0;i++) Raux->rowShift(i) = i;
+  for(uint i=0; i<R.d0; i++) Raux->rowShift(i) = i;
   Raux->symmetric=true;
-  for(uint i=0;i<Z.d0;i++){
+  for(uint i=0; i<Z.d0; i++) {
     uint rs=rowShift(i);
     double* Zi=&Z(i,0);
-    for(uint j=0;j<Z.d1;j++){
+    for(uint j=0; j<Z.d1; j++) {
       uint real_j=j+rs;
       if(real_j>=real_d1) break;
       double Zij=Zi[j];
       double* Rp=R.p + real_j*R.d1;
       double* Jp=Zi+j;
       double* Jpstop=Zi+Z.d1;
-      for(;Jp!=Jpstop; Rp++,Jp++) *Rp += Zij * *Jp;
+      for(; Jp!=Jpstop; Rp++,Jp++) *Rp += Zij * *Jp;
     }
-  }    
+  }
   return R;
 }
 
-arr RowShiftedPackedMatrix::At_x(const arr& x){
+arr RowShiftedPackedMatrix::At_x(const arr& x) {
   CHECK(x.N==Z.d0,"");
   arr y(real_d1);
   y.setZero();
-  for(uint j=0;j<real_d1;j++){
+  for(uint j=0; j<real_d1; j++) {
     double sum=0.;
     uint a=colPatches(j,0);
     uint b=colPatches(j,1);
-    for(uint i=a;i<b;i++){
+    for(uint i=a; i<b; i++) {
       uint rs=rowShift.p[i];
       if(j<rs || j-rs>=Z.d1) continue;
       sum += Z.p[i*Z.d1+j-rs]*x.p[i]; // sum += acc(i,j)*x(i);
@@ -1299,20 +1299,20 @@ arr RowShiftedPackedMatrix::At_x(const arr& x){
   
 }
 
-arr unpack(const arr& X){
+arr unpack(const arr& X) {
   if(X.special==arr::noneST) HALT("this is not special");
   if(X.special==arr::RowShiftedPackedMatrixST) return unpackRowShifted(X);
   return NoArr;
 }
 
-arr comp_At_A(arr& A){
-  if(A.special==arr::noneST){ arr X; blas_At_A(X,A); return X; }
+arr comp_At_A(arr& A) {
+  if(A.special==arr::noneST) { arr X; blas_At_A(X,A); return X; }
   if(A.special==arr::RowShiftedPackedMatrixST) return ((RowShiftedPackedMatrix*)A.aux)->At_A();
   return NoArr;
 }
 
-arr comp_At_x(arr& A, const arr& x){
-  if(A.special==arr::noneST){ arr y; innerProduct(y, ~A, x); return y; }
+arr comp_At_x(arr& A, const arr& x) {
+  if(A.special==arr::noneST) { arr y; innerProduct(y, ~A, x); return y; }
   if(A.special==arr::RowShiftedPackedMatrixST) return ((RowShiftedPackedMatrix*)A.aux)->At_x(x);
   return NoArr;
 }
@@ -1469,4 +1469,4 @@ template MT::Array<arr>::~Array();
 template void MT::save<uintA>(const uintA&, const char*);
 template void MT::load<arr>(arr&, const char*, bool);
 
-void linkArray(){ cout <<"*** libArray.so linked ***" <<endl; }
+void linkArray() { cout <<"*** libArray.so linked ***" <<endl; }
