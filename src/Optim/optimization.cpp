@@ -26,7 +26,7 @@ bool sanityCheck=false; //true;
 uint eval_cost=0;
 SqrPotential& NoPot=*((SqrPotential*)NULL);
 PairSqrPotential& NoPairPot=*((PairSqrPotential*)NULL);
-optOptions globalOptOptions;
+OptOptions globalOptOptions;
 
 //===========================================================================
 //
@@ -43,10 +43,10 @@ struct     SqrPotential;
 /// return type for a function that returns a square potential $f(x,y) = [x,y]^T [A,C; C^T,B] [x,y] - 2 [a,b]^T [x,y] + c$
 struct PairSqrPotential;
 
-/// A scalar function $y = f(x)$, if @grad@ is not NoGrad, gradient is returned
+/// A scalar function $y = f(x)$, if @grad@ is not NoArr, gradient is returned
 struct ScalarFunction;
 
-/// A vector function $y = f(x)$, if @J@ is not NoGrad, Jacobian is returned
+/// A vector function $y = f(x)$, if @J@ is not NoArr, Jacobian is returned
 /// This also implies an optimization problem $\hat f(y) = y^T(x) y(x)$ of (iterated)
 /// Gauss-Newton type where the Hessian is approximated by J^T J
 struct VectorFunction;
@@ -114,12 +114,12 @@ void sanityCheckUptodatePotentials(const MT::Array<SqrPotential>& R, QuadraticCh
 }
 
 double evaluateSF(ScalarFunction& f, const arr& x) {
-  return f.fs(NoGrad, NoArr, x);
+  return f.fs(NoArr, NoArr, x);
 }
 
 double evaluateVF(VectorFunction& f, const arr& x) {
   arr y;
-  f.fv(y, NoGrad, x);
+  f.fv(y, NoArr, x);
   return sumOfSqr(y);
 }
 
@@ -138,10 +138,10 @@ double evaluateVCF(VectorChainFunction& f, const arr& x) {
   double ncost=0.,pcost=0.;
   uint T=x.d0-1;
   arr y;
-  f.fv_i(y, NoGrad, 0, x[0]);  ncost += sumOfSqr(y);
+  f.fv_i(y, NoArr, 0, x[0]);  ncost += sumOfSqr(y);
   for(uint t=1; t<=T; t++) {
-    f.fv_i(y, NoGrad, t, x[t]);  ncost += sumOfSqr(y);
-    f.fv_ij(y, NoGrad, NoGrad, t-1, t, x[t-1], x[t]);  pcost += sumOfSqr(y);
+    f.fv_i(y, NoArr, t, x[t]);  ncost += sumOfSqr(y);
+    f.fv_ij(y, NoArr, NoArr, t-1, t, x[t-1], x[t]);  pcost += sumOfSqr(y);
     //cout <<t <<' ' <<sumOfSqr(y) <<endl;
   }
   //cout <<"node costs=" <<ncost <<" pair costs=" <<pcost <<endl;
@@ -202,7 +202,7 @@ bool checkGradient(ScalarFunction &f,
   for(i=0; i<x.N; i++) {
     dx=x;
     dx.elem(i) += eps;
-    dy = f.fs(NoGrad, NoArr, dx);
+    dy = f.fs(NoArr, NoArr, dx);
     dy = (dy-y)/eps;
     JJ(i)=dy;
   }
@@ -234,7 +234,7 @@ bool checkHessian(ScalarFunction &f, const arr& x, double tolerance){
   for(i=0; i<x.N; i++) {
     dx=x;
     dx.elem(i) += eps;
-    f.fs(dy, NoGrad, dx);
+    f.fs(dy, NoArr, dx);
     dy = (dy-g)/eps;
     for(k=0; k<g.N; k++) Jg(k, i)=dy.elem(k);
   }
@@ -267,7 +267,7 @@ bool checkJacobian(VectorFunction &f,
   for(i=0; i<x.N; i++) {
     dx=x;
     dx.elem(i) += eps;
-    f.fv(dy, NoGrad, dx);
+    f.fv(dy, NoArr, dx);
     dy = (dy-y)/eps;
     for(k=0; k<y.N; k++) JJ(k, i)=dy.elem(k);
   }
@@ -294,23 +294,24 @@ bool checkJacobian(VectorFunction &f,
 // optimization methods
 //
 
-optOptions::optOptions() {
+OptOptions::OptOptions() {
+  verbose=0;
   fmin_return=NULL;
   stopTolerance=1e-2;
   stopEvals=1000;
   stopIters=1000;
-  useAdaptiveDamping=1.;
   initStep=1.;
   minStep=-1.;
   maxStep=-1.;
+  damping=1.;
+  useAdaptiveDamping=false;
   clampInitialState=false;
-  verbose=0;
 }
 
-optOptions global_optOptions;
+OptOptions global_optOptions;
 
 /// preliminary
-uint optNodewise(arr& x, VectorChainFunction& f, optOptions o) {
+uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
 
   struct MyVectorFunction:VectorFunction {
     VectorChainFunction *f;
@@ -321,12 +322,12 @@ uint optNodewise(arr& x, VectorChainFunction& f, optOptions o) {
       arr yij,Ji,Jj;
       f->fv_i(y, J, t, x);  (*evals)++;
       if(t>0) {
-        f->fv_ij(yij, (&J?Ji:NoGrad), (&J?Jj:NoGrad), t-1, t, x_ref[t-1], x);
+        f->fv_ij(yij, (&J?Ji:NoArr), (&J?Jj:NoArr), t-1, t, x_ref[t-1], x);
         y.append(yij);
         if(&J) J.append(Jj);
       }
       if(t<f->get_T()) {
-        f->fv_ij(yij, (&J?Ji:NoGrad), (&J?Jj:NoGrad), t, t+1, x, x_ref[t+1]);
+        f->fv_ij(yij, (&J?Ji:NoArr), (&J?Jj:NoArr), t, t+1, x, x_ref[t+1]);
         y.append(yij);
         if(&J) J.append(Ji);
       }
@@ -345,7 +346,7 @@ uint optNodewise(arr& x, VectorChainFunction& f, optOptions o) {
   if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<endl;
   if(o.verbose>1) cout <<"optNodewise initial cost " <<fx <<endl;
   
-  optOptions op;
+  OptOptions op;
   op.stopTolerance=o.stopTolerance, op.stopEvals=10, op.maxStep=o.maxStep, op.verbose=0;
   
   uint k;
@@ -378,12 +379,12 @@ uint optNodewise(arr& x, VectorChainFunction& f, optOptions o) {
 
 
 /// preliminary
-uint optDynamicProgramming(arr& x, QuadraticChainFunction& f, optOptions o) {
+uint optDynamicProgramming(arr& x, QuadraticChainFunction& f, OptOptions o) {
 
   uint T=x.d0-1,n=x.d1;
   uint evals=0;
   arr y(x);
-  double damping=o.useAdaptiveDamping;
+  double damping=o.damping;
   
   MT::Array<SqrPotential> V(T+1);
   MT::Array<SqrPotential> fi(T+1), fi_at_y(T+1);
@@ -478,17 +479,16 @@ uint optDynamicProgramming(arr& x, QuadraticChainFunction& f, optOptions o) {
 }
 
 /// minimizes \f$f(x)\f$ using its gradient only
-uint optRprop(arr& x, ScalarFunction& f, optOptions o) {
+uint optRprop(arr& x, ScalarFunction& f, OptOptions o) {
   return Rprop().loop(x, f, o.fmin_return, o.stopTolerance, o.initStep, o.stopEvals, o.verbose);
 }
 
 /** @brief Minimizes \f$f(x) = \phi(x)^T \phi(x)$ using the Jacobian. The optional _user arguments specify,
  * if f has already been evaluated at x (another initial evaluation is then omitted
  * to increase performance) and the evaluation of the returned x is also returned */
-uint optGaussNewton(arr& x, VectorFunction& f, optOptions o, arr *addRegularizer, arr *fx_user, arr *Jx_user) {
-  double alpha=1.;
-  double lambda = 1e-10;
-  if(o.useAdaptiveDamping) lambda = o.useAdaptiveDamping;
+uint optGaussNewton(arr& x, VectorFunction& f, OptOptions o, arr *addRegularizer, arr *fx_user, arr *Jx_user) {
+  double alpha = 1.;
+  double lambda = o.damping;
   double fx, fy;
   arr Delta, y;
   uint evals=0;
@@ -504,8 +504,8 @@ uint optGaussNewton(arr& x, VectorFunction& f, optOptions o, arr *addRegularizer
   if(o.verbose>1) cout <<"*** optGaussNewton: starting point f(x)=" <<fx <<" alpha=" <<alpha <<" lambda=" <<lambda <<endl;
   if(o.verbose>2) cout <<"\nx=" <<x <<endl; 
   ofstream fil;
-  if(o.verbose>0) fil.open("z.gaussNewton");
-  if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<endl;
+  if(o.verbose>0) fil.open("z.opt");
+  if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<' ' <<x <<endl;
 
   
   for(uint it=1;;it++) { //iterations and lambda adaptation loop
@@ -569,8 +569,8 @@ uint optGaussNewton(arr& x, VectorFunction& f, optOptions o, arr *addRegularizer
       }
     }
     
-    if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<endl;
-    
+    if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<' ' <<x <<endl;
+
     //stopping criterion
     if((lambda<1. && absMax(Delta)<o.stopTolerance) ||
        (lambda<1. && alpha*absMax(Delta)<1e-3*o.stopTolerance) ||
@@ -588,8 +588,9 @@ uint optGaussNewton(arr& x, VectorFunction& f, optOptions o, arr *addRegularizer
 /** @brief Minimizes \f$f(x) = A(x)^T x A^T(x) - 2 a(x)^T x + c(x)\f$. The optional _user arguments specify,
  * if f has already been evaluated at x (another initial evaluation is then omitted
  * to increase performance) and the evaluation of the returned x is also returned */
-uint optNewton(arr& x, ScalarFunction& f,  optOptions o, double *f_user, arr *g_user, arr *H_user) {
-  double a=1.;
+uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, double *f_user, arr *g_user, arr *H_user) {
+  double alpha = 1.;
+  double lambda = o.damping;
   double fx, fy;
   arr Delta, y;
   uint evals=0;
@@ -609,15 +610,17 @@ uint optNewton(arr& x, ScalarFunction& f,  optOptions o, double *f_user, arr *g_
     fx = f.fs(gx, Hx, x);  evals++;
   }
   
-  if(o.verbose>1) cout <<"*** optNewton: starting point x=" <<x <<" f(x)=" <<fx <<" a=" <<a <<endl;
+  if(o.verbose>1) cout <<"*** optNewton: starting point x=" <<x <<" f(x)=" <<fx <<" a=" <<alpha <<endl;
   ofstream fil;
   if(o.verbose>0) fil.open("z.opt");
-  if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<a <<' ' <<x <<endl;
+  if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<' ' <<x <<endl;
   
   for(;;) {
     //compute Delta
     //cout <<gx <<endl;
-    lapack_Ainv_b_sym(Delta, Hx+1e-10*eye(Hx.d0), -gx);
+    arr R=Hx;
+    if(lambda) for(uint i=0;i<R.d0;i++) R(i,i) += lambda;
+    lapack_Ainv_b_sym(Delta, R, -gx);
     if(o.maxStep>0. && norm(Delta)>o.maxStep)  Delta *= o.maxStep/norm(Delta);
     
 //     x+=Delta;
@@ -631,14 +634,14 @@ uint optNewton(arr& x, ScalarFunction& f,  optOptions o, double *f_user, arr *g_
     }
     
     for(;;) {
-      y = x + a*Delta;
+      y = x + alpha*Delta;
       fy = f.fs(gy, Hy, y);  evals++;
-      if(o.verbose>1) cout <<"optNewton " <<evals <<' ' <<eval_cost <<" \tprobing y=" <<y <<" \tf(y)=" <<fy <<" \t|Delta|=" <<norm(Delta) <<" \ta=" <<a;
-      CHECK(fy==fy, "cost seems to be NAN: ly=" <<fy);
-      if(fy <= fx) break;
+      if(o.verbose>1) cout <<"optNewton " <<evals <<' ' <<eval_cost <<" \tprobing y=" <<y <<" \tf(y)=" <<fy <<" \t|Delta|=" <<norm(Delta) <<" \ta=" <<alpha;
+      //CHECK(fy==fy, "cost seems to be NAN: ly=" <<fy);
+      if(fy!=NAN && fy <= fx) break;
       if(evals>o.stopEvals) break; //WARNING: this may lead to non-monotonicity -> make evals high!
       //decrease stepsize
-      a = .1*a;
+      alpha = .1*alpha;
       if(o.verbose>1) cout <<" - reject" <<endl;
     }
     if(o.verbose>1) cout <<" - ACCEPT" <<endl;
@@ -648,8 +651,8 @@ uint optNewton(arr& x, ScalarFunction& f,  optOptions o, double *f_user, arr *g_
     fx = fy;
     gx = gy;
     Hx = Hy;
-    a = pow(a, 0.5);
-    if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<a <<' ' <<x <<endl;
+    alpha = pow(alpha, 0.5);
+    if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<' ' <<x <<endl;
     
     //stopping criterion
     if(norm(Delta)<o.stopTolerance || evals>o.stopEvals) break;
@@ -665,7 +668,7 @@ uint optNewton(arr& x, ScalarFunction& f,  optOptions o, double *f_user, arr *g_
 }
 
 /// minimizes \f$f(x)\f$ using its gradient only
-uint optGradDescent(arr& x, ScalarFunction& f, optOptions o) {
+uint optGradDescent(arr& x, ScalarFunction& f, OptOptions o) {
   uint evals=0;
   arr y, grad_x, grad_y;
   double fx, fy;
@@ -736,7 +739,7 @@ void updateBwdMessage(SqrPotential& Vi, PairSqrPotential& fij, const SqrPotentia
 }
 
 /// preliminary
-uint optMinSumGaussNewton(arr& x, QuadraticChainFunction& f, optOptions o) {
+uint optMinSumGaussNewton(arr& x, QuadraticChainFunction& f, OptOptions o) {
 
   struct LocalQuadraticFunction:QuadraticFunction {
     QuadraticChainFunction *f;
@@ -760,7 +763,7 @@ uint optMinSumGaussNewton(arr& x, QuadraticChainFunction& f, optOptions o) {
   uint T=x.d0-1,n=x.d1;
   uint evals=0;
   arr y(x);
-  double damping=o.useAdaptiveDamping;
+  double damping=o.damping;
   uint rejects=0;
   
   MT::Array<SqrPotential> V(T+1); //bwd messages
@@ -830,7 +833,7 @@ uint optMinSumGaussNewton(arr& x, QuadraticChainFunction& f, optOptions o) {
       f_loc.R = &Ry(t); //by setting this as reference, each recomputation of R is stored directly in R(t)
       f_loc.x = x[t];
       f_loc.updateR=false;
-      optOptions op;
+      OptOptions op;
       op.stopTolerance=o.stopTolerance, op.stopEvals=10, op.maxStep=o.maxStep, op.verbose=0;
       NIY//optNewton(y[t](), f_loc, op);
       
