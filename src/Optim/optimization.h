@@ -102,7 +102,7 @@ struct Convert {
   Convert(VectorChainFunction&);
   Convert(QuadraticChainFunction&);
   Convert(KOrderMarkovFunction&);
-  Convert(struct ControlledSystem&);
+//  Convert(struct ControlledSystem&);
   ~Convert();
   operator ScalarFunction&();
   operator VectorFunction&();
