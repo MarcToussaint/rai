@@ -689,12 +689,12 @@ void MT::String::operator=(const char *s) { resize(strlen(s), false); memmove(p,
 void MT::String::set(const char *s, uint n) { resize(n, false); memmove(p, s, n); }
 
 /// shorthand for the !strcmp command
-bool MT::String::operator==(const char *s) const { return !strcmp(p, s); }
+bool MT::String::operator==(const char *s) const { return p && !strcmp(p, s); }
 /// shorthand for the !strcmp command
-bool MT::String::operator==(const String& s) const { return !strcmp(p, s.p); }
+bool MT::String::operator==(const String& s) const { return p && s.p && !strcmp(p, s.p); }
 bool MT::String::operator!=(const char *s) const { return !operator==(s); }
 bool MT::String::operator!=(const String& s) const { return !(operator==(s)); }
-bool MT::String::operator<(const String& s) const { return strcmp(p, s.p)<0; }
+bool MT::String::operator<(const String& s) const { return p && s.p && strcmp(p, s.p)<0; }
 
 bool MT::String::contains(const String& substring) const {
   char* p = strstr(this->p, substring.p);
