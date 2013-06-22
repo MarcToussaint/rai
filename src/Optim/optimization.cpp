@@ -24,8 +24,8 @@
 
 bool sanityCheck=false; //true;
 uint eval_cost=0;
-SqrPotential& NoPot=*((SqrPotential*)NULL);
-PairSqrPotential& NoPairPot=*((PairSqrPotential*)NULL);
+SqrPotential& NoPot = *((SqrPotential*)NULL);
+PairSqrPotential& NoPairPot = *((PairSqrPotential*)NULL);
 OptOptions globalOptOptions;
 
 //===========================================================================
