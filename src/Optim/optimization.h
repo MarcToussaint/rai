@@ -102,6 +102,8 @@ struct Convert {
   Convert(VectorChainFunction&);
   Convert(QuadraticChainFunction&);
   Convert(KOrderMarkovFunction&);
+  Convert(double(*fs)(arr*, const arr&, void*),void *data);
+  Convert(void (*fv)(arr&, arr*, const arr&, void*),void *data);
 //  Convert(struct ControlledSystem&);
   ~Convert();
   operator ScalarFunction&();
@@ -110,7 +112,6 @@ struct Convert {
   operator QuadraticChainFunction&();
   operator KOrderMarkovFunction&();
 };
-
 
 //===========================================================================
 //
