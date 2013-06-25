@@ -21,6 +21,7 @@
 
 #include <Core/util_t.h>
 #include <Core/array_t.h>
+#include <Core/thread.h>
 #include "gtk.h"
 #include <sys/syscall.h>
 
@@ -49,10 +50,10 @@ void gtkUnlock() {
 }
 
 struct GtkThread:Thread {
-  void main() {
-    gtk_main();
-    gdk_threads_leave();
-  }
+  GtkThread():Thread("GTK thread") {}
+  virtual void open() {}
+  virtual void step() { gtk_main(); }
+  virtual void close() { gdk_threads_leave(); }
 };
 
 void gtkCheckInitialized() {
@@ -90,7 +91,7 @@ void gtkCheckInitialized() {
       glutInit(&argc, argv);
   
       global_gtkThread = new GtkThread();
-      global_gtkThread -> open("--GTK-loop");
+      global_gtkThread -> threadStep();
     }
     m.unlock();
   }
