@@ -912,6 +912,7 @@ double gaussIntExpectation(double x) {
 #include "util_t.h"
 template void MT::getParameter(double&, const char*);
 template float MT::getParameter<float>(const char*);
+template double MT::getParameter<double>(const char*);
 template void MT::getParameter(uint&, const char*);
 template int MT::getParameter<int>(const char*);
 template void MT::getParameter(int&, const char*);
@@ -930,6 +931,7 @@ template void MT::Parameter<MT::String>::initialize();
 template void MT::Parameter<bool>::initialize();
 template void MT::Parameter<double>::initialize();
 template void MT::Parameter<int>::initialize();
+template void MT::Parameter<uint>::initialize();
 
 template std::map<std::string,int> MT::ParameterMap<int>::m;
 template std::map<std::string,double> MT::ParameterMap<double>::m;
