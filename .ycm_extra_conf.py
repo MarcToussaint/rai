@@ -29,21 +29,25 @@ flags = [
     # TODO this is not complete, please feel free to add stuff
     '-fPIC',
     '-DMT_LAPACK',
-    '-lglut -lGLU -lGL -lX11',
-    '-llapack -lblas',
+    '-lglu',
+    '-lGL',
+    '-lG',
+    '-lX11',
+    '-llapack',
+    '-lblas',
 
     '-I',
     '.',
     '-I',
-    '~/git/mlr/share/src',
+    'src',
     '-L',
     '/home/lib/lib/',
     '-isystem',
-    '~/git/mlr/share/include',
+    '/include',
     '-isystem'
-    '~/git/mlr/share/lib',
+    'lib',
     '-isystem'
-    '~/git/mlr/share/src',
+    'src',
 ]
 
 # Set this to the absolute path to the folder (NOT the file!) containing the
