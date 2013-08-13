@@ -1148,7 +1148,12 @@ void OpenGL::remove(void (*call)(void*), const void* classP) {
 
 /// clear the list of all draw routines
 void OpenGL::clear() {
-  drawers.resize(0);
+  views.clear();
+  drawers.clear();
+  initCalls.clear();
+  hoverCalls.clear();
+  clickCalls.clear();
+  keyCalls.clear();
 }
 
 /// add a hover callback
