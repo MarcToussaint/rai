@@ -312,6 +312,12 @@ void glShadowTransform()
 }
 */
 
+void glTransform(const ors::Transformation& t){
+  double GLmatrix[16];
+  t.getAffineMatrixGL(GLmatrix);
+  glLoadMatrixd(GLmatrix);
+}
+
 void glTransform(const double pos[3], const double R[12]) {
   GLfloat matrix[16];
   matrix[0]=R[0];

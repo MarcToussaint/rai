@@ -61,6 +61,7 @@ void glColor(float r, float g, float b, float a=1.f);
 void glColor(int col);
 void glDrawText(const char* txt, float x, float y, float z);
 //void glShadowTransform();
+void glTransform(const ors::Transformation& t);
 void glTransform(const double pos[3], const double R[12]);
 void glDrawRect(float x1, float y1, float z1, float x2, float y2, float z2,
                 float x3, float y3, float z3, float x4, float y4, float z4,
