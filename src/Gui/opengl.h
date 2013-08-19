@@ -50,6 +50,11 @@
 #include <Core/thread.h>
 
 
+namespace ors {
+struct Transformation;
+struct Vector;
+}
+
 //===========================================================================
 //
 // utility functions
