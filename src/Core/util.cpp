@@ -847,7 +847,7 @@ void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDF
   if(!access("~/gnuplot.cfg", R_OK)) cmd <<"load '~/gnuplot.cfg'\n";
   if(!access("gnuplot.cfg", R_OK)) cmd <<"load 'gnuplot.cfg'\n";
   
-  cmd <<"set title '(MT/plot.h -> gnuplot pipe)'\n"
+  cmd <<"set title '(Gui/plot.h -> gnuplot pipe)'\n"
       <<command <<std::endl;
       
   if(PDFfile) {
