@@ -158,6 +158,7 @@ template<class T> struct Array {
   void referToSubDim(const Array<T>& a, uint dim);
   void referToSubDim(const Array<T>& a, uint i, uint j);
   void takeOver(Array<T>& a);                   //a becomes a reference to its previously owned memory!
+  void swap(Array<T>& a); //the two arrays swap their contents!
   void setGrid(uint dim, T lo, T hi, uint steps);
   void setText(const char* str); //TODO: remove
   
@@ -344,6 +345,7 @@ typedef MT::Array<MT::String*> StringL;
 /// @{
 
 extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional arguments
+extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
 
 
 //===========================================================================
@@ -395,8 +397,8 @@ template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T
 template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o) {      MT::Array<T*> z(7); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; z(6)=(T*)&o; return z; }
 template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p) { MT::Array<T*> z(8); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; z(6)=(T*)&o; z(7)=(T*)&p; return z; }
 
-//#define STRINGS(s0) ARRAY<MT::String>(MT::String(s0))
-#define STRINGS(s0, s1) ARRAY<MT::String>(MT::String(s0), MT::String(s1))
+MT::Array<MT::String> STRINGS(const char* s0);
+MT::Array<MT::String> STRINGS(const char* s0, const char* s1);
 
 
 //===========================================================================

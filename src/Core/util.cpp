@@ -658,7 +658,7 @@ MT::String::String():std::iostream(&buffer) { init(); clearStream(); }
 MT::String::String(const String& s):std::iostream(&buffer) { init(); this->operator=(s); }
 
 /// copy constructor for an ordinary C-string (needs to be 0-terminated)
-MT::String::String(const char *s):std::iostream(&buffer) { init(); CHECK(s,"initializing String with NULL"); this->operator=(s); }
+MT::String::String(const char *s):std::iostream(&buffer) { init(); this->operator=(s); }
 
 MT::String::~String() { if(M) delete[] p; }
 
@@ -686,7 +686,11 @@ MT::String& MT::String::operator=(const String& s) {
 }
 
 /// copies from the C-string
-void MT::String::operator=(const char *s) { resize(strlen(s), false); memmove(p, s, strlen(s)); }
+void MT::String::operator=(const char *s) {
+  if(!s){  clear();  return;  }
+  resize(strlen(s), false);
+  memmove(p, s, strlen(s));
+}
 
 void MT::String::set(const char *s, uint n) { resize(n, false); memmove(p, s, n); }
 

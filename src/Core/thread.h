@@ -136,6 +136,7 @@ struct CycleTimer {
 };
 
 #else //MT_MSVC
+
 struct Mutex {
   int state;
   Mutex() {};
@@ -143,6 +144,7 @@ struct Mutex {
   void lock() { MT_MSG("fake MSVC Mutex"); }
   void unlock() { MT_MSG("fake MSVC Mutex"); }
 };
+
 struct ConditionVariable {
   int value;
   ConditionVariable(int initialState=0) {}

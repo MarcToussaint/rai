@@ -53,10 +53,13 @@ typedef const char* charp;
 #define stdOutPipe(type)\
   inline std::ostream& operator<<(std::ostream& os, const type& x){ x.write(os); return os; }
 #define stdPipes(type)\
-  inline std::istream& operator>>(std::istream& is, type& x){ x.read(is);return is; }\
+  inline std::istream& operator>>(std::istream& is, type& x){ x.read(is); return is; }\
   inline std::ostream& operator<<(std::ostream& os, const type& x){ x.write(os); return os; }
 #define inPipe(type)\
   inline type& operator<<(type& x, const char* str){ std::istringstream ss(str); ss >>x; return x; }
+#define niyPipes(type)\
+  inline std::istream& operator>>(std::istream& is, type& x){ NIY; return is; }\
+  inline std::ostream& operator<<(std::ostream& os, const type& x){ NIY; return os; }
 
 
 

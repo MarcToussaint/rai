@@ -47,6 +47,7 @@ const char* arrayBrackets="[]";
 }
 
 arr& NoArr = *((arr*)NULL);
+uintA& NoUintA = *((uintA*)NULL);
 
 //int ARRAYOLDREAD=0;
 
@@ -1470,3 +1471,6 @@ template void MT::save<uintA>(const uintA&, const char*);
 template void MT::load<arr>(arr&, const char*, bool);
 
 void linkArray() { cout <<"*** libArray.so linked ***" <<endl; }
+
+MT::Array<MT::String> STRINGS(const char* s0){ return ARRAY<MT::String>(MT::String(s0)); }
+MT::Array<MT::String> STRINGS(const char* s0, const char* s1){ return ARRAY<MT::String>(MT::String(s0), MT::String(s1)); }
