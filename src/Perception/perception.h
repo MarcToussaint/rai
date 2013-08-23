@@ -8,7 +8,7 @@
 #  undef MAX
 #endif
 
-#include <System/module.h>
+#include <Core/module.h>
 //#include <views/views.h>
 #include <Ors/ors.h>
 #include <Core/array_t.h>

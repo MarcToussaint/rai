@@ -3,7 +3,7 @@
 
 #ifdef PCL
 
-#include <System/biros.h>
+#include <Core/module.h>
 #include <devTools/logging.h>
 #include <hardware/kinect.h>
 #include <motion/motion.h>
