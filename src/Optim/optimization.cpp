@@ -501,21 +501,24 @@ uint optGaussNewton(arr& x, VectorFunction& f, OptOptions o, arr *addRegularizer
   f.fv(phi, J, x);  evals++;
   fx = sumOfSqr(phi);
   if(addRegularizer)  fx += scalarProduct(x,(*addRegularizer)*vectorShaped(x));
+
+  //startup verbose
   if(o.verbose>1) cout <<"*** optGaussNewton: starting point f(x)=" <<fx <<" alpha=" <<alpha <<" lambda=" <<lambda <<endl;
   if(o.verbose>2) cout <<"\nx=" <<x <<endl;
   ofstream fil;
   if(o.verbose>0) fil.open("z.opt");
   if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<' ' <<x <<endl;
   
-  
   for(uint it=1;; it++) { //iterations and lambda adaptation loop
     if(o.verbose>1) cout <<"optGaussNewton it=" <<it << " lambda=" <<lambda <<flush;
+
     //compute Delta
 #if 1
     arr R=comp_At_A(J);
+//    cout <<"gaussne R = " <<R <<endl;
     if(lambda) { //Levenberg Marquardt damping
-      if(R.special==arr::RowShiftedPackedMatrixST) for(uint i=0; i<R.d0; i++) R(i,0) += lambda; //(R(i,0) is the diagonal in the packed matrix!!)
-      else for(uint i=0; i<R.d0; i++) R(i,i) += lambda;
+      if(R.special==arr::RowShiftedPackedMatrixST) for(uint i=0; i<R.d0; i++) R(i,0) += .5*lambda; //(R(i,0) is the diagonal in the packed matrix!!)
+      else for(uint i=0; i<R.d0; i++) R(i,i) += .5*lambda;
     }
     if(addRegularizer) {
       if(R.special==arr::RowShiftedPackedMatrixST) R = unpack(R);
@@ -527,7 +530,7 @@ uint optGaussNewton(arr& x, VectorFunction& f, OptOptions o, arr *addRegularizer
 #else //this uses lapack's LLS minimizer - but is really slow!!
     x.reshape(x.N);
     if(lambda) {
-      arr D; D.setDiag(sqrt(lambda),x.N);
+      arr D; D.setDiag(sqrt(.5*lambda),x.N);
       J.append(D);
       phi.append(zeros(x.N,1));
     }
@@ -537,6 +540,9 @@ uint optGaussNewton(arr& x, VectorFunction& f, OptOptions o, arr *addRegularizer
     if(o.maxStep>0. && absMax(Delta)>o.maxStep)  Delta *= o.maxStep/absMax(Delta);
     if(o.verbose>1) cout <<" \t|Delta|=" <<absMax(Delta) <<flush;
     
+    //lazy stopping criterion: stop without any update
+    if(lambda<2. && absMax(Delta)<1e-3*o.stopTolerance) break;
+
     for(;;) { //stepsize adaptation loop -- doesn't iterate for useDamping option
       y = x + alpha*Delta;
       f.fv(phi, J, y);  evals++;
@@ -545,7 +551,7 @@ uint optGaussNewton(arr& x, VectorFunction& f, OptOptions o, arr *addRegularizer
       if(o.verbose>2) cout <<" \tprobing y=" <<y;
       if(o.verbose>1) cout <<" \talpha=" <<alpha <<" \tevals=" <<evals <<" \tf(y)=" <<fy <<flush;
       CHECK(fy==fy, "cost seems to be NAN: ly=" <<fy);
-      if(fy <= fx) {
+      if(fy!=NAN && fy <= fx) {
         if(o.verbose>1) cout <<" - ACCEPT" <<endl;
         //adopt new point and adapt stepsize|damping
         x = y;
@@ -572,10 +578,10 @@ uint optGaussNewton(arr& x, VectorFunction& f, OptOptions o, arr *addRegularizer
     if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<' ' <<x <<endl;
     
     //stopping criterion
-    if((lambda<1. && absMax(Delta)<o.stopTolerance) ||
-        (lambda<1. && alpha*absMax(Delta)<1e-3*o.stopTolerance) ||
-        evals>=o.stopEvals ||
-        it>=o.stopIters) break;
+    if( (lambda<2. && absMax(Delta)<o.stopTolerance) ||
+        (lambda<2. && alpha*absMax(Delta)<1e-3*o.stopTolerance) ||
+        (evals>=o.stopEvals) ||
+        (it>=o.stopIters) ) break;
   }
   if(o.fmin_return) *o.fmin_return=fx;
   if(o.verbose>0) fil.close();
@@ -588,82 +594,98 @@ uint optGaussNewton(arr& x, VectorFunction& f, OptOptions o, arr *addRegularizer
 /** @brief Minimizes \f$f(x) = A(x)^T x A^T(x) - 2 a(x)^T x + c(x)\f$. The optional _user arguments specify,
  * if f has already been evaluated at x (another initial evaluation is then omitted
  * to increase performance) and the evaluation of the returned x is also returned */
-uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, double *f_user, arr *g_user, arr *H_user) {
+uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, double *fx_user, arr *gx_user, arr *Hx_user) {
   double alpha = 1.;
   double lambda = o.damping;
   double fx, fy;
   arr Delta, y;
   uint evals=0;
-  
+
   //compute initial costs
   arr gx,Hx,gy,Hy;
-  if(f_user && g_user && H_user) { //pre-condition!: assumes S is correctly evaluated at x!!
+  if(fx_user && gx_user && Hx_user) { //pre-condition!: assumes S is correctly evaluated at x!!
     if(sanityCheck) {
       fx = f.fs(gx, Hx, x);
-      CHECK(fabs(fx-*f_user) <1e-6,"");
-      CHECK((maxDiff(gx,*g_user) + maxDiff(Hx,*H_user) + fabs(fx-*f_user))<1e-6,"");
+      CHECK(fabs(fx-*fx_user) <1e-6,"");
+      CHECK((maxDiff(gx,*gx_user) + maxDiff(Hx,*Hx_user) + fabs(fx-*fx_user))<1e-6,"");
     }
-    fx = *f_user;
-    gx = *g_user;
-    Hx = *H_user;
+    fx = *fx_user;
+    gx = *gx_user;
+    Hx = *Hx_user;
   } else {
     fx = f.fs(gx, Hx, x);  evals++;
   }
-  
-  if(o.verbose>1) cout <<"*** optNewton: starting point x=" <<x <<" f(x)=" <<fx <<" a=" <<alpha <<endl;
+
+  //startup verbose
+  if(o.verbose>1) cout <<"*** optNewton: starting point f(x)=" <<fx <<" alpha=" <<alpha <<" lambda=" <<lambda <<endl;
+  if(o.verbose>2) cout <<"\nx=" <<x <<endl;
   ofstream fil;
   if(o.verbose>0) fil.open("z.opt");
   if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<' ' <<x <<endl;
-  
-  for(;;) {
+
+  for(uint it=1;; it++) { //iterations and lambda adaptation loop
+    if(o.verbose>1) cout <<"optNewton it=" <<it << " lambda=" <<lambda <<flush;
+
     //compute Delta
-    //cout <<gx <<endl;
     arr R=Hx;
+//    cout <<"newton R = " <<R <<endl;
     if(lambda) for(uint i=0; i<R.d0; i++) R(i,i) += lambda;
     lapack_Ainv_b_sym(Delta, R, -gx);
     if(o.maxStep>0. && norm(Delta)>o.maxStep)  Delta *= o.maxStep/norm(Delta);
-    
-//     x+=Delta;
-//     fx = f.fq(&Sx, x); evals++;
-//     break;
+    //if(o.maxStep>0. && absMax(Delta)>o.maxStep)  Delta *= o.maxStep/absMax(Delta);
+    if(o.verbose>1) cout <<" \t|Delta|=" <<absMax(Delta) <<flush;
 
-    //lazy stopping criterion
-    if(norm(Delta)<1e-3*o.stopTolerance) {
-      //x+=Delta; //DANGEROUS!!
-      break;
-    }
-    
-    for(;;) {
+    //lazy stopping criterion: stop without any update
+    if(lambda<2. && absMax(Delta)<1e-3*o.stopTolerance) break;
+
+    for(;;) { //stepsize adaptation loop -- doesn't iterate for useDamping option
       y = x + alpha*Delta;
       fy = f.fs(gy, Hy, y);  evals++;
-      if(o.verbose>1) cout <<"optNewton " <<evals <<' ' <<eval_cost <<" \tprobing y=" <<y <<" \tf(y)=" <<fy <<" \t|Delta|=" <<norm(Delta) <<" \ta=" <<alpha;
+      if(o.verbose>2) cout <<" \tprobing y=" <<y;
+      if(o.verbose>1) cout <<" \talpha=" <<alpha <<" \tevals=" <<evals <<" \tf(y)=" <<fy <<flush;
       //CHECK(fy==fy, "cost seems to be NAN: ly=" <<fy);
-      if(fy!=NAN && fy <= fx) break;
-      if(evals>o.stopEvals) break; //WARNING: this may lead to non-monotonicity -> make evals high!
-      //decrease stepsize
-      alpha = .1*alpha;
-      if(o.verbose>1) cout <<" - reject" <<endl;
+      if(fy!=NAN && fy <= fx) {
+        if(o.verbose>1) cout <<" - ACCEPT" <<endl;
+        //adopt new point and adapt stepsize|damping
+        x = y;
+        fx = fy;
+        gx = gy;
+        Hx = Hy;
+        if(o.useAdaptiveDamping) { //Levenberg-Marquardt type damping
+          lambda = .2*lambda;
+        } else {
+          alpha = pow(alpha, 0.5);
+        }
+        break;
+      } else {
+        if(o.verbose>1) cout <<" - reject" <<endl;
+        //reject new points and adapte stepsize|damping
+        if(o.useAdaptiveDamping) { //Levenberg-Marquardt type damping
+          lambda = 10.*lambda;
+          break;
+        } else {
+          if(alpha*absMax(Delta)<1e-3*o.stopTolerance || evals>o.stopEvals) break; //WARNING: this may lead to non-monotonicity -> make evals high!
+          alpha = .1*alpha;
+        }
+      }
     }
-    if(o.verbose>1) cout <<" - ACCEPT" <<endl;
-    
-    //adopt new point and adapt stepsize
-    x = y;
-    fx = fy;
-    gx = gy;
-    Hx = Hy;
-    alpha = pow(alpha, 0.5);
+
     if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<' ' <<x <<endl;
-    
+
     //stopping criterion
-    if(norm(Delta)<o.stopTolerance || evals>o.stopEvals) break;
+    if( (lambda<2. && absMax(Delta)<o.stopTolerance) ||
+        (lambda<2. && alpha*absMax(Delta)<1e-3*o.stopTolerance) ||
+        (evals>=o.stopEvals) ||
+        (it>=o.stopIters) ) break;
   }
+  if(o.fmin_return) *o.fmin_return=fx;
   if(o.verbose>0) fil.close();
+#ifndef MT_MSVC
   if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l",NULL,true);
-  if(f_user) *f_user = fx;
-  if(g_user) *g_user = gx;
-  if(H_user) *H_user = Hx;
-  if(o.fmin_return) *o.fmin_return = fx;
-//postcondition!: S is always the correct potential at x, and fx the value at x!
+#endif
+  if(fx_user) *fx_user = fx;
+  if(gx_user) *gx_user = gx;
+  if(Hx_user) *Hx_user = Hx;
   return evals;
 }
 
@@ -706,7 +728,7 @@ uint optGradDescent(arr& x, ScalarFunction& f, OptOptions o) {
     if(k>o.stopIters) break;
   }
   if(o.verbose>0) fil.close();
-  if(o.verbose>1) gnuplot("plot 'z.grad' us 1:3 w l",NULL,true);
+  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l",NULL,true);
   return evals;
 }
 
@@ -1019,7 +1041,7 @@ uint Rprop::loop(arr& _x,
     if(evals>maxEvals) break;
   }
   if(verbose>0) fil.close();
-  if(verbose>1) gnuplot("plot 'z.grad' us 1:3 w l", NULL, true);
+  if(verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", NULL, true);
   if(fmin_return) *fmin_return= fx_min;
   _x=x_min;
   return evals;

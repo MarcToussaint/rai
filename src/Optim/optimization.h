@@ -158,7 +158,7 @@ struct OptOptions {
 
 
 uint optGaussNewton(arr& x, VectorFunction& phi, OptOptions opt, arr *addRegularizer=NULL, arr *fx_user=NULL, arr *Jx_user=NULL);
-uint optNewton(arr& x, ScalarFunction& f, OptOptions opt, double *f_user=NULL, arr *g_user=NULL, arr *H_user=NULL);
+uint optNewton(arr& x, ScalarFunction& f, OptOptions opt, double *fx_user=NULL, arr *gx_user=NULL, arr *Hx_user=NULL);
 uint optRprop(arr& x, ScalarFunction& f, OptOptions opt);
 uint optGradDescent(arr& x, ScalarFunction& f, OptOptions opt);
 uint optDynamicProgramming(arr& x, QuadraticChainFunction& f, OptOptions opt);
