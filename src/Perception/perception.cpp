@@ -16,12 +16,10 @@
 #undef MIN
 #undef MAX
 
-extern void loadPerception(){
-  cout <<"LOADING Perception" <<endl;
-}
-
+void lib_Perception(){ MT_MSG("loading"); }
 
 REGISTER_MODULE (ImageViewer)
+REGISTER_MODULE (PointCloudViewer)
 REGISTER_MODULE (OpencvCamera)
 REGISTER_MODULE (CvtGray)
 REGISTER_MODULE (CvtHsv)
@@ -54,6 +52,32 @@ void ImageViewer::open(){}
 void ImageViewer::close(){}
 void ImageViewer::step(){ s->gl.background = img.get(); s->gl.update(); }
 
+
+//===========================================================================
+//
+// PointCloudViewer
+//
+
+struct sPointCloudViewer{
+  OpenGL gl;
+  arr pc[2];
+};
+
+PointCloudViewer::PointCloudViewer(){
+  s = new sPointCloudViewer;
+}
+
+PointCloudViewer::~PointCloudViewer(){
+  delete s;
+}
+
+void PointCloudViewer::open(){ s->gl.add(glDrawPointCloud, s->pc); }
+void PointCloudViewer::close(){}
+void PointCloudViewer::step(){
+  s->pc[0]=pts.get();
+  s->pc[1]=cols.get();
+  s->gl.update();
+}
 
 //===========================================================================
 //

@@ -104,8 +104,9 @@ void glRasterImage(float x, float y, byteA &img, float zoom=1.);
 // standalone draw routines for larget data structures
 //
 
-void glDrawDots(arr& dots);
 void glDrawDots(void *dots);
+void glDrawPointCloud(void *pc);
+void glDrawPointCloud(arr& pts, arr& cols);
 
 
 //===========================================================================

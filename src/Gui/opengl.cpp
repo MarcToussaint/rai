@@ -1041,29 +1041,25 @@ bool glUI::hoverCallback(OpenGL& gl) { NICO }
 bool glUI::clickCallback(OpenGL& gl) { NICO }
 #endif
 
-
 //===========================================================================
 //
 // standalone draw routines for large data structures
 //
 
 #ifdef MT_GL
-void glDrawDots(void *dots) { glDrawDots(*(arr*)dots); }
+void glDrawDots(void *dots) { glDrawPointCloud(*(arr*)dots, NoArr); }
+void glDrawPointCloud(void *pc) { glDrawPointCloud(((arr*)pc)[0], ((arr*)pc)[1]); }
 
-void glDrawDots(arr& dots) {
-  if(!dots.N) return;
-  CHECK(dots.nd==2 && dots.d1==3, "wrong dimension");
-#if 0
-  glBegin(GL_POINTS);
-  for(uint i=0; i<dots.d0; i++) glVertex3dv(&dots(i, 0));
-  glEnd();
-#else
+void glDrawPointCloud(arr& pts, arr& cols) {
+  if(!pts.N) return;
+  CHECK(pts.nd==2 && pts.d1==3, "wrong dimension");
   glEnableClientState(GL_VERTEX_ARRAY);
-  glVertexPointer(3, GL_DOUBLE, 0, dots.p);
-  //if(mesh.C.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
-  //if(mesh.C.N) glColorPointer (3, GL_DOUBLE, 0, mesh.C.p );
-  glDrawArrays(GL_POINTS, 0, dots.d0);
-#endif
+  glVertexPointer(3, GL_DOUBLE, 0, pts.p);
+  if(&cols && cols.N==pts.N){
+    glEnableClientState(GL_COLOR_ARRAY);
+    glColorPointer(3, GL_DOUBLE, 0, cols.p );
+  }else glDisableClientState(GL_COLOR_ARRAY);
+  glDrawArrays(GL_POINTS, 0, pts.d0);
 }
 #endif
 

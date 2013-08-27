@@ -29,6 +29,7 @@ struct PerceptionOutput;
 
 //-- Process creators
 BEGIN_MODULE1(ImageViewer)      ACCESS(byteA, img)       END_MODULE()
+BEGIN_MODULE1(PointCloudViewer) ACCESS(arr, pts)         ACCESS(arr, cols)       END_MODULE()
 BEGIN_MODULE1(OpencvCamera)     ACCESS(byteA, rgb)       END_MODULE()
 BEGIN_MODULE (CvtGray)          ACCESS(byteA, rgb)       ACCESS(byteA, gray)     END_MODULE()
 BEGIN_MODULE (CvtHsv)           ACCESS(byteA, rgb)       ACCESS(byteA, hsv)       END_MODULE()
