@@ -132,7 +132,7 @@ double cpuTime();
 double sysTime();
 double totalTime();
 char *date();
-void wait(double sec);
+void wait(double sec, bool msg_on_fail=true);
 bool wait();
 
 //----- memory

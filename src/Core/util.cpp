@@ -442,7 +442,7 @@ double totalTime() {
 char *date() { static time_t t; time(&t); return ctime(&t); }
 
 /// wait double time
-void wait(double sec) {
+void wait(double sec, bool msg_on_fail) {
 #if defined(MT_Darwin)
   sleep((int)sec);
 #elif !defined(MT_MSVC)
@@ -451,9 +451,7 @@ void wait(double sec) {
   sec -= (double)ts.tv_sec;
   ts.tv_nsec = (long)(floor(1000000000. * sec));
   int rc = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
-  if(rc) {
-    if(rc==0) { MT_MSG("clock_nanosleep() interrupted by signal"); } else MT_MSG("clock_nanosleep() failed " <<rc);
-  }
+  if(rc && msg_on_fail) MT_MSG("clock_nanosleep() failed " <<rc <<' ' <<strerror(rc));
 #else
   Sleep((int)(1000.*sec));
   //MsgWaitForMultipleObjects( 0, NULL, FALSE, (int)(1000.*sec), QS_ALLEVENTS);
