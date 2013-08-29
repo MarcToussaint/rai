@@ -1161,9 +1161,19 @@ void scanArrFile(const char* name) {
 // RowShiftedPackedMatrix
 //
 
-RowShiftedPackedMatrix::RowShiftedPackedMatrix(arr& X):Z(X),real_d1(0), symmetric(false) {
+RowShiftedPackedMatrix::RowShiftedPackedMatrix(arr& X):Z(X), real_d1(0), symmetric(false) {
   Z.special = arr::RowShiftedPackedMatrixST;
   Z.aux = this;
+}
+
+RowShiftedPackedMatrix::RowShiftedPackedMatrix(arr& X, RowShiftedPackedMatrix &aux):
+  Z(X),
+  real_d1(aux.real_d1),
+  rowShift(aux.rowShift),
+  colPatches(aux.colPatches),
+  symmetric(aux.symmetric){
+  Z.special = arr::RowShiftedPackedMatrixST;
+  Z.aux=this;
 }
 
 RowShiftedPackedMatrix *auxRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1) {

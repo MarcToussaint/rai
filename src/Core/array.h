@@ -726,6 +726,7 @@ struct RowShiftedPackedMatrix {
   bool symmetric;
   
   RowShiftedPackedMatrix(arr& X);
+  RowShiftedPackedMatrix(arr& X, RowShiftedPackedMatrix &aux);
   ~RowShiftedPackedMatrix();
   double acc(uint i, uint j);
   void computeColPatches(bool assumeMonotonic); //currently presumes monotonous rowShifts

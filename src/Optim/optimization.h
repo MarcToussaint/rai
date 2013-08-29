@@ -32,36 +32,41 @@ extern uint eval_cost;
 
 //===========================================================================
 //
-// functions that imply (optimization) problems
+// functions that imply optimization problems
 //
 
 //-- return types
-struct     SqrPotential { arr A, a;          double c; }; ///< return type representing \f$x'A x - 2x'a + c\f$
-struct PairSqrPotential { arr A, B, C, a, b; double c; }; ///< return type representing \f$(x,y)' [A C, C' B] (x,y) - 2(x,y)'(a,b) + c\f$
-extern SqrPotential& NoPot; ///< reference to NULL! used for optional arguments
-extern PairSqrPotential& NoPairPot; ///< reference to NULL! used for optional arguments
+//struct     SqrPotential { arr A, a;          double c; }; ///< return type representing \f$x'A x - 2x'a + c\f$
+//struct PairSqrPotential { arr A, B, C, a, b; double c; }; ///< return type representing \f$(x,y)' [A C, C' B] (x,y) - 2(x,y)'(a,b) + c\f$
+//extern SqrPotential& NoPot; ///< reference to NULL! used for optional arguments
+//extern PairSqrPotential& NoPairPot; ///< reference to NULL! used for optional arguments
 
 /// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
-struct ScalarFunction { virtual double fs(arr& g, arr& H, const arr& x) = 0; };
+struct ScalarFunction {
+  virtual double fs(arr& g, arr& H, const arr& x) = 0;
+};
 
 /// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
-struct VectorFunction { virtual void   fv(arr& y, arr& J, const arr& x) = 0; };
+struct VectorFunction {
+  virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
+  virtual uint get_c(){ return 0; } ///< number of (inequality) constraints in y
+};
 
 /// a locally quadratic function TODO: replace by scalar with hessian!
-struct QuadraticFunction { virtual double fq(SqrPotential& S, const arr& x) = 0; };
+//struct QuadraticFunction { virtual double fq(SqrPotential& S, const arr& x) = 0; };
 
-/// functions \f$f_i:x_i \mapsto y\f$ and \f$f_{ij}: x_i,x_j \mapsto y\f$ over a chain \f$x_0,..,x_T\f$ of variables
+///// functions \f$f_i:x_i \mapsto y\f$ and \f$f_{ij}: x_i,x_j \mapsto y\f$ over a chain \f$x_0,..,x_T\f$ of variables
 struct VectorChainFunction {
   virtual uint get_T() = 0;
   virtual void fv_i(arr& y, arr& J, uint i, const arr& x_i) = 0;
   virtual void fv_ij(arr& y, arr& Ji, arr& Jj, uint i, uint j, const arr& x_i, const arr& x_j) = 0;
 };
 
-struct QuadraticChainFunction {
-  virtual uint get_T() = 0;
-  virtual double fq_i(SqrPotential& S, uint i, const arr& x_i) = 0;
-  virtual double fq_ij(PairSqrPotential& S, uint i, uint j, const arr& x_i, const arr& x_j) = 0;
-};
+//struct QuadraticChainFunction {
+//  virtual uint get_T() = 0;
+//  virtual double fq_i(SqrPotential& S, uint i, const arr& x_i) = 0;
+//  virtual double fq_ij(PairSqrPotential& S, uint i, uint j, const arr& x_i, const arr& x_j) = 0;
+//};
 
 /// functions \f$\phi_t:(x_{t-k},..,x_t) \mapsto y\f$ over a chain \f$x_0,..,x_T\f$ of variables
 struct KOrderMarkovFunction { //TODO: rename KOrderChainFunction
@@ -72,7 +77,8 @@ struct KOrderMarkovFunction { //TODO: rename KOrderChainFunction
   virtual uint get_k() = 0;
   virtual uint get_n() = 0; ///< the dimensionality of \f$x_t\f$
   virtual uint get_m(uint t) = 0; ///< the dimensionality of \f$\phi_t\f$
-  virtual arr get_prefix() { return NoArr; }
+  virtual arr get_prefix(){ arr x(get_k(), get_m(0)); x.setZero(); return x; }
+  virtual uint get_c(uint t){ return 0; } ///< number of (inequality) constraints in \f$phi_t\f$
   
   //optional: kernel costs
   virtual bool hasKernel() { return false; }
@@ -98,9 +104,9 @@ struct Convert {
   struct sConvert* s;
   Convert(ScalarFunction&);
   Convert(VectorFunction&);
-  Convert(QuadraticFunction&);
+//  Convert(QuadraticFunction&);
   Convert(VectorChainFunction&);
-  Convert(QuadraticChainFunction&);
+//  Convert(QuadraticChainFunction&);
   Convert(KOrderMarkovFunction&);
   Convert(double(*fs)(arr*, const arr&, void*),void *data);
   Convert(void (*fv)(arr&, arr*, const arr&, void*),void *data);
@@ -109,7 +115,7 @@ struct Convert {
   operator ScalarFunction&();
   operator VectorFunction&();
   operator VectorChainFunction&();
-  operator QuadraticChainFunction&();
+//  operator QuadraticChainFunction&();
   operator KOrderMarkovFunction&();
 };
 
@@ -125,15 +131,15 @@ bool checkDirectionalGradient(ScalarFunction &f, const arr& x, const arr& delta,
 bool checkDirectionalJacobian(VectorFunction &f, const arr& x, const arr& delta, double tolerance);
 
 //these directly simply evaluate squared potentials at some point
-double evaluateSP(const SqrPotential& S, const arr& x);
-double evaluatePSP(const PairSqrPotential& S, const arr& x, const arr& y);
-double evaluateCSP(const MT::Array<SqrPotential>& fi, const MT::Array<PairSqrPotential>& fij, const arr& x);
+//double evaluateSP(const SqrPotential& S, const arr& x);
+//double evaluatePSP(const PairSqrPotential& S, const arr& x, const arr& y);
+//double evaluateCSP(const MT::Array<SqrPotential>& fi, const MT::Array<PairSqrPotential>& fij, const arr& x);
 
 //these actually call the functions (->query cost) to evalute them at some point
 double evaluateSF(ScalarFunction& f, const arr& x);
 double evaluateVF(VectorFunction& f, const arr& x);
 double evaluateVCF(VectorChainFunction& f, const arr& x);
-double evaluateQCF(QuadraticChainFunction& f, const arr& x);
+//double evaluateQCF(QuadraticChainFunction& f, const arr& x);
 
 
 //===========================================================================
@@ -161,11 +167,11 @@ uint optGaussNewton(arr& x, VectorFunction& phi, OptOptions opt, arr *addRegular
 uint optNewton(arr& x, ScalarFunction& f, OptOptions opt, double *fx_user=NULL, arr *gx_user=NULL, arr *Hx_user=NULL);
 uint optRprop(arr& x, ScalarFunction& f, OptOptions opt);
 uint optGradDescent(arr& x, ScalarFunction& f, OptOptions opt);
-uint optDynamicProgramming(arr& x, QuadraticChainFunction& f, OptOptions opt);
+//uint optDynamicProgramming(arr& x, QuadraticChainFunction& f, OptOptions opt);
 /// preliminary
 uint optNodewise(arr& x, VectorChainFunction& f, OptOptions opt);
 /// preliminary
-uint optMinSumGaussNewton(arr& x, QuadraticChainFunction& f, OptOptions opt);
+//uint optMinSumGaussNewton(arr& x, QuadraticChainFunction& f, OptOptions opt);
 
 
 //===========================================================================
