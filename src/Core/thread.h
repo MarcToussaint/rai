@@ -184,10 +184,10 @@ struct Thread{
   ConditionVariableL listensTo;
   //ParameterL dependsOn;
   pid_t tid;                     ///< system thread id
-#if 1 //ndef MT_QT
+#ifndef MT_QT
   pthread_t thread;
 #else
-  struct sThread *s;
+  struct sThread *thread;
 #endif
   uint step_count;
   Metronome *metronome;          ///< used for beat-looping
