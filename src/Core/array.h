@@ -501,6 +501,23 @@ void flip_image(byteA &img);
 
 void scanArrFile(const char* name);
 
+double NNinv(const arr& a, const arr& b, const arr& Cinv);
+double logNNprec(const arr& a, const arr& b, double prec);
+double logNNinv(const arr& a, const arr& b, const arr& Cinv);
+double NN(const arr& a, const arr& b, const arr& C);
+double logNN(const arr& a, const arr& b, const arr& C);
+
+/// non-normalized!! Gaussian function (f(0)=1)
+double NNNNinv(const arr& a, const arr& b, const arr& Cinv);
+double NNNN(const arr& a, const arr& b, const arr& C);
+double NNzeroinv(const arr& x, const arr& Cinv);
+/// gradient of a Gaussian
+double dNNinv(const arr& x, const arr& a, const arr& Ainv, arr& grad);
+/// gradient of a non-normalized Gaussian
+double dNNNNinv(const arr& x, const arr& a, const arr& Ainv, arr& grad);
+double NNsdv(const arr& a, const arr& b, double sdv);
+double NNzerosdv(const arr& x, double sdv);
+
 
 //===========================================================================
 /// @}

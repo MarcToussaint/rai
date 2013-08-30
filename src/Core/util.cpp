@@ -388,6 +388,79 @@ double cosc(double x) {
   return ::cos(x)/x;
 }
 
+#define EXP ::exp //MT::approxExp
+
+double NNsdv(const double& a, const double& b, double sdv){
+  double d=(a-b)/sdv;
+  double norm = 1./(::sqrt(MT_2PI)*sdv);
+  return norm*EXP(-.5*d*d);
+}
+
+double NNsdv(double x, double sdv){
+  x/=sdv;
+  double norm = 1./(::sqrt(MT_2PI)*sdv);
+  return norm*EXP(-.5*x*x);
+}
+
+/* gnuplot:
+heavy(x) = (1+sgn(x))/2
+eps = 0.1
+g(x) = heavy(x-eps)*(x-eps/2) + (1-heavy(x-eps))*x**2/(2*eps)
+plot [-.5:.5] g(abs(x))
+*/
+double POW(double x, double power){ if(power==1.) return x; if(power==2.) return x*x; return pow(x,power); }
+double smoothRamp(double x, double eps, double power){
+  if(x<0.) return 0.;
+  if(power!=1.) return pow(smoothRamp(x,eps,1.),power);
+  if(!eps) return x;
+  if(x>eps) return x - .5*eps;
+  return x*x/(2*eps);
+}
+
+double d_smoothRamp(double x, double eps, double power){
+  if(x<0.) return 0.;
+  if(power!=1.) return power*pow(smoothRamp(x,eps,1.),power-1.)*d_smoothRamp(x,eps,1.);
+  if(!eps || x>eps) return 1.;
+  return x/eps;
+}
+
+/*
+heavy(x) = (1+sgn(x))/2
+power = 1.5
+margin = 1.5
+f(x) = heavy(x)*x**power
+plot f(x/margin+1), 1
+*/
+double barrier(double x, double margin, double power){
+  if(x<-margin) return 0.;
+  double y=x/margin+1.;
+  if(power==1.) return y;
+  if(power==2.) return y*y;
+  return pow(y,power);
+}
+
+double d_barrier(double x, double margin, double power){
+  if(x<-margin) return 0.;
+  double y=x/margin+1.;
+  if(power==1.) return 1./margin;
+  if(power==2.) return 2.*y/margin;
+  return power*pow(y,power-1.)/margin;
+}
+
+double potential(double x, double margin, double power){
+  double y=x/margin;
+  if(power==1.) return fabs(y);
+  if(power==2.) return y*y;
+  return pow(fabs(y),power);
+}
+
+double d_potential(double x, double margin, double power){
+  double y=x/margin;
+  if(power==1.) return MT::sign(y)/margin;
+  if(power==2.) return 2.*y/margin;
+  return power*pow(y,power-1.)*MT::sign(y)/margin;
+}
+
 /** @brief double time since start of the process in floating-point seconds
   (probably in micro second resolution) -- Windows checked! */
 double realTime() {
