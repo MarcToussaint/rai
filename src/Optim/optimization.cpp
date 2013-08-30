@@ -508,14 +508,13 @@ uint optGaussNewton(arr& x, VectorFunction& f, OptOptions o, arr *addRegularizer
   ofstream fil;
   if(o.verbose>0) fil.open("z.opt");
   if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<' ' <<x <<endl;
-  
+
   for(uint it=1;; it++) { //iterations and lambda adaptation loop
     if(o.verbose>1) cout <<"optGaussNewton it=" <<it << " lambda=" <<lambda <<flush;
 
     //compute Delta
 #if 1
     arr R=comp_At_A(J);
-//    cout <<"gaussne R = " <<R <<endl;
     if(lambda) { //Levenberg Marquardt damping
       if(R.special==arr::RowShiftedPackedMatrixST) for(uint i=0; i<R.d0; i++) R(i,0) += .5*lambda; //(R(i,0) is the diagonal in the packed matrix!!)
       else for(uint i=0; i<R.d0; i++) R(i,i) += .5*lambda;
@@ -539,7 +538,7 @@ uint optGaussNewton(arr& x, VectorFunction& f, OptOptions o, arr *addRegularizer
 #endif
     if(o.maxStep>0. && absMax(Delta)>o.maxStep)  Delta *= o.maxStep/absMax(Delta);
     if(o.verbose>1) cout <<" \t|Delta|=" <<absMax(Delta) <<flush;
-    
+
     //lazy stopping criterion: stop without any update
     if(lambda<2. && absMax(Delta)<1e-3*o.stopTolerance) break;
 
@@ -574,9 +573,9 @@ uint optGaussNewton(arr& x, VectorFunction& f, OptOptions o, arr *addRegularizer
         }
       }
     }
-    
+
     if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<' ' <<x <<endl;
-    
+
     //stopping criterion
     if( (lambda<2. && absMax(Delta)<o.stopTolerance) ||
         (lambda<2. && alpha*absMax(Delta)<1e-3*o.stopTolerance) ||
@@ -594,7 +593,7 @@ uint optGaussNewton(arr& x, VectorFunction& f, OptOptions o, arr *addRegularizer
 /** @brief Minimizes \f$f(x) = A(x)^T x A^T(x) - 2 a(x)^T x + c(x)\f$. The optional _user arguments specify,
  * if f has already been evaluated at x (another initial evaluation is then omitted
  * to increase performance) and the evaluation of the returned x is also returned */
-uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, double *fx_user, arr *gx_user, arr *Hx_user) {
+uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, double *fx_user, arr *gx_user, arr *Hx_user) {
   double alpha = 1.;
   double lambda = o.damping;
   double fx, fy;
@@ -614,6 +613,7 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, double *fx_user, arr *g
     Hx = *Hx_user;
   } else {
     fx = f.fs(gx, Hx, x);  evals++;
+    if(addRegularizer)  fx += scalarProduct(x,(*addRegularizer)*vectorShaped(x));
   }
 
   //startup verbose
@@ -627,15 +627,30 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, double *fx_user, arr *g
     if(o.verbose>1) cout <<"optNewton it=" <<it << " lambda=" <<lambda <<flush;
 
     //compute Delta
+#if 1
     arr R=Hx;
-//    cout <<"newton R = " <<R <<endl;
     if(lambda) { //Levenberg Marquardt damping
       if(R.special==arr::RowShiftedPackedMatrixST) for(uint i=0; i<R.d0; i++) R(i,0) += lambda; //(R(i,0) is the diagonal in the packed matrix!!)
       else for(uint i=0; i<R.d0; i++) R(i,i) += lambda;
     }
-    lapack_Ainv_b_sym(Delta, R, -gx);
-    if(o.maxStep>0. && norm(Delta)>o.maxStep)  Delta *= o.maxStep/norm(Delta);
-    //if(o.maxStep>0. && absMax(Delta)>o.maxStep)  Delta *= o.maxStep/absMax(Delta);
+    if(addRegularizer) {
+      if(R.special==arr::RowShiftedPackedMatrixST) R = unpack(R);
+//      cout <<*addRegularizer <<R <<endl;
+      lapack_Ainv_b_sym(Delta, R + (*addRegularizer), -(gx+(*addRegularizer)*vectorShaped(x)));
+    } else {
+      lapack_Ainv_b_sym(Delta, R, -gx);
+    }
+#else //this uses lapack's LLS minimizer - but is really slow!!
+    x.reshape(x.N);
+    if(lambda) {
+      arr D; D.setDiag(sqrt(.5*lambda),x.N);
+      J.append(D);
+      phi.append(zeros(x.N,1));
+    }
+    lapack_min_Ax_b(Delta, J, J*x - phi);
+    Delta -= x;
+#endif
+    if(o.maxStep>0. && absMax(Delta)>o.maxStep)  Delta *= o.maxStep/absMax(Delta);
     if(o.verbose>1) cout <<" \t|Delta|=" <<absMax(Delta) <<flush;
 
     //lazy stopping criterion: stop without any update
@@ -644,6 +659,7 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, double *fx_user, arr *g
     for(;;) { //stepsize adaptation loop -- doesn't iterate for useDamping option
       y = x + alpha*Delta;
       fy = f.fs(gy, Hy, y);  evals++;
+      if(addRegularizer) fy += scalarProduct(y,(*addRegularizer)*vectorShaped(y));
       if(o.verbose>2) cout <<" \tprobing y=" <<y;
       if(o.verbose>1) cout <<" \talpha=" <<alpha <<" \tevals=" <<evals <<" \tf(y)=" <<fy <<flush;
       //CHECK(fy==fy, "cost seems to be NAN: ly=" <<fy);
