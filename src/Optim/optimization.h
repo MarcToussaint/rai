@@ -49,7 +49,13 @@ struct ScalarFunction {
 /// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
 struct VectorFunction {
   virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
-  virtual uint get_c(){ return 0; } ///< number of (inequality) constraints in y
+};
+
+struct ConstrainedProblem:ScalarFunction, VectorFunction {
+  virtual double fs(arr& g, arr& H, const arr& x) = 0;
+  virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
+  virtual uint get_n() = 0;
+  virtual uint get_m() = 0;
 };
 
 /// a locally quadratic function TODO: replace by scalar with hessian!

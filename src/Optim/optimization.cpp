@@ -673,6 +673,7 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
         if(o.useAdaptiveDamping) { //Levenberg-Marquardt type damping
           lambda = .2*lambda;
         } else {
+          if(alpha>.9) lambda = .2*lambda;
           alpha = pow(alpha, 0.5);
         }
         break;
