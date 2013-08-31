@@ -336,6 +336,7 @@ typedef MT::Array<const char*>  CstrList;
 typedef MT::Array<arr*>   arrL;
 
 namespace MT { struct String; }
+typedef MT::Array<MT::String> StringA;
 typedef MT::Array<MT::String*> StringL;
 
 
