@@ -134,7 +134,8 @@ template<class T> struct Array {
   Array<T>& resizeAs(const Array<T>& a);
   Array<T>& reshapeAs(const Array<T>& a);
   Array<T>& resizeCopyAs(const Array<T>& a);
-  
+  Array<T>& dereference();
+
   /// @name initializing/assigning entries
   void clear();
   void setZero(byte zero=0);

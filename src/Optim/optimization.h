@@ -35,6 +35,20 @@ extern uint eval_cost;
 // functions that imply optimization problems
 //
 
+/** NOTE: Why do I define these virtual function with so many arguments to return f, J, and even constraints all at once,
+ * instead of having nice individual methods to return those?
+ *
+ * 1) Because I want these problem definitions (classes) to be STATE-LESS. That is, there must not be a set_x(x); before a get_f();
+ *    I really have (bad) experience with non-stateless problem definitions.
+ *
+ * 2) Because the computation of quantities is expensive and it is usually most efficient to compute all needed quantities together
+ *    (Instead of calling get_f(x); and then get_J(x); separately)
+ *
+ * All these methods allow some returns to be optional: use NoArr
+ *
+ */
+
+
 /// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
 struct ScalarFunction {
   virtual double fs(arr& g, arr& H, const arr& x) = 0;
@@ -45,28 +59,29 @@ struct VectorFunction {
   virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
 };
 
-struct ConstrainedProblem:ScalarFunction, VectorFunction {
-  virtual double fs(arr& g, arr& H, const arr& x) = 0;
-  virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
-  virtual uint get_n() = 0;
-  virtual uint get_m() = 0;
+struct ConstrainedProblem {//:ScalarFunction, VectorFunction {
+  //virtual double fs(arr& g, arr& H, const arr& x) = 0;
+  //virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
+  virtual double fc(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x) = 0;
+  virtual uint dim_x() = 0; ///< \f$ \dim(x) \f$
+  virtual uint dim_g() = 0; ///< \f$ \dim(g) \f$
 };
 
-/// functions \f$\phi_t:(x_{t-k},..,x_t) \mapsto y\f$ over a chain \f$x_0,..,x_T\f$ of variables
-struct KOrderMarkovFunction { //TODO: rename KOrderChainFunction
+/// functions \f$ \phi_t:(x_{t-k},..,x_t) \mapsto y\in\mathbb{R}^{m_t} \f$ over a chain \f$x_0,..,x_T\f$ of variables
+struct KOrderMarkovFunction {
   virtual void phi_t(arr& phi, arr& J, uint t, const arr& x_bar) = 0;
   
   //functions to get the parameters $T$, $k$ and $n$ of the $k$-order Markov Process
-  virtual uint get_T() = 0;
-  virtual uint get_k() = 0;
-  virtual uint get_n() = 0; ///< the dimensionality of \f$x_t\f$
-  virtual uint get_m(uint t) = 0; ///< the dimensionality of \f$\phi_t\f$
-  virtual arr get_prefix(){ arr x(get_k(), get_m(0)); x.setZero(); return x; }
-  virtual uint get_c(uint t){ return 0; } ///< number of (inequality) constraints in \f$phi_t\f$
-  
-  //optional: kernel costs
+  virtual uint get_T() = 0;       ///< horizon (the total x-dimension is (T+1)*n )
+  virtual uint get_k() = 0;       ///< the order of dependence: \f$ \phi=\phi(x_{t-k},..,x_t) \f$
+  virtual uint dim_x() = 0;       ///< \f$ \dim(x_t) \f$
+  virtual uint dim_phi(uint t) = 0; ///< \f$ \dim(\phi_t) \f$
+  virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints in \f$ \phi_t \f$
+  virtual arr get_prefix(){ arr x(get_k(), dim_phi(0)); x.setZero(); return x; } ///< the augmentation \f$ (x_{t=-k},..,x_{t=-1}) \f$ that makes \f$ \phi_{0,..,k-1} \f$ well-defined
+
+  /// optional: we make include kernel costs \f$ \sum_{i,j} k(i,j) x_i^\top x_j \f$ -- PRELIM, see examples/kOrderMarkov
   virtual bool hasKernel() { return false; }
-  virtual double kernel(uint t0,uint t1) { NIY; } ///< a kernal add additional costs: neg-log-likelihoods of a Gaussian Process
+  virtual double kernel(uint t0, uint t1) { NIY; } ///< a kernel adds additional costs: neg-log-likelihoods of a Gaussian Process
 };
 
 
@@ -90,10 +105,12 @@ struct Convert {
   ~Convert();
   operator ScalarFunction&();
   operator VectorFunction&();
+  operator ConstrainedProblem&();
 //  operator VectorChainFunction&();
 //  operator QuadraticChainFunction&();
   operator KOrderMarkovFunction&();
 };
+
 
 //===========================================================================
 //
