@@ -35,7 +35,7 @@ extern uint eval_cost;
 // functions that imply optimization problems
 //
 
-/** NOTE: Why do I define these virtual function with so many arguments to return f, J, and even constraints all at once,
+/** NOTE: Why do I define these virtual function with so many arguments to return f, J, and constraints all at once,
  * instead of having nice individual methods to return those?
  *
  * 1) Because I want these problem definitions (classes) to be STATE-LESS. That is, there must not be a set_x(x); before a get_f();
