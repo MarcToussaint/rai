@@ -120,19 +120,14 @@ struct Convert {
 bool checkGradient(ScalarFunction &f, const arr& x, double tolerance);
 bool checkJacobian(VectorFunction &f, const arr& x, double tolerance);
 bool checkHessian(ScalarFunction &f, const arr& x, double tolerance);
+bool checkAll(ConstrainedProblem &P, const arr& x, double tolerance);
 bool checkDirectionalGradient(ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(VectorFunction &f, const arr& x, const arr& delta, double tolerance);
 
-//these directly simply evaluate squared potentials at some point
-//double evaluateSP(const SqrPotential& S, const arr& x);
-//double evaluatePSP(const PairSqrPotential& S, const arr& x, const arr& y);
-//double evaluateCSP(const MT::Array<SqrPotential>& fi, const MT::Array<PairSqrPotential>& fij, const arr& x);
 
 //these actually call the functions (->query cost) to evalute them at some point
 double evaluateSF(ScalarFunction& f, const arr& x);
 double evaluateVF(VectorFunction& f, const arr& x);
-//double evaluateVCF(VectorChainFunction& f, const arr& x);
-//double evaluateQCF(QuadraticChainFunction& f, const arr& x);
 
 
 //===========================================================================

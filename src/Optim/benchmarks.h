@@ -118,10 +118,10 @@ struct ChoiceConstraintFunction:ConstrainedProblem {
   virtual double fc(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x) {
     double fx =  f.fs(df, Hf, x);
 
-    g.resize(dim_g());
+    if(&g) g.resize(dim_g());
     if(&Jg) { Jg.resize(g.N, x.N); Jg.setZero(); }
-    g(0) = sumOfSqr(x)-.25;   if(&Jg) Jg[0]() = 2.*x;
-    g(1) = -x(0);             if(&Jg) Jg(1,0) = -1.;
+    if(&g) g(0) = sumOfSqr(x)-.25;   if(&Jg) Jg[0]() = 2.*x;
+    if(&g) g(1) = -x(0);             if(&Jg) Jg(1,0) = -1.;
 
     return fx;
   }
@@ -215,7 +215,7 @@ struct ParticleAroundWalls:KOrderMarkovFunction {
   bool kern, constrained;
   void phi_t(arr& phi, arr& J, uint t, const arr& x_bar);
 
-  uint get_T(){ return 100; }
+  uint get_T(){ return 1000; }
   uint get_k(){ return k; }
   uint dim_x(){ return 3; }
   uint dim_phi(uint t);
