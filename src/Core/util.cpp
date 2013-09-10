@@ -463,6 +463,20 @@ double d_potential(double x, double margin, double power){
 
 /** @brief double time since start of the process in floating-point seconds
   (probably in micro second resolution) -- Windows checked! */
+double absTime() {
+#ifndef MT_TIMEB
+  static timeval t; gettimeofday(&t, 0);
+  return ((double)(t.tv_sec) +
+          (double)(t.tv_usec)/1000000.);
+#else
+  static _timeb t; _ftime(&t);
+  return ((double)(t.time) +
+          (double)(t.millitm-startTime.millitm)/1000.);
+#endif
+}
+
+/** @brief double time since start of the process in floating-point seconds
+  (probably in micro second resolution) -- Windows checked! */
 double realTime() {
 #ifndef MT_TIMEB
   static timeval t; gettimeofday(&t, 0);
