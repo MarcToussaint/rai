@@ -89,14 +89,14 @@ bool checkGradient(ScalarFunction &f,
 //   MT::save(J, "z.J");
 //   MT::save(JJ, "z.JJ");
   if(md>tolerance) {
-    MT_MSG("checkGradient (scalar) -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
+    MT_MSG("checkGradient -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
     MT::save(J, "z.J_analytical");
     MT::save(JJ, "z.J_empirical");
     //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
     //HALT("");
     return false;
   } else {
-    cout <<"checkGradient (scalar) -- SUCCESS (max diff error=" <<md <<")" <<endl;
+    cout <<"checkGradient -- SUCCESS (max diff error=" <<md <<")" <<endl;
   }
   return true;
 }
@@ -121,14 +121,14 @@ bool checkHessian(ScalarFunction &f, const arr& x, double tolerance) {
   //   MT::save(J, "z.J");
   //   MT::save(JJ, "z.JJ");
   if(md>tolerance) {
-    MT_MSG("checkGradient (vector) -- FAILURE -- max diff=" <<md <<" |"<<H.elem(i)<<'-'<<Jg.elem(i)<<"| (stored in files z.J_*)");
+    MT_MSG("checkHessian -- FAILURE -- max diff=" <<md <<" |"<<H.elem(i)<<'-'<<Jg.elem(i)<<"| (stored in files z.J_*)");
     MT::save(H, "z.J_analytical");
     MT::save(Jg, "z.J_empirical");
     //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
     //HALT("");
     return false;
   } else {
-    cout <<"checkGradient (vector) -- SUCCESS (max diff error=" <<md <<")" <<endl;
+    cout <<"checkHessian -- SUCCESS (max diff error=" <<md <<")" <<endl;
   }
   return true;
 }
@@ -154,16 +154,35 @@ bool checkJacobian(VectorFunction &f,
 //   MT::save(J, "z.J");
 //   MT::save(JJ, "z.JJ");
   if(md>tolerance) {
-    MT_MSG("checkGradient (vector) -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
+    MT_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
     MT::save(J, "z.J_analytical");
     MT::save(JJ, "z.J_empirical");
     //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
     //HALT("");
     return false;
   } else {
-    cout <<"checkGradient (vector) -- SUCCESS (max diff error=" <<md <<")" <<endl;
+    cout <<"checkJacobian -- SUCCESS (max diff error=" <<md <<")" <<endl;
   }
   return true;
+}
+
+bool checkAll(ConstrainedProblem &P, const arr& x, double tolerance){
+  struct F:ScalarFunction{
+    ConstrainedProblem &P;
+    F(ConstrainedProblem &_P):P(_P){}
+    double fs(arr& g, arr& H, const arr& x){  return P.fc(g, H, NoArr, NoArr, x); }
+  } f(P);
+  struct G:VectorFunction{
+    ConstrainedProblem &P;
+    G(ConstrainedProblem &_P):P(_P){}
+    void fv(arr& y, arr& J, const arr& x){ P.fc(NoArr, NoArr, y, J, x); }
+  } g(P);
+
+  bool good=true;
+  good &= checkGradient(f, x, tolerance);
+  good &= checkHessian (f, x, tolerance);
+  good &= checkJacobian(g, x, tolerance);
+  return good;
 }
 
 
