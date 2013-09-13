@@ -389,5 +389,7 @@ void GraphView::watch() { NICO }
 // explicit instantiations
 //
 
+#ifdef MT_GTK
 template MT::Array<Agnode_t*>::Array();
 template MT::Array<Agnode_t*>::~Array();
+#endif

@@ -45,6 +45,10 @@
 #  define MT_GLUT
 #endif
 
+void glGrabImage(byteA& image);
+void glGrabDepth(byteA& image);
+void glGrabDepth(floatA& depth);
+
 
 //===========================================================================
 //
@@ -854,8 +858,16 @@ void glGrabImage(byteA& image) {
   CHECK(image.nd==2 || image.nd==3, "not an image format");
   GLint w=image.d1, h=image.d0;
   //CHECK(w<=glutGet(GLUT_WINDOW_WIDTH) && h<=glutGet(GLUT_WINDOW_HEIGHT), "grabbing large image from small window:" <<w <<' ' <<h <<' ' <<glutGet(GLUT_WINDOW_WIDTH) <<' ' <<glutGet(GLUT_WINDOW_HEIGHT));
-  
+  if(image.d1%4) {  //necessary: extend the image to have width mod 4
+    uint add=4-(image.d1%4);
+    if(image.nd==2) image.resize(image.d0, image.d1+add);
+    if(image.nd==3) image.resize(image.d0, image.d1+add, image.d2);
+  }
+//  glReadBuffer(GL_FRONT);
+  glReadBuffer(GL_FRONT);
+
   //glPixelStorei(GL_PACK_SWAP_BYTES, 0);
+  glPixelStorei(GL_PACK_ALIGNMENT,4);
   switch(image.d2) {
     case 0:
     case 1:
@@ -872,7 +884,7 @@ void glGrabImage(byteA& image) {
       break;
     case 3:
       glReadPixels(0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, image.p);
-      break;
+    break;
     case 4:
 #if defined MT_SunOS
       glReadPixels(0, 0, w, h, GL_ABGR_EXT, GL_UNSIGNED_BYTE, image.p);
@@ -1514,9 +1526,22 @@ void OpenGL::capture(byteA &img, int w, int h, ors::Camera *cam) {
 #endif
   //postRedrawEvent(false);
   //processEvents();
+  if(w==-1) w=width;
+  if(h==-1) h=height;
   Draw(w, h, cam);
   img.resize(h, w, 3);
+#if 1
   glGrabImage(img);
+#else
+  XImage *image = XGetImage(xdisplay(), xdraw(), 0, 0, w, h, 0, XYPixmap);
+  for (int x = 0; x < w; x++){
+    for (int y = 0; y < h; y++){
+       img(x,y,0) = (XGetPixel(image,x,y) & image->red_mask) >> 16;
+       img(x,y,1) = (XGetPixel(image,x,y) & image->green_mask) >> 8;
+       img(x,y,2) = (XGetPixel(image,x,y) & image->blue_mask);
+    }
+  }
+#endif
 #if defined MT_GTKGL
   gtkUnlock();
 #endif
