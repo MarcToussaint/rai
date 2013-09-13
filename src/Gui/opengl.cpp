@@ -45,10 +45,6 @@
 #  define MT_GLUT
 #endif
 
-void glGrabImage(byteA& image);
-void glGrabDepth(byteA& image);
-void glGrabDepth(floatA& depth);
-
 
 //===========================================================================
 //
@@ -863,8 +859,8 @@ void glGrabImage(byteA& image) {
     if(image.nd==2) image.resize(image.d0, image.d1+add);
     if(image.nd==3) image.resize(image.d0, image.d1+add, image.d2);
   }
-//  glReadBuffer(GL_FRONT);
   glReadBuffer(GL_FRONT);
+//  glReadBuffer(GL_BACK);
 
   //glPixelStorei(GL_PACK_SWAP_BYTES, 0);
   glPixelStorei(GL_PACK_ALIGNMENT,4);
@@ -879,9 +875,9 @@ void glGrabImage(byteA& image) {
       glPixelTransferf(GL_GREEN_SCALE, 1.);
       glPixelTransferf(GL_BLUE_SCALE, 1.);
       break;
-    case 2:
-      //glReadPixels(0, 0, w, h, GL_GA, GL_UNSIGNED_BYTE, image.p);
-      break;
+//    case 2:
+//      //glReadPixels(0, 0, w, h, GL_GA, GL_UNSIGNED_BYTE, image.p);
+//      break;
     case 3:
       glReadPixels(0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, image.p);
     break;
@@ -1531,6 +1527,7 @@ void OpenGL::capture(byteA &img, int w, int h, ors::Camera *cam) {
   Draw(w, h, cam);
   img.resize(h, w, 3);
 #if 1
+  glutSwapBuffers();
   glGrabImage(img);
 #else
   XImage *image = XGetImage(xdisplay(), xdraw(), 0, 0, w, h, 0, XYPixmap);
