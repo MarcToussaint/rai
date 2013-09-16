@@ -202,7 +202,8 @@ struct OpenGL {
   GLSelect *topSelection;        ///< top selected object
   bool immediateExitLoop;
   bool drawFocus;
-  byteA background;
+  bool captureImg, captureDep;
+  byteA background, captureImage, captureDepth;
   double backgroundZoom;
   arr P; //camera projection matrix
   
@@ -233,7 +234,7 @@ struct OpenGL {
   void Select();
   
   /// @name showing, updating, and watching
-  bool update(const char *text=NULL);
+  bool update(const char *text=NULL, bool captureImg=false, bool captureDepth=false);
   int  watch(const char *text=NULL);
   int  timedupdate(double sec);
   void resize(int w, int h);
@@ -252,10 +253,10 @@ struct OpenGL {
   void displayRedBlue(const arr &x, bool wait, float backgroundZoom);
   
   /// @name capture routines
-  void capture(byteA &img, int w=-1, int h=-1, ors::Camera *cam=NULL);
-  void captureDepth(byteA &depth, int w, int h, ors::Camera *cam=NULL);
-  void captureDepth(floatA &depth, int w, int h, ors::Camera *cam=NULL);
-  void captureStereo(byteA &imgL, byteA &imgR, int w, int h, ors::Camera *cam, double baseline);
+//  void capture(byteA &img, int w=-1, int h=-1, ors::Camera *cam=NULL);
+//  void captureDepth(byteA &depth, int w, int h, ors::Camera *cam=NULL);
+//  void captureDepth(floatA &depth, int w, int h, ors::Camera *cam=NULL);
+//  void captureStereo(byteA &imgL, byteA &imgR, int w, int h, ors::Camera *cam, double baseline);
   
 #if 0
   void createOffscreen(int width, int height);

@@ -1076,7 +1076,7 @@ void glDrawPointCloud(arr& pts, arr& cols) {
 // OpenGL implementations
 //
 
-OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy):s(NULL), reportEvents(false), width(0), height(0) {
+OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy):s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false) {
   //MT_MSG("creating OpenGL=" <<this);
   initGlEngine();
   s=new sOpenGL(this,title,w,h,posx,posy); //this might call some callbacks (Reshape/Draw) already!
@@ -1084,7 +1084,7 @@ OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy):s(NULL), reportE
   processEvents();
 }
 
-OpenGL::OpenGL(void *container):s(NULL), reportEvents(false), width(0), height(0) {
+OpenGL::OpenGL(void *container):s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false) {
   initGlEngine();
   s=new sOpenGL(this,container); //this might call some callbacks (Reshape/Draw) already!
   init();
@@ -1351,10 +1351,15 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
     }
   }
   
-  //byteA img(h,w,3);
-  //glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, img.p);
-  //write_ppm(img,"z.opengl.ppm");
-  
+  if(captureImg){
+    captureImage.resize(h, w, 3);
+    glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
+  }
+  if(captureDep){
+    captureDepth.resize(h, w);
+    glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, captureDepth.p);
+  }
+
   //check matrix stack
   GLint s;
   glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &s);
@@ -1454,11 +1459,14 @@ int OpenGL::watch(const char *txt) {
 }
 
 /// update the view (in Qt: also starts displaying the window)
-bool OpenGL::update(const char *txt) {
+bool OpenGL::update(const char *txt, bool _captureImg, bool _captureDep) {
+  captureImg=_captureImg;
+  captureDep=_captureDep;
   pressedkey=0;
   if(txt) text.clear() <<txt;
   postRedrawEvent(false);
   processEvents();
+  captureImg=captureDep=false;
   return !pressedkey;
 }
 
@@ -1513,82 +1521,84 @@ void OpenGL::unproject(double &x, double &y, double &z,bool resetCamera) {
 }
 
 
-void OpenGL::capture(byteA &img, int w, int h, ors::Camera *cam) {
-#ifdef MT_GLUT
-#ifdef MT_FREEGLUT
-  glutSetWindow(s->windowID);
-#elif defined MT_GTKGL
-  gtkLock();
-#endif
-  //postRedrawEvent(false);
-  //processEvents();
-  if(w==-1) w=width;
-  if(h==-1) h=height;
-  Draw(w, h, cam);
-  img.resize(h, w, 3);
-#if 1
-  glutSwapBuffers();
-  glGrabImage(img);
-#else
-  XImage *image = XGetImage(xdisplay(), xdraw(), 0, 0, w, h, 0, XYPixmap);
-  for (int x = 0; x < w; x++){
-    for (int y = 0; y < h; y++){
-       img(x,y,0) = (XGetPixel(image,x,y) & image->red_mask) >> 16;
-       img(x,y,1) = (XGetPixel(image,x,y) & image->green_mask) >> 8;
-       img(x,y,2) = (XGetPixel(image,x,y) & image->blue_mask);
-    }
-  }
-#endif
-#if defined MT_GTKGL
-  gtkUnlock();
-#endif
-#endif
-}
+//void OpenGL::capture(byteA &img, int w, int h, ors::Camera *cam) {
+////#ifdef MT_GLUT
+////#ifdef MT_FREEGLUT
+////  glutSetWindow(s->windowID);
+////#elif defined MT_GTKGL
+////  gtkLock();
+////#endif
+//  captureImg=true;
+//  postRedrawEvent(false);
+//  processEvents();
+//  captureImg=false;
+////  if(w==-1) w=width;
+////  if(h==-1) h=height;
+////  Draw(w, h, cam);
+////  img.resize(h, w, 3);
+////#if 1
+////  glutSwapBuffers();
+////  glGrabImage(img);
+////#else
+////  XImage *image = XGetImage(xdisplay(), xdraw(), 0, 0, w, h, 0, XYPixmap);
+////  for (int x = 0; x < w; x++){
+////    for (int y = 0; y < h; y++){
+////       img(x,y,0) = (XGetPixel(image,x,y) & image->red_mask) >> 16;
+////       img(x,y,1) = (XGetPixel(image,x,y) & image->green_mask) >> 8;
+////       img(x,y,2) = (XGetPixel(image,x,y) & image->blue_mask);
+////    }
+////  }
+////#endif
+////#if defined MT_GTKGL
+////  gtkUnlock();
+////#endif
+////#endif
+//}
 
-void OpenGL::captureDepth(byteA &depth, int w, int h, ors::Camera *cam) {
-#ifdef MT_GLUT
-#ifdef MT_FREEGLUT
-  glutSetWindow(s->windowID);
-#endif
-  //postRedrawEvent(false);
-  //processEvents();
-  Draw(w, h, cam);
-  depth.resize(h, w);
-  glGrabDepth(depth);
-#endif
-}
+//void OpenGL::captureDepth(byteA &depth, int w, int h, ors::Camera *cam) {
+//#ifdef MT_GLUT
+//#ifdef MT_FREEGLUT
+//  glutSetWindow(s->windowID);
+//#endif
+//  //postRedrawEvent(false);
+//  //processEvents();
+//  Draw(w, h, cam);
+//  depth.resize(h, w);
+//  glGrabDepth(depth);
+//#endif
+//}
 
-void OpenGL::captureDepth(floatA &depth, int w, int h, ors::Camera *cam) {
-#ifdef MT_GLUT
-#ifdef MT_FREEGLUT
-  glutSetWindow(s->windowID);
-#endif
-  //postRedrawEvent(false);
-  //processEvents();
-  Draw(w, h, cam);
-  depth.resize(h, w);
-  glGrabDepth(depth);
-#endif
-}
+//void OpenGL::captureDepth(floatA &depth, int w, int h, ors::Camera *cam) {
+//#ifdef MT_GLUT
+//#ifdef MT_FREEGLUT
+//  glutSetWindow(s->windowID);
+//#endif
+//  //postRedrawEvent(false);
+//  //processEvents();
+//  Draw(w, h, cam);
+//  depth.resize(h, w);
+//  glGrabDepth(depth);
+//#endif
+//}
 
-void OpenGL::captureStereo(byteA &imgL, byteA &imgR, int w, int h, ors::Camera *cam, double baseline) {
-#ifdef MT_GLUT
-#ifdef MT_FREEGLUT
-  glutSetWindow(s->windowID);
-#endif
-  postRedrawEvent(false);
-  processEvents();
-  Draw(w, h, cam);
-  imgR.resize(h, w, 3);
-  glGrabImage(imgR);
-  double xorg=cam->X->pos.x;
-  cam->X->pos.x -= baseline;
-  Draw(w, h, cam);
-  imgL.resize(h, w, 3);
-  glGrabImage(imgL);
-  cam->X->pos.x = xorg;
-#endif
-}
+//void OpenGL::captureStereo(byteA &imgL, byteA &imgR, int w, int h, ors::Camera *cam, double baseline) {
+//#ifdef MT_GLUT
+//#ifdef MT_FREEGLUT
+//  glutSetWindow(s->windowID);
+//#endif
+//  postRedrawEvent(false);
+//  processEvents();
+//  Draw(w, h, cam);
+//  imgR.resize(h, w, 3);
+//  glGrabImage(imgR);
+//  double xorg=cam->X->pos.x;
+//  cam->X->pos.x -= baseline;
+//  Draw(w, h, cam);
+//  imgL.resize(h, w, 3);
+//  glGrabImage(imgL);
+//  cam->X->pos.x = xorg;
+//#endif
+//}
 
 
 
