@@ -25,7 +25,6 @@
 
 #if defined MT_GTK and defined MT_GRAPHVIZ
 
-
 #include <gtk/gtk.h>
 //#define WITH_CGRAPH
 #include <graphviz/gvc.h>
@@ -389,7 +388,7 @@ void GraphView::watch() { NICO }
 // explicit instantiations
 //
 
-#ifdef MT_GTK
+#if defined MT_GTK and defined MT_GRAPHVIZ
 template MT::Array<Agnode_t*>::Array();
 template MT::Array<Agnode_t*>::~Array();
 #endif

@@ -805,6 +805,7 @@ void write(const arrL& X, const char *filename, const char *ELEMSEP, const char 
 }
 
 void write_ppm(const byteA &img, const char *file_name, bool swap_rows) {
+  if(!img.N) MT_MSG("empty image");
   CHECK(img.nd==2 || (img.nd==3 && img.d2==3), "only rgb or gray images to ppm");
   ofstream os;
   os.open(file_name, std::ios::out | std::ios::binary);
@@ -1467,6 +1468,7 @@ template MT::Array<arr>::~Array();
 
 #include "util_t.h"
 template void MT::save<uintA>(const uintA&, const char*);
+template void MT::save<arr>(const arr&, const char*);
 template void MT::load<arr>(arr&, const char*, bool);
 
 void linkArray() { cout <<"*** libArray.so linked ***" <<endl; }
