@@ -32,60 +32,57 @@ extern uint eval_cost;
 
 //===========================================================================
 //
-// functions that imply (optimization) problems
+// functions that imply optimization problems
 //
 
-//-- return types
-struct     SqrPotential { arr A, a;          double c; }; ///< return type representing \f$x'A x - 2x'a + c\f$
-struct PairSqrPotential { arr A, B, C, a, b; double c; }; ///< return type representing \f$(x,y)' [A C, C' B] (x,y) - 2(x,y)'(a,b) + c\f$
-extern SqrPotential& NoPot; ///< reference to NULL! used for optional arguments
-extern PairSqrPotential& NoPairPot; ///< reference to NULL! used for optional arguments
+/** NOTE: Why do I define these virtual function with so many arguments to return f, J, and constraints all at once,
+ * instead of having nice individual methods to return those?
+ *
+ * 1) Because I want these problem definitions (classes) to be STATE-LESS. That is, there must not be a set_x(x); before a get_f();
+ *    I really have (bad) experience with non-stateless problem definitions.
+ *
+ * 2) Because the computation of quantities is expensive and it is usually most efficient to compute all needed quantities together
+ *    (Instead of calling get_f(x); and then get_J(x); separately)
+ *
+ * All these methods allow some returns to be optional: use NoArr
+ *
+ */
+
 
 /// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
-struct ScalarFunction { virtual double fs(arr& g, arr& H, const arr& x) = 0; };
+struct ScalarFunction {
+  virtual double fs(arr& g, arr& H, const arr& x) = 0;
+};
 
 /// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
-struct VectorFunction { virtual void   fv(arr& y, arr& J, const arr& x) = 0; };
-
-/// a locally quadratic function TODO: replace by scalar with hessian!
-struct QuadraticFunction { virtual double fq(SqrPotential& S, const arr& x) = 0; };
-
-/// functions \f$f_i:x_i \mapsto y\f$ and \f$f_{ij}: x_i,x_j \mapsto y\f$ over a chain \f$x_0,..,x_T\f$ of variables
-struct VectorChainFunction {
-  virtual uint get_T() = 0;
-  virtual void fv_i(arr& y, arr& J, uint i, const arr& x_i) = 0;
-  virtual void fv_ij(arr& y, arr& Ji, arr& Jj, uint i, uint j, const arr& x_i, const arr& x_j) = 0;
+struct VectorFunction {
+  virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
 };
 
-struct QuadraticChainFunction {
-  virtual uint get_T() = 0;
-  virtual double fq_i(SqrPotential& S, uint i, const arr& x_i) = 0;
-  virtual double fq_ij(PairSqrPotential& S, uint i, uint j, const arr& x_i, const arr& x_j) = 0;
+struct ConstrainedProblem {//:ScalarFunction, VectorFunction {
+  //virtual double fs(arr& g, arr& H, const arr& x) = 0;
+  //virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
+  virtual double fc(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x) = 0;
+  virtual uint dim_x() = 0; ///< \f$ \dim(x) \f$
+  virtual uint dim_g() = 0; ///< \f$ \dim(g) \f$
 };
 
-/// functions \f$\phi_t:(x_{t-k},..,x_t) \mapsto y\f$ over a chain \f$x_0,..,x_T\f$ of variables
-struct KOrderMarkovFunction { //TODO: rename KOrderChainFunction
+/// functions \f$ \phi_t:(x_{t-k},..,x_t) \mapsto y\in\mathbb{R}^{m_t} \f$ over a chain \f$x_0,..,x_T\f$ of variables
+struct KOrderMarkovFunction {
   virtual void phi_t(arr& phi, arr& J, uint t, const arr& x_bar) = 0;
   
   //functions to get the parameters $T$, $k$ and $n$ of the $k$-order Markov Process
-  virtual uint get_T() = 0;
-  virtual uint get_k() = 0;
-  virtual uint get_n() = 0; ///< the dimensionality of \f$x_t\f$
-  virtual uint get_m(uint t) = 0; ///< the dimensionality of \f$\phi_t\f$
-  virtual arr get_prefix() { return NoArr; }
-  
-  //optional: kernel costs
-  virtual bool hasKernel() { return false; }
-  virtual double kernel(uint t0,uint t1) { NIY; } ///< a kernal add additional costs: neg-log-likelihoods of a Gaussian Process
-};
+  virtual uint get_T() = 0;       ///< horizon (the total x-dimension is (T+1)*n )
+  virtual uint get_k() = 0;       ///< the order of dependence: \f$ \phi=\phi(x_{t-k},..,x_t) \f$
+  virtual uint dim_x() = 0;       ///< \f$ \dim(x_t) \f$
+  virtual uint dim_phi(uint t) = 0; ///< \f$ \dim(\phi_t) \f$
+  virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints in \f$ \phi_t \f$
+  virtual arr get_prefix(){ arr x(get_k(), dim_phi(0)); x.setZero(); return x; } ///< the augmentation \f$ (x_{t=-k},..,x_{t=-1}) \f$ that makes \f$ \phi_{0,..,k-1} \f$ well-defined
 
-/*
-struct VectorGraphFunction {
-  virtual uintA edges() = 0;
-  virtual double fi (arr* grad, uint i, const arr& x_i) = 0;
-  virtual double fij(arr* gradi, arr* gradj, uint i, uint j, const arr& x_i, const arr& x_j) = 0;
-  double f_total(const arr& X);
-};*/
+  /// optional: we make include kernel costs \f$ \sum_{i,j} k(i,j) x_i^\top x_j \f$ -- PRELIM, see examples/kOrderMarkov
+  virtual bool hasKernel() { return false; }
+  virtual double kernel(uint t0, uint t1) { NIY; } ///< a kernel adds additional costs: neg-log-likelihoods of a Gaussian Process
+};
 
 
 //===========================================================================
@@ -98,9 +95,9 @@ struct Convert {
   struct sConvert* s;
   Convert(ScalarFunction&);
   Convert(VectorFunction&);
-  Convert(QuadraticFunction&);
-  Convert(VectorChainFunction&);
-  Convert(QuadraticChainFunction&);
+//  Convert(QuadraticFunction&);
+//  Convert(VectorChainFunction&);
+//  Convert(QuadraticChainFunction&);
   Convert(KOrderMarkovFunction&);
   Convert(double(*fs)(arr*, const arr&, void*),void *data);
   Convert(void (*fv)(arr&, arr*, const arr&, void*),void *data);
@@ -108,10 +105,12 @@ struct Convert {
   ~Convert();
   operator ScalarFunction&();
   operator VectorFunction&();
-  operator VectorChainFunction&();
-  operator QuadraticChainFunction&();
+  operator ConstrainedProblem&();
+//  operator VectorChainFunction&();
+//  operator QuadraticChainFunction&();
   operator KOrderMarkovFunction&();
 };
+
 
 //===========================================================================
 //
@@ -121,19 +120,14 @@ struct Convert {
 bool checkGradient(ScalarFunction &f, const arr& x, double tolerance);
 bool checkJacobian(VectorFunction &f, const arr& x, double tolerance);
 bool checkHessian(ScalarFunction &f, const arr& x, double tolerance);
+bool checkAll(ConstrainedProblem &P, const arr& x, double tolerance);
 bool checkDirectionalGradient(ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(VectorFunction &f, const arr& x, const arr& delta, double tolerance);
 
-//these directly simply evaluate squared potentials at some point
-double evaluateSP(const SqrPotential& S, const arr& x);
-double evaluatePSP(const PairSqrPotential& S, const arr& x, const arr& y);
-double evaluateCSP(const MT::Array<SqrPotential>& fi, const MT::Array<PairSqrPotential>& fij, const arr& x);
 
 //these actually call the functions (->query cost) to evalute them at some point
 double evaluateSF(ScalarFunction& f, const arr& x);
 double evaluateVF(VectorFunction& f, const arr& x);
-double evaluateVCF(VectorChainFunction& f, const arr& x);
-double evaluateQCF(QuadraticChainFunction& f, const arr& x);
 
 
 //===========================================================================
@@ -158,14 +152,14 @@ struct OptOptions {
 
 
 uint optGaussNewton(arr& x, VectorFunction& phi, OptOptions opt, arr *addRegularizer=NULL, arr *fx_user=NULL, arr *Jx_user=NULL);
-uint optNewton(arr& x, ScalarFunction& f, OptOptions opt, double *f_user=NULL, arr *g_user=NULL, arr *H_user=NULL);
+uint optNewton(arr& x, ScalarFunction& f, OptOptions opt, arr *addRegularizer=NULL, double *fx_user=NULL, arr *gx_user=NULL, arr *Hx_user=NULL);
 uint optRprop(arr& x, ScalarFunction& f, OptOptions opt);
 uint optGradDescent(arr& x, ScalarFunction& f, OptOptions opt);
-uint optDynamicProgramming(arr& x, QuadraticChainFunction& f, OptOptions opt);
+//uint optDynamicProgramming(arr& x, QuadraticChainFunction& f, OptOptions opt);
 /// preliminary
-uint optNodewise(arr& x, VectorChainFunction& f, OptOptions opt);
+//uint optNodewise(arr& x, VectorChainFunction& f, OptOptions opt);
 /// preliminary
-uint optMinSumGaussNewton(arr& x, QuadraticChainFunction& f, OptOptions opt);
+//uint optMinSumGaussNewton(arr& x, QuadraticChainFunction& f, OptOptions opt);
 
 
 //===========================================================================
