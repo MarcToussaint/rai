@@ -1,6 +1,10 @@
 #include "thread.h"
+
 #ifndef MT_MSVC
 #  include <sys/syscall.h>
+#endif
+#ifdef MT_QT
+#  include <QtCore/QThread>
 #endif
 #include <errno.h>
 
@@ -297,24 +301,32 @@ void* Thread_staticMain(void *_self) {
   return NULL;
 }
 
+#ifdef MT_QT
+class sThread:QThread {
+  Q_OBJECT
+public:
+  Thread *th;
+  sThread(Thread *_th, const char* name):th(_th){ setObjectName(name); }
+  ~sThread(){}
+  void open(){ start(); }
+  void close(){ wait(); }
+protected:
+  void run(){ th->main();  }
+};
+#endif
+
 Thread::Thread(const char* _name): name(_name), state(tsCLOSE), tid(0), thread(0), step_count(0), metronome(NULL)  {
   listensTo.memMove=true;
-//  biros().writeAccess(module);
-//  biros().processes.memMove=true;
-//  biros().processes.append(this);
-//  biros().deAccess(module);
 }
 
 Thread::~Thread() {
   if(!isClosed()) threadClose();
-//  biros().writeAccess(module);
-//  biros().processes.removeValue(this);
-//  biros().deAccess(module);
 }
 
 void Thread::threadOpen(int priority) {
   state.lock();
   if(!isClosed()){ state.unlock(); return; } //this is already open -- or has just beend opened (parallel call to threadOpen)
+#ifndef MT_QT
   int rc;
   pthread_attr_t atts;
   rc = pthread_attr_init(&atts); if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
@@ -330,6 +342,10 @@ void Thread::threadOpen(int priority) {
   }*/
   //prctl(PR_SET_NAME, proc->name.p);
   if(name) pthread_setname_np(thread, name);
+#else
+  thread = new sThread(this, "hallo");
+  thread->open();
+#endif
   state.value=tsOPENING;
   state.unlock();
 }
@@ -337,9 +353,15 @@ void Thread::threadOpen(int priority) {
 void Thread::threadClose() {
   state.setValue(tsCLOSE);
   if(!thread) return;
+#ifndef MT_QT
   int rc;
   rc = pthread_join(thread, NULL);     if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   thread=0;
+#else
+  thread->close();
+  delete thread;
+  thread=NULL;
+#endif
 }
 
 void Thread::threadStep(uint steps, bool wait) {
@@ -448,28 +470,6 @@ void Thread::main() {
 
   close(); //virtual close routine
 }
-
-#ifdef MT_QT
-
-struct sThread:QThread {
-  Thread *th;
-  void run() {  th->main();  }
-};
-
-Thread::Thread():s(NULL) {
-  s = new sThread;
-  s->th=this;
-}
-
-void Thread::open() { s->setObjectName("hallo");  s->start(); }
-
-Thread::~Thread() { close(); delete s; }
-
-void Thread::close() { s->quit(); }
-
-bool Thread::isOpen() { return s->isRunning(); }
-
-#endif
 
 
 //===========================================================================

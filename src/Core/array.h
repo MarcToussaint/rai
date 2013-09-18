@@ -134,7 +134,8 @@ template<class T> struct Array {
   Array<T>& resizeAs(const Array<T>& a);
   Array<T>& reshapeAs(const Array<T>& a);
   Array<T>& resizeCopyAs(const Array<T>& a);
-  
+  Array<T>& dereference();
+
   /// @name initializing/assigning entries
   void clear();
   void setZero(byte zero=0);
@@ -158,6 +159,7 @@ template<class T> struct Array {
   void referToSubDim(const Array<T>& a, uint dim);
   void referToSubDim(const Array<T>& a, uint i, uint j);
   void takeOver(Array<T>& a);                   //a becomes a reference to its previously owned memory!
+  void swap(Array<T>& a); //the two arrays swap their contents!
   void setGrid(uint dim, T lo, T hi, uint steps);
   void setText(const char* str); //TODO: remove
   
@@ -335,6 +337,7 @@ typedef MT::Array<const char*>  CstrList;
 typedef MT::Array<arr*>   arrL;
 
 namespace MT { struct String; }
+typedef MT::Array<MT::String> StringA;
 typedef MT::Array<MT::String*> StringL;
 
 
@@ -344,6 +347,7 @@ typedef MT::Array<MT::String*> StringL;
 /// @{
 
 extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional arguments
+extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
 
 
 //===========================================================================
@@ -395,8 +399,8 @@ template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T
 template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o) {      MT::Array<T*> z(7); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; z(6)=(T*)&o; return z; }
 template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p) { MT::Array<T*> z(8); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; z(6)=(T*)&o; z(7)=(T*)&p; return z; }
 
-//#define STRINGS(s0) ARRAY<MT::String>(MT::String(s0))
-#define STRINGS(s0, s1) ARRAY<MT::String>(MT::String(s0), MT::String(s1))
+MT::Array<MT::String> STRINGS(const char* s0);
+MT::Array<MT::String> STRINGS(const char* s0, const char* s1);
 
 
 //===========================================================================
@@ -487,7 +491,7 @@ void lognormScale(arr& P, double& logP, bool force=true);
 
 void gnuplot(const arr& X);
 void write(const arr& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
-void write(const MT::Array<arr*>& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
+void write(const arrL& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
 
 
 void write_ppm(const byteA &img, const char *file_name, bool swap_rows=false);
@@ -498,6 +502,23 @@ void make_RGB(byteA &img);
 void flip_image(byteA &img);
 
 void scanArrFile(const char* name);
+
+double NNinv(const arr& a, const arr& b, const arr& Cinv);
+double logNNprec(const arr& a, const arr& b, double prec);
+double logNNinv(const arr& a, const arr& b, const arr& Cinv);
+double NN(const arr& a, const arr& b, const arr& C);
+double logNN(const arr& a, const arr& b, const arr& C);
+
+/// non-normalized!! Gaussian function (f(0)=1)
+double NNNNinv(const arr& a, const arr& b, const arr& Cinv);
+double NNNN(const arr& a, const arr& b, const arr& C);
+double NNzeroinv(const arr& x, const arr& Cinv);
+/// gradient of a Gaussian
+double dNNinv(const arr& x, const arr& a, const arr& Ainv, arr& grad);
+/// gradient of a non-normalized Gaussian
+double dNNNNinv(const arr& x, const arr& a, const arr& Ainv, arr& grad);
+double NNsdv(const arr& a, const arr& b, double sdv);
+double NNzerosdv(const arr& x, double sdv);
 
 
 //===========================================================================
@@ -724,6 +745,7 @@ struct RowShiftedPackedMatrix {
   bool symmetric;
   
   RowShiftedPackedMatrix(arr& X);
+  RowShiftedPackedMatrix(arr& X, RowShiftedPackedMatrix &aux);
   ~RowShiftedPackedMatrix();
   double acc(uint i, uint j);
   void computeColPatches(bool assumeMonotonic); //currently presumes monotonous rowShifts

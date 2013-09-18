@@ -136,6 +136,7 @@ struct CycleTimer {
 };
 
 #else //MT_MSVC
+
 struct Mutex {
   int state;
   Mutex() {};
@@ -143,6 +144,7 @@ struct Mutex {
   void lock() { MT_MSG("fake MSVC Mutex"); }
   void unlock() { MT_MSG("fake MSVC Mutex"); }
 };
+
 struct ConditionVariable {
   int value;
   ConditionVariable(int initialState=0) {}
@@ -182,10 +184,10 @@ struct Thread{
   ConditionVariableL listensTo;
   //ParameterL dependsOn;
   pid_t tid;                     ///< system thread id
-#if 1 //ndef MT_QT
+#ifndef MT_QT
   pthread_t thread;
 #else
-  struct sThread *s;
+  struct sThread *thread;
 #endif
   uint step_count;
   Metronome *metronome;          ///< used for beat-looping

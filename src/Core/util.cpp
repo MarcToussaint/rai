@@ -388,6 +388,93 @@ double cosc(double x) {
   return ::cos(x)/x;
 }
 
+#define EXP ::exp //MT::approxExp
+
+double NNsdv(const double& a, const double& b, double sdv){
+  double d=(a-b)/sdv;
+  double norm = 1./(::sqrt(MT_2PI)*sdv);
+  return norm*EXP(-.5*d*d);
+}
+
+double NNsdv(double x, double sdv){
+  x/=sdv;
+  double norm = 1./(::sqrt(MT_2PI)*sdv);
+  return norm*EXP(-.5*x*x);
+}
+
+/* gnuplot:
+heavy(x) = (1+sgn(x))/2
+eps = 0.1
+g(x) = heavy(x-eps)*(x-eps/2) + (1-heavy(x-eps))*x**2/(2*eps)
+plot [-.5:.5] g(abs(x))
+*/
+double POW(double x, double power){ if(power==1.) return x; if(power==2.) return x*x; return pow(x,power); }
+double smoothRamp(double x, double eps, double power){
+  if(x<0.) return 0.;
+  if(power!=1.) return pow(smoothRamp(x,eps,1.),power);
+  if(!eps) return x;
+  if(x>eps) return x - .5*eps;
+  return x*x/(2*eps);
+}
+
+double d_smoothRamp(double x, double eps, double power){
+  if(x<0.) return 0.;
+  if(power!=1.) return power*pow(smoothRamp(x,eps,1.),power-1.)*d_smoothRamp(x,eps,1.);
+  if(!eps || x>eps) return 1.;
+  return x/eps;
+}
+
+/*
+heavy(x) = (1+sgn(x))/2
+power = 1.5
+margin = 1.5
+f(x) = heavy(x)*x**power
+plot f(x/margin+1), 1
+*/
+double barrier(double x, double margin, double power){
+  if(x<-margin) return 0.;
+  double y=x/margin+1.;
+  if(power==1.) return y;
+  if(power==2.) return y*y;
+  return pow(y,power);
+}
+
+double d_barrier(double x, double margin, double power){
+  if(x<-margin) return 0.;
+  double y=x/margin+1.;
+  if(power==1.) return 1./margin;
+  if(power==2.) return 2.*y/margin;
+  return power*pow(y,power-1.)/margin;
+}
+
+double potential(double x, double margin, double power){
+  double y=x/margin;
+  if(power==1.) return fabs(y);
+  if(power==2.) return y*y;
+  return pow(fabs(y),power);
+}
+
+double d_potential(double x, double margin, double power){
+  double y=x/margin;
+  if(power==1.) return MT::sign(y)/margin;
+  if(power==2.) return 2.*y/margin;
+  return power*pow(y,power-1.)*MT::sign(y)/margin;
+}
+
+/** @brief double time since start of the process in floating-point seconds
+  (probably in micro second resolution) -- Windows checked! */
+double absTime() {
+#ifndef MT_TIMEB
+  static timeval t; gettimeofday(&t, 0);
+  return ((double)(t.tv_sec) +
+          (double)(t.tv_usec)/1000000.);
+#else
+  static _timeb t; _ftime(&t);
+  return ((double)(t.time) +
+          (double)(t.millitm-startTime.millitm)/1000.);
+#endif
+}
+
 /** @brief double time since start of the process in floating-point seconds
   (probably in micro second resolution) -- Windows checked! */
 double realTime() {
@@ -442,7 +529,7 @@ double totalTime() {
 char *date() { static time_t t; time(&t); return ctime(&t); }
 
 /// wait double time
-void wait(double sec) {
+void wait(double sec, bool msg_on_fail) {
 #if defined(MT_Darwin)
   sleep((int)sec);
 #elif !defined(MT_MSVC)
@@ -451,9 +538,7 @@ void wait(double sec) {
   sec -= (double)ts.tv_sec;
   ts.tv_nsec = (long)(floor(1000000000. * sec));
   int rc = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
-  if(rc) {
-    if(rc==0) { MT_MSG("clock_nanosleep() interrupted by signal"); } else MT_MSG("clock_nanosleep() failed " <<rc);
-  }
+  if(rc && msg_on_fail) MT_MSG("clock_nanosleep() failed " <<rc <<' ' <<strerror(rc));
 #else
   Sleep((int)(1000.*sec));
   //MsgWaitForMultipleObjects( 0, NULL, FALSE, (int)(1000.*sec), QS_ALLEVENTS);
@@ -658,7 +743,7 @@ MT::String::String():std::iostream(&buffer) { init(); clearStream(); }
 MT::String::String(const String& s):std::iostream(&buffer) { init(); this->operator=(s); }
 
 /// copy constructor for an ordinary C-string (needs to be 0-terminated)
-MT::String::String(const char *s):std::iostream(&buffer) { init(); CHECK(s,"initializing String with NULL"); this->operator=(s); }
+MT::String::String(const char *s):std::iostream(&buffer) { init(); this->operator=(s); }
 
 MT::String::~String() { if(M) delete[] p; }
 
@@ -686,7 +771,11 @@ MT::String& MT::String::operator=(const String& s) {
 }
 
 /// copies from the C-string
-void MT::String::operator=(const char *s) { resize(strlen(s), false); memmove(p, s, strlen(s)); }
+void MT::String::operator=(const char *s) {
+  if(!s){  clear();  return;  }
+  resize(strlen(s), false);
+  memmove(p, s, strlen(s));
+}
 
 void MT::String::set(const char *s, uint n) { resize(n, false); memmove(p, s, n); }
 
@@ -868,7 +957,7 @@ void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDF
   if(!access("~/gnuplot.cfg", R_OK)) cmd <<"load '~/gnuplot.cfg'\n";
   if(!access("gnuplot.cfg", R_OK)) cmd <<"load 'gnuplot.cfg'\n";
   
-  cmd <<"set title '(MT/plot.h -> gnuplot pipe)'\n"
+  cmd <<"set title '(Gui/plot.h -> gnuplot pipe)'\n"
       <<command <<std::endl;
       
   if(PDFfile) {
