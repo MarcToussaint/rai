@@ -1223,19 +1223,12 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   
   //OpenGL initialization
   //two optional thins:
-  glEnable(GL_DEPTH_TEST);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glEnable(GL_CULL_FACE); glFrontFace(GL_CCW);
+//  glEnable(GL_DEPTH_TEST);  glDepthFunc(GL_LESS);
+  glEnable(GL_BLEND);  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glEnable(GL_CULL_FACE);  glFrontFace(GL_CCW);
   //glDisable(GL_CULL_FACE);
-  glDepthFunc(GL_LESS);
-  glShadeModel(GL_SMOOTH);
-  glShadeModel(GL_FLAT);
-  
-  glEnable(GL_DEPTH_TEST);
-  //glEnable(GL_CULL_FACE); glFrontFace(GL_CCW); //CCW is default!
-  glDepthFunc(GL_LESS);
   //glShadeModel(GL_SMOOTH);
+  glShadeModel(GL_FLAT);
   
   //select mode?
   GLint mode;
