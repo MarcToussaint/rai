@@ -491,3 +491,107 @@ void close(const ThreadL& P) {
   Thread *p; uint i;
   for_list(i, p, P) p->threadClose();
 }
+
+//===========================================================================
+//
+// throut Utilities
+//
+
+#include <map>
+
+namespace throut {
+  // "private" variables, not included in thread.h
+  RWLock throutMutex;
+  Mutex msgMutex;
+  std::map<const void*, const char*> throutMap;
+
+  // "private" method, not included in thread.h
+  bool throutContains_private(const void *obj) {
+    return throutMap.count(obj) == 1;
+  }
+
+  // "private" method, not included in thread.h
+  bool throutGetHeading_private(const void *obj, char **head) {
+    bool r = throutContains_private(obj);
+    if(head != NULL)
+      *head = r? (char*)throutMap[obj]: NULL;
+    return r;
+  }
+
+  // "private" method, not included in thread.h
+  void throutUnregHeading_private(const void *obj) {
+    if(throutContains_private(obj)) {
+      delete throutMap[obj];
+      throutMap.erase(obj);
+    }
+  }
+
+  void throutRegHeading(const void *obj, const MT::String &head) {
+    size_t ml = head.N;
+    char *p = new char[ml+1];
+    memcpy(p, (const char*)head, ml+1);
+
+    throutMutex.writeLock();
+    throutUnregHeading_private(obj);
+    throutMap[obj] = p;
+    throutMutex.unlock();
+  }
+
+  void throutRegHeading(const void *obj, const char *head) {
+    size_t ml = strlen(head);
+    char *p = new char[ml+1];
+    memcpy(p, head, ml+1);
+
+    throutMutex.writeLock();
+    throutUnregHeading_private(obj);
+    throutMap[obj] = p;
+    throutMutex.unlock();
+  }
+
+  void throutUnregHeading(const void *obj) {
+    throutMutex.writeLock();
+    throutUnregHeading_private(obj);
+    throutMutex.unlock();
+  }
+
+  bool throutContains(const void *obj) {
+    throutMutex.readLock();
+    bool r = throutContains_private(obj);
+    throutMutex.unlock();
+    return r;
+  }
+
+  void throut(const char *m) {
+    if(m == NULL) {
+      throut("NULL");
+      return;
+    }
+    msgMutex.lock();
+    std::cout << m << std::endl;
+    msgMutex.unlock();
+  }
+
+  void throut(const MT::String &m) {
+    throut((const char*)m);
+  }
+
+  void throut(const void *obj, const char *m) {
+    char *head = NULL;
+    throutMutex.readLock();
+    if(throutGetHeading_private(obj, &head))
+      if(m == NULL)
+        throut(STRING(head << "NULL"));
+      else
+        throut(STRING(head << m));
+    else
+      if(m == NULL)
+        throut("UNREGISTERED_OBJ: NULL");
+      else
+        throut(STRING("UNREGISTERED_OBJ: " << m));
+    throutMutex.unlock();
+  }
+
+  void throut(const void *obj, const MT::String &m) {
+    throut(obj, (const char*)m);
+  }
+}

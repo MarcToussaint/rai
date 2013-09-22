@@ -229,4 +229,22 @@ struct Thread{
 /*   virtual void main() = 0; */
 /* }; */
 
+// ================================================
+//
+// throut utilities
+//
+
+namespace throut {
+  void throutRegHeading(const void *obj, const MT::String &head);
+  void throutRegHeading(const void *obj, const char *head);
+  void throutUnregHeading(const void *obj);
+  bool throutContains(const void *obj);
+
+  void throut(const char *m);
+  void throut(const MT::String &m);
+
+  void throut(const void *obj, const char *m);
+  void throut(const void *obj, const MT::String &m);
+}
+
 #endif
