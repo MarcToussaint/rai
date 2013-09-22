@@ -220,7 +220,7 @@ struct Thread{
   void main(); //this is the thread main - should be private!
 };
 
-/// a basic thread
+/*/// a basic thread */
 /* struct Thread { */
 /*   Thread(); */
 /*   ~Thread(); */
@@ -238,6 +238,7 @@ namespace throut {
   void throutRegHeading(const void *obj, const MT::String &head);
   void throutRegHeading(const void *obj, const char *head);
   void throutUnregHeading(const void *obj);
+  /* TODO void throutUnregAll(); */
   bool throutContains(const void *obj);
 
   void throut(const char *m);
