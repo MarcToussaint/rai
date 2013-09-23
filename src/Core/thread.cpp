@@ -525,7 +525,7 @@ void close(const ThreadL& P) {
  * MyObject *p = new MyObject();
  * throut::throutRegHeading(p, "Object: "); // registers a heading to p
  * // some code
- * throut::throut(p, "message"); // prints "Object: message"
+ * throut::throut(p, "message!"); // prints "Object: message!"
  * // some code
  * throut::throutUnregHeading(p); // unregisters heading related with p
  * @endcode
@@ -535,14 +535,15 @@ void close(const ThreadL& P) {
  * 'this'. In this case, unregistering should be handled in the deconstructor.
  *
  * @code
+ * using namespace throut;
  * class MyObject {
  *   int ID;
  *   MyObject(int id): ID(id) {
- *     throut::throutRegHeading(this, STRING("Object(" << ID << "): "));
+ *     throutRegHeading(this, STRING("Object(" << ID << "): "));
  *   }
  *
  *   ~MyObject() {
- *     throut::throutUnregHeading(this);
+ *     throutUnregHeading(this);
  *   }
  *
  *   void process() {
@@ -645,21 +646,22 @@ namespace throut {
     throutMutex.unlock();
   }
 
-  /* TODO test
-
-  **@brief unregisters all headings
+  /**@brief unregisters all headings
    *
    * - Useful to avoid all memory leaks when throut methods are no longer
    *   needed.
-   * /
+   * - Ideally, unregistering should be handled by specific calls to
+   *   throut::throutUnregHeading().
+   */
   void throutUnregAll() {
     std::map<const void*, const char*>::iterator it;
     throutMutex.writeLock();
-    for(it = throutMap.begin(); it != throutMap.end(); )
+    for(it = throutMap.begin(); it != throutMap.end(); ) {
+      throut(STRING("Deleting " << it->first << " " << it->second));
       throutUnregHeading_private((it++)->first);
+    }
     throutMutex.unlock();
   }
-   */
 
   /**@brief checks if an object is currently registered */
   bool throutContains(const void *obj) {
