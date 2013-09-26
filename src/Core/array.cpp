@@ -851,6 +851,7 @@ void add_alpha_channel(byteA &img, byte alpha) {
 }
 
 void flip_image(byteA &img) {
+  if(!img.N) return;
   uint h=img.d0, n=img.N/img.d0;
   byteA line(n);
   byte *a, *b, *c;
