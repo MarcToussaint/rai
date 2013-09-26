@@ -1261,6 +1261,7 @@ void RowShiftedPackedMatrix::computeColPatches(bool assumeMonotonic) {
 }
 
 arr RowShiftedPackedMatrix::At_A() {
+  //TODO use blas DSYRK instead?
   arr R;
   RowShiftedPackedMatrix *Raux = auxRowShifted(R, real_d1, Z.d1, real_d1);
   for(uint i=0; i<R.d0; i++) Raux->rowShift(i) = i;

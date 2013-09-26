@@ -383,7 +383,10 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
     if(o.verbose>1) cout <<" \t|Delta|=" <<absMax(Delta) <<flush;
 
     //lazy stopping criterion: stop without any update
-    if(lambda<2. && absMax(Delta)<1e-3*o.stopTolerance) break;
+    if(lambda<2. && absMax(Delta)<1e-1*o.stopTolerance){
+      if(o.verbose>1) cout <<" \t - NO UPDATE" <<endl;
+      break;
+    }
 
     for(;;) { //stepsize adaptation loop -- doesn't iterate for useDamping option
       y = x + alpha*Delta;
@@ -402,7 +405,7 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
         if(o.useAdaptiveDamping) { //Levenberg-Marquardt type damping
           lambda = .2*lambda;
         } else {
-          if(alpha>.9) lambda = .2*lambda;
+          if(alpha>.9) lambda = .5*lambda;
           alpha = pow(alpha, 0.5);
         }
         break;
@@ -414,7 +417,9 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
           break;
         } else {
           if(alpha*absMax(Delta)<1e-3*o.stopTolerance || evals>o.stopEvals) break; //WARNING: this may lead to non-monotonicity -> make evals high!
+//          if(alpha<1e-2) lambda = pow(lambda, 0.5);
           alpha = .1*alpha;
+//          break;
         }
       }
     }

@@ -345,6 +345,7 @@ void glPushLightOff() { glGetBooleanv(GL_LIGHTING, &glLightIsOn); glDisable(GL_L
 void glPopLight() { if(glLightIsOn) glEnable(GL_LIGHTING); }
 
 void glDrawText(const char* txt, float x, float y, float z) {
+  if(!txt) return;
 #if 1 //defined MT_FREEGLUT
   glDisable(GL_DEPTH_TEST);
   glPushLightOff();
