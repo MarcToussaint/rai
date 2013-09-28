@@ -25,6 +25,7 @@ void close(const ThreadL& P);
 struct Mutex {
   pthread_mutex_t mutex;
   int state; ///< 0=unlocked, otherwise=syscall(SYS_gettid)
+  uint recursive; ///< number of times it's been locked
   Mutex();
   ~Mutex();
   void lock();

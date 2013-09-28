@@ -26,6 +26,7 @@ Mutex::Mutex() {
   rc = pthread_mutex_init(&mutex, &atts);
   //mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
   state=0;
+  recursive=0;
 }
 
 Mutex::~Mutex() {
@@ -35,14 +36,16 @@ Mutex::~Mutex() {
 
 void Mutex::lock() {
   int rc = pthread_mutex_lock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  state=syscall(SYS_gettid);
+  if(recursive++ == 0)
+    state=syscall(SYS_gettid);
   MUTEX_DUMP(cout <<"Mutex-lock: " <<state <<endl);
 }
 
 void Mutex::unlock() {
   MUTEX_DUMP(cout <<"Mutex-unlock: " <<state <<endl);
-  state=0;
   int rc = pthread_mutex_unlock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  if(--recursive == 0)
+    state=0;
 }
 
 
@@ -560,7 +563,7 @@ namespace throut {
    *
    * - DO NOT USE
    */
-  RWLock throutMutex;
+  RWLock throutRWLock;
   /**@brief "private" variable, not included in header.
    *
    * - DO NOT USE
@@ -613,10 +616,10 @@ namespace throut {
     char *p = new char[ml+1];
     memcpy(p, (const char*)head, ml+1);
 
-    throutMutex.writeLock();
+    throutRWLock.writeLock();
     throutUnregHeading_private(obj);
     throutMap[obj] = p;
-    throutMutex.unlock();
+    throutRWLock.unlock();
   }
 
   /**@brief registers an object's heading
@@ -630,10 +633,10 @@ namespace throut {
     char *p = new char[ml+1];
     memcpy(p, head, ml+1);
 
-    throutMutex.writeLock();
+    throutRWLock.writeLock();
     throutUnregHeading_private(obj);
     throutMap[obj] = p;
-    throutMutex.unlock();
+    throutRWLock.unlock();
   }
 
   /**@brief unregisters an object's heading
@@ -641,9 +644,9 @@ namespace throut {
    * - Memory leaks will occur if a heading is not unregistered
    */
   void throutUnregHeading(const void *obj) {
-    throutMutex.writeLock();
+    throutRWLock.writeLock();
     throutUnregHeading_private(obj);
-    throutMutex.unlock();
+    throutRWLock.unlock();
   }
 
   /**@brief unregisters all headings
@@ -655,19 +658,19 @@ namespace throut {
    */
   void throutUnregAll() {
     std::map<const void*, const char*>::iterator it;
-    throutMutex.writeLock();
+    throutRWLock.writeLock();
     for(it = throutMap.begin(); it != throutMap.end(); ) {
       throut(STRING("Deleting " << it->first << " " << it->second));
       throutUnregHeading_private((it++)->first);
     }
-    throutMutex.unlock();
+    throutRWLock.unlock();
   }
 
   /**@brief checks if an object is currently registered */
   bool throutContains(const void *obj) {
-    throutMutex.readLock();
+    throutRWLock.readLock();
     bool r = throutContains_private(obj);
-    throutMutex.unlock();
+    throutRWLock.unlock();
     return r;
   }
 
@@ -698,7 +701,7 @@ namespace throut {
    */
   void throut(const void *obj, const char *m) {
     char *head = NULL;
-    throutMutex.readLock();
+    throutRWLock.readLock();
     if(throutGetHeading_private(obj, &head))
       if(m == NULL)
         throut(STRING(head << "NULL"));
@@ -709,7 +712,7 @@ namespace throut {
         throut("UNREGISTERED_OBJ: NULL");
       else
         throut(STRING("UNREGISTERED_OBJ: " << m));
-    throutMutex.unlock();
+    throutRWLock.unlock();
   }
 
   /** @brief prints a message on the console, pre-pended with an object's heading
