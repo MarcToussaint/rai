@@ -38,11 +38,11 @@ void Mutex::lock() {
   int rc = pthread_mutex_lock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   if(recursive++ == 0)
     state=syscall(SYS_gettid);
-  MUTEX_DUMP(cout <<"Mutex-lock: " <<state <<endl);
+  MUTEX_DUMP(cout <<"Mutex-lock: " <<state <<" (rec: " <<recursive << ")" <<endl);
 }
 
 void Mutex::unlock() {
-  MUTEX_DUMP(cout <<"Mutex-unlock: " <<state <<endl);
+  MUTEX_DUMP(cout <<"Mutex-unlock: " <<state <<" (rec: " <<recursive << ")" <<endl);
   int rc = pthread_mutex_unlock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   if(--recursive == 0)
     state=0;
@@ -60,7 +60,7 @@ RWLock::RWLock() {
 }
 
 RWLock::~RWLock() {
-  CHECK(!state, "");
+  CHECK(!state, "Destroying locked RWLock");
   int rc = pthread_rwlock_destroy(&lock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
