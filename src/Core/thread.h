@@ -108,15 +108,15 @@ template<class T> typename Singleton<T>::SingletonFields *Singleton<T>::singleto
 
 /// a simple struct to realize a strict tic tac timing (call step() once in a loop)
 struct Metronome {
-  long targetDt;
-  timespec ticTime, lastTime;
+  double ticInterval;
+  timespec ticTime;
   uint tics;
   const char* name;                   ///< name
 
-  Metronome(const char* name, long _targetDt); ///< set tic tac time in milli seconds
+  Metronome(const char* name, double ticIntervalSec); ///< set tic tac time in micro seconds
   ~Metronome();
 
-  void reset(long _targetDt);
+  void reset(double ticIntervalSec);
   void waitForTic();              ///< waits until the next tic
   double getTimeSinceTic();       ///< time since last tic
 };

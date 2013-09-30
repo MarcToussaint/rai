@@ -295,10 +295,16 @@ inline void breakPoint() {
 
 //----- check macros:
 #ifndef MT_NOCHECK
-#  define MT_DEBUG(x) x
-#  define CHECK(cond, msg) if(!(cond)) HALT("CHECK failed: " <<msg);
+
+#  define CHECK(cond, msg) \
+  if(!(cond)){ HALT("CHECK failed: '" <<#cond <<"' " <<msg) }\
+  //  else{ MT_MSG("CHECK SUCCESS: '" <<#cond <<"'") }
+
+#  define CHECK_ZERO(expr, tolerance, msg) \
+  if(fabs(expr)>tolerance){ HALT("CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg) } \
+  //else{ MT_MSG("CHECK_ZERO SUCCESS: '" <<#expr<<"'=" <<expr <<" < " <<tolerance)}
+
 #else
-#  define MT_DEBUG(x)
 #  define CHECK(cond, msg)
 #endif
 

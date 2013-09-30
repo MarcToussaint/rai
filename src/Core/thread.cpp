@@ -146,7 +146,9 @@ void ConditionVariable::waitForSignal(bool userHasLocked) {
 void ConditionVariable::waitForSignal(double seconds, bool userHasLocked) {
   struct timespec timeout;
   clock_gettime(CLOCK_MONOTONIC, &timeout);
-  timeout.tv_nsec+=1000000000l*seconds;
+  long secs = (long)(floor(seconds));
+  timeout.tv_sec  += secs;
+  timeout.tv_nsec += (long)(floor(1000000000. * (seconds-(double)secs)));
   if(timeout.tv_nsec>1000000000l) {
     timeout.tv_sec+=1;
     timeout.tv_nsec-=1000000000l;
@@ -211,27 +213,28 @@ void ConditionVariable::waitUntil(double absTime, bool userHasLocked) {
 // Metronome
 //
 
-Metronome::Metronome(const char* _name, long _targetDt) {
+Metronome::Metronome(const char* _name, double ticIntervalSec) {
   name=_name;
-  reset(_targetDt);
+  reset(ticIntervalSec);
 }
 
 Metronome::~Metronome() {
 }
 
-void Metronome::reset(long _targetDt=0) {
+void Metronome::reset(double ticIntervalSec) {
   clock_gettime(CLOCK_MONOTONIC, &ticTime);
-  lastTime=ticTime;
   tics=0;
-  targetDt = _targetDt;
+  ticInterval = ticIntervalSec;
 }
 
 void Metronome::waitForTic() {
   //compute target time
-  ticTime.tv_nsec+=1000000l*targetDt;
+  long secs = (long)(floor(ticInterval));
+  ticTime.tv_sec  += secs;
+  ticTime.tv_nsec += (long)(floor(1000000000. * (ticInterval-(double)secs)));
   while(ticTime.tv_nsec>1000000000l) {
-    ticTime.tv_sec+=1;
-    ticTime.tv_nsec-=1000000000l;
+    ticTime.tv_sec  += 1;
+    ticTime.tv_nsec -= 1000000000l;
   }
   //wait for target time
   int rc = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ticTime, NULL);
@@ -413,9 +416,9 @@ void Thread::threadLoop() {
 
 void Thread::threadLoopWithBeat(double sec) {
   if(!metronome)
-    metronome=new Metronome("threadTiccer", 1000.*sec);
+    metronome=new Metronome("threadTiccer", sec);
   else
-    metronome->reset(1000.*sec);
+    metronome->reset(sec);
   if(isClosed()) threadOpen();
   state.setValue(tsBEATING);
 }
