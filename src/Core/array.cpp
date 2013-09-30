@@ -771,118 +771,41 @@ uint SUS(const arr& p) {
 
 void gnuplot(const arr& X) {
   if(X.nd==2 && X.d1!=2) {  //assume array -> splot
-    MT::IOraw=true;
-    MT::save(X, "z.pltX");
+    write(LIST<arr>(X), "z.pltX");
     gnuplot("splot 'z.pltX' matrix with pm3d, 'z.pltX' matrix with lines");
-    MT::IOraw=false;
     return;
   }
   if(X.nd==2 && X.d1==2) {  //assume curve -> plot
-    MT::IOraw=true;
-    MT::save(X, "z.pltX");
+    write(LIST<arr>(X), "z.pltX");
     gnuplot("plot 'z.pltX' us 1:2");
-    MT::IOraw=false;
     return;
   }
   if(X.nd==1) {  //assume curve -> plot
-    MT::IOraw=true;
     arr Y;
     Y.referTo(X);
     Y.resize(Y.N, 1);
-    MT::save(Y, "z.pltX");
+    write(LIST<arr>(X), "z.pltX");
     gnuplot("plot 'z.pltX' us 1");
-    MT::IOraw=false;
     return;
   }
 }
 
 void write(const arr& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
-  std::ofstream fil(filename);
+  std::ofstream fil;
+  MT::open(fil, filename);
   X.write(fil, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
   fil.close();
 }
 
-void write(const MT::Array<arr*>& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
-  std::ofstream fil(filename);
+void write(const arrL& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
+  std::ofstream fil;
+  MT::open(fil, filename);
   catCol(X).write(fil, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
   fil.close();
 }
 
-void write(const arr& X, const arr& Y, const char* name) {
-  std::ofstream os;
-  MT::open(os, name);
-  MT::IOraw=true;
-  uint i, j;
-  if(X.nd==1) {
-    for(i=0; i<X.N; i++) os <<X(i) <<' ' <<Y(i) <<std::endl;
-  }
-  if(X.nd==2) {
-    for(i=0; i<X.d0; i++) {
-      for(j=0; j<X[i].N; j++) os <<X[i].elem(j) <<' ';
-      for(j=0; j<Y[i].N; j++) os <<Y[i].elem(j) <<' ';
-      os <<std::endl;
-    }
-  }
-}
-
-void write(const arr& X, const arr& Y, const arr& Z, const char* name) {
-  std::ofstream os;
-  MT::open(os, name);
-  MT::IOraw=true;
-  uint i, j;
-  if(X.nd==1) {
-    for(i=0; i<X.N; i++) os <<X(i) <<' ' <<Y(i) <<' ' <<Z(i) <<std::endl;
-  }
-  if(X.nd==2) {
-    for(i=0; i<X.d0; i++) {
-      for(j=0; j<X[i].N; j++) os <<X[i].elem(j) <<' ';
-      for(j=0; j<Y[i].N; j++) os <<Y[i].elem(j) <<' ';
-      for(j=0; j<Y[i].N; j++) os <<Z[i].elem(j) <<' ';
-      os <<std::endl;
-    }
-  }
-}
-
-void write(const arr& X, const arr& Y, const arr& Z, const arr& A, const char* name) {
-  std::ofstream os;
-  MT::open(os, name);
-  MT::IOraw=true;
-  uint i, j;
-  if(X.nd==1) {
-    for(i=0; i<X.N; i++) os <<X(i) <<' ' <<Y(i) <<' ' <<Z(i) <<' ' <<A(i) <<std::endl;
-  }
-  if(X.nd==2) {
-    for(i=0; i<X.d0; i++) {
-      for(j=0; j<X[i].N; j++) os <<X[i].elem(j) <<' ';
-      for(j=0; j<Y[i].N; j++) os <<Y[i].elem(j) <<' ';
-      for(j=0; j<Y[i].N; j++) os <<Z[i].elem(j) <<' ';
-      for(j=0; j<A[i].N; j++) os <<A[i].elem(j) <<' ';
-      os <<std::endl;
-    }
-  }
-}
-
-void write(const arr& X, const arr& Y, const arr& Z, const arr& A, const arr& B, const char* name) {
-  std::ofstream os;
-  MT::open(os, name);
-  MT::IOraw=true;
-  uint i, j;
-  if(X.nd==1) {
-    for(i=0; i<X.N; i++) os <<X(i) <<' ' <<Y(i) <<' ' <<Z(i) <<' ' <<A(i) <<' ' <<B(i) <<std::endl;
-  }
-  if(X.nd==2) {
-    for(i=0; i<X.d0; i++) {
-      for(j=0; j<X[i].N; j++) os <<X[i].elem(j) <<' ';
-      for(j=0; j<Y[i].N; j++) os <<Y[i].elem(j) <<' ';
-      for(j=0; j<Y[i].N; j++) os <<Z[i].elem(j) <<' ';
-      for(j=0; j<A[i].N; j++) os <<A[i].elem(j) <<' ';
-      for(j=0; j<B[i].N; j++) os <<B[i].elem(j) <<' ';
-      os <<std::endl;
-    }
-  }
-}
-
 void write_ppm(const byteA &img, const char *file_name, bool swap_rows) {
+  if(!img.N) MT_MSG("empty image");
   CHECK(img.nd==2 || (img.nd==3 && img.d2==3), "only rgb or gray images to ppm");
   ofstream os;
   os.open(file_name, std::ios::out | std::ios::binary);
@@ -928,6 +851,7 @@ void add_alpha_channel(byteA &img, byte alpha) {
 }
 
 void flip_image(byteA &img) {
+  if(!img.N) return;
   uint h=img.d0, n=img.N/img.d0;
   byteA line(n);
   byte *a, *b, *c;
@@ -1338,6 +1262,7 @@ void RowShiftedPackedMatrix::computeColPatches(bool assumeMonotonic) {
 }
 
 arr RowShiftedPackedMatrix::At_A() {
+  //TODO use blas DSYRK instead?
   arr R;
   RowShiftedPackedMatrix *Raux = auxRowShifted(R, real_d1, Z.d1, real_d1);
   for(uint i=0; i<R.d0; i++) Raux->rowShift(i) = i;
@@ -1527,9 +1452,9 @@ template MT::Array<MT::String>::~Array();
 template MT::Array<MT::String*>::Array();
 template MT::Array<MT::String*>::~Array();
 
-template MT::Array<arr*>::Array();
-template MT::Array<arr*>::Array(uint);
-template MT::Array<arr*>::~Array();
+template arrL::Array();
+template arrL::Array(uint);
+template arrL::~Array();
 
 template MT::Array<char const*>::Array();
 template MT::Array<char const*>::Array(uint);
@@ -1545,6 +1470,7 @@ template MT::Array<arr>::~Array();
 
 #include "util_t.h"
 template void MT::save<uintA>(const uintA&, const char*);
+template void MT::save<arr>(const arr&, const char*);
 template void MT::load<arr>(arr&, const char*, bool);
 
 void linkArray() { cout <<"*** libArray.so linked ***" <<endl; }
