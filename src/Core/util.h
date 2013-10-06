@@ -309,6 +309,22 @@ inline void breakPoint() {
 #endif
 
 
+//----- TESTING
+#ifndef MLR_EXAMPLES_AS_TESTS
+#  define TEST(name) test##name()
+#  define MAIN main
+#else
+#  define GTEST_DONT_DEFINE_TEST 1
+#  include <gtest/gtest.h>
+#  define TEST(name) test##name(){} GTEST_TEST(arrayTest, name)
+#  define MAIN \
+     main(int argc, char** argv){ \
+       testing::InitGoogleTest(&argc, argv);	\
+       return RUN_ALL_TESTS();			\
+     } int mymain
+#endif
+
+
 //----- verbose:
 #define VERBOSE(l, x) if(l<=MT::getVerboseLevel()) x;
 
