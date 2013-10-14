@@ -25,6 +25,7 @@ void close(const ThreadL& P);
 struct Mutex {
   pthread_mutex_t mutex;
   int state; ///< 0=unlocked, otherwise=syscall(SYS_gettid)
+  uint recursive; ///< number of times it's been locked
   Mutex();
   ~Mutex();
   void lock();
@@ -220,7 +221,7 @@ struct Thread{
   void main(); //this is the thread main - should be private!
 };
 
-/// a basic thread
+/*/// a basic thread */
 /* struct Thread { */
 /*   Thread(); */
 /*   ~Thread(); */
@@ -228,5 +229,24 @@ struct Thread{
 /*   void close(); */
 /*   virtual void main() = 0; */
 /* }; */
+
+// ================================================
+//
+// throut utilities
+//
+
+namespace throut {
+  void throutRegHeading(const void *obj, const MT::String &head);
+  void throutRegHeading(const void *obj, const char *head);
+  void throutUnregHeading(const void *obj);
+  void throutUnregAll();
+  bool throutContains(const void *obj);
+
+  void throut(const char *m);
+  void throut(const MT::String &m);
+
+  void throut(const void *obj, const char *m);
+  void throut(const void *obj, const MT::String &m);
+}
 
 #endif

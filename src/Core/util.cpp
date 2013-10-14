@@ -824,6 +824,27 @@ uint MT::String::read(std::istream& is, const char* skipSymbols, const char *sto
   return N;
 }
 
+//===========================================================================
+//
+// string-filling routines
+
+/** @brief fills the string with the date and time in the format
+ * yy-mm-dd--hh-mm-mm */
+void MT::getNowString(MT::String &str) {
+  time_t t = time(0);
+  struct tm *now = localtime(&t);
+
+  char s[19]; //-- just enough
+  sprintf(s, "%02d-%02d-%02d--%02d-%02d-%02d",
+    now->tm_year-100,
+    now->tm_mon+1,
+    now->tm_mday,
+    now->tm_hour,
+    now->tm_min,
+    now->tm_sec);
+
+  str.clear() << s;
+}
 
 //===========================================================================
 //
