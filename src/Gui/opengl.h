@@ -24,6 +24,9 @@
 #ifndef MT_opengl_h
 #define MT_opengl_h
 
+#include <Core/array.h>
+#include <Core/thread.h>
+
 #include <X11/Xlib.h>
 
 #ifdef MT_FLTK
@@ -47,10 +50,6 @@
 #ifdef MT_GL2PS
 #  include<gl2ps.h>
 #endif
-
-#include <Core/array.h>
-#include <Core/thread.h>
-
 
 namespace ors {
 struct Transformation;
