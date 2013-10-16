@@ -135,8 +135,8 @@ double potential(double x, double margin, double power);
 double d_potential(double x, double margin, double power);
 
 //----- time access
-double absTime();
-double realTime();
+double clockTime(); //(really on the clock)
+double realTime(); //(since process start)
 double cpuTime();
 double sysTime();
 double totalTime();
@@ -310,6 +310,9 @@ inline void breakPoint() {
 #  define CHECK_ZERO(expr, tolerance, msg) \
   if(fabs(expr)>tolerance){ HALT("CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg) } \
   //else{ MT_MSG("CHECK_ZERO SUCCESS: '" <<#expr<<"'=" <<expr <<" < " <<tolerance)}
+
+#  define CHECK_EQ(A, B, msg) \
+  if(!(A==B)){ HALT("CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg) } \
 
 #else
 #  define CHECK(cond, msg)
