@@ -461,16 +461,16 @@ double d_potential(double x, double margin, double power){
   return power*pow(y,power-1.)*MT::sign(y)/margin;
 }
 
-/** @brief double time since start of the process in floating-point seconds
+/** @brief double time on the clock
   (probably in micro second resolution) -- Windows checked! */
-double absTime() {
+double clockTime() {
 #ifndef MT_TIMEB
   static timeval t; gettimeofday(&t, 0);
-  return ((double)(t.tv_sec) +
+  return ((double)(t.tv_sec%86400) + //modulo TODAY
           (double)(t.tv_usec)/1000000.);
 #else
   static _timeb t; _ftime(&t);
-  return ((double)(t.time) +
+  return ((double)(t.time%86400) + //modulo TODAY
           (double)(t.millitm-startTime.millitm)/1000.);
 #endif
 }

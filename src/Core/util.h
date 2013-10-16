@@ -135,8 +135,8 @@ double potential(double x, double margin, double power);
 double d_potential(double x, double margin, double power);
 
 //----- time access
-double absTime();
-double realTime();
+double clockTime(); //(really on the clock)
+double realTime(); //(since process start)
 double cpuTime();
 double sysTime();
 double totalTime();
