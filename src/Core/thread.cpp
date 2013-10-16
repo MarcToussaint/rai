@@ -438,7 +438,13 @@ void Thread::main() {
   //if(Thread::threadPriority) setRRscheduling(Thread::threadPriority);
   //if(Thread::threadPriority) setNice(Thread::threadPriority);
 
-  open(); //virtual open routine
+  try{
+    open(); //virtual open routine
+  } catch(...) {
+    state.setValue(tsFAILURE);
+    cerr <<"*** open() of Thread '" <<name <<"' failed! -- closing it again";
+    return;
+  }
 
   state.lock();
   if(state.value==tsOPENING){

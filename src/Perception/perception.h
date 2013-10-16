@@ -27,20 +27,21 @@ struct Patching;
 struct SURFfeatures;
 struct PerceptionOutput;
 
-//-- Process creators
-BEGIN_MODULE1(ImageViewer)      ACCESS(byteA, img)       END_MODULE()
-BEGIN_MODULE1(PointCloudViewer) ACCESS(arr, pts)         ACCESS(arr, cols)       END_MODULE()
-BEGIN_MODULE1(OpencvCamera)     ACCESS(byteA, rgb)       END_MODULE()
+//-- Module declarations
+BEGIN_MODULE (ImageViewer)      ACCESS(byteA, img)       END_MODULE()
+BEGIN_MODULE (ImageWriter)      ACCESS(byteA, img)       END_MODULE()
+BEGIN_MODULE (PointCloudViewer) ACCESS(arr, pts)         ACCESS(arr, cols)       END_MODULE()
+BEGIN_MODULE (OpencvCamera)     ACCESS(byteA, rgb)       END_MODULE()
 BEGIN_MODULE (CvtGray)          ACCESS(byteA, rgb)       ACCESS(byteA, gray)     END_MODULE()
 BEGIN_MODULE (CvtHsv)           ACCESS(byteA, rgb)       ACCESS(byteA, hsv)       END_MODULE()
-BEGIN_MODULE1(HsvFilter)        ACCESS(byteA, hsv)       ACCESS(floatA, evi)      END_MODULE()
-BEGIN_MODULE1(MotionFilter)     ACCESS(byteA, rgb)       ACCESS(byteA, motion)    END_MODULE()
+BEGIN_MODULE (HsvFilter)        ACCESS(byteA, hsv)       ACCESS(floatA, evi)      END_MODULE()
+BEGIN_MODULE (MotionFilter)     ACCESS(byteA, rgb)       ACCESS(byteA, motion)    END_MODULE()
 BEGIN_MODULE (DifferenceFilter) ACCESS(byteA, i1)        ACCESS(byteA, i2)        ACCESS(byteA, diffImage) END_MODULE()
 BEGIN_MODULE (CannyFilter)      ACCESS(byteA, grayImage) ACCESS(byteA, cannyImage)       END_MODULE()
 BEGIN_MODULE (Patcher)          ACCESS(byteA, rgbImage)  ACCESS(Patching, patchImage)    END_MODULE()
-BEGIN_MODULE1(SURFer)           ACCESS(byteA, grayImage) ACCESS(SURFfeatures, features)  END_MODULE()
+BEGIN_MODULE (SURFer)           ACCESS(byteA, grayImage) ACCESS(SURFfeatures, features)  END_MODULE()
 BEGIN_MODULE (HoughLineFilter)  ACCESS(byteA, grayImage) ACCESS(HoughLines, houghLines)  END_MODULE()
-BEGIN_MODULE1(ShapeFitter)      ACCESS(floatA, eviL) ACCESS(floatA, eviR) ACCESS(PerceptionOutput, perc) END_MODULE()
+BEGIN_MODULE (ShapeFitter)      ACCESS(floatA, eviL) ACCESS(floatA, eviR) ACCESS(PerceptionOutput, perc) END_MODULE()
 
 
 //===========================================================================

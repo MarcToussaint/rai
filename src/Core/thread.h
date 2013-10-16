@@ -4,7 +4,7 @@
 #include "util.h"
 #include "array.h"
 
-enum ThreadState { tsIDLE=0, tsCLOSE=-1, tsOPENING=-2, tsLOOPING=-3, tsBEATING=-4 }; //positive states indicate steps-to-go
+enum ThreadState { tsIDLE=0, tsCLOSE=-1, tsOPENING=-2, tsLOOPING=-3, tsBEATING=-4, tsFAILURE=-5 }; //positive states indicate steps-to-go
 struct ConditionVariable;
 struct Thread;
 typedef MT::Array<ConditionVariable*> ConditionVariableL;
