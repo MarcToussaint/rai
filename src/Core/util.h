@@ -311,6 +311,9 @@ inline void breakPoint() {
   if(fabs(expr)>tolerance){ HALT("CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg) } \
   //else{ MT_MSG("CHECK_ZERO SUCCESS: '" <<#expr<<"'=" <<expr <<" < " <<tolerance)}
 
+#  define CHECK_EQ(A, B, msg) \
+  if(!(A==B)){ HALT("CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg) } \
+
 #else
 #  define CHECK(cond, msg)
 #endif
