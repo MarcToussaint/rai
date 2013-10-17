@@ -21,17 +21,6 @@ void close(const ThreadL& P);
 
 #ifndef MT_MSVC
 
-/// a basic mutex lock
-struct Mutex {
-  pthread_mutex_t mutex;
-  int state; ///< 0=unlocked, otherwise=syscall(SYS_gettid)
-  uint recursive; ///< number of times it's been locked
-  Mutex();
-  ~Mutex();
-  void lock();
-  void unlock();
-};
-
 /// a basic read/write access lock
 struct RWLock {
   pthread_rwlock_t lock;
@@ -70,36 +59,6 @@ struct ConditionVariable {
   void waitForValueSmallerThan(int i, bool userHasLocked=false); ///< return value is the state after the waiting
   void waitUntil(double absTime, bool userHasLocked=false);
 };
-
-/// a generic singleton
-template<class T>
-struct Singleton {
-  struct SingletonFields { //class cannot have own members: everything in the singleton which is created on first demand
-    T obj;
-    RWLock lock;
-  };
-
-  static SingletonFields *singleton;
-
-  SingletonFields& getSingleton() const {
-    static bool currentlyCreating=false;
-    if(currentlyCreating) return *((SingletonFields*) NULL);
-    if(!singleton) {
-      static Mutex m;
-      m.lock();
-      if(!singleton) {
-        currentlyCreating=true;
-        singleton = new SingletonFields();
-        currentlyCreating=false;
-      }
-      m.unlock();
-    }
-    return *singleton;
-  }
-
-  T& obj() { return getSingleton().obj; }
-};
-template<class T> typename Singleton<T>::SingletonFields *Singleton<T>::singleton=NULL;
 
 
 //===========================================================================

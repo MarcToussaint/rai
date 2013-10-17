@@ -13,44 +13,6 @@
 
 //===========================================================================
 //
-// Mutex
-//
-
-#define MUTEX_DUMP(x) //x
-
-Mutex::Mutex() {
-  pthread_mutexattr_t atts;
-  int rc;
-  rc = pthread_mutexattr_init(&atts);  if(rc) HALT("pthread failed with err " <<rc <<strerror(rc));
-  rc = pthread_mutexattr_settype(&atts, PTHREAD_MUTEX_RECURSIVE_NP);  if(rc) HALT("pthread failed with err " <<rc <<strerror(rc));
-  rc = pthread_mutex_init(&mutex, &atts);
-  //mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
-  state=0;
-  recursive=0;
-}
-
-Mutex::~Mutex() {
-  CHECK(!state, "Mutex destroyed without unlocking first");
-  int rc = pthread_mutex_destroy(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-}
-
-void Mutex::lock() {
-  int rc = pthread_mutex_lock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  recursive++;
-  state=syscall(SYS_gettid);
-  MUTEX_DUMP(cout <<"Mutex-lock: " <<state <<" (rec: " <<recursive << ")" <<endl);
-}
-
-void Mutex::unlock() {
-  MUTEX_DUMP(cout <<"Mutex-unlock: " <<state <<" (rec: " <<recursive << ")" <<endl);
-  if(--recursive == 0)
-    state=0;
-  int rc = pthread_mutex_unlock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-}
-
-
-//===========================================================================
-//
 // Access RWLock
 //
 
