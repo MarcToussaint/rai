@@ -109,7 +109,7 @@ template<class T> struct Array {
   Array(uint D0, uint D1);
   Array(uint D0, uint D1, uint D2);
   Array(const T* p, uint size);
-  
+  Array(std::initializer_list<T> list);
   ~Array();
   
   Array<T>& operator=(const T& v);
