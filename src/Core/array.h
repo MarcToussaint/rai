@@ -193,6 +193,11 @@ template<class T> struct Array {
   Array<T> sub(int i, int I, int j, int J) const;
   Array<T> sub(int i, int I, int j, int J, int k, int K) const;
   Array<T> sub(int i, int I, Array<uint> cols) const;
+  Array<T> row(uint row_index) const;
+  Array<T> rows(uint start_row, uint end_row) const;
+  Array<T> col(uint col_index) const;
+  Array<T> cols(uint start_col, uint end_col) const;
+
   void getMatrixBlock(Array<T>& B, uint lo0, uint lo1) const;
   void getVectorBlock(Array<T>& B, uint lo) const;
   void copyInto(T *buffer) const;
