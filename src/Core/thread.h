@@ -25,6 +25,7 @@ void close(const ThreadL& P);
 struct Mutex {
   pthread_mutex_t mutex;
   int state; ///< 0=unlocked, otherwise=syscall(SYS_gettid)
+  uint recursive; ///< number of times it's been locked
   Mutex();
   ~Mutex();
   void lock();
@@ -108,15 +109,15 @@ template<class T> typename Singleton<T>::SingletonFields *Singleton<T>::singleto
 
 /// a simple struct to realize a strict tic tac timing (call step() once in a loop)
 struct Metronome {
-  long targetDt;
-  timespec ticTime, lastTime;
+  double ticInterval;
+  timespec ticTime;
   uint tics;
   const char* name;                   ///< name
 
-  Metronome(const char* name, long _targetDt); ///< set tic tac time in milli seconds
+  Metronome(const char* name, double ticIntervalSec); ///< set tic tac time in micro seconds
   ~Metronome();
 
-  void reset(long _targetDt);
+  void reset(double ticIntervalSec);
   void waitForTic();              ///< waits until the next tic
   double getTimeSinceTic();       ///< time since last tic
 };
@@ -136,6 +137,7 @@ struct CycleTimer {
 };
 
 #else //MT_MSVC
+
 struct Mutex {
   int state;
   Mutex() {};
@@ -143,6 +145,7 @@ struct Mutex {
   void lock() { MT_MSG("fake MSVC Mutex"); }
   void unlock() { MT_MSG("fake MSVC Mutex"); }
 };
+
 struct ConditionVariable {
   int value;
   ConditionVariable(int initialState=0) {}
@@ -182,10 +185,10 @@ struct Thread{
   ConditionVariableL listensTo;
   //ParameterL dependsOn;
   pid_t tid;                     ///< system thread id
-#if 1 //ndef MT_QT
+#ifndef MT_QT
   pthread_t thread;
 #else
-  struct sThread *s;
+  struct sThread *thread;
 #endif
   uint step_count;
   Metronome *metronome;          ///< used for beat-looping
@@ -218,7 +221,7 @@ struct Thread{
   void main(); //this is the thread main - should be private!
 };
 
-/// a basic thread
+/*/// a basic thread */
 /* struct Thread { */
 /*   Thread(); */
 /*   ~Thread(); */
@@ -226,5 +229,24 @@ struct Thread{
 /*   void close(); */
 /*   virtual void main() = 0; */
 /* }; */
+
+// ================================================
+//
+// throut utilities
+//
+
+namespace throut {
+  void throutRegHeading(const void *obj, const MT::String &head);
+  void throutRegHeading(const void *obj, const char *head);
+  void throutUnregHeading(const void *obj);
+  void throutUnregAll();
+  bool throutContains(const void *obj);
+
+  void throut(const char *m);
+  void throut(const MT::String &m);
+
+  void throut(const void *obj, const char *m);
+  void throut(const void *obj, const MT::String &m);
+}
 
 #endif

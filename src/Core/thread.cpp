@@ -1,6 +1,10 @@
 #include "thread.h"
+
 #ifndef MT_MSVC
 #  include <sys/syscall.h>
+#endif
+#ifdef MT_QT
+#  include <QtCore/QThread>
 #endif
 #include <errno.h>
 
@@ -22,22 +26,25 @@ Mutex::Mutex() {
   rc = pthread_mutex_init(&mutex, &atts);
   //mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
   state=0;
+  recursive=0;
 }
 
 Mutex::~Mutex() {
-  CHECK(!state, "Mutex destropyed without unlocking first");
+  CHECK(!state, "Mutex destroyed without unlocking first");
   int rc = pthread_mutex_destroy(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
 void Mutex::lock() {
   int rc = pthread_mutex_lock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  recursive++;
   state=syscall(SYS_gettid);
-  MUTEX_DUMP(cout <<"Mutex-lock: " <<state <<endl);
+  MUTEX_DUMP(cout <<"Mutex-lock: " <<state <<" (rec: " <<recursive << ")" <<endl);
 }
 
 void Mutex::unlock() {
-  MUTEX_DUMP(cout <<"Mutex-unlock: " <<state <<endl);
-  state=0;
+  MUTEX_DUMP(cout <<"Mutex-unlock: " <<state <<" (rec: " <<recursive << ")" <<endl);
+  if(--recursive == 0)
+    state=0;
   int rc = pthread_mutex_unlock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
@@ -53,7 +60,7 @@ RWLock::RWLock() {
 }
 
 RWLock::~RWLock() {
-  CHECK(!state, "");
+  CHECK(!state, "Destroying locked RWLock");
   int rc = pthread_rwlock_destroy(&lock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
@@ -142,7 +149,9 @@ void ConditionVariable::waitForSignal(bool userHasLocked) {
 void ConditionVariable::waitForSignal(double seconds, bool userHasLocked) {
   struct timespec timeout;
   clock_gettime(CLOCK_MONOTONIC, &timeout);
-  timeout.tv_nsec+=1000000000l*seconds;
+  long secs = (long)(floor(seconds));
+  timeout.tv_sec  += secs;
+  timeout.tv_nsec += (long)(floor(1000000000. * (seconds-(double)secs)));
   if(timeout.tv_nsec>1000000000l) {
     timeout.tv_sec+=1;
     timeout.tv_nsec-=1000000000l;
@@ -207,27 +216,28 @@ void ConditionVariable::waitUntil(double absTime, bool userHasLocked) {
 // Metronome
 //
 
-Metronome::Metronome(const char* _name, long _targetDt) {
+Metronome::Metronome(const char* _name, double ticIntervalSec) {
   name=_name;
-  reset(_targetDt);
+  reset(ticIntervalSec);
 }
 
 Metronome::~Metronome() {
 }
 
-void Metronome::reset(long _targetDt=0) {
+void Metronome::reset(double ticIntervalSec) {
   clock_gettime(CLOCK_MONOTONIC, &ticTime);
-  lastTime=ticTime;
   tics=0;
-  targetDt = _targetDt;
+  ticInterval = ticIntervalSec;
 }
 
 void Metronome::waitForTic() {
   //compute target time
-  ticTime.tv_nsec+=1000000l*targetDt;
+  long secs = (long)(floor(ticInterval));
+  ticTime.tv_sec  += secs;
+  ticTime.tv_nsec += (long)(floor(1000000000. * (ticInterval-(double)secs)));
   while(ticTime.tv_nsec>1000000000l) {
-    ticTime.tv_sec+=1;
-    ticTime.tv_nsec-=1000000000l;
+    ticTime.tv_sec  += 1;
+    ticTime.tv_nsec -= 1000000000l;
   }
   //wait for target time
   int rc = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ticTime, NULL);
@@ -297,24 +307,32 @@ void* Thread_staticMain(void *_self) {
   return NULL;
 }
 
+#ifdef MT_QT
+class sThread:QThread {
+  Q_OBJECT
+public:
+  Thread *th;
+  sThread(Thread *_th, const char* name):th(_th){ setObjectName(name); }
+  ~sThread(){}
+  void open(){ start(); }
+  void close(){ wait(); }
+protected:
+  void run(){ th->main();  }
+};
+#endif
+
 Thread::Thread(const char* _name): name(_name), state(tsCLOSE), tid(0), thread(0), step_count(0), metronome(NULL)  {
   listensTo.memMove=true;
-//  biros().writeAccess(module);
-//  biros().processes.memMove=true;
-//  biros().processes.append(this);
-//  biros().deAccess(module);
 }
 
 Thread::~Thread() {
   if(!isClosed()) threadClose();
-//  biros().writeAccess(module);
-//  biros().processes.removeValue(this);
-//  biros().deAccess(module);
 }
 
 void Thread::threadOpen(int priority) {
   state.lock();
   if(!isClosed()){ state.unlock(); return; } //this is already open -- or has just beend opened (parallel call to threadOpen)
+#ifndef MT_QT
   int rc;
   pthread_attr_t atts;
   rc = pthread_attr_init(&atts); if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
@@ -330,6 +348,10 @@ void Thread::threadOpen(int priority) {
   }*/
   //prctl(PR_SET_NAME, proc->name.p);
   if(name) pthread_setname_np(thread, name);
+#else
+  thread = new sThread(this, "hallo");
+  thread->open();
+#endif
   state.value=tsOPENING;
   state.unlock();
 }
@@ -337,9 +359,15 @@ void Thread::threadOpen(int priority) {
 void Thread::threadClose() {
   state.setValue(tsCLOSE);
   if(!thread) return;
+#ifndef MT_QT
   int rc;
   rc = pthread_join(thread, NULL);     if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   thread=0;
+#else
+  thread->close();
+  delete thread;
+  thread=NULL;
+#endif
 }
 
 void Thread::threadStep(uint steps, bool wait) {
@@ -391,9 +419,9 @@ void Thread::threadLoop() {
 
 void Thread::threadLoopWithBeat(double sec) {
   if(!metronome)
-    metronome=new Metronome("threadTiccer", 1000.*sec);
+    metronome=new Metronome("threadTiccer", sec);
   else
-    metronome->reset(1000.*sec);
+    metronome->reset(sec);
   if(isClosed()) threadOpen();
   state.setValue(tsBEATING);
 }
@@ -449,28 +477,6 @@ void Thread::main() {
   close(); //virtual close routine
 }
 
-#ifdef MT_QT
-
-struct sThread:QThread {
-  Thread *th;
-  void run() {  th->main();  }
-};
-
-Thread::Thread():s(NULL) {
-  s = new sThread;
-  s->th=this;
-}
-
-void Thread::open() { s->setObjectName("hallo");  s->start(); }
-
-Thread::~Thread() { close(); delete s; }
-
-void Thread::close() { s->quit(); }
-
-bool Thread::isOpen() { return s->isRunning(); }
-
-#endif
-
 
 //===========================================================================
 //
@@ -490,4 +496,234 @@ void wait(const ThreadL& P) {
 void close(const ThreadL& P) {
   Thread *p; uint i;
   for_list(i, p, P) p->threadClose();
+}
+
+//===========================================================================
+//
+// throut Utilities
+//
+
+#include <map>
+
+/** @namespace throut
+ *  @brief throut (threaded-out); Concurrent access to console output.
+ *
+ * In multi-threaded environments, concurrent accesses to the console output may
+ * overlap producing unreadable text. Throut solves this.
+ *
+ * Instead of using
+ * @code
+ * cout << "some message" << endl;
+ * cout << "value = " << v << endl;
+ * @endcode
+ * 
+ * use
+ * @code
+ * throut::throut("some message");
+ * throut::throut(STRING("value = " << v));
+ * @endcode
+ *
+ * You can "register" a heading with an object pointer, so that referring to
+ * that same pointer will always pre-pend the message with that heading. This is
+ * useful to identify the object issuing the message.
+ *
+ * @code
+ * MyObject *p = new MyObject();
+ * throut::throutRegHeading(p, "Object: "); // registers a heading to p
+ * // some code
+ * throut::throut(p, "message!"); // prints "Object: message!"
+ * // some code
+ * throut::throutUnregHeading(p); // unregisters heading related with p
+ * @endcode
+ *
+ * It is more appropriate to register a heading within the constructor of the
+ * object which will issue the messages, so as to simply use the key-word
+ * 'this'. In this case, unregistering should be handled in the deconstructor.
+ *
+ * @code
+ * using namespace throut;
+ * class MyObject {
+ *   int ID;
+ *   MyObject(int id): ID(id) {
+ *     throutRegHeading(this, STRING("Object(" << ID << "): "));
+ *   }
+ *
+ *   ~MyObject() {
+ *     throutUnregHeading(this);
+ *   }
+ *
+ *   void process() {
+ *     // some code
+ *     // outputs "Object(17): message!" (assuming ID = 17);
+ *     throut(this, "message!");
+ *     // some code
+ *   }
+ * };
+ * @endcode
+ * */
+namespace throut {
+  /**@brief "private" variable, not included in header.
+   *
+   * - DO NOT USE
+   */
+  RWLock throutRWLock;
+  /**@brief "private" variable, not included in header.
+   *
+   * - DO NOT USE
+   */
+  Mutex msgMutex;
+  /**@brief "private" variable, not included in header.
+   *
+   * - DO NOT USE
+   */
+  std::map<const void*, const char*> throutMap;
+
+  /**@brief "private" method, not included in header.
+   *
+   * - DO NOT USE
+   */
+  bool throutContains_private(const void *obj) {
+    return throutMap.count(obj) == 1;
+  }
+
+  /**@brief "private" method, not included in header.
+   *
+   * - DO NOT USE
+   */
+  bool throutGetHeading_private(const void *obj, char **head) {
+    bool r = throutContains_private(obj);
+    if(head != NULL)
+      *head = r? (char*)throutMap[obj]: NULL;
+    return r;
+  }
+
+  /**@brief "private" method, not included in header.
+   *
+   * - DO NOT USE
+   */
+  void throutUnregHeading_private(const void *obj) {
+    if(throutContains_private(obj)) {
+      delete throutMap[obj];
+      throutMap.erase(obj);
+    }
+  }
+
+  /**@brief registers an object's heading
+   *
+   * - It is possible to register a heading to the NULL pointer.
+   * - Registering a new heading to an already registered object will simply
+   * over-write the older heading.
+   */
+  void throutRegHeading(const void *obj, const MT::String &head) {
+    size_t ml = head.N;
+    char *p = new char[ml+1];
+    memcpy(p, (const char*)head, ml+1);
+
+    throutRWLock.writeLock();
+    throutUnregHeading_private(obj);
+    throutMap[obj] = p;
+    throutRWLock.unlock();
+  }
+
+  /**@brief registers an object's heading
+   *
+   * - It is possible to register a heading to the NULL pointer.
+   * - Registering a new heading to an already registered object will simply
+   * over-write the older heading.
+   */
+  void throutRegHeading(const void *obj, const char *head) {
+    size_t ml = strlen(head);
+    char *p = new char[ml+1];
+    memcpy(p, head, ml+1);
+
+    throutRWLock.writeLock();
+    throutUnregHeading_private(obj);
+    throutMap[obj] = p;
+    throutRWLock.unlock();
+  }
+
+  /**@brief unregisters an object's heading
+   *
+   * - Memory leaks will occur if a heading is not unregistered
+   */
+  void throutUnregHeading(const void *obj) {
+    throutRWLock.writeLock();
+    throutUnregHeading_private(obj);
+    throutRWLock.unlock();
+  }
+
+  /**@brief unregisters all headings
+   *
+   * - Useful to avoid all memory leaks when throut methods are no longer
+   *   needed.
+   * - Ideally, unregistering should be handled by specific calls to
+   *   throut::throutUnregHeading().
+   */
+  void throutUnregAll() {
+    std::map<const void*, const char*>::iterator it;
+    throutRWLock.writeLock();
+    for(it = throutMap.begin(); it != throutMap.end(); ) {
+      throut(STRING("Deleting " << it->first << " " << it->second));
+      throutUnregHeading_private((it++)->first);
+    }
+    throutRWLock.unlock();
+  }
+
+  /**@brief checks if an object is currently registered */
+  bool throutContains(const void *obj) {
+    throutRWLock.readLock();
+    bool r = throutContains_private(obj);
+    throutRWLock.unlock();
+    return r;
+  }
+
+  /**@brief prints a message on the console
+   * 
+   * - NULL messages will be converted to "NULL"
+   */
+  void throut(const char *m) {
+    if(m == NULL) {
+      throut("NULL");
+      return;
+    }
+    msgMutex.lock();
+    std::cout << m << std::endl;
+    msgMutex.unlock();
+  }
+
+  /** @brief prints a message on the console */
+  void throut(const MT::String &m) {
+    throut((const char*)m);
+  }
+
+  /** @brief prints a message on the console, pre-pended with an object's heading
+   * 
+   * - NULL messages will be converted to "NULL".
+   * - Messages paired with unregistered objects will be issued pre-pended by
+   * "UNREGISTERED_OBJ: ".
+   */
+  void throut(const void *obj, const char *m) {
+    char *head = NULL;
+    throutRWLock.readLock();
+    if(throutGetHeading_private(obj, &head))
+      if(m == NULL)
+        throut(STRING(head << "NULL"));
+      else
+        throut(STRING(head << m));
+    else
+      if(m == NULL)
+        throut("UNREGISTERED_OBJ: NULL");
+      else
+        throut(STRING("UNREGISTERED_OBJ: " << m));
+    throutRWLock.unlock();
+  }
+
+  /** @brief prints a message on the console, pre-pended with an object's heading
+   * 
+   * - Messages paired with unregistered objects will be issued pre-pended by
+   * "UNREGISTERED_OBJ: ".
+   */
+  void throut(const void *obj, const MT::String &m) {
+    throut(obj, (const char*)m);
+  }
 }

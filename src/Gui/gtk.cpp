@@ -113,7 +113,7 @@ int gtkPopupMenuChoice(StringL& choices) {
     GtkWidget *item = gtk_menu_item_new_with_label(s->p);
     gtk_container_add(GTK_CONTAINER(menu), item);
     gtk_signal_connect_object(GTK_OBJECT(item), "activate",
-                              GTK_SIGNAL_FUNC(menuitem_response), (gpointer) i);
+                              GTK_SIGNAL_FUNC(menuitem_response), (gpointer)i);
   }
   menuChoice.setValue(-1);
   gtk_widget_show_all(menu);

@@ -312,6 +312,12 @@ void glShadowTransform()
 }
 */
 
+void glTransform(const ors::Transformation& t){
+  double GLmatrix[16];
+  t.getAffineMatrixGL(GLmatrix);
+  glLoadMatrixd(GLmatrix);
+}
+
 void glTransform(const double pos[3], const double R[12]) {
   GLfloat matrix[16];
   matrix[0]=R[0];
@@ -339,6 +345,7 @@ void glPushLightOff() { glGetBooleanv(GL_LIGHTING, &glLightIsOn); glDisable(GL_L
 void glPopLight() { if(glLightIsOn) glEnable(GL_LIGHTING); }
 
 void glDrawText(const char* txt, float x, float y, float z) {
+  if(!txt) return;
 #if 1 //defined MT_FREEGLUT
   glDisable(GL_DEPTH_TEST);
   glPushLightOff();
@@ -848,8 +855,16 @@ void glGrabImage(byteA& image) {
   CHECK(image.nd==2 || image.nd==3, "not an image format");
   GLint w=image.d1, h=image.d0;
   //CHECK(w<=glutGet(GLUT_WINDOW_WIDTH) && h<=glutGet(GLUT_WINDOW_HEIGHT), "grabbing large image from small window:" <<w <<' ' <<h <<' ' <<glutGet(GLUT_WINDOW_WIDTH) <<' ' <<glutGet(GLUT_WINDOW_HEIGHT));
-  
+  if(image.d1%4) {  //necessary: extend the image to have width mod 4
+    uint add=4-(image.d1%4);
+    if(image.nd==2) image.resize(image.d0, image.d1+add);
+    if(image.nd==3) image.resize(image.d0, image.d1+add, image.d2);
+  }
+  glReadBuffer(GL_FRONT);
+//  glReadBuffer(GL_BACK);
+
   //glPixelStorei(GL_PACK_SWAP_BYTES, 0);
+  glPixelStorei(GL_PACK_ALIGNMENT,4);
   switch(image.d2) {
     case 0:
     case 1:
@@ -861,12 +876,12 @@ void glGrabImage(byteA& image) {
       glPixelTransferf(GL_GREEN_SCALE, 1.);
       glPixelTransferf(GL_BLUE_SCALE, 1.);
       break;
-    case 2:
-      //glReadPixels(0, 0, w, h, GL_GA, GL_UNSIGNED_BYTE, image.p);
-      break;
+//    case 2:
+//      //glReadPixels(0, 0, w, h, GL_GA, GL_UNSIGNED_BYTE, image.p);
+//      break;
     case 3:
       glReadPixels(0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, image.p);
-      break;
+    break;
     case 4:
 #if defined MT_SunOS
       glReadPixels(0, 0, w, h, GL_ABGR_EXT, GL_UNSIGNED_BYTE, image.p);
@@ -1035,29 +1050,25 @@ bool glUI::hoverCallback(OpenGL& gl) { NICO }
 bool glUI::clickCallback(OpenGL& gl) { NICO }
 #endif
 
-
 //===========================================================================
 //
 // standalone draw routines for large data structures
 //
 
 #ifdef MT_GL
-void glDrawDots(void *dots) { glDrawDots(*(arr*)dots); }
+void glDrawDots(void *dots) { glDrawPointCloud(*(arr*)dots, NoArr); }
+void glDrawPointCloud(void *pc) { glDrawPointCloud(((arr*)pc)[0], ((arr*)pc)[1]); }
 
-void glDrawDots(arr& dots) {
-  if(!dots.N) return;
-  CHECK(dots.nd==2 && dots.d1==3, "wrong dimension");
-#if 0
-  glBegin(GL_POINTS);
-  for(uint i=0; i<dots.d0; i++) glVertex3dv(&dots(i, 0));
-  glEnd();
-#else
+void glDrawPointCloud(arr& pts, arr& cols) {
+  if(!pts.N) return;
+  CHECK(pts.nd==2 && pts.d1==3, "wrong dimension");
   glEnableClientState(GL_VERTEX_ARRAY);
-  glVertexPointer(3, GL_DOUBLE, 0, dots.p);
-  //if(mesh.C.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
-  //if(mesh.C.N) glColorPointer (3, GL_DOUBLE, 0, mesh.C.p );
-  glDrawArrays(GL_POINTS, 0, dots.d0);
-#endif
+  glVertexPointer(3, GL_DOUBLE, 0, pts.p);
+  if(&cols && cols.N==pts.N){
+    glEnableClientState(GL_COLOR_ARRAY);
+    glColorPointer(3, GL_DOUBLE, 0, cols.p );
+  }else glDisableClientState(GL_COLOR_ARRAY);
+  glDrawArrays(GL_POINTS, 0, pts.d0);
 }
 #endif
 
@@ -1066,7 +1077,7 @@ void glDrawDots(arr& dots) {
 // OpenGL implementations
 //
 
-OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy):s(NULL), reportEvents(false), width(0), height(0) {
+OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy):s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false) {
   //MT_MSG("creating OpenGL=" <<this);
   initGlEngine();
   s=new sOpenGL(this,title,w,h,posx,posy); //this might call some callbacks (Reshape/Draw) already!
@@ -1074,7 +1085,7 @@ OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy):s(NULL), reportE
   processEvents();
 }
 
-OpenGL::OpenGL(void *container):s(NULL), reportEvents(false), width(0), height(0) {
+OpenGL::OpenGL(void *container):s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false) {
   initGlEngine();
   s=new sOpenGL(this,container); //this might call some callbacks (Reshape/Draw) already!
   init();
@@ -1148,7 +1159,12 @@ void OpenGL::remove(void (*call)(void*), const void* classP) {
 
 /// clear the list of all draw routines
 void OpenGL::clear() {
-  drawers.resize(0);
+  views.clear();
+  drawers.clear();
+  initCalls.clear();
+  hoverCalls.clear();
+  clickCalls.clear();
+  keyCalls.clear();
 }
 
 /// add a hover callback
@@ -1208,19 +1224,12 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   
   //OpenGL initialization
   //two optional thins:
-  glEnable(GL_DEPTH_TEST);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glEnable(GL_CULL_FACE); glFrontFace(GL_CCW);
+//  glEnable(GL_DEPTH_TEST);  glDepthFunc(GL_LESS);
+  glEnable(GL_BLEND);  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glEnable(GL_CULL_FACE);  glFrontFace(GL_CCW);
   //glDisable(GL_CULL_FACE);
-  glDepthFunc(GL_LESS);
-  glShadeModel(GL_SMOOTH);
-  glShadeModel(GL_FLAT);
-  
-  glEnable(GL_DEPTH_TEST);
-  //glEnable(GL_CULL_FACE); glFrontFace(GL_CCW); //CCW is default!
-  glDepthFunc(GL_LESS);
   //glShadeModel(GL_SMOOTH);
+  glShadeModel(GL_FLAT);
   
   //select mode?
   GLint mode;
@@ -1336,10 +1345,15 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
     }
   }
   
-  //byteA img(h,w,3);
-  //glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, img.p);
-  //write_ppm(img,"z.opengl.ppm");
-  
+  if(captureImg){
+    captureImage.resize(h, w, 3);
+    glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
+  }
+  if(captureDep){
+    captureDepth.resize(h, w);
+    glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, captureDepth.p);
+  }
+
   //check matrix stack
   GLint s;
   glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &s);
@@ -1439,11 +1453,14 @@ int OpenGL::watch(const char *txt) {
 }
 
 /// update the view (in Qt: also starts displaying the window)
-bool OpenGL::update(const char *txt) {
+bool OpenGL::update(const char *txt, bool _captureImg, bool _captureDep) {
+  captureImg=_captureImg;
+  captureDep=_captureDep;
   pressedkey=0;
   if(txt) text.clear() <<txt;
   postRedrawEvent(false);
   processEvents();
+  captureImg=captureDep=false;
   return !pressedkey;
 }
 
@@ -1498,68 +1515,84 @@ void OpenGL::unproject(double &x, double &y, double &z,bool resetCamera) {
 }
 
 
-void OpenGL::capture(byteA &img, int w, int h, ors::Camera *cam) {
-#ifdef MT_GLUT
-#ifdef MT_FREEGLUT
-  glutSetWindow(s->windowID);
-#elif defined MT_GTKGL
-  gtkLock();
-#endif
-  //postRedrawEvent(false);
-  //processEvents();
-  Draw(w, h, cam);
-  img.resize(h, w, 3);
-  glGrabImage(img);
-#if defined MT_GTKGL
-  gtkUnlock();
-#endif
-#endif
-}
+//void OpenGL::capture(byteA &img, int w, int h, ors::Camera *cam) {
+////#ifdef MT_GLUT
+////#ifdef MT_FREEGLUT
+////  glutSetWindow(s->windowID);
+////#elif defined MT_GTKGL
+////  gtkLock();
+////#endif
+//  captureImg=true;
+//  postRedrawEvent(false);
+//  processEvents();
+//  captureImg=false;
+////  if(w==-1) w=width;
+////  if(h==-1) h=height;
+////  Draw(w, h, cam);
+////  img.resize(h, w, 3);
+////#if 1
+////  glutSwapBuffers();
+////  glGrabImage(img);
+////#else
+////  XImage *image = XGetImage(xdisplay(), xdraw(), 0, 0, w, h, 0, XYPixmap);
+////  for (int x = 0; x < w; x++){
+////    for (int y = 0; y < h; y++){
+////       img(x,y,0) = (XGetPixel(image,x,y) & image->red_mask) >> 16;
+////       img(x,y,1) = (XGetPixel(image,x,y) & image->green_mask) >> 8;
+////       img(x,y,2) = (XGetPixel(image,x,y) & image->blue_mask);
+////    }
+////  }
+////#endif
+////#if defined MT_GTKGL
+////  gtkUnlock();
+////#endif
+////#endif
+//}
 
-void OpenGL::captureDepth(byteA &depth, int w, int h, ors::Camera *cam) {
-#ifdef MT_GLUT
-#ifdef MT_FREEGLUT
-  glutSetWindow(s->windowID);
-#endif
-  //postRedrawEvent(false);
-  //processEvents();
-  Draw(w, h, cam);
-  depth.resize(h, w);
-  glGrabDepth(depth);
-#endif
-}
+//void OpenGL::captureDepth(byteA &depth, int w, int h, ors::Camera *cam) {
+//#ifdef MT_GLUT
+//#ifdef MT_FREEGLUT
+//  glutSetWindow(s->windowID);
+//#endif
+//  //postRedrawEvent(false);
+//  //processEvents();
+//  Draw(w, h, cam);
+//  depth.resize(h, w);
+//  glGrabDepth(depth);
+//#endif
+//}
 
-void OpenGL::captureDepth(floatA &depth, int w, int h, ors::Camera *cam) {
-#ifdef MT_GLUT
-#ifdef MT_FREEGLUT
-  glutSetWindow(s->windowID);
-#endif
-  //postRedrawEvent(false);
-  //processEvents();
-  Draw(w, h, cam);
-  depth.resize(h, w);
-  glGrabDepth(depth);
-#endif
-}
+//void OpenGL::captureDepth(floatA &depth, int w, int h, ors::Camera *cam) {
+//#ifdef MT_GLUT
+//#ifdef MT_FREEGLUT
+//  glutSetWindow(s->windowID);
+//#endif
+//  //postRedrawEvent(false);
+//  //processEvents();
+//  Draw(w, h, cam);
+//  depth.resize(h, w);
+//  glGrabDepth(depth);
+//#endif
+//}
 
-void OpenGL::captureStereo(byteA &imgL, byteA &imgR, int w, int h, ors::Camera *cam, double baseline) {
-#ifdef MT_GLUT
-#ifdef MT_FREEGLUT
-  glutSetWindow(s->windowID);
-#endif
-  postRedrawEvent(false);
-  processEvents();
-  Draw(w, h, cam);
-  imgR.resize(h, w, 3);
-  glGrabImage(imgR);
-  double xorg=cam->X->pos.x;
-  cam->X->pos.x -= baseline;
-  Draw(w, h, cam);
-  imgL.resize(h, w, 3);
-  glGrabImage(imgL);
-  cam->X->pos.x = xorg;
-#endif
-}
+//void OpenGL::captureStereo(byteA &imgL, byteA &imgR, int w, int h, ors::Camera *cam, double baseline) {
+//#ifdef MT_GLUT
+//#ifdef MT_FREEGLUT
+//  glutSetWindow(s->windowID);
+//#endif
+//  postRedrawEvent(false);
+//  processEvents();
+//  Draw(w, h, cam);
+//  imgR.resize(h, w, 3);
+//  glGrabImage(imgR);
+//  double xorg=cam->X->pos.x;
+//  cam->X->pos.x -= baseline;
+//  Draw(w, h, cam);
+//  imgL.resize(h, w, 3);
+//  glGrabImage(imgL);
+//  cam->X->pos.x = xorg;
+//#endif
+//}
 
 
 
