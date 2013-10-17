@@ -114,7 +114,15 @@ template<class T> struct Array {
   
   Array<T>& operator=(const T& v);
   Array<T>& operator=(const Array<T>& a);
-  
+
+  /// @name iterators
+  typedef T* iterator;
+  typedef const T* const_iterator;
+  iterator begin() { return p; }
+  iterator end() { return p+N; }
+  const_iterator begin() const { return p; }
+  const_iterator end() const { return p+N; }
+
   /// @name resizing
   Array<T>& resize(uint D0);
   Array<T>& resize(uint D0, uint D1);
