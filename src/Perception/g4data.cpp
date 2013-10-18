@@ -6,23 +6,12 @@
 #define G4DATA_MAKE_KEY(b, s) STRING((b) << "::" << (s))
 
 struct sG4Data {
-  std::map<const char*, intA> obj_inds;
+  std::map<String, intA> obj_inds;
   std::map<std::pair<int, int>, int> hub_sens_ind;
-
   arr data;
 
-  intA getObjectIndex(const char *obj) {
-    if(obj_inds.count(obj) == 0)
-      return -1;
-    return obj_inds.find(obj)->second;
-  }
-
-  int getHubSensIndex(int hid, int sid) {
-    std::pair<int, int> p(hid, sid);
-    if(hub_sens_ind.count(p) == 0)
-      return -1;
-    return hub_sens_ind.find(p)->second;
-  }
+  intA getObjectIndex(const char *obj);
+  int getHubSensIndex(int hid, int sid);
 };
 
 //==============================================================================
@@ -40,22 +29,24 @@ void G4Data::addSensor(const char *bname, const char *sname, int hid, int sid) {
   if(i == -1) HALT(STRING("No sensor " << hid << ":" << sid << " available."));
 
   String name = G4DATA_MAKE_KEY(bname, sname);
-  if(s->obj_inds.count((const char*)name) == 0)
+  if(s->obj_inds.count(name) == 0)
     s->obj_inds[name]; // creates entry automatically
   s->obj_inds[name].append(i);
 
-  if(s->obj_inds.count(bname) == 0)
-    s->obj_inds[bname]; // creates entry automatically
-  s->obj_inds[bname].append(i);
+  name = STRING(bname);
+  if(s->obj_inds.count(name) == 0)
+    s->obj_inds[name]; // creates entry automatically
+  s->obj_inds[name].append(i);
 }
 
 void G4Data::addSensor(const char *bname, int hid, int sid) {
   int i = s->getHubSensIndex(hid, sid);
   if(i == -1) HALT(STRING("No sensor " << hid << ":" << sid << " available."));
 
-  if(s->obj_inds.count(bname) == 0)
-    s->obj_inds[bname]; // creates entry automatically
-  s->obj_inds[bname].append(i);
+  String name = STRING(bname);
+  if(s->obj_inds.count(name) == 0)
+    s->obj_inds[name]; // creates entry automatically
+  s->obj_inds[name].append(i);
 }
 
 void G4Data::loadData(const char *fname) {
@@ -90,24 +81,26 @@ arr G4Data::query(const char *bname, const char *sname) {
 
 arr G4Data::query(const char *bname, int t) {
   arr rData;
-  int N = s->obj_inds[bname].N;
-  rData.resize(N, s->data.d2);
+
+  intA a = s->obj_inds[STRING(bname)];
+  rData.resize(1, a.N, s->data.d2);
 
   for(uint j = 0; j < rData.d1; j++)
     for(uint k = 0; k < rData.d2; k++)
-      rData(j, k) = s->data(t, s->obj_inds[bname](j), k);
+      rData(0, j, k) = s->data(t, a(j), k);
   return rData;
 }
 
 arr G4Data::query(const char *bname) {
   arr rData;
-  int N = s->obj_inds[bname].N;
-  rData.resize(s->data.d0, N, s->data.d2);
+
+  intA a = s->obj_inds[STRING(bname)];
+  rData.resize(s->data.d0, a.N, s->data.d2);
 
   for(uint i = 0; i < rData.d0; i++)
     for(uint j = 0; j < rData.d1; j++)
       for(uint k = 0; k < rData.d2; k++)
-        rData(i, j, k) = s->data(i, s->obj_inds[bname](j), k);
+        rData(i, j, k) = s->data(i, a(j), k);
   return rData;
 }
 
@@ -120,4 +113,18 @@ arr G4Data::query() {
 }
 
 //==============================================================================
+
+intA sG4Data::getObjectIndex(const char *obj) {
+  String s = STRING(obj);
+  if(obj_inds.count(s) == 0)
+    return -1;
+  return obj_inds.find(s)->second;
+}
+
+int sG4Data::getHubSensIndex(int hid, int sid) {
+  std::pair<int, int> p(hid, sid);
+  if(hub_sens_ind.count(p) == 0)
+    return -1;
+  return hub_sens_ind.find(p)->second;
+}
 
