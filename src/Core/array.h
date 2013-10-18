@@ -261,6 +261,7 @@ template<class T> struct Array {
   void makeSparse();
   
   /// @name I/O
+  void print(const char* header=NULL) const;
   void write(std::ostream& os=std::cout, const char *ELEMSEP=NULL, const char *LINESEP=NULL, const char *BRACKETS=NULL, bool dimTag=false, bool binary=false) const;
   void read(std::istream& is);
   void read(const char* filename);
