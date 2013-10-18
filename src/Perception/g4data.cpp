@@ -112,7 +112,7 @@ arr G4Data::query(const char *bname) {
 }
 
 arr G4Data::query(int t) {
-  return s->data.sub(t, t+1, 0, -1, 0, -1);
+  return s->data.sub(t, t, 0, -1, 0, -1);
 }
 
 arr G4Data::query() {
