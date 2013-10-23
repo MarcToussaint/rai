@@ -308,7 +308,7 @@ inline void breakPoint() {
   //  else{ MT_MSG("CHECK SUCCESS: '" <<#cond <<"'") }
 
 #  define CHECK_ZERO(expr, tolerance, msg) \
-  if(fabs(expr)>tolerance){ HALT("CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg) } \
+  if(fabs((double)(expr))>tolerance){ HALT("CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg) } \
   //else{ MT_MSG("CHECK_ZERO SUCCESS: '" <<#expr<<"'=" <<expr <<" < " <<tolerance)}
 
 #  define CHECK_EQ(A, B, msg) \
@@ -492,7 +492,9 @@ extern Rnd rnd;
 /// a basic mutex lock
 //
 struct Mutex {
+#ifndef MT_MSVC
   pthread_mutex_t mutex;
+#endif
   int state; ///< 0=unlocked, otherwise=syscall(SYS_gettid)
   uint recursive; ///< number of times it's been locked
   Mutex();

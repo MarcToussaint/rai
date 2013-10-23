@@ -256,7 +256,6 @@ void CycleTimer::cycleDone() {
   steps++;
 }
 
-#endif //MT_MSVC
 
 //===========================================================================
 //
@@ -695,3 +694,5 @@ namespace throut {
     throut(obj, (const char*)m);
   }
 }
+
+#endif //MT_MSVC

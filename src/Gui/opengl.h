@@ -24,15 +24,18 @@
 #ifndef MT_opengl_h
 #define MT_opengl_h
 
-#include <X11/Xlib.h>
+//#include <X11/Xlib.h>
 
 #ifdef MT_FLTK
 #  include <FL/glut.H>
 #endif
 
 #ifdef MT_FREEGLUT
-#  define FREEGLUT_STATIC
+#  ifndef MT_MSVC
+#    define FREEGLUT_STATIC
+#  endif
 #  include <GL/freeglut.h>
+#  define MT_GL
 #endif
 
 #ifdef MT_GL
@@ -274,8 +277,10 @@ public: //driver dependent methods
   void processEvents();
   void enterEventLoop();
   void exitEventLoop();
+#ifndef MT_MSVC
   Display* xdisplay();
   Drawable xdraw();
+#endif
 
 protected:
   GLEvent lastEvent;

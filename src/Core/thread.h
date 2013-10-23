@@ -95,40 +95,6 @@ struct CycleTimer {
   void cycleDone();
 };
 
-#else //MT_MSVC
-
-struct Mutex {
-  int state;
-  Mutex() {};
-  ~Mutex() {};
-  void lock() { MT_MSG("fake MSVC Mutex"); }
-  void unlock() { MT_MSG("fake MSVC Mutex"); }
-};
-
-struct ConditionVariable {
-  int value;
-  ConditionVariable(int initialState=0) {}
-  ~ConditionVariable() {}
-
-  void setValue(int i, bool signalOnlyFirstInQueue=false) {} ///< sets state and broadcasts
-  int  incrementValue(bool signalOnlyFirstInQueue=false) {}  ///< increase value by 1
-  void broadcast(bool signalOnlyFirstInQueue=false) {}      ///< just broadcast
-
-  void lock() {}
-  void unlock() {}
-
-};
-#endif //MT_MSVC
-
-//===========================================================================
-//
-// implementations
-//
-
-//#if defined MT_IMPLEMENTATION | defined MT_IMPLEMENT_TEMPLATES
-#  include "util_t.h"
-//#endif
-
 
 //===========================================================================
 /**
@@ -207,5 +173,24 @@ namespace throut {
   void throut(const void *obj, const char *m);
   void throut(const void *obj, const MT::String &m);
 }
+
+
+#else //MT_MSVC
+
+struct ConditionVariable {
+  int value;
+  ConditionVariable(int initialState=0) {}
+  ~ConditionVariable() {}
+
+  void setValue(int i, bool signalOnlyFirstInQueue=false) { value=i; }
+  int  incrementValue(bool signalOnlyFirstInQueue=false) { value++; }
+  void broadcast(bool signalOnlyFirstInQueue=false) {}
+
+  void lock() {}
+  void unlock() {}
+
+  int  getValue(bool userHasLocked=false) const { return value; }
+};
+#endif //MT_MSVC
 
 #endif

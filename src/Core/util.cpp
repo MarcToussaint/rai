@@ -939,6 +939,7 @@ void  MT::Rnd::seed250(int32_t seed) {
 
 #define MUTEX_DUMP(x) //x
 
+#ifndef MT_MSVC
 Mutex::Mutex() {
   pthread_mutexattr_t atts;
   int rc;
@@ -968,7 +969,12 @@ void Mutex::unlock() {
     state=0;
   int rc = pthread_mutex_unlock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
-
+#else//MT_MSVC
+Mutex::Mutex() {}
+Mutex::~Mutex() {}
+void Mutex::lock() {}
+void Mutex::unlock() {}
+#endif
 
 //===========================================================================
 //
