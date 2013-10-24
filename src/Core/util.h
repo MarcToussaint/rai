@@ -510,31 +510,21 @@ struct Mutex {
 //
 template<class T>
 struct Singleton {
-  struct SingletonFields { //class cannot have own members: everything in the singleton which is created on first demand
-    T obj;
-  };
+  static T *singleton;
 
-  static SingletonFields *singleton;
-
-  SingletonFields& getSingleton() const {
-    static bool currentlyCreating=false;
-    if(currentlyCreating) return *((SingletonFields*) NULL);
+  T *getSingleton() const {
     if(!singleton) {
       static Mutex m;
       m.lock();
-      if(!singleton) {
-        currentlyCreating=true;
-        singleton = new SingletonFields();
-        currentlyCreating=false;
-      }
+      if(!singleton) singleton = new T;
       m.unlock();
     }
-    return *singleton;
+    return singleton;
   }
 
-  T& obj() { return getSingleton().obj; }
+  T& operator()() const{ return *getSingleton(); }
 };
-template<class T> typename Singleton<T>::SingletonFields *Singleton<T>::singleton=NULL;
+template<class T> T *Singleton<T>::singleton=NULL;
 
 
 //===========================================================================

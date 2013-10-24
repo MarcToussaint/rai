@@ -35,7 +35,6 @@
 #    define FREEGLUT_STATIC
 #  endif
 #  include <GL/freeglut.h>
-#  define MT_GL
 #endif
 
 #ifdef MT_GL

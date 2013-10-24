@@ -1076,6 +1076,7 @@ template uint MT::getParameter(const char*, const uint&);
 template bool MT::getParameter(const char*, const bool&);
 template double MT::getParameter(const char*, const double&);
 template long MT::getParameter(const char*);
+template uint MT::getParameter(const char*);
 template MT::String MT::getParameter(const char*);
 template MT::String MT::getParameter(const char*, const MT::String&);
 template bool MT::checkParameter<uint>(const char*);

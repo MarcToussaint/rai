@@ -16,9 +16,6 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
 
-
-
-
 #include <Core/array_t.h>
 #include <Core/geo.h>
 #include "opengl.h"
