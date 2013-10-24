@@ -2,6 +2,7 @@
 
 #ifndef MT_MSVC
 #  include <sys/syscall.h>
+#  include <unistd.h>
 #endif
 #ifdef MT_QT
 #  include <QtCore/QThread>

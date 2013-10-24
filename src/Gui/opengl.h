@@ -24,7 +24,7 @@
 #ifndef MT_opengl_h
 #define MT_opengl_h
 
-//#include <X11/Xlib.h>
+#include <X11/Xlib.h>
 
 #ifdef MT_FLTK
 #  include <FL/glut.H>
