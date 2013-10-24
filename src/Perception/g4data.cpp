@@ -1,17 +1,15 @@
 #include "g4data.h"
 #include <Core/array.h>
 #include <Core/util.h>
-#include <map>
-
-#define G4DATA_MAKE_KEY(b, s) STRING((b) << "::" << (s))
+#include <Core/keyValueGraph.h>
 
 struct sG4Data {
-  std::map<String, intA> obj_inds;
-  std::map<std::pair<int, int>, int> hub_sens_ind;
+  KeyValueGraph G;
+  uint numS, numT;
+  intA itohs, hstoi;
   arr data;
 
-  intA getObjectIndex(const char *obj);
-  int getHubSensIndex(int hid, int sid);
+  sG4Data(): numS(0), numT(0) {};
 };
 
 //==============================================================================
@@ -24,107 +22,97 @@ G4Data::~G4Data() {
   delete s;
 }
 
-void G4Data::addSensor(const char *bname, const char *sname, int hid, int sid) {
-  int i = s->getHubSensIndex(hid, sid);
-  if(i == -1) HALT(STRING("No sensor " << hid << ":" << sid << " available."));
+void G4Data::loadData(const char *meta_fname, const char *poses_fname) {
+  int hid, sid, hsi, hstoiN, hstoiNprev;
 
-  String name = G4DATA_MAKE_KEY(bname, sname);
-  if(s->obj_inds.count(name) == 0)
-    s->obj_inds[name]; // creates entry automatically
-  s->obj_inds[name].append(i);
+  MT::load(s->G, meta_fname);
+  MT::Array<KeyValueGraph*> sensors = s->G.getTypedValues<KeyValueGraph>("sensor");
+  s->numS = sensors.N;
+  hstoiN = 0;
+  for(uint i = 0; i < s->numS; i++) {
+    hid = *sensors(i)->getValue<double>("hid");
+    sid = *sensors(i)->getValue<double>("sid");
+    hsi = 3*hid+sid;
 
-  name = STRING(bname);
-  if(s->obj_inds.count(name) == 0)
-    s->obj_inds[name]; // creates entry automatically
-  s->obj_inds[name].append(i);
-}
+    if(hsi+1 > hstoiN) { // s->hstoi.N) { to get rid of warning
+      hstoiNprev = s->hstoi.N; // TODO remove prevN and use hsi
+      s->hstoi.resizeCopy(hsi+1);
+      s->hstoi.subRange(hstoiNprev, hsi).setUni(-1);
+      hstoiN = hstoiNprev;
+    }
+    s->hstoi(hsi) = i;
+    s->itohs.append(hsi);
+  }
 
-void G4Data::addSensor(const char *bname, int hid, int sid) {
-  int i = s->getHubSensIndex(hid, sid);
-  if(i == -1) HALT(STRING("No sensor " << hid << ":" << sid << " available."));
-
-  String name = STRING(bname);
-  if(s->obj_inds.count(name) == 0)
-    s->obj_inds[name]; // creates entry automatically
-  s->obj_inds[name].append(i);
-}
-
-void G4Data::loadData(const char *fname) {
   ifstream fil;
-  MT::open(fil, fname);
+  MT::open(fil, poses_fname);
   arr x;
 
-  fil >> x;
-  x.reshape(x.N/2, 2);
-  for(uint i = 0; i < x.N/2; i++)
-    s->hub_sens_ind[std::pair<int, int>(x(i, 0), x(i, 1))] = i;
-
-  uint t = 0;
-  for(; ; t++) {
+  for(s->numT = 0; ; s->numT++) {
     fil >> x;
     if(!x.N || !fil.good()) break;
-    s->data.append(x);
+
+    for(uint i = 0; i < s->numS; i++) {
+      hsi = s->itohs(i);
+      if(hsi != -1)
+        s->data.append(x[hsi]);
+    }
   }
-  s->data.reshape(t, s->data.N/t/7, 7);
-  cout << s->data.d0 << " frames " << s->data.d1 << " sensor loaded" << endl;
+  s->data.reshape(s->numT, s->data.N/s->numT/7, 7);
 }
 
-arr G4Data::query(const char *bname, const char *sname, int t) {
-  String name = G4DATA_MAKE_KEY(bname, sname);
-  return query((const char *)name, t);
+int G4Data::getNumTimesteps() {
+  return s->numT;
 }
 
-arr G4Data::query(const char *bname, const char *sname) {
-  String name = G4DATA_MAKE_KEY(bname, sname);
-  return query((const char *)name);
+int G4Data::getNumSensors(const char *key) {
+  if(key == NULL)
+    return s->numS;
+  return s->G.getTypedValues<KeyValueGraph>(key).N;
 }
 
-arr G4Data::query(const char *bname, int t) {
-  arr rData;
+arr G4Data::query(int t, const char *key) {
+  if(key == NULL)
+    return s->data[t].reshape(1, s->numS, 7);
 
-  intA a = s->obj_inds[STRING(bname)];
-  rData.resize(1, a.N, s->data.d2);
+  arr ret;
+  uint hid, sid, hsi;
 
-  for(uint j = 0; j < rData.d1; j++)
-    for(uint k = 0; k < rData.d2; k++)
-      rData(0, j, k) = s->data(t, a(j), k);
-  return rData;
+  arr tdata = s->data[t];
+  MT::Array<KeyValueGraph*> sensors = s->G.getTypedValues<KeyValueGraph>(key);
+  for(uint i = 0; i < sensors.N; i++) {
+    hid = *sensors(i)->getValue<double>("hid");
+    sid = *sensors(i)->getValue<double>("sid");
+    hsi = 3*hid+sid;
+
+    ret.append(tdata[s->hstoi(hsi)]);
+  }
+  ret.reshape(1, sensors.N, 7);
+
+  return ret;
 }
 
-arr G4Data::query(const char *bname) {
-  arr rData;
+arr G4Data::query(const char *key) {
+  if(key == NULL)
+    return s->data;
 
-  intA a = s->obj_inds[STRING(bname)];
-  rData.resize(s->data.d0, a.N, s->data.d2);
+  arr ret;
+  uint hid, sid, hsi;
+  MT::Array<uint> iv;
 
-  for(uint i = 0; i < rData.d0; i++)
-    for(uint j = 0; j < rData.d1; j++)
-      for(uint k = 0; k < rData.d2; k++)
-        rData(i, j, k) = s->data(i, a(j), k);
-  return rData;
-}
+  MT::Array<KeyValueGraph*> sensors = s->G.getTypedValues<KeyValueGraph>(key);
+  for(uint i = 0; i < sensors.N; i++) {
+    hid = *sensors(i)->getValue<double>("hid");
+    sid = *sensors(i)->getValue<double>("sid");
+    hsi = 3*hid+sid;
+    iv.append(s->hstoi(hsi));
+  }
 
-arr G4Data::query(int t) {
-  return s->data.sub(t, t, 0, -1, 0, -1);
-}
+  for(uint t = 0; t < s->numT; t++)
+    for(uint i = 0; i < sensors.N; i++)
+      ret.append(s->data.sub(t, t, iv(i), iv(i), 0, -1));
+  ret.reshape(s->numT, sensors.N, 7);
 
-arr G4Data::query() {
-  return s->data;
-}
-
-//==============================================================================
-
-intA sG4Data::getObjectIndex(const char *obj) {
-  String s = STRING(obj);
-  if(obj_inds.count(s) == 0)
-    return -1;
-  return obj_inds.find(s)->second;
-}
-
-int sG4Data::getHubSensIndex(int hid, int sid) {
-  std::pair<int, int> p(hid, sid);
-  if(hub_sens_ind.count(p) == 0)
-    return -1;
-  return hub_sens_ind.find(p)->second;
+  return ret;
 }
 

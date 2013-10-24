@@ -8,14 +8,11 @@ struct G4Data {
   G4Data();
   ~G4Data();
 
-  void addSensor(const char *bname, const char *sname, int hid, int sid);
-  void addSensor(const char *bname, int hid, int sid);
-  void loadData(const char *fname);
+  void loadData(const char *meta_fname, const char *poses_fname);
 
-  arr query(const char *bname, const char *sname, int t);
-  arr query(const char *bname, const char *sname);
-  arr query(const char *bname, int t);
-  arr query(const char *bname);
-  arr query(int t);
-  arr query();
+  int getNumTimesteps();
+  int getNumSensors(const char *key = NULL);
+
+  arr query(int t, const char *key = NULL);
+  arr query(const char *key = NULL);
 };
