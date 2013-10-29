@@ -763,6 +763,35 @@ MT::String::operator const char*() const { return p; }
 /// returns the i-th char
 char& MT::String::operator()(uint i) const { CHECK(i<=N, "String range error (" <<i <<"<=" <<N <<")"); return p[i]; }
 
+/// return the substring from `start` to (exclusive) `end`.
+MT::String MT::String::getSubString(uint start, uint end) {
+  CHECK(start < end, "getSubString: start should be smaller than end");
+  end = clip(end, uint(0), N);
+  String tmp;
+  for (uint i = start; i < end; i++) {
+    tmp.append((*this)(i));
+  }
+  return tmp;
+}
+
+/**
+ * @brief Return the last `n` chars of the string.
+ * @param n number of chars to return
+ */
+MT::String MT::String::getLastN(uint n) {
+  n = clip(n, uint(0), N);
+  return getSubString(N-n, N);
+}
+
+/**
+ * @brief Return the first `n` chars of the string.
+ * @param n number of chars to return.
+ */
+MT::String MT::String::getFirstN(uint n) {
+  n = clip(n, uint(0), N);
+  return getSubString(0, n);
+}
+
 /// copy operator
 MT::String& MT::String::operator=(const String& s) {
   resize(s.N, false);
