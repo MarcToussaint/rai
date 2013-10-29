@@ -492,6 +492,17 @@ extern Rnd rnd;
 void gnuplot(const char *command, bool pauseMouse=false, bool persist=false, const char* PDFfile=NULL);
 void gnuplotClose();
 
+//===========================================================================
+// MISC
+
+/**
+ * @brief Clip the `value` of n between `lower` and `upper`.
+ * @return The clipped value.
+ */
+template <typename T>
+T clip(const T& n, const T& lower, const T& upper) {
+  return std::max(lower, std::min(n, upper));
+}
 
 //===========================================================================
 //
