@@ -61,17 +61,17 @@ void G4Data::loadData(const char *meta_fname, const char *poses_fname) {
   s->data.reshape(s->numT, s->data.N/s->numT/7, 7);
 }
 
-int G4Data::getNumTimesteps() {
+int G4Data::getNumTimesteps() const {
   return s->numT;
 }
 
-int G4Data::getNumSensors(const char *key) {
+int G4Data::getNumSensors(const char *key) const {
   if(key == NULL)
     return s->numS;
   return s->G.getTypedValues<KeyValueGraph>(key).N;
 }
 
-arr G4Data::query(int t, const char *key) {
+arr G4Data::query(int t, const char *key) const {
   if(key == NULL)
     return s->data[t].reshape(1, s->numS, 7);
 
@@ -92,7 +92,7 @@ arr G4Data::query(int t, const char *key) {
   return ret;
 }
 
-arr G4Data::query(const char *key) {
+arr G4Data::query(const char *key) const {
   if(key == NULL)
     return s->data;
 
