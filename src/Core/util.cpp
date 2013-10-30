@@ -17,7 +17,6 @@
     -----------------------------------------------------------------  */
 
 #include "util.h"
-#include "thread.h"
 #include <math.h>
 #include <string.h>
 #if defined MT_Linux || defined MT_Cygwin || defined MT_Darwin
@@ -461,16 +460,16 @@ double d_potential(double x, double margin, double power){
   return power*pow(y,power-1.)*MT::sign(y)/margin;
 }
 
-/** @brief double time since start of the process in floating-point seconds
+/** @brief double time on the clock
   (probably in micro second resolution) -- Windows checked! */
-double absTime() {
+double clockTime() {
 #ifndef MT_TIMEB
   static timeval t; gettimeofday(&t, 0);
-  return ((double)(t.tv_sec) +
+  return ((double)(t.tv_sec%86400) + //modulo TODAY
           (double)(t.tv_usec)/1000000.);
 #else
   static _timeb t; _ftime(&t);
-  return ((double)(t.time) +
+  return ((double)(t.time%86400) + //modulo TODAY
           (double)(t.millitm-startTime.millitm)/1000.);
 #endif
 }
@@ -964,6 +963,50 @@ void  MT::Rnd::seed250(int32_t seed) {
 
 //===========================================================================
 //
+// Mutex
+//
+
+#define MUTEX_DUMP(x) //x
+
+#ifndef MT_MSVC
+Mutex::Mutex() {
+  pthread_mutexattr_t atts;
+  int rc;
+  rc = pthread_mutexattr_init(&atts);  if(rc) HALT("pthread failed with err " <<rc <<strerror(rc));
+  rc = pthread_mutexattr_settype(&atts, PTHREAD_MUTEX_RECURSIVE_NP);  if(rc) HALT("pthread failed with err " <<rc <<strerror(rc));
+  rc = pthread_mutex_init(&mutex, &atts);
+  //mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+  state=0;
+  recursive=0;
+}
+
+Mutex::~Mutex() {
+  CHECK(!state, "Mutex destroyed without unlocking first");
+  int rc = pthread_mutex_destroy(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+}
+
+void Mutex::lock() {
+  int rc = pthread_mutex_lock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  recursive++;
+  state=syscall(SYS_gettid);
+  MUTEX_DUMP(cout <<"Mutex-lock: " <<state <<" (rec: " <<recursive << ")" <<endl);
+}
+
+void Mutex::unlock() {
+  MUTEX_DUMP(cout <<"Mutex-unlock: " <<state <<" (rec: " <<recursive << ")" <<endl);
+  if(--recursive == 0)
+    state=0;
+  int rc = pthread_mutex_unlock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+}
+#else//MT_MSVC
+Mutex::Mutex() {}
+Mutex::~Mutex() {}
+void Mutex::lock() {}
+void Mutex::unlock() {}
+#endif
+
+//===========================================================================
+//
 // gnuplot calls
 //
 
@@ -1062,6 +1105,7 @@ template uint MT::getParameter(const char*, const uint&);
 template bool MT::getParameter(const char*, const bool&);
 template double MT::getParameter(const char*, const double&);
 template long MT::getParameter(const char*);
+template uint MT::getParameter(const char*);
 template MT::String MT::getParameter(const char*);
 template MT::String MT::getParameter(const char*, const MT::String&);
 template bool MT::checkParameter<uint>(const char*);

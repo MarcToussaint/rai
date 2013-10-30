@@ -147,8 +147,9 @@ ANN::ANN() { NICO }
 ANN::~ANN() { NICO }
 void ANN::setX(const arr& _XX) { NICO }
 void ANN::append(const arr& x) { NICO }
-void ANN::getkNN(arr& dists, intA& idx, const arr& x, uint k, double eps, bool verbose) { NICO }
-uint ANN::getkNN(const arr& x, double eps, bool verbose) { NICO }
-void ANN::getkNN(arr& xx             , const arr& x, uint k, double eps, bool verbose) { NICO }
+uint ANN::getNN(const arr& x, double eps, bool verbose) { NICO }
+void ANN::getkNN(intA& idx, const arr& x, uint k, double eps, bool verbose) { NICO }
+void ANN::getkNN(arr& sqrDists, intA& idx, const arr& x, uint k, double eps, bool verbose) { NICO }
+void ANN::getkNN(arr& X, const arr& x, uint k, double eps, bool verbose) { NICO }
 
 #endif

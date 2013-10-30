@@ -2,6 +2,7 @@
 
 #ifndef MT_MSVC
 #  include <sys/syscall.h>
+#  include <unistd.h>
 #endif
 #ifdef MT_QT
 #  include <QtCore/QThread>
@@ -10,44 +11,6 @@
 
 
 #ifndef MT_MSVC
-
-//===========================================================================
-//
-// Mutex
-//
-
-#define MUTEX_DUMP(x) //x
-
-Mutex::Mutex() {
-  pthread_mutexattr_t atts;
-  int rc;
-  rc = pthread_mutexattr_init(&atts);  if(rc) HALT("pthread failed with err " <<rc <<strerror(rc));
-  rc = pthread_mutexattr_settype(&atts, PTHREAD_MUTEX_RECURSIVE_NP);  if(rc) HALT("pthread failed with err " <<rc <<strerror(rc));
-  rc = pthread_mutex_init(&mutex, &atts);
-  //mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
-  state=0;
-  recursive=0;
-}
-
-Mutex::~Mutex() {
-  CHECK(!state, "Mutex destroyed without unlocking first");
-  int rc = pthread_mutex_destroy(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-}
-
-void Mutex::lock() {
-  int rc = pthread_mutex_lock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  recursive++;
-  state=syscall(SYS_gettid);
-  MUTEX_DUMP(cout <<"Mutex-lock: " <<state <<" (rec: " <<recursive << ")" <<endl);
-}
-
-void Mutex::unlock() {
-  MUTEX_DUMP(cout <<"Mutex-unlock: " <<state <<" (rec: " <<recursive << ")" <<endl);
-  if(--recursive == 0)
-    state=0;
-  int rc = pthread_mutex_unlock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-}
-
 
 //===========================================================================
 //
@@ -294,7 +257,6 @@ void CycleTimer::cycleDone() {
   steps++;
 }
 
-#endif //MT_MSVC
 
 //===========================================================================
 //
@@ -438,7 +400,13 @@ void Thread::main() {
   //if(Thread::threadPriority) setRRscheduling(Thread::threadPriority);
   //if(Thread::threadPriority) setNice(Thread::threadPriority);
 
-  open(); //virtual open routine
+  try{
+    open(); //virtual open routine
+  } catch(...) {
+    state.setValue(tsFAILURE);
+    cerr <<"*** open() of Thread '" <<name <<"' failed! -- closing it again";
+    return;
+  }
 
   state.lock();
   if(state.value==tsOPENING){
@@ -727,3 +695,5 @@ namespace throut {
     throut(obj, (const char*)m);
   }
 }
+
+#endif //MT_MSVC

@@ -135,8 +135,8 @@ double potential(double x, double margin, double power);
 double d_potential(double x, double margin, double power);
 
 //----- time access
-double absTime();
-double realTime();
+double clockTime(); //(really on the clock)
+double realTime(); //(since process start)
 double cpuTime();
 double sysTime();
 double totalTime();
@@ -311,8 +311,11 @@ inline void breakPoint() {
   //  else{ MT_MSG("CHECK SUCCESS: '" <<#cond <<"'") }
 
 #  define CHECK_ZERO(expr, tolerance, msg) \
-  if(fabs(expr)>tolerance){ HALT("CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg) } \
+  if(fabs((double)(expr))>tolerance){ HALT("CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg) } \
   //else{ MT_MSG("CHECK_ZERO SUCCESS: '" <<#expr<<"'=" <<expr <<" < " <<tolerance)}
+
+#  define CHECK_EQ(A, B, msg) \
+  if(!(A==B)){ HALT("CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg) } \
 
 #else
 #  define CHECK(cond, msg)
@@ -485,6 +488,46 @@ private:
 /// The global Rnd object
 extern Rnd rnd;
 }
+
+
+//===========================================================================
+//
+/// a basic mutex lock
+//
+struct Mutex {
+#ifndef MT_MSVC
+  pthread_mutex_t mutex;
+#endif
+  int state; ///< 0=unlocked, otherwise=syscall(SYS_gettid)
+  uint recursive; ///< number of times it's been locked
+  Mutex();
+  ~Mutex();
+  void lock();
+  void unlock();
+};
+
+
+//===========================================================================
+//
+/// a generic singleton
+//
+template<class T>
+struct Singleton {
+  static T *singleton;
+
+  T *getSingleton() const {
+    if(!singleton) {
+      static Mutex m;
+      m.lock();
+      if(!singleton) singleton = new T;
+      m.unlock();
+    }
+    return singleton;
+  }
+
+  T& operator()() const{ return *getSingleton(); }
+};
+template<class T> T *Singleton<T>::singleton=NULL;
 
 
 //===========================================================================

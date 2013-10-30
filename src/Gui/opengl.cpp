@@ -16,9 +16,6 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
 
-
-
-
 #include <Core/array_t.h>
 #include <Core/geo.h>
 #include "opengl.h"
@@ -1224,7 +1221,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   
   //OpenGL initialization
   //two optional thins:
-//  glEnable(GL_DEPTH_TEST);  glDepthFunc(GL_LESS);
+  glEnable(GL_DEPTH_TEST);  glDepthFunc(GL_LESS);
   glEnable(GL_BLEND);  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_CULL_FACE);  glFrontFace(GL_CCW);
   //glDisable(GL_CULL_FACE);

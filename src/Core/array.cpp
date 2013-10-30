@@ -1472,6 +1472,8 @@ template MT::Array<arr>::~Array();
 template void MT::save<uintA>(const uintA&, const char*);
 template void MT::save<arr>(const arr&, const char*);
 template void MT::load<arr>(arr&, const char*, bool);
+template MT::Array<double> MT::getParameter<MT::Array<double> >(char const*);
+template bool MT::checkParameter<MT::Array<double> >(char const*);
 
 void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 
