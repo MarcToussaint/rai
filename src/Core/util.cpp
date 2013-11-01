@@ -20,6 +20,7 @@
 #include <math.h>
 #include <string.h>
 #if defined MT_Linux || defined MT_Cygwin || defined MT_Darwin
+#  include <linux/limits.h>
 #  include <sys/time.h>
 #  include <sys/times.h>
 #  include <sys/resource.h>
@@ -763,7 +764,7 @@ MT::String::operator const char*() const { return p; }
 char& MT::String::operator()(uint i) const { CHECK(i<=N, "String range error (" <<i <<"<=" <<N <<")"); return p[i]; }
 
 /// return the substring from `start` to (exclusive) `end`.
-MT::String MT::String::getSubString(uint start, uint end) {
+MT::String MT::String::getSubString(uint start, uint end) const {
   CHECK(start < end, "getSubString: start should be smaller than end");
   end = clip(end, uint(0), N);
   String tmp;
@@ -777,7 +778,7 @@ MT::String MT::String::getSubString(uint start, uint end) {
  * @brief Return the last `n` chars of the string.
  * @param n number of chars to return
  */
-MT::String MT::String::getLastN(uint n) {
+MT::String MT::String::getLastN(uint n) const {
   n = clip(n, uint(0), N);
   return getSubString(N-n, N);
 }
@@ -786,7 +787,7 @@ MT::String MT::String::getLastN(uint n) {
  * @brief Return the first `n` chars of the string.
  * @param n number of chars to return.
  */
-MT::String MT::String::getFirstN(uint n) {
+MT::String MT::String::getFirstN(uint n) const {
   n = clip(n, uint(0), N);
   return getSubString(0, n);
 }
@@ -818,6 +819,24 @@ bool MT::String::operator<(const String& s) const { return p && s.p && strcmp(p,
 bool MT::String::contains(const String& substring) const {
   char* p = strstr(this->p, substring.p);
   return p != NULL;
+}
+
+/// Return true iff the string starts with `substring`.
+bool MT::String::startsWith(const String& substring) const {
+  return this->getFirstN(substring.N) == substring;
+}
+/// Return true iff the string starts with `substring`.
+bool MT::String::startsWith(const char* substring) const {
+  return this->startsWith(MT::String(substring));
+}
+
+/// Return true iff the string ends with `substring`.
+bool MT::String::endsWith(const String& substring) const {
+  return this->getLastN(substring.N) == substring;
+}
+/// Return true iff the string ends with `substring`.
+bool MT::String::endsWith(const char* substring) const {
+  return this->endsWith(MT::String(substring));
 }
 
 /// deletes all memory and resets all stream flags
@@ -1084,6 +1103,19 @@ double gaussIntExpectation(double x) {
   double norm=gaussInt(x) / (::sqrt(MT_2PI));
   return - norm*MT::approxExp(-.5*x*x);
 }
+}
+
+//===========================================================================
+// MISC
+
+/**
+ * @brief Return the current working dir as std::string.
+ */
+std::string getcwd_string() {
+   char buff[PATH_MAX];
+   getcwd( buff, PATH_MAX );
+   std::string cwd( buff );
+   return cwd;
 }
 
 //===========================================================================
