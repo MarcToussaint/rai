@@ -20,6 +20,7 @@
 #include <math.h>
 #include <string.h>
 #if defined MT_Linux || defined MT_Cygwin || defined MT_Darwin
+#  include <linux/limits.h>
 #  include <sys/time.h>
 #  include <sys/times.h>
 #  include <sys/resource.h>
@@ -1084,6 +1085,19 @@ double gaussIntExpectation(double x) {
   double norm=gaussInt(x) / (::sqrt(MT_2PI));
   return - norm*MT::approxExp(-.5*x*x);
 }
+}
+
+//===========================================================================
+// MISC
+
+/**
+ * @brief Return the current working dir as std::string.
+ */
+std::string getcwd_string() {
+   char buff[PATH_MAX];
+   getcwd( buff, PATH_MAX );
+   std::string cwd( buff );
+   return cwd;
 }
 
 //===========================================================================
