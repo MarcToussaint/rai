@@ -764,7 +764,7 @@ MT::String::operator const char*() const { return p; }
 char& MT::String::operator()(uint i) const { CHECK(i<=N, "String range error (" <<i <<"<=" <<N <<")"); return p[i]; }
 
 /// return the substring from `start` to (exclusive) `end`.
-MT::String MT::String::getSubString(uint start, uint end) {
+MT::String MT::String::getSubString(uint start, uint end) const {
   CHECK(start < end, "getSubString: start should be smaller than end");
   end = clip(end, uint(0), N);
   String tmp;
@@ -778,7 +778,7 @@ MT::String MT::String::getSubString(uint start, uint end) {
  * @brief Return the last `n` chars of the string.
  * @param n number of chars to return
  */
-MT::String MT::String::getLastN(uint n) {
+MT::String MT::String::getLastN(uint n) const {
   n = clip(n, uint(0), N);
   return getSubString(N-n, N);
 }
@@ -787,7 +787,7 @@ MT::String MT::String::getLastN(uint n) {
  * @brief Return the first `n` chars of the string.
  * @param n number of chars to return.
  */
-MT::String MT::String::getFirstN(uint n) {
+MT::String MT::String::getFirstN(uint n) const {
   n = clip(n, uint(0), N);
   return getSubString(0, n);
 }

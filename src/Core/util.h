@@ -227,9 +227,9 @@ public:
   char &operator()(uint i) const;
   std::iostream& stream();            ///< explicitly returns this as an std::iostream&
   String& operator()();               ///< explicitly return this as a (non-const!) String&
-  String getSubString(uint start, uint end);
-  String getFirstN(uint n);
-  String getLastN(uint n);
+  String getSubString(uint start, uint end) const;
+  String getFirstN(uint n) const;
+  String getLastN(uint n) const;
   
   /// @name setting
   String& operator=(const String& s);
