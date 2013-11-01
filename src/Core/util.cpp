@@ -821,6 +821,24 @@ bool MT::String::contains(const String& substring) const {
   return p != NULL;
 }
 
+/// Return true iff the string starts with `substring`.
+bool MT::String::startsWith(const String& substring) const {
+  return this->getFirstN(substring.N) == substring;
+}
+/// Return true iff the string starts with `substring`.
+bool MT::String::startsWith(const char* substring) const {
+  return this->startsWith(MT::String(substring));
+}
+
+/// Return true iff the string ends with `substring`.
+bool MT::String::endsWith(const String& substring) const {
+  return this->getLastN(substring.N) == substring;
+}
+/// Return true iff the string ends with `substring`.
+bool MT::String::endsWith(const char* substring) const {
+  return this->endsWith(MT::String(substring));
+}
+
 /// deletes all memory and resets all stream flags
 MT::String& MT::String::clear() { resize(0, false); return *this; }
 

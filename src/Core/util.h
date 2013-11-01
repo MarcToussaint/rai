@@ -252,6 +252,10 @@ public:
   
   /// @name misc
   bool contains(const String& substring) const;
+  bool startsWith(const String& substring) const;
+  bool startsWith(const char* substring) const;
+  bool endsWith(const String& substring) const;
+  bool endsWith(const char* substring) const;
   
   /// @name I/O
   void write(std::ostream& os) const;
