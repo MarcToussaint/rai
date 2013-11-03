@@ -160,20 +160,65 @@ struct Thread{
 // throut utilities
 //
 
-namespace throut {
-  void throutRegHeading(const void *obj, const MT::String &head);
-  void throutRegHeading(const void *obj, const char *head);
-  void throutUnregHeading(const void *obj);
-  void throutUnregAll();
-  bool throutContains(const void *obj);
+#include <ostream>
+#include <sstream>
+#include <map>
 
-  void throut(const char *m);
-  void throut(const MT::String &m);
+class tout: public ostream {
+  private:
+    static Mutex mutex;
+    static RWLock lock;
+    static std::map<const void*, const char*> map;
 
-  void throut(const void *obj, const char *m);
-  void throut(const void *obj, const MT::String &m);
+    bool objflag;
+    const void *obj;
+    std::stringstream s;
+
+  public:
+    class reg: public ostream {
+      private:
+        bool objflag;
+        const void *obj;
+        std::stringstream s;
+
+      public:
+        reg(const void *o);
+        reg();
+        ~reg();
+
+        template<class T>
+        std::stringstream& operator<<(const T &t);
+    };
+
+    friend class reg;
+
+    tout(const void *o);
+    tout();
+    ~tout();
+
+    template<class T>
+    std::stringstream& operator<<(const T &t);
+
+    static bool contains(const void *obj);
+    static void unreg(const void *obj);
+    static void unreg_all();
+
+  private:
+    static bool contains_private(const void *obj);
+    static void unreg_private(const void *obj);
+    static bool head_private(const void *obj, char **head);
+};
+
+template<class T>
+std::stringstream& tout::operator<<(const T &t) {
+  s << t;
+  return s;
 }
-
+template<class T>
+std::stringstream& tout::reg::operator<<(const T &t) {
+  s << t;
+  return s;
+}
 
 #else //MT_MSVC
 
