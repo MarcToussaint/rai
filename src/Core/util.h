@@ -227,9 +227,9 @@ public:
   char &operator()(uint i) const;
   std::iostream& stream();            ///< explicitly returns this as an std::iostream&
   String& operator()();               ///< explicitly return this as a (non-const!) String&
-  String getSubString(uint start, uint end);
-  String getFirstN(uint n);
-  String getLastN(uint n);
+  String getSubString(uint start, uint end) const;
+  String getFirstN(uint n) const;
+  String getLastN(uint n) const;
   
   /// @name setting
   String& operator=(const String& s);
@@ -252,6 +252,10 @@ public:
   
   /// @name misc
   bool contains(const String& substring) const;
+  bool startsWith(const String& substring) const;
+  bool startsWith(const char* substring) const;
+  bool endsWith(const String& substring) const;
+  bool endsWith(const char* substring) const;
   
   /// @name I/O
   void write(std::ostream& os) const;
@@ -550,6 +554,7 @@ T clip(const T& n, const T& lower, const T& upper) {
   return std::max(lower, std::min(n, upper));
 }
 
+std::string getcwd_string();
 //===========================================================================
 //
 // implementations
