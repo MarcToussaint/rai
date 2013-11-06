@@ -23,38 +23,21 @@ double RRT::getProposalTowards(arr& q){
   //compute little step
   arr d = q - s->ann.X[s->nearest]; //difference vector between q and nearest neighbor
   double dist = norm(d);
-  q = s->ann.X[s->nearest] + s->stepsize/dist * d;
+  if (dist > s->stepsize)
+    q = s->ann.X[s->nearest] + s->stepsize/dist * d;
   return dist;
 }
 void RRT::add(const arr& q){
   s->ann.append(q);
   s->parent.append(s->nearest);
 }
-void RRT::addLineDraw(const arr& q, Simulator& S){
-  //I can't draw the edge in the 7-dim joint space!
-  //But I can draw a projected edge in 3D endeffector position space:
-  arr y_from,y_to;
-  arr line;
-  S.setJointAngles(s->ann.X[s->nearest],false);  S.kinematicsPos(y_from,"peg");
-  S.setJointAngles(q                 ,false);  S.kinematicsPos(y_to  ,"peg");
-  line.append(y_from); line.reshape(1,line.N);
-  line.append(y_to);
-  plotLine(line); //add a line to the plot
-
-}
 
 //some access routines
+double RRT::getStepsize() { return s->stepsize; }
 uint RRT::getNearest(){ return s->nearest; }
 uint RRT::getParent(uint i){ return s->parent(i); }
 uint RRT::getNumberNodes(){ return s->ann.X.d0; }
 arr RRT::getNode(uint i){ return s->ann.X[i]; }
 void RRT::getRandomNode(arr& q){ q = s->ann.X[rnd(s->ann.X.d0)]; }
 arr RRT::getRandomNode() { return s->ann.X[rnd(s->ann.X.d0)]; }
-
-
-arr RRT::getTrajectoryTo(arr pos) {
-  arr q;
-
-  return q;
-}
 
