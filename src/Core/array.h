@@ -249,6 +249,7 @@ template<class T> struct Array {
   uint setAppendInSorted(const T& x, ElemCompare comp);
   void removeValueInSorted(const T& x, ElemCompare comp);
   void reverse();
+  void reverseRows();
   void permute(uint i, uint j);
   void permute(const Array<uint>& permutation);
   void permuteInv(const Array<uint>& permutation);
