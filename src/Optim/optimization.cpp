@@ -279,7 +279,7 @@ uint optGaussNewton(arr& x, VectorFunction& f, OptOptions o, arr *addRegularizer
       if(o.verbose>2) cout <<" \tprobing y=" <<y;
       if(o.verbose>1) cout <<" \talpha=" <<alpha <<" \tevals=" <<evals <<" \tf(y)=" <<fy <<flush;
       CHECK(fy==fy, "cost seems to be NAN: ly=" <<fy);
-      if(fy!=NAN && fy <= fx) {
+      if(fy==fy && fy <= fx) { //fy==fy is for NAN
         if(o.verbose>1) cout <<" - ACCEPT" <<endl;
         //adopt new point and adapt stepsize|damping
         x = y;
@@ -395,7 +395,7 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
       if(o.verbose>2) cout <<" \tprobing y=" <<y;
       if(o.verbose>1) cout <<" \talpha=" <<alpha <<" \tevals=" <<evals <<" \tf(y)=" <<fy <<flush;
       //CHECK(fy==fy, "cost seems to be NAN: ly=" <<fy);
-      if(fy!=NAN && fy <= fx) {
+      if(fy==fy && fy <= fx) { //fy==fy is for NAN?
         if(o.verbose>1) cout <<" - ACCEPT" <<endl;
         //adopt new point and adapt stepsize|damping
         x = y;
@@ -593,7 +593,7 @@ uint Rprop::loop(arr& _x,
     if(verbose>1) cout <<"optRprop " <<evals <<' ' <<eval_cost <<" \tf(x)=" <<fx <<" \tdiff=" <<diff <<" \tx=" <<x <<endl;
     
     //infeasible point! undo the previous step
-    if(fx==NAN) {
+    if(fx!=fx) { //is NAN
       if(!evals) HALT("can't start Rprop with unfeasible point");
       s->stepSize*=(double).1;
       s->lastGrad=(double)0.;

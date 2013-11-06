@@ -5,6 +5,7 @@
 
 #include "opencv.h"
 #include "libcolorseg.h"
+#include "video.h"
 #include <Core/util_t.h>
 #include <Gui/opengl.h>
 
@@ -19,6 +20,7 @@
 void lib_Perception(){ MT_MSG("loading"); }
 
 REGISTER_MODULE (ImageViewer)
+REGISTER_MODULE (ImageWriter)
 REGISTER_MODULE (PointCloudViewer)
 REGISTER_MODULE (OpencvCamera)
 REGISTER_MODULE (CvtGray)
@@ -40,17 +42,35 @@ REGISTER_MODULE (HoughLineFilter)
 
 struct sImageViewer{  OpenGL gl; };
 
-ImageViewer::ImageViewer(){
-  s = new sImageViewer;
+void ImageViewer::open(){ s = new sImageViewer; }
+void ImageViewer::close(){ delete s; }
+void ImageViewer::step(){ s->gl.background = img.get(); s->gl.update(); }
+
+
+//===========================================================================
+//
+// ImageWriter
+//
+
+struct sImageWriter{
+  MT::String filename;
+  VideoEncoder_libav_simple video;
+  byteA buffer;
+  sImageWriter(const char* _filename, uint fps):filename(_filename), video(filename.p, fps){}
+};
+
+void ImageWriter::open(){
+  s = new sImageWriter(STRING("z." <<img.name <<".avi"), 25);
 }
 
-ImageViewer::~ImageViewer(){
+void ImageWriter::close(){
   delete s;
 }
 
-void ImageViewer::open(){}
-void ImageViewer::close(){}
-void ImageViewer::step(){ s->gl.background = img.get(); s->gl.update(); }
+void ImageWriter::step(){
+  s->buffer = img.get();
+  s->video.addFrame(s->buffer);
+}
 
 
 //===========================================================================
@@ -63,16 +83,15 @@ struct sPointCloudViewer{
   arr pc[2];
 };
 
-PointCloudViewer::PointCloudViewer(){
+void PointCloudViewer::open(){
   s = new sPointCloudViewer;
+  s->gl.add(glDrawPointCloud, s->pc);
 }
 
-PointCloudViewer::~PointCloudViewer(){
+void PointCloudViewer::close(){
   delete s;
 }
 
-void PointCloudViewer::open(){ s->gl.add(glDrawPointCloud, s->pc); }
-void PointCloudViewer::close(){}
 void PointCloudViewer::step(){
   s->pc[0]=pts.get();
   s->pc[1]=cols.get();
@@ -86,20 +105,18 @@ void PointCloudViewer::step(){
 
 struct sOpencvCamera{  cv::VideoCapture capture;  };
 
-OpencvCamera::OpencvCamera(){
-  s = new sOpencvCamera;
-  }
-
-OpencvCamera::~OpencvCamera(){
-  delete s;
-}
-
 void OpencvCamera::open(){
+  s = new sOpencvCamera;
   s->capture.open(0);
   //    capture.set(CV_CAP_PROP_CONVERT_RGB, 1);
   //    cout <<"FPS of opened OpenCV VideoCapture = " <<capture.get(CV_CAP_PROP_FPS) <<endl;;
 }
-void OpencvCamera::close(){ s->capture.release(); }
+
+void OpencvCamera::close(){
+  s->capture.release();
+  delete s;
+}
+
 void OpencvCamera::step(){
   cv::Mat img,imgRGB;
   s->capture.read(img);
@@ -177,18 +194,16 @@ struct sHsvFilter{
   }
 };
 
-HsvFilter::HsvFilter(){
+void HsvFilter::open(){
   s = new sHsvFilter;
   s->hsvMean      = MT::getParameter<floatA>("hsvMean");
   s->hsvDeviation = MT::getParameter<floatA>("hsvDeviation");
 }
 
-HsvFilter::~HsvFilter(){
+void HsvFilter::close(){
   delete s;
 }
 
-void HsvFilter::open(){}
-void HsvFilter::close(){}
 void HsvFilter::step(){
   s->hsvMean      = MT::getParameter<floatA>("hsvMean");
   s->hsvDeviation = MT::getParameter<floatA>("hsvDeviation");
@@ -223,16 +238,14 @@ struct sMotionFilter {
   byteA old_rgb;
 };
 
-MotionFilter::MotionFilter() {
+void MotionFilter::open(){
   s = new sMotionFilter;
 }
 
-MotionFilter::~MotionFilter() {
+void MotionFilter::close(){
   delete s;
 }
 
-void MotionFilter::open(){}
-void MotionFilter::close(){}
 void MotionFilter::step(){
   byteA rgbA,grayA;
   rgbA = rgb.get();
@@ -355,17 +368,16 @@ struct sSURFer{
 //  cv::SURF *surf;
 };
 
-SURFer::SURFer(){
+void SURFer::open() {
   s = new sSURFer;
 //  s->surf = new cv::SURF(500);
 }
-SURFer::~SURFer(){
-//  delete s->surf;
-  delete s;
+
+void SURFer::close() {
+  //  delete s->surf;
+    delete s;
 }
 
-void SURFer::open() {}
-void SURFer::close() {}
 void SURFer::step() {
   byteA gray,display;
   gray = grayImage.get();

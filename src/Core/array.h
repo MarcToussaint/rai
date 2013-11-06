@@ -109,12 +109,20 @@ template<class T> struct Array {
   Array(uint D0, uint D1);
   Array(uint D0, uint D1, uint D2);
   Array(const T* p, uint size);
-  
+  Array(std::initializer_list<T> list);
   ~Array();
   
   Array<T>& operator=(const T& v);
   Array<T>& operator=(const Array<T>& a);
-  
+
+  /// @name iterators
+  typedef T* iterator;
+  typedef const T* const_iterator;
+  iterator begin() { return p; }
+  iterator end() { return p+N; }
+  const_iterator begin() const { return p; }
+  const_iterator end() const { return p+N; }
+
   /// @name resizing
   Array<T>& resize(uint D0);
   Array<T>& resize(uint D0, uint D1);
@@ -185,6 +193,11 @@ template<class T> struct Array {
   Array<T> sub(int i, int I, int j, int J) const;
   Array<T> sub(int i, int I, int j, int J, int k, int K) const;
   Array<T> sub(int i, int I, Array<uint> cols) const;
+  Array<T> row(uint row_index) const;
+  Array<T> rows(uint start_row, uint end_row) const;
+  Array<T> col(uint col_index) const;
+  Array<T> cols(uint start_col, uint end_col) const;
+
   void getMatrixBlock(Array<T>& B, uint lo0, uint lo1) const;
   void getVectorBlock(Array<T>& B, uint lo) const;
   void copyInto(T *buffer) const;
@@ -351,32 +364,6 @@ extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arg
 
 
 //===========================================================================
-/// @}
-/// @name shorthand to specify arrays and lists (list=array of pointers)
-/// @{
-
-// Andreas: this is a generic array builder via recursive variadic templates:
-// uses C++0x specification. Tested with gcc 4.4.6, should work with >4.3
-// according to http://gcc.gnu.org/gcc-4.3/cxx0x_status.html
-
-// enable this by adding -std=c++0x to your CXXFLAGS variable
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
-template<class T>
-void ahelper(MT::Array<T> &z, T t) { z(z.N-1)=t; }
-
-template<class T, typename ...A>
-void ahelper(MT::Array<T> &z, T t, A ...args) {
-  z(z.N-1-sizeof...(args))=t;
-  if(sizeof...(args)) ahelper<T>(z, args...);
-}
-
-template<class T, typename ...A>
-MT::Array<T> ARRAY(A ...args) {
-  MT::Array<T> z(sizeof...(args));
-  ahelper<T>(z, args...);
-  return z;
-}
-#else
 template<class T> MT::Array<T> ARRAY() {                                    MT::Array<T> z(0); return z; }
 template<class T> MT::Array<T> ARRAY(const T& i) {                                    MT::Array<T> z(1); z(0)=i; return z; }
 template<class T> MT::Array<T> ARRAY(const T& i, const T& j) {                               MT::Array<T> z(2); z(0)=i; z(1)=j; return z; }
@@ -387,7 +374,6 @@ template<class T> MT::Array<T> ARRAY(const T& i, const T& j, const T& k, const T
 template<class T> MT::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o) {      MT::Array<T> z(7); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; return z; }
 template<class T> MT::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p) { MT::Array<T> z(8); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; z(7)=p; return z; }
 template<class T> MT::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p, const T& q) { MT::Array<T> z(9); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; z(7)=p; z(8)=q; return z; }
-#endif
 
 template<class T> MT::Array<T*> LIST() {                                    MT::Array<T*> z(0); return z; }
 template<class T> MT::Array<T*> LIST(const T& i) {                                    MT::Array<T*> z(1); z(0)=(T*)&i; return z; }

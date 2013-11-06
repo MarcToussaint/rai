@@ -31,7 +31,9 @@
 #endif
 
 #ifdef MT_FREEGLUT
-#  define FREEGLUT_STATIC
+#  ifndef MT_MSVC
+#    define FREEGLUT_STATIC
+#  endif
 #  include <GL/freeglut.h>
 #endif
 
@@ -274,8 +276,10 @@ public: //driver dependent methods
   void processEvents();
   void enterEventLoop();
   void exitEventLoop();
+#ifndef MT_MSVC
   Display* xdisplay();
   Drawable xdraw();
+#endif
 
 protected:
   GLEvent lastEvent;

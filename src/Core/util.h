@@ -135,8 +135,8 @@ double potential(double x, double margin, double power);
 double d_potential(double x, double margin, double power);
 
 //----- time access
-double absTime();
-double realTime();
+double clockTime(); //(really on the clock)
+double realTime(); //(since process start)
 double cpuTime();
 double sysTime();
 double totalTime();
@@ -225,8 +225,11 @@ public:
   operator char*();
   operator const char*() const;
   char &operator()(uint i) const;
-  std::iostream& stream();             ///< explicitly returns this as an std::iostream&
-  String& operator()();           ///< explicitly return this as a (non-const!) String&
+  std::iostream& stream();            ///< explicitly returns this as an std::iostream&
+  String& operator()();               ///< explicitly return this as a (non-const!) String&
+  String getSubString(uint start, uint end) const;
+  String getFirstN(uint n) const;
+  String getLastN(uint n) const;
   
   /// @name setting
   String& operator=(const String& s);
@@ -249,6 +252,10 @@ public:
   
   /// @name misc
   bool contains(const String& substring) const;
+  bool startsWith(const String& substring) const;
+  bool startsWith(const char* substring) const;
+  bool endsWith(const String& substring) const;
+  bool endsWith(const char* substring) const;
   
   /// @name I/O
   void write(std::ostream& os) const;
@@ -308,8 +315,11 @@ inline void breakPoint() {
   //  else{ MT_MSG("CHECK SUCCESS: '" <<#cond <<"'") }
 
 #  define CHECK_ZERO(expr, tolerance, msg) \
-  if(fabs(expr)>tolerance){ HALT("CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg) } \
+  if(fabs((double)(expr))>tolerance){ HALT("CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg) } \
   //else{ MT_MSG("CHECK_ZERO SUCCESS: '" <<#expr<<"'=" <<expr <<" < " <<tolerance)}
+
+#  define CHECK_EQ(A, B, msg) \
+  if(!(A==B)){ HALT("CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg) } \
 
 #else
 #  define CHECK(cond, msg)
@@ -486,13 +496,65 @@ extern Rnd rnd;
 
 //===========================================================================
 //
+/// a basic mutex lock
+//
+struct Mutex {
+#ifndef MT_MSVC
+  pthread_mutex_t mutex;
+#endif
+  int state; ///< 0=unlocked, otherwise=syscall(SYS_gettid)
+  uint recursive; ///< number of times it's been locked
+  Mutex();
+  ~Mutex();
+  void lock();
+  void unlock();
+};
+
+
+//===========================================================================
+//
+/// a generic singleton
+//
+template<class T>
+struct Singleton {
+  static T *singleton;
+
+  T *getSingleton() const {
+    if(!singleton) {
+      static Mutex m;
+      m.lock();
+      if(!singleton) singleton = new T;
+      m.unlock();
+    }
+    return singleton;
+  }
+
+  T& operator()() const{ return *getSingleton(); }
+};
+template<class T> T *Singleton<T>::singleton=NULL;
+
+
+//===========================================================================
+//
 // gnuplot calls
 //
 
 void gnuplot(const char *command, bool pauseMouse=false, bool persist=false, const char* PDFfile=NULL);
 void gnuplotClose();
 
+//===========================================================================
+// MISC
 
+/**
+ * @brief Clip the `value` of n between `lower` and `upper`.
+ * @return The clipped value.
+ */
+template <typename T>
+T clip(const T& n, const T& lower, const T& upper) {
+  return std::max(lower, std::min(n, upper));
+}
+
+std::string getcwd_string();
 //===========================================================================
 //
 // implementations
