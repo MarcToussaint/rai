@@ -105,9 +105,9 @@ template<class T> struct Array {
   Array(const Array<T>& a);                 //copy constructor
   Array(const Array<T>& a, uint i);         //reference constructor
   Array(const Array<T>& a, uint i, uint j); //reference constructor
-  Array(uint D0);
-  Array(uint D0, uint D1);
-  Array(uint D0, uint D1, uint D2);
+  explicit Array(uint D0);
+  explicit Array(uint D0, uint D1);
+  explicit Array(uint D0, uint D1, uint D2);
   Array(const T* p, uint size);
   Array(std::initializer_list<T> list);
   ~Array();
@@ -249,6 +249,7 @@ template<class T> struct Array {
   uint setAppendInSorted(const T& x, ElemCompare comp);
   void removeValueInSorted(const T& x, ElemCompare comp);
   void reverse();
+  void reverseRows();
   void permute(uint i, uint j);
   void permute(const Array<uint>& permutation);
   void permuteInv(const Array<uint>& permutation);
