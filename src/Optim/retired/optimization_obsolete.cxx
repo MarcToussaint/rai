@@ -188,14 +188,14 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
       f_loc.x_ref = x;
       f_loc.t = t;
       //checkGradient(loc_f, x[t], 1e-4);
-      optGaussNewton(x[t](), f_loc, op);
+      optNewton(x[t](), f_loc, op);
       if(o.verbose>1) cout <<"optNodewise " <<k <<" > " <<t <<' ' <<evaluateVCF(f, x) <<endl;
     }
     for(uint t=f.get_T()-1; t>0; t--) {
       f_loc.x_ref = x;
       f_loc.t=t;
       //checkGradient(loc_f, x[t], 1e-4);
-      optGaussNewton(x[t](), f_loc, op);
+      optNewton(x[t](), f_loc, op);
       if(o.verbose>1) cout <<"optNodewise " <<k <<" < " <<t <<' ' <<evaluateVCF(f, x) <<endl;
     }
     fx = evaluateVCF(f, x);

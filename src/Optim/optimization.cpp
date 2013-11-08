@@ -212,113 +212,6 @@ uint optRprop(arr& x, ScalarFunction& f, OptOptions o) {
   return Rprop().loop(x, f, o.fmin_return, o.stopTolerance, o.initStep, o.stopEvals, o.verbose);
 }
 
-/** @brief Minimizes \f$f(x) = \phi(x)^T \phi(x)$ using the Jacobian. The optional _user arguments specify,
- * if f has already been evaluated at x (another initial evaluation is then omitted
- * to increase performance) and the evaluation of the returned x is also returned */
-uint optGaussNewton(arr& x, VectorFunction& f, OptOptions o, arr *addRegularizer, arr *fx_user, arr *Jx_user) {
-  double alpha = 1.;
-  double lambda = o.damping;
-  double fx, fy;
-  arr Delta, y;
-  uint evals=0;
-  
-  if(fx_user) NIY;
-  
-  //compute initial costs
-  arr phi;
-  arr J;
-  f.fv(phi, J, x);  evals++;
-  fx = sumOfSqr(phi);
-  if(addRegularizer)  fx += scalarProduct(x,(*addRegularizer)*vectorShaped(x));
-
-  //startup verbose
-  if(o.verbose>1) cout <<"*** optGaussNewton: starting point f(x)=" <<fx <<" alpha=" <<alpha <<" lambda=" <<lambda <<endl;
-  if(o.verbose>2) cout <<"\nx=" <<x <<endl;
-  ofstream fil;
-  if(o.verbose>0) fil.open("z.opt");
-  if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<' ' <<x <<endl;
-
-  for(uint it=1;; it++) { //iterations and lambda adaptation loop
-    if(o.verbose>1) cout <<"optGaussNewton it=" <<it << " lambda=" <<lambda <<flush;
-
-    //compute Delta
-#if 1
-    arr R=comp_At_A(J);
-    if(lambda) { //Levenberg Marquardt damping
-      if(R.special==arr::RowShiftedPackedMatrixST) for(uint i=0; i<R.d0; i++) R(i,0) += .5*lambda; //(R(i,0) is the diagonal in the packed matrix!!)
-      else for(uint i=0; i<R.d0; i++) R(i,i) += .5*lambda;
-    }
-    if(addRegularizer) {
-      if(R.special==arr::RowShiftedPackedMatrixST) R = unpack(R);
-//      cout <<*addRegularizer <<R <<endl;
-      lapack_Ainv_b_sym(Delta, R + (*addRegularizer), -(comp_At_x(J, phi)+(*addRegularizer)*vectorShaped(x)));
-    } else {
-      lapack_Ainv_b_sym(Delta, R, -comp_At_x(J, phi));
-    }
-#else //this uses lapack's LLS minimizer - but is really slow!!
-    x.reshape(x.N);
-    if(lambda) {
-      arr D; D.setDiag(sqrt(.5*lambda),x.N);
-      J.append(D);
-      phi.append(zeros(x.N,1));
-    }
-    lapack_min_Ax_b(Delta, J, J*x - phi);
-    Delta -= x;
-#endif
-    if(o.maxStep>0. && absMax(Delta)>o.maxStep)  Delta *= o.maxStep/absMax(Delta);
-    if(o.verbose>1) cout <<" \t|Delta|=" <<absMax(Delta) <<flush;
-
-    //lazy stopping criterion: stop without any update
-    if(lambda<2. && absMax(Delta)<1e-3*o.stopTolerance) break;
-
-    for(;;) { //stepsize adaptation loop -- doesn't iterate for useDamping option
-      y = x + alpha*Delta;
-      f.fv(phi, J, y);  evals++;
-      fy = sumOfSqr(phi);
-      if(addRegularizer) fy += scalarProduct(y,(*addRegularizer)*vectorShaped(y));
-      if(o.verbose>2) cout <<" \tprobing y=" <<y;
-      if(o.verbose>1) cout <<" \talpha=" <<alpha <<" \tevals=" <<evals <<" \tf(y)=" <<fy <<flush;
-      CHECK(fy==fy, "cost seems to be NAN: ly=" <<fy);
-      if(fy==fy && fy <= fx) { //fy==fy is for NAN
-        if(o.verbose>1) cout <<" - ACCEPT" <<endl;
-        //adopt new point and adapt stepsize|damping
-        x = y;
-        fx = fy;
-        if(o.useAdaptiveDamping) { //Levenberg-Marquardt type damping
-          lambda = .2*lambda;
-        } else {
-          alpha = pow(alpha, 0.5);
-        }
-        break;
-      } else {
-        if(o.verbose>1) cout <<" - reject" <<endl;
-        //reject new points and adapte stepsize|damping
-        if(o.useAdaptiveDamping) { //Levenberg-Marquardt type damping
-          lambda = 10.*lambda;
-          break;
-        } else {
-          if(alpha*absMax(Delta)<1e-3*o.stopTolerance || evals>o.stopEvals) break; //WARNING: this may lead to non-monotonicity -> make evals high!
-          alpha = .1*alpha;
-        }
-      }
-    }
-
-    if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<' ' <<x <<endl;
-
-    //stopping criterion
-    if( (lambda<2. && absMax(Delta)<o.stopTolerance) ||
-        (lambda<2. && alpha*absMax(Delta)<1e-3*o.stopTolerance) ||
-        (evals>=o.stopEvals) ||
-        (it>=o.stopIters) ) break;
-  }
-  if(o.fmin_return) *o.fmin_return=fx;
-  if(o.verbose>0) fil.close();
-#ifndef MT_MSVC
-  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l",NULL,true);
-#endif
-  return evals;
-}
-
 /** @brief Minimizes \f$f(x) = A(x)^T x A^T(x) - 2 a(x)^T x + c(x)\f$. The optional _user arguments specify,
  * if f has already been evaluated at x (another initial evaluation is then omitted
  * to increase performance) and the evaluation of the returned x is also returned */
@@ -357,6 +250,7 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
 
     //compute Delta
 #if 1
+    //MT_MSG("\nx=" <<x <<"\ngx=" <<gx <<"\nHx=" <<Hx);
     arr R=Hx;
     if(lambda) { //Levenberg Marquardt damping
       if(R.special==arr::RowShiftedPackedMatrixST) for(uint i=0; i<R.d0; i++) R(i,0) += lambda; //(R(i,0) is the diagonal in the packed matrix!!)
