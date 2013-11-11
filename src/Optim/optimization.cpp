@@ -18,10 +18,6 @@
 
 #include "optimization.h"
 
-#ifndef CHECK_EPS
-#  define CHECK_EPS 1e-8
-#endif
-
 bool sanityCheck=false; //true;
 uint eval_cost=0;
 //SqrPotential& NoPot = *((SqrPotential*)NULL);
@@ -67,106 +63,8 @@ double evaluateVF(VectorFunction& f, const arr& x) {
   return sumOfSqr(y);
 }
 
-/// numeric (finite difference) check of the gradient of f at x
-bool checkGradient(ScalarFunction &f,
-                   const arr& x, double tolerance) {
-  arr J, dx, JJ;
-  double y, dy;
-  y=f.fs(J, NoArr, x);
-  
-  JJ.resize(x.N);
-  double eps=CHECK_EPS;
-  uint i;
-  for(i=0; i<x.N; i++) {
-    dx=x;
-    dx.elem(i) += eps;
-    dy = f.fs(NoArr, NoArr, dx);
-    dy = (dy-y)/eps;
-    JJ(i)=dy;
-  }
-  JJ.reshapeAs(J);
-  double md=maxDiff(J, JJ, &i);
-//   MT::save(J, "z.J");
-//   MT::save(JJ, "z.JJ");
-  if(md>tolerance) {
-    MT_MSG("checkGradient -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
-    MT::save(J, "z.J_analytical");
-    MT::save(JJ, "z.J_empirical");
-    //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
-    //HALT("");
-    return false;
-  } else {
-    cout <<"checkGradient -- SUCCESS (max diff error=" <<md <<")" <<endl;
-  }
-  return true;
-}
 
-bool checkHessian(ScalarFunction &f, const arr& x, double tolerance) {
-  arr g, H, dx, dy, Jg;
-  f.fs(g, H, x);
-  if(H.special==arr::RowShiftedPackedMatrixST) H = unpack(H);
-  
-  Jg.resize(g.N, x.N);
-  double eps=CHECK_EPS;
-  uint i, k;
-  for(i=0; i<x.N; i++) {
-    dx=x;
-    dx.elem(i) += eps;
-    f.fs(dy, NoArr, dx);
-    dy = (dy-g)/eps;
-    for(k=0; k<g.N; k++) Jg(k, i)=dy.elem(k);
-  }
-  Jg.reshapeAs(H);
-  double md=maxDiff(H, Jg, &i);
-  //   MT::save(J, "z.J");
-  //   MT::save(JJ, "z.JJ");
-  if(md>tolerance) {
-    MT_MSG("checkHessian -- FAILURE -- max diff=" <<md <<" |"<<H.elem(i)<<'-'<<Jg.elem(i)<<"| (stored in files z.J_*)");
-    MT::save(H, "z.J_analytical");
-    MT::save(Jg, "z.J_empirical");
-    //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
-    //HALT("");
-    return false;
-  } else {
-    cout <<"checkHessian -- SUCCESS (max diff error=" <<md <<")" <<endl;
-  }
-  return true;
-}
-
-bool checkJacobian(VectorFunction &f,
-                   const arr& x, double tolerance) {
-  arr y, J, dx, dy, JJ;
-  f.fv(y, J, x);
-  if(J.special==arr::RowShiftedPackedMatrixST) J = unpack(J);
-  
-  JJ.resize(y.N, x.N);
-  double eps=CHECK_EPS;
-  uint i, k;
-  for(i=0; i<x.N; i++) {
-    dx=x;
-    dx.elem(i) += eps;
-    f.fv(dy, NoArr, dx);
-    dy = (dy-y)/eps;
-    for(k=0; k<y.N; k++) JJ(k, i)=dy.elem(k);
-  }
-  JJ.reshapeAs(J);
-  double md=maxDiff(J, JJ, &i);
-//   MT::save(J, "z.J");
-//   MT::save(JJ, "z.JJ");
-  if(md>tolerance) {
-    MT_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
-    MT::save(J, "z.J_analytical");
-    MT::save(JJ, "z.J_empirical");
-    //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
-    //HALT("");
-    return false;
-  } else {
-    cout <<"checkJacobian -- SUCCESS (max diff error=" <<md <<")" <<endl;
-  }
-  return true;
-}
-
-bool checkAll(ConstrainedProblem &P, const arr& x, double tolerance){
+bool checkAllGradients(ConstrainedProblem &P, const arr& x, double tolerance){
   struct F:ScalarFunction{
     ConstrainedProblem &P;
     F(ConstrainedProblem &_P):P(_P){}
@@ -350,20 +248,20 @@ uint optGradDescent(arr& x, ScalarFunction& f, OptOptions o) {
   if(o.verbose>0) fil.open("z.opt");
   if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<a <<' ' <<x <<endl;
   
-  grad_x /= norm(grad_x);
+  grad_x /= length(grad_x);
   
   for(uint k=0;; k++) {
     y = x - a*grad_x;
     fy = f.fs(grad_y, NoArr, y);  evals++;
     CHECK(fy==fy, "cost seems to be NAN: fy=" <<fy);
-    if(o.verbose>1) cout <<"optGradDescent " <<evals <<' ' <<eval_cost <<" \tprobing y=" <<y <<" \tf(y)=" <<fy <<" \t|grad|=" <<norm(grad_y) <<" \ta=" <<a;
+    if(o.verbose>1) cout <<"optGradDescent " <<evals <<' ' <<eval_cost <<" \tprobing y=" <<y <<" \tf(y)=" <<fy <<" \t|grad|=" <<length(grad_y) <<" \ta=" <<a;
     
     if(fy <= fx) {
       if(o.verbose>1) cout <<" - ACCEPT" <<endl;
-      double step=norm(x-y);
+      double step=length(x-y);
       x = y;
       fx = fy;
-      grad_x = grad_y/norm(grad_y);
+      grad_x = grad_y/length(grad_y);
       a *= 1.2;
       if(o.maxStep>0. && a>o.maxStep) a = o.maxStep;
       if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<a <<' ' <<x <<endl;

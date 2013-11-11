@@ -262,14 +262,14 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
 //      cbar  = fi(0).c + V(0).c + damping*sumOfSqr(x[0]);
 //      inverse_SymPosDef(Bbarinv0, Bbar);
 //      step = Bbarinv0*bbar0 - y[0];
-//      if(o.maxStep>0. && norm(step)>o.maxStep)  step *= o.maxStep/norm(step);
+//      if(o.maxStep>0. && length(step)>o.maxStep)  step *= o.maxStep/length(step);
 //      y[0]() += step;
 //      //y[0] = Bbarinv0*bbar0;
 //      fy_from_V0 = cbar - scalarProduct(bbar0, Bbarinv0 * bbar0);
 //    }
 //    for(uint t=0; t<T; t++) {
 //      step = Bbarinv[t]*(bbar[t] - (~fij(t).C)*y[t]) - y[t+1];
-//      if(o.maxStep>0. && norm(step)>o.maxStep)  step *= o.maxStep/norm(step);
+//      if(o.maxStep>0. && length(step)>o.maxStep)  step *= o.maxStep/length(step);
 //      y[t+1]() += step;
 //      //y[t+1] = Bbarinv[t]*(bbar[t] - (~fij(t).C)*y[t]);
 //    }
