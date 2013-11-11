@@ -65,7 +65,7 @@ struct KOrderMarkovFunction {
   virtual uint dim_x() = 0;       ///< \f$ \dim(x_t) \f$
   virtual uint dim_phi(uint t) = 0; ///< \f$ \dim(\phi_t) \f$
   virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints in \f$ \phi_t \f$
-  virtual arr get_prefix(){ arr x(get_k(), dim_phi(0)); x.setZero(); return x; } ///< the augmentation \f$ (x_{t=-k},..,x_{t=-1}) \f$ that makes \f$ \phi_{0,..,k-1} \f$ well-defined
+  virtual arr get_prefix(){ arr x(get_k(), dim_x()); x.setZero(); return x; } ///< the augmentation \f$ (x_{t=-k},..,x_{t=-1}) \f$ that makes \f$ \phi_{0,..,k-1} \f$ well-defined
 
   /// optional: we make include kernel costs \f$ \sum_{i,j} k(i,j) x_i^\top x_j \f$ -- PRELIM, see examples/kOrderMarkov
   virtual bool hasKernel() { return false; }
