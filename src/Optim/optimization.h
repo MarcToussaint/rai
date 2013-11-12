@@ -53,6 +53,8 @@ struct ConstrainedProblem {//:ScalarFunction, VectorFunction {
   virtual double fc(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x) = 0;
   virtual uint dim_x() = 0; ///< \f$ \dim(x) \f$
   virtual uint dim_g() = 0; ///< \f$ \dim(g) \f$
+
+  virtual ~ConstrainedProblem() {};
 };
 
 /// functions \f$ \phi_t:(x_{t-k},..,x_t) \mapsto y\in\mathbb{R}^{m_t} \f$ over a chain \f$x_0,..,x_T\f$ of variables
@@ -70,6 +72,8 @@ struct KOrderMarkovFunction {
   /// optional: we make include kernel costs \f$ \sum_{i,j} k(i,j) x_i^\top x_j \f$ -- PRELIM, see examples/kOrderMarkov
   virtual bool hasKernel() { return false; }
   virtual double kernel(uint t0, uint t1) { NIY; } ///< a kernel adds additional costs: neg-log-likelihoods of a Gaussian Process
+
+  virtual ~KOrderMarkovFunction() {};
 };
 
 
