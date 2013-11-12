@@ -49,19 +49,7 @@ extern uint eval_cost;
  */
 
 
-/// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
-struct ScalarFunction {
-  virtual double fs(arr& g, arr& H, const arr& x) = 0;
-};
-
-/// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
-struct VectorFunction {
-  virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
-};
-
 struct ConstrainedProblem {//:ScalarFunction, VectorFunction {
-  //virtual double fs(arr& g, arr& H, const arr& x) = 0;
-  //virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
   virtual double fc(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x) = 0;
   virtual uint dim_x() = 0; ///< \f$ \dim(x) \f$
   virtual uint dim_g() = 0; ///< \f$ \dim(g) \f$
@@ -77,7 +65,7 @@ struct KOrderMarkovFunction {
   virtual uint dim_x() = 0;       ///< \f$ \dim(x_t) \f$
   virtual uint dim_phi(uint t) = 0; ///< \f$ \dim(\phi_t) \f$
   virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints in \f$ \phi_t \f$
-  virtual arr get_prefix(){ arr x(get_k(), dim_phi(0)); x.setZero(); return x; } ///< the augmentation \f$ (x_{t=-k},..,x_{t=-1}) \f$ that makes \f$ \phi_{0,..,k-1} \f$ well-defined
+  virtual arr get_prefix(){ arr x(get_k(), dim_x()); x.setZero(); return x; } ///< the augmentation \f$ (x_{t=-k},..,x_{t=-1}) \f$ that makes \f$ \phi_{0,..,k-1} \f$ well-defined
 
   /// optional: we make include kernel costs \f$ \sum_{i,j} k(i,j) x_i^\top x_j \f$ -- PRELIM, see examples/kOrderMarkov
   virtual bool hasKernel() { return false; }
@@ -117,10 +105,7 @@ struct Convert {
 // checks, evaluation
 //
 
-bool checkGradient(ScalarFunction &f, const arr& x, double tolerance);
-bool checkJacobian(VectorFunction &f, const arr& x, double tolerance);
-bool checkHessian(ScalarFunction &f, const arr& x, double tolerance);
-bool checkAll(ConstrainedProblem &P, const arr& x, double tolerance);
+bool checkAllGradients(ConstrainedProblem &P, const arr& x, double tolerance);
 bool checkDirectionalGradient(ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(VectorFunction &f, const arr& x, const arr& delta, double tolerance);
 

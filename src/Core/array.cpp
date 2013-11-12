@@ -332,14 +332,14 @@ void gaussFromData(arr& a, arr& A, const arr& X) {
 /* compute a rotation matrix that rotates a onto v in arbitrary dimensions */
 void rotationFromAtoB(arr& R, const arr& a, const arr& v) {
   CHECK(a.N==v.N, "");
-  CHECK(fabs(1.-norm(a))<1e-10 && fabs(1.-norm(v))<1e-10, "");
+  CHECK(fabs(1.-length(a))<1e-10 && fabs(1.-length(v))<1e-10, "");
   uint n=a.N, i, j;
   if(maxDiff(a, v)<1e-10) { R.setId(n); return; }  //nothing to rotate!!
   R.resize(n, n);
   //-- compute b orthogonal to a such that (a, b) span the rotation plane
   arr b;
   b = v - a*scalarProduct(a, v);
-  b /= norm(b);
+  b /= length(b);
   //-- compute rotation coefficients within the (a, b) plane, namely, R_2D=(v_a  -v_b ;  v_b  v_a)
   double v_a, v_b;
   v_a=scalarProduct(v, a);     //component along a
@@ -1077,6 +1077,109 @@ void scanArrFile(const char* name) {
     x.writeTagged(cout, tag);  cout <<endl;
     if(!is.good()) return;
   }
+}
+
+#ifndef CHECK_EPS
+#  define CHECK_EPS 1e-8
+#endif
+
+/// numeric (finite difference) check of the gradient of f at x
+bool checkGradient(ScalarFunction &f,
+                   const arr& x, double tolerance) {
+  arr J, dx, JJ;
+  double y, dy;
+  y=f.fs(J, NoArr, x);
+
+  JJ.resize(x.N);
+  double eps=CHECK_EPS;
+  uint i;
+  for(i=0; i<x.N; i++) {
+    dx=x;
+    dx.elem(i) += eps;
+    dy = f.fs(NoArr, NoArr, dx);
+    dy = (dy-y)/eps;
+    JJ(i)=dy;
+  }
+  JJ.reshapeAs(J);
+  double md=maxDiff(J, JJ, &i);
+//   MT::save(J, "z.J");
+//   MT::save(JJ, "z.JJ");
+  if(md>tolerance) {
+    MT_MSG("checkGradient -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
+    MT::save(J, "z.J_analytical");
+    MT::save(JJ, "z.J_empirical");
+    //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
+    //HALT("");
+    return false;
+  } else {
+    cout <<"checkGradient -- SUCCESS (max diff error=" <<md <<")" <<endl;
+  }
+  return true;
+}
+
+bool checkHessian(ScalarFunction &f, const arr& x, double tolerance) {
+  arr g, H, dx, dy, Jg;
+  f.fs(g, H, x);
+  if(H.special==arr::RowShiftedPackedMatrixST) H = unpack(H);
+
+  Jg.resize(g.N, x.N);
+  double eps=CHECK_EPS;
+  uint i, k;
+  for(i=0; i<x.N; i++) {
+    dx=x;
+    dx.elem(i) += eps;
+    f.fs(dy, NoArr, dx);
+    dy = (dy-g)/eps;
+    for(k=0; k<g.N; k++) Jg(k, i)=dy.elem(k);
+  }
+  Jg.reshapeAs(H);
+  double md=maxDiff(H, Jg, &i);
+  //   MT::save(J, "z.J");
+  //   MT::save(JJ, "z.JJ");
+  if(md>tolerance) {
+    MT_MSG("checkHessian -- FAILURE -- max diff=" <<md <<" |"<<H.elem(i)<<'-'<<Jg.elem(i)<<"| (stored in files z.J_*)");
+    MT::save(H, "z.J_analytical");
+    MT::save(Jg, "z.J_empirical");
+    //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
+    //HALT("");
+    return false;
+  } else {
+    cout <<"checkHessian -- SUCCESS (max diff error=" <<md <<")" <<endl;
+  }
+  return true;
+}
+
+bool checkJacobian(VectorFunction &f,
+                   const arr& x, double tolerance) {
+  arr y, J, dx, dy, JJ;
+  f.fv(y, J, x);
+  if(J.special==arr::RowShiftedPackedMatrixST) J = unpack(J);
+
+  JJ.resize(y.N, x.N);
+  double eps=CHECK_EPS;
+  uint i, k;
+  for(i=0; i<x.N; i++) {
+    dx=x;
+    dx.elem(i) += eps;
+    f.fv(dy, NoArr, dx);
+    dy = (dy-y)/eps;
+    for(k=0; k<y.N; k++) JJ(k, i)=dy.elem(k);
+  }
+  JJ.reshapeAs(J);
+  double md=maxDiff(J, JJ, &i);
+//   MT::save(J, "z.J");
+//   MT::save(JJ, "z.JJ");
+  if(md>tolerance) {
+    MT_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
+    MT::save(J, "z.J_analytical");
+    MT::save(JJ, "z.J_empirical");
+    //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
+    //HALT("");
+    return false;
+  } else {
+    cout <<"checkJacobian -- SUCCESS (max diff error=" <<md <<")" <<endl;
+  }
+  return true;
 }
 
 #define EXP ::exp //MT::approxExp

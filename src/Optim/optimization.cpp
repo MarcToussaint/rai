@@ -18,10 +18,6 @@
 
 #include "optimization.h"
 
-#ifndef CHECK_EPS
-#  define CHECK_EPS 1e-8
-#endif
-
 bool sanityCheck=false; //true;
 uint eval_cost=0;
 //SqrPotential& NoPot = *((SqrPotential*)NULL);
@@ -67,106 +63,8 @@ double evaluateVF(VectorFunction& f, const arr& x) {
   return sumOfSqr(y);
 }
 
-/// numeric (finite difference) check of the gradient of f at x
-bool checkGradient(ScalarFunction &f,
-                   const arr& x, double tolerance) {
-  arr J, dx, JJ;
-  double y, dy;
-  y=f.fs(J, NoArr, x);
-  
-  JJ.resize(x.N);
-  double eps=CHECK_EPS;
-  uint i;
-  for(i=0; i<x.N; i++) {
-    dx=x;
-    dx.elem(i) += eps;
-    dy = f.fs(NoArr, NoArr, dx);
-    dy = (dy-y)/eps;
-    JJ(i)=dy;
-  }
-  JJ.reshapeAs(J);
-  double md=maxDiff(J, JJ, &i);
-//   MT::save(J, "z.J");
-//   MT::save(JJ, "z.JJ");
-  if(md>tolerance) {
-    MT_MSG("checkGradient -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
-    MT::save(J, "z.J_analytical");
-    MT::save(JJ, "z.J_empirical");
-    //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
-    //HALT("");
-    return false;
-  } else {
-    cout <<"checkGradient -- SUCCESS (max diff error=" <<md <<")" <<endl;
-  }
-  return true;
-}
 
-bool checkHessian(ScalarFunction &f, const arr& x, double tolerance) {
-  arr g, H, dx, dy, Jg;
-  f.fs(g, H, x);
-  if(H.special==arr::RowShiftedPackedMatrixST) H = unpack(H);
-  
-  Jg.resize(g.N, x.N);
-  double eps=CHECK_EPS;
-  uint i, k;
-  for(i=0; i<x.N; i++) {
-    dx=x;
-    dx.elem(i) += eps;
-    f.fs(dy, NoArr, dx);
-    dy = (dy-g)/eps;
-    for(k=0; k<g.N; k++) Jg(k, i)=dy.elem(k);
-  }
-  Jg.reshapeAs(H);
-  double md=maxDiff(H, Jg, &i);
-  //   MT::save(J, "z.J");
-  //   MT::save(JJ, "z.JJ");
-  if(md>tolerance) {
-    MT_MSG("checkHessian -- FAILURE -- max diff=" <<md <<" |"<<H.elem(i)<<'-'<<Jg.elem(i)<<"| (stored in files z.J_*)");
-    MT::save(H, "z.J_analytical");
-    MT::save(Jg, "z.J_empirical");
-    //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
-    //HALT("");
-    return false;
-  } else {
-    cout <<"checkHessian -- SUCCESS (max diff error=" <<md <<")" <<endl;
-  }
-  return true;
-}
-
-bool checkJacobian(VectorFunction &f,
-                   const arr& x, double tolerance) {
-  arr y, J, dx, dy, JJ;
-  f.fv(y, J, x);
-  if(J.special==arr::RowShiftedPackedMatrixST) J = unpack(J);
-  
-  JJ.resize(y.N, x.N);
-  double eps=CHECK_EPS;
-  uint i, k;
-  for(i=0; i<x.N; i++) {
-    dx=x;
-    dx.elem(i) += eps;
-    f.fv(dy, NoArr, dx);
-    dy = (dy-y)/eps;
-    for(k=0; k<y.N; k++) JJ(k, i)=dy.elem(k);
-  }
-  JJ.reshapeAs(J);
-  double md=maxDiff(J, JJ, &i);
-//   MT::save(J, "z.J");
-//   MT::save(JJ, "z.JJ");
-  if(md>tolerance) {
-    MT_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
-    MT::save(J, "z.J_analytical");
-    MT::save(JJ, "z.J_empirical");
-    //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
-    //HALT("");
-    return false;
-  } else {
-    cout <<"checkJacobian -- SUCCESS (max diff error=" <<md <<")" <<endl;
-  }
-  return true;
-}
-
-bool checkAll(ConstrainedProblem &P, const arr& x, double tolerance){
+bool checkAllGradients(ConstrainedProblem &P, const arr& x, double tolerance){
   struct F:ScalarFunction{
     ConstrainedProblem &P;
     F(ConstrainedProblem &_P):P(_P){}
@@ -212,113 +110,6 @@ uint optRprop(arr& x, ScalarFunction& f, OptOptions o) {
   return Rprop().loop(x, f, o.fmin_return, o.stopTolerance, o.initStep, o.stopEvals, o.verbose);
 }
 
-/** @brief Minimizes \f$f(x) = \phi(x)^T \phi(x)$ using the Jacobian. The optional _user arguments specify,
- * if f has already been evaluated at x (another initial evaluation is then omitted
- * to increase performance) and the evaluation of the returned x is also returned */
-uint optGaussNewton(arr& x, VectorFunction& f, OptOptions o, arr *addRegularizer, arr *fx_user, arr *Jx_user) {
-  double alpha = 1.;
-  double lambda = o.damping;
-  double fx, fy;
-  arr Delta, y;
-  uint evals=0;
-  
-  if(fx_user) NIY;
-  
-  //compute initial costs
-  arr phi;
-  arr J;
-  f.fv(phi, J, x);  evals++;
-  fx = sumOfSqr(phi);
-  if(addRegularizer)  fx += scalarProduct(x,(*addRegularizer)*vectorShaped(x));
-
-  //startup verbose
-  if(o.verbose>1) cout <<"*** optGaussNewton: starting point f(x)=" <<fx <<" alpha=" <<alpha <<" lambda=" <<lambda <<endl;
-  if(o.verbose>2) cout <<"\nx=" <<x <<endl;
-  ofstream fil;
-  if(o.verbose>0) fil.open("z.opt");
-  if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<' ' <<x <<endl;
-
-  for(uint it=1;; it++) { //iterations and lambda adaptation loop
-    if(o.verbose>1) cout <<"optGaussNewton it=" <<it << " lambda=" <<lambda <<flush;
-
-    //compute Delta
-#if 1
-    arr R=comp_At_A(J);
-    if(lambda) { //Levenberg Marquardt damping
-      if(R.special==arr::RowShiftedPackedMatrixST) for(uint i=0; i<R.d0; i++) R(i,0) += .5*lambda; //(R(i,0) is the diagonal in the packed matrix!!)
-      else for(uint i=0; i<R.d0; i++) R(i,i) += .5*lambda;
-    }
-    if(addRegularizer) {
-      if(R.special==arr::RowShiftedPackedMatrixST) R = unpack(R);
-//      cout <<*addRegularizer <<R <<endl;
-      lapack_Ainv_b_sym(Delta, R + (*addRegularizer), -(comp_At_x(J, phi)+(*addRegularizer)*vectorShaped(x)));
-    } else {
-      lapack_Ainv_b_sym(Delta, R, -comp_At_x(J, phi));
-    }
-#else //this uses lapack's LLS minimizer - but is really slow!!
-    x.reshape(x.N);
-    if(lambda) {
-      arr D; D.setDiag(sqrt(.5*lambda),x.N);
-      J.append(D);
-      phi.append(zeros(x.N,1));
-    }
-    lapack_min_Ax_b(Delta, J, J*x - phi);
-    Delta -= x;
-#endif
-    if(o.maxStep>0. && absMax(Delta)>o.maxStep)  Delta *= o.maxStep/absMax(Delta);
-    if(o.verbose>1) cout <<" \t|Delta|=" <<absMax(Delta) <<flush;
-
-    //lazy stopping criterion: stop without any update
-    if(lambda<2. && absMax(Delta)<1e-3*o.stopTolerance) break;
-
-    for(;;) { //stepsize adaptation loop -- doesn't iterate for useDamping option
-      y = x + alpha*Delta;
-      f.fv(phi, J, y);  evals++;
-      fy = sumOfSqr(phi);
-      if(addRegularizer) fy += scalarProduct(y,(*addRegularizer)*vectorShaped(y));
-      if(o.verbose>2) cout <<" \tprobing y=" <<y;
-      if(o.verbose>1) cout <<" \talpha=" <<alpha <<" \tevals=" <<evals <<" \tf(y)=" <<fy <<flush;
-      CHECK(fy==fy, "cost seems to be NAN: ly=" <<fy);
-      if(fy==fy && fy <= fx) { //fy==fy is for NAN
-        if(o.verbose>1) cout <<" - ACCEPT" <<endl;
-        //adopt new point and adapt stepsize|damping
-        x = y;
-        fx = fy;
-        if(o.useAdaptiveDamping) { //Levenberg-Marquardt type damping
-          lambda = .2*lambda;
-        } else {
-          alpha = pow(alpha, 0.5);
-        }
-        break;
-      } else {
-        if(o.verbose>1) cout <<" - reject" <<endl;
-        //reject new points and adapte stepsize|damping
-        if(o.useAdaptiveDamping) { //Levenberg-Marquardt type damping
-          lambda = 10.*lambda;
-          break;
-        } else {
-          if(alpha*absMax(Delta)<1e-3*o.stopTolerance || evals>o.stopEvals) break; //WARNING: this may lead to non-monotonicity -> make evals high!
-          alpha = .1*alpha;
-        }
-      }
-    }
-
-    if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<' ' <<x <<endl;
-
-    //stopping criterion
-    if( (lambda<2. && absMax(Delta)<o.stopTolerance) ||
-        (lambda<2. && alpha*absMax(Delta)<1e-3*o.stopTolerance) ||
-        (evals>=o.stopEvals) ||
-        (it>=o.stopIters) ) break;
-  }
-  if(o.fmin_return) *o.fmin_return=fx;
-  if(o.verbose>0) fil.close();
-#ifndef MT_MSVC
-  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l",NULL,true);
-#endif
-  return evals;
-}
-
 /** @brief Minimizes \f$f(x) = A(x)^T x A^T(x) - 2 a(x)^T x + c(x)\f$. The optional _user arguments specify,
  * if f has already been evaluated at x (another initial evaluation is then omitted
  * to increase performance) and the evaluation of the returned x is also returned */
@@ -357,6 +148,7 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
 
     //compute Delta
 #if 1
+    //MT_MSG("\nx=" <<x <<"\ngx=" <<gx <<"\nHx=" <<Hx);
     arr R=Hx;
     if(lambda) { //Levenberg Marquardt damping
       if(R.special==arr::RowShiftedPackedMatrixST) for(uint i=0; i<R.d0; i++) R(i,0) += lambda; //(R(i,0) is the diagonal in the packed matrix!!)
@@ -456,20 +248,20 @@ uint optGradDescent(arr& x, ScalarFunction& f, OptOptions o) {
   if(o.verbose>0) fil.open("z.opt");
   if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<a <<' ' <<x <<endl;
   
-  grad_x /= norm(grad_x);
+  grad_x /= length(grad_x);
   
   for(uint k=0;; k++) {
     y = x - a*grad_x;
     fy = f.fs(grad_y, NoArr, y);  evals++;
     CHECK(fy==fy, "cost seems to be NAN: fy=" <<fy);
-    if(o.verbose>1) cout <<"optGradDescent " <<evals <<' ' <<eval_cost <<" \tprobing y=" <<y <<" \tf(y)=" <<fy <<" \t|grad|=" <<norm(grad_y) <<" \ta=" <<a;
+    if(o.verbose>1) cout <<"optGradDescent " <<evals <<' ' <<eval_cost <<" \tprobing y=" <<y <<" \tf(y)=" <<fy <<" \t|grad|=" <<length(grad_y) <<" \ta=" <<a;
     
     if(fy <= fx) {
       if(o.verbose>1) cout <<" - ACCEPT" <<endl;
-      double step=norm(x-y);
+      double step=length(x-y);
       x = y;
       fx = fy;
-      grad_x = grad_y/norm(grad_y);
+      grad_x = grad_y/length(grad_y);
       a *= 1.2;
       if(o.maxStep>0. && a>o.maxStep) a = o.maxStep;
       if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<a <<' ' <<x <<endl;
