@@ -264,12 +264,10 @@ template<class T> struct Array {
   /// @name I/O
   void write(std::ostream& os=std::cout, const char *ELEMSEP=NULL, const char *LINESEP=NULL, const char *BRACKETS=NULL, bool dimTag=false, bool binary=false) const;
   void read(std::istream& is);
-  void read(const char* filename);
   void writeTagged(std::ostream& os, const char* tag, bool binary=false) const;
   bool readTagged(std::istream& is, const char *tag);
   void writeTagged(const char* filename, const char* tag, bool binary=false) const;
   bool readTagged(const char* filename, const char *tag);
-  //void readOld(std::istream& is); //? garbage
   void writeDim(std::ostream& os=std::cout) const;
   void readDim(std::istream& is);
   void writeRaw(std::ostream& os) const;
