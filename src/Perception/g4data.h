@@ -13,6 +13,10 @@ struct G4Data {
   int getNumTimesteps() const;
   int getNumSensors(const char *key = NULL) const;
 
+  boolA getMissing() const;
+  MT::Array<intA> getMissingNo() const;
+  MT::Array<intA> getMissingT() const;
+
   arr query(uint t, const char *key = NULL) const;
   arr query(const char *key = NULL) const;
 

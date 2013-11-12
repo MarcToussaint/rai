@@ -93,9 +93,6 @@ void G4Data::loadData(const char *meta_fname, const char *poses_fname, bool inte
           arr s0 = s->data[t-1][i];
           arr sF = s->data[t+no][i];
           arr diff = sF - s0;
-          cout << "t: " << t << endl;
-          cout << "no: " << no << endl;
-          cout << "diff: " << diff << endl;
           for(uint tt = 0; tt < no; tt++)
             s->data[t+tt][i] = s0 + diff*(tt+1.)/(no+1.);
         }
@@ -115,6 +112,18 @@ int G4Data::getNumSensors(const char *key) const {
   if(key == NULL)
     return s->numS;
   return s->G.getTypedValues<KeyValueGraph>(key).N;
+}
+
+boolA G4Data::getMissing() const {
+  return s->missing;
+}
+
+MT::Array<intA> G4Data::getMissingNo() const {
+  return s->missingno;
+}
+
+MT::Array<intA> G4Data::getMissingT() const {
+  return s->missingt;
 }
 
 arr G4Data::query(uint t, const char *key) const {
