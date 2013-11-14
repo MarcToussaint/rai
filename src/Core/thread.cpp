@@ -468,86 +468,80 @@ void close(const ThreadL& P) {
 
 //===========================================================================
 //
-// throut Utilities
+// TStream class, for concurrent access to ostreams
 //
 
-#include <ostream>
-#include <sstream>
-#include <map>
+TStream::TStream(std::ostream &o):out(o) { }
 
-Mutex tout::mutex;
-RWLock tout::lock;
-std::map<const void*, const char*> tout::map;
-
-tout::tout(const void *o):objflag(true), obj(o) {}
-tout::tout():objflag(false) {}
-tout::~tout() {
-  mutex.lock();
-  if(objflag) {
-    char *head;
-    if(head_private(obj, &head))
-      cout << head;
-  }
-  cout << s.str();
-  mutex.unlock();
+TStream::Access TStream::operator()(const void *obj) {
+  return Access(this, obj);
 }
 
-bool tout::contains(const void *obj) {
-  lock.readLock();
-  bool r = contains_private(obj);
-  lock.unlock();
-  return r;
+TStream::Register TStream::reg(const void *obj) {
+  return Register(this, obj);
 }
 
-void tout::unreg(const void *obj) {
-  lock.writeLock();
-  unreg_private(obj);
-  lock.unlock();
+bool TStream::get(const void *obj, char **head) {
+  return get_private(obj, head, true);
 }
 
-void tout::unreg_all() {
-  lock.writeLock();
-  for(auto it = map.begin(); it != map.end(); )
-    // can not delete current object, always delete previous one
-    unreg_private((it++)->first);
-  lock.unlock();
+bool TStream::get_private(const void *obj, char **head, bool l) {
+  if(l) lock.readLock();
+  bool ret = map.count(obj) == 1;
+  if(head) *head = ret? (char*)map[obj]: NULL;
+  if(l) lock.unlock();
+  return ret;
 }
 
-bool tout::contains_private(const void *obj) {
-  return map.count(obj) == 1;
+void TStream::reg_private(const void *obj, char *p, bool l) {
+  if(l) lock.writeLock();
+  unreg_private(obj, false);
+  map[obj] = p;
+  if(l) lock.unlock();
 }
 
-void tout::unreg_private(const void *obj) {
-  if(contains_private(obj)) {
+void TStream::unreg(const void *obj) {
+  unreg_private(obj, true);
+}
+
+void TStream::unreg_private(const void *obj, bool l) {
+  if(l) lock.writeLock();
+  if(get_private(obj, NULL, false)) {
     delete map[obj];
     map.erase(obj);
   }
+  if(l) lock.unlock();
 }
 
-bool tout::head_private(const void *obj, char **head) {
-  bool r = contains_private(obj);
-  if(head != NULL)
-    *head = r? (char*)map[obj]: NULL;
-  return r;
+void TStream::unreg_all() {
+  lock.writeLock();
+  for(auto it = map.begin(); it != map.end(); )
+    unreg_private((it++)->first, false); // always increment before actual deletion
+  lock.unlock();
 }
 
-tout::reg::reg(const void *o):objflag(true), obj(o) {}
-tout::reg::reg():objflag(false) {}
+TStream::Access::Access(TStream *ts, const void *o):tstream(ts), obj(o) { }
+TStream::Access::Access(const Access &a):tstream(a.tstream) { }
+TStream::Access::~Access() {
+  tstream->mutex.lock();
+  char *head;
+  tstream->lock.readLock();
+  if(tstream->get_private(obj, &head, false))
+    tstream->out << head;
+  tstream->lock.unlock();
+  tstream->out << stream.str();
+  tstream->mutex.unlock();
+}
 
-tout::reg::~reg() {
-  const char *cstr = s.str().c_str();
+TStream::Register::Register(TStream *ts, const void *o):tstream(ts), obj(o) {}
+TStream::Register::Register(const Register &r):tstream(r.tstream) {}
+TStream::Register::~Register() {
+  const char *cstr = stream.str().c_str();
   size_t cstrl = strlen(cstr);
   char *p = new char[cstrl+1];
   memcpy(p, cstr, cstrl+1);
 
-  tout::lock.writeLock();
-  if(tout::contains_private(obj)) {
-    delete map[obj];
-    map.erase(obj);
-  }
-  tout::map[obj] = p;
-  tout::lock.unlock();
+  tstream->reg_private(obj, p, true);
 }
-
 
 #endif //MT_MSVC

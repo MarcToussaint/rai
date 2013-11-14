@@ -157,67 +157,77 @@ struct Thread{
 
 // ================================================
 //
-// throut utilities
+// TStream utilities, for concurrent access to ostreams
 //
 
-#include <ostream>
-#include <sstream>
 #include <map>
 
-class tout: public ostream {
+// TODO: share a mutex between different ostreams
+class TStream {
   private:
-    static Mutex mutex;
-    static RWLock lock;
-    static std::map<const void*, const char*> map;
-
-    bool objflag;
-    const void *obj;
-    std::stringstream s;
+    std::ostream &out;
+    Mutex mutex;
+    RWLock lock;
+    std::map<const void*, const char*> map;
 
   public:
-    class reg: public ostream {
-      private:
-        bool objflag;
-        const void *obj;
-        std::stringstream s;
+    class Access;
+    class Register;
 
-      public:
-        reg(const void *o);
-        reg();
-        ~reg();
+    TStream(std::ostream &o);
 
-        template<class T>
-        std::stringstream& operator<<(const T &t);
-    };
+    Access operator()(const void *obj = NULL);
+    Register reg(const void *obj = NULL);
+    void unreg(const void *obj);
+    void unreg_all();
+    bool get(const void *obj, char **head);
 
-    friend class reg;
+  private:
+    void reg_private(const void *obj, char *head, bool l);
+    void unreg_private(const void *obj, bool l);
+    bool get_private(const void *obj, char **head, bool l);
+};
 
-    tout(const void *o);
-    tout();
-    ~tout();
+class TStream::Access: public std::ostream {
+  private:
+    TStream *tstream;
+    std::stringstream stream;
+    const void *obj;
+
+  public:
+    Access(TStream *ts, const void *o);
+    Access(const Access &a);
+    ~Access();
 
     template<class T>
     std::stringstream& operator<<(const T &t);
+};
 
-    static bool contains(const void *obj);
-    static void unreg(const void *obj);
-    static void unreg_all();
-
+class TStream::Register: public std::ostream {
   private:
-    static bool contains_private(const void *obj);
-    static void unreg_private(const void *obj);
-    static bool head_private(const void *obj, char **head);
+    TStream *tstream;
+    std::stringstream stream;
+    const void *obj;
+
+  public:
+    Register(TStream *ts, const void *o);
+    Register(const Register &r);
+    ~Register();
+
+    template<class T>
+    std::stringstream& operator<<(const T &t);
 };
 
 template<class T>
-std::stringstream& tout::operator<<(const T &t) {
-  s << t;
-  return s;
+std::stringstream& TStream::Access::operator<<(const T &t) {
+  stream << t;
+  return stream;
 }
+
 template<class T>
-std::stringstream& tout::reg::operator<<(const T &t) {
-  s << t;
-  return s;
+std::stringstream& TStream::Register::operator<<(const T &t) {
+  stream << t;
+  return stream;
 }
 
 #else //MT_MSVC
