@@ -157,23 +157,78 @@ struct Thread{
 
 // ================================================
 //
-// throut utilities
+// TStream utilities, for concurrent access to ostreams
 //
 
-namespace throut {
-  void throutRegHeading(const void *obj, const MT::String &head);
-  void throutRegHeading(const void *obj, const char *head);
-  void throutUnregHeading(const void *obj);
-  void throutUnregAll();
-  bool throutContains(const void *obj);
+#include <map>
 
-  void throut(const char *m);
-  void throut(const MT::String &m);
+// TODO: share a mutex between different ostreams
+class TStream {
+  private:
+    std::ostream &out;
+    Mutex mutex;
+    RWLock lock;
+    std::map<const void*, const char*> map;
 
-  void throut(const void *obj, const char *m);
-  void throut(const void *obj, const MT::String &m);
+  public:
+    class Access;
+    class Register;
+
+    TStream(std::ostream &o);
+
+    Access operator()(const void *obj = NULL);
+    Register reg(const void *obj = NULL);
+    void unreg(const void *obj);
+    void unreg_all();
+    bool get(const void *obj, char **head);
+
+  private:
+    void reg_private(const void *obj, char *head, bool l);
+    void unreg_private(const void *obj, bool l);
+    bool get_private(const void *obj, char **head, bool l);
+};
+
+class TStream::Access: public std::ostream {
+  private:
+    TStream *tstream;
+    std::stringstream stream;
+    const void *obj;
+
+  public:
+    Access(TStream *ts, const void *o);
+    Access(const Access &a);
+    ~Access();
+
+    template<class T>
+    std::stringstream& operator<<(const T &t);
+};
+
+class TStream::Register: public std::ostream {
+  private:
+    TStream *tstream;
+    std::stringstream stream;
+    const void *obj;
+
+  public:
+    Register(TStream *ts, const void *o);
+    Register(const Register &r);
+    ~Register();
+
+    template<class T>
+    std::stringstream& operator<<(const T &t);
+};
+
+template<class T>
+std::stringstream& TStream::Access::operator<<(const T &t) {
+  stream << t;
+  return stream;
 }
 
+template<class T>
+std::stringstream& TStream::Register::operator<<(const T &t) {
+  stream << t;
+  return stream;
+}
 
 #else //MT_MSVC
 
