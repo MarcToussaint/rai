@@ -22,7 +22,7 @@ double RRT::getProposalTowards(arr& q){
 
   //compute little step
   arr d = q - s->ann.X[s->nearest]; //difference vector between q and nearest neighbor
-  double dist = norm(d);
+  double dist = length(d);
   if (dist > s->stepsize)
     q = s->ann.X[s->nearest] + s->stepsize/dist * d;
   return dist;

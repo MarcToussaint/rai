@@ -264,12 +264,10 @@ template<class T> struct Array {
   /// @name I/O
   void write(std::ostream& os=std::cout, const char *ELEMSEP=NULL, const char *LINESEP=NULL, const char *BRACKETS=NULL, bool dimTag=false, bool binary=false) const;
   void read(std::istream& is);
-  void read(const char* filename);
   void writeTagged(std::ostream& os, const char* tag, bool binary=false) const;
   bool readTagged(std::istream& is, const char *tag);
   void writeTagged(const char* filename, const char* tag, bool binary=false) const;
   bool readTagged(const char* filename, const char *tag);
-  //void readOld(std::istream& is); //? garbage
   void writeDim(std::ostream& os=std::cout) const;
   void readDim(std::istream& is);
   void writeRaw(std::ostream& os) const;
@@ -354,6 +352,15 @@ namespace MT { struct String; }
 typedef MT::Array<MT::String> StringA;
 typedef MT::Array<MT::String*> StringL;
 
+/// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
+struct ScalarFunction {
+  virtual double fs(arr& g, arr& H, const arr& x) = 0;
+};
+
+/// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
+struct VectorFunction {
+  virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
+};
 
 //===========================================================================
 /// @}
@@ -490,6 +497,10 @@ void flip_image(byteA &img);
 
 void scanArrFile(const char* name);
 
+bool checkGradient(ScalarFunction &f, const arr& x, double tolerance);
+bool checkHessian(ScalarFunction &f, const arr& x, double tolerance);
+bool checkJacobian(VectorFunction &f, const arr& x, double tolerance);
+
 double NNinv(const arr& a, const arr& b, const arr& Cinv);
 double logNNprec(const arr& a, const arr& b, double prec);
 double logNNinv(const arr& a, const arr& b, const arr& Cinv);
@@ -551,7 +562,7 @@ template<class T> T scalar(const MT::Array<T>& v);
 template<class T> MT::Array<T> sum(const MT::Array<T>& v, uint d);
 template<class T> T sumOfAbs(const MT::Array<T>& v);
 template<class T> T sumOfSqr(const MT::Array<T>& v);
-template<class T> T norm(const MT::Array<T>& v); //TODO: remove this: the name 'norm' is too ambiguous!! (maybe rename to 'length')
+template<class T> T length(const MT::Array<T>& v); //TODO: remove this: the name 'norm' is too ambiguous!! (maybe rename to 'length')
 template<class T> T mean(const MT::Array<T>& v);
 template<class T> T product(const MT::Array<T>& v);
 

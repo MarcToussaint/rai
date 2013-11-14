@@ -180,7 +180,7 @@ void GaussianProcess::evaluate(const arr& x, double& y, double& sig){
 double GaussianProcess::log_likelihood() {
   arr gram;
   inverse_SymPosDef(gram, Ginv);
-  return (-.5*~Y*GinvY - .5*log(norm(gram)) - (X.N+dX.N)/2 * log(2*MT_PI))(0); // actually a degenerated array of size 1x1
+  return (-.5*~Y*GinvY - .5*log(length(gram)) - (X.N+dX.N)/2 * log(2*MT_PI))(0); // actually a degenerated array of size 1x1
 }
 
 /** vector of covariances between test point and N+dN observation points */

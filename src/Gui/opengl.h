@@ -236,9 +236,9 @@ struct OpenGL {
   void Select();
   
   /// @name showing, updating, and watching
-  bool update(const char *text=NULL, bool captureImg=false, bool captureDepth=false);
-  int  watch(const char *text=NULL);
-  int  timedupdate(double sec);
+  int update(const char *text=NULL, bool captureImg=false, bool captureDepth=false);
+  int watch(const char *text=NULL);
+  int timedupdate(double sec);
   void resize(int w, int h);
   void setClearColors(float r, float g, float b, float a);
   void unproject(double &x, double &y, double &z, bool resetCamera=false);

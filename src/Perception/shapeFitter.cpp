@@ -622,10 +622,10 @@ void ShapeFitter::step(){
       }
       if(obj->shapeType == 1 || 7){//cylinder
         double h=
-          .5*(norm(obj->shapePoints3d[0*n/2]-obj->shapePoints3d[1*n/2-1]) + //rigth side bar
-              norm(obj->shapePoints3d[1*n/2]-obj->shapePoints3d[2*n/2-1])); //left side bar
+          .5*(length(obj->shapePoints3d[0*n/2]-obj->shapePoints3d[1*n/2-1]) + //rigth side bar
+              length(obj->shapePoints3d[1*n/2]-obj->shapePoints3d[2*n/2-1])); //left side bar
         double r=0;
-        for(uint i=0; i<n/2; i++) r += norm(obj->shapePoints3d[i]-obj->shapePoints3d[n/2+i])/2.;
+        for(uint i=0; i<n/2; i++) r += length(obj->shapePoints3d[i]-obj->shapePoints3d[n/2+i])/2.;
         r /= n/2;
         obj->orsShapeParams=ARR(0., 0., h, r);
 
@@ -635,14 +635,14 @@ void ShapeFitter::step(){
       }
       if(obj->shapeType == 2){//box
         double h=
-          .5*(norm(obj->shapePoints3d[1*n/6]-obj->shapePoints3d[2*n/6-1]) +  //rigth side bar
-              norm(obj->shapePoints3d[4*n/6]-obj->shapePoints3d[5*n/6-1]));  //left side bar
+          .5*(length(obj->shapePoints3d[1*n/6]-obj->shapePoints3d[2*n/6-1]) +  //rigth side bar
+              length(obj->shapePoints3d[4*n/6]-obj->shapePoints3d[5*n/6-1]));  //left side bar
         double x=
-          .5*(norm(obj->shapePoints3d[0*n/6]-obj->shapePoints3d[1*n/6-1]) +  //rigth side bar
-              norm(obj->shapePoints3d[3*n/6]-obj->shapePoints3d[4*n/6-1]));  //left side bar
+          .5*(length(obj->shapePoints3d[0*n/6]-obj->shapePoints3d[1*n/6-1]) +  //rigth side bar
+              length(obj->shapePoints3d[3*n/6]-obj->shapePoints3d[4*n/6-1]));  //left side bar
         double y=
-          .5*(norm(obj->shapePoints3d[2*n/6]-obj->shapePoints3d[3*n/6-1]) +  //rigth side bar
-              norm(obj->shapePoints3d[5*n/6]-obj->shapePoints3d[6*n/6-1]));  //left side bar
+          .5*(length(obj->shapePoints3d[2*n/6]-obj->shapePoints3d[3*n/6-1]) +  //rigth side bar
+              length(obj->shapePoints3d[5*n/6]-obj->shapePoints3d[6*n/6-1]));  //left side bar
               
         obj->diagDiff = obj->shapePoints3d[3*n/6] - obj->shapePoints3d[4*n/6];
         //for(uint d = 0; d < 6; d++)
@@ -651,7 +651,7 @@ void ShapeFitter::step(){
       }
       if(obj->shapeType == 0){//sphere
         double r=0;
-        for(uint i=0; i<n; i++) r+=norm(obj->shapePoints3d[0]-obj->center3d); //mitteln ueber alle punkte!
+        for(uint i=0; i<n; i++) r+=length(obj->shapePoints3d[0]-obj->center3d); //mitteln ueber alle punkte!
         r/=n;
         obj->orsShapeParams=ARR(0., 0., 0., r);
       }

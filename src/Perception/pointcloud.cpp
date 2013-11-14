@@ -32,7 +32,7 @@ ObjectClusterer::ObjectClusterer() : Process("ObjectClusterer") {
 }
 
 void findMinMaxOfCylinder(double &min, double &max, arr &start, const pcl::PointCloud<PointT>::Ptr &cloud, const arr &direction) {
-  arr dir = direction/norm(direction);
+  arr dir = direction/length(direction);
   min = std::numeric_limits<double>::max();
   max = -std::numeric_limits<double>::max();
   for(uint i=0; i<cloud->size(); ++i) {
@@ -172,7 +172,7 @@ struct sObjectFitter{
       arr start;
       findMinMaxOfCylinder(min, max, start, cylinder, direction);
       arr s = ARR(object->values[0], object->values[1], object->values[2]);
-      direction = direction/norm(direction);
+      direction = direction/length(direction);
       arr st = s+scalarProduct(direction, (start-s))*direction;
       direction = (max - min) * direction;
       object->values[0] = st(0);
@@ -312,7 +312,7 @@ void ObjectFitter::close() {}
 
 struct sObjectFilter {
   bool filterShape(arr& pos, intA& nums, const arr& measurement, const int i, const double epsilon ) {
-    if (norm(measurement - pos[i]) < epsilon)  {
+    if (length(measurement - pos[i]) < epsilon)  {
       pos[i] = pos[i] * ((nums(i)-1.)/nums(i)) + measurement * (1./nums(i));
       nums(i)++;
       return true;
@@ -405,7 +405,7 @@ void ObjectFilter::step() {
   out_objects->objects.clear();
   // HACK! We assume max two cylinders
   for (uint i = 0; i<cyl_pos.d0; i++) {
-    double height = norm(ARR(cyl_pos(i,3), cyl_pos(i,4), cyl_pos(i,5)));
+    double height = length(ARR(cyl_pos(i,3), cyl_pos(i,4), cyl_pos(i,5)));
     // if cylinder is higher then real cylinder there are probably two...
     if (height > 0.15) {
       int oldd0 = cyl_pos.d0;
@@ -427,7 +427,7 @@ void ObjectFilter::step() {
     cyl->position = ARR(cyl_pos(i,0), cyl_pos(i,1), cyl_pos(i,2));
     cyl->rotation.setDiff(ARR(0,0,1), ARR(cyl_pos(i,3), cyl_pos(i,4), cyl_pos(i,5)));
     cyl->shapeParams(RADIUS) = cyl_pos(i,6);//.025;
-    cyl->shapeParams(HEIGHT) = norm(ARR(cyl_pos(i,3), cyl_pos(i,4), cyl_pos(i,5)));
+    cyl->shapeParams(HEIGHT) = length(ARR(cyl_pos(i,3), cyl_pos(i,4), cyl_pos(i,5)));
     cyl->shapeType = ors::cylinderST;
     //cyl->pcl_object = pcl_cyls(i);
     out_objects->objects.append(cyl);
@@ -481,7 +481,7 @@ void moveObject(intA& used, const ShapeL& objects, const ors::Vector& pos, const
   for(uint i=0; i<objects.N; ++i) {
     if(used.contains(i)) continue;
     ors::Vector diff_ = objects(i)->X.pos - pos;
-    double diff = norm(ARR(diff_.x, diff_.y, diff_.z));
+    double diff = length(ARR(diff_.x, diff_.y, diff_.z));
     if(diff < max) {
       max = diff;
       max_index = i;
