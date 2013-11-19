@@ -65,7 +65,7 @@ void G4Data::loadData(const char *meta_fname, const char *poses_fname, bool inte
       hsi = s->itohs(i);
       if(hsi != -1) {
         s->data.append(x[hsi]);
-        m = norm(x[hsi]) == 0;
+        m = length(x[hsi]) == 0;
         s->missing.append(m);
         if(m && pm(i))
           s->missingno(i).last()++;
