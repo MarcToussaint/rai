@@ -34,7 +34,9 @@
 #endif
 
 #ifdef MT_FREEGLUT
-#  define FREEGLUT_STATIC
+#  ifndef MT_MSVC
+#    define FREEGLUT_STATIC
+#  endif
 #  include <GL/freeglut.h>
 #endif
 
@@ -233,9 +235,9 @@ struct OpenGL {
   void Select();
   
   /// @name showing, updating, and watching
-  bool update(const char *text=NULL, bool captureImg=false, bool captureDepth=false);
-  int  watch(const char *text=NULL);
-  int  timedupdate(double sec);
+  int update(const char *text=NULL, bool captureImg=false, bool captureDepth=false);
+  int watch(const char *text=NULL);
+  int timedupdate(double sec);
   void resize(int w, int h);
   void setClearColors(float r, float g, float b, float a);
   void unproject(double &x, double &y, double &z, bool resetCamera=false);
@@ -273,8 +275,10 @@ public: //driver dependent methods
   void processEvents();
   void enterEventLoop();
   void exitEventLoop();
+#ifndef MT_MSVC
   Display* xdisplay();
   Drawable xdraw();
+#endif
 
 protected:
   GLEvent lastEvent;

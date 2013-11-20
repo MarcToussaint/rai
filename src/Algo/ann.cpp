@@ -71,7 +71,7 @@ void ANN::calculate() {
 
 void ANN::getkNN(arr& dists, intA& idx, const arr& x, uint k, double eps, bool verbose) {
   CHECK(X.d0>=k, "data has less (" <<X.d0 <<") than k=" <<k <<" points");
-  CHECK(x.N==X.d1, "query point has wrong dimension");
+  CHECK(x.N==X.d1, "query point has wrong dimension. x.N=" << x.N << ", X.d1=" << X.d1);
   
   if(X.d0-s->treeSize>bufferSize) {
     if(verbose) std::cout <<"ANN recomputing: X.d0=" <<X.d0 <<" treeSize=" <<s->treeSize <<std::endl;
@@ -147,8 +147,9 @@ ANN::ANN() { NICO }
 ANN::~ANN() { NICO }
 void ANN::setX(const arr& _XX) { NICO }
 void ANN::append(const arr& x) { NICO }
-void ANN::getkNN(arr& dists, intA& idx, const arr& x, uint k, double eps, bool verbose) { NICO }
-uint ANN::getkNN(const arr& x, double eps, bool verbose) { NICO }
-void ANN::getkNN(arr& xx             , const arr& x, uint k, double eps, bool verbose) { NICO }
+uint ANN::getNN(const arr& x, double eps, bool verbose) { NICO }
+void ANN::getkNN(intA& idx, const arr& x, uint k, double eps, bool verbose) { NICO }
+void ANN::getkNN(arr& sqrDists, intA& idx, const arr& x, uint k, double eps, bool verbose) { NICO }
+void ANN::getkNN(arr& X, const arr& x, uint k, double eps, bool verbose) { NICO }
 
 #endif

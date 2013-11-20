@@ -16,9 +16,6 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
 
-
-
-
 #include <Core/array_t.h>
 #include <Core/geo.h>
 #include "opengl.h"
@@ -1224,7 +1221,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   
   //OpenGL initialization
   //two optional thins:
-//  glEnable(GL_DEPTH_TEST);  glDepthFunc(GL_LESS);
+  glEnable(GL_DEPTH_TEST);  glDepthFunc(GL_LESS);
   glEnable(GL_BLEND);  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_CULL_FACE);  glFrontFace(GL_CCW);
   //glDisable(GL_CULL_FACE);
@@ -1453,15 +1450,14 @@ int OpenGL::watch(const char *txt) {
 }
 
 /// update the view (in Qt: also starts displaying the window)
-bool OpenGL::update(const char *txt, bool _captureImg, bool _captureDep) {
+int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep) {
   captureImg=_captureImg;
   captureDep=_captureDep;
-  pressedkey=0;
   if(txt) text.clear() <<txt;
   postRedrawEvent(false);
   processEvents();
   captureImg=captureDep=false;
-  return !pressedkey;
+  return pressedkey;
 }
 
 /// waits some msecons before updating
@@ -1683,9 +1679,7 @@ void OpenGL::Key(unsigned char key, int _x, int _y) {
   bool cont=true;
   for(uint i=0; i<keyCalls.N; i++) cont=cont && keyCalls(i)->keyCallback(*this);
   
-  if(key==13 || key==27) exitEventLoop();
-  if(MT::contains(exitkeys, key)) exitEventLoop();
-  
+  if(key==13 || key==27 || MT::contains(exitkeys, key)) exitEventLoop();
 }
 
 void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {

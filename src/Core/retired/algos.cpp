@@ -1014,7 +1014,7 @@ void PartialLeastSquares::SIMPLS() {
     q=~A*w;
     Q[k]=q;
     //step 5
-    v=C*p; v/=norm(v);
+    v=C*p; v/=length(v);
     //step 6
     C-=v^v;
     M-=p^p;

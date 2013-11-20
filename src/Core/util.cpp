@@ -17,10 +17,10 @@
     -----------------------------------------------------------------  */
 
 #include "util.h"
-#include "thread.h"
 #include <math.h>
 #include <string.h>
 #if defined MT_Linux || defined MT_Cygwin || defined MT_Darwin
+#  include <linux/limits.h>
 #  include <sys/time.h>
 #  include <sys/times.h>
 #  include <sys/resource.h>
@@ -763,6 +763,35 @@ MT::String::operator const char*() const { return p; }
 /// returns the i-th char
 char& MT::String::operator()(uint i) const { CHECK(i<=N, "String range error (" <<i <<"<=" <<N <<")"); return p[i]; }
 
+/// return the substring from `start` to (exclusive) `end`.
+MT::String MT::String::getSubString(uint start, uint end) const {
+  CHECK(start < end, "getSubString: start should be smaller than end");
+  end = clip(end, uint(0), N);
+  String tmp;
+  for (uint i = start; i < end; i++) {
+    tmp.append((*this)(i));
+  }
+  return tmp;
+}
+
+/**
+ * @brief Return the last `n` chars of the string.
+ * @param n number of chars to return
+ */
+MT::String MT::String::getLastN(uint n) const {
+  n = clip(n, uint(0), N);
+  return getSubString(N-n, N);
+}
+
+/**
+ * @brief Return the first `n` chars of the string.
+ * @param n number of chars to return.
+ */
+MT::String MT::String::getFirstN(uint n) const {
+  n = clip(n, uint(0), N);
+  return getSubString(0, n);
+}
+
 /// copy operator
 MT::String& MT::String::operator=(const String& s) {
   resize(s.N, false);
@@ -790,6 +819,24 @@ bool MT::String::operator<(const String& s) const { return p && s.p && strcmp(p,
 bool MT::String::contains(const String& substring) const {
   char* p = strstr(this->p, substring.p);
   return p != NULL;
+}
+
+/// Return true iff the string starts with `substring`.
+bool MT::String::startsWith(const String& substring) const {
+  return this->getFirstN(substring.N) == substring;
+}
+/// Return true iff the string starts with `substring`.
+bool MT::String::startsWith(const char* substring) const {
+  return this->startsWith(MT::String(substring));
+}
+
+/// Return true iff the string ends with `substring`.
+bool MT::String::endsWith(const String& substring) const {
+  return this->getLastN(substring.N) == substring;
+}
+/// Return true iff the string ends with `substring`.
+bool MT::String::endsWith(const char* substring) const {
+  return this->endsWith(MT::String(substring));
 }
 
 /// deletes all memory and resets all stream flags
@@ -935,6 +982,50 @@ void  MT::Rnd::seed250(int32_t seed) {
 
 //===========================================================================
 //
+// Mutex
+//
+
+#define MUTEX_DUMP(x) //x
+
+#ifndef MT_MSVC
+Mutex::Mutex() {
+  pthread_mutexattr_t atts;
+  int rc;
+  rc = pthread_mutexattr_init(&atts);  if(rc) HALT("pthread failed with err " <<rc <<strerror(rc));
+  rc = pthread_mutexattr_settype(&atts, PTHREAD_MUTEX_RECURSIVE_NP);  if(rc) HALT("pthread failed with err " <<rc <<strerror(rc));
+  rc = pthread_mutex_init(&mutex, &atts);
+  //mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+  state=0;
+  recursive=0;
+}
+
+Mutex::~Mutex() {
+  CHECK(!state, "Mutex destroyed without unlocking first");
+  int rc = pthread_mutex_destroy(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+}
+
+void Mutex::lock() {
+  int rc = pthread_mutex_lock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  recursive++;
+  state=syscall(SYS_gettid);
+  MUTEX_DUMP(cout <<"Mutex-lock: " <<state <<" (rec: " <<recursive << ")" <<endl);
+}
+
+void Mutex::unlock() {
+  MUTEX_DUMP(cout <<"Mutex-unlock: " <<state <<" (rec: " <<recursive << ")" <<endl);
+  if(--recursive == 0)
+    state=0;
+  int rc = pthread_mutex_unlock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+}
+#else//MT_MSVC
+Mutex::Mutex() {}
+Mutex::~Mutex() {}
+void Mutex::lock() {}
+void Mutex::unlock() {}
+#endif
+
+//===========================================================================
+//
 // gnuplot calls
 //
 
@@ -1015,6 +1106,19 @@ double gaussIntExpectation(double x) {
 }
 
 //===========================================================================
+// MISC
+
+/**
+ * @brief Return the current working dir as std::string.
+ */
+std::string getcwd_string() {
+   char buff[PATH_MAX];
+   getcwd( buff, PATH_MAX );
+   std::string cwd( buff );
+   return cwd;
+}
+
+//===========================================================================
 //
 // explicit instantiations
 //
@@ -1033,6 +1137,7 @@ template uint MT::getParameter(const char*, const uint&);
 template bool MT::getParameter(const char*, const bool&);
 template double MT::getParameter(const char*, const double&);
 template long MT::getParameter(const char*);
+template uint MT::getParameter(const char*);
 template MT::String MT::getParameter(const char*);
 template MT::String MT::getParameter(const char*, const MT::String&);
 template bool MT::checkParameter<uint>(const char*);

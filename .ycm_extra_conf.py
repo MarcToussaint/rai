@@ -1,5 +1,10 @@
-# This is the config for the 'YouCompleteMe' autocompletion
-#
+"""
+This is the config for the 'YouCompleteMe' [0] autocompletion for vim.
+It works pretty well :)
+
+[0] https://github.com/Valloric/YouCompleteMe
+"""
+
 import os
 import ycm_core
 
@@ -19,6 +24,7 @@ flags = [
     # you MUST specify the std
     '-std=c++11',
     '-std=c++10',
+    '-stdlib=libc++',
     # ...and the same thing goes for the magic -x option which specifies the
     # language that the files to be compiled are written in. This is mostly
     # relevant for c++ headers.

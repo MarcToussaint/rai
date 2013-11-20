@@ -28,7 +28,7 @@ void generateConditionedRandomProjection(arr& M, uint n, double condition) {
   //orthogonalize
   for(i=0; i<n; i++) {
     for(j=0; j<i; j++) M[i]()-=scalarProduct(M[i],M[j])*M[j];
-    M[i]()/=norm(M[i]);
+    M[i]()/=length(M[i]);
   }
   //we condition each column of M with powers of the condition
   for(i=0; i<n; i++) M[i]() *= pow(condition, double(i) / (2.*double(n - 1)));
