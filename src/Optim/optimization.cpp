@@ -141,7 +141,10 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
   if(o.verbose>2) cout <<"\nx=" <<x <<endl;
   ofstream fil;
   if(o.verbose>0) fil.open("z.opt");
-  if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<' ' <<x <<endl;
+  if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha;
+  if(o.verbose>2) fil <<' ' <<x;
+  if(o.verbose>0) fil <<endl;
+
 
   for(uint it=1;; it++) { //iterations and lambda adaptation loop
     if(o.verbose>1) cout <<"optNewton it=" <<it << " lambda=" <<lambda <<flush;
@@ -216,7 +219,9 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
       }
     }
 
-    if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha <<' ' <<x <<endl;
+    if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha;
+    if(o.verbose>2) fil <<' ' <<x;
+    if(o.verbose>0) fil <<endl;
 
     //stopping criterion
     if( (lambda<2. && absMax(Delta)<o.stopTolerance) ||
