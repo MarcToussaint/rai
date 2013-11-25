@@ -21,60 +21,35 @@
 namespace MT{
 
 void rk4(arr& x1, const arr& x0,
-             void (*df)(arr& xd, const arr& x),
-             double dt) {
-  uint n=x0.N;
-  arr k1(n), k2(n), k3(n), k4(n);
+         VectorFunction& f,
+         double dt) {
+  arr k1,k2,k3,k4;
+  f.fv(k1, NoArr, x0);
+  f.fv(k2, NoArr, x0 + 0.5*dt*k1);
+  f.fv(k3, NoArr, x0 + 0.5*dt*k2);
+  f.fv(k4, NoArr, x0 +     dt*k3);
   
-  df(k1, x0);
-  df(k2, x0+(double).5*dt*k1);
-  df(k3, x0+(double).5*dt*k2);
-  df(k4, x0+   dt*k3);
-  
-  x1 = x0;
-  x1 += (dt/(double)6.)*(k1 + (double)2.*k2 + (double)2.*k3 + k4);
+  if(&x1!=&x0) x1 = x0;
+  x1 += (dt/6.)*(k1 + 2.*k2 + 2.*k3 + k4);
 }
 
-void (*global_ddf)(arr& xdd, const arr& x, const arr& v);
-void (*global_sf)(arr& s,  const arr& x, const arr& v);
-void rk_df(arr& xd, const arr& x) {
-  uint n=x.N/2;
-  arr X; X.referTo(x);
-  X.reshape(2, n);
-  arr a;
-  global_ddf(a, X[0], X[1]);
-  xd.resize(x.N);
-  xd.setVectorBlock(X[1], 0);
-  xd.setVectorBlock(a, n);
-}
-void rk_sf(arr& s, const arr& x) {
-  uint n=x.N/2;
-  arr X; X.referTo(x);
-  X.reshape(2, n);
-  global_sf(s, X[0], X[1]);
+void rk4_2ndOrder(arr& x, const arr& x0, VectorFunction& f, double dt){
+  CHECK(x0.nd==2 && x0.d0==2,"need a 2-times-n array   rk4_2ndOrder input");
+  struct F2:VectorFunction{
+    VectorFunction& f;
+    F2(VectorFunction& _f):f(_f){}
+    void fv(arr& y, arr& J, const arr& x){
+      CHECK(x.nd==2 && x.d0==2,"");
+      y.resizeAs(x);
+      y[0]=x[1];
+      f.fv(y[1](), NoArr, x);
+    }
+
+  } f2(f);
+  rk4(x, x0, f2, dt);
 }
 
-void rk4dd(arr& x1, arr& v1, const arr& x0, const arr& v0,
-               void (*ddf)(arr& xdd, const arr& x, const arr& v),
-               double dt) {
-               
-  global_ddf = ddf;
-  
-  uint n=x0.N;
-  
-  arr X(2, n), Y(2*n);
-  X[0]=x0;
-  X[1]=v0;
-  X.reshape(2*n);
-  
-  rk4(Y, X, rk_df, dt);
-  
-  Y.reshape(2, n);
-  x1=Y[0];
-  v1=Y[1];
-}
-
-
+#if 0
 bool rk4_switch(arr& x1, arr& s1, const arr& x0, const arr& s0,
                     void (*df)(arr& xd, const arr& x),
                     void (*sf)(arr& s, const arr& x),
@@ -157,7 +132,7 @@ bool rk4dd_switch(arr& x1, arr& v1, arr& s1, const arr& x0, const arr& v0, const
   v1=Y[1];
   return change;
 }
-
+#endif
 
 //==============================================================================
 //
