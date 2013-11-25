@@ -355,11 +355,13 @@ typedef MT::Array<MT::String*> StringL;
 /// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
 struct ScalarFunction {
   virtual double fs(arr& g, arr& H, const arr& x) = 0;
+  virtual ~ScalarFunction(){}
 };
 
 /// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
 struct VectorFunction {
   virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
+  virtual ~VectorFunction(){}
 };
 
 //===========================================================================
