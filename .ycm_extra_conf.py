@@ -54,6 +54,20 @@ flags = [
     'lib',
     '-isystem'
     'src',
+    "-isystem",
+    "/usr/lib/gcc/x86_64-linux-gnu/4.6/../../../../include/c++/4.6",
+    "-isystem",
+    "/usr/lib/gcc/x86_64-linux-gnu/4.6/../../../../include/c++/4.6/x86_64-linux-gnu",
+    "-isystem",
+    "/usr/lib/gcc/x86_64-linux-gnu/4.6/../../../../include/c++/4.6/backward",
+    "-isystem",
+    "/usr/local/include",
+    "-isystem",
+    "/usr/lib/llvm-3.3/bin/../lib/clang/3.3/include",
+    "-isystem",
+    "/usr/include/x86_64-linux-gnu",
+    "-isystem",
+    "/usr/include",
 ]
 
 # Set this to the absolute path to the folder (NOT the file!) containing the
