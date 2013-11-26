@@ -54,25 +54,6 @@ bool rk4dd_switch(arr& x1, arr& v1, arr& s1, const arr& x0, const arr& v0, const
                   void (*sf)(arr& s, const arr& x, const arr& v),
                   double& dt, double tol);
                   
-/// a spline
-struct Spline {
-  uint T, K, degree;
-  arr points;
-  arr times;
-  arr weights;
-  arr basis, basis_trans, basis_timeGradient;
-
-  Spline(uint T, arr& X, uint degree=2){ setUniformNonperiodicBasis(T, X.d0-1, degree); points=X; }
-  void plotBasis();
-  void setBasis();
-  void setBasisAndTimeGradient();
-  void setUniformNonperiodicBasis(uint T, uint K, uint degree);
-  void eval(arr& f_t, uint t) const;
-  void eval(arr& f) const;
-
-  void partial(arr& dCdx, const arr& dCdf) const;
-  void partial(arr& dCdx, arr& dCdt, const arr& dCdf, bool constrain=true) const;
-};
 
 } //end namespace MT
 
