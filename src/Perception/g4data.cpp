@@ -173,7 +173,7 @@ arr G4Data::query(const char *key) const {
 
 arr G4Data::queryPos(uint t, const char *key) const {
   if(key == NULL)
-    return s->data[t].sub(0, -1, 0, 2).reshape(1, s->numS, 3);
+    return s->data[t].cols(0, 3).reshape(s->numS, 3);
 
   arr ret;
   uint hid, sid, hsi;
@@ -187,9 +187,7 @@ arr G4Data::queryPos(uint t, const char *key) const {
 
     ret.append(tdata[s->hstoi(hsi)]);
   }
-  ret.sub(0, -1, 0, 2).reshape(1, sensors.N, 3);
-
-  return ret;
+  return ret.reshape(sensors.N, 7).cols(0, 3);
 }
 
 arr G4Data::queryPos(const char *key) const {
@@ -210,10 +208,8 @@ arr G4Data::queryPos(const char *key) const {
 
   for(uint t = 0; t < s->numT; t++)
     for(uint i = 0; i < sensors.N; i++)
-      ret.append(s->data.sub(t, t, iv(i), iv(i), 0, -1));
-  ret.sub(0, -1, 0, -1, 0, 2).reshape(s->numT, sensors.N, 3);
-
-  return ret;
+      ret.append(s->data.sub(t, t, iv(i), iv(i), 0, 2));
+  return ret.reshape(s->numT, sensors.N, 3);
 }
 
 arr G4Data::queryQuat(uint t, const char *key) const {
