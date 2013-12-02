@@ -269,7 +269,7 @@ stdPipes(String)
 // string-filling routines
 
 namespace MT {
-  void getNowString(MT::String &str);
+  MT::String getNowString();
 }
 
 //===========================================================================
