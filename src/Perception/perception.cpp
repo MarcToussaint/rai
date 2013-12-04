@@ -67,6 +67,7 @@ void VideoEncoder::open(){
 }
 
 void VideoEncoder::close(){
+  s->video.close();
   delete s;
 }
 

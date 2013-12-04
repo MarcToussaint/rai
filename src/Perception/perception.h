@@ -28,7 +28,7 @@ struct PerceptionOutput;
 
 //-- Module declarations
 BEGIN_MODULE(ImageViewer)      ACCESS(byteA, img)       END_MODULE()
-BEGIN_MODULE(VideoEncoder)      ACCESS(byteA, img)       END_MODULE()
+BEGIN_MODULE(VideoEncoder)     ACCESS(byteA, img)       END_MODULE()
 BEGIN_MODULE(PointCloudViewer) ACCESS(arr, pts)         ACCESS(arr, cols)        END_MODULE()
 BEGIN_MODULE(OpencvCamera)     ACCESS(byteA, rgb)       END_MODULE()
 BEGIN_MODULE(CvtGray)          ACCESS(byteA, rgb)       ACCESS(byteA, gray)      END_MODULE()

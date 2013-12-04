@@ -395,7 +395,7 @@ void Thread::threadStop() {
 
 void Thread::main() {
   tid = syscall(SYS_gettid);
-
+  cout <<"*** Entering Thread '" <<name <<"'" <<endl;
   //http://linux.die.net/man/3/setpriority
   //if(Thread::threadPriority) setRRscheduling(Thread::threadPriority);
   //if(Thread::threadPriority) setNice(Thread::threadPriority);
@@ -443,6 +443,7 @@ void Thread::main() {
   };
 
   close(); //virtual close routine
+  cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
 }
 
 

@@ -106,7 +106,7 @@ void sVideoEncoder_libav_simple::addFrame(const byteA& rgb){
   /* encode the image */
   fflush(stdout);
   out_size = avcodec_encode_video(c, outbuf, outbuf_size, picture);
-  printf("encoding frame %3d (size=%5d)\n", i, out_size);
+//  printf("encoding frame %3d (size=%5d)\n", i, out_size);
   fwrite(outbuf, 1, out_size, f);
 }
 
@@ -116,7 +116,7 @@ void sVideoEncoder_libav_simple::close(){
     fflush(stdout);
 
     out_size = avcodec_encode_video(c, outbuf, outbuf_size, NULL);
-    printf("write frame %3d (size=%5d)\n", i, out_size);
+//    printf("write frame %3d (size=%5d)\n", i, out_size);
     fwrite(outbuf, 1, out_size, f);
   }
 
@@ -133,5 +133,6 @@ void sVideoEncoder_libav_simple::close(){
   avcodec_close(c);
   av_free(c);
   av_free(picture);
-  printf("\n");
+//  printf("\n");
+  cout <<" CLOSED ENCODER  file: " <<filename <<endl;
 }
