@@ -83,10 +83,14 @@ void sVideoEncoder_libav_simple::open(uint width, uint height){
   if (!f) HALT("could not open "<< filename);
 
   /* alloc image and output buffer */
-  outbuf_size = 100000;
-  outbuf = (byte*)malloc(outbuf_size);
   size = c->width * c->height;
   picture_buf = (byte*)malloc((size * 3) / 2); /* size for YUV 420 */
+  if(!picture_buf)
+      HALT("Could not allocate picture buffer");
+  outbuf_size = size*3; // way larger than needed, but hey, you never know what's coming
+  outbuf = (byte*)malloc(outbuf_size);
+  if(!outbuf)
+      HALT("Could not allocate output buffer");
 
   picture->data[0] = picture_buf;
   picture->data[1] = picture->data[0] + size;
@@ -129,10 +133,10 @@ void sVideoEncoder_libav_simple::close(){
   outbuf[3] = 0xb7;
   fwrite(outbuf, 1, 4, f);
   fclose(f);
-  free(picture_buf);
-  free(outbuf);
 
   avcodec_close(c);
+  free(picture_buf);
+  free(outbuf);
   av_free(c);
   av_free(picture);
 //  printf("\n");
