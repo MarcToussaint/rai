@@ -9,6 +9,7 @@ extern "C"{
 }
 
 struct sVideoEncoder_libav_simple{
+  static Mutex libav_open_mutex;
   MT::String filename;
   uint fps;
   bool isOpen;
@@ -26,6 +27,8 @@ struct sVideoEncoder_libav_simple{
   void addFrame(const byteA& rgb);
   void close();
 };
+
+Mutex sVideoEncoder_libav_simple::libav_open_mutex;
 
 
 //==============================================================================
@@ -48,6 +51,7 @@ void VideoEncoder_libav_simple::close(){ s->close(); }
 //==============================================================================
 
 void sVideoEncoder_libav_simple::open(uint width, uint height){
+  Lock avlock(libav_open_mutex);
   avcodec_register_all();
 
   //codec = avcodec_find_encoder(CODEC_ID_MPEG2VIDEO);
