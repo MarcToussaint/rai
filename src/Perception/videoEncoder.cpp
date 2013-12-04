@@ -75,8 +75,8 @@ void sVideoEncoder_libav_simple::open(uint width, uint height){
   av_dict_set(&opts, "preset", "ultrafast", 0);
 
   /* open it */
-  if (avcodec_open2(c, codec, NULL) < 0)
-    HALT("could not open codec");
+  if (avcodec_open2(c, codec, &opts) < 0)
+    HALT("Encoder failed to open");
 
   f = fopen(filename, "wb");
   if (!f) HALT("could not open "<< filename);
