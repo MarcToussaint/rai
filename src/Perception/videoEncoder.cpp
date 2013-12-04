@@ -22,7 +22,7 @@ struct sVideoEncoder_libav_simple{
   SwsContext *sws_ctx;
 
   sVideoEncoder_libav_simple():isOpen(false){}
-  void open(uint width, uint height, uint qp);
+  void open(uint width, uint height);
   void addFrame(const byteA& rgb);
   void close();
 };
@@ -34,12 +34,12 @@ VideoEncoder_libav_simple::VideoEncoder_libav_simple(const char* filename, uint 
   s = new sVideoEncoder_libav_simple;
   s->filename = filename;
   s->fps = fps;
-  s->qp = qp:
+  s->qp = qp;
 }
 
 void VideoEncoder_libav_simple::addFrame(const byteA& rgb){
   if(!rgb.N) return;
-  if(!s->isOpen) s->open(rgb.d1, rgb.d0, s->qp); 
+  if(!s->isOpen) s->open(rgb.d1, rgb.d0); 
   s->addFrame(rgb);
 }
 
@@ -47,7 +47,7 @@ void VideoEncoder_libav_simple::close(){ s->close(); }
 
 //==============================================================================
 
-void sVideoEncoder_libav_simple::open(uint width, uint height, uint qp){
+void sVideoEncoder_libav_simple::open(uint width, uint height){
   avcodec_register_all();
 
   //codec = avcodec_find_encoder(CODEC_ID_MPEG2VIDEO);
