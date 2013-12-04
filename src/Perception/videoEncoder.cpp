@@ -107,6 +107,7 @@ void sVideoEncoder_libav_simple::addFrame(const byteA& rgb){
   /* encode the image */
   fflush(stdout);
   out_size = avcodec_encode_video(c, outbuf, outbuf_size, picture);
+  picture->pts++;
 //  printf("encoding frame %3d (size=%5d)\n", i, out_size);
   fwrite(outbuf, 1, out_size, f);
 }
