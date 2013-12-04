@@ -8,7 +8,7 @@
 struct VideoEncoder_libav_simple{
   struct sVideoEncoder_libav_simple *s;
 
-  VideoEncoder_libav_simple(const char* filename="z.avi", uint fps=30);
+  VideoEncoder_libav_simple(const char* filename="z.avi", uint fps=30, uint qp=0);
   void addFrame(const byteA& rgb);
   void close();
 };

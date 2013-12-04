@@ -9,13 +9,14 @@ extern "C"{
 }
 
 struct sVideoEncoder_libav_simple{
+  static Mutex libav_open_mutex;
   MT::String filename;
   uint fps;
   bool isOpen;
 
   AVCodec *codec;
   AVCodecContext *c;
-  int i, out_size, size, x, y, outbuf_size;
+  int i, out_size, size, x, y, outbuf_size, qp;
   FILE *f;
   AVFrame *picture;
   uint8_t *outbuf, *picture_buf;
@@ -27,13 +28,16 @@ struct sVideoEncoder_libav_simple{
   void close();
 };
 
+Mutex sVideoEncoder_libav_simple::libav_open_mutex;
+
 
 //==============================================================================
 
-VideoEncoder_libav_simple::VideoEncoder_libav_simple(const char* filename, uint fps){
+VideoEncoder_libav_simple::VideoEncoder_libav_simple(const char* filename, uint fps, uint qp){
   s = new sVideoEncoder_libav_simple;
   s->filename = filename;
   s->fps = fps;
+  s->qp = qp;
 }
 
 void VideoEncoder_libav_simple::addFrame(const byteA& rgb){
@@ -47,6 +51,7 @@ void VideoEncoder_libav_simple::close(){ s->close(); }
 //==============================================================================
 
 void sVideoEncoder_libav_simple::open(uint width, uint height){
+  Lock avlock(libav_open_mutex);
   avcodec_register_all();
 
   //codec = avcodec_find_encoder(CODEC_ID_MPEG2VIDEO);
@@ -70,22 +75,26 @@ void sVideoEncoder_libav_simple::open(uint width, uint height){
   AVDictionary *opts = NULL;
   char opt_str[4];
   sprintf(opt_str,"%d", 0);
-  av_dict_set(&opts, "qp", opt_str, 0);
-  //av_dict_set(&opts, "preset", "superfast", 0);
+  av_dict_set(&opts, "qp", opt_str, qp);
+//  av_dict_set(&opts, "preset", "superfast", 0);
   av_dict_set(&opts, "preset", "ultrafast", 0);
 
   /* open it */
-  if (avcodec_open2(c, codec, NULL) < 0)
-    HALT("could not open codec");
+  if (avcodec_open2(c, codec, &opts) < 0)
+    HALT("Encoder failed to open");
 
   f = fopen(filename, "wb");
   if (!f) HALT("could not open "<< filename);
 
   /* alloc image and output buffer */
-  outbuf_size = 100000;
-  outbuf = (byte*)malloc(outbuf_size);
   size = c->width * c->height;
   picture_buf = (byte*)malloc((size * 3) / 2); /* size for YUV 420 */
+  if(!picture_buf)
+      HALT("Could not allocate picture buffer");
+  outbuf_size = size*3; // way larger than needed, but hey, you never know what's coming
+  outbuf = (byte*)malloc(outbuf_size);
+  if(!outbuf)
+      HALT("Could not allocate output buffer");
 
   picture->data[0] = picture_buf;
   picture->data[1] = picture->data[0] + size;
@@ -106,7 +115,8 @@ void sVideoEncoder_libav_simple::addFrame(const byteA& rgb){
   /* encode the image */
   fflush(stdout);
   out_size = avcodec_encode_video(c, outbuf, outbuf_size, picture);
-  printf("encoding frame %3d (size=%5d)\n", i, out_size);
+  picture->pts++;
+//  printf("encoding frame %3d (size=%5d)\n", i, out_size);
   fwrite(outbuf, 1, out_size, f);
 }
 
@@ -116,7 +126,7 @@ void sVideoEncoder_libav_simple::close(){
     fflush(stdout);
 
     out_size = avcodec_encode_video(c, outbuf, outbuf_size, NULL);
-    printf("write frame %3d (size=%5d)\n", i, out_size);
+//    printf("write frame %3d (size=%5d)\n", i, out_size);
     fwrite(outbuf, 1, out_size, f);
   }
 
@@ -127,11 +137,12 @@ void sVideoEncoder_libav_simple::close(){
   outbuf[3] = 0xb7;
   fwrite(outbuf, 1, 4, f);
   fclose(f);
-  free(picture_buf);
-  free(outbuf);
 
   avcodec_close(c);
+  free(picture_buf);
+  free(outbuf);
   av_free(c);
   av_free(picture);
-  printf("\n");
+//  printf("\n");
+  cout <<" CLOSED ENCODER  file: " <<filename <<endl;
 }
