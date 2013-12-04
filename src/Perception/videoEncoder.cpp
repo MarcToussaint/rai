@@ -71,7 +71,7 @@ void sVideoEncoder_libav_simple::open(uint width, uint height){
   char opt_str[4];
   sprintf(opt_str,"%d", 0);
   av_dict_set(&opts, "qp", opt_str, 0);
-  //av_dict_set(&opts, "preset", "superfast", 0);
+//  av_dict_set(&opts, "preset", "superfast", 0);
   av_dict_set(&opts, "preset", "ultrafast", 0);
 
   /* open it */
