@@ -15,14 +15,14 @@ struct sVideoEncoder_libav_simple{
 
   AVCodec *codec;
   AVCodecContext *c;
-  int i, out_size, size, x, y, outbuf_size;
+  int i, out_size, size, x, y, outbuf_size, qp;
   FILE *f;
   AVFrame *picture;
   uint8_t *outbuf, *picture_buf;
   SwsContext *sws_ctx;
 
   sVideoEncoder_libav_simple():isOpen(false){}
-  void open(uint width, uint height);
+  void open(uint width, uint height, uint qp);
   void addFrame(const byteA& rgb);
   void close();
 };
@@ -30,15 +30,16 @@ struct sVideoEncoder_libav_simple{
 
 //==============================================================================
 
-VideoEncoder_libav_simple::VideoEncoder_libav_simple(const char* filename, uint fps){
+VideoEncoder_libav_simple::VideoEncoder_libav_simple(const char* filename, uint fps, uint qp){
   s = new sVideoEncoder_libav_simple;
   s->filename = filename;
   s->fps = fps;
+  s->qp = qp:
 }
 
 void VideoEncoder_libav_simple::addFrame(const byteA& rgb){
   if(!rgb.N) return;
-  if(!s->isOpen) s->open(rgb.d1, rgb.d0); 
+  if(!s->isOpen) s->open(rgb.d1, rgb.d0, s->qp); 
   s->addFrame(rgb);
 }
 
@@ -46,7 +47,7 @@ void VideoEncoder_libav_simple::close(){ s->close(); }
 
 //==============================================================================
 
-void sVideoEncoder_libav_simple::open(uint width, uint height){
+void sVideoEncoder_libav_simple::open(uint width, uint height, uint qp){
   avcodec_register_all();
 
   //codec = avcodec_find_encoder(CODEC_ID_MPEG2VIDEO);
@@ -70,7 +71,7 @@ void sVideoEncoder_libav_simple::open(uint width, uint height){
   AVDictionary *opts = NULL;
   char opt_str[4];
   sprintf(opt_str,"%d", 0);
-  av_dict_set(&opts, "qp", opt_str, 0);
+  av_dict_set(&opts, "qp", opt_str, qp);
 //  av_dict_set(&opts, "preset", "superfast", 0);
   av_dict_set(&opts, "preset", "ultrafast", 0);
 
