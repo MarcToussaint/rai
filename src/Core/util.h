@@ -510,6 +510,12 @@ struct Mutex {
   void unlock();
 };
 
+// support "Resource Acquisition Is Initialization" principle
+struct Lock {
+  Mutex& m;
+  Lock(Mutex& m) : m(m) { m.lock(); };
+  ~Lock() { m.unlock(); };
+};
 
 //===========================================================================
 //
