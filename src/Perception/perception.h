@@ -9,7 +9,6 @@
 #endif
 
 #include <Core/module.h>
-//#include <views/views.h>
 #include <Ors/ors.h>
 #include <Core/array_t.h>
 
@@ -28,20 +27,20 @@ struct SURFfeatures;
 struct PerceptionOutput;
 
 //-- Module declarations
-BEGIN_MODULE (ImageViewer)      ACCESS(byteA, img)       END_MODULE()
-BEGIN_MODULE (ImageWriter)      ACCESS(byteA, img)       END_MODULE()
-BEGIN_MODULE (PointCloudViewer) ACCESS(arr, pts)         ACCESS(arr, cols)       END_MODULE()
-BEGIN_MODULE (OpencvCamera)     ACCESS(byteA, rgb)       END_MODULE()
-BEGIN_MODULE (CvtGray)          ACCESS(byteA, rgb)       ACCESS(byteA, gray)     END_MODULE()
-BEGIN_MODULE (CvtHsv)           ACCESS(byteA, rgb)       ACCESS(byteA, hsv)       END_MODULE()
-BEGIN_MODULE (HsvFilter)        ACCESS(byteA, hsv)       ACCESS(floatA, evi)      END_MODULE()
-BEGIN_MODULE (MotionFilter)     ACCESS(byteA, rgb)       ACCESS(byteA, motion)    END_MODULE()
-BEGIN_MODULE (DifferenceFilter) ACCESS(byteA, i1)        ACCESS(byteA, i2)        ACCESS(byteA, diffImage) END_MODULE()
-BEGIN_MODULE (CannyFilter)      ACCESS(byteA, grayImage) ACCESS(byteA, cannyImage)       END_MODULE()
-BEGIN_MODULE (Patcher)          ACCESS(byteA, rgbImage)  ACCESS(Patching, patchImage)    END_MODULE()
-BEGIN_MODULE (SURFer)           ACCESS(byteA, grayImage) ACCESS(SURFfeatures, features)  END_MODULE()
-BEGIN_MODULE (HoughLineFilter)  ACCESS(byteA, grayImage) ACCESS(HoughLines, houghLines)  END_MODULE()
-BEGIN_MODULE (ShapeFitter)      ACCESS(floatA, eviL) ACCESS(floatA, eviR) ACCESS(PerceptionOutput, perc) END_MODULE()
+BEGIN_MODULE(ImageViewer)      ACCESS(byteA, img)       END_MODULE()
+BEGIN_MODULE(VideoEncoder)     ACCESS(byteA, img)       END_MODULE()
+BEGIN_MODULE(PointCloudViewer) ACCESS(arr, pts)         ACCESS(arr, cols)        END_MODULE()
+BEGIN_MODULE(OpencvCamera)     ACCESS(byteA, rgb)       END_MODULE()
+BEGIN_MODULE(CvtGray)          ACCESS(byteA, rgb)       ACCESS(byteA, gray)      END_MODULE()
+BEGIN_MODULE(CvtHsv)           ACCESS(byteA, rgb)       ACCESS(byteA, hsv)       END_MODULE()
+BEGIN_MODULE(HsvFilter)        ACCESS(byteA, hsv)       ACCESS(floatA, evi)      END_MODULE()
+BEGIN_MODULE(MotionFilter)     ACCESS(byteA, rgb)       ACCESS(byteA, motion)    END_MODULE()
+BEGIN_MODULE(DifferenceFilter) ACCESS(byteA, i1)        ACCESS(byteA, i2)        ACCESS(byteA, diffImage) END_MODULE()
+BEGIN_MODULE(CannyFilter)      ACCESS(byteA, grayImage) ACCESS(byteA, cannyImage)       END_MODULE()
+BEGIN_MODULE(Patcher)          ACCESS(byteA, rgbImage)  ACCESS(Patching, patchImage)    END_MODULE()
+BEGIN_MODULE(SURFer)           ACCESS(byteA, grayImage) ACCESS(SURFfeatures, features)  END_MODULE()
+BEGIN_MODULE(HoughLineFilter)  ACCESS(byteA, grayImage) ACCESS(HoughLines, houghLines)  END_MODULE()
+BEGIN_MODULE(ShapeFitter)      ACCESS(floatA, eviL)     ACCESS(floatA, eviR)            ACCESS(PerceptionOutput, perc)      END_MODULE()
 
 
 //===========================================================================
@@ -77,6 +76,8 @@ struct ColorChoice{
   FIELD(byteA, hsv);
 };
 
+//===========================================================================
+
 struct HoughLines {
 #ifdef MT_OPENCV
   std::vector<cv::Vec4i> lines;
@@ -85,6 +86,8 @@ struct HoughLines {
 };
 inline void operator>>(istream& is,HoughLines& hl){}
 inline void operator<<(ostream& os,const HoughLines& hl){}
+
+//===========================================================================
 
 struct Patching {
   uintA patching;  //for each pixel an integer
@@ -96,6 +99,8 @@ struct Patching {
 inline void operator>>(istream& is,Patching& hl){}
 inline void operator<<(ostream& os,const Patching& hl){}
 
+//===========================================================================
+
 struct SURFfeatures {
 #ifdef MT_OPENCV
   std::vector<cv::KeyPoint> keypoints;
@@ -106,6 +111,8 @@ struct SURFfeatures {
 inline void operator>>(istream& is,SURFfeatures& hl){}
 inline void operator<<(ostream& os,const SURFfeatures& hl){}
 
+//===========================================================================
+
 /** The RigidObjectRepresentation List output of perception */
 struct PerceptionOutput {
   MT::Array<RigidObjectRepresentation> objects;
@@ -113,35 +120,8 @@ struct PerceptionOutput {
 };
 niyPipes(PerceptionOutput)
 
-//===========================================================================
-//
-// Modules
-//
 
 
-
-//===========================================================================
-//
-// Views
-//
-
-#define DECLARE_VIEW(VAR) \
-struct VAR##_View:View{ \
-  byteA copy; \
-  VAR##_View():View(){} \
-  VAR##_View(VAR& var, GtkWidget *container=NULL):View(){ object=&var; gtkNew(container); } \
-  void glInit(); \
-  void glDraw(); \
-  void gtkNew(GtkWidget *container){ gtkNewGl(container); } \
-};
-
-
-//DECLARE_VIEW(Image)
-////DECLARE_VIEW(floatA)
-//DECLARE_VIEW(HoughLines)
-//DECLARE_VIEW(Patching)
-//DECLARE_VIEW(SURFfeatures)
-//DECLARE_VIEW(PerceptionOutput)
 
 
 //===========================================================================
