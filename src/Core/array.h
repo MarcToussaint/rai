@@ -355,11 +355,13 @@ typedef MT::Array<MT::String*> StringL;
 /// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
 struct ScalarFunction {
   virtual double fs(arr& g, arr& H, const arr& x) = 0;
+  virtual ~ScalarFunction(){}
 };
 
 /// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
 struct VectorFunction {
   virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
+  virtual ~VectorFunction(){}
 };
 
 //===========================================================================
@@ -465,6 +467,8 @@ extern bool useLapack;
 
 uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort=true);
 void svd(arr& U, arr& V, const arr& A);
+void pca(arr &Y, arr &v, arr &W, const arr &X, uint size = 0);
+void pca(arr &Y, const arr &W, const arr &X);
 
 void mldivide(arr& X, const arr& A, const arr& b);
 
@@ -564,6 +568,7 @@ template<class T> T sumOfAbs(const MT::Array<T>& v);
 template<class T> T sumOfSqr(const MT::Array<T>& v);
 template<class T> T length(const MT::Array<T>& v); //TODO: remove this: the name 'norm' is too ambiguous!! (maybe rename to 'length')
 template<class T> T mean(const MT::Array<T>& v);
+template<class T> MT::Array<T> mean(const MT::Array<T>& v, uint d);
 template<class T> T product(const MT::Array<T>& v);
 
 template<class T> T trace(const MT::Array<T>& v);
@@ -580,6 +585,8 @@ template<class T> MT::Array<T> diagProduct(const MT::Array<T>& v, const MT::Arra
 
 template<class T> MT::Array<T> elemWiseMin(const MT::Array<T>& v, const MT::Array<T>& w);
 template<class T> MT::Array<T> elemWiseMax(const MT::Array<T>& v, const MT::Array<T>& w);
+template<class T> MT::Array<T> elemWiseProd(const MT::Array<T>& v, const MT::Array<T>& w);
+template<class T> MT::Array<T> elemWiseDiv(const MT::Array<T>& v, const MT::Array<T>& w);
 
 
 //===========================================================================

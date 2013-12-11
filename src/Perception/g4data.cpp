@@ -1,12 +1,14 @@
 #include "g4data.h"
 #include <Core/array.h>
 #include <Core/util.h>
+#include <Core/geo.h>
 #include <Core/keyValueGraph.h>
 
 struct sG4Data {
   KeyValueGraph G;
   uint numS, numT;
   intA itohs, hstoi;
+  StringA names;
   arr data;
   boolA missing;
   MT::Array<intA> missingno;
@@ -33,6 +35,7 @@ void G4Data::loadData(const char *meta_fname, const char *poses_fname, bool inte
   s->numS = sensors.N;
   hstoiN = 0;
   for(uint i = 0; i < s->numS; i++) {
+    s->names.append(*sensors(i)->getValue<String>("name"));
     hid = *sensors(i)->getValue<double>("hid");
     sid = *sensors(i)->getValue<double>("sid");
     hsi = 3*hid+sid;
@@ -59,6 +62,16 @@ void G4Data::loadData(const char *meta_fname, const char *poses_fname, bool inte
   uint T;
   for(T = 0; ; T++) {
     fil >> x;
+    // TODO this is to test whether the quaternions are normalized..
+    /*
+    cout << x.getDim() << endl;
+    for(uint i = 0; i < s->numS; i++) {
+      ors::Quaternion q(x(i, 3), x(i, 4), x(i, 5), x(i, 6));
+      cout << q << endl;
+      cout << " - norm: " << (q.w*q.w+q.x*q.x+q.y*q.y+q.z*q.z) << endl;
+    }
+    */
+
     if(!x.N || !fil.good()) break;
 
     for(uint i = 0; i < s->numS; i++) {
@@ -92,9 +105,22 @@ void G4Data::loadData(const char *meta_fname, const char *poses_fname, bool inte
         else if(t+no < T) { // interpolate between t-1 and t+missingno(i)
           arr s0 = s->data[t-1][i];
           arr sF = s->data[t+no][i];
+          ors::Quaternion q0(s0(3), s0(4), s0(5), s0(6));
+          ors::Quaternion qF(sF(3), sF(4), sF(5), sF(6));
+          ors::Quaternion qt;
+
           arr diff = sF - s0;
-          for(uint tt = 0; tt < no; tt++)
+          for(uint tt = 0; tt < no; tt++) {
             s->data[t+tt][i] = s0 + diff*(tt+1.)/(no+1.);
+            qt.setInterpolate((tt+1.)/(no+1.), q0, qF);
+            // TODO remove couts
+            //cout << " - norm: " << (qt.w*qt.w+qt.x*qt.x+qt.y*qt.y+qt.z*qt.z) << endl;
+            //cout << " - w: " << qt.w << endl;
+            s->data(t+tt, i, 3) = qt.w;
+            s->data(t+tt, i, 4) = qt.x;
+            s->data(t+tt, i, 5) = qt.y;
+            s->data(t+tt, i, 6) = qt.z;
+          }
         }
         else // set all equal to last
           for(uint tt = 0; tt < no; tt++)
@@ -102,6 +128,15 @@ void G4Data::loadData(const char *meta_fname, const char *poses_fname, bool inte
       }
     }
   }
+}
+
+StringA& G4Data::getNames() const {
+  return s->names;
+}
+
+String& G4Data::getName(uint i) const {
+  CHECK(i < s->names.N, "Invalid index.");
+  return s->names(i);
 }
 
 int G4Data::getNumTimesteps() const {
@@ -173,7 +208,7 @@ arr G4Data::query(const char *key) const {
 
 arr G4Data::queryPos(uint t, const char *key) const {
   if(key == NULL)
-    return s->data[t].sub(0, -1, 0, 2).reshape(1, s->numS, 3);
+    return s->data[t].cols(0, 3).reshape(s->numS, 3);
 
   arr ret;
   uint hid, sid, hsi;
@@ -187,9 +222,7 @@ arr G4Data::queryPos(uint t, const char *key) const {
 
     ret.append(tdata[s->hstoi(hsi)]);
   }
-  ret.sub(0, -1, 0, 2).reshape(1, sensors.N, 3);
-
-  return ret;
+  return ret.reshape(sensors.N, 7).cols(0, 3);
 }
 
 arr G4Data::queryPos(const char *key) const {
@@ -210,10 +243,8 @@ arr G4Data::queryPos(const char *key) const {
 
   for(uint t = 0; t < s->numT; t++)
     for(uint i = 0; i < sensors.N; i++)
-      ret.append(s->data.sub(t, t, iv(i), iv(i), 0, -1));
-  ret.sub(0, -1, 0, -1, 0, 2).reshape(s->numT, sensors.N, 3);
-
-  return ret;
+      ret.append(s->data.sub(t, t, iv(i), iv(i), 0, 2));
+  return ret.reshape(s->numT, sensors.N, 3);
 }
 
 arr G4Data::queryQuat(uint t, const char *key) const {
@@ -232,9 +263,7 @@ arr G4Data::queryQuat(uint t, const char *key) const {
 
     ret.append(tdata[s->hstoi(hsi)]);
   }
-  ret.sub(0, -1, 3, -1).reshape(sensors.N, 4);
-
-  return ret;
+  return ret.reshape(sensors.N, 7).cols(3, 7);
 }
 
 arr G4Data::queryQuat(const char *key) const {

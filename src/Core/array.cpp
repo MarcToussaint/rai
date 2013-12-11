@@ -187,6 +187,42 @@ void svd(arr& U, arr& V, const arr& A) {
   //CHECK(maxDiff(A, U*~V) <1e-4, "");
 }
 
+void pca(arr &Y, arr &v, arr &W, const arr &X, uint size) {
+  CHECK(X.nd == 2 && X.d0 > 0 && X.d1 > 0, "Invalid data matrix X.");
+  CHECK(size <= X.d1, "More principal components than data matrix X can offer.");
+
+  if(size == 0)
+    size = X.d1;
+
+  // centering around the mean
+  arr m = mean(X, 0);
+  arr D = X;
+  for(uint i = 0; i < D.d0; i++)
+    D[i]() -= m;
+  
+  arr U;
+  svd(U, v, W, D, true);
+  v = elemWiseProd(v, v);
+  /*
+  cout << "X: " << X << endl;
+  cout << "D: " << D << endl;
+  cout << "~D*D: " << ~D*D << endl;
+  cout << "UU: " << U << endl;
+  cout << "vv: " << v << endl;
+  cout << "WW: " << W << endl;
+  */
+
+  W = W.cols(0, size);
+  pca(Y, W, D);
+
+  v *= 1./sum(v);
+  v.sub(0, size-1);
+}
+
+void pca(arr &Y, const arr &W, const arr &X) {
+  Y = X*W;
+}
+
 void check_inverse(const arr& Ainv, const arr& A) {
 #ifdef MT_CHECK_INVERSE
   arr D, _D; D.setId(A.d0);
@@ -1577,6 +1613,7 @@ template void MT::save<arr>(const arr&, const char*);
 template void MT::load<arr>(arr&, const char*, bool);
 template MT::Array<double> MT::getParameter<MT::Array<double> >(char const*);
 template bool MT::checkParameter<MT::Array<double> >(char const*);
+template void MT::getParameter(uintA&, const char*, const uintA&);
 
 void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 

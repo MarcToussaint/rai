@@ -877,20 +877,20 @@ uint MT::String::read(std::istream& is, const char* skipSymbols, const char *sto
 
 /** @brief fills the string with the date and time in the format
  * yy-mm-dd--hh-mm-mm */
-void MT::getNowString(MT::String &str) {
+MT::String MT::getNowString() {
   time_t t = time(0);
   struct tm *now = localtime(&t);
 
-  char s[19]; //-- just enough
-  sprintf(s, "%02d-%02d-%02d--%02d-%02d-%02d",
+  MT::String str;
+  str.resize(19, false); //-- just enough
+  sprintf(str.p, "%02d-%02d-%02d--%02d-%02d-%02d",
     now->tm_year-100,
     now->tm_mon+1,
     now->tm_mday,
     now->tm_hour,
     now->tm_min,
     now->tm_sec);
-
-  str.clear() << s;
+  return str;
 }
 
 //===========================================================================
@@ -1124,22 +1124,27 @@ std::string getcwd_string() {
 //
 
 #include "util_t.h"
-template void MT::getParameter(double&, const char*);
-template float MT::getParameter<float>(const char*);
-template double MT::getParameter<double>(const char*);
-template void MT::getParameter(uint&, const char*);
-template int MT::getParameter<int>(const char*);
 template void MT::getParameter(int&, const char*);
 template void MT::getParameter(int&, const char*, const int&);
+template void MT::getParameter(uint&, const char*);
+template void MT::getParameter(uint&, const char*, const uint&);
 template void MT::getParameter(bool&, const char*, const bool&);
-template int  MT::getParameter(const char*, const int&);
-template uint MT::getParameter(const char*, const uint&);
-template bool MT::getParameter(const char*, const bool&);
-template double MT::getParameter(const char*, const double&);
-template long MT::getParameter(const char*);
+template void MT::getParameter(double&, const char*);
+template void MT::getParameter(double&, const char*, const double&);
+template void MT::getParameter(MT::String&, const char*, const MT::String&);
+
+template int MT::getParameter<int>(const char*);
+template int  MT::getParameter<int>(const char*, const int&);
 template uint MT::getParameter(const char*);
-template MT::String MT::getParameter(const char*);
-template MT::String MT::getParameter(const char*, const MT::String&);
+template uint MT::getParameter<uint>(const char*, const uint&);
+template float MT::getParameter<float>(const char*);
+template double MT::getParameter<double>(const char*);
+template double MT::getParameter<double>(const char*, const double&);
+template bool MT::getParameter<bool>(const char*, const bool&);
+template long MT::getParameter<long>(const char*);
+template MT::String MT::getParameter<MT::String>(const char*);
+template MT::String MT::getParameter<MT::String>(const char*, const MT::String&);
+
 template bool MT::checkParameter<uint>(const char*);
 
 template void MT::Parameter<MT::String>::initialize();

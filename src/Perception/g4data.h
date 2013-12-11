@@ -10,6 +10,9 @@ struct G4Data {
 
   void loadData(const char *meta_fname, const char *poses_fname, bool interpolate = false);
 
+  StringA& getNames() const;
+  String& getName(uint i) const;
+
   int getNumTimesteps() const;
   int getNumSensors(const char *key = NULL) const;
 
