@@ -397,6 +397,7 @@ template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T
 
 MT::Array<MT::String> STRINGS(const char* s0);
 MT::Array<MT::String> STRINGS(const char* s0, const char* s1);
+MT::Array<MT::String> STRINGS(const char* s0, const char* s1, const char* s2);
 
 
 //===========================================================================
