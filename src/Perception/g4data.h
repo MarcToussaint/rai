@@ -13,12 +13,12 @@ struct G4Data {
   StringA& getNames() const;
   String& getName(uint i) const;
 
-  int getNumTimesteps() const;
-  int getNumSensors(const char *key = NULL) const;
+  uint getNumFrames() const;
+  uint getNumSensors(const char *key = NULL) const;
 
   boolA getMissing() const;
   MT::Array<intA> getMissingNo() const;
-  MT::Array<intA> getMissingT() const;
+  MT::Array<intA> getMissingF() const;
 
   arr query(uint t, const char *key = NULL) const;
   arr query(const char *key = NULL) const;
