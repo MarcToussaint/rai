@@ -6,15 +6,15 @@
 
 struct sG4Data {
   KeyValueGraph G;
-  uint numS, numT;
+  uint numS, numF;
   intA itohs, hstoi;
   StringA names;
   arr data;
   boolA missing;
   MT::Array<intA> missingno;
-  MT::Array<intA> missingt;
+  MT::Array<intA> missingf;
 
-  sG4Data(): numS(0), numT(0) {};
+  sG4Data(): numS(0), numF(0) {};
 };
 
 //==============================================================================
@@ -58,9 +58,9 @@ void G4Data::loadData(const char *meta_fname, const char *poses_fname, bool inte
   boolA pm(s->numS);
   pm.setZero(false);
   s->missingno.resize(s->numS);
-  s->missingt.resize(s->numS);
-  uint T;
-  for(T = 0; ; T++) {
+  s->missingf.resize(s->numS);
+  uint F;
+  for(F = 0; ; F++) {
     fil >> x;
     // TODO this is to test whether the quaternions are normalized..
     /*
@@ -84,25 +84,25 @@ void G4Data::loadData(const char *meta_fname, const char *poses_fname, bool inte
           s->missingno(i).last()++;
         else if(m && !pm(i)) {
           s->missingno(i).append(1);
-          s->missingt(i).append(T);
+          s->missingf(i).append(F);
         }
         pm(i) = m;
       }
     }
   }
-  s->numT = T;
-  s->data.reshape(T, s->data.N/T/7, 7);
-  s->missing.reshape(T, s->data.N/T/7);
+  s->numF = F;
+  s->data.reshape(F, s->data.N/F/7, 7);
+  s->missing.reshape(F, s->data.N/F/7);
 
   if(interpolate) { // interpolating missing measures
     for(uint i = 0; i < s->numS; i++) {
       for(uint j = 0; j < s->missingno(i).N; j++) {
-        uint t = s->missingt(i).elem(j);
+        uint t = s->missingf(i).elem(j);
         uint no = s->missingno(i).elem(j);
         if(t == 0) // set all equal to first
           for(uint tt = 0; tt < no; tt++)
             s->data[tt][i] = s->data[no][i];
-        else if(t+no < T) { // interpolate between t-1 and t+missingno(i)
+        else if(t+no < F) { // interpolate between t-1 and t+missingno(i)
           arr s0 = s->data[t-1][i];
           arr sF = s->data[t+no][i];
           ors::Quaternion q0(s0(3), s0(4), s0(5), s0(6));
@@ -124,7 +124,7 @@ void G4Data::loadData(const char *meta_fname, const char *poses_fname, bool inte
         }
         else // set all equal to last
           for(uint tt = 0; tt < no; tt++)
-            s->data[T-tt-1][i] = s->data[T-no-1][i];
+            s->data[F-tt-1][i] = s->data[F-no-1][i];
       }
     }
   }
@@ -139,11 +139,11 @@ String& G4Data::getName(uint i) const {
   return s->names(i);
 }
 
-int G4Data::getNumTimesteps() const {
-  return s->numT;
+uint G4Data::getNumFrames() const {
+  return s->numF;
 }
 
-int G4Data::getNumSensors(const char *key) const {
+uint G4Data::getNumSensors(const char *key) const {
   if(key == NULL)
     return s->numS;
   return s->G.getTypedValues<KeyValueGraph>(key).N;
@@ -157,8 +157,8 @@ MT::Array<intA> G4Data::getMissingNo() const {
   return s->missingno;
 }
 
-MT::Array<intA> G4Data::getMissingT() const {
-  return s->missingt;
+MT::Array<intA> G4Data::getMissingF() const {
+  return s->missingf;
 }
 
 arr G4Data::query(uint t, const char *key) const {
@@ -198,10 +198,10 @@ arr G4Data::query(const char *key) const {
     iv.append(s->hstoi(hsi));
   }
 
-  for(uint t = 0; t < s->numT; t++)
+  for(uint t = 0; t < s->numF; t++)
     for(uint i = 0; i < sensors.N; i++)
       ret.append(s->data.sub(t, t, iv(i), iv(i), 0, -1));
-  ret.reshape(s->numT, sensors.N, 7);
+  ret.reshape(s->numF, sensors.N, 7);
 
   return ret;
 }
@@ -241,10 +241,10 @@ arr G4Data::queryPos(const char *key) const {
     iv.append(s->hstoi(hsi));
   }
 
-  for(uint t = 0; t < s->numT; t++)
+  for(uint t = 0; t < s->numF; t++)
     for(uint i = 0; i < sensors.N; i++)
       ret.append(s->data.sub(t, t, iv(i), iv(i), 0, 2));
-  return ret.reshape(s->numT, sensors.N, 3);
+  return ret.reshape(s->numF, sensors.N, 3);
 }
 
 arr G4Data::queryQuat(uint t, const char *key) const {
@@ -282,10 +282,10 @@ arr G4Data::queryQuat(const char *key) const {
     iv.append(s->hstoi(hsi));
   }
 
-  for(uint t = 0; t < s->numT; t++)
+  for(uint t = 0; t < s->numF; t++)
     for(uint i = 0; i < sensors.N; i++)
       ret.append(s->data.sub(t, t, iv(i), iv(i), 0, -1));
-  ret.sub(0, -1, 0, -1, 3, -1).reshape(s->numT, sensors.N, 3);
+  ret.sub(0, -1, 0, -1, 3, -1).reshape(s->numF, sensors.N, 3);
 
   return ret;
 }
