@@ -1,6 +1,8 @@
 #include "videoEncoder.h"
 #include <Core/util.h>
 
+#ifdef HAVE_LIBAV
+
 extern "C"{
 #include <libavcodec/avcodec.h>
 #include <libavutil/mathematics.h>
@@ -146,3 +148,20 @@ void sVideoEncoder_libav_simple::close(){
 //  printf("\n");
   cout <<" CLOSED ENCODER  file: " <<filename <<endl;
 }
+
+#else // HAVE_LIBAV
+
+// dummy implementation does nothing
+
+struct sVideoEncoder_libav_simple{
+};
+VideoEncoder_libav_simple::VideoEncoder_libav_simple(const char*, uint, uint){
+  NICO
+}
+void VideoEncoder_libav_simple::addFrame(const byteA&){}
+void VideoEncoder_libav_simple::close(){}
+void sVideoEncoder_libav_simple::open(uint, uint){}
+void sVideoEncoder_libav_simple::addFrame(const byteA& rgb){}
+void sVideoEncoder_libav_simple::close(){}
+
+#endif // HAVE_LIBAV
