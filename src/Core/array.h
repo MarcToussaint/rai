@@ -108,7 +108,7 @@ template<class T> struct Array {
   explicit Array(uint D0);
   explicit Array(uint D0, uint D1);
   explicit Array(uint D0, uint D1, uint D2);
-  Array(const T* p, uint size);
+  explicit Array(const T* p, uint size);    //reference!
   Array(std::initializer_list<T> list);
   ~Array();
   
@@ -166,10 +166,9 @@ template<class T> struct Array {
   void referToSubRange(const Array<T>& a, uint i, int I);
   void referToSubDim(const Array<T>& a, uint dim);
   void referToSubDim(const Array<T>& a, uint i, uint j);
-  void takeOver(Array<T>& a);                   //a becomes a reference to its previously owned memory!
-  void swap(Array<T>& a); //the two arrays swap their contents!
+  void takeOver(Array<T>& a);  //a becomes a reference to its previously owned memory!
+  void swap(Array<T>& a);      //the two arrays swap their contents!
   void setGrid(uint dim, T lo, T hi, uint steps);
-  void setText(const char* str); //TODO: remove
   
   /// @name access by reference (direct memory access)
   T& elem(uint i) const;
@@ -222,6 +221,7 @@ template<class T> struct Array {
   T& append(const T& x);
   void append(const Array<T>& x);
   void append(const T *p, uint n);
+  void prepend(const T& x){ insert(0,x); }
   void replicate(uint copies);
   void insert(uint i, const T& x);
   void replace(uint i, uint n, const Array<T>& x);
@@ -397,6 +397,7 @@ template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T
 
 MT::Array<MT::String> STRINGS(const char* s0);
 MT::Array<MT::String> STRINGS(const char* s0, const char* s1);
+MT::Array<MT::String> STRINGS(const char* s0, const char* s1, const char* s2);
 
 
 //===========================================================================
@@ -539,6 +540,7 @@ template<class T> void getDiag(MT::Array<T>& x, const MT::Array<T>& y);
 template<class T> MT::Array<T> diag(const MT::Array<T>& x) {  MT::Array<T> y;  y.setDiag(x);  return y;  }
 template<class T> MT::Array<T> skew(const MT::Array<T>& x);
 template<class T> void inverse2d(MT::Array<T>& Ainv, const MT::Array<T>& A);
+template<class T> MT::Array<T> replicate(const MT::Array<T>& A, uint d0);
 
 template<class T> uintA size(const MT::Array<T>& x) { return x.getDim(); }
 template<class T> void checkNan(const MT::Array<T>& x);

@@ -11,6 +11,7 @@
 #include <Core/module.h>
 #include <Ors/ors.h>
 #include <Core/array_t.h>
+#include <Gui/opengl.h>
 
 //===========================================================================
 //
@@ -42,6 +43,15 @@ BEGIN_MODULE(SURFer)           ACCESS(byteA, grayImage) ACCESS(SURFfeatures, fea
 BEGIN_MODULE(HoughLineFilter)  ACCESS(byteA, grayImage) ACCESS(HoughLines, houghLines)  END_MODULE()
 BEGIN_MODULE(ShapeFitter)      ACCESS(floatA, eviL)     ACCESS(floatA, eviR)            ACCESS(PerceptionOutput, perc)      END_MODULE()
 
+template<class T>
+struct GenericDisplayViewer : Module {
+  OpenGL *gl;
+  ACCESS(T, var);
+  GenericDisplayViewer(): Module("GenericDisplayViewer"), gl(NULL) {} \
+  virtual void open(){ gl = new OpenGL(STRING("ImageViewer '"<<var.var->name()<<'\'')); }
+  virtual void step(){ gl->background = var.get().display; gl->update(); }
+  virtual void close(){ delete gl; }
+};
 
 //===========================================================================
 //
