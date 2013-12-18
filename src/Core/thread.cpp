@@ -1,4 +1,5 @@
 #include "thread.h"
+#include <exception>
 
 #ifndef MT_MSVC
 #  include <sys/syscall.h>
@@ -395,13 +396,16 @@ void Thread::threadStop() {
 
 void Thread::main() {
   tid = syscall(SYS_gettid);
-
+  cout <<"*** Entering Thread '" <<name <<"'" <<endl;
   //http://linux.die.net/man/3/setpriority
   //if(Thread::threadPriority) setRRscheduling(Thread::threadPriority);
   //if(Thread::threadPriority) setNice(Thread::threadPriority);
 
   try{
     open(); //virtual open routine
+  } catch(const std::exception& ex) {
+    state.setValue(tsFAILURE);
+    cerr << "*** open() of Thread'" << name << "'failed: " << ex.what() << " -- closing it again" << endl;        
   } catch(...) {
     state.setValue(tsFAILURE);
     cerr <<"*** open() of Thread '" <<name <<"' failed! -- closing it again";
@@ -443,6 +447,7 @@ void Thread::main() {
   };
 
   close(); //virtual close routine
+  cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
 }
 
 

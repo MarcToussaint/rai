@@ -59,6 +59,10 @@ inline byteA cvtMAT(const cv::Mat& mat){
   return byteA();
 }
 
+char cvShow(const byteA& img, const char *window="opencv", bool wait=false);
+char cvShow(const floatA& img, const char *window="opencv", bool wait=false);
+void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSdv, uint range);
+
 #else
 
 inline cv::Mat cvMAT(const byteA& img){ NICO }

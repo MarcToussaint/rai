@@ -397,6 +397,7 @@ template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T
 
 MT::Array<MT::String> STRINGS(const char* s0);
 MT::Array<MT::String> STRINGS(const char* s0, const char* s1);
+MT::Array<MT::String> STRINGS(const char* s0, const char* s1, const char* s2);
 
 
 //===========================================================================
@@ -467,6 +468,8 @@ extern bool useLapack;
 
 uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort=true);
 void svd(arr& U, arr& V, const arr& A);
+void pca(arr &Y, arr &v, arr &W, const arr &X, uint size = 0);
+void pca(arr &Y, const arr &W, const arr &X);
 
 void mldivide(arr& X, const arr& A, const arr& b);
 
@@ -533,7 +536,7 @@ double NNzerosdv(const arr& x, double sdv);
 template<class T> MT::Array<T> vectorShaped(const MT::Array<T>& x) {  MT::Array<T> y;  y.referTo(x);  y.reshape(y.N);  return y;  }
 template<class T> void transpose(MT::Array<T>& x, const MT::Array<T>& y);
 template<class T> void negative(MT::Array<T>& x, const MT::Array<T>& y);
-template<class T> void getDiag(MT::Array<T>& x, const MT::Array<T>& y);
+template<class T> MT::Array<T> getDiag(const MT::Array<T>& y);
 template<class T> MT::Array<T> diag(const MT::Array<T>& x) {  MT::Array<T> y;  y.setDiag(x);  return y;  }
 template<class T> MT::Array<T> skew(const MT::Array<T>& x);
 template<class T> void inverse2d(MT::Array<T>& Ainv, const MT::Array<T>& A);
@@ -567,6 +570,7 @@ template<class T> T sumOfAbs(const MT::Array<T>& v);
 template<class T> T sumOfSqr(const MT::Array<T>& v);
 template<class T> T length(const MT::Array<T>& v); //TODO: remove this: the name 'norm' is too ambiguous!! (maybe rename to 'length')
 template<class T> T mean(const MT::Array<T>& v);
+template<class T> MT::Array<T> mean(const MT::Array<T>& v, uint d);
 template<class T> T product(const MT::Array<T>& v);
 
 template<class T> T trace(const MT::Array<T>& v);
