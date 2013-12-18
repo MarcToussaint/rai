@@ -152,7 +152,7 @@ inline bool wait() {
 }
 #else
 inline void wait(double sec, bool msg_on_fail=true) { /* do nothing when running as test */ }
-inline bool wait() { /* do nothing when running as test */ };
+inline bool wait() { return true; /* do nothing when running as test */ };
 #endif
 
 //----- memory
