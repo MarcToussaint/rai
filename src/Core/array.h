@@ -536,7 +536,7 @@ double NNzerosdv(const arr& x, double sdv);
 template<class T> MT::Array<T> vectorShaped(const MT::Array<T>& x) {  MT::Array<T> y;  y.referTo(x);  y.reshape(y.N);  return y;  }
 template<class T> void transpose(MT::Array<T>& x, const MT::Array<T>& y);
 template<class T> void negative(MT::Array<T>& x, const MT::Array<T>& y);
-template<class T> void getDiag(MT::Array<T>& x, const MT::Array<T>& y);
+template<class T> MT::Array<T> getDiag(const MT::Array<T>& y);
 template<class T> MT::Array<T> diag(const MT::Array<T>& x) {  MT::Array<T> y;  y.setDiag(x);  return y;  }
 template<class T> MT::Array<T> skew(const MT::Array<T>& x);
 template<class T> void inverse2d(MT::Array<T>& Ainv, const MT::Array<T>& A);
