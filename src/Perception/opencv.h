@@ -22,6 +22,9 @@
 
 //OpenCV (C++) wrappers
 
+#include <Core/array.h>
+#include <Core/util.h>
+
 #ifdef MT_OPENCV
 
 #undef COUNT
@@ -29,8 +32,6 @@
 #include <opencv2/opencv.hpp>
 #undef MIN
 #undef MAX
-#include <Core/array.h>
-#include <Core/util.h>
 
 inline cv::Mat cvMAT(const byteA& img){
   if(img.nd==2) return cv::Mat(img.d0, img.d1, CV_8UC1, img.p);
@@ -69,6 +70,10 @@ inline cv::Mat cvMAT(const byteA& img){ NICO }
 inline cv::Mat cvMAT(const floatA& img){ NICO }
 inline cv::Mat cvMAT(const doubleA& img){ NICO }
 inline byteA cvtMAT(const cv::Mat& mat){ NICO }
+
+inline char cvShow(const byteA& img, const char *window="opencv", bool wait=false) { NICO }
+inline char cvShow(const floatA& img, const char *window="opencv", bool wait=false) { NICO };
+void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSdv, uint range); { NICO };
 
 #endif //MT_OPENCV
 
