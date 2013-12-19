@@ -691,7 +691,7 @@ void ShapeFitter::step(){
 #endif
 
 
-void realizeObjectsInOrs(ors::Graph& ors, const MT::Array<RigidObjectRepresentation>& objects){
+void realizeObjectsInOrs(ors::KinematicWorld& ors, const MT::Array<RigidObjectRepresentation>& objects){
   RigidObjectRepresentation *obj;  uint i;
   ors::Body *o = ors.getBodyByName("o1");
   uint indFirst = o->index;//hack to get consecutive bodies
@@ -723,7 +723,7 @@ void realizeObjectsInOrs(ors::Graph& ors, const MT::Array<RigidObjectRepresentat
   }
 }
 
-/*void copyShapeInfos(ors::Graph& A, const ors::Graph& B){
+/*void copyShapeInfos(ors::KinematicWorld& A, const ors::KinematicWorld& B){
   uint i; ors::Shape *s, *sa;
   for_list(i, s, B.shapes){
     sa = A.shapes(i);
@@ -736,7 +736,7 @@ void realizeObjectsInOrs(ors::Graph& ors, const MT::Array<RigidObjectRepresentat
   }
 }*/
 
-void copyBodyInfos(ors::Graph& A, const ors::Graph& B){
+void copyBodyInfos(ors::KinematicWorld& A, const ors::KinematicWorld& B){
   uint i; ors::Body *b, *ba;
   ors::Shape *s, *sa;
   for_list(i, b, B.bodies) if(b->shapes.N){
