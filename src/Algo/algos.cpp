@@ -18,63 +18,39 @@
 
 #include "algos.h"
 
+
 namespace MT{
 
 void rk4(arr& x1, const arr& x0,
-             void (*df)(arr& xd, const arr& x),
-             double dt) {
-  uint n=x0.N;
-  arr k1(n), k2(n), k3(n), k4(n);
+         VectorFunction& f,
+         double dt) {
+  arr k1,k2,k3,k4;
+  f.fv(k1, NoArr, x0);
+  f.fv(k2, NoArr, x0 + 0.5*dt*k1);
+  f.fv(k3, NoArr, x0 + 0.5*dt*k2);
+  f.fv(k4, NoArr, x0 +     dt*k3);
   
-  df(k1, x0);
-  df(k2, x0+(double).5*dt*k1);
-  df(k3, x0+(double).5*dt*k2);
-  df(k4, x0+   dt*k3);
-  
-  x1 = x0;
-  x1 += (dt/(double)6.)*(k1 + (double)2.*k2 + (double)2.*k3 + k4);
+  if(&x1!=&x0) x1 = x0;
+  x1 += (dt/6.)*(k1 + 2.*k2 + 2.*k3 + k4);
 }
 
-void (*global_ddf)(arr& xdd, const arr& x, const arr& v);
-void (*global_sf)(arr& s,  const arr& x, const arr& v);
-void rk_df(arr& xd, const arr& x) {
-  uint n=x.N/2;
-  arr X; X.referTo(x);
-  X.reshape(2, n);
-  arr a;
-  global_ddf(a, X[0], X[1]);
-  xd.resize(x.N);
-  xd.setVectorBlock(X[1], 0);
-  xd.setVectorBlock(a, n);
-}
-void rk_sf(arr& s, const arr& x) {
-  uint n=x.N/2;
-  arr X; X.referTo(x);
-  X.reshape(2, n);
-  global_sf(s, X[0], X[1]);
+void rk4_2ndOrder(arr& x, const arr& x0, VectorFunction& f, double dt){
+  CHECK(x0.nd==2 && x0.d0==2,"need a 2-times-n array   rk4_2ndOrder input");
+  struct F2:VectorFunction{
+    VectorFunction& f;
+    F2(VectorFunction& _f):f(_f){}
+    void fv(arr& y, arr& J, const arr& x){
+      CHECK(x.nd==2 && x.d0==2,"");
+      y.resizeAs(x);
+      y[0]=x[1];
+      f.fv(y[1](), NoArr, x);
+    }
+
+  } f2(f);
+  rk4(x, x0, f2, dt);
 }
 
-void rk4dd(arr& x1, arr& v1, const arr& x0, const arr& v0,
-               void (*ddf)(arr& xdd, const arr& x, const arr& v),
-               double dt) {
-               
-  global_ddf = ddf;
-  
-  uint n=x0.N;
-  
-  arr X(2, n), Y(2*n);
-  X[0]=x0;
-  X[1]=v0;
-  X.reshape(2*n);
-  
-  rk4(Y, X, rk_df, dt);
-  
-  Y.reshape(2, n);
-  x1=Y[0];
-  v1=Y[1];
-}
-
-
+#if 0
 bool rk4_switch(arr& x1, arr& s1, const arr& x0, const arr& s0,
                     void (*df)(arr& xd, const arr& x),
                     void (*sf)(arr& s, const arr& x),
@@ -157,136 +133,7 @@ bool rk4dd_switch(arr& x1, arr& v1, arr& s1, const arr& x0, const arr& v0, const
   v1=Y[1];
   return change;
 }
-
-
-//==============================================================================
-//
-// Spline
-//
-
-void Spline::plotBasis() {
-#ifdef MT_plot_h
-  plotClear();
-  arr b_sum(T+1);
-  tensorMarginal(b_sum, basis_trans, TUP(1));
-  plotFunction(b_sum, -1, 1);
-  for(uint i=0; i<=K; i++) plotFunction(basis_trans[i], -1, 1);
-  plot();
-#else
-  NIY;
 #endif
-}
 
-void Spline::setBasis() {
-  uint i, t, p;
-  double time, x, y;
-  CHECK(times.N-1==K+1+degree, "wrong number of time knots");
-  arr b(K+1, T+1), b_0(K+1, T+1);
-  for(p=0; p<=degree; p++) {
-    if(p>0) b_0=b;
-    for(i=0; i<=K; i++) for(t=0; t<=T; t++) {
-        time = (double)t/(double)T;
-        if(!p) {
-          b(i, t) = 0.;
-          if(times(i)<=time && time<times(i+1)) b(i, t)=1.;
-          if(t==T && i==K && time==times(i+1)) b(i, t)=1.;
-        } else {
-          x=DIV(time-times(i), times(i+p)-times(i), true);
-          b(i, t) = x * b_0(i, t);
-          if(i<K) {
-            y=DIV(times(i+p+1)-time, times(i+p+1)-times(i+1), true);
-            b(i, t) += y * b_0(i+1, t);
-          }
-        }
-      }
-  }
-  basis_trans=b;
-  transpose(basis, b);
-}
-
-void Spline::setBasisAndTimeGradient() {
-  uint i, j, t, p, m=times.N-1;
-  double time, x, xx, y, yy;
-  CHECK(m==K+1+degree, "wrong number of time knots");
-  arr b(K+1, T+1), b_0(K+1, T+1), dbt(m+1, K+1, T+1), dbt_0(m+1, K+1, T+1);
-  for(p=0; p<=degree; p++) {
-    if(p>0) { b_0=b; dbt_0=dbt; }
-    for(i=0; i<=K; i++) for(t=0; t<=T; t++) {
-        time = (double)t/(double)T;
-        if(!p) {
-          b(i, t) = 0.;
-          if(times(i)<=time && time<times(i+1)) b(i, t)=1.;
-          if(t==T && i==K && time==times(i+1)) b(i, t)=1.;
-          for(j=0; j<=m; j++) dbt(j, i, t)=0.;
-        } else {
-          xx=times(i+p)-times(i);
-          x=DIV(time-times(i), xx, true);
-          if(i<K) {
-            yy=times(i+p+1)-times(i+1);
-            y=DIV(times(i+p+1)-time, yy, true);
-          } else {
-            yy=1.;
-            y=0.;
-          }
-          b(i, t) = x * b_0(i, t);
-          if(i<K) b(i, t) += y * b_0(i+1, t);
-          for(j=0; j<=m; j++) {
-            dbt(j, i, t) = x * dbt_0(j, i, t);
-            if(i<K) dbt(j, i, t) += y * dbt_0(j, i+1, t);
-            if(j==i)            dbt(j, i, t) += DIV((x-1), xx, true) * b_0(i, t);
-            if(j==i+p)          dbt(j, i, t) -= DIV(x , xx, true) * b_0(i, t);
-            if(i<K && j==i+1)   dbt(j, i, t) += DIV(y , yy, true) * b_0(i+1, t);
-            if(i<K && j==i+p+1) dbt(j, i, t) -= DIV((y-1), yy, true) * b_0(i+1, t);
-          }
-        }
-      }
-  }
-  basis_trans=b;
-  transpose(basis, b);
-  basis_timeGradient=dbt;
-}
-
-void Spline::setUniformNonperiodicBasis(uint _T, uint _K, uint _degree) {
-  T=_T; K=_K; degree=_degree;
-  uint i, m;
-  m=K+1+degree;
-  times.resize(m+1);
-  for(i=0; i<=m; i++) {
-    if(i<=degree) times(i)=.0;
-    else if(i>=m-degree) times(i)=1.;
-    else times(i) = double(i-degree)/double(m-2*degree);
-  }
-  //setBasis(T, K, degree);
-  setBasisAndTimeGradient();
-}
-
-void Spline::eval(arr& f_t, uint t) const { f_t = basis[t]*points; };
-
-void Spline::eval(arr& f) const { f = basis*points; };
-
-void Spline::partial(arr& dCdx, const arr& dCdf) const {
-  CHECK(dCdf.d0==T+1 && dCdf.d1==points.d1, "");
-  dCdx = basis_trans * dCdf;
-}
-
-void Spline::partial(arr& dCdx, arr& dCdt, const arr& dCdf, bool constrain) const {
-  CHECK(dCdf.d0==T+1 && dCdf.d1==points.d1, "");
-  CHECK(basis_timeGradient.N, "");
-  uint n=dCdf.d1, m=K+1+degree, j;
-  dCdx = basis_trans * dCdf;
-  arr X;
-  X.referTo(points);
-  X.reshape((K+1)*n);
-  arr B;
-  B.referTo(basis_timeGradient);
-  B.reshape((m+1)*(K+1), T+1);
-  arr Z = B * dCdf; Z.reshape(m+1, (K+1)*n);
-  dCdt = Z*X;
-  if(constrain) {
-    for(j=0; j<=degree; j++) dCdt(j)=0.;
-    for(j=m-degree; j<=m; j++) dCdt(j)=0.;
-  }
-  dCdt(0)=dCdt(m)=0.;
-}
 
 } //end namespace
