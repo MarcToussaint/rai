@@ -141,8 +141,19 @@ double cpuTime();
 double sysTime();
 double totalTime();
 char *date();
-void wait(double sec, bool msg_on_fail=true);
-bool wait();
+#ifndef EXAMPLES_AS_TESTS
+void __do_wait(double sec, bool msg_on_fail=true);
+bool __do_wait();
+inline void wait(double sec, bool msg_on_fail=true) {
+    __do_wait(sec, msg_on_fail);
+}
+inline bool wait() {
+    return __do_wait();
+}
+#else
+inline void wait(double sec, bool msg_on_fail=true) { /* do nothing when running as test */ }
+inline bool wait() { return true; /* do nothing when running as test */ };
+#endif
 
 //----- memory
 long mem();
