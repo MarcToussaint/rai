@@ -1,0 +1,4 @@
+Makefile
+CATKIN_IGNORE
+catkin_generated
+devel
