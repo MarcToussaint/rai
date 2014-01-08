@@ -5,11 +5,7 @@
 #ifndef __CYGWIN__
 #  include <sys/syscall.h>
 #else
-  int syscall(int, ...) {
-	return 0;
-  }
-  #define SYS_gettid 0
-  int pthread_setname_np(pthread_t, const char*) { return 0; }
+#  include "cygwin_compat.h"
 #endif //__CYGWIN __
 #  include <unistd.h>
 #endif
