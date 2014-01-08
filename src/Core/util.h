@@ -104,7 +104,8 @@ struct FileToken{
   }
 };
 #define FILE(filename) (MT::FileToken(filename)())
- template<class T> void operator<<(T& x, MT::FileToken& fil){ fil.getIs() >>x; }
+template<class T> void operator<<(T& x, MT::FileToken& fil){ fil.getIs() >>x; }
+template<class T> void operator>>(const T& x, MT::FileToken& fil){ fil.getOs() <<x; }
 
 //----- strings and streams
 bool contains(const char *s, char c);
