@@ -88,6 +88,23 @@ template<class T> void save(const T& x, const char *filename);
 template<class T> void load(T& x, const char *filename, bool change_directory=false);
 void decomposeFilename(char *&_path, char *&name, const char *filename);
 std::ofstream& log(const char *name="MT.log");
+struct FileToken{
+  const char* filename;
+  std::ofstream *os;
+  std::ifstream *is;
+  FileToken(const char* _filename):filename(_filename), os(NULL), is(NULL){}
+  FileToken& operator()(){ return *this; }
+  std::ofstream& getOs(){
+    if(!os){ os=new std::ofstream; MT::open(*os, filename); }
+    return *os;
+  }
+  std::ifstream& getIs(){
+    if(!is){ is=new std::ifstream; MT::open(*is, filename); }
+    return *is;
+  }
+};
+#define FILE(filename) (MT::FileToken(filename)())
+ template<class T> void operator<<(T& x, MT::FileToken& fil){ fil.getIs() >>x; }
 
 //----- strings and streams
 bool contains(const char *s, char c);

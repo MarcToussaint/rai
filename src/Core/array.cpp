@@ -833,6 +833,10 @@ void write(const arr& X, const char *filename, const char *ELEMSEP, const char *
   fil.close();
 }
 
+void write(std::ostream& os, const arrL& X, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
+  catCol(X).write(os, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
+}
+
 void write(const arrL& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
   std::ofstream fil;
   MT::open(fil, filename);
