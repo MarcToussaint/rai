@@ -20,10 +20,13 @@
 #include <math.h>
 #include <string.h>
 #if defined MT_Linux || defined MT_Cygwin || defined MT_Darwin
-#  include <linux/limits.h>
+#  include <limits.h>
 #  include <sys/time.h>
 #  include <sys/times.h>
 #  include <sys/resource.h>
+#endif
+#ifdef __CYGWIN__
+#include "cygwin_compat.h"
 #endif
 #if defined MT_MSVC
 #  include <time.h>
@@ -529,7 +532,7 @@ double totalTime() {
 char *date() { static time_t t; time(&t); return ctime(&t); }
 
 /// wait double time
-void wait(double sec, bool msg_on_fail) {
+void __do_wait(double sec, bool msg_on_fail) {
 #if defined(MT_Darwin)
   sleep((int)sec);
 #elif !defined(MT_MSVC)
@@ -562,7 +565,7 @@ void wait(double sec, bool msg_on_fail) {
 }
 
 /// wait for an ENTER at the console
-bool wait() {
+bool __do_wait() {
   char c[10];
   std::cout <<" -- hit a key to continue..." <<std::flush;
   //cbreak(); getch();

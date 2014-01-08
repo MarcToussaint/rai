@@ -187,12 +187,12 @@ void svd(arr& U, arr& V, const arr& A) {
   //CHECK(maxDiff(A, U*~V) <1e-4, "");
 }
 
-void pca(arr &Y, arr &v, arr &W, const arr &X, uint size) {
+void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc) {
   CHECK(X.nd == 2 && X.d0 > 0 && X.d1 > 0, "Invalid data matrix X.");
-  CHECK(size <= X.d1, "More principal components than data matrix X can offer.");
+  CHECK(npc <= X.d1, "More principal components than data matrix X can offer.");
 
-  if(size == 0)
-    size = X.d1;
+  if(npc == 0)
+    npc = X.d1;
 
   // centering around the mean
   arr m = mean(X, 0);
@@ -212,11 +212,11 @@ void pca(arr &Y, arr &v, arr &W, const arr &X, uint size) {
   cout << "WW: " << W << endl;
   */
 
-  W = W.cols(0, size);
+  W = W.cols(0, npc);
   pca(Y, W, D);
 
   v *= 1./sum(v);
-  v.sub(0, size-1);
+  v.sub(0, npc-1);
 }
 
 void pca(arr &Y, const arr &W, const arr &X) {
@@ -1619,3 +1619,4 @@ void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 
 MT::Array<MT::String> STRINGS(const char* s0){ return ARRAY<MT::String>(MT::String(s0)); }
 MT::Array<MT::String> STRINGS(const char* s0, const char* s1){ return ARRAY<MT::String>(MT::String(s0), MT::String(s1)); }
+MT::Array<MT::String> STRINGS(const char* s0, const char* s1, const char* s2){ return ARRAY<MT::String>(MT::String(s0), MT::String(s1), MT::String(s2)); }
