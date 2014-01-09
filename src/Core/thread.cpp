@@ -2,7 +2,11 @@
 #include <exception>
 
 #ifndef MT_MSVC
+#ifndef __CYGWIN__
 #  include <sys/syscall.h>
+#else
+#  include "cygwin_compat.h"
+#endif //__CYGWIN __
 #  include <unistd.h>
 #endif
 #ifdef MT_QT
