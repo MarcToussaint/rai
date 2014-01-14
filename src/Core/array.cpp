@@ -213,7 +213,7 @@ void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc) {
   */
 
   W = W.cols(0, npc);
-  Y = W * D;
+  Y = D * W;
 
   v *= 1./sum(v);
   v.sub(0, npc-1);
