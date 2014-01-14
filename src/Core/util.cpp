@@ -20,10 +20,13 @@
 #include <math.h>
 #include <string.h>
 #if defined MT_Linux || defined MT_Cygwin || defined MT_Darwin
-#  include <linux/limits.h>
+#  include <limits.h>
 #  include <sys/time.h>
 #  include <sys/times.h>
 #  include <sys/resource.h>
+#endif
+#ifdef __CYGWIN__
+#include "cygwin_compat.h"
 #endif
 #if defined MT_MSVC
 #  include <time.h>
