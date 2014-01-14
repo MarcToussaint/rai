@@ -195,14 +195,14 @@ void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc) {
     npc = X.d1;
 
   // centering around the mean
-  arr m = mean(X, 0);
+  arr m = sum(X, 0) / (double)X.d0;
   arr D = X;
   for(uint i = 0; i < D.d0; i++)
     D[i]() -= m;
   
   arr U;
   svd(U, v, W, D, true);
-  v = elemWiseProd(v, v);
+  v = v % v;
   /*
   cout << "X: " << X << endl;
   cout << "D: " << D << endl;
@@ -213,14 +213,10 @@ void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc) {
   */
 
   W = W.cols(0, npc);
-  pca(Y, W, D);
+  Y = W * D;
 
   v *= 1./sum(v);
   v.sub(0, npc-1);
-}
-
-void pca(arr &Y, const arr &W, const arr &X) {
-  Y = X*W;
 }
 
 void check_inverse(const arr& Ainv, const arr& A) {
