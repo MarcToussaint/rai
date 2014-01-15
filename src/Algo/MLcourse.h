@@ -57,7 +57,7 @@ struct CrossValidation {
 //
 
 enum FeatureType { readFromCfgFileFT=0, linearFT=1, quadraticFT, cubicFT, rbfFT=4, piecewiseConstantFT=5, piecewiseLinearFT=6 };
-void makeFeatures(arr& Phi, const arr& X, const arr& Xtrain, FeatureType featureType=readFromCfgFileFT);
+void makeFeatures(arr& Phi, const arr& X, FeatureType featureType=readFromCfgFileFT, const arr& rbfCenters=NoArr);
 
 
 //===========================================================================

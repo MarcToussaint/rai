@@ -59,6 +59,7 @@ extern bool globalMemoryStrict;
 extern const char* arrayElemsep;
 extern const char* arrayLinesep;
 extern const char* arrayBrackets;
+struct FileToken;
 } //namespace
 
 //===========================================================================
@@ -110,6 +111,7 @@ template<class T> struct Array {
   explicit Array(uint D0, uint D1, uint D2);
   explicit Array(const T* p, uint size);    //reference!
   Array(std::initializer_list<T> list);
+  Array(MT::FileToken&); //read from a file
   ~Array();
   
   Array<T>& operator=(const T& v);
