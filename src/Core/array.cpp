@@ -1142,12 +1142,12 @@ bool checkGradient(ScalarFunction &f,
   }
   JJ.reshapeAs(J);
   double md=maxDiff(J, JJ, &i);
-//   MT::save(J, "z.J");
-//   MT::save(JJ, "z.JJ");
+//   J >>FILE("z.J");
+//   JJ >>FILE("z.JJ");
   if(md>tolerance) {
     MT_MSG("checkGradient -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
-    MT::save(J, "z.J_analytical");
-    MT::save(JJ, "z.J_empirical");
+    J >>FILE("z.J_analytical");
+    JJ >>FILE("z.J_empirical");
     //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
     //HALT("");
     return false;
@@ -1174,12 +1174,12 @@ bool checkHessian(ScalarFunction &f, const arr& x, double tolerance) {
   }
   Jg.reshapeAs(H);
   double md=maxDiff(H, Jg, &i);
-  //   MT::save(J, "z.J");
-  //   MT::save(JJ, "z.JJ");
+  //   J >>FILE("z.J");
+  //   JJ >>FILE("z.JJ");
   if(md>tolerance) {
     MT_MSG("checkHessian -- FAILURE -- max diff=" <<md <<" |"<<H.elem(i)<<'-'<<Jg.elem(i)<<"| (stored in files z.J_*)");
-    MT::save(H, "z.J_analytical");
-    MT::save(Jg, "z.J_empirical");
+    H >>FILE("z.J_analytical");
+    Jg >>FILE("z.J_empirical");
     //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
     //HALT("");
     return false;
@@ -1207,12 +1207,12 @@ bool checkJacobian(VectorFunction &f,
   }
   JJ.reshapeAs(J);
   double md=maxDiff(J, JJ, &i);
-//   MT::save(J, "z.J");
-//   MT::save(JJ, "z.JJ");
+//   J >>FILE("z.J");
+//   JJ >>FILE("z.JJ");
   if(md>tolerance) {
     MT_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
-    MT::save(J, "z.J_analytical");
-    MT::save(JJ, "z.J_empirical");
+    J >>FILE("z.J_analytical");
+    JJ >>FILE("z.J_empirical");
     //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
     //HALT("");
     return false;
@@ -1612,9 +1612,6 @@ template MT::Array<arr>::Array(uint);
 template MT::Array<arr>::~Array();
 
 #include "util_t.h"
-template void MT::save<uintA>(const uintA&, const char*);
-template void MT::save<arr>(const arr&, const char*);
-template void MT::load<arr>(arr&, const char*, bool);
 template MT::Array<double> MT::getParameter<MT::Array<double> >(char const*);
 template bool MT::checkParameter<MT::Array<double> >(char const*);
 template void MT::getParameter(uintA&, const char*, const uintA&);

@@ -84,8 +84,6 @@ extern int verboseLevel;
 //----- files
 void open(std::ofstream& fs, const char *name, const char *errmsg="");
 void open(std::ifstream& fs, const char *name, const char *errmsg="");
-template<class T> void save(const T& x, const char *filename);
-template<class T> void load(T& x, const char *filename, bool change_directory=false);
 std::ofstream& log(const char *name="MT.log");
 
 //----- strings and streams
@@ -361,16 +359,13 @@ X >>FILE("outfile");
  etc
 */
 struct FileToken{
-  const char* filename;
   MT::String path, name, cwd;
   std::ofstream *os;
   std::ifstream *is;
-  FileToken(const char* _filename);
+  FileToken(const char* _filename, bool change_dir=true);
   ~FileToken();
   FileToken& operator()(){ return *this; }
-  void decomposeFilename();
-  void enterPath();
-  void leavePath();
+  void decomposeFilename(const char *filename);
   std::ofstream& getOs();
   std::ifstream& getIs();
 };
