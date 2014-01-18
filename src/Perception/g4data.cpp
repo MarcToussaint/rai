@@ -30,7 +30,7 @@ G4Data::~G4Data() {
 void G4Data::loadData(const char *meta_fname, const char *poses_fname, bool interpolate) {
   int hid, sid, hsi, hstoiN, hstoiNprev;
 
-  MT::load(s->G, meta_fname);
+  s->G <<FILE(meta_fname);
   MT::Array<KeyValueGraph*> sensors = s->G.getTypedValues<KeyValueGraph>("sensor");
   s->numS = sensors.N;
   hstoiN = 0;

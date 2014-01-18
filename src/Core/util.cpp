@@ -172,23 +172,6 @@ void open(std::ifstream& fs, const char *name, const char *errmsg) {
   if(!fs.good()) HALT("could not open file `" <<name <<"' for input" <<errmsg);
 }
 
-/// change to the directory of the given filename
-void decomposeFilename(char *&_path, char *&name, const char *filename) {
-  static char path[128];
-  uint i=strlen(filename);
-  CHECK(i<128, "");
-  memmove(path, filename, i);
-  for(; i--;) if(path[i]=='/' || path[i]=='\\') break;
-  if(!(i+1)) {
-    path[0]=0;
-    name=(char*)filename;
-  } else {
-    path[i]=0;
-    name = (char*)filename+i+1;
-  }
-  _path = path;
-}
-
 /// returns true if the (0-terminated) string s contains c
 bool contains(const char *s, char c) {
   for(uint i=0; s[i]; i++) if(s[i]==c) return true;
@@ -895,6 +878,72 @@ MT::String MT::getNowString() {
     now->tm_sec);
   return str;
 }
+
+
+//===========================================================================
+//
+// FileToken
+//
+
+MT::FileToken::FileToken(const char* filename, bool change_dir): os(NULL), is(NULL){
+  if(change_dir){
+    decomposeFilename(filename);
+    if(path.N){
+      cwd.resize(200, false);
+      if(!getcwd(cwd.p, 200)) HALT("couldn't get current dir");
+      cwd.resize(strlen(cwd.p), true);
+      log() <<"entering path `" <<path<<"' from '" <<cwd <<"'" <<std::endl;
+      if(chdir(path)) HALT("couldn't change to directory " <<path);
+    }
+  }
+  else name=filename;
+}
+
+MT::FileToken::~FileToken(){
+  if(is){ is->close(); delete is; is=NULL; }
+  if(os){ os->close(); delete os; os=NULL; }
+  if(cwd.N){
+    log() <<"leaving path `" <<path<<"' back to '" <<cwd <<"'" <<std::endl;
+    if(chdir(cwd)) HALT("couldn't change back to directory " <<cwd);
+  }
+}
+
+/// change to the directory of the given filename
+void MT::FileToken::decomposeFilename(const char* filename) {
+  path = filename;
+  int i=path.N;
+  for(; i--;) if(path(i)=='/' || path(i)=='\\') break;
+  if(i==-1) {
+    path.clear();
+    name=filename;
+  } else {
+    path.resize(i, true);
+    name = filename+i+1;
+  }
+}
+
+std::ofstream& MT::FileToken::getOs(){
+  CHECK(!is,"don't use a FileToken both as input and output");
+  if(!os){
+    os=new std::ofstream;
+    os->open(name);
+    log() <<"opening output file `" <<name <<"'" <<std::endl;
+    if(!os->good()) MT_MSG("could not open file `" <<name <<"' for output");
+  }
+  return *os;
+}
+
+std::ifstream& MT::FileToken::getIs(){
+  CHECK(!os,"don't use a FileToken both as input and output");
+  if(!is){
+    is=new std::ifstream;
+    is->open(name);
+    log() <<"opening input file `" <<name <<"'" <<std::endl;
+    if(!is->good()) HALT("could not open file `" <<name <<"' for input");
+  }
+  return *is;
+}
+
 
 //===========================================================================
 //
