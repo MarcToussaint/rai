@@ -59,6 +59,7 @@ extern bool globalMemoryStrict;
 extern const char* arrayElemsep;
 extern const char* arrayLinesep;
 extern const char* arrayBrackets;
+struct FileToken;
 } //namespace
 
 //===========================================================================
@@ -110,6 +111,7 @@ template<class T> struct Array {
   explicit Array(uint D0, uint D1, uint D2);
   explicit Array(const T* p, uint size);    //reference!
   Array(std::initializer_list<T> list);
+  Array(MT::FileToken&); //read from a file
   ~Array();
   
   Array<T>& operator=(const T& v);
@@ -478,6 +480,7 @@ arr  inverse(const arr& A);
 uint inverse_SVD(arr& inverse, const arr& A);
 void inverse_LU(arr& Xinv, const arr& X);
 void inverse_SymPosDef(arr& Ainv, const arr& A);
+inline arr inverse_SymPosDef(const arr& A){ arr Ainv; inverse_SymPosDef(Ainv, A); return Ainv; }
 void pseudoInverse(arr& Ainv, const arr& A, const arr& Winv, double robustnessEps);
 void gaussFromData(arr& a, arr& A, const arr& X);
 void rotationFromAtoB(arr& R, const arr& a, const arr& v);
@@ -490,6 +493,7 @@ void lognormScale(arr& P, double& logP, bool force=true);
 
 void gnuplot(const arr& X);
 void write(const arr& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
+void write(std::ostream& os, const arrL& X, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
 void write(const arrL& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
 
 
