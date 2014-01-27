@@ -30,13 +30,13 @@ namespace MT {
 
 //----- Runge-Kutta
 /// standard Runge-Kutta 4
-void rk4(arr& x1, const arr& x0,
-         void (*df)(arr& xd, const arr& x),
-         double dt);
+void rk4(arr& x, const arr& x0, VectorFunction& f, double dt);
 /// same for second order diff equation
-void rk4dd(arr& x1, arr& v1, const arr& x0, const arr& v0,
-           void (*ddf)(arr& xdd, const arr& x, const arr& v),
-           double dt);
+//void rk4dd(arr& x1, arr& v1, const arr& x0, const arr& v0,
+//           void (*ddf)(arr& xdd, const arr& x, const arr& v),
+//           double dt);
+void rk4_2ndOrder(arr& x, const arr& x0, VectorFunction& f, double dt);
+
 /** RK with discrete event localization (zero-crossing detection): the
     function sf computes some double-valued indicators. If one of
     these indicators crosses zero this is interpreted as a
@@ -54,25 +54,6 @@ bool rk4dd_switch(arr& x1, arr& v1, arr& s1, const arr& x0, const arr& v0, const
                   void (*sf)(arr& s, const arr& x, const arr& v),
                   double& dt, double tol);
                   
-/// a spline
-struct Spline {
-  uint T, K, degree;
-  arr points;
-  arr times;
-  arr weights;
-  arr basis, basis_trans, basis_timeGradient;
-
-  Spline(uint T, arr& X, uint degree=2){ setUniformNonperiodicBasis(T, X.d0-1, degree); points=X; }
-  void plotBasis();
-  void setBasis();
-  void setBasisAndTimeGradient();
-  void setUniformNonperiodicBasis(uint T, uint K, uint degree);
-  void eval(arr& f_t, uint t) const;
-  void eval(arr& f) const;
-
-  void partial(arr& dCdx, const arr& dCdf) const;
-  void partial(arr& dCdx, arr& dCdt, const arr& dCdf, bool constrain=true) const;
-};
 
 } //end namespace MT
 

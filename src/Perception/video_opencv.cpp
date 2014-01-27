@@ -17,7 +17,7 @@
     -----------------------------------------------------------------  */
 
 
-#include "video.h"
+#include "videoEncoder.h"
 #ifdef MT_OPENCV
 
 #undef COUNT

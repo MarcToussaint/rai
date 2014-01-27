@@ -40,12 +40,12 @@ void linearRegression(arr& beta, const arr& X, const arr& y, const arr* weighted
 void ridgeRegression(arr& beta, const arr& X, const arr& y, double lambda, const arr* weighted, arr* zScores) {
   if(lambda<0.) lambda = MT::getParameter<double>("lambda",1e-10);
 
-  CHECK(y.nd==1 && X.nd==2 && y.N==X.d0, "wrong dimensions");
+  CHECK((y.nd==1 || y.nd==2) && X.nd==2 && y.d0==X.d0, "wrong dimensions");
   arr Xt, I;
   transpose(Xt, X);
   I.setDiag(lambda, X.d1);
   I(0, 0)=1e-10; //don't regularize beta_0 !!
-  if(weighted) Xt = Xt * diag(*weighted);
+  if(weighted) Xt = Xt % (*weighted); //TODO: implement % as index-wise multiplication!
   lapack_Ainv_b_sym(beta, Xt*X + I, Xt*y);
   if(zScores) {
     (*zScores).resize(beta.N);
@@ -326,13 +326,13 @@ void rbfFeatures(arr& Z, const arr& X, const arr& Xtrain) {
   }
 }
 
-void makeFeatures(arr& Z, const arr& X, const arr& Xtrain, FeatureType featureType) {
+void makeFeatures(arr& Z, const arr& X, FeatureType featureType, const arr& rbfCenters) {
   if(featureType==readFromCfgFileFT) featureType = (FeatureType)MT::getParameter<uint>("modelFeatureType", 1);
   switch(featureType) {
     case linearFT:    linearFeatures(Z, X);  break;
     case quadraticFT: quadraticFeatures(Z, X);  break;
     case cubicFT:     cubicFeatures(Z, X);  break;
-    case rbfFT:       rbfFeatures(Z, X, Xtrain);  break;
+    case rbfFT:       if(&rbfCenters) rbfFeatures(Z, X, rbfCenters); else rbfFeatures(Z, X, X);  break;
     case piecewiseConstantFT:  piecewiseConstantFeatures(Z, X);  break;
     case piecewiseLinearFT:    piecewiseLinearFeatures(Z, X);  break;
     default: HALT("");
@@ -352,7 +352,7 @@ void artificialData(arr& X, arr& y, ArtificialDataType dataType) {
     case linearData: {
       X = randn(n, d);
       arr Z;
-      makeFeatures(Z, X, X, (FeatureType)MT::getParameter<uint>("dataFeatureType", 1));
+      makeFeatures(Z, X, (FeatureType)MT::getParameter<uint>("dataFeatureType", 1));
       arr beta;
       beta = randn(Z.d1, 1).reshape(Z.d1);
       if(dataType==linearRedundantData){
@@ -375,7 +375,7 @@ void artificialData(arr& X, arr& y, ArtificialDataType dataType) {
       double rate = MT::getParameter<double>("outlierRate", .1);
       X = randn(n, d);
       arr Z;
-      makeFeatures(Z, X, X, (FeatureType)MT::getParameter<uint>("dataFeatureType", 1));
+      makeFeatures(Z, X, (FeatureType)MT::getParameter<uint>("dataFeatureType", 1));
       arr beta;
       beta = randn(Z.d1, 1).reshape(Z.d1);
       y = Z*beta;

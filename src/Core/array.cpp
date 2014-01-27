@@ -187,6 +187,42 @@ void svd(arr& U, arr& V, const arr& A) {
   //CHECK(maxDiff(A, U*~V) <1e-4, "");
 }
 
+void pca(arr &Y, arr &v, arr &W, const arr &X, uint size) {
+  CHECK(X.nd == 2 && X.d0 > 0 && X.d1 > 0, "Invalid data matrix X.");
+  CHECK(size <= X.d1, "More principal components than data matrix X can offer.");
+
+  if(size == 0)
+    size = X.d1;
+
+  // centering around the mean
+  arr m = mean(X, 0);
+  arr D = X;
+  for(uint i = 0; i < D.d0; i++)
+    D[i]() -= m;
+  
+  arr U;
+  svd(U, v, W, D, true);
+  v = elemWiseProd(v, v);
+  /*
+  cout << "X: " << X << endl;
+  cout << "D: " << D << endl;
+  cout << "~D*D: " << ~D*D << endl;
+  cout << "UU: " << U << endl;
+  cout << "vv: " << v << endl;
+  cout << "WW: " << W << endl;
+  */
+
+  W = W.cols(0, size);
+  pca(Y, W, D);
+
+  v *= 1./sum(v);
+  v.sub(0, size-1);
+}
+
+void pca(arr &Y, const arr &W, const arr &X) {
+  Y = X*W;
+}
+
 void check_inverse(const arr& Ainv, const arr& A) {
 #ifdef MT_CHECK_INVERSE
   arr D, _D; D.setId(A.d0);
@@ -797,6 +833,10 @@ void write(const arr& X, const char *filename, const char *ELEMSEP, const char *
   fil.close();
 }
 
+void write(std::ostream& os, const arrL& X, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
+  catCol(X).write(os, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
+}
+
 void write(const arrL& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
   std::ofstream fil;
   MT::open(fil, filename);
@@ -1102,12 +1142,12 @@ bool checkGradient(ScalarFunction &f,
   }
   JJ.reshapeAs(J);
   double md=maxDiff(J, JJ, &i);
-//   MT::save(J, "z.J");
-//   MT::save(JJ, "z.JJ");
+//   J >>FILE("z.J");
+//   JJ >>FILE("z.JJ");
   if(md>tolerance) {
     MT_MSG("checkGradient -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
-    MT::save(J, "z.J_analytical");
-    MT::save(JJ, "z.J_empirical");
+    J >>FILE("z.J_analytical");
+    JJ >>FILE("z.J_empirical");
     //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
     //HALT("");
     return false;
@@ -1134,12 +1174,12 @@ bool checkHessian(ScalarFunction &f, const arr& x, double tolerance) {
   }
   Jg.reshapeAs(H);
   double md=maxDiff(H, Jg, &i);
-  //   MT::save(J, "z.J");
-  //   MT::save(JJ, "z.JJ");
+  //   J >>FILE("z.J");
+  //   JJ >>FILE("z.JJ");
   if(md>tolerance) {
     MT_MSG("checkHessian -- FAILURE -- max diff=" <<md <<" |"<<H.elem(i)<<'-'<<Jg.elem(i)<<"| (stored in files z.J_*)");
-    MT::save(H, "z.J_analytical");
-    MT::save(Jg, "z.J_empirical");
+    H >>FILE("z.J_analytical");
+    Jg >>FILE("z.J_empirical");
     //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
     //HALT("");
     return false;
@@ -1167,12 +1207,12 @@ bool checkJacobian(VectorFunction &f,
   }
   JJ.reshapeAs(J);
   double md=maxDiff(J, JJ, &i);
-//   MT::save(J, "z.J");
-//   MT::save(JJ, "z.JJ");
+//   J >>FILE("z.J");
+//   JJ >>FILE("z.JJ");
   if(md>tolerance) {
     MT_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
-    MT::save(J, "z.J_analytical");
-    MT::save(JJ, "z.J_empirical");
+    J >>FILE("z.J_analytical");
+    JJ >>FILE("z.J_empirical");
     //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
     //HALT("");
     return false;
@@ -1572,9 +1612,6 @@ template MT::Array<arr>::Array(uint);
 template MT::Array<arr>::~Array();
 
 #include "util_t.h"
-template void MT::save<uintA>(const uintA&, const char*);
-template void MT::save<arr>(const arr&, const char*);
-template void MT::load<arr>(arr&, const char*, bool);
 template MT::Array<double> MT::getParameter<MT::Array<double> >(char const*);
 template bool MT::checkParameter<MT::Array<double> >(char const*);
 template void MT::getParameter(uintA&, const char*, const uintA&);
@@ -1583,3 +1620,4 @@ void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 
 MT::Array<MT::String> STRINGS(const char* s0){ return ARRAY<MT::String>(MT::String(s0)); }
 MT::Array<MT::String> STRINGS(const char* s0, const char* s1){ return ARRAY<MT::String>(MT::String(s0), MT::String(s1)); }
+MT::Array<MT::String> STRINGS(const char* s0, const char* s1, const char* s2){ return ARRAY<MT::String>(MT::String(s0), MT::String(s1), MT::String(s2)); }
