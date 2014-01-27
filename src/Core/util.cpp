@@ -1085,8 +1085,8 @@ void gnuplotClose() {
 void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDFfile) {
 #ifndef MT_MSVC
   if(!MT_gp) {
-    if(!persist) MT_gp=popen("env gnuplot -noraise -geometry 600x600-0-0", "w");
-    else         MT_gp=popen("env gnuplot -noraise -persist -geometry 600x600-0-0", "w");
+    if(!persist) MT_gp=popen("env gnuplot -noraise -geometry 600x600-0-0 2> /dev/null", "w");
+    else         MT_gp=popen("env gnuplot -noraise -persist -geometry 600x600-0-0 2> /dev/null", "w");
     CHECK(MT_gp, "could not open gnuplot pipe");
   }
   
