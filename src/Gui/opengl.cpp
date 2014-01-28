@@ -1032,6 +1032,7 @@ void glSelectWin(uint win) {
 #endif
 
 #else /// MT_GL
+void glColor(int col) { NICO }
 void glColor(float, float, float, float) { NICO }
 void glDrawDiamond(float, float, float, float, float, float) { NICO }
 // void glStandardLight(void*) { NICO }   // TOBIAS: das hier wird doch schon ueber opengl_void.cxx definiert
