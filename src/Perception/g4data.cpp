@@ -77,6 +77,10 @@ void G4Data::loadData(const char *meta_fname, const char *poses_fname, bool inte
     for(uint i = 0; i < s->numS; i++) {
       hsi = s->itohs(i);
       if(hsi != -1) {
+        // setting quaternions to always have positive angle
+        if(x(hsi, 4) < 0)
+          x[hsi].subRange(3, -1)() *= (double)-1;
+
         s->data.append(x[hsi]);
         m = length(x[hsi]) == 0;
         s->missing.append(m);
@@ -113,9 +117,6 @@ void G4Data::loadData(const char *meta_fname, const char *poses_fname, bool inte
           for(uint tt = 0; tt < no; tt++) {
             s->data[t+tt][i] = s0 + diff*(tt+1.)/(no+1.);
             qt.setInterpolate((tt+1.)/(no+1.), q0, qF);
-            // TODO remove couts
-            //cout << " - norm: " << (qt.w*qt.w+qt.x*qt.x+qt.y*qt.y+qt.z*qt.z) << endl;
-            //cout << " - w: " << qt.w << endl;
             s->data(t+tt, i, 3) = qt.w;
             s->data(t+tt, i, 4) = qt.x;
             s->data(t+tt, i, 5) = qt.y;
