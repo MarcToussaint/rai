@@ -25,6 +25,8 @@ double RRT::getProposalTowards(arr& proposal, const arr& q){
   double dist = length(d);
   if (dist > s->stepsize)
     proposal = s->ann.X[s->nearest] + s->stepsize/dist * d;
+  else
+    proposal = q;
   return dist;
 }
 void RRT::add(const arr& q){
