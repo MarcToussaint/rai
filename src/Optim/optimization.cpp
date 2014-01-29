@@ -205,7 +205,7 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
         }
         break;
       } else {
-        if(o.verbose>1) cout <<" - reject" <<endl;
+        if(o.verbose>1) cout <<" - reject\n\t\t\t\t\t\t" <<std::flush;
         //reject new points and adapte stepsize|damping
         if(o.useAdaptiveDamping) { //Levenberg-Marquardt type damping
           lambda = 10.*lambda;
@@ -223,17 +223,20 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
     if(o.verbose>2) fil <<' ' <<x;
     if(o.verbose>0) fil <<endl;
 
-    //stopping criterion
-    if( (lambda<2. && absMax(Delta)<o.stopTolerance) ||
-        (lambda<2. && alpha*absMax(Delta)<1e-3*o.stopTolerance) ||
-        (evals>=o.stopEvals) ||
-        (it>=o.stopIters) ) break;
+    //stopping criteria
+#define STOPIF(expr) if(expr){ if(o.verbose>1) cout <<"--- stopping criterion='" <<#expr <<"'" <<endl; break; }
+    STOPIF(lambda<2. && absMax(Delta)<o.stopTolerance);
+    STOPIF(lambda<2. && alpha*absMax(Delta)<1e-3*o.stopTolerance);
+    STOPIF(evals>=o.stopEvals);
+    STOPIF(it>=o.stopIters);
+#undef STOPIF
   }
   if(o.fmin_return) *o.fmin_return=fx;
   if(o.verbose>0) fil.close();
 #ifndef MT_MSVC
-  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l",NULL,true);
+  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", NULL, true);
 #endif
+  if(o.verbose>1) cout <<"--- optNewtonStop: f(x)=" <<fx <<endl;
   if(fx_user) *fx_user = fx;
   if(gx_user) *gx_user = gx;
   if(Hx_user) *Hx_user = Hx;
