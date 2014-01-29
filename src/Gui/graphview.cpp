@@ -379,6 +379,7 @@ bool sGraphView::on_drawingarea_scroll_event(GtkWidget       *widget,           
 GraphView::GraphView(KeyValueGraph& G, const char* title, void *container) { NICO }
 GraphView::~GraphView() { NICO }
 void GraphView::watch() { NICO }
+void GraphView::update() { NICO }
 
 #endif
 

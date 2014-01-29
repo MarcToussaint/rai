@@ -187,22 +187,22 @@ void svd(arr& U, arr& V, const arr& A) {
   //CHECK(maxDiff(A, U*~V) <1e-4, "");
 }
 
-void pca(arr &Y, arr &v, arr &W, const arr &X, uint size) {
+void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc) {
   CHECK(X.nd == 2 && X.d0 > 0 && X.d1 > 0, "Invalid data matrix X.");
-  CHECK(size <= X.d1, "More principal components than data matrix X can offer.");
+  CHECK(npc <= X.d1, "More principal components than data matrix X can offer.");
 
-  if(size == 0)
-    size = X.d1;
+  if(npc == 0)
+    npc = X.d1;
 
   // centering around the mean
-  arr m = mean(X, 0);
+  arr m = sum(X, 0) / (double)X.d0;
   arr D = X;
   for(uint i = 0; i < D.d0; i++)
     D[i]() -= m;
   
   arr U;
   svd(U, v, W, D, true);
-  v = elemWiseProd(v, v);
+  v = v % v;
   /*
   cout << "X: " << X << endl;
   cout << "D: " << D << endl;
@@ -212,15 +212,11 @@ void pca(arr &Y, arr &v, arr &W, const arr &X, uint size) {
   cout << "WW: " << W << endl;
   */
 
-  W = W.cols(0, size);
-  pca(Y, W, D);
+  W = W.cols(0, npc);
+  Y = D * W;
 
   v *= 1./sum(v);
-  v.sub(0, size-1);
-}
-
-void pca(arr &Y, const arr &W, const arr &X) {
-  Y = X*W;
+  v.sub(0, npc-1);
 }
 
 void check_inverse(const arr& Ainv, const arr& A) {

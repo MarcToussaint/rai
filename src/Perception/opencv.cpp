@@ -1,3 +1,5 @@
+#ifdef MT_OPENCV
+
 #include "opencv.h"
 
 //student-t distribution with different degrees
@@ -71,3 +73,6 @@ void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSd
   for(uint i=0; i<smoothed.N; i++) smoothed.p[i] = student3(smoothed.p[i]);
   diff = smoothed;
 }
+
+#endif // MT_OPENCV
+
