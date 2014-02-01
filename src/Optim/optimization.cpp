@@ -101,6 +101,7 @@ OptOptions::OptOptions() {
   damping=1.;
   useAdaptiveDamping=false;
   clampInitialState=false;
+  constrainedMethod=augmentedLag;
 }
 
 OptOptions global_optOptions;
@@ -205,7 +206,7 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
         }
         break;
       } else {
-        if(o.verbose>1) cout <<" - reject\n\t\t\t\t\t\t" <<std::flush;
+        if(o.verbose>1) cout <<" - reject" <<std::endl;
         //reject new points and adapte stepsize|damping
         if(o.useAdaptiveDamping) { //Levenberg-Marquardt type damping
           lambda = 10.*lambda;
@@ -224,7 +225,7 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
     if(o.verbose>0) fil <<endl;
 
     //stopping criteria
-#define STOPIF(expr) if(expr){ if(o.verbose>1) cout <<"--- stopping criterion='" <<#expr <<"'" <<endl; break; }
+#define STOPIF(expr) if(expr){ if(o.verbose>1) cout <<"\t\t\t\t\t\t--- stopping criterion='" <<#expr <<"'" <<endl; break; }
     STOPIF(lambda<2. && absMax(Delta)<o.stopTolerance);
     STOPIF(lambda<2. && alpha*absMax(Delta)<1e-3*o.stopTolerance);
     STOPIF(evals>=o.stopEvals);
