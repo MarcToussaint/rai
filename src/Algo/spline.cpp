@@ -11,93 +11,92 @@ void plotFunction(const arr& f, double x0=0., double x1=0.);
 // Spline
 //
 
-// returns the spline coefficients: it is guaranteed that if t1 (or t2) is summed over a grid of stepsizes 1, this sums to 1
-double splineCoeff(double t, double t2, uint degree){
-  double dt=t-t2;
-  if(degree==0){
-    if(fabs(dt)>=.5) return 0.;
-    return 1.;
-  }
-  if(degree==1){
-    if(fabs(dt)>=1.) return 0.;
-    if(dt<0) return 1+dt;
-    return 1.-dt;
-  }
-  if(degree==2){
-    dt += 1.5;
-    if(dt<=0. || dt>=3.) return 0.;
-    double dt2=dt*dt;
-    if(dt<=1.) return 0.5*dt2;
-    if(dt<=2.) return 0.5*(-2.*dt2 + 6.*dt - 3.);
-    if(dt<=3.) return 0.5*(    dt2 - 6.*dt + 9.);
-    // from http://en.wikipedia.org/wiki/IrwinE2%80%93Hall_distribution#Special_cases
-  }
-  if(degree==3){
-    dt += 2.;
-    if(dt<=0. || dt>=4.) return 0.;
-    double dt2=dt*dt;
-    double dt3=dt2*dt;
-    if(dt<=1.) return (dt3)/6.;
-    if(dt<=2.) return (-3.*dt3 + 12.*dt2 - 12.*dt +  4.)/6.;
-    if(dt<=3.) return ( 3.*dt3 - 24.*dt2 + 60.*dt - 44.)/6.;
-    if(dt<=4.) return (   -dt3 + 12.*dt2 - 48.*dt + 64.)/6.;
-    // from http://en.wikipedia.org/wiki/IrwinE2%80%93Hall_distribution#Special_cases
-  }
-  HALT("nigher degrees not yet done");
-}
-
-double splineCoeffVel(double t, double t2, uint degree){
-  double dt=t-t2;
-  if(degree==0) return 0.;
-  if(degree==1){
-    if(fabs(dt)>=1.) return 0.;
-    if(dt<0) return 1.;
-    return -1.;
-  }
-  if(degree==2){
-    dt += 1.5;
-    if(dt<=0. || dt>=3.) return 0.;
-    if(dt<=1.) return dt;
-    if(dt<=2.) return (-2.*dt + 3.);
-    if(dt<=3.) return (    dt - 3.);
-  }
-  if(degree==3){
-    dt += 2.;
-    if(dt<=0. || dt>=4.) return 0.;
-    double dt2=dt*dt;
-    if(dt<=1.) return (3.*dt2)/6.;
-    if(dt<=2.) return (-9.*dt2 + 24.*dt - 12.)/6.;
-    if(dt<=3.) return ( 9.*dt2 - 48.*dt + 60.)/6.;
-    if(dt<=4.) return (-3.*dt2 + 24.*dt - 48.)/6.;
-    // from http://en.wikipedia.org/wiki/IrwinE2%80%93Hall_distribution#Special_cases
-  }
-  HALT("nigher degrees not yet done");
-}
 
 namespace MT{
 
 void Spline::plotBasis() {
   plotClear();
-  arr b_sum(T+1);
+  arr b_sum(basis.d0);
   tensorMarginal(b_sum, basis_trans, TUP(1));
   plotFunction(b_sum, -1, 1);
-  for(uint i=0; i<=K; i++) plotFunction(basis_trans[i], -1, 1);
+  for(uint i=0; i<points.d0; i++) plotFunction(basis_trans[i], -1, 1);
   plot();
 }
 
-void Spline::setBasis() {
+void Spline::setBasis(uint T, uint K) {
   CHECK(times.N-1==K+1+degree, "wrong number of time knots");
   basis.resize(T+1, K+1);
-  for(uint t=0; t<=T; t++) basis[t] = getBasis((double)t/T);
+  for(uint t=0; t<=T; t++) basis[t] = getCoeffs((double)t/T, K);
   transpose(basis_trans, basis);
 }
 
-arr Spline::getBasis(double time, arr& dBasis) const {
-  arr b(K+1), b_0(K+1), dBasis_0(K+1);
-  if(&dBasis) dBasis.resizeAs(b).setZero();
+// returns the spline coefficients: it is guaranteed that if t1 (or t2) is summed over a grid of stepsizes 1, this sums to 1
+double Spline::getCoeff(double t, double t2, bool getVels) const{
+  double dt=t-t2;
+  if(!getVels){
+    if(degree==0){
+      if(dt<-.5 || dt>=.5) return 0.;
+      return 1.;
+    }
+    if(degree==1){
+      if(dt<-1. || dt>=1.) return 0.;
+      if(dt<0) return 1+dt;
+      return 1.-dt;
+    }
+    if(degree==2){
+      dt += 1.5;
+      if(dt<=0. || dt>=3.) return 0.;
+      double dt2=dt*dt;
+      if(dt<=1.) return 0.5*dt2;
+      if(dt<=2.) return 0.5*(-2.*dt2 + 6.*dt - 3.);
+      if(dt<=3.) return 0.5*(    dt2 - 6.*dt + 9.);
+      // from http://en.wikipedia.org/wiki/IrwinE2%80%93Hall_distribution#Special_cases
+    }
+    if(degree==3){
+      dt += 2.;
+      if(dt<=0. || dt>=4.) return 0.;
+      double dt2=dt*dt;
+      double dt3=dt2*dt;
+      if(dt<=1.) return (dt3)/6.;
+      if(dt<=2.) return (-3.*dt3 + 12.*dt2 - 12.*dt +  4.)/6.;
+      if(dt<=3.) return ( 3.*dt3 - 24.*dt2 + 60.*dt - 44.)/6.;
+      if(dt<=4.) return (   -dt3 + 12.*dt2 - 48.*dt + 64.)/6.;
+      // from http://en.wikipedia.org/wiki/IrwinE2%80%93Hall_distribution#Special_cases
+    }
+  }else{
+    if(degree==0) return 0.;
+    if(degree==1){
+      if(dt<-1. || dt>=1.) return 0.;
+      if(dt<0) return 1.;
+      return -1.;
+    }
+    if(degree==2){
+      dt += 1.5;
+      if(dt<=0. || dt>=3.) return 0.;
+      if(dt<=1.) return dt;
+      if(dt<=2.) return (-2.*dt + 3.);
+      if(dt<=3.) return (    dt - 3.);
+    }
+    if(degree==3){
+      dt += 2.;
+      if(dt<=0. || dt>=4.) return 0.;
+      double dt2=dt*dt;
+      if(dt<=1.) return (3.*dt2)/6.;
+      if(dt<=2.) return (-9.*dt2 + 24.*dt - 12.)/6.;
+      if(dt<=3.) return ( 9.*dt2 - 48.*dt + 60.)/6.;
+      if(dt<=4.) return (-3.*dt2 + 24.*dt - 48.)/6.;
+      // from http://en.wikipedia.org/wiki/IrwinE2%80%93Hall_distribution#Special_cases
+    }
+  }
+  HALT("nigher degrees not yet done");
+  return 0.;
+}
+
+arr Spline::getCoeffs(double time, uint K, bool velocities) const {
+  arr b(K+1), b_0(K+1), db(K+1), db_0(K+1);
   for(uint p=0; p<=degree; p++) {
     b_0=b; b.setZero();
-    if(&dBasis){ dBasis_0 = dBasis; dBasis.setZero(); }
+    db_0=b; db.setZero();
     for(uint k=0; k<=K; k++) {
       if(!p) {
         if(times(k)<=time && time<times(k+1)) b(k)=1.;
@@ -105,19 +104,20 @@ arr Spline::getBasis(double time, arr& dBasis) const {
       } else {
         double x = DIV(time-times(k), times(k+p)-times(k), true);
         b(k) = x * b_0(k);
-        if(&dBasis) dBasis(k) = DIV(1., times(k+p)-times(k), true) * b_0(k) + x * dBasis_0(k);
+        db(k) = DIV(1., times(k+p)-times(k), true) * b_0(k) + x * db_0(k);
         if(k<K) {
           double y = DIV(times(k+p+1)-time, times(k+p+1)-times(k+1), true);
           b(k) += y * b_0(k+1);
-          if(&dBasis) dBasis(k) += DIV(-1., times(k+p+1)-times(k+1), true) * b_0(k+1) + y * dBasis_0(k+1);
+          db(k) += DIV(-1., times(k+p+1)-times(k+1), true) * b_0(k+1) + y * db_0(k+1);
         }
       }
     }
   }
+  if(velocities) return db;
   return b;
 }
 
-void Spline::setBasisAndTimeGradient() {
+void Spline::setBasisAndTimeGradient(uint T, uint K) {
   uint i, j, t, p, m=times.N-1;
   double time, x, xx, y, yy;
   CHECK(m==K+1+degree, "wrong number of time knots");
@@ -159,8 +159,8 @@ void Spline::setBasisAndTimeGradient() {
   basis_timeGradient=dbt;
 }
 
-void Spline::setUniformNonperiodicBasis(uint _T, uint _K, uint _degree) {
-  T=_T; K=_K; degree=_degree;
+void Spline::setUniformNonperiodicBasis(uint T, uint K, uint _degree) {
+  degree=_degree;
   uint i, m;
   m=K+1+degree;
   times.resize(m+1);
@@ -169,40 +169,29 @@ void Spline::setUniformNonperiodicBasis(uint _T, uint _K, uint _degree) {
     else if(i>=m-degree) times(i)=1.;
     else times(i) = double(i-degree)/double(m-1-degree);
   }
-  setBasis();
+  setBasis(T, K);
 //  setBasisAndTimeGradient();
 }
 
-arr Spline::eval(double t) const {
+arr Spline::eval(double t, bool velocities) const {
+#if 0
+  return (~getBasis(t-.1, velocities) * points).reshape(points.d1);
+#else
   uint N=points.d0-1;
   t*=N;
   int K=floor(t);
   arr x(points.d1);
   x.setZero();
-  for(int k=K-(int)degree; k<=K+(int)degree; k++){
-    double a = splineCoeff(t, (double)k, degree);
+  for(int k=K-1-(int)degree/2; k<=K+1+(int)degree/2; k++){
+    double a = getCoeff(t, (double)k, velocities);
     if(!a) continue;
     uint k_ref = (k>=0)?k:0;
     if(k_ref>N) k_ref=N;
     x+=a*points[k_ref];
   }
+  if(velocities) x *= (double)N;
   return x;
-}
-
-arr Spline::evalVel(double t) const {
-  uint N=points.d0-1;
-  t*=N;
-  int K=floor(t);
-  arr x(points.d1);
-  x.setZero();
-  for(int k=K-(int)degree; k<=K+(int)degree; k++){
-    double a = splineCoeffVel(t, (double)k, degree);
-    if(!a) continue;
-    uint k_ref = (k>=0)?k:0;
-    if(k_ref>N) k_ref=N;
-    x+=a*points[k_ref];
-  }
-  return x;
+#endif
 }
 
 arr Spline::eval(uint t) const { return (~basis[t]*points).reshape(points.d1); };
@@ -210,11 +199,12 @@ arr Spline::eval(uint t) const { return (~basis[t]*points).reshape(points.d1); }
 arr Spline::eval() const { return basis*points; };
 
 void Spline::partial(arr& grad_points, const arr& grad_path) const {
-  CHECK(grad_path.d0==T+1 && grad_path.d1==points.d1, "");
+  CHECK(grad_path.d0==points.d0 && grad_path.d1==points.d1, "");
   grad_points = basis_trans * grad_path;
 }
 
 void Spline::partial(arr& dCdx, arr& dCdt, const arr& dCdf, bool constrain) const {
+  uint K=points.d0-1, T=basis.d0-1;
   CHECK(dCdf.d0==T+1 && dCdf.d1==points.d1, "");
   CHECK(basis_timeGradient.N, "");
   uint n=dCdf.d1, m=K+1+degree, j;
@@ -241,13 +231,30 @@ arr Path::getPosition(double t) const{
 }
 
 arr Path::getVelocity(double t) const{
-  return Spline::evalVel(t);
+  return Spline::eval(t, true);
 }
 
-void Path::transform_CurrentBecomes_EndFixed(const arr& current, double t){}
+void Path::transform_CurrentBecomes_EndFixed(const arr& current, double t){
+  arr delta = current - eval(t);
+  for(uint i=0;i<points.d0;i++){
+    double ti = double(i)/double(points.d0-1);
+    double a = (1.-ti)/(1.-t);
+    points[i]() += a*delta;
+  }
+}
 
-void Path::transform_CurrentFixed_EndBecomes(const arr& end, double t){}
+void Path::transform_CurrentFixed_EndBecomes(const arr& end, double t){
+  arr delta = end - eval(1.);
+  for(uint i=0;i<points.d0;i++){
+    double ti = double(i)/double(points.d0-1);
+    double a = (ti-t)/(1.-t);
+    points[i]() += a*delta;
+  }
+}
 
-void Path::transform_CurrentBecomes_AllFollow(const arr& current, double t){}
+void Path::transform_CurrentBecomes_AllFollow(const arr& current, double t){
+  arr delta = current - eval(t);
+  for(uint i=0;i<points.d0;i++) points[i]() += delta;
+}
 
 } //namespace MT

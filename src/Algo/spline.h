@@ -26,7 +26,7 @@ namespace MT {
 
 /// a spline
 struct Spline {
-  uint T, K, degree;
+  uint degree;
   arr points; ///< the reference points
   arr times;  ///< what times (in [0,1]) the reference points refer to (usually uniform)
   arr basis, basis_trans, basis_timeGradient;
@@ -34,17 +34,26 @@ struct Spline {
   /// for T>0 this is directly constructing basis functions over a (fine) grid of resolution T
   Spline(uint T, arr& X, uint degree=2){ setUniformNonperiodicBasis(T, X.d0-1, degree); points=X; }
 
-  arr getBasis(double time, arr &dBasis=NoArr) const;
-  void setBasis();
-  void setBasisAndTimeGradient();
+  /// two methods to get the coefficients -- the first analytic, the second buggy and recursive
+  double getCoeff(double t, double t2, bool getVels=false) const;
+  arr getCoeffs(double time, uint K, bool velocities=false) const;
+
+  /// core method to evaluate the spline at an arbitrary point
+  arr eval(double t, bool velocities=false) const;
+
+  //-- the rest are all matrix methods:
+
+  /// methods to construct a basis matrix mapping from the K points to a (fine) grid of resolution T
+  void setBasis(uint T, uint K);
+  void setBasisAndTimeGradient(uint T, uint K);
   void setUniformNonperiodicBasis(uint T, uint K, uint degree);
 
-  arr eval(double t) const;
-  arr evalVel(double t) const;
   arr eval(uint t) const;
   arr eval() const;
 
+  /// gradient w.r.t. the points (trivial: mapping is linear)
   void partial(arr& grad_points, const arr& grad_path) const;
+  /// gradient w.r.t. the timings of the point
   void partial(arr& dCdx, arr& dCdt, const arr& dCdf, bool constrain=true) const;
 
   void plotBasis();
@@ -56,9 +65,9 @@ struct Spline {
 
 namespace MT {
 
-/// a wrapper around a 2nd order spline with method specific to online path adaptation
+/// a wrapper around a spline with methods specific to online path adaptation
 struct Path : Spline {
-  Path(arr& X):Spline(0,X,3){}
+  Path(arr& X, uint degree=3):Spline(0,X,degree){}
 
   arr getPosition(double t) const;
   arr getVelocity(double t) const;
