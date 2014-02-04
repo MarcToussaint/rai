@@ -13,18 +13,25 @@ extern "C"{
 struct sVideoEncoder_libav_simple{
   static Mutex libav_open_mutex;
   MT::String filename;
-  uint fps;
+  double fps;
   bool isOpen;
 
+  int i, out_size, size, x, y, outbuf_size, qp;
   AVCodec *codec;
   AVCodecContext *c;
-  int i, out_size, size, x, y, outbuf_size, qp;
   FILE *f;
   AVFrame *picture;
   uint8_t *outbuf, *picture_buf;
   SwsContext *sws_ctx;
 
-  sVideoEncoder_libav_simple():isOpen(false){}
+  sVideoEncoder_libav_simple() :
+      fps(0), isOpen(false), i(0), out_size(0), x(0), y(0), outbuf_size(0), qp(0), codec(NULL), f(NULL), picture(NULL),
+      outbuf(NULL), picture_buf(NULL), sws_ctx(NULL)
+  {}
+  sVideoEncoder_libav_simple(const char* filename, double fps, uint qp) :
+      filename(filename), fps(fps), isOpen(false), i(0), out_size(0), x(0), y(0), outbuf_size(0), qp(qp),
+      codec(NULL), f(NULL), picture(NULL), outbuf(NULL), picture_buf(NULL), sws_ctx(NULL)
+  {}
   void open(uint width, uint height);
   void addFrame(const byteA& rgb);
   void close();
@@ -35,7 +42,7 @@ Mutex sVideoEncoder_libav_simple::libav_open_mutex;
 
 //==============================================================================
 
-VideoEncoder_libav_simple::VideoEncoder_libav_simple(const char* filename, uint fps, uint qp){
+VideoEncoder_libav_simple::VideoEncoder_libav_simple(const char* filename, uint fps, uint qp) {
   s = new sVideoEncoder_libav_simple;
   s->filename = filename;
   s->fps = fps;
@@ -48,7 +55,7 @@ void VideoEncoder_libav_simple::addFrame(const byteA& rgb){
   s->addFrame(rgb);
 }
 
-void VideoEncoder_libav_simple::close(){ s->close(); }
+void VideoEncoder_libav_simple::close(){ if(s->isOpen) s->close(); }
 
 //==============================================================================
 
