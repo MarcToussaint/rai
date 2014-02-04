@@ -76,7 +76,7 @@ void sVideoEncoder_libav_simple::open(uint width, uint height){
   c->width = width;
   c->height = height;
   /* frames per second */
-  c->time_base= (AVRational){1, (int)fps};
+  c->time_base= av_d2q(fps, INT_MAX);
   c->gop_size = 10; /* emit one intra frame every ten frames */
   c->max_b_frames=1;
   c->pix_fmt = PIX_FMT_YUV420P;
