@@ -1668,6 +1668,7 @@ void OpenGL::Reshape(int _width, int _height) {
   CALLBACK_DEBUG(printf("Window %d Reshape Callback:  %d %d\n", 0, _width, _height));
   width=_width;
   height=_height;
+  if(width%4) width = 4*(width/4);
   camera.setWHRatio((double)width/height);
   for(uint v=0; v<views.N; v++) views(v).camera.setWHRatio((views(v).ri-views(v).le)*width/((views(v).to-views(v).bo)*height));
   //postRedrawEvent(true);
