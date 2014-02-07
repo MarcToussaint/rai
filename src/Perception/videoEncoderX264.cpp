@@ -160,11 +160,11 @@ void sVideoEncoder_x264_simple::addFrame(const byteA& rgb){
   uint8_t *uc = pic_in.img.plane[1];
   uint8_t *vc = pic_in.img.plane[2];
   const unsigned int num_pixel = rgb.d0 * rgb.d1;
+
+#pragma omp parallel for schedule(guided, 64) num_threads(2)
   for(int i = 0; i < num_pixel; ++i) {
-      rgbToYuvVis(*rc, *gc, *bc, yc + i, uc + i, vc + i);
-      rc+=3;
-      gc+=3;
-      bc+=3;
+      const int pixel_index = i*3;
+      rgbToYuvVis(rgb.p[pixel_index+2], rgb.p[pixel_index+1], rgb.p[pixel_index], yc + i, uc + i, vc + i);
   }
 
   clock_gettime(CLOCK_REALTIME, &end_csp);
