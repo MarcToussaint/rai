@@ -96,6 +96,48 @@ void VideoEncoder::step(){
 
 //===========================================================================
 //
+// VideoEncoder
+//
+
+struct sVideoEncoderX264{
+  MT::String filename;
+  VideoEncoder_x264_simple video;
+  ofstream timeTagFile;
+  byteA buffer;
+  sVideoEncoderX264(const char* _filename, uint fps):filename(_filename), video(filename.p, fps){
+    timeTagFile.open(STRING(filename <<".times"));
+  }
+};
+
+void VideoEncoderX264::open(){
+    s = new sVideoEncoderX264(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".264"), 60);
+}
+
+void VideoEncoderX264::close(){
+  s->video.close();
+  delete s;
+}
+
+void VideoEncoderX264::step(){
+  //-- grab from shared memory (necessary?)
+  uint rev = img.readAccess();
+  double time = img.var->revisionTime();
+  s->buffer = img();
+  img.deAccess();
+
+  //save image
+  s->video.addFrame(s->buffer);
+
+  //save time tag
+  MT::String tag;
+  tag.resize(30, false);
+  sprintf(tag.p, "%6i %13.6f", rev, time);
+  s->timeTagFile <<tag <<endl;
+}
+
+
+//===========================================================================
+//
 // PointCloudViewer
 //
 
@@ -129,6 +171,11 @@ struct sOpencvCamera{  cv::VideoCapture capture;  };
 void OpencvCamera::open(){
   s = new sOpencvCamera;
   s->capture.open(0);
+  for(std::map<int,double>::const_iterator i = properties.begin(); i != properties.end(); ++i) {
+      if(!s->capture.set(i->first, i->second)) {
+          cerr << "could not set property " << i->first << " to value " << i->second << endl;
+      }
+  }
   //    capture.set(CV_CAP_PROP_CONVERT_RGB, 1);
   //    cout <<"FPS of opened OpenCV VideoCapture = " <<capture.get(CV_CAP_PROP_FPS) <<endl;;
 }
@@ -141,10 +188,19 @@ void OpencvCamera::close(){
 void OpencvCamera::step(){
   cv::Mat img,imgRGB;
   s->capture.read(img);
-  if(!img.empty()){
+  if(!img.empty()){      
     cv::cvtColor(img, imgRGB, CV_BGR2RGB);
     rgb.set()=cvtMAT(imgRGB);
   }
+}
+
+bool OpencvCamera::set(int propId, double value) {
+    if(s)
+        return s->capture.set(propId, value);
+    else {
+        properties[propId] = value;
+        return true; // well, can't really do anything else here...
+    }
 }
 
 

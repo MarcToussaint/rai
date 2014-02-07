@@ -13,6 +13,14 @@ struct VideoEncoder_libav_simple{
   void close();
 };
 
+struct VideoEncoder_x264_simple{
+  struct sVideoEncoder_x264_simple *s;
+
+  VideoEncoder_x264_simple(const char* filename="z.avi", uint fps=30, uint qp=0);
+  void addFrame(const byteA& rgb);
+  void close();
+};
+
 struct VideoEncoder_OpenCV{
   struct sVideoEncoder_OpenCV *s;
 

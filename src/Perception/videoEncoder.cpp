@@ -24,13 +24,16 @@ struct sVideoEncoder_libav_simple{
   uint8_t *outbuf, *picture_buf;
   SwsContext *sws_ctx;
 
+  int frame_count;
+  double encoding_time, video_time, scale_time;
+
   sVideoEncoder_libav_simple() :
       fps(0), isOpen(false), i(0), out_size(0), x(0), y(0), outbuf_size(0), qp(0), codec(NULL), f(NULL), picture(NULL),
-      outbuf(NULL), picture_buf(NULL), sws_ctx(NULL)
+      outbuf(NULL), picture_buf(NULL), sws_ctx(NULL), frame_count(0), encoding_time(0.0), video_time(0.0), scale_time(0.0)
   {}
   sVideoEncoder_libav_simple(const char* filename, double fps, uint qp) :
       filename(filename), fps(fps), isOpen(false), i(0), out_size(0), x(0), y(0), outbuf_size(0), qp(qp),
-      codec(NULL), f(NULL), picture(NULL), outbuf(NULL), picture_buf(NULL), sws_ctx(NULL)
+      codec(NULL), f(NULL), picture(NULL), outbuf(NULL), picture_buf(NULL), sws_ctx(NULL), frame_count(0), encoding_time(0.0), video_time(0.0), scale_time(0.0)
   {}
   void open(uint width, uint height);
   void addFrame(const byteA& rgb);
@@ -79,7 +82,9 @@ void sVideoEncoder_libav_simple::open(uint width, uint height){
   c->time_base= av_d2q(fps, INT_MAX);
   c->gop_size = 10; /* emit one intra frame every ten frames */
   c->max_b_frames=1;
-  c->pix_fmt = PIX_FMT_YUV420P;
+  //c->pix_fmt = PIX_FMT_YUV420P;
+  //c->pix_fmt = PIX_FMT_UYVY422;
+  c->pix_fmt = PIX_FMT_BGR24;
 
   AVDictionary *opts = NULL;
   char opt_str[4];
@@ -111,22 +116,56 @@ void sVideoEncoder_libav_simple::open(uint width, uint height){
   picture->linesize[0] = c->width;
   picture->linesize[1] = c->width / 2;
   picture->linesize[2] = c->width / 2;
+  picture->pts = 0;
 
-  sws_ctx = sws_getContext(width, height, PIX_FMT_RGB24, width, height, c->pix_fmt, SWS_BILINEAR, NULL, NULL, NULL);
+  //sws_ctx = sws_getContext(width, height, PIX_FMT_RGB24, width, height, c->pix_fmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
+  //sws_ctx = sws_getContext(width, height, PIX_FMT_UYVY422, width, height, c->pix_fmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
 
   isOpen=true;
 }
 
+/*namespace {
+void rgb2yuv(const char* y, const char* u, const char* v) {
+    guchar *y=img->data[0], *u=img->data[1], *v=img->data[2];
+                            for (x = img->width*img->height; x>0; x--) {
+                                    prev_inline_rgbToYuvVis (*y, *u, *v, y, u, v);
+                                    y++;
+                                    u++;
+                                    v++;
+                            }
+}
+}
+*/
+
+
 void sVideoEncoder_libav_simple::addFrame(const byteA& rgb){
+  timespec start_ts, end_ts, start_encode_ts, end_encode_ts, start_scale_ts, end_scale_ts;
+  clock_gettime(CLOCK_REALTIME, &start_ts);
   int src_stride = rgb.d1*rgb.d2;
+  clock_gettime(CLOCK_REALTIME, &start_scale_ts);
+  //sws_scale(sws_ctx, &rgb.p, &src_stride, 0, c->height, picture->data, picture->linesize);
   sws_scale(sws_ctx, &rgb.p, &src_stride, 0, c->height, picture->data, picture->linesize);
+  clock_gettime(CLOCK_REALTIME, &end_scale_ts);
+  double start = start_scale_ts.tv_sec + (start_scale_ts.tv_nsec / 1e9), end = end_scale_ts.tv_sec + (end_scale_ts.tv_nsec / 1e9);
+  scale_time+= (end - start);
 
   /* encode the image */
-  fflush(stdout);
+  //fflush(stdout);
+  clock_gettime(CLOCK_REALTIME, &start_encode_ts);
+  picture->data[0] = (uint8_t*)&rgb.p;
   out_size = avcodec_encode_video(c, outbuf, outbuf_size, picture);
+  clock_gettime(CLOCK_REALTIME, &end_encode_ts);
+
+  ++frame_count;
+  start = start_encode_ts.tv_sec + (start_encode_ts.tv_nsec / 1e9), end = end_encode_ts.tv_sec + (end_encode_ts.tv_nsec / 1e9);
+  encoding_time+= (end - start);
   picture->pts++;
 //  printf("encoding frame %3d (size=%5d)\n", i, out_size);
-  fwrite(outbuf, 1, out_size, f);
+  //fwrite(outbuf, 1, out_size, f);
+  clock_gettime(CLOCK_REALTIME, &end_ts);
+
+  start = start_ts.tv_sec + (start_ts.tv_nsec / 1e9), end = end_ts.tv_sec + (end_ts.tv_nsec / 1e9);
+  video_time+= (end - start);
 }
 
 void sVideoEncoder_libav_simple::close(){
@@ -154,6 +193,12 @@ void sVideoEncoder_libav_simple::close(){
   av_free(picture);
 //  printf("\n");
   cout <<" CLOSED ENCODER  file: " <<filename <<endl;
+  double per_frame = (encoding_time/frame_count);
+  cout << "Total encoding time: " << encoding_time << " (" <<  per_frame << "s / " << (per_frame * 1000) << "ms per frame)" << endl;
+  per_frame = (video_time/frame_count);
+  cout << "Total video handling time: " << video_time << " (" <<  per_frame << "s / " << (per_frame * 1000) << "ms per frame)" << endl;
+  per_frame = (scale_time/frame_count);
+  cout << "Video scaling time: " << scale_time << " (" <<  per_frame << "s / " << (per_frame * 1000) << "ms per frame)" << endl;
 }
 
 #else // HAVE_LIBAV

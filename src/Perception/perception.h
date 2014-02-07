@@ -12,6 +12,7 @@
 #include <Ors/ors.h>
 #include <Core/array_t.h>
 #include <Gui/opengl.h>
+#include <map>
 
 //===========================================================================
 //
@@ -30,8 +31,9 @@ struct PerceptionOutput;
 //-- Module declarations
 BEGIN_MODULE(ImageViewer)      ACCESS(byteA, img)       END_MODULE()
 BEGIN_MODULE(VideoEncoder)     ACCESS(byteA, img)       END_MODULE()
+BEGIN_MODULE(VideoEncoderX264)     ACCESS(byteA, img)       END_MODULE()
 BEGIN_MODULE(PointCloudViewer) ACCESS(arr, pts)         ACCESS(arr, cols)        END_MODULE()
-BEGIN_MODULE(OpencvCamera)     ACCESS(byteA, rgb)       END_MODULE()
+BEGIN_MODULE(OpencvCamera)     ACCESS(byteA, rgb)       std::map<int,double> properties; bool set(int prop, double value);  END_MODULE()
 BEGIN_MODULE(CvtGray)          ACCESS(byteA, rgb)       ACCESS(byteA, gray)      END_MODULE()
 BEGIN_MODULE(CvtHsv)           ACCESS(byteA, rgb)       ACCESS(byteA, hsv)       END_MODULE()
 BEGIN_MODULE(HsvFilter)        ACCESS(byteA, hsv)       ACCESS(floatA, evi)      END_MODULE()
