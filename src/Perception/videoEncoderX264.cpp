@@ -153,18 +153,16 @@ void sVideoEncoder_x264_simple::addFrame(const byteA& rgb){
   clock_gettime(CLOCK_REALTIME, &start_ts);
   uint8_t *rc, *gc, *bc;
   // BGR
-  bc = rgb.p;
-  gc = rgb.p + 1;
-  rc = rgb.p + 2;
+  const uint8_t *in_pixels = rgb.p;
   uint8_t *yc = pic_in.img.plane[0];
   uint8_t *uc = pic_in.img.plane[1];
   uint8_t *vc = pic_in.img.plane[2];
   const unsigned int num_pixel = rgb.d0 * rgb.d1;
 
-#pragma omp parallel for schedule(guided, 64) num_threads(2)
+#pragma omp parallel for schedule(guided, 256) num_threads(4)
   for(int i = 0; i < num_pixel; ++i) {
       const int pixel_index = i*3;
-      rgbToYuvVis(rgb.p[pixel_index+2], rgb.p[pixel_index+1], rgb.p[pixel_index], yc + i, uc + i, vc + i);
+      rgbToYuvVis(in_pixels[pixel_index+2], in_pixels[pixel_index+1], in_pixels[pixel_index], yc + i, uc + i, vc + i);
   }
 
   clock_gettime(CLOCK_REALTIME, &end_csp);

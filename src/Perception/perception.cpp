@@ -23,6 +23,7 @@ void lib_Perception(){ MT_MSG("loading"); }
 
 REGISTER_MODULE (ImageViewer)
 REGISTER_MODULE (VideoEncoder)
+REGISTER_MODULE (VideoEncoderX264)
 REGISTER_MODULE (PointCloudViewer)
 REGISTER_MODULE (OpencvCamera)
 REGISTER_MODULE (CvtGray)
