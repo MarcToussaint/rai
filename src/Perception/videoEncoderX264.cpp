@@ -72,7 +72,6 @@ struct sVideoEncoder_x264_simple{
   x264_param_t params;
   x264_nal_t* nals;
   x264_t* encoder;
-  Mat buf;
   bool first;
 
   int frame_count;
@@ -98,7 +97,6 @@ VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char* filename, uint fp
 void VideoEncoder_x264_simple::addFrame(const byteA& rgb){
   if(!rgb.N) return;
   if(!s->isOpen) s->open(rgb.d1, rgb.d0);
-  s->buf = Mat(Size(rgb.d0, rgb.d1), CV_8UC3);
   s->addFrame(rgb);
 }
 
@@ -169,8 +167,6 @@ void sVideoEncoder_x264_simple::addFrame(const byteA& rgb){
   double start = start_ts.tv_sec + (start_ts.tv_nsec / 1e9), end = end_csp.tv_sec + (end_csp.tv_nsec / 1e9);
   scale_time+=(end-start);
 
-  //memcpy(pic_in.img.plane[0], rgb.p, rgb.d0*rgb.d1*rgb.d2);
-
   int num_nals;
   pic_in.i_pts++; // = pic_out.i_pts++;
   clock_gettime(CLOCK_REALTIME, &start_encode_ts);
@@ -198,7 +194,6 @@ void sVideoEncoder_x264_simple::close(){
 
   x264_encoder_close(encoder);
   //FIXME free image data
-
 
   cout <<" CLOSED ENCODER  file: " <<filename <<endl;
   double per_frame = (encoding_time/frame_count);
