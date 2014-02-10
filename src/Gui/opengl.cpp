@@ -1448,7 +1448,7 @@ void OpenGL::Select() {
 int OpenGL::watch(const char *txt) {
   update(txt);
   enterEventLoop();
-  processEvents();
+//  processEvents();
   return pressedkey;
 }
 
@@ -1458,7 +1458,7 @@ int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep) {
   captureDep=_captureDep;
   if(txt) text.clear() <<txt;
   postRedrawEvent(false);
-  processEvents();
+//  processEvents();
   captureImg=captureDep=false;
   return pressedkey;
 }
