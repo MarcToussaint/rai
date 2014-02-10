@@ -102,7 +102,7 @@ void VideoEncoder_x264_simple::addFrame(const byteA& rgb){
   s->addFrame(rgb);
 }
 
-void VideoEncoder_x264_simple::close(){ if(s->isOpen) s->close(); }
+void VideoEncoder_x264_simple::close(){ std::clog << "Closing VideoEncoder264" << endl; if(s->isOpen) s->close(); }
 
 //==============================================================================
 
@@ -172,7 +172,7 @@ void sVideoEncoder_x264_simple::addFrame(const byteA& rgb){
   //memcpy(pic_in.img.plane[0], rgb.p, rgb.d0*rgb.d1*rgb.d2);
 
   int num_nals;
-  pic_in.i_pts = pic_out.i_pts++;
+  pic_in.i_pts++; // = pic_out.i_pts++;
   clock_gettime(CLOCK_REALTIME, &start_encode_ts);
   out_size = x264_encoder_encode(encoder, &nals, &num_nals, &pic_in, &pic_out);
   if(out_size < 0) {
@@ -219,6 +219,6 @@ VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char*, uint, uint){
   NICO
 }
 void VideoEncoder_x264_simple::addFrame(const byteA&){}
-void VideoEncoder_x264_simple::close(){}
+void VideoEncoder_x264_simple::close(){ }
 
 #endif // HAVE_LIBAV
