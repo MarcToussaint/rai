@@ -1453,12 +1453,12 @@ int OpenGL::watch(const char *txt) {
 }
 
 /// update the view (in Qt: also starts displaying the window)
-int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep) {
+int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool waitForCompletedDraw) {
   captureImg=_captureImg;
   captureDep=_captureDep;
   if(txt) text.clear() <<txt;
   postRedrawEvent(false);
-//  processEvents();
+  if(captureImg || captureDep || waitForCompletedDraw) processEvents();
   captureImg=captureDep=false;
   return pressedkey;
 }
@@ -1668,7 +1668,8 @@ void OpenGL::Reshape(int _width, int _height) {
   CALLBACK_DEBUG(printf("Window %d Reshape Callback:  %d %d\n", 0, _width, _height));
   width=_width;
   height=_height;
-  if(width%4) width = 4*(width/4);
+  if(width%8) width = 8*(width/8);
+  if(height%2) height = 2*(height/2);
   camera.setWHRatio((double)width/height);
   for(uint v=0; v<views.N; v++) views(v).camera.setWHRatio((views(v).ri-views(v).le)*width/((views(v).to-views(v).bo)*height));
   //postRedrawEvent(true);

@@ -235,7 +235,7 @@ struct OpenGL {
   void Select();
   
   /// @name showing, updating, and watching
-  int update(const char *text=NULL, bool captureImg=false, bool captureDepth=false);
+  int update(const char *text=NULL, bool captureImg=false, bool captureDepth=false, bool waitForCompletedDraw=false);
   int watch(const char *text=NULL);
   int timedupdate(double sec);
   void resize(int w, int h);
