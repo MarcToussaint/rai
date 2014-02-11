@@ -207,7 +207,8 @@ struct OpenGL {
   byteA background, captureImage, captureDepth;
   double backgroundZoom;
   arr P; //camera projection matrix
-  
+  RWLock lock; //locked during draw callbacks (anything that uses the calls)
+
   /// @name constructors & destructors
   OpenGL(const char* title="MT::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
   //OpenGL(void *parent, const char* title="MT::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);

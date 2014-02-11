@@ -1291,6 +1291,8 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   //std color: black:
   glColor(.3, .3, .5);
   
+//  lock.readLock(); //now accessing user data
+
   //draw central view
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -1300,7 +1302,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
     (*drawers(i).call)(drawers(i).classP);
     glLoadIdentity();
   }
-  
+
   //draw text
   if(text.N) {
     glMatrixMode(GL_PROJECTION);
@@ -1345,6 +1347,8 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
     }
   }
   
+//  lock.unlock(); //now de-accessing user data
+
   if(captureImg){
     captureImage.resize(h, w, 3);
     glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
@@ -1390,6 +1394,8 @@ void OpenGL::Select() {
     vi->camera.glSetProjectionMatrix();
   }
   
+//  lock.readLock(); //now accessing user data
+
   //draw objects
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -1406,6 +1412,9 @@ void OpenGL::Select() {
     GLView *vi=&views(mouseView);
     for(i=0; i<vi->drawers.N; i++) { glLoadName(i); (*vi->drawers(i).call)(vi->drawers(i).classP); }
   }
+
+//  lock.unlock(); //deaccess user data
+
 #else
   Draw(width(),height());
 #endif
