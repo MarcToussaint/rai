@@ -106,13 +106,15 @@ struct sVideoEncoderX264{
   ofstream timeTagFile;
   byteA buffer;
   int revision;
-  sVideoEncoderX264(const char* _filename, uint fps):filename(_filename), video(filename.p, fps), revision(-1){
+  sVideoEncoderX264(const char* _filename, uint fps):filename(_filename), video(filename.p, fps), revision(-1) {
     timeTagFile.open(STRING(filename <<".times"));
   }
 };
 
 void VideoEncoderX264::open(){
     s = new sVideoEncoderX264(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".264"), 60);    
+    if(is_rgb)
+        s->video.set_rgb(is_rgb);
 }
 
 void VideoEncoderX264::close(){
@@ -138,6 +140,9 @@ void VideoEncoderX264::step(){
     sprintf(tag.p, "%6i %13.6f", s->revision, time);
     s->timeTagFile <<tag <<endl;
     s->revision = nextRevision;
+}
+void VideoEncoderX264::set_rgb(bool is_rgb) {
+    this->is_rgb = is_rgb;
 }
 
 

@@ -72,14 +72,14 @@ struct sVideoEncoder_x264_simple{
   x264_param_t params;
   x264_nal_t* nals;
   x264_t* encoder;
-  bool first;
+  bool first, is_rgb;
 
   int frame_count;
   double encoding_time, video_time, scale_time;
 
   sVideoEncoder_x264_simple(const char* filename, double fps, uint qp) :
       filename(filename), fps(fps), isOpen(false), i(0), out_size(0), x(0), y(0), outbuf_size(0), qp(qp),
-      f(NULL), encoder(NULL), nals(NULL), frame_count(0), encoding_time(0.0), video_time(0.0), scale_time(0.0), pts(0), first(false)
+      f(NULL), encoder(NULL), nals(NULL), frame_count(0), encoding_time(0.0), video_time(0.0), scale_time(0.0), pts(0), first(false), is_rgb(false)
   {}
 
   void open(uint width, uint height);
@@ -101,6 +101,10 @@ void VideoEncoder_x264_simple::addFrame(const byteA& rgb){
 }
 
 void VideoEncoder_x264_simple::close(){ std::clog << "Closing VideoEncoder264" << endl; if(s->isOpen) s->close(); }
+
+void VideoEncoder_x264_simple::set_rgb(bool is_rgb) {
+    s->is_rgb = is_rgb;
+}
 
 //==============================================================================
 
@@ -157,10 +161,18 @@ void sVideoEncoder_x264_simple::addFrame(const byteA& rgb){
   uint8_t *vc = pic_in.img.plane[2];
   const unsigned int num_pixel = rgb.d0 * rgb.d1;
 
+  if(!is_rgb) {
 #pragma omp parallel for schedule(guided, 256) num_threads(4)
-  for(int i = 0; i < num_pixel; ++i) {
-      const int pixel_index = i*3;
-      rgbToYuvVis(in_pixels[pixel_index+2], in_pixels[pixel_index+1], in_pixels[pixel_index], yc + i, uc + i, vc + i);
+      for(int i = 0; i < num_pixel; ++i) {
+          const int pixel_index = i*3;
+          rgbToYuvVis(in_pixels[pixel_index+2], in_pixels[pixel_index+1], in_pixels[pixel_index], yc + i, uc + i, vc + i);
+      }
+  } else {
+#pragma omp parallel for schedule(guided, 256) num_threads(4)
+      for(int i = 0; i < num_pixel; ++i) {
+          const int pixel_index = i*3;
+          rgbToYuvVis(in_pixels[pixel_index], in_pixels[pixel_index+1], in_pixels[pixel_index+2], yc + i, uc + i, vc + i);
+      }
   }
 
   clock_gettime(CLOCK_REALTIME, &end_csp);
