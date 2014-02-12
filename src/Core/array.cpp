@@ -1609,6 +1609,7 @@ template MT::Array<arr>::~Array();
 
 #include "util_t.h"
 template MT::Array<double> MT::getParameter<MT::Array<double> >(char const*);
+template MT::Array<uint> MT::getParameter<MT::Array<uint> >(char const*);
 template bool MT::checkParameter<MT::Array<double> >(char const*);
 template void MT::getParameter(uintA&, const char*, const uintA&);
 
