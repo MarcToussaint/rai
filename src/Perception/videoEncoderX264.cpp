@@ -72,15 +72,14 @@ struct sVideoEncoder_x264_simple{
   x264_param_t params;
   x264_nal_t* nals;
   x264_t* encoder;
-  Mat buf;
-  bool first;
+  bool first, is_rgb;
 
   int frame_count;
   double encoding_time, video_time, scale_time;
 
   sVideoEncoder_x264_simple(const char* filename, double fps, uint qp) :
       filename(filename), fps(fps), isOpen(false), i(0), out_size(0), x(0), y(0), outbuf_size(0), qp(qp),
-      f(NULL), encoder(NULL), nals(NULL), frame_count(0), encoding_time(0.0), video_time(0.0), scale_time(0.0), pts(0), first(false)
+      f(NULL), encoder(NULL), nals(NULL), frame_count(0), encoding_time(0.0), video_time(0.0), scale_time(0.0), pts(0), first(false), is_rgb(false)
   {}
 
   void open(uint width, uint height);
@@ -98,11 +97,14 @@ VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char* filename, uint fp
 void VideoEncoder_x264_simple::addFrame(const byteA& rgb){
   if(!rgb.N) return;
   if(!s->isOpen) s->open(rgb.d1, rgb.d0);
-  s->buf = Mat(Size(rgb.d0, rgb.d1), CV_8UC3);
   s->addFrame(rgb);
 }
 
-void VideoEncoder_x264_simple::close(){ if(s->isOpen) s->close(); }
+void VideoEncoder_x264_simple::close(){ std::clog << "Closing VideoEncoder264" << endl; if(s->isOpen) s->close(); }
+
+void VideoEncoder_x264_simple::set_rgb(bool is_rgb) {
+    s->is_rgb = is_rgb;
+}
 
 //==============================================================================
 
@@ -159,20 +161,26 @@ void sVideoEncoder_x264_simple::addFrame(const byteA& rgb){
   uint8_t *vc = pic_in.img.plane[2];
   const unsigned int num_pixel = rgb.d0 * rgb.d1;
 
+  if(!is_rgb) {
 #pragma omp parallel for schedule(guided, 256) num_threads(4)
-  for(int i = 0; i < num_pixel; ++i) {
-      const int pixel_index = i*3;
-      rgbToYuvVis(in_pixels[pixel_index+2], in_pixels[pixel_index+1], in_pixels[pixel_index], yc + i, uc + i, vc + i);
+      for(int i = 0; i < num_pixel; ++i) {
+          const int pixel_index = i*3;
+          rgbToYuvVis(in_pixels[pixel_index+2], in_pixels[pixel_index+1], in_pixels[pixel_index], yc + i, uc + i, vc + i);
+      }
+  } else {
+#pragma omp parallel for schedule(guided, 256) num_threads(4)
+      for(int i = 0; i < num_pixel; ++i) {
+          const int pixel_index = i*3;
+          rgbToYuvVis(in_pixels[pixel_index], in_pixels[pixel_index+1], in_pixels[pixel_index+2], yc + i, uc + i, vc + i);
+      }
   }
 
   clock_gettime(CLOCK_REALTIME, &end_csp);
   double start = start_ts.tv_sec + (start_ts.tv_nsec / 1e9), end = end_csp.tv_sec + (end_csp.tv_nsec / 1e9);
   scale_time+=(end-start);
 
-  //memcpy(pic_in.img.plane[0], rgb.p, rgb.d0*rgb.d1*rgb.d2);
-
   int num_nals;
-  pic_in.i_pts = pic_out.i_pts++;
+  pic_in.i_pts++; // = pic_out.i_pts++;
   clock_gettime(CLOCK_REALTIME, &start_encode_ts);
   out_size = x264_encoder_encode(encoder, &nals, &num_nals, &pic_in, &pic_out);
   if(out_size < 0) {
@@ -199,7 +207,6 @@ void sVideoEncoder_x264_simple::close(){
   x264_encoder_close(encoder);
   //FIXME free image data
 
-
   cout <<" CLOSED ENCODER  file: " <<filename <<endl;
   double per_frame = (encoding_time/frame_count);
   cout << "Total encoding time: " << encoding_time << " (" <<  per_frame << "s / " << (per_frame * 1000) << "ms per frame)" << endl;
@@ -219,6 +226,6 @@ VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char*, uint, uint){
   NICO
 }
 void VideoEncoder_x264_simple::addFrame(const byteA&){}
-void VideoEncoder_x264_simple::close(){}
+void VideoEncoder_x264_simple::close(){ }
 
 #endif // HAVE_LIBAV

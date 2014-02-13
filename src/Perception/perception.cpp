@@ -105,35 +105,44 @@ struct sVideoEncoderX264{
   VideoEncoder_x264_simple video;
   ofstream timeTagFile;
   byteA buffer;
-  sVideoEncoderX264(const char* _filename, uint fps):filename(_filename), video(filename.p, fps){
+  int revision;
+  sVideoEncoderX264(const char* _filename, uint fps):filename(_filename), video(filename.p, fps), revision(-1) {
     timeTagFile.open(STRING(filename <<".times"));
   }
 };
 
 void VideoEncoderX264::open(){
-    s = new sVideoEncoderX264(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".264"), 60);
+    s = new sVideoEncoderX264(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".264"), 60);    
+    if(is_rgb)
+        s->video.set_rgb(is_rgb);
 }
 
 void VideoEncoderX264::close(){
+    std::clog << "Closing VideoEncoderX264...";
   s->video.close();
   delete s;
+  std::clog << "done" << endl;
 }
 
 void VideoEncoderX264::step(){
-  //-- grab from shared memory (necessary?)
-  uint rev = img.readAccess();
-  double time = img.var->revisionTime();
-  s->buffer = img();
-  img.deAccess();
+    //-- grab from shared memory (necessary?)
+    int nextRevision = img.readAccess();
+    double time = img.tstamp();
+    s->buffer = img();
+    img.deAccess();
 
-  //save image
-  s->video.addFrame(s->buffer);
+    //save image
+    s->video.addFrame(s->buffer);
 
-  //save time tag
-  MT::String tag;
-  tag.resize(30, false);
-  sprintf(tag.p, "%6i %13.6f", rev, time);
-  s->timeTagFile <<tag <<endl;
+    //save time tag
+    MT::String tag;
+    tag.resize(30, false);
+    sprintf(tag.p, "%6i %13.6f", s->revision, time);
+    s->timeTagFile <<tag <<endl;
+    s->revision = nextRevision;
+}
+void VideoEncoderX264::set_rgb(bool is_rgb) {
+    this->is_rgb = is_rgb;
 }
 
 
