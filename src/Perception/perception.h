@@ -30,8 +30,6 @@ struct PerceptionOutput;
 
 //-- Module declarations
 BEGIN_MODULE(ImageViewer)      ACCESS(byteA, img)       END_MODULE()
-BEGIN_MODULE(VideoEncoder)     ACCESS(byteA, img)       END_MODULE()
-BEGIN_MODULE(VideoEncoderX264)     ACCESS(byteA, img)       END_MODULE()
 BEGIN_MODULE(PointCloudViewer) ACCESS(arr, pts)         ACCESS(arr, cols)        END_MODULE()
 BEGIN_MODULE(OpencvCamera)     ACCESS(byteA, rgb)       std::map<int,double> properties; bool set(int prop, double value);  END_MODULE()
 BEGIN_MODULE(CvtGray)          ACCESS(byteA, rgb)       ACCESS(byteA, gray)      END_MODULE()
@@ -54,7 +52,34 @@ struct GenericDisplayViewer : Module {
   virtual void step(){ gl->background = var.get()().display; gl->update(); }
   virtual void close(){ delete gl; }
 };
+struct VideoEncoder : public Module {
+     struct sVideoEncoder *s;
+     bool is_rgb;
+     unsigned int fps;
+     ACCESS(byteA, img);
+     VideoEncoder():is_rgb(false) {}
+     virtual ~VideoEncoder() {}
 
+     virtual void open();
+     virtual void step();
+     virtual void close();
+     /// set input packing (default is bgr)
+     void set_rgb(bool is_rgb) { this->is_rgb = is_rgb; }
+     /// set frames per second -- only effective before open
+     void set_fps(unsigned int fps) { this->fps = fps; }
+  };
+struct VideoEncoderX264 : public Module {
+   struct sVideoEncoderX264 *s;
+   bool is_rgb;
+   ACCESS(byteA, img);
+   VideoEncoderX264():is_rgb(false) {}
+   virtual ~VideoEncoderX264() {}
+
+   virtual void open();
+   virtual void step();
+   virtual void close();
+   void set_rgb(bool is_rgb);
+};
 //===========================================================================
 //
 // Types

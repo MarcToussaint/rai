@@ -9,7 +9,7 @@ private:
   
 public:
   RRT(const arr& q0, double _stepsize);
-  double getProposalTowards(arr& q);
+  double getProposalTowards(arr& proposal, const arr& q);
   void add(const arr& q);
 
   //some access routines
