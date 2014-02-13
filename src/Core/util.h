@@ -84,9 +84,6 @@ extern int verboseLevel;
 //----- files
 void open(std::ofstream& fs, const char *name, const char *errmsg="");
 void open(std::ifstream& fs, const char *name, const char *errmsg="");
-template<class T> void save(const T& x, const char *filename);
-template<class T> void load(T& x, const char *filename, bool change_directory=false);
-void decomposeFilename(char *&_path, char *&name, const char *filename);
 std::ofstream& log(const char *name="MT.log");
 
 //----- strings and streams
@@ -141,8 +138,19 @@ double cpuTime();
 double sysTime();
 double totalTime();
 char *date();
-void wait(double sec, bool msg_on_fail=true);
-bool wait();
+#ifndef EXAMPLES_AS_TESTS
+void __do_wait(double sec, bool msg_on_fail=true);
+bool __do_wait();
+inline void wait(double sec, bool msg_on_fail=true) {
+    __do_wait(sec, msg_on_fail);
+}
+inline bool wait() {
+    return __do_wait();
+}
+#else
+inline void wait(double sec, bool msg_on_fail=true) { /* do nothing when running as test */ }
+inline bool wait() { return true; /* do nothing when running as test */ };
+#endif
 
 //----- memory
 long mem();
@@ -269,7 +277,7 @@ stdPipes(String)
 // string-filling routines
 
 namespace MT {
-  void getNowString(MT::String &str);
+  MT::String getNowString();
 }
 
 //===========================================================================
@@ -348,6 +356,36 @@ inline void breakPoint() {
 
 //----- other macros:
 #define MEM_COPY_OPERATOR(x) memmove(this, &x, sizeof(this));
+
+
+//===========================================================================
+//
+// FileToken
+//
+
+namespace MT {
+  /** @brief A ostream/istream wrapper that allows easier initialization of objects, like:
+arr X = FILE("inname");
+X >>FILE("outfile");
+ etc
+*/
+struct FileToken{
+  MT::String path, name, cwd;
+  std::ofstream *os;
+  std::ifstream *is;
+  FileToken(const char* _filename, bool change_dir=true);
+  ~FileToken();
+  FileToken& operator()(){ return *this; }
+  void decomposeFilename(const char *filename);
+  std::ofstream& getOs();
+  std::ifstream& getIs();
+};
+template<class T> FileToken& operator>>(FileToken& fil, T& x){ fil.getIs() >>x;  return fil; }
+template<class T> FileToken& operator<<(FileToken& fil, const T& x){ fil.getOs() <<x;  return fil; }
+template<class T> void operator<<(T& x, FileToken& fil){ fil.getIs() >>x; }
+template<class T> void operator>>(const T& x, FileToken& fil){ fil.getOs() <<x; }
+}
+#define FILE(filename) (MT::FileToken(filename)()) //it needs to return a REFERENCE to a local scope object
 
 
 //===========================================================================
@@ -510,6 +548,12 @@ struct Mutex {
   void unlock();
 };
 
+// support "Resource Acquisition Is Initialization" principle
+struct Lock {
+  Mutex& m;
+  Lock(Mutex& m) : m(m) { m.lock(); };
+  ~Lock() { m.unlock(); };
+};
 
 //===========================================================================
 //

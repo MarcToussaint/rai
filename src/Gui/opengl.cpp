@@ -247,7 +247,8 @@ void glStandardLight(void*) {
 void glStandardScene(void*) {
   glStandardLight(NULL);
 //   glDrawFloor(10, .8, .8, .8);
-  glDrawFloor(10, 1.5, 0.83, .0);
+//  glDrawFloor(10, 1.5, 0.83, .0);
+  glDrawFloor(10., 108./255., 123./255., 139./255.); //Tobias' beautiful colors ;-)
 }
 
 void glColor(int col) {
@@ -1031,6 +1032,7 @@ void glSelectWin(uint win) {
 #endif
 
 #else /// MT_GL
+void glColor(int col) { NICO }
 void glColor(float, float, float, float) { NICO }
 void glDrawDiamond(float, float, float, float, float, float) { NICO }
 // void glStandardLight(void*) { NICO }   // TOBIAS: das hier wird doch schon ueber opengl_void.cxx definiert
@@ -1296,6 +1298,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   for(uint i=0; i<drawers.N; i++) {
     if(mode==GL_SELECT) glLoadName(i);
     (*drawers(i).call)(drawers(i).classP);
+    glLoadIdentity();
   }
   
   //draw text

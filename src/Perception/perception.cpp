@@ -1,26 +1,28 @@
 #include "perception.h"
 #include "pointcloud.h"
 
+void lib_Perception(){ MT_MSG("loading"); }
+
 #ifdef MT_OPENCV
 
 #include "opencv.h"
 #include "libcolorseg.h"
-#include "video.h"
+#include "videoEncoder.h"
 #include <Core/util_t.h>
 #include <Gui/opengl.h>
 
 #undef COUNT
 #include <opencv2/opencv.hpp>
+//#include <opencv2/features2d/features2d.hpp>
+//#include <opencv2/gpu/gpu.hpp>
 #ifdef ARCH_LINUX
 #include <opencv2/nonfree/nonfree.hpp>
 #endif
 #undef MIN
 #undef MAX
 
-void lib_Perception(){ MT_MSG("loading"); }
-
 REGISTER_MODULE (ImageViewer)
-REGISTER_MODULE (ImageWriter)
+REGISTER_MODULE (VideoEncoder)
 REGISTER_MODULE (PointCloudViewer)
 REGISTER_MODULE (OpencvCamera)
 REGISTER_MODULE (CvtGray)
@@ -40,36 +42,55 @@ REGISTER_MODULE (HoughLineFilter)
 // ImageViewer
 //
 
-struct sImageViewer{  OpenGL gl; };
+struct sImageViewer{
+  OpenGL gl;
+  sImageViewer(const char* tit):gl(tit){};
+};
 
-void ImageViewer::open(){ s = new sImageViewer; }
+void ImageViewer::open(){ s = new sImageViewer(STRING("ImageViewer '"<<img.name()<<'\'')); }
 void ImageViewer::close(){ delete s; }
 void ImageViewer::step(){ s->gl.background = img.get(); s->gl.update(); }
 
 
 //===========================================================================
 //
-// ImageWriter
+// VideoEncoder
 //
 
-struct sImageWriter{
+struct sVideoEncoder{
   MT::String filename;
   VideoEncoder_libav_simple video;
+  ofstream timeTagFile;
   byteA buffer;
-  sImageWriter(const char* _filename, uint fps):filename(_filename), video(filename.p, fps){}
+  sVideoEncoder(const char* _filename, uint fps):filename(_filename), video(filename.p, fps){
+    timeTagFile.open(STRING(filename <<".times"));
+  }
 };
 
-void ImageWriter::open(){
-  s = new sImageWriter(STRING("z." <<img.name <<".avi"), 25);
+void VideoEncoder::open(){
+  s = new sVideoEncoder(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".avi"), 25);
 }
 
-void ImageWriter::close(){
+void VideoEncoder::close(){
+  s->video.close();
   delete s;
 }
 
-void ImageWriter::step(){
-  s->buffer = img.get();
+void VideoEncoder::step(){
+  //-- grab from shared memory (necessary?)
+  uint rev = img.readAccess();
+  double time = img.var->revisionTime();
+  s->buffer = img();
+  img.deAccess();
+
+  //save image
   s->video.addFrame(s->buffer);
+
+  //save time tag
+  MT::String tag;
+  tag.resize(30, false);
+  sprintf(tag.p, "%6i %13.6f", rev, time);
+  s->timeTagFile <<tag <<endl;
 }
 
 
@@ -371,6 +392,7 @@ struct sSURFer{
 void SURFer::open() {
   s = new sSURFer;
 //  s->surf = new cv::SURF(500);
+HALT("something in opencv changed... please upate the code")
 }
 
 void SURFer::close() {

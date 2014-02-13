@@ -59,6 +59,7 @@ extern bool globalMemoryStrict;
 extern const char* arrayElemsep;
 extern const char* arrayLinesep;
 extern const char* arrayBrackets;
+struct FileToken;
 } //namespace
 
 //===========================================================================
@@ -108,8 +109,9 @@ template<class T> struct Array {
   explicit Array(uint D0);
   explicit Array(uint D0, uint D1);
   explicit Array(uint D0, uint D1, uint D2);
-  Array(const T* p, uint size);
+  explicit Array(const T* p, uint size);    //reference!
   Array(std::initializer_list<T> list);
+  Array(MT::FileToken&); //read from a file
   ~Array();
   
   Array<T>& operator=(const T& v);
@@ -142,6 +144,7 @@ template<class T> struct Array {
   Array<T>& resizeAs(const Array<T>& a);
   Array<T>& reshapeAs(const Array<T>& a);
   Array<T>& resizeCopyAs(const Array<T>& a);
+  Array<T>& flatten();
   Array<T>& dereference();
 
   /// @name initializing/assigning entries
@@ -166,10 +169,9 @@ template<class T> struct Array {
   void referToSubRange(const Array<T>& a, uint i, int I);
   void referToSubDim(const Array<T>& a, uint dim);
   void referToSubDim(const Array<T>& a, uint i, uint j);
-  void takeOver(Array<T>& a);                   //a becomes a reference to its previously owned memory!
-  void swap(Array<T>& a); //the two arrays swap their contents!
+  void takeOver(Array<T>& a);  //a becomes a reference to its previously owned memory!
+  void swap(Array<T>& a);      //the two arrays swap their contents!
   void setGrid(uint dim, T lo, T hi, uint steps);
-  void setText(const char* str); //TODO: remove
   
   /// @name access by reference (direct memory access)
   T& elem(uint i) const;
@@ -222,6 +224,7 @@ template<class T> struct Array {
   T& append(const T& x);
   void append(const Array<T>& x);
   void append(const T *p, uint n);
+  void prepend(const T& x){ insert(0,x); }
   void replicate(uint copies);
   void insert(uint i, const T& x);
   void replace(uint i, uint n, const Array<T>& x);
@@ -397,6 +400,7 @@ template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T
 
 MT::Array<MT::String> STRINGS(const char* s0);
 MT::Array<MT::String> STRINGS(const char* s0, const char* s1);
+MT::Array<MT::String> STRINGS(const char* s0, const char* s1, const char* s2);
 
 
 //===========================================================================
@@ -467,8 +471,7 @@ extern bool useLapack;
 
 uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort=true);
 void svd(arr& U, arr& V, const arr& A);
-void pca(arr &Y, arr &v, arr &W, const arr &X, uint size = 0);
-void pca(arr &Y, const arr &W, const arr &X);
+void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc = 0);
 
 void mldivide(arr& X, const arr& A, const arr& b);
 
@@ -477,6 +480,7 @@ arr  inverse(const arr& A);
 uint inverse_SVD(arr& inverse, const arr& A);
 void inverse_LU(arr& Xinv, const arr& X);
 void inverse_SymPosDef(arr& Ainv, const arr& A);
+inline arr inverse_SymPosDef(const arr& A){ arr Ainv; inverse_SymPosDef(Ainv, A); return Ainv; }
 void pseudoInverse(arr& Ainv, const arr& A, const arr& Winv, double robustnessEps);
 void gaussFromData(arr& a, arr& A, const arr& X);
 void rotationFromAtoB(arr& R, const arr& a, const arr& v);
@@ -489,6 +493,7 @@ void lognormScale(arr& P, double& logP, bool force=true);
 
 void gnuplot(const arr& X);
 void write(const arr& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
+void write(std::ostream& os, const arrL& X, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
 void write(const arrL& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
 
 
@@ -535,10 +540,11 @@ double NNzerosdv(const arr& x, double sdv);
 template<class T> MT::Array<T> vectorShaped(const MT::Array<T>& x) {  MT::Array<T> y;  y.referTo(x);  y.reshape(y.N);  return y;  }
 template<class T> void transpose(MT::Array<T>& x, const MT::Array<T>& y);
 template<class T> void negative(MT::Array<T>& x, const MT::Array<T>& y);
-template<class T> void getDiag(MT::Array<T>& x, const MT::Array<T>& y);
+template<class T> MT::Array<T> getDiag(const MT::Array<T>& y);
 template<class T> MT::Array<T> diag(const MT::Array<T>& x) {  MT::Array<T> y;  y.setDiag(x);  return y;  }
 template<class T> MT::Array<T> skew(const MT::Array<T>& x);
 template<class T> void inverse2d(MT::Array<T>& Ainv, const MT::Array<T>& A);
+template<class T> MT::Array<T> replicate(const MT::Array<T>& A, uint d0);
 
 template<class T> uintA size(const MT::Array<T>& x) { return x.getDim(); }
 template<class T> void checkNan(const MT::Array<T>& x);
@@ -567,8 +573,6 @@ template<class T> MT::Array<T> sum(const MT::Array<T>& v, uint d);
 template<class T> T sumOfAbs(const MT::Array<T>& v);
 template<class T> T sumOfSqr(const MT::Array<T>& v);
 template<class T> T length(const MT::Array<T>& v); //TODO: remove this: the name 'norm' is too ambiguous!! (maybe rename to 'length')
-template<class T> T mean(const MT::Array<T>& v);
-template<class T> MT::Array<T> mean(const MT::Array<T>& v, uint d);
 template<class T> T product(const MT::Array<T>& v);
 
 template<class T> T trace(const MT::Array<T>& v);
@@ -585,8 +589,6 @@ template<class T> MT::Array<T> diagProduct(const MT::Array<T>& v, const MT::Arra
 
 template<class T> MT::Array<T> elemWiseMin(const MT::Array<T>& v, const MT::Array<T>& w);
 template<class T> MT::Array<T> elemWiseMax(const MT::Array<T>& v, const MT::Array<T>& w);
-template<class T> MT::Array<T> elemWiseProd(const MT::Array<T>& v, const MT::Array<T>& w);
-template<class T> MT::Array<T> elemWiseDiv(const MT::Array<T>& v, const MT::Array<T>& w);
 
 
 //===========================================================================

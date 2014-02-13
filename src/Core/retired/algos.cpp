@@ -117,8 +117,8 @@ bool MT::checkGradient(void (*f)(arr&, arr*, const arr&, void*),
   double md=maxDiff(J, JJ, &i);
   if(md>tolerance) {
     MT_MSG("checkGradient -- FAILURE -- \nmax diff=" <<md <<" (stored in files z.J and z.JJ)");
-    MT::save(J, "z.J");
-    MT::save(JJ, "z.JJ");
+    J >>FILE("z.J");
+    JJ >>FILE("z.JJ");
     cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
     //HALT("");
     return false;
@@ -149,8 +149,8 @@ bool MT::checkGradient(double(*f)(arr*, const arr&, void*),
   double md=maxDiff(J, JJ, 0);
   if(md>tolerance) {
     MT_MSG("checkGradient -- FAILURE -- \nmax diff=" <<md <<" (stored in files z.J and z.JJ)");
-    MT::save(J, "z.J");
-    MT::save(JJ, "z.JJ");
+    J >>FILE("z.J");
+    JJ >>FILE("z.JJ");
     cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
     //HALT("");
     return false;

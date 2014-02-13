@@ -16,26 +16,39 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
 
-#ifndef MT_gtk_h
-#define MT_gtk_h
+
+#ifndef Algo_spline_h
+#define Algo_spline_h
 
 #include <Core/array.h>
 
-typedef struct _GtkWidget GtkWidget;
+namespace MT {
 
-void gtkLock(bool checkInitialized=true);
-void gtkUnlock();
-void gtkCheckInitialized();
-void gtkEnterCallback();
-void gtkLeaveCallback();
+/// a spline
+struct Spline {
+  uint T, K, degree;
+  arr points; ///< the reference points
+  arr times;  ///< what times (in [0,1]) the reference points refer to (usually uniform)
+//  arr weights;
+  arr basis, basis_trans, basis_timeGradient;
 
-int gtkPopupMenuChoice(StringL& choices);
-GtkWidget *gtkTopWindow(const char* title);
+  Spline(uint T, arr& X, uint degree=2){ setUniformNonperiodicBasis(T, X.d0-1, degree); points=X; }
 
-//inline void gtkProcessEvents(){
-//  gktLock();
-//  while (gtk_events_pending())  gtk_main_iteration();
-//  gktUnlock();
-//}
+  arr getBasis(double time) const;
+  void setBasis();
+  void setBasisAndTimeGradient();
+  void setUniformNonperiodicBasis(uint T, uint K, uint degree);
+
+  arr eval(double t) const;
+  arr eval(uint t) const;
+  arr eval() const;
+
+  void partial(arr& grad_points, const arr& grad_path) const;
+  void partial(arr& dCdx, arr& dCdt, const arr& dCdf, bool constrain=true) const;
+
+  void plotBasis();
+};
+
+} //namespace MT
 
 #endif
