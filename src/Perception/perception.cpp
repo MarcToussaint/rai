@@ -127,7 +127,7 @@ void VideoEncoderX264::close(){
 void VideoEncoderX264::step(){
     //-- grab from shared memory (necessary?)
     int nextRevision = img.readAccess();
-    double time = img.var->revisionTime();
+    double time = img.tstamp();
     s->buffer = img();
     img.deAccess();
 
