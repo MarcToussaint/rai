@@ -63,13 +63,14 @@ struct sVideoEncoder{
   VideoEncoder_libav_simple video;
   ofstream timeTagFile;
   byteA buffer;
-  sVideoEncoder(const char* _filename, uint fps):filename(_filename), video(filename.p, fps){
+
+  sVideoEncoder(const char* _filename, uint fps, bool is_rgb=false):filename(_filename), video(filename.p, fps, 0, is_rgb) {
     timeTagFile.open(STRING(filename <<".times"));
   }
 };
 
 void VideoEncoder::open(){
-  s = new sVideoEncoder(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".avi"), 25);
+  s = new sVideoEncoder(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".avi"), fps, is_rgb);
 }
 
 void VideoEncoder::close(){
