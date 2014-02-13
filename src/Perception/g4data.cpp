@@ -62,21 +62,16 @@ void G4Data::loadData(const char *meta_fname, const char *poses_fname, bool inte
   uint F;
   for(F = 0; ; F++) {
     fil >> x;
-    // TODO this is to test whether the quaternions are normalized..
-    /*
-    cout << x.getDim() << endl;
-    for(uint i = 0; i < s->numS; i++) {
-      ors::Quaternion q(x(i, 3), x(i, 4), x(i, 5), x(i, 6));
-      cout << q << endl;
-      cout << " - norm: " << (q.w*q.w+q.x*q.x+q.y*q.y+q.z*q.z) << endl;
-    }
-    */
 
     if(!x.N || !fil.good()) break;
 
     for(uint i = 0; i < s->numS; i++) {
       hsi = s->itohs(i);
       if(hsi != -1) {
+        // setting quaternions to always have positive angle
+        //if(x(hsi, 4) < 0)
+          //x[hsi].subRange(3, -1)() *= (double)-1;
+
         s->data.append(x[hsi]);
         m = length(x[hsi]) == 0;
         s->missing.append(m);
@@ -93,6 +88,18 @@ void G4Data::loadData(const char *meta_fname, const char *poses_fname, bool inte
   s->numF = F;
   s->data.reshape(F, s->data.N/F/7, 7);
   s->missing.reshape(F, s->data.N/F/7);
+
+  // setting quaternions as a continuous path on the 4d sphere
+  arr xprev = s->data[0].sub(0, -1, 3, -1);
+  for(uint f = 1; f < s->data.d0; f++) {
+    for(uint i = 0; i < s->data.d1; i++) {
+      x.referToSubRange(s->data.subDim(f, i)(), 3, -1);
+      if(sum(x % xprev[i]) < 0)
+        x *= -1.;
+      if(!length(xprev[i]) || length(x))
+        xprev[i]() = x;
+    }
+  }
 
   if(interpolate) { // interpolating missing measures
     for(uint i = 0; i < s->numS; i++) {
@@ -113,9 +120,6 @@ void G4Data::loadData(const char *meta_fname, const char *poses_fname, bool inte
           for(uint tt = 0; tt < no; tt++) {
             s->data[t+tt][i] = s0 + diff*(tt+1.)/(no+1.);
             qt.setInterpolate((tt+1.)/(no+1.), q0, qF);
-            // TODO remove couts
-            //cout << " - norm: " << (qt.w*qt.w+qt.x*qt.x+qt.y*qt.y+qt.z*qt.z) << endl;
-            //cout << " - w: " << qt.w << endl;
             s->data(t+tt, i, 3) = qt.w;
             s->data(t+tt, i, 4) = qt.x;
             s->data(t+tt, i, 5) = qt.y;
@@ -128,6 +132,7 @@ void G4Data::loadData(const char *meta_fname, const char *poses_fname, bool inte
       }
     }
   }
+
 }
 
 StringA& G4Data::getNames() const {
