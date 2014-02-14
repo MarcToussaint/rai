@@ -45,8 +45,8 @@ Mutex sVideoEncoder_libav_simple::libav_open_mutex;
 
 //==============================================================================
 
-VideoEncoder_libav_simple::VideoEncoder_libav_simple(const char* filename, uint fps, uint qp, bool is_rgb) {
-    s = new sVideoEncoder_libav_simple(filename, fps, qp, is_rgb);
+VideoEncoder_libav_simple::VideoEncoder_libav_simple(const char* filename, uint fps, uint qp, bool is_rgb) : s(new sVideoEncoder_libav_simple(filename, fps, qp, is_rgb)){
+
 }
 
 void VideoEncoder_libav_simple::addFrame(const byteA& rgb){
@@ -76,6 +76,7 @@ void sVideoEncoder_libav_simple::open(uint width, uint height){
     c->height = height;
     /* frames per second */
     c->time_base= av_d2q(fps, INT_MAX);
+    std::clog << fps << "->" << c->time_base.num << "/" << c->time_base.den << endl;
     c->gop_size = 10; /* emit one intra frame every ten frames */
     c->max_b_frames=1;
     c->pix_fmt = PIX_FMT_YUV444P;
@@ -106,11 +107,11 @@ void sVideoEncoder_libav_simple::open(uint width, uint height){
 
     // configure for three planes, not subsampled
     picture->data[0] = picture_buf;
-    picture->data[1] = picture->data[0] + size;
-    picture->data[2] = picture->data[1] + size;
-    picture->linesize[0] = c->width;
-    picture->linesize[1] = c->width;
-    picture->linesize[2] = c->width;
+    picture->data[1] = picture->data[0] + num_pixels;
+    picture->data[2] = picture->data[1] + num_pixels;
+    picture->linesize[0] = num_pixels;
+    picture->linesize[1] = num_pixels;
+    picture->linesize[2] = num_pixels;
     picture->pts = 0;
 
     // done
@@ -123,9 +124,9 @@ void sVideoEncoder_libav_simple::addFrame(const byteA& rgb){
 
     clock_gettime(CLOCK_REALTIME, &start_ts);
     if(!is_rgb) {
-        bgr2yuv(rgb.p, picture->data[0], picture->data[1], picture->data[1], num_pixels);
+        bgr2yuv(rgb.p, picture->data[0], picture->data[1], picture->data[2], num_pixels);
     } else {
-        rgb2yuv(rgb.p, picture->data[0], picture->data[1], picture->data[1], num_pixels);
+        rgb2yuv(rgb.p, picture->data[0], picture->data[1], picture->data[2], num_pixels);
     }
     clock_gettime(CLOCK_REALTIME, &end_csp_ts);
     double start = start_ts.tv_sec + (start_ts.tv_nsec / 1e9), end = end_csp_ts.tv_sec + (end_csp_ts.tv_nsec / 1e9);

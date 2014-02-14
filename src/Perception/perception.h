@@ -57,7 +57,7 @@ struct VideoEncoder : public Module {
      bool is_rgb;
      unsigned int fps;
      ACCESS(byteA, img);
-     VideoEncoder():is_rgb(false) {}
+     VideoEncoder():is_rgb(false), fps(30) {}
      virtual ~VideoEncoder() {}
 
      virtual void open();
