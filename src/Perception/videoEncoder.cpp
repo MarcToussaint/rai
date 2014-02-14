@@ -109,9 +109,9 @@ void sVideoEncoder_libav_simple::open(uint width, uint height){
     picture->data[0] = picture_buf;
     picture->data[1] = picture->data[0] + num_pixels;
     picture->data[2] = picture->data[1] + num_pixels;
-    picture->linesize[0] = num_pixels;
-    picture->linesize[1] = num_pixels;
-    picture->linesize[2] = num_pixels;
+    picture->linesize[0] = width; //num_pixels;
+    picture->linesize[1] = width; //num_pixels;
+    picture->linesize[2] = width; //num_pixels;
     picture->pts = 0;
 
     // done
@@ -134,7 +134,6 @@ void sVideoEncoder_libav_simple::addFrame(const byteA& rgb){
 
     /* encode the image */
     clock_gettime(CLOCK_REALTIME, &start_encode_ts);
-    picture->data[0] = (uint8_t*)&rgb.p;
     out_size = avcodec_encode_video(c, outbuf, outbuf_size, picture);
     clock_gettime(CLOCK_REALTIME, &end_encode_ts);
 
