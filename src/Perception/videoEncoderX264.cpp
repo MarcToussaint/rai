@@ -40,7 +40,7 @@ struct sVideoEncoder_x264_simple{
 
 //==============================================================================
 
-VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char* filename, uint fps, uint qp) {
+VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char* filename, double fps, uint qp) {
     s = new sVideoEncoder_x264_simple(filename, fps, qp);
 }
 

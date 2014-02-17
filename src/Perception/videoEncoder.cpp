@@ -50,8 +50,8 @@ Mutex sVideoEncoder_libav_simple::libav_open_mutex;
 
 //==============================================================================
 
-VideoEncoder_libav_simple::VideoEncoder_libav_simple(const char* filename, uint fps, uint qp, bool is_rgb) : s(new sVideoEncoder_libav_simple(filename, fps, qp, is_rgb)){
-
+VideoEncoder_libav_simple::VideoEncoder_libav_simple(const char* filename, double fps, uint qp, bool is_rgb) : s(new sVideoEncoder_libav_simple(filename, fps, qp, is_rgb)){
+    std::clog << "Opening " << filename << " with fps=" << fps << ", qp=" << qp << ", " << (is_rgb ? "rgb " : "bgr") << " format" << endl;
 }
 
 void VideoEncoder_libav_simple::addFrame(const byteA& rgb){
@@ -100,7 +100,6 @@ void sVideoEncoder_libav_simple::open(uint width, uint height){
     video_stream->codec->height = height;
     /* frames per second */
     video_stream->codec->time_base = av_d2q(1./fps, INT_MAX);
-    std::clog << fps << "->" << video_stream->codec->time_base.num << "/" << video_stream->codec->time_base.den << endl;
     video_stream->codec->gop_size = 10; /* emit one intra frame every ten frames */
     video_stream->codec->max_b_frames=1;
     video_stream->codec->pix_fmt = PIX_FMT_YUV444P;
