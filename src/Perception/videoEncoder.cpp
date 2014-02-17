@@ -229,7 +229,7 @@ void sVideoEncoder_libav_simple::close(){
 
 struct sVideoEncoder_libav_simple{
 };
-VideoEncoder_libav_simple::VideoEncoder_libav_simple(const char*, uint, uint, bool){
+VideoEncoder_libav_simple::VideoEncoder_libav_simple(const char*, double, uint, bool){
     NICO
 }
 void VideoEncoder_libav_simple::addFrame(const byteA&){}
