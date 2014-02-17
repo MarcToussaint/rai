@@ -8,7 +8,10 @@ extern "C"{
 #include <libavcodec/avcodec.h>
 #include <libavutil/mathematics.h>
 #include <libavutil/samplefmt.h>
+#include <libavformat/avformat.h>
 }
+
+const char* DEFAULT_CONTAINER = "avi";
 
 struct sVideoEncoder_libav_simple{
     static Mutex libav_open_mutex;
@@ -18,8 +21,9 @@ struct sVideoEncoder_libav_simple{
 
     int i, out_size, num_pixels, size, outbuf_size, qp;
     AVCodec *codec;
-    AVCodecContext *c;
-    FILE *f;
+    AVCodecContext *codec_context;
+    AVFormatContext *container_context;
+    AVStream *video_stream;
     AVFrame *picture;
     uint8_t *outbuf, *picture_buf;
     bool is_rgb;
@@ -28,16 +32,18 @@ struct sVideoEncoder_libav_simple{
     double encoding_time, video_time, csp_time;
 
     sVideoEncoder_libav_simple() :
-        fps(0), isOpen(false), i(0), out_size(0), num_pixels(0), outbuf_size(0), qp(0), codec(NULL), f(NULL), picture(NULL),
+        fps(0), isOpen(false), i(0), out_size(0), num_pixels(0), outbuf_size(0), qp(0), codec(NULL), picture(NULL),
         outbuf(NULL), picture_buf(NULL), frame_count(0), encoding_time(0.0), video_time(0.0), csp_time(0.0), is_rgb(false)
     {}
     sVideoEncoder_libav_simple(const char* filename, double fps, uint qp, bool is_rgb) :
         filename(filename), fps(fps), isOpen(false), i(0), out_size(0), num_pixels(0), outbuf_size(0), qp(qp),
-        codec(NULL), f(NULL), picture(NULL), outbuf(NULL), picture_buf(NULL), frame_count(0), encoding_time(0.0), video_time(0.0), csp_time(0.0), is_rgb(is_rgb)
+        codec(NULL), picture(NULL), outbuf(NULL), picture_buf(NULL), frame_count(0), encoding_time(0.0), video_time(0.0), csp_time(0.0), is_rgb(is_rgb)
     {}
     void open(uint width, uint height);
     void addFrame(const byteA& rgb);
     void close();
+private:
+    void writeFrame();
 };
 
 Mutex sVideoEncoder_libav_simple::libav_open_mutex;
@@ -63,23 +69,46 @@ void sVideoEncoder_libav_simple::open(uint width, uint height){
     Lock avlock(libav_open_mutex);
     avcodec_register_all();
 
-    codec = avcodec_find_encoder(CODEC_ID_H264);
+    // prepare container context
+    container_context = avformat_alloc_context();
+    if(!container_context) {
+        HALT("Allocation error for format context");
+    }
+    container_context->oformat = av_guess_format(NULL, filename, NULL);
+    if(!container_context->oformat) {
+        std::cerr << "Could not determine container format from filename '" << filename << "', using " << DEFAULT_CONTAINER;
+        container_context->oformat = av_guess_format(DEFAULT_CONTAINER, NULL, NULL);
+        if(!container_context->oformat) {
+            HALT("Could not open container format for " << DEFAULT_CONTAINER << ", stopping");
+        }
+    }
+    container_context->video_codec_id = CODEC_ID_H264;
+    snprintf(container_context->filename, sizeof(container_context->filename), "%s", filename.p);
+    video_stream = avformat_new_stream(container_context, 0);
+    if(!video_stream) {
+        HALT("Could not allocate video stream in container");
+    }
+
+    codec = avcodec_find_encoder(container_context->video_codec_id);
     if (!codec)
         HALT("codec not found");
 
-    c = avcodec_alloc_context3(codec);
+    codec_context = avcodec_alloc_context3(codec);
     picture = avcodec_alloc_frame();
 
     /* put sample parameters */
     /* resolution must be a multiple of two */
-    c->width = width;
-    c->height = height;
+    codec_context->width = width;
+    codec_context->height = height;
     /* frames per second */
-    c->time_base= av_d2q(fps, INT_MAX);
-    std::clog << fps << "->" << c->time_base.num << "/" << c->time_base.den << endl;
-    c->gop_size = 10; /* emit one intra frame every ten frames */
-    c->max_b_frames=1;
-    c->pix_fmt = PIX_FMT_YUV444P;
+    codec_context->time_base= av_d2q(fps, INT_MAX);
+    std::clog << fps << "->" << codec_context->time_base.num << "/" << codec_context->time_base.den << endl;
+    codec_context->gop_size = 10; /* emit one intra frame every ten frames */
+    codec_context->max_b_frames=1;
+    codec_context->pix_fmt = PIX_FMT_YUV444P;
+    // apparently mp4 needs this
+    if(!strcmp(container_context->oformat->name, "mp4"))
+        codec_context->flags |= CODEC_FLAG_GLOBAL_HEADER;
 
     AVDictionary *opts = NULL;
     char opt_str[4];
@@ -88,11 +117,13 @@ void sVideoEncoder_libav_simple::open(uint width, uint height){
     av_dict_set(&opts, "preset", "ultrafast", 0);
 
     /* open it */
-    if (avcodec_open2(c, codec, &opts) < 0)
+    if (avcodec_open2(codec_context, codec, &opts) < 0)
         HALT("Encoder failed to open");
 
-    f = fopen(filename, "wb");
-    if (!f) HALT("could not open "<< filename);
+    if (avio_open(&container_context->pb, filename, URL_WRONLY) < 0) {
+        HALT("Could not open " << filename);
+    }
+    avformat_write_header(container_context, &opts);
 
     /* alloc image and output buffer */
     num_pixels = width * height;
@@ -118,6 +149,24 @@ void sVideoEncoder_libav_simple::open(uint width, uint height){
     isOpen=true;
 }
 
+void sVideoEncoder_libav_simple::writeFrame() {
+    if(out_size != 0) {
+        // create a packet for container to write
+        AVPacket pkt;
+        av_init_packet(&pkt);
+
+        pkt.pts= codec_context->coded_frame->pts;
+        if(codec_context->coded_frame->key_frame)
+            pkt.flags |= AV_PKT_FLAG_KEY;
+        pkt.stream_index = video_stream->index;
+        pkt.data = outbuf;
+        pkt.size = out_size;
+
+        av_write_frame(container_context, &pkt); // CHECK return code
+        frame_count++;
+        picture->pts++;
+    }
+}
 
 void sVideoEncoder_libav_simple::addFrame(const byteA& rgb){    
     timespec start_ts, end_ts, start_encode_ts, end_encode_ts, end_csp_ts;
@@ -134,13 +183,12 @@ void sVideoEncoder_libav_simple::addFrame(const byteA& rgb){
 
     /* encode the image */
     clock_gettime(CLOCK_REALTIME, &start_encode_ts);
-    out_size = avcodec_encode_video(c, outbuf, outbuf_size, picture);
+    out_size = avcodec_encode_video(codec_context, outbuf, outbuf_size, picture);
     clock_gettime(CLOCK_REALTIME, &end_encode_ts);
 
-    ++frame_count;
+    writeFrame();
     start = start_encode_ts.tv_sec + (start_encode_ts.tv_nsec / 1e9), end = end_encode_ts.tv_sec + (end_encode_ts.tv_nsec / 1e9);
     encoding_time+= (end - start);
-    picture->pts++;
 
     clock_gettime(CLOCK_REALTIME, &end_ts);
 
@@ -150,20 +198,24 @@ void sVideoEncoder_libav_simple::addFrame(const byteA& rgb){
 
 void sVideoEncoder_libav_simple::close(){
     /* get the delayed frames */
-    for(; out_size; i++) {
-        fflush(stdout);
+    do {
+        out_size = avcodec_encode_video(codec_context, outbuf, outbuf_size, NULL);
+        writeFrame();
+    } while(out_size > 0);
 
-        out_size = avcodec_encode_video(c, outbuf, outbuf_size, NULL);
-        fwrite(outbuf, 1, out_size, f);
-    }
-
-    fclose(f);
-
-    avcodec_close(c);
+    avcodec_close(codec_context);
     free(picture_buf);
     free(outbuf);
-    av_free(c);
+    av_free(codec_context);
     av_free(picture);
+
+    av_write_trailer(container_context);
+    /* free the streams */
+    for(i = 0; i < container_context->nb_streams; i++) {
+        av_freep(&container_context->streams[i]);
+    }
+    avio_close(container_context->pb);
+    av_free(container_context);
 
     cout <<" CLOSED ENCODER  file: " <<filename <<endl;
     double per_frame = (encoding_time/frame_count);
