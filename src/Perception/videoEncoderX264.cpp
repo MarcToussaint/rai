@@ -154,11 +154,10 @@ void sVideoEncoder_x264_simple::close(){
 
 struct sVideoEncoder_x264_simple{
 };
-VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char*, double, uint){
+VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char*, double, uint, bool){
   NICO
 }
 void VideoEncoder_x264_simple::addFrame(const byteA&){}
 void VideoEncoder_x264_simple::close(){ }
-void VideoEncoder_x264_simple::set_rgb(bool is_rgb){ }
 
 #endif // HAVE_LIBAV
