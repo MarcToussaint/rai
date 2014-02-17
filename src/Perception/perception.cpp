@@ -64,7 +64,7 @@ struct sVideoEncoder{
   ofstream timeTagFile;
   byteA buffer;
 
-  sVideoEncoder(const char* _filename, uint fps, bool is_rgb=false):filename(_filename), video(filename.p, fps, 0, is_rgb) {
+  sVideoEncoder(const char* _filename, double fps, bool is_rgb=false):filename(_filename), video(filename.p, fps, 0, is_rgb) {
     timeTagFile.open(STRING(filename <<".times"));
   }
 };
@@ -107,15 +107,13 @@ struct sVideoEncoderX264{
   ofstream timeTagFile;
   byteA buffer;
   int revision;
-  sVideoEncoderX264(const char* _filename, uint fps):filename(_filename), video(filename.p, fps), revision(-1) {
+  sVideoEncoderX264(const char* _filename, double fps, bool is_rgb) : filename(_filename), video(filename.p, fps, 0, is_rgb), revision(-1) {
     timeTagFile.open(STRING(filename <<".times"));
   }
 };
 
 void VideoEncoderX264::open(){
-    s = new sVideoEncoderX264(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".264"), 60);    
-    if(is_rgb)
-        s->video.set_rgb(is_rgb);
+    s = new sVideoEncoderX264(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".264"), fps, is_rgb);
 }
 
 void VideoEncoderX264::close(){
@@ -142,10 +140,6 @@ void VideoEncoderX264::step(){
     s->timeTagFile <<tag <<endl;
     s->revision = nextRevision;
 }
-void VideoEncoderX264::set_rgb(bool is_rgb) {
-    this->is_rgb = is_rgb;
-}
-
 
 //===========================================================================
 //

@@ -27,9 +27,9 @@ struct sVideoEncoder_x264_simple{
   int frame_count;
   double encoding_time, video_time, scale_time;
 
-  sVideoEncoder_x264_simple(const char* filename, double fps, uint qp) :
+  sVideoEncoder_x264_simple(const char* filename, double fps, uint qp, bool is_rgb) :
       filename(filename), fps(fps), isOpen(false), i(0), out_size(0), x(0), y(0), outbuf_size(0), qp(qp),
-      f(NULL), encoder(NULL), nals(NULL), frame_count(0), encoding_time(0.0), video_time(0.0), scale_time(0.0), pts(0), first(false), is_rgb(false)
+      f(NULL), encoder(NULL), nals(NULL), frame_count(0), encoding_time(0.0), video_time(0.0), scale_time(0.0), pts(0), first(false), is_rgb(is_rgb)
   {}
 
   void open(uint width, uint height);
@@ -40,8 +40,8 @@ struct sVideoEncoder_x264_simple{
 
 //==============================================================================
 
-VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char* filename, double fps, uint qp) {
-    s = new sVideoEncoder_x264_simple(filename, fps, qp);
+VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char* filename, double fps, uint qp, bool is_rgb) {
+    s = new sVideoEncoder_x264_simple(filename, fps, qp, is_rgb);
 }
 
 void VideoEncoder_x264_simple::addFrame(const byteA& rgb){
@@ -51,10 +51,6 @@ void VideoEncoder_x264_simple::addFrame(const byteA& rgb){
 }
 
 void VideoEncoder_x264_simple::close(){ std::clog << "Closing VideoEncoder264" << endl; if(s->isOpen) s->close(); }
-
-void VideoEncoder_x264_simple::set_rgb(bool is_rgb) {
-    s->is_rgb = is_rgb;
-}
 
 //==============================================================================
 

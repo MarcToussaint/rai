@@ -55,7 +55,7 @@ struct GenericDisplayViewer : Module {
 struct VideoEncoder : public Module {
      struct sVideoEncoder *s;
      bool is_rgb;
-     unsigned int fps;
+     double fps;
      ACCESS(byteA, img);
      VideoEncoder():is_rgb(false), fps(30) {}
      virtual ~VideoEncoder() {}
@@ -66,11 +66,12 @@ struct VideoEncoder : public Module {
      /// set input packing (default is bgr)
      void set_rgb(bool is_rgb) { this->is_rgb = is_rgb; }
      /// set frames per second -- only effective before open
-     void set_fps(unsigned int fps) { this->fps = fps; }
+     void set_fps(double fps) { this->fps = fps; }
   };
 struct VideoEncoderX264 : public Module {
    struct sVideoEncoderX264 *s;
    bool is_rgb;
+   double fps;
    ACCESS(byteA, img);
    VideoEncoderX264():is_rgb(false) {}
    virtual ~VideoEncoderX264() {}
@@ -78,7 +79,10 @@ struct VideoEncoderX264 : public Module {
    virtual void open();
    virtual void step();
    virtual void close();
-   void set_rgb(bool is_rgb);
+   /// set input packing (default is bgr)
+   void set_rgb(bool is_rgb) { this->is_rgb = is_rgb; }
+   /// set frames per second -- only effective before open
+   void set_fps(double fps) { this->fps = fps; }
 };
 //===========================================================================
 //
