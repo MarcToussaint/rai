@@ -139,8 +139,7 @@ void ParticleAroundWalls::phi_t(arr& phi, arr& J, uint t, const arr& x_bar){
   CHECK(m==dim_phi(t),"");
 
   if(&J){ //we also need to return the Jacobian
-    J.resize(m,k+1,n);
-    J.setZero();
+    J.resize(m,k+1,n).setZero();
 
     //curvature
     for(uint i=0;i<n;i++){

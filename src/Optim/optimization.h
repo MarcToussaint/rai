@@ -69,7 +69,7 @@ struct KOrderMarkovFunction {
   virtual uint get_k() = 0;       ///< the order of dependence: \f$ \phi=\phi(x_{t-k},..,x_t) \f$
   virtual uint dim_x() = 0;       ///< \f$ \dim(x_t) \f$
   virtual uint dim_phi(uint t) = 0; ///< \f$ \dim(\phi_t) \f$
-  virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints in \f$ \phi_t \f$
+  virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints at the end of \f$ \phi_t \f$
   virtual arr get_prefix(){ arr x(get_k(), dim_x()); x.setZero(); return x; } ///< the augmentation \f$ (x_{t=-k},..,x_{t=-1}) \f$ that makes \f$ \phi_{0,..,k-1} \f$ well-defined
 
   /// optional: we make include kernel costs \f$ \sum_{i,j} k(i,j) x_i^\top x_j \f$ -- PRELIM, see examples/kOrderMarkov
@@ -127,6 +127,8 @@ double evaluateVF(VectorFunction& f, const arr& x);
 // optimization methods
 //
 
+enum ConstrainedMethodType { noMethod=0, squaredPenalty, augmentedLag, logBarrier };
+
 struct OptOptions {
   uint verbose;
   double *fmin_return;
@@ -139,11 +141,12 @@ struct OptOptions {
   double damping;
   bool useAdaptiveDamping;
   bool clampInitialState;
+  ConstrainedMethodType constrainedMethod;
   OptOptions();
 };
 
 
-uint optGaussNewton(arr& x, VectorFunction& phi, OptOptions opt, arr *addRegularizer=NULL, arr *fx_user=NULL, arr *Jx_user=NULL);
+//uint optGaussNewton(arr& x, VectorFunction& phi, OptOptions opt, arr *addRegularizer=NULL, arr *fx_user=NULL, arr *Jx_user=NULL);
 uint optNewton(arr& x, ScalarFunction& f, OptOptions opt, arr *addRegularizer=NULL, double *fx_user=NULL, arr *gx_user=NULL, arr *Hx_user=NULL);
 uint optRprop(arr& x, ScalarFunction& f, OptOptions opt);
 uint optGradDescent(arr& x, ScalarFunction& f, OptOptions opt);
