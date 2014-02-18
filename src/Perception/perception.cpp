@@ -23,6 +23,7 @@ void lib_Perception(){ MT_MSG("loading"); }
 
 REGISTER_MODULE (ImageViewer)
 REGISTER_MODULE (VideoEncoder)
+REGISTER_MODULE (VideoEncoderX264)
 REGISTER_MODULE (PointCloudViewer)
 REGISTER_MODULE (OpencvCamera)
 REGISTER_MODULE (CvtGray)
@@ -62,13 +63,14 @@ struct sVideoEncoder{
   VideoEncoder_libav_simple video;
   ofstream timeTagFile;
   byteA buffer;
-  sVideoEncoder(const char* _filename, uint fps):filename(_filename), video(filename.p, fps){
+
+  sVideoEncoder(const char* _filename, double fps, bool is_rgb=false):filename(_filename), video(filename.p, fps, 0, is_rgb) {
     timeTagFile.open(STRING(filename <<".times"));
   }
 };
 
 void VideoEncoder::open(){
-  s = new sVideoEncoder(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".avi"), 25);
+  s = new sVideoEncoder(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".avi"), fps, is_rgb);
 }
 
 void VideoEncoder::close(){
@@ -93,6 +95,51 @@ void VideoEncoder::step(){
   s->timeTagFile <<tag <<endl;
 }
 
+
+//===========================================================================
+//
+// VideoEncoder
+//
+
+struct sVideoEncoderX264{
+  MT::String filename;
+  VideoEncoder_x264_simple video;
+  ofstream timeTagFile;
+  byteA buffer;
+  int revision;
+  sVideoEncoderX264(const char* _filename, double fps, bool is_rgb) : filename(_filename), video(filename.p, fps, 0, is_rgb), revision(-1) {
+    timeTagFile.open(STRING(filename <<".times"));
+  }
+};
+
+void VideoEncoderX264::open(){
+    s = new sVideoEncoderX264(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".264"), fps, is_rgb);
+}
+
+void VideoEncoderX264::close(){
+    std::clog << "Closing VideoEncoderX264...";
+  s->video.close();
+  delete s;
+  std::clog << "done" << endl;
+}
+
+void VideoEncoderX264::step(){
+    //-- grab from shared memory (necessary?)
+    int nextRevision = img.readAccess();
+    double time = img.tstamp();
+    s->buffer = img();
+    img.deAccess();
+
+    //save image
+    s->video.addFrame(s->buffer);
+
+    //save time tag
+    MT::String tag;
+    tag.resize(30, false);
+    sprintf(tag.p, "%6i %13.6f", s->revision, time);
+    s->timeTagFile <<tag <<endl;
+    s->revision = nextRevision;
+}
 
 //===========================================================================
 //
@@ -129,6 +176,11 @@ struct sOpencvCamera{  cv::VideoCapture capture;  };
 void OpencvCamera::open(){
   s = new sOpencvCamera;
   s->capture.open(0);
+  for(std::map<int,double>::const_iterator i = properties.begin(); i != properties.end(); ++i) {
+      if(!s->capture.set(i->first, i->second)) {
+          cerr << "could not set property " << i->first << " to value " << i->second << endl;
+      }
+  }
   //    capture.set(CV_CAP_PROP_CONVERT_RGB, 1);
   //    cout <<"FPS of opened OpenCV VideoCapture = " <<capture.get(CV_CAP_PROP_FPS) <<endl;;
 }
@@ -141,10 +193,19 @@ void OpencvCamera::close(){
 void OpencvCamera::step(){
   cv::Mat img,imgRGB;
   s->capture.read(img);
-  if(!img.empty()){
+  if(!img.empty()){      
     cv::cvtColor(img, imgRGB, CV_BGR2RGB);
     rgb.set()=cvtMAT(imgRGB);
   }
+}
+
+bool OpencvCamera::set(int propId, double value) {
+    if(s)
+        return s->capture.set(propId, value);
+    else {
+        properties[propId] = value;
+        return true; // well, can't really do anything else here...
+    }
 }
 
 

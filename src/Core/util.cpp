@@ -461,6 +461,10 @@ double clockTime() {
 #endif
 }
 
+double toTime(const tm& t) {
+    return (double)(mktime(const_cast<tm*>(&t)) % 86400);
+}
+
 /** @brief double time since start of the process in floating-point seconds
   (probably in micro second resolution) -- Windows checked! */
 double realTime() {
