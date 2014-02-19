@@ -1651,6 +1651,15 @@ void OpenGL::saveEPS(const char*) {
 #ifndef MT_QTGL
 /** @brief report on the OpenGL capabilities (the QGLFormat) */
 void OpenGL::about(std::ostream& os) { MT_MSG("NICO"); }
+void glDrawPointCloud(MT::Array<double>&, MT::Array<double>&) { NICO }
+void glDrawSphere(float) { NICO }
+void glDrawCappedCylinder(float, float) { NICO }
+void glDrawText(char const*, float, float, float){ NICO }
+void glDrawDiamond(float, float, float){ NICO }
+void glDrawDisk(float){ NICO }
+void glDrawBox(float, float, float){ NICO }
+void glDrawCylinder(float, float, bool){ NICO }
+
 #endif
 
 
