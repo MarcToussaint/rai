@@ -1,7 +1,6 @@
 #include "rrt.h"
 
 #include <Algo/ann.h>
-#include <Optim/optimization.h>
 
 struct sRRT {
   ANN ann;
