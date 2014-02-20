@@ -10,11 +10,15 @@ extern "C"{
 #include <libavutil/samplefmt.h>
 #include <libavformat/avformat.h>
 }
+#include "avutil.h"
 
-const char* DEFAULT_CONTAINER = "avi";
+namespace {
+    const char* DEFAULT_CONTAINER = "avi";
+}
+
+Mutex libav_open_mutex;
 
 struct sVideoEncoder_libav_simple{
-    static Mutex libav_open_mutex;
     MT::String filename;
     double fps;
     bool isOpen;
@@ -45,9 +49,6 @@ private:
     void writeFrame();
 };
 
-Mutex sVideoEncoder_libav_simple::libav_open_mutex;
-
-
 //==============================================================================
 
 VideoEncoder_libav_simple::VideoEncoder_libav_simple(const char* filename, double fps, uint qp, bool is_rgb) : s(new sVideoEncoder_libav_simple(filename, fps, qp, is_rgb)){
@@ -73,14 +74,7 @@ void sVideoEncoder_libav_simple::open(uint width, uint height){
     if(!container_context) {
         HALT("Allocation error for format context");
     }
-    container_context->oformat = av_guess_format(NULL, filename, NULL);
-    if(!container_context->oformat) {
-        std::cerr << "Could not determine container format from filename '" << filename << "', using " << DEFAULT_CONTAINER;
-        container_context->oformat = av_guess_format(DEFAULT_CONTAINER, NULL, NULL);
-        if(!container_context->oformat) {
-            HALT("Could not open container format for " << DEFAULT_CONTAINER << ", stopping");
-        }
-    }
+    container_context->oformat = mt_guess_format(filename, DEFAULT_CONTAINER);
     container_context->video_codec_id = CODEC_ID_H264;
     codec = avcodec_find_encoder(container_context->video_codec_id);
     if (!codec)
