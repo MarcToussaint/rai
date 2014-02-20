@@ -8,6 +8,7 @@ void lib_Perception(){ MT_MSG("loading"); }
 #include "opencv.h"
 #include "libcolorseg.h"
 #include "videoEncoder.h"
+#include "audio.h"
 #include <Core/util_t.h>
 #include <Gui/opengl.h>
 
@@ -35,6 +36,8 @@ REGISTER_MODULE (CannyFilter)
 REGISTER_MODULE (Patcher)
 REGISTER_MODULE (SURFer)
 REGISTER_MODULE (HoughLineFilter)
+REGISTER_MODULE (AudioReader)
+REGISTER_MODULE (AudioWriter)
 //REGISTER_MODULE (ShapeFitter)
 
 
@@ -576,4 +579,47 @@ VariableL newPointcloudVariables() {
 #endif
 
 
+void AudioReader::open() {
+#ifdef HAVE_PULSEAUDIO
+    poller = new AudioPoller_PA();
+#else
+    poller = NULL;
+#endif
+}
+void AudioReader::close() {
+    if(poller != NULL) {
+        delete poller;
+        poller = NULL;
+    }
+}
+void AudioReader::step() {
+    if(poller == NULL) {
+        return;
+    }
+    Access_typed<byteA>::WriteToken wr(pcms16ne2c.set());
+    wr().resize(4096);
+    int size = poller->read(wr());
+    if(size >= 0)
+        wr().resize(size);
+}
 
+
+void AudioWriter::open() {
+#ifdef HAVE_LIBAV
+    writer = new AudioWriter_libav(STRING("z.audio" <<'.' <<MT::getNowString() <<".wav"));
+#else
+    writer = NULL;
+#endif
+}
+void AudioWriter::close() {
+    if(writer != NULL) {
+        delete writer;
+        writer = NULL;
+    }
+}
+void AudioWriter::step() {
+    if(writer == NULL) {
+        return;
+    }
+    writer->writeSamples_R44100_2C_S16_NE(pcms16ne2c.get());
+}
