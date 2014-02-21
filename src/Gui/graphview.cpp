@@ -116,14 +116,12 @@ void sGraphView::updateGraphvizGraph() {
   agedgeattr(gvGraph, STR("arrowsize"), STR(".5"));
   agedgeattr(gvGraph, STR("fontsize"), STR("6"));
   
-  uint i,j;
-  Item *e, *n;
   gvNodes.resize(G->N);
   
   //first add `nodes' (items without links)
-  for_list(i, e, (*G)) {
-    e->index=i;
-    CHECK(i==e->index,"");
+  for_list(Item,  e,  (*G)) {
+    e->index=e_COUNT;
+    CHECK(e_COUNT==e->index,"");
     MT::String label;
     if(e->keys.N) {
       label <<e->keys(0);
@@ -131,33 +129,33 @@ void sGraphView::updateGraphvizGraph() {
     } else {
       label <<'-';
     }
-    gvNodes(i) = agnode(gvGraph, STRING(e->index <<'_' <<label)); //, true);
-    if(e->keys.N) agset(gvNodes(i), STR("label"), label);
+    gvNodes(e_COUNT) = agnode(gvGraph, STRING(e->index <<'_' <<label)); //, true);
+    if(e->keys.N) agset(gvNodes(e_COUNT), STR("label"), label);
     if(e->parents.N) {
-      agset(gvNodes(i), STR("shape"), STR("box"));
-      agset(gvNodes(i), STR("fontsize"), STR("6"));
-      agset(gvNodes(i), STR("width"), STR(".1"));
-      agset(gvNodes(i), STR("height"), STR(".1"));
+      agset(gvNodes(e_COUNT), STR("shape"), STR("box"));
+      agset(gvNodes(e_COUNT), STR("fontsize"), STR("6"));
+      agset(gvNodes(e_COUNT), STR("width"), STR(".1"));
+      agset(gvNodes(e_COUNT), STR("height"), STR(".1"));
     } else {
-      agset(gvNodes(i), STR("shape"), STR("ellipse"));
+      agset(gvNodes(e_COUNT), STR("shape"), STR("ellipse"));
     }
   }
   
   //now all others
-  for_list(i, e, (*G)) {
+  { for_list(Item, e, (*G)) {
     /*if(e->parents.N==2){ //is an edge
       gvNodes(i) = (Agnode_t*)agedge(gvGraph, gvNodes(e->parents(0)->id), gvNodes(e->parents(1)->id)); //, STRING(i <<"_" <<e->name), true);
     }else*/ if(e->parents.N) {
-      for_list(j, n, e->parents) {
+      for_list(Item, n, e->parents) {
         Agedge_t *ge;
         if(n->index<e->index)
           ge=agedge(gvGraph, gvNodes(n->index), gvNodes(e->index)); //, STRING(n->name <<"--" <<e->name), true);
         else
           ge=agedge(gvGraph, gvNodes(e->index), gvNodes(n->index)); //, STRING(e->name <<"--" <<n->name), true);
-        agset(ge, STR("label"), STRING(j));
+        agset(ge, STR("label"), STRING(e_COUNT));
       }
     }
-  }
+    }}
   
   cout <<gvNodes <<endl;
 }

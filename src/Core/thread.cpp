@@ -345,8 +345,7 @@ void Thread::threadStep(uint steps, bool wait) {
 }
 
 void Thread::listenTo(const ConditionVariableL &signalingVars) {
-  uint i;  ConditionVariable *v;
-  for_list(i, v, signalingVars) listenTo(*v);
+  for_list(ConditionVariable,  v,  signalingVars) listenTo(*v);
 }
 
 void Thread::listenTo(ConditionVariable& v) {
@@ -461,18 +460,15 @@ void Thread::main() {
 //
 
 void stop(const ThreadL& P) {
-  Thread *p; uint i;
-  for_list(i, p, P) p->threadStop();
+  for_list(Thread,  p,  P) p->threadStop();
 }
 
 void wait(const ThreadL& P) {
-  Thread *p; uint i;
-  for_list(i, p, P) p->waitForIdle();
+  for_list(Thread,  p,  P) p->waitForIdle();
 }
 
 void close(const ThreadL& P) {
-  Thread *p; uint i;
-  for_list(i, p, P) p->threadClose();
+  for_list(Thread,  p,  P) p->threadClose();
 }
 
 //===========================================================================
