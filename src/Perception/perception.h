@@ -13,7 +13,6 @@
 #include <Core/array_t.h>
 #include <Gui/opengl.h>
 #include <map>
-#include "audio.h"
 
 //===========================================================================
 //
@@ -28,6 +27,8 @@ struct HoughLines;
 struct Patching;
 struct SURFfeatures;
 struct PerceptionOutput;
+class AudioPoller_PA;
+class AudioWriter_libav;
 
 //-- Module declarations
 BEGIN_MODULE(ImageViewer)      ACCESS(byteA, img)       END_MODULE()
