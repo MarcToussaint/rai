@@ -118,11 +118,11 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
   double alpha = 1.;
   double lambda = o.damping;
   double fx, fy;
+  arr gx, Hx, gy, Hy;
   arr Delta, y;
   uint evals=0;
 
   //compute initial costs
-  arr gx,Hx,gy,Hy;
   if(fx_user && gx_user && Hx_user) { //pre-condition!: assumes S is correctly evaluated at x!!
     if(sanityCheck) {
       fx = f.fs(gx, Hx, x);
@@ -151,7 +151,6 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
     if(o.verbose>1) cout <<"optNewton it=" <<it << " lambda=" <<lambda <<flush;
 
     //compute Delta
-#if 1
     //MT_MSG("\nx=" <<x <<"\ngx=" <<gx <<"\nHx=" <<Hx);
     arr R=Hx;
     if(lambda) { //Levenberg Marquardt damping
@@ -165,16 +164,6 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
     } else {
       lapack_Ainv_b_sym(Delta, R, -gx);
     }
-#else //this uses lapack's LLS minimizer - but is really slow!!
-    x.reshape(x.N);
-    if(lambda) {
-      arr D; D.setDiag(sqrt(.5*lambda),x.N);
-      J.append(D);
-      phi.append(zeros(x.N,1));
-    }
-    lapack_min_Ax_b(Delta, J, J*x - phi);
-    Delta -= x;
-#endif
     if(o.maxStep>0. && absMax(Delta)>o.maxStep)  Delta *= o.maxStep/absMax(Delta);
     if(o.verbose>1) cout <<" \t|Delta|=" <<absMax(Delta) <<flush;
 
