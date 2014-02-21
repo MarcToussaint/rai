@@ -12,7 +12,7 @@ public:
     virtual ~AudioWriter_libav();
 
     /// add audio samples with each sample in a signed 16bit value in the platform's native endianness
-    void writeSamples_R44100_2C_S16_NE(const byteA& samples);
+    void writeSamples_R48000_2C_S16_NE(const byteA& samples);
 };
 
 /// PulseAudio based audio grabber

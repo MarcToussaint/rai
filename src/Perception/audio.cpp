@@ -1,4 +1,6 @@
 #include "audio.h"
+#include <iostream>
+using namespace std;
 
 #include <Core/util.h>
 
@@ -19,7 +21,7 @@ private:
     AVStream *s;
 
 public:
-    sAudioWriter_libav(const char* filename, unsigned int sample_rate=44100, unsigned int num_channels=2) : codec(NULL), oc(NULL), s(NULL) {
+    sAudioWriter_libav(const char* filename) : codec(NULL), oc(NULL), s(NULL) {
         Lock lock(libav_open_mutex);
         avcodec_register_all();
         oc = avformat_alloc_context();
@@ -38,8 +40,8 @@ public:
             HALT("Could not allocate stream structure");
         }
         s->codec->sample_fmt = AV_SAMPLE_FMT_S16;
-        s->codec->sample_rate = sample_rate;
-        s->codec->channels = num_channels;
+        s->codec->sample_rate = 48000;
+        s->codec->channels = 2;
 
         // some formats want stream headers to be separate
         if(oc->oformat->flags & AVFMT_GLOBALHEADER)
@@ -101,9 +103,11 @@ AudioWriter_libav::~AudioWriter_libav() {
 #endif
 }
 
-void AudioWriter_libav::writeSamples_R44100_2C_S16_NE(const byteA &samples) {
+void AudioWriter_libav::writeSamples_R48000_2C_S16_NE(const byteA &samples) {
 #ifdef HAVE_LIBAV
     s->write(samples);
+#else
+    MT_MSG("writeSamples not available, because LIBAV is missing");
 #endif
 }
 
@@ -120,7 +124,7 @@ public:
     sAudioPoller_PA(const char* appname, const char* dev) {
         static const pa_sample_spec ss = {
             .format = PA_SAMPLE_S16NE,
-            .rate = 44100,
+            .rate = 48000,
             .channels = 2
         };
         int error;

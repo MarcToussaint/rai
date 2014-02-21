@@ -619,5 +619,5 @@ void AudioWriter::step() {
     if(writer == NULL) {
         return;
     }
-    writer->writeSamples_R44100_2C_S16_NE(pcms16ne2c.get());
+    writer->writeSamples_R48000_2C_S16_NE(pcms16ne2c.get());
 }
