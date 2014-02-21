@@ -792,7 +792,7 @@ template<class T> T* listFindByType(const MT::Array<T*>& L, const char* type); /
 template<class T, class LowerOperator> void listSort(MT::Array<T*>& L, LowerOperator lowerop);
 
 //TODO obsolete?
-template<class T> MT::Array<T*> LIST(const MT::Array<T>& A) {
+template<class T> MT::Array<T*> getList(const MT::Array<T>& A) {
   MT::Array<T*> L;
   resizeAs(L, A);
   for(uint i=0; i<A.N; i++) L.elem(i) = &A.elem(i);

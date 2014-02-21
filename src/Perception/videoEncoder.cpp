@@ -111,7 +111,9 @@ void sVideoEncoder_libav_simple::open(uint width, uint height){
     if (avcodec_open2(video_stream->codec, codec, &opts) < 0)
         HALT("Encoder failed to open");
 
-    if (avio_open(&container_context->pb, filename, URL_WRONLY) < 0) {
+    // 1 should be URL_WRONLY
+    HALT("URL_WRONLY wasn't defined. So I changed it to 1. Correct this!");
+    if (avio_open(&container_context->pb, filename, 1) < 0) {
         HALT("Could not open " << filename);
     }
     avformat_write_header(container_context, &opts);

@@ -24,7 +24,7 @@
 #include <ANN/ANN.h>
 
 struct sANN {
-  ANNbd_tree *tree;
+  ANNkd_tree *tree;
   //PartialLeastSquares pls;
   MT::Array<double*> cpointers;
   uint treeSize;   //for how many entries in X have we build the tree?
@@ -65,7 +65,7 @@ void ANN::calculate() {
   if(s->treeSize == X.d0) return;
   s->clear();
   X.getCarray(s->cpointers);
-  s->tree = new ANNbd_tree(s->cpointers.p, X.d0, X.d1);
+  s->tree = new ANNkd_tree(s->cpointers.p, X.d0, X.d1);
   s->treeSize = X.d0;
 }
 
