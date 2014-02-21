@@ -45,6 +45,13 @@ public:
         if(oc->oformat->flags & AVFMT_GLOBALHEADER)
             oc->flags |= CODEC_FLAG_GLOBAL_HEADER;
 
+        /* open it */
+        if (avcodec_open2(s->codec, codec, NULL) < 0)
+            HALT("Encoder failed to open");
+
+        if (avio_open(&(oc->pb), filename, URL_WRONLY) < 0) {
+            HALT("Could not open " << filename);
+        }
         avformat_write_header(oc, NULL);
     }
     ~sAudioWriter_libav() {
@@ -55,17 +62,19 @@ public:
     void write(const byteA& audio_samples) {
         AVPacket pkt;
         av_init_packet(&pkt);
+        pkt.data = NULL;
 
         AVFrame frame;
         frame.data[0] = audio_samples.p;
         frame.linesize[0] = audio_samples.d0;
+        frame.nb_samples = audio_samples.d0 / 4; // 2 channels, 2 bytes per sample
         frame.pts = AV_NOPTS_VALUE;
 
         // note: allocates data, so not most efficient, but should do
         int got_packet, ret;
 
-        if(!(ret = avcodec_encode_audio2(s->codec, &pkt, &frame, &got_packet))) {
-            HALT("Could not encode audio frame " << ret);
+        if((ret = avcodec_encode_audio2(s->codec, &pkt, &frame, &got_packet)) != 0) {
+            HALT("Could not encode audio frame: " << ret);
             return;
         }
         if(got_packet) {
@@ -147,11 +156,11 @@ AudioPoller_PA::~AudioPoller_PA() {
 #endif
 }
 
-int  AudioPoller_PA::read(byteA& buf) {
-    int size = 0;
+bool AudioPoller_PA::read(byteA& buf) {
 #ifdef HAVE_PULSEAUDIO
-    size = s->read(buf);
+    return(s->read(buf) >= 0);
+#else
+    MT_MSG("AudioPoller_PA::read not available, libpulse missing");
 #endif
-    return size;
 }
 

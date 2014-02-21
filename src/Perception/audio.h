@@ -25,8 +25,8 @@ public:
     AudioPoller_PA(const char* appname="mt_audiopoller", const char* dev=NULL);
     virtual ~AudioPoller_PA();
 
-    /// read from the device until buf is filled. returns number of bytes read, or -1 on error
-    int read(byteA &buf);
+    /// read from the device until buf is filled. returns true on success, false on EOF
+    bool read(byteA &buf);
 };
 
 #endif // AUDIO_H
