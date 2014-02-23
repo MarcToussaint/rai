@@ -383,6 +383,7 @@ struct FileToken{
 };
 template<class T> FileToken& operator>>(FileToken& fil, T& x){ fil.getIs() >>x;  return fil; }
 template<class T> FileToken& operator<<(FileToken& fil, const T& x){ fil.getOs() <<x;  return fil; }
+inline std::ostream& operator<<(std::ostream& os, FileToken& fil){ return os <<fil.name; }
 template<class T> void operator<<(T& x, FileToken& fil){ fil.getIs() >>x; }
 template<class T> void operator>>(const T& x, FileToken& fil){ fil.getOs() <<x; }
 }
