@@ -1,5 +1,6 @@
 #include "perception.h"
 #include "pointcloud.h"
+#include "audio.h"
 
 void lib_Perception(){ MT_MSG("loading"); }
 
@@ -8,7 +9,6 @@ void lib_Perception(){ MT_MSG("loading"); }
 #include "opencv.h"
 #include "libcolorseg.h"
 #include "videoEncoder.h"
-#include "audio.h"
 #include <Core/util_t.h>
 #include <Gui/opengl.h>
 
