@@ -377,7 +377,7 @@ struct FileToken{
   FileToken(const char* _filename, bool change_dir=true);
   ~FileToken();
   FileToken& operator()(){ return *this; }
-  void decomposeFilename(const char *filename);
+  void decomposeFilename();
   std::ofstream& getOs();
   std::ifstream& getIs();
 };
@@ -532,6 +532,25 @@ private:
 /// The global Rnd object
 extern Rnd rnd;
 }
+
+
+//===========================================================================
+//
+/// a little inotify wrapper
+//
+
+struct Inotify{
+  int fd, wd;
+  char *buffer;
+  uint buffer_size;
+  MT::FileToken *fil;
+  Inotify(const char *filename);
+  ~Inotify();
+  bool pollForModification(bool block=false, bool verbose=false);
+
+  void waitAndReport(){ pollForModification(false, true); }
+  void waitForModification(){ while(!pollForModification(true, false)); }
+};
 
 
 //===========================================================================

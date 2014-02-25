@@ -24,6 +24,8 @@
 #  include <sys/time.h>
 #  include <sys/times.h>
 #  include <sys/resource.h>
+#  include <sys/inotify.h>
+#  include <poll.h>
 #endif
 #ifdef __CYGWIN__
 #include "cygwin_compat.h"
@@ -890,8 +892,9 @@ MT::String MT::getNowString() {
 //
 
 MT::FileToken::FileToken(const char* filename, bool change_dir): os(NULL), is(NULL){
+  name=filename;
   if(change_dir){
-    decomposeFilename(filename);
+    decomposeFilename();
     if(path.N){
       cwd.resize(200, false);
       if(!getcwd(cwd.p, 200)) HALT("couldn't get current dir");
@@ -900,7 +903,6 @@ MT::FileToken::FileToken(const char* filename, bool change_dir): os(NULL), is(NU
       if(chdir(path)) HALT("couldn't change to directory " <<path);
     }
   }
-  else name=filename;
 }
 
 MT::FileToken::~FileToken(){
@@ -913,16 +915,15 @@ MT::FileToken::~FileToken(){
 }
 
 /// change to the directory of the given filename
-void MT::FileToken::decomposeFilename(const char* filename) {
-  path = filename;
+void MT::FileToken::decomposeFilename() {
+  path = name;
   int i=path.N;
   for(; i--;) if(path(i)=='/' || path(i)=='\\') break;
   if(i==-1) {
     path.clear();
-    name=filename;
   } else {
     path.resize(i, true);
-    name = filename+i+1;
+    name = name+i+1;
   }
 }
 
@@ -1034,6 +1035,73 @@ void  MT::Rnd::seed250(int32_t seed) {
   // Anfangszahlen verwerfen
   for(i=0; i<4711; ++i) rnd250();
 }
+
+
+//===========================================================================
+//
+// Inotify
+//
+
+Inotify::Inotify(const char* filename): fd(0), wd(0){
+  fd = inotify_init();
+  if(fd<0) HALT("Couldn't initialize inotify");
+  fil = new MT::FileToken(filename, false);
+  fil->decomposeFilename();
+  wd = inotify_add_watch( fd, fil->path,
+			  IN_MODIFY | IN_CREATE | IN_DELETE );
+  if(wd == -1) HALT("Couldn't add watch to " <<filename);
+  buffer_size = 10*(sizeof(struct inotify_event)+64); 
+  buffer = new char[buffer_size];
+}
+
+Inotify::~Inotify(){
+  inotify_rm_watch( fd, wd );
+  close( fd );
+  delete buffer;
+  delete fil;
+}
+
+bool Inotify::pollForModification(bool block, bool verbose){
+  if(!block){
+    struct pollfd fd_poll = {fd, POLLIN, 0};
+    int r = poll(&fd_poll, 1, 0);
+    CHECK(r>=0,"poll failed");
+    if(!r) return false;
+  }
+
+  int length = read( fd, buffer, buffer_size );
+  CHECK(length>=0, "read failed");
+
+  //-- process event list
+  for(int i=0;i<length;){
+    struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];
+    if(verbose){
+      if(event->len) {
+        if(event->mask & IN_CREATE)
+          cout << "The "
+               <<(event->mask&IN_ISDIR?"directory ":"file ")
+              <<event->name <<" was created." <<endl;
+        if ( event->mask & IN_DELETE )
+          cout << "The "
+               <<(event->mask&IN_ISDIR?"directory ":"file ")
+              <<event->name <<" was deleted." <<endl;
+        if ( event->mask & IN_MODIFY )
+          cout << "The "
+               <<(event->mask&IN_ISDIR?"directory ":"file ")
+              <<event->name <<" was modified." <<endl;
+      }else{
+        cout <<"event of zero length" <<endl;
+      }
+    }
+    if(event->len
+       && (event->mask & (IN_MODIFY|IN_CREATE|IN_DELETE))
+       && !strcmp(event->name, fil->name.p) ) return true; //report modification on specific file
+    i += sizeof(struct inotify_event) + event->len;
+  }
+
+  return false;
+}
+
 
 
 //===========================================================================
