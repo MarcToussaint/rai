@@ -137,6 +137,7 @@ double realTime(); //(since process start)
 double cpuTime();
 double sysTime();
 double totalTime();
+double toTime(const tm& t);
 char *date();
 #ifndef EXAMPLES_AS_TESTS
 void __do_wait(double sec, bool msg_on_fail=true);

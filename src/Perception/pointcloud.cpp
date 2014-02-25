@@ -531,7 +531,7 @@ void ObjectTransformator::step() {
   kinect_objects->deAccess(this);
   DEBUG(pointcloud, "filtered Objects mutex unlock");
 
-  geo().ors.calcBodyFramesFromJoints();
+  geo().ors.calc_fwdPropagateFrames();
   DEBUG(pointcloud, "set ors");
   geo.var->set_ors(geo().ors, this);
   DEBUG(pointcloud, "done.");
