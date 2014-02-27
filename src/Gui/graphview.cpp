@@ -74,8 +74,8 @@ GraphView::GraphView(KeyValueGraph& G, const char* title, void *container) {
   s->p=this;
   s->title=title;
   s->container=GTK_WIDGET(container);
-  s->init();
   s->G = &G;
+  s->init();
 }
 
 GraphView::~GraphView() {
@@ -283,15 +283,15 @@ bool sGraphView::on_drawingarea_configure_event(GtkWidget       *widget,        
   gv = (sGraphView*)g_object_get_data(G_OBJECT(widget),"GraphvizGtk");
   job = gv->gvJob();
   if(!job) return false;
-  if(!job->has_been_rendered) {
-    zoom_to_fit = 1.0;
+//  if(!job->has_been_rendered) {
+//    zoom_to_fit = 1.0;
 //    MT::MIN((double) event->width / (double) job->width, (double) event->height / (double) job->height);
 //    if(zoom_to_fit < 1.0)  /* don't make bigger */
 //      job->zoom *= zoom_to_fit;
-  } else if(job->fit_mode) {
+//  } else if(job->fit_mode) {
     zoom_to_fit = MT::MIN((double) event->width / (double) job->width, (double) event->height / (double) job->height);
     job->zoom *= zoom_to_fit;
-  }
+//  }
   if(event->width > (int)job->width || event->height > (int)job->height)
     job->has_grown = TRUE;
   job->width = event->width;

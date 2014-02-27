@@ -181,14 +181,16 @@ bool contains(const char *s, char c) {
 }
 
 /// skips the chars (typically white characters) when parsing from the istream, returns first non-skipped char
-char skip(std::istream& is, const char *skipchars, bool skipCommentLines) {
+char skip(std::istream& is, const char *skipSymbols, const char *stopSymbols, bool skipCommentLines) {
   char c;
   for(;;) {
     c=is.get();
     if(skipCommentLines && c=='#') { skipRestOfLine(is); continue; }
-    if(!contains(skipchars, c)) { is.putback(c); break; }
+    if(skipSymbols && !contains(skipSymbols, c)) break;
+    if(stopSymbols && contains(stopSymbols, c)) break;
     if(c=='\n') lineCount++;
   }
+  is.putback(c);
   return c;
 }
 
@@ -205,17 +207,17 @@ void skipOne(std::istream& is) {
 }
 
 /// tell you about the next char (after skip()) but puts it back in the stream
-char getNextChar(std::istream& is, const char *skipchars, bool skipCommentLines) {
+char getNextChar(std::istream& is, const char *skipSymbols, bool skipCommentLines) {
   char c;
-  skip(is, skipchars, skipCommentLines);
+  skip(is, skipSymbols, NULL, skipCommentLines);
   is.get(c);
   if(!is.good()) return 0;
   return c;
 }
 
 /// tell you about the next char (after skip()) but puts it back in the stream
-char peerNextChar(std::istream& is, const char *skipchars, bool skipCommentLines) {
-  char c=getNextChar(is, skipchars, skipCommentLines);
+char peerNextChar(std::istream& is, const char *skipSymbols, bool skipCommentLines) {
+  char c=getNextChar(is, skipSymbols, skipCommentLines);
   if(!is.good()) return 0;
   is.putback(c);
   return c;
@@ -920,7 +922,7 @@ void MT::FileToken::decomposeFilename() {
   int i=path.N;
   for(; i--;) if(path(i)=='/' || path(i)=='\\') break;
   if(i==-1) {
-    path.clear();
+    path=".";
   } else {
     path.resize(i, true);
     name = name+i+1;

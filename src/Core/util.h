@@ -88,11 +88,11 @@ std::ofstream& log(const char *name="MT.log");
 
 //----- strings and streams
 bool contains(const char *s, char c);
-char skip(std::istream& is, const char *skipchars=" \n\r\t", bool skipCommentLines=true);
+char skip(std::istream& is, const char *skipSymbols=" \n\r\t", const char *stopSymbols=NULL, bool skipCommentLines=true);
 void skipRestOfLine(std::istream& is);
 void skipOne(std::istream& is);
-char getNextChar(std::istream& is, const char *skipchars=" \n\r\t", bool skipCommentLines=true);
-char peerNextChar(std::istream& is, const char *skipchars=" \n\r\t", bool skipCommentLines=true);
+char getNextChar(std::istream& is, const char *skipSymbols=" \n\r\t", bool skipCommentLines=true);
+char peerNextChar(std::istream& is, const char *skipSymbols=" \n\r\t", bool skipCommentLines=true);
 bool parse(std::istream& is, const char *str, bool silent=false);
 bool skipUntil(std::istream& is, const char *tag);
 
@@ -549,7 +549,7 @@ struct Inotify{
   bool pollForModification(bool block=false, bool verbose=false);
 
   void waitAndReport(){ pollForModification(false, true); }
-  void waitForModification(){ while(!pollForModification(true, false)); }
+  void waitForModification(bool verbose=false){ while(!pollForModification(true, verbose)); }
 };
 
 
