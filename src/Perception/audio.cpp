@@ -51,7 +51,7 @@ public:
         if (avcodec_open2(s->codec, codec, NULL) < 0)
             HALT("Encoder failed to open");
 
-        if (avio_open(&(oc->pb), filename, URL_WRONLY) < 0) {
+        if (avio_open(&(oc->pb), filename, AVIO_FLAG_WRITE) < 0) {
             HALT("Could not open " << filename);
         }
         avformat_write_header(oc, NULL);
