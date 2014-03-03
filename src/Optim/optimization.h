@@ -194,6 +194,7 @@ extern OptOptions globalOptOptions;
 #define _OPT_N2(obj, N, ...) _OPT_ ## N(obj, __VA_ARGS__)
 #define _OPT_N1(obj, N, ...) _OPT_N2(obj, N, __VA_ARGS__) //this forces that _NUM_ARGS(...) is expanded to a number N
 #define OPT(...)     (_OPT_N1(globalOptOptions, _NUM_ARGS(__VA_ARGS__), __VA_ARGS__) , globalOptOptions)
+#define NOOPT (globalOptOptions)
 
 #ifdef  MT_IMPLEMENTATION
 #  include "optimization.cpp"
