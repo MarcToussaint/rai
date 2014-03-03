@@ -8,3 +8,4 @@ install_manifest.txt
 CMakeFiles
 *.bak
 
+share/gofMake/config.mk
