@@ -337,6 +337,15 @@ void Thread::threadClose() {
 #endif
 }
 
+void Thread::threadCancel() {
+  int rc;
+  if(thread){
+    rc = pthread_cancel(thread);     if(rc) HALT("pthread_cancel failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+    rc = pthread_join(thread, NULL);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  }
+  thread=0;
+}
+
 void Thread::threadStep(uint steps, bool wait) {
   if(isClosed()) threadOpen();
   //CHECK(state.value==tsIDLE, "never step while thread is busy!");
