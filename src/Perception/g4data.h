@@ -5,6 +5,7 @@
 
 struct G4Data {
   KeyValueGraph kvg;
+  StringA names;
   uint numS, numF, numT;
 
   G4Data();
@@ -13,6 +14,8 @@ struct G4Data {
   void load(const char *data_fname, const char *meta_fname, const char *poses_fname, bool interpolate = false);
   void save(const char *data_fname);
 
+  bool isAgent(const String &b);
+  bool isObject(const String &b);
   StringA getNames();
   String getName(uint i);
 
