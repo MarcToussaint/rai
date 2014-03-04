@@ -1,31 +1,35 @@
 #pragma once
 
 #include <Core/array.h>
+#include <Core/keyValueGraph.h>
 
 struct G4Data {
-  struct sG4Data *s;
+  KeyValueGraph kvg;
+  uint numS, numF, numT;
 
   G4Data();
-  ~G4Data();
+ ~G4Data();
 
-  void loadData(const char *meta_fname, const char *poses_fname, bool interpolate = false);
+  void load(const char *data_fname, const char *meta_fname, const char *poses_fname, bool interpolate = false);
+  void save(const char *data_fname);
 
-  StringA& getNames() const;
-  String& getName(uint i) const;
+  StringA getNames();
+  String getName(uint i);
 
-  uint getNumFrames() const;
-  uint getNumSensors(const char *key = NULL) const;
+  uint getNumTypes();
+  uint getNumFrames();
+  uint getNumSensors();
+  uint getNumDim(const char *type);
+  uint getNum(const char *key = NULL);
 
-  boolA getMissing() const;
-  MT::Array<intA> getMissingNo() const;
-  MT::Array<intA> getMissingF() const;
+  template<typename T>
+  void appendMeta(const char *name, const T &data);
+  void appendBam(const char *name, const arr &data);
 
-  arr query(uint t, const char *key = NULL) const;
-  arr query(const char *key = NULL) const;
-
-  arr queryPos(uint t, const char *key = NULL) const;
-  arr queryPos(const char *key = NULL) const;
-
-  arr queryQuat(uint t, const char *key = NULL) const;
-  arr queryQuat(const char *key = NULL) const;
+  bool hasBAM(const char *type);
+  arr query(const char *type);
+  arr query(const char *type, const char *sensor);
+  arr query(const char *type, const char *sensor, uint f);
 };
+
+#include "g4data_t.h"
