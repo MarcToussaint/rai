@@ -378,8 +378,9 @@ struct FileToken{
   ~FileToken();
   FileToken& operator()(){ return *this; }
   void decomposeFilename();
-  std::ofstream& getOs();
-  std::ifstream& getIs();
+  std::ostream& getOs();
+  std::istream& getIs();
+  operator std::istream&(){ return getIs(); }
 };
 template<class T> FileToken& operator>>(FileToken& fil, T& x){ fil.getIs() >>x;  return fil; }
 template<class T> FileToken& operator<<(FileToken& fil, const T& x){ fil.getOs() <<x;  return fil; }

@@ -929,7 +929,7 @@ void MT::FileToken::decomposeFilename() {
   }
 }
 
-std::ofstream& MT::FileToken::getOs(){
+std::ostream& MT::FileToken::getOs(){
   CHECK(!is,"don't use a FileToken both as input and output");
   if(!os){
     os=new std::ofstream;
@@ -940,7 +940,7 @@ std::ofstream& MT::FileToken::getOs(){
   return *os;
 }
 
-std::ifstream& MT::FileToken::getIs(){
+std::istream& MT::FileToken::getIs(){
   CHECK(!os,"don't use a FileToken both as input and output");
   if(!is){
     is=new std::ifstream;
