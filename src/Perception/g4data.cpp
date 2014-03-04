@@ -3,6 +3,14 @@
 #include <Core/util.h>
 #include <Core/geo.h>
 #include <Core/keyValueGraph.h>
+#include <Core/array_t.h>
+#include <Core/registry.h>
+
+// TODO not working
+//REGISTER_TYPE(boolA);
+//REGISTER_TYPE(uintA);
+//REGISTER_TYPE(intA);
+//REGISTER_TYPE(StringA);
 
 G4Data::G4Data() { }
 G4Data::~G4Data() { }
@@ -18,6 +26,11 @@ void G4Data::load(const char *data_fname, const char *meta_fname, const char *po
     numS = *kvg.getValue<double>("numS");
     numF = *kvg.getValue<double>("numF");
     numT = kvg.getItems("bam").N;
+    names = *kvg.getValue<String>("names");
+    MT::Array<KeyValueGraph*> sensors = kvg.getTypedValues<KeyValueGraph>("sensor");
+    for(uint i = 0; i < numS; i++)
+      names.append(*sensors(i)->getValue<String>("name"));
+    //kvg.append("names", new StringA(names));
     return;
   }
   catch(const char *e) {
@@ -26,7 +39,6 @@ void G4Data::load(const char *data_fname, const char *meta_fname, const char *po
 
   kvg << FILE(meta_fname);
 
-  StringA names;
   MT::Array<KeyValueGraph*> sensors = kvg.getTypedValues<KeyValueGraph>("sensor");
   numS = sensors.N;
 
@@ -154,12 +166,22 @@ void G4Data::save(const char *data_fname) {
   cout << " DONE!" << endl;
 }
 
+bool G4Data::isAgent(const String &b) {
+  return kvg.getItem("sensor", b)->value<KeyValueGraph>()->getValue<bool>("agent") != NULL;
+}
+
+bool G4Data::isObject(const String &b) {
+  return kvg.getItem("sensor", b)->value<KeyValueGraph>()->getValue<bool>("object") != NULL;
+}
+
 StringA G4Data::getNames() {
-  return *kvg.getItem("meta", "names")->value<StringA>();
+  return names;
+  //return *kvg.getItem("meta", "names")->value<StringA>();
 }
 
 String G4Data::getName(uint i) {
-  return kvg.getItem("meta", "names")->value<StringA>()->elem(i);
+  return names(i);
+  //return kvg.getItem("meta", "names")->value<StringA>()->elem(i);
 }
 
 uint G4Data::getNumTypes() {

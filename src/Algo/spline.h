@@ -35,8 +35,8 @@ struct Spline {
   Spline(uint T, arr& X, uint degree=2){ setUniformNonperiodicBasis(T, X.d0-1, degree); points=X; }
 
   /// two methods to get the coefficients -- the first analytic, the second buggy and recursive
-  double getCoeff(double t, double t2, bool getVels=false) const;
-  arr getCoeffs(double time, uint K, bool velocities=false) const;
+  double getCoeff(double t, double t2, uint der=0) const;
+  arr getCoeffs(double time, uint K, uint der=0) const;
 
   /// core method to evaluate the spline at an arbitrary point
   arr eval(double t, bool velocities=false) const;
@@ -50,6 +50,7 @@ struct Spline {
 
   arr eval(uint t) const;
   arr eval() const;
+  arr smooth(double lambda) const;
 
   /// gradient w.r.t. the points (trivial: mapping is linear)
   void partial(arr& grad_points, const arr& grad_path) const;
