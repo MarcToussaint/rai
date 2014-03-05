@@ -7,4 +7,5 @@ cmake_install.cmake
 install_manifest.txt
 CMakeFiles
 *.bak
+NOBUILD
 

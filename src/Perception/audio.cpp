@@ -51,7 +51,7 @@ public:
         if (avcodec_open2(s->codec, codec, NULL) < 0)
             HALT("Encoder failed to open");
 
-        if (avio_open(&(oc->pb), filename, URL_WRONLY) < 0) {
+        if (avio_open(&(oc->pb), filename, AVIO_FLAG_WRITE) < 0) {
             HALT("Could not open " << filename);
         }
         avformat_write_header(oc, NULL);
@@ -122,11 +122,11 @@ private:
     pa_simple *pa;
 public:
     sAudioPoller_PA(const char* appname, const char* dev) {
-        static const pa_sample_spec ss = {
-            .format = PA_SAMPLE_S16NE,
-            .rate = 48000,
-            .channels = 2
-        };
+        pa_sample_spec ss;
+        ss.format = PA_SAMPLE_S16NE;
+        ss.rate = 48000;
+        ss.channels = 2;
+
         int error;
         if (!(pa = pa_simple_new(NULL, appname, PA_STREAM_RECORD, dev, "record", &ss, NULL, NULL, &error))) {
             HALT(": pa_simple_new() failed: " << pa_strerror(error));

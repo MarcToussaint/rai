@@ -1,5 +1,6 @@
 #include "perception.h"
 #include "pointcloud.h"
+#include "audio.h"
 
 void lib_Perception(){ MT_MSG("loading"); }
 
@@ -8,7 +9,6 @@ void lib_Perception(){ MT_MSG("loading"); }
 #include "opencv.h"
 #include "libcolorseg.h"
 #include "videoEncoder.h"
-#include "audio.h"
 #include <Core/util_t.h>
 #include <Gui/opengl.h>
 
@@ -73,7 +73,7 @@ struct sVideoEncoder{
 };
 
 void VideoEncoder::open(){
-  s = new sVideoEncoder(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".avi"), fps, is_rgb);
+  s = new sVideoEncoder(STRING("z." <<img.var->name <<'.' <<MT::getNowString() <<".avi"), fps, is_rgb);
 }
 
 void VideoEncoder::close(){
@@ -116,7 +116,7 @@ struct sVideoEncoderX264{
 };
 
 void VideoEncoderX264::open(){
-    s = new sVideoEncoderX264(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".264"), fps, is_rgb);
+    s = new sVideoEncoderX264(STRING("z." <<img.var->name <<'.' <<MT::getNowString() <<".264"), fps, is_rgb);
 }
 
 void VideoEncoderX264::close(){
