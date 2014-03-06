@@ -275,6 +275,13 @@ arr G4Data::query(const char *type, const char *sensor, uint f) {
 
 void G4Data::appendBam(const char *name, const arr &data) {
   cout << " * Appending bam: " << name << endl;
-  kvg.append("bam", name, new arr(data));
+  Item *i = kvg.getItem("bam", name);
+
+  if(!i)
+    kvg.append("bam", name, new arr(data));
+  else {
+    cout << " *** bam already exists. Replacing." << endl;
+    *i->value<arr>() = data;
+  }
 }
 
