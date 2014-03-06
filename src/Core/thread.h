@@ -110,7 +110,7 @@ struct Thread{
   ConditionVariableL listensTo;
   //ParameterL dependsOn;
   pid_t tid;                     ///< system thread id
-#ifndef MT_QT
+#ifndef MT_QThread
   pthread_t thread;
 #else
   struct sThread *thread;
