@@ -29,6 +29,9 @@ public:
             HALT("Could not allocate format context");
         }
         oc->oformat = mt_guess_format(filename, DEFAULT_CONTAINER);
+        if(!oc->oformat) {
+            HALT("Could not guess format for " << filename);
+        }
         oc->audio_codec_id = CODEC_ID_PCM_S16LE;       
         codec = avcodec_find_encoder(oc->audio_codec_id);
         if(!codec)

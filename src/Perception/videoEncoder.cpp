@@ -75,6 +75,9 @@ void sVideoEncoder_libav_simple::open(uint width, uint height){
         HALT("Allocation error for format context");
     }
     container_context->oformat = mt_guess_format(filename, DEFAULT_CONTAINER);
+    if(!container_context->oformat) {
+        HALT("Could not guess format for " << filename);
+    }
     container_context->video_codec_id = CODEC_ID_H264;
     codec = avcodec_find_encoder(container_context->video_codec_id);
     if (!codec)
