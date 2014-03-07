@@ -18,7 +18,7 @@ G4Data::~G4Data() { }
 void G4Data::load(const char *data_fname, const char *meta_fname, const char *poses_fname, bool interpolate) {
   int hid, sid, hsi, hstoiN, hstoiNprev;
 
-  try {
+  if(data_fname) try {
     cout << " * Loading data from '" << data_fname << "'." << endl;
     // TODO how to avoid the following from printing???
     kvg << FILE(data_fname);
@@ -68,12 +68,15 @@ void G4Data::load(const char *data_fname, const char *meta_fname, const char *po
   bool m;
   boolA pm(numS);
   pm.setZero(false);
-  arr data;
+  uint currfnum;
+  double currtstamp;
+  arr data, tstamp;
   boolA missing;
   MT::Array<intA> missingno(numS), missingf(numS);
   for(numF = 0; ; numF++) {
-    fil >> x;
+    fil >> currfnum >> currtstamp >> x;
     if(!x.N || !fil.good()) break;
+    tstamp.append(currtstamp);
     for(uint i = 0; i < numS; i++) {
       hsi = itohs(i);
       if(hsi != -1) {
