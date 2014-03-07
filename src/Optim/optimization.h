@@ -139,6 +139,8 @@ struct OptOptions {
   double minStep;
   double maxStep;
   double damping;
+  double stepInc, stepDec;
+  double dampingInc, dampingDec;
   bool useAdaptiveDamping;
   bool clampInitialState;
   ConstrainedMethodType constrainedMethod;

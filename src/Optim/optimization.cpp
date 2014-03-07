@@ -99,6 +99,8 @@ OptOptions::OptOptions() {
   minStep=-1.;
   maxStep=-1.;
   damping=1.;
+  stepInc=.2; stepDec=.1;
+  dampingInc=1.; dampingDec=.7;
   useAdaptiveDamping=false;
   clampInitialState=false;
   constrainedMethod=augmentedLag;
@@ -187,25 +189,18 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
         fx = fy;
         gx = gy;
         Hx = Hy;
-        if(o.useAdaptiveDamping) { //Levenberg-Marquardt type damping
-          lambda = .2*lambda;
-        } else {
-          if(alpha>.9) lambda = .5*lambda;
-          alpha = pow(alpha, 0.5);
-        }
+//          if(alpha>.9) lambda = .5*lambda;
+//          alpha = pow(alpha, 0.5);
+        lambda = lambda*o.dampingDec;
+        alpha = 1. - (1.-alpha)*(1.-o.stepInc);
         break;
       } else {
         if(o.verbose>1) cout <<" - reject" <<std::endl;
         //reject new points and adapte stepsize|damping
-        if(o.useAdaptiveDamping) { //Levenberg-Marquardt type damping
-          lambda = 10.*lambda;
-          break;
-        } else {
-          if(alpha*absMax(Delta)<1e-3*o.stopTolerance || evals>o.stopEvals) break; //WARNING: this may lead to non-monotonicity -> make evals high!
-//          if(alpha<1e-2) lambda = pow(lambda, 0.5);
-          alpha = .1*alpha;
-//          break;
-        }
+        if(alpha*absMax(Delta)<1e-3*o.stopTolerance || evals>o.stopEvals) break; //WARNING: this may lead to non-monotonicity -> make evals high!
+        lambda = lambda*o.dampingInc;
+        alpha = alpha*o.stepDec;
+        if(o.dampingInc!=1.) break; //we need to recompute Delta
       }
     }
 
