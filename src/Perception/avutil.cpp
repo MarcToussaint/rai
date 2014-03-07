@@ -4,6 +4,15 @@
 
 #ifdef HAVE_LIBAV
 
+Mutex libav_open_mutex;
+
+namespace MLR {
+void register_libav() {
+    Lock avlock(libav_open_mutex);
+    av_register_all();
+    avcodec_register_all();
+}
+
 AVOutputFormat* mt_guess_format(const char* filename, const char* DEF_FORMAT) {
  AVOutputFormat* fmt = av_guess_format(NULL, filename, NULL);
     if(!fmt) {
@@ -15,6 +24,8 @@ AVOutputFormat* mt_guess_format(const char* filename, const char* DEF_FORMAT) {
         }
     }
     return fmt;
+}
+
 }
 
 #endif // HAVE_LIBAV

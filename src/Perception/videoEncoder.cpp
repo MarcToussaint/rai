@@ -15,8 +15,7 @@ extern "C"{
 namespace {
     const char* DEFAULT_CONTAINER = "avi";
 }
-
-Mutex libav_open_mutex;
+using namespace MLR;
 
 struct sVideoEncoder_libav_simple{
     MT::String filename;
@@ -66,8 +65,7 @@ void VideoEncoder_libav_simple::close(){ if(s->isOpen) s->close(); }
 //==============================================================================
 
 void sVideoEncoder_libav_simple::open(uint width, uint height){
-    Lock avlock(libav_open_mutex);
-    avcodec_register_all();
+    register_libav();
 
     // prepare container context
     container_context = avformat_alloc_context();
