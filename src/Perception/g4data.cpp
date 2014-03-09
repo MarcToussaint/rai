@@ -18,7 +18,7 @@ G4Data::~G4Data() { }
 void G4Data::load(const char *data_fname, const char *meta_fname, const char *poses_fname, bool interpolate) {
   int hid, sid, hsi, hstoiN, hstoiNprev;
 
-  try {
+  if(data_fname) try {
     cout << " * Loading data from '" << data_fname << "'." << endl;
     // TODO how to avoid the following from printing???
     kvg << FILE(data_fname);
@@ -68,12 +68,15 @@ void G4Data::load(const char *data_fname, const char *meta_fname, const char *po
   bool m;
   boolA pm(numS);
   pm.setZero(false);
-  arr data;
+  uint currfnum;
+  double currtstamp;
+  arr data, tstamp;
   boolA missing;
   MT::Array<intA> missingno(numS), missingf(numS);
   for(numF = 0; ; numF++) {
-    fil >> x;
+    fil >> currfnum >> currtstamp >> x;
     if(!x.N || !fil.good()) break;
+    tstamp.append(currtstamp);
     for(uint i = 0; i < numS; i++) {
       hsi = itohs(i);
       if(hsi != -1) {
@@ -275,6 +278,13 @@ arr G4Data::query(const char *type, const char *sensor, uint f) {
 
 void G4Data::appendBam(const char *name, const arr &data) {
   cout << " * Appending bam: " << name << endl;
-  kvg.append("bam", name, new arr(data));
+  Item *i = kvg.getItem("bam", name);
+
+  if(!i)
+    kvg.append("bam", name, new arr(data));
+  else {
+    cout << " *** bam already exists. Replacing." << endl;
+    *i->getValue<arr>() = data;
+  }
 }
 

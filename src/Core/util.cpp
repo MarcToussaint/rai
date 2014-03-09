@@ -1258,6 +1258,7 @@ template void MT::getParameter(bool&, const char*, const bool&);
 template void MT::getParameter(double&, const char*);
 template void MT::getParameter(double&, const char*, const double&);
 template void MT::getParameter(MT::String&, const char*, const MT::String&);
+template void MT::getParameter(MT::String&, const char*);
 
 template int MT::getParameter<int>(const char*);
 template int  MT::getParameter<int>(const char*, const int&);

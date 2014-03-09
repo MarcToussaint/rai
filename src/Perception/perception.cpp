@@ -73,7 +73,7 @@ struct sVideoEncoder{
 };
 
 void VideoEncoder::open(){
-  s = new sVideoEncoder(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".avi"), fps, is_rgb);
+  s = new sVideoEncoder(STRING("z." <<img.var->name <<'.' <<MT::getNowString() <<".avi"), fps, is_rgb);
 }
 
 void VideoEncoder::close(){
@@ -116,7 +116,7 @@ struct sVideoEncoderX264{
 };
 
 void VideoEncoderX264::open(){
-    s = new sVideoEncoderX264(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".264"), fps, is_rgb);
+    s = new sVideoEncoderX264(STRING("z." <<img.var->name <<'.' <<MT::getNowString() <<".264"), fps, is_rgb);
 }
 
 void VideoEncoderX264::close(){
