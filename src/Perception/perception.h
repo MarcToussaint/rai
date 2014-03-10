@@ -27,6 +27,8 @@ struct HoughLines;
 struct Patching;
 struct SURFfeatures;
 struct PerceptionOutput;
+class AudioPoller_PA;
+class AudioWriter_libav;
 
 //-- Module declarations
 BEGIN_MODULE(ImageViewer)      ACCESS(byteA, img)       END_MODULE()
@@ -42,6 +44,8 @@ BEGIN_MODULE(Patcher)          ACCESS(byteA, rgbImage)  ACCESS(Patching, patchIm
 BEGIN_MODULE(SURFer)           ACCESS(byteA, grayImage) ACCESS(SURFfeatures, features)  END_MODULE()
 BEGIN_MODULE(HoughLineFilter)  ACCESS(byteA, grayImage) ACCESS(HoughLines, houghLines)  END_MODULE()
 BEGIN_MODULE(ShapeFitter)      ACCESS(floatA, eviL)     ACCESS(floatA, eviR)            ACCESS(PerceptionOutput, perc)      END_MODULE()
+BEGIN_MODULE(AudioReader)    AudioPoller_PA *poller; ACCESS(byteA, pcms16ne2c) END_MODULE()
+BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; ACCESS(byteA, pcms16ne2c) END_MODULE()
 
 template<class T>
 struct GenericDisplayViewer : Module {
@@ -49,7 +53,7 @@ struct GenericDisplayViewer : Module {
   ACCESS(T, var);
   GenericDisplayViewer(): Module("GenericDisplayViewer"), gl(NULL) {} \
   virtual void open(){ gl = new OpenGL(STRING("ImageViewer '"<<var.var->name()<<'\'')); }
-  virtual void step(){ gl->background = var.get()().display; gl->update(); }
+  virtual void step(){ gl->background = var.get()->display; gl->update(); }
   virtual void close(){ delete gl; }
 };
 struct VideoEncoder : public Module {

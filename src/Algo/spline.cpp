@@ -31,9 +31,9 @@ void Spline::setBasis(uint T, uint K) {
 }
 
 // returns the spline coefficients: it is guaranteed that if t1 (or t2) is summed over a grid of stepsizes 1, this sums to 1
-double Spline::getCoeff(double t, double t2, bool getVels) const{
+double Spline::getCoeff(double t, double t2, uint der) const{
   double dt=t-t2;
-  if(!getVels){
+  if(der == 0) {
     if(degree==0){
       if(dt<-.5 || dt>=.5) return 0.;
       return 1.;
@@ -63,7 +63,7 @@ double Spline::getCoeff(double t, double t2, bool getVels) const{
       if(dt<=4.) return (   -dt3 + 12.*dt2 - 48.*dt + 64.)/6.;
       // from http://en.wikipedia.org/wiki/IrwinE2%80%93Hall_distribution#Special_cases
     }
-  }else{
+  }else if(der == 1){
     if(degree==0) return 0.;
     if(degree==1){
       if(dt<-1. || dt>=1.) return 0.;
@@ -88,33 +88,47 @@ double Spline::getCoeff(double t, double t2, bool getVels) const{
       // from http://en.wikipedia.org/wiki/IrwinE2%80%93Hall_distribution#Special_cases
     }
   }
-  HALT("nigher degrees not yet done");
+  HALT("nigher derivates or degrees not yet done");
   return 0.;
 }
 
-arr Spline::getCoeffs(double time, uint K, bool velocities) const {
-  arr b(K+1), b_0(K+1), db(K+1), db_0(K+1);
+arr Spline::getCoeffs(double time, uint K, uint der) const {
+  arr b(K+1), b_0(K+1), db(K+1), db_0(K+1), ddb(K+1), ddb_0(K+1);
   for(uint p=0; p<=degree; p++) {
     b_0=b; b.setZero();
-    db_0=b; db.setZero();
+    db_0=db; db.setZero();
+    ddb_0=ddb; ddb.setZero();
     for(uint k=0; k<=K; k++) {
       if(!p) {
         if(times(k)<=time && time<times(k+1)) b(k)=1.;
         if(k==K && time>=times(k+1)) b(k)=1.;
       } else {
-        double x = DIV(time-times(k), times(k+p)-times(k), true);
+        double xnom = time - times(k);
+        double xden = times(k+p) - times(k);
+        double x = DIV(xnom, xden, true);
         b(k) = x * b_0(k);
-        db(k) = DIV(1., times(k+p)-times(k), true) * b_0(k) + x * db_0(k);
+        db(k) = DIV(1., xden, true) * b_0(k) + x * db_0(k);
+        ddb(k) = DIV(2., xden, true) * db_0(k) + x * ddb_0(k);
         if(k<K) {
-          double y = DIV(times(k+p+1)-time, times(k+p+1)-times(k+1), true);
+          double ynom = times(k+p+1) - time;
+          double yden = times(k+p+1) - times(k+1);
+          double y = DIV(ynom, yden, true);
           b(k) += y * b_0(k+1);
-          db(k) += DIV(-1., times(k+p+1)-times(k+1), true) * b_0(k+1) + y * db_0(k+1);
+          db(k) += DIV(-1., yden, true) * b_0(k+1) + y * db_0(k+1);
+          ddb(k) += DIV(-2., yden, true) * db_0(k+1) + y * ddb_0(k+1);
         }
       }
     }
   }
-  if(velocities) return db;
-  return b;
+  switch(der) {
+    case 0:
+      return b;
+    case 1:
+      return db;
+    case 2:
+      return ddb;
+  }
+  HALT("Derivate of order " << der << " not yet implemented.");
 }
 
 void Spline::setBasisAndTimeGradient(uint T, uint K) {
@@ -197,6 +211,18 @@ arr Spline::eval(double t, bool velocities) const {
 arr Spline::eval(uint t) const { return (~basis[t]*points).reshape(points.d1); };
 
 arr Spline::eval() const { return basis*points; };
+
+arr Spline::smooth(double lambda) const {
+  CHECK(lambda >= 0, "Lambda must be non-negative");
+  uint T = basis.d0 - 1;
+  uint K = basis.d1 - 1;
+  arr ddbasis(T+1, K+1);
+  for(uint t=0; t<=T; t++)
+    ddbasis[t] = getCoeffs((double)t/K, K, 2);
+  
+  arr A = ~ddbasis * ddbasis / (double)T;
+  return inverse(eye(K+1) + lambda*A)*points;
+}
 
 void Spline::partial(arr& grad_points, const arr& grad_path) const {
   CHECK(grad_path.d0==points.d0 && grad_path.d1==points.d1, "");

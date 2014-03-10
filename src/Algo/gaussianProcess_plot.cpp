@@ -1,7 +1,7 @@
 #include "gaussianProcess.h"
 #include <Gui/plot.h>
 
-inline void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause){
+void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause){
   arr X, Y, Z, S;
   uint dim;
   //there should be at least 1 observation to guess the dimensionality from
@@ -34,7 +34,7 @@ inline void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause){
   plot(pause);
 }
 
-inline void plotKernel1D(GaussianProcess& gp, double lo, double hi, bool pause){
+void plotKernel1D(GaussianProcess& gp, double lo, double hi, bool pause){
   arr X, K, KD1, KD2;
   X.setGrid(1, lo, hi, 600);
   K.resize(X.d0);
@@ -53,7 +53,7 @@ inline void plotKernel1D(GaussianProcess& gp, double lo, double hi, bool pause){
   plot(pause);
 }
 
-inline void plotKernel2D(GaussianProcess& gp, double lo, double hi, bool pause){
+void plotKernel2D(GaussianProcess& gp, double lo, double hi, bool pause){
   arr X, K, KD1, KD2;
   X.setGrid(2, lo, hi, 1000);
   K.resize(X.d0, X.d1);

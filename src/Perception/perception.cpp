@@ -1,5 +1,6 @@
 #include "perception.h"
 #include "pointcloud.h"
+#include "audio.h"
 
 void lib_Perception(){ MT_MSG("loading"); }
 
@@ -35,6 +36,8 @@ REGISTER_MODULE (CannyFilter)
 REGISTER_MODULE (Patcher)
 REGISTER_MODULE (SURFer)
 REGISTER_MODULE (HoughLineFilter)
+REGISTER_MODULE (AudioReader)
+REGISTER_MODULE (AudioWriter)
 //REGISTER_MODULE (ShapeFitter)
 
 
@@ -70,7 +73,7 @@ struct sVideoEncoder{
 };
 
 void VideoEncoder::open(){
-  s = new sVideoEncoder(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".avi"), fps, is_rgb);
+  s = new sVideoEncoder(STRING("z." <<img.var->name <<'.' <<MT::getNowString() <<".avi"), fps, is_rgb);
 }
 
 void VideoEncoder::close(){
@@ -113,7 +116,7 @@ struct sVideoEncoderX264{
 };
 
 void VideoEncoderX264::open(){
-    s = new sVideoEncoderX264(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".264"), fps, is_rgb);
+    s = new sVideoEncoderX264(STRING("z." <<img.var->name <<'.' <<MT::getNowString() <<".264"), fps, is_rgb);
 }
 
 void VideoEncoderX264::close(){
@@ -576,4 +579,45 @@ VariableL newPointcloudVariables() {
 #endif
 
 
+void AudioReader::open() {
+#ifdef HAVE_PULSEAUDIO
+    poller = new AudioPoller_PA();
+#else
+    poller = NULL;
+#endif
+}
+void AudioReader::close() {
+    if(poller != NULL) {
+        delete poller;
+        poller = NULL;
+    }
+}
+void AudioReader::step() {
+    if(poller == NULL) {
+        return;
+    }
+    Access_typed<byteA>::WriteToken wr(pcms16ne2c.set());
+    wr().resize(4096);
+    poller->read(wr());
+}
 
+
+void AudioWriter::open() {
+#ifdef HAVE_LIBAV
+    writer = new AudioWriter_libav(STRING("z.audio" <<'.' <<MT::getNowString() <<".wav"));
+#else
+    writer = NULL;
+#endif
+}
+void AudioWriter::close() {
+    if(writer != NULL) {
+        delete writer;
+        writer = NULL;
+    }
+}
+void AudioWriter::step() {
+    if(writer == NULL) {
+        return;
+    }
+    writer->writeSamples_R48000_2C_S16_NE(pcms16ne2c.get());
+}

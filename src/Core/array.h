@@ -28,21 +28,14 @@
 #include <stdint.h>
 #include <string.h>
 
-#define FOR1D(x, i)   for(i=0;i<x.d0;i++)
-#define FOR1D_DOWN(x, i)   for(i=x.d0;i--;)
+#define FOR1D(x, i)   for(i=0;i<x.N;i++)
+#define FOR1D_DOWN(x, i)   for(i=x.N;i--;)
 #define FOR2D(x, i, j) for(i=0;i<x.d0;i++) for(j=0;j<x.d1;j++)
 #define FOR3D(x, i, j, k) for(i=0;i<x.d0;i++) for(j=0;j<x.d1;j++) for(k=0;k<x.d2;k++)
-#define FOR_ALL(x, i)   for(i=0;i<x.N;i++)
-
-#define for_list(i, e, X) for(i=0;i<X.N && ((e=X(i)) || true);i++)
-#define for_list_rev(i, e, X) for(i=X.N;i-- && ((e=X(i)) || true);)
 
 //-- don't require previously defined iterators
-#define for_index(i, X) for(uint i=0; i<X.N; i++)
-#define for_(Type, it, X)      for(Type *it=X.p, *it##_stop=X.p+X.N; it!=it##_stop; it++)
-#define for_rev_(Type, it, X)  for(Type *it=X.p+X.N;  (it--)!=X.p; )
-#define for_list_(Type, it, X)     Type *it=NULL; for(uint it##_COUNT=0;   it##_COUNT<X.N && ((it=X(it##_COUNT)) || true); it##_COUNT++)
-#define for_list_rev_(Type, it, X) Type *it=NULL; for(uint it##_COUNT=X.N; it##_COUNT--   && ((it=X(it##_COUNT)) || true); )
+#define for_list(Type, it, X)     Type *it=NULL; for(uint it##_COUNT=0;   it##_COUNT<X.N && ((it=X(it##_COUNT)) || true); it##_COUNT++)
+#define for_list_rev(Type, it, X) Type *it=NULL; for(uint it##_COUNT=X.N; it##_COUNT--   && ((it=X(it##_COUNT)) || true); )
 
 #define ARR ARRAY<double> ///< write ARR(1., 4., 5., 7.) to generate a double-Array
 #define TUP ARRAY<uint> ///< write TUP(1, 2, 3) to generate a uint-Array
@@ -792,7 +785,7 @@ template<class T> T* listFindByType(const MT::Array<T*>& L, const char* type); /
 template<class T, class LowerOperator> void listSort(MT::Array<T*>& L, LowerOperator lowerop);
 
 //TODO obsolete?
-template<class T> MT::Array<T*> LIST(const MT::Array<T>& A) {
+template<class T> MT::Array<T*> getList(const MT::Array<T>& A) {
   MT::Array<T*> L;
   resizeAs(L, A);
   for(uint i=0; i<A.N; i++) L.elem(i) = &A.elem(i);

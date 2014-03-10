@@ -110,7 +110,7 @@ struct Thread{
   ConditionVariableL listensTo;
   //ParameterL dependsOn;
   pid_t tid;                     ///< system thread id
-#ifndef MT_QT
+#ifndef MT_QThread
   pthread_t thread;
 #else
   struct sThread *thread;
@@ -129,6 +129,7 @@ struct Thread{
   void threadLoop();                    ///< loop, stepping forever
   void threadLoopWithBeat(double sec);  ///< loop with a fixed beat (cycle time)
   void threadStop();                    ///< stop looping
+  void threadCancel();                  ///< a hard kill (pthread_cancel) of the thread
 
   void waitForIdle();                   ///< caller waits until step is done (working -> idle mode)
   bool isIdle();                        ///< check if in idle mode
