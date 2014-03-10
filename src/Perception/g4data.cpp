@@ -3,6 +3,14 @@
 #include <Core/util.h>
 #include <Core/geo.h>
 #include <Core/keyValueGraph.h>
+#include <Core/array_t.h>
+#include <Core/registry.h>
+
+// TODO not working
+//REGISTER_TYPE(boolA);
+//REGISTER_TYPE(uintA);
+//REGISTER_TYPE(intA);
+//REGISTER_TYPE(StringA);
 
 G4Data::G4Data() { }
 G4Data::~G4Data() { }
@@ -10,7 +18,7 @@ G4Data::~G4Data() { }
 void G4Data::load(const char *data_fname, const char *meta_fname, const char *poses_fname, bool interpolate) {
   int hid, sid, hsi, hstoiN, hstoiNprev;
 
-  try {
+  if(data_fname) try {
     cout << " * Loading data from '" << data_fname << "'." << endl;
     // TODO how to avoid the following from printing???
     kvg << FILE(data_fname);
@@ -18,6 +26,11 @@ void G4Data::load(const char *data_fname, const char *meta_fname, const char *po
     numS = *kvg.getValue<double>("numS");
     numF = *kvg.getValue<double>("numF");
     numT = kvg.getItems("bam").N;
+    names = *kvg.getValue<String>("names");
+    MT::Array<KeyValueGraph*> sensors = kvg.getTypedValues<KeyValueGraph>("sensor");
+    for(uint i = 0; i < numS; i++)
+      names.append(*sensors(i)->getValue<String>("name"));
+    //kvg.append("names", new StringA(names));
     return;
   }
   catch(const char *e) {
@@ -26,7 +39,6 @@ void G4Data::load(const char *data_fname, const char *meta_fname, const char *po
 
   kvg << FILE(meta_fname);
 
-  StringA names;
   MT::Array<KeyValueGraph*> sensors = kvg.getTypedValues<KeyValueGraph>("sensor");
   numS = sensors.N;
 
@@ -56,12 +68,15 @@ void G4Data::load(const char *data_fname, const char *meta_fname, const char *po
   bool m;
   boolA pm(numS);
   pm.setZero(false);
-  arr data;
+  uint currfnum;
+  double currtstamp;
+  arr data, tstamp;
   boolA missing;
   MT::Array<intA> missingno(numS), missingf(numS);
   for(numF = 0; ; numF++) {
-    fil >> x;
+    fil >> currfnum >> currtstamp >> x;
     if(!x.N || !fil.good()) break;
+    tstamp.append(currtstamp);
     for(uint i = 0; i < numS; i++) {
       hsi = itohs(i);
       if(hsi != -1) {
@@ -154,12 +169,22 @@ void G4Data::save(const char *data_fname) {
   cout << " DONE!" << endl;
 }
 
+bool G4Data::isAgent(const String &b) {
+  return kvg.getItem("sensor", b)->value<KeyValueGraph>()->getValue<bool>("agent") != NULL;
+}
+
+bool G4Data::isObject(const String &b) {
+  return kvg.getItem("sensor", b)->value<KeyValueGraph>()->getValue<bool>("object") != NULL;
+}
+
 StringA G4Data::getNames() {
-  return *kvg.getItem("meta", "names")->value<StringA>();
+  return names;
+  //return *kvg.getItem("meta", "names")->value<StringA>();
 }
 
 String G4Data::getName(uint i) {
-  return kvg.getItem("meta", "names")->value<StringA>()->elem(i);
+  return names(i);
+  //return kvg.getItem("meta", "names")->value<StringA>()->elem(i);
 }
 
 uint G4Data::getNumTypes() {
@@ -253,6 +278,13 @@ arr G4Data::query(const char *type, const char *sensor, uint f) {
 
 void G4Data::appendBam(const char *name, const arr &data) {
   cout << " * Appending bam: " << name << endl;
-  kvg.append("bam", name, new arr(data));
+  Item *i = kvg.getItem("bam", name);
+
+  if(!i)
+    kvg.append("bam", name, new arr(data));
+  else {
+    cout << " *** bam already exists. Replacing." << endl;
+    *i->value<arr>() = data;
+  }
 }
 

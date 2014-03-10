@@ -10,7 +10,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 #include "avutil.h"
-extern Mutex libav_open_mutex; // is defined in videoEncoder.cpp right now
+using namespace MLR;
 
 #define DEFAULT_CONTAINER "wav"
 
@@ -22,13 +22,16 @@ private:
 
 public:
     sAudioWriter_libav(const char* filename) : codec(NULL), oc(NULL), s(NULL) {
-        Lock lock(libav_open_mutex);
-        avcodec_register_all();
+        register_libav();
+
         oc = avformat_alloc_context();
         if(!oc) {
             HALT("Could not allocate format context");
         }
         oc->oformat = mt_guess_format(filename, DEFAULT_CONTAINER);
+        if(!oc->oformat) {
+            HALT("Could not guess format for " << filename);
+        }
         oc->audio_codec_id = CODEC_ID_PCM_S16LE;       
         codec = avcodec_find_encoder(oc->audio_codec_id);
         if(!codec)
