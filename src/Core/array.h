@@ -286,6 +286,7 @@ template<class T> struct Array {
 template<class T> Array<T> operator~(const Array<T>& y); //transpose
 template<class T> Array<T> operator-(const Array<T>& y); //negative
 template<class T> Array<T> operator^(const Array<T>& y, const Array<T>& z); //outer product
+template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z); //index-wise product
 template<class T> Array<T> operator*(const Array<T>& y, const Array<T>& z); //inner product
 template<class T> Array<T> operator*(const Array<T>& y, T z);
 template<class T> Array<T> operator*(T y, const Array<T>& z);
@@ -320,7 +321,7 @@ UpdateOperator(%=);
   template<class T> Array<T> operator op(const Array<T>& y, T z)
 BinaryOperator(+ , +=);
 BinaryOperator(- , -=);
-BinaryOperator(% , *=);
+//BinaryOperator(% , *=);
 BinaryOperator(/ , /=);
 #undef BinaryOperator
 
@@ -576,6 +577,7 @@ template<class T> T absMin(const MT::Array<T>& x);
 
 template<class T> void innerProduct(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z);
 template<class T> void outerProduct(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z);
+template<class T> void indexWiseProduct(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z);
 template<class T> T scalarProduct(const MT::Array<T>& v, const MT::Array<T>& w);
 template<class T> T scalarProduct(const MT::Array<T>& g, const MT::Array<T>& v, const MT::Array<T>& w);
 template<class T> MT::Array<T> diagProduct(const MT::Array<T>& v, const MT::Array<T>& w);
