@@ -84,11 +84,11 @@ template<class T> struct Array {
   uint d0,d1,d2;  ///< 0th, 1st, 2nd dim
   uint *d;  ///< pointer to dimensions (for nd<=3 points to d0)
   uint M;   ///< size of actually allocated memory (may be greater than N)
-  bool reference;///< true if this refers to some external memory
+  bool reference; ///< true if this refers to some external memory
   
   static int  sizeT;   ///< constant for each type T: stores the sizeof(T)
   static char memMove; ///< constant for each type T: decides whether memmove can be used instead of individual copies
-  
+
   //-- special: arrays can be sparse/packed/etc and augmented with aux data to support this
   enum SpecialType { noneST, hasCarrayST, sparseST, diagST, RowShiftedPackedMatrixST, CpointerST };
   SpecialType special;
