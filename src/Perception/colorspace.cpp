@@ -50,14 +50,14 @@ static inline void rgbToYuvVis (const uint8_t rc, const uint8_t gc, const uint8_
 
 void bgr2yuv(const uint8_t* const in_pixels, uint8_t* yc, uint8_t* uc, uint8_t *vc, const unsigned int num_pixel) {
 #pragma omp parallel for schedule(guided, 256) num_threads(4)
-      for(int i = 0; i < num_pixel; ++i) {
+      for(unsigned int i = 0; i < num_pixel; ++i) {
           const int pixel_index = i*3;
           rgbToYuvVis(in_pixels[pixel_index+2], in_pixels[pixel_index+1], in_pixels[pixel_index], yc + i, uc + i, vc + i);
       }
 }
 void rgb2yuv(const uint8_t* const in_pixels, uint8_t* yc, uint8_t* uc, uint8_t *vc, const unsigned int num_pixel) {
 #pragma omp parallel for schedule(guided, 256) num_threads(4)
-      for(int i = 0; i < num_pixel; ++i) {
+      for(unsigned int i = 0; i < num_pixel; ++i) {
           const int pixel_index = i*3;
           rgbToYuvVis(in_pixels[pixel_index], in_pixels[pixel_index+1], in_pixels[pixel_index+2], yc + i, uc + i, vc + i);
       }

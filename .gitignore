@@ -9,3 +9,4 @@ CMakeFiles
 *.bak
 NOBUILD
 
+share/gofMake/config.mk

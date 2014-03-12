@@ -108,12 +108,11 @@ int gtkPopupMenuChoice(StringL& choices) {
   //create menu
   GtkWidget *menu = gtk_menu_new();
   gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, 0, gtk_get_current_event_time());
-  MT::String *s;  uint i;
-  for_list(i, s, choices) {
+  for_list(MT::String,  s,  choices) {
     GtkWidget *item = gtk_menu_item_new_with_label(s->p);
     gtk_container_add(GTK_CONTAINER(menu), item);
     gtk_signal_connect_object(GTK_OBJECT(item), "activate",
-                              GTK_SIGNAL_FUNC(menuitem_response), (gpointer)i);
+                              GTK_SIGNAL_FUNC(menuitem_response), (gpointer)s_COUNT);
   }
   menuChoice.setValue(-1);
   gtk_widget_show_all(menu);
