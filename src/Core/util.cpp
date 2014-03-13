@@ -796,8 +796,15 @@ MT::String& MT::String::operator=(const String& s) {
 /// copies from the C-string
 void MT::String::operator=(const char *s) {
   if(!s){  clear();  return;  }
-  resize(strlen(s), false);
-  memmove(p, s, strlen(s));
+  uint ls = strlen(s);
+  if(!ls){  clear();  return;  }
+  if(s>=p && s<=p+N){ //s points to a substring within this string!
+    memmove(p, s, ls);
+    resize(ls, true);
+  }else{
+    resize(ls, false);
+    memmove(p, s, ls);
+  }
 }
 
 void MT::String::set(const char *s, uint n) { resize(n, false); memmove(p, s, n); }
