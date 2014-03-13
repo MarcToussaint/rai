@@ -88,11 +88,11 @@ std::ofstream& log(const char *name="MT.log");
 
 //----- strings and streams
 bool contains(const char *s, char c);
-char skip(std::istream& is, const char *skipchars=" \n\r\t", bool skipCommentLines=true);
+char skip(std::istream& is, const char *skipSymbols=" \n\r\t", const char *stopSymbols=NULL, bool skipCommentLines=true);
 void skipRestOfLine(std::istream& is);
 void skipOne(std::istream& is);
-char getNextChar(std::istream& is, const char *skipchars=" \n\r\t", bool skipCommentLines=true);
-char peerNextChar(std::istream& is, const char *skipchars=" \n\r\t", bool skipCommentLines=true);
+char getNextChar(std::istream& is, const char *skipSymbols=" \n\r\t", bool skipCommentLines=true);
+char peerNextChar(std::istream& is, const char *skipSymbols=" \n\r\t", bool skipCommentLines=true);
 bool parse(std::istream& is, const char *str, bool silent=false);
 bool skipUntil(std::istream& is, const char *tag);
 
@@ -377,12 +377,14 @@ struct FileToken{
   FileToken(const char* _filename, bool change_dir=true);
   ~FileToken();
   FileToken& operator()(){ return *this; }
-  void decomposeFilename(const char *filename);
+  void decomposeFilename();
   std::ofstream& getOs();
   std::ifstream& getIs();
+  operator std::istream&(){ return getIs(); }
 };
 template<class T> FileToken& operator>>(FileToken& fil, T& x){ fil.getIs() >>x;  return fil; }
 template<class T> FileToken& operator<<(FileToken& fil, const T& x){ fil.getOs() <<x;  return fil; }
+inline std::ostream& operator<<(std::ostream& os, FileToken& fil){ return os <<fil.name; }
 template<class T> void operator<<(T& x, FileToken& fil){ fil.getIs() >>x; }
 template<class T> void operator>>(const T& x, FileToken& fil){ fil.getOs() <<x; }
 }
@@ -531,6 +533,25 @@ private:
 /// The global Rnd object
 extern Rnd rnd;
 }
+
+
+//===========================================================================
+//
+/// a little inotify wrapper
+//
+
+struct Inotify{
+  int fd, wd;
+  char *buffer;
+  uint buffer_size;
+  MT::FileToken *fil;
+  Inotify(const char *filename);
+  ~Inotify();
+  bool pollForModification(bool block=false, bool verbose=false);
+
+  void waitAndReport(){ pollForModification(false, true); }
+  void waitForModification(bool verbose=false){ while(!pollForModification(true, verbose)); }
+};
 
 
 //===========================================================================
