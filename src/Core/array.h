@@ -28,21 +28,14 @@
 #include <stdint.h>
 #include <string.h>
 
-#define FOR1D(x, i)   for(i=0;i<x.d0;i++)
-#define FOR1D_DOWN(x, i)   for(i=x.d0;i--;)
+#define FOR1D(x, i)   for(i=0;i<x.N;i++)
+#define FOR1D_DOWN(x, i)   for(i=x.N;i--;)
 #define FOR2D(x, i, j) for(i=0;i<x.d0;i++) for(j=0;j<x.d1;j++)
 #define FOR3D(x, i, j, k) for(i=0;i<x.d0;i++) for(j=0;j<x.d1;j++) for(k=0;k<x.d2;k++)
-#define FOR_ALL(x, i)   for(i=0;i<x.N;i++)
-
-#define for_list(i, e, X) for(i=0;i<X.N && ((e=X(i)) || true);i++)
-#define for_list_rev(i, e, X) for(i=X.N;i-- && ((e=X(i)) || true);)
 
 //-- don't require previously defined iterators
-#define for_index(i, X) for(uint i=0; i<X.N; i++)
-#define for_(Type, it, X)      for(Type *it=X.p, *it##_stop=X.p+X.N; it!=it##_stop; it++)
-#define for_rev_(Type, it, X)  for(Type *it=X.p+X.N;  (it--)!=X.p; )
-#define for_list_(Type, it, X)     Type *it=NULL; for(uint it##_COUNT=0;   it##_COUNT<X.N && ((it=X(it##_COUNT)) || true); it##_COUNT++)
-#define for_list_rev_(Type, it, X) Type *it=NULL; for(uint it##_COUNT=X.N; it##_COUNT--   && ((it=X(it##_COUNT)) || true); )
+#define for_list(Type, it, X)     Type *it=NULL; for(uint it##_COUNT=0;   it##_COUNT<X.N && ((it=X(it##_COUNT)) || true); it##_COUNT++)
+#define for_list_rev(Type, it, X) Type *it=NULL; for(uint it##_COUNT=X.N; it##_COUNT--   && ((it=X(it##_COUNT)) || true); )
 
 #define ARR ARRAY<double> ///< write ARR(1., 4., 5., 7.) to generate a double-Array
 #define TUP ARRAY<uint> ///< write TUP(1, 2, 3) to generate a uint-Array
@@ -91,11 +84,11 @@ template<class T> struct Array {
   uint d0,d1,d2;  ///< 0th, 1st, 2nd dim
   uint *d;  ///< pointer to dimensions (for nd<=3 points to d0)
   uint M;   ///< size of actually allocated memory (may be greater than N)
-  bool reference;///< true if this refers to some external memory
+  bool reference; ///< true if this refers to some external memory
   
   static int  sizeT;   ///< constant for each type T: stores the sizeof(T)
   static char memMove; ///< constant for each type T: decides whether memmove can be used instead of individual copies
-  
+
   //-- special: arrays can be sparse/packed/etc and augmented with aux data to support this
   enum SpecialType { noneST, hasCarrayST, sparseST, diagST, RowShiftedPackedMatrixST, CpointerST };
   SpecialType special;
@@ -293,6 +286,7 @@ template<class T> struct Array {
 template<class T> Array<T> operator~(const Array<T>& y); //transpose
 template<class T> Array<T> operator-(const Array<T>& y); //negative
 template<class T> Array<T> operator^(const Array<T>& y, const Array<T>& z); //outer product
+template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z); //index-wise product
 template<class T> Array<T> operator*(const Array<T>& y, const Array<T>& z); //inner product
 template<class T> Array<T> operator*(const Array<T>& y, T z);
 template<class T> Array<T> operator*(T y, const Array<T>& z);
@@ -327,7 +321,7 @@ UpdateOperator(%=);
   template<class T> Array<T> operator op(const Array<T>& y, T z)
 BinaryOperator(+ , +=);
 BinaryOperator(- , -=);
-BinaryOperator(% , *=);
+//BinaryOperator(% , *=);
 BinaryOperator(/ , /=);
 #undef BinaryOperator
 
@@ -583,6 +577,7 @@ template<class T> T absMin(const MT::Array<T>& x);
 
 template<class T> void innerProduct(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z);
 template<class T> void outerProduct(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z);
+template<class T> void indexWiseProduct(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z);
 template<class T> T scalarProduct(const MT::Array<T>& v, const MT::Array<T>& w);
 template<class T> T scalarProduct(const MT::Array<T>& g, const MT::Array<T>& v, const MT::Array<T>& w);
 template<class T> MT::Array<T> diagProduct(const MT::Array<T>& v, const MT::Array<T>& w);

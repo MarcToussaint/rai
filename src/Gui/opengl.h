@@ -27,7 +27,9 @@
 #include <Core/array.h>
 #include <Core/thread.h>
 
-#include <X11/Xlib.h>
+#ifndef MT_QTGL
+#  include <X11/Xlib.h>
+#endif
 
 #ifdef MT_FLTK
 #  include <FL/glut.H>
@@ -276,7 +278,7 @@ public: //driver dependent methods
   void processEvents();
   void enterEventLoop();
   void exitEventLoop();
-#ifndef MT_MSVC
+#if !defined MT_MSVC && !defined MT_QTGL
   Display* xdisplay();
   Drawable xdraw();
 #endif
