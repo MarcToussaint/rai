@@ -61,8 +61,9 @@ void G4Data::load(const char *data_fname, const char *meta_fname, const char *po
     itohs.append(hsi);
   }
 
-  ifstream fil;
-  MT::open(fil, poses_fname);
+  ifstream datafin, tstampfin;
+  MT::open(datafin, poses_fname);
+  tstampfin.open(STRING(poses_fname << ".times"));
   arr x;
 
   bool m;
@@ -74,9 +75,12 @@ void G4Data::load(const char *data_fname, const char *meta_fname, const char *po
   boolA missing;
   MT::Array<intA> missingno(numS), missingf(numS);
   for(numF = 0; ; numF++) {
-    fil >> currfnum >> currtstamp >> x;
-    if(!x.N || !fil.good()) break;
-    tstamp.append(currtstamp);
+    datafin >> x;
+    if(tstampfin.good()) {
+      tstampfin >> currfnum >> currtstamp;
+      tstamp.append(currtstamp);
+    }
+    if(!x.N || !datafin.good()) break;
     for(uint i = 0; i < numS; i++) {
       hsi = itohs(i);
       if(hsi != -1) {
@@ -170,21 +174,21 @@ void G4Data::save(const char *data_fname) {
 }
 
 bool G4Data::isAgent(const String &b) {
-  return kvg.getItem("sensor", b)->value<KeyValueGraph>()->getValue<bool>("agent") != NULL;
+  return kvg.getItem("sensor", b)->getValue<KeyValueGraph>()->getValue<bool>("agent") != NULL;
 }
 
 bool G4Data::isObject(const String &b) {
-  return kvg.getItem("sensor", b)->value<KeyValueGraph>()->getValue<bool>("object") != NULL;
+  return kvg.getItem("sensor", b)->getValue<KeyValueGraph>()->getValue<bool>("object") != NULL;
 }
 
 StringA G4Data::getNames() {
   return names;
-  //return *kvg.getItem("meta", "names")->value<StringA>();
+  //return *kvg.getItem("meta", "names")->getValue<StringA>();
 }
 
 String G4Data::getName(uint i) {
   return names(i);
-  //return kvg.getItem("meta", "names")->value<StringA>()->elem(i);
+  //return kvg.getItem("meta", "names")->getValue<StringA>()->elem(i);
 }
 
 uint G4Data::getNumTypes() {
@@ -201,7 +205,7 @@ uint G4Data::getNumSensors() {
 
 uint G4Data::getNumDim(const char *type) {
   CHECK(kvg.getItem("bam", type) != NULL, STRING("BAM '" << type << "' does not exist."));
-  return kvg.getItem("bam", type)->value<arr>()->d2;
+  return kvg.getItem("bam", type)->getValue<arr>()->d2;
 }
 
 uint G4Data::getNum(const char *key) {
@@ -217,14 +221,14 @@ arr G4Data::query(const char *type) {
 
   if(0 == strcmp(type, "pose")) {
     arr x, xPos, xQuat;
-    xPos.referTo(*kvg.getItem("bam", "pos")->value<arr>());
-    xQuat.referTo(*kvg.getItem("bam", "quat")->value<arr>());
+    xPos.referTo(*kvg.getItem("bam", "pos")->getValue<arr>());
+    xQuat.referTo(*kvg.getItem("bam", "quat")->getValue<arr>());
     x.append(xPos);
     x.append(xQuat);
     x.reshape(numS, numF, 7);
     return x;
   }
-  return *kvg.getItem("bam", type)->value<arr>();
+  return *kvg.getItem("bam", type)->getValue<arr>();
 }
 
 arr G4Data::query(const char *type, const char *sensor) {
@@ -233,7 +237,7 @@ arr G4Data::query(const char *type, const char *sensor) {
   KeyValueGraph *skvg;
   uint hid, sid, hsi, i;
   
-  skvg = kvg.getItem("sensor", sensor)->value<KeyValueGraph>();
+  skvg = kvg.getItem("sensor", sensor)->getValue<KeyValueGraph>();
   hid = *skvg->getValue<double>("hid");
   sid = *skvg->getValue<double>("sid");
   hsi = 3 * hid + sid;
@@ -241,15 +245,15 @@ arr G4Data::query(const char *type, const char *sensor) {
   arr x;
   if(0 == strcmp(type, "pose")) {
     arr xPos, xQuat;
-    xPos.referTo(*kvg.getItem("bam", "pos")->value<arr>());
-    xQuat.referTo(*kvg.getItem("bam", "quat")->value<arr>());
+    xPos.referTo(*kvg.getItem("bam", "pos")->getValue<arr>());
+    xQuat.referTo(*kvg.getItem("bam", "quat")->getValue<arr>());
 
     x.append(xPos);
     x.append(xQuat);
     x.reshape(numS, numF, 7);
     return x[i];
   }
-  return kvg.getItem("bam", type)->value<arr>()->operator[](i);
+  return kvg.getItem("bam", type)->getValue<arr>()->operator[](i);
 }
 
 arr G4Data::query(const char *type, const char *sensor, uint f) {
@@ -266,8 +270,8 @@ arr G4Data::query(const char *type, const char *sensor, uint f) {
   arr x;
   if(0 == strcmp(type, "pose")) {
     arr xPos, xQuat;
-    xPos = kvg.getItem("bam", "pos")->value<arr>()->subDim(i, f);
-    xQuat = kvg.getItem("bam", "quat")->value<arr>()->subDim(i, f);
+    xPos = kvg.getItem("bam", "pos")->getValue<arr>()->subDim(i, f);
+    xQuat = kvg.getItem("bam", "quat")->getValue<arr>()->subDim(i, f);
 
     x.append(xPos);
     x.append(xQuat);
@@ -284,7 +288,7 @@ void G4Data::appendBam(const char *name, const arr &data) {
     kvg.append("bam", name, new arr(data));
   else {
     cout << " *** bam already exists. Replacing." << endl;
-    *i->value<arr>() = data;
+    *i->getValue<arr>() = data;
   }
 }
 

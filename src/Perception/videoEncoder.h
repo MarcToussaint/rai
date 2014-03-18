@@ -24,6 +24,7 @@ struct VideoEncoder_x264_simple{
   VideoEncoder_x264_simple(const char* filename="z.264", double fps=30, uint qp=0, bool is_rgb=false);
   void addFrame(const byteA& rgb);
   void close();
+  const MT::String& name() const;
 };
 
 struct VideoEncoder_OpenCV{

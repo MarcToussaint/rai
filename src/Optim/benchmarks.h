@@ -120,8 +120,9 @@ struct ChoiceConstraintFunction:ConstrainedProblem {
 
     if(&g) g.resize(dim_g());
     if(&Jg) { Jg.resize(g.N, x.N); Jg.setZero(); }
-    if(&g) g(0) = sumOfSqr(x)-.25;   if(&Jg) Jg[0]() = 2.*x;
-    if(&g) g(1) = -x(0);             if(&Jg) Jg(1,0) = -1.;
+//    if(&g) g(0) = sumOfSqr(x)-.25;   if(&Jg) Jg[0]() = 2.*x;
+    if(&g) g(0) = -x(1)+x(0);          if(&Jg){ Jg(0,1) = -1;  Jg(0,0) = +1; }
+    if(&g) g(1) = -x(0);               if(&Jg) Jg(1,0) = -1.;
 
     return fx;
   }

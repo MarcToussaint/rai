@@ -139,37 +139,20 @@ struct OptOptions {
   double minStep;
   double maxStep;
   double damping;
+  double stepInc, stepDec;
+  double dampingInc, dampingDec;
+  bool nonStrict;
   bool useAdaptiveDamping;
   bool clampInitialState;
   ConstrainedMethodType constrainedMethod;
   OptOptions();
 };
 
-
-//uint optGaussNewton(arr& x, VectorFunction& phi, OptOptions opt, arr *addRegularizer=NULL, arr *fx_user=NULL, arr *Jx_user=NULL);
-uint optNewton(arr& x, ScalarFunction& f, OptOptions opt, arr *addRegularizer=NULL, double *fx_user=NULL, arr *gx_user=NULL, arr *Hx_user=NULL);
-uint optRprop(arr& x, ScalarFunction& f, OptOptions opt);
+// declared separately:
+#include "opt-newton.h"
+#include "opt-rprop.h"
+#include "opt-carla.h"
 uint optGradDescent(arr& x, ScalarFunction& f, OptOptions opt);
-//uint optDynamicProgramming(arr& x, QuadraticChainFunction& f, OptOptions opt);
-/// preliminary
-//uint optNodewise(arr& x, VectorChainFunction& f, OptOptions opt);
-/// preliminary
-//uint optMinSumGaussNewton(arr& x, QuadraticChainFunction& f, OptOptions opt);
-
-
-//===========================================================================
-//
-// Rprop
-//
-
-/** Rprop, a fast gradient-based minimization */
-struct Rprop {
-  struct sRprop *s;
-  Rprop();
-  void init(double initialStepSize=1., double minStepSize=1e-6, double maxStepSize=50.);
-  bool step(arr& x, ScalarFunction& f);
-  uint loop(arr& x, ScalarFunction& f, double *fmin_return=NULL, double stoppingTolerance=1e-2, double initialStepSize=1., uint maxIterations=1000, uint verbose=0);
-};
 
 
 //===========================================================================
@@ -194,6 +177,7 @@ extern OptOptions globalOptOptions;
 #define _OPT_N2(obj, N, ...) _OPT_ ## N(obj, __VA_ARGS__)
 #define _OPT_N1(obj, N, ...) _OPT_N2(obj, N, __VA_ARGS__) //this forces that _NUM_ARGS(...) is expanded to a number N
 #define OPT(...)     (_OPT_N1(globalOptOptions, _NUM_ARGS(__VA_ARGS__), __VA_ARGS__) , globalOptOptions)
+#define NOOPT (globalOptOptions)
 
 #ifdef  MT_IMPLEMENTATION
 #  include "optimization.cpp"
