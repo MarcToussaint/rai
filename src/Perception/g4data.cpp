@@ -61,8 +61,9 @@ void G4Data::load(const char *data_fname, const char *meta_fname, const char *po
     itohs.append(hsi);
   }
 
-  ifstream fil;
-  MT::open(fil, poses_fname);
+  ifstream datafin, tstampfin;
+  MT::open(datafin, poses_fname);
+  tstampfin.open(STRING(poses_fname << ".times"));
   arr x;
 
   bool m;
@@ -74,9 +75,12 @@ void G4Data::load(const char *data_fname, const char *meta_fname, const char *po
   boolA missing;
   MT::Array<intA> missingno(numS), missingf(numS);
   for(numF = 0; ; numF++) {
-    fil >> currfnum >> currtstamp >> x;
-    if(!x.N || !fil.good()) break;
-    tstamp.append(currtstamp);
+    datafin >> x;
+    if(tstampfin.good()) {
+      tstampfin >> currfnum >> currtstamp;
+      tstamp.append(currtstamp);
+    }
+    if(!x.N || !datafin.good()) break;
     for(uint i = 0; i < numS; i++) {
       hsi = itohs(i);
       if(hsi != -1) {
