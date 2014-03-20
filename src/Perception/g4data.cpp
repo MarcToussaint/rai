@@ -24,12 +24,22 @@ void G4Data::load(const char *data_fname, const char *meta_fname, const char *po
     kvg << FILE(data_fname);
     cout << " * DONE." << endl;
     numS = *kvg.getValue<double>("numS");
+    numA = *kvg.getValue<double>("numA");
+    numO = *kvg.getValue<double>("numO");
     numF = *kvg.getValue<double>("numF");
     numT = kvg.getItems("bam").N;
-    names = *kvg.getValue<String>("names");
+    nameS = *kvg.getValue<String>("nameS");
+    nameA = *kvg.getValue<String>("nameA");
+    nameO = *kvg.getValue<String>("nameO");
     MT::Array<KeyValueGraph*> sensors = kvg.getTypedValues<KeyValueGraph>("sensor");
-    for(uint i = 0; i < numS; i++)
-      names.append(*sensors(i)->getValue<String>("name"));
+    for(uint i = 0; i < numS; i++) {
+      nameS.append(*sensors(i)->getValue<String>("name"));
+      if(sensors(i)->getValue<bool>("agent"))
+        nameA.append(nameS.last());
+      if(sensors(i)->getValue<bool>("object"))
+        nameO.append(nameS.last());
+      // TODO agent name list, object name list,
+    }
     //kvg.append("names", new StringA(names));
     return;
   }
@@ -41,15 +51,26 @@ void G4Data::load(const char *data_fname, const char *meta_fname, const char *po
 
   MT::Array<KeyValueGraph*> sensors = kvg.getTypedValues<KeyValueGraph>("sensor");
   numS = sensors.N;
+  numA = 0;
+  numO = 0;
 
   hstoiN = 0;
   //intA itohs, hstoi;
   arr itohs, hstoi; // TODO arr just because of kvg..
   for(uint i = 0; i < numS; i++) {
-    names.append(*sensors(i)->getValue<String>("name"));
     hid = *sensors(i)->getValue<double>("hid");
     sid = *sensors(i)->getValue<double>("sid");
     hsi = 3*hid+sid;
+
+    nameS.append(*sensors(i)->getValue<String>("name"));
+    if(sensors(i)->getValue<bool>("agent")) {
+      nameA.append(nameS.last());
+      numA++;
+    }
+    if(sensors(i)->getValue<bool>("object")) {
+      nameO.append(nameS.last());
+      numO++;
+    }
 
     if(hsi+1 > hstoiN) {
       hstoiNprev = hstoi.N;
@@ -151,9 +172,9 @@ void G4Data::load(const char *data_fname, const char *meta_fname, const char *po
   arr pose; // virtual BAM
   numT = 3;
 
-  appendMeta("numS", (double)numS);
-  appendMeta("numF", (double)numF);
-  appendMeta("numT", (double)numT);
+  appendMeta("numS", (int)numS);
+  appendMeta("numF", (int)numF);
+  appendMeta("numT", (int)numT);
   //appendMeta("names", names);
   appendMeta("itohs", itohs);
   appendMeta("hstoi", hstoi);
@@ -173,35 +194,46 @@ void G4Data::save(const char *data_fname) {
   cout << " DONE!" << endl;
 }
 
+bool G4Data::isAgent(uint i) { return isAgent(nameS(i)); }
 bool G4Data::isAgent(const String &b) {
-  return kvg.getItem("sensor", b)->getValue<KeyValueGraph>()->getValue<bool>("agent") != NULL;
+  return kvg.getItem("sensor", b)->getValue<KeyValueGraph>()->getValue<bool>("agent");
 }
 
+bool G4Data::isObject(uint i) { return isObject(nameS(i)); }
 bool G4Data::isObject(const String &b) {
-  return kvg.getItem("sensor", b)->getValue<KeyValueGraph>()->getValue<bool>("object") != NULL;
+  return kvg.getItem("sensor", b)->getValue<KeyValueGraph>()->getValue<bool>("object");
 }
 
-StringA G4Data::getNames() {
-  return names;
-  //return *kvg.getItem("meta", "names")->getValue<StringA>();
+StringA G4Data::getNames() { return nameS; }
+String G4Data::getName(uint i) { return nameS(i); }
+StringA G4Data::getAgentNames() { return nameA; }
+String G4Data::getAgentName(uint i) { return nameA(i); }
+StringA G4Data::getObjectNames() { return nameO; }
+String G4Data::getObjectName(uint i) { return nameO(i); }
+
+uint G4Data::getIndex(const String &s) {
+  int i = nameS.findValue(s);
+  CHECK(i >= 0, "Name not found");
+  return i;
 }
 
-String G4Data::getName(uint i) {
-  return names(i);
-  //return kvg.getItem("meta", "names")->getValue<StringA>()->elem(i);
+uint G4Data::getAgentIndex(const String &a) {
+  int i = nameA.findValue(a);
+  CHECK(i >= 0, "Name not found");
+  return i;
 }
 
-uint G4Data::getNumTypes() {
-  return numT;
+uint G4Data::getObjectIndex(const String &o) {
+  int i = nameO.findValue(o);
+  CHECK(i >= 0, "Name not found");
+  return i;
 }
 
-uint G4Data::getNumFrames() {
-  return numF;
-}
-
-uint G4Data::getNumSensors() {
-  return numS;
-}
+uint G4Data::getNumTypes() { return numT; }
+uint G4Data::getNumFrames() { return numF; }
+uint G4Data::getNumSensors() { return numS; }
+uint G4Data::getNumAgents() { return numA; }
+uint G4Data::getNumObjects() { return numO; }
 
 uint G4Data::getNumDim(const char *type) {
   CHECK(kvg.getItem("bam", type) != NULL, STRING("BAM '" << type << "' does not exist."));
