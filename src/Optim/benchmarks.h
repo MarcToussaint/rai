@@ -156,7 +156,7 @@ struct ChoiceConstraintFunction:ConstrainedProblem {
     return n;
   }
   virtual uint dim_g(){
-    if(which==randomLinear) return 5*n+5;
+    if(which==randomLinear) return 2*n+2;
     return 2;
   }
 };
