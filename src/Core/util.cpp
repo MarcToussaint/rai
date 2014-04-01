@@ -797,11 +797,11 @@ MT::String& MT::String::operator=(const String& s) {
 void MT::String::operator=(const char *s) {
   if(!s){  clear();  return;  }
   uint ls = strlen(s);
-  if(s>=p && s<=p+N) {
+  if(!ls){  clear();  return;  }
+  if(s>=p && s<=p+N){ //s points to a substring within this string!
     memmove(p, s, ls);
     resize(ls, true);
-  }
-  else {
+  }else{
     resize(ls, false);
     memmove(p, s, ls);
   }
@@ -1268,12 +1268,13 @@ template void MT::getParameter(MT::String&, const char*, const MT::String&);
 template void MT::getParameter(MT::String&, const char*);
 
 template int MT::getParameter<int>(const char*);
-template int  MT::getParameter<int>(const char*, const int&);
+template int MT::getParameter<int>(const char*, const int&);
 template uint MT::getParameter(const char*);
 template uint MT::getParameter<uint>(const char*, const uint&);
 template float MT::getParameter<float>(const char*);
 template double MT::getParameter<double>(const char*);
 template double MT::getParameter<double>(const char*, const double&);
+template bool MT::getParameter<bool>(const char*);
 template bool MT::getParameter<bool>(const char*, const bool&);
 template long MT::getParameter<long>(const char*);
 template MT::String MT::getParameter<MT::String>(const char*);

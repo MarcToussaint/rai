@@ -584,6 +584,8 @@ template<class T> MT::Array<T> diagProduct(const MT::Array<T>& v, const MT::Arra
 
 template<class T> MT::Array<T> elemWiseMin(const MT::Array<T>& v, const MT::Array<T>& w);
 template<class T> MT::Array<T> elemWiseMax(const MT::Array<T>& v, const MT::Array<T>& w);
+template<class T> MT::Array<T> elemWisemax(const MT::Array<T>& x,const T& y);
+template<class T> MT::Array<T> elemWisemax(const T& x,const MT::Array<T>& y);
 
 
 //===========================================================================
