@@ -98,8 +98,8 @@ OptOptions::OptOptions() {
   minStep=-1.;
   maxStep=-1.;
   damping=1.;
-  stepInc=.2; stepDec=.1;
-  dampingInc=1.; dampingDec=.7;
+  stepInc=.01; stepDec=.1;
+  dampingInc=1.; dampingDec=.9;
   nonStrict=false;
   useAdaptiveDamping=false;
   clampInitialState=false;
