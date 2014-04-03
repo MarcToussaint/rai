@@ -141,7 +141,7 @@ struct OptOptions {
   double damping;
   double stepInc, stepDec;
   double dampingInc, dampingDec;
-  bool nonStrict;
+  int nonStrict; //# of non-strict iterations
   bool useAdaptiveDamping;
   bool clampInitialState;
   ConstrainedMethodType constrainedMethod;
