@@ -112,22 +112,53 @@ struct ChoiceFunction:ScalarFunction {
 //===========================================================================
 
 struct ChoiceConstraintFunction:ConstrainedProblem {
+  enum WhichConstraint { wedge2D=1, halfcircle2D, randomLinear } which;
+  uint n;
+  arr randomG;
   ChoiceFunction f;
   ChoiceConstraintFunction() {
+    which = (WhichConstraint) MT::getParameter<int>("constraintChoice");
+    n = MT::getParameter<uint>("dim", 2);
   }
   virtual double fc(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x) {
+    CHECK(x.N==n,"");
     double fx =  f.fs(df, Hf, x);
 
     if(&g) g.resize(dim_g());
     if(&Jg) { Jg.resize(g.N, x.N); Jg.setZero(); }
-//    if(&g) g(0) = sumOfSqr(x)-.25;   if(&Jg) Jg[0]() = 2.*x;
-    if(&g) g(0) = -x(1)+x(0);          if(&Jg){ Jg(0,1) = -1;  Jg(0,0) = +1; }
-    if(&g) g(1) = -x(0);               if(&Jg) Jg(1,0) = -1.;
+    switch(which) {
+      case wedge2D:
+        if(&g) g(0) = -x(1)+x(0);          if(&Jg){ Jg(0,1) = -1;  Jg(0,0) = +1; } //feasible=top-left
+        if(&g) g(1) = -x(0);               if(&Jg) Jg(1,0) = -1.; //feasible=right
+        break;
+      case halfcircle2D:
+        if(&g) g(0) = sumOfSqr(x)-.25;     if(&Jg) Jg[0]() = 2.*x; //feasible=IN circle of radius .5
+        if(&g) g(1) = -x(0);               if(&Jg) Jg(1,0) = -1.; //feasible=right
+        break;
+      case randomLinear:{
+        uint n=x.N;
+        if(!randomG.N){
+          randomG.resize(dim_g(),n+1);
+          rndUniform(randomG, -1., 1.);
+          for(uint i=0;i<randomG.d0;i++){
+            if(randomG(i,n)>0.) randomG(i,n)*=-1.; //ensure (0,0) is feasible
+            randomG(i,n) -= .2;
+          }
+        }
+        if(&g) g = randomG * cat(x,ARRAY(1.));
+        if(&Jg) Jg = randomG.sub(0,-1,0,-2);
+      } break;
+    }
 
     return fx;
   }
-  virtual uint dim_x(){ return 2; }
-  virtual uint dim_g(){ return 2; }
+  virtual uint dim_x(){
+    return n;
+  }
+  virtual uint dim_g(){
+    if(which==randomLinear) return 2*n+2;
+    return 2;
+  }
 };
 
 //===========================================================================
