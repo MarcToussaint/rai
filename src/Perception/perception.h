@@ -53,7 +53,7 @@ struct GenericDisplayViewer : Module {
   ACCESS(T, var);
   GenericDisplayViewer(): Module("GenericDisplayViewer"), gl(NULL) {} \
   virtual void open(){ gl = new OpenGL(STRING("ImageViewer '"<<var.var->name()<<'\'')); }
-  virtual void step(){ gl->background = var.get()().display; gl->update(); }
+  virtual void step(){ gl->background = var.get()->display; gl->update(); }
   virtual void close(){ delete gl; }
 };
 struct VideoEncoder : public Module {

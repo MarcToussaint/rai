@@ -49,6 +49,10 @@ void VideoEncoder_x264_simple::addFrame(const byteA& rgb){
   if(!s->isOpen) s->open(rgb.d1, rgb.d0);
   s->addFrame(rgb);
 }
+const MT::String& VideoEncoder_x264_simple::name() const {
+	return s->filename;
+}
+
 
 void VideoEncoder_x264_simple::close(){ std::clog << "Closing VideoEncoder264" << endl; if(s->isOpen) s->close(); }
 
