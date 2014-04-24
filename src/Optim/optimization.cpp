@@ -98,9 +98,9 @@ OptOptions::OptOptions() {
   minStep=-1.;
   maxStep=-1.;
   damping=1.;
-  stepInc=.2; stepDec=.1;
-  dampingInc=1.; dampingDec=.7;
-  nonStrict=false;
+  stepInc=2.; stepDec=.1;
+  dampingInc=1.; dampingDec=1.;
+  nonStrict=0;
   useAdaptiveDamping=false;
   clampInitialState=false;
   constrainedMethod=augmentedLag;

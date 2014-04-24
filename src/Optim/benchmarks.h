@@ -128,8 +128,8 @@ struct ChoiceConstraintFunction:ConstrainedProblem {
     if(&Jg) { Jg.resize(g.N, x.N); Jg.setZero(); }
     switch(which) {
       case wedge2D:
-        if(&g) g(0) = -x(1)+x(0);          if(&Jg){ Jg(0,1) = -1;  Jg(0,0) = +1; } //feasible=top-left
-        if(&g) g(1) = -x(0);               if(&Jg) Jg(1,0) = -1.; //feasible=right
+        if(&g)  for(uint i=0;i<g.N;i++) g(i) = -sum(x)+1.5*x(i)-.1;
+        if(&Jg){ Jg=-1.; for(uint i=0;i<g.N;i++) Jg(i,i) = +.5; }
         break;
       case halfcircle2D:
         if(&g) g(0) = sumOfSqr(x)-.25;     if(&Jg) Jg[0]() = 2.*x; //feasible=IN circle of radius .5
@@ -139,7 +139,7 @@ struct ChoiceConstraintFunction:ConstrainedProblem {
         uint n=x.N;
         if(!randomG.N){
           randomG.resize(dim_g(),n+1);
-          rndUniform(randomG, -1., 1.);
+          rndGauss(randomG, 1.);
           for(uint i=0;i<randomG.d0;i++){
             if(randomG(i,n)>0.) randomG(i,n)*=-1.; //ensure (0,0) is feasible
             randomG(i,n) -= .2;
@@ -156,7 +156,8 @@ struct ChoiceConstraintFunction:ConstrainedProblem {
     return n;
   }
   virtual uint dim_g(){
-    if(which==randomLinear) return 2*n+2;
+    if(which==randomLinear) return 5*n+2;
+    if(which==wedge2D) return n;
     return 2;
   }
 };

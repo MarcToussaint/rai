@@ -1281,6 +1281,7 @@ template MT::String MT::getParameter<MT::String>(const char*);
 template MT::String MT::getParameter<MT::String>(const char*, const MT::String&);
 
 template bool MT::checkParameter<uint>(const char*);
+template bool MT::checkParameter<bool>(const char*);
 
 template void MT::Parameter<MT::String>::initialize();
 template void MT::Parameter<bool>::initialize();
