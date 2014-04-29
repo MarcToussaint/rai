@@ -128,7 +128,7 @@ double evaluateVF(VectorFunction& f, const arr& x);
 // optimization methods
 //
 
-enum ConstrainedMethodType { noMethod=0, squaredPenalty, augmentedLag, logBarrier };
+enum ConstrainedMethodType { noMethod=0, squaredPenalty, augmentedLag, logBarrier, anyTimeAula };
 
 struct OptOptions {
   uint verbose;
@@ -152,7 +152,6 @@ struct OptOptions {
 // declared separately:
 #include "opt-newton.h"
 #include "opt-rprop.h"
-#include "opt-carla.h"
 uint optGradDescent(arr& x, ScalarFunction& f, OptOptions opt);
 
 
