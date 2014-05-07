@@ -1341,6 +1341,7 @@ double RowShiftedPackedMatrix::acc(uint i, uint j) {
 arr packRowShifted(const arr& X) {
   arr Z;
   RowShiftedPackedMatrix *Zaux = auxRowShifted(Z, X.d0, 0, X.d1);
+  Z.setZero();
   //-- compute rowShifts and pack_d1:
   uint pack_d1=0;
   for(uint i=0; i<X.d0; i++) {
@@ -1404,6 +1405,7 @@ arr RowShiftedPackedMatrix::At_A() {
   //TODO use blas DSYRK instead?
   arr R;
   RowShiftedPackedMatrix *Raux = auxRowShifted(R, real_d1, Z.d1, real_d1);
+  R.setZero();
   for(uint i=0; i<R.d0; i++) Raux->rowShift(i) = i;
   Raux->symmetric=true;
   if(!Z.d1) return R; //Z is identically zero, all rows fully packed -> return zero R
@@ -1440,6 +1442,7 @@ arr RowShiftedPackedMatrix::A_At() {
 
   arr R;
   RowShiftedPackedMatrix *Raux = auxRowShifted(R, Z.d0, pack_d1, Z.d0);
+  R.setZero();
   for(uint i=0; i<R.d0; i++) Raux->rowShift(i) = i;
   Raux->symmetric=true;
   if(!Z.d1) return R; //Z is identically zero, all rows fully packed -> return zero R
