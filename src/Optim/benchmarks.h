@@ -133,7 +133,7 @@ struct ChoiceConstraintFunction:ConstrainedProblem {
         break;
       case halfcircle2D:
         if(&g) g(0) = sumOfSqr(x)-.25;     if(&Jg) Jg[0]() = 2.*x; //feasible=IN circle of radius .5
-        if(&g) g(1) = -x(0);               if(&Jg) Jg(1,0) = -1.; //feasible=right
+        if(&g) g(1) = -x(0)-.2;            if(&Jg) Jg(1,0) = -1.; //feasible=right of -.2
         break;
       case randomLinear:{
         uint n=x.N;

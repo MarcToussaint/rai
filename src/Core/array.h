@@ -742,11 +742,11 @@ void lapack_min_Ax_b(arr& x,const arr& A, const arr& b);
 /// @{
 
 struct RowShiftedPackedMatrix {
-  arr& Z;
-  uint real_d1;
-  uintA rowShift;
-  uintA colPatches; //column-patch: range of non-zeros in a column; starts with 'a', ends with 'b'-1
-  bool symmetric;
+  arr& Z;           ///< references the array itself
+  uint real_d1;     ///< the real width (the packed width is Z.d1; the height is Z.d0)
+  uintA rowShift;   ///< amount of shift of each row (rowShift.N==Z.d0)
+  uintA colPatches; ///< column-patch: (nd=2,d0=real_d1,d1=2) range of non-zeros in a COLUMN; starts with 'a', ends with 'b'-1
+  bool symmetric;   ///< flag: if true, this stores a symmetric (banded) matrix: only the upper triangle
   
   RowShiftedPackedMatrix(arr& X);
   RowShiftedPackedMatrix(arr& X, RowShiftedPackedMatrix &aux);
@@ -754,19 +754,24 @@ struct RowShiftedPackedMatrix {
   double acc(uint i, uint j);
   void computeColPatches(bool assumeMonotonic); //currently presumes monotonous rowShifts
   arr At_A();
+  arr A_At();
   arr At_x(const arr& x);
+  arr A_x(const arr& x);
 };
 
 inline RowShiftedPackedMatrix& castRowShiftedPackedMatrix(arr& X) {
   ///CHECK(X.special==X.RowShiftedPackedMatrixST,"can't cast like this!");
-  return *((RowShiftedPackedMatrix*)&X);
+  if(X.special!=X.RowShiftedPackedMatrixST) throw("can't cast like this!");
+  return *((RowShiftedPackedMatrix*)X.aux);
 }
 
 arr unpack(const arr& Z); //returns an unpacked matrix in case this is packed
 arr packRowShifted(const arr& X);
 RowShiftedPackedMatrix *auxRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
 arr comp_At_A(arr& A);
+arr comp_A_At(arr& A);
 arr comp_At_x(arr& A, const arr& x);
+arr comp_A_x(arr& A, const arr& x);
 
 
 //===========================================================================
