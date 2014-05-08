@@ -1341,18 +1341,19 @@ double RowShiftedPackedMatrix::acc(uint i, uint j) {
 arr packRowShifted(const arr& X) {
   arr Z;
   RowShiftedPackedMatrix *Zaux = auxRowShifted(Z, X.d0, 0, X.d1);
-  //-- compute rowShifts and d0:
-  uint len=0;
+  Z.setZero();
+  //-- compute rowShifts and pack_d1:
+  uint pack_d1=0;
   for(uint i=0; i<X.d0; i++) {
     uint j=0,rs;
     while(j<X.d1 && X(i,j)==0.) j++;
     Zaux->rowShift(i)=rs=j;
     j=X.d1;
     while(j>rs && X(i,j-1)==0.) j--;
-    if(j-rs>len) len=j-rs;
+    if(j-rs>pack_d1) pack_d1=j-rs;
   }
   
-  Z.resize(X.d0,len);
+  Z.resize(X.d0,pack_d1);
   Z.setZero();
   for(uint i=0; i<Z.d0; i++) for(uint j=0; j<Z.d1 && Zaux->rowShift(i)+j<X.d1; j++)
       Z(i,j) = X(i,Zaux->rowShift(i)+j);
@@ -1360,17 +1361,17 @@ arr packRowShifted(const arr& X) {
   return Z;
 }
 
-arr unpackRowShifted(const arr& Z) {
-  CHECK(Z.special==arr::RowShiftedPackedMatrixST,"");
-  RowShiftedPackedMatrix *Zaux = (RowShiftedPackedMatrix*)Z.aux;
-  arr X(Z.d0, Zaux->real_d1);
-  CHECK(!Zaux->symmetric || Z.d0==Zaux->real_d1,"cannot be symmetric!");
+arr unpackRowShifted(const arr& Y) {
+  CHECK(Y.special==arr::RowShiftedPackedMatrixST,"");
+  RowShiftedPackedMatrix *Yaux = (RowShiftedPackedMatrix*)Y.aux;
+  arr X(Y.d0, Yaux->real_d1);
+  CHECK(!Yaux->symmetric || Y.d0==Yaux->real_d1,"cannot be symmetric!");
   X.setZero();
-  for(uint i=0; i<Z.d0; i++) {
-    uint rs=Zaux->rowShift(i);
-    for(uint j=0; j<Z.d1 && rs+j<X.d1; j++) {
-      X(i,j+rs) = Z(i,j);
-      if(Zaux->symmetric) X(j+rs,i) = Z(i,j);
+  for(uint i=0; i<Y.d0; i++) {
+    uint rs=Yaux->rowShift(i);
+    for(uint j=0; j<Y.d1 && rs+j<X.d1; j++) {
+      X(i,j+rs) = Y(i,j);
+      if(Yaux->symmetric) X(j+rs,i) = Y(i,j);
     }
   }
   return X;
@@ -1404,8 +1405,10 @@ arr RowShiftedPackedMatrix::At_A() {
   //TODO use blas DSYRK instead?
   arr R;
   RowShiftedPackedMatrix *Raux = auxRowShifted(R, real_d1, Z.d1, real_d1);
+  R.setZero();
   for(uint i=0; i<R.d0; i++) Raux->rowShift(i) = i;
   Raux->symmetric=true;
+  if(!Z.d1) return R; //Z is identically zero, all rows fully packed -> return zero R
   for(uint i=0; i<Z.d0; i++) {
     uint rs=rowShift(i);
     double* Zi=&Z(i,0);
@@ -1422,10 +1425,49 @@ arr RowShiftedPackedMatrix::At_A() {
   return R;
 }
 
+arr RowShiftedPackedMatrix::A_At() {
+
+  //-- determine pack_d1 for the resulting symmetric matrix
+  uint pack_d1=1;
+  for(uint i=0; i<Z.d0; i++) {
+    uint rs_i=rowShift(i);
+    for(uint j=Z.d0-1; j>=i+pack_d1; j--) {
+      uint rs_j=rowShift(j);
+      uint a=MT::MAX(rs_i,rs_j);
+      uint b=MT::MIN(rs_i+Z.d1,rs_j+Z.d1);
+      b=MT::MIN(real_d1,b);
+      if(a<b) if(pack_d1<j-i+1) pack_d1=j-i+1;
+    }
+  }
+
+  arr R;
+  RowShiftedPackedMatrix *Raux = auxRowShifted(R, Z.d0, pack_d1, Z.d0);
+  R.setZero();
+  for(uint i=0; i<R.d0; i++) Raux->rowShift(i) = i;
+  Raux->symmetric=true;
+  if(!Z.d1) return R; //Z is identically zero, all rows fully packed -> return zero R
+  for(uint i=0; i<Z.d0; i++) {
+    uint rs_i=rowShift(i);
+    double* Zi=&Z(i,0);
+    for(uint j=i; j<Z.d0 && j<i+pack_d1; j++) {
+      uint rs_j=rowShift(j);
+      double* Zj=&Z(j,0);
+      double* Rij=&R(i,j-i);
+
+      uint a=MT::MAX(rs_i,rs_j);
+      uint b=MT::MIN(rs_i+Z.d1,rs_j+Z.d1);
+      b=MT::MIN(real_d1,b);
+      for(uint k=a;k<b;k++) *Rij += Zi[k-rs_i]*Zj[k-rs_j];
+    }
+  }
+  return R;
+}
+
 arr RowShiftedPackedMatrix::At_x(const arr& x) {
   CHECK(x.N==Z.d0,"");
   arr y(real_d1);
   y.setZero();
+  if(!Z.d1) return y; //Z is identically zero, all rows fully packed -> return zero y
   for(uint j=0; j<real_d1; j++) {
     double sum=0.;
     uint a=colPatches(j,0);
@@ -1438,7 +1480,22 @@ arr RowShiftedPackedMatrix::At_x(const arr& x) {
     y(j) = sum;
   }
   return y;
-  
+}
+
+arr RowShiftedPackedMatrix::A_x(const arr& x) {
+  CHECK(x.N==real_d1,"");
+  arr y(Z.d0);
+  y.setZero();
+  if(!Z.d1) return y; //Z is identically zero, all rows fully packed -> return zero y
+  for(uint i=0; i<Z.d0; i++) {
+    double sum=0.;
+    uint rs=rowShift.p[i];
+    for(uint j=0; j<Z.d1 && j+rs<x.N; j++) {
+      sum += Z(i,j)*x(j+rs);
+    }
+    y(i) = sum;
+  }
+  return y;
 }
 
 arr unpack(const arr& X) {
@@ -1453,9 +1510,21 @@ arr comp_At_A(arr& A) {
   return NoArr;
 }
 
+arr comp_A_At(arr& A) {
+  if(A.special==arr::noneST) { arr X; blas_A_At(X,A); return X; }
+  if(A.special==arr::RowShiftedPackedMatrixST) return ((RowShiftedPackedMatrix*)A.aux)->A_At();
+  return NoArr;
+}
+
 arr comp_At_x(arr& A, const arr& x) {
   if(A.special==arr::noneST) { arr y; innerProduct(y, ~A, x); return y; }
   if(A.special==arr::RowShiftedPackedMatrixST) return ((RowShiftedPackedMatrix*)A.aux)->At_x(x);
+  return NoArr;
+}
+
+arr comp_A_x(arr& A, const arr& x) {
+  if(A.special==arr::noneST) { arr y; innerProduct(y, A, x); return y; }
+  if(A.special==arr::RowShiftedPackedMatrixST) return ((RowShiftedPackedMatrix*)A.aux)->A_x(x);
   return NoArr;
 }
 
