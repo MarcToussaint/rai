@@ -48,20 +48,34 @@ extern uint eval_cost;
  *
  */
 
-struct ScalarFunction; //defined in array.h
+#if 0 //these are already defined in array.h
+/// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
+struct ScalarFunction {
+  virtual double fs(arr& g, arr& H, const arr& x) = 0;
+  virtual ~ScalarFunction(){}
+};
 
-struct VectorFunction; //defined in array.h
+/// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
+struct VectorFunction {
+  virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if !NoArr) Jacobian J for x
+  virtual ~VectorFunction(){}
+};
+#endif
 
-struct ConstrainedProblem {//:ScalarFunction, VectorFunction {
+struct ConstrainedProblem {
+  /// returns \f$f(x), \nabla f(x), \nabla^2 f(x), g(x), \nabla g(x)\f$ (giving NoArr as argument -> do not return this quantity)
   virtual double fc(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x) = 0;
-  virtual uint dim_x() = 0; ///< \f$ \dim(x) \f$
-  virtual uint dim_g() = 0; ///< \f$ \dim(g) \f$
+  virtual uint dim_x() = 0; ///< returns \f$ \dim(x) \f$
+  virtual uint dim_g() = 0; ///< returns \f$ \dim(g) \f$
 
   virtual ~ConstrainedProblem(){}
 };
 
 /// functions \f$ \phi_t:(x_{t-k},..,x_t) \mapsto y\in\mathbb{R}^{m_t} \f$ over a chain \f$x_0,..,x_T\f$ of variables
 struct KOrderMarkovFunction {
+  /// returns $\f\phi(x), \nabla \phi(x)\f$ for a given time step t and a k+1 tuple of states \f$\bar x = (x_{t-k},..,x_t)\f$.
+  /// This defines the cost function \f$f_t = \phi_t^\top \phi_t\f$ in the time slice. Optionally, the last dim_g entries of
+  ///  \f$\phi\f$ are interpreted as inequality constraint function \f$g(\bar x)\f$ for time slice t
   virtual void phi_t(arr& phi, arr& J, uint t, const arr& x_bar) = 0;
   
   //functions to get the parameters $T$, $k$ and $n$ of the $k$-order Markov Process
@@ -91,19 +105,13 @@ struct Convert {
   struct sConvert* s;
   Convert(ScalarFunction&);
   Convert(VectorFunction&);
-//  Convert(QuadraticFunction&);
-//  Convert(VectorChainFunction&);
-//  Convert(QuadraticChainFunction&);
   Convert(KOrderMarkovFunction&);
   Convert(double(*fs)(arr*, const arr&, void*),void *data);
   Convert(void (*fv)(arr&, arr*, const arr&, void*),void *data);
-//  Convert(struct ControlledSystem&);
   ~Convert();
   operator ScalarFunction&();
   operator VectorFunction&();
   operator ConstrainedProblem&();
-//  operator VectorChainFunction&();
-//  operator QuadraticChainFunction&();
   operator KOrderMarkovFunction&();
 };
 
@@ -151,6 +159,7 @@ struct OptOptions {
 
 // declared separately:
 #include "opt-newton.h"
+#include "opt-constrained.h"
 #include "opt-rprop.h"
 uint optGradDescent(arr& x, ScalarFunction& f, OptOptions opt);
 

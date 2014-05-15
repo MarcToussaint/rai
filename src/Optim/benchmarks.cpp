@@ -46,19 +46,13 @@ void SquaredCost::initRandom(uint _n, double condition) {
   //arr U,d,V;    svd(U, d, V, C);    cout <<U <<d <<V <<M <<C <<endl;
 }
 
-//double SquaredCost::fs(arr& grad, arr& H, const arr& x) {
-//  arr y;
-//  fv(y, grad, x);
-//  if(&grad) grad=2.*~y*grad;
-//  if(&H) H = 2.*(~M*M);
-//  return sumOfSqr(y);
-//}
-
 void SquaredCost::fv(arr& y, arr& J,const arr& x) {
   CHECK(x.N==n,"");
   y = M*x;
   if(&J) J=M;
 }
+
+//===========================================================================
 
 NonlinearlyWarpedSquaredCost::NonlinearlyWarpedSquaredCost(uint _n, double condition):sq(_n,condition) {
   n=_n;
@@ -67,14 +61,6 @@ NonlinearlyWarpedSquaredCost::NonlinearlyWarpedSquaredCost(uint _n, double condi
 void NonlinearlyWarpedSquaredCost::initRandom(uint _n, double condition) {
   n=_n;
   sq.initRandom(n,condition);
-}
-
-double NonlinearlyWarpedSquaredCost::fs(arr& grad, arr& H, const arr& x) {
-  arr y;
-  fv(y, grad, x);
-  if(&grad) grad=2.*~y*grad;
-  if(&H) NIY;
-  return sumOfSqr(y);
 }
 
 void NonlinearlyWarpedSquaredCost::fv(arr& y, arr& J,const arr& x) {

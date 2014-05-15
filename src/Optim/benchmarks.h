@@ -223,21 +223,19 @@ struct SquaredCost : VectorFunction {
   SquaredCost(uint n, double condition=100.);
   void initRandom(uint n, double condition=100.);
   
-//  double fs(arr& g, arr& H, const arr& x);
   void fv(arr& y, arr& J,const arr& x);
 };
 
 //===========================================================================
 
 /// Same as SquaredCost but $x_i \gets atan(x_i)$ before evaluating the squared cost
-struct NonlinearlyWarpedSquaredCost : ScalarFunction,VectorFunction {
+struct NonlinearlyWarpedSquaredCost : VectorFunction {
   uint n;  /// dimensionality of $x$
   SquaredCost sq;
   
   NonlinearlyWarpedSquaredCost(uint n, double condition=100.);
   void initRandom(uint n, double condition=100.);
   
-  double fs(arr& grad, arr& H, const arr& x);
   void fv(arr& y, arr& J,const arr& x);
 };
 
@@ -245,7 +243,7 @@ struct NonlinearlyWarpedSquaredCost : ScalarFunction,VectorFunction {
 
 struct ParticleAroundWalls:KOrderMarkovFunction {
   uint k;
-  bool kern, constrained;
+  bool useKernel, constrained;
   void phi_t(arr& phi, arr& J, uint t, const arr& x_bar);
 
   uint get_T(){ return 1000; }
@@ -255,7 +253,7 @@ struct ParticleAroundWalls:KOrderMarkovFunction {
   uint dim_g(uint t);
 
   bool isConstrained(){ return constrained; }
-  bool hasKernel(){ return kern; }
+  bool hasKernel(){ return useKernel; }
   double kernel(uint t0, uint t1){
     //if(t0==t1) return 1e3;
     return 1e0*::exp(-.001*MT::sqr((double)t0-t1));
