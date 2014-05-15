@@ -78,7 +78,6 @@ namespace MT {
 extern int argc;
 extern char** argv;
 extern bool IOraw;  ///< stream modifier for some classes (Mem in particular)
-extern bool noLog;  ///< no logfile: default=true, becomes false when MT::init is called
 extern uint lineCount;
 extern int verboseLevel;
 
@@ -127,10 +126,11 @@ double NNsdv(const double& a, const double& b, double sdv);
 double NNsdv(double x, double sdv);
 double smoothRamp(double x, double eps, double power);
 double d_smoothRamp(double x, double eps, double power);
-double barrier(double x, double margin, double power);
-double d_barrier(double x, double margin, double power);
-double potential(double x, double margin, double power);
-double d_potential(double x, double margin, double power);
+
+double ineqConstraintCost(double g, double margin, double power);
+double d_ineqConstraintCost(double g, double margin, double power);
+double eqConstraintCost(double h, double margin, double power);
+double d_eqConstraintCost(double h, double margin, double power);
 
 //----- time access
 double clockTime(); //(really on the clock)

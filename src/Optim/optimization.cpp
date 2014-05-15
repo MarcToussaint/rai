@@ -90,21 +90,21 @@ bool checkAllGradients(ConstrainedProblem &P, const arr& x, double tolerance){
 //
 
 OptOptions::OptOptions() {
-  verbose=0;
+  verbose    =MT::getParameter<uint>  ("opt/verbose",1);
   fmin_return=NULL;
-  stopTolerance=1e-2;
-  stopEvals=1000;
-  stopIters=1000;
-  initStep=1.;
-  minStep=-1.;
-  maxStep=-1.;
-  damping=1.;
-  stepInc=2.; stepDec=.1;
-  dampingInc=1.; dampingDec=1.;
-  nonStrict=0;
-  useAdaptiveDamping=false;
-  clampInitialState=false;
-  constrainedMethod=augmentedLag;
+  stopTolerance=MT::getParameter<double>("opt/stopTolerance",1e-2);
+  stopEvals =MT::getParameter<uint>  ("opt/stopEvals",1000);
+  stopIters =MT::getParameter<uint>  ("opt/stopIters",1000);
+  initStep  =MT::getParameter<double>("opt/initStep",1.);
+  minStep   =MT::getParameter<double>("opt/minStep",-1.);
+  maxStep   =MT::getParameter<double>("opt/maxStep",-1.);
+  damping   =MT::getParameter<double>("opt/damping",1.);
+  stepInc   =MT::getParameter<double>("opt/stepInc",2.);
+  stepDec   =MT::getParameter<double>("opt/stepDec",.1);
+  dampingInc=MT::getParameter<double>("opt/dampingInc",1.);
+  dampingDec=MT::getParameter<double>("opt/dampingDec",1.);
+  nonStrictSteps=MT::getParameter<uint>  ("opt/nonStrictSteps",0);
+  constrainedMethod = (ConstrainedMethodType)MT::getParameter<int>("opt/constrainedMethod",augmentedLag);
 }
 
 OptOptions global_optOptions;

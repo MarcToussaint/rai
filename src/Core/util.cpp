@@ -111,12 +111,12 @@ bool timerUseRealTime=false;
 QApplication *myApp=NULL;
 #endif
 
-struct Demon {
-  std::ofstream logFile;
-  int logstat;
+struct LogFile {
+  std::ofstream fil;
+  bool isOpen;
+  bool noLog;
   
-  Demon() {
-    logstat=0;
+  LogFile():isOpen(false), noLog(false) {
     timerStartTime=MT::cpuTime();
 #ifndef MT_TIMEB
     gettimeofday(&startTime, 0);
@@ -124,8 +124,8 @@ struct Demon {
     _ftime(&startTime);
 #endif
   }
-  ~Demon() {
-    if(logstat) {  //don't open a log file anymore in the destructor
+  ~LogFile() {
+    if(isOpen) {  //don't open a log file anymore in the destructor
       char times[200];
       sprintf(times, "Ellapsed double time:  %.3lfsec\nProcess  user time:   %.3lfsec", realTime(), cpuTime());
       MT::log() <<"Execution stop:      " <<date()
@@ -146,18 +146,19 @@ struct Demon {
   }
   
   std::ofstream& log(const char *name) {
-    if(!logstat && noLog) logstat=1;
-    if(!logstat) {
-      logFile.open(name);
-      if(!logFile.good()) MT_MSG("could not open log-file `" <<name <<"' for output");
-      logstat=1;
+    if(!isOpen && !noLog) {
+      fil.open(name);
+      if(!fil.good()) MT_MSG("could not open log-file `" <<name <<"' for output");
+      isOpen=true;
     }
-    return logFile;
+    return fil;
   }
-} demon;
+};
+
+Singleton<LogFile> logFile;
 
 /// access to the log-file
-std::ofstream& log(const char *name) { return demon.log(name); }
+std::ofstream& log(const char *name) { return logFile().log(name); }
 
 /// open an output-file with name '\c name'
 void open(std::ofstream& fs, const char *name, const char *errmsg) {
@@ -422,31 +423,31 @@ margin = 1.5
 f(x) = heavy(x)*x**power
 plot f(x/margin+1), 1
 */
-double barrier(double x, double margin, double power){
-  if(x<-margin) return 0.;
-  double y=x/margin+1.;
+double ineqConstraintCost(double g, double margin, double power){
+  if(g<-margin) return 0.;
+  double y=g/margin+1.;
   if(power==1.) return y;
   if(power==2.) return y*y;
   return pow(y,power);
 }
 
-double d_barrier(double x, double margin, double power){
-  if(x<-margin) return 0.;
-  double y=x/margin+1.;
+double d_ineqConstraintCost(double g, double margin, double power){
+  if(g<-margin) return 0.;
+  double y=g/margin+1.;
   if(power==1.) return 1./margin;
   if(power==2.) return 2.*y/margin;
   return power*pow(y,power-1.)/margin;
 }
 
-double potential(double x, double margin, double power){
-  double y=x/margin;
+double eqConstraintCost(double h, double margin, double power){
+  double y=h/margin;
   if(power==1.) return fabs(y);
   if(power==2.) return y*y;
   return pow(fabs(y),power);
 }
 
-double d_potential(double x, double margin, double power){
-  double y=x/margin;
+double d_eqConstraintCost(double h, double margin, double power){
+  double y=h/margin;
   if(power==1.) return MT::sign(y)/margin;
   if(power==2.) return 2.*y/margin;
   return power*pow(y,power-1.)*MT::sign(y)/margin;

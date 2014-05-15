@@ -84,7 +84,7 @@ uint ParticleAroundWalls::dim_phi(uint t){
 }
 
 uint ParticleAroundWalls::dim_g(uint t){
-  if(!constrained) return 0;
+  if(!hardConstrained) return 0;
   uint T=get_T();
   if(t==T/2 || t==T/4 || t==3*T/4 || t==T) return dim_x();
   return 0;
@@ -98,19 +98,21 @@ void ParticleAroundWalls::phi_t(arr& phi, arr& J, uint t, const arr& x_bar){
   CHECK(x_bar.d1==n,"");
   CHECK(t<=T,"");
 
-  //-- transition costs
+  //-- transition costs: append to phi
   if(k==1)  phi = x_bar[1]-x_bar[0]; //penalize velocity
   if(k==2)  phi = x_bar[2]-2.*x_bar[1]+x_bar[0]; //penalize acceleration
   if(k==3)  phi = x_bar[3]-3.*x_bar[2]+3.*x_bar[1]-x_bar[0]; //penalize jerk
 
+  //-- walls: append to phi
+  //Note: here we append to phi ONLY in certain time slices: the dimensionality of phi may very with time slices; see dim_phi(uint t)
   double eps=.1, power=2.;
-  if(!constrained){
+  if(!hardConstrained){
     //-- wall costs
     for(uint i=0;i<n;i++){ //add barrier costs to each dimension
-      if(t==T/4)   phi.append(MT::barrier(i+1.-x_bar(k,i), eps, power));  //middle factor: ``greater than i''
-      if(t==T/2)   phi.append(MT::barrier(x_bar(k,i)+i+1., eps, power));  //last factor: ``lower than -i''
-      if(t==3*T/4) phi.append(MT::barrier(i+1.-x_bar(k,i), eps, power));  //middle factor: ``greater than i''
-      if(t==T)     phi.append(MT::barrier(x_bar(k,i)+i+1., eps, power));  //last factor: ``lower than -i''
+      if(t==T/4)   phi.append(MT::ineqConstraintCost(i+1.-x_bar(k,i), eps, power));  //middle factor: ``greater than i''
+      if(t==T/2)   phi.append(MT::ineqConstraintCost(x_bar(k,i)+i+1., eps, power));  //last factor: ``lower than -i''
+      if(t==3*T/4) phi.append(MT::ineqConstraintCost(i+1.-x_bar(k,i), eps, power));  //middle factor: ``greater than i''
+      if(t==T)     phi.append(MT::ineqConstraintCost(x_bar(k,i)+i+1., eps, power));  //last factor: ``lower than -i''
     }
   }else{
     //-- wall constraints
@@ -128,19 +130,20 @@ void ParticleAroundWalls::phi_t(arr& phi, arr& J, uint t, const arr& x_bar){
   if(&J){ //we also need to return the Jacobian
     J.resize(m,k+1,n).setZero();
 
-    //curvature
+    //-- transition costs
     for(uint i=0;i<n;i++){
       if(k==1){ J(i,1,i) = 1.;  J(i,0,i) = -1.; }
       if(k==2){ J(i,2,i) = 1.;  J(i,1,i) = -2.;  J(i,0,i) = 1.; }
       if(k==3){ J(i,3,i) = 1.;  J(i,2,i) = -3.;  J(i,1,i) = +3.;  J(i,0,i) = -1.; }
     }
 
-    if(!constrained){
+    //-- walls
+    if(!hardConstrained){
       for(uint i=0;i<n;i++){
-        if(t==T/4)   J(n+i,k,i) = -MT::d_barrier(i+1.-x_bar(k,i), eps, power);
-        if(t==T/2)   J(n+i,k,i) =  MT::d_barrier(x_bar(k,i)+i+1., eps, power);
-        if(t==3*T/4) J(n+i,k,i) = -MT::d_barrier(i+1.-x_bar(k,i), eps, power);
-        if(t==T)     J(n+i,k,i) =  MT::d_barrier(x_bar(k,i)+i+1., eps, power);
+        if(t==T/4)   J(n+i,k,i) = -MT::d_ineqConstraintCost(i+1.-x_bar(k,i), eps, power);
+        if(t==T/2)   J(n+i,k,i) =  MT::d_ineqConstraintCost(x_bar(k,i)+i+1., eps, power);
+        if(t==3*T/4) J(n+i,k,i) = -MT::d_ineqConstraintCost(i+1.-x_bar(k,i), eps, power);
+        if(t==T)     J(n+i,k,i) =  MT::d_ineqConstraintCost(x_bar(k,i)+i+1., eps, power);
       }
     }else{
       for(uint i=0;i<n;i++){
