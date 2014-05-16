@@ -293,7 +293,7 @@ double sign(double x) { if(x<0.) return -1.; return 1.; }
 double linsig(double x) { if(x<0.) return 0.; if(x>1.) return 1.; return x; }
 
 /// x ends up in the interval [a, b]
-void constrain(double& x, double a, double b) { if(x<a) x=a; if(x>b) x=b; }
+//void clip(double& x, double a, double b) { if(x<a) x=a; if(x>b) x=b; }
 
 /// the angle of the vector (x, y) in [-pi, pi]
 double phi(double x, double y) {
@@ -762,7 +762,7 @@ char& MT::String::operator()(uint i) const { CHECK(i<=N, "String range error (" 
 /// return the substring from `start` to (exclusive) `end`.
 MT::String MT::String::getSubString(uint start, uint end) const {
   CHECK(start < end, "getSubString: start should be smaller than end");
-  end = clip(end, uint(0), N);
+  clip(end, uint(0), N);
   String tmp;
   for (uint i = start; i < end; i++) {
     tmp.append((*this)(i));
@@ -775,7 +775,7 @@ MT::String MT::String::getSubString(uint start, uint end) const {
  * @param n number of chars to return
  */
 MT::String MT::String::getLastN(uint n) const {
-  n = clip(n, uint(0), N);
+  clip(n, uint(0), N);
   return getSubString(N-n, N);
 }
 
@@ -784,7 +784,7 @@ MT::String MT::String::getLastN(uint n) const {
  * @param n number of chars to return.
  */
 MT::String MT::String::getFirstN(uint n) const {
-  n = clip(n, uint(0), N);
+  clip(n, uint(0), N);
   return getSubString(0, n);
 }
 
@@ -1195,7 +1195,7 @@ void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDF
   }
   
   if(pauseMouse) cmd <<"\n pause mouse" <<std::endl;
-  ofstream gcmd("z.plotcmd"); gcmd <<cmd; gcmd.close(); //for debugging..
+  FILE("z.plotcmd") <<cmd; //for debugging..
   fputs(cmd.p, MT_gp);
   fflush(MT_gp) ;
 #else

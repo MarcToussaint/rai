@@ -56,7 +56,7 @@ struct Spline {
   /// gradient w.r.t. the points (trivial: mapping is linear)
   void partial(arr& grad_points, const arr& grad_path) const;
   /// gradient w.r.t. the timings of the point
-  void partial(arr& dCdx, arr& dCdt, const arr& dCdf, bool constrain=true) const;
+  void partial(arr& dCdx, arr& dCdt, const arr& dCdf, bool clip=true) const;
 
   void plotBasis();
 };

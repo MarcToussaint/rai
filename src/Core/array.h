@@ -487,9 +487,10 @@ double cofactor(const arr& A, uint i, uint j);
 void lognormScale(arr& P, double& logP, bool force=true);
 
 void gnuplot(const arr& X);
-void write(const arr& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
-void write(std::ostream& os, const arrL& X, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
-void write(const arrL& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
+//these are obsolete, use catCol instead
+//void write(const arr& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
+//void write(std::ostream& os, const arrL& X, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
+//void write(const arrL& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
 
 
 void write_ppm(const byteA &img, const char *file_name, bool swap_rows=false);
@@ -599,6 +600,9 @@ template<class T> MT::Array<T> cat(const MT::Array<T>& y, const MT::Array<T>& z,
 template<class T> MT::Array<T> cat(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c, const MT::Array<T>& d) { MT::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); return x; }
 template<class T> MT::Array<T> cat(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c, const MT::Array<T>& d, const MT::Array<T>& e) { MT::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); x.append(e); return x; }
 template<class T> MT::Array<T> catCol(const MT::Array<MT::Array<T>*>& X);
+template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b){ return catCol(LIST<MT::Array<T> >(a,b)); }
+template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c){ return catCol(LIST<MT::Array<T> >(a,b,c)); }
+template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c, const MT::Array<T>& d){ return catCol(LIST<MT::Array<T> >(a,b,c,d)); }
 
 
 //===========================================================================

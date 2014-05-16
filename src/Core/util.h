@@ -103,10 +103,11 @@ void flip(int& b, uint i);
 double MIN(double a, double b);
 double MAX(double a, double b);
 uint MAX(uint a, uint b);
+double indicate(bool expr){ if(expr) return 1.; return 0.; }
 double modMetric(double x, double y, double mod);
 double sign(double x);
 double linsig(double x);
-void   constrain(double& x, double a, double b);
+//void   clip(double& x, double a, double b);
 double phi(double dx, double dy);
 double dphi(double x, double y, double dx, double dy);
 double DIV(double x, double y, bool force=false);
@@ -609,19 +610,19 @@ template<class T> T *Singleton<T>::singleton=NULL;
 void gnuplot(const char *command, bool pauseMouse=false, bool persist=false, const char* PDFfile=NULL);
 void gnuplotClose();
 
-//===========================================================================
-// MISC
 
-/**
- * @brief Clip the `value` of n between `lower` and `upper`.
- * @return The clipped value.
- */
-template <typename T>
-T clip(const T& n, const T& lower, const T& upper) {
-  return std::max(lower, std::min(n, upper));
+//===========================================================================
+//
+// Stefan's misc
+//
+
+/// Clip the `value` of n between `lower` and `upper`.
+template <typename T> T clip(T& x, const T& lower, const T& upper) {
+  if(x<lower) x=lower; if(x>upper) x=upper; return x;
 }
 
 std::string getcwd_string();
+
 //===========================================================================
 //
 // implementations

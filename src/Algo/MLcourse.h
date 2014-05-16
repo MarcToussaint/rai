@@ -28,11 +28,11 @@
 // basic regression and classification methods
 //
 
-void linearRegression(arr& beta, const arr& X, const arr& y, const arr* weighted=NULL);
-void ridgeRegression(arr& beta, const arr& X, const arr& y, double lambda=-1., const arr* weighted=NULL, arr* zScores=NULL);
-void logisticRegression2Class(arr& beta, const arr& X, const arr& y, double lambda=-1.);
-void logisticRegressionMultiClass(arr& beta, const arr& X, const arr& y, double lambda=-1.);
+arr ridgeRegression(const arr& X, const arr& y, double lambda=-1., arr& bayesSigma=NoArr, const arr& weighted=NoArr, arr& zScores=NoArr);
+arr evaluateBayesianRidgeRegressionSigma(const arr& X, const arr& bayesSigma);
 
+arr logisticRegression2Class(const arr& X, const arr& y, double lambda=-1., arr& bayesSigma=NoArr);
+arr logisticRegressionMultiClass(const arr& X, const arr& y, double lambda=-1.);
 
 //===========================================================================
 //
@@ -58,7 +58,7 @@ struct CrossValidation {
 //
 
 enum FeatureType { readFromCfgFileFT=0, linearFT=1, quadraticFT, cubicFT, rbfFT=4, piecewiseConstantFT=5, piecewiseLinearFT=6 };
-void makeFeatures(arr& Phi, const arr& X, FeatureType featureType=readFromCfgFileFT, const arr& rbfCenters=NoArr);
+arr makeFeatures(const arr& X, FeatureType featureType=readFromCfgFileFT, const arr& rbfCenters=NoArr);
 
 
 //===========================================================================
