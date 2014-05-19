@@ -835,12 +835,12 @@ void gnuplot(const arr& X) {
 //  catCol(X).write(os, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
 //}
 
-//void write(const arrL& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
-//  std::ofstream fil;
-//  MT::open(fil, filename);
-//  catCol(X).write(fil, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
-//  fil.close();
-//}
+void write(const arrL& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
+  std::ofstream fil;
+  MT::open(fil, filename);
+  catCol(X).write(fil, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
+  fil.close();
+}
 
 void write_ppm(const byteA &img, const char *file_name, bool swap_rows) {
   if(!img.N) MT_MSG("empty image");
