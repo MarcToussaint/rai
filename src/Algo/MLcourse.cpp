@@ -228,7 +228,7 @@ arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bay
     }
     lastLogLike=logLike;
 
-    beta_update=lapack_Ainv_b_sym(Xt*(w%X) + 2.*I, Xt*(y-p) - 2.*I*beta);   //beta update equation
+    beta_update = lapack_Ainv_b_sym(Xt*(w%X) + 2.*I, Xt*(y-p) - 2.*I*beta);   //beta update equation
     beta += alpha*beta_update;
     
 //    MT_MSG("logReg iter= " <<k <<" negLogLike= " <<-logLike/n <<" beta_update= " <<absMax(beta_update) <<" alpha= " <<alpha);
