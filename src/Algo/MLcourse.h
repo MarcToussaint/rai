@@ -34,6 +34,39 @@ arr evaluateBayesianRidgeRegressionSigma(const arr& X, const arr& bayesSigma);
 arr logisticRegression2Class(const arr& X, const arr& y, double lambda=-1., arr& bayesSigma=NoArr);
 arr logisticRegressionMultiClass(const arr& X, const arr& y, double lambda=-1.);
 
+struct DefaultKernelFunction:KernelFunction{
+  enum KernelType{ readFromCfg=0, Gauss=1 } type;
+  arr hyperParam1,hyperParam2;
+  DefaultKernelFunction(KernelType _type=readFromCfg):type(_type){}
+  virtual double k(const arr& x1, const arr& x2, arr& g1, arr& g2);
+};
+extern DefaultKernelFunction defaultKernelFunction;
+
+struct KernelRidgeRegression{
+  arr X; ///< stored data (to compute kappa for queries)
+  arr kernelMatrix_lambda; ///< X X^T + lambda I
+  arr invKernelMatrix_lambda;
+  arr alpha; ///< (X X^T + lambda I)^-1 y
+  double sigma; ///< mean squared error on training data; estimate of noise
+  KernelFunction& kernel;
+  KernelRidgeRegression(const arr& X, const arr& y, KernelFunction& kernel=defaultKernelFunction, double lambda=-1);
+  arr evaluate(const arr& X, arr& bayesSigma2=NoArr);
+};
+
+struct KernelLogisticRegression{
+  arr X; ///< stored data (to compute kappa for queries)
+  arr kernelMatrix_lambda; ///< X X^T + 2 lambda W^-1
+  arr invKernelMatrix_lambda;
+  arr alpha; ///< (X X^T + 2 lambda W^-1)^-1 (f - (p-y)/w)
+  double lambda;
+  KernelFunction& kernel;
+  KernelLogisticRegression(const arr& X, const arr& y, KernelFunction& kernel=defaultKernelFunction, double lambda=-1);
+  arr evaluate(const arr& X, arr &p_bayes=NoArr, arr& p_hi=NoArr, arr& p_lo=NoArr);
+};
+
+struct KernelCRF{
+};
+
 //===========================================================================
 //
 // cross validation
@@ -70,7 +103,8 @@ extern arr beta_true;
 enum ArtificialDataType { readFromCfgFileDT=0, linearData, sinusData, linearOutlier, linearRedundantData };
 
 void artificialData(arr& X, arr& y, ArtificialDataType dataType=readFromCfgFileDT);
-void artificialData_Hasties2Class(arr& X, arr& y);
+void artificialData_1D2Class(arr& X, arr& y);
+void artificialData_Hasties2Class(arr& X, arr& y, uint dim=2);
 void artificialData_HastiesMultiClass(arr& X, arr& y);
 void artificialData_GaussianMixture(arr& X, arr& y);
 void load_data(arr& X, const char* filename, bool whiten);

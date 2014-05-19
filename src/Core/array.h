@@ -350,6 +350,19 @@ namespace MT { struct String; }
 typedef MT::Array<MT::String> StringA;
 typedef MT::Array<MT::String*> StringL;
 
+//===========================================================================
+/// @}
+/// @name constant arrays
+/// @{
+
+extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional arguments
+extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
+
+//===========================================================================
+/// @}
+/// @name function types
+/// @{
+
 /// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
 struct ScalarFunction {
   virtual double fs(arr& g, arr& H, const arr& x) = 0;
@@ -362,13 +375,12 @@ struct VectorFunction {
   virtual ~VectorFunction(){}
 };
 
-//===========================================================================
-/// @}
-/// @name constant arrays
-/// @{
+/// a kernel function
+struct KernelFunction {
+  virtual double k(const arr& x1, const arr& x2, arr& g1=NoArr, arr& g2=NoArr) = 0;
+  virtual ~KernelFunction(){}
+};
 
-extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional arguments
-extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
 
 
 //===========================================================================
@@ -737,7 +749,7 @@ void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs);
 bool lapack_isPositiveSemiDefinite(const arr& symmA);
 void lapack_inverseSymPosDef(arr& Ainv, const arr& A);
 double lapack_determinantSymPosDef(const arr& A);
-void lapack_Ainv_b_sym(arr& x, const arr& A, const arr& b);
+arr lapack_Ainv_b_sym(const arr& A, const arr& b);
 void lapack_min_Ax_b(arr& x,const arr& A, const arr& b);
 
 

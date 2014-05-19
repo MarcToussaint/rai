@@ -277,6 +277,8 @@ double MIN(double a, double b) { return a<b?a:b; }
 double MAX(double a, double b) { return a>b?a:b; }
 uint MAX(uint a, uint b) { return a>b?a:b; }
 
+double indicate(bool expr){ if(expr) return 1.; return 0.; }
+
 /** @brief the distance between x and y w.r.t.\ a circular topology
     (e.g. modMetric(1, 8, 10)=3) */
 double modMetric(double x, double y, double mod) {

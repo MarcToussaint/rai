@@ -29,6 +29,8 @@ double NormalSdv(const double& a, const double& b, double sdv) {
   return norm*::exp(-.5*d*d);
 }
 
+//===========================================================================
+
 arr ridgeRegression(const arr& X, const arr& y, double lambda, arr& bayesSigma, const arr &weighted, arr &zScores) {
   if(lambda<0.) lambda = MT::getParameter<double>("lambda",1e-10);
 
@@ -38,8 +40,7 @@ arr ridgeRegression(const arr& X, const arr& y, double lambda, arr& bayesSigma, 
   arr XtX = Xt*X;
   for(uint i=1;i<XtX.d0;i++) XtX(i,i) += lambda;
   XtX(0, 0) += 1e-10; //don't regularize beta_0 !!
-  arr beta;
-  lapack_Ainv_b_sym(beta, XtX, Xt*y);
+  arr beta = lapack_Ainv_b_sym(XtX, Xt*y);
   if(&bayesSigma){
     lapack_inverseSymPosDef(bayesSigma, XtX);
     double sigma2 = sqrt(sumOfSqr(X*beta-y)/(X.d0-1));
@@ -57,11 +58,134 @@ arr ridgeRegression(const arr& X, const arr& y, double lambda, arr& bayesSigma, 
   return beta;
 }
 
+//===========================================================================
+
 arr evaluateBayesianRidgeRegressionSigma(const arr& X, const arr& bayesSigma){
   arr s(X.d0);
   for(uint i=0;i<s.N;i++) s.elem(i) = (~X[i] * bayesSigma * X[i]).scalar();
   return s;
 }
+
+//===========================================================================
+
+double DefaultKernelFunction::k(const arr& x1, const arr& x2, arr& g1, arr& g2){
+  if(!type){
+    type = (KernelType) MT::getParameter<uint>("ML/KernelType",1);
+    switch(type){
+      case readFromCfg: HALT("???");  break;
+      case Gauss: hyperParam1 = ARR( MT::sqr(MT::getParameter<double>("ML/KernelWidth")) );  break;
+    }
+  }
+  double k = ::exp(-sqrDistance(x1,x2)/hyperParam1.scalar());
+  if(&g1 || &g2) NIY;
+  return k;
+};
+DefaultKernelFunction defaultKernelFunction;
+
+//===========================================================================
+
+KernelRidgeRegression::KernelRidgeRegression(const arr& _X, const arr& y, KernelFunction& _kernel, double lambda)
+  :X(_X),kernel(_kernel){
+  if(lambda<0.) lambda = MT::getParameter<double>("lambda",1e-10);
+  uint n=X.d0;
+
+  //-- compute kernel matrix
+  arr kernelMatrix(n,n);
+  for(uint i=0;i<n;i++) for(uint j=0;j<i;j++){
+    kernelMatrix(i,j) = kernelMatrix(j,i) = kernel.k(X[i],X[j]);
+  }
+  for(uint i=0;i<n;i++) kernelMatrix(i,i) = kernel.k(X[i],X[i]);
+
+  kernelMatrix_lambda=kernelMatrix;
+  for(uint i=0;i<n;i++) kernelMatrix_lambda(i,i) += lambda;
+
+  //-- compute alpha
+  alpha = lapack_Ainv_b_sym(kernelMatrix_lambda, y);
+
+  sigma = sqrt(sumOfSqr(kernelMatrix*alpha-y)/(X.d0-1));
+}
+
+arr KernelRidgeRegression::evaluate(const arr& Z, arr& bayesSigma2){
+  arr kappa(Z.d0,X.d0);
+  for(uint i=0;i<Z.d0;i++) for(uint j=0;j<X.d0;j++) kappa(i,j) = kernel.k(Z[i],X[j]);
+  if(&bayesSigma2){
+    if(!invKernelMatrix_lambda.N) invKernelMatrix_lambda = inverse_SymPosDef(kernelMatrix_lambda);
+    bayesSigma2.resize(Z.d0);
+    for(uint i=0;i<Z.d0;i++){
+      bayesSigma2(i) = kernel.k(Z[i],Z[i]);
+      bayesSigma2(i) -= scalarProduct(kappa[i], invKernelMatrix_lambda*kappa[i]);
+    }
+  }
+  return kappa * alpha;
+}
+
+//===========================================================================
+
+KernelLogisticRegression::KernelLogisticRegression(const arr& _X, const arr& y, KernelFunction& _kernel, double _lambda)
+  :X(_X),lambda(_lambda),kernel(_kernel){
+  if(lambda<0.) lambda = MT::getParameter<double>("lambda",1e-10);
+  uint n=X.d0;
+
+  //-- compute kernel matrix
+  arr kernelMatrix(n,n);
+  for(uint i=0;i<n;i++) for(uint j=0;j<i;j++){
+    kernelMatrix(i,j) = kernelMatrix(j,i) = kernel.k(X[i],X[j]);
+  }
+  for(uint i=0;i<n;i++) kernelMatrix(i,i) = kernel.k(X[i],X[i]);
+
+  //-- iterate Newton steps on training data
+  arr f(n), p(n), Z(n), w(n), beta_update;
+  double logLike, lastLogLike;
+  f.setZero();
+  for(uint k=0; k<100; k++) {
+    p = exp(f);
+    Z = 1.+p;
+    p /= Z;
+    w = p % (1.-p);
+
+    //compute logLikelihood
+    logLike=0.;
+    for(uint i=0; i<n; i++) logLike += MT::indicate(y(i)==1.)*f(i) - log(Z(i));
+    MT_MSG("log-likelihood = " <<logLike);
+
+    kernelMatrix_lambda = kernelMatrix;
+    for(uint i=0;i<n;i++) kernelMatrix_lambda(i,i) += 2.*lambda/w(i);
+
+    //compute the update
+    arr f_old=f;
+    alpha = lapack_Ainv_b_sym(kernelMatrix_lambda, f - (p-y)/w);
+    f = kernelMatrix * alpha;
+    for(uint i=0; i<f.N; i++) clip(f.elem(i), -100., 100.);  //constrain the discriminative values to avoid NANs...
+
+    if(maxDiff(f,f_old)<1e-5) break;
+  }
+}
+
+arr KernelLogisticRegression::evaluate(const arr& Z, arr& p_bayes, arr &p_hi, arr &p_lo){
+  arr kappa(Z.d0,X.d0);
+  for(uint i=0;i<Z.d0;i++) for(uint j=0;j<X.d0;j++) kappa(i,j) = kernel.k(Z[i],X[j]);
+  arr f = kappa * alpha;
+  for(uint i=0; i<f.N; i++) clip(f.elem(i), -100., 100.);  //constrain the discriminative values to avoid NANs...
+  arr p = exp(f); p/=1.+p;
+
+  if(&p_bayes || &p_hi || &p_lo){ //take sigma of discriminative function to estimate p_bayes, p_up and p_lo
+    if(!invKernelMatrix_lambda.N) invKernelMatrix_lambda = inverse_SymPosDef(kernelMatrix_lambda);
+    arr s(Z.d0);
+    for(uint i=0;i<Z.d0;i++){
+      s(i) = kernel.k(Z[i],Z[i]);
+      s(i) -= scalarProduct(kappa[i], invKernelMatrix_lambda*kappa[i]);
+    }
+    s /= 2.*lambda;
+    for(uint i=0; i<s.N; i++) clip(s.elem(i), -100., 100.);  //constrain the discriminative values to avoid NANs...
+    if(&p_bayes){ p_bayes = exp(f/sqrt(1.+s*MT_PI/8.)); p_bayes /= 1.+p_bayes; }
+    s = sqrt(s);
+    if(&p_hi){ p_hi = exp(f+s); p_hi /= 1.+p_hi; }
+    if(&p_lo){ p_lo = exp(f-s); p_lo /= 1.+p_lo; }
+  }
+  return p;
+}
+
+//===========================================================================
 
 arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bayesSigma) {
   if(lambda<0.) lambda = MT::getParameter<double>("lambda",1e-10);
@@ -103,8 +227,8 @@ arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bay
       alpha = pow(alpha, .8);
     }
     lastLogLike=logLike;
-    
-    lapack_Ainv_b_sym(beta_update, Xt*(w%X) + 2.*I, Xt*(y-p) - 2.*I*beta);   //beta update equation
+
+    beta_update=lapack_Ainv_b_sym(Xt*(w%X) + 2.*I, Xt*(y-p) - 2.*I*beta);   //beta update equation
     beta += alpha*beta_update;
     
 //    MT_MSG("logReg iter= " <<k <<" negLogLike= " <<-logLike/n <<" beta_update= " <<absMax(beta_update) <<" alpha= " <<alpha);
@@ -176,7 +300,7 @@ arr logisticRegressionMultiClass(const arr& X, const arr& y, double lambda) {
     //compute the beta update
     arr tmp = ~(Xt*(y-p) - 2.*I*beta); //the gradient as M-times-d matrix
     tmp.reshape(M*d);                  //... as one big vector
-    lapack_Ainv_b_sym(beta_update, XtWX, tmp); //multiply the inv Hessian
+    beta_update = lapack_Ainv_b_sym(XtWX, tmp); //multiply the inv Hessian
     beta_update.reshape(M, d);         //... as M-times-d matrix
     beta_update = ~beta_update;        //... and back as d-times-M matrix
     
@@ -410,21 +534,26 @@ void artificialData(arr& X, arr& y, ArtificialDataType dataType) {
   cout <<"correct beta=" <<beta_true <<endl;
 }
 
-void artificialData_Hasties2Class(arr& X, arr& y) {
+void artificialData_Hasties2Class(arr& X, arr& y, uint dim) {
   uint n = MT::getParameter<uint>("n", 100);
-  
-  arr means0(10, 2), means1(10, 2), x(2);
-  
-  rndGauss(means0);  means0 += ones(10, 1)*~ARR(1, 0);
-  rndGauss(means1);  means1 += ones(10, 1)*~ARR(0, 1);
-  
+  uint d = MT::getParameter<uint>("d", 100);
+  dim = d;
+
+  arr means0(10, dim), means1(10, dim), x(dim), bias0(dim), bias1(dim);
+
+  bias0.setZero(); bias0(0) = 1.;
+  bias1.setZero(); if(dim>1) bias1(1) = 1.;
+
+  rndGauss(means0);  means0 += ones(10, 1)*~bias0;
+  rndGauss(means1);  means1 += ones(10, 1)*~bias1;
+
   X.clear();
   y.clear();
   for(uint i=0; i<n; i++) {
     rndGauss(x, .2);  x += means0[rnd(10)];
     X.append(~x);
     y.append(0);
-    
+
     rndGauss(x, .2);  x += means1[rnd(10)];
     X.append(~x);
     y.append(1);
