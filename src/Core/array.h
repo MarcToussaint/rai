@@ -422,15 +422,15 @@ inline arr eye(uint n) { return eye(n, n); }
 
 /// return matrix of ones
 inline arr ones(const uintA& d) {  arr z;  z.resize(d);  z=1.;  return z;  }
-/// return matrix of ones
+/// return VECTOR of ones
 inline arr ones(uint n) { return ones(TUP(n, n)); }
 /// return matrix of ones
 inline arr ones(uint d0, uint d1) { return ones(TUP(d0, d1)); }
 
 /// return matrix of zeros
 inline arr zeros(const uintA& d) {  arr z;  z.resize(d);  z.setZero();  return z; }
-/// return matrix of zeros
-inline arr zeros(uint n) { return zeros(TUP(n, n)); }
+/// return VECTOR of zeros
+inline arr zeros(uint n) { return zeros(TUP(n)); }
 /// return matrix of zeros
 inline arr zeros(uint d0, uint d1) { return zeros(TUP(d0, d1)); }
 

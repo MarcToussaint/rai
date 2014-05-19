@@ -395,7 +395,7 @@ void CrossValidation::plot() {
 }
 
 void linearFeatures(arr& Z, const arr& X) {
-  Z.setBlockMatrix(ones(TUP(X.d0, 1)), X);
+  Z.setBlockMatrix(ones(X.d0, 1), X);
 }
 
 void quadraticFeatures(arr& Z, const arr& X) {
@@ -544,8 +544,8 @@ void artificialData_Hasties2Class(arr& X, arr& y, uint dim) {
   bias0.setZero(); bias0(0) = 1.;
   bias1.setZero(); if(dim>1) bias1(1) = 1.;
 
-  rndGauss(means0);  means0 += ones(10, 1)*~bias0;
-  rndGauss(means1);  means1 += ones(10, 1)*~bias1;
+  rndGauss(means0);  means0 += ones(10)*~bias0;
+  rndGauss(means1);  means1 += ones(10)*~bias1;
 
   X.clear();
   y.clear();
@@ -567,7 +567,7 @@ void artificialData_HastiesMultiClass(arr& X, arr& y) {
   arr means(M, 10, 2), x(2);
   
   rndGauss(means);
-  for(uint c=0; c<M; c++)  means[c]() += ones(10, 1)*~ARR(c, c);
+  for(uint c=0; c<M; c++)  means[c]() += ones(10)*~ARR(c, c);
   
   X.resize(M*n, 2);
   y.resize(M*n, M);
