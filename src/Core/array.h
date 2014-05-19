@@ -580,7 +580,7 @@ template<class T> T scalar(const MT::Array<T>& v);
 template<class T> MT::Array<T> sum(const MT::Array<T>& v, uint d);
 template<class T> T sumOfAbs(const MT::Array<T>& v);
 template<class T> T sumOfSqr(const MT::Array<T>& v);
-template<class T> T length(const MT::Array<T>& v); //TODO: remove this: the name 'norm' is too ambiguous!! (maybe rename to 'length')
+template<class T> T length(const MT::Array<T>& v);
 template<class T> T product(const MT::Array<T>& v);
 
 template<class T> T trace(const MT::Array<T>& v);
