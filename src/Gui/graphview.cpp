@@ -24,7 +24,7 @@
 #include <Core/array_t.h>
 #include <Gui/gtk.h>
 
-#if defined MT_GTK and defined MT_GRAPHVIZ
+#if 1 //defined MT_GTK and defined MT_GRAPHVIZ
 
 #include <gtk/gtk.h>
 //#define WITH_CGRAPH
@@ -99,23 +99,33 @@ void GraphView::watch() {
 
 #define STR(s) (char*)s
 
+MT::String label(Item *it){
+  MT::String label;
+  if(it->keys.N) {
+    label <<it->keys(0);
+    for(uint j=1; j<it->keys.N; j++) label <<'\n' <<it->keys(j);
+  } else {
+    label <<'-';
+  }
+  return label;
+}
+
 void sGraphView::updateGraphvizGraph() {
-  aginit();
-  //gvGraph = agopen(STR("new_graph"), Agdirected, NULL);
-  gvGraph = agopen(STR("new_graph"), AGDIGRAPH);
-  agraphattr(gvGraph, STR("rankdir"), STR("LR"));
-  agraphattr(gvGraph, STR("ranksep"), STR("0.05"));
+//  aginit();
+  gvGraph = agopen(STR("new_graph"), Agdirected, NULL);
+  agattr(gvGraph, AGRAPH,STR("rankdir"), STR("LR"));
+  agattr(gvGraph, AGRAPH,STR("ranksep"), STR("0.05"));
   
-  agnodeattr(gvGraph, STR("label"), STR(""));
-  agnodeattr(gvGraph, STR("shape"), STR(""));
-  agnodeattr(gvGraph, STR("fontsize"), STR("11"));
-  agnodeattr(gvGraph, STR("width"), STR(".3"));
-  agnodeattr(gvGraph, STR("height"), STR(".3"));
+  agattr(gvGraph, AGNODE, STR("label"), STR(""));
+  agattr(gvGraph, AGNODE, STR("shape"), STR(""));
+  agattr(gvGraph, AGNODE, STR("fontsize"), STR("11"));
+  agattr(gvGraph, AGNODE, STR("width"), STR(".3"));
+  agattr(gvGraph, AGNODE, STR("height"), STR(".3"));
   
-  agedgeattr(gvGraph, STR("label"), STR(""));
-  agedgeattr(gvGraph, STR("arrowhead"), STR("none"));
-  agedgeattr(gvGraph, STR("arrowsize"), STR(".5"));
-  agedgeattr(gvGraph, STR("fontsize"), STR("6"));
+  agattr(gvGraph, AGEDGE, STR("label"), STR(""));
+  agattr(gvGraph, AGEDGE, STR("arrowhead"), STR("none"));
+  agattr(gvGraph, AGEDGE, STR("arrowsize"), STR(".5"));
+  agattr(gvGraph, AGEDGE, STR("fontsize"), STR("6"));
   
   gvNodes.resize(G->N);
   
@@ -123,15 +133,8 @@ void sGraphView::updateGraphvizGraph() {
   for_list(Item,  e,  (*G)) {
     e->index=e_COUNT;
     CHECK(e_COUNT==e->index,"");
-    MT::String label;
-    if(e->keys.N) {
-      label <<e->keys(0);
-      for(uint j=1; j<e->keys.N; j++) label <<'\n' <<e->keys(j);
-    } else {
-      label <<'-';
-    }
-    gvNodes(e_COUNT) = agnode(gvGraph, STRING(e->index <<'_' <<label)); //, true);
-    if(e->keys.N) agset(gvNodes(e_COUNT), STR("label"), label);
+    gvNodes(e_COUNT) = agnode(gvGraph, STRING(e->index <<'_' <<label(e)), true);
+    if(e->keys.N) agset(gvNodes(e_COUNT), STR("label"), label(e));
     if(e->parents.N) {
       agset(gvNodes(e_COUNT), STR("shape"), STR("box"));
       agset(gvNodes(e_COUNT), STR("fontsize"), STR("6"));
@@ -150,9 +153,9 @@ void sGraphView::updateGraphvizGraph() {
       for_list(Item, n, e->parents) {
         Agedge_t *ge;
         if(n->index<e->index)
-          ge=agedge(gvGraph, gvNodes(n->index), gvNodes(e->index)); //, STRING(n->name <<"--" <<e->name), true);
+          ge=agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), STRING(label(n) <<"--" <<label(e)), true);
         else
-          ge=agedge(gvGraph, gvNodes(e->index), gvNodes(n->index)); //, STRING(e->name <<"--" <<n->name), true);
+          ge=agedge(gvGraph, gvNodes(e->index), gvNodes(n->index), STRING(label(e) <<"--" <<label(n)), true);
         agset(ge, STR("label"), STRING(e_COUNT));
       }
     }
