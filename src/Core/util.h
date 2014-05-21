@@ -1,20 +1,21 @@
 /*  ---------------------------------------------------------------------
-    Copyright 2013 Marc Toussaint
-    email: mtoussai@cs.tu-berlin.de
-
+    Copyright 2014 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
+    
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
+    
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
+
 
 /// @file
 /// @ingroup group_Core
@@ -77,7 +78,6 @@ namespace MT {
 extern int argc;
 extern char** argv;
 extern bool IOraw;  ///< stream modifier for some classes (Mem in particular)
-extern bool noLog;  ///< no logfile: default=true, becomes false when MT::init is called
 extern uint lineCount;
 extern int verboseLevel;
 
@@ -103,10 +103,11 @@ void flip(int& b, uint i);
 double MIN(double a, double b);
 double MAX(double a, double b);
 uint MAX(uint a, uint b);
+double indicate(bool expr);
 double modMetric(double x, double y, double mod);
 double sign(double x);
 double linsig(double x);
-void   constrain(double& x, double a, double b);
+//void   clip(double& x, double a, double b);
 double phi(double dx, double dy);
 double dphi(double x, double y, double dx, double dy);
 double DIV(double x, double y, bool force=false);
@@ -126,10 +127,11 @@ double NNsdv(const double& a, const double& b, double sdv);
 double NNsdv(double x, double sdv);
 double smoothRamp(double x, double eps, double power);
 double d_smoothRamp(double x, double eps, double power);
-double barrier(double x, double margin, double power);
-double d_barrier(double x, double margin, double power);
-double potential(double x, double margin, double power);
-double d_potential(double x, double margin, double power);
+
+double ineqConstraintCost(double g, double margin, double power);
+double d_ineqConstraintCost(double g, double margin, double power);
+double eqConstraintCost(double h, double margin, double power);
+double d_eqConstraintCost(double h, double margin, double power);
 
 //----- time access
 double clockTime(); //(really on the clock)
@@ -608,19 +610,19 @@ template<class T> T *Singleton<T>::singleton=NULL;
 void gnuplot(const char *command, bool pauseMouse=false, bool persist=false, const char* PDFfile=NULL);
 void gnuplotClose();
 
-//===========================================================================
-// MISC
 
-/**
- * @brief Clip the `value` of n between `lower` and `upper`.
- * @return The clipped value.
- */
-template <typename T>
-T clip(const T& n, const T& lower, const T& upper) {
-  return std::max(lower, std::min(n, upper));
+//===========================================================================
+//
+// Stefan's misc
+//
+
+/// Clip the `value` of n between `lower` and `upper`.
+template <typename T> T clip(T& x, const T& lower, const T& upper) {
+  if(x<lower) x=lower; if(x>upper) x=upper; return x;
 }
 
 std::string getcwd_string();
+
 //===========================================================================
 //
 // implementations

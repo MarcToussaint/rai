@@ -48,9 +48,9 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
     if(addRegularizer) {
       if(R.special==arr::RowShiftedPackedMatrixST) R = unpack(R);
       //      cout <<*addRegularizer <<R <<endl;
-      lapack_Ainv_b_sym(Delta, R + (*addRegularizer), -(gx+(*addRegularizer)*vectorShaped(x)));
+      Delta = lapack_Ainv_b_sym(R + (*addRegularizer), -(gx+(*addRegularizer)*vectorShaped(x)));
     } else {
-      lapack_Ainv_b_sym(Delta, R, -gx);
+      Delta = lapack_Ainv_b_sym(R, -gx);
     }
     if(o.maxStep>0. && absMax(Delta)>o.maxStep)  Delta *= o.maxStep/absMax(Delta);
     if(o.verbose>1) cout <<" \t|Delta|=" <<absMax(Delta) <<flush;
