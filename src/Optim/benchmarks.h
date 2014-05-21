@@ -1,20 +1,21 @@
 /*  ---------------------------------------------------------------------
-    Copyright 2013 Marc Toussaint
-    email: mtoussai@cs.tu-berlin.de
-
+    Copyright 2014 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
+    
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
+    
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
+
 
 /// @file
 /// @ingroup group_Optim
@@ -133,7 +134,7 @@ struct ChoiceConstraintFunction:ConstrainedProblem {
         break;
       case halfcircle2D:
         if(&g) g(0) = sumOfSqr(x)-.25;     if(&Jg) Jg[0]() = 2.*x; //feasible=IN circle of radius .5
-        if(&g) g(1) = -x(0);               if(&Jg) Jg(1,0) = -1.; //feasible=right
+        if(&g) g(1) = -x(0)-.2;            if(&Jg) Jg(1,0) = -1.; //feasible=right of -.2
         break;
       case randomLinear:{
         uint n=x.N;
@@ -223,39 +224,45 @@ struct SquaredCost : VectorFunction {
   SquaredCost(uint n, double condition=100.);
   void initRandom(uint n, double condition=100.);
   
-//  double fs(arr& g, arr& H, const arr& x);
   void fv(arr& y, arr& J,const arr& x);
 };
 
 //===========================================================================
 
 /// Same as SquaredCost but $x_i \gets atan(x_i)$ before evaluating the squared cost
-struct NonlinearlyWarpedSquaredCost : ScalarFunction,VectorFunction {
+struct NonlinearlyWarpedSquaredCost : VectorFunction {
   uint n;  /// dimensionality of $x$
   SquaredCost sq;
   
   NonlinearlyWarpedSquaredCost(uint n, double condition=100.);
   void initRandom(uint n, double condition=100.);
   
-  double fs(arr& grad, arr& H, const arr& x);
   void fv(arr& y, arr& J,const arr& x);
 };
 
 //===========================================================================
 
 struct ParticleAroundWalls:KOrderMarkovFunction {
-  uint k;
-  bool kern, constrained;
-  void phi_t(arr& phi, arr& J, uint t, const arr& x_bar);
+  //options of the problem
+  uint T,k;
+  bool hardConstrained, useKernel;
 
-  uint get_T(){ return 1000; }
+  ParticleAroundWalls():
+    T(MT::getParameter<uint>("opt/ParticleAroundWalls/T",1000)),
+    k(MT::getParameter<uint>("opt/ParticleAroundWalls/k",2)),
+    hardConstrained(MT::getParameter<uint>("opt/ParticleAroundWalls/hardConstrained",true)),
+    useKernel(false){}
+
+  //implementations of the kOrderMarkov virtuals
+  void phi_t(arr& phi, arr& J, uint t, const arr& x_bar);
+  uint get_T(){ return T; }
   uint get_k(){ return k; }
   uint dim_x(){ return 3; }
   uint dim_phi(uint t);
   uint dim_g(uint t);
 
-  bool isConstrained(){ return constrained; }
-  bool hasKernel(){ return kern; }
+  bool isConstrained(){ return hardConstrained; }
+  bool hasKernel(){ return useKernel; }
   double kernel(uint t0, uint t1){
     //if(t0==t1) return 1e3;
     return 1e0*::exp(-.001*MT::sqr((double)t0-t1));

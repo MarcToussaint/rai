@@ -1,20 +1,21 @@
 /*  ---------------------------------------------------------------------
-    Copyright 2013 Marc Toussaint
-    email: mtoussai@cs.tu-berlin.de
-
+    Copyright 2014 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
+    
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
+    
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
+
 
 /// @file
 /// @ingroup group_array
@@ -349,6 +350,19 @@ namespace MT { struct String; }
 typedef MT::Array<MT::String> StringA;
 typedef MT::Array<MT::String*> StringL;
 
+//===========================================================================
+/// @}
+/// @name constant arrays
+/// @{
+
+extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional arguments
+extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
+
+//===========================================================================
+/// @}
+/// @name function types
+/// @{
+
 /// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
 struct ScalarFunction {
   virtual double fs(arr& g, arr& H, const arr& x) = 0;
@@ -361,13 +375,12 @@ struct VectorFunction {
   virtual ~VectorFunction(){}
 };
 
-//===========================================================================
-/// @}
-/// @name constant arrays
-/// @{
+/// a kernel function
+struct KernelFunction {
+  virtual double k(const arr& x1, const arr& x2, arr& g1=NoArr, arr& g2=NoArr) = 0;
+  virtual ~KernelFunction(){}
+};
 
-extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional arguments
-extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
 
 
 //===========================================================================
@@ -409,15 +422,15 @@ inline arr eye(uint n) { return eye(n, n); }
 
 /// return matrix of ones
 inline arr ones(const uintA& d) {  arr z;  z.resize(d);  z=1.;  return z;  }
-/// return matrix of ones
+/// return VECTOR of ones
 inline arr ones(uint n) { return ones(TUP(n, n)); }
 /// return matrix of ones
 inline arr ones(uint d0, uint d1) { return ones(TUP(d0, d1)); }
 
 /// return matrix of zeros
 inline arr zeros(const uintA& d) {  arr z;  z.resize(d);  z.setZero();  return z; }
-/// return matrix of zeros
-inline arr zeros(uint n) { return zeros(TUP(n, n)); }
+/// return VECTOR of zeros
+inline arr zeros(uint n) { return zeros(TUP(n)); }
 /// return matrix of zeros
 inline arr zeros(uint d0, uint d1) { return zeros(TUP(d0, d1)); }
 
@@ -486,8 +499,9 @@ double cofactor(const arr& A, uint i, uint j);
 void lognormScale(arr& P, double& logP, bool force=true);
 
 void gnuplot(const arr& X);
-void write(const arr& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
-void write(std::ostream& os, const arrL& X, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
+//these are obsolete, use catCol instead
+//void write(const arr& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
+//void write(std::ostream& os, const arrL& X, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
 void write(const arrL& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
 
 
@@ -566,7 +580,7 @@ template<class T> T scalar(const MT::Array<T>& v);
 template<class T> MT::Array<T> sum(const MT::Array<T>& v, uint d);
 template<class T> T sumOfAbs(const MT::Array<T>& v);
 template<class T> T sumOfSqr(const MT::Array<T>& v);
-template<class T> T length(const MT::Array<T>& v); //TODO: remove this: the name 'norm' is too ambiguous!! (maybe rename to 'length')
+template<class T> T length(const MT::Array<T>& v);
 template<class T> T product(const MT::Array<T>& v);
 
 template<class T> T trace(const MT::Array<T>& v);
@@ -598,6 +612,9 @@ template<class T> MT::Array<T> cat(const MT::Array<T>& y, const MT::Array<T>& z,
 template<class T> MT::Array<T> cat(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c, const MT::Array<T>& d) { MT::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); return x; }
 template<class T> MT::Array<T> cat(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c, const MT::Array<T>& d, const MT::Array<T>& e) { MT::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); x.append(e); return x; }
 template<class T> MT::Array<T> catCol(const MT::Array<MT::Array<T>*>& X);
+template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b){ return catCol(LIST<MT::Array<T> >(a,b)); }
+template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c){ return catCol(LIST<MT::Array<T> >(a,b,c)); }
+template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c, const MT::Array<T>& d){ return catCol(LIST<MT::Array<T> >(a,b,c,d)); }
 
 
 //===========================================================================
@@ -732,7 +749,7 @@ void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs);
 bool lapack_isPositiveSemiDefinite(const arr& symmA);
 void lapack_inverseSymPosDef(arr& Ainv, const arr& A);
 double lapack_determinantSymPosDef(const arr& A);
-void lapack_Ainv_b_sym(arr& x, const arr& A, const arr& b);
+arr lapack_Ainv_b_sym(const arr& A, const arr& b);
 void lapack_min_Ax_b(arr& x,const arr& A, const arr& b);
 
 
@@ -742,11 +759,11 @@ void lapack_min_Ax_b(arr& x,const arr& A, const arr& b);
 /// @{
 
 struct RowShiftedPackedMatrix {
-  arr& Z;
-  uint real_d1;
-  uintA rowShift;
-  uintA colPatches; //column-patch: range of non-zeros in a column; starts with 'a', ends with 'b'-1
-  bool symmetric;
+  arr& Z;           ///< references the array itself
+  uint real_d1;     ///< the real width (the packed width is Z.d1; the height is Z.d0)
+  uintA rowShift;   ///< amount of shift of each row (rowShift.N==Z.d0)
+  uintA colPatches; ///< column-patch: (nd=2,d0=real_d1,d1=2) range of non-zeros in a COLUMN; starts with 'a', ends with 'b'-1
+  bool symmetric;   ///< flag: if true, this stores a symmetric (banded) matrix: only the upper triangle
   
   RowShiftedPackedMatrix(arr& X);
   RowShiftedPackedMatrix(arr& X, RowShiftedPackedMatrix &aux);
@@ -754,19 +771,24 @@ struct RowShiftedPackedMatrix {
   double acc(uint i, uint j);
   void computeColPatches(bool assumeMonotonic); //currently presumes monotonous rowShifts
   arr At_A();
+  arr A_At();
   arr At_x(const arr& x);
+  arr A_x(const arr& x);
 };
 
 inline RowShiftedPackedMatrix& castRowShiftedPackedMatrix(arr& X) {
   ///CHECK(X.special==X.RowShiftedPackedMatrixST,"can't cast like this!");
-  return *((RowShiftedPackedMatrix*)&X);
+  if(X.special!=X.RowShiftedPackedMatrixST) throw("can't cast like this!");
+  return *((RowShiftedPackedMatrix*)X.aux);
 }
 
 arr unpack(const arr& Z); //returns an unpacked matrix in case this is packed
 arr packRowShifted(const arr& X);
 RowShiftedPackedMatrix *auxRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
 arr comp_At_A(arr& A);
+arr comp_A_At(arr& A);
 arr comp_At_x(arr& A, const arr& x);
+arr comp_A_x(arr& A, const arr& x);
 
 
 //===========================================================================

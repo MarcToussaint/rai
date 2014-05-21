@@ -1,20 +1,21 @@
 /*  ---------------------------------------------------------------------
-    Copyright 2013 Marc Toussaint
-    email: mtoussai@cs.tu-berlin.de
-
+    Copyright 2014 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
+    
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
+    
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
+
 
 #include "optimization.h"
 
@@ -89,21 +90,21 @@ bool checkAllGradients(ConstrainedProblem &P, const arr& x, double tolerance){
 //
 
 OptOptions::OptOptions() {
-  verbose=0;
+  verbose    =MT::getParameter<uint>  ("opt/verbose",1);
   fmin_return=NULL;
-  stopTolerance=1e-2;
-  stopEvals=1000;
-  stopIters=1000;
-  initStep=1.;
-  minStep=-1.;
-  maxStep=-1.;
-  damping=1.;
-  stepInc=2.; stepDec=.1;
-  dampingInc=1.; dampingDec=1.;
-  nonStrict=0;
-  useAdaptiveDamping=false;
-  clampInitialState=false;
-  constrainedMethod=augmentedLag;
+  stopTolerance=MT::getParameter<double>("opt/stopTolerance",1e-2);
+  stopEvals =MT::getParameter<uint>  ("opt/stopEvals",1000);
+  stopIters =MT::getParameter<uint>  ("opt/stopIters",1000);
+  initStep  =MT::getParameter<double>("opt/initStep",1.);
+  minStep   =MT::getParameter<double>("opt/minStep",-1.);
+  maxStep   =MT::getParameter<double>("opt/maxStep",-1.);
+  damping   =MT::getParameter<double>("opt/damping",1.);
+  stepInc   =MT::getParameter<double>("opt/stepInc",2.);
+  stepDec   =MT::getParameter<double>("opt/stepDec",.1);
+  dampingInc=MT::getParameter<double>("opt/dampingInc",1.);
+  dampingDec=MT::getParameter<double>("opt/dampingDec",1.);
+  nonStrictSteps=MT::getParameter<uint>  ("opt/nonStrictSteps",0);
+  constrainedMethod = (ConstrainedMethodType)MT::getParameter<int>("opt/constrainedMethod",augmentedLag);
 }
 
 OptOptions global_optOptions;
