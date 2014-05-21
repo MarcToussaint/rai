@@ -24,10 +24,10 @@
 #include <Core/array_t.h>
 #include <Gui/gtk.h>
 
-#if 1 //defined MT_GTK and defined MT_GRAPHVIZ
+#if defined MT_GTK and defined MT_GRAPHVIZ
 
 #include <gtk/gtk.h>
-//#define WITH_CGRAPH
+// #define WITH_CGRAPH
 #include <graphviz/gvc.h>
 #include <graphviz/gvplugin_device.h>
 #undef MIN
