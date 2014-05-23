@@ -805,6 +805,7 @@ template<class T> void listRead(MT::Array<T*>& L, std::istream& is, const char *
 template<class T> void listCopy(MT::Array<T*>& L, const MT::Array<T*>& M);  //copy a list by calling the copy constructor for each element
 template<class T> void listClone(MT::Array<T*>& L, const MT::Array<T*>& M); //copy a list by calling the 'newClone' method of each element (works for virtual types)
 template<class T> void listDelete(MT::Array<T*>& L);
+template<class T> void listReindex(MT::Array<T*>& L);
 template<class T> T* listFindValue(const MT::Array<T*>& L, const T& x);
 template<class T> T* listFindByName(const MT::Array<T*>& L, const char* name); //each element needs a 'name' (usually MT::String)
 template<class T> T* listFindByType(const MT::Array<T*>& L, const char* type); //each element needs a 'type' (usually MT::String)
