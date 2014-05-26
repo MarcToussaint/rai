@@ -544,8 +544,8 @@ void artificialData_Hasties2Class(arr& X, arr& y, uint dim) {
   bias0.setZero(); bias0(0) = 1.;
   bias1.setZero(); if(dim>1) bias1(1) = 1.;
 
-  rndGauss(means0);  means0 += ones(10)*~bias0;
-  rndGauss(means1);  means1 += ones(10)*~bias1;
+  rndGauss(means0);  means0 += ones(10,1)*~bias0;
+  rndGauss(means1);  means1 += ones(10,1)*~bias1;
 
   X.clear();
   y.clear();
