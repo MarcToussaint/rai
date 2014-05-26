@@ -345,6 +345,7 @@ typedef MT::Array<byte>   byteA;
 typedef MT::Array<bool>   boolA;
 typedef MT::Array<const char*>  CstrList;
 typedef MT::Array<arr*>   arrL;
+typedef MT::Array<arr> arrA;
 
 namespace MT { struct String; }
 typedef MT::Array<MT::String> StringA;
@@ -433,6 +434,8 @@ inline arr zeros(const uintA& d) {  arr z;  z.resize(d);  z.setZero();  return z
 inline arr zeros(uint n) { return zeros(TUP(n)); }
 /// return matrix of zeros
 inline arr zeros(uint d0, uint d1) { return zeros(TUP(d0, d1)); }
+/// return tensor of zeros
+inline arr zeros(uint d0, uint d1, uint d2) { return zeros(TUP(d0, d1, d2)); }
 
 arr repmat(const arr& A, uint m, uint n);
 
