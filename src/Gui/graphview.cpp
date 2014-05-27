@@ -94,7 +94,9 @@ void GraphView::update() {
 
 void GraphView::watch() {
   update();
+#ifndef EXAMPLES_AS_TESTS
   gtk_main();
+#endif
 }
 
 #define STR(s) (char*)s
@@ -375,7 +377,7 @@ bool sGraphView::on_drawingarea_scroll_event(GtkWidget       *widget,           
 
 #undef STR
 
-#else //MT_GTK
+#else //defined MT_GTK and defined MT_GRAPHVIZ
 
 #include "graphview.h"
 GraphView::GraphView(KeyValueGraph& G, const char* title, void *container) { NICO }

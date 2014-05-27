@@ -141,18 +141,13 @@ double sysTime();
 double totalTime();
 double toTime(const tm& t);
 char *date();
+void wait(double sec, bool msg_on_fail=true);
 #ifndef EXAMPLES_AS_TESTS
-void __do_wait(double sec, bool msg_on_fail=true);
 bool __do_wait();
-inline void wait(double sec, bool msg_on_fail=true) {
-    __do_wait(sec, msg_on_fail);
-}
-inline bool wait() {
-    return __do_wait();
-}
+inline bool wait() { return __do_wait(); }
 #else
-inline void wait(double sec, bool msg_on_fail=true) { /* do nothing when running as test */ }
-inline bool wait() { return true; /* do nothing when running as test */ };
+// do nothing when running as test
+inline bool wait() { return true; }
 #endif
 
 //----- memory
@@ -338,18 +333,19 @@ inline void breakPoint() {
 
 
 //----- TESTING
-#ifndef MLR_EXAMPLES_AS_TESTS
+#ifndef EXAMPLES_AS_TESTS
 #  define TEST(name) test##name()
 #  define MAIN main
 #else
 #  define GTEST_DONT_DEFINE_TEST 1
 #  include <gtest/gtest.h>
-#  define TEST(name) test##name(){} GTEST_TEST(arrayTest, name)
+#  define TEST(name) test##name(){} GTEST_TEST(examples, name)
 #  define MAIN \
      main(int argc, char** argv){ \
        testing::InitGoogleTest(&argc, argv);	\
        return RUN_ALL_TESTS();			\
-     } int mymain
+     }                                          \
+     inline int obsolete_main //this starts a method declaration
 #endif
 
 

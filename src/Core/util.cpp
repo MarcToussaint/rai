@@ -527,7 +527,7 @@ double totalTime() {
 char *date() { static time_t t; time(&t); return ctime(&t); }
 
 /// wait double time
-void __do_wait(double sec, bool msg_on_fail) {
+void wait(double sec, bool msg_on_fail) {
 #if defined(MT_Darwin)
   sleep((int)sec);
 #elif !defined(MT_MSVC)
@@ -1171,6 +1171,10 @@ void gnuplotClose() {
   if(MT_gp) { fflush(MT_gp); fclose(MT_gp); }
 }
 void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDFfile) {
+#ifndef EXAMPLES_AS_TESTS
+  pauseMouse=false;
+  persist=false;
+#endif
 #ifndef MT_MSVC
   if(!MT_gp) {
     if(!persist) MT_gp=popen("env gnuplot -noraise -geometry 600x600-0-0 2> /dev/null", "w");

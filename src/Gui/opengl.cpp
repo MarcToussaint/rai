@@ -1461,8 +1461,9 @@ void OpenGL::Select() {
   (key pressed or right mouse) */
 int OpenGL::watch(const char *txt) {
   update(txt);
+#ifndef EXAMPLES_AS_TESTS
   enterEventLoop();
-//  processEvents();
+#endif
   return pressedkey;
 }
 
