@@ -97,6 +97,7 @@ bool IOraw=false;
 bool noLog=true;
 uint lineCount=1;
 int verboseLevel=-1;
+int interactivity=-1;
 
 #ifndef MT_TIMEB
 timeval startTime;
@@ -560,7 +561,8 @@ void wait(double sec, bool msg_on_fail) {
 }
 
 /// wait for an ENTER at the console
-bool __do_wait() {
+bool wait() {
+  if(!MT::getInteractivity()) return true;
   char c[10];
   std::cout <<" -- hit a key to continue..." <<std::flush;
   //cbreak(); getch();
@@ -674,6 +676,11 @@ void openConfigFile(const char *name) {
 uint getVerboseLevel() {
   if(verboseLevel==-1) verboseLevel=getParameter<int>("verbose", 0);
   return verboseLevel;
+}
+
+bool getInteractivity(){
+  if(interactivity==-1) interactivity=(checkParameter<bool>("noInteractivity")?0:1);
+  return interactivity==1;
 }
 
 }
@@ -1171,10 +1178,10 @@ void gnuplotClose() {
   if(MT_gp) { fflush(MT_gp); fclose(MT_gp); }
 }
 void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDFfile) {
-#ifndef EXAMPLES_AS_TESTS
+if(!MT::getInteractivity()){
   pauseMouse=false;
   persist=false;
-#endif
+}
 #ifndef MT_MSVC
   if(!MT_gp) {
     if(!persist) MT_gp=popen("env gnuplot -noraise -geometry 600x600-0-0 2> /dev/null", "w");
