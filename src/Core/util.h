@@ -312,16 +312,20 @@ inline void breakPoint() {
 //----- check macros:
 #ifndef MT_NOCHECK
 
-#  define CHECK(cond, msg) \
+#define CHECK(cond, msg) \
   if(!(cond)){ HALT("CHECK failed: '" <<#cond <<"' " <<msg) }\
-  //  else{ MT_MSG("CHECK SUCCESS: '" <<#cond <<"'") }
 
-#  define CHECK_ZERO(expr, tolerance, msg) \
+#define CHECK_ZERO(expr, tolerance, msg) \
   if(fabs((double)(expr))>tolerance){ HALT("CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg) } \
-  //else{ MT_MSG("CHECK_ZERO SUCCESS: '" <<#expr<<"'=" <<expr <<" < " <<tolerance)}
 
-#  define CHECK_EQ(A, B, msg) \
+#define CHECK_EQ(A, B, msg) \
   if(!(A==B)){ HALT("CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg) } \
+
+#define CHECK_GE(A, B, msg) \
+  if(!(A>=B)){ HALT("CHECK_GE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg) } \
+
+#define CHECK_LE(A, B, msg) \
+  if(!(A<=B)){ HALT("CHECK_LE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg) } \
 
 #else
 #  define CHECK(cond, msg)
