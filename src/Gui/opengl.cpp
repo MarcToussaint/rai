@@ -1461,9 +1461,7 @@ void OpenGL::Select() {
   (key pressed or right mouse) */
 int OpenGL::watch(const char *txt) {
   update(txt);
-if(MT::getInteractivity()){
-  enterEventLoop();
-}
+  if(MT::getInteractivity()) enterEventLoop();
   return pressedkey;
 }
 
@@ -1473,7 +1471,7 @@ int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool wai
   captureDep=_captureDep;
   if(txt) text.clear() <<txt;
   postRedrawEvent(false);
-  if(captureImg || captureDep || waitForCompletedDraw) processEvents();
+  if(captureImg || captureDep || waitForCompletedDraw){ MT::wait(.01); processEvents(); MT::wait(.01); }
   captureImg=captureDep=false;
   return pressedkey;
 }
