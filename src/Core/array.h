@@ -1,20 +1,21 @@
 /*  ---------------------------------------------------------------------
-    Copyright 2013 Marc Toussaint
-    email: mtoussai@cs.tu-berlin.de
-
+    Copyright 2014 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
+    
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
+    
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
+
 
 /// @file
 /// @ingroup group_array
@@ -344,10 +345,24 @@ typedef MT::Array<byte>   byteA;
 typedef MT::Array<bool>   boolA;
 typedef MT::Array<const char*>  CstrList;
 typedef MT::Array<arr*>   arrL;
+typedef MT::Array<arr> arrA;
 
 namespace MT { struct String; }
 typedef MT::Array<MT::String> StringA;
 typedef MT::Array<MT::String*> StringL;
+
+//===========================================================================
+/// @}
+/// @name constant arrays
+/// @{
+
+extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional arguments
+extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
+
+//===========================================================================
+/// @}
+/// @name function types
+/// @{
 
 /// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
 struct ScalarFunction {
@@ -361,13 +376,12 @@ struct VectorFunction {
   virtual ~VectorFunction(){}
 };
 
-//===========================================================================
-/// @}
-/// @name constant arrays
-/// @{
+/// a kernel function
+struct KernelFunction {
+  virtual double k(const arr& x1, const arr& x2, arr& g1=NoArr, arr& g2=NoArr) = 0;
+  virtual ~KernelFunction(){}
+};
 
-extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional arguments
-extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
 
 
 //===========================================================================
@@ -409,17 +423,19 @@ inline arr eye(uint n) { return eye(n, n); }
 
 /// return matrix of ones
 inline arr ones(const uintA& d) {  arr z;  z.resize(d);  z=1.;  return z;  }
-/// return matrix of ones
+/// return VECTOR of ones
 inline arr ones(uint n) { return ones(TUP(n, n)); }
 /// return matrix of ones
 inline arr ones(uint d0, uint d1) { return ones(TUP(d0, d1)); }
 
 /// return matrix of zeros
 inline arr zeros(const uintA& d) {  arr z;  z.resize(d);  z.setZero();  return z; }
-/// return matrix of zeros
-inline arr zeros(uint n) { return zeros(TUP(n, n)); }
+/// return VECTOR of zeros
+inline arr zeros(uint n) { return zeros(TUP(n)); }
 /// return matrix of zeros
 inline arr zeros(uint d0, uint d1) { return zeros(TUP(d0, d1)); }
+/// return tensor of zeros
+inline arr zeros(uint d0, uint d1, uint d2) { return zeros(TUP(d0, d1, d2)); }
 
 arr repmat(const arr& A, uint m, uint n);
 
@@ -486,8 +502,9 @@ double cofactor(const arr& A, uint i, uint j);
 void lognormScale(arr& P, double& logP, bool force=true);
 
 void gnuplot(const arr& X);
-void write(const arr& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
-void write(std::ostream& os, const arrL& X, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
+//these are obsolete, use catCol instead
+//void write(const arr& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
+//void write(std::ostream& os, const arrL& X, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
 void write(const arrL& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
 
 
@@ -566,7 +583,7 @@ template<class T> T scalar(const MT::Array<T>& v);
 template<class T> MT::Array<T> sum(const MT::Array<T>& v, uint d);
 template<class T> T sumOfAbs(const MT::Array<T>& v);
 template<class T> T sumOfSqr(const MT::Array<T>& v);
-template<class T> T length(const MT::Array<T>& v); //TODO: remove this: the name 'norm' is too ambiguous!! (maybe rename to 'length')
+template<class T> T length(const MT::Array<T>& v);
 template<class T> T product(const MT::Array<T>& v);
 
 template<class T> T trace(const MT::Array<T>& v);
@@ -598,6 +615,9 @@ template<class T> MT::Array<T> cat(const MT::Array<T>& y, const MT::Array<T>& z,
 template<class T> MT::Array<T> cat(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c, const MT::Array<T>& d) { MT::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); return x; }
 template<class T> MT::Array<T> cat(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c, const MT::Array<T>& d, const MT::Array<T>& e) { MT::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); x.append(e); return x; }
 template<class T> MT::Array<T> catCol(const MT::Array<MT::Array<T>*>& X);
+template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b){ return catCol(LIST<MT::Array<T> >(a,b)); }
+template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c){ return catCol(LIST<MT::Array<T> >(a,b,c)); }
+template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c, const MT::Array<T>& d){ return catCol(LIST<MT::Array<T> >(a,b,c,d)); }
 
 
 //===========================================================================
@@ -732,7 +752,7 @@ void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs);
 bool lapack_isPositiveSemiDefinite(const arr& symmA);
 void lapack_inverseSymPosDef(arr& Ainv, const arr& A);
 double lapack_determinantSymPosDef(const arr& A);
-void lapack_Ainv_b_sym(arr& x, const arr& A, const arr& b);
+arr lapack_Ainv_b_sym(const arr& A, const arr& b);
 void lapack_min_Ax_b(arr& x,const arr& A, const arr& b);
 
 
@@ -788,6 +808,7 @@ template<class T> void listRead(MT::Array<T*>& L, std::istream& is, const char *
 template<class T> void listCopy(MT::Array<T*>& L, const MT::Array<T*>& M);  //copy a list by calling the copy constructor for each element
 template<class T> void listClone(MT::Array<T*>& L, const MT::Array<T*>& M); //copy a list by calling the 'newClone' method of each element (works for virtual types)
 template<class T> void listDelete(MT::Array<T*>& L);
+template<class T> void listReindex(MT::Array<T*>& L);
 template<class T> T* listFindValue(const MT::Array<T*>& L, const T& x);
 template<class T> T* listFindByName(const MT::Array<T*>& L, const char* name); //each element needs a 'name' (usually MT::String)
 template<class T> T* listFindByType(const MT::Array<T*>& L, const char* type); //each element needs a 'type' (usually MT::String)

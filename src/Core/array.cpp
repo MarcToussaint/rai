@@ -1,20 +1,21 @@
 /*  ---------------------------------------------------------------------
-    Copyright 2013 Marc Toussaint
-    email: mtoussai@cs.tu-berlin.de
-
+    Copyright 2014 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
+    
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
+    
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
+
 
 #include "array.h"
 #include "util.h"
@@ -802,36 +803,37 @@ uint SUS(const arr& p) {
 }
 
 void gnuplot(const arr& X) {
+  MT::arrayBrackets="  ";
   if(X.nd==2 && X.d1!=2) {  //assume array -> splot
-    write(LIST<arr>(X), "z.pltX");
+    FILE("z.pltX") <<X;
     gnuplot("splot 'z.pltX' matrix with pm3d, 'z.pltX' matrix with lines");
     return;
   }
   if(X.nd==2 && X.d1==2) {  //assume curve -> plot
-    write(LIST<arr>(X), "z.pltX");
+    FILE("z.pltX") <<X;
     gnuplot("plot 'z.pltX' us 1:2");
     return;
   }
   if(X.nd==1) {  //assume curve -> plot
-    arr Y;
-    Y.referTo(X);
-    Y.resize(Y.N, 1);
-    write(LIST<arr>(X), "z.pltX");
+//    arr Y;
+//    Y.referTo(X);
+//    Y.resize(Y.N, 1);
+    FILE("z.pltX") <<X;
     gnuplot("plot 'z.pltX' us 1");
     return;
   }
 }
 
-void write(const arr& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
-  std::ofstream fil;
-  MT::open(fil, filename);
-  X.write(fil, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
-  fil.close();
-}
+//void write(const arr& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
+//  std::ofstream fil;
+//  MT::open(fil, filename);
+//  X.write(fil, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
+//  fil.close();
+//}
 
-void write(std::ostream& os, const arrL& X, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
-  catCol(X).write(os, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
-}
+//void write(std::ostream& os, const arrL& X, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
+//  catCol(X).write(os, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
+//}
 
 void write(const arrL& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
   std::ofstream fil;
