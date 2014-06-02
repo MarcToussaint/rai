@@ -920,7 +920,7 @@ MT::FileToken::FileToken(const char* filename, bool change_dir): os(NULL), is(NU
       if(!getcwd(cwd.p, 200)) HALT("couldn't get current dir");
       cwd.resize(strlen(cwd.p), true);
       log() <<"entering path `" <<path<<"' from '" <<cwd <<"'" <<std::endl;
-      if(chdir(path)) HALT("couldn't change to directory " <<path);
+      if(chdir(path)) HALT("couldn't change to directory " <<path <<"(current dir: " <<cwd <<")");
     }
   }
 }
