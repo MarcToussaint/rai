@@ -1460,7 +1460,7 @@ void OpenGL::Select() {
 /** @brief watch in interactive mode and wait for an exiting event
   (key pressed or right mouse) */
 int OpenGL::watch(const char *txt) {
-  update(txt);
+  update(STRING(txt<<" - press ENTER to continue"));
   if(MT::getInteractivity()) enterEventLoop();
   return pressedkey;
 }
