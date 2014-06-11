@@ -1,20 +1,21 @@
 /*  ---------------------------------------------------------------------
-    Copyright 2013 Marc Toussaint
-    email: mtoussai@cs.tu-berlin.de
-
+    Copyright 2014 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
+    
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
+    
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
+
 
 #include "util.h"
 #include <math.h>
@@ -96,6 +97,7 @@ bool IOraw=false;
 bool noLog=true;
 uint lineCount=1;
 int verboseLevel=-1;
+int interactivity=-1;
 
 #ifndef MT_TIMEB
 timeval startTime;
@@ -110,12 +112,12 @@ bool timerUseRealTime=false;
 QApplication *myApp=NULL;
 #endif
 
-struct Demon {
-  std::ofstream logFile;
-  int logstat;
+struct LogFile {
+  std::ofstream fil;
+  bool isOpen;
+  bool noLog;
   
-  Demon() {
-    logstat=0;
+  LogFile():isOpen(false), noLog(false) {
     timerStartTime=MT::cpuTime();
 #ifndef MT_TIMEB
     gettimeofday(&startTime, 0);
@@ -123,8 +125,8 @@ struct Demon {
     _ftime(&startTime);
 #endif
   }
-  ~Demon() {
-    if(logstat) {  //don't open a log file anymore in the destructor
+  ~LogFile() {
+    if(isOpen) {  //don't open a log file anymore in the destructor
       char times[200];
       sprintf(times, "Ellapsed double time:  %.3lfsec\nProcess  user time:   %.3lfsec", realTime(), cpuTime());
       MT::log() <<"Execution stop:      " <<date()
@@ -145,18 +147,19 @@ struct Demon {
   }
   
   std::ofstream& log(const char *name) {
-    if(!logstat && noLog) logstat=1;
-    if(!logstat) {
-      logFile.open(name);
-      if(!logFile.good()) MT_MSG("could not open log-file `" <<name <<"' for output");
-      logstat=1;
+    if(!isOpen && !noLog) {
+      fil.open(name);
+      if(!fil.good()) MT_MSG("could not open log-file `" <<name <<"' for output");
+      isOpen=true;
     }
-    return logFile;
+    return fil;
   }
-} demon;
+};
+
+Singleton<LogFile> logFile;
 
 /// access to the log-file
-std::ofstream& log(const char *name) { return demon.log(name); }
+std::ofstream& log(const char *name) { return logFile().log(name); }
 
 /// open an output-file with name '\c name'
 void open(std::ofstream& fs, const char *name, const char *errmsg) {
@@ -275,6 +278,8 @@ double MIN(double a, double b) { return a<b?a:b; }
 double MAX(double a, double b) { return a>b?a:b; }
 uint MAX(uint a, uint b) { return a>b?a:b; }
 
+double indicate(bool expr){ if(expr) return 1.; return 0.; }
+
 /** @brief the distance between x and y w.r.t.\ a circular topology
     (e.g. modMetric(1, 8, 10)=3) */
 double modMetric(double x, double y, double mod) {
@@ -291,7 +296,7 @@ double sign(double x) { if(x<0.) return -1.; return 1.; }
 double linsig(double x) { if(x<0.) return 0.; if(x>1.) return 1.; return x; }
 
 /// x ends up in the interval [a, b]
-void constrain(double& x, double a, double b) { if(x<a) x=a; if(x>b) x=b; }
+//void clip(double& x, double a, double b) { if(x<a) x=a; if(x>b) x=b; }
 
 /// the angle of the vector (x, y) in [-pi, pi]
 double phi(double x, double y) {
@@ -421,31 +426,31 @@ margin = 1.5
 f(x) = heavy(x)*x**power
 plot f(x/margin+1), 1
 */
-double barrier(double x, double margin, double power){
-  if(x<-margin) return 0.;
-  double y=x/margin+1.;
+double ineqConstraintCost(double g, double margin, double power){
+  if(g<-margin) return 0.;
+  double y=g/margin+1.;
   if(power==1.) return y;
   if(power==2.) return y*y;
   return pow(y,power);
 }
 
-double d_barrier(double x, double margin, double power){
-  if(x<-margin) return 0.;
-  double y=x/margin+1.;
+double d_ineqConstraintCost(double g, double margin, double power){
+  if(g<-margin) return 0.;
+  double y=g/margin+1.;
   if(power==1.) return 1./margin;
   if(power==2.) return 2.*y/margin;
   return power*pow(y,power-1.)/margin;
 }
 
-double potential(double x, double margin, double power){
-  double y=x/margin;
+double eqConstraintCost(double h, double margin, double power){
+  double y=h/margin;
   if(power==1.) return fabs(y);
   if(power==2.) return y*y;
   return pow(fabs(y),power);
 }
 
-double d_potential(double x, double margin, double power){
-  double y=x/margin;
+double d_eqConstraintCost(double h, double margin, double power){
+  double y=h/margin;
   if(power==1.) return MT::sign(y)/margin;
   if(power==2.) return 2.*y/margin;
   return power*pow(y,power-1.)*MT::sign(y)/margin;
@@ -523,7 +528,7 @@ double totalTime() {
 char *date() { static time_t t; time(&t); return ctime(&t); }
 
 /// wait double time
-void __do_wait(double sec, bool msg_on_fail) {
+void wait(double sec, bool msg_on_fail) {
 #if defined(MT_Darwin)
   sleep((int)sec);
 #elif !defined(MT_MSVC)
@@ -556,7 +561,8 @@ void __do_wait(double sec, bool msg_on_fail) {
 }
 
 /// wait for an ENTER at the console
-bool __do_wait() {
+bool wait() {
+  if(!MT::getInteractivity()) return true;
   char c[10];
   std::cout <<" -- hit a key to continue..." <<std::flush;
   //cbreak(); getch();
@@ -672,6 +678,11 @@ uint getVerboseLevel() {
   return verboseLevel;
 }
 
+bool getInteractivity(){
+  if(interactivity==-1) interactivity=(checkParameter<bool>("noInteractivity")?0:1);
+  return interactivity==1;
+}
+
 }
 
 /// a global operator to scan (parse) strings from a stream
@@ -760,7 +771,7 @@ char& MT::String::operator()(uint i) const { CHECK(i<=N, "String range error (" 
 /// return the substring from `start` to (exclusive) `end`.
 MT::String MT::String::getSubString(uint start, uint end) const {
   CHECK(start < end, "getSubString: start should be smaller than end");
-  end = clip(end, uint(0), N);
+  clip(end, uint(0), N);
   String tmp;
   for (uint i = start; i < end; i++) {
     tmp.append((*this)(i));
@@ -773,7 +784,7 @@ MT::String MT::String::getSubString(uint start, uint end) const {
  * @param n number of chars to return
  */
 MT::String MT::String::getLastN(uint n) const {
-  n = clip(n, uint(0), N);
+  clip(n, uint(0), N);
   return getSubString(N-n, N);
 }
 
@@ -782,7 +793,7 @@ MT::String MT::String::getLastN(uint n) const {
  * @param n number of chars to return.
  */
 MT::String MT::String::getFirstN(uint n) const {
-  n = clip(n, uint(0), N);
+  clip(n, uint(0), N);
   return getSubString(0, n);
 }
 
@@ -797,11 +808,11 @@ MT::String& MT::String::operator=(const String& s) {
 void MT::String::operator=(const char *s) {
   if(!s){  clear();  return;  }
   uint ls = strlen(s);
-  if(s>=p && s<=p+N) {
+  if(!ls){  clear();  return;  }
+  if(s>=p && s<=p+N){ //s points to a substring within this string!
     memmove(p, s, ls);
     resize(ls, true);
-  }
-  else {
+  }else{
     resize(ls, false);
     memmove(p, s, ls);
   }
@@ -909,7 +920,7 @@ MT::FileToken::FileToken(const char* filename, bool change_dir): os(NULL), is(NU
       if(!getcwd(cwd.p, 200)) HALT("couldn't get current dir");
       cwd.resize(strlen(cwd.p), true);
       log() <<"entering path `" <<path<<"' from '" <<cwd <<"'" <<std::endl;
-      if(chdir(path)) HALT("couldn't change to directory " <<path);
+      if(chdir(path)) HALT("couldn't change to directory " <<path <<"(current dir: " <<cwd <<")");
     }
   }
 }
@@ -1167,6 +1178,10 @@ void gnuplotClose() {
   if(MT_gp) { fflush(MT_gp); fclose(MT_gp); }
 }
 void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDFfile) {
+if(!MT::getInteractivity()){
+  pauseMouse=false;
+  persist=false;
+}
 #ifndef MT_MSVC
   if(!MT_gp) {
     if(!persist) MT_gp=popen("env gnuplot -noraise -geometry 600x600-0-0 2> /dev/null", "w");
@@ -1193,7 +1208,7 @@ void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDF
   }
   
   if(pauseMouse) cmd <<"\n pause mouse" <<std::endl;
-  ofstream gcmd("z.plotcmd"); gcmd <<cmd; gcmd.close(); //for debugging..
+  FILE("z.plotcmd") <<cmd; //for debugging..
   fputs(cmd.p, MT_gp);
   fflush(MT_gp) ;
 #else
@@ -1268,18 +1283,20 @@ template void MT::getParameter(MT::String&, const char*, const MT::String&);
 template void MT::getParameter(MT::String&, const char*);
 
 template int MT::getParameter<int>(const char*);
-template int  MT::getParameter<int>(const char*, const int&);
+template int MT::getParameter<int>(const char*, const int&);
 template uint MT::getParameter(const char*);
 template uint MT::getParameter<uint>(const char*, const uint&);
 template float MT::getParameter<float>(const char*);
 template double MT::getParameter<double>(const char*);
 template double MT::getParameter<double>(const char*, const double&);
+template bool MT::getParameter<bool>(const char*);
 template bool MT::getParameter<bool>(const char*, const bool&);
 template long MT::getParameter<long>(const char*);
 template MT::String MT::getParameter<MT::String>(const char*);
 template MT::String MT::getParameter<MT::String>(const char*, const MT::String&);
 
 template bool MT::checkParameter<uint>(const char*);
+template bool MT::checkParameter<bool>(const char*);
 
 template void MT::Parameter<MT::String>::initialize();
 template void MT::Parameter<bool>::initialize();
