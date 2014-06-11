@@ -168,6 +168,14 @@ uint optGradDescent(arr& x, ScalarFunction& f, OptOptions opt);
 
 //===========================================================================
 //
+// helpers
+//
+
+void displayFunction(ScalarFunction &F, bool wait=true, double lo=-1.2, double hi=1.2);
+
+
+//===========================================================================
+//
 // Named Parameters: Macros for the OPT
 //
 

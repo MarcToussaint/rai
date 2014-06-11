@@ -27,103 +27,28 @@
 
 #include "optimization.h"
 
-//===========================================================================
-
-struct RosenbrockFunction:ScalarFunction {
-  virtual double fs(arr& g, arr& H, const arr& x) {
-    if(&H) NIY;
-    double f=0.;
-    for(uint i=1; i<x.N; i++) f += MT::sqr(x(i)-MT::sqr(x(i-1))) + .01*MT::sqr(1-x(i-1));
-    if(&g) NIY;
-    return f;
-  }
-};
+extern ScalarFunction& RosenbrockFunction;
+extern ScalarFunction& RastriginFunction;
+extern ScalarFunction& SquareFunction;
+extern ScalarFunction& SumFunction;
+extern ScalarFunction& HoleFunction;
+extern ScalarFunction& ChoiceFunction;
 
 //===========================================================================
 
-struct RastriginFunction:ScalarFunction {
-  virtual double fs(arr& g, arr& H, const arr& x) {
-    if(&H) NIY;
-    double A=.5, f=A*x.N;
-    for(uint i=0; i<x.N; i++) f += x(i)*x(i) - A*::cos(10.*x(i));
-    if(&g) {
-      g.resize(x.N);
-      for(uint i=0; i<x.N; i++) g(i) = 2*x(i) + 10.*A*::sin(10.*x(i));
-    }
-    if(&H) {
-      H.resize(x.N,x.N);  H.setZero();
-      for(uint i=0; i<x.N; i++) H(i,i) = 2 + 100.*A*::cos(10.*x(i));
-    }
-    return f;
-  }
-};
-
-//===========================================================================
-
-struct SquareFunction:ScalarFunction {
-  virtual double fs(arr& g, arr& H, const arr& x) {
-    if(&g) g=2.*x;
-    if(&H) H.setDiag(2., x.N);
-    return sumOfSqr(x);
-  }
-};
-
-//===========================================================================
-
-struct HoleFunction:ScalarFunction {
-  virtual double fs(arr& g, arr& H, const arr& x) {
-    double f=exp(-sumOfSqr(x));
-    if(&g) g=2.*f*x;
-    if(&H) { H.setDiag(2.*f, x.N); H -= 4.*f*(x^x); }
-    f = 1.-f;
-    return f;
-  }
-};
-
-//===========================================================================
-
-struct ChoiceFunction:ScalarFunction {
-  enum Which { none=0, sum, square, hole, rosenbrock, rastrigin } which;
-  double condition;
-  ChoiceFunction() {
-    which = (Which) MT::getParameter<int>("fctChoice");
-    condition = MT::getParameter<double>("condition");
-  }
-  virtual double fs(arr& g, arr& H, const arr& x) {
-    double f;
-    arr c(x.N), y(x);
-    for(uint i=0; i<c.N; i++) c(i) = pow(condition,(double)i/(x.N-1));
-    y *= c; //elem-wise product
-    switch(which) {
-      case sum: {
-        f = ::sum(x);
-        if(&g) { g.resize(x.N); g=1.; }
-        if(&H) { H.resize(x.N,x.N); H.setZero(); }
-      } break;
-      case square: f = SquareFunction().fs(g, H, y); break;
-      case hole: f = HoleFunction().fs(g, H, y); break;
-      default: NIY;
-    }
-    if(&g) g*=c; //elem-wise product
-    if(&H) { arr C; C.setDiag(c); H = C*H*C; }
-    return f;
-  }
-};
-
-//===========================================================================
 
 struct ChoiceConstraintFunction:ConstrainedProblem {
   enum WhichConstraint { wedge2D=1, halfcircle2D, randomLinear } which;
   uint n;
   arr randomG;
-  ChoiceFunction f;
+//  ChoiceFunction f;
   ChoiceConstraintFunction() {
     which = (WhichConstraint) MT::getParameter<int>("constraintChoice");
     n = MT::getParameter<uint>("dim", 2);
   }
   virtual double fc(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x) {
     CHECK(x.N==n,"");
-    double fx =  f.fs(df, Hf, x);
+    double fx =  ChoiceFunction.fs(df, Hf, x);
 
     if(&g) g.resize(dim_g());
     if(&Jg) { Jg.resize(g.N, x.N); Jg.setZero(); }

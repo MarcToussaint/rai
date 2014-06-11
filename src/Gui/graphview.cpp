@@ -94,9 +94,9 @@ void GraphView::update() {
 
 void GraphView::watch() {
   update();
-#ifndef EXAMPLES_AS_TESTS
+if(MT::getInteractivity()){
   gtk_main();
-#endif
+}
 }
 
 #define STR(s) (char*)s

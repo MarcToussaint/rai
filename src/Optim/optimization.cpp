@@ -86,6 +86,23 @@ bool checkAllGradients(ConstrainedProblem &P, const arr& x, double tolerance){
 
 //===========================================================================
 //
+// helpers
+//
+
+void displayFunction(ScalarFunction &F, bool wait, double lo, double hi){
+  arr X, Y;
+  X.setGrid(2,lo,hi,100);
+  Y.resize(X.d0);
+  for(uint i=0;i<X.d0;i++) Y(i) = F.fs(NoArr, NoArr, X[i]);
+  Y.reshape(101,101);
+//  plotGnuplot();  plotSurface(Y);  plot(true);
+  write(LIST<arr>(Y),"z.fct");
+  gnuplot("reset; splot [-1:1][-1:1] 'z.fct' matrix us (1.2*($1/50-1)):(1.2*($2/50-1)):3 w l", wait, true);
+}
+
+
+//===========================================================================
+//
 // optimization methods
 //
 
