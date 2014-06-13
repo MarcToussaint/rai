@@ -32,7 +32,9 @@ struct sVideoEncoder_x264_simple{
       filename(filename), fps(fps), isOpen(false), i(0), out_size(0), x(0), y(0), outbuf_size(0), qp(qp), pts(0),
       f(NULL), encoder(NULL), nals(NULL), first(false), in_format(in_format),
       frame_count(0), encoding_time(0.0), video_time(0.0), scale_time(0.0)
-  {}
+  {
+	  std::clog << "Encoder for " << filename << " expects pixel format " << in_format << std::endl;
+  }
 
   void open(uint width, uint height);
   void addFrame(const byteA& image);
@@ -117,9 +119,11 @@ void sVideoEncoder_x264_simple::addFrame(const byteA& image){
   case MLR::PIXEL_FORMAT_RGB8:
 	  rgb2yuv(image.p, pic_in.img.plane[0], pic_in.img.plane[1], pic_in.img.plane[2], num_pixel);
 	  break;
-  case MLR::PIXEL_FORMAT_YUV444_8:
-	  yuv_packed2planar(image.p, pic_in.img.plane[0], pic_in.img.plane[1], pic_in.img.plane[2], num_pixel);
+  case MLR::PIXEL_FORMAT_UYV444:
+	  yuv_packed2planar(in_format, image.p, pic_in.img.plane[0], pic_in.img.plane[1], pic_in.img.plane[2], num_pixel);
 	  break;
+  default:
+	  throw "input pixel format not supported, yet";
   }
 
   clock_gettime(CLOCK_REALTIME, &end_csp);
