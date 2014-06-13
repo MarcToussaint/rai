@@ -62,4 +62,13 @@ void rgb2yuv(const uint8_t* const in_pixels, uint8_t* yc, uint8_t* uc, uint8_t *
           rgbToYuvVis(in_pixels[pixel_index], in_pixels[pixel_index+1], in_pixels[pixel_index+2], yc + i, uc + i, vc + i);
       }
 }
+void yuv_packed2planar(const uint8_t* const in_pixels, uint8_t* yc, uint8_t* uc, uint8_t *vc, const unsigned int num_pixel) {
+#pragma omp parallel for schedule(guided, 256) num_threads(4)
+      for(unsigned int i = 0; i < num_pixel; ++i) {
+          const int pixel_index = i*3;
+          yc[i] = in_pixels[pixel_index];
+          uc[i] = in_pixels[pixel_index +1];
+          vc[i] = in_pixels[pixel_index +2];
+      }
+}
 

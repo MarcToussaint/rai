@@ -20,20 +20,22 @@ struct sVideoEncoder_x264_simple{
   FILE *f;
   x264_picture_t pic_in, pic_out;
   x264_param_t params;
-  x264_nal_t* nals;
   x264_t* encoder;
-  bool first, is_rgb;
+  x264_nal_t* nals;
+  bool first;
+  MLR::PixelFormat in_format;
 
   int frame_count;
   double encoding_time, video_time, scale_time;
 
-  sVideoEncoder_x264_simple(const char* filename, double fps, uint qp, bool is_rgb) :
-      filename(filename), fps(fps), isOpen(false), i(0), out_size(0), x(0), y(0), outbuf_size(0), qp(qp),
-      f(NULL), encoder(NULL), nals(NULL), frame_count(0), encoding_time(0.0), video_time(0.0), scale_time(0.0), pts(0), first(false), is_rgb(is_rgb)
+  sVideoEncoder_x264_simple(const char* filename, double fps, uint qp, MLR::PixelFormat in_format) :
+      filename(filename), fps(fps), isOpen(false), i(0), out_size(0), x(0), y(0), outbuf_size(0), qp(qp), pts(0),
+      f(NULL), encoder(NULL), nals(NULL), first(false), in_format(in_format),
+      frame_count(0), encoding_time(0.0), video_time(0.0), scale_time(0.0)
   {}
 
   void open(uint width, uint height);
-  void addFrame(const byteA& rgb);
+  void addFrame(const byteA& image);
   void close();
 };
 
@@ -41,13 +43,16 @@ struct sVideoEncoder_x264_simple{
 //==============================================================================
 
 VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char* filename, double fps, uint qp, bool is_rgb) {
-    s = new sVideoEncoder_x264_simple(filename, fps, qp, is_rgb);
+    s = new sVideoEncoder_x264_simple(filename, fps, qp, is_rgb ? MLR::PIXEL_FORMAT_RGB8 : MLR::PIXEL_FORMAT_BGR8);
+}
+VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char* filename, double fps, uint qp, MLR::PixelFormat in_format) {
+    s = new sVideoEncoder_x264_simple(filename, fps, qp, in_format);
 }
 
-void VideoEncoder_x264_simple::addFrame(const byteA& rgb){
-  if(!rgb.N) return;
-  if(!s->isOpen) s->open(rgb.d1, rgb.d0);
-  s->addFrame(rgb);
+void VideoEncoder_x264_simple::addFrame(const byteA& image){
+  if(!image.N) return;
+  if(!s->isOpen) s->open(image.d1, image.d0);
+  s->addFrame(image);
 }
 const MT::String& VideoEncoder_x264_simple::name() const {
 	return s->filename;
@@ -97,18 +102,24 @@ void sVideoEncoder_x264_simple::open(uint width, uint height){
     isOpen=true;
 }
 
-void sVideoEncoder_x264_simple::addFrame(const byteA& rgb){
+void sVideoEncoder_x264_simple::addFrame(const byteA& image){
   timespec end_csp, start_ts, end_ts, start_encode_ts, end_encode_ts;
 
   /* encode the image */
   //fflush(stdout);
   clock_gettime(CLOCK_REALTIME, &start_ts);
-  const unsigned int num_pixel = rgb.d0 * rgb.d1;
+  const unsigned int num_pixel = image.d0 * image.d1;
 
-  if(!is_rgb) {
-      bgr2yuv(rgb.p, pic_in.img.plane[0], pic_in.img.plane[1], pic_in.img.plane[2], num_pixel);
-  } else {
-      rgb2yuv(rgb.p, pic_in.img.plane[0], pic_in.img.plane[1], pic_in.img.plane[2], num_pixel);
+  switch(in_format) {
+  case MLR::PIXEL_FORMAT_BGR8:
+	  bgr2yuv(image.p, pic_in.img.plane[0], pic_in.img.plane[1], pic_in.img.plane[2], num_pixel);
+	  break;
+  case MLR::PIXEL_FORMAT_RGB8:
+	  rgb2yuv(image.p, pic_in.img.plane[0], pic_in.img.plane[1], pic_in.img.plane[2], num_pixel);
+	  break;
+  case MLR::PIXEL_FORMAT_YUV444_8:
+	  yuv_packed2planar(image.p, pic_in.img.plane[0], pic_in.img.plane[1], pic_in.img.plane[2], num_pixel);
+	  break;
   }
 
   clock_gettime(CLOCK_REALTIME, &end_csp);
@@ -159,6 +170,9 @@ void sVideoEncoder_x264_simple::close(){
 struct sVideoEncoder_x264_simple{
 };
 VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char*, double, uint, bool){
+  NICO
+}
+VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char*, double, uint, EncoderInputFormat){
   NICO
 }
 void VideoEncoder_x264_simple::addFrame(const byteA&){}
