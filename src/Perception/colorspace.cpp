@@ -1,3 +1,4 @@
+#include <string.h>
 #include "colorspace.h"
 
 #define PREVCOL_SHIFT   10
@@ -65,6 +66,13 @@ void rgb2yuv(const uint8_t* const in_pixels, uint8_t* yc, uint8_t* uc,
 				in_pixels[pixel_index + 2], yc + i, uc + i, vc + i);
 	}
 }
+void raw_fill(const uint8_t* const in_pixels, uint8_t* yc, uint8_t* uc,
+		uint8_t *vc, const unsigned int num_pixel) {
+	memcpy(yc, in_pixels, num_pixel);
+	memset(uc, 128, num_pixel);
+	memset(vc, 128, num_pixel);
+}
+
 
 void uyv444packed_yuv444planar(const uint8_t* const in_pixels, uint8_t* yc,
 		uint8_t* uc, uint8_t *vc, const unsigned int num_pixel) {

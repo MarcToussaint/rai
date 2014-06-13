@@ -72,7 +72,15 @@ void sVideoEncoder_x264_simple::open(uint width, uint height){
     pic_out.i_pts = 0;
     //pic_out.img.i_csp = X264_CSP_I444;
 
-    x264_picture_alloc(&pic_in, X264_CSP_I444, width, height);
+    int cspace = X264_CSP_NONE;
+    switch(in_format) {
+    default:
+    	cspace = X264_CSP_I444;
+    	break;
+    }
+    // could save a bit by using I420 here, but would make filling and converting code more complex
+
+    x264_picture_alloc(&pic_in, cspace, width, height);
     std::clog << "i420 picture, planes=" << pic_in.img.i_plane ;
     for(int i = 0; i < pic_in.img.i_plane; ++i) {
         std::clog << ", stride " << i << " " << pic_in.img.i_stride[i];
@@ -80,7 +88,7 @@ void sVideoEncoder_x264_simple::open(uint width, uint height){
     std::clog << endl;
 
     x264_param_default_preset(&params, "ultrafast", NULL);
-    params.i_csp = X264_CSP_I444;
+    params.i_csp = cspace;
     params.i_threads = 0;
     params.i_width = width;
     params.i_height = height;
@@ -121,6 +129,9 @@ void sVideoEncoder_x264_simple::addFrame(const byteA& image){
 	  break;
   case MLR::PIXEL_FORMAT_UYV444:
 	  yuv_packed2planar(in_format, image.p, pic_in.img.plane[0], pic_in.img.plane[1], pic_in.img.plane[2], num_pixel);
+	  break;
+  case MLR::PIXEL_FORMAT_RAW8:
+	  raw_fill(image.p, pic_in.img.plane[0], pic_in.img.plane[1], pic_in.img.plane[2], num_pixel);
 	  break;
   default:
 	  throw "input pixel format not supported, yet";

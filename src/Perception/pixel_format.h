@@ -12,6 +12,7 @@
 
 namespace MLR {
 enum PixelFormat {
+	PIXEL_FORMAT_RAW8,		// raw sensor-values, format depends on camera type
 	PIXEL_FORMAT_RGB8,		// packed r-g-b, 8 bit each
 	PIXEL_FORMAT_BGR8,  	// packed b-g-r, 8 bit each
 	PIXEL_FORMAT_YUV444_8,	// packed y-u-v, no sub-sampling, 8 bit each
