@@ -1211,8 +1211,7 @@ bool checkJacobian(VectorFunction &f,
     MT_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
     J >>FILE("z.J_analytical");
     JJ >>FILE("z.J_empirical");
-    //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
-    //HALT("");
+    (J/JJ) >>FILE("z.J_ana_emp");
     return false;
   } else {
     cout <<"checkJacobian -- SUCCESS (max diff error=" <<md <<")" <<endl;
