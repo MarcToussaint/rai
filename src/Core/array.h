@@ -160,7 +160,7 @@ template<class T> struct Array {
   void setCarray(const T **buffer, uint D0, uint D1);
   void referTo(const T *buffer, uint n);
   void referTo(const Array<T>& a);
-  void referToSubRange(const Array<T>& a, uint i, int I);
+  void referToSubRange(const Array<T>& a, int i, int I);
   void referToSubDim(const Array<T>& a, uint dim);
   void referToSubDim(const Array<T>& a, uint i, uint j);
   void takeOver(Array<T>& a);  //a becomes a reference to its previously owned memory!
@@ -178,7 +178,7 @@ template<class T> struct Array {
   T& operator()(const Array<uint> &I) const;
   Array<T> operator[](uint i) const;     // calls referToSubDim(*this, i)
   Array<T> subDim(uint i, uint j) const; // calls referToSubDim(*this, i, j)
-  Array<T> subRange(uint i, int I) const; // calls referToSubRange(*this, i, I)
+  Array<T> subRange(int i, int I) const; // calls referToSubRange(*this, i, I)
   Array<T>& operator()();
   T** getCarray(Array<T*>& Cpointers) const;
   
