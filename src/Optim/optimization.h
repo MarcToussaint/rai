@@ -77,12 +77,13 @@ struct KOrderMarkovFunction {
   /// returns $\f\phi(x), \nabla \phi(x)\f$ for a given time step t and a k+1 tuple of states \f$\bar x = (x_{t-k},..,x_t)\f$.
   /// This defines the cost function \f$f_t = \phi_t^\top \phi_t\f$ in the time slice. Optionally, the last dim_g entries of
   ///  \f$\phi\f$ are interpreted as inequality constraint function \f$g(\bar x)\f$ for time slice t
-  virtual void phi_t(arr& phi, arr& J, uint t, const arr& x_bar) = 0;
+  virtual void phi_t(arr& phi, arr& J, uint t, const arr& x_bar, const arr& z=NoArr, const arr& J_z=NoArr) = 0;
   
   //functions to get the parameters $T$, $k$ and $n$ of the $k$-order Markov Process
   virtual uint get_T() = 0;       ///< horizon (the total x-dimension is (T+1)*n )
   virtual uint get_k() = 0;       ///< the order of dependence: \f$ \phi=\phi(x_{t-k},..,x_t) \f$
   virtual uint dim_x() = 0;       ///< \f$ \dim(x_t) \f$
+  virtual uint dim_z(){ return 0; } ///< \f$ \dim(z) \f$
   virtual uint dim_phi(uint t) = 0; ///< \f$ \dim(\phi_t) \f$
   virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints at the end of \f$ \phi_t \f$
   virtual arr get_prefix(){ arr x(get_k(), dim_x()); x.setZero(); return x; } ///< the augmentation \f$ (x_{t=-k},..,x_{t=-1}) \f$ that makes \f$ \phi_{0,..,k-1} \f$ well-defined

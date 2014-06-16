@@ -772,7 +772,7 @@ struct RowShiftedPackedMatrix {
   RowShiftedPackedMatrix(arr& X, RowShiftedPackedMatrix &aux);
   ~RowShiftedPackedMatrix();
   double acc(uint i, uint j);
-  void computeColPatches(bool assumeMonotonic); //currently presumes monotonous rowShifts
+  void computeColPatches(bool assumeMonotonic);
   arr At_A();
   arr A_At();
   arr At_x(const arr& x);
