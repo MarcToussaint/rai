@@ -25,15 +25,13 @@
 #if defined MT_GTK and defined MT_GRAPHVIZ
 
 #include <gtk/gtk.h>
-//#define WITH_CGRAPH
+#include <graphviz/graphviz_version.h>
 #include <graphviz/gvc.h>
 #include <graphviz/gvplugin_device.h>
 #undef MIN
 #undef MAX
 
-#define CHECK_VERSION strcmp(VERSION, "2.26.3")
-#if $CHECK_VERSION != 0 //parse the following only for other versions
-
+#ifdef PACKAGE_URL //parse the following only for other versions
 
 #define INFO(x) //printf("CALLBACK: %s\n",#x);
 
@@ -377,7 +375,7 @@ bool sGraphView::on_drawingarea_scroll_event(GtkWidget       *widget,           
 
 #undef STR
 
-#else //wrong graphviz version
+#else //for bad versions
 GraphView::GraphView(KeyValueGraph& G, const char* title, void *container) { NICO }
 GraphView::~GraphView() { NICO }
 void GraphView::watch() { NICO }
