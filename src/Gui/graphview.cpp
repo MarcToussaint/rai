@@ -24,14 +24,15 @@
 
 #if defined MT_GTK and defined MT_GRAPHVIZ
 
-#include <gtk/gtk.h>
 #include <graphviz/graphviz_version.h>
+#if defined PACKAGE_URL //check the graphviz version (awkward...)
+
+#include <gtk/gtk.h>
 #include <graphviz/gvc.h>
 #include <graphviz/gvplugin_device.h>
 #undef MIN
 #undef MAX
 
-#ifdef PACKAGE_URL //parse the following only for other versions
 
 #define INFO(x) //printf("CALLBACK: %s\n",#x);
 
