@@ -397,7 +397,7 @@ void GraphView::update() { NICO }
 // explicit instantiations
 //
 
-#if defined MT_GTK and defined MT_GRAPHVIZ
+#if defined MT_GTK and defined MT_GRAPHVIZ and defined PACKAGE_URL
 template MT::Array<Agnode_t*>::Array();
 template MT::Array<Agnode_t*>::~Array();
 #endif
