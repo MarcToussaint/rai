@@ -24,7 +24,8 @@
 struct _RosenbrockFunction:ScalarFunction {
   virtual double fs(arr& g, arr& H, const arr& x) {
     double f=0.;
-    for(uint i=1; i<x.N; i++) f += MT::sqr(x(i)-MT::sqr(x(i-1))) + .01*MT::sqr(1-x(i-1));
+    for(uint i=1; i<x.N; i++) f += MT::sqr(x(i)-MT::sqr(x(i-1))) + .01*MT::sqr(1-10.*x(i-1));
+    f = ::log(1.+f);
     if(&g) NIY;
     if(&H) NIY;
     return f;
