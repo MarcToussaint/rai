@@ -187,7 +187,7 @@ struct sVideoEncoder_x264_simple{
 VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char*, double, uint, bool){
   NICO
 }
-VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char*, double, uint, EncoderInputFormat){
+VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char*, double, uint, MLR::PixelFormat){
   NICO
 }
 void VideoEncoder_x264_simple::addFrame(const byteA&){}
