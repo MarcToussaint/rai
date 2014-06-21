@@ -179,7 +179,7 @@ struct ParticleAroundWalls:KOrderMarkovFunction {
     useKernel(false){}
 
   //implementations of the kOrderMarkov virtuals
-  void phi_t(arr& phi, arr& J, uint t, const arr& x_bar, const arr& z=NoArr, const arr& J_z=NoArr);
+  void phi_t(arr& phi, arr& J, uint t, const arr& x_bar, const arr& z=NoArr, arr& J_z=NoArr);
   uint get_T(){ return T; }
   uint get_k(){ return k; }
   uint dim_x(){ return 3; }
