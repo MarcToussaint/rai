@@ -1433,7 +1433,7 @@ arr RowShiftedPackedMatrix::At_A() {
     arr R2 = comp_At_A(*nextInSum);
     CHECK(R2.special==arr::RowShiftedPackedMatrixST, "");
     CHECK(R2.d1<=R.d1,"NIY"); //swap...
-    for(uint i=0;i<R.d0;i++) for(uint j=0;j<R2.d1;j++){
+    for(uint i=0;i<R2.d0;i++) for(uint j=0;j<R2.d1;j++){
       R(i,j) += R2(i,j);
     }
   }

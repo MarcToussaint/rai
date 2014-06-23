@@ -121,6 +121,7 @@ OptOptions::OptOptions() {
   dampingInc=MT::getParameter<double>("opt/dampingInc",1.);
   dampingDec=MT::getParameter<double>("opt/dampingDec",1.);
   nonStrictSteps=MT::getParameter<uint>  ("opt/nonStrictSteps",0);
+  allowOverstep=MT::getParameter<bool>  ("opt/allowOverstep",false);
   constrainedMethod = (ConstrainedMethodType)MT::getParameter<int>("opt/constrainedMethod",augmentedLag);
 }
 

@@ -153,6 +153,7 @@ struct OptOptions {
   double stepInc, stepDec;
   double dampingInc, dampingDec;
   int nonStrictSteps; //# of non-strict iterations
+  bool allowOverstep;
   ConstrainedMethodType constrainedMethod;
   OptOptions();
 };
