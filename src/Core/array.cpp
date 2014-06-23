@@ -1211,7 +1211,7 @@ bool checkJacobian(VectorFunction &f,
     MT_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
     J >>FILE("z.J_analytical");
     JJ >>FILE("z.J_empirical");
-    (J/JJ) >>FILE("z.J_ana_emp");
+//    (J/JJ) >>FILE("z.J_ana_emp");
     return false;
   } else {
     cout <<"checkJacobian -- SUCCESS (max diff error=" <<md <<")" <<endl;
@@ -1377,6 +1377,9 @@ arr unpackRowShifted(const arr& Y) {
       X(i,j+rs) = Y(i,j);
       if(Yaux->symmetric) X(j+rs,i) = Y(i,j);
     }
+  }
+  if(Yaux->nextInSum){
+    X += unpackRowShifted(*Yaux->nextInSum);
   }
   return X;
 }
