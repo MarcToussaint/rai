@@ -77,9 +77,9 @@ bool checkAllGradients(ConstrainedProblem &P, const arr& x, double tolerance){
   } g(P);
 
   bool good=true;
-  good &= checkGradient(f, x, tolerance);
-  good &= checkHessian (f, x, tolerance);
-  good &= checkJacobian(g, x, tolerance);
+  cout <<"f-gradient: "; good &= checkGradient(f, x, tolerance);
+  cout <<"f-hessian:  "; good &= checkHessian (f, x, tolerance);
+  cout <<"g-jacobian: "; good &= checkJacobian(g, x, tolerance);
   return good;
 }
 

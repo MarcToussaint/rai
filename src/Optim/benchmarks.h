@@ -36,6 +36,32 @@ extern ScalarFunction& ChoiceFunction;
 
 //===========================================================================
 
+struct RandomLPFunction:ConstrainedProblem {
+  uint n;
+  arr randomG;
+  RandomLPFunction():n(0) {}
+  virtual double fc(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x) {
+    double fx =  SumFunction.fs(df, Hf, x);
+//    if(&g) g.resize(dim_g());
+//    if(&Jg) { Jg.resize(g.N, x.N); Jg.setZero(); }
+    uint n=x.N;
+    if(randomG.d0 != dim_g()){
+      randomG.resize(dim_g(),n+1);
+      rndGauss(randomG, 1.);
+      for(uint i=0;i<randomG.d0;i++){
+        if(randomG(i,n)>0.) randomG(i,n)*=-1.; //ensure (0,0) is feasible
+        randomG(i,n) -= .2;
+      }
+    }
+    if(&g) g = randomG * cat(x,ARRAY(1.));
+    if(&Jg) Jg = randomG.sub(0,-1,0,-2);
+    return fx;
+  }
+  virtual uint dim_x(){ return n;  }
+  virtual uint dim_g(){ return 5*n+2; }
+};
+
+//===========================================================================
 
 struct ChoiceConstraintFunction:ConstrainedProblem {
   enum WhichConstraint { wedge2D=1, halfcircle2D, randomLinear } which;
@@ -63,7 +89,7 @@ struct ChoiceConstraintFunction:ConstrainedProblem {
         break;
       case randomLinear:{
         uint n=x.N;
-        if(!randomG.N){
+        if(randomG.d0 != dim_g()){
           randomG.resize(dim_g(),n+1);
           rndGauss(randomG, 1.);
           for(uint i=0;i<randomG.d0;i++){
@@ -82,7 +108,7 @@ struct ChoiceConstraintFunction:ConstrainedProblem {
     return n;
   }
   virtual uint dim_g(){
-    if(which==randomLinear) return 5*n+2;
+    if(which==randomLinear) return 5*n+5;
     if(which==wedge2D) return n;
     return 2;
   }
@@ -179,7 +205,7 @@ struct ParticleAroundWalls:KOrderMarkovFunction {
     useKernel(false){}
 
   //implementations of the kOrderMarkov virtuals
-  void phi_t(arr& phi, arr& J, uint t, const arr& x_bar, const arr& z=NoArr, arr& J_z=NoArr);
+  void phi_t(arr& phi, arr& J, uint t, const arr& x_bar);
   uint get_T(){ return T; }
   uint get_k(){ return k; }
   uint dim_x(){ return 3; }
