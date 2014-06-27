@@ -39,22 +39,22 @@ extern ScalarFunction& ChoiceFunction;
 struct RandomLPFunction:ConstrainedProblem {
   uint n;
   arr randomG;
-  RandomLPFunction():n(0) {}
+  RandomLPFunction():n(0) {
+    n = MT::getParameter<uint>("dim", 2);
+  }
   virtual double fc(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x) {
     double fx =  SumFunction.fs(df, Hf, x);
-//    if(&g) g.resize(dim_g());
-//    if(&Jg) { Jg.resize(g.N, x.N); Jg.setZero(); }
-    uint n=x.N;
+    if(n){ CHECK(x.N==n,""); }else n=x.N;
     if(randomG.d0 != dim_g()){
       randomG.resize(dim_g(),n+1);
       rndGauss(randomG, 1.);
       for(uint i=0;i<randomG.d0;i++){
-        if(randomG(i,n)>0.) randomG(i,n)*=-1.; //ensure (0,0) is feasible
-        randomG(i,n) -= .2;
+        if(randomG(i,0)>0.) randomG(i,0)*=-1.; //ensure (0,0) is feasible
+        randomG(i,0) -= .2;
       }
     }
-    if(&g) g = randomG * cat(x,ARRAY(1.));
-    if(&Jg) Jg = randomG.sub(0,-1,0,-2);
+    if(&g) g = randomG * cat(ARRAY(1.),x);
+    if(&Jg) Jg = randomG.sub(0,-1,1,-1);
     return fx;
   }
   virtual uint dim_x(){ return n;  }
@@ -93,12 +93,12 @@ struct ChoiceConstraintFunction:ConstrainedProblem {
           randomG.resize(dim_g(),n+1);
           rndGauss(randomG, 1.);
           for(uint i=0;i<randomG.d0;i++){
-            if(randomG(i,n)>0.) randomG(i,n)*=-1.; //ensure (0,0) is feasible
-            randomG(i,n) -= .2;
+            if(randomG(i,0)>0.) randomG(i,0)*=-1.; //ensure (0,0) is feasible
+            randomG(i,0) -= .2;
           }
         }
-        if(&g) g = randomG * cat(x,ARRAY(1.));
-        if(&Jg) Jg = randomG.sub(0,-1,0,-2);
+        if(&g) g = randomG * cat(ARRAY(1.), x);
+        if(&Jg) Jg = randomG.sub(0,-1,1,-1);
       } break;
     }
 
