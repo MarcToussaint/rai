@@ -26,9 +26,9 @@ struct sImageViewer{
 #endif
   sImageViewer(const char* tit)
 #ifdef MT_GL
-:gl(tit){}
+:gl(tit)
 #endif
-;
+{};
 };
 
 void ImageViewer::open(){ 
