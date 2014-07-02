@@ -4,6 +4,9 @@
 
 void lib_Perception(){ MT_MSG("loading"); }
 
+REGISTER_MODULE (VideoEncoder)
+REGISTER_MODULE (VideoEncoderX264)
+
 #ifdef MT_OPENCV
 
 #include "opencv.h"
@@ -23,8 +26,6 @@ void lib_Perception(){ MT_MSG("loading"); }
 #undef MAX
 
 REGISTER_MODULE (ImageViewer)
-REGISTER_MODULE (VideoEncoder)
-REGISTER_MODULE (VideoEncoderX264)
 REGISTER_MODULE (PointCloudViewer)
 REGISTER_MODULE (OpencvCamera)
 REGISTER_MODULE (CvtGray)
