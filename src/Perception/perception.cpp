@@ -1,46 +1,18 @@
 #include "perception.h"
 #include "pointcloud.h"
 #include "audio.h"
-
-void lib_Perception(){ MT_MSG("loading"); }
-
-REGISTER_MODULE (VideoEncoder)
-REGISTER_MODULE (VideoEncoderX264)
-
-#ifdef MT_OPENCV
-
-#include "opencv.h"
-#include "libcolorseg.h"
 #include "videoEncoder.h"
 #include <Core/util_t.h>
 #include <Gui/opengl.h>
 
-#undef COUNT
-#include <opencv2/opencv.hpp>
-//#include <opencv2/features2d/features2d.hpp>
-//#include <opencv2/gpu/gpu.hpp>
-#ifdef ARCH_LINUX
-#include <opencv2/nonfree/nonfree.hpp>
-#endif
-#undef MIN
-#undef MAX
+void lib_Perception(){ MT_MSG("loading"); }
 
 REGISTER_MODULE (ImageViewer)
 REGISTER_MODULE (PointCloudViewer)
-REGISTER_MODULE (OpencvCamera)
-REGISTER_MODULE (CvtGray)
-REGISTER_MODULE (CvtHsv)
-REGISTER_MODULE (HsvFilter)
-REGISTER_MODULE (MotionFilter)
-REGISTER_MODULE (DifferenceFilter)
-REGISTER_MODULE (CannyFilter)
-REGISTER_MODULE (Patcher)
-REGISTER_MODULE (SURFer)
-REGISTER_MODULE (HoughLineFilter)
+REGISTER_MODULE (VideoEncoder)
+REGISTER_MODULE (VideoEncoderX264)
 REGISTER_MODULE (AudioReader)
 REGISTER_MODULE (AudioWriter)
-//REGISTER_MODULE (ShapeFitter)
-
 
 //===========================================================================
 //
@@ -169,6 +141,83 @@ void PointCloudViewer::step(){
   s->pc[1]=cols.get();
   s->gl.update();
 }
+
+//===========================================================================
+//
+// AudioReader and Writer
+//
+
+void AudioReader::open() {
+#ifdef HAVE_PULSEAUDIO
+    poller = new AudioPoller_PA();
+#else
+    poller = NULL;
+#endif
+}
+void AudioReader::close() {
+    if(poller != NULL) {
+        delete poller;
+        poller = NULL;
+    }
+}
+void AudioReader::step() {
+    if(poller == NULL) {
+        return;
+    }
+    Access_typed<byteA>::WriteToken wr(pcms16ne2c.set());
+    wr().resize(4096);
+    poller->read(wr());
+}
+
+
+void AudioWriter::open() {
+#ifdef HAVE_LIBAV
+    writer = new AudioWriter_libav(STRING("z.audio" <<'.' <<MT::getNowString() <<".wav"));
+#else
+    writer = NULL;
+#endif
+}
+void AudioWriter::close() {
+    if(writer != NULL) {
+        delete writer;
+        writer = NULL;
+    }
+}
+void AudioWriter::step() {
+    if(writer == NULL) {
+        return;
+    }
+    writer->writeSamples_R48000_2C_S16_NE(pcms16ne2c.get());
+}
+
+#ifdef MT_OPENCV
+
+#include "opencv.h"
+#include "libcolorseg.h"
+
+#undef COUNT
+#include <opencv2/opencv.hpp>
+//#include <opencv2/features2d/features2d.hpp>
+//#include <opencv2/gpu/gpu.hpp>
+#ifdef ARCH_LINUX
+#include <opencv2/nonfree/nonfree.hpp>
+#endif
+#undef MIN
+#undef MAX
+
+REGISTER_MODULE (OpencvCamera)
+REGISTER_MODULE (CvtGray)
+REGISTER_MODULE (CvtHsv)
+REGISTER_MODULE (HsvFilter)
+REGISTER_MODULE (MotionFilter)
+REGISTER_MODULE (DifferenceFilter)
+REGISTER_MODULE (CannyFilter)
+REGISTER_MODULE (Patcher)
+REGISTER_MODULE (SURFer)
+REGISTER_MODULE (HoughLineFilter)
+//REGISTER_MODULE (ShapeFitter)
+
+
 
 //===========================================================================
 //
@@ -580,45 +629,3 @@ VariableL newPointcloudVariables() {
 #endif
 
 
-void AudioReader::open() {
-#ifdef HAVE_PULSEAUDIO
-    poller = new AudioPoller_PA();
-#else
-    poller = NULL;
-#endif
-}
-void AudioReader::close() {
-    if(poller != NULL) {
-        delete poller;
-        poller = NULL;
-    }
-}
-void AudioReader::step() {
-    if(poller == NULL) {
-        return;
-    }
-    Access_typed<byteA>::WriteToken wr(pcms16ne2c.set());
-    wr().resize(4096);
-    poller->read(wr());
-}
-
-
-void AudioWriter::open() {
-#ifdef HAVE_LIBAV
-    writer = new AudioWriter_libav(STRING("z.audio" <<'.' <<MT::getNowString() <<".wav"));
-#else
-    writer = NULL;
-#endif
-}
-void AudioWriter::close() {
-    if(writer != NULL) {
-        delete writer;
-        writer = NULL;
-    }
-}
-void AudioWriter::step() {
-    if(writer == NULL) {
-        return;
-    }
-    writer->writeSamples_R48000_2C_S16_NE(pcms16ne2c.get());
-}
