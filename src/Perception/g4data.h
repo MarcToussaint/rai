@@ -2,6 +2,7 @@
 
 #include <Core/array.h>
 #include <Core/keyValueGraph.h>
+#include "g4id.h"
 
 struct G4Data {
   struct sG4Data;
@@ -10,30 +11,32 @@ struct G4Data {
   G4Data();
  ~G4Data();
 
-  void load(const char *data_fname, const char *meta_fname, const char *poses_fname, bool interpolate = false);
+  void load(const char *dir, bool interpolate = false);
   void save(const char *data_fname);
+  void clear();
 
-  const StringA& sensors();
-  const StringA& subjects();
-  const StringA& objects();
-  const StringA& agents();
-  const StringA& limbs();
-  const StringA& digits();
-
-  const StringA& digitsof(const String &limb);
-  const StringA& sublimbs(const String &limb);
-  const String& suplimb(const String &limb);
+  G4ID &id();
 
   uint numFrames();
   uint numDim(const char *bam);
 
-  template<typename T>
-  void appendMeta(const char *name, const T &data);
+  /* template<typename T> */
+  /* void appendMeta(const char *name, const T &data); */
   void appendBam(const char *name, const arr &data);
 
-  bool hasBAM(const char *type);
+  bool hasBam(const char *type);
   arr query(const char *type);
   arr query(const char *type, const char *sensor);
   arr query(const char *type, const char *sensor, uint f);
+  /* arr query(const char *type, const char *sensor1, const char *sensor2); */
+  /* arr query(const char *type, const char *sensor1, const char *sensor2, uint f); */
+
+  void computeVar(const StringA &types, uint wlen, bool force = false);
+  void computeVar(const String &type, uint wlen, bool force = false);
+  void computeDPos(const String &b, bool force = false);
+  void computeDQuat(const String &b, bool force = false);
+
+  void write(std::ostream &os = std::cout) const;
 };
+stdOutPipe(G4Data);
 
