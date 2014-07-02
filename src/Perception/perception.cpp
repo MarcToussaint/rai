@@ -7,7 +7,6 @@
 
 void lib_Perception(){ MT_MSG("loading"); }
 
-REGISTER_MODULE (ImageViewer)
 REGISTER_MODULE (PointCloudViewer)
 REGISTER_MODULE (VideoEncoder)
 REGISTER_MODULE (VideoEncoderX264)
@@ -19,14 +18,26 @@ REGISTER_MODULE (AudioWriter)
 // ImageViewer
 //
 
+REGISTER_MODULE (ImageViewer)
+
 struct sImageViewer{
+#ifdef MT_GL
   OpenGL gl;
-  sImageViewer(const char* tit):gl(tit){};
+#endif
+  sImageViewer(const char* tit)
+#ifdef MT_GL
+:gl(tit){};
+#endif
 };
 
-void ImageViewer::open(){ s = new sImageViewer(STRING("ImageViewer '"<<img.name()<<'\'')); }
+void ImageViewer::open(){ 
+s = new sImageViewer(STRING("ImageViewer '"<<img.name()<<'\'')); }
 void ImageViewer::close(){ delete s; }
-void ImageViewer::step(){ s->gl.background = img.get(); s->gl.update(); }
+void ImageViewer::step(){ 
+#ifdef MT_GL
+s->gl.background = img.get(); s->gl.update(); 
+#endif
+}
 
 
 //===========================================================================
@@ -123,13 +134,17 @@ void VideoEncoderX264::step(){
 //
 
 struct sPointCloudViewer{
+#ifdef MT_GL
   OpenGL gl;
+#endif
   arr pc[2];
 };
 
 void PointCloudViewer::open(){
   s = new sPointCloudViewer;
+#ifdef MT_GL
   s->gl.add(glDrawPointCloud, s->pc);
+#endif
 }
 
 void PointCloudViewer::close(){
@@ -139,7 +154,9 @@ void PointCloudViewer::close(){
 void PointCloudViewer::step(){
   s->pc[0]=pts.get();
   s->pc[1]=cols.get();
+#ifdef MT_GL
   s->gl.update();
+#endif
 }
 
 //===========================================================================
