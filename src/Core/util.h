@@ -107,6 +107,7 @@ uint MAX(uint a, uint b);
 double indicate(bool expr);
 double modMetric(double x, double y, double mod);
 double sign(double x);
+double sign0(double x);
 double linsig(double x);
 //void   clip(double& x, double a, double b);
 double phi(double dx, double dy);
