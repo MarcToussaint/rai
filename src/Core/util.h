@@ -616,7 +616,7 @@ void gnuplotClose();
 
 /// Clip the `value` of n between `lower` and `upper`.
 template <typename T> T clip(T& x, const T& lower, const T& upper) {
-  if(x<lower) x=lower; if(x>upper) x=upper; return x;
+  if(x<lower) x=lower; else if(x>upper) x=upper; return x;
 }
 
 std::string getcwd_string();
