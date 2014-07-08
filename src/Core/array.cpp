@@ -335,16 +335,15 @@ void inverse_SymPosDef(arr& Ainv, const arr& A) {
 #endif
 }
 
-void pseudoInverse(arr& Ainv, const arr& A, const arr& Winv, double eps) {
-  arr tA, E, AWAinv;
-  transpose(tA, A);
-  if(!eps) {
-    inverse_SymPosDef(AWAinv, A*Winv*tA);
-  } else {
-    E.setDiag(eps, A.d0);
-    inverse_SymPosDef(AWAinv, E+A*Winv*tA);
-  }
-  Ainv = Winv * tA * AWAinv;
+arr pseudoInverse(const arr& A, const arr& Winv, double eps) {
+  arr At, E, AAt, AAt_inv, Ainv;
+  transpose(At, A);
+  if(&Winv) AAt = A*Winv*At; else AAt = A*At;
+  if(eps) for(uint i=0;i<AAt.d0;i++) AAt(i,i) += eps;
+  inverse_SymPosDef(AAt_inv, AAt);
+  Ainv = At * AAt_inv;
+  if(&Winv) Ainv = Winv * Ainv;
+  return Ainv;
 }
 
 /// the determinant of a 2D squared matrix

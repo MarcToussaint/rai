@@ -491,7 +491,7 @@ uint inverse_SVD(arr& inverse, const arr& A);
 void inverse_LU(arr& Xinv, const arr& X);
 void inverse_SymPosDef(arr& Ainv, const arr& A);
 inline arr inverse_SymPosDef(const arr& A){ arr Ainv; inverse_SymPosDef(Ainv, A); return Ainv; }
-void pseudoInverse(arr& Ainv, const arr& A, const arr& Winv, double robustnessEps);
+arr pseudoInverse(const arr& A, const arr& Winv=NoArr, double robustnessEps=1e-10);
 void gaussFromData(arr& a, arr& A, const arr& X);
 void rotationFromAtoB(arr& R, const arr& a, const arr& v);
 
