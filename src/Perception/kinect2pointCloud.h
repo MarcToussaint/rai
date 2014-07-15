@@ -4,7 +4,7 @@
 
 struct Kinect2PointCloud: Module {
   ACCESS(byteA, kinect_rgb)
-  ACCESS(MT::Array<uint16_t>, kinect_depth)
+  ACCESS(uint16A, kinect_depth)
 
   ACCESS(arr, kinect_points)
   ACCESS(arr, kinect_pointColors)

@@ -26,13 +26,13 @@ struct sImageViewer{
 #endif
   sImageViewer(const char* tit)
 #ifdef MT_GL
-:gl(tit)
+    :gl(tit)
 #endif
 {};
 };
 
 void ImageViewer::open(){ 
-s = new sImageViewer(STRING("ImageViewer '"<<img.name()<<'\'')); }
+s = new sImageViewer(STRING("ImageViewer '"<<img.var->name()<<'\'')); }
 void ImageViewer::close(){ delete s; }
 void ImageViewer::step(){ 
 #ifdef MT_GL
