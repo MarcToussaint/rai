@@ -36,7 +36,10 @@ s = new sImageViewer(STRING("ImageViewer '"<<img.name()<<'\'')); }
 void ImageViewer::close(){ delete s; }
 void ImageViewer::step(){ 
 #ifdef MT_GL
-s->gl.background = img.get(); s->gl.update(); 
+  s->gl.background = img.get();
+  if(s->gl.height!= s->gl.background.d0 || s->gl.width!= s->gl.background.d1)
+    s->gl.resize(s->gl.background.d1, s->gl.background.d0);
+  s->gl.update();
 #endif
 }
 
@@ -141,10 +144,19 @@ struct sPointCloudViewer{
   arr pc[2];
 };
 
+void drawBackground(void*){
+  glDrawAxes(1.);
+}
+
 void PointCloudViewer::open(){
   s = new sPointCloudViewer;
 #ifdef MT_GL
+  s->gl.add(drawBackground);
   s->gl.add(glDrawPointCloud, s->pc);
+  s->gl.camera.setPosition(0., 0., 0.);
+  s->gl.camera.focus(0., 0., 1.);
+  s->gl.camera.setZRange(.1, 10.);
+  s->gl.camera.setHeightAngle(45.);
 #endif
 }
 

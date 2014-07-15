@@ -936,7 +936,7 @@ void glRasterImage(float x, float y, byteA &img, float zoom) {
     case 0:
     case 1:  glDrawPixels(img.d1, img.d0, GL_LUMINANCE, GL_UNSIGNED_BYTE, img.p);        break;
     case 2:  glDrawPixels(img.d1, img.d0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, img.p);  break;
-    case 3:  glDrawPixels(img.d1, img.d0, GL_BGR, GL_UNSIGNED_BYTE, img.p);              break;
+    case 3:  glDrawPixels(img.d1, img.d0, GL_RGB, GL_UNSIGNED_BYTE, img.p);              break;
     case 4:  glDrawPixels(img.d1, img.d0, GL_RGBA, GL_UNSIGNED_BYTE, img.p);             break;
     default: HALT("no image format");
   };
