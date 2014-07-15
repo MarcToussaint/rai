@@ -343,9 +343,10 @@ typedef MT::Array<int>    intA;
 typedef MT::Array<char>   charA;
 typedef MT::Array<byte>   byteA;
 typedef MT::Array<bool>   boolA;
+typedef MT::Array<uint16_t>   uint16A;
 typedef MT::Array<const char*>  CstrList;
 typedef MT::Array<arr*>   arrL;
-typedef MT::Array<arr> arrA;
+typedef MT::Array<arr>    arrA;
 
 namespace MT { struct String; }
 typedef MT::Array<MT::String> StringA;
