@@ -1,6 +1,10 @@
 #pragma once
 
 #include <Core/module.h>
+#include <Gui/opengl.h>
+
+extern ors::Camera kinectCam;
+void initKinectCam();
 
 struct Kinect2PointCloud: Module {
   ACCESS(byteA, kinect_rgb)

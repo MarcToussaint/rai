@@ -336,6 +336,7 @@ BinaryOperator(/ , /=);
 /// @{
 
 typedef MT::Array<double> arr;
+typedef MT::Array<float>  arrf;
 typedef MT::Array<double> doubleA;
 typedef MT::Array<float>  floatA;
 typedef MT::Array<uint>   uintA;
@@ -344,6 +345,7 @@ typedef MT::Array<char>   charA;
 typedef MT::Array<byte>   byteA;
 typedef MT::Array<bool>   boolA;
 typedef MT::Array<uint16_t>   uint16A;
+typedef MT::Array<uint32_t>   uint32A;
 typedef MT::Array<const char*>  CstrList;
 typedef MT::Array<arr*>   arrL;
 typedef MT::Array<arr>    arrA;
@@ -425,7 +427,7 @@ inline arr eye(uint n) { return eye(n, n); }
 /// return matrix of ones
 inline arr ones(const uintA& d) {  arr z;  z.resize(d);  z=1.;  return z;  }
 /// return VECTOR of ones
-inline arr ones(uint n) { return ones(TUP(n, n)); }
+inline arr ones(uint n) { return ones(TUP(n)); }
 /// return matrix of ones
 inline arr ones(uint d0, uint d1) { return ones(TUP(d0, d1)); }
 
