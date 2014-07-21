@@ -19,6 +19,8 @@
 
 #include "gaussianProcess.h"
 
+#define MT_GP_DEBUG 0
+
 /** prior of 0 */
 double const_0(const arr &x, const void *p){return 0.;}
 

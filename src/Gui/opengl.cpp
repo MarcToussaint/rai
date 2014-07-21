@@ -1032,6 +1032,7 @@ void glSelectWin(uint win) {
 #endif
 
 #else /// MT_GL
+void glColor(int col) { NICO }
 void glColor(float, float, float, float) { NICO }
 void glDrawDiamond(float, float, float, float, float, float) { NICO }
 // void glStandardLight(void*) { NICO }   // TOBIAS: das hier wird doch schon ueber opengl_void.cxx definiert
@@ -1290,6 +1291,9 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   //std color: black:
   glColor(.3, .3, .5);
   
+  lock.readLock(); //now accessing user data
+  //cout <<"LOCK draw" <<endl;
+
   //draw central view
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -1299,7 +1303,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
     (*drawers(i).call)(drawers(i).classP);
     glLoadIdentity();
   }
-  
+
   //draw text
   if(text.N) {
     glMatrixMode(GL_PROJECTION);
@@ -1344,6 +1348,9 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
     }
   }
   
+  //cout <<"UNLOCK draw" <<endl;
+  lock.unlock(); //now de-accessing user data
+
   if(captureImg){
     captureImage.resize(h, w, 3);
     glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
@@ -1389,6 +1396,9 @@ void OpenGL::Select() {
     vi->camera.glSetProjectionMatrix();
   }
   
+  lock.readLock(); //now accessing user data
+  //cout <<"LOCK select" <<endl;
+
   //draw objects
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -1405,6 +1415,10 @@ void OpenGL::Select() {
     GLView *vi=&views(mouseView);
     for(i=0; i<vi->drawers.N; i++) { glLoadName(i); (*vi->drawers(i).call)(vi->drawers(i).classP); }
   }
+
+  //cout <<"UNLOCK select" <<endl;
+  lock.unlock(); //deaccess user data
+
 #else
   Draw(width(),height());
 #endif
@@ -1447,17 +1461,17 @@ void OpenGL::Select() {
 int OpenGL::watch(const char *txt) {
   update(txt);
   enterEventLoop();
-  processEvents();
+//  processEvents();
   return pressedkey;
 }
 
 /// update the view (in Qt: also starts displaying the window)
-int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep) {
+int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool waitForCompletedDraw) {
   captureImg=_captureImg;
   captureDep=_captureDep;
   if(txt) text.clear() <<txt;
   postRedrawEvent(false);
-  processEvents();
+  if(captureImg || captureDep || waitForCompletedDraw) processEvents();
   captureImg=captureDep=false;
   return pressedkey;
 }
@@ -1667,6 +1681,8 @@ void OpenGL::Reshape(int _width, int _height) {
   CALLBACK_DEBUG(printf("Window %d Reshape Callback:  %d %d\n", 0, _width, _height));
   width=_width;
   height=_height;
+  if(width%8) width = 8*(width/8);
+  if(height%2) height = 2*(height/2);
   camera.setWHRatio((double)width/height);
   for(uint v=0; v<views.N; v++) views(v).camera.setWHRatio((views(v).ri-views(v).le)*width/((views(v).to-views(v).bo)*height));
   //postRedrawEvent(true);

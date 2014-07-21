@@ -1,7 +1,6 @@
 #include "rrt.h"
 
 #include <Algo/ann.h>
-#include <Optim/optimization.h>
 
 struct sRRT {
   ANN ann;
@@ -15,7 +14,7 @@ RRT::RRT(const arr& q0, double _stepsize) : s(new sRRT()){
   s->parent.append(0);    //q has itself as parent
   s->stepsize = _stepsize;
 }
-double RRT::getProposalTowards(arr& q){
+double RRT::getProposalTowards(arr& proposal, const arr& q){
   //find NN
   s->nearest=s->ann.getNN(q);
 
@@ -23,7 +22,9 @@ double RRT::getProposalTowards(arr& q){
   arr d = q - s->ann.X[s->nearest]; //difference vector between q and nearest neighbor
   double dist = length(d);
   if (dist > s->stepsize)
-    q = s->ann.X[s->nearest] + s->stepsize/dist * d;
+    proposal = s->ann.X[s->nearest] + s->stepsize/dist * d;
+  else
+    proposal = q;
   return dist;
 }
 void RRT::add(const arr& q){

@@ -1,6 +1,8 @@
 #include "perception.h"
 #include "pointcloud.h"
 
+void lib_Perception(){ MT_MSG("loading"); }
+
 #ifdef MT_OPENCV
 
 #include "opencv.h"
@@ -18,8 +20,6 @@
 #endif
 #undef MIN
 #undef MAX
-
-void lib_Perception(){ MT_MSG("loading"); }
 
 REGISTER_MODULE (ImageViewer)
 REGISTER_MODULE (VideoEncoder)

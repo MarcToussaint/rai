@@ -59,6 +59,7 @@ extern bool globalMemoryStrict;
 extern const char* arrayElemsep;
 extern const char* arrayLinesep;
 extern const char* arrayBrackets;
+struct FileToken;
 } //namespace
 
 //===========================================================================
@@ -110,6 +111,7 @@ template<class T> struct Array {
   explicit Array(uint D0, uint D1, uint D2);
   explicit Array(const T* p, uint size);    //reference!
   Array(std::initializer_list<T> list);
+  Array(MT::FileToken&); //read from a file
   ~Array();
   
   Array<T>& operator=(const T& v);
@@ -142,6 +144,7 @@ template<class T> struct Array {
   Array<T>& resizeAs(const Array<T>& a);
   Array<T>& reshapeAs(const Array<T>& a);
   Array<T>& resizeCopyAs(const Array<T>& a);
+  Array<T>& flatten();
   Array<T>& dereference();
 
   /// @name initializing/assigning entries
@@ -468,8 +471,7 @@ extern bool useLapack;
 
 uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort=true);
 void svd(arr& U, arr& V, const arr& A);
-void pca(arr &Y, arr &v, arr &W, const arr &X, uint size = 0);
-void pca(arr &Y, const arr &W, const arr &X);
+void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc = 0);
 
 void mldivide(arr& X, const arr& A, const arr& b);
 
@@ -478,6 +480,7 @@ arr  inverse(const arr& A);
 uint inverse_SVD(arr& inverse, const arr& A);
 void inverse_LU(arr& Xinv, const arr& X);
 void inverse_SymPosDef(arr& Ainv, const arr& A);
+inline arr inverse_SymPosDef(const arr& A){ arr Ainv; inverse_SymPosDef(Ainv, A); return Ainv; }
 void pseudoInverse(arr& Ainv, const arr& A, const arr& Winv, double robustnessEps);
 void gaussFromData(arr& a, arr& A, const arr& X);
 void rotationFromAtoB(arr& R, const arr& a, const arr& v);
@@ -490,6 +493,7 @@ void lognormScale(arr& P, double& logP, bool force=true);
 
 void gnuplot(const arr& X);
 void write(const arr& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
+void write(std::ostream& os, const arrL& X, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
 void write(const arrL& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
 
 
@@ -569,8 +573,6 @@ template<class T> MT::Array<T> sum(const MT::Array<T>& v, uint d);
 template<class T> T sumOfAbs(const MT::Array<T>& v);
 template<class T> T sumOfSqr(const MT::Array<T>& v);
 template<class T> T length(const MT::Array<T>& v); //TODO: remove this: the name 'norm' is too ambiguous!! (maybe rename to 'length')
-template<class T> T mean(const MT::Array<T>& v);
-template<class T> MT::Array<T> mean(const MT::Array<T>& v, uint d);
 template<class T> T product(const MT::Array<T>& v);
 
 template<class T> T trace(const MT::Array<T>& v);
@@ -587,8 +589,6 @@ template<class T> MT::Array<T> diagProduct(const MT::Array<T>& v, const MT::Arra
 
 template<class T> MT::Array<T> elemWiseMin(const MT::Array<T>& v, const MT::Array<T>& w);
 template<class T> MT::Array<T> elemWiseMax(const MT::Array<T>& v, const MT::Array<T>& w);
-template<class T> MT::Array<T> elemWiseProd(const MT::Array<T>& v, const MT::Array<T>& w);
-template<class T> MT::Array<T> elemWiseDiv(const MT::Array<T>& v, const MT::Array<T>& w);
 
 
 //===========================================================================
