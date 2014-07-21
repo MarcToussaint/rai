@@ -1,55 +1,47 @@
 #include "perception.h"
 #include "pointcloud.h"
-
-void lib_Perception(){ MT_MSG("loading"); }
-
-#ifdef MT_OPENCV
-
-#include "opencv.h"
-#include "libcolorseg.h"
+#include "audio.h"
 #include "videoEncoder.h"
 #include <Core/util_t.h>
 #include <Gui/opengl.h>
 
-#undef COUNT
-#include <opencv2/opencv.hpp>
-//#include <opencv2/features2d/features2d.hpp>
-//#include <opencv2/gpu/gpu.hpp>
-#ifdef ARCH_LINUX
-#include <opencv2/nonfree/nonfree.hpp>
-#endif
-#undef MIN
-#undef MAX
+void lib_Perception(){ MT_MSG("loading"); }
 
-REGISTER_MODULE (ImageViewer)
-REGISTER_MODULE (VideoEncoder)
 REGISTER_MODULE (PointCloudViewer)
-REGISTER_MODULE (OpencvCamera)
-REGISTER_MODULE (CvtGray)
-REGISTER_MODULE (CvtHsv)
-REGISTER_MODULE (HsvFilter)
-REGISTER_MODULE (MotionFilter)
-REGISTER_MODULE (DifferenceFilter)
-REGISTER_MODULE (CannyFilter)
-REGISTER_MODULE (Patcher)
-REGISTER_MODULE (SURFer)
-REGISTER_MODULE (HoughLineFilter)
-//REGISTER_MODULE (ShapeFitter)
-
+REGISTER_MODULE (VideoEncoder)
+REGISTER_MODULE (VideoEncoderX264)
+REGISTER_MODULE (AudioReader)
+REGISTER_MODULE (AudioWriter)
 
 //===========================================================================
 //
 // ImageViewer
 //
 
+REGISTER_MODULE (ImageViewer)
+
 struct sImageViewer{
+#ifdef MT_GL
   OpenGL gl;
-  sImageViewer(const char* tit):gl(tit){};
+#endif
+  sImageViewer(const char* tit)
+#ifdef MT_GL
+    :gl(tit)
+#endif
+{};
 };
 
-void ImageViewer::open(){ s = new sImageViewer(STRING("ImageViewer '"<<img.name()<<'\'')); }
+void ImageViewer::open(){ 
+s = new sImageViewer(STRING("ImageViewer '"<<img.var->name()<<'\'')); }
 void ImageViewer::close(){ delete s; }
-void ImageViewer::step(){ s->gl.background = img.get(); s->gl.update(); }
+void ImageViewer::step(){ 
+#ifdef MT_GL
+  s->gl.background = img.get();
+  if(s->gl.height!= s->gl.background.d0 || s->gl.width!= s->gl.background.d1)
+    s->gl.resize(s->gl.background.d1, s->gl.background.d0);
+  s->gl.update();
+#endif
+}
 
 
 //===========================================================================
@@ -62,13 +54,14 @@ struct sVideoEncoder{
   VideoEncoder_libav_simple video;
   ofstream timeTagFile;
   byteA buffer;
-  sVideoEncoder(const char* _filename, uint fps):filename(_filename), video(filename.p, fps){
+
+  sVideoEncoder(const char* _filename, double fps, bool is_rgb=false):filename(_filename), video(filename.p, fps, 0, is_rgb) {
     timeTagFile.open(STRING(filename <<".times"));
   }
 };
 
 void VideoEncoder::open(){
-  s = new sVideoEncoder(STRING("z." <<img.name <<'.' <<MT::getNowString() <<".avi"), 25);
+  s = new sVideoEncoder(STRING("z." <<img.var->name <<'.' <<MT::getNowString() <<".avi"), fps, is_rgb);
 }
 
 void VideoEncoder::close(){
@@ -96,17 +89,77 @@ void VideoEncoder::step(){
 
 //===========================================================================
 //
+// VideoEncoder
+//
+
+struct sVideoEncoderX264{
+  MT::String filename;
+  VideoEncoder_x264_simple video;
+  ofstream timeTagFile;
+  byteA buffer;
+  int revision;
+  sVideoEncoderX264(const char* _filename, double fps, bool is_rgb) : filename(_filename), video(filename.p, fps, 0, is_rgb), revision(-1) {
+    timeTagFile.open(STRING(filename <<".times"));
+  }
+};
+
+void VideoEncoderX264::open(){
+    s = new sVideoEncoderX264(STRING("z." <<img.var->name <<'.' <<MT::getNowString() <<".264"), fps, is_rgb);
+}
+
+void VideoEncoderX264::close(){
+    std::clog << "Closing VideoEncoderX264...";
+  s->video.close();
+  delete s;
+  std::clog << "done" << endl;
+}
+
+void VideoEncoderX264::step(){
+    //-- grab from shared memory (necessary?)
+    int nextRevision = img.readAccess();
+    double time = img.tstamp();
+    s->buffer = img();
+    img.deAccess();
+
+    //save image
+    s->video.addFrame(s->buffer);
+
+    //save time tag
+    MT::String tag;
+    tag.resize(30, false);
+    sprintf(tag.p, "%6i %13.6f", s->revision, time);
+    s->timeTagFile <<tag <<endl;
+    s->revision = nextRevision;
+}
+
+//===========================================================================
+//
 // PointCloudViewer
 //
 
 struct sPointCloudViewer{
+#ifdef MT_GL
   OpenGL gl;
+  sPointCloudViewer():gl("PointCloudViewer",640,480){}
+#endif
   arr pc[2];
 };
 
+void glDrawAxes(void*){
+  glDrawAxes(1.);
+}
+
 void PointCloudViewer::open(){
   s = new sPointCloudViewer;
+#ifdef MT_GL
+  s->gl.add(glDrawAxes);
   s->gl.add(glDrawPointCloud, s->pc);
+  s->gl.camera.setPosition(0., 0., 0.);
+  s->gl.camera.focus(0., 0., 1.);
+  s->gl.camera.setZRange(.1, 10.);
+  s->gl.camera.heightAbs=s->gl.camera.heightAngle=0.;
+  s->gl.camera.focalLength = 580./480.;
+#endif
 }
 
 void PointCloudViewer::close(){
@@ -116,8 +169,87 @@ void PointCloudViewer::close(){
 void PointCloudViewer::step(){
   s->pc[0]=pts.get();
   s->pc[1]=cols.get();
+#ifdef MT_GL
   s->gl.update();
+#endif
 }
+
+//===========================================================================
+//
+// AudioReader and Writer
+//
+
+void AudioReader::open() {
+#ifdef HAVE_PULSEAUDIO
+    poller = new AudioPoller_PA();
+#else
+    poller = NULL;
+#endif
+}
+void AudioReader::close() {
+    if(poller != NULL) {
+        delete poller;
+        poller = NULL;
+    }
+}
+void AudioReader::step() {
+    if(poller == NULL) {
+        return;
+    }
+    Access_typed<byteA>::WriteToken wr(pcms16ne2c.set());
+    wr().resize(4096);
+    poller->read(wr());
+}
+
+
+void AudioWriter::open() {
+#ifdef HAVE_LIBAV
+    writer = new AudioWriter_libav(STRING("z.audio" <<'.' <<MT::getNowString() <<".wav"));
+#else
+    writer = NULL;
+#endif
+}
+void AudioWriter::close() {
+    if(writer != NULL) {
+        delete writer;
+        writer = NULL;
+    }
+}
+void AudioWriter::step() {
+    if(writer == NULL) {
+        return;
+    }
+    writer->writeSamples_R48000_2C_S16_NE(pcms16ne2c.get());
+}
+
+#ifdef MT_OPENCV
+
+#include "opencv.h"
+#include "libcolorseg.h"
+
+#undef COUNT
+#include <opencv2/opencv.hpp>
+//#include <opencv2/features2d/features2d.hpp>
+//#include <opencv2/gpu/gpu.hpp>
+#ifdef ARCH_LINUX
+#include <opencv2/nonfree/nonfree.hpp>
+#endif
+#undef MIN
+#undef MAX
+
+REGISTER_MODULE (OpencvCamera)
+REGISTER_MODULE (CvtGray)
+REGISTER_MODULE (CvtHsv)
+REGISTER_MODULE (HsvFilter)
+REGISTER_MODULE (MotionFilter)
+REGISTER_MODULE (DifferenceFilter)
+REGISTER_MODULE (CannyFilter)
+REGISTER_MODULE (Patcher)
+REGISTER_MODULE (SURFer)
+REGISTER_MODULE (HoughLineFilter)
+//REGISTER_MODULE (ShapeFitter)
+
+
 
 //===========================================================================
 //
@@ -129,6 +261,11 @@ struct sOpencvCamera{  cv::VideoCapture capture;  };
 void OpencvCamera::open(){
   s = new sOpencvCamera;
   s->capture.open(0);
+  for(std::map<int,double>::const_iterator i = properties.begin(); i != properties.end(); ++i) {
+      if(!s->capture.set(i->first, i->second)) {
+          cerr << "could not set property " << i->first << " to value " << i->second << endl;
+      }
+  }
   //    capture.set(CV_CAP_PROP_CONVERT_RGB, 1);
   //    cout <<"FPS of opened OpenCV VideoCapture = " <<capture.get(CV_CAP_PROP_FPS) <<endl;;
 }
@@ -141,10 +278,19 @@ void OpencvCamera::close(){
 void OpencvCamera::step(){
   cv::Mat img,imgRGB;
   s->capture.read(img);
-  if(!img.empty()){
+  if(!img.empty()){      
     cv::cvtColor(img, imgRGB, CV_BGR2RGB);
     rgb.set()=cvtMAT(imgRGB);
   }
+}
+
+bool OpencvCamera::set(int propId, double value) {
+    if(s)
+        return s->capture.set(propId, value);
+    else {
+        properties[propId] = value;
+        return true; // well, can't really do anything else here...
+    }
 }
 
 
@@ -513,6 +659,5 @@ VariableL newPointcloudVariables() {
   return variables;
 }
 #endif
-
 
 

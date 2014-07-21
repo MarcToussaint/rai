@@ -1,20 +1,21 @@
 /*  ---------------------------------------------------------------------
-    Copyright 2013 Marc Toussaint
-    email: mtoussai@cs.tu-berlin.de
-
+    Copyright 2014 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
+    
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
+    
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
+
 
 /// @file
 /// @ingroup group_Core
@@ -77,9 +78,9 @@ namespace MT {
 extern int argc;
 extern char** argv;
 extern bool IOraw;  ///< stream modifier for some classes (Mem in particular)
-extern bool noLog;  ///< no logfile: default=true, becomes false when MT::init is called
 extern uint lineCount;
 extern int verboseLevel;
+extern int interactivity;
 
 //----- files
 void open(std::ofstream& fs, const char *name, const char *errmsg="");
@@ -88,11 +89,11 @@ std::ofstream& log(const char *name="MT.log");
 
 //----- strings and streams
 bool contains(const char *s, char c);
-char skip(std::istream& is, const char *skipchars=" \n\r\t", bool skipCommentLines=true);
+char skip(std::istream& is, const char *skipSymbols=" \n\r\t", const char *stopSymbols=NULL, bool skipCommentLines=true);
 void skipRestOfLine(std::istream& is);
 void skipOne(std::istream& is);
-char getNextChar(std::istream& is, const char *skipchars=" \n\r\t", bool skipCommentLines=true);
-char peerNextChar(std::istream& is, const char *skipchars=" \n\r\t", bool skipCommentLines=true);
+char getNextChar(std::istream& is, const char *skipSymbols=" \n\r\t", bool skipCommentLines=true);
+char peerNextChar(std::istream& is, const char *skipSymbols=" \n\r\t", bool skipCommentLines=true);
 bool parse(std::istream& is, const char *str, bool silent=false);
 bool skipUntil(std::istream& is, const char *tag);
 
@@ -103,10 +104,12 @@ void flip(int& b, uint i);
 double MIN(double a, double b);
 double MAX(double a, double b);
 uint MAX(uint a, uint b);
+double indicate(bool expr);
 double modMetric(double x, double y, double mod);
 double sign(double x);
+double sign0(double x);
 double linsig(double x);
-void   constrain(double& x, double a, double b);
+//void   clip(double& x, double a, double b);
 double phi(double dx, double dy);
 double dphi(double x, double y, double dx, double dy);
 double DIV(double x, double y, bool force=false);
@@ -126,10 +129,11 @@ double NNsdv(const double& a, const double& b, double sdv);
 double NNsdv(double x, double sdv);
 double smoothRamp(double x, double eps, double power);
 double d_smoothRamp(double x, double eps, double power);
-double barrier(double x, double margin, double power);
-double d_barrier(double x, double margin, double power);
-double potential(double x, double margin, double power);
-double d_potential(double x, double margin, double power);
+
+double ineqConstraintCost(double g, double margin, double power);
+double d_ineqConstraintCost(double g, double margin, double power);
+double eqConstraintCost(double h, double margin, double power);
+double d_eqConstraintCost(double h, double margin, double power);
 
 //----- time access
 double clockTime(); //(really on the clock)
@@ -137,20 +141,10 @@ double realTime(); //(since process start)
 double cpuTime();
 double sysTime();
 double totalTime();
+double toTime(const tm& t);
 char *date();
-#ifndef EXAMPLES_AS_TESTS
-void __do_wait(double sec, bool msg_on_fail=true);
-bool __do_wait();
-inline void wait(double sec, bool msg_on_fail=true) {
-    __do_wait(sec, msg_on_fail);
-}
-inline bool wait() {
-    return __do_wait();
-}
-#else
-inline void wait(double sec, bool msg_on_fail=true) { /* do nothing when running as test */ }
-inline bool wait() { return true; /* do nothing when running as test */ };
-#endif
+void wait(double sec, bool msg_on_fail=true);
+bool wait();
 
 //----- memory
 long mem();
@@ -177,11 +171,12 @@ template<class T> void getParameter(T& x, const char *tag, const T& Default);
 template<class T> void getParameter(T& x, const char *tag);
 template<class T> bool checkParameter(const char *tag);
 
-template <class T> void putParameter(const char* tag, const T& x);
-template <class T> bool getFromMap(T& x, const char* tag);
+template<class T> void putParameter(const char* tag, const T& x);
+template<class T> bool getFromMap(T& x, const char* tag);
 
 //----- get verbose level
 uint getVerboseLevel();
+bool getInteractivity();
 }
 
 //----- stream parsing
@@ -318,16 +313,20 @@ inline void breakPoint() {
 //----- check macros:
 #ifndef MT_NOCHECK
 
-#  define CHECK(cond, msg) \
+#define CHECK(cond, msg) \
   if(!(cond)){ HALT("CHECK failed: '" <<#cond <<"' " <<msg) }\
-  //  else{ MT_MSG("CHECK SUCCESS: '" <<#cond <<"'") }
 
-#  define CHECK_ZERO(expr, tolerance, msg) \
+#define CHECK_ZERO(expr, tolerance, msg) \
   if(fabs((double)(expr))>tolerance){ HALT("CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg) } \
-  //else{ MT_MSG("CHECK_ZERO SUCCESS: '" <<#expr<<"'=" <<expr <<" < " <<tolerance)}
 
-#  define CHECK_EQ(A, B, msg) \
+#define CHECK_EQ(A, B, msg) \
   if(!(A==B)){ HALT("CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg) } \
+
+#define CHECK_GE(A, B, msg) \
+  if(!(A>=B)){ HALT("CHECK_GE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg) } \
+
+#define CHECK_LE(A, B, msg) \
+  if(!(A<=B)){ HALT("CHECK_LE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg) } \
 
 #else
 #  define CHECK(cond, msg)
@@ -335,18 +334,20 @@ inline void breakPoint() {
 
 
 //----- TESTING
-#ifndef MLR_EXAMPLES_AS_TESTS
+#ifndef EXAMPLES_AS_TESTS
 #  define TEST(name) test##name()
 #  define MAIN main
 #else
 #  define GTEST_DONT_DEFINE_TEST 1
 #  include <gtest/gtest.h>
-#  define TEST(name) test##name(){} GTEST_TEST(arrayTest, name)
+#  define TEST(name) test##name(){} GTEST_TEST(examples, name)
 #  define MAIN \
      main(int argc, char** argv){ \
+       MT::initCmdLine(argc,argv);              \
        testing::InitGoogleTest(&argc, argv);	\
        return RUN_ALL_TESTS();			\
-     } int mymain
+     }                                          \
+     inline int obsolete_main //this starts a method declaration
 #endif
 
 
@@ -376,12 +377,14 @@ struct FileToken{
   FileToken(const char* _filename, bool change_dir=true);
   ~FileToken();
   FileToken& operator()(){ return *this; }
-  void decomposeFilename(const char *filename);
+  void decomposeFilename();
   std::ofstream& getOs();
   std::ifstream& getIs();
+  operator std::istream&(){ return getIs(); }
 };
 template<class T> FileToken& operator>>(FileToken& fil, T& x){ fil.getIs() >>x;  return fil; }
 template<class T> FileToken& operator<<(FileToken& fil, const T& x){ fil.getOs() <<x;  return fil; }
+inline std::ostream& operator<<(std::ostream& os, FileToken& fil){ return os <<fil.name; }
 template<class T> void operator<<(T& x, FileToken& fil){ fil.getIs() >>x; }
 template<class T> void operator>>(const T& x, FileToken& fil){ fil.getOs() <<x; }
 }
@@ -534,6 +537,25 @@ extern Rnd rnd;
 
 //===========================================================================
 //
+/// a little inotify wrapper
+//
+
+struct Inotify{
+  int fd, wd;
+  char *buffer;
+  uint buffer_size;
+  MT::FileToken *fil;
+  Inotify(const char *filename);
+  ~Inotify();
+  bool pollForModification(bool block=false, bool verbose=false);
+
+  void waitAndReport(){ pollForModification(false, true); }
+  void waitForModification(bool verbose=false){ while(!pollForModification(true, verbose)); }
+};
+
+
+//===========================================================================
+//
 /// a basic mutex lock
 //
 struct Mutex {
@@ -586,25 +608,18 @@ template<class T> T *Singleton<T>::singleton=NULL;
 void gnuplot(const char *command, bool pauseMouse=false, bool persist=false, const char* PDFfile=NULL);
 void gnuplotClose();
 
-//===========================================================================
-// MISC
 
-/**
- * @brief Clip the `value` of n between `lower` and `upper`.
- * @return The clipped value.
- */
-template <typename T>
-T clip(const T& n, const T& lower, const T& upper) {
-  return std::max(lower, std::min(n, upper));
+//===========================================================================
+//
+// Stefan's misc
+//
+
+/// Clip the `value` of n between `lower` and `upper`.
+template <typename T> T clip(T& x, const T& lower, const T& upper) {
+  if(x<lower) x=lower; else if(x>upper) x=upper; return x;
 }
 
 std::string getcwd_string();
-//===========================================================================
-//
-// implementations
-//
-
-//#  include "util_t.h"
 
 
 //===========================================================================

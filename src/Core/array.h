@@ -1,20 +1,21 @@
 /*  ---------------------------------------------------------------------
-    Copyright 2013 Marc Toussaint
-    email: mtoussai@cs.tu-berlin.de
-
+    Copyright 2014 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
+    
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
+    
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
+
 
 /// @file
 /// @ingroup group_array
@@ -28,21 +29,14 @@
 #include <stdint.h>
 #include <string.h>
 
-#define FOR1D(x, i)   for(i=0;i<x.d0;i++)
-#define FOR1D_DOWN(x, i)   for(i=x.d0;i--;)
+#define FOR1D(x, i)   for(i=0;i<x.N;i++)
+#define FOR1D_DOWN(x, i)   for(i=x.N;i--;)
 #define FOR2D(x, i, j) for(i=0;i<x.d0;i++) for(j=0;j<x.d1;j++)
 #define FOR3D(x, i, j, k) for(i=0;i<x.d0;i++) for(j=0;j<x.d1;j++) for(k=0;k<x.d2;k++)
-#define FOR_ALL(x, i)   for(i=0;i<x.N;i++)
-
-#define for_list(i, e, X) for(i=0;i<X.N && ((e=X(i)) || true);i++)
-#define for_list_rev(i, e, X) for(i=X.N;i-- && ((e=X(i)) || true);)
 
 //-- don't require previously defined iterators
-#define for_index(i, X) for(uint i=0; i<X.N; i++)
-#define for_(Type, it, X)      for(Type *it=X.p, *it##_stop=X.p+X.N; it!=it##_stop; it++)
-#define for_rev_(Type, it, X)  for(Type *it=X.p+X.N;  (it--)!=X.p; )
-#define for_list_(Type, it, X)     Type *it=NULL; for(uint it##_COUNT=0;   it##_COUNT<X.N && ((it=X(it##_COUNT)) || true); it##_COUNT++)
-#define for_list_rev_(Type, it, X) Type *it=NULL; for(uint it##_COUNT=X.N; it##_COUNT--   && ((it=X(it##_COUNT)) || true); )
+#define for_list(Type, it, X)     Type *it=NULL; for(uint it##_COUNT=0;   it##_COUNT<X.N && ((it=X(it##_COUNT)) || true); it##_COUNT++)
+#define for_list_rev(Type, it, X) Type *it=NULL; for(uint it##_COUNT=X.N; it##_COUNT--   && ((it=X(it##_COUNT)) || true); )
 
 #define ARR ARRAY<double> ///< write ARR(1., 4., 5., 7.) to generate a double-Array
 #define TUP ARRAY<uint> ///< write TUP(1, 2, 3) to generate a uint-Array
@@ -91,11 +85,11 @@ template<class T> struct Array {
   uint d0,d1,d2;  ///< 0th, 1st, 2nd dim
   uint *d;  ///< pointer to dimensions (for nd<=3 points to d0)
   uint M;   ///< size of actually allocated memory (may be greater than N)
-  bool reference;///< true if this refers to some external memory
+  bool reference; ///< true if this refers to some external memory
   
   static int  sizeT;   ///< constant for each type T: stores the sizeof(T)
   static char memMove; ///< constant for each type T: decides whether memmove can be used instead of individual copies
-  
+
   //-- special: arrays can be sparse/packed/etc and augmented with aux data to support this
   enum SpecialType { noneST, hasCarrayST, sparseST, diagST, RowShiftedPackedMatrixST, CpointerST };
   SpecialType special;
@@ -166,7 +160,7 @@ template<class T> struct Array {
   void setCarray(const T **buffer, uint D0, uint D1);
   void referTo(const T *buffer, uint n);
   void referTo(const Array<T>& a);
-  void referToSubRange(const Array<T>& a, uint i, int I);
+  void referToSubRange(const Array<T>& a, int i, int I);
   void referToSubDim(const Array<T>& a, uint dim);
   void referToSubDim(const Array<T>& a, uint i, uint j);
   void takeOver(Array<T>& a);  //a becomes a reference to its previously owned memory!
@@ -184,7 +178,7 @@ template<class T> struct Array {
   T& operator()(const Array<uint> &I) const;
   Array<T> operator[](uint i) const;     // calls referToSubDim(*this, i)
   Array<T> subDim(uint i, uint j) const; // calls referToSubDim(*this, i, j)
-  Array<T> subRange(uint i, int I) const; // calls referToSubRange(*this, i, I)
+  Array<T> subRange(int i, int I) const; // calls referToSubRange(*this, i, I)
   Array<T>& operator()();
   T** getCarray(Array<T*>& Cpointers) const;
   
@@ -293,6 +287,7 @@ template<class T> struct Array {
 template<class T> Array<T> operator~(const Array<T>& y); //transpose
 template<class T> Array<T> operator-(const Array<T>& y); //negative
 template<class T> Array<T> operator^(const Array<T>& y, const Array<T>& z); //outer product
+template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z); //index-wise product
 template<class T> Array<T> operator*(const Array<T>& y, const Array<T>& z); //inner product
 template<class T> Array<T> operator*(const Array<T>& y, T z);
 template<class T> Array<T> operator*(T y, const Array<T>& z);
@@ -327,7 +322,7 @@ UpdateOperator(%=);
   template<class T> Array<T> operator op(const Array<T>& y, T z)
 BinaryOperator(+ , +=);
 BinaryOperator(- , -=);
-BinaryOperator(% , *=);
+//BinaryOperator(% , *=);
 BinaryOperator(/ , /=);
 #undef BinaryOperator
 
@@ -341,6 +336,7 @@ BinaryOperator(/ , /=);
 /// @{
 
 typedef MT::Array<double> arr;
+typedef MT::Array<float>  arrf;
 typedef MT::Array<double> doubleA;
 typedef MT::Array<float>  floatA;
 typedef MT::Array<uint>   uintA;
@@ -348,12 +344,28 @@ typedef MT::Array<int>    intA;
 typedef MT::Array<char>   charA;
 typedef MT::Array<byte>   byteA;
 typedef MT::Array<bool>   boolA;
+typedef MT::Array<uint16_t>   uint16A;
+typedef MT::Array<uint32_t>   uint32A;
 typedef MT::Array<const char*>  CstrList;
 typedef MT::Array<arr*>   arrL;
+typedef MT::Array<arr>    arrA;
 
 namespace MT { struct String; }
 typedef MT::Array<MT::String> StringA;
 typedef MT::Array<MT::String*> StringL;
+
+//===========================================================================
+/// @}
+/// @name constant arrays
+/// @{
+
+extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional arguments
+extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
+
+//===========================================================================
+/// @}
+/// @name function types
+/// @{
 
 /// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
 struct ScalarFunction {
@@ -367,13 +379,12 @@ struct VectorFunction {
   virtual ~VectorFunction(){}
 };
 
-//===========================================================================
-/// @}
-/// @name constant arrays
-/// @{
+/// a kernel function
+struct KernelFunction {
+  virtual double k(const arr& x1, const arr& x2, arr& g1=NoArr, arr& g2=NoArr) = 0;
+  virtual ~KernelFunction(){}
+};
 
-extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional arguments
-extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
 
 
 //===========================================================================
@@ -415,17 +426,19 @@ inline arr eye(uint n) { return eye(n, n); }
 
 /// return matrix of ones
 inline arr ones(const uintA& d) {  arr z;  z.resize(d);  z=1.;  return z;  }
-/// return matrix of ones
-inline arr ones(uint n) { return ones(TUP(n, n)); }
+/// return VECTOR of ones
+inline arr ones(uint n) { return ones(TUP(n)); }
 /// return matrix of ones
 inline arr ones(uint d0, uint d1) { return ones(TUP(d0, d1)); }
 
 /// return matrix of zeros
 inline arr zeros(const uintA& d) {  arr z;  z.resize(d);  z.setZero();  return z; }
-/// return matrix of zeros
-inline arr zeros(uint n) { return zeros(TUP(n, n)); }
+/// return VECTOR of zeros
+inline arr zeros(uint n) { return zeros(TUP(n)); }
 /// return matrix of zeros
 inline arr zeros(uint d0, uint d1) { return zeros(TUP(d0, d1)); }
+/// return tensor of zeros
+inline arr zeros(uint d0, uint d1, uint d2) { return zeros(TUP(d0, d1, d2)); }
 
 arr repmat(const arr& A, uint m, uint n);
 
@@ -481,7 +494,7 @@ uint inverse_SVD(arr& inverse, const arr& A);
 void inverse_LU(arr& Xinv, const arr& X);
 void inverse_SymPosDef(arr& Ainv, const arr& A);
 inline arr inverse_SymPosDef(const arr& A){ arr Ainv; inverse_SymPosDef(Ainv, A); return Ainv; }
-void pseudoInverse(arr& Ainv, const arr& A, const arr& Winv, double robustnessEps);
+arr pseudoInverse(const arr& A, const arr& Winv=NoArr, double robustnessEps=1e-10);
 void gaussFromData(arr& a, arr& A, const arr& X);
 void rotationFromAtoB(arr& R, const arr& a, const arr& v);
 
@@ -492,8 +505,9 @@ double cofactor(const arr& A, uint i, uint j);
 void lognormScale(arr& P, double& logP, bool force=true);
 
 void gnuplot(const arr& X);
-void write(const arr& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
-void write(std::ostream& os, const arrL& X, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
+//these are obsolete, use catCol instead
+//void write(const arr& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
+//void write(std::ostream& os, const arrL& X, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
 void write(const arrL& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
 
 
@@ -572,7 +586,7 @@ template<class T> T scalar(const MT::Array<T>& v);
 template<class T> MT::Array<T> sum(const MT::Array<T>& v, uint d);
 template<class T> T sumOfAbs(const MT::Array<T>& v);
 template<class T> T sumOfSqr(const MT::Array<T>& v);
-template<class T> T length(const MT::Array<T>& v); //TODO: remove this: the name 'norm' is too ambiguous!! (maybe rename to 'length')
+template<class T> T length(const MT::Array<T>& v);
 template<class T> T product(const MT::Array<T>& v);
 
 template<class T> T trace(const MT::Array<T>& v);
@@ -583,12 +597,15 @@ template<class T> T absMin(const MT::Array<T>& x);
 
 template<class T> void innerProduct(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z);
 template<class T> void outerProduct(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z);
+template<class T> void indexWiseProduct(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z);
 template<class T> T scalarProduct(const MT::Array<T>& v, const MT::Array<T>& w);
 template<class T> T scalarProduct(const MT::Array<T>& g, const MT::Array<T>& v, const MT::Array<T>& w);
 template<class T> MT::Array<T> diagProduct(const MT::Array<T>& v, const MT::Array<T>& w);
 
 template<class T> MT::Array<T> elemWiseMin(const MT::Array<T>& v, const MT::Array<T>& w);
 template<class T> MT::Array<T> elemWiseMax(const MT::Array<T>& v, const MT::Array<T>& w);
+template<class T> MT::Array<T> elemWisemax(const MT::Array<T>& x,const T& y);
+template<class T> MT::Array<T> elemWisemax(const T& x,const MT::Array<T>& y);
 
 
 //===========================================================================
@@ -601,6 +618,9 @@ template<class T> MT::Array<T> cat(const MT::Array<T>& y, const MT::Array<T>& z,
 template<class T> MT::Array<T> cat(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c, const MT::Array<T>& d) { MT::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); return x; }
 template<class T> MT::Array<T> cat(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c, const MT::Array<T>& d, const MT::Array<T>& e) { MT::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); x.append(e); return x; }
 template<class T> MT::Array<T> catCol(const MT::Array<MT::Array<T>*>& X);
+template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b){ return catCol(LIST<MT::Array<T> >(a,b)); }
+template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c){ return catCol(LIST<MT::Array<T> >(a,b,c)); }
+template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c, const MT::Array<T>& d){ return catCol(LIST<MT::Array<T> >(a,b,c,d)); }
 
 
 //===========================================================================
@@ -735,7 +755,8 @@ void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs);
 bool lapack_isPositiveSemiDefinite(const arr& symmA);
 void lapack_inverseSymPosDef(arr& Ainv, const arr& A);
 double lapack_determinantSymPosDef(const arr& A);
-void lapack_Ainv_b_sym(arr& x, const arr& A, const arr& b);
+inline arr lapack_inverseSymPosDef(const arr& A){ arr Ainv; lapack_inverseSymPosDef(Ainv, A); return Ainv; }
+arr lapack_Ainv_b_sym(const arr& A, const arr& b);
 void lapack_min_Ax_b(arr& x,const arr& A, const arr& b);
 
 
@@ -745,31 +766,37 @@ void lapack_min_Ax_b(arr& x,const arr& A, const arr& b);
 /// @{
 
 struct RowShiftedPackedMatrix {
-  arr& Z;
-  uint real_d1;
-  uintA rowShift;
-  uintA colPatches; //column-patch: range of non-zeros in a column; starts with 'a', ends with 'b'-1
-  bool symmetric;
+  arr& Z;           ///< references the array itself
+  uint real_d1;     ///< the real width (the packed width is Z.d1; the height is Z.d0)
+  uintA rowShift;   ///< amount of shift of each row (rowShift.N==Z.d0)
+  uintA colPatches; ///< column-patch: (nd=2,d0=real_d1,d1=2) range of non-zeros in a COLUMN; starts with 'a', ends with 'b'-1
+  bool symmetric;   ///< flag: if true, this stores a symmetric (banded) matrix: only the upper triangle
+  arr *nextInSum;
   
   RowShiftedPackedMatrix(arr& X);
   RowShiftedPackedMatrix(arr& X, RowShiftedPackedMatrix &aux);
   ~RowShiftedPackedMatrix();
   double acc(uint i, uint j);
-  void computeColPatches(bool assumeMonotonic); //currently presumes monotonous rowShifts
+  void computeColPatches(bool assumeMonotonic);
   arr At_A();
+  arr A_At();
   arr At_x(const arr& x);
+  arr A_x(const arr& x);
 };
 
 inline RowShiftedPackedMatrix& castRowShiftedPackedMatrix(arr& X) {
   ///CHECK(X.special==X.RowShiftedPackedMatrixST,"can't cast like this!");
-  return *((RowShiftedPackedMatrix*)&X);
+  if(X.special!=X.RowShiftedPackedMatrixST) throw("can't cast like this!");
+  return *((RowShiftedPackedMatrix*)X.aux);
 }
 
 arr unpack(const arr& Z); //returns an unpacked matrix in case this is packed
 arr packRowShifted(const arr& X);
 RowShiftedPackedMatrix *auxRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
 arr comp_At_A(arr& A);
+arr comp_A_At(arr& A);
 arr comp_At_x(arr& A, const arr& x);
+arr comp_A_x(arr& A, const arr& x);
 
 
 //===========================================================================
@@ -786,13 +813,14 @@ template<class T> void listRead(MT::Array<T*>& L, std::istream& is, const char *
 template<class T> void listCopy(MT::Array<T*>& L, const MT::Array<T*>& M);  //copy a list by calling the copy constructor for each element
 template<class T> void listClone(MT::Array<T*>& L, const MT::Array<T*>& M); //copy a list by calling the 'newClone' method of each element (works for virtual types)
 template<class T> void listDelete(MT::Array<T*>& L);
+template<class T> void listReindex(MT::Array<T*>& L);
 template<class T> T* listFindValue(const MT::Array<T*>& L, const T& x);
 template<class T> T* listFindByName(const MT::Array<T*>& L, const char* name); //each element needs a 'name' (usually MT::String)
 template<class T> T* listFindByType(const MT::Array<T*>& L, const char* type); //each element needs a 'type' (usually MT::String)
 template<class T, class LowerOperator> void listSort(MT::Array<T*>& L, LowerOperator lowerop);
 
 //TODO obsolete?
-template<class T> MT::Array<T*> LIST(const MT::Array<T>& A) {
+template<class T> MT::Array<T*> getList(const MT::Array<T>& A) {
   MT::Array<T*> L;
   resizeAs(L, A);
   for(uint i=0; i<A.N; i++) L.elem(i) = &A.elem(i);

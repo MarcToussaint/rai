@@ -1,20 +1,21 @@
 /*  ---------------------------------------------------------------------
-    Copyright 2013 Marc Toussaint
-    email: mtoussai@cs.tu-berlin.de
-
+    Copyright 2014 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
+    
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
+    
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
+
 
 /// @file
 /// @ingroup group_Gui
@@ -27,7 +28,9 @@
 #include <Core/array.h>
 #include <Core/thread.h>
 
-#include <X11/Xlib.h>
+#ifndef MT_QTGL
+#  include <X11/Xlib.h>
+#endif
 
 #ifdef MT_FLTK
 #  include <FL/glut.H>
@@ -126,9 +129,9 @@ struct Camera {
   
   float heightAbs;
   float heightAngle;
+  float focalLength;
   float whRatio;
   float zNear, zFar;
-  //arr fixedProjectionMatrix;
   
   Camera();
   Camera(const Camera& c) { *this=c; }
@@ -208,6 +211,7 @@ struct OpenGL {
   double backgroundZoom;
   arr P; //camera projection matrix
   RWLock lock; //locked during draw callbacks (anything that uses the calls)
+  uint fbo, render_buf;
 
   /// @name constructors & destructors
   OpenGL(const char* title="MT::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
@@ -276,7 +280,8 @@ public: //driver dependent methods
   void processEvents();
   void enterEventLoop();
   void exitEventLoop();
-#ifndef MT_MSVC
+  void renderInBack(int width=-1, int height=-1, bool captureImg=true, bool captureDepth=false);
+#if !defined MT_MSVC && !defined MT_QTGL
   Display* xdisplay();
   Drawable xdraw();
 #endif

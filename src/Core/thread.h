@@ -1,3 +1,21 @@
+/*  ---------------------------------------------------------------------
+    Copyright 2014 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    
+    You should have received a COPYING file of the GNU General Public License
+    along with this program. If not, see <http://www.gnu.org/licenses/>
+    -----------------------------------------------------------------  */
+
 #ifndef MT_thread_h
 #define MT_thread_h
 
@@ -110,7 +128,7 @@ struct Thread{
   ConditionVariableL listensTo;
   //ParameterL dependsOn;
   pid_t tid;                     ///< system thread id
-#ifndef MT_QT
+#ifndef MT_QThread
   pthread_t thread;
 #else
   struct sThread *thread;
@@ -129,6 +147,7 @@ struct Thread{
   void threadLoop();                    ///< loop, stepping forever
   void threadLoopWithBeat(double sec);  ///< loop with a fixed beat (cycle time)
   void threadStop();                    ///< stop looping
+  void threadCancel();                  ///< a hard kill (pthread_cancel) of the thread
 
   void waitForIdle();                   ///< caller waits until step is done (working -> idle mode)
   bool isIdle();                        ///< check if in idle mode

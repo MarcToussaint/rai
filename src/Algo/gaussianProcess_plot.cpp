@@ -1,7 +1,25 @@
+/*  ---------------------------------------------------------------------
+    Copyright 2014 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    
+    You should have received a COPYING file of the GNU General Public License
+    along with this program. If not, see <http://www.gnu.org/licenses/>
+    -----------------------------------------------------------------  */
+
 #include "gaussianProcess.h"
 #include <Gui/plot.h>
 
-inline void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause){
+void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause){
   arr X, Y, Z, S;
   uint dim;
   //there should be at least 1 observation to guess the dimensionality from
@@ -34,7 +52,7 @@ inline void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause){
   plot(pause);
 }
 
-inline void plotKernel1D(GaussianProcess& gp, double lo, double hi, bool pause){
+void plotKernel1D(GaussianProcess& gp, double lo, double hi, bool pause){
   arr X, K, KD1, KD2;
   X.setGrid(1, lo, hi, 600);
   K.resize(X.d0);
@@ -53,7 +71,7 @@ inline void plotKernel1D(GaussianProcess& gp, double lo, double hi, bool pause){
   plot(pause);
 }
 
-inline void plotKernel2D(GaussianProcess& gp, double lo, double hi, bool pause){
+void plotKernel2D(GaussianProcess& gp, double lo, double hi, bool pause){
   arr X, K, KD1, KD2;
   X.setGrid(2, lo, hi, 1000);
   K.resize(X.d0, X.d1);

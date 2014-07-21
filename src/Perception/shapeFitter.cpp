@@ -725,7 +725,7 @@ void realizeObjectsInOrs(ors::KinematicWorld& ors, const MT::Array<RigidObjectRe
 
 /*void copyShapeInfos(ors::KinematicWorld& A, const ors::KinematicWorld& B){
   uint i; ors::Shape *s, *sa;
-  for_list(i, s, B.shapes){
+  for_list(Type,  s,  B.shapes){
     sa = A.shapes(i);
     if(sa->type!=s->type){
       sa->type=s->type;
@@ -739,7 +739,7 @@ void realizeObjectsInOrs(ors::KinematicWorld& ors, const MT::Array<RigidObjectRe
 void copyBodyInfos(ors::KinematicWorld& A, const ors::KinematicWorld& B){
   uint i; ors::Body *b, *ba;
   ors::Shape *s, *sa;
-  for_list(i, b, B.bodies) if(b->shapes.N){
+  for_list(Type,  b,  B.bodies) if(b->shapes.N){
     s = b->shapes(0);
     ba = A.bodies(i);
     sa = ba->shapes(0);

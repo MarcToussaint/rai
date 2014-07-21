@@ -1,20 +1,21 @@
 /*  ---------------------------------------------------------------------
-    Copyright 2013 Marc Toussaint
-    email: mtoussai@cs.tu-berlin.de
-
+    Copyright 2014 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
+    
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
+    
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
+
 
 
 
@@ -108,12 +109,11 @@ int gtkPopupMenuChoice(StringL& choices) {
   //create menu
   GtkWidget *menu = gtk_menu_new();
   gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, 0, gtk_get_current_event_time());
-  MT::String *s;  uint i;
-  for_list(i, s, choices) {
+  for_list(MT::String,  s,  choices) {
     GtkWidget *item = gtk_menu_item_new_with_label(s->p);
     gtk_container_add(GTK_CONTAINER(menu), item);
     gtk_signal_connect_object(GTK_OBJECT(item), "activate",
-                              GTK_SIGNAL_FUNC(menuitem_response), (gpointer)i);
+                              GTK_SIGNAL_FUNC(menuitem_response), (gpointer)s_COUNT);
   }
   menuChoice.setValue(-1);
   gtk_widget_show_all(menu);

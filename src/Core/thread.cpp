@@ -1,3 +1,21 @@
+/*  ---------------------------------------------------------------------
+    Copyright 2014 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    
+    You should have received a COPYING file of the GNU General Public License
+    along with this program. If not, see <http://www.gnu.org/licenses/>
+    -----------------------------------------------------------------  */
+
 #include "thread.h"
 #include <exception>
 
@@ -9,7 +27,7 @@
 #endif //__CYGWIN __
 #  include <unistd.h>
 #endif
-#ifdef MT_QT
+#ifdef MT_QThread
 #  include <QtCore/QThread>
 #endif
 #include <errno.h>
@@ -274,7 +292,7 @@ void* Thread_staticMain(void *_self) {
   return NULL;
 }
 
-#ifdef MT_QT
+#ifdef MT_QThread
 class sThread:QThread {
   Q_OBJECT
 public:
@@ -299,7 +317,7 @@ Thread::~Thread() {
 void Thread::threadOpen(int priority) {
   state.lock();
   if(!isClosed()){ state.unlock(); return; } //this is already open -- or has just beend opened (parallel call to threadOpen)
-#ifndef MT_QT
+#ifndef MT_QThread
   int rc;
   pthread_attr_t atts;
   rc = pthread_attr_init(&atts); if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
@@ -326,7 +344,7 @@ void Thread::threadOpen(int priority) {
 void Thread::threadClose() {
   state.setValue(tsCLOSE);
   if(!thread) return;
-#ifndef MT_QT
+#ifndef MT_QThread
   int rc;
   rc = pthread_join(thread, NULL);     if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   thread=0;
@@ -337,6 +355,18 @@ void Thread::threadClose() {
 #endif
 }
 
+void Thread::threadCancel() {
+  if(thread){
+#ifndef MT_QThread
+    int rc = pthread_cancel(thread);     if(rc) HALT("pthread_cancel failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+    rc = pthread_join(thread, NULL);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+#else
+    NIY;
+#endif
+  }
+  thread=0;
+}
+
 void Thread::threadStep(uint steps, bool wait) {
   if(isClosed()) threadOpen();
   //CHECK(state.value==tsIDLE, "never step while thread is busy!");
@@ -345,8 +375,7 @@ void Thread::threadStep(uint steps, bool wait) {
 }
 
 void Thread::listenTo(const ConditionVariableL &signalingVars) {
-  uint i;  ConditionVariable *v;
-  for_list(i, v, signalingVars) listenTo(*v);
+  for_list(ConditionVariable,  v,  signalingVars) listenTo(*v);
 }
 
 void Thread::listenTo(ConditionVariable& v) {
@@ -461,18 +490,15 @@ void Thread::main() {
 //
 
 void stop(const ThreadL& P) {
-  Thread *p; uint i;
-  for_list(i, p, P) p->threadStop();
+  for_list(Thread,  p,  P) p->threadStop();
 }
 
 void wait(const ThreadL& P) {
-  Thread *p; uint i;
-  for_list(i, p, P) p->waitForIdle();
+  for_list(Thread,  p,  P) p->waitForIdle();
 }
 
 void close(const ThreadL& P) {
-  Thread *p; uint i;
-  for_list(i, p, P) p->threadClose();
+  for_list(Thread,  p,  P) p->threadClose();
 }
 
 //===========================================================================

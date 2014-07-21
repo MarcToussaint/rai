@@ -12,6 +12,7 @@
 #include <Ors/ors.h>
 #include <Core/array_t.h>
 #include <Gui/opengl.h>
+#include <map>
 
 //===========================================================================
 //
@@ -26,12 +27,13 @@ struct HoughLines;
 struct Patching;
 struct SURFfeatures;
 struct PerceptionOutput;
+class AudioPoller_PA;
+class AudioWriter_libav;
 
 //-- Module declarations
 BEGIN_MODULE(ImageViewer)      ACCESS(byteA, img)       END_MODULE()
-BEGIN_MODULE(VideoEncoder)     ACCESS(byteA, img)       END_MODULE()
 BEGIN_MODULE(PointCloudViewer) ACCESS(arr, pts)         ACCESS(arr, cols)        END_MODULE()
-BEGIN_MODULE(OpencvCamera)     ACCESS(byteA, rgb)       END_MODULE()
+BEGIN_MODULE(OpencvCamera)     ACCESS(byteA, rgb)       std::map<int,double> properties; bool set(int prop, double value);  END_MODULE()
 BEGIN_MODULE(CvtGray)          ACCESS(byteA, rgb)       ACCESS(byteA, gray)      END_MODULE()
 BEGIN_MODULE(CvtHsv)           ACCESS(byteA, rgb)       ACCESS(byteA, hsv)       END_MODULE()
 BEGIN_MODULE(HsvFilter)        ACCESS(byteA, hsv)       ACCESS(floatA, evi)      END_MODULE()
@@ -42,6 +44,8 @@ BEGIN_MODULE(Patcher)          ACCESS(byteA, rgbImage)  ACCESS(Patching, patchIm
 BEGIN_MODULE(SURFer)           ACCESS(byteA, grayImage) ACCESS(SURFfeatures, features)  END_MODULE()
 BEGIN_MODULE(HoughLineFilter)  ACCESS(byteA, grayImage) ACCESS(HoughLines, houghLines)  END_MODULE()
 BEGIN_MODULE(ShapeFitter)      ACCESS(floatA, eviL)     ACCESS(floatA, eviR)            ACCESS(PerceptionOutput, perc)      END_MODULE()
+BEGIN_MODULE(AudioReader)    AudioPoller_PA *poller; ACCESS(byteA, pcms16ne2c) END_MODULE()
+BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; ACCESS(byteA, pcms16ne2c) END_MODULE()
 
 template<class T>
 struct GenericDisplayViewer : Module {
@@ -49,10 +53,41 @@ struct GenericDisplayViewer : Module {
   ACCESS(T, var);
   GenericDisplayViewer(): Module("GenericDisplayViewer"), gl(NULL) {} \
   virtual void open(){ gl = new OpenGL(STRING("ImageViewer '"<<var.var->name()<<'\'')); }
-  virtual void step(){ gl->background = var.get()().display; gl->update(); }
+  virtual void step(){ gl->background = var.get()->display; gl->update(); }
   virtual void close(){ delete gl; }
 };
+struct VideoEncoder : public Module {
+     struct sVideoEncoder *s;
+     bool is_rgb;
+     double fps;
+     ACCESS(byteA, img);
+     VideoEncoder():is_rgb(false), fps(30) {}
+     virtual ~VideoEncoder() {}
 
+     virtual void open();
+     virtual void step();
+     virtual void close();
+     /// set input packing (default is bgr)
+     void set_rgb(bool is_rgb) { this->is_rgb = is_rgb; }
+     /// set frames per second -- only effective before open
+     void set_fps(double fps) { this->fps = fps; }
+  };
+struct VideoEncoderX264 : public Module {
+   struct sVideoEncoderX264 *s;
+   bool is_rgb;
+   double fps;
+   ACCESS(byteA, img);
+   VideoEncoderX264():is_rgb(false) {}
+   virtual ~VideoEncoderX264() {}
+
+   virtual void open();
+   virtual void step();
+   virtual void close();
+   /// set input packing (default is bgr)
+   void set_rgb(bool is_rgb) { this->is_rgb = is_rgb; }
+   /// set frames per second -- only effective before open
+   void set_fps(double fps) { this->fps = fps; }
+};
 //===========================================================================
 //
 // Types
