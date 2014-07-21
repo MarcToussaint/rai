@@ -35,14 +35,16 @@ struct Surfels{
   arrf pos, norm, col, rad;
   bool renderIndex;
   MT::Array<SurfelStatistics> D;
+  uint32A surfelIdx, rndPerm;
   byteA mask;
+
 
   Surfels():renderIndex(false){}
   uint N(){ return pos.d0; }
   void setRandom(uint N);
   void glDraw();
 
-  uint32A getSurfelIndices(OpenGL& gl);
+  void recomputeSurfelIndices(OpenGL& gl);
   void pointCloud2Surfels(const arr &pts, const arr &cols, OpenGL& gl);
 
 
