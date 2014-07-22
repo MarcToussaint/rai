@@ -19,7 +19,7 @@
 
 #include <Core/array_t.h>
 #include <Core/geo.h>
-#include <GL/glew.h>
+//#include <GL/glew.h>
 #include "opengl.h"
 
 #ifdef MT_FREEGLUT
