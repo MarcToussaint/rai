@@ -31,23 +31,24 @@ struct SurfelStatistics{
 };
 
 struct Surfels{
+  OpenGL gl;
   Mutex mx;
   arrf pos, norm, col, rad;
-  bool renderIndex;
   MT::Array<SurfelStatistics> D;
   uint32A surfelIdx, rndPerm;
-  byteA mask;
+  byteA mask,idxImage;
 
 
-  Surfels():renderIndex(false){}
+  Surfels():gl("Surfel Internel Renderer",640,480){}
   uint N(){ return pos.d0; }
   void setRandom(uint N);
-  void glDraw();
+  void glDraw(bool renderIndex);
 
-  void recomputeSurfelIndices(OpenGL& gl);
+  void recomputeSurfelIndices();
   void pointCloud2Surfels(const arr &pts, const arr &cols, OpenGL& gl);
 
 
 };
 
 void glDrawSurfels(void *classP);
+void glDrawSurfelIndices(void *classP);

@@ -2,7 +2,8 @@
 #include <Core/geo.h>
 #include <Perception/kinect2pointCloud.h>
 
-void glDrawSurfels(void *classP){ ((Surfels*)classP)->glDraw(); }
+void glDrawSurfels(void *classP){ ((Surfels*)classP)->glDraw(false); }
+void glDrawSurfelIndices(void *classP){ ((Surfels*)classP)->glDraw(true); }
 
 void Surfels::setRandom(uint N){
   pos.resize(N,3);
@@ -18,8 +19,7 @@ void Surfels::setRandom(uint N){
   rad=.01;
 }
 
-void Surfels::glDraw(){
-  mx.lock();
+void Surfels::glDraw(bool renderIndex){
   if(renderIndex){
     glClearColor(0,0,0,0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -58,31 +58,28 @@ void Surfels::glDraw(){
   }
   glLoadIdentity();
   glEnable(GL_CULL_FACE);
-  mx.unlock();
 }
 
-void Surfels::recomputeSurfelIndices(OpenGL& gl){
-  mx.lock();
-  renderIndex=true;
-//  ors::Camera saveCam = gl.camera;
-  gl.camera = kinectCam;
+void Surfels::recomputeSurfelIndices(){
+  if(!gl.drawers.N){
+    gl.add(glDrawSurfelIndices, this);
+    initKinectCam();
+    gl.camera = kinectCam;
+  }
 //  gl.update(NULL, true);
   gl.renderInBack();
   flip_image(gl.captureImage);
-  const byteA& img = gl.captureImage;
-  surfelIdx.resize(img.d0,img.d1);
-  mask.resize(img.d0,img.d1);
+  idxImage = gl.captureImage;
+  surfelIdx.resize(idxImage.d0,idxImage.d1);
+  mask.resize(idxImage.d0,idxImage.d1);
   for(uint i=0;i<surfelIdx.N;i++){
-    surfelIdx.elem(i) = img.elem(3*i+0)<<16 | img.elem(3*i+1)<<8 | img.elem(3*i+2);
+    surfelIdx.elem(i) = idxImage.elem(3*i+0)<<16 | idxImage.elem(3*i+1)<<8 | idxImage.elem(3*i+2);
     mask.elem(i) = (surfelIdx.elem(i)==0?0:255);
   }
-//  gl.camera = saveCam;
-  renderIndex=false;
-  mx.unlock();
 }
 
 void Surfels::pointCloud2Surfels(const arr& pts, const arr& cols, OpenGL& gl){
-  recomputeSurfelIndices(gl);
+  recomputeSurfelIndices();
   CHECK(pts.d0==surfelIdx.N,"mismatch in #pixels");
   mx.lock();
   if(rndPerm.N!=surfelIdx.N) rndPerm.setRandomPerm(surfelIdx.N);
