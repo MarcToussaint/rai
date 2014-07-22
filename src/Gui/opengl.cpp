@@ -19,6 +19,7 @@
 
 #include <Core/array_t.h>
 #include <Core/geo.h>
+#include <GL/glew.h>
 #include "opengl.h"
 
 #ifdef MT_FREEGLUT
@@ -90,6 +91,7 @@ void ors::Camera::setZero() {
   foc->setZero();
   heightAngle=90.;
   heightAbs=10.;
+  focalLength=1.;
   whRatio=1.;
   zNear=.1;
   zFar=1000.;
@@ -171,15 +173,24 @@ void ors::Camera::glSetProjectionMatrix() {
 //  if(fixedProjectionMatrix.N) {
 //    glLoadMatrixd(fixedProjectionMatrix.p);
 //  } else {
-  {
-    if(heightAngle==0) {
+  if(heightAngle==0) {
+    if(heightAbs==0) {
+      arr P(4,4);
+      P.setZero();
+      P(0,0) = 2.*focalLength/whRatio;
+      P(1,1) = 2.*focalLength;
+      P(2,2) = (zFar + zNear)/(zNear-zFar);
+      P(2,3) = -1.;
+      P(3,2) = 2. * zFar * zNear / (zNear-zFar);
+      glLoadMatrixd(P.p);
+    }else{
       glOrtho(-whRatio*heightAbs/2, whRatio*heightAbs/2,
-      -heightAbs/2, heightAbs/2, zNear, zFar);
-    } else
-      gluPerspective(heightAngle, whRatio, zNear, zFar);
-    double m[16];
-    glMultMatrixd(X->getInverseAffineMatrixGL(m));
-  }
+              -heightAbs/2, heightAbs/2, zNear, zFar);
+    }
+  } else
+    gluPerspective(heightAngle, whRatio, zNear, zFar);
+  double m[16];
+  glMultMatrixd(X->getInverseAffineMatrixGL(m));
 #else
   NICO
 #endif
@@ -936,7 +947,7 @@ void glRasterImage(float x, float y, byteA &img, float zoom) {
     case 0:
     case 1:  glDrawPixels(img.d1, img.d0, GL_LUMINANCE, GL_UNSIGNED_BYTE, img.p);        break;
     case 2:  glDrawPixels(img.d1, img.d0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, img.p);  break;
-    case 3:  glDrawPixels(img.d1, img.d0, GL_BGR, GL_UNSIGNED_BYTE, img.p);              break;
+    case 3:  glDrawPixels(img.d1, img.d0, GL_RGB, GL_UNSIGNED_BYTE, img.p);              break;
     case 4:  glDrawPixels(img.d1, img.d0, GL_RGBA, GL_UNSIGNED_BYTE, img.p);             break;
     default: HALT("no image format");
   };
@@ -1077,7 +1088,8 @@ void glDrawPointCloud(arr& pts, arr& cols) {
 // OpenGL implementations
 //
 
-OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy):s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false) {
+OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy)
+  : s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false), fbo(0), render_buf(0){
   //MT_MSG("creating OpenGL=" <<this);
   initGlEngine();
   s=new sOpenGL(this,title,w,h,posx,posy); //this might call some callbacks (Reshape/Draw) already!
@@ -1085,7 +1097,8 @@ OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy):s(NULL), reportE
   processEvents();
 }
 
-OpenGL::OpenGL(void *container):s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false) {
+OpenGL::OpenGL(void *container)
+  : s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false), fbo(0), render_buf(0){
   initGlEngine();
   s=new sOpenGL(this,container); //this might call some callbacks (Reshape/Draw) already!
   init();
@@ -1223,14 +1236,11 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   }
   
   //OpenGL initialization
-  //two optional thins:
   glEnable(GL_DEPTH_TEST);  glDepthFunc(GL_LESS);
   glEnable(GL_BLEND);  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_CULL_FACE);  glFrontFace(GL_CCW);
-  //glDisable(GL_CULL_FACE);
-  //glShadeModel(GL_SMOOTH);
-  glShadeModel(GL_FLAT);
-  
+  glShadeModel(GL_FLAT);  //glShadeModel(GL_SMOOTH);
+
   //select mode?
   GLint mode;
   glGetIntegerv(GL_RENDER_MODE, &mode);
@@ -1244,6 +1254,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   //glLineWidth(2);
   
   //**extract the camera projection matrix
+#if 0
   //this is the calibration matrix corresponding to OpenGL's ``viewport''
   intA view(4);
   arr Kview(3, 3);
@@ -1276,7 +1287,8 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   Frust.delRows(2); //We're not interested in OpenGL's ``z-coordinate'', only in the perspective coordinate (divisor) w
   cout <<"K=" <<Kview*Frust <<endl;
   */
-  
+#endif
+
   //draw focus?
   if(drawFocus && mode!=GL_SELECT) {
     glColor(1., .7, .3);

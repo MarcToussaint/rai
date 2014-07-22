@@ -500,7 +500,7 @@ struct sConvert{
   //     uint get_k(){ return 1; }
   //     uint get_n(){ return sys->get_xDim(); }
   //     uint get_m(uint t);
-  //     void phi_t(arr& phi, arr& J, uint t, const arr& x_bar);
+  //     void phi_t(arr& phi, arr& J, uint t, const arr& x_bar, const arr& z=NoArr, const arr& J_z=NoArr);
   //   };
 
   //   struct ControlledSystem_2OrderMarkovFunction:KOrderMarkovFunction {
@@ -510,7 +510,7 @@ struct sConvert{
   //     uint get_k(){ return 2; }
   //     uint get_n(){ return sys->get_xDim()/2; }
   //     uint get_m(uint t);
-  //     void phi_t(arr& phi, arr& J, uint t, const arr& x_bar);
+  //     void phi_t(arr& phi, arr& J, uint t, const arr& x_bar, const arr& z=NoArr, const arr& J_z=NoArr);
   //   };
   // #endif
 };
@@ -644,7 +644,7 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
 //   return sys->get_xDim() + sys->get_phiDim(t);
 // } //dynamic gap plus task costs
 
-// void sConvert::ControlledSystem_1OrderMarkovFunction::phi_t(arr& phi, arr& J, uint t, const arr& x_bar){
+// void sConvert::ControlledSystem_1OrderMarkovFunction::phi_t(arr& phi, arr& J, uint t, const arr& x_bar, const arr& z, const arr& J_z){
 //   arr x0(x_bar,0);
 //   arr x1(x_bar,1);
 
@@ -700,7 +700,7 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
 //   return nq + sys->get_phiDim(t+1);
 // } //dynamic-gap task-costs
 
-// void sConvert::ControlledSystem_2OrderMarkovFunction::phi_t(arr& phi, arr& J, uint t, const arr& x_bar){
+// void sConvert::ControlledSystem_2OrderMarkovFunction::phi_t(arr& phi, arr& J, uint t, const arr& x_bar, const arr& z, const arr& J_z){
 //   uint n=get_n();
 //   CHECK(x_bar.d0==3 && x_bar.d1==n,"");
 //   arr q0(x_bar,0);

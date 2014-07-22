@@ -160,7 +160,7 @@ template<class T> struct Array {
   void setCarray(const T **buffer, uint D0, uint D1);
   void referTo(const T *buffer, uint n);
   void referTo(const Array<T>& a);
-  void referToSubRange(const Array<T>& a, uint i, int I);
+  void referToSubRange(const Array<T>& a, int i, int I);
   void referToSubDim(const Array<T>& a, uint dim);
   void referToSubDim(const Array<T>& a, uint i, uint j);
   void takeOver(Array<T>& a);  //a becomes a reference to its previously owned memory!
@@ -178,7 +178,7 @@ template<class T> struct Array {
   T& operator()(const Array<uint> &I) const;
   Array<T> operator[](uint i) const;     // calls referToSubDim(*this, i)
   Array<T> subDim(uint i, uint j) const; // calls referToSubDim(*this, i, j)
-  Array<T> subRange(uint i, int I) const; // calls referToSubRange(*this, i, I)
+  Array<T> subRange(int i, int I) const; // calls referToSubRange(*this, i, I)
   Array<T>& operator()();
   T** getCarray(Array<T*>& Cpointers) const;
   
@@ -336,6 +336,7 @@ BinaryOperator(/ , /=);
 /// @{
 
 typedef MT::Array<double> arr;
+typedef MT::Array<float>  arrf;
 typedef MT::Array<double> doubleA;
 typedef MT::Array<float>  floatA;
 typedef MT::Array<uint>   uintA;
@@ -343,9 +344,11 @@ typedef MT::Array<int>    intA;
 typedef MT::Array<char>   charA;
 typedef MT::Array<byte>   byteA;
 typedef MT::Array<bool>   boolA;
+typedef MT::Array<uint16_t>   uint16A;
+typedef MT::Array<uint32_t>   uint32A;
 typedef MT::Array<const char*>  CstrList;
 typedef MT::Array<arr*>   arrL;
-typedef MT::Array<arr> arrA;
+typedef MT::Array<arr>    arrA;
 
 namespace MT { struct String; }
 typedef MT::Array<MT::String> StringA;
@@ -424,7 +427,7 @@ inline arr eye(uint n) { return eye(n, n); }
 /// return matrix of ones
 inline arr ones(const uintA& d) {  arr z;  z.resize(d);  z=1.;  return z;  }
 /// return VECTOR of ones
-inline arr ones(uint n) { return ones(TUP(n, n)); }
+inline arr ones(uint n) { return ones(TUP(n)); }
 /// return matrix of ones
 inline arr ones(uint d0, uint d1) { return ones(TUP(d0, d1)); }
 
@@ -491,7 +494,7 @@ uint inverse_SVD(arr& inverse, const arr& A);
 void inverse_LU(arr& Xinv, const arr& X);
 void inverse_SymPosDef(arr& Ainv, const arr& A);
 inline arr inverse_SymPosDef(const arr& A){ arr Ainv; inverse_SymPosDef(Ainv, A); return Ainv; }
-void pseudoInverse(arr& Ainv, const arr& A, const arr& Winv, double robustnessEps);
+arr pseudoInverse(const arr& A, const arr& Winv=NoArr, double robustnessEps=1e-10);
 void gaussFromData(arr& a, arr& A, const arr& X);
 void rotationFromAtoB(arr& R, const arr& a, const arr& v);
 
@@ -752,6 +755,7 @@ void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs);
 bool lapack_isPositiveSemiDefinite(const arr& symmA);
 void lapack_inverseSymPosDef(arr& Ainv, const arr& A);
 double lapack_determinantSymPosDef(const arr& A);
+inline arr lapack_inverseSymPosDef(const arr& A){ arr Ainv; lapack_inverseSymPosDef(Ainv, A); return Ainv; }
 arr lapack_Ainv_b_sym(const arr& A, const arr& b);
 void lapack_min_Ax_b(arr& x,const arr& A, const arr& b);
 
@@ -767,12 +771,13 @@ struct RowShiftedPackedMatrix {
   uintA rowShift;   ///< amount of shift of each row (rowShift.N==Z.d0)
   uintA colPatches; ///< column-patch: (nd=2,d0=real_d1,d1=2) range of non-zeros in a COLUMN; starts with 'a', ends with 'b'-1
   bool symmetric;   ///< flag: if true, this stores a symmetric (banded) matrix: only the upper triangle
+  arr *nextInSum;
   
   RowShiftedPackedMatrix(arr& X);
   RowShiftedPackedMatrix(arr& X, RowShiftedPackedMatrix &aux);
   ~RowShiftedPackedMatrix();
   double acc(uint i, uint j);
-  void computeColPatches(bool assumeMonotonic); //currently presumes monotonous rowShifts
+  void computeColPatches(bool assumeMonotonic);
   arr At_A();
   arr A_At();
   arr At_x(const arr& x);
