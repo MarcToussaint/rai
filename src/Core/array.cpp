@@ -335,16 +335,15 @@ void inverse_SymPosDef(arr& Ainv, const arr& A) {
 #endif
 }
 
-void pseudoInverse(arr& Ainv, const arr& A, const arr& Winv, double eps) {
-  arr tA, E, AWAinv;
-  transpose(tA, A);
-  if(!eps) {
-    inverse_SymPosDef(AWAinv, A*Winv*tA);
-  } else {
-    E.setDiag(eps, A.d0);
-    inverse_SymPosDef(AWAinv, E+A*Winv*tA);
-  }
-  Ainv = Winv * tA * AWAinv;
+arr pseudoInverse(const arr& A, const arr& Winv, double eps) {
+  arr At, E, AAt, AAt_inv, Ainv;
+  transpose(At, A);
+  if(&Winv) AAt = A*Winv*At; else AAt = A*At;
+  if(eps) for(uint i=0;i<AAt.d0;i++) AAt(i,i) += eps;
+  inverse_SymPosDef(AAt_inv, AAt);
+  Ainv = At * AAt_inv;
+  if(&Winv) Ainv = Winv * Ainv;
+  return Ainv;
 }
 
 /// the determinant of a 2D squared matrix
@@ -1211,8 +1210,7 @@ bool checkJacobian(VectorFunction &f,
     MT_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
     J >>FILE("z.J_analytical");
     JJ >>FILE("z.J_empirical");
-    //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
-    //HALT("");
+//    (J/JJ) >>FILE("z.J_ana_emp");
     return false;
   } else {
     cout <<"checkJacobian -- SUCCESS (max diff error=" <<md <<")" <<endl;
@@ -1293,7 +1291,7 @@ double NNzerosdv(const arr& x, double sdv){
 // RowShiftedPackedMatrix
 //
 
-RowShiftedPackedMatrix::RowShiftedPackedMatrix(arr& X):Z(X), real_d1(0), symmetric(false) {
+RowShiftedPackedMatrix::RowShiftedPackedMatrix(arr& X):Z(X), real_d1(0), symmetric(false), nextInSum(NULL) {
   Z.special = arr::RowShiftedPackedMatrixST;
   Z.aux = this;
 }
@@ -1303,7 +1301,9 @@ RowShiftedPackedMatrix::RowShiftedPackedMatrix(arr& X, RowShiftedPackedMatrix &a
   real_d1(aux.real_d1),
   rowShift(aux.rowShift),
   colPatches(aux.colPatches),
-  symmetric(aux.symmetric){
+  symmetric(aux.symmetric),
+  nextInSum(NULL)
+{
   Z.special = arr::RowShiftedPackedMatrixST;
   Z.aux=this;
 }
@@ -1330,6 +1330,7 @@ RowShiftedPackedMatrix *auxRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d
 }
 
 RowShiftedPackedMatrix::~RowShiftedPackedMatrix() {
+  if(nextInSum) delete nextInSum;
   Z.special = arr::noneST;
   Z.aux = NULL;
 }
@@ -1375,6 +1376,9 @@ arr unpackRowShifted(const arr& Y) {
       X(i,j+rs) = Y(i,j);
       if(Yaux->symmetric) X(j+rs,i) = Y(i,j);
     }
+  }
+  if(Yaux->nextInSum){
+    X += unpackRowShifted(*Yaux->nextInSum);
   }
   return X;
 }
@@ -1424,11 +1428,18 @@ arr RowShiftedPackedMatrix::At_A() {
       for(; Jp!=Jpstop; Rp++,Jp++) *Rp += Zij * *Jp;
     }
   }
+  if(nextInSum){
+    arr R2 = comp_At_A(*nextInSum);
+    CHECK(R2.special==arr::RowShiftedPackedMatrixST, "");
+    CHECK(R2.d1<=R.d1,"NIY"); //swap...
+    for(uint i=0;i<R2.d0;i++) for(uint j=0;j<R2.d1;j++){
+      R(i,j) += R2(i,j);
+    }
+  }
   return R;
 }
 
 arr RowShiftedPackedMatrix::A_At() {
-
   //-- determine pack_d1 for the resulting symmetric matrix
   uint pack_d1=1;
   for(uint i=0; i<Z.d0; i++) {
@@ -1462,6 +1473,7 @@ arr RowShiftedPackedMatrix::A_At() {
       for(uint k=a;k<b;k++) *Rij += Zi[k-rs_i]*Zj[k-rs_j];
     }
   }
+  if(nextInSum) NIY;
   return R;
 }
 
@@ -1481,6 +1493,7 @@ arr RowShiftedPackedMatrix::At_x(const arr& x) {
     }
     y(j) = sum;
   }
+  if(nextInSum) y += comp_At_x(*nextInSum, x);
   return y;
 }
 
@@ -1497,6 +1510,7 @@ arr RowShiftedPackedMatrix::A_x(const arr& x) {
     }
     y(i) = sum;
   }
+  if(nextInSum) NIY;
   return y;
 }
 
