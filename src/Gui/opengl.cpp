@@ -1511,9 +1511,9 @@ int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool wai
   captureImg=_captureImg;
   captureDep=_captureDep;
   if(txt) text.clear() <<txt;
+  isUpdating.setValue(1);
   postRedrawEvent(false);
-  if(captureImg || captureDep || waitForCompletedDraw) processEvents(); //{ MT::wait(.01); processEvents(); MT::wait(.01); }
-  captureImg=captureDep=false;
+  if(captureImg || captureDep || waitForCompletedDraw){ processEvents();  isUpdating.waitForValueEq(0); }//{ MT::wait(.01); processEvents(); MT::wait(.01); }
   return pressedkey;
 }
 
