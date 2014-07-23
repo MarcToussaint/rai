@@ -112,7 +112,7 @@ void glRasterImage(float x, float y, byteA &img, float zoom=1.);
 
 void glDrawDots(void *dots);
 void glDrawPointCloud(void *pc);
-void glDrawPointCloud(arr& pts, arr& cols);
+void glDrawPointCloud(const arr& pts, const arr& cols);
 
 
 //===========================================================================
