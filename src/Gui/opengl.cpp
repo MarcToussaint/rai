@@ -22,6 +22,18 @@
 //#include <GL/glew.h>
 #include "opengl.h"
 
+//===========================================================================
+
+struct OpenGLEngineAccess{
+  Mutex openglMutex;
+  void lock(){ openglMutex.lock(); }
+  void unlock(){ openglMutex.unlock(); }
+};
+
+Singleton<OpenGLEngineAccess> openglAccess;
+
+//===========================================================================
+
 #ifdef MT_FREEGLUT
 #  include "opengl_freeglut.cxx"
 #endif
@@ -52,19 +64,6 @@
 
 template MT::Array<glUI::Button>::Array();
 template MT::Array<glUI::Button>::~Array();
-
-//===========================================================================
-//
-//
-//
-
-struct OpenGLEngineAccess{
-  Mutex openglMutex;
-  void lock(){ openglMutex.lock(); }
-  void unlock(){ openglMutex.unlock(); }
-};
-
-Singleton<OpenGLEngineAccess> openglAccess;
 
 
 //===========================================================================
@@ -1394,10 +1393,12 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   if(captureImg){
     captureImage.resize(h, w, 3);
     glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
+    captureImg=false;
   }
   if(captureDep){
     captureDepth.resize(h, w);
     glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, captureDepth.p);
+    captureDep=false;
   }
 
   //check matrix stack
