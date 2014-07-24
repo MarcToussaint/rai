@@ -19,8 +19,20 @@
 
 #include <Core/array_t.h>
 #include <Core/geo.h>
-#include <GL/glew.h>
+//#include <GL/glew.h>
 #include "opengl.h"
+
+//===========================================================================
+
+struct OpenGLEngineAccess{
+  Mutex openglMutex;
+  void lock(){ openglMutex.lock(); }
+  void unlock(){ openglMutex.unlock(); }
+};
+
+Singleton<OpenGLEngineAccess> openglAccess;
+
+//===========================================================================
 
 #ifdef MT_FREEGLUT
 #  include "opengl_freeglut.cxx"
@@ -52,6 +64,7 @@
 
 template MT::Array<glUI::Button>::Array();
 template MT::Array<glUI::Button>::~Array();
+
 
 //===========================================================================
 //
@@ -1068,11 +1081,13 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 
 #ifdef MT_GL
 void glDrawDots(void *dots) { glDrawPointCloud(*(arr*)dots, NoArr); }
-void glDrawPointCloud(void *pc) { glDrawPointCloud(((arr*)pc)[0], ((arr*)pc)[1]); }
+void glDrawPointCloud(void *pc) { glDrawPointCloud(((const arr*)pc)[0], ((const arr*)pc)[1]); }
 
-void glDrawPointCloud(arr& pts, arr& cols) {
+void glDrawPointCloud(const arr& pts, const arr& cols) {
   if(!pts.N) return;
   CHECK(pts.nd==2 && pts.d1==3, "wrong dimension");
+  glDisable(GL_LIGHTING);
+#if 0
   glEnableClientState(GL_VERTEX_ARRAY);
   glVertexPointer(3, GL_DOUBLE, 0, pts.p);
   if(&cols && cols.N==pts.N){
@@ -1080,6 +1095,15 @@ void glDrawPointCloud(arr& pts, arr& cols) {
     glColorPointer(3, GL_DOUBLE, 0, cols.p );
   }else glDisableClientState(GL_COLOR_ARRAY);
   glDrawArrays(GL_POINTS, 0, pts.d0);
+  glDisableClientState(GL_VERTEX_ARRAY);
+#else
+  glBegin(GL_POINTS);
+  for(uint i=0;i<pts.d0;i++){
+    if(cols.N==pts.N) glColor3dv(&cols(i,0));
+    glVertex3dv(&pts(i,0));
+  }
+  glEnd();
+#endif
 }
 #endif
 
@@ -1218,6 +1242,8 @@ void OpenGL::clearKeyCalls() {
 
 void OpenGL::Draw(int w, int h, ors::Camera *cam) {
 #ifdef MT_GL
+  openglAccess().lock();
+
   //clear bufferer
   GLint viewport[4] = {0, 0, w, h};
   glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
@@ -1367,10 +1393,12 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   if(captureImg){
     captureImage.resize(h, w, 3);
     glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
+    captureImg=false;
   }
   if(captureDep){
     captureDepth.resize(h, w);
     glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, captureDepth.p);
+    captureDep=false;
   }
 
   //check matrix stack
@@ -1380,6 +1408,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   //CHECK(s<=1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
   
   //this->s->endGlContext();
+  openglAccess().unlock();
 #endif
 }
 
@@ -1482,9 +1511,9 @@ int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool wai
   captureImg=_captureImg;
   captureDep=_captureDep;
   if(txt) text.clear() <<txt;
+  isUpdating.setValue(1);
   postRedrawEvent(false);
-  if(captureImg || captureDep || waitForCompletedDraw){ MT::wait(.01); processEvents(); MT::wait(.01); }
-  captureImg=captureDep=false;
+  if(captureImg || captureDep || waitForCompletedDraw){ processEvents();  isUpdating.waitForValueEq(0); }//{ MT::wait(.01); processEvents(); MT::wait(.01); }
   return pressedkey;
 }
 

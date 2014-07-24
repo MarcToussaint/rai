@@ -1,14 +1,17 @@
 #ifndef _POINTCLOUD_H__
 #define _POINTCLOUD_H__
 
-#ifdef PCL
 
+#ifdef FIXME_PCL
+#ifdef HAVE_PCL
+
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/ModelCoefficients.h>
 #include <Core/module.h>
 #include <devTools/logging.h>
-#include <hardware/kinect.h>
-#include <motion/motion.h>
-#include <pcl/ModelCoefficients.h>
-#include <pcl/point_types.h>
+//#include <Hardware/kinect.h>
+#include <Motion/motion.h>
 
 SET_LOG(pointcloud, INFO);
 
@@ -92,4 +95,5 @@ class ObjectTransformator : public Process {
 };
 
 #endif // PCL
+#endif // FIXME_PCL
 #endif // _POINTCLOUD_H__

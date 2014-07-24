@@ -4,8 +4,9 @@
 #include <Gui/opengl.h>
 
 struct SurfelStatistics{
-  float n,x,y,z,xx,xy,xz,yy,yz,zz,r,g,b;
-  SurfelStatistics():n(0),x(0),y(0),z(0),xx(0),xy(0),xz(0),yy(0),yz(0),zz(0){}
+  float n,x,y,z,xx,xy,xz,yy,yz,zz,nx,ny,nz,r,g,b;
+  float rad;
+  SurfelStatistics():n(0),x(0),y(0),z(0),xx(0),xy(0),xz(0),yy(0),yz(0),zz(0),nx(0),ny(0),nz(0),r(0),g(0),b(0){}
   void add(float X, float Y, float Z, float R, float G, float B){
     n++;
     x+=X; y+=Y; z+=Z;
@@ -28,6 +29,7 @@ struct SurfelStatistics{
   }
 
   void discount(float a){ n*=a; x*=a; y*=a; z*=a; xx*=a; xy*=a; xz*=a; yy*=a; yz*=a; zz*=a; r*=a; g*=a; b*=a; }
+
 };
 
 struct Surfels{
@@ -46,8 +48,6 @@ struct Surfels{
 
   void recomputeSurfelIndices();
   void pointCloud2Surfels(const arr &pts, const arr &cols, OpenGL& gl);
-
-
 };
 
 void glDrawSurfels(void *classP);
