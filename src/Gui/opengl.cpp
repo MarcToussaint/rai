@@ -1089,18 +1089,25 @@ void glDrawPointCloud(const arr& pts, const arr& cols) {
   glDisable(GL_LIGHTING);
 #if 0
   glEnableClientState(GL_VERTEX_ARRAY);
-  glVertexPointer(3, GL_DOUBLE, 0, pts.p);
+  glVertexPointer(3, GL_DOUBLE, pts.d1-3, pts.p);
   if(&cols && cols.N==pts.N){
     glEnableClientState(GL_COLOR_ARRAY);
-    glColorPointer(3, GL_DOUBLE, 0, cols.p );
+    glColorPointer(3, GL_DOUBLE, cols.d1-3, cols.p );
   }else glDisableClientState(GL_COLOR_ARRAY);
   glDrawArrays(GL_POINTS, 0, pts.d0);
   glDisableClientState(GL_VERTEX_ARRAY);
 #else
   glBegin(GL_POINTS);
-  for(uint i=0;i<pts.d0;i++){
-    if(cols.N==pts.N) glColor3dv(&cols(i,0));
-    glVertex3dv(&pts(i,0));
+  if(!&cols || cols.N!=pts.N){
+    const double *p=pts.begin(), *pstop=pts.end();
+    for(; p!=pstop; p+=pts.d1)
+      glVertex3dv(p);
+  }else{
+    const double *p=pts.begin(), *pstop=pts.end(), *c=cols.begin();
+    for(; p!=pstop; p+=pts.d1, c+=cols.d1){
+      glVertex3dv(p);
+      glColor3dv(c);
+    }
   }
   glEnd();
 #endif
@@ -1513,7 +1520,7 @@ int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool wai
   if(txt) text.clear() <<txt;
   isUpdating.setValue(1);
   postRedrawEvent(false);
-  if(captureImg || captureDep || waitForCompletedDraw){ processEvents();  isUpdating.waitForValueEq(0); }//{ MT::wait(.01); processEvents(); MT::wait(.01); }
+  if(captureImg || captureDep || waitForCompletedDraw){ processEvents();  isUpdating.waitForValueEq(0);  processEvents(); }//{ MT::wait(.01); processEvents(); MT::wait(.01); }
   return pressedkey;
 }
 
