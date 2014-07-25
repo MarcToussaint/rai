@@ -211,7 +211,10 @@ struct OpenGL {
   double backgroundZoom;
   arr P; //camera projection matrix
   RWLock lock; //locked during draw callbacks (anything that uses the calls)
-  uint fbo, render_buf;
+//  uint fbo, render_buf;
+  uint fboId;
+  uint rboColor;
+  uint rboDepth;
   ConditionVariable isUpdating;
 
   /// @name constructors & destructors

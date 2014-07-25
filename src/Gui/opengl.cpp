@@ -19,7 +19,7 @@
 
 #include <Core/array_t.h>
 #include <Core/geo.h>
-//#include <GL/glew.h>
+#include <GL/glew.h>
 #include "opengl.h"
 
 //===========================================================================
@@ -1120,7 +1120,7 @@ void glDrawPointCloud(const arr& pts, const arr& cols) {
 //
 
 OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy)
-  : s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false), fbo(0), render_buf(0){
+  : s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0){
   //MT_MSG("creating OpenGL=" <<this);
   initGlEngine();
   s=new sOpenGL(this,title,w,h,posx,posy); //this might call some callbacks (Reshape/Draw) already!
@@ -1129,7 +1129,7 @@ OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy)
 }
 
 OpenGL::OpenGL(void *container)
-  : s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false), fbo(0), render_buf(0){
+  : s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0){
   initGlEngine();
   s=new sOpenGL(this,container); //this might call some callbacks (Reshape/Draw) already!
   init();
@@ -1518,6 +1518,7 @@ int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool wai
   captureImg=_captureImg;
   captureDep=_captureDep;
   if(txt) text.clear() <<txt;
+  isUpdating.waitForValueEq(0);
   isUpdating.setValue(1);
   postRedrawEvent(false);
   if(captureImg || captureDep || waitForCompletedDraw){ processEvents();  isUpdating.waitForValueEq(0);  processEvents(); }//{ MT::wait(.01); processEvents(); MT::wait(.01); }
