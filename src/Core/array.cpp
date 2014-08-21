@@ -1700,6 +1700,7 @@ template void MT::getParameter(uintA&, const char*, const uintA&);
 
 void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 
+MT::Array<MT::String> STRINGS(){ return ARRAY<MT::String>(); }
 MT::Array<MT::String> STRINGS(const char* s0){ return ARRAY<MT::String>(MT::String(s0)); }
 MT::Array<MT::String> STRINGS(const char* s0, const char* s1){ return ARRAY<MT::String>(MT::String(s0), MT::String(s1)); }
 MT::Array<MT::String> STRINGS(const char* s0, const char* s1, const char* s2){ return ARRAY<MT::String>(MT::String(s0), MT::String(s1), MT::String(s2)); }

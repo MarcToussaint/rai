@@ -409,9 +409,15 @@ template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T
 template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o) {      MT::Array<T*> z(7); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; z(6)=(T*)&o; return z; }
 template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p) { MT::Array<T*> z(8); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; z(6)=(T*)&o; z(7)=(T*)&p; return z; }
 
+MT::Array<MT::String> STRINGS();
 MT::Array<MT::String> STRINGS(const char* s0);
 MT::Array<MT::String> STRINGS(const char* s0, const char* s1);
 MT::Array<MT::String> STRINGS(const char* s0, const char* s1, const char* s2);
+
+#define STRINGS_0()           (ARRAY<MT::String>())
+#define STRINGS_1(s0)         (ARRAY<MT::String>(STRING(s0)))
+#define STRINGS_2(s0, s1)     (ARRAY<MT::String>(STRING(s0),STRING(s1)))
+#define STRINGS_3(s0, s1, s2) (ARRAY<MT::String>(STRING(s0),STRING(s1),STRING(s2)))
 
 
 //===========================================================================
