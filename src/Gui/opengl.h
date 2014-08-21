@@ -56,6 +56,8 @@
 #  include<gl2ps.h>
 #endif
 
+#undef Success
+
 namespace ors {
 struct Transformation;
 struct Vector;

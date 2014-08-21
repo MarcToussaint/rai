@@ -1471,6 +1471,7 @@ void OpenGL::Select() {
 #else
   Draw(width(),height());
 #endif
+  glLoadIdentity();
   
   GLint n;
   n=glRenderMode(GL_RENDER);
