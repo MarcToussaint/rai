@@ -620,7 +620,6 @@ template <typename T> T clip(T& x, const T& lower, const T& upper) {
 
 std::string getcwd_string();
 
-
 //===========================================================================
 //
 // USING's
@@ -637,6 +636,51 @@ using std::ifstream;
 using MT::rnd;
 using MT::String;
 
+//===========================================================================
+//
+// Andrea's misc
+//
+
+// Params {{{
+#include "keyValueGraph.h"
+struct Params {
+  KeyValueGraph kvg;
+
+  template<class T>
+  void set(const char *key, const T &value) {
+    Item *i = kvg.getItem(key);
+    if(i) *i->getValue<T>() = value;
+    else kvg.append(key, new T(value));
+  }
+
+  template<class T>
+  bool get(const char *key, T &value) { return kvg.getValue(value, key); }
+
+  template<class T>
+  T* get(const char *key) { return kvg.getValue<T>(key); }
+
+  void clear() { kvg.clear(); }
+  bool remove(const char *key) {
+    Item *i = kvg.getItem(key);
+    if(!i) return false;
+    // TODO is list() here necessary?
+    kvg.list().remove(i->index);
+    return true;
+  }
+
+  void write(std::ostream &os = std::cout) const {
+    os << "params = {" << std::endl;
+    for(Item *i: kvg) os << "  " << *i << std::endl;
+    os << "}" << std::endl;
+  }
+};
+stdOutPipe(Params)
+// }}}
+// Parametric {{{
+struct Parametric {
+  Params params;
+};
+// }}}
 
 #endif
 
