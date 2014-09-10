@@ -68,7 +68,7 @@ struct ConstrainedProblem {
   virtual double fc(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x) = 0;
   virtual uint dim_x() = 0; ///< returns \f$ \dim(x) \f$
   virtual uint dim_g() = 0; ///< returns \f$ \dim(g) \f$
-
+  arr y,Jy;
   virtual ~ConstrainedProblem(){}
 };
 
