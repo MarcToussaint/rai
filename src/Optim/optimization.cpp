@@ -22,7 +22,7 @@
 uint eval_cost=0;
 //SqrPotential& NoPot = *((SqrPotential*)NULL);
 //PairSqrPotential& NoPairPot = *((PairSqrPotential*)NULL);
-OptOptions globalOptOptions;
+Singleton<OptOptions> globalOptOptions;
 
 //===========================================================================
 //
@@ -124,9 +124,6 @@ OptOptions::OptOptions() {
   allowOverstep=MT::getParameter<bool>  ("opt/allowOverstep",false);
   constrainedMethod = (ConstrainedMethodType)MT::getParameter<int>("opt/constrainedMethod",augmentedLag);
 }
-
-OptOptions global_optOptions;
-
 
 
 /// minimizes \f$f(x)\f$ using its gradient only
