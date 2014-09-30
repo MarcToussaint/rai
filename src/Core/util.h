@@ -621,7 +621,6 @@ template <typename T> T clip(T& x, const T& lower, const T& upper) {
 
 std::string getcwd_string();
 
-
 //===========================================================================
 //
 // USING's
@@ -637,7 +636,6 @@ using std::ofstream;
 using std::ifstream;
 using MT::rnd;
 using MT::String;
-
 
 #endif
 

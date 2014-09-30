@@ -5,6 +5,7 @@
 
 #include <Core/array.h>
 #include "pixel_format.h"
+#include <memory>
 
 /// Video encoder which creates a correct container, with metadata, of one
 /// video stream in H264 format.
@@ -20,8 +21,9 @@ struct VideoEncoder_libav_simple{
 /// Has less metadata (in particular, fps and timing seems to be off), but
 /// is more CPU efficient than the above.
 
+struct sVideoEncoder_x264_simple;
 struct VideoEncoder_x264_simple{
-  struct sVideoEncoder_x264_simple *s;
+  std::auto_ptr<sVideoEncoder_x264_simple> s;
 
   VideoEncoder_x264_simple(const char* filename="z.264", double fps=30, uint qp=0, MLR::PixelFormat in_format=MLR::PIXEL_FORMAT_BGR8);
   /** @deprecated Use constructor with explicit input format. Using this one allows only a choice between RGB and BGR. */
