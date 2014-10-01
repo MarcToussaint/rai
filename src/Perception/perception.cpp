@@ -1,5 +1,5 @@
-#include "perception.h"
 #include "pointcloud.h"
+#include "perception.h"
 #include "audio.h"
 #include "videoEncoder.h"
 #include <Core/util_t.h>
@@ -26,17 +26,20 @@ struct sImageViewer{
 #endif
   sImageViewer(const char* tit)
 #ifdef MT_GL
-:gl(tit)
+    :gl(tit)
 #endif
 {};
 };
 
 void ImageViewer::open(){ 
-s = new sImageViewer(STRING("ImageViewer '"<<img.name()<<'\'')); }
+s = new sImageViewer(STRING("ImageViewer '"<<img.var->name()<<'\'')); }
 void ImageViewer::close(){ delete s; }
 void ImageViewer::step(){ 
 #ifdef MT_GL
-s->gl.background = img.get(); s->gl.update(); 
+  s->gl.background = img.get();
+  if(s->gl.height!= s->gl.background.d0 || s->gl.width!= s->gl.background.d1)
+    s->gl.resize(s->gl.background.d1, s->gl.background.d0);
+  s->gl.update();
 #endif
 }
 
@@ -137,14 +140,25 @@ void VideoEncoderX264::step(){
 struct sPointCloudViewer{
 #ifdef MT_GL
   OpenGL gl;
+  sPointCloudViewer():gl("PointCloudViewer",640,480){}
 #endif
   arr pc[2];
 };
 
+void glDrawAxes(void*){
+  glDrawAxes(1.);
+}
+
 void PointCloudViewer::open(){
   s = new sPointCloudViewer;
 #ifdef MT_GL
+  s->gl.add(glDrawAxes);
   s->gl.add(glDrawPointCloud, s->pc);
+  s->gl.camera.setPosition(0., 0., 0.);
+  s->gl.camera.focus(0., 0., 1.);
+  s->gl.camera.setZRange(.1, 10.);
+  s->gl.camera.heightAbs=s->gl.camera.heightAngle=0.;
+  s->gl.camera.focalLength = 580./480.;
 #endif
 }
 

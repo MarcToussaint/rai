@@ -77,10 +77,27 @@ bool checkAllGradients(ConstrainedProblem &P, const arr& x, double tolerance){
   } g(P);
 
   bool good=true;
-  good &= checkGradient(f, x, tolerance);
-  good &= checkHessian (f, x, tolerance);
-  good &= checkJacobian(g, x, tolerance);
+  cout <<"f-gradient: "; good &= checkGradient(f, x, tolerance);
+  cout <<"f-hessian:  "; good &= checkHessian (f, x, tolerance);
+  cout <<"g-jacobian: "; good &= checkJacobian(g, x, tolerance);
   return good;
+}
+
+
+//===========================================================================
+//
+// helpers
+//
+
+void displayFunction(ScalarFunction &F, bool wait, double lo, double hi){
+  arr X, Y;
+  X.setGrid(2,lo,hi,100);
+  Y.resize(X.d0);
+  for(uint i=0;i<X.d0;i++) Y(i) = F.fs(NoArr, NoArr, X[i]);
+  Y.reshape(101,101);
+//  plotGnuplot();  plotSurface(Y);  plot(true);
+  write(LIST<arr>(Y),"z.fct");
+  gnuplot("reset; splot [-1:1][-1:1] 'z.fct' matrix us (1.2*($1/50-1)):(1.2*($2/50-1)):3 w l", wait, true);
 }
 
 
@@ -104,6 +121,7 @@ OptOptions::OptOptions() {
   dampingInc=MT::getParameter<double>("opt/dampingInc",1.);
   dampingDec=MT::getParameter<double>("opt/dampingDec",1.);
   nonStrictSteps=MT::getParameter<uint>  ("opt/nonStrictSteps",0);
+  allowOverstep=MT::getParameter<bool>  ("opt/allowOverstep",false);
   constrainedMethod = (ConstrainedMethodType)MT::getParameter<int>("opt/constrainedMethod",augmentedLag);
 }
 

@@ -107,6 +107,7 @@ uint MAX(uint a, uint b);
 double indicate(bool expr);
 double modMetric(double x, double y, double mod);
 double sign(double x);
+double sign0(double x);
 double linsig(double x);
 //void   clip(double& x, double a, double b);
 double phi(double dx, double dy);
@@ -615,7 +616,7 @@ void gnuplotClose();
 
 /// Clip the `value` of n between `lower` and `upper`.
 template <typename T> T clip(T& x, const T& lower, const T& upper) {
-  if(x<lower) x=lower; if(x>upper) x=upper; return x;
+  if(x<lower) x=lower; else if(x>upper) x=upper; return x;
 }
 
 std::string getcwd_string();

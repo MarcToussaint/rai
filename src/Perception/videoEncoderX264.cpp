@@ -2,9 +2,6 @@
 #include "colorspace.h"
 #include <Core/util.h>
 
-#include <opencv2/opencv.hpp>
-using namespace cv;
-
 #ifdef HAVE_X264
 
 extern "C" {

@@ -19,7 +19,20 @@
 
 #include <Core/array_t.h>
 #include <Core/geo.h>
+//#include <GL/glew.h>
 #include "opengl.h"
+
+//===========================================================================
+
+struct OpenGLEngineAccess{
+  Mutex openglMutex;
+  void lock(){ openglMutex.lock(); }
+  void unlock(){ openglMutex.unlock(); }
+};
+
+Singleton<OpenGLEngineAccess> openglAccess;
+
+//===========================================================================
 
 #ifdef MT_FREEGLUT
 #  include "opengl_freeglut.cxx"
@@ -51,6 +64,7 @@
 
 template MT::Array<glUI::Button>::Array();
 template MT::Array<glUI::Button>::~Array();
+
 
 //===========================================================================
 //
@@ -90,6 +104,7 @@ void ors::Camera::setZero() {
   foc->setZero();
   heightAngle=90.;
   heightAbs=10.;
+  focalLength=1.;
   whRatio=1.;
   zNear=.1;
   zFar=1000.;
@@ -171,15 +186,24 @@ void ors::Camera::glSetProjectionMatrix() {
 //  if(fixedProjectionMatrix.N) {
 //    glLoadMatrixd(fixedProjectionMatrix.p);
 //  } else {
-  {
-    if(heightAngle==0) {
+  if(heightAngle==0) {
+    if(heightAbs==0) {
+      arr P(4,4);
+      P.setZero();
+      P(0,0) = 2.*focalLength/whRatio;
+      P(1,1) = 2.*focalLength;
+      P(2,2) = (zFar + zNear)/(zNear-zFar);
+      P(2,3) = -1.;
+      P(3,2) = 2. * zFar * zNear / (zNear-zFar);
+      glLoadMatrixd(P.p);
+    }else{
       glOrtho(-whRatio*heightAbs/2, whRatio*heightAbs/2,
-      -heightAbs/2, heightAbs/2, zNear, zFar);
-    } else
-      gluPerspective(heightAngle, whRatio, zNear, zFar);
-    double m[16];
-    glMultMatrixd(X->getInverseAffineMatrixGL(m));
-  }
+              -heightAbs/2, heightAbs/2, zNear, zFar);
+    }
+  } else
+    gluPerspective(heightAngle, whRatio, zNear, zFar);
+  double m[16];
+  glMultMatrixd(X->getInverseAffineMatrixGL(m));
 #else
   NICO
 #endif
@@ -936,7 +960,7 @@ void glRasterImage(float x, float y, byteA &img, float zoom) {
     case 0:
     case 1:  glDrawPixels(img.d1, img.d0, GL_LUMINANCE, GL_UNSIGNED_BYTE, img.p);        break;
     case 2:  glDrawPixels(img.d1, img.d0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, img.p);  break;
-    case 3:  glDrawPixels(img.d1, img.d0, GL_BGR, GL_UNSIGNED_BYTE, img.p);              break;
+    case 3:  glDrawPixels(img.d1, img.d0, GL_RGB, GL_UNSIGNED_BYTE, img.p);              break;
     case 4:  glDrawPixels(img.d1, img.d0, GL_RGBA, GL_UNSIGNED_BYTE, img.p);             break;
     default: HALT("no image format");
   };
@@ -1057,11 +1081,13 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 
 #ifdef MT_GL
 void glDrawDots(void *dots) { glDrawPointCloud(*(arr*)dots, NoArr); }
-void glDrawPointCloud(void *pc) { glDrawPointCloud(((arr*)pc)[0], ((arr*)pc)[1]); }
+void glDrawPointCloud(void *pc) { glDrawPointCloud(((const arr*)pc)[0], ((const arr*)pc)[1]); }
 
-void glDrawPointCloud(arr& pts, arr& cols) {
+void glDrawPointCloud(const arr& pts, const arr& cols) {
   if(!pts.N) return;
   CHECK(pts.nd==2 && pts.d1==3, "wrong dimension");
+  glDisable(GL_LIGHTING);
+#if 0
   glEnableClientState(GL_VERTEX_ARRAY);
   glVertexPointer(3, GL_DOUBLE, 0, pts.p);
   if(&cols && cols.N==pts.N){
@@ -1069,6 +1095,15 @@ void glDrawPointCloud(arr& pts, arr& cols) {
     glColorPointer(3, GL_DOUBLE, 0, cols.p );
   }else glDisableClientState(GL_COLOR_ARRAY);
   glDrawArrays(GL_POINTS, 0, pts.d0);
+  glDisableClientState(GL_VERTEX_ARRAY);
+#else
+  glBegin(GL_POINTS);
+  for(uint i=0;i<pts.d0;i++){
+    if(cols.N==pts.N) glColor3dv(&cols(i,0));
+    glVertex3dv(&pts(i,0));
+  }
+  glEnd();
+#endif
 }
 #endif
 
@@ -1077,7 +1112,8 @@ void glDrawPointCloud(arr& pts, arr& cols) {
 // OpenGL implementations
 //
 
-OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy):s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false) {
+OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy)
+  : s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false), fbo(0), render_buf(0){
   //MT_MSG("creating OpenGL=" <<this);
   initGlEngine();
   s=new sOpenGL(this,title,w,h,posx,posy); //this might call some callbacks (Reshape/Draw) already!
@@ -1085,7 +1121,8 @@ OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy):s(NULL), reportE
   processEvents();
 }
 
-OpenGL::OpenGL(void *container):s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false) {
+OpenGL::OpenGL(void *container)
+  : s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false), fbo(0), render_buf(0){
   initGlEngine();
   s=new sOpenGL(this,container); //this might call some callbacks (Reshape/Draw) already!
   init();
@@ -1205,6 +1242,8 @@ void OpenGL::clearKeyCalls() {
 
 void OpenGL::Draw(int w, int h, ors::Camera *cam) {
 #ifdef MT_GL
+  openglAccess().lock();
+
   //clear bufferer
   GLint viewport[4] = {0, 0, w, h};
   glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
@@ -1223,14 +1262,11 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   }
   
   //OpenGL initialization
-  //two optional thins:
   glEnable(GL_DEPTH_TEST);  glDepthFunc(GL_LESS);
   glEnable(GL_BLEND);  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_CULL_FACE);  glFrontFace(GL_CCW);
-  //glDisable(GL_CULL_FACE);
-  //glShadeModel(GL_SMOOTH);
-  glShadeModel(GL_FLAT);
-  
+  glShadeModel(GL_FLAT);  //glShadeModel(GL_SMOOTH);
+
   //select mode?
   GLint mode;
   glGetIntegerv(GL_RENDER_MODE, &mode);
@@ -1244,6 +1280,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   //glLineWidth(2);
   
   //**extract the camera projection matrix
+#if 0
   //this is the calibration matrix corresponding to OpenGL's ``viewport''
   intA view(4);
   arr Kview(3, 3);
@@ -1276,7 +1313,8 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   Frust.delRows(2); //We're not interested in OpenGL's ``z-coordinate'', only in the perspective coordinate (divisor) w
   cout <<"K=" <<Kview*Frust <<endl;
   */
-  
+#endif
+
   //draw focus?
   if(drawFocus && mode!=GL_SELECT) {
     glColor(1., .7, .3);
@@ -1355,10 +1393,12 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   if(captureImg){
     captureImage.resize(h, w, 3);
     glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
+    captureImg=false;
   }
   if(captureDep){
     captureDepth.resize(h, w);
     glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, captureDepth.p);
+    captureDep=false;
   }
 
   //check matrix stack
@@ -1368,6 +1408,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   //CHECK(s<=1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
   
   //this->s->endGlContext();
+  openglAccess().unlock();
 #endif
 }
 
@@ -1471,7 +1512,7 @@ int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool wai
   captureDep=_captureDep;
   if(txt) text.clear() <<txt;
   postRedrawEvent(false);
-  if(captureImg || captureDep || waitForCompletedDraw){ MT::wait(.01); processEvents(); MT::wait(.01); }
+  if(captureImg || captureDep || waitForCompletedDraw) processEvents(); //{ MT::wait(.01); processEvents(); MT::wait(.01); }
   captureImg=captureDep=false;
   return pressedkey;
 }

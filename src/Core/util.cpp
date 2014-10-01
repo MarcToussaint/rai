@@ -292,6 +292,9 @@ double modMetric(double x, double y, double mod) {
 /// the sign (+/-1) of x (+1 for zero)
 double sign(double x) { if(x<0.) return -1.; return 1.; }
 
+/// the sign (+/-1) of x (0 for zero)
+double sign0(double x) { if(x<0.) return -1.; if(!x) return 0.; return 1.; }
+
 /// returns 0 for x<0, 1 for x>1, x for 0<x<1
 double linsig(double x) { if(x<0.) return 0.; if(x>1.) return 1.; return x; }
 

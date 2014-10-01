@@ -83,6 +83,7 @@ struct KOrderMarkovFunction {
   virtual uint get_T() = 0;       ///< horizon (the total x-dimension is (T+1)*n )
   virtual uint get_k() = 0;       ///< the order of dependence: \f$ \phi=\phi(x_{t-k},..,x_t) \f$
   virtual uint dim_x() = 0;       ///< \f$ \dim(x_t) \f$
+  virtual uint dim_z(){ return 0; } ///< \f$ \dim(z) \f$
   virtual uint dim_phi(uint t) = 0; ///< \f$ \dim(\phi_t) \f$
   virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints at the end of \f$ \phi_t \f$
   virtual arr get_prefix(){ arr x(get_k(), dim_x()); x.setZero(); return x; } ///< the augmentation \f$ (x_{t=-k},..,x_{t=-1}) \f$ that makes \f$ \phi_{0,..,k-1} \f$ well-defined
@@ -152,6 +153,7 @@ struct OptOptions {
   double stepInc, stepDec;
   double dampingInc, dampingDec;
   int nonStrictSteps; //# of non-strict iterations
+  bool allowOverstep;
   ConstrainedMethodType constrainedMethod;
   OptOptions();
 };
@@ -164,6 +166,14 @@ extern OptOptions globalOptOptions;
 #include "opt-constrained.h"
 #include "opt-rprop.h"
 uint optGradDescent(arr& x, ScalarFunction& f, OptOptions opt);
+
+
+//===========================================================================
+//
+// helpers
+//
+
+void displayFunction(ScalarFunction &F, bool wait=true, double lo=-1.2, double hi=1.2);
 
 
 //===========================================================================

@@ -1,4 +1,5 @@
-#ifdef PCL
+#ifdef FIXME_PCL
+#ifdef HAVE_PCL
 #include "pointcloud.h"
 #include "perception.h"
 
@@ -541,3 +542,4 @@ PointCloudVar::PointCloudVar(const char *name) : Variable(name), point_cloud(new
   reg_point_cloud();
 }
 #endif // PCL
+#endif

@@ -112,7 +112,7 @@ void glRasterImage(float x, float y, byteA &img, float zoom=1.);
 
 void glDrawDots(void *dots);
 void glDrawPointCloud(void *pc);
-void glDrawPointCloud(arr& pts, arr& cols);
+void glDrawPointCloud(const arr& pts, const arr& cols);
 
 
 //===========================================================================
@@ -129,9 +129,9 @@ struct Camera {
   
   float heightAbs;
   float heightAngle;
+  float focalLength;
   float whRatio;
   float zNear, zFar;
-  //arr fixedProjectionMatrix;
   
   Camera();
   Camera(const Camera& c) { *this=c; }
@@ -211,6 +211,7 @@ struct OpenGL {
   double backgroundZoom;
   arr P; //camera projection matrix
   RWLock lock; //locked during draw callbacks (anything that uses the calls)
+  uint fbo, render_buf;
 
   /// @name constructors & destructors
   OpenGL(const char* title="MT::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
@@ -279,6 +280,7 @@ public: //driver dependent methods
   void processEvents();
   void enterEventLoop();
   void exitEventLoop();
+  void renderInBack(int width=-1, int height=-1, bool captureImg=true, bool captureDepth=false);
 #if !defined MT_MSVC && !defined MT_QTGL
   Display* xdisplay();
   Drawable xdraw();
