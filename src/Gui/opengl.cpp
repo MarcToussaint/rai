@@ -130,14 +130,13 @@ void ors::Camera::focus(const Vector& v) { *foc=v; focus(); }
 void ors::Camera::focus() { watchDirection((*foc)-X->pos); } //X->Z=X->pos; X->Z-=foc; X->Z.normalize(); upright(); }
 /// rotate the frame to watch in the direction vector D
 void ors::Camera::watchDirection(const Vector& d) {
-  Vector tmp;
   if(d.x==0. && d.y==0.) {
     X->rot.setZero();
     if(d.z>0) X->rot.setDeg(180, 1, 0, 0);
     return;
   }
   Quaternion r;
-  r.setDiff(-X->rot.getZ(tmp), d);
+  r.setDiff(-X->rot.getZ(), d);
   X->rot=r*X->rot;
 }
 /// rotate the frame to set it upright (i.e. camera's y aligned with 's z)
