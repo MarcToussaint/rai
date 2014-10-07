@@ -123,6 +123,7 @@ OptOptions::OptOptions() {
   nonStrictSteps=MT::getParameter<uint>  ("opt/nonStrictSteps",0);
   allowOverstep=MT::getParameter<bool>  ("opt/allowOverstep",false);
   constrainedMethod = (ConstrainedMethodType)MT::getParameter<int>("opt/constrainedMethod",augmentedLag);
+  aulaMuInc =MT::getParameter<double>("opt/aulaMuInc",1.);
 }
 
 

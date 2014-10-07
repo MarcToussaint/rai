@@ -155,6 +155,7 @@ struct OptOptions {
   int nonStrictSteps; //# of non-strict iterations
   bool allowOverstep;
   ConstrainedMethodType constrainedMethod;
+  double aulaMuInc;
   OptOptions();
 };
 
