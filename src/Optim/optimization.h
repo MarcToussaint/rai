@@ -155,11 +155,13 @@ struct OptOptions {
   int nonStrictSteps; //# of non-strict iterations
   bool allowOverstep;
   ConstrainedMethodType constrainedMethod;
+  double aulaMuInc;
   OptOptions();
 };
 
-extern OptOptions globalOptOptions;
-#define NOOPT (globalOptOptions)
+extern Singleton<OptOptions> globalOptOptions;
+
+#define NOOPT (globalOptOptions())
 
 // declared separately:
 #include "opt-newton.h"
@@ -196,7 +198,7 @@ void displayFunction(ScalarFunction &F, bool wait=true, double lo=-1.2, double h
 #define _OPT_9(obj, assign, ...) obj.assign, _OPT_8(obj,__VA_ARGS__)
 #define _OPT_N2(obj, N, ...) _OPT_ ## N(obj, __VA_ARGS__)
 #define _OPT_N1(obj, N, ...) _OPT_N2(obj, N, __VA_ARGS__) //this forces that _NUM_ARGS(...) is expanded to a number N
-#define OPT(...)     (_OPT_N1(globalOptOptions, _NUM_ARGS(__VA_ARGS__), __VA_ARGS__) , globalOptOptions)
+#define OPT(...)     (_OPT_N1(globalOptOptions(), _NUM_ARGS(__VA_ARGS__), __VA_ARGS__) , globalOptOptions())
 
 #ifdef  MT_IMPLEMENTATION
 #  include "optimization.cpp"

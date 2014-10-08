@@ -1422,10 +1422,12 @@ arr RowShiftedPackedMatrix::At_A() {
       uint real_j=j+rs;
       if(real_j>=real_d1) break;
       double Zij=Zi[j];
-      double* Rp=R.p + real_j*R.d1;
-      double* Jp=Zi+j;
-      double* Jpstop=Zi+Z.d1;
-      for(; Jp!=Jpstop; Rp++,Jp++) *Rp += Zij * *Jp;
+      if(Zij!=0.){
+        double* Rp=R.p + real_j*R.d1;
+        double* Jp=Zi+j;
+        double* Jpstop=Zi+Z.d1;
+        for(; Jp!=Jpstop; Rp++,Jp++) if(*Jp!=0.) *Rp += Zij * *Jp;
+      }
     }
   }
   if(nextInSum){
