@@ -58,7 +58,7 @@ struct RandomLPFunction:ConstrainedProblem {
     return fx;
   }
   virtual uint dim_x(){ return n;  }
-  virtual uint dim_g(){ return 5*n+2; }
+  virtual uint dim_g(){ return 5*n+5; }
 };
 
 //===========================================================================

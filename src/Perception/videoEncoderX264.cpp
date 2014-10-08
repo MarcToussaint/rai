@@ -32,6 +32,9 @@ struct sVideoEncoder_x264_simple{
   {
 	  std::clog << "Encoder for " << filename << " expects pixel format " << in_format << std::endl;
   }
+  ~sVideoEncoder_x264_simple() {
+	  close();
+  }
 
   void open(uint width, uint height);
   void addFrame(const byteA& image);
@@ -41,11 +44,13 @@ struct sVideoEncoder_x264_simple{
 
 //==============================================================================
 
-VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char* filename, double fps, uint qp, bool is_rgb) {
-    s = new sVideoEncoder_x264_simple(filename, fps, qp, is_rgb ? MLR::PIXEL_FORMAT_RGB8 : MLR::PIXEL_FORMAT_BGR8);
+VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char* filename, double fps, uint qp, bool is_rgb) :
+    s(new sVideoEncoder_x264_simple(filename, fps, qp, is_rgb ? MLR::PIXEL_FORMAT_RGB8 : MLR::PIXEL_FORMAT_BGR8))
+{
 }
-VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char* filename, double fps, uint qp, MLR::PixelFormat in_format) {
-    s = new sVideoEncoder_x264_simple(filename, fps, qp, in_format);
+VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char* filename, double fps, uint qp, MLR::PixelFormat in_format) :
+    s(new sVideoEncoder_x264_simple(filename, fps, qp, in_format))
+{
 }
 
 void VideoEncoder_x264_simple::addFrame(const byteA& image){
@@ -58,7 +63,11 @@ const MT::String& VideoEncoder_x264_simple::name() const {
 }
 
 
-void VideoEncoder_x264_simple::close(){ std::clog << "Closing VideoEncoder264" << endl; if(s->isOpen) s->close(); }
+void VideoEncoder_x264_simple::close(){
+	std::clog << "Closing VideoEncoder264" << endl;
+	if(s->isOpen)
+		s->close();
+}
 
 //==============================================================================
 

@@ -14,8 +14,7 @@
     
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
-
+    ---------------------------------------------------------------  */
 
 /// @file
 /// @ingroup group_array
@@ -100,6 +99,7 @@ template<class T> struct Array {
   Array(const Array<T>& a);                 //copy constructor
   Array(const Array<T>& a, uint i);         //reference constructor
   Array(const Array<T>& a, uint i, uint j); //reference constructor
+  Array(const Array<T>& a, uint i, uint j, uint k); //reference constructor
   explicit Array(uint D0);
   explicit Array(uint D0, uint D1);
   explicit Array(uint D0, uint D1, uint D2);
@@ -163,6 +163,7 @@ template<class T> struct Array {
   void referToSubRange(const Array<T>& a, int i, int I);
   void referToSubDim(const Array<T>& a, uint dim);
   void referToSubDim(const Array<T>& a, uint i, uint j);
+  void referToSubDim(const Array<T>& a, uint i, uint j, uint k);
   void takeOver(Array<T>& a);  //a becomes a reference to its previously owned memory!
   void swap(Array<T>& a);      //the two arrays swap their contents!
   void setGrid(uint dim, T lo, T hi, uint steps);
@@ -178,6 +179,7 @@ template<class T> struct Array {
   T& operator()(const Array<uint> &I) const;
   Array<T> operator[](uint i) const;     // calls referToSubDim(*this, i)
   Array<T> subDim(uint i, uint j) const; // calls referToSubDim(*this, i, j)
+  Array<T> subDim(uint i, uint j, uint k) const; // calls referToSubDim(*this, i, j, k)
   Array<T> subRange(int i, int I) const; // calls referToSubRange(*this, i, I)
   Array<T>& operator()();
   T** getCarray(Array<T*>& Cpointers) const;
