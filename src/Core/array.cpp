@@ -1656,7 +1656,7 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
 #  include "array_instantiate.cxx"
 #undef T
 
-#define T uint16
+#define T uint16_t
 #  include "array_instantiate.cxx"
 #undef T
 

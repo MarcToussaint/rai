@@ -44,7 +44,6 @@
 #define MT_SQRT2 1.414213562373095049
 #define MT_SQRTPI 1.772453850905516027
 typedef unsigned char byte;            ///< byte
-typedef unsigned short int uint16;     ///< 2 bytes
 typedef unsigned int uint;             ///< unsigned integer
 typedef const char* charp;
 
