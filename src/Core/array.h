@@ -606,6 +606,7 @@ template<class T> T absMin(const MT::Array<T>& x);
 template<class T> void innerProduct(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z);
 template<class T> void outerProduct(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z);
 template<class T> void indexWiseProduct(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z);
+template<class T> MT::Array<T> crossProduct(const MT::Array<T>& y, const MT::Array<T>& z); //only for 3 x 3 or (3,n) x 3
 template<class T> T scalarProduct(const MT::Array<T>& v, const MT::Array<T>& w);
 template<class T> T scalarProduct(const MT::Array<T>& g, const MT::Array<T>& v, const MT::Array<T>& w);
 template<class T> MT::Array<T> diagProduct(const MT::Array<T>& v, const MT::Array<T>& w);
