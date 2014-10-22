@@ -1121,11 +1121,11 @@ void scanArrFile(const char* name) {
 #endif
 
 /// numeric (finite difference) check of the gradient of f at x
-bool checkGradient(ScalarFunction &f,
+bool checkGradient(const ScalarFunction& f,
                    const arr& x, double tolerance) {
   arr J, dx, JJ;
   double y, dy;
-  y=f.fs(J, NoArr, x);
+  y=f(J, NoArr, x);
 
   JJ.resize(x.N);
   double eps=CHECK_EPS;
@@ -1133,7 +1133,7 @@ bool checkGradient(ScalarFunction &f,
   for(i=0; i<x.N; i++) {
     dx=x;
     dx.elem(i) += eps;
-    dy = f.fs(NoArr, NoArr, dx);
+    dy = f(NoArr, NoArr, dx);
     dy = (dy-y)/eps;
     JJ(i)=dy;
   }
@@ -1154,9 +1154,9 @@ bool checkGradient(ScalarFunction &f,
   return true;
 }
 
-bool checkHessian(ScalarFunction &f, const arr& x, double tolerance) {
+bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance) {
   arr g, H, dx, dy, Jg;
-  f.fs(g, H, x);
+  f(g, H, x);
   if(H.special==arr::RowShiftedPackedMatrixST) H = unpack(H);
 
   Jg.resize(g.N, x.N);
@@ -1165,7 +1165,7 @@ bool checkHessian(ScalarFunction &f, const arr& x, double tolerance) {
   for(i=0; i<x.N; i++) {
     dx=x;
     dx.elem(i) += eps;
-    f.fs(dy, NoArr, dx);
+    f(dy, NoArr, dx);
     dy = (dy-g)/eps;
     for(k=0; k<g.N; k++) Jg(k, i)=dy.elem(k);
   }
@@ -1186,10 +1186,10 @@ bool checkHessian(ScalarFunction &f, const arr& x, double tolerance) {
   return true;
 }
 
-bool checkJacobian(VectorFunction &f,
+bool checkJacobian(const VectorFunction& f,
                    const arr& x, double tolerance) {
   arr y, J, dx, dy, JJ;
-  f.fv(y, J, x);
+  f(y, J, x);
   if(J.special==arr::RowShiftedPackedMatrixST) J = unpack(J);
 
   JJ.resize(y.N, x.N);
@@ -1198,7 +1198,7 @@ bool checkJacobian(VectorFunction &f,
   for(i=0; i<x.N; i++) {
     dx=x;
     dx.elem(i) += eps;
-    f.fv(dy, NoArr, dx);
+    f(dy, NoArr, dx);
     dy = (dy-y)/eps;
     for(k=0; k<y.N; k++) JJ(k, i)=dy.elem(k);
   }

@@ -27,6 +27,7 @@
 #include <iostream>
 #include <stdint.h>
 #include <string.h>
+#include <functional>
 
 #define FOR1D(x, i)   for(i=0;i<x.N;i++)
 #define FOR1D_DOWN(x, i)   for(i=x.N;i--;)
@@ -370,16 +371,19 @@ extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arg
 /// @{
 
 /// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
-struct ScalarFunction {
-  virtual double fs(arr& g, arr& H, const arr& x) = 0;
-  virtual ~ScalarFunction(){}
-};
+//struct ScalarFunction {
+//  virtual double fs(arr& g, arr& H, const arr& x) = 0;
+//  virtual ~ScalarFunction(){}
+//};
+
+typedef std::function<double(arr& g, arr& H, const arr& x)> ScalarFunction;
 
 /// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
-struct VectorFunction {
-  virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
-  virtual ~VectorFunction(){}
-};
+//struct VectorFunction {
+//  virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
+//  virtual ~VectorFunction(){}
+//};
+typedef std::function<void(arr& y, arr& J, const arr& x)> VectorFunction;
 
 /// a kernel function
 struct KernelFunction {
@@ -528,9 +532,9 @@ void flip_image(byteA &img);
 
 void scanArrFile(const char* name);
 
-bool checkGradient(ScalarFunction &f, const arr& x, double tolerance);
-bool checkHessian(ScalarFunction &f, const arr& x, double tolerance);
-bool checkJacobian(VectorFunction &f, const arr& x, double tolerance);
+bool checkGradient(const ScalarFunction& f, const arr& x, double tolerance);
+bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance);
+bool checkJacobian(const VectorFunction& f, const arr& x, double tolerance);
 
 double NNinv(const arr& a, const arr& b, const arr& Cinv);
 double logNNprec(const arr& a, const arr& b, double prec);

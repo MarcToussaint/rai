@@ -27,12 +27,12 @@
 
 #include "optimization.h"
 
-extern ScalarFunction& RosenbrockFunction;
-extern ScalarFunction& RastriginFunction;
-extern ScalarFunction& SquareFunction;
-extern ScalarFunction& SumFunction;
-extern ScalarFunction& HoleFunction;
-extern ScalarFunction& ChoiceFunction;
+extern ScalarFunction RosenbrockFunction();
+extern ScalarFunction RastriginFunction();
+extern ScalarFunction SquareFunction();
+extern ScalarFunction SumFunction();
+extern ScalarFunction HoleFunction();
+extern ScalarFunction ChoiceFunction();
 
 //===========================================================================
 
@@ -43,7 +43,7 @@ struct RandomLPFunction:ConstrainedProblem {
     n = MT::getParameter<uint>("dim", 2);
   }
   virtual double fc(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x) {
-    double fx =  SumFunction.fs(df, Hf, x);
+    double fx =  SumFunction()(df, Hf, x);
     if(n){ CHECK(x.N==n,""); }else n=x.N;
     if(randomG.d0 != dim_g()){
       randomG.resize(dim_g(),n+1);
@@ -74,7 +74,7 @@ struct ChoiceConstraintFunction:ConstrainedProblem {
   }
   virtual double fc(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x) {
     CHECK(x.N==n,"");
-    double fx =  ChoiceFunction.fs(df, Hf, x);
+    double fx =  ChoiceFunction()(df, Hf, x);
 
     if(&g) g.resize(dim_g());
     if(&Jg) { Jg.resize(g.N, x.N); Jg.setZero(); }

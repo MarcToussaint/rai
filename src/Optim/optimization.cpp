@@ -35,12 +35,12 @@ Singleton<OptOptions> globalOptOptions;
 //documentations... TODO: move! but not in header!
 
 /// A scalar function $y = f(x)$, if @grad@ is not NoArr, gradient is returned
-struct ScalarFunction;
+typedef std::function<double(arr& g, arr& H, const arr& x)> ScalarFunction;
 
 /// A vector function $y = f(x)$, if @J@ is not NoArr, Jacobian is returned
 /// This also implies an optimization problem $\hat f(y) = y^T(x) y(x)$ of (iterated)
 /// Gauss-Newton type where the Hessian is approximated by J^T J
-struct VectorFunction;
+typedef std::function<void(arr& y, arr& J, const arr& x)> VectorFunction;
 
 /// A scalar function $y = f(x)$, if @S@ is non-NULL, local quadratic approximation is returned
 /// This also implies an optimization problem of (iterated) Newton
@@ -54,32 +54,28 @@ struct QuadraticFunction;
 //
 
 double evaluateSF(ScalarFunction& f, const arr& x) {
-  return f.fs(NoArr, NoArr, x);
+  return f(NoArr, NoArr, x);
 }
 
 double evaluateVF(VectorFunction& f, const arr& x) {
   arr y;
-  f.fv(y, NoArr, x);
+  f(y, NoArr, x);
   return sumOfSqr(y);
 }
 
 
 bool checkAllGradients(ConstrainedProblem &P, const arr& x, double tolerance){
-  struct F:ScalarFunction{
-    ConstrainedProblem &P;
-    F(ConstrainedProblem &_P):P(_P){}
-    double fs(arr& g, arr& H, const arr& x){  return P.fc(g, H, NoArr, NoArr, x); }
-  } f(P);
-  struct G:VectorFunction{
-    ConstrainedProblem &P;
-    G(ConstrainedProblem &_P):P(_P){}
-    void fv(arr& y, arr& J, const arr& x){ P.fc(NoArr, NoArr, y, J, x); }
-  } g(P);
+  ScalarFunction F = [P](arr& df, arr& Hf, const arr& x){
+    return P.f(df, Hf, NoArr, NoArr, x);
+  };
+  VectorFunction G = [P](arr& y, arr& Jy, const arr& x){
+    return P.f(NoArr, NoArr, y, Jy, x);
+  };
 
   bool good=true;
-  cout <<"f-gradient: "; good &= checkGradient(f, x, tolerance);
-  cout <<"f-hessian:  "; good &= checkHessian (f, x, tolerance);
-  cout <<"g-jacobian: "; good &= checkJacobian(g, x, tolerance);
+  cout <<"f-gradient: "; good &= checkGradient(F, x, tolerance);
+  cout <<"f-hessian:  "; good &= checkHessian (F, x, tolerance);
+  cout <<"g-jacobian: "; good &= checkJacobian(G, x, tolerance);
   return good;
 }
 
@@ -89,11 +85,11 @@ bool checkAllGradients(ConstrainedProblem &P, const arr& x, double tolerance){
 // helpers
 //
 
-void displayFunction(ScalarFunction &F, bool wait, double lo, double hi){
+void displayFunction(ScalarFunction &f, bool wait, double lo, double hi){
   arr X, Y;
   X.setGrid(2,lo,hi,100);
   Y.resize(X.d0);
-  for(uint i=0;i<X.d0;i++) Y(i) = F.fs(NoArr, NoArr, X[i]);
+  for(uint i=0;i<X.d0;i++) Y(i) = f(NoArr, NoArr, X[i]);
   Y.reshape(101,101);
 //  plotGnuplot();  plotSurface(Y);  plot(true);
   write(LIST<arr>(Y),"z.fct");
@@ -134,7 +130,7 @@ uint optGradDescent(arr& x, ScalarFunction& f, OptOptions o) {
   double fx, fy;
   double a=o.initStep;
   
-  fx = f.fs(grad_x, NoArr, x);  evals++;
+  fx = f(grad_x, NoArr, x);  evals++;
   if(o.verbose>1) cout <<"*** optGradDescent: starting point x=" <<x <<" f(x)=" <<fx <<" a=" <<a <<endl;
   ofstream fil;
   if(o.verbose>0) fil.open("z.opt");
@@ -144,7 +140,7 @@ uint optGradDescent(arr& x, ScalarFunction& f, OptOptions o) {
   
   for(uint k=0;; k++) {
     y = x - a*grad_x;
-    fy = f.fs(grad_y, NoArr, y);  evals++;
+    fy = f(grad_y, NoArr, y);  evals++;
     CHECK(fy==fy, "cost seems to be NAN: fy=" <<fy);
     if(o.verbose>1) cout <<"optGradDescent " <<evals <<' ' <<eval_cost <<" \tprobing y=" <<y <<" \tf(y)=" <<fy <<" \t|grad|=" <<length(grad_y) <<" \ta=" <<a;
     

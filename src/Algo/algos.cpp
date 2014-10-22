@@ -23,19 +23,19 @@
 namespace MT{
 
 void rk4(arr& x1, const arr& x0,
-         VectorFunction& f,
+         VectorFunction f,
          double dt) {
   arr k1,k2,k3,k4;
-  f.fv(k1, NoArr, x0);
-  f.fv(k2, NoArr, x0 + 0.5*dt*k1);
-  f.fv(k3, NoArr, x0 + 0.5*dt*k2);
-  f.fv(k4, NoArr, x0 +     dt*k3);
+  f(k1, NoArr, x0);
+  f(k2, NoArr, x0 + 0.5*dt*k1);
+  f(k3, NoArr, x0 + 0.5*dt*k2);
+  f(k4, NoArr, x0 +     dt*k3);
   
   if(&x1!=&x0) x1 = x0;
   x1 += (dt/6.)*(k1 + 2.*k2 + 2.*k3 + k4);
 }
 
-void rk4_2ndOrder(arr& x, const arr& x0, VectorFunction& f, double dt){
+void rk4_2ndOrder(arr& x, const arr& x0, VectorFunction f, double dt){
   CHECK(x0.nd==2 && x0.d0==2,"need a 2-times-n array   rk4_2ndOrder input");
   struct F2:VectorFunction{
     VectorFunction& f;
@@ -44,7 +44,7 @@ void rk4_2ndOrder(arr& x, const arr& x0, VectorFunction& f, double dt){
       CHECK(x.nd==2 && x.d0==2,"");
       y.resizeAs(x);
       y[0]=x[1];
-      f.fv(y[1](), NoArr, x);
+      f(y[1](), NoArr, x);
     }
 
   } f2(f);
