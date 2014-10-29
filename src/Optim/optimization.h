@@ -55,18 +55,8 @@ typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
 /// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
 typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
 
-struct ConstrainedProblem {
-  uint dim_x;
-  uint dim_g;
-  /// returns \f$f(x), \nabla f(x), \nabla^2 f(x), g(x), \nabla g(x)\f$ (giving NoArr as argument -> do not return this quantity)
-  std::function<double(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x)> f;
-};
-//  virtual double fc(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x) = 0;
-//  virtual uint dim_x() = 0; ///< returns \f$ \dim(x) \f$
-//  virtual uint dim_g() = 0; ///< returns \f$ \dim(g) \f$
-
-//  virtual ~ConstrainedProblem(){}
-//};
+/// returns \f$f(x), \nabla f(x), \nabla^2 f(x), g(x), \nabla g(x)\f$ (giving NoArr as argument -> do not return this quantity)
+typedef std::function<double(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x)> ConstrainedProblem;
 
 /// functions \f$ \phi_t:(x_{t-k},..,x_t) \mapsto y\in\mathbb{R}^{m_t} \f$ over a chain \f$x_0,..,x_T\f$ of variables
 struct KOrderMarkovFunction {
@@ -175,10 +165,6 @@ void displayFunction(ScalarFunction &f, bool wait=true, double lo=-1.2, double h
 #define _OPT_N2(obj, N, ...) _OPT_ ## N(obj, __VA_ARGS__)
 #define _OPT_N1(obj, N, ...) _OPT_N2(obj, N, __VA_ARGS__) //this forces that _NUM_ARGS(...) is expanded to a number N
 #define OPT(...)     (_OPT_N1(globalOptOptions(), _NUM_ARGS(__VA_ARGS__), __VA_ARGS__) , globalOptOptions())
-
-#ifdef  MT_IMPLEMENTATION
-#  include "optimization.cpp"
-#endif
 
 #endif
 

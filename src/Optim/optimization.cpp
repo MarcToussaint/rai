@@ -66,10 +66,10 @@ double evaluateVF(VectorFunction& f, const arr& x) {
 
 bool checkAllGradients(ConstrainedProblem &P, const arr& x, double tolerance){
   ScalarFunction F = [P](arr& df, arr& Hf, const arr& x){
-    return P.f(df, Hf, NoArr, NoArr, x);
+    return P(df, Hf, NoArr, NoArr, x);
   };
   VectorFunction G = [P](arr& y, arr& Jy, const arr& x){
-    return P.f(NoArr, NoArr, y, Jy, x);
+    return P(NoArr, NoArr, y, Jy, x);
   };
 
   bool good=true;
