@@ -56,7 +56,7 @@ typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
 typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
 
 /// returns \f$f(x), \nabla f(x), \nabla^2 f(x), g(x), \nabla g(x)\f$ (giving NoArr as argument -> do not return this quantity)
-typedef std::function<double(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x)> ConstrainedProblem;
+typedef std::function<double(arr& df, arr& Hf, arr& g, arr& Jg, arr& h, arr& Jh, const arr& x)> ConstrainedProblem;
 
 /// functions \f$ \phi_t:(x_{t-k},..,x_t) \mapsto y\in\mathbb{R}^{m_t} \f$ over a chain \f$x_0,..,x_T\f$ of variables
 struct KOrderMarkovFunction {
@@ -71,7 +71,8 @@ struct KOrderMarkovFunction {
   virtual uint dim_x() = 0;       ///< \f$ \dim(x_t) \f$
   virtual uint dim_z(){ return 0; } ///< \f$ \dim(z) \f$
   virtual uint dim_phi(uint t) = 0; ///< \f$ \dim(\phi_t) \f$
-  virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints at the end of \f$ \phi_t \f$
+  virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints at the end of \f$ \phi_t \f$ (before h terms)
+  virtual uint dim_h(uint t){ return 0; } ///< number of equality constraints at the very end of \f$ \phi_t \f$
   virtual arr get_prefix(){ arr x(get_k(), dim_x()); x.setZero(); return x; } ///< the augmentation \f$ (x_{t=-k},..,x_{t=-1}) \f$ that makes \f$ \phi_{0,..,k-1} \f$ well-defined
   virtual arr get_postfix(){ return arr(); } ///< by default there is no definite final configuration
 
@@ -88,7 +89,7 @@ struct KOrderMarkovFunction {
 // checks, evaluation
 //
 
-bool checkAllGradients(ConstrainedProblem &P, const arr& x, double tolerance);
+bool checkAllGradients(const ConstrainedProblem &P, const arr& x, double tolerance);
 bool checkDirectionalGradient(const ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction &f, const arr& x, const arr& delta, double tolerance);
 
@@ -141,7 +142,7 @@ uint optGradDescent(arr& x, ScalarFunction& f, OptOptions opt);
 // helpers
 //
 
-void displayFunction(ScalarFunction &f, bool wait=true, double lo=-1.2, double hi=1.2);
+void displayFunction(ScalarFunction &f, bool wait=false, double lo=-1.2, double hi=1.2);
 
 
 //===========================================================================

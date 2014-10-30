@@ -64,18 +64,22 @@ double evaluateVF(VectorFunction& f, const arr& x) {
 }
 
 
-bool checkAllGradients(ConstrainedProblem &P, const arr& x, double tolerance){
-  ScalarFunction F = [P](arr& df, arr& Hf, const arr& x){
-    return P(df, Hf, NoArr, NoArr, x);
+bool checkAllGradients(const ConstrainedProblem &P, const arr& x, double tolerance){
+  ScalarFunction F = [&P](arr& df, arr& Hf, const arr& x){
+    return P(df, Hf, NoArr, NoArr, NoArr, NoArr, x);
   };
-  VectorFunction G = [P](arr& y, arr& Jy, const arr& x){
-    return P(NoArr, NoArr, y, Jy, x);
+  VectorFunction G = [&P](arr& g, arr& Jg, const arr& x){
+    return P(NoArr, NoArr, g, Jg, NoArr, NoArr, x);
+  };
+  VectorFunction H = [&P](arr& h, arr& Jh, const arr& x){
+    return P(NoArr, NoArr, NoArr, NoArr, h, Jh, x);
   };
 
   bool good=true;
   cout <<"f-gradient: "; good &= checkGradient(F, x, tolerance);
   cout <<"f-hessian:  "; good &= checkHessian (F, x, tolerance);
   cout <<"g-jacobian: "; good &= checkJacobian(G, x, tolerance);
+  cout <<"h-jacobian: "; good &= checkJacobian(H, x, tolerance);
   return good;
 }
 
@@ -89,11 +93,14 @@ void displayFunction(ScalarFunction &f, bool wait, double lo, double hi){
   arr X, Y;
   X.setGrid(2,lo,hi,100);
   Y.resize(X.d0);
-  for(uint i=0;i<X.d0;i++) Y(i) = f(NoArr, NoArr, X[i]);
+  for(uint i=0;i<X.d0;i++){
+    double fx=f(NoArr, NoArr, X[i]);
+    Y(i) = ((fx==fx && fx<10.)? fx : 10.);
+  }
   Y.reshape(101,101);
 //  plotGnuplot();  plotSurface(Y);  plot(true);
   write(LIST<arr>(Y),"z.fct");
-  gnuplot("reset; splot [-1:1][-1:1] 'z.fct' matrix us (1.2*($1/50-1)):(1.2*($2/50-1)):3 w l", wait, true);
+  gnuplot("reset; splot [-1:1][-1:1] 'z.fct' matrix us ($1/50-1):($2/50-1):3 w l", wait, true);
 }
 
 
