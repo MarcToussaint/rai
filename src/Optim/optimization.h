@@ -85,6 +85,7 @@ struct KOrderMarkovFunction {
   virtual uint dim_phi(uint t) = 0; ///< \f$ \dim(\phi_t) \f$
   virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints at the end of \f$ \phi_t \f$ (before h terms)
   virtual uint dim_h(uint t){ return 0; } ///< number of equality constraints at the very end of \f$ \phi_t \f$
+  virtual StringA getPhiNames(uint t){ return StringA(); }
   virtual arr get_prefix(){ arr x(get_k(), dim_x()); x.setZero(); return x; } ///< the augmentation \f$ (x_{t=-k},..,x_{t=-1}) \f$ that makes \f$ \phi_{0,..,k-1} \f$ well-defined
   virtual arr get_postfix(){ return arr(); } ///< by default there is no definite final configuration
 
