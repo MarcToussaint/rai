@@ -56,7 +56,19 @@ typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
 typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
 
 /// returns \f$f(x), \nabla f(x), \nabla^2 f(x), g(x), \nabla g(x)\f$ (giving NoArr as argument -> do not return this quantity)
-typedef std::function<double(arr& df, arr& Hf, arr& g, arr& Jg, arr& h, arr& Jh, const arr& x)> ConstrainedProblem;
+typedef
+std::function<double(arr& df, arr& Hf,
+                     arr& g, arr& Jg,
+                     arr& h, arr& Jh, const arr& x)>
+ConstrainedProblem;
+
+enum TermType { noTT=0, sumOfSqrTT, ineqTT, eqTT };
+typedef MT::Array<TermType> TermTypeA;
+
+typedef
+std::function<double(arr& phi, arr& J, TermTypeA& tt, StringA& termNames, const arr& x)>
+ConstrainedProblemMix;
+
 
 /// functions \f$ \phi_t:(x_{t-k},..,x_t) \mapsto y\in\mathbb{R}^{m_t} \f$ over a chain \f$x_0,..,x_T\f$ of variables
 struct KOrderMarkovFunction {
