@@ -146,7 +146,7 @@ void SquaredCost::initRandom(uint _n, double condition) {
 }
 
 void SquaredCost::fv(arr& y, arr& J,const arr& x) {
-  CHECK(x.N==n,"");
+  CHECK_EQ(x.N,n,"");
   y = M*x;
   if(&J) J=M;
 }
@@ -163,7 +163,7 @@ void NonlinearlyWarpedSquaredCost::initRandom(uint _n, double condition) {
 }
 
 void NonlinearlyWarpedSquaredCost::fv(arr& y, arr& J,const arr& x) {
-  CHECK(x.N==n,"");
+  CHECK_EQ(x.N,n,"");
   arr xx=atan(x);
   y=sq.M*xx;
   if(&J) {
@@ -192,8 +192,8 @@ void ParticleAroundWalls::phi_t(arr& phi, arr& J, uint t, const arr& x_bar){
   uint T=get_T(), n=dim_x(), k=get_k();
 
   //assert some dimensions
-  CHECK(x_bar.d0==k+1,"");
-  CHECK(x_bar.d1==n,"");
+  CHECK_EQ(x_bar.d0,k+1,"");
+  CHECK_EQ(x_bar.d1,n,"");
   CHECK(t<=T,"");
 
   //-- transition costs: append to phi
@@ -223,7 +223,7 @@ void ParticleAroundWalls::phi_t(arr& phi, arr& J, uint t, const arr& x_bar){
   }
 
   uint m=phi.N;
-  CHECK(m==dim_phi(t),"");
+  CHECK_EQ(m,dim_phi(t),"");
 
   if(&J){ //we also need to return the Jacobian
     J.resize(m,k+1,n).setZero();

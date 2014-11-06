@@ -44,7 +44,7 @@ struct RandomLPFunction:ConstrainedProblem {
   }
   virtual double fc(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x) {
     double fx =  SumFunction()(df, Hf, x);
-    if(n){ CHECK(x.N==n,""); }else n=x.N;
+    if(n){ CHECK_EQ(x.N,n,""); }else n=x.N;
     if(randomG.d0 != dim_g()){
       randomG.resize(dim_g(),n+1);
       rndGauss(randomG, 1.);
@@ -75,7 +75,7 @@ struct ChoiceConstraintFunction:ConstrainedProblem {
     } );
   }
   double fc(arr& df, arr& Hf, arr& g, arr& Jg, arr& h, arr& Jh, const arr& x) {
-    CHECK(x.N==n,"");
+    CHECK_EQ(x.N,n,"");
     double fx = ChoiceFunction()(df, Hf, x);
 
     if(&g) g.resize(dim_g());
@@ -161,7 +161,7 @@ struct SinusesFunction:VectorFunction {
     condition = MT::getParameter<double>("condition");
   }
   virtual void fv(arr& phi, arr& J, const arr& x) {
-    CHECK(x.N==2,"");
+    CHECK_EQ(x.N,2,"");
     phi.resize(4);
     phi(0) = sin(a*x(0));
     phi(1) = sin(a*condition*x(1));

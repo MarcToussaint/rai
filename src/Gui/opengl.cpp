@@ -928,7 +928,7 @@ void glGrabImage(byteA& image) { NICO }
     depth values between 0 and 1. */
 void glGrabDepth(byteA& depth) {
   if(!depth.N) depth.resize(glutGet(GLUT_WINDOW_HEIGHT), glutGet(GLUT_WINDOW_WIDTH));
-  CHECK(depth.nd==2, "depth buffer has to be either 2-dimensional");
+  CHECK_EQ(depth.nd,2, "depth buffer has to be either 2-dimensional");
   GLint w=depth.d1, h=depth.d0;
   glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, depth.p);
 }
@@ -938,7 +938,7 @@ void glGrabDepth(byteA& depth) {
     depth values between 0 and 1. */
 void glGrabDepth(floatA& depth) {
   if(!depth.N) depth.resize(glutGet(GLUT_WINDOW_HEIGHT), glutGet(GLUT_WINDOW_WIDTH));
-  CHECK(depth.nd==2, "depth buffer has to be 2-dimensional");
+  CHECK_EQ(depth.nd,2, "depth buffer has to be 2-dimensional");
   GLint w=depth.d1, h=depth.d0;
   glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, depth.p);
 }

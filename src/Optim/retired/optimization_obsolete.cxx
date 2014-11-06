@@ -857,7 +857,7 @@ double tannenbaum(double *grad, double x, double power=8.) {
 
 void SlalomProblem::fv_i(arr& y, arr& J, uint i, const arr& x_i) {
   eval_cost++;
-  CHECK(x_i.N==2,"");
+  CHECK_EQ(x_i.N,2,"");
   y.resize(1);  y(0)=0.;
   if(&J) { J.resize(1,2);  J.setZero(); }
   if(!(i%(T/K))) {

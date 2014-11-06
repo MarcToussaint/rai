@@ -798,7 +798,7 @@ struct RowShiftedPackedMatrix {
 };
 
 inline RowShiftedPackedMatrix& castRowShiftedPackedMatrix(arr& X) {
-  ///CHECK(X.special==X.RowShiftedPackedMatrixST,"can't cast like this!");
+  ///CHECK_EQ(X.special,X.RowShiftedPackedMatrixST,"can't cast like this!");
   if(X.special!=X.RowShiftedPackedMatrixST) throw("can't cast like this!");
   return *((RowShiftedPackedMatrix*)X.aux);
 }

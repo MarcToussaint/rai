@@ -148,7 +148,7 @@ uint optGradDescent(arr& x, ScalarFunction& f, OptOptions o) {
   for(uint k=0;; k++) {
     y = x - a*grad_x;
     fy = f(grad_y, NoArr, y);  evals++;
-    CHECK(fy==fy, "cost seems to be NAN: fy=" <<fy);
+    CHECK_EQ(fy,fy, "cost seems to be NAN: fy=" <<fy);
     if(o.verbose>1) cout <<"optGradDescent " <<evals <<' ' <<eval_cost <<" \tprobing y=" <<y <<" \tf(y)=" <<fy <<" \t|grad|=" <<length(grad_y) <<" \ta=" <<a;
     
     if(fy <= fx) {

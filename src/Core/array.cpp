@@ -324,7 +324,7 @@ void inverse_LU(arr& Xinv, const arr& X) {
 }
 
 void inverse_SymPosDef(arr& Ainv, const arr& A) {
-  CHECK(A.d0==A.d1, "");
+  CHECK_EQ(A.d0,A.d1, "");
 #ifdef MT_LAPACK
   lapack_inverseSymPosDef(Ainv, A);
 #else
@@ -354,7 +354,7 @@ double determinant(const arr& A);
 double cofactor(const arr& A, uint i, uint j);
 
 void gaussFromData(arr& a, arr& A, const arr& X) {
-  CHECK(X.nd==2, "");
+  CHECK_EQ(X.nd,2, "");
   uint N=X.d0, n=X.d1;
   arr ones(N); ones=1.;
   a = ones*X/(double)N; a.reshape(n);
@@ -363,7 +363,7 @@ void gaussFromData(arr& a, arr& A, const arr& X) {
 
 /* compute a rotation matrix that rotates a onto v in arbitrary dimensions */
 void rotationFromAtoB(arr& R, const arr& a, const arr& v) {
-  CHECK(a.N==v.N, "");
+  CHECK_EQ(a.N,v.N, "");
   CHECK(fabs(1.-length(a))<1e-10 && fabs(1.-length(v))<1e-10, "");
   uint n=a.N, i, j;
   if(maxDiff(a, v)<1e-10) { R.setId(n); return; }  //nothing to rotate!!
@@ -787,7 +787,7 @@ void SUS(const arr& p, uint n, uintA& s) {
     while(sum>ptr) { s(j)=i; j++; ptr+=1.; }
   }
   //now, 'sum' should = 'n' and 'ptr' has been 'n'-times increased -> 'j=n'
-  CHECK(j==n, "error in rnd::SUS(p, n, s) -> p not normalized?");
+  CHECK_EQ(j,n, "error in rnd::SUS(p, n, s) -> p not normalized?");
 }
 
 uint SUS(const arr& p) {
@@ -913,7 +913,7 @@ void make_grey(byteA &img) {
 }
 
 void make_RGB(byteA &img) {
-  CHECK(img.nd==2, "make_RGB requires grey image as input");
+  CHECK_EQ(img.nd,2, "make_RGB requires grey image as input");
   byteA tmp;
   tmp.resize(img.d0, img.d1, 3);
   for(uint i=0; i<img.d0; i++) for(uint j=0; j<img.d1; j++) {
@@ -1078,7 +1078,7 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
           *slot=y.N;
           y.resizeMEM(y.N+1, true); y(y.N-1)=0.;
           y_sparse[0].append(i);
-          CHECK(y_sparse[0].N==y.N, "");
+          CHECK_EQ(y_sparse[0].N,y.N, "");
         }
         i=*slot;
         y(i) += A.elem(n) * (*xp);
@@ -1313,7 +1313,7 @@ RowShiftedPackedMatrix *auxRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d
   if(Z.special==arr::noneST) {
     Zaux = new RowShiftedPackedMatrix(Z);
   } else {
-    CHECK(Z.special==arr::RowShiftedPackedMatrixST,"");
+    CHECK_EQ(Z.special,arr::RowShiftedPackedMatrixST,"");
     Zaux = (RowShiftedPackedMatrix*) Z.aux;
   }
   Z.resize(d0, pack_d1);
@@ -1365,7 +1365,7 @@ arr packRowShifted(const arr& X) {
 }
 
 arr unpackRowShifted(const arr& Y) {
-  CHECK(Y.special==arr::RowShiftedPackedMatrixST,"");
+  CHECK_EQ(Y.special,arr::RowShiftedPackedMatrixST,"");
   RowShiftedPackedMatrix *Yaux = (RowShiftedPackedMatrix*)Y.aux;
   arr X(Y.d0, Yaux->real_d1);
   CHECK(!Yaux->symmetric || Y.d0==Yaux->real_d1,"cannot be symmetric!");
@@ -1432,7 +1432,7 @@ arr RowShiftedPackedMatrix::At_A() {
   }
   if(nextInSum){
     arr R2 = comp_At_A(*nextInSum);
-    CHECK(R2.special==arr::RowShiftedPackedMatrixST, "");
+    CHECK_EQ(R2.special,arr::RowShiftedPackedMatrixST, "");
     CHECK(R2.d1<=R.d1,"NIY"); //swap...
     for(uint i=0;i<R2.d0;i++) for(uint j=0;j<R2.d1;j++){
       R(i,j) += R2(i,j);
@@ -1480,7 +1480,7 @@ arr RowShiftedPackedMatrix::A_At() {
 }
 
 arr RowShiftedPackedMatrix::At_x(const arr& x) {
-  CHECK(x.N==Z.d0,"");
+  CHECK_EQ(x.N,Z.d0,"");
   arr y(real_d1);
   y.setZero();
   if(!Z.d1) return y; //Z is identically zero, all rows fully packed -> return zero y
@@ -1500,7 +1500,7 @@ arr RowShiftedPackedMatrix::At_x(const arr& x) {
 }
 
 arr RowShiftedPackedMatrix::A_x(const arr& x) {
-  CHECK(x.N==real_d1,"");
+  CHECK_EQ(x.N,real_d1,"");
   arr y(Z.d0);
   y.setZero();
   if(!Z.d1) return y; //Z is identically zero, all rows fully packed -> return zero y
@@ -1577,7 +1577,7 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
   // (which becomes uniform in the limit that d is small and N goes
   // to infinity).
   
-  CHECK((N*d)%2==0, "It's impossible to create a graph with " <<N<<" nodes and fixed degree " <<d);
+  CHECK_EQ((N*d)%2,0, "It's impossible to create a graph with " <<N<<" nodes and fixed degree " <<d);
   
   uint j;
   

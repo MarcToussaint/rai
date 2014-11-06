@@ -60,7 +60,7 @@ bool rk4_switch(arr& x1, arr& s1, const arr& x0, const arr& s0,
   arr sa=s0, sb, sm, xa=x0, xb, xm; //states at times a, m, t
   rk4(xb, x0, df, dt);
   sf(sb, xb);
-  //CHECK(sa.N==sb.N, "inconsistent state indicators");
+  //CHECK_EQ(sa.N,sb.N, "inconsistent state indicators");
   bool change=false;
   sn=sa.N<sb.N?sa.N:sb.N;
   for(i=0; i<sn; i++) if(s0(i)*sb(i)<0.) {

@@ -45,7 +45,7 @@ void generateShapePoints(arr& points, arr& weights, arr *grad, uint type, uint N
 
 void generateShapePoints(arr& points, arr& weights, arr *grad, uint type, uint N, const arr& params){
   if(type==0){ //cirlce
-    CHECK(params.N==3, ""); //posx posy radius
+    CHECK_EQ(params.N,3, ""); //posx posy radius
     points.resize(N, 2);
     weights.resize(N); weights=1.;
     if(grad){ grad->resize(N, 2, 3);  grad->setZero(); }
@@ -56,7 +56,7 @@ void generateShapePoints(arr& points, arr& weights, arr *grad, uint type, uint N
     return;
   }
   if(type==1){ //cylinder
-    CHECK(params.N==5, "cylinder needs 5 params"); //posx posy diameter height curve-height
+    CHECK_EQ(params.N,5, "cylinder needs 5 params"); //posx posy diameter height curve-height
     points.resize(4*N, 2);
     weights.resize(4*N);
     if(grad){ grad->resize(4*N, 2, 5);  grad->setZero(); }
@@ -87,7 +87,7 @@ void generateShapePoints(arr& points, arr& weights, arr *grad, uint type, uint N
     return;
   }
   if(type==7){ //capped cylinder
-     CHECK(params.N==5, "cylinder needs 5 params"); //posx posy diameter height curve-height
+     CHECK_EQ(params.N,5, "cylinder needs 5 params"); //posx posy diameter height curve-height
      points.resize(4*N, 2);
      weights.resize(4*N);
      if(grad){ grad->resize(4*N, 2, 5);  grad->setZero(); }
@@ -119,7 +119,7 @@ void generateShapePoints(arr& points, arr& weights, arr *grad, uint type, uint N
    }
 #if 0
   if(type==2){ //box
-    CHECK(params.N==6, "box needs 6 params"); //posx posy width height dx dy
+    CHECK_EQ(params.N,6, "box needs 6 params"); //posx posy width height dx dy
     points.resize(4*N, 2);
     weights.resize(4*N);
     if(grad){ grad->resize(4*N, 2, 6);  grad->setZero(); }
@@ -150,7 +150,7 @@ void generateShapePoints(arr& points, arr& weights, arr *grad, uint type, uint N
   }
 #endif
   if(type==2){ //box
-    CHECK(params.N==8, "box needs 8 params"); //posx posy dx1 dy1 dx2 dy2 dx3 dy3
+    CHECK_EQ(params.N,8, "box needs 8 params"); //posx posy dx1 dy1 dx2 dy2 dx3 dy3
     uint K=6, k;
     points.resize(K*N, 2);
     weights.resize(K*N);
@@ -200,7 +200,7 @@ void generateShapePoints(arr& points, arr& weights, arr *grad, uint type, uint N
     return;
   }
   if(type==3){ //6-polygon
-    CHECK(params.N==12, "6-plygon needs 12 params"); //posx posy dx1 dy1 dx2 dy2 dx3 dy3
+    CHECK_EQ(params.N,12, "6-plygon needs 12 params"); //posx posy dx1 dy1 dx2 dy2 dx3 dy3
     uint K=6, k, kp;
     points.resize(K*N, 2);
     weights.resize(K*N);

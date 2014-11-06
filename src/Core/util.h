@@ -63,6 +63,7 @@ typedef const char* charp;
 
 
 
+
 //----- macros for piping doubles EXACTLY (without rounding errors) in hex coding:
 #define OUTHEX(y) "0x" <<std::hex <<*((unsigned long*)&y) <<std::dec
 #define INHEX(y)  std::hex >>*((unsigned long*)&y) >>std::dec

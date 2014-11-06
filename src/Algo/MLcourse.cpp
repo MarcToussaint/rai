@@ -190,7 +190,7 @@ arr KernelLogisticRegression::evaluate(const arr& Z, arr& p_bayes, arr &p_hi, ar
 arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bayesSigma) {
   if(lambda<0.) lambda = MT::getParameter<double>("lambda",1e-10);
 
-  CHECK(y.nd==1, "");
+  CHECK_EQ(y.nd,1, "");
   uint n=y.N, d=X.d1;
   arr Xt;
   transpose(Xt, X);

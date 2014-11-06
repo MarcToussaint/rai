@@ -133,7 +133,7 @@ void sGraphView::updateGraphvizGraph() {
   //first add `nodes' (items without links)
   for_list(Item,  e,  (*G)) {
     e->index=e_COUNT;
-    CHECK(e_COUNT==e->index,"");
+    CHECK_EQ(e_COUNT,e->index,"");
     gvNodes(e_COUNT) = agnode(gvGraph, STRING(e->index <<'_' <<label(e)), true);
     if(e->keys.N) agset(gvNodes(e_COUNT), STR("label"), label(e));
     if(e->parents.N) {

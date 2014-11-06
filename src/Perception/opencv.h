@@ -53,7 +53,7 @@ inline cv::Mat cvMAT(const doubleA& img){
 }
 
 inline byteA cvtMAT(const cv::Mat& mat){
-  CHECK(mat.dims==2,"");
+  CHECK_EQ(mat.dims,2,"");
   if(mat.elemSize()==1) return byteA(mat.data, mat.total());
   if(mat.elemSize()==3) return byteA(mat.data, 3*mat.total()).reshape(mat.rows, mat.cols, 3);
   NIY;

@@ -80,7 +80,7 @@ void Surfels::recomputeSurfelIndices(){
 
 void Surfels::pointCloud2Surfels(const arr& pts, const arr& cols, OpenGL& gl){
   recomputeSurfelIndices();
-  CHECK(pts.d0==surfelIdx.N,"mismatch in #pixels");
+  CHECK_EQ(pts.d0,surfelIdx.N,"mismatch in #pixels");
   mx.lock();
   if(rndPerm.N!=surfelIdx.N) rndPerm.setRandomPerm(surfelIdx.N);
   for(uint i=0;i<1;i++){ //pts.d0;i++){
@@ -89,7 +89,7 @@ void Surfels::pointCloud2Surfels(const arr& pts, const arr& cols, OpenGL& gl){
     uint s = surfelIdx.elem(p);
     if(pts(p,2)<0. || sum(cols[p])>2.9) continue; //not a legible point!
     if(s==0){ //no surfel hit
-      CHECK(mask.elem(p)==0,"");
+      CHECK_EQ(mask.elem(p),0,"");
       pos.append(ARRAY<float>(pts(p,0), pts(p,1), pts(p,2)));
       col.append(ARRAY<float>(cols(p,0),cols(p,1),cols(p,2)));
       norm.append(ARRAY<float>(0,0,-1));
@@ -102,7 +102,7 @@ void Surfels::pointCloud2Surfels(const arr& pts, const arr& cols, OpenGL& gl){
       cout <<"ADDED surfel: p=" <<p <<" pos=" <<pts[p] <<" col=" <<cols[p] <<endl;
     }else{
       s -= 1;
-      CHECK(mask.elem(p)==255,"");
+      CHECK_EQ(mask.elem(p),255,"");
 //      if(sqrt(sumOfSqr(ARRAY<float>(pts(p,0), pts(p,1), pts(p,2)) - pos[2]))<.1){
 //        D(s).add(pts(p,0), pts(p,1), pts(p,2),
 //                 cols(p,0),cols(p,1),cols(p,2));
