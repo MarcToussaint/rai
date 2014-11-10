@@ -23,6 +23,8 @@ uint eval_cost=0;
 //SqrPotential& NoPot = *((SqrPotential*)NULL);
 //PairSqrPotential& NoPairPot = *((PairSqrPotential*)NULL);
 Singleton<OptOptions> globalOptOptions;
+TermTypeA& NoTermTypeA = *((TermTypeA*)NULL);
+
 
 //===========================================================================
 //
@@ -129,6 +131,27 @@ OptOptions::OptOptions() {
   aulaMuInc =MT::getParameter<double>("opt/aulaMuInc",1.);
 }
 
+void OptOptions::write(std::ostream& os) const{
+#define WRT(x) os <<#x <<" = " <<x <<endl;
+  WRT(verbose);
+//  double *fmin_return);
+  WRT(stopTolerance);
+  WRT(stopEvals);
+  WRT(stopIters);
+  WRT(initStep);
+  WRT(minStep);
+  WRT(maxStep);
+  WRT(damping);
+  WRT(stepInc);
+  WRT(stepDec);
+  WRT(dampingInc);
+  WRT(dampingDec);
+  WRT(nonStrictSteps);
+  WRT(allowOverstep);
+  WRT(constrainedMethod);
+  WRT(aulaMuInc);
+#undef WRT
+}
 
 /// minimizes \f$f(x)\f$ using its gradient only
 uint optGradDescent(arr& x, ScalarFunction& f, OptOptions o) {

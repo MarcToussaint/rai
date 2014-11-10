@@ -64,9 +64,10 @@ ConstrainedProblem;
 
 enum TermType { noTT=0, sumOfSqrTT, ineqTT, eqTT };
 typedef MT::Array<TermType> TermTypeA;
+extern TermTypeA& NoTermTypeA;
 
 typedef
-std::function<double(arr& phi, arr& J, TermTypeA& tt, StringA& termNames, const arr& x)>
+std::function<void(arr& phi, arr& J, TermTypeA& tt, const arr& x)>
 ConstrainedProblemMix;
 
 
@@ -75,7 +76,7 @@ struct KOrderMarkovFunction {
   /// returns $\f\phi(x), \nabla \phi(x)\f$ for a given time step t and a k+1 tuple of states \f$\bar x = (x_{t-k},..,x_t)\f$.
   /// This defines the cost function \f$f_t = \phi_t^\top \phi_t\f$ in the time slice. Optionally, the last dim_g entries of
   ///  \f$\phi\f$ are interpreted as inequality constraint function \f$g(\bar x)\f$ for time slice t
-  virtual void phi_t(arr& phi, arr& J, uint t, const arr& x_bar) = 0;
+  virtual void phi_t(arr& phi, arr& J, TermTypeA& tt, uint t, const arr& x_bar) = 0;
   
   //functions to get the parameters $T$, $k$ and $n$ of the $k$-order Markov Process
   virtual uint get_T() = 0;       ///< horizon (the total x-dimension is (T+1)*n )
@@ -136,7 +137,9 @@ struct OptOptions {
   ConstrainedMethodType constrainedMethod;
   double aulaMuInc;
   OptOptions();
+  void write(std::ostream& os) const;
 };
+stdOutPipe(OptOptions);
 
 extern Singleton<OptOptions> globalOptOptions;
 
