@@ -814,10 +814,10 @@ void gnuplot(const arr& X) {
     return;
   }
   if(X.nd==1) {  //assume curve -> plot
-//    arr Y;
-//    Y.referTo(X);
-//    Y.resize(Y.N, 1);
-    FILE("z.pltX") <<X;
+    arr Y;
+    Y.referTo(X);
+    Y.reshape(Y.N, 1);
+    FILE("z.pltX") <<Y;
     gnuplot("plot 'z.pltX' us 1");
     return;
   }

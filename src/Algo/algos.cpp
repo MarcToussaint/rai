@@ -23,7 +23,7 @@
 namespace MT{
 
 void rk4(arr& x1, const arr& x0,
-         VectorFunction f,
+         const VectorFunction& f,
          double dt) {
   arr k1,k2,k3,k4;
   f(k1, NoArr, x0);
@@ -35,18 +35,21 @@ void rk4(arr& x1, const arr& x0,
   x1 += (dt/6.)*(k1 + 2.*k2 + 2.*k3 + k4);
 }
 
-void rk4_2ndOrder(arr& x, const arr& x0, VectorFunction f, double dt){
+void rk4_2ndOrder(arr& x, const arr& x0, const VectorFunction& f, double dt){
   CHECK(x0.nd==2 && x0.d0==2,"need a 2-times-n array   rk4_2ndOrder input");
   struct F2:VectorFunction{
-    VectorFunction& f;
-    F2(VectorFunction& _f):f(_f){}
+    const VectorFunction& f;
+    F2(const VectorFunction& _f):f(_f){
+      VectorFunction::operator= ( [this](arr& y, arr& J, const arr& x) -> void {
+        fv(y, J, x);
+      } );
+    }
     void fv(arr& y, arr& J, const arr& x){
       CHECK(x.nd==2 && x.d0==2,"");
       y.resizeAs(x);
       y[0]=x[1];
       f(y[1](), NoArr, x);
     }
-
   } f2(f);
   rk4(x, x0, f2, dt);
 }
