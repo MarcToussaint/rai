@@ -36,7 +36,7 @@ extern uint eval_cost;
 // functions that imply optimization problems
 //
 
-/** NOTE: Why do I define these virtual function with so many arguments to return f, J, and constraints all at once,
+/** NOTE: Why do I define the functions with many arguments to return f, J, and constraints all at once,
  * instead of having nice individual methods to return those?
  *
  * 1) Because I want these problem definitions (classes) to be STATE-LESS. That is, there must not be a set_x(x); before a get_f();
@@ -49,35 +49,34 @@ extern uint eval_cost;
  *
  */
 
-#if 0 //these are already defined in array.h
 /// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
-struct ScalarFunction {
-  virtual double fs(arr& g, arr& H, const arr& x) = 0;
-  virtual ~ScalarFunction(){}
-};
+typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
 
 /// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
-struct VectorFunction {
-  virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if !NoArr) Jacobian J for x
-  virtual ~VectorFunction(){}
-};
-#endif
+typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
 
-struct ConstrainedProblem {
-  /// returns \f$f(x), \nabla f(x), \nabla^2 f(x), g(x), \nabla g(x)\f$ (giving NoArr as argument -> do not return this quantity)
-  virtual double fc(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x) = 0;
-  virtual uint dim_x() = 0; ///< returns \f$ \dim(x) \f$
-  virtual uint dim_g() = 0; ///< returns \f$ \dim(g) \f$
-  arr y,Jy;
-  virtual ~ConstrainedProblem(){}
-};
+/// returns \f$f(x), \nabla f(x), \nabla^2 f(x), g(x), \nabla g(x)\f$ (giving NoArr as argument -> do not return this quantity)
+typedef
+std::function<double(arr& df, arr& Hf,
+                     arr& g, arr& Jg,
+                     arr& h, arr& Jh, const arr& x)>
+ConstrainedProblem;
+
+enum TermType { noTT=0, sumOfSqrTT, ineqTT, eqTT };
+typedef MT::Array<TermType> TermTypeA;
+extern TermTypeA& NoTermTypeA;
+
+typedef
+std::function<void(arr& phi, arr& J, TermTypeA& tt, const arr& x)>
+ConstrainedProblemMix;
+
 
 /// functions \f$ \phi_t:(x_{t-k},..,x_t) \mapsto y\in\mathbb{R}^{m_t} \f$ over a chain \f$x_0,..,x_T\f$ of variables
 struct KOrderMarkovFunction {
   /// returns $\f\phi(x), \nabla \phi(x)\f$ for a given time step t and a k+1 tuple of states \f$\bar x = (x_{t-k},..,x_t)\f$.
   /// This defines the cost function \f$f_t = \phi_t^\top \phi_t\f$ in the time slice. Optionally, the last dim_g entries of
   ///  \f$\phi\f$ are interpreted as inequality constraint function \f$g(\bar x)\f$ for time slice t
-  virtual void phi_t(arr& phi, arr& J, uint t, const arr& x_bar) = 0;
+  virtual void phi_t(arr& phi, arr& J, TermTypeA& tt, uint t, const arr& x_bar) = 0;
   
   //functions to get the parameters $T$, $k$ and $n$ of the $k$-order Markov Process
   virtual uint get_T() = 0;       ///< horizon (the total x-dimension is (T+1)*n )
@@ -85,7 +84,9 @@ struct KOrderMarkovFunction {
   virtual uint dim_x() = 0;       ///< \f$ \dim(x_t) \f$
   virtual uint dim_z(){ return 0; } ///< \f$ \dim(z) \f$
   virtual uint dim_phi(uint t) = 0; ///< \f$ \dim(\phi_t) \f$
-  virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints at the end of \f$ \phi_t \f$
+  virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints at the end of \f$ \phi_t \f$ (before h terms)
+  virtual uint dim_h(uint t){ return 0; } ///< number of equality constraints at the very end of \f$ \phi_t \f$
+  virtual StringA getPhiNames(uint t){ return StringA(); }
   virtual arr get_prefix(){ arr x(get_k(), dim_x()); x.setZero(); return x; } ///< the augmentation \f$ (x_{t=-k},..,x_{t=-1}) \f$ that makes \f$ \phi_{0,..,k-1} \f$ well-defined
   virtual arr get_postfix(){ return arr(); } ///< by default there is no definite final configuration
 
@@ -99,33 +100,12 @@ struct KOrderMarkovFunction {
 
 //===========================================================================
 //
-// converter
-//
-
-/// A struct that allows to convert one function type into another, even when given as argument
-struct Convert {
-  struct sConvert* s;
-  Convert(ScalarFunction&);
-  Convert(VectorFunction&);
-  Convert(KOrderMarkovFunction&);
-  Convert(double(*fs)(arr*, const arr&, void*),void *data);
-  Convert(void (*fv)(arr&, arr*, const arr&, void*),void *data);
-  ~Convert();
-  operator ScalarFunction&();
-  operator VectorFunction&();
-  operator ConstrainedProblem&();
-  operator KOrderMarkovFunction&();
-};
-
-
-//===========================================================================
-//
 // checks, evaluation
 //
 
-bool checkAllGradients(ConstrainedProblem &P, const arr& x, double tolerance);
-bool checkDirectionalGradient(ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
-bool checkDirectionalJacobian(VectorFunction &f, const arr& x, const arr& delta, double tolerance);
+bool checkAllGradients(const ConstrainedProblem &P, const arr& x, double tolerance);
+bool checkDirectionalGradient(const ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
+bool checkDirectionalJacobian(const VectorFunction &f, const arr& x, const arr& delta, double tolerance);
 
 
 //these actually call the functions (->query cost) to evalute them at some point
@@ -155,13 +135,18 @@ struct OptOptions {
   int nonStrictSteps; //# of non-strict iterations
   bool allowOverstep;
   ConstrainedMethodType constrainedMethod;
+  double aulaMuInc;
   OptOptions();
+  void write(std::ostream& os) const;
 };
+stdOutPipe(OptOptions);
 
-extern OptOptions globalOptOptions;
-#define NOOPT (globalOptOptions)
+extern Singleton<OptOptions> globalOptOptions;
+
+#define NOOPT (globalOptOptions())
 
 // declared separately:
+#include "opt-convert.h"
 #include "opt-newton.h"
 #include "opt-constrained.h"
 #include "opt-rprop.h"
@@ -173,7 +158,7 @@ uint optGradDescent(arr& x, ScalarFunction& f, OptOptions opt);
 // helpers
 //
 
-void displayFunction(ScalarFunction &F, bool wait=true, double lo=-1.2, double hi=1.2);
+void displayFunction(ScalarFunction &f, bool wait=false, double lo=-1.2, double hi=1.2);
 
 
 //===========================================================================
@@ -196,11 +181,7 @@ void displayFunction(ScalarFunction &F, bool wait=true, double lo=-1.2, double h
 #define _OPT_9(obj, assign, ...) obj.assign, _OPT_8(obj,__VA_ARGS__)
 #define _OPT_N2(obj, N, ...) _OPT_ ## N(obj, __VA_ARGS__)
 #define _OPT_N1(obj, N, ...) _OPT_N2(obj, N, __VA_ARGS__) //this forces that _NUM_ARGS(...) is expanded to a number N
-#define OPT(...)     (_OPT_N1(globalOptOptions, _NUM_ARGS(__VA_ARGS__), __VA_ARGS__) , globalOptOptions)
-
-#ifdef  MT_IMPLEMENTATION
-#  include "optimization.cpp"
-#endif
+#define OPT(...)     (_OPT_N1(globalOptOptions(), _NUM_ARGS(__VA_ARGS__), __VA_ARGS__) , globalOptOptions())
 
 #endif
 

@@ -27,12 +27,12 @@
 
 #include "optimization.h"
 
-extern ScalarFunction& RosenbrockFunction;
-extern ScalarFunction& RastriginFunction;
-extern ScalarFunction& SquareFunction;
-extern ScalarFunction& SumFunction;
-extern ScalarFunction& HoleFunction;
-extern ScalarFunction& ChoiceFunction;
+extern ScalarFunction RosenbrockFunction();
+extern ScalarFunction RastriginFunction();
+extern ScalarFunction SquareFunction();
+extern ScalarFunction SumFunction();
+extern ScalarFunction HoleFunction();
+extern ScalarFunction ChoiceFunction();
 
 //===========================================================================
 
@@ -43,8 +43,8 @@ struct RandomLPFunction:ConstrainedProblem {
     n = MT::getParameter<uint>("dim", 2);
   }
   virtual double fc(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x) {
-    double fx =  SumFunction.fs(df, Hf, x);
-    if(n){ CHECK(x.N==n,""); }else n=x.N;
+    double fx =  SumFunction()(df, Hf, x);
+    if(n){ CHECK_EQ(x.N,n,""); }else n=x.N;
     if(randomG.d0 != dim_g()){
       randomG.resize(dim_g(),n+1);
       rndGauss(randomG, 1.);
@@ -58,26 +58,30 @@ struct RandomLPFunction:ConstrainedProblem {
     return fx;
   }
   virtual uint dim_x(){ return n;  }
-  virtual uint dim_g(){ return 5*n+2; }
+  virtual uint dim_g(){ return 5*n+5; }
 };
 
 //===========================================================================
 
 struct ChoiceConstraintFunction:ConstrainedProblem {
-  enum WhichConstraint { wedge2D=1, halfcircle2D, randomLinear } which;
+  enum WhichConstraint { wedge2D=1, halfcircle2D, randomLinear, circleLine2D } which;
   uint n;
   arr randomG;
-//  ChoiceFunction f;
   ChoiceConstraintFunction() {
     which = (WhichConstraint) MT::getParameter<int>("constraintChoice");
     n = MT::getParameter<uint>("dim", 2);
+    ConstrainedProblem::operator=( [this](arr& df, arr& Hf, arr& g, arr& Jg, arr& h, arr& Jh, const arr& x) -> double{
+      return this->fc(df, Hf, g, Jg, h, Jh, x);
+    } );
   }
-  virtual double fc(arr& df, arr& Hf, arr& g, arr& Jg, const arr& x) {
-    CHECK(x.N==n,"");
-    double fx =  ChoiceFunction.fs(df, Hf, x);
+  double fc(arr& df, arr& Hf, arr& g, arr& Jg, arr& h, arr& Jh, const arr& x) {
+    CHECK_EQ(x.N,n,"");
+    double fx = ChoiceFunction()(df, Hf, x);
 
     if(&g) g.resize(dim_g());
     if(&Jg) { Jg.resize(g.N, x.N); Jg.setZero(); }
+    if(&h) h.resize(dim_h());
+    if(&Jh) { Jh.resize(h.N, x.N); Jh.setZero(); }
     switch(which) {
       case wedge2D:
         if(&g)  for(uint i=0;i<g.N;i++) g(i) = -sum(x)+1.5*x(i)-.1;
@@ -86,6 +90,10 @@ struct ChoiceConstraintFunction:ConstrainedProblem {
       case halfcircle2D:
         if(&g) g(0) = sumOfSqr(x)-.25;     if(&Jg) Jg[0]() = 2.*x; //feasible=IN circle of radius .5
         if(&g) g(1) = -x(0)-.2;            if(&Jg) Jg(1,0) = -1.; //feasible=right of -.2
+        break;
+      case circleLine2D:
+        if(&g) g(0) = sumOfSqr(x)-.25;     if(&Jg) Jg[0]() = 2.*x; //feasible=IN circle of radius .5
+        if(&h) h(0) = x(0);                if(&Jh) Jh(0,0) = 1.;
         break;
       case randomLinear:{
         uint n=x.N;
@@ -110,7 +118,12 @@ struct ChoiceConstraintFunction:ConstrainedProblem {
   virtual uint dim_g(){
     if(which==randomLinear) return 5*n+5;
     if(which==wedge2D) return n;
+    if(which==circleLine2D) return 1;
     return 2;
+  }
+  virtual uint dim_h(){
+    if(which==circleLine2D) return 1;
+    return 0;
   }
 };
 
@@ -148,7 +161,7 @@ struct SinusesFunction:VectorFunction {
     condition = MT::getParameter<double>("condition");
   }
   virtual void fv(arr& phi, arr& J, const arr& x) {
-    CHECK(x.N==2,"");
+    CHECK_EQ(x.N,2,"");
     phi.resize(4);
     phi(0) = sin(a*x(0));
     phi(1) = sin(a*condition*x(1));

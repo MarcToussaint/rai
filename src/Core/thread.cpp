@@ -120,14 +120,14 @@ void ConditionVariable::unlock() {
 
 int ConditionVariable::getValue(bool userHasLocked) const {
   Mutex *m = (Mutex*)&mutex; //sorry: to allow for 'const' access
-  if(!userHasLocked) m->lock(); else CHECK(m->state==syscall(SYS_gettid),"user must have locked before calling this!");
+  if(!userHasLocked) m->lock(); else CHECK_EQ(m->state,syscall(SYS_gettid),"user must have locked before calling this!");
   int i=value;
   if(!userHasLocked) m->unlock();
   return i;
 }
 
 void ConditionVariable::waitForSignal(bool userHasLocked) {
-  if(!userHasLocked) mutex.lock(); else CHECK(mutex.state==syscall(SYS_gettid),"user must have locked before calling this!");
+  if(!userHasLocked) mutex.lock(); else CHECK_EQ(mutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
   int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   if(!userHasLocked) mutex.unlock();
 }
@@ -143,14 +143,14 @@ void ConditionVariable::waitForSignal(double seconds, bool userHasLocked) {
     timeout.tv_nsec-=1000000000l;
   }
 
-  if(!userHasLocked) mutex.lock(); else CHECK(mutex.state==syscall(SYS_gettid),"user must have locked before calling this!");
+  if(!userHasLocked) mutex.lock(); else CHECK_EQ(mutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
   int rc = pthread_cond_timedwait(&cond, &mutex.mutex, &timeout);
   if(rc && rc!=ETIMEDOUT) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   if(!userHasLocked) mutex.unlock();
 }
 
 void ConditionVariable::waitForValueEq(int i, bool userHasLocked) {
-  if(!userHasLocked) mutex.lock(); else CHECK(mutex.state==syscall(SYS_gettid),"user must have locked before calling this!");
+  if(!userHasLocked) mutex.lock(); else CHECK_EQ(mutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
   while(value!=i) {
     int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
@@ -158,7 +158,7 @@ void ConditionVariable::waitForValueEq(int i, bool userHasLocked) {
 }
 
 void ConditionVariable::waitForValueNotEq(int i, bool userHasLocked) {
-  if(!userHasLocked) mutex.lock(); else CHECK(mutex.state==syscall(SYS_gettid),"user must have locked before calling this!");
+  if(!userHasLocked) mutex.lock(); else CHECK_EQ(mutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
   while(value==i) {
     int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
@@ -166,7 +166,7 @@ void ConditionVariable::waitForValueNotEq(int i, bool userHasLocked) {
 }
 
 void ConditionVariable::waitForValueGreaterThan(int i, bool userHasLocked) {
-  if(!userHasLocked) mutex.lock(); else CHECK(mutex.state==syscall(SYS_gettid),"user must have locked before calling this!");
+  if(!userHasLocked) mutex.lock(); else CHECK_EQ(mutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
   while(value<=i) {
     int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
@@ -174,7 +174,7 @@ void ConditionVariable::waitForValueGreaterThan(int i, bool userHasLocked) {
 }
 
 void ConditionVariable::waitForValueSmallerThan(int i, bool userHasLocked) {
-  if(!userHasLocked) mutex.lock(); else CHECK(mutex.state==syscall(SYS_gettid),"user must have locked before calling this!");
+  if(!userHasLocked) mutex.lock(); else CHECK_EQ(mutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
   while(value>=i) {
     int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
@@ -369,7 +369,7 @@ void Thread::threadCancel() {
 
 void Thread::threadStep(uint steps, bool wait) {
   if(isClosed()) threadOpen();
-  //CHECK(state.value==tsIDLE, "never step while thread is busy!");
+  //CHECK_EQ(state.value,tsIDLE, "never step while thread is busy!");
   state.setValue(steps);
   if(wait) waitForIdle();
 }

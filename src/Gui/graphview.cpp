@@ -17,23 +17,22 @@
     -----------------------------------------------------------------  */
 
 
-
-
-
+#include "graphview.h"
 #include <Core/util_t.h>
 #include <Core/array_t.h>
 #include <Gui/gtk.h>
 
 #if defined MT_GTK and defined MT_GRAPHVIZ
 
+#include <graphviz/graphviz_version.h>
+#if defined PACKAGE_URL //check the graphviz version (awkward...)
+
 #include <gtk/gtk.h>
-// #define WITH_CGRAPH
 #include <graphviz/gvc.h>
 #include <graphviz/gvplugin_device.h>
 #undef MIN
 #undef MAX
 
-#include "graphview.h"
 
 #define INFO(x) //printf("CALLBACK: %s\n",#x);
 
@@ -134,7 +133,7 @@ void sGraphView::updateGraphvizGraph() {
   //first add `nodes' (items without links)
   for_list(Item,  e,  (*G)) {
     e->index=e_COUNT;
-    CHECK(e_COUNT==e->index,"");
+    CHECK_EQ(e_COUNT,e->index,"");
     gvNodes(e_COUNT) = agnode(gvGraph, STRING(e->index <<'_' <<label(e)), true);
     if(e->keys.N) agset(gvNodes(e_COUNT), STR("label"), label(e));
     if(e->parents.N) {
@@ -377,14 +376,19 @@ bool sGraphView::on_drawingarea_scroll_event(GtkWidget       *widget,           
 
 #undef STR
 
-#else //defined MT_GTK and defined MT_GRAPHVIZ
+#else //for bad versions
+GraphView::GraphView(KeyValueGraph& G, const char* title, void *container) { NICO }
+GraphView::~GraphView() { NICO }
+void GraphView::watch() { NICO }
+void GraphView::update() { NICO }
+#endif
 
+#else //defined MT_GTK and defined MT_GRAPHVIZ
 #include "graphview.h"
 GraphView::GraphView(KeyValueGraph& G, const char* title, void *container) { NICO }
 GraphView::~GraphView() { NICO }
 void GraphView::watch() { NICO }
 void GraphView::update() { NICO }
-
 #endif
 
 
@@ -393,7 +397,7 @@ void GraphView::update() { NICO }
 // explicit instantiations
 //
 
-#if defined MT_GTK and defined MT_GRAPHVIZ
+#if defined MT_GTK and defined MT_GRAPHVIZ and defined PACKAGE_URL
 template MT::Array<Agnode_t*>::Array();
 template MT::Array<Agnode_t*>::~Array();
 #endif

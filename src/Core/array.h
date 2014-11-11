@@ -14,8 +14,7 @@
     
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
-
+    ---------------------------------------------------------------  */
 
 /// @file
 /// @ingroup group_array
@@ -28,6 +27,7 @@
 #include <iostream>
 #include <stdint.h>
 #include <string.h>
+#include <functional>
 
 #define FOR1D(x, i)   for(i=0;i<x.N;i++)
 #define FOR1D_DOWN(x, i)   for(i=x.N;i--;)
@@ -100,6 +100,7 @@ template<class T> struct Array {
   Array(const Array<T>& a);                 //copy constructor
   Array(const Array<T>& a, uint i);         //reference constructor
   Array(const Array<T>& a, uint i, uint j); //reference constructor
+  Array(const Array<T>& a, uint i, uint j, uint k); //reference constructor
   explicit Array(uint D0);
   explicit Array(uint D0, uint D1);
   explicit Array(uint D0, uint D1, uint D2);
@@ -163,6 +164,7 @@ template<class T> struct Array {
   void referToSubRange(const Array<T>& a, int i, int I);
   void referToSubDim(const Array<T>& a, uint dim);
   void referToSubDim(const Array<T>& a, uint i, uint j);
+  void referToSubDim(const Array<T>& a, uint i, uint j, uint k);
   void takeOver(Array<T>& a);  //a becomes a reference to its previously owned memory!
   void swap(Array<T>& a);      //the two arrays swap their contents!
   void setGrid(uint dim, T lo, T hi, uint steps);
@@ -178,6 +180,7 @@ template<class T> struct Array {
   T& operator()(const Array<uint> &I) const;
   Array<T> operator[](uint i) const;     // calls referToSubDim(*this, i)
   Array<T> subDim(uint i, uint j) const; // calls referToSubDim(*this, i, j)
+  Array<T> subDim(uint i, uint j, uint k) const; // calls referToSubDim(*this, i, j, k)
   Array<T> subRange(int i, int I) const; // calls referToSubRange(*this, i, I)
   Array<T>& operator()();
   T** getCarray(Array<T*>& Cpointers) const;
@@ -338,6 +341,7 @@ BinaryOperator(/ , /=);
 /// @{
 
 typedef MT::Array<double> arr;
+typedef MT::Array<float>  arrf;
 typedef MT::Array<double> doubleA;
 typedef MT::Array<float>  floatA;
 typedef MT::Array<uint>   uintA;
@@ -345,9 +349,11 @@ typedef MT::Array<int>    intA;
 typedef MT::Array<char>   charA;
 typedef MT::Array<byte>   byteA;
 typedef MT::Array<bool>   boolA;
+typedef MT::Array<uint16_t>   uint16A;
+typedef MT::Array<uint32_t>   uint32A;
 typedef MT::Array<const char*>  CstrList;
 typedef MT::Array<arr*>   arrL;
-typedef MT::Array<arr> arrA;
+typedef MT::Array<arr>    arrA;
 
 namespace MT { struct String; }
 typedef MT::Array<MT::String> StringA;
@@ -367,16 +373,19 @@ extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arg
 /// @{
 
 /// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
-struct ScalarFunction {
-  virtual double fs(arr& g, arr& H, const arr& x) = 0;
-  virtual ~ScalarFunction(){}
-};
+//struct ScalarFunction {
+//  virtual double fs(arr& g, arr& H, const arr& x) = 0;
+//  virtual ~ScalarFunction(){}
+//};
+
+typedef std::function<double(arr& g, arr& H, const arr& x)> ScalarFunction;
 
 /// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
-struct VectorFunction {
-  virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
-  virtual ~VectorFunction(){}
-};
+//struct VectorFunction {
+//  virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
+//  virtual ~VectorFunction(){}
+//};
+typedef std::function<void(arr& y, arr& J, const arr& x)> VectorFunction;
 
 /// a kernel function
 struct KernelFunction {
@@ -408,9 +417,15 @@ template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T
 template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o) {      MT::Array<T*> z(7); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; z(6)=(T*)&o; return z; }
 template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p) { MT::Array<T*> z(8); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; z(6)=(T*)&o; z(7)=(T*)&p; return z; }
 
+MT::Array<MT::String> STRINGS();
 MT::Array<MT::String> STRINGS(const char* s0);
 MT::Array<MT::String> STRINGS(const char* s0, const char* s1);
 MT::Array<MT::String> STRINGS(const char* s0, const char* s1, const char* s2);
+
+#define STRINGS_0()           (ARRAY<MT::String>())
+#define STRINGS_1(s0)         (ARRAY<MT::String>(STRING(s0)))
+#define STRINGS_2(s0, s1)     (ARRAY<MT::String>(STRING(s0),STRING(s1)))
+#define STRINGS_3(s0, s1, s2) (ARRAY<MT::String>(STRING(s0),STRING(s1),STRING(s2)))
 
 
 //===========================================================================
@@ -426,7 +441,7 @@ inline arr eye(uint n) { return eye(n, n); }
 /// return matrix of ones
 inline arr ones(const uintA& d) {  arr z;  z.resize(d);  z=1.;  return z;  }
 /// return VECTOR of ones
-inline arr ones(uint n) { return ones(TUP(n, n)); }
+inline arr ones(uint n) { return ones(TUP(n)); }
 /// return matrix of ones
 inline arr ones(uint d0, uint d1) { return ones(TUP(d0, d1)); }
 
@@ -493,7 +508,7 @@ uint inverse_SVD(arr& inverse, const arr& A);
 void inverse_LU(arr& Xinv, const arr& X);
 void inverse_SymPosDef(arr& Ainv, const arr& A);
 inline arr inverse_SymPosDef(const arr& A){ arr Ainv; inverse_SymPosDef(Ainv, A); return Ainv; }
-void pseudoInverse(arr& Ainv, const arr& A, const arr& Winv, double robustnessEps);
+arr pseudoInverse(const arr& A, const arr& Winv=NoArr, double robustnessEps=1e-10);
 void gaussFromData(arr& a, arr& A, const arr& X);
 void rotationFromAtoB(arr& R, const arr& a, const arr& v);
 
@@ -519,9 +534,9 @@ void flip_image(byteA &img);
 
 void scanArrFile(const char* name);
 
-bool checkGradient(ScalarFunction &f, const arr& x, double tolerance);
-bool checkHessian(ScalarFunction &f, const arr& x, double tolerance);
-bool checkJacobian(VectorFunction &f, const arr& x, double tolerance);
+bool checkGradient(const ScalarFunction& f, const arr& x, double tolerance);
+bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance);
+bool checkJacobian(const VectorFunction& f, const arr& x, double tolerance);
 
 double NNinv(const arr& a, const arr& b, const arr& Cinv);
 double logNNprec(const arr& a, const arr& b, double prec);
@@ -597,6 +612,7 @@ template<class T> T absMin(const MT::Array<T>& x);
 template<class T> void innerProduct(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z);
 template<class T> void outerProduct(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z);
 template<class T> void indexWiseProduct(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z);
+template<class T> MT::Array<T> crossProduct(const MT::Array<T>& y, const MT::Array<T>& z); //only for 3 x 3 or (3,n) x 3
 template<class T> T scalarProduct(const MT::Array<T>& v, const MT::Array<T>& w);
 template<class T> T scalarProduct(const MT::Array<T>& g, const MT::Array<T>& v, const MT::Array<T>& w);
 template<class T> MT::Array<T> diagProduct(const MT::Array<T>& v, const MT::Array<T>& w);
@@ -755,6 +771,7 @@ void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs);
 bool lapack_isPositiveSemiDefinite(const arr& symmA);
 void lapack_inverseSymPosDef(arr& Ainv, const arr& A);
 double lapack_determinantSymPosDef(const arr& A);
+inline arr lapack_inverseSymPosDef(const arr& A){ arr Ainv; lapack_inverseSymPosDef(Ainv, A); return Ainv; }
 arr lapack_Ainv_b_sym(const arr& A, const arr& b);
 void lapack_min_Ax_b(arr& x,const arr& A, const arr& b);
 
@@ -784,7 +801,7 @@ struct RowShiftedPackedMatrix {
 };
 
 inline RowShiftedPackedMatrix& castRowShiftedPackedMatrix(arr& X) {
-  ///CHECK(X.special==X.RowShiftedPackedMatrixST,"can't cast like this!");
+  ///CHECK_EQ(X.special,X.RowShiftedPackedMatrixST,"can't cast like this!");
   if(X.special!=X.RowShiftedPackedMatrixST) throw("can't cast like this!");
   return *((RowShiftedPackedMatrix*)X.aux);
 }

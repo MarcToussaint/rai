@@ -324,7 +324,7 @@ void inverse_LU(arr& Xinv, const arr& X) {
 }
 
 void inverse_SymPosDef(arr& Ainv, const arr& A) {
-  CHECK(A.d0==A.d1, "");
+  CHECK_EQ(A.d0,A.d1, "");
 #ifdef MT_LAPACK
   lapack_inverseSymPosDef(Ainv, A);
 #else
@@ -335,16 +335,15 @@ void inverse_SymPosDef(arr& Ainv, const arr& A) {
 #endif
 }
 
-void pseudoInverse(arr& Ainv, const arr& A, const arr& Winv, double eps) {
-  arr tA, E, AWAinv;
-  transpose(tA, A);
-  if(!eps) {
-    inverse_SymPosDef(AWAinv, A*Winv*tA);
-  } else {
-    E.setDiag(eps, A.d0);
-    inverse_SymPosDef(AWAinv, E+A*Winv*tA);
-  }
-  Ainv = Winv * tA * AWAinv;
+arr pseudoInverse(const arr& A, const arr& Winv, double eps) {
+  arr At, E, AAt, AAt_inv, Ainv;
+  transpose(At, A);
+  if(&Winv) AAt = A*Winv*At; else AAt = A*At;
+  if(eps) for(uint i=0;i<AAt.d0;i++) AAt(i,i) += eps;
+  inverse_SymPosDef(AAt_inv, AAt);
+  Ainv = At * AAt_inv;
+  if(&Winv) Ainv = Winv * Ainv;
+  return Ainv;
 }
 
 /// the determinant of a 2D squared matrix
@@ -355,7 +354,7 @@ double determinant(const arr& A);
 double cofactor(const arr& A, uint i, uint j);
 
 void gaussFromData(arr& a, arr& A, const arr& X) {
-  CHECK(X.nd==2, "");
+  CHECK_EQ(X.nd,2, "");
   uint N=X.d0, n=X.d1;
   arr ones(N); ones=1.;
   a = ones*X/(double)N; a.reshape(n);
@@ -364,7 +363,7 @@ void gaussFromData(arr& a, arr& A, const arr& X) {
 
 /* compute a rotation matrix that rotates a onto v in arbitrary dimensions */
 void rotationFromAtoB(arr& R, const arr& a, const arr& v) {
-  CHECK(a.N==v.N, "");
+  CHECK_EQ(a.N,v.N, "");
   CHECK(fabs(1.-length(a))<1e-10 && fabs(1.-length(v))<1e-10, "");
   uint n=a.N, i, j;
   if(maxDiff(a, v)<1e-10) { R.setId(n); return; }  //nothing to rotate!!
@@ -788,7 +787,7 @@ void SUS(const arr& p, uint n, uintA& s) {
     while(sum>ptr) { s(j)=i; j++; ptr+=1.; }
   }
   //now, 'sum' should = 'n' and 'ptr' has been 'n'-times increased -> 'j=n'
-  CHECK(j==n, "error in rnd::SUS(p, n, s) -> p not normalized?");
+  CHECK_EQ(j,n, "error in rnd::SUS(p, n, s) -> p not normalized?");
 }
 
 uint SUS(const arr& p) {
@@ -914,7 +913,7 @@ void make_grey(byteA &img) {
 }
 
 void make_RGB(byteA &img) {
-  CHECK(img.nd==2, "make_RGB requires grey image as input");
+  CHECK_EQ(img.nd,2, "make_RGB requires grey image as input");
   byteA tmp;
   tmp.resize(img.d0, img.d1, 3);
   for(uint i=0; i<img.d0; i++) for(uint j=0; j<img.d1; j++) {
@@ -1079,7 +1078,7 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
           *slot=y.N;
           y.resizeMEM(y.N+1, true); y(y.N-1)=0.;
           y_sparse[0].append(i);
-          CHECK(y_sparse[0].N==y.N, "");
+          CHECK_EQ(y_sparse[0].N,y.N, "");
         }
         i=*slot;
         y(i) += A.elem(n) * (*xp);
@@ -1122,11 +1121,11 @@ void scanArrFile(const char* name) {
 #endif
 
 /// numeric (finite difference) check of the gradient of f at x
-bool checkGradient(ScalarFunction &f,
+bool checkGradient(const ScalarFunction& f,
                    const arr& x, double tolerance) {
   arr J, dx, JJ;
   double y, dy;
-  y=f.fs(J, NoArr, x);
+  y=f(J, NoArr, x);
 
   JJ.resize(x.N);
   double eps=CHECK_EPS;
@@ -1134,7 +1133,7 @@ bool checkGradient(ScalarFunction &f,
   for(i=0; i<x.N; i++) {
     dx=x;
     dx.elem(i) += eps;
-    dy = f.fs(NoArr, NoArr, dx);
+    dy = f(NoArr, NoArr, dx);
     dy = (dy-y)/eps;
     JJ(i)=dy;
   }
@@ -1155,9 +1154,9 @@ bool checkGradient(ScalarFunction &f,
   return true;
 }
 
-bool checkHessian(ScalarFunction &f, const arr& x, double tolerance) {
+bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance) {
   arr g, H, dx, dy, Jg;
-  f.fs(g, H, x);
+  f(g, H, x);
   if(H.special==arr::RowShiftedPackedMatrixST) H = unpack(H);
 
   Jg.resize(g.N, x.N);
@@ -1166,7 +1165,7 @@ bool checkHessian(ScalarFunction &f, const arr& x, double tolerance) {
   for(i=0; i<x.N; i++) {
     dx=x;
     dx.elem(i) += eps;
-    f.fs(dy, NoArr, dx);
+    f(dy, NoArr, dx);
     dy = (dy-g)/eps;
     for(k=0; k<g.N; k++) Jg(k, i)=dy.elem(k);
   }
@@ -1187,10 +1186,10 @@ bool checkHessian(ScalarFunction &f, const arr& x, double tolerance) {
   return true;
 }
 
-bool checkJacobian(VectorFunction &f,
+bool checkJacobian(const VectorFunction& f,
                    const arr& x, double tolerance) {
   arr y, J, dx, dy, JJ;
-  f.fv(y, J, x);
+  f(y, J, x);
   if(J.special==arr::RowShiftedPackedMatrixST) J = unpack(J);
 
   JJ.resize(y.N, x.N);
@@ -1199,7 +1198,7 @@ bool checkJacobian(VectorFunction &f,
   for(i=0; i<x.N; i++) {
     dx=x;
     dx.elem(i) += eps;
-    f.fv(dy, NoArr, dx);
+    f(dy, NoArr, dx);
     dy = (dy-y)/eps;
     for(k=0; k<y.N; k++) JJ(k, i)=dy.elem(k);
   }
@@ -1314,7 +1313,7 @@ RowShiftedPackedMatrix *auxRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d
   if(Z.special==arr::noneST) {
     Zaux = new RowShiftedPackedMatrix(Z);
   } else {
-    CHECK(Z.special==arr::RowShiftedPackedMatrixST,"");
+    CHECK_EQ(Z.special,arr::RowShiftedPackedMatrixST,"");
     Zaux = (RowShiftedPackedMatrix*) Z.aux;
   }
   Z.resize(d0, pack_d1);
@@ -1366,7 +1365,7 @@ arr packRowShifted(const arr& X) {
 }
 
 arr unpackRowShifted(const arr& Y) {
-  CHECK(Y.special==arr::RowShiftedPackedMatrixST,"");
+  CHECK_EQ(Y.special,arr::RowShiftedPackedMatrixST,"");
   RowShiftedPackedMatrix *Yaux = (RowShiftedPackedMatrix*)Y.aux;
   arr X(Y.d0, Yaux->real_d1);
   CHECK(!Yaux->symmetric || Y.d0==Yaux->real_d1,"cannot be symmetric!");
@@ -1423,15 +1422,17 @@ arr RowShiftedPackedMatrix::At_A() {
       uint real_j=j+rs;
       if(real_j>=real_d1) break;
       double Zij=Zi[j];
-      double* Rp=R.p + real_j*R.d1;
-      double* Jp=Zi+j;
-      double* Jpstop=Zi+Z.d1;
-      for(; Jp!=Jpstop; Rp++,Jp++) *Rp += Zij * *Jp;
+      if(Zij!=0.){
+        double* Rp=R.p + real_j*R.d1;
+        double* Jp=Zi+j;
+        double* Jpstop=Zi+Z.d1;
+        for(; Jp!=Jpstop; Rp++,Jp++) if(*Jp!=0.) *Rp += Zij * *Jp;
+      }
     }
   }
   if(nextInSum){
     arr R2 = comp_At_A(*nextInSum);
-    CHECK(R2.special==arr::RowShiftedPackedMatrixST, "");
+    CHECK_EQ(R2.special,arr::RowShiftedPackedMatrixST, "");
     CHECK(R2.d1<=R.d1,"NIY"); //swap...
     for(uint i=0;i<R2.d0;i++) for(uint j=0;j<R2.d1;j++){
       R(i,j) += R2(i,j);
@@ -1479,7 +1480,7 @@ arr RowShiftedPackedMatrix::A_At() {
 }
 
 arr RowShiftedPackedMatrix::At_x(const arr& x) {
-  CHECK(x.N==Z.d0,"");
+  CHECK_EQ(x.N,Z.d0,"");
   arr y(real_d1);
   y.setZero();
   if(!Z.d1) return y; //Z is identically zero, all rows fully packed -> return zero y
@@ -1499,7 +1500,7 @@ arr RowShiftedPackedMatrix::At_x(const arr& x) {
 }
 
 arr RowShiftedPackedMatrix::A_x(const arr& x) {
-  CHECK(x.N==real_d1,"");
+  CHECK_EQ(x.N,real_d1,"");
   arr y(Z.d0);
   y.setZero();
   if(!Z.d1) return y; //Z is identically zero, all rows fully packed -> return zero y
@@ -1576,7 +1577,7 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
   // (which becomes uniform in the limit that d is small and N goes
   // to infinity).
   
-  CHECK((N*d)%2==0, "It's impossible to create a graph with " <<N<<" nodes and fixed degree " <<d);
+  CHECK_EQ((N*d)%2,0, "It's impossible to create a graph with " <<N<<" nodes and fixed degree " <<d);
   
   uint j;
   
@@ -1655,7 +1656,7 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
 #  include "array_instantiate.cxx"
 #undef T
 
-#define T uint16
+#define T uint16_t
 #  include "array_instantiate.cxx"
 #undef T
 
@@ -1701,6 +1702,7 @@ template void MT::getParameter(uintA&, const char*, const uintA&);
 
 void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 
+MT::Array<MT::String> STRINGS(){ return ARRAY<MT::String>(); }
 MT::Array<MT::String> STRINGS(const char* s0){ return ARRAY<MT::String>(MT::String(s0)); }
 MT::Array<MT::String> STRINGS(const char* s0, const char* s1){ return ARRAY<MT::String>(MT::String(s0), MT::String(s1)); }
 MT::Array<MT::String> STRINGS(const char* s0, const char* s1, const char* s2){ return ARRAY<MT::String>(MT::String(s0), MT::String(s1), MT::String(s2)); }

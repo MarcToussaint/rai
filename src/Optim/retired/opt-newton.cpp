@@ -67,7 +67,7 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
       if(addRegularizer) fy += scalarProduct(y,(*addRegularizer)*vectorShaped(y));
       if(o.verbose>2) cout <<" \tprobing y=" <<y;
       if(o.verbose>1) cout <<" \tevals=" <<evals <<" \talpha=" <<alpha <<" \tf(y)=" <<fy <<flush;
-      //CHECK(fy==fy, "cost seems to be NAN: ly=" <<fy);
+      //CHECK_EQ(fy,fy, "cost seems to be NAN: ly=" <<fy);
       if(fy==fy && fy <= fx) { //fy==fy is for NAN?
         if(o.verbose>1) cout <<" - ACCEPT" <<endl;
         //adopt new point and adapt stepsize|damping
