@@ -251,6 +251,8 @@ template<class T> struct Array {
   void permute(const Array<uint>& permutation);
   void permuteInv(const Array<uint>& permutation);
   void permuteRows(const Array<uint>& permutation);
+  void permuteRowsInv(const Array<uint>& permutation);
+
   void permuteRandomly();
   void shift(int offset, bool wrapAround=true);
   
@@ -618,6 +620,7 @@ template<class T> MT::Array<T> catCol(const MT::Array<MT::Array<T>*>& X);
 template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b){ return catCol(LIST<MT::Array<T> >(a,b)); }
 template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c){ return catCol(LIST<MT::Array<T> >(a,b,c)); }
 template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c, const MT::Array<T>& d){ return catCol(LIST<MT::Array<T> >(a,b,c,d)); }
+template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c, const MT::Array<T>& d, const MT::Array<T>& e){ return catCol(LIST<MT::Array<T> >(a,b,c,d,e)); }
 
 
 //===========================================================================
