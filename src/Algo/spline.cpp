@@ -243,7 +243,7 @@ arr Spline::smooth(double lambda) const {
 }
 
 void Spline::partial(arr& grad_points, const arr& grad_path) const {
-  CHECK(grad_path.d0==points.d0 && grad_path.d1==points.d1, "");
+  CHECK(grad_path.d1==points.d1, "");
   grad_points = basis_trans * grad_path;
 }
 
