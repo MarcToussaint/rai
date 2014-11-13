@@ -159,6 +159,7 @@ struct SinusesFunction:VectorFunction {
   SinusesFunction() {
     a = MT::getParameter<double>("SinusesFunction_a");
     condition = MT::getParameter<double>("condition");
+ NIY 
   }
   virtual void fv(arr& phi, arr& J, const arr& x) {
     CHECK_EQ(x.N,2,"");
