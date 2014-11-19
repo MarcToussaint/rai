@@ -390,53 +390,6 @@ void rotationFromAtoB(arr& R, const arr& a, const arr& v) {
   }
 }
 
-//===========================================================================
-//
-/// @name gnuplot fun
-//
-
-/// calls gnuplot to display the (n, 2) or (n, 3) array (n=number of points of line or surface)
-void gnuplot(const arr& X);
-
-/// write 2 arrays in parallel columns in a file
-void write(const arr& X, const arr& Y, const char* name);
-
-/// write 3 arrays in parallel columns in a file
-void write(const arr& X, const arr& Y, const arr& Z, const char* name);
-
-
-//===========================================================================
-//
-/// @name simple image formats
-//
-
-/** save data as ppm or pgm. Images are (height, width, [0, 2, 3, 4])-dim
-  byte arrays, where the 3rd dimension determines whether it's a grey
-  (0), grey-alpha (2), RGB (3), or RGBA (4) image */
-void write_ppm(const byteA &img, const char *file_name, bool swap_rows);
-
-/** read data from an ppm or pgm file */
-void read_ppm(byteA &img, const char *file_name, bool swap_rows);
-
-/// add an alpha channel to an image array
-void add_alpha_channel(byteA &img, byte alpha);
-
-/// make grey scale image
-void make_grey(byteA &img);
-
-/// make a grey image and RGA image
-void make_RGB(byteA &img);
-
-/// make a grey image and RGA image
-void make_RGB2BGRA(byteA &img);
-
-
-//===========================================================================
-//
-// Array class
-//
-
-
 
 uint own_SVD(
   arr& U,
@@ -801,16 +754,17 @@ uint SUS(const arr& p) {
   return 0;
 }
 
-void gnuplot(const arr& X) {
+/// calls gnuplot to display the (n, 2) or (n, 3) array (n=number of points of line or surface)
+void gnuplot(const arr& X, bool pauseMouse, bool persist, const char* PDFfile) {
   MT::arrayBrackets="  ";
   if(X.nd==2 && X.d1!=2) {  //assume array -> splot
     FILE("z.pltX") <<X;
-    gnuplot("splot 'z.pltX' matrix with pm3d, 'z.pltX' matrix with lines");
+    gnuplot("splot 'z.pltX' matrix with pm3d, 'z.pltX' matrix with lines", pauseMouse, persist, PDFfile);
     return;
   }
   if(X.nd==2 && X.d1==2) {  //assume curve -> plot
     FILE("z.pltX") <<X;
-    gnuplot("plot 'z.pltX' us 1:2");
+    gnuplot("plot 'z.pltX' us 1:2", pauseMouse, persist, PDFfile);
     return;
   }
   if(X.nd==1) {  //assume curve -> plot
@@ -818,7 +772,7 @@ void gnuplot(const arr& X) {
     Y.referTo(X);
     Y.reshape(Y.N, 1);
     FILE("z.pltX") <<Y;
-    gnuplot("plot 'z.pltX' us 1");
+    gnuplot("plot 'z.pltX' us 1", pauseMouse, persist, PDFfile);
     return;
   }
 }
@@ -841,6 +795,14 @@ void write(const arrL& X, const char *filename, const char *ELEMSEP, const char 
   fil.close();
 }
 
+//===========================================================================
+//
+/// @name simple image formats
+//
+
+/** save data as ppm or pgm. Images are (height, width, [0, 2, 3, 4])-dim
+  byte arrays, where the 3rd dimension determines whether it's a grey
+  (0), grey-alpha (2), RGB (3), or RGBA (4) image */
 void write_ppm(const byteA &img, const char *file_name, bool swap_rows) {
   if(!img.N) MT_MSG("empty image");
   CHECK(img.nd==2 || (img.nd==3 && img.d2==3), "only rgb or gray images to ppm");
@@ -858,6 +820,7 @@ void write_ppm(const byteA &img, const char *file_name, bool swap_rows) {
   }
 }
 
+/** read data from an ppm or pgm file */
 void read_ppm(byteA &img, const char *file_name, bool swap_rows) {
   uint mode, width, height, max;
   ifstream is;
@@ -879,6 +842,7 @@ void read_ppm(byteA &img, const char *file_name, bool swap_rows) {
   }
 }
 
+/// add an alpha channel to an image array
 void add_alpha_channel(byteA &img, byte alpha) {
   uint w=img.d1, h=img.d0;
   img.reshape(h*w, 3);
@@ -902,6 +866,7 @@ void flip_image(byteA &img) {
   }
 }
 
+/// make grey scale image
 void make_grey(byteA &img) {
   CHECK(img.nd==3 && (img.d2==3 || img.d1==4), "makeGray requires color image as input");
   byteA tmp;
@@ -912,6 +877,7 @@ void make_grey(byteA &img) {
   img=tmp;
 }
 
+/// make a grey image and RGA image
 void make_RGB(byteA &img) {
   CHECK_EQ(img.nd,2, "make_RGB requires grey image as input");
   byteA tmp;
@@ -924,6 +890,7 @@ void make_RGB(byteA &img) {
   img=tmp;
 }
 
+/// make a grey image and RGA image
 void make_RGB2BGRA(byteA &img) {
   CHECK(img.nd==3 && img.d2==3, "make_RGB2RGBA requires color image as input");
   byteA tmp;

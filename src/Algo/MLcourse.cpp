@@ -330,6 +330,7 @@ void CrossValidation::crossValidateSingleLambda(const arr& X, const arr& y, doub
   if(beta_k_fold) beta_k_fold->clear();
   
   //determine blocks
+  CHECK(n>=k_fold,"we need at least as much data as k for k-fold CV");
   uintA blockStart(k_fold+1);
   for(uint k=0;k<=k_fold;k++) blockStart(k) = (k*n)/k_fold;
   

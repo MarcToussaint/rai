@@ -150,7 +150,7 @@ extern Singleton<OptOptions> globalOptOptions;
 #include "opt-newton.h"
 #include "opt-constrained.h"
 #include "opt-rprop.h"
-uint optGradDescent(arr& x, ScalarFunction& f, OptOptions opt);
+uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions opt);
 
 
 //===========================================================================
@@ -158,7 +158,7 @@ uint optGradDescent(arr& x, ScalarFunction& f, OptOptions opt);
 // helpers
 //
 
-void displayFunction(ScalarFunction &f, bool wait=false, double lo=-1.2, double hi=1.2);
+void displayFunction(const ScalarFunction &f, bool wait=false, double lo=-1.2, double hi=1.2);
 
 
 //===========================================================================
