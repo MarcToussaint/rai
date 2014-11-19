@@ -452,6 +452,9 @@ inline arr zeros(uint d0, uint d1) { return zeros(TUP(d0, d1)); }
 /// return tensor of zeros
 inline arr zeros(uint d0, uint d1, uint d2) { return zeros(TUP(d0, d1, d2)); }
 
+/// return a grid (1D: range) split in 'steps' steps
+inline arr grid(uint dim, double lo, double hi, uint steps) { arr g;  g.setGrid(dim, lo, hi, steps);  return g; }
+
 arr repmat(const arr& A, uint m, uint n);
 
 /// return array with random numbers in [0, 1]
@@ -516,10 +519,10 @@ double cofactor(const arr& A, uint i, uint j);
 //void getIndexTuple(uintA &I, uint i, const uintA &d);  //? that also exists inside of array!
 void lognormScale(arr& P, double& logP, bool force=true);
 
-void gnuplot(const arr& X);
+
+
+void gnuplot(const arr& X, bool pauseMouse=false, bool persist=false, const char* PDFfile=NULL);
 //these are obsolete, use catCol instead
-//void write(const arr& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
-//void write(std::ostream& os, const arrL& X, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
 void write(const arrL& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
 
 

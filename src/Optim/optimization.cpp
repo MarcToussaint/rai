@@ -91,7 +91,7 @@ bool checkAllGradients(const ConstrainedProblem &P, const arr& x, double toleran
 // helpers
 //
 
-void displayFunction(ScalarFunction &f, bool wait, double lo, double hi){
+void displayFunction(const ScalarFunction &f, bool wait, double lo, double hi){
   arr X, Y;
   X.setGrid(2,lo,hi,100);
   Y.resize(X.d0);
@@ -154,7 +154,7 @@ void OptOptions::write(std::ostream& os) const{
 }
 
 /// minimizes \f$f(x)\f$ using its gradient only
-uint optGradDescent(arr& x, ScalarFunction& f, OptOptions o) {
+uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions o) {
   uint evals=0;
   arr y, grad_x, grad_y;
   double fx, fy;

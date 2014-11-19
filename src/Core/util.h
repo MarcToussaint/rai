@@ -374,13 +374,16 @@ struct FileToken{
   MT::String path, name, cwd;
   std::ofstream *os;
   std::ifstream *is;
+
   FileToken(const char* _filename, bool change_dir=true);
   ~FileToken();
   FileToken& operator()(){ return *this; }
+
   void decomposeFilename();
   std::ofstream& getOs();
   std::ifstream& getIs();
   operator std::istream&(){ return getIs(); }
+  operator std::ostream&(){ return getOs(); }
 };
 template<class T> FileToken& operator>>(FileToken& fil, T& x){ fil.getIs() >>x;  return fil; }
 template<class T> FileToken& operator<<(FileToken& fil, const T& x){ fil.getOs() <<x;  return fil; }
