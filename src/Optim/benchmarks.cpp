@@ -112,7 +112,7 @@ struct _ChoiceFunction {
 } choice;
 
 ScalarFunction ChoiceFunction(){
-  return [choice](arr& g, arr& H, const arr& x) -> double { return choice.fs(g, H, x); };
+  return [&choice](arr& g, arr& H, const arr& x) -> double { return choice.fs(g, H, x); };
 }
 
 //===========================================================================
