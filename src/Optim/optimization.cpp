@@ -85,6 +85,12 @@ bool checkAllGradients(const ConstrainedProblem &P, const arr& x, double toleran
   return good;
 }
 
+bool checkJacobianCP(const ConstrainedProblemMix &P, const arr& x, double tolerance){
+  VectorFunction F = [&P](arr& phi, arr& J, const arr& x){
+    return P(phi, J, NoTermTypeA, x);
+  };
+  return checkJacobian(F, x, tolerance);
+}
 
 //===========================================================================
 //

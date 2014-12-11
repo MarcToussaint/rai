@@ -219,6 +219,7 @@ template<class T> struct Array {
   /// @name appending etc
   T& append();
   T& append(const T& x);
+  void append(const T& x, uint multiple);
   void append(const Array<T>& x);
   void append(const T *p, uint n);
   void prepend(const T& x){ insert(0,x); }

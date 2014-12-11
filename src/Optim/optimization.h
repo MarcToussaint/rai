@@ -104,6 +104,7 @@ struct KOrderMarkovFunction {
 //
 
 bool checkAllGradients(const ConstrainedProblem &P, const arr& x, double tolerance);
+bool checkJacobianCP(const ConstrainedProblemMix &P, const arr& x, double tolerance);
 bool checkDirectionalGradient(const ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction &f, const arr& x, const arr& delta, double tolerance);
 
