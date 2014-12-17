@@ -974,18 +974,16 @@ void assign(arr& x, const arr& a) {
 }
 #endif
 
-
-
-void getIndexTuple(uintA &I, uint i, const uintA &d) {
-  uint j;
+uintA getIndexTuple(uint i, const uintA &d) {
   CHECK(i<product(d), "out of range");
-  I.resize(d.N);
+  uintA I(d.N);
   I.setZero();
-  for(j=d.N; j--;) {
+  for(uint j=d.N; j--;) {
     I.p[j] = i%d.p[j];
     i -= I.p[j];
     i /= d.p[j];
   }
+  return I;
 }
 
 void lognormScale(arr& P, double& logP, bool force) {

@@ -519,7 +519,7 @@ void rotationFromAtoB(arr& R, const arr& a, const arr& v);
 double determinant(const arr& A);
 double cofactor(const arr& A, uint i, uint j);
 
-//void getIndexTuple(uintA &I, uint i, const uintA &d);  //? that also exists inside of array!
+uintA getIndexTuple(uint i, const uintA &d);  //? that also exists inside of array!
 void lognormScale(arr& P, double& logP, bool force=true);
 
 
