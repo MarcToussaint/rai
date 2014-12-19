@@ -77,8 +77,6 @@ namespace MT {
   header, which contains lots of functions that can be applied on
   Arrays. */
 template<class T> struct Array {
-  typedef bool (*ElemCompare)(const T& a, const T& b);
-  
   T *p;     ///< the pointer on the linear memory allocated
   uint N;   ///< number of elements
   uint nd;  ///< number of dimensions
@@ -94,7 +92,9 @@ template<class T> struct Array {
   enum SpecialType { noneST, hasCarrayST, sparseST, diagST, RowShiftedPackedMatrixST, CpointerST };
   SpecialType special;
   void *aux; ///< arbitrary auxiliary data, depends on special
-  
+
+  typedef bool (*ElemCompare)(const T& a, const T& b);
+
   /// @name constructors
   Array();
   Array(const Array<T>& a);                 //copy constructor
@@ -249,6 +249,7 @@ template<class T> struct Array {
   uint insertInSorted(const T& x, ElemCompare comp);
   uint setAppendInSorted(const T& x, ElemCompare comp);
   void removeValueInSorted(const T& x, ElemCompare comp);
+  void setSectionSorted(const Array<T>& A, const Array<T>& B, ElemCompare comp);
   void reverse();
   void reverseRows();
   void permute(uint i, uint j);
