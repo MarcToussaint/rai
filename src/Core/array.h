@@ -249,7 +249,6 @@ template<class T> struct Array {
   uint insertInSorted(const T& x, ElemCompare comp);
   uint setAppendInSorted(const T& x, ElemCompare comp);
   void removeValueInSorted(const T& x, ElemCompare comp);
-  void setSectionSorted(const Array<T>& A, const Array<T>& B, ElemCompare comp);
   void reverse();
   void reverseRows();
   void permute(uint i, uint j);
@@ -281,7 +280,8 @@ template<class T> struct Array {
   const char* prt(); //gdb pretty print
   
   /// @name kind of private
-  void resizeMEM(uint n, bool copy);
+  void resizeMEM(uint n, bool copy, int Mforce=-1);
+  void anticipateMEM(uint Mforce){ resizeMEM(N, true, Mforce); if(!nd) nd=1; }
   void freeMEM();
   void resetD();
   void init();
@@ -653,7 +653,11 @@ template<class T> void setUnion(MT::Array<T>& x, const MT::Array<T>& y, const MT
 template<class T> void setSection(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z);
 template<class T> MT::Array<T> setUnion(const MT::Array<T>& y, const MT::Array<T>& z) { MT::Array<T> x; setUnion(x, y, z); return x; }
 template<class T> MT::Array<T> setSection(const MT::Array<T>& y, const MT::Array<T>& z) { MT::Array<T> x; setSection(x, y, z); return x; }
+template<class T> MT::Array<T> setSectionSorted(const MT::Array<T>& x, const MT::Array<T>& y,
+                                                bool (*comp)(const T& a, const T& b) );
 template<class T> void setMinus(MT::Array<T>& x, const MT::Array<T>& y);
+template<class T> void setMinusSorted(MT::Array<T>& x, const MT::Array<T>& y,
+                                      bool (*comp)(const T& a, const T& b) );
 template<class T> uint numberSharedElements(const MT::Array<T>& x, const MT::Array<T>& y);
 template<class T> void rndInteger(MT::Array<T>& a, int low=0, int high=1, bool add=false);
 template<class T> void rndUniform(MT::Array<T>& a, double low=0., double high=1., bool add=false);
