@@ -495,6 +495,7 @@ void makeSymmetric(arr& A);
 void transpose(arr& A);
 void SUS(const arr& p, uint n, uintA& s);
 uint SUS(const arr& p);
+void addDiag(arr& A, double d);
 
 namespace MT {
 /// use this to turn on Lapack routines [default true if MT_LAPACK is defined]
@@ -779,6 +780,7 @@ void lapack_RQ(arr& R, arr& Q, const arr& A);
 void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs);
 bool lapack_isPositiveSemiDefinite(const arr& symmA);
 void lapack_inverseSymPosDef(arr& Ainv, const arr& A);
+void lapack_choleskySymPosDef(arr& Achol, const arr& A);
 double lapack_determinantSymPosDef(const arr& A);
 inline arr lapack_inverseSymPosDef(const arr& A){ arr Ainv; lapack_inverseSymPosDef(Ainv, A); return Ainv; }
 arr lapack_Ainv_b_sym(const arr& A, const arr& b);

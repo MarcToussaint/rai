@@ -95,6 +95,16 @@ arr diag(double d, uint n) {
   return z;
 }
 
+void addDiag(arr& A, double d){
+  if(A.special==arr::RowShiftedPackedMatrixST) {
+    RowShiftedPackedMatrix *Aaux = (RowShiftedPackedMatrix*) A.aux;
+    if(!Aaux->symmetric) HALT("this is not a symmetric matrix");
+    for(uint i=0; i<A.d0; i++) A(i,0) += d;
+  }else{
+    for(uint i=0; i<A.d0; i++) A(i,i) += d;
+  }
+}
+
 /// make symmetric \f$A=(A+A^T)/2\f$
 void makeSymmetric(arr& A) {
   CHECK(A.nd==2 && A.d0==A.d1, "not symmetric");
