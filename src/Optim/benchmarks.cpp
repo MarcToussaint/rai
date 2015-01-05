@@ -74,10 +74,15 @@ double HoleFunction(arr& g, arr& H, const arr& x) {
 
 //===========================================================================
 
-struct _ChoiceFunction {
+struct _ChoiceFunction:ScalarFunction {
   enum Which { none=0, sum, square, hole, rosenbrock, rastrigin } which;
   arr condition;
-  _ChoiceFunction():which(none){}
+  _ChoiceFunction():which(none){
+    ScalarFunction::operator=(
+          [this](arr& g, arr& H, const arr& x) -> double { return this->fs(g, H, x); }
+    );
+  }
+
   double fs(arr& g, arr& H, const arr& x) {
     //initialize on first call
     if(which==none){
@@ -111,9 +116,7 @@ struct _ChoiceFunction {
 
 } choice;
 
-ScalarFunction ChoiceFunction(){
-  return [&choice](arr& g, arr& H, const arr& x) -> double { return choice.fs(g, H, x); };
-}
+ScalarFunction ChoiceFunction() { return (ScalarFunction&)choice; }
 
 //===========================================================================
 

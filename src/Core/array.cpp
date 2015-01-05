@@ -1509,6 +1509,12 @@ arr comp_A_At(arr& A) {
   return NoArr;
 }
 
+//arr comp_A_H_At(arr& A, const arr& H){
+//  if(A.special==arr::noneST) { arr X; blas_A_At(X,A); return X; }
+//  if(A.special==arr::RowShiftedPackedMatrixST) return ((RowShiftedPackedMatrix*)A.aux)->A_H_At(H);
+//  return NoArr;
+//}
+
 arr comp_At_x(arr& A, const arr& x) {
   if(A.special==arr::noneST) { arr y; innerProduct(y, ~A, x); return y; }
   if(A.special==arr::RowShiftedPackedMatrixST) return ((RowShiftedPackedMatrix*)A.aux)->At_x(x);

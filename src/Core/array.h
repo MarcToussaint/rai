@@ -822,6 +822,7 @@ arr packRowShifted(const arr& X);
 RowShiftedPackedMatrix *auxRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
 arr comp_At_A(arr& A);
 arr comp_A_At(arr& A);
+arr comp_A_H_At(arr& A, const arr& H);
 arr comp_At_x(arr& A, const arr& x);
 arr comp_A_x(arr& A, const arr& x);
 
