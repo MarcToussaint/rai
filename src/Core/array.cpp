@@ -1179,13 +1179,10 @@ bool checkJacobian(const VectorFunction& f,
   }
   JJ.reshapeAs(J);
   double md=maxDiff(J, JJ, &i);
-//   J >>FILE("z.J");
-//   JJ >>FILE("z.JJ");
   if(md>tolerance) {
     MT_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
     J >>FILE("z.J_analytical");
     JJ >>FILE("z.J_empirical");
-//    (J/JJ) >>FILE("z.J_ana_emp");
     return false;
   } else {
     cout <<"checkJacobian -- SUCCESS (max diff error=" <<md <<")" <<endl;
