@@ -114,39 +114,9 @@ double evaluateSF(ScalarFunction& f, const arr& x);
 double evaluateVF(VectorFunction& f, const arr& x);
 
 
-//===========================================================================
-//
-// optimization methods
-//
-
-enum ConstrainedMethodType { noMethod=0, squaredPenalty, augmentedLag, logBarrier, anyTimeAula };
-
-struct OptOptions {
-  uint verbose;
-  double *fmin_return;
-  double stopTolerance;
-  uint   stopEvals;
-  uint   stopIters;
-  double initStep;
-  double minStep;
-  double maxStep;
-  double damping;
-  double stepInc, stepDec;
-  double dampingInc, dampingDec;
-  int nonStrictSteps; //# of non-strict iterations
-  bool allowOverstep;
-  ConstrainedMethodType constrainedMethod;
-  double aulaMuInc;
-  OptOptions();
-  void write(std::ostream& os) const;
-};
-stdOutPipe(OptOptions);
-
-extern Singleton<OptOptions> globalOptOptions;
-
-#define NOOPT (globalOptOptions())
 
 // declared separately:
+#include "opt-options.h"
 #include "opt-convert.h"
 #include "opt-newton.h"
 #include "opt-constrained.h"
