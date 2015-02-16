@@ -30,6 +30,10 @@
 #include <typeinfo>
 #include <stdint.h>
 
+#ifdef MT_ROS
+#  include <ros/ros.h>
+#endif
+
 //----- if no system flag, I assume Linux
 #if !defined MT_MSVC && !defined MT_Cygwin && !defined MT_Linux && !defined MT_MinGW && !defined MT_Darwin
 #  define MT_Linux
@@ -299,11 +303,16 @@ inline void breakPoint() {
 /* #else */
 /* #  define MT_HERE "@" <<(strrchr(__FILE__, '/')?strrchr(__FILE__, '/')+1:__FILE__) <<':' <<__LINE__ <<':' <<__FUNCTION__ <<": " */
 /* #endif */
+#ifdef MT_ROS
+#  define MT_WRITE_MSG(str) { std::cerr <<str <<std::endl; ROS_INFO("MLR-MSG: %s",str.p); }
+#else
+#  define MT_WRITE_MSG(str) { std::cerr <<str <<std::endl; }
+#endif
 #ifndef MT_MSG
 #  define MT_MSG(msg){ std::cerr <<MT_HERE <<msg <<std::endl; MT::breakPoint(); }
 #endif
 #ifndef HALT
-#  define HALT(msg)  { MT::errString.clear() <<MT_HERE <<msg <<" --- HALT"; std::cerr <<MT::errString <<std::endl; MT::breakPoint(); throw MT::errString.p; }
+#  define HALT(msg)  { MT::errString.clear() <<MT_HERE <<msg <<" --- HALT"; MT_WRITE_MSG(MT::errString); MT::breakPoint(); throw MT::errString.p; }
 #  define NIY HALT("not implemented yet")
 #  define NICO HALT("not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code")
 #  define OPS HALT("obsolete")
