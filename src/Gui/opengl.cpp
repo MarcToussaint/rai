@@ -1071,6 +1071,7 @@ void OpenGL::watchImage(const byteA &_img, bool wait, float _zoom) { NICO }
 void glDrawUI(void *p) { NICO }
 bool glUI::hoverCallback(OpenGL& gl) { NICO }
 bool glUI::clickCallback(OpenGL& gl) { NICO }
+void glDrawPointCloud(const arr& pts, const arr& cols) { NICO }
 #endif
 
 //===========================================================================
