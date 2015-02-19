@@ -26,6 +26,7 @@ struct GraphView {
   GraphView(KeyValueGraph& G, const char* title="MT::GraphvizGtk", void *container=NULL);
   ~GraphView();
   
+  void writeFile(const char* filename);
   void update();
   void watch();
 };

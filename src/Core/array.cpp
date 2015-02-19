@@ -95,6 +95,16 @@ arr diag(double d, uint n) {
   return z;
 }
 
+void addDiag(arr& A, double d){
+  if(A.special==arr::RowShiftedPackedMatrixST) {
+    RowShiftedPackedMatrix *Aaux = (RowShiftedPackedMatrix*) A.aux;
+    if(!Aaux->symmetric) HALT("this is not a symmetric matrix");
+    for(uint i=0; i<A.d0; i++) A(i,0) += d;
+  }else{
+    for(uint i=0; i<A.d0; i++) A(i,i) += d;
+  }
+}
+
 /// make symmetric \f$A=(A+A^T)/2\f$
 void makeSymmetric(arr& A) {
   CHECK(A.nd==2 && A.d0==A.d1, "not symmetric");
@@ -974,18 +984,16 @@ void assign(arr& x, const arr& a) {
 }
 #endif
 
-
-
-void getIndexTuple(uintA &I, uint i, const uintA &d) {
-  uint j;
+uintA getIndexTuple(uint i, const uintA &d) {
   CHECK(i<product(d), "out of range");
-  I.resize(d.N);
+  uintA I(d.N);
   I.setZero();
-  for(j=d.N; j--;) {
+  for(uint j=d.N; j--;) {
     I.p[j] = i%d.p[j];
     i -= I.p[j];
     i /= d.p[j];
   }
+  return I;
 }
 
 void lognormScale(arr& P, double& logP, bool force) {
@@ -1171,13 +1179,10 @@ bool checkJacobian(const VectorFunction& f,
   }
   JJ.reshapeAs(J);
   double md=maxDiff(J, JJ, &i);
-//   J >>FILE("z.J");
-//   JJ >>FILE("z.JJ");
   if(md>tolerance) {
     MT_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
     J >>FILE("z.J_analytical");
     JJ >>FILE("z.J_empirical");
-//    (J/JJ) >>FILE("z.J_ana_emp");
     return false;
   } else {
     cout <<"checkJacobian -- SUCCESS (max diff error=" <<md <<")" <<endl;
@@ -1500,6 +1505,12 @@ arr comp_A_At(arr& A) {
   if(A.special==arr::RowShiftedPackedMatrixST) return ((RowShiftedPackedMatrix*)A.aux)->A_At();
   return NoArr;
 }
+
+//arr comp_A_H_At(arr& A, const arr& H){
+//  if(A.special==arr::noneST) { arr X; blas_A_At(X,A); return X; }
+//  if(A.special==arr::RowShiftedPackedMatrixST) return ((RowShiftedPackedMatrix*)A.aux)->A_H_At(H);
+//  return NoArr;
+//}
 
 arr comp_At_x(arr& A, const arr& x) {
   if(A.special==arr::noneST) { arr y; innerProduct(y, ~A, x); return y; }

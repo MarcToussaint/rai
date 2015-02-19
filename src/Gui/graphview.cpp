@@ -51,11 +51,12 @@ struct sGraphView {
   // on graphviz side
   graph_t *gvGraph;
   MT::Array<Agnode_t *> gvNodes;
-  GVC_t *gvContext;
-  GVJ_t *gvJob() { return gvjobs_first(gvContext); }
+  GVC_t *gv_context;
+  GVJ_t *gvJob() { return gvjobs_first(gv_context); }
   
   void init();
-  void updateGraphvizGraph();
+  void updateGraphvizGraph(bool isSubGraph=false);
+  void writeFile(const char* filename);
   
   static bool on_drawingarea_expose_event(GtkWidget *widget,    GdkEventExpose  *event,    gpointer     user_data);
   static bool on_drawingarea_motion_notify_event(GtkWidget *widget,       GdkEventMotion  *event,       gpointer     user_data);
@@ -86,90 +87,113 @@ GraphView::~GraphView() {
 void GraphView::update() {
   gtkLock();
   s->updateGraphvizGraph();
-  gvLayoutJobs(s->gvContext, s->gvGraph);
-  gvRenderJobs(s->gvContext, s->gvGraph);
+  gvLayoutJobs(s->gv_context, s->gvGraph);
+  gvRenderJobs(s->gv_context, s->gvGraph);
   gtkUnlock();
 }
 
 void GraphView::watch() {
   update();
-if(MT::getInteractivity()){
-  gtk_main();
+  if(MT::getInteractivity()){
+    gtk_main();
+  }
 }
+
+void GraphView::writeFile(const char* filename){
+  s->writeFile(filename);
 }
 
 #define STR(s) (char*)s
 
 MT::String label(Item *it){
   MT::String label;
+#if 1
   if(it->keys.N) {
     label <<it->keys(0);
     for(uint j=1; j<it->keys.N; j++) label <<'\n' <<it->keys(j);
   } else {
     label <<'-';
   }
+#else
+  label <<it->index;
+#endif
   return label;
 }
 
-void sGraphView::updateGraphvizGraph() {
+void sGraphView::updateGraphvizGraph(bool isSubGraph) {
 //  aginit();
-  gvGraph = agopen(STR("new_graph"), Agdirected, NULL);
-  agattr(gvGraph, AGRAPH,STR("rankdir"), STR("LR"));
-  agattr(gvGraph, AGRAPH,STR("ranksep"), STR("0.05"));
-  
-  agattr(gvGraph, AGNODE, STR("label"), STR(""));
-  agattr(gvGraph, AGNODE, STR("shape"), STR(""));
-  agattr(gvGraph, AGNODE, STR("fontsize"), STR("11"));
-  agattr(gvGraph, AGNODE, STR("width"), STR(".3"));
-  agattr(gvGraph, AGNODE, STR("height"), STR(".3"));
-  
-  agattr(gvGraph, AGEDGE, STR("label"), STR(""));
-  agattr(gvGraph, AGEDGE, STR("arrowhead"), STR("none"));
-  agattr(gvGraph, AGEDGE, STR("arrowsize"), STR(".5"));
-  agattr(gvGraph, AGEDGE, STR("fontsize"), STR("6"));
-  
-  gvNodes.resize(G->N);
-  
-  //first add `nodes' (items without links)
-  for_list(Item,  e,  (*G)) {
-    e->index=e_COUNT;
-    CHECK_EQ(e_COUNT,e->index,"");
-    gvNodes(e_COUNT) = agnode(gvGraph, STRING(e->index <<'_' <<label(e)), true);
-    if(e->keys.N) agset(gvNodes(e_COUNT), STR("label"), label(e));
+  if(!isSubGraph){
+    gvGraph = agopen(STR("new_graph"), Agdirected, NULL);
+    agattr(gvGraph, AGRAPH,STR("rankdir"), STR("LR"));
+    agattr(gvGraph, AGRAPH,STR("ranksep"), STR("0.05"));
+
+    agattr(gvGraph, AGNODE, STR("label"), STR(""));
+    agattr(gvGraph, AGNODE, STR("shape"), STR(""));
+    agattr(gvGraph, AGNODE, STR("fontsize"), STR("11"));
+    agattr(gvGraph, AGNODE, STR("width"), STR(".3"));
+    agattr(gvGraph, AGNODE, STR("height"), STR(".3"));
+
+    agattr(gvGraph, AGEDGE, STR("label"), STR(""));
+    agattr(gvGraph, AGEDGE, STR("arrowhead"), STR("none"));
+    agattr(gvGraph, AGEDGE, STR("arrowsize"), STR(".5"));
+    agattr(gvGraph, AGEDGE, STR("fontsize"), STR("6"));
+
+    uint nNodes = G->index(true);
+    gvNodes.resize(nNodes);
+  }
+
+  //first add `nodes' for all items
+  for(Item *e: *G) {
+    gvNodes(e->index) = agnode(gvGraph, STRING(e->index), true);
+    if(e->keys.N) agset(gvNodes(e->index), STR("label"), label(e));
     if(e->parents.N) {
-      agset(gvNodes(e_COUNT), STR("shape"), STR("box"));
-      agset(gvNodes(e_COUNT), STR("fontsize"), STR("6"));
-      agset(gvNodes(e_COUNT), STR("width"), STR(".1"));
-      agset(gvNodes(e_COUNT), STR("height"), STR(".1"));
+      agset(gvNodes(e->index), STR("shape"), STR("box"));
+      agset(gvNodes(e->index), STR("fontsize"), STR("6"));
+      agset(gvNodes(e->index), STR("width"), STR(".1"));
+      agset(gvNodes(e->index), STR("height"), STR(".1"));
     } else {
-      agset(gvNodes(e_COUNT), STR("shape"), STR("ellipse"));
+      agset(gvNodes(e->index), STR("shape"), STR("ellipse"));
     }
   }
   
-  //now all others
-  { for_list(Item, e, (*G)) {
+  //now add 'edges' for all relations
+  for(Item *e: (*G)) {
     /*if(e->parents.N==2){ //is an edge
       gvNodes(i) = (Agnode_t*)agedge(gvGraph, gvNodes(e->parents(0)->id), gvNodes(e->parents(1)->id)); //, STRING(i <<"_" <<e->name), true);
-    }else*/ if(e->parents.N) {
-      for_list(Item, n, e->parents) {
+    }else*/
+    if(e->parents.N) {
+      for(Item *n: e->parents) {
         Agedge_t *ge;
         if(n->index<e->index)
           ge=agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), STRING(label(n) <<"--" <<label(e)), true);
         else
           ge=agedge(gvGraph, gvNodes(e->index), gvNodes(n->index), STRING(label(e) <<"--" <<label(n)), true);
-        agset(ge, STR("label"), STRING(e_COUNT));
+        agset(ge, STR("label"), STRING(e->index));
       }
     }
-    }}
-  
-  cout <<gvNodes <<endl;
+  }
+
+  if(!isSubGraph){
+    G->index(false);
+  }
+}
+
+void sGraphView::writeFile(const char* filename){
+  gtkLock();
+  GVC_t *gvc = gvContext();
+  updateGraphvizGraph();
+  gvLayout(gvc, gvGraph, "dot");
+  gvRenderFilename(gvc, gvGraph, "canon", filename);
+  gvFreeLayout(gvc, gvGraph);
+  gvFreeContext(gvc);
+  gtkUnlock();
 }
 
 void sGraphView::init() {
   gtkLock();
-  gvContext = ::gvContext();
+  gv_context = ::gvContext();
   char *bla[] = {STR("dot"), STR("-Tx11"), NULL};
-  gvParseArgs(gvContext, 2, bla);
+  gvParseArgs(gv_context, 2, bla);
   
   if(!container) {
     container = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -211,10 +235,11 @@ bool sGraphView::on_drawingarea_expose_event(GtkWidget *widget, GdkEventExpose  
   job->external_context = TRUE;
   job->width = widget->allocation.width; //gtk_widget_get_allocated_width(widget);
   job->height = widget->allocation.height; //gtk_widget_get_allocated_height(widget);
-  if(job->has_been_rendered)
-    (job->callbacks->refresh)(job);
-  else
-    (job->callbacks->refresh)(job);
+  if(job->has_been_rendered){
+    if(job->callbacks) (job->callbacks->refresh)(job);
+  }else{
+    if(job->callbacks) (job->callbacks->refresh)(job);
+  }
     
   cairo_destroy(cr);
   

@@ -77,8 +77,6 @@ namespace MT {
   header, which contains lots of functions that can be applied on
   Arrays. */
 template<class T> struct Array {
-  typedef bool (*ElemCompare)(const T& a, const T& b);
-  
   T *p;     ///< the pointer on the linear memory allocated
   uint N;   ///< number of elements
   uint nd;  ///< number of dimensions
@@ -94,7 +92,9 @@ template<class T> struct Array {
   enum SpecialType { noneST, hasCarrayST, sparseST, diagST, RowShiftedPackedMatrixST, CpointerST };
   SpecialType special;
   void *aux; ///< arbitrary auxiliary data, depends on special
-  
+
+  typedef bool (*ElemCompare)(const T& a, const T& b);
+
   /// @name constructors
   Array();
   Array(const Array<T>& a);                 //copy constructor
@@ -219,6 +219,7 @@ template<class T> struct Array {
   /// @name appending etc
   T& append();
   T& append(const T& x);
+  void append(const T& x, uint multiple);
   void append(const Array<T>& x);
   void append(const T *p, uint n);
   void prepend(const T& x){ insert(0,x); }
@@ -254,6 +255,8 @@ template<class T> struct Array {
   void permute(const Array<uint>& permutation);
   void permuteInv(const Array<uint>& permutation);
   void permuteRows(const Array<uint>& permutation);
+  void permuteRowsInv(const Array<uint>& permutation);
+
   void permuteRandomly();
   void shift(int offset, bool wrapAround=true);
   
@@ -277,7 +280,8 @@ template<class T> struct Array {
   const char* prt(); //gdb pretty print
   
   /// @name kind of private
-  void resizeMEM(uint n, bool copy);
+  void resizeMEM(uint n, bool copy, int Mforce=-1);
+  void anticipateMEM(uint Mforce){ resizeMEM(N, true, Mforce); if(!nd) nd=1; }
   void freeMEM();
   void resetD();
   void init();
@@ -491,6 +495,7 @@ void makeSymmetric(arr& A);
 void transpose(arr& A);
 void SUS(const arr& p, uint n, uintA& s);
 uint SUS(const arr& p);
+void addDiag(arr& A, double d);
 
 namespace MT {
 /// use this to turn on Lapack routines [default true if MT_LAPACK is defined]
@@ -516,7 +521,7 @@ void rotationFromAtoB(arr& R, const arr& a, const arr& v);
 double determinant(const arr& A);
 double cofactor(const arr& A, uint i, uint j);
 
-//void getIndexTuple(uintA &I, uint i, const uintA &d);  //? that also exists inside of array!
+uintA getIndexTuple(uint i, const uintA &d);  //? that also exists inside of array!
 void lognormScale(arr& P, double& logP, bool force=true);
 
 
@@ -637,6 +642,7 @@ template<class T> MT::Array<T> catCol(const MT::Array<MT::Array<T>*>& X);
 template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b){ return catCol(LIST<MT::Array<T> >(a,b)); }
 template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c){ return catCol(LIST<MT::Array<T> >(a,b,c)); }
 template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c, const MT::Array<T>& d){ return catCol(LIST<MT::Array<T> >(a,b,c,d)); }
+template<class T> MT::Array<T> catCol(const MT::Array<T>& a, const MT::Array<T>& b, const MT::Array<T>& c, const MT::Array<T>& d, const MT::Array<T>& e){ return catCol(LIST<MT::Array<T> >(a,b,c,d,e)); }
 
 
 //===========================================================================
@@ -648,7 +654,11 @@ template<class T> void setUnion(MT::Array<T>& x, const MT::Array<T>& y, const MT
 template<class T> void setSection(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z);
 template<class T> MT::Array<T> setUnion(const MT::Array<T>& y, const MT::Array<T>& z) { MT::Array<T> x; setUnion(x, y, z); return x; }
 template<class T> MT::Array<T> setSection(const MT::Array<T>& y, const MT::Array<T>& z) { MT::Array<T> x; setSection(x, y, z); return x; }
+template<class T> MT::Array<T> setSectionSorted(const MT::Array<T>& x, const MT::Array<T>& y,
+                                                bool (*comp)(const T& a, const T& b) );
 template<class T> void setMinus(MT::Array<T>& x, const MT::Array<T>& y);
+template<class T> void setMinusSorted(MT::Array<T>& x, const MT::Array<T>& y,
+                                      bool (*comp)(const T& a, const T& b) );
 template<class T> uint numberSharedElements(const MT::Array<T>& x, const MT::Array<T>& y);
 template<class T> void rndInteger(MT::Array<T>& a, int low=0, int high=1, bool add=false);
 template<class T> void rndUniform(MT::Array<T>& a, double low=0., double high=1., bool add=false);
@@ -770,6 +780,7 @@ void lapack_RQ(arr& R, arr& Q, const arr& A);
 void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs);
 bool lapack_isPositiveSemiDefinite(const arr& symmA);
 void lapack_inverseSymPosDef(arr& Ainv, const arr& A);
+void lapack_choleskySymPosDef(arr& Achol, const arr& A);
 double lapack_determinantSymPosDef(const arr& A);
 inline arr lapack_inverseSymPosDef(const arr& A){ arr Ainv; lapack_inverseSymPosDef(Ainv, A); return Ainv; }
 arr lapack_Ainv_b_sym(const arr& A, const arr& b);
@@ -811,6 +822,7 @@ arr packRowShifted(const arr& X);
 RowShiftedPackedMatrix *auxRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
 arr comp_At_A(arr& A);
 arr comp_A_At(arr& A);
+arr comp_A_H_At(arr& A, const arr& H);
 arr comp_At_x(arr& A, const arr& x);
 arr comp_A_x(arr& A, const arr& x);
 
