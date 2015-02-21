@@ -540,20 +540,21 @@ void wait(double sec, bool msg_on_fail) {
   sec -= (double)ts.tv_sec;
   ts.tv_nsec = (long)(floor(1000000000. * sec));
   int rc = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
-  if(rc && msg_on_fail) MT_MSG("clock_nanosleep() failed " <<rc <<' ' <<strerror(rc));
+  if(rc && msg_on_fail){
+    MT_MSG("clock_nanosleep() failed " <<rc <<" '" <<strerror(rc) <<"' trying select instead");
+    timeval tv;
+    tv.tv_sec = ts.tv_sec;
+    tv.tv_usec = ts.tv_nsec/1000l;
+    rc = select(1, NULL, NULL, NULL, &tv);
+    if(rc==-1) MT_MSG("select() failed " <<rc <<" '" <<strerror(errno) <<"'");
+  }
 #else
   Sleep((int)(1000.*sec));
   //MsgWaitForMultipleObjects( 0, NULL, FALSE, (int)(1000.*sec), QS_ALLEVENTS);
 #endif
-  
+
 #if 0
 #ifndef MT_TIMEB
-  timeval tv;
-  tv.tv_sec = (int)(floor(sec));
-  sec -= (double)tv.tv_sec;
-  tv.tv_usec = (int)(floor(1000000. * sec));
-  int r = select(1, NULL, NULL, NULL, &tv);
-  if(r==-1) MT_MSG("select() failed");
   /* r=0 time is up
      r!=0 data in NULL stream available (nonsense)
      */
