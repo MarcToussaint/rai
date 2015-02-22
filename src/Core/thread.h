@@ -149,6 +149,7 @@ struct Thread{
   void threadStop();                    ///< stop looping
   void threadCancel();                  ///< a hard kill (pthread_cancel) of the thread
 
+  void waitForOpened();                 ///< caller waits until opening is done (working -> idle mode)
   void waitForIdle();                   ///< caller waits until step is done (working -> idle mode)
   bool isIdle();                        ///< check if in idle mode
   bool isClosed();                      ///< check if closed

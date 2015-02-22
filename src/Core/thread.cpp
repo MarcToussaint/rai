@@ -396,12 +396,12 @@ bool Thread::isIdle() {
   return state.getValue()==tsIDLE;
 }
 
-//bool Thread::isOpen() {
-//  return thread!=0;
-//}
-
 bool Thread::isClosed() {
   return state.getValue()==tsCLOSE;
+}
+
+void Thread::waitForOpened() {
+  state.waitForValueNotEq(tsOPENING);
 }
 
 void Thread::waitForIdle() {
