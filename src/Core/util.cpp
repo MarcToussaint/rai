@@ -112,55 +112,6 @@ bool timerUseRealTime=false;
 QApplication *myApp=NULL;
 #endif
 
-struct LogFile {
-  std::ofstream fil;
-  bool isOpen;
-  bool noLog;
-  
-  LogFile():isOpen(false), noLog(false) {
-    timerStartTime=MT::cpuTime();
-#ifndef MT_TIMEB
-    gettimeofday(&startTime, 0);
-#else
-    _ftime(&startTime);
-#endif
-  }
-  ~LogFile() {
-    if(isOpen) {  //don't open a log file anymore in the destructor
-      char times[200];
-      sprintf(times, "Ellapsed double time:  %.3lfsec\nProcess  user time:   %.3lfsec", realTime(), cpuTime());
-      MT::log() <<"Execution stop:      " <<date()
-                <<times <<std::endl;
-      //"Ellapsed double time:  " <<::dtoa(realTime()) <<"sec\n"
-      // <<"Process  user time:   " <<::dtoa(cpuTime()) <<"sec" <<std::endl;
-#ifndef MT_TIMEB
-      MT::log() <<"Process system time: " <<sysTime() <<"sec" <<std::endl;
-#endif
-      MT::log().close();
-    }
-#ifdef MT_QT
-    if(myApp) {
-      myApp->processEvents();
-      myApp->quit();
-    }
-#endif
-  }
-  
-  std::ofstream& log(const char *name) {
-    if(!isOpen && !noLog) {
-      fil.open(name);
-      if(!fil.good()) MT_MSG("could not open log-file `" <<name <<"' for output");
-      isOpen=true;
-    }
-    return fil;
-  }
-};
-
-Singleton<LogFile> logFile;
-
-/// access to the log-file
-std::ofstream& log(const char *name) { return logFile().log(name); }
-
 /// open an output-file with name '\c name'
 void open(std::ofstream& fs, const char *name, const char *errmsg) {
   fs.clear();
@@ -912,6 +863,69 @@ MT::String MT::getNowString() {
 
 //===========================================================================
 //
+// logging
+
+namespace MT {
+struct LogServer {
+  std::ofstream fil;
+  bool isOpen;
+  bool noLog;
+
+  LogServer(): isOpen(false), noLog(false) {
+    timerStartTime=MT::cpuTime();
+#ifndef MT_TIMEB
+    gettimeofday(&startTime, 0);
+#else
+    _ftime(&startTime);
+#endif
+  }
+  ~LogServer() {
+    if(isOpen) {  //don't open a log file anymore in the destructor
+      char times[200];
+      sprintf(times, "Ellapsed double time:  %.3lfsec\nProcess  user time:   %.3lfsec", realTime(), cpuTime());
+      MT::log() <<"Execution stop:      " <<date()
+                <<times <<std::endl;
+      //"Ellapsed double time:  " <<::dtoa(realTime()) <<"sec\n"
+      // <<"Process  user time:   " <<::dtoa(cpuTime()) <<"sec" <<std::endl;
+#ifndef MT_TIMEB
+      MT::log() <<"Process system time: " <<sysTime() <<"sec" <<std::endl;
+#endif
+      MT::log().close();
+      isOpen=false;
+    }
+  }
+
+  std::ofstream& logFile(const char *name="MT.log") {
+    if(!isOpen && !noLog) {
+      fil.open(name);
+      if(!fil.good()) MT_MSG("could not open log-file `" <<name <<"' for output");
+      isOpen=true;
+    }
+    return fil;
+  }
+
+};
+
+Singleton<MT::LogServer> logServer;
+
+/// access to the log-file
+std::ofstream& log(const char *name) { return logServer().logFile(name); }
+}
+
+MT::LogToken::LogToken(int log_level, const char* filename, const char* function, uint line)
+  :writeToFile(false), writeToConsole(true){
+//  msg <<filename <<':' <<function <<':' <<line <<'|' <<log_level <<"| ";
+  msg <<function <<':';
+}
+
+MT::LogToken::~LogToken(){
+  if(writeToFile)    logServer().logFile() <<msg <<endl;
+  if(writeToConsole) std::cout <<msg <<endl;
+}
+
+
+//===========================================================================
+//
 // FileToken
 //
 
@@ -1301,12 +1315,6 @@ template MT::String MT::getParameter<MT::String>(const char*, const MT::String&)
 
 template bool MT::checkParameter<uint>(const char*);
 template bool MT::checkParameter<bool>(const char*);
-
-template void MT::Parameter<MT::String>::initialize();
-template void MT::Parameter<bool>::initialize();
-template void MT::Parameter<double>::initialize();
-template void MT::Parameter<int>::initialize();
-template void MT::Parameter<uint>::initialize();
 
 template std::map<std::string,int> MT::ParameterMap<int>::m;
 template std::map<std::string,double> MT::ParameterMap<double>::m;

@@ -271,6 +271,7 @@ public:
 stdPipes(String)
 }
 
+
 //===========================================================================
 //
 // string-filling routines
@@ -279,11 +280,36 @@ namespace MT {
   MT::String getNowString();
 }
 
+
+//===========================================================================
+//
+// logging
+
+namespace MT {
+struct LogToken{
+  MT::String msg;
+  bool writeToFile;
+  bool writeToConsole;
+  LogToken(int log_level, const char* filename, const char* function, uint line);
+  ~LogToken();
+  std::ostream& os(){ return msg; }
+};
+}
+
+#define LOG(log_level) MT::LogToken(log_level, __FILE__, __func__, __LINE__).os()
+
+
+void setLogLevel(const char* topic, int l, bool forLogFile=false);
+
+//The destructor ~LogToken writes into the log file and
+//console. setLogLevel allows to adjust cout verbosity (0 by default),
+//and what is written into the log file (1 by default)
+
+
 //===========================================================================
 //
 // macros for halting/MSGs etc
 //
-
 
 //----- declare my namespace for the first time:
 /// Marc Toussaint namespace
@@ -405,80 +431,6 @@ template<class T> void operator>>(const T& x, FileToken& fil){ fil.getOs() <<x; 
 
 //===========================================================================
 //
-// Parameter class - I use it frequently to read parameters from file or cmd line
-//
-
-namespace MT {
-/** @brief A parameter that initializes itself from the command line
-  (use \c MT::init), parameter file, or a default value (priority in
-  this order).  Initialization is done on the fly the _first_ time
-  its value is queried (i.e., referenced by the cast operators).*/
-template<class type>
-class Parameter {
-public:
-  const char *typeName;
-  type value, Default;
-  const char *tag;
-  bool initialized, hasDefault;
-  
-public:
-  /// @name constructors
-  
-  /// Determines the tag to search for in parameter file/command line
-  explicit Parameter(const char *_tag) {
-    typeName=typeid(type).name();
-    initialized=false;
-    tag=_tag;
-    hasDefault=false;
-  };
-  
-  /** @brief specifies also a default value -- parameter does not have to but
-    can be specified in the parameter file/command line */
-  Parameter(const char *_tag, const type& _default) {
-    typeName=typeid(type).name();
-    initialized=false;
-    tag=_tag;
-    hasDefault=true;
-    Default=_default;
-  };
-  
-  ~Parameter() {}
-  
-  /// @name value access
-  
-  /// standard type conversion: returns a const of the parameter value
-  operator type() { if(!initialized) initialize(); return value; }
-  
-  /// ()-operator: returns an lvalue of the parameter value
-  type& operator()() { if(!initialized) initialize(); return value; }
-  
-  
-  /// @name manipulation
-  
-  /// assigs a value to the parameter -- no further initialization needed
-  type& operator=(const type v) { initialized=true; value=v; return value; }
-  
-  /// set the tag (replacing the one from the constructor)
-  void setTag(char *_tag) { tag=_tag; }
-  
-  /** @brief enforces that the parameter is reinitialized from the parameter
-    file/command line, the next time it is referenced -- even if it
-    has been initialized before */
-  void reInitialize() { initialized=false; }
-  
-  
-  /// @name explicit grabbing
-  
-  
-private:
-  void initialize();
-};
-
-}
-
-
-//===========================================================================
-//
 // random number generator
 //
 
@@ -589,10 +541,12 @@ struct Lock {
   ~Lock() { m.unlock(); };
 };
 
+
 //===========================================================================
 //
 /// a generic singleton
 //
+
 template<class T>
 struct Singleton {
   static T *singleton;
@@ -607,9 +561,27 @@ struct Singleton {
     return singleton;
   }
 
+  ~Singleton(){
+    if(singleton) {
+      static Mutex m;
+      m.lock();
+      if(singleton) delete singleton;
+      m.unlock();
+    }
+  }
+
   T& operator()() const{ return *getSingleton(); }
 };
 template<class T> T *Singleton<T>::singleton=NULL;
+
+
+//===========================================================================
+//
+/// running code on init (in cpp files)
+//
+
+#define RUN_ON_INIT_BEGIN(key) struct key##_RUN_ON_INIT{ key##_RUN_ON_INIT(){
+#define RUN_ON_INIT_END(key)   } } key##_RUN_ON_INIT_dummy;
 
 
 //===========================================================================
