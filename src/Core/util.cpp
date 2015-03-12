@@ -26,6 +26,7 @@
 #  include <sys/times.h>
 #  include <sys/resource.h>
 #  include <sys/inotify.h>
+#  include <sys/stat.h>
 #  include <poll.h>
 #endif
 #ifdef __CYGWIN__
@@ -705,6 +706,9 @@ MT::String::String(const String& s):std::iostream(&buffer) { init(); this->opera
 /// copy constructor for an ordinary C-string (needs to be 0-terminated)
 MT::String::String(const char *s):std::iostream(&buffer) { init(); this->operator=(s); }
 
+
+MT::String::String(const std::string& s):std::iostream(&buffer) { init(); this->operator=(s.c_str()); }
+
 MT::String::~String() { if(M) delete[] p; }
 
 /// returns a reference to this
@@ -963,6 +967,12 @@ void MT::FileToken::decomposeFilename() {
     path.resize(i, true);
     name = name+i+1;
   }
+}
+
+bool MT::FileToken::exists() {
+  struct stat sb;
+  int r=stat(name, &sb);
+  return r==0;
 }
 
 std::ofstream& MT::FileToken::getOs(){

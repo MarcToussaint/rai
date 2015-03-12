@@ -226,6 +226,7 @@ public:
   String();
   String(const String& s);
   explicit String(const char *s);
+  explicit String(const std::string& s);
   ~String();
   
   /// @name access
@@ -323,7 +324,7 @@ inline void breakPoint() {
 }
 
 //----- error handling:
-#  define MT_HERE "@" << __FILE__<<':' <<__LINE__ <<':' <<__FUNCTION__ <<": "
+#  define MT_HERE "@" << __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<": "
 /* #ifdef MT_MSVC */
 /* (strrchr(__FILE__, '\\')?strrchr(__FILE__, '\\')+1:__FILE__) */
 /* #else */
@@ -415,6 +416,7 @@ struct FileToken{
   FileToken& operator()(){ return *this; }
 
   void decomposeFilename();
+  bool exists();
   std::ofstream& getOs();
   std::ifstream& getIs();
   operator std::istream&(){ return getIs(); }

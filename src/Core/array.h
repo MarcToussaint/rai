@@ -106,6 +106,7 @@ template<class T> struct Array {
   explicit Array(uint D0, uint D1, uint D2);
   explicit Array(const T* p, uint size);    //reference!
   Array(std::initializer_list<T> list);
+  template<class S> Array(std::initializer_list<S> list);
   Array(MT::FileToken&); //read from a file
   ~Array();
   
