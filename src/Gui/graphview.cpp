@@ -41,7 +41,7 @@ extern "C" {
 }
 
 struct sGraphView {
-  KeyValueGraph *G;
+  Graph *G;
   GraphView *p;
   MT::String title;
   
@@ -68,7 +68,7 @@ struct sGraphView {
   
 };
 
-GraphView::GraphView(KeyValueGraph& G, const char* title, void *container) {
+GraphView::GraphView(Graph& G, const char* title, void *container) {
   gtkCheckInitialized();
   
   s = new sGraphView;
@@ -402,7 +402,7 @@ bool sGraphView::on_drawingarea_scroll_event(GtkWidget       *widget,           
 #undef STR
 
 #else //for bad versions
-GraphView::GraphView(KeyValueGraph& G, const char* title, void *container) { NICO }
+GraphView::GraphView(Graph& G, const char* title, void *container) { NICO }
 GraphView::~GraphView() { NICO }
 void GraphView::watch() { NICO }
 void GraphView::update() { NICO }
@@ -410,7 +410,7 @@ void GraphView::update() { NICO }
 
 #else //defined MT_GTK and defined MT_GRAPHVIZ
 #include "graphview.h"
-GraphView::GraphView(KeyValueGraph& G, const char* title, void *container) { NICO }
+GraphView::GraphView(Graph& G, const char* title, void *container) { NICO }
 GraphView::~GraphView() { NICO }
 void GraphView::watch() { NICO }
 void GraphView::update() { NICO }
