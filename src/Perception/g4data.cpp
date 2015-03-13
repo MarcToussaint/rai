@@ -356,7 +356,7 @@ arr G4Rec::ann(const char *sensor1, const char *sensor2) {
 
 uint G4Rec::numSensors() const { return nsensors; }
 uint G4Rec::numFrames() const { return nframes; }
-uint G4Rec::numDim(const char *bam) { return kvg.getValue<arr>(STRINGS("bam", bam))->d2; }
+uint G4Rec::numDim(const char *bam) { return kvg.getValue<arr>({"bam", bam})->d2; }
 
 void G4Rec::appendBam(const char *bam, const arr &data) {
   Item *i = kvg.getItem("bam", bam);
@@ -368,28 +368,28 @@ void G4Rec::appendBam(const char *bam, const arr &data) {
 }
 
 bool G4Rec::hasBam(const char *bam) {
-  return kvg.getItem(STRINGS("bam", bam)) != NULL;
+  return kvg.getItem({"bam", bam}) != NULL;
 }
 
 arr G4Rec::query(const char *bam) {
-  Item *i = kvg.getItem(STRINGS("bam", bam));
+  Item *i = kvg.getItem({"bam", bam});
   CHECK(i != nullptr, STRING("BAM '" << bam << "' does not exist."));
 
   if(0 == strcmp(bam, "pose")) {
     arr data, dataPos, dataQuat;
 
-    dataPos.referTo(*kvg.getValue<arr>(STRINGS("bam", "pos")));
-    dataQuat.referTo(*kvg.getValue<arr>(STRINGS("bam", "quat")));
+    dataPos.referTo(*kvg.getValue<arr>({"bam", "pos"}));
+    dataQuat.referTo(*kvg.getValue<arr>({"bam", "quat"}));
     data.append(dataPos);
     data.append(dataQuat);
     data.reshape(nsensors, nframes, 7);
     return data;
   }
-  return *kvg.getValue<arr>(STRINGS("bam", bam));
+  return *kvg.getValue<arr>({"bam", bam});
 }
 
 arr G4Rec::query(const char *type, const char *sensor) {
-  Item *i = kvg.getItem(STRINGS("bam", type));
+  Item *i = kvg.getItem({"bam", type});
   CHECK(i != nullptr, STRING("BAM '" << type << "' does not exist."));
 
   int is = g4id.i(sensor);
@@ -416,7 +416,7 @@ arr G4Rec::query(const char *type, const char *sensor) {
 }
 
 arr G4Rec::query(const char *type, const char *sensor, uint f) {
-  Item *i = kvg.getItem(STRINGS("bam", type));
+  Item *i = kvg.getItem({"bam", type});
   CHECK(i != nullptr, STRING("BAM '" << type << "' does not exist."));
 
   int is = g4id.i(sensor);

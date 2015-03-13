@@ -90,9 +90,9 @@ void Surfels::pointCloud2Surfels(const arr& pts, const arr& cols, OpenGL& gl){
     if(pts(p,2)<0. || sum(cols[p])>2.9) continue; //not a legible point!
     if(s==0){ //no surfel hit
       CHECK_EQ(mask.elem(p),0,"");
-      pos.append(ARRAY<float>(pts(p,0), pts(p,1), pts(p,2)));
-      col.append(ARRAY<float>(cols(p,0),cols(p,1),cols(p,2)));
-      norm.append(ARRAY<float>(0,0,-1));
+      pos.append({(float)pts(p,0), (float)pts(p,1), (float)pts(p,2)});
+      col.append({(float)cols(p,0),(float)cols(p,1),(float)cols(p,2)});
+      norm.append({0.f,0.f,-1.f});
       rad.append(0.03f);
       pos.reshape(pos.N/3,3);
       col.reshape(pos.N/3,3);

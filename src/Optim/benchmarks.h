@@ -53,7 +53,7 @@ struct RandomLPFunction:ConstrainedProblem {
         randomG(i,0) -= .2;
       }
     }
-    if(&g) g = randomG * cat(ARRAY(1.),x);
+    if(&g) g = randomG * cat({1.},x);
     if(&Jg) Jg = randomG.sub(0,-1,1,-1);
     return fx;
   }
@@ -105,7 +105,7 @@ struct ChoiceConstraintFunction:ConstrainedProblem {
             randomG(i,0) -= .2;
           }
         }
-        if(&g) g = randomG * cat(ARRAY(1.), x);
+        if(&g) g = randomG * cat({1.}, x);
         if(&Jg) Jg = randomG.sub(0,-1,1,-1);
       } break;
     }

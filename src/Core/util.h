@@ -297,7 +297,7 @@ struct LogToken{
 };
 }
 
-#define LOG(log_level) MT::LogToken(log_level, __FILE__, __func__, __LINE__).os()
+//#define LOG(log_level) MT::LogToken(log_level, __FILE__, __func__, __LINE__).os()
 
 
 void setLogLevel(const char* topic, int l, bool forLogFile=false);
