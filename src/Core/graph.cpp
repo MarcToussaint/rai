@@ -77,8 +77,11 @@ void Item::write(std::ostream& os) const {
     os <<'(';
     for_list(Item, it, parents) {
       if(it_COUNT) os <<' ';
-      CHECK(it->keys.N,"");
-      os <<it->keys.last();
+      if(it->keys.N){
+        os <<it->keys.last();
+      }else{  //relative numerical reference
+        os <<(int)it->index - (int)index;
+      }
     }
     os <<')';
   }
@@ -158,19 +161,26 @@ Item *readItem(Graph& containingKvg, std::istream& is, bool verbose=false, Graph
       if(e) { //sucessfully found
         parents.append(e);
       } else { //this element is not known!!
-        PARSERR("unknown " <<j <<". parent '" <<str <<"'");
-        MT::skip(is, NULL, ")", false);
+        int rel=0;
+        str >>rel;
+        if(rel<0 && containingKvg.N+rel>=0){
+          e=containingKvg(containingKvg.N+rel);
+          parents.append(e);
+        }else{
+          PARSERR("unknown " <<j <<". parent '" <<str <<"'");
+          MT::skip(is, NULL, ")", false);
+        }
       }
     }
     MT::parse(is, ")");
-    c=MT::getNextChar(is);
+    c=MT::getNextChar(is," \t");
   }
   
   if(verbose) { cout <<" parents:"; if(!parents.N) cout <<"none"; else listWrite(parents,cout," ","()"); cout <<flush; }
   
   //-- read value
   if(c=='=' || c=='{' || c=='[' || c=='<' || c=='!' || c=='\'' || c=='"') {
-    if(c=='=') c=MT::getNextChar(is);
+    if(c=='=') c=MT::getNextChar(is," \t");
     if((c>='a' && c<='z') || (c>='A' && c<='Z')) { //MT::String or boolean
       is.putback(c);
       str.read(is, "", " \n\r\t,;}", false);
@@ -288,7 +298,8 @@ Item *readItem(Graph& containingKvg, std::istream& is, bool verbose=false, Graph
     cout <<endl;
   }
   
-  c=MT::getNextChar(is);
+  //eat the next , or ;
+  c=MT::getNextChar(is," \n\r\t");
   if(c==',' || c==';') {} else is.putback(c);
   
   return item;
@@ -554,7 +565,7 @@ void Graph::read(std::istream& is) {
 void Graph::write(std::ostream& os, const char *ELEMSEP, const char *delim) const {
   uint i;
   if(delim) os <<delim[0];
-  for(i=0; i<N; i++) { if(i) os <<ELEMSEP;  if(elem(i)) os <<*elem(i) <<flush; else os <<"<NULL>"; }
+  for(i=0; i<N; i++) { if(i) os <<ELEMSEP;  if(elem(i)) elem(i)->write(os); else os <<"<NULL>"; }
   if(delim) os <<delim[1] <<std::flush;
 }
 

@@ -153,7 +153,6 @@ struct Graph:ItemL {
 };
 stdPipes(Graph);
 
-typedef Graph Graph;
 
 extern Graph& NoGraph; //this is a pointer to NULL!!!! I use it for optional arguments
 
