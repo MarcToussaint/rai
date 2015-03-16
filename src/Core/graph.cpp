@@ -45,7 +45,10 @@ Item::Item(Graph& _container, const ItemL& _parents)
   : container(_container), parents(_parents){
   index=container.N;
   container.ItemL::append(this);
-  for(Item *i: parents) i->parentOf.append(this);
+  for(Item *i: parents){
+    CHECK(i,"you gave me a NULL parent");
+    i->parentOf.append(this);
+  }
 }
 
 Item::~Item() {

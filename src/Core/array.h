@@ -173,7 +173,7 @@ template<class T> struct Array {
   /// @name access by reference (direct memory access)
   T& elem(uint i) const;
   T& scalar() const;
-  T& last() const;
+  T& last(int i=-1) const;
   T& rndElem() const;
   T& operator()(uint i) const;
   T& operator()(uint i, uint j) const;
