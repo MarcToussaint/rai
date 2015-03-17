@@ -664,7 +664,7 @@ bool Graph::checkConsistency() const{
         parentGraph = &parentGraphItem->container;
       }
       //check sorting
-      CHECK(parent->index < parentGraphItem->index,"subitem refers to parent that sorts below the subgraph");
+//      CHECK(parent->index < parentGraphItem->index,"subitem refers to parent that sorts below the subgraph");
     }else{
       CHECK(parent->index < it->index,"item refers to parent that sorts below the item");
     }
