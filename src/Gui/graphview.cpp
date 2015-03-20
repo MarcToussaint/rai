@@ -290,7 +290,7 @@ bool sGraphView::on_drawingarea_motion_notify_event(GtkWidget       *widget,    
   if(!job) return false;
   job->pointer.x = event->x;
   job->pointer.y = event->y;
-  (job->callbacks->motion)(job, job->pointer);
+  if(job->callbacks) (job->callbacks->motion)(job, job->pointer);
   
   gtk_widget_queue_draw(widget);
   
