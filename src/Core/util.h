@@ -225,7 +225,7 @@ public:
   /// @name constructors
   String();
   String(const String& s);
-  explicit String(const char *s);
+  String(const char *s);
   explicit String(const std::string& s);
   ~String();
   
