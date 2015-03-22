@@ -24,7 +24,7 @@
 #include "graph.h"
 #include "registry.h"
 
-const ItemL& NoItemL=*((ItemL*)NULL);
+ItemL& NoItemL=*((ItemL*)NULL);
 Graph& NoGraph=*((Graph*)NULL);
 
 //===========================================================================

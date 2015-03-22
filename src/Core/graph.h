@@ -32,7 +32,7 @@ struct Item;
 struct Graph;
 typedef MT::Array<Item*> ItemL;
 typedef MT::Array<MT::String> StringA;
-extern const ItemL& NoItemL;
+extern ItemL& NoItemL;
 struct RootType { virtual ~RootType() {}; }; ///< if types derive from RootType, more tricks are possible
 inline std::istream& operator>>(std::istream&, RootType&) { NIY; }
 inline std::ostream& operator<<(std::ostream&, const RootType&) { NIY; }
