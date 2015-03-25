@@ -356,18 +356,21 @@ Graph::Graph(const Graph& G):s(NULL), isReferringToItemsOf(NULL), isItemOfParent
   *this = G;
 }
 
-Graph::Graph(Item *itemOfParentKvg):s(NULL), isReferringToItemsOf(NULL), isItemOfParentKvg(itemOfParentKvg) {
-  ItemL::memMove=true;
-}
+//Graph::Graph(Item *itemOfParentKvg):s(NULL), isReferringToItemsOf(NULL), isItemOfParentKvg(itemOfParentKvg) {
+//  ItemL::memMove=true;
+//}
 
 Graph::~Graph() {
-  //  delete s;
+}
+
+void Graph::clear() {
   if(!isReferringToItemsOf){
     checkConsistency();
     while(N) delete last();
     checkConsistency();
+  }else{
+    ItemL::clear();
   }
-  //  if(!isReference) listDelete(*this);
 }
 
 Item *Graph::append(const uintA& parentIdxs) {
@@ -477,7 +480,7 @@ Item* Graph::merge(Item *m){
     }else{ //overwrite the value
       it->takeoverValue(m);
     }
-    if(&m->container==this) removeItem(m);
+    if(&m->container==this) delete m;
   }else{ //nothing to merge, append
     if(&m->container!=this){
       Item *it = m->newClone(*this);
