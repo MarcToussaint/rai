@@ -81,6 +81,7 @@ const char *MT::String::readSkipSymbols = " \t";
 const char *MT::String::readStopSymbols = "\n\r";
 int   MT::String::readEatStopSymbol     = 1;
 MT::String MT::errString;
+Mutex coutMutex;
 
 
 //===========================================================================

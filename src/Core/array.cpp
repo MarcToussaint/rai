@@ -787,6 +787,12 @@ void gnuplot(const arr& X, bool pauseMouse, bool persist, const char* PDFfile) {
   }
 }
 
+arr bootstrap(const arr& x){
+  arr y(x.N);
+  for(uint i=0;i<y.N;i++) y(i) = x(rnd(y.N));
+  return y;
+}
+
 //void write(const arr& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
 //  std::ofstream fil;
 //  MT::open(fil, filename);

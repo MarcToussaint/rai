@@ -476,6 +476,7 @@ void makeSymmetric(arr& A);
 void transpose(arr& A);
 void SUS(const arr& p, uint n, uintA& s);
 uint SUS(const arr& p);
+arr bootstrap(const arr& x);
 void addDiag(arr& A, double d);
 
 namespace MT {

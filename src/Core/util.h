@@ -524,6 +524,7 @@ struct Inotify{
 //
 /// a basic mutex lock
 //
+
 struct Mutex {
 #ifndef MT_MSVC
   pthread_mutex_t mutex;
@@ -534,13 +535,6 @@ struct Mutex {
   ~Mutex();
   void lock();
   void unlock();
-};
-
-// support "Resource Acquisition Is Initialization" principle
-struct Lock {
-  Mutex& m;
-  Lock(Mutex& m) : m(m) { m.lock(); };
-  ~Lock() { m.unlock(); };
 };
 
 
@@ -575,6 +569,20 @@ struct Singleton {
   T& operator()() const{ return *getSingleton(); }
 };
 template<class T> T *Singleton<T>::singleton=NULL;
+
+
+//===========================================================================
+//
+/// a mutexed cout
+//
+
+extern Mutex coutMutex;
+struct CoutToken{
+  CoutToken(){ coutMutex.lock(); }
+  ~CoutToken(){ coutMutex.unlock(); }
+  std::ostream& getOs(){ return std::cout; }
+};
+#define COUT (CoutToken().getOs())
 
 
 //===========================================================================

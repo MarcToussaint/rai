@@ -24,8 +24,10 @@
 
 enum ThreadState { tsIDLE=0, tsCLOSE=-1, tsOPENING=-2, tsLOOPING=-3, tsBEATING=-4, tsFAILURE=-5 }; //positive states indicate steps-to-go
 struct ConditionVariable;
+struct VariableContainer;
 struct Thread;
 typedef MT::Array<ConditionVariable*> ConditionVariableL;
+typedef MT::Array<VariableContainer*> VariableContainerL;
 typedef MT::Array<Thread*> ThreadL;
 
 void stop(const ThreadL& P);
@@ -56,7 +58,6 @@ struct ConditionVariable {
   int value;
   Mutex mutex;
   pthread_cond_t  cond;
-  MT::Array<Thread*> listeners;
 
   ConditionVariable(int initialState=0);
   ~ConditionVariable();
@@ -78,6 +79,62 @@ struct ConditionVariable {
   void waitUntil(double absTime, bool userHasLocked=false);
 };
 
+struct VariableContainer {
+  MT::String name;            ///< Variable name
+  RWLock rwlock;              ///< rwLock (usually handled via read/writeAccess)
+  ConditionVariable revision; ///< revision (= number of write accesses) number
+  double revision_time;       ///< clock time of last write access
+  ThreadL listeners;          ///< list of threads that are being signaled a threadStep on write access
+
+  /// @name c'tor/d'tor
+  VariableContainer(const char* name);
+  virtual ~VariableContainer();
+
+  /// @name access control
+  /// to be called by a thread before access, returns the revision
+  int readAccess(Thread*);  //might set the caller to sleep
+  int writeAccess(Thread*); //might set the caller to sleep
+  int deAccess(Thread*);
+
+  /// @name syncing via a variable
+  /// the caller is set to sleep
+  int waitForNextRevision();
+  int waitForRevisionGreaterThan(int rev); //returns the revision
+  double revisionTime();
+  int revisionNumber();
+};
+inline void operator<<(ostream& os, const VariableContainer& v){ os <<"Variable '" <<v.name <<'\''; }
+
+template<class T>
+struct Variable:VariableContainer{
+  T data;
+
+  Variable(const char* name=NULL):VariableContainer(name){}
+  Variable(const T& x, const char* name=NULL):VariableContainer(name), data(x){}
+
+  //-- Token-wise access
+  struct ReadToken{
+    Variable<T> *v;
+    Thread *th;
+    ReadToken(Variable<T> *v, Thread *th):v(v), th(th){ v->readAccess(th); }
+    ~ReadToken(){ v->deAccess(th); }
+    const T* operator->(){ return v->data; }
+    operator const T&(){ return v->data; }
+    const T& operator()(){ return v->data; }
+  };
+  struct WriteToken{
+    Variable<T> *v;
+    Thread *th;
+    WriteToken(Variable<T> *v, Thread *th):v(v), th(th){ v->writeAccess(th); }
+    ~WriteToken(){ v->deAccess(th); }
+    WriteToken& operator=(const T& x){ v->data=x; return *this; }
+    T* operator->(){ return v->data; }
+    operator T&(){ return v->data; }
+    T& operator()(){ return v->data; }
+  };
+  ReadToken get(Thread *th=NULL){ return ReadToken(this, th); } ///< read access to the variable's data
+  WriteToken set(Thread *th=NULL){ return WriteToken(this, th); } ///< write access to the variable's data
+};
 
 //===========================================================================
 //
@@ -125,8 +182,7 @@ struct CycleTimer {
 struct Thread{
   MT::String name;
   ConditionVariable state;       ///< the condition variable indicates the state of the thread: positive=steps-to-go, otherwise it is a ThreadState
-  ConditionVariableL listensTo;
-  //ParameterL dependsOn;
+  VariableContainerL listensTo;
   pid_t tid;                     ///< system thread id
 #ifndef MT_QThread
   pthread_t thread;
@@ -155,9 +211,7 @@ struct Thread{
   bool isClosed();                      ///< check if closed
 
   /// @name listen to variable
-  void listenTo(ConditionVariable& var);
-  void listenTo(const ConditionVariableL &signalingVars);
-  void stopListeningTo(ConditionVariable& var);
+  void listenTo(VariableContainer& var);
 
   virtual void open() = 0;
   virtual void step() = 0;
@@ -166,14 +220,6 @@ struct Thread{
   void main(); //this is the thread main - should be private!
 };
 
-/*/// a basic thread */
-/* struct Thread { */
-/*   Thread(); */
-/*   ~Thread(); */
-/*   void open(const char* name=NULL); */
-/*   void close(); */
-/*   virtual void main() = 0; */
-/* }; */
 
 // ================================================
 //
@@ -267,5 +313,7 @@ struct ConditionVariable {
   int  getValue(bool userHasLocked=false) const { return value; }
 };
 #endif //MT_MSVC
+
+#include "thread_t.h"
 
 #endif
