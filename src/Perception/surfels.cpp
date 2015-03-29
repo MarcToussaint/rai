@@ -10,7 +10,7 @@ void Surfels::setRandom(uint N){
   rndGauss(pos, .3);
   for(uint i=0;i<N;i++) pos(i,2) += 1.f;
   norm.resize(N,3);
-  for(uint i=0;i<N;i++) norm[i]() = {0,0,-1};
+  for(uint i=0;i<N;i++) norm[i]() = {0.f,0.f,-1.f};
 //  rndGauss(norm);
   for(uint i=0;i<norm.d0;i++) norm[i]() /= length(norm[i]);
   col.resize(N,3);

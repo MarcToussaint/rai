@@ -74,11 +74,11 @@ void G4ID::load(const char *meta) {
     s->agents.append(name_agent);
     s->subjects.append(name_agent);
 
-    s->kvg_suplimbs.append(name_agent, new String(""), true);
-    s->kvg_sublimbs.append(name_agent, new StringA(), true);
+    s->kvg_suplimbs.append({name_agent}, {}, new String(""), true);
+    s->kvg_sublimbs.append({name_agent}, {}, new StringA(), true);
 
-    s->kvg_digitsof.append(name_agent, new StringA(), true);
-    s->kvg_sensorsof.append(name_agent, new StringA(), true);
+    s->kvg_digitsof.append({name_agent}, {}, new StringA(), true);
+    s->kvg_sensorsof.append({name_agent}, {}, new StringA(), true);
 
     kvg_limbs = a->getTypedValues<Graph>("limb");
     for(Graph *l: kvg_limbs) {
@@ -86,12 +86,12 @@ void G4ID::load(const char *meta) {
       s->limbs.append(name_limb);
       s->subjects.append(name_limb);
 
-      s->kvg_suplimbs.append(name_limb, new String(name_agent), true);
-      s->kvg_sublimbs.append(name_limb, new StringA(), true);
+      s->kvg_suplimbs.append({name_limb}, {}, new String(name_agent), true);
+      s->kvg_sublimbs.append({name_limb}, {}, new StringA(), true);
       s->kvg_sublimbs.getValue<StringA>(name_agent)->append(name_limb);
 
-      s->kvg_digitsof.append(name_limb, new StringA(), true);
-      s->kvg_sensorsof.append(name_limb, new StringA(), true);
+      s->kvg_digitsof.append({name_limb}, {}, new StringA(), true);
+      s->kvg_sensorsof.append({name_limb}, {}, new StringA(), true);
 
       kvg_digits = l->getTypedValues<Graph>("digit");
       for(Graph *d: kvg_digits) {
@@ -101,21 +101,21 @@ void G4ID::load(const char *meta) {
         s->sensors.append(name_digit);
         s->unstruct_sensors.append(name_digit);
 
-        s->kvg_suplimbs.append(name_digit, new String(name_limb), true);
-        s->kvg_sublimbs.append(name_digit, new StringA(), true);
+        s->kvg_suplimbs.append({name_digit}, {}, new String(name_limb), true);
+        s->kvg_sublimbs.append({name_digit}, {}, new StringA(), true);
         s->kvg_sublimbs.getValue<StringA>(name_limb)->append(name_digit);
 
-        s->kvg_digitsof.append(name_digit, new StringA(), true);
+        s->kvg_digitsof.append({name_digit}, {}, new StringA(), true);
         s->kvg_digitsof.getValue<StringA>(name_digit)->append(name_digit);
         s->kvg_digitsof.getValue<StringA>(name_limb)->append(name_digit);
         s->kvg_digitsof.getValue<StringA>(name_agent)->append(name_digit);
 
-        s->kvg_sensorsof.append(name_digit, new StringA(), true);
+        s->kvg_sensorsof.append({name_digit}, {}, new StringA(), true);
         s->kvg_sensorsof.getValue<StringA>(name_digit)->append(name_digit); 
         s->kvg_sensorsof.getValue<StringA>(name_limb)->append(name_digit); 
         s->kvg_sensorsof.getValue<StringA>(name_agent)->append(name_digit); 
 
-        s->kvg_sensors.append(name_digit, d, false);
+        s->kvg_sensors.append({name_digit}, {}, d, false);
 
         readItem(d, s->hsitoi, s->itohsi, i++);
       }
@@ -128,14 +128,14 @@ void G4ID::load(const char *meta) {
     s->objects.append(name_object);
     if(o->getValue(structured, "structured") && structured) {
       kvg_parts = o->getTypedValues<Graph>("part");
-      s->kvg_sensorsof.append(name_object, new StringA(), true);
+      s->kvg_sensorsof.append({name_object}, {}, new StringA(), true);
       for(Graph *p: kvg_parts) {
         p->getValue(name_part, "name");
         s->struct_sensors.append(name_part);
         s->sensors.append(name_part);
 
         s->kvg_sensorsof.getValue<StringA>(name_object)->append(name_part); 
-        s->kvg_sensors.append(name_part, p, false);
+        s->kvg_sensors.append({name_part}, {}, p, false);
 
         readItem(p, s->hsitoi, s->itohsi, i++);
       }
@@ -144,8 +144,8 @@ void G4ID::load(const char *meta) {
       s->unstruct_sensors.append(name_object);
       s->sensors.append(name_object);
 
-      s->kvg_sensors.append(name_object, o, false);
-      s->kvg_sensorsof.append(name_object, new StringA(), true);
+      s->kvg_sensors.append({name_object}, {}, o, false);
+      s->kvg_sensorsof.append({name_object}, {}, new StringA(), true);
       s->kvg_sensorsof.getValue<StringA>(name_object)->append(name_object); 
 
       readItem(o, s->hsitoi, s->itohsi, i++);
@@ -304,7 +304,7 @@ void G4Rec::load(const char *recdir, bool interpolate) {
   }
   // setting up default BAMs
   arr datatmp;
-  tensorPermutation(datatmp, data, {1, 0, 2});
+  tensorPermutation(datatmp, data, {1u, 0u, 2u});
   arr pos = datatmp.sub(0, -1, 0, -1, 0, 2);
   arr quat = datatmp.sub(0, -1, 0, -1, 3, -1);
   arr pose = datatmp;
@@ -362,7 +362,7 @@ void G4Rec::appendBam(const char *bam, const arr &data) {
   Item *i = kvg.getItem("bam", bam);
 
   if(!i)
-    kvg.append("bam", bam, new arr(data));
+    kvg.append({"bam", bam}, {}, new arr(data), true);
   else
     *i->getValue<arr>() = data; // replacing
 }

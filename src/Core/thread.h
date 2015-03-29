@@ -84,6 +84,7 @@ struct VariableContainer {
   RWLock rwlock;              ///< rwLock (usually handled via read/writeAccess)
   ConditionVariable revision; ///< revision (= number of write accesses) number
   double revision_time;       ///< clock time of last write access
+  double data_time;           ///< time stamp of the original data source
   ThreadL listeners;          ///< list of threads that are being signaled a threadStep on write access
 
   /// @name c'tor/d'tor
@@ -118,7 +119,7 @@ struct Variable:VariableContainer{
     Thread *th;
     ReadToken(Variable<T> *v, Thread *th):v(v), th(th){ v->readAccess(th); }
     ~ReadToken(){ v->deAccess(th); }
-    const T* operator->(){ return v->data; }
+    const T* operator->(){ return &v->data; }
     operator const T&(){ return v->data; }
     const T& operator()(){ return v->data; }
   };
@@ -128,7 +129,7 @@ struct Variable:VariableContainer{
     WriteToken(Variable<T> *v, Thread *th):v(v), th(th){ v->writeAccess(th); }
     ~WriteToken(){ v->deAccess(th); }
     WriteToken& operator=(const T& x){ v->data=x; return *this; }
-    T* operator->(){ return v->data; }
+    T* operator->(){ return &v->data; }
     operator T&(){ return v->data; }
     T& operator()(){ return v->data; }
   };
@@ -313,7 +314,5 @@ struct ConditionVariable {
   int  getValue(bool userHasLocked=false) const { return value; }
 };
 #endif //MT_MSVC
-
-#include "thread_t.h"
 
 #endif
