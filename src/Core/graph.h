@@ -125,6 +125,7 @@ struct Graph:ItemL {
   
   //-- adding items
   template<class T> Item *append(T *x, bool ownsValue);
+  template<class T> Item *append(const char* key, T *x, bool ownsValue);
   template<class T> Item *append(const StringA& keys, const ItemL& parents, T *x, bool ownsValue);
 //  template<class T> Item *append(const StringA& keys, T *x, bool ownsValue) { return append(keys, ItemL(), x, ownsValue); }
 //  template<class T> Item *append(const char *key, T *x, bool ownsValue) { return append({MT::String(key)}, ItemL(), x, ownsValue); }
