@@ -38,8 +38,8 @@
 #define for_list(Type, it, X)     Type *it=NULL; for(uint it##_COUNT=0;   it##_COUNT<X.N && ((it=X(it##_COUNT)) || true); it##_COUNT++)
 #define for_list_rev(Type, it, X) Type *it=NULL; for(uint it##_COUNT=X.N; it##_COUNT--   && ((it=X(it##_COUNT)) || true); )
 
-#define ARR(...) MT::Array<double>({ __VA_ARGS__ }) ///< write ARR(1., 4., 5., 7.) to generate a double-Array
-#define TUP(...) MT::Array<uint>({ __VA_ARGS__ }) ///< write TUP(1, 2, 3) to generate a uint-Array
+#define ARR ARRAY<double> ///< write ARR(1., 4., 5., 7.) to generate a double-Array
+#define TUP ARRAY<uint> ///< write TUP(1, 2, 3) to generate a uint-Array
 
 typedef unsigned char byte;
 typedef unsigned int uint;
@@ -399,6 +399,16 @@ struct KernelFunction {
 
 
 //===========================================================================
+template<class T> MT::Array<T> ARRAY() {                                    MT::Array<T> z(0); return z; }
+template<class T> MT::Array<T> ARRAY(const T& i) {                                    MT::Array<T> z(1); z(0)=i; return z; }
+template<class T> MT::Array<T> ARRAY(const T& i, const T& j) {                               MT::Array<T> z(2); z(0)=i; z(1)=j; return z; }
+template<class T> MT::Array<T> ARRAY(const T& i, const T& j, const T& k) {                          MT::Array<T> z(3); z(0)=i; z(1)=j; z(2)=k; return z; }
+template<class T> MT::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l) {                     MT::Array<T> z(4); z(0)=i; z(1)=j; z(2)=k; z(3)=l; return z; }
+template<class T> MT::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m) {                MT::Array<T> z(5); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; return z; }
+template<class T> MT::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n) {           MT::Array<T> z(6); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; return z; }
+template<class T> MT::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o) {      MT::Array<T> z(7); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; return z; }
+template<class T> MT::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p) { MT::Array<T> z(8); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; z(7)=p; return z; }
+template<class T> MT::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p, const T& q) { MT::Array<T> z(9); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; z(7)=p; z(8)=q; return z; }
 
 template<class T> MT::Array<T*> LIST() {                                    MT::Array<T*> z(0); return z; }
 template<class T> MT::Array<T*> LIST(const T& i) {                                    MT::Array<T*> z(1); z(0)=(T*)&i; return z; }
