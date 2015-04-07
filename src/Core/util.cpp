@@ -20,12 +20,14 @@
 #include "util.h"
 #include <math.h>
 #include <string.h>
+#include <signal.h>
 #if defined MT_Linux || defined MT_Cygwin || defined MT_Darwin
 #  include <limits.h>
 #  include <sys/time.h>
 #  include <sys/times.h>
 #  include <sys/resource.h>
 #  include <sys/inotify.h>
+#  include <sys/stat.h>
 #  include <poll.h>
 #endif
 #ifdef __CYGWIN__
@@ -80,6 +82,7 @@ const char *MT::String::readSkipSymbols = " \t";
 const char *MT::String::readStopSymbols = "\n\r";
 int   MT::String::readEatStopSymbol     = 1;
 MT::String MT::errString;
+Mutex coutMutex;
 
 
 //===========================================================================
@@ -112,60 +115,11 @@ bool timerUseRealTime=false;
 QApplication *myApp=NULL;
 #endif
 
-struct LogFile {
-  std::ofstream fil;
-  bool isOpen;
-  bool noLog;
-  
-  LogFile():isOpen(false), noLog(false) {
-    timerStartTime=MT::cpuTime();
-#ifndef MT_TIMEB
-    gettimeofday(&startTime, 0);
-#else
-    _ftime(&startTime);
-#endif
-  }
-  ~LogFile() {
-    if(isOpen) {  //don't open a log file anymore in the destructor
-      char times[200];
-      sprintf(times, "Ellapsed double time:  %.3lfsec\nProcess  user time:   %.3lfsec", realTime(), cpuTime());
-      MT::log() <<"Execution stop:      " <<date()
-                <<times <<std::endl;
-      //"Ellapsed double time:  " <<::dtoa(realTime()) <<"sec\n"
-      // <<"Process  user time:   " <<::dtoa(cpuTime()) <<"sec" <<std::endl;
-#ifndef MT_TIMEB
-      MT::log() <<"Process system time: " <<sysTime() <<"sec" <<std::endl;
-#endif
-      MT::log().close();
-    }
-#ifdef MT_QT
-    if(myApp) {
-      myApp->processEvents();
-      myApp->quit();
-    }
-#endif
-  }
-  
-  std::ofstream& log(const char *name) {
-    if(!isOpen && !noLog) {
-      fil.open(name);
-      if(!fil.good()) MT_MSG("could not open log-file `" <<name <<"' for output");
-      isOpen=true;
-    }
-    return fil;
-  }
-};
-
-Singleton<LogFile> logFile;
-
-/// access to the log-file
-std::ofstream& log(const char *name) { return logFile().log(name); }
-
 /// open an output-file with name '\c name'
 void open(std::ofstream& fs, const char *name, const char *errmsg) {
   fs.clear();
   fs.open(name);
-  log() <<"opening output file `" <<name <<"'" <<std::endl;
+  LOG(3) <<"opening output file `" <<name <<"'" <<std::endl;
   if(!fs.good()) MT_MSG("could not open file `" <<name <<"' for output" <<errmsg);
 }
 
@@ -173,7 +127,7 @@ void open(std::ofstream& fs, const char *name, const char *errmsg) {
 void open(std::ifstream& fs, const char *name, const char *errmsg) {
   fs.clear();
   fs.open(name);
-  log() <<"opening input file `" <<name <<"'" <<std::endl;
+  LOG(3) <<"opening input file `" <<name <<"'" <<std::endl;
   if(!fs.good()) HALT("could not open file `" <<name <<"' for input" <<errmsg);
 }
 
@@ -528,7 +482,25 @@ double totalTime() {
 }
 
 /// the absolute double time and date as string
-char *date() { static time_t t; time(&t); return ctime(&t); }
+char *date() {
+#ifndef MT_TIMEB
+  static timeval tv; gettimeofday(&tv, 0); return date(tv);
+#else
+  static time_t t; time(&t); return ctime(&t);
+#endif
+}
+
+char *date(const timeval& tv){
+  time_t nowtime;
+  struct tm *nowtm;
+  static char tmbuf[64], buf[64];
+
+  nowtime = tv.tv_sec;
+  nowtm = localtime(&nowtime);
+  strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", nowtm);
+  snprintf(buf, sizeof buf, "%s.%06ld", tmbuf, tv.tv_usec);
+  return buf;
+}
 
 /// wait double time
 void wait(double sec, bool msg_on_fail) {
@@ -540,20 +512,21 @@ void wait(double sec, bool msg_on_fail) {
   sec -= (double)ts.tv_sec;
   ts.tv_nsec = (long)(floor(1000000000. * sec));
   int rc = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
-  if(rc && msg_on_fail) MT_MSG("clock_nanosleep() failed " <<rc <<' ' <<strerror(rc));
+  if(rc && msg_on_fail){
+    MT_MSG("clock_nanosleep() failed " <<rc <<" '" <<strerror(rc) <<"' trying select instead");
+    timeval tv;
+    tv.tv_sec = ts.tv_sec;
+    tv.tv_usec = ts.tv_nsec/1000l;
+    rc = select(1, NULL, NULL, NULL, &tv);
+    if(rc==-1) MT_MSG("select() failed " <<rc <<" '" <<strerror(errno) <<"'");
+  }
 #else
   Sleep((int)(1000.*sec));
   //MsgWaitForMultipleObjects( 0, NULL, FALSE, (int)(1000.*sec), QS_ALLEVENTS);
 #endif
-  
+
 #if 0
 #ifndef MT_TIMEB
-  timeval tv;
-  tv.tv_sec = (int)(floor(sec));
-  sec -= (double)tv.tv_sec;
-  tv.tv_usec = (int)(floor(1000000. * sec));
-  int r = select(1, NULL, NULL, NULL, &tv);
-  if(r==-1) MT_MSG("select() failed");
   /* r=0 time is up
      r!=0 data in NULL stream available (nonsense)
      */
@@ -624,17 +597,10 @@ void timerResume() {
 /// memorize the command line arguments and open a log file
 void initCmdLine(int _argc, char *_argv[]) {
   argc=_argc; argv=_argv;
-  time_t t; time(&t);
-  const char *name;
-  if(checkCmdLineTag("nolog")) noLog=true; else noLog=false;
-  name=getCmdLineArgument("log");
-  if(!name) name=MT_LogFileName;
-  log(name);
-  if(!log().good()) MT_MSG(" -- use `-nolog' or `-log' option to specify the log file");
-  log() <<"Compiled at:     " <<__DATE__ <<" " <<__TIME__ <<"\n";
-  log() <<"Execution start: " <<ctime(&t);
-  log() <<"Program call:    '"; for(int i=0; i<argc; i++) log() <<argv[i] <<" ";
-  log() <<"\b'" <<std::endl;
+  MT::String msg;
+  msg <<"** cmd line arguments: '"; for(int i=0; i<argc; i++) msg <<argv[i] <<' ';
+  msg <<"\b'";
+  LOG(0) <<msg;
 }
 
 /// returns true if the tag was found on command line
@@ -659,21 +625,21 @@ char *getCmdLineArgument(const char *tag) {
   \c name is not specified, it searches for a command line-option
   '-cfg' and, if not found, it assumes \c name=MT.cfg */
 void openConfigFile(const char *name) {
-  log() <<"opening config file ";
+  LOG(3) <<"opening config file ";
   if(!name) name=getCmdLineArgument("cfg");
   if(!name) name=MT_ConfigFileName;
   if(cfgFileOpen) {
-    cfgFile.close(); log() <<"(old config file closed) ";
+    cfgFile.close(); LOG(3) <<"(old config file closed) ";
   }
-  log() <<"'" <<name <<"'";
+  LOG(3) <<"'" <<name <<"'";
   cfgFile.clear();
   cfgFile.open(name);
   cfgFileOpen=true;
   if(!cfgFile.good()) {
     //MT_MSG("couldn't open config file " <<name);
-    log() <<" - failed";
+    LOG(3) <<" - failed";
   }
-  log() <<std::endl;
+  LOG(3) <<std::endl;
 }
 
 uint getVerboseLevel() {
@@ -752,6 +718,9 @@ MT::String::String(const String& s):std::iostream(&buffer) { init(); this->opera
 
 /// copy constructor for an ordinary C-string (needs to be 0-terminated)
 MT::String::String(const char *s):std::iostream(&buffer) { init(); this->operator=(s); }
+
+
+MT::String::String(const std::string& s):std::iostream(&buffer) { init(); this->operator=(s.c_str()); }
 
 MT::String::~String() { if(M) delete[] p; }
 
@@ -911,6 +880,90 @@ MT::String MT::getNowString() {
 
 //===========================================================================
 //
+// logging
+
+namespace MT {
+  void handleSIGUSR2(int){
+    int i=5;
+    i*=i;    //set a break point here, if you want to catch errors directly
+  }
+
+struct LogServer {
+  std::ofstream fil;
+  bool noLog;
+
+  int fileLogLevel;
+  int consoleLogLevel;
+  Mutex mutex;
+
+  LogServer(): noLog(false), fileLogLevel(3), consoleLogLevel(3) {
+    signal(SIGUSR2, MT::handleSIGUSR2);
+    timerStartTime=MT::cpuTime();
+#ifndef MT_TIMEB
+    gettimeofday(&startTime, 0);
+#else
+    _ftime(&startTime);
+#endif
+
+    if(checkCmdLineTag("nolog")) noLog=true; else noLog=false;
+    const char *name=getCmdLineArgument("log");
+    if(!name) name=MT_LogFileName;
+
+    fil.open(name);
+    if(!fil.good()){
+      MT_MSG("could not open log-file `" <<name <<"' for output -- use `-nolog' or `-log' option to specify the log file");
+      noLog=true;
+      return;
+    }
+
+    fil <<"** compiled at:     " <<__DATE__ <<" " <<__TIME__ <<'\n';
+    fil <<"** execution start: " <<date(startTime) <<std::endl;
+  }
+
+  ~LogServer() {
+    if(noLog) return;
+    fil <<"** execution stop: " <<date()
+       <<"\n** real time: " <<realTime()
+      <<"sec\n** CPU time: " <<cpuTime()
+     <<"sec\n** system (includes I/O) time: " <<sysTime() <<"sec" <<std::endl;
+    fil.close();
+  }
+};
+
+Singleton<MT::LogServer> logServer;
+
+}
+
+MT::LogToken::~LogToken(){
+  MT::logServer().mutex.lock();
+  if(MT::logServer().fileLogLevel   >=log_level) MT::logServer().fil <<filename <<':' <<function <<':' <<line <<'|' <<log_level <<"| " <<msg <<endl;
+  if(MT::logServer().consoleLogLevel>=log_level){
+    if(log_level>=0) std::cout <<msg <<endl;
+    else{
+      MT::errString.clear() <<filename <<':' <<function <<':' <<line <<": " <<msg;
+#ifdef MT_ROS
+      ROS_INFO("MLR-MSG: %s",MT::errString..p);
+#endif
+      raise(SIGUSR2);
+      if(log_level==-1){ MT::errString <<" -- WARNING"; cerr <<MT::errString <<endl; }
+      if(log_level==-2){ MT::errString <<" -- ERROR  "; cerr <<MT::errString <<endl; throw MT::errString.p; }
+      if(log_level==-3){ MT::errString <<" -- HARD EXIT!"; cerr <<MT::errString <<endl; MT::logServer().mutex.unlock(); exit(1); }
+    }
+  }
+  MT::logServer().mutex.unlock();
+}
+
+void setLogLevels(int fileLogLevel, int consoleLogLevel){
+  MT::logServer().mutex.lock();
+  MT::logServer().fileLogLevel   =fileLogLevel;
+  MT::logServer().consoleLogLevel=consoleLogLevel;
+  MT::logServer().mutex.unlock();
+
+}
+
+
+//===========================================================================
+//
 // FileToken
 //
 
@@ -922,7 +975,7 @@ MT::FileToken::FileToken(const char* filename, bool change_dir): os(NULL), is(NU
       cwd.resize(200, false);
       if(!getcwd(cwd.p, 200)) HALT("couldn't get current dir");
       cwd.resize(strlen(cwd.p), true);
-      log() <<"entering path `" <<path<<"' from '" <<cwd <<"'" <<std::endl;
+      LOG(3) <<"entering path `" <<path<<"' from '" <<cwd <<"'" <<std::endl;
       if(chdir(path)) HALT("couldn't change to directory " <<path <<"(current dir: " <<cwd <<")");
     }
   }
@@ -932,7 +985,7 @@ MT::FileToken::~FileToken(){
   if(is){ is->close(); } //delete is; is=NULL; }
   if(os){ os->close(); } //delete os; os=NULL; }
   if(cwd.N){
-    log() <<"leaving path `" <<path<<"' back to '" <<cwd <<"'" <<std::endl;
+    LOG(3) <<"leaving path `" <<path<<"' back to '" <<cwd <<"'" <<std::endl;
     if(chdir(cwd)) HALT("couldn't change back to directory " <<cwd);
   }
 }
@@ -950,12 +1003,18 @@ void MT::FileToken::decomposeFilename() {
   }
 }
 
+bool MT::FileToken::exists() {
+  struct stat sb;
+  int r=stat(name, &sb);
+  return r==0;
+}
+
 std::ofstream& MT::FileToken::getOs(){
   CHECK(!is,"don't use a FileToken both as input and output");
   if(!os){
     os=new std::ofstream;
     os->open(name);
-    log() <<"opening output file `" <<name <<"'" <<std::endl;
+    LOG(3) <<"opening output file `" <<name <<"'" <<std::endl;
     if(!os->good()) MT_MSG("could not open file `" <<name <<"' for output");
   }
   return *os;
@@ -966,7 +1025,7 @@ std::ifstream& MT::FileToken::getIs(){
   if(!is){
     is=new std::ifstream;
     is->open(name);
-    log() <<"opening input file `" <<name <<"'" <<std::endl;
+    LOG(3) <<"opening input file `" <<name <<"'" <<std::endl;
     if(!is->good()) HALT("could not open file `" <<name <<"' for input");
   }
   return *is;
@@ -1001,7 +1060,7 @@ uint32_t MT::Rnd::clockSeed() {
 #else
   _timeb t; _ftime(&t); s=1000L*t.time+t.millitm;
 #endif
-  log() <<"random clock seed: " <<s <<std::endl;
+  LOG(3) <<"random clock seed: " <<s <<std::endl;
   return seed(s);
 }
 
@@ -1300,12 +1359,6 @@ template MT::String MT::getParameter<MT::String>(const char*, const MT::String&)
 
 template bool MT::checkParameter<uint>(const char*);
 template bool MT::checkParameter<bool>(const char*);
-
-template void MT::Parameter<MT::String>::initialize();
-template void MT::Parameter<bool>::initialize();
-template void MT::Parameter<double>::initialize();
-template void MT::Parameter<int>::initialize();
-template void MT::Parameter<uint>::initialize();
 
 template std::map<std::string,int> MT::ParameterMap<int>::m;
 template std::map<std::string,double> MT::ParameterMap<double>::m;

@@ -787,6 +787,12 @@ void gnuplot(const arr& X, bool pauseMouse, bool persist, const char* PDFfile) {
   }
 }
 
+arr bootstrap(const arr& x){
+  arr y(x.N);
+  for(uint i=0;i<y.N;i++) y(i) = x(rnd(y.N));
+  return y;
+}
+
 //void write(const arr& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
 //  std::ofstream fil;
 //  MT::open(fil, filename);
@@ -1680,7 +1686,10 @@ template void MT::getParameter(uintA&, const char*, const uintA&);
 
 void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 
-MT::Array<MT::String> STRINGS(){ return ARRAY<MT::String>(); }
-MT::Array<MT::String> STRINGS(const char* s0){ return ARRAY<MT::String>(MT::String(s0)); }
-MT::Array<MT::String> STRINGS(const char* s0, const char* s1){ return ARRAY<MT::String>(MT::String(s0), MT::String(s1)); }
-MT::Array<MT::String> STRINGS(const char* s0, const char* s1, const char* s2){ return ARRAY<MT::String>(MT::String(s0), MT::String(s1), MT::String(s2)); }
+namespace MT{
+template<> template<> Array<MT::String>::Array<const char*>(std::initializer_list<const char*> list) {
+  init();
+  for(const char* t : list) append(MT::String(t));
+}
+}
+

@@ -53,7 +53,7 @@ struct RandomLPFunction:ConstrainedProblem {
         randomG(i,0) -= .2;
       }
     }
-    if(&g) g = randomG * cat(ARRAY(1.),x);
+    if(&g) g = randomG * cat({1.},x);
     if(&Jg) Jg = randomG.sub(0,-1,1,-1);
     return fx;
   }
@@ -105,7 +105,7 @@ struct ChoiceConstraintFunction:ConstrainedProblem {
             randomG(i,0) -= .2;
           }
         }
-        if(&g) g = randomG * cat(ARRAY(1.), x);
+        if(&g) g = randomG * cat({1.}, x);
         if(&Jg) Jg = randomG.sub(0,-1,1,-1);
       } break;
     }
@@ -219,7 +219,7 @@ struct ParticleAroundWalls:KOrderMarkovFunction {
     useKernel(false){}
 
   //implementations of the kOrderMarkov virtuals
-  void phi_t(arr& phi, arr& J, uint t, const arr& x_bar);
+  void phi_t(arr& phi, arr& J, TermTypeA& tt, uint t, const arr& x_bar);
   uint get_T(){ return T; }
   uint get_k(){ return k; }
   uint dim_x(){ return 3; }

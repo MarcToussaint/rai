@@ -196,9 +196,10 @@ void AudioReader::step() {
     if(poller == NULL) {
         return;
     }
-    Access_typed<byteA>::WriteToken wr(pcms16ne2c.set());
-    wr().resize(4096);
-    poller->read(wr());
+    pcms16ne2c.writeAccess();
+    pcms16ne2c().resize(4096);
+    poller->read(pcms16ne2c());
+    pcms16ne2c.deAccess();
 }
 
 

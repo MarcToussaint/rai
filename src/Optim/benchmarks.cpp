@@ -21,7 +21,7 @@
 
 //===========================================================================
 
-double RosenbrockFunction(arr& g, arr& H, const arr& x) {
+double _RosenbrockFunction(arr& g, arr& H, const arr& x) {
   double f=0.;
   for(uint i=1; i<x.N; i++) f += MT::sqr(x(i)-MT::sqr(x(i-1))) + .01*MT::sqr(1-10.*x(i-1));
   f = ::log(1.+f);
@@ -30,9 +30,11 @@ double RosenbrockFunction(arr& g, arr& H, const arr& x) {
   return f;
 };
 
+ScalarFunction RosenbrockFunction(){ return _RosenbrockFunction; }
+
 //===========================================================================
 
-double RastriginFunction(arr& g, arr& H, const arr& x) {
+double _RastriginFunction(arr& g, arr& H, const arr& x) {
   double A=.5, f=A*x.N;
   for(uint i=0; i<x.N; i++) f += x(i)*x(i) - A*::cos(10.*x(i));
   if(&g) {
@@ -46,31 +48,39 @@ double RastriginFunction(arr& g, arr& H, const arr& x) {
   return f;
 }
 
+ScalarFunction RastriginFunction(){ return _RastriginFunction; }
+
 //===========================================================================
 
-double SquareFunction(arr& g, arr& H, const arr& x) {
+double _SquareFunction(arr& g, arr& H, const arr& x) {
   if(&g) g=2.*x;
   if(&H) H.setDiag(2., x.N);
   return sumOfSqr(x);
 }
 
+ScalarFunction SquareFunction(){ return _SquareFunction; }
+
 //===========================================================================
 
-double SumFunction(arr& g, arr& H, const arr& x) {
+double _SumFunction(arr& g, arr& H, const arr& x) {
   if(&g) { g.resize(x.N); g=1.; }
   if(&H) { H.resize(x.N,x.N); H.setZero(); }
   return sum(x);
 }
 
+ScalarFunction SumFunction(){ return _SumFunction; }
+
 //===========================================================================
 
-double HoleFunction(arr& g, arr& H, const arr& x) {
+double _HoleFunction(arr& g, arr& H, const arr& x) {
   double f=exp(-sumOfSqr(x));
   if(&g) g=2.*f*x;
   if(&H) { H.setDiag(2.*f, x.N); H -= 4.*f*(x^x); }
   f = 1.-f;
   return f;
 }
+
+ScalarFunction HoleFunction(){ return _HoleFunction; }
 
 //===========================================================================
 
@@ -98,11 +108,11 @@ struct _ChoiceFunction:ScalarFunction {
     y *= condition; //elem-wise product
     double f;
     switch(which) {
-      case sum: f = SumFunction(g, H, y); break;
-      case square: f = SquareFunction(g, H, y); break;
-      case hole: f = HoleFunction(g, H, y); break;
-      case rosenbrock: f = RosenbrockFunction(g, H, y); break;
-      case rastrigin: f = RastriginFunction(g, H, y); break;
+      case sum: f = _SumFunction(g, H, y); break;
+      case square: f = _SquareFunction(g, H, y); break;
+      case hole: f = _HoleFunction(g, H, y); break;
+      case rosenbrock: f = _RosenbrockFunction(g, H, y); break;
+      case rastrigin: f = _RastriginFunction(g, H, y); break;
       default: NIY;
     }
     if(&g) g *= condition; //elem-wise product
@@ -191,7 +201,7 @@ uint ParticleAroundWalls::dim_g(uint t){
   return 0;
 }
 
-void ParticleAroundWalls::phi_t(arr& phi, arr& J, uint t, const arr& x_bar){
+void ParticleAroundWalls::phi_t(arr& phi, arr& J, TermTypeA& tt, uint t, const arr& x_bar){
   uint T=get_T(), n=dim_x(), k=get_k();
 
   //assert some dimensions
@@ -203,6 +213,7 @@ void ParticleAroundWalls::phi_t(arr& phi, arr& J, uint t, const arr& x_bar){
   if(k==1)  phi = x_bar[1]-x_bar[0]; //penalize velocity
   if(k==2)  phi = x_bar[2]-2.*x_bar[1]+x_bar[0]; //penalize acceleration
   if(k==3)  phi = x_bar[3]-3.*x_bar[2]+3.*x_bar[1]-x_bar[0]; //penalize jerk
+  if(&tt) tt.append(sumOfSqrTT, n);
 
   //-- walls: append to phi
   //Note: here we append to phi ONLY in certain time slices: the dimensionality of phi may very with time slices; see dim_phi(uint t)
@@ -215,6 +226,7 @@ void ParticleAroundWalls::phi_t(arr& phi, arr& J, uint t, const arr& x_bar){
       if(t==3*T/4) phi.append(MT::ineqConstraintCost(i+1.-x_bar(k,i), eps, power));  //middle factor: ``greater than i''
       if(t==T)     phi.append(MT::ineqConstraintCost(x_bar(k,i)+i+1., eps, power));  //last factor: ``lower than -i''
     }
+    if(&tt) tt.append(sumOfSqrTT, n);
   }else{
     //-- wall constraints
     for(uint i=0;i<n;i++){ //add barrier costs to each dimension
@@ -223,10 +235,12 @@ void ParticleAroundWalls::phi_t(arr& phi, arr& J, uint t, const arr& x_bar){
       if(t==3*T/4) phi.append((i+1.-x_bar(k,i)));  //middle factor: ``greater than i''
       if(t==T)     phi.append((x_bar(k,i)+i+1.));  //last factor: ``lower than -i''
     }
+    if(&tt) tt.append(ineqTT, n);
   }
 
   uint m=phi.N;
   CHECK_EQ(m,dim_phi(t),"");
+  if(&tt) CHECK_EQ(m,tt.N,"");
 
   if(&J){ //we also need to return the Jacobian
     J.resize(m,k+1,n).setZero();

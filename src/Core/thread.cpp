@@ -199,6 +199,75 @@ void ConditionVariable::waitUntil(double absTime, bool userHasLocked) {
 
 //===========================================================================
 //
+// VariableContainer
+//
+
+VariableContainer::VariableContainer(const char *_name):name(_name), revision(0) {
+  listeners.memMove=true;
+}
+
+VariableContainer::~VariableContainer() {
+}
+
+int VariableContainer::readAccess(Thread *th) {
+//  engine().acc->queryReadAccess(this, p);
+  rwlock.readLock();
+//  engine().acc->logReadAccess(this, p);
+  return revision.getValue();
+}
+
+int VariableContainer::writeAccess(Thread *th) {
+//  engine().acc->queryWriteAccess(this, p);
+  rwlock.writeLock();
+  int r = revision.incrementValue();
+  revision_time = MT::clockTime();
+//  engine().acc->logWriteAccess(this, p);
+//  if(listeners.N && !th){ HALT("I need to know the calling thread when threads listen to variables"); }
+  for(Thread *l: listeners) if(l!=th) l->threadStep();
+  return r;
+}
+
+int VariableContainer::deAccess(Thread *th) {
+//  Module_Thread *p = m?(Module_Thread*) m->thread:NULL;
+  if(rwlock.state == -1) { //log a revision after write access
+    //MT logService.logRevision(this);
+    //MT logService.setValueIfDbDriven(this); //this should be done within queryREADAccess, no?!
+//    engine().acc->logWriteDeAccess(this,p);
+  } else {
+//    engine().acc->logReadDeAccess(this,p);
+  }
+  int rev=revision.getValue();
+  rwlock.unlock();
+  return rev;
+}
+
+double VariableContainer::revisionTime(){
+  return revision_time;
+}
+
+int VariableContainer::revisionNumber(){
+  return revision.getValue();
+}
+
+int VariableContainer::waitForNextRevision(){
+  revision.lock();
+  revision.waitForSignal(true);
+  int rev = revision.value;
+  revision.unlock();
+  return rev;
+}
+
+int VariableContainer::waitForRevisionGreaterThan(int rev) {
+  revision.lock();
+  revision.waitForValueGreaterThan(rev, true);
+  rev = revision.value;
+  revision.unlock();
+  return rev;
+}
+
+
+//===========================================================================
+//
 // Metronome
 //
 
@@ -307,10 +376,14 @@ protected:
 #endif
 
 Thread::Thread(const char* _name): name(_name), state(tsCLOSE), tid(0), thread(0), step_count(0), metronome(NULL)  {
-  listensTo.memMove=true;
 }
 
 Thread::~Thread() {
+  for(VariableContainer *v:listensTo){
+    v->rwlock.writeLock();
+    v->listeners.removeValue(this);
+    v->rwlock.unlock();
+  }
   if(!isClosed()) threadClose();
 }
 
@@ -374,34 +447,23 @@ void Thread::threadStep(uint steps, bool wait) {
   if(wait) waitForIdle();
 }
 
-void Thread::listenTo(const ConditionVariableL &signalingVars) {
-  for_list(ConditionVariable,  v,  signalingVars) listenTo(*v);
-}
-
-void Thread::listenTo(ConditionVariable& v) {
-  v.mutex.lock(); //don't want to increase revision and broadcast!
+void Thread::listenTo(VariableContainer& v) {
+  v.rwlock.writeLock();  //don't want to increase revision and broadcast!
   v.listeners.setAppend(this);
-  v.mutex.unlock();
+  v.rwlock.unlock();
   listensTo.setAppend(&v);
-}
-
-void Thread::stopListeningTo(ConditionVariable& v){
-  v.mutex.lock(); //don't want to increase revision and broadcast!
-  v.listeners.removeValue(this);
-  v.mutex.unlock();
-  listensTo.removeValue(&v);
 }
 
 bool Thread::isIdle() {
   return state.getValue()==tsIDLE;
 }
 
-//bool Thread::isOpen() {
-//  return thread!=0;
-//}
-
 bool Thread::isClosed() {
   return state.getValue()==tsCLOSE;
+}
+
+void Thread::waitForOpened() {
+  state.waitForValueNotEq(tsOPENING);
 }
 
 void Thread::waitForIdle() {
@@ -578,5 +640,10 @@ TStream::Register::~Register() {
 
   tstream->reg_private(obj, p, true);
 }
+
+RUN_ON_INIT_BEGIN()
+VariableContainerL::memMove=true;
+ThreadL::memMove=true;
+RUN_ON_INIT_END()
 
 #endif //MT_MSVC
