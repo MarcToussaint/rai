@@ -28,6 +28,15 @@ ItemL& NoItemL=*((ItemL*)NULL);
 Graph& NoGraph=*((Graph*)NULL);
 
 //===========================================================================
+
+struct ParseInfo{
+  Item *it;
+  istream::pos_type beg,end;
+  istream::pos_type err_beg, err_end;
+  enum Error{ good=0, unknownParent };
+};
+
+//===========================================================================
 //
 //  Item methods
 //
@@ -130,7 +139,7 @@ Graph Item::ParentOf(){
   return G;
 }
 
-Item *readItem(Graph& containingKvg, std::istream& is, bool verbose=false, Graph* parentGraph=NULL, MT::String prefixedKey=MT::String()) {
+Item *readItem(Graph& containingKvg, std::istream& is, bool verbose, bool parseInfo, MT::String prefixedKey=MT::String()) {
   MT::String str;
   StringA keys;
   ItemL parents;
@@ -236,16 +245,6 @@ Item *readItem(Graph& containingKvg, std::istream& is, bool verbose=false, Graph
         }
         MT::parse(is, ">");
       } break;
-      case '=': { //pointer to the next item!
-        Item_typed<Item> *it = new Item_typed<Item>(containingKvg, keys, parents, NULL, false);
-        item = it;
-        Item *next = readItem(containingKvg, is, verbose, parentGraph);
-        if(!next){
-          PARSERR("could not read next item in assigning to previous");
-        }else{
-          it->value = next;
-        }
-      } break;
       case '{': { // Graph (e.g., attribute list)
         Graph *subList = new Graph;
         item = new Item_typed<Graph>(containingKvg, keys, parents, subList, true);
@@ -260,7 +259,6 @@ Item *readItem(Graph& containingKvg, std::istream& is, bool verbose=false, Graph
           str.read(is, " , ", " , )", false);
           if(!str.N) break;
           Item *e=containingKvg.getItem(str);
-          if(!e && parentGraph) e=parentGraph->getItem(str);
           if(e) { //sucessfully found
             refs->ItemL::append(e);
           } else { //this element is not known!!
@@ -381,7 +379,7 @@ Item *Graph::append(const uintA& parentIdxs) {
 
 void Graph::appendDict(const std::map<std::string, std::string>& dict){
   for(const std::pair<std::string,std::string>& p:dict){
-    Item *it = readItem(*this, STRING('='<<p.second), false, NULL, MT::String(p.first));
+    Item *it = readItem(*this, STRING('='<<p.second), false, false, MT::String(p.first));
     if(!it) MT_MSG("failed to read dict entry <" <<p.first <<',' <<p.second <<'>');
   }
 }
@@ -535,31 +533,19 @@ Graph& Graph::operator=(const Graph& G) {
   return *this;
 }
 
-void Graph::read(std::istream& is) {
-  //read all generic attributes
-  //MT::lineCount=1;
+void Graph::read(std::istream& is, bool parseInfo) {
+  if(parseInfo) getParseInfo(NULL).beg=is.tellg();
   for(;;) {
     char c=MT::peerNextChar(is, " \n\r\t,");
-    if(c=='%'){ //special caracter
-      MT::String str;
-      str.read(is,""," \n\r\t",true);
-      if(str=="%include"){
-        is >>str;
-        read(FILE(str).getIs());
-      }else if(str=="%end"){
-        break;
-      }else HALT("don't know special command " <<str);
-    }else{
-      if(!is.good() || c=='}') { is.clear(); break; }
-      Item *it = readItem(*this, is);
-      if(!it) break;
-      if(it->keys.N && it->keys(0)=="Include"){
-        read(it->getValue<MT::FileToken>()->getIs());
-        ItemL::removeValue(it);
-        index();
-      }
+    if(!is.good() || c=='}') { is.clear(); break; }
+    Item *it = readItem(*this, is, false, parseInfo);
+    if(!it) break;
+    if(it->keys.N==1 && it->keys(0)=="Include"){
+      read(it->getValue<MT::FileToken>()->getIs(true));
+      delete it;
     }
   }
+  if(parseInfo) getParseInfo(NULL).end=is.tellg();
   //-- merge all Merge keys
   Graph merges = getItems("Merge");
   for(Item *m:merges){
@@ -647,6 +633,16 @@ void Graph::sortByDotOrder() {
   }
   permuteInv(perm);
   for_list(Item, it2, list()) it2->index=it2_COUNT;
+}
+
+ParseInfo& Graph::getParseInfo(Item* it){
+  if(pi.N!=N+1){
+    listResizeCopy(pi, N+1);
+    pi(0)->it=NULL;
+    for(uint i=1;i<pi.N;i++) pi(i)->it=elem(i-1);
+  }
+  if(!it) return *pi(0);
+  return *pi(it->index+1);
 }
 
 bool Graph::checkConsistency() const{
