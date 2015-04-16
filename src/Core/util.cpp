@@ -942,7 +942,7 @@ MT::LogToken::~LogToken(){
     else{
       MT::errString.clear() <<filename <<':' <<function <<':' <<line <<": " <<msg;
 #ifdef MT_ROS
-      ROS_INFO("MLR-MSG: %s",MT::errString..p);
+      ROS_INFO("MLR-MSG: %s",MT::errString.p);
 #endif
       raise(SIGUSR2);
       if(log_level==-1){ MT::errString <<" -- WARNING"; cerr <<MT::errString <<endl; }
