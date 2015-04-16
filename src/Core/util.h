@@ -425,9 +425,10 @@ struct FileToken{
   FileToken& operator()(){ return *this; }
 
   void decomposeFilename();
+  void changeDir();
   bool exists();
   std::ofstream& getOs();
-  std::ifstream& getIs();
+  std::ifstream& getIs(bool change_dir=false);
   operator std::istream&(){ return getIs(); }
   operator std::ostream&(){ return getOs(); }
 };

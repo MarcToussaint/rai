@@ -969,16 +969,7 @@ void setLogLevels(int fileLogLevel, int consoleLogLevel){
 
 MT::FileToken::FileToken(const char* filename, bool change_dir): os(NULL), is(NULL){
   name=filename;
-  if(change_dir){
-    decomposeFilename();
-    if(path.N){
-      cwd.resize(200, false);
-      if(!getcwd(cwd.p, 200)) HALT("couldn't get current dir");
-      cwd.resize(strlen(cwd.p), true);
-      LOG(3) <<"entering path `" <<path<<"' from '" <<cwd <<"'" <<std::endl;
-      if(chdir(path)) HALT("couldn't change to directory " <<path <<"(current dir: " <<cwd <<")");
-    }
-  }
+  if(change_dir) changeDir();
 }
 
 MT::FileToken::~FileToken(){
@@ -1003,6 +994,21 @@ void MT::FileToken::decomposeFilename() {
   }
 }
 
+void MT::FileToken::changeDir(){
+  if(path.N){
+    HALT("you've changed already?");
+  }else{
+    decomposeFilename();
+    if(path.N){
+      cwd.resize(200, false);
+      if(!getcwd(cwd.p, 200)) HALT("couldn't get current dir");
+      cwd.resize(strlen(cwd.p), true);
+      LOG(3) <<"entering path `" <<path<<"' from '" <<cwd <<"'" <<std::endl;
+      if(chdir(path)) HALT("couldn't change to directory " <<path <<"(current dir: " <<cwd <<")");
+    }
+  }
+}
+
 bool MT::FileToken::exists() {
   struct stat sb;
   int r=stat(name, &sb);
@@ -1020,7 +1026,8 @@ std::ofstream& MT::FileToken::getOs(){
   return *os;
 }
 
-std::ifstream& MT::FileToken::getIs(){
+std::ifstream& MT::FileToken::getIs(bool change_dir){
+  if(change_dir) changeDir();
   CHECK(!os,"don't use a FileToken both as input and output");
   if(!is){
     is=new std::ifstream;
