@@ -304,7 +304,7 @@ struct LogToken{
 //#define LOG(log_level) (MT::LogToken(log_level, __FILE__, __func__, __LINE__).os())
 #define LOG(log_level) MT::LogToken(log_level, __FILE__, __func__, __LINE__).os()
 
-void setLogLevels(int fileLogLevel=3, int consoleLogLevel=3);
+void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 
 //The destructor ~LogToken writes into the log file and
 //console. setLogLevel allows to adjust cout verbosity (0 by default),

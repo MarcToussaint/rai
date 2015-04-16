@@ -896,7 +896,7 @@ struct LogServer {
   int consoleLogLevel;
   Mutex mutex;
 
-  LogServer(): noLog(false), fileLogLevel(3), consoleLogLevel(3) {
+  LogServer(): noLog(false), fileLogLevel(3), consoleLogLevel(2) {
     signal(SIGUSR2, MT::handleSIGUSR2);
     timerStartTime=MT::cpuTime();
 #ifndef MT_TIMEB
