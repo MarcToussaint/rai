@@ -157,3 +157,6 @@ uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions o) {
 }
 
 
+RUN_ON_INIT_BEGIN(optimization)
+TermTypeA::memMove=true;
+RUN_ON_INIT_END(optimization)

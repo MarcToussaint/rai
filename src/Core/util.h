@@ -89,7 +89,6 @@ extern int interactivity;
 //----- files
 void open(std::ofstream& fs, const char *name, const char *errmsg="");
 void open(std::ifstream& fs, const char *name, const char *errmsg="");
-std::ofstream& log(const char *name="MT.log");
 
 //----- strings and streams
 bool contains(const char *s, char c);
@@ -147,6 +146,7 @@ double sysTime();
 double totalTime();
 double toTime(const tm& t);
 char *date();
+char *date(const struct timeval& tv);
 void wait(double sec, bool msg_on_fail=true);
 bool wait();
 
@@ -225,7 +225,8 @@ public:
   /// @name constructors
   String();
   String(const String& s);
-  explicit String(const char *s);
+  String(const char *s);
+  explicit String(const std::string& s);
   ~String();
   
   /// @name access
@@ -288,18 +289,22 @@ namespace MT {
 namespace MT {
 struct LogToken{
   MT::String msg;
-  bool writeToFile;
-  bool writeToConsole;
-  LogToken(int log_level, const char* filename, const char* function, uint line);
+  int log_level;
+  const char *filename, *function;
+  uint line;
+  LogToken(int log_level, const char* filename, const char* function, uint line):log_level(log_level), filename(filename), function(function), line(line) {}
   ~LogToken();
+//  LogToken& operator()(){ return *this; }
   std::ostream& os(){ return msg; }
 };
 }
+//template<class T> MT::LogToken& operator<<(MT::LogToken& log, const T& x){ log.os() <<x;  return log; }
 
+//inline MT::LogToken LOG(int log_level=0){ return MT::LogToken(log_level, __FILE__, __func__, __LINE__); }
+//#define LOG(log_level) (MT::LogToken(log_level, __FILE__, __func__, __LINE__).os())
 #define LOG(log_level) MT::LogToken(log_level, __FILE__, __func__, __LINE__).os()
 
-
-void setLogLevel(const char* topic, int l, bool forLogFile=false);
+void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 
 //The destructor ~LogToken writes into the log file and
 //console. setLogLevel allows to adjust cout verbosity (0 by default),
@@ -315,53 +320,58 @@ void setLogLevel(const char* topic, int l, bool forLogFile=false);
 /// Marc Toussaint namespace
 namespace MT {
 extern String errString;
-
-inline void breakPoint() {
-  int i=5;
-  i*=i;    //set a break point here, if you want to catch errors directly
-}
 }
 
 //----- error handling:
-#  define MT_HERE "@" << __FILE__<<':' <<__LINE__ <<':' <<__FUNCTION__ <<": "
-/* #ifdef MT_MSVC */
-/* (strrchr(__FILE__, '\\')?strrchr(__FILE__, '\\')+1:__FILE__) */
-/* #else */
-/* #  define MT_HERE "@" <<(strrchr(__FILE__, '/')?strrchr(__FILE__, '/')+1:__FILE__) <<':' <<__LINE__ <<':' <<__FUNCTION__ <<": " */
-/* #endif */
-#ifdef MT_ROS
-#  define MT_WRITE_MSG(str) { std::cerr <<str <<std::endl; ROS_INFO("MLR-MSG: %s",str.p); }
-#else
-#  define MT_WRITE_MSG(str) { std::cerr <<str <<std::endl; }
-#endif
-#ifndef MT_MSG
-#  define MT_MSG(msg){ std::cerr <<MT_HERE <<msg <<std::endl; MT::breakPoint(); }
-#endif
+#  define MT_HERE "@" << __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<": "
+///* #ifdef MT_MSVC */
+///* (strrchr(__FILE__, '\\')?strrchr(__FILE__, '\\')+1:__FILE__) */
+///* #else */
+///* #  define MT_HERE "@" <<(strrchr(__FILE__, '/')?strrchr(__FILE__, '/')+1:__FILE__) <<':' <<__LINE__ <<':' <<__FUNCTION__ <<": " */
+///* #endif */
+//#ifdef MT_ROS
+//#  define MT_WRITE_MSG(str) { std::cerr <<str <<std::endl; ROS_INFO("MLR-MSG: %s",str.p); }
+//#else
+//#  define MT_WRITE_MSG(str) { std::cerr <<str <<std::endl; }
+//#endif
+//#ifndef MT_MSG
+//#  define MT_MSG(msg){ std::cerr <<MT_HERE <<msg <<std::endl; }
+//#endif
+//#ifndef HALT
+//#  define HALT(msg)  { MT::errString.clear() <<MT_HERE <<msg <<" --- HALT"; MT_WRITE_MSG(MT::errString); throw MT::errString.p; }
+//#  define NIY HALT("not implemented yet")
+//#  define NICO HALT("not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code")
+//#  define OPS HALT("obsolete")
+//#endif
+
 #ifndef HALT
-#  define HALT(msg)  { MT::errString.clear() <<MT_HERE <<msg <<" --- HALT"; MT_WRITE_MSG(MT::errString); MT::breakPoint(); throw MT::errString.p; }
-#  define NIY HALT("not implemented yet")
-#  define NICO HALT("not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code")
-#  define OPS HALT("obsolete")
+#  define MT_MSG(msg){ LOG(-1) <<msg; }
+#  define HALT(msg){ LOG(-2) <<msg; exit(1); }
+#  define NIY  { LOG(-3) <<"not implemented yet"; exit(1); }
+#  define NICO { LOG(-3) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(1); }
+#  define OPS  { LOG(-3) <<"obsolete"; exit(1); }
 #endif
+
+
 
 
 //----- check macros:
 #ifndef MT_NOCHECK
 
 #define CHECK(cond, msg) \
-  if(!(cond)){ HALT("CHECK failed: '" <<#cond <<"' " <<msg) }\
+  if(!(cond)){ LOG(-3) <<"CHECK failed: '" <<#cond <<"' " <<msg; }\
 
 #define CHECK_ZERO(expr, tolerance, msg) \
-  if(fabs((double)(expr))>tolerance){ HALT("CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg) } \
+  if(fabs((double)(expr))>tolerance){ LOG(3) <<"CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg; } \
 
 #define CHECK_EQ(A, B, msg) \
-  if(!(A==B)){ HALT("CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg) } \
+  if(!(A==B)){ LOG(3) <<"CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; } \
 
 #define CHECK_GE(A, B, msg) \
-  if(!(A>=B)){ HALT("CHECK_GE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg) } \
+  if(!(A>=B)){ LOG(3) <<"CHECK_GE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; } \
 
 #define CHECK_LE(A, B, msg) \
-  if(!(A<=B)){ HALT("CHECK_LE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg) } \
+  if(!(A<=B)){ LOG(3) <<"CHECK_LE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; } \
 
 #else
 #  define CHECK(cond, msg)
@@ -415,8 +425,10 @@ struct FileToken{
   FileToken& operator()(){ return *this; }
 
   void decomposeFilename();
+  void changeDir();
+  bool exists();
   std::ofstream& getOs();
-  std::ifstream& getIs();
+  std::ifstream& getIs(bool change_dir=false);
   operator std::istream&(){ return getIs(); }
   operator std::ostream&(){ return getOs(); }
 };
@@ -522,6 +534,7 @@ struct Inotify{
 //
 /// a basic mutex lock
 //
+
 struct Mutex {
 #ifndef MT_MSVC
   pthread_mutex_t mutex;
@@ -532,13 +545,6 @@ struct Mutex {
   ~Mutex();
   void lock();
   void unlock();
-};
-
-// support "Resource Acquisition Is Initialization" principle
-struct Lock {
-  Mutex& m;
-  Lock(Mutex& m) : m(m) { m.lock(); };
-  ~Lock() { m.unlock(); };
 };
 
 
@@ -573,6 +579,20 @@ struct Singleton {
   T& operator()() const{ return *getSingleton(); }
 };
 template<class T> T *Singleton<T>::singleton=NULL;
+
+
+//===========================================================================
+//
+/// a mutexed cout
+//
+
+extern Mutex coutMutex;
+struct CoutToken{
+  CoutToken(){ coutMutex.lock(); }
+  ~CoutToken(){ coutMutex.unlock(); }
+  std::ostream& getOs(){ return std::cout; }
+};
+#define COUT (CoutToken().getOs())
 
 
 //===========================================================================

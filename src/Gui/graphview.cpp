@@ -34,14 +34,14 @@
 #undef MAX
 
 
-#define INFO(x) //printf("CALLBACK: %s\n",#x);
+#define INFO(x) printf("CALLBACK: %s\n",#x);
 
 extern "C" {
   GVJ_t *gvjobs_first(GVC_t * gvc);
 }
 
 struct sGraphView {
-  KeyValueGraph *G;
+  Graph *G;
   GraphView *p;
   MT::String title;
   
@@ -68,7 +68,7 @@ struct sGraphView {
   
 };
 
-GraphView::GraphView(KeyValueGraph& G, const char* title, void *container) {
+GraphView::GraphView(Graph& G, const char* title, void *container) {
   gtkCheckInitialized();
   
   s = new sGraphView;
@@ -111,8 +111,11 @@ MT::String label(Item *it){
   if(it->keys.N) {
     label <<it->keys(0);
     for(uint j=1; j<it->keys.N; j++) label <<'\n' <<it->keys(j);
-  } else {
-    label <<'-';
+  }
+  if(it->hasValue()) {
+    if(it->keys.N) label <<'\n';
+    label <<'=';
+    it->writeValue(label);
   }
 #else
   label <<it->index;
@@ -121,7 +124,8 @@ MT::String label(Item *it){
 }
 
 void sGraphView::updateGraphvizGraph(bool isSubGraph) {
-//  aginit();
+  if(gvGraph) agclose(gvGraph);
+
   if(!isSubGraph){
     gvGraph = agopen(STR("new_graph"), Agdirected, NULL);
     agattr(gvGraph, AGRAPH,STR("rankdir"), STR("LR"));
@@ -134,7 +138,7 @@ void sGraphView::updateGraphvizGraph(bool isSubGraph) {
     agattr(gvGraph, AGNODE, STR("height"), STR(".3"));
 
     agattr(gvGraph, AGEDGE, STR("label"), STR(""));
-    agattr(gvGraph, AGEDGE, STR("arrowhead"), STR("none"));
+//    agattr(gvGraph, AGEDGE, STR("arrowhead"), STR("none"));
     agattr(gvGraph, AGEDGE, STR("arrowsize"), STR(".5"));
     agattr(gvGraph, AGEDGE, STR("fontsize"), STR("6"));
 
@@ -145,7 +149,7 @@ void sGraphView::updateGraphvizGraph(bool isSubGraph) {
   //first add `nodes' for all items
   for(Item *e: *G) {
     gvNodes(e->index) = agnode(gvGraph, STRING(e->index), true);
-    if(e->keys.N) agset(gvNodes(e->index), STR("label"), label(e));
+    agset(gvNodes(e->index), STR("label"), label(e));
     if(e->parents.N) {
       agset(gvNodes(e->index), STR("shape"), STR("box"));
       agset(gvNodes(e->index), STR("fontsize"), STR("6"));
@@ -162,13 +166,18 @@ void sGraphView::updateGraphvizGraph(bool isSubGraph) {
       gvNodes(i) = (Agnode_t*)agedge(gvGraph, gvNodes(e->parents(0)->id), gvNodes(e->parents(1)->id)); //, STRING(i <<"_" <<e->name), true);
     }else*/
     if(e->parents.N) {
+      uint linkId=0;
       for(Item *n: e->parents) {
-        Agedge_t *ge;
-        if(n->index<e->index)
-          ge=agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), STRING(label(n) <<"--" <<label(e)), true);
-        else
-          ge=agedge(gvGraph, gvNodes(e->index), gvNodes(n->index), STRING(label(e) <<"--" <<label(n)), true);
-        agset(ge, STR("label"), STRING(e->index));
+        if(n->index<e->index){
+//          ge=agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), STRING(label(n) <<"--" <<label(e)), true);
+          agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), NULL, true);
+        }else{
+//          ge=agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), STRING(label(n) <<"--" <<label(e)), true);
+          agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), NULL, true);
+        }
+//        agset(ge, STR("label"), STRING(linkId));
+
+        linkId++;
       }
     }
   }
@@ -281,7 +290,7 @@ bool sGraphView::on_drawingarea_motion_notify_event(GtkWidget       *widget,    
   if(!job) return false;
   job->pointer.x = event->x;
   job->pointer.y = event->y;
-  (job->callbacks->motion)(job, job->pointer);
+  if(job->callbacks) (job->callbacks->motion)(job, job->pointer);
   
   gtk_widget_queue_draw(widget);
   
@@ -351,7 +360,7 @@ bool sGraphView::on_drawingarea_button_press_event(GtkWidget       *widget,     
   return FALSE;
 }
 
-bool sGraphView::on_drawingarea_button_release_event(GtkWidget       *widget,                    GdkEventButton  *event,                    gpointer         user_data) {
+bool sGraphView::on_drawingarea_button_release_event(GtkWidget *widget, GdkEventButton  *event, gpointer user_data) {
   sGraphView *gv;
   GVJ_t *job;
   pointf pointer;
@@ -402,7 +411,7 @@ bool sGraphView::on_drawingarea_scroll_event(GtkWidget       *widget,           
 #undef STR
 
 #else //for bad versions
-GraphView::GraphView(KeyValueGraph& G, const char* title, void *container) { NICO }
+GraphView::GraphView(Graph& G, const char* title, void *container) { NICO }
 GraphView::~GraphView() { NICO }
 void GraphView::watch() { NICO }
 void GraphView::update() { NICO }
@@ -410,7 +419,7 @@ void GraphView::update() { NICO }
 
 #else //defined MT_GTK and defined MT_GRAPHVIZ
 #include "graphview.h"
-GraphView::GraphView(KeyValueGraph& G, const char* title, void *container) { NICO }
+GraphView::GraphView(Graph& G, const char* title, void *container) { NICO }
 GraphView::~GraphView() { NICO }
 void GraphView::watch() { NICO }
 void GraphView::update() { NICO }

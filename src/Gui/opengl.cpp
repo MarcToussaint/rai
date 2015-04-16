@@ -164,7 +164,7 @@ void ors::Camera::upright() {
 void ors::Camera::setCameraProjectionMatrix(const arr& P) {
   //P is in standard convention -> computes fixedProjectionMatrix in OpenGL convention from this
   cout <<"desired P=" <<P <<endl;
-  arr Kview=ARR(200, 0, 200, 0, 200, 200, 0, 0, 1); //OpenGL's calibration matrix
+  arr Kview=ARR(200., 0., 200., 0., 200., 200., 0., 0., 1.); //OpenGL's calibration matrix
   Kview.reshape(3, 3);
   //arr glP=inverse(Kview)*P;
   arr glP=P;

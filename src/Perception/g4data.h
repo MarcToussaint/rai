@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Core/array.h>
-#include <Core/keyValueGraph.h>
+#include <Core/graph.h>
 #include <Gui/opengl.h>
 
 struct G4ID;
@@ -73,7 +73,7 @@ stdOutPipe(G4ID);
 struct G4Rec {
   String dir;
   G4ID g4id;
-  KeyValueGraph kvg, kvgann, params; // TODO ideally, I'd want to use the param class here..
+  Graph kvg, kvgann, params; // TODO ideally, I'd want to use the param class here..
 
   uint nsensors;
   uint nframes;
@@ -132,7 +132,7 @@ stdOutPipe(G4Rec);
 
 struct G4Data {
   String basedir;
-  KeyValueGraph kvg;
+  Graph kvg;
 
   G4Data();
  ~G4Data();
