@@ -35,14 +35,14 @@ namespace MT{
 void Spline::plotBasis() {
   plotClear();
   arr b_sum(basis.d0);
-  tensorMarginal(b_sum, basis_trans, TUP(1));
+  tensorMarginal(b_sum, basis_trans, TUP(1u));
   plotFunction(b_sum, -1, 1);
   for(uint i=0; i<points.d0; i++) plotFunction(basis_trans[i], -1, 1);
   plot();
 }
 
 void Spline::setBasis(uint T, uint K) {
-  CHECK(times.N-1==K+1+degree, "wrong number of time knots");
+  CHECK_EQ(times.N-1,K+1+degree, "wrong number of time knots");
   basis.resize(T+1, K+1);
   for(uint t=0; t<=T; t++) basis[t] = getCoeffs((double)t/T, K);
   transpose(basis_trans, basis);
@@ -152,7 +152,7 @@ arr Spline::getCoeffs(double time, uint K, uint der) const {
 void Spline::setBasisAndTimeGradient(uint T, uint K) {
   uint i, j, t, p, m=times.N-1;
   double time, x, xx, y, yy;
-  CHECK(m==K+1+degree, "wrong number of time knots");
+  CHECK_EQ(m,K+1+degree, "wrong number of time knots");
   arr b(K+1, T+1), b_0(K+1, T+1), dbt(m+1, K+1, T+1), dbt_0(m+1, K+1, T+1);
   for(p=0; p<=degree; p++) {
     if(p>0) { b_0=b; dbt_0=dbt; }
@@ -243,7 +243,7 @@ arr Spline::smooth(double lambda) const {
 }
 
 void Spline::partial(arr& grad_points, const arr& grad_path) const {
-  CHECK(grad_path.d0==points.d0 && grad_path.d1==points.d1, "");
+  CHECK(grad_path.d1==points.d1, "");
   grad_points = basis_trans * grad_path;
 }
 

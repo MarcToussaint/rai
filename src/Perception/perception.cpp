@@ -1,5 +1,5 @@
-#include "perception.h"
 #include "pointcloud.h"
+#include "perception.h"
 #include "audio.h"
 #include "videoEncoder.h"
 #include <Core/util_t.h>
@@ -28,11 +28,12 @@ struct sImageViewer{
 #ifdef MT_GL
     :gl(tit)
 #endif
-{};
+  {}
 };
 
 void ImageViewer::open(){ 
-s = new sImageViewer(STRING("ImageViewer '"<<img.var->name()<<'\'')); }
+  s = new sImageViewer(STRING("ImageViewer '"<<img.var->name()<<'\''));
+}
 void ImageViewer::close(){ delete s; }
 void ImageViewer::step(){ 
 #ifdef MT_GL
@@ -196,9 +197,10 @@ void AudioReader::step() {
     if(poller == NULL) {
         return;
     }
-    Access_typed<byteA>::WriteToken wr(pcms16ne2c.set());
-    wr().resize(4096);
-    poller->read(wr());
+    pcms16ne2c.writeAccess();
+    pcms16ne2c().resize(4096);
+    poller->read(pcms16ne2c());
+    pcms16ne2c.deAccess();
 }
 
 
@@ -509,10 +511,10 @@ void Patcher::step() {
   floatA pch_rgb; //patch mean colors
 
   rgb = rgbImage.get();
-  uint np=get_single_color_segmentation(patching,rgb,1.25,100,100);
+  uint np=get_single_color_segmentation(patching, rgb, 3.f, 64.f, 400);
   np=incremental_patch_ids(patching);
-  get_patch_centroids(pch_cen,rgb,patching,np);
-  get_patch_colors(pch_rgb,rgb,patching,np);
+  get_patch_centroids(pch_cen, patching, np);
+  get_patch_colors(pch_rgb, rgb, patching, np);
   pch2img(display,patching,pch_rgb);
   //getDelaunayEdges(pch_edges, pch_cen);
 

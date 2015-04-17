@@ -148,7 +148,7 @@ void GaussianProcess::appendGradientObservation(const arr& x, const arr& nabla){
 }
 
 double GaussianProcess::max_var(){
-  return cov(kernelP, ARR(0), ARR(0));
+  return cov(kernelP, ARR(0.), ARR(0.));
 }
 
 void GaussianProcess::evaluate(const arr& x, double& y, double& sig){

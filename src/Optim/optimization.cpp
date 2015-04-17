@@ -22,7 +22,9 @@
 uint eval_cost=0;
 //SqrPotential& NoPot = *((SqrPotential*)NULL);
 //PairSqrPotential& NoPairPot = *((PairSqrPotential*)NULL);
-OptOptions globalOptOptions;
+Singleton<OptOptions> globalOptOptions;
+TermTypeA& NoTermTypeA = *((TermTypeA*)NULL);
+
 
 //===========================================================================
 //
@@ -35,12 +37,12 @@ OptOptions globalOptOptions;
 //documentations... TODO: move! but not in header!
 
 /// A scalar function $y = f(x)$, if @grad@ is not NoArr, gradient is returned
-struct ScalarFunction;
+typedef std::function<double(arr& g, arr& H, const arr& x)> ScalarFunction;
 
 /// A vector function $y = f(x)$, if @J@ is not NoArr, Jacobian is returned
 /// This also implies an optimization problem $\hat f(y) = y^T(x) y(x)$ of (iterated)
 /// Gauss-Newton type where the Hessian is approximated by J^T J
-struct VectorFunction;
+typedef std::function<void(arr& y, arr& J, const arr& x)> VectorFunction;
 
 /// A scalar function $y = f(x)$, if @S@ is non-NULL, local quadratic approximation is returned
 /// This also implies an optimization problem of (iterated) Newton
@@ -54,89 +56,71 @@ struct QuadraticFunction;
 //
 
 double evaluateSF(ScalarFunction& f, const arr& x) {
-  return f.fs(NoArr, NoArr, x);
+  return f(NoArr, NoArr, x);
 }
 
 double evaluateVF(VectorFunction& f, const arr& x) {
   arr y;
-  f.fv(y, NoArr, x);
+  f(y, NoArr, x);
   return sumOfSqr(y);
 }
 
 
-bool checkAllGradients(ConstrainedProblem &P, const arr& x, double tolerance){
-  struct F:ScalarFunction{
-    ConstrainedProblem &P;
-    F(ConstrainedProblem &_P):P(_P){}
-    double fs(arr& g, arr& H, const arr& x){  return P.fc(g, H, NoArr, NoArr, x); }
-  } f(P);
-  struct G:VectorFunction{
-    ConstrainedProblem &P;
-    G(ConstrainedProblem &_P):P(_P){}
-    void fv(arr& y, arr& J, const arr& x){ P.fc(NoArr, NoArr, y, J, x); }
-  } g(P);
+bool checkAllGradients(const ConstrainedProblem &P, const arr& x, double tolerance){
+  ScalarFunction F = [&P](arr& df, arr& Hf, const arr& x){
+    return P(df, Hf, NoArr, NoArr, NoArr, NoArr, x);
+  };
+  VectorFunction G = [&P](arr& g, arr& Jg, const arr& x){
+    return P(NoArr, NoArr, g, Jg, NoArr, NoArr, x);
+  };
+  VectorFunction H = [&P](arr& h, arr& Jh, const arr& x){
+    return P(NoArr, NoArr, NoArr, NoArr, h, Jh, x);
+  };
 
   bool good=true;
-  cout <<"f-gradient: "; good &= checkGradient(f, x, tolerance);
-  cout <<"f-hessian:  "; good &= checkHessian (f, x, tolerance);
-  cout <<"g-jacobian: "; good &= checkJacobian(g, x, tolerance);
+  cout <<"f-gradient: "; good &= checkGradient(F, x, tolerance);
+  cout <<"f-hessian:  "; good &= checkHessian (F, x, tolerance);
+  cout <<"g-jacobian: "; good &= checkJacobian(G, x, tolerance);
+  cout <<"h-jacobian: "; good &= checkJacobian(H, x, tolerance);
   return good;
 }
 
+bool checkJacobianCP(const ConstrainedProblemMix &P, const arr& x, double tolerance){
+  VectorFunction F = [&P](arr& phi, arr& J, const arr& x){
+    return P(phi, J, NoTermTypeA, x);
+  };
+  return checkJacobian(F, x, tolerance);
+}
 
 //===========================================================================
 //
 // helpers
 //
 
-void displayFunction(ScalarFunction &F, bool wait, double lo, double hi){
+void displayFunction(const ScalarFunction &f, bool wait, double lo, double hi){
   arr X, Y;
   X.setGrid(2,lo,hi,100);
   Y.resize(X.d0);
-  for(uint i=0;i<X.d0;i++) Y(i) = F.fs(NoArr, NoArr, X[i]);
+  for(uint i=0;i<X.d0;i++){
+    double fx=f(NoArr, NoArr, X[i]);
+    Y(i) = ((fx==fx && fx<10.)? fx : 10.);
+  }
   Y.reshape(101,101);
 //  plotGnuplot();  plotSurface(Y);  plot(true);
   write(LIST<arr>(Y),"z.fct");
-  gnuplot("reset; splot [-1:1][-1:1] 'z.fct' matrix us (1.2*($1/50-1)):(1.2*($2/50-1)):3 w l", wait, true);
+  gnuplot("reset; splot [-1:1][-1:1] 'z.fct' matrix us ($1/50-1):($2/50-1):3 w l", wait, true);
 }
-
-
-//===========================================================================
-//
-// optimization methods
-//
-
-OptOptions::OptOptions() {
-  verbose    =MT::getParameter<uint>  ("opt/verbose",1);
-  fmin_return=NULL;
-  stopTolerance=MT::getParameter<double>("opt/stopTolerance",1e-2);
-  stopEvals =MT::getParameter<uint>  ("opt/stopEvals",1000);
-  stopIters =MT::getParameter<uint>  ("opt/stopIters",1000);
-  initStep  =MT::getParameter<double>("opt/initStep",1.);
-  minStep   =MT::getParameter<double>("opt/minStep",-1.);
-  maxStep   =MT::getParameter<double>("opt/maxStep",-1.);
-  damping   =MT::getParameter<double>("opt/damping",1.);
-  stepInc   =MT::getParameter<double>("opt/stepInc",2.);
-  stepDec   =MT::getParameter<double>("opt/stepDec",.1);
-  dampingInc=MT::getParameter<double>("opt/dampingInc",1.);
-  dampingDec=MT::getParameter<double>("opt/dampingDec",1.);
-  nonStrictSteps=MT::getParameter<uint>  ("opt/nonStrictSteps",0);
-  allowOverstep=MT::getParameter<bool>  ("opt/allowOverstep",false);
-  constrainedMethod = (ConstrainedMethodType)MT::getParameter<int>("opt/constrainedMethod",augmentedLag);
-}
-
-OptOptions global_optOptions;
 
 
 
 /// minimizes \f$f(x)\f$ using its gradient only
-uint optGradDescent(arr& x, ScalarFunction& f, OptOptions o) {
+uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions o) {
   uint evals=0;
   arr y, grad_x, grad_y;
   double fx, fy;
   double a=o.initStep;
   
-  fx = f.fs(grad_x, NoArr, x);  evals++;
+  fx = f(grad_x, NoArr, x);  evals++;
   if(o.verbose>1) cout <<"*** optGradDescent: starting point x=" <<x <<" f(x)=" <<fx <<" a=" <<a <<endl;
   ofstream fil;
   if(o.verbose>0) fil.open("z.opt");
@@ -146,8 +130,8 @@ uint optGradDescent(arr& x, ScalarFunction& f, OptOptions o) {
   
   for(uint k=0;; k++) {
     y = x - a*grad_x;
-    fy = f.fs(grad_y, NoArr, y);  evals++;
-    CHECK(fy==fy, "cost seems to be NAN: fy=" <<fy);
+    fy = f(grad_y, NoArr, y);  evals++;
+    CHECK_EQ(fy,fy, "cost seems to be NAN: fy=" <<fy);
     if(o.verbose>1) cout <<"optGradDescent " <<evals <<' ' <<eval_cost <<" \tprobing y=" <<y <<" \tf(y)=" <<fy <<" \t|grad|=" <<length(grad_y) <<" \ta=" <<a;
     
     if(fy <= fx) {
@@ -173,3 +157,6 @@ uint optGradDescent(arr& x, ScalarFunction& f, OptOptions o) {
 }
 
 
+RUN_ON_INIT_BEGIN(optimization)
+TermTypeA::memMove=true;
+RUN_ON_INIT_END(optimization)

@@ -190,7 +190,7 @@ arr KernelLogisticRegression::evaluate(const arr& Z, arr& p_bayes, arr &p_hi, ar
 arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bayesSigma) {
   if(lambda<0.) lambda = MT::getParameter<double>("lambda",1e-10);
 
-  CHECK(y.nd==1, "");
+  CHECK_EQ(y.nd,1, "");
   uint n=y.N, d=X.d1;
   arr Xt;
   transpose(Xt, X);
@@ -330,6 +330,7 @@ void CrossValidation::crossValidateSingleLambda(const arr& X, const arr& y, doub
   if(beta_k_fold) beta_k_fold->clear();
   
   //determine blocks
+  CHECK(n>=k_fold,"we need at least as much data as k for k-fold CV");
   uintA blockStart(k_fold+1);
   for(uint k=0;k<=k_fold;k++) blockStart(k) = (k*n)/k_fold;
   
@@ -567,7 +568,7 @@ void artificialData_HastiesMultiClass(arr& X, arr& y) {
   arr means(M, 10, 2), x(2);
   
   rndGauss(means);
-  for(uint c=0; c<M; c++)  means[c]() += ones(10,10)*~ARR(c, c);
+  for(uint c=0; c<M; c++)  means[c]() += ones(10,10)*~ARR((double)c, (double)c);
   
   X.resize(M*n, 2);
   y.resize(M*n, M);

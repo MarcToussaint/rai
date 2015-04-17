@@ -168,6 +168,7 @@ bool AudioPoller_PA::read(byteA& buf) {
     return(s->read(buf) >= 0);
 #else
     MT_MSG("AudioPoller_PA::read not available, libpulse missing");
+    return false;
 #endif
 }
 

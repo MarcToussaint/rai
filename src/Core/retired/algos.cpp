@@ -35,7 +35,7 @@
 //
 
 void MT::normalizeData(arr& X) {
-  CHECK(X.nd==2, "data has to be a 2D batch");
+  CHECK_EQ(X.nd,2, "data has to be a 2D batch");
   uint n, N=X.d0, k, K=X.d1;
   arr mean, var, x, sd;
   arr ones(N); ones=1.;
@@ -52,7 +52,7 @@ void MT::normalizeData(arr& X) {
 }
 
 void MT::makeSpline(arr& X, arr& P, uint intersteps) {
-  CHECK(P.nd==2, "makeSpline: set of points is 2D array");
+  CHECK_EQ(P.nd,2, "makeSpline: set of points is 2D array");
   XSpline S;
   S.referTo(P);
   S.type(false, 1.); //is default
@@ -200,7 +200,7 @@ match in size and \c sub=1, then only the upper left submatrices
 are compared; if \c sub=0, the missing entries of the smaller
 matrix are counted as wrong symbols */
 double MT::matdistance(intA& fix, intA& fox, uintA& p, bool sub) {
-  CHECK(fox.d0==p.N, "matrix and its permutation don't agree in size");
+  CHECK_EQ(fox.d0,p.N, "matrix and its permutation don't agree in size");
   uint i, j, Nmin, Nmax, n=0;
   if(fix.d0<=fox.d0) { Nmin=fix.d0; Nmax=fox.d0; } else { Nmin=fox.d0; Nmax=fix.d0; }
   for(i=0; i<Nmin; i++) for(j=0; j<Nmin; j++) if(fix(i, j)!=fox(p(i), p(j))) n++;
@@ -276,7 +276,7 @@ void MonSolver::init(double& par, double wide) {
 }
 void MonSolver::solve(double& par, const double& err) {
   if(phase==0) {
-    CHECK(par==min, "not phase 0!");
+    CHECK_EQ(par,min, "not phase 0!");
     if(err>0.) {
       min-=max-min;
       par=min;
@@ -288,7 +288,7 @@ void MonSolver::solve(double& par, const double& err) {
     }
   }
   if(phase==1) {
-    CHECK(par==max, "not phase 1!");
+    CHECK_EQ(par,max, "not phase 1!");
     if(err<0.) {
       max+=max-min;
       par=max;
@@ -366,7 +366,7 @@ void LinearStatistics::learn(const arr& X, const arr& Y, double weight) {
     }
   }
   if(X.nd==2 && Y.nd==2) {
-    CHECK(X.d0==Y.d0, "need same number of in/out samples");
+    CHECK_EQ(X.d0,Y.d0, "need same number of in/out samples");
     arr ones(X.d0); ones=1.;
     computed=false;
     
@@ -536,7 +536,7 @@ uint TupleIndex::index(uintA i) {
 
 void TupleIndex::checkValid() {
   uint i;
-  for(i=0; i<d0; i++) CHECK(i==index(operator[](i)), "wrong index association");
+  for(i=0; i<d0; i++) CHECK_EQ(i,index(operator[](i)), "wrong index association");
 }
 
 
@@ -566,7 +566,7 @@ void Kalman::setTransitions(uint d, double varT, double varO) {
 
 //notation follows Kevin Murphey's PhD thesis sec 3.6.1 (also in his DBN tutorial)
 void Kalman::filter(arr& Y, arr& X, arr& V, arr *Rt) {
-  CHECK(Y.nd==2, "");
+  CHECK_EQ(Y.nd,2, "");
   uint d=Y.d1, n=Y.d0, t;
   CHECK(!Rt || (Rt->nd==3 && Rt->d0==n && Rt->d1==d && Rt->d2==d) , "");
   
@@ -595,7 +595,7 @@ void Kalman::filter(arr& Y, arr& X, arr& V, arr *Rt) {
 
 //notation follows Kevin Murphey's PhD thesis sec 3.6.1 (also in his DBN tutorial)
 void Kalman::smooth(arr& Y, arr& X, arr& V, arr *Vxx, arr *Rt) {
-  CHECK(Y.nd==2, "");
+  CHECK_EQ(Y.nd,2, "");
   uint d=Y.d1, n=Y.d0, t;
   CHECK(!Rt || (Rt->nd==3 && Rt->d0==n && Rt->d1==d && Rt->d2==d) , "");
   
@@ -664,7 +664,7 @@ void Kalman::EMupdate(arr& Y, arr *Rt) {
 }
 
 void Kalman::fb(arr& y, arr& f, arr& F, arr& g, arr& G, arr& p, arr& P, arr *Rt) {
-  CHECK(y.nd==2, "");
+  CHECK_EQ(y.nd,2, "");
   uint d=y.d1, n=y.d0, t, T=y.d0;
   CHECK(!Rt || (Rt->nd==3 && Rt->d0==n && Rt->d1==d && Rt->d2==d) , "");
   

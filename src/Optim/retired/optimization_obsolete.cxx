@@ -857,7 +857,7 @@ double tannenbaum(double *grad, double x, double power=8.) {
 
 void SlalomProblem::fv_i(arr& y, arr& J, uint i, const arr& x_i) {
   eval_cost++;
-  CHECK(x_i.N==2,"");
+  CHECK_EQ(x_i.N,2,"");
   y.resize(1);  y(0)=0.;
   if(&J) { J.resize(1,2);  J.setZero(); }
   if(!(i%(T/K))) {
@@ -879,8 +879,8 @@ void SlalomProblem::fv_i(arr& y, arr& J, uint i, const arr& x_i) {
 void SlalomProblem::fv_ij(arr& y, arr& Ji, arr& Jj, uint i, uint j, const arr& x_i, const arr& x_j) {
   y.resize(1);
   double tau=.01;
-  arr A=ARRAY(1., tau, 0., 1.);  A.reshape(2,2);
-  arr M=w*diag(ARRAY(2./(tau*tau), 1./tau));  //penalize variance in position & in velocity (control)
+  arr A={1., tau, 0., 1.};  A.reshape(2,2);
+  arr M=w*diag({2./(tau*tau), 1./tau});  //penalize variance in position & in velocity (control)
   y=M*(x_j - A*x_i);
   if(&Ji) { Ji = -M*A; }
   if(&Jj) { Jj = M; }

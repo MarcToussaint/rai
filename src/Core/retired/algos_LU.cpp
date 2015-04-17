@@ -40,7 +40,7 @@ double determinant_LU(const arr& X){
   double det=1.;
   for(i=0; i<n; i++) det *= LU(i, i);
   
-  //double ddet=determinant(X); CHECK(det==ddet, "");
+  //double ddet=determinant(X); CHECK_EQ(det,ddet, "");
   return det;
 }
 
