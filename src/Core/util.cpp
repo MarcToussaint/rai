@@ -1375,3 +1375,4 @@ template std::map<std::string,bool> MT::ParameterMap<bool>::m;
 template std::map<std::string,long> MT::ParameterMap<long>::m;
 template std::map<std::string,MT::String> MT::ParameterMap<MT::String>::m;
 template std::map<std::string,std::string> MT::ParameterMap<std::string>::m;
+

@@ -146,7 +146,7 @@ KernelLogisticRegression::KernelLogisticRegression(const arr& _X, const arr& y, 
     //compute logLikelihood
     logLike=0.;
     for(uint i=0; i<n; i++) logLike += MT::indicate(y(i)==1.)*f(i) - log(Z(i));
-    MT_MSG("log-likelihood = " <<logLike);
+    LOG(1) <<"log-likelihood = " <<logLike;
 
     kernelMatrix_lambda = kernelMatrix;
     for(uint i=0;i<n;i++) kernelMatrix_lambda(i,i) += 2.*lambda/w(i);
@@ -568,7 +568,7 @@ void artificialData_HastiesMultiClass(arr& X, arr& y) {
   arr means(M, 10, 2), x(2);
   
   rndGauss(means);
-  for(uint c=0; c<M; c++)  means[c]() += ones(10,10)*~ARR((double)c, (double)c);
+  for(uint c=0; c<M; c++)  means[c]() += ones(10)*~ARR((double)c, (double)c);
   
   X.resize(M*n, 2);
   y.resize(M*n, M);
