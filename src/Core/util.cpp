@@ -21,6 +21,7 @@
 #include <math.h>
 #include <string.h>
 #include <signal.h>
+#include <stdexcept>
 #if defined MT_Linux || defined MT_Cygwin || defined MT_Darwin
 #  include <limits.h>
 #  include <sys/time.h>
@@ -945,8 +946,8 @@ MT::LogToken::~LogToken(){
       ROS_INFO("MLR-MSG: %s",MT::errString.p);
 #endif
       raise(SIGUSR2);
-      if(log_level==-1){ MT::errString <<" -- WARNING"; cerr <<MT::errString <<endl; }
-      if(log_level==-2){ MT::errString <<" -- ERROR  "; cerr <<MT::errString <<endl; throw MT::errString.p; }
+      if(log_level==-1){ MT::errString <<" -- WARNING";    cerr <<MT::errString <<endl; }
+      if(log_level==-2){ MT::errString <<" -- ERROR  ";    cerr <<MT::errString <<endl; /*throw does not WORK!!!*/ }
       if(log_level==-3){ MT::errString <<" -- HARD EXIT!"; cerr <<MT::errString <<endl; MT::logServer().mutex.unlock(); exit(1); }
     }
   }
@@ -999,7 +1000,7 @@ void MT::FileToken::changeDir(){
     HALT("you've changed already?");
   }else{
     decomposeFilename();
-    if(path.N){
+    if(path.N && path!="."){
       cwd.resize(200, false);
       if(!getcwd(cwd.p, 200)) HALT("couldn't get current dir");
       cwd.resize(strlen(cwd.p), true);
@@ -1226,8 +1227,7 @@ void Mutex::lock() {
 
 void Mutex::unlock() {
   MUTEX_DUMP(cout <<"Mutex-unlock: " <<state <<" (rec: " <<recursive << ")" <<endl);
-  if(--recursive == 0)
-    state=0;
+  if(--recursive == 0) state=0;
   int rc = pthread_mutex_unlock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 #else//MT_MSVC
