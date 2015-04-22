@@ -18,7 +18,7 @@ void initKinectCam(){
 
 
 void Kinect2PointCloud::step(){
-  copy(depth, kinect_depth.get()());
+  depth = kinect_depth.get();
   rgb = kinect_rgb.get();
 
   if(depth.N!=image_width*image_height || rgb.N!=3*image_width*image_height){

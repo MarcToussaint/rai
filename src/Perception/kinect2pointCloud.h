@@ -14,7 +14,7 @@ struct Kinect2PointCloud: Module {
   ACCESS(arr, kinect_pointColors)
 
   arr pts,cols;
-  floatA depth;
+  uint16A depth;
   byteA rgb; //helpers
 
   Kinect2PointCloud():Module("Kinect2PointCloud"){}
