@@ -22,7 +22,7 @@ void Kinect2PointCloud::step(){
   rgb = kinect_rgb.get();
 
   if(depth.N!=image_width*image_height || rgb.N!=3*image_width*image_height){
-    MT_MSG("kinect data has wrong dimension: rgb.dim=" <<depth.getDim() <<"  depth.dim=" <<kinect_depth.get()->getDim());
+    MT_MSG("kinect data has wrong dimension: rgb.dim=" <<depth.dim() <<"  depth.dim=" <<kinect_depth.get()->dim());
     return;
   }
 

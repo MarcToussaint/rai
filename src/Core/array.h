@@ -188,7 +188,7 @@ template<class T> struct Array {
   
   /// @name access by copy
   uint dim(uint k) const;
-  Array<uint> getDim() const;
+  Array<uint> dim() const;
   Array<T> sub(int i, int I) const;
   Array<T> sub(int i, int I, int j, int J) const;
   Array<T> sub(int i, int I, int j, int J, int k, int K) const;
@@ -572,7 +572,7 @@ template<class T> MT::Array<T> skew(const MT::Array<T>& x);
 template<class T> void inverse2d(MT::Array<T>& Ainv, const MT::Array<T>& A);
 template<class T> MT::Array<T> replicate(const MT::Array<T>& A, uint d0);
 
-template<class T> uintA size(const MT::Array<T>& x) { return x.getDim(); }
+template<class T> uintA size(const MT::Array<T>& x) { return x.dim(); }
 template<class T> void checkNan(const MT::Array<T>& x);
 
 template<class T> T entropy(const MT::Array<T>& v);

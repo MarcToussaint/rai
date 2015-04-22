@@ -98,7 +98,7 @@ struct _ChoiceFunction:ScalarFunction {
     if(which==none){
       which = (Which) MT::getParameter<int>("fctChoice");
     }
-    if(!condition.N!=x.N){
+    if(condition.N!=x.N){
       condition.resize(x.N);
       double cond = MT::getParameter<double>("condition");
       for(uint i=0; i<x.N; i++) condition(i) = pow(cond,0.5*i/(x.N-1));

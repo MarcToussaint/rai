@@ -294,7 +294,6 @@ struct LogToken{
   uint line;
   LogToken(int log_level, const char* filename, const char* function, uint line):log_level(log_level), filename(filename), function(function), line(line) {}
   ~LogToken();
-//  LogToken& operator()(){ return *this; }
   std::ostream& os(){ return msg; }
 };
 }
@@ -346,6 +345,7 @@ extern String errString;
 
 #ifndef HALT
 #  define MT_MSG(msg){ LOG(-1) <<msg; }
+#  define THROW(msg){ LOG(-2) <<msg; throw MT::errString.p; }
 #  define HALT(msg){ LOG(-2) <<msg; exit(1); }
 #  define NIY  { LOG(-3) <<"not implemented yet"; exit(1); }
 #  define NICO { LOG(-3) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(1); }
@@ -359,19 +359,19 @@ extern String errString;
 #ifndef MT_NOCHECK
 
 #define CHECK(cond, msg) \
-  if(!(cond)){ LOG(-3) <<"CHECK failed: '" <<#cond <<"' " <<msg; }\
+  if(!(cond)){ LOG(-2) <<"CHECK failed: '" <<#cond <<"' " <<msg;  throw MT::errString.p; }\
 
 #define CHECK_ZERO(expr, tolerance, msg) \
-  if(fabs((double)(expr))>tolerance){ LOG(3) <<"CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg; } \
+  if(fabs((double)(expr))>tolerance){ LOG(-2) <<"CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg; throw MT::errString.p; } \
 
 #define CHECK_EQ(A, B, msg) \
-  if(!(A==B)){ LOG(3) <<"CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; } \
+  if(!(A==B)){ LOG(-2) <<"CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw MT::errString.p; } \
 
 #define CHECK_GE(A, B, msg) \
-  if(!(A>=B)){ LOG(3) <<"CHECK_GE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; } \
+  if(!(A>=B)){ LOG(-2) <<"CHECK_GE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw MT::errString.p; } \
 
 #define CHECK_LE(A, B, msg) \
-  if(!(A<=B)){ LOG(3) <<"CHECK_LE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; } \
+  if(!(A<=B)){ LOG(-2) <<"CHECK_LE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw MT::errString.p; } \
 
 #else
 #  define CHECK(cond, msg)
