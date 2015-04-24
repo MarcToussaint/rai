@@ -34,28 +34,35 @@ class AudioWriter_libav;
 template<class T>
 struct GenericDisplayViewer : Module {
   OpenGL *gl;
-  ACCESS(T, var);
+  ACCESS(T, var)
   GenericDisplayViewer(): Module("GenericDisplayViewer"), gl(NULL) {} \
   virtual void open(){ gl = new OpenGL(STRING("ImageViewer '"<<var.var->name()<<'\'')); }
-  virtual void step(){ gl->background = var.get()->display; gl->update(); }
+  virtual void step(){
+    gl->background = var.get()->display;
+    if(gl->height!= gl->background.d0 || gl->width!= gl->background.d1)
+      gl->resize(gl->background.d1, gl->background.d0);
+    gl->update();
+  }
   virtual void close(){ delete gl; }
 };
-struct VideoEncoder : public Module {
-     struct sVideoEncoder *s;
-     bool is_rgb;
-     double fps;
-     ACCESS(byteA, img);
-     VideoEncoder():is_rgb(false), fps(30) {}
-     virtual ~VideoEncoder() {}
 
-     virtual void open();
-     virtual void step();
-     virtual void close();
-     /// set input packing (default is bgr)
-     void set_rgb(bool is_rgb) { this->is_rgb = is_rgb; }
-     /// set frames per second -- only effective before open
-     void set_fps(double fps) { this->fps = fps; }
-  };
+struct VideoEncoder : public Module {
+  struct sVideoEncoder *s;
+  bool is_rgb;
+  double fps;
+  ACCESS(byteA, img);
+  VideoEncoder():is_rgb(false), fps(30) {}
+  virtual ~VideoEncoder() {}
+
+  virtual void open();
+  virtual void step();
+  virtual void close();
+  /// set input packing (default is bgr)
+  void set_rgb(bool is_rgb) { this->is_rgb = is_rgb; }
+  /// set frames per second -- only effective before open
+  void set_fps(double fps) { this->fps = fps; }
+};
+
 struct VideoEncoderX264 : public Module {
    struct sVideoEncoderX264 *s;
    bool is_rgb;
