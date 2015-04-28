@@ -175,7 +175,7 @@ Item *readItem(Graph& containingKvg, std::istream& is, bool verbose, bool parseI
       } else { //this element is not known!!
         int rel=0;
         str >>rel;
-        if(rel<0 && containingKvg.N+rel>=0){
+        if(rel<0 && (int)containingKvg.N+rel>=0){
           e=containingKvg(containingKvg.N+rel);
           parents.append(e);
         }else{
