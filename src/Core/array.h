@@ -456,14 +456,14 @@ arr repmat(const arr& A, uint m, uint n);
 /// return array with random numbers in [0, 1]
 arr rand(const uintA& d);
 /// return array with random numbers in [0, 1]
-inline arr rand(uint n) { return rand(TUP(n, n)); }
+inline arr rand(uint n) { return rand(TUP(n)); }
 /// return array with random numbers in [0, 1]
 inline arr rand(uint d0, uint d1) { return rand(TUP(d0, d1)); }
 
 /// return array with normal (Gaussian) random numbers
 arr randn(const uintA& d);
 /// return array with normal (Gaussian) random numbers
-inline arr randn(uint n) { return randn(TUP(n, n)); }
+inline arr randn(uint n) { return randn(TUP(n)); }
 /// return array with normal (Gaussian) random numbers
 inline arr randn(uint d0, uint d1) { return randn(TUP(d0, d1)); }
 
