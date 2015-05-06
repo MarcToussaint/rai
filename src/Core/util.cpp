@@ -1242,20 +1242,39 @@ void Mutex::unlock() {}
 // gnuplot calls
 //
 
-static FILE *MT_gp=NULL;
-void gnuplotClose() {
-  if(MT_gp) { fflush(MT_gp); fclose(MT_gp); }
-}
-void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDFfile) {
-if(!MT::getInteractivity()){
-  pauseMouse=false;
-  persist=false;
-}
+struct GnuplotServer{
+  FILE *gp;
+  GnuplotServer():gp(NULL){}
+  ~GnuplotServer(){
+    if(gp){
+      cout <<"Closing Gnuplot" <<endl;
+//      send("set terminal wxt nopersist close\nexit", false);
+//      fclose(gp);
+    }
+  }
+
+  void send(const char *cmd, bool persist){
 #ifndef MT_MSVC
-  if(!MT_gp) {
-    if(!persist) MT_gp=popen("env gnuplot -noraise -geometry 600x600-0-0 2> /dev/null", "w");
-    else         MT_gp=popen("env gnuplot -noraise -persist -geometry 600x600-0-0 2> /dev/null", "w");
-    CHECK(MT_gp, "could not open gnuplot pipe");
+    if(!gp) {
+      if(!persist) gp=popen("env gnuplot -noraise -geometry 600x600-0-0 2> /dev/null", "w");
+      else         gp=popen("env gnuplot -noraise -persist -geometry 600x600-0-0 2> /dev/null", "w");
+      CHECK(gp, "could not open gnuplot pipe");
+    }
+    FILE("z.plotcmd") <<cmd; //for debugging..
+    fputs(cmd, gp);
+    fflush(gp) ;
+  #else
+    NIY;
+  #endif
+  }
+};
+
+Singleton<GnuplotServer> gnuplotServer;
+
+void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDFfile) {
+  if(!MT::getInteractivity()){
+    pauseMouse=false;
+    persist=false;
   }
   
   MT::String cmd;
@@ -1277,12 +1296,7 @@ if(!MT::getInteractivity()){
   }
   
   if(pauseMouse) cmd <<"\n pause mouse" <<std::endl;
-  FILE("z.plotcmd") <<cmd; //for debugging..
-  fputs(cmd.p, MT_gp);
-  fflush(MT_gp) ;
-#else
-  NIY;
-#endif
+  gnuplotServer().send(cmd.p, persist);
 }
 
 
