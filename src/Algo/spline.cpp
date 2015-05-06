@@ -48,9 +48,11 @@ void Spline::setBasis(uint T, uint K) {
   transpose(basis_trans, basis);
 }
 
+#if 0
 // returns the spline coefficients: it is guaranteed that if t1 (or t2) is summed over a grid of stepsizes 1, this sums to 1
-double Spline::getCoeff(double t, double t2, uint der) const{
-  double dt=t-t2;
+
+BUG: that function assumes the same basis functions everywhere, not the squashed ones at the beginning and end
+double Spline::getCoeff(double dt, uint der) const{
   if(der == 0) {
     if(degree==0){
       if(dt<-.5 || dt>=.5) return 0.;
@@ -109,8 +111,9 @@ double Spline::getCoeff(double t, double t2, uint der) const{
   HALT("nigher derivates or degrees not yet done");
   return 0.;
 }
+#endif
 
-arr Spline::getCoeffs(double time, uint K, uint derivative) const {
+arr Spline::getCoeffs(double t, uint K, uint derivative) const {
   arr b(K+1), b_0(K+1), db(K+1), db_0(K+1), ddb(K+1), ddb_0(K+1);
   for(uint p=0; p<=degree; p++) {
     b_0=b; b.setZero();
@@ -118,17 +121,17 @@ arr Spline::getCoeffs(double time, uint K, uint derivative) const {
     ddb_0=ddb; ddb.setZero();
     for(uint k=0; k<=K; k++) {
       if(!p) {
-        if(times(k)<=time && time<times(k+1)) b(k)=1.;
-        if(k==K && time>=times(k+1)) b(k)=1.;
+        if(times(k)<=t && t<times(k+1)) b(k)=1.;
+        if(k==K && t>=times(k+1)) b(k)=1.;
       } else {
-        double xnom = time - times(k);
+        double xnom = t - times(k);
         double xden = times(k+p) - times(k);
         double x = DIV(xnom, xden, true);
         b(k) = x * b_0(k);
         db(k) = DIV(1., xden, true) * b_0(k) + x * db_0(k);
         ddb(k) = DIV(2., xden, true) * db_0(k) + x * ddb_0(k);
         if(k<K) {
-          double ynom = times(k+p+1) - time;
+          double ynom = times(k+p+1) - t;
           double yden = times(k+p+1) - times(k+1);
           double y = DIV(ynom, yden, true);
           b(k) += y * b_0(k+1);
@@ -205,10 +208,10 @@ void Spline::setUniformNonperiodicBasis(uint T, uint K, uint _degree) {
 //  setBasisAndTimeGradient();
 }
 
-arr Spline::eval(double t, bool velocities) const {
+arr Spline::eval(double t, uint derivative) const {
 #if 1
   uint K = points.d0-1;
-  return (~getCoeffs(t, K, 0) * points).reshape(points.d1);
+  return (~getCoeffs(t, K, derivative) * points).reshape(points.d1);
 #else
   uint N=points.d0-1;
   t*=N; //time in same scaling as integer index
@@ -240,7 +243,7 @@ arr Spline::smooth(double lambda) const {
     ddbasis[t] = getCoeffs((double)t/K, K, 2);
   
   arr A = ~ddbasis * ddbasis / (double)T;
-  return inverse(eye(K+1) + lambda*A)*points;
+  return basis*inverse(eye(K+1) + lambda*A)*points;
 }
 
 void Spline::partial(arr& grad_points, const arr& grad_path) const {
