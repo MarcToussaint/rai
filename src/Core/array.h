@@ -77,8 +77,6 @@ namespace MT {
   header, which contains lots of functions that can be applied on
   Arrays. */
 template<class T> struct Array {
-  typedef bool (*ElemCompare)(const T& a, const T& b);
-  
   T *p;     ///< the pointer on the linear memory allocated
   uint N;   ///< number of elements
   uint nd;  ///< number of dimensions
@@ -94,7 +92,9 @@ template<class T> struct Array {
   enum SpecialType { noneST, hasCarrayST, sparseST, diagST, RowShiftedPackedMatrixST, CpointerST };
   SpecialType special;
   void *aux; ///< arbitrary auxiliary data, depends on special
-  
+
+  typedef bool (*ElemCompare)(const T& a, const T& b);
+
   /// @name constructors
   Array();
   Array(const Array<T>& a);                 //copy constructor
@@ -106,6 +106,7 @@ template<class T> struct Array {
   explicit Array(uint D0, uint D1, uint D2);
   explicit Array(const T* p, uint size);    //reference!
   Array(std::initializer_list<T> list);
+  template<class S> Array(std::initializer_list<S> list);
   Array(MT::FileToken&); //read from a file
   ~Array();
   
@@ -172,7 +173,7 @@ template<class T> struct Array {
   /// @name access by reference (direct memory access)
   T& elem(uint i) const;
   T& scalar() const;
-  T& last() const;
+  T& last(int i=-1) const;
   T& rndElem() const;
   T& operator()(uint i) const;
   T& operator()(uint i, uint j) const;
@@ -219,6 +220,7 @@ template<class T> struct Array {
   /// @name appending etc
   T& append();
   T& append(const T& x);
+  void append(const T& x, uint multiple);
   void append(const Array<T>& x);
   void append(const T *p, uint n);
   void prepend(const T& x){ insert(0,x); }
@@ -279,7 +281,8 @@ template<class T> struct Array {
   const char* prt(); //gdb pretty print
   
   /// @name kind of private
-  void resizeMEM(uint n, bool copy);
+  void resizeMEM(uint n, bool copy, int Mforce=-1);
+  void anticipateMEM(uint Mforce){ resizeMEM(N, true, Mforce); if(!nd) nd=1; }
   void freeMEM();
   void resetD();
   void init();
@@ -417,16 +420,6 @@ template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T
 template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o) {      MT::Array<T*> z(7); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; z(6)=(T*)&o; return z; }
 template<class T> MT::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p) { MT::Array<T*> z(8); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; z(6)=(T*)&o; z(7)=(T*)&p; return z; }
 
-MT::Array<MT::String> STRINGS();
-MT::Array<MT::String> STRINGS(const char* s0);
-MT::Array<MT::String> STRINGS(const char* s0, const char* s1);
-MT::Array<MT::String> STRINGS(const char* s0, const char* s1, const char* s2);
-
-#define STRINGS_0()           (ARRAY<MT::String>())
-#define STRINGS_1(s0)         (ARRAY<MT::String>(STRING(s0)))
-#define STRINGS_2(s0, s1)     (ARRAY<MT::String>(STRING(s0),STRING(s1)))
-#define STRINGS_3(s0, s1, s2) (ARRAY<MT::String>(STRING(s0),STRING(s1),STRING(s2)))
-
 
 //===========================================================================
 /// @}
@@ -493,6 +486,8 @@ void makeSymmetric(arr& A);
 void transpose(arr& A);
 void SUS(const arr& p, uint n, uintA& s);
 uint SUS(const arr& p);
+arr bootstrap(const arr& x);
+void addDiag(arr& A, double d);
 
 namespace MT {
 /// use this to turn on Lapack routines [default true if MT_LAPACK is defined]
@@ -518,7 +513,7 @@ void rotationFromAtoB(arr& R, const arr& a, const arr& v);
 double determinant(const arr& A);
 double cofactor(const arr& A, uint i, uint j);
 
-//void getIndexTuple(uintA &I, uint i, const uintA &d);  //? that also exists inside of array!
+uintA getIndexTuple(uint i, const uintA &d);  //? that also exists inside of array!
 void lognormScale(arr& P, double& logP, bool force=true);
 
 
@@ -651,7 +646,11 @@ template<class T> void setUnion(MT::Array<T>& x, const MT::Array<T>& y, const MT
 template<class T> void setSection(MT::Array<T>& x, const MT::Array<T>& y, const MT::Array<T>& z);
 template<class T> MT::Array<T> setUnion(const MT::Array<T>& y, const MT::Array<T>& z) { MT::Array<T> x; setUnion(x, y, z); return x; }
 template<class T> MT::Array<T> setSection(const MT::Array<T>& y, const MT::Array<T>& z) { MT::Array<T> x; setSection(x, y, z); return x; }
+template<class T> MT::Array<T> setSectionSorted(const MT::Array<T>& x, const MT::Array<T>& y,
+                                                bool (*comp)(const T& a, const T& b) );
 template<class T> void setMinus(MT::Array<T>& x, const MT::Array<T>& y);
+template<class T> void setMinusSorted(MT::Array<T>& x, const MT::Array<T>& y,
+                                      bool (*comp)(const T& a, const T& b) );
 template<class T> uint numberSharedElements(const MT::Array<T>& x, const MT::Array<T>& y);
 template<class T> void rndInteger(MT::Array<T>& a, int low=0, int high=1, bool add=false);
 template<class T> void rndUniform(MT::Array<T>& a, double low=0., double high=1., bool add=false);
@@ -773,6 +772,7 @@ void lapack_RQ(arr& R, arr& Q, const arr& A);
 void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs);
 bool lapack_isPositiveSemiDefinite(const arr& symmA);
 void lapack_inverseSymPosDef(arr& Ainv, const arr& A);
+void lapack_choleskySymPosDef(arr& Achol, const arr& A);
 double lapack_determinantSymPosDef(const arr& A);
 inline arr lapack_inverseSymPosDef(const arr& A){ arr Ainv; lapack_inverseSymPosDef(Ainv, A); return Ainv; }
 arr lapack_Ainv_b_sym(const arr& A, const arr& b);
@@ -814,6 +814,7 @@ arr packRowShifted(const arr& X);
 RowShiftedPackedMatrix *auxRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
 arr comp_At_A(arr& A);
 arr comp_A_At(arr& A);
+arr comp_A_H_At(arr& A, const arr& H);
 arr comp_At_x(arr& A, const arr& x);
 arr comp_A_x(arr& A, const arr& x);
 

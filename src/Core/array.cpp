@@ -95,6 +95,16 @@ arr diag(double d, uint n) {
   return z;
 }
 
+void addDiag(arr& A, double d){
+  if(A.special==arr::RowShiftedPackedMatrixST) {
+    RowShiftedPackedMatrix *Aaux = (RowShiftedPackedMatrix*) A.aux;
+    if(!Aaux->symmetric) HALT("this is not a symmetric matrix");
+    for(uint i=0; i<A.d0; i++) A(i,0) += d;
+  }else{
+    for(uint i=0; i<A.d0; i++) A(i,i) += d;
+  }
+}
+
 /// make symmetric \f$A=(A+A^T)/2\f$
 void makeSymmetric(arr& A) {
   CHECK(A.nd==2 && A.d0==A.d1, "not symmetric");
@@ -777,6 +787,12 @@ void gnuplot(const arr& X, bool pauseMouse, bool persist, const char* PDFfile) {
   }
 }
 
+arr bootstrap(const arr& x){
+  arr y(x.N);
+  for(uint i=0;i<y.N;i++) y(i) = x(rnd(y.N));
+  return y;
+}
+
 //void write(const arr& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
 //  std::ofstream fil;
 //  MT::open(fil, filename);
@@ -974,18 +990,16 @@ void assign(arr& x, const arr& a) {
 }
 #endif
 
-
-
-void getIndexTuple(uintA &I, uint i, const uintA &d) {
-  uint j;
+uintA getIndexTuple(uint i, const uintA &d) {
   CHECK(i<product(d), "out of range");
-  I.resize(d.N);
+  uintA I(d.N);
   I.setZero();
-  for(j=d.N; j--;) {
+  for(uint j=d.N; j--;) {
     I.p[j] = i%d.p[j];
     i -= I.p[j];
     i /= d.p[j];
   }
+  return I;
 }
 
 void lognormScale(arr& P, double& logP, bool force) {
@@ -1171,13 +1185,10 @@ bool checkJacobian(const VectorFunction& f,
   }
   JJ.reshapeAs(J);
   double md=maxDiff(J, JJ, &i);
-//   J >>FILE("z.J");
-//   JJ >>FILE("z.JJ");
   if(md>tolerance) {
     MT_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
     J >>FILE("z.J_analytical");
     JJ >>FILE("z.J_empirical");
-//    (J/JJ) >>FILE("z.J_ana_emp");
     return false;
   } else {
     cout <<"checkJacobian -- SUCCESS (max diff error=" <<md <<")" <<endl;
@@ -1501,6 +1512,12 @@ arr comp_A_At(arr& A) {
   return NoArr;
 }
 
+//arr comp_A_H_At(arr& A, const arr& H){
+//  if(A.special==arr::noneST) { arr X; blas_A_At(X,A); return X; }
+//  if(A.special==arr::RowShiftedPackedMatrixST) return ((RowShiftedPackedMatrix*)A.aux)->A_H_At(H);
+//  return NoArr;
+//}
+
 arr comp_At_x(arr& A, const arr& x) {
   if(A.special==arr::noneST) { arr y; innerProduct(y, ~A, x); return y; }
   if(A.special==arr::RowShiftedPackedMatrixST) return ((RowShiftedPackedMatrix*)A.aux)->At_x(x);
@@ -1669,7 +1686,10 @@ template void MT::getParameter(uintA&, const char*, const uintA&);
 
 void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 
-MT::Array<MT::String> STRINGS(){ return ARRAY<MT::String>(); }
-MT::Array<MT::String> STRINGS(const char* s0){ return ARRAY<MT::String>(MT::String(s0)); }
-MT::Array<MT::String> STRINGS(const char* s0, const char* s1){ return ARRAY<MT::String>(MT::String(s0), MT::String(s1)); }
-MT::Array<MT::String> STRINGS(const char* s0, const char* s1, const char* s2){ return ARRAY<MT::String>(MT::String(s0), MT::String(s1), MT::String(s2)); }
+namespace MT{
+template<> template<> Array<MT::String>::Array<const char*>(std::initializer_list<const char*> list) {
+  init();
+  for(const char* t : list) append(MT::String(t));
+}
+}
+

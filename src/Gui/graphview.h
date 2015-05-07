@@ -18,14 +18,15 @@
 
 #pragma once
 
-#include <Core/keyValueGraph.h>
+#include <Core/graph.h>
 
 struct GraphView {
   struct sGraphView *s;
   
-  GraphView(KeyValueGraph& G, const char* title="MT::GraphvizGtk", void *container=NULL);
+  GraphView(Graph& G, const char* title="MT::GraphvizGtk", void *container=NULL);
   ~GraphView();
   
+  void writeFile(const char* filename);
   void update();
   void watch();
 };

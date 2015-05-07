@@ -568,7 +568,7 @@ void artificialData_HastiesMultiClass(arr& X, arr& y) {
   arr means(M, 10, 2), x(2);
   
   rndGauss(means);
-  for(uint c=0; c<M; c++)  means[c]() += ones(10,10)*~ARR(c, c);
+  for(uint c=0; c<M; c++)  means[c]() += ones(10,10)*~ARR((double)c, (double)c);
   
   X.resize(M*n, 2);
   y.resize(M*n, M);
