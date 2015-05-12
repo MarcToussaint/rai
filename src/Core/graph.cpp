@@ -50,8 +50,8 @@ Item::Item(Graph& _container):container(_container){
   }
 }
 
-Item::Item(Graph& _container, const ItemL& _parents)
-  : container(_container), parents(_parents){
+Item::Item(Graph& _container, const StringA& _keys, const ItemL& _parents)
+  : container(_container), keys(_keys), parents(_parents){
   index=container.N;
   container.ItemL::append(this);
   for(Item *i: parents){
@@ -248,7 +248,6 @@ Item *readItem(Graph& containingKvg, std::istream& is, bool verbose, bool parseI
       case '{': { // Graph (e.g., attribute list)
         Graph *subList = new Graph;
         item = new Item_typed<Graph>(containingKvg, keys, parents, subList, true);
-        subList->isItemOfParentKvg = item;
         subList->read(is);
         MT::parse(is, "}");
       } break;
@@ -268,7 +267,6 @@ Item *readItem(Graph& containingKvg, std::istream& is, bool verbose, bool parseI
         }
         MT::parse(is, ")");
         item = new Item_typed<Graph>(containingKvg, keys, parents, refs, true);
-        refs->isItemOfParentKvg = item;
       } break;
       default: { //error
         is.putback(c);
@@ -323,21 +321,17 @@ struct sKeyValueGraph {
 };
 
 Graph::Graph():s(NULL), isReferringToItemsOf(NULL), isItemOfParentKvg(NULL) {
-  ItemL::memMove=true;
 }
 
 Graph::Graph(const char* filename):s(NULL), isReferringToItemsOf(NULL), isItemOfParentKvg(NULL) {
-  ItemL::memMove=true;
   FILE(filename) >>*this;
 }
 
 Graph::Graph(const std::map<std::string, std::string>& dict):s(NULL), isReferringToItemsOf(NULL), isItemOfParentKvg(NULL) {
-  ItemL::memMove=true;
   appendDict(dict);
 }
 
 Graph::Graph(std::initializer_list<ItemInitializer> list) {
-  ItemL::memMove=true;
   for(const ItemInitializer& ic:list){
     Item *clone = ic.it->newClone(*this); //this appends sequentially clones of all items to 'this'
     for(const MT::String& s:ic.parents){
@@ -350,15 +344,17 @@ Graph::Graph(std::initializer_list<ItemInitializer> list) {
 }
 
 Graph::Graph(const Graph& G):s(NULL), isReferringToItemsOf(NULL), isItemOfParentKvg(NULL) {
-  ItemL::memMove=true;
   *this = G;
 }
 
-//Graph::Graph(Item *itemOfParentKvg):s(NULL), isReferringToItemsOf(NULL), isItemOfParentKvg(itemOfParentKvg) {
-//  ItemL::memMove=true;
-//}
-
 Graph::~Graph() {
+  clear();
+  if(isItemOfParentKvg){
+    Item_typed<Graph>* it=dynamic_cast<Item_typed<Graph>*>(isItemOfParentKvg);
+    CHECK(it,"");
+    it->value=NULL;
+    it->ownsValue=false;
+  }
 }
 
 void Graph::clear() {
@@ -496,7 +492,17 @@ Graph& Graph::operator=(const Graph& G) {
   G.checkConsistency();
   //  G.index();//necessary, after checkConsistency?
   //  { for_list(Item, i, G) i->index=i_COUNT; }
+  if(G.isItemOfParentKvg){ //CHECK that this is also a subgraph of the same container..
+    if(isItemOfParentKvg){
+      CHECK(isItemOfParentKvg->container==G.isItemOfParentKvg->container,
+            "to copy a sub graph, the 'receiving' graph needs to already be a subgraph of the same container -- perhaps use Item::newClone() on the origin graph!");
+    }else{
+      Item *Git = G.isItemOfParentKvg;
+      new Item_typed<Graph>(Git->container, Git->keys, Git->parents, this, true);
+    }
+  }
 
+  //-- first, just clone items with their values -- parent-linking is still with the origin-graph's items
   if(!isReferringToItemsOf){ while(N) delete last(); } // listDelete(*this);
   for(Item *it:G){
     if(it->getValueType()==typeid(Graph)){
@@ -510,7 +516,7 @@ Graph& Graph::operator=(const Graph& G) {
     }
   }
 
-  //rewire links
+  //-- now rewire links
   for(Item *it:*this){
     for(uint i=0;i<it->parents.N;i++){
       Item *p=it->parents(i);
@@ -667,7 +673,7 @@ bool Graph::checkConsistency() const{
     }else{
       CHECK(parent->index < it->index,"item refers to parent that sorts below the item");
     }
-    if(it->getValueType()==typeid(Graph)){
+    if(it->getValueType()==typeid(Graph) && it->getValue<Graph>()){
       Graph& G = it->kvg();
       CHECK(G.isItemOfParentKvg==it,"");
       if(!G.isReferringToItemsOf) G.checkConsistency();
@@ -692,3 +698,7 @@ uint Graph::index(bool subKVG, uint start){
   }
   return idx;
 }
+
+RUN_ON_INIT_BEGIN(graph)
+ItemL::memMove=true;
+RUN_ON_INIT_END(graph)
