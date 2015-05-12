@@ -45,7 +45,7 @@ struct Item {
   ItemL parentOf;
   uint index;
   Item(Graph& _container);
-  Item(Graph& _container, const ItemL& _parents);
+  Item(Graph& _container, const StringA& _keys, const ItemL& _parents);
   virtual ~Item();
   template<class T> T *getValue();    ///< query whether the Item is of a certain value, return the value if so
   template<class T> const T *getValue() const; ///< as above

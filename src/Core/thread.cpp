@@ -641,9 +641,9 @@ TStream::Register::~Register() {
   tstream->reg_private(obj, p, true);
 }
 
-RUN_ON_INIT_BEGIN()
+RUN_ON_INIT_BEGIN(thread)
 VariableContainerL::memMove=true;
 ThreadL::memMove=true;
-RUN_ON_INIT_END()
+RUN_ON_INIT_END(thread)
 
 #endif //MT_MSVC
