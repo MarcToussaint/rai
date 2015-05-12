@@ -493,43 +493,50 @@ Graph& Graph::operator=(const Graph& G) {
   //  G.index();//necessary, after checkConsistency?
   //  { for_list(Item, i, G) i->index=i_COUNT; }
   if(G.isItemOfParentKvg){ //CHECK that this is also a subgraph of the same container..
-    if(isItemOfParentKvg){
-      CHECK(isItemOfParentKvg->container==G.isItemOfParentKvg->container,
-            "to copy a sub graph, the 'receiving' graph needs to already be a subgraph of the same container -- perhaps use Item::newClone() on the origin graph!");
-    }else{
+    if(!isItemOfParentKvg){
       Item *Git = G.isItemOfParentKvg;
       new Item_typed<Graph>(Git->container, Git->keys, Git->parents, this, true);
     }
   }
 
-  //-- first, just clone items with their values -- parent-linking is still with the origin-graph's items
+  //-- first, just clone items with their values -- 'parents' still point to the origin items
   if(!isReferringToItemsOf){ while(N) delete last(); } // listDelete(*this);
   for(Item *it:G){
     if(it->getValueType()==typeid(Graph)){
+      // why we can't copy the subgraph yet:
+      // copying the subgraph would require to fully rewire the subgraph (code below)
+      // but if the subgraph refers to parents of this graph that are not create yet, requiring will fail
+      // therefore we just insert an empty graph here; we then copy the subgraph once all items are created
       Item *clone = new Item_typed<Graph>(*this, it->keys, it->parents, new Graph(), true);
-      clone->parentOf.clear();
-      clone->kvg().isItemOfParentKvg=clone;
-      clone->kvg().operator=(it->kvg()); //you can only call the operator= AFTER assigning isItemOfParentKvg
     }else{
       Item *clone = it->newClone(*this); //this appends sequentially clones of all items to 'this'
-      clone->parentOf.clear();
     }
+  }
+
+  //-- the new items are not parent of anybody yet
+  for(Item *it:*this) CHECK(it->parentOf.N==0,"");
+
+  //-- now copy subgraphs
+  for(Item *it:*this) if(it->getValueType()==typeid(Graph)){
+    it->kvg().isItemOfParentKvg = it;
+    it->kvg().operator=(G.elem(it->index)->kvg()); //you can only call the operator= AFTER assigning isItemOfParentKvg
   }
 
   //-- now rewire links
   for(Item *it:*this){
     for(uint i=0;i<it->parents.N;i++){
-      Item *p=it->parents(i);
+      Item *p=it->parents(i); //the parent in the origin graph
       const Graph *newg=this, *oldg=&G;
       while(&p->container!=oldg){  //find the container while iterating backward also in the newG
         CHECK(oldg->isItemOfParentKvg,"");
         newg = &newg->isItemOfParentKvg->container;
         oldg = &oldg->isItemOfParentKvg->container;
       }
+      CHECK(newg->N==oldg->N,"different size!!\n" <<*newg <<"**\n" <<*oldg);
       CHECK(p==oldg->elem(p->index),""); //we found the parent in oldg
-      p->parentOf.removeValue(it);
-      p = newg->elem(p->index); //now assign it to the same in newg
-      p->parentOf.append(it);
+      p->parentOf.removeValue(it);  //origin items is not parent of copy
+      p = newg->elem(p->index);     //the true parent in the new graph
+      p->parentOf.append(it);       //connect both ways
       it->parents(i)=p;
     }
   }

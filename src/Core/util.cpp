@@ -688,6 +688,12 @@ char *MT::String::StringBuf::getIpos() { return gptr(); }
 //-- direct memory operations
 void MT::String::append(char x) { resize(N+1, true); operator()(N-1)=x; }
 
+MT::String& MT::String::setRandom(){
+  resize(rnd(2,6), false);
+  for(uint i=0;i<N;i++) operator()(i)=rnd('a','z');
+  return *this;
+}
+
 void MT::String::resize(uint n, bool copy) {
   if(N==n && M>N) return;
   char *pold=p;

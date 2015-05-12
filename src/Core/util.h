@@ -245,6 +245,7 @@ public:
   void set(const char *s, uint n);
   void resize(uint n, bool copy); //low-level resizing the string buffer - fully uninitialized but with final 0
   void append(char x); //low-level append a char
+  String& setRandom();
   
   /// @name resetting
   String& clear();       //as with Array: resize(0)
