@@ -97,7 +97,8 @@ struct Graph:ItemL {
 //  Graph(Item *itemOfParentKvg);
   ~Graph();
   
-  Graph& operator=(const Graph&);
+  Graph& operator=(const Graph& G){ copy(G,true); return *this; }
+  void copy(const Graph& G, bool alsoBecomeSubgraph);
   void clear();
   ItemL& list() { return *this; }
   

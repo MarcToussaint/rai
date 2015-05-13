@@ -488,11 +488,10 @@ Item* Graph::merge(Item *m){
   return NULL;
 }
 
-Graph& Graph::operator=(const Graph& G) {
+void Graph::copy(const Graph& G, bool alsoBecomeSubgraph){
   G.checkConsistency();
-  //  G.index();//necessary, after checkConsistency?
-  //  { for_list(Item, i, G) i->index=i_COUNT; }
-  if(G.isItemOfParentKvg){ //CHECK that this is also a subgraph of the same container..
+
+  if(G.isItemOfParentKvg && alsoBecomeSubgraph){ //CHECK that this is also a subgraph of the same container..
     if(!isItemOfParentKvg){
       Item *Git = G.isItemOfParentKvg;
       new Item_typed<Graph>(Git->container, Git->keys, Git->parents, this, true);
@@ -543,7 +542,6 @@ Graph& Graph::operator=(const Graph& G) {
 
   this->checkConsistency();
   G.checkConsistency();
-  return *this;
 }
 
 void Graph::read(std::istream& is, bool parseInfo) {
