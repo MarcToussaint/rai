@@ -502,14 +502,14 @@ Graph& Graph::operator=(const Graph& G) {
   //-- first, just clone items with their values -- 'parents' still point to the origin items
   if(!isReferringToItemsOf){ while(N) delete last(); } // listDelete(*this);
   for(Item *it:G){
-    if(it->getValueType()==typeid(Graph)){
+    if(it->getValueType()==typeid(Graph) && it->getValue<Graph>()!=NULL){
       // why we can't copy the subgraph yet:
       // copying the subgraph would require to fully rewire the subgraph (code below)
       // but if the subgraph refers to parents of this graph that are not create yet, requiring will fail
       // therefore we just insert an empty graph here; we then copy the subgraph once all items are created
-      Item *clone = new Item_typed<Graph>(*this, it->keys, it->parents, new Graph(), true);
+      new Item_typed<Graph>(*this, it->keys, it->parents, new Graph(), true);
     }else{
-      Item *clone = it->newClone(*this); //this appends sequentially clones of all items to 'this'
+      it->newClone(*this); //this appends sequentially clones of all items to 'this'
     }
   }
 
@@ -517,7 +517,7 @@ Graph& Graph::operator=(const Graph& G) {
   for(Item *it:*this) CHECK(it->parentOf.N==0,"");
 
   //-- now copy subgraphs
-  for(Item *it:*this) if(it->getValueType()==typeid(Graph)){
+  for(Item *it:*this) if(it->getValueType()==typeid(Graph) && it->getValue<Graph>()!=NULL){
     it->kvg().isItemOfParentKvg = it;
     it->kvg().operator=(G.elem(it->index)->kvg()); //you can only call the operator= AFTER assigning isItemOfParentKvg
   }
@@ -695,7 +695,7 @@ uint Graph::index(bool subKVG, uint start){
   for(Item *it: list()){
     it->index=idx;
     idx++;
-    if(it->getValueType()==typeid(Graph)){
+    if(it->getValueType()==typeid(Graph) && it->getValue<Graph>()){
       Graph& G=it->kvg();
       if(!G.isReferringToItemsOf){
         if(subKVG) idx = G.index(true, idx);
