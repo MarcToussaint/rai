@@ -60,14 +60,14 @@ struct Item {
 
   //-- virtuals implemented by Item_typed
   virtual bool hasValue() const {NIY}
-  virtual void *getValueDirectly() const {NIY}
+  virtual void* getValueDirectly() const {NIY}
   virtual void writeValue(std::ostream &os) const {NIY}
   virtual const std::type_info& getValueType() const {NIY}
   virtual bool is_derived_from_RootType() const {NIY}
   virtual void copyValue(Item*) {NIY}
   virtual void takeoverValue(Item*) {NIY}
   virtual bool hasEqualValue(Item*) {NIY}
-  virtual Item *newClone(Graph& container) const {NIY}
+  virtual Item* newClone(Graph& container) const {NIY}
 };
 stdOutPipe(Item);
 

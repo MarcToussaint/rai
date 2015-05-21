@@ -113,7 +113,7 @@ void Item::write(std::ostream& os) const {
   } else if(getValueType()==typeid(MT::FileToken)) {
     os <<"='" <<getValue<MT::FileToken>()->name <<'\'';
   } else if(getValueType()==typeid(arr)) {
-    os <<'=' <<*getValue<arr>();
+    os <<'='; getValue<arr>()->write(os, NULL, NULL, "[]");
   } else if(getValueType()==typeid(double)) {
     os <<'=' <<*getValue<double>();
   } else if(getValueType()==typeid(bool)) {

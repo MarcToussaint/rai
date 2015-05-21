@@ -951,10 +951,10 @@ MT::LogToken::~LogToken(){
 #ifdef MT_ROS
       ROS_INFO("MLR-MSG: %s",MT::errString.p);
 #endif
-      if(log_level==-1){ MT::errString <<" -- WARNING";    cerr <<MT::errString <<endl; }
+      if(log_level==-1){ MT::errString <<" -- WARNING";    cout <<MT::errString <<endl; }
       if(log_level==-2){ MT::errString <<" -- ERROR  ";    cerr <<MT::errString <<endl; /*throw does not WORK!!!*/ }
       if(log_level==-3){ MT::errString <<" -- HARD EXIT!"; cerr <<MT::errString <<endl; MT::logServer().mutex.unlock(); exit(1); }
-      raise(SIGUSR2);
+      if(log_level<=-2) raise(SIGUSR2);
     }
   }
   MT::logServer().mutex.unlock();
