@@ -488,13 +488,18 @@ Item* Graph::merge(Item *m){
   return NULL;
 }
 
-void Graph::copy(const Graph& G, bool alsoBecomeSubgraph){
+void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer){
   G.checkConsistency();
 
-  if(G.isItemOfParentKvg && alsoBecomeSubgraph){ //CHECK that this is also a subgraph of the same container..
+  if(becomeSubgraphOfContainer){ //CHECK that this is also a subgraph of the same container..
     if(!isItemOfParentKvg){
       Item *Git = G.isItemOfParentKvg;
-      new Item_typed<Graph>(Git->container, Git->keys, Git->parents, this, true);
+      if(Git)
+        new Item_typed<Graph>(*becomeSubgraphOfContainer, Git->keys, Git->parents, this, true);
+      else
+        new Item_typed<Graph>(*becomeSubgraphOfContainer, {}, {}, this, true);
+    }else{
+      CHECK(&isItemOfParentKvg->container==becomeSubgraphOfContainer,"is already subgraph of another container!");
     }
   }
 
