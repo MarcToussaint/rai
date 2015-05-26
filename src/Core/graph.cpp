@@ -523,7 +523,7 @@ void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer){
   //-- now copy subgraphs
   for(Item *it:*this) if(it->getValueType()==typeid(Graph) && it->getValue<Graph>()!=NULL){
     it->kvg().isItemOfParentKvg = it;
-    it->kvg().operator=(G.elem(it->index)->kvg()); //you can only call the operator= AFTER assigning isItemOfParentKvg
+    it->kvg().copy(G.elem(it->index)->kvg(), NULL); //you can only call the operator= AFTER assigning isItemOfParentKvg
   }
 
   //-- now rewire links

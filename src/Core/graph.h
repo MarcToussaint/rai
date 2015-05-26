@@ -28,11 +28,13 @@
 #include "array.h"
 #include <map>
 
-struct Item;
+struct Item; //TODO: Item -> Node
 struct Graph;
 struct ParseInfo;
+struct EditCallback;
 typedef MT::Array<Item*> ItemL;
 typedef MT::Array<ParseInfo*> ParseInfoL;
+typedef MT::Array<EditCallback*> EditCallbackL;
 extern ItemL& NoItemL; //this is a pointer to NULL! I use it for optional arguments
 extern Graph& NoGraph; //this is a pointer to NULL! I use it for optional arguments
 
@@ -88,23 +90,26 @@ struct Graph:ItemL {
   Graph* isReferringToItemsOf; //TODO: remove
   Item *isItemOfParentKvg;
   ParseInfoL pi;
-  
+  EditCallbackL callbacks;
+
+  //-- constructors
   Graph();
   explicit Graph(const char* filename);
   Graph(const std::map<std::string, std::string>& dict);
   Graph(std::initializer_list<ItemInitializer> list);
   Graph(const Graph& G);
-//  Graph(Item *itemOfParentKvg);
   ~Graph();
-  
+  void clear();
+  ItemL& list() { return *this; }
+
+  //-- copy operator
   Graph& operator=(const Graph& G){
-    if(G.isItemOfParentKvg) copy(G, &G.isItemOfParentKvg->container);
-    else copy(G,NULL);
+    if(isItemOfParentKvg) copy(G,NULL); //this is already a subgraph
+    else if(G.isItemOfParentKvg) copy(G, &G.isItemOfParentKvg->container); //copy as subgraph (including the item!)
+    else copy(G,NULL); //root graph plain copy
     return *this;
   }
   void copy(const Graph& G, Graph* becomeSubgraphOfContainer);
-  void clear();
-  ItemL& list() { return *this; }
   
   //-- get items
   Item* getItem(const char *key) const;

@@ -570,10 +570,12 @@ struct Singleton {
 
   ~Singleton(){
     if(singleton) {
-      static Mutex m;
-      m.lock();
-      if(singleton) delete singleton;
-      m.unlock();
+//      static Mutex m; //pthread might already be deinitialized...
+//      m.lock();
+      T *mine=singleton;
+      singleton=NULL;
+      if(mine) delete mine;
+//      m.unlock();
     }
   }
 
