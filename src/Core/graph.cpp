@@ -41,7 +41,8 @@ struct ParseInfo{
 //  Item methods
 //
 
-Item::Item(Graph& _container):container(_container){
+Item::Item(Graph& _container)
+  : container(_container){
   if(&container!=&NoGraph){
     index=container.N;
     container.ItemL::append(this);
@@ -52,6 +53,7 @@ Item::Item(Graph& _container):container(_container){
 
 Item::Item(Graph& _container, const StringA& _keys, const ItemL& _parents)
   : container(_container), keys(_keys), parents(_parents){
+  CHECK(&container!=&NoGraph, "you gave me a NoGraph container");
   index=container.N;
   container.ItemL::append(this);
   for(Item *i: parents){

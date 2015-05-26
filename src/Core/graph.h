@@ -31,10 +31,10 @@
 struct Item; //TODO: Item -> Node
 struct Graph;
 struct ParseInfo;
-struct EditCallback;
+struct GraphEditCallback;
 typedef MT::Array<Item*> ItemL;
 typedef MT::Array<ParseInfo*> ParseInfoL;
-typedef MT::Array<EditCallback*> EditCallbackL;
+typedef MT::Array<GraphEditCallback*> GraphEditCallbackL;
 extern ItemL& NoItemL; //this is a pointer to NULL! I use it for optional arguments
 extern Graph& NoGraph; //this is a pointer to NULL! I use it for optional arguments
 
@@ -90,7 +90,7 @@ struct Graph:ItemL {
   Graph* isReferringToItemsOf; //TODO: remove
   Item *isItemOfParentKvg;
   ParseInfoL pi;
-  EditCallbackL callbacks;
+  GraphEditCallbackL callbacks;
 
   //-- constructors
   Graph();
@@ -168,6 +168,15 @@ struct Graph:ItemL {
 stdPipes(Graph);
 
 //===========================================================================
+
+struct GraphEditCallback {
+  virtual ~GraphEditCallback(){}
+  virtual void cb_new(Item*){}
+  virtual void cb_delete(Item*){}
+};
+
+//===========================================================================
+
 
 inline Graph GRAPH(const ItemL& L){ //TODO: remove
   Graph G;
