@@ -110,7 +110,7 @@ double Spline::getCoeff(double t, double t2, uint der) const{
   return 0.;
 }
 
-arr Spline::getCoeffs(double time, uint K, uint der) const {
+arr Spline::getCoeffs(double time, uint K, uint derivative) const {
   arr b(K+1), b_0(K+1), db(K+1), db_0(K+1), ddb(K+1), ddb_0(K+1);
   for(uint p=0; p<=degree; p++) {
     b_0=b; b.setZero();
@@ -138,7 +138,7 @@ arr Spline::getCoeffs(double time, uint K, uint der) const {
       }
     }
   }
-  switch(der) {
+  switch(derivative) {
     case 0:
       return b;
     case 1:
@@ -146,7 +146,7 @@ arr Spline::getCoeffs(double time, uint K, uint der) const {
     case 2:
       return ddb;
   }
-  HALT("Derivate of order " << der << " not yet implemented.");
+  HALT("Derivate of order " << derivative << " not yet implemented.");
 }
 
 void Spline::setBasisAndTimeGradient(uint T, uint K) {
@@ -199,19 +199,20 @@ void Spline::setUniformNonperiodicBasis(uint T, uint K, uint _degree) {
   for(i=0; i<=m; i++) {
     if(i<=degree) times(i)=.0;
     else if(i>=m-degree) times(i)=1.;
-    else times(i) = double(i-degree)/double(m-1-degree);
+    else times(i) = double(i-degree)/double(m-2*degree);
   }
   setBasis(T, K);
 //  setBasisAndTimeGradient();
 }
 
 arr Spline::eval(double t, bool velocities) const {
-#if 0
-  return (~getBasis(t-.1, velocities) * points).reshape(points.d1);
+#if 1
+  uint K = points.d0-1;
+  return (~getCoeffs(t, K, 0) * points).reshape(points.d1);
 #else
   uint N=points.d0-1;
-  t*=N;
-  int K=floor(t);
+  t*=N; //time in same scaling as integer index
+  int K=floor(t); //integer index
   arr x(points.d1);
   x.setZero();
   for(int k=K-1-(int)degree/2; k<=K+1+(int)degree/2; k++){
@@ -226,9 +227,9 @@ arr Spline::eval(double t, bool velocities) const {
 #endif
 }
 
-arr Spline::eval(uint t) const { return (~basis[t]*points).reshape(points.d1); };
+arr Spline::eval(uint t) const { return (~basis[t]*points).reshape(points.d1); }
 
-arr Spline::eval() const { return basis*points; };
+arr Spline::eval() const { return basis*points; }
 
 arr Spline::smooth(double lambda) const {
   CHECK(lambda >= 0, "Lambda must be non-negative");
