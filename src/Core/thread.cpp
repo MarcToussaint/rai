@@ -199,24 +199,24 @@ void ConditionVariable::waitUntil(double absTime, bool userHasLocked) {
 
 //===========================================================================
 //
-// VariableContainer
+// RevisionedAccessGatedClass
 //
 
-VariableContainer::VariableContainer(const char *_name):name(_name), revision(0) {
+RevisionedAccessGatedClass::RevisionedAccessGatedClass(const char *_name):name(_name), revision(0) {
   listeners.memMove=true;
 }
 
-VariableContainer::~VariableContainer() {
+RevisionedAccessGatedClass::~RevisionedAccessGatedClass() {
 }
 
-int VariableContainer::readAccess(Thread *th) {
+int RevisionedAccessGatedClass::readAccess(Thread *th) {
 //  engine().acc->queryReadAccess(this, p);
   rwlock.readLock();
 //  engine().acc->logReadAccess(this, p);
   return revision.getValue();
 }
 
-int VariableContainer::writeAccess(Thread *th) {
+int RevisionedAccessGatedClass::writeAccess(Thread *th) {
 //  engine().acc->queryWriteAccess(this, p);
   rwlock.writeLock();
   int r = revision.incrementValue();
@@ -227,7 +227,7 @@ int VariableContainer::writeAccess(Thread *th) {
   return r;
 }
 
-int VariableContainer::deAccess(Thread *th) {
+int RevisionedAccessGatedClass::deAccess(Thread *th) {
 //  Module_Thread *p = m?(Module_Thread*) m->thread:NULL;
   if(rwlock.state == -1) { //log a revision after write access
     //MT logService.logRevision(this);
@@ -241,15 +241,15 @@ int VariableContainer::deAccess(Thread *th) {
   return rev;
 }
 
-double VariableContainer::revisionTime(){
+double RevisionedAccessGatedClass::revisionTime(){
   return revision_time;
 }
 
-int VariableContainer::revisionNumber(){
+int RevisionedAccessGatedClass::revisionNumber(){
   return revision.getValue();
 }
 
-int VariableContainer::waitForNextRevision(){
+int RevisionedAccessGatedClass::waitForNextRevision(){
   revision.lock();
   revision.waitForSignal(true);
   int rev = revision.value;
@@ -257,7 +257,7 @@ int VariableContainer::waitForNextRevision(){
   return rev;
 }
 
-int VariableContainer::waitForRevisionGreaterThan(int rev) {
+int RevisionedAccessGatedClass::waitForRevisionGreaterThan(int rev) {
   revision.lock();
   revision.waitForValueGreaterThan(rev, true);
   rev = revision.value;
@@ -379,7 +379,7 @@ Thread::Thread(const char* _name): name(_name), state(tsCLOSE), tid(0), thread(0
 }
 
 Thread::~Thread() {
-  for(VariableContainer *v:listensTo){
+  for(RevisionedAccessGatedClass *v:listensTo){
     v->rwlock.writeLock();
     v->listeners.removeValue(this);
     v->rwlock.unlock();
@@ -447,7 +447,7 @@ void Thread::threadStep(uint steps, bool wait) {
   if(wait) waitForIdle();
 }
 
-void Thread::listenTo(VariableContainer& v) {
+void Thread::listenTo(RevisionedAccessGatedClass& v) {
   v.rwlock.writeLock();  //don't want to increase revision and broadcast!
   v.listeners.setAppend(this);
   v.rwlock.unlock();
@@ -642,7 +642,7 @@ TStream::Register::~Register() {
 }
 
 RUN_ON_INIT_BEGIN(thread)
-VariableContainerL::memMove=true;
+RevisionedAccessGatedClassL::memMove=true;
 ThreadL::memMove=true;
 RUN_ON_INIT_END(thread)
 
