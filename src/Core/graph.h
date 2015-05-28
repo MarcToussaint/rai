@@ -28,11 +28,13 @@
 #include "array.h"
 #include <map>
 
-struct Item;
+struct Item; //TODO: Item -> Node
 struct Graph;
 struct ParseInfo;
+struct GraphEditCallback;
 typedef MT::Array<Item*> ItemL;
 typedef MT::Array<ParseInfo*> ParseInfoL;
+typedef MT::Array<GraphEditCallback*> GraphEditCallbackL;
 extern ItemL& NoItemL; //this is a pointer to NULL! I use it for optional arguments
 extern Graph& NoGraph; //this is a pointer to NULL! I use it for optional arguments
 
@@ -45,7 +47,7 @@ struct Item {
   ItemL parentOf;
   uint index;
   Item(Graph& _container);
-  Item(Graph& _container, const ItemL& _parents);
+  Item(Graph& _container, const StringA& _keys, const ItemL& _parents);
   virtual ~Item();
   template<class T> T *getValue();    ///< query whether the Item is of a certain value, return the value if so
   template<class T> const T *getValue() const; ///< as above
@@ -60,14 +62,14 @@ struct Item {
 
   //-- virtuals implemented by Item_typed
   virtual bool hasValue() const {NIY}
-  virtual void *getValueDirectly() const {NIY}
+  virtual void* getValueDirectly() const {NIY}
   virtual void writeValue(std::ostream &os) const {NIY}
   virtual const std::type_info& getValueType() const {NIY}
   virtual bool is_derived_from_RootType() const {NIY}
   virtual void copyValue(Item*) {NIY}
   virtual void takeoverValue(Item*) {NIY}
   virtual bool hasEqualValue(Item*) {NIY}
-  virtual Item *newClone(Graph& container) const {NIY}
+  virtual Item* newClone(Graph& container) const {NIY}
 };
 stdOutPipe(Item);
 
@@ -88,18 +90,26 @@ struct Graph:ItemL {
   Graph* isReferringToItemsOf; //TODO: remove
   Item *isItemOfParentKvg;
   ParseInfoL pi;
-  
+  GraphEditCallbackL callbacks;
+
+  //-- constructors
   Graph();
   explicit Graph(const char* filename);
   Graph(const std::map<std::string, std::string>& dict);
   Graph(std::initializer_list<ItemInitializer> list);
   Graph(const Graph& G);
-//  Graph(Item *itemOfParentKvg);
   ~Graph();
-  
-  Graph& operator=(const Graph&);
   void clear();
   ItemL& list() { return *this; }
+
+  //-- copy operator
+  Graph& operator=(const Graph& G){
+    if(isItemOfParentKvg) copy(G,NULL); //this is already a subgraph
+    else if(G.isItemOfParentKvg) copy(G, &G.isItemOfParentKvg->container); //copy as subgraph (including the item!)
+    else copy(G,NULL); //root graph plain copy
+    return *this;
+  }
+  void copy(const Graph& G, Graph* becomeSubgraphOfContainer);
   
   //-- get items
   Item* getItem(const char *key) const;
@@ -158,6 +168,15 @@ struct Graph:ItemL {
 stdPipes(Graph);
 
 //===========================================================================
+
+struct GraphEditCallback {
+  virtual ~GraphEditCallback(){}
+  virtual void cb_new(Item*){}
+  virtual void cb_delete(Item*){}
+};
+
+//===========================================================================
+
 
 inline Graph GRAPH(const ItemL& L){ //TODO: remove
   Graph G;

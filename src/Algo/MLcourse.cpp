@@ -146,7 +146,7 @@ KernelLogisticRegression::KernelLogisticRegression(const arr& _X, const arr& y, 
     //compute logLikelihood
     logLike=0.;
     for(uint i=0; i<n; i++) logLike += MT::indicate(y(i)==1.)*f(i) - log(Z(i));
-    MT_MSG("log-likelihood = " <<logLike);
+    LOG(1) <<"log-likelihood = " <<logLike;
 
     kernelMatrix_lambda = kernelMatrix;
     for(uint i=0;i<n;i++) kernelMatrix_lambda(i,i) += 2.*lambda/w(i);
@@ -458,13 +458,12 @@ void piecewiseLinearFeatures(arr& Z, const arr& X) {
 
 void rbfFeatures(arr& Z, const arr& X, const arr& Xtrain) {
   int rbfBias = MT::getParameter<int>("rbfBias", 0);
-  double rbfWidth = MT::getParameter<double>("rbfWidth", .2);
+  double rbfWidth = MT::sqr(MT::getParameter<double>("rbfWidth", .2));
   Z.resize(X.d0, Xtrain.d0+rbfBias);
   for(uint i=0; i<Z.d0; i++) {
     if(rbfBias) Z(i, 0) = 1.; //bias feature also for rbfs?
     for(uint j=0; j<Xtrain.d0; j++) {
-      double d=euclideanDistance(X[i], Xtrain[j])/rbfWidth;
-      Z(i, j+rbfBias) = ::exp(-.5*d*d);
+      Z(i, j+rbfBias) = ::exp(-sqrDistance(X[i], Xtrain[j])/rbfWidth);
     }
   }
 }
@@ -483,8 +482,6 @@ arr makeFeatures(const arr& X, FeatureType featureType, const arr& rbfCenters) {
   }
   return Z;
 }
-
-
 
 void artificialData(arr& X, arr& y, ArtificialDataType dataType) {
   uint n = MT::getParameter<uint>("n", 100);
@@ -568,7 +565,7 @@ void artificialData_HastiesMultiClass(arr& X, arr& y) {
   arr means(M, 10, 2), x(2);
   
   rndGauss(means);
-  for(uint c=0; c<M; c++)  means[c]() += ones(10,10)*~ARR((double)c, (double)c);
+  for(uint c=0; c<M; c++)  means[c]() += ones(10)*~ARR((double)c, (double)c);
   
   X.resize(M*n, 2);
   y.resize(M*n, M);

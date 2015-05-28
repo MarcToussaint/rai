@@ -745,7 +745,7 @@ bool G4RawSeq::hasAnn() {
 void G4RawSeq::write(std::ostream &os) const {
   os << "G4RawSeq: " << endl;
   os << " * sensors: " << sensor1 << ", " << sensor2 << endl;
-  os << " * dims: " << data1.getDim() << ", " << data2.getDim() << endl;
+  os << " * dims: " << data1.dim() << ", " << data2.dim() << endl;
   os << " * ann: " << (ann.N? "yes": "no") << endl;
 }
 
@@ -845,6 +845,6 @@ bool G4FeatSeq::hasAnn() {
 void G4FeatSeq::write(std::ostream &os) const {
   os << "G4FeatSeq: " << endl;
   os << " * sensors: " << sensor1 << ", " << sensor2 << endl;
-  os << " * dim: " << data.getDim() << endl;
+  os << " * dim: " << data.dim() << endl;
   os << " * ann: " << (ann.N? "yes": "no") << endl;
 }
