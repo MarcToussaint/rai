@@ -8,16 +8,24 @@ void MCTS::addRollout(){
   while(!world.is_terminal_state()){
     if(!n->children.N && !n->N) break; //freshmen -> do not expand
     if(!n->children.N && n->N){ //expand: compute new decisions and add corresponding nodes
+      if(verbose>0) cout <<"****************** MCTS: expanding: computing all decisions for current node and adding them as freshmen nodes" <<endl;
       for(const MCTS_Environment::Handle& d:world.get_actions()) new Node(n, d); //this adds a bunch of freshmen for all possible decisions
+    }else{
+      if(verbose>0) cout <<"****************** MCTS: decisions in current node already known" <<endl;
     }
     n = treePolicy(n);
+    if(verbose>0) cout <<"****************** MCTS: made tree policy decision" <<endl;
     n->r = world.transition(n->decision).second;
   }
 
   //-- rollout
   double Return=0.;
-  while(!world.is_terminal_state())  Return += world.transition_randomly().second;
+  while(!world.is_terminal_state()){
+    if(verbose>0) cout <<"****************** MCTS: random decision" <<endl;
+    Return += world.transition_randomly().second;
+  }
 
+  if(verbose>0) cout <<"****************** MCTS: terminal state reached" <<endl;
   Return += world.get_terminal_reward();
 
   //-- backup

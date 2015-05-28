@@ -33,8 +33,9 @@ struct Node{
 struct MCTS{
   MCTS_Environment& world;
   Node root;
+  int verbose;
 
-  MCTS(MCTS_Environment& world):world(world), root(NULL, NULL){}
+  MCTS(MCTS_Environment& world):world(world), root(NULL, NULL), verbose(2){}
 
   void addRollout();                 ///< adds one more rollout to the tree
   Node* treePolicy(Node *n);   ///< policy to choose the child from which to do a rollout or to expand
