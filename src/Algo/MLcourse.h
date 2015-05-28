@@ -48,8 +48,9 @@ struct KernelRidgeRegression{
   arr invKernelMatrix_lambda;
   arr alpha; ///< (X X^T + lambda I)^-1 y
   double sigma; ///< mean squared error on training data; estimate of noise
+  double mu; ///< fixed global bias (default=0)
   KernelFunction& kernel;
-  KernelRidgeRegression(const arr& X, const arr& y, KernelFunction& kernel=defaultKernelFunction, double lambda=-1);
+  KernelRidgeRegression(const arr& X, const arr& y, KernelFunction& kernel=defaultKernelFunction, double lambda=-1, double mu=0.);
   arr evaluate(const arr& X, arr& bayesSigma2=NoArr);
 };
 
@@ -59,9 +60,11 @@ struct KernelLogisticRegression{
   arr invKernelMatrix_lambda;
   arr alpha; ///< (X X^T + 2 lambda W^-1)^-1 (f - (p-y)/w)
   double lambda;
+  double mu; ///< fixed global bias (default=0)
   KernelFunction& kernel;
-  KernelLogisticRegression(const arr& X, const arr& y, KernelFunction& kernel=defaultKernelFunction, double lambda=-1);
+  KernelLogisticRegression(const arr& X, const arr& y, KernelFunction& kernel=defaultKernelFunction, double lambda=-1, double mu=0.);
   arr evaluate(const arr& X, arr &p_bayes=NoArr, arr& p_hi=NoArr, arr& p_lo=NoArr);
+  arr evaluateF(const arr& X, arr& bayesSigma2=NoArr);
 };
 
 struct KernelCRF{
