@@ -30,7 +30,9 @@
 
 struct Item;
 struct Graph;
+struct ParseInfo;
 typedef MT::Array<Item*> ItemL;
+typedef MT::Array<ParseInfo*> ParseInfoL;
 extern ItemL& NoItemL; //this is a pointer to NULL! I use it for optional arguments
 extern Graph& NoGraph; //this is a pointer to NULL! I use it for optional arguments
 
@@ -85,6 +87,7 @@ struct Graph:ItemL {
   struct sKeyValueGraph *s;
   Graph* isReferringToItemsOf; //TODO: remove
   Item *isItemOfParentKvg;
+  ParseInfoL pi;
   
   Graph();
   explicit Graph(const char* filename);
@@ -146,8 +149,9 @@ struct Graph:ItemL {
 
   //-- I/O
   void sortByDotOrder();
+  ParseInfo& getParseInfo(Item *it);
   
-  void read(std::istream& is);
+  void read(std::istream& is, bool parseInfo=false);
   void write(std::ostream& os=std::cout, const char *ELEMSEP="\n", const char *delim=NULL) const;
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0);
 };

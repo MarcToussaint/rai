@@ -37,7 +37,7 @@ struct Spline {
 
   /// two methods to get the coefficients -- the first analytic, the second buggy and recursive
   double getCoeff(double t, double t2, uint der=0) const;
-  arr getCoeffs(double time, uint K, uint der=0) const;
+  arr getCoeffs(double time, uint K, uint derivative=0) const;
 
   /// core method to evaluate the spline at an arbitrary point
   arr eval(double t, bool velocities=false) const;

@@ -304,7 +304,7 @@ struct LogToken{
 //#define LOG(log_level) (MT::LogToken(log_level, __FILE__, __func__, __LINE__).os())
 #define LOG(log_level) MT::LogToken(log_level, __FILE__, __func__, __LINE__).os()
 
-void setLogLevels(int fileLogLevel=3, int consoleLogLevel=3);
+void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 
 //The destructor ~LogToken writes into the log file and
 //console. setLogLevel allows to adjust cout verbosity (0 by default),
@@ -425,9 +425,10 @@ struct FileToken{
   FileToken& operator()(){ return *this; }
 
   void decomposeFilename();
+  void changeDir();
   bool exists();
   std::ofstream& getOs();
-  std::ifstream& getIs();
+  std::ifstream& getIs(bool change_dir=false);
   operator std::istream&(){ return getIs(); }
   operator std::ostream&(){ return getOs(); }
 };
