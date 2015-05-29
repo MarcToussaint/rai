@@ -41,7 +41,8 @@ struct ParseInfo{
 //  Item methods
 //
 
-Item::Item(Graph& _container):container(_container){
+Item::Item(Graph& _container)
+  : container(_container){
   if(&container!=&NoGraph){
     index=container.N;
     container.ItemL::append(this);
@@ -50,8 +51,9 @@ Item::Item(Graph& _container):container(_container){
   }
 }
 
-Item::Item(Graph& _container, const ItemL& _parents)
-  : container(_container), parents(_parents){
+Item::Item(Graph& _container, const StringA& _keys, const ItemL& _parents)
+  : container(_container), keys(_keys), parents(_parents){
+  CHECK(&container!=&NoGraph, "you gave me a NoGraph container");
   index=container.N;
   container.ItemL::append(this);
   for(Item *i: parents){
@@ -113,7 +115,7 @@ void Item::write(std::ostream& os) const {
   } else if(getValueType()==typeid(MT::FileToken)) {
     os <<"='" <<getValue<MT::FileToken>()->name <<'\'';
   } else if(getValueType()==typeid(arr)) {
-    os <<'=' <<*getValue<arr>();
+    os <<'='; getValue<arr>()->write(os, NULL, NULL, "[]");
   } else if(getValueType()==typeid(double)) {
     os <<'=' <<*getValue<double>();
   } else if(getValueType()==typeid(bool)) {
@@ -175,7 +177,7 @@ Item *readItem(Graph& containingKvg, std::istream& is, bool verbose, bool parseI
       } else { //this element is not known!!
         int rel=0;
         str >>rel;
-        if(rel<0 && containingKvg.N+rel>=0){
+        if(rel<0 && (int)containingKvg.N+rel>=0){
           e=containingKvg(containingKvg.N+rel);
           parents.append(e);
         }else{
@@ -248,7 +250,6 @@ Item *readItem(Graph& containingKvg, std::istream& is, bool verbose, bool parseI
       case '{': { // Graph (e.g., attribute list)
         Graph *subList = new Graph;
         item = new Item_typed<Graph>(containingKvg, keys, parents, subList, true);
-        subList->isItemOfParentKvg = item;
         subList->read(is);
         MT::parse(is, "}");
       } break;
@@ -268,7 +269,6 @@ Item *readItem(Graph& containingKvg, std::istream& is, bool verbose, bool parseI
         }
         MT::parse(is, ")");
         item = new Item_typed<Graph>(containingKvg, keys, parents, refs, true);
-        refs->isItemOfParentKvg = item;
       } break;
       default: { //error
         is.putback(c);
@@ -323,21 +323,17 @@ struct sKeyValueGraph {
 };
 
 Graph::Graph():s(NULL), isReferringToItemsOf(NULL), isItemOfParentKvg(NULL) {
-  ItemL::memMove=true;
 }
 
 Graph::Graph(const char* filename):s(NULL), isReferringToItemsOf(NULL), isItemOfParentKvg(NULL) {
-  ItemL::memMove=true;
   FILE(filename) >>*this;
 }
 
 Graph::Graph(const std::map<std::string, std::string>& dict):s(NULL), isReferringToItemsOf(NULL), isItemOfParentKvg(NULL) {
-  ItemL::memMove=true;
   appendDict(dict);
 }
 
 Graph::Graph(std::initializer_list<ItemInitializer> list) {
-  ItemL::memMove=true;
   for(const ItemInitializer& ic:list){
     Item *clone = ic.it->newClone(*this); //this appends sequentially clones of all items to 'this'
     for(const MT::String& s:ic.parents){
@@ -350,15 +346,17 @@ Graph::Graph(std::initializer_list<ItemInitializer> list) {
 }
 
 Graph::Graph(const Graph& G):s(NULL), isReferringToItemsOf(NULL), isItemOfParentKvg(NULL) {
-  ItemL::memMove=true;
   *this = G;
 }
 
-//Graph::Graph(Item *itemOfParentKvg):s(NULL), isReferringToItemsOf(NULL), isItemOfParentKvg(itemOfParentKvg) {
-//  ItemL::memMove=true;
-//}
-
 Graph::~Graph() {
+  clear();
+  if(isItemOfParentKvg){
+    Item_typed<Graph>* it=dynamic_cast<Item_typed<Graph>*>(isItemOfParentKvg);
+    CHECK(it,"");
+    it->value=NULL;
+    it->ownsValue=false;
+  }
 }
 
 void Graph::clear() {
@@ -492,45 +490,65 @@ Item* Graph::merge(Item *m){
   return NULL;
 }
 
-Graph& Graph::operator=(const Graph& G) {
+void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer){
   G.checkConsistency();
-  //  G.index();//necessary, after checkConsistency?
-  //  { for_list(Item, i, G) i->index=i_COUNT; }
 
-  if(!isReferringToItemsOf){ while(N) delete last(); } // listDelete(*this);
-  for(Item *it:G){
-    if(it->getValueType()==typeid(Graph)){
-      Item *clone = new Item_typed<Graph>(*this, it->keys, it->parents, new Graph(), true);
-      clone->parentOf.clear();
-      clone->kvg().isItemOfParentKvg=clone;
-      clone->kvg().operator=(it->kvg()); //you can only call the operator= AFTER assigning isItemOfParentKvg
+  if(becomeSubgraphOfContainer){ //CHECK that this is also a subgraph of the same container..
+    if(!isItemOfParentKvg){
+      Item *Git = G.isItemOfParentKvg;
+      if(Git)
+        new Item_typed<Graph>(*becomeSubgraphOfContainer, Git->keys, Git->parents, this, true);
+      else
+        new Item_typed<Graph>(*becomeSubgraphOfContainer, {}, {}, this, true);
     }else{
-      Item *clone = it->newClone(*this); //this appends sequentially clones of all items to 'this'
-      clone->parentOf.clear();
+      CHECK(&isItemOfParentKvg->container==becomeSubgraphOfContainer,"is already subgraph of another container!");
     }
   }
 
-  //rewire links
+  //-- first, just clone items with their values -- 'parents' still point to the origin items
+  if(!isReferringToItemsOf){ while(N) delete last(); } // listDelete(*this);
+  for(Item *it:G){
+    if(it->getValueType()==typeid(Graph) && it->getValue<Graph>()!=NULL){
+      // why we can't copy the subgraph yet:
+      // copying the subgraph would require to fully rewire the subgraph (code below)
+      // but if the subgraph refers to parents of this graph that are not create yet, requiring will fail
+      // therefore we just insert an empty graph here; we then copy the subgraph once all items are created
+      new Item_typed<Graph>(*this, it->keys, it->parents, new Graph(), true);
+    }else{
+      it->newClone(*this); //this appends sequentially clones of all items to 'this'
+    }
+  }
+
+  //-- the new items are not parent of anybody yet
+  for(Item *it:*this) CHECK(it->parentOf.N==0,"");
+
+  //-- now copy subgraphs
+  for(Item *it:*this) if(it->getValueType()==typeid(Graph) && it->getValue<Graph>()!=NULL){
+    it->kvg().isItemOfParentKvg = it;
+    it->kvg().copy(G.elem(it->index)->kvg(), NULL); //you can only call the operator= AFTER assigning isItemOfParentKvg
+  }
+
+  //-- now rewire links
   for(Item *it:*this){
     for(uint i=0;i<it->parents.N;i++){
-      Item *p=it->parents(i);
+      Item *p=it->parents(i); //the parent in the origin graph
       const Graph *newg=this, *oldg=&G;
       while(&p->container!=oldg){  //find the container while iterating backward also in the newG
         CHECK(oldg->isItemOfParentKvg,"");
         newg = &newg->isItemOfParentKvg->container;
         oldg = &oldg->isItemOfParentKvg->container;
       }
+      CHECK(newg->N==oldg->N,"different size!!\n" <<*newg <<"**\n" <<*oldg);
       CHECK(p==oldg->elem(p->index),""); //we found the parent in oldg
-      p->parentOf.removeValue(it);
-      p = newg->elem(p->index); //now assign it to the same in newg
-      p->parentOf.append(it);
+      p->parentOf.removeValue(it);  //origin items is not parent of copy
+      p = newg->elem(p->index);     //the true parent in the new graph
+      p->parentOf.append(it);       //connect both ways
       it->parents(i)=p;
     }
   }
 
   this->checkConsistency();
   G.checkConsistency();
-  return *this;
 }
 
 void Graph::read(std::istream& is, bool parseInfo) {
@@ -667,7 +685,7 @@ bool Graph::checkConsistency() const{
     }else{
       CHECK(parent->index < it->index,"item refers to parent that sorts below the item");
     }
-    if(it->getValueType()==typeid(Graph)){
+    if(it->getValueType()==typeid(Graph) && it->getValue<Graph>()){
       Graph& G = it->kvg();
       CHECK(G.isItemOfParentKvg==it,"");
       if(!G.isReferringToItemsOf) G.checkConsistency();
@@ -682,7 +700,7 @@ uint Graph::index(bool subKVG, uint start){
   for(Item *it: list()){
     it->index=idx;
     idx++;
-    if(it->getValueType()==typeid(Graph)){
+    if(it->getValueType()==typeid(Graph) && it->getValue<Graph>()){
       Graph& G=it->kvg();
       if(!G.isReferringToItemsOf){
         if(subKVG) idx = G.index(true, idx);
@@ -692,3 +710,7 @@ uint Graph::index(bool subKVG, uint start){
   }
   return idx;
 }
+
+RUN_ON_INIT_BEGIN(graph)
+ItemL::memMove=true;
+RUN_ON_INIT_END(graph)

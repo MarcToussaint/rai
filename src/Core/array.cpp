@@ -42,7 +42,7 @@ uint64_t globalMemoryTotal=0, globalMemoryBound=1ull<<30; //this is 1GB
 bool globalMemoryStrict=false;
 const char* arrayElemsep=" ";
 const char* arrayLinesep="\n ";
-const char* arrayBrackets="[]";
+const char* arrayBrackets="\0\0";
 
 //===========================================================================
 }
@@ -1687,7 +1687,7 @@ template void MT::getParameter(uintA&, const char*, const uintA&);
 void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 
 namespace MT{
-template<> template<> Array<MT::String>::Array<const char*>(std::initializer_list<const char*> list) {
+template<> template<> Array<MT::String>::Array(std::initializer_list<const char*> list) {
   init();
   for(const char* t : list) append(MT::String(t));
 }
