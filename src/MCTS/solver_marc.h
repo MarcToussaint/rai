@@ -37,7 +37,7 @@ struct MCTS{
 
   MCTS(MCTS_Environment& world):world(world), root(NULL, NULL), verbose(2){}
 
-  void addRollout();                 ///< adds one more rollout to the tree
+  void addRollout(int stepAbort=-1);                 ///< adds one more rollout to the tree
   Node* treePolicy(Node *n);   ///< policy to choose the child from which to do a rollout or to expand
   double Qvalue(Node* n, int optimistic); ///< current value estimates at a node
   arr Qfunction(Node* n=NULL, int optimistic=0); ///< the Q-function (value estimates of all children) at a node

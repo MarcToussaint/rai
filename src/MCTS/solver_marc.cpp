@@ -1,11 +1,12 @@
 #include "solver_marc.h"
 
-void MCTS::addRollout(){
+void MCTS::addRollout(int stepAbort){
+  int step=0;
   Node *n = &root;
   world.reset_state();
 
   //-- tree policy
-  while(!world.is_terminal_state()){
+  while(!world.is_terminal_state() && (stepAbort<0 || step++<stepAbort)){
     if(!n->children.N && !n->N) break; //freshmen -> do not expand
     if(!n->children.N && n->N){ //expand: compute new decisions and add corresponding nodes
       if(verbose>0) cout <<"****************** MCTS: expanding: computing all decisions for current node and adding them as freshmen nodes" <<endl;
@@ -20,7 +21,7 @@ void MCTS::addRollout(){
 
   //-- rollout
   double Return=0.;
-  while(!world.is_terminal_state()){
+  while(!world.is_terminal_state() && (stepAbort<0 || step++<stepAbort)){
     if(verbose>0) cout <<"****************** MCTS: random decision" <<endl;
     Return += world.transition_randomly().second;
   }
