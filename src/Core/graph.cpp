@@ -431,11 +431,11 @@ Graph Graph::getItems(const char* key) {
 Item* Graph::getChild(Item *p1, Item *p2) const{
   if(p1->parentOf.N < p2->parentOf.N){
     for(Item *i:p1->parentOf){
-      if(p2->parentOf.findValue(i)>0) return i;
+      if(p2->parentOf.findValue(i)>=0) return i;
     }
   }else{
     for(Item *i:p2->parentOf){
-      if(p1->parentOf.findValue(i)>0) return i;
+      if(p1->parentOf.findValue(i)>=0) return i;
     }
   }
   return NULL;
@@ -608,7 +608,7 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
       label <<")\" ";
     }
 
-    if(defaultEdges && it->parents.N==2 && it->getValueType()==typeid(bool)){ //an edge
+    if(defaultEdges && it->parents.N==2){ //an edge
       os <<it->parents(0)->index <<" -> " <<it->parents(1)->index <<" [ " <<label <<"];" <<endl;
     }else{
       if(it->getValueType()==typeid(Graph)){
@@ -710,6 +710,18 @@ uint Graph::index(bool subKVG, uint start){
   }
   return idx;
 }
+
+//===========================================================================
+
+ItemL neighbors(Item* it){
+  ItemL N;
+  for(Item *e:it->parentOf){
+    for(Item *n:e->parents) if(n!=it) N.setAppend(n);
+  }
+  return N;
+}
+
+//===========================================================================
 
 RUN_ON_INIT_BEGIN(graph)
 ItemL::memMove=true;

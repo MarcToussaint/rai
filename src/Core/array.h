@@ -451,6 +451,9 @@ inline arr zeros(uint d0, uint d1, uint d2) { return zeros(TUP(d0, d1, d2)); }
 /// return a grid (1D: range) split in 'steps' steps
 inline arr grid(uint dim, double lo, double hi, uint steps) { arr g;  g.setGrid(dim, lo, hi, steps);  return g; }
 
+/// return a grid with different lo/hi/steps in each dimension
+arr grid(const arr& lo, const arr& hi, const uintA& steps);
+
 arr repmat(const arr& A, uint m, uint n);
 
 /// return array with random numbers in [0, 1]

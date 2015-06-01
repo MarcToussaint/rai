@@ -117,13 +117,13 @@ struct Graph:ItemL {
   Item* getItem(const StringA &keys);
   Item* operator[](const char *key) { return getItem(key); }
   Item& I(const char *key) { Item *it=getItem(key); CHECK(it,"item '" <<key <<"' does not exist"); return *it; }
-  Item* getChild(Item *p1, Item *p2) const;
+  Item* getChild(Item *p1, Item *p2) const; //TODO -> getEdge
 
   //-- get lists of items (TODO: return ItemL, not referring Graph)
   Graph getItems(const char* key);
   Graph getItemsOfDegree(uint deg);
   Graph getTypedItems(const char* key, const std::type_info& type);
-  template<class T> Graph getTypedItems(const char* key){ return getTypedItems(key, typeid(T)); }
+  template<class T> Graph getTypedItems(const char* key=NULL){ return getTypedItems(key, typeid(T)); }
   template<class T> ItemL getDerivedItems();
 
   //-- get values directly (TODO: remove)
@@ -133,7 +133,7 @@ struct Graph:ItemL {
   template<class T> bool getValue(T& x, const StringA &keys) { T* y=getValue<T>(keys); if(y) { x=*y; return true; } return false; }
 
   //-- get lists of all values of a certain type T (or derived from T)
-  template<class T> MT::Array<T*> getTypedValues(const char* key);
+  template<class T> MT::Array<T*> getTypedValues(const char* key=NULL);
   template<class T> MT::Array<T*> getDerivedValues();
   
   //-- adding items
@@ -166,6 +166,10 @@ struct Graph:ItemL {
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0);
 };
 stdPipes(Graph);
+
+//===========================================================================
+
+ItemL neighbors(Item*);
 
 //===========================================================================
 

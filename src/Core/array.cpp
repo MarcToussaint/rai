@@ -72,6 +72,37 @@ I've put the clapack.h directly into the MT directory - one only has to link to 
 /// @name matrix operations
 //
 
+arr grid(const arr& lo, const arr& hi, const uintA& steps){
+  CHECK(lo.N==hi.N && lo.N==steps.N,"");
+  arr X;
+  uint i, j, k;
+  if(lo.N==1) {
+    X.resize(steps(0)+1, 1);
+    for(i=0; i<X.d0; i++) X.operator()(i, 0)=lo(0)+(hi(0)-lo(0))*i/steps(0);
+    return X;
+  }
+  if(lo.N==2) {
+     X.resize(steps(0)+1, steps(1)+1, 2);
+    for(i=0; i<X.d0; i++) for(j=0; j<X.d1; j++) {
+        X.operator()(i, j, 0)=lo(0)+(i?(hi(0)-lo(0))*i/steps(0):0.);
+        X.operator()(i, j, 1)=lo(1)+(j?(hi(1)-lo(1))*j/steps(1):0.);
+      }
+    X.reshape(X.d0*X.d1, 2);
+    return X;
+  }
+  if(lo.N==3) {
+    X.resize(TUP(steps(0)+1, steps(1)+1, steps(2)+1, 3));
+    for(i=0; i<X.d0; i++) for(j=0; j<X.d1; j++) for(k=0; k<X.d2; k++) {
+          X.operator()(TUP(i, j, k, 0))=lo(0)+(hi(0)-lo(0))*i/steps(0);
+          X.operator()(TUP(i, j, k, 1))=lo(1)+(hi(1)-lo(1))*j/steps(1);
+          X.operator()(TUP(i, j, k, 2))=lo(2)+(hi(2)-lo(2))*k/steps(2);
+        }
+    X.reshape(X.d0*X.d1*X.d2, 3);
+    return X;
+  }
+  HALT("not implemented yet");
+
+}
 
 arr repmat(const arr& A, uint m, uint n) {
   CHECK(A.nd==1 || A.nd==2, "");
