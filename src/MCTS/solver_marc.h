@@ -41,6 +41,9 @@ struct MCTS{
   Node* treePolicy(Node *n);   ///< policy to choose the child from which to do a rollout or to expand
   double Qvalue(Node* n, int optimistic); ///< current value estimates at a node
   arr Qfunction(Node* n=NULL, int optimistic=0); ///< the Q-function (value estimates of all children) at a node
+  arr Qvariance(Node* n=NULL);
+  void reportQ(ostream& os, Node* n=NULL);
+  uint Nnodes(Node *n=NULL, bool subTree=true);
 
   //only to display
   void writeToGraph(Graph& G, Node* n=NULL);
