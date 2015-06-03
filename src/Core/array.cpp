@@ -740,9 +740,9 @@ double cofactor(const arr& A, uint i, uint j) {
 /** Given a distribution p over a discrete domain {0, .., p.N-1}
     Stochastic Universal Sampling draws n samples from this
     distribution, stored as integers in s */
-void SUS(const arr& p, uint n, uintA& s) {
+uintA sampleMultinomial_SUS(const arr& p, uint n) {
   //following T. Baeck "EA in Theo. and Prac." p120
-  s.resize(n);
+  uintA s(n);
   double sum=0, ptr=MT::rnd.uni();
   uint i, j=0;
   for(i=0; i<p.N; i++) {
@@ -750,17 +750,18 @@ void SUS(const arr& p, uint n, uintA& s) {
     while(sum>ptr) { s(j)=i; j++; ptr+=1.; }
   }
   //now, 'sum' should = 'n' and 'ptr' has been 'n'-times increased -> 'j=n'
-  CHECK_EQ(j,n, "error in rnd::SUS(p, n, s) -> p not normalized?");
+  CHECK_EQ(j,n, "error in rnd::sampleMultinomial_SUS(p, n) -> p not normalized?");
+  return s;
 }
 
-uint SUS(const arr& p) {
+uint sampleMultinomial(const arr& p) {
   double sum=0, ptr=MT::rnd.uni();
   uint i;
   for(i=0; i<p.N; i++) {
     sum+=p(i);
     if(sum>ptr) return i;
   }
-  HALT("error in rnd::SUS(p) -> p not normalized? " <<p);
+  HALT("error in rnd::sampleMultinomial(p) -> p not normalized? " <<p);
   return 0;
 }
 

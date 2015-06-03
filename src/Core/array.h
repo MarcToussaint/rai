@@ -171,7 +171,7 @@ template<class T> struct Array {
   void setGrid(uint dim, T lo, T hi, uint steps);
   
   /// @name access by reference (direct memory access)
-  T& elem(uint i) const;
+  T& elem(int i) const;
   T& scalar() const;
   operator T&() const{ return scalar(); }
   T& last(int i=-1) const;
@@ -485,8 +485,8 @@ arr logspace(double base, double limit, uint n);
 arr diag(double d, uint n);
 void makeSymmetric(arr& A);
 void transpose(arr& A);
-void SUS(const arr& p, uint n, uintA& s);
-uint SUS(const arr& p);
+uintA sampleMultinomial_SUS(const arr& p, uint n);
+uint sampleMultinomial(const arr& p);
 arr bootstrap(const arr& x);
 void addDiag(arr& A, double d);
 

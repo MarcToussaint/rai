@@ -9,25 +9,26 @@ void MCTS::addRollout(int stepAbort){
   while(!world.is_terminal_state() && (stepAbort<0 || step++<stepAbort)){
     if(!n->children.N && !n->N) break; //freshmen -> do not expand
     if(!n->children.N && n->N){ //expand: compute new decisions and add corresponding nodes
-      if(verbose>0) cout <<"****************** MCTS: expanding: computing all decisions for current node and adding them as freshmen nodes" <<endl;
+      if(verbose>2) cout <<"****************** MCTS: expanding: computing all decisions for current node and adding them as freshmen nodes" <<endl;
       for(const MCTS_Environment::Handle& d:world.get_actions()) new Node(n, d); //this adds a bunch of freshmen for all possible decisions
     }else{
-      if(verbose>0) cout <<"****************** MCTS: decisions in current node already known" <<endl;
+      if(verbose>2) cout <<"****************** MCTS: decisions in current node already known" <<endl;
     }
     n = treePolicy(n);
-    if(verbose>0) cout <<"****************** MCTS: made tree policy decision" <<endl;
+    if(verbose>1) cout <<"****************** MCTS: made tree policy decision" <<endl;
     n->r = world.transition(n->decision).second;
   }
 
   //-- rollout
   double Return=0.;
   while(!world.is_terminal_state() && (stepAbort<0 || step++<stepAbort)){
-    if(verbose>0) cout <<"****************** MCTS: random decision" <<endl;
+    if(verbose>1) cout <<"****************** MCTS: random decision" <<endl;
     Return += world.transition_randomly().second;
   }
 
-  if(verbose>0) cout <<"****************** MCTS: terminal state reached" <<endl;
-  Return += world.get_terminal_reward();
+  double r = world.get_terminal_reward();
+  Return += r;
+  if(verbose>0) cout <<"****************** MCTS: terminal state reached; terminal r=" <<r <<" Return=" <<Return <<endl;
 
   //-- backup
   for(;;){
@@ -93,16 +94,16 @@ uint MCTS::Nnodes(Node *n, bool subTree){
 }
 
 double MCTS::Qvalue(Node* n, int optimistic){
-  if(n->children.N && n->N>n->children.N){ //the child is mature and has children itself
+  if(false && n->children.N && n->N>n->children.N){ //the child is mature and has children itself
     if(optimistic==+1) return n->Qup;
     if(optimistic== 0) return n->Qme;
     if(optimistic==-1) return n->Qlo;
   }else{
     //the child is premature -> use its on-policy return estimates (and UCB)
-    double beta = 2.*sqrt(2.*::log(n->parent?n->parent->N:n->N));
-    if(optimistic==+1) return n->Q/n->N + beta/sqrt(n->N);
+    double c = beta*sqrt(2.*::log(n->parent?n->parent->N:n->N));
+    if(optimistic==+1) return n->Q/n->N + c/sqrt(n->N);
     if(optimistic== 0) return n->Q/n->N;
-    if(optimistic==-1) return n->Q/n->N - beta/sqrt(n->N);
+    if(optimistic==-1) return n->Q/n->N - c/sqrt(n->N);
   }
   HALT("");
   return 0.;
