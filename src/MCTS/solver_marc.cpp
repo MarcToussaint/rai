@@ -11,6 +11,7 @@ void MCTS::addRollout(int stepAbort){
     if(!n->children.N && n->N){ //expand: compute new decisions and add corresponding nodes
       if(verbose>2) cout <<"****************** MCTS: expanding: computing all decisions for current node and adding them as freshmen nodes" <<endl;
       for(const MCTS_Environment::Handle& d:world.get_actions()) new Node(n, d); //this adds a bunch of freshmen for all possible decisions
+      n->children.permuteRandomly();
     }else{
       if(verbose>2) cout <<"****************** MCTS: decisions in current node already known" <<endl;
     }
@@ -26,9 +27,11 @@ void MCTS::addRollout(int stepAbort){
     Return += world.transition_randomly().second;
   }
 
+
   double r = world.get_terminal_reward();
   Return += r;
-  if(verbose>0) cout <<"****************** MCTS: terminal state reached; terminal r=" <<r <<" Return=" <<Return <<endl;
+  if(step>=stepAbort) Return -= 100.;
+  if(verbose>0) cout <<"****************** MCTS: terminal state reached; step=" <<step <<" terminal r=" <<r <<" Return=" <<Return <<endl;
 
   //-- backup
   for(;;){
