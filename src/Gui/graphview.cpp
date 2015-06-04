@@ -105,7 +105,7 @@ void GraphView::writeFile(const char* filename){
 
 #define STR(s) (char*)s
 
-MT::String label(Item *it){
+MT::String label(Node *it){
   MT::String label;
 #if 1
   if(it->keys.N) {
@@ -147,7 +147,7 @@ void sGraphView::updateGraphvizGraph(bool isSubGraph) {
   }
 
   //first add `nodes' for all items
-  for(Item *e: *G) {
+  for(Node *e: *G) {
     gvNodes(e->index) = agnode(gvGraph, STRING(e->index), true);
     agset(gvNodes(e->index), STR("label"), label(e));
     if(e->parents.N) {
@@ -161,13 +161,13 @@ void sGraphView::updateGraphvizGraph(bool isSubGraph) {
   }
   
   //now add 'edges' for all relations
-  for(Item *e: (*G)) {
+  for(Node *e: (*G)) {
     /*if(e->parents.N==2){ //is an edge
       gvNodes(i) = (Agnode_t*)agedge(gvGraph, gvNodes(e->parents(0)->id), gvNodes(e->parents(1)->id)); //, STRING(i <<"_" <<e->name), true);
     }else*/
     if(e->parents.N) {
       uint linkId=0;
-      for(Item *n: e->parents) {
+      for(Node *n: e->parents) {
         if(n->index<e->index){
 //          ge=agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), STRING(label(n) <<"--" <<label(e)), true);
           agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), NULL, true);

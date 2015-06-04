@@ -1,7 +1,7 @@
 #include "solver_marc.h"
 
 void MCTS::addRollout(){
-  Node *n = &root;
+  MCTS_Node *n = &root;
   world.reset_state();
 
   //-- tree policy
@@ -9,7 +9,7 @@ void MCTS::addRollout(){
     if(!n->children.N && !n->N) break; //freshmen -> do not expand
     if(!n->children.N && n->N){ //expand: compute new decisions and add corresponding nodes
       if(verbose>0) cout <<"****************** MCTS: expanding: computing all decisions for current node and adding them as freshmen nodes" <<endl;
-      for(const MCTS_Environment::Handle& d:world.get_actions()) new Node(n, d); //this adds a bunch of freshmen for all possible decisions
+      for(const MCTS_Environment::Handle& d:world.get_actions()) new MCTS_Node(n, d); //this adds a bunch of freshmen for all possible decisions
     }else{
       if(verbose>0) cout <<"****************** MCTS: decisions in current node already known" <<endl;
     }
@@ -44,7 +44,7 @@ void MCTS::addRollout(){
   }
 }
 
-Node* MCTS::treePolicy(Node* n){
+MCTS_Node* MCTS::treePolicy(MCTS_Node* n){
   CHECK(n->children.N, "you should have children!");
   CHECK(n->N, "you should not be a freshman!");
   if(n->N>n->children.N){ //we've visited each child at least once
@@ -55,16 +55,16 @@ Node* MCTS::treePolicy(Node* n){
   return n->children( n->N-1 ); //else: visit children by their order
 }
 
-arr MCTS::Qfunction(Node* n, int optimistic){
+arr MCTS::Qfunction(MCTS_Node* n, int optimistic){
   if(!n) n=&root;
   if(!n->children.N) return arr();
   arr Q(n->children.N);
   uint i=0;
-  for(Node *ch:n->children){ Q(i) = Qvalue(ch, optimistic); i++; }
+  for(MCTS_Node *ch:n->children){ Q(i) = Qvalue(ch, optimistic); i++; }
   return Q;
 }
 
-double MCTS::Qvalue(Node* n, int optimistic){
+double MCTS::Qvalue(MCTS_Node* n, int optimistic){
   if(n->children.N && n->N>n->children.N){ //the child is mature and has children itself
     if(optimistic==+1) return n->Qup;
     if(optimistic== 0) return n->Qme;
@@ -80,10 +80,10 @@ double MCTS::Qvalue(Node* n, int optimistic){
   return 0.;
 }
 
-void MCTS::writeToGraph(Graph& G, Node* n){
-  ItemL par;
-  if(!n) n=&root; else par.append((Item*)(n->parent->data));
+void MCTS::writeToGraph(Graph& G, MCTS_Node* n){
+  NodeL par;
+  if(!n) n=&root; else par.append((Node*)(n->parent->data));
   double q=-10.;  if(n->N) q=n->Q/n->N;
-  n->data = new Item_typed<double>(G, {STRING("t"<<n->t <<'N' <<n->N <<'[' <<n->Qlo <<',' <<n->Qme <<',' <<n->Qup <<']')}, par, new double(q), true);
-  for(Node *c:n->children) writeToGraph(G, c);
+  n->data = new Node_typed<double>(G, {STRING("t"<<n->t <<'N' <<n->N <<'[' <<n->Qlo <<',' <<n->Qme <<',' <<n->Qup <<']')}, par, new double(q), true);
+  for(MCTS_Node *c:n->children) writeToGraph(G, c);
 }
