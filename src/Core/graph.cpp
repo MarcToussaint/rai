@@ -431,11 +431,11 @@ Graph Graph::getItems(const char* key) {
 Node* Graph::getChild(Node *p1, Node *p2) const{
   if(p1->parentOf.N < p2->parentOf.N){
     for(Node *i:p1->parentOf){
-      if(p2->parentOf.findValue(i)>=0) return i;
+      if(p2->parentOf.findValue(i)!=-1) return i;
     }
   }else{
     for(Node *i:p2->parentOf){
-      if(p1->parentOf.findValue(i)>=0) return i;
+      if(p1->parentOf.findValue(i)!=-1) return i;
     }
   }
   return NULL;
