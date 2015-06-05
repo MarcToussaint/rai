@@ -34,13 +34,17 @@ struct MCTS{
   MCTS_Environment& world;
   MCTS_Node root;
   int verbose;
+  double beta;
 
-  MCTS(MCTS_Environment& world):world(world), root(NULL, NULL), verbose(2){}
+  MCTS(MCTS_Environment& world):world(world), root(NULL, NULL), verbose(2), beta(2.){}
 
-  void addRollout();                 ///< adds one more rollout to the tree
+  void addRollout(int stepAbort=-1);                 ///< adds one more rollout to the tree
   MCTS_Node* treePolicy(MCTS_Node *n);   ///< policy to choose the child from which to do a rollout or to expand
   double Qvalue(MCTS_Node* n, int optimistic); ///< current value estimates at a node
   arr Qfunction(MCTS_Node* n=NULL, int optimistic=0); ///< the Q-function (value estimates of all children) at a node
+  arr Qvariance(MCTS_Node* n=NULL);
+  void reportQ(ostream& os, MCTS_Node* n=NULL);
+  uint Nnodes(MCTS_Node *n=NULL, bool subTree=true);
 
   //only to display
   void writeToGraph(Graph& G, MCTS_Node* n=NULL);
