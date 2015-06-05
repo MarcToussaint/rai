@@ -69,34 +69,34 @@ arr MCTS::Qfunction(MCTS_Node* n, int optimistic){
   return Q;
 }
 
-arr MCTS::Qvariance(Node* n){
+arr MCTS::Qvariance(MCTS_Node* n){
   if(!n) n=&root;
   if(!n->children.N) return arr();
   arr QV(n->children.N);
   uint i=0;
-  for(Node *ch:n->children){ QV(i) = ch->Qup - ch->Qlo; i++; }
+  for(MCTS_Node *ch:n->children){ QV(i) = ch->Qup - ch->Qlo; i++; }
   return QV;
 }
 
-void MCTS::reportQ(ostream& os, Node* n){
+void MCTS::reportQ(ostream& os, MCTS_Node* n){
   if(!n) n=&root;
   if(!n->children.N) return;
   uint i=0;
-  for(Node *ch:n->children){
+  for(MCTS_Node *ch:n->children){
     os <<'t' <<ch->t <<'N' <<ch->N <<'[' <<ch->Qlo <<',' <<ch->Qme <<',' <<ch->Qup <<']' <<endl;
     i++;
   }
 }
 
-uint MCTS::Nnodes(Node *n, bool subTree){
+uint MCTS::Nnodes(MCTS_Node *n, bool subTree){
   if(!n) n=&root;
   if(!subTree) return n->children.N;
   uint i=1;
-  for(Node *ch:n->children) i += Nnodes(ch, true);
+  for(MCTS_Node *ch:n->children) i += Nnodes(ch, true);
   return i;
 }
 
-double MCTS::Qvalue(Node* n, int optimistic){
+double MCTS::Qvalue(MCTS_Node* n, int optimistic){
   if(false && n->children.N && n->N>n->children.N){ //the child is mature and has children itself
     if(optimistic==+1) return n->Qup;
     if(optimistic== 0) return n->Qme;
