@@ -6,6 +6,7 @@ void MCTS::addRollout(int stepAbort){
   world.reset_state();
 
   //-- tree policy
+  double Return_tree=0.;
   while(!world.is_terminal_state() && (stepAbort<0 || step++<stepAbort)){
     if(!n->children.N && !n->N) break; //freshmen -> do not expand
     if(!n->children.N && n->N){ //expand: compute new decisions and add corresponding nodes
@@ -17,29 +18,29 @@ void MCTS::addRollout(int stepAbort){
     }
     n = treePolicy(n);
     if(verbose>1) cout <<"****************** MCTS: made tree policy decision" <<endl;
-    n->r = world.transition(n->decision).second;
+    Return_tree += n->r = world.transition(n->decision).second;
   }
 
   //-- rollout
-  double Return=0.;
+  double Return_rollout=0.;
   while(!world.is_terminal_state() && (stepAbort<0 || step++<stepAbort)){
     if(verbose>1) cout <<"****************** MCTS: random decision" <<endl;
-    Return += world.transition_randomly().second;
+    Return_rollout += world.transition_randomly().second;
   }
 
-
-  double r = world.get_terminal_reward();
-  Return += r;
-  if(step>=stepAbort) Return -= 100.;
-  if(verbose>0) cout <<"****************** MCTS: terminal state reached; step=" <<step <<" terminal r=" <<r <<" Return=" <<Return <<endl;
+  //  double r = world.get_terminal_reward();
+  //  Return_rollout += r;
+  if(step>=stepAbort) Return_rollout -= 100.;
+  if(verbose>0) cout <<"****************** MCTS: terminal state reached; step=" <<step <<" Return=" <<Return_tree + Return_rollout <<endl;
 
   //-- backup
+  double Return_togo = Return_rollout;
   for(;;){
     if(!n) break;
     n->N++;
     n->R += n->r;   //total immediate reward
-    Return += n->r; //add up total return from n to terminal
-    n->Q += Return;
+    Return_togo += n->r; //add up total return from n to terminal
+    n->Q += Return_togo;
     if(n->children.N && n->N>n->children.N){ //propagate bounds
       n->Qup = max( Qfunction(n, +1) );
       n->Qme = max( Qfunction(n,  0) );
