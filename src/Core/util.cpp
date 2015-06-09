@@ -688,6 +688,12 @@ char *MT::String::StringBuf::getIpos() { return gptr(); }
 //-- direct memory operations
 void MT::String::append(char x) { resize(N+1, true); operator()(N-1)=x; }
 
+MT::String& MT::String::setRandom(){
+  resize(rnd(2,6), false);
+  for(uint i=0;i<N;i++) operator()(i)=rnd('a','z');
+  return *this;
+}
+
 void MT::String::resize(uint n, bool copy) {
   if(N==n && M>N) return;
   char *pold=p;
@@ -945,10 +951,10 @@ MT::LogToken::~LogToken(){
 #ifdef MT_ROS
       ROS_INFO("MLR-MSG: %s",MT::errString.p);
 #endif
-      raise(SIGUSR2);
-      if(log_level==-1){ MT::errString <<" -- WARNING";    cerr <<MT::errString <<endl; }
+      if(log_level==-1){ MT::errString <<" -- WARNING";    cout <<MT::errString <<endl; }
       if(log_level==-2){ MT::errString <<" -- ERROR  ";    cerr <<MT::errString <<endl; /*throw does not WORK!!!*/ }
       if(log_level==-3){ MT::errString <<" -- HARD EXIT!"; cerr <<MT::errString <<endl; MT::logServer().mutex.unlock(); exit(1); }
+      if(log_level<=-2) raise(SIGUSR2);
     }
   }
   MT::logServer().mutex.unlock();
@@ -1242,20 +1248,39 @@ void Mutex::unlock() {}
 // gnuplot calls
 //
 
-static FILE *MT_gp=NULL;
-void gnuplotClose() {
-  if(MT_gp) { fflush(MT_gp); fclose(MT_gp); }
-}
-void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDFfile) {
-if(!MT::getInteractivity()){
-  pauseMouse=false;
-  persist=false;
-}
+struct GnuplotServer{
+  FILE *gp;
+  GnuplotServer():gp(NULL){}
+  ~GnuplotServer(){
+    if(gp){
+      cout <<"Closing Gnuplot" <<endl;
+//      send("set terminal wxt nopersist close\nexit", false);
+//      fclose(gp);
+    }
+  }
+
+  void send(const char *cmd, bool persist){
 #ifndef MT_MSVC
-  if(!MT_gp) {
-    if(!persist) MT_gp=popen("env gnuplot -noraise -geometry 600x600-0-0 2> /dev/null", "w");
-    else         MT_gp=popen("env gnuplot -noraise -persist -geometry 600x600-0-0 2> /dev/null", "w");
-    CHECK(MT_gp, "could not open gnuplot pipe");
+    if(!gp) {
+      if(!persist) gp=popen("env gnuplot -noraise -geometry 600x600-0-0 2> /dev/null", "w");
+      else         gp=popen("env gnuplot -noraise -persist -geometry 600x600-0-0 2> /dev/null", "w");
+      CHECK(gp, "could not open gnuplot pipe");
+    }
+    FILE("z.plotcmd") <<cmd; //for debugging..
+    fputs(cmd, gp);
+    fflush(gp) ;
+  #else
+    NIY;
+  #endif
+  }
+};
+
+Singleton<GnuplotServer> gnuplotServer;
+
+void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDFfile) {
+  if(!MT::getInteractivity()){
+    pauseMouse=false;
+    persist=false;
   }
   
   MT::String cmd;
@@ -1277,12 +1302,7 @@ if(!MT::getInteractivity()){
   }
   
   if(pauseMouse) cmd <<"\n pause mouse" <<std::endl;
-  FILE("z.plotcmd") <<cmd; //for debugging..
-  fputs(cmd.p, MT_gp);
-  fflush(MT_gp) ;
-#else
-  NIY;
-#endif
+  gnuplotServer().send(cmd.p, persist);
 }
 
 

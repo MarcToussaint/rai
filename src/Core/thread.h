@@ -24,10 +24,10 @@
 
 enum ThreadState { tsIDLE=0, tsCLOSE=-1, tsOPENING=-2, tsLOOPING=-3, tsBEATING=-4, tsFAILURE=-5 }; //positive states indicate steps-to-go
 struct ConditionVariable;
-struct VariableContainer;
+struct RevisionedAccessGatedClass;
 struct Thread;
 typedef MT::Array<ConditionVariable*> ConditionVariableL;
-typedef MT::Array<VariableContainer*> VariableContainerL;
+typedef MT::Array<RevisionedAccessGatedClass*> RevisionedAccessGatedClassL;
 typedef MT::Array<Thread*> ThreadL;
 
 void stop(const ThreadL& P);
@@ -79,7 +79,8 @@ struct ConditionVariable {
   void waitUntil(double absTime, bool userHasLocked=false);
 };
 
-struct VariableContainer {
+/// Deriving from this allows to make variables/classes revisioned read-write access gated
+struct RevisionedAccessGatedClass {
   MT::String name;            ///< Variable name
   RWLock rwlock;              ///< rwLock (usually handled via read/writeAccess)
   ConditionVariable revision; ///< revision (= number of write accesses) number
@@ -88,8 +89,8 @@ struct VariableContainer {
   ThreadL listeners;          ///< list of threads that are being signaled a threadStep on write access
 
   /// @name c'tor/d'tor
-  VariableContainer(const char* name);
-  virtual ~VariableContainer();
+  RevisionedAccessGatedClass(const char* name);
+  virtual ~RevisionedAccessGatedClass();
 
   /// @name access control
   /// to be called by a thread before access, returns the revision
@@ -104,14 +105,15 @@ struct VariableContainer {
   double revisionTime();
   int revisionNumber();
 };
-inline void operator<<(ostream& os, const VariableContainer& v){ os <<"Variable '" <<v.name <<'\''; }
+inline void operator<<(ostream& os, const RevisionedAccessGatedClass& v){ os <<"Variable '" <<v.name <<'\''; }
 
+/// A variable is an access gated data field of type T
 template<class T>
-struct Variable:VariableContainer{
+struct Variable:RevisionedAccessGatedClass{
   T data;
 
-  Variable(const char* name=NULL):VariableContainer(name){}
-  Variable(const T& x, const char* name=NULL):VariableContainer(name), data(x){}
+  Variable(const char* name=NULL):RevisionedAccessGatedClass(name){}
+  Variable(const T& x, const char* name=NULL):RevisionedAccessGatedClass(name), data(x){}
 
   //-- Token-wise access
   struct ReadToken{
@@ -183,7 +185,7 @@ struct CycleTimer {
 struct Thread{
   MT::String name;
   ConditionVariable state;       ///< the condition variable indicates the state of the thread: positive=steps-to-go, otherwise it is a ThreadState
-  VariableContainerL listensTo;
+  RevisionedAccessGatedClassL listensTo;
   pid_t tid;                     ///< system thread id
 #ifndef MT_QThread
   pthread_t thread;
@@ -212,7 +214,7 @@ struct Thread{
   bool isClosed();                      ///< check if closed
 
   /// @name listen to variable
-  void listenTo(VariableContainer& var);
+  void listenTo(RevisionedAccessGatedClass& var);
 
   virtual void open() = 0;
   virtual void step() = 0;

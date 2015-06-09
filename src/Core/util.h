@@ -245,6 +245,7 @@ public:
   void set(const char *s, uint n);
   void resize(uint n, bool copy); //low-level resizing the string buffer - fully uninitialized but with final 0
   void append(char x); //low-level append a char
+  String& setRandom();
   
   /// @name resetting
   String& clear();       //as with Array: resize(0)
@@ -569,10 +570,12 @@ struct Singleton {
 
   ~Singleton(){
     if(singleton) {
-      static Mutex m;
-      m.lock();
-      if(singleton) delete singleton;
-      m.unlock();
+//      static Mutex m; //pthread might already be deinitialized...
+//      m.lock();
+      T *mine=singleton;
+      singleton=NULL;
+      if(mine) delete mine;
+//      m.unlock();
     }
   }
 

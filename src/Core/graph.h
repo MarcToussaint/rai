@@ -28,26 +28,28 @@
 #include "array.h"
 #include <map>
 
-struct Item;
+struct Node;
 struct Graph;
 struct ParseInfo;
-typedef MT::Array<Item*> ItemL;
+struct GraphEditCallback;
+typedef MT::Array<Node*> NodeL;
 typedef MT::Array<ParseInfo*> ParseInfoL;
-extern ItemL& NoItemL; //this is a pointer to NULL! I use it for optional arguments
+typedef MT::Array<GraphEditCallback*> GraphEditCallbackL;
+extern NodeL& NoItemL; //this is a pointer to NULL! I use it for optional arguments
 extern Graph& NoGraph; //this is a pointer to NULL! I use it for optional arguments
 
 //===========================================================================
 
-struct Item {
+struct Node {
   Graph& container;
   StringA keys;
-  ItemL parents;
-  ItemL parentOf;
+  NodeL parents;
+  NodeL parentOf;
   uint index;
-  Item(Graph& _container);
-  Item(Graph& _container, const ItemL& _parents);
-  virtual ~Item();
-  template<class T> T *getValue();    ///< query whether the Item is of a certain value, return the value if so
+  Node(Graph& _container);
+  Node(Graph& _container, const StringA& _keys, const NodeL& _parents);
+  virtual ~Node();
+  template<class T> T *getValue();    ///< query whether the Node is of a certain value, return the value if so
   template<class T> const T *getValue() const; ///< as above
   template<class T> T& V(){ T *x=getValue<T>(); CHECK(x,"wrong type"); return *x; }
 
@@ -55,21 +57,21 @@ struct Item {
   bool matches(const StringA &query_keys);
   void write(std::ostream &os) const;
   Graph ParentOf();
-  //-- specific standard values TODO: make return pointer!
-  Graph& kvg(){ Graph *kvg=getValue<Graph>(); CHECK(kvg,""); return *kvg; }
+  //-- specific standard values
+  Graph& graph(){ Graph *kvg=getValue<Graph>(); CHECK(kvg,""); return *kvg; }
 
-  //-- virtuals implemented by Item_typed
+  //-- virtuals implemented by Node_typed
   virtual bool hasValue() const {NIY}
-  virtual void *getValueDirectly() const {NIY}
+  virtual void* getValueDirectly() const {NIY}
   virtual void writeValue(std::ostream &os) const {NIY}
   virtual const std::type_info& getValueType() const {NIY}
   virtual bool is_derived_from_RootType() const {NIY}
-  virtual void copyValue(Item*) {NIY}
-  virtual void takeoverValue(Item*) {NIY}
-  virtual bool hasEqualValue(Item*) {NIY}
-  virtual Item *newClone(Graph& container) const {NIY}
+  virtual void copyValue(Node*) {NIY}
+  virtual void takeoverValue(Node*) {NIY}
+  virtual bool hasEqualValue(Node*) {NIY}
+  virtual Node* newClone(Graph& container) const {NIY}
 };
-stdOutPipe(Item);
+stdOutPipe(Node);
 
 //===========================================================================
 
@@ -77,44 +79,52 @@ struct ItemInitializer{
   ItemInitializer(const char* key);
   template<class T> ItemInitializer(const char* key, const T& x);
   template<class T> ItemInitializer(const char* key, const StringA& parents, const T& x);
-  Item *it;
+  Node *it;
   StringA parents;
 };
 
 //===========================================================================
 
-struct Graph:ItemL {
+struct Graph:NodeL {
   struct sKeyValueGraph *s;
   Graph* isReferringToItemsOf; //TODO: remove
-  Item *isItemOfParentKvg;
+  Node *isItemOfParentKvg;
   ParseInfoL pi;
-  
+  GraphEditCallbackL callbacks;
+
+  //-- constructors
   Graph();
   explicit Graph(const char* filename);
   Graph(const std::map<std::string, std::string>& dict);
   Graph(std::initializer_list<ItemInitializer> list);
   Graph(const Graph& G);
-//  Graph(Item *itemOfParentKvg);
   ~Graph();
-  
-  Graph& operator=(const Graph&);
   void clear();
-  ItemL& list() { return *this; }
+  NodeL& list() { return *this; }
+
+  //-- copy operator
+  Graph& operator=(const Graph& G){
+    if(isItemOfParentKvg) copy(G,NULL); //this is already a subgraph
+    else if(G.isItemOfParentKvg) copy(G, &G.isItemOfParentKvg->container); //copy as subgraph (including the item!)
+    else copy(G,NULL); //root graph plain copy
+    return *this;
+  }
+  void copy(const Graph& G, Graph* becomeSubgraphOfContainer);
   
   //-- get items
-  Item* getItem(const char *key) const;
-  Item* getItem(const char *key1, const char *key2);
-  Item* getItem(const StringA &keys);
-  Item* operator[](const char *key) { return getItem(key); }
-  Item& I(const char *key) { Item *it=getItem(key); CHECK(it,"item '" <<key <<"' does not exist"); return *it; }
-  Item* getChild(Item *p1, Item *p2) const;
+  Node* getItem(const char *key) const;
+  Node* getItem(const char *key1, const char *key2);
+  Node* getItem(const StringA &keys);
+  Node* operator[](const char *key) { return getItem(key); }
+  Node& I(const char *key) { Node *it=getItem(key); CHECK(it,"item '" <<key <<"' does not exist"); return *it; }
+  Node* getChild(Node *p1, Node *p2) const; //TODO -> getEdge
 
-  //-- get lists of items (TODO: return ItemL, not referring Graph)
+  //-- get lists of items (TODO: return NodeL, not referring Graph)
   Graph getItems(const char* key);
   Graph getItemsOfDegree(uint deg);
   Graph getTypedItems(const char* key, const std::type_info& type);
-  template<class T> Graph getTypedItems(const char* key){ return getTypedItems(key, typeid(T)); }
-  template<class T> ItemL getDerivedItems();
+  template<class T> Graph getTypedItems(const char* key=NULL){ return getTypedItems(key, typeid(T)); }
+  template<class T> NodeL getDerivedItems();
 
   //-- get values directly (TODO: remove)
   template<class T> T* getValue(const char *key);
@@ -123,23 +133,23 @@ struct Graph:ItemL {
   template<class T> bool getValue(T& x, const StringA &keys) { T* y=getValue<T>(keys); if(y) { x=*y; return true; } return false; }
 
   //-- get lists of all values of a certain type T (or derived from T)
-  template<class T> MT::Array<T*> getTypedValues(const char* key);
+  template<class T> MT::Array<T*> getTypedValues(const char* key=NULL);
   template<class T> MT::Array<T*> getDerivedValues();
   
   //-- adding items
-  template<class T> Item *append(T *x, bool ownsValue);
-  template<class T> Item *append(const char* key, T *x, bool ownsValue);
-  template<class T> Item *append(const StringA& keys, const ItemL& parents, T *x, bool ownsValue);
-//  template<class T> Item *append(const StringA& keys, T *x, bool ownsValue) { return append(keys, ItemL(), x, ownsValue); }
-//  template<class T> Item *append(const char *key, T *x, bool ownsValue) { return append({MT::String(key)}, ItemL(), x, ownsValue); }
-//  template<class T> Item *append(const char *key1, const char* key2, T *x, bool ownsValue) {  return append({MT::String(key1), MT::String(key2)}, ItemL(), x, ownsValue); }
-  Item *append(const uintA& parentIdxs);
+  template<class T> Node *append(T *x, bool ownsValue);
+  template<class T> Node *append(const char* key, T *x, bool ownsValue);
+  template<class T> Node *append(const StringA& keys, const NodeL& parents, T *x, bool ownsValue);
+//  template<class T> Node *append(const StringA& keys, T *x, bool ownsValue) { return append(keys, NodeL(), x, ownsValue); }
+//  template<class T> Node *append(const char *key, T *x, bool ownsValue) { return append({MT::String(key)}, NodeL(), x, ownsValue); }
+//  template<class T> Node *append(const char *key1, const char* key2, T *x, bool ownsValue) {  return append({MT::String(key1), MT::String(key2)}, NodeL(), x, ownsValue); }
+  Node *append(const uintA& parentIdxs);
 
   void appendDict(const std::map<std::string, std::string>& dict);
 
   //-- merging items  //TODO: explain better
-  Item *merge(Item* m); //removes m and deletes, if it is a member of This and merged with another Item
-  void merge(const ItemL& L){ for(Item *m:L) merge(m); }
+  Node *merge(Node* m); //removes m and deletes, if it is a member of This and merged with another Node
+  void merge(const NodeL& L){ for(Node *m:L) merge(m); }
 
   //-- debugging
   bool checkConsistency() const;
@@ -149,7 +159,7 @@ struct Graph:ItemL {
 
   //-- I/O
   void sortByDotOrder();
-  ParseInfo& getParseInfo(Item *it);
+  ParseInfo& getParseInfo(Node *it);
   
   void read(std::istream& is, bool parseInfo=false);
   void write(std::ostream& os=std::cout, const char *ELEMSEP="\n", const char *delim=NULL) const;
@@ -159,14 +169,27 @@ stdPipes(Graph);
 
 //===========================================================================
 
-inline Graph GRAPH(const ItemL& L){ //TODO: remove
+NodeL neighbors(Node*);
+
+//===========================================================================
+
+struct GraphEditCallback {
+  virtual ~GraphEditCallback(){}
+  virtual void cb_new(Node*){}
+  virtual void cb_delete(Node*){}
+};
+
+//===========================================================================
+
+
+inline Graph GRAPH(const NodeL& L){ //TODO: remove
   Graph G;
   G.isReferringToItemsOf = (Graph*)(1);
-  G.ItemL::operator=(L);
+  G.NodeL::operator=(L);
   return G;
 }
 
-inline bool ItemComp(Item* const& a, Item* const& b){ //TODO: why?
+inline bool ItemComp(Node* const& a, Node* const& b){ //TODO: why?
   return a < b;
 }
 
@@ -185,7 +208,7 @@ struct Params {
 
   template<class T>
   void set(const char *key, const T &value) {
-    Item *i = kvg.getItem(key);
+    Node *i = kvg.getItem(key);
     if(i) *i->getValue<T>() = value;
     else kvg.append({key}, {}, new T(value), true);
   }
@@ -200,7 +223,7 @@ struct Params {
 
   bool remove(const char *key) {
     delete kvg[key];
-    Item *i = kvg.getItem(key);
+    Node *i = kvg.getItem(key);
     if(!i) return false;
     delete i;
 //    // TODO is list() here necessary?
