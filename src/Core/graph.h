@@ -35,7 +35,7 @@ struct GraphEditCallback;
 typedef MT::Array<Node*> NodeL;
 typedef MT::Array<ParseInfo*> ParseInfoL;
 typedef MT::Array<GraphEditCallback*> GraphEditCallbackL;
-extern NodeL& NoItemL; //this is a pointer to NULL! I use it for optional arguments
+extern NodeL& NoNodeL; //this is a pointer to NULL! I use it for optional arguments
 extern Graph& NoGraph; //this is a pointer to NULL! I use it for optional arguments
 
 //===========================================================================
@@ -58,7 +58,7 @@ struct Node {
   void write(std::ostream &os) const;
   Graph ParentOf();
   //-- specific standard values
-  Graph& graph(){ Graph *kvg=getValue<Graph>(); CHECK(kvg,""); return *kvg; }
+  Graph& graph(){ Graph *graph=getValue<Graph>(); CHECK(graph,""); return *graph; }
 
   //-- virtuals implemented by Node_typed
   virtual bool hasValue() const {NIY}
@@ -75,10 +75,10 @@ stdOutPipe(Node);
 
 //===========================================================================
 
-struct ItemInitializer{
-  ItemInitializer(const char* key);
-  template<class T> ItemInitializer(const char* key, const T& x);
-  template<class T> ItemInitializer(const char* key, const StringA& parents, const T& x);
+struct NodeInitializer{
+  NodeInitializer(const char* key);
+  template<class T> NodeInitializer(const char* key, const T& x);
+  template<class T> NodeInitializer(const char* key, const StringA& parents, const T& x);
   Node *it;
   StringA parents;
 };
@@ -87,8 +87,8 @@ struct ItemInitializer{
 
 struct Graph:NodeL {
   struct sKeyValueGraph *s;
-  Graph* isReferringToItemsOf; //TODO: remove
-  Node *isItemOfParentKvg;
+  Graph* isReferringToNodesOf; //TODO: remove
+  Node *isNodeOfParentGraph;
   ParseInfoL pi;
   GraphEditCallbackL callbacks;
 
@@ -96,7 +96,7 @@ struct Graph:NodeL {
   Graph();
   explicit Graph(const char* filename);
   Graph(const std::map<std::string, std::string>& dict);
-  Graph(std::initializer_list<ItemInitializer> list);
+  Graph(std::initializer_list<NodeInitializer> list);
   Graph(const Graph& G);
   ~Graph();
   void clear();
@@ -104,27 +104,27 @@ struct Graph:NodeL {
 
   //-- copy operator
   Graph& operator=(const Graph& G){
-    if(isItemOfParentKvg) copy(G,NULL); //this is already a subgraph
-    else if(G.isItemOfParentKvg) copy(G, &G.isItemOfParentKvg->container); //copy as subgraph (including the item!)
+    if(isNodeOfParentGraph) copy(G,NULL); //this is already a subgraph
+    else if(G.isNodeOfParentGraph) copy(G, &G.isNodeOfParentGraph->container); //copy as subgraph (including the item!)
     else copy(G,NULL); //root graph plain copy
     return *this;
   }
   void copy(const Graph& G, Graph* becomeSubgraphOfContainer);
   
   //-- get items
-  Node* getItem(const char *key) const;
-  Node* getItem(const char *key1, const char *key2);
-  Node* getItem(const StringA &keys);
-  Node* operator[](const char *key) { return getItem(key); }
-  Node& I(const char *key) { Node *it=getItem(key); CHECK(it,"item '" <<key <<"' does not exist"); return *it; }
+  Node* getNode(const char *key) const;
+  Node* getNode(const char *key1, const char *key2);
+  Node* getNode(const StringA &keys);
+  Node* operator[](const char *key) { return getNode(key); }
+  Node& I(const char *key) { Node *it=getNode(key); CHECK(it,"item '" <<key <<"' does not exist"); return *it; }
   Node* getChild(Node *p1, Node *p2) const; //TODO -> getEdge
 
   //-- get lists of items (TODO: return NodeL, not referring Graph)
-  Graph getItems(const char* key);
-  Graph getItemsOfDegree(uint deg);
-  Graph getTypedItems(const char* key, const std::type_info& type);
-  template<class T> Graph getTypedItems(const char* key=NULL){ return getTypedItems(key, typeid(T)); }
-  template<class T> NodeL getDerivedItems();
+  Graph getNodes(const char* key);
+  Graph getNodesOfDegree(uint deg);
+  Graph getTypedNodes(const char* key, const std::type_info& type);
+  template<class T> Graph getTypedNodes(const char* key=NULL){ return getTypedNodes(key, typeid(T)); }
+  template<class T> NodeL getDerivedNodes();
 
   //-- get values directly (TODO: remove)
   template<class T> T* getValue(const char *key);
@@ -184,12 +184,12 @@ struct GraphEditCallback {
 
 inline Graph GRAPH(const NodeL& L){ //TODO: remove
   Graph G;
-  G.isReferringToItemsOf = (Graph*)(1);
+  G.isReferringToNodesOf = (Graph*)(1);
   G.NodeL::operator=(L);
   return G;
 }
 
-inline bool ItemComp(Node* const& a, Node* const& b){ //TODO: why?
+inline bool NodeComp(Node* const& a, Node* const& b){ //TODO: why?
   return a < b;
 }
 
@@ -204,36 +204,36 @@ inline bool ItemComp(Node* const& a, Node* const& b){ //TODO: why?
 // Params {{{
 #include "graph.h"
 struct Params {
-  Graph kvg;
+  Graph graph;
 
   template<class T>
   void set(const char *key, const T &value) {
-    Node *i = kvg.getItem(key);
+    Node *i = graph.getNode(key);
     if(i) *i->getValue<T>() = value;
-    else kvg.append({key}, {}, new T(value), true);
+    else graph.append({key}, {}, new T(value), true);
   }
 
   template<class T>
-  bool get(const char *key, T &value) { return kvg.getValue(value, key); }
+  bool get(const char *key, T &value) { return graph.getValue(value, key); }
 
   template<class T>
-  T* get(const char *key) { return kvg.getValue<T>(key); }
+  T* get(const char *key) { return graph.getValue<T>(key); }
 
-  void clear() { kvg.clear(); }
+  void clear() { graph.clear(); }
 
   bool remove(const char *key) {
-    delete kvg[key];
-    Node *i = kvg.getItem(key);
+    delete graph[key];
+    Node *i = graph.getNode(key);
     if(!i) return false;
     delete i;
 //    // TODO is list() here necessary?
-//    kvg.list().remove(i->index);
+//    graph.list().remove(i->index);
     return true;
   }
 
   void write(std::ostream &os = std::cout) const {
     os << "params = {" << std::endl;
-    kvg.write(os, " ");
+    graph.write(os, " ");
     os << "}" << std::endl;
   }
 };

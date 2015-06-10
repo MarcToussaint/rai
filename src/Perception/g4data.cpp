@@ -41,7 +41,7 @@ void G4ID::clear() {
   s->digits.clear();
 }
 
-void readItem(Graph *i, uintA &hsitoi, uintA &itohsi, int ind) {
+void readNode(Graph *i, uintA &hsitoi, uintA &itohsi, int ind) {
   uint hid, sid, hsi, hsitoiN;
   
   hid = (uint)*i->getValue<double>("hid");
@@ -117,7 +117,7 @@ void G4ID::load(const char *meta) {
 
         s->kvg_sensors.append({name_digit}, {}, d, false);
 
-        readItem(d, s->hsitoi, s->itohsi, i++);
+        readNode(d, s->hsitoi, s->itohsi, i++);
       }
     }
   }
@@ -137,7 +137,7 @@ void G4ID::load(const char *meta) {
         s->kvg_sensorsof.getValue<StringA>(name_object)->append(name_part); 
         s->kvg_sensors.append({name_part}, {}, p, false);
 
-        readItem(p, s->hsitoi, s->itohsi, i++);
+        readNode(p, s->hsitoi, s->itohsi, i++);
       }
     }
     else {
@@ -148,7 +148,7 @@ void G4ID::load(const char *meta) {
       s->kvg_sensorsof.append({name_object}, {}, new StringA(), true);
       s->kvg_sensorsof.getValue<StringA>(name_object)->append(name_object); 
 
-      readItem(o, s->hsitoi, s->itohsi, i++);
+      readNode(o, s->hsitoi, s->itohsi, i++);
     }
   }
 }
@@ -359,7 +359,7 @@ uint G4Rec::numFrames() const { return nframes; }
 uint G4Rec::numDim(const char *bam) { return kvg.getValue<arr>({"bam", bam})->d2; }
 
 void G4Rec::appendBam(const char *bam, const arr &data) {
-  Node *i = kvg.getItem("bam", bam);
+  Node *i = kvg.getNode("bam", bam);
 
   if(!i)
     kvg.append({"bam", bam}, {}, new arr(data), true);
@@ -368,11 +368,11 @@ void G4Rec::appendBam(const char *bam, const arr &data) {
 }
 
 bool G4Rec::hasBam(const char *bam) {
-  return kvg.getItem({"bam", bam}) != NULL;
+  return kvg.getNode({"bam", bam}) != NULL;
 }
 
 arr G4Rec::query(const char *bam) {
-  Node *i = kvg.getItem({"bam", bam});
+  Node *i = kvg.getNode({"bam", bam});
   CHECK(i != nullptr, STRING("BAM '" << bam << "' does not exist."));
 
   if(0 == strcmp(bam, "pose")) {
@@ -389,7 +389,7 @@ arr G4Rec::query(const char *bam) {
 }
 
 arr G4Rec::query(const char *type, const char *sensor) {
-  Node *i = kvg.getItem({"bam", type});
+  Node *i = kvg.getNode({"bam", type});
   CHECK(i != nullptr, STRING("BAM '" << type << "' does not exist."));
 
   int is = g4id.i(sensor);
@@ -416,7 +416,7 @@ arr G4Rec::query(const char *type, const char *sensor) {
 }
 
 arr G4Rec::query(const char *type, const char *sensor, uint f) {
-  Node *i = kvg.getItem({"bam", type});
+  Node *i = kvg.getNode({"bam", type});
   CHECK(i != nullptr, STRING("BAM '" << type << "' does not exist."));
 
   int is = g4id.i(sensor);
@@ -437,7 +437,7 @@ arr G4Rec::query(const char *type, const char *sensor, uint f) {
 
 /*   Graph *skvg1 = s->kvg_sensors.getValue<Graph>(sensor1); */
 /*   Graph *skvg2 = s->kvg_sensors.getValue<Graph>(sensor2); */
-/*   CHECK(s->kvg.getItem(type) != NULL, STRING("BAM '" << type << "' does not exist.")); */
+/*   CHECK(s->kvg.getNode(type) != NULL, STRING("BAM '" << type << "' does not exist.")); */
 /*   CHECK(skvg1, STRING("Sensor '" << sensor1 << "' does not exist.")); */
 /*   CHECK(skvg2, STRING("Sensor '" << sensor2 << "' does not exist.")); */
 
@@ -458,7 +458,7 @@ arr G4Rec::query(const char *type, const char *sensor, uint f) {
 /* arr G4Data::query(const char *type, const char *sensor1, const char *sensor2, uint f) { */
 /*   Graph *skvg1 = s->kvg_sensors.getValue<Graph>(sensor1); */
 /*   Graph *skvg2 = s->kvg_sensors.getValue<Graph>(sensor2); */
-/*   CHECK(s->kvg.getItem(type) != NULL, STRING("BAM '" << type << "' does not exist.")); */
+/*   CHECK(s->kvg.getNode(type) != NULL, STRING("BAM '" << type << "' does not exist.")); */
 /*   CHECK(skvg1, STRING("Sensor '" << sensor1 << "' does not exist.")); */
 /*   CHECK(skvg2, STRING("Sensor '" << sensor2 << "' does not exist.")); */
 
@@ -677,7 +677,7 @@ void G4Data::load(const char *recdir, bool interpolate) {
 }
 
 G4Rec &G4Data::rec(const char *recdir) {
-  Node *i = kvg.getItem(recdir);
+  Node *i = kvg.getNode(recdir);
   CHECK(i, STRING("No recording named '" << recdir << "'."));
   return *i->getValue<G4Rec>();
 }
