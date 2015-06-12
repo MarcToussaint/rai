@@ -718,6 +718,7 @@ UnaryFunction(cbrt);
 UnaryFunction(ceil);
 UnaryFunction(fabs);
 UnaryFunction(floor);
+UnaryFunction(sigm);
 #undef UnaryFunction
 
 #define BinaryFunction( func )            \
