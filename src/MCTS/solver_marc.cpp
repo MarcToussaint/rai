@@ -12,10 +12,24 @@ void MCTS::addRollout(int stepAbort){
     if(!n->children.N && n->N){ //expand: compute new decisions and add corresponding nodes
       if(verbose>2) cout <<"****************** MCTS: expanding: computing all decisions for current node and adding them as freshmen nodes" <<endl;
       for(const MCTS_Environment::Handle& d:world.get_actions()) new MCTS_Node(n, d); //this adds a bunch of freshmen for all possible decisions
-      n->children.permuteRandomly();
+      //n->children.permuteRandomly();
     }else{
       if(verbose>2) cout <<"****************** MCTS: decisions in current node already known" <<endl;
     }
+#if 1
+    //DEBUG whether decision set is correct
+    auto A = world.get_actions();
+    CHECK(n->children.N==A.size(),"");
+//    for(auto &a:A) cout <<*a <<endl;
+//    cout <<endl;
+//    for(auto &ch:n->children) cout <<*ch->decision <<endl;
+    for(uint i=0;i<n->children.N;i++){
+      MT::String d1,d2;
+      d1 <<*n->children(i)->decision;
+      d2 <<*A[i];
+      CHECK_EQ(d1, d2, "");
+    }
+#endif
     n = treePolicy(n);
     if(verbose>1) cout <<"****************** MCTS: made tree policy decision" <<endl;
     Return_tree += n->r = world.transition(n->decision).second;
@@ -86,6 +100,14 @@ void MCTS::reportQ(ostream& os, MCTS_Node* n){
   for(MCTS_Node *ch:n->children){
     os <<'t' <<ch->t <<'N' <<ch->N <<'[' <<ch->Qlo <<',' <<ch->Qme <<',' <<ch->Qup <<']' <<endl;
     i++;
+  }
+}
+
+void MCTS::reportDecisions(ostream& os, MCTS_Node* n){
+  if(!n) n=&root;
+  if(!n->children.N) return;
+  for(MCTS_Node *ch:n->children){
+    os <<'t' <<ch->t <<'N' <<ch->N <<" D=" <<*ch->decision <<endl;
   }
 }
 

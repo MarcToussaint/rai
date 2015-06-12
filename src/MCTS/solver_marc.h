@@ -45,6 +45,7 @@ struct MCTS{
   arr Qvariance(MCTS_Node* n=NULL);
   void reportQ(ostream& os, MCTS_Node* n=NULL);
   uint Nnodes(MCTS_Node *n=NULL, bool subTree=true);
+  void reportDecisions(ostream& os, MCTS_Node* n=NULL);
 
   //only to display
   void writeToGraph(Graph& G, MCTS_Node* n=NULL);
