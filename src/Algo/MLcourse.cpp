@@ -36,7 +36,7 @@ arr ridgeRegression(const arr& X, const arr& y, double lambda, arr& bayesSigma, 
 
   CHECK((y.nd==1 || y.nd==2) && X.nd==2 && y.d0==X.d0, "wrong dimensions");
   arr Xt = ~X;
-  if(&weighted) Xt = Xt % weighted; //TODO: implement % as index-wise multiplication!
+  if(&weighted) Xt = Xt % weighted;
   arr XtX = Xt*X;
   for(uint i=1;i<XtX.d0;i++) XtX(i,i) += lambda;
   XtX(0, 0) += 1e-10; //don't regularize beta_0 !!

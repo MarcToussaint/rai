@@ -21,43 +21,49 @@ void Kinect2PointCloud::step(){
   depth = kinect_depth.get();
   rgb = kinect_rgb.get();
 
-  if(depth.N!=image_width*image_height || rgb.N!=3*image_width*image_height){
-    MT_MSG("kinect data has wrong dimension: rgb.dim=" <<depth.dim() <<"  depth.dim=" <<kinect_depth.get()->dim());
-    return;
-  }
-
-  rgb.reshape(image_width*image_height, 3);
-  pts.resize(image_width*image_height, 3);
-  cols.resize(image_width*image_height, 3);
-
-  float constant = 1.0f / 580; //focal length of kinect in pixels
-  int centerX = (image_width >> 1);
-  int centerY = (image_height >> 1);
-
-  int value_idx = 0;
-  int point_idx = 0;
-  for (int v = -centerY+1; v <= centerY; ++v) {
-    for (int u = -centerX+1; u <= centerX; ++u, ++value_idx, ++point_idx) {
-      double d=depth.elem(value_idx);
-      if (d!= 0 && d!=2047) { //2^11-1
-        double z=(double) d * 0.001;
-        pts(point_idx, 0) = z*constant*u;
-        pts(point_idx, 1) = z*constant*v;
-        pts(point_idx, 2) = z;
-
-        cols(point_idx, 0) = (double)rgb(point_idx, 0)/255.;
-        cols(point_idx, 1) = (double)rgb(point_idx, 1)/255.;
-        cols(point_idx, 2) = (double)rgb(point_idx, 2)/255.;
-      }else{
-        pts(point_idx, 0) = 0.;
-        pts(point_idx, 1) = 0.;
-        pts(point_idx, 2) = -1.;
-        cols[point_idx]() = 255.f;
-      }
-    }
-  }
+  MLR::images2pointcloud(pts, cols, rgb, depth);
 
   kinect_points.set() = pts;
   kinect_pointColors.set() = cols;
 }
 
+
+void MLR::images2pointcloud(arr& pts, arr& cols, const byteA& rgb, const uint16A& depth){
+  depthData2pointCloud(pts, depth);
+
+  if(rgb.N!=3*image_width*image_height){
+    MT_MSG("kinect rgb data has wrong dimension: rgb.dim=" <<rgb.dim());
+    return;
+  }
+
+  cols.resize(image_width*image_height, 3);
+  for(uint i=0;i<rgb.N;i++) cols.elem(i) = (double)rgb.elem(i)/255.;
+}
+
+void MLR::depthData2pointCloud(arr& pts, const uint16A& depth){
+  if(depth.N!=image_width*image_height){
+    MT_MSG("kinect depth data has wrong dimension: depth.dim=" <<depth.dim());
+    return;
+  }
+
+  pts.resize(image_width*image_height, 3);
+
+  float constant = 1.0f / 580; //focal length of kinect in pixels
+  int centerX = (image_width >> 1);
+  int centerY = (image_height >> 1);
+
+  int i = 0;
+  for(int y=-centerY+1; y<=centerY; y++) for(int x=-centerX+1; x<=centerX; x++, i++) {
+    double d=depth.elem(i);
+    if (d!= 0 && d!=2047) { //2^11-1
+      double z=(double) d * 0.001;
+      pts(i, 0) = z*constant*x;
+      pts(i, 1) = z*constant*y;
+      pts(i, 2) = z;
+    }else{
+      pts(i, 0) = 0.;
+      pts(i, 1) = 0.;
+      pts(i, 2) = -1.;
+    }
+  }
+}
