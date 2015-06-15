@@ -24,6 +24,8 @@
 #include "graph.h"
 #include "registry.h"
 
+#define DEBUG(x)
+
 NodeL& NoNodeL=*((NodeL*)NULL);
 Graph& NoGraph=*((Graph*)NULL);
 
@@ -491,7 +493,7 @@ Node* Graph::merge(Node *m){
 }
 
 void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer){
-  G.checkConsistency();
+  DEBUG(G.checkConsistency();)
 
   //-- first delete existing items
   if(!isReferringToNodesOf){ while(N) delete last(); } // listDelete(*this);
@@ -550,8 +552,8 @@ void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer){
     }
   }
 
-  this->checkConsistency();
-  G.checkConsistency();
+  DEBUG(this->checkConsistency();)
+  DEBUG(G.checkConsistency();)
 }
 
 void Graph::read(std::istream& is, bool parseInfo) {
