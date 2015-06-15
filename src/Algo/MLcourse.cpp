@@ -228,6 +228,7 @@ arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bay
     //compute logLikelihood
     logLike=0.;
     for(uint i=0; i<n; i++) logLike += MT::indicate(y(i)==1.)*f(i) - log(Z(i));
+    LOG(1) <<"log-likelihood = " <<logLike;
 
     //optionally reject the update
     if(k && logLike<lastLogLike) {
@@ -548,7 +549,7 @@ void artificialData(arr& X, arr& y, ArtificialDataType dataType) {
 
 void artificialData_Hasties2Class(arr& X, arr& y, uint dim) {
   uint n = MT::getParameter<uint>("n", 100);
-  uint d = MT::getParameter<uint>("d", 100);
+  uint d = MT::getParameter<uint>("d", 2);
   dim = d;
 
   arr means0(10, dim), means1(10, dim), x(dim), bias0(dim), bias1(dim);
