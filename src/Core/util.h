@@ -376,6 +376,10 @@ extern String errString;
 
 #else
 #  define CHECK(cond, msg)
+#define CHECK_ZERO(expr, tolerance, msg)
+#define CHECK_EQ(A, B, msg)
+#define CHECK_GE(A, B, msg)
+#define CHECK_LE(A, B, msg)
 #endif
 
 
