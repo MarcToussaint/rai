@@ -59,8 +59,9 @@
 #undef Success
 
 namespace ors {
-struct Transformation;
 struct Vector;
+struct Quaternion;
+struct Transformation;
 }
 
 //===========================================================================
@@ -76,6 +77,7 @@ void glDrawText(const char* txt, float x, float y, float z);
 //void glShadowTransform();
 void glTransform(const ors::Transformation& t);
 void glTransform(const double pos[3], const double R[12]);
+void glRotate(const ors::Quaternion& rot);
 void glDrawRect(float x1, float y1, float z1, float x2, float y2, float z2,
                 float x3, float y3, float z3, float x4, float y4, float z4,
                 float r, float g, float b);
@@ -105,7 +107,6 @@ void glDrawTexQuad(uint texture,
                    float mulX=1., float mulY=1.);
 //grabImage: use OpenGL::capture instead!
 void glRasterImage(float x, float y, byteA &img, float zoom=1.);
-
 
 //===========================================================================
 //
@@ -174,22 +175,19 @@ struct OpenGL {
   struct sOpenGL *s;
   
   /// @name little structs to store objects and callbacks
-  struct GLDrawer   { void *classP; void (*call)(void*); };
-  struct GLInitCall { void *classP; bool (*call)(void*, OpenGL*); };
-  //struct GLHoverCall { void *classP; bool (*call)(void*, OpenGL*); };
-  //struct GLClickCall { void *classP; bool (*call)(void*, OpenGL*); };
-  //struct GLKeyCall   { void *classP; bool (*call)(void*, OpenGL*); };
+  struct GLInitCall { virtual bool glInit(OpenGL&) = 0; };
+  struct GLDrawer    { virtual void glDraw(OpenGL&) = 0; };
   struct GLHoverCall { virtual bool hoverCallback(OpenGL&) = 0; };
   struct GLClickCall { virtual bool clickCallback(OpenGL&) = 0; };
   struct GLKeyCall  { virtual bool keyCallback(OpenGL&) = 0; };
   struct GLEvent    { int button, key, x, y; float dx, dy; void set(int b, int k, int _x, int _y, float _dx, float _dy) { button=b; key=k; x=_x; y=_y; dx=_dx; dy=_dy; } };
   struct GLSelect   { int name; double dmin, dmax, x,y,z; };
-  struct GLView     { double le, ri, bo, to;  MT::Array<GLDrawer> drawers;  ors::Camera camera;  byteA *img;  MT::String text;  GLView() { img=NULL; le=bo=0.; ri=to=1.; } };
+  struct GLView     { double le, ri, bo, to;  MT::Array<GLDrawer*> drawers;  ors::Camera camera;  byteA *img;  MT::String text;  GLView() { img=NULL; le=bo=0.; ri=to=1.; } };
   
   /// @name data fields
   MT::Array<GLView> views;            ///< list of draw routines
-  MT::Array<GLDrawer> drawers;        ///< list of draw routines
-  MT::Array<GLInitCall> initCalls;    ///< list of initialization routines
+  MT::Array<GLDrawer*> drawers;        ///< list of draw routines
+  MT::Array<GLInitCall*> initCalls;    ///< list of initialization routines
   MT::Array<GLHoverCall*> hoverCalls; ///< list of hover callbacks
   MT::Array<GLClickCall*> clickCalls; ///< list of click callbacks
   MT::Array<GLKeyCall*> keyCalls;     ///< list of click callbacks
@@ -228,17 +226,15 @@ struct OpenGL {
   ~OpenGL();
   
   /// @name adding drawing routines and callbacks
-  void add(void (*call)(void*), const void* classP=0);
-  void remove(void (*call)(void*), const void* classP=0);
-  template<class T> void add(const T& x) { add(x.staticDraw, &x); } ///< add a class or struct with a staticDraw routine
   void clear();
-  void addHoverCall(GLHoverCall *c);
-  void clearHoverCalls();
-  void addClickCall(GLClickCall *c);
-  void clearClickCalls();
-  void addKeyCall(GLKeyCall *c);
-  void clearKeyCalls();
-  void addView(uint view, void (*call)(void*), const void* classP=0);
+  void add(void (*call)(void*), void* classP=NULL);
+  void addDrawer(GLDrawer *c){ drawers.append(c); }
+  void remove(void (*call)(void*), const void* classP=0);
+  //template<class T> void add(const T& x) { add(x.staticDraw, &x); } ///< add a class or struct with a staticDraw routine
+  void addHoverCall(GLHoverCall *c){ hoverCalls.append(c); }
+  void addClickCall(GLClickCall *c){ clickCalls.append(c); }
+  void addKeyCall(GLKeyCall *c){ keyCalls.append(c); }
+  void addView(uint view, void (*call)(void*), void* classP=0);
   void setViewPort(uint view, double l, double r, double b, double t);
   
   /// @name the core draw routines (actually only for internal use)

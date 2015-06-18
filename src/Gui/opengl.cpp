@@ -285,7 +285,7 @@ void glColor(int col) {
     {0.2, 1.0, 0.2, 1.0}
   }; // green
   
-  if(col<0) col=0; if(col>5) col=5;
+  col = col%6; //if(col<0) col=0; if(col>5) col=5;
   glColor(colorsTab[col][0], colorsTab[col][1], colorsTab[col][2], colorsTab[col][3]);
 }
 
@@ -339,6 +339,13 @@ void glTransform(const ors::Transformation& t){
   t.getAffineMatrixGL(GLmatrix);
   glLoadMatrixd(GLmatrix);
 }
+
+void glRotate(const ors::Quaternion& rot){
+  double GLmatrix[16];
+  rot.getMatrixGL(GLmatrix);
+  glMultMatrixd(GLmatrix);
+}
+
 
 void glTransform(const double pos[3], const double R[12]) {
   GLfloat matrix[16];
@@ -1173,18 +1180,24 @@ void OpenGL::init() {
   backgroundZoom=1;
 };
 
+struct CstyleDrawer:OpenGL::GLDrawer{
+  void *classP;
+  void (*call)(void*);
+  CstyleDrawer(void (*call)(void*), void* classP): classP(classP), call(call){}
+  void glDraw(OpenGL&){ call(classP); }
+};
+
 /// add a draw routine
-void OpenGL::add(void (*call)(void*), const void* classP) {
+void OpenGL::add(void (*call)(void*), void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
-  GLDrawer d; d.classP=(void*)classP; d.call=call;
-  drawers.append(d);
+  drawers.append(new CstyleDrawer(call, classP));
 }
 
-void OpenGL::addView(uint v, void (*call)(void*), const void* classP) {
+/// add a draw routine to a view
+void OpenGL::addView(uint v, void (*call)(void*), void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
-  GLDrawer d; d.classP=(void*)classP; d.call=call;
   if(v>=views.N) views.resizeCopy(v+1);
-  views(v).drawers.append(d);
+  views(v).drawers.append(new CstyleDrawer(call, classP));
 }
 
 void OpenGL::setViewPort(uint v, double l, double r, double b, double t) {
@@ -1193,57 +1206,21 @@ void OpenGL::setViewPort(uint v, double l, double r, double b, double t) {
 }
 
 /// remove a draw routine
-void OpenGL::remove(void (*call)(void*), const void* classP) {
-  CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
-  uint i;
-  for(i=0; i<drawers.N; i++) if(drawers(i).call==call && drawers(i).classP==classP) break;
-  CHECK(i<drawers.N, "value to remove not found");
-  drawers.remove(i, 1);
-}
+//void OpenGL::remove(void (*call)(void*), const void* classP) {
+//  CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
+//  uint i;
+//  for(i=0; i<drawers.N; i++) if(drawers(i).call==call && drawers(i).classP==classP) break;
+//  CHECK(i<drawers.N, "value to remove not found");
+//  drawers.remove(i, 1);
+//}
 
-/// clear the list of all draw routines
+/// clear the list of all draw and callback routines
 void OpenGL::clear() {
   views.clear();
   drawers.clear();
   initCalls.clear();
   hoverCalls.clear();
   clickCalls.clear();
-  keyCalls.clear();
-}
-
-/// add a hover callback
-void OpenGL::addHoverCall(GLHoverCall *c) {
-  //CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
-  //GLHoverCall c; c.classP=(void*)classP; c.call=call;
-  hoverCalls.append(c);
-}
-
-/// clear hover callbacks
-void OpenGL::clearHoverCalls() {
-  hoverCalls.clear();
-}
-
-/// add a click callback
-void OpenGL::addClickCall(GLClickCall *c) {
-  //CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
-  //GLClickCall c; c.classP=(void*)classP; c.call=call;
-  clickCalls.append(c);
-}
-
-/// clear click callbacks
-void OpenGL::clearClickCalls() {
-  clickCalls.clear();
-}
-
-/// add a click callback
-void OpenGL::addKeyCall(GLKeyCall *c) {
-  //CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
-  //GLKeyCall c; c.classP=(void*)classP; c.call=call;
-  keyCalls.append(c);
-}
-
-/// clear click callbacks
-void OpenGL::clearKeyCalls() {
   keyCalls.clear();
 }
 
@@ -1346,7 +1323,8 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   if(mode==GL_SELECT) glInitNames();
   for(uint i=0; i<drawers.N; i++) {
     if(mode==GL_SELECT) glLoadName(i);
-    (*drawers(i).call)(drawers(i).classP);
+//    (*drawers(i).call)(drawers(i).classP);
+    drawers(i)->glDraw(*this);
     glLoadIdentity();
   }
 
@@ -1382,7 +1360,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
       double size = .005 * (camera.X->pos-*camera.foc).length();
       glDrawDiamond((*vi->camera.foc).x, (*vi->camera.foc).y, (*vi->camera.foc).z, size, size, size);
     }
-    for(uint i=0; i<vi->drawers.N; i++)(*vi->drawers(i).call)(vi->drawers(i).classP);
+    for(uint i=0; i<vi->drawers.N; i++) vi->drawers(i)->glDraw(*this);
     if(vi->text.N) {
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
@@ -1455,14 +1433,14 @@ void OpenGL::Select() {
   if(mouseView==-1) {
     for(i=0; i<drawers.N; i++) {
       glLoadName(i);
-      (*drawers(i).call)(drawers(i).classP);
+      drawers(i)->glDraw(*this);
       GLint s;
       glGetIntegerv(GL_NAME_STACK_DEPTH, &s);
       if(s!=0) MT_MSG("OpenGL name stack has not depth 1 (pushs>pops) in SELECT mode:" <<s);
     }
   } else {
     GLView *vi=&views(mouseView);
-    for(i=0; i<vi->drawers.N; i++) { glLoadName(i); (*vi->drawers(i).call)(vi->drawers(i).classP); }
+    for(i=0; i<vi->drawers.N; i++) { glLoadName(i); vi->drawers(i)->glDraw(*this); }
   }
 
   //cout <<"UNLOCK select" <<endl;
@@ -1974,3 +1952,5 @@ bool glUI::checkMouse(int _x, int _y) {
 #  include"opengl_Cygwin.moccpp"
 #endif
 #endif
+
+
