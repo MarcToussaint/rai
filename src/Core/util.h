@@ -291,18 +291,39 @@ namespace MT {
 struct LogToken{
   MT::String msg;
   int log_level;
+  int logCoutLevel, logFileLevel;
   const char *filename, *function;
   uint line;
-  LogToken(int log_level, const char* filename, const char* function, uint line):log_level(log_level), filename(filename), function(function), line(line) {}
+  std::ofstream *fil;
+  LogToken(int log_level, int logCoutLevel, int logFileLevel, const char* filename, const char* function, uint line, std::ofstream* fil)
+    : log_level(log_level), logCoutLevel(logCoutLevel), logFileLevel(logFileLevel), filename(filename), function(function), line(line), fil(fil) {}
   ~LogToken();
   std::ostream& os(){ return msg; }
 };
 }
 //template<class T> MT::LogToken& operator<<(MT::LogToken& log, const T& x){ log.os() <<x;  return log; }
 
+struct Log{
+  int logFileLevel, logCoutLevel;
+  const char* key;
+  std::ofstream fil;
+  Log(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0){
+    logCoutLevel = MT::getParameter<int>(STRING("logCoutLevel_"<<key), defaultLogCoutLevel);
+    logFileLevel = MT::getParameter<int>(STRING("logFileLevel_"<<key), defaultLogFileLevel);
+    MT::open(fil, STRING("z.log."<<key));
+  }
+  ~Log(){ fil.close(); }
+  MT::LogToken operator()(int log_level, const char* filename, const char* function, uint line) const{
+    return MT::LogToken(log_level, logCoutLevel, logFileLevel, filename, function, line, (std::ofstream*)&fil);
+  }
+};
+
+extern Log _log;
+
 //inline MT::LogToken LOG(int log_level=0){ return MT::LogToken(log_level, __FILE__, __func__, __LINE__); }
 //#define LOG(log_level) (MT::LogToken(log_level, __FILE__, __func__, __LINE__).os())
-#define LOG(log_level) MT::LogToken(log_level, __FILE__, __func__, __LINE__).os()
+//#define LOG(log_level) MT::LogToken(log_level, MT::logFileLevel, MT::logCoutLevel, __FILE__, __func__, __LINE__).os()
+#define LOG(log_level) _log(log_level, __FILE__, __func__, __LINE__).os()
 
 void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 
@@ -601,6 +622,16 @@ struct CoutToken{
 };
 #define COUT (CoutToken().getOs())
 
+
+//===========================================================================
+
+struct GlobalThings {
+  std::ifstream cfgFile;
+  bool cfgFileOpen=false;
+  Mutex cfgFileMutex;
+};
+
+extern Singleton<GlobalThings> globalThings;
 
 //===========================================================================
 //

@@ -74,6 +74,9 @@
 #  include <sys/syscall.h>
 #endif
 
+
+Singleton<GlobalThings> globalThings;
+
 //===========================================================================
 //
 // Bag container
@@ -84,6 +87,7 @@ const char *MT::String::readStopSymbols = "\n\r";
 int   MT::String::readEatStopSymbol     = 1;
 MT::String MT::errString;
 Mutex coutMutex;
+Log _log("global", 2, 3);
 
 
 //===========================================================================
@@ -94,9 +98,6 @@ Mutex coutMutex;
 namespace MT {
 int argc;
 char** argv;
-std::ifstream cfgFile;
-bool cfgFileOpen=false;
-Mutex cfgFileMutex;
 bool IOraw=false;
 bool noLog=true;
 uint lineCount=1;
@@ -621,7 +622,95 @@ char *getCmdLineArgument(const char *tag) {
     }
   return NULL;
 }
+}//namespace MT
 
+//===========================================================================
+//
+// logging
+
+namespace MT {
+  void handleSIGUSR2(int){
+    int i=5;
+    i*=i;    //set a break point here, if you want to catch errors directly
+  }
+
+struct LogServer {
+  std::ofstream fil;
+  bool noLog;
+  Mutex mutex;
+
+
+  LogServer(): noLog(false) {
+    signal(SIGUSR2, MT::handleSIGUSR2);
+    timerStartTime=MT::cpuTime();
+#ifndef MT_TIMEB
+    gettimeofday(&startTime, 0);
+#else
+    _ftime(&startTime);
+#endif
+
+    if(checkCmdLineTag("nolog")) noLog=true; else noLog=false;
+    const char *name=getCmdLineArgument("log");
+    if(!name) name=MT_LogFileName;
+
+    fil.open(name);
+    if(!fil.good()){
+      MT_MSG("could not open log-file `" <<name <<"' for output -- use `-nolog' or `-log' option to specify the log file");
+      noLog=true;
+      return;
+    }
+
+    fil <<"** compiled at:     " <<__DATE__ <<" " <<__TIME__ <<'\n';
+    fil <<"** execution start: " <<date(startTime) <<std::endl;
+  }
+
+  ~LogServer() {
+    if(noLog) return;
+    fil <<"** execution stop: " <<date()
+       <<"\n** real time: " <<realTime()
+      <<"sec\n** CPU time: " <<cpuTime()
+     <<"sec\n** system (includes I/O) time: " <<sysTime() <<"sec" <<std::endl;
+    fil.close();
+  }
+};
+
+Singleton<MT::LogServer> logServer;
+
+}
+
+MT::LogToken::~LogToken(){
+  MT::logServer().mutex.lock();
+  if(logFileLevel>=log_level){
+    if(!fil) fil=&MT::logServer().fil;
+    (*fil) <<filename <<':' <<function <<':' <<line <<'|' <<log_level <<"| " <<msg <<endl;
+  }
+  if(logCoutLevel>=log_level){
+    if(log_level>=0) std::cout <<filename <<':' <<function <<':' <<line <<'|' <<log_level <<"| " <<msg <<endl;
+  }
+  if(log_level<0){
+    MT::errString.clear() <<filename <<':' <<function <<':' <<line <<'|' <<log_level <<"| " <<msg <<endl;
+#ifdef MT_ROS
+    ROS_INFO("MLR-MSG: %s",MT::errString.p);
+#endif
+    if(log_level==-1){ MT::errString <<" -- WARNING";    cout <<MT::errString <<endl; }
+    if(log_level==-2){ MT::errString <<" -- ERROR  ";    cerr <<MT::errString <<endl; /*throw does not WORK!!!*/ }
+    if(log_level==-3){ MT::errString <<" -- HARD EXIT!"; cerr <<MT::errString <<endl; MT::logServer().mutex.unlock(); exit(1); }
+    if(log_level<=-2) raise(SIGUSR2);
+  }
+  MT::logServer().mutex.unlock();
+}
+
+void setLogLevels(int fileLogLevel, int consoleLogLevel){
+  _log.logCoutLevel=consoleLogLevel;
+  _log.logFileLevel=fileLogLevel;
+}
+
+
+//===========================================================================
+//
+// parameters
+
+namespace MT{
 /** @brief Open a (possibly new) config file with name '\c name'.<br> If
   \c name is not specified, it searches for a command line-option
   '-cfg' and, if not found, it assumes \c name=MT.cfg */
@@ -629,14 +718,14 @@ void openConfigFile(const char *name) {
   LOG(3) <<"opening config file ";
   if(!name) name=getCmdLineArgument("cfg");
   if(!name) name=MT_ConfigFileName;
-  if(cfgFileOpen) {
-    cfgFile.close(); LOG(3) <<"(old config file closed) ";
+  if(globalThings().cfgFileOpen) {
+    globalThings().cfgFile.close(); LOG(3) <<"(old config file closed) ";
   }
   LOG(3) <<"'" <<name <<"'";
-  cfgFile.clear();
-  cfgFile.open(name);
-  cfgFileOpen=true;
-  if(!cfgFile.good()) {
+  globalThings().cfgFile.clear();
+  globalThings().cfgFile.open(name);
+  globalThings().cfgFileOpen=true;
+  if(!globalThings().cfgFile.good()) {
     //MT_MSG("couldn't open config file " <<name);
     LOG(3) <<" - failed";
   }
@@ -882,90 +971,6 @@ MT::String MT::getNowString() {
     now->tm_min,
     now->tm_sec);
   return str;
-}
-
-
-//===========================================================================
-//
-// logging
-
-namespace MT {
-  void handleSIGUSR2(int){
-    int i=5;
-    i*=i;    //set a break point here, if you want to catch errors directly
-  }
-
-struct LogServer {
-  std::ofstream fil;
-  bool noLog;
-
-  int fileLogLevel;
-  int consoleLogLevel;
-  Mutex mutex;
-
-  LogServer(): noLog(false), fileLogLevel(3), consoleLogLevel(2) {
-    signal(SIGUSR2, MT::handleSIGUSR2);
-    timerStartTime=MT::cpuTime();
-#ifndef MT_TIMEB
-    gettimeofday(&startTime, 0);
-#else
-    _ftime(&startTime);
-#endif
-
-    if(checkCmdLineTag("nolog")) noLog=true; else noLog=false;
-    const char *name=getCmdLineArgument("log");
-    if(!name) name=MT_LogFileName;
-
-    fil.open(name);
-    if(!fil.good()){
-      MT_MSG("could not open log-file `" <<name <<"' for output -- use `-nolog' or `-log' option to specify the log file");
-      noLog=true;
-      return;
-    }
-
-    fil <<"** compiled at:     " <<__DATE__ <<" " <<__TIME__ <<'\n';
-    fil <<"** execution start: " <<date(startTime) <<std::endl;
-  }
-
-  ~LogServer() {
-    if(noLog) return;
-    fil <<"** execution stop: " <<date()
-       <<"\n** real time: " <<realTime()
-      <<"sec\n** CPU time: " <<cpuTime()
-     <<"sec\n** system (includes I/O) time: " <<sysTime() <<"sec" <<std::endl;
-    fil.close();
-  }
-};
-
-Singleton<MT::LogServer> logServer;
-
-}
-
-MT::LogToken::~LogToken(){
-  MT::logServer().mutex.lock();
-  if(MT::logServer().fileLogLevel   >=log_level) MT::logServer().fil <<filename <<':' <<function <<':' <<line <<'|' <<log_level <<"| " <<msg <<endl;
-  if(MT::logServer().consoleLogLevel>=log_level){
-    if(log_level>=0) std::cout <<msg <<endl;
-    else{
-      MT::errString.clear() <<filename <<':' <<function <<':' <<line <<": " <<msg;
-#ifdef MT_ROS
-      ROS_INFO("MLR-MSG: %s",MT::errString.p);
-#endif
-      if(log_level==-1){ MT::errString <<" -- WARNING";    cout <<MT::errString <<endl; }
-      if(log_level==-2){ MT::errString <<" -- ERROR  ";    cerr <<MT::errString <<endl; /*throw does not WORK!!!*/ }
-      if(log_level==-3){ MT::errString <<" -- HARD EXIT!"; cerr <<MT::errString <<endl; MT::logServer().mutex.unlock(); exit(1); }
-      if(log_level<=-2) raise(SIGUSR2);
-    }
-  }
-  MT::logServer().mutex.unlock();
-}
-
-void setLogLevels(int fileLogLevel, int consoleLogLevel){
-  MT::logServer().mutex.lock();
-  MT::logServer().fileLogLevel   =fileLogLevel;
-  MT::logServer().consoleLogLevel=consoleLogLevel;
-  MT::logServer().mutex.unlock();
-
 }
 
 
