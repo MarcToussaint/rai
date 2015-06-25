@@ -391,7 +391,7 @@ Node* Graph::getNode(const char *key) const {
   return NULL;
 }
 
-Node* Graph::getNode(const char *key1, const char *key2) {
+Node* Graph::getNode(const char *key1, const char *key2) const {
   for(Node *it: (*this)) {
     for(uint i=0; i<it->keys.N; i++) if(it->keys(i)==key1) {
       for(uint i=0; i<it->keys.N; i++) if(it->keys(i)==key2)
@@ -401,32 +401,15 @@ Node* Graph::getNode(const char *key1, const char *key2) {
   return NULL;
 }
 
-Node* Graph::getNode(const StringA &keys) {
-  //  bool found;
+Node* Graph::getNode(const StringA &keys) const {
   for(Node *it: (*this)) if(it->matches(keys)) return it;
   if(isNodeOfParentGraph) return isNodeOfParentGraph->container.getNode(keys);
-  //  {
-  //    found = true;
-  //    for(uint k = 0; k < keys.N && found; k++) {
-  //      found = false;
-  //      for(const String &key: it->keys) {
-  //        if(keys(k) == key) {
-  //          found = true;
-  //          break;
-  //        }
-  //      }
-  //    }
-  //    if(found) return it;
-  //  }
   return NULL;
 }
 
-Graph Graph::getNodes(const char* key) {
-  Graph ret;
-  ret.isReferringToNodesOf = this;
-  for(Node *it: (*this)) if(it->matches(key)) ret.NodeL::append(it);
-  //    for(uint i=0; i<it->keys.N; i++) if(it->keys(i)==key) { ret.NodeL::append(it); break; }
-  //  }
+NodeL Graph::getNodes(const char* key) const {
+  NodeL ret;
+  for(Node *it: (*this)) if(it->matches(key)) ret.append(it);
   return ret;
 }
 
@@ -443,23 +426,21 @@ Node* Graph::getChild(Node *p1, Node *p2) const{
   return NULL;
 }
 
-Graph Graph::getNodesOfDegree(uint deg) {
-  Graph ret;
-  ret.isReferringToNodesOf = this;
+NodeL Graph::getNodesOfDegree(uint deg) {
+  NodeL ret;
   for(Node *it: (*this)) {
-    if(it->parents.N==deg) ret.NodeL::append(it);
+    if(it->parents.N==deg) ret.append(it);
   }
   return ret;
 }
 
 
-Graph Graph::getTypedNodes(const char* key, const std::type_info& type) {
-  Graph ret;
-  ret.isReferringToNodesOf = this;
+NodeL Graph::getTypedNodes(const char* key, const std::type_info& type) {
+  NodeL ret;
   for(Node *it: (*this)) if(it->getValueType()==type) {
     if(!key) ret.NodeL::append(it);
     else for(uint i=0; i<it->keys.N; i++) if(it->keys(i)==key) {
-      ret.NodeL::append(it);
+      ret.append(it);
       break;
     }
   }
@@ -467,7 +448,7 @@ Graph Graph::getTypedNodes(const char* key, const std::type_info& type) {
 }
 
 Node* Graph::merge(Node *m){
-  Graph KVG = getTypedNodes(m->keys(0), m->getValueType());
+  NodeL KVG = getTypedNodes(m->keys(0), m->getValueType());
   //CHECK(KVG.N<=1, "can't merge into multiple items yet");
   Node *it=NULL;
   if(KVG.N) it=KVG.elem(0);
@@ -570,7 +551,7 @@ void Graph::read(std::istream& is, bool parseInfo) {
   }
   if(parseInfo) getParseInfo(NULL).end=is.tellg();
   //-- merge all Merge keys
-  Graph merges = getNodes("Merge");
+  NodeL merges = getNodes("Merge");
   for(Node *m:merges){
     m->keys.remove(0);
     merge(m);

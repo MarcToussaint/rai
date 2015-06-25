@@ -682,13 +682,13 @@ MT::LogToken::~LogToken(){
   MT::logServer().mutex.lock();
   if(logFileLevel>=log_level){
     if(!fil) fil=&MT::logServer().fil;
-    (*fil) <<function <<':' <<filename <<':' <<line <<'|' <<log_level <<"| " <<msg <<endl;
+    (*fil) <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg <<endl;
   }
   if(logCoutLevel>=log_level){
-    if(log_level>=0) std::cout <<function <<':' <<filename <<':' <<line <<'|' <<log_level <<"| " <<msg <<endl;
+    if(log_level>=0) std::cout <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg <<endl;
   }
   if(log_level<0){
-    MT::errString.clear() <<function <<':' <<filename <<':' <<line <<'|' <<log_level <<"| " <<msg <<endl;
+    MT::errString.clear() <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg <<endl;
 #ifdef MT_ROS
     ROS_INFO("MLR-MSG: %s",MT::errString.p);
 #endif

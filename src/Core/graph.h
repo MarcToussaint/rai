@@ -71,7 +71,7 @@ struct Node {
   virtual bool hasEqualValue(Node*) {NIY}
   virtual Node* newClone(Graph& container) const {NIY}
 };
-stdOutPipe(Node);
+stdOutPipe(Node)
 
 //===========================================================================
 
@@ -113,22 +113,24 @@ struct Graph:NodeL {
   
   //-- get items
   Node* getNode(const char *key) const;
-  Node* getNode(const char *key1, const char *key2);
-  Node* getNode(const StringA &keys);
-  Node* operator[](const char *key) { return getNode(key); }
+  Node* getNode(const char *key1, const char *key2) const;
+  Node* getNode(const StringA &keys) const;
+  Node* operator[](const char *key) const{ return getNode(key); }
   Node& I(const char *key) { Node *it=getNode(key); CHECK(it,"item '" <<key <<"' does not exist"); return *it; }
   Node* getChild(Node *p1, Node *p2) const; //TODO -> getEdge
 
   //-- get lists of items (TODO: return NodeL, not referring Graph)
-  Graph getNodes(const char* key);
-  Graph getNodesOfDegree(uint deg);
-  Graph getTypedNodes(const char* key, const std::type_info& type);
+  NodeL getNodes(const char* key) const;
+  NodeL getNodesOfDegree(uint deg);
+  NodeL getTypedNodes(const char* key, const std::type_info& type);
   template<class T> Graph getTypedNodes(const char* key=NULL){ return getTypedNodes(key, typeid(T)); }
   template<class T> NodeL getDerivedNodes();
 
   //-- get values directly (TODO: remove)
-  template<class T> T* getValue(const char *key);
-  template<class T> T* getValue(const StringA &keys);
+  template<class T> T& V(const char *key){ T* y=getValue<T>(key); CHECK(y,""); return *y; }
+  template<class T> const T& V(const char *key, const T& defaultValue) const{ T* y=getValue<T>(key); if(y) return *y; return defaultValue; }
+  template<class T> T* getValue(const char *key) const;
+  template<class T> T* getValue(const StringA &keys) const;
   template<class T> bool getValue(T& x, const char *key) { T* y=getValue<T>(key); if(y) { x=*y; return true; } return false; }
   template<class T> bool getValue(T& x, const StringA &keys) { T* y=getValue<T>(keys); if(y) { x=*y; return true; } return false; }
 
