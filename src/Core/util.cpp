@@ -688,7 +688,7 @@ MT::LogToken::~LogToken(){
     if(log_level>=0) std::cout <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg <<endl;
   }
   if(log_level<0){
-    MT::errString.clear() <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg <<endl;
+    MT::errString.clear() <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg;
 #ifdef MT_ROS
     ROS_INFO("MLR-MSG: %s",MT::errString.p);
 #endif
