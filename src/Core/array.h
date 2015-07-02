@@ -54,6 +54,10 @@ extern const char* arrayElemsep;
 extern const char* arrayLinesep;
 extern const char* arrayBrackets;
 struct FileToken;
+template<class T> bool lower(const T& a, const T& b){ return a<b; }
+template<class T> bool lowerEqual(const T& a, const T& b){ return a<=b; }
+template<class T> bool greater(const T& a, const T& b){ return a>b; }
+template<class T> bool greaterEqual(const T& a, const T& b){ return a>=b; }
 } //namespace
 
 //===========================================================================
@@ -174,6 +178,7 @@ template<class T> struct Array {
   T& elem(int i) const;
   T& scalar() const;
   operator T&() const{ return scalar(); }
+  T& first() const;
   T& last(int i=-1) const;
   T& rndElem() const;
   T& operator()(uint i) const;
@@ -244,13 +249,13 @@ template<class T> struct Array {
   T popLast();
   
   /// @name sorting and permuting this array
-  void sort(ElemCompare comp);
-  bool isSorted(ElemCompare comp) const;
-  uint rankInSorted(const T& x, ElemCompare comp) const;
-  int findValueInSorted(const T& x, ElemCompare comp) const;
-  uint insertInSorted(const T& x, ElemCompare comp);
-  uint setAppendInSorted(const T& x, ElemCompare comp);
-  void removeValueInSorted(const T& x, ElemCompare comp);
+  void sort(ElemCompare comp=lowerEqual);
+  bool isSorted(ElemCompare comp=lowerEqual) const;
+  uint rankInSorted(const T& x, ElemCompare comp=lowerEqual) const;
+  int findValueInSorted(const T& x, ElemCompare comp=lowerEqual) const;
+  uint insertInSorted(const T& x, ElemCompare comp=lowerEqual);
+  uint setAppendInSorted(const T& x, ElemCompare comp=lowerEqual);
+  void removeValueInSorted(const T& x, ElemCompare comp=lowerEqual);
   void reverse();
   void reverseRows();
   void permute(uint i, uint j);
