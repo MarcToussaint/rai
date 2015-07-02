@@ -578,6 +578,7 @@ template<class T> MT::Array<T> replicate(const MT::Array<T>& A, uint d0);
 
 template<class T> uintA size(const MT::Array<T>& x) { return x.dim(); }
 template<class T> void checkNan(const MT::Array<T>& x);
+template<class T> void sort(MT::Array<T>& x);
 
 template<class T> T entropy(const MT::Array<T>& v);
 template<class T> T normalizeDist(MT::Array<T>& v);
