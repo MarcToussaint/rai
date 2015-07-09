@@ -331,6 +331,10 @@ Graph::Graph(const char* filename):s(NULL), isReferringToNodesOf(NULL), isNodeOf
   FILE(filename) >>*this;
 }
 
+Graph::Graph(MT::String& str):s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL) {
+  str >>*this;
+}
+
 Graph::Graph(const std::map<std::string, std::string>& dict):s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL) {
   appendDict(dict);
 }
