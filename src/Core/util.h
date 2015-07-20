@@ -627,8 +627,10 @@ struct CoutToken{
 
 struct GlobalThings {
   std::ifstream cfgFile;
-  bool cfgFileOpen=false;
+  bool cfgFileOpen;
   Mutex cfgFileMutex;
+
+GlobalThings():cfgFileOpen(false){};
 };
 
 extern Singleton<GlobalThings> globalThings;

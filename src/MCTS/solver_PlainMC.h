@@ -8,7 +8,7 @@
 //===========================================================================
 
 struct PlainMC{
-  struct Statistics{ uint n=0; arr X; };
+  struct Statistics{ uint n; arr X; Statistics():n(0){} };
 
   MCTS_Environment& world;
   MT::Array<MCTS_Environment::Handle> A;  ///< what decision do we have in the start state
