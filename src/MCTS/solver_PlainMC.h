@@ -13,9 +13,9 @@ struct PlainMC{
   MCTS_Environment& world;
   MT::Array<MCTS_Environment::Handle> A;  ///< what decision do we have in the start state
   MT::Array<Statistics> D;                ///< data of returns for all first actions
-  double gamma=.9;
-  int verbose=2;
-  uint topSize=10;
+  double gamma;
+  int verbose;
+  uint topSize;
 
   PlainMC(MCTS_Environment& world);
   void reset();

@@ -2,7 +2,7 @@
 #include <Core/array-vector.h>
 
 PlainMC::PlainMC(MCTS_Environment& world)
-  : world(world), verbose(2){
+  : world(world), gamma(.9), verbose(2), topSize(10){
   reset();
 }
 
