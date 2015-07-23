@@ -818,6 +818,8 @@ MT::String::String(const char *s):std::iostream(&buffer) { init(); this->operato
 
 MT::String::String(const std::string& s):std::iostream(&buffer) { init(); this->operator=(s.c_str()); }
 
+MT::String::String(MT::FileToken& file):std::iostream(&buffer) { init(); read(file.getIs(), "", "", 0); }
+
 MT::String::~String() { if(M) delete[] p; }
 
 /// returns a reference to this

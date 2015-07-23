@@ -120,14 +120,16 @@ struct Graph:NodeL {
   Node& I(const char *key) { Node *it=getNode(key); CHECK(it,"item '" <<key <<"' does not exist"); return *it; }
   Node* getChild(Node *p1, Node *p2) const; //TODO -> getEdge
 
-  //-- get lists of items (TODO: return NodeL, not referring Graph)
+  //-- get lists of items
   NodeL getNodes(const char* key) const;
   NodeL getNodesOfDegree(uint deg);
   NodeL getTypedNodes(const char* key, const std::type_info& type);
   template<class T> Graph getTypedNodes(const char* key=NULL){ return getTypedNodes(key, typeid(T)); }
   template<class T> NodeL getDerivedNodes();
 
-  //-- get values directly (TODO: remove)
+  //-- get values directly (TODO: remove V and 'getValue', just get should be enough)
+  template<class T> T& get(const char *key) const;
+  template<class T> const T& get(const char *key, const T& defaultValue) const;
   template<class T> T& V(const char *key){ T* y=getValue<T>(key); CHECK(y,""); return *y; }
   template<class T> const T& V(const char *key, const T& defaultValue) const{ T* y=getValue<T>(key); if(y) return *y; return defaultValue; }
   template<class T> T* getValue(const char *key) const;

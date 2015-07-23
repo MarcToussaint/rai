@@ -227,6 +227,7 @@ public:
   String(const String& s);
   String(const char *s);
   explicit String(const std::string& s);
+  explicit String(struct FileToken& file);
   ~String();
   
   /// @name access

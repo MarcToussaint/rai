@@ -328,7 +328,8 @@ Graph::Graph():s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL) {
 }
 
 Graph::Graph(const char* filename):s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL) {
-  FILE(filename) >>*this;
+  read(MT::FileToken(filename).getIs());
+//  FILE(filename) >>*this;
 }
 
 Graph::Graph(MT::String& str):s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL) {
