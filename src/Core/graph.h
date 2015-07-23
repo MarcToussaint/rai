@@ -143,7 +143,8 @@ struct Graph:NodeL {
   
   //-- adding items
   template<class T> Node *append(T *x, bool ownsValue);
-  template<class T> Node *append(const char* key, T *x, bool ownsValue);
+//  template<class T> Node *append(const char* key, T *x, bool ownsValue);
+  template<class T> Node *append(const StringA& keys, const NodeL& parents, const T& x);
   template<class T> Node *append(const StringA& keys, const NodeL& parents, T *x, bool ownsValue);
 //  template<class T> Node *append(const StringA& keys, T *x, bool ownsValue) { return append(keys, NodeL(), x, ownsValue); }
 //  template<class T> Node *append(const char *key, T *x, bool ownsValue) { return append({MT::String(key)}, NodeL(), x, ownsValue); }

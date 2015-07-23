@@ -23,6 +23,7 @@ uint eval_cost=0;
 //SqrPotential& NoPot = *((SqrPotential*)NULL);
 //PairSqrPotential& NoPairPot = *((PairSqrPotential*)NULL);
 Singleton<OptOptions> globalOptOptions;
+const char* TermTypeString[]={"noTT", "sumOfSqrTT", "ineqTT", "eqTT" };
 TermTypeA& NoTermTypeA = *((TermTypeA*)NULL);
 
 

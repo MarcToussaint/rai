@@ -61,6 +61,7 @@ typedef std::function<double(arr& df, arr& Hf,
                              arr& h, arr& Jh, const arr& x)> ConstrainedProblem;
 
 enum TermType { noTT=0, sumOfSqrTT, ineqTT, eqTT };
+extern const char* TermTypeString[];
 typedef MT::Array<TermType> TermTypeA;
 extern TermTypeA& NoTermTypeA;
 
