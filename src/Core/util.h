@@ -453,6 +453,7 @@ struct FileToken{
 
   void decomposeFilename();
   void changeDir();
+  void unchangeDir();
   bool exists();
   std::ofstream& getOs();
   std::ifstream& getIs(bool change_dir=false);

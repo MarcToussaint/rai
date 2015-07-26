@@ -393,6 +393,7 @@ Node* Graph::getNode(const char *key) const {
   for(Node *it: (*this)) if(it->matches(key)) return it;
   //    for(const MT::String& k:it->keys) if(k==key) return it;
   if(isNodeOfParentGraph) return isNodeOfParentGraph->container.getNode(key);
+  MT_MSG("no node with key '"<<key <<"' found");
   return NULL;
 }
 
@@ -403,12 +404,14 @@ Node* Graph::getNode(const char *key1, const char *key2) const {
         return it;
     }
   }
+  MT_MSG("no node with keys '"<<key1 <<' ' <<key2 <<"' found");
   return NULL;
 }
 
 Node* Graph::getNode(const StringA &keys) const {
   for(Node *it: (*this)) if(it->matches(keys)) return it;
   if(isNodeOfParentGraph) return isNodeOfParentGraph->container.getNode(keys);
+  MT_MSG("no node with keys '"<<keys <<"' found");
   return NULL;
 }
 
@@ -553,6 +556,9 @@ void Graph::read(std::istream& is, bool parseInfo) {
       read(it->getValue<MT::FileToken>()->getIs(true));
       delete it;
     }
+    if(it->keys.N==1 && it->keys(0)=="ChDir"){
+      it->getValue<MT::FileToken>()->changeDir();
+    }
   }
   if(parseInfo) getParseInfo(NULL).end=is.tellg();
   //-- merge all Merge keys
@@ -560,6 +566,13 @@ void Graph::read(std::istream& is, bool parseInfo) {
   for(Node *m:merges){
     m->keys.remove(0);
     merge(m);
+  }
+  for(uint i=N;i--;){
+    Node *it=elem(i);
+    if(it->keys.N==1 && it->keys(0)=="ChDir"){
+      it->getValue<MT::FileToken>()->unchangeDir();
+      delete it;
+    }
   }
 }
 

@@ -984,15 +984,13 @@ MT::String MT::getNowString() {
 MT::FileToken::FileToken(const char* filename, bool change_dir): os(NULL), is(NULL){
   name=filename;
   if(change_dir) changeDir();
+  if(!exists()) HALT("file '" <<filename <<"' does not exist");
 }
 
 MT::FileToken::~FileToken(){
   if(is){ is->close(); } //delete is; is=NULL; }
   if(os){ os->close(); } //delete os; os=NULL; }
-  if(cwd.N){
-    LOG(3) <<"leaving path `" <<path<<"' back to '" <<cwd <<"'" <<std::endl;
-    if(chdir(cwd)) HALT("couldn't change back to directory " <<cwd);
-  }
+  unchangeDir();
 }
 
 /// change to the directory of the given filename
@@ -1020,6 +1018,13 @@ void MT::FileToken::changeDir(){
       LOG(3) <<"entering path `" <<path<<"' from '" <<cwd <<"'" <<std::endl;
       if(chdir(path)) HALT("couldn't change to directory " <<path <<"(current dir: " <<cwd <<")");
     }
+  }
+}
+
+void MT::FileToken::unchangeDir(){
+  if(cwd.N){
+    LOG(3) <<"leaving path `" <<path<<"' back to '" <<cwd <<"'" <<std::endl;
+    if(chdir(cwd)) HALT("couldn't change back to directory " <<cwd);
   }
 }
 
