@@ -984,7 +984,7 @@ MT::String MT::getNowString() {
 MT::FileToken::FileToken(const char* filename, bool change_dir): os(NULL), is(NULL){
   name=filename;
   if(change_dir) changeDir();
-  if(!exists()) HALT("file '" <<filename <<"' does not exist");
+//  if(!exists()) HALT("file '" <<filename <<"' does not exist");
 }
 
 MT::FileToken::~FileToken(){
