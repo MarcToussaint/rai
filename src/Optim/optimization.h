@@ -55,12 +55,8 @@ typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
 /// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
 typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
 
-/// returns \f$f(x), \nabla f(x), \nabla^2 f(x), g(x), \nabla g(x)\f$ (giving NoArr as argument -> do not return this quantity)
-typedef std::function<double(arr& df, arr& Hf,
-                             arr& g, arr& Jg,
-                             arr& h, arr& Jh, const arr& x)> ConstrainedProblem;
 
-enum TermType { noTT=0, sumOfSqrTT, ineqTT, eqTT };
+enum TermType { noTT=0, fTT, sumOfSqrTT, ineqTT, eqTT };
 extern const char* TermTypeString[];
 typedef MT::Array<TermType> TermTypeA;
 extern TermTypeA& NoTermTypeA;
@@ -100,7 +96,6 @@ struct KOrderMarkovFunction {
 // checks, evaluation
 //
 
-bool checkAllGradients(const ConstrainedProblem &P, const arr& x, double tolerance);
 bool checkJacobianCP(const ConstrainedProblemMix &P, const arr& x, double tolerance);
 bool checkDirectionalGradient(const ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction &f, const arr& x, const arr& delta, double tolerance);
