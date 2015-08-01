@@ -54,7 +54,7 @@ struct MCTS_Environment {
     virtual void reset_state() = 0;
 
     /// static information on the environment
-    enum InfoTag{ hasTerminal, isDeterministic, hasMaxReward, getMaxReward, hasMinReward, getMinReward, isMarkov, writeState };
+    enum InfoTag{ getGamma, hasTerminal, isDeterministic, hasMaxReward, getMaxReward, hasMinReward, getMinReward, isMarkov, writeState };
     virtual bool get_info(InfoTag tag) const = 0;
     virtual double get_info_value(InfoTag tag) const = 0;
 };

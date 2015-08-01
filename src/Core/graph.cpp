@@ -329,11 +329,10 @@ Graph::Graph():s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL) {
 
 Graph::Graph(const char* filename):s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL) {
   read(MT::FileToken(filename).getIs());
-//  FILE(filename) >>*this;
 }
 
-Graph::Graph(MT::String& str):s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL) {
-  str >>*this;
+Graph::Graph(istream& is):s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL) {
+  read(is);
 }
 
 Graph::Graph(const std::map<std::string, std::string>& dict):s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL) {

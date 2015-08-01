@@ -95,7 +95,7 @@ struct Graph:NodeL {
   //-- constructors
   Graph();
   explicit Graph(const char* filename);
-  explicit Graph(MT::String& str);
+  explicit Graph(istream& is);
   Graph(const std::map<std::string, std::string>& dict);
   Graph(std::initializer_list<NodeInitializer> list);
   Graph(const Graph& G);

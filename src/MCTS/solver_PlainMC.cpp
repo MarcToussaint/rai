@@ -4,6 +4,7 @@
 PlainMC::PlainMC(MCTS_Environment& world)
   : world(world), gamma(.9), verbose(2), topSize(10){
   reset();
+  gamma = world.get_info_value(MCTS_Environment::getGamma);
 }
 
 void PlainMC::reset(){
