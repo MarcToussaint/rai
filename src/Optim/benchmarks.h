@@ -114,9 +114,9 @@ struct ChoiceConstraintFunction:ConstrainedProblemMix {
 
     if(&J) J.reshape(J.N/x.N,x.N);
   }
-//  virtual uint dim_x(){
-//    return n;
-//  }
+ virtual uint dim_x(){
+   return n;
+ }
 //  virtual uint dim_g(){
 //    if(which==randomLinear) return ;
 //    if(which==wedge2D) return n;
