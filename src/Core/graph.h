@@ -124,7 +124,7 @@ struct Graph:NodeL {
   NodeL getNodes(const char* key) const;
   NodeL getNodesOfDegree(uint deg);
   NodeL getTypedNodes(const char* key, const std::type_info& type);
-  template<class T> Graph getTypedNodes(const char* key=NULL){ return getTypedNodes(key, typeid(T)); }
+  template<class T> NodeL getTypedNodes(const char* key=NULL){ return getTypedNodes(key, typeid(T)); }
   template<class T> NodeL getDerivedNodes();
 
   //-- get values directly (TODO: remove V and 'getValue', just get should be enough)
