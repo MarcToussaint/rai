@@ -77,25 +77,24 @@ struct ChoiceConstraintFunction:ConstrainedProblemMix {
   }
   void fc(arr& phi, arr& J, TermTypeA& tt, const arr& x) {
     CHECK_EQ(x.N,n,"");
-    phi.clear();  tt.clear();  if(&J) J.clear();
+    phi.clear();  if(&tt) tt.clear();  if(&J) J.clear();
 
     arr H;
-    phi.append( ChoiceFunction()(J, H, x) ); tt.append(fTT);
-
-    HALT("H not used yet!");
+    phi.append( ChoiceFunction()(J, H, x) ); if(&tt) tt.append(fTT);
+    //HALT("H not used yet!");
 
     switch(which) {
       case wedge2D:
-        for(uint i=0;i<x.N;i++){ phi.append( -sum(x)+1.5*x(i)-.1 ); tt.append(ineqTT); }
+        for(uint i=0;i<x.N;i++){ phi.append( -sum(x)+1.5*x(i)-.2 ); if(&tt) tt.append(ineqTT); }
         if(&J){ arr Jg(x.N, x.N); Jg=-1.; for(uint i=0;i<x.N;i++) Jg(i,i) = +.5; J.append(Jg); }
         break;
       case halfcircle2D:
-        phi.append( sumOfSqr(x)-.25 );  tt.append( ineqTT );  if(&J) J.append( 2.*x ); //feasible=IN circle of radius .5
-        phi.append( -x(0)-.2 );         tt.append( eqTT );    if(&J) J.append( zeros(x.N)(0) = -1. ); //feasible=right of -.2
+        phi.append( sumOfSqr(x)-.25 );  if(&tt) tt.append( ineqTT );  if(&J) J.append( 2.*x ); //feasible=IN circle of radius .5
+        phi.append( -x(0)-.2 );         if(&tt) tt.append( ineqTT );  if(&J){ J.append( zeros(x.N) ); J.elem(-x.N) = -1.; } //feasible=right of -.2
         break;
       case circleLine2D:
-        phi.append( sumOfSqr(x)-.25 );  tt.append( ineqTT );  if(&J) J.append( 2.*x ); //feasible=IN circle of radius .5
-        phi.append( x(0) );             tt.append( eqTT );    if(&J) J.append( zeros(x.N)(0) = 1. );
+        phi.append( sumOfSqr(x)-.25 );  if(&tt) tt.append( ineqTT );  if(&J) J.append( 2.*x ); //feasible=IN circle of radius .5
+        phi.append( x(0) );             if(&tt) tt.append( eqTT );    if(&J){ J.append( zeros(x.N) ); J.elem(-x.N) = 1.; }
         break;
       case randomLinear:{
         if(!randomG.N){
@@ -108,6 +107,7 @@ struct ChoiceConstraintFunction:ConstrainedProblemMix {
         }
         CHECK_EQ(randomG.d1, x.N+1, "you changed dimensionality");
         phi.append( randomG * cat({1.}, x) );
+        if(&tt) tt.append( consts(ineqTT, randomG.d0) );
         if(&J) J.append( randomG.sub(0,-1,1,-1) );
       } break;
     }

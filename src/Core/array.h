@@ -437,14 +437,14 @@ inline arr eye(uint d0, uint d1) { arr z;  z.resize(d0, d1);  z.setId();  return
 /// return identity matrix
 inline arr eye(uint n) { return eye(n, n); }
 
-/// return matrix of ones
+/// return array of ones
 inline arr ones(const uintA& d) {  arr z;  z.resize(d);  z=1.;  return z;  }
 /// return VECTOR of ones
 inline arr ones(uint n) { return ones(TUP(n)); }
 /// return matrix of ones
 inline arr ones(uint d0, uint d1) { return ones(TUP(d0, d1)); }
 
-/// return matrix of zeros
+/// return array of zeros
 inline arr zeros(const uintA& d) {  arr z;  z.resize(d);  z.setZero();  return z; }
 /// return VECTOR of zeros
 inline arr zeros(uint n) { return zeros(TUP(n)); }
@@ -452,6 +452,15 @@ inline arr zeros(uint n) { return zeros(TUP(n)); }
 inline arr zeros(uint d0, uint d1) { return zeros(TUP(d0, d1)); }
 /// return tensor of zeros
 inline arr zeros(uint d0, uint d1, uint d2) { return zeros(TUP(d0, d1, d2)); }
+
+/// return array of c's
+template<class T> MT::Array<T> consts(const T& c, const uintA& d)  {  MT::Array<T> z;  z.resize(d);  z.setUni(c);  return z; }
+/// return VECTOR of c's
+template<class T> MT::Array<T> consts(const T& c, uint n) { return consts(c, TUP(n)); }
+/// return matrix of c's
+template<class T> MT::Array<T> consts(const T& c, uint d0, uint d1) { return consts(c, TUP(d0, d1)); }
+/// return tensor of c's
+template<class T> MT::Array<T> consts(const T& c, uint d0, uint d1, uint d2) { return consts(c, TUP(d0, d1, d2)); }
 
 /// return a grid (1D: range) split in 'steps' steps
 inline arr grid(uint dim, double lo, double hi, uint steps) { arr g;  g.setGrid(dim, lo, hi, steps);  return g; }

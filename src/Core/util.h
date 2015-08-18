@@ -370,9 +370,9 @@ extern String errString;
 #  define MT_MSG(msg){ LOG(-1) <<msg; }
 #  define THROW(msg){ LOG(-2) <<msg; throw MT::errString.p; }
 #  define HALT(msg){ LOG(-2) <<msg; exit(1); }
-#  define NIY  { LOG(-3) <<"not implemented yet"; exit(1); }
-#  define NICO { LOG(-3) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(1); }
-#  define OPS  { LOG(-3) <<"obsolete"; exit(1); }
+#  define NIY  { LOG(-2) <<"not implemented yet"; exit(1); }
+#  define NICO { LOG(-2) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(1); }
+#  define OPS  { LOG(-2) <<"obsolete"; exit(1); }
 #endif
 
 
