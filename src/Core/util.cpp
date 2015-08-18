@@ -386,19 +386,19 @@ f(x) = heavy(x)*x**power
 plot f(x/margin+1), 1
 */
 double ineqConstraintCost(double g, double margin, double power){
-  if(g<-margin) return 0.;
-  double y=g/margin+1.;
+  double y=g+margin;
+  if(y<0.) return 0.;
   if(power==1.) return y;
   if(power==2.) return y*y;
   return pow(y,power);
 }
 
 double d_ineqConstraintCost(double g, double margin, double power){
-  if(g<-margin) return 0.;
-  double y=g/margin+1.;
-  if(power==1.) return 1./margin;
-  if(power==2.) return 2.*y/margin;
-  return power*pow(y,power-1.)/margin;
+  double y=g+margin;
+  if(y<0.) return 0.;
+  if(power==1.) return 1.;
+  if(power==2.) return 2.*y;
+  return power*pow(y,power-1.);
 }
 
 double eqConstraintCost(double h, double margin, double power){
