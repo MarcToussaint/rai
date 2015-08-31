@@ -639,11 +639,11 @@ byteA evidence2RGB(const floatA& evidence){
 
 #endif //MT_OPENCV
 
-#ifdef PCL
+#ifdef MLR_PCL
 // Pointcloud stuff
 //
-ProcessL newPointcloudProcesses() {
-  ProcessL processes;
+ModuleL newPointcloudProcesses() {
+  ModuleL processes;
   processes.append(new ObjectClusterer);
   processes.append(new ObjectFitter);
 
@@ -652,14 +652,14 @@ ProcessL newPointcloudProcesses() {
   return processes;
 }
 
-VariableL newPointcloudVariables() {
-  VariableL variables;
-  variables.append(new PointCloudVar("KinectData3D"));
-  variables.append(new PointCloudSet("ObjectClusters"));
-  variables.append(new ObjectSet("Objects"));
-  variables.append(new ObjectBeliefSet("filteredObjects"));
-  return variables;
-}
+//VariableL newPointcloudVariables() {
+//  VariableL variables;
+//  variables.append(new PointCloudVar("KinectData3D"));
+//  variables.append(new PointCloudSet("ObjectClusters"));
+//  variables.append(new ObjectSet("Objects"));
+//  variables.append(new ObjectBeliefSet("filteredObjects"));
+//  return variables;
+//}
 #endif
 
 

@@ -51,6 +51,7 @@ struct RWLock {
   void readLock();   ///< multiple threads may request 'lock for read'
   void writeLock();  ///< only one thread may request 'lock for write'
   void unlock();     ///< thread must unlock when they're done
+  bool isLocked();
 };
 
 /// a basic condition variable

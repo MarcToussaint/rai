@@ -71,6 +71,11 @@ void RWLock::unlock() {
   int rc = pthread_rwlock_unlock(&lock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
+bool RWLock::isLocked() {
+  return state!=0;
+}
+
+
 
 //===========================================================================
 //
@@ -644,6 +649,7 @@ TStream::Register::~Register() {
 RUN_ON_INIT_BEGIN(thread)
 RevisionedAccessGatedClassL::memMove=true;
 ThreadL::memMove=true;
+
 RUN_ON_INIT_END(thread)
 
 #endif //MT_MSVC

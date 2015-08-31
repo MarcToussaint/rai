@@ -1,5 +1,4 @@
-#ifdef FIXME_PCL
-#ifdef HAVE_PCL
+#ifdef MLR_PCL
 #include "pointcloud.h"
 #include "perception.h"
 
@@ -20,16 +19,16 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/common/transforms.h>
 
-#include <vtkSmartPointer.h>
-#include <vtkDataSet.h>
-#include <vtkLineSource.h>
-#include <vtkTubeFilter.h>
+//#include <vtkSmartPointer.h>
+//#include <vtkDataSet.h>
+//#include <vtkLineSource.h>
+//#include <vtkTubeFilter.h>
 
 
-ObjectClusterer::ObjectClusterer() : Process("ObjectClusterer") {
-  biros().getVariable(data_3d, "KinectData3D", this, true);
-  biros().getVariable(point_clouds, "ObjectClusters", this, true);
-  listenTo(data_3d);
+ObjectClusterer::ObjectClusterer() : Module("ObjectClusterer") {
+//  biros->getVariable(data_3d, "KinectData3D", this, true);
+//  biros().getVariable(point_clouds, "ObjectClusters", this, true);
+  NIY;//listenTo(data_3d);
 }
 
 void findMinMaxOfCylinder(double &min, double &max, arr &start, const pcl::PointCloud<PointT>::Ptr &cloud, const arr &direction) {
@@ -68,13 +67,13 @@ struct sObjectFitter{
     seg.setOptimizeCoefficients (true);
     seg.setModelType (pcl::SACMODEL_CYLINDER);
     seg.setMethodType (pcl::SAC_RANSAC);
-    double ndw = biros().getParameter<double>("CylNormalDistanceWeight", 0.07, p);
+    double ndw = MT::getParameter<double>("CylNormalDistanceWeight", 0.07);
     seg.setNormalDistanceWeight (ndw);
     seg.setMaxIterations (100);
-    double dt = biros().getParameter<double>("CylDistanceThreshold", 0.01, p);
+    double dt = MT::getParameter<double>("CylDistanceThreshold", 0.01);
     seg.setDistanceThreshold (dt);
-    double minRadius = biros().getParameter<double>("MinSphereRadius", 0.01, p);
-    double maxRadius = biros().getParameter<double>("MaxSphereRadius", 0.1, p);
+    double minRadius = MT::getParameter<double>("MinSphereRadius", 0.01);
+    double maxRadius = MT::getParameter<double>("MaxSphereRadius", 0.1);
     seg.setRadiusLimits (minRadius, maxRadius);
     seg.setInputCloud (cloud);
     seg.setInputNormals (normals);
@@ -83,7 +82,7 @@ struct sObjectFitter{
     pcl::ModelCoefficients::Ptr coefficients_cylinder (new pcl::ModelCoefficients);
     seg.segment (*inliers_cylinder, *coefficients_cylinder);
 
-    uint minCloudSize = biros().getParameter<int>("minCloudSize", 500, p);
+    uint minCloudSize = MT::getParameter<int>("minCloudSize", 500);
     if (inliers_cylinder->indices.size() < minCloudSize) {
       object.reset();   
       return 0;
@@ -102,10 +101,10 @@ struct sObjectFitter{
     seg.setOptimizeCoefficients (true);
     seg.setModelType (pcl::SACMODEL_SPHERE);
     seg.setMethodType (pcl::SAC_RANSAC);
-    double ndw = biros().getParameter<double>("SphereNormalDistanceWeight", 10, p);
+    double ndw = MT::getParameter<double>("SphereNormalDistanceWeight", 10);
     seg.setNormalDistanceWeight (ndw);
     seg.setMaxIterations (100);
-    double dt = biros().getParameter<double>("SphereDistanceThreshold", .0005, p);
+    double dt = MT::getParameter<double>("SphereDistanceThreshold", .0005);
     seg.setDistanceThreshold (dt);
     seg.setRadiusLimits (0.01, 0.1);
     seg.setInputCloud (cloud);
@@ -114,7 +113,7 @@ struct sObjectFitter{
     pcl::PointIndices::Ptr inliers_sphere(new pcl::PointIndices);
     pcl::ModelCoefficients::Ptr coefficients_sphere(new pcl::ModelCoefficients);
     seg.segment (*inliers_sphere, *coefficients_sphere);
-    uint minCloudSize = biros().getParameter<int>("minCloudSize", 500, p);
+    uint minCloudSize = MT::getParameter<int>("minCloudSize", 500);
     if (inliers_sphere->indices.size() < minCloudSize) {
       object.reset();   
       return 0;
@@ -191,7 +190,7 @@ struct sObjectFitter{
     }
     //if rest points are enough create new job
 
-    uint minCloudSize = biros().getParameter<int>("minCloudSize", 500, p);
+    uint minCloudSize = MT::getParameter<int>("minCloudSize", 500);
     if (cloud->size() - inliers->indices.size() > minCloudSize) {
       anotherJob = createNewJob(cloud, inliers);
       return true;
@@ -206,7 +205,8 @@ void ObjectClusterer::close() {}
 
 void ObjectClusterer::step() {
   //get a copy of the kinect data
-  pcl::PointCloud<PointT>::Ptr cloud(data_3d->get_point_cloud_copy(this));
+  pcl::PointCloud<PointT>::Ptr cloud(data_3d.get()());
+
   if(cloud->points.size() == 0) return;
 
   //DEBUG_VAR(pointcloud, cloud->points.size());
@@ -248,7 +248,7 @@ void ObjectClusterer::step() {
   std::vector<pcl::PointIndices> cluster_indices;
   pcl::EuclideanClusterExtraction<PointT> ec;
   ec.setClusterTolerance(0.01);
-  int minCloudSize = biros().getParameter<int>("minCloudSize", 500, this);
+  int minCloudSize = MT::getParameter<int>("minCloudSize", 500);
   ec.setMinClusterSize(minCloudSize);
   ec.setMaxClusterSize(25000);
   ec.setSearchMethod(tree);
@@ -265,20 +265,20 @@ void ObjectClusterer::step() {
     cloud_cluster->height = 1;
     cloud_cluster->is_dense = true;
     pcl::PointCloud<PointT>::Ptr cluster_transformed(new pcl::PointCloud<PointT>);
-    Eigen::Matrix4f transform(biros().getParameter<floatA>("kinect_trans_mat", this).p);
+    Eigen::Matrix4f transform(MT::getParameter<floatA>("kinect_trans_mat").p);
     transform.transposeInPlace();
     pcl::transformPointCloud(*cloud_cluster, *cluster_transformed, transform);
 
     _point_clouds.append(cluster_transformed);
   }
 
-  point_clouds->set_point_clouds(_point_clouds, this);
+  point_clouds.set() = _point_clouds;
 }
 
-ObjectFitter::ObjectFitter() : Process("ObectFitter"), s(new sObjectFitter(this)) {
-  biros().getVariable<PointCloudSet>(objectClusters, "ObjectClusters", this, true);
-  biros().getVariable<ObjectSet>(objects, "Objects", this, true);
-  listenTo(objectClusters);
+ObjectFitter::ObjectFitter() : Module("ObectFitter"), s(new sObjectFitter(this)) {
+//  biros().getVariable<PointCloudSet>(objectClusters, "ObjectClusters", this, true);
+//  biros().getVariable<ObjectSet>(objects, "Objects", this, true);
+  NIY//listenTo(objectClusters);
 }
 
 void ObjectFitter::open() {}
@@ -286,7 +286,7 @@ void ObjectFitter::open() {}
 void ObjectFitter::step() {
   MT::Array<FittingResult> results;
 
-  PointCloudL plist = objectClusters->get_point_clouds(this);
+  PointCloudL plist = objectClusters.get();
   PointCloudL next;
   while (plist.N) {
 #pragma omp parallel for
@@ -305,9 +305,7 @@ void ObjectFitter::step() {
   }
 
   //write back
-  objects->writeAccess(this);
-  objects->objects = results;
-  objects->deAccess(this);
+  objects.set() = results;
 }
 void ObjectFitter::close() {}
 
@@ -321,7 +319,7 @@ struct sObjectFilter {
     return false;
   }
 
-  void filterCylinders(arr& pos, FittingResultL& cylinders, const FittingResultL& objects, Process *p) {
+  void filterCylinders(arr& pos, FittingResultL& cylinders, const FittingResultL& objects, Module *p) {
     intA nums;
     pos.clear();
     nums.resize(0);
@@ -345,7 +343,7 @@ struct sObjectFilter {
       measurement_.append(-measurement.sub(0,0,3,5));
       measurement_.append(measurement(0,6));
       measurement_.resize(1,7);
-      double epsilon = biros().getParameter<double>("objectDistance", p);
+      double epsilon = MT::getParameter<double>("objectDistance");
       for (uint j = 0; j<pos.d0; ++j) {
         if(filterShape(pos, nums, measurement, j, epsilon)) { found = true; break;}
         else if (filterShape(pos, nums, measurement_, j, epsilon)) {found = true; break; }
@@ -357,7 +355,7 @@ struct sObjectFilter {
     }
 
   }
-  void filterSpheres(arr& pos, FittingResultL& spheres, const FittingResultL& objects, Process* p) {
+  void filterSpheres(arr& pos, FittingResultL& spheres, const FittingResultL& objects, Module* p) {
     intA nums;
     pos.clear();
     nums.resize(0);
@@ -370,7 +368,7 @@ struct sObjectFilter {
       arr measurement;
       measurement.resize(1,4);
       std::copy(objects(i)->values.begin(), objects(i)->values.end(), measurement.p);
-      double epsilon = biros().getParameter<double>("objectDistance", p);
+      double epsilon = MT::getParameter<double>("objectDistance");
       for (uint j = 0; j<pos.d0; ++j) {
         if(filterShape(pos, nums, measurement, j, epsilon)) { found = true; break; }
       }
@@ -382,11 +380,11 @@ struct sObjectFilter {
   }
 };
 
-ObjectFilter::ObjectFilter(const char* name) : Process(name) {
+ObjectFilter::ObjectFilter(const char* name) : Module(name) {
   s = new sObjectFilter;  
-  biros().getVariable(in_objects, "Objects", this, true);
-  biros().getVariable(out_objects, "filteredObjects", this, true);
-  listenTo(in_objects);
+  //biros().getVariable(in_objects, "Objects", this, true);
+  //biros().getVariable(out_objects, "filteredObjects", this, true);
+  NIY//listenTo(in_objects);
 }
 
 void ObjectFilter::open() {
@@ -397,13 +395,13 @@ void ObjectFilter::step() {
   cyl_pos.resize(0,7);
   sph_pos.resize(0,7);
   FittingResultL pcl_cyls, pcl_sph;
-  in_objects->readAccess(this);
+  in_objects.readAccess();
   FittingResult o;
-  s->filterCylinders( cyl_pos, pcl_cyls, in_objects->objects, this);
-  s->filterSpheres( sph_pos, pcl_sph, in_objects->objects, this);
-  in_objects->deAccess(this);
-  out_objects->writeAccess(this);
-  out_objects->objects.clear();
+  s->filterCylinders( cyl_pos, pcl_cyls, in_objects(), this);
+  s->filterSpheres( sph_pos, pcl_sph, in_objects(), this);
+  in_objects.deAccess();
+  out_objects.writeAccess();
+  out_objects->clear();
   // HACK! We assume max two cylinders
   for (uint i = 0; i<cyl_pos.d0; i++) {
     double height = length(ARR(cyl_pos(i,3), cyl_pos(i,4), cyl_pos(i,5)));
@@ -431,7 +429,7 @@ void ObjectFilter::step() {
     cyl->shapeParams(HEIGHT) = length(ARR(cyl_pos(i,3), cyl_pos(i,4), cyl_pos(i,5)));
     cyl->shapeType = ors::cylinderST;
     //cyl->pcl_object = pcl_cyls(i);
-    out_objects->objects.append(cyl);
+    out_objects->append(cyl);
   }
   for (uint i = 0; i<sph_pos.d0; i++) {
     ObjectBelief *sph = new ObjectBelief;
@@ -439,21 +437,21 @@ void ObjectFilter::step() {
     sph->shapeParams(RADIUS) = sph_pos(i,3);
     sph->shapeType = ors::sphereST;
     //sph->pcl_object = pcl_sph(i);
-    out_objects->objects.append(sph);
+    out_objects->append(sph);
   }
-  out_objects->deAccess(this);
+  out_objects.deAccess();
 }
 
-ObjectTransformator::ObjectTransformator(const char* name) : Process(name) {
-  biros().getVariable(kinect_objects, "filteredObjects", this, true);
-  geo.init("GeometricState", this);
-  listenTo(kinect_objects);
+ObjectTransformator::ObjectTransformator(const char* name) : Module(name) {
+//  biros().getVariable(kinect_objects, "filteredObjects", this, true);
+  geo.init("GeometricState");
+  NIY//listenTo(kinect_objects);
 }
 
 void ObjectTransformator::open() {
 }
 
-void createOrsObject(ors::Body& body, const ObjectBelief *object, const arr& transformation) {
+void createOrsObject(ors::KinematicWorld& world, ors::Body& body, const ObjectBelief *object, const arr& transformation) {
   ors::Transformation t;
   t.pos = object->position;
   t.rot = object->rotation;
@@ -465,14 +463,12 @@ void createOrsObject(ors::Body& body, const ObjectBelief *object, const arr& tra
 
   arr size = ARR(0., 0., object->shapeParams(HEIGHT), object->shapeParams(RADIUS));
  
-  ors::Shape* s = new ors::Shape();
+  ors::Shape* s = new ors::Shape(world, body);
   for (uint i = 0; i < 4; ++i) s->size[i] = size(i);
   for (uint i = 0; i < 3; ++i) s->color[i] = .3;
   s->type = object->shapeType;
-  s->body = &body;
   s->name = "pointcloud_shape";
   
-  body.shapes.append(s);
   body.X = t; 
 }
 
@@ -496,50 +492,46 @@ void moveObject(intA& used, const ShapeL& objects, const ors::Vector& pos, const
 
 void ObjectTransformator::step() {
   DEBUG(pointcloud, "geo pull");
-  geo.pull();
+  geo = geoState.get();
   DEBUG(pointcloud, "done");
 
   ShapeL cylinders;
   ShapeL spheres;
-  for (int i=geo().ors.shapes.N-1;i>=0;i--) {
-    if (strncmp(geo().ors.shapes(i)->name, "thing", 5) == 0 && geo().ors.shapes(i)->type == ors::cylinderST) {
-      ors::Shape *s = geo().ors.shapes(i);
+  for (int i=geo.shapes.N-1;i>=0;i--) {
+    if (strncmp(geo.shapes(i)->name, "thing", 5) == 0 && geo.shapes(i)->type == ors::cylinderST) {
+      ors::Shape *s = geo.shapes(i);
       cylinders.append(s);
     }
-    else if (strncmp(geo().ors.shapes(i)->name, "thing", 5) == 0 && geo().ors.shapes(i)->type == ors::sphereST) {
-      ors::Shape *s = geo().ors.shapes(i);
+    else if (strncmp(geo.shapes(i)->name, "thing", 5) == 0 && geo.shapes(i)->type == ors::sphereST) {
+      ors::Shape *s = geo.shapes(i);
       spheres.append(s);
     }
   }
 
   DEBUG(pointcloud, "filteredObject mutex");
-  kinect_objects->readAccess(this);
+  kinect_objects.readAccess();
   uint c = 0, s = 0;
   intA used;
   used.clear();
-  for(uint i=0;i<kinect_objects->objects.N && i<spheres.N + cylinders.N;i++){
-    if (kinect_objects->objects(i)->shapeType == ors::cylinderST && c < cylinders.N) {
-      moveObject(used, cylinders, kinect_objects->objects(i)->position, kinect_objects->objects(i)->rotation);
+  for(uint i=0;i<kinect_objects->N && i<spheres.N + cylinders.N;i++){
+    if (kinect_objects->elem(i)->shapeType == ors::cylinderST && c < cylinders.N) {
+      moveObject(used, cylinders, kinect_objects->elem(i)->position, kinect_objects->elem(i)->rotation);
       ++c;
     }
-    else if (kinect_objects->objects(i)->shapeType == ors::sphereST && s < spheres.N) {
-      spheres(s)->X.pos = kinect_objects->objects(i)->position;
-      spheres(s)->X.rot = kinect_objects->objects(i)->rotation;
+    else if (kinect_objects->elem(i)->shapeType == ors::sphereST && s < spheres.N) {
+      spheres(s)->X.pos = kinect_objects->elem(i)->position;
+      spheres(s)->X.rot = kinect_objects->elem(i)->rotation;
       spheres(s)->rel.setDifference(spheres(s)->body->X, spheres(s)->X);
       ++s;
     }
   }
-  kinect_objects->deAccess(this);
+  kinect_objects.deAccess();
   DEBUG(pointcloud, "filtered Objects mutex unlock");
 
-  geo().ors.calc_fwdPropagateFrames();
+  geo.calc_fwdPropagateFrames();
   DEBUG(pointcloud, "set ors");
-  geo.var->set_ors(geo().ors, this);
+  geoState.set() = geo;
   DEBUG(pointcloud, "done.");
 }
 
-PointCloudVar::PointCloudVar(const char *name) : Variable(name), point_cloud(new pcl::PointCloud<PointT>()) { 
-  reg_point_cloud();
-}
-#endif // PCL
-#endif
+#endif // MLR_PCL

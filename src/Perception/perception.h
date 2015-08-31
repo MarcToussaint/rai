@@ -190,41 +190,8 @@ BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; ACCESS(byteA, pcms16ne2c
 //TODO Johannes VariableL newPointcloudVariables();
 
 //TODO: where should this go? maybe ors?
-//TODO Johannes const int RADIUS = 2;
-//TODO Johannes const int HEIGHT = 3;
 
 
-/*TODO Johannes
-struct ObjectBelief {
-
-  ObjectBelief() {
-    shapeParams.resize(4);  
-  }
-  //pose
-  // TODO: make pointers
-  ors::Vector position;
-  ors::Quaternion rotation;
-
-  arr poseCov;
-
-  // primitive shapes
-  ors::ShapeType shapeType;
-  arr shapeParams;
-
-  // TODO: make pointer, such that the using app does not need to implicitly
-  // include half of the PCL?
-  //pcl::ModelCoefficients::Ptr pcl_object;
-
-  //pcl::PointCloud<PointT>* pointCloud;
-  arr vertices;
-  uintA triangles;
-};
-
-struct ObjectBeliefSet : Variable {
-  FIELD(MT::Array<ObjectBelief*>, objects);
-  ObjectBeliefSet(const char *name) : Variable(name) { reg_objects(); }
-};
-*/
 
 #endif //MT_perception_h
 
