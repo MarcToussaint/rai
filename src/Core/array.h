@@ -766,6 +766,11 @@ template<class T, class S> void copy(MT::Array<T>& x, const MT::Array<S>& a) {
   resizeAs(x, a);
   for(uint i=0; i<x.N; i++) x.elem(i)=(T)a.elem(i);
 }
+template<class T, class S> MT::Array<T> convert(const MT::Array<S>& a) {
+  MT::Array<T> x;
+  copy<T,S>(x,a);
+  return x;
+}
 /// check whether this and \c a have same dimensions
 template<class T, class S>
 bool samedim(const MT::Array<T>& a, const MT::Array<S>& b) {
