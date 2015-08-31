@@ -86,7 +86,7 @@ struct RevisionedAccessGatedClass {
   RWLock rwlock;              ///< rwLock (usually handled via read/writeAccess)
   ConditionVariable revision; ///< revision (= number of write accesses) number
   double revision_time;       ///< clock time of last write access
-  double data_time;           ///< time stamp of the original data source
+  timespec data_time;         ///< time stamp of the original data source
   ThreadL listeners;          ///< list of threads that are being signaled a threadStep on write access
 
   /// @name c'tor/d'tor
@@ -130,6 +130,7 @@ struct Variable:RevisionedAccessGatedClass{
     Variable<T> *v;
     Thread *th;
     WriteToken(Variable<T> *v, Thread *th):v(v), th(th){ v->writeAccess(th); }
+    WriteToken(const timespec& dataTime, Variable<T> *v, Thread *th):v(v), th(th){ v->writeAccess(th); v->data_time=dataTime; }
     ~WriteToken(){ v->deAccess(th); }
     WriteToken& operator=(const T& x){ v->data=x; return *this; }
     T* operator->(){ return &v->data; }
@@ -138,6 +139,7 @@ struct Variable:RevisionedAccessGatedClass{
   };
   ReadToken get(Thread *th=NULL){ return ReadToken(this, th); } ///< read access to the variable's data
   WriteToken set(Thread *th=NULL){ return WriteToken(this, th); } ///< write access to the variable's data
+  WriteToken set(const timespec& dataTime, Thread *th=NULL){ return WriteToken(dataTime, this, th); } ///< write access to the variable's data
 };
 
 //===========================================================================
