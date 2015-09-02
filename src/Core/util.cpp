@@ -429,6 +429,12 @@ double clockTime() {
 #endif
 }
 
+timespec clockTime2(){
+  timespec ts;
+  clock_gettime(CLOCK_REALTIME, &ts);
+  return ts;
+}
+
 double toTime(const tm& t) {
     return (double)(mktime(const_cast<tm*>(&t)) % 86400);
 }

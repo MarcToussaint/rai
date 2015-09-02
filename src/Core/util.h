@@ -140,6 +140,7 @@ double d_eqConstraintCost(double h, double margin, double power);
 
 //----- time access
 double clockTime(); //(really on the clock)
+timespec clockTime2();
 double realTime(); //(since process start)
 double cpuTime();
 double sysTime();

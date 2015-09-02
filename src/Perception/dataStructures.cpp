@@ -1,5 +1,7 @@
 #include "dataStructures.h"
 
+#ifdef MLR_PCL
+
 void glDrawPrimitives(void* classP){
   ((DisplayPrimitives*)classP)->glDraw();
 }
@@ -39,7 +41,4 @@ void ArrCloudView::glDraw(){
   glDrawPointCloud(p,c);
 }
 
-
-
-
-
+#endif
