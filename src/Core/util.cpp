@@ -979,8 +979,8 @@ MT::FileToken::FileToken(const char* filename, bool change_dir): os(NULL), is(NU
 }
 
 MT::FileToken::~FileToken(){
-  if(is){ is->close(); } //delete is; is=NULL; }
-  if(os){ os->close(); } //delete os; os=NULL; }
+  if(is){ is->close(); delete is; is=NULL; }
+  if(os){ os->close(); delete os; os=NULL; }
   unchangeDir();
 }
 
