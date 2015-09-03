@@ -135,7 +135,7 @@ struct Variable:RevisionedAccessGatedClass{
     Variable<T> *v;
     Thread *th;
     WriteToken(Variable<T> *v, Thread *th):v(v), th(th){ v->writeAccess(th); }
-    WriteToken(const timespec& dataTime, Variable<T> *v, Thread *th):v(v), th(th){ v->writeAccess(th); v->data_time=dataTime; }
+    WriteToken(const double& dataTime, Variable<T> *v, Thread *th):v(v), th(th){ v->writeAccess(th); v->data_time=dataTime; }
     ~WriteToken(){ v->deAccess(th); }
     WriteToken& operator=(const T& x){ v->data=x; return *this; }
     T* operator->(){ return &v->data; }
@@ -144,7 +144,7 @@ struct Variable:RevisionedAccessGatedClass{
   };
   ReadToken get(Thread *th=NULL){ return ReadToken(this, th); } ///< read access to the variable's data
   WriteToken set(Thread *th=NULL){ return WriteToken(this, th); } ///< write access to the variable's data
-  WriteToken set(const timespec& dataTime, Thread *th=NULL){ return WriteToken(dataTime, this, th); } ///< write access to the variable's data
+  WriteToken set(const double& dataTime, Thread *th=NULL){ return WriteToken(dataTime, this, th); } ///< write access to the variable's data
 };
 
 //===========================================================================

@@ -139,7 +139,7 @@ double eqConstraintCost(double h, double margin, double power);
 double d_eqConstraintCost(double h, double margin, double power);
 
 //----- time access
-double clockTime(); //(really on the clock)
+double clockTime(bool today=true); //(really on the clock)
 timespec clockTime2();
 double realTime(); //(since process start)
 double cpuTime();
@@ -147,7 +147,7 @@ double sysTime();
 double totalTime();
 double toTime(const tm& t);
 char *date();
-char *date(const struct timeval& tv);
+char *date(double sec);
 void wait(double sec, bool msg_on_fail=true);
 bool wait();
 
