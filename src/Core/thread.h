@@ -80,6 +80,11 @@ struct ConditionVariable {
   void waitUntil(double absTime, bool userHasLocked=false);
 };
 
+//===========================================================================
+//
+// access gated (rwlocked) variables
+//
+
 /// Deriving from this allows to make variables/classes revisioned read-write access gated
 struct RevisionedAccessGatedClass {
   MT::String name;            ///< Variable name
@@ -216,7 +221,7 @@ struct Thread{
   bool isIdle();                        ///< check if in idle mode
   bool isClosed();                      ///< check if closed
 
-  /// @name listen to variable
+  /// @name listen to a variable
   void listenTo(RevisionedAccessGatedClass& var);
 
   virtual void open() = 0;
