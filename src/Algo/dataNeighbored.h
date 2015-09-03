@@ -9,11 +9,13 @@ struct DataNeighbored{
   uintA idx2pixel; ///< after removing points, this maps from X-index to original data index
   arr weights;
 
-  DataNeighbored(const arr& pts);
+  DataNeighbored(){}
+  DataNeighbored(const arr& pts){ setData(pts); }
 
   uint n() const;
   uint d() const;
 
+  void setData(const arr& pts);
   void setGridNeighborhood(uint height, uint width);
   uintA getKneighborhood(uint i, uint k);
 

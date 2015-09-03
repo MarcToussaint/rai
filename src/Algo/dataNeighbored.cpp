@@ -1,11 +1,15 @@
 #include "dataNeighbored.h"
 
-DataNeighbored::DataNeighbored(const arr& pts):X(pts){
-  //decide on ok
+void DataNeighbored::setData(const arr& pts){
+  X = pts;
   ok.resize(X.d0);
   for(uint i=0;i<X.d0;i++) if(pts(i,2)>=0) ok(i)=true; else ok(i)=false;
-  weights.resize(X.d0);
-  weights.setZero();
+  if(weights.N!=X.d0){
+    weights.resize(X.d0);
+    weights.setZero();
+  }
+  N.clear();
+  idx2pixel.setStraightPerm(X.d0);
 }
 
 uint DataNeighbored::n() const{ return X.d0; }
@@ -38,10 +42,12 @@ void DataNeighbored::removeNonOk(){
     while(Ni.N && Ni.last()==X.d0) Ni.resizeCopy(Ni.N-1); //remove those, pointing to !ok (==X.d0 index)
   }
   for(uint i=0;i<X.d0;i++) if(ok(i)){
-    X[index(i)] = X[i];
-    N(index(i)) = N(i);
+    if(index(i)!=i){
+      X[index(i)] = X[i];
+      N(index(i)) = N(i);
+      weights(index(i)) = weights(i);
+    }
     idx2pixel(index(i)) = i;
-    weights(index(i)) = weights(i);
   }
   X.resizeCopy(s,X.d1);
   N.resizeCopy(s);
