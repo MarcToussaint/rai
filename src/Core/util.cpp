@@ -978,6 +978,15 @@ MT::FileToken::FileToken(const char* filename, bool change_dir): os(NULL), is(NU
 //  if(!exists()) HALT("file '" <<filename <<"' does not exist");
 }
 
+MT::FileToken::FileToken(const FileToken& ft): os(NULL), is(NULL){
+  name=ft.name;
+  if(ft.path.N){
+    NIY;
+    path=ft.path;
+    cwd=ft.cwd;
+  }
+}
+
 MT::FileToken::~FileToken(){
   if(is){ is->close(); delete is; is=NULL; }
   if(os){ os->close(); delete os; os=NULL; }
@@ -1037,9 +1046,9 @@ std::ofstream& MT::FileToken::getOs(){
 }
 
 std::ifstream& MT::FileToken::getIs(bool change_dir){
-  if(change_dir) changeDir();
   CHECK(!os,"don't use a FileToken both as input and output");
   if(!is){
+    if(change_dir) changeDir();
     is=new std::ifstream;
     is->open(name);
     LOG(3) <<"opening input file `" <<name <<"'" <<std::endl;

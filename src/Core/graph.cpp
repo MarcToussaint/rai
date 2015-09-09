@@ -551,11 +551,11 @@ void Graph::read(std::istream& is, bool parseInfo) {
     if(!is.good() || c=='}') { is.clear(); break; }
     Node *it = readNode(*this, is, false, parseInfo);
     if(!it) break;
-    if(it->keys.N==1 && it->keys(0)=="Include"){
+    if(it->keys.N==1 && it->keys.last()=="Include"){
       read(it->getValue<MT::FileToken>()->getIs(true));
       delete it;
-    }
-    if(it->keys.N==1 && it->keys(0)=="ChDir"){
+    }else
+    if(it->keys.N==1 && it->keys.last()=="ChDir"){
       it->getValue<MT::FileToken>()->changeDir();
     }
   }

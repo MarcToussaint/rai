@@ -449,6 +449,7 @@ struct FileToken{
   std::ifstream *is;
 
   FileToken(const char* _filename, bool change_dir=true);
+  FileToken(const FileToken& ft);
   ~FileToken();
   FileToken& operator()(){ return *this; }
 
