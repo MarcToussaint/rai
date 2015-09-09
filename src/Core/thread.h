@@ -91,7 +91,7 @@ struct RevisionedAccessGatedClass {
   RWLock rwlock;              ///< rwLock (usually handled via read/writeAccess)
   ConditionVariable revision; ///< revision (= number of write accesses) number
   double revision_time;       ///< clock time of last write access
-  double data_time;         ///< time stamp of the original data source
+  double data_time;           ///< time stamp of the original data source
   ThreadL listeners;          ///< list of threads that are being signaled a threadStep on write access
 
   /// @name c'tor/d'tor

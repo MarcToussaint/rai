@@ -29,6 +29,7 @@
 #include <fstream>
 #include <typeinfo>
 #include <stdint.h>
+#include <memory>
 
 #ifdef MT_ROS
 #  include <ros/ros.h>
@@ -445,8 +446,8 @@ X >>FILE("outfile");
 */
 struct FileToken{
   MT::String path, name, cwd;
-  std::ofstream *os;
-  std::ifstream *is;
+  std::shared_ptr<std::ofstream> os;
+  std::shared_ptr<std::ifstream> is;
 
   FileToken(const char* _filename, bool change_dir=true);
   FileToken(const FileToken& ft);

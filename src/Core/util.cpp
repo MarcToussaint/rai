@@ -972,24 +972,24 @@ MT::String MT::getNowString() {
 // FileToken
 //
 
-MT::FileToken::FileToken(const char* filename, bool change_dir): os(NULL), is(NULL){
+MT::FileToken::FileToken(const char* filename, bool change_dir){
   name=filename;
   if(change_dir) changeDir();
 //  if(!exists()) HALT("file '" <<filename <<"' does not exist");
 }
 
-MT::FileToken::FileToken(const FileToken& ft): os(NULL), is(NULL){
+MT::FileToken::FileToken(const FileToken& ft){
   name=ft.name;
   if(ft.path.N){
     NIY;
     path=ft.path;
     cwd=ft.cwd;
   }
+  is = ft.is;
+  os = ft.os;
 }
 
 MT::FileToken::~FileToken(){
-  if(is){ is->close(); delete is; is=NULL; }
-  if(os){ os->close(); delete os; os=NULL; }
   unchangeDir();
 }
 
@@ -1037,7 +1037,7 @@ bool MT::FileToken::exists() {
 std::ofstream& MT::FileToken::getOs(){
   CHECK(!is,"don't use a FileToken both as input and output");
   if(!os){
-    os=new std::ofstream;
+    os = std::make_shared<std::ofstream>();
     os->open(name);
     LOG(3) <<"opening output file `" <<name <<"'" <<std::endl;
     if(!os->good()) MT_MSG("could not open file `" <<name <<"' for output");
@@ -1046,10 +1046,10 @@ std::ofstream& MT::FileToken::getOs(){
 }
 
 std::ifstream& MT::FileToken::getIs(bool change_dir){
+  if(change_dir) changeDir();
   CHECK(!os,"don't use a FileToken both as input and output");
   if(!is){
-    if(change_dir) changeDir();
-    is=new std::ifstream;
+    is = std::make_shared<std::ifstream>();
     is->open(name);
     LOG(3) <<"opening input file `" <<name <<"'" <<std::endl;
     if(!is->good()) HALT("could not open file `" <<name <<"' for input");
