@@ -118,8 +118,8 @@ template<class T>
 struct Variable:RevisionedAccessGatedClass{
   T data;
 
-  Variable(const char* name=NULL):RevisionedAccessGatedClass(name){}
-  Variable(const T& x, const char* name=NULL):RevisionedAccessGatedClass(name), data(x){}
+   Variable(const char* name):RevisionedAccessGatedClass(name){}
+  Variable(const T& x, const char* name):RevisionedAccessGatedClass(name), data(x){}
 
   //-- Token-wise access
   struct ReadToken{

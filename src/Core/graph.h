@@ -75,16 +75,6 @@ stdOutPipe(Node)
 
 //===========================================================================
 
-struct NodeInitializer{
-  NodeInitializer(const char* key);
-  template<class T> NodeInitializer(const char* key, const T& x);
-  template<class T> NodeInitializer(const char* key, const StringA& parents, const T& x);
-  Node *it;
-  StringA parents;
-};
-
-//===========================================================================
-
 struct Graph:NodeL {
   struct sKeyValueGraph *s;
   Graph* isReferringToNodesOf; //TODO: remove
@@ -97,7 +87,7 @@ struct Graph:NodeL {
   explicit Graph(const char* filename);
   explicit Graph(istream& is);
   Graph(const std::map<std::string, std::string>& dict);
-  Graph(std::initializer_list<NodeInitializer> list);
+  Graph(std::initializer_list<struct NodeInitializer> list);
   Graph(const Graph& G);
   ~Graph();
   void clear();
@@ -170,8 +160,20 @@ struct Graph:NodeL {
   void read(std::istream& is, bool parseInfo=false);
   void write(std::ostream& os=std::cout, const char *ELEMSEP="\n", const char *delim=NULL) const;
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0);
+  void writeParseInfo(std::ostream& os);
 };
 stdPipes(Graph);
+
+//===========================================================================
+
+struct NodeInitializer{
+  NodeInitializer(const char* key);
+  template<class T> NodeInitializer(const char* key, const T& x);
+  template<class T> NodeInitializer(const char* key, const StringA& parents, const T& x);
+  Graph G;
+  Node *it;
+  StringA parents;
+};
 
 //===========================================================================
 

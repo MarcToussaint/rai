@@ -295,11 +295,11 @@ struct LogToken{
   MT::String msg;
   int log_level;
   int logCoutLevel, logFileLevel;
-  const char *filename, *function;
+  const char *key, *filename, *function;
   uint line;
   std::ofstream *fil;
-  LogToken(int log_level, int logCoutLevel, int logFileLevel, const char* filename, const char* function, uint line, std::ofstream* fil)
-    : log_level(log_level), logCoutLevel(logCoutLevel), logFileLevel(logFileLevel), filename(filename), function(function), line(line), fil(fil) {}
+  LogToken(int log_level, int logCoutLevel, int logFileLevel, const char* key, const char* filename, const char* function, uint line, std::ofstream* fil)
+    : log_level(log_level), logCoutLevel(logCoutLevel), logFileLevel(logFileLevel), key(key), filename(filename), function(function), line(line), fil(fil) {}
   ~LogToken();
   std::ostream& os(){ return msg; }
 };
@@ -310,14 +310,13 @@ struct Log{
   int logFileLevel, logCoutLevel;
   const char* key;
   std::ofstream fil;
-  Log(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0){
+  Log(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0):key(key){
     logCoutLevel = MT::getParameter<int>(STRING("logCoutLevel_"<<key), defaultLogCoutLevel);
     logFileLevel = MT::getParameter<int>(STRING("logFileLevel_"<<key), defaultLogFileLevel);
-    MT::open(fil, STRING("z.log."<<key));
   }
   ~Log(){ fil.close(); }
-  MT::LogToken operator()(int log_level, const char* filename, const char* function, uint line) const{
-    return MT::LogToken(log_level, logCoutLevel, logFileLevel, filename, function, line, (std::ofstream*)&fil);
+  MT::LogToken operator()(int log_level, const char* filename, const char* function, uint line) const {
+    return MT::LogToken(log_level, logCoutLevel, logFileLevel, key, filename, function, line, (std::ofstream*)&fil);
   }
 };
 

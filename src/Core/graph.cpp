@@ -36,7 +36,9 @@ struct ParseInfo{
   istream::pos_type beg,end;
   istream::pos_type err_beg, err_end;
   enum Error{ good=0, unknownParent };
+  void write(ostream& os) const{ os <<'<' <<beg <<',' <<end <<'>'; }
 };
+stdOutPipe(ParseInfo)
 
 //===========================================================================
 //
@@ -49,6 +51,7 @@ Node::Node(Graph& _container)
     index=container.N;
     container.NodeL::append(this);
   }else{
+    HALT("don't do that anymore!");	
     index=(uint)(-1);
   }
 }
@@ -149,6 +152,9 @@ Node *readNode(Graph& containingGraph, std::istream& is, bool verbose, bool pars
   NodeL parents;
   Node *item=NULL;
 
+  istream::pos_type is_startPos=is.tellg();
+  istream::pos_type is_lastPos=is.tellg();
+
   if(verbose) { cout <<"\nITEM (line="<<MT::lineCount <<")"; }
 
 #define PARSERR(x) { cerr <<"[[error in parsing Graph file (line=" <<MT::lineCount <<"):\n"\
@@ -159,6 +165,7 @@ Node *readNode(Graph& containingGraph, std::istream& is, bool verbose, bool pars
     MT::skip(is," \t\n\r");
     for(;;) {
       if(!str.read(is, " \t", " \t\n\r,;([{}=", false)) break;
+      is_lastPos=is.tellg();
       keys.append(str);
     }
     //if(!keys.N) return false;
@@ -173,6 +180,7 @@ Node *readNode(Graph& containingGraph, std::istream& is, bool verbose, bool pars
   if(c=='(') {
     for(uint j=0;; j++) {
       if(!str.read(is, " \t\n\r,", " \t\n\r,)", false)) break;
+      is_lastPos=is.tellg();
       Node *e=containingGraph.getNode(str);
       if(e) { //sucessfully found
         parents.append(e);
@@ -189,14 +197,16 @@ Node *readNode(Graph& containingGraph, std::istream& is, bool verbose, bool pars
       }
     }
     MT::parse(is, ")");
+    is_lastPos=is.tellg();
     c=MT::getNextChar(is," \t");
   }
   
   if(verbose) { cout <<" parents:"; if(!parents.N) cout <<"none"; else listWrite(parents,cout," ","()"); cout <<flush; }
   
   //-- read value
-  if(c=='=' || c=='{' || c=='[' || c=='<' || c=='!' || c=='\'' || c=='"') {
+  if(c=='=' || c=='{' || c=='[' || c=='<' || c=='!') {
     if(c=='=') c=MT::getNextChar(is," \t");
+    is_lastPos=is.tellg();
     if((c>='a' && c<='z') || (c>='A' && c<='Z')) { //MT::String or boolean
       is.putback(c);
       str.read(is, "", " \n\r\t,;}", false);
@@ -278,22 +288,24 @@ Node *readNode(Graph& containingGraph, std::istream& is, bool verbose, bool pars
         return NULL;
       }
     }
+    is_lastPos=is.tellg();
   } else { //no '=' or '{' -> boolean
     is.putback(c);
     item = new Node_typed<bool>(containingGraph, keys, parents, new bool(true), true);
   }
 
 #undef PARSERR
+  if(parseInfo && item){
+    item->container.getParseInfo(item).beg=is_startPos;
+    item->container.getParseInfo(item).end=is_lastPos;
+  }
 
   if(verbose) {
     if(item) { cout <<" value:"; item->writeValue(cout); cout <<" FULL:"; item->write(cout); cout <<endl; }
     else { cout <<"FAILED" <<endl; }
   }
   
-  if(item){
-    //    for(Node *it:item->parents) it->parentOf.append(item);
-    //    containingGraph.appendNode(item);
-  }else {
+  if(!item){
     cout <<"FAILED reading item with keys ";
     keys.write(cout, " ", NULL, "()");
     cout <<" and parents ";
@@ -310,7 +322,7 @@ Node *readNode(Graph& containingGraph, std::istream& is, bool verbose, bool pars
 
 
 NodeInitializer::NodeInitializer(const char* key){
-  it = new Node_typed<bool>(NoGraph, NULL, false);
+  it = new Node_typed<bool>(G, NULL, false);
   it->keys.append(STRING(key));
 }
 
@@ -339,7 +351,7 @@ Graph::Graph(const std::map<std::string, std::string>& dict):s(NULL), isReferrin
   appendDict(dict);
 }
 
-Graph::Graph(std::initializer_list<NodeInitializer> list) {
+Graph::Graph(std::initializer_list<NodeInitializer> list):s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL)  {
   for(const NodeInitializer& ic:list){
     Node *clone = ic.it->newClone(*this); //this appends sequentially clones of all items to 'this'
     for(const MT::String& s:ic.parents){
@@ -576,10 +588,15 @@ void Graph::read(std::istream& is, bool parseInfo) {
 }
 
 void Graph::write(std::ostream& os, const char *ELEMSEP, const char *delim) const {
-  uint i;
   if(delim) os <<delim[0];
-  for(i=0; i<N; i++) { if(i) os <<ELEMSEP;  if(elem(i)) elem(i)->write(os); else os <<"<NULL>"; }
+  for(uint i=0; i<N; i++) { if(i) os <<ELEMSEP;  if(elem(i)) elem(i)->write(os); else os <<"<NULL>"; }
   if(delim) os <<delim[1] <<std::flush;
+}
+
+void Graph::writeParseInfo(std::ostream& os) {
+  os <<"GRAPH " <<getParseInfo(NULL) <<endl;
+  for(Node *n:*this)
+    os <<"NODE '" <<*n <<"' " <<getParseInfo(n) <<endl;
 }
 
 void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, int nodesOrEdges) {

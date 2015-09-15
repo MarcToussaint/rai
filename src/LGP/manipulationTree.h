@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Ors/ors.h>
+#include <FOL/fol_mcts_world.h>
 
 //===========================================================================
 
@@ -27,8 +28,7 @@ struct ManipulationTree_Node{
 
   ///root node init
   ManipulationTree_Node(const ors::KinematicWorld& world_root, const Graph& symbols_root)
-    : parent(NULL), s(0), kinematics(world_root), symbols(symbols_root), effKinematics(kinematics), effPoseReward(0.){
-  }
+    : parent(NULL), s(0), kinematics(world_root), symbols(symbols_root), effKinematics(kinematics), effPoseReward(0.){}
 
   ///child node creation
   ManipulationTree_Node(ManipulationTree_Node *parent)
@@ -37,3 +37,23 @@ struct ManipulationTree_Node{
     parent->children.append(this);
   }
 };
+
+//===========================================================================
+
+//struct ManipulationTree{
+//  ManipulationTree_Node root;
+
+//  LGP lgp;
+
+//  ManipulationTree(const ors::KinematicWorld& world_root, const Graph& symbols_root)
+//    : root(world_root, symbols_root), fol(FILE("fol.g")), mc(fol) {}
+
+//  ManipulationTree_Node& getRndNode();
+//  void addRollout(){
+//    mc.addRollout(100);
+//  }
+
+//  void optimEffPose(ManipulationTree_Node& n);
+//  void optimPath(ManipulationTree_Node& n);
+
+//}

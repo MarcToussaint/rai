@@ -673,6 +673,7 @@ MT::LogToken::~LogToken(){
   MT::logServer().mutex.lock();
   if(logFileLevel>=log_level){
     if(!fil) fil=&MT::logServer().fil;
+    if(!fil->is_open()) MT::open(*fil, STRING("z.log."<<key));
     (*fil) <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg <<endl;
   }
   if(logCoutLevel>=log_level){
