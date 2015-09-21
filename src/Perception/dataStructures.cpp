@@ -41,5 +41,4 @@ void ArrCloudView::glDraw(){
   glDrawPointCloud(p,c);
 }
 
-
 #endif

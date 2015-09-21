@@ -16,6 +16,7 @@ struct PlainMC{
   double gamma;
   int verbose;
   uint topSize;
+  StringA blackList;
 
   PlainMC(MCTS_Environment& world);
   void reset();

@@ -649,7 +649,6 @@ TStream::Register::~Register() {
 RUN_ON_INIT_BEGIN(thread)
 RevisionedAccessGatedClassL::memMove=true;
 ThreadL::memMove=true;
-
 RUN_ON_INIT_END(thread)
 
 #endif //MT_MSVC

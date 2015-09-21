@@ -29,6 +29,7 @@
 #include <fstream>
 #include <typeinfo>
 #include <stdint.h>
+#include <memory>
 
 #ifdef MT_ROS
 #  include <ros/ros.h>
@@ -139,14 +140,15 @@ double eqConstraintCost(double h, double margin, double power);
 double d_eqConstraintCost(double h, double margin, double power);
 
 //----- time access
-double clockTime(); //(really on the clock)
+double clockTime(bool today=true); //(really on the clock)
+timespec clockTime2();
 double realTime(); //(since process start)
 double cpuTime();
 double sysTime();
 double totalTime();
 double toTime(const tm& t);
 char *date();
-char *date(const struct timeval& tv);
+char *date(double sec);
 void wait(double sec, bool msg_on_fail=true);
 bool wait();
 
@@ -444,10 +446,11 @@ X >>FILE("outfile");
 */
 struct FileToken{
   MT::String path, name, cwd;
-  std::ofstream *os;
-  std::ifstream *is;
+  std::shared_ptr<std::ofstream> os;
+  std::shared_ptr<std::ifstream> is;
 
   FileToken(const char* _filename, bool change_dir=true);
+  FileToken(const FileToken& ft);
   ~FileToken();
   FileToken& operator()(){ return *this; }
 

@@ -70,6 +70,10 @@ public:
     virtual void reset_state() {
         env_marc->reset_state();
     }
+
+
+
+
     virtual bool has_terminal_state() const {
         return env_marc->get_info(MCTS_Environment::InfoTag::hasTerminal);
     }
@@ -96,4 +100,3 @@ public:
     }
 };
 
-inline std::ostream& operator<<(std::ostream& os, const MCTS_Environment::SAO& x){ x.write(os); return os; }

@@ -104,11 +104,7 @@ uint lineCount=1;
 int verboseLevel=-1;
 int interactivity=-1;
 
-#ifndef MT_TIMEB
-timeval startTime;
-#else
-_timeb startTime;
-#endif
+double startTime;
 double timerStartTime=0.;
 double timerPauseTime=-1.;
 bool timerUseRealTime=false;
@@ -417,16 +413,26 @@ double d_eqConstraintCost(double h, double margin, double power){
 
 /** @brief double time on the clock
   (probably in micro second resolution) -- Windows checked! */
-double clockTime() {
+double clockTime(bool today) {
 #ifndef MT_TIMEB
-  static timeval t; gettimeofday(&t, 0);
-  return ((double)(t.tv_sec%86400) + //modulo TODAY
-          (double)(t.tv_usec)/1000000.);
+  static timespec ts;
+  clock_gettime(CLOCK_REALTIME, &ts);
+  if(today) ts.tv_sec = ts.tv_sec%86400; //modulo TODAY
+  return ((double)(ts.tv_sec) + 1e-9d*(double)(ts.tv_nsec));
+//  static timeval t; gettimeofday(&t, 0);
+//  return ((double)(t.tv_sec%86400) + //modulo TODAY
+//          (double)(t.tv_usec)/1000000.);
 #else
   static _timeb t; _ftime(&t);
   return ((double)(t.time%86400) + //modulo TODAY
           (double)(t.millitm-startTime.millitm)/1000.);
 #endif
+}
+
+timespec clockTime2(){
+  timespec ts;
+  clock_gettime(CLOCK_REALTIME, &ts);
+  return ts;
 }
 
 double toTime(const tm& t) {
@@ -436,15 +442,7 @@ double toTime(const tm& t) {
 /** @brief double time since start of the process in floating-point seconds
   (probably in micro second resolution) -- Windows checked! */
 double realTime() {
-#ifndef MT_TIMEB
-  static timeval t; gettimeofday(&t, 0);
-  return ((double)(t.tv_sec-startTime.tv_sec-1) +
-          (double)((long)1000000+t.tv_usec-startTime.tv_usec)/1000000.);
-#else
-  static _timeb t; _ftime(&t);
-  return ((double)(t.time-startTime.time-1) +
-          (double)((unsigned short)1000+t.millitm-startTime.millitm)/1000.);
-#endif
+  return clockTime(false)-startTime;
 }
 
 /** @brief user CPU time of this process in floating-point seconds (pure
@@ -485,22 +483,19 @@ double totalTime() {
 
 /// the absolute double time and date as string
 char *date() {
-#ifndef MT_TIMEB
-  static timeval tv; gettimeofday(&tv, 0); return date(tv);
-#else
-  static time_t t; time(&t); return ctime(&t);
-#endif
+  return date(clockTime(false));
 }
 
-char *date(const timeval& tv){
+char *date(double sec){
   time_t nowtime;
   struct tm *nowtm;
   static char tmbuf[64], buf[64];
 
-  nowtime = tv.tv_sec;
+  nowtime = (long)(floor(sec));
+  sec -= (double)nowtime;
   nowtm = localtime(&nowtime);
   strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", nowtm);
-  snprintf(buf, sizeof buf, "%s.%06ld", tmbuf, tv.tv_usec);
+  snprintf(buf, sizeof buf, "%s.%06ld", tmbuf, (long)(floor(1e6d*sec)));
   return buf;
 }
 
@@ -512,7 +507,7 @@ void wait(double sec, bool msg_on_fail) {
   timespec ts;
   ts.tv_sec = (long)(floor(sec));
   sec -= (double)ts.tv_sec;
-  ts.tv_nsec = (long)(floor(1000000000. * sec));
+  ts.tv_nsec = (long)(floor(1e9d*sec));
   int rc = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
   if(rc && msg_on_fail){
     MT_MSG("clock_nanosleep() failed " <<rc <<" '" <<strerror(rc) <<"' trying select instead");
@@ -643,11 +638,7 @@ struct LogServer {
   LogServer(): noLog(false) {
     signal(SIGUSR2, MT::handleSIGUSR2);
     timerStartTime=MT::cpuTime();
-#ifndef MT_TIMEB
-    gettimeofday(&startTime, 0);
-#else
-    _ftime(&startTime);
-#endif
+    startTime = clockTime(false);
 
     if(checkCmdLineTag("nolog")) noLog=true; else noLog=false;
     const char *name=getCmdLineArgument("log");
@@ -981,15 +972,24 @@ MT::String MT::getNowString() {
 // FileToken
 //
 
-MT::FileToken::FileToken(const char* filename, bool change_dir): os(NULL), is(NULL){
+MT::FileToken::FileToken(const char* filename, bool change_dir){
   name=filename;
   if(change_dir) changeDir();
 //  if(!exists()) HALT("file '" <<filename <<"' does not exist");
 }
 
+MT::FileToken::FileToken(const FileToken& ft){
+  name=ft.name;
+  if(ft.path.N){
+    NIY;
+    path=ft.path;
+    cwd=ft.cwd;
+  }
+  is = ft.is;
+  os = ft.os;
+}
+
 MT::FileToken::~FileToken(){
-  if(is){ is->close(); } //delete is; is=NULL; }
-  if(os){ os->close(); } //delete os; os=NULL; }
   unchangeDir();
 }
 
@@ -1037,7 +1037,7 @@ bool MT::FileToken::exists() {
 std::ofstream& MT::FileToken::getOs(){
   CHECK(!is,"don't use a FileToken both as input and output");
   if(!os){
-    os=new std::ofstream;
+    os = std::make_shared<std::ofstream>();
     os->open(name);
     LOG(3) <<"opening output file `" <<name <<"'" <<std::endl;
     if(!os->good()) MT_MSG("could not open file `" <<name <<"' for output");
@@ -1049,7 +1049,7 @@ std::ifstream& MT::FileToken::getIs(bool change_dir){
   if(change_dir) changeDir();
   CHECK(!os,"don't use a FileToken both as input and output");
   if(!is){
-    is=new std::ifstream;
+    is = std::make_shared<std::ifstream>();
     is->open(name);
     LOG(3) <<"opening input file `" <<name <<"'" <<std::endl;
     if(!is->good()) HALT("could not open file `" <<name <<"' for input");
