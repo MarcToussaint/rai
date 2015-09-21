@@ -378,13 +378,8 @@ Graph::~Graph() {
 }
 
 void Graph::clear() {
-  if(!isReferringToNodesOf){
-    checkConsistency();
-    while(N) delete last();
-    checkConsistency();
-  }else{
-    NodeL::clear();
-  }
+  if(!isReferringToNodesOf) while(N) delete last();
+  else NodeL::clear();
 }
 
 Node *Graph::append(const uintA& parentIdxs) {
@@ -493,10 +488,10 @@ Node* Graph::merge(Node *m){
 }
 
 void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer){
-  DEBUG(G.checkConsistency();)
+  DEBUG(G.checkConsistency());
 
   //-- first delete existing items
-  if(!isReferringToNodesOf){ while(N) delete last(); } // listDelete(*this);
+  clear();
 
   //-- make this become a subgraph
   if(becomeSubgraphOfContainer){ //CHECK that this is also a subgraph of the same container..
