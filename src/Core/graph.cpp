@@ -24,6 +24,8 @@
 #include "graph.h"
 #include "registry.h"
 
+#define DEBUG(x)
+
 NodeL& NoNodeL=*((NodeL*)NULL);
 Graph& NoGraph=*((Graph*)NULL);
 
@@ -34,7 +36,9 @@ struct ParseInfo{
   istream::pos_type beg,end;
   istream::pos_type err_beg, err_end;
   enum Error{ good=0, unknownParent };
+  void write(ostream& os) const{ os <<'<' <<beg <<',' <<end <<'>'; }
 };
+stdOutPipe(ParseInfo)
 
 //===========================================================================
 //
@@ -47,6 +51,7 @@ Node::Node(Graph& _container)
     index=container.N;
     container.NodeL::append(this);
   }else{
+    HALT("don't do that anymore!");	
     index=(uint)(-1);
   }
 }
@@ -147,6 +152,9 @@ Node *readNode(Graph& containingGraph, std::istream& is, bool verbose, bool pars
   NodeL parents;
   Node *item=NULL;
 
+  istream::pos_type is_startPos=is.tellg();
+  istream::pos_type is_lastPos=is.tellg();
+
   if(verbose) { cout <<"\nITEM (line="<<MT::lineCount <<")"; }
 
 #define PARSERR(x) { cerr <<"[[error in parsing Graph file (line=" <<MT::lineCount <<"):\n"\
@@ -157,6 +165,7 @@ Node *readNode(Graph& containingGraph, std::istream& is, bool verbose, bool pars
     MT::skip(is," \t\n\r");
     for(;;) {
       if(!str.read(is, " \t", " \t\n\r,;([{}=", false)) break;
+      is_lastPos=is.tellg();
       keys.append(str);
     }
     //if(!keys.N) return false;
@@ -171,6 +180,7 @@ Node *readNode(Graph& containingGraph, std::istream& is, bool verbose, bool pars
   if(c=='(') {
     for(uint j=0;; j++) {
       if(!str.read(is, " \t\n\r,", " \t\n\r,)", false)) break;
+      is_lastPos=is.tellg();
       Node *e=containingGraph.getNode(str);
       if(e) { //sucessfully found
         parents.append(e);
@@ -187,14 +197,16 @@ Node *readNode(Graph& containingGraph, std::istream& is, bool verbose, bool pars
       }
     }
     MT::parse(is, ")");
+    is_lastPos=is.tellg();
     c=MT::getNextChar(is," \t");
   }
   
   if(verbose) { cout <<" parents:"; if(!parents.N) cout <<"none"; else listWrite(parents,cout," ","()"); cout <<flush; }
   
   //-- read value
-  if(c=='=' || c=='{' || c=='[' || c=='<' || c=='!' || c=='\'' || c=='"') {
+  if(c=='=' || c=='{' || c=='[' || c=='<' || c=='!') {
     if(c=='=') c=MT::getNextChar(is," \t");
+    is_lastPos=is.tellg();
     if((c>='a' && c<='z') || (c>='A' && c<='Z')) { //MT::String or boolean
       is.putback(c);
       str.read(is, "", " \n\r\t,;}", false);
@@ -276,22 +288,24 @@ Node *readNode(Graph& containingGraph, std::istream& is, bool verbose, bool pars
         return NULL;
       }
     }
+    is_lastPos=is.tellg();
   } else { //no '=' or '{' -> boolean
     is.putback(c);
     item = new Node_typed<bool>(containingGraph, keys, parents, new bool(true), true);
   }
 
 #undef PARSERR
+  if(parseInfo && item){
+    item->container.getParseInfo(item).beg=is_startPos;
+    item->container.getParseInfo(item).end=is_lastPos;
+  }
 
   if(verbose) {
     if(item) { cout <<" value:"; item->writeValue(cout); cout <<" FULL:"; item->write(cout); cout <<endl; }
     else { cout <<"FAILED" <<endl; }
   }
   
-  if(item){
-    //    for(Node *it:item->parents) it->parentOf.append(item);
-    //    containingGraph.appendNode(item);
-  }else {
+  if(!item){
     cout <<"FAILED reading item with keys ";
     keys.write(cout, " ", NULL, "()");
     cout <<" and parents ";
@@ -308,7 +322,7 @@ Node *readNode(Graph& containingGraph, std::istream& is, bool verbose, bool pars
 
 
 NodeInitializer::NodeInitializer(const char* key){
-  it = new Node_typed<bool>(NoGraph, NULL, false);
+  it = new Node_typed<bool>(G, NULL, false);
   it->keys.append(STRING(key));
 }
 
@@ -326,14 +340,18 @@ Graph::Graph():s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL) {
 }
 
 Graph::Graph(const char* filename):s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL) {
-  FILE(filename) >>*this;
+  read(MT::FileToken(filename).getIs());
+}
+
+Graph::Graph(istream& is):s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL) {
+  read(is);
 }
 
 Graph::Graph(const std::map<std::string, std::string>& dict):s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL) {
   appendDict(dict);
 }
 
-Graph::Graph(std::initializer_list<NodeInitializer> list) {
+Graph::Graph(std::initializer_list<NodeInitializer> list):s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL)  {
   for(const NodeInitializer& ic:list){
     Node *clone = ic.it->newClone(*this); //this appends sequentially clones of all items to 'this'
     for(const MT::String& s:ic.parents){
@@ -360,13 +378,8 @@ Graph::~Graph() {
 }
 
 void Graph::clear() {
-  if(!isReferringToNodesOf){
-    checkConsistency();
-    while(N) delete last();
-    checkConsistency();
-  }else{
-    NodeL::clear();
-  }
+  if(!isReferringToNodesOf) while(N) delete last();
+  else NodeL::clear();
 }
 
 Node *Graph::append(const uintA& parentIdxs) {
@@ -386,45 +399,31 @@ Node* Graph::getNode(const char *key) const {
   for(Node *it: (*this)) if(it->matches(key)) return it;
   //    for(const MT::String& k:it->keys) if(k==key) return it;
   if(isNodeOfParentGraph) return isNodeOfParentGraph->container.getNode(key);
+//  MT_MSG("no node with key '"<<key <<"' found");
   return NULL;
 }
 
-Node* Graph::getNode(const char *key1, const char *key2) {
+Node* Graph::getNode(const char *key1, const char *key2) const {
   for(Node *it: (*this)) {
     for(uint i=0; i<it->keys.N; i++) if(it->keys(i)==key1) {
       for(uint i=0; i<it->keys.N; i++) if(it->keys(i)==key2)
         return it;
     }
   }
+//  MT_MSG("no node with keys '"<<key1 <<' ' <<key2 <<"' found");
   return NULL;
 }
 
-Node* Graph::getNode(const StringA &keys) {
-  //  bool found;
+Node* Graph::getNode(const StringA &keys) const {
   for(Node *it: (*this)) if(it->matches(keys)) return it;
   if(isNodeOfParentGraph) return isNodeOfParentGraph->container.getNode(keys);
-  //  {
-  //    found = true;
-  //    for(uint k = 0; k < keys.N && found; k++) {
-  //      found = false;
-  //      for(const String &key: it->keys) {
-  //        if(keys(k) == key) {
-  //          found = true;
-  //          break;
-  //        }
-  //      }
-  //    }
-  //    if(found) return it;
-  //  }
+//  MT_MSG("no node with keys '"<<keys <<"' found");
   return NULL;
 }
 
-Graph Graph::getNodes(const char* key) {
-  Graph ret;
-  ret.isReferringToNodesOf = this;
-  for(Node *it: (*this)) if(it->matches(key)) ret.NodeL::append(it);
-  //    for(uint i=0; i<it->keys.N; i++) if(it->keys(i)==key) { ret.NodeL::append(it); break; }
-  //  }
+NodeL Graph::getNodes(const char* key) const {
+  NodeL ret;
+  for(Node *it: (*this)) if(it->matches(key)) ret.append(it);
   return ret;
 }
 
@@ -441,23 +440,21 @@ Node* Graph::getChild(Node *p1, Node *p2) const{
   return NULL;
 }
 
-Graph Graph::getNodesOfDegree(uint deg) {
-  Graph ret;
-  ret.isReferringToNodesOf = this;
+NodeL Graph::getNodesOfDegree(uint deg) {
+  NodeL ret;
   for(Node *it: (*this)) {
-    if(it->parents.N==deg) ret.NodeL::append(it);
+    if(it->parents.N==deg) ret.append(it);
   }
   return ret;
 }
 
 
-Graph Graph::getTypedNodes(const char* key, const std::type_info& type) {
-  Graph ret;
-  ret.isReferringToNodesOf = this;
+NodeL Graph::getTypedNodes(const char* key, const std::type_info& type) {
+  NodeL ret;
   for(Node *it: (*this)) if(it->getValueType()==type) {
     if(!key) ret.NodeL::append(it);
     else for(uint i=0; i<it->keys.N; i++) if(it->keys(i)==key) {
-      ret.NodeL::append(it);
+      ret.append(it);
       break;
     }
   }
@@ -465,7 +462,7 @@ Graph Graph::getTypedNodes(const char* key, const std::type_info& type) {
 }
 
 Node* Graph::merge(Node *m){
-  Graph KVG = getTypedNodes(m->keys(0), m->getValueType());
+  NodeL KVG = getTypedNodes(m->keys(0), m->getValueType());
   //CHECK(KVG.N<=1, "can't merge into multiple items yet");
   Node *it=NULL;
   if(KVG.N) it=KVG.elem(0);
@@ -491,10 +488,10 @@ Node* Graph::merge(Node *m){
 }
 
 void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer){
-  G.checkConsistency();
+  DEBUG(G.checkConsistency());
 
   //-- first delete existing items
-  if(!isReferringToNodesOf){ while(N) delete last(); } // listDelete(*this);
+  clear();
 
   //-- make this become a subgraph
   if(becomeSubgraphOfContainer){ //CHECK that this is also a subgraph of the same container..
@@ -550,8 +547,8 @@ void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer){
     }
   }
 
-  this->checkConsistency();
-  G.checkConsistency();
+  DEBUG(this->checkConsistency();)
+  DEBUG(G.checkConsistency();)
 }
 
 void Graph::read(std::istream& is, bool parseInfo) {
@@ -561,25 +558,40 @@ void Graph::read(std::istream& is, bool parseInfo) {
     if(!is.good() || c=='}') { is.clear(); break; }
     Node *it = readNode(*this, is, false, parseInfo);
     if(!it) break;
-    if(it->keys.N==1 && it->keys(0)=="Include"){
+    if(it->keys.N==1 && it->keys.last()=="Include"){
       read(it->getValue<MT::FileToken>()->getIs(true));
       delete it;
+    }else
+    if(it->keys.N==1 && it->keys.last()=="ChDir"){
+      it->getValue<MT::FileToken>()->changeDir();
     }
   }
   if(parseInfo) getParseInfo(NULL).end=is.tellg();
   //-- merge all Merge keys
-  Graph merges = getNodes("Merge");
+  NodeL merges = getNodes("Merge");
   for(Node *m:merges){
     m->keys.remove(0);
     merge(m);
   }
+  for(uint i=N;i--;){
+    Node *it=elem(i);
+    if(it->keys.N==1 && it->keys(0)=="ChDir"){
+      it->getValue<MT::FileToken>()->unchangeDir();
+      delete it;
+    }
+  }
 }
 
 void Graph::write(std::ostream& os, const char *ELEMSEP, const char *delim) const {
-  uint i;
   if(delim) os <<delim[0];
-  for(i=0; i<N; i++) { if(i) os <<ELEMSEP;  if(elem(i)) elem(i)->write(os); else os <<"<NULL>"; }
+  for(uint i=0; i<N; i++) { if(i) os <<ELEMSEP;  if(elem(i)) elem(i)->write(os); else os <<"<NULL>"; }
   if(delim) os <<delim[1] <<std::flush;
+}
+
+void Graph::writeParseInfo(std::ostream& os) {
+  os <<"GRAPH " <<getParseInfo(NULL) <<endl;
+  for(Node *n:*this)
+    os <<"NODE '" <<*n <<"' " <<getParseInfo(n) <<endl;
 }
 
 void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, int nodesOrEdges) {

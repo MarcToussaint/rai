@@ -2,6 +2,7 @@
 
 #include <Core/module.h>
 #include <Gui/opengl.h>
+#include <Core/geo.cpp>
 
 extern ors::Camera kinectCam;
 void initKinectCam();
@@ -10,6 +11,7 @@ struct Kinect2PointCloud: Module {
   ACCESS(byteA, kinect_rgb)
   ACCESS(uint16A, kinect_depth)
 
+  ACCESS(ors::Transformation, kinect_frame)
   ACCESS(arr, kinect_points)
   ACCESS(arr, kinect_pointColors)
 

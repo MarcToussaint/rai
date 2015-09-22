@@ -33,12 +33,11 @@ void KinectDepthPacking::step(){
   kinect_depth.readAccess();
   kinect_depthRgb.writeAccess();
 
-  double tstamp = kinect_depth.tstamp();
 
   MLR::pack_kindepth2rgb(kinect_depth(), kinect_depthRgb());
 
   kinect_depthRgb().reshape(kinect_depth().d0, kinect_depth().d1, 3);
-  kinect_depthRgb.tstamp() = tstamp;
+  kinect_depthRgb.v->revision_time = kinect_depth.v->revision_time;
 
   kinect_depthRgb.deAccess();
   kinect_depth.deAccess();
