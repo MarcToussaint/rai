@@ -71,6 +71,11 @@ void RWLock::unlock() {
   int rc = pthread_rwlock_unlock(&lock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
+bool RWLock::isLocked() {
+  return state!=0;
+}
+
+
 
 //===========================================================================
 //

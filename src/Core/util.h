@@ -29,6 +29,7 @@
 #include <fstream>
 #include <typeinfo>
 #include <stdint.h>
+#include <memory>
 
 #ifdef MT_ROS
 #  include <ros/ros.h>
@@ -139,14 +140,15 @@ double eqConstraintCost(double h, double margin, double power);
 double d_eqConstraintCost(double h, double margin, double power);
 
 //----- time access
-double clockTime(); //(really on the clock)
+double clockTime(bool today=true); //(really on the clock)
+timespec clockTime2();
 double realTime(); //(since process start)
 double cpuTime();
 double sysTime();
 double totalTime();
 double toTime(const tm& t);
 char *date();
-char *date(const struct timeval& tv);
+char *date(double sec);
 void wait(double sec, bool msg_on_fail=true);
 bool wait();
 
@@ -227,6 +229,7 @@ public:
   String(const String& s);
   String(const char *s);
   explicit String(const std::string& s);
+  explicit String(std::istream& is);
   ~String();
   
   /// @name access
@@ -291,18 +294,38 @@ namespace MT {
 struct LogToken{
   MT::String msg;
   int log_level;
-  const char *filename, *function;
+  int logCoutLevel, logFileLevel;
+  const char *key, *filename, *function;
   uint line;
-  LogToken(int log_level, const char* filename, const char* function, uint line):log_level(log_level), filename(filename), function(function), line(line) {}
+  std::ofstream *fil;
+  LogToken(int log_level, int logCoutLevel, int logFileLevel, const char* key, const char* filename, const char* function, uint line, std::ofstream* fil)
+    : log_level(log_level), logCoutLevel(logCoutLevel), logFileLevel(logFileLevel), key(key), filename(filename), function(function), line(line), fil(fil) {}
   ~LogToken();
   std::ostream& os(){ return msg; }
 };
 }
 //template<class T> MT::LogToken& operator<<(MT::LogToken& log, const T& x){ log.os() <<x;  return log; }
 
+struct Log{
+  int logFileLevel, logCoutLevel;
+  const char* key;
+  std::ofstream fil;
+  Log(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0):key(key){
+    logCoutLevel = MT::getParameter<int>(STRING("logCoutLevel_"<<key), defaultLogCoutLevel);
+    logFileLevel = MT::getParameter<int>(STRING("logFileLevel_"<<key), defaultLogFileLevel);
+  }
+  ~Log(){ fil.close(); }
+  MT::LogToken operator()(int log_level, const char* filename, const char* function, uint line) const {
+    return MT::LogToken(log_level, logCoutLevel, logFileLevel, key, filename, function, line, (std::ofstream*)&fil);
+  }
+};
+
+extern Log _log;
+
 //inline MT::LogToken LOG(int log_level=0){ return MT::LogToken(log_level, __FILE__, __func__, __LINE__); }
 //#define LOG(log_level) (MT::LogToken(log_level, __FILE__, __func__, __LINE__).os())
-#define LOG(log_level) MT::LogToken(log_level, __FILE__, __func__, __LINE__).os()
+//#define LOG(log_level) MT::LogToken(log_level, MT::logFileLevel, MT::logCoutLevel, __FILE__, __func__, __LINE__).os()
+#define LOG(log_level) _log(log_level, __FILE__, __func__, __LINE__).os()
 
 void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 
@@ -348,9 +371,9 @@ extern String errString;
 #  define MT_MSG(msg){ LOG(-1) <<msg; }
 #  define THROW(msg){ LOG(-2) <<msg; throw MT::errString.p; }
 #  define HALT(msg){ LOG(-2) <<msg; exit(1); }
-#  define NIY  { LOG(-3) <<"not implemented yet"; exit(1); }
-#  define NICO { LOG(-3) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(1); }
-#  define OPS  { LOG(-3) <<"obsolete"; exit(1); }
+#  define NIY  { LOG(-2) <<"not implemented yet"; exit(1); }
+#  define NICO { LOG(-2) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(1); }
+#  define OPS  { LOG(-2) <<"obsolete"; exit(1); }
 #endif
 
 
@@ -376,6 +399,10 @@ extern String errString;
 
 #else
 #  define CHECK(cond, msg)
+#define CHECK_ZERO(expr, tolerance, msg)
+#define CHECK_EQ(A, B, msg)
+#define CHECK_GE(A, B, msg)
+#define CHECK_LE(A, B, msg)
 #endif
 
 
@@ -418,15 +445,17 @@ X >>FILE("outfile");
 */
 struct FileToken{
   MT::String path, name, cwd;
-  std::ofstream *os;
-  std::ifstream *is;
+  std::shared_ptr<std::ofstream> os;
+  std::shared_ptr<std::ifstream> is;
 
   FileToken(const char* _filename, bool change_dir=true);
+  FileToken(const FileToken& ft);
   ~FileToken();
   FileToken& operator()(){ return *this; }
 
   void decomposeFilename();
   void changeDir();
+  void unchangeDir();
   bool exists();
   std::ofstream& getOs();
   std::ifstream& getIs(bool change_dir=false);
@@ -597,6 +626,18 @@ struct CoutToken{
 };
 #define COUT (CoutToken().getOs())
 
+
+//===========================================================================
+
+struct GlobalThings {
+  std::ifstream cfgFile;
+  bool cfgFileOpen;
+  Mutex cfgFileMutex;
+
+GlobalThings():cfgFileOpen(false){};
+};
+
+extern Singleton<GlobalThings> globalThings;
 
 //===========================================================================
 //
