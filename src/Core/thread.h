@@ -51,6 +51,7 @@ struct RWLock {
   void readLock();   ///< multiple threads may request 'lock for read'
   void writeLock();  ///< only one thread may request 'lock for write'
   void unlock();     ///< thread must unlock when they're done
+  bool isLocked();
 };
 
 /// a basic condition variable
@@ -78,6 +79,11 @@ struct ConditionVariable {
   void waitForValueSmallerThan(int i, bool userHasLocked=false); ///< return value is the state after the waiting
   void waitUntil(double absTime, bool userHasLocked=false);
 };
+
+//===========================================================================
+//
+// access gated (rwlocked) variables
+//
 
 /// Deriving from this allows to make variables/classes revisioned read-write access gated
 struct RevisionedAccessGatedClass {
@@ -112,8 +118,8 @@ template<class T>
 struct Variable:RevisionedAccessGatedClass{
   T data;
 
-  Variable(const char* name=NULL):RevisionedAccessGatedClass(name){}
-  Variable(const T& x, const char* name=NULL):RevisionedAccessGatedClass(name), data(x){}
+   Variable(const char* name):RevisionedAccessGatedClass(name){}
+  Variable(const T& x, const char* name):RevisionedAccessGatedClass(name), data(x){}
 
   //-- Token-wise access
   struct ReadToken{
@@ -129,6 +135,7 @@ struct Variable:RevisionedAccessGatedClass{
     Variable<T> *v;
     Thread *th;
     WriteToken(Variable<T> *v, Thread *th):v(v), th(th){ v->writeAccess(th); }
+    WriteToken(const double& dataTime, Variable<T> *v, Thread *th):v(v), th(th){ v->writeAccess(th); v->data_time=dataTime; }
     ~WriteToken(){ v->deAccess(th); }
     WriteToken& operator=(const T& x){ v->data=x; return *this; }
     T* operator->(){ return &v->data; }
@@ -137,6 +144,7 @@ struct Variable:RevisionedAccessGatedClass{
   };
   ReadToken get(Thread *th=NULL){ return ReadToken(this, th); } ///< read access to the variable's data
   WriteToken set(Thread *th=NULL){ return WriteToken(this, th); } ///< write access to the variable's data
+  WriteToken set(const double& dataTime, Thread *th=NULL){ return WriteToken(dataTime, this, th); } ///< write access to the variable's data
 };
 
 //===========================================================================
@@ -213,7 +221,7 @@ struct Thread{
   bool isIdle();                        ///< check if in idle mode
   bool isClosed();                      ///< check if closed
 
-  /// @name listen to variable
+  /// @name listen to a variable
   void listenTo(RevisionedAccessGatedClass& var);
 
   virtual void open() = 0;

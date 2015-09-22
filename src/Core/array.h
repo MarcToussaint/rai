@@ -54,6 +54,10 @@ extern const char* arrayElemsep;
 extern const char* arrayLinesep;
 extern const char* arrayBrackets;
 struct FileToken;
+template<class T> bool lower(const T& a, const T& b){ return a<b; }
+template<class T> bool lowerEqual(const T& a, const T& b){ return a<=b; }
+template<class T> bool greater(const T& a, const T& b){ return a>b; }
+template<class T> bool greaterEqual(const T& a, const T& b){ return a>=b; }
 } //namespace
 
 //===========================================================================
@@ -174,6 +178,7 @@ template<class T> struct Array {
   T& elem(int i) const;
   T& scalar() const;
   operator T&() const{ return scalar(); }
+  T& first() const;
   T& last(int i=-1) const;
   T& rndElem() const;
   T& operator()(uint i) const;
@@ -244,13 +249,13 @@ template<class T> struct Array {
   T popLast();
   
   /// @name sorting and permuting this array
-  void sort(ElemCompare comp);
-  bool isSorted(ElemCompare comp) const;
-  uint rankInSorted(const T& x, ElemCompare comp) const;
-  int findValueInSorted(const T& x, ElemCompare comp) const;
-  uint insertInSorted(const T& x, ElemCompare comp);
-  uint setAppendInSorted(const T& x, ElemCompare comp);
-  void removeValueInSorted(const T& x, ElemCompare comp);
+  void sort(ElemCompare comp=lowerEqual);
+  bool isSorted(ElemCompare comp=lowerEqual) const;
+  uint rankInSorted(const T& x, ElemCompare comp=lowerEqual) const;
+  int findValueInSorted(const T& x, ElemCompare comp=lowerEqual) const;
+  uint insertInSorted(const T& x, ElemCompare comp=lowerEqual);
+  uint setAppendInSorted(const T& x, ElemCompare comp=lowerEqual);
+  void removeValueInSorted(const T& x, ElemCompare comp=lowerEqual);
   void reverse();
   void reverseRows();
   void permute(uint i, uint j);
@@ -432,14 +437,14 @@ inline arr eye(uint d0, uint d1) { arr z;  z.resize(d0, d1);  z.setId();  return
 /// return identity matrix
 inline arr eye(uint n) { return eye(n, n); }
 
-/// return matrix of ones
+/// return array of ones
 inline arr ones(const uintA& d) {  arr z;  z.resize(d);  z=1.;  return z;  }
 /// return VECTOR of ones
 inline arr ones(uint n) { return ones(TUP(n)); }
 /// return matrix of ones
 inline arr ones(uint d0, uint d1) { return ones(TUP(d0, d1)); }
 
-/// return matrix of zeros
+/// return array of zeros
 inline arr zeros(const uintA& d) {  arr z;  z.resize(d);  z.setZero();  return z; }
 /// return VECTOR of zeros
 inline arr zeros(uint n) { return zeros(TUP(n)); }
@@ -447,6 +452,15 @@ inline arr zeros(uint n) { return zeros(TUP(n)); }
 inline arr zeros(uint d0, uint d1) { return zeros(TUP(d0, d1)); }
 /// return tensor of zeros
 inline arr zeros(uint d0, uint d1, uint d2) { return zeros(TUP(d0, d1, d2)); }
+
+/// return array of c's
+template<class T> MT::Array<T> consts(const T& c, const uintA& d)  {  MT::Array<T> z;  z.resize(d);  z.setUni(c);  return z; }
+/// return VECTOR of c's
+template<class T> MT::Array<T> consts(const T& c, uint n) { return consts(c, TUP(n)); }
+/// return matrix of c's
+template<class T> MT::Array<T> consts(const T& c, uint d0, uint d1) { return consts(c, TUP(d0, d1)); }
+/// return tensor of c's
+template<class T> MT::Array<T> consts(const T& c, uint d0, uint d1, uint d2) { return consts(c, TUP(d0, d1, d2)); }
 
 /// return a grid (1D: range) split in 'steps' steps
 inline arr grid(uint dim, double lo, double hi, uint steps) { arr g;  g.setGrid(dim, lo, hi, steps);  return g; }
@@ -578,6 +592,7 @@ template<class T> MT::Array<T> replicate(const MT::Array<T>& A, uint d0);
 
 template<class T> uintA size(const MT::Array<T>& x) { return x.dim(); }
 template<class T> void checkNan(const MT::Array<T>& x);
+template<class T> void sort(MT::Array<T>& x);
 
 template<class T> T entropy(const MT::Array<T>& v);
 template<class T> T normalizeDist(MT::Array<T>& v);
@@ -750,6 +765,11 @@ template<class T, class S> void reshapeAs(MT::Array<T>& x, const MT::Array<S>& a
 template<class T, class S> void copy(MT::Array<T>& x, const MT::Array<S>& a) {
   resizeAs(x, a);
   for(uint i=0; i<x.N; i++) x.elem(i)=(T)a.elem(i);
+}
+template<class T, class S> MT::Array<T> convert(const MT::Array<S>& a) {
+  MT::Array<T> x;
+  copy<T,S>(x,a);
+  return x;
 }
 /// check whether this and \c a have same dimensions
 template<class T, class S>

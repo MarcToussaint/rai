@@ -71,17 +71,7 @@ struct Node {
   virtual bool hasEqualValue(Node*) {NIY}
   virtual Node* newClone(Graph& container) const {NIY}
 };
-stdOutPipe(Node);
-
-//===========================================================================
-
-struct NodeInitializer{
-  NodeInitializer(const char* key);
-  template<class T> NodeInitializer(const char* key, const T& x);
-  template<class T> NodeInitializer(const char* key, const StringA& parents, const T& x);
-  Node *it;
-  StringA parents;
-};
+stdOutPipe(Node)
 
 //===========================================================================
 
@@ -95,8 +85,9 @@ struct Graph:NodeL {
   //-- constructors
   Graph();
   explicit Graph(const char* filename);
+  explicit Graph(istream& is);
   Graph(const std::map<std::string, std::string>& dict);
-  Graph(std::initializer_list<NodeInitializer> list);
+  Graph(std::initializer_list<struct NodeInitializer> list);
   Graph(const Graph& G);
   ~Graph();
   void clear();
@@ -113,22 +104,26 @@ struct Graph:NodeL {
   
   //-- get items
   Node* getNode(const char *key) const;
-  Node* getNode(const char *key1, const char *key2);
-  Node* getNode(const StringA &keys);
-  Node* operator[](const char *key) { return getNode(key); }
+  Node* getNode(const char *key1, const char *key2) const;
+  Node* getNode(const StringA &keys) const;
+  Node* operator[](const char *key) const{ return getNode(key); }
   Node& I(const char *key) { Node *it=getNode(key); CHECK(it,"item '" <<key <<"' does not exist"); return *it; }
   Node* getChild(Node *p1, Node *p2) const; //TODO -> getEdge
 
-  //-- get lists of items (TODO: return NodeL, not referring Graph)
-  Graph getNodes(const char* key);
-  Graph getNodesOfDegree(uint deg);
-  Graph getTypedNodes(const char* key, const std::type_info& type);
-  template<class T> Graph getTypedNodes(const char* key=NULL){ return getTypedNodes(key, typeid(T)); }
+  //-- get lists of items
+  NodeL getNodes(const char* key) const;
+  NodeL getNodesOfDegree(uint deg);
+  NodeL getTypedNodes(const char* key, const std::type_info& type);
+  template<class T> NodeL getTypedNodes(const char* key=NULL){ return getTypedNodes(key, typeid(T)); }
   template<class T> NodeL getDerivedNodes();
 
-  //-- get values directly (TODO: remove)
-  template<class T> T* getValue(const char *key);
-  template<class T> T* getValue(const StringA &keys);
+  //-- get values directly (TODO: remove V and 'getValue', just get should be enough)
+  template<class T> T& get(const char *key) const;
+  template<class T> const T& get(const char *key, const T& defaultValue) const;
+  template<class T> T& V(const char *key){ T* y=getValue<T>(key); CHECK(y,""); return *y; }
+  template<class T> const T& V(const char *key, const T& defaultValue) const{ T* y=getValue<T>(key); if(y) return *y; return defaultValue; }
+  template<class T> T* getValue(const char *key) const;
+  template<class T> T* getValue(const StringA &keys) const;
   template<class T> bool getValue(T& x, const char *key) { T* y=getValue<T>(key); if(y) { x=*y; return true; } return false; }
   template<class T> bool getValue(T& x, const StringA &keys) { T* y=getValue<T>(keys); if(y) { x=*y; return true; } return false; }
 
@@ -138,7 +133,8 @@ struct Graph:NodeL {
   
   //-- adding items
   template<class T> Node *append(T *x, bool ownsValue);
-  template<class T> Node *append(const char* key, T *x, bool ownsValue);
+//  template<class T> Node *append(const char* key, T *x, bool ownsValue);
+  template<class T> Node *append(const StringA& keys, const NodeL& parents, const T& x);
   template<class T> Node *append(const StringA& keys, const NodeL& parents, T *x, bool ownsValue);
 //  template<class T> Node *append(const StringA& keys, T *x, bool ownsValue) { return append(keys, NodeL(), x, ownsValue); }
 //  template<class T> Node *append(const char *key, T *x, bool ownsValue) { return append({MT::String(key)}, NodeL(), x, ownsValue); }
@@ -164,8 +160,20 @@ struct Graph:NodeL {
   void read(std::istream& is, bool parseInfo=false);
   void write(std::ostream& os=std::cout, const char *ELEMSEP="\n", const char *delim=NULL) const;
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0);
+  void writeParseInfo(std::ostream& os);
 };
 stdPipes(Graph);
+
+//===========================================================================
+
+struct NodeInitializer{
+  NodeInitializer(const char* key);
+  template<class T> NodeInitializer(const char* key, const T& x);
+  template<class T> NodeInitializer(const char* key, const StringA& parents, const T& x);
+  Graph G;
+  Node *it;
+  StringA parents;
+};
 
 //===========================================================================
 
