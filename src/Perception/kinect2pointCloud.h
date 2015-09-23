@@ -2,7 +2,7 @@
 
 #include <Core/module.h>
 #include <Gui/opengl.h>
-#include <Core/geo.cpp>
+#include <Core/geo.h>
 
 extern ors::Camera kinectCam;
 void initKinectCam();
