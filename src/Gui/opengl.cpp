@@ -32,6 +32,9 @@ struct OpenGLEngineAccess{
 
 Singleton<OpenGLEngineAccess> openglAccess;
 
+void openGlLock(){ openglAccess().lock(); }
+void openGlUnlock(){ openglAccess().unlock(); }
+
 //===========================================================================
 
 #ifdef MT_FREEGLUT
