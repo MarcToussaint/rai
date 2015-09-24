@@ -46,9 +46,11 @@ struct Node {
   NodeL parents;
   NodeL parentOf;
   uint index;
+
   Node(Graph& _container);
   Node(Graph& _container, const StringA& _keys, const NodeL& _parents);
   virtual ~Node();
+
   template<class T> T *getValue();    ///< query whether the Node is of a certain value, return the value if so
   template<class T> const T *getValue() const; ///< as above
   template<class T> T& V(){ T *x=getValue<T>(); CHECK(x,"wrong type"); return *x; }
@@ -75,12 +77,14 @@ stdOutPipe(Node)
 
 //===========================================================================
 
-struct Graph:NodeL {
+struct Graph : NodeL {
   struct sKeyValueGraph *s;
   Graph* isReferringToNodesOf; //TODO: remove
   Node *isNodeOfParentGraph;
+
   ParseInfoL pi;
   GraphEditCallbackL callbacks;
+
 
   //-- constructors
   Graph();
@@ -189,13 +193,6 @@ struct GraphEditCallback {
 
 //===========================================================================
 
-
-inline Graph GRAPH(const NodeL& L){ //TODO: remove
-  Graph G;
-  G.isReferringToNodesOf = (Graph*)(1);
-  G.NodeL::operator=(L);
-  return G;
-}
 
 inline bool NodeComp(Node* const& a, Node* const& b){ //TODO: why?
   return a < b;
