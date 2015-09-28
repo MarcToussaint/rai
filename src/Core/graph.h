@@ -179,6 +179,9 @@ struct NodeInitializer{
   StringA parents;
 };
 
+#define NI(key, val) NodeInitializer(#key, val)
+#define NIs(key, val) NodeInitializer(#key, MT::String(#val))
+
 //===========================================================================
 
 NodeL neighbors(Node*);
