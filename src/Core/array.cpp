@@ -1295,6 +1295,15 @@ double NNzerosdv(const arr& x, double sdv){
   return norm*EXP(-.5*sumOfSqr(x)/(sdv*sdv));
 }
 
+MT::String singleString(const StringA& strs){
+  MT::String s;
+  for(const MT::String& str:strs){
+    if(s.N) s<<"_";
+    s<<str;
+  }
+  return s;
+}
+
 
 //===========================================================================
 //

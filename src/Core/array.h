@@ -571,6 +571,7 @@ double dNNNNinv(const arr& x, const arr& a, const arr& Ainv, arr& grad);
 double NNsdv(const arr& a, const arr& b, double sdv);
 double NNzerosdv(const arr& x, double sdv);
 
+MT::String singleString(const StringA& strs);
 
 //===========================================================================
 /// @}

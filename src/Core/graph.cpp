@@ -397,9 +397,7 @@ void Graph::appendDict(const std::map<std::string, std::string>& dict){
 
 Node* Graph::getNode(const char *key) const {
   for(Node *it: (*this)) if(it->matches(key)) return it;
-  //    for(const MT::String& k:it->keys) if(k==key) return it;
   if(isNodeOfParentGraph) return isNodeOfParentGraph->container.getNode(key);
-//  MT_MSG("no node with key '"<<key <<"' found");
   return NULL;
 }
 
@@ -410,15 +408,20 @@ Node* Graph::getNode(const char *key1, const char *key2) const {
         return it;
     }
   }
-//  MT_MSG("no node with keys '"<<key1 <<' ' <<key2 <<"' found");
   return NULL;
 }
 
 Node* Graph::getNode(const StringA &keys) const {
   for(Node *it: (*this)) if(it->matches(keys)) return it;
   if(isNodeOfParentGraph) return isNodeOfParentGraph->container.getNode(keys);
-//  MT_MSG("no node with keys '"<<keys <<"' found");
   return NULL;
+}
+
+NodeL Graph::getNodes(const StringA &keys) const {
+  NodeL ret;
+  for(const String& s:keys){ Node *n=getNode(s); CHECK(n,"unknown symbol '"<<s <<"'"); ret.append(n); }
+  return ret;
+
 }
 
 NodeL Graph::getNodes(const char* key) const {

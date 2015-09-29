@@ -115,6 +115,7 @@ struct Graph : NodeL {
   Node* getChild(Node *p1, Node *p2) const; //TODO -> getEdge
 
   //-- get lists of items
+  NodeL getNodes(const StringA &keys) const;
   NodeL getNodes(const char* key) const;
   NodeL getNodesOfDegree(uint deg);
   NodeL getTypedNodes(const char* key, const std::type_info& type);
@@ -179,7 +180,7 @@ struct NodeInitializer{
   StringA parents;
 };
 
-#define NI(key, val) NodeInitializer(#key, val)
+#define NO(key, val) NodeInitializer(#key, val)
 #define NIs(key, val) NodeInitializer(#key, MT::String(#val))
 
 //===========================================================================
