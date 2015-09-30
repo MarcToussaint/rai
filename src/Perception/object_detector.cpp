@@ -1,4 +1,6 @@
-﻿#include "object_detector.h"
+﻿#ifdef MLR_PCL
+
+#include "object_detector.h"
 #include "plane.h"
 #include <pcl/common/pca.h>
 #include <pcl/common/transforms.h>
@@ -188,3 +190,5 @@ void fittingBoundingBox(pcl::PointCloud<PointT>::Ptr inCloud, PointT &min, Point
     pca.reconstruct (proj_max, max);
 
 }
+
+#endif

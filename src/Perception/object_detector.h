@@ -1,3 +1,5 @@
+#ifdef MLR_PCL
+
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -29,3 +31,5 @@ bool planeFindingWithNormals(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointClou
 
 
 void fittingBoundingBox(pcl::PointCloud<PointT>::Ptr inCloud, PointT &min, PointT &max);
+
+#endif

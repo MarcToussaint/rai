@@ -119,6 +119,7 @@ struct Variable:RevisionedAccessGatedClass{
   T data;
 
   Variable():RevisionedAccessGatedClass("global"){}
+  Variable(const Variable&):RevisionedAccessGatedClass(NULL){ HALT("not allowed"); }
   Variable(const char* name):RevisionedAccessGatedClass(name){}
   Variable(const T& x, const char* name):RevisionedAccessGatedClass(name), data(x){}
 

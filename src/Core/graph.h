@@ -122,6 +122,9 @@ struct Graph : NodeL {
   template<class T> NodeL getTypedNodes(const char* key=NULL){ return getTypedNodes(key, typeid(T)); }
   template<class T> NodeL getDerivedNodes();
 
+  //-- get typed node
+  template<class T> Node* getTypedNode(const char *key) const;
+
   //-- get values directly (TODO: remove V and 'getValue', just get should be enough)
   template<class T> T& get(const char *key) const;
   template<class T> const T& get(const char *key, const T& defaultValue) const;
