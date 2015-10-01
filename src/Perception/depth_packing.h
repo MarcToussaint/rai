@@ -3,8 +3,8 @@
 #include <Core/module.h>
 
 BEGIN_MODULE(KinectDepthPacking)
-  ACCESS(uint16A, kinect_depth);
-  ACCESS(byteA, kinect_depthRgb);
+  ACCESSlisten(uint16A, kinect_depth);
+  ACCESSnew(byteA, kinect_depthRgb);
 END_MODULE()
 
 namespace MLR {

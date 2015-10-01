@@ -8,12 +8,12 @@ extern ors::Camera kinectCam;
 void initKinectCam();
 
 struct Kinect2PointCloud: Module {
-  ACCESS(byteA, kinect_rgb)
-  ACCESS(uint16A, kinect_depth)
+  ACCESSnew(byteA, kinect_rgb)
+  ACCESSlisten(uint16A, kinect_depth)
 
-  ACCESS(ors::Transformation, kinect_frame)
-  ACCESS(arr, kinect_points)
-  ACCESS(arr, kinect_pointColors)
+  ACCESSnew(ors::Transformation, kinect_frame)
+  ACCESSnew(arr, kinect_points)
+  ACCESSnew(arr, kinect_pointColors)
 
   arr pts,cols;
   uint16A depth;
