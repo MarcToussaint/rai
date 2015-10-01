@@ -33,7 +33,36 @@
 #include <GL/glut.h>
 #include <X11/Xlib.h>
 
-struct GtkThread *global_gtkThread=NULL;
+struct GtkThread:Thread {
+  GtkThread():Thread("GTK thread", .0) {
+    int argc=1;
+    char **argv = new char*[1];
+    argv[0] = (char*)"x.exe";
+
+    XInitThreads();
+//      g_thread_init(NULL);
+    gdk_threads_init();
+    gdk_threads_enter();
+    gtk_init(&argc, &argv);
+    gtk_gl_init(&argc, &argv);
+    glutInit(&argc, argv);
+
+    threadLoop();
+  }
+  ~GtkThread(){
+    gtk_main_quit();
+    threadClose();
+    gdk_threads_leave();
+//    g_main_context_unref(g_main_context_default ());
+    cout <<"STOPPING GTK" <<endl;
+  }
+
+  virtual void open() {}
+  virtual void step() { gtk_main(); }
+  virtual void close() {  }
+};
+
+Singleton<GtkThread> global_gtkThread;
 Mutex callbackMutex;
 
 void gtkEnterCallback() {  callbackMutex.lock();  }
@@ -50,12 +79,6 @@ void gtkUnlock() {
   gdk_threads_leave();
 }
 
-struct GtkThread:Thread {
-  GtkThread():Thread("GTK thread") {}
-  virtual void open() {}
-  virtual void step() { gtk_main(); }
-  virtual void close() { gdk_threads_leave(); }
-};
 
 void gtkCheckInitialized() {
 #if 0
@@ -75,27 +98,7 @@ void gtkCheckInitialized() {
     glutInit(&argc, argv);
   }
 #else
-  static Mutex m;
-  if(!global_gtkThread) {
-    m.lock();
-    if(!global_gtkThread) {
-      int argc=1;
-      char **argv = new char*[1];
-      argv[0] = (char*)"x.exe";
-  
-      XInitThreads();
-//      g_thread_init(NULL);
-      gdk_threads_init();
-      gdk_threads_enter();
-      gtk_init(&argc, &argv);
-      gtk_gl_init(&argc, &argv);
-      glutInit(&argc, argv);
-  
-      global_gtkThread = new GtkThread();
-      global_gtkThread -> threadStep();
-    }
-    m.unlock();
-  }
+  global_gtkThread();
 #endif
 }
 

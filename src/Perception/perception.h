@@ -189,7 +189,7 @@ struct OpencvCamera:Module{
   struct sOpencvCamera *s;
   Access_typed<byteA> rgb;
   std::map<int,double> properties; bool set(int prop, double value);
-  OpencvCamera(const char* rgb_name="rgb") : Module(STRING("OpencvCamera_"<<rgb_name), -1.), rgb(this, rgb_name){}
+  OpencvCamera(const char* rgb_name="rgb") : Module(STRING("OpencvCamera_"<<rgb_name), 0.), rgb(this, rgb_name){}
   void open();
   void step();
   void close();

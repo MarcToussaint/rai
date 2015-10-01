@@ -159,10 +159,8 @@ struct Metronome {
   double ticInterval;
   timespec ticTime;
   uint tics;
-  const char* name;                   ///< name
 
-  Metronome(const char* name, double ticIntervalSec); ///< set tic tac time in micro seconds
-  ~Metronome();
+  Metronome(double ticIntervalSec); ///< set tic tac time in micro seconds
 
   void reset(double ticIntervalSec);
   void waitForTic();              ///< waits until the next tic
@@ -172,8 +170,8 @@ struct Metronome {
 /// a really simple thing to meassure cycle and busy times
 struct CycleTimer {
   uint steps;
-  double cyclDt, cyclDtMean, cyclDtMax;  ///< internal variables to measure step time
   double busyDt, busyDtMean, busyDtMax;  ///< internal variables to measure step time
+  double cyclDt, cyclDtMean, cyclDtMax;  ///< internal variables to measure step time
   timespec now, lastTime;
   const char* name;                    ///< name
   CycleTimer(const char *_name=NULL);
@@ -181,6 +179,7 @@ struct CycleTimer {
   void reset();
   void cycleStart();
   void cycleDone();
+  void report();
 };
 
 
@@ -203,18 +202,19 @@ struct Thread{
   struct sThread *thread;
 #endif
   uint step_count;
-  Metronome *metronome;          ///< used for beat-looping
+  Metronome metronome;          ///< used for beat-looping
+  CycleTimer timer;
 
   /// @name c'tor/d'tor
-  Thread(const char* name);
+  Thread(const char* _name, double beatIntervalSec=0.); ///< beatIntervalSec=0. indicates full speed looping
   virtual ~Thread();
 
   /// @name to be called from `outside' (e.g. the main) to start/step/close the thread
   void threadOpen(int priority=0);      ///< start the thread (in idle mode) (should be positive for changes)
   void threadClose();                   ///< close the thread (stops looping and waits for idle mode before joining the thread)
   void threadStep(uint steps=1, bool wait=false);     ///< trigger (multiple) step (idle -> working mode) (wait until idle? otherwise calling during non-idle -> error)
-  void threadLoop();                    ///< loop, stepping forever
-  void threadLoopWithBeat(double sec);  ///< loop with a fixed beat (cycle time)
+  void threadLoop();                    ///< loop, either with fixed beat or at full speed
+//  void threadLoopWithBeat(double beatIntervalSec);  ///< loop with a fixed beat (cycle time)
   void threadStop();                    ///< stop looping
   void threadCancel();                  ///< a hard kill (pthread_cancel) of the thread
 
