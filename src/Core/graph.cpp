@@ -683,12 +683,12 @@ ParseInfo& Graph::getParseInfo(Node* it){
 
 bool Graph::checkConsistency() const{
   uint idx=0;
-  for(Node *it: *this){
-    CHECK_EQ(&it->container, this, "");
-    CHECK_EQ(it->index, idx, "");
-    for(Node *j: it->parents)  CHECK(j->parentOf.findValue(it) != -1,"");
-    for(Node *j: it->parentOf) CHECK(j->parents.findValue(it) != -1,"");
-    for(Node *parent: it->parents) if(&parent->container!=this){
+  for(Node *node: *this){
+    CHECK_EQ(&node->container, this, "");
+    CHECK_EQ(node->index, idx, "");
+    for(Node *j: node->parents)  CHECK(j->parentOf.findValue(node) != -1,"");
+    for(Node *j: node->parentOf) CHECK(j->parents.findValue(node) != -1,"");
+    for(Node *parent: node->parents) if(&parent->container!=this){
       //check that parent is contained in a super-graph of this
       const Graph *parentGraph = this;
       const Node *parentGraphNode;
@@ -701,11 +701,11 @@ bool Graph::checkConsistency() const{
       //check sorting
 //      CHECK(parent->index < parentGraphNode->index,"subitem refers to parent that sorts below the subgraph");
     }else{
-      CHECK(parent->index < it->index,"item refers to parent that sorts below the item");
+      CHECK(parent->index < node->index,"item refers to parent that sorts below the item");
     }
-    if(it->getValueType()==typeid(Graph) && it->getValue<Graph>()){
-      Graph& G = it->graph();
-      CHECK(G.isNodeOfParentGraph==it,"");
+    if(node->getValueType()==typeid(Graph) && node->getValue<Graph>()){
+      Graph& G = node->graph();
+      CHECK(G.isNodeOfParentGraph==node,"");
       if(!G.isReferringToNodesOf) G.checkConsistency();
     }
     idx++;
