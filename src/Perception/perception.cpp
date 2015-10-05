@@ -40,7 +40,8 @@ void ImageViewer::step(){
   s->gl.background = img.get();
   if(s->gl.height!= s->gl.background.d0 || s->gl.width!= s->gl.background.d1)
     s->gl.resize(s->gl.background.d1, s->gl.background.d0);
-  s->gl.update();
+  s->gl.update(name, false, false, true);
+//  MT::wait(.1);
 #endif
 }
 
