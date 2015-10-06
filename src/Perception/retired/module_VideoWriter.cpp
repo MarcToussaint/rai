@@ -7,8 +7,8 @@ VideoEncoderModule::VideoEncoderModule():Module("FloatA_Recorder"), fps(30), vid
 }
 
 void VideoEncoderModule::open(){
-  MT::String nowStr;
-  MT::getNowString();
+  mlr::String nowStr;
+  mlr::getNowString();
   video = new VideoEncoder_libav_simple(STRING("z.video." << nowStr << ".avi"), fps);
 }
 
@@ -31,7 +31,7 @@ void VideoEncoderModule::step(){
   video->addFrame(image);
 
   //save time tag
-  MT::String tag;
+  mlr::String tag;
   tag.resize(30, false);
   sprintf(tag.p, "%6i %13.6f", rev, time);
   timeTagFile <<tag <<endl;

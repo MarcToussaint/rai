@@ -5,7 +5,7 @@
 #include <Gui/opengl.h>
 
 struct ModelEnsemble :OpenGL::GLDrawer{
-  MT::Array<MinEigModel*> models;
+  mlr::Array<MinEigModel*> models;
 
   arr vert;
 

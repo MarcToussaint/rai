@@ -22,37 +22,37 @@
 /// @addtogroup group_Gui
 /// @{
 
-#ifndef MT_opengl_h
-#define MT_opengl_h
+#ifndef MLR_opengl_h
+#define MLR_opengl_h
 
 #include <Core/array.h>
 #include <Core/thread.h>
 
-#ifndef MT_QTGL
+#ifndef MLR_QTGL
 #  include <X11/Xlib.h>
 #endif
 
-#ifdef MT_FLTK
+#ifdef MLR_FLTK
 #  include <FL/glut.H>
 #endif
 
-#ifdef MT_FREEGLUT
-#  ifndef MT_MSVC
+#ifdef MLR_FREEGLUT
+#  ifndef MLR_MSVC
 #    define FREEGLUT_STATIC
 #  endif
 #  include <GL/freeglut.h>
 #endif
 
-#ifdef MT_GL
+#ifdef MLR_GL
 #  include <GL/gl.h>
 #  include <GL/glu.h>
-#  ifdef MT_CUDA
+#  ifdef MLR_CUDA
 #    undef APIENTRY
 #  endif
 #  include <GL/glut.h>
 #endif
 
-#ifdef MT_GL2PS
+#ifdef MLR_GL2PS
 #  include<gl2ps.h>
 #endif
 
@@ -182,17 +182,17 @@ struct OpenGL {
   struct GLKeyCall  { virtual bool keyCallback(OpenGL&) = 0; };
   struct GLEvent    { int button, key, x, y; float dx, dy; void set(int b, int k, int _x, int _y, float _dx, float _dy) { button=b; key=k; x=_x; y=_y; dx=_dx; dy=_dy; } };
   struct GLSelect   { int name; double dmin, dmax, x,y,z; };
-  struct GLView     { double le, ri, bo, to;  MT::Array<GLDrawer*> drawers;  ors::Camera camera;  byteA *img;  MT::String text;  GLView() { img=NULL; le=bo=0.; ri=to=1.; } };
+  struct GLView     { double le, ri, bo, to;  mlr::Array<GLDrawer*> drawers;  ors::Camera camera;  byteA *img;  mlr::String text;  GLView() { img=NULL; le=bo=0.; ri=to=1.; } };
   
   /// @name data fields
-  MT::Array<GLView> views;            ///< list of draw routines
-  MT::Array<GLDrawer*> drawers;        ///< list of draw routines
-  MT::Array<GLInitCall*> initCalls;    ///< list of initialization routines
-  MT::Array<GLHoverCall*> hoverCalls; ///< list of hover callbacks
-  MT::Array<GLClickCall*> clickCalls; ///< list of click callbacks
-  MT::Array<GLKeyCall*> keyCalls;     ///< list of click callbacks
+  mlr::Array<GLView> views;            ///< list of draw routines
+  mlr::Array<GLDrawer*> drawers;        ///< list of draw routines
+  mlr::Array<GLInitCall*> initCalls;    ///< list of initialization routines
+  mlr::Array<GLHoverCall*> hoverCalls; ///< list of hover callbacks
+  mlr::Array<GLClickCall*> clickCalls; ///< list of click callbacks
+  mlr::Array<GLKeyCall*> keyCalls;     ///< list of click callbacks
   ors::Camera camera;     ///< the camera used for projection
-  MT::String text;        ///< the text to be drawn as title within the opengl frame
+  mlr::String text;        ///< the text to be drawn as title within the opengl frame
   float clearR, clearG, clearB, clearA;  ///< colors of the beackground (called in glClearColor(...))
   bool reportEvents, reportSelects;    ///< flags for verbosity
   int pressedkey;         ///< stores the key pressed
@@ -202,7 +202,7 @@ struct OpenGL {
   int mouseposx, mouseposy;  ///< current x- and y-position of mouse
   int mouseView;
   bool mouseIsDown;
-  MT::Array<GLSelect> selection; ///< list of all selected objects
+  mlr::Array<GLSelect> selection; ///< list of all selected objects
   GLSelect *topSelection;        ///< top selected object
   bool immediateExitLoop;
   bool drawFocus;
@@ -218,8 +218,8 @@ struct OpenGL {
   ConditionVariable isUpdating;
 
   /// @name constructors & destructors
-  OpenGL(const char* title="MT::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
-  //OpenGL(void *parent, const char* title="MT::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
+  OpenGL(const char* title="mlr::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
+  //OpenGL(void *parent, const char* title="mlr::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
   OpenGL(void *container); //special constructor: used when the underlying system-dependent class exists already
   
   OpenGL *newClone() const;
@@ -283,7 +283,7 @@ public: //driver dependent methods
   void enterEventLoop();
   void exitEventLoop();
   void renderInBack(int width=-1, int height=-1, bool captureImg=true, bool captureDepth=false);
-#if !defined MT_MSVC && !defined MT_QTGL
+#if !defined MLR_MSVC && !defined MLR_QTGL
   Display* xdisplay();
   Drawable xdraw();
 #endif
@@ -313,7 +313,7 @@ protected:
 struct glUI:OpenGL::GLHoverCall,OpenGL::GLClickCall {
   int top;
   struct Button { byteA img1, img2; bool hover; uint x, y, w, h; const char* name; };
-  MT::Array<Button> buttons;
+  mlr::Array<Button> buttons;
   
   glUI() { top=-1; }
   

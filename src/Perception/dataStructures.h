@@ -44,7 +44,7 @@ struct ArrCloudView:Primitive{
 };
 
 struct DisplayPrimitives{
-  MT::Array<Primitive*> P;
+  mlr::Array<Primitive*> P;
   ors::KinematicWorld G;
   arr pc[2];
 

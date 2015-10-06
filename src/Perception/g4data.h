@@ -10,8 +10,8 @@ struct G4Data;
 struct G4RawSeq;
 struct G4FeatSeq;
 
-typedef MT::Array<G4RawSeq*> G4RawSeqL;
-typedef MT::Array<G4FeatSeq*> G4FeatSeqL;
+typedef mlr::Array<G4RawSeq*> G4RawSeqL;
+typedef mlr::Array<G4FeatSeq*> G4FeatSeqL;
 
 
 // =============================================================================
@@ -53,9 +53,9 @@ struct G4ID {
   const char *sensor(uint hsi);
 
   template <class T>
-  MT::Array<T> query(const MT::Array<T> &data, const String &sensor);
+  mlr::Array<T> query(const mlr::Array<T> &data, const String &sensor);
   template <class T>
-  MT::Array<T> query(const MT::Array<T> &data, const StringA &sensors);
+  mlr::Array<T> query(const mlr::Array<T> &data, const StringA &sensors);
 
   /* arr query(const String &sensor) jjjj */
   /*   // TODO */

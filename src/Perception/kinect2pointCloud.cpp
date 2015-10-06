@@ -38,7 +38,7 @@ void MLR::images2pointcloud(arr& pts, arr& cols, const byteA& rgb, const uint16A
   depthData2pointCloud(pts, depth);
 
   if(rgb.N!=3*image_width*image_height){
-    MT_MSG("kinect rgb data has wrong dimension: rgb.dim=" <<rgb.dim());
+    MLR_MSG("kinect rgb data has wrong dimension: rgb.dim=" <<rgb.dim());
     return;
   }
 
@@ -48,7 +48,7 @@ void MLR::images2pointcloud(arr& pts, arr& cols, const byteA& rgb, const uint16A
 
 void MLR::depthData2pointCloud(arr& pts, const uint16A& depth){
   if(depth.N!=image_width*image_height){
-    MT_MSG("kinect depth data has wrong dimension: depth.dim=" <<depth.dim());
+    MLR_MSG("kinect depth data has wrong dimension: depth.dim=" <<depth.dim());
     return;
   }
 

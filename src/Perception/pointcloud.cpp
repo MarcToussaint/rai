@@ -67,13 +67,13 @@ struct sObjectFitter{
     seg.setOptimizeCoefficients (true);
     seg.setModelType (pcl::SACMODEL_CYLINDER);
     seg.setMethodType (pcl::SAC_RANSAC);
-    double ndw = MT::getParameter<double>("CylNormalDistanceWeight", 0.07);
+    double ndw = mlr::getParameter<double>("CylNormalDistanceWeight", 0.07);
     seg.setNormalDistanceWeight (ndw);
     seg.setMaxIterations (100);
-    double dt = MT::getParameter<double>("CylDistanceThreshold", 0.01);
+    double dt = mlr::getParameter<double>("CylDistanceThreshold", 0.01);
     seg.setDistanceThreshold (dt);
-    double minRadius = MT::getParameter<double>("MinSphereRadius", 0.01);
-    double maxRadius = MT::getParameter<double>("MaxSphereRadius", 0.1);
+    double minRadius = mlr::getParameter<double>("MinSphereRadius", 0.01);
+    double maxRadius = mlr::getParameter<double>("MaxSphereRadius", 0.1);
     seg.setRadiusLimits (minRadius, maxRadius);
     seg.setInputCloud (cloud);
     seg.setInputNormals (normals);
@@ -82,7 +82,7 @@ struct sObjectFitter{
     pcl::ModelCoefficients::Ptr coefficients_cylinder (new pcl::ModelCoefficients);
     seg.segment (*inliers_cylinder, *coefficients_cylinder);
 
-    uint minCloudSize = MT::getParameter<int>("minCloudSize", 500);
+    uint minCloudSize = mlr::getParameter<int>("minCloudSize", 500);
     if (inliers_cylinder->indices.size() < minCloudSize) {
       object.reset();   
       return 0;
@@ -101,10 +101,10 @@ struct sObjectFitter{
     seg.setOptimizeCoefficients (true);
     seg.setModelType (pcl::SACMODEL_SPHERE);
     seg.setMethodType (pcl::SAC_RANSAC);
-    double ndw = MT::getParameter<double>("SphereNormalDistanceWeight", 10);
+    double ndw = mlr::getParameter<double>("SphereNormalDistanceWeight", 10);
     seg.setNormalDistanceWeight (ndw);
     seg.setMaxIterations (100);
-    double dt = MT::getParameter<double>("SphereDistanceThreshold", .0005);
+    double dt = mlr::getParameter<double>("SphereDistanceThreshold", .0005);
     seg.setDistanceThreshold (dt);
     seg.setRadiusLimits (0.01, 0.1);
     seg.setInputCloud (cloud);
@@ -113,7 +113,7 @@ struct sObjectFitter{
     pcl::PointIndices::Ptr inliers_sphere(new pcl::PointIndices);
     pcl::ModelCoefficients::Ptr coefficients_sphere(new pcl::ModelCoefficients);
     seg.segment (*inliers_sphere, *coefficients_sphere);
-    uint minCloudSize = MT::getParameter<int>("minCloudSize", 500);
+    uint minCloudSize = mlr::getParameter<int>("minCloudSize", 500);
     if (inliers_sphere->indices.size() < minCloudSize) {
       object.reset();   
       return 0;
@@ -190,7 +190,7 @@ struct sObjectFitter{
     }
     //if rest points are enough create new job
 
-    uint minCloudSize = MT::getParameter<int>("minCloudSize", 500);
+    uint minCloudSize = mlr::getParameter<int>("minCloudSize", 500);
     if (cloud->size() - inliers->indices.size() > minCloudSize) {
       anotherJob = createNewJob(cloud, inliers);
       return true;
@@ -248,7 +248,7 @@ void ObjectClusterer::step() {
   std::vector<pcl::PointIndices> cluster_indices;
   pcl::EuclideanClusterExtraction<PointT> ec;
   ec.setClusterTolerance(0.01);
-  int minCloudSize = MT::getParameter<int>("minCloudSize", 500);
+  int minCloudSize = mlr::getParameter<int>("minCloudSize", 500);
   ec.setMinClusterSize(minCloudSize);
   ec.setMaxClusterSize(25000);
   ec.setSearchMethod(tree);
@@ -265,7 +265,7 @@ void ObjectClusterer::step() {
     cloud_cluster->height = 1;
     cloud_cluster->is_dense = true;
     pcl::PointCloud<PointT>::Ptr cluster_transformed(new pcl::PointCloud<PointT>);
-    Eigen::Matrix4f transform(MT::getParameter<floatA>("kinect_trans_mat").p);
+    Eigen::Matrix4f transform(mlr::getParameter<floatA>("kinect_trans_mat").p);
     transform.transposeInPlace();
     pcl::transformPointCloud(*cloud_cluster, *cluster_transformed, transform);
 
@@ -284,7 +284,7 @@ ObjectFitter::ObjectFitter() : Module("ObectFitter"), s(new sObjectFitter(this))
 void ObjectFitter::open() {}
 
 void ObjectFitter::step() {
-  MT::Array<FittingResult> results;
+  mlr::Array<FittingResult> results;
 
   PointCloudL plist = objectClusters.get();
   PointCloudL next;
@@ -343,7 +343,7 @@ struct sObjectFilter {
       measurement_.append(-measurement.sub(0,0,3,5));
       measurement_.append(measurement(0,6));
       measurement_.resize(1,7);
-      double epsilon = MT::getParameter<double>("objectDistance");
+      double epsilon = mlr::getParameter<double>("objectDistance");
       for (uint j = 0; j<pos.d0; ++j) {
         if(filterShape(pos, nums, measurement, j, epsilon)) { found = true; break;}
         else if (filterShape(pos, nums, measurement_, j, epsilon)) {found = true; break; }
@@ -368,7 +368,7 @@ struct sObjectFilter {
       arr measurement;
       measurement.resize(1,4);
       std::copy(objects(i)->values.begin(), objects(i)->values.end(), measurement.p);
-      double epsilon = MT::getParameter<double>("objectDistance");
+      double epsilon = mlr::getParameter<double>("objectDistance");
       for (uint j = 0; j<pos.d0; ++j) {
         if(filterShape(pos, nums, measurement, j, epsilon)) { found = true; break; }
       }

@@ -5,7 +5,7 @@ PlainMC::PlainMC(MCTS_Environment& world)
   : world(world), gamma(.9), verbose(2), topSize(10){
   reset();
   gamma = world.get_info_value(MCTS_Environment::getGamma);
-  MT::FileToken fil("PlainMC.blackList");
+  mlr::FileToken fil("PlainMC.blackList");
   if(fil.exists()){
     blackList.read(fil.getIs());
   }
@@ -18,9 +18,9 @@ void PlainMC::reset(){
 }
 
 void topAdd(double y, arr& x, uint topSize){
-  if(x.N<topSize) x.insertInSorted(y, MT::greater);
+  if(x.N<topSize) x.insertInSorted(y, mlr::greater);
   else if(y>x.last()){
-    x.insertInSorted(y, MT::greater);
+    x.insertInSorted(y, mlr::greater);
     x.popLast();
   }
 }
@@ -31,7 +31,7 @@ void PlainMC::addRollout(int stepAbort){
   double R=0.;
   double discount=1.;
 
-  MT::String decisionsString;
+  mlr::String decisionsString;
 
   // random first choice
   uint a = rnd(A.N);
@@ -56,7 +56,7 @@ void PlainMC::addRollout(int stepAbort){
   if(step>=stepAbort) R -= 100.;
   if(verbose>0) cout <<"****************** MC: terminal state reached; step=" <<step <<" Return=" <<R <<endl;
 
-  for(const MT::String& black:blackList){
+  for(const mlr::String& black:blackList){
     if(decisionsString.startsWith(black)){
       if(verbose>0) cout <<"****************** MC: rollout was on BLACKLIST: " <<*black <<endl;
       return;

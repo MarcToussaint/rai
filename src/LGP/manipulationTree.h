@@ -8,7 +8,7 @@
 
 struct ManipulationTree_Node{
   ManipulationTree_Node *parent;
-  MT::Array<ManipulationTree_Node*> children;
+  mlr::Array<ManipulationTree_Node*> children;
   uint s;               ///< depth/step of this node
 //  double t;             ///< real time
 

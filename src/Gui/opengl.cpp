@@ -37,26 +37,26 @@ void openGlUnlock(){ openglAccess().unlock(); }
 
 //===========================================================================
 
-#ifdef MT_FREEGLUT
+#ifdef MLR_FREEGLUT
 #  include "opengl_freeglut.cxx"
 #endif
 
-#ifdef MT_GTKGL
+#ifdef MLR_GTKGL
 #  include "opengl_gtk.cxx"
 #endif
 
-#ifdef MT_FLTK
+#ifdef MLR_FLTK
 #  include "opengl_fltk.cxx"
 #endif
 
-#ifdef MT_QTGL
+#ifdef MLR_QTGL
 #  include "opengl_qt.cxx"
 #endif
 
-#if !defined MT_FREEGLUT && !defined MT_GTKGL && !defined MT_FLTK && !defined MT_QTGL
+#if !defined MLR_FREEGLUT && !defined MLR_GTKGL && !defined MLR_FLTK && !defined MLR_QTGL
 #  include "opengl_void.cxx"
 #else
-#  define MT_GLUT
+#  define MLR_GLUT
 #endif
 
 
@@ -65,8 +65,8 @@ void openGlUnlock(){ openglAccess().unlock(); }
 // force instantiations
 //
 
-template MT::Array<glUI::Button>::Array();
-template MT::Array<glUI::Button>::~Array();
+template mlr::Array<glUI::Button>::Array();
+template mlr::Array<glUI::Button>::~Array();
 
 
 //===========================================================================
@@ -184,7 +184,7 @@ void ors::Camera::setCameraProjectionMatrix(const arr& P) {
 /** sets OpenGL's GL_PROJECTION matrix accordingly -- should be
     called in an opengl draw routine */
 void ors::Camera::glSetProjectionMatrix() {
-#ifdef MT_GL
+#ifdef MLR_GL
 //  if(fixedProjectionMatrix.N) {
 //    glLoadMatrixd(fixedProjectionMatrix.p);
 //  } else {
@@ -238,7 +238,7 @@ uint OpenGL::selectionBuffer[1000];
 // utility implementations
 //
 
-#ifdef MT_GL
+#ifdef MLR_GL
 void glStandardLight(void*) {
   glEnable(GL_LIGHTING);
 #if 1
@@ -378,7 +378,7 @@ void glPopLight() { if(glLightIsOn) glEnable(GL_LIGHTING); }
 
 void glDrawText(const char* txt, float x, float y, float z) {
   if(!txt) return;
-#if 1 //defined MT_FREEGLUT
+#if 1 //defined MLR_FREEGLUT
   glDisable(GL_DEPTH_TEST);
   glPushLightOff();
   glRasterPos3f(x, y, z);
@@ -761,11 +761,11 @@ void glMakeTorus(int num) {
   scalFac=1/(outerRadius*2);
   
   for(i=0; i<rings; i++) {
-    theta1 = (float)i * 2.0 * MT_PI / rings;
-    theta2 = (float)(i + 1) * 2.0 * MT_PI / rings;
+    theta1 = (float)i * 2.0 * MLR_PI / rings;
+    theta2 = (float)(i + 1) * 2.0 * MLR_PI / rings;
     for(j=0; j<sides; j++) {
-      phi1 = (float)j * 2.0 * MT_PI / sides;
-      phi2 = (float)(j + 1) * 2.0 * MT_PI / sides;
+      phi1 = (float)j * 2.0 * MLR_PI / sides;
+      phi2 = (float)(j + 1) * 2.0 * MLR_PI / sides;
       
       v0[0] = cos(theta1) * (outerRadius + innerRadius * cos(phi1));
       v0[1] =-sin(theta1) * (outerRadius + innerRadius * cos(phi1));
@@ -877,7 +877,7 @@ void glDrawTexQuad(uint texture,
   glDisable(GL_TEXTURE_2D);
 }
 
-#ifdef MT_GLUT
+#ifdef MLR_GLUT
 /** @brief return the RGBA-image of scenery drawn just before; the image
   buffer has to have either 2 dimensions [width, height] for a
   gray-scale luminance image or 3 dimensions [width, height, 4] for an
@@ -915,10 +915,10 @@ void glGrabImage(byteA& image) {
       glReadPixels(0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, image.p);
     break;
     case 4:
-#if defined MT_SunOS
+#if defined MLR_SunOS
       glReadPixels(0, 0, w, h, GL_ABGR_EXT, GL_UNSIGNED_BYTE, image.p);
 #else
-#if defined MT_Cygwin
+#if defined MLR_Cygwin
       glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, image.p);
 #else
       //glReadPixels(0, 0, w, h, GL_BGRA_EXT, GL_UNSIGNED_BYTE, image.p);
@@ -1058,14 +1058,14 @@ bool glUI::clickCallback(OpenGL& gl) {
   return true;
 }
 
-#ifdef MT_FREEGLUT
+#ifdef MLR_FREEGLUT
 void glSelectWin(uint win) {
   if(!staticgl[win]) staticgl[win]=new OpenGL;
   glutSetWindow(staticgl[win]->s->windowID);
 }
 #endif
 
-#else /// MT_GL
+#else /// MLR_GL
 void glColor(int col) { NICO }
 void glColor(float, float, float, float) { NICO }
 void glDrawDiamond(float, float, float, float, float, float) { NICO }
@@ -1089,7 +1089,7 @@ void glDrawPointCloud(const arr& pts, const arr& cols) { NICO }
 // standalone draw routines for large data structures
 //
 
-#ifdef MT_GL
+#ifdef MLR_GL
 void glDrawDots(void *dots) { glDrawPointCloud(*(arr*)dots, NoArr); }
 void glDrawPointCloud(void *pc) { glDrawPointCloud(((const arr*)pc)[0], ((const arr*)pc)[1]); }
 
@@ -1131,7 +1131,7 @@ void glDrawPointCloud(const arr& pts, const arr& cols) {
 
 OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy)
   : s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0){
-  //MT_MSG("creating OpenGL=" <<this);
+  //MLR_MSG("creating OpenGL=" <<this);
   initGlEngine();
   s=new sOpenGL(this,title,w,h,posx,posy); //this might call some callbacks (Reshape/Draw) already!
   init();
@@ -1149,7 +1149,7 @@ OpenGL::OpenGL(void *container)
 OpenGL::~OpenGL() {
   delete s;
   s=NULL;
-//  MT_MSG("destructing OpenGL=" <<this);
+//  MLR_MSG("destructing OpenGL=" <<this);
 }
 
 OpenGL* OpenGL::newClone() const {
@@ -1228,7 +1228,7 @@ void OpenGL::clear() {
 }
 
 void OpenGL::Draw(int w, int h, ors::Camera *cam) {
-#ifdef MT_GL
+#ifdef MLR_GL
   openglAccess().lock();
 
   //clear bufferer
@@ -1289,7 +1289,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   //cout <<"OpenGL's P=" <<P <<endl;
   
   /*
-  double zn=camera.zNear, zf=camera.zFar, f=1./tan(MT_PI/180.*camera.heightAngle/2.);
+  double zn=camera.zNear, zf=camera.zFar, f=1./tan(MLR_PI/180.*camera.heightAngle/2.);
   arr Frust(4, 4); Frust.setZero();
   Frust(0, 0) = Frust(1, 1) = f;
   Frust(2, 2) = (zf+zn)/(zn-zf);
@@ -1392,7 +1392,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   //check matrix stack
   GLint s;
   glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &s);
-  if(s!=1) MT_MSG("OpenGL name stack has not depth 1 (pushs>pops) in DRAW mode:" <<s);
+  if(s!=1) MLR_MSG("OpenGL name stack has not depth 1 (pushs>pops) in DRAW mode:" <<s);
   //CHECK(s<=1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
   
   //this->s->endGlContext();
@@ -1401,7 +1401,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
 }
 
 void OpenGL::Select() {
-#ifdef MT_GL
+#ifdef MLR_GL
   uint i, j, k;
   
   s->beginGlContext();
@@ -1439,7 +1439,7 @@ void OpenGL::Select() {
       drawers(i)->glDraw(*this);
       GLint s;
       glGetIntegerv(GL_NAME_STACK_DEPTH, &s);
-      if(s!=0) MT_MSG("OpenGL name stack has not depth 1 (pushs>pops) in SELECT mode:" <<s);
+      if(s!=0) MLR_MSG("OpenGL name stack has not depth 1 (pushs>pops) in SELECT mode:" <<s);
     }
   } else {
     GLView *vi=&views(mouseView);
@@ -1491,7 +1491,7 @@ void OpenGL::Select() {
   (key pressed or right mouse) */
 int OpenGL::watch(const char *txt) {
   update(STRING(txt<<" - press ENTER to continue"));
-  if(MT::getInteractivity()) enterEventLoop();
+  if(mlr::getInteractivity()) enterEventLoop();
   return pressedkey;
 }
 
@@ -1503,7 +1503,7 @@ int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool wai
   isUpdating.waitForValueEq(0);
   isUpdating.setValue(1);
   postRedrawEvent(false);
-  if(captureImg || captureDep || waitForCompletedDraw){ processEvents();  isUpdating.waitForValueEq(0);  processEvents(); }//{ MT::wait(.01); processEvents(); MT::wait(.01); }
+  if(captureImg || captureDep || waitForCompletedDraw){ processEvents();  isUpdating.waitForValueEq(0);  processEvents(); }//{ mlr::wait(.01); processEvents(); mlr::wait(.01); }
   return pressedkey;
 }
 
@@ -1511,11 +1511,11 @@ int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool wai
 int OpenGL::timedupdate(double sec) {
   static double lasttime=-1;
   double now;
-  now=MT::realTime();
-  if(lasttime>0. && now-lasttime<sec) MT::wait(lasttime+sec-now);
+  now=mlr::realTime();
+  if(lasttime>0. && now-lasttime<sec) mlr::wait(lasttime+sec-now);
   lasttime=now;
   return update();
-#if 0//def MT_QTGL
+#if 0//def MLR_QTGL
   int i;
   quitLoopOnTimer=true;
   i=startTimer(msec);
@@ -1534,7 +1534,7 @@ void OpenGL::setClearColors(float r, float g, float b, float a) {
   camera view (e.g. as a result of selection) computes the world 3D
   coordinates */
 void OpenGL::unproject(double &x, double &y, double &z,bool resetCamera) {
-#ifdef MT_GL
+#ifdef MLR_GL
   double _x, _y, _z;
   GLdouble modelMatrix[16], projMatrix[16];
   GLint viewPort[4];
@@ -1559,10 +1559,10 @@ void OpenGL::unproject(double &x, double &y, double &z,bool resetCamera) {
 
 
 //void OpenGL::capture(byteA &img, int w, int h, ors::Camera *cam) {
-////#ifdef MT_GLUT
-////#ifdef MT_FREEGLUT
+////#ifdef MLR_GLUT
+////#ifdef MLR_FREEGLUT
 ////  glutSetWindow(s->windowID);
-////#elif defined MT_GTKGL
+////#elif defined MLR_GTKGL
 ////  gtkLock();
 ////#endif
 //  captureImg=true;
@@ -1586,15 +1586,15 @@ void OpenGL::unproject(double &x, double &y, double &z,bool resetCamera) {
 ////    }
 ////  }
 ////#endif
-////#if defined MT_GTKGL
+////#if defined MLR_GTKGL
 ////  gtkUnlock();
 ////#endif
 ////#endif
 //}
 
 //void OpenGL::captureDepth(byteA &depth, int w, int h, ors::Camera *cam) {
-//#ifdef MT_GLUT
-//#ifdef MT_FREEGLUT
+//#ifdef MLR_GLUT
+//#ifdef MLR_FREEGLUT
 //  glutSetWindow(s->windowID);
 //#endif
 //  //postRedrawEvent(false);
@@ -1606,8 +1606,8 @@ void OpenGL::unproject(double &x, double &y, double &z,bool resetCamera) {
 //}
 
 //void OpenGL::captureDepth(floatA &depth, int w, int h, ors::Camera *cam) {
-//#ifdef MT_GLUT
-//#ifdef MT_FREEGLUT
+//#ifdef MLR_GLUT
+//#ifdef MLR_FREEGLUT
 //  glutSetWindow(s->windowID);
 //#endif
 //  //postRedrawEvent(false);
@@ -1619,8 +1619,8 @@ void OpenGL::unproject(double &x, double &y, double &z,bool resetCamera) {
 //}
 
 //void OpenGL::captureStereo(byteA &imgL, byteA &imgR, int w, int h, ors::Camera *cam, double baseline) {
-//#ifdef MT_GLUT
-//#ifdef MT_FREEGLUT
+//#ifdef MLR_GLUT
+//#ifdef MLR_FREEGLUT
 //  glutSetWindow(s->windowID);
 //#endif
 //  postRedrawEvent(false);
@@ -1653,7 +1653,7 @@ void OpenGL::reportSelection() {
   }
 }
 
-#ifdef MT_GL2PS
+#ifdef MLR_GL2PS
 /** @brief generates a ps from the current OpenGL display, using gl2ps */
 void OpenGL::saveEPS(const char *filename) {
   FILE *fp = fopen(filename, "wb");
@@ -1675,13 +1675,13 @@ void OpenGL::saveEPS(const char *filename) {
 }
 #else
 void OpenGL::saveEPS(const char*) {
-  MT_MSG("WARNING: OpenGL::saveEPS was called without MT_GL2PS configured!");
+  MLR_MSG("WARNING: OpenGL::saveEPS was called without MLR_GL2PS configured!");
 }
 #endif
 
-#ifndef MT_QTGL
+#ifndef MLR_QTGL
 /** @brief report on the OpenGL capabilities (the QGLFormat) */
-void OpenGL::about(std::ostream& os) { MT_MSG("NICO"); }
+void OpenGL::about(std::ostream& os) { MLR_MSG("NICO"); }
 #endif
 
 
@@ -1691,7 +1691,7 @@ void OpenGL::about(std::ostream& os) { MT_MSG("NICO"); }
 //
 
 #if 1
-#  define CALLBACK_DEBUG(x) if(reportEvents) { cout <<MT_HERE <<s <<':'; x; }
+#  define CALLBACK_DEBUG(x) if(reportEvents) { cout <<MLR_HERE <<s <<':'; x; }
 #else
 #  define CALLBACK_DEBUG(x)
 #endif
@@ -1728,7 +1728,7 @@ void OpenGL::Key(unsigned char key, int _x, int _y) {
   bool cont=true;
   for(uint i=0; i<keyCalls.N; i++) cont=cont && keyCalls(i)->keyCallback(*this);
   
-  if(key==13 || key==27 || MT::contains(exitkeys, key)) exitEventLoop();
+  if(key==13 || key==27 || mlr::contains(exitkeys, key)) exitEventLoop();
 }
 
 void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
@@ -1803,7 +1803,7 @@ void OpenGL::MouseWheel(int wheel, int direction, int x, int y) {
 
 
 void OpenGL::Motion(int _x, int _y) {
-#ifdef MT_GL
+#ifdef MLR_GL
   int w=width, h=height;
   _y = h-_y;
   CALLBACK_DEBUG(printf("Window %d Mouse Motion Callback:  %d %d\n", 0, _x, _y));
@@ -1819,7 +1819,7 @@ void OpenGL::Motion(int _x, int _y) {
   }
   CALLBACK_DEBUG(cout <<"associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
   lastEvent.set(mouse_button, -1, _x, _y, vec.x-s->downVec.x, vec.y-s->downVec.y);
-#ifndef MT_Linux
+#ifndef MLR_Linux
   int modifiers=glutGetModifiers();
 #else
   //int modifiers=0;
@@ -1897,7 +1897,7 @@ void glUI::addButton(uint x, uint y, const char *name, const char *img1, const c
 }
 
 void glUI::glDraw() {
-#ifdef MT_GL
+#ifdef MLR_GL
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
   GLint viewPort[4];
@@ -1944,14 +1944,14 @@ bool glUI::checkMouse(int _x, int _y) {
   return true;
 }
 
-#ifdef MT_QTGL
-#if   defined MT_MSVC
+#ifdef MLR_QTGL
+#if   defined MLR_MSVC
 #  include"opengl_MSVC.moccpp"
-#elif defined MT_SunOS
+#elif defined MLR_SunOS
 #  include"opengl_SunOS.moccpp"
-#elif defined MT_Linux
+#elif defined MLR_Linux
 #  include"opengl_qt_moc.cxx"
-#elif defined MT_Cygwin
+#elif defined MLR_Cygwin
 #  include"opengl_Cygwin.moccpp"
 #endif
 #endif

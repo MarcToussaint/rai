@@ -16,8 +16,8 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
 
-#ifndef MT_thread_h
-#define MT_thread_h
+#ifndef MLR_thread_h
+#define MLR_thread_h
 
 #include "util.h"
 #include "array.h"
@@ -26,9 +26,9 @@ enum ThreadState { tsIDLE=0, tsCLOSE=-1, tsOPENING=-2, tsLOOPING=-3, tsBEATING=-
 struct ConditionVariable;
 struct RevisionedAccessGatedClass;
 struct Thread;
-typedef MT::Array<ConditionVariable*> ConditionVariableL;
-typedef MT::Array<RevisionedAccessGatedClass*> RevisionedAccessGatedClassL;
-typedef MT::Array<Thread*> ThreadL;
+typedef mlr::Array<ConditionVariable*> ConditionVariableL;
+typedef mlr::Array<RevisionedAccessGatedClass*> RevisionedAccessGatedClassL;
+typedef mlr::Array<Thread*> ThreadL;
 
 void stop(const ThreadL& P);
 void wait(const ThreadL& P);
@@ -39,7 +39,7 @@ void close(const ThreadL& P);
 // threading: pthread wrappers: Mutex, RWLock, ConditionVariable
 //
 
-#ifndef MT_MSVC
+#ifndef MLR_MSVC
 
 /// a basic read/write access lock
 struct RWLock {
@@ -87,7 +87,7 @@ struct ConditionVariable {
 
 /// Deriving from this allows to make variables/classes revisioned read-write access gated
 struct RevisionedAccessGatedClass {
-  MT::String name;            ///< Variable name
+  mlr::String name;            ///< Variable name
   RWLock rwlock;              ///< rwLock (usually handled via read/writeAccess)
   ConditionVariable revision; ///< revision (= number of write accesses) number
   double revision_time;       ///< clock time of last write access
@@ -192,11 +192,11 @@ struct CycleTimer {
  * step() should contain the actual calculation.
  */
 struct Thread{
-  MT::String name;
+  mlr::String name;
   ConditionVariable state;       ///< the condition variable indicates the state of the thread: positive=steps-to-go, otherwise it is a ThreadState
   RevisionedAccessGatedClassL listensTo;
   pid_t tid;                     ///< system thread id
-#ifndef MT_QThread
+#ifndef MLR_QThread
   pthread_t thread;
 #else
   struct sThread *thread;
@@ -309,7 +309,7 @@ std::stringstream& TStream::Register::operator<<(const T &t) {
   return stream;
 }
 
-#else //MT_MSVC
+#else //MLR_MSVC
 
 struct ConditionVariable {
   int value;
@@ -325,6 +325,6 @@ struct ConditionVariable {
 
   int  getValue(bool userHasLocked=false) const { return value; }
 };
-#endif //MT_MSVC
+#endif //MLR_MSVC
 
 #endif

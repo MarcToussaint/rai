@@ -5,7 +5,7 @@
 struct DataNeighbored{
   arr X; ///< data (features for each point)
   boolA ok; ///< whether the data point is ok (not corrupted)
-  MT::Array<uintA> N; ///< neighborhood
+  mlr::Array<uintA> N; ///< neighborhood
   uintA idx2pixel; ///< after removing points, this maps from X-index to original data index
   arr weights;
 

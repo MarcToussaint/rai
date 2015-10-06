@@ -22,7 +22,7 @@
 #include <Core/array_t.h>
 #include <Gui/gtk.h>
 
-#if defined MT_GTK and defined MT_GRAPHVIZ
+#if defined MLR_GTK and defined MLR_GRAPHVIZ
 
 #include <graphviz/graphviz_version.h>
 #if defined PACKAGE_URL //check the graphviz version (awkward...)
@@ -43,14 +43,14 @@ extern "C" {
 struct sGraphView {
   Graph *G;
   GraphView *p;
-  MT::String title;
+  mlr::String title;
   
   // on gtk side
   GtkWidget *drawingarea,*container;
   
   // on graphviz side
   graph_t *gvGraph;
-  MT::Array<Agnode_t *> gvNodes;
+  mlr::Array<Agnode_t *> gvNodes;
   GVC_t *gv_context;
   GVJ_t *gvJob() { return gvjobs_first(gv_context); }
   
@@ -94,7 +94,7 @@ void GraphView::update() {
 
 void GraphView::watch() {
   update();
-  if(MT::getInteractivity()){
+  if(mlr::getInteractivity()){
     gtk_main();
   }
 }
@@ -105,8 +105,8 @@ void GraphView::writeFile(const char* filename){
 
 #define STR(s) (char*)s
 
-MT::String label(Node *it){
-  MT::String label;
+mlr::String label(Node *it){
+  mlr::String label;
 #if 1
   if(it->keys.N) {
     label <<it->keys(0);
@@ -256,7 +256,7 @@ bool sGraphView::on_drawingarea_expose_event(GtkWidget *widget, GdkEventExpose  
     if(agobjkind(job->current_obj)==AGNODE || agobjkind(job->current_obj)==AGEDGE) {
       int i=gv->gvNodes.findValue((Agnode_t*)job->current_obj);
       if(i<0) {
-        MT_MSG("???");
+        MLR_MSG("???");
       } else {
         cout <<"current object:" <<i <<' ' <<*(*gv->G)(i) <<endl;
       }
@@ -266,7 +266,7 @@ bool sGraphView::on_drawingarea_expose_event(GtkWidget *widget, GdkEventExpose  
     if(agobjkind(job->selected_obj)==AGNODE) {
       int i=gv->gvNodes.findValue((Agnode_t*)job->selected_obj);
       if(i<0) {
-        MT_MSG("???");
+        MLR_MSG("???");
       } else {
       
         cout <<"selected object:" <<i <<' ' <<*(*gv->G)(i) <<endl;
@@ -324,11 +324,11 @@ bool sGraphView::on_drawingarea_configure_event(GtkWidget       *widget,        
   if(!job) return false;
 //  if(!job->has_been_rendered) {
 //    zoom_to_fit = 1.0;
-//    MT::MIN((double) event->width / (double) job->width, (double) event->height / (double) job->height);
+//    mlr::MIN((double) event->width / (double) job->width, (double) event->height / (double) job->height);
 //    if(zoom_to_fit < 1.0)  /* don't make bigger */
 //      job->zoom *= zoom_to_fit;
 //  } else if(job->fit_mode) {
-    zoom_to_fit = MT::MIN((double) event->width / (double) job->width, (double) event->height / (double) job->height);
+    zoom_to_fit = mlr::MIN((double) event->width / (double) job->width, (double) event->height / (double) job->height);
     job->zoom *= zoom_to_fit;
 //  }
   if(event->width > (int)job->width || event->height > (int)job->height)
@@ -417,7 +417,7 @@ void GraphView::watch() { NICO }
 void GraphView::update() { NICO }
 #endif
 
-#else //defined MT_GTK and defined MT_GRAPHVIZ
+#else //defined MLR_GTK and defined MLR_GRAPHVIZ
 #include "graphview.h"
 GraphView::GraphView(Graph& G, const char* title, void *container) { NICO }
 GraphView::~GraphView() { NICO }
@@ -431,7 +431,7 @@ void GraphView::update() { NICO }
 // explicit instantiations
 //
 
-#if defined MT_GTK and defined MT_GRAPHVIZ and defined PACKAGE_URL
-template MT::Array<Agnode_t*>::Array();
-template MT::Array<Agnode_t*>::~Array();
+#if defined MLR_GTK and defined MLR_GRAPHVIZ and defined PACKAGE_URL
+template mlr::Array<Agnode_t*>::Array();
+template mlr::Array<Agnode_t*>::~Array();
 #endif

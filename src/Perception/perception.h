@@ -1,7 +1,7 @@
-#ifndef MT_perception_h
-#define MT_perception_h
+#ifndef MLR_perception_h
+#define MLR_perception_h
 
-#ifdef MT_OPENCV
+#ifdef MLR_OPENCV
 #  undef COUNT
 #  include <opencv2/opencv.hpp>
 #  undef MIN
@@ -99,7 +99,7 @@ struct RigidObjectRepresentation {
   RigidObjectRepresentation(){ found=0; }
 };
 
-typedef MT::Array<RigidObjectRepresentation*> RigidObjectRepresentationL;
+typedef mlr::Array<RigidObjectRepresentation*> RigidObjectRepresentationL;
 
 
 //===========================================================================
@@ -115,7 +115,7 @@ struct ColorChoice{
 //===========================================================================
 
 struct HoughLines {
-#ifdef MT_OPENCV
+#ifdef MLR_OPENCV
   std::vector<cv::Vec4i> lines;
 #endif
   FIELD(byteA, display);
@@ -138,7 +138,7 @@ inline void operator<<(ostream& os,const Patching& hl){}
 //===========================================================================
 
 struct SURFfeatures {
-#ifdef MT_OPENCV
+#ifdef MLR_OPENCV
   std::vector<cv::KeyPoint> keypoints;
   std::vector<float> descriptors;
 #endif
@@ -151,7 +151,7 @@ inline void operator<<(ostream& os,const SURFfeatures& hl){}
 
 /** The RigidObjectRepresentation List output of perception */
 struct PerceptionOutput {
-  MT::Array<RigidObjectRepresentation> objects;
+  mlr::Array<RigidObjectRepresentation> objects;
   FIELD(byteA, display);
 };
 niyPipes(PerceptionOutput);
@@ -293,7 +293,7 @@ BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; ACCESSnew(byteA, pcms16n
 
 
 
-#endif //MT_perception_h
+#endif //MLR_perception_h
 
 
 

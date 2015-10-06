@@ -20,20 +20,20 @@
 #include "array.h"
 #include "util.h"
 
-static double MT_SIGN_SVD(double a, double b) { return b>0 ? ::fabs(a) : -::fabs(a); }
-#define MT_max_SVD(a, b) ( (a)>(b) ? (a) : (b) )
-#define MT_SVD_MINVALUE .0 //1e-10
-#ifndef MT_NOCHECK
-//#  define MT_CHECK_INVERSE 1e-5
-//#  define MT_CHECK_SVD 1e-5
+static double MLR_SIGN_SVD(double a, double b) { return b>0 ? ::fabs(a) : -::fabs(a); }
+#define MLR_max_SVD(a, b) ( (a)>(b) ? (a) : (b) )
+#define MLR_SVD_MINVALUE .0 //1e-10
+#ifndef MLR_NOCHECK
+//#  define MLR_CHECK_INVERSE 1e-5
+//#  define MLR_CHECK_SVD 1e-5
 #endif
 
 
-namespace MT {
+namespace mlr {
 //===========================================================================
 
 bool useLapack=true;
-#ifdef MT_LAPACK
+#ifdef MLR_LAPACK
 const bool lapackSupported=true;
 #else
 const bool lapackSupported=false;
@@ -58,7 +58,7 @@ Use the documentation at
   http://www.netlib.org/lapack/individualroutines.html
 to find the right function! Also use the man tools with Debian package lapack-doc installed.
 
-I've put the clapack.h directly into the MT directory - one only has to link to the Fortran lib
+I've put the clapack.h directly into the mlr directory - one only has to link to the Fortran lib
 */
 
 
@@ -151,8 +151,8 @@ void transpose(arr& A) {
   for(i=1; i<n; i++) for(j=0; j<i; j++) { z=A(j, i); A(j, i)=A(i, j); A(i, j)=z; }
 }
 
-namespace MT {
-/// use this to turn on Lapack routines [default true if MT_LAPACK is defined]
+namespace mlr {
+/// use this to turn on Lapack routines [default true if MLR_LAPACK is defined]
 extern bool useLapack;
 }
 
@@ -163,7 +163,7 @@ extern bool useLapack;
 /// @name SVD etc
 //
 
-/// called from svd if MT_LAPACK is not defined
+/// called from svd if MLR_LAPACK is not defined
 uint own_SVD(
   arr& U,
   arr& w,
@@ -174,12 +174,12 @@ uint own_SVD(
 /** @brief Singular Value Decomposition (from Numerical Recipes);
   computes \f$U, D, V\f$ with \f$A = U D V^T\f$ from \f$A\f$ such that
   \f$U\f$ and \f$V\f$ are orthogonal and \f$D\f$ diagonal (the
-  returned array d is 1-dimensional) -- uses LAPACK if MT_LAPACK is
+  returned array d is 1-dimensional) -- uses LAPACK if MLR_LAPACK is
   defined */
 uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort) {
   uint r;
-#ifdef MT_LAPACK
-  if(MT::useLapack) {
+#ifdef MLR_LAPACK
+  if(mlr::useLapack) {
     r=lapack_SVD(U, d, V, A);
     V=~V;
   } else {
@@ -189,9 +189,9 @@ uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort) {
   r=own_SVD(U, d, V, A, sort);
 #endif
   
-#ifdef MT_CHECK_SVD
-  bool uselapack=MT::useLapack;
-  MT::useLapack=false;
+#ifdef MLR_CHECK_SVD
+  bool uselapack=mlr::useLapack;
+  mlr::useLapack=false;
   double err;
   arr dD, I;
   setDiagonal(dD, d);
@@ -200,19 +200,19 @@ uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort) {
   arr Atmp;
   Atmp = U * dD * ~V;
   //cout <<"\nA=" <<A <<"\nAtmp=" <<Atmp <<"U=" <<U <<"W=" <<dD <<"~V=" <<~V <<endl;
-  std::cout <<"SVD is correct:  " <<(err=maxDiff(Atmp, A)) <<' ' <<endl;    CHECK(err<MT_CHECK_SVD, "");
+  std::cout <<"SVD is correct:  " <<(err=maxDiff(Atmp, A)) <<' ' <<endl;    CHECK(err<MLR_CHECK_SVD, "");
   if(A.d0<=A.d1) {
     I.setId(U.d0);
-    std::cout <<"U is orthogonal: " <<(err=maxDiff(U * ~U, I)) <<' ' <<endl;  CHECK(err<MT_CHECK_SVD, "");
+    std::cout <<"U is orthogonal: " <<(err=maxDiff(U * ~U, I)) <<' ' <<endl;  CHECK(err<MLR_CHECK_SVD, "");
     I.setId(V.d1);
-    std::cout <<"V is orthogonal: " <<(err=maxDiff(~V * V, I)) <<endl;        CHECK(err<MT_CHECK_SVD, "");
+    std::cout <<"V is orthogonal: " <<(err=maxDiff(~V * V, I)) <<endl;        CHECK(err<MLR_CHECK_SVD, "");
   } else {
     I.setId(U.d1);
-    std::cout <<"U is orthogonal: " <<(err=maxDiff(~U * U, I)) <<' ' <<endl;  CHECK(err<MT_CHECK_SVD, "");
+    std::cout <<"U is orthogonal: " <<(err=maxDiff(~U * U, I)) <<' ' <<endl;  CHECK(err<MLR_CHECK_SVD, "");
     I.setId(V.d0);
     std::cout <<"V is orthogonal: " <<(err=sqrDistance(V * ~V, I)) <<endl;        CHECK(err<1e-5, "");
   }
-  MT::useLapack=uselapack;
+  mlr::useLapack=uselapack;
 #endif
   
   return r;
@@ -262,23 +262,23 @@ void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc) {
 }
 
 void check_inverse(const arr& Ainv, const arr& A) {
-#ifdef MT_CHECK_INVERSE
+#ifdef MLR_CHECK_INVERSE
   arr D, _D; D.setId(A.d0);
   uint me;
   _D=A*Ainv;
   double err=maxDiff(_D, D, &me);
   cout <<"inverse is correct: " <<err <<endl;
   if(A.d0<10) {
-    CHECK(err<MT_CHECK_INVERSE , "inverting failed, error=" <<err <<" " <<_D.elem(me) <<"!=" <<D.elem(me) <<"\nA=" <<A <<"\nAinv=" <<Ainv <<"\nA*Ainv=" <<_D);
+    CHECK(err<MLR_CHECK_INVERSE , "inverting failed, error=" <<err <<" " <<_D.elem(me) <<"!=" <<D.elem(me) <<"\nA=" <<A <<"\nAinv=" <<Ainv <<"\nA*Ainv=" <<_D);
   } else {
-    CHECK(err<MT_CHECK_INVERSE , "inverting failed, error=" <<err <<" " <<_D.elem(me) <<"!=" <<D.elem(me));
+    CHECK(err<MLR_CHECK_INVERSE , "inverting failed, error=" <<err <<" " <<_D.elem(me) <<"!=" <<D.elem(me));
   }
 #endif
 }
 
 uint inverse(arr& Ainv, const arr& A) {
   uint r=inverse_SVD(Ainv, A);
-  //MT::inverse_LU(inverse, A); return A.d0;
+  //mlr::inverse_LU(inverse, A); return A.d0;
   return r;
 }
 
@@ -322,14 +322,14 @@ uint inverse_SVD(arr& Ainv, const arr& A) {
     }
 #endif
   
-#ifdef MT_CHECK_INVERSE
+#ifdef MLR_CHECK_INVERSE
   check_inverse(Ainv, A);
 #endif
   return r;
 }
 
 void mldivide(arr& X, const arr& A, const arr& b) {
-#ifdef MT_LAPACK
+#ifdef MLR_LAPACK
   lapack_mldivide(X, A, b);
 #else
   NIY;
@@ -358,7 +358,7 @@ void inverse_LU(arr& Xinv, const arr& X) {
   delete[] idx;
   delete[] d;
   
-#ifdef MT_CHECK_INVERSE
+#ifdef MLR_CHECK_INVERSE
   check_inverse(Xinv, X);
 #endif
 #endif
@@ -366,12 +366,12 @@ void inverse_LU(arr& Xinv, const arr& X) {
 
 void inverse_SymPosDef(arr& Ainv, const arr& A) {
   CHECK_EQ(A.d0,A.d1, "");
-#ifdef MT_LAPACK
+#ifdef MLR_LAPACK
   lapack_inverseSymPosDef(Ainv, A);
 #else
   inverse_SVD(Ainv, A);
 #endif
-#ifdef MT_CHECK_INVERSE
+#ifdef MLR_CHECK_INVERSE
   check_inverse(Ainv, A);
 #endif
 }
@@ -438,13 +438,13 @@ uint own_SVD(
   arr& V,
   const arr& A,
   bool sort) {
-  //MT::Array<double*> Apointers, Upointers, Vpointers;
+  //mlr::Array<double*> Apointers, Upointers, Vpointers;
   unsigned m = A.d0; /* rows */
   unsigned n = A.d1; /* cols */
   U.resize(m, n);
   V.resize(n, n);
   w.resize(n);
-  MT::Array<double*> Ap, Up, Vp;
+  mlr::Array<double*> Ap, Up, Vp;
   double **a = A.getCarray(Ap); //Pointers(Apointers); /* input matrix */
   double **u = U.getCarray(Up); //Pointers(Upointers); /* left vectors */
   double **v = V.getCarray(Vp); //Pointers(Vpointers); /* right vectors */
@@ -476,7 +476,7 @@ uint own_SVD(
         }
         
         f = u[i][i];
-        g = -MT_SIGN_SVD(sqrt(s), f);
+        g = -MLR_SIGN_SVD(sqrt(s), f);
         h = f * g - s;
         u[i][i] = f - g;
         
@@ -505,7 +505,7 @@ uint own_SVD(
         }
         
         f = u[i][l];
-        g = -MT_SIGN_SVD(sqrt(s), f);
+        g = -MLR_SIGN_SVD(sqrt(s), f);
         h = f * g - s;
         u[i][l] = f - g;
         
@@ -522,7 +522,7 @@ uint own_SVD(
       }
     }
     
-    anorm = MT_max_SVD(anorm, fabs(w(i)) + fabs(rv1(i)));
+    anorm = MLR_max_SVD(anorm, fabs(w(i)) + fabs(rv1(i)));
   }
   
   /* accumulation of right-hand transformations */
@@ -642,7 +642,7 @@ uint own_SVD(
       h = rv1(k);
       f = ((y - z) * (y + z) + (g - h) * (g + h)) / (2.0 * h * y);
       g = hypot(f, 1.0);
-      f = ((x - z) * (x + z) + h * ((y / (f + MT_SIGN_SVD(g, f))) - h)) / x;
+      f = ((x - z) * (x + z) + h * ((y / (f + MLR_SIGN_SVD(g, f))) - h)) / x;
       
       /* next qr transformation */
       c = s = 1.0;
@@ -727,7 +727,7 @@ uint own_SVD(
   
   //rank analysis
   
-  for(r=0; r<n && w(r)>MT_SVD_MINVALUE; r++) {};
+  for(r=0; r<n && w(r)>MLR_SVD_MINVALUE; r++) {};
   
   t = r < n ? fabs(w(n-1)) : 0.0;
   r = 0;
@@ -756,7 +756,7 @@ double determinantSubroutine(double **A, uint n) {
 
 double determinant(const arr& A) {
   CHECK(A.nd==2 && A.d0==A.d1, "determinants require a squared 2D matrix");
-  MT::Array<double*> tmp;
+  mlr::Array<double*> tmp;
   return determinantSubroutine(A.getCarray(tmp), A.d0);
 }
 
@@ -774,7 +774,7 @@ double cofactor(const arr& A, uint i, uint j) {
 uintA sampleMultinomial_SUS(const arr& p, uint n) {
   //following T. Baeck "EA in Theo. and Prac." p120
   uintA s(n);
-  double sum=0, ptr=MT::rnd.uni();
+  double sum=0, ptr=mlr::rnd.uni();
   uint i, j=0;
   for(i=0; i<p.N; i++) {
     sum+=p(i)*n;
@@ -786,7 +786,7 @@ uintA sampleMultinomial_SUS(const arr& p, uint n) {
 }
 
 uint sampleMultinomial(const arr& p) {
-  double sum=0, ptr=MT::rnd.uni();
+  double sum=0, ptr=mlr::rnd.uni();
   uint i;
   for(i=0; i<p.N; i++) {
     sum+=p(i);
@@ -798,7 +798,7 @@ uint sampleMultinomial(const arr& p) {
 
 /// calls gnuplot to display the (n, 2) or (n, 3) array (n=number of points of line or surface)
 void gnuplot(const arr& X, bool pauseMouse, bool persist, const char* PDFfile) {
-  MT::arrayBrackets="  ";
+  mlr::arrayBrackets="  ";
   if(X.nd==2 && X.d1!=2) {  //assume array -> splot
     FILE("z.pltX") <<X;
     gnuplot("splot 'z.pltX' matrix with pm3d, 'z.pltX' matrix with lines", pauseMouse, persist, PDFfile);
@@ -827,7 +827,7 @@ arr bootstrap(const arr& x){
 
 //void write(const arr& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
 //  std::ofstream fil;
-//  MT::open(fil, filename);
+//  mlr::open(fil, filename);
 //  X.write(fil, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
 //  fil.close();
 //}
@@ -838,7 +838,7 @@ arr bootstrap(const arr& x){
 
 void write(const arrL& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
   std::ofstream fil;
-  MT::open(fil, filename);
+  mlr::open(fil, filename);
   catCol(X).write(fil, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
   fil.close();
 }
@@ -852,7 +852,7 @@ void write(const arrL& X, const char *filename, const char *ELEMSEP, const char 
   byte arrays, where the 3rd dimension determines whether it's a grey
   (0), grey-alpha (2), RGB (3), or RGBA (4) image */
 void write_ppm(const byteA &img, const char *file_name, bool swap_rows) {
-  if(!img.N) MT_MSG("empty image");
+  if(!img.N) MLR_MSG("empty image");
   CHECK(img.nd==2 || (img.nd==3 && img.d2==3), "only rgb or gray images to ppm");
   ofstream os;
   os.open(file_name, std::ios::out | std::ios::binary);
@@ -876,7 +876,7 @@ void read_ppm(byteA &img, const char *file_name, bool swap_rows) {
   if(!is.good()) HALT("could not open file `" <<file_name <<"' for input");
   if(is.get()!='P') HALT("NO PPM FILE:" <<file_name);
   is >>mode;
-  if(MT::peerNextChar(is)=='#') MT::skipRestOfLine(is);
+  if(mlr::peerNextChar(is)=='#') mlr::skipRestOfLine(is);
   is >>width >>height >>max;
   is.get(); //MUST be a white character if everything went ok
   switch(mode) {
@@ -952,10 +952,10 @@ void make_RGB2BGRA(byteA &img) {
   img=tmp;
 }
 
-#ifdef MT_EXPRESSIONS
+#ifdef MLR_EXPRESSIONS
 void assign(arr& x) {
   CHECK(x.ex, "self-assignment only if it is an expression");
-  MT::Ex *e=x.ex;
+  mlr::Ex *e=x.ex;
   x.init();
   x.ex=e;
   assign(x, x);
@@ -965,8 +965,8 @@ void assign(arr& x) {
 
 void assign(arr& x, const arr& a) {
   if(!a.ex) { x=a; return; }
-  MT::Ex &e=*a.ex;
-  if(e.op==MT::UNI) {
+  mlr::Ex &e=*a.ex;
+  if(e.op==mlr::UNI) {
     arr *A=(arr*)e.A;
     if(A->ex) assign(*A);
     if(!e.trans && e.mul==1 && e.add==0) { x=*A; return; }
@@ -981,23 +981,23 @@ void assign(arr& x, const arr& a) {
     //bool at, bt;
     //double ac, bc, ap, bp;
     switch(e.op) {
-      case MT::PROD:
+      case mlr::PROD:
         if(!A->ex && !B->ex) { innerProduct(x, *A, *B); return; }
         HALT("prod");
         break;
-      case MT::MUL:
+      case mlr::MUL:
         if(!A->ex && !B->ex) { mult(x, *A, *B); return; }
         HALT("mult");
         break;
-      case MT::Div:
+      case mlr::Div:
         if(!A->ex && !B->ex) { div(x, *A, *B); return; }
         HALT("mult");
         break;
-      case MT::OUT:
+      case mlr::OUT:
         if(!A->ex && !B->ex) { outerProduct(x, *A, *B); return; }
         HALT("out");
         break;
-      case MT::PLUS:
+      case mlr::PLUS:
         if(!A->ex && !B->ex) { plus(x, *A, *B); return; }
         //if(A->ex){ ap=A->ex->add; ac=A->ex->mul; at=A->ex->trans; A=(arr*)A->ex->A; }else{ ap=0; ac=1; at=false; }
         //if(B->ex){ bp=B->ex->add; bc=B->ex->mul; bt=B->ex->trans; B=(arr*)B->ex->A; }else{ bp=0; bc=1; bt=false; }
@@ -1005,7 +1005,7 @@ void assign(arr& x, const arr& a) {
         //if(!at && !bt && !B){ scalarPlus(x, *A, bc); return; }
         HALT("plus");
         break;
-      case MT::MINUS:
+      case mlr::MINUS:
         if(!A->ex && !B->ex) { minus(x, *A, *B); return; }
         //if(A->ex){ ap=A->ex->add; ac=A->ex->mul; at=A->ex->trans; A=(arr*)A->ex->A; }else{ ap=0; ac=1; at=false; }
         //if(B->ex){ bp=B->ex->add; bc=B->ex->mul; bt=B->ex->trans; B=(arr*)B->ex->A; }else{ bp=0; bc=1; bt=false; }
@@ -1013,7 +1013,7 @@ void assign(arr& x, const arr& a) {
         //if(!at && !bt && !B){ scalarPlus(x, *A, bc); return; }
         HALT("minus");
         break;
-      case MT::UNI:
+      case mlr::UNI:
         HALT("shouldn't be here!");
         break;
     }
@@ -1035,7 +1035,7 @@ uintA getIndexTuple(uint i, const uintA &d) {
 }
 
 void lognormScale(arr& P, double& logP, bool force) {
-#ifdef MT_NoLognormScale
+#ifdef MLR_NoLognormScale
   return;
 #endif
   double Z=0.;
@@ -1048,7 +1048,7 @@ void lognormScale(arr& P, double& logP, bool force) {
   } else {
     logP+=::log(Z);
     P=1.;
-    MT_MSG("ill-conditioned table factor for norm scaling");
+    MLR_MSG("ill-conditioned table factor for norm scaling");
   }
 }
 
@@ -1155,7 +1155,7 @@ bool checkGradient(const ScalarFunction& f,
 //   J >>FILE("z.J");
 //   JJ >>FILE("z.JJ");
   if(md>tolerance) {
-    MT_MSG("checkGradient -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
+    MLR_MSG("checkGradient -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
     J >>FILE("z.J_analytical");
     JJ >>FILE("z.J_empirical");
     //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
@@ -1187,7 +1187,7 @@ bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance) {
   //   J >>FILE("z.J");
   //   JJ >>FILE("z.JJ");
   if(md>tolerance) {
-    MT_MSG("checkHessian -- FAILURE -- max diff=" <<md <<" |"<<H.elem(i)<<'-'<<Jg.elem(i)<<"| (stored in files z.J_*)");
+    MLR_MSG("checkHessian -- FAILURE -- max diff=" <<md <<" |"<<H.elem(i)<<'-'<<Jg.elem(i)<<"| (stored in files z.J_*)");
     H >>FILE("z.J_analytical");
     Jg >>FILE("z.J_empirical");
     //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
@@ -1218,7 +1218,7 @@ bool checkJacobian(const VectorFunction& f,
   JJ.reshapeAs(J);
   double md=maxDiff(J, JJ, &i);
   if(md>tolerance) {
-    MT_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
+    MLR_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
     J >>FILE("z.J_analytical");
     JJ >>FILE("z.J_empirical");
     return false;
@@ -1228,11 +1228,11 @@ bool checkJacobian(const VectorFunction& f,
   return true;
 }
 
-#define EXP ::exp //MT::approxExp
+#define EXP ::exp //mlr::approxExp
 
 double NNinv(const arr& a, const arr& b, const arr& Cinv){
   double d=sqrDistance(Cinv, a, b);
-  double norm = ::sqrt(lapack_determinantSymPosDef((1./MT_2PI)*Cinv));
+  double norm = ::sqrt(lapack_determinantSymPosDef((1./MLR_2PI)*Cinv));
   return norm*EXP(-.5*d);
 }
 double logNNinv(const arr& a, const arr& b, const arr& Cinv){
@@ -1240,14 +1240,14 @@ double logNNinv(const arr& a, const arr& b, const arr& Cinv){
   return 1;
   /*
   arr d=a-b;
-  double norm = ::sqrt(fabs(MT::determinant_LU((1./MT_2PI)*Cinv)));
+  double norm = ::sqrt(fabs(mlr::determinant_LU((1./MLR_2PI)*Cinv)));
   return ::log(norm) + (-.5*scalarProduct(Cinv, d, d));
   */
 }
 double logNNprec(const arr& a, const arr& b, double prec){
   uint n=a.N;
   arr d=a-b;
-  double norm = pow(prec/MT_2PI, .5*n);
+  double norm = pow(prec/MLR_2PI, .5*n);
   return ::log(norm) + (-.5*prec*scalarProduct(d, d));
 }
 double logNN(const arr& a, const arr& b, const arr& C){
@@ -1271,7 +1271,7 @@ double NNNN(const arr& a, const arr& b, const arr& C){
   return NNNNinv(a, b, Cinv);
 }
 double NNzeroinv(const arr& x, const arr& Cinv){
-  double norm = ::sqrt(lapack_determinantSymPosDef((1./MT_2PI)*Cinv));
+  double norm = ::sqrt(lapack_determinantSymPosDef((1./MLR_2PI)*Cinv));
   return norm*EXP(-.5*scalarProduct(Cinv, x, x));
 }
 /// gradient of a Gaussian
@@ -1287,17 +1287,17 @@ double dNNNNinv(const arr& x, const arr& a, const arr& Ainv, arr& grad){
   return y;
 }
 double NNsdv(const arr& a, const arr& b, double sdv){
-  double norm = 1./(::sqrt(MT_2PI)*sdv);
+  double norm = 1./(::sqrt(MLR_2PI)*sdv);
   return norm*EXP(-.5*sqrDistance(a, b)/(sdv*sdv));
 }
 double NNzerosdv(const arr& x, double sdv){
-  double norm = 1./(::sqrt(MT_2PI)*sdv);
+  double norm = 1./(::sqrt(MLR_2PI)*sdv);
   return norm*EXP(-.5*sumOfSqr(x)/(sdv*sdv));
 }
 
-MT::String singleString(const StringA& strs){
-  MT::String s;
-  for(const MT::String& str:strs){
+mlr::String singleString(const StringA& strs){
+  mlr::String s;
+  for(const mlr::String& str:strs){
     if(s.N) s<<"_";
     s<<str;
   }
@@ -1467,9 +1467,9 @@ arr RowShiftedPackedMatrix::A_At() {
     uint rs_i=rowShift(i);
     for(uint j=Z.d0-1; j>=i+pack_d1; j--) {
       uint rs_j=rowShift(j);
-      uint a=MT::MAX(rs_i,rs_j);
-      uint b=MT::MIN(rs_i+Z.d1,rs_j+Z.d1);
-      b=MT::MIN(real_d1,b);
+      uint a=mlr::MAX(rs_i,rs_j);
+      uint b=mlr::MIN(rs_i+Z.d1,rs_j+Z.d1);
+      b=mlr::MIN(real_d1,b);
       if(a<b) if(pack_d1<j-i+1) pack_d1=j-i+1;
     }
   }
@@ -1488,9 +1488,9 @@ arr RowShiftedPackedMatrix::A_At() {
       double* Zj=&Z(j,0);
       double* Rij=&R(i,j-i);
 
-      uint a=MT::MAX(rs_i,rs_j);
-      uint b=MT::MIN(rs_i+Z.d1,rs_j+Z.d1);
-      b=MT::MIN(real_d1,b);
+      uint a=mlr::MAX(rs_i,rs_j);
+      uint b=mlr::MIN(rs_i+Z.d1,rs_j+Z.d1);
+      b=mlr::MIN(real_d1,b);
       for(uint k=a;k<b;k++) *Rij += Zi[k-rs_i]*Zj[k-rs_j];
     }
   }
@@ -1697,41 +1697,41 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
 #undef T
 #undef NOFLOAT
 
-template MT::Array<MT::String>::Array();
-template MT::Array<MT::String>::~Array();
+template mlr::Array<mlr::String>::Array();
+template mlr::Array<mlr::String>::~Array();
 
-template MT::Array<MT::String*>::Array();
-template MT::Array<MT::String*>::~Array();
+template mlr::Array<mlr::String*>::Array();
+template mlr::Array<mlr::String*>::~Array();
 
 template arrL::Array();
 template arrL::Array(uint);
 template arrL::~Array();
 
-template MT::Array<char const*>::Array();
-template MT::Array<char const*>::Array(uint);
-template MT::Array<char const*>::~Array();
+template mlr::Array<char const*>::Array();
+template mlr::Array<char const*>::Array(uint);
+template mlr::Array<char const*>::~Array();
 
-template MT::Array<uintA>::Array();
-template MT::Array<uintA>::Array(uint);
-template MT::Array<uintA>::~Array();
+template mlr::Array<uintA>::Array();
+template mlr::Array<uintA>::Array(uint);
+template mlr::Array<uintA>::~Array();
 
-template MT::Array<arr>::Array();
-template MT::Array<arr>::Array(uint);
-template MT::Array<arr>::~Array();
+template mlr::Array<arr>::Array();
+template mlr::Array<arr>::Array(uint);
+template mlr::Array<arr>::~Array();
 
 #include "util_t.h"
-template MT::Array<double> MT::getParameter<MT::Array<double> >(char const*);
-template MT::Array<float> MT::getParameter<MT::Array<float> >(char const*);
-template MT::Array<uint> MT::getParameter<MT::Array<uint> >(char const*);
-template bool MT::checkParameter<MT::Array<double> >(char const*);
-template void MT::getParameter(uintA&, const char*, const uintA&);
+template mlr::Array<double> mlr::getParameter<mlr::Array<double> >(char const*);
+template mlr::Array<float> mlr::getParameter<mlr::Array<float> >(char const*);
+template mlr::Array<uint> mlr::getParameter<mlr::Array<uint> >(char const*);
+template bool mlr::checkParameter<mlr::Array<double> >(char const*);
+template void mlr::getParameter(uintA&, const char*, const uintA&);
 
 void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 
-namespace MT{
-template<> template<> Array<MT::String>::Array(std::initializer_list<const char*> list) {
+namespace mlr{
+template<> template<> Array<mlr::String>::Array(std::initializer_list<const char*> list) {
   init();
-  for(const char* t : list) append(MT::String(t));
+  for(const char* t : list) append(mlr::String(t));
 }
 }
 

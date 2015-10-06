@@ -17,7 +17,7 @@ std::pair<MCTS_Environment::Handle, double> BlindBranch::transition(const MCTS_E
 }
 
 std::pair<MCTS_Environment::Handle, double>  BlindBranch::transition_randomly(){
-  if(MT::rnd.uni()<.5) return transition(actions(0));
+  if(mlr::rnd.uni()<.5) return transition(actions(0));
   return transition(actions(1));
 }
 

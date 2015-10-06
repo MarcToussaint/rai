@@ -9,7 +9,7 @@ extern "C" {
 }
 
 struct sVideoEncoder_x264_simple{
-  MT::String filename;
+  mlr::String filename;
   double fps;
   bool isOpen;
 
@@ -58,7 +58,7 @@ void VideoEncoder_x264_simple::addFrame(const byteA& image){
   if(!s->isOpen) s->open(image.d1, image.d0);
   s->addFrame(image);
 }
-const MT::String& VideoEncoder_x264_simple::name() const {
+const mlr::String& VideoEncoder_x264_simple::name() const {
 	return s->filename;
 }
 

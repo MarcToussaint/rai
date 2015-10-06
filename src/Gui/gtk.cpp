@@ -26,7 +26,7 @@
 #include "gtk.h"
 #include <sys/syscall.h>
 
-#ifdef MT_GTK
+#ifdef MLR_GTK
 
 #include <gtk/gtk.h>
 #include <gtk/gtkgl.h>
@@ -112,7 +112,7 @@ int gtkPopupMenuChoice(StringL& choices) {
   //create menu
   GtkWidget *menu = gtk_menu_new();
   gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, 0, gtk_get_current_event_time());
-  for_list(MT::String,  s,  choices) {
+  for_list(mlr::String,  s,  choices) {
     GtkWidget *item = gtk_menu_item_new_with_label(s->p);
     gtk_container_add(GTK_CONTAINER(menu), item);
     gtk_signal_connect_object(GTK_OBJECT(item), "activate",
@@ -138,6 +138,6 @@ GtkWidget *gtkTopWindow(const char* name) {
   return win;
 }
 
-#else //MT_GTK
+#else //MLR_GTK
 #endif
 
