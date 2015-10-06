@@ -185,6 +185,19 @@ struct ImageViewer:Module{
   void close();
 };
 
+struct PointCloudViewer:Module{
+  struct sPointCloudViewer *s;
+  Access_typed<arr> pts;
+  Access_typed<arr> cols;
+  PointCloudViewer(const char* pts_name="kinect_points", const char* cols_name="kinect_pointColors")
+    : Module(STRING("PointCloudViewer_"<<pts_name <<'_' <<cols_name)),
+      pts(this, pts_name, true),
+      cols(this, cols_name){}
+  void open();
+  void step();
+  void close();
+};
+
 struct OpencvCamera:Module{
   struct sOpencvCamera *s;
   Access_typed<byteA> rgb;
@@ -244,7 +257,7 @@ struct CannyFilter:Module{
 };
 
 //BEGIN_MODULE(ImageViewer)      ACCESS(byteA, img)       END_MODULE()
-BEGIN_MODULE(PointCloudViewer) ACCESSlisten(arr, pts)         ACCESSnew(arr, cols)        END_MODULE()
+//BEGIN_MODULE(PointCloudViewer) ACCESSlisten(arr, kinect_points)         ACCESSnew(arr, kinect_pointColors)        END_MODULE()
 //BEGIN_MODULE(OpencvCamera)     ACCESS(byteA, rgb)       std::map<int,double> properties; bool set(int prop, double value);  END_MODULE()
 //BEGIN_MODULE(CvtGray)          ACCESS(byteA, rgb)       ACCESS(byteA, gray)      END_MODULE()
 BEGIN_MODULE(CvtHsv)           ACCESSlisten(byteA, rgb)       ACCESSnew(byteA, hsv)       END_MODULE()
