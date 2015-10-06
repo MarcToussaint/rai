@@ -12,7 +12,7 @@ PlainMC::PlainMC(MCTS_Environment& world)
 }
 
 void PlainMC::reset(){
-  A = ARRAY(world.get_actions());
+  A = conv_stdvec2arr(world.get_actions());
   D.clear();
   D.resize(A.N);
 }

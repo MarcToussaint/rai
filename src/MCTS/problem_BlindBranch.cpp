@@ -22,7 +22,7 @@ std::pair<MCTS_Environment::Handle, double>  BlindBranch::transition_randomly(){
 }
 
 const std::vector<MCTS_Environment::Handle> BlindBranch::get_actions(){
-  return VECTOR(actions);
+  return conv_arr2stdvec(actions);
 }
 
 const MCTS_Environment::Handle BlindBranch::get_state(){
