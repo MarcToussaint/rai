@@ -4,7 +4,7 @@
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <Core/geo.h>
+#include <Geo/geo.h>
 #include <Gui/opengl.h>
 #include <Ors/ors.h>
 #include <Core/module.h>

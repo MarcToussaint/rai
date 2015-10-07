@@ -23,11 +23,11 @@ void Kinect2PointCloud::step(){
 
   MLR::images2pointcloud(pts, cols, rgb, depth);
 
-  kinect_frame.readAccess();
-  if(!kinect_frame().isZero()){
-    kinect_frame().applyOnPointArray(pts);
-  }
-  kinect_frame.deAccess();
+//  kinect_frame.readAccess();
+//  if(!kinect_frame().isZero()){
+//    kinect_frame().applyOnPointArray(pts);
+//  }
+//  kinect_frame.deAccess();
 
   kinect_points.set() = pts;
   kinect_pointColors.set() = cols;

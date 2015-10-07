@@ -116,14 +116,6 @@ uintA getSubMeshPositions(const char* filename);
 
 //===========================================================================
 //
-// OpenGL static draw functions
-//
-
-void glDrawMesh(void *classP);
-
-
-//===========================================================================
-//
 // C-style functions
 //
 
@@ -137,6 +129,16 @@ void inertiaCylinder(double *Inertia, double& mass, double density, double heigh
 
 
 /** @} */
+
+//===========================================================================
+//
+// OpenGL static draw functions
+//
+
+void glDrawMesh(void *classP);
+void glDrawPointCloud(const arr& pts, const arr& cols);
+void glDrawDots(void *dots);
+void glDrawPointCloud(void *pc);
 
 
 //===========================================================================

@@ -206,7 +206,7 @@ struct Thread{
   CycleTimer timer;
 
   /// @name c'tor/d'tor
-  Thread(const char* _name, double beatIntervalSec=0.); ///< beatIntervalSec=0. indicates full speed looping
+  Thread(const char* _name, double beatIntervalSec=0.); ///< beatIntervalSec=0. indicates full speed looping, beatIntervalSec=-1. indicates no looping (steps triggered by listening)
   virtual ~Thread();
 
   /// @name to be called from `outside' (e.g. the main) to start/step/close the thread

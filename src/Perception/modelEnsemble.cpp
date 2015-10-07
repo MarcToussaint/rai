@@ -7,12 +7,17 @@ ModelEnsemble::ModelEnsemble(){
 bool ModelEnsemble::addNewRegionGrowingModel(DataNeighbored& D){
   MinEigModel *model = new MinEigModel(D);
 
+  if(models.N>5) return false;
+
   //-- find a random seed
-  uint i;
-  for(;;){
+  uint i,k;
+  for(uint k=20;k--;){
     i=rnd(D.n());
     if(D.ok(i) && D.weights(i)*10.<rnd.uni()) break;
-//    if(D.ok(i) && D.weights(i)==0.) break;
+    if(!k){
+      LOG(0) <<"no unused data points found";
+      return false;
+    }
   }
 
   //-- initialize with neighborhood of size 400
@@ -24,8 +29,6 @@ bool ModelEnsemble::addNewRegionGrowingModel(DataNeighbored& D){
     model->expand(10);
     if(!model->fringe.N) break;
     model->calc(true);
-    //      model->colorPixelsWithWeights(cols);
-    //      gl.update();
   }
 
   //-- check success

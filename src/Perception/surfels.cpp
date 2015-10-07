@@ -1,5 +1,5 @@
 #include "surfels.h"
-#include <Core/geo.h>
+#include <Geo/geo.h>
 #include <Perception/kinect2pointCloud.h>
 
 void glDrawSurfels(void *classP){ ((Surfels*)classP)->glDraw(false); }

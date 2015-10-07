@@ -108,15 +108,6 @@ void glDrawTexQuad(uint texture,
 //grabImage: use OpenGL::capture instead!
 void glRasterImage(float x, float y, byteA &img, float zoom=1.);
 
-//===========================================================================
-//
-// standalone draw routines for larget data structures
-//
-
-void glDrawDots(void *dots);
-void glDrawPointCloud(void *pc);
-void glDrawPointCloud(const arr& pts, const arr& cols);
-
 
 //===========================================================================
 //

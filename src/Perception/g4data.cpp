@@ -1,6 +1,6 @@
 #include <Core/array.h>
 #include <Core/util.h>
-#include <Core/geo.h>
+#include <Geo/geo.h>
 #include <Core/graph.h>
 #include <Core/registry.h>
 #include "g4data.h"

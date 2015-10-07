@@ -15,7 +15,7 @@
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <Core/array.h>
-#include <Core/geo.h>
+#include <Geo/geo.h>
 
 typedef pcl::PointXYZRGB PointT;
 
