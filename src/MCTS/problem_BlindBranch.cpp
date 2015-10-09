@@ -1,4 +1,3 @@
-#include <Core/array-vector.h>
 
 #include "problem_BlindBranch.h"
 

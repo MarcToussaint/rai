@@ -18,7 +18,7 @@
 
 #include <cmath>
 #include <cstdlib>
-#include "array_t.h"
+#include "array.tpp"
 #include "algos.h"
 
 #ifdef MLR_SHARK

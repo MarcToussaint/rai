@@ -10,10 +10,11 @@ struct ModelEnsemble :OpenGL::GLDrawer{
   arr vert;
 
   ModelEnsemble();
+  ~ModelEnsemble();
 
-  bool addNewRegionGrowingModel(DataNeighbored& D);
+  bool addNewRegionGrowingModel(DataNeighbored& data);
   void reestimateVert();
-  void reoptimizeModels(DataNeighbored& D);
+  void reoptimizeModels(DataNeighbored& data);
 
   void glDraw(OpenGL &);
 

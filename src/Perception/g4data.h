@@ -193,4 +193,4 @@ struct G4FeatSeq: Parametric {
 };
 stdOutPipe(G4FeatSeq);
 
-#include "g4data_t.h"
+#include "g4data.tpp"

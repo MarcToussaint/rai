@@ -20,8 +20,8 @@
 
 
 
-#include <Core/util_t.h>
-#include <Core/array_t.h>
+#include <Core/util.tpp>
+#include <Core/array.tpp>
 #include <Core/thread.h>
 #include "gtk.h"
 #include <sys/syscall.h>

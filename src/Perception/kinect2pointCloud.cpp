@@ -21,7 +21,7 @@ void Kinect2PointCloud::step(){
   depth = kinect_depth.get();
   rgb = kinect_rgb.get();
 
-  MLR::images2pointcloud(pts, cols, rgb, depth);
+  images2pointcloud(pts, cols, rgb, depth);
 
 //  kinect_frame.readAccess();
 //  if(!kinect_frame().isZero()){
@@ -34,7 +34,7 @@ void Kinect2PointCloud::step(){
 }
 
 
-void MLR::images2pointcloud(arr& pts, arr& cols, const byteA& rgb, const uint16A& depth){
+void images2pointcloud(arr& pts, arr& cols, const byteA& rgb, const uint16A& depth){
   depthData2pointCloud(pts, depth);
 
   if(rgb.N!=3*image_width*image_height){
@@ -46,7 +46,7 @@ void MLR::images2pointcloud(arr& pts, arr& cols, const byteA& rgb, const uint16A
   for(uint i=0;i<rgb.N;i++) cols.elem(i) = (double)rgb.elem(i)/255.;
 }
 
-void MLR::depthData2pointCloud(arr& pts, const uint16A& depth){
+void depthData2pointCloud(arr& pts, const uint16A& depth){
   if(depth.N!=image_width*image_height){
     MLR_MSG("kinect depth data has wrong dimension: depth.dim=" <<depth.dim());
     return;

@@ -19,8 +19,8 @@
 
 #include <map>
 
-#include "util_t.h"
-#include "array_t.h"
+#include "util.tpp"
+#include "array.tpp"
 #include "graph.h"
 #include "registry.h"
 

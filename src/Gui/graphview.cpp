@@ -18,8 +18,8 @@
 
 
 #include "graphview.h"
-#include <Core/util_t.h>
-#include <Core/array_t.h>
+#include <Core/util.tpp>
+#include <Core/array.tpp>
 #include <Gui/gtk.h>
 
 #if defined MLR_GTK and defined MLR_GRAPHVIZ

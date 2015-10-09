@@ -27,10 +27,8 @@ struct Kinect2PointCloud: Module {
   void close(){}
 };
 
-namespace MLR{
-  /// convert raw image data into depth and color arrays like in a pointcloud
-  void images2pointcloud(arr& pts, arr& cols, const byteA& rgb, const uint16A& depth);
+/// convert raw image data into depth and color arrays like in a pointcloud
+void images2pointcloud(arr& pts, arr& cols, const byteA& rgb, const uint16A& depth);
 
-  /// convert raw depth data to a pointcloud (no color)
-  void depthData2pointCloud(arr& pts, const uint16A& depth);
-}
+/// convert raw depth data to a pointcloud (no color)
+void depthData2pointCloud(arr& pts, const uint16A& depth);

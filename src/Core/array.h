@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <functional>
+#include <vector>
 
 #define FOR1D(x, i)   for(i=0;i<x.N;i++)
 #define FOR1D_DOWN(x, i)   for(i=x.N;i--;)
@@ -903,13 +904,26 @@ template<class vert, class edge> void graphDelete(mlr::Array<vert*>& V, mlr::Arr
 
 
 //===========================================================================
+//
+// conv with std::vector
+//
+
+template<class T> mlr::Array<T> conv_stdvec2arr(const std::vector<T>& v){
+  return mlr::Array<T>(&v.front(), v.size());
+}
+
+template<class T> std::vector<T> conv_arr2stdvec(const mlr::Array<T>& x){
+  return std::vector<T>(x.begin(), x.end());
+}
+
+//===========================================================================
 // implementations
 //
 
 void linkArray();
 
 //#if defined MLR_IMPLEMENT_TEMPLATES | defined MLR_IMPLEMENTATION
-#  include "array_t.h"
+#  include "array.tpp"
 //#endif
 
 #endif

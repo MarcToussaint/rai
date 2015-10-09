@@ -4,16 +4,20 @@ ModelEnsemble::ModelEnsemble(){
   vert={0.0477157, -0.617799, -0.784887};
 }
 
-bool ModelEnsemble::addNewRegionGrowingModel(DataNeighbored& D){
-  MinEigModel *model = new MinEigModel(D);
+ModelEnsemble::~ModelEnsemble(){
+  listDelete(models);
+}
 
-  if(models.N>5) return false;
+bool ModelEnsemble::addNewRegionGrowingModel(DataNeighbored& data){
+  MinEigModel *model = new MinEigModel(data);
+
+//  if(models.N>5) return false;
 
   //-- find a random seed
   uint i,k;
   for(uint k=20;k--;){
-    i=rnd(D.n());
-    if(D.ok(i) && D.weights(i)*10.<rnd.uni()) break;
+    i=rnd(data.n());
+    if(data.valid(i) && data.weights(i)*10.<rnd.uni()) break;
     if(!k){
       LOG(0) <<"no unused data points found";
       return false;
@@ -21,7 +25,7 @@ bool ModelEnsemble::addNewRegionGrowingModel(DataNeighbored& D){
   }
 
   //-- initialize with neighborhood of size 400
-  model->setPoints(D.getKneighborhood(i, 400));
+  model->setPoints(data.getKneighborhood(i, 400));
   model->calc(false);
 
   //-- expand until fringe is empty
@@ -34,15 +38,30 @@ bool ModelEnsemble::addNewRegionGrowingModel(DataNeighbored& D){
   //-- check success
   model->calcDensity();
   model->report();
-  if(model->density<40000.){
+  if(model->density<.1){
     delete model;
     return false;
   }
 
-  for(uint i:model->pts) if(D.weights(i)<model->weights(i)) D.weights(i)=model->weights(i);
-  models.append(model);
+  for(uint i:model->pts) if(data.weights(i)<model->weights(i)) data.weights(i)=model->weights(i);
   model->label=models.N;
+  models.append(model);
   return true;
+}
+
+void ModelEnsemble::reoptimizeModels(DataNeighbored& data){
+  data.weights.setZero();
+  for(MinEigModel *model:models){
+    model->fringe = model->pts;
+    model->expand(10);
+    model->setWeightsToZero();
+    model->reweightWithError(model->pts);
+    model->calc(true);
+    model->calcDensity();
+    if(model->density<.1){ model->setWeightsToZero(); model->density=0.; continue; }
+    for(uint i:model->pts) if(data.weights(i)<model->weights(i)) data.weights(i)=model->weights(i);
+  }
+  for(uint i=models.N;i--;) if(!models(i)->density){ delete models(i);  models.remove(i); }
 }
 
 void ModelEnsemble::reestimateVert(){
@@ -61,19 +80,6 @@ void ModelEnsemble::reestimateVert(){
   vert = mu/n;
   vert /= length(vert);
   for(auto m:models) if(m->label==1) m->bias_xx = -1e-1 * (vert^vert);
-}
-
-void ModelEnsemble::reoptimizeModels(DataNeighbored& D){
-  D.weights.setZero();
-  for(MinEigModel *m:models){
-    m->fringe = m->pts;
-    m->expand(10);
-    m->setWeightsToZero();
-    m->reweightWithError(m->pts);
-    m->calc(true);
-    m->calcDensity();
-    for(uint i:m->pts) if(D.weights(i)<m->weights(i)) D.weights(i)=m->weights(i);
-  }
 }
 
 void ModelEnsemble::glDraw(OpenGL&){

@@ -205,7 +205,7 @@ inline bool NodeComp(Node* const& a, Node* const& b){ //TODO: why?
   return a < b;
 }
 
-#include "graph_t.h"
+#include "graph.tpp"
 
 //===========================================================================
 //

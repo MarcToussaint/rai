@@ -131,6 +131,7 @@ void open(std::ifstream& fs, const char *name, const char *errmsg) {
 
 /// returns true if the (0-terminated) string s contains c
 bool contains(const char *s, char c) {
+  if(!s) return false;
   for(uint i=0; s[i]; i++) if(s[i]==c) return true;
   return false;
 }
@@ -1373,7 +1374,7 @@ std::string getcwd_string() {
 // explicit instantiations
 //
 
-#include "util_t.h"
+#include "util.tpp"
 template void mlr::getParameter(int&, const char*);
 template void mlr::getParameter(int&, const char*, const int&);
 template void mlr::getParameter(uint&, const char*);

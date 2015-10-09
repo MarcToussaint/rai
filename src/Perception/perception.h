@@ -10,7 +10,7 @@
 
 #include <Core/module.h>
 #include <Ors/ors.h>
-#include <Core/array_t.h>
+#include <Core/array.tpp>
 #include <Gui/opengl.h>
 #include <map>
 
