@@ -1318,6 +1318,14 @@ void Camera::glConvertToLinearDepth(double &d) {
   d = d/(zFar/zNear*(1.-d)+1.);
 }
 
+void Camera::setKinect(){
+  setPosition(0., 0., 0.);
+  focus(0., 0., 1.);
+  setZRange(.1, 10.);
+  heightAbs=heightAngle=0.;
+  focalLength = 580./480.;
+}
+
 //==============================================================================
 
 /// use as similarity measure (distance = 1 - |scalarprod|)

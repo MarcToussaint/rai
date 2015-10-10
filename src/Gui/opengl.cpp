@@ -22,6 +22,9 @@
 #include <GL/glew.h>
 #include "opengl.h"
 
+
+OpenGL& NoOpenGL = *((OpenGL*)(NULL));
+
 //===========================================================================
 
 struct OpenGLEngineAccess{
@@ -994,7 +997,7 @@ void OpenGL::init() {
   backgroundZoom=1;
 };
 
-struct CstyleDrawer:OpenGL::GLDrawer{
+struct CstyleDrawer : GLDrawer{
   void *classP;
   void (*call)(void*);
   CstyleDrawer(void (*call)(void*), void* classP): classP(classP), call(call){}
@@ -1523,7 +1526,7 @@ void OpenGL::Reshape(int _width, int _height) {
   CALLBACK_DEBUG(printf("Window %d Reshape Callback:  %d %d\n", 0, _width, _height));
   width=_width;
   height=_height;
-  if(width%8) width = 8*(width/8);
+  if(width%4) width = 4*(width/4);
   if(height%2) height = 2*(height/2);
   camera.setWHRatio((double)width/height);
   for(uint v=0; v<views.N; v++) views(v).camera.setWHRatio((views(v).ri-views(v).le)*width/((views(v).to-views(v).bo)*height));

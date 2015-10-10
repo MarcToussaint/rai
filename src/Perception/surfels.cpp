@@ -63,8 +63,7 @@ void Surfels::glDraw(bool renderIndex){
 void Surfels::recomputeSurfelIndices(){
   if(!gl.drawers.N){
     gl.add(glDrawSurfelIndices, this);
-    initKinectCam();
-    gl.camera = kinectCam;
+    gl.camera.setKinect();
   }
 //  gl.update(NULL, true);
   gl.renderInBack();

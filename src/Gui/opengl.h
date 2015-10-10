@@ -124,7 +124,6 @@ struct OpenGL {
   
   /// @name little structs to store objects and callbacks
   struct GLInitCall { virtual bool glInit(OpenGL&) = 0; };
-  struct GLDrawer    { virtual void glDraw(OpenGL&) = 0; };
   struct GLHoverCall { virtual bool hoverCallback(OpenGL&) = 0; };
   struct GLClickCall { virtual bool clickCallback(OpenGL&) = 0; };
   struct GLKeyCall  { virtual bool keyCallback(OpenGL&) = 0; };
@@ -177,6 +176,7 @@ struct OpenGL {
   /// @name adding drawing routines and callbacks
   void clear();
   void add(void (*call)(void*), void* classP=NULL);
+  void add(GLDrawer& c){ drawers.append(&c); }
   void addDrawer(GLDrawer *c){ drawers.append(c); }
   void remove(void (*call)(void*), const void* classP=0);
   //template<class T> void add(const T& x) { add(x.staticDraw, &x); } ///< add a class or struct with a staticDraw routine
@@ -247,7 +247,9 @@ protected:
   void Key(unsigned char key, int x, int y);
   void Mouse(int button, int updown, int x, int y);
   void Motion(int x, int y);
+public:
   void Reshape(int w, int h);
+protected:
   void MouseWheel(int wheel, int direction, int x, int y);
   
   friend struct sOpenGL;
@@ -276,6 +278,8 @@ struct glUI:OpenGL::GLHoverCall,OpenGL::GLClickCall {
 };
 
 void glDrawUI(void *p);
+
+extern OpenGL& NoOpenGL;
 
 /// @}
 

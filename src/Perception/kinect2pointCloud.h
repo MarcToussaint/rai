@@ -4,9 +4,6 @@
 #include <Gui/opengl.h>
 #include <Geo/geo.h>
 
-extern ors::Camera kinectCam;
-void initKinectCam();
-
 struct Kinect2PointCloud: Module {
   ACCESSnew(byteA, kinect_rgb)
   ACCESSlisten(uint16A, kinect_depth)

@@ -153,15 +153,9 @@ void glDrawAxes(void*){
 
 void PointCloudViewer::open(){
   s = new sPointCloudViewer;
-#ifdef MLR_GL
   s->gl.add(glDrawAxes);
   s->gl.add(glDrawPointCloud, s->pc);
-  s->gl.camera.setPosition(0., 0., 0.);
-  s->gl.camera.focus(0., 0., 1.);
-  s->gl.camera.setZRange(.1, 10.);
-  s->gl.camera.heightAbs=s->gl.camera.heightAngle=0.;
-  s->gl.camera.focalLength = 580./480.;
-#endif
+  s->gl.camera.setKinect();
 }
 
 void PointCloudViewer::close(){

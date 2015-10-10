@@ -8,15 +8,6 @@ const unsigned int depth_size = image_width*image_height;
 
 ors::Camera kinectCam;
 
-void initKinectCam(){
-  kinectCam.setPosition(0., 0., 0.);
-  kinectCam.focus(0., 0., 1.);
-  kinectCam.setZRange(.1, 10.);
-  kinectCam.heightAbs=kinectCam.heightAngle=0.;
-  kinectCam.focalLength = 580./480.;
-}
-
-
 void Kinect2PointCloud::step(){
   depth = kinect_depth.get();
   rgb = kinect_rgb.get();

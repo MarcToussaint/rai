@@ -227,6 +227,7 @@ struct Camera {
   void glSetProjectionMatrix();
   void glConvertToTrueDepth(double &d);
   void glConvertToLinearDepth(double &d);
+  void setKinect();
 };
 
 //===========================================================================
