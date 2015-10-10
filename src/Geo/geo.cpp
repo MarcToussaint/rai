@@ -26,6 +26,9 @@
 REGISTER_TYPE_Key(T, ors::Transformation);
 #endif
 
+
+#include <GL/glu.h>
+
 const ors::Vector Vector_x(1, 0, 0);
 const ors::Vector Vector_y(0, 1, 0);
 const ors::Vector Vector_z(0, 0, 1);
@@ -1181,6 +1184,138 @@ void Transformation::read(std::istream& is) {
   }
   if(is.fail()) HALT("could not read Transformation struct");
   zeroVels = vel.isZero && angvel.isZero;
+}
+
+//===========================================================================
+//
+// camera class
+//
+
+/** @brief constructor; specify a frame if the camera is to be attached
+   to an existing frame. Otherwise the camera creates its own
+      frame */
+Camera::Camera() {
+  setZero();
+
+  setPosition(0., 0., 10.);
+  focus(0, 0, 0);
+  setZRange(.1, 1000.);
+  setHeightAngle(12.);
+}
+
+void Camera::setZero() {
+  X.setZero();
+  foc.setZero();
+  heightAngle=90.;
+  heightAbs=10.;
+  focalLength=1.;
+  whRatio=1.;
+  zNear=.1;
+  zFar=1000.;
+}
+
+/// the height angle (in degrees) of the camera perspective; set it 0 for orthogonal projection
+void Camera::setHeightAngle(float a) { heightAngle=a; }
+/// the absolute height of the camera perspective (automatically also sets heightAngle=0)
+void Camera::setHeightAbs(float h) { heightAngle=0; heightAbs=h; }
+/// the z-range (depth range) visible for the camera
+void Camera::setZRange(float znear, float zfar) { zNear=znear; zFar=zfar; }
+/// set the width/height ratio of your viewport to see a non-distorted picture
+void Camera::setWHRatio(float ratio) { whRatio=ratio; }
+/// the frame's position
+void Camera::setPosition(float x, float y, float z) { X.pos.set(x, y, z); }
+/// rotate the frame to focus the absolute coordinate origin (0, 0, 0)
+void Camera::focusOrigin() { foc.setZero(); focus(); }
+/// rotate the frame to focus the point (x, y, z)
+void Camera::focus(float x, float y, float z) { foc.set(x, y, z); focus(); }
+/// rotate the frame to focus the point given by the vector
+void Camera::focus(const Vector& v) { foc=v; focus(); }
+/// rotate the frame to focus (again) the previously given focus
+void Camera::focus() { watchDirection(foc-X.pos); } //X.Z=X.pos; X.Z-=foc; X.Z.normalize(); upright(); }
+/// rotate the frame to watch in the direction vector D
+void Camera::watchDirection(const Vector& d) {
+  if(d.x==0. && d.y==0.) {
+    X.rot.setZero();
+    if(d.z>0) X.rot.setDeg(180, 1, 0, 0);
+    return;
+  }
+  Quaternion r;
+  r.setDiff(-X.rot.getZ(), d);
+  X.rot=r*X.rot;
+}
+/// rotate the frame to set it upright (i.e. camera's y aligned with 's z)
+void Camera::upright() {
+#if 1
+  //construct desired X:
+  Vector v(0, 0, -1), x(1, 0, 0), dx, up;
+  x=X.rot*x; //true X
+  v=X.rot*v;
+  if(fabs(v.z)<1.) up.set(0, 0, 1); else up.set(0, 1, 0);
+  dx=up^v; //desired X
+  if(dx*x<=0) dx=-dx;
+  Quaternion r;
+  r.setDiff(x, dx);
+  X.rot=r*X.rot;
+#else
+  if(X.Z[2]<1.) X.Y.set(0, 0, 1); else X.Y.set(0, 1, 0);
+  X.X=X.Y^X.Z; X.X.normalize();
+  X.Y=X.Z^X.X; X.Y.normalize();
+#endif
+}
+
+//}
+
+void Camera::setCameraProjectionMatrix(const arr& P) {
+  //P is in standard convention -> computes fixedProjectionMatrix in OpenGL convention from this
+  cout <<"desired P=" <<P <<endl;
+  arr Kview=ARR(200., 0., 200., 0., 200., 200., 0., 0., 1.); //OpenGL's calibration matrix
+  Kview.reshape(3, 3);
+  //arr glP=inverse(Kview)*P;
+  arr glP=P;
+  //glP[2]()*=-1.;
+  glP.append(glP[2]);
+  glP[2]()*=.99; glP(2, 2)*=1.02; //some hack to invent a culling coordinate (usually determined via near and far...)
+  glP = ~glP;
+  glP *= 1./glP(3, 3);
+  cout <<"glP=" <<glP <<endl;
+  //glLoadMatrixd(glP.p);
+  //fixedProjectionMatrix = glP;
+}
+
+/** sets OpenGL's GL_PROJECTION matrix accordingly -- should be
+    called in an opengl draw routine */
+void Camera::glSetProjectionMatrix() {
+//  if(fixedProjectionMatrix.N) {
+//    glLoadMatrixd(fixedProjectionMatrix.p);
+//  } else {
+  if(heightAngle==0) {
+    if(heightAbs==0) {
+      arr P(4,4);
+      P.setZero();
+      P(0,0) = 2.*focalLength/whRatio;
+      P(1,1) = 2.*focalLength;
+      P(2,2) = (zFar + zNear)/(zNear-zFar);
+      P(2,3) = -1.;
+      P(3,2) = 2. * zFar * zNear / (zNear-zFar);
+      glLoadMatrixd(P.p);
+    }else{
+      glOrtho(-whRatio*heightAbs/2, whRatio*heightAbs/2,
+              -heightAbs/2, heightAbs/2, zNear, zFar);
+    }
+  } else
+    gluPerspective(heightAngle, whRatio, zNear, zFar);
+  double m[16];
+  glMultMatrixd(X.getInverseAffineMatrixGL(m));
+}
+
+/// convert from gluPerspective's non-linear [0, 1] depth to the true [zNear, zFar] depth
+void Camera::glConvertToTrueDepth(double &d) {
+  d = zNear + (zFar-zNear)*d/(zFar/zNear*(1.-d)+1.);
+}
+
+/// convert from gluPerspective's non-linear [0, 1] depth to the linear [0, 1] depth
+void Camera::glConvertToLinearDepth(double &d) {
+  d = d/(zFar/zNear*(1.-d)+1.);
 }
 
 //==============================================================================

@@ -95,7 +95,7 @@ void gtkCheckInitialized() {
 //    gdk_threads_enter();
     gtk_init(&argc, &argv);
     gtk_gl_init(&argc, &argv);
-    glutInit(&argc, argv);
+    //glutInit(&argc, argv);
   }
 #else
   global_gtkThread();

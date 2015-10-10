@@ -27,6 +27,7 @@
 
 #include <Core/array.h>
 #include <Core/thread.h>
+#include <Geo/geo.h>
 
 #ifndef MLR_QTGL
 #  include <X11/Xlib.h>
@@ -111,50 +112,6 @@ void glRasterImage(float x, float y, byteA &img, float zoom=1.);
 
 //===========================================================================
 //
-// Camera class
-//
-
-namespace ors {
-struct Transformation;
-struct Vector;
-struct Camera {
-  Transformation *X; // X.p is camera's position
-  Vector *foc;
-  
-  float heightAbs;
-  float heightAngle;
-  float focalLength;
-  float whRatio;
-  float zNear, zFar;
-  
-  Camera();
-  Camera(const Camera& c) { *this=c; }
-  ~Camera();
-  Camera& operator=(const Camera& c);
-  
-  void setZero();
-  void setHeightAngle(float a);
-  void setHeightAbs(float h);
-  void setZRange(float znear, float zfar);
-  void setWHRatio(float ratio);
-  void setPosition(float x, float y, float z);
-  void setOffset(float x, float y, float z);
-  void setCameraProjectionMatrix(const arr& P); //P is in standard convention -> computes fixedProjectionMatrix in OpenGL convention from this
-  void focusOrigin();
-  void focus(float x, float y, float z);
-  void focus(const Vector& v);
-  void focus();
-  void watchDirection(const Vector& d);
-  void upright();
-  void glSetProjectionMatrix();
-  void glConvertToTrueDepth(double &d);
-  void glConvertToLinearDepth(double &d);
-};
-}
-
-
-//===========================================================================
-//
 // OpenGL class
 //
 
@@ -182,6 +139,7 @@ struct OpenGL {
   mlr::Array<GLHoverCall*> hoverCalls; ///< list of hover callbacks
   mlr::Array<GLClickCall*> clickCalls; ///< list of click callbacks
   mlr::Array<GLKeyCall*> keyCalls;     ///< list of click callbacks
+  mlr::String title;     ///< the window title
   ors::Camera camera;     ///< the camera used for projection
   mlr::String text;        ///< the text to be drawn as title within the opengl frame
   float clearR, clearG, clearB, clearA;  ///< colors of the beackground (called in glClearColor(...))
@@ -269,11 +227,12 @@ private:
   
 public: //driver dependent methods
   ConditionVariable watching;
+  void checkWindow();
   void postRedrawEvent(bool fromWithinCallback);
   void processEvents();
   void enterEventLoop();
   void exitEventLoop();
-  void renderInBack(int width=-1, int height=-1, bool captureImg=true, bool captureDepth=false);
+  void renderInBack(bool captureImg=true, bool captureDepth=false);
 #if !defined MLR_MSVC && !defined MLR_QTGL
   Display* xdisplay();
   Drawable xdraw();

@@ -542,8 +542,8 @@ void gnuplot(const arr& X, bool pauseMouse=false, bool persist=false, const char
 void write(const arrL& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
 
 
-void write_ppm(const byteA &img, const char *file_name, bool swap_rows=false);
-void read_ppm(byteA &img, const char *file_name, bool swap_rows=false);
+void write_ppm(const byteA &img, const char *file_name, bool swap_rows=true);
+void read_ppm(byteA &img, const char *file_name, bool swap_rows=true);
 void add_alpha_channel(byteA &img, byte alpha);
 void make_grey(byteA &img);
 void make_RGB(byteA &img);

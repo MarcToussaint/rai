@@ -197,6 +197,37 @@ struct Transformation {
   void read(std::istream& is);
 };
 
+/// a camera projection in 3D
+struct Camera {
+  Transformation X;
+  Vector foc;
+
+  float heightAbs;
+  float heightAngle;
+  float focalLength;
+  float whRatio;
+  float zNear, zFar;
+
+  Camera();
+
+  void setZero();
+  void setHeightAngle(float a);
+  void setHeightAbs(float h);
+  void setZRange(float znear, float zfar);
+  void setWHRatio(float ratio);
+  void setPosition(float x, float y, float z);
+  void setOffset(float x, float y, float z);
+  void setCameraProjectionMatrix(const arr& P); //P is in standard convention -> computes fixedProjectionMatrix in OpenGL convention from this
+  void focusOrigin();
+  void focus(float x, float y, float z);
+  void focus(const Vector& v);
+  void focus();
+  void watchDirection(const Vector& d);
+  void upright();
+  void glSetProjectionMatrix();
+  void glConvertToTrueDepth(double &d);
+  void glConvertToLinearDepth(double &d);
+};
 
 //===========================================================================
 //

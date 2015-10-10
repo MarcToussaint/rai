@@ -880,7 +880,10 @@ void write_ppm(const byteA &img, const char *file_name, bool swap_rows) {
   if(!swap_rows) {
     os.write((char*)img.p, img.N);
   } else {
-    for(uint i=img.d0; i--;) os.write((char*)&img(i, 0, 0), img.d1*img.d2);
+    if(img.d2)
+      for(uint i=img.d0; i--;) os.write((char*)&img(i, 0, 0), img.d1*img.d2);
+    else
+      for(uint i=img.d0; i--;) os.write((char*)&img(i, 0), img.d1);
   }
 }
 

@@ -69,157 +69,6 @@ template mlr::Array<glUI::Button>::Array();
 template mlr::Array<glUI::Button>::~Array();
 
 
-//===========================================================================
-//
-// camera class
-//
-
-/** @brief constructor; specify a frame if the camera is to be attached
-   to an existing frame. Otherwise the camera creates its own
-      frame */
-ors::Camera::Camera() {
-  X = new Transformation;
-  //if(!frame){ f=new Frame; ownFrame=true; }else{ f=frame; ownFrame=false; }
-  foc = new ors::Vector;
-  setZero();
-  
-  setPosition(0., 0., 10.);
-  focus(0, 0, 0);
-  setZRange(.1, 1000.);
-  setHeightAngle(12.);
-}
-
-ors::Camera::~Camera() {
-  delete X;
-  delete foc;
-}
-
-ors::Camera& ors::Camera::operator=(const ors::Camera& c) {
-  //MEM_COPY_OPERATOR(c);
-  memmove(this, &c, sizeof(*this));
-  foc = new ors::Vector(*c.foc);
-  X = new ors::Transformation(*c.X);
-  return *this;
-}
-
-void ors::Camera::setZero() {
-  X->setZero();
-  foc->setZero();
-  heightAngle=90.;
-  heightAbs=10.;
-  focalLength=1.;
-  whRatio=1.;
-  zNear=.1;
-  zFar=1000.;
-}
-
-/// the height angle (in degrees) of the camera perspective; set it 0 for orthogonal projection
-void ors::Camera::setHeightAngle(float a) { heightAngle=a; }
-/// the absolute height of the camera perspective (automatically also sets heightAngle=0)
-void ors::Camera::setHeightAbs(float h) { heightAngle=0; heightAbs=h; }
-/// the z-range (depth range) visible for the camera
-void ors::Camera::setZRange(float znear, float zfar) { zNear=znear; zFar=zfar; }
-/// set the width/height ratio of your viewport to see a non-distorted picture
-void ors::Camera::setWHRatio(float ratio) { whRatio=ratio; }
-/// the frame's position
-void ors::Camera::setPosition(float x, float y, float z) { X->pos.set(x, y, z); }
-/// rotate the frame to focus the absolute coordinate origin (0, 0, 0)
-void ors::Camera::focusOrigin() { foc->setZero(); focus(); }
-/// rotate the frame to focus the point (x, y, z)
-void ors::Camera::focus(float x, float y, float z) { foc->set(x, y, z); focus(); }
-/// rotate the frame to focus the point given by the vector
-void ors::Camera::focus(const Vector& v) { *foc=v; focus(); }
-/// rotate the frame to focus (again) the previously given focus
-void ors::Camera::focus() { watchDirection((*foc)-X->pos); } //X->Z=X->pos; X->Z-=foc; X->Z.normalize(); upright(); }
-/// rotate the frame to watch in the direction vector D
-void ors::Camera::watchDirection(const Vector& d) {
-  if(d.x==0. && d.y==0.) {
-    X->rot.setZero();
-    if(d.z>0) X->rot.setDeg(180, 1, 0, 0);
-    return;
-  }
-  Quaternion r;
-  r.setDiff(-X->rot.getZ(), d);
-  X->rot=r*X->rot;
-}
-/// rotate the frame to set it upright (i.e. camera's y aligned with 's z)
-void ors::Camera::upright() {
-#if 1
-  //construct desired X:
-  Vector v(0, 0, -1), x(1, 0, 0), dx, up;
-  x=X->rot*x; //true X
-  v=X->rot*v;
-  if(fabs(v.z)<1.) up.set(0, 0, 1); else up.set(0, 1, 0);
-  dx=up^v; //desired X
-  if(dx*x<=0) dx=-dx;
-  Quaternion r;
-  r.setDiff(x, dx);
-  X->rot=r*X->rot;
-#else
-  if(X->Z[2]<1.) X->Y.set(0, 0, 1); else X->Y.set(0, 1, 0);
-  X->X=X->Y^X->Z; X->X.normalize();
-  X->Y=X->Z^X->X; X->Y.normalize();
-#endif
-}
-
-//}
-
-void ors::Camera::setCameraProjectionMatrix(const arr& P) {
-  //P is in standard convention -> computes fixedProjectionMatrix in OpenGL convention from this
-  cout <<"desired P=" <<P <<endl;
-  arr Kview=ARR(200., 0., 200., 0., 200., 200., 0., 0., 1.); //OpenGL's calibration matrix
-  Kview.reshape(3, 3);
-  //arr glP=inverse(Kview)*P;
-  arr glP=P;
-  //glP[2]()*=-1.;
-  glP.append(glP[2]);
-  glP[2]()*=.99; glP(2, 2)*=1.02; //some hack to invent a culling coordinate (usually determined via near and far...)
-  glP = ~glP;
-  glP *= 1./glP(3, 3);
-  cout <<"glP=" <<glP <<endl;
-  //glLoadMatrixd(glP.p);
-  //fixedProjectionMatrix = glP;
-}
-
-/** sets OpenGL's GL_PROJECTION matrix accordingly -- should be
-    called in an opengl draw routine */
-void ors::Camera::glSetProjectionMatrix() {
-#ifdef MLR_GL
-//  if(fixedProjectionMatrix.N) {
-//    glLoadMatrixd(fixedProjectionMatrix.p);
-//  } else {
-  if(heightAngle==0) {
-    if(heightAbs==0) {
-      arr P(4,4);
-      P.setZero();
-      P(0,0) = 2.*focalLength/whRatio;
-      P(1,1) = 2.*focalLength;
-      P(2,2) = (zFar + zNear)/(zNear-zFar);
-      P(2,3) = -1.;
-      P(3,2) = 2. * zFar * zNear / (zNear-zFar);
-      glLoadMatrixd(P.p);
-    }else{
-      glOrtho(-whRatio*heightAbs/2, whRatio*heightAbs/2,
-              -heightAbs/2, heightAbs/2, zNear, zFar);
-    }
-  } else
-    gluPerspective(heightAngle, whRatio, zNear, zFar);
-  double m[16];
-  glMultMatrixd(X->getInverseAffineMatrixGL(m));
-#else
-  NICO
-#endif
-}
-
-/// convert from gluPerspective's non-linear [0, 1] depth to the true [zNear, zFar] depth
-void ors::Camera::glConvertToTrueDepth(double &d) {
-  d = zNear + (zFar-zNear)*d/(zFar/zNear*(1.-d)+1.);
-}
-
-/// convert from gluPerspective's non-linear [0, 1] depth to the linear [0, 1] depth
-void ors::Camera::glConvertToLinearDepth(double &d) {
-  d = d/(zFar/zNear*(1.-d)+1.);
-}
 
 
 
@@ -378,7 +227,6 @@ void glPopLight() { if(glLightIsOn) glEnable(GL_LIGHTING); }
 
 void glDrawText(const char* txt, float x, float y, float z) {
   if(!txt) return;
-#if 1 //defined MLR_FREEGLUT
   glDisable(GL_DEPTH_TEST);
   glPushLightOff();
   glRasterPos3f(x, y, z);
@@ -400,7 +248,6 @@ void glDrawText(const char* txt, float x, float y, float z) {
   }
   glPopLight();
   glEnable(GL_DEPTH_TEST);
-#endif
 }
 
 void glDrawRect(float x1, float y1, float z1, float x2, float y2, float z2,
@@ -1097,21 +944,18 @@ void glDrawPointCloud(const arr& pts, const arr& cols) { NICO }
 // OpenGL implementations
 //
 
-OpenGL::OpenGL(const char* title,int w,int h,int posx,int posy)
-  : s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0){
+OpenGL::OpenGL(const char* _title,int w,int h,int posx,int posy)
+  : s(NULL), title(_title), reportEvents(false), width(w), height(h), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0){
   //MLR_MSG("creating OpenGL=" <<this);
-  initGlEngine();
-  s=new sOpenGL(this,title,w,h,posx,posy); //this might call some callbacks (Reshape/Draw) already!
+  Reshape(w,h);
+  s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
   init();
-  processEvents();
 }
 
 OpenGL::OpenGL(void *container)
   : s(NULL), reportEvents(false), width(0), height(0), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0){
-  initGlEngine();
   s=new sOpenGL(this,container); //this might call some callbacks (Reshape/Draw) already!
   init();
-  processEvents();
 }
 
 OpenGL::~OpenGL() {
@@ -1129,7 +973,6 @@ OpenGL* OpenGL::newClone() const {
 }
 
 void OpenGL::init() {
-//  CHECK(width && height,"width and height are not set -- perhaps not initialized");
   camera.setPosition(0., 0., 10.);
   camera.focus(0, 0, 0);
   camera.setZRange(.1, 1000.);
@@ -1273,12 +1116,12 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   //draw focus?
   if(drawFocus && mode!=GL_SELECT) {
     glColor(1., .7, .3);
-    double size = .005 * (camera.X->pos-*camera.foc).length();
-    glDrawDiamond((*camera.foc).x, (*camera.foc).y, (*camera.foc).z, size, size, size);
+    double size = .005 * (camera.X.pos-camera.foc).length();
+    glDrawDiamond(camera.foc.x, camera.foc.y, camera.foc.z, size, size, size);
   }
   /*if(topSelection && mode!=GL_SELECT){
     glColor(1., .7, .3);
-    double size = .005 * (camera.X->pos-*camera.foc).length();
+    double size = .005 * (camera.X.pos-camera.foc).length();
     glDrawDiamond(topSelection->x, topSelection->y, topSelection->z, size, size, size);
   }*/
   
@@ -1294,7 +1137,6 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   if(mode==GL_SELECT) glInitNames();
   for(uint i=0; i<drawers.N; i++) {
     if(mode==GL_SELECT) glLoadName(i);
-//    (*drawers(i).call)(drawers(i).classP);
     drawers(i)->glDraw(*this);
     glLoadIdentity();
   }
@@ -1328,8 +1170,8 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
     glLoadIdentity();
     if(drawFocus) {
       glColor(1., .7, .3);
-      double size = .005 * (camera.X->pos-*camera.foc).length();
-      glDrawDiamond((*vi->camera.foc).x, (*vi->camera.foc).y, (*vi->camera.foc).z, size, size, size);
+      double size = .005 * (camera.X.pos-camera.foc).length();
+      glDrawDiamond(vi->camera.foc.x, vi->camera.foc.y, vi->camera.foc.z, size, size, size);
     }
     for(uint i=0; i<vi->drawers.N; i++) vi->drawers(i)->glDraw(*this);
     if(vi->text.N) {
@@ -1465,6 +1307,7 @@ int OpenGL::watch(const char *txt) {
 
 /// update the view (in Qt: also starts displaying the window)
 int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool waitForCompletedDraw) {
+  checkWindow();
   captureImg=_captureImg;
   captureDep=_captureDep;
   if(txt) text.clear() <<txt;
@@ -1596,12 +1439,12 @@ void OpenGL::unproject(double &x, double &y, double &z,bool resetCamera) {
 //  Draw(w, h, cam);
 //  imgR.resize(h, w, 3);
 //  glGrabImage(imgR);
-//  double xorg=cam->X->pos.x;
-//  cam->X->pos.x -= baseline;
+//  double xorg=cam->X.pos.x;
+//  cam->X.pos.x -= baseline;
 //  Draw(w, h, cam);
 //  imgL.resize(h, w, 3);
 //  glGrabImage(imgL);
-//  cam->X->pos.x = xorg;
+//  cam->X.pos.x = xorg;
 //#endif
 //}
 
@@ -1684,7 +1527,6 @@ void OpenGL::Reshape(int _width, int _height) {
   if(height%2) height = 2*(height/2);
   camera.setWHRatio((double)width/height);
   for(uint v=0; v<views.N; v++) views(v).camera.setWHRatio((views(v).ri-views(v).le)*width/((views(v).to-views(v).bo)*height));
-  //postRedrawEvent(true);
 }
 
 void OpenGL::Key(unsigned char key, int _x, int _y) {
@@ -1735,9 +1577,9 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   }
   //store where you've clicked
   s->downVec=vec;
-  s->downRot=cam->X->rot;
-  s->downPos=cam->X->pos;
-  s->downFoc=*cam->foc;
+  s->downRot=cam->X.rot;
+  s->downPos=cam->X.pos;
+  s->downFoc=cam->foc;
   
   //check object clicked on
   if(!downPressed) {
@@ -1751,8 +1593,8 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   if(!cont) { postRedrawEvent(true); return; }
   
   //mouse scroll wheel:
-  if(mouse_button==4 && !downPressed) cam->X->pos += s->downRot*Vector_z * (.2 * s->downPos.length());
-  if(mouse_button==5 && !downPressed) cam->X->pos -= s->downRot*Vector_z * (.2 * s->downPos.length());
+  if(mouse_button==4 && !downPressed) cam->X.pos += s->downRot*Vector_z * (.2 * s->downPos.length());
+  if(mouse_button==5 && !downPressed) cam->X.pos -= s->downRot*Vector_z * (.2 * s->downPos.length());
   
   if(mouse_button==3) {  //selection
     Select();
@@ -1764,8 +1606,8 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
 
 void OpenGL::MouseWheel(int wheel, int direction, int x, int y) {
   CALLBACK_DEBUG(printf("Window %d Mouse Wheel Callback:  %d %d %d %d\n", 0, wheel, direction, x, y));
-  if(direction>0) camera.X->pos += camera.X->rot*Vector_z * (.1 * (camera.X->pos-*camera.foc).length());
-  else            camera.X->pos -= camera.X->rot*Vector_z * (.1 * (camera.X->pos-*camera.foc).length());
+  if(direction>0) camera.X.pos += camera.X.rot*Vector_z * (.1 * (camera.X.pos-camera.foc).length());
+  else            camera.X.pos -= camera.X.rot*Vector_z * (.1 * (camera.X.pos-camera.foc).length());
   postRedrawEvent(true);
 }
 
@@ -1808,13 +1650,13 @@ void OpenGL::Motion(int _x, int _y) {
       rot.setVec((vec-s->downVec) ^ Vector_z); //consider only xy-mouse-move
     }
 #if 0 //rotate about origin
-    cam->X->rot = s->downRot * rot;   //rotate camera's direction
+    cam->X.rot = s->downRot * rot;   //rotate camera's direction
     rot = s->downRot * rot / s->downRot; //interpret rotation relative to current viewing
-    cam->X->pos = rot * s->downPos;   //rotate camera's position
+    cam->X.pos = rot * s->downPos;   //rotate camera's position
 #else //rotate about focus
-    cam->X->rot = s->downRot * rot;   //rotate camera's direction
+    cam->X.rot = s->downRot * rot;   //rotate camera's direction
     rot = s->downRot * rot / s->downRot; //interpret rotation relative to current viewing
-    cam->X->pos = s->downFoc + rot * (s->downPos - s->downFoc);   //rotate camera's position
+    cam->X.pos = s->downFoc + rot * (s->downPos - s->downFoc);   //rotate camera's position
     //cam->focus();
 #endif
     postRedrawEvent(true);
@@ -1824,18 +1666,199 @@ void OpenGL::Motion(int _x, int _y) {
     /*    ors::Vector trans = s->downVec - vec;
         trans.z=0.;
         trans = s->downRot*trans;
-        cam->X->pos = s->downPos + trans;
+        cam->X.pos = s->downPos + trans;
         postRedrawEvent(true);*/
   }
   if(mouse_button==2) {  //zooming || (mouse_button==1 && !(modifiers&GLUT_ACTIVE_SHIFT) && (modifiers&GLUT_ACTIVE_CTRL))){
     double dy = s->downVec.y - vec.y;
     if(dy<-.99) dy = -.99;
-    cam->X->pos = s->downPos + s->downRot*Vector_z * dy * s->downPos.length();
+    cam->X.pos = s->downPos + s->downRot*Vector_z * dy * s->downPos.length();
     postRedrawEvent(true);
   }
 #else
   NICO
 #endif
+}
+
+
+//===========================================================================
+//
+// offscreen/background rendering
+//
+
+struct XBackgroundContext{
+  typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
+  typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+
+  glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
+  glXMakeContextCurrentARBProc glXMakeContextCurrentARB = 0;
+  Display* dpy;
+  int fbcount;
+  GLXFBConfig* fbc;
+  GLXContext ctx;
+  GLXPbuffer pbuf;
+
+  XBackgroundContext(){
+    static int visual_attribs[] = { None };
+    int context_attribs[] = { GLX_CONTEXT_MAJOR_VERSION_ARB, 3, GLX_CONTEXT_MINOR_VERSION_ARB, 0, None };
+
+    dpy = XOpenDisplay(0);
+    fbcount = 0;
+    fbc = NULL;
+
+    /* open display */
+    if(!(dpy = XOpenDisplay(0))) HALT("Failed to open display");
+
+    /* get framebuffer configs, any is usable (might want to add proper attribs) */
+    if(!(fbc = glXChooseFBConfig(dpy, DefaultScreen(dpy), visual_attribs, &fbcount)))
+      HALT("Failed to get FBConfig");
+
+    /* get the required extensions */
+    glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB");
+    glXMakeContextCurrentARB = (glXMakeContextCurrentARBProc)glXGetProcAddressARB( (const GLubyte *) "glXMakeContextCurrent");
+    if ( !(glXCreateContextAttribsARB && glXMakeContextCurrentARB) ){
+      XFree(fbc);
+      HALT("missing support for GLX_ARB_create_context");
+    }
+
+    /* create a context using glXCreateContextAttribsARB */
+    if ( !( ctx = glXCreateContextAttribsARB(dpy, fbc[0], 0, True, context_attribs)) ){
+      XFree(fbc);
+      HALT("Failed to create opengl context");
+    }
+
+    /* create temporary pbuffer */
+    int pbuffer_attribs[] = { GLX_PBUFFER_WIDTH, 800, GLX_PBUFFER_HEIGHT, 600, None };
+    pbuf = glXCreatePbuffer(dpy, fbc[0], pbuffer_attribs);
+
+    XFree(fbc);
+    XSync(dpy, False);
+
+    makeCurrent();
+  }
+
+  void makeCurrent(){
+    /* try to make it the current context */
+    if ( !glXMakeContextCurrent(dpy, pbuf, pbuf, ctx) ){
+      /* some drivers do not support context without default framebuffer, so fallback on
+             * using the default window.
+             */
+      if ( !glXMakeContextCurrent(dpy, DefaultRootWindow(dpy), DefaultRootWindow(dpy), ctx) ){
+        fprintf(stderr, "failed to make current");
+        exit(1);
+      }
+    }
+  }
+};
+
+Singleton<XBackgroundContext> xBackgroundContext;
+
+void OpenGL::renderInBack(bool _captureImg, bool _captureDep){
+
+  xBackgroundContext().makeCurrent();
+
+  CHECK_EQ(width%4,0,"should be devidable by 4!!");
+
+  isUpdating.waitForValueEq(0);
+  isUpdating.setValue(1);
+
+//  s->beginGlContext();
+
+  if(!rboColor || !rboDepth){ //need to initialize
+    glewInit();
+    glGenRenderbuffers(1, &rboColor);  // Create a new renderbuffer unique name.
+    glBindRenderbuffer(GL_RENDERBUFFER, rboColor);  // Set it as the current.
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height); // Sets storage type for currently bound renderbuffer.
+    // Depth renderbuffer.
+    glGenRenderbuffers(1, &rboDepth);
+    glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+    // Framebuffer.
+    // Create a framebuffer and a renderbuffer object.
+    // You need to delete them when program exits.
+    glGenFramebuffers(1, &fboId);
+    glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+    //from now on, operate on the given framebuffer
+    //GL_FRAMEBUFFER        read write
+    //GL_READ_FRAMEBUFFER   read
+    //GL_FRAMEBUFFER        write
+
+    // Adds color renderbuffer to currently bound framebuffer.
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rboColor);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,  GL_RENDERBUFFER, rboDepth);
+
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+    //glReadBuffer(GL_BACK);
+
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+      cout << "framebuffer error:" << endl;
+      switch (status) {
+        case GL_FRAMEBUFFER_UNDEFINED: {
+          cout << "GL_FRAMEBUFFER_UNDEFINED" << endl;
+          break;
+        }
+        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: {
+          cout << "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT" << endl;
+          break;
+        }
+        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: {
+          cout << "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT" << endl;
+          break;
+        }
+        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: {
+          cout << "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER" << endl;
+          break;
+        }
+        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: {
+          cout << "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER" << endl;
+          break;
+        }
+        case GL_FRAMEBUFFER_UNSUPPORTED: {
+          cout << "GL_FRAMEBUFFER_UNSUPPORTED" << endl;
+          break;
+        }
+        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: {
+          cout << "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE" << endl;
+          break;
+        }
+        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS: {
+          cout << "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS" << endl;
+          break;
+        }
+        case 0: {
+          cout << "0" << endl;
+          break;
+        }
+      }
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
+
+  //-- draw!
+  Draw(width, height);
+  glFlush();
+
+  //-- read
+  if(_captureImg){
+    captureImage.resize(height, width, 3);
+    //  glReadBuffer(GL_BACK);
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
+  }
+  if(_captureDep){
+    captureDepth.resize(height, width);
+    glReadBuffer(GL_DEPTH_ATTACHMENT);
+    glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, captureDepth.p);
+  }
+
+  // Return to onscreen rendering:
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+  isUpdating.setValue(0);
+//  s->endGlContext();
 }
 
 //===========================================================================
