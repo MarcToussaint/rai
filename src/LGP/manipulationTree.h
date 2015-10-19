@@ -42,12 +42,17 @@ struct ManipulationTree_Node{
     s=parent->s+1;
     parent->children.append(this);
     fol.setState(parent->folState);
-    fol.transition(a);
+    if(a){
+      fol.transition(a);
+    }else{
+      LOG(-1) <<"this doesn't make sense";
+    }
     folState = fol.getState();
     decision = a;
   }
 
   void dump(int level=0);
+
   void expand(){
     fol.setState(folState);
     auto actions = fol.get_actions();
