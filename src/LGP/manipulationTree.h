@@ -4,6 +4,9 @@
 #include <FOL/fol_mcts_world.h>
 #include "LGP.h"
 
+struct ManipulationTree_Node;
+typedef mlr::Array<ManipulationTree_Node*> ManipulationTree_NodeL;
+
 //===========================================================================
 
 struct ManipulationTree_Node{
@@ -51,7 +54,7 @@ struct ManipulationTree_Node{
     decision = a;
   }
 
-  void dump(int level=0);
+  void write(ostream& os=cout) const;
 
   void expand(){
     fol.setState(folState);
@@ -62,6 +65,8 @@ struct ManipulationTree_Node{
     }
   }
 };
+
+inline ostream& operator<<(ostream& os, const ManipulationTree_Node& n){ n.write(os); return os; }
 
 //===========================================================================
 
