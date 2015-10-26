@@ -25,7 +25,7 @@ void Plane::glDraw(){
   p *= -c/(p*p);
   glLoadIdentity();
   glTranslatef(p.x, p.y, p.z);
-  glRotated(180.*angle/MT_PI, axis.x, axis.y, axis.z);
+  glRotated(180.*angle/MLR_PI, axis.x, axis.y, axis.z);
   glDisable(GL_CULL_FACE);
   glDrawRect(0,0,0,1.);
   glLoadIdentity();

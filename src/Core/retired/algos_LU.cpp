@@ -27,7 +27,7 @@ double *vector(uint i, uint j) { return new double[j]; }
 void nrerror(const char* msg) { HALT(msg); }
 void free_vector(double* p, uint i, uint j) { delete[] p; }
 
-namespace MT {
+namespace mlr {
 double determinant_LU(const arr& X){
   CHECK(X.nd==2 && X.d0==X.d1, "");
   uint n=X.d0, i;
@@ -35,7 +35,7 @@ double determinant_LU(const arr& X){
   LU=X;
   intA idx(n);
   doubleA d(n);
-  MT::Array<double*> tmp;
+  mlr::Array<double*> tmp;
   ludcmp(LU.getCarray(tmp), n, idx.p, d.p);
   double det=1.;
   for(i=0; i<n; i++) det *= LU(i, i);
@@ -55,7 +55,7 @@ void inverse_LU(arr& Xinv, const arr& X){
   LU=X;
   intA idx(n);
   doubleA d(n);
-  MT::Array<double*> tmp;
+  mlr::Array<double*> tmp;
   ludcmp(LU.getCarray(tmp), n, idx.p, d.p);
   //--
   arr col(n);
@@ -66,12 +66,12 @@ void inverse_LU(arr& Xinv, const arr& X){
     for(i=0; i<n; i++) Xinv(i, j)=col(i);
   }
   
-#ifdef MT_CHECK_INVERSE
+#ifdef MLR_CHECK_INVERSE
   arr D, _D; D.setId(n);
   uint me;
   _D=X*Xinv;
   double err=maxDiff(_D, D, &me);
-  CHECK(err<MT_CHECK_INVERSE , "inverting failed, error=" <<err <<" " <<_D.elem(me) <<"!=" <<D.elem(me));
+  CHECK(err<MLR_CHECK_INVERSE , "inverting failed, error=" <<err <<" " <<_D.elem(me) <<"!=" <<D.elem(me));
 #endif
 }
 
@@ -82,7 +82,7 @@ void LU_decomposition(arr& L, arr& U, const arr& X){
   LU=X;
   intA idx(n);
   doubleA d(n);
-  MT::Array<double*> tmp;
+  mlr::Array<double*> tmp;
 
   ludcmp(LU.getCarray(tmp), n, idx.p, d.p);
   

@@ -20,7 +20,7 @@
 
 #include "gaussianProcess.h"
 
-#define MT_GP_DEBUG 0
+#define MLR_GP_DEBUG 0
 
 /** prior of 0 */
 double const_0(const arr &x, const void *p){return 0.;}
@@ -125,7 +125,7 @@ void GaussianProcess::appendObservation(const arr& x, double y){
   Y.append(y);
   X.reshape(N+1, x.N);
   Y.reshape(N+1);
-#if MT_GP_DEBUG
+#if MLR_GP_DEBUG
   arr iG=Ginv;
   recompute();
   double err=maxDiff(iG, Ginv);
@@ -183,7 +183,7 @@ void GaussianProcess::evaluate(const arr& x, double& y, double& sig){
 double GaussianProcess::log_likelihood() {
   arr gram;
   inverse_SymPosDef(gram, Ginv);
-  return (-.5*~Y*GinvY - .5*log(length(gram)) - (X.N+dX.N)/2 * log(2*MT_PI))(0); // actually a degenerated array of size 1x1
+  return (-.5*~Y*GinvY - .5*log(length(gram)) - (X.N+dX.N)/2 * log(2*MLR_PI))(0); // actually a degenerated array of size 1x1
 }
 
 /** vector of covariances between test point and N+dN observation points */

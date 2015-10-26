@@ -18,8 +18,8 @@
 
 
 
-#ifndef MT_linearRegression_h
-#define MT_linearRegression_h
+#ifndef MLR_linearRegression_h
+#define MLR_linearRegression_h
 
 #include <Core/array.h>
 

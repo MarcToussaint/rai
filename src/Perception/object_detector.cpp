@@ -1,10 +1,12 @@
-﻿#include "object_detector.h"
+﻿#ifdef MLR_PCL
+
+#include "object_detector.h"
 #include "plane.h"
 #include <pcl/common/pca.h>
 #include <pcl/common/transforms.h>
 #include <Core/array.h>
 #include <pcl/common/eigen.h>
-#include <Core/geo.h>
+#include <Geo/geo.h>
 
 bool sphereDetector(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::Normal>::Ptr inCloudNormal, pcl::ModelCoefficients::Ptr outCoefficients, pcl::PointIndices::Ptr outInliersPlane,double min_radius, double max_radius)
 {
@@ -188,3 +190,5 @@ void fittingBoundingBox(pcl::PointCloud<PointT>::Ptr inCloud, PointT &min, Point
     pca.reconstruct (proj_max, max);
 
 }
+
+#endif

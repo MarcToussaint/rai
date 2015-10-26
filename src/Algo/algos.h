@@ -22,12 +22,12 @@
 /// @addtogroup group_Core
 /// @{
 
-#ifndef MT_algos_h
-#define MT_algos_h
+#ifndef MLR_algos_h
+#define MLR_algos_h
 
 #include <Core/array.h>
 
-namespace MT {
+namespace mlr {
 
 //----- Runge-Kutta
 /// standard Runge-Kutta 4
@@ -56,7 +56,7 @@ bool rk4dd_switch(arr& x1, arr& v1, arr& s1, const arr& x0, const arr& v0, const
                   double& dt, double tol);
                   
 
-} //end namespace MT
+} //end namespace mlr
 
 #endif
 

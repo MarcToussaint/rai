@@ -17,12 +17,12 @@
     -----------------------------------------------------------------  */
 
 
-#ifndef MT_color_h
-#define MT_color_h
+#ifndef MLR_color_h
+#define MLR_color_h
 
 #include <Core/util.h>
 
-namespace MT {
+namespace mlr {
 /// simple float[3] color class
 class Color {
 public:
@@ -166,6 +166,6 @@ public:
   void read(std::istream& is) { is >>PARSE("(") >>r >>PARSE(":") >>g >>PARSE(":") >>b >>PARSE(")"); }
 };
 }
-stdPipes(MT::Color);
+stdPipes(mlr::Color);
 
 #endif
