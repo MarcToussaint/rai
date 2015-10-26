@@ -415,7 +415,7 @@ double d_eqConstraintCost(double h, double margin, double power){
   (probably in micro second resolution) -- Windows checked! */
 double clockTime(bool today) {
 #ifndef MT_TIMEB
-  static timespec ts;
+  timespec ts;
   clock_gettime(CLOCK_REALTIME, &ts);
   if(today) ts.tv_sec = ts.tv_sec%86400; //modulo TODAY
   return ((double)(ts.tv_sec) + 1e-9d*(double)(ts.tv_nsec));
@@ -449,7 +449,7 @@ double realTime() {
   processor time) -- Windows checked! */
 double cpuTime() {
 #ifndef MT_TIMEB
-  static tms t; times(&t);
+  tms t; times(&t);
   return ((double)t.tms_utime)/sysconf(_SC_CLK_TCK);
 #else
   return ((double)clock())/CLOCKS_PER_SEC; //MSVC: CLOCKS_PER_SEC=1000
@@ -461,7 +461,7 @@ double cpuTime() {
   -- not implemented for Windows! */
 double sysTime() {
 #ifndef MT_TIMEB
-  static tms t; times(&t);
+  tms t; times(&t);
   return ((double)(t.tms_stime))/sysconf(_SC_CLK_TCK);
 #else
   HALT("sysTime() is not implemented for Windows!");
@@ -473,7 +473,7 @@ double sysTime() {
   as cpuTime + sysTime) -- not implemented for Windows! */
 double totalTime() {
 #ifndef MT_TIMEB
-  static tms t; times(&t);
+  tms t; times(&t);
   return ((double)(t.tms_utime+t.tms_stime))/sysconf(_SC_CLK_TCK);
 #else
   HALT("totalTime() is not implemented for Windows!");
