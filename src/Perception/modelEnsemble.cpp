@@ -14,7 +14,7 @@ bool ModelEnsemble::addNewRegionGrowingModel(DataNeighbored& data){
 //  if(models.N>5) return false;
 
   //-- find a random seed
-  uint i,k;
+  uint i;
   for(uint k=20;k--;){
     i=rnd(data.n());
     if(data.valid(i) && data.weights(i)*10.<rnd.uni()) break;
