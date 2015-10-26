@@ -18,8 +18,8 @@
 
 
 
-#ifndef MT_gaussianProcess_h
-#define MT_gaussianProcess_h
+#ifndef MLR_gaussianProcess_h
+#define MLR_gaussianProcess_h
 
 #include <Core/array.h>
 #include <Core/util.h>
@@ -177,7 +177,7 @@ inline void dGaussKernel(arr& grad, void *P, const arr& a, const arr& b){
   if(&a==&b){ grad.resizeAs(a); grad.setZero(); return; }
   double gauss=GaussKernel(P, a, b), gamma=1./K.widthVar;
   grad = gamma * (b-a) * gauss; // SD: Note the (b - a) swap cancles the leading minus
-  //MT_MSG("gamma=" <<gamma <<"; b-a" <<b -a <<"; gauss=" <<gauss<<"; grad=" <<grad);
+  //MLR_MSG("gamma=" <<gamma <<"; b-a" <<b -a <<"; gauss=" <<gauss<<"; grad=" <<grad);
 }
 
 /** @brief covariance between derivative at point a and function value at
@@ -279,7 +279,7 @@ inline void randomFunction(GaussianProcess& gp, arr& Xbase, bool illustrate, boo
 
 
 
-#ifdef  MT_IMPLEMENTATION
+#ifdef  MLR_IMPLEMENTATION
 #  include "gaussianProcess.cpp"
 #endif
 

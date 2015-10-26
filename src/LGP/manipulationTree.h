@@ -2,19 +2,25 @@
 
 #include <Ors/ors.h>
 #include <FOL/fol_mcts_world.h>
+#include "LGP.h"
+
+struct ManipulationTree_Node;
+typedef mlr::Array<ManipulationTree_Node*> ManipulationTree_NodeL;
 
 //===========================================================================
 
 struct ManipulationTree_Node{
   ManipulationTree_Node *parent;
-  MT::Array<ManipulationTree_Node*> children;
+  mlr::Array<ManipulationTree_Node*> children;
   uint s;               ///< depth/step of this node
 //  double t;             ///< real time
-//  action;           ///< what decision (relative to the parent) does this node represent
 
-//  ors::KinematicSwitch sw; ///< the kinematic switch(es) that this action implies
+  FOL_World& fol;
+  FOL_World::Handle decision;
+  Graph *folState; ///< the symbolic state after action
+
+  //  ors::KinematicSwitch sw; ///< the kinematic switch(es) that this action implies
   ors::KinematicWorld kinematics; ///< actual kinematics after action (includes all previous switches)
-  Graph symbols; ///< the symbolic state after action
 
   //-- results of effective pose optimization
   ors::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
@@ -27,16 +33,40 @@ struct ManipulationTree_Node{
   double pathCosts;
 
   ///root node init
-  ManipulationTree_Node(const ors::KinematicWorld& world_root, const Graph& symbols_root)
-    : parent(NULL), s(0), kinematics(world_root), symbols(symbols_root), effKinematics(kinematics), effPoseReward(0.){}
+  ManipulationTree_Node(LogicGeometricProgram& lgp)
+    : parent(NULL), s(0), fol(lgp.fol_root), kinematics(lgp.world_root), effKinematics(kinematics), effPoseReward(0.){
+    fol.generateStateTree=true;
+    folState = fol.getState();
+  }
 
   ///child node creation
-  ManipulationTree_Node(ManipulationTree_Node *parent)
-    : parent(parent), kinematics(parent->kinematics), symbols(parent->symbols), effKinematics(kinematics), effPoseReward(0.){
+  ManipulationTree_Node(ManipulationTree_Node *parent, FOL_World::Handle& a)
+    : parent(parent), fol(parent->fol), kinematics(parent->kinematics), effKinematics(kinematics), effPoseReward(0.){
     s=parent->s+1;
     parent->children.append(this);
+    fol.setState(parent->folState);
+    if(a){
+      fol.transition(a);
+    }else{
+      LOG(-1) <<"this doesn't make sense";
+    }
+    folState = fol.getState();
+    decision = a;
+  }
+
+  void write(ostream& os=cout) const;
+
+  void expand(){
+    fol.setState(folState);
+    auto actions = fol.get_actions();
+    for(FOL_World::Handle& a:actions){
+      cout <<"  DECISION: " <<*a <<endl;
+      new ManipulationTree_Node(this, a);
+    }
   }
 };
+
+inline ostream& operator<<(ostream& os, const ManipulationTree_Node& n){ n.write(os); return os; }
 
 //===========================================================================
 

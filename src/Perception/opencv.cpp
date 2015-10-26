@@ -1,4 +1,4 @@
-#ifdef MT_OPENCV
+#ifdef MLR_OPENCV
 
 #include "opencv.h"
 
@@ -74,5 +74,5 @@ void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSd
   diff = smoothed;
 }
 
-#endif // MT_OPENCV
+#endif // MLR_OPENCV
 

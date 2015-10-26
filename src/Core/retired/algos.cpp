@@ -18,11 +18,11 @@
 
 #include <cmath>
 #include <cstdlib>
-#include "array_t.h"
+#include "array.tpp"
 #include "algos.h"
 
-#ifdef MT_SHARK
-#  define Array MT::Array
+#ifdef MLR_SHARK
+#  define Array mlr::Array
 #endif
 
 #ifndef CHECK_EPS
@@ -31,10 +31,10 @@
 
 //===========================================================================
 //
-// functions in MT namespace
+// functions in mlr namespace
 //
 
-void MT::normalizeData(arr& X) {
+void mlr::normalizeData(arr& X) {
   CHECK_EQ(X.nd,2, "data has to be a 2D batch");
   uint n, N=X.d0, k, K=X.d1;
   arr mean, var, x, sd;
@@ -51,7 +51,7 @@ void MT::normalizeData(arr& X) {
   for(n=0; n<N; n++) for(k=0; k<K; k++) if(sd(k)) X(n, k)/=sd(k);
 }
 
-void MT::makeSpline(arr& X, arr& P, uint intersteps) {
+void mlr::makeSpline(arr& X, arr& P, uint intersteps) {
   CHECK_EQ(P.nd,2, "makeSpline: set of points is 2D array");
   XSpline S;
   S.referTo(P);
@@ -65,7 +65,7 @@ void MT::makeSpline(arr& X, arr& P, uint intersteps) {
   }
 }
 
-void MT::makeSpline(arr& X, arr& dX, arr& P, uint intersteps) {
+void mlr::makeSpline(arr& X, arr& dX, arr& P, uint intersteps) {
   XSpline S;
   S.referTo(P);
   S.type(false, 1.); //is default
@@ -79,7 +79,7 @@ void MT::makeSpline(arr& X, arr& dX, arr& P, uint intersteps) {
   }
 }
 
-void MT::randomSpline(arr& X, uint dim, uint points, uint intersteps, double lo, double hi, uint cycles) {
+void mlr::randomSpline(arr& X, uint dim, uint points, uint intersteps, double lo, double hi, uint cycles) {
   arr P(points, dim);
   rndUniform(P, lo, hi, false);
   if(cycles>1) P.replicate(cycles);
@@ -88,7 +88,7 @@ void MT::randomSpline(arr& X, uint dim, uint points, uint intersteps, double lo,
   makeSpline(X, P, intersteps);
 }
 
-void MT::randomSpline(arr& X, arr& dX, uint dim, uint points, uint intersteps, double lo, double hi, uint cycles) {
+void mlr::randomSpline(arr& X, arr& dX, uint dim, uint points, uint intersteps, double lo, double hi, uint cycles) {
   arr P(points, dim);
   rndUniform(P, lo, hi, false);
   if(cycles>1) P.replicate(cycles);
@@ -97,7 +97,7 @@ void MT::randomSpline(arr& X, arr& dX, uint dim, uint points, uint intersteps, d
   makeSpline(X, dX, P, intersteps);
 }
 
-bool MT::checkGradient(void (*f)(arr&, arr*, const arr&, void*),
+bool mlr::checkGradient(void (*f)(arr&, arr*, const arr&, void*),
                        void *data,
                        const arr& x, double tolerance) {
   arr y, J, dx, dy, JJ;
@@ -116,7 +116,7 @@ bool MT::checkGradient(void (*f)(arr&, arr*, const arr&, void*),
   JJ.reshapeAs(J);
   double md=maxDiff(J, JJ, &i);
   if(md>tolerance) {
-    MT_MSG("checkGradient -- FAILURE -- \nmax diff=" <<md <<" (stored in files z.J and z.JJ)");
+    MLR_MSG("checkGradient -- FAILURE -- \nmax diff=" <<md <<" (stored in files z.J and z.JJ)");
     J >>FILE("z.J");
     JJ >>FILE("z.JJ");
     cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
@@ -128,7 +128,7 @@ bool MT::checkGradient(void (*f)(arr&, arr*, const arr&, void*),
   return true;
 }
 
-bool MT::checkGradient(double(*f)(arr*, const arr&, void*),
+bool mlr::checkGradient(double(*f)(arr*, const arr&, void*),
                        void *data,
                        const arr& x, double tolerance) {
   arr J, dx, JJ;
@@ -148,7 +148,7 @@ bool MT::checkGradient(double(*f)(arr*, const arr&, void*),
   JJ.reshapeAs(J);
   double md=maxDiff(J, JJ, 0);
   if(md>tolerance) {
-    MT_MSG("checkGradient -- FAILURE -- \nmax diff=" <<md <<" (stored in files z.J and z.JJ)");
+    MLR_MSG("checkGradient -- FAILURE -- \nmax diff=" <<md <<" (stored in files z.J and z.JJ)");
     J >>FILE("z.J");
     JJ >>FILE("z.JJ");
     cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
@@ -160,31 +160,31 @@ bool MT::checkGradient(double(*f)(arr*, const arr&, void*),
   return true;
 }
 
-void MT::convolution(arr &y, const arr &x, double(*h)(double), double scale) {
+void mlr::convolution(arr &y, const arr &x, double(*h)(double), double scale) {
   CHECK(x.nd==1 || x.nd==2, "");
   uint T=x.d0, i, j;
   y.resizeAs(x); y.setZero();
   for(i=0; i<T; i++) for(j=0; j<T; j++) {
       if(x.nd==1)
-        y(i) += h(MT_2PI*((double)i-j)/scale)*(double)2./scale * x(j);
+        y(i) += h(MLR_2PI*((double)i-j)/scale)*(double)2./scale * x(j);
       else
-        y[i]() += h(MT_2PI*((double)i-j)/scale)*(double)2./scale * x[j];
+        y[i]() += h(MLR_2PI*((double)i-j)/scale)*(double)2./scale * x[j];
     }
 }
 
-void MT::bandpassFilter(arr &y, const arr &x, double loWavelength, double hiWavelength) {
+void mlr::bandpassFilter(arr &y, const arr &x, double loWavelength, double hiWavelength) {
   arr y_hi, y_lo;
-  convolution(y_lo, x, MT::cosc, hiWavelength);
-  convolution(y_hi, x, MT::cosc, loWavelength);
+  convolution(y_lo, x, mlr::cosc, hiWavelength);
+  convolution(y_hi, x, mlr::cosc, loWavelength);
   y=y_hi-y_lo;
 }
 
-void MT::bandpassEnergy(arr &y, const arr &x, double loWavelength, double hiWavelength) {
+void mlr::bandpassEnergy(arr &y, const arr &x, double loWavelength, double hiWavelength) {
   arr y_his, y_hic, y_los, y_loc, ys, yc;
-  convolution(y_los, x, MT::sinc, hiWavelength);
-  convolution(y_loc, x, MT::cosc, hiWavelength);
-  convolution(y_his, x, MT::sinc, loWavelength);
-  convolution(y_hic, x, MT::cosc, loWavelength);
+  convolution(y_los, x, mlr::sinc, hiWavelength);
+  convolution(y_loc, x, mlr::cosc, hiWavelength);
+  convolution(y_his, x, mlr::sinc, loWavelength);
+  convolution(y_hic, x, mlr::cosc, loWavelength);
   ys=y_his-y_los;
   yc=y_hic-y_loc;
   uint i;
@@ -199,7 +199,7 @@ the nodes of \c fox are permuted according to \c p. If they don't
 match in size and \c sub=1, then only the upper left submatrices
 are compared; if \c sub=0, the missing entries of the smaller
 matrix are counted as wrong symbols */
-double MT::matdistance(intA& fix, intA& fox, uintA& p, bool sub) {
+double mlr::matdistance(intA& fix, intA& fox, uintA& p, bool sub) {
   CHECK_EQ(fox.d0,p.N, "matrix and its permutation don't agree in size");
   uint i, j, Nmin, Nmax, n=0;
   if(fix.d0<=fox.d0) { Nmin=fix.d0; Nmax=fox.d0; } else { Nmin=fox.d0; Nmax=fix.d0; }
@@ -210,7 +210,7 @@ double MT::matdistance(intA& fix, intA& fox, uintA& p, bool sub) {
 }
 
 /** same as \c matdistance(A, B, identical-permutation, sub) */
-double MT::matdistance(intA& A, intA& B, bool sub) {
+double mlr::matdistance(intA& A, intA& B, bool sub) {
   uintA p;
   p.setStraightPerm(B.d0);
   return matdistance(A, B, p, sub);
@@ -218,7 +218,7 @@ double MT::matdistance(intA& A, intA& B, bool sub) {
 
 /* Uses simulated annealing to find the permutation \c p such that
 \c matdistance(fix, fox, p, sub) becomes minimal */
-double MT::matannealing(intA& fix, intA& fox, uintA& p, bool sub, double annealingRepetitions, double annealingCooling) {
+double mlr::matannealing(intA& fix, intA& fox, uintA& p, bool sub, double annealingRepetitions, double annealingCooling) {
   CHECK(fix.nd==2 && fox.nd==2, "");
   
   uint N=fox.d0;
@@ -758,7 +758,7 @@ void Kalman::fb(arr& y, arr& f, arr& F, arr& g, arr& G, arr& p, arr& P, arr *Rt)
     z = A*p[t];           //mean output
     Z = CovV + A*CovH*~A; //output variance
     z = y[t]-z;
-    l=-.5*scalarProduct(Z, z, z) - .5*d*::log(MT_2PI) - .5*::log(determinant(Z));
+    l=-.5*scalarProduct(Z, z, z) - .5*d*::log(MLR_2PI) - .5*::log(determinant(Z));
     LL += l;
   }
   LL/=T;
@@ -978,7 +978,7 @@ void PartialLeastSquares::SIMPLS() {
   S.compute();
   double scale=trace(S.VarX);
   if(scale<1e-10) {
-    //MT_MSG("Warning: PLS: too small variance (only 1 data point?) -> use constant regression");
+    //MLR_MSG("Warning: PLS: too small variance (only 1 data point?) -> use constant regression");
     B.resize(O, I); W.resize(K, I); Q.resize(K, O); B=0.; W=0.; Q=0.;
     return;
   }
@@ -1126,7 +1126,7 @@ void RP_df(arr& dx, const arr& x, void *data) {
 }
 
 //----- fwd declarations of external routines
-#ifdef MT_algos_extern
+#ifdef MLR_algos_extern
 extern "C" {
   longinteger dlevmar_der(
     void (*func)(double *p, double *hx, longinteger m, longinteger n, void *adata),
@@ -1149,7 +1149,7 @@ void frprmn(double p[], int n, double ftol, int *iter, int maxIterations, double
                   double stoppingTolerance);*/
 
 //--- the minimize routine itself
-int MT::minimize(double(*f)(arr*, const arr&, void*),
+int mlr::minimize(double(*f)(arr*, const arr&, void*),
                  void *data,
                  arr& x,
                  double *fmin_return,
@@ -1178,7 +1178,7 @@ int MT::minimize(double(*f)(arr*, const arr&, void*),
       //i=rpropMinimize(minimizeStatic::RP_f, minimizeStatic::RP_df, data,
       //  x, fminp, maxIterations, stoppingTolerance);
       break;
-#ifdef MT_algos_extern
+#ifdef MLR_algos_extern
     case 0: //conjugate gradient
       ::frprmn(x.p, x.N, stoppingTolerance, &i, maxIterations, fminp,
                minimizeStatic::CG_f,

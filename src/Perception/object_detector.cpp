@@ -6,7 +6,7 @@
 #include <pcl/common/transforms.h>
 #include <Core/array.h>
 #include <pcl/common/eigen.h>
-#include <Core/geo.h>
+#include <Geo/geo.h>
 
 bool sphereDetector(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::Normal>::Ptr inCloudNormal, pcl::ModelCoefficients::Ptr outCoefficients, pcl::PointIndices::Ptr outInliersPlane,double min_radius, double max_radius)
 {

@@ -1,5 +1,5 @@
 #include "surfels.h"
-#include <Core/geo.h>
+#include <Geo/geo.h>
 #include <Perception/kinect2pointCloud.h>
 
 void glDrawSurfels(void *classP){ ((Surfels*)classP)->glDraw(false); }
@@ -63,8 +63,7 @@ void Surfels::glDraw(bool renderIndex){
 void Surfels::recomputeSurfelIndices(){
   if(!gl.drawers.N){
     gl.add(glDrawSurfelIndices, this);
-    initKinectCam();
-    gl.camera = kinectCam;
+    gl.camera.setKinect();
   }
 //  gl.update(NULL, true);
   gl.renderInBack();

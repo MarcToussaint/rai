@@ -22,8 +22,8 @@
 /// @addtogroup group_Optim
 /// @{
 
-#ifndef MT_optimization_h
-#define MT_optimization_h
+#ifndef MLR_optimization_h
+#define MLR_optimization_h
 
 #include <Core/array.h>
 
@@ -58,7 +58,7 @@ typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
 
 enum TermType { noTT=0, fTT, sumOfSqrTT, ineqTT, eqTT };
 extern const char* TermTypeString[];
-typedef MT::Array<TermType> TermTypeA;
+typedef mlr::Array<TermType> TermTypeA;
 extern TermTypeA& NoTermTypeA;
 
 typedef std::function<void(arr& phi, arr& J, TermTypeA& tt, const arr& x)> ConstrainedProblemMix;

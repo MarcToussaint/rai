@@ -18,9 +18,9 @@ double UnconstrainedProblem::lagrangian(arr& dL, arr& HL, const arr& _x){
   //L value
   double L=f_x;
   if(muLB)     for(uint i=0;i<g_x.N;i++){ if(g_x(i)>0.) return NAN;  L -= muLB * ::log(-g_x(i)); } //log barrier, check feasibility
-  if(mu)       for(uint i=0;i<g_x.N;i++) if(I_lambda_x(i)) L += mu * MT::sqr(g_x(i));   //g-penalty
+  if(mu)       for(uint i=0;i<g_x.N;i++) if(I_lambda_x(i)) L += mu * mlr::sqr(g_x(i));   //g-penalty
   if(lambda.N) for(uint i=0;i<g_x.N;i++) if(lambda(i)>0.) L += lambda(i) * g_x(i);      //g-lagrange terms
-  if(nu)       for(uint i=0;i<h_x.N;i++) L += nu * MT::sqr(h_x(i));                     //h-penalty
+  if(nu)       for(uint i=0;i<h_x.N;i++) L += nu * mlr::sqr(h_x(i));                     //h-penalty
   if(kappa.N)  for(uint i=0;i<h_x.N;i++) L += kappa(i) * h_x(i);                        //h-lagrange terms
 
   if(&dL){ //L gradient
@@ -50,7 +50,7 @@ double UnconstrainedProblem::lagrangian(arr& dL, arr& HL, const arr& _x){
     //-- g-terms
     if(g_x.N){
       arr coeff=zeros(g_x.N);
-      if(muLB)     for(uint i=0;i<g_x.N;i++) coeff(i) += (muLB/MT::sqr(g_x(i)));   //log barrier
+      if(muLB)     for(uint i=0;i<g_x.N;i++) coeff(i) += (muLB/mlr::sqr(g_x(i)));   //log barrier
       if(mu)       for(uint i=0;i<g_x.N;i++) if(I_lambda_x(i)) coeff(i) += 2.*mu;  //g-penalty
       arr tmp = Jg_x;
       for(uint i=0;i<g_x.N;i++) tmp[i]() *= sqrt(coeff(i));
@@ -168,7 +168,7 @@ uint optConstrained(arr& x, arr& dual, const ConstrainedProblem& P, OptOptions o
   switch(opt.constrainedMethod){
     case squaredPenalty: UCP.mu=1.;  break;
     case augmentedLag:   UCP.mu=1.;  break;
-    case anyTimeAula:    UCP.mu=1.;  /*stopTolInc=MT::getParameter("/opt/optConstrained/anyTimeAulaStopTolInc",2.);*/ break;
+    case anyTimeAula:    UCP.mu=1.;  /*stopTolInc=mlr::getParameter("/opt/optConstrained/anyTimeAulaStopTolInc",2.);*/ break;
     case logBarrier:     UCP.muLB=.1;  break;
     case noMethod: HALT("need to set method before");  break;
   }

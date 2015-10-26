@@ -22,8 +22,8 @@
 /// @addtogroup group_Core
 /// @{
 
-#ifndef MT_util_h
-#define MT_util_h
+#ifndef MLR_util_h
+#define MLR_util_h
 
 #include <iostream>
 #include <fstream>
@@ -31,23 +31,23 @@
 #include <stdint.h>
 #include <memory>
 
-#ifdef MT_ROS
+#ifdef MLR_ROS
 #  include <ros/ros.h>
 #endif
 
 //----- if no system flag, I assume Linux
-#if !defined MT_MSVC && !defined MT_Cygwin && !defined MT_Linux && !defined MT_MinGW && !defined MT_Darwin
-#  define MT_Linux
+#if !defined MLR_MSVC && !defined MLR_Cygwin && !defined MLR_Linux && !defined MLR_MinGW && !defined MLR_Darwin
+#  define MLR_Linux
 #endif
 
 
 //----- basic defs:
-#define MT_PI 3.14159265358979323846
-#define MT_LN2 0.69314718055994528622676398299518041312694549560546875
-#define MT_2PI 6.283195307179587
-#define MT_LnSqrt2Pi -0.9189385332046727417803296
-#define MT_SQRT2 1.414213562373095049
-#define MT_SQRTPI 1.772453850905516027
+#define MLR_PI 3.14159265358979323846
+#define MLR_LN2 0.69314718055994528622676398299518041312694549560546875
+#define MLR_2PI 6.283195307179587
+#define MLR_LnSqrt2Pi -0.9189385332046727417803296
+#define MLR_SQRT2 1.414213562373095049
+#define MLR_SQRTPI 1.772453850905516027
 typedef unsigned char byte;            ///< byte
 typedef unsigned int uint;             ///< unsigned integer
 typedef const char* charp;
@@ -79,7 +79,7 @@ typedef const char* charp;
 // standard little methods in my namespace
 //
 
-namespace MT {
+namespace mlr {
 extern int argc;
 extern char** argv;
 extern bool IOraw;  ///< stream modifier for some classes (Mem in particular)
@@ -195,14 +195,14 @@ std::istream& operator>>(std::istream& is, const PARSE&);
 // String class
 //
 
-#define STRING(x) (((MT::String&)(MT::String().stream() <<x)))
-#define STREAM(x) (((MT::String&)(MT::String().stream() <<x)).stream())
+#define STRING(x) (((mlr::String&)(mlr::String().stream() <<x)))
+#define STREAM(x) (((mlr::String&)(mlr::String().stream() <<x)).stream())
 
-namespace MT {
+namespace mlr {
 /** @brief String implements the functionalities of an ostream and an
 istream, but also can be send to an ostream or read from an
 istream. It is based on a simple streambuf derived from the
-MT::Mem class */
+mlr::Mem class */
 struct String:public std::iostream {
 private:
   struct StringBuf:std::streambuf {
@@ -281,8 +281,8 @@ stdPipes(String)
 //
 // string-filling routines
 
-namespace MT {
-  MT::String getNowString();
+namespace mlr {
+  mlr::String getNowString();
 }
 
 
@@ -290,9 +290,9 @@ namespace MT {
 //
 // logging
 
-namespace MT {
+namespace mlr {
 struct LogToken{
-  MT::String msg;
+  mlr::String msg;
   int log_level;
   int logCoutLevel, logFileLevel;
   const char *key, *filename, *function;
@@ -304,27 +304,27 @@ struct LogToken{
   std::ostream& os(){ return msg; }
 };
 }
-//template<class T> MT::LogToken& operator<<(MT::LogToken& log, const T& x){ log.os() <<x;  return log; }
+//template<class T> mlr::LogToken& operator<<(mlr::LogToken& log, const T& x){ log.os() <<x;  return log; }
 
 struct Log{
   int logFileLevel, logCoutLevel;
   const char* key;
   std::ofstream fil;
   Log(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0):key(key){
-    logCoutLevel = MT::getParameter<int>(STRING("logCoutLevel_"<<key), defaultLogCoutLevel);
-    logFileLevel = MT::getParameter<int>(STRING("logFileLevel_"<<key), defaultLogFileLevel);
+    logCoutLevel = mlr::getParameter<int>(STRING("logCoutLevel_"<<key), defaultLogCoutLevel);
+    logFileLevel = mlr::getParameter<int>(STRING("logFileLevel_"<<key), defaultLogFileLevel);
   }
   ~Log(){ fil.close(); }
-  MT::LogToken operator()(int log_level, const char* filename, const char* function, uint line) const {
-    return MT::LogToken(log_level, logCoutLevel, logFileLevel, key, filename, function, line, (std::ofstream*)&fil);
+  mlr::LogToken operator()(int log_level, const char* filename, const char* function, uint line) const {
+    return mlr::LogToken(log_level, logCoutLevel, logFileLevel, key, filename, function, line, (std::ofstream*)&fil);
   }
 };
 
 extern Log _log;
 
-//inline MT::LogToken LOG(int log_level=0){ return MT::LogToken(log_level, __FILE__, __func__, __LINE__); }
-//#define LOG(log_level) (MT::LogToken(log_level, __FILE__, __func__, __LINE__).os())
-//#define LOG(log_level) MT::LogToken(log_level, MT::logFileLevel, MT::logCoutLevel, __FILE__, __func__, __LINE__).os()
+//inline mlr::LogToken LOG(int log_level=0){ return mlr::LogToken(log_level, __FILE__, __func__, __LINE__); }
+//#define LOG(log_level) (mlr::LogToken(log_level, __FILE__, __func__, __LINE__).os())
+//#define LOG(log_level) mlr::LogToken(log_level, mlr::logFileLevel, mlr::logCoutLevel, __FILE__, __func__, __LINE__).os()
 #define LOG(log_level) _log(log_level, __FILE__, __func__, __LINE__).os()
 
 void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
@@ -341,35 +341,35 @@ void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 
 //----- declare my namespace for the first time:
 /// Marc Toussaint namespace
-namespace MT {
+namespace mlr {
 extern String errString;
 }
 
 //----- error handling:
-#  define MT_HERE "@" << __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<": "
-///* #ifdef MT_MSVC */
+#  define MLR_HERE "@" << __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<": "
+///* #ifdef MLR_MSVC */
 ///* (strrchr(__FILE__, '\\')?strrchr(__FILE__, '\\')+1:__FILE__) */
 ///* #else */
-///* #  define MT_HERE "@" <<(strrchr(__FILE__, '/')?strrchr(__FILE__, '/')+1:__FILE__) <<':' <<__LINE__ <<':' <<__FUNCTION__ <<": " */
+///* #  define MLR_HERE "@" <<(strrchr(__FILE__, '/')?strrchr(__FILE__, '/')+1:__FILE__) <<':' <<__LINE__ <<':' <<__FUNCTION__ <<": " */
 ///* #endif */
-//#ifdef MT_ROS
-//#  define MT_WRITE_MSG(str) { std::cerr <<str <<std::endl; ROS_INFO("MLR-MSG: %s",str.p); }
+//#ifdef MLR_ROS
+//#  define MLR_WRITE_MSG(str) { std::cerr <<str <<std::endl; ROS_INFO("MLR-MSG: %s",str.p); }
 //#else
-//#  define MT_WRITE_MSG(str) { std::cerr <<str <<std::endl; }
+//#  define MLR_WRITE_MSG(str) { std::cerr <<str <<std::endl; }
 //#endif
-//#ifndef MT_MSG
-//#  define MT_MSG(msg){ std::cerr <<MT_HERE <<msg <<std::endl; }
+//#ifndef MLR_MSG
+//#  define MLR_MSG(msg){ std::cerr <<MLR_HERE <<msg <<std::endl; }
 //#endif
 //#ifndef HALT
-//#  define HALT(msg)  { MT::errString.clear() <<MT_HERE <<msg <<" --- HALT"; MT_WRITE_MSG(MT::errString); throw MT::errString.p; }
+//#  define HALT(msg)  { mlr::errString.clear() <<MLR_HERE <<msg <<" --- HALT"; MLR_WRITE_MSG(mlr::errString); throw mlr::errString.p; }
 //#  define NIY HALT("not implemented yet")
 //#  define NICO HALT("not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code")
 //#  define OPS HALT("obsolete")
 //#endif
 
 #ifndef HALT
-#  define MT_MSG(msg){ LOG(-1) <<msg; }
-#  define THROW(msg){ LOG(-2) <<msg; throw MT::errString.p; }
+#  define MLR_MSG(msg){ LOG(-1) <<msg; }
+#  define THROW(msg){ LOG(-2) <<msg; throw mlr::errString.p; }
 #  define HALT(msg){ LOG(-2) <<msg; exit(1); }
 #  define NIY  { LOG(-2) <<"not implemented yet"; exit(1); }
 #  define NICO { LOG(-2) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(1); }
@@ -380,22 +380,22 @@ extern String errString;
 
 
 //----- check macros:
-#ifndef MT_NOCHECK
+#ifndef MLR_NOCHECK
 
 #define CHECK(cond, msg) \
-  if(!(cond)){ LOG(-2) <<"CHECK failed: '" <<#cond <<"' " <<msg;  throw MT::errString.p; }\
+  if(!(cond)){ LOG(-2) <<"CHECK failed: '" <<#cond <<"' " <<msg;  throw mlr::errString.p; }\
 
 #define CHECK_ZERO(expr, tolerance, msg) \
-  if(fabs((double)(expr))>tolerance){ LOG(-2) <<"CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg; throw MT::errString.p; } \
+  if(fabs((double)(expr))>tolerance){ LOG(-2) <<"CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg; throw mlr::errString.p; } \
 
 #define CHECK_EQ(A, B, msg) \
-  if(!(A==B)){ LOG(-2) <<"CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw MT::errString.p; } \
+  if(!(A==B)){ LOG(-2) <<"CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw mlr::errString.p; } \
 
 #define CHECK_GE(A, B, msg) \
-  if(!(A>=B)){ LOG(-2) <<"CHECK_GE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw MT::errString.p; } \
+  if(!(A>=B)){ LOG(-2) <<"CHECK_GE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw mlr::errString.p; } \
 
 #define CHECK_LE(A, B, msg) \
-  if(!(A<=B)){ LOG(-2) <<"CHECK_LE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw MT::errString.p; } \
+  if(!(A<=B)){ LOG(-2) <<"CHECK_LE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw mlr::errString.p; } \
 
 #else
 #  define CHECK(cond, msg)
@@ -416,7 +416,7 @@ extern String errString;
 #  define TEST(name) test##name(){} GTEST_TEST(examples, name)
 #  define MAIN \
      main(int argc, char** argv){ \
-       MT::initCmdLine(argc,argv);              \
+       mlr::initCmdLine(argc,argv);              \
        testing::InitGoogleTest(&argc, argv);	\
        return RUN_ALL_TESTS();			\
      }                                          \
@@ -425,7 +425,7 @@ extern String errString;
 
 
 //----- verbose:
-#define VERBOSE(l, x) if(l<=MT::getVerboseLevel()) x;
+#define VERBOSE(l, x) if(l<=mlr::getVerboseLevel()) x;
 
 
 //----- other macros:
@@ -437,14 +437,14 @@ extern String errString;
 // FileToken
 //
 
-namespace MT {
+namespace mlr {
   /** @brief A ostream/istream wrapper that allows easier initialization of objects, like:
 arr X = FILE("inname");
 X >>FILE("outfile");
  etc
 */
 struct FileToken{
-  MT::String path, name, cwd;
+  mlr::String path, name, cwd;
   std::shared_ptr<std::ofstream> os;
   std::shared_ptr<std::ifstream> is;
 
@@ -465,10 +465,10 @@ struct FileToken{
 template<class T> FileToken& operator>>(FileToken& fil, T& x){ fil.getIs() >>x;  return fil; }
 template<class T> FileToken& operator<<(FileToken& fil, const T& x){ fil.getOs() <<x;  return fil; }
 inline std::ostream& operator<<(std::ostream& os, FileToken& fil){ return os <<fil.name; }
-template<class T> void operator<<(T& x, FileToken& fil){ fil.getIs() >>x; }
+template<class T> FileToken& operator<<(T& x, FileToken& fil){ fil.getIs() >>x; return fil; }
 template<class T> void operator>>(const T& x, FileToken& fil){ fil.getOs() <<x; }
 }
-#define FILE(filename) (MT::FileToken(filename)()) //it needs to return a REFERENCE to a local scope object
+#define FILE(filename) (mlr::FileToken(filename)()) //it needs to return a REFERENCE to a local scope object
 
 
 //===========================================================================
@@ -476,9 +476,9 @@ template<class T> void operator>>(const T& x, FileToken& fil){ fil.getOs() <<x; 
 // random number generator
 //
 
-namespace MT {
+namespace mlr {
 /** @brief A random number generator. An global instantiation \c
-  MT::rnd of a \c Rnd object is created. Use this one object to get
+  mlr::rnd of a \c Rnd object is created. Use this one object to get
   random numbers.*/
 class Rnd {
 private:
@@ -550,7 +550,7 @@ struct Inotify{
   int fd, wd;
   char *buffer;
   uint buffer_size;
-  MT::FileToken *fil;
+  mlr::FileToken *fil;
   Inotify(const char *filename);
   ~Inotify();
   bool pollForModification(bool block=false, bool verbose=false);
@@ -566,7 +566,7 @@ struct Inotify{
 //
 
 struct Mutex {
-#ifndef MT_MSVC
+#ifndef MLR_MSVC
   pthread_mutex_t mutex;
 #endif
   int state; ///< 0=unlocked, otherwise=syscall(SYS_gettid)
@@ -612,6 +612,13 @@ struct Singleton {
 };
 template<class T> T *Singleton<T>::singleton=NULL;
 
+
+//===========================================================================
+//
+// just a hook to make things gl drawable
+//
+
+struct GLDrawer    { virtual void glDraw(struct OpenGL&) = 0; ~GLDrawer(){} };
 
 //===========================================================================
 //
@@ -682,8 +689,8 @@ using std::ostream;
 using std::istream;
 using std::ofstream;
 using std::ifstream;
-using MT::rnd;
-using MT::String;
+using mlr::rnd;
+using mlr::String;
 
 #endif
 

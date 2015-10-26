@@ -22,8 +22,8 @@
 /// @addtogroup group_Core
 /// @{
 
-#ifndef MT_ann_h
-#define MT_ann_h
+#ifndef MLR_ann_h
+#define MLR_ann_h
 
 #include <Core/array.h>
 

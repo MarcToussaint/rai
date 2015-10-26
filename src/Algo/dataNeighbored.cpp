@@ -2,14 +2,19 @@
 
 void DataNeighbored::setData(const arr& pts){
   X = pts;
-  ok.resize(X.d0);
-  for(uint i=0;i<X.d0;i++) if(pts(i,2)>=0) ok(i)=true; else ok(i)=false;
+  valid.resize(X.d0);
+  for(uint i=0;i<X.d0;i++) if(pts(i,2)>=0) valid(i)=true; else valid(i)=false;
   if(weights.N!=X.d0){
     weights.resize(X.d0);
     weights.setZero();
   }
   N.clear();
   idx2pixel.setStraightPerm(X.d0);
+}
+
+void DataNeighbored::setCosts(const arr& _costs){
+  costs = _costs;
+  CHECK_EQ(costs.N, X.d0, "");
 }
 
 uint DataNeighbored::n() const{ return X.d0; }
@@ -21,37 +26,39 @@ void DataNeighbored::setGridNeighborhood(uint height, uint width){
   N.resize(X.d0);
   for(uint y=0;y<height;y++) for(uint x=0;x<width;x++){
     uint i=y*width + x, j;
-    if(!ok(i)) continue;
-    if(y){          j=(y-1)*width+(x  ); if(ok(j)) N(i).append(j); }
-    if(x){          j=(y  )*width+(x-1); if(ok(j)) N(i).append(j); }
-    if(y<height-1){ j=(y+1)*width+(x  ); if(ok(j)) N(i).append(j); }
-    if(x<width-1){  j=(y  )*width+(x+1); if(ok(j)) N(i).append(j); }
+    if(!valid(i)) continue;
+    if(y){          j=(y-1)*width+(x  ); if(valid(j)) N(i).append(j); }
+    if(x){          j=(y  )*width+(x-1); if(valid(j)) N(i).append(j); }
+    if(y<height-1){ j=(y+1)*width+(x  ); if(valid(j)) N(i).append(j); }
+    if(x<width-1){  j=(y  )*width+(x+1); if(valid(j)) N(i).append(j); }
   }
 }
 
-void DataNeighbored::removeNonOk(){
+void DataNeighbored::removeNonValid(){
   uintA index(X.d0);
   index = X.d0;
   int s=0;
-  for(uint i=0;i<X.d0;i++) if(ok(i)){ index(i)=s; s++; } //assign new indeces to each point
+  for(uint i=0;i<X.d0;i++) if(valid(i)){ index(i)=s; s++; } //assign new indeces to each point
   idx2pixel.resize(s);
-  for(uint i=0;i<X.d0;i++) if(ok(i)){
+  for(uint i=0;i<X.d0;i++) if(valid(i)){
     uintA& Ni = N(i);
     for(uint& j:Ni) j=index(j); //use new indices in neighborhoods
     Ni.sort();                  //sort neighborhoods
     while(Ni.N && Ni.last()==X.d0) Ni.resizeCopy(Ni.N-1); //remove those, pointing to !ok (==X.d0 index)
   }
-  for(uint i=0;i<X.d0;i++) if(ok(i)){
+  for(uint i=0;i<X.d0;i++) if(valid(i)){
     if(index(i)!=i){
       X[index(i)] = X[i];
       N(index(i)) = N(i);
       weights(index(i)) = weights(i);
+      costs(index(i)) = costs(i);
     }
     idx2pixel(index(i)) = i;
   }
   X.resizeCopy(s,X.d1);
   N.resizeCopy(s);
   weights.resizeCopy(s);
+  costs.resizeCopy(s);
 }
 
 void DataNeighbored::initFringe(uintA& fringe, uintA& pts, boolA& included, uint i){

@@ -22,8 +22,8 @@
 /// @addtogroup group_Optim
 /// @{
 
-#ifndef MT_optimization_benchmarks_h
-#define MT_optimization_benchmarks_h
+#ifndef MLR_optimization_benchmarks_h
+#define MLR_optimization_benchmarks_h
 
 #include "optimization.h"
 
@@ -69,8 +69,8 @@ struct ChoiceConstraintFunction:ConstrainedProblemMix {
   uint n;
   arr randomG;
   ChoiceConstraintFunction() {
-    which = (WhichConstraint) MT::getParameter<int>("constraintChoice");
-    n = MT::getParameter<uint>("dim", 2);
+    which = (WhichConstraint) mlr::getParameter<int>("constraintChoice");
+    n = mlr::getParameter<uint>("dim", 2);
     ConstrainedProblemMix::operator=( [this](arr& phi, arr& J, TermTypeA& tt, const arr& x) -> void {
       this->fc(phi, J, tt, x);
     } );
@@ -162,8 +162,8 @@ struct SinusesFunction:VectorFunction {
   double a;
   double condition;
   SinusesFunction() {
-    a = MT::getParameter<double>("SinusesFunction_a");
-    condition = MT::getParameter<double>("condition");
+    a = mlr::getParameter<double>("SinusesFunction_a");
+    condition = mlr::getParameter<double>("condition");
  NIY 
   }
   virtual void fv(arr& phi, arr& J, const arr& x) {
@@ -218,9 +218,9 @@ struct ParticleAroundWalls:KOrderMarkovFunction {
   bool hardConstrained, useKernel;
 
   ParticleAroundWalls():
-    T(MT::getParameter<uint>("opt/ParticleAroundWalls/T",1000)),
-    k(MT::getParameter<uint>("opt/ParticleAroundWalls/k",2)),
-    hardConstrained(MT::getParameter<uint>("opt/ParticleAroundWalls/hardConstrained",true)),
+    T(mlr::getParameter<uint>("opt/ParticleAroundWalls/T",1000)),
+    k(mlr::getParameter<uint>("opt/ParticleAroundWalls/k",2)),
+    hardConstrained(mlr::getParameter<uint>("opt/ParticleAroundWalls/hardConstrained",true)),
     useKernel(false){}
 
   //implementations of the kOrderMarkov virtuals
@@ -235,7 +235,7 @@ struct ParticleAroundWalls:KOrderMarkovFunction {
   bool hasKernel(){ return useKernel; }
   double kernel(uint t0, uint t1){
     //if(t0==t1) return 1e3;
-    return 1e0*::exp(-.001*MT::sqr((double)t0-t1));
+    return 1e0*::exp(-.001*mlr::sqr((double)t0-t1));
   }
 };
 

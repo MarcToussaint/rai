@@ -30,7 +30,7 @@ struct VideoEncoder_x264_simple{
   explicit VideoEncoder_x264_simple(const char* filename, double fps, uint qp, bool is_rgb);
   void addFrame(const byteA& image);
   void close();
-  const MT::String& name() const;
+  const mlr::String& name() const;
 };
 
 struct VideoEncoder_OpenCV{

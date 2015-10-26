@@ -1,7 +1,7 @@
-#ifndef MT_perception_h
-#define MT_perception_h
+#ifndef MLR_perception_h
+#define MLR_perception_h
 
-#ifdef MT_OPENCV
+#ifdef MLR_OPENCV
 #  undef COUNT
 #  include <opencv2/opencv.hpp>
 #  undef MIN
@@ -10,7 +10,7 @@
 
 #include <Core/module.h>
 #include <Ors/ors.h>
-#include <Core/array_t.h>
+#include <Core/array.tpp>
 #include <Gui/opengl.h>
 #include <map>
 
@@ -99,7 +99,7 @@ struct RigidObjectRepresentation {
   RigidObjectRepresentation(){ found=0; }
 };
 
-typedef MT::Array<RigidObjectRepresentation*> RigidObjectRepresentationL;
+typedef mlr::Array<RigidObjectRepresentation*> RigidObjectRepresentationL;
 
 
 //===========================================================================
@@ -115,7 +115,7 @@ struct ColorChoice{
 //===========================================================================
 
 struct HoughLines {
-#ifdef MT_OPENCV
+#ifdef MLR_OPENCV
   std::vector<cv::Vec4i> lines;
 #endif
   FIELD(byteA, display);
@@ -138,7 +138,7 @@ inline void operator<<(ostream& os,const Patching& hl){}
 //===========================================================================
 
 struct SURFfeatures {
-#ifdef MT_OPENCV
+#ifdef MLR_OPENCV
   std::vector<cv::KeyPoint> keypoints;
   std::vector<float> descriptors;
 #endif
@@ -151,7 +151,7 @@ inline void operator<<(ostream& os,const SURFfeatures& hl){}
 
 /** The RigidObjectRepresentation List output of perception */
 struct PerceptionOutput {
-  MT::Array<RigidObjectRepresentation> objects;
+  mlr::Array<RigidObjectRepresentation> objects;
   FIELD(byteA, display);
 };
 niyPipes(PerceptionOutput);
@@ -185,11 +185,24 @@ struct ImageViewer:Module{
   void close();
 };
 
+struct PointCloudViewer:Module{
+  struct sPointCloudViewer *s;
+  Access_typed<arr> pts;
+  Access_typed<arr> cols;
+  PointCloudViewer(const char* pts_name="kinect_points", const char* cols_name="kinect_pointColors")
+    : Module(STRING("PointCloudViewer_"<<pts_name <<'_' <<cols_name)),
+      pts(this, pts_name, true),
+      cols(this, cols_name){}
+  void open();
+  void step();
+  void close();
+};
+
 struct OpencvCamera:Module{
   struct sOpencvCamera *s;
   Access_typed<byteA> rgb;
   std::map<int,double> properties; bool set(int prop, double value);
-  OpencvCamera(const char* rgb_name="rgb") : Module(STRING("OpencvCamera_"<<rgb_name), -1.), rgb(this, rgb_name){}
+  OpencvCamera(const char* rgb_name="rgb") : Module(STRING("OpencvCamera_"<<rgb_name), 0.), rgb(this, rgb_name){}
   void open();
   void step();
   void close();
@@ -244,7 +257,7 @@ struct CannyFilter:Module{
 };
 
 //BEGIN_MODULE(ImageViewer)      ACCESS(byteA, img)       END_MODULE()
-BEGIN_MODULE(PointCloudViewer) ACCESSlisten(arr, pts)         ACCESSnew(arr, cols)        END_MODULE()
+//BEGIN_MODULE(PointCloudViewer) ACCESSlisten(arr, kinect_points)         ACCESSnew(arr, kinect_pointColors)        END_MODULE()
 //BEGIN_MODULE(OpencvCamera)     ACCESS(byteA, rgb)       std::map<int,double> properties; bool set(int prop, double value);  END_MODULE()
 //BEGIN_MODULE(CvtGray)          ACCESS(byteA, rgb)       ACCESS(byteA, gray)      END_MODULE()
 BEGIN_MODULE(CvtHsv)           ACCESSlisten(byteA, rgb)       ACCESSnew(byteA, hsv)       END_MODULE()
@@ -280,7 +293,7 @@ BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; ACCESSnew(byteA, pcms16n
 
 
 
-#endif //MT_perception_h
+#endif //MLR_perception_h
 
 
 
