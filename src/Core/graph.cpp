@@ -493,6 +493,10 @@ Node* Graph::merge(Node *m){
 void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer){
   G.checkConsistency();
 
+  //-- first delete existing items
+  if(!isReferringToNodesOf){ while(N) delete last(); } // listDelete(*this);
+
+  //-- make this become a subgraph
   if(becomeSubgraphOfContainer){ //CHECK that this is also a subgraph of the same container..
     if(!isNodeOfParentGraph){
       Node *Git = G.isNodeOfParentGraph;
@@ -506,7 +510,6 @@ void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer){
   }
 
   //-- first, just clone items with their values -- 'parents' still point to the origin items
-  if(!isReferringToNodesOf){ while(N) delete last(); } // listDelete(*this);
   for(Node *it:G){
     if(it->getValueType()==typeid(Graph) && it->getValue<Graph>()!=NULL){
       // why we can't copy the subgraph yet:
