@@ -19,7 +19,7 @@
 #ifndef _HEADER_GUARD_RRT_H_
 #define _HEADER_GUARD_RRT_H_
 
-#include <Core/array_t.h>
+#include <Core/array.tpp>
 
 struct RRT{
 private:

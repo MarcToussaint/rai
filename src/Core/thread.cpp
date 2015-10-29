@@ -19,7 +19,7 @@
 #include "thread.h"
 #include <exception>
 
-#ifndef MT_MSVC
+#ifndef MLR_MSVC
 #ifndef __CYGWIN__
 #  include <sys/syscall.h>
 #else
@@ -27,13 +27,13 @@
 #endif //__CYGWIN __
 #  include <unistd.h>
 #endif
-#ifdef MT_QThread
+#ifdef MLR_QThread
 #  include <QtCore/QThread>
 #endif
 #include <errno.h>
 
 
-#ifndef MT_MSVC
+#ifndef MLR_MSVC
 
 //===========================================================================
 //
@@ -70,6 +70,11 @@ void RWLock::unlock() {
   stateMutex.unlock();
   int rc = pthread_rwlock_unlock(&lock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
+
+bool RWLock::isLocked() {
+  return state!=0;
+}
+
 
 
 //===========================================================================
@@ -220,7 +225,7 @@ int RevisionedAccessGatedClass::writeAccess(Thread *th) {
 //  engine().acc->queryWriteAccess(this, p);
   rwlock.writeLock();
   int r = revision.incrementValue();
-  revision_time = MT::clockTime();
+  revision_time = mlr::clockTime();
 //  engine().acc->logWriteAccess(this, p);
 //  if(listeners.N && !th){ HALT("I need to know the calling thread when threads listen to variables"); }
   for(Thread *l: listeners) if(l!=th) l->threadStep();
@@ -271,12 +276,8 @@ int RevisionedAccessGatedClass::waitForRevisionGreaterThan(int rev) {
 // Metronome
 //
 
-Metronome::Metronome(const char* _name, double ticIntervalSec) {
-  name=_name;
+Metronome::Metronome(double ticIntervalSec) {
   reset(ticIntervalSec);
-}
-
-Metronome::~Metronome() {
 }
 
 void Metronome::reset(double ticIntervalSec) {
@@ -296,7 +297,7 @@ void Metronome::waitForTic() {
   }
   //wait for target time
   int rc = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ticTime, NULL);
-  if(rc && errno) MT_MSG("clock_nanosleep() failed " <<rc <<" errno=" <<errno <<' ' <<strerror(errno));
+  if(rc && errno) MLR_MSG("clock_nanosleep() failed " <<rc <<" errno=" <<errno <<' ' <<strerror(errno));
 
   tics++;
 }
@@ -349,6 +350,11 @@ void CycleTimer::cycleDone() {
   steps++;
 }
 
+void CycleTimer::report(){
+  printf("busy=[%5.1f %5.1f] cycle=[%5.1f %5.1f] load=%4.1f%% steps=%i\n", busyDtMean, busyDtMax, cyclDtMean, cyclDtMax, 100.*busyDtMean/cyclDtMean, steps);
+  fflush(stdout);
+}
+
 
 //===========================================================================
 //
@@ -361,7 +367,7 @@ void* Thread_staticMain(void *_self) {
   return NULL;
 }
 
-#ifdef MT_QThread
+#ifdef MLR_QThread
 class sThread:QThread {
   Q_OBJECT
 public:
@@ -375,7 +381,8 @@ protected:
 };
 #endif
 
-Thread::Thread(const char* _name): name(_name), state(tsCLOSE), tid(0), thread(0), step_count(0), metronome(NULL)  {
+Thread::Thread(const char* _name, double beatIntervalSec): name(_name), state(tsCLOSE), tid(0), thread(0), step_count(0), metronome(beatIntervalSec)  {
+  if(name.N>14) name.resize(14, true);
 }
 
 Thread::~Thread() {
@@ -390,7 +397,7 @@ Thread::~Thread() {
 void Thread::threadOpen(int priority) {
   state.lock();
   if(!isClosed()){ state.unlock(); return; } //this is already open -- or has just beend opened (parallel call to threadOpen)
-#ifndef MT_QThread
+#ifndef MLR_QThread
   int rc;
   pthread_attr_t atts;
   rc = pthread_attr_init(&atts); if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
@@ -417,7 +424,7 @@ void Thread::threadOpen(int priority) {
 void Thread::threadClose() {
   state.setValue(tsCLOSE);
   if(!thread) return;
-#ifndef MT_QThread
+#ifndef MLR_QThread
   int rc;
   rc = pthread_join(thread, NULL);     if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   thread=0;
@@ -430,7 +437,7 @@ void Thread::threadClose() {
 
 void Thread::threadCancel() {
   if(thread){
-#ifndef MT_QThread
+#ifndef MLR_QThread
     int rc = pthread_cancel(thread);     if(rc) HALT("pthread_cancel failed with err " <<rc <<" '" <<strerror(rc) <<"'");
     rc = pthread_join(thread, NULL);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 #else
@@ -472,17 +479,21 @@ void Thread::waitForIdle() {
 
 void Thread::threadLoop() {
   if(isClosed()) threadOpen();
-  state.setValue(tsLOOPING);
+  if(metronome.ticInterval>1e-10){
+    state.setValue(tsBEATING);
+  }else{
+    state.setValue(tsLOOPING);
+  }
 }
 
-void Thread::threadLoopWithBeat(double sec) {
-  if(!metronome)
-    metronome=new Metronome("threadTiccer", sec);
-  else
-    metronome->reset(sec);
-  if(isClosed()) threadOpen();
-  state.setValue(tsBEATING);
-}
+//void Thread::threadLoopWithBeat(double beatIntervalSec) {
+//  if(!metronome)
+//    metronome=new Metronome("threadTiccer", beatIntervalSec);
+//  else
+//    metronome->reset(beatIntervalSec);
+//  if(isClosed()) threadOpen();
+//  state.setValue(tsBEATING);
+//}
 
 void Thread::threadStop() {
   CHECK(!isClosed(), "called stop to closed thread");
@@ -516,7 +527,7 @@ void Thread::main() {
   state.unlock();
 
 
-  //timer.reset();
+  timer.reset();
   bool waitForTic=false;
   for(;;){
     //-- wait for a non-idle state
@@ -527,12 +538,14 @@ void Thread::main() {
     if(state.value>0) state.value--; //count down
     state.unlock();
 
-    if(waitForTic) metronome->waitForTic();
+    if(waitForTic) metronome.waitForTic();
 
     //-- make a step
     //engine().acc->logStepBegin(module);
+    timer.cycleStart();
     step(); //virtual step routine
     step_count++;
+    timer.cycleDone();
     //engine().acc->logStepEnd(module);
 
     //-- broadcast in case somebody was waiting for a finished step
@@ -646,4 +659,4 @@ RevisionedAccessGatedClassL::memMove=true;
 ThreadL::memMove=true;
 RUN_ON_INIT_END(thread)
 
-#endif //MT_MSVC
+#endif //MLR_MSVC

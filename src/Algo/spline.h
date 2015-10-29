@@ -23,7 +23,7 @@
 
 #include <Core/array.h>
 
-namespace MT {
+namespace mlr {
 
 /// a spline
 struct Spline {
@@ -62,11 +62,11 @@ struct Spline {
   void plotBasis();
 };
 
-} //namespace MT
+} //namespace mlr
 
 //==============================================================================
 
-namespace MT {
+namespace mlr {
 
 /// a wrapper around a spline with methods specific to online path adaptation
 struct Path : Spline {
@@ -83,6 +83,6 @@ struct Path : Spline {
   void transform_CurrentBecomes_AllFollow(const arr& current, double t);
 };
 
-} //namespace MT
+} //namespace mlr
 
 #endif

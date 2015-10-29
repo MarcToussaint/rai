@@ -110,7 +110,7 @@ void AudioWriter_libav::writeSamples_R48000_2C_S16_NE(const byteA &samples) {
 #ifdef HAVE_LIBAV
     s->write(samples);
 #else
-    MT_MSG("writeSamples not available, because LIBAV is missing");
+    MLR_MSG("writeSamples not available, because LIBAV is missing");
 #endif
 }
 
@@ -141,7 +141,7 @@ public:
     int read(byteA& buf) {
         int ret, error;
         if((ret = pa_simple_read(pa, buf.p, buf.d0, &error)) < 0) {
-            MT_MSG(pa_strerror(error));
+            MLR_MSG(pa_strerror(error));
             return -1;
         }
         return ret;
@@ -167,7 +167,7 @@ bool AudioPoller_PA::read(byteA& buf) {
 #ifdef HAVE_PULSEAUDIO
     return(s->read(buf) >= 0);
 #else
-    MT_MSG("AudioPoller_PA::read not available, libpulse missing");
+    MLR_MSG("AudioPoller_PA::read not available, libpulse missing");
     return false;
 #endif
 }

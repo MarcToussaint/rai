@@ -22,7 +22,7 @@
 #include <string.h>
 #include <signal.h>
 #include <stdexcept>
-#if defined MT_Linux || defined MT_Cygwin || defined MT_Darwin
+#if defined MLR_Linux || defined MLR_Cygwin || defined MLR_Darwin
 #  include <limits.h>
 #  include <sys/time.h>
 #  include <sys/times.h>
@@ -34,27 +34,27 @@
 #ifdef __CYGWIN__
 #include "cygwin_compat.h"
 #endif
-#if defined MT_MSVC
+#if defined MLR_MSVC
 #  include <time.h>
 #  include <sys/timeb.h>
 #  include <windows.h>
 #  undef min
 #  undef max
-#  define MT_TIMEB
-#  ifdef MT_QT
+#  define MLR_TIMEB
+#  ifdef MLR_QT
 #    undef  NOUNICODE
 #    define NOUNICODE
 #  endif
 #  pragma warning(disable: 4305 4244 4250 4355 4786 4996)
 #endif
-#if defined MT_MinGW
+#if defined MLR_MinGW
 #  include <unistd.h>
 #  include <sys/time.h>
 #  include <sys/timeb.h>
-#  define MT_TIMEB
+#  define MLR_TIMEB
 #endif
 
-#ifdef MT_QT
+#ifdef MLR_QT
 #  undef scroll
 #  undef Unsorted
 #  include <Qt/qmetatype.h>
@@ -63,56 +63,53 @@
 #  include <QThread>
 #endif
 
-#ifndef MT_ConfigFileName
-#  define MT_ConfigFileName "MT.cfg"
-#  define MT_LogFileName "MT.log"
+#ifndef MLR_ConfigFileName
+#  define MLR_ConfigFileName "MT.cfg"
+#  define MLR_LogFileName "MT.log"
 #endif
 
 #include <errno.h>
-#ifndef MT_MSVC
+#ifndef MLR_MSVC
 #  include <unistd.h>
 #  include <sys/syscall.h>
 #endif
+
+
+Singleton<GlobalThings> globalThings;
 
 //===========================================================================
 //
 // Bag container
 //
 
-const char *MT::String::readSkipSymbols = " \t";
-const char *MT::String::readStopSymbols = "\n\r";
-int   MT::String::readEatStopSymbol     = 1;
-MT::String MT::errString;
+const char *mlr::String::readSkipSymbols = " \t";
+const char *mlr::String::readStopSymbols = "\n\r";
+int   mlr::String::readEatStopSymbol     = 1;
+mlr::String mlr::errString;
 Mutex coutMutex;
+Log _log("global", 2, 3);
 
 
 //===========================================================================
 //
-// utilities in MT namespace
+// utilities in mlr namespace
 //
 
-namespace MT {
+namespace mlr {
 int argc;
 char** argv;
-std::ifstream cfgFile;
-bool cfgFileOpen=false;
-Mutex cfgFileMutex;
 bool IOraw=false;
 bool noLog=true;
 uint lineCount=1;
 int verboseLevel=-1;
 int interactivity=-1;
 
-#ifndef MT_TIMEB
-timeval startTime;
-#else
-_timeb startTime;
-#endif
+double startTime;
 double timerStartTime=0.;
 double timerPauseTime=-1.;
 bool timerUseRealTime=false;
 
-#ifdef MT_QT
+#ifdef MLR_QT
 QApplication *myApp=NULL;
 #endif
 
@@ -121,7 +118,7 @@ void open(std::ofstream& fs, const char *name, const char *errmsg) {
   fs.clear();
   fs.open(name);
   LOG(3) <<"opening output file `" <<name <<"'" <<std::endl;
-  if(!fs.good()) MT_MSG("could not open file `" <<name <<"' for output" <<errmsg);
+  if(!fs.good()) MLR_MSG("could not open file `" <<name <<"' for output" <<errmsg);
 }
 
 /// open an input-file with name '\c name'
@@ -134,6 +131,7 @@ void open(std::ifstream& fs, const char *name, const char *errmsg) {
 
 /// returns true if the (0-terminated) string s contains c
 bool contains(const char *s, char c) {
+  if(!s) return false;
   for(uint i=0; s[i]; i++) if(s[i]==c) return true;
   return false;
 }
@@ -199,15 +197,15 @@ bool skipUntil(std::istream& is, const char *tag) {
 
 /// a global operator to scan (parse) strings from a stream
 bool parse(std::istream& is, const char *str, bool silent) {
-  if(!is.good()) { if(!silent) MT_MSG("bad stream tag when scanning for `" <<str <<"'"); return false; }  //is.clear(); }
+  if(!is.good()) { if(!silent) MLR_MSG("bad stream tag when scanning for `" <<str <<"'"); return false; }  //is.clear(); }
   uint i, n=strlen(str);
   char *buf=new char [n+1]; buf[n]=0;
-  MT::skip(is, " \n\r\t");
+  mlr::skip(is, " \n\r\t");
   is.read(buf, n);
   if(!is.good() || strcmp(str, buf)) {
     for(i=n; i--;) is.putback(buf[i]);
     is.setstate(std::ios::failbit);
-    if(!silent)  MT_MSG("(LINE=" <<MT::lineCount <<") parsing of constant string `" <<str
+    if(!silent)  MLR_MSG("(LINE=" <<mlr::lineCount <<") parsing of constant string `" <<str
                           <<"' failed! (read instead: `" <<buf <<"')");
     return false;
   }
@@ -258,11 +256,11 @@ double linsig(double x) { if(x<0.) return 0.; if(x>1.) return 1.; return x; }
 
 /// the angle of the vector (x, y) in [-pi, pi]
 double phi(double x, double y) {
-  if(x==0. || ::fabs(x)<1e-10) { if(y>0.) return MT_PI/2.; else return -MT_PI/2.; }
+  if(x==0. || ::fabs(x)<1e-10) { if(y>0.) return MLR_PI/2.; else return -MLR_PI/2.; }
   double p=::atan(y/x);
-  if(x<0.) { if(y<0.) p-=MT_PI; else p+=MT_PI; }
-  if(p>MT_PI)  p-=2.*MT_PI;
-  if(p<-MT_PI) p+=2.*MT_PI;
+  if(x<0.) { if(y<0.) p-=MLR_PI; else p+=MLR_PI; }
+  if(p>MLR_PI)  p-=2.*MLR_PI;
+  if(p<-MLR_PI) p+=2.*MLR_PI;
   return p;
 }
 
@@ -341,17 +339,17 @@ double cosc(double x) {
   return ::cos(x)/x;
 }
 
-#define EXP ::exp //MT::approxExp
+#define EXP ::exp //mlr::approxExp
 
 double NNsdv(const double& a, const double& b, double sdv){
   double d=(a-b)/sdv;
-  double norm = 1./(::sqrt(MT_2PI)*sdv);
+  double norm = 1./(::sqrt(MLR_2PI)*sdv);
   return norm*EXP(-.5*d*d);
 }
 
 double NNsdv(double x, double sdv){
   x/=sdv;
-  double norm = 1./(::sqrt(MT_2PI)*sdv);
+  double norm = 1./(::sqrt(MLR_2PI)*sdv);
   return norm*EXP(-.5*x*x);
 }
 
@@ -385,19 +383,19 @@ f(x) = heavy(x)*x**power
 plot f(x/margin+1), 1
 */
 double ineqConstraintCost(double g, double margin, double power){
-  if(g<-margin) return 0.;
-  double y=g/margin+1.;
+  double y=g+margin;
+  if(y<0.) return 0.;
   if(power==1.) return y;
   if(power==2.) return y*y;
   return pow(y,power);
 }
 
 double d_ineqConstraintCost(double g, double margin, double power){
-  if(g<-margin) return 0.;
-  double y=g/margin+1.;
-  if(power==1.) return 1./margin;
-  if(power==2.) return 2.*y/margin;
-  return power*pow(y,power-1.)/margin;
+  double y=g+margin;
+  if(y<0.) return 0.;
+  if(power==1.) return 1.;
+  if(power==2.) return 2.*y;
+  return power*pow(y,power-1.);
 }
 
 double eqConstraintCost(double h, double margin, double power){
@@ -409,23 +407,33 @@ double eqConstraintCost(double h, double margin, double power){
 
 double d_eqConstraintCost(double h, double margin, double power){
   double y=h/margin;
-  if(power==1.) return MT::sign(y)/margin;
+  if(power==1.) return mlr::sign(y)/margin;
   if(power==2.) return 2.*y/margin;
-  return power*pow(y,power-1.)*MT::sign(y)/margin;
+  return power*pow(y,power-1.)*mlr::sign(y)/margin;
 }
 
 /** @brief double time on the clock
   (probably in micro second resolution) -- Windows checked! */
-double clockTime() {
-#ifndef MT_TIMEB
-  static timeval t; gettimeofday(&t, 0);
-  return ((double)(t.tv_sec%86400) + //modulo TODAY
-          (double)(t.tv_usec)/1000000.);
+double clockTime(bool today) {
+#ifndef MLR_TIMEB
+  timespec ts;
+  clock_gettime(CLOCK_REALTIME, &ts);
+  if(today) ts.tv_sec = ts.tv_sec%86400; //modulo TODAY
+  return ((double)(ts.tv_sec) + 1e-9d*(double)(ts.tv_nsec));
+//  static timeval t; gettimeofday(&t, 0);
+//  return ((double)(t.tv_sec%86400) + //modulo TODAY
+//          (double)(t.tv_usec)/1000000.);
 #else
   static _timeb t; _ftime(&t);
   return ((double)(t.time%86400) + //modulo TODAY
           (double)(t.millitm-startTime.millitm)/1000.);
 #endif
+}
+
+timespec clockTime2(){
+  timespec ts;
+  clock_gettime(CLOCK_REALTIME, &ts);
+  return ts;
 }
 
 double toTime(const tm& t) {
@@ -435,22 +443,14 @@ double toTime(const tm& t) {
 /** @brief double time since start of the process in floating-point seconds
   (probably in micro second resolution) -- Windows checked! */
 double realTime() {
-#ifndef MT_TIMEB
-  static timeval t; gettimeofday(&t, 0);
-  return ((double)(t.tv_sec-startTime.tv_sec-1) +
-          (double)((long)1000000+t.tv_usec-startTime.tv_usec)/1000000.);
-#else
-  static _timeb t; _ftime(&t);
-  return ((double)(t.time-startTime.time-1) +
-          (double)((unsigned short)1000+t.millitm-startTime.millitm)/1000.);
-#endif
+  return clockTime(false)-startTime;
 }
 
 /** @brief user CPU time of this process in floating-point seconds (pure
   processor time) -- Windows checked! */
 double cpuTime() {
-#ifndef MT_TIMEB
-  static tms t; times(&t);
+#ifndef MLR_TIMEB
+  tms t; times(&t);
   return ((double)t.tms_utime)/sysconf(_SC_CLK_TCK);
 #else
   return ((double)clock())/CLOCKS_PER_SEC; //MSVC: CLOCKS_PER_SEC=1000
@@ -461,8 +461,8 @@ double cpuTime() {
   time spend for file input/output, x-server stuff, etc.)
   -- not implemented for Windows! */
 double sysTime() {
-#ifndef MT_TIMEB
-  static tms t; times(&t);
+#ifndef MLR_TIMEB
+  tms t; times(&t);
   return ((double)(t.tms_stime))/sysconf(_SC_CLK_TCK);
 #else
   HALT("sysTime() is not implemented for Windows!");
@@ -473,8 +473,8 @@ double sysTime() {
 /** @brief total CPU time of this process in floating-point seconds (same
   as cpuTime + sysTime) -- not implemented for Windows! */
 double totalTime() {
-#ifndef MT_TIMEB
-  static tms t; times(&t);
+#ifndef MLR_TIMEB
+  tms t; times(&t);
   return ((double)(t.tms_utime+t.tms_stime))/sysconf(_SC_CLK_TCK);
 #else
   HALT("totalTime() is not implemented for Windows!");
@@ -484,42 +484,39 @@ double totalTime() {
 
 /// the absolute double time and date as string
 char *date() {
-#ifndef MT_TIMEB
-  static timeval tv; gettimeofday(&tv, 0); return date(tv);
-#else
-  static time_t t; time(&t); return ctime(&t);
-#endif
+  return date(clockTime(false));
 }
 
-char *date(const timeval& tv){
+char *date(double sec){
   time_t nowtime;
   struct tm *nowtm;
   static char tmbuf[64], buf[64];
 
-  nowtime = tv.tv_sec;
+  nowtime = (long)(floor(sec));
+  sec -= (double)nowtime;
   nowtm = localtime(&nowtime);
   strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", nowtm);
-  snprintf(buf, sizeof buf, "%s.%06ld", tmbuf, tv.tv_usec);
+  snprintf(buf, sizeof buf, "%s.%06ld", tmbuf, (long)(floor(1e6d*sec)));
   return buf;
 }
 
 /// wait double time
 void wait(double sec, bool msg_on_fail) {
-#if defined(MT_Darwin)
+#if defined(MLR_Darwin)
   sleep((int)sec);
-#elif !defined(MT_MSVC)
+#elif !defined(MLR_MSVC)
   timespec ts;
   ts.tv_sec = (long)(floor(sec));
   sec -= (double)ts.tv_sec;
-  ts.tv_nsec = (long)(floor(1000000000. * sec));
+  ts.tv_nsec = (long)(floor(1e9d*sec));
   int rc = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
   if(rc && msg_on_fail){
-    MT_MSG("clock_nanosleep() failed " <<rc <<" '" <<strerror(rc) <<"' trying select instead");
+    MLR_MSG("clock_nanosleep() failed " <<rc <<" '" <<strerror(rc) <<"' trying select instead");
     timeval tv;
     tv.tv_sec = ts.tv_sec;
     tv.tv_usec = ts.tv_nsec/1000l;
     rc = select(1, NULL, NULL, NULL, &tv);
-    if(rc==-1) MT_MSG("select() failed " <<rc <<" '" <<strerror(errno) <<"'");
+    if(rc==-1) MLR_MSG("select() failed " <<rc <<" '" <<strerror(errno) <<"'");
   }
 #else
   Sleep((int)(1000.*sec));
@@ -527,7 +524,7 @@ void wait(double sec, bool msg_on_fail) {
 #endif
 
 #if 0
-#ifndef MT_TIMEB
+#ifndef MLR_TIMEB
   /* r=0 time is up
      r!=0 data in NULL stream available (nonsense)
      */
@@ -539,7 +536,7 @@ void wait(double sec, bool msg_on_fail) {
 
 /// wait for an ENTER at the console
 bool wait() {
-  if(!MT::getInteractivity()) return true;
+  if(!mlr::getInteractivity()) return true;
   char c[10];
   std::cout <<" -- hit a key to continue..." <<std::flush;
   //cbreak(); getch();
@@ -552,11 +549,11 @@ bool wait() {
 
 /// the integral shared memory size -- not implemented for Windows!
 long mem() {
-#ifndef MT_TIMEB
+#ifndef MLR_TIMEB
   static rusage r; getrusage(RUSAGE_SELF, &r);
   return r.ru_idrss;
 #else
-  HALT("MT::mem() is not implemented for Windows!");
+  HALT("mlr::mem() is not implemented for Windows!");
   return 0;
 #endif
 }
@@ -598,7 +595,7 @@ void timerResume() {
 /// memorize the command line arguments and open a log file
 void initCmdLine(int _argc, char *_argv[]) {
   argc=_argc; argv=_argv;
-  MT::String msg;
+  mlr::String msg;
   msg <<"** cmd line arguments: '"; for(int i=0; i<argc; i++) msg <<argv[i] <<' ';
   msg <<"\b'";
   LOG(0) <<msg;
@@ -621,23 +618,108 @@ char *getCmdLineArgument(const char *tag) {
     }
   return NULL;
 }
+}//namespace mlr
 
+//===========================================================================
+//
+// logging
+
+namespace mlr {
+  void handleSIGUSR2(int){
+    int i=5;
+    i*=i;    //set a break point here, if you want to catch errors directly
+  }
+
+struct LogServer {
+  std::ofstream fil;
+  bool noLog;
+  Mutex mutex;
+
+
+  LogServer(): noLog(false) {
+    signal(SIGUSR2, mlr::handleSIGUSR2);
+    timerStartTime=mlr::cpuTime();
+    startTime = clockTime(false);
+
+    if(checkCmdLineTag("nolog")) noLog=true; else noLog=false;
+    const char *name=getCmdLineArgument("log");
+    if(!name) name=MLR_LogFileName;
+
+    fil.open(name);
+    if(!fil.good()){
+      MLR_MSG("could not open log-file `" <<name <<"' for output -- use `-nolog' or `-log' option to specify the log file");
+      noLog=true;
+      return;
+    }
+
+    fil <<"** compiled at:     " <<__DATE__ <<" " <<__TIME__ <<'\n';
+    fil <<"** execution start: " <<date(startTime) <<std::endl;
+  }
+
+  ~LogServer() {
+    if(noLog) return;
+    fil <<"** execution stop: " <<date()
+       <<"\n** real time: " <<realTime()
+      <<"sec\n** CPU time: " <<cpuTime()
+     <<"sec\n** system (includes I/O) time: " <<sysTime() <<"sec" <<std::endl;
+    fil.close();
+  }
+};
+
+Singleton<mlr::LogServer> logServer;
+
+}
+
+mlr::LogToken::~LogToken(){
+  mlr::logServer().mutex.lock();
+  if(logFileLevel>=log_level){
+    if(!fil) fil=&mlr::logServer().fil;
+    if(!fil->is_open()) mlr::open(*fil, STRING("z.log."<<key));
+    (*fil) <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg <<endl;
+  }
+  if(logCoutLevel>=log_level){
+    if(log_level>=0) std::cout <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg <<endl;
+  }
+  if(log_level<0){
+    mlr::errString.clear() <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg;
+#ifdef MLR_ROS
+    ROS_INFO("MLR-MSG: %s",mlr::errString.p);
+#endif
+    if(log_level==-1){ mlr::errString <<" -- WARNING";    cout <<mlr::errString <<endl; }
+    if(log_level==-2){ mlr::errString <<" -- ERROR  ";    cerr <<mlr::errString <<endl; /*throw does not WORK!!!*/ }
+    if(log_level==-3){ mlr::errString <<" -- HARD EXIT!"; cerr <<mlr::errString <<endl; mlr::logServer().mutex.unlock(); exit(1); }
+    if(log_level<=-2) raise(SIGUSR2);
+  }
+  mlr::logServer().mutex.unlock();
+}
+
+void setLogLevels(int fileLogLevel, int consoleLogLevel){
+  _log.logCoutLevel=consoleLogLevel;
+  _log.logFileLevel=fileLogLevel;
+}
+
+
+//===========================================================================
+//
+// parameters
+
+namespace mlr{
 /** @brief Open a (possibly new) config file with name '\c name'.<br> If
   \c name is not specified, it searches for a command line-option
   '-cfg' and, if not found, it assumes \c name=MT.cfg */
 void openConfigFile(const char *name) {
   LOG(3) <<"opening config file ";
   if(!name) name=getCmdLineArgument("cfg");
-  if(!name) name=MT_ConfigFileName;
-  if(cfgFileOpen) {
-    cfgFile.close(); LOG(3) <<"(old config file closed) ";
+  if(!name) name=MLR_ConfigFileName;
+  if(globalThings().cfgFileOpen) {
+    globalThings().cfgFile.close(); LOG(3) <<"(old config file closed) ";
   }
   LOG(3) <<"'" <<name <<"'";
-  cfgFile.clear();
-  cfgFile.open(name);
-  cfgFileOpen=true;
-  if(!cfgFile.good()) {
-    //MT_MSG("couldn't open config file " <<name);
+  globalThings().cfgFile.clear();
+  globalThings().cfgFile.open(name);
+  globalThings().cfgFileOpen=true;
+  if(!globalThings().cfgFile.good()) {
+    //MLR_MSG("couldn't open config file " <<name);
     LOG(3) <<" - failed";
   }
   LOG(3) <<std::endl;
@@ -657,12 +739,12 @@ bool getInteractivity(){
 
 /// a global operator to scan (parse) strings from a stream
 std::istream& operator>>(std::istream& is, const PARSE& x) {
-  MT::parse(is, x.str); return is;
+  mlr::parse(is, x.str); return is;
 }
 
 /// the same global operator for non-const string
 std::istream& operator>>(std::istream& is, char *str) {
-  MT::parse(is, (const char*)str); return is;
+  mlr::parse(is, (const char*)str); return is;
 }
 
 
@@ -671,30 +753,30 @@ std::istream& operator>>(std::istream& is, char *str) {
 // String class
 //
 
-int MT::String::StringBuf::overflow(int C) {
+int mlr::String::StringBuf::overflow(int C) {
   string->append(C);
   return C;
 }
 
-int MT::String::StringBuf::sync() {
+int mlr::String::StringBuf::sync() {
   if(string->flushCallback) string->flushCallback(*string);
   return 0;
 }
 
-void MT::String::StringBuf::setIpos(char *p) { setg(string->p, p, string->p+string->N); }
+void mlr::String::StringBuf::setIpos(char *p) { setg(string->p, p, string->p+string->N); }
 
-char *MT::String::StringBuf::getIpos() { return gptr(); }
+char *mlr::String::StringBuf::getIpos() { return gptr(); }
 
 //-- direct memory operations
-void MT::String::append(char x) { resize(N+1, true); operator()(N-1)=x; }
+void mlr::String::append(char x) { resize(N+1, true); operator()(N-1)=x; }
 
-MT::String& MT::String::setRandom(){
+mlr::String& mlr::String::setRandom(){
   resize(rnd(2,6), false);
   for(uint i=0;i<N;i++) operator()(i)=rnd('a','z');
   return *this;
 }
 
-void MT::String::resize(uint n, bool copy) {
+void mlr::String::resize(uint n, bool copy) {
   if(N==n && M>N) return;
   char *pold=p;
   uint Mold=M;
@@ -706,7 +788,7 @@ void MT::String::resize(uint n, bool copy) {
   }
   if(M!=Mold) {
     p=new char [M];
-    if(!p) HALT("MT::Mem failed memory allocation of " <<M <<"bytes");
+    if(!p) HALT("mlr::Mem failed memory allocation of " <<M <<"bytes");
     if(copy) memmove(p, pold, N<n?N:n);
     if(Mold) delete[] pold;
   }
@@ -715,40 +797,42 @@ void MT::String::resize(uint n, bool copy) {
   resetIstream();
 }
 
-void MT::String::init() { p=0; N=0; M=0; buffer.string=this; flushCallback=NULL; }
+void mlr::String::init() { p=0; N=0; M=0; buffer.string=this; flushCallback=NULL; }
 
 /// standard constructor
-MT::String::String():std::iostream(&buffer) { init(); clearStream(); }
+mlr::String::String():std::iostream(&buffer) { init(); clearStream(); }
 
 /// copy constructor
-MT::String::String(const String& s):std::iostream(&buffer) { init(); this->operator=(s); }
+mlr::String::String(const String& s):std::iostream(&buffer) { init(); this->operator=(s); }
 
 /// copy constructor for an ordinary C-string (needs to be 0-terminated)
-MT::String::String(const char *s):std::iostream(&buffer) { init(); this->operator=(s); }
+mlr::String::String(const char *s):std::iostream(&buffer) { init(); this->operator=(s); }
 
 
-MT::String::String(const std::string& s):std::iostream(&buffer) { init(); this->operator=(s.c_str()); }
+mlr::String::String(const std::string& s):std::iostream(&buffer) { init(); this->operator=(s.c_str()); }
 
-MT::String::~String() { if(M) delete[] p; }
+mlr::String::String(std::istream& is):std::iostream(&buffer) { init(); read(is, "", "", 0); }
+
+mlr::String::~String() { if(M) delete[] p; }
 
 /// returns a reference to this
-std::iostream& MT::String::stream() { return (std::iostream&)(*this); }
+std::iostream& mlr::String::stream() { return (std::iostream&)(*this); }
 
 /// returns a reference to this
-MT::String& MT::String::operator()() { return *this; }
+mlr::String& mlr::String::operator()() { return *this; }
 
 /** @brief returns the true memory buffer (C-string) of this class (which is
 always kept 0-terminated) */
-MT::String::operator char*() { return p; }
+mlr::String::operator char*() { return p; }
 
 /// as above but const
-MT::String::operator const char*() const { return p; }
+mlr::String::operator const char*() const { return p; }
 
 /// returns the i-th char
-char& MT::String::operator()(uint i) const { CHECK(i<=N, "String range error (" <<i <<"<=" <<N <<")"); return p[i]; }
+char& mlr::String::operator()(uint i) const { CHECK(i<=N, "String range error (" <<i <<"<=" <<N <<")"); return p[i]; }
 
 /// return the substring from `start` to (exclusive) `end`.
-MT::String MT::String::getSubString(uint start, uint end) const {
+mlr::String mlr::String::getSubString(uint start, uint end) const {
   CHECK(start < end, "getSubString: start should be smaller than end");
   clip(end, uint(0), N);
   String tmp;
@@ -762,7 +846,7 @@ MT::String MT::String::getSubString(uint start, uint end) const {
  * @brief Return the last `n` chars of the string.
  * @param n number of chars to return
  */
-MT::String MT::String::getLastN(uint n) const {
+mlr::String mlr::String::getLastN(uint n) const {
   clip(n, uint(0), N);
   return getSubString(N-n, N);
 }
@@ -771,20 +855,20 @@ MT::String MT::String::getLastN(uint n) const {
  * @brief Return the first `n` chars of the string.
  * @param n number of chars to return.
  */
-MT::String MT::String::getFirstN(uint n) const {
+mlr::String mlr::String::getFirstN(uint n) const {
   clip(n, uint(0), N);
   return getSubString(0, n);
 }
 
 /// copy operator
-MT::String& MT::String::operator=(const String& s) {
+mlr::String& mlr::String::operator=(const String& s) {
   resize(s.N, false);
   memmove(p, s.p, N);
   return *this;
 }
 
 /// copies from the C-string
-void MT::String::operator=(const char *s) {
+void mlr::String::operator=(const char *s) {
   if(!s){  clear();  return;  }
   uint ls = strlen(s);
   if(!ls){  clear();  return;  }
@@ -797,63 +881,63 @@ void MT::String::operator=(const char *s) {
   }
 }
 
-void MT::String::set(const char *s, uint n) { resize(n, false); memmove(p, s, n); }
+void mlr::String::set(const char *s, uint n) { resize(n, false); memmove(p, s, n); }
 
 /// shorthand for the !strcmp command
-bool MT::String::operator==(const char *s) const { return p && !strcmp(p, s); }
+bool mlr::String::operator==(const char *s) const { return p && !strcmp(p, s); }
 /// shorthand for the !strcmp command
-bool MT::String::operator==(const String& s) const { return p && s.p && !strcmp(p, s.p); }
-bool MT::String::operator!=(const char *s) const { return !operator==(s); }
-bool MT::String::operator!=(const String& s) const { return !(operator==(s)); }
-bool MT::String::operator<(const String& s) const { return p && s.p && strcmp(p, s.p)<0; }
+bool mlr::String::operator==(const String& s) const { return p && s.p && !strcmp(p, s.p); }
+bool mlr::String::operator!=(const char *s) const { return !operator==(s); }
+bool mlr::String::operator!=(const String& s) const { return !(operator==(s)); }
+bool mlr::String::operator<(const String& s) const { return p && s.p && strcmp(p, s.p)<0; }
 
-bool MT::String::contains(const String& substring) const {
+bool mlr::String::contains(const String& substring) const {
   char* p = strstr(this->p, substring.p);
   return p != NULL;
 }
 
 /// Return true iff the string starts with `substring`.
-bool MT::String::startsWith(const String& substring) const {
+bool mlr::String::startsWith(const String& substring) const {
   return this->getFirstN(substring.N) == substring;
 }
 /// Return true iff the string starts with `substring`.
-bool MT::String::startsWith(const char* substring) const {
-  return this->startsWith(MT::String(substring));
+bool mlr::String::startsWith(const char* substring) const {
+  return this->startsWith(mlr::String(substring));
 }
 
 /// Return true iff the string ends with `substring`.
-bool MT::String::endsWith(const String& substring) const {
+bool mlr::String::endsWith(const String& substring) const {
   return this->getLastN(substring.N) == substring;
 }
 /// Return true iff the string ends with `substring`.
-bool MT::String::endsWith(const char* substring) const {
-  return this->endsWith(MT::String(substring));
+bool mlr::String::endsWith(const char* substring) const {
+  return this->endsWith(mlr::String(substring));
 }
 
 /// deletes all memory and resets all stream flags
-MT::String& MT::String::clear() { resize(0, false); return *this; }
+mlr::String& mlr::String::clear() { resize(0, false); return *this; }
 
 /// call IOstream::clear();
-MT::String& MT::String::clearStream() { std::iostream::clear(); return *this; }
+mlr::String& mlr::String::clearStream() { std::iostream::clear(); return *this; }
 
 /** @brief when using this String as an istream (to read other variables
   from it), this method resets the reading-pointer to the beginning
   of the string and also clears all flags of the stream */
-MT::String& MT::String::resetIstream() { buffer.setIpos(p); clearStream(); return *this; }
+mlr::String& mlr::String::resetIstream() { buffer.setIpos(p); clearStream(); return *this; }
 
 /// writes the string into some ostream
-void MT::String::write(std::ostream& os) const { if(N) os <<p; }
+void mlr::String::write(std::ostream& os) const { if(N) os <<p; }
 
 /** @brief reads the string from some istream: first skip until one of the stopSymbols
 is encountered (default: newline symbols) */
-uint MT::String::read(std::istream& is, const char* skipSymbols, const char *stopSymbols, int eatStopSymbol) {
+uint mlr::String::read(std::istream& is, const char* skipSymbols, const char *stopSymbols, int eatStopSymbol) {
   if(!skipSymbols) skipSymbols=readSkipSymbols;
   if(!stopSymbols) stopSymbols=readStopSymbols;
   if(eatStopSymbol==-1) eatStopSymbol=readEatStopSymbol;
-  MT::skip(is, skipSymbols);
+  mlr::skip(is, skipSymbols);
   clear();
   char c=is.get();
-  while(c!=-1 && is.good() && !MT::contains(stopSymbols, c)) {
+  while(c!=-1 && is.good() && !mlr::contains(stopSymbols, c)) {
     append(c);
     c=is.get();
   }
@@ -868,11 +952,11 @@ uint MT::String::read(std::istream& is, const char* skipSymbols, const char *sto
 
 /** @brief fills the string with the date and time in the format
  * yy-mm-dd--hh-mm-mm */
-MT::String MT::getNowString() {
+mlr::String mlr::getNowString() {
   time_t t = time(0);
   struct tm *now = localtime(&t);
 
-  MT::String str;
+  mlr::String str;
   str.resize(19, false); //-- just enough
   sprintf(str.p, "%02d-%02d-%02d--%02d-%02d-%02d",
     now->tm_year-100,
@@ -887,109 +971,32 @@ MT::String MT::getNowString() {
 
 //===========================================================================
 //
-// logging
-
-namespace MT {
-  void handleSIGUSR2(int){
-    int i=5;
-    i*=i;    //set a break point here, if you want to catch errors directly
-  }
-
-struct LogServer {
-  std::ofstream fil;
-  bool noLog;
-
-  int fileLogLevel;
-  int consoleLogLevel;
-  Mutex mutex;
-
-  LogServer(): noLog(false), fileLogLevel(3), consoleLogLevel(2) {
-    signal(SIGUSR2, MT::handleSIGUSR2);
-    timerStartTime=MT::cpuTime();
-#ifndef MT_TIMEB
-    gettimeofday(&startTime, 0);
-#else
-    _ftime(&startTime);
-#endif
-
-    if(checkCmdLineTag("nolog")) noLog=true; else noLog=false;
-    const char *name=getCmdLineArgument("log");
-    if(!name) name=MT_LogFileName;
-
-    fil.open(name);
-    if(!fil.good()){
-      MT_MSG("could not open log-file `" <<name <<"' for output -- use `-nolog' or `-log' option to specify the log file");
-      noLog=true;
-      return;
-    }
-
-    fil <<"** compiled at:     " <<__DATE__ <<" " <<__TIME__ <<'\n';
-    fil <<"** execution start: " <<date(startTime) <<std::endl;
-  }
-
-  ~LogServer() {
-    if(noLog) return;
-    fil <<"** execution stop: " <<date()
-       <<"\n** real time: " <<realTime()
-      <<"sec\n** CPU time: " <<cpuTime()
-     <<"sec\n** system (includes I/O) time: " <<sysTime() <<"sec" <<std::endl;
-    fil.close();
-  }
-};
-
-Singleton<MT::LogServer> logServer;
-
-}
-
-MT::LogToken::~LogToken(){
-  MT::logServer().mutex.lock();
-  if(MT::logServer().fileLogLevel   >=log_level) MT::logServer().fil <<filename <<':' <<function <<':' <<line <<'|' <<log_level <<"| " <<msg <<endl;
-  if(MT::logServer().consoleLogLevel>=log_level){
-    if(log_level>=0) std::cout <<msg <<endl;
-    else{
-      MT::errString.clear() <<filename <<':' <<function <<':' <<line <<": " <<msg;
-#ifdef MT_ROS
-      ROS_INFO("MLR-MSG: %s",MT::errString.p);
-#endif
-      if(log_level==-1){ MT::errString <<" -- WARNING";    cout <<MT::errString <<endl; }
-      if(log_level==-2){ MT::errString <<" -- ERROR  ";    cerr <<MT::errString <<endl; /*throw does not WORK!!!*/ }
-      if(log_level==-3){ MT::errString <<" -- HARD EXIT!"; cerr <<MT::errString <<endl; MT::logServer().mutex.unlock(); exit(1); }
-      if(log_level<=-2) raise(SIGUSR2);
-    }
-  }
-  MT::logServer().mutex.unlock();
-}
-
-void setLogLevels(int fileLogLevel, int consoleLogLevel){
-  MT::logServer().mutex.lock();
-  MT::logServer().fileLogLevel   =fileLogLevel;
-  MT::logServer().consoleLogLevel=consoleLogLevel;
-  MT::logServer().mutex.unlock();
-
-}
-
-
-//===========================================================================
-//
 // FileToken
 //
 
-MT::FileToken::FileToken(const char* filename, bool change_dir): os(NULL), is(NULL){
+mlr::FileToken::FileToken(const char* filename, bool change_dir){
   name=filename;
   if(change_dir) changeDir();
+//  if(!exists()) HALT("file '" <<filename <<"' does not exist");
 }
 
-MT::FileToken::~FileToken(){
-  if(is){ is->close(); } //delete is; is=NULL; }
-  if(os){ os->close(); } //delete os; os=NULL; }
-  if(cwd.N){
-    LOG(3) <<"leaving path `" <<path<<"' back to '" <<cwd <<"'" <<std::endl;
-    if(chdir(cwd)) HALT("couldn't change back to directory " <<cwd);
+mlr::FileToken::FileToken(const FileToken& ft){
+  name=ft.name;
+  if(ft.path.N){
+    NIY;
+    path=ft.path;
+    cwd=ft.cwd;
   }
+  is = ft.is;
+  os = ft.os;
+}
+
+mlr::FileToken::~FileToken(){
+  unchangeDir();
 }
 
 /// change to the directory of the given filename
-void MT::FileToken::decomposeFilename() {
+void mlr::FileToken::decomposeFilename() {
   path = name;
   int i=path.N;
   for(; i--;) if(path(i)=='/' || path(i)=='\\') break;
@@ -1001,7 +1008,7 @@ void MT::FileToken::decomposeFilename() {
   }
 }
 
-void MT::FileToken::changeDir(){
+void mlr::FileToken::changeDir(){
   if(path.N){
     HALT("you've changed already?");
   }else{
@@ -1016,28 +1023,35 @@ void MT::FileToken::changeDir(){
   }
 }
 
-bool MT::FileToken::exists() {
+void mlr::FileToken::unchangeDir(){
+  if(cwd.N){
+    LOG(3) <<"leaving path `" <<path<<"' back to '" <<cwd <<"'" <<std::endl;
+    if(chdir(cwd)) HALT("couldn't change back to directory " <<cwd);
+  }
+}
+
+bool mlr::FileToken::exists() {
   struct stat sb;
   int r=stat(name, &sb);
   return r==0;
 }
 
-std::ofstream& MT::FileToken::getOs(){
+std::ofstream& mlr::FileToken::getOs(){
   CHECK(!is,"don't use a FileToken both as input and output");
   if(!os){
-    os=new std::ofstream;
+    os = std::make_shared<std::ofstream>();
     os->open(name);
     LOG(3) <<"opening output file `" <<name <<"'" <<std::endl;
-    if(!os->good()) MT_MSG("could not open file `" <<name <<"' for output");
+    if(!os->good()) MLR_MSG("could not open file `" <<name <<"' for output");
   }
   return *os;
 }
 
-std::ifstream& MT::FileToken::getIs(bool change_dir){
+std::ifstream& mlr::FileToken::getIs(bool change_dir){
   if(change_dir) changeDir();
   CHECK(!os,"don't use a FileToken both as input and output");
   if(!is){
-    is=new std::ifstream;
+    is = std::make_shared<std::ifstream>();
     is->open(name);
     LOG(3) <<"opening input file `" <<name <<"'" <<std::endl;
     if(!is->good()) HALT("could not open file `" <<name <<"' for input");
@@ -1051,9 +1065,9 @@ std::ifstream& MT::FileToken::getIs(bool change_dir){
 // random number generator
 //
 
-namespace MT { Rnd rnd; }
+namespace mlr { Rnd rnd; }
 
-uint32_t MT::Rnd::seed(uint32_t n) {
+uint32_t mlr::Rnd::seed(uint32_t n) {
   uint32_t s, c;
   if(n>12345) { s=n; c=n%113; } else { s=12345; c=n; }
   while(c--) s*=65539;
@@ -1063,13 +1077,13 @@ uint32_t MT::Rnd::seed(uint32_t n) {
   return n;
 }
 
-uint32_t MT::Rnd::seed() {
-  return seed(MT::getParameter<uint32_t>("seed", 0));
+uint32_t mlr::Rnd::seed() {
+  return seed(mlr::getParameter<uint32_t>("seed", 0));
 }
 
-uint32_t MT::Rnd::clockSeed() {
+uint32_t mlr::Rnd::clockSeed() {
   uint32_t s;
-#ifndef MT_TIMEB
+#ifndef MLR_TIMEB
   timeval t; gettimeofday(&t, 0); s=1000000L*t.tv_sec+t.tv_usec;
 #else
   _timeb t; _ftime(&t); s=1000L*t.time+t.millitm;
@@ -1078,7 +1092,7 @@ uint32_t MT::Rnd::clockSeed() {
   return seed(s);
 }
 
-double MT::Rnd::gauss() {
+double mlr::Rnd::gauss() {
   double w, v, rsq, fac;
   do {
     v   = 2 * uni() - 1;
@@ -1089,7 +1103,7 @@ double MT::Rnd::gauss() {
   return v*fac;
 }
 
-uint32_t MT::Rnd::poisson(double mean) {
+uint32_t mlr::Rnd::poisson(double mean) {
   if(mean>100) {
     uint32_t i=(uint32_t)::floor(mean+::sqrt(mean)*gauss()+.5);
     return (i>0)?(uint32_t)i:0;
@@ -1107,7 +1121,7 @@ uint32_t MT::Rnd::poisson(double mean) {
   return count;
 }
 
-void  MT::Rnd::seed250(int32_t seed) {
+void  mlr::Rnd::seed250(int32_t seed) {
   int32_t      i;
   int32_t     j, k;
   
@@ -1141,7 +1155,7 @@ void  MT::Rnd::seed250(int32_t seed) {
 Inotify::Inotify(const char* filename): fd(0), wd(0){
   fd = inotify_init();
   if(fd<0) HALT("Couldn't initialize inotify");
-  fil = new MT::FileToken(filename, false);
+  fil = new mlr::FileToken(filename, false);
   fil->decomposeFilename();
   wd = inotify_add_watch( fd, fil->path,
 			  IN_MODIFY | IN_CREATE | IN_DELETE );
@@ -1207,7 +1221,7 @@ bool Inotify::pollForModification(bool block, bool verbose){
 
 #define MUTEX_DUMP(x) //x
 
-#ifndef MT_MSVC
+#ifndef MLR_MSVC
 Mutex::Mutex() {
   pthread_mutexattr_t atts;
   int rc;
@@ -1236,7 +1250,7 @@ void Mutex::unlock() {
   if(--recursive == 0) state=0;
   int rc = pthread_mutex_unlock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
-#else//MT_MSVC
+#else//MLR_MSVC
 Mutex::Mutex() {}
 Mutex::~Mutex() {}
 void Mutex::lock() {}
@@ -1260,7 +1274,7 @@ struct GnuplotServer{
   }
 
   void send(const char *cmd, bool persist){
-#ifndef MT_MSVC
+#ifndef MLR_MSVC
     if(!gp) {
       if(!persist) gp=popen("env gnuplot -noraise -geometry 600x600-0-0 2> /dev/null", "w");
       else         gp=popen("env gnuplot -noraise -persist -geometry 600x600-0-0 2> /dev/null", "w");
@@ -1278,12 +1292,12 @@ struct GnuplotServer{
 Singleton<GnuplotServer> gnuplotServer;
 
 void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDFfile) {
-  if(!MT::getInteractivity()){
+  if(!mlr::getInteractivity()){
     pauseMouse=false;
     persist=false;
   }
   
-  MT::String cmd;
+  mlr::String cmd;
   cmd <<"set style data lines\n";
   
   // run standard files
@@ -1311,7 +1325,7 @@ void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDF
 // Cumulative probability for the Standard Normal Distribution
 //
 
-namespace MT {
+namespace mlr {
 double erf(double x) {
   double t, z, retval;
   z = fabs(x);
@@ -1332,13 +1346,13 @@ double erf(double x) {
 
 /// the integral of N(0, 1) from -infty to x
 double gaussInt(double x) {
-  return .5*(1.+erf(x/MT_SQRT2));
+  return .5*(1.+erf(x/MLR_SQRT2));
 }
 
 /// expectation \f$\int_x^\infty {\cal N}(x) x dx\f$ when integrated from -infty to x
 double gaussIntExpectation(double x) {
-  double norm=gaussInt(x) / (::sqrt(MT_2PI));
-  return - norm*MT::approxExp(-.5*x*x);
+  double norm=gaussInt(x) / (::sqrt(MLR_2PI));
+  return - norm*mlr::approxExp(-.5*x*x);
 }
 }
 
@@ -1360,39 +1374,39 @@ std::string getcwd_string() {
 // explicit instantiations
 //
 
-#include "util_t.h"
-template void MT::getParameter(int&, const char*);
-template void MT::getParameter(int&, const char*, const int&);
-template void MT::getParameter(uint&, const char*);
-template void MT::getParameter(uint&, const char*, const uint&);
-template void MT::getParameter(bool&, const char*, const bool&);
-template void MT::getParameter(double&, const char*);
-template void MT::getParameter(double&, const char*, const double&);
-template void MT::getParameter(MT::String&, const char*, const MT::String&);
-template void MT::getParameter(MT::String&, const char*);
+#include "util.tpp"
+template void mlr::getParameter(int&, const char*);
+template void mlr::getParameter(int&, const char*, const int&);
+template void mlr::getParameter(uint&, const char*);
+template void mlr::getParameter(uint&, const char*, const uint&);
+template void mlr::getParameter(bool&, const char*, const bool&);
+template void mlr::getParameter(double&, const char*);
+template void mlr::getParameter(double&, const char*, const double&);
+template void mlr::getParameter(mlr::String&, const char*, const mlr::String&);
+template void mlr::getParameter(mlr::String&, const char*);
 
-template int MT::getParameter<int>(const char*);
-template int MT::getParameter<int>(const char*, const int&);
-template uint MT::getParameter(const char*);
-template uint MT::getParameter<uint>(const char*, const uint&);
-template float MT::getParameter<float>(const char*);
-template double MT::getParameter<double>(const char*);
-template double MT::getParameter<double>(const char*, const double&);
-template bool MT::getParameter<bool>(const char*);
-template bool MT::getParameter<bool>(const char*, const bool&);
-template long MT::getParameter<long>(const char*);
-template MT::String MT::getParameter<MT::String>(const char*);
-template MT::String MT::getParameter<MT::String>(const char*, const MT::String&);
+template int mlr::getParameter<int>(const char*);
+template int mlr::getParameter<int>(const char*, const int&);
+template uint mlr::getParameter(const char*);
+template uint mlr::getParameter<uint>(const char*, const uint&);
+template float mlr::getParameter<float>(const char*);
+template double mlr::getParameter<double>(const char*);
+template double mlr::getParameter<double>(const char*, const double&);
+template bool mlr::getParameter<bool>(const char*);
+template bool mlr::getParameter<bool>(const char*, const bool&);
+template long mlr::getParameter<long>(const char*);
+template mlr::String mlr::getParameter<mlr::String>(const char*);
+template mlr::String mlr::getParameter<mlr::String>(const char*, const mlr::String&);
 
-template bool MT::checkParameter<uint>(const char*);
-template bool MT::checkParameter<bool>(const char*);
+template bool mlr::checkParameter<uint>(const char*);
+template bool mlr::checkParameter<bool>(const char*);
 
-template std::map<std::string,int> MT::ParameterMap<int>::m;
-template std::map<std::string,double> MT::ParameterMap<double>::m;
-template std::map<std::string,unsigned int> MT::ParameterMap<unsigned int>::m;
-template std::map<std::string,float> MT::ParameterMap<float>::m;
-template std::map<std::string,bool> MT::ParameterMap<bool>::m;
-template std::map<std::string,long> MT::ParameterMap<long>::m;
-template std::map<std::string,MT::String> MT::ParameterMap<MT::String>::m;
-template std::map<std::string,std::string> MT::ParameterMap<std::string>::m;
+template std::map<std::string,int> mlr::ParameterMap<int>::m;
+template std::map<std::string,double> mlr::ParameterMap<double>::m;
+template std::map<std::string,unsigned int> mlr::ParameterMap<unsigned int>::m;
+template std::map<std::string,float> mlr::ParameterMap<float>::m;
+template std::map<std::string,bool> mlr::ParameterMap<bool>::m;
+template std::map<std::string,long> mlr::ParameterMap<long>::m;
+template std::map<std::string,mlr::String> mlr::ParameterMap<mlr::String>::m;
+template std::map<std::string,std::string> mlr::ParameterMap<std::string>::m;
 

@@ -98,7 +98,7 @@ struct DecideSign {
   bool step(double x);
   double mean() { return sumX/N; }
   double sdv() { double m=mean(); return sqrt((sumXX+2.*m*m)/N-m*m); }
-  double sign() { return MT::sign(sumX); }
+  double sign() { return mlr::sign(sumX); }
 };
 
 struct SGD {
@@ -123,7 +123,7 @@ struct SGD {
     w1=w2=w0;
     l1=l2=0.;
     e1=e2=0.;
-    MT::open(log, "log.sgd");
+    mlr::open(log, "log.sgd");
   }
   
   void stepPlain() {
@@ -131,13 +131,13 @@ struct SGD {
     double err;
     l1 += m->loss(w1, perm(t%N), &grad, &err);   w1 -= a1 * grad;   e1+=err;
     log <<t
-        <<" time= " <<MT::timerRead()
+        <<" time= " <<mlr::timerRead()
         <<" loss1= " <<l1/(t%BATCH+1)
         <<" err1= "  <<e1/(t%BATCH+1)
         <<" rate1= " <<a1
         <<endl;
     cout <<t
-         <<" time= " <<MT::timerRead()
+         <<" time= " <<mlr::timerRead()
          <<" loss1= " <<l1/(t%BATCH+1)
          <<" err1= "  <<e1/(t%BATCH+1)
          <<" rate1= " <<a1
@@ -156,13 +156,13 @@ struct SGD {
     l1 += m->loss(w1, perm(t%N), &grad, &err);   w1 -= a1 * grad;   e1+=err;
     l2 += m->loss(w2, perm(t%N), &grad, &err);   w2 -= a2 * grad;   e2+=err;
     log <<t
-        <<" time= " <<MT::timerRead()
+        <<" time= " <<mlr::timerRead()
         <<" loss1= " <<l1/(t%BATCH+1) <<" loss2= " <<l2/(t%BATCH+1)
         <<" err1= "  <<e1/(t%BATCH+1) <<" err2= "  <<e2/(t%BATCH+1)
         <<" rate1= " <<a1 <<" rate2= " <<a2
         <<endl;
     cout <<t
-         <<" time= " <<MT::timerRead()
+         <<" time= " <<mlr::timerRead()
          <<" loss1= " <<l1/(t%BATCH+1) <<" loss2= " <<l2/(t%BATCH+1)
          <<" err1= "  <<e1/(t%BATCH+1) <<" err2= "  <<e2/(t%BATCH+1)
          <<" rate1= " <<a1 <<" rate2= " <<a2
@@ -206,7 +206,7 @@ struct OnlineRprop {
   OptimizationProblem *m;
   uintA perm;
   ofstream log;
-  MT::Array<DecideSign> signer;
+  mlr::Array<DecideSign> signer;
   
   void init(OptimizationProblem *_m, double initialRate, uint _N, const arr& w0);
   void step();

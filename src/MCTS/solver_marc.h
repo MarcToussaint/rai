@@ -3,13 +3,13 @@
 #include <Core/array.h>
 #include <Core/graph.h>
 
-#include "env_marc.h"
+#include "environment.h"
 
 //===========================================================================
 
 struct MCTS_Node{
   MCTS_Node *parent;
-  MT::Array<MCTS_Node*> children;
+  mlr::Array<MCTS_Node*> children;
   MCTS_Environment::Handle decision;           ///< what decision (relative to the parent) does this node represent
 
   double Qup,Qme,Qlo;   ///< upper, mean, and lower Q estimates

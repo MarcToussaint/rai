@@ -18,7 +18,7 @@ namespace {
 using namespace MLR;
 
 struct sVideoEncoder_libav_simple{
-    MT::String filename;
+    mlr::String filename;
     double fps;
     bool isOpen;
 
