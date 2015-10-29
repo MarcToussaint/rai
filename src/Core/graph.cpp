@@ -729,6 +729,21 @@ uint Graph::index(bool subKVG, uint start){
   return idx;
 }
 
+bool operator==(const Graph& A, const Graph& B){
+  if(A.N!=B.N) return false;
+  for(uint i=0;i<A.N;i++){
+    Node *a = A(i), *b = B(i);
+    if(a->index!=b->index) return false;
+    if(a->keys!=b->keys) return false;
+    if(a->parents.N!=b->parents.N) return false;
+    for(uint j=0;j<a->parents.N;j++) if(a->parents(j)->index!=b->parents(j)->index) return false;
+    if(a->getValueType()!=b->getValueType()) return false;
+    if(a->hasValue()!=b->hasValue()) return false;
+    if(a->hasValue() && !a->hasEqualValue(b)) return false;
+  }
+  return true;
+}
+
 //===========================================================================
 
 NodeL neighbors(Node* it){

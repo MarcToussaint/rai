@@ -172,6 +172,8 @@ struct Graph : NodeL {
 };
 stdPipes(Graph);
 
+bool operator==(const Graph& A, const Graph& B);
+
 //===========================================================================
 
 struct NodeInitializer{
