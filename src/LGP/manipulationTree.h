@@ -81,7 +81,7 @@ struct ManipulationTree_Node{
     problem.setTiming(0, 1.);
     problem.k_order=0;
     problem.parseTasks(*poseProblem);
-//    problem.featureReport();
+//    problem.reportFull();
 
     for(ors::KinematicSwitch *sw: problem.switches)
       if(sw->timeOfApplication==0) sw->apply(effKinematics);
@@ -91,7 +91,7 @@ struct ManipulationTree_Node{
     OptConstrained opt(x, NoArr, problem.InvKinProblem(), OPT(verbose=0));
     opt.run();
 
-//    problem.featureReport();
+//    problem.reportFull();
 //    problem.costReport();
 //    problem.world.gl().watch();
 //    effKinematics.setJointState(problem.x0);
