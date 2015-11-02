@@ -149,6 +149,8 @@ struct Variable:RevisionedAccessGatedClass{
   WriteToken set(const double& dataTime, Thread *th=NULL){ return WriteToken(dataTime, this, th); } ///< write access to the variable's data
 };
 
+inline bool operator==(const RevisionedAccessGatedClass&,const RevisionedAccessGatedClass&){ return false; }
+
 //===========================================================================
 //
 // Timing helpers

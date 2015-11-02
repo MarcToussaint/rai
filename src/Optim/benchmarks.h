@@ -36,7 +36,7 @@ extern ScalarFunction ChoiceFunction();
 
 //===========================================================================
 
-struct RandomLPFunction:ConstrainedProblemMix {
+struct RandomLPFunction:ConstrainedProblem {
   arr randomG;
   virtual double fc(arr& phi, arr& J, TermTypeA& tt, const arr& x) {
     if(!randomG.N){
@@ -64,24 +64,22 @@ struct RandomLPFunction:ConstrainedProblemMix {
 
 //===========================================================================
 
-struct ChoiceConstraintFunction:ConstrainedProblemMix {
+struct ChoiceConstraintFunction:ConstrainedProblem {
   enum WhichConstraint { wedge2D=1, halfcircle2D, randomLinear, circleLine2D } which;
   uint n;
   arr randomG;
   ChoiceConstraintFunction() {
     which = (WhichConstraint) mlr::getParameter<int>("constraintChoice");
     n = mlr::getParameter<uint>("dim", 2);
-    ConstrainedProblemMix::operator=( [this](arr& phi, arr& J, TermTypeA& tt, const arr& x) -> void {
-      this->fc(phi, J, tt, x);
+    ConstrainedProblem::operator=( [this](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) -> void {
+      this->fc(phi, J, H, tt, x);
     } );
   }
-  void fc(arr& phi, arr& J, TermTypeA& tt, const arr& x) {
+  void fc(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) {
     CHECK_EQ(x.N,n,"");
     phi.clear();  if(&tt) tt.clear();  if(&J) J.clear();
 
-    arr H;
     phi.append( ChoiceFunction()(J, H, x) ); if(&tt) tt.append(fTT);
-    //HALT("H not used yet!");
 
     switch(which) {
       case wedge2D:
@@ -131,14 +129,14 @@ struct ChoiceConstraintFunction:ConstrainedProblemMix {
 
 //===========================================================================
 
-struct SimpleConstraintFunction:ConstrainedProblemMix {
+struct SimpleConstraintFunction:ConstrainedProblem {
   SimpleConstraintFunction(){
-    ConstrainedProblemMix::operator=(
-      [this](arr& phi, arr& J, TermTypeA& tt, const arr& x) -> void {
-      this->fc(phi, J, tt, x);
+    ConstrainedProblem::operator=(
+      [this](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) -> void {
+      this->fc(phi, J, H, tt, x);
     } );
   }
-  virtual void fc(arr& phi, arr& J, TermTypeA& tt, const arr& _x) {
+  virtual void fc(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& _x) {
     CHECK(_x.N==2,"");
     tt = { sumOfSqrTT, sumOfSqrTT, ineqTT, ineqTT };
     phi.resize(4);

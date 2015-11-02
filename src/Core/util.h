@@ -470,6 +470,8 @@ template<class T> void operator>>(const T& x, FileToken& fil){ fil.getOs() <<x; 
 }
 #define FILE(filename) (mlr::FileToken(filename)()) //it needs to return a REFERENCE to a local scope object
 
+inline bool operator==(const mlr::FileToken&, const mlr::FileToken&){ return false; }
+
 
 //===========================================================================
 //
