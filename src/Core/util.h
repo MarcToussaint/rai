@@ -311,8 +311,8 @@ struct Log{
   const char* key;
   std::ofstream fil;
   Log(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0):key(key){
-    logCoutLevel = mlr::getParameter<int>(STRING("logCoutLevel_"<<key), defaultLogCoutLevel);
-    logFileLevel = mlr::getParameter<int>(STRING("logFileLevel_"<<key), defaultLogFileLevel);
+//    logCoutLevel = mlr::getParameter<int>(STRING("logCoutLevel_"<<key), defaultLogCoutLevel);
+//    logFileLevel = mlr::getParameter<int>(STRING("logFileLevel_"<<key), defaultLogFileLevel);
   }
   ~Log(){ fil.close(); }
   mlr::LogToken operator()(int log_level, const char* filename, const char* function, uint line) const {
