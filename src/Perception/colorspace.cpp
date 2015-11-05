@@ -84,11 +84,11 @@ void uyv444packed_yuv444planar(const uint8_t* const in_pixels, uint8_t* yc,
 	}
 }
 
-void yuv_packed2planar(MLR::PixelFormat in_format,
+void yuv_packed2planar(mlr::PixelFormat in_format,
 		const uint8_t* const in_pixels, uint8_t* yc, uint8_t* uc, uint8_t *vc,
 		const unsigned int num_pixel) {
 	switch (in_format) {
-	case MLR::PIXEL_FORMAT_UYV444:
+	case mlr::PIXEL_FORMAT_UYV444:
 		uyv444packed_yuv444planar(in_pixels, yc, uc, vc, num_pixel);
 		break;
 	default:

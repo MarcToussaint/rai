@@ -7,7 +7,7 @@
 
 #include <functional>
 /*
-namespace MLR {
+namespace mlr {
     struct sPointCloudSubscriber {
 #ifdef HAVE_ROS_IMAGE_TRANSPORT
         ros::NodeHandle n;

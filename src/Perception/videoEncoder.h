@@ -25,7 +25,7 @@ struct sVideoEncoder_x264_simple;
 struct VideoEncoder_x264_simple{
   std::auto_ptr<sVideoEncoder_x264_simple> s;
 
-  VideoEncoder_x264_simple(const char* filename="z.264", double fps=30, uint qp=0, MLR::PixelFormat in_format=MLR::PIXEL_FORMAT_BGR8);
+  VideoEncoder_x264_simple(const char* filename="z.264", double fps=30, uint qp=0, mlr::PixelFormat in_format=mlr::PIXEL_FORMAT_BGR8);
   /** @deprecated Use constructor with explicit input format. Using this one allows only a choice between RGB and BGR. */
   explicit VideoEncoder_x264_simple(const char* filename, double fps, uint qp, bool is_rgb);
   void addFrame(const byteA& image);

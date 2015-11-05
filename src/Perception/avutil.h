@@ -10,7 +10,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
-namespace MLR {
+namespace mlr {
 /// call this before using any libav methods
 void register_libav();
 
