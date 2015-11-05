@@ -679,16 +679,16 @@ mlr::LogToken::~LogToken(){
   }
   if(logCoutLevel>=log_level){
     if(log_level>=0) std::cout <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg <<endl;
-  }
-  if(log_level<0){
-    mlr::errString.clear() <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg;
+    if(log_level<0){
+      mlr::errString.clear() <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg;
 #ifdef MLR_ROS
-    ROS_INFO("MLR-MSG: %s",mlr::errString.p);
+      ROS_INFO("MLR-MSG: %s",mlr::errString.p);
 #endif
-    if(log_level==-1){ mlr::errString <<" -- WARNING";    cout <<mlr::errString <<endl; }
-    if(log_level==-2){ mlr::errString <<" -- ERROR  ";    cerr <<mlr::errString <<endl; /*throw does not WORK!!!*/ }
-    if(log_level==-3){ mlr::errString <<" -- HARD EXIT!"; cerr <<mlr::errString <<endl; mlr::logServer().mutex.unlock(); exit(1); }
-    if(log_level<=-2) raise(SIGUSR2);
+      if(log_level==-1){ mlr::errString <<" -- WARNING";    cout <<mlr::errString <<endl; }
+      if(log_level==-2){ mlr::errString <<" -- ERROR  ";    cerr <<mlr::errString <<endl; /*throw does not WORK!!!*/ }
+      if(log_level==-3){ mlr::errString <<" -- HARD EXIT!"; cerr <<mlr::errString <<endl; mlr::logServer().mutex.unlock(); exit(1); }
+      if(log_level<=-2) raise(SIGUSR2);
+    }
   }
   mlr::logServer().mutex.unlock();
 }

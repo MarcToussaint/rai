@@ -29,6 +29,7 @@
 #include <fstream>
 #include <typeinfo>
 #include <stdint.h>
+#include <string.h>
 #include <memory>
 
 #ifdef MLR_ROS
@@ -300,31 +301,33 @@ struct LogToken{
   std::ofstream *fil;
   LogToken(int log_level, int logCoutLevel, int logFileLevel, const char* key, const char* filename, const char* function, uint line, std::ofstream* fil)
     : log_level(log_level), logCoutLevel(logCoutLevel), logFileLevel(logFileLevel), key(key), filename(filename), function(function), line(line), fil(fil) {}
-  ~LogToken();
+  ~LogToken(); //that's where the magic happens!
   std::ostream& os(){ return msg; }
 };
 }
 //template<class T> mlr::LogToken& operator<<(mlr::LogToken& log, const T& x){ log.os() <<x;  return log; }
 
 struct Log{
-  int logFileLevel, logCoutLevel;
   const char* key;
+  int logCoutLevel, logFileLevel;
+  bool cfgFileWasRead;
   std::ofstream fil;
-  Log(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0):key(key){
-    logCoutLevel = mlr::getParameter<int>(STRING("logCoutLevel_"<<key), defaultLogCoutLevel);
-    logFileLevel = mlr::getParameter<int>(STRING("logFileLevel_"<<key), defaultLogFileLevel);
-  }
+  Log(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0)
+    : key(key), logCoutLevel(defaultLogCoutLevel), logFileLevel(defaultLogFileLevel), cfgFileWasRead(false){}
   ~Log(){ fil.close(); }
   mlr::LogToken operator()(int log_level, const char* filename, const char* function, uint line) const {
+    if(strcmp(key,"global") && !cfgFileWasRead){
+      Log *nonconst=(Log*)this;
+      nonconst->logCoutLevel = mlr::getParameter<int>(STRING("logCoutLevel_"<<key), logCoutLevel);
+      nonconst->logFileLevel = mlr::getParameter<int>(STRING("logFileLevel_"<<key), logFileLevel);
+      nonconst->cfgFileWasRead=true;
+    }
     return mlr::LogToken(log_level, logCoutLevel, logFileLevel, key, filename, function, line, (std::ofstream*)&fil);
   }
 };
 
 extern Log _log;
 
-//inline mlr::LogToken LOG(int log_level=0){ return mlr::LogToken(log_level, __FILE__, __func__, __LINE__); }
-//#define LOG(log_level) (mlr::LogToken(log_level, __FILE__, __func__, __LINE__).os())
-//#define LOG(log_level) mlr::LogToken(log_level, mlr::logFileLevel, mlr::logCoutLevel, __FILE__, __func__, __LINE__).os()
 #define LOG(log_level) _log(log_level, __FILE__, __func__, __LINE__).os()
 
 void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);

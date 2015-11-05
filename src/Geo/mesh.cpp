@@ -39,23 +39,21 @@ extern "C"{
 
 bool orsDrawWires=false;
 
-namespace ors {
-
 //==============================================================================
 //
 // Mesh code
 //
 
-Mesh::Mesh() :
+ors::Mesh::Mesh() :
     parsing_pos_start(0),
     parsing_pos_end(std::numeric_limits<long>::max())
 {};
 
-void Mesh::clear() {
+void ors::Mesh::clear() {
   V.clear(); Vn.clear(); T.clear(); Tn.clear(); C.clear(); //strips.clear();
 }
 
-void Mesh::setBox() {
+void ors::Mesh::setBox() {
   double verts[24] = {
     -.5, -.5, -.5 ,
     +.5, -.5, -.5 ,
@@ -81,7 +79,7 @@ void Mesh::setBox() {
   //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
 }
 
-void Mesh::setTetrahedron() {
+void ors::Mesh::setTetrahedron() {
   double s2=MLR_SQRT2/3., s6=sqrt(6.)/3.;
   double verts[12] = { 0., 0., 1. , 2.*s2, 0., -1./3., -s2, s6, -1./3., -s2, -s6, -1./3. };
   uint   tris [12] = { 0, 1, 2, 0, 2, 3, 0, 3, 1, 1, 3, 2 };
@@ -92,7 +90,7 @@ void Mesh::setTetrahedron() {
   //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
 }
 
-void Mesh::setOctahedron() {
+void ors::Mesh::setOctahedron() {
   double verts[18] = {
     1, 0, 0,
     -1, 0, 0,
@@ -112,7 +110,7 @@ void Mesh::setOctahedron() {
   //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
 }
 
-void Mesh::setDodecahedron() {
+void ors::Mesh::setDodecahedron() {
   double a = 1/sqrt(3.), b = sqrt((3.-sqrt(5.))/6.), c=sqrt((3.+sqrt(5.))/6.);
   double verts[60] = {
     a, a, a,
@@ -150,7 +148,7 @@ void Mesh::setDodecahedron() {
   T.reshape(36, 3);
 }
 
-void Mesh::setSphere(uint fineness) {
+void ors::Mesh::setSphere(uint fineness) {
   setOctahedron();
   for(uint k=0; k<fineness; k++) {
     subDevide();
@@ -158,7 +156,7 @@ void Mesh::setSphere(uint fineness) {
   }
 }
 
-void Mesh::setHalfSphere(uint fineness) {
+void ors::Mesh::setHalfSphere(uint fineness) {
   setOctahedron();
   V.resizeCopy(5, 3);
   T.resizeCopy(4, 3);
@@ -168,7 +166,7 @@ void Mesh::setHalfSphere(uint fineness) {
   }
 }
 
-void Mesh::setCylinder(double r, double l, uint fineness) {
+void ors::Mesh::setCylinder(double r, double l, uint fineness) {
   uint div = 4 * (1 <<fineness);
   V.resize(2*div+2, 3);
   T.resize(4*div, 3);
@@ -205,7 +203,7 @@ void Mesh::setCylinder(double r, double l, uint fineness) {
   }
 }
 
-void Mesh::setSSBox(double x, double y, double z, double r, uint fineness){
+void ors::Mesh::setSSBox(double x, double y, double z, double r, uint fineness){
   setSphere(fineness);
   scale(r);
   for(uint i=0;i<V.d0;i++){
@@ -215,7 +213,7 @@ void Mesh::setSSBox(double x, double y, double z, double r, uint fineness){
   }
 }
 
-void Mesh::setCappedCylinder(double r, double l, uint fineness) {
+void ors::Mesh::setCappedCylinder(double r, double l, uint fineness) {
   uint i;
   setSphere(fineness);
   scale(r);
@@ -225,7 +223,7 @@ void Mesh::setCappedCylinder(double r, double l, uint fineness) {
 /** @brief add triangles according to the given grid; grid has to be a 2D
   Array, the elements of which are indices referring to vertices in
   the vertex list (V) */
-void Mesh::setGrid(uint X, uint Y) {
+void ors::Mesh::setGrid(uint X, uint Y) {
   CHECK(X>1 && Y>1, "grid has to be at least 2x2");
   CHECK_EQ(V.d0,X*Y, "don't have X*Y mesh-vertices to create grid faces");
   uint i, j, k=T.d0;
@@ -240,13 +238,13 @@ void Mesh::setGrid(uint X, uint Y) {
   }
 }
 
-void Mesh::setRandom(uint vertices){
+void ors::Mesh::setRandom(uint vertices){
   V.resize(10,3);
   rndUniform(V, -1., 1.);
   makeConvexHull();
 }
 
-void Mesh::subDevide() {
+void ors::Mesh::subDevide() {
   uint v=V.d0, t=T.d0;
   V.resizeCopy(v+3*t, 3);
   uintA newT(4*t, 3);
@@ -265,26 +263,26 @@ void Mesh::subDevide() {
   T = newT;
 }
 
-void Mesh::scale(double f) {  V *= f; }
+void ors::Mesh::scale(double f) {  V *= f; }
 
-void Mesh::scale(double sx, double sy, double sz) {
+void ors::Mesh::scale(double sx, double sy, double sz) {
   uint i;
   for(i=0; i<V.d0; i++) {  V(i, 0)*=sx;  V(i, 1)*=sy;  V(i, 2)*=sz;  }
 }
 
-void Mesh::translate(double dx, double dy, double dz) {
+void ors::Mesh::translate(double dx, double dy, double dz) {
   uint i;
   for(i=0; i<V.d0; i++) {  V(i, 0)+=dx;  V(i, 1)+=dy;  V(i, 2)+=dz;  }
 }
 
-Vector Mesh::center() {
+ors::Vector ors::Mesh::center() {
   arr Vmean = sum(V,0);
   Vmean /= (double)V.d0;
   for(uint i=0; i<V.d0; i++) V[i]() -= Vmean;
   return Vector(Vmean);
 }
 
-void Mesh::box() {
+void ors::Mesh::box() {
   double x, X, y, Y, z, Z, m;
   x=X=V(0, 0);
   y=Y=V(0, 1);
@@ -304,14 +302,14 @@ void Mesh::box() {
   scale(1./m);
 }
 
-void Mesh::addMesh(const Mesh& mesh2) {
+void ors::Mesh::addMesh(const Mesh& mesh2) {
   uint n=V.d0, t=T.d0;
   V.append(mesh2.V);
   T.append(mesh2.T);
   for(; t<T.d0; t++) {  T(t, 0)+=n;  T(t, 1)+=n;  T(t, 2)+=n;  }
 }
 
-void Mesh::makeConvexHull() {
+void ors::Mesh::makeConvexHull() {
   if(!V.N) return;
 #ifndef  MLR_ORS_ONLY_BASICS
   getTriangulatedHull(T, V);
@@ -320,7 +318,7 @@ void Mesh::makeConvexHull() {
 #endif
 }
 
-void Mesh::setSSC(const ors::Mesh& m, double r, uint fineness){
+void ors::Mesh::setSSC(const ors::Mesh& m, double r, uint fineness){
   Mesh ball;
   ball.setSphere(fineness);
   ball.scale(r);
@@ -339,7 +337,7 @@ void Mesh::setSSC(const ors::Mesh& m, double r, uint fineness){
   normals of the vertices (N); average normals are averaged over
   all adjacent triangles that are in the triangle list or member of
   a strip */
-void Mesh::computeNormals() {
+void ors::Mesh::computeNormals() {
   uint i;
   Vector a, b, c;
   Tn.resize(T.d0, 3);
@@ -365,7 +363,7 @@ void Mesh::computeNormals() {
 /** @brief add triangles according to the given grid; grid has to be a 2D
   Array, the elements of which are indices referring to vertices in
   the vertex list (V) */
-/*void Mesh::gridToTriangles(const uintA &grid){
+/*void ors::Mesh::gridToTriangles(const uintA &grid){
   uint i, j, k=T.d0;
   T.resizeCopy(T.d0+2*(grid.d0-1)*(grid.d1-1), 3);
   for(i=0;i<grid.d0-1;i++) for(j=0;j<grid.d1-1;j++){
@@ -395,7 +393,7 @@ void Mesh::computeNormals() {
   the x-axis (the first index)); grid has to be a 2D Array, the
   elements of which are indices referring to vertices in the vertex
   list (V) */
-/*void Mesh::gridToStrips(const uintA& grid){
+/*void ors::Mesh::gridToStrips(const uintA& grid){
   CHECK(grid.d0>1 && grid.d1>1, "grid has to be at least 2x2");
   uint i, j, k=strips.N, l;
   strips.resizeCopy(strips.N+grid.d0-1);
@@ -421,7 +419,7 @@ void Mesh::computeNormals() {
 /** @brief add strips according to the given grid (sliced in strips along
   the x-axis (the first index)); it is assumed that the vertices in
   the list V linearly correspond to points in the XxY grid */
-/*void Mesh::gridToStrips(uint X, uint Y){
+/*void ors::Mesh::gridToStrips(uint X, uint Y){
   CHECK(X>1 && Y>1, "grid has to be at least 2x2");
   uint i, j, k=strips.N, l;
   strips.resizeCopy(strips.N+Y-1);
@@ -438,7 +436,7 @@ void Mesh::computeNormals() {
   }
 }*/
 
-void deleteZeroTriangles(Mesh& m) {
+void deleteZeroTriangles(ors::Mesh& m) {
   uintA newT;
   newT.resizeAs(m.T);
   uint i, j;
@@ -450,7 +448,7 @@ void deleteZeroTriangles(Mesh& m) {
   m.T=newT;
 }
 
-void permuteVertices(Mesh& m, uintA& p) {
+void permuteVertices(ors::Mesh& m, uintA& p) {
   CHECK_EQ(p.N,m.V.d0, "");
   uint i;
   arr x(p.N, 3);
@@ -473,7 +471,7 @@ void permuteVertices(Mesh& m, uintA& p) {
 
 /** @brief delete all void triangles (with vertex indices (0, 0, 0)) and void
   vertices (not used for triangles or strips) */
-void Mesh::deleteUnusedVertices() {
+void ors::Mesh::deleteUnusedVertices() {
   if(!V.N) return;
   uintA p;
   uintA u;
@@ -504,7 +502,7 @@ bool COMP(uint i, uint j) {
 
 /** @brief delete all void triangles (with vertex indices (0, 0, 0)) and void
   vertices (not used for triangles or strips) */
-void Mesh::fuseNearVertices(double tol) {
+void ors::Mesh::fuseNearVertices(double tol) {
   if(!V.N) return;
   uintA p;
   uint i, j;
@@ -545,7 +543,7 @@ void Mesh::fuseNearVertices(double tol) {
   cout <<"#V=" <<V.d0 <<", done" <<endl;
 }
 
-void getVertexNeighorsList(const Mesh& m, intA& Vt, intA& VT) {
+void getVertexNeighorsList(const ors::Mesh& m, intA& Vt, intA& VT) {
   uint i, j;
   Vt.resize(m.V.d0);  Vt.setZero();
   VT.resize(m.V.d0, 100);
@@ -556,7 +554,7 @@ void getVertexNeighorsList(const Mesh& m, intA& Vt, intA& VT) {
   }
 }
 
-void getTriNormals(const Mesh& m, arr& Tn) {
+void getTriNormals(const ors::Mesh& m, arr& Tn) {
   uint i;
   ors::Vector a, b, c;
   Tn.resize(m.T.d0, 3); //tri normals
@@ -568,7 +566,7 @@ void getTriNormals(const Mesh& m, arr& Tn) {
 }
 
 /// flips all faces
-void Mesh::flipFaces() {
+void ors::Mesh::flipFaces() {
   uint i, a;
   for(i=0; i<T.d0; i++) {
     a=T(i, 0);
@@ -578,7 +576,7 @@ void Mesh::flipFaces() {
 }
 
 /// check whether this is really a closed mesh, and flip inconsistent faces
-void Mesh::clean() {
+void ors::Mesh::clean() {
   uint i, j, idist=0;
   Vector a, b, c, m;
   double mdist=0.;
@@ -704,7 +702,7 @@ void Mesh::clean() {
   computeNormals();
 }
 
-void getEdgeNeighborsList(const Mesh& m, uintA& EV, uintA& Et, intA& ET) {
+void getEdgeNeighborsList(const ors::Mesh& m, uintA& EV, uintA& Et, intA& ET) {
   intA Vt, VT;
   getVertexNeighorsList(m, Vt, VT);
   
@@ -755,7 +753,7 @@ void getEdgeNeighborsList(const Mesh& m, uintA& EV, uintA& Et, intA& ET) {
        <<"\nneighs=\n" <<ET <<endl;
 }
 
-void getTriNeighborsList(const Mesh& m, uintA& Tt, intA& TT) {
+void getTriNeighborsList(const ors::Mesh& m, uintA& Tt, intA& TT) {
   intA Vt, VT;
   getVertexNeighorsList(m, Vt, VT);
   
@@ -781,7 +779,7 @@ void getTriNeighborsList(const Mesh& m, uintA& Tt, intA& TT) {
   //cout <<Tt <<TT <<endl;
 }
 
-void Mesh::skin(uint start) {
+void ors::Mesh::skin(uint start) {
   intA TT;
   uintA Tt;
   getTriNeighborsList(*this, Tt, TT);
@@ -819,13 +817,13 @@ void Mesh::skin(uint start) {
   cout <<T <<endl;
 }
 
-Vector Mesh::getMeanVertex() {
+ors::Vector ors::Mesh::getMeanVertex() {
   arr Vmean = sum(V,0);
   Vmean /= (double)V.d0;
   return Vector(Vmean);
 }
 
-double Mesh::getRadius() {
+double ors::Mesh::getRadius() {
   double r=0.;
   for(uint i=0;i<V.d0;i++) r=mlr::MAX(r, sumOfSqr(V[i]));
   return sqrt(r);
@@ -846,21 +844,21 @@ double triArea(const arr& a, const arr& b, const arr& c){
 #endif
 }
 
-double Mesh::getArea() const{
+double ors::Mesh::getArea() const{
   double A=0.;
   for(uint i=0;i<T.d0;i++) A += triArea(V[T(i,0)], V[T(i,1)], V[T(i,2)]);
   return A;
 }
 
-void Mesh::write(std::ostream& os) const {
+void ors::Mesh::write(std::ostream& os) const {
   os <<"Mesh: " <<V.d0 <<" vertices, " <<T.d0 <<" triangles" <<endl;
 }
 
-void Mesh::readFile(const char* filename) {
+void ors::Mesh::readFile(const char* filename) {
   read(FILE(filename).getIs(), filename+(strlen(filename)-3));
 }
 
-void Mesh::read(std::istream& is, const char* fileExtension) {
+void ors::Mesh::read(std::istream& is, const char* fileExtension) {
   bool loaded=false;
   if(!strcmp(fileExtension, "obj")) { readObjFile(is); loaded=true; }
   if(!strcmp(fileExtension, "off")) { readOffFile(is); loaded=true; }
@@ -870,7 +868,7 @@ void Mesh::read(std::istream& is, const char* fileExtension) {
   if(!loaded) HALT("can't read fileExtension '" <<fileExtension <<"'");
 }
 
-void Mesh::writeTriFile(const char* filename) {
+void ors::Mesh::writeTriFile(const char* filename) {
   ofstream os;
   mlr::open(os, filename);
   os <<"TRI" <<endl <<endl
@@ -882,7 +880,7 @@ void Mesh::writeTriFile(const char* filename) {
   T.write(os, " ", "\n ", "  ");
 }
 
-void Mesh::readTriFile(std::istream& is) {
+void ors::Mesh::readTriFile(std::istream& is) {
   uint i, nV, nT;
   is >>PARSE("TRI") >>nV >>nT;
   V.resize(nV, 3);
@@ -891,7 +889,7 @@ void Mesh::readTriFile(std::istream& is) {
   for(i=0; i<T.N; i++) is >>T.elem(i);
 }
 
-void Mesh::writeOffFile(const char* filename) {
+void ors::Mesh::writeOffFile(const char* filename) {
   ofstream os;
   mlr::open(os, filename);
   uint i;
@@ -900,7 +898,7 @@ void Mesh::writeOffFile(const char* filename) {
   for(i=0; i<T.d0; i++) os <<3 <<' ' <<T(i, 0) <<' ' <<T(i, 1) <<' ' <<T(i, 2) <<endl;
 }
 
-void Mesh::readOffFile(std::istream& is) {
+void ors::Mesh::readOffFile(std::istream& is) {
   uint i, k, nVertices, nFaces, nEdges;
   is >>PARSE("OFF") >>nVertices >>nFaces >>nEdges;
   CHECK(!nEdges, "can't read edges in off file");
@@ -914,7 +912,7 @@ void Mesh::readOffFile(std::istream& is) {
   }
 }
 
-void Mesh::readPlyFile(std::istream& is) {
+void ors::Mesh::readPlyFile(std::istream& is) {
   uint i, k, nVertices, nFaces;
   mlr::String str;
   is >>PARSE("ply") >>PARSE("format") >>str;
@@ -939,7 +937,7 @@ void Mesh::readPlyFile(std::istream& is) {
 }
 
 #ifdef MLR_extern_ply
-void Mesh::writePLY(const char *fn, bool bin) {
+void ors::Mesh::writePLY(const char *fn, bool bin) {
   struct PlyFace { unsigned char nverts;  int *verts; };
   struct Vertex { float x,  y,  z ;  };
   uint _nverts = V.d0;
@@ -1001,7 +999,7 @@ void Mesh::writePLY(const char *fn, bool bin) {
   free_ply(ply);
 }
 
-void Mesh::readPLY(const char *fn) {
+void ors::Mesh::readPLY(const char *fn) {
   struct PlyFace {    unsigned char nverts;  int *verts; };
   struct Vertex {    double x,  y,  z ;  };
   uint _nverts=0, _ntrigs=0;
@@ -1078,11 +1076,11 @@ void Mesh::readPLY(const char *fn) {
   V.reshape(V.N/3,3);
 }
 #else
-void Mesh::writePLY(const char *fn, bool bin) { NICO }
-void Mesh::readPLY(const char *fn) { NICO }
+void ors::Mesh::writePLY(const char *fn, bool bin) { NICO }
+void ors::Mesh::readPLY(const char *fn) { NICO }
 #endif
 
-void Mesh::readStlFile(std::istream& is) {
+void ors::Mesh::readStlFile(std::istream& is) {
   //first check if binary
   if(mlr::parse(is, "solid", true)) { //is ascii
     mlr::String name;
@@ -1143,7 +1141,7 @@ void Mesh::readStlFile(std::istream& is) {
   }
 }
 
-/*void Mesh::getOBJ(char* filename){
+/*void ors::Mesh::getOBJ(char* filename){
   if(!glm){
   glm = glmReadOBJ(filename);
   glmReverseWinding(glm);
@@ -1171,7 +1169,7 @@ char *strn(std::istream& is){
 }
 
 /** initialises the ascii-obj file "filename"*/
-void Mesh::readObjFile(std::istream& is) {
+void ors::Mesh::readObjFile(std::istream& is) {
   // make a first pass through the file to get a count of the number
   // of vertices, normals, texcoords & triangles
   uint nV, nN, nTex, nT;
@@ -1438,7 +1436,7 @@ void glDrawMesh(void *classP) {
 }
 
 /// GL routine to draw a ors::Mesh
-void Mesh::glDraw() {
+void ors::Mesh::glDraw() {
   if(!T.N){
     glDrawPointCloud(V, C);
     return;
@@ -1521,7 +1519,7 @@ void Mesh::glDraw() {
 #endif
 }
 #else //MLR_GL
-void Mesh::glDraw() { NICO }
+void ors::Mesh::glDraw() { NICO }
 void glDrawMesh(void*) { NICO }
 void glTransform(const ors::Transformation&) { NICO }
 #endif
@@ -1554,8 +1552,6 @@ void inertiaCylinder(double *I, double& mass, double density, double height, dou
   I[4]=mass/12.*(3.*r2+h2);
   I[8]=mass/2.*r2;
 }
-
-}//END of namespace
 
 
 //===========================================================================

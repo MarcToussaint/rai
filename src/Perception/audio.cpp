@@ -10,7 +10,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 #include "avutil.h"
-using namespace MLR;
+using namespace mlr;
 
 #define DEFAULT_CONTAINER "wav"
 
