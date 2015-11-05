@@ -315,11 +315,12 @@ struct Log{
   Log(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0)
     : key(key), logCoutLevel(defaultLogCoutLevel), logFileLevel(defaultLogFileLevel), cfgFileWasRead(false){}
   ~Log(){ fil.close(); }
-  mlr::LogToken operator()(int log_level, const char* filename, const char* function, uint line) {
+  mlr::LogToken operator()(int log_level, const char* filename, const char* function, uint line) const {
     if(strcmp(key,"global") && !cfgFileWasRead){
-      logCoutLevel = mlr::getParameter<int>(STRING("logCoutLevel_"<<key), logCoutLevel);
-      logFileLevel = mlr::getParameter<int>(STRING("logFileLevel_"<<key), logFileLevel);
-      cfgFileWasRead=true;
+      Log *nonconst=(Log*)this;
+      nonconst->logCoutLevel = mlr::getParameter<int>(STRING("logCoutLevel_"<<key), logCoutLevel);
+      nonconst->logFileLevel = mlr::getParameter<int>(STRING("logFileLevel_"<<key), logFileLevel);
+      nonconst->cfgFileWasRead=true;
     }
     return mlr::LogToken(log_level, logCoutLevel, logFileLevel, key, filename, function, line, (std::ofstream*)&fil);
   }
