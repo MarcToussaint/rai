@@ -146,181 +146,6 @@ Graph Node::ParentOf(){
   return G;
 }
 
-Node *readNode(Graph& containingGraph, std::istream& is, bool verbose, bool parseInfo, mlr::String prefixedKey=mlr::String()) {
-  mlr::String str;
-  StringA keys;
-  NodeL parents;
-  Node *item=NULL;
-
-  istream::pos_type is_startPos=is.tellg();
-  istream::pos_type is_lastPos=is.tellg();
-
-  if(verbose) { cout <<"\nITEM (line="<<mlr::lineCount <<")"; }
-
-#define PARSERR(x) { cerr <<"[[error in parsing Graph file (line=" <<mlr::lineCount <<"):\n"\
-                          <<"  item keys=" <<keys <<"\n  error=" <<x <<"]]"; is.clear(); }
-  
-  //-- read keys
-  if(!prefixedKey.N){
-    mlr::skip(is," \t\n\r");
-    for(;;) {
-      if(!str.read(is, " \t", " \t\n\r,;([{}=", false)) break;
-      is_lastPos=is.tellg();
-      keys.append(str);
-    }
-    //if(!keys.N) return false;
-  }else{
-    keys.append(prefixedKey);
-  }
-  
-  if(verbose) { cout <<" keys:" <<keys <<flush; }
-  
-  //-- read parents
-  char c=mlr::getNextChar(is," \t"); //don't skip new lines
-  if(c=='(') {
-    for(uint j=0;; j++) {
-      if(!str.read(is, " \t\n\r,", " \t\n\r,)", false)) break;
-      is_lastPos=is.tellg();
-      Node *e=containingGraph.getNode(str);
-      if(e) { //sucessfully found
-        parents.append(e);
-      } else { //this element is not known!!
-        int rel=0;
-        str >>rel;
-        if(rel<0 && (int)containingGraph.N+rel>=0){
-          e=containingGraph(containingGraph.N+rel);
-          parents.append(e);
-        }else{
-          PARSERR("unknown " <<j <<". parent '" <<str <<"'");
-          mlr::skip(is, NULL, ")", false);
-        }
-      }
-    }
-    mlr::parse(is, ")");
-    is_lastPos=is.tellg();
-    c=mlr::getNextChar(is," \t");
-  }
-  
-  if(verbose) { cout <<" parents:"; if(!parents.N) cout <<"none"; else listWrite(parents,cout," ","()"); cout <<flush; }
-  
-  //-- read value
-  if(c=='=' || c=='{' || c=='[' || c=='<' || c=='!') {
-    if(c=='=') c=mlr::getNextChar(is," \t");
-    is_lastPos=is.tellg();
-    if((c>='a' && c<='z') || (c>='A' && c<='Z')) { //mlr::String or boolean
-      is.putback(c);
-      str.read(is, "", " \n\r\t,;}", false);
-      if(str=="true") item = new Node_typed<bool>(containingGraph, keys, parents, new bool(true), true);
-      else if(str=="false") item = new Node_typed<bool>(containingGraph, keys, parents, new bool(false), true);
-      else item = new Node_typed<mlr::String>(containingGraph, keys, parents, new mlr::String(str), true);
-    } else if(mlr::contains("-.0123456789", c)) {  //single double
-      is.putback(c);
-      double d;
-      try { is >>d; } catch(...) PARSERR("can't parse double");
-      item = new Node_typed<double>(containingGraph, keys, parents, new double(d), true);
-    } else switch(c) {
-      case '!': { //boolean false
-        item = new Node_typed<bool>(containingGraph, keys, parents, new bool(false), true);
-      } break;
-      case '\'': { //mlr::FileToken
-        str.read(is, "", "\'", true);
-        mlr::FileToken *f = new mlr::FileToken(str, false);
-        try{
-          f->getIs(); //creates the ifstream and might throw an error
-          item = new Node_typed<mlr::FileToken>(containingGraph, keys, parents, f, true);
-        } catch(...){
-          PARSERR("kvg indicates file which does not exist -> converting to string!");
-          item = new Node_typed<mlr::String>(containingGraph, keys, parents, new mlr::String(str), true);
-          delete f;
-        }
-      } break;
-      case '\"': { //mlr::String
-        str.read(is, "", "\"", true);
-        item = new Node_typed<mlr::String>(containingGraph, keys, parents, new mlr::String(str), true);
-      } break;
-      case '[': { //arr
-        is.putback(c);
-        arr reals;
-        is >>reals;
-        item = new Node_typed<arr>(containingGraph, keys, parents, new arr(reals), true);
-      } break;
-      case '<': { //any type parser
-        str.read(is, " \t", " \t\n\r()`-=~!@#$%^&*()+[]{};'\\:|,./<>?", false);
-        //      str.read(is, " \t", " \t\n\r()`1234567890-=~!@#$%^&*()_+[]{};'\\:|,./<>?", false);
-        item = readTypeIntoNode(containingGraph, str, is);
-        if(!item) {
-          is.clear();
-          MLR_MSG("could not parse value of type '" <<str <<"' -- no such type has been registered");
-          str.read(is,"",">",false);
-          MLR_MSG("ignoring: '"<<str<<"'");
-        } else {
-          item->keys = keys;
-          item->parents = parents;
-        }
-        mlr::parse(is, ">");
-      } break;
-      case '{': { // Graph (e.g., attribute list)
-        Graph *subList = new Graph;
-        item = new Node_typed<Graph>(containingGraph, keys, parents, subList, true);
-        subList->read(is);
-        mlr::parse(is, "}");
-      } break;
-      case '(': { // referring Graph
-        Graph *refs = new Graph;
-        refs->isReferringToNodesOf = &containingGraph;
-        for(uint j=0;; j++) {
-          str.read(is, " , ", " , )", false);
-          if(!str.N) break;
-          Node *e=containingGraph.getNode(str);
-          if(e) { //sucessfully found
-            refs->NodeL::append(e);
-          } else { //this element is not known!!
-            HALT("line:" <<mlr::lineCount <<" reading item '" <<keys <<"': unknown "
-                 <<j <<"th linked element '" <<str <<"'"); //DON'T DO THIS YET
-          }
-        }
-        mlr::parse(is, ")");
-        item = new Node_typed<Graph>(containingGraph, keys, parents, refs, true);
-      } break;
-      default: { //error
-        is.putback(c);
-        PARSERR("unknown value indicator '" <<c <<"'");
-        return NULL;
-      }
-    }
-    is_lastPos=is.tellg();
-  } else { //no '=' or '{' -> boolean
-    is.putback(c);
-    item = new Node_typed<bool>(containingGraph, keys, parents, new bool(true), true);
-  }
-
-#undef PARSERR
-  if(parseInfo && item){
-    item->container.getParseInfo(item).beg=is_startPos;
-    item->container.getParseInfo(item).end=is_lastPos;
-  }
-
-  if(verbose) {
-    if(item) { cout <<" value:"; item->writeValue(cout); cout <<" FULL:"; item->write(cout); cout <<endl; }
-    else { cout <<"FAILED" <<endl; }
-  }
-  
-  if(!item){
-    cout <<"FAILED reading item with keys ";
-    keys.write(cout, " ", NULL, "()");
-    cout <<" and parents ";
-    listWrite(parents,cout," ","()");
-    cout <<endl;
-  }
-  
-  //eat the next , or ;
-  c=mlr::getNextChar(is," \n\r\t");
-  if(c==',' || c==';') {} else is.putback(c);
-  
-  return item;
-}
-
-
 NodeInitializer::NodeInitializer(const char* key){
   it = new Node_typed<bool>(G, NULL, false);
   it->keys.append(STRING(key));
@@ -390,7 +215,7 @@ Node *Graph::append(const uintA& parentIdxs) {
 
 void Graph::appendDict(const std::map<std::string, std::string>& dict){
   for(const std::pair<std::string,std::string>& p:dict){
-    Node *it = readNode(*this, STRING('='<<p.second), false, false, mlr::String(p.first));
+    Node *it = readNode(STRING('='<<p.second), false, false, mlr::String(p.first));
     if(!it) MLR_MSG("failed to read dict entry <" <<p.first <<',' <<p.second <<'>');
   }
 }
@@ -559,7 +384,7 @@ void Graph::read(std::istream& is, bool parseInfo) {
   for(;;) {
     char c=mlr::peerNextChar(is, " \n\r\t,");
     if(!is.good() || c=='}') { is.clear(); break; }
-    Node *it = readNode(*this, is, false, parseInfo);
+    Node *it = readNode(is, false, parseInfo);
     if(!it) break;
     if(it->keys.N==1 && it->keys.last()=="Include"){
       read(it->getValue<mlr::FileToken>()->getIs(true));
@@ -570,12 +395,15 @@ void Graph::read(std::istream& is, bool parseInfo) {
     }
   }
   if(parseInfo) getParseInfo(NULL).end=is.tellg();
+
   //-- merge all Merge keys
   NodeL merges = getNodes("Merge");
   for(Node *m:merges){
     m->keys.remove(0);
     merge(m);
   }
+
+  //-- delete all ChDir nodes in reverse order
   for(uint i=N;i--;){
     Node *it=elem(i);
     if(it->keys.N==1 && it->keys(0)=="ChDir"){
@@ -583,6 +411,181 @@ void Graph::read(std::istream& is, bool parseInfo) {
       delete it;
     }
   }
+}
+
+
+Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::String prefixedKey) {
+  mlr::String str;
+  StringA keys;
+  NodeL parents;
+  Node *item=NULL;
+
+  istream::pos_type is_startPos=is.tellg();
+  istream::pos_type is_lastPos=is.tellg();
+
+  if(verbose) { cout <<"\nITEM (line="<<mlr::lineCount <<")"; }
+
+#define PARSERR(x) { cerr <<"[[error in parsing Graph file (line=" <<mlr::lineCount <<"):\n"\
+                          <<"  item keys=" <<keys <<"\n  error=" <<x <<"]]"; is.clear(); }
+
+  //-- read keys
+  if(!prefixedKey.N){
+    mlr::skip(is," \t\n\r");
+    for(;;) {
+      if(!str.read(is, " \t", " \t\n\r,;([{}=", false)) break;
+      is_lastPos=is.tellg();
+      keys.append(str);
+    }
+    //if(!keys.N) return false;
+  }else{
+    keys.append(prefixedKey);
+  }
+
+  if(verbose) { cout <<" keys:" <<keys <<flush; }
+
+  //-- read parents
+  char c=mlr::getNextChar(is," \t"); //don't skip new lines
+  if(c=='(') {
+    for(uint j=0;; j++) {
+      if(!str.read(is, " \t\n\r,", " \t\n\r,)", false)) break;
+      is_lastPos=is.tellg();
+      Node *e=this->getNode(str);
+      if(e) { //sucessfully found
+        parents.append(e);
+      } else { //this element is not known!!
+        int rel=0;
+        str >>rel;
+        if(rel<0 && (int)this->N+rel>=0){
+          e=elem(this->N+rel);
+          parents.append(e);
+        }else{
+          PARSERR("unknown " <<j <<". parent '" <<str <<"'");
+          mlr::skip(is, NULL, ")", false);
+        }
+      }
+    }
+    mlr::parse(is, ")");
+    is_lastPos=is.tellg();
+    c=mlr::getNextChar(is," \t");
+  }
+
+  if(verbose) { cout <<" parents:"; if(!parents.N) cout <<"none"; else listWrite(parents,cout," ","()"); cout <<flush; }
+
+  //-- read value
+  if(c=='=' || c=='{' || c=='[' || c=='<' || c=='!') {
+    if(c=='=') c=mlr::getNextChar(is," \t");
+    is_lastPos=is.tellg();
+    if((c>='a' && c<='z') || (c>='A' && c<='Z')) { //mlr::String or boolean
+      is.putback(c);
+      str.read(is, "", " \n\r\t,;}", false);
+      if(str=="true") item = new Node_typed<bool>(*this, keys, parents, new bool(true), true);
+      else if(str=="false") item = new Node_typed<bool>(*this, keys, parents, new bool(false), true);
+      else item = new Node_typed<mlr::String>(*this, keys, parents, new mlr::String(str), true);
+    } else if(mlr::contains("-.0123456789", c)) {  //single double
+      is.putback(c);
+      double d;
+      try { is >>d; } catch(...) PARSERR("can't parse double");
+      item = new Node_typed<double>(*this, keys, parents, new double(d), true);
+    } else switch(c) {
+      case '!': { //boolean false
+        item = new Node_typed<bool>(*this, keys, parents, new bool(false), true);
+      } break;
+      case '\'': { //mlr::FileToken
+        str.read(is, "", "\'", true);
+        mlr::FileToken *f = new mlr::FileToken(str, false);
+        try{
+          f->getIs(); //creates the ifstream and might throw an error
+          item = new Node_typed<mlr::FileToken>(*this, keys, parents, f, true);
+        } catch(...){
+          PARSERR("kvg indicates file which does not exist -> converting to string!");
+          item = new Node_typed<mlr::String>(*this, keys, parents, new mlr::String(str), true);
+          delete f;
+        }
+      } break;
+      case '\"': { //mlr::String
+        str.read(is, "", "\"", true);
+        item = new Node_typed<mlr::String>(*this, keys, parents, new mlr::String(str), true);
+      } break;
+      case '[': { //arr
+        is.putback(c);
+        arr reals;
+        is >>reals;
+        item = new Node_typed<arr>(*this, keys, parents, new arr(reals), true);
+      } break;
+      case '<': { //any type parser
+        str.read(is, " \t", " \t\n\r()`-=~!@#$%^&*()+[]{};'\\:|,./<>?", false);
+        //      str.read(is, " \t", " \t\n\r()`1234567890-=~!@#$%^&*()_+[]{};'\\:|,./<>?", false);
+        item = readTypeIntoNode(*this, str, is);
+        if(!item) {
+          is.clear();
+          MLR_MSG("could not parse value of type '" <<str <<"' -- no such type has been registered");
+          str.read(is,"",">",false);
+          MLR_MSG("ignoring: '"<<str<<"'");
+        } else {
+          item->keys = keys;
+          item->parents = parents;
+        }
+        mlr::parse(is, ">");
+      } break;
+      case '{': { // Graph (e.g., attribute list)
+        Graph *subList = new Graph;
+        item = new Node_typed<Graph>(*this, keys, parents, subList, true);
+        subList->read(is);
+        mlr::parse(is, "}");
+      } break;
+      case '(': { // referring Graph
+        Graph *refs = new Graph;
+        refs->isReferringToNodesOf = this;
+        for(uint j=0;; j++) {
+          str.read(is, " , ", " , )", false);
+          if(!str.N) break;
+          Node *e=this->getNode(str);
+          if(e) { //sucessfully found
+            refs->NodeL::append(e);
+          } else { //this element is not known!!
+            HALT("line:" <<mlr::lineCount <<" reading item '" <<keys <<"': unknown "
+                 <<j <<"th linked element '" <<str <<"'"); //DON'T DO THIS YET
+          }
+        }
+        mlr::parse(is, ")");
+        item = new Node_typed<Graph>(*this, keys, parents, refs, true);
+      } break;
+      default: { //error
+        is.putback(c);
+        PARSERR("unknown value indicator '" <<c <<"'");
+        return NULL;
+      }
+    }
+    is_lastPos=is.tellg();
+  } else { //no '=' or '{' -> boolean
+    is.putback(c);
+    item = new Node_typed<bool>(*this, keys, parents, new bool(true), true);
+  }
+
+#undef PARSERR
+  if(parseInfo && item){
+    item->container.getParseInfo(item).beg=is_startPos;
+    item->container.getParseInfo(item).end=is_lastPos;
+  }
+
+  if(verbose) {
+    if(item) { cout <<" value:"; item->writeValue(cout); cout <<" FULL:"; item->write(cout); cout <<endl; }
+    else { cout <<"FAILED" <<endl; }
+  }
+
+  if(!item){
+    cout <<"FAILED reading item with keys ";
+    keys.write(cout, " ", NULL, "()");
+    cout <<" and parents ";
+    listWrite(parents,cout," ","()");
+    cout <<endl;
+  }
+
+  //eat the next , or ;
+  c=mlr::getNextChar(is," \n\r\t");
+  if(c==',' || c==';') {} else is.putback(c);
+
+  return item;
 }
 
 void Graph::write(std::ostream& os, const char *ELEMSEP, const char *delim) const {

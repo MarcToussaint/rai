@@ -166,6 +166,7 @@ struct Graph : NodeL {
   ParseInfo& getParseInfo(Node *it);
   
   void read(std::istream& is, bool parseInfo=false);
+  Node* readNode(std::istream& is, bool verbose=false, bool parseInfo=false, mlr::String prefixedKey=mlr::String()); //used only internally..
   void write(std::ostream& os=std::cout, const char *ELEMSEP="\n", const char *delim=NULL) const;
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0);
   void writeParseInfo(std::ostream& os);
