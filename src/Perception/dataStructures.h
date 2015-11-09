@@ -43,12 +43,12 @@ struct ArrCloudView:Primitive{
   void glDraw();
 };
 
-struct DisplayPrimitives{
+struct DisplayPrimitives : GLDrawer{
   mlr::Array<Primitive*> P;
   ors::KinematicWorld G;
   arr pc[2];
 
-  void glDraw();
+  void glDraw(struct OpenGL&);
 };
 
 #endif
