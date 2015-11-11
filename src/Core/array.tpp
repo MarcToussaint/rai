@@ -1378,7 +1378,8 @@ template<class T> void mlr::Array<T>::takeOver(mlr::Array<T>& a) {
 
 template<class T> void mlr::Array<T>::swap(Array<T>& a) {
   CHECK(!a.reference, "can't swap with a reference");
-  if(N!=a.N) resizeAs(a);
+  CHECK_EQ(N, a.N, "swap only works for equal sized memories");
+//  if(N!=a.N) resizeAs(a);
   T* p_tmp = p;
   p=a.p;
   a.p=p_tmp;

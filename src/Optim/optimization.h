@@ -61,7 +61,7 @@ extern const char* TermTypeString[];
 typedef mlr::Array<TermType> TermTypeA;
 extern TermTypeA& NoTermTypeA;
 
-typedef std::function<void(arr& phi, arr& J, TermTypeA& tt, const arr& x)> ConstrainedProblemMix;
+typedef std::function<void(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x)> ConstrainedProblem;
 
 
 /// functions \f$ \phi_t:(x_{t-k},..,x_t) \mapsto y\in\mathbb{R}^{m_t} \f$ over a chain \f$x_0,..,x_T\f$ of variables
@@ -96,7 +96,7 @@ struct KOrderMarkovFunction {
 // checks, evaluation
 //
 
-bool checkJacobianCP(const ConstrainedProblemMix &P, const arr& x, double tolerance);
+bool checkJacobianCP(const ConstrainedProblem &P, const arr& x, double tolerance);
 bool checkDirectionalGradient(const ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction &f, const arr& x, const arr& delta, double tolerance);
 

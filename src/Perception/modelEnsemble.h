@@ -4,7 +4,7 @@
 #include <Algo/minEigModel.h>
 #include <Gui/opengl.h>
 
-struct ModelEnsemble :OpenGL::GLDrawer{
+struct ModelEnsemble :GLDrawer{
   mlr::Array<MinEigModel*> models;
 
   arr vert;

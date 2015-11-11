@@ -416,7 +416,7 @@ double d_eqConstraintCost(double h, double margin, double power){
   (probably in micro second resolution) -- Windows checked! */
 double clockTime(bool today) {
 #ifndef MLR_TIMEB
-  static timespec ts;
+  timespec ts;
   clock_gettime(CLOCK_REALTIME, &ts);
   if(today) ts.tv_sec = ts.tv_sec%86400; //modulo TODAY
   return ((double)(ts.tv_sec) + 1e-9d*(double)(ts.tv_nsec));
@@ -450,7 +450,7 @@ double realTime() {
   processor time) -- Windows checked! */
 double cpuTime() {
 #ifndef MLR_TIMEB
-  static tms t; times(&t);
+  tms t; times(&t);
   return ((double)t.tms_utime)/sysconf(_SC_CLK_TCK);
 #else
   return ((double)clock())/CLOCKS_PER_SEC; //MSVC: CLOCKS_PER_SEC=1000
@@ -462,7 +462,7 @@ double cpuTime() {
   -- not implemented for Windows! */
 double sysTime() {
 #ifndef MLR_TIMEB
-  static tms t; times(&t);
+  tms t; times(&t);
   return ((double)(t.tms_stime))/sysconf(_SC_CLK_TCK);
 #else
   HALT("sysTime() is not implemented for Windows!");
@@ -474,7 +474,7 @@ double sysTime() {
   as cpuTime + sysTime) -- not implemented for Windows! */
 double totalTime() {
 #ifndef MLR_TIMEB
-  static tms t; times(&t);
+  tms t; times(&t);
   return ((double)(t.tms_utime+t.tms_stime))/sysconf(_SC_CLK_TCK);
 #else
   HALT("totalTime() is not implemented for Windows!");
@@ -679,16 +679,16 @@ mlr::LogToken::~LogToken(){
   }
   if(logCoutLevel>=log_level){
     if(log_level>=0) std::cout <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg <<endl;
-  }
-  if(log_level<0){
-    mlr::errString.clear() <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg;
+    if(log_level<0){
+      mlr::errString.clear() <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg;
 #ifdef MLR_ROS
-    ROS_INFO("MLR-MSG: %s",mlr::errString.p);
+      ROS_INFO("MLR-MSG: %s",mlr::errString.p);
 #endif
-    if(log_level==-1){ mlr::errString <<" -- WARNING";    cout <<mlr::errString <<endl; }
-    if(log_level==-2){ mlr::errString <<" -- ERROR  ";    cerr <<mlr::errString <<endl; /*throw does not WORK!!!*/ }
-    if(log_level==-3){ mlr::errString <<" -- HARD EXIT!"; cerr <<mlr::errString <<endl; mlr::logServer().mutex.unlock(); exit(1); }
-    if(log_level<=-2) raise(SIGUSR2);
+      if(log_level==-1){ mlr::errString <<" -- WARNING";    cout <<mlr::errString <<endl; }
+      if(log_level==-2){ mlr::errString <<" -- ERROR  ";    cerr <<mlr::errString <<endl; /*throw does not WORK!!!*/ }
+      if(log_level==-3){ mlr::errString <<" -- HARD EXIT!"; cerr <<mlr::errString <<endl; mlr::logServer().mutex.unlock(); exit(1); }
+      if(log_level<=-2) raise(SIGUSR2);
+    }
   }
   mlr::logServer().mutex.unlock();
 }

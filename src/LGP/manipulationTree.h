@@ -3,6 +3,11 @@
 #include <Ors/ors.h>
 #include <FOL/fol_mcts_world.h>
 #include "LGP.h"
+#include <FOL/fol.h>
+#include <Motion/komo.h>
+
+struct ManipulationTree_Node;
+typedef mlr::Array<ManipulationTree_Node*> ManipulationTree_NodeL;
 
 //===========================================================================
 
@@ -20,6 +25,7 @@ struct ManipulationTree_Node{
   ors::KinematicWorld kinematics; ///< actual kinematics after action (includes all previous switches)
 
   //-- results of effective pose optimization
+  Graph *poseProblem;
   ors::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
   arr effPose;
   double effPoseCost;
@@ -38,25 +44,67 @@ struct ManipulationTree_Node{
 
   ///child node creation
   ManipulationTree_Node(ManipulationTree_Node *parent, FOL_World::Handle& a)
-    : parent(parent), fol(parent->fol), kinematics(parent->kinematics), effKinematics(kinematics), effPoseReward(0.){
+    : parent(parent), fol(parent->fol), kinematics(parent->kinematics), effKinematics(parent->effKinematics), effPoseReward(0.){
     s=parent->s+1;
     parent->children.append(this);
     fol.setState(parent->folState);
-    fol.transition(a);
+    if(a){
+      fol.transition(a);
+    }else{
+      LOG(-1) <<"this doesn't make sense";
+    }
     folState = fol.getState();
     decision = a;
   }
 
-  void dump(int level=0);
+  void write(ostream& os=cout) const;
+
   void expand(){
     fol.setState(folState);
     auto actions = fol.get_actions();
     for(FOL_World::Handle& a:actions){
-      cout <<"  DECISION: " <<*a <<endl;
+      cout <<"  EXPAND DECISION: " <<*a <<endl;
       new ManipulationTree_Node(this, a);
     }
   }
+
+  void solvePoseProblem(){
+    Node *n = new Node_typed<Graph>(fol.KB, {"PoseProblem"}, {folState->isNodeOfParentGraph}, new Graph, true);
+    poseProblem = &n->graph();
+    poseProblem->copy(*folState, &fol.KB);
+    NodeL komoRules = fol.KB.getNodes("EffectiveKinematicsRule");
+    listWrite(komoRules, cout, "\n"); cout <<endl;
+    forwardChaining_FOL(*poseProblem, komoRules/*, NULL, NoGraph, 5*/);
+    cout <<"POSE PROBLEM:" <<*poseProblem <<endl;
+//    KOMO komo(*poseProblem);
+    MotionProblem problem(effKinematics, false);
+    problem.setTiming(0, 1.);
+    problem.k_order=0;
+    problem.parseTasks(*poseProblem);
+//    problem.reportFull();
+
+    for(ors::KinematicSwitch *sw: problem.switches)
+      if(sw->timeOfApplication==0) sw->apply(effKinematics);
+
+    arr x=problem.x0;
+    rndGauss(x, .1, true);
+    OptConstrained opt(x, NoArr, problem.InvKinProblem(), OPT(verbose=0));
+    opt.run();
+
+//    problem.reportFull();
+//    problem.costReport();
+//    problem.world.gl().watch();
+//    effKinematics.setJointState(problem.x0);
+
+    for(ors::KinematicSwitch *sw: problem.switches)
+      if(sw->timeOfApplication==1) sw->apply(effKinematics);
+    effKinematics.topSort();
+    effKinematics.checkConsistency();
+
+  }
 };
+
+inline ostream& operator<<(ostream& os, const ManipulationTree_Node& n){ n.write(os); return os; }
 
 //===========================================================================
 

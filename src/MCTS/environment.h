@@ -59,5 +59,6 @@ struct MCTS_Environment {
     virtual double get_info_value(InfoTag tag) const = 0;
 };
 
+extern std::shared_ptr<const MCTS_Environment::SAO> NoHandle;
 
 inline std::ostream& operator<<(std::ostream& os, const MCTS_Environment::SAO& x){ x.write(os); return os; }
