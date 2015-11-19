@@ -232,7 +232,7 @@ public: //driver dependent methods
   void processEvents();
   void enterEventLoop();
   void exitEventLoop();
-  void renderInBack(bool captureImg=true, bool captureDepth=false);
+  void renderInBack(bool captureImg=true, bool captureDepth=false, int w=-1, int h=-1);
 #if !defined MLR_MSVC && !defined MLR_QTGL
   Display* xdisplay();
   Drawable xdraw();

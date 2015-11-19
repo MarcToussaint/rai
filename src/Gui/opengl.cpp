@@ -244,8 +244,9 @@ void glDrawText(const char* txt, float x, float y, float z) {
         if(font==GLUT_BITMAP_HELVETICA_12) font=GLUT_BITMAP_HELVETICA_18;
         else font=GLUT_BITMAP_HELVETICA_12;
         break;
-      default:
-        glutBitmapCharacter(font, *txt);
+      default:{
+//        glutBitmapCharacter(font, *txt);
+      }
     }
     txt++;
   }
@@ -1755,11 +1756,13 @@ struct XBackgroundContext{
 
 Singleton<XBackgroundContext> xBackgroundContext;
 
-void OpenGL::renderInBack(bool _captureImg, bool _captureDep){
+void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
+  if(w<0) w=width;
+  if(h<0) h=height;
 
   xBackgroundContext().makeCurrent();
 
-  CHECK_EQ(width%4,0,"should be devidable by 4!!");
+  CHECK_EQ(w%4,0,"should be devidable by 4!!");
 
   isUpdating.waitForValueEq(0);
   isUpdating.setValue(1);
@@ -1770,11 +1773,11 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep){
     glewInit();
     glGenRenderbuffers(1, &rboColor);  // Create a new renderbuffer unique name.
     glBindRenderbuffer(GL_RENDERBUFFER, rboColor);  // Set it as the current.
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height); // Sets storage type for currently bound renderbuffer.
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, w, h); // Sets storage type for currently bound renderbuffer.
     // Depth renderbuffer.
     glGenRenderbuffers(1, &rboDepth);
     glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
     // Framebuffer.
     // Create a framebuffer and a renderbuffer object.
     // You need to delete them when program exits.
@@ -1840,20 +1843,20 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep){
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
 
   //-- draw!
-  Draw(width, height);
+  Draw(w, h);
   glFlush();
 
   //-- read
   if(_captureImg){
-    captureImage.resize(height, width, 3);
+    captureImage.resize(h, w, 3);
     //  glReadBuffer(GL_BACK);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
-    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
+    glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
   }
   if(_captureDep){
-    captureDepth.resize(height, width);
+    captureDepth.resize(h, w);
     glReadBuffer(GL_DEPTH_ATTACHMENT);
-    glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, captureDepth.p);
+    glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, captureDepth.p);
   }
 
   // Return to onscreen rendering:

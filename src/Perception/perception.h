@@ -14,6 +14,7 @@
 #include <Gui/opengl.h>
 #include <map>
 
+
 //===========================================================================
 //
 // fwd declarations
@@ -180,6 +181,7 @@ struct ImageViewer:Module{
   struct sImageViewer *s;
   Access_typed<byteA> img;
   ImageViewer(const char* img_name="rgb") : Module(STRING("ImageViewer_"<<img_name)), img(this, img_name, true){}
+  ~ImageViewer(){}
   void open();
   void step();
   void close();
@@ -254,6 +256,38 @@ struct CannyFilter:Module{
   void open();
   void step();
   void close();
+};
+
+struct OrsViewer:Module{
+  ACCESSlisten(ors::KinematicWorld, modelWorld)
+  Access_typed<byteA> modelCameraView;
+  Access_typed<byteA> modelDepthView;
+  ors::KinematicWorld copy;
+
+  bool computeCameraView;
+  OrsViewer()
+    : Module("OrsViewer"),
+      modelCameraView(this, "modelCameraView"),
+      modelDepthView(this, "modelDepthView"),
+      computeCameraView(true){}
+  ~OrsViewer(){}
+  void open() {}
+  void step();
+  void close() {}
+};
+
+struct ComputeCameraView:Module{
+  ACCESSlisten(ors::KinematicWorld, modelWorld)
+  Access_typed<byteA> cameraView;
+  OpenGL gl;
+  uint skipFrames, frame;
+  ComputeCameraView(uint skipFrames=0)
+    : Module("OrsViewer"),
+      cameraView(this, "cameraView"),
+      skipFrames(skipFrames), frame(0){}
+  void open();
+  void step();
+  void close() {}
 };
 
 //BEGIN_MODULE(ImageViewer)      ACCESS(byteA, img)       END_MODULE()
