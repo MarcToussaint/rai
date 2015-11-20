@@ -33,75 +33,18 @@ struct ManipulationTree_Node{
 
   //-- results of full path optimization
   arr path;
-  double pathCosts;
+  double pathCost;
 
   ///root node init
-  ManipulationTree_Node(LogicGeometricProgram& lgp)
-    : parent(NULL), s(0), fol(lgp.fol_root), kinematics(lgp.world_root), effKinematics(kinematics), effPoseReward(0.){
-    fol.generateStateTree=true;
-    folState = fol.getState();
-  }
+  ManipulationTree_Node(LogicGeometricProgram& lgp);
 
   ///child node creation
-  ManipulationTree_Node(ManipulationTree_Node *parent, FOL_World::Handle& a)
-    : parent(parent), fol(parent->fol), kinematics(parent->kinematics), effKinematics(parent->effKinematics), effPoseReward(0.){
-    s=parent->s+1;
-    parent->children.append(this);
-    fol.setState(parent->folState);
-    if(a){
-      fol.transition(a);
-    }else{
-      LOG(-1) <<"this doesn't make sense";
-    }
-    folState = fol.getState();
-    decision = a;
-  }
+  ManipulationTree_Node(ManipulationTree_Node *parent, FOL_World::Handle& a);
+
+  void expand();
+  void solvePoseProblem();
 
   void write(ostream& os=cout) const;
-
-  void expand(){
-    fol.setState(folState);
-    auto actions = fol.get_actions();
-    for(FOL_World::Handle& a:actions){
-      cout <<"  EXPAND DECISION: " <<*a <<endl;
-      new ManipulationTree_Node(this, a);
-    }
-  }
-
-  void solvePoseProblem(){
-    Node *n = new Node_typed<Graph>(fol.KB, {"PoseProblem"}, {folState->isNodeOfParentGraph}, new Graph, true);
-    poseProblem = &n->graph();
-    poseProblem->copy(*folState, &fol.KB);
-    NodeL komoRules = fol.KB.getNodes("EffectiveKinematicsRule");
-    listWrite(komoRules, cout, "\n"); cout <<endl;
-    forwardChaining_FOL(*poseProblem, komoRules/*, NULL, NoGraph, 5*/);
-    cout <<"POSE PROBLEM:" <<*poseProblem <<endl;
-//    KOMO komo(*poseProblem);
-    MotionProblem problem(effKinematics, false);
-    problem.setTiming(0, 1.);
-    problem.k_order=0;
-    problem.parseTasks(*poseProblem);
-//    problem.reportFull();
-
-    for(ors::KinematicSwitch *sw: problem.switches)
-      if(sw->timeOfApplication==0) sw->apply(effKinematics);
-
-    arr x=problem.x0;
-    rndGauss(x, .1, true);
-    OptConstrained opt(x, NoArr, problem.InvKinProblem(), OPT(verbose=0));
-    opt.run();
-
-//    problem.reportFull();
-//    problem.costReport();
-//    problem.world.gl().watch();
-//    effKinematics.setJointState(problem.x0);
-
-    for(ors::KinematicSwitch *sw: problem.switches)
-      if(sw->timeOfApplication==1) sw->apply(effKinematics);
-    effKinematics.topSort();
-    effKinematics.checkConsistency();
-
-  }
 };
 
 inline ostream& operator<<(ostream& os, const ManipulationTree_Node& n){ n.write(os); return os; }
