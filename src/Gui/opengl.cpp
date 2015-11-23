@@ -245,7 +245,7 @@ void glDrawText(const char* txt, float x, float y, float z) {
         else font=GLUT_BITMAP_HELVETICA_12;
         break;
       default:{
-//        glutBitmapCharacter(font, *txt);
+        glutBitmapCharacter(font, *txt);
       }
     }
     txt++;

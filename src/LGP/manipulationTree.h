@@ -12,6 +12,7 @@ typedef mlr::Array<ManipulationTree_Node*> ManipulationTree_NodeL;
 //===========================================================================
 
 struct ManipulationTree_Node{
+  LogicGeometricProgram &lgp;
   ManipulationTree_Node *parent;
   mlr::Array<ManipulationTree_Node*> children;
   uint s;               ///< depth/step of this node
@@ -20,18 +21,21 @@ struct ManipulationTree_Node{
   FOL_World& fol;
   FOL_World::Handle decision;
   Graph *folState; ///< the symbolic state after action
+  Node  *folDecision; ///< the predicate in the folState that represents the decision
 
   //  ors::KinematicSwitch sw; ///< the kinematic switch(es) that this action implies
   ors::KinematicWorld kinematics; ///< actual kinematics after action (includes all previous switches)
 
   //-- results of effective pose optimization
-  Graph *poseProblem;
+  Graph *poseProblemSpecs;
   ors::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
   arr effPose;
   double effPoseCost;
   double effPoseReward;
 
   //-- results of full path optimization
+  MotionProblem pathProblem;
+  Graph *pathProblemSpecs;
   arr path;
   double pathCost;
 
@@ -39,10 +43,11 @@ struct ManipulationTree_Node{
   ManipulationTree_Node(LogicGeometricProgram& lgp);
 
   ///child node creation
-  ManipulationTree_Node(ManipulationTree_Node *parent, FOL_World::Handle& a);
+  ManipulationTree_Node(LogicGeometricProgram& lgp, ManipulationTree_Node *parent, FOL_World::Handle& a);
 
   void expand();
   void solvePoseProblem();
+  void solvePathProblem(uint microSteps);
 
   void write(ostream& os=cout) const;
 };
