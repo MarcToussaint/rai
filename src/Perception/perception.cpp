@@ -663,22 +663,27 @@ void openGlLock();
 void openGlUnlock();
 
 void OrsViewer::step(){
-  openGlLock();
+  copy.gl().lock.writeLock();
   copy = modelWorld.get();
-  openGlUnlock();
+  copy.gl().lock.unlock();
   copy.gl().update(NULL, false, false, true);
   mlr::wait(.03);
-  if(computeCameraView){
-    openGlLock();
-    ors::Camera cam = copy.gl().camera;
-    copy.gl().camera.setKinect();
-    copy.gl().camera.X = copy.getShapeByName("endeffKinect")->X * copy.gl().camera.X;
-//    copy.gl().renderInBack(true, true, 580, 480);
-    copy.glGetMasks(580, 480, true);
-    modelCameraView.set() = copy.gl().captureImage;
-    modelDepthView.set() = copy.gl().captureDepth;
-    copy.gl().camera = cam;
-    openGlUnlock();
+  if(false && computeCameraView){
+    ors::Shape *kinectShape = copy.getShapeByName("endeffKinect");
+    if(kinectShape){ //otherwise 'copy' is not up-to-date yet
+//      openGlLock();
+      copy.gl().lock.writeLock();
+      ors::Camera cam = copy.gl().camera;
+      copy.gl().camera.setKinect();
+      copy.gl().camera.X = kinectShape->X * copy.gl().camera.X;
+      //    copy.gl().renderInBack(true, true, 580, 480);
+      copy.glGetMasks(580, 480, true);
+      modelCameraView.set() = copy.gl().captureImage;
+      modelDepthView.set() = copy.gl().captureDepth;
+      copy.gl().camera = cam;
+      copy.gl().lock.unlock();
+//      openGlUnlock();
+    }
   }
 }
 

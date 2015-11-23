@@ -187,7 +187,7 @@ struct OpenGL {
   void setViewPort(uint view, double l, double r, double b, double t);
   
   /// @name the core draw routines (actually only for internal use)
-  void Draw(int w, int h, ors::Camera *cam=NULL);
+  void Draw(int w, int h, ors::Camera *cam=NULL, bool ignoreLock=false);
   void Select();
   
   /// @name showing, updating, and watching

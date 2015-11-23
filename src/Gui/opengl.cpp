@@ -245,7 +245,7 @@ void glDrawText(const char* txt, float x, float y, float z) {
         else font=GLUT_BITMAP_HELVETICA_12;
         break;
       default:{
-        glutBitmapCharacter(font, *txt);
+//        glutBitmapCharacter(font, *txt);
       }
     }
     txt++;
@@ -1041,9 +1041,10 @@ void OpenGL::clear() {
   keyCalls.clear();
 }
 
-void OpenGL::Draw(int w, int h, ors::Camera *cam) {
+void OpenGL::Draw(int w, int h, ors::Camera *cam, bool ignoreLock) {
 #ifdef MLR_GL
   openglAccess().lock();
+  if(!ignoreLock) lock.readLock(); //now accessing user data
 
   //clear bufferer
   GLint viewport[4] = {0, 0, w, h};
@@ -1071,7 +1072,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   //select mode?
   GLint mode;
   glGetIntegerv(GL_RENDER_MODE, &mode);
-  
+
   //projection
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -1131,9 +1132,6 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   //std color: black:
   glColor(.3, .3, .5);
   
-  lock.readLock(); //now accessing user data
-  //cout <<"LOCK draw" <<endl;
-
   //draw central view
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -1189,7 +1187,6 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   }
   
   //cout <<"UNLOCK draw" <<endl;
-  lock.unlock(); //now de-accessing user data
 
   if(captureImg){
     captureImage.resize(h, w, 3);
@@ -1208,7 +1205,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   if(s!=1) MLR_MSG("OpenGL name stack has not depth 1 (pushs>pops) in DRAW mode:" <<s);
   //CHECK(s<=1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
   
-  //this->s->endGlContext();
+  if(!ignoreLock) lock.unlock(); //now de-accessing user data
   openglAccess().unlock();
 #endif
 }
@@ -1847,7 +1844,7 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
 
   //-- draw!
-  Draw(w, h);
+  Draw(w, h, NULL, true);
   glFlush();
 
   //-- read
