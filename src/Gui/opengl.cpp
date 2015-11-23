@@ -1689,6 +1689,7 @@ void OpenGL::Motion(int _x, int _y) {
 //
 
 struct XBackgroundContext{
+#ifdef MLR_GL
   typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
   typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 
@@ -1751,12 +1752,13 @@ struct XBackgroundContext{
       }
     }
   }
+#endif
 };
 
 Singleton<XBackgroundContext> xBackgroundContext;
 
 void OpenGL::renderInBack(bool _captureImg, bool _captureDep){
-
+#ifdef MLR_GL
   xBackgroundContext().makeCurrent();
 
   CHECK_EQ(width%4,0,"should be devidable by 4!!");
@@ -1861,6 +1863,7 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep){
 
   isUpdating.setValue(0);
 //  s->endGlContext();
+#endif
 }
 
 //===========================================================================
