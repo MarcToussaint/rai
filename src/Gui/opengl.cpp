@@ -1693,15 +1693,16 @@ struct XBackgroundContext{
   typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
   typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 
-  glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
-  glXMakeContextCurrentARBProc glXMakeContextCurrentARB = 0;
+  glXCreateContextAttribsARBProc glXCreateContextAttribsARB;
+  glXMakeContextCurrentARBProc glXMakeContextCurrentARB;
   Display* dpy;
   int fbcount;
   GLXFBConfig* fbc;
   GLXContext ctx;
   GLXPbuffer pbuf;
 
-  XBackgroundContext(){
+  XBackgroundContext()
+    : glXCreateContextAttribsARB(0), glXMakeContextCurrentARB(0){
     static int visual_attribs[] = { None };
     int context_attribs[] = { GLX_CONTEXT_MAJOR_VERSION_ARB, 3, GLX_CONTEXT_MINOR_VERSION_ARB, 0, None };
 
