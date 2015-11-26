@@ -146,7 +146,7 @@ Graph Node::ParentOf(){
   return G;
 }
 
-NodeInitializer::NodeInitializer(const char* key){
+Nod::Nod(const char* key){
   it = new Node_typed<bool>(G, NULL, false);
   it->keys.append(STRING(key));
 }
@@ -176,16 +176,8 @@ Graph::Graph(const std::map<std::string, std::string>& dict):s(NULL), isReferrin
   appendDict(dict);
 }
 
-Graph::Graph(std::initializer_list<NodeInitializer> list):s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL)  {
-  for(const NodeInitializer& ic:list){
-    Node *clone = ic.it->newClone(*this); //this appends sequentially clones of all items to 'this'
-    for(const mlr::String& s:ic.parents){
-      Node *p = getNode(s);
-      CHECK(p,"parent " <<p <<" of " <<*clone <<" does not exist!");
-      clone->parents.append(p);
-      p->parentOf.append(clone);
-    }
-  }
+Graph::Graph(std::initializer_list<Nod> list):s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL)  {
+  for(const Nod& ni:list) append(ni);
 }
 
 Graph::Graph(const Graph& G):s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL) {
@@ -205,6 +197,17 @@ Graph::~Graph() {
 void Graph::clear() {
   if(!isReferringToNodesOf) while(N) delete last();
   else NodeL::clear();
+}
+
+Node *Graph::append(const Nod& ni){
+  Node *clone = ni.it->newClone(*this); //this appends sequentially clones of all items to 'this'
+  for(const mlr::String& s:ni.parents){
+    Node *p = getNode(s);
+    CHECK(p,"parent " <<p <<" of " <<*clone <<" does not exist!");
+    clone->parents.append(p);
+    p->parentOf.append(clone);
+  }
+  return clone;
 }
 
 Node *Graph::append(const uintA& parentIdxs) {

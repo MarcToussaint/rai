@@ -311,7 +311,7 @@ template<class T> bool operator!=(const Array<T>& v, const Array<T>& w);
 template<class T> bool operator<(const Array<T>& v, const Array<T>& w);
 template<class T> std::istream& operator>>(std::istream& is, Array<T>& x);
 template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x);
-template<class T> Array<T>& operator<<(Array<T>& x, const char* str);
+//template<class T> Array<T>& operator<<(Array<T>& x, const char* str);
 
 //element-wise update operators
 #ifndef SWIG
