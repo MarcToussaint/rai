@@ -94,7 +94,7 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps){
   for(ManipulationTree_Node *node:pathnodes) if(node->folDecision){
     CHECK(node->s > 0,"");
     node->folDecision->newClone(*pathProblemSpecs);
-    forwardChaining_FOL(*pathProblemSpecs, komoRules/*, NULL, NoGraph, 5*/);
+    forwardChaining_FOL(*pathProblemSpecs, komoRules); //, NULL, NoGraph, 4);
     pathProblem.parseTasks(*pathProblemSpecs, microSteps, (node->s-1)*microSteps);
     cout <<"PATH PROBLEM: (s=" <<node->s <<")\n" <<*pathProblemSpecs <<endl;
     pathProblemSpecs->clear();

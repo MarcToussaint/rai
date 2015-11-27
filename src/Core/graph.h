@@ -189,7 +189,7 @@ struct Nod{
 };
 
 /// pipe node initializers into a graph (to append nodes)
-Graph& operator<<(Graph& G, const Nod& n){ G.append(n); return G; }
+inline Graph& operator<<(Graph& G, const Nod& n){ G.append(n); return G; }
 
 //===========================================================================
 
