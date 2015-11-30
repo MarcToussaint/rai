@@ -106,14 +106,22 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps){
   arr x = replicate(pathProblem.x0, pathProblem.T+1); //we initialize with a constant trajectory!
   rndGauss(x, .1, true);
   MotionProblemFunction MPF(pathProblem);
-  OptConstrained opt(x, NoArr, Convert(MPF), OPT(verbose=0));
-  opt.run();
-  path = x;
-  pathCost = opt.newton.fx;
+  if(!MPF.dim_g_h()){
+    optNewton(x, Convert(MPF), OPT(verbose=2, stopIters=100, maxStep=.1, stepInc=1.1, stepDec=0.7 , damping=1., allowOverstep=true));
+//    OptNewton opt(x, Convert(MPF), OPT(verbose=0));
+//    opt.run();
+    path = x;
+//    pathCost = opt.fx;
+  }else{
+    OptConstrained opt(x, NoArr, Convert(MPF), OPT(verbose=0));
+    opt.run();
+    path = x;
+    pathCost = opt.newton.fx;
+  }
 
   pathProblem.reportFull(true);
   pathProblem.costReport();
-  MPF.displayTrajectory(1, "PathProblem", -1.);
+  pathProblem.displayTrajectory(1, "PathProblem", -.01);
 
 //  for(ors::KinematicSwitch *sw: pathProblem.switches)
 //    if(sw->timeOfApplication==pathProblem.T+1) sw->apply(effKinematics);
