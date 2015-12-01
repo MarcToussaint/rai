@@ -41,7 +41,6 @@ void ImageViewer::step(){
   if(s->gl.height!= s->gl.background.d0 || s->gl.width!= s->gl.background.d1)
     s->gl.resize(s->gl.background.d1, s->gl.background.d0);
   s->gl.update(name, false, false, true);
-//  mlr::wait(.1);
 #endif
 }
 
@@ -658,3 +657,59 @@ ModuleL newPointcloudProcesses() {
 #endif
 
 
+
+
+void openGlLock();
+void openGlUnlock();
+
+void OrsViewer::step(){
+  copy.gl().lock.writeLock();
+  copy = modelWorld.get();
+  copy.gl().lock.unlock();
+  copy.gl().update(NULL, false, false, true);
+  mlr::wait(.03);
+  if(false && computeCameraView){
+    ors::Shape *kinectShape = copy.getShapeByName("endeffKinect");
+    if(kinectShape){ //otherwise 'copy' is not up-to-date yet
+//      openGlLock();
+      copy.gl().lock.writeLock();
+      ors::Camera cam = copy.gl().camera;
+      copy.gl().camera.setKinect();
+      copy.gl().camera.X = kinectShape->X * copy.gl().camera.X;
+      //    copy.gl().renderInBack(true, true, 580, 480);
+      copy.glGetMasks(580, 480, true);
+      modelCameraView.set() = copy.gl().captureImage;
+      modelDepthView.set() = copy.gl().captureDepth;
+      copy.gl().camera = cam;
+      copy.gl().lock.unlock();
+//      openGlUnlock();
+    }
+  }
+}
+
+
+
+
+void draw1(void*){
+  glStandardLight(NULL);
+  glColor(1,0,0);
+  glFrontFace(GL_CW);
+//  glutSolidTeapot(1.);
+  glDrawAxes(1.);
+  glFrontFace(GL_CCW);
+}
+
+void ComputeCameraView::open(){
+  gl.add(glStandardLight);
+  gl.addDrawer(&modelWorld.set()());
+}
+
+void ComputeCameraView::step(){
+  if(!frame--){
+    modelWorld.readAccess();
+    gl.renderInBack();
+    modelWorld.deAccess();
+    cameraView.set() = gl.captureImage;
+    frame=skipFrames;
+  }
+}

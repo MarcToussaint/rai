@@ -212,6 +212,7 @@ RevisionedAccessGatedClass::RevisionedAccessGatedClass(const char *_name):name(_
 }
 
 RevisionedAccessGatedClass::~RevisionedAccessGatedClass() {
+  for(Thread *th: listeners) th->listensTo.removeValue(this);
 }
 
 int RevisionedAccessGatedClass::readAccess(Thread *th) {

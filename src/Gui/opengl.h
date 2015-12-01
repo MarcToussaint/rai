@@ -187,7 +187,7 @@ struct OpenGL {
   void setViewPort(uint view, double l, double r, double b, double t);
   
   /// @name the core draw routines (actually only for internal use)
-  void Draw(int w, int h, ors::Camera *cam=NULL);
+  void Draw(int w, int h, ors::Camera *cam=NULL, bool ignoreLock=false);
   void Select();
   
   /// @name showing, updating, and watching
@@ -232,7 +232,7 @@ public: //driver dependent methods
   void processEvents();
   void enterEventLoop();
   void exitEventLoop();
-  void renderInBack(bool captureImg=true, bool captureDepth=false);
+  void renderInBack(bool captureImg=true, bool captureDepth=false, int w=-1, int h=-1);
 #if !defined MLR_MSVC && !defined MLR_QTGL
   Display* xdisplay();
   Drawable xdraw();

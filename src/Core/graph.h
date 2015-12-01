@@ -91,7 +91,7 @@ struct Graph : NodeL {
   explicit Graph(const char* filename);
   explicit Graph(istream& is);
   Graph(const std::map<std::string, std::string>& dict);
-  Graph(std::initializer_list<struct NodeInitializer> list);
+  Graph(std::initializer_list<struct Nod> list);
   Graph(const Graph& G);
   ~Graph();
   void clear();
@@ -140,6 +140,7 @@ struct Graph : NodeL {
   template<class T> mlr::Array<T*> getDerivedValues();
   
   //-- adding items
+  Node *append(const Nod& ni);
   template<class T> Node *append(T *x, bool ownsValue);
 //  template<class T> Node *append(const char* key, T *x, bool ownsValue);
   template<class T> Node *append(const StringA& keys, const NodeL& parents, const T& x);
@@ -177,17 +178,18 @@ bool operator==(const Graph& A, const Graph& B);
 
 //===========================================================================
 
-struct NodeInitializer{
-  NodeInitializer(const char* key);
-  template<class T> NodeInitializer(const char* key, const T& x);
-  template<class T> NodeInitializer(const char* key, const StringA& parents, const T& x);
+/// This is a Node initializer, specifically for Graph(std::initializer_list<struct Nod> list); and the operator<< below
+struct Nod{
+  Nod(const char* key);
+  template<class T> Nod(const char* key, const T& x);
+  template<class T> Nod(const char* key, const StringA& parents, const T& x);
   Graph G;
   Node *it;
   StringA parents;
 };
 
-#define NO(key, val) NodeInitializer(#key, val)
-#define NIs(key, val) NodeInitializer(#key, mlr::String(#val))
+/// pipe node initializers into a graph (to append nodes)
+inline Graph& operator<<(Graph& G, const Nod& n){ G.append(n); return G; }
 
 //===========================================================================
 
