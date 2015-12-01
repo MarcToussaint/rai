@@ -17,6 +17,7 @@
     -----------------------------------------------------------------  */
 
 #include "thread.h"
+#include "registry.h"
 #include <exception>
 
 #ifndef MLR_MSVC
