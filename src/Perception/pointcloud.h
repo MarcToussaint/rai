@@ -1,9 +1,7 @@
 #ifndef _POINTCLOUD_H__
 #define _POINTCLOUD_H__
 
-
-#ifdef FIXME_PCL
-#ifdef HAVE_PCL
+#ifdef MLR_PCL
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -13,87 +11,93 @@
 //#include <Hardware/kinect.h>
 #include <Motion/motion.h>
 
-SET_LOG(pointcloud, INFO);
+SET_LOG(pointcloud, INFO)
 
 typedef pcl::PointXYZRGBA PointT;
-typedef MT::Array<pcl::PointCloud<PointT>::Ptr> PointCloudL;
+typedef mlr::Array<pcl::PointCloud<PointT>::Ptr> PointCloudL;
 typedef pcl::PointCloud<PointT>::Ptr FittingJob;
 typedef pcl::ModelCoefficients::Ptr FittingResult;
-typedef MT::Array<FittingResult> FittingResultL;
+typedef mlr::Array<FittingResult> FittingResultL;
+const int RADIUS = 2;
+const int HEIGHT = 3;
 
-struct ObjectBeliefSet;
+struct ObjectBelief {
 
-// -- Variables
+  ObjectBelief() {
+    shapeParams.resize(4);
+  }
+  //pose
+  // TODO: make pointers
+  ors::Vector position;
+  ors::Quaternion rotation;
 
-class PointCloudVar : public Variable {
-  public:
-    PointCloudVar(const char* name);
-    FIELD(pcl::PointCloud<PointT>::ConstPtr, point_cloud);
-    pcl::PointCloud<PointT>::Ptr get_point_cloud_copy(Process *p) { readAccess(p); pcl::PointCloud<PointT>::Ptr tmp = point_cloud->makeShared(); deAccess(p); return tmp; }
+  arr poseCov;
+
+  // primitive shapes
+  ors::ShapeType shapeType;
+  arr shapeParams;
+
+  // TODO: make pointer, such that the using app does not need to implicitly
+  // include half of the PCL?
+  //pcl::ModelCoefficients::Ptr pcl_object;
+
+  //pcl::PointCloud<PointT>* pointCloud;
+  arr vertices;
+  uintA triangles;
 };
 
-class PointCloudSet : public Variable {
-  public:
-    PointCloudSet(const char* name) : Variable(name) { reg_point_clouds(); }
-    FIELD(PointCloudL, point_clouds);
-};
-
-class ObjectSet : public Variable {
-  public:
-    ObjectSet(const char *name) : Variable(name) { reg_objects(); }
-    FIELD(FittingResultL, objects);
-};
+typedef mlr::Array<ObjectBelief*> ObjectBeliefSet;
+typedef pcl::PointCloud<PointT>::Ptr PointCloudVar;
+typedef PointCloudL PointCloudSet;
+typedef FittingResultL ObjectSet;
 
 // -- Processes
 
-class ObjectClusterer : public Process {
-  public:
-    ObjectClusterer();
-    PointCloudVar* data_3d;
-    PointCloudSet* point_clouds;
+struct ObjectClusterer : public Module {
+  ObjectClusterer();
+  ACCESS(PointCloudVar, data_3d)
+  ACCESS(PointCloudSet, point_clouds)
 
-    void open();
-    void step();
-    void close();
+  void open();
+  void step();
+  void close();
 };
 
-class ObjectFitter : public Process {
+struct ObjectFitter : public Module {
   struct sObjectFitter* s;
-  public:
-    ObjectFitter();
 
-    void open();
-    void step();
-    void close();
+  ObjectFitter();
 
-    PointCloudSet* objectClusters;
-    ObjectSet *objects;
+  void open();
+  void step();
+  void close();
+
+  ACCESS(PointCloudSet, objectClusters)
+  ACCESS(ObjectSet, objects)
 };
 
 
-class ObjectFilter : public Process {
-  public:
-    struct sObjectFilter *s;
-    ObjectFilter(const char *name) ;
-    void open();
-    void step();
-    void close() {};
+struct ObjectFilter : public Module {
+  struct sObjectFilter *s;
+  ObjectFilter(const char *name) ;
+  void open();
+  void step();
+  void close() {}
 
-    ObjectSet* in_objects;
-    ObjectBeliefSet* out_objects;
+  ACCESS(ObjectSet, in_objects)
+  ACCESS(ObjectBeliefSet, out_objects)
 };
 
-class ObjectTransformator : public Process {
-  public:
-    ObjectTransformator(const char *name);
-    void open();
-    void step();
-    void close() {};
+struct ObjectTransformator : public Module {
+  ObjectTransformator(const char *name);
+  void open();
+  void step();
+  void close() {}
 
-    ObjectBeliefSet* kinect_objects;
-    WorkingCopy<GeometricState> geo;
+  ACCESS(ObjectBeliefSet, kinect_objects)
+  ACCESS(ors::KinematicWorld, geoState)
+  ors::KinematicWorld geo;
 };
 
-#endif // PCL
-#endif // FIXME_PCL
+#endif // MLR_PCL
 #endif // _POINTCLOUD_H__

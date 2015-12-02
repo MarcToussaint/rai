@@ -22,37 +22,38 @@
 /// @addtogroup group_Gui
 /// @{
 
-#ifndef MT_opengl_h
-#define MT_opengl_h
+#ifndef MLR_opengl_h
+#define MLR_opengl_h
 
 #include <Core/array.h>
 #include <Core/thread.h>
+#include <Geo/geo.h>
 
-#ifndef MT_QTGL
+#ifndef MLR_QTGL
 #  include <X11/Xlib.h>
 #endif
 
-#ifdef MT_FLTK
+#ifdef MLR_FLTK
 #  include <FL/glut.H>
 #endif
 
-#ifdef MT_FREEGLUT
-#  ifndef MT_MSVC
+#ifdef MLR_FREEGLUT
+#  ifndef MLR_MSVC
 #    define FREEGLUT_STATIC
 #  endif
 #  include <GL/freeglut.h>
 #endif
 
-#ifdef MT_GL
+#ifdef MLR_GL
 #  include <GL/gl.h>
 #  include <GL/glu.h>
-#  ifdef MT_CUDA
+#  ifdef MLR_CUDA
 #    undef APIENTRY
 #  endif
 #  include <GL/glut.h>
 #endif
 
-#ifdef MT_GL2PS
+#ifdef MLR_GL2PS
 #  include<gl2ps.h>
 #endif
 
@@ -108,59 +109,6 @@ void glDrawTexQuad(uint texture,
 //grabImage: use OpenGL::capture instead!
 void glRasterImage(float x, float y, byteA &img, float zoom=1.);
 
-//===========================================================================
-//
-// standalone draw routines for larget data structures
-//
-
-void glDrawDots(void *dots);
-void glDrawPointCloud(void *pc);
-void glDrawPointCloud(const arr& pts, const arr& cols);
-
-
-//===========================================================================
-//
-// Camera class
-//
-
-namespace ors {
-struct Transformation;
-struct Vector;
-struct Camera {
-  Transformation *X; // X.p is camera's position
-  Vector *foc;
-  
-  float heightAbs;
-  float heightAngle;
-  float focalLength;
-  float whRatio;
-  float zNear, zFar;
-  
-  Camera();
-  Camera(const Camera& c) { *this=c; }
-  ~Camera();
-  Camera& operator=(const Camera& c);
-  
-  void setZero();
-  void setHeightAngle(float a);
-  void setHeightAbs(float h);
-  void setZRange(float znear, float zfar);
-  void setWHRatio(float ratio);
-  void setPosition(float x, float y, float z);
-  void setOffset(float x, float y, float z);
-  void setCameraProjectionMatrix(const arr& P); //P is in standard convention -> computes fixedProjectionMatrix in OpenGL convention from this
-  void focusOrigin();
-  void focus(float x, float y, float z);
-  void focus(const Vector& v);
-  void focus();
-  void watchDirection(const Vector& d);
-  void upright();
-  void glSetProjectionMatrix();
-  void glConvertToTrueDepth(double &d);
-  void glConvertToLinearDepth(double &d);
-};
-}
-
 
 //===========================================================================
 //
@@ -176,23 +124,23 @@ struct OpenGL {
   
   /// @name little structs to store objects and callbacks
   struct GLInitCall { virtual bool glInit(OpenGL&) = 0; };
-  struct GLDrawer    { virtual void glDraw(OpenGL&) = 0; };
   struct GLHoverCall { virtual bool hoverCallback(OpenGL&) = 0; };
   struct GLClickCall { virtual bool clickCallback(OpenGL&) = 0; };
   struct GLKeyCall  { virtual bool keyCallback(OpenGL&) = 0; };
   struct GLEvent    { int button, key, x, y; float dx, dy; void set(int b, int k, int _x, int _y, float _dx, float _dy) { button=b; key=k; x=_x; y=_y; dx=_dx; dy=_dy; } };
   struct GLSelect   { int name; double dmin, dmax, x,y,z; };
-  struct GLView     { double le, ri, bo, to;  MT::Array<GLDrawer*> drawers;  ors::Camera camera;  byteA *img;  MT::String text;  GLView() { img=NULL; le=bo=0.; ri=to=1.; } };
+  struct GLView     { double le, ri, bo, to;  mlr::Array<GLDrawer*> drawers;  ors::Camera camera;  byteA *img;  mlr::String text;  GLView() { img=NULL; le=bo=0.; ri=to=1.; } };
   
   /// @name data fields
-  MT::Array<GLView> views;            ///< list of draw routines
-  MT::Array<GLDrawer*> drawers;        ///< list of draw routines
-  MT::Array<GLInitCall*> initCalls;    ///< list of initialization routines
-  MT::Array<GLHoverCall*> hoverCalls; ///< list of hover callbacks
-  MT::Array<GLClickCall*> clickCalls; ///< list of click callbacks
-  MT::Array<GLKeyCall*> keyCalls;     ///< list of click callbacks
+  mlr::Array<GLView> views;            ///< list of draw routines
+  mlr::Array<GLDrawer*> drawers;        ///< list of draw routines
+  mlr::Array<GLInitCall*> initCalls;    ///< list of initialization routines
+  mlr::Array<GLHoverCall*> hoverCalls; ///< list of hover callbacks
+  mlr::Array<GLClickCall*> clickCalls; ///< list of click callbacks
+  mlr::Array<GLKeyCall*> keyCalls;     ///< list of click callbacks
+  mlr::String title;     ///< the window title
   ors::Camera camera;     ///< the camera used for projection
-  MT::String text;        ///< the text to be drawn as title within the opengl frame
+  mlr::String text;        ///< the text to be drawn as title within the opengl frame
   float clearR, clearG, clearB, clearA;  ///< colors of the beackground (called in glClearColor(...))
   bool reportEvents, reportSelects;    ///< flags for verbosity
   int pressedkey;         ///< stores the key pressed
@@ -202,7 +150,7 @@ struct OpenGL {
   int mouseposx, mouseposy;  ///< current x- and y-position of mouse
   int mouseView;
   bool mouseIsDown;
-  MT::Array<GLSelect> selection; ///< list of all selected objects
+  mlr::Array<GLSelect> selection; ///< list of all selected objects
   GLSelect *topSelection;        ///< top selected object
   bool immediateExitLoop;
   bool drawFocus;
@@ -218,8 +166,8 @@ struct OpenGL {
   ConditionVariable isUpdating;
 
   /// @name constructors & destructors
-  OpenGL(const char* title="MT::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
-  //OpenGL(void *parent, const char* title="MT::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
+  OpenGL(const char* title="mlr::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
+  //OpenGL(void *parent, const char* title="mlr::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
   OpenGL(void *container); //special constructor: used when the underlying system-dependent class exists already
   
   OpenGL *newClone() const;
@@ -228,6 +176,7 @@ struct OpenGL {
   /// @name adding drawing routines and callbacks
   void clear();
   void add(void (*call)(void*), void* classP=NULL);
+  void add(GLDrawer& c){ drawers.append(&c); }
   void addDrawer(GLDrawer *c){ drawers.append(c); }
   void remove(void (*call)(void*), const void* classP=0);
   //template<class T> void add(const T& x) { add(x.staticDraw, &x); } ///< add a class or struct with a staticDraw routine
@@ -238,8 +187,8 @@ struct OpenGL {
   void setViewPort(uint view, double l, double r, double b, double t);
   
   /// @name the core draw routines (actually only for internal use)
-  void Draw(int w, int h, ors::Camera *cam=NULL);
-  void Select();
+  void Draw(int w, int h, ors::Camera *cam=NULL, bool ignoreLock=false);
+  void Select(bool ignoreLock=false);
   
   /// @name showing, updating, and watching
   int update(const char *text=NULL, bool captureImg=false, bool captureDepth=false, bool waitForCompletedDraw=true);
@@ -278,12 +227,13 @@ private:
   
 public: //driver dependent methods
   ConditionVariable watching;
+  void checkWindow();
   void postRedrawEvent(bool fromWithinCallback);
   void processEvents();
   void enterEventLoop();
   void exitEventLoop();
-  void renderInBack(int width=-1, int height=-1, bool captureImg=true, bool captureDepth=false);
-#if !defined MT_MSVC && !defined MT_QTGL
+  void renderInBack(bool captureImg=true, bool captureDepth=false, int w=-1, int h=-1);
+#if !defined MLR_MSVC && !defined MLR_QTGL
   Display* xdisplay();
   Drawable xdraw();
 #endif
@@ -297,7 +247,9 @@ protected:
   void Key(unsigned char key, int x, int y);
   void Mouse(int button, int updown, int x, int y);
   void Motion(int x, int y);
+public:
   void Reshape(int w, int h);
+protected:
   void MouseWheel(int wheel, int direction, int x, int y);
   
   friend struct sOpenGL;
@@ -313,7 +265,7 @@ protected:
 struct glUI:OpenGL::GLHoverCall,OpenGL::GLClickCall {
   int top;
   struct Button { byteA img1, img2; bool hover; uint x, y, w, h; const char* name; };
-  MT::Array<Button> buttons;
+  mlr::Array<Button> buttons;
   
   glUI() { top=-1; }
   
@@ -326,6 +278,8 @@ struct glUI:OpenGL::GLHoverCall,OpenGL::GLClickCall {
 };
 
 void glDrawUI(void *p);
+
+extern OpenGL& NoOpenGL;
 
 /// @}
 

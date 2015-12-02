@@ -1,4 +1,3 @@
-#include <Core/array-vector.h>
 
 #include "problem_BlindBranch.h"
 
@@ -17,12 +16,12 @@ std::pair<MCTS_Environment::Handle, double> BlindBranch::transition(const MCTS_E
 }
 
 std::pair<MCTS_Environment::Handle, double>  BlindBranch::transition_randomly(){
-  if(MT::rnd.uni()<.5) return transition(actions(0));
+  if(mlr::rnd.uni()<.5) return transition(actions(0));
   return transition(actions(1));
 }
 
 const std::vector<MCTS_Environment::Handle> BlindBranch::get_actions(){
-  return VECTOR(actions);
+  return conv_arr2stdvec(actions);
 }
 
 const MCTS_Environment::Handle BlindBranch::get_state(){

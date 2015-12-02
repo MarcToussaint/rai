@@ -23,6 +23,7 @@ uint eval_cost=0;
 //SqrPotential& NoPot = *((SqrPotential*)NULL);
 //PairSqrPotential& NoPairPot = *((PairSqrPotential*)NULL);
 Singleton<OptOptions> globalOptOptions;
+const char* TermTypeString[]={"noTT", "fTT", "sumOfSqrTT", "ineqTT", "eqTT" };
 TermTypeA& NoTermTypeA = *((TermTypeA*)NULL);
 
 
@@ -65,29 +66,9 @@ double evaluateVF(VectorFunction& f, const arr& x) {
   return sumOfSqr(y);
 }
 
-
-bool checkAllGradients(const ConstrainedProblem &P, const arr& x, double tolerance){
-  ScalarFunction F = [&P](arr& df, arr& Hf, const arr& x){
-    return P(df, Hf, NoArr, NoArr, NoArr, NoArr, x);
-  };
-  VectorFunction G = [&P](arr& g, arr& Jg, const arr& x){
-    return P(NoArr, NoArr, g, Jg, NoArr, NoArr, x);
-  };
-  VectorFunction H = [&P](arr& h, arr& Jh, const arr& x){
-    return P(NoArr, NoArr, NoArr, NoArr, h, Jh, x);
-  };
-
-  bool good=true;
-  cout <<"f-gradient: "; good &= checkGradient(F, x, tolerance);
-  cout <<"f-hessian:  "; good &= checkHessian (F, x, tolerance);
-  cout <<"g-jacobian: "; good &= checkJacobian(G, x, tolerance);
-  cout <<"h-jacobian: "; good &= checkJacobian(H, x, tolerance);
-  return good;
-}
-
-bool checkJacobianCP(const ConstrainedProblemMix &P, const arr& x, double tolerance){
+bool checkJacobianCP(const ConstrainedProblem &P, const arr& x, double tolerance){
   VectorFunction F = [&P](arr& phi, arr& J, const arr& x){
-    return P(phi, J, NoTermTypeA, x);
+    return P(phi, J, NoArr, NoTermTypeA, x);
   };
   return checkJacobian(F, x, tolerance);
 }

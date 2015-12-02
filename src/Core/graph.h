@@ -22,8 +22,8 @@
 /// @addtogroup group_Core
 /// @{
 
-#ifndef MT_keyValueGraph_h
-#define MT_keyValueGraph_h
+#ifndef MLR_keyValueGraph_h
+#define MLR_keyValueGraph_h
 
 #include "array.h"
 #include <map>
@@ -32,9 +32,9 @@ struct Node;
 struct Graph;
 struct ParseInfo;
 struct GraphEditCallback;
-typedef MT::Array<Node*> NodeL;
-typedef MT::Array<ParseInfo*> ParseInfoL;
-typedef MT::Array<GraphEditCallback*> GraphEditCallbackL;
+typedef mlr::Array<Node*> NodeL;
+typedef mlr::Array<ParseInfo*> ParseInfoL;
+typedef mlr::Array<GraphEditCallback*> GraphEditCallbackL;
 extern NodeL& NoNodeL; //this is a pointer to NULL! I use it for optional arguments
 extern Graph& NoGraph; //this is a pointer to NULL! I use it for optional arguments
 
@@ -46,9 +46,11 @@ struct Node {
   NodeL parents;
   NodeL parentOf;
   uint index;
+
   Node(Graph& _container);
   Node(Graph& _container, const StringA& _keys, const NodeL& _parents);
   virtual ~Node();
+
   template<class T> T *getValue();    ///< query whether the Node is of a certain value, return the value if so
   template<class T> const T *getValue() const; ///< as above
   template<class T> T& V(){ T *x=getValue<T>(); CHECK(x,"wrong type"); return *x; }
@@ -71,32 +73,25 @@ struct Node {
   virtual bool hasEqualValue(Node*) {NIY}
   virtual Node* newClone(Graph& container) const {NIY}
 };
-stdOutPipe(Node);
+stdOutPipe(Node)
 
 //===========================================================================
 
-struct NodeInitializer{
-  NodeInitializer(const char* key);
-  template<class T> NodeInitializer(const char* key, const T& x);
-  template<class T> NodeInitializer(const char* key, const StringA& parents, const T& x);
-  Node *it;
-  StringA parents;
-};
-
-//===========================================================================
-
-struct Graph:NodeL {
+struct Graph : NodeL {
   struct sKeyValueGraph *s;
   Graph* isReferringToNodesOf; //TODO: remove
   Node *isNodeOfParentGraph;
+
   ParseInfoL pi;
   GraphEditCallbackL callbacks;
+
 
   //-- constructors
   Graph();
   explicit Graph(const char* filename);
+  explicit Graph(istream& is);
   Graph(const std::map<std::string, std::string>& dict);
-  Graph(std::initializer_list<NodeInitializer> list);
+  Graph(std::initializer_list<struct Nod> list);
   Graph(const Graph& G);
   ~Graph();
   void clear();
@@ -113,36 +108,46 @@ struct Graph:NodeL {
   
   //-- get items
   Node* getNode(const char *key) const;
-  Node* getNode(const char *key1, const char *key2);
-  Node* getNode(const StringA &keys);
-  Node* operator[](const char *key) { return getNode(key); }
+  Node* getNode(const char *key1, const char *key2) const;
+  Node* getNode(const StringA &keys) const;
+  Node* operator[](const char *key) const{ return getNode(key); }
   Node& I(const char *key) { Node *it=getNode(key); CHECK(it,"item '" <<key <<"' does not exist"); return *it; }
   Node* getChild(Node *p1, Node *p2) const; //TODO -> getEdge
 
-  //-- get lists of items (TODO: return NodeL, not referring Graph)
-  Graph getNodes(const char* key);
-  Graph getNodesOfDegree(uint deg);
-  Graph getTypedNodes(const char* key, const std::type_info& type);
-  template<class T> Graph getTypedNodes(const char* key=NULL){ return getTypedNodes(key, typeid(T)); }
+  //-- get lists of items
+  NodeL getNodes(const StringA &keys) const;
+  NodeL getNodes(const char* key) const;
+  NodeL getNodesOfDegree(uint deg);
+  NodeL getTypedNodes(const char* key, const std::type_info& type);
+  template<class T> NodeL getTypedNodes(const char* key=NULL){ return getTypedNodes(key, typeid(T)); }
   template<class T> NodeL getDerivedNodes();
 
-  //-- get values directly (TODO: remove)
-  template<class T> T* getValue(const char *key);
-  template<class T> T* getValue(const StringA &keys);
+  //-- get typed node
+  template<class T> Node* getTypedNode(const char *key) const;
+
+  //-- get values directly (TODO: remove V and 'getValue', just get should be enough)
+  template<class T> T& get(const char *key) const;
+  template<class T> const T& get(const char *key, const T& defaultValue) const;
+  template<class T> T& V(const char *key){ T* y=getValue<T>(key); CHECK(y,""); return *y; }
+  template<class T> const T& V(const char *key, const T& defaultValue) const{ T* y=getValue<T>(key); if(y) return *y; return defaultValue; }
+  template<class T> T* getValue(const char *key) const;
+  template<class T> T* getValue(const StringA &keys) const;
   template<class T> bool getValue(T& x, const char *key) { T* y=getValue<T>(key); if(y) { x=*y; return true; } return false; }
   template<class T> bool getValue(T& x, const StringA &keys) { T* y=getValue<T>(keys); if(y) { x=*y; return true; } return false; }
 
   //-- get lists of all values of a certain type T (or derived from T)
-  template<class T> MT::Array<T*> getTypedValues(const char* key=NULL);
-  template<class T> MT::Array<T*> getDerivedValues();
+  template<class T> mlr::Array<T*> getTypedValues(const char* key=NULL);
+  template<class T> mlr::Array<T*> getDerivedValues();
   
   //-- adding items
+  Node *append(const Nod& ni);
   template<class T> Node *append(T *x, bool ownsValue);
-  template<class T> Node *append(const char* key, T *x, bool ownsValue);
+//  template<class T> Node *append(const char* key, T *x, bool ownsValue);
+  template<class T> Node *append(const StringA& keys, const NodeL& parents, const T& x);
   template<class T> Node *append(const StringA& keys, const NodeL& parents, T *x, bool ownsValue);
 //  template<class T> Node *append(const StringA& keys, T *x, bool ownsValue) { return append(keys, NodeL(), x, ownsValue); }
-//  template<class T> Node *append(const char *key, T *x, bool ownsValue) { return append({MT::String(key)}, NodeL(), x, ownsValue); }
-//  template<class T> Node *append(const char *key1, const char* key2, T *x, bool ownsValue) {  return append({MT::String(key1), MT::String(key2)}, NodeL(), x, ownsValue); }
+//  template<class T> Node *append(const char *key, T *x, bool ownsValue) { return append({mlr::String(key)}, NodeL(), x, ownsValue); }
+//  template<class T> Node *append(const char *key1, const char* key2, T *x, bool ownsValue) {  return append({mlr::String(key1), mlr::String(key2)}, NodeL(), x, ownsValue); }
   Node *append(const uintA& parentIdxs);
 
   void appendDict(const std::map<std::string, std::string>& dict);
@@ -162,10 +167,29 @@ struct Graph:NodeL {
   ParseInfo& getParseInfo(Node *it);
   
   void read(std::istream& is, bool parseInfo=false);
+  Node* readNode(std::istream& is, bool verbose=false, bool parseInfo=false, mlr::String prefixedKey=mlr::String()); //used only internally..
   void write(std::ostream& os=std::cout, const char *ELEMSEP="\n", const char *delim=NULL) const;
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0);
+  void writeParseInfo(std::ostream& os);
 };
 stdPipes(Graph);
+
+bool operator==(const Graph& A, const Graph& B);
+
+//===========================================================================
+
+/// This is a Node initializer, specifically for Graph(std::initializer_list<struct Nod> list); and the operator<< below
+struct Nod{
+  Nod(const char* key);
+  template<class T> Nod(const char* key, const T& x);
+  template<class T> Nod(const char* key, const StringA& parents, const T& x);
+  Graph G;
+  Node *it;
+  StringA parents;
+};
+
+/// pipe node initializers into a graph (to append nodes)
+inline Graph& operator<<(Graph& G, const Nod& n){ G.append(n); return G; }
 
 //===========================================================================
 
@@ -182,18 +206,11 @@ struct GraphEditCallback {
 //===========================================================================
 
 
-inline Graph GRAPH(const NodeL& L){ //TODO: remove
-  Graph G;
-  G.isReferringToNodesOf = (Graph*)(1);
-  G.NodeL::operator=(L);
-  return G;
-}
-
 inline bool NodeComp(Node* const& a, Node* const& b){ //TODO: why?
   return a < b;
 }
 
-#include "graph_t.h"
+#include "graph.tpp"
 
 //===========================================================================
 //

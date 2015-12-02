@@ -22,8 +22,8 @@
 /// @addtogroup group_Optim
 /// @{
 
-#ifndef MT_optimization_h
-#define MT_optimization_h
+#ifndef MLR_optimization_h
+#define MLR_optimization_h
 
 #include <Core/array.h>
 
@@ -55,16 +55,13 @@ typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
 /// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
 typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
 
-/// returns \f$f(x), \nabla f(x), \nabla^2 f(x), g(x), \nabla g(x)\f$ (giving NoArr as argument -> do not return this quantity)
-typedef std::function<double(arr& df, arr& Hf,
-                             arr& g, arr& Jg,
-                             arr& h, arr& Jh, const arr& x)> ConstrainedProblem;
 
-enum TermType { noTT=0, sumOfSqrTT, ineqTT, eqTT };
-typedef MT::Array<TermType> TermTypeA;
+enum TermType { noTT=0, fTT, sumOfSqrTT, ineqTT, eqTT };
+extern const char* TermTypeString[];
+typedef mlr::Array<TermType> TermTypeA;
 extern TermTypeA& NoTermTypeA;
 
-typedef std::function<void(arr& phi, arr& J, TermTypeA& tt, const arr& x)> ConstrainedProblemMix;
+typedef std::function<void(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x)> ConstrainedProblem;
 
 
 /// functions \f$ \phi_t:(x_{t-k},..,x_t) \mapsto y\in\mathbb{R}^{m_t} \f$ over a chain \f$x_0,..,x_T\f$ of variables
@@ -99,8 +96,7 @@ struct KOrderMarkovFunction {
 // checks, evaluation
 //
 
-bool checkAllGradients(const ConstrainedProblem &P, const arr& x, double tolerance);
-bool checkJacobianCP(const ConstrainedProblemMix &P, const arr& x, double tolerance);
+bool checkJacobianCP(const ConstrainedProblem &P, const arr& x, double tolerance);
 bool checkDirectionalGradient(const ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction &f, const arr& x, const arr& delta, double tolerance);
 

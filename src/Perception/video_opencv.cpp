@@ -18,7 +18,7 @@
 
 
 #include "videoEncoder.h"
-#ifdef MT_OPENCV
+#ifdef MLR_OPENCV
 
 #undef COUNT
 #include <opencv2/opencv.hpp>
@@ -62,11 +62,11 @@ void VideoEncoder_OpenCV::close(){
   cvReleaseVideoWriter(&s->video);
 }
 
-#else //MT_OPENCV
+#else //MLR_OPENCV
 
 #include <Core/util.h>
-  VideoEncoder_OpenCV::VideoEncoder_OpenCV(const char* filename, uint fps){ MT_MSG("WARNING - using dummy Revel module"); };
+  VideoEncoder_OpenCV::VideoEncoder_OpenCV(const char* filename, uint fps){ MLR_MSG("WARNING - using dummy Revel module"); };
   void VideoEncoder_OpenCV::addFrame(const byteA& img){};
   void VideoEncoder_OpenCV::close(){};
 
-#endif //MT_OPENCV
+#endif //MLR_OPENCV

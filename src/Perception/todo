@@ -1,0 +1,19 @@
+1) get xzy- and rgb- images from kinect (both 3D images) -- this requires already a rough estimate of vert
+
+2) extract horizontal planes by getting peaks in z coordinate
+
+3) reestimte vert from the planes
+
+4) extract all vertical planes by projecting the data onto xy-plane? NO! looses image topology. region growing
+
+-------------
+
+region growing:
+
+compute features for all points
+model:
+  {set of points} -> params, cost
+  new point, params -> delta cost
+  del point, params -> delta cost (same, right?)
+
+  
