@@ -100,8 +100,8 @@ struct Quaternion {
 
   Quaternion() {}
   Quaternion(double w, double x, double y, double z) { set(w,x,y,z); }
-  Quaternion(const arr& q) { CHECK_EQ(q.N,4, "");  set(q.p); };
-  Quaternion(const Quaternion& q) { set(q.w, q.x, q.y, q.z); };
+  Quaternion(const arr& q) { CHECK_EQ(q.N,4, "");  set(q.p); }
+  Quaternion(const Quaternion& q) { set(q.w, q.x, q.y, q.z); }
   double *p() { return &w; }
   
   void set(double w, double x, double y, double z);
