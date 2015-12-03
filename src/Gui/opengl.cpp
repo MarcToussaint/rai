@@ -1210,7 +1210,10 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam, bool ignoreLock) {
 #endif
 }
 
-void OpenGL::Select() {
+void OpenGL::Select(bool ignoreLock) {
+  openglAccess().lock();
+  if(!ignoreLock) lock.readLock();
+
 #ifdef MLR_GL
   uint i, j, k;
   
@@ -1295,6 +1298,8 @@ void OpenGL::Select() {
   
   s->endGlContext();
 #endif
+  if(!ignoreLock) lock.unlock();
+  openglAccess().unlock();
 }
 
 /** @brief watch in interactive mode and wait for an exiting event

@@ -188,7 +188,7 @@ struct OpenGL {
   
   /// @name the core draw routines (actually only for internal use)
   void Draw(int w, int h, ors::Camera *cam=NULL, bool ignoreLock=false);
-  void Select();
+  void Select(bool ignoreLock=false);
   
   /// @name showing, updating, and watching
   int update(const char *text=NULL, bool captureImg=false, bool captureDepth=false, bool waitForCompletedDraw=true);
