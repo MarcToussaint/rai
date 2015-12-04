@@ -1313,7 +1313,10 @@ int OpenGL::watch(const char *txt) {
   update(STRING(txt<<" - press ENTER to continue"));
   if(mlr::getInteractivity()){
     watching.setValue(1);
-    watching.waitForValueEq(0);
+    while(watching.getValue()!=0){
+      processEvents();
+      sleepForEvents();
+    }
   }
   return pressedkey;
 }

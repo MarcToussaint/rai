@@ -2,7 +2,7 @@
 #include "colorspace.h"
 #include <Core/util.h>
 
-#ifdef HAVE_X264
+#ifdef X264_INSTALLED
 
 extern "C" {
 #include <x264.h>
@@ -184,7 +184,7 @@ void sVideoEncoder_x264_simple::close(){
   cout << "Video scaling time: " << scale_time << " (" <<  per_frame << "s / " << (per_frame * 1000) << "ms per frame)" << endl;
 }
 
-#else // HAVE_x264
+#else // X264_INSTALLED
 
 // dummy implementation does nothing
 
@@ -199,4 +199,4 @@ VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char*, double, uint, ml
 void VideoEncoder_x264_simple::addFrame(const byteA&){}
 void VideoEncoder_x264_simple::close(){ }
 
-#endif // HAVE_LIBAV
+#endif // X264_INSTALLED
