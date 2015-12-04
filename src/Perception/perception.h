@@ -259,14 +259,15 @@ struct CannyFilter:Module{
 };
 
 struct OrsViewer:Module{
-  ACCESSlisten(ors::KinematicWorld, modelWorld)
+  Access_typed<ors::KinematicWorld> modelWorld;
   Access_typed<byteA> modelCameraView;
   Access_typed<byteA> modelDepthView;
   ors::KinematicWorld copy;
 
   bool computeCameraView;
   OrsViewer()
-    : Module("OrsViewer"),
+    : Module("OrsViewer", .1),
+      modelWorld(this, "modelWorld", false),
       modelCameraView(this, "modelCameraView"),
       modelDepthView(this, "modelDepthView"),
       computeCameraView(true){}

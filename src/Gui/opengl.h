@@ -138,14 +138,15 @@ struct OpenGL {
   mlr::Array<GLHoverCall*> hoverCalls; ///< list of hover callbacks
   mlr::Array<GLClickCall*> clickCalls; ///< list of click callbacks
   mlr::Array<GLKeyCall*> keyCalls;     ///< list of click callbacks
+
   mlr::String title;     ///< the window title
+  uint width, height;
   ors::Camera camera;     ///< the camera used for projection
   mlr::String text;        ///< the text to be drawn as title within the opengl frame
   float clearR, clearG, clearB, clearA;  ///< colors of the beackground (called in glClearColor(...))
   bool reportEvents, reportSelects;    ///< flags for verbosity
   int pressedkey;         ///< stores the key pressed
   const char *exitkeys;   ///< additional keys to exit watch mode
-  uint width,height;
   int mouse_button;       ///< stores which button was pressed
   int mouseposx, mouseposy;  ///< current x- and y-position of mouse
   int mouseView;
@@ -164,6 +165,7 @@ struct OpenGL {
   uint rboColor;
   uint rboDepth;
   ConditionVariable isUpdating;
+  ConditionVariable watching;
 
   /// @name constructors & destructors
   OpenGL(const char* title="mlr::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
@@ -189,7 +191,8 @@ struct OpenGL {
   /// @name the core draw routines (actually only for internal use)
   void Draw(int w, int h, ors::Camera *cam=NULL, bool ignoreLock=false);
   void Select(bool ignoreLock=false);
-  
+  void renderInBack(bool captureImg=true, bool captureDepth=false, int w=-1, int h=-1);
+
   /// @name showing, updating, and watching
   int update(const char *text=NULL, bool captureImg=false, bool captureDepth=false, bool waitForCompletedDraw=true);
   int watch(const char *text=NULL);
@@ -209,30 +212,11 @@ struct OpenGL {
   void displayGrey(const arr &x, bool wait, float backgroundZoom);
   void displayRedBlue(const arr &x, bool wait, float backgroundZoom);
   
-  /// @name capture routines
-//  void capture(byteA &img, int w=-1, int h=-1, ors::Camera *cam=NULL);
-//  void captureDepth(byteA &depth, int w, int h, ors::Camera *cam=NULL);
-//  void captureDepth(floatA &depth, int w, int h, ors::Camera *cam=NULL);
-//  void captureStereo(byteA &imgL, byteA &imgR, int w, int h, ors::Camera *cam, double baseline);
-  
-#if 0
-  void createOffscreen(int width, int height);
-  void offscreenGrab(byteA& image);
-  void offscreenGrab(byteA& image, byteA& depth);
-  void offscreenGrabDepth(byteA& depth);
-  void offscreenGrabDepth(floatA& depth);
-private:
-  void setOffscreen(int width, int height);
-#endif
-  
 public: //driver dependent methods
-  ConditionVariable watching;
-  void checkWindow();
+  void openWindow();
+  void closeWindow();
   void postRedrawEvent(bool fromWithinCallback);
   void processEvents();
-  void enterEventLoop();
-  void exitEventLoop();
-  void renderInBack(bool captureImg=true, bool captureDepth=false, int w=-1, int h=-1);
 #if !defined MLR_MSVC && !defined MLR_QTGL
   Display* xdisplay();
   Drawable xdraw();
@@ -243,6 +227,7 @@ protected:
   static uint selectionBuffer[1000];
   
   void init(); //initializes camera etc
+
   //general callbacks (used by all implementations)
   void Key(unsigned char key, int x, int y);
   void Mouse(int button, int updown, int x, int y);
