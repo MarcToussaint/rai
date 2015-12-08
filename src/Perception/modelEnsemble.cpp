@@ -89,8 +89,8 @@ void ModelEnsemble::glDraw(OpenGL&){
   }
 }
 
-void ModelEnsemble::report(ostream& os){
+void ModelEnsemble::report(ostream& os, bool mini){
   uint c=0;
-  for(MinEigModel* m:models){ os <<c++ <<' '; m->report(os, true); }
+  for(MinEigModel* m:models){ os <<c++ <<' '; m->report(os, mini); }
   os <<"vert=" <<vert <<endl;
 }

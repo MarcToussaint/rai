@@ -783,6 +783,7 @@ arr Quaternion::getJacobian() const{
   return J;
 }
 
+/// this is a 4x(3x3) matrix, such that ~(J*x) is the jacobian of (R*x), and ~qdelta*J is (del R/del q)(qdelta)
 arr Quaternion::getMatrixJacobian() const{
   arr J(4,9); //transpose!
   double r0=w, r1=x, r2=y, r3=z;
