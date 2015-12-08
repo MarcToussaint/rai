@@ -830,23 +830,20 @@ double ors::Mesh::getRadius() {
 }
 
 double triArea(const arr& a, const arr& b, const arr& c){
-#if 1
   return .5*length(crossProduct(b-a, c-a));
-#else
-  arr B=b;
-  arr C=c;
-  B-=a;
-  C-=a;
-  return .5*::sqrt(sumOfSqr(B)*sumOfSqr(C)-mlr::sqr(scalarProduct(B,C)));
-//  B -= (scalarProduct(B,C)/sumOfSqr(C)) * C;
-//  CHECK_ZERO(scalarProduct(B,C), 1e-4, "");
-//  return .5*length(B)*length(C);
-#endif
 }
 
 double ors::Mesh::getArea() const{
+  CHECK(T.d1==3,"");
   double A=0.;
   for(uint i=0;i<T.d0;i++) A += triArea(V[T(i,0)], V[T(i,1)], V[T(i,2)]);
+  return A;
+}
+
+double ors::Mesh::getCircum() const{
+  CHECK(T.d1==2,"");
+  double A=0.;
+  for(uint i=0;i<T.d0;i++) A += length(V[T(i,0)] - V[T(i,1)]);
   return A;
 }
 
@@ -1439,6 +1436,15 @@ void glDrawMesh(void *classP) {
 void ors::Mesh::glDraw() {
   if(!T.N){
     glDrawPointCloud(V, C);
+    return;
+  }
+  if(T.d1==2){
+    glBegin(GL_LINES);
+    for(uint t=0; t<T.d0; t++) {
+      glVertex3dv(&V(T(t, 0), 0));
+      glVertex3dv(&V(T(t, 1), 0));
+    }
+    glEnd();
     return;
   }
   if(V.d0!=Vn.d0 || T.d0!=Tn.d0) {

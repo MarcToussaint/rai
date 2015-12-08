@@ -386,9 +386,21 @@ void glDrawDiamond(float x, float y, float z, float dx, float dy, float dz) {
   glPopMatrix();
 }
 
-void glDrawAxes(double scale) {
+void glDrawAxis() {
   GLUquadric *style=gluNewQuadric();
-  
+  glBegin(GL_LINES);
+  glVertex3f(0, 0, 0);
+  glVertex3f(.95, 0, 0);
+  glEnd();
+  glTranslatef(.8, 0, 0);
+  glRotatef(90, 0, 1, 0);
+  glDisable(GL_CULL_FACE);
+  gluCylinder(style, .08, 0, .2, 20, 1);
+  glEnable(GL_CULL_FACE);
+  gluDeleteQuadric(style);
+}
+
+void glDrawAxes(double scale) {
   for(uint i=0; i<3; i++) {
     glPushMatrix();
     glScalef(scale, scale, scale);
@@ -397,19 +409,10 @@ void glDrawAxes(double scale) {
       case 1:  glColor(0, 1, 0);  glRotatef(90, 0, 0, 1);  break;
       case 2:  glColor(0, 0, 1);  glRotatef(90, 0, -1, 0);  break;
     }
-    glBegin(GL_LINES);
-    glVertex3f(0, 0, 0);
-    glVertex3f(.95, 0, 0);
-    glEnd();
-    glTranslatef(.8, 0, 0);
-    glRotatef(90, 0, 1, 0);
-    glDisable(GL_CULL_FACE);
-    gluCylinder(style, .08, 0, .2, 20, 1);
-    glEnable(GL_CULL_FACE);
+    glDrawAxis();
     glPopMatrix();
   }
   
-  gluDeleteQuadric(style);
 }
 
 void drawCoordinateFrame() {
@@ -1536,7 +1539,7 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   if(mouse_button==5 && !downPressed) cam->X.pos -= s->downRot*Vector_z * (.2 * s->downPos.length());
   
   if(mouse_button==3) {  //selection
-    Select();
+    Select(true);
     if(topSelection)
       cam->focus(topSelection->x, topSelection->y, topSelection->z);
   }

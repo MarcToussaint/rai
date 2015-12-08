@@ -1,5 +1,7 @@
 #include "modelEnsemble.h"
 
+#define QUALITY_THRESHOLD 0.1
+
 ModelEnsemble::ModelEnsemble(){
   vert={0.0477157, -0.617799, -0.784887};
 }
@@ -38,7 +40,7 @@ bool ModelEnsemble::addNewRegionGrowingModel(DataNeighbored& data){
   //-- check success
   model->calcDensity();
   model->report();
-  if(model->density<.1){
+  if(model->density<QUALITY_THRESHOLD){
     delete model;
     return false;
   }
@@ -58,7 +60,7 @@ void ModelEnsemble::reoptimizeModels(DataNeighbored& data){
     model->reweightWithError(model->pts);
     model->calc(true);
     model->calcDensity();
-    if(model->density<.1){ model->setWeightsToZero(); model->density=0.; continue; }
+    if(model->density<QUALITY_THRESHOLD){ model->setWeightsToZero(); model->density=0.; continue; }
     for(uint i:model->pts) if(data.weights(i)<model->weights(i)) data.weights(i)=model->weights(i);
   }
   for(uint i=models.N;i--;) if(!models(i)->density){ delete models(i);  models.remove(i); }

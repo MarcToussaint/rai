@@ -712,3 +712,17 @@ void ComputeCameraView::step(){
     frame=skipFrames;
   }
 }
+
+
+void AllViewer::open() {
+  gl.add(glStandardScene, 0);
+  gl.add(glDrawPointCloud, &kinect_points_copy);
+  gl.add(glDrawPlanes, &planes_now_copy);
+}
+
+void AllViewer::step(){
+  kinect_points_copy = kinect_points.get();
+  kinect_pointColors_copy = kinect_pointColors.get();
+  planes_now_copy = planes_now.get();
+  gl.update();
+}

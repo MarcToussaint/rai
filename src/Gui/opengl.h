@@ -93,6 +93,7 @@ void glDrawSphere(float radius);
 void glDrawDisk(float radius);
 void glDrawCylinder(float radius, float length, bool closed=true);
 void glDrawCappedCylinder(float radius, float length);
+void glDrawAxis();
 void glDrawAxes(double scale);
 void glDrawGridBox(float x);
 void glDrawGridBox(float x1, float y1, float z1, float x2, float y2, float z2);

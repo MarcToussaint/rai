@@ -80,6 +80,7 @@ struct Mesh {
   Vector getMeanVertex();
   double getRadius();
   double getArea() const;
+  double getCircum() const;
   double getVolume();
 
 

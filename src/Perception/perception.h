@@ -14,6 +14,7 @@
 #include <Gui/opengl.h>
 #include <map>
 
+#include "plane.h"
 
 //===========================================================================
 //
@@ -275,6 +276,29 @@ struct OrsViewer:Module{
   void open() {}
   void step();
   void close() {}
+};
+
+struct AllViewer : Module{
+  Access_typed<arr> kinect_points;
+  Access_typed<arr> kinect_pointColors;
+  Access_typed<PlaneA> planes_now;
+
+  arr kinect_points_copy;
+  arr kinect_pointColors_copy;
+  PlaneA planes_now_copy;
+  OpenGL gl;
+
+  AllViewer()
+    : Module("AllViewer", .1),
+      kinect_points(this, "kinect_points"),
+      kinect_pointColors(this, "kinect_pointColors"),
+      planes_now(this, "planes_now"),
+      gl("AllViewer"){}
+  ~AllViewer(){}
+  void open();
+  void step();
+  void close() {}
+
 };
 
 struct ComputeCameraView:Module{
