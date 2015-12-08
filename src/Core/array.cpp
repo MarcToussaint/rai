@@ -1154,7 +1154,7 @@ void scanArrFile(const char* name) {
 
 /// numeric (finite difference) check of the gradient of f at x
 bool checkGradient(const ScalarFunction& f,
-                   const arr& x, double tolerance) {
+                   const arr& x, double tolerance, bool verbose) {
   arr J, dx, JJ;
   double y, dy;
   y=f(J, NoArr, x);
@@ -1186,7 +1186,7 @@ bool checkGradient(const ScalarFunction& f,
   return true;
 }
 
-bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance) {
+bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance, bool verbose) {
   arr g, H, dx, dy, Jg;
   f(g, H, x);
   if(H.special==arr::RowShiftedPackedMatrixST) H = unpack(H);
@@ -1219,7 +1219,7 @@ bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance) {
 }
 
 bool checkJacobian(const VectorFunction& f,
-                   const arr& x, double tolerance) {
+                   const arr& x, double tolerance, bool verbose) {
   arr y, J, dx, dy, JJ;
   f(y, J, x);
   if(J.special==arr::RowShiftedPackedMatrixST) J = unpack(J);
@@ -1240,6 +1240,10 @@ bool checkJacobian(const VectorFunction& f,
     MLR_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
     J >>FILE("z.J_analytical");
     JJ >>FILE("z.J_empirical");
+    if(verbose){
+      cout <<"J_analytical = " <<J
+         <<"\nJ_empirical  = " <<JJ <<endl;
+    }
     return false;
   } else {
     cout <<"checkJacobian -- SUCCESS (max diff error=" <<md <<")" <<endl;

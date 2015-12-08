@@ -105,6 +105,7 @@ struct Quaternion {
   double *p() { return &w; }
   
   void set(double w, double x, double y, double z);
+  void set(const arr& q);
   void set(double* p);
   void setZero();
   void setRandom();
@@ -144,6 +145,7 @@ struct Quaternion {
   double* getMatrixGL(double* m) const;  //in OpenGL format: transposed 4x4 memory storage
 
   arr getJacobian() const;
+  arr getMatrixJacobian() const;
 
   void writeNice(std::ostream& os) const;
   void write(std::ostream& os) const;

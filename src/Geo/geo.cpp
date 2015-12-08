@@ -38,7 +38,7 @@ ors::Vector& NoVector = *((ors::Vector*)NULL);
 ors::Transformation& NoTransformation = *((ors::Transformation*)NULL);
 
 namespace ors {
-double scalarProduct(const ors::Quaternion& a, const ors::Quaternion& b);
+  double scalarProduct(const ors::Quaternion& a, const ors::Quaternion& b);
 }
 
 //===========================================================================
@@ -475,6 +475,9 @@ void Quaternion::alignWith(const Vector& v) {
 void Quaternion::set(double* p) { w=p[0]; x=p[1]; y=p[2]; z=p[3]; isZero=(w==1. || w==-1.); }
 
 /// set the quad
+void Quaternion::set(const arr& q) { CHECK_EQ(q.N,4, "");  set(q.p); }
+
+/// set the quad
 void Quaternion::set(double _w, double _x, double _y, double _z) { w=_w; x=_x; y=_y; z=_z; isZero=(w==1. || w==-1.); }
 
 /// reset the rotation to identity
@@ -777,6 +780,26 @@ arr Quaternion::getJacobian() const{
     J(1, i) = -2.*e.y;
     J(2, i) = -2.*e.z;
   }
+  return J;
+}
+
+arr Quaternion::getMatrixJacobian() const{
+  arr J(4,9); //transpose!
+  double r0=w, r1=x, r2=y, r3=z;
+  J[0] = {      0,    -r3,     r2,
+               r3,      0,    -r1,
+              -r2,     r1,      0 };
+  J[1] = {      0,     r2,     r3,
+               r2, -2.*r1,    -r0,
+               r3,     r0, -2.*r1 };
+  J[2] = { -2.*r2,     r1,    r0,
+               r1,      0,     r3,
+              -r0,     r3, -2.*r2 };
+  J[3] = { -2.*r3,    -r0,     r1,
+               r0, -2.*r3,     r2,
+               r1,     r2,      0};
+  J *= 2.;
+  J.reshape(4,3,3);
   return J;
 }
 
