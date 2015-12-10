@@ -230,6 +230,7 @@ struct Camera {
   void glConvertToTrueDepth(double &d);
   void glConvertToLinearDepth(double &d);
   void setKinect();
+  void setDefault();
 };
 
 //===========================================================================

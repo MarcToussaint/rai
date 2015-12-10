@@ -1267,7 +1267,7 @@ void Camera::watchDirection(const Vector& d) {
   r.setDiff(-X.rot.getZ(), d);
   X.rot=r*X.rot;
 }
-/// rotate the frame to set it upright (i.e. camera's y aligned with 's z)
+/// rotate the frame to set it upright (i.e. camera's y aligned with world's z)
 void Camera::upright() {
 #if 1
   //construct desired X:
@@ -1343,11 +1343,23 @@ void Camera::glConvertToLinearDepth(double &d) {
 }
 
 void Camera::setKinect(){
+  setZero();
   setPosition(0., 0., 0.);
-  focus(0., 0., 1.);
-  setZRange(.1, 10.);
-  heightAbs=heightAngle=0.;
+  focus(0., 0., 5.);
+  setZRange(.1, 50.);
+#if 0
+  heightAbs=heightAngle = 0;
+#else
+  heightAbs=10; heightAngle=45;
+#endif
   focalLength = 580./480.;
+}
+
+void Camera::setDefault(){
+  setZero();
+  setPosition(10., -15., 8.);
+  focus(0, 0, 1.);
+  upright();
 }
 
 //==============================================================================

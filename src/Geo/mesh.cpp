@@ -841,6 +841,7 @@ double ors::Mesh::getArea() const{
 }
 
 double ors::Mesh::getCircum() const{
+  if(!T.N) return 0.;
   CHECK(T.d1==2,"");
   double A=0.;
   for(uint i=0;i<T.d0;i++) A += length(V[T(i,0)] - V[T(i,1)]);

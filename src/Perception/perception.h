@@ -193,8 +193,8 @@ struct PointCloudViewer:Module{
   Access_typed<arr> pts;
   Access_typed<arr> cols;
   PointCloudViewer(const char* pts_name="kinect_points", const char* cols_name="kinect_pointColors")
-    : Module(STRING("PointCloudViewer_"<<pts_name <<'_' <<cols_name)),
-      pts(this, pts_name, true),
+    : Module(STRING("PointCloudViewer_"<<pts_name <<'_' <<cols_name), .1),
+      pts(this, pts_name),
       cols(this, cols_name){}
   void open();
   void step();

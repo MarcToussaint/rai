@@ -155,6 +155,7 @@ void PointCloudViewer::open(){
   s->gl.add(glDrawAxes);
   s->gl.add(glDrawPointCloud, s->pc);
   s->gl.camera.setKinect();
+//  s->gl.reportSelects = true;
 }
 
 void PointCloudViewer::close(){

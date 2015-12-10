@@ -1535,8 +1535,8 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   if(!cont) { postRedrawEvent(true); lock.unlock(); return; }
   
   //mouse scroll wheel:
-  if(mouse_button==4 && !downPressed) cam->X.pos += s->downRot*Vector_z * (.2 * s->downPos.length());
-  if(mouse_button==5 && !downPressed) cam->X.pos -= s->downRot*Vector_z * (.2 * s->downPos.length());
+  if(mouse_button==4 && !downPressed) cam->X.pos += s->downRot*Vector_z * (.1 * (s->downPos-s->downFoc).length());
+  if(mouse_button==5 && !downPressed) cam->X.pos -= s->downRot*Vector_z * (.1 * (s->downPos-s->downFoc).length());
   
   if(mouse_button==3) {  //selection
     Select(true);
