@@ -26,18 +26,15 @@ struct ManipulationTree_Node{
   //  ors::KinematicSwitch sw; ///< the kinematic switch(es) that this action implies
   ors::KinematicWorld kinematics; ///< actual kinematics after action (includes all previous switches)
 
-  //-- results of effective pose optimization
-  Graph *poseProblemSpecs;
+  //-- effective pose, frame sequence, and path optimization
   ors::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
-  arr effPose;
-  double effPoseCost;
-  double effPoseReward;
 
-  //-- results of full path optimization
-  MotionProblem pathProblem;
-  Graph *pathProblemSpecs;
-  arr path;
-  double pathCost;
+  //-- specs and results of the three optimization problems
+  MotionProblem seqProblem, pathProblem;
+  Graph *poseProblemSpecs, *seqProblemSpecs, *pathProblemSpecs;
+  arr pose, seq, path;
+  double poseCost, seqCost, pathCost;
+  double effPoseReward;
 
   ///root node init
   ManipulationTree_Node(LogicGeometricProgram& lgp);
@@ -47,9 +44,14 @@ struct ManipulationTree_Node{
 
   void expand();
   void solvePoseProblem();
+  void solveSeqProblem();
   void solvePathProblem(uint microSteps);
 
+  ManipulationTree_NodeL getTreePath();
+
   void write(ostream& os=cout) const;
+  void getGraph(Graph& G, Node *n=NULL) const;
+  Graph getGraph() const{ Graph G; getGraph(G, NULL); return G; }
 };
 
 inline ostream& operator<<(ostream& os, const ManipulationTree_Node& n){ n.write(os); return os; }

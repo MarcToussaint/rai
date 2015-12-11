@@ -75,7 +75,6 @@ struct KOrderMarkovFunction {
   virtual uint get_T() = 0;       ///< horizon (the total x-dimension is (T+1)*n )
   virtual uint get_k() = 0;       ///< the order of dependence: \f$ \phi=\phi(x_{t-k},..,x_t) \f$
   virtual uint dim_x() = 0;       ///< \f$ \dim(x_t) \f$
-  virtual uint dim_z(){ return 0; } ///< \f$ \dim(z) \f$
   virtual uint dim_phi(uint t) = 0; ///< \f$ \dim(\phi_t) \f$
   virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints at the end of \f$ \phi_t \f$ (before h terms)
   virtual uint dim_h(uint t){ return 0; } ///< number of equality constraints at the very end of \f$ \phi_t \f$
