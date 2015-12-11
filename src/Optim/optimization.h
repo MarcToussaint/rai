@@ -66,15 +66,18 @@ typedef std::function<void(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x
 
 /// functions \f$ \phi_t:(x_{t-k},..,x_t) \mapsto y\in\mathbb{R}^{m_t} \f$ over a chain \f$x_0,..,x_T\f$ of variables
 struct KOrderMarkovFunction {
+  virtual void set_x(const arr& x) = 0;
+
   /// returns $\f\phi(x), \nabla \phi(x)\f$ for a given time step t and a k+1 tuple of states \f$\bar x = (x_{t-k},..,x_t)\f$.
   /// This defines the cost function \f$f_t = \phi_t^\top \phi_t\f$ in the time slice. Optionally, the last dim_g entries of
   ///  \f$\phi\f$ are interpreted as inequality constraint function \f$g(\bar x)\f$ for time slice t
-  virtual void phi_t(arr& phi, arr& J, TermTypeA& tt, uint t, const arr& x_bar) = 0;
+  virtual void phi_t(arr& phi, arr& J, TermTypeA& tt, uint t) = 0;
   
   //functions to get the parameters $T$, $k$ and $n$ of the $k$-order Markov Process
   virtual uint get_T() = 0;       ///< horizon (the total x-dimension is (T+1)*n )
   virtual uint get_k() = 0;       ///< the order of dependence: \f$ \phi=\phi(x_{t-k},..,x_t) \f$
-  virtual uint dim_x() = 0;       ///< \f$ \dim(x_t) \f$
+  virtual uint dim_x() = 0;       ///< \f$ \sum_t \dim(x_t) \f$
+  virtual uint dim_x(uint t) = 0;       ///< \f$ \dim(x_t) \f$
   virtual uint dim_phi(uint t) = 0; ///< \f$ \dim(\phi_t) \f$
   virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints at the end of \f$ \phi_t \f$ (before h terms)
   virtual uint dim_h(uint t){ return 0; } ///< number of equality constraints at the very end of \f$ \phi_t \f$
