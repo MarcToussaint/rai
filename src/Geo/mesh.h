@@ -101,15 +101,14 @@ struct Mesh {
   void readPLY(const char *fn);
   void glDraw();
 };
-
-
+} //END of namespace
+stdOutPipe(ors::Mesh)
 
 //===========================================================================
 //
 // operators
 //
 
-stdOutPipe(Mesh);
 uintA getSubMeshPositions(const char* filename);
 
 
@@ -123,7 +122,6 @@ void inertiaSphere(double *Inertia, double& mass, double density, double radius)
 void inertiaBox(double *Inertia, double& mass, double density, double dx, double dy, double dz);
 void inertiaCylinder(double *Inertia, double& mass, double density, double height, double radius);
 
-} //END of namespace
 
 /// @} end of group_geo
 

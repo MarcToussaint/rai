@@ -244,8 +244,9 @@ void glDrawText(const char* txt, float x, float y, float z) {
         if(font==GLUT_BITMAP_HELVETICA_12) font=GLUT_BITMAP_HELVETICA_18;
         else font=GLUT_BITMAP_HELVETICA_12;
         break;
-      default:
+      default:{
         glutBitmapCharacter(font, *txt);
+      }
     }
     txt++;
   }
@@ -1040,9 +1041,10 @@ void OpenGL::clear() {
   keyCalls.clear();
 }
 
-void OpenGL::Draw(int w, int h, ors::Camera *cam) {
+void OpenGL::Draw(int w, int h, ors::Camera *cam, bool ignoreLock) {
 #ifdef MLR_GL
   openglAccess().lock();
+  if(!ignoreLock) lock.readLock(); //now accessing user data
 
   //clear bufferer
   GLint viewport[4] = {0, 0, w, h};
@@ -1070,7 +1072,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   //select mode?
   GLint mode;
   glGetIntegerv(GL_RENDER_MODE, &mode);
-  
+
   //projection
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -1130,9 +1132,6 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   //std color: black:
   glColor(.3, .3, .5);
   
-  lock.readLock(); //now accessing user data
-  //cout <<"LOCK draw" <<endl;
-
   //draw central view
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -1188,7 +1187,6 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   }
   
   //cout <<"UNLOCK draw" <<endl;
-  lock.unlock(); //now de-accessing user data
 
   if(captureImg){
     captureImage.resize(h, w, 3);
@@ -1207,12 +1205,15 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam) {
   if(s!=1) MLR_MSG("OpenGL name stack has not depth 1 (pushs>pops) in DRAW mode:" <<s);
   //CHECK(s<=1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
   
-  //this->s->endGlContext();
+  if(!ignoreLock) lock.unlock(); //now de-accessing user data
   openglAccess().unlock();
 #endif
 }
 
-void OpenGL::Select() {
+void OpenGL::Select(bool ignoreLock) {
+  openglAccess().lock();
+  if(!ignoreLock) lock.readLock();
+
 #ifdef MLR_GL
   uint i, j, k;
   
@@ -1297,6 +1298,8 @@ void OpenGL::Select() {
   
   s->endGlContext();
 #endif
+  if(!ignoreLock) lock.unlock();
+  openglAccess().unlock();
 }
 
 /** @brief watch in interactive mode and wait for an exiting event
@@ -1689,18 +1692,20 @@ void OpenGL::Motion(int _x, int _y) {
 //
 
 struct XBackgroundContext{
+#ifdef MLR_GL
   typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
   typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 
-  glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
-  glXMakeContextCurrentARBProc glXMakeContextCurrentARB = 0;
+  glXCreateContextAttribsARBProc glXCreateContextAttribsARB;
+  glXMakeContextCurrentARBProc glXMakeContextCurrentARB;
   Display* dpy;
   int fbcount;
   GLXFBConfig* fbc;
   GLXContext ctx;
   GLXPbuffer pbuf;
 
-  XBackgroundContext(){
+  XBackgroundContext()
+    : glXCreateContextAttribsARB(0), glXMakeContextCurrentARB(0){
     static int visual_attribs[] = { None };
     int context_attribs[] = { GLX_CONTEXT_MAJOR_VERSION_ARB, 3, GLX_CONTEXT_MINOR_VERSION_ARB, 0, None };
 
@@ -1751,15 +1756,19 @@ struct XBackgroundContext{
       }
     }
   }
+#endif
 };
 
 Singleton<XBackgroundContext> xBackgroundContext;
 
-void OpenGL::renderInBack(bool _captureImg, bool _captureDep){
+void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
+#ifdef MLR_GL
+  if(w<0) w=width;
+  if(h<0) h=height;
 
   xBackgroundContext().makeCurrent();
 
-  CHECK_EQ(width%4,0,"should be devidable by 4!!");
+  CHECK_EQ(w%4,0,"should be devidable by 4!!");
 
   isUpdating.waitForValueEq(0);
   isUpdating.setValue(1);
@@ -1770,11 +1779,11 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep){
     glewInit();
     glGenRenderbuffers(1, &rboColor);  // Create a new renderbuffer unique name.
     glBindRenderbuffer(GL_RENDERBUFFER, rboColor);  // Set it as the current.
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height); // Sets storage type for currently bound renderbuffer.
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, w, h); // Sets storage type for currently bound renderbuffer.
     // Depth renderbuffer.
     glGenRenderbuffers(1, &rboDepth);
     glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
     // Framebuffer.
     // Create a framebuffer and a renderbuffer object.
     // You need to delete them when program exits.
@@ -1840,20 +1849,20 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep){
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
 
   //-- draw!
-  Draw(width, height);
+  Draw(w, h, NULL, true);
   glFlush();
 
   //-- read
   if(_captureImg){
-    captureImage.resize(height, width, 3);
+    captureImage.resize(h, w, 3);
     //  glReadBuffer(GL_BACK);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
-    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
+    glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
   }
   if(_captureDep){
-    captureDepth.resize(height, width);
+    captureDepth.resize(h, w);
     glReadBuffer(GL_DEPTH_ATTACHMENT);
-    glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, captureDepth.p);
+    glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, captureDepth.p);
   }
 
   // Return to onscreen rendering:
@@ -1861,6 +1870,7 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep){
 
   isUpdating.setValue(0);
 //  s->endGlContext();
+#endif
 }
 
 //===========================================================================

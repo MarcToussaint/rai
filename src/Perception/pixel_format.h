@@ -10,7 +10,7 @@
 
 /* for the yuv formats, also see http://www.ptgrey.com/support/kb/index.asp?a=4&q=313 */
 
-namespace MLR {
+namespace mlr {
 enum PixelFormat {
 	PIXEL_FORMAT_RAW8,		// raw sensor-values, format depends on camera type
 	PIXEL_FORMAT_RGB8,		// packed r-g-b, 8 bit each

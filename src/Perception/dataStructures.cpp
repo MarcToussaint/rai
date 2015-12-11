@@ -3,11 +3,11 @@
 #ifdef MLR_PCL
 
 void glDrawPrimitives(void* classP){
-  ((DisplayPrimitives*)classP)->glDraw();
+  ((DisplayPrimitives*)classP)->glDraw(NoOpenGL);
 }
 
-void DisplayPrimitives::glDraw(){
-  G.glDraw();
+void DisplayPrimitives::glDraw(struct OpenGL& gl){
+  G.glDraw(gl);
   double tmp[16];
   for(Primitive* p:P){
     if(!p->X.isZero()){

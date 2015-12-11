@@ -208,7 +208,14 @@ struct Thread{
   CycleTimer timer;
 
   /// @name c'tor/d'tor
-  Thread(const char* _name, double beatIntervalSec=0.); ///< beatIntervalSec=0. indicates full speed looping, beatIntervalSec=-1. indicates no looping (steps triggered by listening)
+  /** DON'T open drivers/devices/files or so here in the constructor,
+   * but in open(). Sometimes a module might be created only to see
+   * which accesses it needs. The default constructure should really
+   * do nothing
+   *
+   * beatIntervalSec=0. indicates full speed looping, beatIntervalSec=-1. indicates no looping (steps triggered by listening)
+   */
+  Thread(const char* _name, double beatIntervalSec=0.);
   virtual ~Thread();
 
   /// @name to be called from `outside' (e.g. the main) to start/step/close the thread
@@ -228,8 +235,19 @@ struct Thread{
   /// @name listen to a variable
   void listenTo(RevisionedAccessGatedClass& var);
 
+  /** use this to open drivers/devices/files and initialize
+   *  parameters; this is called within the thread */
   virtual void open() = 0;
+
+  /** The most important method of all of this: step does the actual
+   *  computation of the module. Modules should be state less. Access
+   *  the variables by calling the x.get(), x.set() or
+   *  x.[read|write|de]Access(), where ACCESS(TYPE, x) was
+   *  declared. */
   virtual void step() = 0;
+
+  /** use this to close drivers/devices/files; this is called within
+   *  the thread */
   virtual void close() = 0;
 
   void main(); //this is the thread main - should be private!

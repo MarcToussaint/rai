@@ -17,6 +17,7 @@
     -----------------------------------------------------------------  */
 
 #include "thread.h"
+#include "registry.h"
 #include <exception>
 
 #ifndef MLR_MSVC
@@ -212,6 +213,7 @@ RevisionedAccessGatedClass::RevisionedAccessGatedClass(const char *_name):name(_
 }
 
 RevisionedAccessGatedClass::~RevisionedAccessGatedClass() {
+  for(Thread *th: listeners) th->listensTo.removeValue(this);
 }
 
 int RevisionedAccessGatedClass::readAccess(Thread *th) {

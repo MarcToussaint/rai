@@ -3149,7 +3149,7 @@ BinaryOperator(/ , /=);
 #undef BinaryOperator
 
 /// allows a notation such as x <<"[0 1; 2 3]"; to initialize an array x
-template<class T> Array<T>& operator<<(Array<T>& x, const char* str) { std::istringstream ss(str); ss >>x; return x; }
+//template<class T> Array<T>& operator<<(Array<T>& x, const char* str) { std::istringstream ss(str); ss >>x; return x; }
 
 /// calls Array<T>::read
 template<class T> std::istream& operator>>(std::istream& is, Array<T>& x) { x.read(is); return is; }
