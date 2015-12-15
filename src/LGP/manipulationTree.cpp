@@ -59,7 +59,7 @@ void ManipulationTree_Node::solvePoseProblem(){
   for(ors::KinematicSwitch *sw: poseProblem.switches)
     if(sw->timeOfApplication==0) sw->apply(effKinematics);
 
-  arr x=poseProblem.x0;
+  arr x=poseProblem.getInitialization();
   rndGauss(x, .1, true);
   OptConstrained opt(x, NoArr, poseProblem.InvKinProblem(), OPT(verbose=0));
   opt.run();
@@ -91,7 +91,11 @@ void ManipulationTree_Node::solveSeqProblem(){
 //  listWrite(komoRules, cout, "\n"); cout <<endl;
   for(ManipulationTree_Node *node:treepath) if(node->folDecision){ //(e.g. the root may not have a decision)
     CHECK(node->s > 0,""); //don't add anything for the root
+#if 0
     node->folDecision->newClone(*seqProblemSpecs); //add the decision literal to the specs
+#else
+    seqProblemSpecs->copy(*node->folState, false);
+#endif
     forwardChaining_FOL(*seqProblemSpecs, komoRules); //use the rules to add to the specs
     seqProblem.parseTasks(*seqProblemSpecs, 1, node->s-1);
     cout <<"SEQ PROBLEM: (s=" <<node->s <<")\n" <<*seqProblemSpecs <<endl;
@@ -102,15 +106,14 @@ void ManipulationTree_Node::solveSeqProblem(){
   arr x = seqProblem.getInitialization();
   seqProblem.reportFull(true);
   rndGauss(x, .1, true);
-  MotionProblemFunction MPF(seqProblem);
-  if(!MPF.dim_g_h()){
-    optNewton(x, Convert(MPF), OPT(verbose=2, stopIters=100, maxStep=.1, stepInc=1.1, stepDec=0.7 , damping=1., allowOverstep=true));
+  if(!seqProblem.dim_g_h()){
+    optNewton(x, Convert(seqProblem), OPT(verbose=2, stopIters=100, maxStep=.1, stepInc=1.1, stepDec=0.7 , damping=1., allowOverstep=true));
 //    OptNewton opt(x, Convert(MPF), OPT(verbose=0));
 //    opt.run();
     seq = x;
 //    seqCost = opt.fx;
   }else{
-    OptConstrained opt(x, NoArr, Convert(MPF), OPT(verbose=0));
+    OptConstrained opt(x, NoArr, Convert(seqProblem), OPT(verbose=0));
     opt.run();
     seq = x;
     seqCost = opt.newton.fx;
@@ -145,17 +148,16 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps){
   //    KOMO komo(*pathProblem);
   pathProblem.reportFull(true);
 
-  arr x = replicate(pathProblem.x0, pathProblem.T+1); //we initialize with a constant trajectory!
+  arr x = pathProblem.getInitialization();
   rndGauss(x, .1, true);
-  MotionProblemFunction MPF(pathProblem);
-  if(!MPF.dim_g_h()){
-    optNewton(x, Convert(MPF), OPT(verbose=2, stopIters=100, maxStep=.1, stepInc=1.1, stepDec=0.7 , damping=1., allowOverstep=true));
+  if(!pathProblem.dim_g_h()){
+    optNewton(x, Convert(pathProblem), OPT(verbose=2, stopIters=100, maxStep=.1, stepInc=1.1, stepDec=0.7 , damping=1., allowOverstep=true));
 //    OptNewton opt(x, Convert(MPF), OPT(verbose=0));
 //    opt.run();
     path = x;
 //    pathCost = opt.fx;
   }else{
-    OptConstrained opt(x, NoArr, Convert(MPF), OPT(verbose=0));
+    OptConstrained opt(x, NoArr, Convert(pathProblem), OPT(verbose=0));
     opt.run();
     path = x;
     pathCost = opt.newton.fx;
