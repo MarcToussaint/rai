@@ -49,10 +49,12 @@ extern uint eval_cost;
  *
  */
 
-/// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
+/// A scalar function $y = f(x)$, if @df@ or @Hf@ are not NoArr, the gradient and/or Hessian is returned
 typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
 
-/// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
+/// A vector function $y = f(x)$, if @J@ is not NoArr, Jacobian is returned
+/// This also implies an optimization problem $\hat f(y) = y^T(x) y(x)$ of (iterated)
+/// Gauss-Newton type where the Hessian is approximated by J^T J
 typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
 
 
@@ -61,6 +63,14 @@ extern const char* TermTypeString[];
 typedef mlr::Array<TermType> TermTypeA;
 extern TermTypeA& NoTermTypeA;
 
+/** A ConstrainedProblem returns a feature vector $phi$ and optionally its Jacobian $J$. For each entry of
+ *  this feature vector $tt(i)$ determins whether this is an inequality constraint, an equality constraint,
+ *  a sumOfSqr or "direct-f" cost feature. The latter two define the objective function as
+ *  $f(x) = f_j(x) + \sum_i \phi_i(x)^2$, where the sum only goes over sumOfSqr features, and f_j is a
+ *  direct-f feature (tt(i)==fTT). The direct-f feature is special: there may only exist a single such
+ *  feature; and if there exists this feature the returned Hessian $H$ needs to be its hessian.
+ *  For the sumOfSqr features no Hessian is returned: we assume the Gauss-Newton approximation.
+ */
 typedef std::function<void(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x)> ConstrainedProblem;
 
 
@@ -76,11 +86,12 @@ struct KOrderMarkovFunction {
   //functions to get the parameters $T$, $k$ and $n$ of the $k$-order Markov Process
   virtual uint get_T() = 0;       ///< horizon (the total x-dimension is (T+1)*n )
   virtual uint get_k() = 0;       ///< the order of dependence: \f$ \phi=\phi(x_{t-k},..,x_t) \f$
-  virtual uint dim_x() = 0;       ///< \f$ \sum_t \dim(x_t) \f$
+  virtual uint dim_x() { uint d=0, T=get_T(); for(uint t=0; t<=T; t++) d+=dim_x(t); return d; }   ///< \f$ \sum_t \dim(x_t) \f$
   virtual uint dim_x(uint t) = 0;       ///< \f$ \dim(x_t) \f$
   virtual uint dim_phi(uint t) = 0; ///< \f$ \dim(\phi_t) \f$
   virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints at the end of \f$ \phi_t \f$ (before h terms)
   virtual uint dim_h(uint t){ return 0; } ///< number of equality constraints at the very end of \f$ \phi_t \f$
+  virtual uint dim_g_h(){ uint d=0, T=get_T(); for(uint t=0;t<=T;t++) d += dim_g(t) + dim_h(t); return d; }
   virtual StringA getPhiNames(uint t){ return StringA(); }
   virtual arr get_prefix(){ arr x(get_k(), dim_x()); x.setZero(); return x; } ///< the augmentation \f$ (x_{t=-k},..,x_{t=-1}) \f$ that makes \f$ \phi_{0,..,k-1} \f$ well-defined
   virtual arr get_postfix(){ return arr(); } ///< by default there is no definite final configuration
@@ -103,13 +114,8 @@ bool checkDirectionalGradient(const ScalarFunction &f, const arr& x, const arr& 
 bool checkDirectionalJacobian(const VectorFunction &f, const arr& x, const arr& delta, double tolerance);
 
 
-//these actually call the functions (->query cost) to evalute them at some point
-double evaluateSF(ScalarFunction& f, const arr& x);
-double evaluateVF(VectorFunction& f, const arr& x);
 
-
-
-// declared separately:
+// optimization algorithms declared separately:
 #include "opt-options.h"
 #include "opt-convert.h"
 #include "opt-newton.h"
