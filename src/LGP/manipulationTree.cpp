@@ -98,9 +98,9 @@ void ManipulationTree_Node::solveSeqProblem(){
     seqProblemSpecs->clear();
   }
 
-  seqProblem.reportFull(true);
 
-  arr x = replicate(seqProblem.x0, seqProblem.T+1); //we initialize with a constant trajectory!
+  arr x = seqProblem.getInitialization();
+  seqProblem.reportFull(true);
   rndGauss(x, .1, true);
   MotionProblemFunction MPF(seqProblem);
   if(!MPF.dim_g_h()){
