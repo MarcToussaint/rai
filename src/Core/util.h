@@ -83,6 +83,7 @@ typedef const char* charp;
 namespace mlr {
 extern int argc;
 extern char** argv;
+extern const char* mlrCorePath;
 extern bool IOraw;  ///< stream modifier for some classes (Mem in particular)
 extern uint lineCount;
 extern int verboseLevel;
@@ -91,6 +92,7 @@ extern int interactivity;
 //----- files
 void open(std::ofstream& fs, const char *name, const char *errmsg="");
 void open(std::ifstream& fs, const char *name, const char *errmsg="");
+const char* mlrPath(const char* rel=NULL);
 
 //----- strings and streams
 bool contains(const char *s, char c);
