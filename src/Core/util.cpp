@@ -89,8 +89,6 @@ mlr::String mlr::errString;
 Mutex coutMutex;
 Log _log("global", 2, 3);
 
-const char* mlr::mlrCorePath = path();
-
 
 //===========================================================================
 //
@@ -623,7 +621,6 @@ char *getCmdLineArgument(const char *tag) {
 
 const char* mlrPath(const char* rel){
   return MLR_CORE_PATH;
-
 }
 
 }//namespace mlr

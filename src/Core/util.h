@@ -83,7 +83,6 @@ typedef const char* charp;
 namespace mlr {
 extern int argc;
 extern char** argv;
-extern const char* mlrCorePath;
 extern bool IOraw;  ///< stream modifier for some classes (Mem in particular)
 extern uint lineCount;
 extern int verboseLevel;
