@@ -89,6 +89,8 @@ mlr::String mlr::errString;
 Mutex coutMutex;
 Log _log("global", 2, 3);
 
+const char* mlr::mlrCorePath = path();
+
 
 //===========================================================================
 //
