@@ -110,6 +110,7 @@ struct KOrderMarkovFunction {
 //
 
 bool checkJacobianCP(const ConstrainedProblem &P, const arr& x, double tolerance);
+bool checkHessianCP(const ConstrainedProblem &P, const arr& x, double tolerance);
 bool checkDirectionalGradient(const ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction &f, const arr& x, const arr& delta, double tolerance);
 

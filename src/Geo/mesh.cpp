@@ -318,7 +318,7 @@ void ors::Mesh::makeConvexHull() {
 #endif
 }
 
-void ors::Mesh::setSSC(const ors::Mesh& m, double r, uint fineness){
+void ors::Mesh::setSSCvx(const ors::Mesh& m, double r, uint fineness){
   Mesh ball;
   ball.setSphere(fineness);
   ball.scale(r);
@@ -817,13 +817,13 @@ void ors::Mesh::skin(uint start) {
   cout <<T <<endl;
 }
 
-ors::Vector ors::Mesh::getMeanVertex() {
+ors::Vector ors::Mesh::getMeanVertex() const {
   arr Vmean = sum(V,0);
   Vmean /= (double)V.d0;
   return Vector(Vmean);
 }
 
-double ors::Mesh::getRadius() {
+double ors::Mesh::getRadius() const {
   double r=0.;
   for(uint i=0;i<V.d0;i++) r=mlr::MAX(r, sumOfSqr(V[i]));
   return sqrt(r);
@@ -836,8 +836,27 @@ double triArea(const arr& a, const arr& b, const arr& c){
 double ors::Mesh::getArea() const{
   CHECK(T.d1==3,"");
   double A=0.;
-  for(uint i=0;i<T.d0;i++) A += triArea(V[T(i,0)], V[T(i,1)], V[T(i,2)]);
-  return A;
+  ors::Vector a,b,c;
+  for(uint i=0;i<T.d0;i++){
+    a.set(V.p+3*T.p[3*i+0]);
+    b.set(V.p+3*T.p[3*i+1]);
+    c.set(V.p+3*T.p[3*i+2]);
+    A += ((b-a)^(c-a)).length();
+  }
+  return .5*A;
+}
+
+double ors::Mesh::getVolume() const{
+  CHECK(T.d1==3,"");
+  ors::Vector z = getMeanVertex(), a,b,c;
+  double vol=0.;
+  for(uint i=0;i<T.d0;i++){
+    a.set(V.p+3*T.p[3*i+0]);
+    b.set(V.p+3*T.p[3*i+1]);
+    c.set(V.p+3*T.p[3*i+2]);
+    vol += (a-z) * ((b-a)^(c-a));
+  }
+  return vol/6.;
 }
 
 double ors::Mesh::getCircum() const{
@@ -1774,3 +1793,162 @@ void ors::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint 
 }
 #endif
 /** @} */
+
+//===========================================================================
+
+DistanceFunction_Sphere::DistanceFunction_Sphere(const ors::Transformation& _t, double _r):t(_t),r(_r){
+  ScalarFunction::operator=( [this](arr& g, arr& H, const arr& x)->double{ return f(g,H,x); } );
+}
+
+double DistanceFunction_Sphere::f(arr& g, arr& H, const arr& x){
+  arr d = x-conv_vec2arr(t.pos);
+  double len = length(d);
+  if(&g) g = d/len;
+  if(&H) H = 1./len * (eye(3) - (d^d)/(len*len));
+  return len-r;
+}
+
+//===========================================================================
+
+//double DistanceFunction_InfCylinder::fs(arr& g, arr& H, const arr& x){
+//  z = z / length(z);
+//  arr a = (x-c) - scalarProduct((x-c), z) * z;
+//  arr I(x.d0,x.d0);
+//  uint i;
+//  double na = length(a);
+
+//  if(&g) g = s*a/na;
+//  if(&H){
+//    I.setZero();
+//    for(i=0;i<x.d0;++i) I(i,i)=1;
+//    H = s/na * (I - z*(~z) - 1/(na*na) * a*(~a));
+//  }
+//  return s*(na-r);
+//}
+
+//===========================================================================
+
+DistanceFunction_Cylinder::DistanceFunction_Cylinder(const ors::Transformation& _t, double _r, double _dz):t(_t),r(_r),dz(_dz){
+  ScalarFunction::operator=( [this](arr& g, arr& H, const arr& x)->double{ return f(g,H,x); } );
+}
+
+double DistanceFunction_Cylinder::f(arr& g, arr& H, const arr& x){
+  arr z = conv_vec2arr(t.rot.getZ());
+  arr c = conv_vec2arr(t.pos);
+  arr b = scalarProduct(x-c, z) * z;
+  arr a = (x-c) - b;
+  arr I(3,3);
+  double la = length(a);
+  double lb = length(b);
+  arr aaTovasq = 1/(la*la) * (a^a);
+  arr zzT = z^z;
+
+  if ( lb < dz/2. ){ // x projection on z is inside cyl
+    if(la<r && (dz/2.-lb)<(r-la)){ // x is INSIDE the cyl and closer to the lid than the wall
+      if(&g) g = 1./lb*b; //z is unit: s*z*|z|*sgn(b*z) = s*b/nb
+      if(&H) { I.setZero(); H=I; }
+      return lb-dz/2.;
+    }else{ // closer to the side than to a lid (inc. cases in- and outside the tube, because (r-na)<0 then)
+      if(&g) g = a/la;
+      if(&H){
+        I.setId(3);
+        H = 1./la * (I - zzT - aaTovasq);
+      }
+      return la-r;
+    }
+  }else{// x projection on z is outside cylinder
+    if ( la < r ){// inside the infinite cylinder
+      if(&g) g = b/lb;
+      if(&H) H.resize(3,3).setZero();
+      return lb-dz/2.;
+    }else{ // outside the infinite cyl
+      arr v =  b/lb * (lb-dz/2.)  + a/la * (la-r); //MT: good! (note: b/nb is the same as z) SD: well, b/nb is z or -z.
+      double nv=length(v);
+      if(&g) g = v/nv;
+      if(&H){
+        I.setId(3);
+        arr dvdx = (la-r)/la*( I - zzT - aaTovasq )
+                   + aaTovasq + zzT;
+        H = 1./nv* (dvdx - 1/nv/nv * (v^v) * (~dvdx) );
+      }
+      return nv;
+    }
+  }
+  HALT("You shouldn't be here!");
+}
+
+//===========================================================================
+
+DistanceFunction_Box::DistanceFunction_Box(const ors::Transformation& _t, double _dx, double _dy, double _dz, double _r):t(_t),dx(_dx),dy(_dy),dz(_dz), r(_r){
+  ScalarFunction::operator=( [this](arr& g, arr& H, const arr& x)->double{ return f(g,H,x); } );
+}
+
+double DistanceFunction_Box::f(arr& g, arr& H, const arr& x){
+  arr rot = t.rot.getArr();
+  arr a_rel = (~rot)*(x-conv_vec2arr(t.pos));
+  arr dim = {dx, dy, dz};
+
+  double d;
+  arr closest = a_rel;
+  arr del_abs = fabs(a_rel)-dim;
+  //-- find closest point on box and distance to it
+  if(del_abs.max()<0.){ //inside
+    uint side=del_abs.maxIndex(); //which side are we closest to?
+    if(a_rel(side)>0) closest(side) = dim(side);  else  closest(side)=-dim(side); //in positive or neg direction?
+    d = del_abs(side);
+  }else{ //outside
+    closest = elemWiseMax(-dim,closest);
+    closest = elemWiseMin(dim,closest);
+    d = length(a_rel - closest);
+  }
+
+  arr del = a_rel-closest;
+  if(&g) g = rot*del/d; //transpose(R) rotates the gradient back to world coordinates
+  if(&H){
+    if(d<0.){ //inside
+      H.resize(3,3).setZero();
+    }else{ //outside
+      if(del_abs.min()>0.){ //outside on all 3 axis
+        H = 1./d * (eye(3) - (del^del)/(d*d));
+      }else{
+        arr edge=del_abs;
+        for(double& z: edge) z=(z<0.)?0.:1.;
+        if(sum(edge)<=1.1){ //closest to the plane (equals 1.)
+          H.resize(3,3).setZero();
+        }else{ //closest to an edge
+          edge = 1.-edge;
+          H = 1./d * (eye(3) - (del^del)/(d*d) - (edge^edge));
+        }
+      }
+      H = rot*H*(~rot);
+    }
+  }
+
+  return d-r;
+}
+
+ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> double{
+  CHECK_EQ(x.N, 14, "pt + abcr + pose");
+  ors::Transformation t;
+  ors::Vector size(x.subRange(3,5));
+  t.pos.set( x.subRange(7,9) );
+  t.rot.set( x.subRange(10,13) );
+  t.rot.normalize();
+  DistanceFunction_Box D(t, size.x, size.y, size.z, x(6));
+  arr grad;
+  double f=D.f(grad, NoArr, x.subRange(0,2));
+  if(&g){
+    g.resize(14);
+    g.setZero();
+    g.subRange(0,2) = grad;
+    g.subRange(7,9) = - grad;
+    g.subRange(3,5) = - (t.rot / ors::Vector(grad)).getArr();
+    g(6) = -1.;
+//    g.subRange(10,13) = (t.rot.getMatrixJacobian()*(x.subRange(0,2)-t.pos.getArr()))*grad;
+    g.subRange(10,13) = ~grad*crossProduct(t.rot.getJacobian(), (x.subRange(0,2)-t.pos.getArr()));
+    g.subRange(10,13)() /= -sqrt(sumOfSqr(x.subRange(10,13))); //account for the potential non-normalization of q
+
+  }
+  return f;
+};
+

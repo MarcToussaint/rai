@@ -37,6 +37,21 @@ bool checkJacobianCP(const ConstrainedProblem &P, const arr& x, double tolerance
   return checkJacobian(F, x, tolerance);
 }
 
+bool checkHessianCP(const ConstrainedProblem &P, const arr& x, double tolerance){
+  uint i;
+  arr phi, J;
+  TermTypeA tt;
+  P(phi, NoArr, NoArr, tt, x);
+  for(i=0;i<tt.N;i++) if(tt(i)==fTT) break;
+  CHECK(i<tt.N,"");
+  ScalarFunction F = [&P,&phi,&J,i](arr& g, arr& H, const arr& x) -> double{
+    P(phi, J, H, NoTermTypeA, x);
+    g = J[i];
+    return phi(i);
+  };
+  return checkHessian(F, x, tolerance);
+}
+
 //===========================================================================
 //
 // helpers

@@ -56,7 +56,7 @@ struct Mesh {
   void setCylinder(double r, double l, uint fineness=3);
   void setCappedCylinder(double r, double l, uint fineness=3);
   void setSSBox(double x, double y, double z, double r, uint fineness=3);
-  void setSSC(const ors::Mesh& m, double r, uint fineness=3);
+  void setSSCvx(const ors::Mesh& m, double r, uint fineness=3);
   void setImplicitSurface(ScalarFunction f, double lo=-10., double hi=+10., uint res=100);
   void setRandom(uint vertices=10);
   void setGrid(uint X, uint Y);
@@ -77,11 +77,11 @@ struct Mesh {
   void fuseNearVertices(double tol=1e-5);
   void clean();
   void flipFaces();
-  Vector getMeanVertex();
-  double getRadius();
+  Vector getMeanVertex() const;
+  double getRadius() const;
   double getArea() const;
   double getCircum() const;
-  double getVolume();
+  double getVolume() const;
 
 
   //[preliminary]]
@@ -138,6 +138,32 @@ void glDrawMesh(void *classP);
 void glDrawPointCloud(const arr& pts, const arr& cols);
 void glDrawDots(void *dots);
 void glDrawPointCloud(void *pc);
+
+
+//===========================================================================
+//
+// analytic distance functions
+//
+
+struct DistanceFunction_Sphere:ScalarFunction{
+  ors::Transformation t; double r;
+  DistanceFunction_Sphere(const ors::Transformation& _t, double _r);
+  double f(arr& g, arr& H, const arr& x);
+};
+
+struct DistanceFunction_Box:ScalarFunction{
+  ors::Transformation t; double dx, dy, dz, r;
+  DistanceFunction_Box(const ors::Transformation& _t, double _dx, double _dy, double _dz, double _r=0.);
+  double f(arr& g, arr& H, const arr& x);
+};
+
+struct DistanceFunction_Cylinder:ScalarFunction{
+  ors::Transformation t; double r, dz;
+  DistanceFunction_Cylinder(const ors::Transformation& _t, double _r, double _dz);
+  double f(arr& g, arr& H, const arr& x);
+};
+
+extern ScalarFunction DistanceFunction_SSBox;
 
 
 //===========================================================================
