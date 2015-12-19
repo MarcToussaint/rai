@@ -166,7 +166,7 @@ template<class T> struct Array {
   void setCarray(const T **buffer, uint D0, uint D1);
   void referTo(const T *buffer, uint n);
   void referTo(const Array<T>& a);
-  void referToSubRange(const Array<T>& a, int i, int I);
+  void referToSub(const Array<T>& a, int i, int I);
   void referToSubDim(const Array<T>& a, uint dim);
   void referToSubDim(const Array<T>& a, uint i, uint j);
   void referToSubDim(const Array<T>& a, uint i, uint j, uint k);
@@ -177,7 +177,7 @@ template<class T> struct Array {
   /// @name access by reference (direct memory access)
   T& elem(int i) const;
   T& scalar() const;
-  operator T&() const{ return scalar(); }
+//  operator T&() const{ return scalar(); }
   T& first() const;
   T& last(int i=-1) const;
   T& rndElem() const;
@@ -188,7 +188,7 @@ template<class T> struct Array {
   Array<T> operator[](uint i) const;     // calls referToSubDim(*this, i)
   Array<T> subDim(uint i, uint j) const; // calls referToSubDim(*this, i, j)
   Array<T> subDim(uint i, uint j, uint k) const; // calls referToSubDim(*this, i, j, k)
-  Array<T> subRange(int i, int I) const; // calls referToSubRange(*this, i, I)
+  Array<T> subRef(int i, int I) const; // calls referToSub(*this, i, I)
   Array<T>& operator()();
   T** getCarray(Array<T*>& Cpointers) const;
   

@@ -1931,24 +1931,24 @@ double DistanceFunction_Box::f(arr& g, arr& H, const arr& x){
 ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> double{
   CHECK_EQ(x.N, 14, "pt + abcr + pose");
   ors::Transformation t;
-  t.pos.set( x.subRange(7,9) );
-  t.rot.set( x.subRange(10,13) );
+  t.pos.set( x.subRef(7,9) );
+  t.rot.set( x.subRef(10,13) );
   t.rot.normalize();
   arr closest, signs;
-  closestPointOnBox(closest, signs, t, x(3), x(4), x(5), x.subRange(0,2));
-  arr grad = x.subRange(0,2) - closest;
+  closestPointOnBox(closest, signs, t, x(3), x(4), x(5), x.subRef(0,2));
+  arr grad = x.subRef(0,2) - closest;
   double d = length(grad);
   grad /= d;
   d -= x(6);
   if(&g){
     g.resize(14);
     g.setZero();
-    g.subRange(0,2) = grad;
-    g.subRange(7,9) = - grad;
-    g.subRange(3,5) = - signs%(t.rot / ors::Vector(grad)).getArr();
+    g.subRef(0,2) = grad;
+    g.subRef(7,9) = - grad;
+    g.subRef(3,5) = - signs%(t.rot / ors::Vector(grad)).getArr();
     g(6) = -1.;
-    g.subRange(10,13) = ~grad*crossProduct(t.rot.getJacobian(), (x.subRange(0,2)-t.pos.getArr()));
-    g.subRange(10,13)() /= -sqrt(sumOfSqr(x.subRange(10,13))); //account for the potential non-normalization of q
+    g.subRef(10,13) = ~grad*crossProduct(t.rot.getJacobian(), (x.subRef(0,2)-t.pos.getArr()));
+    g.subRef(10,13)() /= -sqrt(sumOfSqr(x.subRef(10,13))); //account for the potential non-normalization of q
   }
   return d;
 };

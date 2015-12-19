@@ -761,7 +761,7 @@ template<class T> mlr::Array<T> mlr::Array<T>::subDim(uint i, uint j) const { re
 template<class T> mlr::Array<T> mlr::Array<T>::subDim(uint i, uint j, uint k) const { return Array(*this, i, j, k); }
 
 /// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
-template<class T> mlr::Array<T> mlr::Array<T>::subRange(int i, int I) const { mlr::Array<T> z;  z.referToSubRange(*this, i, I);  return z; }
+template<class T> mlr::Array<T> mlr::Array<T>::subRef(int i, int I) const { mlr::Array<T> z;  z.referToSub(*this, i, I);  return z; }
 
 
 /// convert a subarray into a reference (e.g. a[3]()+=.123)
@@ -1286,7 +1286,7 @@ template<class T> void mlr::Array<T>::referTo(const mlr::Array<T>& a) {
 }
 
 /// make this array a subarray reference to \c a
-template<class T> void mlr::Array<T>::referToSubRange(const mlr::Array<T>& a, int i, int I) {
+template<class T> void mlr::Array<T>::referToSub(const mlr::Array<T>& a, int i, int I) {
   CHECK(a.nd<=3, "not implemented yet");
   freeMEM();
   resetD();

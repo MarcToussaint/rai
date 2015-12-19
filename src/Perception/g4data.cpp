@@ -51,7 +51,7 @@ void readNode(Graph *i, uintA &hsitoi, uintA &itohsi, int ind) {
   if(hsi >= hsitoi.N) {
     hsitoiN = hsitoi.N;
     hsitoi.resizeCopy(hsi+1);
-    hsitoi.subRange(hsitoiN, hsi)() = -1;
+    hsitoi.subRef(hsitoiN, hsi)() = -1;
   }
   hsitoi(hsi) = ind;
   itohsi.append(hsi);
@@ -264,7 +264,7 @@ void G4Rec::load(const char *recdir, bool interpolate) {
   dataquatprev = data[0].sub(0, -1, 3, -1);
   for(uint f = 1; f < data.d0; f++) {
     for(uint i = 0; i < data.d1; i++) {
-      dataquat.referToSubRange(data.subDim(f, i)(), 3, -1);
+      dataquat.referToSub(data.subDim(f, i)(), 3, -1);
       if(sum(dataquat % dataquatprev[i]) < 0)
         dataquat *= -1.;
       if(!length(dataquatprev[i]) || length(dataquat))
@@ -326,7 +326,7 @@ void G4Rec::load(const char *recdir, bool interpolate) {
       for(Node *lock: *pair->getValue<Graph>()) {
         from = (uint)*lock->getValue<Graph>()->getValue<double>("from");
         to = (uint)*lock->getValue<Graph>()->getValue<double>("to");
-        ann->subRange(from, to) = 1;
+        ann->subRef(from, to) = 1;
       }
       pair->getValue<Graph>()->append("ann", ann);
     }
@@ -547,7 +547,7 @@ void G4Rec::computeDQuat(const char *sensor) {
 //   for(uint i = 0; i < bam.d0; i++) {
 //     for(uint fi = ff; fi < ft; fi++) {
 //       uint wi = fi - ff;
-//       window.referToSubRange(bam[i], wi, wi + wlen - 1);
+//       window.referToSub(bam[i], wi, wi + wlen - 1);
 //       windowMean = sum(window, 0) / (double)wlen;
 //       windowMean = ~repmat(windowMean, 1, wlen);
 //       bamVar(i, fi) = sumOfSqr(window - windowMean);
@@ -585,7 +585,7 @@ void G4Rec::computeVar(const char *type) {
       uint f = (f_thin + 1) * thinning - 1;
       if(f < ff) continue;
       // if(f > ft) break;
-      window.referToSubRange(bam[i], f - wlen + 1, f);
+      window.referToSub(bam[i], f - wlen + 1, f);
       windowMean = sum(window, 0) / (double)wlen;
       // windowMeanRep = ~repmat(windowMean, 1, wlen);
       // bamVar(i, f_thin) = sumOfSqr(window - windowMeanRep);
