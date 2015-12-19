@@ -62,7 +62,7 @@ struct Vector {
   double radius() const;
   double phi() const;
   double theta() const;
-  arr getArr(){ return arr(&x,3); }
+  arr getArr() const{ return arr(&x,3); }
   
   void write(std::ostream&) const;
   void read(std::istream&);

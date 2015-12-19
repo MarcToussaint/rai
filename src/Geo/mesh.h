@@ -32,7 +32,7 @@ namespace ors {
 
 //===========================================================================
 /// a mesh (arrays of vertices, triangles, colors & normals)
-struct Mesh {
+struct Mesh : GLDrawer {
   arr V;                ///< vertices
   arr Vn;               ///< triangle normals
   arr C;                ///< vertex colors
@@ -100,7 +100,7 @@ struct Mesh {
   void writeOffFile(const char* filename);
   void writePLY(const char *fn, bool bin);
   void readPLY(const char *fn);
-  void glDraw();
+  void glDraw(struct OpenGL&);
 };
 } //END of namespace
 stdOutPipe(ors::Mesh)
@@ -128,16 +128,6 @@ void inertiaCylinder(double *Inertia, double& mass, double density, double heigh
 
 
 /** @} */
-
-//===========================================================================
-//
-// OpenGL static draw functions
-//
-
-void glDrawMesh(void *classP);
-void glDrawPointCloud(const arr& pts, const arr& cols);
-void glDrawDots(void *dots);
-void glDrawPointCloud(void *pc);
 
 
 //===========================================================================

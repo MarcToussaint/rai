@@ -46,8 +46,7 @@ bool orsDrawWires=false;
 
 ors::Mesh::Mesh() :
     parsing_pos_start(0),
-    parsing_pos_end(std::numeric_limits<long>::max())
-{};
+    parsing_pos_end(std::numeric_limits<long>::max()){}
 
 void ors::Mesh::clear() {
   V.clear(); Vn.clear(); T.clear(); Tn.clear(); C.clear(); //strips.clear();
@@ -1447,15 +1446,39 @@ uintA getSubMeshPositions(const char* filename) {
 
 #ifdef MLR_GL
 
-/// static GL routine to draw a ors::Mesh
-void glDrawMesh(void *classP) {
-  ((ors::Mesh*)classP)->glDraw();
-}
-
 /// GL routine to draw a ors::Mesh
-void ors::Mesh::glDraw() {
-  if(!T.N){
-    glDrawPointCloud(V, C);
+void ors::Mesh::glDraw(struct OpenGL&) {
+  if(!T.N){  //-- draw point cloud
+    if(!V.N) return;
+    CHECK(V.nd==2 && V.d1==3, "wrong dimension");
+    glPointSize(3.);
+    glDisable(GL_LIGHTING);
+  #if 1
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3, GL_DOUBLE, V.d1-3, V.p);
+    if(C.N==V.N){
+      glEnableClientState(GL_COLOR_ARRAY);
+      glColorPointer(3, GL_DOUBLE, C.d1-3, C.p );
+    }else glDisableClientState(GL_COLOR_ARRAY);
+    glDrawArrays(GL_POINTS, 0, V.d0);
+    glDisableClientState(GL_VERTEX_ARRAY);
+  #else
+    glBegin(GL_POINTS);
+    if(C.N!=V.N){
+      const double *p=V.begin(), *pstop=V.end();
+      for(; p!=pstop; p+=V.d1)
+        glVertex3dv(p);
+    }else{
+      const double *p=V.begin(), *pstop=V.end(), *c=C.begin();
+      for(; p!=pstop; p+=V.d1, c+=C.d1){
+        glVertex3dv(p);
+        glColor3dv(c);
+      }
+    }
+    glEnd();
+  #endif
+    glEnable(GL_LIGHTING);
+    glPointSize(1.);
     return;
   }
   if(T.d1==2){
@@ -1545,7 +1568,7 @@ void ors::Mesh::glDraw() {
 #endif
 }
 #else //MLR_GL
-void ors::Mesh::glDraw() { NICO }
+void ors::Mesh::glDraw(struct OpenGL&) { NICO }
 void glDrawMesh(void*) { NICO }
 void glTransform(const ors::Transformation&) { NICO }
 #endif
@@ -1578,50 +1601,6 @@ void inertiaCylinder(double *I, double& mass, double density, double height, dou
   I[4]=mass/12.*(3.*r2+h2);
   I[8]=mass/2.*r2;
 }
-
-
-//===========================================================================
-//
-// point cloud drawing
-//
-
-
-#ifdef MLR_GL
-void glDrawDots(void *dots) { glDrawPointCloud(*(arr*)dots, NoArr); }
-
-void glDrawPointCloud(void *pc) { glDrawPointCloud(((const arr*)pc)[0], ((const arr*)pc)[1]); }
-
-void glDrawPointCloud(const arr& pts, const arr& cols) {
-  if(!pts.N) return;
-  CHECK(pts.nd==2 && pts.d1==3, "wrong dimension");
-  glDisable(GL_LIGHTING);
-#if 0
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glVertexPointer(3, GL_DOUBLE, pts.d1-3, pts.p);
-  if(&cols && cols.N==pts.N){
-    glEnableClientState(GL_COLOR_ARRAY);
-    glColorPointer(3, GL_DOUBLE, cols.d1-3, cols.p );
-  }else glDisableClientState(GL_COLOR_ARRAY);
-  glDrawArrays(GL_POINTS, 0, pts.d0);
-  glDisableClientState(GL_VERTEX_ARRAY);
-#else
-  glBegin(GL_POINTS);
-  if(!&cols || cols.N!=pts.N){
-    const double *p=pts.begin(), *pstop=pts.end();
-    for(; p!=pstop; p+=pts.d1)
-      glVertex3dv(p);
-  }else{
-    const double *p=pts.begin(), *pstop=pts.end(), *c=cols.begin();
-    for(; p!=pstop; p+=pts.d1, c+=cols.d1){
-      glVertex3dv(p);
-      glColor3dv(c);
-    }
-  }
-  glEnd();
-#endif
-}
-#else //MLR_GL
-#endif
 
 
 //===========================================================================
@@ -1879,30 +1858,52 @@ double DistanceFunction_Cylinder::f(arr& g, arr& H, const arr& x){
 
 //===========================================================================
 
+void closestPointOnBox(arr& closest, arr& signs, const ors::Transformation& t, double dx, double dy, double dz, const arr& x){
+  arr rot = t.rot.getArr();
+  arr a_rel = (~rot)*(x-conv_vec2arr(t.pos)); //point in box coordinates
+  arr dim = {dx, dy, dz};
+  signs.resize(3);
+  signs.setZero();
+  closest = a_rel;
+  arr del_abs = fabs(a_rel)-dim;
+  if(del_abs.max()<0.){ //inside
+    uint side=del_abs.maxIndex(); //which side are we closest to?
+     //in positive or neg direction?
+    if(a_rel(side)>0){ closest(side) = dim(side);  signs(side)=+1.; }
+    else             { closest(side) =-dim(side);  signs(side)=-1.; }
+  }else{ //outside
+    for(uint side=0;side<3;side++){
+      if(closest(side)<-dim(side)){ signs(side)=-1.; closest(side)=-dim(side); }
+      if(closest(side)> dim(side)){ signs(side)=+1.; closest(side)= dim(side); }
+    }
+  }
+  closest = rot*closest + t.pos.getArr();
+}
+
+//===========================================================================
+
 DistanceFunction_Box::DistanceFunction_Box(const ors::Transformation& _t, double _dx, double _dy, double _dz, double _r):t(_t),dx(_dx),dy(_dy),dz(_dz), r(_r){
   ScalarFunction::operator=( [this](arr& g, arr& H, const arr& x)->double{ return f(g,H,x); } );
 }
 
 double DistanceFunction_Box::f(arr& g, arr& H, const arr& x){
   arr rot = t.rot.getArr();
-  arr a_rel = (~rot)*(x-conv_vec2arr(t.pos));
+  arr a_rel = (~rot)*(x-conv_vec2arr(t.pos)); //point in box coordinates
   arr dim = {dx, dy, dz};
 
-  double d;
   arr closest = a_rel;
   arr del_abs = fabs(a_rel)-dim;
   //-- find closest point on box and distance to it
   if(del_abs.max()<0.){ //inside
     uint side=del_abs.maxIndex(); //which side are we closest to?
     if(a_rel(side)>0) closest(side) = dim(side);  else  closest(side)=-dim(side); //in positive or neg direction?
-    d = del_abs(side);
   }else{ //outside
     closest = elemWiseMax(-dim,closest);
     closest = elemWiseMin(dim,closest);
-    d = length(a_rel - closest);
   }
 
   arr del = a_rel-closest;
+  double d = length(del);
   if(&g) g = rot*del/d; //transpose(R) rotates the gradient back to world coordinates
   if(&H){
     if(d<0.){ //inside
@@ -1930,25 +1931,25 @@ double DistanceFunction_Box::f(arr& g, arr& H, const arr& x){
 ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> double{
   CHECK_EQ(x.N, 14, "pt + abcr + pose");
   ors::Transformation t;
-  ors::Vector size(x.subRange(3,5));
   t.pos.set( x.subRange(7,9) );
   t.rot.set( x.subRange(10,13) );
   t.rot.normalize();
-  DistanceFunction_Box D(t, size.x, size.y, size.z, x(6));
-  arr grad;
-  double f=D.f(grad, NoArr, x.subRange(0,2));
+  arr closest, signs;
+  closestPointOnBox(closest, signs, t, x(3), x(4), x(5), x.subRange(0,2));
+  arr grad = x.subRange(0,2) - closest;
+  double d = length(grad);
+  grad /= d;
+  d -= x(6);
   if(&g){
     g.resize(14);
     g.setZero();
     g.subRange(0,2) = grad;
     g.subRange(7,9) = - grad;
-    g.subRange(3,5) = - (t.rot / ors::Vector(grad)).getArr();
+    g.subRange(3,5) = - signs%(t.rot / ors::Vector(grad)).getArr();
     g(6) = -1.;
-//    g.subRange(10,13) = (t.rot.getMatrixJacobian()*(x.subRange(0,2)-t.pos.getArr()))*grad;
     g.subRange(10,13) = ~grad*crossProduct(t.rot.getJacobian(), (x.subRange(0,2)-t.pos.getArr()));
     g.subRange(10,13)() /= -sqrt(sumOfSqr(x.subRange(10,13))); //account for the potential non-normalization of q
-
   }
-  return f;
+  return d;
 };
 
