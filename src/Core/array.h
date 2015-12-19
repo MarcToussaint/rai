@@ -110,7 +110,7 @@ template<class T> struct Array {
   explicit Array(uint D0, uint D1, uint D2);
   explicit Array(const T* p, uint size);    //reference!
   Array(std::initializer_list<T> list);
-  template<class S> Array(std::initializer_list<S> list);
+  template<class S> Array(std::initializer_list<S> list); //this is only implemented for T=mlr::String and S=const char* !
   Array(mlr::FileToken&); //read from a file
   ~Array();
   
@@ -144,7 +144,7 @@ template<class T> struct Array {
   Array<T>& resizeAs(const Array<T>& a);
   Array<T>& reshapeAs(const Array<T>& a);
   Array<T>& resizeCopyAs(const Array<T>& a);
-  Array<T>& flatten();
+  Array<T>& reshapeFlat();
   Array<T>& dereference();
 
   /// @name initializing/assigning entries
@@ -167,9 +167,9 @@ template<class T> struct Array {
   void referTo(const T *buffer, uint n);
   void referTo(const Array<T>& a);
   void referToSub(const Array<T>& a, int i, int I);
-  void referToSubDim(const Array<T>& a, uint dim);
-  void referToSubDim(const Array<T>& a, uint i, uint j);
-  void referToSubDim(const Array<T>& a, uint i, uint j, uint k);
+  void referToDim(const Array<T>& a, uint i);
+  void referToDim(const Array<T>& a, uint i, uint j);
+  void referToDim(const Array<T>& a, uint i, uint j, uint k);
   void takeOver(Array<T>& a);  //a becomes a reference to its previously owned memory!
   void swap(Array<T>& a);      //the two arrays swap their contents!
   void setGrid(uint dim, T lo, T hi, uint steps);
@@ -181,15 +181,16 @@ template<class T> struct Array {
   T& first() const;
   T& last(int i=-1) const;
   T& rndElem() const;
+//  T& operator()() const{ return scalar(); }
   T& operator()(uint i) const;
   T& operator()(uint i, uint j) const;
   T& operator()(uint i, uint j, uint k) const;
   T& operator()(const Array<uint> &I) const;
-  Array<T> operator[](uint i) const;     // calls referToSubDim(*this, i)
-  Array<T> subDim(uint i, uint j) const; // calls referToSubDim(*this, i, j)
-  Array<T> subDim(uint i, uint j, uint k) const; // calls referToSubDim(*this, i, j, k)
+  Array<T> operator[](uint i) const;     // calls referToDim(*this, i)
+  Array<T> subDim(uint i, uint j) const; // calls referToDim(*this, i, j)
+  Array<T> subDim(uint i, uint j, uint k) const; // calls referToDim(*this, i, j, k)
   Array<T> subRef(int i, int I) const; // calls referToSub(*this, i, I)
-  Array<T>& operator()();
+  Array<T>& operator()(){ return *this; } //TODO: replace by scalar reference!
   T** getCarray(Array<T*>& Cpointers) const;
   
   /// @name access by copy
@@ -317,15 +318,17 @@ template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x);
 #ifndef SWIG
 #define UpdateOperator( op )        \
   template<class T> Array<T>& operator op (Array<T>& x, const Array<T>& y); \
-  template<class T> Array<T>& operator op ( Array<T>& x, T y )
-UpdateOperator(|=);
-UpdateOperator(^=);
-UpdateOperator(&=);
-UpdateOperator(+=);
-UpdateOperator(-=);
-UpdateOperator(*=);
-UpdateOperator(/=);
-UpdateOperator(%=);
+  template<class T> Array<T>& operator op (Array<T>& x, T y ); \
+  template<class T> void operator op (Array<T>&& x, const Array<T>& y); \
+  template<class T> void operator op (Array<T>&& x, T y );
+UpdateOperator(|=)
+UpdateOperator(^=)
+UpdateOperator(&=)
+UpdateOperator(+=)
+UpdateOperator(-=)
+UpdateOperator(*=)
+UpdateOperator(/=)
+UpdateOperator(%=)
 #undef UpdateOperator
 #endif
 

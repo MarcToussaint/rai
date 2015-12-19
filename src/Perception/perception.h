@@ -283,8 +283,7 @@ struct AllViewer : Module{
   Access_typed<arr> kinect_pointColors;
   Access_typed<PlaneA> planes_now;
 
-  arr kinect_points_copy;
-  arr kinect_pointColors_copy;
+  ors::Mesh kinect;
   PlaneA planes_now_copy;
   OpenGL gl;
 

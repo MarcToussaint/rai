@@ -187,15 +187,15 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
   arr v, f, w, v_f, y_f, dv, subn, wk, W;
   double dd;
   for(i=0; i<vertices.N; i++) {
-    v.referToSubDim(X, vertices(i)); //v is the vertex in question
+    v.referToDim(X, vertices(i)); //v is the vertex in question
     
     // subn: normal of the sub-facet opposit to v
     if(i) j=0; else j=1;
-    w.referToSubDim(X, vertices(j)); //take w as origin of local frame
+    w.referToDim(X, vertices(j)); //take w as origin of local frame
     CHECK(vertices.N>=X.d1, ""); //won't work otherwise..
     W.resize(vertices.N, X.d1);      //compose matrix of basis vectors
     for(k=0, l=0; k<vertices.N; k++) if(k!=i && k!=j) {
-        wk.referToSubDim(X, vertices(k));
+        wk.referToDim(X, vertices(k));
         W[l]() = wk-w;
         l++;
       }
@@ -219,7 +219,7 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
     CHECK(fabs(dd - d*d)<1e-8, "");
     
     //compute gradient
-    dv.referToSubDim(dDdX, vertices(i));
+    dv.referToDim(dDdX, vertices(i));
     dv = f - y + yf_vf_norm*v_f;
     dv *= 2.*yf_vf_norm;
     dv *= .5/d;

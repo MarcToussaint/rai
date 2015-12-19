@@ -143,7 +143,7 @@ struct sPointCloudViewer{
   OpenGL gl;
   sPointCloudViewer():gl("PointCloudViewer",640,480){}
 #endif
-  arr pc[2];
+  ors::Mesh pc;
 };
 
 void glDrawAxes(void*){
@@ -153,7 +153,7 @@ void glDrawAxes(void*){
 void PointCloudViewer::open(){
   s = new sPointCloudViewer;
   s->gl.add(glDrawAxes);
-  s->gl.add(glDrawPointCloud, s->pc);
+  s->gl.add(s->pc);
   s->gl.camera.setKinect();
 //  s->gl.reportSelects = true;
 }
@@ -163,8 +163,8 @@ void PointCloudViewer::close(){
 }
 
 void PointCloudViewer::step(){
-  s->pc[0]=pts.get();
-  s->pc[1]=cols.get();
+  s->pc.V=pts.get();
+  s->pc.C=cols.get();
 #ifdef MLR_GL
   s->gl.update();
 #endif
@@ -717,13 +717,13 @@ void ComputeCameraView::step(){
 
 void AllViewer::open() {
   gl.add(glStandardScene, 0);
-  gl.add(glDrawPointCloud, &kinect_points_copy);
+  gl.add(kinect);
   gl.add(glDrawPlanes, &planes_now_copy);
 }
 
 void AllViewer::step(){
-  kinect_points_copy = kinect_points.get();
-  kinect_pointColors_copy = kinect_pointColors.get();
+  kinect.V = kinect_points.get();
+  kinect.C = kinect_pointColors.get();
   planes_now_copy = planes_now.get();
   gl.update();
 }

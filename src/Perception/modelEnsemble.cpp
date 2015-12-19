@@ -107,10 +107,10 @@ void ModelEnsemble::reestimateVert(){
   for(auto m:models) if(m->label==1) m->bias_xx = -1e-1 * (vert^vert);
 }
 
-void ModelEnsemble::glDraw(OpenGL&){
+void ModelEnsemble::glDraw(OpenGL& gl){
   for(MinEigModel *m:models){
     glColor(m->label);
-    m->glDraw();
+    m->glDraw(gl );
   }
 }
 

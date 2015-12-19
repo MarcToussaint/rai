@@ -88,13 +88,13 @@ template<class T> mlr::Array<T>::Array():d(&d0) { init(); }
 template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a) { init(); operator=(a); }
 
 /// reference constructor
-template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i) { init(); referToSubDim(a, i); }
+template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i) { init(); referToDim(a, i); }
 
 /// reference constructor
-template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i, uint j) { init(); referToSubDim(a, i, j); }
+template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i, uint j) { init(); referToDim(a, i, j); }
 
 /// reference constructor
-template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i, uint j, uint k) { init(); referToSubDim(a, i, j, k); }
+template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i, uint j, uint k) { init(); referToDim(a, i, j, k); }
 
 /// constructor with resize
 template<class T> mlr::Array<T>::Array(uint i) { init(); resize(i); }
@@ -240,7 +240,7 @@ template<class T> mlr::Array<T>& mlr::Array<T>::reshapeAs(const mlr::Array<T>& a
   return *this;
 }
 
-template<class T> mlr::Array<T>& mlr::Array<T>::flatten() {
+template<class T> mlr::Array<T>& mlr::Array<T>::reshapeFlat() {
   reshape(N);
   return *this;
 }
@@ -765,7 +765,7 @@ template<class T> mlr::Array<T> mlr::Array<T>::subRef(int i, int I) const { mlr:
 
 
 /// convert a subarray into a reference (e.g. a[3]()+=.123)
-template<class T> mlr::Array<T>& mlr::Array<T>::operator()() { return (*this); }
+//template<class T> T& mlr::Array<T>::operator()() const { return scalar(); } //return (*this); }
 
 /// reference to the max entry
 template<class T> T& mlr::Array<T>::max() const { CHECK(N, ""); uint i, m=0; for(i=1; i<N; i++) if(p[i]>p[m]) m=i; return p[m]; }
@@ -1310,9 +1310,9 @@ template<class T> void mlr::Array<T>::referToSub(const mlr::Array<T>& a, int i, 
 }
 
 /// make this array a subarray reference to \c a
-template<class T> void mlr::Array<T>::referToSubDim(const mlr::Array<T>& a, uint dim) {
+template<class T> void mlr::Array<T>::referToDim(const mlr::Array<T>& a, uint i) {
   CHECK(a.nd>1, "can't create subarray of array less than 2 dimensions");
-  CHECK(dim<a.d0, "SubDim range error (" <<dim <<"<" <<a.d0 <<")");
+  CHECK(i<a.d0, "SubDim range error (" <<i <<"<" <<a.d0 <<")");
   freeMEM();
   reference=true; memMove=a.memMove;
   if(a.nd==2) {
@@ -1326,11 +1326,11 @@ template<class T> void mlr::Array<T>::referToSubDim(const mlr::Array<T>& a, uint
     resetD();
     if(nd>3) { d=new uint[nd];  memmove(d, a.d+1, nd*sizeof(uint)); }
   }
-  p=a.p+dim*N;
+  p=a.p+i*N;
 }
 
 /// make this array a subarray reference to \c a
-template<class T> void mlr::Array<T>::referToSubDim(const mlr::Array<T>& a, uint i, uint j) {
+template<class T> void mlr::Array<T>::referToDim(const mlr::Array<T>& a, uint i, uint j) {
   CHECK(a.nd>2, "can't create subsubarray of array less than 3 dimensions");
   CHECK(i<a.d0 && j<a.d1, "SubDim range error (" <<i <<"<" <<a.d0 <<", " <<j <<"<" <<a.d1 <<")");
   freeMEM();
@@ -1344,7 +1344,7 @@ template<class T> void mlr::Array<T>::referToSubDim(const mlr::Array<T>& a, uint
 }
 
 /// make this array a subarray reference to \c a
-template<class T> void mlr::Array<T>::referToSubDim(const mlr::Array<T>& a, uint i, uint j, uint k) {
+template<class T> void mlr::Array<T>::referToDim(const mlr::Array<T>& a, uint i, uint j, uint k) {
   CHECK(a.nd>3, "can't create subsubarray of array less than 3 dimensions");
   CHECK(i<a.d0 && j<a.d1 && k<a.d2, "SubDim range error (" <<i <<"<" <<a.d0 <<", " <<j <<"<" <<a.d1 <<", " <<k <<"<" <<a.d2 << ")");
   freeMEM();
@@ -3120,10 +3120,22 @@ template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Arr
     return x;           \
   }                 \
   \
-  template<class T> Array<T>& operator op ( Array<T>& x, T y ){ \
+  template<class T> Array<T>& operator op (Array<T>& x, T y ){ \
     T *xp=x.p, *xstop=xp+x.N;              \
     for(; xp!=xstop; xp++) *xp op y;        \
     return x;           \
+  } \
+  \
+  template<class T> void operator op (Array<T>&& x, const Array<T>& y){ \
+    CHECK_EQ(x.N,y.N, "binary operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
+    T *xp=x.p, *xstop=xp+x.N;              \
+    const T *yp=y.p;              \
+    for(; xp!=xstop; xp++, yp++) *xp op *yp;       \
+  }                 \
+  \
+  template<class T> void operator op (Array<T>&& x, T y ){ \
+    T *xp=x.p, *xstop=xp+x.N;              \
+    for(; xp!=xstop; xp++) *xp op y;        \
   }
 
 UpdateOperator(|=)
