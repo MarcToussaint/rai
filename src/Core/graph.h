@@ -130,10 +130,10 @@ struct Graph : NodeL {
   template<class T> const T& get(const char *key, const T& defaultValue) const;
   template<class T> T& V(const char *key){ T* y=getValue<T>(key); CHECK(y,""); return *y; }
   template<class T> const T& V(const char *key, const T& defaultValue) const{ T* y=getValue<T>(key); if(y) return *y; return defaultValue; }
-  template<class T> T* getValue(const char *key) const;
-  template<class T> T* getValue(const StringA &keys) const;
-  template<class T> bool getValue(T& x, const char *key) { T* y=getValue<T>(key); if(y) { x=*y; return true; } return false; }
-  template<class T> bool getValue(T& x, const StringA &keys) { T* y=getValue<T>(keys); if(y) { x=*y; return true; } return false; }
+  template<class T> T* getValue(const char *key)     const { Node *n = getNode(key);   if(!n) return NULL;  return n->getValue<T>(); }
+  template<class T> T* getValue(const StringA &keys) const { Node *n = getNode(keys);  if(!n) return NULL;  return n->getValue<T>(); }
+  template<class T> bool getValue(T& x, const char *key)     const { T* y=getValue<T>(key);  if(!y) return false;  x=*y;  return true; }
+  template<class T> bool getValue(T& x, const StringA &keys) const { T* y=getValue<T>(keys); if(!y) return false;  x=*y;  return true; }
 
   //-- get lists of all values of a certain type T (or derived from T)
   template<class T> mlr::Array<T*> getTypedValues(const char* key=NULL);
@@ -184,7 +184,7 @@ struct Nod{
   template<class T> Nod(const char* key, const T& x);
   template<class T> Nod(const char* key, const StringA& parents, const T& x);
   Graph G;
-  Node *it;
+  Node *n;
   StringA parents;
 };
 

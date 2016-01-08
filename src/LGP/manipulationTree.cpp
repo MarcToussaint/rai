@@ -94,7 +94,7 @@ void ManipulationTree_Node::solveSeqProblem(){
 #if 0
     node->folDecision->newClone(*seqProblemSpecs); //add the decision literal to the specs
 #else
-    seqProblemSpecs->copy(*node->folState, false);
+    seqProblemSpecs->copy(*node->folState, NULL);
 #endif
     forwardChaining_FOL(*seqProblemSpecs, komoRules); //use the rules to add to the specs
     seqProblem.parseTasks(*seqProblemSpecs, 1, node->s-1);
@@ -102,24 +102,27 @@ void ManipulationTree_Node::solveSeqProblem(){
     seqProblemSpecs->clear();
   }
 
-
-  arr x = seqProblem.getInitialization();
+  arr seq = seqProblem.getInitialization();
   seqProblem.reportFull(true);
-  rndGauss(x, .1, true);
+  rndGauss(seq, .1, true);
+
+  Convert cvt(seqProblem);
+
+  checkJacobianCP(cvt, seq, 1e-4);
+  checkHessianCP(cvt, seq, 1e-4);
+//  exit(0);
+
   if(!seqProblem.dim_g_h()){
-    optNewton(x, Convert(seqProblem), OPT(verbose=2, stopIters=100, maxStep=.1, stepInc=1.1, stepDec=0.7 , damping=1., allowOverstep=true));
-//    OptNewton opt(x, Convert(MPF), OPT(verbose=0));
-//    opt.run();
-    seq = x;
-//    seqCost = opt.fx;
-  }else{
-    OptConstrained opt(x, NoArr, Convert(seqProblem), OPT(verbose=0));
+    OptNewton opt(seq, cvt, OPT(verbose=2));
     opt.run();
-    seq = x;
+    seqCost = opt.fx;
+  }else{
+    OptConstrained opt(seq, NoArr, cvt, OPT(verbose=0));
+    opt.run();
     seqCost = opt.newton.fx;
   }
 
-  seqProblem.reportFull(true);
+//  seqProblem.reportFull(true);
   seqProblem.costReport();
   seqProblem.displayTrajectory(1, "SeqProblem", -.01);
 }

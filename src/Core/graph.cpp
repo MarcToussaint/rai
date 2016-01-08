@@ -147,8 +147,8 @@ Graph Node::ParentOf(){
 }
 
 Nod::Nod(const char* key){
-  it = new Node_typed<bool>(G, NULL, false);
-  it->keys.append(STRING(key));
+  n = new Node_typed<bool>(G, NULL, false);
+  n->keys.append(STRING(key));
 }
 
 
@@ -200,7 +200,7 @@ void Graph::clear() {
 }
 
 Node *Graph::append(const Nod& ni){
-  Node *clone = ni.it->newClone(*this); //this appends sequentially clones of all items to 'this'
+  Node *clone = ni.n->newClone(*this); //this appends sequentially clones of all items to 'this'
   for(const mlr::String& s:ni.parents){
     Node *p = getNode(s);
     CHECK(p,"parent " <<p <<" of " <<*clone <<" does not exist!");

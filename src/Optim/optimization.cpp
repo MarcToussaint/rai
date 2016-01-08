@@ -43,7 +43,10 @@ bool checkHessianCP(const ConstrainedProblem &P, const arr& x, double tolerance)
   TermTypeA tt;
   P(phi, NoArr, NoArr, tt, x);
   for(i=0;i<tt.N;i++) if(tt(i)==fTT) break;
-  CHECK(i<tt.N,"");
+  if(i==tt.N){
+    MLR_MSG("no f-term in this KOM problem");
+    return true;
+  }
   ScalarFunction F = [&P,&phi,&J,i](arr& g, arr& H, const arr& x) -> double{
     P(phi, J, H, NoTermTypeA, x);
     g = J[i];

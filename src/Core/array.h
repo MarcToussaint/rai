@@ -436,9 +436,11 @@ template<class T> mlr::Array<T*> LIST(const T& i, const T& j, const T& k, const 
 /// @{
 
 /// return identity matrix
-inline arr eye(uint d0, uint d1) { arr z;  z.resize(d0, d1);  z.setId();  return z; }
+inline arr eye(uint d0, uint d1) { arr z(d0, d1);  z.setId();  return z; }
 /// return identity matrix
 inline arr eye(uint n) { return eye(n, n); }
+/// return the ith standard basis vector (ith column of the Id matrix)
+inline arr eyeVec(uint n, uint i) { arr z(n); z.setZero(); z(i)=1.; return z; }
 
 /// return array of ones
 inline arr ones(const uintA& d) {  arr z;  z.resize(d);  z=1.;  return z;  }
