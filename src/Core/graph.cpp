@@ -184,6 +184,12 @@ Graph::Graph(const Graph& G):s(NULL), isReferringToNodesOf(NULL), isNodeOfParent
   *this = G;
 }
 
+Graph::Graph(Graph& container, const StringA& keys, const NodeL& parents) : s(NULL), isReferringToNodesOf(NULL), isNodeOfParentGraph(NULL){
+  Node *n = new Node_typed<Graph>(container, keys, parents, this, false);
+  CHECK(isNodeOfParentGraph==n,"");
+}
+
+
 Graph::~Graph() {
   clear();
   if(isNodeOfParentGraph){
@@ -295,14 +301,14 @@ NodeL Graph::getTypedNodes(const char* key, const std::type_info& type) {
 Node* Graph::merge(Node *m){
   NodeL KVG = getTypedNodes(m->keys(0), m->getValueType());
   //CHECK(KVG.N<=1, "can't merge into multiple items yet");
-  Node *it=NULL;
-  if(KVG.N) it=KVG.elem(0);
-  if(it){
-    CHECK(m->getValueType()==it->getValueType(), "can't merge items of different types!");
-    if(it->getValueType()==typeid(Graph)){ //merge the KVGs
-      it->getValue<Graph>()->merge(*m->getValue<Graph>());
+  Node *n=NULL;
+  if(KVG.N) n=KVG.elem(0);
+  if(n){
+    CHECK(m->getValueType()==n->getValueType(), "can't merge items of different types!");
+    if(n->getValueType()==typeid(Graph)){ //merge the KVGs
+      n->getValue<Graph>()->merge(*m->getValue<Graph>());
     }else{ //overwrite the value
-      it->takeoverValue(m);
+      n->takeoverValue(m);
     }
     if(&m->container==this) delete m;
   }else{ //nothing to merge, append
@@ -318,18 +324,20 @@ Node* Graph::merge(Node *m){
   return NULL;
 }
 
-void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer){
+void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer,bool appendInsteadOfClear){
   DEBUG(G.checkConsistency());
 
   //-- first delete existing items
-  clear();
+  if(!appendInsteadOfClear) clear();
+  uint indexOffset=N;
+  NodeL newNodes;
 
   //-- make this become a subgraph
   if(becomeSubgraphOfContainer){ //CHECK that this is also a subgraph of the same container..
     if(!isNodeOfParentGraph){
-      Node *Git = G.isNodeOfParentGraph;
-      if(Git)
-        new Node_typed<Graph>(*becomeSubgraphOfContainer, Git->keys, Git->parents, this, true);
+      Node *Gnode = G.isNodeOfParentGraph;
+      if(Gnode)
+        new Node_typed<Graph>(*becomeSubgraphOfContainer, Gnode->keys, Gnode->parents, this, true);
       else
         new Node_typed<Graph>(*becomeSubgraphOfContainer, {}, {}, this, true);
     }else{
@@ -338,43 +346,49 @@ void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer){
   }
 
   //-- first, just clone items with their values -- 'parents' still point to the origin items
-  for(Node *it:G){
-    if(it->getValueType()==typeid(Graph) && it->getValue<Graph>()!=NULL){
+  for(Node *n:G){
+    Node *newn=NULL;
+    if(n->getValueType()==typeid(Graph) && n->getValue<Graph>()!=NULL){
       // why we can't copy the subgraph yet:
       // copying the subgraph would require to fully rewire the subgraph (code below)
       // but if the subgraph refers to parents of this graph that are not create yet, requiring will fail
       // therefore we just insert an empty graph here; we then copy the subgraph once all items are created
-      new Node_typed<Graph>(*this, it->keys, it->parents, new Graph(), true);
+      newn = new Node_typed<Graph>(*this, n->keys, n->parents, new Graph(), true);
     }else{
-      it->newClone(*this); //this appends sequentially clones of all items to 'this'
+      newn = n->newClone(*this); //this appends sequentially clones of all items to 'this'
     }
+    newNodes.append(newn);
   }
 
   //-- the new items are not parent of anybody yet
-  for(Node *it:*this) CHECK(it->parentOf.N==0,"");
+  for(Node *n:newNodes) CHECK(n->parentOf.N==0,"");
 
   //-- now copy subgraphs
-  for(Node *it:*this) if(it->getValueType()==typeid(Graph) && it->getValue<Graph>()!=NULL){
-    it->graph().isNodeOfParentGraph = it;
-    it->graph().copy(G.elem(it->index)->graph(), NULL); //you can only call the operator= AFTER assigning isNodeOfParentGraph
+  for(Node *n:newNodes) if(n->getValueType()==typeid(Graph) && n->getValue<Graph>()!=NULL){
+    n->graph().isNodeOfParentGraph = n;
+    n->graph().copy(G.elem(n->index-indexOffset)->graph(), NULL); //you can only call the operator= AFTER assigning isNodeOfParentGraph
   }
 
-  //-- now rewire links
-  for(Node *it:*this){
-    for(uint i=0;i<it->parents.N;i++){
-      Node *p=it->parents(i); //the parent in the origin graph
-      const Graph *newg=this, *oldg=&G;
-      while(&p->container!=oldg){  //find the container while iterating backward also in the newG
-        CHECK(oldg->isNodeOfParentGraph,"");
-        newg = &newg->isNodeOfParentGraph->container;
-        oldg = &oldg->isNodeOfParentGraph->container;
+  //-- now rewire parental links
+  for(Node *n:newNodes){
+    for(uint i=0;i<n->parents.N;i++){
+      Node *p=n->parents(i); //the parent in the origin graph
+      if(&p->container==&G){ //parent is in this graph, no need for complicated search
+        p = newNodes.elem(p->index);     //the true parent in the new graph
+      }else{
+        const Graph *newg=this, *oldg=&G;
+        while(&p->container!=oldg){  //find the container while iterating backward also in the newG
+          CHECK(oldg->isNodeOfParentGraph,"");
+          newg = &newg->isNodeOfParentGraph->container;
+          oldg = &oldg->isNodeOfParentGraph->container;
+        }
+        CHECK(newg->N==oldg->N,"different size!!\n" <<*newg <<"**\n" <<*oldg);
+        CHECK(p==oldg->elem(p->index),""); //we found the parent in oldg
+        p->parentOf.removeValue(n);  //origin items is not parent of copy
+        p = newg->elem(p->index);     //the true parent in the new graph
       }
-      CHECK(newg->N==oldg->N,"different size!!\n" <<*newg <<"**\n" <<*oldg);
-      CHECK(p==oldg->elem(p->index),""); //we found the parent in oldg
-      p->parentOf.removeValue(it);  //origin items is not parent of copy
-      p = newg->elem(p->index);     //the true parent in the new graph
-      p->parentOf.append(it);       //connect both ways
-      it->parents(i)=p;
+      p->parentOf.append(n);       //connect both ways
+      n->parents(i)=p;
     }
   }
 

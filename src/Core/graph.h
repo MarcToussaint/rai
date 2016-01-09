@@ -93,6 +93,7 @@ struct Graph : NodeL {
   Graph(const std::map<std::string, std::string>& dict);
   Graph(std::initializer_list<struct Nod> list);
   Graph(const Graph& G);
+  Graph(Graph& container, const StringA& keys, const NodeL& parents); //creates this as a subgraph of container
   ~Graph();
   void clear();
   NodeL& list() { return *this; }
@@ -104,7 +105,7 @@ struct Graph : NodeL {
     else copy(G,NULL); //root graph plain copy
     return *this;
   }
-  void copy(const Graph& G, Graph* becomeSubgraphOfContainer);
+  void copy(const Graph& G, Graph* becomeSubgraphOfContainer, bool appendInsteadOfClear=false);
   
   //-- get items
   Node* getNode(const char *key) const;

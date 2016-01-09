@@ -91,18 +91,27 @@ void ManipulationTree_Node::solveSeqProblem(){
 //  listWrite(komoRules, cout, "\n"); cout <<endl;
   for(ManipulationTree_Node *node:treepath) if(node->folDecision){ //(e.g. the root may not have a decision)
     CHECK(node->s > 0,""); //don't add anything for the root
-#if 0
-    node->folDecision->newClone(*seqProblemSpecs); //add the decision literal to the specs
-#else
-    seqProblemSpecs->copy(*node->folState, NULL);
-#endif
-    forwardChaining_FOL(*seqProblemSpecs, komoRules); //use the rules to add to the specs
-    seqProblem.parseTasks(*seqProblemSpecs, 1, node->s-1);
-    cout <<"SEQ PROBLEM: (s=" <<node->s <<")\n" <<*seqProblemSpecs <<endl;
-    seqProblemSpecs->clear();
+    Graph tmp(*node->folState);
+    Graph changes(fol.KB, {}, {});
+    forwardChaining_FOL(tmp, komoRules, NULL, changes); //use the rules to add to the specs
+    changes.checkConsistency();
+    for(Node *n:changes){
+      Graph *p;
+      arr *t;
+      double *tt;
+      if((p=n->getValue<Graph>())){
+        if((t=p->getValue<arr>("time"))) *t += (double)(node->s-1);
+        if((tt=p->getValue<double>("time"))) *tt += (double)(node->s-1);
+      }
+    }
+    seqProblemSpecs->copy(changes, NULL, true);
+//    cout <<"SEQ PROBLEM: (s=" <<node->s <<")\n" <<*seqProblemSpecs <<endl;
   }
 
+  cout <<"SEQ PROBLEM symbolic:\n" <<*seqProblemSpecs <<endl;
+  seqProblem.parseTasks(*seqProblemSpecs, 1, 0);
   arr seq = seqProblem.getInitialization();
+  cout <<"SEQ PROBLEM motion problem:\n";
   seqProblem.reportFull(true);
   rndGauss(seq, .1, true);
 
