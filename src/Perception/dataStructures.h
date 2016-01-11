@@ -4,7 +4,7 @@
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <Core/geo.h>
+#include <Geo/geo.h>
 #include <Gui/opengl.h>
 #include <Ors/ors.h>
 #include <Core/module.h>
@@ -43,12 +43,12 @@ struct ArrCloudView:Primitive{
   void glDraw();
 };
 
-struct DisplayPrimitives{
-  MT::Array<Primitive*> P;
+struct DisplayPrimitives : GLDrawer{
+  mlr::Array<Primitive*> P;
   ors::KinematicWorld G;
   arr pc[2];
 
-  void glDraw();
+  void glDraw(struct OpenGL&);
 };
 
 #endif

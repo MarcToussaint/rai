@@ -20,7 +20,7 @@
 #include "algos.h"
 
 
-namespace MT{
+namespace mlr{
 
 void rk4(arr& x1, const arr& x0,
          const VectorFunction& f,

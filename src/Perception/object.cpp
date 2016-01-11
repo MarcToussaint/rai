@@ -1,3 +1,5 @@
+#ifdef MLR_PCL
+
 #include "object.h"
 #include "object_detector.h"
 
@@ -72,3 +74,4 @@ void extractPrimitives(std::vector<pcl::PointCloud<PointT>::Ptr> list_extracted_
     }
 }
 
+#endif

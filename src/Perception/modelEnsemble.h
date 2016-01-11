@@ -4,16 +4,17 @@
 #include <Algo/minEigModel.h>
 #include <Gui/opengl.h>
 
-struct ModelEnsemble :OpenGL::GLDrawer{
-  MT::Array<MinEigModel*> models;
+struct ModelEnsemble :GLDrawer{
+  mlr::Array<MinEigModel*> models;
 
   arr vert;
 
   ModelEnsemble();
+  ~ModelEnsemble();
 
-  bool addNewRegionGrowingModel(DataNeighbored& D);
+  bool addNewRegionGrowingModel(DataNeighbored& data);
   void reestimateVert();
-  void reoptimizeModels(DataNeighbored& D);
+  void reoptimizeModels(DataNeighbored& data);
 
   void glDraw(OpenGL &);
 

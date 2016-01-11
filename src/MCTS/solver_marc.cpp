@@ -24,7 +24,7 @@ void MCTS::addRollout(int stepAbort){
 //    cout <<endl;
 //    for(auto &ch:n->children) cout <<*ch->decision <<endl;
     for(uint i=0;i<n->children.N;i++){
-      MT::String d1,d2;
+      mlr::String d1,d2;
       d1 <<*n->children(i)->decision;
       d2 <<*A[i];
       CHECK_EQ(d1, d2, "");

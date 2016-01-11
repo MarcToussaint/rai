@@ -22,8 +22,8 @@
 /// @addtogroup group_Optim
 /// @{
 
-#ifndef MT_optimization_benchmarks_h
-#define MT_optimization_benchmarks_h
+#ifndef MLR_optimization_benchmarks_h
+#define MLR_optimization_benchmarks_h
 
 #include "optimization.h"
 
@@ -36,7 +36,7 @@ extern ScalarFunction ChoiceFunction();
 
 //===========================================================================
 
-struct RandomLPFunction:ConstrainedProblemMix {
+struct RandomLPFunction:ConstrainedProblem {
   arr randomG;
   virtual double fc(arr& phi, arr& J, TermTypeA& tt, const arr& x) {
     if(!randomG.N){
@@ -64,24 +64,22 @@ struct RandomLPFunction:ConstrainedProblemMix {
 
 //===========================================================================
 
-struct ChoiceConstraintFunction:ConstrainedProblemMix {
+struct ChoiceConstraintFunction:ConstrainedProblem {
   enum WhichConstraint { wedge2D=1, halfcircle2D, randomLinear, circleLine2D } which;
   uint n;
   arr randomG;
   ChoiceConstraintFunction() {
-    which = (WhichConstraint) MT::getParameter<int>("constraintChoice");
-    n = MT::getParameter<uint>("dim", 2);
-    ConstrainedProblemMix::operator=( [this](arr& phi, arr& J, TermTypeA& tt, const arr& x) -> void {
-      this->fc(phi, J, tt, x);
+    which = (WhichConstraint) mlr::getParameter<int>("constraintChoice");
+    n = mlr::getParameter<uint>("dim", 2);
+    ConstrainedProblem::operator=( [this](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) -> void {
+      this->fc(phi, J, H, tt, x);
     } );
   }
-  void fc(arr& phi, arr& J, TermTypeA& tt, const arr& x) {
+  void fc(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) {
     CHECK_EQ(x.N,n,"");
     phi.clear();  if(&tt) tt.clear();  if(&J) J.clear();
 
-    arr H;
     phi.append( ChoiceFunction()(J, H, x) ); if(&tt) tt.append(fTT);
-    //HALT("H not used yet!");
 
     switch(which) {
       case wedge2D:
@@ -131,14 +129,14 @@ struct ChoiceConstraintFunction:ConstrainedProblemMix {
 
 //===========================================================================
 
-struct SimpleConstraintFunction:ConstrainedProblemMix {
+struct SimpleConstraintFunction:ConstrainedProblem {
   SimpleConstraintFunction(){
-    ConstrainedProblemMix::operator=(
-      [this](arr& phi, arr& J, TermTypeA& tt, const arr& x) -> void {
-      this->fc(phi, J, tt, x);
+    ConstrainedProblem::operator=(
+      [this](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) -> void {
+      this->fc(phi, J, H, tt, x);
     } );
   }
-  virtual void fc(arr& phi, arr& J, TermTypeA& tt, const arr& _x) {
+  virtual void fc(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& _x) {
     CHECK(_x.N==2,"");
     tt = { sumOfSqrTT, sumOfSqrTT, ineqTT, ineqTT };
     phi.resize(4);
@@ -162,8 +160,8 @@ struct SinusesFunction:VectorFunction {
   double a;
   double condition;
   SinusesFunction() {
-    a = MT::getParameter<double>("SinusesFunction_a");
-    condition = MT::getParameter<double>("condition");
+    a = mlr::getParameter<double>("SinusesFunction_a");
+    condition = mlr::getParameter<double>("condition");
  NIY 
   }
   virtual void fv(arr& phi, arr& J, const arr& x) {
@@ -218,9 +216,9 @@ struct ParticleAroundWalls:KOrderMarkovFunction {
   bool hardConstrained, useKernel;
 
   ParticleAroundWalls():
-    T(MT::getParameter<uint>("opt/ParticleAroundWalls/T",1000)),
-    k(MT::getParameter<uint>("opt/ParticleAroundWalls/k",2)),
-    hardConstrained(MT::getParameter<uint>("opt/ParticleAroundWalls/hardConstrained",true)),
+    T(mlr::getParameter<uint>("opt/ParticleAroundWalls/T",1000)),
+    k(mlr::getParameter<uint>("opt/ParticleAroundWalls/k",2)),
+    hardConstrained(mlr::getParameter<uint>("opt/ParticleAroundWalls/hardConstrained",true)),
     useKernel(false){}
 
   //implementations of the kOrderMarkov virtuals
@@ -235,7 +233,7 @@ struct ParticleAroundWalls:KOrderMarkovFunction {
   bool hasKernel(){ return useKernel; }
   double kernel(uint t0, uint t1){
     //if(t0==t1) return 1e3;
-    return 1e0*::exp(-.001*MT::sqr((double)t0-t1));
+    return 1e0*::exp(-.001*mlr::sqr((double)t0-t1));
   }
 };
 

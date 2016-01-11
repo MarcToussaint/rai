@@ -1,6 +1,6 @@
 #include <Core/array.h>
 #include <Core/util.h>
-#include <Core/geo.h>
+#include <Geo/geo.h>
 #include <Core/graph.h>
 #include <Core/registry.h>
 #include "g4data.h"
@@ -61,7 +61,7 @@ void readNode(Graph *i, uintA &hsitoi, uintA &itohsi, int ind) {
 
 void G4ID::load(const char *meta) {
   String name_agent, name_limb, name_digit, name_object, name_part;
-  MT::Array<Graph*> kvg_agents, kvg_limbs, kvg_digits, kvg_objects, kvg_parts;
+  mlr::Array<Graph*> kvg_agents, kvg_limbs, kvg_digits, kvg_objects, kvg_parts;
   uint i = 0;
 
   bool structured;
@@ -218,7 +218,7 @@ void G4Rec::load(const char *recdir, bool interpolate) {
   g4id.load(STRING(recdir << "meta.kvg"));
 
   ifstream datafin, tstampfin;
-  MT::open(datafin, STRING(recdir << "poses.dat"));
+  mlr::open(datafin, STRING(recdir << "poses.dat"));
   tstampfin.open(STRING(recdir << "poses.dat.times"));
   arr dataframe;
 
@@ -232,7 +232,7 @@ void G4Rec::load(const char *recdir, bool interpolate) {
   double currtstamp;
   arr data, tstamp;
   boolA missing;
-  MT::Array<intA> missingno(nsensors), missingf(nsensors);
+  mlr::Array<intA> missingno(nsensors), missingf(nsensors);
   for(nframes = 0;; nframes++) {
     datafin >> dataframe;
     if(tstampfin.good()) {

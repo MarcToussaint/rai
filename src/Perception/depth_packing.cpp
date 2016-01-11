@@ -2,7 +2,7 @@
 
 REGISTER_MODULE(KinectDepthPacking)
 
-namespace MLR {
+namespace mlr {
   void pack_kindepth2rgb(const uint16A& depth, byteA& buffer) {
     buffer.resize(depth.N, 3);
 
@@ -34,7 +34,7 @@ void KinectDepthPacking::step(){
   kinect_depthRgb.writeAccess();
 
 
-  MLR::pack_kindepth2rgb(kinect_depth(), kinect_depthRgb());
+  mlr::pack_kindepth2rgb(kinect_depth(), kinect_depthRgb());
 
   kinect_depthRgb().reshape(kinect_depth().d0, kinect_depth().d1, 3);
   kinect_depthRgb.v->revision_time = kinect_depth.v->revision_time;

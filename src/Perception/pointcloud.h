@@ -14,10 +14,10 @@
 SET_LOG(pointcloud, INFO)
 
 typedef pcl::PointXYZRGBA PointT;
-typedef MT::Array<pcl::PointCloud<PointT>::Ptr> PointCloudL;
+typedef mlr::Array<pcl::PointCloud<PointT>::Ptr> PointCloudL;
 typedef pcl::PointCloud<PointT>::Ptr FittingJob;
 typedef pcl::ModelCoefficients::Ptr FittingResult;
-typedef MT::Array<FittingResult> FittingResultL;
+typedef mlr::Array<FittingResult> FittingResultL;
 const int RADIUS = 2;
 const int HEIGHT = 3;
 
@@ -46,7 +46,7 @@ struct ObjectBelief {
   uintA triangles;
 };
 
-typedef MT::Array<ObjectBelief*> ObjectBeliefSet;
+typedef mlr::Array<ObjectBelief*> ObjectBeliefSet;
 typedef pcl::PointCloud<PointT>::Ptr PointCloudVar;
 typedef PointCloudL PointCloudSet;
 typedef FittingResultL ObjectSet;

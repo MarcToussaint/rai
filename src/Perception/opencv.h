@@ -17,15 +17,15 @@
     -----------------------------------------------------------------  */
 
 
-#ifndef MT_opencv_h
-#define MT_opencv_h
+#ifndef MLR_opencv_h
+#define MLR_opencv_h
 
 //OpenCV (C++) wrappers
 
 #include <Core/array.h>
 #include <Core/util.h>
 
-#ifdef MT_OPENCV
+#ifdef MLR_OPENCV
 
 #undef COUNT
 //#include <opencv/highgui.h>
@@ -70,6 +70,6 @@ inline char cvShow(const byteA& img, const char *window="opencv", bool wait=fals
 inline char cvShow(const floatA& img, const char *window="opencv", bool wait=false) { NICO };
 void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSdv, uint range); { NICO };
 
-#endif //MT_OPENCV
+#endif //MLR_OPENCV
 
 #endif

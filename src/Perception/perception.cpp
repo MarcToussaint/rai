@@ -2,10 +2,10 @@
 #include "perception.h"
 #include "audio.h"
 #include "videoEncoder.h"
-#include <Core/util_t.h>
+#include <Core/util.tpp>
 #include <Gui/opengl.h>
 
-void lib_Perception(){ MT_MSG("loading"); }
+void lib_Perception(){ MLR_MSG("loading"); }
 
 REGISTER_MODULE (PointCloudViewer)
 REGISTER_MODULE (VideoEncoder)
@@ -21,11 +21,11 @@ REGISTER_MODULE (AudioWriter)
 REGISTER_MODULE (ImageViewer)
 
 struct sImageViewer{
-#ifdef MT_GL
+#ifdef MLR_GL
   OpenGL gl;
 #endif
   sImageViewer(const char* tit)
-#ifdef MT_GL
+#ifdef MLR_GL
     :gl(tit)
 #endif
   {}
@@ -36,11 +36,11 @@ void ImageViewer::open(){
 }
 void ImageViewer::close(){ delete s; }
 void ImageViewer::step(){ 
-#ifdef MT_GL
+#ifdef MLR_GL
   s->gl.background = img.get();
   if(s->gl.height!= s->gl.background.d0 || s->gl.width!= s->gl.background.d1)
     s->gl.resize(s->gl.background.d1, s->gl.background.d0);
-  s->gl.update();
+  s->gl.update(name, false, false, true);
 #endif
 }
 
@@ -51,7 +51,7 @@ void ImageViewer::step(){
 //
 
 struct sVideoEncoder{
-  MT::String filename;
+  mlr::String filename;
   VideoEncoder_libav_simple video;
   ofstream timeTagFile;
   byteA buffer;
@@ -62,7 +62,7 @@ struct sVideoEncoder{
 };
 
 void VideoEncoder::open(){
-  s = new sVideoEncoder(STRING("z." <<img.var->name <<'.' <<MT::getNowString() <<".avi"), fps, is_rgb);
+  s = new sVideoEncoder(STRING("z." <<img.var->name <<'.' <<mlr::getNowString() <<".avi"), fps, is_rgb);
 }
 
 void VideoEncoder::close(){
@@ -81,7 +81,7 @@ void VideoEncoder::step(){
   s->video.addFrame(s->buffer);
 
   //save time tag
-  MT::String tag;
+  mlr::String tag;
   tag.resize(30, false);
   sprintf(tag.p, "%6i %13.6f", rev, time);
   s->timeTagFile <<tag <<endl;
@@ -94,7 +94,7 @@ void VideoEncoder::step(){
 //
 
 struct sVideoEncoderX264{
-  MT::String filename;
+  mlr::String filename;
   VideoEncoder_x264_simple video;
   ofstream timeTagFile;
   byteA buffer;
@@ -105,7 +105,7 @@ struct sVideoEncoderX264{
 };
 
 void VideoEncoderX264::open(){
-    s = new sVideoEncoderX264(STRING("z." <<img.var->name <<'.' <<MT::getNowString() <<".264"), fps, is_rgb);
+    s = new sVideoEncoderX264(STRING("z." <<img.var->name <<'.' <<mlr::getNowString() <<".264"), fps, is_rgb);
 }
 
 void VideoEncoderX264::close(){
@@ -126,7 +126,7 @@ void VideoEncoderX264::step(){
     s->video.addFrame(s->buffer);
 
     //save time tag
-    MT::String tag;
+    mlr::String tag;
     tag.resize(30, false);
     sprintf(tag.p, "%6i %13.6f", s->revision, time);
     s->timeTagFile <<tag <<endl;
@@ -139,7 +139,7 @@ void VideoEncoderX264::step(){
 //
 
 struct sPointCloudViewer{
-#ifdef MT_GL
+#ifdef MLR_GL
   OpenGL gl;
   sPointCloudViewer():gl("PointCloudViewer",640,480){}
 #endif
@@ -152,15 +152,9 @@ void glDrawAxes(void*){
 
 void PointCloudViewer::open(){
   s = new sPointCloudViewer;
-#ifdef MT_GL
   s->gl.add(glDrawAxes);
   s->gl.add(glDrawPointCloud, s->pc);
-  s->gl.camera.setPosition(0., 0., 0.);
-  s->gl.camera.focus(0., 0., 1.);
-  s->gl.camera.setZRange(.1, 10.);
-  s->gl.camera.heightAbs=s->gl.camera.heightAngle=0.;
-  s->gl.camera.focalLength = 580./480.;
-#endif
+  s->gl.camera.setKinect();
 }
 
 void PointCloudViewer::close(){
@@ -170,7 +164,7 @@ void PointCloudViewer::close(){
 void PointCloudViewer::step(){
   s->pc[0]=pts.get();
   s->pc[1]=cols.get();
-#ifdef MT_GL
+#ifdef MLR_GL
   s->gl.update();
 #endif
 }
@@ -206,7 +200,7 @@ void AudioReader::step() {
 
 void AudioWriter::open() {
 #ifdef HAVE_LIBAV
-    writer = new AudioWriter_libav(STRING("z.audio" <<'.' <<MT::getNowString() <<".wav"));
+    writer = new AudioWriter_libav(STRING("z.audio" <<'.' <<mlr::getNowString() <<".wav"));
 #else
     writer = NULL;
 #endif
@@ -224,7 +218,7 @@ void AudioWriter::step() {
     writer->writeSamples_R48000_2C_S16_NE(pcms16ne2c.get());
 }
 
-#ifdef MT_OPENCV
+#ifdef MLR_OPENCV
 
 #include "opencv.h"
 #include "libcolorseg.h"
@@ -365,8 +359,8 @@ struct sHsvFilter{
 
 void HsvFilter::open(){
   s = new sHsvFilter;
-  s->hsvMean      = MT::getParameter<floatA>("hsvMean");
-  s->hsvDeviation = MT::getParameter<floatA>("hsvDeviation");
+  s->hsvMean      = mlr::getParameter<floatA>("hsvMean");
+  s->hsvDeviation = mlr::getParameter<floatA>("hsvDeviation");
 }
 
 void HsvFilter::close(){
@@ -374,8 +368,8 @@ void HsvFilter::close(){
 }
 
 void HsvFilter::step(){
-  s->hsvMean      = MT::getParameter<floatA>("hsvMean");
-  s->hsvDeviation = MT::getParameter<floatA>("hsvDeviation");
+  s->hsvMean      = mlr::getParameter<floatA>("hsvMean");
+  s->hsvDeviation = mlr::getParameter<floatA>("hsvDeviation");
 
   byteA hsvA;
   hsvA = hsv.get();
@@ -637,7 +631,7 @@ byteA evidence2RGB(const floatA& evidence){
   return tmp;
 }
 
-#endif //MT_OPENCV
+#endif //MLR_OPENCV
 
 #ifdef MLR_PCL
 // Pointcloud stuff
@@ -663,3 +657,59 @@ ModuleL newPointcloudProcesses() {
 #endif
 
 
+
+
+void openGlLock();
+void openGlUnlock();
+
+void OrsViewer::step(){
+  copy.gl().lock.writeLock();
+  copy = modelWorld.get();
+  copy.gl().lock.unlock();
+  copy.gl().update(NULL, false, false, true);
+  mlr::wait(.03);
+  if(false && computeCameraView){
+    ors::Shape *kinectShape = copy.getShapeByName("endeffKinect");
+    if(kinectShape){ //otherwise 'copy' is not up-to-date yet
+//      openGlLock();
+      copy.gl().lock.writeLock();
+      ors::Camera cam = copy.gl().camera;
+      copy.gl().camera.setKinect();
+      copy.gl().camera.X = kinectShape->X * copy.gl().camera.X;
+      //    copy.gl().renderInBack(true, true, 580, 480);
+      copy.glGetMasks(580, 480, true);
+      modelCameraView.set() = copy.gl().captureImage;
+      modelDepthView.set() = copy.gl().captureDepth;
+      copy.gl().camera = cam;
+      copy.gl().lock.unlock();
+//      openGlUnlock();
+    }
+  }
+}
+
+
+
+
+void draw1(void*){
+  glStandardLight(NULL);
+  glColor(1,0,0);
+  glFrontFace(GL_CW);
+//  glutSolidTeapot(1.);
+  glDrawAxes(1.);
+  glFrontFace(GL_CCW);
+}
+
+void ComputeCameraView::open(){
+  gl.add(glStandardLight);
+  gl.addDrawer(&modelWorld.set()());
+}
+
+void ComputeCameraView::step(){
+  if(!frame--){
+    modelWorld.readAccess();
+    gl.renderInBack();
+    modelWorld.deAccess();
+    cameraView.set() = gl.captureImage;
+    frame=skipFrames;
+  }
+}

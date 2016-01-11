@@ -8,37 +8,28 @@ const unsigned int depth_size = image_width*image_height;
 
 ors::Camera kinectCam;
 
-void initKinectCam(){
-  kinectCam.setPosition(0., 0., 0.);
-  kinectCam.focus(0., 0., 1.);
-  kinectCam.setZRange(.1, 10.);
-  kinectCam.heightAbs=kinectCam.heightAngle=0.;
-  kinectCam.focalLength = 580./480.;
-}
-
-
 void Kinect2PointCloud::step(){
   depth = kinect_depth.get();
   rgb = kinect_rgb.get();
 
-  MLR::images2pointcloud(pts, cols, rgb, depth);
+  images2pointcloud(pts, cols, rgb, depth);
 
-  kinect_frame.readAccess();
-  if(!kinect_frame().isZero()){
-    kinect_frame().applyOnPointArray(pts);
-  }
-  kinect_frame.deAccess();
+//  kinect_frame.readAccess();
+//  if(!kinect_frame().isZero()){
+//    kinect_frame().applyOnPointArray(pts);
+//  }
+//  kinect_frame.deAccess();
 
   kinect_points.set() = pts;
   kinect_pointColors.set() = cols;
 }
 
 
-void MLR::images2pointcloud(arr& pts, arr& cols, const byteA& rgb, const uint16A& depth){
+void images2pointcloud(arr& pts, arr& cols, const byteA& rgb, const uint16A& depth){
   depthData2pointCloud(pts, depth);
 
   if(rgb.N!=3*image_width*image_height){
-    MT_MSG("kinect rgb data has wrong dimension: rgb.dim=" <<rgb.dim());
+    MLR_MSG("kinect rgb data has wrong dimension: rgb.dim=" <<rgb.dim());
     return;
   }
 
@@ -46,9 +37,9 @@ void MLR::images2pointcloud(arr& pts, arr& cols, const byteA& rgb, const uint16A
   for(uint i=0;i<rgb.N;i++) cols.elem(i) = (double)rgb.elem(i)/255.;
 }
 
-void MLR::depthData2pointCloud(arr& pts, const uint16A& depth){
+void depthData2pointCloud(arr& pts, const uint16A& depth){
   if(depth.N!=image_width*image_height){
-    MT_MSG("kinect depth data has wrong dimension: depth.dim=" <<depth.dim());
+    MLR_MSG("kinect depth data has wrong dimension: depth.dim=" <<depth.dim());
     return;
   }
 

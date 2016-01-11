@@ -30,7 +30,7 @@ void plotFunction(const arr& f, double x0=0., double x1=0.);
 //
 
 
-namespace MT{
+namespace mlr{
 
 void Spline::plotBasis() {
   plotClear();
@@ -305,4 +305,4 @@ void Path::transform_CurrentBecomes_AllFollow(const arr& current, double t){
   for(uint i=0;i<points.d0;i++) points[i]() += delta;
 }
 
-} //namespace MT
+} //namespace mlr

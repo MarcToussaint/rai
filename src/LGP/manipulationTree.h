@@ -2,41 +2,57 @@
 
 #include <Ors/ors.h>
 #include <FOL/fol_mcts_world.h>
+#include "LGP.h"
+#include <FOL/fol.h>
+#include <Motion/komo.h>
+
+struct ManipulationTree_Node;
+typedef mlr::Array<ManipulationTree_Node*> ManipulationTree_NodeL;
 
 //===========================================================================
 
 struct ManipulationTree_Node{
+  LogicGeometricProgram &lgp;
   ManipulationTree_Node *parent;
-  MT::Array<ManipulationTree_Node*> children;
+  mlr::Array<ManipulationTree_Node*> children;
   uint s;               ///< depth/step of this node
 //  double t;             ///< real time
-//  action;           ///< what decision (relative to the parent) does this node represent
 
-//  ors::KinematicSwitch sw; ///< the kinematic switch(es) that this action implies
+  FOL_World& fol;
+  FOL_World::Handle decision;
+  Graph *folState; ///< the symbolic state after action
+  Node  *folDecision; ///< the predicate in the folState that represents the decision
+
+  //  ors::KinematicSwitch sw; ///< the kinematic switch(es) that this action implies
   ors::KinematicWorld kinematics; ///< actual kinematics after action (includes all previous switches)
-  Graph symbols; ///< the symbolic state after action
 
   //-- results of effective pose optimization
+  Graph *poseProblemSpecs;
   ors::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
   arr effPose;
   double effPoseCost;
   double effPoseReward;
 
   //-- results of full path optimization
+  MotionProblem pathProblem;
+  Graph *pathProblemSpecs;
   arr path;
-  double pathCosts;
+  double pathCost;
 
   ///root node init
-  ManipulationTree_Node(const ors::KinematicWorld& world_root, const Graph& symbols_root)
-    : parent(NULL), s(0), kinematics(world_root), symbols(symbols_root), effKinematics(kinematics), effPoseReward(0.){}
+  ManipulationTree_Node(LogicGeometricProgram& lgp);
 
   ///child node creation
-  ManipulationTree_Node(ManipulationTree_Node *parent)
-    : parent(parent), kinematics(parent->kinematics), symbols(parent->symbols), effKinematics(kinematics), effPoseReward(0.){
-    s=parent->s+1;
-    parent->children.append(this);
-  }
+  ManipulationTree_Node(LogicGeometricProgram& lgp, ManipulationTree_Node *parent, FOL_World::Handle& a);
+
+  void expand();
+  void solvePoseProblem();
+  void solvePathProblem(uint microSteps);
+
+  void write(ostream& os=cout) const;
 };
+
+inline ostream& operator<<(ostream& os, const ManipulationTree_Node& n){ n.write(os); return os; }
 
 //===========================================================================
 

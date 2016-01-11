@@ -17,8 +17,8 @@
     -----------------------------------------------------------------  */
 
 
-#ifndef MT_gtk_h
-#define MT_gtk_h
+#ifndef MLR_gtk_h
+#define MLR_gtk_h
 
 #include <Core/array.h>
 

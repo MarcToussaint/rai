@@ -16,8 +16,8 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
 
-#ifndef MT_thread_h
-#define MT_thread_h
+#ifndef MLR_thread_h
+#define MLR_thread_h
 
 #include "util.h"
 #include "array.h"
@@ -26,9 +26,9 @@ enum ThreadState { tsIDLE=0, tsCLOSE=-1, tsOPENING=-2, tsLOOPING=-3, tsBEATING=-
 struct ConditionVariable;
 struct RevisionedAccessGatedClass;
 struct Thread;
-typedef MT::Array<ConditionVariable*> ConditionVariableL;
-typedef MT::Array<RevisionedAccessGatedClass*> RevisionedAccessGatedClassL;
-typedef MT::Array<Thread*> ThreadL;
+typedef mlr::Array<ConditionVariable*> ConditionVariableL;
+typedef mlr::Array<RevisionedAccessGatedClass*> RevisionedAccessGatedClassL;
+typedef mlr::Array<Thread*> ThreadL;
 
 void stop(const ThreadL& P);
 void wait(const ThreadL& P);
@@ -39,7 +39,7 @@ void close(const ThreadL& P);
 // threading: pthread wrappers: Mutex, RWLock, ConditionVariable
 //
 
-#ifndef MT_MSVC
+#ifndef MLR_MSVC
 
 /// a basic read/write access lock
 struct RWLock {
@@ -87,7 +87,7 @@ struct ConditionVariable {
 
 /// Deriving from this allows to make variables/classes revisioned read-write access gated
 struct RevisionedAccessGatedClass {
-  MT::String name;            ///< Variable name
+  mlr::String name;            ///< Variable name
   RWLock rwlock;              ///< rwLock (usually handled via read/writeAccess)
   ConditionVariable revision; ///< revision (= number of write accesses) number
   double revision_time;       ///< clock time of last write access
@@ -118,7 +118,9 @@ template<class T>
 struct Variable:RevisionedAccessGatedClass{
   T data;
 
-   Variable(const char* name):RevisionedAccessGatedClass(name){}
+  Variable():RevisionedAccessGatedClass("global"){}
+  Variable(const Variable&):RevisionedAccessGatedClass(NULL){ HALT("not allowed"); }
+  Variable(const char* name):RevisionedAccessGatedClass(name){}
   Variable(const T& x, const char* name):RevisionedAccessGatedClass(name), data(x){}
 
   //-- Token-wise access
@@ -147,6 +149,8 @@ struct Variable:RevisionedAccessGatedClass{
   WriteToken set(const double& dataTime, Thread *th=NULL){ return WriteToken(dataTime, this, th); } ///< write access to the variable's data
 };
 
+inline bool operator==(const RevisionedAccessGatedClass&,const RevisionedAccessGatedClass&){ return false; }
+
 //===========================================================================
 //
 // Timing helpers
@@ -157,10 +161,8 @@ struct Metronome {
   double ticInterval;
   timespec ticTime;
   uint tics;
-  const char* name;                   ///< name
 
-  Metronome(const char* name, double ticIntervalSec); ///< set tic tac time in micro seconds
-  ~Metronome();
+  Metronome(double ticIntervalSec); ///< set tic tac time in micro seconds
 
   void reset(double ticIntervalSec);
   void waitForTic();              ///< waits until the next tic
@@ -170,8 +172,8 @@ struct Metronome {
 /// a really simple thing to meassure cycle and busy times
 struct CycleTimer {
   uint steps;
-  double cyclDt, cyclDtMean, cyclDtMax;  ///< internal variables to measure step time
   double busyDt, busyDtMean, busyDtMax;  ///< internal variables to measure step time
+  double cyclDt, cyclDtMean, cyclDtMax;  ///< internal variables to measure step time
   timespec now, lastTime;
   const char* name;                    ///< name
   CycleTimer(const char *_name=NULL);
@@ -179,6 +181,7 @@ struct CycleTimer {
   void reset();
   void cycleStart();
   void cycleDone();
+  void report();
 };
 
 
@@ -191,28 +194,36 @@ struct CycleTimer {
  * step() should contain the actual calculation.
  */
 struct Thread{
-  MT::String name;
+  mlr::String name;
   ConditionVariable state;       ///< the condition variable indicates the state of the thread: positive=steps-to-go, otherwise it is a ThreadState
   RevisionedAccessGatedClassL listensTo;
   pid_t tid;                     ///< system thread id
-#ifndef MT_QThread
+#ifndef MLR_QThread
   pthread_t thread;
 #else
   struct sThread *thread;
 #endif
   uint step_count;
-  Metronome *metronome;          ///< used for beat-looping
+  Metronome metronome;          ///< used for beat-looping
+  CycleTimer timer;
 
   /// @name c'tor/d'tor
-  Thread(const char* name);
+  /** DON'T open drivers/devices/files or so here in the constructor,
+   * but in open(). Sometimes a module might be created only to see
+   * which accesses it needs. The default constructure should really
+   * do nothing
+   *
+   * beatIntervalSec=0. indicates full speed looping, beatIntervalSec=-1. indicates no looping (steps triggered by listening)
+   */
+  Thread(const char* _name, double beatIntervalSec=0.);
   virtual ~Thread();
 
   /// @name to be called from `outside' (e.g. the main) to start/step/close the thread
   void threadOpen(int priority=0);      ///< start the thread (in idle mode) (should be positive for changes)
   void threadClose();                   ///< close the thread (stops looping and waits for idle mode before joining the thread)
   void threadStep(uint steps=1, bool wait=false);     ///< trigger (multiple) step (idle -> working mode) (wait until idle? otherwise calling during non-idle -> error)
-  void threadLoop();                    ///< loop, stepping forever
-  void threadLoopWithBeat(double sec);  ///< loop with a fixed beat (cycle time)
+  void threadLoop();                    ///< loop, either with fixed beat or at full speed
+//  void threadLoopWithBeat(double beatIntervalSec);  ///< loop with a fixed beat (cycle time)
   void threadStop();                    ///< stop looping
   void threadCancel();                  ///< a hard kill (pthread_cancel) of the thread
 
@@ -224,8 +235,19 @@ struct Thread{
   /// @name listen to a variable
   void listenTo(RevisionedAccessGatedClass& var);
 
+  /** use this to open drivers/devices/files and initialize
+   *  parameters; this is called within the thread */
   virtual void open() = 0;
+
+  /** The most important method of all of this: step does the actual
+   *  computation of the module. Modules should be state less. Access
+   *  the variables by calling the x.get(), x.set() or
+   *  x.[read|write|de]Access(), where ACCESS(TYPE, x) was
+   *  declared. */
   virtual void step() = 0;
+
+  /** use this to close drivers/devices/files; this is called within
+   *  the thread */
   virtual void close() = 0;
 
   void main(); //this is the thread main - should be private!
@@ -307,7 +329,7 @@ std::stringstream& TStream::Register::operator<<(const T &t) {
   return stream;
 }
 
-#else //MT_MSVC
+#else //MLR_MSVC
 
 struct ConditionVariable {
   int value;
@@ -323,6 +345,6 @@ struct ConditionVariable {
 
   int  getValue(bool userHasLocked=false) const { return value; }
 };
-#endif //MT_MSVC
+#endif //MLR_MSVC
 
 #endif
