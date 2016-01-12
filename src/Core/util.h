@@ -91,6 +91,7 @@ extern int interactivity;
 //----- files
 void open(std::ofstream& fs, const char *name, const char *errmsg="");
 void open(std::ifstream& fs, const char *name, const char *errmsg="");
+const char* mlrPath(const char* rel=NULL);
 
 //----- strings and streams
 bool contains(const char *s, char c);
