@@ -455,6 +455,7 @@ struct FileToken{
   std::shared_ptr<std::ofstream> os;
   std::shared_ptr<std::ifstream> is;
 
+  FileToken(){}
   FileToken(const char* _filename, bool change_dir=true);
   FileToken(const FileToken& ft);
   ~FileToken();

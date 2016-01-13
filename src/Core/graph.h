@@ -87,73 +87,62 @@ struct Graph : NodeL {
 
 
   //-- constructors
-  Graph();
-  explicit Graph(const char* filename);
-  explicit Graph(istream& is);
-  Graph(const std::map<std::string, std::string>& dict);
-  Graph(std::initializer_list<struct Nod> list);
-  Graph(const Graph& G);
-  Graph(Graph& container, const StringA& keys, const NodeL& parents); //creates this as a subgraph of container
+  Graph();                                               ///< empty graph
+  explicit Graph(const char* filename);                  ///< read from a file
+  explicit Graph(istream& is);                           ///< read from a stream
+  Graph(const std::map<std::string, std::string>& dict); ///< useful to represent Python dicts
+  Graph(std::initializer_list<struct Nod> list);         ///< initialize, e.g.: {"x", "b", {"a", 3.}, {"b", {"x"}, 5.}, {"c", mlr::String("BLA")} };
+  Graph(const Graph& G);                                 ///< copy constructor
+  Graph(Graph& container, const StringA& keys, const NodeL& parents); ///< creates this as a subgraph of container
   ~Graph();
   void clear();
   NodeL& list() { return *this; }
 
   //-- copy operator
   Graph& operator=(const Graph& G){
-    if(isNodeOfParentGraph) copy(G,NULL); //this is already a subgraph
-    else if(G.isNodeOfParentGraph) copy(G, &G.isNodeOfParentGraph->container); //copy as subgraph (including the item!)
-    else copy(G,NULL); //root graph plain copy
+    if(isNodeOfParentGraph) copy(G, NULL); //this is already a subgraph
+    else if(G.isNodeOfParentGraph) copy(G, &G.isNodeOfParentGraph->container); //copy as subgraph (including the node!)
+    else copy(G, NULL); //root graph plain copy
     return *this;
   }
   void copy(const Graph& G, Graph* becomeSubgraphOfContainer, bool appendInsteadOfClear=false);
   
-  //-- get items
-  Node* getNode(const char *key) const;
-  Node* getNode(const char *key1, const char *key2) const;
-  Node* getNode(const StringA &keys) const;
+  //-- get nodes
+  Node* getNode(const char *key) const;      ///< returns NULL if not found
+  Node* getNode(const StringA &keys) const;  ///< returns NULL if not found
   Node* operator[](const char *key) const{ return getNode(key); }
-  Node& I(const char *key) { Node *it=getNode(key); CHECK(it,"item '" <<key <<"' does not exist"); return *it; }
-  Node* getChild(Node *p1, Node *p2) const; //TODO -> getEdge
+  Node* getEdge(Node *p1, Node *p2) const;
+  template<class T> Node* getNodeOfType(const char *key) const;
 
-  //-- get lists of items
-  NodeL getNodes(const StringA &keys) const;
+  //-- get lists of nodes
   NodeL getNodes(const char* key) const;
+  NodeL getNodes(const StringA &keys) const;
   NodeL getNodesOfDegree(uint deg);
-  NodeL getTypedNodes(const char* key, const std::type_info& type);
-  template<class T> NodeL getTypedNodes(const char* key=NULL){ return getTypedNodes(key, typeid(T)); }
+  NodeL getNodesOfType(const char* key, const std::type_info& type);
+  template<class T> NodeL getNodesOfType(const char* key=NULL){ return getNodesOfType(key, typeid(T)); }
   template<class T> NodeL getDerivedNodes();
 
-  //-- get typed node
-  template<class T> Node* getTypedNode(const char *key) const;
-
-  //-- get values directly (TODO: remove V and 'getValue', just get should be enough)
-  template<class T> T& get(const char *key) const;
-  template<class T> const T& get(const char *key, const T& defaultValue) const;
-  template<class T> T& V(const char *key){ T* y=getValue<T>(key); CHECK(y,""); return *y; }
-  template<class T> const T& V(const char *key, const T& defaultValue) const{ T* y=getValue<T>(key); if(y) return *y; return defaultValue; }
+  //-- get values directly
   template<class T> T* getValue(const char *key)     const { Node *n = getNode(key);   if(!n) return NULL;  return n->getValue<T>(); }
   template<class T> T* getValue(const StringA &keys) const { Node *n = getNode(keys);  if(!n) return NULL;  return n->getValue<T>(); }
-  template<class T> bool getValue(T& x, const char *key)     const { T* y=getValue<T>(key);  if(!y) return false;  x=*y;  return true; }
-  template<class T> bool getValue(T& x, const StringA &keys) const { T* y=getValue<T>(keys); if(!y) return false;  x=*y;  return true; }
+  template<class T> T& get(const char *key) const;
+  template<class T> const T& get(const char *key, const T& defaultValue) const;
+  template<class T> bool get(T& x, const char *key)     const { T* y=getValue<T>(key);  if(!y) return false;  x=*y;  return true; }
+  template<class T> bool get(T& x, const StringA &keys) const { T* y=getValue<T>(keys); if(!y) return false;  x=*y;  return true; }
 
   //-- get lists of all values of a certain type T (or derived from T)
-  template<class T> mlr::Array<T*> getTypedValues(const char* key=NULL);
+  template<class T> mlr::Array<T*> getValuesOfType(const char* key=NULL);
   template<class T> mlr::Array<T*> getDerivedValues();
   
-  //-- adding items
-  Node *append(const Nod& ni);
+  //-- adding nodes
   template<class T> Node *append(T *x, bool ownsValue);
-//  template<class T> Node *append(const char* key, T *x, bool ownsValue);
   template<class T> Node *append(const StringA& keys, const NodeL& parents, const T& x);
   template<class T> Node *append(const StringA& keys, const NodeL& parents, T *x, bool ownsValue);
-//  template<class T> Node *append(const StringA& keys, T *x, bool ownsValue) { return append(keys, NodeL(), x, ownsValue); }
-//  template<class T> Node *append(const char *key, T *x, bool ownsValue) { return append({mlr::String(key)}, NodeL(), x, ownsValue); }
-//  template<class T> Node *append(const char *key1, const char* key2, T *x, bool ownsValue) {  return append({mlr::String(key1), mlr::String(key2)}, NodeL(), x, ownsValue); }
   Node *append(const uintA& parentIdxs);
-
+  Node *append(const Nod& ni); ///< (internal) append a node initializer
   void appendDict(const std::map<std::string, std::string>& dict);
 
-  //-- merging items  //TODO: explain better
+  //-- merging nodes  //TODO: explain better
   Node *merge(Node* m); //removes m and deletes, if it is a member of This and merged with another Node
   void merge(const NodeL& L){ for(Node *m:L) merge(m); }
 
@@ -171,6 +160,7 @@ struct Graph : NodeL {
   Node* readNode(std::istream& is, bool verbose=false, bool parseInfo=false, mlr::String prefixedKey=mlr::String()); //used only internally..
   void write(std::ostream& os=std::cout, const char *ELEMSEP="\n", const char *delim=NULL) const;
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0);
+  void writeHtml(std::ostream& os, std::istream& is);
   void writeParseInfo(std::ostream& os);
 };
 stdPipes(Graph);
