@@ -618,6 +618,11 @@ char *getCmdLineArgument(const char *tag) {
     }
   return NULL;
 }
+
+const char* mlrPath(const char* rel){
+  return MLR_CORE_PATH;
+}
+
 }//namespace mlr
 
 //===========================================================================
