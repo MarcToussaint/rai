@@ -376,8 +376,9 @@ void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer,bool appendIns
   for(Node *n:newNodes){
     for(uint i=0;i<n->parents.N;i++){
       Node *p=n->parents(i); //the parent in the origin graph
-      if(&p->container==&G){ //parent is in this graph, no need for complicated search
-        p = newNodes.elem(p->index);     //the true parent in the new graph
+      if(&p->container==&G){ //parent is directly in G, no need for complicated search
+        p->parentOf.removeValue(n);   //original parent it not parent of copy
+        p = newNodes.elem(p->index);  //the true parent in the new graph
       }else{
         const Graph *newg=this, *oldg=&G;
         while(&p->container!=oldg){  //find the container while iterating backward also in the newG
@@ -387,7 +388,7 @@ void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer,bool appendIns
         }
         CHECK(newg->N==oldg->N,"different size!!\n" <<*newg <<"**\n" <<*oldg);
         CHECK(p==oldg->elem(p->index),""); //we found the parent in oldg
-        p->parentOf.removeValue(n);  //origin nodes is not parent of copy
+        p->parentOf.removeValue(n);   //original parent is not parent of copy
         p = newg->elem(p->index);     //the true parent in the new graph
       }
       p->parentOf.append(n);       //connect both ways
@@ -659,7 +660,7 @@ void Graph::writeHtml(std::ostream& os, std::istream& is) {
 #undef GO
 }
 
-void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, int nodesOrEdges) {
+void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, int nodesOrEdges, int focusIndex) {
   if(!withoutHeader){
     os <<"digraph G{" <<endl;
     os <<"graph [ rankdir=\"LR\", ranksep=0.05 ];" <<endl;
@@ -686,6 +687,8 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
       for(uint i=1;i<it->parents.N;i++) label <<' ' <<it->parents(i)->keys.last();
       label <<")\" ";
     }
+
+    if(focusIndex==(int)it->index) shape <<" color=red";
 
     if(defaultEdges && it->parents.N==2){ //an edge
       os <<it->parents(0)->index <<" -> " <<it->parents(1)->index <<" [ " <<label <<"];" <<endl;
@@ -754,7 +757,7 @@ bool Graph::checkConsistency() const{
       const Graph *parentGraph = this;
       const Node *parentGraphNode;
       while(&parent->container!=parentGraph){
-        //wee need to descend one more
+        //we need to descend one more
         parentGraphNode = parentGraph->isNodeOfParentGraph;
         CHECK(parentGraphNode,"there is no more supergraph to find the parent");
         parentGraph = &parentGraphNode->container;

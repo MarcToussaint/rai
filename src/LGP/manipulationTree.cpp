@@ -4,7 +4,7 @@ ManipulationTree_Node::ManipulationTree_Node(LogicGeometricProgram& lgp)
   : lgp(lgp), parent(NULL), s(0), fol(lgp.fol_root),
     kinematics(lgp.world_root),
     effKinematics(lgp.world_root),
-    seqProblem(lgp.world_root, false), pathProblem(lgp.world_root, false),
+    poseProblem(effKinematics, false), seqProblem(lgp.world_root, false), pathProblem(lgp.world_root, false),
     poseCost(0.), seqCost(0.), pathCost(0.), effPoseReward(0.){
   fol.generateStateTree=true;
   folState = fol.getState();
@@ -16,7 +16,7 @@ ManipulationTree_Node::ManipulationTree_Node(LogicGeometricProgram& lgp, Manipul
   : lgp(lgp), parent(parent), fol(parent->fol),
     kinematics(parent->kinematics),
     effKinematics(parent->effKinematics),
-    seqProblem(lgp.world_root, false), pathProblem(lgp.world_root, false),
+    poseProblem(effKinematics, false), seqProblem(lgp.world_root, false), pathProblem(lgp.world_root, false),
     poseCost(0.), seqCost(0.), pathCost(0.), effPoseReward(0.){
   s=parent->s+1;
   parent->children.append(this);
@@ -32,12 +32,14 @@ ManipulationTree_Node::ManipulationTree_Node(LogicGeometricProgram& lgp, Manipul
 }
 
 void ManipulationTree_Node::expand(){
+  CHECK(!isExpanded,"");
   fol.setState(folState);
   auto actions = fol.get_actions();
   for(FOL_World::Handle& a:actions){
     cout <<"  EXPAND DECISION: " <<*a <<endl;
     new ManipulationTree_Node(lgp, this, a);
   }
+  isExpanded=true;
 }
 
 void ManipulationTree_Node::solvePoseProblem(){
@@ -50,7 +52,6 @@ void ManipulationTree_Node::solvePoseProblem(){
   cout <<"POSE PROBLEM:" <<*poseProblemSpecs <<endl;
   //    KOMO komo(*poseProblem);
 
-  MotionProblem poseProblem(effKinematics, false);
   poseProblem.setTiming(0, 1.);
   poseProblem.k_order=0;
   poseProblem.parseTasks(*poseProblemSpecs);
@@ -209,16 +210,17 @@ void ManipulationTree_Node::write(ostream& os) const{
   for(ManipulationTree_Node *n:children) n->write(os);
 }
 
-void ManipulationTree_Node::getGraph(Graph& G, Node* n) const{
+void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
   if(!n){
     n = new Node_typed<bool>(G, {"a:<ROOT>"}, NodeL(), NULL, false);
   }else{
     n = new Node_typed<bool>(G, {STRING("a:"<<*decision)}, {n}, NULL, false);
   }
+  graphIndex = n->index;
   n->keys.append(STRING("cPose:" <<poseCost));
   n->keys.append(STRING("cPath:" <<pathCost));
   n->keys.append(STRING("reward:" <<effPoseReward));
-  for(const ManipulationTree_Node *ch:children) ch->getGraph(G, n);
+  for(ManipulationTree_Node *ch:children) ch->getGraph(G, n);
 }
 
 RUN_ON_INIT_BEGIN(manipulationTree)

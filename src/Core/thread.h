@@ -90,6 +90,7 @@ struct RevisionedAccessGatedClass {
   mlr::String name;            ///< Variable name
   RWLock rwlock;              ///< rwLock (usually handled via read/writeAccess)
   ConditionVariable revision; ///< revision (= number of write accesses) number
+  int last_revision;          ///< last revision that has been accessed (read of write)
   double revision_time;       ///< clock time of last write access
   double data_time;           ///< time stamp of the original data source
   ThreadL listeners;          ///< list of threads that are being signaled a threadStep on write access
@@ -105,6 +106,7 @@ struct RevisionedAccessGatedClass {
   int deAccess(Thread*);
 
   /// @name syncing via a variable
+  bool hasNewRevision();
   /// the caller is set to sleep
   int waitForNextRevision();
   int waitForRevisionGreaterThan(int rev); //returns the revision

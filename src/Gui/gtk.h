@@ -33,10 +33,6 @@ void gtkLeaveCallback();
 int gtkPopupMenuChoice(StringL& choices);
 GtkWidget *gtkTopWindow(const char* title);
 
-//inline void gtkProcessEvents(){
-//  gktLock();
-//  while (gtk_events_pending())  gtk_main_iteration();
-//  gktUnlock();
-//}
+void gtkProcessEvents();
 
 #endif

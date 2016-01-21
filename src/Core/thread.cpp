@@ -216,22 +216,41 @@ RevisionedAccessGatedClass::~RevisionedAccessGatedClass() {
   for(Thread *th: listeners) th->listensTo.removeValue(this);
 }
 
+bool RevisionedAccessGatedClass::hasNewRevision(){
+  return revision.getValue() > last_revision;
+}
+
 int RevisionedAccessGatedClass::readAccess(Thread *th) {
 //  engine().acc->queryReadAccess(this, p);
   rwlock.readLock();
 //  engine().acc->logReadAccess(this, p);
-  return revision.getValue();
+  last_revision = revision.getValue();
+  return last_revision;
 }
+
+//bool RevisionedAccessGatedClass::readAccessIfNewer(Thread*){
+//  rwlock.readLock();
+//  int rev = revision.getValue();
+//  if(rev > last_revision){
+//    last_revision = rev;
+//    return true;
+//  }else{
+//    rwlock.unlock();
+//    return false;
+//  }
+//  HALT("shouldn't be here")
+//  return false;
+//}
 
 int RevisionedAccessGatedClass::writeAccess(Thread *th) {
 //  engine().acc->queryWriteAccess(this, p);
   rwlock.writeLock();
-  int r = revision.incrementValue();
+  last_revision = revision.incrementValue();
   revision_time = mlr::clockTime();
 //  engine().acc->logWriteAccess(this, p);
 //  if(listeners.N && !th){ HALT("I need to know the calling thread when threads listen to variables"); }
   for(Thread *l: listeners) if(l!=th) l->threadStep();
-  return r;
+  return last_revision;
 }
 
 int RevisionedAccessGatedClass::deAccess(Thread *th) {
@@ -243,9 +262,9 @@ int RevisionedAccessGatedClass::deAccess(Thread *th) {
   } else {
 //    engine().acc->logReadDeAccess(this,p);
   }
-  int rev=revision.getValue();
+  last_revision = revision.getValue();
   rwlock.unlock();
-  return rev;
+  return last_revision;
 }
 
 double RevisionedAccessGatedClass::revisionTime(){
