@@ -10,12 +10,13 @@ ManipulationTree_Node::ManipulationTree_Node(LogicGeometricProgram& lgp)
   folState = fol.getState();
   folDecision = NULL;
   decision = NULL;
+  hasEffKinematics = true;
 }
 
 ManipulationTree_Node::ManipulationTree_Node(LogicGeometricProgram& lgp, ManipulationTree_Node* parent, MCTS_Environment::Handle& a)
   : lgp(lgp), parent(parent), fol(parent->fol),
     kinematics(parent->kinematics),
-    effKinematics(parent->effKinematics),
+//    effKinematics(parent->effKinematics),
     poseProblem(effKinematics, false), seqProblem(lgp.world_root, false), pathProblem(lgp.world_root, false),
     poseCost(0.), seqCost(0.), pathCost(0.), effPoseReward(0.){
   s=parent->s+1;
@@ -43,6 +44,9 @@ void ManipulationTree_Node::expand(){
 }
 
 void ManipulationTree_Node::solvePoseProblem(){
+  CHECK(!parent || parent->hasEffKinematics,"parent needs to have computed the pose first!");
+  if(parent) effKinematics = parent->effKinematics;
+
   Node *n = new Node_typed<Graph>(fol.KB, {"PoseProblem"}, {folState->isNodeOfParentGraph}, new Graph, true);
   poseProblemSpecs = &n->graph();
   poseProblemSpecs->copy(*folState, &fol.KB);
@@ -66,8 +70,8 @@ void ManipulationTree_Node::solvePoseProblem(){
   opt.run();
   poseCost = opt.newton.fx;
 
-  poseProblem.reportFull();
-  poseProblem.costReport();
+//  poseProblem.reportFull();
+  poseProblem.costReport(false);
   //    problem.world.gl().watch();
   //    effKinematics.setJointState(problem.x0);
 
@@ -75,9 +79,10 @@ void ManipulationTree_Node::solvePoseProblem(){
     if(sw->timeOfApplication==1) sw->apply(effKinematics);
   effKinematics.topSort();
   effKinematics.checkConsistency();
+  hasEffKinematics = true;
 }
 
-void ManipulationTree_Node::solveSeqProblem(){
+void ManipulationTree_Node::solveSeqProblem(int verbose){
   //-- create new problem declaration (within the KB)
   Node *seqProblemNode = new Node_typed<Graph>(fol.KB, {"SeqProblem"}, {folState->isNodeOfParentGraph}, new Graph, true);
   seqProblemSpecs = &seqProblemNode->graph();
@@ -133,8 +138,8 @@ void ManipulationTree_Node::solveSeqProblem(){
   }
 
 //  seqProblem.reportFull(true);
-  seqProblem.costReport();
-  seqProblem.displayTrajectory(1, "SeqProblem", -.01);
+  seqProblem.costReport(false);
+  if(verbose>1) seqProblem.displayTrajectory(1, "SeqProblem", -.01);
 }
 
 void ManipulationTree_Node::solvePathProblem(uint microSteps){
@@ -207,7 +212,7 @@ void ManipulationTree_Node::write(ostream& os) const{
   for(uint i=0;i<s+1;i++) os <<"  ";  os <<" poseCost=" <<poseCost <<endl;
   for(uint i=0;i<s+1;i++) os <<"  ";  os <<" poseReward=" <<effPoseReward <<endl;
   for(uint i=0;i<s+1;i++) os <<"  ";  os <<" pathCost=" <<pathCost <<endl;
-  for(ManipulationTree_Node *n:children) n->write(os);
+//  for(ManipulationTree_Node *n:children) n->write(os);
 }
 
 void ManipulationTree_Node::getGraph(Graph& G, Node* n) {

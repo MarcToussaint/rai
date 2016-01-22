@@ -30,6 +30,7 @@ struct ManipulationTree_Node{
   ors::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
 
   bool isExpanded=false;
+  bool hasEffKinematics=false;
 
   //-- specs and results of the three optimization problems
   MotionProblem poseProblem, seqProblem, pathProblem;
@@ -47,7 +48,7 @@ struct ManipulationTree_Node{
   //- computations on the node
   void expand();           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
   void solvePoseProblem(); ///< solve the effective pose problem
-  void solveSeqProblem();  ///< compute a sequence of key poses along the decision path
+  void solveSeqProblem(int verbose=0);  ///< compute a sequence of key poses along the decision path
   void solvePathProblem(uint microSteps); ///< compute a full path along the decision path
 
   //-- helpers
