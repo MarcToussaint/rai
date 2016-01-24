@@ -72,8 +72,8 @@ struct ConditionVariable {
 
   int  getValue(bool userHasLocked=false) const;
   void waitForSignal(bool userHasLocked=false);
-  void waitForSignal(double seconds, bool userHasLocked=false);
-  void waitForValueEq(int i, bool userHasLocked=false);    ///< return value is the state after the waiting
+  bool waitForSignal(double seconds, bool userHasLocked=false);
+  bool waitForValueEq(int i, bool userHasLocked=false, double seconds=-1);    ///< return value is the state after the waiting
   void waitForValueNotEq(int i, bool userHasLocked=false); ///< return value is the state after the waiting
   void waitForValueGreaterThan(int i, bool userHasLocked=false); ///< return value is the state after the waiting
   void waitForValueSmallerThan(int i, bool userHasLocked=false); ///< return value is the state after the waiting

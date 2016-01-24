@@ -138,7 +138,7 @@ void ConditionVariable::waitForSignal(bool userHasLocked) {
   if(!userHasLocked) mutex.unlock();
 }
 
-void ConditionVariable::waitForSignal(double seconds, bool userHasLocked) {
+bool ConditionVariable::waitForSignal(double seconds, bool userHasLocked) {
   struct timespec timeout;
   clock_gettime(CLOCK_MONOTONIC, &timeout);
   long secs = (long)(floor(seconds));
@@ -153,14 +153,25 @@ void ConditionVariable::waitForSignal(double seconds, bool userHasLocked) {
   int rc = pthread_cond_timedwait(&cond, &mutex.mutex, &timeout);
   if(rc && rc!=ETIMEDOUT) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   if(!userHasLocked) mutex.unlock();
+  return rc!=ETIMEDOUT;
 }
 
-void ConditionVariable::waitForValueEq(int i, bool userHasLocked) {
+bool ConditionVariable::waitForValueEq(int i, bool userHasLocked, double seconds) {
   if(!userHasLocked) mutex.lock(); else CHECK_EQ(mutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
   while(value!=i) {
-    int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+    if(seconds<0.){
+      waitForSignal(true);
+      //int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+    }else{
+      bool succ = waitForSignal(seconds, true);
+      if(!succ){
+        if(!userHasLocked) mutex.unlock();
+        return false;
+      }
+    }
   }
   if(!userHasLocked) mutex.unlock();
+  return true;
 }
 
 void ConditionVariable::waitForValueNotEq(int i, bool userHasLocked) {
