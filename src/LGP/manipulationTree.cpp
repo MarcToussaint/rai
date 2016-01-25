@@ -91,7 +91,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   ManipulationTree_NodeL treepath = getTreePath();
 
   //-- add decisions to the seq pose problem description
-  seqProblem.setTiming(s, 5.*s);
+  seqProblem.setTiming(s-1, 5.*s); //T=0 means one pose is optimized!!
   seqProblem.k_order=1;
   NodeL komoRules = fol.KB.getNodes("SeqProblemRule");
 //  listWrite(komoRules, cout, "\n"); cout <<endl;
@@ -106,8 +106,8 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
       arr *t;
       double *tt;
       if((p=n->getValue<Graph>())){
-        if((t=p->getValue<arr>("time"))) *t += (double)(node->s-1);
-        if((tt=p->getValue<double>("time"))) *tt += (double)(node->s-1);
+        if((t=p->getValue<arr>("time"))) *t += (double)(node->s)-2.;
+        if((tt=p->getValue<double>("time"))) *tt += (double)(node->s)-2.;
       }
     }
     seqProblemSpecs->copy(changes, NULL, true);
@@ -138,7 +138,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   }
 
 //  seqProblem.reportFull(true);
-  seqProblem.costReport(false);
+  seqProblem.costReport(verbose>1);
   if(verbose>1) seqProblem.displayTrajectory(1, "SeqProblem", -.01);
 }
 
@@ -166,23 +166,24 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   //    KOMO komo(*pathProblem);
   pathProblem.reportFull(true);
 
-  arr x = pathProblem.getInitialization();
-  rndGauss(x, .1, true);
+  path = pathProblem.getInitialization();
+  rndGauss(path, .1, true);
+
+  Convert cvt(pathProblem);
+
   if(!pathProblem.dim_g_h()){
-    optNewton(x, Convert(pathProblem), OPT(verbose=2, stopIters=100, maxStep=.1, stepInc=1.1, stepDec=0.7 , damping=1., allowOverstep=true));
-//    OptNewton opt(x, Convert(MPF), OPT(verbose=0));
-//    opt.run();
-    path = x;
-//    pathCost = opt.fx;
-  }else{
-    OptConstrained opt(x, NoArr, Convert(pathProblem), OPT(verbose=0));
+//    optNewton(path, cvt, OPT(verbose=2, stopIters=100, maxStep=.1, stepInc=1.1, stepDec=0.7 , damping=1., allowOverstep=true));
+    OptNewton opt(path, cvt, OPT(verbose=2));
     opt.run();
-    path = x;
+    pathCost = opt.fx;
+  }else{
+    OptConstrained opt(path, NoArr, cvt, OPT(verbose=0));
+    opt.run();
     pathCost = opt.newton.fx;
   }
 
 //  pathProblem.reportFull(true);
-  pathProblem.costReport();
+  pathProblem.costReport(verbose>1);
   if(verbose>1) pathProblem.displayTrajectory(1, "PathProblem", -.01);
 
 //  for(ors::KinematicSwitch *sw: pathProblem.switches)
