@@ -142,7 +142,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   if(verbose>1) seqProblem.displayTrajectory(1, "SeqProblem", -.01);
 }
 
-void ManipulationTree_Node::solvePathProblem(uint microSteps){
+void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   Node *pathProblemNode = new Node_typed<Graph>(fol.KB, {"PathProblem"}, {folState->isNodeOfParentGraph}, new Graph, true);
   pathProblemSpecs = &pathProblemNode->graph();
 
@@ -181,9 +181,9 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps){
     pathCost = opt.newton.fx;
   }
 
-  pathProblem.reportFull(true);
+//  pathProblem.reportFull(true);
   pathProblem.costReport();
-  pathProblem.displayTrajectory(1, "PathProblem", -.01);
+  if(verbose>1) pathProblem.displayTrajectory(1, "PathProblem", -.01);
 
 //  for(ors::KinematicSwitch *sw: pathProblem.switches)
   //    if(sw->timeOfApplication==pathProblem.T+1) sw->apply(effKinematics);

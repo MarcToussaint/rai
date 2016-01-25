@@ -49,7 +49,7 @@ struct ManipulationTree_Node{
   void expand();           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
   void solvePoseProblem(); ///< solve the effective pose problem
   void solveSeqProblem(int verbose=0);  ///< compute a sequence of key poses along the decision path
-  void solvePathProblem(uint microSteps); ///< compute a full path along the decision path
+  void solvePathProblem(uint microSteps, int verbose=0); ///< compute a full path along the decision path
 
   //-- helpers
   ManipulationTree_NodeL getTreePath(); ///< return the decision path in terms of a list of nodes (just walking to the root)
