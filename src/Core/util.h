@@ -315,6 +315,7 @@ struct Log{
   Log(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0)
     : key(key), logCoutLevel(defaultLogCoutLevel), logFileLevel(defaultLogFileLevel), cfgFileWasRead(false){}
   ~Log(){ fil.close(); }
+  //TODO: rename to getToken
   mlr::LogToken operator()(int log_level, const char* filename, const char* function, uint line) const {
     if(strcmp(key,"global") && !cfgFileWasRead){
       Log *nonconst=(Log*)this;

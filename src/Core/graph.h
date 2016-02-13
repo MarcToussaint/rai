@@ -126,6 +126,7 @@ struct Graph : NodeL {
   template<class T> T* getValue(const char *key)     const { Node *n = getNode(key);   if(!n) return NULL;  return n->getValue<T>(); }
   template<class T> T* getValue(const StringA &keys) const { Node *n = getNode(keys);  if(!n) return NULL;  return n->getValue<T>(); }
   template<class T> T& get(const char *key) const;
+  template<class T> T& get(const StringA &keys) const;
   template<class T> const T& get(const char *key, const T& defaultValue) const;
   template<class T> bool get(T& x, const char *key)     const { T* y=getValue<T>(key);  if(!y) return false;  x=*y;  return true; }
   template<class T> bool get(T& x, const StringA &keys) const { T* y=getValue<T>(keys); if(!y) return false;  x=*y;  return true; }

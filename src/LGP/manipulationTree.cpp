@@ -50,7 +50,7 @@ void ManipulationTree_Node::solvePoseProblem(){
   Node *n = new Node_typed<Graph>(fol.KB, {"PoseProblem"}, {folState->isNodeOfParentGraph}, new Graph, true);
   poseProblemSpecs = &n->graph();
   poseProblemSpecs->copy(*folState, &fol.KB);
-  NodeL komoRules = fol.KB.getNodes("EffectiveKinematicsRule");
+  NodeL komoRules = fol.KB.getNodes("PoseProblemRule");
 //  listWrite(komoRules, cout, "\n"); cout <<endl;
   forwardChaining_FOL(*poseProblemSpecs, komoRules/*, NULL, NoGraph, 5*/);
   cout <<"POSE PROBLEM:" <<*poseProblemSpecs <<endl;
@@ -64,25 +64,29 @@ void ManipulationTree_Node::solvePoseProblem(){
   for(ors::KinematicSwitch *sw: poseProblem.switches)
     if(sw->timeOfApplication==0) sw->apply(effKinematics);
 
-  arr x=poseProblem.getInitialization();
-  rndGauss(x, .1, true);
-  OptConstrained opt(x, NoArr, poseProblem.InvKinProblem(), OPT(verbose=0));
+  pose=poseProblem.getInitialization();
+  rndGauss(pose, .1, true);
+  OptConstrained opt(pose, NoArr, poseProblem.InvKinProblem(), OPT(verbose=0));
   opt.run();
   poseCost = opt.newton.fx;
 
 //  poseProblem.reportFull();
   poseProblem.costReport(false);
   //    problem.world.gl().watch();
-  //    effKinematics.setJointState(problem.x0);
+
+  effKinematics.setJointState(pose);
 
   for(ors::KinematicSwitch *sw: poseProblem.switches)
     if(sw->timeOfApplication==1) sw->apply(effKinematics);
   effKinematics.topSort();
   effKinematics.checkConsistency();
+  effKinematics.getJointState();
   hasEffKinematics = true;
 }
 
 void ManipulationTree_Node::solveSeqProblem(int verbose){
+  if(!s) return;
+
   //-- create new problem declaration (within the KB)
   Node *seqProblemNode = new Node_typed<Graph>(fol.KB, {"SeqProblem"}, {folState->isNodeOfParentGraph}, new Graph, true);
   seqProblemSpecs = &seqProblemNode->graph();
@@ -123,8 +127,8 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
 
   Convert cvt(seqProblem);
 
-  checkJacobianCP(cvt, seq, 1e-4);
-  checkHessianCP(cvt, seq, 1e-4);
+//  checkJacobianCP(cvt, seq, 1e-4);
+//  checkHessianCP(cvt, seq, 1e-4);
 //  exit(0);
 
   if(!seqProblem.dim_g_h()){
@@ -163,10 +167,8 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
     pathProblemSpecs->clear();
   }
 
-  //    KOMO komo(*pathProblem);
-  pathProblem.reportFull(true);
-
   path = pathProblem.getInitialization();
+  pathProblem.reportFull(true);
   rndGauss(path, .1, true);
 
   Convert cvt(pathProblem);
@@ -185,9 +187,6 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
 //  pathProblem.reportFull(true);
   pathProblem.costReport(verbose>1);
   if(verbose>1) pathProblem.displayTrajectory(1, "PathProblem", -.01);
-
-//  for(ors::KinematicSwitch *sw: pathProblem.switches)
-  //    if(sw->timeOfApplication==pathProblem.T+1) sw->apply(effKinematics);
 }
 
 ManipulationTree_NodeL ManipulationTree_Node::getTreePath(){
