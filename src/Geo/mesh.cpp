@@ -20,6 +20,7 @@
 
 #include "mesh.h"
 #include "qhull.h"
+#include <Optim/optimization.h>
 
 #include <limits>
 
@@ -314,7 +315,124 @@ void ors::Mesh::makeConvexHull() {
   getTriangulatedHull(T, V);
 #else
   NICO
-#endif
+    #endif
+}
+
+void fitSCBox(arr& x, double& f, double& g, const arr& X, int verbose){
+  ConstrainedProblem F=[&X](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){
+    phi.resize(5+X.d0);
+    if(&tt){ tt.resize(5+X.d0); tt=ineqTT; }
+    if(&J) {  J.resize(5+X.d0,11); J.setZero(); }
+    if(&H) {  H.resize(11,11); H.setZero(); }
+
+    //-- the scalar objective
+    double a=x(0), b=x(1), c=x(2), r=x(3);
+    phi(0) = a*b*c + 2.*r*(a*b + a*c +b*c) + 4./3.*r*r*r;
+    if(&tt) tt(0) = fTT;
+    if(&J){
+      J(0,0) = b*c + 2.*r*(b+c);
+      J(0,1) = a*c + 2.*r*(a+c);
+      J(0,2) = a*b + 2.*r*(a+b);
+      J(0,3) = 2.*(a*b + a*c +b*c) + 4.*r*r;
+    }
+    if(&H){
+      H(0,1) = H(1,0) = c + 2.*r;
+      H(0,2) = H(2,0) = b + 2.*r;
+      H(0,3) = H(3,0) = 2.*(b+c);
+
+      H(1,2) = H(2,1) = a + 2.*r;
+      H(1,3) = H(3,1) = 2.*(a+c);
+
+      H(2,3) = H(3,2) = 2.*(a+b);
+
+      H(3,3) = 8.*r;
+    }
+
+    //-- positive
+    double w=100.;
+    phi(1) = -w*(a-.01);
+    phi(2) = -w*(b-.01);
+    phi(3) = -w*(c-.01);
+    phi(4) = -w*(r-.01);
+    if(&J){
+      J(1,0) = -w;
+      J(2,1) = -w;
+      J(3,2) = -w;
+      J(4,3) = -w;
+    }
+
+    //-- all constraints
+    for(uint i=0;i<X.d0;i++){
+      arr y, Jy;
+      y = X[i];
+      y.append(x);
+      phi(i+5) = DistanceFunction_SSBox(Jy, NoArr, y);
+      //      Jy.subRef(3,5)() *= -1.;
+      if(&J) J[i+5] = Jy.subRef(3,-1);
+    }
+  };
+
+  //initialization
+  x.resize(11);
+  ors::Quaternion rot;
+  rot.setRandom();
+  arr tX = X * rot.getArr(); //rotate points (with rot^{-1})
+  arr ma = max(tX,0), mi = min(tX,0);  //get coordinate-wise min and max
+  x.subRef(0,2)() = (ma-mi)/2.;   //sizes
+  x(3) = 1.; //sum(ma-mi)/6.;  //radius
+  x.subRef(4,6)() = rot.getArr() * (mi+.5*(ma-mi)); //center (rotated back)
+  x.subRef(7,10)() = conv_quat2arr(rot);
+  rndGauss(x.subRef(7,10)(), .1, true);
+  x.subRef(7,10)() /= length(x.subRef(7,10)());
+
+  if(verbose>1){
+    checkJacobianCP(F, x, 1e-4);
+    checkHessianCP(F, x, 1e-4);
+  }
+
+  OptConstrained opt(x, NoArr, F, OPT(
+                   stopTolerance = 1e-4,
+                   stopFTolerance = 1e-3,
+                   damping=1,
+                   maxStep=-1,
+                   constrainedMethod = anyTimeAula,
+                   aulaMuInc = 1.1
+                   ));
+  opt.run();
+
+  if(verbose>1){
+    checkJacobianCP(F, x, 1e-4);
+    checkHessianCP(F, x, 1e-4);
+  }
+
+  f = opt.UCP.get_costs();
+  g = opt.UCP.get_sumOfGviolations();
+}
+
+void ors::Mesh::makeSCBox(const arr& X, uint trials, int verbose){
+  if(!X.N){ clear(); return; }
+
+  arr x, x_best;
+  double f,g, f_best, g_best;
+  fitSCBox(x_best, f_best, g_best, X, verbose);
+  for(uint k=1;k<trials;k++){
+    fitSCBox(x, f, g, X, verbose);
+    if(g<g_best-1e-4 ||
+       (g<1e-4 && f<f_best)){ x_best=x; f_best=f; g_best=g; }
+  }
+
+  if(verbose>2){
+    cout <<"x=" <<x_best;
+    cout <<"\nf = " <<f_best <<"\ng-violations = " <<g_best <<endl;
+  }
+
+  setSSBox(2.*x_best(0), 2.*x_best(1), 2.*x_best(2), x_best(3));
+  ors::Transformation t;
+  t.setZero();
+  t.pos.set( x_best.subRef(4,6) );
+  t.rot.set( x_best.subRef(7,-1) );
+  t.rot.normalize();
+  t.applyOnPointArray(V);
 }
 
 void ors::Mesh::setSSCvx(const ors::Mesh& m, double r, uint fineness){

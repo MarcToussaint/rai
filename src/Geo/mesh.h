@@ -70,6 +70,7 @@ struct Mesh : GLDrawer {
   void box();
   void addMesh(const ors::Mesh& mesh2);
   void makeConvexHull();
+  void makeSCBox(const arr& X, uint trials=10, int verbose=0);
   
   /// @name internal computations & cleanup
   void computeNormals();

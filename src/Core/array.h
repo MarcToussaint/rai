@@ -489,8 +489,8 @@ inline arr randn(uint n) { return randn(TUP(n)); }
 /// return array with normal (Gaussian) random numbers
 inline arr randn(uint d0, uint d1) { return randn(TUP(d0, d1)); }
 
-inline double max(const arr& x) { return x.max(); }
-inline double min(const arr& x) { return x.min(); }
+//inline double max(const arr& x) { return x.max(); }
+//inline double min(const arr& x) { return x.min(); }
 inline uint argmax(const arr& x) { return x.maxIndex(); }
 inline uint argmin(const arr& x) { return x.minIndex(); }
 
@@ -625,6 +625,8 @@ template<class T> T sumOfAbs(const mlr::Array<T>& v);
 template<class T> T sumOfSqr(const mlr::Array<T>& v);
 template<class T> T length(const mlr::Array<T>& v);
 template<class T> T product(const mlr::Array<T>& v);
+template<class T> T max(const mlr::Array<T>& v);
+template<class T> mlr::Array<T> max(const mlr::Array<T>& v, uint d);
 
 template<class T> T trace(const mlr::Array<T>& v);
 template<class T> T var(const mlr::Array<T>& v);
