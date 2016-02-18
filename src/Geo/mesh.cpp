@@ -318,7 +318,7 @@ void ors::Mesh::makeConvexHull() {
     #endif
 }
 
-void fitSCBox(arr& x, double& f, double& g, const arr& X, int verbose){
+void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
   ConstrainedProblem F=[&X](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){
     phi.resize(5+X.d0);
     if(&tt){ tt.resize(5+X.d0); tt=ineqTT; }
@@ -409,29 +409,30 @@ void fitSCBox(arr& x, double& f, double& g, const arr& X, int verbose){
   g = opt.UCP.get_sumOfGviolations();
 }
 
-void ors::Mesh::makeSCBox(const arr& X, uint trials, int verbose){
+void ors::Mesh::makeSSBox(arr& x, Transformation& t, const arr& X, uint trials, int verbose){
   if(!X.N){ clear(); return; }
 
-  arr x, x_best;
+  arr x_best;
   double f,g, f_best, g_best;
-  fitSCBox(x_best, f_best, g_best, X, verbose);
+  fitSSBox(x_best, f_best, g_best, X, verbose);
   for(uint k=1;k<trials;k++){
-    fitSCBox(x, f, g, X, verbose);
+    fitSSBox(x, f, g, X, verbose);
     if(g<g_best-1e-4 ||
        (g<1e-4 && f<f_best)){ x_best=x; f_best=f; g_best=g; }
   }
 
+  x=x_best;
+
   if(verbose>2){
-    cout <<"x=" <<x_best;
+    cout <<"x=" <<x;
     cout <<"\nf = " <<f_best <<"\ng-violations = " <<g_best <<endl;
   }
 
-  setSSBox(2.*x_best(0), 2.*x_best(1), 2.*x_best(2), x_best(3));
-  ors::Transformation t;
   t.setZero();
-  t.pos.set( x_best.subRef(4,6) );
-  t.rot.set( x_best.subRef(7,-1) );
+  t.pos.set( x.subRef(4,6) );
+  t.rot.set( x.subRef(7,-1) );
   t.rot.normalize();
+  setSSBox(2.*x(0), 2.*x(1), 2.*x(2), x(3));
   t.applyOnPointArray(V);
 }
 
