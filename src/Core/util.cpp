@@ -575,7 +575,7 @@ double timerRead(bool reset) {
 
 /// read the timer relative to a given start time (user CPU time)
 double timerRead(bool reset, double startTime) {
-  double c=(timerUseRealTime?realTime():cpuTime())-startTime;
+  double c=(timerUseRealTime?realTime():cpuTime())-startTime; //Danny: not correct? should contain -timerStartTime?!?!?
   if(reset) timerStart(timerUseRealTime);
   return c;
 }
