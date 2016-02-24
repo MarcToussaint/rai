@@ -61,15 +61,15 @@ void readNode(Graph *i, uintA &hsitoi, uintA &itohsi, int ind) {
 
 void G4ID::load(const char *meta) {
   String name_agent, name_limb, name_digit, name_object, name_part;
-  mlr::Array<Graph*> kvg_agents, kvg_limbs, kvg_digits, kvg_objects, kvg_parts;
+  mlr::Array<Graph**> kvg_agents, kvg_limbs, kvg_digits, kvg_objects, kvg_parts;
   uint i = 0;
 
   bool structured;
 
   FILE(meta) >> s->kvg;
 
-  kvg_agents = s->kvg.getValuesOfType<Graph>("agent");
-  for(Graph *a: kvg_agents) {
+  kvg_agents = s->kvg.getValuesOfType<Graph*>("agent");
+  for(Graph **_a: kvg_agents) { Graph *a=*_a;
     a->get(name_agent, "name");
     s->agents.append(name_agent);
     s->subjects.append(name_agent);
@@ -80,8 +80,8 @@ void G4ID::load(const char *meta) {
     s->kvg_digitsof.append<StringA>({name_agent}, {}, StringA());
     s->kvg_sensorsof.append<StringA>({name_agent}, {}, StringA());
 
-    kvg_limbs = a->getValuesOfType<Graph>("limb");
-    for(Graph *l: kvg_limbs) {
+    kvg_limbs = a->getValuesOfType<Graph*>("limb");
+    for(Graph **_l: kvg_limbs) { Graph *l=*_l;
       l->get(name_limb, "name");
       s->limbs.append(name_limb);
       s->subjects.append(name_limb);
@@ -93,8 +93,8 @@ void G4ID::load(const char *meta) {
       s->kvg_digitsof.append({name_limb}, {}, StringA());
       s->kvg_sensorsof.append({name_limb}, {}, StringA());
 
-      kvg_digits = l->getValuesOfType<Graph>("digit");
-      for(Graph *d: kvg_digits) {
+      kvg_digits = l->getValuesOfType<Graph*>("digit");
+      for(Graph **_d: kvg_digits) { Graph *d=*_d;
         d->get(name_digit, "name");
         s->digits.append(name_digit);
         s->subjects.append(name_digit);
@@ -122,14 +122,14 @@ void G4ID::load(const char *meta) {
     }
   }
 
-  kvg_objects = s->kvg.getValuesOfType<Graph>("object");
-  for(Graph *o: kvg_objects) {
+  kvg_objects = s->kvg.getValuesOfType<Graph*>("object");
+  for(Graph **_o: kvg_objects) { Graph *o=*_o;
     o->get(name_object, "name");
     s->objects.append(name_object);
     if(o->get(structured, "structured") && structured) {
-      kvg_parts = o->getValuesOfType<Graph>("part");
+      kvg_parts = o->getValuesOfType<Graph*>("part");
       s->kvg_sensorsof.append({name_object}, {}, StringA());
-      for(Graph *p: kvg_parts) {
+      for(Graph **_p: kvg_parts) { Graph *p=*_p;
         p->get(name_part, "name");
         s->struct_sensors.append(name_part);
         s->sensors.append(name_part);
@@ -182,7 +182,7 @@ int G4ID::i(const char *sensor) {
 }
 
 int G4ID::hsi(const char *sensor) {
-  Graph *skvg = s->kvg_sensors.getValue<Graph>(sensor);
+  Graph *skvg = s->kvg_sensors.get<Graph*>(sensor);
 
   uint hid = *skvg->getValue<double>("hid");
   uint sid = *skvg->getValue<double>("sid");
@@ -323,9 +323,9 @@ void G4Rec::load(const char *recdir, bool interpolate) {
     for(Node *pair: kvgann) {
       ann = new arr(nframes);
       ann->setZero();
-      for(Node *lock: *pair->getValue<Graph>()) {
-        from = (uint)*lock->getValue<Graph>()->getValue<double>("from");
-        to = (uint)*lock->getValue<Graph>()->getValue<double>("to");
+      for(Node *lock: *pair->V<Graph*>()) {
+        from = (uint)*lock->V<Graph*>()->getValue<double>("from");
+        to = (uint)*lock->V<Graph*>()->getValue<double>("to");
         ann->subRef(from, to) = 1;
       }
       NIY; //I don't understand the following:
@@ -351,7 +351,7 @@ arr G4Rec::ann(const char *sensor1, const char *sensor2) {
   for(Node *pair: kvgann)
     if(g4id.sensorsof(pair->keys(0)).contains(STRING(sensor1))
     && g4id.sensorsof(pair->keys(1)).contains(STRING(sensor2)))
-      return *pair->getValue<Graph>()->getValue<arr>("ann");
+      return *pair->V<Graph*>()->getValue<arr>("ann");
   return arr();
 }
 
@@ -436,8 +436,8 @@ arr G4Rec::query(const char *type, const char *sensor, uint f) {
 /*   // TODO check that the type works for 2 sensors.... */
 /*   // e.g. check that it is not "poses" */
 
-/*   Graph *skvg1 = s->kvg_sensors.getValue<Graph>(sensor1); */
-/*   Graph *skvg2 = s->kvg_sensors.getValue<Graph>(sensor2); */
+/*   Graph *skvg1 = s->kvg_sensors.get<Graph*>(sensor1); */
+/*   Graph *skvg2 = s->kvg_sensors.get<Graph*>(sensor2); */
 /*   CHECK(s->kvg.getNode(type) != NULL, STRING("BAM '" << type << "' does not exist.")); */
 /*   CHECK(skvg1, STRING("Sensor '" << sensor1 << "' does not exist.")); */
 /*   CHECK(skvg2, STRING("Sensor '" << sensor2 << "' does not exist.")); */
@@ -457,8 +457,8 @@ arr G4Rec::query(const char *type, const char *sensor, uint f) {
 /* } */
 
 /* arr G4Data::query(const char *type, const char *sensor1, const char *sensor2, uint f) { */
-/*   Graph *skvg1 = s->kvg_sensors.getValue<Graph>(sensor1); */
-/*   Graph *skvg2 = s->kvg_sensors.getValue<Graph>(sensor2); */
+/*   Graph *skvg1 = s->kvg_sensors.get<Graph*>(sensor1); */
+/*   Graph *skvg2 = s->kvg_sensors.get<Graph*>(sensor2); */
 /*   CHECK(s->kvg.getNode(type) != NULL, STRING("BAM '" << type << "' does not exist.")); */
 /*   CHECK(skvg1, STRING("Sensor '" << sensor1 << "' does not exist.")); */
 /*   CHECK(skvg2, STRING("Sensor '" << sensor2 << "' does not exist.")); */

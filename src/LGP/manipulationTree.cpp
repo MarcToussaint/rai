@@ -49,7 +49,7 @@ void ManipulationTree_Node::solvePoseProblem(){
   if(parent) effKinematics = parent->effKinematics;
 
   if(true || !poseProblem){ //create the pose problem
-    Node *n = new Node_typed<Graph>(fol.KB, {"PoseProblem"}, {folState->isNodeOfParentGraph}, new Graph, true);
+    Node *n = new Node_typed<Graph*>(fol.KB, {"PoseProblem"}, {folState->isNodeOfParentGraph}, new Graph);
     poseProblemSpecs = &n->graph();
     poseProblemSpecs->copy(*folState, &fol.KB);
     NodeL komoRules = fol.KB.getNodes("PoseProblemRule");  //  listWrite(komoRules, cout, "\n"); cout <<endl;
@@ -93,7 +93,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   if(!s) return;
 
   //-- create new problem declaration (within the KB)
-  Node *seqProblemNode = new Node_typed<Graph>(fol.KB, {"SeqProblem"}, {folState->isNodeOfParentGraph}, new Graph, true);
+  Node *seqProblemNode = new Node_typed<Graph*>(fol.KB, {"SeqProblem"}, {folState->isNodeOfParentGraph}, new Graph);
   seqProblemSpecs = &seqProblemNode->graph();
 
   //-- collect 'path nodes'
@@ -115,7 +115,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
       Graph *p;
       arr *t;
       double *tt;
-      if((p=n->getValue<Graph>())){
+      if((p=n->V<Graph*>())){
         if((t=p->getValue<arr>("time"))) *t += (double)(node->s)-2.;
         if((tt=p->getValue<double>("time"))) *tt += (double)(node->s)-2.;
       }
@@ -159,7 +159,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
 }
 
 void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
-  Node *pathProblemNode = new Node_typed<Graph>(fol.KB, {"PathProblem"}, {folState->isNodeOfParentGraph}, new Graph, true);
+  Node *pathProblemNode = new Node_typed<Graph*>(fol.KB, {"PathProblem"}, {folState->isNodeOfParentGraph}, new Graph);
   pathProblemSpecs = &pathProblemNode->graph();
 
   //-- collect 'path nodes'
@@ -231,9 +231,9 @@ void ManipulationTree_Node::write(ostream& os) const{
 
 void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
   if(!n){
-    n = new Node_typed<bool>(G, {"a:<ROOT>"}, NodeL(), NULL, false);
+    n = new Node_typed<bool>(G, {"a:<ROOT>"}, NodeL(), true);
   }else{
-    n = new Node_typed<bool>(G, {STRING("a:"<<*decision)}, {n}, NULL, false);
+    n = new Node_typed<bool>(G, {STRING("a:"<<*decision)}, {n}, true);
   }
   graphIndex = n->index;
   n->keys.append(STRING("cPose:" <<poseCost));
