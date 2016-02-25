@@ -112,11 +112,9 @@ mlr::String label(Node *it){
     label <<it->keys(0);
     for(uint j=1; j<it->keys.N; j++) label <<'\n' <<it->keys(j);
   }
-  if(it->hasValue()) {
-    if(it->keys.N) label <<'\n';
-    label <<'=';
-    it->writeValue(label);
-  }
+  if(it->keys.N) label <<'\n';
+  label <<'=';
+  it->writeValue(label);
 #else
   label <<it->index;
 #endif

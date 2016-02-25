@@ -54,12 +54,13 @@ struct Node {
   virtual ~Node();
 
   //-- get value
-  template<class T> T *getValue();    ///< query whether the Node is of a certain value, return the value if so
+  template<class T> bool is(){ return type==typeid(T); }
+  template<class T> T *getValue();    ///< query whether node type is equal to (or derived from) T, return the value if so
   template<class T> const T *getValue() const; ///< as above
   template<class T> T& V(){ T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"'"); return *x; }
   template<class T> const T& V() const{ const T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"'"); return *x; }
-  Graph& graph() { CHECK(isGraph(), "this node is not of type 'Graph'"); return V<Graph>(); }
-  const Graph& graph() const { CHECK(isGraph(), "this node is not of type 'Graph'"); return V<Graph>(); }
+  Graph& graph() { return V<Graph>(); }
+  const Graph& graph() const { return V<Graph>(); }
   bool isBoolAndTrue() const{ const bool *value=getValue<bool>(); if(!value) return false; return *value; }
   bool isGraph() const;//{ return type==typeid(Graph); }
 
@@ -69,14 +70,11 @@ struct Node {
   void write(std::ostream &os) const;
 
   //-- virtuals implemented by Node_typed
-  virtual bool hasValue() const {NIY}
   virtual void* getValueDirectly() const {NIY}
-  virtual void writeValue(std::ostream &os) const {NIY}
-  virtual const std::type_info& getValueType() const {NIY}
-  virtual void takeoverValue(Node *it) {NIY}
-  virtual bool is_derived_from_RootType() const {NIY}
   virtual void copyValue(Node*) {NIY}
   virtual bool hasEqualValue(Node*) {NIY}
+  virtual void writeValue(std::ostream &os) const {NIY}
+  virtual const std::type_info& getValueType() const {NIY}
   virtual Node* newClone(Graph& container) const {NIY}
 };
 stdOutPipe(Node)
@@ -103,14 +101,8 @@ struct Graph : NodeL {
   NodeL& list() { return *this; }
 
   //-- copy operator
-  Graph& operator=(const Graph& G){
-//    if(isNodeOfParentGraph) copy(G, NULL); //this is already a subgraph
-//    else if(G.isNodeOfParentGraph) copy(G, &G.isNodeOfParentGraph->container); //copy as subgraph (including the node!)
-//    else copy(G, NULL); //root graph plain copy
-    xx_graph_copy(G);
-    return *this;
-  }
-  void xx_graph_copy(const Graph& G, bool appendInsteadOfClear=false);
+  Graph& operator=(const Graph& G){  copy(G);  return *this;  }
+  void copy(const Graph& G, bool appendInsteadOfClear=false);
   
   //-- get nodes
   Node* getNode(const char *key) const;      ///< returns NULL if not found
@@ -138,12 +130,9 @@ struct Graph : NodeL {
 
   //-- get lists of all values of a certain type T (or derived from T)
   template<class T> mlr::Array<T*> getValuesOfType(const char* key=NULL);
-  template<class T> mlr::Array<T*> getDerivedValues();
   
   //-- adding nodes
-//  template<class T> Node *append(T *x, bool ownsValue);
   template<class T> Node *append(const StringA& keys, const NodeL& parents, const T& x);
-//  template<class T> Node *append(const StringA& keys, const NodeL& parents, T *x, bool ownsValue);
   Node *append(const uintA& parentIdxs);
   Node *append(const Nod& ni); ///< (internal) append a node initializer
   void appendDict(const std::map<std::string, std::string>& dict);

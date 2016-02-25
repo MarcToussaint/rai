@@ -24,7 +24,7 @@
 #include "graph.h"
 #include "registry.h"
 
-#define DEBUG(x) x
+#define DEBUG(x)
 
 NodeL& NoNodeL=*((NodeL*)NULL);
 Graph& NoGraph=*((Graph*)NULL);
@@ -105,7 +105,6 @@ void Node::write(std::ostream& os) const {
   }
   
   //-- write value
-  if(!hasValue()) return;
   if(isGraph()) {
     os <<" {";
     graph().write(os, " ");
@@ -137,13 +136,6 @@ void Node::write(std::ostream& os) const {
     }
   }
 }
-
-//Graph Node::ParentOf(){
-//  Graph G;
-//  G.isReferringToNodesOf = &container;
-//  G.NodeL::operator=(parentOf);
-//  return G;
-//}
 
 Nod::Nod(const char* key){
   n = new Node_typed<bool>(G, true);
@@ -181,12 +173,6 @@ Graph::Graph(const Graph& G):isNodeOfParentGraph(NULL) {
 
 Graph::~Graph() {
   clear();
-  if(isNodeOfParentGraph){
-    Node_typed<Graph>* it=dynamic_cast<Node_typed<Graph>*>(isNodeOfParentGraph);
-    CHECK(it,"");
-//    it->value=NULL;
-//    it->ownsValue=false;
-  }
 }
 
 void Graph::clear() {
@@ -222,16 +208,6 @@ Node* Graph::getNode(const char *key) const {
   if(isNodeOfParentGraph) return isNodeOfParentGraph->container.getNode(key);
   return NULL;
 }
-
-//Node* Graph::getNode(const char *key1, const char *key2) const {
-//  for(Node *it: (*this)) {
-//    for(uint i=0; i<it->keys.N; i++) if(it->keys(i)==key1) {
-//      for(uint i=0; i<it->keys.N; i++) if(it->keys(i)==key2)
-//        return it;
-//    }
-//  }
-//  return NULL;
-//}
 
 Node* Graph::getNode(const StringA &keys) const {
   for(Node *it: (*this)) if(it->matches(keys)) return it;
@@ -313,7 +289,7 @@ Node* Graph::merge(Node *m){
   return NULL;
 }
 
-void Graph::xx_graph_copy(const Graph& G, bool appendInsteadOfClear){
+void Graph::copy(const Graph& G, bool appendInsteadOfClear){
   DEBUG(G.checkConsistency());
 
   //-- first delete existing nodes
@@ -324,18 +300,6 @@ void Graph::xx_graph_copy(const Graph& G, bool appendInsteadOfClear){
   //-- if either is a subgraph, ensure they're a subgraph of the same -- over restrictive!!
 //  if(isNodeOfParentGraph || G.isNodeOfParentGraph){
 //    CHECK(&isNodeOfParentGraph->container==&G.isNodeOfParentGraph->container,"is already subgraph of another container!");
-//  }
-//  if(becomeSubgraphOfContainer){ //CHECK that this is also a subgraph of the same container..
-//    if(!isNodeOfParentGraph){
-//      HALT("don't do that");
-//      Node *Gnode = G.isNodeOfParentGraph;
-//      if(Gnode)
-//        new Node_typed<Graph*>(*becomeSubgraphOfContainer, Gnode->keys, Gnode->parents, this);
-//      else
-//        new Node_typed<Graph*>(*becomeSubgraphOfContainer, {}, {}, this);
-//    }else{
-//      CHECK(&isNodeOfParentGraph->container==becomeSubgraphOfContainer,"is already subgraph of another container!");
-//    }
 //  }
 
   //-- first, just clone nodes with their values -- 'parents' still point to the origin nodes
@@ -359,7 +323,7 @@ void Graph::xx_graph_copy(const Graph& G, bool appendInsteadOfClear){
   //-- now copy subgraphs
   for(Node *n:newNodes) if(n->isGraph()){
     n->graph().isNodeOfParentGraph = n;
-    n->graph().xx_graph_copy(G.elem(n->index-indexOffset)->graph()); //you can only call the operator= AFTER assigning isNodeOfParentGraph
+    n->graph().copy(G.elem(n->index-indexOffset)->graph()); //you can only call the operator= AFTER assigning isNodeOfParentGraph
   }
 
   //-- now rewire parental links
@@ -799,8 +763,7 @@ bool operator==(const Graph& A, const Graph& B){
     if(a->parents.N!=b->parents.N) return false;
     for(uint j=0;j<a->parents.N;j++) if(a->parents(j)->index!=b->parents(j)->index) return false;
     if(a->getValueType()!=b->getValueType()) return false;
-    if(a->hasValue()!=b->hasValue()) return false;
-    if(a->hasValue() && !a->hasEqualValue(b)) return false;
+    if(!a->hasEqualValue(b)) return false;
   }
   return true;
 }
