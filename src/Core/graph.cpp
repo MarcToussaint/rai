@@ -48,15 +48,15 @@ stdOutPipe(ParseInfo)
 //  Node methods
 //
 
-Node::Node(Graph& _container)
-  : container(_container){
+Node::Node(const std::type_info& _type, Graph& _container)
+  : type(_type), container(_container){
   CHECK(&container!=&NoGraph, "don't do that anymore!");
   index=container.N;
   container.NodeL::append(this);
 }
 
-Node::Node(Graph& _container, const StringA& _keys, const NodeL& _parents)
-  : container(_container), keys(_keys), parents(_parents){
+Node::Node(const std::type_info& _type, Graph& _container, const StringA& _keys, const NodeL& _parents)
+  : type(_type), container(_container), keys(_keys), parents(_parents){
   CHECK(&container!=&NoGraph, "don't do that anymore!");
   index=container.N;
   container.NodeL::append(this);
@@ -106,9 +106,9 @@ void Node::write(std::ostream& os) const {
   
   //-- write value
   if(!hasValue()) return;
-  if(getValueType()==typeid(Graph*)) {
+  if(isGraph()) {
     os <<" {";
-    V<Graph*>()->write(os, " ");
+    graph().write(os, " ");
     os <<" }";
   } else if(getValueType()==typeid(NodeL)) {
     os <<"=(";
@@ -300,8 +300,8 @@ Node* Graph::merge(Node *m){
   CHECK(n!=m,"how is this possible?");
   if(n){
     CHECK(m->getValueType()==n->getValueType(), "can't merge nodes of different types!");
-    if(n->getValueType()==typeid(Graph*)){ //merge the KVGs
-      n->V<Graph*>()->merge(*m->V<Graph*>());
+    if(n->isGraph()){ //merge the KVGs
+      n->graph().merge(m->graph());
     }else{ //overwrite the value
       n->copyValue(m);
     }
@@ -347,7 +347,7 @@ void Graph::xx_graph_copy(const Graph& G, bool appendInsteadOfClear){
   //-- first, just clone nodes with their values -- 'parents' still point to the origin nodes
   for(Node *n:G){
     Node *newn=NULL;
-    if(n->getValueType()==typeid(Graph*) && n->V<Graph*>()!=NULL){
+    if(n->isGraph()){
       // why we can't copy the subgraph yet:
       // copying the subgraph would require to fully rewire the subgraph (code below)
       // but if the subgraph refers to parents of this graph that are not create yet, requiring will fail
@@ -363,7 +363,7 @@ void Graph::xx_graph_copy(const Graph& G, bool appendInsteadOfClear){
   for(Node *n:newNodes) CHECK(n->parentOf.N==0,"");
 
   //-- now copy subgraphs
-  for(Node *n:newNodes) if(n->getValueType()==typeid(Graph*) && n->V<Graph*>()!=NULL){
+  for(Node *n:newNodes) if(n->isGraph()){
     n->graph().isNodeOfParentGraph = n;
     n->graph().xx_graph_copy(G.elem(n->index-indexOffset)->graph()); //you can only call the operator= AFTER assigning isNodeOfParentGraph
   }
@@ -690,11 +690,11 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
     if(defaultEdges && it->parents.N==2){ //an edge
       os <<it->parents(0)->index <<" -> " <<it->parents(1)->index <<" [ " <<label <<"];" <<endl;
     }else{
-      if(it->getValueType()==typeid(Graph*)){
+      if(it->isGraph()){
         os <<"subgraph cluster_" <<it->index <<" { " <<label /*<<" rank=same"*/ <<endl;
-        it->V<Graph*>()->writeDot(os, true, defaultEdges, +1);
+        it->graph().writeDot(os, true, defaultEdges, +1);
         os <<"}" <<endl;
-        it->V<Graph*>()->writeDot(os, true, defaultEdges, -1);
+        it->graph().writeDot(os, true, defaultEdges, -1);
       }else{//normal node
         if(nodesOrEdges>=0){
           os <<it->index <<" [ " <<label <<shape <<" ];" <<endl;
@@ -722,8 +722,8 @@ void Graph::sortByDotOrder() {
   uintA perm;
   perm.setStraightPerm(N);
   for_list(Node, it, list()) {
-    if(it->getValueType()==typeid(Graph*)) {
-      double *order = it->V<Graph*>()->getValue<double>("dot_order");
+    if(it->isGraph()) {
+      double *order = it->graph().getValue<double>("dot_order");
       if(!order) { MLR_MSG("doesn't have dot_order attribute"); return; }
       perm(it_COUNT) = (uint)*order;
     }
@@ -764,7 +764,7 @@ bool Graph::checkConsistency() const{
     }else{
       CHECK(parent->index < node->index,"node refers to parent that sorts below the node");
     }
-    if(node->getValueType()==typeid(Graph*) && node->V<Graph*>()){
+    if(node->isGraph()){
       Graph& G = node->graph();
       CHECK(G.isNodeOfParentGraph==node,"");
       G.checkConsistency();
@@ -779,7 +779,7 @@ uint Graph::index(bool subKVG, uint start){
   for(Node *it: list()){
     it->index=idx;
     idx++;
-    if(it->getValueType()==typeid(Graph*) && it->V<Graph*>()){
+    if(it->isGraph()){
       Graph& G=it->graph();
       if(subKVG) idx = G.index(true, idx);
       else G.index(false, 0);

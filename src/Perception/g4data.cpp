@@ -323,13 +323,12 @@ void G4Rec::load(const char *recdir, bool interpolate) {
     for(Node *pair: kvgann) {
       ann = new arr(nframes);
       ann->setZero();
-      for(Node *lock: *pair->V<Graph*>()) {
-        from = (uint)*lock->V<Graph*>()->getValue<double>("from");
-        to = (uint)*lock->V<Graph*>()->getValue<double>("to");
+      for(Node *lock: pair->graph()) {
+        from = (uint)lock->graph()->getValue<double>("from");
+        to = (uint)lock->graph()->getValue<double>("to");
         ann->subRef(from, to) = 1;
       }
-      NIY; //I don't understand the following:
-//      pair->getValue<Graph*>()->append("ann", ann);
+      pair->graph().append("ann", ann);
     }
   }
   catch(const char *e) {
@@ -351,7 +350,7 @@ arr G4Rec::ann(const char *sensor1, const char *sensor2) {
   for(Node *pair: kvgann)
     if(g4id.sensorsof(pair->keys(0)).contains(STRING(sensor1))
     && g4id.sensorsof(pair->keys(1)).contains(STRING(sensor2)))
-      return *pair->V<Graph*>()->getValue<arr>("ann");
+      return pair->graph()->getValue<arr>("ann");
   return arr();
 }
 

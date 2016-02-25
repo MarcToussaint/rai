@@ -115,7 +115,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
       Graph *p;
       arr *t;
       double *tt;
-      if((p=n->V<Graph*>())){
+      if((p=&n->graph())){
         if((t=p->getValue<arr>("time"))) *t += (double)(node->s)-2.;
         if((tt=p->getValue<double>("time"))) *tt += (double)(node->s)-2.;
       }

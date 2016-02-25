@@ -42,14 +42,15 @@ extern Graph& NoGraph; //this is a reference to NULL! I use it for optional argu
 //===========================================================================
 
 struct Node {
+  const std::type_info& type;
   Graph& container;
   StringA keys;
   NodeL parents;
   NodeL parentOf;
   uint index;
 
-  Node(Graph& _container);
-  Node(Graph& _container, const StringA& _keys, const NodeL& _parents);
+  Node(const std::type_info& _type, Graph& _container);
+  Node(const std::type_info& _type, Graph& _container, const StringA& _keys, const NodeL& _parents);
   virtual ~Node();
 
   //-- get value
@@ -57,8 +58,9 @@ struct Node {
   template<class T> const T *getValue() const; ///< as above
   template<class T> T& V(){ T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"'"); return *x; }
   template<class T> const T& V() const{ const T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"'"); return *x; }
-  Graph& graph(){ Graph *graph=V<Graph*>(); CHECK(graph, "this node is not of type 'Graph'"); return *graph; }
-  bool isBoolAndTrue(){ bool *value=getValue<bool>(); if(!value) return false; return *value; }
+  Graph& graph() const{ Graph *graph=V<Graph*>(); CHECK(graph, "this node is not of type 'Graph'"); return *graph; }
+  bool isBoolAndTrue() const{ const bool *value=getValue<bool>(); if(!value) return false; return *value; }
+  bool isGraph() const{ return type==typeid(Graph*); }
 
   bool matches(const char *key); ///< return true, if 'key' is in keys
   bool matches(const StringA &query_keys); ///< return true, if all query_keys are in keys
