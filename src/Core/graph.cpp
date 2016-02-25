@@ -24,7 +24,7 @@
 #include "graph.h"
 #include "registry.h"
 
-#define DEBUG(x)
+#define DEBUG(x) x
 
 NodeL& NoNodeL=*((NodeL*)NULL);
 Graph& NoGraph=*((Graph*)NULL);
@@ -179,18 +179,12 @@ Graph::Graph(const Graph& G):isNodeOfParentGraph(NULL) {
   *this = G;
 }
 
-//Graph::Graph(Graph& container, const StringA& keys, const NodeL& parents) : isNodeOfParentGraph(NULL){
-//  Node *n = new Node_typed<Graph*>(container, keys, parents, this);
-//  CHECK(isNodeOfParentGraph==n,"");
-//}
-
-
 Graph::~Graph() {
   clear();
   if(isNodeOfParentGraph){
-    Node_typed<Graph*>* it=dynamic_cast<Node_typed<Graph*>*>(isNodeOfParentGraph);
+    Node_typed<Graph>* it=dynamic_cast<Node_typed<Graph>*>(isNodeOfParentGraph);
     CHECK(it,"");
-    it->value=NULL;
+//    it->value=NULL;
 //    it->ownsValue=false;
   }
 }
@@ -399,6 +393,7 @@ void Graph::xx_graph_copy(const Graph& G, bool appendInsteadOfClear){
 void Graph::read(std::istream& is, bool parseInfo) {
   if(parseInfo) getParseInfo(NULL).beg=is.tellg();
   for(;;) {
+    DEBUG(checkConsistency();)
     char c=mlr::peerNextChar(is, " \n\r\t,");
     if(!is.good() || c=='}') { is.clear(); break; }
     Node *it = readNode(is, false, parseInfo);
@@ -413,12 +408,16 @@ void Graph::read(std::istream& is, bool parseInfo) {
   }
   if(parseInfo) getParseInfo(NULL).end=is.tellg();
 
+  DEBUG(checkConsistency();)
+
   //-- merge all Merge keys
   NodeL merges = getNodes("Merge");
   for(Node *m:merges){
     m->keys.remove(0);
     merge(m);
   }
+
+  DEBUG(checkConsistency();)
 
   //-- delete all ChDir nodes in reverse order
   for(uint i=N;i--;){
@@ -468,6 +467,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
   }else{
     keys.append(prefixedKey);
   }
+  DEBUG(checkConsistency();)
 
   if(verbose) { cout <<" keys:" <<keys <<flush; }
 
@@ -497,6 +497,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
     mlr::parse(is, ")");
     c=mlr::getNextChar(is," \t");
   }
+  DEBUG(checkConsistency();)
 
   if(verbose) { cout <<" parents:"; if(!parents.N) cout <<"none"; else listWrite(parents,cout," ","()"); cout <<flush; }
 
@@ -559,8 +560,8 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
         mlr::parse(is, ">");
       } break;
       case '{': { // sub graph
-        Node_typed<Graph*> *subgraph = newSubGraph(*this, keys, parents);
-	subgraph->value->read(is);
+        Node_typed<Graph> *subgraph = newSubGraph(*this, keys, parents);
+        subgraph->value.read(is);
         mlr::parse(is, "}");
         node = subgraph;
       } break;
@@ -593,6 +594,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
   }
   if(node) pinfo.value_end=is.tellg();
   pinfo.end=is.tellg();
+  DEBUG(checkConsistency();)
 
   if(parseInfo && node){
     pinfo.node = node;
@@ -766,7 +768,7 @@ bool Graph::checkConsistency() const{
     }
     if(node->isGraph()){
       Graph& G = node->graph();
-      CHECK(G.isNodeOfParentGraph==node,"");
+      CHECK_EQ(G.isNodeOfParentGraph, node, "");
       G.checkConsistency();
     }
     idx++;
@@ -805,8 +807,8 @@ bool operator==(const Graph& A, const Graph& B){
 
 //===========================================================================
 
-Node_typed<Graph*>* newSubGraph(Graph& container, const StringA& keys, const NodeL& parents){
-  return new Node_typed<Graph*>(container, keys, parents, new Graph());
+Node_typed<Graph>* newSubGraph(Graph& container, const StringA& keys, const NodeL& parents){
+  return new Node_typed<Graph>(container, keys, parents, Graph());
 }
 
 //===========================================================================

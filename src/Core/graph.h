@@ -58,9 +58,10 @@ struct Node {
   template<class T> const T *getValue() const; ///< as above
   template<class T> T& V(){ T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"'"); return *x; }
   template<class T> const T& V() const{ const T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"'"); return *x; }
-  Graph& graph() const{ Graph *graph=V<Graph*>(); CHECK(graph, "this node is not of type 'Graph'"); return *graph; }
+  Graph& graph() { CHECK(isGraph(), "this node is not of type 'Graph'"); return V<Graph>(); }
+  const Graph& graph() const { CHECK(isGraph(), "this node is not of type 'Graph'"); return V<Graph>(); }
   bool isBoolAndTrue() const{ const bool *value=getValue<bool>(); if(!value) return false; return *value; }
-  bool isGraph() const{ return type==typeid(Graph*); }
+  bool isGraph() const;//{ return type==typeid(Graph); }
 
   bool matches(const char *key); ///< return true, if 'key' is in keys
   bool matches(const StringA &query_keys); ///< return true, if all query_keys are in keys
@@ -172,8 +173,9 @@ stdPipes(Graph);
 
 bool operator==(const Graph& A, const Graph& B);
 
-Node_typed<Graph*>* newSubGraph(Graph& container, const StringA& keys, const NodeL& parents); ///< creates this as a subgraph-node of container
+Node_typed<Graph>* newSubGraph(Graph& container, const StringA& keys, const NodeL& parents); ///< creates this as a subgraph-node of container
 
+inline bool Node::isGraph() const{ return type==typeid(Graph); }
 //===========================================================================
 
 /// This is a Node initializer, specifically for Graph(std::initializer_list<struct Nod> list); and the operator<< below
