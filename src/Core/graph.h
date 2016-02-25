@@ -29,6 +29,7 @@
 #include <map>
 
 struct Node;
+template<class T> struct Node_typed;
 struct Graph;
 struct ParseInfo;
 struct GraphEditCallback;
@@ -92,7 +93,7 @@ struct Graph : NodeL {
   Graph(const std::map<std::string, std::string>& dict); ///< useful to represent Python dicts
   Graph(std::initializer_list<struct Nod> list);         ///< initialize, e.g.: {"x", "b", {"a", 3.}, {"b", {"x"}, 5.}, {"c", mlr::String("BLA")} };
   Graph(const Graph& G);                                 ///< copy constructor
-  Graph(Graph& container, const StringA& keys, const NodeL& parents); ///< creates this as a subgraph-node of container
+//  Graph(Graph& container, const StringA& keys, const NodeL& parents); ///< creates this as a subgraph-node of container
   ~Graph();
 
   void clear();
@@ -100,12 +101,13 @@ struct Graph : NodeL {
 
   //-- copy operator
   Graph& operator=(const Graph& G){
-    if(isNodeOfParentGraph) copy(G, NULL); //this is already a subgraph
-    else if(G.isNodeOfParentGraph) copy(G, &G.isNodeOfParentGraph->container); //copy as subgraph (including the node!)
-    else copy(G, NULL); //root graph plain copy
+//    if(isNodeOfParentGraph) copy(G, NULL); //this is already a subgraph
+//    else if(G.isNodeOfParentGraph) copy(G, &G.isNodeOfParentGraph->container); //copy as subgraph (including the node!)
+//    else copy(G, NULL); //root graph plain copy
+    xx_graph_copy(G);
     return *this;
   }
-  void copy(const Graph& G, Graph* becomeSubgraphOfContainer, bool appendInsteadOfClear=false);
+  void xx_graph_copy(const Graph& G, bool appendInsteadOfClear=false);
   
   //-- get nodes
   Node* getNode(const char *key) const;      ///< returns NULL if not found
@@ -167,6 +169,8 @@ struct Graph : NodeL {
 stdPipes(Graph);
 
 bool operator==(const Graph& A, const Graph& B);
+
+Node_typed<Graph*>* newSubGraph(Graph& container, const StringA& keys, const NodeL& parents); ///< creates this as a subgraph-node of container
 
 //===========================================================================
 

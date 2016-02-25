@@ -179,10 +179,10 @@ Graph::Graph(const Graph& G):isNodeOfParentGraph(NULL) {
   *this = G;
 }
 
-Graph::Graph(Graph& container, const StringA& keys, const NodeL& parents) : isNodeOfParentGraph(NULL){
-  Node *n = new Node_typed<Graph*>(container, keys, parents, this);
-  CHECK(isNodeOfParentGraph==n,"");
-}
+//Graph::Graph(Graph& container, const StringA& keys, const NodeL& parents) : isNodeOfParentGraph(NULL){
+//  Node *n = new Node_typed<Graph*>(container, keys, parents, this);
+//  CHECK(isNodeOfParentGraph==n,"");
+//}
 
 
 Graph::~Graph() {
@@ -319,7 +319,7 @@ Node* Graph::merge(Node *m){
   return NULL;
 }
 
-void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer,bool appendInsteadOfClear){
+void Graph::xx_graph_copy(const Graph& G, bool appendInsteadOfClear){
   DEBUG(G.checkConsistency());
 
   //-- first delete existing nodes
@@ -327,18 +327,22 @@ void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer,bool appendIns
   uint indexOffset=N;
   NodeL newNodes;
 
-  //-- make this become a subgraph
-  if(becomeSubgraphOfContainer){ //CHECK that this is also a subgraph of the same container..
-    if(!isNodeOfParentGraph){
-      Node *Gnode = G.isNodeOfParentGraph;
-      if(Gnode)
-        new Node_typed<Graph*>(*becomeSubgraphOfContainer, Gnode->keys, Gnode->parents, this);
-      else
-        new Node_typed<Graph*>(*becomeSubgraphOfContainer, {}, {}, this);
-    }else{
-      CHECK(&isNodeOfParentGraph->container==becomeSubgraphOfContainer,"is already subgraph of another container!");
-    }
-  }
+  //-- if either is a subgraph, ensure they're a subgraph of the same -- over restrictive!!
+//  if(isNodeOfParentGraph || G.isNodeOfParentGraph){
+//    CHECK(&isNodeOfParentGraph->container==&G.isNodeOfParentGraph->container,"is already subgraph of another container!");
+//  }
+//  if(becomeSubgraphOfContainer){ //CHECK that this is also a subgraph of the same container..
+//    if(!isNodeOfParentGraph){
+//      HALT("don't do that");
+//      Node *Gnode = G.isNodeOfParentGraph;
+//      if(Gnode)
+//        new Node_typed<Graph*>(*becomeSubgraphOfContainer, Gnode->keys, Gnode->parents, this);
+//      else
+//        new Node_typed<Graph*>(*becomeSubgraphOfContainer, {}, {}, this);
+//    }else{
+//      CHECK(&isNodeOfParentGraph->container==becomeSubgraphOfContainer,"is already subgraph of another container!");
+//    }
+//  }
 
   //-- first, just clone nodes with their values -- 'parents' still point to the origin nodes
   for(Node *n:G){
@@ -348,7 +352,7 @@ void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer,bool appendIns
       // copying the subgraph would require to fully rewire the subgraph (code below)
       // but if the subgraph refers to parents of this graph that are not create yet, requiring will fail
       // therefore we just insert an empty graph here; we then copy the subgraph once all nodes are created
-      newn = new Node_typed<Graph*>(*this, n->keys, n->parents, new Graph());
+      newn = newSubGraph(*this, n->keys, n->parents);
     }else{
       newn = n->newClone(*this); //this appends sequentially clones of all nodes to 'this'
     }
@@ -361,7 +365,7 @@ void Graph::copy(const Graph& G, Graph* becomeSubgraphOfContainer,bool appendIns
   //-- now copy subgraphs
   for(Node *n:newNodes) if(n->getValueType()==typeid(Graph*) && n->V<Graph*>()!=NULL){
     n->graph().isNodeOfParentGraph = n;
-    n->graph().copy(G.elem(n->index-indexOffset)->graph(), NULL); //you can only call the operator= AFTER assigning isNodeOfParentGraph
+    n->graph().xx_graph_copy(G.elem(n->index-indexOffset)->graph()); //you can only call the operator= AFTER assigning isNodeOfParentGraph
   }
 
   //-- now rewire parental links
@@ -554,11 +558,11 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
         }
         mlr::parse(is, ">");
       } break;
-      case '{': { // Graph (e.g., attribute list)
-        Graph *subList = new Graph;
-        node = new Node_typed<Graph*>(*this, keys, parents, subList);
-        subList->read(is);
+      case '{': { // sub graph
+        Node_typed<Graph*> *subgraph = newSubGraph(*this, keys, parents);
+	subgraph->value->read(is);
         mlr::parse(is, "}");
+        node = subgraph;
       } break;
 //      case '(': { // referring Graph
 //        Graph *refs = new Graph;
@@ -797,6 +801,12 @@ bool operator==(const Graph& A, const Graph& B){
     if(a->hasValue() && !a->hasEqualValue(b)) return false;
   }
   return true;
+}
+
+//===========================================================================
+
+Node_typed<Graph*>* newSubGraph(Graph& container, const StringA& keys, const NodeL& parents){
+  return new Node_typed<Graph*>(container, keys, parents, new Graph());
 }
 
 //===========================================================================
