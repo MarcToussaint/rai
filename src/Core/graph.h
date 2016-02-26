@@ -43,25 +43,27 @@ extern Graph& NoGraph; //this is a reference to NULL! I use it for optional argu
 
 struct Node {
   const std::type_info& type;
+  const void *value_ptr;
   Graph& container;
   StringA keys;
   NodeL parents;
   NodeL parentOf;
   uint index;
 
-  Node(const std::type_info& _type, Graph& _container);
-  Node(const std::type_info& _type, Graph& _container, const StringA& _keys, const NodeL& _parents);
+  Node(const std::type_info& _type, void *_value_ptr, Graph& _container);
+  Node(const std::type_info& _type, void* _value_ptr, Graph& _container, const StringA& _keys, const NodeL& _parents);
   virtual ~Node();
 
   //-- get value
-  template<class T> bool is(){ return type==typeid(T); }
+  template<class T> bool isOfType() const{ return type==typeid(T); }
   template<class T> T *getValue();    ///< query whether node type is equal to (or derived from) T, return the value if so
   template<class T> const T *getValue() const; ///< as above
-  template<class T> T& V(){ T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"'"); return *x; }
-  template<class T> const T& V() const{ const T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"'"); return *x; }
-  Graph& graph() { return V<Graph>(); }
-  const Graph& graph() const { return V<Graph>(); }
-  bool isBoolAndTrue() const{ const bool *value=getValue<bool>(); if(!value) return false; return *value; }
+  template<class T> T& get(){ T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"'"); return *x; }
+  template<class T> const T& get() const{ const T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"'"); return *x; }
+  Graph& graph() { return get<Graph>(); }
+  const Graph& graph() const { return get<Graph>(); }
+  bool isBoolAndTrue() const{ if(type!=typeid(bool)) return false; return *((bool*)value_ptr) == true; }
+  bool isBoolAndFalse() const{ if(type!=typeid(bool)) return false; return *((bool*)value_ptr) == false; }
   bool isGraph() const;//{ return type==typeid(Graph); }
 
   bool matches(const char *key); ///< return true, if 'key' is in keys
@@ -70,11 +72,9 @@ struct Node {
   void write(std::ostream &os) const;
 
   //-- virtuals implemented by Node_typed
-  virtual void* getValueDirectly() const {NIY}
   virtual void copyValue(Node*) {NIY}
   virtual bool hasEqualValue(Node*) {NIY}
   virtual void writeValue(std::ostream &os) const {NIY}
-  virtual const std::type_info& getValueType() const {NIY}
   virtual Node* newClone(Graph& container) const {NIY}
 };
 stdOutPipe(Node)
@@ -94,7 +94,6 @@ struct Graph : NodeL {
   Graph(const std::map<std::string, std::string>& dict); ///< useful to represent Python dicts
   Graph(std::initializer_list<struct Nod> list);         ///< initialize, e.g.: {"x", "b", {"a", 3.}, {"b", {"x"}, 5.}, {"c", mlr::String("BLA")} };
   Graph(const Graph& G);                                 ///< copy constructor
-//  Graph(Graph& container, const StringA& keys, const NodeL& parents); ///< creates this as a subgraph-node of container
   ~Graph();
 
   void clear();
@@ -158,13 +157,14 @@ struct Graph : NodeL {
   void writeHtml(std::ostream& os, std::istream& is);
   void writeParseInfo(std::ostream& os);
 };
-stdPipes(Graph);
+stdPipes(Graph)
 
 bool operator==(const Graph& A, const Graph& B);
 
 Node_typed<Graph>* newSubGraph(Graph& container, const StringA& keys, const NodeL& parents); ///< creates this as a subgraph-node of container
 
 inline bool Node::isGraph() const{ return type==typeid(Graph); }
+
 //===========================================================================
 
 /// This is a Node initializer, specifically for Graph(std::initializer_list<struct Nod> list); and the operator<< below

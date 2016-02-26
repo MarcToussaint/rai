@@ -48,15 +48,15 @@ stdOutPipe(ParseInfo)
 //  Node methods
 //
 
-Node::Node(const std::type_info& _type, Graph& _container)
-  : type(_type), container(_container){
+Node::Node(const std::type_info& _type, void* _value_ptr, Graph& _container)
+  : type(_type), value_ptr(_value_ptr), container(_container){
   CHECK(&container!=&NoGraph, "don't do that anymore!");
   index=container.N;
   container.NodeL::append(this);
 }
 
-Node::Node(const std::type_info& _type, Graph& _container, const StringA& _keys, const NodeL& _parents)
-  : type(_type), container(_container), keys(_keys), parents(_parents){
+Node::Node(const std::type_info& _type, void* _value_ptr, Graph& _container, const StringA& _keys, const NodeL& _parents)
+  : type(_type), value_ptr(_value_ptr), container(_container), keys(_keys), parents(_parents){
   CHECK(&container!=&NoGraph, "don't do that anymore!");
   index=container.N;
   container.NodeL::append(this);
@@ -109,22 +109,22 @@ void Node::write(std::ostream& os) const {
     os <<" {";
     graph().write(os, " ");
     os <<" }";
-  } else if(getValueType()==typeid(NodeL)) {
+  } else if(isOfType<NodeL>()) {
     os <<"=(";
     for(Node *it: (*getValue<NodeL>())) os <<' ' <<it->keys.last();
     os <<" )";
-  } else if(getValueType()==typeid(mlr::String)) {
+  } else if(isOfType<mlr::String>()) {
     os <<"=\"" <<*getValue<mlr::String>() <<'"';
-  } else if(getValueType()==typeid(mlr::FileToken)) {
+  } else if(isOfType<mlr::FileToken>()) {
     os <<"='" <<getValue<mlr::FileToken>()->name <<'\'';
-  } else if(getValueType()==typeid(arr)) {
+  } else if(isOfType<arr>()) {
     os <<'='; getValue<arr>()->write(os, NULL, NULL, "[]");
-  } else if(getValueType()==typeid(double)) {
+  } else if(isOfType<double>()) {
     os <<'=' <<*getValue<double>();
-  } else if(getValueType()==typeid(bool)) {
+  } else if(isOfType<bool>()) {
     if(*getValue<bool>()) os<<','; else os <<'!';
   } else {
-    Node *it = reg_findType(getValueType().name());
+    Node *it = reg_findType(type.name());
     if(it && it->keys.N>1) {
       os <<" = <" <<it->keys(1) <<' ';
       writeValue(os);
@@ -252,7 +252,7 @@ NodeL Graph::getNodesOfDegree(uint deg) {
 
 NodeL Graph::getNodesOfType(const char* key, const std::type_info& type) {
   NodeL ret;
-  for(Node *it: (*this)) if(it->getValueType()==type) {
+  for(Node *it: (*this)) if(it->type==type) {
     if(!key) ret.NodeL::append(it);
     else for(uint i=0; i<it->keys.N; i++) if(it->keys(i)==key) {
       ret.append(it);
@@ -263,13 +263,13 @@ NodeL Graph::getNodesOfType(const char* key, const std::type_info& type) {
 }
 
 Node* Graph::merge(Node *m){
-  NodeL KVG = getNodesOfType(m->keys(0), m->getValueType());
+  NodeL KVG = getNodesOfType(m->keys(0), m->type);
   //CHECK(KVG.N<=1, "can't merge into multiple nodes yet");
   Node *n=NULL;
   if(KVG.N) n=KVG.elem(0);
   CHECK(n!=m,"how is this possible?");
   if(n){
-    CHECK(m->getValueType()==n->getValueType(), "can't merge nodes of different types!");
+    CHECK(m->type==n->type, "can't merge nodes of different types!");
     if(n->isGraph()){ //merge the KVGs
       n->graph().merge(m->graph());
     }else{ //overwrite the value
@@ -490,7 +490,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
         try{
 //          f->getIs();
           node = new Node_typed<mlr::FileToken>(*this, keys, parents, mlr::FileToken(str, false));
-          node->V<mlr::FileToken>().getIs();  //creates the ifstream and might throw an error
+          node->get<mlr::FileToken>().getIs();  //creates the ifstream and might throw an error
         } catch(...){
           delete node;
           PARSERR("file which does not exist -> converting to string!", pinfo);
@@ -762,7 +762,7 @@ bool operator==(const Graph& A, const Graph& B){
     if(a->keys!=b->keys) return false;
     if(a->parents.N!=b->parents.N) return false;
     for(uint j=0;j<a->parents.N;j++) if(a->parents(j)->index!=b->parents(j)->index) return false;
-    if(a->getValueType()!=b->getValueType()) return false;
+    if(a->type!=b->type) return false;
     if(!a->hasEqualValue(b)) return false;
   }
   return true;

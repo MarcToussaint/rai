@@ -366,6 +366,7 @@ typedef mlr::Array<uint32_t>   uint32A;
 typedef mlr::Array<const char*>  CstrList;
 typedef mlr::Array<arr*>   arrL;
 typedef mlr::Array<arr>    arrA;
+typedef mlr::Array<uintA>    uintAA;
 
 namespace mlr { struct String; }
 typedef mlr::Array<mlr::String> StringA;
