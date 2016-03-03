@@ -1,5 +1,8 @@
 #include "modelEnsemble.h"
 
+#define QUALITY_THRESHOLD 0.01
+#define NOISE_MARGIN 0.1
+
 ModelEnsemble::ModelEnsemble(){
   vert={0.0477157, -0.617799, -0.784887};
 }
@@ -9,19 +12,31 @@ ModelEnsemble::~ModelEnsemble(){
 }
 
 bool ModelEnsemble::addNewRegionGrowingModel(DataNeighbored& data){
-  MinEigModel *model = new MinEigModel(data);
+  MinEigModel *model = new MinEigModel(data, NOISE_MARGIN);
 
 //  if(models.N>5) return false;
 
   //-- find a random seed
   uint i;
+  uintA idel;
   for(uint k=20;k--;){
-    i=rnd(data.n());
-    if(data.valid(i) && data.weights(i)*10.<rnd.uni()) break;
     if(!k){
-      LOG(0) <<"no unused data points found";
+//      LOG(0) <<"no unused data points found";
       return false;
     }
+
+    i=rnd(data.n());
+    if(!data.valid(i)) continue;
+    if(data.isModelledWeights(i)>.1) continue;
+
+    idel = data.getKneighborhood(i, 20);
+    double w=0.;
+    for(uint j:idel) w += data.isModelledWeights(j);
+    w/=idel.N;
+    cout <<"SEED TESTED. w=" <<w <<endl;
+    if(w>.1) continue;
+
+    break; //success!
   }
 
   //-- initialize with neighborhood of size 400
@@ -37,29 +52,39 @@ bool ModelEnsemble::addNewRegionGrowingModel(DataNeighbored& data){
 
   //-- check success
   model->calcDensity();
-  model->report();
-  if(model->density<.1){
+  cout <<"TESTED MODEL: ";
+  model->report(cout, true);
+  if(model->density<QUALITY_THRESHOLD){
+    cout <<"-- DISCARD" <<endl;
     delete model;
     return false;
   }
+  cout <<"-- ACCEPT" <<endl;
 
-  for(uint i:model->pts) if(data.weights(i)<model->weights(i)) data.weights(i)=model->weights(i);
+  for(uint i:model->pts) if(data.isModelledWeights(i)<model->weights(i)) data.isModelledWeights(i)=model->weights(i);
   model->label=models.N;
   models.append(model);
   return true;
 }
 
 void ModelEnsemble::reoptimizeModels(DataNeighbored& data){
-  data.weights.setZero();
+  data.isModelledWeights.setZero();
   for(MinEigModel *model:models){
-    model->fringe = model->pts;
-    model->expand(10);
-    model->setWeightsToZero();
+//    model->expand(10);
+//    model->setWeightsToOne();
+//    model->calc(false);
     model->reweightWithError(model->pts);
-    model->calc(true);
+    model->calc(false);
+    model->fringe = model->pts;
+    for(uint k=0;;k++){
+      model->expand(10);
+      if(!model->fringe.N) break;
+      model->calc(true);
+    }
+//    model->calc(true);
     model->calcDensity();
-    if(model->density<.1){ model->setWeightsToZero(); model->density=0.; continue; }
-    for(uint i:model->pts) if(data.weights(i)<model->weights(i)) data.weights(i)=model->weights(i);
+    if(model->density<QUALITY_THRESHOLD){ model->setWeightsToZero(); model->density=0.; continue; }
+    for(uint i:model->pts) if(data.isModelledWeights(i)<model->weights(i)) data.isModelledWeights(i)=model->weights(i);
   }
   for(uint i=models.N;i--;) if(!models(i)->density){ delete models(i);  models.remove(i); }
 }
@@ -89,8 +114,8 @@ void ModelEnsemble::glDraw(OpenGL&){
   }
 }
 
-void ModelEnsemble::report(ostream& os){
+void ModelEnsemble::report(ostream& os, bool mini){
   uint c=0;
-  for(MinEigModel* m:models){ os <<c++ <<' '; m->report(os, true); }
+  for(MinEigModel* m:models){ os <<c++ <<' '; m->report(os, mini); }
   os <<"vert=" <<vert <<endl;
 }

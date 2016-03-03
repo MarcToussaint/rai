@@ -324,6 +324,7 @@ double forceClosure(const arr& C, const arr& Cn, const ors::Vector& center,
 
 void getTriangulatedHull(uintA& T, arr& V) {
   int exitcode;
+  uint dim=V.d1;
   static char* cmd = (char*) "qhull Qt ";
   exitcode = qh_new_qhull(V.d1, V.d0, V.p, false, cmd, NULL, stderr);
   if(exitcode) HALT("qh_new_qhull error - exitcode " <<exitcode);
@@ -334,12 +335,12 @@ void getTriangulatedHull(uintA& T, arr& V) {
   uint f, i, v;
   
   arr Vnew;
-  Vnew.resize(qh num_vertices, 3);
-  T.resize(qh num_facets, 3);
+  Vnew.resize(qh num_vertices, dim);
+  T.resize(qh num_facets, dim);
   i=0;
   FORALLvertices {
     vertex->id = i;
-    memmove(&Vnew(i, 0), vertex->point, 3*sizeof(double));
+    memmove(&Vnew(i, 0), vertex->point,  dim*sizeof(double));
     i++;
   }
   f=0;
@@ -350,7 +351,7 @@ void getTriangulatedHull(uintA& T, arr& V) {
       i++;
     }
     if(facet->toporient) {
-      v=T(f, 2);  T(f, 2)=T(f, 1);  T(f, 1)=v;
+      v=T(f, 0);  T(f, 0)=T(f, 1);  T(f, 1)=v;
     }
     f++;
   }

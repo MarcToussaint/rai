@@ -550,9 +550,9 @@ void flip_image(byteA &img);
 
 void scanArrFile(const char* name);
 
-bool checkGradient(const ScalarFunction& f, const arr& x, double tolerance);
-bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance);
-bool checkJacobian(const VectorFunction& f, const arr& x, double tolerance);
+bool checkGradient(const ScalarFunction& f, const arr& x, double tolerance, bool verbose=false);
+bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance, bool verbose=false);
+bool checkJacobian(const VectorFunction& f, const arr& x, double tolerance, bool verbose=false);
 
 double NNinv(const arr& a, const arr& b, const arr& Cinv);
 double logNNprec(const arr& a, const arr& b, double prec);

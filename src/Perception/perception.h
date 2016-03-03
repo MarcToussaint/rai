@@ -14,6 +14,7 @@
 #include <Gui/opengl.h>
 #include <map>
 
+#include "plane.h"
 
 //===========================================================================
 //
@@ -192,8 +193,8 @@ struct PointCloudViewer:Module{
   Access_typed<arr> pts;
   Access_typed<arr> cols;
   PointCloudViewer(const char* pts_name="kinect_points", const char* cols_name="kinect_pointColors")
-    : Module(STRING("PointCloudViewer_"<<pts_name <<'_' <<cols_name)),
-      pts(this, pts_name, true),
+    : Module(STRING("PointCloudViewer_"<<pts_name <<'_' <<cols_name), .1),
+      pts(this, pts_name),
       cols(this, cols_name){}
   void open();
   void step();
@@ -259,14 +260,15 @@ struct CannyFilter:Module{
 };
 
 struct OrsViewer:Module{
-  ACCESSlisten(ors::KinematicWorld, modelWorld)
+  Access_typed<ors::KinematicWorld> modelWorld;
   Access_typed<byteA> modelCameraView;
   Access_typed<byteA> modelDepthView;
   ors::KinematicWorld copy;
 
   bool computeCameraView;
   OrsViewer()
-    : Module("OrsViewer"),
+    : Module("OrsViewer", .1),
+      modelWorld(this, "modelWorld", false),
       modelCameraView(this, "modelCameraView"),
       modelDepthView(this, "modelDepthView"),
       computeCameraView(true){}
@@ -274,6 +276,29 @@ struct OrsViewer:Module{
   void open() {}
   void step();
   void close() {}
+};
+
+struct AllViewer : Module{
+  Access_typed<arr> kinect_points;
+  Access_typed<arr> kinect_pointColors;
+  Access_typed<PlaneA> planes_now;
+
+  arr kinect_points_copy;
+  arr kinect_pointColors_copy;
+  PlaneA planes_now_copy;
+  OpenGL gl;
+
+  AllViewer()
+    : Module("AllViewer", .1),
+      kinect_points(this, "kinect_points"),
+      kinect_pointColors(this, "kinect_pointColors"),
+      planes_now(this, "planes_now"),
+      gl("AllViewer"){}
+  ~AllViewer(){}
+  void open();
+  void step();
+  void close() {}
+
 };
 
 struct ComputeCameraView:Module{

@@ -605,8 +605,7 @@ void Graph::writeParseInfo(std::ostream& os) {
 
 void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, int nodesOrEdges) {
   if(!withoutHeader){
-    if(defaultEdges) os <<"digraph G{" <<endl;
-    else             os <<"graph G{" <<endl;
+    os <<"digraph G{" <<endl;
     os <<"graph [ rankdir=\"LR\", ranksep=0.05 ];" <<endl;
     os <<"node [ fontsize=9, width=.3, height=.3 ];" <<endl;
     os <<"edge [ arrowtail=dot, arrowsize=.5, fontsize=6 ];" <<endl;
@@ -647,9 +646,9 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
         if(nodesOrEdges<=0){
           for_list(Node, pa, it->parents) {
             if(pa->index<it->index)
-              os <<pa->index <<" -- " <<it->index <<" [ ";
+              os <<pa->index <<" -> " <<it->index <<" [ ";
             else
-              os <<it->index <<" -- " <<pa->index <<" [ ";
+              os <<it->index <<" -> " <<pa->index <<" [ ";
             os <<"label=" <<pa_COUNT;
             os <<" ];" <<endl;
           }

@@ -38,7 +38,7 @@ ors::Vector& NoVector = *((ors::Vector*)NULL);
 ors::Transformation& NoTransformation = *((ors::Transformation*)NULL);
 
 namespace ors {
-double scalarProduct(const ors::Quaternion& a, const ors::Quaternion& b);
+  double scalarProduct(const ors::Quaternion& a, const ors::Quaternion& b);
 }
 
 //===========================================================================
@@ -475,6 +475,9 @@ void Quaternion::alignWith(const Vector& v) {
 void Quaternion::set(double* p) { w=p[0]; x=p[1]; y=p[2]; z=p[3]; isZero=(w==1. || w==-1.); }
 
 /// set the quad
+void Quaternion::set(const arr& q) { CHECK_EQ(q.N,4, "");  set(q.p); }
+
+/// set the quad
 void Quaternion::set(double _w, double _x, double _y, double _z) { w=_w; x=_x; y=_y; z=_z; isZero=(w==1. || w==-1.); }
 
 /// reset the rotation to identity
@@ -777,6 +780,27 @@ arr Quaternion::getJacobian() const{
     J(1, i) = -2.*e.y;
     J(2, i) = -2.*e.z;
   }
+  return J;
+}
+
+/// this is a 4x(3x3) matrix, such that ~(J*x) is the jacobian of (R*x), and ~qdelta*J is (del R/del q)(qdelta)
+arr Quaternion::getMatrixJacobian() const{
+  arr J(4,9); //transpose!
+  double r0=w, r1=x, r2=y, r3=z;
+  J[0] = {      0,    -r3,     r2,
+               r3,      0,    -r1,
+              -r2,     r1,      0 };
+  J[1] = {      0,     r2,     r3,
+               r2, -2.*r1,    -r0,
+               r3,     r0, -2.*r1 };
+  J[2] = { -2.*r2,     r1,    r0,
+               r1,      0,     r3,
+              -r0,     r3, -2.*r2 };
+  J[3] = { -2.*r3,    -r0,     r1,
+               r0, -2.*r3,     r2,
+               r1,     r2,      0};
+  J *= 2.;
+  J.reshape(4,3,3);
   return J;
 }
 
@@ -1215,9 +1239,9 @@ void Camera::setZero() {
 }
 
 /// the height angle (in degrees) of the camera perspective; set it 0 for orthogonal projection
-void Camera::setHeightAngle(float a) { heightAngle=a; }
+void Camera::setHeightAngle(float a) { heightAngle=a; heightAbs=0.;}
 /// the absolute height of the camera perspective (automatically also sets heightAngle=0)
-void Camera::setHeightAbs(float h) { heightAngle=0; heightAbs=h; }
+void Camera::setHeightAbs(float h) { heightAngle=0.; heightAbs=h; }
 /// the z-range (depth range) visible for the camera
 void Camera::setZRange(float znear, float zfar) { zNear=znear; zFar=zfar; }
 /// set the width/height ratio of your viewport to see a non-distorted picture
@@ -1243,7 +1267,7 @@ void Camera::watchDirection(const Vector& d) {
   r.setDiff(-X.rot.getZ(), d);
   X.rot=r*X.rot;
 }
-/// rotate the frame to set it upright (i.e. camera's y aligned with 's z)
+/// rotate the frame to set it upright (i.e. camera's y aligned with world's z)
 void Camera::upright() {
 #if 1
   //construct desired X:
@@ -1319,11 +1343,23 @@ void Camera::glConvertToLinearDepth(double &d) {
 }
 
 void Camera::setKinect(){
+  setZero();
   setPosition(0., 0., 0.);
-  focus(0., 0., 1.);
-  setZRange(.1, 10.);
-  heightAbs=heightAngle=0.;
+  focus(0., 0., 5.);
+  setZRange(.1, 50.);
+#if 0
+  heightAbs=heightAngle = 0;
+#else
+  heightAbs=10; heightAngle=45;
+#endif
   focalLength = 580./480.;
+}
+
+void Camera::setDefault(){
+  setHeightAngle(12.);
+  setPosition(10., -15., 8.);
+  focus(0, 0, 1.);
+  upright();
 }
 
 //==============================================================================

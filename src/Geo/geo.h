@@ -100,11 +100,12 @@ struct Quaternion {
 
   Quaternion() {}
   Quaternion(double w, double x, double y, double z) { set(w,x,y,z); }
-  Quaternion(const arr& q) { CHECK_EQ(q.N,4, "");  set(q.p); };
-  Quaternion(const Quaternion& q) { set(q.w, q.x, q.y, q.z); };
+  Quaternion(const arr& q) { CHECK_EQ(q.N,4, "");  set(q.p); }
+  Quaternion(const Quaternion& q) { set(q.w, q.x, q.y, q.z); }
   double *p() { return &w; }
   
   void set(double w, double x, double y, double z);
+  void set(const arr& q);
   void set(double* p);
   void setZero();
   void setRandom();
@@ -144,6 +145,7 @@ struct Quaternion {
   double* getMatrixGL(double* m) const;  //in OpenGL format: transposed 4x4 memory storage
 
   arr getJacobian() const;
+  arr getMatrixJacobian() const;
 
   void writeNice(std::ostream& os) const;
   void write(std::ostream& os) const;
@@ -228,6 +230,7 @@ struct Camera {
   void glConvertToTrueDepth(double &d);
   void glConvertToLinearDepth(double &d);
   void setKinect();
+  void setDefault();
 };
 
 //===========================================================================

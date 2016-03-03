@@ -155,6 +155,7 @@ void PointCloudViewer::open(){
   s->gl.add(glDrawAxes);
   s->gl.add(glDrawPointCloud, s->pc);
   s->gl.camera.setKinect();
+//  s->gl.reportSelects = true;
 }
 
 void PointCloudViewer::close(){
@@ -667,22 +668,21 @@ void OrsViewer::step(){
   copy = modelWorld.get();
   copy.gl().lock.unlock();
   copy.gl().update(NULL, false, false, true);
-  mlr::wait(.03);
-  if(false && computeCameraView){
+  if(computeCameraView){
     ors::Shape *kinectShape = copy.getShapeByName("endeffKinect");
     if(kinectShape){ //otherwise 'copy' is not up-to-date yet
-//      openGlLock();
       copy.gl().lock.writeLock();
       ors::Camera cam = copy.gl().camera;
       copy.gl().camera.setKinect();
       copy.gl().camera.X = kinectShape->X * copy.gl().camera.X;
-      //    copy.gl().renderInBack(true, true, 580, 480);
-      copy.glGetMasks(580, 480, true);
+//      openGlLock();
+      copy.gl().renderInBack(true, true, 580, 480);
+//      copy.glGetMasks(580, 480, true);
+//      openGlUnlock();
       modelCameraView.set() = copy.gl().captureImage;
       modelDepthView.set() = copy.gl().captureDepth;
       copy.gl().camera = cam;
       copy.gl().lock.unlock();
-//      openGlUnlock();
     }
   }
 }
@@ -712,4 +712,18 @@ void ComputeCameraView::step(){
     cameraView.set() = gl.captureImage;
     frame=skipFrames;
   }
+}
+
+
+void AllViewer::open() {
+  gl.add(glStandardScene, 0);
+  gl.add(glDrawPointCloud, &kinect_points_copy);
+  gl.add(glDrawPlanes, &planes_now_copy);
+}
+
+void AllViewer::step(){
+  kinect_points_copy = kinect_points.get();
+  kinect_pointColors_copy = kinect_pointColors.get();
+  planes_now_copy = planes_now.get();
+  gl.update();
 }
