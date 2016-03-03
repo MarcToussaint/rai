@@ -365,11 +365,11 @@ void Graph::read(std::istream& is, bool parseInfo) {
     Node *it = readNode(is, false, parseInfo);
     if(!it) break;
     if(it->keys.N==1 && it->keys.last()=="Include"){
-      read(it->getValue<mlr::FileToken>()->getIs(true));
+      read(it->get<mlr::FileToken>().getIs(true));
       delete it;
     }else
     if(it->keys.N==1 && it->keys.last()=="ChDir"){
-      it->getValue<mlr::FileToken>()->changeDir();
+      it->get<mlr::FileToken>().changeDir();
     }
   }
   if(parseInfo) getParseInfo(NULL).end=is.tellg();
@@ -389,7 +389,7 @@ void Graph::read(std::istream& is, bool parseInfo) {
   for(uint i=N;i--;){
     Node *it=elem(i);
     if(it->keys.N==1 && it->keys(0)=="ChDir"){
-      it->getValue<mlr::FileToken>()->unchangeDir();
+      it->get<mlr::FileToken>().unchangeDir();
       delete it;
     }
   }

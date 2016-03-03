@@ -36,8 +36,11 @@ class AudioWriter_libav;
 template<class T>
 struct GenericDisplayViewer : Module {
   OpenGL *gl;
-  ACCESS(T, var)
-  GenericDisplayViewer(): Module("GenericDisplayViewer"), gl(NULL) {} \
+  Access_typed<T> var;
+  GenericDisplayViewer(const char* var_name)
+    : Module("GenericDisplayViewer", -1.)
+    , gl(NULL)
+    , var(this, var_name, true){}
   virtual void open(){ gl = new OpenGL(STRING("ImageViewer '"<<var.var->name()<<'\'')); }
   virtual void step(){
     gl->background = var.get()->display;
@@ -52,7 +55,7 @@ struct VideoEncoder : public Module {
   struct sVideoEncoder *s;
   bool is_rgb;
   double fps;
-  ACCESSlisten(byteA, img);
+  ACCESSlisten(byteA, img)
   VideoEncoder():Module("VideoEncoder"), is_rgb(false), fps(30) {}
   virtual ~VideoEncoder() {}
 
@@ -69,7 +72,7 @@ struct VideoEncoderX264 : public Module {
    struct sVideoEncoderX264 *s;
    bool is_rgb;
    double fps;
-   ACCESSlisten(byteA, img);
+   ACCESSlisten(byteA, img)
    VideoEncoderX264():Module("VideoEncoderX264"), is_rgb(false) {}
    virtual ~VideoEncoderX264() {}
 
@@ -181,7 +184,7 @@ BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; ACCESS(byteA, pcms16ne2c
 struct ImageViewer:Module{
   struct sImageViewer *s;
   Access_typed<byteA> img;
-  ImageViewer(const char* img_name="rgb") : Module(STRING("ImageViewer_"<<img_name)), img(this, img_name, true){}
+  ImageViewer(const char* img_name="rgb") : Module(STRING("ImageViewer_"<<img_name), -1), img(this, img_name, true){}
   ~ImageViewer(){}
   void open();
   void step();
@@ -217,7 +220,7 @@ struct CvtGray:Module{
   Access_typed<byteA> gray;
   std::map<int,double> properties; bool set(int prop, double value);
   CvtGray(const char* rgb_name="rgb", const char* gray_name="gray")
-    : Module(STRING("CvtGray_"<<rgb_name)), rgb(this, rgb_name, true), gray(this, gray_name){}
+    : Module(STRING("CvtGray_"<<rgb_name), -1), rgb(this, rgb_name, true), gray(this, gray_name){}
   void open();
   void step();
   void close();
@@ -228,7 +231,7 @@ struct MotionFilter:Module{
   Access_typed<byteA> rgb;
   Access_typed<byteA> motion;
   MotionFilter(const char* rgb_name="rgb", const char* motion_name="motion")
-    : Module(STRING("MotionFilter_"<<rgb_name)), rgb(this, rgb_name, true), motion(this, motion_name){}
+    : Module(STRING("MotionFilter_"<<rgb_name), -1), rgb(this, rgb_name, true), motion(this, motion_name){}
   void open();
   void step();
   void close();
@@ -240,7 +243,7 @@ struct DifferenceFilter:Module{
   Access_typed<byteA> i2;
   Access_typed<byteA> diffImage;
   DifferenceFilter(const char* i1_name="i1", const char* i2_name="i2", const char* diffImage_name="diffImage")
-    : Module(STRING("DifferenceFilter_"<<i1_name)), i1(this, i1_name, true), i2(this, i2_name), diffImage(this, diffImage_name){}
+    : Module(STRING("DifferenceFilter_"<<i1_name), -1), i1(this, i1_name, true), i2(this, i2_name), diffImage(this, diffImage_name){}
   void open();
   void step();
   void close();
@@ -251,9 +254,22 @@ struct CannyFilter:Module{
   Access_typed<byteA> grayImage;
   Access_typed<byteA> cannyImage;
   CannyFilter(const char* grayImage_name="grayImage", const char* cannyImage_name="cannyImage")
-    : Module(STRING("CannyFilter_"<<grayImage_name<<"_" <<cannyImage_name)),
+    : Module(STRING("CannyFilter_"<<grayImage_name<<"_" <<cannyImage_name), -1),
       grayImage(this, grayImage_name, true),
       cannyImage(this, cannyImage_name){}
+  void open();
+  void step();
+  void close();
+};
+
+struct Patcher:Module{
+  struct sPatcher *s;
+  Access_typed<byteA> rgbImage;
+  Access_typed<Patching> patchImage;
+  Patcher(const char* rgbImage_name="rgbImage", const char* patchImage_name="patchImage")
+    : Module(STRING("Patcher"<<rgbImage_name<<"_" <<patchImage_name), -1),
+      rgbImage(this, rgbImage_name, true),
+      patchImage(this, patchImage_name){}
   void open();
   void step();
   void close();
@@ -290,7 +306,7 @@ BEGIN_MODULE(HsvFilter)        ACCESSlisten(byteA, hsv)       ACCESSnew(floatA, 
 //BEGIN_MODULE(MotionFilter)     ACCESS(byteA, rgb)       ACCESS(byteA, motion)    END_MODULE()
 //BEGIN_MODULE(DifferenceFilter) ACCESS(byteA, i1)        ACCESS(byteA, i2)        ACCESS(byteA, diffImage) END_MODULE()
 //BEGIN_MODULE(CannyFilter)      ACCESS(byteA, grayImage) ACCESS(byteA, cannyImage)       END_MODULE()
-BEGIN_MODULE(Patcher)          ACCESSlisten(byteA, rgbImage)  ACCESSnew(Patching, patchImage)    END_MODULE()
+//BEGIN_MODULE(Patcher)          ACCESSlisten(byteA, rgbImage)  ACCESSnew(Patching, patchImage)    END_MODULE()
 BEGIN_MODULE(SURFer)           ACCESSlisten(byteA, grayImage) ACCESSnew(SURFfeatures, features)  END_MODULE()
 BEGIN_MODULE(HoughLineFilter)  ACCESSlisten(byteA, grayImage) ACCESSnew(HoughLines, houghLines)  END_MODULE()
 BEGIN_MODULE(ShapeFitter)      ACCESSlisten(floatA, eviL)     ACCESSnew(floatA, eviR)            ACCESSnew(PerceptionOutput, perc)      END_MODULE()

@@ -44,8 +44,8 @@ void G4ID::clear() {
 void readNode(Graph *i, uintA &hsitoi, uintA &itohsi, int ind) {
   uint hid, sid, hsi, hsitoiN;
   
-  hid = (uint)*i->getValue<double>("hid");
-  sid = (uint)*i->getValue<double>("sid");
+  hid = (uint)i->get<double>("hid");
+  sid = (uint)i->get<double>("sid");
   hsi = HSI(hid, sid);
 
   if(hsi >= hsitoi.N) {
@@ -184,8 +184,8 @@ int G4ID::i(const char *sensor) {
 int G4ID::hsi(const char *sensor) {
   Graph *skvg = &s->kvg_sensors.get<Graph>(sensor);
 
-  uint hid = *skvg->getValue<double>("hid");
-  uint sid = *skvg->getValue<double>("sid");
+  uint hid = skvg->get<double>("hid");
+  uint sid = skvg->get<double>("sid");
 
   return HSI(hid, sid);
 }
@@ -365,7 +365,7 @@ void G4Rec::appendBam(const char *bam, const arr &data) {
   if(!i)
     kvg.append({"bam", bam}, {}, arr(data));
   else
-    *i->getValue<arr>() = data; // replacing
+    i->get<arr>() = data; // replacing
 }
 
 bool G4Rec::hasBam(const char *bam) {
@@ -413,7 +413,7 @@ arr G4Rec::query(const char *type, const char *sensor) {
     x.reshape(nframes, 7);
     return x;
   }
-  return i->getValue<arr>()->operator[](is);
+  return i->get<arr>().operator[](is);
 }
 
 arr G4Rec::query(const char *type, const char *sensor, uint f) {
@@ -429,7 +429,7 @@ arr G4Rec::query(const char *type, const char *sensor, uint f) {
     x.append(kvg.getValue<arr>("quat")->subDim(is, f));
     return x;
   }
-  return i->getValue<arr>()->subDim(is, f);
+  return i->get<arr>().subDim(is, f);
 }
 
 /* arr G4Rec::query(const char *type, const char *sensor1, const char *sensor2) { */
@@ -445,12 +445,12 @@ arr G4Rec::query(const char *type, const char *sensor, uint f) {
 /*   uint hid1, sid1, i1; */
 /*   uint hid2, sid2, i2; */
   
-/*   hid1 = *skvg1->getValue<double>("hid"); */
-/*   sid1 = *skvg1->getValue<double>("sid"); */
+/*   hid1 = skvg1->get<double>("hid"); */
+/*   sid1 = skvg1->get<double>("sid"); */
 /*   i1 = s->kvg.getValue<arr>("hsitoi")->elem(HSI(hid1, sid1)); */
   
-/*   hid2 = *skvg2->getValue<double>("hid"); */
-/*   sid2 = *skvg2->getValue<double>("sid"); */
+/*   hid2 = skvg2->get<double>("hid"); */
+/*   sid2 = skvg2->get<double>("sid"); */
 /*   i2 = s->kvg.getValue<arr>("hsitoi")->elem(HSI(hid2, sid2)); */
 
 /*   return s->kvg.getValue<arr>(type)->subDim(i1, i2); */
@@ -466,12 +466,12 @@ arr G4Rec::query(const char *type, const char *sensor, uint f) {
 /*   uint hid1, sid1, i1; */
 /*   uint hid2, sid2, i2; */
   
-/*   hid1 = *skvg1->getValue<double>("hid"); */
-/*   sid1 = *skvg1->getValue<double>("sid"); */
+/*   hid1 = skvg1->get<double>("hid"); */
+/*   sid1 = skvg1->get<double>("sid"); */
 /*   i1 = s->kvg.getValue<arr>("hsitoi")->elem(HSI(hid1, sid1)); */
   
-/*   hid2 = *skvg2->getValue<double>("hid"); */
-/*   sid2 = *skvg2->getValue<double>("sid"); */
+/*   hid2 = skvg2->get<double>("hid"); */
+/*   sid2 = skvg2->get<double>("sid"); */
 /*   i2 = s->kvg.getValue<arr>("hsitoi")->elem(HSI(hid2, sid2)); */
 
 /*   return s->kvg.getValue<arr>("bam", type)->subDim(i1, i2, f); */
@@ -680,7 +680,7 @@ void G4Data::load(const char *recdir, bool interpolate) {
 G4Rec &G4Data::rec(const char *recdir) {
   Node *i = kvg.getNode(recdir);
   CHECK(i, STRING("No recording named '" << recdir << "'."));
-  return *i->getValue<G4Rec>();
+  return i->get<G4Rec>();
 }
 
 #if 0

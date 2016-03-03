@@ -210,10 +210,11 @@ struct NonlinearlyWarpedSquaredCost : VectorFunction {
 
 //===========================================================================
 
-struct ParticleAroundWalls:KOrderMarkovFunction {
+struct ParticleAroundWalls : KOrderMarkovFunction {
   //options of the problem
   uint T,k;
   bool hardConstrained, useKernel;
+  arr x;
 
   ParticleAroundWalls():
     T(mlr::getParameter<uint>("opt/ParticleAroundWalls/T",1000)),
@@ -222,10 +223,11 @@ struct ParticleAroundWalls:KOrderMarkovFunction {
     useKernel(false){}
 
   //implementations of the kOrderMarkov virtuals
-  void phi_t(arr& phi, arr& J, TermTypeA& tt, uint t, const arr& x_bar);
+  void set_x(const arr& _x){ x=_x; }
+  void phi_t(arr& phi, arr& J, TermTypeA& tt, uint t);
   uint get_T(){ return T; }
   uint get_k(){ return k; }
-  uint dim_x(){ return 3; }
+  uint dim_x(uint t){ return 3; }
   uint dim_phi(uint t);
   uint dim_g(uint t);
 
