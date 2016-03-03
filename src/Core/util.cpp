@@ -598,7 +598,7 @@ void initCmdLine(int _argc, char *_argv[]) {
   mlr::String msg;
   msg <<"** cmd line arguments: '"; for(int i=0; i<argc; i++) msg <<argv[i] <<' ';
   msg <<"\b'";
-  LOG(0) <<msg;
+  LOG(1) <<msg;
 }
 
 /// returns true if the tag was found on command line

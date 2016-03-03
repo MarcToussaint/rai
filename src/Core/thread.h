@@ -36,7 +36,7 @@ void close(const ThreadL& P);
 
 //===========================================================================
 //
-// threading: pthread wrappers: Mutex, RWLock, ConditionVariable
+//  basic threading: pthread wrappers: Mutex, RWLock, ConditionVariable
 //
 
 #ifndef MLR_MSVC
@@ -82,7 +82,7 @@ struct ConditionVariable {
 
 //===========================================================================
 //
-// access gated (rwlocked) variables
+// access gated (rwlocked) variables (shared memory)
 //
 
 /// Deriving from this allows to make variables/classes revisioned read-write access gated
@@ -90,7 +90,7 @@ struct RevisionedAccessGatedClass {
   mlr::String name;            ///< Variable name
   RWLock rwlock;              ///< rwLock (usually handled via read/writeAccess)
   ConditionVariable revision; ///< revision (= number of write accesses) number
-  int last_revision;          ///< last revision that has been accessed (read of write)
+  int last_revision;          ///< last revision that has been accessed (read or write)
   double revision_time;       ///< clock time of last write access
   double data_time;           ///< time stamp of the original data source
   ThreadL listeners;          ///< list of threads that are being signaled a threadStep on write access

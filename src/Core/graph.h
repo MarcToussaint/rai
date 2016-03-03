@@ -22,55 +22,59 @@
 /// @addtogroup group_Core
 /// @{
 
-#ifndef MLR_keyValueGraph_h
-#define MLR_keyValueGraph_h
+#ifndef MLR_graph_h
+#define MLR_graph_h
 
 #include "array.h"
 #include <map>
 
 struct Node;
+template<class T> struct Node_typed;
 struct Graph;
 struct ParseInfo;
 struct GraphEditCallback;
 typedef mlr::Array<Node*> NodeL;
 typedef mlr::Array<ParseInfo*> ParseInfoL;
 typedef mlr::Array<GraphEditCallback*> GraphEditCallbackL;
-extern NodeL& NoNodeL; //this is a pointer to NULL! I use it for optional arguments
-extern Graph& NoGraph; //this is a pointer to NULL! I use it for optional arguments
+extern NodeL& NoNodeL; //this is a reference to NULL! I use it for optional arguments
+extern Graph& NoGraph; //this is a reference to NULL! I use it for optional arguments
 
 //===========================================================================
 
 struct Node {
+  const std::type_info& type;
+  const void *value_ptr;
   Graph& container;
   StringA keys;
   NodeL parents;
   NodeL parentOf;
   uint index;
 
-  Node(Graph& _container);
-  Node(Graph& _container, const StringA& _keys, const NodeL& _parents);
+  Node(const std::type_info& _type, void *_value_ptr, Graph& _container);
+  Node(const std::type_info& _type, void* _value_ptr, Graph& _container, const StringA& _keys, const NodeL& _parents);
   virtual ~Node();
 
-  template<class T> T *getValue();    ///< query whether the Node is of a certain value, return the value if so
+  //-- get value
+  template<class T> bool isOfType() const{ return type==typeid(T); }
+  template<class T> T *getValue();    ///< query whether node type is equal to (or derived from) T, return the value if so
   template<class T> const T *getValue() const; ///< as above
-  template<class T> T& V(){ T *x=getValue<T>(); CHECK(x,"wrong type"); return *x; }
+  template<class T> T& get(){ T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"'"); return *x; }
+  template<class T> const T& get() const{ const T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"'"); return *x; }
+  Graph& graph() { return get<Graph>(); }
+  const Graph& graph() const { return get<Graph>(); }
+  bool isBoolAndTrue() const{ if(type!=typeid(bool)) return false; return *((bool*)value_ptr) == true; }
+  bool isBoolAndFalse() const{ if(type!=typeid(bool)) return false; return *((bool*)value_ptr) == false; }
+  bool isGraph() const;//{ return type==typeid(Graph); }
 
-  bool matches(const char *key);
-  bool matches(const StringA &query_keys);
+  bool matches(const char *key); ///< return true, if 'key' is in keys
+  bool matches(const StringA &query_keys); ///< return true, if all query_keys are in keys
+
   void write(std::ostream &os) const;
-  Graph ParentOf();
-  //-- specific standard values
-  Graph& graph(){ Graph *graph=getValue<Graph>(); CHECK(graph,""); return *graph; }
 
   //-- virtuals implemented by Node_typed
-  virtual bool hasValue() const {NIY}
-  virtual void* getValueDirectly() const {NIY}
-  virtual void writeValue(std::ostream &os) const {NIY}
-  virtual const std::type_info& getValueType() const {NIY}
-  virtual bool is_derived_from_RootType() const {NIY}
   virtual void copyValue(Node*) {NIY}
-  virtual void takeoverValue(Node*) {NIY}
   virtual bool hasEqualValue(Node*) {NIY}
+  virtual void writeValue(std::ostream &os) const {NIY}
   virtual Node* newClone(Graph& container) const {NIY}
 };
 stdOutPipe(Node)
@@ -78,13 +82,10 @@ stdOutPipe(Node)
 //===========================================================================
 
 struct Graph : NodeL {
-  struct sKeyValueGraph *s;
-  Graph* isReferringToNodesOf; //TODO: remove
   Node *isNodeOfParentGraph;
 
   ParseInfoL pi;
   GraphEditCallbackL callbacks;
-
 
   //-- constructors
   Graph();                                               ///< empty graph
@@ -93,19 +94,14 @@ struct Graph : NodeL {
   Graph(const std::map<std::string, std::string>& dict); ///< useful to represent Python dicts
   Graph(std::initializer_list<struct Nod> list);         ///< initialize, e.g.: {"x", "b", {"a", 3.}, {"b", {"x"}, 5.}, {"c", mlr::String("BLA")} };
   Graph(const Graph& G);                                 ///< copy constructor
-  Graph(Graph& container, const StringA& keys, const NodeL& parents); ///< creates this as a subgraph of container
   ~Graph();
+
   void clear();
   NodeL& list() { return *this; }
 
   //-- copy operator
-  Graph& operator=(const Graph& G){
-    if(isNodeOfParentGraph) copy(G, NULL); //this is already a subgraph
-    else if(G.isNodeOfParentGraph) copy(G, &G.isNodeOfParentGraph->container); //copy as subgraph (including the node!)
-    else copy(G, NULL); //root graph plain copy
-    return *this;
-  }
-  void copy(const Graph& G, Graph* becomeSubgraphOfContainer, bool appendInsteadOfClear=false);
+  Graph& operator=(const Graph& G){  copy(G);  return *this;  }
+  void copy(const Graph& G, bool appendInsteadOfClear=false);
   
   //-- get nodes
   Node* getNode(const char *key) const;      ///< returns NULL if not found
@@ -126,18 +122,16 @@ struct Graph : NodeL {
   template<class T> T* getValue(const char *key)     const { Node *n = getNode(key);   if(!n) return NULL;  return n->getValue<T>(); }
   template<class T> T* getValue(const StringA &keys) const { Node *n = getNode(keys);  if(!n) return NULL;  return n->getValue<T>(); }
   template<class T> T& get(const char *key) const;
+  template<class T> T& get(const StringA &keys) const;
   template<class T> const T& get(const char *key, const T& defaultValue) const;
   template<class T> bool get(T& x, const char *key)     const { T* y=getValue<T>(key);  if(!y) return false;  x=*y;  return true; }
   template<class T> bool get(T& x, const StringA &keys) const { T* y=getValue<T>(keys); if(!y) return false;  x=*y;  return true; }
 
   //-- get lists of all values of a certain type T (or derived from T)
   template<class T> mlr::Array<T*> getValuesOfType(const char* key=NULL);
-  template<class T> mlr::Array<T*> getDerivedValues();
   
   //-- adding nodes
-  template<class T> Node *append(T *x, bool ownsValue);
   template<class T> Node *append(const StringA& keys, const NodeL& parents, const T& x);
-  template<class T> Node *append(const StringA& keys, const NodeL& parents, T *x, bool ownsValue);
   Node *append(const uintA& parentIdxs);
   Node *append(const Nod& ni); ///< (internal) append a node initializer
   void appendDict(const std::map<std::string, std::string>& dict);
@@ -163,9 +157,13 @@ struct Graph : NodeL {
   void writeHtml(std::ostream& os, std::istream& is);
   void writeParseInfo(std::ostream& os);
 };
-stdPipes(Graph);
+stdPipes(Graph)
 
 bool operator==(const Graph& A, const Graph& B);
+
+Node_typed<Graph>* newSubGraph(Graph& container, const StringA& keys, const NodeL& parents); ///< creates this as a subgraph-node of container
+
+inline bool Node::isGraph() const{ return type==typeid(Graph); }
 
 //===========================================================================
 
@@ -218,7 +216,7 @@ struct Params {
   void set(const char *key, const T &value) {
     Node *i = graph.getNode(key);
     if(i) *i->getValue<T>() = value;
-    else graph.append({key}, {}, new T(value), true);
+    else graph.append({key}, {}, value);
   }
 
   template<class T>

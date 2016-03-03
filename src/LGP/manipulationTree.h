@@ -33,7 +33,7 @@ struct ManipulationTree_Node{
   bool hasEffKinematics=false;
 
   //-- specs and results of the three optimization problems
-  MotionProblem poseProblem, seqProblem, pathProblem;
+  MotionProblem *poseProblem, *seqProblem, *pathProblem;
   Graph *poseProblemSpecs, *seqProblemSpecs, *pathProblemSpecs;
   arr pose, seq, path;
   double poseCost, seqCost, pathCost;
