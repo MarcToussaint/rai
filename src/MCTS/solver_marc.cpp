@@ -139,6 +139,6 @@ void MCTS::writeToGraph(Graph& G, MCTS_Node* n){
   NodeL par;
   if(!n) n=&root; else par.append((Node*)(n->parent->data));
   double q=-10.;  if(n->N) q=n->Q/n->N;
-  n->data = new Node_typed<double>(G, {STRING("t"<<n->t <<'N' <<n->N <<'[' <<n->Qlo <<',' <<n->Qme <<',' <<n->Qup <<']')}, par, new double(q), true);
+  n->data = new Node_typed<double>(G, {STRING("t"<<n->t <<'N' <<n->N <<'[' <<n->Qlo <<',' <<n->Qme <<',' <<n->Qup <<']')}, par, q);
   for(MCTS_Node *c:n->children) writeToGraph(G, c);
 }

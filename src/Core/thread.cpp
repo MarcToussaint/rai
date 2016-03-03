@@ -414,6 +414,7 @@ protected:
 #endif
 
 Thread::Thread(const char* _name, double beatIntervalSec): name(_name), state(tsCLOSE), tid(0), thread(0), step_count(0), metronome(beatIntervalSec)  {
+  new Node_typed<Thread*>(registry(), {"Thread", name}, {}, this);
   if(name.N>14) name.resize(14, true);
 }
 

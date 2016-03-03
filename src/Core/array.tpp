@@ -2068,6 +2068,22 @@ template<class T> T sum(const mlr::Array<T>& v) {
   return t;
 }
 
+/// \f$\max_i x_i\f$
+template<class T> T max(const mlr::Array<T>& v) {
+  CHECK(v.N,"");
+  T m(v.p[0]);
+  for(uint i=v.N; i--; ) if(v.p[i]>m) m=v.p[i];
+  return m;
+}
+
+/// \f$\min_i x_i\f$
+template<class T> T min(const mlr::Array<T>& v) {
+  CHECK(v.N,"");
+  T m(v.p[0]);
+  for(uint i=v.N; i--; ) if(v.p[i]<m) m=v.p[i];
+  return m;
+}
+
 template<class T> T scalar(const mlr::Array<T>& x) {
   return x.scalar();
 }
@@ -2113,6 +2129,52 @@ template<class T> mlr::Array<T> sum(const mlr::Array<T>& v, uint d) {
   }
   S.reshape(S.N);
   return S;
+}
+
+/// \f$\max_i x_i\f$
+template<class T> mlr::Array<T> max(const mlr::Array<T>& v, uint d) {
+  CHECK(v.nd>d, "array doesn't have this dimension");
+  mlr::Array<T> x;
+  x.referTo(v);
+  mlr::Array<T> M;
+  uint i, j;
+  if(d==v.nd-1) {  //max over last index - contiguous in memory
+    x.reshape(x.N/x.dim(x.nd-1), x.dim(x.nd-1));
+    M.resize(x.d0);
+    for(i=0; i<x.d0; i++) M(i) = max(x[i]);
+    return M;
+  }
+  if(d==0) {  //sum over first index
+    x.reshape(x.d0, x.N/x.d0);
+    M = x[0]; //first row
+    for(i=1; i<x.d0; i++) for(j=0; j<x.d1; j++)
+      if(x(i,j)>M(j)) M(j)=x(i, j);
+    return M;
+  }
+  NIY;
+}
+
+/// \f$\max_i x_i\f$
+template<class T> mlr::Array<T> min(const mlr::Array<T>& v, uint d) {
+  CHECK(v.nd>d, "array doesn't have this dimension");
+  mlr::Array<T> x;
+  x.referTo(v);
+  mlr::Array<T> M;
+  uint i, j;
+  if(d==v.nd-1) {  //max over last index - contiguous in memory
+    x.reshape(x.N/x.dim(x.nd-1), x.dim(x.nd-1));
+    M.resize(x.d0);
+    for(i=0; i<x.d0; i++) M(i) = min(x[i]);
+    return M;
+  }
+  if(d==0) {  //sum over first index
+    x.reshape(x.d0, x.N/x.d0);
+    M = x[0]; //first row
+    for(i=1; i<x.d0; i++) for(j=0; j<x.d1; j++)
+      if(x(i,j)<M(j)) M(j)=x(i, j);
+    return M;
+  }
+  NIY;
 }
 
 /// \f$\sum_i |x_i|\f$
