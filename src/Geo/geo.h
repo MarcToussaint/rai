@@ -235,6 +235,7 @@ struct Camera {
   void setDefault();
 };
 
+
 //===========================================================================
 //
 // operators
@@ -294,6 +295,16 @@ std::ostream& operator<<(std::ostream&, const Vector&);
 std::ostream& operator<<(std::ostream&, const Matrix&);
 std::ostream& operator<<(std::ostream&, const Quaternion&);
 std::ostream& operator<<(std::ostream&, const Transformation&);
+
+//===========================================================================
+//
+// more complex operations
+//
+
+/// return the difference of two orientations as a 3D-rotation-vector,
+/// optionally also return the 'Jacobians' w.r.t. q1 and q2, but in terms
+/// of a 'cross-product-matrix'
+void quatDiff(arr& y, arr& J1, arr& J2, const Quaternion& q1, const Quaternion& q2);
 
 } //END of namespace
 

@@ -123,6 +123,8 @@ void Node::write(std::ostream& os) const {
     os <<'=' <<*getValue<double>();
   } else if(isOfType<bool>()) {
     if(*getValue<bool>()) os<<','; else os <<'!';
+  } else if(isOfType<Type*>()) {
+    get<Type*>()->write(os);
   } else {
     Node *it = reg_findType(type.name());
     if(it && it->keys.N>1) {
