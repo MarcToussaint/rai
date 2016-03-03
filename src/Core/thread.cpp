@@ -138,7 +138,7 @@ void ConditionVariable::waitForSignal(bool userHasLocked) {
   if(!userHasLocked) mutex.unlock();
 }
 
-void ConditionVariable::waitForSignal(double seconds, bool userHasLocked) {
+bool ConditionVariable::waitForSignal(double seconds, bool userHasLocked) {
   struct timespec timeout;
   clock_gettime(CLOCK_MONOTONIC, &timeout);
   long secs = (long)(floor(seconds));
@@ -153,14 +153,25 @@ void ConditionVariable::waitForSignal(double seconds, bool userHasLocked) {
   int rc = pthread_cond_timedwait(&cond, &mutex.mutex, &timeout);
   if(rc && rc!=ETIMEDOUT) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   if(!userHasLocked) mutex.unlock();
+  return rc!=ETIMEDOUT;
 }
 
-void ConditionVariable::waitForValueEq(int i, bool userHasLocked) {
+bool ConditionVariable::waitForValueEq(int i, bool userHasLocked, double seconds) {
   if(!userHasLocked) mutex.lock(); else CHECK_EQ(mutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
   while(value!=i) {
-    int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+    if(seconds<0.){
+      waitForSignal(true);
+      //int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+    }else{
+      bool succ = waitForSignal(seconds, true);
+      if(!succ){
+        if(!userHasLocked) mutex.unlock();
+        return false;
+      }
+    }
   }
   if(!userHasLocked) mutex.unlock();
+  return true;
 }
 
 void ConditionVariable::waitForValueNotEq(int i, bool userHasLocked) {
@@ -216,22 +227,41 @@ RevisionedAccessGatedClass::~RevisionedAccessGatedClass() {
   for(Thread *th: listeners) th->listensTo.removeValue(this);
 }
 
+bool RevisionedAccessGatedClass::hasNewRevision(){
+  return revision.getValue() > last_revision;
+}
+
 int RevisionedAccessGatedClass::readAccess(Thread *th) {
 //  engine().acc->queryReadAccess(this, p);
   rwlock.readLock();
 //  engine().acc->logReadAccess(this, p);
-  return revision.getValue();
+  last_revision = revision.getValue();
+  return last_revision;
 }
+
+//bool RevisionedAccessGatedClass::readAccessIfNewer(Thread*){
+//  rwlock.readLock();
+//  int rev = revision.getValue();
+//  if(rev > last_revision){
+//    last_revision = rev;
+//    return true;
+//  }else{
+//    rwlock.unlock();
+//    return false;
+//  }
+//  HALT("shouldn't be here")
+//  return false;
+//}
 
 int RevisionedAccessGatedClass::writeAccess(Thread *th) {
 //  engine().acc->queryWriteAccess(this, p);
   rwlock.writeLock();
-  int r = revision.incrementValue();
+  last_revision = revision.incrementValue();
   revision_time = mlr::clockTime();
 //  engine().acc->logWriteAccess(this, p);
 //  if(listeners.N && !th){ HALT("I need to know the calling thread when threads listen to variables"); }
   for(Thread *l: listeners) if(l!=th) l->threadStep();
-  return r;
+  return last_revision;
 }
 
 int RevisionedAccessGatedClass::deAccess(Thread *th) {
@@ -243,9 +273,9 @@ int RevisionedAccessGatedClass::deAccess(Thread *th) {
   } else {
 //    engine().acc->logReadDeAccess(this,p);
   }
-  int rev=revision.getValue();
+  last_revision = revision.getValue();
   rwlock.unlock();
-  return rev;
+  return last_revision;
 }
 
 double RevisionedAccessGatedClass::revisionTime(){
@@ -384,6 +414,7 @@ protected:
 #endif
 
 Thread::Thread(const char* _name, double beatIntervalSec): name(_name), state(tsCLOSE), tid(0), thread(0), step_count(0), metronome(beatIntervalSec)  {
+  new Node_typed<Thread*>(registry(), {"Thread", name}, {}, this);
   if(name.N>14) name.resize(14, true);
 }
 

@@ -841,17 +841,6 @@ arr bootstrap(const arr& x){
   return y;
 }
 
-//void write(const arr& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
-//  std::ofstream fil;
-//  mlr::open(fil, filename);
-//  X.write(fil, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
-//  fil.close();
-//}
-
-//void write(std::ostream& os, const arrL& X, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
-//  catCol(X).write(os, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
-//}
-
 void write(const arrL& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
   std::ofstream fil;
   mlr::open(fil, filename);
@@ -971,75 +960,6 @@ void make_RGB2BGRA(byteA &img) {
   img=tmp;
 }
 
-#ifdef MLR_EXPRESSIONS
-void assign(arr& x) {
-  CHECK(x.ex, "self-assignment only if it is an expression");
-  mlr::Ex *e=x.ex;
-  x.init();
-  x.ex=e;
-  assign(x, x);
-  delete x.ex;
-  x.ex=0;
-}
-
-void assign(arr& x, const arr& a) {
-  if(!a.ex) { x=a; return; }
-  mlr::Ex &e=*a.ex;
-  if(e.op==mlr::UNI) {
-    arr *A=(arr*)e.A;
-    if(A->ex) assign(*A);
-    if(!e.trans && e.mul==1 && e.add==0) { x=*A; return; }
-    if(!e.trans && e.mul==1) { scalarPlus(x, *A, *((double*)&e.add)); return; }
-    if(!e.trans && e.add==0) { scalarMultiplication(x, *A, *((double*)&e.mul)); return; }
-    if(e.mul==1 && e.add==0) { transpose(x, *A); return; }
-    HALT("");
-  } else {
-    arr *A=(arr*)e.A, *B=(arr*)e.B;
-    if(A->ex) assign(*A);
-    if(B->ex) assign(*B);
-    //bool at, bt;
-    //double ac, bc, ap, bp;
-    switch(e.op) {
-      case mlr::PROD:
-        if(!A->ex && !B->ex) { innerProduct(x, *A, *B); return; }
-        HALT("prod");
-        break;
-      case mlr::MUL:
-        if(!A->ex && !B->ex) { mult(x, *A, *B); return; }
-        HALT("mult");
-        break;
-      case mlr::Div:
-        if(!A->ex && !B->ex) { div(x, *A, *B); return; }
-        HALT("mult");
-        break;
-      case mlr::OUT:
-        if(!A->ex && !B->ex) { outerProduct(x, *A, *B); return; }
-        HALT("out");
-        break;
-      case mlr::PLUS:
-        if(!A->ex && !B->ex) { plus(x, *A, *B); return; }
-        //if(A->ex){ ap=A->ex->add; ac=A->ex->mul; at=A->ex->trans; A=(arr*)A->ex->A; }else{ ap=0; ac=1; at=false; }
-        //if(B->ex){ bp=B->ex->add; bc=B->ex->mul; bt=B->ex->trans; B=(arr*)B->ex->A; }else{ bp=0; bc=1; bt=false; }
-        //if(!at && !bt && !ap && !bp){ plus(x, ac, *A, bc, *B); return; }
-        //if(!at && !bt && !B){ scalarPlus(x, *A, bc); return; }
-        HALT("plus");
-        break;
-      case mlr::MINUS:
-        if(!A->ex && !B->ex) { minus(x, *A, *B); return; }
-        //if(A->ex){ ap=A->ex->add; ac=A->ex->mul; at=A->ex->trans; A=(arr*)A->ex->A; }else{ ap=0; ac=1; at=false; }
-        //if(B->ex){ bp=B->ex->add; bc=B->ex->mul; bt=B->ex->trans; B=(arr*)B->ex->A; }else{ bp=0; bc=1; bt=false; }
-        //if(!at && !bt && !ap && !bp){ plus(x, ac, *A, -bc, *B); return; }
-        //if(!at && !bt && !B){ scalarPlus(x, *A, bc); return; }
-        HALT("minus");
-        break;
-      case mlr::UNI:
-        HALT("shouldn't be here!");
-        break;
-    }
-    HALT("yet undefined expression");
-  }
-}
-#endif
 
 uintA getIndexTuple(uint i, const uintA &d) {
   CHECK(i<product(d), "out of range");
@@ -1459,32 +1379,40 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
   x=b;
   arr Acol=A;
   integer N=A.d0, KD=A.d1-1, NRHS=1, LDAB=A.d1, INFO;
-  if(A.special!=arr::RowShiftedPackedMatrixST) {
-    try{
+  try{
+    if(A.special!=arr::RowShiftedPackedMatrixST) {
       dposv_((char*)"L", &N, &NRHS, Acol.p, &N, x.p, &N, &INFO);
-    }catch(...){
-      HALT("here");
+    } else {
+      //assumes symmetric and upper triangle (see check's above)
+      dpbsv_((char*)"L", &N, &KD, &NRHS, Acol.p, &LDAB, x.p, &N, &INFO);
     }
-  } else {
-    //assumes symmetric and upper triangle (see check's above)
-    dpbsv_((char*)"L", &N, &KD, &NRHS, Acol.p, &LDAB, x.p, &N, &INFO);
+  }catch(...){
+    HALT("here");
   }
   if(INFO) {
+#if 1
     uint k=(N>3?3:N); //number of required eigenvalues
     mlr::Array<integer> IWORK(5*N), IFAIL(N);
-    arr WORK(7*N);
-    integer M, IL=1, IU=k, LDQ=0, LDZ=1;
+    arr WORK(10*(3*N)), Acopy=A;
+    integer M, IL=1, IU=k, LDQ=0, LDZ=1, LWORK=WORK.N;
     double VL=0., VU=0., ABSTOL=1e-8;
-    arr w(k);
-    dsbevx_((char*)"N", (char*)"I", (char*)"L", &N, &KD, Acol.p, &LDAB, (double*)NULL, &LDQ, &VL, &VU, &IL, &IU, &ABSTOL, &M, w.p, (double*)NULL, &LDZ, WORK.p, IWORK.p, IFAIL.p, &INFO);
-
-    THROW("lapack_Ainv_b_sym error info = " <<INFO
-         <<"\n typically this is because A is not pos-def,\nA=" <<A <<"\nb=" <<b <<"\neigenvalues=" <<w);
-  }
-#if 0
-  arr y = inverse(A)*b;
-  std::cout  <<"lapack_Ainv_b_sym error = " <<sqrDistance(x, y) <<std::endl;
+    arr sig(N);
+    if(A.special!=arr::RowShiftedPackedMatrixST) {
+//      sig.resize(N);
+//      dsyev_ ((char*)"N", (char*)"L", &N, A.p, &N, sig.p, WORK.p, &LWORK, &INFO);
+//      lapack_EigenDecomp(A, sig, NoArr);
+      dsyevx_((char*)"N", (char*)"I", (char*)"L", &N, Acopy.p, &LDAB, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)NULL, &LDZ, WORK.p, &LWORK, IWORK.p, IFAIL.p, &INFO);
+    }else{
+      dsbevx_((char*)"N", (char*)"I", (char*)"L", &N, &KD, Acopy.p, &LDAB, (double*)NULL, &LDQ, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)NULL, &LDZ, WORK.p, IWORK.p, IFAIL.p, &INFO);
+    }
+    sig.resizeCopy(k);
+#else
+    arr sig, eig;
+    lapack_EigenDecomp(A, sig, eig);
 #endif
+    THROW("lapack_Ainv_b_sym error info = " <<INFO
+         <<". Typically this is because A is not pos-def.\nsmallest "<<k<<" eigenvalues=" <<sig);
+  }
   return x;
 }
 
@@ -1531,16 +1459,17 @@ void lapack_RQ(arr& R, arr &Q, const arr& A) {
 
 void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs) {
   CHECK(symmA.nd==2 && symmA.d0==symmA.d1, "not symmetric");
-  arr work;
-  Evecs=symmA;
+  arr work, symmAcopy = symmA;
   integer N=symmA.d0;
   Evals.resize(N);
-  Evecs.resize(N, N);
-  // any number for size
   work.resize(10*(3*N));
   integer info, wn=work.N;
-  dsyev_((char*)"V", (char*)"U", &N, Evecs.p,
-         &N, Evals.p, work.p, &wn, &info);
+  if(&Evecs){
+    dsyev_((char*)"V", (char*)"L", &N, symmAcopy.p, &N, Evals.p, work.p, &wn, &info);
+    Evecs = symmAcopy;
+  }else{
+    dsyev_((char*)"N", (char*)"L", &N, symmAcopy.p, &N, Evals.p, work.p, &wn, &info);
+  }
   CHECK(!info, "lapack_EigenDecomp error info = " <<info);
 }
 

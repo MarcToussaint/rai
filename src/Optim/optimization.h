@@ -49,19 +49,48 @@ extern uint eval_cost;
  *
  */
 
-/// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
+/// A scalar function $y = f(x)$, if @df@ or @Hf@ are not NoArr, the gradient and/or Hessian is returned
 typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
 
-/// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
+/// A vector function $y = f(x)$, if @J@ is not NoArr, Jacobian is returned
+/// This also implies an optimization problem $\hat f(y) = y^T(x) y(x)$ of (iterated)
+/// Gauss-Newton type where the Hessian is approximated by J^T J
 typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
 
-
+/// symbols to declare of which type an objective feature is
 enum TermType { noTT=0, fTT, sumOfSqrTT, ineqTT, eqTT };
 extern const char* TermTypeString[];
 typedef mlr::Array<TermType> TermTypeA;
 extern TermTypeA& NoTermTypeA;
 
+/** A ConstrainedProblem returns a feature vector $phi$ and optionally its Jacobian $J$. For each entry of
+ *  this feature vector $tt(i)$ determins whether this is an inequality constraint, an equality constraint,
+ *  a sumOfSqr or "direct-f" cost feature. The latter two define the objective function as
+ *  $f(x) = f_j(x) + \sum_i \phi_i(x)^2$, where the sum only goes over sumOfSqr features, and f_j is a
+ *  direct-f feature (tt(i)==fTT). The direct-f feature is special: there may only exist a single such
+ *  feature; and if there exists this feature the returned Hessian $H$ needs to be its hessian.
+ *  For the sumOfSqr features no Hessian is returned: we assume the Gauss-Newton approximation.
+ */
 typedef std::function<void(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x)> ConstrainedProblem;
+
+
+struct GraphProblem {
+  /// We have 'variableDimensions.N' variables, each with a different dimension 'variableDimensions(i)'.
+  /// We have 'featureVariables.N' features, each depends on the tuple/clique 'featureVariables(j)' of variables.
+  /// That is, 'featureVariables' is a list of tuples/cliques that defines the hyper graph
+  virtual void getStructure(uintA& variableDimensions, uintAA& featureVariables);
+
+  /// We require 'x.N == \sum_i variableDimensions(i)'; so x defines the value of all variables
+  /// This returns the feature values, types and Jacobians at state x
+  /// Only for features of type 'fTT' also a Hessian is returned
+  /// Jacobians and Hessians are dense! But only w.r.t. the variables the feature depends on!!
+  /// (It is the job of the optimizer to translate this to sparse global Jacobians/Hessians)
+  virtual void phi(arr& phi, arrA& J, arrA& H, TermTypeA& tt, const arr& x);
+
+  bool checkDimensions(const arr& x);                 ///< check if Jacobians and Hessians have right dimensions (=clique size)
+  bool checkJacobian(const arr& x, double tolerance); ///< finite differences check of the returned Jacobian at x
+  bool checkHessian(const arr& x, double tolerance);  ///< finite differences check of the returned Hessian at x
+};
 
 
 /// functions \f$ \phi_t:(x_{t-k},..,x_t) \mapsto y\in\mathbb{R}^{m_t} \f$ over a chain \f$x_0,..,x_T\f$ of variables
@@ -76,11 +105,12 @@ struct KOrderMarkovFunction {
   //functions to get the parameters $T$, $k$ and $n$ of the $k$-order Markov Process
   virtual uint get_T() = 0;       ///< horizon (the total x-dimension is (T+1)*n )
   virtual uint get_k() = 0;       ///< the order of dependence: \f$ \phi=\phi(x_{t-k},..,x_t) \f$
-  virtual uint dim_x() = 0;       ///< \f$ \sum_t \dim(x_t) \f$
+  virtual uint dim_x() { uint d=0, T=get_T(); for(uint t=0; t<=T; t++) d+=dim_x(t); return d; }   ///< \f$ \sum_t \dim(x_t) \f$
   virtual uint dim_x(uint t) = 0;       ///< \f$ \dim(x_t) \f$
   virtual uint dim_phi(uint t) = 0; ///< \f$ \dim(\phi_t) \f$
   virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints at the end of \f$ \phi_t \f$ (before h terms)
   virtual uint dim_h(uint t){ return 0; } ///< number of equality constraints at the very end of \f$ \phi_t \f$
+  virtual uint dim_g_h(){ uint d=0, T=get_T(); for(uint t=0;t<=T;t++) d += dim_g(t) + dim_h(t); return d; }
   virtual StringA getPhiNames(uint t){ return StringA(); }
   virtual arr get_prefix(){ arr x(get_k(), dim_x()); x.setZero(); return x; } ///< the augmentation \f$ (x_{t=-k},..,x_{t=-1}) \f$ that makes \f$ \phi_{0,..,k-1} \f$ well-defined
   virtual arr get_postfix(){ return arr(); } ///< by default there is no definite final configuration
@@ -99,17 +129,13 @@ struct KOrderMarkovFunction {
 //
 
 bool checkJacobianCP(const ConstrainedProblem &P, const arr& x, double tolerance);
+bool checkHessianCP(const ConstrainedProblem &P, const arr& x, double tolerance);
 bool checkDirectionalGradient(const ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction &f, const arr& x, const arr& delta, double tolerance);
 
 
-//these actually call the functions (->query cost) to evalute them at some point
-double evaluateSF(ScalarFunction& f, const arr& x);
-double evaluateVF(VectorFunction& f, const arr& x);
 
-
-
-// declared separately:
+// optimization algorithms declared separately:
 #include "opt-options.h"
 #include "opt-convert.h"
 #include "opt-newton.h"
