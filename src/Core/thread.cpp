@@ -219,12 +219,14 @@ void ConditionVariable::waitUntil(double absTime, bool userHasLocked) {
 // RevisionedAccessGatedClass
 //
 
-RevisionedAccessGatedClass::RevisionedAccessGatedClass(const char *_name):name(_name), revision(0) {
+RevisionedAccessGatedClass::RevisionedAccessGatedClass(const char *_name):name(_name), revision(0), registryNode(NULL) {
+  registryNode = new Node_typed<RevisionedAccessGatedClass* >(registry(), {"Variable", name}, {}, this);
   listeners.memMove=true;
 }
 
 RevisionedAccessGatedClass::~RevisionedAccessGatedClass() {
   for(Thread *th: listeners) th->listensTo.removeValue(this);
+  delete registryNode;
 }
 
 bool RevisionedAccessGatedClass::hasNewRevision(){
@@ -413,8 +415,8 @@ protected:
 };
 #endif
 
-Thread::Thread(const char* _name, double beatIntervalSec): name(_name), state(tsCLOSE), tid(0), thread(0), step_count(0), metronome(beatIntervalSec)  {
-  new Node_typed<Thread*>(registry(), {"Thread", name}, {}, this);
+Thread::Thread(const char* _name, double beatIntervalSec): name(_name), state(tsCLOSE), tid(0), thread(0), step_count(0), metronome(beatIntervalSec), registryNode(NULL)  {
+  registryNode = new Node_typed<Thread*>(registry(), {"Thread", name}, {}, this);
   if(name.N>14) name.resize(14, true);
 }
 
@@ -425,6 +427,7 @@ Thread::~Thread() {
     v->rwlock.unlock();
   }
   if(!isClosed()) threadClose();
+  delete registryNode;
 }
 
 void Thread::threadOpen(int priority) {

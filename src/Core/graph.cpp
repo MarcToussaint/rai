@@ -124,7 +124,7 @@ void Node::write(std::ostream& os) const {
   } else if(isOfType<bool>()) {
     if(*getValue<bool>()) os<<','; else os <<'!';
   } else if(isOfType<Type*>()) {
-    get<Type*>()->write(os);
+    os <<" = "; get<Type*>()->write(os);
   } else {
     Node *it = reg_findType(type.name());
     if(it && it->keys.N>1) {
