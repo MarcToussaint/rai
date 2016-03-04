@@ -215,7 +215,7 @@ struct Params {
   template<class T>
   void set(const char *key, const T &value) {
     Node *i = graph.getNode(key);
-    if(i) *i->getValue<T>() = value;
+    if(i) i->get<T>() = value;
     else graph.append({key}, {}, value);
   }
 

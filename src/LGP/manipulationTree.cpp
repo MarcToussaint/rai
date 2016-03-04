@@ -108,7 +108,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   for(ManipulationTree_Node *node:treepath) if(node->folDecision){ //(e.g. the root may not have a decision)
     CHECK(node->s > 0,""); //don't add anything for the root
     Graph tmp(*node->folState);
-    Graph& changes = *newSubGraph(fol.KB, {}, {});
+    Graph& changes = newSubGraph(fol.KB, {}, {})->graph();
     forwardChaining_FOL(tmp, komoRules, NULL, changes); //use the rules to add to the specs
     changes.checkConsistency();
     for(Node *n:changes){
@@ -120,7 +120,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
         if((tt=p->getValue<double>("time"))) *tt += (double)(node->s)-2.;
       }
     }
-    seqProblemSpecs->copy(changes, NULL, true);
+    seqProblemSpecs->copy(changes, true);
     delete changes.isNodeOfParentGraph;
 //    cout <<"SEQ PROBLEM: (s=" <<node->s <<")\n" <<*seqProblemSpecs <<endl;
   }

@@ -190,19 +190,28 @@ void NonlinearlyWarpedSquaredCost::fv(arr& y, arr& J,const arr& x) {
 
 uint ParticleAroundWalls::dim_phi(uint t){
   uint T=get_T();
-  if(t==T/2 || t==T/4 || t==3*T/4 || t==T) return 2*dim_x();
-  return dim_x();
+  if(t==T/2 || t==T/4 || t==3*T/4 || t==T) return 2*dim_x(t);
+  return dim_x(t);
 }
 
 uint ParticleAroundWalls::dim_g(uint t){
   if(!hardConstrained) return 0;
   uint T=get_T();
-  if(t==T/2 || t==T/4 || t==3*T/4 || t==T) return dim_x();
+  if(t==T/2 || t==T/4 || t==3*T/4 || t==T) return dim_x(t);
   return 0;
 }
 
-void ParticleAroundWalls::phi_t(arr& phi, arr& J, TermTypeA& tt, uint t, const arr& x_bar){
-  uint T=get_T(), n=dim_x(), k=get_k();
+void ParticleAroundWalls::phi_t(arr& phi, arr& J, TermTypeA& tt, uint t){
+  uint T=get_T(), n=dim_x(t), k=get_k();
+
+  //construct x_bar
+  arr x_bar;
+  if(t>=k) {
+    x_bar.referToSub(x, t-k, t);
+  } else { //x_bar includes the prefix
+    x_bar.resize(k+1,n);
+    for(int i=t-k; i<=(int)t; i++) x_bar[i-t+k]() = (i<0)? x[0] : x[i];
+  }
 
   //assert some dimensions
   CHECK_EQ(x_bar.d0,k+1,"");
@@ -269,5 +278,8 @@ void ParticleAroundWalls::phi_t(arr& phi, arr& J, TermTypeA& tt, uint t, const a
       }
     }
   }
+
+  J.reshape(m,(k+1)*n);
+  if(&J && t<k) J.delColumns(0,(k-t)*n);
 }
 

@@ -18,7 +18,7 @@ template<class T>
 void G4Rec::set(const char *key, const T &value) {
   Node *i = params.getNode(key);
   if(i)
-    *i->getValue<T>() = value;
+    i->get<T>() = value;
   else
     params.append(key, new T(value));
 }
