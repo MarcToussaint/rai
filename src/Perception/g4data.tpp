@@ -25,11 +25,11 @@ void G4Rec::set(const char *key, const T &value) {
 
 template<class T>
 bool G4Rec::get(const char *key, T &value) {
-  return params.getValue(value, key);
+  return params.get(value, key);
 }
 
 template<class T>
 T* G4Rec::get(const char *key) {
-  return params.getValue<T>(key);
+  return params.find<T>(key);
 }
 
