@@ -24,7 +24,7 @@
 #include "graph.h"
 #include "registry.h"
 
-#define DEBUG(x) x
+#define DEBUG(x)
 
 NodeL& NoNodeL=*((NodeL*)NULL);
 Graph& NoGraph=*((Graph*)NULL);
@@ -212,30 +212,70 @@ void Graph::appendDict(const std::map<std::string, std::string>& dict){
   }
 }
 
-Node* Graph::getNode(const char *key) const {
-  for(Node *n: (*this)) if(n->matches(key)) return n;
-  if(isNodeOfParentGraph) return isNodeOfParentGraph->container.getNode(key);
-  return NULL;
+Node* Graph::findNode(const StringA& keys, bool recurseUp, bool recurseDown) const {
+  for(Node* n: (*this)) if(n->matches(keys)) return n;
+  Node* ret=NULL;
+  if(recurseUp && isNodeOfParentGraph) ret = isNodeOfParentGraph->container.findNode(keys, true, false);
+  if(ret) return ret;
+  if(recurseDown) for(Node *n: (*this)) if(n->isGraph()){
+    ret = n->graph().findNode(keys, false, true);
+    if(ret) return ret;
+  }
+  return ret;
 }
 
-Node* Graph::getNode(const StringA &keys) const {
-  for(Node *n: (*this)) if(n->matches(keys)) return n;
-  if(isNodeOfParentGraph) return isNodeOfParentGraph->container.getNode(keys);
-  return NULL;
+Node* Graph::findNodeOfType(const std::type_info& type, const StringA& keys, bool recurseUp, bool recurseDown) const {
+  for(Node* n: (*this)) if(n->type==type && n->matches(keys)) return n;
+  Node* ret=NULL;
+  if(recurseUp && isNodeOfParentGraph) ret = isNodeOfParentGraph->container.findNodeOfType(type, keys, true, false);
+  if(ret) return ret;
+  if(recurseDown) for(Node *n: (*this)) if(n->isGraph()){
+    ret = n->graph().findNodeOfType(type, keys, false, true);
+    if(ret) return ret;
+  }
+  return ret;
 }
 
-NodeL Graph::getNodes(const StringA &keys) const {
+NodeL Graph::findNodes(const StringA& keys, bool recurseUp, bool recurseDown) const {
   NodeL ret;
   for(Node *n: (*this)) if(n->matches(keys)) ret.append(n);
+  if(recurseUp && isNodeOfParentGraph) ret.append( isNodeOfParentGraph->container.findNodes(keys, true, false) );
+  if(recurseDown) for(Node *n: (*this)) if(n->isGraph()) ret.append( n->graph().findNodes(keys, false, true) );
   return ret;
-
 }
 
-NodeL Graph::getNodes(const char* key) const {
+NodeL Graph::findNodesOfType(const std::type_info& type, const StringA& keys, bool recurseUp, bool recurseDown) const {
   NodeL ret;
-  for(Node *n: (*this)) if(n->matches(key)) ret.append(n);
+  for(Node *n: (*this)) if(n->type==type && n->matches(keys)) ret.append(n);
+  if(recurseUp && isNodeOfParentGraph) ret.append( isNodeOfParentGraph->container.findNodesOfType(type, keys, true, false) );
+  if(recurseDown) for(Node *n: (*this)) if(n->isGraph()) ret.append( n->graph().findNodesOfType(type, keys, false, true) );
   return ret;
 }
+
+//Node* Graph::getNode(const char *key) const {
+//  for(Node *n: (*this)) if(n->matches(key)) return n;
+//  if(isNodeOfParentGraph) return isNodeOfParentGraph->container.getNode(key);
+//  return NULL;
+//}
+
+//Node* Graph::getNode(const StringA &keys) const {
+//  for(Node *n: (*this)) if(n->matches(keys)) return n;
+//  if(isNodeOfParentGraph) return isNodeOfParentGraph->container.getNode(keys);
+//  return NULL;
+//}
+
+//NodeL Graph::getNodes(const StringA &keys) const {
+//  NodeL ret;
+//  for(Node *n: (*this)) if(n->matches(keys)) ret.append(n);
+//  return ret;
+
+//}
+
+//NodeL Graph::getNodes(const char* key) const {
+//  NodeL ret;
+//  for(Node *n: (*this)) if(n->matches(key)) ret.append(n);
+//  return ret;
+//}
 
 Node* Graph::getEdge(Node *p1, Node *p2) const{
   if(p1->parentOf.N < p2->parentOf.N){
@@ -256,17 +296,8 @@ NodeL Graph::getNodesOfDegree(uint deg) {
   return ret;
 }
 
-
-NodeL Graph::getNodesOfType(const char* key, const std::type_info& type) {
-  NodeL ret;
-  for(Node *n: (*this)) if(n->type==type) {
-    if(!key || n->matches(key)) ret.append(n);
-  }
-  return ret;
-}
-
 Node* Graph::merge(Node *m){
-  NodeL KVG = getNodesOfType(m->keys(0), m->type);
+  NodeL KVG = findNodesOfType(m->type, {m->keys(0)});
   //CHECK(KVG.N<=1, "can't merge into multiple nodes yet");
   Node *n=NULL;
   if(KVG.N) n=KVG.elem(0);
@@ -452,7 +483,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
     pinfo.parents_beg=is.tellg();
     for(uint j=0;; j++) {
       if(!str.read(is, " \t\n\r,", " \t\n\r,)", false)) break;
-      Node *e = this->getNode(str);
+      Node *e = this->findNode({str}, true, false); //important: recurse up
       if(e) { //sucessfully found
         parents.append(e);
         pinfo.parents_end=is.tellg();

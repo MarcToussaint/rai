@@ -110,28 +110,33 @@ struct Graph : NodeL {
   Node_typed<Graph>* appendSubgraph(const StringA& keys, const NodeL& parents, const Graph& x=NoGraph);
   void appendDict(const std::map<std::string, std::string>& dict);
 
+  //-- basic node retrieval -- users usually use the higher-level wrappers below
+  Node* findNode (const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;  ///< returns NULL if not found
+  NodeL findNodes(const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;
+  Node* findNodeOfType (const std::type_info& type, const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;
+  NodeL findNodesOfType(const std::type_info& type, const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;
+
   //-- get nodes
-  Node* operator[](const char *key) const{ return getNode(key); }
-  Node* getNode(const char *key) const;      ///< returns NULL if not found
-  Node* getNode(const StringA &keys) const;  ///< returns NULL if not found
-  template<class T> Node_typed<T>* getNodeOfType(const StringA& keys=StringA()) const;
+  Node* operator[](const char *key) const{ Node *n = findNode({key}); return n; }//CHECK(n, "key '" <<key <<"' not found"); return n; }
+  Node* getNode(const char *key) const{ return findNode({key}, true, false); }
+  Node* getNode(const StringA &keys) const{ return findNode(keys, true, false); }
   Node* getEdge(Node *p1, Node *p2) const;
 
   //-- get lists of nodes
-  NodeL getNodes(const char* key) const;
-  NodeL getNodes(const StringA &keys) const;
+  NodeL getNodes(const char* key) const{ return findNodes({key}); }
+  NodeL getNodes(const StringA &keys) const{ return findNodes(keys); }
   NodeL getNodesOfDegree(uint deg);
-  NodeL getNodesOfType(const char* key, const std::type_info& type);
-  template<class T> NodeL getNodesOfType(const char* key=NULL){ return getNodesOfType(key, typeid(T)); }
+  template<class T> NodeL getNodesOfType(){ return findNodesOfType(typeid(T)); }
+  template<class T> NodeL getNodesOfType(const char* key){ return findNodesOfType(typeid(T), {key}); }
 
   //-- get values directly
-  template<class T> T* find(const char *key)     const { Node_typed<T> *n = getNodeOfType<T>({key}); if(!n) return NULL;  return &n->value; }
-  template<class T> T* find(const StringA &keys) const { Node_typed<T> *n = getNodeOfType<T>(keys);  if(!n) return NULL;  return &n->value; }
+  template<class T> T* find(const char *key)     const { Node *n = findNodeOfType(typeid(T), {key}); if(!n) return NULL;  return n->getValue<T>(); }
+  template<class T> T* find(const StringA &keys) const { Node *n = findNodeOfType(typeid(T), keys);  if(!n) return NULL;  return n->getValue<T>(); }
   template<class T> T& get(const char *key) const;
   template<class T> T& get(const StringA &keys) const;
   template<class T> const T& get(const char *key, const T& defaultValue) const;
-  template<class T> bool get(T& x, const char *key)     const { Node_typed<T> *n = getNodeOfType<T>({key}); if(!n) return false;  x=n->value;  return true; }
-  template<class T> bool get(T& x, const StringA &keys) const { Node_typed<T> *n = getNodeOfType<T>(keys);  if(!n) return false;  x=n->value;  return true; }
+  template<class T> bool get(T& x, const char *key)     const { Node *n = findNodeOfType(typeid(T), {key}); if(!n) return false;  x=n->get<T>();  return true; }
+  template<class T> bool get(T& x, const StringA &keys) const { Node *n = findNodeOfType(typeid(T), keys);  if(!n) return false;  x=n->get<T>();  return true; }
 
   //-- get lists of all values of a certain type T (or derived from T)
   template<class T> mlr::Array<T*> getValuesOfType(const char* key=NULL);
