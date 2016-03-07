@@ -21,27 +21,24 @@ REGISTER_MODULE (AudioWriter)
 REGISTER_MODULE (ImageViewer)
 
 struct sImageViewer{
-#ifdef MLR_GL
   OpenGL gl;
-#endif
-  sImageViewer(const char* tit)
-#ifdef MLR_GL
-    :gl(tit)
-#endif
-  {}
+  sImageViewer(const char* tit) : gl(tit) {}
 };
 
 void ImageViewer::open(){ 
   s = new sImageViewer(STRING("ImageViewer '"<<img.var->name()<<'\''));
+  s->gl.openWindow();
+  s->gl.update();
 }
 void ImageViewer::close(){ delete s; }
 void ImageViewer::step(){ 
-#ifdef MLR_GL
+  s->gl.lock.writeLock();
   s->gl.background = img.get();
+  s->gl.lock.unlock();
+  if(!s->gl.background.N) return;
   if(s->gl.height!= s->gl.background.d0 || s->gl.width!= s->gl.background.d1)
     s->gl.resize(s->gl.background.d1, s->gl.background.d0);
   s->gl.update(name, false, false, true);
-#endif
 }
 
 
@@ -139,10 +136,8 @@ void VideoEncoderX264::step(){
 //
 
 struct sPointCloudViewer{
-#ifdef MLR_GL
   OpenGL gl;
   sPointCloudViewer():gl("PointCloudViewer",640,480){}
-#endif
   ors::Mesh pc;
 };
 
@@ -165,9 +160,7 @@ void PointCloudViewer::close(){
 void PointCloudViewer::step(){
   s->pc.V=pts.get();
   s->pc.C=cols.get();
-#ifdef MLR_GL
   s->gl.update();
-#endif
 }
 
 //===========================================================================

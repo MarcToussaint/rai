@@ -51,7 +51,7 @@ struct Node {
   uint index;
 
   Node(const std::type_info& _type, void *_value_ptr, Graph& _container);
-  Node(const std::type_info& _type, void* _value_ptr, Graph& _container, const StringA& _keys, const NodeL& _parents);
+  Node(const std::type_info& _type, void *_value_ptr, Graph& _container, const StringA& _keys, const NodeL& _parents);
   virtual ~Node();
 
   //-- get value
@@ -101,50 +101,52 @@ struct Graph : NodeL {
 
   //-- copy operator
   Graph& operator=(const Graph& G){  copy(G);  return *this;  }
-  void copy(const Graph& G, bool appendInsteadOfClear=false);
+  void copy(const Graph& G, bool appendInsteadOfClear=false, bool allowCopySubgraphToNonsubgraph=false);
   
+  //-- adding nodes
+  template<class T> Node *append(const StringA& keys, const NodeL& parents, const T& x); ///<exactly equivalent to calling a Node_typed constructor
+  Node *append(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
+  Node *append(const Nod& ni); ///< (internal) append a node initializer
+  Node_typed<Graph>* appendSubgraph(const StringA& keys, const NodeL& parents, const Graph& x=NoGraph);
+  void appendDict(const std::map<std::string, std::string>& dict);
+
+  //-- basic node retrieval -- users usually use the higher-level wrappers below
+  Node* findNode (const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;  ///< returns NULL if not found
+  NodeL findNodes(const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;
+  Node* findNodeOfType (const std::type_info& type, const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;
+  NodeL findNodesOfType(const std::type_info& type, const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;
+
   //-- get nodes
-  Node* getNode(const char *key) const;      ///< returns NULL if not found
-  Node* getNode(const StringA &keys) const;  ///< returns NULL if not found
-  Node* operator[](const char *key) const{ return getNode(key); }
+  Node* operator[](const char *key) const{ Node *n = findNode({key}); return n; }//CHECK(n, "key '" <<key <<"' not found"); return n; }
+  Node* getNode(const char *key) const{ return findNode({key}, true, false); }
+  Node* getNode(const StringA &keys) const{ return findNode(keys, true, false); }
   Node* getEdge(Node *p1, Node *p2) const;
-  template<class T> Node* getNodeOfType(const char *key) const;
 
   //-- get lists of nodes
-  NodeL getNodes(const char* key) const;
-  NodeL getNodes(const StringA &keys) const;
+  NodeL getNodes(const char* key) const{ return findNodes({key}); }
+  NodeL getNodes(const StringA &keys) const{ return findNodes(keys); }
   NodeL getNodesOfDegree(uint deg);
-  NodeL getNodesOfType(const char* key, const std::type_info& type);
-  template<class T> NodeL getNodesOfType(const char* key=NULL){ return getNodesOfType(key, typeid(T)); }
-  template<class T> NodeL getDerivedNodes();
+  template<class T> NodeL getNodesOfType(){ return findNodesOfType(typeid(T)); }
+  template<class T> NodeL getNodesOfType(const char* key){ return findNodesOfType(typeid(T), {key}); }
 
   //-- get values directly
-  template<class T> T* getValue(const char *key)     const { Node *n = getNode(key);   if(!n) return NULL;  return n->getValue<T>(); }
-  template<class T> T* getValue(const StringA &keys) const { Node *n = getNode(keys);  if(!n) return NULL;  return n->getValue<T>(); }
+  template<class T> T* find(const char *key)     const { Node *n = findNodeOfType(typeid(T), {key}); if(!n) return NULL;  return n->getValue<T>(); }
+  template<class T> T* find(const StringA &keys) const { Node *n = findNodeOfType(typeid(T), keys);  if(!n) return NULL;  return n->getValue<T>(); }
   template<class T> T& get(const char *key) const;
   template<class T> T& get(const StringA &keys) const;
   template<class T> const T& get(const char *key, const T& defaultValue) const;
-  template<class T> bool get(T& x, const char *key)     const { T* y=getValue<T>(key);  if(!y) return false;  x=*y;  return true; }
-  template<class T> bool get(T& x, const StringA &keys) const { T* y=getValue<T>(keys); if(!y) return false;  x=*y;  return true; }
+  template<class T> bool get(T& x, const char *key)     const { Node *n = findNodeOfType(typeid(T), {key}); if(!n) return false;  x=n->get<T>();  return true; }
+  template<class T> bool get(T& x, const StringA &keys) const { Node *n = findNodeOfType(typeid(T), keys);  if(!n) return false;  x=n->get<T>();  return true; }
 
   //-- get lists of all values of a certain type T (or derived from T)
   template<class T> mlr::Array<T*> getValuesOfType(const char* key=NULL);
   
-  //-- adding nodes
-  template<class T> Node *append(const StringA& keys, const NodeL& parents, const T& x);
-  Node *append(const uintA& parentIdxs);
-  Node *append(const Nod& ni); ///< (internal) append a node initializer
-  void appendDict(const std::map<std::string, std::string>& dict);
-
   //-- merging nodes  //TODO: explain better
   Node *merge(Node* m); //removes m and deletes, if it is a member of This and merged with another Node
   void merge(const NodeL& L){ for(Node *m:L) merge(m); }
 
   //-- debugging
   bool checkConsistency() const;
-
-  //-- indexing
-  uint index(bool subKVG=false, uint start=0); //TODO: make private
 
   //-- I/O
   void sortByDotOrder();
@@ -156,6 +158,11 @@ struct Graph : NodeL {
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0, int focusIndex=-1);
   void writeHtml(std::ostream& os, std::istream& is);
   void writeParseInfo(std::ostream& os);
+
+private:
+  friend struct Node;
+  friend struct sGraphView;
+  uint index(bool subKVG=false, uint start=0);
 };
 stdPipes(Graph)
 
@@ -215,15 +222,15 @@ struct Params {
   template<class T>
   void set(const char *key, const T &value) {
     Node *i = graph.getNode(key);
-    if(i) *i->getValue<T>() = value;
+    if(i) i->get<T>() = value;
     else graph.append({key}, {}, value);
   }
 
   template<class T>
-  bool get(const char *key, T &value) { return graph.getValue(value, key); }
+  bool get(const char *key, T &value) { return graph.get(value, key); }
 
   template<class T>
-  T* get(const char *key) { return graph.getValue<T>(key); }
+  T* get(const char *key) { return graph.find<T>(key); }
 
   void clear() { graph.clear(); }
 

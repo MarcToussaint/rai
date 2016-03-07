@@ -94,6 +94,7 @@ struct RevisionedAccessGatedClass {
   double revision_time;       ///< clock time of last write access
   double data_time;           ///< time stamp of the original data source
   ThreadL listeners;          ///< list of threads that are being signaled a threadStep on write access
+  struct Node* registryNode;
 
   /// @name c'tor/d'tor
   RevisionedAccessGatedClass(const char* name);
@@ -208,6 +209,7 @@ struct Thread{
   uint step_count;
   Metronome metronome;          ///< used for beat-looping
   CycleTimer timer;
+  struct Node* registryNode;
 
   /// @name c'tor/d'tor
   /** DON'T open drivers/devices/files or so here in the constructor,
@@ -217,7 +219,7 @@ struct Thread{
    *
    * beatIntervalSec=0. indicates full speed looping, beatIntervalSec=-1. indicates no looping (steps triggered by listening)
    */
-  Thread(const char* _name, double beatIntervalSec=0.);
+  Thread(const char* _name, double beatIntervalSec=-1.);
   virtual ~Thread();
 
   /// @name to be called from `outside' (e.g. the main) to start/step/close the thread
