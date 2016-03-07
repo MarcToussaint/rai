@@ -490,11 +490,18 @@ void Thread::threadStep(uint steps, bool wait) {
   if(wait) waitForIdle();
 }
 
-void Thread::listenTo(RevisionedAccessGatedClass& v) {
-  v.rwlock.writeLock();  //don't want to increase revision and broadcast!
-  v.listeners.setAppend(this);
-  v.rwlock.unlock();
-  listensTo.setAppend(&v);
+void Thread::listenTo(RevisionedAccessGatedClass& var) {
+  var.rwlock.writeLock();  //don't want to increase revision and broadcast!
+  var.listeners.setAppend(this);
+  var.rwlock.unlock();
+  listensTo.setAppend(&var);
+}
+
+void Thread::stopListenTo(RevisionedAccessGatedClass& var){
+  listensTo.removeValue(&var);
+  var.rwlock.writeLock();
+  var.listeners.removeValue(this);
+  var.rwlock.unlock();
 }
 
 bool Thread::isIdle() {
