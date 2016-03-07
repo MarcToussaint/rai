@@ -68,7 +68,8 @@ struct sGraphView {
   static bool on_drawingarea_scroll_event(GtkWidget   *widget, GdkEventScroll    *event,    gpointer     user_data);
 };
 
-GraphView::GraphView(Graph& G, const char* title, void *container):verbose(false) {
+GraphView::GraphView(Graph& G, const char* title, void *container)
+  : verbose(false) {
   gtkCheckInitialized();
   
   s = new sGraphView;
