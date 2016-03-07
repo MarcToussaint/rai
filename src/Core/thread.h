@@ -238,6 +238,7 @@ struct Thread{
 
   /// @name listen to a variable
   void listenTo(RevisionedAccessGatedClass& var);
+  void stopListenTo(RevisionedAccessGatedClass& var);
 
   /** use this to open drivers/devices/files and initialize
    *  parameters; this is called within the thread */
