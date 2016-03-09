@@ -249,7 +249,7 @@ struct Thread{
    *  the variables by calling the x.get(), x.set() or
    *  x.[read|write|de]Access(), where ACCESS(TYPE, x) was
    *  declared. */
-  virtual void step() = 0;
+  virtual void step(){ LOG(-1) <<"you're calling the 'pseudo-pure virtual' step(), which should be overloaded (are you in a destructor?)"; }
 
   /** use this to close drivers/devices/files; this is called within
    *  the thread */
