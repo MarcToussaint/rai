@@ -905,8 +905,9 @@ bool mlr::String::contains(const String& substring) const {
 
 /// Return true iff the string starts with `substring`.
 bool mlr::String::startsWith(const String& substring) const {
-  return this->getFirstN(substring.N) == substring;
+  return N>=substring.N && this->getFirstN(substring.N) == substring;
 }
+
 /// Return true iff the string starts with `substring`.
 bool mlr::String::startsWith(const char* substring) const {
   return this->startsWith(mlr::String(substring));
