@@ -546,6 +546,29 @@ template<class T> void mlr::Array<T>::insert(uint i, const T& x) {
   p[i]=x;
 }
 
+template<class T> void mlr::Array<T>::insert(uint i, const Array<T>& x){
+  uint xN=x.N;
+  if(!xN) return;
+  if(!nd || !N){
+    CHECK(i==0,"");
+    *this = x;
+  }else if(nd==1){
+    CHECK(i<=N,"");
+    uint oldN=N;
+    resizeCopy(N+xN);
+    if(i<oldN) memmove(p+i+xN, p+i, sizeT*(oldN-i));
+    memmove(p+i, x.p, sizeT*xN);
+  }else if(nd==2){
+    CHECK(i<=d0,"");
+    uint oldN=d0;
+    if(x.nd==1 && d1==x.d0) resizeCopy(d0+1, d1);
+    else if(x.nd==2 && d1==x.d1) resizeCopy(d0+x.d0, d1);
+    else HALT("");
+    if(i<oldN) memmove(p+i*d1+xN, p+i*d1, sizeT*(oldN-i)*d1);
+    memmove(p+i*d1, x.p, sizeT*xN);
+  }
+}
+
 /// remove (delete) a subsequence of the array -- the array becomes 1D!  [only with memMove!]
 template<class T> void mlr::Array<T>::remove(uint i, uint n) {
   if(i==N-n) { resizeCopy(N-n); return; }
