@@ -358,8 +358,8 @@ void CrossValidation::crossValidateSingleLambda(const arr& X, const arr& y, doub
     }
     Xtrain.delRows(blockStart(k), blockStart(k+1)-blockStart(k));
     ytrain.remove(blockStart(k), blockStart(k+1)-blockStart(k));
-    Xtest.referToSubRange(X, blockStart(k), blockStart(k+1)-1);
-    ytest.referToSubRange(y, blockStart(k), blockStart(k+1)-1);
+    Xtest.referToSub(X, blockStart(k), blockStart(k+1)-1);
+    ytest.referToSub(y, blockStart(k), blockStart(k+1)-1);
     
     cout <<k <<": train:";
     train(Xtrain, ytrain, lambda, beta);

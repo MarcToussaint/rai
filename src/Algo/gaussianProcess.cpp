@@ -81,27 +81,27 @@ void GaussianProcess::recompute(){
   gram.resize(N+dN, N+dN);
   if(!gram.N) return;
   for(i=0; i<N; i++){
-    xi.referToSubDim(X, i);
+    xi.referToDim(X, i);
     gram(i, i) = cov(kernelP, xi, xi);
     Mu_func.append(mu_func(xi, priorP));
   }
   for(i=1; i<N; i++){
-    xi.referToSubDim(X, i);
+    xi.referToDim(X, i);
     for(j=0; j<i; j++){
-      xj.referToSubDim(X, j);
+      xj.referToDim(X, j);
       gram(i, j) = gram(j, i) = cov(kernelP, xi, xj);
     }
   }
   if(dN){ //derivative observations
-    for(i=0; i<dN; i++){ xi.referToSubDim(dX, i); gram(N+i, N+i) = covD_D(dI(i), dI(i), kernelP, xi, xi); }
+    for(i=0; i<dN; i++){ xi.referToDim(dX, i); gram(N+i, N+i) = covD_D(dI(i), dI(i), kernelP, xi, xi); }
     for(i=0; i<dN; i++){
-      xi.referToSubDim(dX, i);
+      xi.referToDim(dX, i);
       for(j=0; j<N; j++){
-        xj.referToSubDim(X, j);
+        xj.referToDim(X, j);
         gram(N+i, j) = gram(j, N+i) = covF_D(dI(i), kernelP, xj, xi);
       }
       for(j=0; j<i; j++){
-        xj.referToSubDim(dX, j);
+        xj.referToDim(dX, j);
         gram(N+i, N+j) = gram(N+j, N+i) = covD_D(dI(i), dI(j), kernelP, xi, xj);
       }
     }
@@ -160,9 +160,9 @@ void GaussianProcess::evaluate(const arr& x, double& y, double& sig){
     return; 
   }
   if(k.N!=N+dN) k.resize(N+dN);
-  for(i=0; i<N; i++){ xi.referToSubDim(X, i); k(i)=cov(kernelP, x, xi); }
+  for(i=0; i<N; i++){ xi.referToDim(X, i); k(i)=cov(kernelP, x, xi); }
   //derivative observations
-  for(i=0; i<dN; i++){ xi.referToSubDim(dX, i); k(N+i)=covF_D(dI(i), kernelP, x, xi); }
+  for(i=0; i<dN; i++){ xi.referToDim(dX, i); k(N+i)=covF_D(dI(i), kernelP, x, xi); }
   
   y = scalarProduct(k, GinvY) + mu_func(x, priorP) + mu;
   innerProduct(Ginvk, Ginv, k);
@@ -192,8 +192,8 @@ void GaussianProcess::k_star(const arr& x, arr& k){
   arr xi;
   
   if(k.N!=N+dN) k.resize(N+dN);
-  for(i=0; i<N; i++){ xi.referToSubDim(X, i); k(i)=cov(kernelP, x, xi); }
-  for(i=0; i<dN; i++){ xi.referToSubDim(dX, i); k(N+i)=covF_D(dI(i), kernelP, x, xi); }
+  for(i=0; i<N; i++){ xi.referToDim(X, i); k(i)=cov(kernelP, x, xi); }
+  for(i=0; i<dN; i++){ xi.referToDim(dX, i); k(N+i)=covF_D(dI(i), kernelP, x, xi); }
 }
 
 /** vector of covariances between test point and N+dN  observation points */
@@ -204,11 +204,11 @@ void GaussianProcess::dk_star(const arr& x, arr& k){
   if(k.N!=N+dN) k.resize(N+dN, d);
   for(j=0; j<d; ++j){
     for(i=0; i<N; i++){
-      xi.referToSubDim(X, i);
+      xi.referToDim(X, i);
       k(i, j)=covD_F(j, kernelP, x, xi);
     }
     for(i=0; i<dN; i++){
-      xi.referToSubDim(dX, i);
+      xi.referToDim(dX, i);
       k(N+i, j)=covD_D(j, dI(i), kernelP, x, xi);
     }
   }
@@ -270,13 +270,13 @@ void GaussianProcess::gradient(arr& grad, const arr& x){
   grad.setZero();
   // take the gradient in the function value observations
   for(i=0; i<N; i++){
-    xi.referToSubDim(X, i);
+    xi.referToDim(X, i);
     dcov(dk, kernelP, x, xi);
     grad += GinvY(i) * dk;
   }
   // derivative observations
   for(i=0; i<dN; i++){
-    dxi.referToSubDim(dX, i);
+    dxi.referToDim(dX, i);
     dk.setZero();
     for(d=0; d<dim; ++d){
       dk(d) = covD_D(d, dI(i), kernelP, x, dxi);
@@ -360,7 +360,7 @@ void GaussianProcess::hessianPos (arr& hess, const arr& x){
   hess.setZero();
   // function value observations
   for(n=0; n<N; n++){
-    xn.referToSubDim(X, n);
+    xn.referToDim(X, n);
     for(i=0; i<dim; i++){
       for(j=0; j<dim; j++){
         d2k(n, i, j)=covD_D(i, j, kernelP, x, xn);
@@ -371,7 +371,7 @@ void GaussianProcess::hessianPos (arr& hess, const arr& x){
   }
   // derivative observations
   for(n=0; n<dN; n++){
-    dxn.referToSubDim(dX, n);
+    dxn.referToDim(dX, n);
     for(i=0; i<dim; i++){
       for(j=0; j<dim; j++){
         d2k(n, i, j)=covDD_D(i, j, dI(n), kernelP, x, dxn);
@@ -386,5 +386,5 @@ void GaussianProcess::evaluate(const arr& X, arr& Y, arr& S){
   uint i;
   static arr xi;
   Y.resize(X.d0); S.resize(X.d0);
-  for(i=0; i<X.d0; i++){ xi.referToSubDim(X, i); evaluate(xi, Y(i), S(i)); }
+  for(i=0; i<X.d0; i++){ xi.referToDim(X, i); evaluate(xi, Y(i), S(i)); }
 }

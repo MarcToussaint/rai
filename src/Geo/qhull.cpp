@@ -187,15 +187,15 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
   arr v, f, w, v_f, y_f, dv, subn, wk, W;
   double dd;
   for(i=0; i<vertices.N; i++) {
-    v.referToSubDim(X, vertices(i)); //v is the vertex in question
+    v.referToDim(X, vertices(i)); //v is the vertex in question
     
     // subn: normal of the sub-facet opposit to v
     if(i) j=0; else j=1;
-    w.referToSubDim(X, vertices(j)); //take w as origin of local frame
+    w.referToDim(X, vertices(j)); //take w as origin of local frame
     CHECK(vertices.N>=X.d1, ""); //won't work otherwise..
     W.resize(vertices.N, X.d1);      //compose matrix of basis vectors
     for(k=0, l=0; k<vertices.N; k++) if(k!=i && k!=j) {
-        wk.referToSubDim(X, vertices(k));
+        wk.referToDim(X, vertices(k));
         W[l]() = wk-w;
         l++;
       }
@@ -219,7 +219,7 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
     CHECK(fabs(dd - d*d)<1e-8, "");
     
     //compute gradient
-    dv.referToSubDim(dDdX, vertices(i));
+    dv.referToDim(dDdX, vertices(i));
     dv = f - y + yf_vf_norm*v_f;
     dv *= 2.*yf_vf_norm;
     dv *= .5/d;
@@ -324,6 +324,7 @@ double forceClosure(const arr& C, const arr& Cn, const ors::Vector& center,
 
 void getTriangulatedHull(uintA& T, arr& V) {
   int exitcode;
+  uint dim=V.d1;
   static char* cmd = (char*) "qhull Qt ";
   exitcode = qh_new_qhull(V.d1, V.d0, V.p, false, cmd, NULL, stderr);
   if(exitcode) HALT("qh_new_qhull error - exitcode " <<exitcode);
@@ -334,12 +335,12 @@ void getTriangulatedHull(uintA& T, arr& V) {
   uint f, i, v;
   
   arr Vnew;
-  Vnew.resize(qh num_vertices, 3);
-  T.resize(qh num_facets, 3);
+  Vnew.resize(qh num_vertices, dim);
+  T.resize(qh num_facets, dim);
   i=0;
   FORALLvertices {
     vertex->id = i;
-    memmove(&Vnew(i, 0), vertex->point, 3*sizeof(double));
+    memmove(&Vnew(i, 0), vertex->point,  dim*sizeof(double));
     i++;
   }
   f=0;
@@ -350,7 +351,7 @@ void getTriangulatedHull(uintA& T, arr& V) {
       i++;
     }
     if(facet->toporient) {
-      v=T(f, 2);  T(f, 2)=T(f, 1);  T(f, 1)=v;
+      v=T(f, 0);  T(f, 0)=T(f, 1);  T(f, 1)=v;
     }
     f++;
   }

@@ -267,7 +267,7 @@ inline void randomFunction(GaussianProcess& gp, arr& Xbase, bool illustrate, boo
       plotBelief(gp, Xbase.min(), Xbase.max());
     }
     
-    x.referToSubDim(Xbase, i); //get next input point
+    x.referToDim(Xbase, i); //get next input point
     gp.evaluate(x, y, sig);      //sample it from the GP itself
     y+=sig*rnd.gauss();        //with standard deviation..
     gp.appendObservation(x, y);

@@ -20,57 +20,39 @@
 #include "optimization.h"
 
 uint eval_cost=0;
-//SqrPotential& NoPot = *((SqrPotential*)NULL);
-//PairSqrPotential& NoPairPot = *((PairSqrPotential*)NULL);
 Singleton<OptOptions> globalOptOptions;
 const char* TermTypeString[]={"noTT", "fTT", "sumOfSqrTT", "ineqTT", "eqTT" };
 TermTypeA& NoTermTypeA = *((TermTypeA*)NULL);
 
-
 //===========================================================================
 //
-// misc (internal)
+// checks and converters
 //
 
-//void init(SqrPotential &V, uint n) { V.A.resize(n,n); V.a.resize(n); V.A.setZero(); V.a.setZero(); V.c=0.; }
-
-
-//documentations... TODO: move! but not in header!
-
-/// A scalar function $y = f(x)$, if @grad@ is not NoArr, gradient is returned
-typedef std::function<double(arr& g, arr& H, const arr& x)> ScalarFunction;
-
-/// A vector function $y = f(x)$, if @J@ is not NoArr, Jacobian is returned
-/// This also implies an optimization problem $\hat f(y) = y^T(x) y(x)$ of (iterated)
-/// Gauss-Newton type where the Hessian is approximated by J^T J
-typedef std::function<void(arr& y, arr& J, const arr& x)> VectorFunction;
-
-/// A scalar function $y = f(x)$, if @S@ is non-NULL, local quadratic approximation is returned
-/// This also implies an optimization problem of (iterated) Newton
-/// type with the given Hessian
-struct QuadraticFunction;
-
-
-//===========================================================================
-//
-// checks, evaluation and converters
-//
-
-double evaluateSF(ScalarFunction& f, const arr& x) {
-  return f(NoArr, NoArr, x);
-}
-
-double evaluateVF(VectorFunction& f, const arr& x) {
-  arr y;
-  f(y, NoArr, x);
-  return sumOfSqr(y);
-}
 
 bool checkJacobianCP(const ConstrainedProblem &P, const arr& x, double tolerance){
   VectorFunction F = [&P](arr& phi, arr& J, const arr& x){
     return P(phi, J, NoArr, NoTermTypeA, x);
   };
   return checkJacobian(F, x, tolerance);
+}
+
+bool checkHessianCP(const ConstrainedProblem &P, const arr& x, double tolerance){
+  uint i;
+  arr phi, J;
+  TermTypeA tt;
+  P(phi, NoArr, NoArr, tt, x);
+  for(i=0;i<tt.N;i++) if(tt(i)==fTT) break;
+  if(i==tt.N){
+    MLR_MSG("no f-term in this KOM problem");
+    return true;
+  }
+  ScalarFunction F = [&P,&phi,&J,i](arr& g, arr& H, const arr& x) -> double{
+    P(phi, J, H, NoTermTypeA, x);
+    g = J[i];
+    return phi(i);
+  };
+  return checkHessian(F, x, tolerance);
 }
 
 //===========================================================================

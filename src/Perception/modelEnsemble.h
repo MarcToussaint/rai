@@ -18,5 +18,5 @@ struct ModelEnsemble :GLDrawer{
 
   void glDraw(OpenGL &);
 
-  void report(ostream& os=cout);
+  void report(ostream& os=cout, bool mini=true);
 };

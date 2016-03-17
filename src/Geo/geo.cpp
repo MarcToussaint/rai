@@ -38,7 +38,7 @@ ors::Vector& NoVector = *((ors::Vector*)NULL);
 ors::Transformation& NoTransformation = *((ors::Transformation*)NULL);
 
 namespace ors {
-double scalarProduct(const ors::Quaternion& a, const ors::Quaternion& b);
+  double scalarProduct(const ors::Quaternion& a, const ors::Quaternion& b);
 }
 
 //===========================================================================
@@ -475,6 +475,9 @@ void Quaternion::alignWith(const Vector& v) {
 void Quaternion::set(double* p) { w=p[0]; x=p[1]; y=p[2]; z=p[3]; isZero=(w==1. || w==-1.); }
 
 /// set the quad
+void Quaternion::set(const arr& q) { CHECK_EQ(q.N,4, "");  set(q.p); }
+
+/// set the quad
 void Quaternion::set(double _w, double _x, double _y, double _z) { w=_w; x=_x; y=_y; z=_z; isZero=(w==1. || w==-1.); }
 
 /// reset the rotation to identity
@@ -777,6 +780,27 @@ arr Quaternion::getJacobian() const{
     J(1, i) = -2.*e.y;
     J(2, i) = -2.*e.z;
   }
+  return J;
+}
+
+/// this is a 4x(3x3) matrix, such that ~(J*x) is the jacobian of (R*x), and ~qdelta*J is (del R/del q)(qdelta)
+arr Quaternion::getMatrixJacobian() const{
+  arr J(4,9); //transpose!
+  double r0=w, r1=x, r2=y, r3=z;
+  J[0] = {      0,    -r3,     r2,
+               r3,      0,    -r1,
+              -r2,     r1,      0 };
+  J[1] = {      0,     r2,     r3,
+               r2, -2.*r1,    -r0,
+               r3,     r0, -2.*r1 };
+  J[2] = { -2.*r2,     r1,    r0,
+               r1,      0,     r3,
+              -r0,     r3, -2.*r2 };
+  J[3] = { -2.*r3,    -r0,     r1,
+               r0, -2.*r3,     r2,
+               r1,     r2,      0};
+  J *= 2.;
+  J.reshape(4,3,3);
   return J;
 }
 
@@ -1215,9 +1239,9 @@ void Camera::setZero() {
 }
 
 /// the height angle (in degrees) of the camera perspective; set it 0 for orthogonal projection
-void Camera::setHeightAngle(float a) { heightAngle=a; }
+void Camera::setHeightAngle(float a) { heightAngle=a; heightAbs=0.;}
 /// the absolute height of the camera perspective (automatically also sets heightAngle=0)
-void Camera::setHeightAbs(float h) { heightAngle=0; heightAbs=h; }
+void Camera::setHeightAbs(float h) { heightAngle=0.; heightAbs=h; }
 /// the z-range (depth range) visible for the camera
 void Camera::setZRange(float znear, float zfar) { zNear=znear; zFar=zfar; }
 /// set the width/height ratio of your viewport to see a non-distorted picture
@@ -1243,7 +1267,7 @@ void Camera::watchDirection(const Vector& d) {
   r.setDiff(-X.rot.getZ(), d);
   X.rot=r*X.rot;
 }
-/// rotate the frame to set it upright (i.e. camera's y aligned with 's z)
+/// rotate the frame to set it upright (i.e. camera's y aligned with world's z)
 void Camera::upright() {
 #if 1
   //construct desired X:
@@ -1319,11 +1343,23 @@ void Camera::glConvertToLinearDepth(double &d) {
 }
 
 void Camera::setKinect(){
+  setZero();
   setPosition(0., 0., 0.);
-  focus(0., 0., 1.);
-  setZRange(.1, 10.);
-  heightAbs=heightAngle=0.;
+  focus(0., 0., 5.);
+  setZRange(.1, 50.);
+#if 0
+  heightAbs=heightAngle = 0;
+#else
+  heightAbs=10; heightAngle=45;
+#endif
   focalLength = 580./480.;
+}
+
+void Camera::setDefault(){
+  setHeightAngle(12.);
+  setPosition(10., -15., 8.);
+  focus(0, 0, 1.);
+  upright();
 }
 
 //==============================================================================
@@ -1356,127 +1392,6 @@ std::ostream& operator<<(std::ostream& os, const Transformation& x)     { x.writ
  * mlr/stanio/concepts/note-analytic-impl-shapes-hessian
  */
 
-
-
-//===========================================================================
-
-double DistanceFunction_Sphere::fs(arr& g, arr& H, const arr& x){
-  arr d = x-conv_vec2arr(t.pos);
-  double len = length(d);
-  if(&g) g = d/len;
-  if(&H) H = 1./len * (eye(3) - (d^d)/(len*len));
-  return len-r;
-}
-
-//===========================================================================
-
-//double DistanceFunction_InfCylinder::fs(arr& g, arr& H, const arr& x){
-//  z = z / length(z);
-//  arr a = (x-c) - scalarProduct((x-c), z) * z;
-//  arr I(x.d0,x.d0);
-//  uint i;
-//  double na = length(a);
-
-//  if(&g) g = s*a/na;
-//  if(&H){
-//    I.setZero();
-//    for(i=0;i<x.d0;++i) I(i,i)=1;
-//    H = s/na * (I - z*(~z) - 1/(na*na) * a*(~a));
-//  }
-//  return s*(na-r);
-//}
-
-//===========================================================================
-
-double DistanceFunction_Cylinder::fs(arr& g, arr& H, const arr& x){
-  arr z = conv_vec2arr(t.rot.getZ());
-  arr c = conv_vec2arr(t.pos);
-  arr b = scalarProduct(x-c, z) * z;
-  arr a = (x-c) - b;
-  arr I(3,3);
-  double la = length(a);
-  double lb = length(b);
-  arr aaTovasq = 1/(la*la) * (a^a);
-  arr zzT = z^z;
-
-  if ( lb < dz/2. ){ // x projection on z is inside cyl
-    if(la<r && (dz/2.-lb)<(r-la)){ // x is INSIDE the cyl and closer to the lid than the wall
-      if(&g) g = 1./lb*b; //z is unit: s*z*|z|*sgn(b*z) = s*b/nb
-      if(&H) { I.setZero(); H=I; }
-      return lb-dz/2.;
-    }else{ // closer to the side than to a lid (inc. cases in- and outside the tube, because (r-na)<0 then)
-      if(&g) g = a/la;
-      if(&H){
-        I.setId(3);
-        H = 1./la * (I - zzT - aaTovasq);
-      }
-      return la-r;
-    }
-  }else{// x projection on z is outside cylinder
-    if ( la < r ){// inside the infinite cylinder
-      if(&g) g = b/lb;
-      if(&H) H.resize(3,3).setZero();
-      return lb-dz/2.;
-    }else{ // outside the infinite cyl
-      arr v =  b/lb * (lb-dz/2.)  + a/la * (la-r); //MT: good! (note: b/nb is the same as z) SD: well, b/nb is z or -z.
-      double nv=length(v);
-      if(&g) g = v/nv;
-      if(&H){
-        I.setId(3);
-        arr dvdx = (la-r)/la*( I - zzT - aaTovasq )
-                   + aaTovasq + zzT;
-        H = 1./nv* (dvdx - 1/nv/nv * (v^v) * (~dvdx) );
-      }
-      return nv;
-    }
-  }
-  HALT("You shouldn't be here!");
-}
-
-//===========================================================================
-
-double DistanceFunction_Box::fs(arr& g, arr& H, const arr& x){
-  arr rot = t.rot.getArr();
-  arr a_rel = (~rot)*(x-conv_vec2arr(t.pos));
-  arr dim = {dx, dy, dz};
-
-  double d;
-  arr closest = a_rel;
-  arr del_abs = fabs(a_rel)-dim;
-  //-- find closest point on box and distance to it
-  if(del_abs.max()<0.){ //inside
-    uint side=del_abs.maxIndex(); //which side are we closest to?
-    if(a_rel(side)>0) closest(side) = dim(side);  else  closest(side)=-dim(side); //in positive or neg direction?
-    d = del_abs(side);
-  }else{ //outside
-    closest = elemWiseMax(-dim,closest);
-    closest = elemWiseMin(dim,closest);
-    d = length(a_rel - closest);
-  }
-
-  arr del = a_rel-closest;
-  if(&g) g = rot*del/d; //transpose(R) rotates the gradient back to world coordinates
-  if(&H){
-    if(d<0.){ //inside
-      H.resize(3,3).setZero();
-    }else{ //outside
-      if(del_abs.min()>0.){ //outside on all 3 axis
-        H = 1./d * (eye(3) - (del^del)/(d*d));
-      }else{
-        arr edge=del_abs;
-        for(double& z: edge) z=(z<0.)?0.:1.;
-        if(sum(edge)<=1.1){ //closest to the plane (equals 1.)
-          H.resize(3,3).setZero();
-        }else{ //closest to an edge
-          edge = 1.-edge;
-          H = 1./d * (eye(3) - (del^del)/(d*d) - (edge^edge));
-        }
-      }
-      H = rot*H*(~rot);
-    }
-  }
-  return d;
-}
 
 
 //===========================================================================

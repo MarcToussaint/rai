@@ -20,6 +20,7 @@
 
 #include "mesh.h"
 #include "qhull.h"
+#include <Optim/optimization.h>
 
 #include <limits>
 
@@ -46,8 +47,7 @@ bool orsDrawWires=false;
 
 ors::Mesh::Mesh() :
     parsing_pos_start(0),
-    parsing_pos_end(std::numeric_limits<long>::max())
-{};
+    parsing_pos_end(std::numeric_limits<long>::max()){}
 
 void ors::Mesh::clear() {
   V.clear(); Vn.clear(); T.clear(); Tn.clear(); C.clear(); //strips.clear();
@@ -315,10 +315,128 @@ void ors::Mesh::makeConvexHull() {
   getTriangulatedHull(T, V);
 #else
   NICO
-#endif
+    #endif
 }
 
-void ors::Mesh::setSSC(const ors::Mesh& m, double r, uint fineness){
+void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
+  ConstrainedProblem F=[&X](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){
+    phi.resize(5+X.d0);
+    if(&tt){ tt.resize(5+X.d0); tt=ineqTT; }
+    if(&J) {  J.resize(5+X.d0,11); J.setZero(); }
+    if(&H) {  H.resize(11,11); H.setZero(); }
+
+    //-- the scalar objective
+    double a=x(0), b=x(1), c=x(2), r=x(3);
+    phi(0) = a*b*c + 2.*r*(a*b + a*c +b*c) + 4./3.*r*r*r;
+    if(&tt) tt(0) = fTT;
+    if(&J){
+      J(0,0) = b*c + 2.*r*(b+c);
+      J(0,1) = a*c + 2.*r*(a+c);
+      J(0,2) = a*b + 2.*r*(a+b);
+      J(0,3) = 2.*(a*b + a*c +b*c) + 4.*r*r;
+    }
+    if(&H){
+      H(0,1) = H(1,0) = c + 2.*r;
+      H(0,2) = H(2,0) = b + 2.*r;
+      H(0,3) = H(3,0) = 2.*(b+c);
+
+      H(1,2) = H(2,1) = a + 2.*r;
+      H(1,3) = H(3,1) = 2.*(a+c);
+
+      H(2,3) = H(3,2) = 2.*(a+b);
+
+      H(3,3) = 8.*r;
+    }
+
+    //-- positive
+    double w=100.;
+    phi(1) = -w*(a-.01);
+    phi(2) = -w*(b-.01);
+    phi(3) = -w*(c-.01);
+    phi(4) = -w*(r-.01);
+    if(&J){
+      J(1,0) = -w;
+      J(2,1) = -w;
+      J(3,2) = -w;
+      J(4,3) = -w;
+    }
+
+    //-- all constraints
+    for(uint i=0;i<X.d0;i++){
+      arr y, Jy;
+      y = X[i];
+      y.append(x);
+      phi(i+5) = DistanceFunction_SSBox(Jy, NoArr, y);
+      //      Jy.subRef(3,5)() *= -1.;
+      if(&J) J[i+5] = Jy.subRef(3,-1);
+    }
+  };
+
+  //initialization
+  x.resize(11);
+  ors::Quaternion rot;
+  rot.setRandom();
+  arr tX = X * rot.getArr(); //rotate points (with rot^{-1})
+  arr ma = max(tX,0), mi = min(tX,0);  //get coordinate-wise min and max
+  x.subRef(0,2)() = (ma-mi)/2.;   //sizes
+  x(3) = 1.; //sum(ma-mi)/6.;  //radius
+  x.subRef(4,6)() = rot.getArr() * (mi+.5*(ma-mi)); //center (rotated back)
+  x.subRef(7,10)() = conv_quat2arr(rot);
+  rndGauss(x.subRef(7,10)(), .1, true);
+  x.subRef(7,10)() /= length(x.subRef(7,10)());
+
+  if(verbose>1){
+    checkJacobianCP(F, x, 1e-4);
+    checkHessianCP(F, x, 1e-4);
+  }
+
+  OptConstrained opt(x, NoArr, F, OPT(
+                   stopTolerance = 1e-4,
+                   stopFTolerance = 1e-3,
+                   damping=1,
+                   maxStep=-1,
+                   constrainedMethod = anyTimeAula,
+                   aulaMuInc = 1.1
+                   ));
+  opt.run();
+
+  if(verbose>1){
+    checkJacobianCP(F, x, 1e-4);
+    checkHessianCP(F, x, 1e-4);
+  }
+
+  f = opt.UCP.get_costs();
+  g = opt.UCP.get_sumOfGviolations();
+}
+
+void ors::Mesh::makeSSBox(arr& x, Transformation& t, const arr& X, uint trials, int verbose){
+  if(!X.N){ clear(); return; }
+
+  arr x_best;
+  double f,g, f_best, g_best;
+  fitSSBox(x_best, f_best, g_best, X, verbose);
+  for(uint k=1;k<trials;k++){
+    fitSSBox(x, f, g, X, verbose);
+    if(g<g_best-1e-4 ||
+       (g<1e-4 && f<f_best)){ x_best=x; f_best=f; g_best=g; }
+  }
+
+  x=x_best;
+
+  if(verbose>2){
+    cout <<"x=" <<x;
+    cout <<"\nf = " <<f_best <<"\ng-violations = " <<g_best <<endl;
+  }
+
+  t.setZero();
+  t.pos.set( x.subRef(4,6) );
+  t.rot.set( x.subRef(7,-1) );
+  t.rot.normalize();
+  setSSBox(2.*x(0), 2.*x(1), 2.*x(2), x(3));
+  t.applyOnPointArray(V);
+}
+
+void ors::Mesh::setSSCvx(const ors::Mesh& m, double r, uint fineness){
   Mesh ball;
   ball.setSphere(fineness);
   ball.scale(r);
@@ -817,36 +935,53 @@ void ors::Mesh::skin(uint start) {
   cout <<T <<endl;
 }
 
-ors::Vector ors::Mesh::getMeanVertex() {
+ors::Vector ors::Mesh::getMeanVertex() const {
   arr Vmean = sum(V,0);
   Vmean /= (double)V.d0;
   return Vector(Vmean);
 }
 
-double ors::Mesh::getRadius() {
+double ors::Mesh::getRadius() const {
   double r=0.;
   for(uint i=0;i<V.d0;i++) r=mlr::MAX(r, sumOfSqr(V[i]));
   return sqrt(r);
 }
 
 double triArea(const arr& a, const arr& b, const arr& c){
-#if 1
   return .5*length(crossProduct(b-a, c-a));
-#else
-  arr B=b;
-  arr C=c;
-  B-=a;
-  C-=a;
-  return .5*::sqrt(sumOfSqr(B)*sumOfSqr(C)-mlr::sqr(scalarProduct(B,C)));
-//  B -= (scalarProduct(B,C)/sumOfSqr(C)) * C;
-//  CHECK_ZERO(scalarProduct(B,C), 1e-4, "");
-//  return .5*length(B)*length(C);
-#endif
 }
 
 double ors::Mesh::getArea() const{
+  CHECK(T.d1==3,"");
   double A=0.;
-  for(uint i=0;i<T.d0;i++) A += triArea(V[T(i,0)], V[T(i,1)], V[T(i,2)]);
+  ors::Vector a,b,c;
+  for(uint i=0;i<T.d0;i++){
+    a.set(V.p+3*T.p[3*i+0]);
+    b.set(V.p+3*T.p[3*i+1]);
+    c.set(V.p+3*T.p[3*i+2]);
+    A += ((b-a)^(c-a)).length();
+  }
+  return .5*A;
+}
+
+double ors::Mesh::getVolume() const{
+  CHECK(T.d1==3,"");
+  ors::Vector z = getMeanVertex(), a,b,c;
+  double vol=0.;
+  for(uint i=0;i<T.d0;i++){
+    a.set(V.p+3*T.p[3*i+0]);
+    b.set(V.p+3*T.p[3*i+1]);
+    c.set(V.p+3*T.p[3*i+2]);
+    vol += (a-z) * ((b-a)^(c-a));
+  }
+  return vol/6.;
+}
+
+double ors::Mesh::getCircum() const{
+  if(!T.N) return 0.;
+  CHECK(T.d1==2,"");
+  double A=0.;
+  for(uint i=0;i<T.d0;i++) A += length(V[T(i,0)] - V[T(i,1)]);
   return A;
 }
 
@@ -1430,15 +1565,48 @@ uintA getSubMeshPositions(const char* filename) {
 
 #ifdef MLR_GL
 
-/// static GL routine to draw a ors::Mesh
-void glDrawMesh(void *classP) {
-  ((ors::Mesh*)classP)->glDraw();
-}
-
 /// GL routine to draw a ors::Mesh
-void ors::Mesh::glDraw() {
-  if(!T.N){
-    glDrawPointCloud(V, C);
+void ors::Mesh::glDraw(struct OpenGL&) {
+  if(!T.N){  //-- draw point cloud
+    if(!V.N) return;
+    CHECK(V.nd==2 && V.d1==3, "wrong dimension");
+    glPointSize(3.);
+    glDisable(GL_LIGHTING);
+  #if 1
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3, GL_DOUBLE, V.d1-3, V.p);
+    if(C.N==V.N){
+      glEnableClientState(GL_COLOR_ARRAY);
+      glColorPointer(3, GL_DOUBLE, C.d1-3, C.p );
+    }else glDisableClientState(GL_COLOR_ARRAY);
+    glDrawArrays(GL_POINTS, 0, V.d0);
+    glDisableClientState(GL_VERTEX_ARRAY);
+  #else
+    glBegin(GL_POINTS);
+    if(C.N!=V.N){
+      const double *p=V.begin(), *pstop=V.end();
+      for(; p!=pstop; p+=V.d1)
+        glVertex3dv(p);
+    }else{
+      const double *p=V.begin(), *pstop=V.end(), *c=C.begin();
+      for(; p!=pstop; p+=V.d1, c+=C.d1){
+        glVertex3dv(p);
+        glColor3dv(c);
+      }
+    }
+    glEnd();
+  #endif
+    glEnable(GL_LIGHTING);
+    glPointSize(1.);
+    return;
+  }
+  if(T.d1==2){
+    glBegin(GL_LINES);
+    for(uint t=0; t<T.d0; t++) {
+      glVertex3dv(&V(T(t, 0), 0));
+      glVertex3dv(&V(T(t, 1), 0));
+    }
+    glEnd();
     return;
   }
   if(V.d0!=Vn.d0 || T.d0!=Tn.d0) {
@@ -1519,7 +1687,7 @@ void ors::Mesh::glDraw() {
 #endif
 }
 #else //MLR_GL
-void ors::Mesh::glDraw() { NICO }
+void ors::Mesh::glDraw(struct OpenGL&) { NICO }
 void glDrawMesh(void*) { NICO }
 void glTransform(const ors::Transformation&) { NICO }
 #endif
@@ -1552,50 +1720,6 @@ void inertiaCylinder(double *I, double& mass, double density, double height, dou
   I[4]=mass/12.*(3.*r2+h2);
   I[8]=mass/2.*r2;
 }
-
-
-//===========================================================================
-//
-// point cloud drawing
-//
-
-
-#ifdef MLR_GL
-void glDrawDots(void *dots) { glDrawPointCloud(*(arr*)dots, NoArr); }
-
-void glDrawPointCloud(void *pc) { glDrawPointCloud(((const arr*)pc)[0], ((const arr*)pc)[1]); }
-
-void glDrawPointCloud(const arr& pts, const arr& cols) {
-  if(!pts.N) return;
-  CHECK(pts.nd==2 && pts.d1==3, "wrong dimension");
-  glDisable(GL_LIGHTING);
-#if 0
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glVertexPointer(3, GL_DOUBLE, pts.d1-3, pts.p);
-  if(&cols && cols.N==pts.N){
-    glEnableClientState(GL_COLOR_ARRAY);
-    glColorPointer(3, GL_DOUBLE, cols.d1-3, cols.p );
-  }else glDisableClientState(GL_COLOR_ARRAY);
-  glDrawArrays(GL_POINTS, 0, pts.d0);
-  glDisableClientState(GL_VERTEX_ARRAY);
-#else
-  glBegin(GL_POINTS);
-  if(!&cols || cols.N!=pts.N){
-    const double *p=pts.begin(), *pstop=pts.end();
-    for(; p!=pstop; p+=pts.d1)
-      glVertex3dv(p);
-  }else{
-    const double *p=pts.begin(), *pstop=pts.end(), *c=cols.begin();
-    for(; p!=pstop; p+=pts.d1, c+=cols.d1){
-      glVertex3dv(p);
-      glColor3dv(c);
-    }
-  }
-  glEnd();
-#endif
-}
-#else //MLR_GL
-#endif
 
 
 //===========================================================================
@@ -1767,3 +1891,184 @@ void ors::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint 
 }
 #endif
 /** @} */
+
+//===========================================================================
+
+DistanceFunction_Sphere::DistanceFunction_Sphere(const ors::Transformation& _t, double _r):t(_t),r(_r){
+  ScalarFunction::operator=( [this](arr& g, arr& H, const arr& x)->double{ return f(g,H,x); } );
+}
+
+double DistanceFunction_Sphere::f(arr& g, arr& H, const arr& x){
+  arr d = x-conv_vec2arr(t.pos);
+  double len = length(d);
+  if(&g) g = d/len;
+  if(&H) H = 1./len * (eye(3) - (d^d)/(len*len));
+  return len-r;
+}
+
+//===========================================================================
+
+//double DistanceFunction_InfCylinder::fs(arr& g, arr& H, const arr& x){
+//  z = z / length(z);
+//  arr a = (x-c) - scalarProduct((x-c), z) * z;
+//  arr I(x.d0,x.d0);
+//  uint i;
+//  double na = length(a);
+
+//  if(&g) g = s*a/na;
+//  if(&H){
+//    I.setZero();
+//    for(i=0;i<x.d0;++i) I(i,i)=1;
+//    H = s/na * (I - z*(~z) - 1/(na*na) * a*(~a));
+//  }
+//  return s*(na-r);
+//}
+
+//===========================================================================
+
+DistanceFunction_Cylinder::DistanceFunction_Cylinder(const ors::Transformation& _t, double _r, double _dz):t(_t),r(_r),dz(_dz){
+  ScalarFunction::operator=( [this](arr& g, arr& H, const arr& x)->double{ return f(g,H,x); } );
+}
+
+double DistanceFunction_Cylinder::f(arr& g, arr& H, const arr& x){
+  arr z = conv_vec2arr(t.rot.getZ());
+  arr c = conv_vec2arr(t.pos);
+  arr b = scalarProduct(x-c, z) * z;
+  arr a = (x-c) - b;
+  arr I(3,3);
+  double la = length(a);
+  double lb = length(b);
+  arr aaTovasq = 1/(la*la) * (a^a);
+  arr zzT = z^z;
+
+  if ( lb < dz/2. ){ // x projection on z is inside cyl
+    if(la<r && (dz/2.-lb)<(r-la)){ // x is INSIDE the cyl and closer to the lid than the wall
+      if(&g) g = 1./lb*b; //z is unit: s*z*|z|*sgn(b*z) = s*b/nb
+      if(&H) { I.setZero(); H=I; }
+      return lb-dz/2.;
+    }else{ // closer to the side than to a lid (inc. cases in- and outside the tube, because (r-na)<0 then)
+      if(&g) g = a/la;
+      if(&H){
+        I.setId(3);
+        H = 1./la * (I - zzT - aaTovasq);
+      }
+      return la-r;
+    }
+  }else{// x projection on z is outside cylinder
+    if ( la < r ){// inside the infinite cylinder
+      if(&g) g = b/lb;
+      if(&H) H.resize(3,3).setZero();
+      return lb-dz/2.;
+    }else{ // outside the infinite cyl
+      arr v =  b/lb * (lb-dz/2.)  + a/la * (la-r); //MT: good! (note: b/nb is the same as z) SD: well, b/nb is z or -z.
+      double nv=length(v);
+      if(&g) g = v/nv;
+      if(&H){
+        I.setId(3);
+        arr dvdx = (la-r)/la*( I - zzT - aaTovasq )
+                   + aaTovasq + zzT;
+        H = 1./nv* (dvdx - 1/nv/nv * (v^v) * (~dvdx) );
+      }
+      return nv;
+    }
+  }
+  HALT("You shouldn't be here!");
+}
+
+//===========================================================================
+
+void closestPointOnBox(arr& closest, arr& signs, const ors::Transformation& t, double dx, double dy, double dz, const arr& x){
+  arr rot = t.rot.getArr();
+  arr a_rel = (~rot)*(x-conv_vec2arr(t.pos)); //point in box coordinates
+  arr dim = {dx, dy, dz};
+  signs.resize(3);
+  signs.setZero();
+  closest = a_rel;
+  arr del_abs = fabs(a_rel)-dim;
+  if(del_abs.max()<0.){ //inside
+    uint side=del_abs.maxIndex(); //which side are we closest to?
+     //in positive or neg direction?
+    if(a_rel(side)>0){ closest(side) = dim(side);  signs(side)=+1.; }
+    else             { closest(side) =-dim(side);  signs(side)=-1.; }
+  }else{ //outside
+    for(uint side=0;side<3;side++){
+      if(closest(side)<-dim(side)){ signs(side)=-1.; closest(side)=-dim(side); }
+      if(closest(side)> dim(side)){ signs(side)=+1.; closest(side)= dim(side); }
+    }
+  }
+  closest = rot*closest + t.pos.getArr();
+}
+
+//===========================================================================
+
+DistanceFunction_Box::DistanceFunction_Box(const ors::Transformation& _t, double _dx, double _dy, double _dz, double _r):t(_t),dx(_dx),dy(_dy),dz(_dz), r(_r){
+  ScalarFunction::operator=( [this](arr& g, arr& H, const arr& x)->double{ return f(g,H,x); } );
+}
+
+double DistanceFunction_Box::f(arr& g, arr& H, const arr& x){
+  arr rot = t.rot.getArr();
+  arr a_rel = (~rot)*(x-conv_vec2arr(t.pos)); //point in box coordinates
+  arr dim = {dx, dy, dz};
+
+  arr closest = a_rel;
+  arr del_abs = fabs(a_rel)-dim;
+  //-- find closest point on box and distance to it
+  if(del_abs.max()<0.){ //inside
+    uint side=del_abs.maxIndex(); //which side are we closest to?
+    if(a_rel(side)>0) closest(side) = dim(side);  else  closest(side)=-dim(side); //in positive or neg direction?
+  }else{ //outside
+    closest = elemWiseMax(-dim,closest);
+    closest = elemWiseMin(dim,closest);
+  }
+
+  arr del = a_rel-closest;
+  double d = length(del);
+  if(&g) g = rot*del/d; //transpose(R) rotates the gradient back to world coordinates
+  if(&H){
+    if(d<0.){ //inside
+      H.resize(3,3).setZero();
+    }else{ //outside
+      if(del_abs.min()>0.){ //outside on all 3 axis
+        H = 1./d * (eye(3) - (del^del)/(d*d));
+      }else{
+        arr edge=del_abs;
+        for(double& z: edge) z=(z<0.)?0.:1.;
+        if(sum(edge)<=1.1){ //closest to the plane (equals 1.)
+          H.resize(3,3).setZero();
+        }else{ //closest to an edge
+          edge = 1.-edge;
+          H = 1./d * (eye(3) - (del^del)/(d*d) - (edge^edge));
+        }
+      }
+      H = rot*H*(~rot);
+    }
+  }
+
+  return d-r;
+}
+
+ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> double{
+  CHECK_EQ(x.N, 14, "pt + abcr + pose");
+  ors::Transformation t;
+  t.pos.set( x.subRef(7,9) );
+  t.rot.set( x.subRef(10,13) );
+  t.rot.normalize();
+  arr closest, signs;
+  closestPointOnBox(closest, signs, t, x(3), x(4), x(5), x.subRef(0,2));
+  arr grad = x.subRef(0,2) - closest;
+  double d = length(grad);
+  grad /= d;
+  d -= x(6);
+  if(&g){
+    g.resize(14);
+    g.setZero();
+    g.subRef(0,2) = grad;
+    g.subRef(7,9) = - grad;
+    g.subRef(3,5) = - signs%(t.rot / ors::Vector(grad)).getArr();
+    g(6) = -1.;
+    g.subRef(10,13) = ~grad*crossProduct(t.rot.getJacobian(), (x.subRef(0,2)-t.pos.getArr()));
+    g.subRef(10,13)() /= -sqrt(sumOfSqr(x.subRef(10,13))); //account for the potential non-normalization of q
+  }
+  return d;
+};
+

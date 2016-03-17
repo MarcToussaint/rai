@@ -36,7 +36,7 @@ void close(const ThreadL& P);
 
 //===========================================================================
 //
-// threading: pthread wrappers: Mutex, RWLock, ConditionVariable
+//  basic threading: pthread wrappers: Mutex, RWLock, ConditionVariable
 //
 
 #ifndef MLR_MSVC
@@ -72,8 +72,8 @@ struct ConditionVariable {
 
   int  getValue(bool userHasLocked=false) const;
   void waitForSignal(bool userHasLocked=false);
-  void waitForSignal(double seconds, bool userHasLocked=false);
-  void waitForValueEq(int i, bool userHasLocked=false);    ///< return value is the state after the waiting
+  bool waitForSignal(double seconds, bool userHasLocked=false);
+  bool waitForValueEq(int i, bool userHasLocked=false, double seconds=-1);    ///< return value is the state after the waiting
   void waitForValueNotEq(int i, bool userHasLocked=false); ///< return value is the state after the waiting
   void waitForValueGreaterThan(int i, bool userHasLocked=false); ///< return value is the state after the waiting
   void waitForValueSmallerThan(int i, bool userHasLocked=false); ///< return value is the state after the waiting
@@ -82,7 +82,7 @@ struct ConditionVariable {
 
 //===========================================================================
 //
-// access gated (rwlocked) variables
+// access gated (rwlocked) variables (shared memory)
 //
 
 /// Deriving from this allows to make variables/classes revisioned read-write access gated
@@ -90,9 +90,11 @@ struct RevisionedAccessGatedClass {
   mlr::String name;            ///< Variable name
   RWLock rwlock;              ///< rwLock (usually handled via read/writeAccess)
   ConditionVariable revision; ///< revision (= number of write accesses) number
+  int last_revision;          ///< last revision that has been accessed (read or write)
   double revision_time;       ///< clock time of last write access
   double data_time;           ///< time stamp of the original data source
   ThreadL listeners;          ///< list of threads that are being signaled a threadStep on write access
+  struct Node* registryNode;
 
   /// @name c'tor/d'tor
   RevisionedAccessGatedClass(const char* name);
@@ -105,6 +107,7 @@ struct RevisionedAccessGatedClass {
   int deAccess(Thread*);
 
   /// @name syncing via a variable
+  bool hasNewRevision();
   /// the caller is set to sleep
   int waitForNextRevision();
   int waitForRevisionGreaterThan(int rev); //returns the revision
@@ -206,6 +209,7 @@ struct Thread{
   uint step_count;
   Metronome metronome;          ///< used for beat-looping
   CycleTimer timer;
+  struct Node* registryNode;
 
   /// @name c'tor/d'tor
   /** DON'T open drivers/devices/files or so here in the constructor,
@@ -215,7 +219,7 @@ struct Thread{
    *
    * beatIntervalSec=0. indicates full speed looping, beatIntervalSec=-1. indicates no looping (steps triggered by listening)
    */
-  Thread(const char* _name, double beatIntervalSec=0.);
+  Thread(const char* _name, double beatIntervalSec=-1.);
   virtual ~Thread();
 
   /// @name to be called from `outside' (e.g. the main) to start/step/close the thread
@@ -234,6 +238,7 @@ struct Thread{
 
   /// @name listen to a variable
   void listenTo(RevisionedAccessGatedClass& var);
+  void stopListenTo(RevisionedAccessGatedClass& var);
 
   /** use this to open drivers/devices/files and initialize
    *  parameters; this is called within the thread */

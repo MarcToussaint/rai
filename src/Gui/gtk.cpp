@@ -45,7 +45,6 @@ struct GtkThread:Thread {
     gdk_threads_enter();
     gtk_init(&argc, &argv);
     gtk_gl_init(&argc, &argv);
-    glutInit(&argc, argv);
 
     threadLoop();
   }
@@ -102,8 +101,11 @@ void gtkCheckInitialized() {
 #endif
 }
 
-
-
+void gtkProcessEvents(){
+  gtkLock();
+  while (gtk_events_pending())  gtk_main_iteration();
+  gtkUnlock();
+}
 
 ConditionVariable menuChoice(-1);
 static void menuitem_response(int choice) { menuChoice.setValue(choice); }

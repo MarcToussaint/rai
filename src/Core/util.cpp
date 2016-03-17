@@ -575,7 +575,7 @@ double timerRead(bool reset) {
 
 /// read the timer relative to a given start time (user CPU time)
 double timerRead(bool reset, double startTime) {
-  double c=(timerUseRealTime?realTime():cpuTime())-startTime;
+  double c=(timerUseRealTime?realTime():cpuTime())-startTime; //Danny: not correct? should contain -timerStartTime?!?!?
   if(reset) timerStart(timerUseRealTime);
   return c;
 }
@@ -598,7 +598,7 @@ void initCmdLine(int _argc, char *_argv[]) {
   mlr::String msg;
   msg <<"** cmd line arguments: '"; for(int i=0; i<argc; i++) msg <<argv[i] <<' ';
   msg <<"\b'";
-  LOG(0) <<msg;
+  LOG(1) <<msg;
 }
 
 /// returns true if the tag was found on command line
@@ -618,6 +618,13 @@ char *getCmdLineArgument(const char *tag) {
     }
   return NULL;
 }
+
+String mlrPath(const char* rel){
+  String path(MLR_CORE_PATH);
+  path <<"/../../" <<rel;
+  return path;
+}
+
 }//namespace mlr
 
 //===========================================================================

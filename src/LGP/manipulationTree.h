@@ -17,39 +17,46 @@ struct ManipulationTree_Node{
   mlr::Array<ManipulationTree_Node*> children;
   uint s;               ///< depth/step of this node
 //  double t;             ///< real time
+  uint graphIndex=0;
 
-  FOL_World& fol;
-  FOL_World::Handle decision;
-  Graph *folState; ///< the symbolic state after action
+  //-- info on the state and action this node represents
+  FOL_World& fol; ///< the symbolic KB (all Graphs below are subgraphs of this large KB)
+  FOL_World::Handle decision; ///< the decision that led to this node
+  Graph *folState; ///< the symbolic state after the decision
   Node  *folDecision; ///< the predicate in the folState that represents the decision
 
-  //  ors::KinematicSwitch sw; ///< the kinematic switch(es) that this action implies
+  //-- kinematics: the kinematic structure of the world after the decision path
   ors::KinematicWorld kinematics; ///< actual kinematics after action (includes all previous switches)
-
-  //-- results of effective pose optimization
-  Graph *poseProblemSpecs;
   ors::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
-  arr effPose;
-  double effPoseCost;
+
+  bool isExpanded=false;
+  bool hasEffKinematics=false;
+
+  //-- specs and results of the three optimization problems
+  MotionProblem *poseProblem, *seqProblem, *pathProblem;
+  Graph *poseProblemSpecs, *seqProblemSpecs, *pathProblemSpecs;
+  arr pose, seq, path;
+  double poseCost, seqCost, pathCost;
   double effPoseReward;
 
-  //-- results of full path optimization
-  MotionProblem pathProblem;
-  Graph *pathProblemSpecs;
-  arr path;
-  double pathCost;
-
-  ///root node init
+  /// root node init
   ManipulationTree_Node(LogicGeometricProgram& lgp);
 
-  ///child node creation
+  /// child node creation
   ManipulationTree_Node(LogicGeometricProgram& lgp, ManipulationTree_Node *parent, FOL_World::Handle& a);
 
-  void expand();
-  void solvePoseProblem();
-  void solvePathProblem(uint microSteps);
+  //- computations on the node
+  void expand();           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
+  void solvePoseProblem(); ///< solve the effective pose problem
+  void solveSeqProblem(int verbose=0);  ///< compute a sequence of key poses along the decision path
+  void solvePathProblem(uint microSteps, int verbose=0); ///< compute a full path along the decision path
+
+  //-- helpers
+  ManipulationTree_NodeL getTreePath(); ///< return the decision path in terms of a list of nodes (just walking to the root)
 
   void write(ostream& os=cout) const;
+  void getGraph(Graph& G, Node *n=NULL);
+  Graph getGraph(){ Graph G; getGraph(G, NULL); G.checkConsistency(); return G; }
 };
 
 inline ostream& operator<<(ostream& os, const ManipulationTree_Node& n){ n.write(os); return os; }
