@@ -3858,4 +3858,10 @@ void maximumSpanningTree(mlr::Array<vert*>& V, mlr::Array<edge*>& E, const Compa
 }*/
 
 
+namespace mlr{
+template<> template<class S> Array<mlr::String>::Array(std::initializer_list<S> list) {
+    HALT("NEVER CALL THIS CONSTRUCTOR!")
+}
+}
+
 #endif
