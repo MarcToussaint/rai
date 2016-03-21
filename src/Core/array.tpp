@@ -427,7 +427,6 @@ template<class T> void mlr::Array<T>::resetD() {
 }
 
 
-
 //***** append, insert & remove
 
 /// append an (uninitialized) element to the array and return its reference -- the array becomes 1D!
