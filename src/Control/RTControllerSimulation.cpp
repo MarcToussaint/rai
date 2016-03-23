@@ -155,7 +155,7 @@ void RTControllerSimulation::step() {
   }
 
   if(cmd.q.N==q.N){
-#if 0
+#if 1
     //TODO: use exactly same conditions as in RT controller
     //TODO: the real RT controller does a lot more: checks ctrl limits, etc. This should be simulated as well
     u = cmd.u_bias + cmd.Kp*(cmd.q - q) + cmd.Kd*(cmd.qdot - qDot);
@@ -167,6 +167,10 @@ void RTControllerSimulation::step() {
     world->stepDynamics(u, tau, 0., this->gravity);
     world->getJointState(q,qDot);
   }
+
+  checkNan(q);
+  checkNan(qDot);
+  checkNan(u);
 
   this->ctrl_obs.writeAccess();
   this->ctrl_obs().q = q;
