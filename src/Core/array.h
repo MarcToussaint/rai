@@ -231,8 +231,10 @@ template<class T> struct Array {
   void append(const Array<T>& x);
   void append(const T *p, uint n);
   void prepend(const T& x){ insert(0,x); }
+  void prepend(const Array<T>& x){ insert(0,x); }
   void replicate(uint copies);
   void insert(uint i, const T& x);
+  void insert(uint i, const Array<T>& x);
   void replace(uint i, uint n, const Array<T>& x);
   void remove(uint i, uint n=1);
   void removePerm(uint i);          //more efficient for sets, works also for non-memMove arrays

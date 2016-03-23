@@ -427,7 +427,6 @@ template<class T> void mlr::Array<T>::resetD() {
 }
 
 
-
 //***** append, insert & remove
 
 /// append an (uninitialized) element to the array and return its reference -- the array becomes 1D!
@@ -544,6 +543,29 @@ template<class T> void mlr::Array<T>::insert(uint i, const T& x) {
   resizeCopy(Nold+1);
   if(i<Nold) memmove(p+i+1, p+i, sizeT*(Nold-i));
   p[i]=x;
+}
+
+template<class T> void mlr::Array<T>::insert(uint i, const Array<T>& x){
+  uint xN=x.N;
+  if(!xN) return;
+  if(!nd || !N){
+    CHECK(i==0,"");
+    *this = x;
+  }else if(nd==1){
+    CHECK(i<=N,"");
+    uint oldN=N;
+    resizeCopy(N+xN);
+    if(i<oldN) memmove(p+i+xN, p+i, sizeT*(oldN-i));
+    memmove(p+i, x.p, sizeT*xN);
+  }else if(nd==2){
+    CHECK(i<=d0,"");
+    uint oldN=d0;
+    if(x.nd==1 && d1==x.d0) resizeCopy(d0+1, d1);
+    else if(x.nd==2 && d1==x.d1) resizeCopy(d0+x.d0, d1);
+    else HALT("");
+    if(i<oldN) memmove(p+i*d1+xN, p+i*d1, sizeT*(oldN-i)*d1);
+    memmove(p+i*d1, x.p, sizeT*xN);
+  }
 }
 
 /// remove (delete) a subsequence of the array -- the array becomes 1D!  [only with memMove!]
@@ -2393,6 +2415,11 @@ void outerProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>&
   \f$\forall_{i}:~ x_{ij} = v_{ij} w_{ij}\f$*/
 template<class T>
 void indexWiseProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>& z) {
+  if(y.N==1){  //scalar x any -> ..
+    x=z;
+    x*=y.scalar();
+    return;
+  }
   if(y.nd==1 && z.nd==1) {  //vector x vector -> element wise
     x=y;
     x*=z;
@@ -2416,6 +2443,7 @@ void indexWiseProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array
     return;
   }
   if(y.dim() == z.dim()) { //matrix x matrix -> element-wise
+    HALT("THIS IS AMBIGUOUS!");
     x = y;
     T *xp=x.p, *xstop=x.p+x.N, *zp=z.p;
     for(; xp!=xstop; xp++, zp++) *xp *= *zp;
