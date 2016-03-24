@@ -3855,12 +3855,15 @@ void maximumSpanningTree(mlr::Array<vert*>& V, mlr::Array<edge*>& E, const Compa
   graphMakeLists(V, E);
 }
 
-/*template<class T> mlr::Array<T> get(const AnyList& L, const char* tag){
-  for_list(Any,  a,  L) if(!strcmp(a->tag, tag)) break;
-  if(i==L.N) HALT("tag '" <<tag <<"' is not in this AnyList");
-  if(!a->n) return mlr::Array<T>((T*)a->p, 1);
-  return mlr::Array<T>((T*)a->p, a->n);
-}*/
+//namespace mlr{
+//template<class T> Array<T>::Array(std::initializer_list<const char*> list) {
+//  init();
+//  for(const char* t : list) append(mlr::String(t));
+//}
 
+//template<> template<class S> Array<mlr::String>::Array(std::initializer_list<S> list) {
+//    HALT("NEVER CALL THIS CONSTRUCTOR!")
+//}
+//}
 
 #endif
