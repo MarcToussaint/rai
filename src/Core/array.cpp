@@ -2061,10 +2061,10 @@ template void mlr::getParameter(uintA&, const char*, const uintA&);
 
 void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 
-namespace mlr{
-template<> template<> Array<mlr::String>::Array(std::initializer_list<const char*> list) {
-  init();
-  for(const char* t : list) append(mlr::String(t));
-}
-}
+//namespace mlr{
+//template<> template<> Array<mlr::String>::Array(std::initializer_list<const char*> list) {
+//  init();
+//  for(const char* t : list) append(mlr::String(t));
+//}
+//}
 
