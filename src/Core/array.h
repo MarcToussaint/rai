@@ -110,7 +110,7 @@ template<class T> struct Array {
   explicit Array(uint D0, uint D1, uint D2);
   explicit Array(const T* p, uint size);    //reference!
   Array(std::initializer_list<T> list);
-  template<class S> Array(std::initializer_list<S> list); //this is only implemented for T=mlr::String and S=const char* !
+//  template<class S> Array(std::initializer_list<S> list); //this is only implemented for T=mlr::String and S=const char* !
   Array(mlr::FileToken&); //read from a file
   ~Array();
   
