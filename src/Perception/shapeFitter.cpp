@@ -17,7 +17,7 @@ struct ShapeFitter: Process {
   ShapeFitter(FloatImage& _eviL, FloatImage& _eviR, PerceptionOutput &_perc): Process("ShapeFitter"), eviL(&_eviL), eviR(&_eviR), percOut(&_perc){}
   void open(){
     ifstream fil;
-    mlr::open(fil, "../../configurations/calib_P");
+    mlr::open(fil, "../../data/configurations/calib_P");
     Pl.readTagged(fil, "PL");
     Pr.readTagged(fil, "PR");
     fil.close();

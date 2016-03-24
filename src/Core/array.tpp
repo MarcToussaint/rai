@@ -427,7 +427,6 @@ template<class T> void mlr::Array<T>::resetD() {
 }
 
 
-
 //***** append, insert & remove
 
 /// append an (uninitialized) element to the array and return its reference -- the array becomes 1D!
@@ -2416,6 +2415,11 @@ void outerProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>&
   \f$\forall_{i}:~ x_{ij} = v_{ij} w_{ij}\f$*/
 template<class T>
 void indexWiseProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>& z) {
+  if(y.N==1){  //scalar x any -> ..
+    x=z;
+    x*=y.scalar();
+    return;
+  }
   if(y.nd==1 && z.nd==1) {  //vector x vector -> element wise
     x=y;
     x*=z;
@@ -2439,6 +2443,7 @@ void indexWiseProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array
     return;
   }
   if(y.dim() == z.dim()) { //matrix x matrix -> element-wise
+    HALT("THIS IS AMBIGUOUS!");
     x = y;
     T *xp=x.p, *xstop=x.p+x.N, *zp=z.p;
     for(; xp!=xstop; xp++, zp++) *xp *= *zp;

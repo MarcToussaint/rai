@@ -999,7 +999,7 @@ void ors::Mesh::read(std::istream& is, const char* fileExtension) {
   if(!strcmp(fileExtension, "off")) { readOffFile(is); loaded=true; }
   if(!strcmp(fileExtension, "ply")) { readPlyFile(is); loaded=true; }
   if(!strcmp(fileExtension, "tri")) { readTriFile(is); loaded=true; }
-  if(!strcmp(fileExtension, "stl")) { readStlFile(is); loaded=true; }
+  if(!strcmp(fileExtension, "stl") || !strcmp(fileExtension, "STL")) { readStlFile(is); loaded=true; }
   if(!loaded) HALT("can't read fileExtension '" <<fileExtension <<"'");
 }
 
@@ -1222,7 +1222,7 @@ void ors::Mesh::readStlFile(std::istream& is) {
     is >>name;
     uint i, k=0, k0;
     double x, y, z;
-    cout <<"reading STL file -- object name '" <<name <<"'..." <<endl;
+//    cout <<"reading STL file -- object name '" <<name <<"'..." <<endl;
     V.resize(10000);
     //1st pass
     for(i=0, k=0;; i++) {
@@ -1270,7 +1270,7 @@ void ors::Mesh::readStlFile(std::istream& is) {
       is.read((char*)&Vfloat(3*i,0), 9*Vfloat.sizeT);
       T(i,0)=3*i+0;  T(i,1)=3*i+1;  T(i,2)=3*i+2;
       is.read((char*)&att, 2);
-      CHECK_EQ(att,0,"");
+      CHECK_EQ(att,0,"this stl file is broke");
     }
     copy(V,Vfloat);
   }
