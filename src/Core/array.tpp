@@ -2251,6 +2251,11 @@ template<class T> T absMax(const mlr::Array<T>& x) {
   return t;
 }
 
+/// get absolute min (using fabs)
+template<class T> void clip(const mlr::Array<T>& x, T lo, T hi) {
+  for(uint i=0; i<x.N; i++) ::clip(x.p[i], lo, hi);
+}
+
 
 //===========================================================================
 //

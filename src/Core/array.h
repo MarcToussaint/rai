@@ -636,6 +636,7 @@ template<class T> T var(const mlr::Array<T>& v);
 template<class T> T minDiag(const mlr::Array<T>& v);
 template<class T> T absMax(const mlr::Array<T>& x);
 template<class T> T absMin(const mlr::Array<T>& x);
+template<class T> void clip(const mlr::Array<T>& x, T lo, T hi);
 
 template<class T> void innerProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>& z);
 template<class T> void outerProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>& z);

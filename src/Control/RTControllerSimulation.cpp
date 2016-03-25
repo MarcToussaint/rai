@@ -84,7 +84,7 @@ void RTControlStep(
     if(velM<0. && u(i)<0.) u(i)*=(1.+velM); //decrease effort close to velocity margin
     if(velM>0. && u(i)>0.) u(i)*=(1.-velM); //decrease effort close to velocity margin
       */
-//    clip(u(i), -cmd.effLimitRatio*limits(i,3), cmd.effLimitRatio*limits(i,3));
+    clip(u(i), -cmd.effLimitRatio*limits(i,3), cmd.effLimitRatio*limits(i,3));
   }
 
   //-- base velocities
@@ -155,7 +155,7 @@ void RTControllerSimulation::step() {
   }
 
   if(cmd.q.N==q.N){
-#if 1
+#if 0
     //TODO: use exactly same conditions as in RT controller
     //TODO: the real RT controller does a lot more: checks ctrl limits, etc. This should be simulated as well
     u = cmd.u_bias + cmd.Kp*(cmd.q - q) + cmd.Kd*(cmd.qdot - qDot);
