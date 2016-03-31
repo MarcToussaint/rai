@@ -8,6 +8,7 @@
 #include <geometry_msgs/WrenchStamped.h>
 #include <sensor_msgs/Image.h>
 #include <std_msgs/String.h>
+#include <sensor_msgs/JointState.h>
 #include <visualization_msgs/MarkerArray.h>
 
 //===========================================================================
@@ -48,6 +49,7 @@ uint16A             conv_image2uint16A(const sensor_msgs::Image& msg);
 arr                 conv_points2arr(const std::vector<geometry_msgs::Point>& pts);
 arr                 conv_colors2arr(const std::vector<std_msgs::ColorRGBA>& pts);
 CtrlMsg             conv_JointState2CtrlMsg(const marc_controller_pkg::JointState& msg);
+arr                 conv_JointState2arr(const sensor_msgs::JointState& msg);
 ors::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::MarkerArray& markers);
 std_msgs::Float32MultiArray conv_floatA2Float32Array(const floatA&);
 

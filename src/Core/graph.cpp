@@ -402,14 +402,19 @@ void Graph::read(std::istream& is, bool parseInfo) {
     DEBUG(checkConsistency();)
     char c=mlr::peerNextChar(is, " \n\r\t,");
     if(!is.good() || c=='}') { is.clear(); break; }
-    Node *it = readNode(is, false, parseInfo);
-    if(!it) break;
-    if(it->keys.N==1 && it->keys.last()=="Include"){
-      read(it->get<mlr::FileToken>().getIs(true));
-      delete it;
+    Node *n = readNode(is, false, parseInfo);
+    if(!n) break;
+    if(n->keys.N==1 && n->keys.last()=="Include"){
+      read(n->get<mlr::FileToken>().getIs(true));
+      delete n;
     }else
-    if(it->keys.N==1 && it->keys.last()=="ChDir"){
-      it->get<mlr::FileToken>().changeDir();
+    if(n->keys.N==1 && n->keys.last()=="ChDir"){
+      n->get<mlr::FileToken>().changeDir();
+    }else
+    if(n->keys.first()=="Delete"){
+      n->keys.remove(0);
+      NodeL dels = getNodes(n->keys);
+      for(Node* d: dels) delete d;
     }
   }
   if(parseInfo) getParseInfo(NULL).end=is.tellg();
@@ -427,10 +432,10 @@ void Graph::read(std::istream& is, bool parseInfo) {
 
   //-- delete all ChDir nodes in reverse order
   for(uint i=N;i--;){
-    Node *it=elem(i);
-    if(it->keys.N==1 && it->keys(0)=="ChDir"){
-      it->get<mlr::FileToken>().unchangeDir();
-      delete it;
+    Node *n=elem(i);
+    if(n->keys.N==1 && n->keys(0)=="ChDir"){
+      n->get<mlr::FileToken>().unchangeDir();
+      delete n;
     }
   }
 }
