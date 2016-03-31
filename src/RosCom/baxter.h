@@ -1,7 +1,7 @@
 #include "roscom.h"
-#include <baxter_core_msgs/JointCommand.h>
+//#include <baxter_core_msgs/JointCommand.h>
 
-baxter_core_msgs::JointCommand conv_qRef2baxterMessage(const arr& q_ref, const ors::KinematicWorld& baxterModel, const char* prefix);
+//baxter_core_msgs::JointCommand conv_qRef2baxterMessage(const arr& q_ref, const ors::KinematicWorld& baxterModel, const char* prefix);
 
 bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const ors::KinematicWorld& baxterModel);
 

@@ -411,7 +411,7 @@ void Graph::read(std::istream& is, bool parseInfo) {
     if(n->keys.N==1 && n->keys.last()=="ChDir"){
       n->get<mlr::FileToken>().changeDir();
     }else
-    if(n->keys.first()=="Delete"){
+    if(n->keys.N>0 && n->keys.first()=="Delete"){
       n->keys.remove(0);
       NodeL dels = getNodes(n->keys);
       for(Node* d: dels) delete d;

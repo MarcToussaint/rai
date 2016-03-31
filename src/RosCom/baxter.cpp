@@ -1,4 +1,6 @@
 #include "baxter.h"
+#if 0
+
 #include <baxter_core_msgs/HeadPanCommand.h>
 #include <baxter_core_msgs/EndEffectorCommand.h>
 
@@ -69,3 +71,10 @@ void SendPositionCommandsToBaxter::step(){
 void SendPositionCommandsToBaxter::close(){
   //    delete nh;
 }
+
+#else
+bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const ors::KinematicWorld& baxterModel){
+  NICO;
+}
+
+#endif
