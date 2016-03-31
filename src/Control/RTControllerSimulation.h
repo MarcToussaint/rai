@@ -12,6 +12,7 @@ struct RTControllerSimulation : Module {
   Access_typed<ors::KinematicWorld> modelWorld;
 
   ors::KinematicWorld* world;
+  ors::Joint *j_baseTranslationRotation;
   double tau;
   bool gravity;
 

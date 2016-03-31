@@ -45,8 +45,8 @@ void RTControlStep(
     u += Kp_base % (cmd.Kp * (cmd.q - q));
     u += Kd_base % (cmd.Kd.scalar() * (cmd.qdot - qd));
   } else if(cmd.Kp.d0==q.N && cmd.Kp.d1==q.N && cmd.Kd.d0==q.N && cmd.Kd.d1==q.N) { //Kp and Kd are proper matrices -> assume they define desired linear acceleration laws
-    u += cmd.Kp * (cmd.q - q);
-    u += cmd.Kd * (cmd.qdot - qd);
+    u += (cmd.Kp * (cmd.q - q));
+    u += (cmd.Kd * (cmd.qdot - qd));
   }
 
   //-- I term
@@ -77,16 +77,6 @@ void RTControlStep(
     }
   }
 
-  //-- clip torques
-  for (uint i=0;i<q.N;i++){
-    /*double velM = marginMap(qd(i), -velLimitRatio*limits(i,2), velLimitRatio*limits(i,2), .1);
-        //clip(velM, -1., 1.)
-    if(velM<0. && u(i)<0.) u(i)*=(1.+velM); //decrease effort close to velocity margin
-    if(velM>0. && u(i)>0.) u(i)*=(1.-velM); //decrease effort close to velocity margin
-      */
-    clip(u(i), -cmd.effLimitRatio*limits(i,3), cmd.effLimitRatio*limits(i,3));
-  }
-
   //-- base velocities
   if(j_baseTranslationRotation && j_baseTranslationRotation->qDim()==3){
     double phi = cmd.q(j_baseTranslationRotation->qIndex+2);
@@ -100,6 +90,17 @@ void RTControlStep(
   }else{
     base_v.clear();
   }
+
+  //-- clip torques
+  for (uint i=0;i<q.N;i++){
+    /*double velM = marginMap(qd(i), -velLimitRatio*limits(i,2), velLimitRatio*limits(i,2), .1);
+        //clip(velM, -1., 1.)
+    if(velM<0. && u(i)<0.) u(i)*=(1.+velM); //decrease effort close to velocity margin
+    if(velM>0. && u(i)>0.) u(i)*=(1.-velM); //decrease effort close to velocity margin
+      */
+    clip(u(i), -cmd.effLimitRatio*limits(i,3), cmd.effLimitRatio*limits(i,3));
+  }
+
 }
 
 RTControllerSimulation::RTControllerSimulation(double tau, bool gravity, double _systematicErrorSdv)
@@ -126,9 +127,15 @@ void RTControllerSimulation::open() {
   limits.resize(world->q.N,5).setZero();
   for(ors::Joint* j: world->joints) if(j->qDim()>0){
     arr *info;
-    info = j->ats.find<arr>("gains");  if(info){ Kp_base(j->qIndex)=info->elem(0); Kd_base(j->qIndex)=info->elem(1); }
-    info = j->ats.find<arr>("limits");  if(info){ limits(j->qIndex,0)=info->elem(0); limits(j->qIndex,1)=info->elem(1); }
-    info = j->ats.find<arr>("ctrl_limits");  if(info){ limits(j->qIndex,2)=info->elem(0); limits(j->qIndex,3)=info->elem(1); limits(j->qIndex,4)=info->elem(2); }
+    info = j->ats.find<arr>("gains");  if(info){
+      for(uint i=0;i<j->qDim();i++){ Kp_base(j->qIndex+i)=info->elem(0); Kd_base(j->qIndex+i)=info->elem(1); }
+    }
+    info = j->ats.find<arr>("limits");  if(info){
+      for(uint i=0;i<j->qDim();i++){ limits(j->qIndex+i,0)=info->elem(0); limits(j->qIndex+i,1)=info->elem(1); }
+    }
+    info = j->ats.find<arr>("ctrl_limits");  if(info){
+      for(uint i=0;i<j->qDim();i++){ limits(j->qIndex+i,2)=info->elem(0); limits(j->qIndex+i,3)=info->elem(1); limits(j->qIndex+i,4)=info->elem(2); }
+    }
   }
 
   this->ctrl_obs.writeAccess();
@@ -138,6 +145,8 @@ void RTControllerSimulation::open() {
   this->ctrl_obs().fR = zeros(6);
   this->ctrl_obs().u_bias = zeros(q.d0);
   this->ctrl_obs.deAccess();
+
+  j_baseTranslationRotation = world->getJointByName("worldTranslationRotation");
 }
 
 void RTControllerSimulation::step() {
@@ -160,12 +169,15 @@ void RTControllerSimulation::step() {
     //TODO: the real RT controller does a lot more: checks ctrl limits, etc. This should be simulated as well
     u = cmd.u_bias + cmd.Kp*(cmd.q - q) + cmd.Kd*(cmd.qdot - qDot);
 #else
-    RTControlStep(u, base_v, I_term, NoArr, NoArr, q, qDot, NoArr, NoArr, cmd, Kp_base, Kd_base, limits, NULL);
+    RTControlStep(u, base_v, I_term, NoArr, NoArr, q, qDot, NoArr, NoArr, cmd, Kp_base, Kd_base, limits, j_baseTranslationRotation);
     if(systematicError.N) u += systematicError;
 #endif
 
-    world->stepDynamics(u, tau, 0., this->gravity);
-    world->getJointState(q,qDot);
+//    world->stepDynamics(u, tau, 0., this->gravity);
+//    u /= (Kp_base+.001);
+    q += tau*qDot + .5*tau*tau*u;
+    qDot += tau*u;
+    world->setJointState(q,qDot);
   }
 
   checkNan(q);
