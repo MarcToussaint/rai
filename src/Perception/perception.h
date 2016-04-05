@@ -298,20 +298,20 @@ struct AllViewer : Module{
 };
 
 //BEGIN_MODULE(ImageViewer)      ACCESS(byteA, img)       END_MODULE()
-//BEGIN_MODULE(PointCloudViewer) ACCESSlisten(arr, kinect_points)         ACCESSnew(arr, kinect_pointColors)        END_MODULE()
+//BEGIN_MODULE(PointCloudViewer) ACCESSlisten(arr, kinect_points)         ACCESS(arr, kinect_pointColors)        END_MODULE()
 //BEGIN_MODULE(OpencvCamera)     ACCESS(byteA, rgb)       std::map<int,double> properties; bool set(int prop, double value);  END_MODULE()
 //BEGIN_MODULE(CvtGray)          ACCESS(byteA, rgb)       ACCESS(byteA, gray)      END_MODULE()
-BEGIN_MODULE(CvtHsv)           ACCESSlisten(byteA, rgb)       ACCESSnew(byteA, hsv)       END_MODULE()
-BEGIN_MODULE(HsvFilter)        ACCESSlisten(byteA, hsv)       ACCESSnew(floatA, evi)      END_MODULE()
+BEGIN_MODULE(CvtHsv)           ACCESSlisten(byteA, rgb)       ACCESS(byteA, hsv)       END_MODULE()
+BEGIN_MODULE(HsvFilter)        ACCESSlisten(byteA, hsv)       ACCESS(floatA, evi)      END_MODULE()
 //BEGIN_MODULE(MotionFilter)     ACCESS(byteA, rgb)       ACCESS(byteA, motion)    END_MODULE()
 //BEGIN_MODULE(DifferenceFilter) ACCESS(byteA, i1)        ACCESS(byteA, i2)        ACCESS(byteA, diffImage) END_MODULE()
 //BEGIN_MODULE(CannyFilter)      ACCESS(byteA, grayImage) ACCESS(byteA, cannyImage)       END_MODULE()
-//BEGIN_MODULE(Patcher)          ACCESSlisten(byteA, rgbImage)  ACCESSnew(Patching, patchImage)    END_MODULE()
-BEGIN_MODULE(SURFer)           ACCESSlisten(byteA, grayImage) ACCESSnew(SURFfeatures, features)  END_MODULE()
-BEGIN_MODULE(HoughLineFilter)  ACCESSlisten(byteA, grayImage) ACCESSnew(HoughLines, houghLines)  END_MODULE()
-BEGIN_MODULE(ShapeFitter)      ACCESSlisten(floatA, eviL)     ACCESSnew(floatA, eviR)            ACCESSnew(PerceptionOutput, perc)      END_MODULE()
-BEGIN_MODULE(AudioReader)    AudioPoller_PA *poller; ACCESSnew(byteA, pcms16ne2c) END_MODULE()
-BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; ACCESSnew(byteA, pcms16ne2c) END_MODULE()
+//BEGIN_MODULE(Patcher)          ACCESSlisten(byteA, rgbImage)  ACCESS(Patching, patchImage)    END_MODULE()
+BEGIN_MODULE(SURFer)           ACCESSlisten(byteA, grayImage) ACCESS(SURFfeatures, features)  END_MODULE()
+BEGIN_MODULE(HoughLineFilter)  ACCESSlisten(byteA, grayImage) ACCESS(HoughLines, houghLines)  END_MODULE()
+BEGIN_MODULE(ShapeFitter)      ACCESSlisten(floatA, eviL)     ACCESS(floatA, eviR)            ACCESS(PerceptionOutput, perc)      END_MODULE()
+BEGIN_MODULE(AudioReader)    AudioPoller_PA *poller; ACCESS(byteA, pcms16ne2c) END_MODULE()
+BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; ACCESS(byteA, pcms16ne2c) END_MODULE()
 
 #endif
 

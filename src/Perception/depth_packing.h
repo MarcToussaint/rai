@@ -5,7 +5,7 @@
 struct KinectDepthPacking:Module{
   struct sKinectDepthPacking *s;
   ACCESSlisten(uint16A, kinect_depth);
-  ACCESSnew(byteA, kinect_depthRgb);
+  ACCESS(byteA, kinect_depthRgb);
   KinectDepthPacking():Module("KinectDepthPacking"){}
   void open();
   void step();

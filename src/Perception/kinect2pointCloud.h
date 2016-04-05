@@ -5,12 +5,12 @@
 #include <Geo/geo.h>
 
 struct Kinect2PointCloud: Module {
-  ACCESSnew(byteA, kinect_rgb)
+  ACCESS(byteA, kinect_rgb)
   ACCESSlisten(uint16A, kinect_depth)
 
-//  ACCESSnew(ors::Transformation, kinect_frame)
-  ACCESSnew(arr, kinect_points)
-  ACCESSnew(arr, kinect_pointColors)
+//  ACCESS(ors::Transformation, kinect_frame)
+  ACCESS(arr, kinect_points)
+  ACCESS(arr, kinect_pointColors)
 
   arr pts,cols;
   uint16A depth;

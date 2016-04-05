@@ -110,7 +110,7 @@ template<class T> struct Array {
   explicit Array(uint D0, uint D1, uint D2);
   explicit Array(const T* p, uint size);    //reference!
   Array(std::initializer_list<T> list);
-  template<class S> Array(std::initializer_list<S> list); //this is only implemented for T=mlr::String and S=const char* !
+//  template<class S> Array(std::initializer_list<S> list); //this is only implemented for T=mlr::String and S=const char* !
   Array(mlr::FileToken&); //read from a file
   ~Array();
   
@@ -231,8 +231,10 @@ template<class T> struct Array {
   void append(const Array<T>& x);
   void append(const T *p, uint n);
   void prepend(const T& x){ insert(0,x); }
+  void prepend(const Array<T>& x){ insert(0,x); }
   void replicate(uint copies);
   void insert(uint i, const T& x);
+  void insert(uint i, const Array<T>& x);
   void replace(uint i, uint n, const Array<T>& x);
   void remove(uint i, uint n=1);
   void removePerm(uint i);          //more efficient for sets, works also for non-memMove arrays
@@ -634,6 +636,7 @@ template<class T> T var(const mlr::Array<T>& v);
 template<class T> T minDiag(const mlr::Array<T>& v);
 template<class T> T absMax(const mlr::Array<T>& x);
 template<class T> T absMin(const mlr::Array<T>& x);
+template<class T> void clip(const mlr::Array<T>& x, T lo, T hi);
 
 template<class T> void innerProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>& z);
 template<class T> void outerProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>& z);
