@@ -56,5 +56,16 @@ struct AlvarSyncer : Module {
   void close() {};
 };
 
+struct SubscribeAlvar{
+  ACCESSname(ar::AlvarMarkers, ar_pose_markers)
+  Subscriber<ar::AlvarMarkers> sub;
+
+  SubscribeAlvar()
+    : sub("/ar_pose_marker", ar_pose_markers) {
+  }
+  ~SubscribeAlvar(){
+  }
+
+};
 
 
