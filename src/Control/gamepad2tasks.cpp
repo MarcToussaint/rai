@@ -64,12 +64,20 @@ Gamepad2Tasks::Gamepad2Tasks(TaskController& _MP, const arr& _q0)
     endeffL->setGains(30.,1.); //endeffL->maxAcc=.5;
     headAxes->setGains(10.,5.);
   }
-  for(CtrlTask* task:{ homing, endeffR, endeffL, base, torso, head, headAxes, limits, coll, gripperL, gripperR })
+  for(CtrlTask* task:{ homing, endeffR, endeffL, head, headAxes, limits, coll, gripperL, gripperR })
     task->active=false;
+
+  if (robot=="pr2")
+  {
+    base->active=false;
+    torso->active=false;
+  }
 }
 
 mlr::Array<CtrlTask*> Gamepad2Tasks::getTasks(){
-  return { homing, endeffR, endeffL, base, torso, head, headAxes, limits, coll, gripperL, gripperR };
+  if (robot=="pr2") { return { homing, endeffR, endeffL, base, torso, head, headAxes, limits, coll, gripperL, gripperR }; }
+  else if (robot=="baxter") { return { homing, endeffR, endeffL, head, headAxes, limits, coll, gripperL, gripperR }; }
+  else { NIY; }
 }
 
 double gamepadSignalMap(double x){
