@@ -4,7 +4,7 @@
 #include <Core/array.h>
 #include <Core/module.h>
 #include <Ors/ors.h>
-#include <pr2/roscom.h>
+#include <RosCom/roscom.h>
 
 struct RTControllerSimulation : Module {
   Access_typed<CtrlMsg> ctrl_ref;
@@ -12,6 +12,7 @@ struct RTControllerSimulation : Module {
   Access_typed<ors::KinematicWorld> modelWorld;
 
   ors::KinematicWorld* world;
+  ors::Joint *j_baseTranslationRotation;
   double tau;
   bool gravity;
 

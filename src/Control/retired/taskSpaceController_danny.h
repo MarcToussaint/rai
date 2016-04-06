@@ -4,7 +4,7 @@
 #include <Ors/ors.h>
 #include <Motion/taskMaps.h>
 #include <Core/array.h>
-#include <pr2/roscom.h>
+#include <RosCom/roscom.h>
 #include <Algo/spline.h>
 #include <Core/module.h>
 
