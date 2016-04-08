@@ -62,7 +62,7 @@ uint64_t globalMemoryTotal=0, globalMemoryBound=1ull<<30; //this is 1GB
 bool globalMemoryStrict=false;
 const char* arrayElemsep=" ";
 const char* arrayLinesep="\n ";
-const char* arrayBrackets="\0\0";
+const char* arrayBrackets="  ";
 
 //===========================================================================
 }

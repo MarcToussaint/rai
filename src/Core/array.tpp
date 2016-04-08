@@ -1643,10 +1643,10 @@ template<class T> void mlr::Array<T>::read(std::istream& is) {
     readDim(is);
     c=mlr::peerNextChar(is);
     if(c==0) {  //binary read
-      c=is.get();  if(c!=0) PARSERR("couldn't read newline before binary data block :-(");
+      c=is.get();  if(c!=0) PARSERR("couldn't read \0 before binary data block :-(");
       is.read((char*)p, sizeT*N);
       if(is.fail()) PARSERR("could not binary data");
-      c=is.get(); if(c!=0) PARSERR("couldn't read newline after binary data block :-(");
+      c=is.get();  if(c!=0) PARSERR("couldn't read \0 after binary data block :-(");
     }else{  //fast ascii read
       for(i=0; i<N; i++) {
 	if(is.fail()) PARSERR("could not read " <<i <<"-th element of an array");
