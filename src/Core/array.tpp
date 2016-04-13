@@ -1085,6 +1085,12 @@ template<class T> T*** mlr::Array<T>::getPointers(Array<T**>& array3d, Array<T*>
 
 //***** assignments
 
+template<class T> mlr::Array<T>& mlr::Array<T>::operator=(std::initializer_list<T> list) {
+  clear();
+  for(T t : list) append(t);
+  return *this;
+}
+
 /// set all elements to value \c v
 template<class T> mlr::Array<T>& mlr::Array<T>::operator=(const T& v) {
   uint i;
