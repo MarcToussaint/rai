@@ -7,7 +7,7 @@
 #include <Ors/ors.h>
 #include <RosCom/pr2DynamicSimulation.h>
 #include <Control/taskSpaceController.h>
-#include <RosCom/rosalvar.h>
+#include <RosCom/subscribeAlvarMarkers.h>
 
 struct PR2Interface : Module {
   ACCESS(CtrlMsg, ctrl_ref)
