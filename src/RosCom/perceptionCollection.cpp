@@ -32,7 +32,7 @@ void Collector::step()
 
   if (perceps.N > 0)
   {
-    std::cout << "Collector update" << std::endl;
+    //std::cout << "Collector update" << std::endl;
     perceptual_inputs.set() = perceps;
   }
 
