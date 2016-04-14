@@ -51,30 +51,35 @@ baxter_core_msgs::EndEffectorCommand getGripperMsg(const arr& q_ref, const ors::
 
 SendPositionCommandsToBaxter::SendPositionCommandsToBaxter()
   : Module("SendPositionCommandsToBaxter", 0.01),
+    nh(NULL),
     ctrl_ref(this, "ctrl_ref", true){}
 
 void SendPositionCommandsToBaxter::open(){
-  nh = new ros::NodeHandle;
-  pubR = nh->advertise<baxter_core_msgs::JointCommand>("/robot/limb/right/joint_command", 1);
-  pubL = nh->advertise<baxter_core_msgs::JointCommand>("/robot/limb/left/joint_command", 1);
-  pubHead = nh->advertise<baxter_core_msgs::HeadPanCommand>("/robot/head/command_head_pan", 1);
-  pubGripper = nh->advertise<baxter_core_msgs::EndEffectorCommand>("/robot/end_effector/left_gripper/command", 1);
-  baxterModel.init(mlr::mlrPath("data/baxter_model/baxter-modifications.ors").p);
+  if(mlr::getParameter<bool>("usrRos",false)){
+    nh = new ros::NodeHandle;
+    pubR = nh->advertise<baxter_core_msgs::JointCommand>("/robot/limb/right/joint_command", 1);
+    pubL = nh->advertise<baxter_core_msgs::JointCommand>("/robot/limb/left/joint_command", 1);
+    pubHead = nh->advertise<baxter_core_msgs::HeadPanCommand>("/robot/head/command_head_pan", 1);
+    pubGripper = nh->advertise<baxter_core_msgs::EndEffectorCommand>("/robot/end_effector/left_gripper/command", 1);
+    baxterModel.init(mlr::mlrPath("data/baxter_model/baxter.ors").p);
+  }
 }
 
 void SendPositionCommandsToBaxter::step(){
-  arr q_ref = ctrl_ref.get()->q;
+  if(nh){
+    arr q_ref = ctrl_ref.get()->q;
 
-  if (q_ref.N == 0) { return; }
+    if(!q_ref.N) return;
 
-  pubR.publish(conv_qRef2baxterMessage(q_ref, baxterModel, "right_"));
-  pubL.publish(conv_qRef2baxterMessage(q_ref, baxterModel, "left_"));
-  pubHead.publish(getHeadMsg(q_ref, baxterModel));
-  pubGripper.publish(getGripperMsg(q_ref, baxterModel));
+    pubR.publish(conv_qRef2baxterMessage(q_ref, baxterModel, "right_"));
+    pubL.publish(conv_qRef2baxterMessage(q_ref, baxterModel, "left_"));
+    pubHead.publish(getHeadMsg(q_ref, baxterModel));
+    pubGripper.publish(getGripperMsg(q_ref, baxterModel));
+  }
 }
 
 void SendPositionCommandsToBaxter::close(){
-  delete nh;
+  if(nh) delete nh;
 }
 
 #else

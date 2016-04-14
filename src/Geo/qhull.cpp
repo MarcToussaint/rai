@@ -51,6 +51,10 @@ const char* qhullVersion() {
   return qh_version;
 }
 
+void qHullSave(){
+  qh_save_qhull();
+}
+
 //===========================================================================
 
 void getQhullState(uint D, arr& points, arr& vertices, arr& lines) {
@@ -474,3 +478,5 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
 void getDelaunayEdges(uintA& E, const arr& V) { NICO }
 #endif
 /** @} */
+
+
