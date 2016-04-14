@@ -4,9 +4,7 @@
 
 struct ServiceRAP{
   Access_typed<RelationalMachine> RM;
-
-  ros::NodeHandle *nh;
-  ros::ServiceServer service;
+  struct sServiceRAP *s;
 
   ServiceRAP();
   ~ServiceRAP();
