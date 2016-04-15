@@ -56,30 +56,37 @@ baxter_core_msgs::EndEffectorCommand getGripperMsg(const arr& q_ref, const ors::
   return msg;
 }
 
+
 SendPositionCommandsToBaxter::SendPositionCommandsToBaxter()
-  : Module("SendPositionCommandsToBaxter"),
-    q_ref(this, "q_ref", true),
-    s(NULL){
-}
+  : Module("SendPositionCommandsToBaxter", 0.01),
+    nh(NULL),
+    ctrl_ref(this, "ctrl_ref", true){}
 
 void SendPositionCommandsToBaxter::open(){
-  s = new sSendPositionCommandsToBaxter;
-  s->pubR = s->nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/right/joint_command", 1);
-  s->pubL = s->nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/left/joint_command", 1);
-  s->pubHead = s->nh.advertise<baxter_core_msgs::HeadPanCommand>("robot/head/command_head_pan", 1);
-  s->pubGripper = s->nh.advertise<baxter_core_msgs::EndEffectorCommand>("robot/end_effector/left_gripper/command", 1);
-  s->baxterModel.init(mlr::mlrPath("data/baxter_model/baxter-modifications.ors").p);
+  if(mlr::getParameter<bool>("usrRos",false)){
+    s = new sSendPositionCommandsToBaxter;
+    s->pubR = s->nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/right/joint_command", 1);
+    s->pubL = s->nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/left/joint_command", 1);
+    s->pubHead = s->nh.advertise<baxter_core_msgs::HeadPanCommand>("robot/head/command_head_pan", 1);
+    s->pubGripper = s->nh.advertise<baxter_core_msgs::EndEffectorCommand>("robot/end_effector/left_gripper/command", 1);
+    s->baxterModel.init(mlr::mlrPath("data/baxter_model/baxter-modifications.ors").p);
+  }
 }
 
 void SendPositionCommandsToBaxter::step(){
-  s->pubR.publish(conv_qRef2baxterMessage(q_ref.get(), s->baxterModel, "right_"));
-  s->pubL.publish(conv_qRef2baxterMessage(q_ref.get(), s->baxterModel, "left_"));
-  s->pubHead.publish(getHeadMsg(q_ref.get(), s->baxterModel));
-  s->pubGripper.publish(getGripperMsg(q_ref.get(), s->baxterModel));
+  if(s){
+    arr q_ref = ctrl_ref.get()->q;
+    if(!q_ref.N) return;
+
+    s->pubR.publish(conv_qRef2baxterMessage(q_ref.get(), s->baxterModel, "right_"));
+    s->pubL.publish(conv_qRef2baxterMessage(q_ref.get(), s->baxterModel, "left_"));
+    s->pubHead.publish(getHeadMsg(q_ref.get(), s->baxterModel));
+    s->pubGripper.publish(getGripperMsg(q_ref.get(), s->baxterModel));
+  }
 }
 
 void SendPositionCommandsToBaxter::close(){
-  delete s;
+  if(s) delete s;
 }
 
 #endif

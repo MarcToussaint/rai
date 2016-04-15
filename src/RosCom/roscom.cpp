@@ -11,12 +11,14 @@ void rosCheckInit(const char* node_name){
   static Mutex mutex;
   static bool inited = false;
 
-  mutex.lock();
-  if(!inited) {
-    ros::init(mlr::argc, mlr::argv, node_name, ros::init_options::NoSigintHandler);
-    inited = true;
+  if(mlr::getParameter<bool>("useRos", false)){
+    mutex.lock();
+    if(!inited) {
+      ros::init(mlr::argc, mlr::argv, node_name, ros::init_options::NoSigintHandler);
+      inited = true;
+    }
+    mutex.unlock();
   }
-  mutex.unlock();
 }
 
 std_msgs::String conv_string2string(const mlr::String& str){
