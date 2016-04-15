@@ -45,6 +45,8 @@ extern "C" {
 
 #include <lapack/lapacke.h>
 #define integer int
+#undef MAX
+#undef MIN
 #endif
 #endif //MLR_LAPACK
 

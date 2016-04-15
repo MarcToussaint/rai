@@ -1,19 +1,29 @@
 #include "serviceRAP.h"
 
+#ifdef MLR_ROS
+#include <mlr_srv/StringString.h>
+
+#include <ros/ros.h>
+struct sServiceRAP{
+  ros::NodeHandle nh;
+  ros::ServiceServer service;
+  bool cb_service(mlr_srv::StringString::Request& _request, mlr_srv::StringString::Response& response);
+};
+
 ServiceRAP::ServiceRAP()
-  : RM(NULL, "RM"), nh(NULL){
+  : RM(NULL, "RM"), s(NULL){
   if(mlr::getParameter<bool>("useRos")){
     cout <<"*** Starting ROS Service RAP" <<endl;
-    nh = new ros::NodeHandle;
-    service = nh->advertiseService("/RAP/service", &ServiceRAP::cb_service, this);
+    s = new sServiceRAP;
+    s->service = s->nh.advertiseService("/RAP/service", &sServiceRAP::cb_service, s);
   }
 }
 
 ServiceRAP::~ServiceRAP(){
-  if(nh) delete nh;
+  if(s) delete s;
  }
 
-bool ServiceRAP::cb_service(mlr_srv::StringString::Request& _request, mlr_srv::StringString::Response& response){
+bool sServiceRAP::cb_service(mlr_srv::StringString::Request& _request, mlr_srv::StringString::Response& response){
   mlr::String request = _request.str.c_str();
   if(request=="getState"){
     mlr::String str = RM.get()->getState();
@@ -41,3 +51,11 @@ bool ServiceRAP::cb_service(mlr_srv::StringString::Request& _request, mlr_srv::S
     response.str = "<NO RESPONSE>";
   return true;
 }
+
+#else
+
+struct sServiceRAP{};
+ServiceRAP::ServiceRAP() : RM(NULL, "RM"){}
+ServiceRAP::~ServiceRAP(){}
+
+#endif
