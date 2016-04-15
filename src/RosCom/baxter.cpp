@@ -58,9 +58,10 @@ baxter_core_msgs::EndEffectorCommand getGripperMsg(const arr& q_ref, const ors::
 
 
 SendPositionCommandsToBaxter::SendPositionCommandsToBaxter()
-  : Module("SendPositionCommandsToBaxter", 0.01),
-    nh(NULL),
-    ctrl_ref(this, "ctrl_ref", true){}
+  : Module("SendPositionCommandsToBaxter"),
+    ctrl_ref(this, "ctrl_ref", true),
+    s(NULL){
+}
 
 void SendPositionCommandsToBaxter::open(){
   if(mlr::getParameter<bool>("usrRos",false)){
@@ -78,10 +79,10 @@ void SendPositionCommandsToBaxter::step(){
     arr q_ref = ctrl_ref.get()->q;
     if(!q_ref.N) return;
 
-    s->pubR.publish(conv_qRef2baxterMessage(q_ref.get(), s->baxterModel, "right_"));
-    s->pubL.publish(conv_qRef2baxterMessage(q_ref.get(), s->baxterModel, "left_"));
-    s->pubHead.publish(getHeadMsg(q_ref.get(), s->baxterModel));
-    s->pubGripper.publish(getGripperMsg(q_ref.get(), s->baxterModel));
+    s->pubR.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "right_"));
+    s->pubL.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "left_"));
+    s->pubHead.publish(getHeadMsg(q_ref, s->baxterModel));
+    s->pubGripper.publish(getGripperMsg(q_ref, s->baxterModel));
   }
 }
 

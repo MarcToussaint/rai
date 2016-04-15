@@ -5,13 +5,16 @@
 
 #include <ros/ros.h>
 struct sServiceRAP{
+  Access_typed<RelationalMachine> RM;
   ros::NodeHandle nh;
   ros::ServiceServer service;
+
+  sServiceRAP() : RM(NULL, "RM"){}
   bool cb_service(mlr_srv::StringString::Request& _request, mlr_srv::StringString::Response& response);
+  
 };
 
-ServiceRAP::ServiceRAP()
-  : RM(NULL, "RM"), s(NULL){
+ServiceRAP::ServiceRAP() : s(NULL){
   if(mlr::getParameter<bool>("useRos")){
     cout <<"*** Starting ROS Service RAP" <<endl;
     s = new sServiceRAP;

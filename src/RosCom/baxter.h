@@ -1,5 +1,6 @@
 #include <Core/array.h>
 #include <Core/module.h>
+#include <Control/ctrlMsg.h>
 
 #ifdef MLR_ROS
 #include <sensor_msgs/JointState.h>
@@ -8,7 +9,7 @@ bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const o
 #endif
 
 struct SendPositionCommandsToBaxter:Module{
-  Access_typed<arr> q_ref;
+  Access_typed<CtrlMsg> ctrl_ref;
   struct sSendPositionCommandsToBaxter *s;
 
   SendPositionCommandsToBaxter();
