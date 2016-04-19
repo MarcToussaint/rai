@@ -1,17 +1,23 @@
 #pragma once
 
-#include <RosCom/roscom.h>
-#include <RosCom/rosmacro.h>
 #include <Ors/ors.h>
+#include <Core/module.h>
 
-#ifdef MLR_ROS_INDIGO
-  #include <ar_track_alvar_msgs/AlvarMarkers.h>
+#ifdef MLR_ROS
+#  include "roscom.h"
+#  ifdef MLR_ROS_INDIGO
+#    include <ar_track_alvar_msgs/AlvarMarkers.h>
   namespace ar = ar_track_alvar_msgs;
+#  endif
+#  if MLR_ROS_GROOVY
+#    include <ar_track_alvar/AlvarMarkers.h>
+  namespace ar = ar_track_alvar_msgs;
+#  endif
+#else
+  struct AlvarMarker{ AlvarMarker(){NICO} };
+  struct AlvarMarkers{ AlvarMarkers(){NICO} };
 #endif
-#if MLR_ROS_GROOVY
-  #include <ar_track_alvar/AlvarMarkers.h>
-  namespace ar = ar_track_alvar;
-#endif
+
 
 //===========================================================================
 /// Generic subscriber to the AR maker alvar

@@ -4,7 +4,7 @@
 #include <Core/array.h>
 #include <Core/module.h>
 #include <Ors/ors.h>
-#include <RosCom/roscom.h>
+#include <Control/ctrlMsg.h>
 
 struct RTControllerSimulation : Module {
   Access_typed<CtrlMsg> ctrl_ref;

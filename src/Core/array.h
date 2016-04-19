@@ -114,6 +114,7 @@ template<class T> struct Array {
   Array(mlr::FileToken&); //read from a file
   ~Array();
   
+  Array<T>& operator=(std::initializer_list<T> list);
   Array<T>& operator=(const T& v);
   Array<T>& operator=(const Array<T>& a);
 

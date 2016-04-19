@@ -1,24 +1,21 @@
-#include "roscom.h"
-#include <baxter_core_msgs/JointCommand.h>
+#include <Core/array.h>
+#include <Core/module.h>
+#include <Control/ctrlMsg.h>
 
-baxter_core_msgs::JointCommand conv_qRef2baxterMessage(const arr& q_ref, const ors::KinematicWorld& baxterModel, const char* prefix);
-
+#ifdef MLR_ROS
+#include <sensor_msgs/JointState.h>
+#include <Ors/ors.h>
 bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const ors::KinematicWorld& baxterModel);
-
+#endif
 
 struct SendPositionCommandsToBaxter:Module{
   Access_typed<CtrlMsg> ctrl_ref;
+  struct sSendPositionCommandsToBaxter *s;
 
-  ros::NodeHandle *nh;
-  ros::Publisher pubL, pubR, pubHead, pubGripper;
-
-  ors::KinematicWorld baxterModel;
   SendPositionCommandsToBaxter();
   ~SendPositionCommandsToBaxter(){}
 
   void open();
-
   void step();
-
   void close();
 };

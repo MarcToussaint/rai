@@ -1,6 +1,6 @@
+#ifdef MLR_ROS
+
 #include "roscom.h"
-
-
 
 bool rosOk(){
   return ros::ok();
@@ -11,12 +11,14 @@ void rosCheckInit(const char* node_name){
   static Mutex mutex;
   static bool inited = false;
 
-  mutex.lock();
-  if(!inited) {
-    ros::init(mlr::argc, mlr::argv, node_name, ros::init_options::NoSigintHandler);
-    inited = true;
+  if(mlr::getParameter<bool>("useRos", false)){
+    mutex.lock();
+    if(!inited) {
+      ros::init(mlr::argc, mlr::argv, node_name, ros::init_options::NoSigintHandler);
+      inited = true;
+    }
+    mutex.unlock();
   }
-  mutex.unlock();
 }
 
 std_msgs::String conv_string2string(const mlr::String& str){
@@ -250,8 +252,6 @@ floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray &msg){
 // OLD
 //
 
-
-#ifdef MLR_ROS
 
 void PerceptionObjects2Ors::step(){
   perceptionObjects.readAccess();
@@ -529,19 +529,20 @@ void syncJointStateWitROS(ors::KinematicWorld& world,
 
 
 //===========================================================================
-#else // MLR_ROS no defined
+//#else // MLR_ROS no defined
 
-void RosCom_Spinner::open(){ NICO }
-void RosCom_Spinner::step(){ NICO }
-void RosCom_Spinner::close(){ NICO }
+//void RosCom_Spinner::open(){ NICO }
+//void RosCom_Spinner::step(){ NICO }
+//void RosCom_Spinner::close(){ NICO }
 
-void RosCom_ControllerSync::open(){ NICO }
-void RosCom_ControllerSync::step(){ NICO }
-void RosCom_ControllerSync::close(){ NICO }
+//void RosCom_ControllerSync::open(){ NICO }
+//void RosCom_ControllerSync::step(){ NICO }
+//void RosCom_ControllerSync::close(){ NICO }
 
-void RosCom_ForceSensorSync::open(){ NICO }
-void RosCom_ForceSensorSync::step(){ NICO }
-void RosCom_ForceSensorSync::close(){ NICO }
+//void RosCom_ForceSensorSync::open(){ NICO }
+//void RosCom_ForceSensorSync::step(){ NICO }
+//void RosCom_ForceSensorSync::close(){ NICO }
+
 #endif
 
 //REGISTER_MODULE(RosCom_Spinner)
