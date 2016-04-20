@@ -3,7 +3,12 @@
 #include <vector>
 
 struct Hungarian {
-  arr costs, starred, primed;
+  arr costs, starred;
+  Hungarian(const arr& cost_matrix);
+  ~Hungarian();
+
+private:
+  arr primed;
   uint dim;
   arr covered_rows;
   arr covered_cols;
@@ -17,7 +22,4 @@ struct Hungarian {
 
   std::vector<uint> path_row;
   std::vector<uint> path_col;
-
-  Hungarian(const arr& cost_matrix);
-  ~Hungarian();
 };

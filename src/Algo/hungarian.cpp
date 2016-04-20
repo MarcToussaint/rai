@@ -1,4 +1,4 @@
-#include <Algo/hungarian.h>
+#include "hungarian.h"
 
 Hungarian::Hungarian(const arr& cost_matrix)
 {
@@ -8,6 +8,7 @@ Hungarian::Hungarian(const arr& cost_matrix)
   primed = starred;
   covered_rows = zeros(dim);
   covered_cols = covered_rows;
+  minimize();
 }
 
 Hungarian::~Hungarian(){}
@@ -29,19 +30,6 @@ void Hungarian::minimize()
     costs[i]() -= costs(i, minRow);
   }
   costs = ~costs;
-
-  /*
-  std::cout.precision(3);
-  for (uint i = 0; i < dim; i++ )
-  {
-    for (uint j = 0; j < dim; j++ )
-    {
-      std::cout << costs(i,j) << ' ';
-    }
-    std::cout << std::endl;
-  }
-  */
-
   starZeros();
 }
 
@@ -87,9 +75,8 @@ void Hungarian::coverColumns()
   starred = ~starred;
 
   if (count == dim)
-  {
     return;
-  }
+
   prime();
 }
 
@@ -149,9 +136,7 @@ void Hungarian::makePath()
 
     starred = ~starred;
     if (starred(row, path_col.at(count)) == 0)
-    {
       break;
-    }
 
     count++;
     path_row.push_back(row);
