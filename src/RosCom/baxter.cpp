@@ -64,13 +64,13 @@ SendPositionCommandsToBaxter::SendPositionCommandsToBaxter()
 }
 
 void SendPositionCommandsToBaxter::open(){
-  if(mlr::getParameter<bool>("usrRos",false)){
+  if(mlr::getParameter<bool>("useRos",false)){
     s = new sSendPositionCommandsToBaxter;
     s->pubR = s->nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/right/joint_command", 1);
     s->pubL = s->nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/left/joint_command", 1);
     s->pubHead = s->nh.advertise<baxter_core_msgs::HeadPanCommand>("robot/head/command_head_pan", 1);
     s->pubGripper = s->nh.advertise<baxter_core_msgs::EndEffectorCommand>("robot/end_effector/left_gripper/command", 1);
-    s->baxterModel.init(mlr::mlrPath("data/baxter_model/baxter-modifications.ors").p);
+    s->baxterModel.init(mlr::mlrPath("data/baxter_model/baxter.ors").p);
   }
 }
 
