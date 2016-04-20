@@ -55,7 +55,7 @@ SendPositionCommandsToBaxter::SendPositionCommandsToBaxter()
     ctrl_ref(this, "ctrl_ref", true){}
 
 void SendPositionCommandsToBaxter::open(){
-  if(mlr::getParameter<bool>("usrRos",false)){
+  if(mlr::getParameter<bool>("useRos",false)){
     nh = new ros::NodeHandle;
     pubR = nh->advertise<baxter_core_msgs::JointCommand>("/robot/limb/right/joint_command", 1);
     pubL = nh->advertise<baxter_core_msgs::JointCommand>("/robot/limb/left/joint_command", 1);
