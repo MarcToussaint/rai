@@ -49,6 +49,21 @@ Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker)
   arr points = conv_points2arr(marker.points);
   arr mean = sum(points,0)/(double)points.d0;
   Cluster new_object(mean, points, marker.header.frame_id);
+
+  // Convert into a position relative to the base.
+  tf::TransformListener listener;
+  tf::StampedTransform baseTransform;
+  try{
+    listener.waitForTransform("/base_footprint", marker.header.frame_id, ros::Time(0), ros::Duration(1.0));
+    listener.lookupTransform("/base_footprint", marker.header.frame_id, ros::Time(0), baseTransform);
+  }
+  catch (tf::TransformException &ex) {
+      ROS_ERROR("%s",ex.what());
+      ros::Duration(1.0).sleep();
+      exit(0);
+  }
+  new_object.frame = conv_transform2transformation(baseTransform);
+
   return new_object;
 }
 
@@ -57,13 +72,8 @@ Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker)
   Alvar new_alvar(marker.header.frame_id);
   new_alvar.id = marker.id;
 
+  new_alvar.transform = conv_pose2transformation(marker.pose.pose);
 
-  new_alvar.transform.rot.x = marker.pose.pose.orientation.x;
-  new_alvar.transform.rot.y = marker.pose.pose.orientation.y;
-  new_alvar.transform.rot.z = marker.pose.pose.orientation.z;
-  new_alvar.transform.rot.w = marker.pose.pose.orientation.w;
-
-#if 0
   tf::TransformListener listener;
   tf::StampedTransform baseTransform;
   try{
@@ -74,16 +84,7 @@ Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker)
       ROS_ERROR("%s",ex.what());
       ros::Duration(1.0).sleep();
   }
-  tf::Vector3 position(marker.pose.pose.position.x, marker.pose.pose.position.y, marker.pose.pose.position.z);
-  position = baseTransform * position;
-
-  new_alvar.transform.pos = {position.x, position.y, position.z};
-
-#else
-  //  new_alvar.transform = conv_pose2transformation(marker.pose.pose);
-
-  new_alvar.transform.pos = {marker.pose.pose.position.x, marker.pose.pose.position.y, marker.pose.pose.position.z};
-#endif
+  new_alvar.frame = conv_transform2transformation(baseTransform);
 
   return new_alvar;
 }
