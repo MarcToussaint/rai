@@ -15,9 +15,28 @@ void Collector::step()
   {
     tabletop_revision = tabletop_rev;
     const visualization_msgs::MarkerArray msg = tabletop_clusters.get();
-    for(auto & marker : msg.markers){
-      Cluster* new_cluster = new Cluster(conv_ROSMarker2Cluster( marker ));
-      perceps.append( new_cluster );
+
+    if (msg.markers.size() > 0)
+    {
+      // Convert into a position relative to the base.
+      tf::TransformListener listener;
+      tf::StampedTransform baseTransform;
+      try{
+        listener.waitForTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), ros::Duration(1.0));
+        listener.lookupTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), baseTransform);
+      }
+      catch (tf::TransformException &ex) {
+          ROS_ERROR("%s",ex.what());
+          ros::Duration(1.0).sleep();
+          exit(0);
+      }
+      ors::Transformation frame = conv_transform2transformation(baseTransform);
+
+      for(auto & marker : msg.markers){
+        Cluster* new_cluster = new Cluster(conv_ROSMarker2Cluster( marker ));
+        new_cluster->frame = frame;
+        perceps.append( new_cluster );
+      }
     }
   }
 
@@ -49,21 +68,6 @@ Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker)
   arr points = conv_points2arr(marker.points);
   arr mean = sum(points,0)/(double)points.d0;
   Cluster new_object(mean, points, marker.header.frame_id);
-
-  // Convert into a position relative to the base.
-  tf::TransformListener listener;
-  tf::StampedTransform baseTransform;
-  try{
-    listener.waitForTransform("/base_footprint", marker.header.frame_id, ros::Time(0), ros::Duration(1.0));
-    listener.lookupTransform("/base_footprint", marker.header.frame_id, ros::Time(0), baseTransform);
-  }
-  catch (tf::TransformException &ex) {
-      ROS_ERROR("%s",ex.what());
-      ros::Duration(1.0).sleep();
-      exit(0);
-  }
-  new_object.frame = conv_transform2transformation(baseTransform);
-
   return new_object;
 }
 

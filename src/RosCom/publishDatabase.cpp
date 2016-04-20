@@ -85,8 +85,8 @@ void PublishDatabase::step()
   object_database.waitForNextRevision();
 
   object_database.readAccess();
-
   FilterObjects objectDatabase = object_database.get();
+
 
   visualization_msgs::MarkerArray cluster_markers;
   ar::AlvarMarkers ar_markers;
