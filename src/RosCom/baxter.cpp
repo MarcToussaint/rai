@@ -1,8 +1,17 @@
 #include "baxter.h"
-#if 1
 
+#ifdef MLR_ROS
+
+#include "roscom.h"
 #include <baxter_core_msgs/HeadPanCommand.h>
 #include <baxter_core_msgs/EndEffectorCommand.h>
+#include <baxter_core_msgs/JointCommand.h>
+
+struct sSendPositionCommandsToBaxter{
+  ros::NodeHandle nh;
+  ros::Publisher pubL, pubR, pubHead, pubGripper;
+  ors::KinematicWorld baxterModel;
+};
 
 baxter_core_msgs::JointCommand conv_qRef2baxterMessage(const arr& q_ref, const ors::KinematicWorld& baxterModel, const char* prefix){
   baxter_core_msgs::JointCommand msg;
@@ -25,7 +34,6 @@ bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const o
 }
 
 baxter_core_msgs::HeadPanCommand getHeadMsg(const arr& q_ref, const ors::KinematicWorld& baxterModel){
-
   baxter_core_msgs::HeadPanCommand msg;
   ors::Joint *j = baxterModel.getJointByName("head_pan");
   msg.target = q_ref(j->qIndex);
@@ -50,41 +58,36 @@ baxter_core_msgs::EndEffectorCommand getGripperMsg(const arr& q_ref, const ors::
 
 
 SendPositionCommandsToBaxter::SendPositionCommandsToBaxter()
-  : Module("SendPositionCommandsToBaxter", 0.01),
-    nh(NULL),
-    ctrl_ref(this, "ctrl_ref", true){}
+  : Module("SendPositionCommandsToBaxter"),
+    ctrl_ref(this, "ctrl_ref", true),
+    s(NULL){
+}
 
 void SendPositionCommandsToBaxter::open(){
   if(mlr::getParameter<bool>("useRos",false)){
-    nh = new ros::NodeHandle;
-    pubR = nh->advertise<baxter_core_msgs::JointCommand>("/robot/limb/right/joint_command", 1);
-    pubL = nh->advertise<baxter_core_msgs::JointCommand>("/robot/limb/left/joint_command", 1);
-    pubHead = nh->advertise<baxter_core_msgs::HeadPanCommand>("/robot/head/command_head_pan", 1);
-    pubGripper = nh->advertise<baxter_core_msgs::EndEffectorCommand>("/robot/end_effector/left_gripper/command", 1);
-    baxterModel.init(mlr::mlrPath("data/baxter_model/baxter.ors").p);
+    s = new sSendPositionCommandsToBaxter;
+    s->pubR = s->nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/right/joint_command", 1);
+    s->pubL = s->nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/left/joint_command", 1);
+    s->pubHead = s->nh.advertise<baxter_core_msgs::HeadPanCommand>("robot/head/command_head_pan", 1);
+    s->pubGripper = s->nh.advertise<baxter_core_msgs::EndEffectorCommand>("robot/end_effector/left_gripper/command", 1);
+    s->baxterModel.init(mlr::mlrPath("data/baxter_model/baxter.ors").p);
   }
 }
 
 void SendPositionCommandsToBaxter::step(){
-  if(nh){
+  if(s){
     arr q_ref = ctrl_ref.get()->q;
-
     if(!q_ref.N) return;
 
-    pubR.publish(conv_qRef2baxterMessage(q_ref, baxterModel, "right_"));
-    pubL.publish(conv_qRef2baxterMessage(q_ref, baxterModel, "left_"));
-    pubHead.publish(getHeadMsg(q_ref, baxterModel));
-    pubGripper.publish(getGripperMsg(q_ref, baxterModel));
+    s->pubR.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "right_"));
+    s->pubL.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "left_"));
+    s->pubHead.publish(getHeadMsg(q_ref, s->baxterModel));
+    s->pubGripper.publish(getGripperMsg(q_ref, s->baxterModel));
   }
 }
 
 void SendPositionCommandsToBaxter::close(){
-  if(nh) delete nh;
-}
-
-#else
-bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const ors::KinematicWorld& baxterModel){
-  NICO;
+  if(s) delete s;
 }
 
 #endif

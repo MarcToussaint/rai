@@ -159,7 +159,7 @@ struct Graph : NodeL {
   void writeHtml(std::ostream& os, std::istream& is);
   void writeParseInfo(std::ostream& os);
 
-private:
+  //private:
   friend struct Node;
   friend struct sGraphView;
   uint index(bool subKVG=false, uint start=0);

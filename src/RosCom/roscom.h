@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef MLR_ROS
+# error "Sorry, you can include this only when compiling against ROS"
+#endif
+
 #include <tf/transform_listener.h>
 #include <tf/tf.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
@@ -245,16 +249,6 @@ struct SoftHandMsg{
 //===========================================================================
 /// This module only calls ros:spinOnce() in step() and loops full speed -- to sync the process with the ros server
 
-struct RosCom_Spinner:Module{
-  bool useRos;
-  RosCom_Spinner(const char* nodeName="MLRnode"):Module("RosCom_Spinner", .001){
-    useRos = mlr::getParameter<bool>("useRos");
-    if(useRos) rosCheckInit(nodeName);
-  }
-  void open(){}
-  void step(){ if(useRos) ros::spinOnce(); }
-  void close(){}
-};
 
 
 // Helper function so sync ors with the real PR2
