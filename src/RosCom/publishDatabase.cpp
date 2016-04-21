@@ -72,13 +72,27 @@ ar::AlvarMarker conv_FilterObject2Alvar(const FilterObject& object)
   return new_marker;
 }
 
-geometry_msgs::Pose conv_FilterObject2AlvarVis(const FilterObject& object)
+void PublishDatabase::syncCluster(const Cluster* cluster)
 {
-  geometry_msgs::Pose new_marker;
-  new_marker = conv_transformation2pose(object.transform);
-  return new_marker;
-}
+  mlr::String cluster_name = STRING("cluster" << cluster->id);
 
+  ors::Body *body = modelWorld.set()->getBodyByName(cluster_name, false);
+  if (not body) {
+    //cout << cluster_name << " does not exist yet; adding it..." << endl;
+    body = new ors::Body(modelWorld.set());
+    body->name = cluster_name;
+    ors::Shape *shape = new ors::Shape(modelWorld.set(), *body);
+    shape->name = cluster_name;
+    shape->type = ors::pointCloudST;
+    stored_clusters.append(cluster->id);
+  }
+  ors::Transformation inv;
+  inv.setInverse(cluster->frame);
+  inv.addRelativeTranslation(0,0,-1);
+  inv.setInverse(inv);
+  body->X = inv;
+  body->shapes(0)->mesh.V = cluster->points;
+}
 
 void PublishDatabase::step()
 {
@@ -87,35 +101,59 @@ void PublishDatabase::step()
   object_database.readAccess();
   FilterObjects objectDatabase = object_database.get();
 
-
   visualization_msgs::MarkerArray cluster_markers;
   ar::AlvarMarkers ar_markers;
 
-  int alvar_count = 0, cluster_count = 0;
+  mlr::Array<uint> new_clusters, new_alvars;
 
   for (uint i = 0; i < objectDatabase.N; i++)
   {
     switch ( objectDatabase(i)->type )
     {
       case FilterObject::FilterObjectType::alvar:
-        alvar_count++;
-        ar_markers.markers.push_back(conv_FilterObject2Alvar(*objectDatabase(i)));
-        ar_markers.header.frame_id = dynamic_cast<Alvar*>(objectDatabase(i))->frame_id;
+      {
+        ar::AlvarMarker alvar = conv_FilterObject2Alvar(*objectDatabase(i));
+        ar_markers.markers.push_back(alvar);
+        ar_markers.header.frame_id = alvar.header.frame_id;
+        new_alvars.append(objectDatabase(i)->id);
         break;
+      }
       case FilterObject::FilterObjectType::cluster:
-        cluster_count++;
-        cluster_markers.markers.push_back(conv_FilterObject2Marker(*objectDatabase(i)));
+      {
+        visualization_msgs::Marker marker = conv_FilterObject2Marker(*objectDatabase(i));
+        cluster_markers.markers.push_back(marker);
+        syncCluster(dynamic_cast<Cluster*>(objectDatabase(i)));
+        new_clusters.append(objectDatabase(i)->id);
         break;
+      }
       default:
+      {
         NIY;
         break;
+      }
     }
   }
   object_database.deAccess();
 
+  // Publish ROS messages
   if (cluster_markers.markers.size() > 0)
     tabletop_pub.publish(cluster_markers);
 
   if (ar_markers.markers.size() > 0)
     alvar_pub.publish(ar_markers);
+
+
+  // Sync the modelWorld
+  for (uint id : stored_clusters)
+  {
+    if (new_clusters.contains(id) == 0)
+    {
+      // Remove ID from the world
+      stored_clusters.removeValue(id);
+      delete modelWorld.set()->getBodyByName(STRING("cluster" << id));
+    }
+  }
+
+  new_clusters.clear();
+
 }

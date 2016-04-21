@@ -7,6 +7,7 @@
 #include <RosCom/filterObject.h>
 
 struct PublishDatabase : Module{
+  ACCESSname(ors::KinematicWorld, modelWorld)
   ACCESSname(FilterObjects, object_database)
 
   PublishDatabase();
@@ -19,4 +20,7 @@ struct PublishDatabase : Module{
   virtual void step();
   virtual void close();
 
+private:
+  void syncCluster(const Cluster* cluster);
+  mlr::Array<uint> stored_clusters, stored_alvars;
 };

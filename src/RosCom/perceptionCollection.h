@@ -26,8 +26,7 @@ struct Collector : Module{
   virtual void step();
   virtual void close(){}
 
+private:
   int tabletop_revision = 0;
   int ar_pose_markers_revision = 0;
-
-  uint count = 0;
 };
