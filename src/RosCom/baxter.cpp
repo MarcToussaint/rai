@@ -46,7 +46,7 @@ baxter_core_msgs::EndEffectorCommand getGripperMsg(const arr& q_ref, const ors::
   ors::Joint *j = baxterModel.getJointByName("l_gripper_l_finger_joint");
   mlr::String str;
   str <<"{ \"position\":" <<1000.*q_ref(j->qIndex) <<", \"dead zone\":5.0, \"force\": 40.0, \"holding force\": 30.0, \"velocity\": 50.0 }";
-//  cout <<str <<endl;
+  //cout <<str <<endl;
 
   msg.id = 65538;
   msg.command = msg.CMD_GO;
