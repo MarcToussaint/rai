@@ -547,15 +547,14 @@ void artificialData(arr& X, arr& y, ArtificialDataType dataType) {
   cout <<"correct beta=" <<beta_true <<endl;
 }
 
-void artificialData_Hasties2Class(arr& X, arr& y, uint dim) {
+void artificialData_Hasties2Class(arr& X, arr& y) {
   uint n = mlr::getParameter<uint>("n", 100);
   uint d = mlr::getParameter<uint>("d", 2);
-  dim = d;
 
-  arr means0(10, dim), means1(10, dim), x(dim), bias0(dim), bias1(dim);
+  arr means0(10, d), means1(10, d), x(d), bias0(d), bias1(d);
 
   bias0.setZero(); bias0(0) = 1.;
-  bias1.setZero(); if(dim>1) bias1(1) = 1.;
+  bias1.setZero(); if(d>1) bias1(1) = 1.;
 
   rndGauss(means0);  means0 += ones(10,1)*~bias0;
   rndGauss(means1);  means1 += ones(10,1)*~bias1;
@@ -575,14 +574,15 @@ void artificialData_Hasties2Class(arr& X, arr& y, uint dim) {
 
 void artificialData_HastiesMultiClass(arr& X, arr& y) {
   uint n = mlr::getParameter<uint>("n", 100);
+  uint d = mlr::getParameter<uint>("d", 2);
   uint M = mlr::getParameter<uint>("M", 3);
-  
-  arr means(M, 10, 2), x(2);
+
+  arr means(M, 10, d), x(d);
   
   rndGauss(means);
-  for(uint c=0; c<M; c++)  means[c]() += ones(10)*~ARR((double)c, (double)c);
+  for(uint c=0; c<M; c++)  means[c]() += ones(10,1)*~consts((double)c,d);
   
-  X.resize(M*n, 2);
+  X.resize(M*n, d);
   y.resize(M*n, M);
   y.setZero();
   for(uint i=0; i<n; i++) {
