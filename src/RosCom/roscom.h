@@ -34,6 +34,7 @@
 
 void rosCheckInit(const char* node_name="pr2_module");
 bool rosOk();
+struct RosInit{ RosInit(const char* node_name="mlr_module"); };
 
 //-- ROS <--> MLR
 std_msgs::String    conv_string2string(const mlr::String&);

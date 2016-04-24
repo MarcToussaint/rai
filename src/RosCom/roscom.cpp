@@ -21,6 +21,10 @@ void rosCheckInit(const char* node_name){
   }
 }
 
+RosInit::RosInit(const char* node_name){
+  rosCheckInit(node_name);
+}
+
 std_msgs::String conv_string2string(const mlr::String& str){
   std_msgs::String msg;
   if(str.N) msg.data = str.p;

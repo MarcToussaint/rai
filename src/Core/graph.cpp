@@ -144,6 +144,12 @@ Nod::Nod(const char* key){
   n->keys.append(STRING(key));
 }
 
+Nod::Nod(const char* key, const char* stringValue){
+  n = new Node_typed<mlr::String>(G, STRING(stringValue));
+  n->keys.append(STRING(key));
+}
+
+
 
 //===========================================================================
 //
@@ -181,7 +187,7 @@ void Graph::clear() {
   while(N) delete last();
 }
 
-Node *Graph::append(const Nod& ni){
+Graph& Graph::append(const Nod& ni){
   Node *clone = ni.n->newClone(*this); //this appends sequentially clones of all nodes to 'this'
   for(const mlr::String& s:ni.parents){
     Node *p = getNode(s);
@@ -189,7 +195,7 @@ Node *Graph::append(const Nod& ni){
     clone->parents.append(p);
     p->parentOf.append(clone);
   }
-  return clone;
+  return *this;
 }
 
 Node_typed<Graph>* Graph::appendSubgraph(const StringA& keys, const NodeL& parents, const Graph& x){
