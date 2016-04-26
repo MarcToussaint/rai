@@ -62,6 +62,18 @@ ors::Transformation conv_pose2transformation(const geometry_msgs::Pose &pose){
   return X;
 }
 
+geometry_msgs::Pose conv_transformation2pose(const ors::Transformation& transform){
+  geometry_msgs::Pose pose;
+  pose.position.x = transform.pos.x;
+  pose.position.y = transform.pos.y;
+  pose.position.z = transform.pos.z;
+  pose.orientation.x = transform.rot.x;
+  pose.orientation.y = transform.rot.y;
+  pose.orientation.z = transform.rot.z;
+  pose.orientation.w = transform.rot.w;
+  return pose;
+}
+
 ors::Vector conv_point2vector(const geometry_msgs::Point& p){
   return ors::Vector(p.x, p.y, p.z);
 }
@@ -554,6 +566,8 @@ void syncJointStateWitROS(ors::KinematicWorld& world,
 //REGISTER_MODULE(RosCom_KinectSync)
 //REGISTER_MODULE(RosCom_HeadCamsSync)
 //REGISTER_MODULE(RosCom_ArmCamsSync)
+
+
 
 
 
