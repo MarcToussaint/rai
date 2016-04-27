@@ -84,6 +84,8 @@ void PublishDatabase::syncCluster(const Cluster* cluster)
     ors::Shape *shape = new ors::Shape(modelWorld.set(), *body);
     shape->name = cluster_name;
     shape->type = ors::pointCloudST;
+//    shape->type = ors::markerST;
+//    shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
     stored_clusters.append(cluster->id);
   }
   ors::Transformation inv;
@@ -91,7 +93,12 @@ void PublishDatabase::syncCluster(const Cluster* cluster)
   inv.addRelativeTranslation(0,0,-1);
   inv.setInverse(inv);
   body->X = inv;
+  //cluster->frame = body->X;
   body->shapes(0)->mesh.V = cluster->points;
+
+  ors::Vector cen = body->shapes(0)->mesh.center();
+  body->X.addRelativeTranslation(cen);
+  ((Cluster*)cluster)->transform = body->X;
 }
 
 void PublishDatabase::step()
