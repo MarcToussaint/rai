@@ -18,23 +18,27 @@ void Collector::step()
 
     if (msg.markers.size() > 0)
     {
-      // Convert into a position relative to the base.
-      tf::TransformListener listener;
-      tf::StampedTransform baseTransform;
-      try{
-        listener.waitForTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), ros::Duration(1.0));
-        listener.lookupTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), baseTransform);
+      if (!has_transform)
+      {
+        // Convert into a position relative to the base.
+        tf::TransformListener listener;
+        tf::StampedTransform baseTransform;
+        try{
+          listener.waitForTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), ros::Duration(1.0));
+          listener.lookupTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), baseTransform);
+          tf = conv_transform2transformation(baseTransform);
+          has_transform = true;
+        }
+        catch (tf::TransformException &ex) {
+            ROS_ERROR("%s",ex.what());
+            ros::Duration(1.0).sleep();
+            exit(0);
+        }
       }
-      catch (tf::TransformException &ex) {
-          ROS_ERROR("%s",ex.what());
-          ros::Duration(1.0).sleep();
-          exit(0);
-      }
-      ors::Transformation frame = conv_transform2transformation(baseTransform);
 
       for(auto & marker : msg.markers){
         Cluster* new_cluster = new Cluster(conv_ROSMarker2Cluster( marker ));
-        new_cluster->frame = frame;
+        new_cluster->frame = tf;
         perceps.append( new_cluster );
       }
     }

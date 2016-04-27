@@ -29,4 +29,6 @@ struct Collector : Module{
 private:
   int tabletop_revision = 0;
   int ar_pose_markers_revision = 0;
+  ors::Transformation tf;
+  bool has_transform = false;
 };
