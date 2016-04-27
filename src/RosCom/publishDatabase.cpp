@@ -74,14 +74,15 @@ ar::AlvarMarker conv_FilterObject2Alvar(const FilterObject& object)
 
 void PublishDatabase::syncCluster(const Cluster* cluster)
 {
+  modelWorld.writeAccess();
   mlr::String cluster_name = STRING("cluster" << cluster->id);
 
-  ors::Body *body = modelWorld.set()->getBodyByName(cluster_name, false);
+  ors::Body *body = modelWorld().getBodyByName(cluster_name, false);
   if (not body) {
     //cout << cluster_name << " does not exist yet; adding it..." << endl;
-    body = new ors::Body(modelWorld.set());
+    body = new ors::Body(modelWorld());
     body->name = cluster_name;
-    ors::Shape *shape = new ors::Shape(modelWorld.set(), *body);
+    ors::Shape *shape = new ors::Shape(modelWorld(), *body);
     shape->name = cluster_name;
     shape->type = ors::pointCloudST;
 //    shape->type = ors::markerST;
@@ -99,14 +100,15 @@ void PublishDatabase::syncCluster(const Cluster* cluster)
   ors::Vector cen = body->shapes(0)->mesh.center();
   body->X.addRelativeTranslation(cen);
   ((Cluster*)cluster)->transform = body->X;
+  modelWorld.deAccess();
 }
 
 void PublishDatabase::step()
 {
   object_database.waitForNextRevision();
 
-  object_database.readAccess();
-  FilterObjects objectDatabase = object_database.get();
+  object_database.writeAccess();
+  FilterObjects objectDatabase = object_database();
 
   visualization_msgs::MarkerArray cluster_markers;
   ar::AlvarMarkers ar_markers;
@@ -151,16 +153,17 @@ void PublishDatabase::step()
 
 
   // Sync the modelWorld
+  modelWorld.writeAccess();
   for (uint id : stored_clusters)
   {
     if (new_clusters.contains(id) == 0)
     {
       // Remove ID from the world
       stored_clusters.removeValue(id);
-      delete modelWorld.set()->getBodyByName(STRING("cluster" << id));
+      delete modelWorld().getBodyByName(STRING("cluster" << id));
     }
   }
-
+  modelWorld.deAccess();
   new_clusters.clear();
 
 }

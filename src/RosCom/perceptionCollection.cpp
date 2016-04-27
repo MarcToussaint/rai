@@ -14,7 +14,7 @@ void Collector::step()
   if ( tabletop_rev > tabletop_revision )
   {
     tabletop_revision = tabletop_rev;
-    const visualization_msgs::MarkerArray msg = tabletop_clusters.get();
+    const visualization_msgs::MarkerArray msg = tabletop_clusters();
 
     if (msg.markers.size() > 0)
     {
@@ -47,7 +47,7 @@ void Collector::step()
   if ( ar_rev > ar_pose_markers_revision)
   {
     ar_pose_markers_revision = ar_rev;
-    const ar::AlvarMarkers msg = ar_pose_markers.get();
+    const ar::AlvarMarkers msg = ar_pose_markers();
     for(auto & marker : msg.markers)
     {
       Alvar* new_alvar = new Alvar(conv_ROSAlvar2Alvar( marker ));
@@ -57,8 +57,9 @@ void Collector::step()
 
   if (perceps.N > 0)
   {
-    //std::cout << "Collector update" << std::endl;
-    perceptual_inputs.set() = perceps;
+    perceptual_inputs.writeAccess();
+    perceptual_inputs() = perceps;
+    perceptual_inputs.deAccess();
   }
 
   ar_pose_markers.deAccess();
