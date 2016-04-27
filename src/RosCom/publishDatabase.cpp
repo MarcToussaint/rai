@@ -159,7 +159,7 @@ void PublishDatabase::step()
     if (new_clusters.contains(id) == 0)
     {
       // Remove ID from the world
-      stored_clusters.removeValue(id);
+      stored_clusters.removeValueSafe(id);
       delete modelWorld().getBodyByName(STRING("cluster" << id));
     }
   }
