@@ -85,8 +85,10 @@ void PublishDatabase::syncCluster(const Cluster* cluster)
     ors::Shape *shape = new ors::Shape(modelWorld(), *body);
     shape->name = cluster_name;
     shape->type = ors::pointCloudST;
-//    shape->type = ors::markerST;
-//    shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
+    shape = new ors::Shape(modelWorld(), *body);
+    shape->name = cluster_name;
+    shape->type = ors::markerST;
+    shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
     stored_clusters.append(cluster->id);
   }
   ors::Transformation inv;
@@ -99,7 +101,11 @@ void PublishDatabase::syncCluster(const Cluster* cluster)
 
   ors::Vector cen = body->shapes(0)->mesh.center();
   body->X.addRelativeTranslation(cen);
+  body->shapes(0)->rel.rot = body->X.rot;
+  body->X.rot.setZero();
+
   ((Cluster*)cluster)->transform = body->X;
+  ((Cluster*)cluster)->mean = ARR(cen.x, cen.y, cen.z);
   modelWorld.deAccess();
 }
 
