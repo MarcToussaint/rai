@@ -11,6 +11,8 @@ void Collector::step()
   int tabletop_rev = tabletop_clusters.readAccess();
   int ar_rev = ar_pose_markers.readAccess();
 
+  if (this->useRos)
+  {
   if ( tabletop_rev > tabletop_revision )
   {
     tabletop_revision = tabletop_rev;
@@ -54,7 +56,26 @@ void Collector::step()
       perceps.append( new_alvar );
     }
   }
-
+  }
+  else
+  {
+    ors::Mesh box;
+    box.setBox();
+    box.scale(0.1);
+    box.subDivide();
+    box.subDivide();
+    box.subDivide();
+    Cluster* fake_cluster = new Cluster( ARR(0.6, 0., 0.05),  // mean
+                                         box.V,               // points
+                                         "/base_footprint");  // frame
+    fake_cluster->frame.setZero();
+    fake_cluster->frame.addRelativeTranslation(0.6, 0., 0.05);
+    ors::Quaternion rot;
+    rot.setDeg(30, ors::Vector(0.1, 0.25, 1));
+    fake_cluster->frame.addRelativeRotation(rot);
+    perceps.append( fake_cluster );
+    mlr::wait(0.01);
+  }
   if (perceps.N > 0)
   {
     perceptual_inputs.writeAccess();

@@ -27,6 +27,7 @@ struct Collector : Module{
   virtual void close(){}
 
 private:
+  bool useRos = mlr::getParameter<bool>("useRos", false);
   int tabletop_revision = 0;
   int ar_pose_markers_revision = 0;
   ors::Transformation tf;

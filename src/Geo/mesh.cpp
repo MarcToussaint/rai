@@ -151,7 +151,7 @@ void ors::Mesh::setDodecahedron() {
 void ors::Mesh::setSphere(uint fineness) {
   setOctahedron();
   for(uint k=0; k<fineness; k++) {
-    subDevide();
+    subDivide();
     for(uint i=0; i<V.d0; i++) V[i]() /= length(V[i]);
   }
 }
@@ -161,7 +161,7 @@ void ors::Mesh::setHalfSphere(uint fineness) {
   V.resizeCopy(5, 3);
   T.resizeCopy(4, 3);
   for(uint k=0; k<fineness; k++) {
-    subDevide();
+    subDivide();
     for(uint i=0; i<V.d0; i++) V[i]() /= length(V[i]);
   }
 }
@@ -244,7 +244,7 @@ void ors::Mesh::setRandom(uint vertices){
   makeConvexHull();
 }
 
-void ors::Mesh::subDevide() {
+void ors::Mesh::subDivide() {
   uint v=V.d0, t=T.d0;
   V.resizeCopy(v+3*t, 3);
   uintA newT(4*t, 3);
