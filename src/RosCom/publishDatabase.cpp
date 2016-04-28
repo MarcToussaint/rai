@@ -31,16 +31,21 @@ PublishDatabase::PublishDatabase():
     Module("PublishDatabase", 0){}
 
 void PublishDatabase::open(){
-  ros::init(mlr::argc, mlr::argv, "publish_database", ros::init_options::NoSigintHandler);
-  nh = new ros::NodeHandle;
-  tabletop_pub = nh->advertise<visualization_msgs::MarkerArray>("/tabletop/tracked_clusters", 1);
-  alvar_pub = nh->advertise<geometry_msgs::PoseArray>("/tracked_ar_pose_marker", 1);
+  //ros::init(mlr::argc, mlr::argv, "publish_database", ros::init_options::NoSigintHandler);
+  if(mlr::getParameter<bool>("useRos"))
+    nh = new ros::NodeHandle;
+  if(nh){
+    tabletop_pub = nh->advertise<visualization_msgs::MarkerArray>("/tabletop/tracked_clusters", 1);
+    alvar_pub = nh->advertise<geometry_msgs::PoseArray>("/tracked_ar_pose_marker", 1);
+  }
 }
 
 void PublishDatabase::close()
 {
-  nh->shutdown();
-  delete nh;
+  if(nh){
+    //  nh->shutdown();
+    delete nh;
+  }
 }
 
 visualization_msgs::Marker conv_FilterObject2Marker(const FilterObject& object)
@@ -151,11 +156,13 @@ void PublishDatabase::step()
   object_database.deAccess();
 
   // Publish ROS messages
-  if (cluster_markers.markers.size() > 0)
-    tabletop_pub.publish(cluster_markers);
+  if(nh){
+    if (cluster_markers.markers.size() > 0)
+      tabletop_pub.publish(cluster_markers);
 
-  if (ar_markers.markers.size() > 0)
-    alvar_pub.publish(ar_markers);
+    if (ar_markers.markers.size() > 0)
+      alvar_pub.publish(ar_markers);
+  }
 
 
   // Sync the modelWorld
