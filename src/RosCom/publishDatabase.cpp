@@ -110,7 +110,8 @@ void PublishDatabase::syncCluster(const Cluster* cluster)
   body->X.rot.setZero();
 
   ((Cluster*)cluster)->transform = body->X;
-  ((Cluster*)cluster)->mean = ARR(cen.x, cen.y, cen.z);
+  //((Cluster*)cluster)->mean = ARR(cen.x, cen.y, cen.z);
+  /* If we change the mean, we compare the transformed mean to an untransformed mean later...*/
   modelWorld.deAccess();
 }
 
