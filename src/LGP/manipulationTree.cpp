@@ -1,9 +1,10 @@
 #include "manipulationTree.h"
 
-ManipulationTree_Node::ManipulationTree_Node(LogicGeometricProgram& lgp)
-  : lgp(lgp), parent(NULL), s(0), fol(lgp.fol_root),
-    kinematics(lgp.world_root),
-    effKinematics(lgp.world_root),
+ManipulationTree_Node::ManipulationTree_Node(ors::KinematicWorld& kin, FOL_World& _fol)
+  : parent(NULL), s(0), fol(_fol),
+    startKinematics(kin),
+    kinematics(kin),
+    effKinematics(kin),
     poseProblem(NULL), seqProblem(NULL), pathProblem(NULL),
     poseCost(0.), seqCost(0.), pathCost(0.), effPoseReward(0.){
   fol.generateStateTree=true;
@@ -13,8 +14,9 @@ ManipulationTree_Node::ManipulationTree_Node(LogicGeometricProgram& lgp)
   hasEffKinematics = true;
 }
 
-ManipulationTree_Node::ManipulationTree_Node(LogicGeometricProgram& lgp, ManipulationTree_Node* parent, MCTS_Environment::Handle& a)
-  : lgp(lgp), parent(parent), fol(parent->fol),
+ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS_Environment::Handle& a)
+  : parent(parent), fol(parent->fol),
+    startKinematics(parent->startKinematics),
     kinematics(parent->kinematics),
 //    effKinematics(parent->effKinematics),
     poseProblem(NULL), seqProblem(NULL), pathProblem(NULL),
@@ -38,7 +40,7 @@ void ManipulationTree_Node::expand(){
   auto actions = fol.get_actions();
   for(FOL_World::Handle& a:actions){
     cout <<"  EXPAND DECISION: " <<*a <<endl;
-    new ManipulationTree_Node(lgp, this, a);
+    new ManipulationTree_Node(this, a);
   }
   isExpanded=true;
 }
@@ -100,7 +102,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   ManipulationTree_NodeL treepath = getTreePath();
 
   //-- add decisions to the seq pose problem description
-  seqProblem = new MotionProblem(lgp.world_root, true);
+  seqProblem = new MotionProblem(startKinematics, true);
   seqProblem->setTiming(s-1, 5.*s); //T=0 means one pose is optimized!!
   seqProblem->k_order=1;
   NodeL komoRules = fol.KB.getNodes("SeqProblemRule");
@@ -167,7 +169,7 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   ManipulationTree_NodeL treepath = getTreePath();
 
   //-- add decisions to the path problem description
-  pathProblem = new MotionProblem(lgp.world_root, true);
+  pathProblem = new MotionProblem(startKinematics, true);
   pathProblem->setTiming(s*microSteps, 5.*s);
   pathProblem->k_order=2;
   NodeL komoRules = fol.KB.getNodes("PathProblemRule");
