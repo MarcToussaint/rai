@@ -1,6 +1,7 @@
 #include "baxter.h"
-#if 0
+#if 1
 
+#include <baxter_core_msgs/JointCommand.h>
 #include <baxter_core_msgs/HeadPanCommand.h>
 #include <baxter_core_msgs/EndEffectorCommand.h>
 

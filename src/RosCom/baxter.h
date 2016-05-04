@@ -1,5 +1,4 @@
 #include "roscom.h"
-//#include <baxter_core_msgs/JointCommand.h>
 
 //baxter_core_msgs::JointCommand conv_qRef2baxterMessage(const arr& q_ref, const ors::KinematicWorld& baxterModel, const char* prefix);
 
