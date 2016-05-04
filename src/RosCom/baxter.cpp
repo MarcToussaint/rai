@@ -75,7 +75,7 @@ void SendPositionCommandsToBaxter::open(){
 }
 
 void SendPositionCommandsToBaxter::step(){
-  if(s){
+  if(s && enable){
     arr q_ref = ctrl_ref.get()->q;
     if(!q_ref.N) return;
 

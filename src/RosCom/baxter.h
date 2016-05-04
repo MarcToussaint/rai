@@ -18,4 +18,6 @@ struct SendPositionCommandsToBaxter:Module{
   void open();
   void step();
   void close();
+
+  bool enable = true;
 };

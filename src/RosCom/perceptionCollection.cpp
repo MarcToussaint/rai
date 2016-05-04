@@ -109,7 +109,7 @@ void Collector::step()
     fake_alvar->frame.setZero();
 
     arr pos = { 0.6, -0.3, 1.05 };
-    //rndUniform(pos, -0.005, 0.005, true);
+    rndUniform(pos, -0.005, 0.005, true);
     fake_alvar->frame.addRelativeTranslation(pos(0), pos(1), pos(2));
 
     arr alv_rot = { 0, 0, 0.785 };
