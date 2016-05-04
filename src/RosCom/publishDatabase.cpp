@@ -17,6 +17,7 @@
     -----------------------------------------------------------------  */
 #include "publishDatabase.h"
 #include <geometry_msgs/PoseArray.h>
+#include <object_recognition_msgs/TableArray.h>
 
 #ifdef MLR_ROS_GROOVY
   #include <ar_track_alvar/AlvarMarkers.h>
@@ -35,8 +36,9 @@ void PublishDatabase::open(){
   if(mlr::getParameter<bool>("useRos"))
     nh = new ros::NodeHandle;
   if(nh){
-    tabletop_pub = nh->advertise<visualization_msgs::MarkerArray>("/tabletop/tracked_clusters", 1);
-    alvar_pub = nh->advertise<geometry_msgs::PoseArray>("/tracked_ar_pose_marker", 1);
+    cluster_pub = nh->advertise<visualization_msgs::MarkerArray>("/tabletop/tracked_clusters", 1);
+    alvar_pub = nh->advertise<ar::AlvarMarkers>("/tracked_ar_pose_marker", 1);
+    plane_pub = nh->advertise<object_recognition_msgs::TableArray>("/tracked_table_array", 1);
   }
 }
 
@@ -80,7 +82,7 @@ ar::AlvarMarker conv_FilterObject2Alvar(const FilterObject& object)
 void PublishDatabase::syncCluster(const Cluster* cluster)
 {
   modelWorld.writeAccess();
-  mlr::String cluster_name = STRING("cluster" << cluster->id);
+  mlr::String cluster_name = STRING("cluster_" << cluster->id);
 
   ors::Body *body = modelWorld().getBodyByName(cluster_name, false);
   if (not body) {
@@ -96,11 +98,7 @@ void PublishDatabase::syncCluster(const Cluster* cluster)
     shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
     stored_clusters.append(cluster->id);
   }
-  ors::Transformation inv;
-  inv.setInverse(cluster->frame);
-  inv.addRelativeTranslation(0,0,-1);
-  inv.setInverse(inv);
-  body->X = inv;
+  body->X = cluster->frame;
   //cluster->frame = body->X;
   body->shapes(0)->mesh.V = cluster->points;
 
@@ -112,6 +110,29 @@ void PublishDatabase::syncCluster(const Cluster* cluster)
   ((Cluster*)cluster)->transform = body->X;
   //((Cluster*)cluster)->mean = ARR(cen.x, cen.y, cen.z);
   /* If we change the mean, we compare the transformed mean to an untransformed mean later...*/
+  modelWorld.deAccess();
+}
+
+void PublishDatabase::syncAlvar(const Alvar* alvar)
+{
+  modelWorld.writeAccess();
+  mlr::String alvar_name = STRING("alvar_" << alvar->id);
+
+  ors::Body *body = modelWorld().getBodyByName(alvar_name, false);
+  if (not body) {
+//    cout << alvar_name << " does not exist yet; adding it..." << endl;
+    body = new ors::Body(modelWorld());
+    body->name = alvar_name;
+    ors::Shape *shape = new ors::Shape(modelWorld(), *body);
+    shape->name = alvar_name;
+    shape->type = ors::markerST;
+    shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
+    stored_alvars.append(alvar->id);
+  }
+
+  body->X = alvar->frame * alvar->transform;
+
+  //((Alvar*)alvar)->transform = body->X;
   modelWorld.deAccess();
 }
 
@@ -136,6 +157,7 @@ void PublishDatabase::step()
         ar::AlvarMarker alvar = conv_FilterObject2Alvar(*objectDatabase(i));
         ar_markers.markers.push_back(alvar);
         ar_markers.header.frame_id = alvar.header.frame_id;
+        syncAlvar(dynamic_cast<Alvar*>(objectDatabase(i)));
         new_alvars.append(objectDatabase(i)->id);
         break;
       }
@@ -159,7 +181,7 @@ void PublishDatabase::step()
   // Publish ROS messages
   if(nh){
     if (cluster_markers.markers.size() > 0)
-      tabletop_pub.publish(cluster_markers);
+      cluster_pub.publish(cluster_markers);
 
     if (ar_markers.markers.size() > 0)
       alvar_pub.publish(ar_markers);
@@ -174,10 +196,17 @@ void PublishDatabase::step()
     {
       // Remove ID from the world
       stored_clusters.removeValueSafe(id);
-      delete modelWorld().getBodyByName(STRING("cluster" << id));
+      delete modelWorld().getBodyByName(STRING("cluster_" << id));
+    }
+  }
+  for (uint id : stored_alvars)
+  {
+    if (new_alvars.contains(id) == 0)
+    {
+      // Remove ID from the world
+      stored_alvars.removeValueSafe(id);
+      delete modelWorld().getBodyByName(STRING("alvar_" << id));
     }
   }
   modelWorld.deAccess();
-  new_clusters.clear();
-
 }

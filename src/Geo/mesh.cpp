@@ -239,7 +239,7 @@ void ors::Mesh::setGrid(uint X, uint Y) {
 }
 
 void ors::Mesh::setRandom(uint vertices){
-  V.resize(10,3);
+  V.resize(vertices,3);
   rndUniform(V, -1., 1.);
   makeConvexHull();
 }

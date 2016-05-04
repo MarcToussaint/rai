@@ -13,8 +13,9 @@ struct PublishDatabase : Module{
   PublishDatabase();
 
   ros::NodeHandle* nh;
-  ros::Publisher tabletop_pub;
+  ros::Publisher cluster_pub;
   ros::Publisher alvar_pub;
+  ros::Publisher plane_pub;
 
   virtual void open();
   virtual void step();
@@ -22,5 +23,6 @@ struct PublishDatabase : Module{
 
 private:
   void syncCluster(const Cluster* cluster);
+  void syncAlvar(const Alvar* alvar);
   mlr::Array<uint> stored_clusters, stored_alvars;
 };
