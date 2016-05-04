@@ -99,7 +99,7 @@ void Collector::step()
                                          box.V,               // points
                                          "/base_footprint");  // frame
     fake_cluster->frame.setZero();
-    fake_cluster->frame.addRelativeTranslation(0.6, 0., 0.05);
+    fake_cluster->frame.addRelativeTranslation(0.6, 0., 1.05);
     ors::Quaternion rot;
     rot.setDeg(30, ors::Vector(0.1, 0.25, 1));
     fake_cluster->frame.addRelativeRotation(rot);
@@ -108,7 +108,7 @@ void Collector::step()
     Alvar* fake_alvar = new Alvar("/base_footprint");
     fake_alvar->frame.setZero();
 
-    arr pos = { 0.6, 0.3, 0.05 };
+    arr pos = { 0.6, -0.3, 1.05 };
     //rndUniform(pos, -0.005, 0.005, true);
     fake_alvar->frame.addRelativeTranslation(pos(0), pos(1), pos(2));
 
@@ -116,7 +116,7 @@ void Collector::step()
     rndUniform(alv_rot, -0.01, 0.01, true);
     rot.setRpy(alv_rot(0), alv_rot(1), alv_rot(2));
     fake_alvar->frame.addRelativeRotation(rot);
-    fake_alvar->id = 3;
+    fake_alvar->id = 2;
     perceps.append( fake_alvar );
     mlr::wait(0.01);
   }
