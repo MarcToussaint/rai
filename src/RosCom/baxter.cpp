@@ -33,6 +33,18 @@ bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const o
   return true;
 }
 
+arr baxter_getEfforts(const sensor_msgs::JointState& msg, const ors::KinematicWorld& baxterModel){
+  uint n = msg.name.size();
+  if(!n) return arr();
+  arr u(baxterModel.q.N);
+  u.setZero();
+  for(uint i=0;i<n;i++){
+    ors::Joint *j = baxterModel.getJointByName(msg.name[i].c_str(), false);
+    if(j) u(j->qIndex) = msg.effort[i];
+  }
+  return u;
+}
+
 baxter_core_msgs::HeadPanCommand getHeadMsg(const arr& q_ref, const ors::KinematicWorld& baxterModel){
   baxter_core_msgs::HeadPanCommand msg;
   ors::Joint *j = baxterModel.getJointByName("head_pan");
