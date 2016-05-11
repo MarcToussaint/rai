@@ -9,7 +9,7 @@
 
 struct sSendPositionCommandsToBaxter{
   ros::NodeHandle nh;
-  ros::Publisher pubL, pubR, pubHead, pubGripper;
+  ros::Publisher pubL, pubR, pubLg, pubRg, pubHead, pubGripper;
   ors::KinematicWorld baxterModel;
 };
 
@@ -80,6 +80,8 @@ void SendPositionCommandsToBaxter::open(){
     s = new sSendPositionCommandsToBaxter;
     s->pubR = s->nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/right/joint_command", 1);
     s->pubL = s->nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/left/joint_command", 1);
+    s->pubRg = s->nh.advertise<std_msgs::Empty>("robot/limb/right/suppress_gravity_compensation", 1);
+    s->pubLg = s->nh.advertise<std_msgs::Empty>("robot/limb/left/suppress_gravity_compensation", 1);
     s->pubHead = s->nh.advertise<baxter_core_msgs::HeadPanCommand>("robot/head/command_head_pan", 1);
     s->pubGripper = s->nh.advertise<baxter_core_msgs::EndEffectorCommand>("robot/end_effector/left_gripper/command", 1);
     s->baxterModel.init(mlr::mlrPath("data/baxter_model/baxter.ors").p);
@@ -87,12 +89,22 @@ void SendPositionCommandsToBaxter::open(){
 }
 
 void SendPositionCommandsToBaxter::step(){
-  if(s && enable){
+  if(s){
     arr q_ref = ctrl_ref.get()->q;
     if(!q_ref.N) return;
 
-    s->pubR.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "right_"));
-    s->pubL.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "left_"));
+    if (totalTorqueModeL)
+      s->pubLg.publish(std_msgs::Empty());
+
+    if (totalTorqueModeR)
+      s->pubRg.publish(std_msgs::Empty());
+
+    if (enablePositionControlL && !totalTorqueModeL)
+      s->pubL.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "left_"));
+
+    if (enablePositionControlR && !totalTorqueModeR)
+      s->pubR.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "right_"));
+
     s->pubHead.publish(getHeadMsg(q_ref, s->baxterModel));
     s->pubGripper.publish(getGripperMsg(q_ref, s->baxterModel));
   }

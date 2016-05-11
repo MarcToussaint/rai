@@ -20,6 +20,9 @@ struct SendPositionCommandsToBaxter:Module{
   void step();
   void close();
 
-  bool enable = true;
+  bool enablePositionControlL = true;
+  bool enablePositionControlR = true;
+  bool totalTorqueModeL = false;
+  bool totalTorqueModeR = false;
 };
 
