@@ -5,7 +5,7 @@
 #include "roscom.h"
 
 RosCom_Spinner::RosCom_Spinner(const char* nodeName):Module("RosCom_Spinner", .001){
-  useRos = mlr::getParameter<bool>("useRos");
+  useRos = mlr::getParameter<bool>("useRos", false);
   if(useRos) rosCheckInit(nodeName);
 }
 

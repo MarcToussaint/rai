@@ -83,7 +83,7 @@ struct Subscriber : SubscriberType {
   ros::Subscriber sub;
   Subscriber(const char* topic_name, Access_typed<msg_type>& _access)
     : access(_access) {
-    if(mlr::getParameter<bool>("useRos")){
+    if(mlr::getParameter<bool>("useRos", false)){
       nh = new ros::NodeHandle;
       registry().append<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
       cout <<"subscibing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<"> ..." <<std::flush;
