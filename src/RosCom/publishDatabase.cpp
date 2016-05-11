@@ -33,7 +33,7 @@ PublishDatabase::PublishDatabase():
 
 void PublishDatabase::open(){
   //ros::init(mlr::argc, mlr::argv, "publish_database", ros::init_options::NoSigintHandler);
-  if(mlr::getParameter<bool>("useRos"))
+  if(mlr::getParameter<bool>("useRos", false))
     nh = new ros::NodeHandle;
   if(nh){
     cluster_pub = nh->advertise<visualization_msgs::MarkerArray>("/tabletop/tracked_clusters", 1);
