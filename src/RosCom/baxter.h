@@ -12,8 +12,9 @@ arr baxter_getEfforts(const sensor_msgs::JointState& msg, const ors::KinematicWo
 struct SendPositionCommandsToBaxter:Module{
   Access_typed<CtrlMsg> ctrl_ref;
   struct sSendPositionCommandsToBaxter *s;
+  ors::KinematicWorld baxterModel;
 
-  SendPositionCommandsToBaxter();
+  SendPositionCommandsToBaxter(const ors::KinematicWorld& baxterWorld);
   ~SendPositionCommandsToBaxter(){}
 
   void open();
