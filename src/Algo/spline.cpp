@@ -41,78 +41,6 @@ void Spline::plotBasis() {
   plot();
 }
 
-void Spline::setBasis(uint T, uint K) {
-  CHECK_EQ(times.N-1,K+1+degree, "wrong number of time knots");
-  basis.resize(T+1, K+1);
-  for(uint t=0; t<=T; t++) basis[t] = getCoeffs((double)t/T, K);
-  transpose(basis_trans, basis);
-}
-
-#if 0
-// returns the spline coefficients: it is guaranteed that if t1 (or t2) is summed over a grid of stepsizes 1, this sums to 1
-
-BUG: that function assumes the same basis functions everywhere, not the squashed ones at the beginning and end
-double Spline::getCoeff(double dt, uint der) const{
-  if(der == 0) {
-    if(degree==0){
-      if(dt<-.5 || dt>=.5) return 0.;
-      return 1.;
-    }
-    if(degree==1){
-      if(dt<-1. || dt>=1.) return 0.;
-      if(dt<0) return 1+dt;
-      return 1.-dt;
-    }
-    if(degree==2){
-      dt += 1.5;
-      if(dt<=0. || dt>=3.) return 0.;
-      double dt2=dt*dt;
-      if(dt<=1.) return 0.5*dt2;
-      if(dt<=2.) return 0.5*(-2.*dt2 + 6.*dt - 3.);
-      if(dt<=3.) return 0.5*(    dt2 - 6.*dt + 9.);
-      // from http://en.wikipedia.org/wiki/IrwinE2%80%93Hall_distribution#Special_cases
-    }
-    if(degree==3){
-      dt += 2.;
-      if(dt<=0. || dt>=4.) return 0.;
-      double dt2=dt*dt;
-      double dt3=dt2*dt;
-      if(dt<=1.) return (dt3)/6.;
-      if(dt<=2.) return (-3.*dt3 + 12.*dt2 - 12.*dt +  4.)/6.;
-      if(dt<=3.) return ( 3.*dt3 - 24.*dt2 + 60.*dt - 44.)/6.;
-      if(dt<=4.) return (   -dt3 + 12.*dt2 - 48.*dt + 64.)/6.;
-      // from http://en.wikipedia.org/wiki/IrwinE2%80%93Hall_distribution#Special_cases
-    }
-  }else if(der == 1){
-    if(degree==0) return 0.;
-    if(degree==1){
-      if(dt<-1. || dt>=1.) return 0.;
-      if(dt<0) return 1.;
-      return -1.;
-    }
-    if(degree==2){
-      dt += 1.5;
-      if(dt<=0. || dt>=3.) return 0.;
-      if(dt<=1.) return dt;
-      if(dt<=2.) return (-2.*dt + 3.);
-      if(dt<=3.) return (    dt - 3.);
-    }
-    if(degree==3){
-      dt += 2.;
-      if(dt<=0. || dt>=4.) return 0.;
-      double dt2=dt*dt;
-      if(dt<=1.) return (3.*dt2)/6.;
-      if(dt<=2.) return (-9.*dt2 + 24.*dt - 12.)/6.;
-      if(dt<=3.) return ( 9.*dt2 - 48.*dt + 60.)/6.;
-      if(dt<=4.) return (-3.*dt2 + 24.*dt - 48.)/6.;
-      // from http://en.wikipedia.org/wiki/IrwinE2%80%93Hall_distribution#Special_cases
-    }
-  }
-  HALT("nigher derivates or degrees not yet done");
-  return 0.;
-}
-#endif
-
 arr Spline::getCoeffs(double t, uint K, uint derivative) const {
   arr b(K+1), b_0(K+1), db(K+1), db_0(K+1), ddb(K+1), ddb_0(K+1);
   for(uint p=0; p<=degree; p++) {
@@ -150,6 +78,13 @@ arr Spline::getCoeffs(double t, uint K, uint derivative) const {
       return ddb;
   }
   HALT("Derivate of order " << derivative << " not yet implemented.");
+}
+
+void Spline::setBasis(uint T, uint K) {
+  CHECK_EQ(times.N-1,K+1+degree, "wrong number of time knots");
+  basis.resize(T+1, K+1);
+  for(uint t=0; t<=T; t++) basis[t] = getCoeffs((double)t/T, K);
+  transpose(basis_trans, basis);
 }
 
 void Spline::setBasisAndTimeGradient(uint T, uint K) {
@@ -209,25 +144,8 @@ void Spline::setUniformNonperiodicBasis(uint T, uint K, uint _degree) {
 }
 
 arr Spline::eval(double t, uint derivative) const {
-#if 1
   uint K = points.d0-1;
   return (~getCoeffs(t, K, derivative) * points).reshape(points.d1);
-#else
-  uint N=points.d0-1;
-  t*=N; //time in same scaling as integer index
-  int K=floor(t); //integer index
-  arr x(points.d1);
-  x.setZero();
-  for(int k=K-1-(int)degree/2; k<=K+1+(int)degree/2; k++){
-    double a = getCoeff(t, (double)k, velocities);
-    if(!a) continue;
-    uint k_ref = (k>=0)?k:0;
-    if(k_ref>N) k_ref=N;
-    x+=a*points[k_ref];
-  }
-  if(velocities) x *= (double)N;
-  return x;
-#endif
 }
 
 arr Spline::eval(uint t) const { return (~basis[t]*points).reshape(points.d1); }

@@ -1821,9 +1821,14 @@ arr RowShiftedPackedMatrix::At_x(const arr& x) {
 }
 
 arr RowShiftedPackedMatrix::A_x(const arr& x) {
+  if(x.nd==2){
+    arr Y(x.d1, Z.d0);
+    arr X = ~x;
+    for(uint j=0;j<x.d1;j++) Y[j]() = A_x(X[j]);
+    return ~Y;
+  }
   CHECK_EQ(x.N,real_d1,"");
-  arr y(Z.d0);
-  y.setZero();
+  arr y = zeros(Z.d0);
   if(!Z.d1) return y; //Z is identically zero, all rows fully packed -> return zero y
   for(uint i=0; i<Z.d0; i++) {
     double sum=0.;

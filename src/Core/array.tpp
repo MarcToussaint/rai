@@ -1108,6 +1108,7 @@ template<class T> mlr::Array<T>& mlr::Array<T>::operator=(const mlr::Array<T>& a
   uint i;
   if(memMove) memmove(p, a.p, sizeT*N);
   else for(i=0; i<N; i++) p[i]=a.p[i];
+  if(aux) aux=NULL; //TODO: you lost it!!
   special = a.special;
   if(special == noneST) return *this;
   if(special == RowShiftedPackedMatrixST){

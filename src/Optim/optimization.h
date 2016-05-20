@@ -73,7 +73,6 @@ extern TermTypeA& NoTermTypeA;
  */
 typedef std::function<void(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x)> ConstrainedProblem;
 
-
 struct GraphProblem {
   /// We have 'variableDimensions.N' variables, each with a different dimension 'variableDimensions(i)'.
   /// We have 'featureVariables.N' features, each depends on the tuple/clique 'featureVariables(j)' of variables.
