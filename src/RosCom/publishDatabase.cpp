@@ -138,9 +138,15 @@ void PublishDatabase::syncAlvar(const Alvar* alvar)
 
 void PublishDatabase::step()
 {
-  object_database.waitForNextRevision();
+  int rev = object_database.writeAccess();
 
-  object_database.writeAccess();
+  if (rev == revision)
+  {
+    object_database.deAccess();
+    return;
+  }
+  revision = rev;
+
   FilterObjects objectDatabase = object_database();
 
   visualization_msgs::MarkerArray cluster_markers;
