@@ -25,4 +25,5 @@ private:
   void syncCluster(const Cluster* cluster);
   void syncAlvar(const Alvar* alvar);
   mlr::Array<uint> stored_clusters, stored_alvars;
+  int revision = -1;
 };
