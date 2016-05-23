@@ -1074,14 +1074,13 @@ void scanArrFile(const char* name) {
 #  define CHECK_EPS 1e-8
 #endif
 
-/// numeric (finite difference) check of the gradient of f at x
-bool checkGradient(const ScalarFunction& f,
-                   const arr& x, double tolerance, bool verbose) {
-  arr J, dx, JJ;
+/// numeric (finite difference) computation of the gradient
+arr finiteDifferenceGradient(const ScalarFunction& f, const arr& x, arr& Janalytic){
+  arr dx, J;
   double y, dy;
-  y=f(J, NoArr, x);
+  y=f(Janalytic, NoArr, x);
 
-  JJ.resize(x.N);
+  J.resize(x.N);
   double eps=CHECK_EPS;
   uint i;
   for(i=0; i<x.N; i++) {
@@ -1089,9 +1088,34 @@ bool checkGradient(const ScalarFunction& f,
     dx.elem(i) += eps;
     dy = f(NoArr, NoArr, dx);
     dy = (dy-y)/eps;
+    J(i)=dy;
+  }
+  return J;
+}
+
+/// numeric (finite difference) check of the gradient of f at x
+bool checkGradient(const ScalarFunction& f,
+                   const arr& x, double tolerance, bool verbose) {
+#if 1
+  arr J;
+  arr JJ = finiteDifferenceGradient(f, x, J);
+#else
+  arr J, dx, JJ;
+  double y, dy;
+  y=f(J, NoArr, x);
+
+  JJ.resize(x.N);
+  double eps=CHECK_EPS;
+  for(uint i=0; i<x.N; i++) {
+    dx=x;
+    dx.elem(i) += eps;
+    dy = f(NoArr, NoArr, dx);
+    dy = (dy-y)/eps;
     JJ(i)=dy;
   }
   JJ.reshapeAs(J);
+#endif
+  uint i;
   double md=maxDiff(J, JJ, &i);
 //   J >>FILE("z.J");
 //   JJ >>FILE("z.JJ");
