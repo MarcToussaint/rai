@@ -586,6 +586,13 @@ struct Mutex {
   ~Mutex();
   void lock();
   void unlock();
+
+  struct Token{
+    Mutex &m;
+    Token(Mutex& m):m(m){ m.lock(); }
+    ~Token(){ m.unlock(); }
+  };
+  struct Token operator()(){ return Token(*this); }
 };
 
 
