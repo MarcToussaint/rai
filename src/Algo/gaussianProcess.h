@@ -50,12 +50,12 @@ struct GaussianProcess {
   // kernelD3 = covDD_D
   /* covariance between two function values */
   double(*cov)(void *P, const arr& a, const arr& b);
-  double covF_F(void *P, const arr& a, const arr& b){ return cov(P, a, b); };
+  double covF_F(void *P, const arr& a, const arr& b){ return cov(P, a, b); }
   /* gradient of covariance. other words \forall i covD_F(i, P, a, a) */
   void (*dcov)(arr& grad, void *P, const arr& a, const arr& b);
   /* covariance between derivative and function values */
   double(*covF_D)(uint e, void *P, const arr& a, const arr& b);
-  double   covD_F(uint e, void *P, const arr& a, const arr& b){return covF_D(e, P, b, a);};
+  double   covD_F(uint e, void *P, const arr& a, const arr& b){return covF_D(e, P, b, a);}
   /* covariance between two derivatives */
   double(*covD_D)(uint e, uint l, void *P, const arr& a, const arr& b);
   /* covariance between 2nd derivative and function values */
@@ -131,6 +131,7 @@ struct GaussianProcess {
   void appendObservation(const arr& x, double y);     ///< add a new datum to the data and updates the inv Gram matrix
   void appendDerivativeObservation(const arr& x, double dy, uint i);
   void appendGradientObservation(const arr& x, const arr& dydx);
+  
   void evaluate(const arr& x, double& y, double& sig);   ///< evaluate the GP at some point - returns y and sig (=standard deviation)
   void evaluate(const arr& X, arr& Y, arr& S);   ///< evaluate the GP at some array of points - returns all y's and sig's
   double log_likelihood();

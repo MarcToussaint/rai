@@ -45,7 +45,7 @@ extern DefaultKernelFunction defaultKernelFunction;
 struct KernelRidgeRegression{
   arr X; ///< stored data (to compute kappa for queries)
   arr kernelMatrix_lambda; ///< X X^T + lambda I
-  arr invKernelMatrix_lambda;
+  arr invKernelMatrix_lambda; ///< (X X^T + lambda I)^-1
   arr alpha; ///< (X X^T + lambda I)^-1 y
   double sigma; ///< mean squared error on training data; estimate of noise
   double mu; ///< fixed global bias (default=0)
