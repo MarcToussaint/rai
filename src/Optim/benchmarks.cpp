@@ -195,7 +195,6 @@ uint ParticleAroundWalls::dim_phi(uint t){
 }
 
 uint ParticleAroundWalls::dim_g(uint t){
-  if(!hardConstrained) return 0;
   uint T=get_T();
   if(t==T/2 || t==T/4 || t==3*T/4 || t==T) return dim_x(t);
   return 0;
@@ -204,16 +203,16 @@ uint ParticleAroundWalls::dim_g(uint t){
 void ParticleAroundWalls::phi_t(arr& phi, arr& J, TermTypeA& tt, uint t){
   uint T=get_T(), n=dim_x(t), k=get_k();
 
-  //construct x_bar
+  //-- construct x_bar
   arr x_bar;
   if(t>=k) {
     x_bar.referToSub(x, t-k, t);
   } else { //x_bar includes the prefix
     x_bar.resize(k+1,n);
-    for(int i=t-k; i<=(int)t; i++) x_bar[i-t+k]() = (i<0)? x[0] : x[i];
+    for(int i=t-k; i<=(int)t; i++) x_bar[i-t+k]() = (i<0)? zeros(n) : x[i];
   }
 
-  //assert some dimensions
+  //-- assert some dimensions
   CHECK_EQ(x_bar.d0,k+1,"");
   CHECK_EQ(x_bar.d1,n,"");
   CHECK(t<=T,"");
@@ -224,28 +223,16 @@ void ParticleAroundWalls::phi_t(arr& phi, arr& J, TermTypeA& tt, uint t){
   if(k==3)  phi = x_bar[3]-3.*x_bar[2]+3.*x_bar[1]-x_bar[0]; //penalize jerk
   if(&tt) tt = consts(sumOfSqrTT, n);
 
-  //-- walls: append to phi
-  //Note: here we append to phi ONLY in certain time slices: the dimensionality of phi may very with time slices; see dim_phi(uint t)
-  double eps=.1, power=2.;
-  if(!hardConstrained){
-    //-- wall costs
-    for(uint i=0;i<n;i++){ //add barrier costs to each dimension
-      if(t==T/4)   phi.append(mlr::ineqConstraintCost(i+1.-x_bar(k,i), eps, power));  //middle factor: ``greater than i''
-      if(t==T/2)   phi.append(mlr::ineqConstraintCost(x_bar(k,i)+i+1., eps, power));  //last factor: ``lower than -i''
-      if(t==3*T/4) phi.append(mlr::ineqConstraintCost(i+1.-x_bar(k,i), eps, power));  //middle factor: ``greater than i''
-      if(t==T)     phi.append(mlr::ineqConstraintCost(x_bar(k,i)+i+1., eps, power));  //last factor: ``lower than -i''
-    }
-    if(&tt && (t==T/4 || t==T/2 || t==3*T/4 || t==T) ) tt.append(sumOfSqrTT, n);
-  }else{
-    //-- wall constraints
-    for(uint i=0;i<n;i++){ //add barrier costs to each dimension
-      if(t==T/4)   phi.append((i+1.-x_bar(k,i)));  //middle factor: ``greater than i''
-      if(t==T/2)   phi.append((x_bar(k,i)+i+1.));  //last factor: ``lower than -i''
-      if(t==3*T/4) phi.append((i+1.-x_bar(k,i)));  //middle factor: ``greater than i''
-      if(t==T)     phi.append((x_bar(k,i)+i+1.));  //last factor: ``lower than -i''
-    }
-    if(&tt && (t==T/4 || t==T/2 || t==3*T/4 || t==T) ) tt.append(ineqTT, n);
+  //-- wall constraints: append to phi
+  //Note: here we append to phi ONLY in certain time slices ->
+  //the dimensionality of phi may very with time slices; see dim_phi(uint t)
+  for(uint i=0;i<n;i++){ //add barrier costs to each dimension
+    if(t==T/4)   phi.append((i+1.-x_bar(k,i)));  //``greater than i+1''
+    if(t==T/2)   phi.append((x_bar(k,i)+i+1.));  //``lower than -i-1''
+    if(t==3*T/4) phi.append((i+1.-x_bar(k,i)));  //``greater than i+1''
+    if(t==T)     phi.append((x_bar(k,i)+i+1.));  //``lower than -i-1''
   }
+  if(&tt && (t==T/4 || t==T/2 || t==3*T/4 || t==T) ) tt.append(ineqTT, n);
 
   uint m=phi.N;
   CHECK_EQ(m,dim_phi(t),"");
@@ -261,21 +248,12 @@ void ParticleAroundWalls::phi_t(arr& phi, arr& J, TermTypeA& tt, uint t){
       if(k==3){ J(i,3,i) = 1.;  J(i,2,i) = -3.;  J(i,1,i) = +3.;  J(i,0,i) = -1.; }
     }
 
-    //-- walls
-    if(!hardConstrained){
-      for(uint i=0;i<n;i++){
-        if(t==T/4)   J(n+i,k,i) = -mlr::d_ineqConstraintCost(i+1.-x_bar(k,i), eps, power);
-        if(t==T/2)   J(n+i,k,i) =  mlr::d_ineqConstraintCost(x_bar(k,i)+i+1., eps, power);
-        if(t==3*T/4) J(n+i,k,i) = -mlr::d_ineqConstraintCost(i+1.-x_bar(k,i), eps, power);
-        if(t==T)     J(n+i,k,i) =  mlr::d_ineqConstraintCost(x_bar(k,i)+i+1., eps, power);
-      }
-    }else{
-      for(uint i=0;i<n;i++){
-        if(t==T/4)   J(n+i,k,i) = -1.;
-        if(t==T/2)   J(n+i,k,i) = +1.;
-        if(t==3*T/4) J(n+i,k,i) = -1.;
-        if(t==T)     J(n+i,k,i) = +1.;
-      }
+    //-- wall constraints
+    for(uint i=0;i<n;i++){
+      if(t==T/4)   J(n+i,k,i) = -1.;
+      if(t==T/2)   J(n+i,k,i) = +1.;
+      if(t==3*T/4) J(n+i,k,i) = -1.;
+      if(t==T)     J(n+i,k,i) = +1.;
     }
   }
 
