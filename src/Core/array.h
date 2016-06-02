@@ -663,6 +663,7 @@ template<class T> mlr::Array<T> cat(const mlr::Array<T>& y, const mlr::Array<T>&
 template<class T> mlr::Array<T> cat(const mlr::Array<T>& a, const mlr::Array<T>& b, const mlr::Array<T>& c, const mlr::Array<T>& d) { mlr::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); return x; }
 template<class T> mlr::Array<T> cat(const mlr::Array<T>& a, const mlr::Array<T>& b, const mlr::Array<T>& c, const mlr::Array<T>& d, const mlr::Array<T>& e) { mlr::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); x.append(e); return x; }
 template<class T> mlr::Array<T> catCol(const mlr::Array<mlr::Array<T>*>& X);
+template<class T> mlr::Array<T> catCol(const mlr::Array<mlr::Array<T> >& X);
 template<class T> mlr::Array<T> catCol(const mlr::Array<T>& a, const mlr::Array<T>& b){ return catCol(LIST<mlr::Array<T> >(a,b)); }
 template<class T> mlr::Array<T> catCol(const mlr::Array<T>& a, const mlr::Array<T>& b, const mlr::Array<T>& c){ return catCol(LIST<mlr::Array<T> >(a,b,c)); }
 template<class T> mlr::Array<T> catCol(const mlr::Array<T>& a, const mlr::Array<T>& b, const mlr::Array<T>& c, const mlr::Array<T>& d){ return catCol(LIST<mlr::Array<T> >(a,b,c,d)); }

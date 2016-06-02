@@ -1136,6 +1136,13 @@ template<class T> mlr::Array<T> catCol(const mlr::Array<mlr::Array<T>*>& X) {
   return z;
 }
 
+/// concatenate 2D matrices (or vectors) column-wise
+template<class T> mlr::Array<T> catCol(const mlr::Array<mlr::Array<T> >& X) {
+  mlr::Array<mlr::Array<T>*> Xp;
+  for(mlr::Array<T>& x:  X) Xp.append(&x);
+  return catCol(Xp);
+}
+
 /// set all entries to same value x [default: don't change dimension]
 template<class T> void mlr::Array<T>::setUni(const T& x, int d) {
   if(d!=-1) resize(d);
