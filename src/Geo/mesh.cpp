@@ -367,8 +367,8 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
       y = X[i];
       y.append(x);
       phi(i+5) = DistanceFunction_SSBox(Jy, NoArr, y);
-      //      Jy.subRef(3,5)() *= -1.;
-      if(&J) J[i+5] = Jy.subRef(3,-1);
+      //      Jy.refRange(3,5)() *= -1.;
+      if(&J) J[i+5] = Jy.refRange(3,-1);
     }
   };
 
@@ -378,12 +378,12 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
   rot.setRandom();
   arr tX = X * rot.getArr(); //rotate points (with rot^{-1})
   arr ma = max(tX,0), mi = min(tX,0);  //get coordinate-wise min and max
-  x.subRef(0,2)() = (ma-mi)/2.;   //sizes
+  x.refRange(0,2)() = (ma-mi)/2.;   //sizes
   x(3) = 1.; //sum(ma-mi)/6.;  //radius
-  x.subRef(4,6)() = rot.getArr() * (mi+.5*(ma-mi)); //center (rotated back)
-  x.subRef(7,10)() = conv_quat2arr(rot);
-  rndGauss(x.subRef(7,10)(), .1, true);
-  x.subRef(7,10)() /= length(x.subRef(7,10)());
+  x.refRange(4,6)() = rot.getArr() * (mi+.5*(ma-mi)); //center (rotated back)
+  x.refRange(7,10)() = conv_quat2arr(rot);
+  rndGauss(x.refRange(7,10)(), .1, true);
+  x.refRange(7,10)() /= length(x.refRange(7,10)());
 
   if(verbose>1){
     checkJacobianCP(F, x, 1e-4);
@@ -429,8 +429,8 @@ void ors::Mesh::makeSSBox(arr& x, Transformation& t, const arr& X, uint trials, 
   }
 
   t.setZero();
-  t.pos.set( x.subRef(4,6) );
-  t.rot.set( x.subRef(7,-1) );
+  t.pos.set( x.refRange(4,6) );
+  t.rot.set( x.refRange(7,-1) );
   t.rot.normalize();
   setSSBox(2.*x(0), 2.*x(1), 2.*x(2), x(3));
   t.applyOnPointArray(V);
@@ -2050,24 +2050,24 @@ double DistanceFunction_Box::f(arr& g, arr& H, const arr& x){
 ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> double{
   CHECK_EQ(x.N, 14, "pt + abcr + pose");
   ors::Transformation t;
-  t.pos.set( x.subRef(7,9) );
-  t.rot.set( x.subRef(10,13) );
+  t.pos.set( x.refRange(7,9) );
+  t.rot.set( x.refRange(10,13) );
   t.rot.normalize();
   arr closest, signs;
-  closestPointOnBox(closest, signs, t, x(3), x(4), x(5), x.subRef(0,2));
-  arr grad = x.subRef(0,2) - closest;
+  closestPointOnBox(closest, signs, t, x(3), x(4), x(5), x.refRange(0,2));
+  arr grad = x.refRange(0,2) - closest;
   double d = length(grad);
   grad /= d;
   d -= x(6);
   if(&g){
     g.resize(14);
     g.setZero();
-    g.subRef(0,2) = grad;
-    g.subRef(7,9) = - grad;
-    g.subRef(3,5) = - signs%(t.rot / ors::Vector(grad)).getArr();
+    g.refRange(0,2) = grad;
+    g.refRange(7,9) = - grad;
+    g.refRange(3,5) = - signs%(t.rot / ors::Vector(grad)).getArr();
     g(6) = -1.;
-    g.subRef(10,13) = ~grad*crossProduct(t.rot.getJacobian(), (x.subRef(0,2)-t.pos.getArr()));
-    g.subRef(10,13)() /= -sqrt(sumOfSqr(x.subRef(10,13))); //account for the potential non-normalization of q
+    g.refRange(10,13) = ~grad*crossProduct(t.rot.getJacobian(), (x.refRange(0,2)-t.pos.getArr()));
+    g.refRange(10,13)() /= -sqrt(sumOfSqr(x.refRange(10,13))); //account for the potential non-normalization of q
   }
   return d;
 };

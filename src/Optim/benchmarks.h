@@ -145,7 +145,7 @@ struct SimpleConstraintFunction:ConstrainedProblem {
     //simple squared potential, displaced by 1
     arr x(_x);
     x(0) -= 1.;
-    phi.subRef(0,1) = x;
+    phi.refRange(0,1) = x;
     if(&J) J.setMatrixBlock(eye(2),0,0);
     x(0) += 1.;
 

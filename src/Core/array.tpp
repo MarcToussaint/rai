@@ -777,13 +777,13 @@ template<class T> T& mlr::Array<T>::operator()(uint i, uint j, uint k) const {
 template<class T> mlr::Array<T> mlr::Array<T>::operator[](uint i) const { return Array(*this, i); }
 
 /// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
-template<class T> mlr::Array<T> mlr::Array<T>::subDim(uint i, uint j) const { return Array(*this, i, j); }
+template<class T> mlr::Array<T> mlr::Array<T>::refDim(uint i, uint j) const { return Array(*this, i, j); }
 
 /// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
-template<class T> mlr::Array<T> mlr::Array<T>::subDim(uint i, uint j, uint k) const { return Array(*this, i, j, k); }
+template<class T> mlr::Array<T> mlr::Array<T>::refDim(uint i, uint j, uint k) const { return Array(*this, i, j, k); }
 
 /// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
-template<class T> mlr::Array<T> mlr::Array<T>::subRef(int i, int I) const { mlr::Array<T> z;  z.referToSub(*this, i, I);  return z; }
+template<class T> mlr::Array<T> mlr::Array<T>::refRange(int i, int I) const { mlr::Array<T> z;  z.referToRange(*this, i, I);  return z; }
 
 
 /// convert a subarray into a reference (e.g. a[3]()+=.123)
@@ -963,10 +963,9 @@ template<class T> mlr::Array<T> mlr::Array<T>::sub(int i, int I, Array<uint> col
   mlr::Array<T> x;
   if(i<0) i+=d0;
   if(I<0) I+=d0;
-  CHECK(i>0 && I>0 && i<=I, "lower limit higher than upper!");
+  CHECK(i>=0 && I>=0 && i<=I, "lower limit higher than upper!");
   x.resize(I-i+1, cols.N);
-  int k, l;
-  for(k=i; k<=I; k++) for(l=0; l<(int)cols.N; l++) x(k-i, l)=operator()(k, cols(l));
+  for(int ii=i; ii<=I; ii++) for(int l=0; l<(int)cols.N; l++) x(ii-i, l)=operator()(ii, cols(l));
   return x;
 }
 
@@ -1321,7 +1320,7 @@ template<class T> void mlr::Array<T>::referTo(const mlr::Array<T>& a) {
 }
 
 /// make this array a subarray reference to \c a
-template<class T> void mlr::Array<T>::referToSub(const mlr::Array<T>& a, int i, int I) {
+template<class T> void mlr::Array<T>::referToRange(const mlr::Array<T>& a, int i, int I) {
   CHECK(a.nd<=3, "not implemented yet");
   freeMEM();
   resetD();
