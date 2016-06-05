@@ -45,7 +45,7 @@ extern uint eval_cost;
  * 2) Because the computation of quantities is expensive and it is usually most efficient to compute all needed quantities together
  *    (Instead of calling get_f(x); and then get_J(x); separately)
  *
- * All these methods allow some returns to be optional: use NoArr
+ * The methods allow some returns to be optional: use NoArr
  *
  */
 
@@ -90,7 +90,6 @@ struct GraphProblem {
   bool checkJacobian(const arr& x, double tolerance); ///< finite differences check of the returned Jacobian at x
   bool checkHessian(const arr& x, double tolerance);  ///< finite differences check of the returned Hessian at x
 };
-
 
 /// functions \f$ \phi_t:(x_{t-k},..,x_t) \mapsto y\in\mathbb{R}^{m_t} \f$ over a chain \f$x_0,..,x_T\f$ of variables
 struct KOrderMarkovFunction {

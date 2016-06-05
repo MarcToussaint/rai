@@ -191,6 +191,7 @@ template<class T> struct Array {
   Array<T> subDim(uint i, uint j) const; // calls referToDim(*this, i, j)
   Array<T> subDim(uint i, uint j, uint k) const; // calls referToDim(*this, i, j, k)
   Array<T> subRef(int i, int I) const; // calls referToSub(*this, i, I)
+  Array<T> refRange(uint i, int j, int J) const;
   Array<T>& operator()(){ return *this; } //TODO: replace by scalar reference!
   T** getCarray(Array<T*>& Cpointers) const;
   
@@ -471,14 +472,6 @@ template<class T> mlr::Array<T> consts(const T& c, uint d0, uint d1) { return co
 /// return tensor of c's
 template<class T> mlr::Array<T> consts(const T& c, uint d0, uint d1, uint d2) { return consts(c, TUP(d0, d1, d2)); }
 
-/// return a grid (1D: range) split in 'steps' steps
-inline arr grid(uint dim, double lo, double hi, uint steps) { arr g;  g.setGrid(dim, lo, hi, steps);  return g; }
-
-/// return a grid with different lo/hi/steps in each dimension
-arr grid(const arr& lo, const arr& hi, const uintA& steps);
-
-arr repmat(const arr& A, uint m, uint n);
-
 /// return array with random numbers in [0, 1]
 arr rand(const uintA& d);
 /// return array with random numbers in [0, 1]
@@ -492,6 +485,13 @@ arr randn(const uintA& d);
 inline arr randn(uint n) { return randn(TUP(n)); }
 /// return array with normal (Gaussian) random numbers
 inline arr randn(uint d0, uint d1) { return randn(TUP(d0, d1)); }
+
+/// return a grid with different lo/hi/steps in each dimension
+arr grid(const arr& lo, const arr& hi, const uintA& steps);
+/// return a grid (1D: range) split in 'steps' steps
+inline arr grid(uint dim, double lo, double hi, uint steps) { arr g;  g.setGrid(dim, lo, hi, steps);  return g; }
+
+arr repmat(const arr& A, uint m, uint n);
 
 //inline double max(const arr& x) { return x.max(); }
 //inline double min(const arr& x) { return x.min(); }
@@ -600,6 +600,7 @@ template<class T> mlr::Array<T> diag(const mlr::Array<T>& x) {  mlr::Array<T> y;
 template<class T> mlr::Array<T> skew(const mlr::Array<T>& x);
 template<class T> void inverse2d(mlr::Array<T>& Ainv, const mlr::Array<T>& A);
 template<class T> mlr::Array<T> replicate(const mlr::Array<T>& A, uint d0);
+template<class T> mlr::Array<T> integral(const mlr::Array<T>& x);
 
 template<class T> uintA size(const mlr::Array<T>& x) { return x.dim(); }
 template<class T> void checkNan(const mlr::Array<T>& x);

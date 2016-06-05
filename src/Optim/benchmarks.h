@@ -26,6 +26,7 @@
 #define MLR_optimization_benchmarks_h
 
 #include "optimization.h"
+#include "KOMO_Problem.h"
 
 extern ScalarFunction RosenbrockFunction();
 extern ScalarFunction RastriginFunction();
@@ -236,6 +237,28 @@ struct ParticleAroundWalls : KOrderMarkovFunction {
     //if(t0==t1) return 1e3;
     return 1e0*::exp(-.001*mlr::sqr((double)t0-t1));
   }
+};
+
+//===========================================================================
+
+struct ParticleAroundWalls2 : KOMO_Problem {
+  //options of the problem
+  uint T,k,n;
+  bool useKernel;
+  arr x;
+
+  ParticleAroundWalls2():
+    T(mlr::getParameter<uint>("opt/ParticleAroundWalls/T",1000)),
+    k(mlr::getParameter<uint>("opt/ParticleAroundWalls/k",2)),
+    n(mlr::getParameter<uint>("opt/ParticleAroundWalls/n",3)),
+    useKernel(false){}
+
+  //implementations of the kOrderMarkov virtuals
+  uint get_T(){ return T; }
+  uint get_k(){ return k; }
+  void getStructure(uintA& variableDimensions, uintA& featureTimes, TermTypeA& featureTypes);
+
+  void phi(arr& phi, arrA& J, arrA& H, TermTypeA& tt, const arr& x);
 };
 
 //===========================================================================

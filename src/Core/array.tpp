@@ -785,6 +785,27 @@ template<class T> mlr::Array<T> mlr::Array<T>::subDim(uint i, uint j, uint k) co
 /// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
 template<class T> mlr::Array<T> mlr::Array<T>::subRef(int i, int I) const { mlr::Array<T> z;  z.referToSub(*this, i, I);  return z; }
 
+/// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
+template<class T> mlr::Array<T> mlr::Array<T>::refRange(uint i, int j, int J) const {
+  mlr::Array<T> z;
+  z.reference=true; z.memMove=memMove;
+
+  CHECK(nd>1 && nd<=3, "does not work for vectors")
+  if(j<0) j+=d1;
+  if(J<0) J+=d1;
+  CHECK(i<d0 && j>=0 && J>=0 && j<=J && J<d1, "range error");
+
+  if(nd==2) {
+    z.nd=1;  z.d0=J+1-j; z.N=z.d0;
+    z.p=p+i*d1+j;
+  }
+  if(nd==3) {
+    z.nd=3;  z.d0=J+1-j; z.d1=d2; z.N=z.d0*z.d1;
+    z.p=p+i*d1*d2+j*d2;
+  }
+  return z;
+}
+
 
 /// convert a subarray into a reference (e.g. a[3]()+=.123)
 //template<class T> T& mlr::Array<T>::operator()() const { return scalar(); } //return (*this); }
@@ -1884,6 +1905,21 @@ template<class T> mlr::Array<T> replicate(const mlr::Array<T>& A, uint d0) {
     for(uint i=0;i<x.d0;i++) x[i]=A;
   }
   return x;
+}
+
+/// return the integral image, or vector
+template<class T> mlr::Array<T> integral(const mlr::Array<T>& x){
+  CHECK(x.nd==1 || x.nd==2,"");
+  if(x.nd==1){
+    T s(0);
+    mlr::Array<T> y(x.N);
+    for(uint i=0;i<x.N;i++){ s+=x.elem(i); y.elem(i)=s; }
+    return y;
+  }
+  if(x.nd==2){
+    NIY;
+  }
+  return mlr::Array<T>();
 }
 
 #ifdef MLR_CLANG
