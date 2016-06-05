@@ -290,7 +290,7 @@ void ParticleAroundWalls2::phi(arr& phi, arrA& J, arrA& H, TermTypeA& tt, const 
     //-- construct x_bar
     arr x_bar;
     if(t>=k) {
-      x_bar.referToSub(x, t-k, t);
+      x_bar.referToRange(x, t-k, t);
     } else { //x_bar includes the prefix
       x_bar.resize(k+1,n);
       for(int i=t-k; i<=(int)t; i++) x_bar[i-t+k]() = (i<0)? zeros(n) : x[i];

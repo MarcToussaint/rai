@@ -774,7 +774,25 @@ template<class T> T& mlr::Array<T>::operator()(uint i, uint j, uint k) const {
 }
 
 /// get a subarray (e.g., row of a matrix); use in conjuction with operator()() to get a reference
-template<class T> mlr::Array<T> mlr::Array<T>::operator[](uint i) const { return Array(*this, i); }
+template<class T> mlr::Array<T> mlr::Array<T>::operator[](uint i) const {
+//  return Array(*this, i);
+  mlr::Array<T> z;
+  CHECK(nd>1, "can't create subarray of array less than 2 dimensions");
+  CHECK(i<d0, "SubDim range error (" <<i <<"<" <<d0 <<")");
+  z.reference=true; z.memMove=memMove;
+  if(nd==2) {
+    z.nd=1; z.d0=d1; z.N=z.d0;
+  }
+  if(nd==3) {
+    z.nd=2; z.d0=d1; z.d1=d2; z.N=z.d0*z.d1;
+  }
+  if(nd>3) {
+    z.nd=nd-1; z.d0=d1; z.d1=d2; z.d2=d[3]; z.N=N/d0;
+    if(z.nd>3) { z.d=new uint[z.nd];  memmove(z.d, d+1, z.nd*sizeof(uint)); }
+  }
+  z.p=p+i*z.N;
+  return z;
+}
 
 /// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
 template<class T> mlr::Array<T> mlr::Array<T>::refDim(uint i, uint j) const { return Array(*this, i, j); }
@@ -783,7 +801,28 @@ template<class T> mlr::Array<T> mlr::Array<T>::refDim(uint i, uint j) const { re
 template<class T> mlr::Array<T> mlr::Array<T>::refDim(uint i, uint j, uint k) const { return Array(*this, i, j, k); }
 
 /// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
-template<class T> mlr::Array<T> mlr::Array<T>::refRange(int i, int I) const { mlr::Array<T> z;  z.referToRange(*this, i, I);  return z; }
+template<class T> mlr::Array<T> mlr::Array<T>::refRange(int i, int I) const {
+  mlr::Array<T> z;
+  z.reference=true; z.memMove=memMove;
+
+  CHECK(nd<=3, "not implemented yet");
+  if(i<0) i+=d0;
+  if(I<0) I+=d0;
+  CHECK(i>=0 && I>=0 && i<=I && I<d0, "range error");
+  if(nd==1) {
+    z.nd=1;  z.d0=I+1-i; z.d1=0; z.d2=0;  z.N=z.d0;
+    z.p=p+i;
+  }
+  if(nd==2) {
+    z.nd=2;  z.d0=I+1-i; z.d1=d1; z.d2=0;  z.N=z.d0*z.d1;
+    z.p=p+i*d1;
+  }
+  if(nd==3) {
+    z.nd=3;  z.d0=I+1-i; z.d1=d1; z.d2=d2;  z.N=z.d0*z.d1*z.d2;
+    z.p=p+i*d1*d2;
+  }
+  return z;
+}
 
 /// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
 template<class T> mlr::Array<T> mlr::Array<T>::refRange(uint i, int j, int J) const {

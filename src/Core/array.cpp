@@ -1668,8 +1668,8 @@ RowShiftedPackedMatrix *auxRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d
   Zaux->rowShift.setZero();
   Zaux->colPatches.resize(real_d1, 2);
   for(uint i=0; i<real_d1; i++) {
-    Zaux->colPatches(i,0)=0;
-    Zaux->colPatches(i,1)=d0;
+    Zaux->colPatches.p[2*i]=0;
+    Zaux->colPatches.p[2*i+1]=d0;
   }
   return Zaux;
 }
@@ -1737,17 +1737,17 @@ void RowShiftedPackedMatrix::computeColPatches(bool assumeMonotonic) {
       while(a<Z.d0 && acc(a,j)==0) a++;
       b=Z.d0;
       while(b>0 && acc(b-1,j)==0) b--;
-      colPatches(j,0)=a;
-      colPatches(j,1)=b;
+      colPatches.p[2*j]=a;
+      colPatches.p[2*j+1]=b;
     }
   } else {
     for(uint j=0; j<real_d1; j++) {
-      while(a<Z.d0 && j>=rowShift(a)+Z.d1) a++;
-      colPatches(j,0)=a;
+      while(a<Z.d0 && j>=rowShift.p[a]+Z.d1) a++;
+      colPatches.p[2*j]=a;
     }
     for(uint j=real_d1; j--;) {
-      while(b>0 && j<rowShift(b-1)) b--;
-      colPatches(j,1)=b;
+      while(b>0 && j<rowShift.p[b-1]) b--;
+      colPatches.p[2*j+1]=b;
     }
   }
 }
