@@ -123,8 +123,8 @@ void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& 
   if(dim_z){ //split _x into (x,z)
     x.referTo(_x);
     x.reshape((T+1-x_post.d0)*n + dim_z);
-    z.referToSub(x, -(int)dim_z, -1);
-    x.referToSub(_x, 0, -(int)dim_z-1);
+    z.referToRange(x, -(int)dim_z, -1);
+    x.referToRange(_x, 0, -(int)dim_z-1);
     x.reshape(T+1-x_post.d0, n);
   }else{ //there is no z -> x = _x
     x.referTo(_x);
@@ -167,7 +167,7 @@ void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& 
         x_bar.resize(k+1,n);
         for(int i=t-k; i<=(int)t; i++) x_bar[i-t+k]() = (i>=(int)x.d0)? x_post[i-x.d0] : x[i];
       } else{
-        if(!dim_z) x_bar.referToSub(x, t-k, t);
+        if(!dim_z) x_bar.referToRange(x, t-k, t);
         else x_bar = x.sub(t-k, t, 0, -1); //need to copy as we will augment
       }
     } else { //x_bar includes the prefix
@@ -176,7 +176,7 @@ void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& 
     }
     if(dim_z){ //append the constant variable to x_bar
       x_bar.insColumns(x_bar.d1, dim_z);
-      for(uint i=0;i<=k;i++) x_bar[i].subRef(-dim_z, -1)=z;
+      for(uint i=0;i<=k;i++) x_bar[i].refRange(-dim_z, -1)=z;
     }
 
     //query
@@ -255,7 +255,7 @@ void conv_KOrderMarkovFunction_VectorFunction(KOrderMarkovFunction& f, arr& phi,
   for(uint t=0; t<=T-k; t++) {
     m_t = f->get_m(t);
     arr phi_t,J_t;
-    f->phi_t(phi_t, (&J?J_t:NoArr), t, x.subRef(t, t+k));
+    f->phi_t(phi_t, (&J?J_t:NoArr), t, x.refRange(t, t+k));
     CHECK_EQ(phi_t.N,m_t,"");
     phi.setVectorBlock(phi_t, M);
     if(&J) {
@@ -278,8 +278,8 @@ void conv_KOrderMarkovFunction_VectorFunction(KOrderMarkovFunction& f, arr& phi,
   if(dim_z){
     x.referTo(_x);
     x.reshape((T+1-x_post.d0)*n + dim_z);
-    z.referToSub(x, -(int)dim_z, -1);
-    x.referToSub(_x, 0, -(int)dim_z-1);
+    z.referToRange(x, -(int)dim_z, -1);
+    x.referToRange(_x, 0, -(int)dim_z-1);
     x.reshape(T+1-x_post.d0, n);
   }else{
     x.referTo(_x);
@@ -317,7 +317,7 @@ void conv_KOrderMarkovFunction_VectorFunction(KOrderMarkovFunction& f, arr& phi,
         x_bar.resize(k+1,n);
         for(int i=t-k; i<=(int)t; i++) x_bar[i-t+k]() = (i>=(int)x.d0)? x_post[i-x.d0] : x[i];
       } else{
-        if(!dim_z) x_bar.referToSub(x, t-k, t);
+        if(!dim_z) x_bar.referToRange(x, t-k, t);
         else x_bar = x.sub(t-k, t, 0, -1); //need to copy as we will augment
       }
     } else { //x_bar includes the prefix
@@ -326,7 +326,7 @@ void conv_KOrderMarkovFunction_VectorFunction(KOrderMarkovFunction& f, arr& phi,
     }
     if(dim_z){ //append the constant variable to x_bar
       x_bar.insColumns(x_bar.d1, dim_z);
-      for(uint i=0;i<=k;i++) x_bar[i].subRef(-dim_z, -1)=z;
+      for(uint i=0;i<=k;i++) x_bar[i].refRange(-dim_z, -1)=z;
     }
 
     //query
@@ -421,7 +421,7 @@ double conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction &f, arr
         x_bar.resize(k+1,n);
         for(int i=t-k; i<=(int)t; i++) x_bar[i-t+k]() = (i>=(int)x.d0)? x_post[i-x.d0] : x[i];
       } else {
-        x_bar.referToSub(x, t-k, t);
+        x_bar.referToRange(x, t-k, t);
       }
     } else { //x_bar includes the prefix
       x_bar.resize(k+1,n);
@@ -435,11 +435,11 @@ double conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction &f, arr
     if(getJ) CHECK(J_t.d0==phid && J_t.d1==(k+1)*n,"");
 
     //insert in meta_y
-    f_t.referToSub(phi_t, 0, m_t-1);
+    f_t.referToRange(phi_t, 0, m_t-1);
     CHECK_EQ(f_t.N,m_t,"");
     meta_y.setVectorBlock(f_t, y_count);
     if(getJ) {
-      Jf_t.referToSub(J_t, 0, m_t-1);
+      Jf_t.referToRange(J_t, 0, m_t-1);
       if(t>=k) {
         meta_Jy.setMatrixBlock(Jf_t, y_count, 0);
         for(uint i=0; i<Jf_t.d0; i++) Jy_aux->rowShift(y_count+i) = (t-k)*n;
@@ -454,11 +454,11 @@ double conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction &f, arr
 
     //insert in meta_g
     if(dimg_t){
-      g_t.referToSub(phi_t, m_t, -1);
+      g_t.referToRange(phi_t, m_t, -1);
       CHECK_EQ(g_t.N,dimg_t,"");
       if(&g) g.setVectorBlock(g_t, g_count);
       if(&Jg) {
-        Jg_t.referToSub(J_t, m_t, -1);
+        Jg_t.referToRange(J_t, m_t, -1);
         if(t>=k) {
           Jg.setMatrixBlock(Jg_t, g_count, 0);
           for(uint i=0; i<Jg_t.d0; i++) Jg_aux->rowShift(g_count+i) = (t-k)*n;
@@ -535,12 +535,12 @@ double conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction &f, arr
 
     //split up: push cost terms into y
     if (dimf_t) {
-      y.setVectorBlock(phi.subRef(M, M+dimf_t-1), y_count);
+      y.setVectorBlock(phi.refRange(M, M+dimf_t-1), y_count);
       if(getJ) {
-        Jy.setMatrixBlock(J.subRef(M, M+dimf_t-1), y_count, 0);
+        Jy.setMatrixBlock(J.refRange(M, M+dimf_t-1), y_count, 0);
         for(uint i=0; i<dimf_t; i++) Jy_aux->rowShift(y_count+i) = J_aux->rowShift(M+i);
         if(dimz){
-          Jyz->setMatrixBlock(Jz->subRef(M, M+dimf_t-1), y_count, 0);
+          Jyz->setMatrixBlock(Jz->refRange(M, M+dimf_t-1), y_count, 0);
           for(uint i=0; i<dimf_t; i++) Jyz_aux->rowShift(y_count+i) = Jz_aux->rowShift(M+i);
         }
       }
@@ -548,12 +548,12 @@ double conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction &f, arr
       y_count += dimf_t;
     }
     //split up: push inequality terms into g
-    if(&g && dimg_t) g.setVectorBlock(phi.subRef(M, M+dimg_t-1), g_count);
+    if(&g && dimg_t) g.setVectorBlock(phi.refRange(M, M+dimg_t-1), g_count);
     if(&Jg && dimg_t) {
-      Jg.setMatrixBlock(J.subRef(M, M+dimg_t-1), g_count, 0);
+      Jg.setMatrixBlock(J.refRange(M, M+dimg_t-1), g_count, 0);
       for(uint i=0; i<dimg_t; i++) Jg_aux->rowShift(g_count+i) = J_aux->rowShift(M+i);
       if(dimz){
-        Jgz->setMatrixBlock(Jz->subRef(M, M+dimg_t-1), g_count, 0);
+        Jgz->setMatrixBlock(Jz->refRange(M, M+dimg_t-1), g_count, 0);
         for(uint i=0; i<dimg_t; i++) Jgz_aux->rowShift(g_count+i) = Jz_aux->rowShift(M+i);
       }
     }
@@ -561,12 +561,12 @@ double conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction &f, arr
     g_count += dimg_t;
 
     //split up: push equality terms into h
-    if(&h && dimh_t) h.setVectorBlock(phi.subRef(M, M+dimh_t-1), h_count);
+    if(&h && dimh_t) h.setVectorBlock(phi.refRange(M, M+dimh_t-1), h_count);
     if(&Jh && dimh_t) {
-      Jh.setMatrixBlock(J.subRef(M, M+dimh_t-1), h_count, 0);
+      Jh.setMatrixBlock(J.refRange(M, M+dimh_t-1), h_count, 0);
       for(uint i=0; i<dimh_t; i++) Jh_aux->rowShift(h_count+i) = J_aux->rowShift(M+i);
       if(dimz){
-        Jhz->setMatrixBlock(Jz->subRef(M, M+dimh_t-1), h_count, 0);
+        Jhz->setMatrixBlock(Jz->refRange(M, M+dimh_t-1), h_count, 0);
         for(uint i=0; i<dimh_t; i++) Jhz_aux->rowShift(h_count+i) = Jz_aux->rowShift(M+i);
       }
     }

@@ -62,7 +62,7 @@ struct Mesh : GLDrawer {
   void setGrid(uint X, uint Y);
 
   /// @name transform and modify
-  void subDevide();
+  void subDivide();
   void scale(double f);
   void scale(double sx, double sy, double sz);
   void translate(double dx, double dy, double dz);

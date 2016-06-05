@@ -21,6 +21,10 @@ void rosCheckInit(const char* node_name){
   }
 }
 
+RosInit::RosInit(const char* node_name){
+  rosCheckInit(node_name);
+}
+
 std_msgs::String conv_string2string(const mlr::String& str){
   std_msgs::String msg;
   if(str.N) msg.data = str.p;
@@ -58,6 +62,18 @@ ors::Transformation conv_pose2transformation(const geometry_msgs::Pose &pose){
   return X;
 }
 
+geometry_msgs::Pose conv_transformation2pose(const ors::Transformation& transform){
+  geometry_msgs::Pose pose;
+  pose.position.x = transform.pos.x;
+  pose.position.y = transform.pos.y;
+  pose.position.z = transform.pos.z;
+  pose.orientation.x = transform.rot.x;
+  pose.orientation.y = transform.rot.y;
+  pose.orientation.z = transform.rot.z;
+  pose.orientation.w = transform.rot.w;
+  return pose;
+}
+
 ors::Vector conv_point2vector(const geometry_msgs::Point& p){
   return ors::Vector(p.x, p.y, p.z);
 }
@@ -67,7 +83,7 @@ ors::Quaternion conv_quaternion2quaternion(const geometry_msgs::Quaternion& q){
 }
 
 void conv_pose2transXYPhi(arr& q, uint qIndex, const geometry_msgs::PoseWithCovarianceStamped& pose){
-  q.subRef(qIndex, qIndex+3) = conv_pose2transXYPhi(pose);
+  q.refRange(qIndex, qIndex+3) = conv_pose2transXYPhi(pose);
 }
 
 arr conv_pose2transXYPhi(const geometry_msgs::PoseWithCovarianceStamped& pose){
@@ -550,6 +566,8 @@ void syncJointStateWitROS(ors::KinematicWorld& world,
 //REGISTER_MODULE(RosCom_KinectSync)
 //REGISTER_MODULE(RosCom_HeadCamsSync)
 //REGISTER_MODULE(RosCom_ArmCamsSync)
+
+
 
 
 
