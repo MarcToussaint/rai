@@ -167,7 +167,7 @@ template<class T> struct Array {
   void setCarray(const T **buffer, uint D0, uint D1);
   void referTo(const T *buffer, uint n);
   void referTo(const Array<T>& a);
-  void referToSub(const Array<T>& a, int i, int I);
+  void referToRange(const Array<T>& a, int i, int I);
   void referToDim(const Array<T>& a, uint i);
   void referToDim(const Array<T>& a, uint i, uint j);
   void referToDim(const Array<T>& a, uint i, uint j, uint k);
@@ -188,9 +188,9 @@ template<class T> struct Array {
   T& operator()(uint i, uint j, uint k) const;
   T& operator()(const Array<uint> &I) const;
   Array<T> operator[](uint i) const;     // calls referToDim(*this, i)
-  Array<T> subDim(uint i, uint j) const; // calls referToDim(*this, i, j)
-  Array<T> subDim(uint i, uint j, uint k) const; // calls referToDim(*this, i, j, k)
-  Array<T> subRef(int i, int I) const; // calls referToSub(*this, i, I)
+  Array<T> refDim(uint i, uint j) const; // calls referToDim(*this, i, j)
+  Array<T> refDim(uint i, uint j, uint k) const; // calls referToDim(*this, i, j, k)
+  Array<T> refRange(int i, int I) const; // calls referToRange(*this, i, I)
   Array<T>& operator()(){ return *this; } //TODO: replace by scalar reference!
   T** getCarray(Array<T*>& Cpointers) const;
   
@@ -663,6 +663,7 @@ template<class T> mlr::Array<T> cat(const mlr::Array<T>& y, const mlr::Array<T>&
 template<class T> mlr::Array<T> cat(const mlr::Array<T>& a, const mlr::Array<T>& b, const mlr::Array<T>& c, const mlr::Array<T>& d) { mlr::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); return x; }
 template<class T> mlr::Array<T> cat(const mlr::Array<T>& a, const mlr::Array<T>& b, const mlr::Array<T>& c, const mlr::Array<T>& d, const mlr::Array<T>& e) { mlr::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); x.append(e); return x; }
 template<class T> mlr::Array<T> catCol(const mlr::Array<mlr::Array<T>*>& X);
+template<class T> mlr::Array<T> catCol(const mlr::Array<mlr::Array<T> >& X);
 template<class T> mlr::Array<T> catCol(const mlr::Array<T>& a, const mlr::Array<T>& b){ return catCol(LIST<mlr::Array<T> >(a,b)); }
 template<class T> mlr::Array<T> catCol(const mlr::Array<T>& a, const mlr::Array<T>& b, const mlr::Array<T>& c){ return catCol(LIST<mlr::Array<T> >(a,b,c)); }
 template<class T> mlr::Array<T> catCol(const mlr::Array<T>& a, const mlr::Array<T>& b, const mlr::Array<T>& c, const mlr::Array<T>& d){ return catCol(LIST<mlr::Array<T> >(a,b,c,d)); }
