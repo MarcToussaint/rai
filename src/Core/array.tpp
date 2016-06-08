@@ -74,8 +74,7 @@ template<class T> void mlr::Array<T>::init() {
   p=NULL;
   M=N=nd=d0=d1=d2=0;
   d=&d0;
-  special=noneST;
-  aux=NULL;
+  special=NULL;
 }
 
 
@@ -279,6 +278,8 @@ template<class T> uint mlr::Array<T>::dim(uint k) const {
 
 //***** sparse arrays
 
+//TODO: reactivate SPARSE!
+#if 0
 /// return fraction of non-zeros in the array
 template<class T> double mlr::Array<T>::sparsity() {
   uint i, m=0;
@@ -293,7 +294,7 @@ template<class T> void mlr::Array<T>::makeSparse() {
   uint n=0;
   if(nd==1) {
     uint i;
-    aux=sparse=new Array<uint> [2];
+    special=sparse=new Array<uint> [2];
     sparse[1].resize(d0); sparse[1]=-1;
     for(i=0; i<d0; i++) if(p[i]) {
         sparse[0].append(i); //list of entries (maps n->i)
@@ -307,7 +308,7 @@ template<class T> void mlr::Array<T>::makeSparse() {
   if(nd==2) {
     uint i, j;
     Array<uint> pair(2);
-    aux=sparse=new Array<uint> [1+d1+d0];
+    special=sparse=new Array<uint> [1+d1+d0];
     for(i=0; i<d0; i++) for(j=0; j<d1; j++) if(p[i*d1+j]) {
           pair(0)=i; pair(1)=j; sparse[0].append(pair);   sparse[0].reshape(n+1, 2);
           permute(i*d1+j, n);
@@ -320,7 +321,7 @@ template<class T> void mlr::Array<T>::makeSparse() {
     return;
   }
 }
-
+#endif
 
 //***** internal memory routines (probably not for external use)
 
@@ -411,12 +412,12 @@ template<class T> void mlr::Array<T>::freeMEM() {
 #endif
   if(M) delete[] p;
   //if(M) free(p);
-  //if(aux) delete[] aux;
+  //if(special) delete[] special;
   if(d && d!=&d0) delete[] d;
   p=NULL;
   M=N=nd=d0=d1=d2=0;
   d=&d0;
-  //aux=NULL;
+  //special=NULL;
   reference=false;
 }
 
@@ -761,14 +762,14 @@ template<class T> T& mlr::Array<T>::operator()(uint i) const {
 
 /// 2D access
 template<class T> T& mlr::Array<T>::operator()(uint i, uint j) const {
-  CHECK(nd==2 && i<d0 && j<d1 && special!=sparseST,
+  CHECK(nd==2 && i<d0 && j<d1 && !isSparse(*this),
         "2D range error (" <<nd <<"=2, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<")");
   return p[i*d1+j];
 }
 
 /// 3D access
 template<class T> T& mlr::Array<T>::operator()(uint i, uint j, uint k) const {
-  CHECK(nd==3 && i<d0 && j<d1 && k<d2 && special!=sparseST,
+  CHECK(nd==3 && i<d0 && j<d1 && k<d2 && !isSparse(*this),
         "3D range error (" <<nd <<"=3, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<", " <<k <<"<" <<d2 <<")");
   return p[(i*d1+j)*d2+k];
 }
@@ -1100,10 +1101,10 @@ mlr::Array<T> mlr::Array<T>::cols(uint start_col, uint end_col) const {
 template<class T> T** mlr::Array<T>::getCarray() const {
   CHECK(nd>=2, "only 2D or higher-D arrays gives C-array of type T**");
   HALT("I think this is buggy");
-  if(special==hasCarrayST) return (T**) aux;
+  if(special==hasCarrayST) return (T**) special;
   T** pp;
   ((mlr::Array<T>*)this)->special = hasCarrayST;
-  ((mlr::Array<T>*)this)->aux = pp = new T* [d0];
+  ((mlr::Array<T>*)this)->special = pp = new T* [d0];
   uint skip;
   if(nd==2) skip=d1; else skip=N/d0;
   for(uint i=0; i<d0; i++) pp[i]=p+i*skip;
@@ -1167,15 +1168,12 @@ template<class T> mlr::Array<T>& mlr::Array<T>::operator=(const mlr::Array<T>& a
   uint i;
   if(memMove) memmove(p, a.p, sizeT*N);
   else for(i=0; i<N; i++) p[i]=a.p[i];
-  if(aux) aux=NULL; //TODO: you lost it!!
-  special = a.special;
-  if(special == noneST) return *this;
-  if(special == RowShiftedPackedMatrixST){
+  if(special) special=NULL; //TODO: you lost it!!
+  if(isRowShifted(a)){
     CHECK(typeid(T)==typeid(double),"");
-    aux = new RowShiftedPackedMatrix(*((arr*)this),*((RowShiftedPackedMatrix*)a.aux));
+    special = new RowShifted(*((arr*)this),*((RowShifted*)a.special));
     return *this;
   }
-  NIY;
   return *this;
 }
 
@@ -1671,8 +1669,8 @@ template<class T> void mlr::Array<T>::write(std::ostream& os, const char *ELEMSE
     }
     if(nd==2) for(j=0; j<d0; j++) {
         if(j) os <<LINESEP;
-        if(special==RowShiftedPackedMatrixST){
-          RowShiftedPackedMatrix *rs = (RowShiftedPackedMatrix*)aux;
+        if(isRowShifted(*this)){
+          RowShifted *rs = dynamic_cast<RowShifted*>(special);
           cout <<"[row-shift=" <<rs->rowShift(j) <<"] ";
         }
         for(i=0; i<d1; i++) os <<ELEMSEP <<operator()(j, i);

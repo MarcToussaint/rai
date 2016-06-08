@@ -29,6 +29,7 @@
 #include <string.h>
 #include <functional>
 
+//-- TODO: old, remove
 #define FOR1D(x, i)   for(i=0;i<x.N;i++)
 #define FOR1D_DOWN(x, i)   for(i=x.N;i--;)
 #define FOR2D(x, i, j) for(i=0;i<x.d0;i++) for(j=0;j<x.d1;j++)
@@ -43,8 +44,9 @@
 
 typedef unsigned char byte;
 typedef unsigned int uint;
+struct SpecialArray;
 
-//-- global memory information and options
+//-- global memory information and options TODO: hide -> array.cpp
 namespace mlr {
 extern bool useLapack;
 extern const bool lapackSupported;
@@ -74,9 +76,7 @@ namespace mlr {
   Can buffer more memory than necessary for faster
   resize; enables non-const reference of subarrays; enables fast
   memove for elementary types; implements many standard
-  array/matrix/tensor operations. Please see the fully public attributes at the
-  bottom of this page -- everthing is meant to be perfectly
-  transparent. Interfacing with ordinary C-buffers is simple.
+  array/matrix/tensor operations. Interfacing with ordinary C-buffers is simple.
   Please see also the reference for the \ref array.h
   header, which contains lots of functions that can be applied on
   Arrays. */
@@ -93,9 +93,7 @@ template<class T> struct Array {
   static char memMove; ///< constant for each type T: decides whether memmove can be used instead of individual copies
 
   //-- special: arrays can be sparse/packed/etc and augmented with aux data to support this
-  enum SpecialType { noneST, hasCarrayST, sparseST, diagST, RowShiftedPackedMatrixST, CpointerST };
-  SpecialType special;
-  void *aux; ///< arbitrary auxiliary data, depends on special
+  SpecialArray *special; ///< arbitrary auxiliary data, depends on special
 
   typedef bool (*ElemCompare)(const T& a, const T& b);
 
@@ -272,7 +270,7 @@ template<class T> struct Array {
   void permuteRandomly();
   void shift(int offset, bool wrapAround=true);
   
-  /// @name sparse matrices [TODO: move outside, use 'special']
+  /// @name special matrices [TODO: move outside, use 'special']
   double sparsity();
   void makeSparse();
   
@@ -299,14 +297,14 @@ template<class T> struct Array {
   void init();
 };
 
-
 //===========================================================================
 /// @name basic Array operators
 /// @{
+
 template<class T> Array<T> operator~(const Array<T>& y); //transpose
 template<class T> Array<T> operator-(const Array<T>& y); //negative
 template<class T> Array<T> operator^(const Array<T>& y, const Array<T>& z); //outer product
-template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z); //index-wise product
+template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z); //index/element-wise product
 template<class T> Array<T> operator*(const Array<T>& y, const Array<T>& z); //inner product
 template<class T> Array<T> operator*(const Array<T>& y, T z);
 template<class T> Array<T> operator*(T y, const Array<T>& z);
@@ -316,7 +314,6 @@ template<class T> bool operator!=(const Array<T>& v, const Array<T>& w);
 template<class T> bool operator<(const Array<T>& v, const Array<T>& w);
 template<class T> std::istream& operator>>(std::istream& is, Array<T>& x);
 template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x);
-//template<class T> Array<T>& operator<<(Array<T>& x, const char* str);
 
 //element-wise update operators
 #ifndef SWIG
@@ -351,8 +348,49 @@ BinaryOperator(/ , /=);
 /// @} //group
 } //namespace
 
+//===========================================================================
+/// @name basic Array functions
+/// @{
+
+#ifndef SWIG
+#define UnaryFunction( func )           \
+  template<class T> mlr::Array<T> func (const mlr::Array<T>& y)
+UnaryFunction(acos);
+UnaryFunction(asin);
+UnaryFunction(atan);
+UnaryFunction(cos);
+UnaryFunction(sin);
+UnaryFunction(tan);
+UnaryFunction(cosh);
+UnaryFunction(sinh);
+UnaryFunction(tanh);
+UnaryFunction(acosh);
+UnaryFunction(asinh);
+UnaryFunction(atanh);
+UnaryFunction(exp);
+UnaryFunction(log);
+UnaryFunction(log10);
+UnaryFunction(sqrt);
+UnaryFunction(cbrt);
+UnaryFunction(ceil);
+UnaryFunction(fabs);
+UnaryFunction(floor);
+UnaryFunction(sigm);
+#undef UnaryFunction
+
+#define BinaryFunction( func )            \
+  template<class T> mlr::Array<T> func(const mlr::Array<T>& y, const mlr::Array<T>& z); \
+  template<class T> mlr::Array<T> func(const mlr::Array<T>& y, T z); \
+  template<class T> mlr::Array<T> func(T y, const mlr::Array<T>& z)
+BinaryFunction(atan2);
+BinaryFunction(pow);
+BinaryFunction(fmod);
+#undef BinaryFunction
+
+#endif //SWIG
 
 //===========================================================================
+/// @}
 /// @name standard types
 /// @{
 
@@ -378,7 +416,7 @@ typedef mlr::Array<mlr::String*> StringL;
 
 //===========================================================================
 /// @}
-/// @name constant arrays
+/// @name constant non-arrays
 /// @{
 
 extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional arguments
@@ -386,7 +424,7 @@ extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arg
 
 //===========================================================================
 /// @}
-/// @name function types
+/// @name basic function types
 /// @{
 
 /// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
@@ -410,9 +448,8 @@ struct KernelFunction {
   virtual ~KernelFunction(){}
 };
 
-
-
 //===========================================================================
+
 template<class T> mlr::Array<T> ARRAY() {                                    mlr::Array<T> z(0); return z; }
 template<class T> mlr::Array<T> ARRAY(const T& i) {                                    mlr::Array<T> z(1); z(0)=i; return z; }
 template<class T> mlr::Array<T> ARRAY(const T& i, const T& j) {                               mlr::Array<T> z(2); z(0)=i; z(1)=j; return z; }
@@ -723,50 +760,7 @@ template<class T> void tensorAdd(mlr::Array<T> &X, const mlr::Array<T> &Y, const
 
 //===========================================================================
 /// @}
-/// @name basic Array functions
-/// @{
-
-#ifndef SWIG
-#define UnaryFunction( func )           \
-  template<class T> mlr::Array<T> func (const mlr::Array<T>& y)
-UnaryFunction(acos);
-UnaryFunction(asin);
-UnaryFunction(atan);
-UnaryFunction(cos);
-UnaryFunction(sin);
-UnaryFunction(tan);
-UnaryFunction(cosh);
-UnaryFunction(sinh);
-UnaryFunction(tanh);
-UnaryFunction(acosh);
-UnaryFunction(asinh);
-UnaryFunction(atanh);
-UnaryFunction(exp);
-UnaryFunction(log);
-UnaryFunction(log10);
-UnaryFunction(sqrt);
-UnaryFunction(cbrt);
-UnaryFunction(ceil);
-UnaryFunction(fabs);
-UnaryFunction(floor);
-UnaryFunction(sigm);
-#undef UnaryFunction
-
-#define BinaryFunction( func )            \
-  template<class T> mlr::Array<T> func(const mlr::Array<T>& y, const mlr::Array<T>& z); \
-  template<class T> mlr::Array<T> func(const mlr::Array<T>& y, T z); \
-  template<class T> mlr::Array<T> func(T y, const mlr::Array<T>& z)
-BinaryFunction(atan2);
-BinaryFunction(pow);
-BinaryFunction(fmod);
-#undef BinaryFunction
-
-#endif //SWIG
-
-
-//===========================================================================
-/// @}
-/// @name double template functions
+/// @name twice template functions
 /// @{
 
 #ifndef SWIG
@@ -797,7 +791,7 @@ bool samedim(const mlr::Array<T>& a, const mlr::Array<S>& b) {
 
 //===========================================================================
 /// @}
-/// @name lapack interfaces
+/// @name low-level lapack interfaces
 /// @{
 
 void blas_Mv(arr& y, const arr& A, const arr& x);
@@ -822,10 +816,22 @@ void lapack_min_Ax_b(arr& x,const arr& A, const arr& b);
 
 //===========================================================================
 /// @}
-/// @name special agumentations
+/// @name special matrices & packings
 /// @{
 
-struct RowShiftedPackedMatrix {
+arr unpack(const arr& X);
+arr comp_At_A(arr& A);
+arr comp_A_At(arr& A);
+arr comp_At_x(arr& A, const arr& x);
+arr comp_A_x(arr& A, const arr& x);
+
+struct SpecialArray{
+  enum Type { noneST, hasCarrayST, sparseST, diagST, RowShiftedST, CpointerST };
+  Type type;
+  virtual ~SpecialArray(){}
+};
+
+struct RowShifted : SpecialArray {
   arr& Z;           ///< references the array itself
   uint real_d1;     ///< the real width (the packed width is Z.d1; the height is Z.d0)
   uintA rowShift;   ///< amount of shift of each row (rowShift.N==Z.d0)
@@ -833,9 +839,9 @@ struct RowShiftedPackedMatrix {
   bool symmetric;   ///< flag: if true, this stores a symmetric (banded) matrix: only the upper triangle
   arr *nextInSum;
   
-  RowShiftedPackedMatrix(arr& X);
-  RowShiftedPackedMatrix(arr& X, RowShiftedPackedMatrix &aux);
-  ~RowShiftedPackedMatrix();
+  RowShifted(arr& X);
+  RowShifted(arr& X, RowShifted &aux);
+  ~RowShifted();
   double acc(uint i, uint j);
   void computeColPatches(bool assumeMonotonic);
   arr At_A();
@@ -844,25 +850,24 @@ struct RowShiftedPackedMatrix {
   arr A_x(const arr& x);
 };
 
-inline RowShiftedPackedMatrix& castRowShiftedPackedMatrix(arr& X) {
-  ///CHECK_EQ(X.special,X.RowShiftedPackedMatrixST,"can't cast like this!");
-  if(X.special!=X.RowShiftedPackedMatrixST) throw("can't cast like this!");
-  return *((RowShiftedPackedMatrix*)X.aux);
+inline RowShifted* castRowShifted(arr& X) {
+  ///CHECK_EQ(X.special,X.RowShiftedST,"can't cast like this!");
+  if(!X.special || X.special->type!=SpecialArray::RowShiftedST) throw("can't cast like this!");
+  return dynamic_cast<RowShifted*>(X.special); //((RowShifted*)X.aux);
 }
+
+template<class T> bool isNotSpecial(const mlr::Array<T>& X){ return !X.special || X.special->type==SpecialArray::noneST; }
+template<class T> bool isRowShifted(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::RowShiftedST; }
+template<class T> bool isSparse(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseST; }
 
 arr unpack(const arr& Z); //returns an unpacked matrix in case this is packed
 arr packRowShifted(const arr& X);
-RowShiftedPackedMatrix *auxRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
-arr comp_At_A(arr& A);
-arr comp_A_At(arr& A);
-arr comp_A_H_At(arr& A, const arr& H);
-arr comp_At_x(arr& A, const arr& x);
-arr comp_A_x(arr& A, const arr& x);
+RowShifted *makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
 
 
 //===========================================================================
 /// @}
-/// @name lists
+/// @name lists -- TODO: make lists 'special'
 /// @{
 
 /*  TODO: realize list simpler: let the Array class have a 'listMode' flag. When this flag is true, the read, write, resize, find etc routines
@@ -892,7 +897,7 @@ template<class T> T* new_elem(mlr::Array<T*>& L) { T *e=new T; e->index=L.N; L.a
 
 //===========================================================================
 /// @}
-/// @name graphs
+/// @name graphs -- TODO: transfer to graph data structure
 /// @{
 
 void graphRandomUndirected(uintA& E, uint n, double connectivity);

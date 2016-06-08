@@ -69,7 +69,7 @@ void KOMO_ConstrainedProblem::f(arr& phi, arr& J, arr& H, TermTypeA& tt, const a
   if(&J){
     uint k=KOMO.get_k();
     uint dim_xmax = max(variableDimensions);
-    RowShiftedPackedMatrix *Jaux = auxRowShifted(J, phi.N, (k+1)*dim_xmax, x.N);
+    RowShifted *Jaux = makeRowShifted(J, phi.N, (k+1)*dim_xmax, x.N);
     J.setZero();
 
     //loop over features
