@@ -33,18 +33,18 @@ bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const o
   return true;
 }
 
-bool baxter_get_q_qdot_u(arr& q, arr& qdot, arr& u, const sensor_msgs::JointState& msg, const ors::KinematicWorld& baxterModel){
+bool baxter_get_q_qdot_u(arr& q, arr& v, arr& u, const sensor_msgs::JointState& msg, const ors::KinematicWorld& baxterModel){
   uint n = msg.name.size();
   if(!n) return false;
-  if(q.N!=baxterModel.q.N) q.resize(baxterModel.q.N).setZero();
-  if(qdot.N!=baxterModel.q.N) qdot.resize(baxterModel.q.N).setZero();
-  if(u.N!=baxterModel.q.N) u.resize(baxterModel.q.N).setZero();
+  if(&q && q.N!=baxterModel.q.N) q.resize(baxterModel.q.N).setZero();
+  if(&v && v.N!=baxterModel.q.N) v.resize(baxterModel.q.N).setZero();
+  if(&u && u.N!=baxterModel.q.N) u.resize(baxterModel.q.N).setZero();
   for(uint i=0;i<n;i++){
     ors::Joint *j = baxterModel.getJointByName(msg.name[i].c_str(), false);
     if(j){
-      q(j->qIndex) = msg.position[i];
-      qdot(j->qIndex) = msg.velocity[i];
-      u(j->qIndex) = msg.effort[i];
+      if(&q) q(j->qIndex) = msg.position[i];
+      if(&v) v(j->qIndex) = msg.velocity[i];
+      if(&u) u(j->qIndex) = msg.effort[i];
     }
   }
   return true;
