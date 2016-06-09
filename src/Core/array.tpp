@@ -2139,6 +2139,7 @@ template<class T> mlr::Array<T> sum(const mlr::Array<T>& v, uint d) {
     x.reshape(x.d0, x.N/x.d0);
     S.resize(x.d1);  S.setZero();
     for(i=0; i<x.d0; i++) for(j=0; j<x.d1; j++) S(j) += x(i, j);
+    if(v.nd>2) S.reshape(v.dim().sub(1,-1));
     return S;
   }
   //any other index (includes the previous cases, but marginally slower)
