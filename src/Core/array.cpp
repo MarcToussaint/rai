@@ -993,48 +993,46 @@ void lognormScale(arr& P, double& logP, bool force) {
   }
 }
 
-#if 0
-TODO: reactivate SPARSE!
 void sparseProduct(arr& y, arr& A, const arr& x) {
-  CHECK(x.nd==1 && A.nd==2 && x.d0==A.d1, "not a proper matrix multiplication");
-  if(A.special!=arr::sparseST && x.special!=arr::sparseST) {
+  CHECK(x.nd==1 && A.nd==2 && x.d0==A.d1, "not a proper matrix-vector multiplication");
+  if(!isSparse(A) && !isSparse(x)) {
     innerProduct(y, A, x);
     return;
   }
-  if(A.special==arr::sparseST && x.special!=arr::sparseST) {
+  if(isSparse(A) && !isSparse(x)) {
     uint i, j, *k, *kstop;
     y.resize(A.d0); y.setZero();
     double *Ap=A.p;
-    uintA* elems = (uintA*)A.aux;
-    for(k=elems->p, kstop=elems->p+elems->N; k!=kstop; Ap++) {
+    uintA& A_elems = dynamic_cast<SparseMatrix*>(A.special)->elems;
+    for(k=A_elems.p, kstop=A_elems.p+A_elems.N; k!=kstop; Ap++) {
       i=*k; k++;
       j=*k; k++;
       y.p[i] += (*Ap) * x.p[j];
     }
     return;
   }
-  if(A.special==arr::sparseST && x.special==arr::sparseST) {
+  if(isSparse(A) && isSparse(x)) {
     uint i, j, n, *k, *kstop, *l, *lstop;
     y.clear(); y.nd=1; y.d0=A.d0;
-    uintA *y_sparse;
-    y.aux=y_sparse=new uintA [2];
-    y_sparse[1].resize(y.d0); y_sparse[1]=(uint)-1;
+    y.special = new SparseMatrix(y, A.d0); //aux=y_sparse=new uintA [2];
+    uintA& y_elems= dynamic_cast<SparseMatrix*>(y.special)->elems;
+    uintA& y_col= dynamic_cast<SparseMatrix*>(y.special)->cols(0);
+    y_col.resize(y.d0); y_col=(uint)-1;
     double *xp=x.p;
-    uintA *elems, *col;
-    elems = (uintA*)x.aux;
+    uintA& x_elems = dynamic_cast<SparseMatrix*>(x.special)->elems;
     uint *slot;
-    for(k=elems->p, kstop=elems->p+elems->N; k!=kstop; xp++) {
+    for(k=x_elems.p, kstop=x_elems.p+x_elems.N; k!=kstop; xp++) {
       j=*k; k++;
-      col = (uintA*)A.aux+(1+j);
-      for(l=col->p, lstop=col->p+col->N; l!=lstop;) {
+      uintA& A_col = dynamic_cast<SparseMatrix*>(A.special)->cols(j);
+      for(l=A_col.p, lstop=A_col.p+A_col.N; l!=lstop;) {
         i =*l; l++;
         n =*l; l++;
-        slot=&y_sparse[1](i);
+        slot=&y_col(i);
         if(*slot==(uint)-1) {
           *slot=y.N;
           y.resizeMEM(y.N+1, true); y(y.N-1)=0.;
-          y_sparse[0].append(i);
-          CHECK_EQ(y_sparse[0].N,y.N, "");
+          y_elems.append(i);
+          CHECK_EQ(y_elems.N,y.N, "");
         }
         i=*slot;
         y(i) += A.elem(n) * (*xp);
@@ -1042,13 +1040,12 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     }
     return;
   }
-  if(A.special!=arr::sparseST && x.special==arr::sparseST) {
+  if(!isSparse(A) && isSparse(x)) {
     uint i, j, *k, *kstop, d1=A.d1;
     y.resize(A.d0); y.setZero();
     double *xp=x.p;
-    uintA *elems;
-    elems = (uintA*)x.aux;
-    for(k=elems->p, kstop=elems->p+elems->N; k!=kstop; xp++) {
+    uintA& elems = dynamic_cast<SparseMatrix*>(x.special)->elems;
+    for(k=elems.p, kstop=elems.p+elems.N; k!=kstop; xp++) {
       j=*k; k++;
       for(i=0; i<A.d0; i++) {
         y.p[i] += A.p[i*d1+j] * (*xp);
@@ -1057,7 +1054,6 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     return;
   }
 }
-#endif
 
 void scanArrFile(const char* name) {
   ifstream is(name, std::ios::binary);
@@ -1613,8 +1609,8 @@ dlauum = multiply L'*L
 #if !defined MLR_MSVC && defined MLR_NOCHECK
 #  warning "MLR_LAPACK undefined - using inefficient implementations"
 #endif
-void blas_MM(arr& X, const arr& A, const arr& B) { innerProduct(X, A, B); };
-void blas_MsymMsym(arr& X, const arr& A, const arr& B) { innerProduct(X, A, B); };
+void blas_MM(arr& X, const arr& A, const arr& B) { mlr::useLapack=false; innerProduct(X, A, B); };
+void blas_MsymMsym(arr& X, const arr& A, const arr& B) { mlr::useLapack=false; innerProduct(X, A, B); };
 void blas_A_At(arr& X, const arr& A) { NICO }
 void blas_At_A(arr& X, const arr& A) { NICO }
 void lapack_cholesky(arr& C, const arr& A) { NICO }

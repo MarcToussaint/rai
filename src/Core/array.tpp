@@ -278,8 +278,7 @@ template<class T> uint mlr::Array<T>::dim(uint k) const {
 
 //***** sparse arrays
 
-//TODO: reactivate SPARSE!
-#if 0
+
 /// return fraction of non-zeros in the array
 template<class T> double mlr::Array<T>::sparsity() {
   uint i, m=0;
@@ -289,39 +288,50 @@ template<class T> double mlr::Array<T>::sparsity() {
 
 /// make sparse: create the \ref sparse index
 template<class T> void mlr::Array<T>::makeSparse() {
-  CHECK(special!=sparseST, "only once yet");
-  uintA* sparse;
-  uint n=0;
-  if(nd==1) {
+  special = new SparseMatrix(*this);
+}
+
+template<class T> SparseMatrix::SparseMatrix(mlr::Array<T>& X, uint d0){
+  CHECK(isNotSpecial(X), "only once yet");
+  type=sparseST;
+  cols.resize(1);
+  X.nd=1; X.d0=d0;
+}
+
+template<class T> SparseMatrix::SparseMatrix(mlr::Array<T>& X){
+  CHECK(isNotSpecial(X), "only once yet");
+  type=sparseST;
+  uint n=0; //memory index
+  if(X.nd==1) {
     uint i;
-    special=sparse=new Array<uint> [2];
-    sparse[1].resize(d0); sparse[1]=-1;
-    for(i=0; i<d0; i++) if(p[i]) {
-        sparse[0].append(i); //list of entries (maps n->i)
-        sparse[1](i)=n;      //index list to entries (maps i->n)
-        permute(i, n);
-        n++;
-      }
-    N=n; resizeMEM(n, true);
+    cols.resize(1);
+    elems.clear();
+    cols(0).clear();//resize(X.d0); sparse[1]=-1;
+    for(i=0; i<X.d0; i++) if(X.p[i]) {
+      elems.append(i); //list of entries (maps n->i)
+      cols(0).append(TUP(i,n));     //index list to entries (maps i->n)
+      X.permute(i, n);
+      n++;
+    }
+    X.N=n; X.resizeMEM(n, true);
     return;
   }
-  if(nd==2) {
+  if(X.nd==2) {
     uint i, j;
-    Array<uint> pair(2);
-    special=sparse=new Array<uint> [1+d1+d0];
-    for(i=0; i<d0; i++) for(j=0; j<d1; j++) if(p[i*d1+j]) {
-          pair(0)=i; pair(1)=j; sparse[0].append(pair);   sparse[0].reshape(n+1, 2);
-          permute(i*d1+j, n);
-          //register entry in columns an row indices
-          pair(0)=i; pair(1)=n; sparse[1+j]   .append(pair); sparse[1+j]   .reshape(sparse[1+j]   .N/2, 2);
-          pair(0)=j; pair(1)=n; sparse[1+d1+i].append(pair); sparse[1+d1+j].reshape(sparse[1+d1+j].N/2, 2);
-          n++;
-        }
-    N=n; resizeMEM(n, true);
+    cols.resize(X.d1);
+    rows.resize(X.d0);
+    for(i=0; i<X.d0; i++) for(j=0; j<X.d1; j++) if(X.p[i*X.d1+j]) {
+      elems.append(TUP(i,j));   elems.reshape(n+1, 2);
+      X.permute(i*X.d1+j, n);
+      //register entry in columns and row indices
+      cols(j).append(TUP(i,n));  cols(j).reshape(cols(j).N/2, 2);
+      rows(i).append(TUP(j,n));  rows(i).reshape(rows(i).N/2, 2);
+      n++;
+    }
+    X.N=n; X.resizeMEM(n, true);
     return;
   }
 }
-#endif
 
 //***** internal memory routines (probably not for external use)
 
@@ -357,10 +367,8 @@ template<class T> void mlr::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
   }
   if(Mnew!=Mold) {  //if M changed, allocate the memory
     uint64_t memoryNew = ((uint64_t)Mnew)*sizeT;
-#ifdef MLR_GLOBALMEM
     globalMemoryTotal -= ((uint64_t)Mold)*sizeT;
     globalMemoryTotal += memoryNew;
-#endif
     if(Mnew) {
       if(globalMemoryTotal>globalMemoryBound) { //helpers to limit global memory (e.g. to avoid crashing a machine)
         if(globalMemoryStrict) { //undo changes then throw an error
@@ -407,9 +415,7 @@ template<class T> mlr::Array<T>& mlr::Array<T>::dereference(){
 
 /// free all memory and reset all pointers and sizes
 template<class T> void mlr::Array<T>::freeMEM() {
-#ifdef MLR_GLOBALMEM
   globalMemoryTotal -= M*sizeT;
-#endif
   if(M) delete[] p;
   //if(M) free(p);
   //if(special) delete[] special;
@@ -1657,6 +1663,10 @@ template<class T> void mlr::Array<T>::write(std::ostream& os, const char *ELEMSE
     os.write((char*)p, sizeT*N);
     os.put(0);
     os <<std::endl;
+  } if(isSparse(*this)) {
+    uintA& elems = dynamic_cast<SparseMatrix*>(special)->elems;
+    if(nd==1) for(uint i=0;i<N;i++) cout <<"( " <<elems(i) <<" ) " <<elem(i) <<endl;
+      else for(uint i=0;i<N;i++) cout <<'(' <<elems[i] <<") " <<elem(i) <<endl;
   } else {
     if(BRACKETS[0]) os <<BRACKETS[0];
     if(dimTag || nd>=3) { os <<' '; writeDim(os); if(nd==2) os <<LINESEP; else os <<' '; }
@@ -2369,9 +2379,7 @@ void innerProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>&
   */
   if(y.nd==2 && z.nd==1) {  //matrix x vector -> vector
     CHECK_EQ(y.d1,z.d0, "wrong dimensions for inner product");
-#ifdef MLR_LAPACK
     if(mlr::useLapack && typeid(T)==typeid(double)) { blas_Mv(x, y, z); return; }
-#endif
     uint i, d0=y.d0, dk=y.d1;
     T *a, *astop, *b, *c;
     x.resize(d0); x.setZero();
@@ -2400,9 +2408,7 @@ void innerProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>&
       return;
     }
 #endif
-#ifdef MLR_LAPACK
     if(mlr::useLapack && typeid(T)==typeid(double)) { blas_MM(x, y, z); return; }
-#endif
     T *a, *astop, *b, *c;
     x.resize(d0, d1); x.setZero();
     c=x.p;

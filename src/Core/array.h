@@ -831,6 +831,10 @@ struct SpecialArray{
   virtual ~SpecialArray(){}
 };
 
+template<class T> bool isNotSpecial(const mlr::Array<T>& X){ return !X.special || X.special->type==SpecialArray::noneST; }
+template<class T> bool isRowShifted(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::RowShiftedST; }
+template<class T> bool isSparse(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseST; }
+
 struct RowShifted : SpecialArray {
   arr& Z;           ///< references the array itself
   uint real_d1;     ///< the real width (the packed width is Z.d1; the height is Z.d0)
@@ -856,9 +860,14 @@ inline RowShifted* castRowShifted(arr& X) {
   return dynamic_cast<RowShifted*>(X.special); //((RowShifted*)X.aux);
 }
 
-template<class T> bool isNotSpecial(const mlr::Array<T>& X){ return !X.special || X.special->type==SpecialArray::noneST; }
-template<class T> bool isRowShifted(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::RowShiftedST; }
-template<class T> bool isSparse(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseST; }
+struct SparseMatrix : SpecialArray{
+  uintA elems; ///< for every non-zero (in memory order), the (row,col) index tuple [or only (row) for vectors]
+  uintAA cols; ///< for every column, for every non-zero the (row,memory) index tuple [also for a vector column]
+  uintAA rows; ///< for every row   , for every non-zero the (column,memory) index tuple [not for vectors]
+  template<class T> SparseMatrix(mlr::Array<T>& X);
+  template<class T> SparseMatrix(mlr::Array<T>& X, uint d0);
+};
+
 
 arr unpack(const arr& Z); //returns an unpacked matrix in case this is packed
 arr packRowShifted(const arr& X);
