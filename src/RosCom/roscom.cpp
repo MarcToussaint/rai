@@ -52,6 +52,15 @@ ors::Transformation conv_transform2transformation(const tf::Transform &trans){
   return X;
 }
 
+
+ors::Transformation conv_transform2transformation(const geometry_msgs::Transform &trans){
+  ors::Transformation X;
+  X.setZero();
+  X.rot.set(trans.rotation.w, trans.rotation.x, trans.rotation.y, trans.rotation.z);
+  X.pos.set(trans.translation.x, trans.translation.y, trans.translation.z);
+  return X;
+}
+
 ors::Transformation conv_pose2transformation(const geometry_msgs::Pose &pose){
   ors::Transformation X;
   X.setZero();

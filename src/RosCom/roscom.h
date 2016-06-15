@@ -41,6 +41,7 @@ std_msgs::String    conv_string2string(const mlr::String&);
 mlr::String         conv_string2string(const std_msgs::String&);
 std_msgs::String    conv_stringA2string(const StringA& strs);
 ors::Transformation conv_transform2transformation(const tf::Transform&);
+ors::Transformation conv_transform2transformation(const geometry_msgs::Transform&);
 ors::Transformation conv_pose2transformation(const geometry_msgs::Pose&);
 ors::Vector         conv_point2vector(const geometry_msgs::Point& p);
 ors::Quaternion     conv_quaternion2quaternion(const geometry_msgs::Quaternion& q);
@@ -87,7 +88,7 @@ struct Subscriber : SubscriberType {
       nh = new ros::NodeHandle;
       registry().append<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
       cout <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<"> ..." <<std::flush;
-      sub  = nh->subscribe( topic_name, 1, &Subscriber::callback, this);
+      sub  = nh->subscribe( topic_name, 100, &Subscriber::callback, this);
       cout <<"done" <<endl;
     }
   }
