@@ -990,14 +990,14 @@ void ors::Mesh::write(std::ostream& os) const {
 }
 
 void ors::Mesh::readFile(const char* filename) {
-  read(FILE(filename).getIs(), filename+(strlen(filename)-3));
+  read(FILE(filename).getIs(), filename+(strlen(filename)-3), filename);
 }
 
-void ors::Mesh::read(std::istream& is, const char* fileExtension) {
+void ors::Mesh::read(std::istream& is, const char* fileExtension, const char* filename) {
   bool loaded=false;
   if(!strcmp(fileExtension, "obj")) { readObjFile(is); loaded=true; }
   if(!strcmp(fileExtension, "off")) { readOffFile(is); loaded=true; }
-  if(!strcmp(fileExtension, "ply")) { readPlyFile(is); loaded=true; }
+  if(!strcmp(fileExtension, "ply")) { readPLY(filename); loaded=true; }
   if(!strcmp(fileExtension, "tri")) { readTriFile(is); loaded=true; }
   if(!strcmp(fileExtension, "stl") || !strcmp(fileExtension, "STL")) { readStlFile(is); loaded=true; }
   if(!loaded) HALT("can't read fileExtension '" <<fileExtension <<"'");

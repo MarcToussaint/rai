@@ -90,7 +90,7 @@ struct Mesh : GLDrawer {
   
   /// @name IO
   void write(std::ostream&) const; ///< only writes generic info
-  void read(std::istream&, const char* fileExtension);
+  void read(std::istream&, const char* fileExtension, const char* filename=NULL);
   void readFile(const char* filename);
   void readTriFile(std::istream& is);
   void readObjFile(std::istream& is);
