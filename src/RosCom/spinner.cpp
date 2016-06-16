@@ -9,7 +9,9 @@ RosCom_Spinner::RosCom_Spinner(const char* nodeName):Module("RosCom_Spinner", .0
   if(useRos) rosCheckInit(nodeName);
 }
 
-void RosCom_Spinner::step(){ if(useRos) ros::spinOnce(); }
+void RosCom_Spinner::step(){
+  if(useRos) ros::spinOnce();
+}
 
 #else
 
