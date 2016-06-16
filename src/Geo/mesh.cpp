@@ -1034,12 +1034,22 @@ void ors::Mesh::writeOffFile(const char* filename) {
 }
 
 void ors::Mesh::readOffFile(std::istream& is) {
-  uint i, k, nVertices, nFaces, nEdges;
-  is >>PARSE("OFF") >>nVertices >>nFaces >>nEdges;
+  uint i, k, nVertices, nFaces, nEdges, alpha;
+  bool color;
+  mlr::String tag;
+  is >>tag;
+  if(tag=="OFF") color=false;
+  else if(tag=="COFF") color=true;
+  else HALT("");
+  is >>nVertices >>nFaces >>nEdges;
   CHECK(!nEdges, "can't read edges in off file");
   V.resize(nVertices, 3);
   T.resize(nFaces   , 3);
-  for(i=0; i<V.N; i++) is >>V.elem(i);
+  if(color) C.resize(nVertices, 3);
+  for(i=0; i<V.d0; i++){
+    is >>V(i, 0) >>V(i, 1) >>V(i, 2);
+    if(color) is >>C(i,0) >>C(i,1) >>C(i,2) >>alpha;
+  }
   for(i=0; i<T.d0; i++) {
     is >>k;
     CHECK_EQ(k,3, "can only read triangles from OFF");
@@ -1136,25 +1146,27 @@ void ors::Mesh::writePLY(const char *fn, bool bin) {
 
 void ors::Mesh::readPLY(const char *fn) {
   struct PlyFace {    unsigned char nverts;  int *verts; };
-  struct Vertex {    double x,  y,  z ;  };
+  struct Vertex {    double x,  y,  z ;  byte r,g,b; };
   uint _nverts=0, _ntrigs=0;
-  Vertex   *_vertices   ;  /**< vertex   buffer */
   
   PlyProperty vert_props[]  = { /* list of property information for a PlyVertex */
-    {"x", Float64, Float64, offsetof(Vertex,x), 0, 0, 0, 0},
-    {"y", Float64, Float64, offsetof(Vertex,y), 0, 0, 0, 0},
-    {"z", Float64, Float64, offsetof(Vertex,z), 0, 0, 0, 0}
-//    {"nx", Float64, Float64, offsetof( Vertex,nx ), 0, 0, 0, 0},
-//    {"ny", Float64, Float64, offsetof( Vertex,ny ), 0, 0, 0, 0},
-//    {"nz", Float64, Float64, offsetof( Vertex,nz ), 0, 0, 0, 0}
-  };
+                                {"x", Float64, Float64, offsetof(Vertex,x), 0, 0, 0, 0},
+                                {"y", Float64, Float64, offsetof(Vertex,y), 0, 0, 0, 0},
+                                {"z", Float64, Float64, offsetof(Vertex,z), 0, 0, 0, 0},
+                                //    {"nx", Float64, Float64, offsetof( Vertex,nx ), 0, 0, 0, 0},
+                                //    {"ny", Float64, Float64, offsetof( Vertex,ny ), 0, 0, 0, 0},
+                                //    {"nz", Float64, Float64, offsetof( Vertex,nz ), 0, 0, 0, 0}
+                                {"red", Uint8, Uint8, offsetof(Vertex,r), 0,0,0,0},
+                                {"green", Uint8, Uint8, offsetof(Vertex,g), 0,0,0,0},
+                                {"blue", Uint8, Uint8, offsetof(Vertex,b), 0,0,0,0}
+                              };
   
   PlyProperty face_props[]  = { /* list of property information for a PlyFace */
-    {"vertex_indices", Int32, Int32, offsetof(PlyFace,verts), 1, Uint8, Uint8, offsetof(PlyFace,nverts)},
+                                {"vertex_indices", Int32, Int32, offsetof(PlyFace,verts), 1, Uint8, Uint8, offsetof(PlyFace,nverts)},
   };
   
   FILE    *fp  = fopen(fn, "r");
-  if(!fp) return ;
+  if(!fp) return;
   PlyFile *ply = read_ply(fp);
   
   //-- get the number of faces and vertices
@@ -1164,9 +1176,10 @@ void ors::Mesh::readPLY(const char *fn) {
     if(equal_strings("vertex", elem_name)) _nverts = elem_count;
     if(equal_strings("face",   elem_name)) _ntrigs = elem_count;
   }
-  _vertices  = new Vertex  [_nverts] ;
-  T.resize(_ntrigs,3) ;
-  
+  V.resize(_nverts,3);
+  C.resize(_nverts,3);
+  T.resize(_ntrigs,3);
+
   //-- examine each element type that is in the file (PlyVertex, PlyFace)
   for(int i = 0; i < ply->num_elem_types; ++i)  {
     int elem_count ;
@@ -1177,11 +1190,20 @@ void ors::Mesh::readPLY(const char *fn) {
       setup_property_ply(ply, &vert_props[0]);
       setup_property_ply(ply, &vert_props[1]);
       setup_property_ply(ply, &vert_props[2]);
-//      setup_property_ply(ply, &vert_props[3]);
-//      setup_property_ply(ply, &vert_props[4]);
-//      setup_property_ply(ply, &vert_props[5]);
+      setup_property_ply(ply, &vert_props[3]);
+      setup_property_ply(ply, &vert_props[4]);
+      setup_property_ply(ply, &vert_props[5]);
 
-      for(uint j = 0; j < _nverts; ++j)  get_element_ply(ply, (void *)(_vertices + j));
+      Vertex vertex;
+      for(uint j = 0; j < _nverts; ++j){
+        get_element_ply(ply, &vertex);
+        V(j,0) = vertex.x;
+        V(j,1) = vertex.y;
+        V(j,2) = vertex.z;
+        C(j,0) = vertex.r;
+        C(j,1) = vertex.g;
+        C(j,2) = vertex.b;
+      }
     } else if(equal_strings("face", elem_name))  {
       /* set up for getting PlyFace elements */
       /* (all we need are PlyVertex indices) */
@@ -1192,9 +1214,9 @@ void ors::Mesh::readPLY(const char *fn) {
         if(face.nverts != 3)
           HALT("not a triangulated surface: polygon " <<j <<" has " <<face.nverts <<" sides") ;
           
-        T(j,0) = face.verts[0] ;
-        T(j,1) = face.verts[1] ;
-        T(j,2) = face.verts[2] ;
+        T(j,0) = face.verts[0];
+        T(j,1) = face.verts[1];
+        T(j,2) = face.verts[2];
         
         free(face.verts) ;
       }
@@ -1204,11 +1226,6 @@ void ors::Mesh::readPLY(const char *fn) {
   
   close_ply(ply); //calls fclose
   free_ply(ply);
-  
-  //-- copy to mesh
-  doubleA Verts((double*)_vertices, _nverts*3);
-  V.takeOver(Verts);
-  V.reshape(V.N/3,3);
 }
 #else
 void ors::Mesh::writePLY(const char *fn, bool bin) { NICO }
@@ -1640,9 +1657,10 @@ void ors::Mesh::glDraw(struct OpenGL&) {
   glEnableClientState(GL_VERTEX_ARRAY);
   glEnableClientState(GL_NORMAL_ARRAY);
   if(C.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
+
   glVertexPointer(3, GL_DOUBLE, 0, V.p);
-  if(C.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
   glNormalPointer(GL_DOUBLE, 0, Vn.p);
+  if(C.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
 
   glDrawElements(GL_TRIANGLES, T.N, GL_UNSIGNED_INT, T.p);
 
