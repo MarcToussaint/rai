@@ -50,6 +50,7 @@ void ManipulationTree_Node::solvePoseProblem(){
   CHECK(!parent || parent->hasEffKinematics,"parent needs to have computed the pose first!");
   if(parent) effKinematics = parent->effKinematics;
 
+#if 0
   if(true || !poseProblem){ //create the pose problem
     Node *n = fol.KB.appendSubgraph({"PoseProblem"}, {folState->isNodeOfParentGraph});
     poseProblemSpecs = &n->graph();
@@ -80,10 +81,32 @@ void ManipulationTree_Node::solvePoseProblem(){
     poseCost = opt.newton.fx;
     pose = newPose;
   }
+#else
+  poseProblem = new KOMO();
+  KOMO& komo(*poseProblem);
+  poseProblem->setModel(effKinematics);
+  poseProblem->setTiming(1,1,5.,1);
+
+  komo.setSquaredQVelocities();
+  poseProblem->setAbstractTask(0, *folState);
+
+  komo.reset();
+  komo.MP->reportFull(true, FILE("z.problem"));
+  komo.run();
+
+  Graph result = komo.getReport();
+  double cost = result.get<double>({"total","sqrCosts"});
+  if(!pose.N || cost<poseCost){
+    poseCost = cost;
+    pose = komo.x;
+  }
+//  komo.displayTrajectory(-1.);
+#endif
+
 
   effKinematics.setJointState(pose);
 
-  for(ors::KinematicSwitch *sw: poseProblem->switches)
+  for(ors::KinematicSwitch *sw: poseProblem->MP->switches)
     if(sw->timeOfApplication==1) sw->apply(effKinematics);
   effKinematics.topSort();
   effKinematics.checkConsistency();
@@ -101,6 +124,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   //-- collect 'path nodes'
   ManipulationTree_NodeL treepath = getTreePath();
 
+#if 0
   //-- add decisions to the seq pose problem description
   seqProblem = new MotionProblem(startKinematics, true);
   seqProblem->setTiming(s-1, 5.*s); //T=0 means one pose is optimized!!
@@ -159,6 +183,9 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
 //  seqProblem->reportFull(true);
   seqProblem->costReport(verbose>1);
   if(verbose>1) seqProblem->displayTrajectory(1, "SeqProblem", -.01);
+#else
+  NIY
+#endif
 }
 
 void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
@@ -168,6 +195,7 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   //-- collect 'path nodes'
   ManipulationTree_NodeL treepath = getTreePath();
 
+#if 0
   //-- add decisions to the path problem description
   pathProblem = new MotionProblem(startKinematics, true);
   pathProblem->setTiming(s*microSteps, 5.*s);
@@ -203,6 +231,31 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
 //  pathProblem->reportFull(true);
   pathProblem->costReport(verbose>1);
   if(verbose>1) pathProblem->displayTrajectory(1, "PathProblem", -.01);
+#else
+  pathProblem = new KOMO();
+  KOMO& komo(*pathProblem);
+  komo.setModel(startKinematics);
+  komo.setTiming(s+1, microSteps, 5., 2);
+
+  komo.setSquaredQAccelerations();
+
+  for(ManipulationTree_Node *node:treepath) /*if(node->folDecision)*/{
+//    CHECK(node->s > 0,"");
+    komo.setAbstractTask(node->s, *node->folState);
+  }
+
+  komo.reset();
+  komo.MP->reportFull(true, FILE("z.problem"));
+  komo.run();
+
+  Graph result = komo.getReport();
+  double cost = result.get<double>({"total","sqrCosts"});
+  if(!pose.N || cost<poseCost){
+    poseCost = cost;
+    pose = komo.x;
+  }
+//  komo.displayTrajectory(-1.);
+#endif
 }
 
 ManipulationTree_NodeL ManipulationTree_Node::getTreePath(){
