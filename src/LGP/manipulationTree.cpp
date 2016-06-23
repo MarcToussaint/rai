@@ -88,6 +88,7 @@ void ManipulationTree_Node::solvePoseProblem(){
   poseProblem->setTiming(1,1,5.,1);
 
   komo.setSquaredQVelocities();
+  cout <<"  ** PoseProblem for state" <<*folState <<endl;
   poseProblem->setAbstractTask(0, *folState);
 
   komo.reset();
