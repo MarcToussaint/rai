@@ -14,8 +14,9 @@ typedef mlr::Array<ManipulationTree_Node*> ManipulationTree_NodeL;
 struct ManipulationTree_Node{
   ManipulationTree_Node *parent;
   mlr::Array<ManipulationTree_Node*> children;
-  uint s;               ///< depth/step of this node
-//  double t;             ///< real time
+  uint s;               ///< decision depth/step of this node
+  double time;          ///< real time
+  double folReward;
   uint graphIndex=0;
 
   //-- info on the state and action this node represents

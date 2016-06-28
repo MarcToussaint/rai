@@ -941,6 +941,15 @@ ors::Vector ors::Mesh::getMeanVertex() const {
   return Vector(Vmean);
 }
 
+void ors::Mesh::getBox(double& dx, double& dy, double& dz) const {
+  dx=dy=dz=0.;
+  for(uint i=0;i<V.d0;i++){
+    dx=mlr::MAX(dx, fabs(V(i,0)));
+    dy=mlr::MAX(dy, fabs(V(i,1)));
+    dz=mlr::MAX(dz, fabs(V(i,2)));
+  }
+}
+
 double ors::Mesh::getRadius() const {
   double r=0.;
   for(uint i=0;i<V.d0;i++) r=mlr::MAX(r, sumOfSqr(V[i]));

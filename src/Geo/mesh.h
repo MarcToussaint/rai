@@ -79,6 +79,7 @@ struct Mesh : GLDrawer {
   void clean();
   void flipFaces();
   Vector getMeanVertex() const;
+  void getBox(double& dx, double& dy, double& dz) const;
   double getRadius() const;
   double getArea() const;
   double getCircum() const;

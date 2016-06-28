@@ -26,6 +26,8 @@ ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS
   fol.setState(parent->folState);
   if(a){
     fol.transition(a);
+    time=parent->time+fol.lastStepDuration;
+    folReward = fol.lastStepReward;
   }else{
     LOG(-1) <<"this doesn't make sense";
   }
@@ -185,7 +187,30 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   seqProblem->costReport(verbose>1);
   if(verbose>1) seqProblem->displayTrajectory(1, "SeqProblem", -.01);
 #else
-  NIY
+  seqProblem = new KOMO();
+  KOMO& komo(*seqProblem);
+  komo.setModel(startKinematics);
+  komo.setTiming(time, 1, 5., 1);
+
+  komo.setHoming(-1., -1., 1e-1);
+  komo.setSquaredQVelocities();
+  komo.setSquaredFixJointVelocities(-1., -1., 1e3);
+
+  for(ManipulationTree_Node *node:treepath){
+    komo.setAbstractTask(node->time, *node->folState, true);
+  }
+
+  komo.reset();
+  komo.MP->reportFull(true, FILE("z.problem"));
+  komo.run();
+//  komo.checkGradients();
+
+  Graph result = komo.getReport();
+  double cost = result.get<double>({"total","sqrCosts"});
+  if(!pose.N || cost<poseCost){
+    poseCost = cost;
+    pose = komo.x;
+  }
 #endif
 }
 
@@ -236,13 +261,13 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   pathProblem = new KOMO();
   KOMO& komo(*pathProblem);
   komo.setModel(startKinematics);
-  komo.setTiming(s+1, microSteps, 5., 2);
+  komo.setTiming(time, microSteps, 5., 2);
 
   komo.setSquaredQAccelerations();
+  komo.setSquaredFixJointVelocities(-1., -1., 1e3);
 
   for(ManipulationTree_Node *node:treepath) /*if(node->folDecision)*/{
-//    CHECK(node->s > 0,"");
-    komo.setAbstractTask(node->s, *node->folState);
+    komo.setAbstractTask(node->time, *node->folState, true);
   }
 
   komo.reset();
