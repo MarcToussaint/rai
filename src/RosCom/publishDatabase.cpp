@@ -131,8 +131,8 @@ void PublishDatabase::syncAlvar(const Alvar* alvar)
   }
 
   body->X = alvar->frame * alvar->transform;
+  body->shapes.first()->X = body->X;
 
-  //((Alvar*)alvar)->transform = body->X;
   modelWorld.deAccess();
 }
 
