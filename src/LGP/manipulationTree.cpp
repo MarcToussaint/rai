@@ -190,7 +190,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   seqProblem = new KOMO();
   KOMO& komo(*seqProblem);
   komo.setModel(startKinematics);
-  komo.setTiming(time, 1, 5., 1);
+  komo.setTiming(time, 2, 5., 1, false);
 
   komo.setHoming(-1., -1., 1e-1);
   komo.setSquaredQVelocities();
