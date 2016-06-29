@@ -2,33 +2,33 @@
 #include "perceptionCollection.h"
 
 Collector::Collector():
-    Module("Collector", 0){}
+    Module("Collector", 0){ tf.setZero(); } //MT: why running full speed!? listen to the accesses instead?
 
 void Collector::step()
 {
-  FilterObjects perceps;
+  FilterObjects perceps; //MT 'percepts'?
 
   int cluster_rev = tabletop_clusters.readAccess();
   int ar_rev = ar_pose_markers.readAccess();
 
-  if (this->useRos)
+  if (this->useRos) //MT why care about ROS?
   {
-    if ( cluster_rev > tabletop_clusters_revision )
-    {
+    if ( cluster_rev > tabletop_clusters_revision ){ //only if new cluster info is available
       tabletop_clusters_revision = cluster_rev;
       const visualization_msgs::MarkerArray msg = tabletop_clusters();
 
-      if (msg.markers.size() > 0)
-      {
-        if (!has_transform)
-        {
+      if (msg.markers.size() > 0){
+        if (!has_transform) { //get the transform from ROS
+          //MT: markers and clusters have the same transformation??
           // Convert into a position relative to the base.
           tf::TransformListener listener;
           tf::StampedTransform baseTransform;
           try{
+            //MT: why not use ros_getTransform?
             listener.waitForTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), ros::Duration(1.0));
             listener.lookupTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), baseTransform);
             tf = conv_transform2transformation(baseTransform);
+            //MT: really add the meter here? This seems hidden magic numbers in the code. And only for Baxter..?
             ors::Transformation inv;
             inv.setInverse(tf);
             inv.addRelativeTranslation(0,0,-1);
@@ -51,12 +51,10 @@ void Collector::step()
       }
     }
 
-    if ( ar_rev > ar_pose_markers_revision)
-    {
+    if ( ar_rev > ar_pose_markers_revision){ //new alwar objects are available
       ar_pose_markers_revision = ar_rev;
       const ar::AlvarMarkers msg = ar_pose_markers();
-      for(auto & marker : msg.markers)
-      {
+      for(auto & marker : msg.markers) {
         if (!has_transform)
         {
           // Convert into a position relative to the base.
@@ -79,13 +77,13 @@ void Collector::step()
               exit(0);
           }
         }
-        Alvar* new_alvar = new Alvar(conv_ROSAlvar2Alvar( marker ));
+        Alvar* new_alvar = new Alvar( conv_ROSAlvar2Alvar(marker) );
         new_alvar->frame = tf;
         perceps.append( new_alvar );
       }
     }
   }
-  else // If useRos==0, make a fake cluster and alvar
+  else // If useRos==0, make a fake cluster and alvar //MT: no, that's not general code
   {
     ors::Mesh box;
     box.setBox();
@@ -120,21 +118,19 @@ void Collector::step()
     perceps.append( fake_alvar );
     mlr::wait(0.01);
   }
-  if (perceps.N > 0)
-  {
-    perceptual_inputs.writeAccess();
+
+  if (perceps.N > 0){
+    perceptual_inputs.writeAccess(); //MT: use perceptual_inputs.set() = perceps;
     perceptual_inputs() = perceps;
     perceptual_inputs.deAccess();
   }
 
-  ar_pose_markers.deAccess();
+  ar_pose_markers.deAccess(); //MT: make the access shorter, only around the blocks above
   tabletop_clusters.deAccess();
-
 }
 
 
-Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker)
-{
+Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker){
   arr points = conv_points2arr(marker.points);
   arr mean = sum(points,0)/(double)points.d0;
   Cluster new_object(mean, points, marker.header.frame_id);
@@ -142,8 +138,7 @@ Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker)
   return new_object;
 }
 
-Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker)
-{
+Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker){
   Alvar new_alvar(marker.header.frame_id);
   new_alvar.id = marker.id;
   new_alvar.transform = conv_pose2transformation(marker.pose.pose);

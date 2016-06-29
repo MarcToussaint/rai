@@ -31,5 +31,5 @@ private:
   int tabletop_clusters_revision = 0;
   int ar_pose_markers_revision = 0;
   ors::Transformation tf; // Transformation from the camera to the body
-  bool has_transform = false;
+  bool has_transform = true;
 };
