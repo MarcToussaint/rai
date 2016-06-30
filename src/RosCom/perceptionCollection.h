@@ -16,13 +16,15 @@ Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker);
 Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker);
 
 struct Collector : Module{
-  ACCESSlisten(visualization_msgs::MarkerArray, tabletop_clusters)
-  ACCESSlisten(ar::AlvarMarkers, ar_pose_markers)
+  Access_typed<visualization_msgs::MarkerArray> tabletop_clusters;
+  Access_typed<ar::AlvarMarkers> ar_pose_markers;
+ // ACCESSlisten(visualization_msgs::MarkerArray, tabletop_clusters)
+//  ACCESSlisten(ar::AlvarMarkers, ar_pose_markers)
   ACCESSname(ors::Transformation, tabletop_srcFrame)
   ACCESSname(ors::Transformation, alvar_srcFrame)
   ACCESSname(FilterObjects, perceptual_inputs)
 
-  Collector();
+  Collector(const bool simulate = false);
 
   virtual void open(){}
   virtual void step();
@@ -34,4 +36,6 @@ private:
   int ar_pose_markers_revision = 0;
 //  ors::Transformation tf; // Transformation from the camera to the body
 //  bool has_transform = true;
+
+  bool simulate;
 };
