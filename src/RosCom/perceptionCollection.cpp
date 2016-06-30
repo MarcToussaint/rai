@@ -2,22 +2,26 @@
 #include "perceptionCollection.h"
 
 Collector::Collector():
-    Module("Collector", 0){ tf.setZero(); } //MT: why running full speed!? listen to the accesses instead?
+    Module("Collector", -1){
+  tabletop_srcFrame.set()->setZero();
+  alvar_srcFrame.set()->setZero();
+//  tf.setZero();
+} //MT: why running full speed!? listen to the accesses instead?
 
 void Collector::step()
 {
   FilterObjects perceps; //MT 'percepts'?
 
-  int cluster_rev = tabletop_clusters.readAccess();
-  int ar_rev = ar_pose_markers.readAccess();
-
   if (this->useRos) //MT why care about ROS?
   {
+
+    int cluster_rev = tabletop_clusters.readAccess();
     if ( cluster_rev > tabletop_clusters_revision ){ //only if new cluster info is available
       tabletop_clusters_revision = cluster_rev;
       const visualization_msgs::MarkerArray msg = tabletop_clusters();
 
       if (msg.markers.size() > 0){
+#if 0
         if (!has_transform) { //get the transform from ROS
           //MT: markers and clusters have the same transformation??
           // Convert into a position relative to the base.
@@ -42,19 +46,24 @@ void Collector::step()
               exit(0);
           }
         }
+#endif
 
         for(auto & marker : msg.markers){
           Cluster* new_cluster = new Cluster(conv_ROSMarker2Cluster( marker ));
-          new_cluster->frame = tf;
+          new_cluster->frame = tabletop_srcFrame.get(); //tf
           perceps.append( new_cluster );
         }
       }
     }
+    tabletop_clusters.deAccess();
 
+    int ar_rev = ar_pose_markers.readAccess();
     if ( ar_rev > ar_pose_markers_revision){ //new alwar objects are available
       ar_pose_markers_revision = ar_rev;
       const ar::AlvarMarkers msg = ar_pose_markers();
+
       for(auto & marker : msg.markers) {
+#if 0
         if (!has_transform)
         {
           // Convert into a position relative to the base.
@@ -77,11 +86,15 @@ void Collector::step()
               exit(0);
           }
         }
+#endif
+
         Alvar* new_alvar = new Alvar( conv_ROSAlvar2Alvar(marker) );
-        new_alvar->frame = tf;
+        new_alvar->frame = alvar_srcFrame.get(); //tf;
         perceps.append( new_alvar );
       }
     }
+    ar_pose_markers.deAccess(); //MT: make the access shorter, only around the blocks above
+
   }
   else // If useRos==0, make a fake cluster and alvar //MT: no, that's not general code
   {
@@ -124,9 +137,6 @@ void Collector::step()
     perceptual_inputs() = perceps;
     perceptual_inputs.deAccess();
   }
-
-  ar_pose_markers.deAccess(); //MT: make the access shorter, only around the blocks above
-  tabletop_clusters.deAccess();
 }
 
 
