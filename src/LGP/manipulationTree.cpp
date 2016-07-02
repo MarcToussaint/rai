@@ -192,17 +192,19 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   komo.setModel(startKinematics);
   komo.setTiming(time, 2, 5., 1, false);
 
-  komo.setHoming(-1., -1., 1e-1);
+//  komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
   komo.setSquaredFixJointVelocities(-1., -1., 1e3);
+  komo.setSquaredFixSwitchVelocities(-1., -1., 1e3);
 
   for(ManipulationTree_Node *node:treepath){
     komo.setAbstractTask(node->time, *node->folState, true);
   }
 
   komo.reset();
-  komo.MP->reportFull(true, FILE("z.problem"));
+//  komo.MP->reportFull(true, FILE("z.problem"));
   komo.run();
+  komo.MP->reportFull(true, FILE("z.problem"));
 //  komo.checkGradients();
 
   Graph result = komo.getReport();
