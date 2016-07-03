@@ -21,13 +21,13 @@
 #include <Hardware/gamepad/gamepad.h>
 
 Teleop2Tasks::Teleop2Tasks(TaskController& _MP):fmc(_MP){
-  effPosR = fmc.addPDTask("MoveEffTo_endeffR", .2, 1.8,new DefaultTaskMap(posTMT, fmc.world,"endeffR",NoVector,"base_footprint"));
+  effPosR = fmc.addPDTask("MoveEffTo_endeffR", .2, 1.8,new TaskMap_Default(posTMT, fmc.world,"endeffR",NoVector,"base_footprint"));
   effPosR->y_ref = {0.8, -.5, 1.};
 
-  effPosL = fmc.addPDTask("MoveEffTo_endeffL", .2, 1.8,new DefaultTaskMap(posTMT,fmc.world,"endeffL",NoVector,"base_footprint"));
+  effPosL = fmc.addPDTask("MoveEffTo_endeffL", .2, 1.8,new TaskMap_Default(posTMT,fmc.world,"endeffL",NoVector,"base_footprint"));
   effPosL->y_ref = {0.8, .5, 1.};
 
-  fc = fmc.addPDTask("fc_endeffL", .2, 1.8,new DefaultTaskMap(posTMT,fmc.world, "endeffForceL",NoVector,"base_footprint"));
+  fc = fmc.addPDTask("fc_endeffL", .2, 1.8,new TaskMap_Default(posTMT,fmc.world, "endeffForceL",NoVector,"base_footprint"));
   fc->y_ref ={0.8,0.5,1.};
   fc->f_ref = {15.,15.,15.};
   fc->f_alpha = .075;
@@ -43,11 +43,11 @@ Teleop2Tasks::Teleop2Tasks(TaskController& _MP):fmc(_MP){
   gripperL->setTarget({0.01});
   //gripperL->y_ref = {.08};  // open gripper 8cm
 
-  effOrientationR = fmc.addPDTask("orientationR", .2, 1.8,new DefaultTaskMap(quatTMT,fmc.world, "endeffR"));
+  effOrientationR = fmc.addPDTask("orientationR", .2, 1.8,new TaskMap_Default(quatTMT,fmc.world, "endeffR"));
   effOrientationR->y_ref = {1., 0., 0., 0.};
   effOrientationR->flipTargetSignOnNegScalarProduct = true;
 
-  effOrientationL = fmc.addPDTask("orientationL", .2,1.8,new DefaultTaskMap(quatTMT,fmc.world, "endeffL"));
+  effOrientationL = fmc.addPDTask("orientationL", .2,1.8,new TaskMap_Default(quatTMT,fmc.world, "endeffL"));
   effOrientationL->y_ref = {1., 0., 0., 0.};
   effOrientationL->flipTargetSignOnNegScalarProduct = true;
 
