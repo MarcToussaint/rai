@@ -1498,6 +1498,23 @@ void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs) {
   CHECK(!info, "lapack_EigenDecomp error info = " <<info);
 }
 
+arr lapack_kSmallestEigenValues_sym(const arr& A, uint k){
+  CHECK(k<A.d0,"");
+  integer N=A.d0, KD=A.d1-1, LDAB=A.d1, INFO;
+  mlr::Array<integer> IWORK(5*N), IFAIL(N);
+  arr WORK(10*(3*N)), Acopy=A;
+  integer M, IL=1, IU=k, LDQ=0, LDZ=1, LWORK=WORK.N;
+  double VL=0., VU=0., ABSTOL=1e-8;
+  arr sig(N);
+  if(!isRowShifted(A)) {
+    dsyevx_((char*)"N", (char*)"I", (char*)"L", &N, Acopy.p, &LDAB, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)NULL, &LDZ, WORK.p, &LWORK, IWORK.p, IFAIL.p, &INFO);
+  }else{
+    dsbevx_((char*)"N", (char*)"I", (char*)"L", &N, &KD, Acopy.p, &LDAB, (double*)NULL, &LDQ, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)NULL, &LDZ, WORK.p, IWORK.p, IFAIL.p, &INFO);
+  }
+  sig.resizeCopy(k);
+  return sig;
+}
+
 bool lapack_isPositiveSemiDefinite(const arr& symmA) {
   // Check that all eigenvalues are nonnegative.
   arr d, V;

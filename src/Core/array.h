@@ -803,6 +803,7 @@ void lapack_mldivide(arr& X, const arr& A, const arr& b);
 void lapack_LU(arr& LU, const arr& A);
 void lapack_RQ(arr& R, arr& Q, const arr& A);
 void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs);
+arr  lapack_kSmallestEigenValues_sym(const arr& A, uint k);
 bool lapack_isPositiveSemiDefinite(const arr& symmA);
 void lapack_inverseSymPosDef(arr& Ainv, const arr& A);
 void lapack_choleskySymPosDef(arr& Achol, const arr& A);

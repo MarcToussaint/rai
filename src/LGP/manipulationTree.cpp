@@ -192,7 +192,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   komo.setModel(startKinematics);
   komo.setTiming(time, 2, 5., 1, false);
 
-//  komo.setHoming(-1., -1., 1e-1); //gradient bug??
+  komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
   komo.setSquaredFixJointVelocities(-1., -1., 1e3);
   komo.setSquaredFixSwitchVelocities(-1., -1., 1e3);
@@ -205,7 +205,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
 //  komo.MP->reportFull(true, FILE("z.problem"));
   komo.run();
   komo.MP->reportFull(true, FILE("z.problem"));
-//  komo.checkGradients();
+  komo.checkGradients();
 
   Graph result = komo.getReport();
   double cost = result.get<double>({"total","sqrCosts"});

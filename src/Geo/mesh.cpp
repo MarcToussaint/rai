@@ -468,7 +468,7 @@ void ors::Mesh::computeNormals() {
     b.set(&V(T(i, 1), 0));
     c.set(&V(T(i, 2), 0));
 
-    b-=a; c-=a; a=b^c; a.normalize();
+    b-=a; c-=a; a=b^c; if(!a.isZero) a.normalize();
     Tn(i, 0)=a.x;  Tn(i, 1)=a.y;  Tn(i, 2)=a.z;
     Vn(T(i, 0), 0)+=a.x;  Vn(T(i, 0), 1)+=a.y;  Vn(T(i, 0), 2)+=a.z;
     Vn(T(i, 1), 0)+=a.x;  Vn(T(i, 1), 1)+=a.y;  Vn(T(i, 1), 2)+=a.z;
