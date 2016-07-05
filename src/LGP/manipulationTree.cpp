@@ -49,7 +49,10 @@ void ManipulationTree_Node::expand(){
 
 void ManipulationTree_Node::solvePoseProblem(){
   //reset the effective kinematics:
-  CHECK(!parent || parent->hasEffKinematics,"parent needs to have computed the pose first!");
+  if(parent && !parent->hasEffKinematics){
+    MLR_MSG("parent needs to have computed the pose first!");
+    return;
+  }
   if(parent) effKinematics = parent->effKinematics;
 
   poseProblem = new KOMO();
