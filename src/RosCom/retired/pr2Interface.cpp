@@ -263,7 +263,7 @@ void PR2Interface::sendCommand(const arr& u0, const arr& Kp, const arr& Kd, cons
 }
 
 void PR2Interface::goToPosition(arr pos, mlr::String shape, double executionTime, bool useMotionPlaner, mlr::String name) {
-  TaskMap* posMap = new DefaultTaskMap(posTMT, *this->modelWorld, shape);
+  TaskMap* posMap = new TaskMap_Default(posTMT, *this->modelWorld, shape);
   this->goToTask(posMap, pos, executionTime, useMotionPlaner, name);
 }
 
@@ -275,7 +275,7 @@ void PR2Interface::goToTasks(mlr::Array<LinTaskSpaceAccLaw*> laws, double execut
     MP.x0 = modelWorld->getJointState(); //TODO nix modelWorld, copiedWorld?
 
     Task *t;
-    t = MP.addTask("transitions", new TransitionTaskMap(MP.world));
+    t = MP.addTask("transitions", new TaskMap_Transition(MP.world));
     t->map.order=2; //make this an acceleration task!
     t->setCostSpecs(0, MP.T, {0.}, 1e0);
 

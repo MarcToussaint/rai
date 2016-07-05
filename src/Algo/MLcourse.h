@@ -45,7 +45,7 @@ extern DefaultKernelFunction defaultKernelFunction;
 struct KernelRidgeRegression{
   arr X; ///< stored data (to compute kappa for queries)
   arr kernelMatrix_lambda; ///< X X^T + lambda I
-  arr invKernelMatrix_lambda;
+  arr invKernelMatrix_lambda; ///< (X X^T + lambda I)^-1
   arr alpha; ///< (X X^T + lambda I)^-1 y
   double sigma; ///< mean squared error on training data; estimate of noise
   double mu; ///< fixed global bias (default=0)
@@ -107,7 +107,7 @@ enum ArtificialDataType { readFromCfgFileDT=0, linearData, sinusData, linearOutl
 
 void artificialData(arr& X, arr& y, ArtificialDataType dataType=readFromCfgFileDT);
 void artificialData_1D2Class(arr& X, arr& y);
-void artificialData_Hasties2Class(arr& X, arr& y, uint dim=2);
+void artificialData_Hasties2Class(arr& X, arr& y);
 void artificialData_HastiesMultiClass(arr& X, arr& y);
 void artificialData_GaussianMixture(arr& X, arr& y);
 void load_data(arr& X, const char* filename, bool whiten);
