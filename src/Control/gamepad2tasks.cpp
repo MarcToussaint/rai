@@ -40,7 +40,7 @@ Gamepad2Tasks::Gamepad2Tasks(TaskController& _MP, const arr& _q0)
     coll = new CtrlTask("collisions", new TaskMap_Proxy(allPTMT, {0u}, .1), .2, .8, 1., 1.);
     if(robot=="pr2") {
       base = new CtrlTask("endeffBase", new TaskMap_qItself(MP.world, "worldTranslationRotation"), .2, .8, 1., 1.);
-      torso = new CtrlTask("torso_lift_link", new DefaultTaskMap(posTMT, MP.world, "torso_lift_link_0"), .2, .8, 1., 1.);
+      torso = new CtrlTask("torso_lift_link", new TaskMap_Default(posTMT, MP.world, "torso_lift_link_0"), .2, .8, 1., 1.);
       gripperL = new CtrlTask("gripperL", new TaskMap_qItself(MP.world.getJointByName("l_gripper_joint")->qIndex, MP.world.getJointStateDimension()), 2., .8, 1., 1.);
       gripperR = new CtrlTask("gripperR", new TaskMap_qItself(MP.world.getJointByName("r_gripper_joint")->qIndex, MP.world.getJointStateDimension()), 2., .8, 1., 1.);
     }

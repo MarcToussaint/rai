@@ -367,8 +367,10 @@ template<class T> void mlr::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
   }
   if(Mnew!=Mold) {  //if M changed, allocate the memory
     uint64_t memoryNew = ((uint64_t)Mnew)*sizeT;
+#ifdef MLR_GLOBALMEM
     globalMemoryTotal -= ((uint64_t)Mold)*sizeT;
     globalMemoryTotal += memoryNew;
+#endif
     if(Mnew) {
       if(globalMemoryTotal>globalMemoryBound) { //helpers to limit global memory (e.g. to avoid crashing a machine)
         if(globalMemoryStrict) { //undo changes then throw an error
@@ -415,7 +417,9 @@ template<class T> mlr::Array<T>& mlr::Array<T>::dereference(){
 
 /// free all memory and reset all pointers and sizes
 template<class T> void mlr::Array<T>::freeMEM() {
+#ifdef MLR_GLOBALMEM
   globalMemoryTotal -= M*sizeT;
+#endif
   if(M) delete[] p;
   //if(M) free(p);
   //if(special) delete[] special;
