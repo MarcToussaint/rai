@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef MLR_ROS
+# error "Sorry, you can include this only when compiling against ROS"
+#endif
+
 #include <tf/transform_listener.h>
 #include <tf/tf.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
@@ -30,6 +34,7 @@
 
 void rosCheckInit(const char* node_name="pr2_module");
 bool rosOk();
+struct RosInit{ RosInit(const char* node_name="mlr_module"); };
 
 //-- ROS <--> MLR
 std_msgs::String    conv_string2string(const mlr::String&);
@@ -54,6 +59,7 @@ ors::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::Ma
 std_msgs::Float32MultiArray conv_floatA2Float32Array(const floatA&);
 
 //-- MLR -> ROS
+geometry_msgs::Pose conv_transformation2pose(const ors::Transformation&);
 std::vector<geometry_msgs::Point> conv_arr2points(const arr& pts);
 marc_controller_pkg::JointState   conv_CtrlMsg2JointState(const CtrlMsg& ctrl);
 floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray&);
@@ -77,7 +83,7 @@ struct Subscriber : SubscriberType {
   ros::Subscriber sub;
   Subscriber(const char* topic_name, Access_typed<msg_type>& _access)
     : access(_access) {
-    if(mlr::getParameter<bool>("useRos")){
+    if(mlr::getParameter<bool>("useRos", false)){
       nh = new ros::NodeHandle;
       registry().append<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
       cout <<"subscibing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<"> ..." <<std::flush;
@@ -245,16 +251,6 @@ struct SoftHandMsg{
 //===========================================================================
 /// This module only calls ros:spinOnce() in step() and loops full speed -- to sync the process with the ros server
 
-struct RosCom_Spinner:Module{
-  bool useRos;
-  RosCom_Spinner(const char* nodeName="MLRnode"):Module("RosCom_Spinner", .001){
-    useRos = mlr::getParameter<bool>("useRos");
-    if(useRos) rosCheckInit(nodeName);
-  }
-  void open(){}
-  void step(){ if(useRos) ros::spinOnce(); }
-  void close(){}
-};
 
 
 // Helper function so sync ors with the real PR2

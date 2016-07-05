@@ -33,7 +33,6 @@
 #ifdef MLR_QHULL
 
 #include "mesh.h"
-//#include "plot.h"
 
 extern "C" {
   #include <qhull/qhull_a.h>
@@ -44,6 +43,8 @@ extern "C" {
 #undef dW
 
 int QHULL_DEBUG_LEVEL=0;
+
+static Mutex qhullMutex;
 
 //===========================================================================
 
@@ -97,6 +98,8 @@ void getQhullState(uint D, arr& points, arr& vertices, arr& lines) {
 //===========================================================================
 
 double distanceToConvexHull(const arr &X, const arr &y, arr *projectedPoint, uintA *faceVertices, bool freeqhull) {
+  auto lock = qhullMutex();
+
   int exitcode;
   //static const char* cmd = "qhull Tv i p";
   static char* cmd = (char*) "qhull ";
@@ -139,24 +142,24 @@ double distanceToConvexHull(const arr &X, const arr &y, arr *projectedPoint, uin
     }
   }
   
-  if(QHULL_DEBUG_LEVEL>1) {
-    arr line;
-    NIY;
-//    plotQhullState(X.d1);
-//    plotPoints(y);
-    if(projectedPoint) {
-      line.clear();
-      line.append(y);
-      line.append(*projectedPoint);
-//      plotPoints(*projectedPoint);
-      line.reshape(2, X.d1);
-//      plotLine(line);
-    }
+//  if(QHULL_DEBUG_LEVEL>1) {
+//    arr line;
+//    NIY;
+////    plotQhullState(X.d1);
+////    plotPoints(y);
+//    if(projectedPoint) {
+//      line.clear();
+//      line.append(y);
+//      line.append(*projectedPoint);
+////      plotPoints(*projectedPoint);
+//      line.reshape(2, X.d1);
+////      plotLine(line);
+//    }
 //    plot();
     
-    //cout <<"**best facet: " <<bestfacet->id <<endl;
-    //FOREACHvertex_(facet->vertices) cout <<vertex->id <<' ';
-  }
+//    //cout <<"**best facet: " <<bestfacet->id <<endl;
+//    //FOREACHvertex_(facet->vertices) cout <<vertex->id <<' ';
+//  }
   
   if(freeqhull) {
     qh_freeqhull(!qh_ALL);
@@ -226,7 +229,6 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
   }
   
   return d;
-  
 }
 
 //===========================================================================
@@ -319,10 +321,9 @@ double forceClosure(const arr& C, const arr& Cn, const ors::Vector& center,
 
 //===========================================================================
 
-
-//===========================================================================
-
 void getTriangulatedHull(uintA& T, arr& V) {
+  auto lock = qhullMutex();
+
   int exitcode;
   uint dim=V.d1;
   static char* cmd = (char*) "qhull Qt ";
@@ -367,6 +368,8 @@ void getTriangulatedHull(uintA& T, arr& V) {
 }
 
 void getDelaunayEdges(uintA& E, const arr& V) {
+  auto lock = qhullMutex();
+
   if(V.d0<3) { E.clear(); return; }
   int exitcode;
   static char* cmd = (char*) "qhull d Qbb Qt ";
@@ -474,3 +477,5 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
 void getDelaunayEdges(uintA& E, const arr& V) { NICO }
 #endif
 /** @} */
+
+

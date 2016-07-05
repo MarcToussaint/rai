@@ -1,6 +1,6 @@
+#ifdef MLR_ROS
+
 #include "roscom.h"
-
-
 
 bool rosOk(){
   return ros::ok();
@@ -11,12 +11,18 @@ void rosCheckInit(const char* node_name){
   static Mutex mutex;
   static bool inited = false;
 
-  mutex.lock();
-  if(!inited) {
-    ros::init(mlr::argc, mlr::argv, node_name, ros::init_options::NoSigintHandler);
-    inited = true;
+  if(mlr::getParameter<bool>("useRos", false)){
+    mutex.lock();
+    if(!inited) {
+      ros::init(mlr::argc, mlr::argv, node_name, ros::init_options::NoSigintHandler);
+      inited = true;
+    }
+    mutex.unlock();
   }
-  mutex.unlock();
+}
+
+RosInit::RosInit(const char* node_name){
+  rosCheckInit(node_name);
 }
 
 std_msgs::String conv_string2string(const mlr::String& str){
@@ -56,6 +62,18 @@ ors::Transformation conv_pose2transformation(const geometry_msgs::Pose &pose){
   return X;
 }
 
+geometry_msgs::Pose conv_transformation2pose(const ors::Transformation& transform){
+  geometry_msgs::Pose pose;
+  pose.position.x = transform.pos.x;
+  pose.position.y = transform.pos.y;
+  pose.position.z = transform.pos.z;
+  pose.orientation.x = transform.rot.x;
+  pose.orientation.y = transform.rot.y;
+  pose.orientation.z = transform.rot.z;
+  pose.orientation.w = transform.rot.w;
+  return pose;
+}
+
 ors::Vector conv_point2vector(const geometry_msgs::Point& p){
   return ors::Vector(p.x, p.y, p.z);
 }
@@ -65,7 +83,7 @@ ors::Quaternion conv_quaternion2quaternion(const geometry_msgs::Quaternion& q){
 }
 
 void conv_pose2transXYPhi(arr& q, uint qIndex, const geometry_msgs::PoseWithCovarianceStamped& pose){
-  q.subRef(qIndex, qIndex+3) = conv_pose2transXYPhi(pose);
+  q.refRange(qIndex, qIndex+3) = conv_pose2transXYPhi(pose);
 }
 
 arr conv_pose2transXYPhi(const geometry_msgs::PoseWithCovarianceStamped& pose){
@@ -250,8 +268,6 @@ floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray &msg){
 // OLD
 //
 
-
-#ifdef MLR_ROS
 
 void PerceptionObjects2Ors::step(){
   perceptionObjects.readAccess();
@@ -529,19 +545,20 @@ void syncJointStateWitROS(ors::KinematicWorld& world,
 
 
 //===========================================================================
-#else // MLR_ROS no defined
+//#else // MLR_ROS no defined
 
-void RosCom_Spinner::open(){ NICO }
-void RosCom_Spinner::step(){ NICO }
-void RosCom_Spinner::close(){ NICO }
+//void RosCom_Spinner::open(){ NICO }
+//void RosCom_Spinner::step(){ NICO }
+//void RosCom_Spinner::close(){ NICO }
 
-void RosCom_ControllerSync::open(){ NICO }
-void RosCom_ControllerSync::step(){ NICO }
-void RosCom_ControllerSync::close(){ NICO }
+//void RosCom_ControllerSync::open(){ NICO }
+//void RosCom_ControllerSync::step(){ NICO }
+//void RosCom_ControllerSync::close(){ NICO }
 
-void RosCom_ForceSensorSync::open(){ NICO }
-void RosCom_ForceSensorSync::step(){ NICO }
-void RosCom_ForceSensorSync::close(){ NICO }
+//void RosCom_ForceSensorSync::open(){ NICO }
+//void RosCom_ForceSensorSync::step(){ NICO }
+//void RosCom_ForceSensorSync::close(){ NICO }
+
 #endif
 
 //REGISTER_MODULE(RosCom_Spinner)
@@ -549,6 +566,8 @@ void RosCom_ForceSensorSync::close(){ NICO }
 //REGISTER_MODULE(RosCom_KinectSync)
 //REGISTER_MODULE(RosCom_HeadCamsSync)
 //REGISTER_MODULE(RosCom_ArmCamsSync)
+
+
 
 
 
