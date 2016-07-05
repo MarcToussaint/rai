@@ -42,11 +42,11 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
     //MLR_MSG("\nx=" <<x <<"\ngx=" <<gx <<"\nHx=" <<Hx);
     arr R=Hx;
     if(lambda) { //Levenberg Marquardt damping
-      if(R.special==arr::RowShiftedPackedMatrixST) for(uint i=0; i<R.d0; i++) R(i,0) += lambda; //(R(i,0) is the diagonal in the packed matrix!!)
+      if(R.special==arr::RowShiftedST) for(uint i=0; i<R.d0; i++) R(i,0) += lambda; //(R(i,0) is the diagonal in the packed matrix!!)
       else for(uint i=0; i<R.d0; i++) R(i,i) += lambda;
     }
     if(addRegularizer) {
-      if(R.special==arr::RowShiftedPackedMatrixST) R = unpack(R);
+      if(R.special==arr::RowShiftedST) R = unpack(R);
       //      cout <<*addRegularizer <<R <<endl;
       Delta = lapack_Ainv_b_sym(R + (*addRegularizer), -(gx+(*addRegularizer)*vectorShaped(x)));
     } else {

@@ -5,6 +5,7 @@
 void plotQhullState(uint D);
 extern int QHULL_DEBUG_LEVEL;
 const char* qhullVersion();
+void qHullSave();
 
 double distanceToConvexHull(const arr &X,        //points
                             const arr &y,        //query point
