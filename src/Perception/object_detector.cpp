@@ -1,7 +1,7 @@
 ﻿#ifdef MLR_PCL
 
 #include "object_detector.h"
-#include "plane.h"
+#include "pclPlaneExtraction.h"
 #include <pcl/common/pca.h>
 #include <pcl/common/transforms.h>
 #include <Core/array.h>

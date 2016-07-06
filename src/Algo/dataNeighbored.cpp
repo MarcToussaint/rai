@@ -4,9 +4,9 @@ void DataNeighbored::setData(const arr& pts){
   X = pts;
   valid.resize(X.d0);
   for(uint i=0;i<X.d0;i++) if(pts(i,2)>=0) valid(i)=true; else valid(i)=false;
-  if(weights.N!=X.d0){
-    weights.resize(X.d0);
-    weights.setZero();
+  if(isModelledWeights.N!=X.d0){
+    isModelledWeights.resize(X.d0);
+    isModelledWeights.setZero();
   }
   N.clear();
   idx2pixel.setStraightPerm(X.d0);
@@ -21,16 +21,16 @@ uint DataNeighbored::n() const{ return X.d0; }
 
 uint DataNeighbored::d() const{ return X.d1; }
 
-void DataNeighbored::setGridNeighborhood(uint height, uint width){
+void DataNeighbored::setGridNeighborhood(uint height, uint width, bool excludeNonValids){
   CHECK_EQ(width*height, X.d0, "");
   N.resize(X.d0);
   for(uint y=0;y<height;y++) for(uint x=0;x<width;x++){
     uint i=y*width + x, j;
-    if(!valid(i)) continue;
-    if(y){          j=(y-1)*width+(x  ); if(valid(j)) N(i).append(j); }
-    if(x){          j=(y  )*width+(x-1); if(valid(j)) N(i).append(j); }
-    if(y<height-1){ j=(y+1)*width+(x  ); if(valid(j)) N(i).append(j); }
-    if(x<width-1){  j=(y  )*width+(x+1); if(valid(j)) N(i).append(j); }
+    if(excludeNonValids && !valid(i)) continue;
+    if(y){          j=(y-1)*width+(x  ); if(!excludeNonValids || valid(j)) N(i).append(j); }
+    if(x){          j=(y  )*width+(x-1); if(!excludeNonValids || valid(j)) N(i).append(j); }
+    if(y<height-1){ j=(y+1)*width+(x  ); if(!excludeNonValids || valid(j)) N(i).append(j); }
+    if(x<width-1){  j=(y  )*width+(x+1); if(!excludeNonValids || valid(j)) N(i).append(j); }
   }
 }
 
@@ -50,18 +50,19 @@ void DataNeighbored::removeNonValid(){
     if(index(i)!=i){
       X[index(i)] = X[i];
       N(index(i)) = N(i);
-      weights(index(i)) = weights(i);
+      isModelledWeights(index(i)) = isModelledWeights(i);
       costs(index(i)) = costs(i);
     }
     idx2pixel(index(i)) = i;
   }
   X.resizeCopy(s,X.d1);
   N.resizeCopy(s);
-  weights.resizeCopy(s);
+  isModelledWeights.resizeCopy(s);
   costs.resizeCopy(s);
 }
 
 void DataNeighbored::initFringe(uintA& fringe, uintA& pts, boolA& included, uint i){
+  CHECK(valid(i),"");
   fringe.clear();
   fringe.append(i);
   pts = fringe;
@@ -73,7 +74,7 @@ void DataNeighbored::initFringe(uintA& fringe, uintA& pts, boolA& included, uint
 void DataNeighbored::expandFringe(uintA& fringe, uintA& pts, boolA& included){
   uintA newfringe;
   for(uint i:fringe) for(uint j:N(i)){
-    if(!included(j)){
+    if(valid(j) && !included(j)){
       newfringe.append(j);
       pts.append(j);
       included(j)=true;
@@ -83,6 +84,7 @@ void DataNeighbored::expandFringe(uintA& fringe, uintA& pts, boolA& included){
 }
 
 uintA DataNeighbored::getKneighborhood(uint i, uint k){
+  CHECK(valid(i),"");
   uintA fringe, pts;
   boolA included;
   initFringe(fringe, pts, included, i);

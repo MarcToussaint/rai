@@ -91,7 +91,6 @@ extern int interactivity;
 //----- files
 void open(std::ofstream& fs, const char *name, const char *errmsg="");
 void open(std::ifstream& fs, const char *name, const char *errmsg="");
-const char* mlrPath(const char* rel=NULL);
 
 //----- strings and streams
 bool contains(const char *s, char c);
@@ -316,6 +315,7 @@ struct Log{
   Log(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0)
     : key(key), logCoutLevel(defaultLogCoutLevel), logFileLevel(defaultLogFileLevel), cfgFileWasRead(false){}
   ~Log(){ fil.close(); }
+  //TODO: rename to getToken
   mlr::LogToken operator()(int log_level, const char* filename, const char* function, uint line) const {
     if(strcmp(key,"global") && !cfgFileWasRead){
       Log *nonconst=(Log*)this;
@@ -442,6 +442,10 @@ extern String errString;
 //
 
 namespace mlr {
+
+
+  String mlrPath(const char* rel=NULL);
+
   /** @brief A ostream/istream wrapper that allows easier initialization of objects, like:
 arr X = FILE("inname");
 X >>FILE("outfile");
@@ -452,6 +456,7 @@ struct FileToken{
   std::shared_ptr<std::ofstream> os;
   std::shared_ptr<std::ifstream> is;
 
+  FileToken(){}
   FileToken(const char* _filename, bool change_dir=true);
   FileToken(const FileToken& ft);
   ~FileToken();
@@ -468,7 +473,7 @@ struct FileToken{
 };
 template<class T> FileToken& operator>>(FileToken& fil, T& x){ fil.getIs() >>x;  return fil; }
 template<class T> FileToken& operator<<(FileToken& fil, const T& x){ fil.getOs() <<x;  return fil; }
-inline std::ostream& operator<<(std::ostream& os, FileToken& fil){ return os <<fil.name; }
+inline std::ostream& operator<<(std::ostream& os, const FileToken& fil){ return os <<fil.name; }
 template<class T> FileToken& operator<<(T& x, FileToken& fil){ fil.getIs() >>x; return fil; }
 template<class T> void operator>>(const T& x, FileToken& fil){ fil.getOs() <<x; }
 }
@@ -581,6 +586,13 @@ struct Mutex {
   ~Mutex();
   void lock();
   void unlock();
+
+  struct Token{
+    Mutex &m;
+    Token(Mutex& m):m(m){ m.lock(); }
+    ~Token(){ m.unlock(); }
+  };
+  struct Token operator()(){ return Token(*this); }
 };
 
 

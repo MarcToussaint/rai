@@ -7,7 +7,7 @@ struct DataNeighbored{
   boolA valid; ///< whether the data point is ok (not corrupted)
   mlr::Array<uintA> N; ///< neighborhood
   uintA idx2pixel; ///< after removing points, this maps from X-index to original data index
-  arr weights;
+  arr isModelledWeights;
   arr costs;  ///< the 'cost' per data point, i.e., weigthing in the cost function
 
   DataNeighbored(){}
@@ -18,7 +18,7 @@ struct DataNeighbored{
 
   void setData(const arr& pts);
   void setCosts(const arr& _costs);
-  void setGridNeighborhood(uint height, uint width);
+  void setGridNeighborhood(uint height, uint width, bool excludeNonValids=true);
   uintA getKneighborhood(uint i, uint k);
 
   void removeNonValid();

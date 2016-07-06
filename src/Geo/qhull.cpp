@@ -33,7 +33,6 @@
 #ifdef MLR_QHULL
 
 #include "mesh.h"
-//#include "plot.h"
 
 extern "C" {
   #include <qhull/qhull_a.h>
@@ -44,6 +43,8 @@ extern "C" {
 #undef dW
 
 int QHULL_DEBUG_LEVEL=0;
+
+static Mutex qhullMutex;
 
 //===========================================================================
 
@@ -97,6 +98,8 @@ void getQhullState(uint D, arr& points, arr& vertices, arr& lines) {
 //===========================================================================
 
 double distanceToConvexHull(const arr &X, const arr &y, arr *projectedPoint, uintA *faceVertices, bool freeqhull) {
+  auto lock = qhullMutex();
+
   int exitcode;
   //static const char* cmd = "qhull Tv i p";
   static char* cmd = (char*) "qhull ";
@@ -139,24 +142,24 @@ double distanceToConvexHull(const arr &X, const arr &y, arr *projectedPoint, uin
     }
   }
   
-  if(QHULL_DEBUG_LEVEL>1) {
-    arr line;
-    NIY;
-//    plotQhullState(X.d1);
-//    plotPoints(y);
-    if(projectedPoint) {
-      line.clear();
-      line.append(y);
-      line.append(*projectedPoint);
-//      plotPoints(*projectedPoint);
-      line.reshape(2, X.d1);
-//      plotLine(line);
-    }
+//  if(QHULL_DEBUG_LEVEL>1) {
+//    arr line;
+//    NIY;
+////    plotQhullState(X.d1);
+////    plotPoints(y);
+//    if(projectedPoint) {
+//      line.clear();
+//      line.append(y);
+//      line.append(*projectedPoint);
+////      plotPoints(*projectedPoint);
+//      line.reshape(2, X.d1);
+////      plotLine(line);
+//    }
 //    plot();
     
-    //cout <<"**best facet: " <<bestfacet->id <<endl;
-    //FOREACHvertex_(facet->vertices) cout <<vertex->id <<' ';
-  }
+//    //cout <<"**best facet: " <<bestfacet->id <<endl;
+//    //FOREACHvertex_(facet->vertices) cout <<vertex->id <<' ';
+//  }
   
   if(freeqhull) {
     qh_freeqhull(!qh_ALL);
@@ -187,15 +190,15 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
   arr v, f, w, v_f, y_f, dv, subn, wk, W;
   double dd;
   for(i=0; i<vertices.N; i++) {
-    v.referToSubDim(X, vertices(i)); //v is the vertex in question
+    v.referToDim(X, vertices(i)); //v is the vertex in question
     
     // subn: normal of the sub-facet opposit to v
     if(i) j=0; else j=1;
-    w.referToSubDim(X, vertices(j)); //take w as origin of local frame
+    w.referToDim(X, vertices(j)); //take w as origin of local frame
     CHECK(vertices.N>=X.d1, ""); //won't work otherwise..
     W.resize(vertices.N, X.d1);      //compose matrix of basis vectors
     for(k=0, l=0; k<vertices.N; k++) if(k!=i && k!=j) {
-        wk.referToSubDim(X, vertices(k));
+        wk.referToDim(X, vertices(k));
         W[l]() = wk-w;
         l++;
       }
@@ -219,14 +222,13 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
     CHECK(fabs(dd - d*d)<1e-8, "");
     
     //compute gradient
-    dv.referToSubDim(dDdX, vertices(i));
+    dv.referToDim(dDdX, vertices(i));
     dv = f - y + yf_vf_norm*v_f;
     dv *= 2.*yf_vf_norm;
     dv *= .5/d;
   }
   
   return d;
-  
 }
 
 //===========================================================================
@@ -319,11 +321,11 @@ double forceClosure(const arr& C, const arr& Cn, const ors::Vector& center,
 
 //===========================================================================
 
-
-//===========================================================================
-
 void getTriangulatedHull(uintA& T, arr& V) {
+  auto lock = qhullMutex();
+
   int exitcode;
+  uint dim=V.d1;
   static char* cmd = (char*) "qhull Qt ";
   exitcode = qh_new_qhull(V.d1, V.d0, V.p, false, cmd, NULL, stderr);
   if(exitcode) HALT("qh_new_qhull error - exitcode " <<exitcode);
@@ -334,12 +336,12 @@ void getTriangulatedHull(uintA& T, arr& V) {
   uint f, i, v;
   
   arr Vnew;
-  Vnew.resize(qh num_vertices, 3);
-  T.resize(qh num_facets, 3);
+  Vnew.resize(qh num_vertices, dim);
+  T.resize(qh num_facets, dim);
   i=0;
   FORALLvertices {
     vertex->id = i;
-    memmove(&Vnew(i, 0), vertex->point, 3*sizeof(double));
+    memmove(&Vnew(i, 0), vertex->point,  dim*sizeof(double));
     i++;
   }
   f=0;
@@ -350,7 +352,7 @@ void getTriangulatedHull(uintA& T, arr& V) {
       i++;
     }
     if(facet->toporient) {
-      v=T(f, 2);  T(f, 2)=T(f, 1);  T(f, 1)=v;
+      v=T(f, 0);  T(f, 0)=T(f, 1);  T(f, 1)=v;
     }
     f++;
   }
@@ -366,6 +368,8 @@ void getTriangulatedHull(uintA& T, arr& V) {
 }
 
 void getDelaunayEdges(uintA& E, const arr& V) {
+  auto lock = qhullMutex();
+
   if(V.d0<3) { E.clear(); return; }
   int exitcode;
   static char* cmd = (char*) "qhull d Qbb Qt ";
@@ -473,3 +477,5 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
 void getDelaunayEdges(uintA& E, const arr& V) { NICO }
 #endif
 /** @} */
+
+

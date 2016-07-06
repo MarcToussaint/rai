@@ -112,22 +112,22 @@ void UnconstrainedProblem::anyTimeAulaUpdate(double lambdaStepsize, double muInc
 
   //collect gradients of active constraints
   arr A;
-  RowShiftedPackedMatrix *Aaux, *Jgaux;
-  if(Jg_x.special==arr::RowShiftedPackedMatrixST){
-    Aaux = auxRowShifted(A, 0, Jg_x.d1, x.N);
-    Jgaux = &castRowShiftedPackedMatrix(Jg_x);
+  RowShifted *Aaux, *Jgaux;
+  if(Jg_x.special==arr::RowShiftedST){
+    Aaux = makeRowShifted(A, 0, Jg_x.d1, x.N);
+    Jgaux = castRowShifted(Jg_x);
   }
   //append rows of Jg_x to A if constraint is active
   for(uint i=0;i<g_x.N;i++) if(g_x(i)>0. || lambda(i)>0.){
     A.append(Jg_x[i]);
     A.reshape(A.N/Jg_x.d1,Jg_x.d1);
-    if(Jg_x.special==arr::RowShiftedPackedMatrixST)
+    if(Jg_x.special==arr::RowShiftedST)
       Aaux->rowShift.append(Jgaux->rowShift(i));
   }
   if(A.d0>0){
     arr tmp = comp_A_At(A);
-    if(Jg_x.special==arr::RowShiftedPackedMatrixST){
-      CHECK_EQ(castRowShiftedPackedMatrix(tmp).symmetric,true,"");
+    if(Jg_x.special==arr::RowShiftedST){
+      CHECK_EQ(castRowShifted(tmp)->symmetric, true, "");
       for(uint i=0;i<tmp.d0;i++) tmp(i,0) += 1e-6;
     }else{
       for(uint i=0;i<tmp.d0;i++) tmp(i,i) += 1e-6;
