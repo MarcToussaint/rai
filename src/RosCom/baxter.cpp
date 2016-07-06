@@ -1,5 +1,4 @@
 #include "baxter.h"
-#if 1
 
 #ifdef MLR_ROS
 
