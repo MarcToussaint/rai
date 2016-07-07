@@ -29,7 +29,10 @@
 
 
 PublishDatabase::PublishDatabase():
-    Module("PublishDatabase", 0){}
+    Module("PublishDatabase", -1),
+    object_database(this, "object_database", true),
+    nh(NULL)
+{}
 
 void PublishDatabase::open(){
   //ros::init(mlr::argc, mlr::argv, "publish_database", ros::init_options::NoSigintHandler);

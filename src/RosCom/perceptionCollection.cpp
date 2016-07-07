@@ -1,18 +1,22 @@
 #include <RosCom/roscom.h>
 #include "perceptionCollection.h"
 
-Collector::Collector():
-    Module("Collector", -1){
+Collector::Collector(const bool simulate):
+    Module("Collector", simulate ? 0.05:-1),
+    tabletop_clusters(this, "tabletop_clusters", !simulate),
+    ar_pose_markers(this, "ar_pose_markers", !simulate)
+{
   tabletop_srcFrame.set()->setZero();
   alvar_srcFrame.set()->setZero();
+  this->simulate = simulate;
 //  tf.setZero();
-} //MT: why running full speed!? listen to the accesses instead?
+}
 
 void Collector::step()
 {
-  FilterObjects perceps; //MT 'percepts'?
+  FilterObjects percepts;
 
-  if (this->useRos) //MT why care about ROS?
+  if (!simulate)
   {
 
     int cluster_rev = tabletop_clusters.readAccess();
@@ -51,7 +55,7 @@ void Collector::step()
         for(auto & marker : msg.markers){
           Cluster* new_cluster = new Cluster(conv_ROSMarker2Cluster( marker ));
           new_cluster->frame = tabletop_srcFrame.get(); //tf
-          perceps.append( new_cluster );
+          percepts.append( new_cluster );
         }
       }
     }
@@ -90,13 +94,13 @@ void Collector::step()
 
         Alvar* new_alvar = new Alvar( conv_ROSAlvar2Alvar(marker) );
         new_alvar->frame = alvar_srcFrame.get(); //tf;
-        perceps.append( new_alvar );
+        percepts.append( new_alvar );
       }
     }
     ar_pose_markers.deAccess(); //MT: make the access shorter, only around the blocks above
 
   }
-  else // If useRos==0, make a fake cluster and alvar //MT: no, that's not general code
+  else // If 'simulate', make a fake cluster and alvar
   {
     ors::Mesh box;
     box.setBox();
@@ -114,7 +118,7 @@ void Collector::step()
     ors::Quaternion rot;
     rot.setDeg(30, ors::Vector(0.1, 0.25, 1));
     fake_cluster->frame.addRelativeRotation(rot);
-    perceps.append( fake_cluster );
+    percepts.append( fake_cluster );
 
     Alvar* fake_alvar = new Alvar("/base_footprint");
     fake_alvar->frame.setZero();
@@ -128,14 +132,11 @@ void Collector::step()
     rot.setRpy(alv_rot(0), alv_rot(1), alv_rot(2));
     fake_alvar->frame.addRelativeRotation(rot);
     fake_alvar->id = 2;
-    perceps.append( fake_alvar );
-    mlr::wait(0.01);
+    percepts.append( fake_alvar );
   }
 
-  if (perceps.N > 0){
-    perceptual_inputs.writeAccess(); //MT: use perceptual_inputs.set() = perceps;
-    perceptual_inputs() = perceps;
-    perceptual_inputs.deAccess();
+  if (percepts.N > 0){
+    perceptual_inputs.set() = percepts;
   }
 }
 
