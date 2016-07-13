@@ -45,7 +45,7 @@ extern uint eval_cost;
  * 2) Because the computation of quantities is expensive and it is usually most efficient to compute all needed quantities together
  *    (Instead of calling get_f(x); and then get_J(x); separately)
  *
- * All these methods allow some returns to be optional: use NoArr
+ * The methods allow some returns to be optional: use NoArr
  *
  */
 
@@ -72,26 +72,6 @@ extern TermTypeA& NoTermTypeA;
  *  For the sumOfSqr features no Hessian is returned: we assume the Gauss-Newton approximation.
  */
 typedef std::function<void(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x)> ConstrainedProblem;
-
-
-struct GraphProblem {
-  /// We have 'variableDimensions.N' variables, each with a different dimension 'variableDimensions(i)'.
-  /// We have 'featureVariables.N' features, each depends on the tuple/clique 'featureVariables(j)' of variables.
-  /// That is, 'featureVariables' is a list of tuples/cliques that defines the hyper graph
-  virtual void getStructure(uintA& variableDimensions, uintAA& featureVariables);
-
-  /// We require 'x.N == \sum_i variableDimensions(i)'; so x defines the value of all variables
-  /// This returns the feature values, types and Jacobians at state x
-  /// Only for features of type 'fTT' also a Hessian is returned
-  /// Jacobians and Hessians are dense! But only w.r.t. the variables the feature depends on!!
-  /// (It is the job of the optimizer to translate this to sparse global Jacobians/Hessians)
-  virtual void phi(arr& phi, arrA& J, arrA& H, TermTypeA& tt, const arr& x);
-
-  bool checkDimensions(const arr& x);                 ///< check if Jacobians and Hessians have right dimensions (=clique size)
-  bool checkJacobian(const arr& x, double tolerance); ///< finite differences check of the returned Jacobian at x
-  bool checkHessian(const arr& x, double tolerance);  ///< finite differences check of the returned Hessian at x
-};
-
 
 /// functions \f$ \phi_t:(x_{t-k},..,x_t) \mapsto y\in\mathbb{R}^{m_t} \f$ over a chain \f$x_0,..,x_T\f$ of variables
 struct KOrderMarkovFunction {

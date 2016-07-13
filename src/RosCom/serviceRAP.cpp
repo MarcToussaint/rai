@@ -8,10 +8,9 @@ struct sServiceRAP{
   Access_typed<RelationalMachine> RM;
   ros::NodeHandle nh;
   ros::ServiceServer service;
+  bool cb_service(mlr_srv::StringString::Request& _request, mlr_srv::StringString::Response& response);
 
   sServiceRAP() : RM(NULL, "RM"){}
-  bool cb_service(mlr_srv::StringString::Request& _request, mlr_srv::StringString::Response& response);
-  
 };
 
 ServiceRAP::ServiceRAP() : s(NULL){

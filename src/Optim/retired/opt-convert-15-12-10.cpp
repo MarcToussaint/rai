@@ -104,7 +104,7 @@ ScalarFunction convert_VectorFunction_ScalarFunction(const VectorFunction& f) {
   return [&f](arr& g, arr& H, const arr& x) -> double {
     arr y,J;
     f(y, (&g?J:NoArr), x);
-    //  if(J.special==arr::RowShiftedPackedMatrixST) J = unpack(J);
+    //  if(J.special==arr::RowShiftedST) J = unpack(J);
     if(&g){ g = comp_At_x(J, y); g *= 2.; }
     if(&H){ H = comp_At_A(J); H *= 2.; }
     return sumOfSqr(y);
@@ -137,14 +137,14 @@ void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& 
 
   //resizing things:
   phi.resize(dim_phi).setZero();
-  RowShiftedPackedMatrix *Jaux, *Jzaux;
+  RowShifted *Jaux, *Jzaux;
   arr *Jz;
   if(&J){
-    Jaux = auxRowShifted(J, dim_phi, (k+1)*n, _x.N);
+    Jaux = makeRowShifted(J, dim_phi, (k+1)*n, _x.N);
     J.setZero();
     if(dim_z){
       Jz = new arr(dim_phi, dim_z);
-      Jzaux = auxRowShifted(*Jz, dim_phi, dim_z, _x.N);
+      Jzaux = makeRowShifted(*Jz, dim_phi, dim_z, _x.N);
       Jz->setZero();
       Jaux->nextInSum = Jz; //this is crucial: the returned J contains a quite hidden link to Jz
     }
@@ -291,16 +291,16 @@ void conv_KOrderMarkovFunction_VectorFunction(KOrderMarkovFunction& f, arr& phi,
 
   //resizing things:
   phi.resize(dim_Phi);   phi.setZero();
-  RowShiftedPackedMatrix *Jaux, *Jzaux;
+  RowShifted *Jaux, *Jzaux;
   arr *Jz;
   if(&J){
-    Jaux = auxRowShifted(J, dim_Phi, (k+1)*n, _x.N);
+    Jaux = makeRowShifted(J, dim_Phi, (k+1)*n, _x.N);
     J.setZero();
     if(dim_z){
       Jz = new arr(dim_Phi, dim_z);
       Jz->setZero();
       Jaux->nextInSum = Jz;
-      Jzaux = auxRowShifted(*Jz, dim_Phi, dim_z, _x.N);
+      Jzaux = makeRowShifted(*Jz, dim_Phi, dim_z, _x.N);
     }
   }
 
@@ -399,11 +399,11 @@ double conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction &f, arr
   bool getJ = (&df || &Hf || &Jg);
 
   arr meta_y, meta_Jy;
-  RowShiftedPackedMatrix *Jy_aux, *Jg_aux;
+  RowShifted *Jy_aux, *Jg_aux;
   meta_y.resize(meta_yd);
   if(&g) g.resize(meta_gd);
-  if(getJ){ Jy_aux = auxRowShifted(meta_Jy, meta_yd, (k+1)*n, x.N); meta_Jy.setZero(); }
-  if(&Jg){ Jg_aux = auxRowShifted(Jg, meta_gd, (k+1)*n, x.N); Jg.setZero(); }
+  if(getJ){ Jy_aux = makeRowShifted(meta_Jy, meta_yd, (k+1)*n, x.N); meta_Jy.setZero(); }
+  if(&Jg){ Jg_aux = makeRowShifted(Jg, meta_gd, (k+1)*n, x.N); Jg.setZero(); }
 
   uint y_count=0;
   uint g_count=0;
@@ -494,7 +494,7 @@ double conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction &f, arr
   arr phi, J;
   bool getJ = (&df) || (&Hf) || (&Jg) || (&Jh);
   conv_KOrderMarkovFunction_VectorFunction(f, phi, (getJ?J:NoArr), x);
-  RowShiftedPackedMatrix *J_aux = (RowShiftedPackedMatrix*)J.aux;
+  RowShifted *J_aux = (RowShifted*)J.aux;
 
   //resizing things:
   uint T=f.get_T();
@@ -505,24 +505,24 @@ double conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction &f, arr
   CHECK_EQ(phi.N,dimphi,"");
 
   arr y, Jy;
-  RowShiftedPackedMatrix *Jy_aux, *Jg_aux, *Jh_aux;
+  RowShifted *Jy_aux, *Jg_aux, *Jh_aux;
   y.resize(dimy);
   if(&g) g.resize(dimg);
   if(&h) h.resize(dimh);
-  if(getJ) Jy_aux = auxRowShifted(Jy, dimy, J.d1, J_aux->real_d1);
-  if(&Jg)  Jg_aux = auxRowShifted(Jg, dimg, J.d1, J_aux->real_d1);
-  if(&Jh)  Jh_aux = auxRowShifted(Jh, dimh, J.d1, J_aux->real_d1);
+  if(getJ) Jy_aux = makeRowShifted(Jy, dimy, J.d1, J_aux->real_d1);
+  if(&Jg)  Jg_aux = makeRowShifted(Jg, dimg, J.d1, J_aux->real_d1);
+  if(&Jh)  Jh_aux = makeRowShifted(Jh, dimh, J.d1, J_aux->real_d1);
 
   //if there is a z
   uint dimz = f.dim_z();
   arr *Jz, *Jyz, *Jgz, *Jhz;
-  RowShiftedPackedMatrix *Jz_aux, *Jyz_aux, *Jgz_aux, *Jhz_aux;
+  RowShifted *Jz_aux, *Jyz_aux, *Jgz_aux, *Jhz_aux;
   if(dimz && getJ){
     Jz = J_aux->nextInSum;
-    Jz_aux = (RowShiftedPackedMatrix*)Jz->aux;
-            { Jyz = new arr(dimy, dimz);  Jy_aux->nextInSum = Jyz;  Jyz_aux = auxRowShifted(*Jyz, dimy, Jz->d1, Jz_aux->real_d1); }
-    if(&Jg) { Jgz = new arr(dimg, dimz);  Jg_aux->nextInSum = Jgz;  Jgz_aux = auxRowShifted(*Jgz, dimg, Jz->d1, Jz_aux->real_d1); }
-    if(&Jh) { Jhz = new arr(dimh, dimz);  Jh_aux->nextInSum = Jhz;  Jhz_aux = auxRowShifted(*Jhz, dimh, Jz->d1, Jz_aux->real_d1); }
+    Jz_aux = (RowShifted*)Jz->aux;
+            { Jyz = new arr(dimy, dimz);  Jy_aux->nextInSum = Jyz;  Jyz_aux = makeRowShifted(*Jyz, dimy, Jz->d1, Jz_aux->real_d1); }
+    if(&Jg) { Jgz = new arr(dimg, dimz);  Jg_aux->nextInSum = Jgz;  Jgz_aux = makeRowShifted(*Jgz, dimg, Jz->d1, Jz_aux->real_d1); }
+    if(&Jh) { Jhz = new arr(dimh, dimz);  Jh_aux->nextInSum = Jhz;  Jhz_aux = makeRowShifted(*Jhz, dimh, Jz->d1, Jz_aux->real_d1); }
   }
 
   //loop over time t

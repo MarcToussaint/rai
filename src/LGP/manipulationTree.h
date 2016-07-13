@@ -12,11 +12,11 @@ typedef mlr::Array<ManipulationTree_Node*> ManipulationTree_NodeL;
 //===========================================================================
 
 struct ManipulationTree_Node{
-  LogicGeometricProgram &lgp;
   ManipulationTree_Node *parent;
   mlr::Array<ManipulationTree_Node*> children;
-  uint s;               ///< depth/step of this node
-//  double t;             ///< real time
+  uint s;               ///< decision depth/step of this node
+  double time;          ///< real time
+  double folReward;
   uint graphIndex=0;
 
   //-- info on the state and action this node represents
@@ -26,6 +26,7 @@ struct ManipulationTree_Node{
   Node  *folDecision; ///< the predicate in the folState that represents the decision
 
   //-- kinematics: the kinematic structure of the world after the decision path
+  ors::KinematicWorld& startKinematics; ///< initial start state kinematics
   ors::KinematicWorld kinematics; ///< actual kinematics after action (includes all previous switches)
   ors::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
 
@@ -33,17 +34,18 @@ struct ManipulationTree_Node{
   bool hasEffKinematics=false;
 
   //-- specs and results of the three optimization problems
-  MotionProblem *poseProblem, *seqProblem, *pathProblem;
+//  MotionProblem *poseProblem, *seqProblem, *pathProblem;
+  KOMO *poseProblem, *seqProblem, *pathProblem;
   Graph *poseProblemSpecs, *seqProblemSpecs, *pathProblemSpecs;
   arr pose, seq, path;
   double poseCost, seqCost, pathCost;
   double effPoseReward;
 
   /// root node init
-  ManipulationTree_Node(LogicGeometricProgram& lgp);
+  ManipulationTree_Node(ors::KinematicWorld& kin, FOL_World& fol);
 
   /// child node creation
-  ManipulationTree_Node(LogicGeometricProgram& lgp, ManipulationTree_Node *parent, FOL_World::Handle& a);
+  ManipulationTree_Node(ManipulationTree_Node *parent, FOL_World::Handle& a);
 
   //- computations on the node
   void expand();           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)

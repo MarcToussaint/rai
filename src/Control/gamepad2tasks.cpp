@@ -21,24 +21,26 @@
 #include <Hardware/gamepad/gamepad.h>
 
 Gamepad2Tasks::Gamepad2Tasks(TaskController& _MP, const arr& _q0)
-  : MP(_MP),
+  : MP(_MP), q0(_q0),
     endeffR(NULL), endeffL(NULL), base(NULL), torso(NULL), head(NULL), headAxes(NULL), limits(NULL), coll(NULL), gripperL(NULL), gripperR(NULL){
 
   robot = mlr::getParameter<mlr::String>("robot", "pr2");
 
-  if(mlr::getParameter<bool>("oldfashinedTaskControl", true)){
+  if(true || mlr::getParameter<bool>("oldfashinedTaskControl", true)){
     homing = new CtrlTask("qHoming", new TaskMap_qItself(), .5, 1., .2, 10.);
     homing->setTarget(q0);
-    endeffR = new CtrlTask("endeffR", new DefaultTaskMap(posTMT, MP.world, "endeffR", NoVector, "base_footprint"), .5, .8, 1., 1.);
-    endeffL = new CtrlTask("endeffL", new DefaultTaskMap(posTMT, MP.world, "endeffL", NoVector, "base_footprint"), .5, .8, 1., 1.);
+    endeffR = new CtrlTask("endeffR", new TaskMap_Default(posTMT, MP.world, "endeffR", NoVector, "base_footprint"), .5, .8, 1., 1.);
+    endeffL = new CtrlTask("endeffL", new TaskMap_Default(posTMT, MP.world, "endeffL", NoVector, "base_footprint"), .5, .8, 1., 1.);
     //  base = new CtrlTask("endeffBase", new TaskMap_qItself(MP.world, "worldTranslationRotation"), .2, .8, 1., 1.);
-    //  torso = new CtrlTask("torso_lift_link", new DefaultTaskMap(posTMT, MP.world, "torso_lift_link_0"), .2, .8, 1., 1.);
-    head = new CtrlTask("endeffHead", new DefaultTaskMap(gazeAtTMT, MP.world, "endeffHead", Vector_z, "base_footprint"), .5, 1., 1., 1.);
+    //  torso = new CtrlTask("torso_lift_link", new TaskMap_Default(posTMT, MP.world, "torso_lift_link_0"), .2, .8, 1., 1.);
+    head = new CtrlTask("endeffHead", new TaskMap_Default(gazeAtTMT, MP.world, "endeffHead", Vector_z, "base_footprint"), .5, 1., 1., 1.);
     if(robot=="pr2") headAxes = new CtrlTask("endeffHead", new TaskMap_qItself(MP.world, "head_pan_joint", "head_tilt_joint"), .5, 1., 1., 1.);
     if(robot=="baxter") headAxes = new CtrlTask("endeffHead", new TaskMap_qItself(MP.world, "head_pan"), .5, 1., 1., 1.);
     limits = new CtrlTask("limits", new TaskMap_qLimits(), .2, .8, 1., 1.);
-    coll = new CtrlTask("collisions", new ProxyTaskMap(allPTMT, {0u}, .1), .2, .8, 1., 1.);
+    coll = new CtrlTask("collisions", new TaskMap_Proxy(allPTMT, {0u}, .1), .2, .8, 1., 1.);
     if(robot=="pr2") {
+      base = new CtrlTask("endeffBase", new TaskMap_qItself(MP.world, "worldTranslationRotation"), .2, .8, 1., 1.);
+      torso = new CtrlTask("torso_lift_link", new TaskMap_Default(posTMT, MP.world, "torso_lift_link_0"), .2, .8, 1., 1.);
       gripperL = new CtrlTask("gripperL", new TaskMap_qItself(MP.world.getJointByName("l_gripper_joint")->qIndex, MP.world.getJointStateDimension()), 2., .8, 1., 1.);
       gripperR = new CtrlTask("gripperR", new TaskMap_qItself(MP.world.getJointByName("r_gripper_joint")->qIndex, MP.world.getJointStateDimension()), 2., .8, 1., 1.);
     }
@@ -47,21 +49,22 @@ Gamepad2Tasks::Gamepad2Tasks(TaskController& _MP, const arr& _q0)
       gripperR = new CtrlTask("gripperR", new TaskMap_qItself(MP.world.getJointByName("r_gripper_l_finger_joint")->qIndex, MP.world.getJointStateDimension()), 2., .8, 1., 1.);
     }
   }else{
-    homing = new CtrlTask("qHoming", new TaskMap_qItself(), .5, 1., .5, .5);
+    homing = new CtrlTask("qHoming", new TaskMap_qItself(), .5, 1., 0., 0.);
+//    homing->setGains(10., 2.);
     homing->setTarget(q0);
-    endeffR = new CtrlTask("endeffR", new DefaultTaskMap(posTMT, MP.world, "endeffR", NoVector, "base_footprint"), 1., .1, 1., 1.);
-    endeffL = new CtrlTask("endeffL", new DefaultTaskMap(posTMT, MP.world, "endeffL", NoVector, "base_footprint"), .5, .8, 1., 1.);
+    endeffR = new CtrlTask("endeffR", new TaskMap_Default(posTMT, MP.world, "endeffR", NoVector, "base_footprint"), 1., .1, 1., 1.);
+    endeffL = new CtrlTask("endeffL", new TaskMap_Default(posTMT, MP.world, "endeffL", NoVector, "base_footprint"), .5, .8, 1., 1.);
     base = new CtrlTask("endeffBase", new TaskMap_qItself(MP.world, "worldTranslationRotation"), .2, .8, 1., 1.);
-    torso = new CtrlTask("torso_lift_link", new DefaultTaskMap(posTMT, MP.world, "torso_lift_link_0"), .2, .8, 1., 1.);
-    head = new CtrlTask("endeffHead", new DefaultTaskMap(gazeAtTMT, MP.world, "endeffHead", Vector_z, "base_footprint"), 1., .8, 1., 1.);
+    torso = new CtrlTask("torso_lift_link", new TaskMap_Default(posTMT, MP.world, "torso_lift_link_0"), .2, .8, 1., 1.);
+    head = new CtrlTask("endeffHead", new TaskMap_Default(gazeAtTMT, MP.world, "endeffHead", Vector_z, "base_footprint"), 1., .8, 1., 1.);
     headAxes = new CtrlTask("endeffHead", new TaskMap_qItself(MP.world, "head_pan_joint", "head_tilt_joint"), .5, 1., 1., 1.);
     limits = new CtrlTask("limits", new TaskMap_qLimits(), .2, .8, 1., 1.);
-    coll = new CtrlTask("collisions", new ProxyTaskMap(allPTMT, {0u}, .1), .2, .8, 1., 1.);
+    coll = new CtrlTask("collisions", new TaskMap_Proxy(allPTMT, {0u}, .1), .2, .8, 1., 1.);
     gripperL = new CtrlTask("gripperL", new TaskMap_qItself(MP.world.getJointByName("l_gripper_joint")->qIndex, MP.world.getJointStateDimension()), 2., .8, 1., 1.);
     gripperR = new CtrlTask("gripperR", new TaskMap_qItself(MP.world.getJointByName("r_gripper_joint")->qIndex, MP.world.getJointStateDimension()), 2., .8, 1., 1.);
 
-    endeffR->setGains(30.,1.);
-    endeffL->setGains(30.,1.); //endeffL->maxAcc=.5;
+    endeffR->setGains(40.,2.);
+    endeffL->setGains(10.,1.); //endeffL->maxAcc=.5;
     headAxes->setGains(10.,5.);
   }
   for(CtrlTask* task:{ homing, endeffR, endeffL, head, headAxes, limits, coll, gripperL, gripperR })
@@ -156,7 +159,7 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState){
       //-- left right: gaze control
 //      if(head && (sel==left || sel==right)){
 //        head->active=true;
-//        dynamic_cast<DefaultTaskMap*>(&head->map)->jvec = pdt->y;
+//        dynamic_cast<TaskMap_Default*>(&head->map)->jvec = pdt->y;
 //      }
       break;
     }

@@ -1527,12 +1527,6 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   if(!downPressed) {
     if(reportSelects) Select(true);
   }
-  //step through all callbacks
-  bool cont=true;
-  if(!downPressed) {
-    for(uint i=0; i<clickCalls.N; i++) cont=cont && clickCalls(i)->clickCallback(*this);
-  }
-  if(!cont) { postRedrawEvent(true); lock.unlock(); return; }
   
   //mouse scroll wheel:
   if(mouse_button==4 && !downPressed) cam->X.pos += s->downRot*Vector_z * (.1 * (s->downPos-s->downFoc).length());
@@ -1540,9 +1534,20 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   
   if(mouse_button==3) {  //selection
     Select(true);
-    if(topSelection)
+    if(topSelection){
       cam->focus(topSelection->x, topSelection->y, topSelection->z);
+//      uint name=topSelection->name;
+//      cout <<"RIGHT CLICK call: id = 0x" <<std::hex <<topSelection->name <<endl;
+    }
   }
+
+  //step through all callbacks
+  bool cont=true;
+  if(!downPressed) {
+    for(uint i=0; i<clickCalls.N; i++) cont=cont && clickCalls(i)->clickCallback(*this);
+  }
+  if(!cont) { postRedrawEvent(true); lock.unlock(); return; }
+
   postRedrawEvent(true);
   lock.unlock();
 }
