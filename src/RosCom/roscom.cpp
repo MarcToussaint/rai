@@ -199,6 +199,8 @@ arr conv_wrench2arr(const geometry_msgs::WrenchStamped& msg){
 }
 
 byteA conv_image2byteA(const sensor_msgs::Image& msg){
+  uint channels = msg.data.size()/(msg.height*msg.width);
+  if(channels==4) return conv_stdvec2arr<byte>(msg.data).reshape(msg.height, msg.width, 4);
   return conv_stdvec2arr<byte>(msg.data).reshape(msg.height, msg.width, 3);
 }
 

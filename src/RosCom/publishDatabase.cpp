@@ -32,7 +32,10 @@
 
 
 PublishDatabase::PublishDatabase():
-    Module("PublishDatabase", 0){}
+    Module("PublishDatabase", -1),
+    object_database(this, "object_database", true),
+    nh(NULL)
+{}
 
 void PublishDatabase::open(){
   //ros::init(mlr::argc, mlr::argv, "publish_database", ros::init_options::NoSigintHandler);
@@ -154,8 +157,8 @@ void PublishDatabase::syncAlvar(const Alvar* alvar)
   }
 
   body->X = alvar->frame * alvar->transform;
+  body->shapes.first()->X = body->X;
 
-  //((Alvar*)alvar)->transform = body->X;
   modelWorld.deAccess();
 }
 

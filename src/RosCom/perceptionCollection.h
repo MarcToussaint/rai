@@ -18,15 +18,18 @@ OptitrackMarker conv_tf2OptitrackMarker(const geometry_msgs::TransformStamped& m
 OptitrackBody conv_tf2OptitrackBody(const geometry_msgs::TransformStamped& msg);
 
 struct Collector : Module{
-  ACCESSname(visualization_msgs::MarkerArray, tabletop_clusters)
-  ACCESSname(ar::AlvarMarkers, ar_pose_markers)
+  Access_typed<visualization_msgs::MarkerArray> tabletop_clusters;
+  Access_typed<ar::AlvarMarkers> ar_pose_markers;
+ // ACCESSlisten(visualization_msgs::MarkerArray, tabletop_clusters)
+//  ACCESSlisten(ar::AlvarMarkers, ar_pose_markers)
+  ACCESSname(ors::Transformation, tabletop_srcFrame)
+  ACCESSname(ors::Transformation, alvar_srcFrame)
   ACCESSname(std::vector<geometry_msgs::TransformStamped>, opti_markers)
   ACCESSname(std::vector<geometry_msgs::TransformStamped>, opti_bodies)
 
-
   ACCESSname(FilterObjects, perceptual_inputs)
 
-  Collector();
+  Collector(const bool simulate = false);
 
   virtual void open(){}
   virtual void step();
@@ -38,7 +41,8 @@ private:
   int ar_pose_markers_revision = 0;
   int opti_markers_revision = 0;
   int opti_bodies_revision = 0;
+//  ors::Transformation tf; // Transformation from the camera to the body
+//  bool has_transform = true;
 
-  ors::Transformation tf; // Transformation from the camera to the body
-  bool has_transform = false;
+  bool simulate;
 };

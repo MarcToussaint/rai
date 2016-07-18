@@ -9,8 +9,8 @@
 
 
 struct PublishDatabase : Module{
+  Access_typed<FilterObjects> object_database;
   ACCESSname(ors::KinematicWorld, modelWorld)
-  ACCESSname(FilterObjects, object_database)
 
   PublishDatabase();
 
