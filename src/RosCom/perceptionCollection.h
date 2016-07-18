@@ -24,6 +24,7 @@ struct Collector : Module{
 //  ACCESSlisten(ar::AlvarMarkers, ar_pose_markers)
   ACCESSname(ors::Transformation, tabletop_srcFrame)
   ACCESSname(ors::Transformation, alvar_srcFrame)
+  ACCESSname(ors::Transformation, optitrack_srcFrame)
   ACCESSname(std::vector<geometry_msgs::TransformStamped>, opti_markers)
   ACCESSname(std::vector<geometry_msgs::TransformStamped>, opti_bodies)
 

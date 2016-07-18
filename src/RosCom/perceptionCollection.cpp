@@ -8,6 +8,7 @@ Collector::Collector(const bool simulate):
 {
   tabletop_srcFrame.set()->setZero();
   alvar_srcFrame.set()->setZero();
+  optitrack_srcFrame.set()->setZero();
   this->simulate = simulate;
 //  tf.setZero();
 }
@@ -107,6 +108,7 @@ void Collector::step()
       const std::vector<geometry_msgs::TransformStamped> msgs = opti_bodies();
       for(uint i=0; i<msgs.size(); i++){
           geometry_msgs::TransformStamped msg = msgs.at(i);
+#if 0
           if (!has_transform)
           {
            // Convert into a position relative to the base.
@@ -129,8 +131,9 @@ void Collector::step()
               exit(0);
             }
           }
+#endif
           OptitrackBody* new_optitrack_body = new OptitrackBody(conv_tf2OptitrackBody( msg ));
-          new_optitrack_body->frame = tf;
+          new_optitrack_body->frame = optitrack_srcFrame.get(); //tf
           percepts.append( new_optitrack_body );
         }
     }
@@ -144,7 +147,7 @@ void Collector::step()
 
       for(uint i=0; i<msgs.size(); i++){
           geometry_msgs::TransformStamped msg = msgs.at(i);
-
+#if 0
           if (!has_transform)
           {
            // Convert into a position relative to the base.
@@ -167,8 +170,9 @@ void Collector::step()
               exit(0);
             }
           }
+#endif
           OptitrackMarker* new_optitrack_marker = new OptitrackMarker(conv_tf2OptitrackMarker( msg ));
-          new_optitrack_marker->frame = tf;
+          new_optitrack_marker->frame = optitrack_srcFrame.get(); //tf;
           percepts.append( new_optitrack_marker );
         }
     }
