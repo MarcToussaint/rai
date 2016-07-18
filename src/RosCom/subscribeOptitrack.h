@@ -14,8 +14,9 @@ struct SubscribeOptitrack{
 
 struct Optitrack : Module{
   ACCESSname(tf::tfMessage, tf_messages)
-  ACCESSname(geometry_msgs::TransformStamped, opti_drone)
-  ACCESSname(geometry_msgs::TransformStamped, opti_body)
+  ACCESSname(std::vector<geometry_msgs::TransformStamped>, opti_markers)
+  ACCESSname(std::vector<geometry_msgs::TransformStamped>, opti_bodies)
+
 
   Optitrack():Module("Optitrack", -1){}
   ~Optitrack(){}

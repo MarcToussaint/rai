@@ -61,6 +61,7 @@ std_msgs::Float32MultiArray conv_floatA2Float32Array(const floatA&);
 
 //-- MLR -> ROS
 geometry_msgs::Pose conv_transformation2pose(const ors::Transformation&);
+geometry_msgs::Transform conv_transformation2transform(const ors::Transformation&);
 std::vector<geometry_msgs::Point> conv_arr2points(const arr& pts);
 marc_controller_pkg::JointState   conv_CtrlMsg2JointState(const CtrlMsg& ctrl);
 floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray&);

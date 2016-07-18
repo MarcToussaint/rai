@@ -7,9 +7,12 @@ Collector::Collector():
 void Collector::step()
 {
   FilterObjects perceps;
+  perceps.clear();
 
   int cluster_rev = tabletop_clusters.readAccess();
   int ar_rev = ar_pose_markers.readAccess();
+  int body_rev = opti_bodies.readAccess();
+  int marker_rev = opti_markers.readAccess();
 
   if (this->useRos)
   {
@@ -84,6 +87,77 @@ void Collector::step()
         perceps.append( new_alvar );
       }
     }
+
+    if ( body_rev > opti_bodies_revision)
+    {
+      opti_bodies_revision = body_rev;
+      const std::vector<geometry_msgs::TransformStamped> msgs = opti_bodies();
+      for(uint i=0; i<msgs.size(); i++){
+          geometry_msgs::TransformStamped msg = msgs.at(i);
+          if (!has_transform)
+          {
+           // Convert into a position relative to the base.
+            tf::TransformListener listener;
+            tf::StampedTransform baseTransform;
+            try{
+                listener.waitForTransform("/world", msg.header.frame_id, ros::Time(0), ros::Duration(1.0));
+                listener.lookupTransform("/world", msg.header.frame_id, ros::Time(0), baseTransform);
+                tf = conv_transform2transformation(baseTransform);
+                ors::Transformation inv;
+                inv.setInverse(tf);
+                inv.addRelativeTranslation(0,0,-1);
+                inv.setInverse(inv);
+                tf = inv;
+                has_transform = true;
+            }
+            catch (tf::TransformException &ex) {
+              ROS_ERROR("%s",ex.what());
+              ros::Duration(1.0).sleep();
+              exit(0);
+            }
+          }
+          OptitrackBody* new_optitrack_body = new OptitrackBody(conv_tf2OptitrackBody( msg ));
+          new_optitrack_body->frame = tf;
+          perceps.append( new_optitrack_body );
+        }
+    }
+
+    if ( marker_rev > opti_markers_revision)
+    {
+      opti_markers_revision = marker_rev;
+      const std::vector<geometry_msgs::TransformStamped> msgs = opti_markers();
+
+      for(uint i=0; i<msgs.size(); i++){
+          geometry_msgs::TransformStamped msg = msgs.at(i);
+
+          if (!has_transform)
+          {
+           // Convert into a position relative to the base.
+            tf::TransformListener listener;
+            tf::StampedTransform baseTransform;
+            try{
+                listener.waitForTransform("/world", msg.header.frame_id, ros::Time(0), ros::Duration(1.0));
+                listener.lookupTransform("/world", msg.header.frame_id, ros::Time(0), baseTransform);
+                tf = conv_transform2transformation(baseTransform);
+                ors::Transformation inv;
+                inv.setInverse(tf);
+                inv.addRelativeTranslation(0,0,-1);
+                inv.setInverse(inv);
+                tf = inv;
+                has_transform = true;
+            }
+            catch (tf::TransformException &ex) {
+              ROS_ERROR("%s",ex.what());
+              ros::Duration(1.0).sleep();
+              exit(0);
+            }
+          }
+          OptitrackMarker* new_optitrack_marker = new OptitrackMarker(conv_tf2OptitrackMarker( msg ));
+          new_optitrack_marker->frame = tf;
+          perceps.append( new_optitrack_marker );
+        }
+    }
+
   }
   else // If useRos==0, make a fake cluster and alvar
   {
@@ -122,14 +196,15 @@ void Collector::step()
   }
   if (perceps.N > 0)
   {
-    perceptual_inputs.writeAccess();
-    perceptual_inputs() = perceps;
-    perceptual_inputs.deAccess();
+      perceptual_inputs.writeAccess();
+      perceptual_inputs() = perceps;
+      perceptual_inputs.deAccess();
   }
 
   ar_pose_markers.deAccess();
   tabletop_clusters.deAccess();
-
+  opti_bodies.deAccess();
+  opti_markers.deAccess();
 }
 
 
@@ -149,4 +224,21 @@ Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker)
   new_alvar.transform = conv_pose2transformation(marker.pose.pose);
   return new_alvar;
 }
+
+OptitrackMarker conv_tf2OptitrackMarker(const geometry_msgs::TransformStamped& msg)
+{
+  OptitrackMarker new_optitrackmarker(msg.header.frame_id);
+//  new_optitrackmarker.id = marker.id;
+  new_optitrackmarker.transform = conv_transform2transformation(msg.transform);
+  return new_optitrackmarker;
+}
+
+OptitrackBody conv_tf2OptitrackBody(const geometry_msgs::TransformStamped& msg)
+{
+  OptitrackBody new_optitrackbody(msg.header.frame_id);
+//  new_alvar.id = body.id;
+  new_optitrackbody.transform = conv_transform2transformation(msg.transform);
+  return new_optitrackbody;
+}
+
 

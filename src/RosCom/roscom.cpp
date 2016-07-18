@@ -83,6 +83,18 @@ geometry_msgs::Pose conv_transformation2pose(const ors::Transformation& transfor
   return pose;
 }
 
+geometry_msgs::Transform conv_transformation2transform(const ors::Transformation& transformation){
+  geometry_msgs::Transform transform;
+  transform.translation.x = transformation.pos.x;
+  transform.translation.y  = transformation.pos.y;
+  transform.translation.z  = transformation.pos.z;
+  transform.rotation.x = transformation.rot.x;
+  transform.rotation.y = transformation.rot.y;
+  transform.rotation.z = transformation.rot.z;
+  transform.rotation.w = transformation.rot.w;
+  return transform;
+}
+
 ors::Vector conv_point2vector(const geometry_msgs::Point& p){
   return ors::Vector(p.x, p.y, p.z);
 }

@@ -16,33 +16,36 @@ void Optitrack::step()
   {
     return;
   }
-  geometry_msgs::TransformStamped tf = msg.transforms[0];
-//  cout << tf << endl;
-  if (!strcmp(tf.header.frame_id.c_str(), "optitrack_frame") )
-  {
-    if (!strcmp(tf.child_frame_id.c_str(), "drone") )
-    {
-      opti_drone.set() = tf;
-      return;
-    }
-    if (!strcmp(tf.child_frame_id.c_str(), "body"))
-    {
-      opti_body.set() = tf;
-      return;
-    }
-  }
 
+  std::vector<geometry_msgs::TransformStamped> tfs = msg.transforms;
+  std::vector<geometry_msgs::TransformStamped> bodies; bodies.clear();
+  std::vector<geometry_msgs::TransformStamped> markers; markers.clear();
+
+  for (uint i = 0; i < tfs.size(); ++i)
+  {
+      geometry_msgs::TransformStamped tf = tfs.at(i);
+      if (!strcmp(tf.header.frame_id.c_str(), "world") )
+      {
+        if (!strncmp(tf.child_frame_id.c_str(), "body_", 4))
+        {
+          bodies.push_back(tf);
+          continue;
+        }
+        if (!strncmp(tf.child_frame_id.c_str(), "marker_", 6))
+        {
+          markers.push_back(tf);
+          continue;
+        }
+      }
+  }
+  if (bodies.size() > 0)
+  {
+      opti_bodies.set() = bodies;
+  }
+  if (markers.size() > 0)
+  {
+      opti_markers.set() = markers;
+  }
 }
 
-//tf::TransformListener listener;
-//          tf::StampedTransform baseTransform;
-//          try{
-//            listener.waitForTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), ros::Duration(1.0));
-//            listener.lookupTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), baseTransform);
-//            tf = conv_transform2transformation(baseTransform);
-//            ors::Transformation inv;
-//            inv.setInverse(tf);
-//            inv.addRelativeTranslation(0,0,-1);
-//            inv.setInverse(inv);
-//            tf = inv;
-//            has_transform = true;
+

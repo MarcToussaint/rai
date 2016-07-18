@@ -6,6 +6,8 @@
 
 #include <RosCom/filterObject.h>
 
+
+
 struct PublishDatabase : Module{
   ACCESSname(ors::KinematicWorld, modelWorld)
   ACCESSname(FilterObjects, object_database)
@@ -16,6 +18,9 @@ struct PublishDatabase : Module{
   ros::Publisher cluster_pub;
   ros::Publisher alvar_pub;
   ros::Publisher plane_pub;
+  ros::Publisher optitrackmarker_pub;
+  ros::Publisher optitrackbody_pub;
+
 
   virtual void open();
   virtual void step();
@@ -24,6 +29,8 @@ struct PublishDatabase : Module{
 private:
   void syncCluster(const Cluster* cluster);
   void syncAlvar(const Alvar* alvar);
-  mlr::Array<uint> stored_clusters, stored_alvars;
+  void syncOptitrackMarker(const OptitrackMarker* optitrackmarker);
+  void syncOptitrackBody(const OptitrackBody* optitrackbody);
+  mlr::Array<uint> stored_clusters, stored_alvars, stored_optitrackmarkers, stored_optitrackbodies;
   int revision = -1;
 };

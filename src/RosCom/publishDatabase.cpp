@@ -28,6 +28,9 @@
 #endif
 
 
+
+
+
 PublishDatabase::PublishDatabase():
     Module("PublishDatabase", 0){}
 
@@ -39,6 +42,8 @@ void PublishDatabase::open(){
     cluster_pub = nh->advertise<visualization_msgs::MarkerArray>("/tabletop/tracked_clusters", 1);
     alvar_pub = nh->advertise<ar::AlvarMarkers>("/tracked_ar_pose_marker", 1);
     plane_pub = nh->advertise<object_recognition_msgs::TableArray>("/tracked_table_array", 1);
+    optitrackmarker_pub = nh->advertise<tf::tfMessage>("/tracked_marker_tf", 1);
+    optitrackbody_pub = nh->advertise<tf::tfMessage>("/tracked_body_tf", 1);
   }
 }
 
@@ -77,6 +82,24 @@ ar::AlvarMarker conv_FilterObject2Alvar(const FilterObject& object)
   new_marker.pose.pose = conv_transformation2pose(object.transform);
   new_marker.id = object.id;
   return new_marker;
+}
+
+geometry_msgs::TransformStamped conv_FilterObject2OptitrackMarker(const FilterObject& object)
+{
+    geometry_msgs::TransformStamped new_marker;
+    new_marker.header.frame_id = dynamic_cast<const OptitrackMarker&>(object).frame_id;
+    new_marker.transform = conv_transformation2transform(object.transform);
+    new_marker.child_frame_id = STRING("optitrackmarker_" << object.id);
+    return new_marker;
+}
+
+geometry_msgs::TransformStamped conv_FilterObject2OptitrackBody(const FilterObject& object)
+{
+    geometry_msgs::TransformStamped new_marker;
+    new_marker.header.frame_id = dynamic_cast<const OptitrackBody&>(object).frame_id;
+    new_marker.transform = conv_transformation2transform(object.transform);
+    new_marker.child_frame_id = STRING("optitrackbody_" << object.id);
+    return new_marker;
 }
 
 void PublishDatabase::syncCluster(const Cluster* cluster)
@@ -136,6 +159,52 @@ void PublishDatabase::syncAlvar(const Alvar* alvar)
   modelWorld.deAccess();
 }
 
+void PublishDatabase::syncOptitrackBody(const OptitrackBody* optitrackbody)
+{
+  modelWorld.writeAccess();
+  mlr::String optitrackbody_name = STRING("optitrackbody_" << optitrackbody->id);
+
+  ors::Body *body = modelWorld().getBodyByName(optitrackbody_name, false);
+  if (not body) {
+    cout << optitrackbody_name << " does not exist yet; adding it..." << endl;
+    body = new ors::Body(modelWorld());
+    body->name = optitrackbody_name;
+    ors::Shape *shape = new ors::Shape(modelWorld(), *body);
+    shape->name = optitrackbody_name;
+    shape->type = ors::markerST;
+    shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .1;
+    stored_optitrackbodies.append(optitrackbody->id);
+  }
+
+  body->X = optitrackbody->frame * optitrackbody->transform;
+
+  //((Alvar*)alvar)->transform = body->X;
+  modelWorld.deAccess();
+}
+
+void PublishDatabase::syncOptitrackMarker(const OptitrackMarker* optitrackmarker)
+{
+  modelWorld.writeAccess();
+  mlr::String optitrackmarker_name = STRING("optitrackmarker_" << optitrackmarker->id);
+
+  ors::Body *body = modelWorld().getBodyByName(optitrackmarker_name, false);
+  if (not body) {
+    cout << optitrackmarker_name << " does not exist yet; adding it..." << endl;
+    body = new ors::Body(modelWorld());
+    body->name = optitrackmarker_name;
+    ors::Shape *shape = new ors::Shape(modelWorld(), *body);
+    shape->name = optitrackmarker_name;
+    shape->type = ors::sphereST;
+    shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .03;
+    stored_optitrackmarkers.append(optitrackmarker->id);
+  }
+
+  body->X = optitrackmarker->frame * optitrackmarker->transform;
+
+  //((Alvar*)alvar)->transform = body->X;
+  modelWorld.deAccess();
+}
+
 void PublishDatabase::step()
 {
   int rev = object_database.writeAccess();
@@ -151,8 +220,10 @@ void PublishDatabase::step()
 
   visualization_msgs::MarkerArray cluster_markers;
   ar::AlvarMarkers ar_markers;
+  tf::tfMessage optitrackmarker_markers;
+  tf::tfMessage optitrackbody_markers;
 
-  mlr::Array<uint> new_clusters, new_alvars;
+  mlr::Array<uint> new_clusters, new_alvars, new_optitrackmarkers, new_optitrackbodies;
 
   for (uint i = 0; i < objectDatabase.N; i++)
   {
@@ -175,6 +246,22 @@ void PublishDatabase::step()
         new_clusters.append(objectDatabase(i)->id);
         break;
       }
+      case FilterObject::FilterObjectType::optitrackbody:
+      {
+        geometry_msgs::TransformStamped optitrackbody = conv_FilterObject2OptitrackBody(*objectDatabase(i));
+        optitrackbody_markers.transforms.push_back(optitrackbody);
+        syncOptitrackBody(dynamic_cast<OptitrackBody*>(objectDatabase(i)));
+        new_optitrackbodies.append(objectDatabase(i)->id);
+        break;
+      }
+      case FilterObject::FilterObjectType::optitrackmarker:
+      {
+        geometry_msgs::TransformStamped optitrackmarker = conv_FilterObject2OptitrackMarker(*objectDatabase(i));
+        optitrackmarker_markers.transforms.push_back(optitrackmarker);
+        syncOptitrackMarker(dynamic_cast<OptitrackMarker*>(objectDatabase(i)));
+        new_optitrackmarkers.append(objectDatabase(i)->id);
+        break;
+      }
       default:
       {
         NIY;
@@ -191,6 +278,15 @@ void PublishDatabase::step()
 
     if (ar_markers.markers.size() > 0)
       alvar_pub.publish(ar_markers);
+
+    if (optitrackbody_markers.transforms.size() > 0)
+    {
+      optitrackbody_pub.publish(optitrackbody_markers);
+    }
+    if (optitrackmarker_markers.transforms.size() > 0)
+    {
+      optitrackmarker_pub.publish(optitrackmarker_markers);
+    }
   }
 
 
@@ -212,6 +308,24 @@ void PublishDatabase::step()
       // Remove ID from the world
       stored_alvars.removeValueSafe(id);
       delete modelWorld().getBodyByName(STRING("alvar_" << id));
+    }
+  }
+  for (uint id : stored_optitrackmarkers)
+  {
+    if (new_optitrackmarkers.contains(id) == 0)
+    {
+      // Remove ID from the world
+      stored_optitrackmarkers.removeValueSafe(id);
+      delete modelWorld().getBodyByName(STRING("optitrackmarker_" << id));
+    }
+  }
+  for (uint id : stored_optitrackbodies)
+  {
+    if (new_optitrackbodies.contains(id) == 0)
+    {
+      // Remove ID from the world
+      stored_optitrackbodies.removeValueSafe(id);
+      delete modelWorld().getBodyByName(STRING("optitrackbody_" << id));
     }
   }
   modelWorld.deAccess();
