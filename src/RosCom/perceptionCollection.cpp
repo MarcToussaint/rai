@@ -93,7 +93,10 @@ void Collector::step()
 #endif
 
         Alvar* new_alvar = new Alvar( conv_ROSAlvar2Alvar(marker) );
-        new_alvar->frame = alvar_srcFrame.get(); //tf;
+        //new_alvar->frame = alvar_srcFrame.get(); //tf;
+        new_alvar->frame.setInverse(alvar_srcFrame.get());
+        new_alvar->frame.addRelativeTranslation(0,0,-1);
+        new_alvar->frame.setInverse(new_alvar->frame);
         percepts.append( new_alvar );
       }
     }
@@ -123,15 +126,15 @@ void Collector::step()
     Alvar* fake_alvar = new Alvar("/base_footprint");
     fake_alvar->frame.setZero();
 
-    arr pos = { 0.6, -0.3, 1.05 };
+    arr pos = { 0.8, 0.6, 1.5 };
     rndUniform(pos, -0.005, 0.005, true);
     fake_alvar->frame.addRelativeTranslation(pos(0), pos(1), pos(2));
 
-    arr alv_rot = { 0, 0, 0.785 };
+    arr alv_rot = { MLR_PI/2, 0, -MLR_PI/2};
     rndUniform(alv_rot, -0.01, 0.01, true);
     rot.setRpy(alv_rot(0), alv_rot(1), alv_rot(2));
     fake_alvar->frame.addRelativeRotation(rot);
-    fake_alvar->id = 2;
+    fake_alvar->id = 10;
     percepts.append( fake_alvar );
   }
 
