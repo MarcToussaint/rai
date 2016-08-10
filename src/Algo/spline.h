@@ -34,6 +34,7 @@ struct Spline {
 
   /// for T>0 this is directly constructing basis functions over a (fine) grid of resolution T
   Spline(uint T, arr& X, uint degree=2):points(X){ setUniformNonperiodicBasis(T, X.d0-1, degree); }
+  Spline(){}
 
   /// for t \in [0,1] the coefficients are the weighting of the points: f(t) = coeffs(t)^T * points
   arr getCoeffs(double t, uint K, uint derivative=0) const;
@@ -44,9 +45,9 @@ struct Spline {
   //-- the rest are all matrix methods, using the basis mastix for fixed grid of size T
 
   /// methods to construct a basis matrix mapping from the K points to a (fine) grid of resolution T
-  void setBasis(uint T, uint K);
-  void setBasisAndTimeGradient(uint T, uint K);
-  void setUniformNonperiodicBasis(uint T, uint K, uint degree);
+  void setBasis(uint T, uint K); ///< requires that degree and times has been set; computes basis, basis_trans
+  void setBasisAndTimeGradient(uint T, uint K); ///< as above, but computes also gradient w.r.t. times
+  void setUniformNonperiodicBasis(uint T, uint K, uint degree); ///< sets the times uniformly, then computes basis
 
   /// returns f(t/T) at one of the precomputed grid points of the basis matrix
   arr eval(uint t) const;
