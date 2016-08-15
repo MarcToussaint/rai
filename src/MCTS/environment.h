@@ -12,7 +12,7 @@ using std::tuple;
  *  needs to provide the set of feasible decisions for the current state. For the MCTS solver, states, actions, and
  *  rewards are fully abstract entities -- they can only be referred to via 'handles'. */
 struct MCTS_Environment {
-    /** A generic State-Action-Observation object as abstraction of a real state, action, or observation. The environment can,
+    /** A generic State-or-Action-or-Observation object as abstraction of a real state, action, or observation. The environment can,
      *  via dynamic casting, get the semantics back. The MCTS solver should not use any other properties than equality. */
     struct SAO {
       virtual ~SAO(){}
@@ -24,16 +24,25 @@ struct MCTS_Environment {
             exit(-1);
         }
     };
+
     typedef std::shared_ptr<const SAO> Handle;
+
+    /** The return value of a state transition. We had 'tuples' first. But I don't like handling them */
+    struct TransitionReturn {
+      Handle observation;
+      double reward;
+      double duration;
+    };
+
 
     MCTS_Environment() = default;
   virtual ~MCTS_Environment(){}
 
     /// Perform the action; return the resulting observation and reward
-    virtual std::pair<Handle, double> transition(const Handle& action) = 0;
+    virtual TransitionReturn transition(const Handle& action) = 0;
 
     /// Perform a random action
-    virtual std::pair<Handle, double> transition_randomly(){
+    virtual TransitionReturn transition_randomly(){
       std::vector<Handle> actions = get_actions();
       return transition(actions[rand()%actions.size()]);
     }

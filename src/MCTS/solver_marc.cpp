@@ -32,14 +32,14 @@ void MCTS::addRollout(int stepAbort){
 #endif
     n = treePolicy(n);
     if(verbose>1) cout <<"****************** MCTS: made tree policy decision" <<endl;
-    Return_tree += n->r = world.transition(n->decision).second;
+    Return_tree += n->r = world.transition(n->decision).reward;
   }
 
   //-- rollout
   double Return_rollout=0.;
   while(!world.is_terminal_state() && (stepAbort<0 || step++<stepAbort)){
     if(verbose>1) cout <<"****************** MCTS: random decision" <<endl;
-    Return_rollout += world.transition_randomly().second;
+    Return_rollout += world.transition_randomly().reward;
   }
 
   //  double r = world.get_terminal_reward();

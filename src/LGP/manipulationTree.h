@@ -7,6 +7,7 @@
 #include <Motion/komo.h>
 
 struct ManipulationTree_Node;
+struct PlainMC;
 typedef mlr::Array<ManipulationTree_Node*> ManipulationTree_NodeL;
 
 //===========================================================================
@@ -35,6 +36,7 @@ struct ManipulationTree_Node{
 
   //-- specs and results of the three optimization problems
 //  MotionProblem *poseProblem, *seqProblem, *pathProblem;
+  PlainMC *mc;
   KOMO *poseProblem, *seqProblem, *pathProblem;
   Graph *poseProblemSpecs, *seqProblemSpecs, *pathProblemSpecs;
   arr pose, seq, path;
@@ -49,6 +51,7 @@ struct ManipulationTree_Node{
 
   //- computations on the node
   void expand();           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
+  void addMCRollouts(uint num,int stepAbort);
   void solvePoseProblem(); ///< solve the effective pose problem
   void solveSeqProblem(int verbose=0);  ///< compute a sequence of key poses along the decision path
   void solvePathProblem(uint microSteps, int verbose=0); ///< compute a full path along the decision path

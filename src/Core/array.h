@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <functional>
+#include <memory>
 
 //-- TODO: old, remove
 #define FOR1D(x, i)   for(i=0;i<x.N;i++)
@@ -881,7 +882,8 @@ RowShifted *makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
 /*  TODO: realize list simpler: let the Array class have a 'listMode' flag. When this flag is true, the read, write, resize, find etc routines
 will simply be behave differently */
 
-template<class T> void listWrite(const mlr::Array<T*>& L, std::ostream& os, const char *ELEMSEP=" ", const char *delim=NULL);
+template<class T> char listWrite(const mlr::Array<std::shared_ptr<T> >& L, std::ostream& os=std::cout, const char *ELEMSEP=" ", const char *delim=NULL);
+template<class T> char listWrite(const mlr::Array<T*>& L, std::ostream& os=std::cout, const char *ELEMSEP=" ", const char *delim=NULL);
 template<class T> void listWriteNames(const mlr::Array<T*>& L, std::ostream& os);
 template<class T> void listRead(mlr::Array<T*>& L, std::istream& is, const char *delim=NULL);
 template<class T> void listCopy(mlr::Array<T*>& L, const mlr::Array<T*>& M);  //copy a list by calling the copy constructor for each element

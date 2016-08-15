@@ -7,15 +7,15 @@ BlindBranch::BlindBranch(uint H):H(H){
 
 void BlindBranch::reset_state(){ state=0; T=0; }
 
-std::pair<MCTS_Environment::Handle, double> BlindBranch::transition(const MCTS_Environment::Handle& action){
+MCTS_Environment::TransitionReturn BlindBranch::transition(const MCTS_Environment::Handle& action){
   state += std::dynamic_pointer_cast<const Action>(action)->d;
   T++;
   double r=0.;
   if(is_terminal_state()) r = (double)state/H;
-  return {Handle(NULL), r};
+  return {Handle(NULL), r, 1.};
 }
 
-std::pair<MCTS_Environment::Handle, double>  BlindBranch::transition_randomly(){
+MCTS_Environment::TransitionReturn BlindBranch::transition_randomly(){
   if(mlr::rnd.uni()<.5) return transition(actions(0));
   return transition(actions(1));
 }

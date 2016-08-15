@@ -28,8 +28,8 @@ struct BlindBranch:MCTS_Environment{
 
   BlindBranch(uint H);
   void reset_state();
-  std::pair<Handle, double> transition(const Handle& action);
-  std::pair<Handle, double> transition_randomly();
+  TransitionReturn transition(const Handle& action);
+  TransitionReturn transition_randomly();
   const std::vector<Handle> get_actions();
   const Handle get_state();
   void set_state(const Handle& _state);

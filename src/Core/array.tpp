@@ -1566,7 +1566,6 @@ template<class T> int mlr::Array<T>::findValueInSorted(const T& x, ElemCompare c
 
 /// fast insert method in a sorted array, the array remains sorted
 template<class T> uint mlr::Array<T>::insertInSorted(const T& x, ElemCompare comp) {
-  CHECK(memMove, "");
   uint cand_pos = rankInSorted(x, comp);
   insert(cand_pos, x);
   return cand_pos;
@@ -3534,11 +3533,20 @@ template struct mlr::Array<bool>;
 // lists
 //
 
-template<class T> void listWrite(const mlr::Array<T*>& L, std::ostream& os, const char *ELEMSEP, const char *delim) {
+template<class T> char listWrite(const mlr::Array<std::shared_ptr<T> >& L, std::ostream& os, const char *ELEMSEP, const char *delim) {
   uint i;
   if(delim) os <<delim[0];
   for(i=0; i<L.N; i++) { if(i) os <<ELEMSEP;  if(L.elem(i)) os <<*L.elem(i); else os <<"<NULL>"; }
   if(delim) os <<delim[1] <<std::flush;
+  return '#';
+}
+
+template<class T> char listWrite(const mlr::Array<T*>& L, std::ostream& os, const char *ELEMSEP, const char *delim) {
+  uint i;
+  if(delim) os <<delim[0];
+  for(i=0; i<L.N; i++) { if(i) os <<ELEMSEP;  if(L.elem(i)) os <<*L.elem(i); else os <<"<NULL>"; }
+  if(delim) os <<delim[1] <<std::flush;
+  return '#';
 }
 
 template<class T> void listWriteNames(const mlr::Array<T*>& L, std::ostream& os) {

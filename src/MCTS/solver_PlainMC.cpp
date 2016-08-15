@@ -12,6 +12,7 @@ PlainMC::PlainMC(MCTS_Environment& world)
 
 void PlainMC::reset(){
   A = conv_stdvec2arr(world.get_actions());
+  if(verbose>1){ cout <<"START decisions: "; listWrite(A); cout <<endl; }
   D.clear();
   D.resize(A.N);
 }
@@ -31,25 +32,27 @@ void PlainMC::addRollout(int stepAbort){
   double discount=1.;
 
   mlr::String decisionsString;
+  MCTS_Environment::TransitionReturn ret;
 
   // random first choice
   uint a = rnd(A.N);
-  if(verbose>1) cout <<"****************** MC: first decision:" <<*A(a) <<endl;
-  R += discount * world.transition(A(a)).second;
+  if(verbose>1) cout <<"****************** MC: first decision: " <<*A(a) <<endl;
   decisionsString <<*A(a) <<' ';
+  ret = world.transition(A(a));
+  R += discount * ret.reward;
+  discount *= pow(gamma, ret.duration);  //  discount *= gamma;
 
   //-- rollout
   while(!world.is_terminal_state() && (stepAbort<0 || step++<stepAbort)){
-    if(verbose>1) cout <<"****************** MC: random decision" <<endl;
-    discount *= gamma;
-#if 0
-    R += discount * world.transition_randomly().second;
-#else
-    std::vector<MCTS_Environment::Handle> actions = world.get_actions();
-    uint a = rand()%actions.size();
-    R += discount * world.transition(actions[a]).second;
-    decisionsString <<*actions[a] <<' ';
-#endif
+    mlr::Array<MCTS_Environment::Handle> actions;
+    actions = conv_stdvec2arr(world.get_actions()); //WARNING: conv... returns a reference!!
+    if(verbose>2){ cout <<"Possible decisions: "; listWrite(actions); cout <<endl; }
+    uint a = rand()%actions.N;
+    if(verbose>1) cout <<"****************** MC: random decision: " <<*actions(a) <<endl;
+    decisionsString <<*actions(a) <<' ';
+    ret = world.transition(actions(a));
+    R += discount * ret.reward;
+    discount *= pow(gamma, ret.duration);    //    discount *= gamma;
   }
 
   if(step>=stepAbort) R -= 100.;
@@ -68,6 +71,7 @@ void PlainMC::addRollout(int stepAbort){
 }
 
 void PlainMC::report(){
+  cout <<"MC Planner report:" <<endl;
   for(uint a=0;a<A.N;a++){
     cout <<"action=" <<*A(a) <<" n=" <<D(a).n <<" returns=" <<D(a).X <<endl;
   }

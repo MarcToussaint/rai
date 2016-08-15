@@ -11,7 +11,7 @@ struct PlainMC{
   struct Statistics{ uint n; arr X; Statistics():n(0){} };
 
   MCTS_Environment& world;
-  mlr::Array<MCTS_Environment::Handle> A;  ///< what decision do we have in the start state
+  mlr::Array<MCTS_Environment::Handle> A;  ///< what decisions do we have in the start state
   mlr::Array<Statistics> D;                ///< data of returns for all first actions
   double gamma;
   int verbose;

@@ -1,10 +1,13 @@
 #include "manipulationTree.h"
+#include <MCTS/solver_PlainMC.h>
+
 
 ManipulationTree_Node::ManipulationTree_Node(ors::KinematicWorld& kin, FOL_World& _fol)
   : parent(NULL), s(0), fol(_fol),
     startKinematics(kin),
     kinematics(kin),
     effKinematics(kin),
+    mc(NULL),
     poseProblem(NULL), seqProblem(NULL), pathProblem(NULL),
     poseCost(0.), seqCost(0.), pathCost(0.), effPoseReward(0.){
   fol.generateStateTree=true;
@@ -19,6 +22,7 @@ ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS
     startKinematics(parent->startKinematics),
     kinematics(parent->kinematics),
 //    effKinematics(parent->effKinematics),
+    mc(NULL),
     poseProblem(NULL), seqProblem(NULL), pathProblem(NULL),
     poseCost(0.), seqCost(0.), pathCost(0.), effPoseReward(0.){
   s=parent->s+1;
@@ -45,6 +49,22 @@ void ManipulationTree_Node::expand(){
     new ManipulationTree_Node(this, a);
   }
   isExpanded=true;
+}
+
+void ManipulationTree_Node::addMCRollouts(uint num, int stepAbort){
+  fol.setState(folState);
+  cout <<"********\n *** MC from STATE="; fol.state->write(cout," ","{}"); cout <<endl;
+  fol.generateStateTree=false;
+  if(!mc){
+    mc = new PlainMC(fol);
+    mc->reset();
+    mc->verbose = 0;
+  }
+  for(uint k=0;k<num;k++) mc->addRollout(stepAbort);
+  mc->report();
+  fol.generateStateTree=true;
+  auto a = mc->getBestAction();
+  cout <<"******** BEST ACTION " <<*a <<endl;
 }
 
 void ManipulationTree_Node::solvePoseProblem(){
@@ -88,7 +108,7 @@ void ManipulationTree_Node::solvePoseProblem(){
 }
 
 void ManipulationTree_Node::solveSeqProblem(int verbose){
-  if(!s) return;
+  if(!s || !time) return; //there is no sequence to compute
 
   //-- create new problem declaration (within the KB)
 //  Node *seqProblemNode = fol.KB.appendSubgraph({"SeqProblem"}, {folState->isNodeOfParentGraph});
@@ -128,6 +148,8 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
 void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
 //  Node *pathProblemNode = fol.KB.appendSubgraph({"PathProblem"}, {folState->isNodeOfParentGraph});
 //  pathProblemSpecs = &pathProblemNode->graph();
+
+  if(!s || !time) return; //there is no path to compute
 
   //-- collect 'path nodes'
   ManipulationTree_NodeL treepath = getTreePath();

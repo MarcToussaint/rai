@@ -549,7 +549,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
           node->get<mlr::FileToken>().getIs();  //creates the ifstream and might throw an error
         } catch(...){
           delete node;
-          PARSERR("file which does not exist -> converting to string!", pinfo);
+          PARSERR("file " <<str <<" does not exist -> converting to string!", pinfo);
           node = new Node_typed<mlr::String>(*this, keys, parents, str);
 //          delete f;
         }
@@ -572,7 +572,9 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
           is.clear();
           mlr::String substr;
           substr.read(is,"",">",false);
-          PARSERR("could not parse value of type '" <<str <<"' -- no such type has been registered; ignoring: '"<<substr<<"'", pinfo);
+          PARSERR("could not parse value of type '" <<str <<"' -- no such type has been registered; converting this to string: '"<<substr<<"'", pinfo);
+          str = STRING('<' <<str <<' ' <<substr <<'>');
+          node = new Node_typed<mlr::String>(*this, keys, parents, str);
         } else {
           node->keys = keys;
           node->parents = parents;
@@ -627,11 +629,11 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
   }
 
   if(!node){
-    cout <<"FAILED reading node with keys ";
-    keys.write(cout, " ", NULL, "()");
-    cout <<" and parents ";
-    listWrite(parents,cout," ","()");
-    cout <<endl;
+    cerr <<"FAILED reading node with keys ";
+    keys.write(cerr, " ", NULL, "()");
+    cerr <<" and parents ";
+    listWrite(parents,cerr," ","()");
+    cerr <<endl;
   }
 
   //eat the next , or ;
