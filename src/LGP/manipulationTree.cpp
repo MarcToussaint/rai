@@ -9,7 +9,8 @@ ManipulationTree_Node::ManipulationTree_Node(ors::KinematicWorld& kin, FOL_World
     effKinematics(kin),
     mc(NULL),
     poseProblem(NULL), seqProblem(NULL), pathProblem(NULL),
-    poseCost(0.), seqCost(0.), pathCost(0.), effPoseReward(0.){
+    symCost(0.), poseCost(0.), seqCost(0.), pathCost(0.), effPoseReward(0.),
+    symTerminal(false), poseFeasible(false), seqFeasible(false), pathFeasible(false) {
   fol.generateStateTree=true;
   folState = fol.getState();
   folDecision = NULL;
@@ -24,7 +25,8 @@ ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS
 //    effKinematics(parent->effKinematics),
     mc(NULL),
     poseProblem(NULL), seqProblem(NULL), pathProblem(NULL),
-    poseCost(0.), seqCost(0.), pathCost(0.), effPoseReward(0.){
+    symCost(0.), poseCost(0.), seqCost(0.), pathCost(0.), effPoseReward(0.),
+    symTerminal(false), poseFeasible(false), seqFeasible(false), pathFeasible(false) {
   s=parent->s+1;
   parent->children.append(this);
   fol.setState(parent->folState);
@@ -48,6 +50,11 @@ void ManipulationTree_Node::expand(){
     cout <<"  EXPAND DECISION: " <<*a <<endl;
     new ManipulationTree_Node(this, a);
   }
+  isExpanded=true;
+}
+
+void ManipulationTree_Node::expandOneActionOnly(const FOL_World::Handle& a){
+  new ManipulationTree_Node(this, a);
   isExpanded=true;
 }
 

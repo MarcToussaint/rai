@@ -40,7 +40,8 @@ struct ManipulationTree_Node{
   KOMO *poseProblem, *seqProblem, *pathProblem;
   Graph *poseProblemSpecs, *seqProblemSpecs, *pathProblemSpecs;
   arr pose, seq, path;
-  double poseCost, seqCost, pathCost;
+  double symCost, poseCost, seqCost, pathCost;
+  bool symTerminal, poseFeasible, seqFeasible, pathFeasible;
   double effPoseReward;
 
   /// root node init
