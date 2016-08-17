@@ -233,6 +233,7 @@ void PublishDatabase::step()
       {
         object_recognition_msgs::Table table = conv_FilterObject2Table(*objectDatabase(i));
         table_array.tables.push_back(table);
+        table_array.header.frame_id = table.header.frame_id;
         syncPlane(dynamic_cast<Plane*>(objectDatabase(i)));
         new_planes.append(objectDatabase(i)->id);
         break;
