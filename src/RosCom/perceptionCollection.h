@@ -11,13 +11,17 @@
   #include <ar_track_alvar/AlvarMarkers.h>
   namespace ar = ar_track_alvar;
 #endif
+#include <object_recognition_msgs/TableArray.h>
 
 Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker);
+Plane conv_ROSTable2Plane(const object_recognition_msgs::Table& table);
 Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker);
 
 struct Collector : Module{
   Access_typed<visualization_msgs::MarkerArray> tabletop_clusters;
   Access_typed<ar::AlvarMarkers> ar_pose_markers;
+  Access_typed<object_recognition_msgs::TableArray> tabletop_tableArray;
+
  // ACCESSlisten(visualization_msgs::MarkerArray, tabletop_clusters)
 //  ACCESSlisten(ar::AlvarMarkers, ar_pose_markers)
   ACCESSname(ors::Transformation, tabletop_srcFrame)
@@ -34,6 +38,7 @@ private:
   bool useRos = mlr::getParameter<bool>("useRos", false);
   int tabletop_clusters_revision = 0;
   int ar_pose_markers_revision = 0;
+  int tabletop_tableArray_revision = 0;
 //  ors::Transformation tf; // Transformation from the camera to the body
 //  bool has_transform = true;
 
