@@ -4,7 +4,8 @@
 Collector::Collector(const bool simulate):
     Module("Collector", simulate ? 0.05:-1),
     tabletop_clusters(this, "tabletop_clusters", !simulate),
-    ar_pose_markers(this, "ar_pose_markers", !simulate)
+    ar_pose_markers(this, "ar_pose_markers", !simulate),
+    tabletop_tableArray(this, "tabletop_tableArray", !simulate)
 {
   tabletop_srcFrame.set()->setZero();
   alvar_srcFrame.set()->setZero();
@@ -60,6 +61,22 @@ void Collector::step()
       }
     }
     tabletop_clusters.deAccess();
+
+    int tableArray_rev = tabletop_tableArray.readAccess();
+    if ( tableArray_rev > tabletop_tableArray_revision ){ //only if new cluster info is available
+      tabletop_tableArray_revision = tableArray_rev;
+      const object_recognition_msgs::TableArray msg = tabletop_tableArray();
+
+      if (msg.tables.size() > 0){
+
+        for(auto & table : msg.tables){
+          Plane* new_plane = new Plane(conv_ROSTable2Plane( table ));
+          new_plane->frame = tabletop_srcFrame.get(); //tf
+          percepts.append( new_plane );
+        }
+      }
+    }
+    tabletop_tableArray.deAccess();
 
     int ar_rev = ar_pose_markers.readAccess();
     if ( ar_rev > ar_pose_markers_revision){ //new alwar objects are available
@@ -147,9 +164,15 @@ void Collector::step()
 Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker){
   arr points = conv_points2arr(marker.points);
   arr mean = sum(points,0)/(double)points.d0;
-  Cluster new_object(mean, points, marker.header.frame_id);
+  return Cluster(mean, points, marker.header.frame_id);
+}
 
-  return new_object;
+Plane conv_ROSTable2Plane(const object_recognition_msgs::Table& table){
+  arr hull = conv_points2arr(table.convex_hull);
+  ors::Transformation t = conv_pose2transformation(table.pose);
+  arr center = t.pos.getArr();
+  arr normal = (t * Vector_z).getArr();
+  return Plane(normal, center, hull, table.header.frame_id);
 }
 
 Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker){

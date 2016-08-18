@@ -318,6 +318,14 @@ void ors::Mesh::makeConvexHull() {
     #endif
 }
 
+void ors::Mesh::makeTriangleFan(){
+  T.clear();
+  for(uint i=1;i+1<V.d0;i++){
+    T.append(TUP(0,i,i+1));
+  }
+  T.reshape(T.N/3,3);
+}
+
 void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
   ConstrainedProblem F=[&X](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){
     phi.resize(5+X.d0);
@@ -2098,4 +2106,6 @@ ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> doub
   }
   return d;
 };
+
+
 

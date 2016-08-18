@@ -73,6 +73,21 @@ visualization_msgs::Marker conv_FilterObject2Marker(const FilterObject& object)
   return new_marker;
 }
 
+object_recognition_msgs::Table conv_FilterObject2Table(const FilterObject& object)
+{
+  const Plane& plane = dynamic_cast<const Plane&>(object);
+  object_recognition_msgs::Table new_table;
+  ors::Transformation t;
+  t.pos = plane.center;
+  t.rot.setDiff(Vector_z, plane.normal);
+  new_table.pose = conv_transformation2pose(t);
+  new_table.convex_hull = conv_arr2points(plane.hull);
+  new_table.header.stamp = ros::Time(0.);
+  new_table.header.frame_id = plane.frame_id;
+
+  return new_table;
+}
+
 ar::AlvarMarker conv_FilterObject2Alvar(const FilterObject& object)
 {
   ar::AlvarMarker new_marker;
@@ -116,6 +131,41 @@ void PublishDatabase::syncCluster(const Cluster* cluster)
   modelWorld.deAccess();
 }
 
+void PublishDatabase::syncPlane(const Plane* plane)
+{
+  modelWorld.writeAccess();
+  mlr::String plane_name = STRING("plane_" << plane->id);
+
+  ors::Body *body = modelWorld().getBodyByName(plane_name, false);
+  if (not body) {
+    //cout << plane_name << " does not exist yet; adding it..." << endl;
+    body = new ors::Body(modelWorld());
+    body->name = plane_name;
+    ors::Shape *shape = new ors::Shape(modelWorld(), *body);
+    shape->name = plane_name;
+    shape->type = ors::pointCloudST;
+    shape = new ors::Shape(modelWorld(), *body);
+    shape->name = plane_name;
+    shape->type = ors::markerST;
+    shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
+    stored_planes.append(plane->id);
+  }
+  body->X = plane->frame;
+  //plane->frame = body->X;
+  body->shapes(0)->mesh.V = plane->hull;
+  body->shapes(0)->mesh.makeTriangleFan();
+
+  ors::Vector cen = body->shapes(0)->mesh.center();
+  body->X.addRelativeTranslation(cen);
+  body->shapes(0)->rel.rot = body->X.rot;
+  body->X.rot.setZero();
+
+  ((Plane*)plane)->transform = body->X;
+  //((plane*)plane)->mean = ARR(cen.x, cen.y, cen.z);
+  /* If we change the mean, we compare the transformed mean to an untransformed mean later...*/
+  modelWorld.deAccess();
+}
+
 void PublishDatabase::syncAlvar(const Alvar* alvar)
 {
   modelWorld.writeAccess();
@@ -153,9 +203,10 @@ void PublishDatabase::step()
   FilterObjects objectDatabase = object_database();
 
   visualization_msgs::MarkerArray cluster_markers;
+  object_recognition_msgs::TableArray table_array;
   ar::AlvarMarkers ar_markers;
 
-  mlr::Array<uint> new_clusters, new_alvars;
+  mlr::Array<uint> new_clusters, new_alvars, new_planes;
 
   for (uint i = 0; i < objectDatabase.N; i++)
   {
@@ -180,7 +231,11 @@ void PublishDatabase::step()
       }
       default:
       {
-        NIY;
+        object_recognition_msgs::Table table = conv_FilterObject2Table(*objectDatabase(i));
+        table_array.tables.push_back(table);
+        table_array.header.frame_id = table.header.frame_id;
+        syncPlane(dynamic_cast<Plane*>(objectDatabase(i)));
+        new_planes.append(objectDatabase(i)->id);
         break;
       }
     }
@@ -194,6 +249,9 @@ void PublishDatabase::step()
 
     if (ar_markers.markers.size() > 0)
       alvar_pub.publish(ar_markers);
+
+    if (table_array.tables.size() > 0)
+      plane_pub.publish(table_array);
   }
 
 

@@ -21,9 +21,10 @@ struct PublishDatabase : Module{
   virtual void step();
   virtual void close();
 
-private:
+
   void syncCluster(const Cluster* cluster);
+  void syncPlane(const Plane* plane);
   void syncAlvar(const Alvar* alvar);
-  mlr::Array<uint> stored_clusters, stored_alvars;
+  mlr::Array<uint> stored_clusters, stored_alvars, stored_planes;
   int revision = -1;
 };
