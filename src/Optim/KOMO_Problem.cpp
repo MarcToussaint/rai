@@ -53,7 +53,7 @@ void KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x){
 }
 
 
-KOMO_ConstrainedProblem::KOMO_ConstrainedProblem(KOMO_Problem& P) : KOMO(P){
+Conv_KOMO_ConstrainedProblem::Conv_KOMO_ConstrainedProblem(KOMO_Problem& P) : KOMO(P){
   KOMO.getStructure(variableDimensions, featureTimes, featureTypes);
   varDimIntegral = integral(variableDimensions);
 
@@ -62,7 +62,7 @@ KOMO_ConstrainedProblem::KOMO_ConstrainedProblem(KOMO_Problem& P) : KOMO(P){
   } );
 }
 
-void KOMO_ConstrainedProblem::f(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){
+void Conv_KOMO_ConstrainedProblem::f(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){
   KOMO.phi(phi, J_KOMO, H_KOMO, tt, x);
 
   //-- construct a row-shifed J from the array of featureJs
@@ -83,6 +83,7 @@ void KOMO_ConstrainedProblem::f(arr& phi, arr& J, arr& H, TermTypeA& tt, const a
       else Jaux->rowShift(i) =  varDimIntegral(t-k-1);
     }
 
+    Jaux->reshift();
     Jaux->computeColPatches(true);
   }
 }

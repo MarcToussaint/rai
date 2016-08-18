@@ -1661,6 +1661,7 @@ RowShifted::RowShifted(arr& X, RowShifted &aux):
   Z(X),
   real_d1(aux.real_d1),
   rowShift(aux.rowShift),
+  rowLen(aux.rowLen),
   colPatches(aux.colPatches),
   symmetric(aux.symmetric),
   nextInSum(NULL)
@@ -1695,10 +1696,51 @@ RowShifted::~RowShifted() {
   Z.special = NULL;
 }
 
-double RowShifted::acc(uint i, uint j) {
+double RowShifted::elem(uint i, uint j) {
   uint rs=rowShift(i);
   if(j<rs || j>=rs+Z.d1) return 0.;
   return Z(i, j-rs);
+}
+
+void RowShifted::reshift(){
+  rowLen.resize(Z.d0);
+  for(uint i=0; i<Z.d0; i++) {
+#if 1
+    //find number of leading and trailing zeros
+    double *Zp = Z.p + i*Z.d1;
+    double *Zlead = Zp;
+    double *Ztrail = Zp + Z.d1-1;
+    while(*Ztrail==0. && Ztrail>=Zlead) Ztrail--;
+    while(*Zlead==0. && Zlead<=Ztrail) Zlead++;
+    if(Ztrail<Zlead){ //all zeros
+      rowLen.p[i]=0.;
+    }else{
+      uint rs = Zlead-Zp;
+      uint len = 1+Ztrail-Zlead;
+      rowShift.p[i] += rs;
+      rowLen.p[i] = len;
+      if(Zlead!=Zp){
+        memmove(Zp, Zlead, len*Z.sizeT);
+        memset (Zp+len, 0, (Z.d1-len)*Z.sizeT);
+      }
+    }
+#else
+    //find number of leading zeros
+    uint j=0;
+    while(j<Z.d1 && Z(i,j)==0.) j++;
+    //shift or so..
+    if(j==Z.d1){ //all zeros...
+    }else if(j){ //some zeros
+      rowShift(i) += j;
+      memmove(&Z(i,0), &Z(i,j), (Z.d1-j)*Z.sizeT);
+      memset (&Z(i,Z.d1-j), 0, j*Z.sizeT);
+    }
+    //find number of trailing zeros
+    j=Z.d1;
+    while(j>0 && Z(i,j-1)==0.) j--;
+    rowLen(i)=j;
+#endif
+  }
 }
 
 arr packRowShifted(const arr& X) {
@@ -1749,9 +1791,9 @@ void RowShifted::computeColPatches(bool assumeMonotonic) {
   if(!assumeMonotonic) {
     for(uint j=0; j<real_d1; j++) {
       a=0;
-      while(a<Z.d0 && acc(a,j)==0) a++;
+      while(a<Z.d0 && elem(a,j)==0) a++;
       b=Z.d0;
-      while(b>0 && acc(b-1,j)==0) b--;
+      while(b>a && elem(b-1,j)==0) b--;
       colPatches.p[2*j]=a;
       colPatches.p[2*j+1]=b;
     }
@@ -1769,6 +1811,7 @@ void RowShifted::computeColPatches(bool assumeMonotonic) {
 
 arr RowShifted::At_A() {
   //TODO use blas DSYRK instead?
+  CHECK_EQ(rowLen.N, rowShift.N, "");
   arr R;
   RowShifted *Raux = makeRowShifted(R, real_d1, Z.d1, real_d1);
   R.setZero();
@@ -1776,16 +1819,17 @@ arr RowShifted::At_A() {
   Raux->symmetric=true;
   if(!Z.d1) return R; //Z is identically zero, all rows fully packed -> return zero R
   for(uint i=0; i<Z.d0; i++) {
-    uint rs=rowShift(i);
-    double* Zi=&Z(i,0);
-    for(uint j=0; j<Z.d1; j++) {
+    uint rs=rowShift.p[i];
+    uint rlen=rowLen.p[i];
+    double* Zi = Z.p+i*Z.d1;
+    for(uint j=0; j<rlen/*Z.d1*/; j++) {
       uint real_j=j+rs;
       if(real_j>=real_d1) break;
       double Zij=Zi[j];
       if(Zij!=0.){
         double* Rp=R.p + real_j*R.d1;
         double* Jp=Zi+j;
-        double* Jpstop=Zi+Z.d1;
+        double* Jpstop=Zi+rlen; //Z.d1;
         for(; Jp!=Jpstop; Rp++,Jp++) if(*Jp!=0.) *Rp += Zij * *Jp;
       }
     }
@@ -1805,12 +1849,12 @@ arr RowShifted::A_At() {
   //-- determine pack_d1 for the resulting symmetric matrix
   uint pack_d1=1;
   for(uint i=0; i<Z.d0; i++) {
-    uint rs_i=rowShift(i);
+    uint rs_i=rowShift.p[i];
     for(uint j=Z.d0-1; j>=i+pack_d1; j--) {
-      uint rs_j=rowShift(j);
-      uint a=mlr::MAX(rs_i,rs_j);
-      uint b=mlr::MIN(rs_i+Z.d1,rs_j+Z.d1);
-      b=mlr::MIN(real_d1,b);
+      uint rs_j=rowShift.p[j];
+      uint a,b;
+      if(rs_i<rs_j){ a=rs_j; b=rs_i+Z.d1; }else{ a=rs_i; b=rs_j+Z.d1; }
+      if(real_d1<b) b=real_d1;
       if(a<b) if(pack_d1<j-i+1) pack_d1=j-i+1;
     }
   }
@@ -1822,16 +1866,16 @@ arr RowShifted::A_At() {
   Raux->symmetric=true;
   if(!Z.d1) return R; //Z is identically zero, all rows fully packed -> return zero R
   for(uint i=0; i<Z.d0; i++) {
-    uint rs_i=rowShift(i);
+    uint rs_i=rowShift.p[i];
     double* Zi=&Z(i,0);
     for(uint j=i; j<Z.d0 && j<i+pack_d1; j++) {
-      uint rs_j=rowShift(j);
+      uint rs_j=rowShift.p[j];
       double* Zj=&Z(j,0);
       double* Rij=&R(i,j-i);
 
-      uint a=mlr::MAX(rs_i,rs_j);
-      uint b=mlr::MIN(rs_i+Z.d1,rs_j+Z.d1);
-      b=mlr::MIN(real_d1,b);
+      uint a,b;
+      if(rs_i<rs_j){ a=rs_j; b=rs_i+Z.d1; }else{ a=rs_i; b=rs_j+Z.d1; }
+      if(real_d1<b) b=real_d1;
       for(uint k=a;k<b;k++) *Rij += Zi[k-rs_i]*Zj[k-rs_j];
     }
   }
@@ -1840,20 +1884,23 @@ arr RowShifted::A_At() {
 }
 
 arr RowShifted::At_x(const arr& x) {
+  CHECK_EQ(rowLen.N, rowShift.N, "");
   CHECK_EQ(x.N,Z.d0,"");
   arr y(real_d1);
   y.setZero();
+//  cout <<"SPARSITY = " <<Z.sparsity() <<endl;
   if(!Z.d1) return y; //Z is identically zero, all rows fully packed -> return zero y
-  for(uint j=0; j<real_d1; j++) {
-    double sum=0.;
-    uint a=colPatches(j,0);
-    uint b=colPatches(j,1);
-    for(uint i=a; i<b; i++) {
-      uint rs=rowShift.p[i];
-      if(j<rs || j-rs>=Z.d1) continue;
-      sum += Z.p[i*Z.d1+j-rs]*x.p[i]; // sum += acc(i,j)*x(i);
-    }
-    y(j) = sum;
+  for(uint i=0; i<Z.d0; i++) {
+    double xi = x.p[i];
+    uint rs=rowShift.p[i];
+#if 0
+    for(uint j=0; j<Z.d1; j++) y.p[rs+j] += xi * Z.p[i*Z.d1+j]; // sum += acc(i,j)*x(i);
+#else //PROFILED
+    double *Zp = Z.p + i*Z.d1;
+    double *yp = y.p + rs;
+    double *ypstop = yp + rowLen.p[i]; //+ Z.d1;
+    for(;yp!=ypstop;){ *yp += xi * *Zp;  Zp++;  yp++; }
+#endif
   }
   if(nextInSum) y += comp_At_x(*nextInSum, x);
   return y;
@@ -1879,6 +1926,22 @@ arr RowShifted::A_x(const arr& x) {
   }
   if(nextInSum) NIY;
   return y;
+}
+
+arr RowShifted::At(){
+  uint width = 0;
+  for(uint i=0;i<colPatches.d0;i++){ uint a=colPatches(i,1)-colPatches(i,0); if(a>width) width=a; }
+
+  arr At;
+  RowShifted* At_ = makeRowShifted(At, real_d1, width, Z.d0);
+  for(uint i=0;i<real_d1;i++){
+    uint rs = colPatches(i,0);
+    At_->rowShift(i) = rs;
+    uint rlen = colPatches(i,1)-rs;
+    for(uint j=0;j<rlen;j++) At_->Z(i,j) = elem(rs+j,i);
+  }
+//  At_->computeColPatches(false);
+  return At;
 }
 
 arr unpack(const arr& X) {
@@ -1908,6 +1971,12 @@ arr comp_A_At(arr& A) {
 arr comp_At_x(arr& A, const arr& x) {
   if(isNotSpecial(A)) { arr y; innerProduct(y, ~A, x); return y; }
   if(isRowShifted(A)) return ((RowShifted*)A.special)->At_x(x);
+  return NoArr;
+}
+
+arr comp_At(arr& A) {
+  if(isNotSpecial(A)) { return ~A; }
+  if(isRowShifted(A)) return ((RowShifted*)A.special)->At();
   return NoArr;
 }
 

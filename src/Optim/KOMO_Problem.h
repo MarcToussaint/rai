@@ -14,14 +14,14 @@ struct KOMO_Problem {
 
 
 //-- converters
-struct KOMO_ConstrainedProblem : ConstrainedProblem{
+struct Conv_KOMO_ConstrainedProblem : ConstrainedProblem{
   KOMO_Problem& KOMO;
   uintA variableDimensions, varDimIntegral;
   uintA featureTimes;
   TermTypeA featureTypes;
   arrA J_KOMO, H_KOMO;
 
-  KOMO_ConstrainedProblem(KOMO_Problem& P);
+  Conv_KOMO_ConstrainedProblem(KOMO_Problem& P);
 
 
   void f(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x);
