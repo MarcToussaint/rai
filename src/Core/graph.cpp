@@ -39,6 +39,7 @@ struct ParseInfo{
   istream::pos_type parents_beg, parents_end;
   istream::pos_type value_beg, value_end;
   enum Error{ good=0, unknownParent };
+  ParseInfo():node(NULL){}
   void write(ostream& os) const{ os <<'<' <<beg <<',' <<end <<'>'; }
 };
 stdOutPipe(ParseInfo)
@@ -144,6 +145,12 @@ Nod::Nod(const char* key){
   n->keys.append(STRING(key));
 }
 
+Nod::Nod(const char* key, const char* stringValue){
+  n = new Node_typed<mlr::String>(G, STRING(stringValue));
+  n->keys.append(STRING(key));
+}
+
+
 
 //===========================================================================
 //
@@ -181,7 +188,7 @@ void Graph::clear() {
   while(N) delete last();
 }
 
-Node *Graph::append(const Nod& ni){
+Graph& Graph::append(const Nod& ni){
   Node *clone = ni.n->newClone(*this); //this appends sequentially clones of all nodes to 'this'
   for(const mlr::String& s:ni.parents){
     Node *p = getNode(s);
@@ -189,7 +196,7 @@ Node *Graph::append(const Nod& ni){
     clone->parents.append(p);
     p->parentOf.append(clone);
   }
-  return clone;
+  return *this;
 }
 
 Node_typed<Graph>* Graph::appendSubgraph(const StringA& keys, const NodeL& parents, const Graph& x){
@@ -297,11 +304,11 @@ NodeL Graph::getNodesOfDegree(uint deg) {
 }
 
 Node* Graph::merge(Node *m){
-  NodeL KVG = findNodesOfType(m->type, {m->keys(0)});
+  NodeL KVG = findNodesOfType(m->type, {m->keys.last()});
   //CHECK(KVG.N<=1, "can't merge into multiple nodes yet");
   Node *n=NULL;
   if(KVG.N) n=KVG.elem(0);
-  CHECK(n!=m,"how is this possible?");
+  CHECK(n!=m,"how is this possible?: You're trying to merge with '" <<*m <<"' but this is the only node using these keys");
   if(n){
     CHECK(m->type==n->type, "can't merge nodes of different types!");
     if(n->isGraph()){ //merge the KVGs
@@ -454,7 +461,9 @@ void writeFromStream(std::ostream& os, std::istream& is, istream::pos_type beg, 
 #define PARSERR(x, pinfo) { \
   cerr <<"[[error in parsing Graph file (line=" <<mlr::lineCount <<"): " <<x <<":\n  \""; \
   writeFromStream(cerr, is, pinfo.beg, is.tellg()); \
-  cerr <<"<<<\"  ]]" <<endl; is.clear(); }
+  cerr <<"<<<\"  ]]" <<endl; \
+  if(pinfo.node) cerr <<"  (node='" <<*pinfo.node <<"')" <<endl; \
+  is.clear(); }
 
 Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::String prefixedKey) {
   mlr::String str;
