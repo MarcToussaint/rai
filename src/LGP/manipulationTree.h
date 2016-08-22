@@ -8,6 +8,7 @@
 
 struct ManipulationTree_Node;
 struct PlainMC;
+struct MCStatistics;
 typedef mlr::Array<ManipulationTree_Node*> ManipulationTree_NodeL;
 
 //===========================================================================
@@ -36,13 +37,14 @@ struct ManipulationTree_Node{
 
   //-- specs and results of the three optimization problems
 //  MotionProblem *poseProblem, *seqProblem, *pathProblem;
-  PlainMC *mc;
+  PlainMC *rootMC;
+  MCStatistics *mcStats;
   KOMO *poseProblem, *seqProblem, *pathProblem;
   Graph *poseProblemSpecs, *seqProblemSpecs, *pathProblemSpecs;
   arr pose, seq, path;
   double symCost, poseCost, seqCost, pathCost;
+  double effPoseReward, costSoFar;
   bool symTerminal, poseFeasible, seqFeasible, pathFeasible;
-  double effPoseReward;
 
   /// root node init
   ManipulationTree_Node(ors::KinematicWorld& kin, FOL_World& fol);
@@ -52,6 +54,7 @@ struct ManipulationTree_Node{
 
   //- computations on the node
   void expand();           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
+  arr generateRootMCRollouts(uint num, int stepAbort, const mlr::Array<MCTS_Environment::Handle>& prefixDecisions);
   void addMCRollouts(uint num,int stepAbort);
   void solvePoseProblem(); ///< solve the effective pose problem
   void solveSeqProblem(int verbose=0);  ///< compute a sequence of key poses along the decision path
@@ -63,6 +66,7 @@ struct ManipulationTree_Node{
   void write(ostream& os=cout) const;
   void getGraph(Graph& G, Node *n=NULL);
   Graph getGraph(){ Graph G; getGraph(G, NULL); G.checkConsistency(); return G; }
+
 };
 
 inline ostream& operator<<(ostream& os, const ManipulationTree_Node& n){ n.write(os); return os; }
