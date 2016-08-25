@@ -827,14 +827,15 @@ arr comp_At(arr& A);
 arr comp_A_x(arr& A, const arr& x);
 
 struct SpecialArray{
-  enum Type { noneST, hasCarrayST, sparseST, diagST, RowShiftedST, CpointerST };
+  enum Type { noneST, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };
   Type type;
   virtual ~SpecialArray(){}
 };
 
 template<class T> bool isNotSpecial(const mlr::Array<T>& X){ return !X.special || X.special->type==SpecialArray::noneST; }
 template<class T> bool isRowShifted(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::RowShiftedST; }
-template<class T> bool isSparse(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseST; }
+template<class T> bool isSparseMatrix(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseMatrixST; }
+template<class T> bool isSparseVector(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseVectorST; }
 
 struct RowShifted : SpecialArray {
   arr& Z;           ///< references the array itself
@@ -864,6 +865,12 @@ inline RowShifted* castRowShifted(arr& X) {
   return dynamic_cast<RowShifted*>(X.special); //((RowShifted*)X.aux);
 }
 
+struct SparseVector: SpecialArray{
+  uint N; ///< original size
+  uintA elems; ///< for every non-zero (in memory order), the index
+  template<class T> SparseVector(mlr::Array<T>& X);
+};
+
 struct SparseMatrix : SpecialArray{
   uintA elems; ///< for every non-zero (in memory order), the (row,col) index tuple [or only (row) for vectors]
   uintAA cols; ///< for every column, for every non-zero the (row,memory) index tuple [also for a vector column]
@@ -872,10 +879,14 @@ struct SparseMatrix : SpecialArray{
   template<class T> SparseMatrix(mlr::Array<T>& X, uint d0);
 };
 
+//struct RowSparseMatrix : SpecialArray {
+//  RowSparseMatrix()
+//};
 
 arr unpack(const arr& Z); //returns an unpacked matrix in case this is packed
 arr packRowShifted(const arr& X);
 RowShifted *makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
+arr makeRowSparse(const arr& X);
 
 
 //===========================================================================

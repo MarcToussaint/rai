@@ -34,6 +34,7 @@ ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS
     fol.transition(a);
     time=parent->time+fol.lastStepDuration;
     folReward = fol.lastStepReward;
+    symTerminal = fol.successEnd || fol.deadEnd;
   }else{
     LOG(-1) <<"this doesn't make sense";
   }
@@ -87,7 +88,10 @@ void ManipulationTree_Node::addMCRollouts(uint num, int stepAbort){
 
   for(ManipulationTree_Node* n:treepath){
     if(!n->mcStats) n->mcStats = new MCStatistics;
-    for(auto& r:R) n->mcStats->add(r);
+    for(auto& r:R){
+      n->mcStats->add(r);
+      n->symCost = - n->mcStats->X.first();
+    }
   }
 
 //  mcStats->report();
@@ -248,7 +252,7 @@ void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
   graphIndex = n->index;
   n->keys.append(STRING("s:" <<s <<" t:" <<time));
   if(mcStats) n->keys.append(STRING("MC best:" <<mcStats->X.first() <<" n:" <<mcStats->n));
-  n->keys.append(STRING("sym cost:" <<symCost));
+  n->keys.append(STRING("sym cost:" <<symCost <<" terminal:" <<symTerminal));
   n->keys.append(STRING("seq cost:" <<seqCost <<" feasible:" <<seqFeasible));
   n->keys.append(STRING("costSoFar:" <<costSoFar));
 //  n->keys.append(STRING("reward:" <<effPoseReward));

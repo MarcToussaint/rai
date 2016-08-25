@@ -288,19 +288,38 @@ template<class T> double mlr::Array<T>::sparsity() {
 
 /// make sparse: create the \ref sparse index
 template<class T> void mlr::Array<T>::makeSparse() {
-  special = new SparseMatrix(*this);
+  if(nd==1){
+    special = new SparseVector(*this);
+  }else if(nd==2){
+    special = new SparseMatrix(*this);
+  }else NIY;
+}
+
+template<class T> SparseVector::SparseVector(mlr::Array<T>& x){
+  CHECK(isNotSpecial(x), "only once yet");
+  type=sparseVectorST;
+  N = x.N;
+  uint n=0; //memory index
+  elems.resize(x.N);
+  for(uint i=0; i<N; i++) if(x.p[i]) {
+    elems.p[n]=i; //list of entries (maps n->i)
+    x.p[n]=x.p[i];
+    n++;
+  }
+  x.resizeCopy(n);
+  elems.resizeCopy(n);
 }
 
 template<class T> SparseMatrix::SparseMatrix(mlr::Array<T>& X, uint d0){
   CHECK(isNotSpecial(X), "only once yet");
-  type=sparseST;
+  type=sparseMatrixST;
   cols.resize(1);
   X.nd=1; X.d0=d0;
 }
 
 template<class T> SparseMatrix::SparseMatrix(mlr::Array<T>& X){
   CHECK(isNotSpecial(X), "only once yet");
-  type=sparseST;
+  type=sparseMatrixST;
   uint n=0; //memory index
   if(X.nd==1) {
     uint i;
@@ -772,14 +791,14 @@ template<class T> T& mlr::Array<T>::operator()(uint i) const {
 
 /// 2D access
 template<class T> T& mlr::Array<T>::operator()(uint i, uint j) const {
-  CHECK(nd==2 && i<d0 && j<d1 && !isSparse(*this),
+  CHECK(nd==2 && i<d0 && j<d1 && !isSparseMatrix(*this),
         "2D range error (" <<nd <<"=2, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<")");
   return p[i*d1+j];
 }
 
 /// 3D access
 template<class T> T& mlr::Array<T>::operator()(uint i, uint j, uint k) const {
-  CHECK(nd==3 && i<d0 && j<d1 && k<d2 && !isSparse(*this),
+  CHECK(nd==3 && i<d0 && j<d1 && k<d2 && !isSparseMatrix(*this),
         "3D range error (" <<nd <<"=3, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<", " <<k <<"<" <<d2 <<")");
   return p[(i*d1+j)*d2+k];
 }
@@ -1666,7 +1685,10 @@ template<class T> void mlr::Array<T>::write(std::ostream& os, const char *ELEMSE
     os.write((char*)p, sizeT*N);
     os.put(0);
     os <<std::endl;
-  } if(isSparse(*this)) {
+  } else if(isSparseVector(*this)) {
+    uintA& elems = dynamic_cast<SparseVector*>(special)->elems;
+    for(uint i=0;i<N;i++) cout <<"( " <<elems(i) <<" ) " <<elem(i) <<endl;
+  } else if(isSparseMatrix(*this)) {
     uintA& elems = dynamic_cast<SparseMatrix*>(special)->elems;
     if(nd==1) for(uint i=0;i<N;i++) cout <<"( " <<elems(i) <<" ) " <<elem(i) <<endl;
       else for(uint i=0;i<N;i++) cout <<'(' <<elems[i] <<") " <<elem(i) <<endl;
@@ -2593,10 +2615,28 @@ mlr::Array<T> crossProduct(const mlr::Array<T>& y, const mlr::Array<T>& z) {
 /// \f$\sum_i v_i\, w_i\f$, or \f$\sum_{ij} v_{ij}\, w_{ij}\f$, etc.
 template<class T>
 T scalarProduct(const mlr::Array<T>& v, const mlr::Array<T>& w) {
-  CHECK_EQ(v.N,w.N,
-        "scalar product on different array dimensions (" <<v.N <<", " <<w.N <<")");
   T t(0);
-  for(uint i=v.N; i--; t+=v.p[i]*w.p[i]);
+  if(!v.special && !w.special){
+    CHECK_EQ(v.N,w.N,
+          "scalar product on different array dimensions (" <<v.N <<", " <<w.N <<")");
+    for(uint i=v.N; i--; t+=v.p[i]*w.p[i]);
+  }else{
+    if(isSparseVector(v) && isSparseVector(w)){
+      SparseVector *sv = dynamic_cast<SparseVector*>(v.special);
+      SparseVector *sw = dynamic_cast<SparseVector*>(w.special);
+      CHECK_EQ(sv->N,sw->N,
+            "scalar product on different array dimensions (" <<sv->N <<", " <<sw->N <<")");
+      uint *ev=sv->elems.p, *ev_stop=ev+v.N, *ew=sw->elems.p, *ew_stop=ew+w.N;
+      T *vp=v.p, *wp=w.p;
+      for(;ev!=ev_stop && ew!=ew_stop;){
+        if(*ev==*ew){
+          t += *vp * *wp;
+          ev++; vp++;
+          ew++; wp++;
+        }else if(*ev<*ew){ ev++; vp++; }else{ ew++; wp++; }
+      }
+    }else NIY
+  }
   return t;
 }
 

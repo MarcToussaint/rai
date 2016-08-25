@@ -994,12 +994,11 @@ void lognormScale(arr& P, double& logP, bool force) {
 }
 
 void sparseProduct(arr& y, arr& A, const arr& x) {
-  CHECK(x.nd==1 && A.nd==2 && x.d0==A.d1, "not a proper matrix-vector multiplication");
-  if(!isSparse(A) && !isSparse(x)) {
+  if(!A.special && !x.special) {
     innerProduct(y, A, x);
     return;
   }
-  if(isSparse(A) && !isSparse(x)) {
+  if(isSparseMatrix(A) && !isSparseVector(x)) {
     uint i, j, *k, *kstop;
     y.resize(A.d0); y.setZero();
     double *Ap=A.p;
@@ -1011,7 +1010,9 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     }
     return;
   }
-  if(isSparse(A) && isSparse(x)) {
+  if(isSparseMatrix(A) && isSparseVector(x)) {
+    SparseVector *sx = dynamic_cast<SparseVector*>(x.special);
+    CHECK(x.nd==1 && A.nd==2 && sx->N==A.d1, "not a proper matrix-vector multiplication");
     uint i, j, n, *k, *kstop, *l, *lstop;
     y.clear(); y.nd=1; y.d0=A.d0;
     y.special = new SparseMatrix(y, A.d0); //aux=y_sparse=new uintA [2];
@@ -1019,7 +1020,7 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     uintA& y_col= dynamic_cast<SparseMatrix*>(y.special)->cols(0);
     y_col.resize(y.d0); y_col=(uint)-1;
     double *xp=x.p;
-    uintA& x_elems = dynamic_cast<SparseMatrix*>(x.special)->elems;
+    uintA& x_elems = sx->elems;
     uint *slot;
     for(k=x_elems.p, kstop=x_elems.p+x_elems.N; k!=kstop; xp++) {
       j=*k; k++;
@@ -1040,7 +1041,7 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     }
     return;
   }
-  if(!isSparse(A) && isSparse(x)) {
+  if(!isSparseMatrix(A) && isSparseVector(x)) {
     uint i, j, *k, *kstop, d1=A.d1;
     y.resize(A.d0); y.setZero();
     double *xp=x.p;
@@ -1683,11 +1684,6 @@ RowShifted *makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1) {
   Zaux->real_d1=real_d1;
   Zaux->rowShift.resize(d0);
   Zaux->rowShift.setZero();
-  Zaux->colPatches.resize(real_d1, 2);
-  for(uint i=0; i<real_d1; i++) {
-    Zaux->colPatches.p[2*i]=0;
-    Zaux->colPatches.p[2*i+1]=d0;
-  }
   return Zaux;
 }
 
@@ -1762,7 +1758,6 @@ arr packRowShifted(const arr& X) {
   Z.setZero();
   for(uint i=0; i<Z.d0; i++) for(uint j=0; j<Z.d1 && Zaux->rowShift(i)+j<X.d1; j++)
       Z(i,j) = X(i,Zaux->rowShift(i)+j);
-  Zaux->computeColPatches(false);
   return Z;
 }
 
@@ -1930,6 +1925,7 @@ arr RowShifted::A_x(const arr& x) {
 
 arr RowShifted::At(){
   uint width = 0;
+  if(!colPatches.N) computeColPatches(false);
   for(uint i=0;i<colPatches.d0;i++){ uint a=colPatches(i,1)-colPatches(i,0); if(a>width) width=a; }
 
   arr At;
@@ -1940,9 +1936,15 @@ arr RowShifted::At(){
     uint rlen = colPatches(i,1)-rs;
     for(uint j=0;j<rlen;j++) At_->Z(i,j) = elem(rs+j,i);
   }
-//  At_->computeColPatches(false);
   return At;
 }
+
+
+
+//===========================================================================
+//
+// generic special
+//
 
 arr unpack(const arr& X) {
   if(isNotSpecial(X)) HALT("this is not special");
@@ -2182,4 +2184,6 @@ void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 //  for(const char* t : list) append(mlr::String(t));
 //}
 //}
+
+
 
