@@ -26,24 +26,20 @@ void Collector::step()
       const visualization_msgs::MarkerArray msg = tabletop_clusters();
 
       if (msg.markers.size() > 0){
-#if 0
-        if (!has_transform) { //get the transform from ROS
-          //MT: markers and clusters have the same transformation??
+        if (!has_cluster_transform) { //get the transform from ROS
+
           // Convert into a position relative to the base.
           tf::TransformListener listener;
-          tf::StampedTransform baseTransform;
           try{
-            //MT: why not use ros_getTransform?
-            listener.waitForTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), ros::Duration(1.0));
-            listener.lookupTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), baseTransform);
-            tf = conv_transform2transformation(baseTransform);
+            ors::Transformation tf = ros_getTransform("/base", msg.markers[0].header.frame_id, listener);
+
             //MT: really add the meter here? This seems hidden magic numbers in the code. And only for Baxter..?
             ors::Transformation inv;
             inv.setInverse(tf);
             inv.addRelativeTranslation(0,0,-1);
             inv.setInverse(inv);
-            tf = inv;
-            has_transform = true;
+            tabletop_srcFrame.set() = inv;
+            has_cluster_transform = true;
           }
           catch (tf::TransformException &ex) {
               ROS_ERROR("%s",ex.what());
@@ -51,11 +47,10 @@ void Collector::step()
               exit(0);
           }
         }
-#endif
 
         for(auto & marker : msg.markers){
           Cluster* new_cluster = new Cluster(conv_ROSMarker2Cluster( marker ));
-          new_cluster->frame = tabletop_srcFrame.get(); //tf
+          new_cluster->frame = tabletop_srcFrame.get();
           percepts.append( new_cluster );
         }
       }
@@ -84,22 +79,20 @@ void Collector::step()
       const ar::AlvarMarkers msg = ar_pose_markers();
 
       for(auto & marker : msg.markers) {
-#if 0
-        if (!has_transform)
-        {
+        if (!has_alvar_transform) { //get the transform from ROS
+
           // Convert into a position relative to the base.
           tf::TransformListener listener;
-          tf::StampedTransform baseTransform;
           try{
-            listener.waitForTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), ros::Duration(1.0));
-            listener.lookupTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), baseTransform);
-            tf = conv_transform2transformation(baseTransform);
+            ors::Transformation tf = ros_getTransform("/base", msg.markers[0].header.frame_id, listener);
+
+            //MT: really add the meter here? This seems hidden magic numbers in the code. And only for Baxter..?
             ors::Transformation inv;
             inv.setInverse(tf);
             inv.addRelativeTranslation(0,0,-1);
             inv.setInverse(inv);
-            tf = inv;
-            has_transform = true;
+            alvar_srcFrame.set() = inv;
+            has_alvar_transform = true;
           }
           catch (tf::TransformException &ex) {
               ROS_ERROR("%s",ex.what());
@@ -107,13 +100,13 @@ void Collector::step()
               exit(0);
           }
         }
-#endif
+
 
         Alvar* new_alvar = new Alvar( conv_ROSAlvar2Alvar(marker) );
-        //new_alvar->frame = alvar_srcFrame.get(); //tf;
-        new_alvar->frame.setInverse(alvar_srcFrame.get());
-        new_alvar->frame.addRelativeTranslation(0,0,-1);
-        new_alvar->frame.setInverse(new_alvar->frame);
+        new_alvar->frame = alvar_srcFrame.get();
+//        new_alvar->frame.setInverse(alvar_srcFrame.get());
+//        new_alvar->frame.addRelativeTranslation(0,0,-1);
+//        new_alvar->frame.setInverse(new_alvar->frame);
         percepts.append( new_alvar );
       }
     }
@@ -143,7 +136,7 @@ void Collector::step()
     Alvar* fake_alvar = new Alvar("/base_footprint");
     fake_alvar->frame.setZero();
 
-    arr pos = { 0.8, 0.6, 1.5 };
+    arr pos = { 0.9, 0.3, 1.5 };
     rndUniform(pos, -0.005, 0.005, true);
     fake_alvar->frame.addRelativeTranslation(pos(0), pos(1), pos(2));
 

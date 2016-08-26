@@ -74,7 +74,12 @@ baxter_core_msgs::EndEffectorCommand getGripperMsg(const arr& q_ref, const ors::
   baxter_core_msgs::EndEffectorCommand msg;
   ors::Joint *j = baxterModel.getJointByName("l_gripper_l_finger_joint");
   mlr::String str;
-  str <<"{ \"position\":" <<1000.*q_ref(j->qIndex) <<", \"dead zone\":5.0, \"force\": 40.0, \"holding force\": 30.0, \"velocity\": 50.0 }";
+
+  double position = q_ref(j->qIndex) / j->limits(1) * 100.0;
+
+//  str <<"{ \"position\":" <<1000.*q_ref(j->qIndex) <<", \"dead zone\":5.0, \"force\": 40.0, \"holding force\": 30.0, \"velocity\": 50.0 }";
+  str <<"{ \"position\":" << position<<", \"dead zone\":5.0, \"force\": 40.0, \"holding force\": 30.0, \"velocity\": 50.0 }";
+
   //cout <<str <<endl;
 
   msg.id = 65538;

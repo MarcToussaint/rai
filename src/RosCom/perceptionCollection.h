@@ -22,8 +22,6 @@ struct Collector : Module{
   Access_typed<ar::AlvarMarkers> ar_pose_markers;
   Access_typed<object_recognition_msgs::TableArray> tabletop_tableArray;
 
- // ACCESSlisten(visualization_msgs::MarkerArray, tabletop_clusters)
-//  ACCESSlisten(ar::AlvarMarkers, ar_pose_markers)
   ACCESSname(ors::Transformation, tabletop_srcFrame)
   ACCESSname(ors::Transformation, alvar_srcFrame)
   ACCESSname(FilterObjects, perceptual_inputs)
@@ -39,8 +37,10 @@ private:
   int tabletop_clusters_revision = 0;
   int ar_pose_markers_revision = 0;
   int tabletop_tableArray_revision = 0;
-//  ors::Transformation tf; // Transformation from the camera to the body
-//  bool has_transform = true;
 
   bool simulate;
+
+  bool has_cluster_transform = false;
+  bool has_alvar_transform = false;
+
 };
