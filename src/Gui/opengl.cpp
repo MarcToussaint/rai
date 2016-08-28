@@ -359,7 +359,7 @@ void glDrawBox(float x, float y, float z) {
 }
 
 void glDrawDiamond(float x, float y, float z) {
-  glDisable(GL_CULL_FACE);
+//  glDisable(GL_CULL_FACE);
   glBegin(GL_TRIANGLE_FAN);
   glVertex3f(.0, .0, z);
   glVertex3f(x, .0, .0);
@@ -376,7 +376,7 @@ void glDrawDiamond(float x, float y, float z) {
   glVertex3f(.0, -y, .0);
   glVertex3f(x, .0, .0);
   glEnd();
-  glEnable(GL_CULL_FACE);
+//  glEnable(GL_CULL_FACE);
 }
 
 void glDrawDiamond(float x, float y, float z, float dx, float dy, float dz) {
@@ -394,9 +394,9 @@ void glDrawAxis() {
   glEnd();
   glTranslatef(.8, 0, 0);
   glRotatef(90, 0, 1, 0);
-  glDisable(GL_CULL_FACE);
+//  glDisable(GL_CULL_FACE);
   gluCylinder(style, .08, 0, .2, 20, 1);
-  glEnable(GL_CULL_FACE);
+//  glEnable(GL_CULL_FACE);
   gluDeleteQuadric(style);
 }
 
