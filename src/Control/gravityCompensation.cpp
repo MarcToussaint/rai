@@ -261,7 +261,7 @@ void GravityCompensation::learnModels(bool verbose) {
 
   CV cv;
 
-  cv.verbose = false;
+  //cv.verbose = false;
 
   arr lambdas = ARR(1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4,1e5);
   lambdas.append(lambdas*5.0);
@@ -295,9 +295,9 @@ void GravityCompensation::saveBetas() {
 }
 
 void GravityCompensation::loadBetas() {
-  betaLeftArm << FILE("betaLeftArm.dat");
-  betaRightArm << FILE("betaRightArm.dat");
-  betaHead << FILE("betaHead.dat");
+  betaLeftArm << FILE(mlr::mlrPath("examples/pr2/calibrateControl/betaLeftArm.dat"));
+  betaRightArm << FILE(mlr::mlrPath("examples/pr2/calibrateControl/betaRightArm.dat"));
+  betaHead << FILE(mlr::mlrPath("examples/pr2/calibrateControl/betaHead.dat"));
   modelLearned = true;
 }
 
