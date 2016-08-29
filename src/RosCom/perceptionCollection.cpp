@@ -10,7 +10,6 @@ Collector::Collector(const bool simulate):
   tabletop_srcFrame.set()->setZero();
   alvar_srcFrame.set()->setZero();
   this->simulate = simulate;
-//  tf.setZero();
 }
 
 void Collector::step()
@@ -25,7 +24,19 @@ void Collector::step()
       tabletop_clusters_revision = cluster_rev;
       const visualization_msgs::MarkerArray msg = tabletop_clusters();
 
-      if (msg.markers.size() > 0){
+      if (msg.markers.size() > 0)
+      {
+        if (!has_tabletop_tf)
+        {
+          tf::TransformListener listener;
+          ors::Transformation tf;
+          if (ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener, tf))
+          {
+            tabletop_srcFrame.set() = tf;
+            has_tabletop_tf = true;
+          }
+        }
+
 #if 0
         if (!has_transform) { //get the transform from ROS
           //MT: markers and clusters have the same transformation??
@@ -67,7 +78,19 @@ void Collector::step()
       tabletop_tableArray_revision = tableArray_rev;
       const object_recognition_msgs::TableArray msg = tabletop_tableArray();
 
-      if (msg.tables.size() > 0){
+      if (msg.tables.size() > 0)
+      {
+
+        if (!has_tabletop_tf)
+        {
+          tf::TransformListener listener;
+          ors::Transformation tf;
+          if (ros_getTransform("/base_footprint", msg.header.frame_id, listener, tf))
+          {
+            tabletop_srcFrame.set() = tf;
+            has_tabletop_tf = true;
+          }
+        }
 
         for(auto & table : msg.tables){
           Plane* new_plane = new Plane(conv_ROSTable2Plane( table ));
@@ -84,6 +107,16 @@ void Collector::step()
       const ar::AlvarMarkers msg = ar_pose_markers();
 
       for(auto & marker : msg.markers) {
+        if (!has_alvar_tf)
+        {
+          tf::TransformListener listener;
+          ors::Transformation tf;
+          if (ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener, tf))
+          {
+            alvar_srcFrame.set() = tf;
+            has_alvar_tf = true;
+          }
+        }
 #if 0
         if (!has_transform)
         {
@@ -165,11 +198,28 @@ Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker){
 }
 
 Plane conv_ROSTable2Plane(const object_recognition_msgs::Table& table){
-  arr hull = conv_points2arr(table.convex_hull);
+//  arr hull;
   ors::Transformation t = conv_pose2transformation(table.pose);
-  arr center = t.pos.getArr();
-  arr normal = (t * Vector_z).getArr();
-  return Plane(normal, center, hull, table.header.frame_id);
+
+//  for (auto & pt : table.convex_hull)
+//  {
+//    ors::Vector point(pt.x, pt.y, pt.z);
+//    point = t * point;
+////    tf::Point point = table.pose * (pt);
+//    hull.append(ARR(point.x, point.y, point.z));
+//  }
+//  hull.resize(table.convex_hull.size(), 3);
+
+//  cout << hull.nd << ' ' << hull.N << endl;
+  arr hull = conv_points2arr(table.convex_hull);
+  arr center = ARR(t.pos.x, t.pos.y, t.pos.z);
+  ors::Vector norm = t.rot*ors::Vector(0,0,1);
+
+  cout << "Norm: " << norm << endl;
+  arr normal = ARR(norm.x, norm.y, norm.z);
+  Plane toReturn = Plane(normal, center, hull, table.header.frame_id);
+  toReturn.transform = t;
+  return toReturn;
 }
 
 Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker){

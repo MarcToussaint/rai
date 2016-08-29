@@ -67,6 +67,7 @@ floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray&);
 //-- get transformations
 ors::Transformation ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener);
 ors::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener);
+bool ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener, ors::Transformation& result);
 
 
 struct SubscriberType { virtual ~SubscriberType() {} }; ///< if types derive from RootType, more tricks are possible

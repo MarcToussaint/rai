@@ -77,10 +77,7 @@ object_recognition_msgs::Table conv_FilterObject2Table(const FilterObject& objec
 {
   const Plane& plane = dynamic_cast<const Plane&>(object);
   object_recognition_msgs::Table new_table;
-  ors::Transformation t;
-  t.pos = plane.center;
-  t.rot.setDiff(Vector_z, plane.normal);
-  new_table.pose = conv_transformation2pose(t);
+  new_table.pose = conv_transformation2pose(plane.transform);
   new_table.convex_hull = conv_arr2points(plane.hull);
   new_table.header.stamp = ros::Time(0.);
   new_table.header.frame_id = plane.frame_id;
@@ -150,7 +147,8 @@ void PublishDatabase::syncPlane(const Plane* plane)
     shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
     stored_planes.append(plane->id);
   }
-  body->X = plane->frame;
+  body->X = plane->frame * plane->transform;
+
   //plane->frame = body->X;
   body->shapes(0)->mesh.V = plane->hull;
   body->shapes(0)->mesh.makeTriangleFan();
