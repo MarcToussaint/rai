@@ -10,6 +10,7 @@ struct KOMO_Problem {
   virtual void phi(arr& phi, arrA& J, arrA& H, TermTypeA& tt, const arr& x) = 0;
 
   bool checkStructure(const arr& x);                 ///< check if Jacobians and Hessians have right dimensions (=clique size)
+  void report(const arr& phi=NoArr);
 };
 
 
@@ -23,9 +24,9 @@ struct Conv_KOMO_ConstrainedProblem : ConstrainedProblem{
 
   Conv_KOMO_ConstrainedProblem(KOMO_Problem& P);
 
-
   void f(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x);
 };
+
 
 struct KOMO_GraphProblem : GraphProblem{
   KOMO_Problem& KOMO;

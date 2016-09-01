@@ -28,6 +28,20 @@ bool KOMO_Problem::checkStructure(const arr& x){
   return true;
 }
 
+void KOMO_Problem::report(const arr& phi){
+  TermTypeA featureTypes;
+  uint k=get_k();
+  uintA variableDimensions, featureTimes;
+  getStructure(variableDimensions, featureTimes, featureTypes);
+
+  cout <<"KOMO Problem report:  k=" <<k <<"  Features:" <<endl;
+  for(uint i=0;i<featureTimes.N;i++){
+    cout <<i <<" t=" <<featureTimes(i) <<" vardim=" <<variableDimensions(featureTimes(i)) <<" type=" <<featureTypes(i);
+    if(&phi) cout <<" phi=" <<phi(i) <<" phi^2=" <<mlr::sqr(phi(i));
+    cout <<endl;
+  }
+}
+
 
 void KOMO_GraphProblem::getStructure(uintA& variableDimensions, uintAA& featureVariables, TermTypeA& featureTypes){
   uintA featureTimes;

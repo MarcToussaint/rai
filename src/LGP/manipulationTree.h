@@ -46,6 +46,8 @@ struct ManipulationTree_Node{
   double effPoseReward, costSoFar;
   bool symTerminal, poseFeasible, seqFeasible, pathFeasible;
 
+  bool inFringe1, inFringe2;
+
   /// root node init
   ManipulationTree_Node(ors::KinematicWorld& kin, FOL_World& fol);
 

@@ -30,6 +30,9 @@ NodeL& NoNodeL=*((NodeL*)NULL);
 Graph& NoGraph=*((Graph*)NULL);
 
 //===========================================================================
+//
+// annotations to a node while parting; can be used for highlighting and error messages
+//
 
 struct ParseInfo{
   Node *node;
@@ -43,6 +46,7 @@ struct ParseInfo{
   void write(ostream& os) const{ os <<'<' <<beg <<',' <<end <<'>'; }
 };
 stdOutPipe(ParseInfo)
+
 
 //===========================================================================
 //
@@ -689,46 +693,47 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
     os <<"edge [ arrowtail=dot, arrowsize=.5, fontsize=6 ];" <<endl;
     index(true);
   }
-  for(Node *it: list()) {
-    mlr::String label, shape("shape=ellipse");
-    if(it->keys.N){
+  for(Node *n: list()) {
+    mlr::String label;
+    if(n->keys.N){
       label <<"label=\"";
       bool newline=false;
-      for(mlr::String& k:it->keys){
-        if(k=="box") shape="shape=box";
-        else{
-          if(newline) label <<'\n';
-          label <<k;
-          newline=true;
-        }
+      for(mlr::String& k:n->keys){
+        if(newline) label <<'\n';
+        label <<k;
+        newline=true;
       }
       label <<"\" ";
-    }else if(it->parents.N){
-      label <<"label=\"(" <<it->parents(0)->keys.last();
-      for(uint i=1;i<it->parents.N;i++) label <<' ' <<it->parents(i)->keys.last();
+    }else if(n->parents.N){
+      label <<"label=\"(" <<n->parents(0)->keys.last();
+      for(uint i=1;i<n->parents.N;i++) label <<' ' <<n->parents(i)->keys.last();
       label <<")\" ";
     }
 
-    if(focusIndex==(int)it->index) shape <<" color=red";
+    mlr::String shape;
+    if(n->keys.contains("box")) shape <<" shape=box"; else shape <<" shape=ellipse";
+    if(focusIndex==(int)n->index) shape <<" color=red";
+    if(hasRenderingInfo(n)) shape <<' ' <<getRenderingInfo(n).dotstyle;
 
-    if(defaultEdges && it->parents.N==2){ //an edge
-      os <<it->parents(0)->index <<" -> " <<it->parents(1)->index <<" [ " <<label <<"];" <<endl;
+
+    if(defaultEdges && n->parents.N==2){ //an edge
+      os <<n->parents(0)->index <<" -> " <<n->parents(1)->index <<" [ " <<label <<"];" <<endl;
     }else{
-      if(it->isGraph()){
-        os <<"subgraph cluster_" <<it->index <<" { " <<label /*<<" rank=same"*/ <<endl;
-        it->graph().writeDot(os, true, defaultEdges, +1);
+      if(n->isGraph()){
+        os <<"subgraph cluster_" <<n->index <<" { " <<label /*<<" rank=same"*/ <<endl;
+        n->graph().writeDot(os, true, defaultEdges, +1);
         os <<"}" <<endl;
-        it->graph().writeDot(os, true, defaultEdges, -1);
+        n->graph().writeDot(os, true, defaultEdges, -1);
       }else{//normal node
         if(nodesOrEdges>=0){
-          os <<it->index <<" [ " <<label <<shape <<" ];" <<endl;
+          os <<n->index <<" [ " <<label <<shape <<" ];" <<endl;
         }
         if(nodesOrEdges<=0){
-          for_list(Node, pa, it->parents) {
-            if(pa->index<it->index)
-              os <<pa->index <<" -> " <<it->index <<" [ ";
+          for_list(Node, pa, n->parents) {
+            if(pa->index<n->index)
+              os <<pa->index <<" -> " <<n->index <<" [ ";
             else
-              os <<it->index <<" -> " <<pa->index <<" [ ";
+              os <<n->index <<" -> " <<pa->index <<" [ ";
             os <<"label=" <<pa_COUNT;
             os <<" ];" <<endl;
           }
@@ -756,14 +761,25 @@ void Graph::sortByDotOrder() {
   for_list(Node, it2, list()) it2->index=it2_COUNT;
 }
 
-ParseInfo& Graph::getParseInfo(Node* it){
+ParseInfo& Graph::getParseInfo(Node* n){
   if(pi.N!=N+1){
     listResizeCopy(pi, N+1);
     pi(0)->node=NULL;
     for(uint i=1;i<pi.N;i++) pi(i)->node=elem(i-1);
   }
-  if(!it) return *pi(0);
-  return *pi(it->index+1);
+  if(!n) return *pi(0);
+  return *pi(n->index+1);
+}
+
+RenderingInfo& Graph::getRenderingInfo(Node* n){
+  if(ri.N!=N+1){
+    listResizeCopy(ri, N+1);
+    ri(0)->node=NULL;
+    for(uint i=1;i<ri.N;i++) ri(i)->node=elem(i-1);
+  }
+  if(!n) return *ri(0);
+  return *ri(n->index+1);
+
 }
 
 bool Graph::checkConsistency() const{

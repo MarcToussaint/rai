@@ -32,9 +32,11 @@ struct Node;
 template<class T> struct Node_typed;
 struct Graph;
 struct ParseInfo;
+struct RenderingInfo;
 struct GraphEditCallback;
 typedef mlr::Array<Node*> NodeL;
 typedef mlr::Array<ParseInfo*> ParseInfoL;
+typedef mlr::Array<RenderingInfo*> RenderingInfoL;
 typedef mlr::Array<GraphEditCallback*> GraphEditCallbackL;
 extern NodeL& NoNodeL; //this is a reference to NULL! I use it for optional arguments
 extern Graph& NoGraph; //this is a reference to NULL! I use it for optional arguments
@@ -85,6 +87,7 @@ struct Graph : NodeL {
   Node *isNodeOfParentGraph;
 
   ParseInfoL pi;
+  RenderingInfoL ri;
   GraphEditCallbackL callbacks;
 
   //-- constructors
@@ -150,8 +153,10 @@ struct Graph : NodeL {
 
   //-- I/O
   void sortByDotOrder();
-  ParseInfo& getParseInfo(Node *it);
-  
+  ParseInfo& getParseInfo(Node *n);
+  bool hasRenderingInfo(Node *n){ return n->index<ri.N; }
+  RenderingInfo& getRenderingInfo(Node *n);
+
   void read(std::istream& is, bool parseInfo=false);
   Node* readNode(std::istream& is, bool verbose=false, bool parseInfo=false, mlr::String prefixedKey=mlr::String()); //used only internally..
   void write(std::ostream& os=std::cout, const char *ELEMSEP="\n", const char *delim=NULL) const;
@@ -220,6 +225,19 @@ struct GraphEditCallback {
   virtual void cb_new(Node*){}
   virtual void cb_delete(Node*){}
 };
+
+//===========================================================================
+//
+// annotations to a node for rendering; esp dot
+//
+
+struct RenderingInfo{
+  Node *node;
+  mlr::String dotstyle;
+  RenderingInfo():node(NULL){}
+  void write(ostream& os) const{ os <<dotstyle; }
+};
+stdOutPipe(RenderingInfo)
 
 //===========================================================================
 
