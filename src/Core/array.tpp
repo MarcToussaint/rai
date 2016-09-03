@@ -3415,6 +3415,8 @@ template<class T> void negative(mlr::Array<T>& x, const mlr::Array<T>& y) {
 
 inline double sigm(double x) {  return 1./(1.+::exp(-x)); }
 
+inline double sign(double x) {  return (x > 0) - (x < 0); }
+
 
 #define UnaryFunction( func )         \
   template<class T>           \
@@ -3456,6 +3458,9 @@ UnaryFunction(ceil);
 UnaryFunction(fabs);
 UnaryFunction(floor);
 UnaryFunction(sigm);
+
+UnaryFunction(sign);
+
 #undef UnaryFunction
 
 
