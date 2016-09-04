@@ -554,15 +554,18 @@ void Thread::main() {
   //if(Thread::threadPriority) setRRscheduling(Thread::threadPriority);
   //if(Thread::threadPriority) setNice(Thread::threadPriority);
 
-  try{
-    open(); //virtual open routine
-  } catch(const std::exception& ex) {
-    state.setValue(tsFAILURE);
-    cerr << "*** open() of Thread'" << name << "'failed: " << ex.what() << " -- closing it again" << endl;        
-  } catch(...) {
-    state.setValue(tsFAILURE);
-    cerr <<"*** open() of Thread '" <<name <<"' failed! -- closing it again";
-    return;
+  {
+    auto mux = stepMutex();
+    try{
+      open(); //virtual open routine
+    } catch(const std::exception& ex) {
+      state.setValue(tsFAILURE);
+      cerr << "*** open() of Thread'" << name << "'failed: " << ex.what() << " -- closing it again" << endl;
+    } catch(...) {
+      state.setValue(tsFAILURE);
+      cerr <<"*** open() of Thread '" <<name <<"' failed! -- closing it again";
+      return;
+    }
   }
 
   state.lock();
@@ -589,10 +592,12 @@ void Thread::main() {
 
     //-- make a step
     //engine().acc->logStepBegin(module);
+    stepMutex.lock();
     timer.cycleStart();
     step(); //virtual step routine
     step_count++;
     timer.cycleDone();
+    stepMutex.unlock();
     //engine().acc->logStepEnd(module);
 
     //-- broadcast in case somebody was waiting for a finished step
@@ -601,7 +606,9 @@ void Thread::main() {
     state.unlock();
   };
 
+  stepMutex.lock();
   close(); //virtual close routine
+  stepMutex.unlock();
   cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
 }
 

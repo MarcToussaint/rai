@@ -199,17 +199,18 @@ struct CycleTimer {
 struct Thread{
   mlr::String name;
   ConditionVariable state;       ///< the condition variable indicates the state of the thread: positive=steps-to-go, otherwise it is a ThreadState
-  RevisionedAccessGatedClassL listensTo;
+  RevisionedAccessGatedClassL listensTo; ///< a list of variables this thread listens to (a step is triggered when the var's revision increases)
   pid_t tid;                     ///< system thread id
 #ifndef MLR_QThread
   pthread_t thread;
 #else
   struct sThread *thread;
 #endif
-  uint step_count;
+  Mutex stepMutex;              ///< This is set whenever the 'main' is in step (or open, or close) --- use this in all service methods callable from outside!!
+  uint step_count;              ///< how often the step was called
   Metronome metronome;          ///< used for beat-looping
-  CycleTimer timer;
-  struct Node* registryNode;
+  CycleTimer timer;             ///< measure how the time spend per cycle, within step, idle
+  struct Node* registryNode;    ///< every thread registers itself globally
 
   /// @name c'tor/d'tor
   /** DON'T open drivers/devices/files or so here in the constructor,
@@ -245,7 +246,7 @@ struct Thread{
   virtual void open() = 0;
 
   /** The most important method of all of this: step does the actual
-   *  computation of the module. Modules should be state less. Access
+   *  computation of the thread. Access
    *  the variables by calling the x.get(), x.set() or
    *  x.[read|write|de]Access(), where ACCESS(TYPE, x) was
    *  declared. */

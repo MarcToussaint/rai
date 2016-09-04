@@ -33,7 +33,7 @@ struct Spline {
   arr basis, basis_trans, basis_timeGradient;
 
   /// for T>0 this is directly constructing basis functions over a (fine) grid of resolution T
-  Spline(uint T, arr& X, uint degree=2):points(X){ setUniformNonperiodicBasis(T, X.d0-1, degree); }
+  Spline(uint T, const arr& X, uint degree=2):points(X){ setUniformNonperiodicBasis(T, X.d0-1, degree); }
   Spline(){}
 
   /// for t \in [0,1] the coefficients are the weighting of the points: f(t) = coeffs(t)^T * points
