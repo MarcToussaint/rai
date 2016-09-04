@@ -692,7 +692,7 @@ mlr::LogToken::~LogToken(){
       ROS_INFO("MLR-MSG: %s",mlr::errString.p);
 #endif
       if(log_level==-1){ mlr::errString <<" -- WARNING";    cout <<mlr::errString <<endl; }
-      if(log_level==-2){ mlr::errString <<" -- ERROR  ";    cerr <<mlr::errString <<endl; /*throw does not WORK!!!*/ }
+      if(log_level==-2){ mlr::errString <<" -- ERROR  ";    cerr <<mlr::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
       if(log_level==-3){ mlr::errString <<" -- HARD EXIT!"; cerr <<mlr::errString <<endl; mlr::logServer().mutex.unlock(); exit(1); }
       if(log_level<=-2) raise(SIGUSR2);
     }

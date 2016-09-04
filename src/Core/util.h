@@ -373,7 +373,7 @@ extern String errString;
 
 #ifndef HALT
 #  define MLR_MSG(msg){ LOG(-1) <<msg; }
-#  define THROW(msg){ LOG(-2) <<msg; throw mlr::errString.p; }
+#  define THROW(msg){ LOG(-2) <<msg; throw(mlr::errString.p); }
 #  define HALT(msg){ LOG(-2) <<msg; exit(1); }
 #  define NIY  { LOG(-2) <<"not implemented yet"; exit(1); }
 #  define NICO { LOG(-2) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(1); }

@@ -70,7 +70,9 @@ struct ManipulationTree_Node{
   void getAllChildren(ManipulationTree_NodeL& tree);
   ManipulationTree_Node *treePolicy_random(); ///< returns leave -- by descending children randomly
 
-  void write(ostream& os=cout) const;
+  void checkConsistency();
+
+  void write(ostream& os=cout, bool recursive=false) const;
   void getGraph(Graph& G, Node *n=NULL);
   Graph getGraph(){ Graph G; getGraph(G, NULL); G.checkConsistency(); return G; }
 

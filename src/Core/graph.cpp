@@ -802,7 +802,7 @@ bool Graph::checkConsistency() const{
       //check sorting
 //      CHECK(parent->index < parentGraphNode->index,"subnode refers to parent that sorts below the subgraph");
     }else{
-      CHECK(parent->index < node->index,"node refers to parent that sorts below the node");
+//      CHECK(parent->index < node->index,"node refers to parent that sorts below the node");
     }
     if(node->isGraph()){
       Graph& G = node->graph();

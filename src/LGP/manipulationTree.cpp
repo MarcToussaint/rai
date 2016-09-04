@@ -12,8 +12,9 @@ ManipulationTree_Node::ManipulationTree_Node(ors::KinematicWorld& kin, FOL_World
     symCost(0.), poseCost(0.), seqCost(0.), pathCost(0.), effPoseReward(0.), costSoFar(0.),
     poseFeasible(false), seqFeasible(false), pathFeasible(false),
     inFringe1(false), inFringe2(false) {
-  fol.generateStateTree=true;
-  folState = fol.createChildState();
+  //this is the root node!
+  fol.reset_state();
+  folState = fol.createStateCopy();
   folDecision = NULL;
   decision = NULL;
   hasEffKinematics = true;
@@ -41,7 +42,7 @@ ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS
   }else{
     LOG(-1) <<"this doesn't make sense";
   }
-  folState = fol.getState();
+  folState = fol.createStateCopy();
   folDecision = fol.lastDecisionInState;
   decision = a;
 }
@@ -61,8 +62,8 @@ void ManipulationTree_Node::expand(){
 arr ManipulationTree_Node::generateRootMCRollouts(uint num, int stepAbort, const mlr::Array<MCTS_Environment::Handle>& prefixDecisions){
   CHECK(!parent, "generating rollouts needs to be done by the root only");
 
-  fol.reset_state(); //setState(folState);
-  cout <<"********\n *** MC from STATE="; fol.state->write(cout," ","{}"); cout <<endl;
+  fol.reset_state();
+  cout <<"********\n *** MC from STATE=" <<*fol.state->isNodeOfParentGraph <<endl;
   if(!rootMC){
     rootMC = new PlainMC(fol);
     rootMC->verbose = 0;
@@ -70,11 +71,9 @@ arr ManipulationTree_Node::generateRootMCRollouts(uint num, int stepAbort, const
 
   arr R;
 
-  fol.generateStateTree=false;
   for(uint k=0;k<num;k++){
     R.append( rootMC->generateRollout(stepAbort, prefixDecisions) );
   }
-  fol.generateStateTree=true;
 
   return R;
 }
@@ -168,11 +167,17 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   FILE("z.fol") <<fol;
   komo.MP->reportFull(true, FILE("z.problem"));
   komo.reset();
-  komo.run();
+  try{
+    komo.run();
+  } catch(const char* msg){
+    cout <<"KOMO FAILED: " <<msg <<endl;
+  }
+
   komo.MP->reportFull(true, FILE("z.problem"));
 //  komo.checkGradients();
 
   Graph result = komo.getReport();
+  FILE("z.problem.cost") <<result;
   double cost = result.get<double>({"total","sqrCosts"});
   double constraints = result.get<double>({"total","constraints"});
 
@@ -254,21 +259,26 @@ ManipulationTree_Node *ManipulationTree_Node::treePolicy_random(){
   return this;
 }
 
-void ManipulationTree_Node::write(ostream& os) const{
-  for(uint i=0;i<s+1;i++) os <<"--";
+void ManipulationTree_Node::checkConsistency(){
+  if(parent){
+    CHECK_EQ(parent->folState->isNodeOfParentGraph, folState->isNodeOfParentGraph->parents.scalar(), "");
+  }
+  for(auto* ch:children) ch->checkConsistency();
+}
+
+void ManipulationTree_Node::write(ostream& os, bool recursive) const{
+  os <<"------- NODE -------\ns=" <<s <<" t=" <<time;
   if(decision) os <<" a= " <<*decision <<endl;
   else os <<" a=<ROOT>"<<endl;
 
   for(uint i=0;i<s+1;i++) os <<"  ";
-  os <<" s= ";
-  folState->write(os, " ");
-  os <<endl;
+  os <<" state= " <<*folState->isNodeOfParentGraph <<endl;
   for(uint i=0;i<s+1;i++) os <<"  ";  os <<" depth=" <<s <<endl;
   for(uint i=0;i<s+1;i++) os <<"  ";  os <<" poseCost=" <<poseCost <<endl;
   for(uint i=0;i<s+1;i++) os <<"  ";  os <<" poseReward=" <<effPoseReward <<endl;
   for(uint i=0;i<s+1;i++) os <<"  ";  os <<" seqCost=" <<seqCost <<endl;
   for(uint i=0;i<s+1;i++) os <<"  ";  os <<" pathCost=" <<pathCost <<endl;
-//  for(ManipulationTree_Node *n:children) n->write(os);
+  if(recursive) for(ManipulationTree_Node *n:children) n->write(os);
 }
 
 void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
