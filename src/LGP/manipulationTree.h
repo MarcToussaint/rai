@@ -28,12 +28,14 @@ struct ManipulationTree_Node{
   Node  *folDecision; ///< the predicate in the folState that represents the decision
 
   //-- kinematics: the kinematic structure of the world after the decision path
-  ors::KinematicWorld& startKinematics; ///< initial start state kinematics
-  ors::KinematicWorld kinematics; ///< actual kinematics after action (includes all previous switches)
+  const ors::KinematicWorld& startKinematics; ///< initial start state kinematics
+//  ors::KinematicWorld kinematics; ///< actual kinematics after action (includes all previous switches)
   ors::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
 
   bool isExpanded=false;
   bool hasEffKinematics=false;
+  bool isInfeasible=false;
+  bool isTerminal=false;
 
   //-- specs and results of the three optimization problems
 //  MotionProblem *poseProblem, *seqProblem, *pathProblem;
@@ -63,7 +65,10 @@ struct ManipulationTree_Node{
   void solvePathProblem(uint microSteps, int verbose=0); ///< compute a full path along the decision path
 
   //-- helpers
+  void labelInfeasible(); ///< sets the infeasible label AND removes all children!
   ManipulationTree_NodeL getTreePath(); ///< return the decision path in terms of a list of nodes (just walking to the root)
+  void getAllChildren(ManipulationTree_NodeL& tree);
+  ManipulationTree_Node *treePolicy_random(); ///< returns leave -- by descending children randomly
 
   void write(ostream& os=cout) const;
   void getGraph(Graph& G, Node *n=NULL);

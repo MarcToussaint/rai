@@ -5,12 +5,12 @@
 ManipulationTree_Node::ManipulationTree_Node(ors::KinematicWorld& kin, FOL_World& _fol)
   : parent(NULL), s(0), fol(_fol),
     startKinematics(kin),
-    kinematics(kin),
+//    kinematics(kin),
     effKinematics(kin),
     rootMC(NULL), mcStats(NULL),
     poseProblem(NULL), seqProblem(NULL), pathProblem(NULL),
     symCost(0.), poseCost(0.), seqCost(0.), pathCost(0.), effPoseReward(0.), costSoFar(0.),
-    symTerminal(false), poseFeasible(false), seqFeasible(false), pathFeasible(false),
+    poseFeasible(false), seqFeasible(false), pathFeasible(false),
     inFringe1(false), inFringe2(false) {
   fol.generateStateTree=true;
   folState = fol.createChildState();
@@ -22,12 +22,12 @@ ManipulationTree_Node::ManipulationTree_Node(ors::KinematicWorld& kin, FOL_World
 ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS_Environment::Handle& a)
   : parent(parent), fol(parent->fol),
     startKinematics(parent->startKinematics),
-    kinematics(parent->kinematics),
-//    effKinematics(parent->effKinematics),
+//    kinematics(parent->kinematics),
+    effKinematics(parent->effKinematics),
     rootMC(NULL), mcStats(NULL),
     poseProblem(NULL), seqProblem(NULL), pathProblem(NULL),
     symCost(0.), poseCost(0.), seqCost(0.), pathCost(0.), effPoseReward(0.), costSoFar(0.),
-    symTerminal(false), poseFeasible(false), seqFeasible(false), pathFeasible(false),
+    poseFeasible(false), seqFeasible(false), pathFeasible(false),
     inFringe1(false), inFringe2(false) {
   s=parent->s+1;
   parent->children.append(this);
@@ -36,7 +36,8 @@ ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS
     fol.transition(a);
     time=parent->time+fol.lastStepDuration;
     folReward = fol.lastStepReward;
-    symTerminal = fol.successEnd || fol.deadEnd;
+    isTerminal = fol.successEnd || fol.deadEnd;
+    if(fol.deadEnd) labelInfeasible();
   }else{
     LOG(-1) <<"this doesn't make sense";
   }
@@ -53,6 +54,7 @@ void ManipulationTree_Node::expand(){
     cout <<"  EXPAND DECISION: " <<*a <<endl;
     new ManipulationTree_Node(this, a);
   }
+  if(!children.N) isTerminal=true;
   isExpanded=true;
 }
 
@@ -159,7 +161,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
 
   cout <<"HERERE!" <<endl;
   for(ManipulationTree_Node *node:treepath){
-    komo.setAbstractTask(node->time, *node->folState, true, 2);
+    komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState, true, 2);
   }
 
   listWrite(treepath);
@@ -179,6 +181,8 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
     seqCost = cost;
     seq = komo.x;
   }
+
+  if(!seqFeasible) labelInfeasible();
 }
 
 void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
@@ -201,7 +205,7 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   komo.setSquaredFixSwitchVelocities(-1., -1., 1e3);
 
   for(ManipulationTree_Node *node:treepath) {
-    komo.setAbstractTask(node->time, *node->folState, true);
+    komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState, true);
   }
 
   komo.reset();
@@ -217,7 +221,15 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
     pathCost = cost;
     path = komo.x;
   }
-//  komo.displayTrajectory(-1.);
+  //  komo.displayTrajectory(-1.);
+}
+
+void ManipulationTree_Node::labelInfeasible(){
+  isInfeasible = true;
+  ManipulationTree_NodeL tree;
+  getAllChildren(tree);
+//  for(ManipulationTree_Node *n:tree) if(n!=this) delete n; //TODO: memory leak!
+  children.clear();
 }
 
 ManipulationTree_NodeL ManipulationTree_Node::getTreePath(){
@@ -228,6 +240,18 @@ ManipulationTree_NodeL ManipulationTree_Node::getTreePath(){
     node = node->parent;
   }
   return path;
+}
+
+void ManipulationTree_Node::getAllChildren(ManipulationTree_NodeL& tree){
+  for(ManipulationTree_Node* c:children) c->getAllChildren(tree);
+  tree.append(this);
+}
+
+ManipulationTree_Node *ManipulationTree_Node::treePolicy_random(){
+  if(isInfeasible) return NULL;
+  if(isTerminal) return NULL;
+  if(children.N) return children.rndElem()->treePolicy_random();
+  return this;
 }
 
 void ManipulationTree_Node::write(ostream& os) const{
@@ -256,17 +280,15 @@ void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
   graphIndex = n->index;
   n->keys.append(STRING("s:" <<s <<" t:" <<time));
   if(mcStats) n->keys.append(STRING("MC best:" <<mcStats->X.first() <<" n:" <<mcStats->n));
-  n->keys.append(STRING("sym cost:" <<symCost <<" terminal:" <<symTerminal));
+  n->keys.append(STRING("sym cost:" <<symCost <<" terminal:" <<isTerminal));
   n->keys.append(STRING("seq cost:" <<seqCost <<" feasible:" <<seqFeasible));
   n->keys.append(STRING("path cost:" <<pathCost <<" feasible:" <<pathFeasible));
   n->keys.append(STRING("costSoFar:" <<costSoFar));
 
   G.getRenderingInfo(n).dotstyle="shape=box";
-  if(seq.N){
-    if(!seqFeasible) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=red";
-    if(seqFeasible) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=green";
-  }
-  if(inFringe1) G.getRenderingInfo(n).dotstyle <<" color=green";
+  if(isInfeasible) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=red";
+  if(seq.N && !isInfeasible) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=green";
+//  if(inFringe1) G.getRenderingInfo(n).dotstyle <<" color=green";
   if(inFringe2) G.getRenderingInfo(n).dotstyle <<" peripheries=2";
 
 //  n->keys.append(STRING("reward:" <<effPoseReward));

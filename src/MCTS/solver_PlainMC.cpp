@@ -52,6 +52,10 @@ double PlainMC::generateRollout(int stepAbort, const mlr::Array<MCTS_Environment
     mlr::Array<MCTS_Environment::Handle> actions;
     actions = conv_stdvec2arr(world.get_actions()); //WARNING: conv... returns a reference!!
     if(verbose>2){ cout <<"Possible decisions: "; listWrite(actions); cout <<endl; }
+    if(!actions.N){
+      if(verbose>1){ cout <<" -- no decisions left -> terminal" <<endl; }
+      break;
+    }
     uint a = rand()%actions.N;
     if(verbose>1) cout <<"****************** MC: random decision: " <<*actions(a) <<endl;
     rolloutDecisions.append(actions(a));
