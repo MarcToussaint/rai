@@ -290,9 +290,13 @@ bool ManipulationTree_Node::recomputeAllFolStates(){
 //      children.clear();
     }
   }
-  for(uint i=children.N;i--;){
-    bool feasible = children(i)->recomputeAllFolStates();
-    if(!feasible) children.remove(i);
+  if(children.N){
+    for(uint i=children.N-1;;){
+      bool feasible = children(i)->recomputeAllFolStates();
+      if(!feasible) children.remove(i);
+      if(!i || !children.N) break;
+      i--;
+    }
   }
   return true;
 }
@@ -343,7 +347,7 @@ void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
     n = new Node_typed<bool>(G, {STRING("a:"<<*decision)}, {n}, true);
   }
   graphIndex = n->index;
-  n->keys.append(STRING("s:" <<s <<" t:" <<time));
+  n->keys.append(STRING("s:" <<s <<" t:" <<time <<' ' <<folState->isNodeOfParentGraph->keys.scalar()));
   if(mcStats) n->keys.append(STRING("MC best:" <<mcStats->X.first() <<" n:" <<mcStats->n));
   n->keys.append(STRING("sym cost:" <<symCost <<" terminal:" <<isTerminal));
   n->keys.append(STRING("seq cost:" <<seqCost <<" feasible:" <<seqFeasible));
