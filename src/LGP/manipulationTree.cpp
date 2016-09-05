@@ -3,7 +3,7 @@
 
 
 ManipulationTree_Node::ManipulationTree_Node(ors::KinematicWorld& kin, FOL_World& _fol)
-  : parent(NULL), s(0), fol(_fol),
+  : parent(NULL), s(0), fol(_fol), folState(NULL), folDecision(NULL),
     startKinematics(kin),
 //    kinematics(kin),
     effKinematics(kin),
@@ -15,13 +15,11 @@ ManipulationTree_Node::ManipulationTree_Node(ors::KinematicWorld& kin, FOL_World
   //this is the root node!
   fol.reset_state();
   folState = fol.createStateCopy();
-  folDecision = NULL;
-  decision = NULL;
   hasEffKinematics = true;
 }
 
 ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS_Environment::Handle& a)
-  : parent(parent), fol(parent->fol),
+  : parent(parent), fol(parent->fol), folState(NULL), folDecision(NULL),
     startKinematics(parent->startKinematics),
 //    kinematics(parent->kinematics),
     effKinematics(parent->effKinematics),
@@ -33,17 +31,14 @@ ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS
   s=parent->s+1;
   parent->children.append(this);
   fol.setState(parent->folState);
-  if(a){
-    fol.transition(a);
-    time=parent->time+fol.lastStepDuration;
-    folReward = fol.lastStepReward;
-    isTerminal = fol.successEnd || fol.deadEnd;
-    if(fol.deadEnd) labelInfeasible();
-  }else{
-    LOG(-1) <<"this doesn't make sense";
-  }
+  CHECK(a,"giving a 'NULL' shared pointer??");
+  fol.transition(a);
+  time=parent->time+fol.lastStepDuration;
+  folReward = fol.lastStepReward;
+  isTerminal = fol.successEnd;
+  if(fol.deadEnd) labelInfeasible();
   folState = fol.createStateCopy();
-  folDecision = fol.lastDecisionInState;
+  folDecision = folState->getNode("decision");
   decision = a;
 }
 
@@ -231,10 +226,21 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
 
 void ManipulationTree_Node::labelInfeasible(){
   isInfeasible = true;
-  ManipulationTree_NodeL tree;
-  getAllChildren(tree);
+
+  //-- remove children
+//  ManipulationTree_NodeL tree;
+//  getAllChildren(tree);
 //  for(ManipulationTree_Node *n:tree) if(n!=this) delete n; //TODO: memory leak!
   children.clear();
+
+  //-- add INFEASIBLE flag to fol
+  NodeL symbols = folDecision->parents;
+  symbols.prepend( fol.KB.getNode({"INFEASIBLE"}));
+  new Node_typed<bool>(*fol.start_state, {}, symbols, true);
+
+  ManipulationTree_Node *root=getRoot();
+  root->recomputeAllFolStates();
+
 }
 
 ManipulationTree_NodeL ManipulationTree_Node::getTreePath(){
@@ -245,6 +251,12 @@ ManipulationTree_NodeL ManipulationTree_Node::getTreePath(){
     node = node->parent;
   }
   return path;
+}
+
+ManipulationTree_Node* ManipulationTree_Node::getRoot(){
+  ManipulationTree_Node* n=this;
+  while(n->parent) n=n->parent;
+  return n;
 }
 
 void ManipulationTree_Node::getAllChildren(ManipulationTree_NodeL& tree){
@@ -259,10 +271,53 @@ ManipulationTree_Node *ManipulationTree_Node::treePolicy_random(){
   return this;
 }
 
+bool ManipulationTree_Node::recomputeAllFolStates(){
+  if(!parent){ //this is root
+    folState->copy(*fol.start_state);
+  }else{
+    fol.setState(parent->folState);
+    if(fol.is_feasible_action(decision)){
+      fol.transition(decision);
+      time=parent->time+fol.lastStepDuration;
+      folReward = fol.lastStepReward;
+      isTerminal = fol.successEnd;
+      if(fol.deadEnd) labelInfeasible();
+      folState->copy(*fol.state);
+      folDecision = folState->getNode("decision");
+    }else{
+      return false; //return 'I'm infeasible to the parent'
+//      parent->children.removeValue(this);
+//      children.clear();
+    }
+  }
+  for(uint i=children.N;i--;){
+    bool feasible = children(i)->recomputeAllFolStates();
+    if(!feasible) children.remove(i);
+  }
+  return true;
+}
+
 void ManipulationTree_Node::checkConsistency(){
+  //-- check that the state->parent points to the parent's state
   if(parent){
     CHECK_EQ(parent->folState->isNodeOfParentGraph, folState->isNodeOfParentGraph->parents.scalar(), "");
+    CHECK_EQ(&folDecision->container, folState, "");
   }
+
+  //-- check that each child exactly matches a decision, in same order
+  if(children.N){
+    fol.setState(folState);
+    auto actions = fol.get_actions();
+    CHECK_EQ(children.N, actions.size(), "");
+    uint i=0;
+    for(FOL_World::Handle& a:actions){
+      cout <<"  DECISION: " <<*a <<endl;
+      FOL_World::Handle& b = children(i)->decision;
+      CHECK_EQ(*a, *b, "children do not match decisions");
+      i++;
+    }
+  }
+
   for(auto* ch:children) ch->checkConsistency();
 }
 
@@ -296,8 +351,15 @@ void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
   n->keys.append(STRING("costSoFar:" <<costSoFar));
 
   G.getRenderingInfo(n).dotstyle="shape=box";
-  if(isInfeasible) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=red";
-  if(seq.N && !isInfeasible) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=green";
+  if(isInfeasible){
+    if(isTerminal)  G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=violet";
+    else G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=red";
+  }else if(isTerminal){
+    if(seq.N) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=cyan";
+    else G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=blue";
+  }else{
+    if(seq.N) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=green";
+  }
 //  if(inFringe1) G.getRenderingInfo(n).dotstyle <<" color=green";
   if(inFringe2) G.getRenderingInfo(n).dotstyle <<" peripheries=2";
 

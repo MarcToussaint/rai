@@ -50,6 +50,9 @@ struct MCTS_Environment {
     /// Get the available actions in the current state
     virtual const std::vector<Handle> get_actions() = 0;
 
+    /// Return whether action is feasible in current state
+    virtual bool is_feasible_action(const Handle& action){ return true; }
+
     /// Get the current state
     virtual const Handle get_state() = 0;
 

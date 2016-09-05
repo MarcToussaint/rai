@@ -67,8 +67,10 @@ struct ManipulationTree_Node{
   //-- helpers
   void labelInfeasible(); ///< sets the infeasible label AND removes all children!
   ManipulationTree_NodeL getTreePath(); ///< return the decision path in terms of a list of nodes (just walking to the root)
+  ManipulationTree_Node* getRoot(); ///< return the decision path in terms of a list of nodes (just walking to the root)
   void getAllChildren(ManipulationTree_NodeL& tree);
   ManipulationTree_Node *treePolicy_random(); ///< returns leave -- by descending children randomly
+  bool recomputeAllFolStates();
 
   void checkConsistency();
 
