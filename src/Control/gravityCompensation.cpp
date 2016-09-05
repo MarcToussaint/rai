@@ -2,6 +2,113 @@
 #include <Algo/MLcourse.h>
 #include <Motion/taskMaps.h>
 
+struct GravityCompensation::CV : public CrossValidation {
+  void  train(const arr& X, const arr& y, double param, arr& beta) {
+    beta = ridgeRegression(X, y, param); //returns optimal beta for training data
+  }
+  double test(const arr& X, const arr& y, const arr& beta) {
+    arr y_pred = X*beta;
+    return sqrt(sumOfSqr(y_pred-y)/y.N); //returns RMSE on test data
+  }
+
+  arr calculateBetaWithCV(const arr& Phi, const arr& y, const arr& lambdas, const bool& verbose, double& c) {
+    this->verbose = verbose;
+    this->crossValidateMultipleLambdas(Phi, y, lambdas, 10, false);
+
+    if(verbose) {
+      this->plot();
+    }
+    if(verbose) cout <<"10-fold CV:\n  costMeans= " << this->scoreMeans << "\n  costSDVs= " << this->scoreSDVs << endl;
+
+    uint bestIndex = this->scoreMeans.minIndex();
+
+    c = (1-scoreMeans(bestIndex)/scoreMeans.last())*100;
+
+    return ridgeRegression(Phi, y, lambdas(bestIndex));
+  }
+};
+
+void GravityCompensation::learnFTModel() {
+  GravityCompensation::CV cv;
+
+  arr q;
+  q << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/q"));
+  arr fL;
+  fL << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/fL"));
+  arr fR;
+  fR << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/fR"));
+
+  arr PhiL = featuresFT(q, "endeffL");
+  arr PhiR = featuresFT(q, "endeffR");
+
+  arr lambdas = ARR(1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4,1e5);
+  lambdas.append(lambdas*5.0);
+  lambdas.append(lambdas*7.0);
+  lambdas.append(lambdas*3.0);
+  lambdas.sort(); //not necessary, just for nicer cv plots
+
+  arr mL = zeros(6);
+  arr mR = zeros(6);
+  for(uint i = 0; i < 6; i++) {
+    betaFTL.append(~cv.calculateBetaWithCV(PhiL, fL.sub(0,-1,i,i), lambdas, false, mL(i)));
+    betaFTR.append(~cv.calculateBetaWithCV(PhiR, fR.sub(0,-1,i,i), lambdas, false, mR(i)));
+  }
+  betaFTL = ~betaFTL;
+  betaFTR = ~betaFTR;
+  cout << "Percentage of variance for left endeff FT sensor:" << mL << endl;
+  cout << "Percentage of variance for right endeff FT sensor: " <<mR << endl;
+}
+
+arr GravityCompensation::compensateFTL(const arr& q) {
+  return featuresFT(q, "endeffL")*betaFTL;
+}
+
+arr GravityCompensation::compensateFTR(const arr& q) {
+  return featuresFT(q, "endeffR")*betaFTR;
+}
+
+GravityCompensation::GravityCompensation(const ors::KinematicWorld& world) : world(world) {
+
+}
+
+arr GravityCompensation::featuresFT(arr q, mlr::String endeff) {
+  if(q.nd < 2) q = ~q;
+
+  arr Phi = ones(q.d0,1);
+  Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world, endeff, ors::Vector(1.0,0.0,0.0)), q));
+  Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world, endeff, ors::Vector(0.0,1.0,0.0)), q));
+  Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world, endeff, ors::Vector(0.0,0.0,1.0)), q));
+  return Phi;
+}
+
+arr GravityCompensation::generateTaskMapFeature(TaskMap_Default map, arr Q) {
+  arr phiTemp;
+  for (uint t = 0; t < Q.d0; t++) {
+    world.setJointState(Q[t]);
+    arr y;
+    map.phi(y, NoArr, world);
+    phiTemp.append(~y);
+  }
+  return phiTemp;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if 0
+
 arr GravityCompensation::generateTaskMapFeature(TaskMap_Default map, arr Q) {
   arr phiTemp;
   for (uint t = 0; t < Q.d0; t++) {
@@ -39,7 +146,7 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
 
   CHECK(Q.d1 == world.getJointStateDimension(), "Wrong Q dimension")
 
-  if(robotPart == leftArm) {
+      if(robotPart == leftArm) {
     arr X = Q*~TLeftArm;
 
     Phi = makeFeatures(X, linearFT);
@@ -67,7 +174,7 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
     Phi = catCol(Phi,sin(X));
     Phi = catCol(Phi,cos(X));
 
-/*
+    /*
     //Summed sinus/cosinus
     arr temp;
     for(uint i = 0; i < leftJoints.N; i++) {
@@ -76,7 +183,7 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
       Phi = catCol(Phi,cos(sum(temp,1)));
     }
 */
-/*
+    /*
     TaskMap_Default posTask(posTMT, world, "endeffR");
       Phi_tmp.clear();
       for (uint t = 0; t<Q.d0; t++) {
@@ -98,7 +205,7 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
 
 
 
-/*
+    /*
     // add dynamics features
     arr Phi_tmp;
     arr phi_t;
@@ -173,7 +280,7 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
     //Phi = catCol(Phi,sin(X));
     //Phi = catCol(Phi,cos(X));
 
-   /* Phi = makeFeatures(X,quadraticFT);
+    /* Phi = makeFeatures(X,quadraticFT);
 
     // add sin/cos features
     Phi = catCol(Phi,sin(X));
@@ -289,7 +396,7 @@ void GravityCompensation::learnModels(bool verbose) {
 void GravityCompensation::saveBetas() {
   CHECK(modelLearned, "You have to learn the model first!")
 
-  write(LIST<arr>(betaLeftArm),STRING("betaLeftArm.dat"));
+      write(LIST<arr>(betaLeftArm),STRING("betaLeftArm.dat"));
   write(LIST<arr>(betaRightArm),STRING("betaRightArm.dat"));
   write(LIST<arr>(betaHead),STRING("betaHead.dat"));
 }
@@ -304,9 +411,9 @@ void GravityCompensation::loadBetas() {
 arr GravityCompensation::compensate(arr q, bool compensateLeftArm, bool compensateRightArm, bool compensateHead) {
 
   CHECK(modelLearned, "You have to learn the model first!")
-  CHECK(q.N == world.getJointStateDimension(), "wrong joint state dimension!")
+      CHECK(q.N == world.getJointStateDimension(), "wrong joint state dimension!")
 
-  arr u = zeros(world.getJointStateDimension());
+      arr u = zeros(world.getJointStateDimension());
   if(compensateLeftArm) {
     u += features(q, leftArm)*betaLeftArm*TLeftArm;
   }
@@ -324,9 +431,9 @@ arr GravityCompensation::compensate(arr q, bool compensateLeftArm, bool compensa
 
 arr GravityCompensation::compensate(arr q, StringA joints) {
   CHECK(modelLearned, "You have to learn the model first!")
-  CHECK(q.N == world.getJointStateDimension(), "wrong joint state dimension!")
+      CHECK(q.N == world.getJointStateDimension(), "wrong joint state dimension!")
 
-  arr uTemp = zeros(world.getJointStateDimension());
+      arr uTemp = zeros(world.getJointStateDimension());
   uTemp += features(q, leftArm)*betaLeftArm*TLeftArm;
   uTemp += features(q, rightArm)*betaRightArm*TRightArm;
   uTemp += features(q, head)*betaHead*THead;
@@ -384,3 +491,8 @@ arr GravityCompensation::makeQMatrix(arr Q, uint jointIndex) {
 
   return QJointStateMatrix;
 }
+
+#endif
+
+
+

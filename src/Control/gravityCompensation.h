@@ -7,46 +7,61 @@
 
 struct GravityCompensation {
 
-    ors::KinematicWorld world;
+  struct CV;
 
-    enum RobotPart{
-        leftArm,
-        rightArm,
-        head
-    };
+  ors::KinematicWorld world;
 
-    arr TLeftArm, TRightArm, THead;
+  arr betaFTL, betaFTR;
 
-    arr betaLeftArm, betaRightArm, betaHead;
+  void learnFTModel();
+  arr compensateFTL(const arr& q);
+  arr compensateFTR(const arr& q);
 
-    bool modelLearned  = false;
+  GravityCompensation(const ors::KinematicWorld& world);
 
-    StringA leftJoints = {"l_shoulder_pan_joint","l_shoulder_lift_joint","l_upper_arm_roll_joint","l_elbow_flex_joint",
-                          "l_forearm_roll_joint","l_wrist_flex_joint"};
+  arr featuresFT(arr q, mlr::String endeff);
+  arr generateTaskMapFeature(TaskMap_Default map, arr Q);
 
-    StringA rightJoints = {"r_shoulder_pan_joint","r_shoulder_lift_joint","r_upper_arm_roll_joint","r_elbow_flex_joint",
-                           "r_forearm_roll_joint","r_wrist_flex_joint"};
+#if 0
+  enum RobotPart{
+    leftArm,
+    rightArm,
+    head
+  };
 
-    StringA headJoints = {"head_tilt_joint"};//,"head_pan_joint"};
+  arr TLeftArm, TRightArm, THead;
 
-    arr features(arr Q, const RobotPart robotPart);
-    void learnModels(bool verbose);
-    void saveBetas();
-    void loadBetas();
-    arr compensate(arr q, bool compensateLeftArm, bool compensateRightArm, bool compensateHead);
-    arr compensate(arr q, StringA joints);
+  arr betaLeftArm, betaRightArm, betaHead;
 
-    GravityCompensation(const ors::KinematicWorld& world);
+  bool modelLearned  = false;
 
-    //for debugging
-    void testForLimits();
+  StringA leftJoints = {"l_shoulder_pan_joint","l_shoulder_lift_joint","l_upper_arm_roll_joint","l_elbow_flex_joint",
+                        "l_forearm_roll_joint","l_wrist_flex_joint"};
+
+  StringA rightJoints = {"r_shoulder_pan_joint","r_shoulder_lift_joint","r_upper_arm_roll_joint","r_elbow_flex_joint",
+                         "r_forearm_roll_joint","r_wrist_flex_joint"};
+
+  StringA headJoints = {"head_tilt_joint"};//,"head_pan_joint"};
+
+  arr features(arr Q, const RobotPart robotPart);
+  void learnModels(bool verbose);
+  void saveBetas();
+  void loadBetas();
+  arr compensate(arr q, bool compensateLeftArm, bool compensateRightArm, bool compensateHead);
+  arr compensate(arr q, StringA joints);
+
+  GravityCompensation(const ors::KinematicWorld& world);
+
+  //for debugging
+  void testForLimits();
 
 
 
-    //========= Helper functions, just convenience and good practices
-    arr makeQMatrix(arr Q, uint jointIndex);
-    arr generateTaskMapFeature(TaskMap_Default map, arr Q);
-    void generatePredictionsOnDataSet(const arr& Q, const arr& U, const StringA& joints);
+  //========= Helper functions, just convenience and good practices
+  arr makeQMatrix(arr Q, uint jointIndex);
+  arr generateTaskMapFeature(TaskMap_Default map, arr Q);
+  void generatePredictionsOnDataSet(const arr& Q, const arr& U, const StringA& joints);
+#endif
 };
 
 #endif // GRAVITYCOMPENSATION_H
