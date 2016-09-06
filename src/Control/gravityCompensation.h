@@ -11,7 +11,21 @@ struct GravityCompensation {
 
   ors::KinematicWorld world;
 
+  arr TLeftArm, TRightArm, THead;
+  StringA leftJoints = {"l_shoulder_pan_joint","l_shoulder_lift_joint","l_upper_arm_roll_joint","l_elbow_flex_joint",
+                        "l_forearm_roll_joint","l_wrist_flex_joint"};
+
+  StringA rightJoints = {"r_shoulder_pan_joint","r_shoulder_lift_joint","r_upper_arm_roll_joint","r_elbow_flex_joint",
+                         "r_forearm_roll_joint","r_wrist_flex_joint"};
+
+  StringA headJoints = {"head_tilt_joint"};
+
+  arr beta_l_shoulder_pan_joint, beta_l_shoulder_lift_joint, beta_l_upper_arm_roll_joint, beta_l_elbow_flex_joint, beta_l_forearm_roll_joint, beta_l_wrist_flex_joint;
   arr betaFTL, betaFTR;
+
+  void learnGCModel();
+
+  arr compensate(const arr& q, const arr& qSign, const StringA& joints);
 
   void learnFTModel();
   arr compensateFTL(const arr& q);
@@ -19,8 +33,13 @@ struct GravityCompensation {
 
   GravityCompensation(const ors::KinematicWorld& world);
 
+  arr featuresGC(arr q, arr qSign, const mlr::String& joint);
+
   arr featuresFT(arr q, mlr::String endeff);
   arr generateTaskMapFeature(TaskMap_Default map, arr Q);
+
+  void testForLimits();
+  void removeLimits();
 
 #if 0
   enum RobotPart{

@@ -28,6 +28,82 @@ struct GravityCompensation::CV : public CrossValidation {
   }
 };
 
+void GravityCompensation::learnGCModel() {
+  GravityCompensation::CV cv;
+
+  arr q;
+  q << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_LW/q"));
+  arr u;
+  u << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_LW/u"));
+  arr qSign;
+  qSign << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_LW/qSign"));
+
+  arr lambdas = ARR(1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4,1e5);
+  lambdas.append(lambdas*5.0);
+  lambdas.append(lambdas*7.0);
+  lambdas.append(lambdas*3.0);
+  lambdas.sort(); //not necessary, just for nicer cv plots
+
+
+  double c;
+  mlr::String joint = "l_shoulder_pan_joint";
+  uint index = world.getJointByName(joint)->qIndex;
+  beta_l_shoulder_pan_joint = cv.calculateBetaWithCV(featuresGC(q, qSign, joint), u.sub(0,-1,index,index), lambdas, false, c);
+  cout << c << endl;
+
+  joint = "l_shoulder_lift_joint";
+  index = world.getJointByName(joint)->qIndex;
+  beta_l_shoulder_lift_joint = cv.calculateBetaWithCV(featuresGC(q, qSign, joint), u.sub(0,-1,index,index), lambdas, false, c);
+  cout << c << endl;
+
+  joint = "l_upper_arm_roll_joint";
+  index = world.getJointByName(joint)->qIndex;
+  beta_l_upper_arm_roll_joint = cv.calculateBetaWithCV(featuresGC(q, qSign, joint), u.sub(0,-1,index,index), lambdas, false, c);
+  cout << c << endl;
+
+  joint = "l_elbow_flex_joint";
+  index = world.getJointByName(joint)->qIndex;
+  beta_l_elbow_flex_joint = cv.calculateBetaWithCV(featuresGC(q, qSign, joint), u.sub(0,-1,index,index), lambdas, false, c);
+  cout << c << endl;
+
+  joint = "l_forearm_roll_joint";
+  index = world.getJointByName(joint)->qIndex;
+  beta_l_forearm_roll_joint = cv.calculateBetaWithCV(featuresGC(q, qSign, joint), u.sub(0,-1,index,index), lambdas, false, c);
+  cout << c << endl;
+
+  joint = "l_wrist_flex_joint";
+  index = world.getJointByName(joint)->qIndex;
+  beta_l_wrist_flex_joint = cv.calculateBetaWithCV(featuresGC(q, qSign, joint), u.sub(0,-1,index,index), lambdas, false, c);
+  cout << c << endl;
+
+}
+
+arr GravityCompensation::compensate(const arr& q, const arr& qSign, const StringA& joints) {
+  arr u = zeros(world.getJointStateDimension());
+
+  for(mlr::String joint : joints) {
+    uint index = world.getJointByName(joint)->qIndex;
+    arr beta = zeros(1);
+    if(joint == "l_shoulder_pan_joint") {
+      beta = beta_l_shoulder_pan_joint;
+    } else if(joint == "l_shoulder_lift_joint") {
+      beta = beta_l_shoulder_lift_joint;
+    } else if(joint == "l_upper_arm_roll_joint") {
+      beta = beta_l_upper_arm_roll_joint;
+    } else if(joint == "l_elbow_flex_joint") {
+      beta = beta_l_elbow_flex_joint;
+    } else if(joint == "l_forearm_roll_joint") {
+      beta = beta_l_forearm_roll_joint;
+    } else if(joint == "l_wrist_flex_joint") {
+      beta = beta_l_wrist_flex_joint;
+    }
+    arr uTemp = featuresGC(q, qSign, joint)*beta;
+    u(index) = uTemp(0,0);
+  }
+  clip(u, -7.0, 7.0); //TODO: More sophisticated clipping!
+  return u;
+}
+
 void GravityCompensation::learnFTModel() {
   GravityCompensation::CV cv;
 
@@ -68,6 +144,58 @@ arr GravityCompensation::compensateFTR(const arr& q) {
 }
 
 GravityCompensation::GravityCompensation(const ors::KinematicWorld& world) : world(world) {
+  TLeftArm = zeros(leftJoints.N, world.getJointStateDimension());
+  for(uint i = 0; i < leftJoints.N; i++) {
+    TLeftArm(i, world.getJointByName(leftJoints(i))->qIndex) = 1;
+  }
+  TRightArm = zeros(rightJoints.N, world.getJointStateDimension());
+  for(uint i = 0; i < rightJoints.N; i++) {
+    TRightArm(i, world.getJointByName(rightJoints(i))->qIndex) = 1;
+  }
+  THead = zeros(headJoints.N, world.getJointStateDimension());
+  for(uint i = 0; i < headJoints.N; i++) {
+    THead(i, world.getJointByName(headJoints(i))->qIndex) = 1;
+  }
+}
+
+arr GravityCompensation::featuresGC(arr q, arr qSign, const mlr::String& joint) {
+  arr Phi;
+
+  if(q.nd < 2) {
+    q = ~q;
+    qSign = ~qSign;
+  }
+
+  uint index = world.getJointByName(joint)->qIndex;
+
+  arr X = q*~TLeftArm;
+
+  Phi = makeFeatures(X, linearFT);
+
+  arr Phi_tmp;
+  arr phi_t;
+  for (uint t = 0; t < q.d0; t++) {
+    phi_t.clear();
+    world.setJointState(q[t], q[t]*0.);
+
+    arr M,F;
+    world.equationOfMotion(M,F);
+    phi_t.append(TLeftArm*F);
+
+    Phi_tmp.append(~phi_t);
+  }
+
+  Phi = catCol(Phi,Phi_tmp);
+
+  //Phi = makeFeatures(X,quadraticFT);
+
+  // add sin/cos features
+  Phi = catCol(Phi,sin(X));
+  Phi = catCol(Phi,cos(X));
+
+  Phi = catCol(Phi, sign(qSign.sub(0,-1,index,index)));
+
+  return Phi;
 
 }
 
@@ -98,6 +226,50 @@ arr GravityCompensation::generateTaskMapFeature(TaskMap_Default map, arr Q) {
 
 
 
+void GravityCompensation::testForLimits() {
+  arr q;
+  q << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/q"));
+  //bool limitViolation = false;
+  uint j = 0;
+  for(uint i = 0; i < q.d0; i++) {
+    world.setJointState(q[i]);
+    LimitsConstraint limits(0.03);
+    arr y;
+    limits.phi(y,NoArr,world);
+    if(y(0) > 0) {
+      cout << i << " " << y<< endl;
+      j++;
+    }
+  }
+  cout << j << endl;
+
+}
+
+void GravityCompensation::removeLimits() {
+  arr q;
+  q << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/q"));
+  arr u;
+  u << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/u"));
+  arr qSign;
+  qSign << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/qSign"));
+
+  arr qNew, uNew, qSignNew;
+
+  for(uint i = 0; i < q.d0; i++) {
+    world.setJointState(q[i]);
+    LimitsConstraint limits;
+    arr y;
+    limits.phi(y, NoArr, world);
+    if(y(0) <= 0) {
+      qNew.append(~q[i]);
+      qSignNew.append(~qSign[i]);
+      uNew.append(~u[i]);
+    }
+  }
+  FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_LW/q")) << qNew;
+  FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_LW/qSign")) << qSignNew;
+  FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_LW/u")) << uNew;
+}
 
 
 
