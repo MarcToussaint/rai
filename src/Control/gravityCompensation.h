@@ -20,6 +20,7 @@ struct GravityCompensation {
 
   StringA headJoints = {"head_tilt_joint"};
 
+  std::map<mlr::String, arr> betasGC;
   arr beta_l_shoulder_pan_joint, beta_l_shoulder_lift_joint, beta_l_upper_arm_roll_joint, beta_l_elbow_flex_joint, beta_l_forearm_roll_joint, beta_l_wrist_flex_joint;
   arr betaFTL, betaFTR;
 

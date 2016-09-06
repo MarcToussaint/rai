@@ -44,38 +44,17 @@ void GravityCompensation::learnGCModel() {
   lambdas.append(lambdas*3.0);
   lambdas.sort(); //not necessary, just for nicer cv plots
 
+  StringA joints;
+  joints.append(leftJoints);
+  joints.append(rightJoints);
+  joints.append(headJoints);
 
-  double c;
-  mlr::String joint = "l_shoulder_pan_joint";
-  uint index = world.getJointByName(joint)->qIndex;
-  beta_l_shoulder_pan_joint = cv.calculateBetaWithCV(featuresGC(q, qSign, joint), u.sub(0,-1,index,index), lambdas, false, c);
-  cout << c << endl;
-
-  joint = "l_shoulder_lift_joint";
-  index = world.getJointByName(joint)->qIndex;
-  beta_l_shoulder_lift_joint = cv.calculateBetaWithCV(featuresGC(q, qSign, joint), u.sub(0,-1,index,index), lambdas, false, c);
-  cout << c << endl;
-
-  joint = "l_upper_arm_roll_joint";
-  index = world.getJointByName(joint)->qIndex;
-  beta_l_upper_arm_roll_joint = cv.calculateBetaWithCV(featuresGC(q, qSign, joint), u.sub(0,-1,index,index), lambdas, false, c);
-  cout << c << endl;
-
-  joint = "l_elbow_flex_joint";
-  index = world.getJointByName(joint)->qIndex;
-  beta_l_elbow_flex_joint = cv.calculateBetaWithCV(featuresGC(q, qSign, joint), u.sub(0,-1,index,index), lambdas, false, c);
-  cout << c << endl;
-
-  joint = "l_forearm_roll_joint";
-  index = world.getJointByName(joint)->qIndex;
-  beta_l_forearm_roll_joint = cv.calculateBetaWithCV(featuresGC(q, qSign, joint), u.sub(0,-1,index,index), lambdas, false, c);
-  cout << c << endl;
-
-  joint = "l_wrist_flex_joint";
-  index = world.getJointByName(joint)->qIndex;
-  beta_l_wrist_flex_joint = cv.calculateBetaWithCV(featuresGC(q, qSign, joint), u.sub(0,-1,index,index), lambdas, false, c);
-  cout << c << endl;
-
+  for(mlr::String joint : joints) {
+    uint index = world.getJointByName(joint)->qIndex;
+    double c;
+    betasGC[joint] = cv.calculateBetaWithCV(featuresGC(q, qSign, joint), u.sub(0,-1,index,index), lambdas, false, c);
+    cout << c << endl;
+  }
 }
 
 arr GravityCompensation::compensate(const arr& q, const arr& qSign, const StringA& joints) {
@@ -83,22 +62,7 @@ arr GravityCompensation::compensate(const arr& q, const arr& qSign, const String
 
   for(mlr::String joint : joints) {
     uint index = world.getJointByName(joint)->qIndex;
-    arr beta = zeros(1);
-    if(joint == "l_shoulder_pan_joint") {
-      beta = beta_l_shoulder_pan_joint;
-    } else if(joint == "l_shoulder_lift_joint") {
-      beta = beta_l_shoulder_lift_joint;
-    } else if(joint == "l_upper_arm_roll_joint") {
-      beta = beta_l_upper_arm_roll_joint;
-    } else if(joint == "l_elbow_flex_joint") {
-      beta = beta_l_elbow_flex_joint;
-    } else if(joint == "l_forearm_roll_joint") {
-      beta = beta_l_forearm_roll_joint;
-    } else if(joint == "l_wrist_flex_joint") {
-      beta = beta_l_wrist_flex_joint;
-    }
-    arr uTemp = featuresGC(q, qSign, joint)*beta;
-    u(index) = uTemp(0,0);
+    u(index) = (featuresGC(q, qSign, joint)*betasGC.find(joint)->second).first();
   }
   clip(u, -7.0, 7.0); //TODO: More sophisticated clipping!
   return u;
@@ -167,33 +131,130 @@ arr GravityCompensation::featuresGC(arr q, arr qSign, const mlr::String& joint) 
   }
 
   uint index = world.getJointByName(joint)->qIndex;
+  arr T;
+  FeatureType featureType;
+  bool dynamicFeature, cosFeature, sinFeature, stictionFeature;
+  if(joint == "l_shoulder_pan_joint") {
+    T = TLeftArm;
+    featureType = linearFT;
+    dynamicFeature = true;
+    cosFeature = true;
+    sinFeature = true;
+    stictionFeature = true;
+  } else if(joint == "l_shoulder_lift_joint") {
+    T = TLeftArm;
+    featureType = linearFT;
+    dynamicFeature = true;
+    cosFeature = true;
+    sinFeature = true;
+    stictionFeature = true;
+  } else if(joint == "l_upper_arm_roll_joint") {
+    T = TLeftArm;
+    featureType = linearFT;
+    dynamicFeature = true;
+    cosFeature = true;
+    sinFeature = true;
+    stictionFeature = true;
+  } else if(joint == "l_elbow_flex_joint") {
+    T = TLeftArm;
+    featureType = linearFT;
+    dynamicFeature = true;
+    cosFeature = true;
+    sinFeature = true;
+    stictionFeature = true;
+  } else if(joint == "l_forearm_roll_joint") {
+    T = TLeftArm;
+    featureType = linearFT;
+    dynamicFeature = true;
+    cosFeature = true;
+    sinFeature = true;
+    stictionFeature = true;
+  } else if(joint == "l_wrist_flex_joint") {
+    T = TLeftArm;
+    featureType = linearFT;
+    dynamicFeature = true;
+    cosFeature = true;
+    sinFeature = true;
+    stictionFeature = true;
 
-  arr X = q*~TLeftArm;
+  } else if(joint == "r_shoulder_pan_joint") {
+    T = TRightArm;
+    featureType = linearFT;
+    dynamicFeature = true;
+    cosFeature = true;
+    sinFeature = true;
+    stictionFeature = true;
+  } else if(joint == "r_shoulder_lift_joint") {
+    T = TRightArm;
+    featureType = cubicFT;
+    dynamicFeature = true;
+    cosFeature = false;
+    sinFeature = false;
+    stictionFeature = true;
+  } else if(joint == "r_upper_arm_roll_joint") {
+    T = TRightArm;
+    featureType = linearFT;
+    dynamicFeature = true;
+    cosFeature = true;
+    sinFeature = true;
+    stictionFeature = true;
+  } else if(joint == "r_elbow_flex_joint") {
+    T = TRightArm;
+    featureType = linearFT;
+    dynamicFeature = true;
+    cosFeature = true;
+    sinFeature = true;
+    stictionFeature = true;
+  } else if(joint == "r_forearm_roll_joint") {
+    T = TRightArm;
+    featureType = linearFT;
+    dynamicFeature = true;
+    cosFeature = true;
+    sinFeature = true;
+    stictionFeature = true;
+  } else if(joint == "r_wrist_flex_joint") {
+    T = TRightArm;
+    featureType = linearFT;
+    dynamicFeature = true;
+    cosFeature = true;
+    sinFeature = true;
+    stictionFeature = true;
 
-  Phi = makeFeatures(X, linearFT);
-
-  arr Phi_tmp;
-  arr phi_t;
-  for (uint t = 0; t < q.d0; t++) {
-    phi_t.clear();
-    world.setJointState(q[t], q[t]*0.);
-
-    arr M,F;
-    world.equationOfMotion(M,F);
-    phi_t.append(TLeftArm*F);
-
-    Phi_tmp.append(~phi_t);
+  } else if(joint == "head_tilt_joint") {
+    T = THead;
+    featureType = linearFT;
+    dynamicFeature = false; //TODO why does the F not contain any information about the head?!?!??!??!??!?!??!?!?!?!??
+    cosFeature = true;
+    sinFeature = true;
+    stictionFeature = true;
   }
 
-  Phi = catCol(Phi,Phi_tmp);
+  arr X = q*~T;
 
-  //Phi = makeFeatures(X,quadraticFT);
+  Phi = makeFeatures(X, featureType);
+
+  if(dynamicFeature) {
+    arr Phi_tmp;
+    for (uint t = 0; t < q.d0; t++) {
+      world.setJointState(q[t], q[t]*0.);
+      arr M,F;
+      world.equationOfMotion(M,F);
+      Phi_tmp.append(~(T*F));
+      //Phi_tmp.append(~F);
+    }
+    //.sub(0,-1,index,index)
+    Phi = catCol(Phi,Phi_tmp);
+  }
 
   // add sin/cos features
-  Phi = catCol(Phi,sin(X));
-  Phi = catCol(Phi,cos(X));
+  if(sinFeature) Phi = catCol(Phi,sin(X));
+  if(cosFeature) Phi = catCol(Phi,cos(X));
 
-  Phi = catCol(Phi, sign(qSign.sub(0,-1,index,index)));
+  if(stictionFeature) Phi = catCol(Phi, sign(qSign.sub(0,-1,index,index)));
+
+  //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(posTMT, world, "endeffL"), q));
+  //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"endeffL",ors::Vector(0.,0.,1.)), q));
+  //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"endeffL",ors::Vector(1.,0.,0.)), q));
 
   return Phi;
 
@@ -203,7 +264,7 @@ arr GravityCompensation::featuresFT(arr q, mlr::String endeff) {
   if(q.nd < 2) q = ~q;
 
   arr Phi = ones(q.d0,1);
-  Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world, endeff, ors::Vector(1.0,0.0,0.0)), q));
+  Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world, endeff, ors::Vector(1.0,0.0,0.0)), q)); //TODO distinguish between axes!!
   Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world, endeff, ors::Vector(0.0,1.0,0.0)), q));
   Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world, endeff, ors::Vector(0.0,0.0,1.0)), q));
   return Phi;
