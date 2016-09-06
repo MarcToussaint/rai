@@ -158,7 +158,7 @@ void PublishDatabase::syncPlane(const Plane* plane)
   body->shapes(0)->rel.rot = body->X.rot;
   body->X.rot.setZero();
 
-  ((Plane*)plane)->transform = body->X;
+//  ((Plane*)plane)->transform = body->X;
   //((plane*)plane)->mean = ARR(cen.x, cen.y, cen.z);
   /* If we change the mean, we compare the transformed mean to an untransformed mean later...*/
   modelWorld.deAccess();
@@ -227,13 +227,17 @@ void PublishDatabase::step()
         new_clusters.append(objectDatabase(i)->id);
         break;
       }
-      default:
+      case FilterObject::FilterObjectType::plane:
       {
         object_recognition_msgs::Table table = conv_FilterObject2Table(*objectDatabase(i));
         table_array.tables.push_back(table);
         table_array.header.frame_id = table.header.frame_id;
         syncPlane(dynamic_cast<Plane*>(objectDatabase(i)));
         new_planes.append(objectDatabase(i)->id);
+        break;
+      }
+      default:
+      {
         break;
       }
     }
