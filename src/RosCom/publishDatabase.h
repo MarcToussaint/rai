@@ -16,6 +16,7 @@ struct PublishDatabase : Module{
   ros::Publisher cluster_pub;
   ros::Publisher alvar_pub;
   ros::Publisher plane_pub;
+  ros::Publisher plane_marker_pub; // Publish plane info as visualization markers.
 
   virtual void open();
   virtual void step();

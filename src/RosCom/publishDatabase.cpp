@@ -42,6 +42,7 @@ void PublishDatabase::open(){
     cluster_pub = nh->advertise<visualization_msgs::MarkerArray>("/tabletop/tracked_clusters", 1);
     alvar_pub = nh->advertise<ar::AlvarMarkers>("/tracked_ar_pose_marker", 1);
     plane_pub = nh->advertise<object_recognition_msgs::TableArray>("/tracked_table_array", 1);
+    plane_marker_pub = nh->advertise<visualization_msgs::MarkerArray>("/tracked_table_markers_array", 1);
   }
 }
 
@@ -83,6 +84,26 @@ object_recognition_msgs::Table conv_FilterObject2Table(const FilterObject& objec
   new_table.header.frame_id = plane.frame_id;
 
   return new_table;
+}
+
+visualization_msgs::Marker conv_FilterObject2TableMarker(const FilterObject& object)
+{
+  visualization_msgs::Marker new_marker;
+  const Plane& plane = dynamic_cast<const Plane&>(object);
+  new_marker.type = visualization_msgs::Marker::POINTS;
+  new_marker.points = conv_arr2points( plane.hull );
+  new_marker.id = plane.id;
+  new_marker.scale.x = .1;
+  new_marker.scale.y = .1;
+  new_marker.lifetime = ros::Duration(0.5);
+  new_marker.header.stamp = ros::Time(0.);
+  new_marker.header.frame_id = plane.frame_id;
+  new_marker.color.a = 1.0; //plane.relevance;
+  new_marker.color.r = 1.0;
+  new_marker.color.g = 0;
+  new_marker.color.b = 0;
+  new_marker.pose = conv_transformation2pose(plane.transform * plane.frame);
+  return new_marker;
 }
 
 ar::AlvarMarker conv_FilterObject2Alvar(const FilterObject& object)
@@ -200,7 +221,7 @@ void PublishDatabase::step()
 
   FilterObjects objectDatabase = object_database();
 
-  visualization_msgs::MarkerArray cluster_markers;
+  visualization_msgs::MarkerArray cluster_markers, plane_markers;
   object_recognition_msgs::TableArray table_array;
   ar::AlvarMarkers ar_markers;
 
@@ -230,6 +251,9 @@ void PublishDatabase::step()
       case FilterObject::FilterObjectType::plane:
       {
         object_recognition_msgs::Table table = conv_FilterObject2Table(*objectDatabase(i));
+        visualization_msgs::Marker marker = conv_FilterObject2TableMarker(*objectDatabase(i));
+        plane_markers.markers.push_back(marker);
+
         table_array.tables.push_back(table);
         table_array.header.frame_id = table.header.frame_id;
         syncPlane(dynamic_cast<Plane*>(objectDatabase(i)));
@@ -254,6 +278,10 @@ void PublishDatabase::step()
 
     if (table_array.tables.size() > 0)
       plane_pub.publish(table_array);
+
+    if (plane_markers.markers.size() > 0)
+      plane_marker_pub.publish(plane_markers);
+
   }
 
 
