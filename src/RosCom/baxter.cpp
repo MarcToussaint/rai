@@ -130,6 +130,10 @@ void SendPositionCommandsToBaxter::step(){
     s->pubHead.publish(getHeadMsg(q_ref, baxterModel));
     s->pubGripper.publish(getGripperMsg(q_ref, baxterModel));
   }
+  else
+  {
+    close();
+  }
 }
 
 void SendPositionCommandsToBaxter::close(){
