@@ -31,7 +31,7 @@ void Collector::step()
           // Convert into a position relative to the base.
           tf::TransformListener listener;
           try{
-            ors::Transformation tf = ros_getTransform("/base", msg.markers[0].header.frame_id, listener);
+            ors::Transformation tf = ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener);
 
             //MT: really add the meter here? This seems hidden magic numbers in the code. And only for Baxter..?
             ors::Transformation inv;
@@ -84,7 +84,7 @@ void Collector::step()
           // Convert into a position relative to the base.
           tf::TransformListener listener;
           try{
-            ors::Transformation tf = ros_getTransform("/base", msg.markers[0].header.frame_id, listener);
+            ors::Transformation tf = ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener);
 
             //MT: really add the meter here? This seems hidden magic numbers in the code. And only for Baxter..?
             ors::Transformation inv;
