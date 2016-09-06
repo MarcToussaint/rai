@@ -98,7 +98,7 @@ visualization_msgs::Marker conv_FilterObject2TableMarker(const FilterObject& obj
   new_marker.lifetime = ros::Duration(0.5);
   new_marker.header.stamp = ros::Time(0.);
   new_marker.header.frame_id = plane.frame_id;
-  new_marker.color.a = 1.0; //plane.relevance;
+  new_marker.color.a = plane.relevance;
   new_marker.color.r = 1.0;
   new_marker.color.g = 0;
   new_marker.color.b = 0;
