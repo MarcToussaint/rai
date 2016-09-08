@@ -138,6 +138,7 @@ struct GaussianProcess {
   double max_var(); // the variance when no data present
   void gradient(arr& grad, const arr& x);           ///< evaluate the gradient dy/dx of the mean at some point
   void hessianPos (arr& hess, const arr& x);           ///< evaluate the hessian dy/dx1dx2 of the mean at some point
+  void gradientV(arr& grad, const arr& x);
   void k_star(const arr& x, arr& k);
   void dk_star(const arr& x, arr& k);
   

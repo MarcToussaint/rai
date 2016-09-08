@@ -381,9 +381,16 @@ void GaussianProcess::hessianPos (arr& hess, const arr& x){
   }
 }
 
+void GaussianProcess::gradientV(arr& grad, const arr& x) {
+  arr k, dk;
+  k_star(x, k);
+  dk_star(x, dk);
+  grad = -2.0*~k*Ginv*dk;
+}
+
 void GaussianProcess::evaluate(const arr& X, arr& Y, arr& S){
   uint i;
-  static arr xi;
+  arr xi;
   Y.resize(X.d0); S.resize(X.d0);
   for(i=0; i<X.d0; i++){ xi.referToDim(X, i); evaluate(xi, Y(i), S(i)); }
 }
