@@ -4,12 +4,12 @@
 Collector::Collector(const bool simulate):
     Module("Collector", simulate ? 0.05:-1),
     tabletop_clusters(this, "tabletop_clusters", !simulate),
-    ar_pose_markers(this, "ar_pose_markers", !simulate)
+    ar_pose_markers(this, "ar_pose_markers", !simulate),
+    tabletop_tableArray(this, "tabletop_tableArray", !simulate)
 {
   tabletop_srcFrame.set()->setZero();
   alvar_srcFrame.set()->setZero();
   this->simulate = simulate;
-//  tf.setZero();
 }
 
 void Collector::step()
@@ -24,7 +24,19 @@ void Collector::step()
       tabletop_clusters_revision = cluster_rev;
       const visualization_msgs::MarkerArray msg = tabletop_clusters();
 
-      if (msg.markers.size() > 0){
+      if (msg.markers.size() > 0)
+      {
+        if (!has_tabletop_tf)
+        {
+          tf::TransformListener listener;
+          ors::Transformation tf;
+          if (ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener, tf))
+          {
+            tabletop_srcFrame.set() = tf;
+            has_tabletop_tf = true;
+          }
+        }
+
 #if 0
         if (!has_transform) { //get the transform from ROS
           //MT: markers and clusters have the same transformation??
@@ -61,12 +73,50 @@ void Collector::step()
     }
     tabletop_clusters.deAccess();
 
+    int tableArray_rev = tabletop_tableArray.readAccess();
+    if ( tableArray_rev > tabletop_tableArray_revision ){ //only if new cluster info is available
+      tabletop_tableArray_revision = tableArray_rev;
+      const object_recognition_msgs::TableArray msg = tabletop_tableArray();
+
+      if (msg.tables.size() > 0)
+      {
+
+        if (!has_tabletop_tf)
+        {
+          tf::TransformListener listener;
+          ors::Transformation tf;
+          if (ros_getTransform("/base_footprint", msg.header.frame_id, listener, tf))
+          {
+            tabletop_srcFrame.set() = tf;
+            has_tabletop_tf = true;
+          }
+        }
+
+        for(auto & table : msg.tables){
+          Plane* new_plane = new Plane(conv_ROSTable2Plane( table ));
+          new_plane->frame = tabletop_srcFrame.get(); //tf
+          percepts.append( new_plane );
+        }
+      }
+    }
+    tabletop_tableArray.deAccess();
+
     int ar_rev = ar_pose_markers.readAccess();
     if ( ar_rev > ar_pose_markers_revision){ //new alwar objects are available
       ar_pose_markers_revision = ar_rev;
       const ar::AlvarMarkers msg = ar_pose_markers();
 
       for(auto & marker : msg.markers) {
+        if (!has_alvar_tf)
+        {
+          tf::TransformListener listener;
+          ors::Transformation tf;
+          if (ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener, tf))
+          {
+            alvar_srcFrame.set() = tf;
+            has_alvar_tf = true;
+          }
+        }
 #if 0
         if (!has_transform)
         {
@@ -144,9 +194,32 @@ void Collector::step()
 Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker){
   arr points = conv_points2arr(marker.points);
   arr mean = sum(points,0)/(double)points.d0;
-  Cluster new_object(mean, points, marker.header.frame_id);
+  return Cluster(mean, points, marker.header.frame_id);
+}
 
-  return new_object;
+Plane conv_ROSTable2Plane(const object_recognition_msgs::Table& table){
+//  arr hull;
+  ors::Transformation t = conv_pose2transformation(table.pose);
+
+//  for (auto & pt : table.convex_hull)
+//  {
+//    ors::Vector point(pt.x, pt.y, pt.z);
+//    point = t * point;
+////    tf::Point point = table.pose * (pt);
+//    hull.append(ARR(point.x, point.y, point.z));
+//  }
+//  hull.resize(table.convex_hull.size(), 3);
+
+//  cout << hull.nd << ' ' << hull.N << endl;
+  arr hull = conv_points2arr(table.convex_hull);
+  arr center = ARR(t.pos.x, t.pos.y, t.pos.z);
+  ors::Vector norm = t.rot*ors::Vector(0,0,1);
+
+  cout << "Norm: " << norm << endl;
+  arr normal = ARR(norm.x, norm.y, norm.z);
+  Plane toReturn = Plane(normal, center, hull, table.header.frame_id);
+  toReturn.transform = t;
+  return toReturn;
 }
 
 Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker){

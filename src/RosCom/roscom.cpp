@@ -121,6 +121,22 @@ ors::Transformation ros_getTransform(const std::string& from, const std::string&
   return X;
 }
 
+bool ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener, ors::Transformation& result){
+  result.setZero();
+  try{
+    tf::StampedTransform transform;
+    listener.lookupTransform(from, to, ros::Time(0), transform);
+    result = conv_transform2transformation(transform);
+  }
+  catch (tf::TransformException &ex) {
+    ROS_ERROR("%s",ex.what());
+    ros::Duration(1.0).sleep();
+    return false;
+  }
+  return true;
+}
+
+
 ors::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener){
   ors::Transformation X;
   X.setZero();
