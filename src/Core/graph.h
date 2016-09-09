@@ -106,11 +106,11 @@ struct Graph : NodeL {
   Graph& operator=(const Graph& G){  copy(G);  return *this;  }
   void copy(const Graph& G, bool appendInsteadOfClear=false, bool allowCopySubgraphToNonsubgraph=false);
   
-  //-- adding nodes
-  template<class T> Node *append(const StringA& keys, const NodeL& parents, const T& x); ///<exactly equivalent to calling a Node_typed constructor
-  Node *append(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
+  //-- adding nodes (TODO:rename to newNode, newEdge)
+  template<class T> Node_typed<T> *append(const StringA& keys, const NodeL& parents, const T& x); ///<exactly equivalent to calling a Node_typed constructor
+  Node_typed<int>* append(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
   Graph& append(const Nod& ni); ///< (internal) append a node initializer
-  Node_typed<Graph>* appendSubgraph(const StringA& keys, const NodeL& parents, const Graph& x=NoGraph);
+  Node_typed<Graph>* newSubgraph(const StringA& keys, const NodeL& parents, const Graph& x=NoGraph);
   void appendDict(const std::map<std::string, std::string>& dict);
 
   //-- basic node retrieval -- users usually use the higher-level wrappers below

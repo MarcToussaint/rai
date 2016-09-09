@@ -62,7 +62,7 @@ Node::Node(const std::type_info& _type, void* _value_ptr, Graph& _container)
 
 Node::Node(const std::type_info& _type, void* _value_ptr, Graph& _container, const StringA& _keys, const NodeL& _parents)
   : type(_type), value_ptr(_value_ptr), container(_container), keys(_keys), parents(_parents){
-  CHECK(&container!=&NoGraph, "don't do that anymore!");
+  CHECK(&container!=&NoGraph, "This is a NoGraph (NULL) -- don't do that anymore!");
   index=container.N;
   container.NodeL::append(this);
   if(parents.N) for(Node *i: parents){
@@ -203,14 +203,14 @@ Graph& Graph::append(const Nod& ni){
   return *this;
 }
 
-Node_typed<Graph>* Graph::appendSubgraph(const StringA& keys, const NodeL& parents, const Graph& x){
+Node_typed<Graph>* Graph::newSubgraph(const StringA& keys, const NodeL& parents, const Graph& x){
   Node_typed<Graph>* n = new Node_typed<Graph>(*this, keys, parents, Graph());
   DEBUG( CHECK(n->value.isNodeOfParentGraph && &n->value.isNodeOfParentGraph->container==this,"") )
   if(&x) n->value.copy(x);
   return n;
 }
 
-Node *Graph::append(const uintA& parentIdxs) {
+Node_typed<int>* Graph::append(const uintA& parentIdxs) {
   NodeL parents(parentIdxs.N);
   for(uint i=0;i<parentIdxs.N; i++) parents(i) = NodeL::elem(parentIdxs(i));
   return append<int>({STRING(NodeL::N)}, parents, 0);
@@ -340,7 +340,7 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool allowCopySubgra
   if(!allowCopySubgraphToNonsubgraph && G.isNodeOfParentGraph){
     if(!this->isNodeOfParentGraph){
       HALT("Typically you should not copy a subgraph into a non-subgraph (or call the copy operator with a subgraph).\
-           Use 'appendSubgraph' instead\
+           Use 'newSubgraph' instead\
            If you still want to do it you need to ensure that all node parents are declared, and then enforce it by setting 'allowCopySubgraphToNonsubgraph'");
     }
   }
@@ -363,7 +363,7 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool allowCopySubgra
       // copying the subgraph would require to fully rewire the subgraph (code below)
       // but if the subgraph refers to parents of this graph that are not create yet, requiring will fail
       // therefore we just insert an empty graph here; we then copy the subgraph once all nodes are created
-      newn = this->appendSubgraph(n->keys, n->parents);
+      newn = this->newSubgraph(n->keys, n->parents);
     }else{
       newn = n->newClone(*this); //this appends sequentially clones of all nodes to 'this'
     }
@@ -586,7 +586,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
         mlr::parse(is, ">");
       } break;
       case '{': { // sub graph
-        Node_typed<Graph> *subgraph = this->appendSubgraph(keys, parents);
+        Node_typed<Graph> *subgraph = this->newSubgraph(keys, parents);
         subgraph->value.read(is);
         mlr::parse(is, "}");
         node = subgraph;

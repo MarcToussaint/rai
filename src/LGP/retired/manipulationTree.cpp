@@ -5,7 +5,7 @@ void ManipulationTree_Node::solvePoseProblem(){
 
 #if 0
   if(true || !poseProblem){ //create the pose problem
-    Node *n = fol.KB.appendSubgraph({"PoseProblem"}, {folState->isNodeOfParentGraph});
+    Node *n = fol.KB.newSubgraph({"PoseProblem"}, {folState->isNodeOfParentGraph});
     poseProblemSpecs = &n->graph();
     poseProblemSpecs->copy(*folState, &fol.KB);
     NodeL komoRules = fol.KB.getNodes("PoseProblemRule");  //  listWrite(komoRules, cout, "\n"); cout <<endl;
@@ -72,7 +72,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   if(!s) return;
 
   //-- create new problem declaration (within the KB)
-  Node *seqProblemNode = fol.KB.appendSubgraph({"SeqProblem"}, {folState->isNodeOfParentGraph});
+  Node *seqProblemNode = fol.KB.newSubgraph({"SeqProblem"}, {folState->isNodeOfParentGraph});
   seqProblemSpecs = &seqProblemNode->graph();
 
   //-- collect 'path nodes'
@@ -88,7 +88,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   for(ManipulationTree_Node *node:treepath) if(node->folDecision){ //(e.g. the root may not have a decision)
     CHECK(node->s > 0,""); //don't add anything for the root
     Graph tmp(*node->folState);
-    Graph& changes = fol.KB.appendSubgraph({}, {})->graph();
+    Graph& changes = fol.KB.newSubgraph({}, {})->graph();
     forwardChaining_FOL(tmp, komoRules, NULL, changes); //use the rules to add to the specs
     changes.checkConsistency();
     for(Node *n:changes){
@@ -168,7 +168,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
 }
 
 void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
-  Node *pathProblemNode = fol.KB.appendSubgraph({"PathProblem"}, {folState->isNodeOfParentGraph});
+  Node *pathProblemNode = fol.KB.newSubgraph({"PathProblem"}, {folState->isNodeOfParentGraph});
   pathProblemSpecs = &pathProblemNode->graph();
 
   //-- collect 'path nodes'

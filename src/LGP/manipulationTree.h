@@ -25,6 +25,7 @@ struct ManipulationTree_Node{
   FOL_World& fol; ///< the symbolic KB (all Graphs below are subgraphs of this large KB)
   FOL_World::Handle decision; ///< the decision that led to this node
   Graph *folState; ///< the symbolic state after the decision
+  Graph *folAddToState; ///< facts that are added to the state /after/ the fol.transition, e.g., infeasibility predicates
   Node  *folDecision; ///< the predicate in the folState that represents the decision
 
   //-- kinematics: the kinematic structure of the world after the decision path
