@@ -4,6 +4,10 @@
 #define DEBUG(x) //x
 #define DEL_INFEASIBLE(x) //x
 
+uint COUNT_evals=0;
+uint COUNT_seqOpt=0;
+uint COUNT_pathOpt=0;
+
 ManipulationTree_Node::ManipulationTree_Node(ors::KinematicWorld& kin, FOL_World& _fol)
   : parent(NULL), s(0), fol(_fol), folState(NULL), folAddToState(NULL), folDecision(NULL),
     startKinematics(kin),
@@ -114,7 +118,7 @@ void ManipulationTree_Node::solvePoseProblem(){
   komo.setTiming(1,1,5.,1);
 
   komo.setSquaredQVelocities();
-  cout <<"  ** PoseProblem for state" <<*folState <<endl;
+//  cout <<"  ** PoseProblem for state" <<*folState <<endl;
   komo.setAbstractTask(0, *folState);
 
   komo.reset();
@@ -169,6 +173,8 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   } catch(const char* msg){
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
+  COUNT_evals += komo.opt->newton.evals;
+  COUNT_seqOpt++;
 
   DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
 //  komo.checkGradients();
@@ -184,7 +190,8 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
     seq = komo.x;
   }
 
-  if(!seqFeasible) labelInfeasible();
+  if(!seqFeasible)
+    labelInfeasible();
 }
 
 void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
@@ -213,7 +220,10 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   komo.reset();
   DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
   komo.run();
-  DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
+  DEBUG( komo.MP->reportFull(true, FILE("z.problem")); );
+
+  COUNT_evals += komo.opt->newton.evals;
+  COUNT_pathOpt++;
 
   Graph result = komo.getReport();
   double cost = result.get<double>({"total","sqrCosts"});
@@ -239,7 +249,7 @@ void ManipulationTree_Node::labelInfeasible(){
   NodeL symbols = folDecision->parents;
   symbols.prepend( fol.KB.getNode({"INFEASIBLE"}));
 
-  cout <<"\n *** LABELLING INFEASIBLE: "; listWrite(symbols); cout <<endl;
+//  cout <<"\n *** LABELLING INFEASIBLE: "; listWrite(symbols); cout <<endl;
   //-- find the right parent...
   ManipulationTree_Node* node = this;
   while(node->parent){
@@ -264,6 +274,7 @@ void ManipulationTree_Node::labelInfeasible(){
 
 //  ManipulationTree_Node *root=getRoot();
   node->recomputeAllFolStates();
+  node->recomputeAllMCStats();
 
 }
 
@@ -295,6 +306,25 @@ ManipulationTree_Node *ManipulationTree_Node::treePolicy_random(){
   return this;
 }
 
+ManipulationTree_Node *ManipulationTree_Node::treePolicy_softMax(double temperature){
+  if(isInfeasible) return NULL;
+  if(isTerminal){
+//    LOG(0) <<"stuck at terminal:" <<*this <<endl;
+    return NULL;
+  }
+  if(children.N){
+    arr Q(children.N);
+    for(uint i=0;i<children.N;i++) Q(i) = children.elem(i)->symCost;
+//    rndGauss(Q, .1, true);
+    Q *= -temperature;
+    Q = exp(Q);
+    normalizeDist(Q);
+    uint best = sampleMultinomial(Q); //.maxIndex();
+    return children.elem(best)->treePolicy_softMax(temperature);
+  }
+  return this;
+}
+
 bool ManipulationTree_Node::recomputeAllFolStates(){
   if(!parent){ //this is root
     folState->copy(*fol.start_state);
@@ -307,14 +337,16 @@ bool ManipulationTree_Node::recomputeAllFolStates(){
       folReward = fol.lastStepReward;
       isTerminal = fol.successEnd;
       if(fol.deadEnd){
-        isInfeasible=true;
+        if(!seqFeasible && !pathFeasible) //seq or path have already proven it feasible! Despite the logic...
+          isInfeasible=true;
         return false;
       }
       folState->copy(*fol.state);
       if(folAddToState) applyEffectLiterals(*folState, *folAddToState, {}, NULL);
       folDecision = folState->getNode("decision");
     }else{
-      isInfeasible=true;
+      if(!seqFeasible && !pathFeasible) //seq or path have already proven it feasible! Despite the logic...
+        isInfeasible=true;
       return false;
     }
   }
@@ -327,6 +359,20 @@ bool ManipulationTree_Node::recomputeAllFolStates(){
     }
   }
   return true;
+}
+
+void ManipulationTree_Node::recomputeAllMCStats(bool excludeLeafs){
+  if(!mcStats) return;
+  if(children.N || !excludeLeafs || isInfeasible)
+    mcStats->clear();
+  for(ManipulationTree_Node* ch:children){
+    ch->recomputeAllMCStats();
+    for(double x:ch->mcStats->X) mcStats->add(x);
+  }
+  if(mcStats->n)
+    symCost = - mcStats->X.first();
+  else
+    symCost = 100.;
 }
 
 void ManipulationTree_Node::checkConsistency(){
@@ -376,7 +422,7 @@ void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
   }
   graphIndex = n->index;
   n->keys.append(STRING("s:" <<s <<" t:" <<time <<' ' <<folState->isNodeOfParentGraph->keys.scalar()));
-  if(mcStats) n->keys.append(STRING("MC best:" <<mcStats->X.first() <<" n:" <<mcStats->n));
+  if(mcStats && mcStats->n) n->keys.append(STRING("MC best:" <<mcStats->X.first() <<" n:" <<mcStats->n));
   n->keys.append(STRING("sym cost:" <<symCost <<" terminal:" <<isTerminal));
   n->keys.append(STRING("seq cost:" <<seqCost <<" feasible:" <<seqFeasible));
   n->keys.append(STRING("path cost:" <<pathCost <<" feasible:" <<pathFeasible));

@@ -12,6 +12,7 @@ struct MCStatistics{
   uint n;
   arr X;
   MCStatistics():n(0){}
+  void clear(){ X.clear(); n=0; }
   void add(double R, uint topSize=10);
 };
 

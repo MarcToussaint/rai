@@ -21,7 +21,7 @@ PlainMC::PlainMC(MCTS_Environment& world)
 
 void PlainMC::reset(){
   A = conv_stdvec2arr(world.get_actions());
-  if(verbose>1){ cout <<"START decisions: [" <<A.N <<']'; listWrite(A); cout <<endl; }
+//  if(verbose>1){ cout <<"START decisions: [" <<A.N <<']'; listWrite(A); cout <<endl; }
   D.clear();
   D.resize(A.N);
 }

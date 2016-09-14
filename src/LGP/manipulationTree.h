@@ -11,6 +11,8 @@ struct PlainMC;
 struct MCStatistics;
 typedef mlr::Array<ManipulationTree_Node*> ManipulationTree_NodeL;
 
+extern uint COUNT_evals, COUNT_seqOpt, COUNT_pathOpt;
+
 //===========================================================================
 
 struct ManipulationTree_Node{
@@ -71,7 +73,9 @@ struct ManipulationTree_Node{
   ManipulationTree_Node* getRoot(); ///< return the decision path in terms of a list of nodes (just walking to the root)
   void getAllChildren(ManipulationTree_NodeL& tree);
   ManipulationTree_Node *treePolicy_random(); ///< returns leave -- by descending children randomly
+  ManipulationTree_Node *treePolicy_softMax(double temperature);
   bool recomputeAllFolStates();
+  void recomputeAllMCStats(bool excludeLeafs=true);
 
   void checkConsistency();
 
