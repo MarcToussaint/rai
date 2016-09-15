@@ -11,7 +11,7 @@ struct PlainMC;
 struct MCStatistics;
 typedef mlr::Array<ManipulationTree_Node*> ManipulationTree_NodeL;
 
-extern uint COUNT_evals, COUNT_seqOpt, COUNT_pathOpt;
+extern uint COUNT_kin, COUNT_evals, COUNT_seqOpt, COUNT_pathOpt;
 
 //===========================================================================
 
@@ -47,7 +47,7 @@ struct ManipulationTree_Node{
   KOMO *poseProblem, *seqProblem, *pathProblem;
   Graph *poseProblemSpecs, *seqProblemSpecs, *pathProblemSpecs;
   arr pose, seq, path;
-  double symCost, poseCost, seqCost, pathCost;
+  double symCost, poseCost, seqCost, seqConstraints, pathCost, pathConstraints;
   double effPoseReward, costSoFar;
   bool symTerminal, poseFeasible, seqFeasible, pathFeasible;
 

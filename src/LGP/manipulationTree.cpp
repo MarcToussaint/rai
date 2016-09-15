@@ -4,6 +4,7 @@
 #define DEBUG(x) //x
 #define DEL_INFEASIBLE(x) //x
 
+uint COUNT_kin=0;
 uint COUNT_evals=0;
 uint COUNT_seqOpt=0;
 uint COUNT_pathOpt=0;
@@ -15,7 +16,7 @@ ManipulationTree_Node::ManipulationTree_Node(ors::KinematicWorld& kin, FOL_World
     effKinematics(kin),
     rootMC(NULL), mcStats(NULL),
     poseProblem(NULL), seqProblem(NULL), pathProblem(NULL),
-    symCost(0.), poseCost(0.), seqCost(0.), pathCost(0.), effPoseReward(0.), costSoFar(0.),
+    symCost(0.), poseCost(0.), seqCost(0.), seqConstraints(0.), pathCost(0.), pathConstraints(0.), effPoseReward(0.), costSoFar(0.),
     poseFeasible(false), seqFeasible(false), pathFeasible(false),
     inFringe1(false), inFringe2(false) {
   //this is the root node!
@@ -31,7 +32,7 @@ ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS
     effKinematics(parent->effKinematics),
     rootMC(NULL), mcStats(NULL),
     poseProblem(NULL), seqProblem(NULL), pathProblem(NULL),
-    symCost(0.), poseCost(0.), seqCost(0.), pathCost(0.), effPoseReward(0.), costSoFar(0.),
+    symCost(0.), poseCost(0.), seqCost(0.), seqConstraints(0.), pathCost(0.), pathConstraints(0.), effPoseReward(0.), costSoFar(0.),
     poseFeasible(false), seqFeasible(false), pathFeasible(false),
     inFringe1(false), inFringe2(false) {
   s=parent->s+1;
@@ -174,6 +175,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   COUNT_evals += komo.opt->newton.evals;
+  COUNT_kin += ors::KinematicWorld::setJointStateCount;
   COUNT_seqOpt++;
 
   DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
@@ -185,8 +187,9 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   double constraints = result.get<double>({"total","constraints"});
 
   if(!seq.N || cost<seqCost){
-    seqFeasible = (constraints<.5);
     seqCost = cost;
+    seqConstraints = constraints;
+    seqFeasible = (constraints<.5);
     seq = komo.x;
   }
 
@@ -223,14 +226,16 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   DEBUG( komo.MP->reportFull(true, FILE("z.problem")); );
 
   COUNT_evals += komo.opt->newton.evals;
+  COUNT_kin += ors::KinematicWorld::setJointStateCount;
   COUNT_pathOpt++;
 
   Graph result = komo.getReport();
   double cost = result.get<double>({"total","sqrCosts"});
   double constraints = result.get<double>({"total","constraints"});
   if(!path.N || cost<pathCost){
-    pathFeasible = (constraints<.5);
     pathCost = cost;
+    pathConstraints = constraints;
+    pathFeasible = (constraints<.5);
     path = komo.x;
   }
   //  komo.displayTrajectory(-1.);
@@ -424,8 +429,8 @@ void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
   n->keys.append(STRING("s:" <<s <<" t:" <<time <<' ' <<folState->isNodeOfParentGraph->keys.scalar()));
   if(mcStats && mcStats->n) n->keys.append(STRING("MC best:" <<mcStats->X.first() <<" n:" <<mcStats->n));
   n->keys.append(STRING("sym cost:" <<symCost <<" terminal:" <<isTerminal));
-  n->keys.append(STRING("seq cost:" <<seqCost <<" feasible:" <<seqFeasible));
-  n->keys.append(STRING("path cost:" <<pathCost <<" feasible:" <<pathFeasible));
+  n->keys.append(STRING("seq cost:" <<seqCost <<"seq con:" <<seqConstraints <<" feasible:" <<seqFeasible));
+  n->keys.append(STRING("path cost:" <<pathCost <<"path con:" <<pathConstraints <<" feasible:" <<pathFeasible));
   n->keys.append(STRING("costSoFar:" <<costSoFar));
   if(folAddToState) n->keys.append(STRING("symAdd:" <<*folAddToState));
 
@@ -440,7 +445,8 @@ void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
     if(seq.N) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=green";
   }
 //  if(inFringe1) G.getRenderingInfo(n).dotstyle <<" color=green";
-  if(inFringe2) G.getRenderingInfo(n).dotstyle <<" peripheries=2";
+  if(inFringe1) G.getRenderingInfo(n).dotstyle <<" peripheries=2";
+  if(inFringe2) G.getRenderingInfo(n).dotstyle <<" peripheries=3";
 
 //  n->keys.append(STRING("reward:" <<effPoseReward));
   for(ManipulationTree_Node *ch:children) ch->getGraph(G, n);
