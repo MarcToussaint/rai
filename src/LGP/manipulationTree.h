@@ -11,7 +11,7 @@ struct PlainMC;
 struct MCStatistics;
 typedef mlr::Array<ManipulationTree_Node*> ManipulationTree_NodeL;
 
-extern uint COUNT_kin, COUNT_evals, COUNT_seqOpt, COUNT_pathOpt;
+extern uint COUNT_kin, COUNT_evals, COUNT_poseOpt, COUNT_seqOpt, COUNT_pathOpt;
 
 //===========================================================================
 
@@ -20,19 +20,18 @@ struct ManipulationTree_Node{
   mlr::Array<ManipulationTree_Node*> children;
   uint s;               ///< decision depth/step of this node
   double time;          ///< real time
-  double folReward;
   uint graphIndex=0;
 
   //-- info on the state and action this node represents
   FOL_World& fol; ///< the symbolic KB (all Graphs below are subgraphs of this large KB)
   FOL_World::Handle decision; ///< the decision that led to this node
   Graph *folState; ///< the symbolic state after the decision
-  Graph *folAddToState; ///< facts that are added to the state /after/ the fol.transition, e.g., infeasibility predicates
   Node  *folDecision; ///< the predicate in the folState that represents the decision
+  double folReward;  ///< the reward collected with this transition step
+  Graph *folAddToState; ///< facts that are added to the state /after/ the fol.transition, e.g., infeasibility predicates
 
   //-- kinematics: the kinematic structure of the world after the decision path
   const ors::KinematicWorld& startKinematics; ///< initial start state kinematics
-//  ors::KinematicWorld kinematics; ///< actual kinematics after action (includes all previous switches)
   ors::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
 
   bool isExpanded=false;
@@ -47,7 +46,7 @@ struct ManipulationTree_Node{
   KOMO *poseProblem, *seqProblem, *pathProblem;
   Graph *poseProblemSpecs, *seqProblemSpecs, *pathProblemSpecs;
   arr pose, seq, path;
-  double symCost, poseCost, seqCost, seqConstraints, pathCost, pathConstraints;
+  double symCost, poseCost, poseConstraints, seqCost, seqConstraints, pathCost, pathConstraints;
   double effPoseReward, costSoFar;
   bool symTerminal, poseFeasible, seqFeasible, pathFeasible;
 

@@ -1,38 +1,36 @@
 #include "manipulationTree.h"
 #include <MCTS/solver_PlainMC.h>
 
-#define DEBUG(x) //x
+#define DEBUG(x) x
 #define DEL_INFEASIBLE(x) //x
 
 uint COUNT_kin=0;
 uint COUNT_evals=0;
+uint COUNT_poseOpt=0;
 uint COUNT_seqOpt=0;
 uint COUNT_pathOpt=0;
 
 ManipulationTree_Node::ManipulationTree_Node(ors::KinematicWorld& kin, FOL_World& _fol)
-  : parent(NULL), s(0), fol(_fol), folState(NULL), folAddToState(NULL), folDecision(NULL),
-    startKinematics(kin),
-//    kinematics(kin),
-    effKinematics(kin),
+  : parent(NULL), s(0),
+    fol(_fol), folState(NULL), folDecision(NULL), folReward(0.), folAddToState(NULL),
+    startKinematics(kin), effKinematics(),
     rootMC(NULL), mcStats(NULL),
     poseProblem(NULL), seqProblem(NULL), pathProblem(NULL),
-    symCost(0.), poseCost(0.), seqCost(0.), seqConstraints(0.), pathCost(0.), pathConstraints(0.), effPoseReward(0.), costSoFar(0.),
+    symCost(0.), poseCost(0.), poseConstraints(0.), seqCost(0.), seqConstraints(0.), pathCost(0.), pathConstraints(0.), effPoseReward(0.), costSoFar(0.),
     poseFeasible(false), seqFeasible(false), pathFeasible(false),
     inFringe1(false), inFringe2(false) {
   //this is the root node!
   fol.reset_state();
   folState = fol.createStateCopy();
-  hasEffKinematics = true;
 }
 
 ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS_Environment::Handle& a)
-  : parent(parent), fol(parent->fol), folState(NULL), folAddToState(NULL), folDecision(NULL),
-    startKinematics(parent->startKinematics),
-//    kinematics(parent->kinematics),
-    effKinematics(parent->effKinematics),
+  : parent(parent), fol(parent->fol),
+     folState(NULL), folDecision(NULL), folReward(0.), folAddToState(NULL),
+    startKinematics(parent->startKinematics), effKinematics(),
     rootMC(NULL), mcStats(NULL),
     poseProblem(NULL), seqProblem(NULL), pathProblem(NULL),
-    symCost(0.), poseCost(0.), seqCost(0.), seqConstraints(0.), pathCost(0.), pathConstraints(0.), effPoseReward(0.), costSoFar(0.),
+    symCost(0.), poseCost(0.), poseConstraints(0.), seqCost(0.), seqConstraints(0.), pathCost(0.), pathConstraints(0.), effPoseReward(0.), costSoFar(0.),
     poseFeasible(false), seqFeasible(false), pathFeasible(false),
     inFringe1(false), inFringe2(false) {
   s=parent->s+1;
@@ -106,47 +104,76 @@ void ManipulationTree_Node::addMCRollouts(uint num, int stepAbort){
 }
 
 void ManipulationTree_Node::solvePoseProblem(){
+
   //reset the effective kinematics:
-  if(parent && !parent->hasEffKinematics){
+  if(parent && !parent->effKinematics.q.N){
     MLR_MSG("parent needs to have computed the pose first!");
     return;
   }
-  if(parent) effKinematics = parent->effKinematics;
+  if(!parent) effKinematics = startKinematics;
+  else effKinematics = parent->effKinematics;
+
+  //-- collect 'path nodes'
+  ManipulationTree_NodeL treepath = getTreePath();
 
   poseProblem = new KOMO();
   KOMO& komo(*poseProblem);
   komo.setModel(effKinematics);
-  komo.setTiming(1,1,5.,1);
+  komo.setTiming(1., 2, 5., 1, false);
 
+  komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
-//  cout <<"  ** PoseProblem for state" <<*folState <<endl;
-  komo.setAbstractTask(0, *folState);
+//  komo.setSquaredFixJointVelocities(-1., -1., 1e3);
+  komo.setSquaredFixSwitchVelocities(-1., -1., 1e3);
 
-  komo.reset();
+  komo.setAbstractTask(0., *folState, true);
+//  for(ors::KinematicSwitch *sw: poseProblem->MP->switches){
+//    sw->timeOfApplication=2;
+//  }
+
+  DEBUG( FILE("z.fol") <<fol; )
   DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
-  komo.run();
+  komo.reset();
+  try{
+    komo.run();
+  } catch(const char* msg){
+    cout <<"KOMO FAILED: " <<msg <<endl;
+  }
+  COUNT_evals += komo.opt->newton.evals;
+  COUNT_kin += ors::KinematicWorld::setJointStateCount;
+  COUNT_poseOpt++;
+
+  DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
 
   Graph result = komo.getReport();
+  DEBUG( FILE("z.problem.cost") <<result; )
   double cost = result.get<double>({"total","sqrCosts"});
+  double constraints = result.get<double>({"total","constraints"});
+
   if(!pose.N || cost<poseCost){
     poseCost = cost;
+    poseConstraints = constraints;
+    poseFeasible = (constraints<.5);
     pose = komo.x;
   }
-//  komo.displayTrajectory(-1.);
 
+  if(!poseFeasible)
+    labelInfeasible();
 
-  effKinematics.setJointState(pose);
+  effKinematics = *poseProblem->MP->configurations.last();
 
-  for(ors::KinematicSwitch *sw: poseProblem->MP->switches)
-    if(sw->timeOfApplication==1) sw->apply(effKinematics);
+  for(ors::KinematicSwitch *sw: poseProblem->MP->switches){
+//    CHECK_EQ(sw->timeOfApplication, 1, "need to do this before the optimization..");
+    if(sw->timeOfApplication>=2) sw->apply(effKinematics);
+  }
   effKinematics.topSort();
-  effKinematics.checkConsistency();
+  DEBUG( effKinematics.checkConsistency(); )
   effKinematics.getJointState();
-  hasEffKinematics = true;
 }
 
 void ManipulationTree_Node::solveSeqProblem(int verbose){
-  if(!s){ seqFeasible=true; return; }//there is no sequence to compute
+
+  if(!s){ seqFeasible=true; return; } //there is no sequence to compute
 
   //-- collect 'path nodes'
   ManipulationTree_NodeL treepath = getTreePath();
@@ -165,7 +192,6 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
     komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState, true);
   }
 
-//  listWrite(treepath);
   DEBUG( FILE("z.fol") <<fol; )
   DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
   komo.reset();
@@ -198,10 +224,8 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
 }
 
 void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
-//  Node *pathProblemNode = fol.KB.newSubgraph({"PathProblem"}, {folState->isNodeOfParentGraph});
-//  pathProblemSpecs = &pathProblemNode->graph();
 
-  if(!s || !time) return; //there is no path to compute
+  if(!s){ pathFeasible=true; return; } //there is no path to compute
 
   //-- collect 'path nodes'
   ManipulationTree_NodeL treepath = getTreePath();
@@ -209,36 +233,46 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   pathProblem = new KOMO();
   KOMO& komo(*pathProblem);
   komo.setModel(startKinematics);
-  komo.setTiming(time, microSteps, 5., 2, false);
+  komo.setTiming(time+1., microSteps, 5., 2, false);
 
   komo.setHoming(-1., -1., 1e-2); //gradient bug??
   komo.setSquaredQAccelerations();
   komo.setSquaredFixJointVelocities(-1., -1., 1e3);
   komo.setSquaredFixSwitchVelocities(-1., -1., 1e3);
 
-  for(ManipulationTree_Node *node:treepath) {
+  for(ManipulationTree_Node *node:treepath){
     komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState, true);
   }
 
-  komo.reset();
+  DEBUG( FILE("z.fol") <<fol; )
   DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
-  komo.run();
-  DEBUG( komo.MP->reportFull(true, FILE("z.problem")); );
-
+  komo.reset();
+  try{
+    komo.run();
+  } catch(const char* msg){
+    cout <<"KOMO FAILED: " <<msg <<endl;
+  }
   COUNT_evals += komo.opt->newton.evals;
   COUNT_kin += ors::KinematicWorld::setJointStateCount;
   COUNT_pathOpt++;
 
+  DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
+//  komo.checkGradients();
+
   Graph result = komo.getReport();
+  DEBUG( FILE("z.problem.cost") <<result; )
   double cost = result.get<double>({"total","sqrCosts"});
   double constraints = result.get<double>({"total","constraints"});
+
   if(!path.N || cost<pathCost){
     pathCost = cost;
     pathConstraints = constraints;
     pathFeasible = (constraints<.5);
     path = komo.x;
   }
-  //  komo.displayTrajectory(-1.);
+
+  if(!pathFeasible)
+    labelInfeasible();
 }
 
 void ManipulationTree_Node::labelInfeasible(){
