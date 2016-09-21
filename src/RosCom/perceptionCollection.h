@@ -40,7 +40,7 @@ private:
 
   bool simulate;
 
-  bool has_cluster_transform = false;
+  bool has_tabletop_transform = false;
   bool has_alvar_transform = false;
 
 };

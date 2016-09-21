@@ -26,14 +26,14 @@ void Collector::step()
 
       if (msg.markers.size() > 0)
       {
-        if (!has_tabletop_tf)
+        if (!has_tabletop_transform)
         {
           tf::TransformListener listener;
           ors::Transformation tf;
           if (ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener, tf))
           {
             tabletop_srcFrame.set() = tf;
-            has_tabletop_tf = true;
+            has_tabletop_transform = true;
           }
         }
 
@@ -52,7 +52,7 @@ void Collector::step()
             inv.addRelativeTranslation(0,0,-1);
             inv.setInverse(inv);
             tabletop_srcFrame.set() = inv;
-            has_cluster_transform = true;
+            has_tabletop_transform = true;
           }
           catch (tf::TransformException &ex) {
               ROS_ERROR("%s",ex.what());
@@ -79,14 +79,14 @@ void Collector::step()
       if (msg.tables.size() > 0)
       {
 
-        if (!has_tabletop_tf)
+        if (!has_tabletop_transform)
         {
           tf::TransformListener listener;
           ors::Transformation tf;
           if (ros_getTransform("/base_footprint", msg.header.frame_id, listener, tf))
           {
             tabletop_srcFrame.set() = tf;
-            has_tabletop_tf = true;
+            has_tabletop_transform = true;
           }
         }
 
@@ -105,14 +105,14 @@ void Collector::step()
       const ar::AlvarMarkers msg = ar_pose_markers();
 
       for(auto & marker : msg.markers) {
-        if (!has_alvar_tf)
+        if (!has_alvar_transform)
         {
           tf::TransformListener listener;
           ors::Transformation tf;
           if (ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener, tf))
           {
             alvar_srcFrame.set() = tf;
-            has_alvar_tf = true;
+            has_alvar_transform = true;
           }
         }
 #if 0
@@ -196,6 +196,7 @@ Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker){
 }
 
 Plane conv_ROSTable2Plane(const object_recognition_msgs::Table& table){
+  ors::Transformation t = conv_pose2transformation(table.pose);
   arr hull = conv_points2arr(table.convex_hull);
   arr center = ARR(t.pos.x, t.pos.y, t.pos.z);
   ors::Vector norm = t.rot*ors::Vector(0,0,1);
