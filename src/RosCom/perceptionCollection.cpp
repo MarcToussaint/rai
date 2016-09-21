@@ -10,7 +10,6 @@ Collector::Collector(const bool simulate):
   tabletop_srcFrame.set()->setZero();
   alvar_srcFrame.set()->setZero();
   this->simulate = simulate;
-//  tf.setZero();
 }
 
 void Collector::step()
@@ -25,11 +24,25 @@ void Collector::step()
       tabletop_clusters_revision = cluster_rev;
       const visualization_msgs::MarkerArray msg = tabletop_clusters();
 
-      if (msg.markers.size() > 0){
-        if (!has_cluster_transform) { //get the transform from ROS
+      if (msg.markers.size() > 0)
+      {
+        if (!has_tabletop_tf)
+        {
+          tf::TransformListener listener;
+          ors::Transformation tf;
+          if (ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener, tf))
+          {
+            tabletop_srcFrame.set() = tf;
+            has_tabletop_tf = true;
+          }
+        }
 
+#if 0
+        if (!has_transform) { //get the transform from ROS
+          //MT: markers and clusters have the same transformation??
           // Convert into a position relative to the base.
           tf::TransformListener listener;
+          tf::StampedTransform baseTransform;
           try{
             ors::Transformation tf = ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener);
 
@@ -47,6 +60,7 @@ void Collector::step()
               exit(0);
           }
         }
+#endif
 
         for(auto & marker : msg.markers){
           Cluster* new_cluster = new Cluster(conv_ROSMarker2Cluster( marker ));
@@ -62,7 +76,19 @@ void Collector::step()
       tabletop_tableArray_revision = tableArray_rev;
       const object_recognition_msgs::TableArray msg = tabletop_tableArray();
 
-      if (msg.tables.size() > 0){
+      if (msg.tables.size() > 0)
+      {
+
+        if (!has_tabletop_tf)
+        {
+          tf::TransformListener listener;
+          ors::Transformation tf;
+          if (ros_getTransform("/base_footprint", msg.header.frame_id, listener, tf))
+          {
+            tabletop_srcFrame.set() = tf;
+            has_tabletop_tf = true;
+          }
+        }
 
         for(auto & table : msg.tables){
           Plane* new_plane = new Plane(conv_ROSTable2Plane( table ));
@@ -79,14 +105,26 @@ void Collector::step()
       const ar::AlvarMarkers msg = ar_pose_markers();
 
       for(auto & marker : msg.markers) {
-        if (!has_alvar_transform) { //get the transform from ROS
-
+        if (!has_alvar_tf)
+        {
+          tf::TransformListener listener;
+          ors::Transformation tf;
+          if (ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener, tf))
+          {
+            alvar_srcFrame.set() = tf;
+            has_alvar_tf = true;
+          }
+        }
+#if 0
+        if (!has_transform)
+        {
           // Convert into a position relative to the base.
           tf::TransformListener listener;
+          tf::StampedTransform baseTransform;
           try{
-            ors::Transformation tf = ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener);
-
-            //MT: really add the meter here? This seems hidden magic numbers in the code. And only for Baxter..?
+            listener.waitForTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), ros::Duration(1.0));
+            listener.lookupTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), baseTransform);
+            tf = conv_transform2transformation(baseTransform);
             ors::Transformation inv;
             inv.setInverse(tf);
             inv.addRelativeTranslation(0,0,-1);
@@ -100,13 +138,10 @@ void Collector::step()
               exit(0);
           }
         }
-
+#endif
 
         Alvar* new_alvar = new Alvar( conv_ROSAlvar2Alvar(marker) );
         new_alvar->frame = alvar_srcFrame.get();
-//        new_alvar->frame.setInverse(alvar_srcFrame.get());
-//        new_alvar->frame.addRelativeTranslation(0,0,-1);
-//        new_alvar->frame.setInverse(new_alvar->frame);
         percepts.append( new_alvar );
       }
     }
@@ -162,10 +197,13 @@ Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker){
 
 Plane conv_ROSTable2Plane(const object_recognition_msgs::Table& table){
   arr hull = conv_points2arr(table.convex_hull);
-  ors::Transformation t = conv_pose2transformation(table.pose);
-  arr center = t.pos.getArr();
-  arr normal = (t * Vector_z).getArr();
-  return Plane(normal, center, hull, table.header.frame_id);
+  arr center = ARR(t.pos.x, t.pos.y, t.pos.z);
+  ors::Vector norm = t.rot*ors::Vector(0,0,1);
+
+  arr normal = ARR(norm.x, norm.y, norm.z);
+  Plane toReturn = Plane(normal, center, hull, table.header.frame_id);
+  toReturn.transform = t;
+  return toReturn;
 }
 
 Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker){
