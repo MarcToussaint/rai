@@ -293,7 +293,7 @@ template<class T> struct Array {
   void anticipateMEM(uint Mforce){ resizeMEM(N, true, Mforce); if(!nd) nd=1; }
   void freeMEM();
   void resetD();
-  void init();
+//  void init();
 };
 
 //===========================================================================

@@ -54,7 +54,10 @@ template<class T> int mlr::Array<T>::sizeT=-1;
   header, which contains lots of functions that can be applied on
   Arrays. */
 
-template<class T> void mlr::Array<T>::init() {
+//***** constructors
+
+/// standard constructor -- this becomes an empty array
+template<class T> mlr::Array<T>::Array():d(&d0) {
   reference=false;
   if(sizeT==-1) sizeT=sizeof(T);
   if(memMove==(char)-1) {
@@ -73,59 +76,38 @@ template<class T> void mlr::Array<T>::init() {
   }
   p=NULL;
   M=N=nd=d0=d1=d2=0;
-  d=&d0;
+//  d=&d0;
   special=NULL;
 }
 
-
-//***** constructors
-
-/// standard constructor -- this becomes an empty array
-template<class T> mlr::Array<T>::Array():d(&d0) { init(); }
-
 /// copy constructor
-template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a) { init(); operator=(a); }
+template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a):Array() { operator=(a); }
 
 /// reference constructor
-template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i) { init(); referToDim(a, i); }
+template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i):Array() { referToDim(a, i); }
 
 /// reference constructor
-template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i, uint j) { init(); referToDim(a, i, j); }
+template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i, uint j):Array() { referToDim(a, i, j); }
 
 /// reference constructor
-template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i, uint j, uint k) { init(); referToDim(a, i, j, k); }
+template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i, uint j, uint k):Array() { referToDim(a, i, j, k); }
 
 /// constructor with resize
-template<class T> mlr::Array<T>::Array(uint i) { init(); resize(i); }
+template<class T> mlr::Array<T>::Array(uint i):Array() { resize(i); }
 
 /// constructor with resize
-template<class T> mlr::Array<T>::Array(uint i, uint j) { init(); resize(i, j); }
+template<class T> mlr::Array<T>::Array(uint i, uint j):Array() { resize(i, j); }
 
 /// constructor with resize
-template<class T> mlr::Array<T>::Array(uint i, uint j, uint k) { init(); resize(i, j, k); }
+template<class T> mlr::Array<T>::Array(uint i, uint j, uint k):Array() { resize(i, j, k); }
 
 /// this becomes a reference on the C-array \c p
-template<class T> mlr::Array<T>::Array(const T* p, uint size) { init(); referTo(p, size); }
+template<class T> mlr::Array<T>::Array(const T* p, uint size):Array() { referTo(p, size); }
 
+/// initialization via {1., 2., 3., ...} lists..
+template<class T> mlr::Array<T>::Array(std::initializer_list<T> list):Array() { operator=(list); }
 
-/**
- * @brief Initialization list for mlr::Array
- *
- * This makes it possible to initialize list like this:
-\code
-arr a = { 1.1, 2, 25.7, 12 };
-\endcode
- * See http://en.cppreference.com/w/cpp/utility/initializer_list for more.
- *
- * @param list the list used to initialize the array.
- */
-template<class T> mlr::Array<T>::Array(std::initializer_list<T> list) {
-  init();
-  for(T t : list) append(t);
-}
-
-template<class T> mlr::Array<T>::Array(mlr::FileToken& f) {
-  init();
+template<class T> mlr::Array<T>::Array(mlr::FileToken& f):Array() {
   read(f.getIs());
 }
 
@@ -1175,8 +1157,9 @@ template<class T> T*** mlr::Array<T>::getPointers(Array<T**>& array3d, Array<T*>
 //***** assignments
 
 template<class T> mlr::Array<T>& mlr::Array<T>::operator=(std::initializer_list<T> list) {
-  clear();
-  for(T t : list) append(t);
+  resize(list.size());
+  uint i=0;
+  for(T t : list) elem(i++)=t;
   return *this;
 }
 

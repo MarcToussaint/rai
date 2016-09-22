@@ -161,14 +161,11 @@ struct Quaternion {
 struct Transformation {
   Vector pos;     ///< position (translation)
   Quaternion rot; ///< orientation
-  Vector vel;     ///< linear velocity
-  Vector angvel;  ///< angular velocity
-  bool zeroVels;    ///< velocities are identically zero
   
   Transformation() {}
   Transformation(int zero){ CHECK_EQ(zero,0,"this is only for initialization with zero"); setZero(); }
-  Transformation(const Transformation &t) : pos(t.pos), rot(t.rot), vel(t.vel), angvel(t.angvel), zeroVels(t.zeroVels) {}
-  Transformation(const char* init) { read(mlr::String(init).stream()); }
+  Transformation(const Transformation &t) : pos(t.pos), rot(t.rot) {}
+  Transformation(const char* init) { setText(init); }
 
   Transformation& setZero();
   Transformation& setText(const char* txt);
@@ -185,11 +182,7 @@ struct Transformation {
   void addRelativeRotation(const Quaternion&);
   void addRelativeRotationDeg(double degree, double x, double y, double z);
   void addRelativeRotationRad(double rad, double x, double y, double z);
-  void addRelativeRotationQuat(double s, double x, double y, double z);
-  void addRelativeVelocity(double x, double y, double z);
-  void addRelativeAngVelocityDeg(double degree, double x, double y, double z);
-  void addRelativeAngVelocityRad(double rad, double x, double y, double z);
-  void addRelativeAngVelocityRad(double wx, double wy, double wz);
+  void addRelativeRotationQuat(double w, double x, double y, double z);
   
   void appendTransformation(const Transformation& f);     // this = this * f
   void appendInvTransformation(const Transformation& f);     // this = this * f^{-1}
@@ -201,6 +194,41 @@ struct Transformation {
   double* getInverseAffineMatrixGL(double *m) const;// in OpenGL format (transposed memory storage!!)
   
   void applyOnPointArray(arr& pts);
+
+  void write(std::ostream& os) const;
+  void read(std::istream& is);
+};
+
+/// includes linear & angular velocities
+struct DynamicTransformation : Transformation{
+  Vector vel;     ///< linear velocity
+  Vector angvel;  ///< angular velocity
+  bool zeroVels;    ///< velocities are identically zero
+
+  DynamicTransformation() {}
+  DynamicTransformation(int zero){ CHECK_EQ(zero,0,"this is only for initialization with zero"); setZero(); }
+  DynamicTransformation(const DynamicTransformation &t) : Transformation(t), vel(t.vel), angvel(t.angvel), zeroVels(t.zeroVels) {}
+  DynamicTransformation(const char* init) { read(mlr::String(init).stream()); }
+
+  DynamicTransformation& setZero();
+  DynamicTransformation& setText(const char* txt);
+  void setRandom();
+  void setInverse(const DynamicTransformation& f);
+  void setDifference(const DynamicTransformation& from, const DynamicTransformation& to);
+  void setAffineMatrix(const double *m);
+
+  bool isZero() const;
+  double diffZero() const;
+
+  void addRelativeTranslation(double x, double y, double z);
+  void addRelativeTranslation(const Vector& x_rel);
+  void addRelativeVelocity(double x, double y, double z);
+  void addRelativeAngVelocityDeg(double degree, double x, double y, double z);
+  void addRelativeAngVelocityRad(double rad, double x, double y, double z);
+  void addRelativeAngVelocityRad(double wx, double wy, double wz);
+
+  void appendTransformation(const DynamicTransformation& f);     // this = this * f
+  void appendInvTransformation(const DynamicTransformation& f);     // this = this * f^{-1}
 
   void write(std::ostream& os) const;
   void read(std::istream& is);
