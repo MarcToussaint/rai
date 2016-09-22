@@ -173,11 +173,7 @@ void RTControllerSimulation::step() {
     if(systematicError.N) u += systematicError;
 #endif
 
-//    world->stepDynamics(u, tau, 0., this->gravity);
-//    u /= (Kp_base+.001);
-    q += tau*qDot + .5*tau*tau*u;
-    qDot += tau*u;
-    world->setJointState(q,qDot);
+    world->stepDynamics(u, tau, 0., this->gravity);
   }
 
   checkNan(q);
