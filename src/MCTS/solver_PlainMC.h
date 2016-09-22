@@ -37,6 +37,8 @@ struct PlainMC{
   PlainMC(MCTS_Environment& world);
   void reset();
 
+  double initRollout(const mlr::Array<MCTS_Environment::Handle>& prefixDecisions);
+  double finishRollout(int stepAbort=-1);
   double generateRollout(int stepAbort=-1, const mlr::Array<MCTS_Environment::Handle>& prefixDecisions={});
   double addRollout(int stepAbort=-1);                 ///< adds one more rollout to the tree
   void addReturnToStatistics(double R, MCTS_Environment::Handle decision, int decisionIndex=-1);

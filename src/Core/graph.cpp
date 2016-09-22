@@ -301,6 +301,22 @@ Node* Graph::getEdge(Node *p1, Node *p2) const{
   return NULL;
 }
 
+Node* Graph::getEdge(const NodeL& parents) const{
+  CHECK(parents.N>0,"");
+  //grap 'sparsest' parent:
+  uint minSize = this->N;
+  Node *sparsestParent = NULL;
+  for(Node *p:parents) if(p->parentOf.N<minSize){ sparsestParent=p; minSize=p->parentOf.N; }
+  if(!sparsestParent){
+    for(Node *e:*this) if(e->parents==parents) return e;
+  }else{
+    for(Node *e:sparsestParent->parentOf) if(&e->container==this){
+      if(e->parents==parents) return e;
+    }
+  }
+  return NULL;
+}
+
 NodeL Graph::getNodesOfDegree(uint deg) {
   NodeL ret;
   for(Node *n: (*this)) if(n->parents.N==deg) ret.append(n);

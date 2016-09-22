@@ -1629,6 +1629,7 @@ dlauum = multiply L'*L
 #endif
 void blas_MM(arr& X, const arr& A, const arr& B) { mlr::useLapack=false; innerProduct(X, A, B); };
 void blas_MsymMsym(arr& X, const arr& A, const arr& B) { mlr::useLapack=false; innerProduct(X, A, B); };
+void blas_Mv(arr& y, const arr& A, const arr& x) {       mlr::useLapack=false; innerProduct(y, A, x); mlr::useLapack=true; };
 void blas_A_At(arr& X, const arr& A) { NICO }
 void blas_At_A(arr& X, const arr& A) { NICO }
 void lapack_cholesky(arr& C, const arr& A) { NICO }

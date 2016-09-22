@@ -26,7 +26,61 @@ void PlainMC::reset(){
   D.resize(A.N);
 }
 
+double PlainMC::initRollout(const mlr::Array<MCTS_Environment::Handle>& prefixDecisions){
+  world.reset_state();
+
+  //reset rollout 'return' variables
+  rolloutStep=0;
+  rolloutR=0.;
+  rolloutDiscount=1.;
+  rolloutDecisions.clear();
+
+  MCTS_Environment::TransitionReturn ret;
+
+  //-- follow prefixDecisions
+  for(uint i=0; i<prefixDecisions.N; i++){
+    MCTS_Environment::Handle& a = prefixDecisions(i);
+    if(verbose>1) cout <<"****************** MC: prefix decision " <<i <<": " <<*a <<endl;
+    rolloutDecisions.append(a);
+    ret = world.transition(a);
+    rolloutR += rolloutDiscount * ret.reward;
+    rolloutDiscount *= pow(gamma, ret.duration);  //  discount *= gamma;
+  }
+
+  return rolloutR;
+}
+
+double PlainMC::finishRollout(int stepAbort){
+  MCTS_Environment::TransitionReturn ret;
+
+  //-- continue with random rollout
+  while(!world.is_terminal_state() && (stepAbort<0 || rolloutStep++<(uint)stepAbort)){
+    mlr::Array<MCTS_Environment::Handle> actions;
+    actions = conv_stdvec2arr(world.get_actions()); //WARNING: conv... returns a reference!!
+    if(verbose>2){ cout <<"Possible decisions: "; listWrite(actions); cout <<endl; }
+    if(!actions.N){
+      if(verbose>1){ cout <<" -- no decisions left -> terminal" <<endl; }
+      break;
+    }
+    uint a = rand()%actions.N;
+    if(verbose>1) cout <<"****************** MC: random decision: " <<*actions(a) <<endl;
+    rolloutDecisions.append(actions(a));
+    ret = world.transition(actions(a));
+    rolloutR += rolloutDiscount * ret.reward;
+    rolloutDiscount *= pow(gamma, ret.duration);    //    discount *= gamma;
+  }
+
+  if(stepAbort>=0 && rolloutStep>=(uint)stepAbort) rolloutR -= 100.;
+  if(verbose>0) cout <<"****************** MC: terminal state reached; step=" <<rolloutStep <<" Return=" <<rolloutR <<endl;
+
+  return rolloutR;
+}
+
 double PlainMC::generateRollout(int stepAbort, const mlr::Array<MCTS_Environment::Handle>& prefixDecisions){
+#if 1
+  initRollout(prefixDecisions);
+  return finishRollout(stepAbort);
+#else
   world.reset_state();
 
   //reset rollout 'return' variables
@@ -68,6 +122,7 @@ double PlainMC::generateRollout(int stepAbort, const mlr::Array<MCTS_Environment
   if(verbose>0) cout <<"****************** MC: terminal state reached; step=" <<rolloutStep <<" Return=" <<rolloutR <<endl;
 
   return rolloutR;
+#endif
 }
 
 double PlainMC::addRollout(int stepAbort){

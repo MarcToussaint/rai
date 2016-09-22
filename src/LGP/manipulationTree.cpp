@@ -1,8 +1,8 @@
 #include "manipulationTree.h"
 #include <MCTS/solver_PlainMC.h>
 
-#define DEBUG(x) x
-#define DEL_INFEASIBLE(x) //x
+#define DEBUG(x) //x
+#define DEL_INFEASIBLE(x) x
 
 uint COUNT_kin=0;
 uint COUNT_evals=0;
@@ -16,12 +16,15 @@ ManipulationTree_Node::ManipulationTree_Node(ors::KinematicWorld& kin, FOL_World
     startKinematics(kin), effKinematics(),
     rootMC(NULL), mcStats(NULL),
     poseProblem(NULL), seqProblem(NULL), pathProblem(NULL),
-    symCost(0.), poseCost(0.), poseConstraints(0.), seqCost(0.), seqConstraints(0.), pathCost(0.), pathConstraints(0.), effPoseReward(0.), costSoFar(0.),
+    mcCount(0), poseCount(0), seqCount(0), pathCount(0),
+    symCost(0.), poseCost(0.), poseConstraints(0.), seqCost(0.), seqConstraints(0.), pathCost(0.), pathConstraints(0.),
     poseFeasible(false), seqFeasible(false), pathFeasible(false),
     inFringe1(false), inFringe2(false) {
   //this is the root node!
   fol.reset_state();
   folState = fol.createStateCopy();
+  rootMC = new PlainMC(fol);
+  rootMC->verbose = 0;
 }
 
 ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS_Environment::Handle& a)
@@ -30,7 +33,8 @@ ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS
     startKinematics(parent->startKinematics), effKinematics(),
     rootMC(NULL), mcStats(NULL),
     poseProblem(NULL), seqProblem(NULL), pathProblem(NULL),
-    symCost(0.), poseCost(0.), poseConstraints(0.), seqCost(0.), seqConstraints(0.), pathCost(0.), pathConstraints(0.), effPoseReward(0.), costSoFar(0.),
+    mcCount(0), poseCount(0), seqCount(0), pathCount(0),
+    symCost(0.), poseCost(0.), poseConstraints(0.), seqCost(0.), seqConstraints(0.), pathCost(0.), pathConstraints(0.),
     poseFeasible(false), seqFeasible(false), pathFeasible(false),
     inFringe1(false), inFringe2(false) {
   s=parent->s+1;
@@ -46,10 +50,12 @@ ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS
   folAddToState = NULL; //fresh creation -> notion to add
   folDecision = folState->getNode("decision");
   decision = a;
+  rootMC = parent->rootMC;
 }
 
 void ManipulationTree_Node::expand(){
   CHECK(!isExpanded,"");
+  if(isTerminal) return;
   fol.setState(folState, s);
   auto actions = fol.get_actions();
   for(FOL_World::Handle& a:actions){
@@ -73,7 +79,10 @@ arr ManipulationTree_Node::generateRootMCRollouts(uint num, int stepAbort, const
   arr R;
 
   for(uint k=0;k<num;k++){
-    R.append( rootMC->generateRollout(stepAbort, prefixDecisions) );
+    rootMC->initRollout(prefixDecisions);
+    fol.setState(folState);
+    double r = rootMC->finishRollout(stepAbort);
+    R.append( r );
   }
 
   return R;
@@ -88,7 +97,17 @@ void ManipulationTree_Node::addMCRollouts(uint num, int stepAbort){
 
 //  cout <<"DECISION PATH = "; listWrite(prefixDecisions); cout <<endl;
 
-  arr R = treepath.first()->generateRootMCRollouts(num, stepAbort, prefixDecisions);
+#if 0
+  arr R = generateRootMCRollouts(num, stepAbort, prefixDecisions);
+#else
+  arr R;
+  for(uint k=0;k<num;k++){
+    rootMC->initRollout(prefixDecisions);
+    fol.setState(folState);
+    double r = rootMC->finishRollout(stepAbort);
+    R.append( r );
+  }
+#endif
 
   for(ManipulationTree_Node* n:treepath){
     if(!n->mcStats) n->mcStats = new MCStatistics;
@@ -98,6 +117,7 @@ void ManipulationTree_Node::addMCRollouts(uint num, int stepAbort){
     }
   }
 
+  mcCount += num;
 //  mcStats->report();
 //  auto a = rootMC->getBestAction();
 //  cout <<"******** BEST ACTION " <<*a <<endl;
@@ -142,6 +162,7 @@ void ManipulationTree_Node::solvePoseProblem(){
   COUNT_evals += komo.opt->newton.evals;
   COUNT_kin += ors::KinematicWorld::setJointStateCount;
   COUNT_poseOpt++;
+  poseCount++;
 
   DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
 
@@ -149,6 +170,8 @@ void ManipulationTree_Node::solvePoseProblem(){
   DEBUG( FILE("z.problem.cost") <<result; )
   double cost = result.get<double>({"total","sqrCosts"});
   double constraints = result.get<double>({"total","constraints"});
+
+  if(parent) cost += parent->poseCost;
 
   if(!pose.N || cost<poseCost){
     poseCost = cost;
@@ -181,7 +204,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   seqProblem = new KOMO();
   KOMO& komo(*seqProblem);
   komo.setModel(startKinematics);
-  komo.setTiming(time+1., 2, 5., 1, false); //really + 1. phase??
+  komo.setTiming(time, 2, 5., 1, false); //really + 1. phase??
 
   komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
@@ -203,6 +226,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   COUNT_evals += komo.opt->newton.evals;
   COUNT_kin += ors::KinematicWorld::setJointStateCount;
   COUNT_seqOpt++;
+  seqCount++;
 
   DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
 //  komo.checkGradients();
@@ -233,7 +257,7 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   pathProblem = new KOMO();
   KOMO& komo(*pathProblem);
   komo.setModel(startKinematics);
-  komo.setTiming(time+1., microSteps, 5., 2, false);
+  komo.setTiming(time, microSteps, 5., 2, false);
 
   komo.setHoming(-1., -1., 1e-2); //gradient bug??
   komo.setSquaredQAccelerations();
@@ -255,6 +279,7 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   COUNT_evals += komo.opt->newton.evals;
   COUNT_kin += ors::KinematicWorld::setJointStateCount;
   COUNT_pathOpt++;
+  pathCount++;
 
   DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
 //  komo.checkGradients();
@@ -313,7 +338,7 @@ void ManipulationTree_Node::labelInfeasible(){
 
 //  ManipulationTree_Node *root=getRoot();
   node->recomputeAllFolStates();
-  node->recomputeAllMCStats();
+  node->recomputeAllMCStats(false);
 
 }
 
@@ -397,15 +422,18 @@ bool ManipulationTree_Node::recomputeAllFolStates(){
       i--;
     }
   }
+  DEBUG( if(!parent) FILE("z.fol") <<fol; )
   return true;
 }
 
 void ManipulationTree_Node::recomputeAllMCStats(bool excludeLeafs){
   if(!mcStats) return;
-  if(children.N || !excludeLeafs || isInfeasible)
-    mcStats->clear();
+  if(!isTerminal){
+    if(children.N || !excludeLeafs || isInfeasible)
+      mcStats->clear();
+  }
   for(ManipulationTree_Node* ch:children){
-    ch->recomputeAllMCStats();
+    ch->recomputeAllMCStats(excludeLeafs);
     for(double x:ch->mcStats->X) mcStats->add(x);
   }
   if(mcStats->n)
@@ -447,7 +475,6 @@ void ManipulationTree_Node::write(ostream& os, bool recursive) const{
   os <<" state= " <<*folState->isNodeOfParentGraph <<endl;
   for(uint i=0;i<s+1;i++) os <<"  ";  os <<" depth=" <<s <<endl;
   for(uint i=0;i<s+1;i++) os <<"  ";  os <<" poseCost=" <<poseCost <<endl;
-  for(uint i=0;i<s+1;i++) os <<"  ";  os <<" poseReward=" <<effPoseReward <<endl;
   for(uint i=0;i<s+1;i++) os <<"  ";  os <<" seqCost=" <<seqCost <<endl;
   for(uint i=0;i<s+1;i++) os <<"  ";  os <<" pathCost=" <<pathCost <<endl;
   if(recursive) for(ManipulationTree_Node *n:children) n->write(os);
@@ -462,10 +489,10 @@ void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
   graphIndex = n->index;
   n->keys.append(STRING("s:" <<s <<" t:" <<time <<' ' <<folState->isNodeOfParentGraph->keys.scalar()));
   if(mcStats && mcStats->n) n->keys.append(STRING("MC best:" <<mcStats->X.first() <<" n:" <<mcStats->n));
-  n->keys.append(STRING("sym cost:" <<symCost <<" terminal:" <<isTerminal));
-  n->keys.append(STRING("seq cost:" <<seqCost <<"seq con:" <<seqConstraints <<" feasible:" <<seqFeasible));
-  n->keys.append(STRING("path cost:" <<pathCost <<"path con:" <<pathConstraints <<" feasible:" <<pathFeasible));
-  n->keys.append(STRING("costSoFar:" <<costSoFar));
+  n->keys.append(STRING("sym  #" <<mcCount <<" f:" <<symCost <<" terminal:" <<isTerminal));
+  n->keys.append(STRING("pose #" <<poseCount <<" f:" <<poseCost <<" g:" <<poseConstraints <<" feasible:" <<poseFeasible));
+  n->keys.append(STRING("seq  #" <<seqCount <<" f:" <<seqCost <<" g:" <<seqConstraints <<" feasible:" <<seqFeasible));
+  n->keys.append(STRING("path #" <<pathCount <<" f:" <<pathCost <<" g:" <<pathConstraints <<" feasible:" <<pathFeasible));
   if(folAddToState) n->keys.append(STRING("symAdd:" <<*folAddToState));
 
   G.getRenderingInfo(n).dotstyle="shape=box";
@@ -473,10 +500,10 @@ void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
     if(isTerminal)  G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=violet";
     else G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=red";
   }else if(isTerminal){
-    if(seq.N) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=cyan";
+    if(seqCount || pathCount) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=cyan";
     else G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=blue";
   }else{
-    if(seq.N) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=green";
+    if(poseCount || seqCount || pathCount) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=green";
   }
 //  if(inFringe1) G.getRenderingInfo(n).dotstyle <<" color=green";
   if(inFringe1) G.getRenderingInfo(n).dotstyle <<" peripheries=2";
@@ -484,6 +511,11 @@ void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
 
 //  n->keys.append(STRING("reward:" <<effPoseReward));
   for(ManipulationTree_Node *ch:children) ch->getGraph(G, n);
+}
+
+void ManipulationTree_Node::getAll(ManipulationTree_NodeL& L){
+  L.append(this);
+  for(ManipulationTree_Node *ch:children) ch->getAll(L);
 }
 
 RUN_ON_INIT_BEGIN(manipulationTree)

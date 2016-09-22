@@ -46,8 +46,8 @@ struct ManipulationTree_Node{
   KOMO *poseProblem, *seqProblem, *pathProblem;
   Graph *poseProblemSpecs, *seqProblemSpecs, *pathProblemSpecs;
   arr pose, seq, path;
+  uint mcCount, poseCount, seqCount, pathCount;
   double symCost, poseCost, poseConstraints, seqCost, seqConstraints, pathCost, pathConstraints;
-  double effPoseReward, costSoFar;
   bool symTerminal, poseFeasible, seqFeasible, pathFeasible;
 
   bool inFringe1, inFringe2;
@@ -81,7 +81,8 @@ struct ManipulationTree_Node{
   void write(ostream& os=cout, bool recursive=false) const;
   void getGraph(Graph& G, Node *n=NULL);
   Graph getGraph(){ Graph G; getGraph(G, NULL); G.checkConsistency(); return G; }
-
+  void getAll(ManipulationTree_NodeL& L);
+  ManipulationTree_NodeL getAll(){ ManipulationTree_NodeL L; getAll(L); return L; }
 };
 
 inline ostream& operator<<(ostream& os, const ManipulationTree_Node& n){ n.write(os); return os; }

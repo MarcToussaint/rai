@@ -124,6 +124,7 @@ struct Graph : NodeL {
   Node* getNode(const char *key) const{ return findNode({key}, true, false); }
   Node* getNode(const StringA &keys) const{ return findNode(keys, true, false); }
   Node* getEdge(Node *p1, Node *p2) const;
+  Node* getEdge(const NodeL& parents) const;
 
   //-- get lists of nodes
   NodeL getNodes(const char* key) const{ return findNodes({key}); }
