@@ -132,7 +132,12 @@ struct Quaternion {
   void normalize();
   void multiply(double f);
   void alignWith(const Vector& v);
-  
+
+  void addX(double angle);
+  void addY(double angle);
+  void addZ(double angle);
+  void append(const Quaternion& q);
+
   double diffZero() const;
   bool isNormalized() const;
   double getDeg() const;
@@ -273,6 +278,9 @@ struct Camera {
 //
 // operators
 //
+
+// efficient
+void mult(Vector& a, const Quaternion& b, const Vector& c,bool add); //a += b*c (for add=true)
 
 // VECTOR
 double  operator*(const Vector&, const Vector&);

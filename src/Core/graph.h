@@ -178,6 +178,33 @@ Node_typed<Graph>* newSubGraph(Graph& container, const StringA& keys, const Node
 
 inline bool Node::isGraph() const{ return type==typeid(Graph); }
 
+//===========================================================================
+
+struct GraphEditCallback {
+  virtual ~GraphEditCallback(){}
+  virtual void cb_new(Node*){}
+  virtual void cb_delete(Node*){}
+  virtual void cb_graphDestruct(){}
+};
+
+//===========================================================================
+
+template<class T>
+struct ArrayG : mlr::Array<T>, GraphEditCallback {
+  Graph& G;
+
+  ArrayG(Graph& _G):G(_G){ this->memMove=true;  this->resize(G.N);  G.callbacks.append(this); }
+  ~ArrayG(){ G.callbacks.removeValue(this); }
+
+  T& operator()(Node *n) const { return this->elem(n->index); }
+
+  virtual void cb_new(Node *n){ this->insert(n->index, T()); }
+  virtual void cb_delete(Node *n){ this->remove(n->index); }
+};
+
+//===========================================================================
+
+
 #define GRAPH(str) \
   Graph(mlr::String(str).stream())
 
@@ -218,14 +245,6 @@ inline Graph& operator<<(Graph& G, const Nod& n){ G.append(n); return G; }
 //===========================================================================
 
 NodeL neighbors(Node*);
-
-//===========================================================================
-
-struct GraphEditCallback {
-  virtual ~GraphEditCallback(){}
-  virtual void cb_new(Node*){}
-  virtual void cb_delete(Node*){}
-};
 
 //===========================================================================
 //

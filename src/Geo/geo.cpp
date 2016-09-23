@@ -474,6 +474,62 @@ void Quaternion::alignWith(const Vector& v) {
   normalize();
 }
 
+void Quaternion::addX(double angle){
+  if(!angle){ return; }
+  angle/=2.;
+  double cw=cos(angle);
+  double cx=sin(angle);
+
+  Quaternion a;
+  a.w = w*cw - x*cx;
+  a.x = w*cx + x*cw;
+  a.y = y*cw + z*cx;
+  a.z = z*cw - y*cx;
+
+  set(a.w, a.x, a.y, a.z);
+}
+
+void Quaternion::addY(double angle){
+  if(!angle){ return; }
+  angle/=2.;
+  double cw=cos(angle);
+  double cy=sin(angle);
+
+  Quaternion a;
+  a.w = w*cw - y*cy;
+  a.x = x*cw - z*cy;
+  a.y = w*cy + y*cw;
+  a.z = z*cw + x*cy;
+
+  set(a.w, a.x, a.y, a.z);
+}
+
+void Quaternion::addZ(double angle){
+  if(!angle){ return; }
+  angle/=2.;
+  double cw=cos(angle);
+  double cz=sin(angle);
+
+  Quaternion a;
+  a.w = w*cw - z*cz;
+  a.x = x*cw + y*cz;
+  a.y = y*cw - x*cz;
+  a.z = w*cz + z*cw;
+
+  set(a.w, a.x, a.y, a.z);
+}
+
+void Quaternion::append(const Quaternion& q){
+  if(q.isZero) return;
+  double aw = w*q.w;
+  double ax = x*q.w;
+  double ay = y*q.w;
+  double az = z*q.w;
+  if(q.x){ aw -= x*q.x;  ax += w*q.x;  ay += z*q.x;  az -= y*q.x; }
+  if(q.y){ aw -= y*q.y;  ax -= z*q.y;  ay += w*q.y;  az += x*q.y; }
+  if(q.z){ aw -= z*q.z;  ax += y*q.z;  ay -= x*q.z;  az += w*q.z; }
+  w=aw; x=ax; y=ay; z=az; isZero=false;
+}
 
 /// set the quad
 void Quaternion::set(double* p) { w=p[0]; x=p[1]; y=p[2]; z=p[3]; isZero=(w==1. || w==-1.); }
@@ -823,11 +879,23 @@ Quaternion operator-(const Quaternion& b) {
 
 /// compound of two rotations (A=B*C)
 Quaternion operator*(const Quaternion& b, const Quaternion& c) {
+  if(c.isZero) return b;
+  if(b.isZero) return c;
   Quaternion a;
+#if 0
   a.w = b.w*c.w - b.x*c.x - b.y*c.y - b.z*c.z;
   a.x = b.w*c.x + b.x*c.w + b.y*c.z - b.z*c.y;
   a.y = b.w*c.y + b.y*c.w + b.z*c.x - b.x*c.z;
   a.z = b.w*c.z + b.z*c.w + b.x*c.y - b.y*c.x;
+#else
+  a.w = b.w*c.w;
+  a.x = b.x*c.w;
+  a.y = b.y*c.w;
+  a.z = b.z*c.w;
+  if(c.x){ a.w -= b.x*c.x;  a.x += b.w*c.x;  a.y += b.z*c.x;  a.z -= b.y*c.x; }
+  if(c.y){ a.w -= b.y*c.y;  a.x -= b.z*c.y;  a.y += b.w*c.y;  a.z += b.x*c.y; }
+  if(c.z){ a.w -= b.z*c.z;  a.x += b.y*c.z;  a.y -= b.x*c.z;  a.z += b.w*c.z; }
+#endif
   a.isZero=(a.w==1. || a.w==-1.);
   return a;
 }
@@ -843,31 +911,34 @@ Quaternion operator/(const Quaternion& b, const Quaternion& c) {
   return a;
 }
 
+void mult(Vector& a, const Quaternion& b, const Vector& c,bool add){
+  if(c.isZero){
+    if(!add) a.setZero();
+    return;
+  }
+  double Bx=2.*b.x, By=2.*b.y, Bz=2.*b.z;
+  double q11 = b.x*Bx;
+  double q22 = b.y*By;
+  double q33 = b.z*Bz;
+  double q12 = b.x*By;
+  double q13 = b.x*Bz;
+  double q23 = b.y*Bz;
+  double q01 = b.w*Bx;
+  double q02 = b.w*By;
+  double q03 = b.w*Bz;
+  if(!add) a.x=a.y=a.z=0.;
+  if(c.x){ a.x += (1.-q22-q33)*c.x; a.y += (q12+q03)*c.x; a.z += (q13-q02)*c.x; }
+  if(c.y){ a.x += (q12-q03)*c.y; a.y += (1.-q11-q33)*c.y; a.z += (q23+q01)*c.y; }
+  if(c.z){ a.x += (q13+q02)*c.z; a.y += (q23-q01)*c.z; a.z += (1.-q11-q22)*c.z; }
+  a.isZero = false;
+}
+
 /// transform of a vector by a rotation
 Vector operator*(const Quaternion& b, const Vector& c) {
-#if 1
-  double P1=2.*b.x, P2=2.*b.y, P3=2.*b.z;
-  double q11 = b.x*P1;
-  double q22 = b.y*P2;
-  double q33 = b.z*P3;
-  double q12 = b.x*P2;
-  double q13 = b.x*P3;
-  double q23 = b.y*P3;
-  double q01 = b.w*P1;
-  double q02 = b.w*P2;
-  double q03 = b.w*P3;
-  double m0=1.-q22-q33, m1=q12-q03,    m2=q13+q02;
-  double m3=q12+q03,    m4=1.-q11-q33, m5=q23-q01;
-  double m6=q13-q02,    m7=q23+q01,    m8=1.-q11-q22;
+  if(c.isZero) return Vector(0);
   Vector a;
-  a.x=m0*c.x+m1*c.y+m2*c.z;
-  a.y=m3*c.x+m4*c.y+m5*c.z;
-  a.z=m6*c.x+m7*c.y+m8*c.z;
-  a.isZero = c.isZero;
+  mult(a,b,c,false);
   return a;
-#else
-  return b.getMatrix()*c;
-#endif
 }
 
 /// inverse transform of a vector by a rotation
@@ -973,8 +1044,14 @@ void Transformation::addRelativeRotationQuat(double w, double x, double y, doubl
     which is interpreted RELATIVE to the current frame
     (new = old * f) */
 void Transformation::appendTransformation(const Transformation& f) {
-  if(!f.pos.isZero){ if(rot.isZero) pos += f.pos; else pos += rot*f.pos; }
-  if(!f.rot.isZero){ if(rot.isZero) rot = f.rot; else rot = rot*f.rot; }
+  if(!f.pos.isZero){
+    if(rot.isZero) pos += f.pos;
+    else mult(pos, rot, f.pos, true);
+  }
+  if(!f.rot.isZero){
+    if(rot.isZero) rot = f.rot;
+    else rot.append(f.rot);
+  }
 }
 
 /// inverse transform (new = old * f^{-1})

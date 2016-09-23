@@ -878,4 +878,5 @@ NodeL neighbors(Node* it){
 
 RUN_ON_INIT_BEGIN(graph)
 NodeL::memMove=true;
+GraphEditCallbackL::memMove=true;
 RUN_ON_INIT_END(graph)
