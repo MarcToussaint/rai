@@ -1639,6 +1639,7 @@ void lapack_RQ(arr& R, arr &Q, const arr& A) { NICO; }
 void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs) { NICO; }
 bool lapack_isPositiveSemiDefinite(const arr& symmA) { NICO; }
 void lapack_inverseSymPosDef(arr& Ainv, const arr& A) { NICO; }
+arr lapack_kSmallestEigenValues_sym(const arr& A, uint k){ NICO; }
 arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
   arr invA;
   inverse(invA, A);

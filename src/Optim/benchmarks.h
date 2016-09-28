@@ -39,7 +39,7 @@ extern ScalarFunction ChoiceFunction();
 
 struct RandomLPFunction:ConstrainedProblem {
   arr randomG;
-  virtual double fc(arr& phi, arr& J, TermTypeA& tt, const arr& x) {
+  virtual void fc(arr& phi, arr& J, TermTypeA& tt, const arr& x) {
     if(!randomG.N){
       randomG.resize(5*x.N+5,x.N+1);
       rndGauss(randomG, 1.);

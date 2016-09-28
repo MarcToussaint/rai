@@ -214,7 +214,7 @@ arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bay
   //I(0, 0)=1e-10; on classification is makes sense to include the bias in regularization, I think... (rescaling one beta only changes the slope of the sigmoid, not the decision boundary)
   
   arr f(n), p(n), Z(n), w(n), beta_update;
-  double logLike, lastLogLike, alpha=1.;
+  double logLike, lastLogLike=0., alpha=1.;
   arr beta(d);
   beta.setZero();
   for(uint k=0; k<100; k++) {
@@ -270,7 +270,7 @@ arr logisticRegressionMultiClass(const arr& X, const arr& y, double lambda) {
   I(0, 0)=1e-10;
   
   arr f(n, M), p(n, M), Z(n), w(n), beta_update;
-  double logLike, lastLogLike, alpha=1.;
+  double logLike, lastLogLike=0., alpha=1.;
   arr beta(d, M);
   beta.setZero();
   for(uint k=0; k<100; k++) {
