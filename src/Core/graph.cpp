@@ -141,12 +141,12 @@ void Node::write(std::ostream& os) const {
 }
 
 Nod::Nod(const char* key){
-  n = new Node_typed<bool>(G, true);
+  n = G.newNode<bool>(true);
   n->keys.append(STRING(key));
 }
 
 Nod::Nod(const char* key, const char* stringValue){
-  n = new Node_typed<mlr::String>(G, STRING(stringValue));
+  n = G.newNode<mlr::String>(STRING(stringValue));
   n->keys.append(STRING(key));
 }
 
@@ -157,26 +157,26 @@ Nod::Nod(const char* key, const char* stringValue){
 //  Graph methods
 //
 
-Graph::Graph():isNodeOfParentGraph(NULL) {
+Graph::Graph():isNodeOfGraph(NULL) {
 }
 
-Graph::Graph(const char* filename):isNodeOfParentGraph(NULL) {
+Graph::Graph(const char* filename):isNodeOfGraph(NULL) {
   read(mlr::FileToken(filename).getIs());
 }
 
-Graph::Graph(istream& is):isNodeOfParentGraph(NULL) {
+Graph::Graph(istream& is):isNodeOfGraph(NULL) {
   read(is);
 }
 
-Graph::Graph(const std::map<std::string, std::string>& dict):isNodeOfParentGraph(NULL) {
+Graph::Graph(const std::map<std::string, std::string>& dict):isNodeOfGraph(NULL) {
   appendDict(dict);
 }
 
-Graph::Graph(std::initializer_list<Nod> list):isNodeOfParentGraph(NULL)  {
-  for(const Nod& ni:list) append(ni);
+Graph::Graph(std::initializer_list<Nod> list):isNodeOfGraph(NULL)  {
+  for(const Nod& ni:list) newNode(ni);
 }
 
-Graph::Graph(const Graph& G):isNodeOfParentGraph(NULL) {
+Graph::Graph(const Graph& G):isNodeOfGraph(NULL) {
   *this = G;
 }
 
@@ -188,7 +188,7 @@ void Graph::clear() {
   while(N) delete last();
 }
 
-Graph& Graph::append(const Nod& ni){
+Graph& Graph::newNode(const Nod& ni){
   Node *clone = ni.n->newClone(*this); //this appends sequentially clones of all nodes to 'this'
   for(const mlr::String& s:ni.parents){
     Node *p = getNode(s);
@@ -200,16 +200,16 @@ Graph& Graph::append(const Nod& ni){
 }
 
 Node_typed<Graph>* Graph::newSubgraph(const StringA& keys, const NodeL& parents, const Graph& x){
-  Node_typed<Graph>* n = new Node_typed<Graph>(*this, keys, parents, Graph());
-  DEBUG( CHECK(n->value.isNodeOfParentGraph && &n->value.isNodeOfParentGraph->container==this,"") )
+  Node_typed<Graph>* n = newNode<Graph>(keys, parents, Graph());
+  DEBUG( CHECK(n->value.isNodeOfGraph && &n->value.isNodeOfGraph->container==this,"") )
   if(&x) n->value.copy(x);
   return n;
 }
 
-Node_typed<int>* Graph::append(const uintA& parentIdxs) {
+Node_typed<int>* Graph::newNode(const uintA& parentIdxs) {
   NodeL parents(parentIdxs.N);
   for(uint i=0;i<parentIdxs.N; i++) parents(i) = NodeL::elem(parentIdxs(i));
-  return append<int>({STRING(NodeL::N)}, parents, 0);
+  return newNode<int>({STRING(NodeL::N)}, parents, 0);
 }
 
 void Graph::appendDict(const std::map<std::string, std::string>& dict){
@@ -222,7 +222,7 @@ void Graph::appendDict(const std::map<std::string, std::string>& dict){
 Node* Graph::findNode(const StringA& keys, bool recurseUp, bool recurseDown) const {
   for(Node* n: (*this)) if(n->matches(keys)) return n;
   Node* ret=NULL;
-  if(recurseUp && isNodeOfParentGraph) ret = isNodeOfParentGraph->container.findNode(keys, true, false);
+  if(recurseUp && isNodeOfGraph) ret = isNodeOfGraph->container.findNode(keys, true, false);
   if(ret) return ret;
   if(recurseDown) for(Node *n: (*this)) if(n->isGraph()){
     ret = n->graph().findNode(keys, false, true);
@@ -234,7 +234,7 @@ Node* Graph::findNode(const StringA& keys, bool recurseUp, bool recurseDown) con
 Node* Graph::findNodeOfType(const std::type_info& type, const StringA& keys, bool recurseUp, bool recurseDown) const {
   for(Node* n: (*this)) if(n->type==type && n->matches(keys)) return n;
   Node* ret=NULL;
-  if(recurseUp && isNodeOfParentGraph) ret = isNodeOfParentGraph->container.findNodeOfType(type, keys, true, false);
+  if(recurseUp && isNodeOfGraph) ret = isNodeOfGraph->container.findNodeOfType(type, keys, true, false);
   if(ret) return ret;
   if(recurseDown) for(Node *n: (*this)) if(n->isGraph()){
     ret = n->graph().findNodeOfType(type, keys, false, true);
@@ -246,7 +246,7 @@ Node* Graph::findNodeOfType(const std::type_info& type, const StringA& keys, boo
 NodeL Graph::findNodes(const StringA& keys, bool recurseUp, bool recurseDown) const {
   NodeL ret;
   for(Node *n: (*this)) if(n->matches(keys)) ret.append(n);
-  if(recurseUp && isNodeOfParentGraph) ret.append( isNodeOfParentGraph->container.findNodes(keys, true, false) );
+  if(recurseUp && isNodeOfGraph) ret.append( isNodeOfGraph->container.findNodes(keys, true, false) );
   if(recurseDown) for(Node *n: (*this)) if(n->isGraph()) ret.append( n->graph().findNodes(keys, false, true) );
   return ret;
 }
@@ -254,20 +254,20 @@ NodeL Graph::findNodes(const StringA& keys, bool recurseUp, bool recurseDown) co
 NodeL Graph::findNodesOfType(const std::type_info& type, const StringA& keys, bool recurseUp, bool recurseDown) const {
   NodeL ret;
   for(Node *n: (*this)) if(n->type==type && n->matches(keys)) ret.append(n);
-  if(recurseUp && isNodeOfParentGraph) ret.append( isNodeOfParentGraph->container.findNodesOfType(type, keys, true, false) );
+  if(recurseUp && isNodeOfGraph) ret.append( isNodeOfGraph->container.findNodesOfType(type, keys, true, false) );
   if(recurseDown) for(Node *n: (*this)) if(n->isGraph()) ret.append( n->graph().findNodesOfType(type, keys, false, true) );
   return ret;
 }
 
 //Node* Graph::getNode(const char *key) const {
 //  for(Node *n: (*this)) if(n->matches(key)) return n;
-//  if(isNodeOfParentGraph) return isNodeOfParentGraph->container.getNode(key);
+//  if(isNodeOfGraph) return isNodeOfGraph->container.getNode(key);
 //  return NULL;
 //}
 
 //Node* Graph::getNode(const StringA &keys) const {
 //  for(Node *n: (*this)) if(n->matches(keys)) return n;
-//  if(isNodeOfParentGraph) return isNodeOfParentGraph->container.getNode(keys);
+//  if(isNodeOfGraph) return isNodeOfGraph->container.getNode(keys);
 //  return NULL;
 //}
 
@@ -349,8 +349,8 @@ Node* Graph::merge(Node *m){
 void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool allowCopySubgraphToNonsubgraph){
   DEBUG(G.checkConsistency());
 
-  if(!allowCopySubgraphToNonsubgraph && G.isNodeOfParentGraph){
-    if(!this->isNodeOfParentGraph){
+  if(!allowCopySubgraphToNonsubgraph && G.isNodeOfGraph){
+    if(!this->isNodeOfGraph){
       HALT("Typically you should not copy a subgraph into a non-subgraph (or call the copy operator with a subgraph).\
            Use 'newSubgraph' instead\
            If you still want to do it you need to ensure that all node parents are declared, and then enforce it by setting 'allowCopySubgraphToNonsubgraph'");
@@ -363,8 +363,8 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool allowCopySubgra
   NodeL newNodes;
 
   //-- if either is a subgraph, ensure they're a subgraph of the same -- over restrictive!!
-//  if(isNodeOfParentGraph || G.isNodeOfParentGraph){
-//    CHECK(&isNodeOfParentGraph->container==&G.isNodeOfParentGraph->container,"is already subgraph of another container!");
+//  if(isNodeOfGraph || G.isNodeOfGraph){
+//    CHECK(&isNodeOfGraph->container==&G.isNodeOfGraph->container,"is already subgraph of another container!");
 //  }
 
   //-- first, just clone nodes with their values -- 'parents' still point to the origin nodes
@@ -387,23 +387,24 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool allowCopySubgra
 
   //-- now copy subgraphs
   for(Node *n:newNodes) if(n->isGraph()){
-    n->graph().copy(G.elem(n->index-indexOffset)->graph()); //you can only call the operator= AFTER assigning isNodeOfParentGraph
+    n->graph().copy(G.elem(n->index-indexOffset)->graph()); //you can only call the operator= AFTER assigning isNodeOfGraph
   }
 
   //-- now rewire parental links
   for(Node *n:newNodes){
     for(uint i=0;i<n->parents.N;i++){
       Node *p=n->parents(i); //the parent in the origin graph
+      if(isChildOfGraph(p->container)) continue;
       if(&p->container==&G){ //parent is directly in G, no need for complicated search
         p->parentOf.removeValue(n);   //original parent is not parent of copy
         p = newNodes.elem(p->index);  //the true parent in the new graph
       }else{
         const Graph *newg=this, *oldg=&G;
         while(&p->container!=oldg){  //find the container while iterating backward also in the newG
-          CHECK(oldg->isNodeOfParentGraph,"");
-          CHECK(newg->isNodeOfParentGraph,"");
-          newg = &newg->isNodeOfParentGraph->container;
-          oldg = &oldg->isNodeOfParentGraph->container;
+          CHECK(oldg->isNodeOfGraph,"");
+          CHECK(newg->isNodeOfGraph,"");
+          newg = &newg->isNodeOfGraph->container;
+          oldg = &oldg->isNodeOfGraph->container;
         }
         CHECK(newg->N==oldg->N,"different size!!\n" <<*newg <<"**\n" <<*oldg);
         CHECK(p==oldg->elem(p->index),""); //we found the parent in oldg
@@ -545,40 +546,40 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
     if((c>='a' && c<='z') || (c>='A' && c<='Z')) { //mlr::String or boolean
       is.putback(c);
       str.read(is, "", " \n\r\t,;}", false);
-      if(str=="true") node = new Node_typed<bool>(*this, keys, parents, true);
-      else if(str=="false") node = new Node_typed<bool>(*this, keys, parents, false);
-      else node = new Node_typed<mlr::String>(*this, keys, parents, str);
+      if(str=="true") node = newNode<bool>(keys, parents, true);
+      else if(str=="false") node = newNode<bool>(keys, parents, false);
+      else node = newNode<mlr::String>(keys, parents, str);
     } else if(mlr::contains("-.0123456789", c)) {  //single double
       is.putback(c);
       double d;
       try { is >>d; } catch(...) PARSERR("can't parse the double number", pinfo);
-      node = new Node_typed<double>(*this, keys, parents, d);
+      node = newNode<double>(keys, parents, d);
     } else switch(c) {
       case '!': { //boolean false
-        node = new Node_typed<bool>(*this, keys, parents, false);
+        node = newNode<bool>(keys, parents, false);
       } break;
       case '\'': { //mlr::FileToken
         str.read(is, "", "\'", true);
         try{
 //          f->getIs();
-          node = new Node_typed<mlr::FileToken>(*this, keys, parents, mlr::FileToken(str, false));
+          node = newNode<mlr::FileToken>(keys, parents, mlr::FileToken(str, false));
           node->get<mlr::FileToken>().getIs();  //creates the ifstream and might throw an error
         } catch(...){
           delete node;
           PARSERR("file " <<str <<" does not exist -> converting to string!", pinfo);
-          node = new Node_typed<mlr::String>(*this, keys, parents, str);
+          node = newNode<mlr::String>(keys, parents, str);
 //          delete f;
         }
       } break;
       case '\"': { //mlr::String
         str.read(is, "", "\"", true);
-        node = new Node_typed<mlr::String>(*this, keys, parents, str);
+        node = newNode<mlr::String>(keys, parents, str);
       } break;
       case '[': { //arr
         is.putback(c);
         arr reals;
         is >>reals;
-        node = new Node_typed<arr>(*this, keys, parents, reals);
+        node = newNode<arr>(keys, parents, reals);
       } break;
       case '<': { //any type parser
         str.read(is, " \t", " \t\n\r()`-=~!@#$%^&*()+[]{};'\\:|,./<>?", false);
@@ -590,7 +591,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
           substr.read(is,"",">",false);
           PARSERR("could not parse value of type '" <<str <<"' -- no such type has been registered; converting this to string: '"<<substr<<"'", pinfo);
           str = STRING('<' <<str <<' ' <<substr <<'>');
-          node = new Node_typed<mlr::String>(*this, keys, parents, str);
+          node = newNode<mlr::String>(keys, parents, str);
         } else {
           node->keys = keys;
           node->parents = parents;
@@ -618,7 +619,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
 //          }
 //        }
 //        mlr::parse(is, ")");
-//        node = new Node_typed<Graph*>(*this, keys, parents, refs, true);
+//        node = newNode<Graph*>(keys, parents, refs, true);
 //      } break;
       default: { //error
         is.putback(c);
@@ -628,7 +629,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
     }
   } else { //no '=' or '{' -> boolean
     is.putback(c);
-    node = new Node_typed<bool>(*this, keys, parents, true);
+    node = newNode<bool>(keys, parents, true);
   }
   if(node) pinfo.value_end=is.tellg();
   pinfo.end=is.tellg();
@@ -794,6 +795,27 @@ RenderingInfo& Graph::getRenderingInfo(Node* n){
 
 }
 
+const Graph* Graph::getRootGraph() const{
+  const Graph* g=this;
+  for(;;){
+    const Node* n=g->isNodeOfGraph;
+    if(!n) break;
+    g = &n->container;
+  }
+  return g;
+}
+
+bool Graph::isChildOfGraph(const Graph& G) const{
+  const Graph* g=this;
+  for(;;){
+    const Node* n=g->isNodeOfGraph;
+    if(!n) break;
+    g = &n->container;
+    if(g==&G) return true;
+  }
+  return false;
+}
+
 bool Graph::checkConsistency() const{
   uint idx=0;
   for(Node *node: *this){
@@ -807,7 +829,7 @@ bool Graph::checkConsistency() const{
       const Node *parentGraphNode;
       while(&parent->container!=parentGraph){
         //we need to descend one more
-        parentGraphNode = parentGraph->isNodeOfParentGraph;
+        parentGraphNode = parentGraph->isNodeOfGraph;
         CHECK(parentGraphNode,"there is no more supergraph to find the parent");
         parentGraph = &parentGraphNode->container;
       }
@@ -818,7 +840,7 @@ bool Graph::checkConsistency() const{
     }
     if(node->isGraph()){
       Graph& G = node->graph();
-      CHECK_EQ(G.isNodeOfParentGraph, node, "");
+      CHECK_EQ(G.isNodeOfGraph, node, "");
       G.checkConsistency();
     }
     idx++;
@@ -857,7 +879,7 @@ bool operator==(const Graph& A, const Graph& B){
 //===========================================================================
 
 Node_typed<Graph>* newSubGraph(Graph& container, const StringA& keys, const NodeL& parents){
-  return new Node_typed<Graph>(container, keys, parents, Graph());
+  return container.newNode<Graph>(keys, parents, Graph());
 }
 
 //===========================================================================

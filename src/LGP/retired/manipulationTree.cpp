@@ -5,7 +5,7 @@ void ManipulationTree_Node::solvePoseProblem(){
 
 #if 0
   if(true || !poseProblem){ //create the pose problem
-    Node *n = fol.KB.newSubgraph({"PoseProblem"}, {folState->isNodeOfParentGraph});
+    Node *n = fol.KB.newSubgraph({"PoseProblem"}, {folState->isNodeOfGraph});
     poseProblemSpecs = &n->graph();
     poseProblemSpecs->copy(*folState, &fol.KB);
     NodeL komoRules = fol.KB.getNodes("PoseProblemRule");  //  listWrite(komoRules, cout, "\n"); cout <<endl;
@@ -72,7 +72,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   if(!s) return;
 
   //-- create new problem declaration (within the KB)
-  Node *seqProblemNode = fol.KB.newSubgraph({"SeqProblem"}, {folState->isNodeOfParentGraph});
+  Node *seqProblemNode = fol.KB.newSubgraph({"SeqProblem"}, {folState->isNodeOfGraph});
   seqProblemSpecs = &seqProblemNode->graph();
 
   //-- collect 'path nodes'
@@ -101,7 +101,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
       }
     }
     seqProblemSpecs->copy(changes, true);
-    delete changes.isNodeOfParentGraph;
+    delete changes.isNodeOfGraph;
 //    cout <<"SEQ PROBLEM: (s=" <<node->s <<")\n" <<*seqProblemSpecs <<endl;
   }
 
@@ -168,7 +168,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
 }
 
 void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
-  Node *pathProblemNode = fol.KB.newSubgraph({"PathProblem"}, {folState->isNodeOfParentGraph});
+  Node *pathProblemNode = fol.KB.newSubgraph({"PathProblem"}, {folState->isNodeOfGraph});
   pathProblemSpecs = &pathProblemNode->graph();
 
   //-- collect 'path nodes'

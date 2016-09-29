@@ -58,6 +58,7 @@ struct PlainMC{
   double addRollout(int stepAbort=-1);                 ///< adds one more rollout to the tree
   void addReturnToStatistics(double R, MCTS_Environment::Handle decision, int decisionIndex=-1);
   void report();
+  uint getBestActionIdx();
   MCTS_Environment::Handle getBestAction();
 };
 
