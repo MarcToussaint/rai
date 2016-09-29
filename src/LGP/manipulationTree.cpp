@@ -85,7 +85,7 @@ arr ManipulationTree_Node::generateRootMCRollouts(uint num, int stepAbort, const
   CHECK(!parent, "generating rollouts needs to be done by the root only");
 
   fol.reset_state();
-//  cout <<"********\n *** MC from STATE=" <<*fol.state->isNodeOfParentGraph <<endl;
+//  cout <<"********\n *** MC from STATE=" <<*fol.state->isNodeOfGraph <<endl;
   if(!rootMC){
     rootMC = new PlainMC(fol);
     rootMC->verbose = 0;
@@ -347,7 +347,7 @@ void ManipulationTree_Node::labelInfeasible(){
   }
 
   if(!node->folAddToState){
-    node->folAddToState = &fol.KB.newSubgraph({"ADD"}, {node->folState->isNodeOfParentGraph})->value;
+    node->folAddToState = &fol.KB.newSubgraph({"ADD"}, {node->folState->isNodeOfGraph})->value;
   }
   new Node_typed<bool>(*node->folAddToState, {}, symbols, true);
 
@@ -460,7 +460,7 @@ void ManipulationTree_Node::recomputeAllMCStats(bool excludeLeafs){
 void ManipulationTree_Node::checkConsistency(){
   //-- check that the state->parent points to the parent's state
   if(parent){
-    CHECK_EQ(parent->folState->isNodeOfParentGraph, folState->isNodeOfParentGraph->parents.scalar(), "");
+    CHECK_EQ(parent->folState->isNodeOfGraph, folState->isNodeOfGraph->parents.scalar(), "");
     CHECK_EQ(&folDecision->container, folState, "");
   }
 
@@ -487,7 +487,7 @@ void ManipulationTree_Node::write(ostream& os, bool recursive) const{
   else os <<" a=<ROOT>"<<endl;
 
   for(uint i=0;i<s+1;i++) os <<"  ";
-  os <<" state= " <<*folState->isNodeOfParentGraph <<endl;
+  os <<" state= " <<*folState->isNodeOfGraph <<endl;
   for(uint i=0;i<s+1;i++) os <<"  ";  os <<" depth=" <<s <<endl;
   for(uint i=0;i<s+1;i++) os <<"  ";  os <<" poseCost=" <<poseCost <<endl;
   for(uint i=0;i<s+1;i++) os <<"  ";  os <<" seqCost=" <<seqCost <<endl;
@@ -502,7 +502,7 @@ void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
     n = new Node_typed<bool>(G, {STRING("a:"<<*decision)}, {n}, true);
   }
   graphIndex = n->index;
-  n->keys.append(STRING("s:" <<s <<" t:" <<time <<' ' <<folState->isNodeOfParentGraph->keys.scalar()));
+  n->keys.append(STRING("s:" <<s <<" t:" <<time <<' ' <<folState->isNodeOfGraph->keys.scalar()));
   if(mcStats && mcStats->n) n->keys.append(STRING("MC best:" <<mcStats->X.first() <<" n:" <<mcStats->n));
   n->keys.append(STRING("sym  #" <<mcCount <<" f:" <<symCost <<" terminal:" <<isTerminal));
   n->keys.append(STRING("pose #" <<poseCount <<" f:" <<poseCost <<" g:" <<poseConstraints <<" feasible:" <<poseFeasible));

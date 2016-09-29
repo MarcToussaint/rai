@@ -80,7 +80,7 @@ stdOutPipe(Node)
 //===========================================================================
 
 struct Graph : NodeL {
-  Node *isNodeOfParentGraph;
+  Node *isNodeOfGraph; // rename: isNodeOfGraph
 
   ParseInfoL pi;
   RenderingInfoL ri;
@@ -144,6 +144,10 @@ struct Graph : NodeL {
   //-- merging nodes  //TODO: explain better
   Node *merge(Node* m); //removes m and deletes, if it is a member of This and merged with another Node
   void merge(const NodeL& L){ for(Node *m:L) merge(m); }
+
+  //-- hierarchical finding: up and down in the graph hierarchy
+  const Graph* getRootGraph() const;
+  bool isChildOfGraph(const Graph& G) const;
 
   //-- debugging
   bool checkConsistency() const;

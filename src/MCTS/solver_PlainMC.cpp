@@ -187,7 +187,7 @@ void PlainMC::report(){
   }
 }
 
-MCTS_Environment::Handle PlainMC::getBestAction(){
+uint PlainMC::getBestActionIdx(){
   arr Q(A.N);
   double Qmin=0.;
   if(world.get_info(world.hasMinReward)) Qmin = world.get_info_value(world.getMinReward);
@@ -197,7 +197,11 @@ MCTS_Environment::Handle PlainMC::getBestAction(){
     else
       Q(a) = Qmin;
   }
-  return A(Q.maxIndex());
+  return Q.maxIndex();
+}
+
+MCTS_Environment::Handle PlainMC::getBestAction(){
+  return A(getBestActionIdx());
 }
 
 
