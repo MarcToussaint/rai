@@ -216,7 +216,7 @@ void ConditionVariable::waitUntil(double absTime, bool userHasLocked) {
 //
 
 RevisionedAccessGatedClass::RevisionedAccessGatedClass(const char *_name):name(_name), revision(0), registryNode(NULL) {
-  registryNode = new Node_typed<RevisionedAccessGatedClass* >(registry(), {"Variable", name}, {}, this);
+  registryNode = registry().newNode<RevisionedAccessGatedClass* >({"Variable", name}, {}, this);
   listeners.memMove=true;
 }
 
@@ -412,7 +412,7 @@ protected:
 #endif
 
 Thread::Thread(const char* _name, double beatIntervalSec): name(_name), state(tsCLOSE), tid(0), thread(0), step_count(0), metronome(beatIntervalSec), registryNode(NULL)  {
-  registryNode = new Node_typed<Thread*>(registry(), {"Thread", name}, {}, this);
+  registryNode = registry().newNode<Thread*>({"Thread", name}, {}, this);
   if(name.N>14) name.resize(14, true);
 }
 

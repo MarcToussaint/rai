@@ -349,7 +349,7 @@ void ManipulationTree_Node::labelInfeasible(){
   if(!node->folAddToState){
     node->folAddToState = &fol.KB.newSubgraph({"ADD"}, {node->folState->isNodeOfGraph})->value;
   }
-  new Node_typed<bool>(*node->folAddToState, {}, symbols, true);
+  node->folAddToState->newNode<bool>({}, symbols, true);
 
 //  ManipulationTree_Node *root=getRoot();
   node->recomputeAllFolStates();
@@ -497,9 +497,9 @@ void ManipulationTree_Node::write(ostream& os, bool recursive) const{
 
 void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
   if(!n){
-    n = new Node_typed<bool>(G, {"a:<ROOT>"}, NodeL(), true);
+    n = G.newNode<bool>({"a:<ROOT>"}, NodeL(), true);
   }else{
-    n = new Node_typed<bool>(G, {STRING("a:"<<*decision)}, {n}, true);
+    n = G.newNode<bool>({STRING("a:"<<*decision)}, {n}, true);
   }
   graphIndex = n->index;
   n->keys.append(STRING("s:" <<s <<" t:" <<time <<' ' <<folState->isNodeOfGraph->keys.scalar()));

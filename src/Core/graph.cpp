@@ -141,12 +141,12 @@ void Node::write(std::ostream& os) const {
 }
 
 Nod::Nod(const char* key){
-  n = new Node_typed<bool>(G, true);
+  n = G.newNode<bool>(true);
   n->keys.append(STRING(key));
 }
 
 Nod::Nod(const char* key, const char* stringValue){
-  n = new Node_typed<mlr::String>(G, STRING(stringValue));
+  n = G.newNode<mlr::String>(STRING(stringValue));
   n->keys.append(STRING(key));
 }
 
@@ -173,7 +173,7 @@ Graph::Graph(const std::map<std::string, std::string>& dict):isNodeOfGraph(NULL)
 }
 
 Graph::Graph(std::initializer_list<Nod> list):isNodeOfGraph(NULL)  {
-  for(const Nod& ni:list) append(ni);
+  for(const Nod& ni:list) newNode(ni);
 }
 
 Graph::Graph(const Graph& G):isNodeOfGraph(NULL) {
@@ -188,7 +188,7 @@ void Graph::clear() {
   while(N) delete last();
 }
 
-Graph& Graph::append(const Nod& ni){
+Graph& Graph::newNode(const Nod& ni){
   Node *clone = ni.n->newClone(*this); //this appends sequentially clones of all nodes to 'this'
   for(const mlr::String& s:ni.parents){
     Node *p = getNode(s);
@@ -200,16 +200,16 @@ Graph& Graph::append(const Nod& ni){
 }
 
 Node_typed<Graph>* Graph::newSubgraph(const StringA& keys, const NodeL& parents, const Graph& x){
-  Node_typed<Graph>* n = new Node_typed<Graph>(*this, keys, parents, Graph());
+  Node_typed<Graph>* n = newNode<Graph>(keys, parents, Graph());
   DEBUG( CHECK(n->value.isNodeOfGraph && &n->value.isNodeOfGraph->container==this,"") )
   if(&x) n->value.copy(x);
   return n;
 }
 
-Node_typed<int>* Graph::append(const uintA& parentIdxs) {
+Node_typed<int>* Graph::newNode(const uintA& parentIdxs) {
   NodeL parents(parentIdxs.N);
   for(uint i=0;i<parentIdxs.N; i++) parents(i) = NodeL::elem(parentIdxs(i));
-  return append<int>({STRING(NodeL::N)}, parents, 0);
+  return newNode<int>({STRING(NodeL::N)}, parents, 0);
 }
 
 void Graph::appendDict(const std::map<std::string, std::string>& dict){
@@ -546,40 +546,40 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
     if((c>='a' && c<='z') || (c>='A' && c<='Z')) { //mlr::String or boolean
       is.putback(c);
       str.read(is, "", " \n\r\t,;}", false);
-      if(str=="true") node = new Node_typed<bool>(*this, keys, parents, true);
-      else if(str=="false") node = new Node_typed<bool>(*this, keys, parents, false);
-      else node = new Node_typed<mlr::String>(*this, keys, parents, str);
+      if(str=="true") node = newNode<bool>(keys, parents, true);
+      else if(str=="false") node = newNode<bool>(keys, parents, false);
+      else node = newNode<mlr::String>(keys, parents, str);
     } else if(mlr::contains("-.0123456789", c)) {  //single double
       is.putback(c);
       double d;
       try { is >>d; } catch(...) PARSERR("can't parse the double number", pinfo);
-      node = new Node_typed<double>(*this, keys, parents, d);
+      node = newNode<double>(keys, parents, d);
     } else switch(c) {
       case '!': { //boolean false
-        node = new Node_typed<bool>(*this, keys, parents, false);
+        node = newNode<bool>(keys, parents, false);
       } break;
       case '\'': { //mlr::FileToken
         str.read(is, "", "\'", true);
         try{
 //          f->getIs();
-          node = new Node_typed<mlr::FileToken>(*this, keys, parents, mlr::FileToken(str, false));
+          node = newNode<mlr::FileToken>(keys, parents, mlr::FileToken(str, false));
           node->get<mlr::FileToken>().getIs();  //creates the ifstream and might throw an error
         } catch(...){
           delete node;
           PARSERR("file " <<str <<" does not exist -> converting to string!", pinfo);
-          node = new Node_typed<mlr::String>(*this, keys, parents, str);
+          node = newNode<mlr::String>(keys, parents, str);
 //          delete f;
         }
       } break;
       case '\"': { //mlr::String
         str.read(is, "", "\"", true);
-        node = new Node_typed<mlr::String>(*this, keys, parents, str);
+        node = newNode<mlr::String>(keys, parents, str);
       } break;
       case '[': { //arr
         is.putback(c);
         arr reals;
         is >>reals;
-        node = new Node_typed<arr>(*this, keys, parents, reals);
+        node = newNode<arr>(keys, parents, reals);
       } break;
       case '<': { //any type parser
         str.read(is, " \t", " \t\n\r()`-=~!@#$%^&*()+[]{};'\\:|,./<>?", false);
@@ -591,7 +591,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
           substr.read(is,"",">",false);
           PARSERR("could not parse value of type '" <<str <<"' -- no such type has been registered; converting this to string: '"<<substr<<"'", pinfo);
           str = STRING('<' <<str <<' ' <<substr <<'>');
-          node = new Node_typed<mlr::String>(*this, keys, parents, str);
+          node = newNode<mlr::String>(keys, parents, str);
         } else {
           node->keys = keys;
           node->parents = parents;
@@ -619,7 +619,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
 //          }
 //        }
 //        mlr::parse(is, ")");
-//        node = new Node_typed<Graph*>(*this, keys, parents, refs, true);
+//        node = newNode<Graph*>(keys, parents, refs, true);
 //      } break;
       default: { //error
         is.putback(c);
@@ -629,7 +629,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
     }
   } else { //no '=' or '{' -> boolean
     is.putback(c);
-    node = new Node_typed<bool>(*this, keys, parents, true);
+    node = newNode<bool>(keys, parents, true);
   }
   if(node) pinfo.value_end=is.tellg();
   pinfo.end=is.tellg();
@@ -879,7 +879,7 @@ bool operator==(const Graph& A, const Graph& B){
 //===========================================================================
 
 Node_typed<Graph>* newSubGraph(Graph& container, const StringA& keys, const NodeL& parents){
-  return new Node_typed<Graph>(container, keys, parents, Graph());
+  return container.newNode<Graph>(keys, parents, Graph());
 }
 
 //===========================================================================

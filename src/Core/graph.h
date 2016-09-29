@@ -103,9 +103,10 @@ struct Graph : NodeL {
   void copy(const Graph& G, bool appendInsteadOfClear=false, bool allowCopySubgraphToNonsubgraph=false);
   
   //-- adding nodes (TODO:rename to newNode, newEdge)
-  template<class T> Node_typed<T> *append(const StringA& keys, const NodeL& parents, const T& x); ///<exactly equivalent to calling a Node_typed constructor
-  Node_typed<int>* append(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
-  Graph& append(const Nod& ni); ///< (internal) append a node initializer
+  template<class T> Node_typed<T>* newNode(const StringA& keys, const NodeL& parents, const T& x); ///<exactly equivalent to calling a Node_typed constructor
+  template<class T> Node_typed<T>* newNode(const T& x); ///<exactly equivalent to calling a Node_typed constructor
+  Node_typed<int>* newNode(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
+  Graph& newNode(const Nod& ni); ///< (internal) append a node initializer
   Node_typed<Graph>* newSubgraph(const StringA& keys, const NodeL& parents, const Graph& x=NoGraph);
   void appendDict(const std::map<std::string, std::string>& dict);
 
@@ -240,7 +241,7 @@ struct Nod{
 };
 
 /// pipe node initializers into a graph (to append nodes)
-inline Graph& operator<<(Graph& G, const Nod& n){ G.append(n); return G; }
+inline Graph& operator<<(Graph& G, const Nod& n){ G.newNode(n); return G; }
 
 //===========================================================================
 
