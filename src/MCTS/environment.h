@@ -1,3 +1,18 @@
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
+
+
 #pragma once
 
 #include <iostream>
@@ -12,7 +27,7 @@ using std::tuple;
  *  needs to provide the set of feasible decisions for the current state. For the MCTS solver, states, actions, and
  *  rewards are fully abstract entities -- they can only be referred to via 'handles'. */
 struct MCTS_Environment {
-    /** A generic State-Action-Observation object as abstraction of a real state, action, or observation. The environment can,
+    /** A generic State-or-Action-or-Observation object as abstraction of a real state, action, or observation. The environment can,
      *  via dynamic casting, get the semantics back. The MCTS solver should not use any other properties than equality. */
     struct SAO {
       virtual ~SAO(){}
@@ -24,22 +39,34 @@ struct MCTS_Environment {
             exit(-1);
         }
     };
+
     typedef std::shared_ptr<const SAO> Handle;
+
+    /** The return value of a state transition. We had 'tuples' first. But I don't like handling them */
+    struct TransitionReturn {
+      Handle observation;
+      double reward;
+      double duration;
+    };
+
 
     MCTS_Environment() = default;
   virtual ~MCTS_Environment(){}
 
     /// Perform the action; return the resulting observation and reward
-    virtual std::pair<Handle, double> transition(const Handle& action) = 0;
+    virtual TransitionReturn transition(const Handle& action) = 0;
 
     /// Perform a random action
-    virtual std::pair<Handle, double> transition_randomly(){
+    virtual TransitionReturn transition_randomly(){
       std::vector<Handle> actions = get_actions();
       return transition(actions[rand()%actions.size()]);
     }
 
     /// Get the available actions in the current state
     virtual const std::vector<Handle> get_actions() = 0;
+
+    /// Return whether action is feasible in current state
+    virtual bool is_feasible_action(const Handle& action){ return true; }
 
     /// Get the current state
     virtual const Handle get_state() = 0;

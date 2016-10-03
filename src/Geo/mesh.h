@@ -1,20 +1,16 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
 
 
 #ifndef MLR_mesh_h
@@ -62,7 +58,7 @@ struct Mesh : GLDrawer {
   void setGrid(uint X, uint Y);
 
   /// @name transform and modify
-  void subDevide();
+  void subDivide();
   void scale(double f);
   void scale(double sx, double sy, double sz);
   void translate(double dx, double dy, double dz);
@@ -79,6 +75,7 @@ struct Mesh : GLDrawer {
   void clean();
   void flipFaces();
   Vector getMeanVertex() const;
+  void getBox(double& dx, double& dy, double& dz) const;
   double getRadius() const;
   double getArea() const;
   double getCircum() const;
@@ -90,7 +87,7 @@ struct Mesh : GLDrawer {
   
   /// @name IO
   void write(std::ostream&) const; ///< only writes generic info
-  void read(std::istream&, const char* fileExtension);
+  void read(std::istream&, const char* fileExtension, const char* filename=NULL);
   void readFile(const char* filename);
   void readTriFile(std::istream& is);
   void readObjFile(std::istream& is);

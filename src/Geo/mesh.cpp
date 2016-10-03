@@ -1,22 +1,16 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
-
-
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
 
 #include "mesh.h"
 #include "qhull.h"
@@ -151,7 +145,7 @@ void ors::Mesh::setDodecahedron() {
 void ors::Mesh::setSphere(uint fineness) {
   setOctahedron();
   for(uint k=0; k<fineness; k++) {
-    subDevide();
+    subDivide();
     for(uint i=0; i<V.d0; i++) V[i]() /= length(V[i]);
   }
 }
@@ -161,7 +155,7 @@ void ors::Mesh::setHalfSphere(uint fineness) {
   V.resizeCopy(5, 3);
   T.resizeCopy(4, 3);
   for(uint k=0; k<fineness; k++) {
-    subDevide();
+    subDivide();
     for(uint i=0; i<V.d0; i++) V[i]() /= length(V[i]);
   }
 }
@@ -239,12 +233,12 @@ void ors::Mesh::setGrid(uint X, uint Y) {
 }
 
 void ors::Mesh::setRandom(uint vertices){
-  V.resize(10,3);
+  V.resize(vertices,3);
   rndUniform(V, -1., 1.);
   makeConvexHull();
 }
 
-void ors::Mesh::subDevide() {
+void ors::Mesh::subDivide() {
   uint v=V.d0, t=T.d0;
   V.resizeCopy(v+3*t, 3);
   uintA newT(4*t, 3);
@@ -367,8 +361,8 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
       y = X[i];
       y.append(x);
       phi(i+5) = DistanceFunction_SSBox(Jy, NoArr, y);
-      //      Jy.subRef(3,5)() *= -1.;
-      if(&J) J[i+5] = Jy.subRef(3,-1);
+      //      Jy.refRange(3,5)() *= -1.;
+      if(&J) J[i+5] = Jy.refRange(3,-1);
     }
   };
 
@@ -378,12 +372,12 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
   rot.setRandom();
   arr tX = X * rot.getArr(); //rotate points (with rot^{-1})
   arr ma = max(tX,0), mi = min(tX,0);  //get coordinate-wise min and max
-  x.subRef(0,2)() = (ma-mi)/2.;   //sizes
+  x.refRange(0,2)() = (ma-mi)/2.;   //sizes
   x(3) = 1.; //sum(ma-mi)/6.;  //radius
-  x.subRef(4,6)() = rot.getArr() * (mi+.5*(ma-mi)); //center (rotated back)
-  x.subRef(7,10)() = conv_quat2arr(rot);
-  rndGauss(x.subRef(7,10)(), .1, true);
-  x.subRef(7,10)() /= length(x.subRef(7,10)());
+  x.refRange(4,6)() = rot.getArr() * (mi+.5*(ma-mi)); //center (rotated back)
+  x.refRange(7,10)() = conv_quat2arr(rot);
+  rndGauss(x.refRange(7,10)(), .1, true);
+  x.refRange(7,10)() /= length(x.refRange(7,10)());
 
   if(verbose>1){
     checkJacobianCP(F, x, 1e-4);
@@ -429,8 +423,8 @@ void ors::Mesh::makeSSBox(arr& x, Transformation& t, const arr& X, uint trials, 
   }
 
   t.setZero();
-  t.pos.set( x.subRef(4,6) );
-  t.rot.set( x.subRef(7,-1) );
+  t.pos.set( x.refRange(4,6) );
+  t.rot.set( x.refRange(7,-1) );
   t.rot.normalize();
   setSSBox(2.*x(0), 2.*x(1), 2.*x(2), x(3));
   t.applyOnPointArray(V);
@@ -468,7 +462,7 @@ void ors::Mesh::computeNormals() {
     b.set(&V(T(i, 1), 0));
     c.set(&V(T(i, 2), 0));
 
-    b-=a; c-=a; a=b^c; a.normalize();
+    b-=a; c-=a; a=b^c; if(!a.isZero) a.normalize();
     Tn(i, 0)=a.x;  Tn(i, 1)=a.y;  Tn(i, 2)=a.z;
     Vn(T(i, 0), 0)+=a.x;  Vn(T(i, 0), 1)+=a.y;  Vn(T(i, 0), 2)+=a.z;
     Vn(T(i, 1), 0)+=a.x;  Vn(T(i, 1), 1)+=a.y;  Vn(T(i, 1), 2)+=a.z;
@@ -941,6 +935,15 @@ ors::Vector ors::Mesh::getMeanVertex() const {
   return Vector(Vmean);
 }
 
+void ors::Mesh::getBox(double& dx, double& dy, double& dz) const {
+  dx=dy=dz=0.;
+  for(uint i=0;i<V.d0;i++){
+    dx=mlr::MAX(dx, fabs(V(i,0)));
+    dy=mlr::MAX(dy, fabs(V(i,1)));
+    dz=mlr::MAX(dz, fabs(V(i,2)));
+  }
+}
+
 double ors::Mesh::getRadius() const {
   double r=0.;
   for(uint i=0;i<V.d0;i++) r=mlr::MAX(r, sumOfSqr(V[i]));
@@ -990,14 +993,14 @@ void ors::Mesh::write(std::ostream& os) const {
 }
 
 void ors::Mesh::readFile(const char* filename) {
-  read(FILE(filename).getIs(), filename+(strlen(filename)-3));
+  read(FILE(filename).getIs(), filename+(strlen(filename)-3), filename);
 }
 
-void ors::Mesh::read(std::istream& is, const char* fileExtension) {
+void ors::Mesh::read(std::istream& is, const char* fileExtension, const char* filename) {
   bool loaded=false;
   if(!strcmp(fileExtension, "obj")) { readObjFile(is); loaded=true; }
   if(!strcmp(fileExtension, "off")) { readOffFile(is); loaded=true; }
-  if(!strcmp(fileExtension, "ply")) { readPlyFile(is); loaded=true; }
+  if(!strcmp(fileExtension, "ply")) { readPLY(filename); loaded=true; }
   if(!strcmp(fileExtension, "tri")) { readTriFile(is); loaded=true; }
   if(!strcmp(fileExtension, "stl") || !strcmp(fileExtension, "STL")) { readStlFile(is); loaded=true; }
   if(!loaded) HALT("can't read fileExtension '" <<fileExtension <<"'");
@@ -1034,12 +1037,22 @@ void ors::Mesh::writeOffFile(const char* filename) {
 }
 
 void ors::Mesh::readOffFile(std::istream& is) {
-  uint i, k, nVertices, nFaces, nEdges;
-  is >>PARSE("OFF") >>nVertices >>nFaces >>nEdges;
+  uint i, k, nVertices, nFaces, nEdges, alpha;
+  bool color;
+  mlr::String tag;
+  is >>tag;
+  if(tag=="OFF") color=false;
+  else if(tag=="COFF") color=true;
+  else HALT("");
+  is >>nVertices >>nFaces >>nEdges;
   CHECK(!nEdges, "can't read edges in off file");
   V.resize(nVertices, 3);
   T.resize(nFaces   , 3);
-  for(i=0; i<V.N; i++) is >>V.elem(i);
+  if(color) C.resize(nVertices, 3);
+  for(i=0; i<V.d0; i++){
+    is >>V(i, 0) >>V(i, 1) >>V(i, 2);
+    if(color) is >>C(i,0) >>C(i,1) >>C(i,2) >>alpha;
+  }
   for(i=0; i<T.d0; i++) {
     is >>k;
     CHECK_EQ(k,3, "can only read triangles from OFF");
@@ -1136,25 +1149,27 @@ void ors::Mesh::writePLY(const char *fn, bool bin) {
 
 void ors::Mesh::readPLY(const char *fn) {
   struct PlyFace {    unsigned char nverts;  int *verts; };
-  struct Vertex {    double x,  y,  z ;  };
+  struct Vertex {    double x,  y,  z ;  byte r,g,b; };
   uint _nverts=0, _ntrigs=0;
-  Vertex   *_vertices   ;  /**< vertex   buffer */
   
   PlyProperty vert_props[]  = { /* list of property information for a PlyVertex */
-    {"x", Float64, Float64, offsetof(Vertex,x), 0, 0, 0, 0},
-    {"y", Float64, Float64, offsetof(Vertex,y), 0, 0, 0, 0},
-    {"z", Float64, Float64, offsetof(Vertex,z), 0, 0, 0, 0}
-//    {"nx", Float64, Float64, offsetof( Vertex,nx ), 0, 0, 0, 0},
-//    {"ny", Float64, Float64, offsetof( Vertex,ny ), 0, 0, 0, 0},
-//    {"nz", Float64, Float64, offsetof( Vertex,nz ), 0, 0, 0, 0}
-  };
+                                {"x", Float64, Float64, offsetof(Vertex,x), 0, 0, 0, 0},
+                                {"y", Float64, Float64, offsetof(Vertex,y), 0, 0, 0, 0},
+                                {"z", Float64, Float64, offsetof(Vertex,z), 0, 0, 0, 0},
+                                //    {"nx", Float64, Float64, offsetof( Vertex,nx ), 0, 0, 0, 0},
+                                //    {"ny", Float64, Float64, offsetof( Vertex,ny ), 0, 0, 0, 0},
+                                //    {"nz", Float64, Float64, offsetof( Vertex,nz ), 0, 0, 0, 0}
+                                {"red", Uint8, Uint8, offsetof(Vertex,r), 0,0,0,0},
+                                {"green", Uint8, Uint8, offsetof(Vertex,g), 0,0,0,0},
+                                {"blue", Uint8, Uint8, offsetof(Vertex,b), 0,0,0,0}
+                              };
   
   PlyProperty face_props[]  = { /* list of property information for a PlyFace */
-    {"vertex_indices", Int32, Int32, offsetof(PlyFace,verts), 1, Uint8, Uint8, offsetof(PlyFace,nverts)},
+                                {"vertex_indices", Int32, Int32, offsetof(PlyFace,verts), 1, Uint8, Uint8, offsetof(PlyFace,nverts)},
   };
   
   FILE    *fp  = fopen(fn, "r");
-  if(!fp) return ;
+  if(!fp) return;
   PlyFile *ply = read_ply(fp);
   
   //-- get the number of faces and vertices
@@ -1164,9 +1179,10 @@ void ors::Mesh::readPLY(const char *fn) {
     if(equal_strings("vertex", elem_name)) _nverts = elem_count;
     if(equal_strings("face",   elem_name)) _ntrigs = elem_count;
   }
-  _vertices  = new Vertex  [_nverts] ;
-  T.resize(_ntrigs,3) ;
-  
+  V.resize(_nverts,3);
+  C.resize(_nverts,3);
+  T.resize(_ntrigs,3);
+
   //-- examine each element type that is in the file (PlyVertex, PlyFace)
   for(int i = 0; i < ply->num_elem_types; ++i)  {
     int elem_count ;
@@ -1177,11 +1193,20 @@ void ors::Mesh::readPLY(const char *fn) {
       setup_property_ply(ply, &vert_props[0]);
       setup_property_ply(ply, &vert_props[1]);
       setup_property_ply(ply, &vert_props[2]);
-//      setup_property_ply(ply, &vert_props[3]);
-//      setup_property_ply(ply, &vert_props[4]);
-//      setup_property_ply(ply, &vert_props[5]);
+      setup_property_ply(ply, &vert_props[3]);
+      setup_property_ply(ply, &vert_props[4]);
+      setup_property_ply(ply, &vert_props[5]);
 
-      for(uint j = 0; j < _nverts; ++j)  get_element_ply(ply, (void *)(_vertices + j));
+      Vertex vertex;
+      for(uint j = 0; j < _nverts; ++j){
+        get_element_ply(ply, &vertex);
+        V(j,0) = vertex.x;
+        V(j,1) = vertex.y;
+        V(j,2) = vertex.z;
+        C(j,0) = vertex.r;
+        C(j,1) = vertex.g;
+        C(j,2) = vertex.b;
+      }
     } else if(equal_strings("face", elem_name))  {
       /* set up for getting PlyFace elements */
       /* (all we need are PlyVertex indices) */
@@ -1192,9 +1217,9 @@ void ors::Mesh::readPLY(const char *fn) {
         if(face.nverts != 3)
           HALT("not a triangulated surface: polygon " <<j <<" has " <<face.nverts <<" sides") ;
           
-        T(j,0) = face.verts[0] ;
-        T(j,1) = face.verts[1] ;
-        T(j,2) = face.verts[2] ;
+        T(j,0) = face.verts[0];
+        T(j,1) = face.verts[1];
+        T(j,2) = face.verts[2];
         
         free(face.verts) ;
       }
@@ -1204,11 +1229,6 @@ void ors::Mesh::readPLY(const char *fn) {
   
   close_ply(ply); //calls fclose
   free_ply(ply);
-  
-  //-- copy to mesh
-  doubleA Verts((double*)_vertices, _nverts*3);
-  V.takeOver(Verts);
-  V.reshape(V.N/3,3);
 }
 #else
 void ors::Mesh::writePLY(const char *fn, bool bin) { NICO }
@@ -1640,9 +1660,10 @@ void ors::Mesh::glDraw(struct OpenGL&) {
   glEnableClientState(GL_VERTEX_ARRAY);
   glEnableClientState(GL_NORMAL_ARRAY);
   if(C.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
+
   glVertexPointer(3, GL_DOUBLE, 0, V.p);
-  if(C.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
   glNormalPointer(GL_DOUBLE, 0, Vn.p);
+  if(C.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
 
   glDrawElements(GL_TRIANGLES, T.N, GL_UNSIGNED_INT, T.p);
 
@@ -2050,24 +2071,24 @@ double DistanceFunction_Box::f(arr& g, arr& H, const arr& x){
 ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> double{
   CHECK_EQ(x.N, 14, "pt + abcr + pose");
   ors::Transformation t;
-  t.pos.set( x.subRef(7,9) );
-  t.rot.set( x.subRef(10,13) );
+  t.pos.set( x.refRange(7,9) );
+  t.rot.set( x.refRange(10,13) );
   t.rot.normalize();
   arr closest, signs;
-  closestPointOnBox(closest, signs, t, x(3), x(4), x(5), x.subRef(0,2));
-  arr grad = x.subRef(0,2) - closest;
+  closestPointOnBox(closest, signs, t, x(3), x(4), x(5), x.refRange(0,2));
+  arr grad = x.refRange(0,2) - closest;
   double d = length(grad);
   grad /= d;
   d -= x(6);
   if(&g){
     g.resize(14);
     g.setZero();
-    g.subRef(0,2) = grad;
-    g.subRef(7,9) = - grad;
-    g.subRef(3,5) = - signs%(t.rot / ors::Vector(grad)).getArr();
+    g.refRange(0,2) = grad;
+    g.refRange(7,9) = - grad;
+    g.refRange(3,5) = - signs%(t.rot / ors::Vector(grad)).getArr();
     g(6) = -1.;
-    g.subRef(10,13) = ~grad*crossProduct(t.rot.getJacobian(), (x.subRef(0,2)-t.pos.getArr()));
-    g.subRef(10,13)() /= -sqrt(sumOfSqr(x.subRef(10,13))); //account for the potential non-normalization of q
+    g.refRange(10,13) = ~grad*crossProduct(t.rot.getJacobian(), (x.refRange(0,2)-t.pos.getArr()));
+    g.refRange(10,13)() /= -sqrt(sumOfSqr(x.refRange(10,13))); //account for the potential non-normalization of q
   }
   return d;
 };

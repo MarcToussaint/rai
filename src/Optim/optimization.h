@@ -1,20 +1,16 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
 
 
 /// @file
@@ -45,7 +41,7 @@ extern uint eval_cost;
  * 2) Because the computation of quantities is expensive and it is usually most efficient to compute all needed quantities together
  *    (Instead of calling get_f(x); and then get_J(x); separately)
  *
- * All these methods allow some returns to be optional: use NoArr
+ * The methods allow some returns to be optional: use NoArr
  *
  */
 
@@ -72,26 +68,6 @@ extern TermTypeA& NoTermTypeA;
  *  For the sumOfSqr features no Hessian is returned: we assume the Gauss-Newton approximation.
  */
 typedef std::function<void(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x)> ConstrainedProblem;
-
-
-struct GraphProblem {
-  /// We have 'variableDimensions.N' variables, each with a different dimension 'variableDimensions(i)'.
-  /// We have 'featureVariables.N' features, each depends on the tuple/clique 'featureVariables(j)' of variables.
-  /// That is, 'featureVariables' is a list of tuples/cliques that defines the hyper graph
-  virtual void getStructure(uintA& variableDimensions, uintAA& featureVariables);
-
-  /// We require 'x.N == \sum_i variableDimensions(i)'; so x defines the value of all variables
-  /// This returns the feature values, types and Jacobians at state x
-  /// Only for features of type 'fTT' also a Hessian is returned
-  /// Jacobians and Hessians are dense! But only w.r.t. the variables the feature depends on!!
-  /// (It is the job of the optimizer to translate this to sparse global Jacobians/Hessians)
-  virtual void phi(arr& phi, arrA& J, arrA& H, TermTypeA& tt, const arr& x);
-
-  bool checkDimensions(const arr& x);                 ///< check if Jacobians and Hessians have right dimensions (=clique size)
-  bool checkJacobian(const arr& x, double tolerance); ///< finite differences check of the returned Jacobian at x
-  bool checkHessian(const arr& x, double tolerance);  ///< finite differences check of the returned Hessian at x
-};
-
 
 /// functions \f$ \phi_t:(x_{t-k},..,x_t) \mapsto y\in\mathbb{R}^{m_t} \f$ over a chain \f$x_0,..,x_T\f$ of variables
 struct KOrderMarkovFunction {
@@ -157,9 +133,10 @@ void displayFunction(const ScalarFunction &f, bool wait=false, double lo=-1.2, d
 // Named Parameters: Macros for the OPT
 //
 
-
+#ifndef _NUM_ARGS
 #define _NUM_ARGS2(X,X64,X63,X62,X61,X60,X59,X58,X57,X56,X55,X54,X53,X52,X51,X50,X49,X48,X47,X46,X45,X44,X43,X42,X41,X40,X39,X38,X37,X36,X35,X34,X33,X32,X31,X30,X29,X28,X27,X26,X25,X24,X23,X22,X21,X20,X19,X18,X17,X16,X15,X14,X13,X12,X11,X10,X9,X8,X7,X6,X5,X4,X3,X2,X1,N,...) N
 #define _NUM_ARGS(...) _NUM_ARGS2(0,1, __VA_ARGS__ ,64,63,62,61,60,59,58,57,56,55,54,53,52,51,50,49,48,47,46,45,44,43,42,41,40,39,38,37,36,35,34,33,32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0)
+#endif
 
 #define _OPT_1(obj)         obj
 #define _OPT_2(obj, assign) obj.assign

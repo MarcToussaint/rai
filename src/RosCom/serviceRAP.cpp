@@ -5,18 +5,18 @@
 
 #include <ros/ros.h>
 struct sServiceRAP{
-  ServiceRAP *p;
-  sServiceRAP(ServiceRAP *p) : p(p) {};
+  Access_typed<RelationalMachine> RM;
   ros::NodeHandle nh;
   ros::ServiceServer service;
   bool cb_service(mlr_srv::StringString::Request& _request, mlr_srv::StringString::Response& response);
+
+  sServiceRAP() : RM(NULL, "RM"){}
 };
 
-ServiceRAP::ServiceRAP()
-  : RM(NULL, "RM"), s(NULL){
+ServiceRAP::ServiceRAP() : s(NULL){
   if(mlr::getParameter<bool>("useRos")){
     cout <<"*** Starting ROS Service RAP" <<endl;
-    s = new sServiceRAP(this);
+    s = new sServiceRAP;
     s->service = s->nh.advertiseService("/RAP/service", &sServiceRAP::cb_service, s);
   }
 }
@@ -28,25 +28,25 @@ ServiceRAP::~ServiceRAP(){
 bool sServiceRAP::cb_service(mlr_srv::StringString::Request& _request, mlr_srv::StringString::Response& response){
   mlr::String request = _request.str.c_str();
   if(request=="getState"){
-    mlr::String str = p->RM.get()->getState();
+    mlr::String str = RM.get()->getState();
     response.str = str.p;
     return true;
   }
   if(request=="getSymbols"){
     mlr::String str;
-    str <<p->RM.get()->getSymbols();
+    str <<RM.get()->getSymbols();
     response.str = str.p;
     return true;
   }
 
   cout <<"received new effect '" <<request <<"'" <<endl;
   if(!request.N) return false;
-  p->RM.writeAccess();
-  p->RM().applyEffect(request);
-  p->RM().fwdChainRules();
+  RM.writeAccess();
+  RM().applyEffect(request);
+  RM().fwdChainRules();
   mlr::String str;
-  p->RM().tmp->write(str," ");
-  p->RM.deAccess();
+  RM().tmp->write(str," ");
+  RM.deAccess();
   if(str.N)
     response.str = str.p;
   else

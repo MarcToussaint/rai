@@ -1,20 +1,16 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
 
 
 /// @file
@@ -26,6 +22,7 @@
 #define MLR_optimization_benchmarks_h
 
 #include "optimization.h"
+#include "KOMO_Problem.h"
 
 extern ScalarFunction RosenbrockFunction();
 extern ScalarFunction RastriginFunction();
@@ -38,7 +35,7 @@ extern ScalarFunction ChoiceFunction();
 
 struct RandomLPFunction:ConstrainedProblem {
   arr randomG;
-  virtual double fc(arr& phi, arr& J, TermTypeA& tt, const arr& x) {
+  virtual void fc(arr& phi, arr& J, TermTypeA& tt, const arr& x) {
     if(!randomG.N){
       randomG.resize(5*x.N+5,x.N+1);
       rndGauss(randomG, 1.);
@@ -145,7 +142,7 @@ struct SimpleConstraintFunction:ConstrainedProblem {
     //simple squared potential, displaced by 1
     arr x(_x);
     x(0) -= 1.;
-    phi.subRef(0,1) = x;
+    phi.refRange(0,1) = x;
     if(&J) J.setMatrixBlock(eye(2),0,0);
     x(0) += 1.;
 
@@ -212,31 +209,52 @@ struct NonlinearlyWarpedSquaredCost : VectorFunction {
 
 struct ParticleAroundWalls : KOrderMarkovFunction {
   //options of the problem
-  uint T,k;
-  bool hardConstrained, useKernel;
+  uint T,k,n;
+  bool useKernel;
   arr x;
 
   ParticleAroundWalls():
     T(mlr::getParameter<uint>("opt/ParticleAroundWalls/T",1000)),
     k(mlr::getParameter<uint>("opt/ParticleAroundWalls/k",2)),
-    hardConstrained(mlr::getParameter<uint>("opt/ParticleAroundWalls/hardConstrained",true)),
+    n(mlr::getParameter<uint>("opt/ParticleAroundWalls/n",3)),
     useKernel(false){}
 
   //implementations of the kOrderMarkov virtuals
-  void set_x(const arr& _x){ x=_x; }
+  void set_x(const arr& _x){ x=_x; x.reshape(T+1,n); }
   void phi_t(arr& phi, arr& J, TermTypeA& tt, uint t);
   uint get_T(){ return T; }
   uint get_k(){ return k; }
-  uint dim_x(uint t){ return 3; }
+  uint dim_x(uint t){ return n; }
   uint dim_phi(uint t);
   uint dim_g(uint t);
 
-  bool isConstrained(){ return hardConstrained; }
   bool hasKernel(){ return useKernel; }
   double kernel(uint t0, uint t1){
     //if(t0==t1) return 1e3;
     return 1e0*::exp(-.001*mlr::sqr((double)t0-t1));
   }
+};
+
+//===========================================================================
+
+struct ParticleAroundWalls2 : KOMO_Problem {
+  //options of the problem
+  uint T,k,n;
+  bool useKernel;
+  arr x;
+
+  ParticleAroundWalls2():
+    T(mlr::getParameter<uint>("opt/ParticleAroundWalls/T",1000)),
+    k(mlr::getParameter<uint>("opt/ParticleAroundWalls/k",2)),
+    n(mlr::getParameter<uint>("opt/ParticleAroundWalls/n",3)),
+    useKernel(false){}
+
+  //implementations of the kOrderMarkov virtuals
+  uint get_T(){ return T; }
+  uint get_k(){ return k; }
+  void getStructure(uintA& variableDimensions, uintA& featureTimes, TermTypeA& featureTypes);
+
+  void phi(arr& phi, arrA& J, arrA& H, TermTypeA& tt, const arr& x);
 };
 
 //===========================================================================

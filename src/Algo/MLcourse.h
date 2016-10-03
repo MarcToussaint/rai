@@ -1,22 +1,16 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
-
-
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
 
 #ifndef MLR_linearRegression_h
 #define MLR_linearRegression_h
@@ -45,7 +39,7 @@ extern DefaultKernelFunction defaultKernelFunction;
 struct KernelRidgeRegression{
   arr X; ///< stored data (to compute kappa for queries)
   arr kernelMatrix_lambda; ///< X X^T + lambda I
-  arr invKernelMatrix_lambda;
+  arr invKernelMatrix_lambda; ///< (X X^T + lambda I)^-1
   arr alpha; ///< (X X^T + lambda I)^-1 y
   double sigma; ///< mean squared error on training data; estimate of noise
   double mu; ///< fixed global bias (default=0)
@@ -107,7 +101,7 @@ enum ArtificialDataType { readFromCfgFileDT=0, linearData, sinusData, linearOutl
 
 void artificialData(arr& X, arr& y, ArtificialDataType dataType=readFromCfgFileDT);
 void artificialData_1D2Class(arr& X, arr& y);
-void artificialData_Hasties2Class(arr& X, arr& y, uint dim=2);
+void artificialData_Hasties2Class(arr& X, arr& y);
 void artificialData_HastiesMultiClass(arr& X, arr& y);
 void artificialData_GaussianMixture(arr& X, arr& y);
 void load_data(arr& X, const char* filename, bool whiten);

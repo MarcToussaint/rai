@@ -1,22 +1,16 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
-
-
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
 
 #include <Core/util.h>
 #include "MLcourse.h"
@@ -214,7 +208,7 @@ arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bay
   //I(0, 0)=1e-10; on classification is makes sense to include the bias in regularization, I think... (rescaling one beta only changes the slope of the sigmoid, not the decision boundary)
   
   arr f(n), p(n), Z(n), w(n), beta_update;
-  double logLike, lastLogLike, alpha=1.;
+  double logLike, lastLogLike=0., alpha=1.;
   arr beta(d);
   beta.setZero();
   for(uint k=0; k<100; k++) {
@@ -270,7 +264,7 @@ arr logisticRegressionMultiClass(const arr& X, const arr& y, double lambda) {
   I(0, 0)=1e-10;
   
   arr f(n, M), p(n, M), Z(n), w(n), beta_update;
-  double logLike, lastLogLike, alpha=1.;
+  double logLike, lastLogLike=0., alpha=1.;
   arr beta(d, M);
   beta.setZero();
   for(uint k=0; k<100; k++) {
@@ -358,8 +352,8 @@ void CrossValidation::crossValidateSingleLambda(const arr& X, const arr& y, doub
     }
     Xtrain.delRows(blockStart(k), blockStart(k+1)-blockStart(k));
     ytrain.remove(blockStart(k), blockStart(k+1)-blockStart(k));
-    Xtest.referToSub(X, blockStart(k), blockStart(k+1)-1);
-    ytest.referToSub(y, blockStart(k), blockStart(k+1)-1);
+    Xtest.referToRange(X, blockStart(k), blockStart(k+1)-1);
+    ytest.referToRange(y, blockStart(k), blockStart(k+1)-1);
     
     cout <<k <<": train:";
     train(Xtrain, ytrain, lambda, beta);
@@ -547,15 +541,14 @@ void artificialData(arr& X, arr& y, ArtificialDataType dataType) {
   cout <<"correct beta=" <<beta_true <<endl;
 }
 
-void artificialData_Hasties2Class(arr& X, arr& y, uint dim) {
+void artificialData_Hasties2Class(arr& X, arr& y) {
   uint n = mlr::getParameter<uint>("n", 100);
   uint d = mlr::getParameter<uint>("d", 2);
-  dim = d;
 
-  arr means0(10, dim), means1(10, dim), x(dim), bias0(dim), bias1(dim);
+  arr means0(10, d), means1(10, d), x(d), bias0(d), bias1(d);
 
   bias0.setZero(); bias0(0) = 1.;
-  bias1.setZero(); if(dim>1) bias1(1) = 1.;
+  bias1.setZero(); if(d>1) bias1(1) = 1.;
 
   rndGauss(means0);  means0 += ones(10,1)*~bias0;
   rndGauss(means1);  means1 += ones(10,1)*~bias1;
@@ -575,14 +568,15 @@ void artificialData_Hasties2Class(arr& X, arr& y, uint dim) {
 
 void artificialData_HastiesMultiClass(arr& X, arr& y) {
   uint n = mlr::getParameter<uint>("n", 100);
+  uint d = mlr::getParameter<uint>("d", 2);
   uint M = mlr::getParameter<uint>("M", 3);
-  
-  arr means(M, 10, 2), x(2);
+
+  arr means(M, 10, d), x(d);
   
   rndGauss(means);
-  for(uint c=0; c<M; c++)  means[c]() += ones(10)*~ARR((double)c, (double)c);
+  for(uint c=0; c<M; c++)  means[c]() += ones(10,1)*~consts((double)c,d);
   
-  X.resize(M*n, 2);
+  X.resize(M*n, d);
   y.resize(M*n, M);
   y.setZero();
   for(uint i=0; i<n; i++) {

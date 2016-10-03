@@ -1,20 +1,16 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
 
 
 #include "util.h"
@@ -692,7 +688,7 @@ mlr::LogToken::~LogToken(){
       ROS_INFO("MLR-MSG: %s",mlr::errString.p);
 #endif
       if(log_level==-1){ mlr::errString <<" -- WARNING";    cout <<mlr::errString <<endl; }
-      if(log_level==-2){ mlr::errString <<" -- ERROR  ";    cerr <<mlr::errString <<endl; /*throw does not WORK!!!*/ }
+      if(log_level==-2){ mlr::errString <<" -- ERROR  ";    cerr <<mlr::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
       if(log_level==-3){ mlr::errString <<" -- HARD EXIT!"; cerr <<mlr::errString <<endl; mlr::logServer().mutex.unlock(); exit(1); }
       if(log_level<=-2) raise(SIGUSR2);
     }
@@ -793,7 +789,7 @@ void mlr::String::resize(uint n, bool copy) {
   } else if(n+1>M || 10+2*n<M/2) {
     M=11+2*n;
   }
-  if(M!=Mold) {
+  if(M!=Mold) { //do we actually have to allocate?
     p=new char [M];
     if(!p) HALT("mlr::Mem failed memory allocation of " <<M <<"bytes");
     if(copy) memmove(p, pold, N<n?N:n);
@@ -807,18 +803,18 @@ void mlr::String::resize(uint n, bool copy) {
 void mlr::String::init() { p=0; N=0; M=0; buffer.string=this; flushCallback=NULL; }
 
 /// standard constructor
-mlr::String::String():std::iostream(&buffer) { init(); clearStream(); }
+mlr::String::String() : std::iostream(&buffer) { init(); clearStream(); }
 
 /// copy constructor
-mlr::String::String(const String& s):std::iostream(&buffer) { init(); this->operator=(s); }
+mlr::String::String(const String& s) : std::iostream(&buffer) { init(); this->operator=(s); }
 
 /// copy constructor for an ordinary C-string (needs to be 0-terminated)
-mlr::String::String(const char *s):std::iostream(&buffer) { init(); this->operator=(s); }
+mlr::String::String(const char *s) : std::iostream(&buffer) { init(); this->operator=(s); }
 
 
-mlr::String::String(const std::string& s):std::iostream(&buffer) { init(); this->operator=(s.c_str()); }
+mlr::String::String(const std::string& s) : std::iostream(&buffer) { init(); this->operator=(s.c_str()); }
 
-mlr::String::String(std::istream& is):std::iostream(&buffer) { init(); read(is, "", "", 0); }
+mlr::String::String(std::istream& is) : std::iostream(&buffer) { init(); read(is, "", "", 0); }
 
 mlr::String::~String() { if(M) delete[] p; }
 
@@ -1026,7 +1022,7 @@ void mlr::FileToken::changeDir(){
       if(!getcwd(cwd.p, 200)) HALT("couldn't get current dir");
       cwd.resize(strlen(cwd.p), true);
       LOG(3) <<"entering path `" <<path<<"' from '" <<cwd <<"'" <<std::endl;
-      if(chdir(path)) HALT("couldn't change to directory " <<path <<"(current dir: " <<cwd <<")");
+      if(chdir(path)) HALT("couldn't change to directory " <<path <<" (current dir: " <<cwd <<")");
     }
   }
 }
@@ -1062,7 +1058,7 @@ std::ifstream& mlr::FileToken::getIs(bool change_dir){
     is = std::make_shared<std::ifstream>();
     is->open(name);
     LOG(3) <<"opening input file `" <<name <<"'" <<std::endl;
-    if(!is->good()) HALT("could not open file `" <<name <<"' for input");
+    if(!is->good()) THROW("could not open file `" <<name <<"' for input");
   }
   return *is;
 }

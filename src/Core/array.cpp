@@ -1,20 +1,16 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
 
 
 #include "array.h"
@@ -142,8 +138,8 @@ arr diag(double d, uint n) {
 }
 
 void addDiag(arr& A, double d){
-  if(A.special==arr::RowShiftedPackedMatrixST) {
-    RowShiftedPackedMatrix *Aaux = (RowShiftedPackedMatrix*) A.aux;
+  if(isRowShifted(A)) {
+    RowShifted *Aaux = (RowShifted*) A.special;
     if(!Aaux->symmetric) HALT("this is not a symmetric matrix");
     for(uint i=0; i<A.d0; i++) A(i,0) += d;
   }else{
@@ -994,45 +990,46 @@ void lognormScale(arr& P, double& logP, bool force) {
 }
 
 void sparseProduct(arr& y, arr& A, const arr& x) {
-  CHECK(x.nd==1 && A.nd==2 && x.d0==A.d1, "not a proper matrix multiplication");
-  if(A.special!=arr::sparseST && x.special!=arr::sparseST) {
+  if(!A.special && !x.special) {
     innerProduct(y, A, x);
     return;
   }
-  if(A.special==arr::sparseST && x.special!=arr::sparseST) {
+  if(isSparseMatrix(A) && !isSparseVector(x)) {
     uint i, j, *k, *kstop;
     y.resize(A.d0); y.setZero();
     double *Ap=A.p;
-    uintA* elems = (uintA*)A.aux;
-    for(k=elems->p, kstop=elems->p+elems->N; k!=kstop; Ap++) {
+    uintA& A_elems = dynamic_cast<SparseMatrix*>(A.special)->elems;
+    for(k=A_elems.p, kstop=A_elems.p+A_elems.N; k!=kstop; Ap++) {
       i=*k; k++;
       j=*k; k++;
       y.p[i] += (*Ap) * x.p[j];
     }
     return;
   }
-  if(A.special==arr::sparseST && x.special==arr::sparseST) {
+  if(isSparseMatrix(A) && isSparseVector(x)) {
+    SparseVector *sx = dynamic_cast<SparseVector*>(x.special);
+    CHECK(x.nd==1 && A.nd==2 && sx->N==A.d1, "not a proper matrix-vector multiplication");
     uint i, j, n, *k, *kstop, *l, *lstop;
     y.clear(); y.nd=1; y.d0=A.d0;
-    uintA *y_sparse;
-    y.aux=y_sparse=new uintA [2];
-    y_sparse[1].resize(y.d0); y_sparse[1]=(uint)-1;
+    y.special = new SparseMatrix(y, A.d0); //aux=y_sparse=new uintA [2];
+    uintA& y_elems= dynamic_cast<SparseMatrix*>(y.special)->elems;
+    uintA& y_col= dynamic_cast<SparseMatrix*>(y.special)->cols(0);
+    y_col.resize(y.d0); y_col=(uint)-1;
     double *xp=x.p;
-    uintA *elems, *col;
-    elems = (uintA*)x.aux;
+    uintA& x_elems = sx->elems;
     uint *slot;
-    for(k=elems->p, kstop=elems->p+elems->N; k!=kstop; xp++) {
+    for(k=x_elems.p, kstop=x_elems.p+x_elems.N; k!=kstop; xp++) {
       j=*k; k++;
-      col = (uintA*)A.aux+(1+j);
-      for(l=col->p, lstop=col->p+col->N; l!=lstop;) {
+      uintA& A_col = dynamic_cast<SparseMatrix*>(A.special)->cols(j);
+      for(l=A_col.p, lstop=A_col.p+A_col.N; l!=lstop;) {
         i =*l; l++;
         n =*l; l++;
-        slot=&y_sparse[1](i);
+        slot=&y_col(i);
         if(*slot==(uint)-1) {
           *slot=y.N;
           y.resizeMEM(y.N+1, true); y(y.N-1)=0.;
-          y_sparse[0].append(i);
-          CHECK_EQ(y_sparse[0].N,y.N, "");
+          y_elems.append(i);
+          CHECK_EQ(y_elems.N,y.N, "");
         }
         i=*slot;
         y(i) += A.elem(n) * (*xp);
@@ -1040,13 +1037,12 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     }
     return;
   }
-  if(A.special!=arr::sparseST && x.special==arr::sparseST) {
+  if(!isSparseMatrix(A) && isSparseVector(x)) {
     uint i, j, *k, *kstop, d1=A.d1;
     y.resize(A.d0); y.setZero();
     double *xp=x.p;
-    uintA *elems;
-    elems = (uintA*)x.aux;
-    for(k=elems->p, kstop=elems->p+elems->N; k!=kstop; xp++) {
+    uintA& elems = dynamic_cast<SparseMatrix*>(x.special)->elems;
+    for(k=elems.p, kstop=elems.p+elems.N; k!=kstop; xp++) {
       j=*k; k++;
       for(i=0; i<A.d0; i++) {
         y.p[i] += A.p[i*d1+j] * (*xp);
@@ -1074,14 +1070,13 @@ void scanArrFile(const char* name) {
 #  define CHECK_EPS 1e-8
 #endif
 
-/// numeric (finite difference) check of the gradient of f at x
-bool checkGradient(const ScalarFunction& f,
-                   const arr& x, double tolerance, bool verbose) {
-  arr J, dx, JJ;
+/// numeric (finite difference) computation of the gradient
+arr finiteDifferenceGradient(const ScalarFunction& f, const arr& x, arr& Janalytic){
+  arr dx, J;
   double y, dy;
-  y=f(J, NoArr, x);
+  y=f(Janalytic, NoArr, x);
 
-  JJ.resize(x.N);
+  J.resize(x.N);
   double eps=CHECK_EPS;
   uint i;
   for(i=0; i<x.N; i++) {
@@ -1089,9 +1084,34 @@ bool checkGradient(const ScalarFunction& f,
     dx.elem(i) += eps;
     dy = f(NoArr, NoArr, dx);
     dy = (dy-y)/eps;
+    J(i)=dy;
+  }
+  return J;
+}
+
+/// numeric (finite difference) check of the gradient of f at x
+bool checkGradient(const ScalarFunction& f,
+                   const arr& x, double tolerance, bool verbose) {
+#if 1
+  arr J;
+  arr JJ = finiteDifferenceGradient(f, x, J);
+#else
+  arr J, dx, JJ;
+  double y, dy;
+  y=f(J, NoArr, x);
+
+  JJ.resize(x.N);
+  double eps=CHECK_EPS;
+  for(uint i=0; i<x.N; i++) {
+    dx=x;
+    dx.elem(i) += eps;
+    dy = f(NoArr, NoArr, dx);
+    dy = (dy-y)/eps;
     JJ(i)=dy;
   }
   JJ.reshapeAs(J);
+#endif
+  uint i;
   double md=maxDiff(J, JJ, &i);
 //   J >>FILE("z.J");
 //   JJ >>FILE("z.JJ");
@@ -1111,7 +1131,7 @@ bool checkGradient(const ScalarFunction& f,
 bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance, bool verbose) {
   arr g, H, dx, dy, Jg;
   f(g, H, x);
-  if(H.special==arr::RowShiftedPackedMatrixST) H = unpack(H);
+  if(isRowShifted(H)) H = unpack(H);
 
   Jg.resize(g.N, x.N);
   double eps=CHECK_EPS;
@@ -1144,7 +1164,7 @@ bool checkJacobian(const VectorFunction& f,
                    const arr& x, double tolerance, bool verbose) {
   arr y, J, dx, dy, JJ;
   f(y, J, x);
-  if(J.special==arr::RowShiftedPackedMatrixST) J = unpack(J);
+  if(isRowShifted(J)) J = unpack(J);
 
   JJ.resize(y.N, x.N);
   double eps=CHECK_EPS;
@@ -1274,7 +1294,6 @@ mlr::String singleString(const StringA& strs){
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
 
-
 // file:///usr/share/doc/liblapack-doc/lug/index.html
 
 #ifdef MLR_LAPACK
@@ -1373,8 +1392,8 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
     x=~x;
     return x;
   }
-  if(A.special==arr::RowShiftedPackedMatrixST) {
-    RowShiftedPackedMatrix *Aaux = (RowShiftedPackedMatrix*) A.aux;
+  if(isRowShifted(A)) {
+    RowShifted *Aaux = (RowShifted*) A.special;
     if(!Aaux->symmetric) HALT("this is not a symmetric matrix");
     for(uint i=0; i<A.d0; i++) if(Aaux->rowShift(i)!=i) HALT("this is not shifted as an upper triangle");
   }
@@ -1382,7 +1401,7 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
   arr Acol=A;
   integer N=A.d0, KD=A.d1-1, NRHS=1, LDAB=A.d1, INFO;
   try{
-    if(A.special!=arr::RowShiftedPackedMatrixST) {
+    if(!isRowShifted(A)) {
       dposv_((char*)"L", &N, &NRHS, Acol.p, &N, x.p, &N, &INFO);
     } else {
       //assumes symmetric and upper triangle (see check's above)
@@ -1399,7 +1418,7 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
     integer M, IL=1, IU=k, LDQ=0, LDZ=1, LWORK=WORK.N;
     double VL=0., VU=0., ABSTOL=1e-8;
     arr sig(N);
-    if(A.special!=arr::RowShiftedPackedMatrixST) {
+    if(!isRowShifted(A)) {
 //      sig.resize(N);
 //      dsyev_ ((char*)"N", (char*)"L", &N, A.p, &N, sig.p, WORK.p, &LWORK, &INFO);
 //      lapack_EigenDecomp(A, sig, NoArr);
@@ -1475,6 +1494,23 @@ void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs) {
   CHECK(!info, "lapack_EigenDecomp error info = " <<info);
 }
 
+arr lapack_kSmallestEigenValues_sym(const arr& A, uint k){
+  CHECK(k<A.d0,"");
+  integer N=A.d0, KD=A.d1-1, LDAB=A.d1, INFO;
+  mlr::Array<integer> IWORK(5*N), IFAIL(N);
+  arr WORK(10*(3*N)), Acopy=A;
+  integer M, IL=1, IU=k, LDQ=0, LDZ=1, LWORK=WORK.N;
+  double VL=0., VU=0., ABSTOL=1e-8;
+  arr sig(N);
+  if(!isRowShifted(A)) {
+    dsyevx_((char*)"N", (char*)"I", (char*)"L", &N, Acopy.p, &LDAB, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)NULL, &LDZ, WORK.p, &LWORK, IWORK.p, IFAIL.p, &INFO);
+  }else{
+    dsbevx_((char*)"N", (char*)"I", (char*)"L", &N, &KD, Acopy.p, &LDAB, (double*)NULL, &LDQ, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)NULL, &LDZ, WORK.p, IWORK.p, IFAIL.p, &INFO);
+  }
+  sig.resizeCopy(k);
+  return sig;
+}
+
 bool lapack_isPositiveSemiDefinite(const arr& symmA) {
   // Check that all eigenvalues are nonnegative.
   arr d, V;
@@ -1525,8 +1561,8 @@ void lapack_mldivide(arr& X, const arr& A, const arr& b) {
 }
 
 void lapack_choleskySymPosDef(arr& Achol, const arr& A) {
-  if(A.special==arr::RowShiftedPackedMatrixST) {
-    RowShiftedPackedMatrix *Aaux = (RowShiftedPackedMatrix*) A.aux;
+  if(isRowShifted(A)) {
+    RowShifted *Aaux = (RowShifted*) A.special;
     if(!Aaux->symmetric) HALT("this is not a symmetric matrix");
     for(uint i=0; i<A.d0; i++) if(Aaux->rowShift(i)!=i) HALT("this is not shifted as an upper triangle");
 
@@ -1586,85 +1622,123 @@ dlauum = multiply L'*L
 #if !defined MLR_MSVC && defined MLR_NOCHECK
 #  warning "MLR_LAPACK undefined - using inefficient implementations"
 #endif
-void blas_MM(arr& X, const arr& A, const arr& B) { innerProduct(X, A, B); };
-void blas_MsymMsym(arr& X, const arr& A, const arr& B) { innerProduct(X, A, B); };
+void blas_MM(arr& X, const arr& A, const arr& B) { mlr::useLapack=false; innerProduct(X, A, B); };
+void blas_MsymMsym(arr& X, const arr& A, const arr& B) { mlr::useLapack=false; innerProduct(X, A, B); };
+void blas_Mv(arr& y, const arr& A, const arr& x) {       mlr::useLapack=false; innerProduct(y, A, x); mlr::useLapack=true; };
 void blas_A_At(arr& X, const arr& A) { NICO }
 void blas_At_A(arr& X, const arr& A) { NICO }
 void lapack_cholesky(arr& C, const arr& A) { NICO }
-uint lapack_SVD(arr& U, arr& d, arr& Vt, const arr& A) { NICO };
-void lapack_LU(arr& LU, const arr& A) { NICO };
-void lapack_RQ(arr& R, arr &Q, const arr& A) { NICO };
-void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs) { NICO };
-bool lapack_isPositiveSemiDefinite(const arr& symmA) { NICO };
-void lapack_inverseSymPosDef(arr& Ainv, const arr& A) { NICO };
+uint lapack_SVD(arr& U, arr& d, arr& Vt, const arr& A) { NICO; }
+void lapack_LU(arr& LU, const arr& A) { NICO; }
+void lapack_RQ(arr& R, arr &Q, const arr& A) { NICO; }
+void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs) { NICO; }
+bool lapack_isPositiveSemiDefinite(const arr& symmA) { NICO; }
+void lapack_inverseSymPosDef(arr& Ainv, const arr& A) { NICO; }
+arr lapack_kSmallestEigenValues_sym(const arr& A, uint k){ NICO; }
 arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
   arr invA;
   inverse(invA, A);
   return invA*b;
 };
-double lapack_determinantSymPosDef(const arr& A) { NICO };
-void lapack_mldivide(arr& X, const arr& A, const arr& b) { NICO };
+double lapack_determinantSymPosDef(const arr& A) { NICO; }
+void lapack_mldivide(arr& X, const arr& A, const arr& b) { NICO; }
 #endif
 
 
 //===========================================================================
 //
-// RowShiftedPackedMatrix
+// RowShifted
 //
 
-RowShiftedPackedMatrix::RowShiftedPackedMatrix(arr& X):Z(X), real_d1(0), symmetric(false), nextInSum(NULL) {
-  Z.special = arr::RowShiftedPackedMatrixST;
-  Z.aux = this;
+RowShifted::RowShifted(arr& X):Z(X), real_d1(0), symmetric(false), nextInSum(NULL) {
+  type = SpecialArray::RowShiftedST;
+  Z.special = this;
 }
 
-RowShiftedPackedMatrix::RowShiftedPackedMatrix(arr& X, RowShiftedPackedMatrix &aux):
+RowShifted::RowShifted(arr& X, RowShifted &aux):
   Z(X),
   real_d1(aux.real_d1),
   rowShift(aux.rowShift),
+  rowLen(aux.rowLen),
   colPatches(aux.colPatches),
   symmetric(aux.symmetric),
   nextInSum(NULL)
 {
-  Z.special = arr::RowShiftedPackedMatrixST;
-  Z.aux=this;
+  type = SpecialArray::RowShiftedST;
+  Z.special=this;
 }
 
-RowShiftedPackedMatrix *auxRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1) {
-  RowShiftedPackedMatrix *Zaux;
-  if(Z.special==arr::noneST) {
-    Zaux = new RowShiftedPackedMatrix(Z);
+RowShifted *makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1) {
+  RowShifted *Zaux;
+  if(!Z.special) {
+    Zaux = new RowShifted(Z);
   } else {
-    CHECK_EQ(Z.special,arr::RowShiftedPackedMatrixST,"");
-    Zaux = (RowShiftedPackedMatrix*) Z.aux;
+    CHECK_EQ(Z.special->type, SpecialArray::RowShiftedST, "");
+    Zaux = dynamic_cast<RowShifted*>(Z.special);
   }
   Z.resize(d0, pack_d1);
   Z.setZero();
   Zaux->real_d1=real_d1;
   Zaux->rowShift.resize(d0);
   Zaux->rowShift.setZero();
-  Zaux->colPatches.resize(real_d1, 2);
-  for(uint i=0; i<real_d1; i++) {
-    Zaux->colPatches(i,0)=0;
-    Zaux->colPatches(i,1)=d0;
-  }
   return Zaux;
 }
 
-RowShiftedPackedMatrix::~RowShiftedPackedMatrix() {
+RowShifted::~RowShifted() {
   if(nextInSum) delete nextInSum;
-  Z.special = arr::noneST;
-  Z.aux = NULL;
+  Z.special = NULL;
 }
 
-double RowShiftedPackedMatrix::acc(uint i, uint j) {
+double RowShifted::elem(uint i, uint j) {
   uint rs=rowShift(i);
   if(j<rs || j>=rs+Z.d1) return 0.;
   return Z(i, j-rs);
 }
 
+void RowShifted::reshift(){
+  rowLen.resize(Z.d0);
+  for(uint i=0; i<Z.d0; i++) {
+#if 1
+    //find number of leading and trailing zeros
+    double *Zp = Z.p + i*Z.d1;
+    double *Zlead = Zp;
+    double *Ztrail = Zp + Z.d1-1;
+    while(*Ztrail==0. && Ztrail>=Zlead) Ztrail--;
+    while(*Zlead==0. && Zlead<=Ztrail) Zlead++;
+    if(Ztrail<Zlead){ //all zeros
+      rowLen.p[i]=0.;
+    }else{
+      uint rs = Zlead-Zp;
+      uint len = 1+Ztrail-Zlead;
+      rowShift.p[i] += rs;
+      rowLen.p[i] = len;
+      if(Zlead!=Zp){
+        memmove(Zp, Zlead, len*Z.sizeT);
+        memset (Zp+len, 0, (Z.d1-len)*Z.sizeT);
+      }
+    }
+#else
+    //find number of leading zeros
+    uint j=0;
+    while(j<Z.d1 && Z(i,j)==0.) j++;
+    //shift or so..
+    if(j==Z.d1){ //all zeros...
+    }else if(j){ //some zeros
+      rowShift(i) += j;
+      memmove(&Z(i,0), &Z(i,j), (Z.d1-j)*Z.sizeT);
+      memset (&Z(i,Z.d1-j), 0, j*Z.sizeT);
+    }
+    //find number of trailing zeros
+    j=Z.d1;
+    while(j>0 && Z(i,j-1)==0.) j--;
+    rowLen(i)=j;
+#endif
+  }
+}
+
 arr packRowShifted(const arr& X) {
   arr Z;
-  RowShiftedPackedMatrix *Zaux = auxRowShifted(Z, X.d0, 0, X.d1);
+  RowShifted *Zaux = makeRowShifted(Z, X.d0, 0, X.d1);
   Z.setZero();
   //-- compute rowShifts and pack_d1:
   uint pack_d1=0;
@@ -1681,13 +1755,12 @@ arr packRowShifted(const arr& X) {
   Z.setZero();
   for(uint i=0; i<Z.d0; i++) for(uint j=0; j<Z.d1 && Zaux->rowShift(i)+j<X.d1; j++)
       Z(i,j) = X(i,Zaux->rowShift(i)+j);
-  Zaux->computeColPatches(false);
   return Z;
 }
 
 arr unpackRowShifted(const arr& Y) {
-  CHECK_EQ(Y.special,arr::RowShiftedPackedMatrixST,"");
-  RowShiftedPackedMatrix *Yaux = (RowShiftedPackedMatrix*)Y.aux;
+  CHECK(isRowShifted(Y),"");
+  RowShifted *Yaux = (RowShifted*)Y.special;
   arr X(Y.d0, Yaux->real_d1);
   CHECK(!Yaux->symmetric || Y.d0==Yaux->real_d1,"cannot be symmetric!");
   X.setZero();
@@ -1704,56 +1777,58 @@ arr unpackRowShifted(const arr& Y) {
   return X;
 }
 
-void RowShiftedPackedMatrix::computeColPatches(bool assumeMonotonic) {
+void RowShifted::computeColPatches(bool assumeMonotonic) {
   colPatches.resize(real_d1,2);
   uint a=0,b=Z.d0;
   if(!assumeMonotonic) {
     for(uint j=0; j<real_d1; j++) {
       a=0;
-      while(a<Z.d0 && acc(a,j)==0) a++;
+      while(a<Z.d0 && elem(a,j)==0) a++;
       b=Z.d0;
-      while(b>0 && acc(b-1,j)==0) b--;
-      colPatches(j,0)=a;
-      colPatches(j,1)=b;
+      while(b>a && elem(b-1,j)==0) b--;
+      colPatches.p[2*j]=a;
+      colPatches.p[2*j+1]=b;
     }
   } else {
     for(uint j=0; j<real_d1; j++) {
-      while(a<Z.d0 && j>=rowShift(a)+Z.d1) a++;
-      colPatches(j,0)=a;
+      while(a<Z.d0 && j>=rowShift.p[a]+Z.d1) a++;
+      colPatches.p[2*j]=a;
     }
     for(uint j=real_d1; j--;) {
-      while(b>0 && j<rowShift(b-1)) b--;
-      colPatches(j,1)=b;
+      while(b>0 && j<rowShift.p[b-1]) b--;
+      colPatches.p[2*j+1]=b;
     }
   }
 }
 
-arr RowShiftedPackedMatrix::At_A() {
+arr RowShifted::At_A() {
   //TODO use blas DSYRK instead?
+  CHECK_EQ(rowLen.N, rowShift.N, "");
   arr R;
-  RowShiftedPackedMatrix *Raux = auxRowShifted(R, real_d1, Z.d1, real_d1);
+  RowShifted *Raux = makeRowShifted(R, real_d1, Z.d1, real_d1);
   R.setZero();
   for(uint i=0; i<R.d0; i++) Raux->rowShift(i) = i;
   Raux->symmetric=true;
   if(!Z.d1) return R; //Z is identically zero, all rows fully packed -> return zero R
   for(uint i=0; i<Z.d0; i++) {
-    uint rs=rowShift(i);
-    double* Zi=&Z(i,0);
-    for(uint j=0; j<Z.d1; j++) {
+    uint rs=rowShift.p[i];
+    uint rlen=rowLen.p[i];
+    double* Zi = Z.p+i*Z.d1;
+    for(uint j=0; j<rlen/*Z.d1*/; j++) {
       uint real_j=j+rs;
       if(real_j>=real_d1) break;
       double Zij=Zi[j];
       if(Zij!=0.){
         double* Rp=R.p + real_j*R.d1;
         double* Jp=Zi+j;
-        double* Jpstop=Zi+Z.d1;
+        double* Jpstop=Zi+rlen; //Z.d1;
         for(; Jp!=Jpstop; Rp++,Jp++) if(*Jp!=0.) *Rp += Zij * *Jp;
       }
     }
   }
   if(nextInSum){
     arr R2 = comp_At_A(*nextInSum);
-    CHECK_EQ(R2.special,arr::RowShiftedPackedMatrixST, "");
+    CHECK(isRowShifted(R2), "");
     CHECK(R2.d1<=R.d1,"NIY"); //swap...
     for(uint i=0;i<R2.d0;i++) for(uint j=0;j<R2.d1;j++){
       R(i,j) += R2(i,j);
@@ -1762,37 +1837,37 @@ arr RowShiftedPackedMatrix::At_A() {
   return R;
 }
 
-arr RowShiftedPackedMatrix::A_At() {
+arr RowShifted::A_At() {
   //-- determine pack_d1 for the resulting symmetric matrix
   uint pack_d1=1;
   for(uint i=0; i<Z.d0; i++) {
-    uint rs_i=rowShift(i);
+    uint rs_i=rowShift.p[i];
     for(uint j=Z.d0-1; j>=i+pack_d1; j--) {
-      uint rs_j=rowShift(j);
-      uint a=mlr::MAX(rs_i,rs_j);
-      uint b=mlr::MIN(rs_i+Z.d1,rs_j+Z.d1);
-      b=mlr::MIN(real_d1,b);
+      uint rs_j=rowShift.p[j];
+      uint a,b;
+      if(rs_i<rs_j){ a=rs_j; b=rs_i+Z.d1; }else{ a=rs_i; b=rs_j+Z.d1; }
+      if(real_d1<b) b=real_d1;
       if(a<b) if(pack_d1<j-i+1) pack_d1=j-i+1;
     }
   }
 
   arr R;
-  RowShiftedPackedMatrix *Raux = auxRowShifted(R, Z.d0, pack_d1, Z.d0);
+  RowShifted *Raux = makeRowShifted(R, Z.d0, pack_d1, Z.d0);
   R.setZero();
   for(uint i=0; i<R.d0; i++) Raux->rowShift(i) = i;
   Raux->symmetric=true;
   if(!Z.d1) return R; //Z is identically zero, all rows fully packed -> return zero R
   for(uint i=0; i<Z.d0; i++) {
-    uint rs_i=rowShift(i);
+    uint rs_i=rowShift.p[i];
     double* Zi=&Z(i,0);
     for(uint j=i; j<Z.d0 && j<i+pack_d1; j++) {
-      uint rs_j=rowShift(j);
+      uint rs_j=rowShift.p[j];
       double* Zj=&Z(j,0);
       double* Rij=&R(i,j-i);
 
-      uint a=mlr::MAX(rs_i,rs_j);
-      uint b=mlr::MIN(rs_i+Z.d1,rs_j+Z.d1);
-      b=mlr::MIN(real_d1,b);
+      uint a,b;
+      if(rs_i<rs_j){ a=rs_j; b=rs_i+Z.d1; }else{ a=rs_i; b=rs_j+Z.d1; }
+      if(real_d1<b) b=real_d1;
       for(uint k=a;k<b;k++) *Rij += Zi[k-rs_i]*Zj[k-rs_j];
     }
   }
@@ -1800,30 +1875,38 @@ arr RowShiftedPackedMatrix::A_At() {
   return R;
 }
 
-arr RowShiftedPackedMatrix::At_x(const arr& x) {
+arr RowShifted::At_x(const arr& x) {
+  CHECK_EQ(rowLen.N, rowShift.N, "");
   CHECK_EQ(x.N,Z.d0,"");
   arr y(real_d1);
   y.setZero();
+//  cout <<"SPARSITY = " <<Z.sparsity() <<endl;
   if(!Z.d1) return y; //Z is identically zero, all rows fully packed -> return zero y
-  for(uint j=0; j<real_d1; j++) {
-    double sum=0.;
-    uint a=colPatches(j,0);
-    uint b=colPatches(j,1);
-    for(uint i=a; i<b; i++) {
-      uint rs=rowShift.p[i];
-      if(j<rs || j-rs>=Z.d1) continue;
-      sum += Z.p[i*Z.d1+j-rs]*x.p[i]; // sum += acc(i,j)*x(i);
-    }
-    y(j) = sum;
+  for(uint i=0; i<Z.d0; i++) {
+    double xi = x.p[i];
+    uint rs=rowShift.p[i];
+#if 0
+    for(uint j=0; j<Z.d1; j++) y.p[rs+j] += xi * Z.p[i*Z.d1+j]; // sum += acc(i,j)*x(i);
+#else //PROFILED
+    double *Zp = Z.p + i*Z.d1;
+    double *yp = y.p + rs;
+    double *ypstop = yp + rowLen.p[i]; //+ Z.d1;
+    for(;yp!=ypstop;){ *yp += xi * *Zp;  Zp++;  yp++; }
+#endif
   }
   if(nextInSum) y += comp_At_x(*nextInSum, x);
   return y;
 }
 
-arr RowShiftedPackedMatrix::A_x(const arr& x) {
+arr RowShifted::A_x(const arr& x) {
+  if(x.nd==2){
+    arr Y(x.d1, Z.d0);
+    arr X = ~x;
+    for(uint j=0;j<x.d1;j++) Y[j]() = A_x(X[j]);
+    return ~Y;
+  }
   CHECK_EQ(x.N,real_d1,"");
-  arr y(Z.d0);
-  y.setZero();
+  arr y = zeros(Z.d0);
   if(!Z.d1) return y; //Z is identically zero, all rows fully packed -> return zero y
   for(uint i=0; i<Z.d0; i++) {
     double sum=0.;
@@ -1837,39 +1920,68 @@ arr RowShiftedPackedMatrix::A_x(const arr& x) {
   return y;
 }
 
+arr RowShifted::At(){
+  uint width = 0;
+  if(!colPatches.N) computeColPatches(false);
+  for(uint i=0;i<colPatches.d0;i++){ uint a=colPatches(i,1)-colPatches(i,0); if(a>width) width=a; }
+
+  arr At;
+  RowShifted* At_ = makeRowShifted(At, real_d1, width, Z.d0);
+  for(uint i=0;i<real_d1;i++){
+    uint rs = colPatches(i,0);
+    At_->rowShift(i) = rs;
+    uint rlen = colPatches(i,1)-rs;
+    for(uint j=0;j<rlen;j++) At_->Z(i,j) = elem(rs+j,i);
+  }
+  return At;
+}
+
+
+
+//===========================================================================
+//
+// generic special
+//
+
 arr unpack(const arr& X) {
-  if(X.special==arr::noneST) HALT("this is not special");
-  if(X.special==arr::RowShiftedPackedMatrixST) return unpackRowShifted(X);
+  if(isNotSpecial(X)) HALT("this is not special");
+  if(isRowShifted(X)) return unpackRowShifted(X);
   return NoArr;
 }
 
 arr comp_At_A(arr& A) {
-  if(A.special==arr::noneST) { arr X; blas_At_A(X,A); return X; }
-  if(A.special==arr::RowShiftedPackedMatrixST) return ((RowShiftedPackedMatrix*)A.aux)->At_A();
+  if(isNotSpecial(A)) { arr X; blas_At_A(X,A); return X; }
+  if(isRowShifted(A)) return ((RowShifted*)A.special)->At_A();
   return NoArr;
 }
 
 arr comp_A_At(arr& A) {
-  if(A.special==arr::noneST) { arr X; blas_A_At(X,A); return X; }
-  if(A.special==arr::RowShiftedPackedMatrixST) return ((RowShiftedPackedMatrix*)A.aux)->A_At();
+  if(isNotSpecial(A)) { arr X; blas_A_At(X,A); return X; }
+  if(isRowShifted(A)) return ((RowShifted*)A.special)->A_At();
   return NoArr;
 }
 
 //arr comp_A_H_At(arr& A, const arr& H){
-//  if(A.special==arr::noneST) { arr X; blas_A_At(X,A); return X; }
-//  if(A.special==arr::RowShiftedPackedMatrixST) return ((RowShiftedPackedMatrix*)A.aux)->A_H_At(H);
+//  if(isNotSpecial(A)) { arr X; blas_A_At(X,A); return X; }
+//  if(isRowShifted(A)) return ((RowShifted*)A.aux)->A_H_At(H);
 //  return NoArr;
 //}
 
 arr comp_At_x(arr& A, const arr& x) {
-  if(A.special==arr::noneST) { arr y; innerProduct(y, ~A, x); return y; }
-  if(A.special==arr::RowShiftedPackedMatrixST) return ((RowShiftedPackedMatrix*)A.aux)->At_x(x);
+  if(isNotSpecial(A)) { arr y; innerProduct(y, ~A, x); return y; }
+  if(isRowShifted(A)) return ((RowShifted*)A.special)->At_x(x);
+  return NoArr;
+}
+
+arr comp_At(arr& A) {
+  if(isNotSpecial(A)) { return ~A; }
+  if(isRowShifted(A)) return ((RowShifted*)A.special)->At();
   return NoArr;
 }
 
 arr comp_A_x(arr& A, const arr& x) {
-  if(A.special==arr::noneST) { arr y; innerProduct(y, A, x); return y; }
-  if(A.special==arr::RowShiftedPackedMatrixST) return ((RowShiftedPackedMatrix*)A.aux)->A_x(x);
+  if(isNotSpecial(A)) { arr y; innerProduct(y, A, x); return y; }
+  if(isRowShifted(A)) return ((RowShifted*)A.special)->A_x(x);
   return NoArr;
 }
 
@@ -2069,4 +2181,6 @@ void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 //  for(const char* t : list) append(mlr::String(t));
 //}
 //}
+
+
 
