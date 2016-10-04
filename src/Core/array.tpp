@@ -2532,7 +2532,6 @@ void indexWiseProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array
       T yi=y.p[i];
       T *xp=&x(i,0), *xstop=xp+x.d1;
       for(; xp!=xstop; xp++) *xp *= yi;
-//      x[i]() *= y(i);
     }
     return;
   }
@@ -2543,7 +2542,7 @@ void indexWiseProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array
     return;
   }
   if(y.dim() == z.dim()) { //matrix x matrix -> element-wise
-    HALT("THIS IS AMBIGUOUS!");
+//    HALT("THIS IS AMBIGUOUS!");
     x = y;
     T *xp=x.p, *xstop=x.p+x.N, *zp=z.p;
     for(; xp!=xstop; xp++, zp++) *xp *= *zp;

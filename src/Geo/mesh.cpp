@@ -19,12 +19,12 @@
 #include <limits>
 
 #ifdef MLR_extern_ply
-#  include <extern/ply/ply.h>
+#  include "ply/ply.h"
 #endif
 
 #ifdef MLR_extern_GJK
 extern "C"{
-#  include <extern/GJK/gjk.h>
+#  include "GJK/gjk.h"
 }
 #endif
 
@@ -1866,7 +1866,7 @@ double GJK_distance(ors::Mesh& mesh1, ors::Mesh& mesh2,
 //
 
 #ifdef MLR_extern_Lewiner
-#  include <extern/Lewiner/MarchingCubes.h>
+#  include "Lewiner/MarchingCubes.h"
 
 
 void ors::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint res) {
