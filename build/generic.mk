@@ -48,7 +48,7 @@ UIC = uic
 YACC = bison -d
 
 LINK	= $(CXX)
-CPATHS	+= $(BASE)/src
+CPATHS	+= $(BASE)/src $(BASE)/include
 LPATHS	+= $(BASE)/src /usr/local/lib
 LIBS += -lrt
 SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefined
@@ -124,7 +124,7 @@ SWIG_FLAGS=-c++ -python $(SWIG_INCLUDE)
 #
 ################################################################################
 
-BUILDS := $(DEPEND:%=$(BASE)/src/lib%.so) $(BUILDS)
+BUILDS := $(DEPEND:%=makeDepend/%) $(BUILDS)
 LIBS := $(DEPEND:%=-l%) $(LIBS)
 CXXFLAGS := $(DEPEND:%=-DMLR_%) $(CXXFLAGS)
 
@@ -154,16 +154,15 @@ export MSVC_LPATH
 ################################################################################
 
 default: $(OUTPUT)
+all: $(OUTPUT) #this is for qtcreator, which by default uses the 'all' target
 
 clean: force
-	rm -f $(OUTPUT) $(OBJS) $(PREOBJS) callgrind.out.* .lastMake $(CLEAN)
+	rm -f $(OUTPUT) $(OBJS) $(PREOBJS) callgrind.out.* $(CLEAN)
 	@find $(BASE) -type d -name 'Make.lock' -delete -print
-	@find $(BASE) -type f -name '.lastMake' -delete -print
 	@rm -f $(MODULE_NAME)_wrap.* $(MODULE_NAME)py.so $(MODULE_NAME)py.py
 
 cleanLocks: force
 	@find $(BASE) -type d -name 'Make.lock' -delete -print
-	@find $(BASE) -type f -name '.lastMake' -delete -print
 
 cleanAll: clean
 	@find $(BASE) -type f \( -name '*.o' -or -name '*.so' -or -name '*.exe' \)  -delete -print
@@ -247,9 +246,7 @@ pywrapper: $(OUTPUT) $(MODULE_NAME)py.so $(MODULE_NAME)py.py
 %.exe: $(PREOBJS) $(BUILDS) $(OBJS)
 	$(LINK) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
-## this RULE only applies to $(NAME).so
-## other %.so files are created by calling make in their directory
-../$(NAME).so: $(PREOBJS) $(BUILDS) $(OBJS)
+%.so: $(PREOBJS) $(BUILDS) $(OBJS)
 	$(LINK) $(LDFLAGS) -o $@ $(OBJS) $(LIBS) $(SHAREFLAG)
 
 %.lib: $(PREOBJS) $(BUILDS) $(OBJS)
@@ -314,23 +311,26 @@ includeAll.cxx: force
 #
 ################################################################################
 
-$(BASE)/src/libextern_%.so: %
-	+@-$(BASE)/build/make-path.sh $<
+makeDepend/extern_%: %
+	+@-$(BASE)/build/make-path.sh $< libextern_$*.a
+	cd $(BASE)/src && ln -sf $(NAME)/$*/libextern_$*.a libextern_$*.a
 
-$(BASE)/src/libHardware_%.so: $(BASE)/src/Hardware/%
-	+@-$(BASE)/build/make-path.sh $<
+makeDepend/Hardware_%: $(BASE)/src/Hardware/%
+	+@-$(BASE)/build/make-path.sh $< libHardware_$*.so
+	cd $(BASE)/src && ln -sf Hardware/$*/libHardware_$*.so libHardware_$*.so
 
-$(BASE)/src/lib%.so: $(BASE)/src/%
-	+@-$(BASE)/build/make-path.sh $<
+makeDepend/%: $(BASE)/src/%
+	+@-$(BASE)/build/make-path.sh $< lib$*.so
+	cd $(BASE)/src && ln -sf $*/lib$*.so lib$*.so
 
 makePath/%: %
-	+@-$(BASE)/build/make-path.sh $<
+	+@-$(BASE)/build/make-path.sh $< x.exe
 
 makeTest/%: %
-	+@-$(BASE)/build/make-path.sh $< MLR_TESTS=1
+	+@-$(BASE)/build/make-path.sh $< x.exe MLR_TESTS=1
 
 runPath/%: %
-	+@-$(BASE)/build/run-path.sh $<
+	+@-$(BASE)/build/run-path.sh $< x.exe
 
 cleanPath/%: %
 	@echo "                                                ***** clean " $*
