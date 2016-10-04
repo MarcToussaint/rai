@@ -180,6 +180,7 @@ void PublishDatabase::syncOptitrackBody(const OptitrackBody* optitrackbody)
   }
 
   body->X = optitrackbody->frame * optitrackbody->transform;
+  body->shapes.first()->X = body->X;
 
   //((Alvar*)alvar)->transform = body->X;
   modelWorld.deAccess();

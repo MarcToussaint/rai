@@ -4,7 +4,9 @@
 Collector::Collector(const bool simulate):
     Module("Collector", simulate ? 0.05:-1),
     tabletop_clusters(this, "tabletop_clusters", !simulate),
-    ar_pose_markers(this, "ar_pose_markers", !simulate)
+    ar_pose_markers(this, "ar_pose_markers", !simulate),
+    opti_markers(this, "opti_markers", !simulate),
+    opti_bodies(this, "opti_bodies", !simulate)
 {
   tabletop_srcFrame.set()->setZero();
   alvar_srcFrame.set()->setZero();

@@ -17,6 +17,7 @@ struct Optitrack : Module{
   ACCESSname(std::vector<geometry_msgs::TransformStamped>, opti_markers)
   ACCESSname(std::vector<geometry_msgs::TransformStamped>, opti_bodies)
 
+  SubscribeOptitrack* sub;
 
   Optitrack():Module("Optitrack", -1){}
   ~Optitrack(){}
