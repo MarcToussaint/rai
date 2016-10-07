@@ -115,6 +115,7 @@ bool checkDirectionalJacobian(const VectorFunction &f, const arr& x, const arr& 
 #include "opt-options.h"
 #include "opt-convert.h"
 #include "opt-newton.h"
+#include "opt-grad.h"
 #include "opt-constrained.h"
 #include "opt-rprop.h"
 uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions opt);
