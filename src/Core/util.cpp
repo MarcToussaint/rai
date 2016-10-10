@@ -1243,7 +1243,8 @@ Mutex::~Mutex() {
 }
 
 void Mutex::lock() {
-  int rc = pthread_mutex_lock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  int rc = pthread_mutex_lock(&mutex);
+  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   recursive++;
   state=syscall(SYS_gettid);
   MUTEX_DUMP(cout <<"Mutex-lock: " <<state <<" (rec: " <<recursive << ")" <<endl);
@@ -1252,7 +1253,8 @@ void Mutex::lock() {
 void Mutex::unlock() {
   MUTEX_DUMP(cout <<"Mutex-unlock: " <<state <<" (rec: " <<recursive << ")" <<endl);
   if(--recursive == 0) state=0;
-  int rc = pthread_mutex_unlock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  int rc = pthread_mutex_unlock(&mutex);
+  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 #else//MLR_MSVC
 Mutex::Mutex() {}

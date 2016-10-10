@@ -284,7 +284,7 @@ struct Params {
   void set(const char *key, const T &value) {
     Node *i = graph.getNode(key);
     if(i) i->get<T>() = value;
-    else graph.append({key}, {}, value);
+    else graph.newNode({key}, {}, value);
   }
 
   template<class T>
