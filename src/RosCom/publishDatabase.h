@@ -6,9 +6,9 @@
 
 #include <RosCom/filterObject.h>
 
-struct PublishDatabase : Thread {
+struct PublishDatabase : Thread{
+  Access_typed<FilterObjects> object_database;
   ACCESSname(ors::KinematicWorld, modelWorld)
-  ACCESSname(FilterObjects, object_database)
 
   PublishDatabase();
 
@@ -16,14 +16,16 @@ struct PublishDatabase : Thread {
   ros::Publisher cluster_pub;
   ros::Publisher alvar_pub;
   ros::Publisher plane_pub;
+  ros::Publisher plane_marker_pub; // Publish plane info as visualization markers.
 
   virtual void open();
   virtual void step();
   virtual void close();
 
-private:
+
   void syncCluster(const Cluster* cluster);
+  void syncPlane(const Plane* plane);
   void syncAlvar(const Alvar* alvar);
-  mlr::Array<uint> stored_clusters, stored_alvars;
+  mlr::Array<uint> stored_clusters, stored_alvars, stored_planes;
   int revision = -1;
 };

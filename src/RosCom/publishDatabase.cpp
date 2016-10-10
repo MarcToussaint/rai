@@ -29,7 +29,10 @@
 
 
 PublishDatabase::PublishDatabase()
-  : Thread("PublishDatabase", 0){}
+  : Thread("PublishDatabase", -1),
+    object_database(this, "object_database", true),
+    nh(NULL)
+{}
 
 void PublishDatabase::open(){
   //ros::init(mlr::argc, mlr::argv, "publish_database", ros::init_options::NoSigintHandler);
@@ -39,6 +42,7 @@ void PublishDatabase::open(){
     cluster_pub = nh->advertise<visualization_msgs::MarkerArray>("/tabletop/tracked_clusters", 1);
     alvar_pub = nh->advertise<ar::AlvarMarkers>("/tracked_ar_pose_marker", 1);
     plane_pub = nh->advertise<object_recognition_msgs::TableArray>("/tracked_table_array", 1);
+    plane_marker_pub = nh->advertise<visualization_msgs::MarkerArray>("/tracked_table_markers_array", 1);
   }
 }
 
@@ -67,6 +71,38 @@ visualization_msgs::Marker conv_FilterObject2Marker(const FilterObject& object)
   new_marker.color.g = (double)((new_marker.id*10000)%91)/91;
   new_marker.color.b = (double)((new_marker.id*10000)%89)/89;
 
+  return new_marker;
+}
+
+object_recognition_msgs::Table conv_FilterObject2Table(const FilterObject& object)
+{
+  const Plane& plane = dynamic_cast<const Plane&>(object);
+  object_recognition_msgs::Table new_table;
+  new_table.pose = conv_transformation2pose(plane.transform);
+  new_table.convex_hull = conv_arr2points(plane.hull);
+  new_table.header.stamp = ros::Time(0.);
+  new_table.header.frame_id = plane.frame_id;
+
+  return new_table;
+}
+
+visualization_msgs::Marker conv_FilterObject2TableMarker(const FilterObject& object)
+{
+  visualization_msgs::Marker new_marker;
+  const Plane& plane = dynamic_cast<const Plane&>(object);
+  new_marker.type = visualization_msgs::Marker::POINTS;
+  new_marker.points = conv_arr2points( plane.hull );
+  new_marker.id = plane.id;
+  new_marker.scale.x = .1;
+  new_marker.scale.y = .1;
+  new_marker.lifetime = ros::Duration(0.5);
+  new_marker.header.stamp = ros::Time(0.);
+  new_marker.header.frame_id = plane.frame_id;
+  new_marker.color.a = plane.relevance;
+  new_marker.color.r = 1.0;
+  new_marker.color.g = 0;
+  new_marker.color.b = 0;
+  new_marker.pose = conv_transformation2pose(plane.transform * plane.frame);
   return new_marker;
 }
 
@@ -113,6 +149,42 @@ void PublishDatabase::syncCluster(const Cluster* cluster)
   modelWorld.deAccess();
 }
 
+void PublishDatabase::syncPlane(const Plane* plane)
+{
+  modelWorld.writeAccess();
+  mlr::String plane_name = STRING("plane_" << plane->id);
+
+  ors::Body *body = modelWorld().getBodyByName(plane_name, false);
+  if (not body) {
+    //cout << plane_name << " does not exist yet; adding it..." << endl;
+    body = new ors::Body(modelWorld());
+    body->name = plane_name;
+    ors::Shape *shape = new ors::Shape(modelWorld(), *body);
+    shape->name = plane_name;
+    shape->type = ors::pointCloudST;
+    shape = new ors::Shape(modelWorld(), *body);
+    shape->name = plane_name;
+    shape->type = ors::markerST;
+    shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
+    stored_planes.append(plane->id);
+  }
+  body->X = plane->frame * plane->transform;
+
+  //plane->frame = body->X;
+  body->shapes(0)->mesh.V = plane->hull;
+  body->shapes(0)->mesh.makeTriangleFan();
+
+  ors::Vector cen = body->shapes(0)->mesh.center();
+  body->X.addRelativeTranslation(cen);
+  body->shapes(0)->rel.rot = body->X.rot;
+  body->X.rot.setZero();
+
+//  ((Plane*)plane)->transform = body->X;
+  //((plane*)plane)->mean = ARR(cen.x, cen.y, cen.z);
+  /* If we change the mean, we compare the transformed mean to an untransformed mean later...*/
+  modelWorld.deAccess();
+}
+
 void PublishDatabase::syncAlvar(const Alvar* alvar)
 {
   modelWorld.writeAccess();
@@ -131,8 +203,8 @@ void PublishDatabase::syncAlvar(const Alvar* alvar)
   }
 
   body->X = alvar->frame * alvar->transform;
+  body->shapes.first()->X = body->X;
 
-  //((Alvar*)alvar)->transform = body->X;
   modelWorld.deAccess();
 }
 
@@ -149,10 +221,11 @@ void PublishDatabase::step()
 
   FilterObjects objectDatabase = object_database();
 
-  visualization_msgs::MarkerArray cluster_markers;
+  visualization_msgs::MarkerArray cluster_markers, plane_markers;
+  object_recognition_msgs::TableArray table_array;
   ar::AlvarMarkers ar_markers;
 
-  mlr::Array<uint> new_clusters, new_alvars;
+  mlr::Array<uint> new_clusters, new_alvars, new_planes;
 
   for (uint i = 0; i < objectDatabase.N; i++)
   {
@@ -175,9 +248,20 @@ void PublishDatabase::step()
         new_clusters.append(objectDatabase(i)->id);
         break;
       }
+      case FilterObject::FilterObjectType::plane:
+      {
+        object_recognition_msgs::Table table = conv_FilterObject2Table(*objectDatabase(i));
+        visualization_msgs::Marker marker = conv_FilterObject2TableMarker(*objectDatabase(i));
+        plane_markers.markers.push_back(marker);
+
+        table_array.tables.push_back(table);
+        table_array.header.frame_id = table.header.frame_id;
+        syncPlane(dynamic_cast<Plane*>(objectDatabase(i)));
+        new_planes.append(objectDatabase(i)->id);
+        break;
+      }
       default:
       {
-        NIY;
         break;
       }
     }
@@ -191,6 +275,13 @@ void PublishDatabase::step()
 
     if (ar_markers.markers.size() > 0)
       alvar_pub.publish(ar_markers);
+
+    if (table_array.tables.size() > 0)
+      plane_pub.publish(table_array);
+
+    if (plane_markers.markers.size() > 0)
+      plane_marker_pub.publish(plane_markers);
+
   }
 
 

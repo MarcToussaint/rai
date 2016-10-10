@@ -54,12 +54,12 @@ struct AlvarSyncer : Thread {
   AlvarSyncer()
    : Thread("AlvarSyncer"),
     modelWorld(this, "modelWorld", true),
-    ar_pose_markers(this, "ar_pose_markers") {};
-  void open() {};
+    ar_pose_markers(this, "ar_pose_markers") {}
+  void open() {}
   void step() {
     syncMarkers(modelWorld.set(), ar_pose_markers.get());
   }
-  void close() {};
+  void close() {}
 };
 
 struct SubscribeAlvar{

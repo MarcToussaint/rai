@@ -62,6 +62,55 @@ arr evaluateBayesianRidgeRegressionSigma(const arr& X, const arr& bayesSigma){
 
 //===========================================================================
 
+RidgeRegression::RidgeRegression(const arr& X, const arr& y, double lambda, const arr& weighted, int verbose){
+  if(lambda<0.) lambda = mlr::getParameter<double>("lambda",1e-10);
+  CHECK((y.nd==1 || y.nd==2) && X.nd==2 && y.d0==X.d0, "wrong dimensions");
+
+  arr Xt = ~X;
+  if(&weighted) Xt = Xt % weighted;
+  XtX_I = Xt*X;
+  for(uint i=1;i<XtX_I.d0;i++) XtX_I(i,i) += lambda;
+  XtX_I(0, 0) += 1e-10; //don't regularize beta_0 !!
+  beta = lapack_Ainv_b_sym(XtX_I, Xt*y);
+  sigmaSqr = sumOfSqr(X*beta-y)/double(y.N/*-beta.N*/); //beta.N are the degrees of freedom that we substract (=1 for const model)
+  if(verbose>0){
+    cout <<"Ridge Regression: #data=" <<X.d0 <<" #features=" <<X.d1 <<" #outputs=" <<(y.nd==2?y.d1:1) <<endl;
+    cout <<"   mean error (sdv)=" <<sqrt(sigmaSqr) <<endl;
+    if(y.nd==2)
+      cout <<"   multi-output mean errors (sdv)=" <<sqrt(getMultiOutputSquaredErrors(X, y)) <<endl;
+  }
+}
+
+arr RidgeRegression::getBetaSigmaMatrix(){
+  lapack_inverseSymPosDef(betaSigmaMatrix, XtX_I);
+  betaSigmaMatrix *= sigmaSqr;
+  return betaSigmaMatrix;
+}
+
+arr RidgeRegression::getBetaZscores() {
+  arr zScores(beta.N);
+  arr betaSigmaMatrix = getBetaSigmaMatrix();
+  for(uint i=0; i<beta.N; i++) zScores(i) = fabs(beta(i)) / ::sqrt(betaSigmaMatrix(i,i));
+  return zScores;
+}
+
+arr RidgeRegression::getMultiOutputSquaredErrors(const arr& X, const arr& y){
+  arr err = X*beta-y;
+  err *= err; //elem-wise
+  return sum(err,0)/double(X.d0/*-X.d1*/); //beta.N are the degrees of freedom that we substract (=1 for const model)
+}
+
+arr RidgeRegression::evaluate(const arr& X, arr& bayesSigma2){
+  if(&bayesSigma2){
+    bayesSigma2.resize(X.d0);
+    if(!betaSigmaMatrix.N) getBetaSigmaMatrix();
+    for(uint i=0;i<X.d0;i++) bayesSigma2(i) = (~X[i] * betaSigmaMatrix * X[i]).scalar();
+  }
+  return X*beta;
+}
+
+//===========================================================================
+
 double DefaultKernelFunction::k(const arr& x1, const arr& x2, arr& g1, arr& g2){
   if(!type){
     type = (KernelType) mlr::getParameter<uint>("ML/KernelType",1);
@@ -195,7 +244,7 @@ arr KernelLogisticRegression::evaluate(const arr& Z, arr& p_bayes, arr &p_hi, ar
 
 //===========================================================================
 
-arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bayesSigma) {
+arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bayesSigma2) {
   if(lambda<0.) lambda = mlr::getParameter<double>("lambda",1e-10);
 
   CHECK_EQ(y.nd,1, "");
@@ -244,8 +293,8 @@ arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bay
     
     if(alpha*absMax(beta_update)<1e-5) break;
   }
-  if(&bayesSigma){
-    lapack_inverseSymPosDef(bayesSigma, Xt*(w%X) + 2.*I);
+  if(&bayesSigma2){
+    lapack_inverseSymPosDef(bayesSigma2, Xt*(w%X) + 2.*I);
   }
   return beta;
 }
@@ -331,7 +380,7 @@ void CrossValidation::crossValidateSingleLambda(const arr& X, const arr& y, doub
     uintA perm;
     perm.setRandomPerm(X.d0);
     X_perm=X;  X_perm.permuteRows(perm);
-    y_perm=y;  y_perm.permute(perm);
+    y_perm=y;  if(y.nd==2) y_perm.permuteRows(perm); else y_perm.permute(perm);
   }
   //initialize
   double cost, costM=0., costD=0.;
@@ -351,7 +400,10 @@ void CrossValidation::crossValidateSingleLambda(const arr& X, const arr& y, doub
       Xtrain = X_perm;  ytrain = y_perm;
     }
     Xtrain.delRows(blockStart(k), blockStart(k+1)-blockStart(k));
-    ytrain.remove(blockStart(k), blockStart(k+1)-blockStart(k));
+    if(ytrain.nd==2)
+      ytrain.delRows(blockStart(k), blockStart(k+1)-blockStart(k));
+    else
+      ytrain.remove(blockStart(k), blockStart(k+1)-blockStart(k));
     Xtest.referToRange(X, blockStart(k), blockStart(k+1)-1);
     ytest.referToRange(y, blockStart(k), blockStart(k+1)-1);
     
@@ -382,10 +434,10 @@ void CrossValidation::crossValidateSingleLambda(const arr& X, const arr& y, doub
   if(scoreSDV)   *scoreSDV  =costD; else scoreSDVs  =ARR(costD);
   if(scoreTrain) *scoreTrain=costT; else scoreTrains=ARR(costT);
   cout <<"CV: lambda=" <<lambda <<" \tmean-on-rest=" <<costM <<" \tsdv=" <<costD <<" \ttrain-on-full=" <<costT <<endl;
-  cout <<"cross validation results:";
-  if(lambda!=-1) cout <<"\n  lambda = " <<lambda;
-  cout <<"\n  test-error  = " <<costM <<" (+- " <<costD <<", lower: " <<costM-costD <<")"
-  <<"\n  train-error = " <<costT <<endl;
+//  cout <<"cross validation results:";
+//  if(lambda!=-1) cout <<"\n  lambda = " <<lambda;
+//  cout <<"\n  test-error  = " <<costM <<" (+- " <<costD <<", lower: " <<costM-costD <<")"
+//  <<"\n  train-error = " <<costT <<endl;
 }
 
 void CrossValidation::crossValidateMultipleLambdas(const arr& X, const arr& y, const arr& _lambdas, uint k_fold, bool permute) {
@@ -466,7 +518,7 @@ void piecewiseLinearFeatures(arr& Z, const arr& X) {
 
 
 void rbfFeatures(arr& Z, const arr& X, const arr& Xtrain) {
-  int rbfBias = mlr::getParameter<int>("rbfBias", 0);
+  uint rbfBias = mlr::getParameter<uint>("rbfBias", 1);
   double rbfWidth = mlr::sqr(mlr::getParameter<double>("rbfWidth", .2));
   Z.resize(X.d0, Xtrain.d0+rbfBias);
   for(uint i=0; i<Z.d0; i++) {
@@ -481,6 +533,7 @@ arr makeFeatures(const arr& X, FeatureType featureType, const arr& rbfCenters) {
   if(featureType==readFromCfgFileFT) featureType = (FeatureType)mlr::getParameter<uint>("modelFeatureType", 1);
   arr Z;
   switch(featureType) {
+    case constFT:     Z = consts<double>(1., X.d0, 1);  break;
     case linearFT:    linearFeatures(Z, X);  break;
     case quadraticFT: quadraticFeatures(Z, X);  break;
     case cubicFT:     cubicFeatures(Z, X);  break;
@@ -647,3 +700,5 @@ void load_data(arr& X, const char* filename, bool whiten) {
       }
   }
 }
+
+

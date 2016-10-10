@@ -320,11 +320,11 @@ NodeL Graph::getNodesOfDegree(uint deg) {
 }
 
 Node* Graph::merge(Node *m){
-  NodeL KVG = findNodesOfType(m->type, {m->keys(0)});
+  NodeL KVG = findNodesOfType(m->type, {m->keys.last()});
   //CHECK(KVG.N<=1, "can't merge into multiple nodes yet");
   Node *n=NULL;
   if(KVG.N) n=KVG.elem(0);
-  CHECK(n!=m,"how is this possible? are you sure this Merge exists?:" <<*m);
+  CHECK(n!=m,"how is this possible?: You're trying to merge with '" <<*m <<"' but this is the only node using these keys");
   if(n){
     CHECK(m->type==n->type, "can't merge nodes of different types!");
     if(n->isGraph()){ //merge the KVGs
