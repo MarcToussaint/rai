@@ -215,7 +215,7 @@ void AudioWriter::step() {
 #ifdef MLR_OPENCV
 
 #include "opencv.h"
-#include "libcolorseg.h"
+#include "colorseg.h"
 
 #undef COUNT
 #include <opencv2/opencv.hpp>

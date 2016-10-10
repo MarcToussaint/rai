@@ -12,6 +12,7 @@ else
 	tput setaf 3 && echo "       *** Make     " $1 && tput sgr0
 	MAKEFLAGS='-j4 -k' make  -f makefile $3
 	if [ $? = 0 ] ; then # success
+	    touch $2
 	    tput setaf 3 && echo "       *** Done     " $1 && tput sgr0
 #	    date +'%y-%m-%d-%T' > .lastMake
 	else # fail

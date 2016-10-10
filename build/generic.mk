@@ -6,6 +6,8 @@
 
 .SECONDARY:
 
+.PRECIOUS: %.o
+
 BASE_REAL = $(shell realpath $(BASE))
 
 ################################################################################
@@ -164,11 +166,15 @@ clean: force
 cleanLocks: force
 	@find $(BASE) -type d -name 'Make.lock' -delete -print
 
-cleanAll: clean
-	@find $(BASE) -type f \( -name '*.o' -or -name '*.so' -or -name '*.exe' \)  -delete -print
+cleanAll: force
+	@find $(BASE) -type d -name 'Make.lock' -delete -print
+	@find $(BASE) \( -type f -or -type l \) \( -name '*.o' -or -name 'lib*.so' -or -name 'lib*.a' \) -delete -print
 
-cleanLibs: clean
-	@find $(BASE)/lib -type f \( -name '*.so' \)  -delete -print
+cleanLibs: force
+	@find $(BASE)/lib -type f \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
+
+cleanDepends: force
+	@find $(BASE) -type f -name 'Makefile.dep' -delete -print
 
 depend: generate_Makefile.dep
 
@@ -313,15 +319,15 @@ includeAll.cxx: force
 
 makeDepend/extern_%: %
 	+@-$(BASE)/build/make-path.sh $< libextern_$*.a
-	cd $(BASE)/src && ln -sf $(NAME)/$*/libextern_$*.a libextern_$*.a
+	@cd $(BASE)/src && ln -sf $(NAME)/$*/libextern_$*.a libextern_$*.a
 
 makeDepend/Hardware_%: $(BASE)/src/Hardware/%
 	+@-$(BASE)/build/make-path.sh $< libHardware_$*.so
-	cd $(BASE)/src && ln -sf Hardware/$*/libHardware_$*.so libHardware_$*.so
+	@cd $(BASE)/src && ln -sf Hardware/$*/libHardware_$*.so libHardware_$*.so
 
 makeDepend/%: $(BASE)/src/%
 	+@-$(BASE)/build/make-path.sh $< lib$*.so
-	cd $(BASE)/src && ln -sf $*/lib$*.so lib$*.so
+	@cd $(BASE)/src && ln -sf $*/lib$*.so lib$*.so
 
 makePath/%: %
 	+@-$(BASE)/build/make-path.sh $< x.exe
