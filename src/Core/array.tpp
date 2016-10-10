@@ -3380,6 +3380,7 @@ template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x) 
 
 /// equal in size and all elements
 template<class T> bool operator==(const Array<T>& v, const Array<T>& w) {
+  if(!&w) return !&v; //if w==NoArr
   if(!samedim(v, w)) return false;
   const T *vp=v.p, *wp=w.p, *vstop=vp+v.N;
   for(; vp!=vstop; vp++, wp++)
