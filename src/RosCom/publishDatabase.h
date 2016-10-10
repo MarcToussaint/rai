@@ -1,12 +1,12 @@
 #pragma once
 
-#include <Core/module.h>
+#include <Core/thread.h>
 #include <Core/array.h>
 #include <RosCom/roscom.h>
 
 #include <RosCom/filterObject.h>
 
-struct PublishDatabase : Module{
+struct PublishDatabase : Thread {
   ACCESSname(ors::KinematicWorld, modelWorld)
   ACCESSname(FilterObjects, object_database)
 

@@ -251,6 +251,7 @@ bool operator!=(const Quaternion& lhs, const Quaternion& rhs) {
 }
 
 bool operator==(const Transformation& lhs, const Transformation& rhs) {
+  if(!&rhs) return !&lhs; //if rhs==NoArr
   return lhs.pos == rhs.pos && lhs.rot == rhs.rot;
 }
 

@@ -8,7 +8,7 @@
 #  undef MAX
 #endif
 
-#include <Core/module.h>
+#include <Core/thread.h>
 #include <Ors/ors.h>
 #include <Core/array.tpp>
 #include <Gui/opengl.h>
@@ -34,11 +34,11 @@ class AudioWriter_libav;
 
 
 template<class T>
-struct GenericDisplayViewer : Module {
+struct GenericDisplayViewer : Thread {
   OpenGL *gl;
   Access_typed<T> var;
   GenericDisplayViewer(const char* var_name)
-    : Module("GenericDisplayViewer", -1.)
+    : Thread("GenericDisplayViewer", -1.)
     , gl(NULL)
     , var(this, var_name, true){}
   virtual void open(){ gl = new OpenGL(STRING("ImageViewer '"<<var.var->name()<<'\'')); }
@@ -51,12 +51,12 @@ struct GenericDisplayViewer : Module {
   virtual void close(){ delete gl; }
 };
 
-struct VideoEncoder : public Module {
+struct VideoEncoder : Thread {
   struct sVideoEncoder *s;
   bool is_rgb;
   double fps;
   ACCESSlisten(byteA, img)
-  VideoEncoder():Module("VideoEncoder"), is_rgb(false), fps(30) {}
+  VideoEncoder() : Thread("VideoEncoder"), is_rgb(false), fps(30) {}
   virtual ~VideoEncoder() {}
 
   virtual void open();
@@ -68,12 +68,12 @@ struct VideoEncoder : public Module {
   void set_fps(double fps) { this->fps = fps; }
 };
 
-struct VideoEncoderX264 : public Module {
+struct VideoEncoderX264 : Thread {
    struct sVideoEncoderX264 *s;
    bool is_rgb;
    double fps;
    ACCESSlisten(byteA, img)
-   VideoEncoderX264():Module("VideoEncoderX264"), is_rgb(false) {}
+   VideoEncoderX264() : Thread("VideoEncoderX264"), is_rgb(false) {}
    virtual ~VideoEncoderX264() {}
 
    virtual void open();
@@ -113,8 +113,8 @@ typedef mlr::Array<RigidObjectRepresentation*> RigidObjectRepresentationL;
 //
 
 struct ColorChoice{
-  FIELD(byteA, rgb);
-  FIELD(byteA, hsv);
+  byteA rgb;
+  byteA hsv;
 };
 
 //===========================================================================
@@ -123,7 +123,7 @@ struct HoughLines {
 #ifdef MLR_OPENCV
   std::vector<cv::Vec4i> lines;
 #endif
-  FIELD(byteA, display);
+  byteA display;
 };
 inline void operator>>(istream& is,HoughLines& hl){}
 inline void operator<<(ostream& os,const HoughLines& hl){}
@@ -135,7 +135,7 @@ struct Patching {
   arr pch_cen;     //patch centers
   uintA pch_edges; //patch Delauney edges
   floatA pch_rgb;  //patch mean colors
-  FIELD(byteA, display);
+  byteA display;
 };
 inline void operator>>(istream& is,Patching& hl){}
 inline void operator<<(ostream& os,const Patching& hl){}
@@ -147,7 +147,7 @@ struct SURFfeatures {
   std::vector<cv::KeyPoint> keypoints;
   std::vector<float> descriptors;
 #endif
-  FIELD(byteA, display);
+  byteA display;
 };
 inline void operator>>(istream& is,SURFfeatures& hl){}
 inline void operator<<(ostream& os,const SURFfeatures& hl){}
@@ -157,7 +157,7 @@ inline void operator<<(ostream& os,const SURFfeatures& hl){}
 /** The RigidObjectRepresentation List output of perception */
 struct PerceptionOutput {
   mlr::Array<RigidObjectRepresentation> objects;
-  FIELD(byteA, display);
+  byteA display;
 };
 niyPipes(PerceptionOutput);
 
@@ -181,22 +181,22 @@ BEGIN_MODULE(AudioReader)    AudioPoller_PA *poller; ACCESS(byteA, pcms16ne2c) E
 BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; ACCESS(byteA, pcms16ne2c) END_MODULE()
 #else
 
-struct ImageViewer:Module{
+struct ImageViewer : Thread {
   struct sImageViewer *s;
   Access_typed<byteA> img;
-  ImageViewer(const char* img_name="rgb") : Module(STRING("ImageViewer_"<<img_name), -1), img(this, img_name, true){}
+  ImageViewer(const char* img_name="rgb") : Thread(STRING("ImageViewer_"<<img_name), -1), img(this, img_name, true){}
   ~ImageViewer(){}
   void open();
   void step();
   void close();
 };
 
-struct PointCloudViewer:Module{
+struct PointCloudViewer : Thread {
   struct sPointCloudViewer *s;
   Access_typed<arr> pts;
   Access_typed<arr> cols;
   PointCloudViewer(const char* pts_name="kinect_points", const char* cols_name="kinect_pointColors")
-    : Module(STRING("PointCloudViewer_"<<pts_name <<'_' <<cols_name), .1),
+    : Thread(STRING("PointCloudViewer_"<<pts_name <<'_' <<cols_name), .1),
       pts(this, pts_name),
       cols(this, cols_name){}
   void open();
@@ -204,57 +204,57 @@ struct PointCloudViewer:Module{
   void close();
 };
 
-struct OpencvCamera:Module{
+struct OpencvCamera : Thread {
   struct sOpencvCamera *s;
   Access_typed<byteA> rgb;
   std::map<int,double> properties; bool set(int prop, double value);
-  OpencvCamera(const char* rgb_name="rgb") : Module(STRING("OpencvCamera_"<<rgb_name), 0.), rgb(this, rgb_name){}
+  OpencvCamera(const char* rgb_name="rgb") : Thread(STRING("OpencvCamera_"<<rgb_name), 0.), rgb(this, rgb_name){}
   void open();
   void step();
   void close();
 };
 
-struct CvtGray:Module{
+struct CvtGray : Thread {
   struct sCvtGray *s;
   Access_typed<byteA> rgb;
   Access_typed<byteA> gray;
   std::map<int,double> properties; bool set(int prop, double value);
   CvtGray(const char* rgb_name="rgb", const char* gray_name="gray")
-    : Module(STRING("CvtGray_"<<rgb_name), -1), rgb(this, rgb_name, true), gray(this, gray_name){}
+    : Thread(STRING("CvtGray_"<<rgb_name), -1), rgb(this, rgb_name, true), gray(this, gray_name){}
   void open();
   void step();
   void close();
 };
 
-struct MotionFilter:Module{
+struct MotionFilter : Thread {
   struct sMotionFilter *s;
   Access_typed<byteA> rgb;
   Access_typed<byteA> motion;
   MotionFilter(const char* rgb_name="rgb", const char* motion_name="motion")
-    : Module(STRING("MotionFilter_"<<rgb_name), -1), rgb(this, rgb_name, true), motion(this, motion_name){}
+    : Thread(STRING("MotionFilter_"<<rgb_name), -1), rgb(this, rgb_name, true), motion(this, motion_name){}
   void open();
   void step();
   void close();
 };
 
-struct DifferenceFilter:Module{
+struct DifferenceFilter : Thread {
   struct sDifferenceFilter *s;
   Access_typed<byteA> i1;
   Access_typed<byteA> i2;
   Access_typed<byteA> diffImage;
   DifferenceFilter(const char* i1_name="i1", const char* i2_name="i2", const char* diffImage_name="diffImage")
-    : Module(STRING("DifferenceFilter_"<<i1_name), -1), i1(this, i1_name, true), i2(this, i2_name), diffImage(this, diffImage_name){}
+    : Thread(STRING("DifferenceFilter_"<<i1_name), -1), i1(this, i1_name, true), i2(this, i2_name), diffImage(this, diffImage_name){}
   void open();
   void step();
   void close();
 };
 
-struct CannyFilter:Module{
+struct CannyFilter : Thread {
   struct sCannyFilter *s;
   Access_typed<byteA> grayImage;
   Access_typed<byteA> cannyImage;
   CannyFilter(const char* grayImage_name="grayImage", const char* cannyImage_name="cannyImage")
-    : Module(STRING("CannyFilter_"<<grayImage_name<<"_" <<cannyImage_name), -1),
+    : Thread(STRING("CannyFilter_"<<grayImage_name<<"_" <<cannyImage_name), -1),
       grayImage(this, grayImage_name, true),
       cannyImage(this, cannyImage_name){}
   void open();
@@ -262,12 +262,12 @@ struct CannyFilter:Module{
   void close();
 };
 
-struct Patcher:Module{
+struct Patcher : Thread {
   struct sPatcher *s;
   Access_typed<byteA> rgbImage;
   Access_typed<Patching> patchImage;
   Patcher(const char* rgbImage_name="rgbImage", const char* patchImage_name="patchImage")
-    : Module(STRING("Patcher"<<rgbImage_name<<"_" <<patchImage_name), -1),
+    : Thread(STRING("Patcher"<<rgbImage_name<<"_" <<patchImage_name), -1),
       rgbImage(this, rgbImage_name, true),
       patchImage(this, patchImage_name){}
   void open();
@@ -275,7 +275,7 @@ struct Patcher:Module{
   void close();
 };
 
-struct AllViewer : Module{
+struct AllViewer : Thread {
   Access_typed<arr> kinect_points;
   Access_typed<arr> kinect_pointColors;
   Access_typed<PlaneA> planes_now;
@@ -285,7 +285,7 @@ struct AllViewer : Module{
   OpenGL gl;
 
   AllViewer()
-    : Module("AllViewer", .1),
+    : Thread("AllViewer", .1),
       kinect_points(this, "kinect_points"),
       kinect_pointColors(this, "kinect_pointColors"),
       planes_now(this, "planes_now"),

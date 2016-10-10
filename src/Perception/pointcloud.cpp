@@ -5,7 +5,7 @@
 #include <numeric>
 #include <limits>
 
-#include <Core/module.h>
+#include <Core/thread.h>
 #include <Core/array.h>
 
 #include <pcl/point_cloud.h>
@@ -25,7 +25,7 @@
 //#include <vtkTubeFilter.h>
 
 
-ObjectClusterer::ObjectClusterer() : Module("ObjectClusterer") {
+ObjectClusterer::ObjectClusterer() : Thread("ObjectClusterer") {
 //  biros->getVariable(data_3d, "KinectData3D", this, true);
 //  biros().getVariable(point_clouds, "ObjectClusters", this, true);
   NIY;//listenTo(data_3d);
@@ -275,7 +275,7 @@ void ObjectClusterer::step() {
   point_clouds.set() = _point_clouds;
 }
 
-ObjectFitter::ObjectFitter() : Module("ObectFitter"), s(new sObjectFitter(this)) {
+ObjectFitter::ObjectFitter() : Thread("ObectFitter"), s(new sObjectFitter(this)) {
 //  biros().getVariable<PointCloudSet>(objectClusters, "ObjectClusters", this, true);
 //  biros().getVariable<ObjectSet>(objects, "Objects", this, true);
   NIY//listenTo(objectClusters);
@@ -380,7 +380,7 @@ struct sObjectFilter {
   }
 };
 
-ObjectFilter::ObjectFilter(const char* name) : Module(name) {
+ObjectFilter::ObjectFilter(const char* name) : Thread(name) {
   s = new sObjectFilter;  
   //biros().getVariable(in_objects, "Objects", this, true);
   //biros().getVariable(out_objects, "filteredObjects", this, true);
@@ -442,7 +442,7 @@ void ObjectFilter::step() {
   out_objects.deAccess();
 }
 
-ObjectTransformator::ObjectTransformator(const char* name) : Module(name) {
+ObjectTransformator::ObjectTransformator(const char* name) : Thread(name) {
 //  biros().getVariable(kinect_objects, "filteredObjects", this, true);
   geo.init("GeometricState");
   NIY//listenTo(kinect_objects);

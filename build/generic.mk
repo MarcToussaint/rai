@@ -335,13 +335,13 @@ runPath/%: %
 cleanPath/%: %
 	@echo "                                                ***** clean " $*
 	@-rm -f $*/Makefile.dep
-	@-$(MAKE) -C $* -f Makefile clean --no-print-directory
+	@-$(MAKE) -C $* -f makefile clean --no-print-directory
 
 makePythonPath/%: %
 	make --directory=$< pywrapper
 
-$(BASE)/build/config.mk: $(BASE)/build/config.mk.default
-	cp $< $@
+#$(BASE)/build/config.mk: $(BASE)/build/config.mk.default
+#	cp $< $@
 
 zip::
 	cd ..;  rm -f $(NAME).tgz;  tar cvzf $(NAME).tgz $(NAME) --dereference --exclude-vcs --exclude-from tar.exclude --exclude-from $(NAME)/tar.exclude

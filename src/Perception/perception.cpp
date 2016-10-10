@@ -7,18 +7,18 @@
 
 void lib_Perception(){ MLR_MSG("loading"); }
 
-REGISTER_MODULE (PointCloudViewer)
-REGISTER_MODULE (VideoEncoder)
-REGISTER_MODULE (VideoEncoderX264)
-REGISTER_MODULE (AudioReader)
-REGISTER_MODULE (AudioWriter)
+//REGISTER_MODULE (PointCloudViewer)
+//REGISTER_MODULE (VideoEncoder)
+//REGISTER_MODULE (VideoEncoderX264)
+//REGISTER_MODULE (AudioReader)
+//REGISTER_MODULE (AudioWriter)
 
 //===========================================================================
 //
 // ImageViewer
 //
 
-REGISTER_MODULE (ImageViewer)
+//REGISTER_MODULE (ImageViewer)
 
 struct sImageViewer{
   OpenGL gl;
@@ -227,16 +227,16 @@ void AudioWriter::step() {
 #undef MIN
 #undef MAX
 
-REGISTER_MODULE (OpencvCamera)
-REGISTER_MODULE (CvtGray)
-REGISTER_MODULE (CvtHsv)
-REGISTER_MODULE (HsvFilter)
-REGISTER_MODULE (MotionFilter)
-REGISTER_MODULE (DifferenceFilter)
-REGISTER_MODULE (CannyFilter)
-REGISTER_MODULE (Patcher)
-REGISTER_MODULE (SURFer)
-REGISTER_MODULE (HoughLineFilter)
+//REGISTER_MODULE (OpencvCamera)
+//REGISTER_MODULE (CvtGray)
+//REGISTER_MODULE (CvtHsv)
+//REGISTER_MODULE (HsvFilter)
+//REGISTER_MODULE (MotionFilter)
+//REGISTER_MODULE (DifferenceFilter)
+//REGISTER_MODULE (CannyFilter)
+//REGISTER_MODULE (Patcher)
+//REGISTER_MODULE (SURFer)
+//REGISTER_MODULE (HoughLineFilter)
 //REGISTER_MODULE (ShapeFitter)
 
 
@@ -593,7 +593,7 @@ void HoughLineFilter::step() {
 // ShapeFitter
 //
 
-//struct ShapeFitter: Module {
+//struct ShapeFitter: Thread{
 //  struct sShapeFitter *s;
 
 //  FloatImage *eviL, *eviR;

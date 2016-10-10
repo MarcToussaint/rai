@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Core/module.h>
+#include <Core/thread.h>
 
-struct RosCom_Spinner:Module{
+struct RosCom_Spinner : Thread {
   bool useRos;
   RosCom_Spinner(const char* nodeName="MLRnode");
   void open(){}

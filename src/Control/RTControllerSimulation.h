@@ -2,11 +2,11 @@
 #define PR2DYNAMICSIMULATION_H
 
 #include <Core/array.h>
-#include <Core/module.h>
+#include <Core/thread.h>
 #include <Ors/ors.h>
 #include <Control/ctrlMsg.h>
 
-struct RTControllerSimulation : Module {
+struct RTControllerSimulation : Thread {
   Access_typed<CtrlMsg> ctrl_ref;
   Access_typed<CtrlMsg> ctrl_obs;
   Access_typed<ors::KinematicWorld> modelWorld;

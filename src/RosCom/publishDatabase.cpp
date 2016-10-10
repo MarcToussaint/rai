@@ -28,8 +28,8 @@
 #endif
 
 
-PublishDatabase::PublishDatabase():
-    Module("PublishDatabase", 0){}
+PublishDatabase::PublishDatabase()
+  : Thread("PublishDatabase", 0){}
 
 void PublishDatabase::open(){
   //ros::init(mlr::argc, mlr::argv, "publish_database", ros::init_options::NoSigintHandler);

@@ -324,7 +324,7 @@ Node* Graph::merge(Node *m){
   //CHECK(KVG.N<=1, "can't merge into multiple nodes yet");
   Node *n=NULL;
   if(KVG.N) n=KVG.elem(0);
-  CHECK(n!=m,"how is this possible?");
+  CHECK(n!=m,"how is this possible? are you sure this Merge exists?:" <<*m);
   if(n){
     CHECK(m->type==n->type, "can't merge nodes of different types!");
     if(n->isGraph()){ //merge the KVGs

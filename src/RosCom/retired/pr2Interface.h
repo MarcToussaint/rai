@@ -1,7 +1,7 @@
 #ifndef PR2INTERFACE_H
 #define PR2INTERFACE_H
 
-#include <Core/module.h>
+#include <Core/thread.h>
 #include <Core/array.h>
 #include <RosCom/roscom.h>
 #include <Ors/ors.h>
@@ -9,7 +9,7 @@
 #include <Control/taskSpaceController.h>
 #include <RosCom/subscribeAlvarMarkers.h>
 
-struct PR2Interface : Module {
+struct PR2Interface : Thread {
   ACCESS(CtrlMsg, ctrl_ref)
   ACCESS(CtrlMsg, ctrl_obs)
   ACCESS(AlvarMarkers, ar_pose_markers)

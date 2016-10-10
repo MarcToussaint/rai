@@ -70,7 +70,7 @@ baxter_core_msgs::EndEffectorCommand getGripperMsg(const arr& q_ref, const ors::
 
 
 SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const ors::KinematicWorld& kw)
-  : Module("SendPositionCommandsToBaxter"),
+  : Thread("SendPositionCommandsToBaxter"),
     ctrl_ref(this, "ctrl_ref", true),
     s(NULL),
     baxterModel(kw){

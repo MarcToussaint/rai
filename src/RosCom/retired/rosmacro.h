@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ros/ros.h>
-#include <Core/module.h>
+#include <Core/thread.h>
 
 
 /** MACRO to create a MLR module that integrates data from ROS into the MLR
@@ -20,11 +20,11 @@
 #ifdef MLR_ROS
 
 #define ROSSUB(topic_name, msg_type, var_name) \
-  struct ROSSUB_##var_name : Module { \
+  struct ROSSUB_##var_name : Thread { \
     ACCESS(msg_type, var_name) \
     ros::NodeHandle* _nh; \
     ros::Subscriber _sub; \
-    ROSSUB_##var_name() : Module(#var_name) {} \
+    ROSSUB_##var_name() : Thread(#var_name) {} \
     void open() { \
       this->_nh = new ros::NodeHandle; \
       this->_sub  = this->_nh->subscribe( \
@@ -42,9 +42,9 @@
 
 #else
 
-struct ROSSUB_##var_name : Module { \
+struct ROSSUB_##var_name : Thread { \
   ACCESS(msg_type, var_name) \
-  ROSSUB_##var_name() : Module(#var_name) {} \
+  ROSSUB_##var_name() : Thread(#var_name) {} \
   void open() { \
     LOG(-1) <<"fake subscriber: " <<#var_name <<" -- compiled without MLR_ROS flag"; \
   } \

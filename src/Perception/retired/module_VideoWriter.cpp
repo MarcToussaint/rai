@@ -3,7 +3,7 @@
 
 REGISTER_MODULE(VideoEncoderModule)
 
-VideoEncoderModule::VideoEncoderModule():Module("FloatA_Recorder"), fps(30), video(NULL){
+VideoEncoderModule::VideoEncoderModule() : Thread("FloatA_Recorder"), fps(30), video(NULL){
 }
 
 void VideoEncoderModule::open(){

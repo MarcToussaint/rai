@@ -1,8 +1,8 @@
 #include <RosCom/roscom.h>
 #include "perceptionCollection.h"
 
-Collector::Collector():
-    Module("Collector", 0){}
+Collector::Collector()
+  : Thread("Collector", 0){}
 
 void Collector::step()
 {

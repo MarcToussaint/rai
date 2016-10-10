@@ -6,7 +6,7 @@
 #include <Core/array.h>
 #include <RosCom/roscom.h>
 #include <Algo/spline.h>
-#include <Core/module.h>
+#include <Core/thread.h>
 
 
 struct LinTaskSpaceAccLaw {

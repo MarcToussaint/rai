@@ -1,5 +1,5 @@
 #pragma once
-#include <Core/module.h>
+#include <Core/thread.h>
 #include <RosCom/filterObject.h>
 #include <RosCom/roscom.h>
 
@@ -15,7 +15,7 @@
 Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker);
 Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker);
 
-struct Collector : Module{
+struct Collector : Thread {
   ACCESSname(visualization_msgs::MarkerArray, tabletop_clusters)
   ACCESSname(ar::AlvarMarkers, ar_pose_markers)
   ACCESSname(FilterObjects, perceptual_inputs)

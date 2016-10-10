@@ -389,7 +389,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
                    stopFTolerance = 1e-3,
                    damping=1,
                    maxStep=-1,
-                   constrainedMethod = anyTimeAula,
+                   constrainedMethod = augmentedLag,
                    aulaMuInc = 1.1
                    ));
   opt.run();
@@ -403,10 +403,10 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
   g = opt.UCP.get_sumOfGviolations();
 }
 
-void ors::Mesh::makeSSBox(arr& x, Transformation& t, const arr& X, uint trials, int verbose){
+void ors::Mesh::makeSSBox(arr& x_ret, Transformation& t_ret, const arr& X, uint trials, int verbose){
   if(!X.N){ clear(); return; }
 
-  arr x_best;
+  arr x,x_best;
   double f,g, f_best, g_best;
   fitSSBox(x_best, f_best, g_best, X, verbose);
   for(uint k=1;k<trials;k++){
@@ -415,19 +415,26 @@ void ors::Mesh::makeSSBox(arr& x, Transformation& t, const arr& X, uint trials, 
        (g<1e-4 && f<f_best)){ x_best=x; f_best=f; g_best=g; }
   }
 
-  x=x_best;
+  x = x_best;
+
+  if(x_ret!=NoArr)
+    x_ret=x;
 
   if(verbose>2){
     cout <<"x=" <<x;
     cout <<"\nf = " <<f_best <<"\ng-violations = " <<g_best <<endl;
   }
 
+  Transformation t;
   t.setZero();
   t.pos.set( x.refRange(4,6) );
   t.rot.set( x.refRange(7,-1) );
   t.rot.normalize();
   setSSBox(2.*x(0), 2.*x(1), 2.*x(2), x(3));
   t.applyOnPointArray(V);
+
+  if(t_ret!=NoTransformation)
+    t_ret = t;
 }
 
 void ors::Mesh::setSSCvx(const ors::Mesh& m, double r, uint fineness){

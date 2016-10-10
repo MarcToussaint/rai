@@ -255,6 +255,17 @@ struct Thread{
   void main(); //this is the thread main - should be private!
 };
 
+// macro for a most standard declaration of a module
+#define BEGIN_MODULE(name) \
+  struct name : Thread { \
+    struct s##name *s; \
+    name(): Thread(#name), s(NULL) {} \
+    virtual void open(); \
+    virtual void step(); \
+    virtual void close();
+
+#define END_MODULE() };
+
 
 //===========================================================================
 //
@@ -334,6 +345,10 @@ struct Access_typed:Access{
 };
 
 inline bool operator==(const Access&,const Access&){ return false; }
+
+#define ACCESS(type, name) Access_typed<type> name = Access_typed<type>(this, #name);
+#define ACCESSlisten(type, name) Access_typed<type> name = Access_typed<type>(this, #name, true);
+#define ACCESSname(type, name) Access_typed<type> name = Access_typed<type>(NULL, #name);
 
 
 //===========================================================================
