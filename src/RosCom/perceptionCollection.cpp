@@ -5,16 +5,20 @@ Collector::Collector(const bool simulate):
     Module("Collector", simulate ? 0.05:-1),
     tabletop_clusters(this, "tabletop_clusters", !simulate),
     ar_pose_markers(this, "ar_pose_markers", !simulate),
+    opti_markers(this, "opti_markers", !simulate),
+    opti_bodies(this, "opti_bodies", !simulate),
     tabletop_tableArray(this, "tabletop_tableArray", !simulate)
 {
   tabletop_srcFrame.set()->setZero();
   alvar_srcFrame.set()->setZero();
+  optitrack_srcFrame.set()->setZero();
   this->simulate = simulate;
 }
 
 void Collector::step()
 {
   FilterObjects percepts;
+  percepts.clear();
 
   if (!simulate)
   {
@@ -146,6 +150,83 @@ void Collector::step()
       }
     }
     ar_pose_markers.deAccess(); //MT: make the access shorter, only around the blocks above
+	
+	int body_rev = opti_bodies.readAccess();
+    if ( body_rev > opti_bodies_revision)
+    {
+      opti_bodies_revision = body_rev;
+      const std::vector<geometry_msgs::TransformStamped> msgs = opti_bodies();
+      for(uint i=0; i<msgs.size(); i++){
+          geometry_msgs::TransformStamped msg = msgs.at(i);
+#if 0
+          if (!has_transform)
+          {
+           // Convert into a position relative to the base.
+            tf::TransformListener listener;
+            tf::StampedTransform baseTransform;
+            try{
+                listener.waitForTransform("/world", msg.header.frame_id, ros::Time(0), ros::Duration(1.0));
+                listener.lookupTransform("/world", msg.header.frame_id, ros::Time(0), baseTransform);
+                tf = conv_transform2transformation(baseTransform);
+                ors::Transformation inv;
+                inv.setInverse(tf);
+                inv.addRelativeTranslation(0,0,-1);
+                inv.setInverse(inv);
+                tf = inv;
+                has_transform = true;
+            }
+            catch (tf::TransformException &ex) {
+              ROS_ERROR("%s",ex.what());
+              ros::Duration(1.0).sleep();
+              exit(0);
+            }
+          }
+#endif
+          OptitrackBody* new_optitrack_body = new OptitrackBody(conv_tf2OptitrackBody( msg ));
+          new_optitrack_body->frame = optitrack_srcFrame.get(); //tf
+          percepts.append( new_optitrack_body );
+        }
+    }
+	opti_bodies.deAccess();
+
+	int marker_rev = opti_markers.readAccess();
+    if ( marker_rev > opti_markers_revision)
+    {
+      opti_markers_revision = marker_rev;
+      const std::vector<geometry_msgs::TransformStamped> msgs = opti_markers();
+
+      for(uint i=0; i<msgs.size(); i++){
+          geometry_msgs::TransformStamped msg = msgs.at(i);
+#if 0
+          if (!has_transform)
+          {
+           // Convert into a position relative to the base.
+            tf::TransformListener listener;
+            tf::StampedTransform baseTransform;
+            try{
+                listener.waitForTransform("/world", msg.header.frame_id, ros::Time(0), ros::Duration(1.0));
+                listener.lookupTransform("/world", msg.header.frame_id, ros::Time(0), baseTransform);
+                tf = conv_transform2transformation(baseTransform);
+                ors::Transformation inv;
+                inv.setInverse(tf);
+                inv.addRelativeTranslation(0,0,-1);
+                inv.setInverse(inv);
+                tf = inv;
+                has_transform = true;
+            }
+            catch (tf::TransformException &ex) {
+              ROS_ERROR("%s",ex.what());
+              ros::Duration(1.0).sleep();
+              exit(0);
+            }
+          }
+#endif
+          OptitrackMarker* new_optitrack_marker = new OptitrackMarker(conv_tf2OptitrackMarker( msg ));
+          new_optitrack_marker->frame = optitrack_srcFrame.get(); //tf;
+          percepts.append( new_optitrack_marker );
+        }
+    }
+	opti_markers.deAccess();
 
   }
   else // If 'simulate', make a fake cluster and alvar
@@ -164,6 +245,12 @@ void Collector::step()
     fake_cluster->frame.setZero();
     fake_cluster->frame.addRelativeTranslation(0.6, 0., 1.05);
     ors::Quaternion rot;
+
+//    int tick = perceptual_inputs.readAccess();
+//    perceptual_inputs.deAccess();
+//    cout << "tick: " << tick << endl;
+//    rot.setDeg(0.01 * tick, ors::Vector(0.1, 0.25, 1));
+
     rot.setDeg(30, ors::Vector(0.1, 0.25, 1));
     fake_cluster->frame.addRelativeRotation(rot);
     percepts.append( fake_cluster );
@@ -181,6 +268,7 @@ void Collector::step()
     fake_alvar->frame.addRelativeRotation(rot);
     fake_alvar->id = 10;
     percepts.append( fake_alvar );
+    mlr::wait(0.01);
   }
 
   if (percepts.N > 0){
@@ -189,7 +277,8 @@ void Collector::step()
 }
 
 
-Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker){
+Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker)
+{
   arr points = conv_points2arr(marker.points);
   arr mean = sum(points,0)/(double)points.d0;
   return Cluster(mean, points, marker.header.frame_id);
@@ -207,10 +296,28 @@ Plane conv_ROSTable2Plane(const object_recognition_msgs::Table& table){
   return toReturn;
 }
 
-Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker){
+Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker)
+{
   Alvar new_alvar(marker.header.frame_id);
   new_alvar.id = marker.id;
   new_alvar.transform = conv_pose2transformation(marker.pose.pose);
   return new_alvar;
 }
+
+OptitrackMarker conv_tf2OptitrackMarker(const geometry_msgs::TransformStamped& msg)
+{
+  OptitrackMarker new_optitrackmarker(msg.header.frame_id);
+//  new_optitrackmarker.id = marker.id;
+  new_optitrackmarker.transform = conv_transform2transformation(msg.transform);
+  return new_optitrackmarker;
+}
+
+OptitrackBody conv_tf2OptitrackBody(const geometry_msgs::TransformStamped& msg)
+{
+  OptitrackBody new_optitrackbody(msg.header.frame_id);
+//  new_alvar.id = body.id;
+  new_optitrackbody.transform = conv_transform2transformation(msg.transform);
+  return new_optitrackbody;
+}
+
 

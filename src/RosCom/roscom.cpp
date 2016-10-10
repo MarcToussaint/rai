@@ -52,6 +52,15 @@ ors::Transformation conv_transform2transformation(const tf::Transform &trans){
   return X;
 }
 
+
+ors::Transformation conv_transform2transformation(const geometry_msgs::Transform &trans){
+  ors::Transformation X;
+  X.setZero();
+  X.rot.set(trans.rotation.w, trans.rotation.x, trans.rotation.y, trans.rotation.z);
+  X.pos.set(trans.translation.x, trans.translation.y, trans.translation.z);
+  return X;
+}
+
 ors::Transformation conv_pose2transformation(const geometry_msgs::Pose &pose){
   ors::Transformation X;
   X.setZero();
@@ -72,6 +81,18 @@ geometry_msgs::Pose conv_transformation2pose(const ors::Transformation& transfor
   pose.orientation.z = transform.rot.z;
   pose.orientation.w = transform.rot.w;
   return pose;
+}
+
+geometry_msgs::Transform conv_transformation2transform(const ors::Transformation& transformation){
+  geometry_msgs::Transform transform;
+  transform.translation.x = transformation.pos.x;
+  transform.translation.y  = transformation.pos.y;
+  transform.translation.z  = transformation.pos.z;
+  transform.rotation.x = transformation.rot.x;
+  transform.rotation.y = transformation.rot.y;
+  transform.rotation.z = transformation.rot.z;
+  transform.rotation.w = transformation.rot.w;
+  return transform;
 }
 
 ors::Vector conv_point2vector(const geometry_msgs::Point& p){
