@@ -667,7 +667,9 @@ Vector Quaternion::getX() const {
   double q13 = 2.*x*z;
   double q02 = 2.*w*y;
   double q03 = 2.*w*z;
-  Rx.set(1-q22-q33, q12+q03, q13-q02);
+  Rx.x=1-q22-q33;
+  Rx.y=q12+q03;
+  Rx.z=q13-q02;
   return Rx;
 }
 Vector Quaternion::getY() const { return (*this)*Vector_y; }
