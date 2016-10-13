@@ -367,9 +367,9 @@ void glDrawDiamond(float x, float y, float z) {
   glBegin(GL_TRIANGLE_FAN);
   glVertex3f(.0, .0, -z);
   glVertex3f(x, .0, .0);
-  glVertex3f(.0, y, .0);
-  glVertex3f(-x, .0, .0);
   glVertex3f(.0, -y, .0);
+  glVertex3f(-x, .0, .0);
+  glVertex3f(.0, y, .0);
   glVertex3f(x, .0, .0);
   glEnd();
 //  glEnable(GL_CULL_FACE);
