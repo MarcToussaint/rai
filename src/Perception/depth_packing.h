@@ -1,12 +1,12 @@
 #pragma once
 
-#include <Core/module.h>
+#include <Core/thread.h>
 
-struct KinectDepthPacking:Module{
+struct KinectDepthPacking : Thread {
   struct sKinectDepthPacking *s;
   ACCESSlisten(uint16A, kinect_depth);
   ACCESS(byteA, kinect_depthRgb);
-  KinectDepthPacking():Module("KinectDepthPacking"){}
+  KinectDepthPacking() : Thread("KinectDepthPacking"){}
   void open();
   void step();
   void close();

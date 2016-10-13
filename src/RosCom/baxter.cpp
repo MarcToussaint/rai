@@ -33,6 +33,23 @@ bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const o
   return true;
 }
 
+bool baxter_get_q_qdot_u(arr& q, arr& v, arr& u, const sensor_msgs::JointState& msg, const ors::KinematicWorld& baxterModel){
+  uint n = msg.name.size();
+  if(!n) return false;
+  if(&q && q.N!=baxterModel.q.N) q.resize(baxterModel.q.N).setZero();
+  if(&v && v.N!=baxterModel.q.N) v.resize(baxterModel.q.N).setZero();
+  if(&u && u.N!=baxterModel.q.N) u.resize(baxterModel.q.N).setZero();
+  for(uint i=0;i<n;i++){
+    ors::Joint *j = baxterModel.getJointByName(msg.name[i].c_str(), false);
+    if(j){
+      if(&q) q(j->qIndex) = msg.position[i];
+      if(&v) v(j->qIndex) = msg.velocity[i];
+      if(&u) u(j->qIndex) = msg.effort[i];
+    }
+  }
+  return true;
+}
+
 arr baxter_getEfforts(const sensor_msgs::JointState& msg, const ors::KinematicWorld& baxterModel){
   uint n = msg.name.size();
   if(!n) return arr();
@@ -57,7 +74,12 @@ baxter_core_msgs::EndEffectorCommand getGripperMsg(const arr& q_ref, const ors::
   baxter_core_msgs::EndEffectorCommand msg;
   ors::Joint *j = baxterModel.getJointByName("l_gripper_l_finger_joint");
   mlr::String str;
-  str <<"{ \"position\":" <<1000.*q_ref(j->qIndex) <<", \"dead zone\":5.0, \"force\": 40.0, \"holding force\": 30.0, \"velocity\": 50.0 }";
+
+  double position = q_ref(j->qIndex) / j->limits(1) * 100.0;
+
+//  str <<"{ \"position\":" <<1000.*q_ref(j->qIndex) <<", \"dead zone\":5.0, \"force\": 40.0, \"holding force\": 30.0, \"velocity\": 50.0 }";
+  str <<"{ \"position\":" << position<<", \"dead zone\":5.0, \"force\": 40.0, \"holding force\": 30.0, \"velocity\": 50.0 }";
+
   //cout <<str <<endl;
 
   msg.id = 65538;
@@ -70,7 +92,7 @@ baxter_core_msgs::EndEffectorCommand getGripperMsg(const arr& q_ref, const ors::
 
 
 SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const ors::KinematicWorld& kw)
-  : Module("SendPositionCommandsToBaxter"),
+  : Thread("SendPositionCommandsToBaxter"),
     ctrl_ref(this, "ctrl_ref", true),
     s(NULL),
     baxterModel(kw){
@@ -107,6 +129,10 @@ void SendPositionCommandsToBaxter::step(){
 
     s->pubHead.publish(getHeadMsg(q_ref, baxterModel));
     s->pubGripper.publish(getGripperMsg(q_ref, baxterModel));
+  }
+  else
+  {
+    close();
   }
 }
 

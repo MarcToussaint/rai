@@ -2226,6 +2226,7 @@ template<class T> mlr::Array<T> sum(const mlr::Array<T>& v, uint d) {
     x.reshape(x.d0, x.N/x.d0);
     S.resize(x.d1);  S.setZero();
     for(i=0; i<x.d0; i++) for(j=0; j<x.d1; j++) S(j) += x(i, j);
+    if(v.nd>2) S.reshape(v.dim().sub(1,-1));
     return S;
   }
   //any other index (includes the previous cases, but marginally slower)
@@ -2532,7 +2533,6 @@ void indexWiseProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array
       T yi=y.p[i];
       T *xp=&x(i,0), *xstop=xp+x.d1;
       for(; xp!=xstop; xp++) *xp *= yi;
-//      x[i]() *= y(i);
     }
     return;
   }
@@ -2543,7 +2543,7 @@ void indexWiseProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array
     return;
   }
   if(y.dim() == z.dim()) { //matrix x matrix -> element-wise
-    HALT("THIS IS AMBIGUOUS!");
+//    HALT("THIS IS AMBIGUOUS!");
     x = y;
     T *xp=x.p, *xstop=x.p+x.N, *zp=z.p;
     for(; xp!=xstop; xp++, zp++) *xp *= *zp;
@@ -3381,6 +3381,7 @@ template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x) 
 
 /// equal in size and all elements
 template<class T> bool operator==(const Array<T>& v, const Array<T>& w) {
+  if(!&w) return !&v; //if w==NoArr
   if(!samedim(v, w)) return false;
   const T *vp=v.p, *wp=w.p, *vstop=vp+v.N;
   for(; vp!=vstop; vp++, wp++)

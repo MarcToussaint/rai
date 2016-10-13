@@ -6,7 +6,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/ModelCoefficients.h>
-#include <Core/module.h>
+#include <Core/thread.h>
 #include <devTools/logging.h>
 //#include <Hardware/kinect.h>
 #include <Motion/motion.h>

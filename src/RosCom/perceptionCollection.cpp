@@ -1,40 +1,58 @@
 #include <RosCom/roscom.h>
 #include "perceptionCollection.h"
 
-Collector::Collector():
-    Module("Collector", 0){}
+Collector::Collector(const bool simulate)
+  : Thread("Collector", simulate ? 0.05:-1),
+    tabletop_clusters(this, "tabletop_clusters", !simulate),
+    ar_pose_markers(this, "ar_pose_markers", !simulate),
+    tabletop_tableArray(this, "tabletop_tableArray", !simulate)
+{
+  tabletop_srcFrame.set()->setZero();
+  alvar_srcFrame.set()->setZero();
+  this->simulate = simulate;
+}
 
 void Collector::step()
 {
-  FilterObjects perceps;
+  FilterObjects percepts;
 
-  int cluster_rev = tabletop_clusters.readAccess();
-  int ar_rev = ar_pose_markers.readAccess();
-
-  if (this->useRos)
+  if (!simulate)
   {
-    if ( cluster_rev > tabletop_clusters_revision )
-    {
+
+    int cluster_rev = tabletop_clusters.readAccess();
+    if ( cluster_rev > tabletop_clusters_revision ){ //only if new cluster info is available
       tabletop_clusters_revision = cluster_rev;
       const visualization_msgs::MarkerArray msg = tabletop_clusters();
 
       if (msg.markers.size() > 0)
       {
-        if (!has_transform)
+        if (!has_tabletop_transform)
         {
+          tf::TransformListener listener;
+          ors::Transformation tf;
+          if (ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener, tf))
+          {
+            tabletop_srcFrame.set() = tf;
+            has_tabletop_transform = true;
+          }
+        }
+
+#if 0
+        if (!has_transform) { //get the transform from ROS
+          //MT: markers and clusters have the same transformation??
           // Convert into a position relative to the base.
           tf::TransformListener listener;
           tf::StampedTransform baseTransform;
           try{
-            listener.waitForTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), ros::Duration(1.0));
-            listener.lookupTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), baseTransform);
-            tf = conv_transform2transformation(baseTransform);
+            ors::Transformation tf = ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener);
+
+            //MT: really add the meter here? This seems hidden magic numbers in the code. And only for Baxter..?
             ors::Transformation inv;
             inv.setInverse(tf);
             inv.addRelativeTranslation(0,0,-1);
             inv.setInverse(inv);
-            tf = inv;
-            has_transform = true;
+            tabletop_srcFrame.set() = inv;
+            has_tabletop_transform = true;
           }
           catch (tf::TransformException &ex) {
               ROS_ERROR("%s",ex.what());
@@ -42,21 +60,62 @@ void Collector::step()
               exit(0);
           }
         }
+#endif
 
         for(auto & marker : msg.markers){
           Cluster* new_cluster = new Cluster(conv_ROSMarker2Cluster( marker ));
-          new_cluster->frame = tf;
-          perceps.append( new_cluster );
+          new_cluster->frame = tabletop_srcFrame.get();
+          percepts.append( new_cluster );
         }
       }
     }
+    tabletop_clusters.deAccess();
 
-    if ( ar_rev > ar_pose_markers_revision)
-    {
+    int tableArray_rev = tabletop_tableArray.readAccess();
+    if ( tableArray_rev > tabletop_tableArray_revision ){ //only if new cluster info is available
+      tabletop_tableArray_revision = tableArray_rev;
+      const object_recognition_msgs::TableArray msg = tabletop_tableArray();
+
+      if (msg.tables.size() > 0)
+      {
+
+        if (!has_tabletop_transform)
+        {
+          tf::TransformListener listener;
+          ors::Transformation tf;
+          if (ros_getTransform("/base_footprint", msg.header.frame_id, listener, tf))
+          {
+            tabletop_srcFrame.set() = tf;
+            has_tabletop_transform = true;
+          }
+        }
+
+        for(auto & table : msg.tables){
+          Plane* new_plane = new Plane(conv_ROSTable2Plane( table ));
+          new_plane->frame = tabletop_srcFrame.get(); //tf
+          percepts.append( new_plane );
+        }
+      }
+    }
+    tabletop_tableArray.deAccess();
+
+    int ar_rev = ar_pose_markers.readAccess();
+    if ( ar_rev > ar_pose_markers_revision){ //new alwar objects are available
       ar_pose_markers_revision = ar_rev;
       const ar::AlvarMarkers msg = ar_pose_markers();
-      for(auto & marker : msg.markers)
-      {
+
+      for(auto & marker : msg.markers) {
+        if (!has_alvar_transform)
+        {
+          tf::TransformListener listener;
+          ors::Transformation tf;
+          if (ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener, tf))
+          {
+            alvar_srcFrame.set() = tf;
+            has_alvar_transform = true;
+          }
+        }
+#if 0
         if (!has_transform)
         {
           // Convert into a position relative to the base.
@@ -70,8 +129,8 @@ void Collector::step()
             inv.setInverse(tf);
             inv.addRelativeTranslation(0,0,-1);
             inv.setInverse(inv);
-            tf = inv;
-            has_transform = true;
+            alvar_srcFrame.set() = inv;
+            has_alvar_transform = true;
           }
           catch (tf::TransformException &ex) {
               ROS_ERROR("%s",ex.what());
@@ -79,13 +138,17 @@ void Collector::step()
               exit(0);
           }
         }
-        Alvar* new_alvar = new Alvar(conv_ROSAlvar2Alvar( marker ));
-        new_alvar->frame = tf;
-        perceps.append( new_alvar );
+#endif
+
+        Alvar* new_alvar = new Alvar( conv_ROSAlvar2Alvar(marker) );
+        new_alvar->frame = alvar_srcFrame.get();
+        percepts.append( new_alvar );
       }
     }
+    ar_pose_markers.deAccess(); //MT: make the access shorter, only around the blocks above
+
   }
-  else // If useRos==0, make a fake cluster and alvar
+  else // If 'simulate', make a fake cluster and alvar
   {
     ors::Mesh box;
     box.setBox();
@@ -103,47 +166,48 @@ void Collector::step()
     ors::Quaternion rot;
     rot.setDeg(30, ors::Vector(0.1, 0.25, 1));
     fake_cluster->frame.addRelativeRotation(rot);
-    perceps.append( fake_cluster );
+    percepts.append( fake_cluster );
 
     Alvar* fake_alvar = new Alvar("/base_footprint");
     fake_alvar->frame.setZero();
 
-    arr pos = { 0.6, -0.3, 1.05 };
+    arr pos = { 0.9, 0.3, 1.5 };
     rndUniform(pos, -0.005, 0.005, true);
     fake_alvar->frame.addRelativeTranslation(pos(0), pos(1), pos(2));
 
-    arr alv_rot = { 0, 0, 0.785 };
+    arr alv_rot = { MLR_PI/2, 0, -MLR_PI/2};
     rndUniform(alv_rot, -0.01, 0.01, true);
     rot.setRpy(alv_rot(0), alv_rot(1), alv_rot(2));
     fake_alvar->frame.addRelativeRotation(rot);
-    fake_alvar->id = 2;
-    perceps.append( fake_alvar );
-    mlr::wait(0.01);
-  }
-  if (perceps.N > 0)
-  {
-    perceptual_inputs.writeAccess();
-    perceptual_inputs() = perceps;
-    perceptual_inputs.deAccess();
+    fake_alvar->id = 10;
+    percepts.append( fake_alvar );
   }
 
-  ar_pose_markers.deAccess();
-  tabletop_clusters.deAccess();
-
+  if (percepts.N > 0){
+    perceptual_inputs.set() = percepts;
+  }
 }
 
 
-Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker)
-{
+Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker){
   arr points = conv_points2arr(marker.points);
   arr mean = sum(points,0)/(double)points.d0;
-  Cluster new_object(mean, points, marker.header.frame_id);
-
-  return new_object;
+  return Cluster(mean, points, marker.header.frame_id);
 }
 
-Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker)
-{
+Plane conv_ROSTable2Plane(const object_recognition_msgs::Table& table){
+  ors::Transformation t = conv_pose2transformation(table.pose);
+  arr hull = conv_points2arr(table.convex_hull);
+  arr center = ARR(t.pos.x, t.pos.y, t.pos.z);
+  ors::Vector norm = t.rot*ors::Vector(0,0,1);
+
+  arr normal = ARR(norm.x, norm.y, norm.z);
+  Plane toReturn = Plane(normal, center, hull, table.header.frame_id);
+  toReturn.transform = t;
+  return toReturn;
+}
+
+Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker){
   Alvar new_alvar(marker.header.frame_id);
   new_alvar.id = marker.id;
   new_alvar.transform = conv_pose2transformation(marker.pose.pose);

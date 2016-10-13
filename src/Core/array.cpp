@@ -1681,6 +1681,8 @@ RowShifted *makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1) {
   Zaux->real_d1=real_d1;
   Zaux->rowShift.resize(d0);
   Zaux->rowShift.setZero();
+  Zaux->rowLen.resize(d0);
+  Zaux->rowLen = pack_d1;
   return Zaux;
 }
 
@@ -1737,6 +1739,13 @@ void RowShifted::reshift(){
 }
 
 arr packRowShifted(const arr& X) {
+#if 1
+  arr Z;
+  RowShifted *Zaux = makeRowShifted(Z, X.d0, X.d1, X.d1);
+  memmove(Z.p, X.p, Z.N*Z.sizeT);
+  Zaux->reshift();
+  return Z;
+#else
   arr Z;
   RowShifted *Zaux = makeRowShifted(Z, X.d0, 0, X.d1);
   Z.setZero();
@@ -1756,6 +1765,7 @@ arr packRowShifted(const arr& X) {
   for(uint i=0; i<Z.d0; i++) for(uint j=0; j<Z.d1 && Zaux->rowShift(i)+j<X.d1; j++)
       Z(i,j) = X(i,Zaux->rowShift(i)+j);
   return Z;
+#endif
 }
 
 arr unpackRowShifted(const arr& Y) {

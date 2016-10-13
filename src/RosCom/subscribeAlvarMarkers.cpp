@@ -36,7 +36,7 @@ void syncMarkers(ors::KinematicWorld& world, const ar::AlvarMarkers& markers) {
   for (const ar::AlvarMarker& marker : markers.markers) {
     mlr::String marker_name = STRING("marker" << marker.id);
 
-    ors::Body *body = world.getBodyByName(marker_name);
+    ors::Body *body = world.getBodyByName(marker_name,false);
     if (not body) {
       createdNewMarkers = true;
       cout << marker_name << " does not exist yet; adding it..." << endl;

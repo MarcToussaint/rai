@@ -15,6 +15,8 @@
 #include "thread.h"
 #include "registry.h"
 #include <exception>
+#include <signal.h>
+#include <iomanip>
 
 #ifndef MLR_MSVC
 #ifndef __CYGWIN__
@@ -599,6 +601,88 @@ void Thread::main() {
 
   close(); //virtual close routine
   cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
+}
+
+
+//===========================================================================
+//
+// controlling threads
+//
+
+Singleton<ConditionVariable> moduleShutdown;
+
+void signalhandler(int s){
+  int calls = moduleShutdown().incrementValue();
+  cerr <<"\n*** System received signal " <<s <<" -- count=" <<calls <<endl;
+  if(calls==1){
+    LOG(0) <<" -- waiting for main loop to break on moduleShutdown().getValue()" <<endl;
+  }
+  if(calls==2){
+    LOG(0) <<" -- smoothly closing modules directly" <<endl;
+    threadCloseModules(); //might lead to a hangup of the main loop, but processes should close
+    LOG(0) <<" -- DONE" <<endl;
+  }
+  if(calls==3){
+    LOG(0) <<" -- cancelling threads to force closing" <<endl;
+    threadCancelModules();
+    LOG(0) <<" -- DONE" <<endl;
+  }
+  if(calls>3){
+    LOG(3) <<" ** moduleShutdown failed - hard exit!" <<endl;
+    exit(1);
+  }
+}
+
+void openModules(){
+  NodeL threads = registry().getNodesOfType<Thread*>();
+  for(Node* th:threads){ th->get<Thread*>()->open(); }
+}
+
+void stepModules(){
+  NodeL threads = registry().getNodesOfType<Thread*>();
+  for(Node* th:threads){ th->get<Thread*>()->step(); }
+}
+
+void closeModules(){
+  NodeL threads = registry().getNodesOfType<Thread*>();
+  for(Node* th:threads){ th->get<Thread*>()->close(); }
+}
+
+RevisionedAccessGatedClassL getVariables(){
+  return registry().getValuesOfType<RevisionedAccessGatedClass>();
+}
+
+void threadOpenModules(bool waitForOpened, bool setSignalHandler){
+  if(setSignalHandler) signal(SIGINT, signalhandler);
+  NodeL threads = registry().getNodesOfType<Thread*>();
+  for(Node *th: threads) th->get<Thread*>()->threadOpen();
+  if(waitForOpened) for(Node *th: threads) th->get<Thread*>()->waitForOpened();
+  for(Node *th: threads){
+    Thread *mod=th->get<Thread*>();
+    if(mod->metronome.ticInterval>=0.) mod->threadLoop();
+    //otherwise the module is listening (hopefully)
+  }
+}
+
+void threadCloseModules(){
+  NodeL threads = registry().getNodesOfType<Thread*>();
+  for(Node *th: threads) th->get<Thread*>()->threadClose();
+  modulesReportCycleTimes();
+}
+
+void threadCancelModules(){
+  NodeL threads = registry().getNodesOfType<Thread*>();
+  for(Node *th: threads) th->get<Thread*>()->threadCancel();
+}
+
+void modulesReportCycleTimes(){
+  cout <<"Cycle times for all Modules (msec):" <<endl;
+  NodeL threads = registry().getNodesOfType<Thread*>();
+  for(Node *th: threads){
+    Thread *thread=th->get<Thread*>();
+    cout <<std::setw(30) <<thread->name <<" : ";
+    thread->timer.report();
+  }
 }
 
 

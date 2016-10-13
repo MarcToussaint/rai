@@ -104,7 +104,7 @@ void RTControlStep(
 }
 
 RTControllerSimulation::RTControllerSimulation(double tau, bool gravity, double _systematicErrorSdv)
-  : Module("DynmSim", -1.)
+  : Thread("DynmSim", -1.)
   , ctrl_ref(this, "ctrl_ref", true)
   , ctrl_obs(this, "ctrl_obs")
   , modelWorld(this, "modelWorld")
@@ -173,11 +173,7 @@ void RTControllerSimulation::step() {
     if(systematicError.N) u += systematicError;
 #endif
 
-//    world->stepDynamics(u, tau, 0., this->gravity);
-//    u /= (Kp_base+.001);
-    q += tau*qDot + .5*tau*tau*u;
-    qDot += tau*u;
-    world->setJointState(q,qDot);
+    world->stepDynamics(u, tau, 0., this->gravity);
   }
 
   checkNan(q);

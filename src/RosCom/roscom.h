@@ -17,7 +17,7 @@
 
 //===========================================================================
 
-#include <Core/module.h>
+#include <Core/thread.h>
 #include <Core/array.h>
 #include <Geo/geo.h>
 #include <Ors/ors.h>
@@ -67,6 +67,7 @@ floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray&);
 //-- get transformations
 ors::Transformation ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener);
 ors::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener);
+bool ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener, ors::Transformation& result);
 
 
 struct SubscriberType { virtual ~SubscriberType() {} }; ///< if types derive from RootType, more tricks are possible
@@ -192,14 +193,14 @@ struct SubscriberConvNoHeader : SubscriberType{
 //
 
 template<class msg_type, class var_type, msg_type conv(const var_type&)>
-struct PublisherConv : Module{
+struct PublisherConv : Thread {
   Access_typed<var_type> access;
   ros::NodeHandle *nh;
   ros::Publisher pub;
   const char* topic_name;
 
   PublisherConv(const char* _topic_name, Access_typed<var_type>& _access)
-      : Module(STRING("Publisher_"<<_access.name <<"->" <<_topic_name), -1),
+      : Thread(STRING("Publisher_"<<_access.name <<"->" <<_topic_name), -1),
         access(this, _access, true),
         nh(NULL),
         topic_name(_topic_name){
@@ -207,7 +208,7 @@ struct PublisherConv : Module{
       nh = new ros::NodeHandle;
   }
   PublisherConv(const char* _topic_name, const char* var_name)
-      : Module(STRING("Publisher_"<<var_name <<"->" <<_topic_name), -1),
+      : Thread(STRING("Publisher_"<<var_name <<"->" <<_topic_name), -1),
         access(this, var_name, true),
         nh(NULL),
         topic_name(_topic_name){
@@ -272,11 +273,11 @@ void syncJointStateWitROS(ors::KinematicWorld& world, Access_typed<CtrlMsg>& ctr
 
 //===========================================================================
 
-struct PerceptionObjects2Ors : Module{
+struct PerceptionObjects2Ors : Thread {
   Access_typed<visualization_msgs::MarkerArray> perceptionObjects;
   Access_typed<ors::KinematicWorld> modelWorld;
   PerceptionObjects2Ors()
-    : Module("PerceptionObjects2Ors"),
+    : Thread("PerceptionObjects2Ors"),
     perceptionObjects(this, "perceptionObjects", true),
     modelWorld(this, "modelWorld"){}
   void open(){}

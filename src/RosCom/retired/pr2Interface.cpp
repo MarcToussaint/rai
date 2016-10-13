@@ -3,11 +3,11 @@
 #include <stdlib.h>
 #include <RosCom/roscom.h>
 #include <RosCom/rosmacro.h>
-#include <Core/module.h>
+#include <Core/thread.h>
 #include <Gui/opengl.h>
 #include <Core/util.h>
 
-PR2Interface::PR2Interface() : Module("PR2_Interface") {
+PR2Interface::PR2Interface() : Thread("PR2_Interface") {
   this->useROS = mlr::getParameter<bool>("useRos", false);
 }
 

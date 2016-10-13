@@ -19,12 +19,12 @@
 #include <limits>
 
 #ifdef MLR_extern_ply
-#  include <extern/ply/ply.h>
+#  include "ply/ply.h"
 #endif
 
 #ifdef MLR_extern_GJK
 extern "C"{
-#  include <extern/GJK/gjk.h>
+#  include "GJK/gjk.h"
 }
 #endif
 
@@ -312,6 +312,14 @@ void ors::Mesh::makeConvexHull() {
     #endif
 }
 
+void ors::Mesh::makeTriangleFan(){
+  T.clear();
+  for(uint i=1;i+1<V.d0;i++){
+    T.append(TUP(0,i,i+1));
+  }
+  T.reshape(T.N/3,3);
+}
+
 void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
   ConstrainedProblem F=[&X](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){
     phi.resize(5+X.d0);
@@ -389,7 +397,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
                    stopFTolerance = 1e-3,
                    damping=1,
                    maxStep=-1,
-                   constrainedMethod = anyTimeAula,
+                   constrainedMethod = augmentedLag,
                    aulaMuInc = 1.1
                    ));
   opt.run();
@@ -403,10 +411,10 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
   g = opt.UCP.get_sumOfGviolations();
 }
 
-void ors::Mesh::makeSSBox(arr& x, Transformation& t, const arr& X, uint trials, int verbose){
+void ors::Mesh::makeSSBox(arr& x_ret, Transformation& t_ret, const arr& X, uint trials, int verbose){
   if(!X.N){ clear(); return; }
 
-  arr x_best;
+  arr x,x_best;
   double f,g, f_best, g_best;
   fitSSBox(x_best, f_best, g_best, X, verbose);
   for(uint k=1;k<trials;k++){
@@ -415,19 +423,26 @@ void ors::Mesh::makeSSBox(arr& x, Transformation& t, const arr& X, uint trials, 
        (g<1e-4 && f<f_best)){ x_best=x; f_best=f; g_best=g; }
   }
 
-  x=x_best;
+  x = x_best;
+
+  if(x_ret!=NoArr)
+    x_ret=x;
 
   if(verbose>2){
     cout <<"x=" <<x;
     cout <<"\nf = " <<f_best <<"\ng-violations = " <<g_best <<endl;
   }
 
+  Transformation t;
   t.setZero();
   t.pos.set( x.refRange(4,6) );
   t.rot.set( x.refRange(7,-1) );
   t.rot.normalize();
   setSSBox(2.*x(0), 2.*x(1), 2.*x(2), x(3));
   t.applyOnPointArray(V);
+
+  if(t_ret!=NoTransformation)
+    t_ret = t;
 }
 
 void ors::Mesh::setSSCvx(const ors::Mesh& m, double r, uint fineness){
@@ -1866,7 +1881,7 @@ double GJK_distance(ors::Mesh& mesh1, ors::Mesh& mesh2,
 //
 
 #ifdef MLR_extern_Lewiner
-#  include <extern/Lewiner/MarchingCubes.h>
+#  include "Lewiner/MarchingCubes.h"
 
 
 void ors::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint res) {
@@ -2092,4 +2107,6 @@ ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> doub
   }
   return d;
 };
+
+
 
