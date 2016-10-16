@@ -2249,7 +2249,7 @@ template<class T> mlr::Array<T> sum(const mlr::Array<T>& v, uint d) {
     }
     S(IS) += x(k);
   }
-  S.reshape(S.N);
+//  S.reshape(S.N); //(mt: Hä? Hab ich das gemacht???)
   return S;
 }
 
