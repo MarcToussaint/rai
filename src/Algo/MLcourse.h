@@ -34,6 +34,20 @@ arr evaluateBayesianRidgeRegressionSigma(const arr& X, const arr& bayesSigma);
 arr logisticRegression2Class(const arr& X, const arr& y, double lambda=-1., arr& bayesSigma=NoArr);
 arr logisticRegressionMultiClass(const arr& X, const arr& y, double lambda=-1.);
 
+struct RidgeRegression{
+  arr beta; ///< (X^T X + lambda I)^-1 X^T y
+  arr XtX_I; ///< (X^T X + lambda I)
+  double sigmaSqr; ///< mean squared error on training data; estimate of noise
+  arr betaSigmaMatrix; ///< variance (matrix) of estimated beta
+
+  RidgeRegression(const arr& X, const arr& y, double lambda=-1, const arr& weighted=NoArr, int verbose=1);
+  arr evaluate(const arr& X, arr& bayesSigma2=NoArr);
+
+  arr getBetaSigmaMatrix();
+  arr getBetaZscores();
+  arr getMultiOutputSquaredErrors(const arr& X, const arr& y);
+};
+
 struct DefaultKernelFunction:KernelFunction{
   enum KernelType{ readFromCfg=0, Gauss=1 } type;
   arr hyperParam1,hyperParam2;
@@ -45,7 +59,7 @@ extern DefaultKernelFunction defaultKernelFunction;
 struct KernelRidgeRegression{
   arr X; ///< stored data (to compute kappa for queries)
   arr kernelMatrix_lambda; ///< X X^T + lambda I
-  arr invKernelMatrix_lambda;
+  arr invKernelMatrix_lambda; ///< (X X^T + lambda I)^-1
   arr alpha; ///< (X X^T + lambda I)^-1 y
   double sigma; ///< mean squared error on training data; estimate of noise
   double mu; ///< fixed global bias (default=0)
@@ -93,7 +107,7 @@ struct CrossValidation {
 // constructing features from data
 //
 
-enum FeatureType { readFromCfgFileFT=0, linearFT=1, quadraticFT, cubicFT, rbfFT=4, piecewiseConstantFT=5, piecewiseLinearFT=6 };
+enum FeatureType { readFromCfgFileFT=0, linearFT=1, quadraticFT, cubicFT, rbfFT=4, piecewiseConstantFT=5, piecewiseLinearFT=6, constFT=7 };
 arr makeFeatures(const arr& X, FeatureType featureType=readFromCfgFileFT, const arr& rbfCenters=NoArr);
 
 
@@ -107,7 +121,7 @@ enum ArtificialDataType { readFromCfgFileDT=0, linearData, sinusData, linearOutl
 
 void artificialData(arr& X, arr& y, ArtificialDataType dataType=readFromCfgFileDT);
 void artificialData_1D2Class(arr& X, arr& y);
-void artificialData_Hasties2Class(arr& X, arr& y, uint dim=2);
+void artificialData_Hasties2Class(arr& X, arr& y);
 void artificialData_HastiesMultiClass(arr& X, arr& y);
 void artificialData_GaussianMixture(arr& X, arr& y);
 void load_data(arr& X, const char* filename, bool whiten);

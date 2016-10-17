@@ -74,8 +74,7 @@ template<class T> void mlr::Array<T>::init() {
   p=NULL;
   M=N=nd=d0=d1=d2=0;
   d=&d0;
-  special=noneST;
-  aux=NULL;
+  special=NULL;
 }
 
 
@@ -88,13 +87,13 @@ template<class T> mlr::Array<T>::Array():d(&d0) { init(); }
 template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a) { init(); operator=(a); }
 
 /// reference constructor
-template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i) { init(); referToSubDim(a, i); }
+template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i) { init(); referToDim(a, i); }
 
 /// reference constructor
-template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i, uint j) { init(); referToSubDim(a, i, j); }
+template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i, uint j) { init(); referToDim(a, i, j); }
 
 /// reference constructor
-template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i, uint j, uint k) { init(); referToSubDim(a, i, j, k); }
+template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i, uint j, uint k) { init(); referToDim(a, i, j, k); }
 
 /// constructor with resize
 template<class T> mlr::Array<T>::Array(uint i) { init(); resize(i); }
@@ -240,7 +239,7 @@ template<class T> mlr::Array<T>& mlr::Array<T>::reshapeAs(const mlr::Array<T>& a
   return *this;
 }
 
-template<class T> mlr::Array<T>& mlr::Array<T>::flatten() {
+template<class T> mlr::Array<T>& mlr::Array<T>::reshapeFlat() {
   reshape(N);
   return *this;
 }
@@ -279,6 +278,7 @@ template<class T> uint mlr::Array<T>::dim(uint k) const {
 
 //***** sparse arrays
 
+
 /// return fraction of non-zeros in the array
 template<class T> double mlr::Array<T>::sparsity() {
   uint i, m=0;
@@ -288,39 +288,50 @@ template<class T> double mlr::Array<T>::sparsity() {
 
 /// make sparse: create the \ref sparse index
 template<class T> void mlr::Array<T>::makeSparse() {
-  CHECK(special!=sparseST, "only once yet");
-  uintA* sparse;
-  uint n=0;
-  if(nd==1) {
+  special = new SparseMatrix(*this);
+}
+
+template<class T> SparseMatrix::SparseMatrix(mlr::Array<T>& X, uint d0){
+  CHECK(isNotSpecial(X), "only once yet");
+  type=sparseST;
+  cols.resize(1);
+  X.nd=1; X.d0=d0;
+}
+
+template<class T> SparseMatrix::SparseMatrix(mlr::Array<T>& X){
+  CHECK(isNotSpecial(X), "only once yet");
+  type=sparseST;
+  uint n=0; //memory index
+  if(X.nd==1) {
     uint i;
-    aux=sparse=new Array<uint> [2];
-    sparse[1].resize(d0); sparse[1]=-1;
-    for(i=0; i<d0; i++) if(p[i]) {
-        sparse[0].append(i); //list of entries (maps n->i)
-        sparse[1](i)=n;      //index list to entries (maps i->n)
-        permute(i, n);
-        n++;
-      }
-    N=n; resizeMEM(n, true);
+    cols.resize(1);
+    elems.clear();
+    cols(0).clear();//resize(X.d0); sparse[1]=-1;
+    for(i=0; i<X.d0; i++) if(X.p[i]) {
+      elems.append(i); //list of entries (maps n->i)
+      cols(0).append(TUP(i,n));     //index list to entries (maps i->n)
+      X.permute(i, n);
+      n++;
+    }
+    X.N=n; X.resizeMEM(n, true);
     return;
   }
-  if(nd==2) {
+  if(X.nd==2) {
     uint i, j;
-    Array<uint> pair(2);
-    aux=sparse=new Array<uint> [1+d1+d0];
-    for(i=0; i<d0; i++) for(j=0; j<d1; j++) if(p[i*d1+j]) {
-          pair(0)=i; pair(1)=j; sparse[0].append(pair);   sparse[0].reshape(n+1, 2);
-          permute(i*d1+j, n);
-          //register entry in columns an row indices
-          pair(0)=i; pair(1)=n; sparse[1+j]   .append(pair); sparse[1+j]   .reshape(sparse[1+j]   .N/2, 2);
-          pair(0)=j; pair(1)=n; sparse[1+d1+i].append(pair); sparse[1+d1+j].reshape(sparse[1+d1+j].N/2, 2);
-          n++;
-        }
-    N=n; resizeMEM(n, true);
+    cols.resize(X.d1);
+    rows.resize(X.d0);
+    for(i=0; i<X.d0; i++) for(j=0; j<X.d1; j++) if(X.p[i*X.d1+j]) {
+      elems.append(TUP(i,j));   elems.reshape(n+1, 2);
+      X.permute(i*X.d1+j, n);
+      //register entry in columns and row indices
+      cols(j).append(TUP(i,n));  cols(j).reshape(cols(j).N/2, 2);
+      rows(i).append(TUP(j,n));  rows(i).reshape(rows(i).N/2, 2);
+      n++;
+    }
+    X.N=n; X.resizeMEM(n, true);
     return;
   }
 }
-
 
 //***** internal memory routines (probably not for external use)
 
@@ -411,12 +422,12 @@ template<class T> void mlr::Array<T>::freeMEM() {
 #endif
   if(M) delete[] p;
   //if(M) free(p);
-  //if(aux) delete[] aux;
+  //if(special) delete[] special;
   if(d && d!=&d0) delete[] d;
   p=NULL;
   M=N=nd=d0=d1=d2=0;
   d=&d0;
-  //aux=NULL;
+  //special=NULL;
   reference=false;
 }
 
@@ -425,7 +436,6 @@ template<class T> void mlr::Array<T>::resetD() {
   if(d && d!=&d0) delete[] d;
   d=&d0;
 }
-
 
 
 //***** append, insert & remove
@@ -544,6 +554,29 @@ template<class T> void mlr::Array<T>::insert(uint i, const T& x) {
   resizeCopy(Nold+1);
   if(i<Nold) memmove(p+i+1, p+i, sizeT*(Nold-i));
   p[i]=x;
+}
+
+template<class T> void mlr::Array<T>::insert(uint i, const Array<T>& x){
+  uint xN=x.N;
+  if(!xN) return;
+  if(!nd || !N){
+    CHECK(i==0,"");
+    *this = x;
+  }else if(nd==1){
+    CHECK(i<=N,"");
+    uint oldN=N;
+    resizeCopy(N+xN);
+    if(i<oldN) memmove(p+i+xN, p+i, sizeT*(oldN-i));
+    memmove(p+i, x.p, sizeT*xN);
+  }else if(nd==2){
+    CHECK(i<=d0,"");
+    uint oldN=d0;
+    if(x.nd==1 && d1==x.d0) resizeCopy(d0+1, d1);
+    else if(x.nd==2 && d1==x.d1) resizeCopy(d0+x.d0, d1);
+    else HALT("");
+    if(i<oldN) memmove(p+i*d1+xN, p+i*d1, sizeT*(oldN-i)*d1);
+    memmove(p+i*d1, x.p, sizeT*xN);
+  }
 }
 
 /// remove (delete) a subsequence of the array -- the array becomes 1D!  [only with memMove!]
@@ -739,33 +772,93 @@ template<class T> T& mlr::Array<T>::operator()(uint i) const {
 
 /// 2D access
 template<class T> T& mlr::Array<T>::operator()(uint i, uint j) const {
-  CHECK(nd==2 && i<d0 && j<d1 && special!=sparseST,
+  CHECK(nd==2 && i<d0 && j<d1 && !isSparse(*this),
         "2D range error (" <<nd <<"=2, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<")");
   return p[i*d1+j];
 }
 
 /// 3D access
 template<class T> T& mlr::Array<T>::operator()(uint i, uint j, uint k) const {
-  CHECK(nd==3 && i<d0 && j<d1 && k<d2 && special!=sparseST,
+  CHECK(nd==3 && i<d0 && j<d1 && k<d2 && !isSparse(*this),
         "3D range error (" <<nd <<"=3, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<", " <<k <<"<" <<d2 <<")");
   return p[(i*d1+j)*d2+k];
 }
 
 /// get a subarray (e.g., row of a matrix); use in conjuction with operator()() to get a reference
-template<class T> mlr::Array<T> mlr::Array<T>::operator[](uint i) const { return Array(*this, i); }
+template<class T> mlr::Array<T> mlr::Array<T>::operator[](uint i) const {
+//  return Array(*this, i);
+  mlr::Array<T> z;
+  CHECK(nd>1, "can't create subarray of array less than 2 dimensions");
+  CHECK(i<d0, "SubDim range error (" <<i <<"<" <<d0 <<")");
+  z.reference=true; z.memMove=memMove;
+  if(nd==2) {
+    z.nd=1; z.d0=d1; z.N=z.d0;
+  }
+  if(nd==3) {
+    z.nd=2; z.d0=d1; z.d1=d2; z.N=z.d0*z.d1;
+  }
+  if(nd>3) {
+    z.nd=nd-1; z.d0=d1; z.d1=d2; z.d2=d[3]; z.N=N/d0;
+    if(z.nd>3) { z.d=new uint[z.nd];  memmove(z.d, d+1, z.nd*sizeof(uint)); }
+  }
+  z.p=p+i*z.N;
+  return z;
+}
 
 /// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
-template<class T> mlr::Array<T> mlr::Array<T>::subDim(uint i, uint j) const { return Array(*this, i, j); }
+template<class T> mlr::Array<T> mlr::Array<T>::refDim(uint i, uint j) const { return Array(*this, i, j); }
 
 /// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
-template<class T> mlr::Array<T> mlr::Array<T>::subDim(uint i, uint j, uint k) const { return Array(*this, i, j, k); }
+template<class T> mlr::Array<T> mlr::Array<T>::refDim(uint i, uint j, uint k) const { return Array(*this, i, j, k); }
 
 /// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
-template<class T> mlr::Array<T> mlr::Array<T>::subRange(int i, int I) const { mlr::Array<T> z;  z.referToSubRange(*this, i, I);  return z; }
+template<class T> mlr::Array<T> mlr::Array<T>::refRange(int i, int I) const {
+  mlr::Array<T> z;
+  z.reference=true; z.memMove=memMove;
+
+  CHECK(nd<=3, "not implemented yet");
+  if(i<0) i+=d0;
+  if(I<0) I+=d0;
+  CHECK(i>=0 && I>=0 && i<=I && I<d0, "range error");
+  if(nd==1) {
+    z.nd=1;  z.d0=I+1-i; z.d1=0; z.d2=0;  z.N=z.d0;
+    z.p=p+i;
+  }
+  if(nd==2) {
+    z.nd=2;  z.d0=I+1-i; z.d1=d1; z.d2=0;  z.N=z.d0*z.d1;
+    z.p=p+i*d1;
+  }
+  if(nd==3) {
+    z.nd=3;  z.d0=I+1-i; z.d1=d1; z.d2=d2;  z.N=z.d0*z.d1*z.d2;
+    z.p=p+i*d1*d2;
+  }
+  return z;
+}
+
+/// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
+template<class T> mlr::Array<T> mlr::Array<T>::refRange(uint i, int j, int J) const {
+  mlr::Array<T> z;
+  z.reference=true; z.memMove=memMove;
+
+  CHECK(nd>1 && nd<=3, "does not work for vectors")
+  if(j<0) j+=d1;
+  if(J<0) J+=d1;
+  CHECK(i<d0 && j>=0 && J>=0 && j<=J && J<d1, "range error");
+
+  if(nd==2) {
+    z.nd=1;  z.d0=J+1-j; z.N=z.d0;
+    z.p=p+i*d1+j;
+  }
+  if(nd==3) {
+    z.nd=3;  z.d0=J+1-j; z.d1=d2; z.N=z.d0*z.d1;
+    z.p=p+i*d1*d2+j*d2;
+  }
+  return z;
+}
 
 
 /// convert a subarray into a reference (e.g. a[3]()+=.123)
-template<class T> mlr::Array<T>& mlr::Array<T>::operator()() { return (*this); }
+//template<class T> T& mlr::Array<T>::operator()() const { return scalar(); } //return (*this); }
 
 /// reference to the max entry
 template<class T> T& mlr::Array<T>::max() const { CHECK(N, ""); uint i, m=0; for(i=1; i<N; i++) if(p[i]>p[m]) m=i; return p[m]; }
@@ -941,10 +1034,9 @@ template<class T> mlr::Array<T> mlr::Array<T>::sub(int i, int I, Array<uint> col
   mlr::Array<T> x;
   if(i<0) i+=d0;
   if(I<0) I+=d0;
-  CHECK(i>0 && I>0 && i<=I, "lower limit higher than upper!");
+  CHECK(i>=0 && I>=0 && i<=I, "lower limit higher than upper!");
   x.resize(I-i+1, cols.N);
-  int k, l;
-  for(k=i; k<=I; k++) for(l=0; l<(int)cols.N; l++) x(k-i, l)=operator()(k, cols(l));
+  for(int ii=i; ii<=I; ii++) for(int l=0; l<(int)cols.N; l++) x(ii-i, l)=operator()(ii, cols(l));
   return x;
 }
 
@@ -1019,10 +1111,10 @@ mlr::Array<T> mlr::Array<T>::cols(uint start_col, uint end_col) const {
 template<class T> T** mlr::Array<T>::getCarray() const {
   CHECK(nd>=2, "only 2D or higher-D arrays gives C-array of type T**");
   HALT("I think this is buggy");
-  if(special==hasCarrayST) return (T**) aux;
+  if(special==hasCarrayST) return (T**) special;
   T** pp;
   ((mlr::Array<T>*)this)->special = hasCarrayST;
-  ((mlr::Array<T>*)this)->aux = pp = new T* [d0];
+  ((mlr::Array<T>*)this)->special = pp = new T* [d0];
   uint skip;
   if(nd==2) skip=d1; else skip=N/d0;
   for(uint i=0; i<d0; i++) pp[i]=p+i*skip;
@@ -1063,6 +1155,12 @@ template<class T> T*** mlr::Array<T>::getPointers(Array<T**>& array3d, Array<T*>
 
 //***** assignments
 
+template<class T> mlr::Array<T>& mlr::Array<T>::operator=(std::initializer_list<T> list) {
+  clear();
+  for(T t : list) append(t);
+  return *this;
+}
+
 /// set all elements to value \c v
 template<class T> mlr::Array<T>& mlr::Array<T>::operator=(const T& v) {
   uint i;
@@ -1080,14 +1178,12 @@ template<class T> mlr::Array<T>& mlr::Array<T>::operator=(const mlr::Array<T>& a
   uint i;
   if(memMove) memmove(p, a.p, sizeT*N);
   else for(i=0; i<N; i++) p[i]=a.p[i];
-  special = a.special;
-  if(special == noneST) return *this;
-  if(special == RowShiftedPackedMatrixST){
+  if(special) special=NULL; //TODO: you lost it!!
+  if(isRowShifted(a)){
     CHECK(typeid(T)==typeid(double),"");
-    aux = new RowShiftedPackedMatrix(*((arr*)this),*((RowShiftedPackedMatrix*)a.aux));
+    special = new RowShifted(*((arr*)this),*((RowShifted*)a.special));
     return *this;
   }
-  NIY;
   return *this;
 }
 
@@ -1106,6 +1202,13 @@ template<class T> mlr::Array<T> catCol(const mlr::Array<mlr::Array<T>*>& X) {
   d1=0;
   for(mlr::Array<T> *x:  X) { z.setMatrixBlock(*x, 0, d1); d1+=x->nd==2?x->d1:1; }
   return z;
+}
+
+/// concatenate 2D matrices (or vectors) column-wise
+template<class T> mlr::Array<T> catCol(const mlr::Array<mlr::Array<T> >& X) {
+  mlr::Array<mlr::Array<T>*> Xp;
+  for(mlr::Array<T>& x:  X) Xp.append(&x);
+  return catCol(Xp);
 }
 
 /// set all entries to same value x [default: don't change dimension]
@@ -1286,7 +1389,7 @@ template<class T> void mlr::Array<T>::referTo(const mlr::Array<T>& a) {
 }
 
 /// make this array a subarray reference to \c a
-template<class T> void mlr::Array<T>::referToSubRange(const mlr::Array<T>& a, int i, int I) {
+template<class T> void mlr::Array<T>::referToRange(const mlr::Array<T>& a, int i, int I) {
   CHECK(a.nd<=3, "not implemented yet");
   freeMEM();
   resetD();
@@ -1310,9 +1413,9 @@ template<class T> void mlr::Array<T>::referToSubRange(const mlr::Array<T>& a, in
 }
 
 /// make this array a subarray reference to \c a
-template<class T> void mlr::Array<T>::referToSubDim(const mlr::Array<T>& a, uint dim) {
+template<class T> void mlr::Array<T>::referToDim(const mlr::Array<T>& a, uint i) {
   CHECK(a.nd>1, "can't create subarray of array less than 2 dimensions");
-  CHECK(dim<a.d0, "SubDim range error (" <<dim <<"<" <<a.d0 <<")");
+  CHECK(i<a.d0, "SubDim range error (" <<i <<"<" <<a.d0 <<")");
   freeMEM();
   reference=true; memMove=a.memMove;
   if(a.nd==2) {
@@ -1326,11 +1429,11 @@ template<class T> void mlr::Array<T>::referToSubDim(const mlr::Array<T>& a, uint
     resetD();
     if(nd>3) { d=new uint[nd];  memmove(d, a.d+1, nd*sizeof(uint)); }
   }
-  p=a.p+dim*N;
+  p=a.p+i*N;
 }
 
 /// make this array a subarray reference to \c a
-template<class T> void mlr::Array<T>::referToSubDim(const mlr::Array<T>& a, uint i, uint j) {
+template<class T> void mlr::Array<T>::referToDim(const mlr::Array<T>& a, uint i, uint j) {
   CHECK(a.nd>2, "can't create subsubarray of array less than 3 dimensions");
   CHECK(i<a.d0 && j<a.d1, "SubDim range error (" <<i <<"<" <<a.d0 <<", " <<j <<"<" <<a.d1 <<")");
   freeMEM();
@@ -1344,7 +1447,7 @@ template<class T> void mlr::Array<T>::referToSubDim(const mlr::Array<T>& a, uint
 }
 
 /// make this array a subarray reference to \c a
-template<class T> void mlr::Array<T>::referToSubDim(const mlr::Array<T>& a, uint i, uint j, uint k) {
+template<class T> void mlr::Array<T>::referToDim(const mlr::Array<T>& a, uint i, uint j, uint k) {
   CHECK(a.nd>3, "can't create subsubarray of array less than 3 dimensions");
   CHECK(i<a.d0 && j<a.d1 && k<a.d2, "SubDim range error (" <<i <<"<" <<a.d0 <<", " <<j <<"<" <<a.d1 <<", " <<k <<"<" <<a.d2 << ")");
   freeMEM();
@@ -1564,6 +1667,10 @@ template<class T> void mlr::Array<T>::write(std::ostream& os, const char *ELEMSE
     os.write((char*)p, sizeT*N);
     os.put(0);
     os <<std::endl;
+  } if(isSparse(*this)) {
+    uintA& elems = dynamic_cast<SparseMatrix*>(special)->elems;
+    if(nd==1) for(uint i=0;i<N;i++) cout <<"( " <<elems(i) <<" ) " <<elem(i) <<endl;
+      else for(uint i=0;i<N;i++) cout <<'(' <<elems[i] <<") " <<elem(i) <<endl;
   } else {
     if(BRACKETS[0]) os <<BRACKETS[0];
     if(dimTag || nd>=3) { os <<' '; writeDim(os); if(nd==2) os <<LINESEP; else os <<' '; }
@@ -1576,8 +1683,8 @@ template<class T> void mlr::Array<T>::write(std::ostream& os, const char *ELEMSE
     }
     if(nd==2) for(j=0; j<d0; j++) {
         if(j) os <<LINESEP;
-        if(special==RowShiftedPackedMatrixST){
-          RowShiftedPackedMatrix *rs = (RowShiftedPackedMatrix*)aux;
+        if(isRowShifted(*this)){
+          RowShifted *rs = dynamic_cast<RowShifted*>(special);
           cout <<"[row-shift=" <<rs->rowShift(j) <<"] ";
         }
         for(i=0; i<d1; i++) os <<ELEMSEP <<operator()(j, i);
@@ -1621,10 +1728,10 @@ template<class T> void mlr::Array<T>::read(std::istream& is) {
     readDim(is);
     c=mlr::peerNextChar(is);
     if(c==0) {  //binary read
-      c=is.get();  if(c!=0) PARSERR("couldn't read newline before binary data block :-(");
+      c=is.get();  if(c!=0) PARSERR("couldn't read \0 before binary data block :-(");
       is.read((char*)p, sizeT*N);
       if(is.fail()) PARSERR("could not binary data");
-      c=is.get(); if(c!=0) PARSERR("couldn't read newline after binary data block :-(");
+      c=is.get();  if(c!=0) PARSERR("couldn't read \0 after binary data block :-(");
     }else{  //fast ascii read
       for(i=0; i<N; i++) {
 	if(is.fail()) PARSERR("could not read " <<i <<"-th element of an array");
@@ -1857,6 +1964,21 @@ template<class T> mlr::Array<T> replicate(const mlr::Array<T>& A, uint d0) {
   return x;
 }
 
+/// return the integral image, or vector
+template<class T> mlr::Array<T> integral(const mlr::Array<T>& x){
+  CHECK(x.nd==1 || x.nd==2,"");
+  if(x.nd==1){
+    T s(0);
+    mlr::Array<T> y(x.N);
+    for(uint i=0;i<x.N;i++){ s+=x.elem(i); y.elem(i)=s; }
+    return y;
+  }
+  if(x.nd==2){
+    NIY;
+  }
+  return mlr::Array<T>();
+}
+
 #ifdef MLR_CLANG
 #  pragma clang diagnostic pop
 #endif
@@ -2068,6 +2190,22 @@ template<class T> T sum(const mlr::Array<T>& v) {
   return t;
 }
 
+/// \f$\max_i x_i\f$
+template<class T> T max(const mlr::Array<T>& v) {
+  CHECK(v.N,"");
+  T m(v.p[0]);
+  for(uint i=v.N; i--; ) if(v.p[i]>m) m=v.p[i];
+  return m;
+}
+
+/// \f$\min_i x_i\f$
+template<class T> T min(const mlr::Array<T>& v) {
+  CHECK(v.N,"");
+  T m(v.p[0]);
+  for(uint i=v.N; i--; ) if(v.p[i]<m) m=v.p[i];
+  return m;
+}
+
 template<class T> T scalar(const mlr::Array<T>& x) {
   return x.scalar();
 }
@@ -2089,6 +2227,7 @@ template<class T> mlr::Array<T> sum(const mlr::Array<T>& v, uint d) {
     x.reshape(x.d0, x.N/x.d0);
     S.resize(x.d1);  S.setZero();
     for(i=0; i<x.d0; i++) for(j=0; j<x.d1; j++) S(j) += x(i, j);
+    if(v.nd>2) S.reshape(v.dim().sub(1,-1));
     return S;
   }
   //any other index (includes the previous cases, but marginally slower)
@@ -2113,6 +2252,52 @@ template<class T> mlr::Array<T> sum(const mlr::Array<T>& v, uint d) {
   }
   S.reshape(S.N);
   return S;
+}
+
+/// \f$\max_i x_i\f$
+template<class T> mlr::Array<T> max(const mlr::Array<T>& v, uint d) {
+  CHECK(v.nd>d, "array doesn't have this dimension");
+  mlr::Array<T> x;
+  x.referTo(v);
+  mlr::Array<T> M;
+  uint i, j;
+  if(d==v.nd-1) {  //max over last index - contiguous in memory
+    x.reshape(x.N/x.dim(x.nd-1), x.dim(x.nd-1));
+    M.resize(x.d0);
+    for(i=0; i<x.d0; i++) M(i) = max(x[i]);
+    return M;
+  }
+  if(d==0) {  //sum over first index
+    x.reshape(x.d0, x.N/x.d0);
+    M = x[0]; //first row
+    for(i=1; i<x.d0; i++) for(j=0; j<x.d1; j++)
+      if(x(i,j)>M(j)) M(j)=x(i, j);
+    return M;
+  }
+  NIY;
+}
+
+/// \f$\max_i x_i\f$
+template<class T> mlr::Array<T> min(const mlr::Array<T>& v, uint d) {
+  CHECK(v.nd>d, "array doesn't have this dimension");
+  mlr::Array<T> x;
+  x.referTo(v);
+  mlr::Array<T> M;
+  uint i, j;
+  if(d==v.nd-1) {  //max over last index - contiguous in memory
+    x.reshape(x.N/x.dim(x.nd-1), x.dim(x.nd-1));
+    M.resize(x.d0);
+    for(i=0; i<x.d0; i++) M(i) = min(x[i]);
+    return M;
+  }
+  if(d==0) {  //sum over first index
+    x.reshape(x.d0, x.N/x.d0);
+    M = x[0]; //first row
+    for(i=1; i<x.d0; i++) for(j=0; j<x.d1; j++)
+      if(x(i,j)<M(j)) M(j)=x(i, j);
+    return M;
+  }
+  NIY;
 }
 
 /// \f$\sum_i |x_i|\f$
@@ -2167,6 +2352,11 @@ template<class T> T absMax(const mlr::Array<T>& x) {
   return t;
 }
 
+/// get absolute min (using fabs)
+template<class T> void clip(const mlr::Array<T>& x, T lo, T hi) {
+  for(uint i=0; i<x.N; i++) ::clip(x.p[i], lo, hi);
+}
+
 
 //===========================================================================
 //
@@ -2194,9 +2384,7 @@ void innerProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>&
   */
   if(y.nd==2 && z.nd==1) {  //matrix x vector -> vector
     CHECK_EQ(y.d1,z.d0, "wrong dimensions for inner product");
-#ifdef MLR_LAPACK
     if(mlr::useLapack && typeid(T)==typeid(double)) { blas_Mv(x, y, z); return; }
-#endif
     uint i, d0=y.d0, dk=y.d1;
     T *a, *astop, *b, *c;
     x.resize(d0); x.setZero();
@@ -2225,9 +2413,7 @@ void innerProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>&
       return;
     }
 #endif
-#ifdef MLR_LAPACK
     if(mlr::useLapack && typeid(T)==typeid(double)) { blas_MM(x, y, z); return; }
-#endif
     T *a, *astop, *b, *c;
     x.resize(d0, d1); x.setZero();
     c=x.p;
@@ -2331,6 +2517,11 @@ void outerProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>&
   \f$\forall_{i}:~ x_{ij} = v_{ij} w_{ij}\f$*/
 template<class T>
 void indexWiseProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>& z) {
+  if(y.N==1){  //scalar x any -> ..
+    x=z;
+    x*=y.scalar();
+    return;
+  }
   if(y.nd==1 && z.nd==1) {  //vector x vector -> element wise
     x=y;
     x*=z;
@@ -2354,6 +2545,7 @@ void indexWiseProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array
     return;
   }
   if(y.dim() == z.dim()) { //matrix x matrix -> element-wise
+    HALT("THIS IS AMBIGUOUS!");
     x = y;
     T *xp=x.p, *xstop=x.p+x.N, *zp=z.p;
     for(; xp!=xstop; xp++, zp++) *xp *= *zp;
@@ -3120,10 +3312,22 @@ template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Arr
     return x;           \
   }                 \
   \
-  template<class T> Array<T>& operator op ( Array<T>& x, T y ){ \
+  template<class T> Array<T>& operator op (Array<T>& x, T y ){ \
     T *xp=x.p, *xstop=xp+x.N;              \
     for(; xp!=xstop; xp++) *xp op y;        \
     return x;           \
+  } \
+  \
+  template<class T> void operator op (Array<T>&& x, const Array<T>& y){ \
+    CHECK_EQ(x.N,y.N, "binary operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
+    T *xp=x.p, *xstop=xp+x.N;              \
+    const T *yp=y.p;              \
+    for(; xp!=xstop; xp++, yp++) *xp op *yp;       \
+  }                 \
+  \
+  template<class T> void operator op (Array<T>&& x, T y ){ \
+    T *xp=x.p, *xstop=xp+x.N;              \
+    for(; xp!=xstop; xp++) *xp op y;        \
   }
 
 UpdateOperator(|=)
@@ -3753,12 +3957,15 @@ void maximumSpanningTree(mlr::Array<vert*>& V, mlr::Array<edge*>& E, const Compa
   graphMakeLists(V, E);
 }
 
-/*template<class T> mlr::Array<T> get(const AnyList& L, const char* tag){
-  for_list(Any,  a,  L) if(!strcmp(a->tag, tag)) break;
-  if(i==L.N) HALT("tag '" <<tag <<"' is not in this AnyList");
-  if(!a->n) return mlr::Array<T>((T*)a->p, 1);
-  return mlr::Array<T>((T*)a->p, a->n);
-}*/
+//namespace mlr{
+//template<class T> Array<T>::Array(std::initializer_list<const char*> list) {
+//  init();
+//  for(const char* t : list) append(mlr::String(t));
+//}
 
+//template<> template<class S> Array<mlr::String>::Array(std::initializer_list<S> list) {
+//    HALT("NEVER CALL THIS CONSTRUCTOR!")
+//}
+//}
 
 #endif

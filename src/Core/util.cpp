@@ -598,7 +598,7 @@ void initCmdLine(int _argc, char *_argv[]) {
   mlr::String msg;
   msg <<"** cmd line arguments: '"; for(int i=0; i<argc; i++) msg <<argv[i] <<' ';
   msg <<"\b'";
-  LOG(0) <<msg;
+  LOG(1) <<msg;
 }
 
 /// returns true if the tag was found on command line
@@ -619,8 +619,10 @@ char *getCmdLineArgument(const char *tag) {
   return NULL;
 }
 
-const char* mlrPath(const char* rel){
-  return MLR_CORE_PATH;
+String mlrPath(const char* rel){
+  String path(MLR_CORE_PATH);
+  path <<"/../../" <<rel;
+  return path;
 }
 
 }//namespace mlr
@@ -903,8 +905,9 @@ bool mlr::String::contains(const String& substring) const {
 
 /// Return true iff the string starts with `substring`.
 bool mlr::String::startsWith(const String& substring) const {
-  return this->getFirstN(substring.N) == substring;
+  return N>=substring.N && this->getFirstN(substring.N) == substring;
 }
+
 /// Return true iff the string starts with `substring`.
 bool mlr::String::startsWith(const char* substring) const {
   return this->startsWith(mlr::String(substring));

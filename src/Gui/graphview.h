@@ -22,6 +22,7 @@
 
 struct GraphView {
   struct sGraphView *s;
+  bool verbose;
   
   GraphView(Graph& G, const char* title="mlr::GraphvizGtk", void *container=NULL);
   ~GraphView();

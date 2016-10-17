@@ -45,40 +45,52 @@ extern uint eval_cost;
  * 2) Because the computation of quantities is expensive and it is usually most efficient to compute all needed quantities together
  *    (Instead of calling get_f(x); and then get_J(x); separately)
  *
- * All these methods allow some returns to be optional: use NoArr
+ * The methods allow some returns to be optional: use NoArr
  *
  */
 
-/// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
+/// A scalar function $y = f(x)$, if @df@ or @Hf@ are not NoArr, the gradient and/or Hessian is returned
 typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
 
-/// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
+/// A vector function $y = f(x)$, if @J@ is not NoArr, Jacobian is returned
+/// This also implies an optimization problem $\hat f(y) = y^T(x) y(x)$ of (iterated)
+/// Gauss-Newton type where the Hessian is approximated by J^T J
 typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
 
-
+/// symbols to declare of which type an objective feature is
 enum TermType { noTT=0, fTT, sumOfSqrTT, ineqTT, eqTT };
 extern const char* TermTypeString[];
 typedef mlr::Array<TermType> TermTypeA;
 extern TermTypeA& NoTermTypeA;
 
+/** A ConstrainedProblem returns a feature vector $phi$ and optionally its Jacobian $J$. For each entry of
+ *  this feature vector $tt(i)$ determins whether this is an inequality constraint, an equality constraint,
+ *  a sumOfSqr or "direct-f" cost feature. The latter two define the objective function as
+ *  $f(x) = f_j(x) + \sum_i \phi_i(x)^2$, where the sum only goes over sumOfSqr features, and f_j is a
+ *  direct-f feature (tt(i)==fTT). The direct-f feature is special: there may only exist a single such
+ *  feature; and if there exists this feature the returned Hessian $H$ needs to be its hessian.
+ *  For the sumOfSqr features no Hessian is returned: we assume the Gauss-Newton approximation.
+ */
 typedef std::function<void(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x)> ConstrainedProblem;
-
 
 /// functions \f$ \phi_t:(x_{t-k},..,x_t) \mapsto y\in\mathbb{R}^{m_t} \f$ over a chain \f$x_0,..,x_T\f$ of variables
 struct KOrderMarkovFunction {
+  virtual void set_x(const arr& x) = 0;
+
   /// returns $\f\phi(x), \nabla \phi(x)\f$ for a given time step t and a k+1 tuple of states \f$\bar x = (x_{t-k},..,x_t)\f$.
   /// This defines the cost function \f$f_t = \phi_t^\top \phi_t\f$ in the time slice. Optionally, the last dim_g entries of
   ///  \f$\phi\f$ are interpreted as inequality constraint function \f$g(\bar x)\f$ for time slice t
-  virtual void phi_t(arr& phi, arr& J, TermTypeA& tt, uint t, const arr& x_bar) = 0;
+  virtual void phi_t(arr& phi, arr& J, TermTypeA& tt, uint t) = 0;
   
   //functions to get the parameters $T$, $k$ and $n$ of the $k$-order Markov Process
   virtual uint get_T() = 0;       ///< horizon (the total x-dimension is (T+1)*n )
   virtual uint get_k() = 0;       ///< the order of dependence: \f$ \phi=\phi(x_{t-k},..,x_t) \f$
-  virtual uint dim_x() = 0;       ///< \f$ \dim(x_t) \f$
-  virtual uint dim_z(){ return 0; } ///< \f$ \dim(z) \f$
+  virtual uint dim_x() { uint d=0, T=get_T(); for(uint t=0; t<=T; t++) d+=dim_x(t); return d; }   ///< \f$ \sum_t \dim(x_t) \f$
+  virtual uint dim_x(uint t) = 0;       ///< \f$ \dim(x_t) \f$
   virtual uint dim_phi(uint t) = 0; ///< \f$ \dim(\phi_t) \f$
   virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints at the end of \f$ \phi_t \f$ (before h terms)
   virtual uint dim_h(uint t){ return 0; } ///< number of equality constraints at the very end of \f$ \phi_t \f$
+  virtual uint dim_g_h(){ uint d=0, T=get_T(); for(uint t=0;t<=T;t++) d += dim_g(t) + dim_h(t); return d; }
   virtual StringA getPhiNames(uint t){ return StringA(); }
   virtual arr get_prefix(){ arr x(get_k(), dim_x()); x.setZero(); return x; } ///< the augmentation \f$ (x_{t=-k},..,x_{t=-1}) \f$ that makes \f$ \phi_{0,..,k-1} \f$ well-defined
   virtual arr get_postfix(){ return arr(); } ///< by default there is no definite final configuration
@@ -97,17 +109,13 @@ struct KOrderMarkovFunction {
 //
 
 bool checkJacobianCP(const ConstrainedProblem &P, const arr& x, double tolerance);
+bool checkHessianCP(const ConstrainedProblem &P, const arr& x, double tolerance);
 bool checkDirectionalGradient(const ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction &f, const arr& x, const arr& delta, double tolerance);
 
 
-//these actually call the functions (->query cost) to evalute them at some point
-double evaluateSF(ScalarFunction& f, const arr& x);
-double evaluateVF(VectorFunction& f, const arr& x);
 
-
-
-// declared separately:
+// optimization algorithms declared separately:
 #include "opt-options.h"
 #include "opt-convert.h"
 #include "opt-newton.h"
@@ -129,9 +137,10 @@ void displayFunction(const ScalarFunction &f, bool wait=false, double lo=-1.2, d
 // Named Parameters: Macros for the OPT
 //
 
-
+#ifndef _NUM_ARGS
 #define _NUM_ARGS2(X,X64,X63,X62,X61,X60,X59,X58,X57,X56,X55,X54,X53,X52,X51,X50,X49,X48,X47,X46,X45,X44,X43,X42,X41,X40,X39,X38,X37,X36,X35,X34,X33,X32,X31,X30,X29,X28,X27,X26,X25,X24,X23,X22,X21,X20,X19,X18,X17,X16,X15,X14,X13,X12,X11,X10,X9,X8,X7,X6,X5,X4,X3,X2,X1,N,...) N
 #define _NUM_ARGS(...) _NUM_ARGS2(0,1, __VA_ARGS__ ,64,63,62,61,60,59,58,57,56,55,54,53,52,51,50,49,48,47,46,45,44,43,42,41,40,39,38,37,36,35,34,33,32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0)
+#endif
 
 #define _OPT_1(obj)         obj
 #define _OPT_2(obj, assign) obj.assign
