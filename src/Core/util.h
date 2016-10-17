@@ -656,6 +656,7 @@ struct GlobalThings {
   Mutex cfgFileMutex;
 
 GlobalThings():cfgFileOpen(false){};
+
 };
 
 extern Singleton<GlobalThings> globalThings;

@@ -26,6 +26,9 @@
 #endif
 
 
+bool getParameterFromGraph(const std::type_info& type, void* data, const char* key);
+
+
 namespace mlr {
 /** @brief Search for a command line option \c -tag and, if found, pipe the
  next command line option into \c value by the
@@ -93,21 +96,28 @@ bool getFromMap(T& x, const char* tag) {
 
 template<class T>
 bool getParameterBase(T& x, const char *tag, bool hasDefault, const T* Default) {
+#if 1
+  if(getParameterFromGraph(typeid(T), &x, tag)){
+    LOG(3) <<std::setw(20) <<tag <<" = " <<std::setw(5) <<x <<" [" <<typeid(x).name() <<"] (graph!)";
+    return true;
+  }
+#else
   if(getFromMap<T>(x, tag)) {
     LOG(3) <<std::setw(20) <<tag <<" = " <<std::setw(5) <<x <<" [" <<typeid(x).name() <<"] (map!)";
     return true;
   }
   
-  if(getFromCmdLine(x, tag)) {
+  if(getFromCmdLine<T>(x, tag)) {
     LOG(3) <<std::setw(20) <<tag <<" = " <<std::setw(5) <<x <<" [" <<typeid(x).name() <<"] (cmd line!)";
     return true;
   }
   
-  if(getFromCfgFile(x, tag)) {
+  if(getFromCfgFile<T>(x, tag)) {
     LOG(3) <<std::setw(20) <<tag <<" = " <<std::setw(5) <<x <<" [" <<typeid(x).name() <<"]";
     return true;
   }
-  
+#endif
+
   if(hasDefault) {
     if(Default) {
       x=*Default;

@@ -73,6 +73,7 @@ struct Node {
   virtual void copyValue(Node*) {NIY}
   virtual bool hasEqualValue(Node*) {NIY}
   virtual void writeValue(std::ostream &os) const {NIY}
+  virtual void copyValueInto(void*) const {NIY}
   virtual Node* newClone(Graph& container) const {NIY}
 };
 stdOutPipe(Node)
