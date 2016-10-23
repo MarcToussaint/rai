@@ -18,7 +18,6 @@
 #include "util.tpp"
 #include "array.tpp"
 #include "graph.h"
-#include "registry.h"
 
 #define DEBUG(x)
 
@@ -31,18 +30,43 @@ Graph& NoGraph=*((Graph*)NULL);
 //
 
 struct ParseInfo{
-  Node *node;
   istream::pos_type beg,end;
   istream::pos_type err_beg, err_end;
   istream::pos_type keys_beg, keys_end;
   istream::pos_type parents_beg, parents_end;
   istream::pos_type value_beg, value_end;
   enum Error{ good=0, unknownParent };
-  ParseInfo():node(NULL){}
   void write(ostream& os) const{ os <<'<' <<beg <<',' <<end <<'>'; }
 };
 stdOutPipe(ParseInfo)
 
+
+//===========================================================================
+//
+// retrieving types
+//
+
+//-- query existing types
+inline Node *reg_findType(const char* key) {
+  NodeL types = registry().getNodesOfType<std::shared_ptr<Type> >();
+  for(Node *ti: types) {
+    if(mlr::String(ti->get<std::shared_ptr<Type> >()->typeId().name())==key) return ti;
+    if(ti->matches(key)) return ti;
+  }
+  return NULL;
+}
+
+
+//===========================================================================
+//
+// read a value from a stream by looking up available registered types
+//
+
+inline Node* readTypeIntoNode(Graph& container, const char* key, std::istream& is) {
+  Node *ti = reg_findType(key);
+  if(ti) return ti->get<std::shared_ptr<Type> >()->readIntoNewNode(container, is);
+  return NULL;
+}
 
 //===========================================================================
 //
@@ -157,18 +181,18 @@ Nod::Nod(const char* key, const char* stringValue){
 //  Graph methods
 //
 
-Graph::Graph():isNodeOfGraph(NULL) {
+Graph::Graph() : isNodeOfGraph(NULL), pi(NULL), ri(NULL) {
 }
 
-Graph::Graph(const char* filename):isNodeOfGraph(NULL) {
+Graph::Graph(const char* filename): Graph() {
   read(mlr::FileToken(filename).getIs());
 }
 
-Graph::Graph(istream& is):isNodeOfGraph(NULL) {
+Graph::Graph(istream& is) : Graph() {
   read(is);
 }
 
-Graph::Graph(const std::map<std::string, std::string>& dict):isNodeOfGraph(NULL) {
+Graph::Graph(const std::map<std::string, std::string>& dict) : Graph() {
   appendDict(dict);
 }
 
@@ -319,29 +343,29 @@ NodeL Graph::getNodesOfDegree(uint deg) {
   return ret;
 }
 
-Node* Graph::merge(Node *m){
-  NodeL KVG = findNodesOfType(m->type, {m->keys.last()});
-  //CHECK(KVG.N<=1, "can't merge into multiple nodes yet");
+Node* Graph::edit(Node *ed){
+  NodeL KVG = findNodesOfType(ed->type, {ed->keys.last()});
+  //CHECK(KVG.N<=1, "can't edit into multiple nodes yet");
   Node *n=NULL;
   if(KVG.N) n=KVG.elem(0);
-  CHECK(n!=m,"how is this possible?: You're trying to merge with '" <<*m <<"' but this is the only node using these keys");
+  CHECK(n!=ed,"how is this possible?: You're trying to edit with '" <<*ed <<"' but this is the only node using these keys");
   if(n){
-    CHECK(m->type==n->type, "can't merge nodes of different types!");
+    CHECK(ed->type==n->type, "can't edit/merge nodes of different types!");
     if(n->isGraph()){ //merge the KVGs
-      n->graph().merge(m->graph());
+      n->graph().edit(ed->graph());
     }else{ //overwrite the value
-      n->copyValue(m);
+      n->copyValue(ed);
     }
-    if(&m->container==this) delete m;
+    if(&ed->container==this) delete ed;
   }else{ //nothing to merge, append
-    if(&m->container!=this){
-      Node *it = m->newClone(*this);
+    if(&ed->container!=this){
+      Node *it = ed->newClone(*this);
       for(uint i=0;i<it->parents.N;i++){
         it->parents(i) = elem(it->parents(i)->index);
         it->parents(i)->parentOf.append(it);
       }
     }
-    return m;
+    return ed;
   }
   return NULL;
 }
@@ -446,10 +470,11 @@ void Graph::read(std::istream& is, bool parseInfo) {
   DEBUG(checkConsistency();)
 
   //-- merge all Merge keys
-  NodeL merges = getNodes("Merge");
-  for(Node *m:merges){
-    m->keys.remove(0);
-    merge(m);
+  NodeL edits = getNodes("Edit");
+  for(Node *ed:edits){
+    CHECK_EQ(ed->keys.first(), "Edit" , "an edit node needs Edit as first key");
+    ed->keys.remove(0);
+    edit(ed);
   }
 
   DEBUG(checkConsistency();)
@@ -479,8 +504,9 @@ void writeFromStream(std::ostream& os, std::istream& is, istream::pos_type beg, 
   cerr <<"[[error in parsing Graph file (line=" <<mlr::lineCount <<"): " <<x <<":\n  \""; \
   writeFromStream(cerr, is, pinfo.beg, is.tellg()); \
   cerr <<"<<<\"  ]]" <<endl; \
-  if(pinfo.node) cerr <<"  (node='" <<*pinfo.node <<"')" <<endl; \
   is.clear(); }
+
+//  if(node) cerr <<"  (node='" <<*node <<"')" <<endl;
 
 Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::String prefixedKey) {
   mlr::String str;
@@ -635,10 +661,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
   pinfo.end=is.tellg();
   DEBUG(checkConsistency();)
 
-  if(parseInfo && node){
-    pinfo.node = node;
-    node->container.getParseInfo(node) = pinfo;
-  }
+  if(parseInfo && node) node->container.getParseInfo(node) = pinfo;
 
   if(verbose) {
     if(node) { cout <<" value:"; node->writeValue(cout); cout <<" FULL:"; node->write(cout); cout <<endl; }
@@ -775,24 +798,27 @@ void Graph::sortByDotOrder() {
 }
 
 ParseInfo& Graph::getParseInfo(Node* n){
-  if(pi.N!=N+1){
-    listResizeCopy(pi, N+1);
-    pi(0)->node=NULL;
-    for(uint i=1;i<pi.N;i++) pi(i)->node=elem(i-1);
-  }
-  if(!n) return *pi(0);
-  return *pi(n->index+1);
+  if(!pi) pi=new ArrayG<ParseInfo>(*this);
+  return pi->operator ()(n);
+//  if(pi.N!=N+1){
+//    listResizeCopy(pi, N+1);
+//    pi(0)->node=NULL;
+//    for(uint i=1;i<pi.N;i++) pi(i)->node=elem(i-1);
+//  }
+//  if(!n) return *pi(0);
+//  return *pi(n->index+1);
 }
 
 RenderingInfo& Graph::getRenderingInfo(Node* n){
-  if(ri.N!=N+1){
-    listResizeCopy(ri, N+1);
-    ri(0)->node=NULL;
-    for(uint i=1;i<ri.N;i++) ri(i)->node=elem(i-1);
-  }
-  if(!n) return *ri(0);
-  return *ri(n->index+1);
-
+  if(!ri) ri=new ArrayG<RenderingInfo>(*this);
+  return ri->operator ()(n);
+//  if(ri.N!=N+1){
+//    listResizeCopy(ri, N+1);
+//    ri(0)->node=NULL;
+//    for(uint i=1;i<ri.N;i++) ri(i)->node=elem(i-1);
+//  }
+//  if(!n) return *ri(0);
+//  return *ri(n->index+1);
 }
 
 const Graph* Graph::getRootGraph() const{
@@ -878,12 +904,6 @@ bool operator==(const Graph& A, const Graph& B){
 
 //===========================================================================
 
-Node_typed<Graph>* newSubGraph(Graph& container, const StringA& keys, const NodeL& parents){
-  return container.newNode<Graph>(keys, parents, Graph());
-}
-
-//===========================================================================
-
 NodeL neighbors(Node* it){
   NodeL N;
   for(Node *e:it->parentOf){
@@ -893,6 +913,72 @@ NodeL neighbors(Node* it){
 }
 
 //===========================================================================
+//
+// global singleton TypeRegistrationSpace
+//
+
+Singleton<Graph> registry;
+
+struct RegistryInitializer{
+  Mutex lock;
+  RegistryInitializer(){
+    int n;
+    for(n=1; n<mlr::argc; n++){
+      if(mlr::argv[n][0]=='-'){
+        mlr::String key(mlr::argv[n]+1);
+        if(n+1<mlr::argc && mlr::argv[n+1][0]!='-'){
+          mlr::String value;
+          value <<'=' <<mlr::argv[n+1];
+          registry().readNode(value, false, false, key);
+          n++;
+        }else{
+          registry().newNode<bool>({key}, {}, true);
+        }
+      }else{
+        MLR_MSG("non-parsed cmd line argument:" <<mlr::argv[n]);
+      }
+    }
+
+    mlr::String cfgFileName="MT.cfg";
+    if(registry()["cfg"]) cfgFileName = registry().get<mlr::String>("cfg");
+    LOG(3) <<"opening config file '" <<cfgFileName <<"'";
+    ifstream fil;
+    fil.open(cfgFileName);
+    if(fil.good()){
+      fil >>registry();
+    }else{
+      LOG(3) <<" - failed";
+    }
+
+  }
+  ~RegistryInitializer(){
+  }
+};
+
+Singleton<RegistryInitializer> registryInitializer;
+
+bool getParameterFromGraph(const std::type_info& type, void* data, const char* key){
+  registryInitializer();
+  Node *n = registry().findNodeOfType(type, {key});
+  if(n){
+    n->copyValueInto(data);
+    return true;
+  }else{
+    n = registry().findNode({key});
+    if(n && n->isOfType<double>()){
+      if(type==typeid(int)){ *((int*)data) = (int)n->get<double>(); return true; }
+      if(type==typeid(uint)){ *((uint*)data) = (uint)n->get<double>(); return true; }
+      if(type==typeid(bool)){ *((bool*)data) = (bool)n->get<double>(); return true; }
+    }
+    if(n && n->isOfType<mlr::String>()){
+      NIY;
+//      n->get<mlr::String>() >>x;
+    }
+  }
+  return false;
+}
+
+ //===========================================================================
 
 RUN_ON_INIT_BEGIN(graph)
 NodeL::memMove=true;

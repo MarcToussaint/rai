@@ -17,7 +17,7 @@
 
 #include "util.h"
 #include "array.h"
-#include "registry.h"
+#include "graph.h"
 
 enum ThreadState { tsIDLE=0, tsCLOSE=-1, tsOPENING=-2, tsLOOPING=-3, tsBEATING=-4, tsFAILURE=-5 }; //positive states indicate steps-to-go
 struct ConditionVariable;
@@ -305,7 +305,7 @@ struct Access_typed:Access{
 
   /// A "copy" of acc: An access to the same variable as acc refers to, but now for '_module'
   Access_typed(Thread* _thread, const Access_typed<T>& acc, bool moduleListens=false)
-    : Access(acc.name, new Type_typed<T, void>(), _thread, NULL), v(NULL){
+    : Access(acc.name, new Type_typed<T>(), _thread, NULL), v(NULL){
     v = acc.v;
     var = acc.var;
     if(thread){
@@ -318,7 +318,7 @@ struct Access_typed:Access{
 
   /// searches for globally registrated variable 'name', checks type equivalence, and becomes an access for '_module'
   Access_typed(Thread* _thread, const char* name, bool moduleListens=false)
-    : Access(name, new Type_typed<T, void>(), _thread, NULL), v(NULL){
+    : Access(name, new Type_typed<T>(), _thread, NULL), v(NULL){
     RevisionedAccessGatedClass** _var = registry().find<RevisionedAccessGatedClass*>({"Variable", name});
     if(!_var){
       v = new Variable<T>(name);

@@ -18,8 +18,8 @@
 #include "geo.h"
 
 #ifndef MLR_NO_REGISTRY
-#include <Core/registry.h>
-REGISTER_TYPE_Key(T, ors::Transformation);
+#include <Core/graph.h>
+REGISTER_TYPE(T, ors::Transformation);
 #endif
 
 

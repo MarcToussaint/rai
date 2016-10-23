@@ -788,7 +788,7 @@ double cofactor(const arr& A, uint i, uint j) {
 uintA sampleMultinomial_SUS(const arr& p, uint n) {
   //following T. Baeck "EA in Theo. and Prac." p120
   uintA s(n);
-  double sum=0, ptr=mlr::rnd.uni();
+  double sum=0, ptr=rnd.uni();
   uint i, j=0;
   for(i=0; i<p.N; i++) {
     sum+=p(i)*n;
@@ -800,7 +800,7 @@ uintA sampleMultinomial_SUS(const arr& p, uint n) {
 }
 
 uint sampleMultinomial(const arr& p) {
-  double sum=0, ptr=mlr::rnd.uni();
+  double sum=0, ptr=rnd.uni();
   uint i;
   for(i=0; i<p.N; i++) {
     sum+=p(i);
@@ -2122,37 +2122,38 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
 //===========================================================================
 //
 // explicit instantiations
+// (in old versions, array.tpp was not included by array.h -- one could revive this)
 //
 
-#include "array.tpp"
-#define T double
-#  include "array_instantiate.cxx"
-#undef T
+//#include "array.tpp"
+//#define T double
+//#  include "array_instantiate.cxx"
+//#undef T
 
-#define NOFLOAT
-#define T float
-#  include "array_instantiate.cxx"
-#undef T
+//#define NOFLOAT
+//#define T float
+//#  include "array_instantiate.cxx"
+//#undef T
 
-#define T uint
-#  include "array_instantiate.cxx"
-#undef T
+//#define T uint
+//#  include "array_instantiate.cxx"
+//#undef T
 
-#define T uint16_t
-#  include "array_instantiate.cxx"
-#undef T
+//#define T uint16_t
+//#  include "array_instantiate.cxx"
+//#undef T
 
-#define T int
-#  include "array_instantiate.cxx"
-#undef T
+//#define T int
+//#  include "array_instantiate.cxx"
+//#undef T
 
-#define T long
-#  include "array_instantiate.cxx"
-#undef T
-#define T byte
-#  include "array_instantiate.cxx"
-#undef T
-#undef NOFLOAT
+//#define T long
+//#  include "array_instantiate.cxx"
+//#undef T
+//#define T byte
+//#  include "array_instantiate.cxx"
+//#undef T
+//#undef NOFLOAT
 
 template mlr::Array<mlr::String>::Array();
 template mlr::Array<mlr::String>::~Array();
@@ -2177,6 +2178,7 @@ template mlr::Array<arr>::Array(uint);
 template mlr::Array<arr>::~Array();
 
 #include "util.tpp"
+
 template mlr::Array<double> mlr::getParameter<mlr::Array<double> >(char const*);
 template mlr::Array<float> mlr::getParameter<mlr::Array<float> >(char const*);
 template mlr::Array<uint> mlr::getParameter<mlr::Array<uint> >(char const*);

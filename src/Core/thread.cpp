@@ -13,7 +13,7 @@
     --------------------------------------------------------------  */
 
 #include "thread.h"
-#include "registry.h"
+#include "graph.h"
 #include <exception>
 #include <signal.h>
 #include <iomanip>

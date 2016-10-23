@@ -27,7 +27,7 @@ ifndef OBJS
 OBJS = main.o
 endif
 ifndef OUTPUT
-OUTPUT = x.exe
+OUTPUT = cleanLocks x.exe
 endif
 ifndef SRCS
 SRCS = $(OBJS:%.o=%.cpp)

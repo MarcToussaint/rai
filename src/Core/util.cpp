@@ -71,8 +71,6 @@
 #endif
 
 
-Singleton<GlobalThings> globalThings;
-
 //===========================================================================
 //
 // Bag container
@@ -83,7 +81,7 @@ const char *mlr::String::readStopSymbols = "\n\r";
 int   mlr::String::readEatStopSymbol     = 1;
 mlr::String mlr::errString;
 Mutex coutMutex;
-Log _log("global", 2, 3);
+mlr::LogObject _log("global", 2, 3);
 
 
 //===========================================================================
@@ -621,6 +619,16 @@ String mlrPath(const char* rel){
   return path;
 }
 
+uint getVerboseLevel() {
+  if(verboseLevel==-1) verboseLevel=getParameter<int>("verbose", 0);
+  return verboseLevel;
+}
+
+bool getInteractivity(){
+  if(interactivity==-1) interactivity=(checkParameter<bool>("noInteractivity")?0:1);
+  return interactivity==1;
+}
+
 }//namespace mlr
 
 //===========================================================================
@@ -634,56 +642,57 @@ namespace mlr {
   }
 
 struct LogServer {
-  std::ofstream fil;
-  bool noLog;
   Mutex mutex;
 
-
-  LogServer(): noLog(false) {
+  LogServer() {
     signal(SIGUSR2, mlr::handleSIGUSR2);
     timerStartTime=mlr::cpuTime();
     startTime = clockTime(false);
-
-    if(checkCmdLineTag("nolog")) noLog=true; else noLog=false;
-    const char *name=getCmdLineArgument("log");
-    if(!name) name=MLR_LogFileName;
-
-    fil.open(name);
-    if(!fil.good()){
-      MLR_MSG("could not open log-file `" <<name <<"' for output -- use `-nolog' or `-log' option to specify the log file");
-      noLog=true;
-      return;
-    }
-
-    fil <<"** compiled at:     " <<__DATE__ <<" " <<__TIME__ <<'\n';
-    fil <<"** execution start: " <<date(startTime) <<std::endl;
   }
 
   ~LogServer() {
-    if(noLog) return;
-    fil <<"** execution stop: " <<date()
-       <<"\n** real time: " <<realTime()
-      <<"sec\n** CPU time: " <<cpuTime()
-     <<"sec\n** system (includes I/O) time: " <<sysTime() <<"sec" <<std::endl;
-    fil.close();
   }
 };
 
 Singleton<mlr::LogServer> logServer;
+}
 
+mlr::LogObject::LogObject(const char* key, int defaultLogCoutLevel, int defaultLogFileLevel)
+  : key(key), logCoutLevel(defaultLogCoutLevel), logFileLevel(defaultLogFileLevel){
+  if(!strcmp(key,"global")){
+    fil.open("z.log.global");
+    fil <<"** compiled at:     " <<__DATE__ <<" " <<__TIME__ <<'\n';
+    fil <<"** execution start: " <<mlr::date(mlr::startTime) <<std::endl;
+  }else{
+    logCoutLevel = mlr::getParameter<int>(STRING("logCoutLevel_"<<key), logCoutLevel);
+    logFileLevel = mlr::getParameter<int>(STRING("logFileLevel_"<<key), logFileLevel);
+  }
+}
+
+mlr::LogObject::~LogObject(){
+  if(!strcmp(key,"global")){
+    fil <<"** execution stop: " <<mlr::date()
+       <<"\n** real time: " <<mlr::realTime()
+      <<"sec\n** CPU time: " <<mlr::cpuTime()
+     <<"sec\n** system (includes I/O) time: " <<mlr::sysTime() <<"sec" <<std::endl;
+  }
+  fil.close();
+}
+
+mlr::LogToken mlr::LogObject::getToken(int log_level, const char* code_file, const char* code_func, uint code_line) {
+  return mlr::LogToken(*this, log_level, code_file, code_func, code_line);
 }
 
 mlr::LogToken::~LogToken(){
   mlr::logServer().mutex.lock();
-  if(logFileLevel>=log_level){
-    if(!fil) fil=&mlr::logServer().fil;
-    if(!fil->is_open()) mlr::open(*fil, STRING("z.log."<<key));
-    (*fil) <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg <<endl;
+  if(log.logFileLevel>=log_level){
+    if(!log.fil.is_open()) mlr::open(log.fil, STRING("z.log."<<log.key));
+    log.fil <<code_func <<':' <<code_file <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
   }
-  if(logCoutLevel>=log_level){
-    if(log_level>=0) std::cout <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg <<endl;
+  if(log.logCoutLevel>=log_level){
+    if(log_level>=0) std::cout <<code_func <<':' <<code_file <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
     if(log_level<0){
-      mlr::errString.clear() <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg;
+      mlr::errString.clear() <<code_func <<':' <<code_file <<':' <<code_line <<'(' <<log_level <<") " <<msg;
 #ifdef MLR_ROS
       ROS_INFO("MLR-MSG: %s",mlr::errString.p);
 #endif
@@ -707,36 +716,6 @@ void setLogLevels(int fileLogLevel, int consoleLogLevel){
 // parameters
 
 namespace mlr{
-/** @brief Open a (possibly new) config file with name '\c name'.<br> If
-  \c name is not specified, it searches for a command line-option
-  '-cfg' and, if not found, it assumes \c name=MT.cfg */
-void openConfigFile(const char *name) {
-  LOG(3) <<"opening config file ";
-  if(!name) name=getCmdLineArgument("cfg");
-  if(!name) name=MLR_ConfigFileName;
-  if(globalThings().cfgFileOpen) {
-    globalThings().cfgFile.close(); LOG(3) <<"(old config file closed) ";
-  }
-  LOG(3) <<"'" <<name <<"'";
-  globalThings().cfgFile.clear();
-  globalThings().cfgFile.open(name);
-  globalThings().cfgFileOpen=true;
-  if(!globalThings().cfgFile.good()) {
-    //MLR_MSG("couldn't open config file " <<name);
-    LOG(3) <<" - failed";
-  }
-  LOG(3) <<std::endl;
-}
-
-uint getVerboseLevel() {
-  if(verboseLevel==-1) verboseLevel=getParameter<int>("verbose", 0);
-  return verboseLevel;
-}
-
-bool getInteractivity(){
-  if(interactivity==-1) interactivity=(checkParameter<bool>("noInteractivity")?0:1);
-  return interactivity==1;
-}
 
 }
 
@@ -1069,7 +1048,7 @@ std::ifstream& mlr::FileToken::getIs(bool change_dir){
 // random number generator
 //
 
-namespace mlr { Rnd rnd; }
+mlr::Rnd rnd;
 
 uint32_t mlr::Rnd::seed(uint32_t n) {
   uint32_t s, c;
@@ -1406,13 +1385,4 @@ template mlr::String mlr::getParameter<mlr::String>(const char*, const mlr::Stri
 
 template bool mlr::checkParameter<uint>(const char*);
 template bool mlr::checkParameter<bool>(const char*);
-
-template std::map<std::string,int> mlr::ParameterMap<int>::m;
-template std::map<std::string,double> mlr::ParameterMap<double>::m;
-template std::map<std::string,unsigned int> mlr::ParameterMap<unsigned int>::m;
-template std::map<std::string,float> mlr::ParameterMap<float>::m;
-template std::map<std::string,bool> mlr::ParameterMap<bool>::m;
-template std::map<std::string,long> mlr::ParameterMap<long>::m;
-template std::map<std::string,mlr::String> mlr::ParameterMap<mlr::String>::m;
-template std::map<std::string,std::string> mlr::ParameterMap<std::string>::m;
 

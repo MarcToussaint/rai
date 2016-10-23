@@ -2,7 +2,6 @@
 #include <Core/util.h>
 #include <Geo/geo.h>
 #include <Core/graph.h>
-#include <Core/registry.h>
 #include "g4data.h"
 
 // =============================================================================
