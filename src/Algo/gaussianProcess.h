@@ -296,6 +296,7 @@ inline double WendlandKernel(void *P, const arr& a, const arr& b){
   return parameter.sf*parameter.sf * pow(max(ARR(0.0,1.0-d)),4)*(1.0+4.0*d);
 }
 
+#if 0
 /** @brief return gradient of the covariance function, i.e.
   for i \in {vector dimensions}: \dfdx{k(a, b)}{x_i}  w.r.t.
   In other words: for all components invoke covD_F(i, P, a, b)
@@ -329,6 +330,7 @@ inline double GaussKernelD_D(uint e, uint l, void *P, const arr& a, const arr& b
   return gamma *(KRONEKER(e, l) - gamma*de*dl) * gauss;
 }
 */
+#endif
 
 
 

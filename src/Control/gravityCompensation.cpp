@@ -513,6 +513,7 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
     //Phi = catCol(Phi,sin(X));
     //Phi = catCol(Phi,cos(X));
 
+#if 0
     /* Phi = makeFeatures(X,quadraticFT);
 
     // add sin/cos features
@@ -521,7 +522,7 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
 
     //TODO dynamics feature has no effect because gravity compensations seems not to work for the head
     // add dynamics features
-    /* arr Phi_tmp;
+    //* arr Phi_tmp;
     for (uint t = 0; t < Q.d0; t++) {
       world.setJointState(Q[t], Q[t]*0.);
 
@@ -531,6 +532,7 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
     }
     Phi = catCol(Phi,Phi_tmp);
     */
+#endif
 
     return Phi;
   }
