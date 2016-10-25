@@ -1,6 +1,6 @@
 #include "depth_packing.h"
 
-REGISTER_MODULE(KinectDepthPacking)
+//REGISTER_MODULE(KinectDepthPacking)
 
 namespace mlr {
   void pack_kindepth2rgb(const uint16A& depth, byteA& buffer) {

@@ -52,6 +52,15 @@ ors::Transformation conv_transform2transformation(const tf::Transform &trans){
   return X;
 }
 
+
+ors::Transformation conv_transform2transformation(const geometry_msgs::Transform &trans){
+  ors::Transformation X;
+  X.setZero();
+  X.rot.set(trans.rotation.w, trans.rotation.x, trans.rotation.y, trans.rotation.z);
+  X.pos.set(trans.translation.x, trans.translation.y, trans.translation.z);
+  return X;
+}
+
 ors::Transformation conv_pose2transformation(const geometry_msgs::Pose &pose){
   ors::Transformation X;
   X.setZero();
@@ -72,6 +81,18 @@ geometry_msgs::Pose conv_transformation2pose(const ors::Transformation& transfor
   pose.orientation.z = transform.rot.z;
   pose.orientation.w = transform.rot.w;
   return pose;
+}
+
+geometry_msgs::Transform conv_transformation2transform(const ors::Transformation& transformation){
+  geometry_msgs::Transform transform;
+  transform.translation.x = transformation.pos.x;
+  transform.translation.y  = transformation.pos.y;
+  transform.translation.z  = transformation.pos.z;
+  transform.rotation.x = transformation.rot.x;
+  transform.rotation.y = transformation.rot.y;
+  transform.rotation.z = transformation.rot.z;
+  transform.rotation.w = transformation.rot.w;
+  return transform;
 }
 
 ors::Vector conv_point2vector(const geometry_msgs::Point& p){
@@ -120,6 +141,22 @@ ors::Transformation ros_getTransform(const std::string& from, const std::string&
   }
   return X;
 }
+
+bool ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener, ors::Transformation& result){
+  result.setZero();
+  try{
+    tf::StampedTransform transform;
+    listener.lookupTransform(from, to, ros::Time(0), transform);
+    result = conv_transform2transformation(transform);
+  }
+  catch (tf::TransformException &ex) {
+    ROS_ERROR("%s",ex.what());
+    ros::Duration(1.0).sleep();
+    return false;
+  }
+  return true;
+}
+
 
 ors::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener){
   ors::Transformation X;
@@ -178,6 +215,8 @@ arr conv_wrench2arr(const geometry_msgs::WrenchStamped& msg){
 }
 
 byteA conv_image2byteA(const sensor_msgs::Image& msg){
+  uint channels = msg.data.size()/(msg.height*msg.width);
+  if(channels==4) return conv_stdvec2arr<byte>(msg.data).reshape(msg.height, msg.width, 4);
   return conv_stdvec2arr<byte>(msg.data).reshape(msg.height, msg.width, 3);
 }
 

@@ -1,10 +1,10 @@
 #pragma once
 
-#include <Core/module.h>
+#include <Core/thread.h>
 #include <Gui/opengl.h>
 #include <Geo/geo.h>
 
-struct Kinect2PointCloud: Module {
+struct Kinect2PointCloud: Thread{
   ACCESS(byteA, kinect_rgb)
   ACCESSlisten(uint16A, kinect_depth)
 
@@ -16,7 +16,7 @@ struct Kinect2PointCloud: Module {
   uint16A depth;
   byteA rgb; //helpers
 
-  Kinect2PointCloud():Module("Kinect2PointCloud"){}
+  Kinect2PointCloud() : Thread("Kinect2PointCloud"){}
   virtual ~Kinect2PointCloud(){}
 
   void open(){}

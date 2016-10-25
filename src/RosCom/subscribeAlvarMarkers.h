@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Ors/ors.h>
-#include <Core/module.h>
+#include <Core/thread.h>
 
 #ifdef MLR_ROS
 #  include "roscom.h"
@@ -48,18 +48,18 @@ void setBody(ors::Body& body, const ar::AlvarMarker& marker);
  */
 void syncMarkers(ors::KinematicWorld& world, const ar::AlvarMarkers& markers);
 
-struct AlvarSyncer : Module {
+struct AlvarSyncer : Thread {
   Access_typed<ors::KinematicWorld> modelWorld;
   Access_typed<ar::AlvarMarkers> ar_pose_markers;
-  AlvarSyncer() :
-    Module("AlvarSyncer"),
+  AlvarSyncer()
+   : Thread("AlvarSyncer"),
     modelWorld(this, "modelWorld", true),
-    ar_pose_markers(this, "ar_pose_markers") {};
-  void open() {};
+    ar_pose_markers(this, "ar_pose_markers") {}
+  void open() {}
   void step() {
     syncMarkers(modelWorld.set(), ar_pose_markers.get());
   }
-  void close() {};
+  void close() {}
 };
 
 struct SubscribeAlvar{

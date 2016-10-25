@@ -15,7 +15,6 @@
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
-
 #include "gamepad2tasks.h"
 #include <Motion/taskMaps.h>
 #include <Hardware/gamepad/gamepad.h>

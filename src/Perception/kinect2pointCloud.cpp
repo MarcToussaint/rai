@@ -1,6 +1,6 @@
 #include "kinect2pointCloud.h"
 
-REGISTER_MODULE(Kinect2PointCloud)
+//REGISTER_MODULE(Kinect2PointCloud)
 
 const unsigned int image_width = 640; //kinect resolution
 const unsigned int image_height = 480; //kinect resolution

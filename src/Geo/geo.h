@@ -1,20 +1,16 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
 
 
 /// @file
@@ -132,7 +128,12 @@ struct Quaternion {
   void normalize();
   void multiply(double f);
   void alignWith(const Vector& v);
-  
+
+  void addX(double angle);
+  void addY(double angle);
+  void addZ(double angle);
+  void append(const Quaternion& q);
+
   double diffZero() const;
   bool isNormalized() const;
   double getDeg() const;
@@ -161,14 +162,11 @@ struct Quaternion {
 struct Transformation {
   Vector pos;     ///< position (translation)
   Quaternion rot; ///< orientation
-  Vector vel;     ///< linear velocity
-  Vector angvel;  ///< angular velocity
-  bool zeroVels;    ///< velocities are identically zero
   
   Transformation() {}
   Transformation(int zero){ CHECK_EQ(zero,0,"this is only for initialization with zero"); setZero(); }
-  Transformation(const Transformation &t) : pos(t.pos), rot(t.rot), vel(t.vel), angvel(t.angvel), zeroVels(t.zeroVels) {}
-  Transformation(const char* init) { read(mlr::String(init).stream()); }
+  Transformation(const Transformation &t) : pos(t.pos), rot(t.rot) {}
+  Transformation(const char* init) { setText(init); }
 
   Transformation& setZero();
   Transformation& setText(const char* txt);
@@ -185,11 +183,7 @@ struct Transformation {
   void addRelativeRotation(const Quaternion&);
   void addRelativeRotationDeg(double degree, double x, double y, double z);
   void addRelativeRotationRad(double rad, double x, double y, double z);
-  void addRelativeRotationQuat(double s, double x, double y, double z);
-  void addRelativeVelocity(double x, double y, double z);
-  void addRelativeAngVelocityDeg(double degree, double x, double y, double z);
-  void addRelativeAngVelocityRad(double rad, double x, double y, double z);
-  void addRelativeAngVelocityRad(double wx, double wy, double wz);
+  void addRelativeRotationQuat(double w, double x, double y, double z);
   
   void appendTransformation(const Transformation& f);     // this = this * f
   void appendInvTransformation(const Transformation& f);     // this = this * f^{-1}
@@ -201,6 +195,41 @@ struct Transformation {
   double* getInverseAffineMatrixGL(double *m) const;// in OpenGL format (transposed memory storage!!)
   
   void applyOnPointArray(arr& pts);
+
+  void write(std::ostream& os) const;
+  void read(std::istream& is);
+};
+
+/// includes linear & angular velocities
+struct DynamicTransformation : Transformation{
+  Vector vel;     ///< linear velocity
+  Vector angvel;  ///< angular velocity
+  bool zeroVels;    ///< velocities are identically zero
+
+  DynamicTransformation() {}
+  DynamicTransformation(int zero){ CHECK_EQ(zero,0,"this is only for initialization with zero"); setZero(); }
+  DynamicTransformation(const DynamicTransformation &t) : Transformation(t), vel(t.vel), angvel(t.angvel), zeroVels(t.zeroVels) {}
+  DynamicTransformation(const char* init) { read(mlr::String(init).stream()); }
+
+  DynamicTransformation& setZero();
+  DynamicTransformation& setText(const char* txt);
+  void setRandom();
+  void setInverse(const DynamicTransformation& f);
+  void setDifference(const DynamicTransformation& from, const DynamicTransformation& to);
+  void setAffineMatrix(const double *m);
+
+  bool isZero() const;
+  double diffZero() const;
+
+  void addRelativeTranslation(double x, double y, double z);
+  void addRelativeTranslation(const Vector& x_rel);
+  void addRelativeVelocity(double x, double y, double z);
+  void addRelativeAngVelocityDeg(double degree, double x, double y, double z);
+  void addRelativeAngVelocityRad(double rad, double x, double y, double z);
+  void addRelativeAngVelocityRad(double wx, double wy, double wz);
+
+  void appendTransformation(const DynamicTransformation& f);     // this = this * f
+  void appendInvTransformation(const DynamicTransformation& f);     // this = this * f^{-1}
 
   void write(std::ostream& os) const;
   void read(std::istream& is);
@@ -245,6 +274,9 @@ struct Camera {
 //
 // operators
 //
+
+// efficient
+void mult(Vector& a, const Quaternion& b, const Vector& c,bool add); //a += b*c (for add=true)
 
 // VECTOR
 double  operator*(const Vector&, const Vector&);

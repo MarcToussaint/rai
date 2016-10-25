@@ -1,20 +1,16 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
 
 
 /// @file
@@ -30,11 +26,12 @@
 
 struct Node;
 template<class T> struct Node_typed;
+template<class T> struct ArrayG;
 struct Graph;
 struct ParseInfo;
+struct RenderingInfo;
 struct GraphEditCallback;
 typedef mlr::Array<Node*> NodeL;
-typedef mlr::Array<ParseInfo*> ParseInfoL;
 typedef mlr::Array<GraphEditCallback*> GraphEditCallbackL;
 extern NodeL& NoNodeL; //this is a reference to NULL! I use it for optional arguments
 extern Graph& NoGraph; //this is a reference to NULL! I use it for optional arguments
@@ -75,6 +72,7 @@ struct Node {
   virtual void copyValue(Node*) {NIY}
   virtual bool hasEqualValue(Node*) {NIY}
   virtual void writeValue(std::ostream &os) const {NIY}
+  virtual void copyValueInto(void*) const {NIY}
   virtual Node* newClone(Graph& container) const {NIY}
 };
 stdOutPipe(Node)
@@ -82,10 +80,12 @@ stdOutPipe(Node)
 //===========================================================================
 
 struct Graph : NodeL {
-  Node *isNodeOfParentGraph;
+  Node *isNodeOfGraph; ///< THIS is a subgraph of another graph; isNodeOfGraph points to the node that equals THIS graph
 
-  ParseInfoL pi;
-  GraphEditCallbackL callbacks;
+  GraphEditCallbackL callbacks; ///< list of callbacks that are informed about creation and destruction of nodes
+
+  ArrayG<ParseInfo> *pi;     ///< optional annotation of nodes: when detailed file parsing is enabled
+  ArrayG<RenderingInfo> *ri; ///< optional annotation of nodes: dot style commands
 
   //-- constructors
   Graph();                                               ///< empty graph
@@ -104,10 +104,11 @@ struct Graph : NodeL {
   void copy(const Graph& G, bool appendInsteadOfClear=false, bool allowCopySubgraphToNonsubgraph=false);
   
   //-- adding nodes
-  template<class T> Node *append(const StringA& keys, const NodeL& parents, const T& x); ///<exactly equivalent to calling a Node_typed constructor
-  Node *append(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
-  Graph& append(const Nod& ni); ///< (internal) append a node initializer
-  Node_typed<Graph>* appendSubgraph(const StringA& keys, const NodeL& parents, const Graph& x=NoGraph);
+  template<class T> Node_typed<T>* newNode(const StringA& keys, const NodeL& parents, const T& x); ///<exactly equivalent to calling a Node_typed constructor
+  template<class T> Node_typed<T>* newNode(const T& x); ///<exactly equivalent to calling a Node_typed constructor
+  Node_typed<int>* newNode(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
+  Graph& newNode(const Nod& ni); ///< (internal) append a node initializer
+  Node_typed<Graph>* newSubgraph(const StringA& keys, const NodeL& parents, const Graph& x=NoGraph);
   void appendDict(const std::map<std::string, std::string>& dict);
 
   //-- basic node retrieval -- users usually use the higher-level wrappers below
@@ -121,6 +122,7 @@ struct Graph : NodeL {
   Node* getNode(const char *key) const{ return findNode({key}, true, false); }
   Node* getNode(const StringA &keys) const{ return findNode(keys, true, false); }
   Node* getEdge(Node *p1, Node *p2) const;
+  Node* getEdge(const NodeL& parents) const;
 
   //-- get lists of nodes
   NodeL getNodes(const char* key) const{ return findNodes({key}); }
@@ -141,17 +143,23 @@ struct Graph : NodeL {
   //-- get lists of all values of a certain type T (or derived from T)
   template<class T> mlr::Array<T*> getValuesOfType(const char* key=NULL);
   
-  //-- merging nodes  //TODO: explain better
-  Node *merge(Node* m); //removes m and deletes, if it is a member of This and merged with another Node
-  void merge(const NodeL& L){ for(Node *m:L) merge(m); }
+  //-- editing nodes
+  Node *edit(Node *ed); ///< ed describes how another node should be edited; ed is removed after editing is done
+  void edit(const NodeL& L){ for(Node *ed:L) edit(ed); }
+
+  //-- hierarchical finding: up and down in the graph hierarchy
+  const Graph* getRootGraph() const;
+  bool isChildOfGraph(const Graph& G) const;
 
   //-- debugging
   bool checkConsistency() const;
 
   //-- I/O
   void sortByDotOrder();
-  ParseInfo& getParseInfo(Node *it);
-  
+  ParseInfo& getParseInfo(Node *n);
+  bool hasRenderingInfo(Node *n){ return ri; }
+  RenderingInfo& getRenderingInfo(Node *n);
+
   void read(std::istream& is, bool parseInfo=false);
   Node* readNode(std::istream& is, bool verbose=false, bool parseInfo=false, mlr::String prefixedKey=mlr::String()); //used only internally..
   void write(std::ostream& os=std::cout, const char *ELEMSEP="\n", const char *delim=NULL) const;
@@ -168,9 +176,32 @@ stdPipes(Graph)
 
 bool operator==(const Graph& A, const Graph& B);
 
-Node_typed<Graph>* newSubGraph(Graph& container, const StringA& keys, const NodeL& parents); ///< creates this as a subgraph-node of container
-
 inline bool Node::isGraph() const{ return type==typeid(Graph); }
+
+//===========================================================================
+
+struct GraphEditCallback {
+  virtual ~GraphEditCallback(){}
+  virtual void cb_new(Node*){}
+  virtual void cb_delete(Node*){}
+  virtual void cb_graphDestruct(){}
+};
+
+//===========================================================================
+
+/// To associate additional objects with each node, this simple array stores such
+/// objects, resizes automatically and is accessible by node pointer
+template<class T>
+struct ArrayG : mlr::Array<T>, GraphEditCallback {
+  Graph& G;
+  ArrayG(Graph& _G):G(_G){ this->memMove=true;  this->resize(G.N);  G.callbacks.append(this); }
+  ~ArrayG(){ G.callbacks.removeValue(this); }
+  T& operator()(Node *n) const { return this->elem(n->index); }
+  virtual void cb_new(Node *n){ this->insert(n->index, T()); }
+  virtual void cb_delete(Node *n){ this->remove(n->index); }
+};
+
+//===========================================================================
 
 #define GRAPH(str) \
   Graph(mlr::String(str).stream())
@@ -196,6 +227,7 @@ inline bool Node::isGraph() const{ return type==typeid(Graph); }
 //===========================================================================
 
 /// This is a Node initializer, specifically for Graph(std::initializer_list<struct Nod> list); and the operator<< below
+/// not to be used otherwise
 struct Nod{
   Nod(const char* key);
   Nod(const char* key, const char* stringValue);
@@ -207,7 +239,7 @@ struct Nod{
 };
 
 /// pipe node initializers into a graph (to append nodes)
-inline Graph& operator<<(Graph& G, const Nod& n){ G.append(n); return G; }
+inline Graph& operator<<(Graph& G, const Nod& n){ G.newNode(n); return G; }
 
 //===========================================================================
 
@@ -215,70 +247,41 @@ NodeL neighbors(Node*);
 
 //===========================================================================
 
-struct GraphEditCallback {
-  virtual ~GraphEditCallback(){}
-  virtual void cb_new(Node*){}
-  virtual void cb_delete(Node*){}
+/// annotations to a node for rendering; esp dot
+struct RenderingInfo{
+  mlr::String dotstyle;
+  void write(ostream& os) const{ os <<dotstyle; }
 };
+stdOutPipe(RenderingInfo)
 
 //===========================================================================
 
+/// global registry of anything using a singleton Graph
+extern Singleton<Graph> registry;
 
-inline bool NodeComp(Node* const& a, Node* const& b){ //TODO: why?
-  return a < b;
-}
+//===========================================================================
+
+// registering a type that can parse io streams into a Node --
+// using this mechanism, a Graph can parse any type from files, when types
+// are registered
+template<class T>
+struct Type_typed_readable:Type_typed<T> {
+  virtual Node* readIntoNewNode(Graph& container, std::istream& is) const { Node_typed<T> *n = container.newNode<T>(T()); is >>n->value; return n; }
+};
+
+typedef mlr::Array<std::shared_ptr<Type> > TypeInfoL;
+
+//===========================================================================
+
+// macro for declaring types (in *.cpp files)
+#define REGISTER_TYPE(Key, T) \
+  RUN_ON_INIT_BEGIN(Decl_Type##_##Key) \
+  registry().newNode<std::shared_ptr<Type> >({mlr::String("Decl_Type"), mlr::String(#Key)}, NodeL(), std::make_shared<Type_typed_readable<T> >()); \
+  RUN_ON_INIT_END(Decl_Type##_##Key)
+
+//===========================================================================
 
 #include "graph.tpp"
-
-//===========================================================================
-//
-// Andrea's util based on Graph
-// (would put in util.h, but creates inclusion loop which breaks compilation)
-//
-
-// Params {{{
-#include "graph.h"
-struct Params {
-  Graph graph;
-
-  template<class T>
-  void set(const char *key, const T &value) {
-    Node *i = graph.getNode(key);
-    if(i) i->get<T>() = value;
-    else graph.append({key}, {}, value);
-  }
-
-  template<class T>
-  bool get(const char *key, T &value) { return graph.get(value, key); }
-
-  template<class T>
-  T* get(const char *key) { return graph.find<T>(key); }
-
-  void clear() { graph.clear(); }
-
-  bool remove(const char *key) {
-    delete graph[key];
-    Node *i = graph.getNode(key);
-    if(!i) return false;
-    delete i;
-//    // TODO is list() here necessary?
-//    graph.list().remove(i->index);
-    return true;
-  }
-
-  void write(std::ostream &os = std::cout) const {
-    os << "params = {" << std::endl;
-    graph.write(os, " ");
-    os << "}" << std::endl;
-  }
-};
-stdOutPipe(Params)
-// }}}
-// Parametric {{{
-struct Parametric {
-  Params params;
-};
-// }}}
 
 #endif
 

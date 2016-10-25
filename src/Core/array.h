@@ -1,20 +1,16 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    ---------------------------------------------------------------  */
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
 
 /// @file
 /// @ingroup group_array
@@ -28,6 +24,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <functional>
+#include <memory>
 
 //-- TODO: old, remove
 #define FOR1D(x, i)   for(i=0;i<x.N;i++)
@@ -292,7 +289,7 @@ template<class T> struct Array {
   void anticipateMEM(uint Mforce){ resizeMEM(N, true, Mforce); if(!nd) nd=1; }
   void freeMEM();
   void resetD();
-  void init();
+//  void init();
 };
 
 //===========================================================================
@@ -823,22 +820,25 @@ arr unpack(const arr& X);
 arr comp_At_A(arr& A);
 arr comp_A_At(arr& A);
 arr comp_At_x(arr& A, const arr& x);
+arr comp_At(arr& A);
 arr comp_A_x(arr& A, const arr& x);
 
 struct SpecialArray{
-  enum Type { noneST, hasCarrayST, sparseST, diagST, RowShiftedST, CpointerST };
+  enum Type { noneST, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };
   Type type;
   virtual ~SpecialArray(){}
 };
 
 template<class T> bool isNotSpecial(const mlr::Array<T>& X){ return !X.special || X.special->type==SpecialArray::noneST; }
 template<class T> bool isRowShifted(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::RowShiftedST; }
-template<class T> bool isSparse(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseST; }
+template<class T> bool isSparseMatrix(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseMatrixST; }
+template<class T> bool isSparseVector(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseVectorST; }
 
 struct RowShifted : SpecialArray {
   arr& Z;           ///< references the array itself
   uint real_d1;     ///< the real width (the packed width is Z.d1; the height is Z.d0)
   uintA rowShift;   ///< amount of shift of each row (rowShift.N==Z.d0)
+  uintA rowLen;     ///< number of non-zeros in the row
   uintA colPatches; ///< column-patch: (nd=2,d0=real_d1,d1=2) range of non-zeros in a COLUMN; starts with 'a', ends with 'b'-1
   bool symmetric;   ///< flag: if true, this stores a symmetric (banded) matrix: only the upper triangle
   arr *nextInSum;
@@ -846,12 +846,14 @@ struct RowShifted : SpecialArray {
   RowShifted(arr& X);
   RowShifted(arr& X, RowShifted &aux);
   ~RowShifted();
-  double acc(uint i, uint j);
+  double elem(uint i, uint j); //TODO rename to 'elem'
+  void reshift(); //shift all cols to start with non-zeros
   void computeColPatches(bool assumeMonotonic);
   arr At_A();
   arr A_At();
   arr At_x(const arr& x);
   arr A_x(const arr& x);
+  arr At();
 };
 
 inline RowShifted* castRowShifted(arr& X) {
@@ -859,6 +861,12 @@ inline RowShifted* castRowShifted(arr& X) {
   if(!X.special || X.special->type!=SpecialArray::RowShiftedST) throw("can't cast like this!");
   return dynamic_cast<RowShifted*>(X.special); //((RowShifted*)X.aux);
 }
+
+struct SparseVector: SpecialArray{
+  uint N; ///< original size
+  uintA elems; ///< for every non-zero (in memory order), the index
+  template<class T> SparseVector(mlr::Array<T>& X);
+};
 
 struct SparseMatrix : SpecialArray{
   uintA elems; ///< for every non-zero (in memory order), the (row,col) index tuple [or only (row) for vectors]
@@ -868,10 +876,14 @@ struct SparseMatrix : SpecialArray{
   template<class T> SparseMatrix(mlr::Array<T>& X, uint d0);
 };
 
+//struct RowSparseMatrix : SpecialArray {
+//  RowSparseMatrix()
+//};
 
 arr unpack(const arr& Z); //returns an unpacked matrix in case this is packed
 arr packRowShifted(const arr& X);
 RowShifted *makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
+arr makeRowSparse(const arr& X);
 
 
 //===========================================================================
@@ -882,7 +894,8 @@ RowShifted *makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
 /*  TODO: realize list simpler: let the Array class have a 'listMode' flag. When this flag is true, the read, write, resize, find etc routines
 will simply be behave differently */
 
-template<class T> void listWrite(const mlr::Array<T*>& L, std::ostream& os, const char *ELEMSEP=" ", const char *delim=NULL);
+template<class T> char listWrite(const mlr::Array<std::shared_ptr<T> >& L, std::ostream& os=std::cout, const char *ELEMSEP=" ", const char *delim=NULL);
+template<class T> char listWrite(const mlr::Array<T*>& L, std::ostream& os=std::cout, const char *ELEMSEP=" ", const char *delim=NULL);
 template<class T> void listWriteNames(const mlr::Array<T*>& L, std::ostream& os);
 template<class T> void listRead(mlr::Array<T*>& L, std::istream& is, const char *delim=NULL);
 template<class T> void listCopy(mlr::Array<T*>& L, const mlr::Array<T*>& M);  //copy a list by calling the copy constructor for each element

@@ -1,20 +1,16 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
 
 
 /// @file
@@ -77,7 +73,7 @@ typedef const char* charp;
 
 //===========================================================================
 //
-// standard little methods in my namespace
+// standard little methods in my namespace (this needs cleanup)
 //
 
 namespace mlr {
@@ -168,9 +164,6 @@ void initCmdLine(int _argc, char *_argv[]);
 bool checkCmdLineTag(const char *tag);
 char *getCmdLineArgument(const char *tag);
 
-//----- config file handling
-void openConfigFile(const char *name=0);
-
 //----- parameter grabbing from command line, config file, or default value
 template<class T> T getParameter(const char *tag);
 template<class T> T getParameter(const char *tag, const T& Default);
@@ -247,8 +240,8 @@ public:
   String& operator=(const String& s);
   void operator=(const char *s);
   void set(const char *s, uint n);
-  void resize(uint n, bool copy); //low-level resizing the string buffer - fully uninitialized but with final 0
-  void append(char x); //low-level append a char
+  void resize(uint n, bool copy); //low-level resizing the string buffer - with additinal final 0
+  void append(char x);
   String& setRandom();
   
   /// @name resetting
@@ -292,44 +285,34 @@ namespace mlr {
 // logging
 
 namespace mlr {
-struct LogToken{
-  mlr::String msg;
-  int log_level;
-  int logCoutLevel, logFileLevel;
-  const char *key, *filename, *function;
-  uint line;
-  std::ofstream *fil;
-  LogToken(int log_level, int logCoutLevel, int logFileLevel, const char* key, const char* filename, const char* function, uint line, std::ofstream* fil)
-    : log_level(log_level), logCoutLevel(logCoutLevel), logFileLevel(logFileLevel), key(key), filename(filename), function(function), line(line), fil(fil) {}
-  ~LogToken(); //that's where the magic happens!
-  std::ostream& os(){ return msg; }
-};
+  /// An object that represents a log file and/or cout logging, together with log levels read from a cfg file
+  struct LogObject{
+    std::ofstream fil;
+    const char* key;
+    int logCoutLevel, logFileLevel;
+    LogObject(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0);
+    ~LogObject();
+    LogObject& getNonConst() const{ return *((LogObject*)this); } //ugly... but Logs are often members of classes, and they are accessed in const methods of these classes...
+    struct LogToken getToken(int log_level, const char *code_file, const char *code_func, uint code_line);
+  };
+
+  /// A Token to such a Log object which, on destruction, writes into the Log
+  struct LogToken{
+    mlr::String msg;
+    LogObject& log;
+    int log_level;
+    const char *code_file, *code_func;
+    uint code_line;
+    LogToken(LogObject& log, int log_level, const char *code_file, const char *code_func, uint code_line)
+      : log(log), log_level(log_level), code_file(code_file), code_func(code_func), code_line(code_line){}
+    ~LogToken(); //that's where the magic happens!
+    std::ostream& os(){ return msg; }
+  };
 }
-//template<class T> mlr::LogToken& operator<<(mlr::LogToken& log, const T& x){ log.os() <<x;  return log; }
 
-struct Log{
-  const char* key;
-  int logCoutLevel, logFileLevel;
-  bool cfgFileWasRead;
-  std::ofstream fil;
-  Log(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0)
-    : key(key), logCoutLevel(defaultLogCoutLevel), logFileLevel(defaultLogFileLevel), cfgFileWasRead(false){}
-  ~Log(){ fil.close(); }
-  //TODO: rename to getToken
-  mlr::LogToken operator()(int log_level, const char* filename, const char* function, uint line) const {
-    if(strcmp(key,"global") && !cfgFileWasRead){
-      Log *nonconst=(Log*)this;
-      nonconst->logCoutLevel = mlr::getParameter<int>(STRING("logCoutLevel_"<<key), logCoutLevel);
-      nonconst->logFileLevel = mlr::getParameter<int>(STRING("logFileLevel_"<<key), logFileLevel);
-      nonconst->cfgFileWasRead=true;
-    }
-    return mlr::LogToken(log_level, logCoutLevel, logFileLevel, key, filename, function, line, (std::ofstream*)&fil);
-  }
-};
+extern mlr::LogObject _log;
 
-extern Log _log;
-
-#define LOG(log_level) _log(log_level, __FILE__, __func__, __LINE__).os()
+#define LOG(log_level) _log.getNonConst().getToken(log_level, __FILE__, __func__, __LINE__).os()
 
 void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 
@@ -343,37 +326,16 @@ void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 // macros for halting/MSGs etc
 //
 
-//----- declare my namespace for the first time:
-/// Marc Toussaint namespace
 namespace mlr {
 extern String errString;
 }
 
 //----- error handling:
 #  define MLR_HERE "@" << __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<": "
-///* #ifdef MLR_MSVC */
-///* (strrchr(__FILE__, '\\')?strrchr(__FILE__, '\\')+1:__FILE__) */
-///* #else */
-///* #  define MLR_HERE "@" <<(strrchr(__FILE__, '/')?strrchr(__FILE__, '/')+1:__FILE__) <<':' <<__LINE__ <<':' <<__FUNCTION__ <<": " */
-///* #endif */
-//#ifdef MLR_ROS
-//#  define MLR_WRITE_MSG(str) { std::cerr <<str <<std::endl; ROS_INFO("MLR-MSG: %s",str.p); }
-//#else
-//#  define MLR_WRITE_MSG(str) { std::cerr <<str <<std::endl; }
-//#endif
-//#ifndef MLR_MSG
-//#  define MLR_MSG(msg){ std::cerr <<MLR_HERE <<msg <<std::endl; }
-//#endif
-//#ifndef HALT
-//#  define HALT(msg)  { mlr::errString.clear() <<MLR_HERE <<msg <<" --- HALT"; MLR_WRITE_MSG(mlr::errString); throw mlr::errString.p; }
-//#  define NIY HALT("not implemented yet")
-//#  define NICO HALT("not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code")
-//#  define OPS HALT("obsolete")
-//#endif
 
 #ifndef HALT
 #  define MLR_MSG(msg){ LOG(-1) <<msg; }
-#  define THROW(msg){ LOG(-2) <<msg; throw mlr::errString.p; }
+#  define THROW(msg){ LOG(-1) <<msg; throw(mlr::errString.p); }
 #  define HALT(msg){ LOG(-2) <<msg; exit(1); }
 #  define NIY  { LOG(-2) <<"not implemented yet"; exit(1); }
 #  define NICO { LOG(-2) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(1); }
@@ -402,7 +364,7 @@ extern String errString;
   if(!(A<=B)){ LOG(-2) <<"CHECK_LE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw mlr::errString.p; } \
 
 #else
-#  define CHECK(cond, msg)
+#define CHECK(cond, msg)
 #define CHECK_ZERO(expr, tolerance, msg)
 #define CHECK_EQ(A, B, msg)
 #define CHECK_GE(A, B, msg)
@@ -547,9 +509,9 @@ private:
   void seed250(int32_t seed);
 };
 
-/// The global Rnd object
-extern Rnd rnd;
 }
+/// The global Rnd object
+extern mlr::Rnd rnd;
 
 
 //===========================================================================
@@ -653,16 +615,29 @@ struct CoutToken{
 
 
 //===========================================================================
+//
+// to register a type (instead of general thing/object), use this:
+//
 
-struct GlobalThings {
-  std::ifstream cfgFile;
-  bool cfgFileOpen;
-  Mutex cfgFileMutex;
+struct Type {
+  virtual ~Type(){}
+  virtual const std::type_info& typeId() const {NIY}
+  virtual struct Node* readIntoNewNode(struct Graph& container, std::istream&) const {NIY}
+  virtual void* newInstance() const {NIY}
+  void write(std::ostream& os) const {  os <<"Type '" <<typeId().name() <<"' ";  }
+  void read(std::istream& is) const {NIY}
+};
+stdPipes(Type)
 
-GlobalThings():cfgFileOpen(false){};
+template<class T>
+struct Type_typed : Type {
+  virtual const std::type_info& typeId() const { return typeid(T); }
+  virtual void* newInstance() const { return new T(); }
 };
 
-extern Singleton<GlobalThings> globalThings;
+inline bool operator!=(Type& t1, Type& t2){ return t1.typeId() != t2.typeId(); }
+inline bool operator==(Type& t1, Type& t2){ return t1.typeId() == t2.typeId(); }
+
 
 //===========================================================================
 //
@@ -707,7 +682,6 @@ using std::ostream;
 using std::istream;
 using std::ofstream;
 using std::ifstream;
-using mlr::rnd;
 using mlr::String;
 
 #endif

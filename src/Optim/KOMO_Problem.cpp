@@ -1,3 +1,18 @@
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
+
+
 #include "KOMO_Problem.h"
 #include "Graph_Problem.h"
 
@@ -28,6 +43,20 @@ bool KOMO_Problem::checkStructure(const arr& x){
   return true;
 }
 
+void KOMO_Problem::report(const arr& phi){
+  TermTypeA featureTypes;
+  uint k=get_k();
+  uintA variableDimensions, featureTimes;
+  getStructure(variableDimensions, featureTimes, featureTypes);
+
+  cout <<"KOMO Problem report:  k=" <<k <<"  Features:" <<endl;
+  for(uint i=0;i<featureTimes.N;i++){
+    cout <<i <<" t=" <<featureTimes(i) <<" vardim=" <<variableDimensions(featureTimes(i)) <<" type=" <<featureTypes(i);
+    if(&phi) cout <<" phi=" <<phi(i) <<" phi^2=" <<mlr::sqr(phi(i));
+    cout <<endl;
+  }
+}
+
 
 void KOMO_GraphProblem::getStructure(uintA& variableDimensions, uintAA& featureVariables, TermTypeA& featureTypes){
   uintA featureTimes;
@@ -53,7 +82,7 @@ void KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x){
 }
 
 
-KOMO_ConstrainedProblem::KOMO_ConstrainedProblem(KOMO_Problem& P) : KOMO(P){
+Conv_KOMO_ConstrainedProblem::Conv_KOMO_ConstrainedProblem(KOMO_Problem& P) : KOMO(P){
   KOMO.getStructure(variableDimensions, featureTimes, featureTypes);
   varDimIntegral = integral(variableDimensions);
 
@@ -62,7 +91,7 @@ KOMO_ConstrainedProblem::KOMO_ConstrainedProblem(KOMO_Problem& P) : KOMO(P){
   } );
 }
 
-void KOMO_ConstrainedProblem::f(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){
+void Conv_KOMO_ConstrainedProblem::f(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){
   KOMO.phi(phi, J_KOMO, H_KOMO, tt, x);
 
   //-- construct a row-shifed J from the array of featureJs
@@ -83,6 +112,7 @@ void KOMO_ConstrainedProblem::f(arr& phi, arr& J, arr& H, TermTypeA& tt, const a
       else Jaux->rowShift(i) =  varDimIntegral(t-k-1);
     }
 
+    Jaux->reshift();
     Jaux->computeColPatches(true);
   }
 }

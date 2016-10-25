@@ -1,0 +1,32 @@
+#/bin/sh
+
+#arguments: 1 path, 2 file to wait for, 3 make options
+
+cd $1
+LASTFILE=`ls -Art | tail -n 1`
+if [ "$LASTFILE" = $2 ]; then
+    tput sgr0 && echo "         * UpToDate " $1/$2
+else
+    if mkdir Make.lock 2> /dev/null
+    then    # lock did not exist and was created successfully
+	tput setaf 3 && echo "       *** Make     " $1 && tput sgr0
+	MAKEFLAGS='-j4 -k' make  -f makefile $3
+	if [ $? = 0 ] ; then # success
+	    touch $2
+	    tput setaf 3 && echo "       *** Done     " $1 && tput sgr0
+#	    date +'%y-%m-%d-%T' > .lastMake
+	else # fail
+	    tput bold && tput setaf 1
+	    echo "     ***** FAILED   " $1/$2
+	    tput sgr0
+	fi
+	rm -rf Make.lock
+    else
+	tput setaf 2 && echo "         * Waiting  " $1/$2 && tput sgr0
+	while [ -d Make.lock ]
+	do
+	    sleep 0.2
+	done
+	tput setaf 2 && echo "         * DoneWait " $1/$2 && tput sgr0
+    fi
+fi

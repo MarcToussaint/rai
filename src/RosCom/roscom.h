@@ -17,7 +17,7 @@
 
 //===========================================================================
 
-#include <Core/module.h>
+#include <Core/thread.h>
 #include <Core/array.h>
 #include <Geo/geo.h>
 #include <Ors/ors.h>
@@ -41,6 +41,7 @@ std_msgs::String    conv_string2string(const mlr::String&);
 mlr::String         conv_string2string(const std_msgs::String&);
 std_msgs::String    conv_stringA2string(const StringA& strs);
 ors::Transformation conv_transform2transformation(const tf::Transform&);
+ors::Transformation conv_transform2transformation(const geometry_msgs::Transform&);
 ors::Transformation conv_pose2transformation(const geometry_msgs::Pose&);
 ors::Vector         conv_point2vector(const geometry_msgs::Point& p);
 ors::Quaternion     conv_quaternion2quaternion(const geometry_msgs::Quaternion& q);
@@ -60,6 +61,7 @@ std_msgs::Float32MultiArray conv_floatA2Float32Array(const floatA&);
 
 //-- MLR -> ROS
 geometry_msgs::Pose conv_transformation2pose(const ors::Transformation&);
+geometry_msgs::Transform conv_transformation2transform(const ors::Transformation&);
 std::vector<geometry_msgs::Point> conv_arr2points(const arr& pts);
 marc_controller_pkg::JointState   conv_CtrlMsg2JointState(const CtrlMsg& ctrl);
 floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray&);
@@ -67,6 +69,7 @@ floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray&);
 //-- get transformations
 ors::Transformation ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener);
 ors::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener);
+bool ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener, ors::Transformation& result);
 
 
 struct SubscriberType { virtual ~SubscriberType() {} }; ///< if types derive from RootType, more tricks are possible
@@ -85,9 +88,9 @@ struct Subscriber : SubscriberType {
     : access(_access) {
     if(mlr::getParameter<bool>("useRos", false)){
       nh = new ros::NodeHandle;
-      registry().append<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
-      cout <<"subscibing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<"> ..." <<std::flush;
-      sub  = nh->subscribe( topic_name, 1, &Subscriber::callback, this);
+      registry().newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
+      cout <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<"> ..." <<std::flush;
+      sub  = nh->subscribe( topic_name, 100, &Subscriber::callback, this);
       cout <<"done" <<endl;
     }
   }
@@ -115,8 +118,8 @@ struct SubscriberConv : SubscriberType {
     if(mlr::getParameter<bool>("useRos")){
       nh = new ros::NodeHandle;
       listener = new tf::TransformListener;
-      registry().append<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
-      cout <<"subscibing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> ..." <<std::flush;
+      registry().newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
+      cout <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> ..." <<std::flush;
       sub = nh->subscribe(topic_name, 1, &SubscriberConv::callback, this);
       cout <<"done" <<endl;
     }
@@ -126,8 +129,8 @@ struct SubscriberConv : SubscriberType {
     if(mlr::getParameter<bool>("useRos")){
       nh = new ros::NodeHandle;
       listener = new tf::TransformListener;
-      registry().append<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
-      cout <<"subscibing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> ..." <<std::flush;
+      registry().newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
+      cout <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> ..." <<std::flush;
       sub = nh->subscribe(topic_name, 1, &SubscriberConv::callback, this);
       cout <<"done" <<endl;
     }
@@ -160,7 +163,7 @@ struct SubscriberConvNoHeader : SubscriberType{
     : access(NULL, _access) {
     if(mlr::getParameter<bool>("useRos")){
       nh = new ros::NodeHandle;
-      registry().append<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
+      registry().newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
       cout <<"subscibing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> ..." <<std::flush;
       sub = nh->subscribe( topic_name, 1, &SubscriberConvNoHeader::callback, this);
       cout <<"done" <<endl;
@@ -170,7 +173,7 @@ struct SubscriberConvNoHeader : SubscriberType{
     : access(NULL, var_name) {
     if(mlr::getParameter<bool>("useRos")){
       nh = new ros::NodeHandle;
-      registry().append<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
+      registry().newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
       cout <<"subscibing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> ..." <<std::flush;
       sub = nh->subscribe( topic_name, 1, &SubscriberConvNoHeader::callback, this);
       cout <<"done" <<endl;
@@ -192,14 +195,14 @@ struct SubscriberConvNoHeader : SubscriberType{
 //
 
 template<class msg_type, class var_type, msg_type conv(const var_type&)>
-struct PublisherConv : Module{
+struct PublisherConv : Thread {
   Access_typed<var_type> access;
   ros::NodeHandle *nh;
   ros::Publisher pub;
   const char* topic_name;
 
   PublisherConv(const char* _topic_name, Access_typed<var_type>& _access)
-      : Module(STRING("Publisher_"<<_access.name <<"->" <<_topic_name), -1),
+      : Thread(STRING("Publisher_"<<_access.name <<"->" <<_topic_name), -1),
         access(this, _access, true),
         nh(NULL),
         topic_name(_topic_name){
@@ -207,7 +210,7 @@ struct PublisherConv : Module{
       nh = new ros::NodeHandle;
   }
   PublisherConv(const char* _topic_name, const char* var_name)
-      : Module(STRING("Publisher_"<<var_name <<"->" <<_topic_name), -1),
+      : Thread(STRING("Publisher_"<<var_name <<"->" <<_topic_name), -1),
         access(this, var_name, true),
         nh(NULL),
         topic_name(_topic_name){
@@ -272,11 +275,11 @@ void syncJointStateWitROS(ors::KinematicWorld& world, Access_typed<CtrlMsg>& ctr
 
 //===========================================================================
 
-struct PerceptionObjects2Ors : Module{
+struct PerceptionObjects2Ors : Thread {
   Access_typed<visualization_msgs::MarkerArray> perceptionObjects;
   Access_typed<ors::KinematicWorld> modelWorld;
   PerceptionObjects2Ors()
-    : Module("PerceptionObjects2Ors"),
+    : Thread("PerceptionObjects2Ors"),
     perceptionObjects(this, "perceptionObjects", true),
     modelWorld(this, "modelWorld"){}
   void open(){}

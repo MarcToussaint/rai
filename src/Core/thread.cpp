@@ -1,24 +1,22 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
 
 #include "thread.h"
-#include "registry.h"
+#include "graph.h"
 #include <exception>
+#include <signal.h>
+#include <iomanip>
 
 #ifndef MLR_MSVC
 #ifndef __CYGWIN__
@@ -220,7 +218,7 @@ void ConditionVariable::waitUntil(double absTime, bool userHasLocked) {
 //
 
 RevisionedAccessGatedClass::RevisionedAccessGatedClass(const char *_name):name(_name), revision(0), registryNode(NULL) {
-  registryNode = new Node_typed<RevisionedAccessGatedClass* >(registry(), {"Variable", name}, {}, this);
+  registryNode = registry().newNode<RevisionedAccessGatedClass* >({"Variable", name}, {}, this);
   listeners.memMove=true;
 }
 
@@ -416,7 +414,7 @@ protected:
 #endif
 
 Thread::Thread(const char* _name, double beatIntervalSec): name(_name), state(tsCLOSE), tid(0), thread(0), step_count(0), metronome(beatIntervalSec), registryNode(NULL)  {
-  registryNode = new Node_typed<Thread*>(registry(), {"Thread", name}, {}, this);
+  registryNode = registry().newNode<Thread*>({"Thread", name}, {}, this);
   if(name.N>14) name.resize(14, true);
 }
 
@@ -610,6 +608,88 @@ void Thread::main() {
   close(); //virtual close routine
   stepMutex.unlock();
   cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
+}
+
+
+//===========================================================================
+//
+// controlling threads
+//
+
+Singleton<ConditionVariable> moduleShutdown;
+
+void signalhandler(int s){
+  int calls = moduleShutdown().incrementValue();
+  cerr <<"\n*** System received signal " <<s <<" -- count=" <<calls <<endl;
+  if(calls==1){
+    LOG(0) <<" -- waiting for main loop to break on moduleShutdown().getValue()" <<endl;
+  }
+  if(calls==2){
+    LOG(0) <<" -- smoothly closing modules directly" <<endl;
+    threadCloseModules(); //might lead to a hangup of the main loop, but processes should close
+    LOG(0) <<" -- DONE" <<endl;
+  }
+  if(calls==3){
+    LOG(0) <<" -- cancelling threads to force closing" <<endl;
+    threadCancelModules();
+    LOG(0) <<" -- DONE" <<endl;
+  }
+  if(calls>3){
+    LOG(3) <<" ** moduleShutdown failed - hard exit!" <<endl;
+    exit(1);
+  }
+}
+
+void openModules(){
+  NodeL threads = registry().getNodesOfType<Thread*>();
+  for(Node* th:threads){ th->get<Thread*>()->open(); }
+}
+
+void stepModules(){
+  NodeL threads = registry().getNodesOfType<Thread*>();
+  for(Node* th:threads){ th->get<Thread*>()->step(); }
+}
+
+void closeModules(){
+  NodeL threads = registry().getNodesOfType<Thread*>();
+  for(Node* th:threads){ th->get<Thread*>()->close(); }
+}
+
+RevisionedAccessGatedClassL getVariables(){
+  return registry().getValuesOfType<RevisionedAccessGatedClass>();
+}
+
+void threadOpenModules(bool waitForOpened, bool setSignalHandler){
+  if(setSignalHandler) signal(SIGINT, signalhandler);
+  NodeL threads = registry().getNodesOfType<Thread*>();
+  for(Node *th: threads) th->get<Thread*>()->threadOpen();
+  if(waitForOpened) for(Node *th: threads) th->get<Thread*>()->waitForOpened();
+  for(Node *th: threads){
+    Thread *mod=th->get<Thread*>();
+    if(mod->metronome.ticInterval>=0.) mod->threadLoop();
+    //otherwise the module is listening (hopefully)
+  }
+}
+
+void threadCloseModules(){
+  NodeL threads = registry().getNodesOfType<Thread*>();
+  for(Node *th: threads) th->get<Thread*>()->threadClose();
+  modulesReportCycleTimes();
+}
+
+void threadCancelModules(){
+  NodeL threads = registry().getNodesOfType<Thread*>();
+  for(Node *th: threads) th->get<Thread*>()->threadCancel();
+}
+
+void modulesReportCycleTimes(){
+  cout <<"Cycle times for all Modules (msec):" <<endl;
+  NodeL threads = registry().getNodesOfType<Thread*>();
+  for(Node *th: threads){
+    Thread *thread=th->get<Thread*>();
+    cout <<std::setw(30) <<thread->name <<" : ";
+    thread->timer.report();
+  }
 }
 
 

@@ -1,5 +1,5 @@
 #include <FOL/relationalMachine.h>
-#include <Core/module.h>
+#include <Core/thread.h>
 
 struct ServiceRAP{
   struct sServiceRAP *s;

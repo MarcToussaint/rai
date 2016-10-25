@@ -1,9 +1,9 @@
 #pragma once
 
 #include "video.h"
-#include <Core/module.h>
+#include <Core/thread.h>
 
-struct VideoEncoderModule: Module{
+struct VideoEncoderModule: Thread{
   ACCESS(byteA, img)
 
   VideoEncoderModule();

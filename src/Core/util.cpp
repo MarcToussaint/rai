@@ -1,20 +1,16 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
 
 
 #include "util.h"
@@ -75,8 +71,6 @@
 #endif
 
 
-Singleton<GlobalThings> globalThings;
-
 //===========================================================================
 //
 // Bag container
@@ -87,7 +81,7 @@ const char *mlr::String::readStopSymbols = "\n\r";
 int   mlr::String::readEatStopSymbol     = 1;
 mlr::String mlr::errString;
 Mutex coutMutex;
-Log _log("global", 2, 3);
+mlr::LogObject _log("global", 2, 3);
 
 
 //===========================================================================
@@ -625,6 +619,16 @@ String mlrPath(const char* rel){
   return path;
 }
 
+uint getVerboseLevel() {
+  if(verboseLevel==-1) verboseLevel=getParameter<int>("verbose", 0);
+  return verboseLevel;
+}
+
+bool getInteractivity(){
+  if(interactivity==-1) interactivity=(checkParameter<bool>("noInteractivity")?0:1);
+  return interactivity==1;
+}
+
 }//namespace mlr
 
 //===========================================================================
@@ -638,61 +642,62 @@ namespace mlr {
   }
 
 struct LogServer {
-  std::ofstream fil;
-  bool noLog;
   Mutex mutex;
 
-
-  LogServer(): noLog(false) {
+  LogServer() {
     signal(SIGUSR2, mlr::handleSIGUSR2);
     timerStartTime=mlr::cpuTime();
     startTime = clockTime(false);
-
-    if(checkCmdLineTag("nolog")) noLog=true; else noLog=false;
-    const char *name=getCmdLineArgument("log");
-    if(!name) name=MLR_LogFileName;
-
-    fil.open(name);
-    if(!fil.good()){
-      MLR_MSG("could not open log-file `" <<name <<"' for output -- use `-nolog' or `-log' option to specify the log file");
-      noLog=true;
-      return;
-    }
-
-    fil <<"** compiled at:     " <<__DATE__ <<" " <<__TIME__ <<'\n';
-    fil <<"** execution start: " <<date(startTime) <<std::endl;
   }
 
   ~LogServer() {
-    if(noLog) return;
-    fil <<"** execution stop: " <<date()
-       <<"\n** real time: " <<realTime()
-      <<"sec\n** CPU time: " <<cpuTime()
-     <<"sec\n** system (includes I/O) time: " <<sysTime() <<"sec" <<std::endl;
-    fil.close();
   }
 };
 
 Singleton<mlr::LogServer> logServer;
+}
 
+mlr::LogObject::LogObject(const char* key, int defaultLogCoutLevel, int defaultLogFileLevel)
+  : key(key), logCoutLevel(defaultLogCoutLevel), logFileLevel(defaultLogFileLevel){
+  if(!strcmp(key,"global")){
+    fil.open("z.log.global");
+    fil <<"** compiled at:     " <<__DATE__ <<" " <<__TIME__ <<'\n';
+    fil <<"** execution start: " <<mlr::date(mlr::startTime) <<std::endl;
+  }else{
+    logCoutLevel = mlr::getParameter<int>(STRING("logCoutLevel_"<<key), logCoutLevel);
+    logFileLevel = mlr::getParameter<int>(STRING("logFileLevel_"<<key), logFileLevel);
+  }
+}
+
+mlr::LogObject::~LogObject(){
+  if(!strcmp(key,"global")){
+    fil <<"** execution stop: " <<mlr::date()
+       <<"\n** real time: " <<mlr::realTime()
+      <<"sec\n** CPU time: " <<mlr::cpuTime()
+     <<"sec\n** system (includes I/O) time: " <<mlr::sysTime() <<"sec" <<std::endl;
+  }
+  fil.close();
+}
+
+mlr::LogToken mlr::LogObject::getToken(int log_level, const char* code_file, const char* code_func, uint code_line) {
+  return mlr::LogToken(*this, log_level, code_file, code_func, code_line);
 }
 
 mlr::LogToken::~LogToken(){
   mlr::logServer().mutex.lock();
-  if(logFileLevel>=log_level){
-    if(!fil) fil=&mlr::logServer().fil;
-    if(!fil->is_open()) mlr::open(*fil, STRING("z.log."<<key));
-    (*fil) <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg <<endl;
+  if(log.logFileLevel>=log_level){
+    if(!log.fil.is_open()) mlr::open(log.fil, STRING("z.log."<<log.key));
+    log.fil <<code_func <<':' <<code_file <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
   }
-  if(logCoutLevel>=log_level){
-    if(log_level>=0) std::cout <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg <<endl;
+  if(log.logCoutLevel>=log_level){
+    if(log_level>=0) std::cout <<code_func <<':' <<code_file <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
     if(log_level<0){
-      mlr::errString.clear() <<function <<':' <<filename <<':' <<line <<'(' <<log_level <<") " <<msg;
+      mlr::errString.clear() <<code_func <<':' <<code_file <<':' <<code_line <<'(' <<log_level <<") " <<msg;
 #ifdef MLR_ROS
       ROS_INFO("MLR-MSG: %s",mlr::errString.p);
 #endif
       if(log_level==-1){ mlr::errString <<" -- WARNING";    cout <<mlr::errString <<endl; }
-      if(log_level==-2){ mlr::errString <<" -- ERROR  ";    cerr <<mlr::errString <<endl; /*throw does not WORK!!!*/ }
+      if(log_level==-2){ mlr::errString <<" -- ERROR  ";    cerr <<mlr::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
       if(log_level==-3){ mlr::errString <<" -- HARD EXIT!"; cerr <<mlr::errString <<endl; mlr::logServer().mutex.unlock(); exit(1); }
       if(log_level<=-2) raise(SIGUSR2);
     }
@@ -711,36 +716,6 @@ void setLogLevels(int fileLogLevel, int consoleLogLevel){
 // parameters
 
 namespace mlr{
-/** @brief Open a (possibly new) config file with name '\c name'.<br> If
-  \c name is not specified, it searches for a command line-option
-  '-cfg' and, if not found, it assumes \c name=MT.cfg */
-void openConfigFile(const char *name) {
-  LOG(3) <<"opening config file ";
-  if(!name) name=getCmdLineArgument("cfg");
-  if(!name) name=MLR_ConfigFileName;
-  if(globalThings().cfgFileOpen) {
-    globalThings().cfgFile.close(); LOG(3) <<"(old config file closed) ";
-  }
-  LOG(3) <<"'" <<name <<"'";
-  globalThings().cfgFile.clear();
-  globalThings().cfgFile.open(name);
-  globalThings().cfgFileOpen=true;
-  if(!globalThings().cfgFile.good()) {
-    //MLR_MSG("couldn't open config file " <<name);
-    LOG(3) <<" - failed";
-  }
-  LOG(3) <<std::endl;
-}
-
-uint getVerboseLevel() {
-  if(verboseLevel==-1) verboseLevel=getParameter<int>("verbose", 0);
-  return verboseLevel;
-}
-
-bool getInteractivity(){
-  if(interactivity==-1) interactivity=(checkParameter<bool>("noInteractivity")?0:1);
-  return interactivity==1;
-}
 
 }
 
@@ -793,7 +768,7 @@ void mlr::String::resize(uint n, bool copy) {
   } else if(n+1>M || 10+2*n<M/2) {
     M=11+2*n;
   }
-  if(M!=Mold) {
+  if(M!=Mold) { //do we actually have to allocate?
     p=new char [M];
     if(!p) HALT("mlr::Mem failed memory allocation of " <<M <<"bytes");
     if(copy) memmove(p, pold, N<n?N:n);
@@ -807,18 +782,18 @@ void mlr::String::resize(uint n, bool copy) {
 void mlr::String::init() { p=0; N=0; M=0; buffer.string=this; flushCallback=NULL; }
 
 /// standard constructor
-mlr::String::String():std::iostream(&buffer) { init(); clearStream(); }
+mlr::String::String() : std::iostream(&buffer) { init(); clearStream(); }
 
 /// copy constructor
-mlr::String::String(const String& s):std::iostream(&buffer) { init(); this->operator=(s); }
+mlr::String::String(const String& s) : std::iostream(&buffer) { init(); this->operator=(s); }
 
 /// copy constructor for an ordinary C-string (needs to be 0-terminated)
-mlr::String::String(const char *s):std::iostream(&buffer) { init(); this->operator=(s); }
+mlr::String::String(const char *s) : std::iostream(&buffer) { init(); this->operator=(s); }
 
 
-mlr::String::String(const std::string& s):std::iostream(&buffer) { init(); this->operator=(s.c_str()); }
+mlr::String::String(const std::string& s) : std::iostream(&buffer) { init(); this->operator=(s.c_str()); }
 
-mlr::String::String(std::istream& is):std::iostream(&buffer) { init(); read(is, "", "", 0); }
+mlr::String::String(std::istream& is) : std::iostream(&buffer) { init(); read(is, "", "", 0); }
 
 mlr::String::~String() { if(M) delete[] p; }
 
@@ -1026,7 +1001,7 @@ void mlr::FileToken::changeDir(){
       if(!getcwd(cwd.p, 200)) HALT("couldn't get current dir");
       cwd.resize(strlen(cwd.p), true);
       LOG(3) <<"entering path `" <<path<<"' from '" <<cwd <<"'" <<std::endl;
-      if(chdir(path)) HALT("couldn't change to directory " <<path <<"(current dir: " <<cwd <<")");
+      if(chdir(path)) HALT("couldn't change to directory " <<path <<" (current dir: " <<cwd <<")");
     }
   }
 }
@@ -1062,7 +1037,7 @@ std::ifstream& mlr::FileToken::getIs(bool change_dir){
     is = std::make_shared<std::ifstream>();
     is->open(name);
     LOG(3) <<"opening input file `" <<name <<"'" <<std::endl;
-    if(!is->good()) HALT("could not open file `" <<name <<"' for input");
+    if(!is->good()) THROW("could not open file `" <<name <<"' for input");
   }
   return *is;
 }
@@ -1073,7 +1048,7 @@ std::ifstream& mlr::FileToken::getIs(bool change_dir){
 // random number generator
 //
 
-namespace mlr { Rnd rnd; }
+mlr::Rnd rnd;
 
 uint32_t mlr::Rnd::seed(uint32_t n) {
   uint32_t s, c;
@@ -1247,7 +1222,8 @@ Mutex::~Mutex() {
 }
 
 void Mutex::lock() {
-  int rc = pthread_mutex_lock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  int rc = pthread_mutex_lock(&mutex);
+  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   recursive++;
   state=syscall(SYS_gettid);
   MUTEX_DUMP(cout <<"Mutex-lock: " <<state <<" (rec: " <<recursive << ")" <<endl);
@@ -1256,7 +1232,8 @@ void Mutex::lock() {
 void Mutex::unlock() {
   MUTEX_DUMP(cout <<"Mutex-unlock: " <<state <<" (rec: " <<recursive << ")" <<endl);
   if(--recursive == 0) state=0;
-  int rc = pthread_mutex_unlock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  int rc = pthread_mutex_unlock(&mutex);
+  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 #else//MLR_MSVC
 Mutex::Mutex() {}
@@ -1408,13 +1385,4 @@ template mlr::String mlr::getParameter<mlr::String>(const char*, const mlr::Stri
 
 template bool mlr::checkParameter<uint>(const char*);
 template bool mlr::checkParameter<bool>(const char*);
-
-template std::map<std::string,int> mlr::ParameterMap<int>::m;
-template std::map<std::string,double> mlr::ParameterMap<double>::m;
-template std::map<std::string,unsigned int> mlr::ParameterMap<unsigned int>::m;
-template std::map<std::string,float> mlr::ParameterMap<float>::m;
-template std::map<std::string,bool> mlr::ParameterMap<bool>::m;
-template std::map<std::string,long> mlr::ParameterMap<long>::m;
-template std::map<std::string,mlr::String> mlr::ParameterMap<mlr::String>::m;
-template std::map<std::string,std::string> mlr::ParameterMap<std::string>::m;
 

@@ -104,7 +104,7 @@ void RTControlStep(
 }
 
 RTControllerSimulation::RTControllerSimulation(double tau, bool gravity, double _systematicErrorSdv)
-  : Module("DynmSim", -1.)
+  : Thread("DynmSim", -1.)
   , ctrl_ref(this, "ctrl_ref", true)
   , ctrl_obs(this, "ctrl_obs")
   , modelWorld(this, "modelWorld")

@@ -1,20 +1,16 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
 
 
 #include <Core/array.tpp>
@@ -359,7 +355,7 @@ void glDrawBox(float x, float y, float z) {
 }
 
 void glDrawDiamond(float x, float y, float z) {
-  glDisable(GL_CULL_FACE);
+//  glDisable(GL_CULL_FACE);
   glBegin(GL_TRIANGLE_FAN);
   glVertex3f(.0, .0, z);
   glVertex3f(x, .0, .0);
@@ -371,12 +367,12 @@ void glDrawDiamond(float x, float y, float z) {
   glBegin(GL_TRIANGLE_FAN);
   glVertex3f(.0, .0, -z);
   glVertex3f(x, .0, .0);
-  glVertex3f(.0, y, .0);
-  glVertex3f(-x, .0, .0);
   glVertex3f(.0, -y, .0);
+  glVertex3f(-x, .0, .0);
+  glVertex3f(.0, y, .0);
   glVertex3f(x, .0, .0);
   glEnd();
-  glEnable(GL_CULL_FACE);
+//  glEnable(GL_CULL_FACE);
 }
 
 void glDrawDiamond(float x, float y, float z, float dx, float dy, float dz) {
@@ -394,9 +390,9 @@ void glDrawAxis() {
   glEnd();
   glTranslatef(.8, 0, 0);
   glRotatef(90, 0, 1, 0);
-  glDisable(GL_CULL_FACE);
+//  glDisable(GL_CULL_FACE);
   gluCylinder(style, .08, 0, .2, 20, 1);
-  glEnable(GL_CULL_FACE);
+//  glEnable(GL_CULL_FACE);
   gluDeleteQuadric(style);
 }
 
