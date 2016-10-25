@@ -1682,7 +1682,7 @@ RowShifted *makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1) {
   Zaux->rowShift.resize(d0);
   Zaux->rowShift.setZero();
   Zaux->rowLen.resize(d0);
-  Zaux->rowLen = pack_d1;
+  if(d0) Zaux->rowLen = pack_d1;
   return Zaux;
 }
 
