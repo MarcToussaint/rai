@@ -41,6 +41,7 @@ std_msgs::String    conv_string2string(const mlr::String&);
 mlr::String         conv_string2string(const std_msgs::String&);
 std_msgs::String    conv_stringA2string(const StringA& strs);
 ors::Transformation conv_transform2transformation(const tf::Transform&);
+ors::Transformation conv_transform2transformation(const geometry_msgs::Transform&);
 ors::Transformation conv_pose2transformation(const geometry_msgs::Pose&);
 ors::Vector         conv_point2vector(const geometry_msgs::Point& p);
 ors::Quaternion     conv_quaternion2quaternion(const geometry_msgs::Quaternion& q);
@@ -60,6 +61,7 @@ std_msgs::Float32MultiArray conv_floatA2Float32Array(const floatA&);
 
 //-- MLR -> ROS
 geometry_msgs::Pose conv_transformation2pose(const ors::Transformation&);
+geometry_msgs::Transform conv_transformation2transform(const ors::Transformation&);
 std::vector<geometry_msgs::Point> conv_arr2points(const arr& pts);
 marc_controller_pkg::JointState   conv_CtrlMsg2JointState(const CtrlMsg& ctrl);
 floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray&);
@@ -87,8 +89,8 @@ struct Subscriber : SubscriberType {
     if(mlr::getParameter<bool>("useRos", false)){
       nh = new ros::NodeHandle;
       registry().newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
-      cout <<"subscibing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<"> ..." <<std::flush;
-      sub  = nh->subscribe( topic_name, 1, &Subscriber::callback, this);
+      cout <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<"> ..." <<std::flush;
+      sub  = nh->subscribe( topic_name, 100, &Subscriber::callback, this);
       cout <<"done" <<endl;
     }
   }
@@ -117,7 +119,7 @@ struct SubscriberConv : SubscriberType {
       nh = new ros::NodeHandle;
       listener = new tf::TransformListener;
       registry().newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
-      cout <<"subscibing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> ..." <<std::flush;
+      cout <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> ..." <<std::flush;
       sub = nh->subscribe(topic_name, 1, &SubscriberConv::callback, this);
       cout <<"done" <<endl;
     }
@@ -128,7 +130,7 @@ struct SubscriberConv : SubscriberType {
       nh = new ros::NodeHandle;
       listener = new tf::TransformListener;
       registry().newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
-      cout <<"subscibing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> ..." <<std::flush;
+      cout <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> ..." <<std::flush;
       sub = nh->subscribe(topic_name, 1, &SubscriberConv::callback, this);
       cout <<"done" <<endl;
     }
