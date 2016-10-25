@@ -2157,7 +2157,7 @@ template<class T> T maxRelDiff(const mlr::Array<T>& v, const mlr::Array<T>& w, T
   }*/
 
 
-/// \f$\sqrt{\sum_{ij} g_{ij} (v^i-w^i) (v^j-w^j)}\f$ Danny: no square root, right?
+/// \f$\sqrt{\sum_{ij} g_{ij} (v^i-w^i) (v^j-w^j)}\f$
 template<class T> T sqrDistance(const mlr::Array<T>& g, const mlr::Array<T>& v, const mlr::Array<T>& w) {
   mlr::Array<T> d(v);
   d -= w;
@@ -2319,22 +2319,18 @@ template<class T> T length(const mlr::Array<T>& v) { return (T)::sqrt((double)su
 template<class T> T var(const mlr::Array<T>& v) { T m=sum(v)/v.N; return sumOfSqr(v)/v.N-m*m; }
 
 template<class T> mlr::Array<T> mean(const mlr::Array<T>& v) {
-  mlr::Array<T> m = sum(v, 0);
-  for(uint i = 0; i < m.d0; i++) {
-    m(i) = m(i)/v.d0;
-  }
-  return m;
+  CHECK_EQ(v.nd, 2, "");
+  return sum(v, 0)/double(v.d0);
 }
 
 template<class T> mlr::Array<T> stdDev(const mlr::Array<T>& v) {
+  CHECK_EQ(v.nd, 2, "");
   CHECK(v.d0 > 1, "empirical standard deviation makes sense only for N>1")
   mlr::Array<T> m = sum(v,0);
-  mlr::Array<T> x;
   mlr::Array<T> vX;
   vX.referTo(v);
-  vX.reshape(vX.d0, vX.N/vX.d0);
-  x.resize(vX.d1);
-  x.setZero();
+  vX.reshape(vX.d0, vX.N/vX.d0); //mt: why also for non 2-dim arrays???
+  mlr::Array<T> x = zeros(vX.d1);
   for(uint i = 0; i < v.d0; i++) {
     for(uint j = 0; j < vX.d1; j++) {
       x(j) += mlr::sqr(vX(i,j)-m(j)/vX.d0)/(vX.d0-1);

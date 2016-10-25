@@ -85,7 +85,6 @@ struct KernelCRF{
 
 struct CrossValidation {
   arr scoreMeans, scoreSDVs, scoreTrains, lambdas;
-
   bool verbose = true;
   
   virtual void  train(const arr& X, const arr& y, double lambda, arr& beta) = 0;

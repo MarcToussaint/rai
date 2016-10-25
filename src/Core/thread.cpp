@@ -256,7 +256,6 @@ int RevisionedAccessGatedClass::readAccess(Thread *th) {
 int RevisionedAccessGatedClass::writeAccess(Thread *th) {
 //  engine().acc->queryWriteAccess(this, p);
   rwlock.writeLock();
-  //last_revision = revision.incrementValue();
   int i = revision.incrementValue();
   revision_time = mlr::clockTime();
 //  engine().acc->logWriteAccess(this, p);
@@ -274,9 +273,9 @@ int RevisionedAccessGatedClass::deAccess(Thread *th) {
   } else {
 //    engine().acc->logReadDeAccess(this,p);
   }
-  //last_revision = revision.getValue();
+  int i = revision.getValue();
   rwlock.unlock();
-  return last_revision;
+  return i;
 }
 
 double RevisionedAccessGatedClass::revisionTime(){
@@ -548,7 +547,7 @@ void Thread::threadStop() {
 
 void Thread::main() {
   tid = syscall(SYS_gettid);
-  if(verbose) cout <<"*** Entering Thread '" <<name <<"'" <<endl;
+  if(verbose>0) cout <<"*** Entering Thread '" <<name <<"'" <<endl;
   //http://linux.die.net/man/3/setpriority
   //if(Thread::threadPriority) setRRscheduling(Thread::threadPriority);
   //if(Thread::threadPriority) setNice(Thread::threadPriority);
@@ -601,7 +600,7 @@ void Thread::main() {
   };
 
   close(); //virtual close routine
-  if(verbose) cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
+  if(verbose>0) cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
 }
 
 

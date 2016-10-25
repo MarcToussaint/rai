@@ -207,8 +207,7 @@ struct Thread{
   Metronome metronome;          ///< used for beat-looping
   CycleTimer timer;
   struct Node* registryNode;
-
-  bool verbose = true;
+  int verbose;
 
   /// @name c'tor/d'tor
   /** DON'T open drivers/devices/files or so here in the constructor,
