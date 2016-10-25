@@ -1,22 +1,16 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
-
-
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
 
 #include <Core/util.h>
 #include "MLcourse.h"
@@ -214,7 +208,7 @@ arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bay
   //I(0, 0)=1e-10; on classification is makes sense to include the bias in regularization, I think... (rescaling one beta only changes the slope of the sigmoid, not the decision boundary)
   
   arr f(n), p(n), Z(n), w(n), beta_update;
-  double logLike, lastLogLike, alpha=1.;
+  double logLike, lastLogLike=0., alpha=1.;
   arr beta(d);
   beta.setZero();
   for(uint k=0; k<100; k++) {
@@ -270,7 +264,7 @@ arr logisticRegressionMultiClass(const arr& X, const arr& y, double lambda) {
   I(0, 0)=1e-10;
   
   arr f(n, M), p(n, M), Z(n), w(n), beta_update;
-  double logLike, lastLogLike, alpha=1.;
+  double logLike, lastLogLike=0., alpha=1.;
   arr beta(d, M);
   beta.setZero();
   for(uint k=0; k<100; k++) {

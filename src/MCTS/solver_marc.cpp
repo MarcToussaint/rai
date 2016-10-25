@@ -1,3 +1,18 @@
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
+
+
 #include "solver_marc.h"
 
 void MCTS::addRollout(int stepAbort){
@@ -32,14 +47,14 @@ void MCTS::addRollout(int stepAbort){
 #endif
     n = treePolicy(n);
     if(verbose>1) cout <<"****************** MCTS: made tree policy decision" <<endl;
-    Return_tree += n->r = world.transition(n->decision).second;
+    Return_tree += n->r = world.transition(n->decision).reward;
   }
 
   //-- rollout
   double Return_rollout=0.;
   while(!world.is_terminal_state() && (stepAbort<0 || step++<stepAbort)){
     if(verbose>1) cout <<"****************** MCTS: random decision" <<endl;
-    Return_rollout += world.transition_randomly().second;
+    Return_rollout += world.transition_randomly().reward;
   }
 
   //  double r = world.get_terminal_reward();
@@ -139,6 +154,6 @@ void MCTS::writeToGraph(Graph& G, MCTS_Node* n){
   NodeL par;
   if(!n) n=&root; else par.append((Node*)(n->parent->data));
   double q=-10.;  if(n->N) q=n->Q/n->N;
-  n->data = new Node_typed<double>(G, {STRING("t"<<n->t <<'N' <<n->N <<'[' <<n->Qlo <<',' <<n->Qme <<',' <<n->Qup <<']')}, par, q);
+  n->data = G.newNode<double>({STRING("t"<<n->t <<'N' <<n->N <<'[' <<n->Qlo <<',' <<n->Qme <<',' <<n->Qup <<']')}, par, q);
   for(MCTS_Node *c:n->children) writeToGraph(G, c);
 }

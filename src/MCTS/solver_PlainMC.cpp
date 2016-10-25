@@ -1,4 +1,28 @@
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
+
+
 #include "solver_PlainMC.h"
+
+void MCStatistics::add(double R, uint topSize){
+  n++;
+  if(X.N<topSize) X.insertInSorted(R, mlr::greater);
+  else if(R>X.last()){
+    X.insertInSorted(R, mlr::greater);
+    X.popLast();
+  }
+}
 
 PlainMC::PlainMC(MCTS_Environment& world)
   : world(world), gamma(.9), verbose(2), topSize(10){
@@ -12,68 +36,158 @@ PlainMC::PlainMC(MCTS_Environment& world)
 
 void PlainMC::reset(){
   A = conv_stdvec2arr(world.get_actions());
+//  if(verbose>1){ cout <<"START decisions: [" <<A.N <<']'; listWrite(A); cout <<endl; }
   D.clear();
   D.resize(A.N);
 }
 
-void topAdd(double y, arr& x, uint topSize){
-  if(x.N<topSize) x.insertInSorted(y, mlr::greater);
-  else if(y>x.last()){
-    x.insertInSorted(y, mlr::greater);
-    x.popLast();
+double PlainMC::initRollout(const mlr::Array<MCTS_Environment::Handle>& prefixDecisions){
+  world.reset_state();
+
+  //reset rollout 'return' variables
+  rolloutStep=0;
+  rolloutR=0.;
+  rolloutDiscount=1.;
+  rolloutDecisions.clear();
+
+  MCTS_Environment::TransitionReturn ret;
+
+  //-- follow prefixDecisions
+  for(uint i=0; i<prefixDecisions.N; i++){
+    MCTS_Environment::Handle& a = prefixDecisions(i);
+    if(verbose>1) cout <<"****************** MC: prefix decision " <<i <<": " <<*a <<endl;
+    rolloutDecisions.append(a);
+    ret = world.transition(a);
+    rolloutR += rolloutDiscount * ret.reward;
+    rolloutDiscount *= pow(gamma, ret.duration);  //  discount *= gamma;
   }
+
+  return rolloutR;
 }
 
-void PlainMC::addRollout(int stepAbort){
-  int step=0;
-  world.reset_state();
-  double R=0.;
-  double discount=1.;
+double PlainMC::finishRollout(int stepAbort){
+  MCTS_Environment::TransitionReturn ret;
 
-  mlr::String decisionsString;
-
-  // random first choice
-  uint a = rnd(A.N);
-  if(verbose>1) cout <<"****************** MC: first decision:" <<*A(a) <<endl;
-  R += discount * world.transition(A(a)).second;
-  decisionsString <<*A(a) <<' ';
-
-  //-- rollout
-  while(!world.is_terminal_state() && (stepAbort<0 || step++<stepAbort)){
-    if(verbose>1) cout <<"****************** MC: random decision" <<endl;
-    discount *= gamma;
-#if 0
-    R += discount * world.transition_randomly().second;
-#else
-    std::vector<MCTS_Environment::Handle> actions = world.get_actions();
-    uint a = rand()%actions.size();
-    R += discount * world.transition(actions[a]).second;
-    decisionsString <<*actions[a] <<' ';
-#endif
+  //-- continue with random rollout
+  while(!world.is_terminal_state() && (stepAbort<0 || rolloutStep++<(uint)stepAbort)){
+    mlr::Array<MCTS_Environment::Handle> actions;
+    actions = conv_stdvec2arr(world.get_actions()); //WARNING: conv... returns a reference!!
+    if(verbose>2){ cout <<"Possible decisions: "; listWrite(actions); cout <<endl; }
+    if(!actions.N){
+      if(verbose>1){ cout <<" -- no decisions left -> terminal" <<endl; }
+      break;
+    }
+    uint a = rand()%actions.N;
+    if(verbose>1) cout <<"****************** MC: random decision: " <<*actions(a) <<endl;
+    rolloutDecisions.append(actions(a));
+    ret = world.transition(actions(a));
+    rolloutR += rolloutDiscount * ret.reward;
+    rolloutDiscount *= pow(gamma, ret.duration);    //    discount *= gamma;
   }
 
-  if(step>=stepAbort) R -= 100.;
-  if(verbose>0) cout <<"****************** MC: terminal state reached; step=" <<step <<" Return=" <<R <<endl;
+  if(stepAbort>=0 && rolloutStep>=(uint)stepAbort) rolloutR -= 100.;
+  if(verbose>0) cout <<"****************** MC: terminal state reached; step=" <<rolloutStep <<" Return=" <<rolloutR <<endl;
 
-  for(const mlr::String& black:blackList){
-    if(decisionsString.startsWith(black)){
-      if(verbose>0) cout <<"****************** MC: rollout was on BLACKLIST: " <<*black <<endl;
-      return;
+  return rolloutR;
+}
+
+double PlainMC::generateRollout(int stepAbort, const mlr::Array<MCTS_Environment::Handle>& prefixDecisions){
+#if 1
+  initRollout(prefixDecisions);
+  return finishRollout(stepAbort);
+#else
+  world.reset_state();
+
+  //reset rollout 'return' variables
+  rolloutStep=0;
+  rolloutR=0.;
+  rolloutDiscount=1.;
+  rolloutDecisions.clear();
+
+  MCTS_Environment::TransitionReturn ret;
+
+  //-- follow prefixDecisions
+  for(uint i=0; i<prefixDecisions.N; i++){
+    MCTS_Environment::Handle& a = prefixDecisions(i);
+    if(verbose>1) cout <<"****************** MC: prefix decision " <<i <<": " <<*a <<endl;
+    rolloutDecisions.append(a);
+    ret = world.transition(a);
+    rolloutR += rolloutDiscount * ret.reward;
+    rolloutDiscount *= pow(gamma, ret.duration);  //  discount *= gamma;
+  }
+
+  //-- continue with random rollout
+  while(!world.is_terminal_state() && (stepAbort<0 || rolloutStep++<(uint)stepAbort)){
+    mlr::Array<MCTS_Environment::Handle> actions;
+    actions = conv_stdvec2arr(world.get_actions()); //WARNING: conv... returns a reference!!
+    if(verbose>2){ cout <<"Possible decisions: "; listWrite(actions); cout <<endl; }
+    if(!actions.N){
+      if(verbose>1){ cout <<" -- no decisions left -> terminal" <<endl; }
+      break;
+    }
+    uint a = rand()%actions.N;
+    if(verbose>1) cout <<"****************** MC: random decision: " <<*actions(a) <<endl;
+    rolloutDecisions.append(actions(a));
+    ret = world.transition(actions(a));
+    rolloutR += rolloutDiscount * ret.reward;
+    rolloutDiscount *= pow(gamma, ret.duration);    //    discount *= gamma;
+  }
+
+  if(stepAbort>=0 && rolloutStep>=(uint)stepAbort) rolloutR -= 100.;
+  if(verbose>0) cout <<"****************** MC: terminal state reached; step=" <<rolloutStep <<" Return=" <<rolloutR <<endl;
+
+  return rolloutR;
+#endif
+}
+
+double PlainMC::addRollout(int stepAbort){
+  // random first choice
+  uint a = rnd(A.N);
+
+  //generate rollout
+  generateRollout(stepAbort, {A(a)});
+
+  if(blackList.N){
+    mlr::String decisionsString;
+    for(const auto& a:rolloutDecisions) decisionsString <<*a <<' ';
+    for(const mlr::String& black:blackList){
+      if(decisionsString.startsWith(black)){
+        if(verbose>0) cout <<"****************** MC: rollout was on BLACKLIST: " <<*black <<endl;
+        return 0.;
+      }
     }
   }
 
   //-- collect data
-  D(a).n++;
-  topAdd(R, D(a).X, topSize);
+  addReturnToStatistics(rolloutR, A(a), a);
+
+  return rolloutR;
+}
+
+
+void PlainMC::addReturnToStatistics(double rolloutR, MCTS_Environment::Handle decision, int decisionIndex){
+  if(decisionIndex>=0){
+    CHECK_EQ(A(decisionIndex), decision, "")
+  }else{ //search for index..
+//    cout <<*decision <<endl;
+//    listWrite(A);
+    uint i;
+    for(i=0;i<A.N;i++) if(*A(i)==*decision) break;
+    CHECK(i<A.N,"");
+    decisionIndex=i;
+  }
+  D(decisionIndex).add(rolloutR);
+  Droot.add(rolloutR);
 }
 
 void PlainMC::report(){
+  cout <<"MC Planner report:" <<endl;
   for(uint a=0;a<A.N;a++){
     cout <<"action=" <<*A(a) <<" n=" <<D(a).n <<" returns=" <<D(a).X <<endl;
   }
 }
 
-MCTS_Environment::Handle PlainMC::getBestAction(){
+uint PlainMC::getBestActionIdx(){
   arr Q(A.N);
   double Qmin=0.;
   if(world.get_info(world.hasMinReward)) Qmin = world.get_info_value(world.getMinReward);
@@ -83,5 +197,11 @@ MCTS_Environment::Handle PlainMC::getBestAction(){
     else
       Q(a) = Qmin;
   }
-  return A(Q.maxIndex());
+  return Q.maxIndex();
 }
+
+MCTS_Environment::Handle PlainMC::getBestAction(){
+  return A(getBestActionIdx());
+}
+
+

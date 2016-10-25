@@ -1,20 +1,16 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
 
 
 /// @file
@@ -247,8 +243,8 @@ public:
   String& operator=(const String& s);
   void operator=(const char *s);
   void set(const char *s, uint n);
-  void resize(uint n, bool copy); //low-level resizing the string buffer - fully uninitialized but with final 0
-  void append(char x); //low-level append a char
+  void resize(uint n, bool copy); //low-level resizing the string buffer - with additinal final 0
+  void append(char x);
   String& setRandom();
   
   /// @name resetting
@@ -373,7 +369,7 @@ extern String errString;
 
 #ifndef HALT
 #  define MLR_MSG(msg){ LOG(-1) <<msg; }
-#  define THROW(msg){ LOG(-2) <<msg; throw mlr::errString.p; }
+#  define THROW(msg){ LOG(-2) <<msg; throw(mlr::errString.p); }
 #  define HALT(msg){ LOG(-2) <<msg; exit(1); }
 #  define NIY  { LOG(-2) <<"not implemented yet"; exit(1); }
 #  define NICO { LOG(-2) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(1); }
@@ -663,6 +659,36 @@ GlobalThings():cfgFileOpen(false){};
 };
 
 extern Singleton<GlobalThings> globalThings;
+
+//===========================================================================
+//
+// to register a type (instead of general thing/item), use this:
+//
+
+struct Type {
+  virtual ~Type(){}
+  virtual const std::type_info& typeId() const {NIY}
+  virtual struct Node* readIntoNewNode(struct Graph& container, std::istream&) const {NIY}
+  virtual void* newInstance() const {NIY}
+//  virtual Type* clone() const {NIY}
+  void write(std::ostream& os) const {  os <<"Type '" <<typeId().name() <<"' ";  }
+  void read(std::istream& is) const {NIY}
+};
+stdPipes(Type)
+
+template<class T, class Base>
+struct Type_typed : Type {
+  virtual const std::type_info& typeId() const { return typeid(T); }
+  virtual void* newInstance() const { return new T(); }
+//  virtual Type* clone() const { Type *t = new Type_typed<T, void>(); t->parents=parents; return t; }
+};
+
+inline bool operator!=(Type& t1, Type& t2){ return t1.typeId() != t2.typeId(); }
+inline bool operator==(Type& t1, Type& t2){ return t1.typeId() == t2.typeId(); }
+
+
+
+
 
 //===========================================================================
 //

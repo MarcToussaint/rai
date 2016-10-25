@@ -1,3 +1,17 @@
+/*  ------------------------------------------------------------------
+    Copyright 2016 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or (at
+    your option) any later version. This program is distributed without
+    any warranty. See the GNU General Public License for more details.
+    You should have received a COPYING file of the full GNU General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>
+    --------------------------------------------------------------  */
+
 
 #include "problem_BlindBranch.h"
 
@@ -7,15 +21,15 @@ BlindBranch::BlindBranch(uint H):H(H){
 
 void BlindBranch::reset_state(){ state=0; T=0; }
 
-std::pair<MCTS_Environment::Handle, double> BlindBranch::transition(const MCTS_Environment::Handle& action){
+MCTS_Environment::TransitionReturn BlindBranch::transition(const MCTS_Environment::Handle& action){
   state += std::dynamic_pointer_cast<const Action>(action)->d;
   T++;
   double r=0.;
   if(is_terminal_state()) r = (double)state/H;
-  return {Handle(NULL), r};
+  return {Handle(NULL), r, 1.};
 }
 
-std::pair<MCTS_Environment::Handle, double>  BlindBranch::transition_randomly(){
+MCTS_Environment::TransitionReturn BlindBranch::transition_randomly(){
   if(mlr::rnd.uni()<.5) return transition(actions(0));
   return transition(actions(1));
 }
