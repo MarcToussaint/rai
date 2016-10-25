@@ -374,6 +374,7 @@ UnaryFunction(ceil);
 UnaryFunction(fabs);
 UnaryFunction(floor);
 UnaryFunction(sigm);
+UnaryFunction(sign);
 #undef UnaryFunction
 
 #define BinaryFunction( func )            \

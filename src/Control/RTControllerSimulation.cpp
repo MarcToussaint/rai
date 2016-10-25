@@ -181,6 +181,9 @@ void RTControllerSimulation::step() {
   checkNan(u);
 
   this->ctrl_obs.writeAccess();
+  /*for(uint i = 0; i < q.N; i++) {
+    q(i) = round(q(i)*1000)/1000.0;
+  }*/
   this->ctrl_obs().q = q;
   this->ctrl_obs().qdot = qDot;
   this->ctrl_obs().u_bias = u;
