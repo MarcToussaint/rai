@@ -407,14 +407,14 @@ void CrossValidation::crossValidateSingleLambda(const arr& X, const arr& y, doub
     Xtest.referToRange(X, blockStart(k), blockStart(k+1)-1);
     ytest.referToRange(y, blockStart(k), blockStart(k+1)-1);
     
-    cout <<k <<": train:";
+    if(verbose) cout <<k <<": train:";
     train(Xtrain, ytrain, lambda, beta);
     if(beta_k_fold) beta_k_fold->append(beta);
     
     cost = test(Xtest, ytest, beta);
     costM += cost;
     costD += cost*cost;
-    cout <<" test: " <<cost <<endl;
+    if(verbose) cout <<" test: " <<cost <<endl;
   }
   if(beta_k_fold) beta_k_fold->reshape(k_fold,beta.N);
   
@@ -424,20 +424,19 @@ void CrossValidation::crossValidateSingleLambda(const arr& X, const arr& y, doub
   costD = sqrt(costD)/sqrt((double)k_fold); //sdv of the mean estimator
   
   //on full training data:
-  cout <<"full: train:";
+  if(verbose) cout <<"full: train:";
   train(X, y, lambda, beta);
   double costT = test(X, y, beta);
   if(beta_total) *beta_total = beta;
-  cout <<" test: " <<costT <<endl;
+  if(verbose) cout <<" test: " <<costT <<endl;
   
   if(scoreMean)  *scoreMean =costM; else scoreMeans =ARR(costM);
   if(scoreSDV)   *scoreSDV  =costD; else scoreSDVs  =ARR(costD);
   if(scoreTrain) *scoreTrain=costT; else scoreTrains=ARR(costT);
-  cout <<"CV: lambda=" <<lambda <<" \tmean-on-rest=" <<costM <<" \tsdv=" <<costD <<" \ttrain-on-full=" <<costT <<endl;
-//  cout <<"cross validation results:";
-//  if(lambda!=-1) cout <<"\n  lambda = " <<lambda;
-//  cout <<"\n  test-error  = " <<costM <<" (+- " <<costD <<", lower: " <<costM-costD <<")"
-//  <<"\n  train-error = " <<costT <<endl;
+  if(verbose) cout <<"CV: lambda=" <<lambda <<" \tmean-on-rest=" <<costM <<" \tsdv=" <<costD <<" \ttrain-on-full=" <<costT <<endl;
+  if(verbose) cout <<"cross validation results:";
+  if(verbose) if(lambda!=-1) cout <<"\n  lambda = " <<lambda;
+  if(verbose) cout <<"\n  test-error  = " <<costM <<" (+- " <<costD <<", lower: " <<costM-costD <<")"<<"\n  train-error = " <<costT <<endl;
 }
 
 void CrossValidation::crossValidateMultipleLambdas(const arr& X, const arr& y, const arr& _lambdas, uint k_fold, bool permute) {

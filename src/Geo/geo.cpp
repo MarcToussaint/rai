@@ -143,6 +143,50 @@ double Vector::phi() const {
 /// the angle from the x/y-plane
 double Vector::theta() const { return ::atan(z/radius())+MLR_PI/2.; }
 
+Vector Vector::getNormalVectorNormalToThis() const {
+  if(isZero){
+    MLR_MSG("every vector is normal to a zero vector");
+  }
+  arr s = ARR(fabs(x), fabs(y), fabs(z));
+  uint c = s.maxIndex();
+  double xv, yv, zv;
+  if(c == 0) {
+    xv = -(y+z)/x;
+    yv = 1.0;
+    zv = 1.0;
+  } else if(c == 1) {
+    xv = 1.0;
+    yv = -(x+z)/y;
+    zv = 1.0;
+  } else {
+    xv = 1.0;
+    yv = 1.0;
+    zv = -(x+y)/z;
+  }
+  Vector v(xv,yv,zv);
+  v.normalize();
+  return v;
+}
+
+void Vector::generateOrthonormalSystem(Vector& u, Vector& v) const {
+  u = getNormalVectorNormalToThis();
+  v = (*this)^u;
+  v.normalize();
+}
+
+arr Vector::generateOrthonormalSystemMatrix() const {
+  arr V;
+  Vector n = *this;
+  n.normalize();
+  Vector u = getNormalVectorNormalToThis();
+  Vector v = n^u;
+  v.normalize();
+  V.append(~conv_vec2arr(n));
+  V.append(~conv_vec2arr(u));
+  V.append(~conv_vec2arr(v));
+  return ~V;
+}
+
 //{ I/O
 void Vector::write(std::ostream& os) const {
   if(!mlr::IOraw) os <<'(' <<x <<' ' <<y <<' ' <<z <<')';

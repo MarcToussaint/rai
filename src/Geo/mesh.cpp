@@ -995,6 +995,29 @@ double ors::Mesh::getVolume() const{
   return vol/6.;
 }
 
+double ors::Mesh::meshMetric(const ors::Mesh& trueMesh, const ors::Mesh& estimatedMesh) {
+  //basically a Haussdorf metric, stupidly realized by brute force algorithm
+  auto haussdorfDistanceOneSide = [](const arr& V1, const arr& V2)->double {
+    double distance = 0.0;
+    for(uint i = 0; i < V1.d0; i++) {
+      double shortestDistance = std::numeric_limits<double>::infinity();
+      for(uint j = 0; j < V2.d0; j++) {
+        double d = length(V2[j]-V1[i]);
+        if(d < shortestDistance) {
+          shortestDistance = d;
+        }
+      }
+      if(shortestDistance > distance) {
+        distance = shortestDistance;
+      }
+    }
+    return distance;
+  };
+
+  return mlr::MAX(haussdorfDistanceOneSide(trueMesh.V, estimatedMesh.V), haussdorfDistanceOneSide(estimatedMesh.V, trueMesh.V));
+}
+
+
 double ors::Mesh::getCircum() const{
   if(!T.N) return 0.;
   CHECK(T.d1==2,"");
@@ -1671,13 +1694,15 @@ void ors::Mesh::glDraw(struct OpenGL&) {
   GLboolean turnOnLight=false;
   if(C.N) { glGetBooleanv(GL_LIGHTING, &turnOnLight); glDisable(GL_LIGHTING); }
 
-  glShadeModel(GL_FLAT);
+  //glShadeModel(GL_FLAT);
+  glShadeModel(GL_SMOOTH);
   glEnableClientState(GL_VERTEX_ARRAY);
   glEnableClientState(GL_NORMAL_ARRAY);
   if(C.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
 
   glVertexPointer(3, GL_DOUBLE, 0, V.p);
   glNormalPointer(GL_DOUBLE, 0, Vn.p);
+
   if(C.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
 
   glDrawElements(GL_TRIANGLES, T.N, GL_UNSIGNED_INT, T.p);
@@ -1887,7 +1912,7 @@ double GJK_distance(ors::Mesh& mesh1, ors::Mesh& mesh2,
 void ors::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint res) {
   MarchingCubes mc(res, res, res);
   mc.init_all() ;
-
+  double startTime = mlr::timerRead();
   //compute data
   uint k=0, j=0, i=0;
   float x=lo, y=lo, z=lo;
@@ -1901,7 +1926,7 @@ void ors::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint 
       }
     }
   }
-
+  cout << "calculation of data took: " << mlr::timerRead() - startTime << " seconds" << endl;
   mc.run();
   mc.clean_temps();
 
@@ -1913,6 +1938,44 @@ void ors::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint 
     V(i, 0)=lo+mc.vert(i)->x*(hi-lo)/res;
     V(i, 1)=lo+mc.vert(i)->y*(hi-lo)/res;
     V(i, 2)=lo+mc.vert(i)->z*(hi-lo)/res;
+  }
+  for(i=0; i<T.d0; i++) {
+    T(i, 0)=mc.trig(i)->v1;
+    T(i, 1)=mc.trig(i)->v2;
+    T(i, 2)=mc.trig(i)->v3;
+  }
+}
+
+
+void ors::Mesh::setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res) {
+  MarchingCubes mc(res, res, res);
+  mc.init_all() ;
+
+  //compute data
+  uint k=0, j=0, i=0;
+  float x, y, z;
+  for(k=0; k<res; k++) {
+    z = zLo+k*(zHi-zLo)/res;
+    for(j=0; j<res; j++) {
+      y = yLo+j*(yHi-yLo)/res;
+      for(i=0; i<res; i++) {
+        x = xLo+i*(xHi-xLo)/res;
+        mc.set_data(f(NoArr, NoArr, ARR((double)x, (double)y, (double)z)), i, j, k) ;
+      }
+    }
+  }
+
+  mc.run();
+  mc.clean_temps();
+
+  //convert to Mesh
+  clear();
+  V.resize(mc.nverts(), 3);
+  T.resize(mc.ntrigs(), 3);
+  for(i=0; i<V.d0; i++) {
+    V(i, 0)=xLo+mc.vert(i)->x*(xHi-xLo)/res;
+    V(i, 1)=yLo+mc.vert(i)->y*(yHi-yLo)/res;
+    V(i, 2)=zLo+mc.vert(i)->z*(zHi-zLo)/res;
   }
   for(i=0; i<T.d0; i++) {
     T(i, 0)=mc.trig(i)->v1;

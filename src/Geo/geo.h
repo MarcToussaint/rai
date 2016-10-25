@@ -60,6 +60,10 @@ struct Vector {
   double phi() const;
   double theta() const;
   arr getArr() const{ return arr(&x,3); }
+
+  Vector getNormalVectorNormalToThis() const;
+  void generateOrthonormalSystem(Vector& u, Vector& v) const;
+  arr generateOrthonormalSystemMatrix() const;
   
   void write(std::ostream&) const;
   void read(std::istream&);

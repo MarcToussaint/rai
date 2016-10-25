@@ -371,6 +371,7 @@ UnaryFunction(ceil);
 UnaryFunction(fabs);
 UnaryFunction(floor);
 UnaryFunction(sigm);
+UnaryFunction(sign);
 #undef UnaryFunction
 
 #define BinaryFunction( func )            \
@@ -668,6 +669,8 @@ template<class T> mlr::Array<T> max(const mlr::Array<T>& v, uint d);
 
 template<class T> T trace(const mlr::Array<T>& v);
 template<class T> T var(const mlr::Array<T>& v);
+template<class T> mlr::Array<T> mean(const mlr::Array<T>& v);
+template<class T> mlr::Array<T> stdDev(const mlr::Array<T>& v);
 template<class T> T minDiag(const mlr::Array<T>& v);
 template<class T> T absMax(const mlr::Array<T>& x);
 template<class T> T absMin(const mlr::Array<T>& x);
@@ -794,6 +797,8 @@ void blas_MM(arr& X, const arr& A, const arr& B);
 void blas_MsymMsym(arr& X, const arr& A, const arr& B);
 void blas_A_At(arr& X, const arr& A);
 void blas_At_A(arr& X, const arr& A);
+arr blas_solve_L_b(const arr& L, const arr& b);
+
 void lapack_cholesky(arr& C, const arr& A);
 uint lapack_SVD(arr& U, arr& d, arr& Vt, const arr& A);
 void lapack_mldivide(arr& X, const arr& A, const arr& b);
@@ -808,6 +813,8 @@ double lapack_determinantSymPosDef(const arr& A);
 inline arr lapack_inverseSymPosDef(const arr& A){ arr Ainv; lapack_inverseSymPosDef(Ainv, A); return Ainv; }
 arr lapack_Ainv_b_sym(const arr& A, const arr& b);
 void lapack_min_Ax_b(arr& x,const arr& A, const arr& b);
+arr lapack_Ainv_b_symPosDef_givenCholesky(const arr& U, const arr&b);
+arr lapack_Ainv_b_triangular(const arr& L, const arr& b);
 
 
 //===========================================================================

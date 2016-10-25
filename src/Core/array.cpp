@@ -1381,6 +1381,15 @@ void blas_MsymMsym(arr& X, const arr& A, const arr& B) {
   std::cout  <<"blas_MsymMsym error = " <<sqrDistance(X, Y) <<std::endl;
 #endif
 }
+
+arr blas_solve_L_b(const arr& L, const arr& b) {
+  HALT("there is a bug")
+  arr x = b;
+  cblas_dtrsm(CblasColMajor, CblasLeft, CblasLower, CblasNoTrans, CblasNonUnit, b.d0, 1, 1.0, L.p, L.d0, x.p, x.d0);
+  //cblas_dtrsm(CblasRowMajor, CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit, b.d0, 1, 1.0, L.p, L.d0, x.p, 1);
+  return x;
+}
+
 #endif //MLR_NOBLAS
 
 arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
@@ -1609,6 +1618,33 @@ void lapack_min_Ax_b(arr& x,const arr& A, const arr& b) {
   dgels_((char*)"N", &M, &N, &NRHS, At.p, &M, x.p, &M, work.p, &LWORK, &info);
   CHECK(!info, "dgels_ error info = " <<info);
   x.resizeCopy(A.d1);
+}
+
+arr lapack_Ainv_b_symPosDef_givenCholesky(const arr& U, const arr& b) {
+  //in lapack (or better fortran) the rows and columns are switched!! (ARGH)
+  integer N = U.d0, LDA = U.d1, INFO, LDB = b.d0, NRHS = 1;
+  arr x;
+  if(b.nd > 1) {
+    NRHS = b.d1;
+    x = ~b; //TODO is there a chance to remove this?
+    dpotrs_((char*)"L", &N, &NRHS, U.p, &LDA, x.p, &LDB, &INFO);
+    CHECK(!INFO, "lapack dpotrs error info = " << INFO);
+    return ~x;
+  } else {
+    x = b;
+    dpotrs_((char*)"L", &N, &NRHS, U.p, &LDA, x.p, &LDB, &INFO);
+    CHECK(!INFO, "lapack dpotrs error info = " << INFO);
+    return x;
+  }
+}
+
+arr lapack_Ainv_b_triangular(const arr& L, const arr& b) {
+  //DTRTRS
+  integer N = L.d0, LDA = L.d0, INFO, LDB = b.d0, NRHS = 1;
+  arr x = b;
+  dtrtrs_((char*)"L", (char*)"N", (char*)"N", &N, &NRHS, L.p, &LDA, x.p, &LDB, &INFO);
+  CHECK(!INFO, "lapack dtrtrs error info = " << INFO);
+  return x;
 }
 
 /*
