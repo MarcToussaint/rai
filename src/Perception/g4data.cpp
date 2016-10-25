@@ -794,7 +794,7 @@ void G4FeatSeq::set(G4Rec &g4rec, const char *sens1, const char *sens2) {
   
   arr g4ann = g4rec.ann(sens1, sens2);
   uint thinning = *g4rec.get<uint>("thinning");
-  params.set("thinning", thinning);
+  //params.set("thinning", thinning); mt: NIY!
   nframes = g4rec.numFrames();
   nframes_thin = sens1_posVar.N;
   for(uint f_thin = 0; f_thin < nframes_thin; f_thin++) {

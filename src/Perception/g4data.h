@@ -176,7 +176,7 @@ stdOutPipe(G4RawSeq);
 // G4FeatSeq
 //
 
-struct G4FeatSeq: Parametric {
+struct G4FeatSeq /*: Parametric*/ {
   String sensor1, sensor2;
   arr data;
   uint nframes, nframes_thin;

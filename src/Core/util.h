@@ -292,6 +292,7 @@ namespace mlr {
     int logCoutLevel, logFileLevel;
     LogObject(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0);
     ~LogObject();
+    LogObject& getNonConst() const{ return *((LogObject*)this); } //ugly... but Logs are often members of classes, and they are accessed in const methods of these classes...
     struct LogToken getToken(int log_level, const char *code_file, const char *code_func, uint code_line);
   };
 
@@ -311,7 +312,7 @@ namespace mlr {
 
 extern mlr::LogObject _log;
 
-#define LOG(log_level) _log.getToken(log_level, __FILE__, __func__, __LINE__).os()
+#define LOG(log_level) _log.getNonConst().getToken(log_level, __FILE__, __func__, __LINE__).os()
 
 void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 
