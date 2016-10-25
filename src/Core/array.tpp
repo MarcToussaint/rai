@@ -2319,17 +2319,17 @@ template<class T> T length(const mlr::Array<T>& v) { return (T)::sqrt((double)su
 template<class T> T var(const mlr::Array<T>& v) { T m=sum(v)/v.N; return sumOfSqr(v)/v.N-m*m; }
 
 template<class T> mlr::Array<T> mean(const mlr::Array<T>& v) {
-  CHECK_EQ(v.nd, 2, "");
+  //CHECK_EQ(v.nd, 2, ""); //Danny: why no mean for 1D arrays?
   return sum(v, 0)/double(v.d0);
 }
 
 template<class T> mlr::Array<T> stdDev(const mlr::Array<T>& v) {
-  CHECK_EQ(v.nd, 2, "");
+  //CHECK_EQ(v.nd, 2, "");
   CHECK(v.d0 > 1, "empirical standard deviation makes sense only for N>1")
   mlr::Array<T> m = sum(v,0);
   mlr::Array<T> vX;
   vX.referTo(v);
-  vX.reshape(vX.d0, vX.N/vX.d0); //mt: why also for non 2-dim arrays???
+  vX.reshape(vX.d0, vX.N/vX.d0); //mt: why also for non 2-dim arrays??? Danny: why not?
   mlr::Array<T> x = zeros(vX.d1);
   for(uint i = 0; i < v.d0; i++) {
     for(uint j = 0; j < vX.d1; j++) {

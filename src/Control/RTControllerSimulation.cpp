@@ -1,6 +1,6 @@
 #include "RTControllerSimulation.h"
 #include <Motion/taskMaps.h>
-
+//#include "../../../usr/DD/Bachelorarbeit/src/objectGenerator.h"
 
 void force(ors::KinematicWorld* world, arr& fR) {
   world->stepSwift();
@@ -136,24 +136,37 @@ void RTControlStep(
 
 }
 
-RTControllerSimulation::RTControllerSimulation(double tau, bool gravity, double _systematicErrorSdv)
+RTControllerSimulation::RTControllerSimulation(ors::KinematicWorld realWorld, double tau, bool gravity, double _systematicErrorSdv)
   : Thread("DynmSim", -1.)
   , ctrl_ref(this, "ctrl_ref", true)
   , ctrl_obs(this, "ctrl_obs")
-  , modelWorld(this, "modelWorld")
+  //, modelWorld(this, "modelWorld")
   , tau(tau)
-  , gravity(gravity),
-    stepCount(0),
-    systematicErrorSdv(_systematicErrorSdv){
+  , gravity(gravity)
+  , stepCount(0)
+  , systematicErrorSdv(_systematicErrorSdv) {
+  //world = new ors::KinematicWorld(realWorld);
+  world = new ors::KinematicWorld(mlr::mlrPath("data/pr2_model/pr2_model.ors"));
 
+  //Object o(*world);
+  //o.generateObject("b", 0.16, 0.16, 0.1, 0.55, -0.1, 0.55); //0.5 for x
+  //Object ob(*world);
+  //ob.generateObject("trueShape", 0.17, 0.17, 0.12, 0.55, -0.1, 0.55, false);
 }
 
 void RTControllerSimulation::open() {
-  world = new ors::KinematicWorld(modelWorld.get());
+  //world = new ors::KinematicWorld;
+  //world->copy(modelWorld.get()());
+  //world = new ors::KinematicWorld(modelWorld.get());
+  //world = new ors::KinematicWorld(mlr::mlrPath("data/pr2_model/pr2_model.ors"));
+
+
+
+  makeConvexHulls(world->shapes);
   arr q, qDot;
   world->getJointState(q,qDot);
 
-  makeConvexHulls(world->shapes);
+  //makeConvexHulls(world->shapes);
 
   I_term = zeros(q.N);
 

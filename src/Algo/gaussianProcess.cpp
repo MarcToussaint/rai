@@ -345,6 +345,7 @@ end
 *
 */
 void GaussianProcess::hessianPos (arr& hess, const arr& x){
+  //Danny: I think that this is wrong.. Or at least numerical Hessian checking fails
   CHECK(X.N || dX.N , "can't recompute Hessian without data");
   CHECK((X.N && x.N==X.d1) || (dX.N && x.N==dX.d1), "dimensions don't match!");
   uint i, j, n, N=Y.N, dN=dY.N, dim;
