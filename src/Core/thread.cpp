@@ -258,12 +258,13 @@ int RevisionedAccessGatedClass::readAccess(Thread *th) {
 int RevisionedAccessGatedClass::writeAccess(Thread *th) {
 //  engine().acc->queryWriteAccess(this, p);
   rwlock.writeLock();
-  last_revision = revision.incrementValue();
+  //last_revision = revision.incrementValue();
+  int i = revision.incrementValue();
   revision_time = mlr::clockTime();
 //  engine().acc->logWriteAccess(this, p);
 //  if(listeners.N && !th){ HALT("I need to know the calling thread when threads listen to variables"); }
   for(Thread *l: listeners) if(l!=th) l->threadStep();
-  return last_revision;
+  return i;
 }
 
 int RevisionedAccessGatedClass::deAccess(Thread *th) {
@@ -275,7 +276,7 @@ int RevisionedAccessGatedClass::deAccess(Thread *th) {
   } else {
 //    engine().acc->logReadDeAccess(this,p);
   }
-  last_revision = revision.getValue();
+  //last_revision = revision.getValue();
   rwlock.unlock();
   return last_revision;
 }
@@ -549,7 +550,7 @@ void Thread::threadStop() {
 
 void Thread::main() {
   tid = syscall(SYS_gettid);
-  cout <<"*** Entering Thread '" <<name <<"'" <<endl;
+  if(verbose) cout <<"*** Entering Thread '" <<name <<"'" <<endl;
   //http://linux.die.net/man/3/setpriority
   //if(Thread::threadPriority) setRRscheduling(Thread::threadPriority);
   //if(Thread::threadPriority) setNice(Thread::threadPriority);
@@ -602,7 +603,7 @@ void Thread::main() {
   };
 
   close(); //virtual close routine
-  cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
+  if(verbose) cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
 }
 
 

@@ -211,6 +211,8 @@ struct Thread{
   CycleTimer timer;
   struct Node* registryNode;
 
+  bool verbose = true;
+
   /// @name c'tor/d'tor
   /** DON'T open drivers/devices/files or so here in the constructor,
    * but in open(). Sometimes a module might be created only to see

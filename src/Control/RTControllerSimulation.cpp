@@ -4,7 +4,7 @@
 
 void force(ors::KinematicWorld* world, arr& fR) {
   world->stepSwift();
-  world->contactsToForces(100.0);
+  //world->contactsToForces(100.0);
 
   for(ors::Proxy* p : world->proxies) {
     if(world->shapes(p->a)->name == "endeffR" && world->shapes(p->b)->name == "b") {
@@ -18,6 +18,18 @@ void force(ors::KinematicWorld* world, arr& fR) {
         fR(3) = torque(0);
         fR(4) = torque(1);
         fR(5) = torque(2);
+        cout << fR(2) << endl;
+      }
+    }
+  }
+}
+
+void forceSimulateContactOnly(ors::KinematicWorld* world, arr& fR) {
+  world->stepSwift();
+  for(ors::Proxy* p : world->proxies) {
+    if(world->shapes(p->a)->name == "endeffR" && world->shapes(p->b)->name == "b") {
+      if(p->d <= 0.02) {
+        fR(2) = -4.0;
       }
     }
   }
@@ -119,7 +131,7 @@ void RTControlStep(
     if(velM<0. && u(i)<0.) u(i)*=(1.+velM); //decrease effort close to velocity margin
     if(velM>0. && u(i)>0.) u(i)*=(1.-velM); //decrease effort close to velocity margin
       */
-    clip(u(i), -cmd.effLimitRatio*limits(i,3), cmd.effLimitRatio*limits(i,3));
+    //clip(u(i), -cmd.effLimitRatio*limits(i,3), cmd.effLimitRatio*limits(i,3));
   }
 
 }
@@ -199,12 +211,13 @@ void RTControllerSimulation::step() {
 
 
     //force(world, fR);
+    forceSimulateContactOnly(world, fR);
     u(3) = 0.0;
     world->stepDynamics(u, tau, 0., this->gravity);
 
   }
 
-
+  //cout << fR(2) << endl;
 
   checkNan(q);
   checkNan(qDot);

@@ -58,6 +58,7 @@ struct Mesh : GLDrawer {
   void setSSBox(double x, double y, double z, double r, uint fineness=3);
   void setSSCvx(const ors::Mesh& m, double r, uint fineness=3);
   void setImplicitSurface(ScalarFunction f, double lo=-10., double hi=+10., uint res=100);
+  void setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res);
   void setRandom(uint vertices=10);
   void setGrid(uint X, uint Y);
 
@@ -85,6 +86,8 @@ struct Mesh : GLDrawer {
   double getCircum() const;
   double getVolume() const;
 
+  /// Comparing two Meshes - static function
+  static double meshMetric(const Mesh &trueMesh, const Mesh &estimatedMesh); // Haussdorf metric
 
   //[preliminary]]
   void skin(uint i);

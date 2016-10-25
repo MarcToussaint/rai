@@ -1416,7 +1416,7 @@ void OpenGL::saveEPS(const char *filename) {
                    GL2PS_OCCLUSION_CULL | GL2PS_BEST_ROOT,
                    GL_RGBA, 0, NULL, 0, 0, 0, buffsize,
                    fp, filename);
-    Draw(width(), height());
+    Draw(width, height);
     state = gl2psEndPage();
   }
   fclose(fp);

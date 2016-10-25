@@ -132,7 +132,7 @@ struct GaussianProcess {
   void appendDerivativeObservation(const arr& x, double dy, uint i);
   void appendGradientObservation(const arr& x, const arr& dydx);
   
-  void evaluate(const arr& x, double& y, double& sig);   ///< evaluate the GP at some point - returns y and sig (=standard deviation)
+  void evaluate(const arr& x, double& y, double& sig, bool calcSig = true);   ///< evaluate the GP at some point - returns y and sig (=standard deviation)
   void evaluate(const arr& X, arr& Y, arr& S);   ///< evaluate the GP at some array of points - returns all y's and sig's
   double log_likelihood();
   double max_var(); // the variance when no data present
@@ -278,6 +278,64 @@ inline void randomFunction(GaussianProcess& gp, arr& Xbase, bool illustrate, boo
   
   gp.obsVar=orgObsVar;
 }
+
+
+
+//===========================================================================
+//
+/// wendland kernel
+//
+
+struct WendlandKernelParam {
+  double sf, sigma;
+  WendlandKernelParam(){ sf=1.0; sigma = 0.1; }
+  WendlandKernelParam(double sf, double sigma) : sf(sf), sigma(sigma) {}
+};
+
+
+inline double WendlandKernel(void *P, const arr& a, const arr& b){
+  WendlandKernelParam& parameter = *((WendlandKernelParam*)P);
+  if((&a==&b) || operator==(a, b)) return parameter.sf*parameter.sf;
+  double d;
+  //if(a.N!=1) d = sqrDistance(a, b)/parameter.sigma; else { d = b(0) - a(0); d = d*d; }
+  d = euclideanDistance(a, b)/parameter.sigma/parameter.sigma;
+  return parameter.sf*parameter.sf * pow(max(ARR(0.0,1.0-d)),4)*(1.0+4.0*d);
+}
+
+/*
+/** @brief return gradient of the covariance function, i.e.
+  for i \in {vector dimensions}: \dfdx{k(a, b)}{x_i}  w.r.t.
+  In other words: for all components invoke covD_F(i, P, a, b)
+  you can also pass a double[3] as parameters
+inline void dGaussKernel(arr& grad, void *P, const arr& a, const arr& b){
+  GaussKernelParams& K = *((GaussKernelParams*)P);
+  if(&a==&b){ grad.resizeAs(a); grad.setZero(); return; }
+  double gauss=GaussKernel(P, a, b), gamma=1./K.widthVar;
+  grad = gamma * (b-a) * gauss; // SD: Note the (b - a) swap cancles the leading minus
+  //MLR_MSG("gamma=" <<gamma <<"; b-a" <<b -a <<"; gauss=" <<gauss<<"; grad=" <<grad);
+}
+
+/** @brief covariance between derivative at point a and function value at
+ * point b
+  you can also pass a double[3] as parameters
+inline double GaussKernelF_D(uint e, void *P, const arr& a, const arr& b){
+  GaussKernelParams& K = *((GaussKernelParams*)P);
+  if(&a==&b){ HALT("this shouldn't happen, I think"); }
+  double gauss=GaussKernel(P, a, b), gamma=1./K.widthVar;
+  double de=a(e)-b(e);
+  return gamma * de * gauss;
+}
+
+/** @brief covariance between derivatives at points \vec a and \vec b
+  you can also pass a double[3] as parameters
+inline double GaussKernelD_D(uint e, uint l, void *P, const arr& a, const arr& b){
+  GaussKernelParams& K = *((GaussKernelParams*)P);
+  if(&a==&b) return K.priorVar/K.widthVar + K.derivVar;
+  double gauss=GaussKernel(P, a, b), gamma=1./K.widthVar;
+  double de=a(e)-b(e), dl=a(l)-b(l);
+  return gamma *(KRONEKER(e, l) - gamma*de*dl) * gauss;
+}
+*/
 
 
 
