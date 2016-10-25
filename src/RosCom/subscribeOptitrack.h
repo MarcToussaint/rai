@@ -12,14 +12,14 @@ struct SubscribeOptitrack{
 
 };
 
-struct Optitrack : Module{
+struct Optitrack : Thread{
   ACCESSname(tf::tfMessage, tf_messages)
   ACCESSname(std::vector<geometry_msgs::TransformStamped>, opti_markers)
   ACCESSname(std::vector<geometry_msgs::TransformStamped>, opti_bodies)
 
   SubscribeOptitrack* sub;
 
-  Optitrack():Module("Optitrack", -1){}
+  Optitrack():Thread("Optitrack", -1){}
   ~Optitrack(){}
 
   virtual void open();
