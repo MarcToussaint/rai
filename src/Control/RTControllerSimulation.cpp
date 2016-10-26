@@ -145,8 +145,8 @@ RTControllerSimulation::RTControllerSimulation(ors::KinematicWorld realWorld, do
   , gravity(gravity)
   , stepCount(0)
   , systematicErrorSdv(_systematicErrorSdv) {
-  //world = new ors::KinematicWorld(realWorld);
-  world = new ors::KinematicWorld(mlr::mlrPath("data/pr2_model/pr2_model.ors"));
+  world = new ors::KinematicWorld(realWorld);
+  //world = new ors::KinematicWorld(mlr::mlrPath("data/pr2_model/pr2_model.ors"));
 
   //Object o(*world);
   //o.generateObject("b", 0.16, 0.16, 0.1, 0.55, -0.1, 0.55); //0.5 for x
