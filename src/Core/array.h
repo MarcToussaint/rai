@@ -797,7 +797,6 @@ void blas_MM(arr& X, const arr& A, const arr& B);
 void blas_MsymMsym(arr& X, const arr& A, const arr& B);
 void blas_A_At(arr& X, const arr& A);
 void blas_At_A(arr& X, const arr& A);
-arr blas_solve_L_b(const arr& L, const arr& b);
 
 void lapack_cholesky(arr& C, const arr& A);
 uint lapack_SVD(arr& U, arr& d, arr& Vt, const arr& A);
