@@ -92,7 +92,7 @@ Conv_KOMO_ConstrainedProblem::Conv_KOMO_ConstrainedProblem(KOMO_Problem& P) : KO
 }
 
 void Conv_KOMO_ConstrainedProblem::f(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){
-  KOMO.phi(phi, J_KOMO, H_KOMO, tt, x);
+  KOMO.phi(phi, (&J?J_KOMO:NoArrA), (&H?H_KOMO:NoArrA), tt, x);
 
   //-- construct a row-shifed J from the array of featureJs
   if(&J){

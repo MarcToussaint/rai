@@ -66,6 +66,7 @@ const char* arrayBrackets="  ";
 }
 
 arr& NoArr = *((arr*)NULL);
+arrA& NoArrA = *((arrA*)NULL);
 uintA& NoUintA = *((uintA*)NULL);
 
 /* LAPACK notes

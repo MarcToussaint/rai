@@ -33,27 +33,41 @@ extern ScalarFunction ChoiceFunction();
 
 //===========================================================================
 
-struct RandomLPFunction:ConstrainedProblem {
+struct RandomLPFunction : ConstrainedProblem {
   arr randomG;
-  virtual void fc(arr& phi, arr& J, TermTypeA& tt, const arr& x) {
-    if(!randomG.N){
-      randomG.resize(5*x.N+5,x.N+1);
-      rndGauss(randomG, 1.);
-      for(uint i=0;i<randomG.d0;i++){
-        if(randomG(i,0)>0.) randomG(i,0)*=-1.; //ensure (0,0) is feasible
-        randomG(i,0) -= .2;
-      }
+
+  RandomLPFunction(){
+    ConstrainedProblem::operator=( [this](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) -> void {
+      this->fc(phi, J, H, tt, x);
+    } );
+  }
+
+  void generateG(uint xN){
+    randomG.resize(5*xN+5,xN+1);
+    rndGauss(randomG, 1.);
+    for(uint i=0;i<randomG.d0;i++){
+      if(randomG(i,0)>0.) randomG(i,0)*=-1.; //ensure (0,0) is feasible
+      randomG(i,0) -= .2;
     }
+  }
+
+  uint dim_x(){ return rnd(10)+10; }
+
+  virtual void fc(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) {
+    if(!randomG.N) generateG(x.N);
     CHECK(randomG.d1==x.N+1,"you changed dimensionality!");
 
     phi.clear();
-    tt.clear();
+    if(&tt) tt.clear();
     if(&J) J.clear();
 
-    phi.append() = sum(x); tt.append(fTT);
+    phi.append() = sum(x);
+    if(&tt) tt.append(fTT);
     if(&J) J.append(ones(1,x.N));
+    if(&H) H = zeros(x.N, x.N);
 
     phi.append( randomG * cat({1.},x) );
+    if(&tt) tt.append(consts(ineqTT, randomG.d0));
     if(&J) J.append( randomG.sub(0,-1,1,-1) );
     if(&J) J.reshape(J.N/x.N, x.N);
   }
@@ -135,9 +149,10 @@ struct SimpleConstraintFunction:ConstrainedProblem {
   }
   virtual void fc(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& _x) {
     CHECK(_x.N==2,"");
-    tt = { sumOfSqrTT, sumOfSqrTT, ineqTT, ineqTT };
+    if(&tt) tt = { sumOfSqrTT, sumOfSqrTT, ineqTT, ineqTT };
     phi.resize(4);
     if(&J){ J.resize(4, 2); J.setZero(); }
+    if(&H){ H=zeros(4,4); }
 
     //simple squared potential, displaced by 1
     arr x(_x);
@@ -203,36 +218,6 @@ struct NonlinearlyWarpedSquaredCost : VectorFunction {
   void initRandom(uint n, double condition=100.);
   
   void fv(arr& y, arr& J,const arr& x);
-};
-
-//===========================================================================
-
-struct ParticleAroundWalls : KOrderMarkovFunction {
-  //options of the problem
-  uint T,k,n;
-  bool useKernel;
-  arr x;
-
-  ParticleAroundWalls():
-    T(mlr::getParameter<uint>("opt/ParticleAroundWalls/T",1000)),
-    k(mlr::getParameter<uint>("opt/ParticleAroundWalls/k",2)),
-    n(mlr::getParameter<uint>("opt/ParticleAroundWalls/n",3)),
-    useKernel(false){}
-
-  //implementations of the kOrderMarkov virtuals
-  void set_x(const arr& _x){ x=_x; x.reshape(T+1,n); }
-  void phi_t(arr& phi, arr& J, TermTypeA& tt, uint t);
-  uint get_T(){ return T; }
-  uint get_k(){ return k; }
-  uint dim_x(uint t){ return n; }
-  uint dim_phi(uint t);
-  uint dim_g(uint t);
-
-  bool hasKernel(){ return useKernel; }
-  double kernel(uint t0, uint t1){
-    //if(t0==t1) return 1e3;
-    return 1e0*::exp(-.001*mlr::sqr((double)t0-t1));
-  }
 };
 
 //===========================================================================

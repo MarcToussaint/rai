@@ -415,6 +415,7 @@ typedef mlr::Array<mlr::String*> StringL;
 /// @{
 
 extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional arguments
+extern arrA& NoArrA; //this is a pointer to NULL!!!! I use it for optional arguments
 extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
 
 //===========================================================================
