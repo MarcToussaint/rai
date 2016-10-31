@@ -36,11 +36,7 @@ extern ScalarFunction ChoiceFunction();
 struct RandomLPFunction : ConstrainedProblem {
   arr randomG;
 
-  RandomLPFunction(){
-    ConstrainedProblem::operator=( [this](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) -> void {
-      this->fc(phi, J, H, tt, x);
-    } );
-  }
+  RandomLPFunction(){}
 
   void generateG(uint xN){
     randomG.resize(5*xN+5,xN+1);
@@ -53,7 +49,7 @@ struct RandomLPFunction : ConstrainedProblem {
 
   uint dim_x(){ return rnd(10)+10; }
 
-  virtual void fc(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) {
+  virtual void phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) {
     if(!randomG.N) generateG(x.N);
     CHECK(randomG.d1==x.N+1,"you changed dimensionality!");
 
@@ -75,18 +71,15 @@ struct RandomLPFunction : ConstrainedProblem {
 
 //===========================================================================
 
-struct ChoiceConstraintFunction:ConstrainedProblem {
+struct ChoiceConstraintFunction : ConstrainedProblem {
   enum WhichConstraint { wedge2D=1, halfcircle2D, randomLinear, circleLine2D } which;
   uint n;
   arr randomG;
   ChoiceConstraintFunction() {
     which = (WhichConstraint) mlr::getParameter<int>("constraintChoice");
     n = mlr::getParameter<uint>("dim", 2);
-    ConstrainedProblem::operator=( [this](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) -> void {
-      this->fc(phi, J, H, tt, x);
-    } );
   }
-  void fc(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) {
+  void phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) {
     CHECK_EQ(x.N,n,"");
     phi.clear();  if(&tt) tt.clear();  if(&J) J.clear();
 
@@ -140,14 +133,10 @@ struct ChoiceConstraintFunction:ConstrainedProblem {
 
 //===========================================================================
 
-struct SimpleConstraintFunction:ConstrainedProblem {
+struct SimpleConstraintFunction : ConstrainedProblem {
   SimpleConstraintFunction(){
-    ConstrainedProblem::operator=(
-      [this](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) -> void {
-      this->fc(phi, J, H, tt, x);
-    } );
   }
-  virtual void fc(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& _x) {
+  virtual void phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& _x) {
     CHECK(_x.N==2,"");
     if(&tt) tt = { sumOfSqrTT, sumOfSqrTT, ineqTT, ineqTT };
     phi.resize(4);

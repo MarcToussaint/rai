@@ -26,29 +26,83 @@ TermTypeA& NoTermTypeA = *((TermTypeA*)NULL);
 //
 
 
-bool checkJacobianCP(const ConstrainedProblem &P, const arr& x, double tolerance){
+bool checkJacobianCP(ConstrainedProblem &P, const arr& x, double tolerance){
   VectorFunction F = [&P](arr& phi, arr& J, const arr& x){
-    return P(phi, J, NoArr, NoTermTypeA, x);
+    return P.phi(phi, J, NoArr, NoTermTypeA, x);
   };
   return checkJacobian(F, x, tolerance);
 }
 
-bool checkHessianCP(const ConstrainedProblem &P, const arr& x, double tolerance){
+bool checkHessianCP(ConstrainedProblem &P, const arr& x, double tolerance){
   uint i;
   arr phi, J;
   TermTypeA tt;
-  P(phi, NoArr, NoArr, tt, x);
+  P.phi(phi, NoArr, NoArr, tt, x); //TODO: only call getStructure
   for(i=0;i<tt.N;i++) if(tt(i)==fTT) break;
   if(i==tt.N){
     MLR_MSG("no f-term in this KOM problem");
     return true;
   }
   ScalarFunction F = [&P,&phi,&J,i](arr& g, arr& H, const arr& x) -> double{
-    P(phi, J, H, NoTermTypeA, x);
+    P.phi(phi, J, H, NoTermTypeA, x);
     g = J[i];
     return phi(i);
   };
   return checkHessian(F, x, tolerance);
+}
+
+//===========================================================================
+//
+// optimization options
+//
+
+OptOptions::OptOptions() {
+  verbose    = mlr::getParameter<uint>  ("opt/verbose", 1);
+  fmin_return=NULL;
+  stopTolerance= mlr::getParameter<double>("opt/stopTolerance", 1e-2);
+  stopFTolerance= mlr::getParameter<double>("opt/stopFTolerance", 1e-1);
+  stopGTolerance= mlr::getParameter<double>("opt/stopGTolerance", -1.);
+  stopEvals = mlr::getParameter<uint>  ("opt/stopEvals", 1000);
+  stopIters = mlr::getParameter<uint>  ("opt/stopIters", 1000);
+  stopLineSteps = mlr::getParameter<uint>  ("opt/stopLineSteps", 10);
+  stopTinySteps = mlr::getParameter<uint>  ("opt/stopTinySteps", 10);
+  initStep  = mlr::getParameter<double>("opt/initStep", 1.);
+  minStep   = mlr::getParameter<double>("opt/minStep", -1.);
+  maxStep   = mlr::getParameter<double>("opt/maxStep", .5);
+  damping   = mlr::getParameter<double>("opt/damping", .1);
+  stepInc   = mlr::getParameter<double>("opt/stepInc", 2.);
+  stepDec   = mlr::getParameter<double>("opt/stepDec", .1);
+  dampingInc= mlr::getParameter<double>("opt/dampingInc", 2.);
+  dampingDec= mlr::getParameter<double>("opt/dampingDec", .5);
+  wolfe     = mlr::getParameter<double>("opt/wolfe", .01);
+  nonStrictSteps= mlr::getParameter<uint>  ("opt/nonStrictSteps", 0);
+  allowOverstep= mlr::getParameter<bool>  ("opt/allowOverstep", true);
+  constrainedMethod = (ConstrainedMethodType)mlr::getParameter<int>("opt/constrainedMethod", anyTimeAula);
+  muInit = mlr::getParameter<double>("opt/muInit", 1.);
+  muLBInit = mlr::getParameter<double>("opt/muLBInit", 1.);
+  aulaMuInc = mlr::getParameter<double>("opt/aulaMuInc", 2.);
+}
+
+void OptOptions::write(std::ostream& os) const{
+#define WRT(x) os <<#x <<" = " <<x <<endl;
+  WRT(verbose);
+//  double *fmin_return);
+  WRT(stopTolerance);
+  WRT(stopEvals);
+  WRT(stopIters);
+  WRT(initStep);
+  WRT(minStep);
+  WRT(maxStep);
+  WRT(damping);
+  WRT(stepInc);
+  WRT(stepDec);
+  WRT(dampingInc);
+  WRT(dampingDec);
+  WRT(nonStrictSteps);
+  WRT(allowOverstep);
+  WRT(constrainedMethod);
+  WRT(aulaMuInc);
+#undef WRT
 }
 
 //===========================================================================

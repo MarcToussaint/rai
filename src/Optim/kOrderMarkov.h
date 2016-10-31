@@ -32,4 +32,4 @@ struct KOrderMarkovFunction {
 
 ScalarFunction     conv_KOrderMarkovFunction2ScalarFunction(KOrderMarkovFunction& f);
 VectorFunction     conv_KOrderMarkovFunction2VectorFunction(KOrderMarkovFunction& f);
-ConstrainedProblem conv_KOrderMarkovFunction2ConstrainedProblem(KOrderMarkovFunction& f);
+//ConstrainedProblem conv_KOrderMarkovFunction2ConstrainedProblem(KOrderMarkovFunction& f);

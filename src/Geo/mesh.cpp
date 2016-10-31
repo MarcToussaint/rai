@@ -14,7 +14,7 @@
 
 #include "mesh.h"
 #include "qhull.h"
-#include <Optim/optimization.h>
+#include <Optim/lagrangian.h>
 
 #include <limits>
 
@@ -321,58 +321,62 @@ void ors::Mesh::makeTriangleFan(){
 }
 
 void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
-  ConstrainedProblem F=[&X](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){
-    phi.resize(5+X.d0);
-    if(&tt){ tt.resize(5+X.d0); tt=ineqTT; }
-    if(&J) {  J.resize(5+X.d0,11); J.setZero(); }
-    if(&H) {  H.resize(11,11); H.setZero(); }
+  struct fitSSBoxProblem : ConstrainedProblem{
+    const arr& X;
+    fitSSBoxProblem(const arr& X):X(X){}
+    void phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){
+      phi.resize(5+X.d0);
+      if(&tt){ tt.resize(5+X.d0); tt=ineqTT; }
+      if(&J) {  J.resize(5+X.d0,11); J.setZero(); }
+      if(&H) {  H.resize(11,11); H.setZero(); }
 
-    //-- the scalar objective
-    double a=x(0), b=x(1), c=x(2), r=x(3);
-    phi(0) = a*b*c + 2.*r*(a*b + a*c +b*c) + 4./3.*r*r*r;
-    if(&tt) tt(0) = fTT;
-    if(&J){
-      J(0,0) = b*c + 2.*r*(b+c);
-      J(0,1) = a*c + 2.*r*(a+c);
-      J(0,2) = a*b + 2.*r*(a+b);
-      J(0,3) = 2.*(a*b + a*c +b*c) + 4.*r*r;
+      //-- the scalar objective
+      double a=x(0), b=x(1), c=x(2), r=x(3);
+      phi(0) = a*b*c + 2.*r*(a*b + a*c +b*c) + 4./3.*r*r*r;
+      if(&tt) tt(0) = fTT;
+      if(&J){
+        J(0,0) = b*c + 2.*r*(b+c);
+        J(0,1) = a*c + 2.*r*(a+c);
+        J(0,2) = a*b + 2.*r*(a+b);
+        J(0,3) = 2.*(a*b + a*c +b*c) + 4.*r*r;
+      }
+      if(&H){
+        H(0,1) = H(1,0) = c + 2.*r;
+        H(0,2) = H(2,0) = b + 2.*r;
+        H(0,3) = H(3,0) = 2.*(b+c);
+
+        H(1,2) = H(2,1) = a + 2.*r;
+        H(1,3) = H(3,1) = 2.*(a+c);
+
+        H(2,3) = H(3,2) = 2.*(a+b);
+
+        H(3,3) = 8.*r;
+      }
+
+      //-- positive
+      double w=100.;
+      phi(1) = -w*(a-.01);
+      phi(2) = -w*(b-.01);
+      phi(3) = -w*(c-.01);
+      phi(4) = -w*(r-.01);
+      if(&J){
+        J(1,0) = -w;
+        J(2,1) = -w;
+        J(3,2) = -w;
+        J(4,3) = -w;
+      }
+
+      //-- all constraints
+      for(uint i=0;i<X.d0;i++){
+        arr y, Jy;
+        y = X[i];
+        y.append(x);
+        phi(i+5) = DistanceFunction_SSBox(Jy, NoArr, y);
+        //      Jy.refRange(3,5)() *= -1.;
+        if(&J) J[i+5] = Jy.refRange(3,-1);
+      }
     }
-    if(&H){
-      H(0,1) = H(1,0) = c + 2.*r;
-      H(0,2) = H(2,0) = b + 2.*r;
-      H(0,3) = H(3,0) = 2.*(b+c);
-
-      H(1,2) = H(2,1) = a + 2.*r;
-      H(1,3) = H(3,1) = 2.*(a+c);
-
-      H(2,3) = H(3,2) = 2.*(a+b);
-
-      H(3,3) = 8.*r;
-    }
-
-    //-- positive
-    double w=100.;
-    phi(1) = -w*(a-.01);
-    phi(2) = -w*(b-.01);
-    phi(3) = -w*(c-.01);
-    phi(4) = -w*(r-.01);
-    if(&J){
-      J(1,0) = -w;
-      J(2,1) = -w;
-      J(3,2) = -w;
-      J(4,3) = -w;
-    }
-
-    //-- all constraints
-    for(uint i=0;i<X.d0;i++){
-      arr y, Jy;
-      y = X[i];
-      y.append(x);
-      phi(i+5) = DistanceFunction_SSBox(Jy, NoArr, y);
-      //      Jy.refRange(3,5)() *= -1.;
-      if(&J) J[i+5] = Jy.refRange(3,-1);
-    }
-  };
+  } F(X);
 
   //initialization
   x.resize(11);

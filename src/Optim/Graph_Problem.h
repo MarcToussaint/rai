@@ -37,14 +37,14 @@ struct GraphProblem {
 };
 
 /// Reduction to an unstructured constrained problem
-struct Graph_ConstrainedProblem:ConstrainedProblem{
+struct Conv_Graph_ConstrainedProblem:ConstrainedProblem{
   GraphProblem& G;
   uintA variableDimensions, varDimIntegral;
   uintAA featureVariables;
   TermTypeA featureTypes;
   arrA J_G, H_G;
 
-  Graph_ConstrainedProblem(GraphProblem& _G);
-  void f(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x);
+  Conv_Graph_ConstrainedProblem(GraphProblem& _G);
+  void phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x);
 };
 
