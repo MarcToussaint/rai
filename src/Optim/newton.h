@@ -37,5 +37,5 @@ struct OptNewton{
   ~OptNewton();
   StopCriterion step();
   StopCriterion run(uint maxIt = 1000);
-  void reinit();
+  void reinit(const arr& _x);
 };

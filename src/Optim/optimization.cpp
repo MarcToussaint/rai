@@ -76,7 +76,7 @@ OptOptions::OptOptions() {
   dampingDec= mlr::getParameter<double>("opt/dampingDec", .5);
   wolfe     = mlr::getParameter<double>("opt/wolfe", .01);
   nonStrictSteps= mlr::getParameter<uint>  ("opt/nonStrictSteps", 0);
-  allowOverstep= mlr::getParameter<bool>  ("opt/allowOverstep", true);
+  allowOverstep= mlr::getParameter<bool>  ("opt/allowOverstep", false);
   constrainedMethod = (ConstrainedMethodType)mlr::getParameter<int>("opt/constrainedMethod", anyTimeAula);
   muInit = mlr::getParameter<double>("opt/muInit", 1.);
   muLBInit = mlr::getParameter<double>("opt/muLBInit", 1.);

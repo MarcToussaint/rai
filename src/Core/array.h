@@ -440,7 +440,7 @@ typedef std::function<void(arr& y, arr& J, const arr& x)> VectorFunction;
 
 /// a kernel function
 struct KernelFunction {
-  virtual double k(const arr& x1, const arr& x2, arr& g1=NoArr, arr& g2=NoArr) = 0;
+  virtual double k(const arr& x1, const arr& x2, arr& g1=NoArr, arr& Hx1=NoArr) = 0;
   virtual ~KernelFunction(){}
 };
 

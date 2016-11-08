@@ -32,10 +32,11 @@ OptNewton::OptNewton(arr& _x, const ScalarFunction& _f,  OptOptions _o):
   alpha = o.initStep;
   beta = o.damping;
   additionalRegularizer=NULL;
-  reinit();
+  reinit(_x);
 }
 
-void OptNewton::reinit(){
+void OptNewton::reinit(const arr& _x){
+  if(&x!=&_x) x = _x;
   fx = f(gx, Hx, x);  evals++;
   if(additionalRegularizer)  fx += scalarProduct(x,(*additionalRegularizer)*vectorShaped(x));
 
@@ -66,7 +67,7 @@ OptNewton::StopCriterion OptNewton::step(){
     if(isRowShifted(R)) for(uint i=0; i<R.d0; i++) R(i,0) += beta; //(R(i,0) is the diagonal in the packed matrix!!)
     else for(uint i=0; i<R.d0; i++) R(i,i) += beta;
   }
-  if(additionalRegularizer) {
+  if(additionalRegularizer) { //obsolete -> retire
     if(isRowShifted(R)) R = unpack(R);
     Delta = lapack_Ainv_b_sym(R + (*additionalRegularizer), -(gx+(*additionalRegularizer)*vectorShaped(x)));
   } else {
@@ -77,17 +78,23 @@ OptNewton::StopCriterion OptNewton::step(){
       inversionFailed=true;
     }
     if(inversionFailed){
-//      arr sig, eig;
-//      lapack_EigenDecomp(R, sig, eig);
-      arr sig = lapack_kSmallestEigenValues_sym(R, 3);
-      if(o.verbose>0){
-        cout <<endl <<"** hessian inversion failed ... increasing damping **\neigenvalues=" <<sig <<endl;
+      if(false){ //increase beta
+        arr sig = lapack_kSmallestEigenValues_sym(R, 3);
+        if(o.verbose>0){
+          cout <<"** hessian inversion failed ... increasing damping **\neigenvalues=" <<sig <<endl;
+        }
+        double sigmin = sig.min();
+        if(sigmin>0.) THROW("Hessian inversion failed, but eigenvalues are positive???");
+        beta = 2.*beta - sigmin;
+        betaChanged=true;
+        return stopCriterion=stopNone;
+      }else{ //use gradient
+        if(o.verbose>0){
+          cout <<"** hessian inversion failed ... using gradient descent direction" <<endl;
+        }
+        Delta = -gx / length(gx) * o.maxStep;
+//        alpha = 1.;
       }
-      double sigmin = sig.min();
-      if(sigmin>0.) THROW("Hessian inversion failed, but eigenvalues are positive???");
-      beta = 2.*beta - sigmin;
-      betaChanged=true;
-      return stopCriterion=stopNone;
     }
   }
   double maxDelta = absMax(Delta);

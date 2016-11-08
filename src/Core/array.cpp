@@ -1496,7 +1496,7 @@ void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs) {
 }
 
 arr lapack_kSmallestEigenValues_sym(const arr& A, uint k){
-  CHECK(k<A.d0,"");
+  if(k>A.d0) k=A.d0; //  CHECK(k<=A.d0,"");
   integer N=A.d0, KD=A.d1-1, LDAB=A.d1, INFO;
   mlr::Array<integer> IWORK(5*N), IFAIL(N);
   arr WORK(10*(3*N)), Acopy=A;

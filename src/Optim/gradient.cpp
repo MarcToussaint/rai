@@ -25,7 +25,8 @@ OptGrad::OptGrad(arr& _x, const ScalarFunction& _f,  OptOptions _o):
   reinit();
 }
 
-void OptGrad::reinit(){
+void OptGrad::reinit(const arr& _x){
+  if(&_x && &_x!=&x) x=_x;
   fx = f(gx, NoArr, x);  evals++;
 
   //startup verbose
@@ -36,8 +37,6 @@ void OptGrad::reinit(){
   if(o.verbose>2) fil <<' ' <<x;
   if(o.verbose>0) fil <<endl;
 }
-
-//===========================================================================
 
 OptGrad::StopCriterion OptGrad::step(){
   double fy;

@@ -39,7 +39,7 @@ struct OptGrad{
   ~OptGrad();
   StopCriterion step();
   StopCriterion run(uint maxIt = 1000);
-  void reinit();
+  void reinit(const arr& _x=NoArr);
 };
 
 inline int optGrad(arr& x, const ScalarFunction& f, OptOptions opt=NOOPT){
