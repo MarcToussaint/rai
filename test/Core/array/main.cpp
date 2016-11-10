@@ -258,7 +258,7 @@ void TEST(Exception){
   cout <<"\n*** exception handling\n";
   arr A;
   A.append(10);
-  cout <<"accessing our of range..." <<endl;
+  cout <<"accessing out of range..." <<endl;
   bool caught=false;
   try{
     cout <<A(2);
