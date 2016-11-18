@@ -157,7 +157,8 @@ struct OpenGL {
   bool immediateExitLoop;
   bool drawFocus;
   bool captureImg, captureDep;
-  byteA background, captureImage, captureDepth;
+  byteA background, captureImage;
+  floatA captureDepth;
   double backgroundZoom;
   arr P; //camera projection matrix
   RWLock lock; //locked during draw callbacks (anything that uses the calls)
