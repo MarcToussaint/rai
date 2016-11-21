@@ -862,6 +862,8 @@ inline RowShifted* castRowShifted(arr& X) {
   return dynamic_cast<RowShifted*>(X.special); //((RowShifted*)X.aux);
 }
 
+namespace mlr {
+
 struct SparseVector: SpecialArray{
   uint N; ///< original size
   uintA elems; ///< for every non-zero (in memory order), the index
@@ -875,6 +877,8 @@ struct SparseMatrix : SpecialArray{
   template<class T> SparseMatrix(mlr::Array<T>& X);
   template<class T> SparseMatrix(mlr::Array<T>& X, uint d0);
 };
+
+}//namespace mlr
 
 //struct RowSparseMatrix : SpecialArray {
 //  RowSparseMatrix()

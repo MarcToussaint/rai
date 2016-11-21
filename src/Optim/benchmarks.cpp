@@ -80,7 +80,7 @@ ScalarFunction HoleFunction(){ return _HoleFunction; }
 
 //===========================================================================
 
-struct _ChoiceFunction:ScalarFunction {
+struct _ChoiceFunction : ScalarFunction {
   enum Which { none=0, sum, square, hole, rosenbrock, rastrigin } which;
   arr condition;
   _ChoiceFunction():which(none){

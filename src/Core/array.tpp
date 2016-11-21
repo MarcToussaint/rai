@@ -272,7 +272,7 @@ template<class T> void mlr::Array<T>::makeSparse() {
   }else NIY;
 }
 
-template<class T> SparseVector::SparseVector(mlr::Array<T>& x){
+template<class T> mlr::SparseVector::SparseVector(mlr::Array<T>& x){
   CHECK(isNotSpecial(x), "only once yet");
   type=sparseVectorST;
   N = x.N;
@@ -287,14 +287,14 @@ template<class T> SparseVector::SparseVector(mlr::Array<T>& x){
   elems.resizeCopy(n);
 }
 
-template<class T> SparseMatrix::SparseMatrix(mlr::Array<T>& X, uint d0){
+template<class T> mlr::SparseMatrix::SparseMatrix(mlr::Array<T>& X, uint d0){
   CHECK(isNotSpecial(X), "only once yet");
   type=sparseMatrixST;
   cols.resize(1);
   X.nd=1; X.d0=d0;
 }
 
-template<class T> SparseMatrix::SparseMatrix(mlr::Array<T>& X){
+template<class T> mlr::SparseMatrix::SparseMatrix(mlr::Array<T>& X){
   CHECK(isNotSpecial(X), "only once yet");
   type=sparseMatrixST;
   uint n=0; //memory index
@@ -2600,8 +2600,8 @@ T scalarProduct(const mlr::Array<T>& v, const mlr::Array<T>& w) {
     for(uint i=v.N; i--; t+=v.p[i]*w.p[i]);
   }else{
     if(isSparseVector(v) && isSparseVector(w)){
-      SparseVector *sv = dynamic_cast<SparseVector*>(v.special);
-      SparseVector *sw = dynamic_cast<SparseVector*>(w.special);
+      mlr::SparseVector *sv = dynamic_cast<mlr::SparseVector*>(v.special);
+      mlr::SparseVector *sw = dynamic_cast<mlr::SparseVector*>(w.special);
       CHECK_EQ(sv->N,sw->N,
             "scalar product on different array dimensions (" <<sv->N <<", " <<sw->N <<")");
       uint *ev=sv->elems.p, *ev_stop=ev+v.N, *ew=sw->elems.p, *ew_stop=ew+w.N;
