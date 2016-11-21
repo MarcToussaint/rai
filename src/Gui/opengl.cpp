@@ -1198,7 +1198,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam, bool ignoreLock) {
   }
   if(captureDep){
     captureDepth.resize(h, w);
-    glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, captureDepth.p);
+    glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
 //    flip_image(captureDepth);
     captureDep=false;
   }
@@ -1801,7 +1801,7 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
   if(_captureDep){
     captureDepth.resize(h, w);
     glReadBuffer(GL_DEPTH_ATTACHMENT);
-    glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, captureDepth.p);
+    glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
 //    flip_image(captureDepth);
   }
 
