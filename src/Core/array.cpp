@@ -999,7 +999,7 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     uint i, j, *k, *kstop;
     y.resize(A.d0); y.setZero();
     double *Ap=A.p;
-    uintA& A_elems = dynamic_cast<SparseMatrix*>(A.special)->elems;
+    uintA& A_elems = dynamic_cast<mlr::SparseMatrix*>(A.special)->elems;
     for(k=A_elems.p, kstop=A_elems.p+A_elems.N; k!=kstop; Ap++) {
       i=*k; k++;
       j=*k; k++;
@@ -1008,20 +1008,20 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     return;
   }
   if(isSparseMatrix(A) && isSparseVector(x)) {
-    SparseVector *sx = dynamic_cast<SparseVector*>(x.special);
+    mlr::SparseVector *sx = dynamic_cast<mlr::SparseVector*>(x.special);
     CHECK(x.nd==1 && A.nd==2 && sx->N==A.d1, "not a proper matrix-vector multiplication");
     uint i, j, n, *k, *kstop, *l, *lstop;
     y.clear(); y.nd=1; y.d0=A.d0;
-    y.special = new SparseMatrix(y, A.d0); //aux=y_sparse=new uintA [2];
-    uintA& y_elems= dynamic_cast<SparseMatrix*>(y.special)->elems;
-    uintA& y_col= dynamic_cast<SparseMatrix*>(y.special)->cols(0);
+    y.special = new mlr::SparseMatrix(y, A.d0); //aux=y_sparse=new uintA [2];
+    uintA& y_elems= dynamic_cast<mlr::SparseMatrix*>(y.special)->elems;
+    uintA& y_col= dynamic_cast<mlr::SparseMatrix*>(y.special)->cols(0);
     y_col.resize(y.d0); y_col=(uint)-1;
     double *xp=x.p;
     uintA& x_elems = sx->elems;
     uint *slot;
     for(k=x_elems.p, kstop=x_elems.p+x_elems.N; k!=kstop; xp++) {
       j=*k; k++;
-      uintA& A_col = dynamic_cast<SparseMatrix*>(A.special)->cols(j);
+      uintA& A_col = dynamic_cast<mlr::SparseMatrix*>(A.special)->cols(j);
       for(l=A_col.p, lstop=A_col.p+A_col.N; l!=lstop;) {
         i =*l; l++;
         n =*l; l++;
@@ -1042,7 +1042,7 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     uint i, j, *k, *kstop, d1=A.d1;
     y.resize(A.d0); y.setZero();
     double *xp=x.p;
-    uintA& elems = dynamic_cast<SparseMatrix*>(x.special)->elems;
+    uintA& elems = dynamic_cast<mlr::SparseMatrix*>(x.special)->elems;
     for(k=elems.p, kstop=elems.p+elems.N; k!=kstop; xp++) {
       j=*k; k++;
       for(i=0; i<A.d0; i++) {

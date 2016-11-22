@@ -29,3 +29,5 @@ else
 	tput setaf 0 && echo "         * DoneWait " $1/$2 && tput sgr0
     fi
 fi
+
+exit 0
