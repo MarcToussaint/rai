@@ -344,7 +344,7 @@ NodeL Graph::getNodesOfDegree(uint deg) {
 }
 
 Node* Graph::edit(Node *ed){
-  NodeL KVG = findNodesOfType(ed->type, {ed->keys.last()});
+  NodeL KVG = findNodesOfType(ed->type, ed->keys);
   //CHECK(KVG.N<=1, "can't edit into multiple nodes yet");
   Node *n=NULL;
   if(KVG.N) n=KVG.elem(0);
