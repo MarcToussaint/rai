@@ -699,6 +699,13 @@ void Graph::writeParseInfo(std::ostream& os) {
     os <<"NODE '" <<*n <<"' " <<getParseInfo(n) <<endl;
 }
 
+void Graph::displayDot(){
+  writeDot(FILE("z.dot"), false, false, 0);
+  int r;
+  r = system("dot -Tpdf z.dot > z.pdf");  if(r) LOG(-1) <<"could not startup dot";
+  r = system("evince z.pdf &");  if(r) LOG(-1) <<"could not startup evince";
+}
+
 void Graph::writeHtml(std::ostream& os, std::istream& is) {
   char c;
   long int g=getParseInfo(NULL).beg;

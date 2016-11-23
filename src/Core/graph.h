@@ -107,6 +107,7 @@ struct Graph : NodeL {
   
   //-- adding nodes
   template<class T> Node_typed<T>* newNode(const StringA& keys, const NodeL& parents, const T& x); ///<exactly equivalent to calling a Node_typed constructor
+  template<class T> Node_typed<T>* newNode(const StringA& keys, const NodeL& parents); ///<exactly equivalent to calling a Node_typed constructor
   template<class T> Node_typed<T>* newNode(const T& x); ///<exactly equivalent to calling a Node_typed constructor
   Node_typed<int>* newNode(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
   Graph& newNode(const Nod& ni); ///< (internal) append a node initializer
@@ -168,6 +169,8 @@ struct Graph : NodeL {
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0, int focusIndex=-1);
   void writeHtml(std::ostream& os, std::istream& is);
   void writeParseInfo(std::ostream& os);
+
+  void displayDot();
 
   //private:
   friend struct Node;

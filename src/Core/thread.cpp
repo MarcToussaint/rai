@@ -217,14 +217,13 @@ void ConditionVariable::waitUntil(double absTime, bool userHasLocked) {
 // RevisionedAccessGatedClass
 //
 
-RevisionedAccessGatedClass::RevisionedAccessGatedClass(const char *_name):name(_name), revision(0), registryNode(NULL) {
-  registryNode = registry().newNode<RevisionedAccessGatedClass* >({"Variable", name}, {}, this);
-  listeners.memMove=true;
-}
+//RevisionedAccessGatedClass::RevisionedAccessGatedClass(const char *_name):name(_name), revision(0), registryNode(NULL) {
+////  registryNode = registry().newNode<RevisionedAccessGatedClass* >({"Variable", name}, {}, this);
+//}
 
 RevisionedAccessGatedClass::~RevisionedAccessGatedClass() {
   for(Thread *th: listeners) th->listensTo.removeValue(this);
-  delete registryNode;
+//  delete registryNode;
 }
 
 bool RevisionedAccessGatedClass::hasNewRevision(){

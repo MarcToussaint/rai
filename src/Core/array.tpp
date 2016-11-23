@@ -3623,7 +3623,7 @@ template<class T> void listCopy(mlr::Array<T*>& L, const mlr::Array<T*>& M) {
 }
 
 template<class T> void listDelete(mlr::Array<T*>& L) {
-  for(uint i=L.N; i--;){ delete L.elem(i); L.elem(i)=NULL; }
+  for(uint i=L.N; i--;) delete L.elem(i);
   L.clear();
 }
 
