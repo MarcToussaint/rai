@@ -385,14 +385,16 @@ template<class T> void mlr::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
       if(!p) { p=pold; M=Mold; HALT("memory allocation failed! Wanted size = " <<Mnew*sizeT <<"bytes"); }
       M=Mnew;
       if(copy){
-        if(memMove==1) memmove(p, pold, sizeT*(N<n?N:n));
-        else for(i=N<n?N:n; i--;) p[i]=pold[i];
+        if(memMove==1){
+          memmove(p, pold, sizeT*(N<n?N:n));
+          if(n>N) memset(p+N, 0, sizeT*(n-N));
+        }else for(i=N<n?N:n; i--;) p[i]=pold[i];
       }
     } else {
       p=0;
     }
     CHECK((pold && Mold) || (!pold && !Mold), "");
-    if(Mold) delete[] pold;  //if(Mold) free(pold);
+    if(Mold){ delete[] pold; pold=NULL; } //if(Mold) free(pold);
   }
   N=n;
 }
@@ -416,10 +418,10 @@ template<class T> void mlr::Array<T>::freeMEM() {
 #ifdef MLR_GLOBALMEM
   globalMemoryTotal -= M*sizeT;
 #endif
-  if(M) delete[] p;
+  if(M){ delete[] p; p=NULL; }
   //if(M) free(p);
   //if(special) delete[] special;
-  if(d && d!=&d0) delete[] d;
+  if(d && d!=&d0){ delete[] d; d=NULL; }
   p=NULL;
   M=N=nd=d0=d1=d2=0;
   d=&d0;
@@ -429,7 +431,7 @@ template<class T> void mlr::Array<T>::freeMEM() {
 
 /// reset the dimensionality pointer d to point to &d0
 template<class T> void mlr::Array<T>::resetD() {
-  if(d && d!=&d0) delete[] d;
+  if(d && d!=&d0){ delete[] d; d=NULL; }
   d=&d0;
 }
 
@@ -661,7 +663,7 @@ template<class T> void mlr::Array<T>::insRows(uint i, uint k) {
   uint n=d0;
   resizeCopy(d0+k, d1);
   memmove(p+(i+k)*d1, p+i*d1, sizeT*d1*(n-i));
-  memset(p+ i   *d1, 0     , sizeT*d1*k);
+  memset (p+ i   *d1, 0     , sizeT*d1*k);
 }
 
 /// deletes k columns starting from the i-th (i==d1 -> deletes the last k columns)
@@ -689,7 +691,7 @@ template<class T> void mlr::Array<T>::insColumns(uint i, uint k) {
   resizeCopy(d0, n+k);
   for(uint j=d0; j--;) {
     memmove(p+j*d1+(i+k), p+j*n+i, sizeT*(n-i));
-    memset(p+j*d1+i    , 0      , sizeT*k);
+    memset (p+j*d1+i    , 0      , sizeT*k);
     memmove(p+j*d1      , p+j*n  , sizeT*i);
   }
 }
@@ -3591,37 +3593,37 @@ template<class T> void listRead(mlr::Array<T*>& L, std::istream& is, const char 
 
 template<class T> void listClone(mlr::Array<T*>& L, const mlr::Array<T*>& M) {
   listDelete(L);
-  L.resize(M.N);
+  L.resizeAs(M);
   uint i;
-  for(i=0; i<L.N; i++) L(i)=M(i)->newClone();
+  for(i=0; i<L.N; i++) L.elem(i)=M.elem(i)->newClone();
 }
 
 template<class T> void listResize(mlr::Array<T*>& L, uint N) {
   listDelete(L);
   L.resize(N);
   uint i;
-  for(i=0; i<N; i++) L(i)=new T();
+  for(i=0; i<N; i++) L.elem(i)=new T();
 }
 
 template<class T> void listResizeCopy(mlr::Array<T*>& L, uint N) {
   if(L.N<N){
     uint n=L.N;
     L.resizeCopy(N);
-    for(uint i=n;i<N;i++) L(i)=new T();
+    for(uint i=n;i<N;i++) L.elem(i)=new T();
   }else{
-    for(uint i=N;i<L.N;i++) delete L(i);
+    for(uint i=N;i<L.N;i++){ delete L.elem(i); L.elem(i)=NULL; }
     L.resizeCopy(N);
   }
 }
 
 template<class T> void listCopy(mlr::Array<T*>& L, const mlr::Array<T*>& M) {
   listDelete(L);
-  L.resize(M.N);
-  for(uint i=0; i<L.N; i++) L(i)=new T(*M(i));
+  L.resizeAs(M);
+  for(uint i=0; i<L.N; i++) L.elem(i)=new T(*M.elem(i));
 }
 
 template<class T> void listDelete(mlr::Array<T*>& L) {
-  for(uint i=L.N; i--;) delete L.elem(i);
+  for(uint i=L.N; i--;){ delete L.elem(i); L.elem(i)=NULL; }
   L.clear();
 }
 

@@ -765,7 +765,7 @@ double determinantSubroutine(double **A, uint n) {
     }
     d+=((i&1)?-1.:1.) * A[i][0] * determinantSubroutine(B, n-1);
   }
-  delete[] B;
+  delete[] B; B=NULL;
   return d;
 }
 
@@ -1688,7 +1688,7 @@ RowShifted *makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1) {
 }
 
 RowShifted::~RowShifted() {
-  if(nextInSum) delete nextInSum;
+  if(nextInSum){ delete nextInSum; nextInSum=NULL; }
   Z.special = NULL;
 }
 

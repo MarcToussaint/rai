@@ -85,7 +85,9 @@ struct Graph : NodeL {
   GraphEditCallbackL callbacks; ///< list of callbacks that are informed about creation and destruction of nodes
 
   ArrayG<ParseInfo> *pi;     ///< optional annotation of nodes: when detailed file parsing is enabled
-  ArrayG<RenderingInfo> *ri; ///< optional annotation of nodes: dot style commands
+//  ArrayG<RenderingInfo> *ri; ///< optional annotation of nodes: dot style commands
+  ArrayG<RenderingInfo> *ri;
+//  mlr::Array<RenderingInfo> ri; ///< optional annotation of nodes: dot style commands
 
   //-- constructors
   Graph();                                               ///< empty graph
@@ -187,18 +189,34 @@ struct GraphEditCallback {
   virtual void cb_graphDestruct(){}
 };
 
+
 //===========================================================================
 
 /// To associate additional objects with each node, this simple array stores such
 /// objects, resizes automatically and is accessible by node pointer
 template<class T>
-struct ArrayG : mlr::Array<T>, GraphEditCallback {
+struct ArrayG : mlr::Array<T*>, GraphEditCallback {
+  //why a list: the cb_new/delete call insert/remove, which requires memMove
   Graph& G;
-  ArrayG(Graph& _G):G(_G){ this->memMove=true;  this->resize(G.N);  G.callbacks.append(this); }
-  ~ArrayG(){ G.callbacks.removeValue(this); }
-  T& operator()(Node *n) const { return this->elem(n->index); }
-  virtual void cb_new(Node *n){ this->insert(n->index, T()); }
-  virtual void cb_delete(Node *n){ this->remove(n->index); }
+  ArrayG(Graph& _G):G(_G){
+    this->memMove=true;
+    this->resize(G.N+1).setZero();
+    G.callbacks.append(this);
+  }
+  ~ArrayG(){
+    G.callbacks.removeValue(this);
+    for(T* x:*this) if(x){ delete x; x=NULL; }
+    this->clear();
+  }
+  T& operator()(Node *n){
+    CHECK_EQ(this->N, G.N+1,"");
+//    if(this->N != G.N+1) listResizeCopy(*this, G.N+1); //redundant, given the callback mechanisms...
+    T* &x = (!n? this->elem(0) : this->elem(n->index+1)); //x is a reference!
+    if(!x) x = new T(); //...assigned here
+    return *x;
+  }
+  virtual void cb_new(Node *n){ this->insert(n->index+1, (T*)NULL); }
+  virtual void cb_delete(Node *n){ T* &x = this->elem(n->index+1); if(x){ delete x; x=NULL; } this->remove(n->index+1); }
 };
 
 //===========================================================================
