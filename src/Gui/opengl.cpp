@@ -961,6 +961,7 @@ OpenGL::OpenGL(void *container)
 }
 
 OpenGL::~OpenGL() {
+  clear();
   delete s;
   s=NULL;
 //  MLR_MSG("destructing OpenGL=" <<this);
@@ -1032,6 +1033,7 @@ void OpenGL::setViewPort(uint v, double l, double r, double b, double t) {
 
 /// clear the list of all draw and callback routines
 void OpenGL::clear() {
+  for(auto& x:drawers) if(CstyleDrawer* d = dynamic_cast<CstyleDrawer*>(x)) delete d;
   views.clear();
   drawers.clear();
   initCalls.clear();
