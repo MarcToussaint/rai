@@ -1651,7 +1651,7 @@ void lapack_mldivide(arr& X, const arr& A, const arr& b) { NICO; }
 // RowShifted
 //
 
-RowShifted::RowShifted(arr& X):Z(X), real_d1(0), symmetric(false), nextInSum(NULL) {
+RowShifted::RowShifted(arr& X):Z(X), real_d1(0), symmetric(false) {
   type = SpecialArray::RowShiftedST;
   Z.special = this;
 }
@@ -1662,8 +1662,7 @@ RowShifted::RowShifted(arr& X, RowShifted &aux):
   rowShift(aux.rowShift),
   rowLen(aux.rowLen),
   colPatches(aux.colPatches),
-  symmetric(aux.symmetric),
-  nextInSum(NULL)
+  symmetric(aux.symmetric)
 {
   type = SpecialArray::RowShiftedST;
   Z.special=this;
@@ -1688,7 +1687,6 @@ RowShifted *makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1) {
 }
 
 RowShifted::~RowShifted() {
-  if(nextInSum){ delete nextInSum; nextInSum=NULL; }
   Z.special = NULL;
 }
 
@@ -1782,9 +1780,6 @@ arr unpackRowShifted(const arr& Y) {
       if(Yaux->symmetric) X(j+rs,i) = Y(i,j);
     }
   }
-  if(Yaux->nextInSum){
-    X += unpackRowShifted(*Yaux->nextInSum);
-  }
   return X;
 }
 
@@ -1837,14 +1832,6 @@ arr RowShifted::At_A() {
       }
     }
   }
-  if(nextInSum){
-    arr R2 = comp_At_A(*nextInSum);
-    CHECK(isRowShifted(R2), "");
-    CHECK(R2.d1<=R.d1,"NIY"); //swap...
-    for(uint i=0;i<R2.d0;i++) for(uint j=0;j<R2.d1;j++){
-      R(i,j) += R2(i,j);
-    }
-  }
   return R;
 }
 
@@ -1882,7 +1869,6 @@ arr RowShifted::A_At() {
       for(uint k=a;k<b;k++) *Rij += Zi[k-rs_i]*Zj[k-rs_j];
     }
   }
-  if(nextInSum) NIY;
   return R;
 }
 
@@ -1905,7 +1891,6 @@ arr RowShifted::At_x(const arr& x) {
     for(;yp!=ypstop;){ *yp += xi * *Zp;  Zp++;  yp++; }
 #endif
   }
-  if(nextInSum) y += comp_At_x(*nextInSum, x);
   return y;
 }
 
@@ -1927,7 +1912,6 @@ arr RowShifted::A_x(const arr& x) {
     }
     y(i) = sum;
   }
-  if(nextInSum) NIY;
   return y;
 }
 

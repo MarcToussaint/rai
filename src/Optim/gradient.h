@@ -56,6 +56,7 @@ inline int optGrad(arr& x, const ScalarFunction& f, OptOptions opt=NOOPT){
 struct Rprop {
   struct sRprop *s;
   Rprop();
+  ~Rprop();
   void init(double initialStepSize=1., double minStepSize=1e-6, double maxStepSize=50.);
   bool step(arr& x, const ScalarFunction& f);
   uint loop(arr& x, const ScalarFunction& f, double *fmin_return=NULL, double stoppingTolerance=1e-2, double initialStepSize=1., uint maxIterations=1000, uint verbose=0);

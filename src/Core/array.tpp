@@ -107,6 +107,7 @@ template<class T> mlr::Array<T>::Array(mlr::FileToken& f):Array() {
 }
 
 template<class T> mlr::Array<T>::~Array() {
+  if(special){ delete special; special=NULL; }
   freeMEM();
 }
 
@@ -1177,7 +1178,7 @@ template<class T> mlr::Array<T>& mlr::Array<T>::operator=(const mlr::Array<T>& a
   uint i;
   if(memMove) memmove(p, a.p, sizeT*N);
   else for(i=0; i<N; i++) p[i]=a.p[i];
-  if(special) special=NULL; //TODO: you lost it!!
+  if(special){ delete special; special=NULL; }
   if(isRowShifted(a)){
     CHECK(typeid(T)==typeid(double),"");
     special = new RowShifted(*((arr*)this),*((RowShifted*)a.special));

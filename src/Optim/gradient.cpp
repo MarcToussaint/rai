@@ -117,7 +117,7 @@ OptGrad::StopCriterion OptGrad::run(uint maxIt){
     if(stopCriterion==stopCritLineSteps){ reinit();   continue; }
     if(stopCriterion>=stopCrit1) break;
   }
-  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", NULL, false);
+//  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", NULL, false);
   if(o.fmin_return) *o.fmin_return= fx;
   return stopCriterion;
 }
@@ -152,6 +152,10 @@ Rprop::Rprop() {
   s->dMin = 1e-6;
   s->rMax = 0.;
   s->delta0 = 1.;
+}
+
+Rprop::~Rprop() {
+  delete s;
 }
 
 void Rprop::init(double initialStepSize, double minStepSize, double maxStepSize) {
@@ -269,7 +273,7 @@ uint Rprop::loop(arr& _x,
     if(evals>maxEvals) break;
   }
   if(verbose>0) fil.close();
-  if(verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", NULL, true);
+//  if(verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", NULL, true);
   if(fmin_return) *fmin_return= fx_min;
   _x=x_min;
   return evals;

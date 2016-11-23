@@ -46,6 +46,7 @@ extern TermTypeA& NoTermTypeA;
  */
 struct ConstrainedProblem{
   //TODO: add getStructure -> dim_x, tt
+  virtual ~ConstrainedProblem() = default;
   virtual void phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) = 0;
 };
 
@@ -114,10 +115,10 @@ extern Singleton<OptOptions> globalOptOptions;
 #define NOOPT (globalOptOptions())
 
 // optimization algorithms declared separately:
-//#include "convert.h"
-//#include "newton.h"
-//#include "gradient.h"
+#include "newton.h"
+#include "gradient.h"
 //#include "lagrangian.h"
+#include "convert.h"
 //uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions opt);
 
 
