@@ -381,8 +381,8 @@ extern String errString;
 #  include <gtest/gtest.h>
 #  define TEST(name) test##name(){} GTEST_TEST(examples, name)
 #  define MAIN \
-     main(int argc, char** argv){ \
-       mlr::initCmdLine(argc,argv);              \
+     main(int argc, char** argv){               \
+       mlr::initCmdLine(argc,argv);             \
        testing::InitGoogleTest(&argc, argv);	\
        return RUN_ALL_TESTS();			\
      }                                          \

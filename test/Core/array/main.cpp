@@ -288,7 +288,7 @@ void TEST(MemoryBound){
 
 void TEST(BinaryIO){
   cout <<"\n*** acsii and binary IO\n";
-  arr a,b; a.resize(10000,100); rndUniform(a,0.,1.,false);
+  arr a,b; a.resize(1000,100); rndUniform(a,0.,1.,false);
 
   ofstream fout("z.ascii"),bout("z.bin",ios::binary);
   ifstream fin("z.ascii") ,bin("z.bin",ios::binary);
@@ -416,7 +416,7 @@ void TEST(Determinant){
 
 void TEST(MM){
   cout <<"\n*** matrix multiplication speeds\n";
-  uint M=10000,N=100,O=100;
+  uint M=3000,N=100,O=100;
   arr A(M,N),B(N,O),C,D;
   rndUniform(A,-1,1,false);
   rndUniform(B,-1,1,false);
@@ -448,7 +448,7 @@ void TEST(MM){
 
 void TEST(SVD){
   cout <<"\n*** singular value decomposition\n";
-  uint m=1000,n=500,r=2,svdr;
+  uint m=300,n=100,r=2,svdr;
   arr L(m,r),R(r,n),A,U,d,V,D;
   rndUniform(L,-1,1,false);
   rndUniform(R,-1,1,false);
@@ -510,7 +510,7 @@ void TEST(PCA) {
 
 void TEST(Inverse){
   cout <<"\n*** matrix inverse\n";
-  uint m=500,n=500,svdr;
+  uint m=200,n=200,svdr;
   arr A(m,n),invA,I;
   rndUniform(A,-1,1,false);
   I.setId(m);
@@ -807,8 +807,7 @@ void TEST(EigenValues){
 
 //===========================================================================
 
-int MAIN(int argc, char *argv[]){
-
+int MAIN(int argc, char **argv){
 
   testBasics();
   testCheatSheet();
@@ -819,7 +818,7 @@ int MAIN(int argc, char *argv[]){
   testStdVectorCompat();
   testMatlab();
   testException();
-  testMemoryBound();
+//  testMemoryBound();
   testBinaryIO();
   testExpression();
   testPermutation();

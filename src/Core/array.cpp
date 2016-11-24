@@ -1704,8 +1704,8 @@ void RowShifted::reshift(){
     double *Zp = Z.p + i*Z.d1;
     double *Zlead = Zp;
     double *Ztrail = Zp + Z.d1-1;
-    while(*Ztrail==0. && Ztrail>=Zlead) Ztrail--;
-    while(*Zlead==0. && Zlead<=Ztrail) Zlead++;
+    while(Ztrail>=Zlead && *Ztrail==0.) Ztrail--;
+    while(Zlead<=Ztrail && *Zlead==0. ) Zlead++;
     if(Ztrail<Zlead){ //all zeros
       rowLen.p[i]=0.;
     }else{
