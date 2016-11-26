@@ -598,7 +598,7 @@ template<class T> T *Singleton<T>::singleton=NULL;
 // just a hook to make things gl drawable
 //
 
-struct GLDrawer    { virtual void glDraw(struct OpenGL&) = 0; ~GLDrawer(){} };
+struct GLDrawer    { virtual void glDraw(struct OpenGL&) = 0; virtual ~GLDrawer(){} };
 
 //===========================================================================
 //

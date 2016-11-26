@@ -161,6 +161,7 @@ void TEST(Manual){
 //===========================================================================
 
 int MAIN(int argc, char** argv){
+  mlr::initCmdLine(argc, argv);
 
   cout <<"GLOBAL LATENT REGISTRY:\n" <<registry() <<endl;
 
