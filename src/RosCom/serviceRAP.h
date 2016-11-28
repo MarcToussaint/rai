@@ -1,4 +1,4 @@
-#include <FOL/relationalMachine.h>
+#include <Logic/relationalMachine.h>
 #include <Core/thread.h>
 
 struct ServiceRAP{

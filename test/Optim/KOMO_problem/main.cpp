@@ -100,8 +100,7 @@ void TEST(KOrderMarkov2) {
 int MAIN(int argc,char** argv){
   mlr::initCmdLine(argc,argv);
 
-
-//  testKOrderMarkov();
+  //  testKOrderMarkov();
   testKOrderMarkov2();
 
   return 0;

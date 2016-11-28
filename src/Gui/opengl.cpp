@@ -1318,6 +1318,8 @@ int OpenGL::watch(const char *txt) {
       processEvents();
       sleepForEvents();
     }
+  }else{
+    mlr::wait(.5);
   }
   return pressedkey;
 }

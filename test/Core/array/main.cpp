@@ -383,15 +383,17 @@ void TEST(Gnuplot){
   arr X(30,30);
   for(i=0;i<X.d0;i++) for(j=0;j<X.d1;j++) X(i,j)=sin(.2*i)*sin(.1*j);
   gnuplot(X);
+  mlr::wait(.5);
 
   X.resize(100);
   for(i=0;i<X.d0;i++) X(i)=sin(.3*i);
   gnuplot(X);
+  mlr::wait(.5);
 
   X.resize(100,2);
   for(i=0;i<X.d0;i++){ X(i,0)=MLR_PI*(2./(X.d0-1)*i-1.); X(i,1)=sin(X(i,0)); }
   gnuplot(X);
-  mlr::wait(1.);
+  mlr::wait(.5);
 }
 
 //===========================================================================

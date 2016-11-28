@@ -16,9 +16,9 @@
 #pragma once
 
 #include <Ors/ors.h>
-#include <FOL/fol_mcts_world.h>
+#include <Logic/fol_mcts_world.h>
 #include "LGP.h"
-#include <FOL/fol.h>
+#include <Logic/fol.h>
 #include <Motion/komo.h>
 
 struct ManipulationTree_Node;
