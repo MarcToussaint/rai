@@ -446,6 +446,42 @@ inline bool operator==(const mlr::FileToken&, const mlr::FileToken&){ return fal
 
 //===========================================================================
 //
+// give names to Enum (for pipe << >> )
+//
+
+namespace mlr {
+  template<class enum_T>
+  struct Enum{
+    enum_T x;
+    static const char* names [];
+    Enum():x((enum_T)-1){}
+    explicit Enum(const enum_T& y):x(y){}
+    const enum_T& operator=(const enum_T& y){ x=y; return x; }
+    bool operator==(const enum_T& y) const{ return x==y; }
+    bool operator!=(const enum_T& y) const{ return x!=y; }
+    operator enum_T() const{ return x; }
+    void read(std::istream& is){
+      mlr::String str(is);
+      int i=0;
+      for(const char* n:names){
+        if(!n) LOG(-2) <<"enum_T " <<typeid(enum_T).name() <<' ' <<str <<" out of range";
+        if(str==n){ x=(enum_T)(i); break; }
+        i++;
+      }
+      CHECK(!strcmp(names[x], str.p), "");
+    }
+    void write(std::ostream& os) const{
+      if(x<0) os <<"none";
+      os <<names[x];
+    }
+  };
+  template<class T> std::istream& operator>>(std::istream& is, Enum<T>& x){ x.read(is); return is; }
+  template<class T> std::ostream& operator<<(std::ostream& os, const Enum<T>& x){ x.write(os); return os; }
+}
+
+
+//===========================================================================
+//
 // random number generator
 //
 

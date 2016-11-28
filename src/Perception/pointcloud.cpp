@@ -427,7 +427,7 @@ void ObjectFilter::step() {
     cyl->rotation.setDiff(ARR(0,0,1), ARR(cyl_pos(i,3), cyl_pos(i,4), cyl_pos(i,5)));
     cyl->shapeParams(RADIUS) = cyl_pos(i,6);//.025;
     cyl->shapeParams(HEIGHT) = length(ARR(cyl_pos(i,3), cyl_pos(i,4), cyl_pos(i,5)));
-    cyl->shapeType = mlr::cylinderST;
+    cyl->shapeType = mlr::ST_cylinder;
     //cyl->pcl_object = pcl_cyls(i);
     out_objects->append(cyl);
   }
@@ -435,7 +435,7 @@ void ObjectFilter::step() {
     ObjectBelief *sph = new ObjectBelief;
     sph->position = ARR(sph_pos(i,0), sph_pos(i,1), sph_pos(i,2));
     sph->shapeParams(RADIUS) = sph_pos(i,3);
-    sph->shapeType = mlr::sphereST;
+    sph->shapeType = mlr::ST_sphere;
     //sph->pcl_object = pcl_sph(i);
     out_objects->append(sph);
   }
@@ -498,11 +498,11 @@ void ObjectTransformator::step() {
   ShapeL cylinders;
   ShapeL spheres;
   for (int i=geo.shapes.N-1;i>=0;i--) {
-    if (strncmp(geo.shapes(i)->name, "thing", 5) == 0 && geo.shapes(i)->type == mlr::cylinderST) {
+    if (strncmp(geo.shapes(i)->name, "thing", 5) == 0 && geo.shapes(i)->type == mlr::ST_cylinder) {
       mlr::Shape *s = geo.shapes(i);
       cylinders.append(s);
     }
-    else if (strncmp(geo.shapes(i)->name, "thing", 5) == 0 && geo.shapes(i)->type == mlr::sphereST) {
+    else if (strncmp(geo.shapes(i)->name, "thing", 5) == 0 && geo.shapes(i)->type == mlr::ST_sphere) {
       mlr::Shape *s = geo.shapes(i);
       spheres.append(s);
     }
@@ -514,11 +514,11 @@ void ObjectTransformator::step() {
   intA used;
   used.clear();
   for(uint i=0;i<kinect_objects->N && i<spheres.N + cylinders.N;i++){
-    if (kinect_objects->elem(i)->shapeType == mlr::cylinderST && c < cylinders.N) {
+    if (kinect_objects->elem(i)->shapeType == mlr::ST_cylinder && c < cylinders.N) {
       moveObject(used, cylinders, kinect_objects->elem(i)->position, kinect_objects->elem(i)->rotation);
       ++c;
     }
-    else if (kinect_objects->elem(i)->shapeType == mlr::sphereST && s < spheres.N) {
+    else if (kinect_objects->elem(i)->shapeType == mlr::ST_sphere && s < spheres.N) {
       spheres(s)->X.pos = kinect_objects->elem(i)->position;
       spheres(s)->X.rot = kinect_objects->elem(i)->rotation;
       spheres(s)->rel.setDifference(spheres(s)->body->X, spheres(s)->X);

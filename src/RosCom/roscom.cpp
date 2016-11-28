@@ -272,9 +272,9 @@ mlr::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::Ma
       s = new mlr::Shape(world, NoBody);
       s->name=name;
       if(marker.type==marker.CYLINDER){
-        s->type = mlr::cylinderST;
+        s->type = mlr::ST_cylinder;
       }else if(marker.type==marker.POINTS){
-        s->type = mlr::meshST;
+        s->type = mlr::ST_mesh;
         s->mesh.V = conv_points2arr(marker.points);
         s->mesh.C = conv_colors2arr(marker.colors);
       }else NIY;
@@ -319,11 +319,11 @@ void PerceptionObjects2Ors::step(){
     if(!s){
       s = new mlr::Shape(modelWorld(), NoBody);
       if(marker.type==marker.CYLINDER){
-        s->type = mlr::cylinderST;
+        s->type = mlr::ST_cylinder;
         s->size[3] = .5*(marker.scale.x+marker.scale.y);
         s->size[2] = marker.scale.z;
       }else if(marker.type==marker.POINTS){
-        s->type = mlr::meshST;
+        s->type = mlr::ST_mesh;
         s->mesh.V = conv_points2arr(marker.points);
         s->mesh.C = conv_colors2arr(marker.colors);
       }else NIY;

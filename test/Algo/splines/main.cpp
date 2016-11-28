@@ -67,7 +67,7 @@ void TEST(BSpline){
   plotFunction(path);
   plotFunction(S.points);
   plotPoints(S.points);
-  plot();
+  plot(false);
 
   for(double lambda = 0.; lambda < .1; lambda += .001) {
     path = S.smooth(lambda);
@@ -75,7 +75,7 @@ void TEST(BSpline){
     plotFunction(path);
     plotFunction(S.points);
     plotPoints(S.points);
-    plot();
+    plot(false);
   }
 
   ofstream fil("z.test");
@@ -121,6 +121,8 @@ void TEST(BSpline){
   }
 
   plot(true);
+
+  plotClose();
 }
 
 

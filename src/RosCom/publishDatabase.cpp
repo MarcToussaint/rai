@@ -147,10 +147,10 @@ void PublishDatabase::syncCluster(const Cluster* cluster)
     body->name = cluster_name;
     mlr::Shape *shape = new mlr::Shape(modelWorld(), *body);
     shape->name = cluster_name;
-    shape->type = mlr::pointCloudST;
+    shape->type = mlr::ST_pointCloud;
     shape = new mlr::Shape(modelWorld(), *body);
     shape->name = cluster_name;
-    shape->type = mlr::markerST;
+    shape->type = mlr::ST_marker;
     shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
     stored_clusters.append(cluster->id);
   }
@@ -181,7 +181,7 @@ void PublishDatabase::syncAlvar(const Alvar* alvar)
     body->name = alvar_name;
     mlr::Shape *shape = new mlr::Shape(modelWorld(), *body);
     shape->name = alvar_name;
-    shape->type = mlr::markerST;
+    shape->type = mlr::ST_marker;
     shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
     stored_alvars.append(alvar->id);
   }
@@ -204,7 +204,7 @@ void PublishDatabase::syncOptitrackBody(const OptitrackBody* optitrackbody)
     body->name = optitrackbody_name;
     mlr::Shape *shape = new mlr::Shape(modelWorld(), *body);
     shape->name = optitrackbody_name;
-    shape->type = mlr::markerST;
+    shape->type = mlr::ST_marker;
     shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .1;
     stored_optitrackbodies.append(optitrackbody->id);
   }
@@ -227,7 +227,7 @@ void PublishDatabase::syncOptitrackMarker(const OptitrackMarker* optitrackmarker
     body->name = optitrackmarker_name;
     mlr::Shape *shape = new mlr::Shape(modelWorld(), *body);
     shape->name = optitrackmarker_name;
-    shape->type = mlr::sphereST;
+    shape->type = mlr::ST_sphere;
     shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .03;
     stored_optitrackmarkers.append(optitrackmarker->id);
   }
@@ -250,10 +250,10 @@ void PublishDatabase::syncPlane(const Plane* plane)
     body->name = plane_name;
     mlr::Shape *shape = new mlr::Shape(modelWorld(), *body);
     shape->name = plane_name;
-    shape->type = mlr::pointCloudST;
+    shape->type = mlr::ST_pointCloud;
     shape = new mlr::Shape(modelWorld(), *body);
     shape->name = plane_name;
-    shape->type = mlr::markerST;
+    shape->type = mlr::ST_marker;
     shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
     stored_planes.append(plane->id);
   }

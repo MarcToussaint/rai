@@ -44,7 +44,7 @@ void syncMarkers(mlr::KinematicWorld& world, const ar::AlvarMarkers& markers) {
       body->name = marker_name;
       mlr::Shape *shape = new mlr::Shape(world, *body);
       shape->name = marker_name;
-      shape->type = mlr::markerST;
+      shape->type = mlr::ST_marker;
       shape->size[0] = .3; shape->size[1] = .0; shape->size[2] = .0; shape->size[3] = .0;
     }
     mlr::Vector Y_old;

@@ -824,12 +824,12 @@ arr comp_At(arr& A);
 arr comp_A_x(arr& A, const arr& x);
 
 struct SpecialArray{
-  enum Type { noneST, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };
+  enum Type { ST_none, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };
   Type type;
   virtual ~SpecialArray(){}
 };
 
-template<class T> bool isNotSpecial(const mlr::Array<T>& X){ return !X.special || X.special->type==SpecialArray::noneST; }
+template<class T> bool isNotSpecial(const mlr::Array<T>& X){ return !X.special || X.special->type==SpecialArray::ST_none; }
 template<class T> bool isRowShifted(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::RowShiftedST; }
 template<class T> bool isSparseMatrix(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseMatrixST; }
 template<class T> bool isSparseVector(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseVectorST; }

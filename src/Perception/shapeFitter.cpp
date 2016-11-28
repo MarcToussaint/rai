@@ -700,11 +700,11 @@ void realizeObjectsInOrs(mlr::KinematicWorld& ors, const mlr::Array<RigidObjectR
     if(!obj->found) continue;
     mlr::Body *o = ors.bodies(i+indFirst);
     mlr::Shape *s = o->shapes(0);
-    mlr::ShapeType type=mlr::noneST;//SSD: getting rid of a warning. ok?
-    if(obj->shapeType == 0) type=mlr::sphereST;
-    if(obj->shapeType == 1) type=mlr::cylinderST;
+    mlr::ShapeType type=mlr::ST_none;//SSD: getting rid of a warning. ok?
+    if(obj->shapeType == 0) type=mlr::ST_sphere;
+    if(obj->shapeType == 1) type=mlr::ST_cylinder;
     if(obj->shapeType == 2){//box
-      type = mlr::boxST;
+      type = mlr::ST_box;
       //  mlr::Vector diag(obj->diagDiff(0), obj->diagDiff(1), obj->diagDiff(2)*0);//z is the smallest entry, but still not 0
       //double phi=acos(diag(0)/diag.length());//arccos btw 100 and diag
       // mlr::Quaternion q;
