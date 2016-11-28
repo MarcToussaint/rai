@@ -19,22 +19,22 @@
 
 #ifndef MLR_NO_REGISTRY
 #include <Core/graph.h>
-REGISTER_TYPE(T, ors::Transformation);
+REGISTER_TYPE(T, mlr::Transformation);
 #endif
 
 
 #include <GL/glu.h>
 
-const ors::Vector Vector_x(1, 0, 0);
-const ors::Vector Vector_y(0, 1, 0);
-const ors::Vector Vector_z(0, 0, 1);
-const ors::Transformation Transformation_Id(ors::Transformation().setZero());
-const ors::Quaternion Quaternion_Id(1, 0, 0, 0);
-ors::Vector& NoVector = *((ors::Vector*)NULL);
-ors::Transformation& NoTransformation = *((ors::Transformation*)NULL);
+const mlr::Vector Vector_x(1, 0, 0);
+const mlr::Vector Vector_y(0, 1, 0);
+const mlr::Vector Vector_z(0, 0, 1);
+const mlr::Transformation Transformation_Id(mlr::Transformation().setZero());
+const mlr::Quaternion Quaternion_Id(1, 0, 0, 0);
+mlr::Vector& NoVector = *((mlr::Vector*)NULL);
+mlr::Transformation& NoTransformation = *((mlr::Transformation*)NULL);
 
-namespace ors {
-  double scalarProduct(const ors::Quaternion& a, const ors::Quaternion& b);
+namespace mlr {
+  double scalarProduct(const mlr::Quaternion& a, const mlr::Quaternion& b);
 }
 
 //===========================================================================
@@ -44,7 +44,7 @@ namespace ors {
  * simulation and linking to external simulation engines. In
  * particular, using ors we can implement a soc::SocSystemAbstraction.
  */
-namespace ors {
+namespace mlr {
 
 double& Vector::operator()(uint i) {
   CHECK(i<3,"out of range");
@@ -826,7 +826,7 @@ double* Quaternion::getMatrixGL(double* m) const {
 /// this is a 3-by-4 matrix $J$, giving the angular velocity vector $w = J \dot q$  induced by a $\dot q$
 arr Quaternion::getJacobian() const{
   arr J(3,4);
-  ors::Quaternion e;
+  mlr::Quaternion e;
   for(uint i=0;i<4;i++){
     if(i==0) e.set(1.,0.,0.,0.);
     if(i==1) e.set(0.,1.,0.,0.);
@@ -1571,7 +1571,7 @@ std::ostream& operator<<(std::ostream& os, const Matrix& x)    { x.write(os); re
 std::ostream& operator<<(std::ostream& os, const Quaternion& x) { x.write(os); return os; }
 std::ostream& operator<<(std::ostream& os, const Transformation& x)     { x.write(os); return os; }
 
-} //namespace ors
+} //namespace mlr
 
 
 //===========================================================================
@@ -1592,8 +1592,8 @@ std::ostream& operator<<(std::ostream& os, const Transformation& x)     { x.writ
 // explicit instantiations
 //
 
-template mlr::Array<ors::Vector>::Array();
-template mlr::Array<ors::Vector>::~Array();
+template mlr::Array<mlr::Vector>::Array();
+template mlr::Array<mlr::Vector>::~Array();
 
-template mlr::Array<ors::Transformation*>::Array();
-template mlr::Array<ors::Transformation*>::~Array();
+template mlr::Array<mlr::Transformation*>::Array();
+template mlr::Array<mlr::Transformation*>::~Array();

@@ -86,7 +86,7 @@ void RosCom_ControllerSync::close(){
 
 //===========================================================================
 // Helper function so sync ors with the real PR2
-void initialSyncJointStateWithROS(ors::KinematicWorld& world,
+void initialSyncJointStateWithROS(mlr::KinematicWorld& world,
     Access_typed<CtrlMsg>& ctrl_obs, bool useRos) {
 
   if (not useRos) { return; }
@@ -111,7 +111,7 @@ void initialSyncJointStateWithROS(ors::KinematicWorld& world,
   HALT("sync'ing real PR2 with simulated failed");
 }
 
-void syncJointStateWitROS(ors::KinematicWorld& world,
+void syncJointStateWitROS(mlr::KinematicWorld& world,
     Access_typed<CtrlMsg>& ctrl_obs, bool useRos) {
 
   if (not useRos) { return; }

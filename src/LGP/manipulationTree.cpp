@@ -25,7 +25,7 @@ uint COUNT_poseOpt=0;
 uint COUNT_seqOpt=0;
 uint COUNT_pathOpt=0;
 
-ManipulationTree_Node::ManipulationTree_Node(ors::KinematicWorld& kin, FOL_World& _fol)
+ManipulationTree_Node::ManipulationTree_Node(mlr::KinematicWorld& kin, FOL_World& _fol)
   : parent(NULL), s(0),
     fol(_fol), folState(NULL), folDecision(NULL), folReward(0.), folAddToState(NULL),
     startKinematics(kin), effKinematics(),
@@ -162,7 +162,7 @@ void ManipulationTree_Node::solvePoseProblem(){
   komo.setSquaredFixSwitchVelocities(-1., -1., 1e3);
 
   komo.setAbstractTask(0., *folState, true);
-//  for(ors::KinematicSwitch *sw: poseProblem->MP->switches){
+//  for(mlr::KinematicSwitch *sw: poseProblem->MP->switches){
 //    sw->timeOfApplication=2;
 //  }
 
@@ -175,7 +175,7 @@ void ManipulationTree_Node::solvePoseProblem(){
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   COUNT_evals += komo.opt->newton.evals;
-  COUNT_kin += ors::KinematicWorld::setJointStateCount;
+  COUNT_kin += mlr::KinematicWorld::setJointStateCount;
   COUNT_poseOpt++;
   poseCount++;
 
@@ -200,7 +200,7 @@ void ManipulationTree_Node::solvePoseProblem(){
 
   effKinematics = *poseProblem->MP->configurations.last();
 
-  for(ors::KinematicSwitch *sw: poseProblem->MP->switches){
+  for(mlr::KinematicSwitch *sw: poseProblem->MP->switches){
 //    CHECK_EQ(sw->timeOfApplication, 1, "need to do this before the optimization..");
     if(sw->timeOfApplication>=2) sw->apply(effKinematics);
   }
@@ -239,7 +239,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   COUNT_evals += komo.opt->newton.evals;
-  COUNT_kin += ors::KinematicWorld::setJointStateCount;
+  COUNT_kin += mlr::KinematicWorld::setJointStateCount;
   COUNT_seqOpt++;
   seqCount++;
 
@@ -292,7 +292,7 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   COUNT_evals += komo.opt->newton.evals;
-  COUNT_kin += ors::KinematicWorld::setJointStateCount;
+  COUNT_kin += mlr::KinematicWorld::setJointStateCount;
   COUNT_pathOpt++;
   pathCount++;
 

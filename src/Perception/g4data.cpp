@@ -281,9 +281,9 @@ void G4Rec::load(const char *recdir, bool interpolate) {
         else if(t+no < nframes) { // interpolate between t-1 and t+missingno(i)
           arr s0 = data[t-1][i];
           arr sF = data[t+no][i];
-          ors::Quaternion q0(s0(3), s0(4), s0(5), s0(6));
-          ors::Quaternion qF(sF(3), sF(4), sF(5), sF(6));
-          ors::Quaternion qt;
+          mlr::Quaternion q0(s0(3), s0(4), s0(5), s0(6));
+          mlr::Quaternion qF(sF(3), sF(4), sF(5), sF(6));
+          mlr::Quaternion qt;
 
           arr diff = sF - s0;
           for(uint tt = 0; tt < no; tt++) {
@@ -487,8 +487,8 @@ void G4Rec::computeDPos(const char *sensor) {
   posX = query("pos", sensor);
   posY = query("pos");
   quatX = query("quat", sensor);
-  ors::Vector pX, pY, p, A;
-  ors::Quaternion qX;
+  mlr::Vector pX, pY, p, A;
+  mlr::Quaternion qX;
   for(uint is = 0; is < nsensors; is++) {
     for(uint f = 0; f < nframes; f++) {
       pX.set(posX[f].p);
@@ -514,7 +514,7 @@ void G4Rec::computeDQuat(const char *sensor) {
   arr quatX, quatY;
   quatX = query("quat", sensor);
   quatY = query("quat");
-  ors::Quaternion qX, qY, quat, A;
+  mlr::Quaternion qX, qY, quat, A;
   for(uint j = 0; j < nsensors; j++) {
     for(uint f = 0; f < nframes; f++) {
       qX.set(quatX[f].p);

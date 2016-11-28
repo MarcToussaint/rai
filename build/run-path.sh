@@ -5,7 +5,7 @@ DATE=`/bin/date +"%y-%b-%d %H:%M:%S"`
 cd $1
 echo "         * Running " $1
 echo "****" $1 $DATE >> $THISPATH/z.test-report
-/usr/bin/timeout 20s ./x.exe -noInteractivity >> $THISPATH/z.test-report 2>&1
+/usr/bin/timeout 60s ./x.exe -noInteractivity >> $THISPATH/z.test-report 2>&1
 RETVAL=$?
 if [ $RETVAL -eq 124 ]; then
     echo "     ***** TIMEOUT " $1

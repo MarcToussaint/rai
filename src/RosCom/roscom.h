@@ -40,11 +40,11 @@ struct RosInit{ RosInit(const char* node_name="mlr_module"); };
 std_msgs::String    conv_string2string(const mlr::String&);
 mlr::String         conv_string2string(const std_msgs::String&);
 std_msgs::String    conv_stringA2string(const StringA& strs);
-ors::Transformation conv_transform2transformation(const tf::Transform&);
-ors::Transformation conv_transform2transformation(const geometry_msgs::Transform&);
-ors::Transformation conv_pose2transformation(const geometry_msgs::Pose&);
-ors::Vector         conv_point2vector(const geometry_msgs::Point& p);
-ors::Quaternion     conv_quaternion2quaternion(const geometry_msgs::Quaternion& q);
+mlr::Transformation conv_transform2transformation(const tf::Transform&);
+mlr::Transformation conv_transform2transformation(const geometry_msgs::Transform&);
+mlr::Transformation conv_pose2transformation(const geometry_msgs::Pose&);
+mlr::Vector         conv_point2vector(const geometry_msgs::Point& p);
+mlr::Quaternion     conv_quaternion2quaternion(const geometry_msgs::Quaternion& q);
 void                conv_pose2transXYPhi(arr& q, uint qIndex, const geometry_msgs::PoseWithCovarianceStamped &pose);
 arr                 conv_pose2transXYPhi(const geometry_msgs::PoseWithCovarianceStamped &pose);
 double              conv_time2double(const ros::Time& time);
@@ -56,20 +56,20 @@ arr                 conv_points2arr(const std::vector<geometry_msgs::Point>& pts
 arr                 conv_colors2arr(const std::vector<std_msgs::ColorRGBA>& pts);
 CtrlMsg             conv_JointState2CtrlMsg(const marc_controller_pkg::JointState& msg);
 arr                 conv_JointState2arr(const sensor_msgs::JointState& msg);
-ors::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::MarkerArray& markers);
+mlr::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::MarkerArray& markers);
 std_msgs::Float32MultiArray conv_floatA2Float32Array(const floatA&);
 
 //-- MLR -> ROS
-geometry_msgs::Pose conv_transformation2pose(const ors::Transformation&);
-geometry_msgs::Transform conv_transformation2transform(const ors::Transformation&);
+geometry_msgs::Pose conv_transformation2pose(const mlr::Transformation&);
+geometry_msgs::Transform conv_transformation2transform(const mlr::Transformation&);
 std::vector<geometry_msgs::Point> conv_arr2points(const arr& pts);
 marc_controller_pkg::JointState   conv_CtrlMsg2JointState(const CtrlMsg& ctrl);
 floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray&);
 
 //-- get transformations
-ors::Transformation ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener);
-ors::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener);
-bool ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener, ors::Transformation& result);
+mlr::Transformation ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener);
+mlr::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener);
+bool ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener, mlr::Transformation& result);
 
 
 struct SubscriberType { virtual ~SubscriberType() {} }; ///< if types derive from RootType, more tricks are possible
@@ -109,11 +109,11 @@ struct Subscriber : SubscriberType {
 template<class msg_type, class var_type, var_type conv(const msg_type&)>
 struct SubscriberConv : SubscriberType {
   Access_typed<var_type> access;
-  Access_typed<ors::Transformation> *frame;
+  Access_typed<mlr::Transformation> *frame;
   ros::NodeHandle *nh;
   ros::Subscriber sub;
   tf::TransformListener *listener;
-  SubscriberConv(const char* topic_name, Access_typed<var_type>& _access, Access_typed<ors::Transformation> *_frame=NULL)
+  SubscriberConv(const char* topic_name, Access_typed<var_type>& _access, Access_typed<mlr::Transformation> *_frame=NULL)
     : access(NULL, _access), frame(_frame) {
     if(mlr::getParameter<bool>("useRos")){
       nh = new ros::NodeHandle;
@@ -124,7 +124,7 @@ struct SubscriberConv : SubscriberType {
       cout <<"done" <<endl;
     }
   }
-  SubscriberConv(const char* topic_name, const char* var_name, Access_typed<ors::Transformation> *_frame=NULL)
+  SubscriberConv(const char* topic_name, const char* var_name, Access_typed<mlr::Transformation> *_frame=NULL)
     : access(NULL, var_name), frame(_frame) {
     if(mlr::getParameter<bool>("useRos")){
       nh = new ros::NodeHandle;
@@ -264,20 +264,20 @@ struct SoftHandMsg{
  *
  * If useRos==false then nothing happens.
  */
-void initialSyncJointStateWithROS(ors::KinematicWorld& world, Access_typed<CtrlMsg>& ctrl_obs, bool useRos);
+void initialSyncJointStateWithROS(mlr::KinematicWorld& world, Access_typed<CtrlMsg>& ctrl_obs, bool useRos);
 
 /**
  * Sync the world with ctrl_obs from the robot.
  *
  * If useRos==false then nothing happens.
  */
-void syncJointStateWitROS(ors::KinematicWorld& world, Access_typed<CtrlMsg>& ctrl_obs, bool useRos);
+void syncJointStateWitROS(mlr::KinematicWorld& world, Access_typed<CtrlMsg>& ctrl_obs, bool useRos);
 
 //===========================================================================
 
 struct PerceptionObjects2Ors : Thread {
   Access_typed<visualization_msgs::MarkerArray> perceptionObjects;
-  Access_typed<ors::KinematicWorld> modelWorld;
+  Access_typed<mlr::KinematicWorld> modelWorld;
   PerceptionObjects2Ors()
     : Thread("PerceptionObjects2Ors"),
     perceptionObjects(this, "perceptionObjects", true),

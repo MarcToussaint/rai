@@ -185,13 +185,13 @@ void glShadowTransform()
 }
 */
 
-void glTransform(const ors::Transformation& t){
+void glTransform(const mlr::Transformation& t){
   double GLmatrix[16];
   t.getAffineMatrixGL(GLmatrix);
   glLoadMatrixd(GLmatrix);
 }
 
-void glRotate(const ors::Quaternion& rot){
+void glRotate(const mlr::Quaternion& rot){
   double GLmatrix[16];
   rot.getMatrixGL(GLmatrix);
   glMultMatrixd(GLmatrix);
@@ -1042,7 +1042,7 @@ void OpenGL::clear() {
   keyCalls.clear();
 }
 
-void OpenGL::Draw(int w, int h, ors::Camera *cam, bool ignoreLock) {
+void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool ignoreLock) {
 #ifdef MLR_GL
 
   if(!ignoreLock){
@@ -1444,7 +1444,7 @@ void OpenGL::about(std::ostream& os) { MLR_MSG("NICO"); }
 #  define CALLBACK_DEBUG(x)
 #endif
 
-void getSphereVector(ors::Vector& vec, int _x, int _y, int le, int ri, int bo, int to) {
+void getSphereVector(mlr::Vector& vec, int _x, int _y, int le, int ri, int bo, int to) {
   int w=ri-le, h=to-bo;
   int minwh = w<h?w:h;
   double x, y;
@@ -1493,8 +1493,8 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   lastEvent.set(mouse_button, -1, _x, _y, 0., 0.);
   
   GLView *v;
-  ors::Camera *cam=&camera;
-  ors::Vector vec;
+  mlr::Camera *cam=&camera;
+  mlr::Vector vec;
   for(mouseView=views.N; mouseView--;) {
     v=&views(mouseView);
     if(_x<v->ri*w && _x>v->le*w && _y<v->to*h && _y>v->bo*h) {
@@ -1569,8 +1569,8 @@ void OpenGL::Motion(int _x, int _y) {
   _y = h-_y;
   CALLBACK_DEBUG(printf("Window %d Mouse Motion Callback:  %d %d\n", 0, _x, _y));
   mouseposx=_x; mouseposy=_y;
-  ors::Camera *cam;
-  ors::Vector vec;
+  mlr::Camera *cam;
+  mlr::Vector vec;
   if(mouseView==-1) {
     cam=&camera;
     getSphereVector(vec, _x, _y, 0, w, 0, h);
@@ -1589,7 +1589,7 @@ void OpenGL::Motion(int _x, int _y) {
     return;
   }
   if(mouse_button==1) {  //rotation // && !(modifiers&GLUT_ACTIVE_SHIFT) && !(modifiers&GLUT_ACTIVE_CTRL)){
-    ors::Quaternion rot;
+    mlr::Quaternion rot;
     if(s->downVec.z<.1) {
       rot.setDiff(vec, s->downVec);  //consider imagined sphere rotation of mouse-move
     } else {
@@ -1609,7 +1609,7 @@ void OpenGL::Motion(int _x, int _y) {
     if(immediateExitLoop) watching.setValue(0);
   }
   if(mouse_button==3) {  //translation || (mouse_button==1 && (modifiers&GLUT_ACTIVE_SHIFT) && !(modifiers&GLUT_ACTIVE_CTRL))){
-    /*    ors::Vector trans = s->downVec - vec;
+    /*    mlr::Vector trans = s->downVec - vec;
         trans.z=0.;
         trans = s->downRot*trans;
         cam->X.pos = s->downPos + trans;

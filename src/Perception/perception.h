@@ -280,7 +280,7 @@ struct AllViewer : Thread {
   Access_typed<arr> kinect_pointColors;
   Access_typed<PlaneA> planes_now;
 
-  ors::Mesh kinect;
+  mlr::Mesh kinect;
   PlaneA planes_now_copy;
   OpenGL gl;
 

@@ -19,7 +19,7 @@ void ManipulationTree_Node::solvePoseProblem(){
     //    Problem->reportFull();
   }
 
-  for(ors::KinematicSwitch *sw: poseProblem->switches)
+  for(mlr::KinematicSwitch *sw: poseProblem->switches)
     if(sw->timeOfApplication==0) sw->apply(effKinematics);
 
   arr newPose=poseProblem->getInitialization();
@@ -60,7 +60,7 @@ void ManipulationTree_Node::solvePoseProblem(){
 
   effKinematics.setJointState(pose);
 
-  for(ors::KinematicSwitch *sw: poseProblem->MP->switches)
+  for(mlr::KinematicSwitch *sw: poseProblem->MP->switches)
     if(sw->timeOfApplication==1) sw->apply(effKinematics);
   effKinematics.topSort();
   effKinematics.checkConsistency();

@@ -139,7 +139,7 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState){
         pdt->map.phi(pdt->y, NoArr, MP.world);
         pdt->v_ref.resizeAs(pdt->y);
       }
-      ors::Vector vel(gamepadLeftRight, gamepadForwardBack, gamepadUpDown);
+      mlr::Vector vel(gamepadLeftRight, gamepadForwardBack, gamepadUpDown);
       if(sel==down){
         vel.set ( .5*gamepadLeftRight, .5*gamepadRotate, 2.*gamepadForwardBack );
         vel = MP.world.getShapeByName("endeffBase") -> X.rot * vel;
@@ -165,7 +165,7 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState){
     case 1: { //homing
       cout <<"homing" <<endl;
       homing->setTarget(q0);
-      ors::Joint *j = MP.world.getJointByName("worldTranslationRotation");
+      mlr::Joint *j = MP.world.getJointByName("worldTranslationRotation");
       if(j){
         arr b;
         base->map.phi(b, NoArr, MP.world);

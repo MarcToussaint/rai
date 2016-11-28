@@ -51,7 +51,7 @@ rather simple. [To be done generically.]
 
 ## Example
 
-See the example.kvg!
+See the example.g!
 
 
 ## FUTURE features

@@ -89,8 +89,8 @@ static void draw2(void*){
 
 void TEST(Mesh) {
   uint i,j,N=10;
-  ors::Vector v;
-  ors::Mesh mesh;
+  mlr::Vector v;
+  mlr::Mesh mesh;
 
   //add points to the mesh
   mesh.V.resize(N*N,3);
@@ -126,7 +126,7 @@ void TEST(Mesh) {
 /************ third test ************/
 
 void TEST(Obj) {
-  ors::Mesh mesh,mesh2;
+  mlr::Mesh mesh,mesh2;
 
   //mesh.readObjFile(FILE("../../external/3dmodel/obj/gipshand2-273k.obj"));
   mesh.readObjFile(FILE("base-male-nude.obj"));

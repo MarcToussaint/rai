@@ -20,39 +20,39 @@
 // }
 
 // ============================================================================
-void setBody(ors::Body& body, const ar::AlvarMarker& marker) {
+void setBody(mlr::Body& body, const ar::AlvarMarker& marker) {
   body.X = conv_pose2transformation(marker.pose.pose);
 }
 
 
-void syncMarkers(ors::KinematicWorld& world, const ar::AlvarMarkers& markers) {
+void syncMarkers(mlr::KinematicWorld& world, const ar::AlvarMarkers& markers) {
   bool createdNewMarkers = false;
 
   // transform: torso_lift_link is the reference frame_id
-  ors::Body *torso = world.getBodyByName("torso_lift_link", false);
+  mlr::Body *torso = world.getBodyByName("torso_lift_link", false);
   if(!torso) return; //TODO: make this more general!
-  ors::Transformation refFrame = torso->X;
+  mlr::Transformation refFrame = torso->X;
 
   for (const ar::AlvarMarker& marker : markers.markers) {
     mlr::String marker_name = STRING("marker" << marker.id);
 
-    ors::Body *body = world.getBodyByName(marker_name,false);
+    mlr::Body *body = world.getBodyByName(marker_name,false);
     if (not body) {
       createdNewMarkers = true;
       cout << marker_name << " does not exist yet; adding it..." << endl;
-      body = new ors::Body(world);
+      body = new mlr::Body(world);
       body->name = marker_name;
-      ors::Shape *shape = new ors::Shape(world, *body);
+      mlr::Shape *shape = new mlr::Shape(world, *body);
       shape->name = marker_name;
-      shape->type = ors::markerST;
+      shape->type = mlr::markerST;
       shape->size[0] = .3; shape->size[1] = .0; shape->size[2] = .0; shape->size[3] = .0;
     }
-    ors::Vector Y_old;
-    ors::Vector Z_old;
+    mlr::Vector Y_old;
+    mlr::Vector Z_old;
     Z_old = world.getShapeByName(marker_name)->X.rot.getZ();
     Y_old = world.getShapeByName(marker_name)->X.rot.getY();
     setBody(*body, marker);
-    ors::Transformation T;
+    mlr::Transformation T;
 
     T.setZero();
     T.addRelativeRotationDeg(90.,0.,1.,0.);
@@ -83,6 +83,6 @@ void syncMarkers(ors::KinematicWorld& world, const ar::AlvarMarkers& markers) {
   }
 }
 #else
-void setBody(ors::Body& body, const AlvarMarker& marker) {}
-void syncMarkers(ors::KinematicWorld& world, AlvarMarkers& markers) {}
+void setBody(mlr::Body& body, const AlvarMarker& marker) {}
+void syncMarkers(mlr::KinematicWorld& world, AlvarMarkers& markers) {}
 #endif

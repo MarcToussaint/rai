@@ -1,6 +1,6 @@
 #include <Core/graph.h>
 
-//const char *filename="/home/mtoussai/git/3rdHand/documents/USTT/14-meeting3TUD/box.kvg";
+//const char *filename="/home/mtoussai/git/3rdHand/documents/USTT/14-meeting3TUD/box.g";
 const char *filename=NULL;
 
 //===========================================================================
@@ -10,7 +10,7 @@ void TEST(Read){
 
   G.checkConsistency();
   cout <<"\n** reading graph..." <<flush;
-  G.read(FILE(filename?filename:"example.kvg"), true); //including parse info
+  G.read(FILE(filename?filename:"example.g"), true); //including parse info
   cout <<G <<endl;
   G.checkConsistency();
   cout <<"\ndone" <<endl;
@@ -22,7 +22,7 @@ void TEST(Read){
 //  cout <<"'k modify' merged with 'k':" <<*G["k"] <<endl;
 
   G.checkConsistency();
-  if(filename) return; //below only for "example.kvg"
+  if(filename) return; //below only for "example.g"
   cout <<"\n** access to individual items:" <<endl;
   cout <<*G["k"] <<endl;
   cout <<G["k"]->graph() <<endl;
@@ -30,7 +30,7 @@ void TEST(Read){
   cout <<G["k"]->graph()["z"]->get<mlr::String>() <<endl;
   cout <<"DONE" <<endl;
 
-  G.writeHtml(FILE("z.html"), FILE("example.kvg"));
+  G.writeHtml(FILE("z.html"), FILE("example.g"));
 }
 
 //===========================================================================

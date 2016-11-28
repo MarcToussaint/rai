@@ -55,7 +55,7 @@
 
 #undef Success
 
-namespace ors {
+namespace mlr {
 struct Vector;
 struct Quaternion;
 struct Transformation;
@@ -72,9 +72,9 @@ void glColor(float r, float g, float b, float a=1.f);
 void glColor(int col);
 void glDrawText(const char* txt, float x, float y, float z);
 //void glShadowTransform();
-void glTransform(const ors::Transformation& t);
+void glTransform(const mlr::Transformation& t);
 void glTransform(const double pos[3], const double R[12]);
-void glRotate(const ors::Quaternion& rot);
+void glRotate(const mlr::Quaternion& rot);
 void glDrawRect(float x1, float y1, float z1, float x2, float y2, float z2,
                 float x3, float y3, float z3, float x4, float y4, float z4,
                 float r, float g, float b);
@@ -126,7 +126,7 @@ struct OpenGL {
   struct GLKeyCall  { virtual bool keyCallback(OpenGL&) = 0; };
   struct GLEvent    { int button, key, x, y; float dx, dy; void set(int b, int k, int _x, int _y, float _dx, float _dy) { button=b; key=k; x=_x; y=_y; dx=_dx; dy=_dy; } };
   struct GLSelect   { int name; double dmin, dmax, x,y,z; };
-  struct GLView     { double le, ri, bo, to;  mlr::Array<GLDrawer*> drawers;  ors::Camera camera;  byteA *img;  mlr::String text;  GLView() { img=NULL; le=bo=0.; ri=to=1.; } };
+  struct GLView     { double le, ri, bo, to;  mlr::Array<GLDrawer*> drawers;  mlr::Camera camera;  byteA *img;  mlr::String text;  GLView() { img=NULL; le=bo=0.; ri=to=1.; } };
   
   /// @name data fields
   mlr::Array<GLView> views;            ///< list of draw routines
@@ -138,7 +138,7 @@ struct OpenGL {
 
   mlr::String title;     ///< the window title
   uint width, height;
-  ors::Camera camera;     ///< the camera used for projection
+  mlr::Camera camera;     ///< the camera used for projection
   mlr::String text;        ///< the text to be drawn as title within the opengl frame
   float clearR, clearG, clearB, clearA;  ///< colors of the beackground (called in glClearColor(...))
   bool reportEvents, reportSelects;    ///< flags for verbosity
@@ -187,7 +187,7 @@ struct OpenGL {
   void setViewPort(uint view, double l, double r, double b, double t);
   
   /// @name the core draw routines (actually only for internal use)
-  void Draw(int w, int h, ors::Camera *cam=NULL, bool ignoreLock=false);
+  void Draw(int w, int h, mlr::Camera *cam=NULL, bool ignoreLock=false);
   void Select(bool ignoreLock=false);
   void renderInBack(bool captureImg=true, bool captureDepth=false, int w=-1, int h=-1);
 

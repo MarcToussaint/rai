@@ -4,9 +4,9 @@
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>
 
-ors::Mesh m1, m2;
-ors::Transformation t1, t2;
-ors::Vector p1, p2;
+mlr::Mesh m1, m2;
+mlr::Transformation t1, t2;
+mlr::Vector p1, p2;
 
 void draw(void*){
   glDisable(GL_DEPTH_TEST);
@@ -59,7 +59,7 @@ void TEST(GJK) {
 //===========================================================================
 
 void TEST(Volume){
-  ors::Mesh m;
+  mlr::Mesh m;
   for(uint k=1;k<10;k++){
     cout <<"sphere fineness " <<k <<endl;
     m.setSphere(k);
@@ -74,9 +74,9 @@ void TEST(Volume){
 //===========================================================================
 
 void TEST(DistanceFunctions) {
-  ors::Transformation t;
+  mlr::Transformation t;
   t.setRandom();
-  ors::Mesh m;
+  mlr::Mesh m;
   OpenGL gl;
   gl.add(glStandardScene,NULL);
   gl.add(m);
@@ -164,7 +164,7 @@ ScalarFunction cylinder = [](arr&,arr&, const arr& X){
   };
 
 void TEST(SimpleImplicitSurfaces) {
-  ors::Mesh m;
+  mlr::Mesh m;
   OpenGL gl;
   gl.add(glStandardScene,NULL);
   gl.add(m);

@@ -225,13 +225,13 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
 
 //===========================================================================
 
-double forceClosure(const arr& C, const arr& Cn, const ors::Vector& center,
+double forceClosure(const arr& C, const arr& Cn, const mlr::Vector& center,
                     double mu, double torqueWeights, arr *dFdC) { //, arr *dFdCn
   CHECK_EQ(C.d0,Cn.d0, "different number of points and normals");
   CHECK_EQ(C.d1,3, "");
   
   uint i, j, S=7;
-  ors::Vector c, n;
+  mlr::Vector c, n;
   
   arr X;
   if(torqueWeights>0.)  X.resize(C.d0*S, 6);  //store 6d points for convex wrench hull
@@ -252,15 +252,15 @@ double forceClosure(const arr& C, const arr& Cn, const ors::Vector& center,
     n.set(&Cn(i, 0));                   //contact normal
     c -= center;
     
-    ors::Quaternion r;
+    mlr::Quaternion r;
     r.setDiff(Vector_z, n);//rotate cone's z-axis into contact normal n
     
     for(j=0; j<S; j++) {   //each sample, equidistant on a circle
       double angle = j*MLR_2PI/S;
-      ors::Vector f(cos(angle)*mu, sin(angle)*mu, 1.);  //force point sampled from cone
+      mlr::Vector f(cos(angle)*mu, sin(angle)*mu, 1.);  //force point sampled from cone
       
       f = r*f;                         //rotate
-      ors::Vector c_f = c^f;
+      mlr::Vector c_f = c^f;
       
       //what about different scales in force vs torque??!!
       if(torqueWeights>=0.) { //forceClosure
@@ -462,7 +462,7 @@ void delaunay(Graph<N, E>& g, uint dim=2) {
 int QHULL_DEBUG_LEVEL=0;
 const char* qhullVersion() { return "NONE"; }
 void getTriangulatedHull(uintA& T, arr& V) { NICO }
-double forceClosure(const arr& C, const arr& Cn, const ors::Vector& center,
+double forceClosure(const arr& C, const arr& Cn, const mlr::Vector& center,
                     double mu, double torqueWeights, arr *dFdC) { NICO }
 double distanceToConvexHull(const arr &X, const arr &y, arr *projectedPoint, uintA *faceVertices, bool freeqhull) { NICO }
 double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool freeqhull) { NICO }
