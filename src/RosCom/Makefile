@@ -1,0 +1,15 @@
+BASE   = ../..
+NAME   = $(shell basename `pwd`)
+OUTPUT = lib$(NAME).so
+
+ROS = 1
+DEPEND = Core Hardware Hardware_gamepad Motion Ors Gui FOL
+
+#CXXFLAGS += -DROS_PACKAGE_NAME='"pr2_module"'
+
+CPATHS += $(BASE)/projects/marc_controller_pkg/msg_gen/cpp/include
+
+SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )
+OBJS = $(SRCS:%.cpp=%.o)
+
+include $(BASE)/build/generic.mk
