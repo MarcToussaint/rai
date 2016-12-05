@@ -372,14 +372,18 @@ Node* Graph::edit(Node *ed){
   return NULL;
 }
 
-void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool allowCopySubgraphToNonsubgraph){
+void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubgraphToNonsubgraph){
   DEBUG(G.checkConsistency());
 
-  if(!allowCopySubgraphToNonsubgraph && G.isNodeOfGraph){
-    if(!this->isNodeOfGraph){
+  if(!enforceCopySubgraphToNonsubgraph){
+    if(G.isNodeOfGraph && !this->isNodeOfGraph){
       HALT("Typically you should not copy a subgraph into a non-subgraph (or call the copy operator with a subgraph).\
            Use 'newSubgraph' instead\
-           If you still want to do it you need to ensure that all node parents are declared, and then enforce it by setting 'allowCopySubgraphToNonsubgraph'");
+           If you still want to do it you need to ensure that all node parents are declared, and then enforce it by setting 'enforceCopySubgraphToNonsubgraph'");
+    }
+  }else{
+    if(this->isNodeOfGraph){
+      HALT("You set 'enforceCopySubgraphToNonsubgraph', but this is not a Nonsubgraph");
     }
   }
 

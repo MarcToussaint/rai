@@ -89,7 +89,6 @@ uint OpenGL::selectionBuffer[1000];
 #ifdef MLR_GL
 void glStandardLight(void*) {
   glEnable(GL_LIGHTING);
-#if 1
   static GLfloat ambient[]   = { .5, .5, .5, 1.0 };
   static GLfloat diffuse[]   = { .2, .2, .2, 1.0 };
   static GLfloat specular[]  = { .3, .3, .3, 1.0 };
@@ -103,27 +102,14 @@ void glStandardLight(void*) {
   glLightfv(GL_LIGHT0, GL_DIFFUSE,  diffuse);
   glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
   glEnable(GL_LIGHT0);
-#endif
-#if 0
-  static GLfloat diffuse1[]   = { 0.5, 0.5, 0.5, 1.0 };
-  static GLfloat specular1[]  = { 0.1, 0.1, 0.1, 1.0 };
-  static GLfloat position1[]  = { -100.0, 20.0, -100.0, 1.0 };
-  static GLfloat direction1[] = { 1.0, -.2, 1.0 };
-  glLightfv(GL_LIGHT1, GL_POSITION, position1);
-  glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, direction1);
-  glLighti(GL_LIGHT1, GL_SPOT_CUTOFF,   90);
-  glLighti(GL_LIGHT1, GL_SPOT_EXPONENT, 10);
-  glLightfv(GL_LIGHT1, GL_DIFFUSE,  diffuse1);
-  glLightfv(GL_LIGHT1, GL_SPECULAR, specular1);
-  glEnable(GL_LIGHT1);
-#endif
 }
 
 void glStandardScene(void*) {
   glStandardLight(NULL);
-//   glDrawFloor(10, .8, .8, .8);
-//  glDrawFloor(10, 1.5, 0.83, .0);
-  glDrawFloor(10., 108./255., 123./255., 139./255.); //Tobias' beautiful colors ;-)
+  //  glDrawFloor(10, .8, .8, .8);
+  //  glDrawFloor(10, 1.5, 0.83, .0);
+  glDrawFloor(10., 108./255., 123./255., 139./255.);
+  glDrawAxes(.1);
 }
 
 void glColor(int col) {
@@ -141,7 +127,7 @@ void glColor(int col) {
 }
 
 void glColor(float r, float g, float b, float alpha) {
-  float amb=1.f, diff=1.f, spec=1.f;
+  float amb=1.f, diff=1.f, spec=.5f;
   GLfloat ambient[4], diffuse[4], specular[4];
   ambient[0] = r*amb;
   ambient[1] = g*amb;
@@ -151,9 +137,9 @@ void glColor(float r, float g, float b, float alpha) {
   diffuse[1] = g*diff;
   diffuse[2] = b*diff;
   diffuse[3] = alpha;
-  specular[0] = spec*.5*(1.+r);
-  specular[1] = spec*.5*(1.+g);
-  specular[2] = spec*.5*(1.+b);
+  specular[0] = spec*.5f*(1.+r);
+  specular[1] = spec*.5f*(1.+g);
+  specular[2] = spec*.5f*(1.+b);
   specular[3] = alpha;
 #if 0
   glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, diffuse);
@@ -161,7 +147,7 @@ void glColor(float r, float g, float b, float alpha) {
   glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
   glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse);
   glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular);
-  glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50.0f);
+  glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 1.0f);
 #endif
   glColor4f(r, g, b, alpha);
 }
@@ -383,6 +369,7 @@ void glDrawDiamond(float x, float y, float z, float dx, float dy, float dz) {
 }
 
 void glDrawAxis() {
+//    glDisable(GL_CULL_FACE);
   GLUquadric *style=gluNewQuadric();
   glBegin(GL_LINES);
   glVertex3f(0, 0, 0);
@@ -390,10 +377,9 @@ void glDrawAxis() {
   glEnd();
   glTranslatef(.8, 0, 0);
   glRotatef(90, 0, 1, 0);
-//  glDisable(GL_CULL_FACE);
   gluCylinder(style, .08, 0, .2, 20, 1);
-//  glEnable(GL_CULL_FACE);
   gluDeleteQuadric(style);
+//    glEnable(GL_CULL_FACE);
 }
 
 void glDrawAxes(double scale) {
@@ -401,55 +387,13 @@ void glDrawAxes(double scale) {
     glPushMatrix();
     glScalef(scale, scale, scale);
     switch(i) {
-      case 0:  glColor(1, 0, 0);  break;
-      case 1:  glColor(0, 1, 0);  glRotatef(90, 0, 0, 1);  break;
-      case 2:  glColor(0, 0, 1);  glRotatef(90, 0, -1, 0);  break;
+      case 0:  glColor(.7, 0, 0);  break;
+      case 1:  glColor(0, .7, 0);  glRotatef(90, 0, 0, 1);  break;
+      case 2:  glColor(0, 0, .7);  glRotatef(90, 0, -1, 0);  break;
     }
     glDrawAxis();
     glPopMatrix();
   }
-  
-}
-
-void drawCoordinateFrame() {
-  // x-axis = green
-  glBegin(GL_LINE_STRIP);
-  glColor(4.0, 0.0, 0.0);
-  glVertex3f(0.0, 0.0, 0.001);
-  glVertex3f(1.0, 0.0, 0.001);
-  glVertex3f(0.0, 0.0, 0.002);
-  glVertex3f(1.0, 0.0, 0.002);
-  glVertex3f(0.0, 0.0, 0.003);
-  glVertex3f(1.0, 0.0, 0.003);
-  glVertex3f(0.0, 0.0, 0.004);
-  glVertex3f(1.0, 0.0, 0.004);
-  glEnd();
-  
-  // y-axis = green
-  glBegin(GL_LINE_STRIP);
-  glColor(0.0, 4.0, 0.0);
-  glVertex3f(0.0, 0.0, 0.001);
-  glVertex3f(0.0, 1.0, 0.001);
-  glVertex3f(0.0, 0.0, 0.002);
-  glVertex3f(0.0, 1.0, 0.002);
-  glVertex3f(0.0, 0.0, 0.003);
-  glVertex3f(0.0, 1.0, 0.003);
-  glVertex3f(0.0, 0.0, 0.004);
-  glVertex3f(0.0, 1.0, 0.004);
-  glEnd();
-  
-  // z-axis = blue
-  glBegin(GL_LINE_STRIP);
-  glColor(0.0, 0.0, 4.0);
-  glVertex3f(0.001, 0.0, 0.0);
-  glVertex3f(0.001, 0.0, 1.0);
-  glVertex3f(0.002, 0.0, 0.0);
-  glVertex3f(0.002, 0.0, 1.0);
-  glVertex3f(0.003, 0.0, 0.0);
-  glVertex3f(0.003, 0.0, 1.0);
-  glVertex3f(0.004, 0.0, 0.0);
-  glVertex3f(0.004, 0.0, 1.0);
-  glEnd();
 }
 
 void glDrawSphere(float radius) {
@@ -1478,7 +1422,7 @@ void OpenGL::Key(unsigned char key, int _x, int _y) {
   bool cont=true;
   for(uint i=0; i<keyCalls.N; i++) cont=cont && keyCalls(i)->keyCallback(*this);
   
-  if(key==13 || key==27 || mlr::contains(exitkeys, key)) watching.setValue(0);
+  if(key==13 || key==27 || key=='q' || mlr::contains(exitkeys, key)) watching.setValue(0);
   lock.unlock();
 }
 

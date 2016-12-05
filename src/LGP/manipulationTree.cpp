@@ -161,13 +161,13 @@ void ManipulationTree_Node::solvePoseProblem(){
 //  komo.setSquaredFixJointVelocities(-1., -1., 1e3);
   komo.setSquaredFixSwitchVelocities(-1., -1., 1e3);
 
-  komo.setAbstractTask(0., *folState, true);
+  komo.setAbstractTask(0., *folState);
 //  for(mlr::KinematicSwitch *sw: poseProblem->MP->switches){
 //    sw->timeOfApplication=2;
 //  }
 
   DEBUG( FILE("z.fol") <<fol; )
-  DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
+  DEBUG( komo.MP->reportFeatures(true, FILE("z.problem")); )
   komo.reset();
   try{
     komo.run();
@@ -179,7 +179,7 @@ void ManipulationTree_Node::solvePoseProblem(){
   COUNT_poseOpt++;
   poseCount++;
 
-  DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
+  DEBUG( komo.MP->reportFeatures(true, FILE("z.problem")); )
 
   Graph result = komo.getReport();
   DEBUG( FILE("z.problem.cost") <<result; )
@@ -219,7 +219,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   seqProblem = new KOMO();
   KOMO& komo(*seqProblem);
   komo.setModel(startKinematics);
-  komo.setTiming(time, 2, 5., 1, false); //really + 1. phase??
+  komo.setTiming(time, 2, 5., 1, false);
 
   komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
@@ -227,11 +227,11 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   komo.setSquaredFixSwitchVelocities(-1., -1., 1e3);
 
   for(ManipulationTree_Node *node:treepath){
-    komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState, true);
+    komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
   }
 
   DEBUG( FILE("z.fol") <<fol; )
-  DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
+  DEBUG( komo.MP->reportFeatures(true, FILE("z.problem")); )
   komo.reset();
   try{
     komo.run();
@@ -243,7 +243,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   COUNT_seqOpt++;
   seqCount++;
 
-  DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
+  DEBUG( komo.MP->reportFeatures(true, FILE("z.problem")); )
 //  komo.checkGradients();
 
   Graph result = komo.getReport();
@@ -280,11 +280,11 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   komo.setSquaredFixSwitchVelocities(-1., -1., 1e3);
 
   for(ManipulationTree_Node *node:treepath){
-    komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState, true);
+    komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
   }
 
   DEBUG( FILE("z.fol") <<fol; )
-  DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
+  DEBUG( komo.MP->reportFeatures(true, FILE("z.problem")); )
   komo.reset();
   try{
     komo.run();
@@ -296,7 +296,7 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   COUNT_pathOpt++;
   pathCount++;
 
-  DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
+  DEBUG( komo.MP->reportFeatures(true, FILE("z.problem")); )
 //  komo.checkGradients();
 
   Graph result = komo.getReport();

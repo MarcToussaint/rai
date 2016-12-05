@@ -103,7 +103,7 @@ struct Graph : NodeL {
 
   //-- copy operator
   Graph& operator=(const Graph& G){  copy(G);  return *this;  }
-  void copy(const Graph& G, bool appendInsteadOfClear=false, bool allowCopySubgraphToNonsubgraph=false);
+  void copy(const Graph& G, bool appendInsteadOfClear=false, bool enforceCopySubgraphToNonsubgraph=false);
   
   //-- adding nodes
   template<class T> Node_typed<T>* newNode(const StringA& keys, const NodeL& parents, const T& x); ///<exactly equivalent to calling a Node_typed constructor
