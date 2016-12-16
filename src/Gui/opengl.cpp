@@ -891,7 +891,7 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 //
 
 OpenGL::OpenGL(const char* _title, int w, int h, int posx, int posy)
-  : s(NULL), title(_title), width(w), height(h), reportEvents(false), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0){
+  : s(NULL), title(_title), width(w), height(h), reportEvents(false), topSelection(NULL), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0){
   //MLR_MSG("creating OpenGL=" <<this);
   Reshape(w,h);
   s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
@@ -899,7 +899,7 @@ OpenGL::OpenGL(const char* _title, int w, int h, int posx, int posy)
 }
 
 OpenGL::OpenGL(void *container)
-  : s(NULL), width(0), height(0), reportEvents(false), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0){
+  : s(NULL), width(0), height(0), reportEvents(false), topSelection(NULL), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0){
   s=new sOpenGL(this,container); //this might call some callbacks (Reshape/Draw) already!
   init();
 }

@@ -159,7 +159,7 @@ void ManipulationTree_Node::solvePoseProblem(){
   komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
 //  komo.setSquaredFixJointVelocities(-1., -1., 1e3);
-  komo.setSquaredFixSwitchVelocities(-1., -1., 1e3);
+  komo.setSquaredFixSwitchedObjects(-1., -1., 1e3);
 
   komo.setAbstractTask(0., *folState);
 //  for(mlr::KinematicSwitch *sw: poseProblem->MP->switches){
@@ -224,7 +224,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
   komo.setSquaredFixJointVelocities(-1., -1., 1e3);
-  komo.setSquaredFixSwitchVelocities(-1., -1., 1e3);
+  komo.setSquaredFixSwitchedObjects(-1., -1., 1e3);
 
   for(ManipulationTree_Node *node:treepath){
     komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
@@ -277,7 +277,7 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   komo.setHoming(-1., -1., 1e-2); //gradient bug??
   komo.setSquaredQAccelerations();
   komo.setSquaredFixJointVelocities(-1., -1., 1e3);
-  komo.setSquaredFixSwitchVelocities(-1., -1., 1e3);
+  komo.setSquaredFixSwitchedObjects(-1., -1., 1e3);
 
   for(ManipulationTree_Node *node:treepath){
     komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);

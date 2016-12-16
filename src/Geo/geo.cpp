@@ -1461,17 +1461,17 @@ void Camera::watchDirection(const Vector& d) {
   X.rot=r*X.rot;
 }
 /// rotate the frame to set it upright (i.e. camera's y aligned with world's z)
-void Camera::upright() {
+void Camera::upright(const Vector& up) {
 #if 1
   //construct desired X:
-  Vector v(0, 0, -1), x(1, 0, 0), dx, up;
+  Vector fwd(0, 0, -1), x(1, 0, 0), xDesired;
   x=X.rot*x; //true X
-  v=X.rot*v;
-  if(fabs(v.z)<1.) up.set(0, 0, 1); else up.set(0, 1, 0);
-  dx=up^v; //desired X
-  if(dx*x<=0) dx=-dx;
+  fwd=X.rot*fwd;
+//  if(fabs(fwd.z)<1.) up.set(0, 0, 1); else up.set(0, 1, 0);
+  xDesired=up^fwd; //desired X
+  if(xDesired*x<=0) xDesired=-xDesired;
   Quaternion r;
-  r.setDiff(x, dx);
+  r.setDiff(x, xDesired);
   X.rot=r*X.rot;
 #else
   if(X.Z[2]<1.) X.Y.set(0, 0, 1); else X.Y.set(0, 1, 0);
