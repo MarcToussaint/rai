@@ -2510,6 +2510,12 @@ void outerProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>&
 #endif
     return;
   }
+  if(y.nd==2 && z.nd==1) {
+    uint i, j, k, d0=y.d0, d1=y.d1, d2=z.d0;
+    x.resize(d0, d1, d2);
+    for(i=0; i<d0; i++) for(j=0; j<d1; j++) for(k=0; k<d2; k++) x.p[(i*d1+j)*d2+k] = y.p[i*d1+j] * z.p[k];
+    return;
+  }
   HALT("outer product - not yet implemented for these dimensions");
 }
 
