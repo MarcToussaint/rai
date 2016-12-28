@@ -196,11 +196,11 @@ Graph::Graph(const std::map<std::string, std::string>& dict) : Graph() {
   appendDict(dict);
 }
 
-Graph::Graph(std::initializer_list<Nod> list):isNodeOfGraph(NULL)  {
+Graph::Graph(std::initializer_list<Nod> list) : Graph() {
   for(const Nod& ni:list) newNode(ni);
 }
 
-Graph::Graph(const Graph& G):isNodeOfGraph(NULL) {
+Graph::Graph(const Graph& G) : Graph() {
   *this = G;
 }
 
@@ -209,6 +209,8 @@ Graph::~Graph() {
 }
 
 void Graph::clear() {
+  if(ri){ delete ri; ri=NULL; }
+  if(pi){ delete pi; pi=NULL; }
   while(N) delete last();
 }
 
@@ -344,7 +346,7 @@ NodeL Graph::getNodesOfDegree(uint deg) {
 }
 
 Node* Graph::edit(Node *ed){
-  NodeL KVG = findNodesOfType(ed->type, {ed->keys.last()});
+  NodeL KVG = findNodesOfType(ed->type, ed->keys);
   //CHECK(KVG.N<=1, "can't edit into multiple nodes yet");
   Node *n=NULL;
   if(KVG.N) n=KVG.elem(0);
@@ -356,7 +358,7 @@ Node* Graph::edit(Node *ed){
     }else{ //overwrite the value
       n->copyValue(ed);
     }
-    if(&ed->container==this) delete ed;
+    if(&ed->container==this){ delete ed; ed=NULL; }
   }else{ //nothing to merge, append
     if(&ed->container!=this){
       Node *it = ed->newClone(*this);
@@ -370,14 +372,18 @@ Node* Graph::edit(Node *ed){
   return NULL;
 }
 
-void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool allowCopySubgraphToNonsubgraph){
+void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubgraphToNonsubgraph){
   DEBUG(G.checkConsistency());
 
-  if(!allowCopySubgraphToNonsubgraph && G.isNodeOfGraph){
-    if(!this->isNodeOfGraph){
+  if(!enforceCopySubgraphToNonsubgraph){
+    if(G.isNodeOfGraph && !this->isNodeOfGraph){
       HALT("Typically you should not copy a subgraph into a non-subgraph (or call the copy operator with a subgraph).\
            Use 'newSubgraph' instead\
-           If you still want to do it you need to ensure that all node parents are declared, and then enforce it by setting 'allowCopySubgraphToNonsubgraph'");
+           If you still want to do it you need to ensure that all node parents are declared, and then enforce it by setting 'enforceCopySubgraphToNonsubgraph'");
+    }
+  }else{
+    if(this->isNodeOfGraph){
+      HALT("You set 'enforceCopySubgraphToNonsubgraph', but this is not a Nonsubgraph");
     }
   }
 
@@ -454,7 +460,7 @@ void Graph::read(std::istream& is, bool parseInfo) {
     if(!n) break;
     if(n->keys.N==1 && n->keys.last()=="Include"){
       read(n->get<mlr::FileToken>().getIs(true));
-      delete n;
+      delete n; n=NULL;
     }else
     if(n->keys.N==1 && n->keys.last()=="ChDir"){
       n->get<mlr::FileToken>().changeDir();
@@ -462,7 +468,7 @@ void Graph::read(std::istream& is, bool parseInfo) {
     if(n->keys.N>0 && n->keys.first()=="Delete"){
       n->keys.remove(0);
       NodeL dels = getNodes(n->keys);
-      for(Node* d: dels) delete d;
+      for(Node* d: dels){ delete d; d=NULL; }
     }
   }
   if(parseInfo) getParseInfo(NULL).end=is.tellg();
@@ -484,7 +490,7 @@ void Graph::read(std::istream& is, bool parseInfo) {
     Node *n=elem(i);
     if(n->keys.N==1 && n->keys(0)=="ChDir"){
       n->get<mlr::FileToken>().unchangeDir();
-      delete n;
+      delete n; n=NULL;
     }
   }
 }
@@ -591,10 +597,10 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
           node = newNode<mlr::FileToken>(keys, parents, mlr::FileToken(str, false));
           node->get<mlr::FileToken>().getIs();  //creates the ifstream and might throw an error
         } catch(...){
-          delete node;
+          delete node; node=NULL;
           PARSERR("file " <<str <<" does not exist -> converting to string!", pinfo);
           node = newNode<mlr::String>(keys, parents, str);
-//          delete f;
+//          delete f; f=NULL;
         }
       } break;
       case '\"': { //mlr::String
@@ -695,6 +701,13 @@ void Graph::writeParseInfo(std::ostream& os) {
   os <<"GRAPH " <<getParseInfo(NULL) <<endl;
   for(Node *n:*this)
     os <<"NODE '" <<*n <<"' " <<getParseInfo(n) <<endl;
+}
+
+void Graph::displayDot(){
+  writeDot(FILE("z.dot"), false, false, 0);
+  int r;
+  r = system("dot -Tpdf z.dot > z.pdf");  if(r) LOG(-1) <<"could not startup dot";
+  r = system("evince z.pdf &");  if(r) LOG(-1) <<"could not startup evince";
 }
 
 void Graph::writeHtml(std::ostream& os, std::istream& is) {
@@ -810,15 +823,19 @@ ParseInfo& Graph::getParseInfo(Node* n){
 }
 
 RenderingInfo& Graph::getRenderingInfo(Node* n){
+  CHECK(&n->container==this,"");
+#if 1
   if(!ri) ri=new ArrayG<RenderingInfo>(*this);
-  return ri->operator ()(n);
-//  if(ri.N!=N+1){
-//    listResizeCopy(ri, N+1);
-//    ri(0)->node=NULL;
-//    for(uint i=1;i<ri.N;i++) ri(i)->node=elem(i-1);
-//  }
-//  if(!n) return *ri(0);
-//  return *ri(n->index+1);
+  return ri->operator()(n);
+#else
+  if(ri.N!=N+1){
+    ri.resizeCopy(N+1); //listResizeCopy(ri, N+1);
+//    ri.elem(0)->node=NULL;
+//    for(uint i=1;i<ri.N;i++) ri.elem(i)->node=elem(i-1);
+  }
+  if(!n) return ri.elem(0);
+  return ri.elem(n->index+1);
+#endif
 }
 
 const Graph* Graph::getRootGraph() const{

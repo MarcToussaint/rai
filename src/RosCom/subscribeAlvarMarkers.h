@@ -25,7 +25,7 @@
 
 
 //===========================================================================
-// using ors::KinematicWorld;  // this is necessary to make the macro work.
+// using mlr::KinematicWorld;  // this is necessary to make the macro work.
 
 // /// Simple syncing of the ors world "modelWorld" with ar_pose_marker
 // BEGIN_ROSMODULE("/ar_pose_marker", AlvarMarkers, markers)
@@ -39,17 +39,17 @@
 /**
  * Set the transformation of the body to the transformation of the alvar maker.
  */
-void setBody(ors::Body& body, const ar::AlvarMarker& marker);
+void setBody(mlr::Body& body, const ar::AlvarMarker& marker);
 
 /**
  * Sync all markers from the msg with the ors world.
  *
  * Note: this never deletes old markers.
  */
-void syncMarkers(ors::KinematicWorld& world, const ar::AlvarMarkers& markers);
+void syncMarkers(mlr::KinematicWorld& world, const ar::AlvarMarkers& markers);
 
 struct AlvarSyncer : Thread {
-  Access_typed<ors::KinematicWorld> modelWorld;
+  Access_typed<mlr::KinematicWorld> modelWorld;
   Access_typed<ar::AlvarMarkers> ar_pose_markers;
   AlvarSyncer()
    : Thread("AlvarSyncer"),

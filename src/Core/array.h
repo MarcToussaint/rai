@@ -415,6 +415,7 @@ typedef mlr::Array<mlr::String*> StringL;
 /// @{
 
 extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional arguments
+extern arrA& NoArrA; //this is a pointer to NULL!!!! I use it for optional arguments
 extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
 
 //===========================================================================
@@ -439,7 +440,7 @@ typedef std::function<void(arr& y, arr& J, const arr& x)> VectorFunction;
 
 /// a kernel function
 struct KernelFunction {
-  virtual double k(const arr& x1, const arr& x2, arr& g1=NoArr, arr& g2=NoArr) = 0;
+  virtual double k(const arr& x1, const arr& x2, arr& g1=NoArr, arr& Hx1=NoArr) = 0;
   virtual ~KernelFunction(){}
 };
 
@@ -823,12 +824,12 @@ arr comp_At(arr& A);
 arr comp_A_x(arr& A, const arr& x);
 
 struct SpecialArray{
-  enum Type { noneST, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };
+  enum Type { ST_none, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };
   Type type;
   virtual ~SpecialArray(){}
 };
 
-template<class T> bool isNotSpecial(const mlr::Array<T>& X){ return !X.special || X.special->type==SpecialArray::noneST; }
+template<class T> bool isNotSpecial(const mlr::Array<T>& X){ return !X.special || X.special->type==SpecialArray::ST_none; }
 template<class T> bool isRowShifted(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::RowShiftedST; }
 template<class T> bool isSparseMatrix(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseMatrixST; }
 template<class T> bool isSparseVector(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseVectorST; }
@@ -840,7 +841,6 @@ struct RowShifted : SpecialArray {
   uintA rowLen;     ///< number of non-zeros in the row
   uintA colPatches; ///< column-patch: (nd=2,d0=real_d1,d1=2) range of non-zeros in a COLUMN; starts with 'a', ends with 'b'-1
   bool symmetric;   ///< flag: if true, this stores a symmetric (banded) matrix: only the upper triangle
-  arr *nextInSum;
   
   RowShifted(arr& X);
   RowShifted(arr& X, RowShifted &aux);
@@ -861,6 +861,8 @@ inline RowShifted* castRowShifted(arr& X) {
   return dynamic_cast<RowShifted*>(X.special); //((RowShifted*)X.aux);
 }
 
+namespace mlr {
+
 struct SparseVector: SpecialArray{
   uint N; ///< original size
   uintA elems; ///< for every non-zero (in memory order), the index
@@ -874,6 +876,8 @@ struct SparseMatrix : SpecialArray{
   template<class T> SparseMatrix(mlr::Array<T>& X);
   template<class T> SparseMatrix(mlr::Array<T>& X, uint d0);
 };
+
+}//namespace mlr
 
 //struct RowSparseMatrix : SpecialArray {
 //  RowSparseMatrix()

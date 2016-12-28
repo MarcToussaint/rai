@@ -25,7 +25,7 @@ uint COUNT_poseOpt=0;
 uint COUNT_seqOpt=0;
 uint COUNT_pathOpt=0;
 
-ManipulationTree_Node::ManipulationTree_Node(ors::KinematicWorld& kin, FOL_World& _fol)
+ManipulationTree_Node::ManipulationTree_Node(mlr::KinematicWorld& kin, FOL_World& _fol)
   : parent(NULL), s(0),
     fol(_fol), folState(NULL), folDecision(NULL), folReward(0.), folAddToState(NULL),
     startKinematics(kin), effKinematics(),
@@ -159,15 +159,15 @@ void ManipulationTree_Node::solvePoseProblem(){
   komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
 //  komo.setSquaredFixJointVelocities(-1., -1., 1e3);
-  komo.setSquaredFixSwitchVelocities(-1., -1., 1e3);
+  komo.setSquaredFixSwitchedObjects(-1., -1., 1e3);
 
-  komo.setAbstractTask(0., *folState, true);
-//  for(ors::KinematicSwitch *sw: poseProblem->MP->switches){
+  komo.setAbstractTask(0., *folState);
+//  for(mlr::KinematicSwitch *sw: poseProblem->MP->switches){
 //    sw->timeOfApplication=2;
 //  }
 
   DEBUG( FILE("z.fol") <<fol; )
-  DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
+  DEBUG( komo.MP->reportFeatures(true, FILE("z.problem")); )
   komo.reset();
   try{
     komo.run();
@@ -175,11 +175,11 @@ void ManipulationTree_Node::solvePoseProblem(){
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   COUNT_evals += komo.opt->newton.evals;
-  COUNT_kin += ors::KinematicWorld::setJointStateCount;
+  COUNT_kin += mlr::KinematicWorld::setJointStateCount;
   COUNT_poseOpt++;
   poseCount++;
 
-  DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
+  DEBUG( komo.MP->reportFeatures(true, FILE("z.problem")); )
 
   Graph result = komo.getReport();
   DEBUG( FILE("z.problem.cost") <<result; )
@@ -200,7 +200,7 @@ void ManipulationTree_Node::solvePoseProblem(){
 
   effKinematics = *poseProblem->MP->configurations.last();
 
-  for(ors::KinematicSwitch *sw: poseProblem->MP->switches){
+  for(mlr::KinematicSwitch *sw: poseProblem->MP->switches){
 //    CHECK_EQ(sw->timeOfApplication, 1, "need to do this before the optimization..");
     if(sw->timeOfApplication>=2) sw->apply(effKinematics);
   }
@@ -219,19 +219,19 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   seqProblem = new KOMO();
   KOMO& komo(*seqProblem);
   komo.setModel(startKinematics);
-  komo.setTiming(time, 2, 5., 1, false); //really + 1. phase??
+  komo.setTiming(time, 2, 5., 1, false);
 
   komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
   komo.setSquaredFixJointVelocities(-1., -1., 1e3);
-  komo.setSquaredFixSwitchVelocities(-1., -1., 1e3);
+  komo.setSquaredFixSwitchedObjects(-1., -1., 1e3);
 
   for(ManipulationTree_Node *node:treepath){
-    komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState, true);
+    komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
   }
 
   DEBUG( FILE("z.fol") <<fol; )
-  DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
+  DEBUG( komo.MP->reportFeatures(true, FILE("z.problem")); )
   komo.reset();
   try{
     komo.run();
@@ -239,11 +239,11 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   COUNT_evals += komo.opt->newton.evals;
-  COUNT_kin += ors::KinematicWorld::setJointStateCount;
+  COUNT_kin += mlr::KinematicWorld::setJointStateCount;
   COUNT_seqOpt++;
   seqCount++;
 
-  DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
+  DEBUG( komo.MP->reportFeatures(true, FILE("z.problem")); )
 //  komo.checkGradients();
 
   Graph result = komo.getReport();
@@ -277,14 +277,14 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   komo.setHoming(-1., -1., 1e-2); //gradient bug??
   komo.setSquaredQAccelerations();
   komo.setSquaredFixJointVelocities(-1., -1., 1e3);
-  komo.setSquaredFixSwitchVelocities(-1., -1., 1e3);
+  komo.setSquaredFixSwitchedObjects(-1., -1., 1e3);
 
   for(ManipulationTree_Node *node:treepath){
-    komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState, true);
+    komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
   }
 
   DEBUG( FILE("z.fol") <<fol; )
-  DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
+  DEBUG( komo.MP->reportFeatures(true, FILE("z.problem")); )
   komo.reset();
   try{
     komo.run();
@@ -292,11 +292,11 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   COUNT_evals += komo.opt->newton.evals;
-  COUNT_kin += ors::KinematicWorld::setJointStateCount;
+  COUNT_kin += mlr::KinematicWorld::setJointStateCount;
   COUNT_pathOpt++;
   pathCount++;
 
-  DEBUG( komo.MP->reportFull(true, FILE("z.problem")); )
+  DEBUG( komo.MP->reportFeatures(true, FILE("z.problem")); )
 //  komo.checkGradients();
 
   Graph result = komo.getReport();

@@ -5,7 +5,7 @@ typedef std::function<double(arr& df, arr& Hf,
 
 bool checkAllGradients(const ConstrainedProblem &P, const arr& x, double tolerance);
 
-struct UnconstrainedProblem{
+struct LagrangianProblem{
   /** The VectorFunction F describes the cost function f(x) as well as the constraints g(x)
       concatenated to one vector:
       phi(0) = cost,   phi(1,..,phi.N-1) = constraints */
@@ -23,7 +23,7 @@ struct UnconstrainedProblem{
   double f_x; ///< scalar value f(x)
   arr df_x, Hf_x, g_x, Jg_x, h_x, Jh_x; ///< everything else at x
 
-  UnconstrainedProblem(const ConstrainedProblem &P):P(P), muLB(0.), mu(0.), nu(0.) {
+  LagrangianProblem(const ConstrainedProblem &P):P(P), muLB(0.), mu(0.), nu(0.) {
     Lag = [this](arr& dL, arr& HL, const arr& x) -> double {
       return this->lagrangian(dL, HL, x);
     };

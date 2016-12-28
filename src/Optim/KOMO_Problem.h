@@ -39,7 +39,7 @@ struct Conv_KOMO_ConstrainedProblem : ConstrainedProblem{
 
   Conv_KOMO_ConstrainedProblem(KOMO_Problem& P);
 
-  void f(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x);
+  void phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x);
 };
 
 

@@ -16,9 +16,9 @@
 #pragma once
 
 #include <Ors/ors.h>
-#include <FOL/fol_mcts_world.h>
+#include <Logic/fol_mcts_world.h>
 #include "LGP.h"
-#include <FOL/fol.h>
+#include <Logic/fol.h>
 #include <Motion/komo.h>
 
 struct ManipulationTree_Node;
@@ -46,8 +46,8 @@ struct ManipulationTree_Node{
   Graph *folAddToState; ///< facts that are added to the state /after/ the fol.transition, e.g., infeasibility predicates
 
   //-- kinematics: the kinematic structure of the world after the decision path
-  const ors::KinematicWorld& startKinematics; ///< initial start state kinematics
-  ors::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
+  const mlr::KinematicWorld& startKinematics; ///< initial start state kinematics
+  mlr::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
 
   bool isExpanded=false;
   bool hasEffKinematics=false;
@@ -68,7 +68,7 @@ struct ManipulationTree_Node{
   bool inFringe1, inFringe2;
 
   /// root node init
-  ManipulationTree_Node(ors::KinematicWorld& kin, FOL_World& fol);
+  ManipulationTree_Node(mlr::KinematicWorld& kin, FOL_World& fol);
 
   /// child node creation
   ManipulationTree_Node(ManipulationTree_Node *parent, FOL_World::Handle& a);
@@ -109,7 +109,7 @@ inline ostream& operator<<(ostream& os, const ManipulationTree_Node& n){ n.write
 
 //  LGP lgp;
 
-//  ManipulationTree(const ors::KinematicWorld& world_root, const Graph& symbols_root)
+//  ManipulationTree(const mlr::KinematicWorld& world_root, const Graph& symbols_root)
 //    : root(world_root, symbols_root), fol(FILE("fol.g")), mc(fol) {}
 
 //  ManipulationTree_Node& getRndNode();

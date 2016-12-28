@@ -35,7 +35,7 @@ double distanceToConvexHullGradient(arr& dDdX,       //gradient (or same dim as 
 
 double forceClosure(const arr& X,  //contact points (size Nx3)
                     const arr& Xn, //contact normals (size Nx3)
-                    const ors::Vector& center, //object center
+                    const mlr::Vector& center, //object center
                     double mu=.5,     //friction coefficient
                     double discountTorques=1.,   //friction coefficient
                     arr *dFdX=NULL);    //optional: also compute gradient

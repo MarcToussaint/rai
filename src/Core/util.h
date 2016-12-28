@@ -381,8 +381,8 @@ extern String errString;
 #  include <gtest/gtest.h>
 #  define TEST(name) test##name(){} GTEST_TEST(examples, name)
 #  define MAIN \
-     main(int argc, char** argv){ \
-       mlr::initCmdLine(argc,argv);              \
+     main(int argc, char** argv){               \
+       mlr::initCmdLine(argc,argv);             \
        testing::InitGoogleTest(&argc, argv);	\
        return RUN_ALL_TESTS();			\
      }                                          \
@@ -442,6 +442,42 @@ template<class T> void operator>>(const T& x, FileToken& fil){ fil.getOs() <<x; 
 #define FILE(filename) (mlr::FileToken(filename)()) //it needs to return a REFERENCE to a local scope object
 
 inline bool operator==(const mlr::FileToken&, const mlr::FileToken&){ return false; }
+
+
+//===========================================================================
+//
+// give names to Enum (for pipe << >> )
+//
+
+namespace mlr {
+  template<class enum_T>
+  struct Enum{
+    enum_T x;
+    static const char* names [];
+    Enum():x((enum_T)-1){}
+    explicit Enum(const enum_T& y):x(y){}
+    const enum_T& operator=(const enum_T& y){ x=y; return x; }
+    bool operator==(const enum_T& y) const{ return x==y; }
+    bool operator!=(const enum_T& y) const{ return x!=y; }
+    operator enum_T() const{ return x; }
+    void read(std::istream& is){
+      mlr::String str(is);
+      int i=0;
+      for(const char* n:names){
+        if(!n) LOG(-2) <<"enum_T " <<typeid(enum_T).name() <<' ' <<str <<" out of range";
+        if(str==n){ x=(enum_T)(i); break; }
+        i++;
+      }
+      CHECK(!strcmp(names[x], str.p), "");
+    }
+    void write(std::ostream& os) const{
+      if(x<0) os <<"none";
+      os <<names[x];
+    }
+  };
+  template<class T> std::istream& operator>>(std::istream& is, Enum<T>& x){ x.read(is); return is; }
+  template<class T> std::ostream& operator<<(std::ostream& os, const Enum<T>& x){ x.write(os); return os; }
+}
 
 
 //===========================================================================
@@ -598,7 +634,7 @@ template<class T> T *Singleton<T>::singleton=NULL;
 // just a hook to make things gl drawable
 //
 
-struct GLDrawer    { virtual void glDraw(struct OpenGL&) = 0; ~GLDrawer(){} };
+struct GLDrawer    { virtual void glDraw(struct OpenGL&) = 0; virtual ~GLDrawer(){} };
 
 //===========================================================================
 //

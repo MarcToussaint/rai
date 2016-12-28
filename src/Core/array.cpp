@@ -66,6 +66,7 @@ const char* arrayBrackets="  ";
 }
 
 arr& NoArr = *((arr*)NULL);
+arrA& NoArrA = *((arrA*)NULL);
 uintA& NoUintA = *((uintA*)NULL);
 
 /* LAPACK notes
@@ -764,7 +765,7 @@ double determinantSubroutine(double **A, uint n) {
     }
     d+=((i&1)?-1.:1.) * A[i][0] * determinantSubroutine(B, n-1);
   }
-  delete[] B;
+  delete[] B; B=NULL;
   return d;
 }
 
@@ -998,7 +999,7 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     uint i, j, *k, *kstop;
     y.resize(A.d0); y.setZero();
     double *Ap=A.p;
-    uintA& A_elems = dynamic_cast<SparseMatrix*>(A.special)->elems;
+    uintA& A_elems = dynamic_cast<mlr::SparseMatrix*>(A.special)->elems;
     for(k=A_elems.p, kstop=A_elems.p+A_elems.N; k!=kstop; Ap++) {
       i=*k; k++;
       j=*k; k++;
@@ -1007,20 +1008,20 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     return;
   }
   if(isSparseMatrix(A) && isSparseVector(x)) {
-    SparseVector *sx = dynamic_cast<SparseVector*>(x.special);
+    mlr::SparseVector *sx = dynamic_cast<mlr::SparseVector*>(x.special);
     CHECK(x.nd==1 && A.nd==2 && sx->N==A.d1, "not a proper matrix-vector multiplication");
     uint i, j, n, *k, *kstop, *l, *lstop;
     y.clear(); y.nd=1; y.d0=A.d0;
-    y.special = new SparseMatrix(y, A.d0); //aux=y_sparse=new uintA [2];
-    uintA& y_elems= dynamic_cast<SparseMatrix*>(y.special)->elems;
-    uintA& y_col= dynamic_cast<SparseMatrix*>(y.special)->cols(0);
+    y.special = new mlr::SparseMatrix(y, A.d0); //aux=y_sparse=new uintA [2];
+    uintA& y_elems= dynamic_cast<mlr::SparseMatrix*>(y.special)->elems;
+    uintA& y_col= dynamic_cast<mlr::SparseMatrix*>(y.special)->cols(0);
     y_col.resize(y.d0); y_col=(uint)-1;
     double *xp=x.p;
     uintA& x_elems = sx->elems;
     uint *slot;
     for(k=x_elems.p, kstop=x_elems.p+x_elems.N; k!=kstop; xp++) {
       j=*k; k++;
-      uintA& A_col = dynamic_cast<SparseMatrix*>(A.special)->cols(j);
+      uintA& A_col = dynamic_cast<mlr::SparseMatrix*>(A.special)->cols(j);
       for(l=A_col.p, lstop=A_col.p+A_col.N; l!=lstop;) {
         i =*l; l++;
         n =*l; l++;
@@ -1041,7 +1042,7 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     uint i, j, *k, *kstop, d1=A.d1;
     y.resize(A.d0); y.setZero();
     double *xp=x.p;
-    uintA& elems = dynamic_cast<SparseMatrix*>(x.special)->elems;
+    uintA& elems = dynamic_cast<mlr::SparseMatrix*>(x.special)->elems;
     for(k=elems.p, kstop=elems.p+elems.N; k!=kstop; xp++) {
       j=*k; k++;
       for(i=0; i<A.d0; i++) {
@@ -1495,7 +1496,7 @@ void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs) {
 }
 
 arr lapack_kSmallestEigenValues_sym(const arr& A, uint k){
-  CHECK(k<A.d0,"");
+  if(k>A.d0) k=A.d0; //  CHECK(k<=A.d0,"");
   integer N=A.d0, KD=A.d1-1, LDAB=A.d1, INFO;
   mlr::Array<integer> IWORK(5*N), IFAIL(N);
   arr WORK(10*(3*N)), Acopy=A;
@@ -1650,7 +1651,7 @@ void lapack_mldivide(arr& X, const arr& A, const arr& b) { NICO; }
 // RowShifted
 //
 
-RowShifted::RowShifted(arr& X):Z(X), real_d1(0), symmetric(false), nextInSum(NULL) {
+RowShifted::RowShifted(arr& X):Z(X), real_d1(0), symmetric(false) {
   type = SpecialArray::RowShiftedST;
   Z.special = this;
 }
@@ -1661,8 +1662,7 @@ RowShifted::RowShifted(arr& X, RowShifted &aux):
   rowShift(aux.rowShift),
   rowLen(aux.rowLen),
   colPatches(aux.colPatches),
-  symmetric(aux.symmetric),
-  nextInSum(NULL)
+  symmetric(aux.symmetric)
 {
   type = SpecialArray::RowShiftedST;
   Z.special=this;
@@ -1687,7 +1687,6 @@ RowShifted *makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1) {
 }
 
 RowShifted::~RowShifted() {
-  if(nextInSum) delete nextInSum;
   Z.special = NULL;
 }
 
@@ -1705,8 +1704,8 @@ void RowShifted::reshift(){
     double *Zp = Z.p + i*Z.d1;
     double *Zlead = Zp;
     double *Ztrail = Zp + Z.d1-1;
-    while(*Ztrail==0. && Ztrail>=Zlead) Ztrail--;
-    while(*Zlead==0. && Zlead<=Ztrail) Zlead++;
+    while(Ztrail>=Zlead && *Ztrail==0.) Ztrail--;
+    while(Zlead<=Ztrail && *Zlead==0. ) Zlead++;
     if(Ztrail<Zlead){ //all zeros
       rowLen.p[i]=0.;
     }else{
@@ -1781,9 +1780,6 @@ arr unpackRowShifted(const arr& Y) {
       if(Yaux->symmetric) X(j+rs,i) = Y(i,j);
     }
   }
-  if(Yaux->nextInSum){
-    X += unpackRowShifted(*Yaux->nextInSum);
-  }
   return X;
 }
 
@@ -1836,14 +1832,6 @@ arr RowShifted::At_A() {
       }
     }
   }
-  if(nextInSum){
-    arr R2 = comp_At_A(*nextInSum);
-    CHECK(isRowShifted(R2), "");
-    CHECK(R2.d1<=R.d1,"NIY"); //swap...
-    for(uint i=0;i<R2.d0;i++) for(uint j=0;j<R2.d1;j++){
-      R(i,j) += R2(i,j);
-    }
-  }
   return R;
 }
 
@@ -1881,7 +1869,6 @@ arr RowShifted::A_At() {
       for(uint k=a;k<b;k++) *Rij += Zi[k-rs_i]*Zj[k-rs_j];
     }
   }
-  if(nextInSum) NIY;
   return R;
 }
 
@@ -1904,7 +1891,6 @@ arr RowShifted::At_x(const arr& x) {
     for(;yp!=ypstop;){ *yp += xi * *Zp;  Zp++;  yp++; }
 #endif
   }
-  if(nextInSum) y += comp_At_x(*nextInSum, x);
   return y;
 }
 
@@ -1926,7 +1912,6 @@ arr RowShifted::A_x(const arr& x) {
     }
     y(i) = sum;
   }
-  if(nextInSum) NIY;
   return y;
 }
 

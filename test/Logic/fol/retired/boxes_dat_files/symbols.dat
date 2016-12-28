@@ -1,0 +1,38 @@
+activate_pickup 2 action binary
+terminate_pickup 2 action binary  
+activate_positioning 1 action binary 
+terminate_positioning 1 action binary 
+activate_release 1 action binary 
+terminate_release 1 action binary 
+activate_screwing 3 action binary 
+terminate_screwing 3 action binary 
+
+pickup 2 primitive reals 
+positioning  1 primitive reals 
+screwing 1 primitive reals
+release 1 primitive reals
+
+
+wall 1 primitive binary
+screw 1 primitive binary
+ground 1 primitive binary
+object 1 primitive binary
+material 1 primitive binary
+humR 1 primitive binary
+humL 1 primitive binary
+rob  1 primitive binary
+hand 1 primitive binary
+used 1 primitive binary
+inPosition 1 primitive binary
+inhand 2 primitive binary 
+fixed 2 primitive binary
+
+active_pickup 2 primitive binary
+active_positioning 1 primitive binary
+active_screwing 1 primitive binary
+active_release 1 primitive binary
+busy 1 primitive binary
+
+inhandNil 1 conjunction binary  <-- All Y hand(X)  -inhand(X Y)
+
+

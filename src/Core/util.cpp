@@ -530,7 +530,10 @@ void wait(double sec, bool msg_on_fail) {
 
 /// wait for an ENTER at the console
 bool wait() {
-  if(!mlr::getInteractivity()) return true;
+  if(!mlr::getInteractivity()){
+    mlr::wait(.5);
+    return true;
+  }
   char c[10];
   std::cout <<" -- hit a key to continue..." <<std::flush;
   //cbreak(); getch();
@@ -1302,6 +1305,10 @@ void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDF
   
   if(pauseMouse) cmd <<"\n pause mouse" <<std::endl;
   gnuplotServer().send(cmd.p, persist);
+
+  if(!mlr::getInteractivity()){
+    mlr::wait(.5);
+  }
 }
 
 

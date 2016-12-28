@@ -107,6 +107,7 @@ template<class T> mlr::Array<T>::Array(mlr::FileToken& f):Array() {
 }
 
 template<class T> mlr::Array<T>::~Array() {
+  if(special){ delete special; special=NULL; }
   freeMEM();
 }
 
@@ -272,7 +273,7 @@ template<class T> void mlr::Array<T>::makeSparse() {
   }else NIY;
 }
 
-template<class T> SparseVector::SparseVector(mlr::Array<T>& x){
+template<class T> mlr::SparseVector::SparseVector(mlr::Array<T>& x){
   CHECK(isNotSpecial(x), "only once yet");
   type=sparseVectorST;
   N = x.N;
@@ -287,14 +288,14 @@ template<class T> SparseVector::SparseVector(mlr::Array<T>& x){
   elems.resizeCopy(n);
 }
 
-template<class T> SparseMatrix::SparseMatrix(mlr::Array<T>& X, uint d0){
+template<class T> mlr::SparseMatrix::SparseMatrix(mlr::Array<T>& X, uint d0){
   CHECK(isNotSpecial(X), "only once yet");
   type=sparseMatrixST;
   cols.resize(1);
   X.nd=1; X.d0=d0;
 }
 
-template<class T> SparseMatrix::SparseMatrix(mlr::Array<T>& X){
+template<class T> mlr::SparseMatrix::SparseMatrix(mlr::Array<T>& X){
   CHECK(isNotSpecial(X), "only once yet");
   type=sparseMatrixST;
   uint n=0; //memory index
@@ -385,14 +386,16 @@ template<class T> void mlr::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
       if(!p) { p=pold; M=Mold; HALT("memory allocation failed! Wanted size = " <<Mnew*sizeT <<"bytes"); }
       M=Mnew;
       if(copy){
-        if(memMove==1) memmove(p, pold, sizeT*(N<n?N:n));
-        else for(i=N<n?N:n; i--;) p[i]=pold[i];
+        if(memMove==1){
+          memmove(p, pold, sizeT*(N<n?N:n));
+          if(n>N) memset(p+N, 0, sizeT*(n-N));
+        }else for(i=N<n?N:n; i--;) p[i]=pold[i];
       }
     } else {
       p=0;
     }
     CHECK((pold && Mold) || (!pold && !Mold), "");
-    if(Mold) delete[] pold;  //if(Mold) free(pold);
+    if(Mold){ delete[] pold; pold=NULL; } //if(Mold) free(pold);
   }
   N=n;
 }
@@ -416,10 +419,10 @@ template<class T> void mlr::Array<T>::freeMEM() {
 #ifdef MLR_GLOBALMEM
   globalMemoryTotal -= M*sizeT;
 #endif
-  if(M) delete[] p;
+  if(M){ delete[] p; p=NULL; }
   //if(M) free(p);
   //if(special) delete[] special;
-  if(d && d!=&d0) delete[] d;
+  if(d && d!=&d0){ delete[] d; d=NULL; }
   p=NULL;
   M=N=nd=d0=d1=d2=0;
   d=&d0;
@@ -429,7 +432,7 @@ template<class T> void mlr::Array<T>::freeMEM() {
 
 /// reset the dimensionality pointer d to point to &d0
 template<class T> void mlr::Array<T>::resetD() {
-  if(d && d!=&d0) delete[] d;
+  if(d && d!=&d0){ delete[] d; d=NULL; }
   d=&d0;
 }
 
@@ -661,7 +664,7 @@ template<class T> void mlr::Array<T>::insRows(uint i, uint k) {
   uint n=d0;
   resizeCopy(d0+k, d1);
   memmove(p+(i+k)*d1, p+i*d1, sizeT*d1*(n-i));
-  memset(p+ i   *d1, 0     , sizeT*d1*k);
+  memset (p+ i   *d1, 0     , sizeT*d1*k);
 }
 
 /// deletes k columns starting from the i-th (i==d1 -> deletes the last k columns)
@@ -689,7 +692,7 @@ template<class T> void mlr::Array<T>::insColumns(uint i, uint k) {
   resizeCopy(d0, n+k);
   for(uint j=d0; j--;) {
     memmove(p+j*d1+(i+k), p+j*n+i, sizeT*(n-i));
-    memset(p+j*d1+i    , 0      , sizeT*k);
+    memset (p+j*d1+i    , 0      , sizeT*k);
     memmove(p+j*d1      , p+j*n  , sizeT*i);
   }
 }
@@ -1175,7 +1178,7 @@ template<class T> mlr::Array<T>& mlr::Array<T>::operator=(const mlr::Array<T>& a
   uint i;
   if(memMove) memmove(p, a.p, sizeT*N);
   else for(i=0; i<N; i++) p[i]=a.p[i];
-  if(special) special=NULL; //TODO: you lost it!!
+  if(special){ delete special; special=NULL; }
   if(isRowShifted(a)){
     CHECK(typeid(T)==typeid(double),"");
     special = new RowShifted(*((arr*)this),*((RowShifted*)a.special));
@@ -2507,6 +2510,12 @@ void outerProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>&
 #endif
     return;
   }
+  if(y.nd==2 && z.nd==1) {
+    uint i, j, k, d0=y.d0, d1=y.d1, d2=z.d0;
+    x.resize(d0, d1, d2);
+    for(i=0; i<d0; i++) for(j=0; j<d1; j++) for(k=0; k<d2; k++) x.p[(i*d1+j)*d2+k] = y.p[i*d1+j] * z.p[k];
+    return;
+  }
   HALT("outer product - not yet implemented for these dimensions");
 }
 
@@ -2600,8 +2609,8 @@ T scalarProduct(const mlr::Array<T>& v, const mlr::Array<T>& w) {
     for(uint i=v.N; i--; t+=v.p[i]*w.p[i]);
   }else{
     if(isSparseVector(v) && isSparseVector(w)){
-      SparseVector *sv = dynamic_cast<SparseVector*>(v.special);
-      SparseVector *sw = dynamic_cast<SparseVector*>(w.special);
+      mlr::SparseVector *sv = dynamic_cast<mlr::SparseVector*>(v.special);
+      mlr::SparseVector *sw = dynamic_cast<mlr::SparseVector*>(w.special);
       CHECK_EQ(sv->N,sw->N,
             "scalar product on different array dimensions (" <<sv->N <<", " <<sw->N <<")");
       uint *ev=sv->elems.p, *ev_stop=ev+v.N, *ew=sw->elems.p, *ew_stop=ew+w.N;
@@ -3591,33 +3600,33 @@ template<class T> void listRead(mlr::Array<T*>& L, std::istream& is, const char 
 
 template<class T> void listClone(mlr::Array<T*>& L, const mlr::Array<T*>& M) {
   listDelete(L);
-  L.resize(M.N);
+  L.resizeAs(M);
   uint i;
-  for(i=0; i<L.N; i++) L(i)=M(i)->newClone();
+  for(i=0; i<L.N; i++) L.elem(i)=M.elem(i)->newClone();
 }
 
 template<class T> void listResize(mlr::Array<T*>& L, uint N) {
   listDelete(L);
   L.resize(N);
   uint i;
-  for(i=0; i<N; i++) L(i)=new T();
+  for(i=0; i<N; i++) L.elem(i)=new T();
 }
 
 template<class T> void listResizeCopy(mlr::Array<T*>& L, uint N) {
   if(L.N<N){
     uint n=L.N;
     L.resizeCopy(N);
-    for(uint i=n;i<N;i++) L(i)=new T();
+    for(uint i=n;i<N;i++) L.elem(i)=new T();
   }else{
-    for(uint i=N;i<L.N;i++) delete L(i);
+    for(uint i=N;i<L.N;i++){ delete L.elem(i); L.elem(i)=NULL; }
     L.resizeCopy(N);
   }
 }
 
 template<class T> void listCopy(mlr::Array<T*>& L, const mlr::Array<T*>& M) {
   listDelete(L);
-  L.resize(M.N);
-  for(uint i=0; i<L.N; i++) L(i)=new T(*M(i));
+  L.resizeAs(M);
+  for(uint i=0; i<L.N; i++) L.elem(i)=new T(*M.elem(i));
 }
 
 template<class T> void listDelete(mlr::Array<T*>& L) {

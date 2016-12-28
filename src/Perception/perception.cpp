@@ -138,7 +138,7 @@ void VideoEncoderX264::step(){
 struct sPointCloudViewer{
   OpenGL gl;
   sPointCloudViewer():gl("PointCloudViewer",640,480){}
-  ors::Mesh pc;
+  mlr::Mesh pc;
 };
 
 void glDrawAxes(void*){

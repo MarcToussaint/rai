@@ -12,38 +12,15 @@
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
 
-
-/// @file
-/// @ingroup group_Optim
-/// @addtogroup group_Optim
-/// @{
-
-#ifndef MLR_optimization_h
-#define MLR_optimization_h
+#pragma once
 
 #include <Core/array.h>
 
-// function evaluation counter (used only for performance meassurements, global for simplicity)
-extern uint eval_cost;
-
-
 //===========================================================================
 //
-// functions that imply optimization problems
+// types (mostly abstract classes or lambda expressions) to represent non-linear programs
 //
 
-/** NOTE: Why do I define the functions with many arguments to return f, J, and constraints all at once,
- * instead of having nice individual methods to return those?
- *
- * 1) Because I want these problem definitions (classes) to be STATE-LESS. That is, there must not be a set_x(x); before a get_f();
- *    I really have (bad) experience with non-stateless problem definitions.
- *
- * 2) Because the computation of quantities is expensive and it is usually most efficient to compute all needed quantities together
- *    (Instead of calling get_f(x); and then get_J(x); separately)
- *
- * The methods allow some returns to be optional: use NoArr
- *
- */
 
 /// A scalar function $y = f(x)$, if @df@ or @Hf@ are not NoArr, the gradient and/or Hessian is returned
 typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
@@ -54,7 +31,7 @@ typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
 typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
 
 /// symbols to declare of which type an objective feature is
-enum TermType { noTT=0, fTT, sumOfSqrTT, ineqTT, eqTT };
+enum TermType { noTT=0, fTT, sumOfSqrTT, ineqTT, eqTT }; //TODO: -> FeatureType
 extern const char* TermTypeString[];
 typedef mlr::Array<TermType> TermTypeA;
 extern TermTypeA& NoTermTypeA;
@@ -67,35 +44,24 @@ extern TermTypeA& NoTermTypeA;
  *  feature; and if there exists this feature the returned Hessian $H$ needs to be its hessian.
  *  For the sumOfSqr features no Hessian is returned: we assume the Gauss-Newton approximation.
  */
-typedef std::function<void(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x)> ConstrainedProblem;
+struct ConstrainedProblem{
+  //TODO: add getStructure -> dim_x, tt
+  virtual ~ConstrainedProblem() = default;
+  virtual void phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) = 0;
+};
 
-/// functions \f$ \phi_t:(x_{t-k},..,x_t) \mapsto y\in\mathbb{R}^{m_t} \f$ over a chain \f$x_0,..,x_T\f$ of variables
-struct KOrderMarkovFunction {
-  virtual void set_x(const arr& x) = 0;
 
-  /// returns $\f\phi(x), \nabla \phi(x)\f$ for a given time step t and a k+1 tuple of states \f$\bar x = (x_{t-k},..,x_t)\f$.
-  /// This defines the cost function \f$f_t = \phi_t^\top \phi_t\f$ in the time slice. Optionally, the last dim_g entries of
-  ///  \f$\phi\f$ are interpreted as inequality constraint function \f$g(\bar x)\f$ for time slice t
-  virtual void phi_t(arr& phi, arr& J, TermTypeA& tt, uint t) = 0;
-  
-  //functions to get the parameters $T$, $k$ and $n$ of the $k$-order Markov Process
-  virtual uint get_T() = 0;       ///< horizon (the total x-dimension is (T+1)*n )
-  virtual uint get_k() = 0;       ///< the order of dependence: \f$ \phi=\phi(x_{t-k},..,x_t) \f$
-  virtual uint dim_x() { uint d=0, T=get_T(); for(uint t=0; t<=T; t++) d+=dim_x(t); return d; }   ///< \f$ \sum_t \dim(x_t) \f$
-  virtual uint dim_x(uint t) = 0;       ///< \f$ \dim(x_t) \f$
-  virtual uint dim_phi(uint t) = 0; ///< \f$ \dim(\phi_t) \f$
-  virtual uint dim_g(uint t){ return 0; } ///< number of inequality constraints at the end of \f$ \phi_t \f$ (before h terms)
-  virtual uint dim_h(uint t){ return 0; } ///< number of equality constraints at the very end of \f$ \phi_t \f$
-  virtual uint dim_g_h(){ uint d=0, T=get_T(); for(uint t=0;t<=T;t++) d += dim_g(t) + dim_h(t); return d; }
-  virtual StringA getPhiNames(uint t){ return StringA(); }
-  virtual arr get_prefix(){ arr x(get_k(), dim_x()); x.setZero(); return x; } ///< the augmentation \f$ (x_{t=-k},..,x_{t=-1}) \f$ that makes \f$ \phi_{0,..,k-1} \f$ well-defined
-  virtual arr get_postfix(){ return arr(); } ///< by default there is no definite final configuration
+//===========================================================================
+//
+// lambda expression interfaces
+//
 
-  /// optional: we make include kernel costs \f$ \sum_{i,j} k(i,j) x_i^\top x_j \f$ -- PRELIM, see examples/kOrderMarkov
-  virtual bool hasKernel() { return false; }
-  virtual double kernel(uint t0, uint t1) { NIY; } ///< a kernel adds additional costs: neg-log-likelihoods of a Gaussian Process
+typedef std::function<void(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x)> ConstrainedProblemLambda;
 
-  virtual ~KOrderMarkovFunction(){}
+struct Conv_Lambda_ConstrainedProblem : ConstrainedProblem{
+  ConstrainedProblemLambda f;
+  Conv_Lambda_ConstrainedProblem(const ConstrainedProblemLambda& f): f(f){}
+  void phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){ f(phi, J, H, tt, x); }
 };
 
 
@@ -104,21 +70,56 @@ struct KOrderMarkovFunction {
 // checks, evaluation
 //
 
-bool checkJacobianCP(const ConstrainedProblem &P, const arr& x, double tolerance);
-bool checkHessianCP(const ConstrainedProblem &P, const arr& x, double tolerance);
+bool checkJacobianCP(ConstrainedProblem& P, const arr& x, double tolerance);
+bool checkHessianCP(ConstrainedProblem& P, const arr& x, double tolerance);
 bool checkDirectionalGradient(const ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction &f, const arr& x, const arr& delta, double tolerance);
 
 
+//===========================================================================
+//
+// generic optimization options
+//
+
+enum ConstrainedMethodType { noMethod=0, squaredPenalty, augmentedLag, logBarrier, anyTimeAula, squaredPenaltyFixed };
+
+struct OptOptions {
+  uint verbose;
+  double *fmin_return;
+  double stopTolerance;
+  double stopFTolerance;
+  double stopGTolerance;
+  uint   stopEvals;
+  uint   stopIters;
+  uint   stopLineSteps;
+  uint   stopTinySteps;
+  double initStep;
+  double minStep;
+  double maxStep;
+  double damping;
+  double stepInc, stepDec;
+  double dampingInc, dampingDec;
+  double wolfe;
+  int nonStrictSteps; //# of non-strict iterations
+  bool allowOverstep;
+  ConstrainedMethodType constrainedMethod;
+  double muInit, muLBInit;
+  double aulaMuInc;
+  OptOptions();
+  void write(std::ostream& os) const;
+};
+stdOutPipe(OptOptions)
+
+extern Singleton<OptOptions> globalOptOptions;
+
+#define NOOPT (globalOptOptions())
 
 // optimization algorithms declared separately:
-#include "opt-options.h"
-#include "opt-convert.h"
-#include "opt-newton.h"
-#include "opt-grad.h"
-#include "opt-constrained.h"
-#include "opt-rprop.h"
-uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions opt);
+#include "newton.h"
+#include "gradient.h"
+//#include "lagrangian.h"
+#include "convert.h"
+//uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions opt);
 
 
 //===========================================================================
@@ -127,6 +128,10 @@ uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions opt);
 //
 
 void displayFunction(const ScalarFunction &f, bool wait=false, double lo=-1.2, double hi=1.2);
+
+
+// function evaluation counter (used only for performance meassurements, global for simplicity)
+extern uint eval_cost;
 
 
 //===========================================================================
@@ -152,6 +157,3 @@ void displayFunction(const ScalarFunction &f, bool wait=false, double lo=-1.2, d
 #define _OPT_N1(obj, N, ...) _OPT_N2(obj, N, __VA_ARGS__) //this forces that _NUM_ARGS(...) is expanded to a number N
 #define OPT(...)     (_OPT_N1(globalOptOptions(), _NUM_ARGS(__VA_ARGS__), __VA_ARGS__) , globalOptOptions())
 
-#endif
-
-/// @} //end group

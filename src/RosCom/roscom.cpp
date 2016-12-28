@@ -42,8 +42,8 @@ std_msgs::String conv_stringA2string(const StringA& strs){
   return msg;
 }
 
-ors::Transformation conv_transform2transformation(const tf::Transform &trans){
-  ors::Transformation X;
+mlr::Transformation conv_transform2transformation(const tf::Transform &trans){
+  mlr::Transformation X;
   X.setZero();
   tf::Quaternion q = trans.getRotation();
   tf::Vector3 t = trans.getOrigin();
@@ -53,16 +53,16 @@ ors::Transformation conv_transform2transformation(const tf::Transform &trans){
 }
 
 
-ors::Transformation conv_transform2transformation(const geometry_msgs::Transform &trans){
-  ors::Transformation X;
+mlr::Transformation conv_transform2transformation(const geometry_msgs::Transform &trans){
+  mlr::Transformation X;
   X.setZero();
   X.rot.set(trans.rotation.w, trans.rotation.x, trans.rotation.y, trans.rotation.z);
   X.pos.set(trans.translation.x, trans.translation.y, trans.translation.z);
   return X;
 }
 
-ors::Transformation conv_pose2transformation(const geometry_msgs::Pose &pose){
-  ors::Transformation X;
+mlr::Transformation conv_pose2transformation(const geometry_msgs::Pose &pose){
+  mlr::Transformation X;
   X.setZero();
   auto& q = pose.orientation;
   auto& t = pose.position;
@@ -71,7 +71,7 @@ ors::Transformation conv_pose2transformation(const geometry_msgs::Pose &pose){
   return X;
 }
 
-geometry_msgs::Pose conv_transformation2pose(const ors::Transformation& transform){
+geometry_msgs::Pose conv_transformation2pose(const mlr::Transformation& transform){
   geometry_msgs::Pose pose;
   pose.position.x = transform.pos.x;
   pose.position.y = transform.pos.y;
@@ -83,7 +83,7 @@ geometry_msgs::Pose conv_transformation2pose(const ors::Transformation& transfor
   return pose;
 }
 
-geometry_msgs::Transform conv_transformation2transform(const ors::Transformation& transformation){
+geometry_msgs::Transform conv_transformation2transform(const mlr::Transformation& transformation){
   geometry_msgs::Transform transform;
   transform.translation.x = transformation.pos.x;
   transform.translation.y  = transformation.pos.y;
@@ -95,12 +95,12 @@ geometry_msgs::Transform conv_transformation2transform(const ors::Transformation
   return transform;
 }
 
-ors::Vector conv_point2vector(const geometry_msgs::Point& p){
-  return ors::Vector(p.x, p.y, p.z);
+mlr::Vector conv_point2vector(const geometry_msgs::Point& p){
+  return mlr::Vector(p.x, p.y, p.z);
 }
 
-ors::Quaternion conv_quaternion2quaternion(const geometry_msgs::Quaternion& q){
-  return ors::Quaternion(q.w, q.x, q.y, q.z);
+mlr::Quaternion conv_quaternion2quaternion(const geometry_msgs::Quaternion& q){
+  return mlr::Quaternion(q.w, q.x, q.y, q.z);
 }
 
 void conv_pose2transXYPhi(arr& q, uint qIndex, const geometry_msgs::PoseWithCovarianceStamped& pose){
@@ -110,11 +110,11 @@ void conv_pose2transXYPhi(arr& q, uint qIndex, const geometry_msgs::PoseWithCova
 arr conv_pose2transXYPhi(const geometry_msgs::PoseWithCovarianceStamped& pose){
   auto& _quat=pose.pose.pose.orientation;
   auto& _pos=pose.pose.pose.position;
-  ors::Quaternion quat(_quat.w, _quat.x, _quat.y, _quat.z);
-  ors::Vector pos(_pos.x, _pos.y, _pos.z);
+  mlr::Quaternion quat(_quat.w, _quat.x, _quat.y, _quat.z);
+  mlr::Vector pos(_pos.x, _pos.y, _pos.z);
 
   double angle;
-  ors::Vector rotvec;
+  mlr::Vector rotvec;
   quat.getRad(angle, rotvec);
   return ARR(pos(0), pos(1), mlr::sign(rotvec(2)) * angle);
 }
@@ -127,8 +127,8 @@ double conv_time2double(const ros::Time& time){
   return (double)(time.sec) + 1e-9d*(double)(time.nsec);
 }
 
-ors::Transformation ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener){
-  ors::Transformation X;
+mlr::Transformation ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener){
+  mlr::Transformation X;
   X.setZero();
   try{
     tf::StampedTransform transform;
@@ -142,7 +142,7 @@ ors::Transformation ros_getTransform(const std::string& from, const std::string&
   return X;
 }
 
-bool ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener, ors::Transformation& result){
+bool ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener, mlr::Transformation& result){
   result.setZero();
   try{
     tf::StampedTransform transform;
@@ -158,8 +158,8 @@ bool ros_getTransform(const std::string& from, const std::string& to, tf::Transf
 }
 
 
-ors::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener){
-  ors::Transformation X;
+mlr::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener){
+  mlr::Transformation X;
   X.setZero();
   try{
     tf::StampedTransform transform;
@@ -261,20 +261,20 @@ marc_controller_pkg::JointState conv_CtrlMsg2JointState(const CtrlMsg& ctrl){
   return jointState;
 }
 
-ors::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::MarkerArray& markers){
-  ors::KinematicWorld world;
+mlr::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::MarkerArray& markers){
+  mlr::KinematicWorld world;
   tf::TransformListener listener;
   for(const visualization_msgs::Marker& marker:markers.markers){
     mlr::String name;
     name <<"obj" <<marker.id;
-    ors::Shape *s = world.getShapeByName(name);
+    mlr::Shape *s = world.getShapeByName(name);
     if(!s){
-      s = new ors::Shape(world, NoBody);
+      s = new mlr::Shape(world, NoBody);
       s->name=name;
       if(marker.type==marker.CYLINDER){
-        s->type = ors::cylinderST;
+        s->type = mlr::ST_cylinder;
       }else if(marker.type==marker.POINTS){
-        s->type = ors::meshST;
+        s->type = mlr::ST_mesh;
         s->mesh.V = conv_points2arr(marker.points);
         s->mesh.C = conv_colors2arr(marker.colors);
       }else NIY;
@@ -315,15 +315,15 @@ void PerceptionObjects2Ors::step(){
   for(visualization_msgs::Marker& marker : perceptionObjects().markers){
     mlr::String name;
     name <<"obj" <<marker.id;
-    ors::Shape *s = modelWorld->getShapeByName(name);
+    mlr::Shape *s = modelWorld->getShapeByName(name);
     if(!s){
-      s = new ors::Shape(modelWorld(), NoBody);
+      s = new mlr::Shape(modelWorld(), NoBody);
       if(marker.type==marker.CYLINDER){
-        s->type = ors::cylinderST;
+        s->type = mlr::ST_cylinder;
         s->size[3] = .5*(marker.scale.x+marker.scale.y);
         s->size[2] = marker.scale.z;
       }else if(marker.type==marker.POINTS){
-        s->type = ors::meshST;
+        s->type = mlr::ST_mesh;
         s->mesh.V = conv_points2arr(marker.points);
         s->mesh.C = conv_colors2arr(marker.colors);
       }else NIY;
@@ -408,7 +408,7 @@ void PerceptionObjects2Ors::step(){
 
 //===========================================================================
 // Helper function so sync ors with the real PR2
-void initialSyncJointStateWithROS(ors::KinematicWorld& world,
+void initialSyncJointStateWithROS(mlr::KinematicWorld& world,
     Access_typed<CtrlMsg>& ctrl_obs, bool useRos) {
 
   if (not useRos) { return; }
@@ -433,7 +433,7 @@ void initialSyncJointStateWithROS(ors::KinematicWorld& world,
   HALT("sync'ing real PR2 with simulated failed");
 }
 
-void syncJointStateWitROS(ors::KinematicWorld& world,
+void syncJointStateWitROS(mlr::KinematicWorld& world,
     Access_typed<CtrlMsg>& ctrl_obs, bool useRos) {
 
   if (not useRos) { return; }

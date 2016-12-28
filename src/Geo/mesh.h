@@ -24,7 +24,7 @@
 /// @addtogroup group_geo
 /// @{
 
-namespace ors {
+namespace mlr {
 
 //===========================================================================
 /// a mesh (arrays of vertices, triangles, colors & normals)
@@ -52,7 +52,7 @@ struct Mesh : GLDrawer {
   void setCylinder(double r, double l, uint fineness=3);
   void setCappedCylinder(double r, double l, uint fineness=3);
   void setSSBox(double x, double y, double z, double r, uint fineness=3);
-  void setSSCvx(const ors::Mesh& m, double r, uint fineness=3);
+  void setSSCvx(const mlr::Mesh& m, double r, uint fineness=3);
   void setImplicitSurface(ScalarFunction f, double lo=-10., double hi=+10., uint res=100);
   void setRandom(uint vertices=10);
   void setGrid(uint X, uint Y);
@@ -64,10 +64,10 @@ struct Mesh : GLDrawer {
   void translate(double dx, double dy, double dz);
   Vector center();
   void box();
-  void addMesh(const ors::Mesh& mesh2);
+  void addMesh(const mlr::Mesh& mesh2);
   void makeConvexHull();
   void makeTriangleFan();
-  void makeSSBox(arr& x, ors::Transformation& t, const arr& X, uint trials=10, int verbose=0);
+  void makeSSBox(arr& x, mlr::Transformation& t, const arr& X, uint trials=10, int verbose=0);
   
   /// @name internal computations & cleanup
   void computeNormals();
@@ -102,7 +102,7 @@ struct Mesh : GLDrawer {
   void glDraw(struct OpenGL&);
 };
 } //END of namespace
-stdOutPipe(ors::Mesh)
+stdOutPipe(mlr::Mesh)
 
 //===========================================================================
 //
@@ -135,20 +135,20 @@ void inertiaCylinder(double *Inertia, double& mass, double density, double heigh
 //
 
 struct DistanceFunction_Sphere:ScalarFunction{
-  ors::Transformation t; double r;
-  DistanceFunction_Sphere(const ors::Transformation& _t, double _r);
+  mlr::Transformation t; double r;
+  DistanceFunction_Sphere(const mlr::Transformation& _t, double _r);
   double f(arr& g, arr& H, const arr& x);
 };
 
 struct DistanceFunction_Box:ScalarFunction{
-  ors::Transformation t; double dx, dy, dz, r;
-  DistanceFunction_Box(const ors::Transformation& _t, double _dx, double _dy, double _dz, double _r=0.);
+  mlr::Transformation t; double dx, dy, dz, r;
+  DistanceFunction_Box(const mlr::Transformation& _t, double _dx, double _dy, double _dz, double _r=0.);
   double f(arr& g, arr& H, const arr& x);
 };
 
 struct DistanceFunction_Cylinder:ScalarFunction{
-  ors::Transformation t; double r, dz;
-  DistanceFunction_Cylinder(const ors::Transformation& _t, double _r, double _dz);
+  mlr::Transformation t; double r, dz;
+  DistanceFunction_Cylinder(const mlr::Transformation& _t, double _r, double _dz);
   double f(arr& g, arr& H, const arr& x);
 };
 
@@ -162,10 +162,10 @@ extern ScalarFunction DistanceFunction_SSBox;
 
 enum GJK_point_type { GJK_vertex=1, GJK_edge, GJK_face };
 extern GJK_point_type& NoPointType;
-double GJK_sqrDistance(const ors::Mesh& mesh1, const ors::Mesh& mesh2,
-                    const ors::Transformation& t1, const ors::Transformation& t2,
-                    ors::Vector& p1, ors::Vector& p2,
-                    ors::Vector& e1, ors::Vector& e2,
+double GJK_sqrDistance(const mlr::Mesh& mesh1, const mlr::Mesh& mesh2,
+                    const mlr::Transformation& t1, const mlr::Transformation& t2,
+                    mlr::Vector& p1, mlr::Vector& p2,
+                    mlr::Vector& e1, mlr::Vector& e2,
                     GJK_point_type& pt1, GJK_point_type& pt2);
 
 

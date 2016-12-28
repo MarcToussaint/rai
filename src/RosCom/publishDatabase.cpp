@@ -140,17 +140,17 @@ void PublishDatabase::syncCluster(const Cluster* cluster)
   modelWorld.writeAccess();
   mlr::String cluster_name = STRING("cluster_" << cluster->id);
 
-  ors::Body *body = modelWorld().getBodyByName(cluster_name, false);
+  mlr::Body *body = modelWorld().getBodyByName(cluster_name, false);
   if (not body) {
     //cout << cluster_name << " does not exist yet; adding it..." << endl;
-    body = new ors::Body(modelWorld());
+    body = new mlr::Body(modelWorld());
     body->name = cluster_name;
-    ors::Shape *shape = new ors::Shape(modelWorld(), *body);
+    mlr::Shape *shape = new mlr::Shape(modelWorld(), *body);
     shape->name = cluster_name;
-    shape->type = ors::pointCloudST;
-    shape = new ors::Shape(modelWorld(), *body);
+    shape->type = mlr::ST_pointCloud;
+    shape = new mlr::Shape(modelWorld(), *body);
     shape->name = cluster_name;
-    shape->type = ors::markerST;
+    shape->type = mlr::ST_marker;
     shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
     stored_clusters.append(cluster->id);
   }
@@ -158,7 +158,7 @@ void PublishDatabase::syncCluster(const Cluster* cluster)
   //cluster->frame = body->X;
   body->shapes(0)->mesh.V = cluster->points;
 
-  ors::Vector cen = body->shapes(0)->mesh.center();
+  mlr::Vector cen = body->shapes(0)->mesh.center();
   body->X.addRelativeTranslation(cen);
   body->shapes(0)->rel.rot = body->X.rot;
   body->X.rot.setZero();
@@ -174,14 +174,14 @@ void PublishDatabase::syncAlvar(const Alvar* alvar)
   modelWorld.writeAccess();
   mlr::String alvar_name = STRING("alvar_" << alvar->id);
 
-  ors::Body *body = modelWorld().getBodyByName(alvar_name, false);
+  mlr::Body *body = modelWorld().getBodyByName(alvar_name, false);
   if (not body) {
 //    cout << alvar_name << " does not exist yet; adding it..." << endl;
-    body = new ors::Body(modelWorld());
+    body = new mlr::Body(modelWorld());
     body->name = alvar_name;
-    ors::Shape *shape = new ors::Shape(modelWorld(), *body);
+    mlr::Shape *shape = new mlr::Shape(modelWorld(), *body);
     shape->name = alvar_name;
-    shape->type = ors::markerST;
+    shape->type = mlr::ST_marker;
     shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
     stored_alvars.append(alvar->id);
   }
@@ -197,14 +197,14 @@ void PublishDatabase::syncOptitrackBody(const OptitrackBody* optitrackbody)
   modelWorld.writeAccess();
   mlr::String optitrackbody_name = STRING("optitrackbody_" << optitrackbody->id);
 
-  ors::Body *body = modelWorld().getBodyByName(optitrackbody_name, false);
+  mlr::Body *body = modelWorld().getBodyByName(optitrackbody_name, false);
   if (not body) {
     cout << optitrackbody_name << " does not exist yet; adding it..." << endl;
-    body = new ors::Body(modelWorld());
+    body = new mlr::Body(modelWorld());
     body->name = optitrackbody_name;
-    ors::Shape *shape = new ors::Shape(modelWorld(), *body);
+    mlr::Shape *shape = new mlr::Shape(modelWorld(), *body);
     shape->name = optitrackbody_name;
-    shape->type = ors::markerST;
+    shape->type = mlr::ST_marker;
     shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .1;
     stored_optitrackbodies.append(optitrackbody->id);
   }
@@ -220,14 +220,14 @@ void PublishDatabase::syncOptitrackMarker(const OptitrackMarker* optitrackmarker
   modelWorld.writeAccess();
   mlr::String optitrackmarker_name = STRING("optitrackmarker_" << optitrackmarker->id);
 
-  ors::Body *body = modelWorld().getBodyByName(optitrackmarker_name, false);
+  mlr::Body *body = modelWorld().getBodyByName(optitrackmarker_name, false);
   if (not body) {
     cout << optitrackmarker_name << " does not exist yet; adding it..." << endl;
-    body = new ors::Body(modelWorld());
+    body = new mlr::Body(modelWorld());
     body->name = optitrackmarker_name;
-    ors::Shape *shape = new ors::Shape(modelWorld(), *body);
+    mlr::Shape *shape = new mlr::Shape(modelWorld(), *body);
     shape->name = optitrackmarker_name;
-    shape->type = ors::sphereST;
+    shape->type = mlr::ST_sphere;
     shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .03;
     stored_optitrackmarkers.append(optitrackmarker->id);
   }
@@ -243,17 +243,17 @@ void PublishDatabase::syncPlane(const Plane* plane)
   modelWorld.writeAccess();
   mlr::String plane_name = STRING("plane_" << plane->id);
 
-  ors::Body *body = modelWorld().getBodyByName(plane_name, false);
+  mlr::Body *body = modelWorld().getBodyByName(plane_name, false);
   if (not body) {
     //cout << plane_name << " does not exist yet; adding it..." << endl;
-    body = new ors::Body(modelWorld());
+    body = new mlr::Body(modelWorld());
     body->name = plane_name;
-    ors::Shape *shape = new ors::Shape(modelWorld(), *body);
+    mlr::Shape *shape = new mlr::Shape(modelWorld(), *body);
     shape->name = plane_name;
-    shape->type = ors::pointCloudST;
-    shape = new ors::Shape(modelWorld(), *body);
+    shape->type = mlr::ST_pointCloud;
+    shape = new mlr::Shape(modelWorld(), *body);
     shape->name = plane_name;
-    shape->type = ors::markerST;
+    shape->type = mlr::ST_marker;
     shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
     stored_planes.append(plane->id);
   }
@@ -263,7 +263,7 @@ void PublishDatabase::syncPlane(const Plane* plane)
   body->shapes(0)->mesh.V = plane->hull;
   body->shapes(0)->mesh.makeTriangleFan();
 
-  ors::Vector cen = body->shapes(0)->mesh.center();
+  mlr::Vector cen = body->shapes(0)->mesh.center();
   body->X.addRelativeTranslation(cen);
   body->shapes(0)->rel.rot = body->X.rot;
   body->X.rot.setZero();

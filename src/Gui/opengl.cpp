@@ -89,7 +89,6 @@ uint OpenGL::selectionBuffer[1000];
 #ifdef MLR_GL
 void glStandardLight(void*) {
   glEnable(GL_LIGHTING);
-#if 1
   static GLfloat ambient[]   = { .5, .5, .5, 1.0 };
   static GLfloat diffuse[]   = { .2, .2, .2, 1.0 };
   static GLfloat specular[]  = { .3, .3, .3, 1.0 };
@@ -103,27 +102,14 @@ void glStandardLight(void*) {
   glLightfv(GL_LIGHT0, GL_DIFFUSE,  diffuse);
   glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
   glEnable(GL_LIGHT0);
-#endif
-#if 0
-  static GLfloat diffuse1[]   = { 0.5, 0.5, 0.5, 1.0 };
-  static GLfloat specular1[]  = { 0.1, 0.1, 0.1, 1.0 };
-  static GLfloat position1[]  = { -100.0, 20.0, -100.0, 1.0 };
-  static GLfloat direction1[] = { 1.0, -.2, 1.0 };
-  glLightfv(GL_LIGHT1, GL_POSITION, position1);
-  glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, direction1);
-  glLighti(GL_LIGHT1, GL_SPOT_CUTOFF,   90);
-  glLighti(GL_LIGHT1, GL_SPOT_EXPONENT, 10);
-  glLightfv(GL_LIGHT1, GL_DIFFUSE,  diffuse1);
-  glLightfv(GL_LIGHT1, GL_SPECULAR, specular1);
-  glEnable(GL_LIGHT1);
-#endif
 }
 
 void glStandardScene(void*) {
   glStandardLight(NULL);
-//   glDrawFloor(10, .8, .8, .8);
-//  glDrawFloor(10, 1.5, 0.83, .0);
-  glDrawFloor(10., 108./255., 123./255., 139./255.); //Tobias' beautiful colors ;-)
+  //  glDrawFloor(10, .8, .8, .8);
+  //  glDrawFloor(10, 1.5, 0.83, .0);
+  glDrawFloor(10., 108./255., 123./255., 139./255.);
+  glDrawAxes(.1);
 }
 
 void glColor(int col) {
@@ -141,7 +127,7 @@ void glColor(int col) {
 }
 
 void glColor(float r, float g, float b, float alpha) {
-  float amb=1.f, diff=1.f, spec=1.f;
+  float amb=1.f, diff=1.f, spec=.5f;
   GLfloat ambient[4], diffuse[4], specular[4];
   ambient[0] = r*amb;
   ambient[1] = g*amb;
@@ -151,9 +137,9 @@ void glColor(float r, float g, float b, float alpha) {
   diffuse[1] = g*diff;
   diffuse[2] = b*diff;
   diffuse[3] = alpha;
-  specular[0] = spec*.5*(1.+r);
-  specular[1] = spec*.5*(1.+g);
-  specular[2] = spec*.5*(1.+b);
+  specular[0] = spec*.5f*(1.+r);
+  specular[1] = spec*.5f*(1.+g);
+  specular[2] = spec*.5f*(1.+b);
   specular[3] = alpha;
 #if 0
   glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, diffuse);
@@ -161,7 +147,7 @@ void glColor(float r, float g, float b, float alpha) {
   glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
   glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse);
   glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular);
-  glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50.0f);
+  glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 1.0f);
 #endif
   glColor4f(r, g, b, alpha);
 }
@@ -185,13 +171,13 @@ void glShadowTransform()
 }
 */
 
-void glTransform(const ors::Transformation& t){
+void glTransform(const mlr::Transformation& t){
   double GLmatrix[16];
   t.getAffineMatrixGL(GLmatrix);
   glLoadMatrixd(GLmatrix);
 }
 
-void glRotate(const ors::Quaternion& rot){
+void glRotate(const mlr::Quaternion& rot){
   double GLmatrix[16];
   rot.getMatrixGL(GLmatrix);
   glMultMatrixd(GLmatrix);
@@ -383,6 +369,7 @@ void glDrawDiamond(float x, float y, float z, float dx, float dy, float dz) {
 }
 
 void glDrawAxis() {
+//    glDisable(GL_CULL_FACE);
   GLUquadric *style=gluNewQuadric();
   glBegin(GL_LINES);
   glVertex3f(0, 0, 0);
@@ -390,10 +377,9 @@ void glDrawAxis() {
   glEnd();
   glTranslatef(.8, 0, 0);
   glRotatef(90, 0, 1, 0);
-//  glDisable(GL_CULL_FACE);
   gluCylinder(style, .08, 0, .2, 20, 1);
-//  glEnable(GL_CULL_FACE);
   gluDeleteQuadric(style);
+//    glEnable(GL_CULL_FACE);
 }
 
 void glDrawAxes(double scale) {
@@ -401,55 +387,13 @@ void glDrawAxes(double scale) {
     glPushMatrix();
     glScalef(scale, scale, scale);
     switch(i) {
-      case 0:  glColor(1, 0, 0);  break;
-      case 1:  glColor(0, 1, 0);  glRotatef(90, 0, 0, 1);  break;
-      case 2:  glColor(0, 0, 1);  glRotatef(90, 0, -1, 0);  break;
+      case 0:  glColor(.7, 0, 0);  break;
+      case 1:  glColor(0, .7, 0);  glRotatef(90, 0, 0, 1);  break;
+      case 2:  glColor(0, 0, .7);  glRotatef(90, 0, -1, 0);  break;
     }
     glDrawAxis();
     glPopMatrix();
   }
-  
-}
-
-void drawCoordinateFrame() {
-  // x-axis = green
-  glBegin(GL_LINE_STRIP);
-  glColor(4.0, 0.0, 0.0);
-  glVertex3f(0.0, 0.0, 0.001);
-  glVertex3f(1.0, 0.0, 0.001);
-  glVertex3f(0.0, 0.0, 0.002);
-  glVertex3f(1.0, 0.0, 0.002);
-  glVertex3f(0.0, 0.0, 0.003);
-  glVertex3f(1.0, 0.0, 0.003);
-  glVertex3f(0.0, 0.0, 0.004);
-  glVertex3f(1.0, 0.0, 0.004);
-  glEnd();
-  
-  // y-axis = green
-  glBegin(GL_LINE_STRIP);
-  glColor(0.0, 4.0, 0.0);
-  glVertex3f(0.0, 0.0, 0.001);
-  glVertex3f(0.0, 1.0, 0.001);
-  glVertex3f(0.0, 0.0, 0.002);
-  glVertex3f(0.0, 1.0, 0.002);
-  glVertex3f(0.0, 0.0, 0.003);
-  glVertex3f(0.0, 1.0, 0.003);
-  glVertex3f(0.0, 0.0, 0.004);
-  glVertex3f(0.0, 1.0, 0.004);
-  glEnd();
-  
-  // z-axis = blue
-  glBegin(GL_LINE_STRIP);
-  glColor(0.0, 0.0, 4.0);
-  glVertex3f(0.001, 0.0, 0.0);
-  glVertex3f(0.001, 0.0, 1.0);
-  glVertex3f(0.002, 0.0, 0.0);
-  glVertex3f(0.002, 0.0, 1.0);
-  glVertex3f(0.003, 0.0, 0.0);
-  glVertex3f(0.003, 0.0, 1.0);
-  glVertex3f(0.004, 0.0, 0.0);
-  glVertex3f(0.004, 0.0, 1.0);
-  glEnd();
 }
 
 void glDrawSphere(float radius) {
@@ -947,7 +891,7 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 //
 
 OpenGL::OpenGL(const char* _title, int w, int h, int posx, int posy)
-  : s(NULL), title(_title), width(w), height(h), reportEvents(false), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0){
+  : s(NULL), title(_title), width(w), height(h), reportEvents(false), topSelection(NULL), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0){
   //MLR_MSG("creating OpenGL=" <<this);
   Reshape(w,h);
   s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
@@ -955,12 +899,13 @@ OpenGL::OpenGL(const char* _title, int w, int h, int posx, int posy)
 }
 
 OpenGL::OpenGL(void *container)
-  : s(NULL), width(0), height(0), reportEvents(false), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0){
+  : s(NULL), width(0), height(0), reportEvents(false), topSelection(NULL), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0){
   s=new sOpenGL(this,container); //this might call some callbacks (Reshape/Draw) already!
   init();
 }
 
 OpenGL::~OpenGL() {
+  clear();
   delete s;
   s=NULL;
 //  MLR_MSG("destructing OpenGL=" <<this);
@@ -1032,6 +977,7 @@ void OpenGL::setViewPort(uint v, double l, double r, double b, double t) {
 
 /// clear the list of all draw and callback routines
 void OpenGL::clear() {
+  for(auto& x:drawers) if(CstyleDrawer* d = dynamic_cast<CstyleDrawer*>(x)) delete d;
   views.clear();
   drawers.clear();
   initCalls.clear();
@@ -1040,7 +986,7 @@ void OpenGL::clear() {
   keyCalls.clear();
 }
 
-void OpenGL::Draw(int w, int h, ors::Camera *cam, bool ignoreLock) {
+void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool ignoreLock) {
 #ifdef MLR_GL
 
   if(!ignoreLock){
@@ -1198,7 +1144,7 @@ void OpenGL::Draw(int w, int h, ors::Camera *cam, bool ignoreLock) {
   }
   if(captureDep){
     captureDepth.resize(h, w);
-    glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, captureDepth.p);
+    glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
 //    flip_image(captureDepth);
     captureDep=false;
   }
@@ -1316,6 +1262,8 @@ int OpenGL::watch(const char *txt) {
       processEvents();
       sleepForEvents();
     }
+  }else{
+    mlr::wait(.5);
   }
   return pressedkey;
 }
@@ -1440,7 +1388,7 @@ void OpenGL::about(std::ostream& os) { MLR_MSG("NICO"); }
 #  define CALLBACK_DEBUG(x)
 #endif
 
-void getSphereVector(ors::Vector& vec, int _x, int _y, int le, int ri, int bo, int to) {
+void getSphereVector(mlr::Vector& vec, int _x, int _y, int le, int ri, int bo, int to) {
   int w=ri-le, h=to-bo;
   int minwh = w<h?w:h;
   double x, y;
@@ -1474,7 +1422,7 @@ void OpenGL::Key(unsigned char key, int _x, int _y) {
   bool cont=true;
   for(uint i=0; i<keyCalls.N; i++) cont=cont && keyCalls(i)->keyCallback(*this);
   
-  if(key==13 || key==27 || mlr::contains(exitkeys, key)) watching.setValue(0);
+  if(key==13 || key==27 || key=='q' || mlr::contains(exitkeys, key)) watching.setValue(0);
   lock.unlock();
 }
 
@@ -1489,8 +1437,8 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   lastEvent.set(mouse_button, -1, _x, _y, 0., 0.);
   
   GLView *v;
-  ors::Camera *cam=&camera;
-  ors::Vector vec;
+  mlr::Camera *cam=&camera;
+  mlr::Vector vec;
   for(mouseView=views.N; mouseView--;) {
     v=&views(mouseView);
     if(_x<v->ri*w && _x>v->le*w && _y<v->to*h && _y>v->bo*h) {
@@ -1565,8 +1513,8 @@ void OpenGL::Motion(int _x, int _y) {
   _y = h-_y;
   CALLBACK_DEBUG(printf("Window %d Mouse Motion Callback:  %d %d\n", 0, _x, _y));
   mouseposx=_x; mouseposy=_y;
-  ors::Camera *cam;
-  ors::Vector vec;
+  mlr::Camera *cam;
+  mlr::Vector vec;
   if(mouseView==-1) {
     cam=&camera;
     getSphereVector(vec, _x, _y, 0, w, 0, h);
@@ -1585,7 +1533,7 @@ void OpenGL::Motion(int _x, int _y) {
     return;
   }
   if(mouse_button==1) {  //rotation // && !(modifiers&GLUT_ACTIVE_SHIFT) && !(modifiers&GLUT_ACTIVE_CTRL)){
-    ors::Quaternion rot;
+    mlr::Quaternion rot;
     if(s->downVec.z<.1) {
       rot.setDiff(vec, s->downVec);  //consider imagined sphere rotation of mouse-move
     } else {
@@ -1605,7 +1553,7 @@ void OpenGL::Motion(int _x, int _y) {
     if(immediateExitLoop) watching.setValue(0);
   }
   if(mouse_button==3) {  //translation || (mouse_button==1 && (modifiers&GLUT_ACTIVE_SHIFT) && !(modifiers&GLUT_ACTIVE_CTRL))){
-    /*    ors::Vector trans = s->downVec - vec;
+    /*    mlr::Vector trans = s->downVec - vec;
         trans.z=0.;
         trans = s->downRot*trans;
         cam->X.pos = s->downPos + trans;
@@ -1801,7 +1749,7 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
   if(_captureDep){
     captureDepth.resize(h, w);
     glReadBuffer(GL_DEPTH_ATTACHMENT);
-    glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, captureDepth.p);
+    glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
 //    flip_image(captureDepth);
   }
 

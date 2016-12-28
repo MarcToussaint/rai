@@ -26,9 +26,9 @@ struct Collector : Thread{
   Access_typed<std::vector<geometry_msgs::TransformStamped>> opti_bodies;
   Access_typed<object_recognition_msgs::TableArray> tabletop_tableArray;
 
-  ACCESSname(ors::Transformation, tabletop_srcFrame)
-  ACCESSname(ors::Transformation, alvar_srcFrame)
-  ACCESSname(ors::Transformation, optitrack_srcFrame)
+  ACCESSname(mlr::Transformation, tabletop_srcFrame)
+  ACCESSname(mlr::Transformation, alvar_srcFrame)
+  ACCESSname(mlr::Transformation, optitrack_srcFrame)
 
   ACCESSname(FilterObjects, perceptual_inputs)
 

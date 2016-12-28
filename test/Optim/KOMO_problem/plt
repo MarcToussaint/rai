@@ -1,0 +1,10 @@
+heavy(x) = (1+sgn(x))/2
+eps = .1
+power = 2.
+margin = .1
+g(x) = heavy(x)*( heavy(x-eps)*(x-eps/2) + (1-heavy(x-eps))*x**2/(2*eps) )**power
+f(x) = heavy(x)*( (x)**power )
+h(x) = abs(x)**power
+plot [-1:.5][-.1:5] f(x/margin+1), h(x/margin), 1
+
+

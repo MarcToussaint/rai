@@ -23,7 +23,7 @@
 
 #include <Core/array.h>
 
-namespace ors {
+namespace mlr {
 
 //===========================================================================
 /// a 3D vector (double[3])
@@ -261,7 +261,7 @@ struct Camera {
   void focus(const Vector& v);
   void focus();
   void watchDirection(const Vector& d);
-  void upright();
+  void upright(const Vector& up=Vector(0,0,1));
   void glSetProjectionMatrix();
   void glConvertToTrueDepth(double &d);
   void glConvertToLinearDepth(double &d);
@@ -351,9 +351,9 @@ void quatDiff(arr& y, arr& J1, arr& J2, const Quaternion& q1, const Quaternion& 
 // conversions to arr
 //
 
-inline arr conv_vec2arr(const ors::Vector& v) {      return arr(&v.x, 3); }
-inline arr conv_quat2arr(const ors::Quaternion& q) { return arr(&q.w, 4); }
-inline arr conv_mat2arr(const ors::Matrix& m) {      return arr(&m.m00, 9); }
+inline arr conv_vec2arr(const mlr::Vector& v) {      return arr(&v.x, 3); }
+inline arr conv_quat2arr(const mlr::Quaternion& q) { return arr(&q.w, 4); }
+inline arr conv_mat2arr(const mlr::Matrix& m) {      return arr(&m.m00, 9); }
 
 
 //===========================================================================
@@ -361,13 +361,13 @@ inline arr conv_mat2arr(const ors::Matrix& m) {      return arr(&m.m00, 9); }
 // constants
 //
 
-extern const ors::Vector Vector_x;
-extern const ors::Vector Vector_y;
-extern const ors::Vector Vector_z;
-extern const ors::Transformation Transformation_Id;
-extern const ors::Quaternion Quaternion_Id;
-extern ors::Vector& NoVector;
-extern ors::Transformation& NoTransformation;
+extern const mlr::Vector Vector_x;
+extern const mlr::Vector Vector_y;
+extern const mlr::Vector Vector_z;
+extern const mlr::Transformation Transformation_Id;
+extern const mlr::Quaternion Quaternion_Id;
+extern mlr::Vector& NoVector;
+extern mlr::Transformation& NoTransformation;
 
 
 //===========================================================================

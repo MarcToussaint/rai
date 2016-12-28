@@ -172,12 +172,13 @@ LIBS      += -lgsl
 endif
 
 ifeq ($(OCTAVE),1)
-CXXFLAGS += -DMLR_OCTAVE
+CXXFLAGS += -DMLR_OCTAVE -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4
 ifeq ($(ARCH_LINUX),1)
 CPATH := $(CPATH):/usr/include/octave-3.6.2
 LPATHS += /usr/lib/octave/3.6.2
 else
-LPATHS += /usr/lib/octave-3.2.4
+CPATH := $(CPATH):/usr/include/octave-3.8.1:/usr/include/octave-3.8.1/octave
+LPATHS += /usr/lib/octave-3.8.1
 endif
 LIBS	+= -loctinterp -loctave
 # TIP!!!: run 'mkoctfile --verbose main.cpp' and have a look at the compile options!

@@ -16,17 +16,17 @@ void ManipulationTree_Node::solvePoseProblem(){
     poseProblem->setTiming(0, 1.);
     poseProblem->k_order=0;
     poseProblem->parseTasks(*poseProblemSpecs);
-    //    Problem->reportFull();
+    //    Problem->reportFeatures();
   }
 
-  for(ors::KinematicSwitch *sw: poseProblem->switches)
+  for(mlr::KinematicSwitch *sw: poseProblem->switches)
     if(sw->timeOfApplication==0) sw->apply(effKinematics);
 
   arr newPose=poseProblem->getInitialization();
   rndGauss(newPose, .1, true);
   OptConstrained opt(newPose, NoArr, poseProblem->InvKinProblem(), OPT(verbose=2));
   opt.run();
-  //  poseProblem->reportFull();
+  //  poseProblem->reportFeatures();
   poseProblem->costReport(false);
   //    Problem->world.gl().watch();
 
@@ -45,7 +45,7 @@ void ManipulationTree_Node::solvePoseProblem(){
   komo.setAbstractTask(0, *folState);
 
   komo.reset();
-  komo.MP->reportFull(true, FILE("z.problem"));
+  komo.MP->reportFeatures(true, FILE("z.problem"));
   komo.run();
 
   Graph result = komo.getReport();
@@ -60,7 +60,7 @@ void ManipulationTree_Node::solvePoseProblem(){
 
   effKinematics.setJointState(pose);
 
-  for(ors::KinematicSwitch *sw: poseProblem->MP->switches)
+  for(mlr::KinematicSwitch *sw: poseProblem->MP->switches)
     if(sw->timeOfApplication==1) sw->apply(effKinematics);
   effKinematics.topSort();
   effKinematics.checkConsistency();
@@ -109,7 +109,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   seqProblem->parseTasks(*seqProblemSpecs, 1, 0);
   arr newSeq = seqProblem->getInitialization();
   cout <<"SEQ PROBLEM motion problem:\n";
-  seqProblem->reportFull(true);
+  seqProblem->reportFeatures(true);
   rndGauss(newSeq, .1, true);
 
   Convert cvt(*seqProblem);
@@ -134,7 +134,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
     seq=newSeq;
   }
 
-//  seqProblem->reportFull(true);
+//  seqProblem->reportFeatures(true);
   seqProblem->costReport(verbose>1);
   if(verbose>1) seqProblem->displayTrajectory(1, "SeqProblem", -.01);
 #else
@@ -146,16 +146,16 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
   komo.setSquaredFixJointVelocities(-1., -1., 1e3);
-  komo.setSquaredFixSwitchVelocities(-1., -1., 1e3);
+  komo.setSquaredFixSwitchedObjects(-1., -1., 1e3);
 
   for(ManipulationTree_Node *node:treepath){
-    komo.setAbstractTask(node->time, *node->folState, true);
+    komo.setAbstractTask(node->time, *node->folState);
   }
 
   komo.reset();
-//  komo.MP->reportFull(true, FILE("z.problem"));
+//  komo.MP->reportFeatures(true, FILE("z.problem"));
   komo.run();
-  komo.MP->reportFull(true, FILE("z.problem"));
+  komo.MP->reportFeatures(true, FILE("z.problem"));
 //  komo.checkGradients();
 
   Graph result = komo.getReport();
@@ -191,7 +191,7 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   }
 
   path = pathProblem->getInitialization();
-  pathProblem->reportFull(true);
+  pathProblem->reportFeatures(true);
   rndGauss(path, .1, true);
 
   Convert cvt(*pathProblem);
@@ -207,7 +207,7 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
     pathCost = opt.newton.fx;
   }
 
-//  pathProblem->reportFull(true);
+//  pathProblem->reportFeatures(true);
   pathProblem->costReport(verbose>1);
   if(verbose>1) pathProblem->displayTrajectory(1, "PathProblem", -.01);
 #else
@@ -220,11 +220,11 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   komo.setSquaredFixJointVelocities(-1., -1., 1e3);
 
   for(ManipulationTree_Node *node:treepath) /*if(node->folDecision)*/{
-    komo.setAbstractTask(node->time, *node->folState, true);
+    komo.setAbstractTask(node->time, *node->folState);
   }
 
   komo.reset();
-  komo.MP->reportFull(true, FILE("z.problem"));
+  komo.MP->reportFeatures(true, FILE("z.problem"));
   komo.run();
 
   Graph result = komo.getReport();

@@ -691,40 +691,40 @@ void ShapeFitter::step(){
 #endif
 
 
-void realizeObjectsInOrs(ors::KinematicWorld& ors, const mlr::Array<RigidObjectRepresentation>& objects){
+void realizeObjectsInOrs(mlr::KinematicWorld& ors, const mlr::Array<RigidObjectRepresentation>& objects){
   RigidObjectRepresentation *obj;  uint i;
-  ors::Body *o = ors.getBodyByName("o1");
+  mlr::Body *o = ors.getBodyByName("o1");
   uint indFirst = o->index;//hack to get consecutive bodies
   for(i=0; i<objects.N; i++){
     obj=&objects(i);
     if(!obj->found) continue;
-    ors::Body *o = ors.bodies(i+indFirst);
-    ors::Shape *s = o->shapes(0);
-    ors::ShapeType type=ors::noneST;//SSD: getting rid of a warning. ok?
-    if(obj->shapeType == 0) type=ors::sphereST;
-    if(obj->shapeType == 1) type=ors::cylinderST;
+    mlr::Body *o = ors.bodies(i+indFirst);
+    mlr::Shape *s = o->shapes(0);
+    mlr::ShapeType type=mlr::ST_none;//SSD: getting rid of a warning. ok?
+    if(obj->shapeType == 0) type=mlr::ST_sphere;
+    if(obj->shapeType == 1) type=mlr::ST_cylinder;
     if(obj->shapeType == 2){//box
-      type = ors::boxST;
-      //  ors::Vector diag(obj->diagDiff(0), obj->diagDiff(1), obj->diagDiff(2)*0);//z is the smallest entry, but still not 0
+      type = mlr::ST_box;
+      //  mlr::Vector diag(obj->diagDiff(0), obj->diagDiff(1), obj->diagDiff(2)*0);//z is the smallest entry, but still not 0
       //double phi=acos(diag(0)/diag.length());//arccos btw 100 and diag
-      // ors::Quaternion q;
-      //q.setDiff(ors::Vector(1, 0, 0), diag);
-      //q.setRad(phi, ors::Vector(0, 0, 1));
+      // mlr::Quaternion q;
+      //q.setDiff(mlr::Vector(1, 0, 0), diag);
+      //q.setRad(phi, mlr::Vector(0, 0, 1));
       // s->rel.r = q;
     }
     if(type!=s->type){
       s->type=type;
       s->mesh.clear();
     }
-    // s->rel.p = -o->X.p + ors::Vector(obj->center3d(0), obj->center3d(1), obj->center3d(2));
-    o->X.pos =  ors::Vector(obj->center3d(0), obj->center3d(1), obj->center3d(2));
+    // s->rel.p = -o->X.p + mlr::Vector(obj->center3d(0), obj->center3d(1), obj->center3d(2));
+    o->X.pos =  mlr::Vector(obj->center3d(0), obj->center3d(1), obj->center3d(2));
     memmove(s->size, obj->orsShapeParams.p, 4*sizeof(double));
     //cout <<" object " <<o->name <<" pos " <<o->X.p <<" " <<obj->center3d <<endl;
   }
 }
 
-/*void copyShapeInfos(ors::KinematicWorld& A, const ors::KinematicWorld& B){
-  uint i; ors::Shape *s, *sa;
+/*void copyShapeInfos(mlr::KinematicWorld& A, const mlr::KinematicWorld& B){
+  uint i; mlr::Shape *s, *sa;
   for_list(Type,  s,  B.shapes){
     sa = A.shapes(i);
     if(sa->type!=s->type){
@@ -736,9 +736,9 @@ void realizeObjectsInOrs(ors::KinematicWorld& ors, const mlr::Array<RigidObjectR
   }
 }*/
 
-void copyBodyInfos(ors::KinematicWorld& A, const ors::KinematicWorld& B){
-  uint i; ors::Body *b, *ba;
-  ors::Shape *s, *sa;
+void copyBodyInfos(mlr::KinematicWorld& A, const mlr::KinematicWorld& B){
+  uint i; mlr::Body *b, *ba;
+  mlr::Shape *s, *sa;
   for_list(Type,  b,  B.bodies) if(b->shapes.N){
     s = b->shapes(0);
     ba = A.bodies(i);

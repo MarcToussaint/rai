@@ -85,14 +85,10 @@ void KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x){
 Conv_KOMO_ConstrainedProblem::Conv_KOMO_ConstrainedProblem(KOMO_Problem& P) : KOMO(P){
   KOMO.getStructure(variableDimensions, featureTimes, featureTypes);
   varDimIntegral = integral(variableDimensions);
-
-  ConstrainedProblem::operator=( [this](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) -> void{
-    return f(phi, J, H, tt, x);
-  } );
 }
 
-void Conv_KOMO_ConstrainedProblem::f(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){
-  KOMO.phi(phi, J_KOMO, H_KOMO, tt, x);
+void Conv_KOMO_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){
+  KOMO.phi(phi, (&J?J_KOMO:NoArrA), (&H?H_KOMO:NoArrA), tt, x);
 
   //-- construct a row-shifed J from the array of featureJs
   if(&J){
