@@ -110,7 +110,7 @@ ScalarFunction convert_VectorFunction_ScalarFunction(const VectorFunction& f) {
   };
 }
 
-void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& _x) {
+void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& _x) {
   //probing dimensionality
   uint T=f.get_T();
   uint k=f.get_k();
@@ -180,7 +180,7 @@ void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& 
 
     //query
     arr phi_t, J_t, Jz_t;
-    TermTypeA tt_t;
+    ObjectiveTypeA tt_t;
     f.phi_t(phi_t, (&J?J_t:NoArr), tt_t, t, x_bar);
     CHECK_EQ(phi_t.N,dimphi_t,"");
     phi.setVectorBlock(phi_t, M);
@@ -232,7 +232,7 @@ void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& 
 }
 
 ConstrainedProblem convert_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f){
-  return [&f](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) -> void {
+  return [&f](arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) -> void {
     conv_KOrderMarkovFunction_ConstrainedProblem(f, phi, J, H, tt, x);
   };
 }
@@ -591,6 +591,6 @@ double conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction &f, arr
 //===========================================================================
 
 RUN_ON_INIT_BEGIN()
-  mlr::Array<TermType>::memMove=true;
+  mlr::Array<ObjectiveType>::memMove=true;
 RUN_ON_INIT_END()
 

@@ -457,6 +457,9 @@ template<class T> mlr::Array<T> ARRAY(const T& i, const T& j, const T& k, const 
 template<class T> mlr::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p) { mlr::Array<T> z(8); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; z(7)=p; return z; }
 template<class T> mlr::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p, const T& q) { mlr::Array<T> z(9); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; z(7)=p; z(8)=q; return z; }
 
+template<class T> mlr::Array<T> ARRAY(uint D0, std::initializer_list<T> init) {  mlr::Array<T> z(init); z.reshape(D0); return z; }
+template<class T> mlr::Array<T> ARRAY(uint D0, uint D1, std::initializer_list<T> init) {  mlr::Array<T> z(init); z.reshape(D0, D1); return z; }
+
 template<class T> mlr::Array<T*> LIST() {                                    mlr::Array<T*> z(0); return z; }
 template<class T> mlr::Array<T*> LIST(const T& i) {                                    mlr::Array<T*> z(1); z(0)=(T*)&i; return z; }
 template<class T> mlr::Array<T*> LIST(const T& i, const T& j) {                               mlr::Array<T*> z(2); z(0)=(T*)&i; z(1)=(T*)&j; return z; }

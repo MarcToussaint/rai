@@ -20,7 +20,7 @@ Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G) :
   varDimIntegral = integral(variableDimensions);
 }
 
-void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) {
+void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
   G.phi(phi, J_G, H_G, x);
 
   if(&tt) tt = featureTypes;

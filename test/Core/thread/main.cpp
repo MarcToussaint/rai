@@ -7,9 +7,9 @@ Mutex m;
 
 // Normal Thread struct
 struct MyThread: Thread{
-  Variable<double>& x;
+  AccessData<double>& x;
   uint n;
-  MyThread(Variable<double>& x, uint n, double beat):Thread(STRING("MyThread_"<<n), beat), x(x), n(n){}
+  MyThread(AccessData<double>& x, uint n, double beat):Thread(STRING("MyThread_"<<n), beat), x(x), n(n){}
   void open(){}
   void close(){}
   void step(){
@@ -19,8 +19,8 @@ struct MyThread: Thread{
 };
 
 void TEST(Thread){
-  Variable<double> x;
-  x.data = 0.;
+  AccessData<double> x;
+  x.value = 0.;
   MyThread t1(x, 1, .5), t2(x, 2, .5);
 
   t1.threadLoop();
@@ -172,7 +172,7 @@ void TEST(ModuleSorter1){
   for(uint i=0;i<N-1;i++)
     ps.append( new PairSorter(STRING("int"<<i), STRING("int"<<i+1)) );
   cout <<registry() <<endl <<"----------------------------" <<endl;
-  auto vars = registry().getValuesOfType<Variable<int> >();
+  auto vars = registry().getValuesOfType<AccessData<int> >();
   CHECK_EQ(vars.N, N, "");
 
   threadOpenModules(true);

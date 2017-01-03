@@ -10,7 +10,7 @@ uint ParticleAroundWalls::dim_g(uint t){
   return 0;
 }
 
-void ParticleAroundWalls::phi_t(arr& phi, arr& J, TermTypeA& tt, uint t){
+void ParticleAroundWalls::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t){
   uint T=get_T(), n=dim_x(t), k=get_k();
 
   //-- construct x_bar
@@ -31,7 +31,7 @@ void ParticleAroundWalls::phi_t(arr& phi, arr& J, TermTypeA& tt, uint t){
   if(k==1)  phi = x_bar[1]-x_bar[0]; //penalize velocity
   if(k==2)  phi = x_bar[2]-2.*x_bar[1]+x_bar[0]; //penalize acceleration
   if(k==3)  phi = x_bar[3]-3.*x_bar[2]+3.*x_bar[1]-x_bar[0]; //penalize jerk
-  if(&tt) tt = consts(sumOfSqrTT, n);
+  if(&tt) tt = consts(OT_sumOfSqr, n);
 
   //-- wall constraints: append to phi
   //Note: here we append to phi ONLY in certain time slices ->
@@ -42,7 +42,7 @@ void ParticleAroundWalls::phi_t(arr& phi, arr& J, TermTypeA& tt, uint t){
     if(t==3*T/4) phi.append((i+1.-x_bar(k,i)));  //``greater than i+1''
     if(t==T)     phi.append((x_bar(k,i)+i+1.));  //``lower than -i-1''
   }
-  if(&tt && (t==T/4 || t==T/2 || t==3*T/4 || t==T) ) tt.append(ineqTT, n);
+  if(&tt && (t==T/4 || t==T/2 || t==3*T/4 || t==T) ) tt.append(OT_ineq, n);
 
   uint m=phi.N;
   CHECK_EQ(m,dim_phi(t),"");

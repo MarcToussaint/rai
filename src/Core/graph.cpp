@@ -743,12 +743,13 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
     index(true);
   }
   for(Node *n: list()) {
+    if(hasRenderingInfo(n) && getRenderingInfo(n).skip) continue;
     mlr::String label;
     if(n->keys.N){
       label <<"label=\"";
       bool newline=false;
       for(mlr::String& k:n->keys){
-        if(newline) label <<'\n';
+        if(newline) label <<"\\n";
         label <<k;
         newline=true;
       }
@@ -779,6 +780,7 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
         }
         if(nodesOrEdges<=0){
           for_list(Node, pa, n->parents) {
+            if(hasRenderingInfo(pa) && getRenderingInfo(pa).skip) continue;
             if(pa->index<n->index)
               os <<pa->index <<" -> " <<n->index <<" [ ";
             else

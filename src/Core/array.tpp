@@ -787,6 +787,9 @@ template<class T> T& mlr::Array<T>::operator()(uint i, uint j, uint k) const {
 template<class T> mlr::Array<T> mlr::Array<T>::operator[](uint i) const {
 //  return Array(*this, i);
   mlr::Array<T> z;
+#if 1
+  z.referToDim(*this, i);
+#else
   CHECK(nd>1, "can't create subarray of array less than 2 dimensions");
   CHECK(i<d0, "SubDim range error (" <<i <<"<" <<d0 <<")");
   z.reference=true; z.memMove=memMove;
@@ -801,11 +804,14 @@ template<class T> mlr::Array<T> mlr::Array<T>::operator[](uint i) const {
     if(z.nd>3) { z.d=new uint[z.nd];  memmove(z.d, d+1, z.nd*sizeof(uint)); }
   }
   z.p=p+i*z.N;
+#endif
   return z;
 }
 
 /// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
-template<class T> mlr::Array<T> mlr::Array<T>::refDim(uint i, uint j) const { return Array(*this, i, j); }
+template<class T> mlr::Array<T> mlr::Array<T>::refDim(uint i, uint j) const {
+  return Array(*this, i, j);
+}
 
 /// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
 template<class T> mlr::Array<T> mlr::Array<T>::refDim(uint i, uint j, uint k) const { return Array(*this, i, j, k); }
@@ -1013,7 +1019,7 @@ template<class T> mlr::Array<T> mlr::Array<T>::sub(int i, int I, int j, int J, i
   mlr::Array<T> x;
   if(i<0) i+=d0;
   if(j<0) j+=d1;
-  if(k<0) j+=d2;
+  if(k<0) k+=d2;
   if(I<0) I+=d0;
   if(J<0) J+=d1;
   if(K<0) K+=d2;

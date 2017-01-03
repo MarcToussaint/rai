@@ -271,6 +271,8 @@ NodeL neighbors(Node*);
 /// annotations to a node for rendering; esp dot
 struct RenderingInfo{
   mlr::String dotstyle;
+  bool skip;
+  RenderingInfo() : skip(false){}
   void write(ostream& os) const{ os <<dotstyle; }
 };
 stdOutPipe(RenderingInfo)

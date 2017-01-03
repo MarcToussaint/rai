@@ -218,7 +218,7 @@ void ConditionVariable::waitUntil(double absTime, bool userHasLocked) {
 //
 
 //RevisionedAccessGatedClass::RevisionedAccessGatedClass(const char *_name):name(_name), revision(0), registryNode(NULL) {
-////  registryNode = registry().newNode<RevisionedAccessGatedClass* >({"Variable", name}, {}, this);
+////  registryNode = registry().newNode<RevisionedAccessGatedClass* >({"AccessData", name}, {}, this);
 //}
 
 RevisionedAccessGatedClass::~RevisionedAccessGatedClass() {

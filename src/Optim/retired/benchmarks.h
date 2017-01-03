@@ -12,7 +12,7 @@ struct ParticleAroundWalls : KOrderMarkovFunction {
 
   //implementations of the kOrderMarkov virtuals
   void set_x(const arr& _x){ x=_x; x.reshape(T+1,n); }
-  void phi_t(arr& phi, arr& J, TermTypeA& tt, uint t);
+  void phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t);
   uint get_T(){ return T; }
   uint get_k(){ return k; }
   uint dim_x(uint t){ return n; }

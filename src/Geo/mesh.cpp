@@ -324,16 +324,16 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
   struct fitSSBoxProblem : ConstrainedProblem{
     const arr& X;
     fitSSBoxProblem(const arr& X):X(X){}
-    void phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){
+    void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x){
       phi.resize(5+X.d0);
-      if(&tt){ tt.resize(5+X.d0); tt=ineqTT; }
+      if(&tt){ tt.resize(5+X.d0); tt=OT_ineq; }
       if(&J) {  J.resize(5+X.d0,11); J.setZero(); }
       if(&H) {  H.resize(11,11); H.setZero(); }
 
       //-- the scalar objective
       double a=x(0), b=x(1), c=x(2), r=x(3);
       phi(0) = a*b*c + 2.*r*(a*b + a*c +b*c) + 4./3.*r*r*r;
-      if(&tt) tt(0) = fTT;
+      if(&tt) tt(0) = OT_f;
       if(&J){
         J(0,0) = b*c + 2.*r*(b+c);
         J(0,1) = a*c + 2.*r*(a+c);

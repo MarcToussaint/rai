@@ -49,7 +49,7 @@ struct RandomLPFunction : ConstrainedProblem {
 
   uint dim_x(){ return rnd(10)+10; }
 
-  virtual void phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) {
+  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
     if(!randomG.N) generateG(x.N);
     CHECK(randomG.d1==x.N+1,"you changed dimensionality!");
 
@@ -58,12 +58,12 @@ struct RandomLPFunction : ConstrainedProblem {
     if(&J) J.clear();
 
     phi.append() = sum(x);
-    if(&tt) tt.append(fTT);
+    if(&tt) tt.append(OT_f);
     if(&J) J.append(ones(1,x.N));
     if(&H) H = zeros(x.N, x.N);
 
     phi.append( randomG * cat({1.},x) );
-    if(&tt) tt.append(consts(ineqTT, randomG.d0));
+    if(&tt) tt.append(consts(OT_ineq, randomG.d0));
     if(&J) J.append( randomG.sub(0,-1,1,-1) );
     if(&J) J.reshape(J.N/x.N, x.N);
   }
@@ -79,24 +79,24 @@ struct ChoiceConstraintFunction : ConstrainedProblem {
     which = (WhichConstraint) mlr::getParameter<int>("constraintChoice");
     n = mlr::getParameter<uint>("dim", 2);
   }
-  void phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) {
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
     CHECK_EQ(x.N,n,"");
     phi.clear();  if(&tt) tt.clear();  if(&J) J.clear();
 
-    phi.append( ChoiceFunction()(J, H, x) ); if(&tt) tt.append(fTT);
+    phi.append( ChoiceFunction()(J, H, x) ); if(&tt) tt.append(OT_f);
 
     switch(which) {
       case wedge2D:
-        for(uint i=0;i<x.N;i++){ phi.append( -sum(x)+1.5*x(i)-.2 ); if(&tt) tt.append(ineqTT); }
+        for(uint i=0;i<x.N;i++){ phi.append( -sum(x)+1.5*x(i)-.2 ); if(&tt) tt.append(OT_ineq); }
         if(&J){ arr Jg(x.N, x.N); Jg=-1.; for(uint i=0;i<x.N;i++) Jg(i,i) = +.5; J.append(Jg); }
         break;
       case halfcircle2D:
-        phi.append( sumOfSqr(x)-.25 );  if(&tt) tt.append( ineqTT );  if(&J) J.append( 2.*x ); //feasible=IN circle of radius .5
-        phi.append( -x(0)-.2 );         if(&tt) tt.append( ineqTT );  if(&J){ J.append( zeros(x.N) ); J.elem(-x.N) = -1.; } //feasible=right of -.2
+        phi.append( sumOfSqr(x)-.25 );  if(&tt) tt.append( OT_ineq );  if(&J) J.append( 2.*x ); //feasible=IN circle of radius .5
+        phi.append( -x(0)-.2 );         if(&tt) tt.append( OT_ineq );  if(&J){ J.append( zeros(x.N) ); J.elem(-x.N) = -1.; } //feasible=right of -.2
         break;
       case circleLine2D:
-        phi.append( sumOfSqr(x)-.25 );  if(&tt) tt.append( ineqTT );  if(&J) J.append( 2.*x ); //feasible=IN circle of radius .5
-        phi.append( x(0) );             if(&tt) tt.append( eqTT );    if(&J){ J.append( zeros(x.N) ); J.elem(-x.N) = 1.; }
+        phi.append( sumOfSqr(x)-.25 );  if(&tt) tt.append( OT_ineq );  if(&J) J.append( 2.*x ); //feasible=IN circle of radius .5
+        phi.append( x(0) );             if(&tt) tt.append( OT_eq );    if(&J){ J.append( zeros(x.N) ); J.elem(-x.N) = 1.; }
         break;
       case randomLinear:{
         if(!randomG.N){
@@ -109,7 +109,7 @@ struct ChoiceConstraintFunction : ConstrainedProblem {
         }
         CHECK_EQ(randomG.d1, x.N+1, "you changed dimensionality");
         phi.append( randomG * cat({1.}, x) );
-        if(&tt) tt.append( consts(ineqTT, randomG.d0) );
+        if(&tt) tt.append( consts(OT_ineq, randomG.d0) );
         if(&J) J.append( randomG.sub(0,-1,1,-1) );
       } break;
     }
@@ -136,9 +136,9 @@ struct ChoiceConstraintFunction : ConstrainedProblem {
 struct SimpleConstraintFunction : ConstrainedProblem {
   SimpleConstraintFunction(){
   }
-  virtual void phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& _x) {
+  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& _x) {
     CHECK(_x.N==2,"");
-    if(&tt) tt = { sumOfSqrTT, sumOfSqrTT, ineqTT, ineqTT };
+    if(&tt) tt = { OT_sumOfSqr, OT_sumOfSqr, OT_ineq, OT_ineq };
     phi.resize(4);
     if(&J){ J.resize(4, 2); J.setZero(); }
     if(&H){ H=zeros(4,4); }
@@ -226,9 +226,9 @@ struct ParticleAroundWalls2 : KOMO_Problem {
   //implementations of the kOrderMarkov virtuals
   uint get_T(){ return T; }
   uint get_k(){ return k; }
-  void getStructure(uintA& variableDimensions, uintA& featureTimes, TermTypeA& featureTypes);
+  void getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes);
 
-  void phi(arr& phi, arrA& J, arrA& H, TermTypeA& tt, const arr& x);
+  void phi(arr& phi, arrA& J, arrA& H, ObjectiveTypeA& tt, const arr& x);
 };
 
 //===========================================================================

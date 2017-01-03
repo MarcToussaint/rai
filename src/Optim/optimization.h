@@ -31,23 +31,23 @@ typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
 typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
 
 /// symbols to declare of which type an objective feature is
-enum TermType { noTT=0, fTT, sumOfSqrTT, ineqTT, eqTT }; //TODO: -> FeatureType
-extern const char* TermTypeString[];
-typedef mlr::Array<TermType> TermTypeA;
-extern TermTypeA& NoTermTypeA;
+enum ObjectiveType { OT_none=0, OT_f, OT_sumOfSqr, OT_ineq, OT_eq }; //TODO: -> ObjectiveType
+extern const char* ObjectiveTypeString[];
+typedef mlr::Array<ObjectiveType> ObjectiveTypeA;
+extern ObjectiveTypeA& NoTermTypeA;
 
 /** A ConstrainedProblem returns a feature vector $phi$ and optionally its Jacobian $J$. For each entry of
  *  this feature vector $tt(i)$ determins whether this is an inequality constraint, an equality constraint,
  *  a sumOfSqr or "direct-f" cost feature. The latter two define the objective function as
  *  $f(x) = f_j(x) + \sum_i \phi_i(x)^2$, where the sum only goes over sumOfSqr features, and f_j is a
- *  direct-f feature (tt(i)==fTT). The direct-f feature is special: there may only exist a single such
+ *  direct-f feature (tt(i)==OT_f). The direct-f feature is special: there may only exist a single such
  *  feature; and if there exists this feature the returned Hessian $H$ needs to be its hessian.
  *  For the sumOfSqr features no Hessian is returned: we assume the Gauss-Newton approximation.
  */
 struct ConstrainedProblem{
   //TODO: add getStructure -> dim_x, tt
   virtual ~ConstrainedProblem() = default;
-  virtual void phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) = 0;
+  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x) = 0;
 };
 
 
@@ -56,12 +56,12 @@ struct ConstrainedProblem{
 // lambda expression interfaces
 //
 
-typedef std::function<void(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x)> ConstrainedProblemLambda;
+typedef std::function<void(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x)> ConstrainedProblemLambda;
 
 struct Conv_Lambda_ConstrainedProblem : ConstrainedProblem{
   ConstrainedProblemLambda f;
   Conv_Lambda_ConstrainedProblem(const ConstrainedProblemLambda& f): f(f){}
-  void phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){ f(phi, J, H, tt, x); }
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x){ f(phi, J, H, tt, x); }
 };
 
 

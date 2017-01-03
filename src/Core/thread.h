@@ -112,7 +112,7 @@ struct CycleTimer {
 
 //===========================================================================
 /**
- * A Thread does some calculation and shares the result via a Variable.
+ * A Thread does some calculation and shares the result via a AccessData.
  *
  * Inherit from the class Thread to create your own process.
  * You need to implement open(), close(), and step().
@@ -199,7 +199,7 @@ struct Thread{
 
 /// Deriving from this allows to make variables/classes revisioned read-write access gated
 struct RevisionedAccessGatedClass {
-  mlr::String name;           ///< Variable name
+  mlr::String name;           ///< AccessData name
   RWLock rwlock;              ///< rwLock (usually handled via read/writeAccess)
   ConditionVariable revision; ///< revision (= number of write accesses) number
   int last_revision;          ///< last revision that has been accessed (read or write)
@@ -225,37 +225,37 @@ struct RevisionedAccessGatedClass {
   double revisionTime();
   int revisionNumber();
 };
-inline void operator<<(ostream& os, const RevisionedAccessGatedClass& v){ os <<"Variable '" <<v.name <<'\''; }
+inline void operator<<(ostream& os, const RevisionedAccessGatedClass& v){ os <<"AccessData '" <<v.name <<'\''; }
 
 /// A variable is an access gated data field of type T
 template<class T>
-struct Variable:RevisionedAccessGatedClass{
-  T data;
+struct AccessData : RevisionedAccessGatedClass{
+  T value;
 
-  Variable() = default;
-  Variable(const Variable&){ HALT("not allowed"); }
-  void operator=(const Variable&){ HALT("not allowed"); }
+  AccessData() = default;
+  AccessData(const AccessData&){ HALT("not allowed"); }
+  void operator=(const AccessData&){ HALT("not allowed"); }
 
   //-- Token-wise access
   struct ReadToken{
-    Variable<T> *v;
+    AccessData<T> *v;
     Thread *th;
-    ReadToken(Variable<T> *v, Thread *th):v(v), th(th){ v->readAccess(th); }
+    ReadToken(AccessData<T> *v, Thread *th):v(v), th(th){ v->readAccess(th); }
     ~ReadToken(){ v->deAccess(th); }
-    const T* operator->(){ return &v->data; }
-    operator const T&(){ return v->data; }
-    const T& operator()(){ return v->data; }
+    const T* operator->(){ return &v->value; }
+    operator const T&(){ return v->value; }
+    const T& operator()(){ return v->value; }
   };
   struct WriteToken{
-    Variable<T> *v;
+    AccessData<T> *v;
     Thread *th;
-    WriteToken(Variable<T> *v, Thread *th):v(v), th(th){ v->writeAccess(th); }
-    WriteToken(const double& dataTime, Variable<T> *v, Thread *th):v(v), th(th){ v->writeAccess(th); v->data_time=dataTime; }
+    WriteToken(AccessData<T> *v, Thread *th):v(v), th(th){ v->writeAccess(th); }
+    WriteToken(const double& dataTime, AccessData<T> *v, Thread *th):v(v), th(th){ v->writeAccess(th); v->data_time=dataTime; }
     ~WriteToken(){ v->deAccess(th); }
-    WriteToken& operator=(const T& x){ v->data=x; return *this; }
-    T* operator->(){ return &v->data; }
-    operator T&(){ return v->data; }
-    T& operator()(){ return v->data; }
+    WriteToken& operator=(const T& x){ v->value=x; return *this; }
+    T* operator->(){ return &v->value; }
+    operator T&(){ return v->value; }
+    T& operator()(){ return v->value; }
   };
   ReadToken get(Thread *th=NULL){ return ReadToken(this, th); } ///< read access to the variable's data
   WriteToken set(Thread *th=NULL){ return WriteToken(this, th); } ///< write access to the variable's data
@@ -275,18 +275,18 @@ inline bool operator==(const RevisionedAccessGatedClass&,const RevisionedAccessG
 struct Access{
   mlr::String name; ///< name; by default the access' name; redefine to a variable's name to autoconnect
   Thread *thread;  ///< which module is this a member of
-  RevisionedAccessGatedClass *var;   ///< which variable does it access
+  RevisionedAccessGatedClass *data;   ///< which variable does it access
   struct Node* registryNode;
-  Access(const char* _name, Thread *_thread, RevisionedAccessGatedClass *_var):name(_name), thread(_thread), var(_var){}
+  Access(const char* _name, Thread *_thread, RevisionedAccessGatedClass *_var):name(_name), thread(_thread), data(_var){}
   virtual ~Access(){}
-  bool hasNewRevision(){ return var->hasNewRevision(); }
-  int readAccess(){  return var->readAccess((Thread*)thread); }
-  int writeAccess(){ return var->writeAccess((Thread*)thread); }
-  int deAccess(){    return var->deAccess((Thread*)thread); }
-  int waitForNextRevision(){ return var->waitForNextRevision(); }
-  int waitForRevisionGreaterThan(int rev){    return var->waitForRevisionGreaterThan(rev); }
-//  double& tstamp(){ return var->data_time; } ///< reference to the data's time. Variable should be locked while accessing this.
-  double& dataTime(){ return var->data_time; } ///< reference to the data's time. Variable should be locked while accessing this.
+  bool hasNewRevision(){ return data->hasNewRevision(); }
+  int readAccess(){  return data->readAccess((Thread*)thread); }
+  int writeAccess(){ return data->writeAccess((Thread*)thread); }
+  int deAccess(){    return data->deAccess((Thread*)thread); }
+  int waitForNextRevision(){ return data->waitForNextRevision(); }
+  int waitForRevisionGreaterThan(int rev){    return data->waitForRevisionGreaterThan(rev); }
+//  double& tstamp(){ return var->data_time; } ///< reference to the data's time. AccessData should be locked while accessing this.
+  double& dataTime(){ return data->data_time; } ///< reference to the data's time. AccessData should be locked while accessing this.
 };
 
 
@@ -295,46 +295,46 @@ struct Access{
     the variable's content */
 template<class T>
 struct Access_typed:Access{
-  Variable<T> *v;
+  AccessData<T> *d;
 
   /// A "copy" of acc: An access to the same variable as acc refers to, but now for '_thred'
   Access_typed(Thread* _thread, const Access_typed<T>& acc, bool moduleListens=false)
-    : Access(acc.name, _thread, NULL), v(NULL){
-    v = acc.v;
-    var = acc.var;
+    : Access(acc.name, _thread, NULL), d(NULL){
+    d = acc.d;
+    data = acc.data;
     if(thread){
-      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, v->registryNode}, this);
-      if(moduleListens) thread->listenTo(*var);
+      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, d->registryNode}, this);
+      if(moduleListens) thread->listenTo(*data);
     }else{
-      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {v->registryNode}, this);
+      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {d->registryNode}, this);
     }
   }
 
   /// searches for globally registrated variable 'name', checks type equivalence, and becomes an access for '_thred'
   Access_typed(Thread* _thread, const char* name, bool moduleListens=false)
-    : Access(name, _thread, NULL), v(NULL){
-    v = registry().find<Variable<T> >({"Variable", name});
-    if(!v){ //this is the ONLY place where a variable should be created
-      Node_typed<Variable<T> > *vnode = registry().newNode<Variable<T> >({"Variable", name}, {});
-      v = &vnode->value;
-      v->name = name;
-      v->registryNode = vnode;
+    : Access(name, _thread, NULL), d(NULL){
+    d = registry().find<AccessData<T> >({"AccessData", name});
+    if(!d){ //this is the ONLY place where a variable should be created
+      Node_typed<AccessData<T> > *vnode = registry().newNode<AccessData<T> >({"AccessData", name}, {});
+      d = &vnode->value;
+      d->name = name;
+      d->registryNode = vnode;
     }
-    var = dynamic_cast<RevisionedAccessGatedClass*>(v);
+    data = dynamic_cast<RevisionedAccessGatedClass*>(d);
     if(thread){
-      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, v->registryNode}, this);
-      if(moduleListens) thread->listenTo(*var);
+      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, d->registryNode}, this);
+      if(moduleListens) thread->listenTo(*data);
     }else{
-      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {v->registryNode}, this);
+      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {d->registryNode}, this);
     }
   }
 
   ~Access_typed(){ delete registryNode; }
-  T& operator()(){ CHECK(v->rwlock.isLocked(),"direct variable access without locking it before");  return v->data; }
-  T* operator->(){ CHECK(v->rwlock.isLocked(),"direct variable access without locking it before");  return &(v->data); }
-  typename Variable<T>::ReadToken get(){ return v->get((Thread*)thread); } ///< read access to the variable's data
-  typename Variable<T>::WriteToken set(){ return v->set((Thread*)thread); } ///< write access to the variable's data
-  typename Variable<T>::WriteToken set(const double& dataTime){ return v->set(dataTime, (Thread*)thread); } ///< write access to the variable's data
+  T& operator()(){ CHECK(d->rwlock.isLocked(),"direct variable access without locking it before");  return d->value; }
+  T* operator->(){ CHECK(d->rwlock.isLocked(),"direct variable access without locking it before");  return &(d->value); }
+  typename AccessData<T>::ReadToken get(){ return d->get((Thread*)thread); } ///< read access to the variable's data
+  typename AccessData<T>::WriteToken set(){ return d->set((Thread*)thread); } ///< write access to the variable's data
+  typename AccessData<T>::WriteToken set(const double& dataTime){ return d->set(dataTime, (Thread*)thread); } ///< write access to the variable's data
 };
 
 inline bool operator==(const Access&,const Access&){ return false; }
@@ -350,7 +350,7 @@ inline bool operator==(const Access&,const Access&){ return false; }
 
 extern Singleton<ConditionVariable> moduleShutdown;
 Node *getVariable(const char* name);
-template <class T> T* getVariable(const char* name){  return dynamic_cast<T*>(registry().get<RevisionedAccessGatedClass*>({"Variable",name}));  }
+template <class T> T* getVariable(const char* name){  return dynamic_cast<T*>(registry().get<RevisionedAccessGatedClass*>({"AccessData",name}));  }
 template <class T> T* getThread(const char* name){  return dynamic_cast<T*>(registry().get<Thread*>({"Thread",name}));  }
 RevisionedAccessGatedClassL getVariables();
 void openModules();

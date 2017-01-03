@@ -17,8 +17,8 @@
 
 uint eval_cost=0;
 Singleton<OptOptions> globalOptOptions;
-const char* TermTypeString[]={"noTT", "fTT", "sumOfSqrTT", "ineqTT", "eqTT" };
-TermTypeA& NoTermTypeA = *((TermTypeA*)NULL);
+const char* ObjectiveTypeString[]={"OT_none", "OT_f", "OT_sumOfSqr", "OT_ineq", "OT_eq" };
+ObjectiveTypeA& NoTermTypeA = *((ObjectiveTypeA*)NULL);
 
 //===========================================================================
 //
@@ -36,9 +36,9 @@ bool checkJacobianCP(ConstrainedProblem &P, const arr& x, double tolerance){
 bool checkHessianCP(ConstrainedProblem &P, const arr& x, double tolerance){
   uint i;
   arr phi, J;
-  TermTypeA tt;
+  ObjectiveTypeA tt;
   P.phi(phi, NoArr, NoArr, tt, x); //TODO: only call getStructure
-  for(i=0;i<tt.N;i++) if(tt(i)==fTT) break;
+  for(i=0;i<tt.N;i++) if(tt(i)==OT_f) break;
   if(i==tt.N){
     MLR_MSG("no f-term in this KOM problem");
     return true;
@@ -172,5 +172,5 @@ uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions o) {
 
 
 RUN_ON_INIT_BEGIN(optimization)
-TermTypeA::memMove=true;
+ObjectiveTypeA::memMove=true;
 RUN_ON_INIT_END(optimization)

@@ -61,29 +61,29 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x){
   //precompute I_lambda_x
   boolA I_lambda_x(phi_x.N);
   if(phi_x.N) I_lambda_x = false;
-  if(mu)       for(uint i=0;i<phi_x.N;i++) if(tt_x.p[i]==ineqTT) I_lambda_x.p[i] = (phi_x.p[i]>0. || (lambda.N && lambda.p[i]>0.));
+  if(mu)       for(uint i=0;i<phi_x.N;i++) if(tt_x.p[i]==OT_ineq) I_lambda_x.p[i] = (phi_x.p[i]>0. || (lambda.N && lambda.p[i]>0.));
 
   double L=0.; //L value
   for(uint i=0;i<phi_x.N;i++){
-    if(            tt_x.p[i]==fTT                    ) L += phi_x.p[i];                // direct cost term
-    if(            tt_x.p[i]==sumOfSqrTT             ) L += mlr::sqr(phi_x.p[i]);       // sumOfSqr term
-    if(muLB     && tt_x.p[i]==ineqTT                 ){ if(phi_x.p[i]>0.) return NAN;  L -= muLB * ::log(-phi_x.p[i]); } //log barrier, check feasibility
-    if(mu       && tt_x.p[i]==ineqTT && I_lambda_x.p[i]) L += mu * mlr::sqr(phi_x.p[i]);  //g-penalty
-    if(lambda.N && tt_x.p[i]==ineqTT && lambda.p[i]>0. ) L += lambda.p[i] * phi_x.p[i];    //g-lagrange terms
-    if(nu       && tt_x.p[i]==eqTT                   ) L += nu * mlr::sqr(phi_x.p[i]);  //h-penalty
-    if(lambda.N && tt_x.p[i]==eqTT                   ) L += lambda.p[i] * phi_x.p[i];    //h-lagrange terms
+    if(            tt_x.p[i]==OT_f                    ) L += phi_x.p[i];                // direct cost term
+    if(            tt_x.p[i]==OT_sumOfSqr             ) L += mlr::sqr(phi_x.p[i]);       // sumOfSqr term
+    if(muLB     && tt_x.p[i]==OT_ineq                 ){ if(phi_x.p[i]>0.) return NAN;  L -= muLB * ::log(-phi_x.p[i]); } //log barrier, check feasibility
+    if(mu       && tt_x.p[i]==OT_ineq && I_lambda_x.p[i]) L += mu * mlr::sqr(phi_x.p[i]);  //g-penalty
+    if(lambda.N && tt_x.p[i]==OT_ineq && lambda.p[i]>0. ) L += lambda.p[i] * phi_x.p[i];    //g-lagrange terms
+    if(nu       && tt_x.p[i]==OT_eq                   ) L += nu * mlr::sqr(phi_x.p[i]);  //h-penalty
+    if(lambda.N && tt_x.p[i]==OT_eq                   ) L += lambda.p[i] * phi_x.p[i];    //h-lagrange terms
   }
 
   if(&dL){ //L gradient
     arr coeff=zeros(phi_x.N);
     for(uint i=0;i<phi_x.N;i++){
-      if(            tt_x.p[i]==fTT                    ) coeff.p[i] += 1.;              // direct cost term
-      if(            tt_x.p[i]==sumOfSqrTT             ) coeff.p[i] += 2.* phi_x.p[i];    // sumOfSqr terms
-      if(muLB     && tt_x.p[i]==ineqTT                 ) coeff.p[i] -= (muLB/phi_x.p[i]); //log barrier, check feasibility
-      if(mu       && tt_x.p[i]==ineqTT && I_lambda_x.p[i]) coeff.p[i] += 2.*mu*phi_x.p[i];  //g-penalty
-      if(lambda.N && tt_x.p[i]==ineqTT && lambda.p[i]>0. ) coeff.p[i] += lambda.p[i];       //g-lagrange terms
-      if(nu       && tt_x.p[i]==eqTT                   ) coeff.p[i] += 2.*nu*phi_x.p[i];  //h-penalty
-      if(lambda.N && tt_x.p[i]==eqTT                   ) coeff.p[i] += lambda.p[i];       //h-lagrange terms
+      if(            tt_x.p[i]==OT_f                    ) coeff.p[i] += 1.;              // direct cost term
+      if(            tt_x.p[i]==OT_sumOfSqr             ) coeff.p[i] += 2.* phi_x.p[i];    // sumOfSqr terms
+      if(muLB     && tt_x.p[i]==OT_ineq                 ) coeff.p[i] -= (muLB/phi_x.p[i]); //log barrier, check feasibility
+      if(mu       && tt_x.p[i]==OT_ineq && I_lambda_x.p[i]) coeff.p[i] += 2.*mu*phi_x.p[i];  //g-penalty
+      if(lambda.N && tt_x.p[i]==OT_ineq && lambda.p[i]>0. ) coeff.p[i] += lambda.p[i];       //g-lagrange terms
+      if(nu       && tt_x.p[i]==OT_eq                   ) coeff.p[i] += 2.*nu*phi_x.p[i];  //h-penalty
+      if(lambda.N && tt_x.p[i]==OT_eq                   ) coeff.p[i] += lambda.p[i];       //h-lagrange terms
     }
     dL = comp_At_x(J_x, coeff);
     dL.reshape(x.N);
@@ -93,11 +93,11 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x){
     arr coeff=zeros(phi_x.N);
     int fterm=-1;
     for(uint i=0;i<phi_x.N;i++){
-      if(            tt_x.p[i]==fTT){ if(fterm!=-1) HALT("There must only be 1 f-term (in the current implementation)");  fterm=i; }
-      if(            tt_x.p[i]==sumOfSqrTT             ) coeff.p[i] += 2.;      // sumOfSqr terms
-      if(muLB     && tt_x.p[i]==ineqTT                 ) coeff.p[i] += (muLB/mlr::sqr(phi_x.p[i]));  //log barrier, check feasibility
-      if(mu       && tt_x.p[i]==ineqTT && I_lambda_x.p[i]) coeff.p[i] += 2.*mu;   //g-penalty
-      if(nu       && tt_x.p[i]==eqTT                   ) coeff.p[i] += 2.*nu;   //h-penalty
+      if(            tt_x.p[i]==OT_f){ if(fterm!=-1) HALT("There must only be 1 f-term (in the current implementation)");  fterm=i; }
+      if(            tt_x.p[i]==OT_sumOfSqr             ) coeff.p[i] += 2.;      // sumOfSqr terms
+      if(muLB     && tt_x.p[i]==OT_ineq                 ) coeff.p[i] += (muLB/mlr::sqr(phi_x.p[i]));  //log barrier, check feasibility
+      if(mu       && tt_x.p[i]==OT_ineq && I_lambda_x.p[i]) coeff.p[i] += 2.*mu;   //g-penalty
+      if(nu       && tt_x.p[i]==OT_eq                   ) coeff.p[i] += 2.*nu;   //h-penalty
     }
     arr tmp = J_x;
     for(uint i=0;i<phi_x.N;i++) tmp[i]() *= sqrt(coeff.p[i]);
@@ -121,8 +121,8 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x){
 double LagrangianProblem::get_costs(){
   double S=0.;
   for(uint i=0;i<phi_x.N;i++){
-    if(tt_x(i)==fTT) S += phi_x(i);
-    if(tt_x(i)==sumOfSqrTT) S += mlr::sqr(phi_x(i));
+    if(tt_x(i)==OT_f) S += phi_x(i);
+    if(tt_x(i)==OT_sumOfSqr) S += mlr::sqr(phi_x(i));
   }
   return S;
 }
@@ -130,7 +130,7 @@ double LagrangianProblem::get_costs(){
 double LagrangianProblem::get_sumOfGviolations(){
   double S=0.;
   for(uint i=0;i<phi_x.N;i++){
-    if(tt_x(i)==ineqTT && phi_x(i)>0.) S += phi_x(i);
+    if(tt_x(i)==OT_ineq && phi_x(i)>0.) S += phi_x(i);
   }
   return S;
 }
@@ -138,12 +138,12 @@ double LagrangianProblem::get_sumOfGviolations(){
 double LagrangianProblem::get_sumOfHviolations(){
   double S=0.;
   for(uint i=0;i<phi_x.N;i++){
-    if(tt_x(i)==eqTT) S += fabs(phi_x(i));
+    if(tt_x(i)==OT_eq) S += fabs(phi_x(i));
   }
   return S;
 }
 
-uint LagrangianProblem::get_dimOfType(const TermType& tt){
+uint LagrangianProblem::get_dimOfType(const ObjectiveType& tt){
   uint d=0;
   for(uint i=0;i<tt_x.N;i++) if(tt_x(i)==tt) d++;
   return d;
@@ -154,9 +154,9 @@ void LagrangianProblem::aulaUpdate(bool anyTimeVariant, double lambdaStepsize, d
 
   //-- lambda update
   for(uint i=0;i<lambda.N;i++){
-    if(tt_x(i)==eqTT  )  lambda(i) += (lambdaStepsize * 2.*nu)*phi_x(i);
-    if(tt_x(i)==ineqTT)  lambda(i) += (lambdaStepsize * 2.*mu)*phi_x(i);
-    if(tt_x(i)==ineqTT && lambda(i)<0.) lambda(i)=0.;  //bound clipping
+    if(tt_x(i)==OT_eq  )  lambda(i) += (lambdaStepsize * 2.*nu)*phi_x(i);
+    if(tt_x(i)==OT_ineq)  lambda(i) += (lambdaStepsize * 2.*mu)*phi_x(i);
+    if(tt_x(i)==OT_ineq && lambda(i)<0.) lambda(i)=0.;  //bound clipping
   }
 
   if(anyTimeVariant){
@@ -169,8 +169,8 @@ void LagrangianProblem::aulaUpdate(bool anyTimeVariant, double lambdaStepsize, d
     }
     //append rows of J_x to A if constraint is active
     for(uint i=0;i<lambda.N;i++){
-      if( (tt_x(i)==eqTT) ||
-          (tt_x(i)==ineqTT && (phi_x(i)>0. || lambda(i)>0.)) ){
+      if( (tt_x(i)==OT_eq) ||
+          (tt_x(i)==OT_ineq && (phi_x(i)>0. || lambda(i)>0.)) ){
         A.append(J_x[i]);
         A.reshape(A.N/J_x.d1,J_x.d1);
         if(isRowShifted(J_x))
@@ -202,8 +202,8 @@ void LagrangianProblem::aulaUpdate(bool anyTimeVariant, double lambdaStepsize, d
       if(worked){
         //reinsert zero rows
         for(uint i=0;i<lambda.N;i++){
-          if(! ( (tt_x(i)==eqTT) ||
-                 (tt_x(i)==ineqTT && (phi_x(i)>0. || lambda(i)>0.)) ) ){
+          if(! ( (tt_x(i)==OT_eq) ||
+                 (tt_x(i)==OT_ineq && (phi_x(i)>0. || lambda(i)>0.)) ) ){
             beta.insert(i,0.);
           }
         }
@@ -231,7 +231,7 @@ void LagrangianProblem::aulaUpdate(bool anyTimeVariant, double lambdaStepsize, d
 //
 
 
-void PhaseOneProblem::phi(arr& meta_phi, arr& meta_J, arr& meta_H, TermTypeA& tt, const arr& x){
+void PhaseOneProblem::phi(arr& meta_phi, arr& meta_J, arr& meta_H, ObjectiveTypeA& tt, const arr& x){
   NIY;
   arr g, Jg;
 //  f_orig(NoArr, NoArr, g, (&meta_Jg?Jg:NoArr), x.sub(0,-2)); //the underlying problem only receives a x.N-1 dimensional x
@@ -311,7 +311,7 @@ bool OptConstrained::step(){
   }
 
   //check for no constraints
-  if(UCP.get_dimOfType(ineqTT) + UCP.get_dimOfType(eqTT) == 0){
+  if(UCP.get_dimOfType(OT_ineq) + UCP.get_dimOfType(OT_eq) == 0){
     if(opt.verbose>0) cout <<"** optConstr. NO CONSTRAINTS -> run Newton againg and stop" <<endl;
     newton.run();
     return true;

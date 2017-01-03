@@ -39,7 +39,7 @@ struct LagrangianProblem : ScalarFunction{ //TODO: rename: UnconstrainedLagrangi
   //-- buffers to avoid recomputing gradients
   arr x;          ///< point where P was last evaluated
   arr phi_x, J_x, H_x; ///< everything else at x
-  TermTypeA tt_x; ///< everything else at x
+  ObjectiveTypeA tt_x; ///< everything else at x
 
   LagrangianProblem(ConstrainedProblem &P, OptOptions opt=NOOPT, arr& lambdaInit=NoArr);
 
@@ -48,7 +48,7 @@ struct LagrangianProblem : ScalarFunction{ //TODO: rename: UnconstrainedLagrangi
   double get_costs();            ///< info on the terms from last call
   double get_sumOfGviolations(); ///< info on the terms from last call
   double get_sumOfHviolations(); ///< info on the terms from last call
-  uint get_dimOfType(const TermType& tt); ///< info on the terms from last call
+  uint get_dimOfType(const ObjectiveType& tt); ///< info on the terms from last call
 
   void aulaUpdate(bool anyTimeVariant, double lambdaStepsize=1., double muInc=1., double *L_x=NULL, arr &dL_x=NoArr, arr &HL_x=NoArr);
 };
@@ -65,7 +65,7 @@ struct PhaseOneProblem : ConstrainedProblem{
   ConstrainedProblem &f_orig;
 
   PhaseOneProblem(ConstrainedProblem &f_orig):f_orig(f_orig) {}
-  void phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x);
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
 };
 
 
@@ -102,14 +102,14 @@ inline uint optConstrained(arr& x, arr &dual, ConstrainedProblem& P, OptOptions 
 
 inline void evaluateConstrainedProblem(const arr& x, ConstrainedProblem& P, std::ostream& os){
   arr phi_x;
-  TermTypeA tt_x;
+  ObjectiveTypeA tt_x;
   P.phi(phi_x, NoArr, NoArr, tt_x, x);
   double Ef=0., Eh=0., Eg=0.;
   for(uint i=0;i<phi_x.N;i++){
-    if(tt_x(i)==fTT) Ef += phi_x(i);
-    if(tt_x(i)==sumOfSqrTT) Ef += mlr::sqr(phi_x(i));
-    if(tt_x(i)==ineqTT && phi_x(i)>0.) Eg += phi_x(i);
-    if(tt_x(i)==eqTT) Eh += fabs(phi_x(i));
+    if(tt_x(i)==OT_f) Ef += phi_x(i);
+    if(tt_x(i)==OT_sumOfSqr) Ef += mlr::sqr(phi_x(i));
+    if(tt_x(i)==OT_ineq && phi_x(i)>0.) Eg += phi_x(i);
+    if(tt_x(i)==OT_eq) Eh += fabs(phi_x(i));
   }
   os <<"f=" <<Ef <<" sum([g>0]g)="<<Eg <<" sum(|h|)=" <<Eh <<endl;
 }

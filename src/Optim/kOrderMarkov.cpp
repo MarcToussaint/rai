@@ -3,7 +3,7 @@
 #define TT T //(T+1)
 #define tlT (t<T) //(t<=T)
 
-void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) {
+void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
 #if 1
   //set state
   f.set_x(x);
@@ -33,7 +33,7 @@ void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& 
 
     //query
     arr phi_t, J_t;
-    TermTypeA tt_t;
+    ObjectiveTypeA tt_t;
     f.phi_t(phi_t, (&J?J_t:NoArr), tt_t, t);
     //    CHECK_EQ(phi_t.N, f.dim_phi(t), "");
     if(!phi_t.N) continue;
@@ -111,7 +111,7 @@ void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& 
 
     //query
     arr phi_t, J_t;
-    TermTypeA tt_t;
+    ObjectiveTypeA tt_t;
     f.phi_t(phi_t, (&J?J_t:NoArr), tt_t, t, x_bar);
     CHECK_EQ(phi_t.N,dimphi_t,"");
     phi.setVectorBlock(phi_t, M);

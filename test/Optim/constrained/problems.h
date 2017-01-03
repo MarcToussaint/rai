@@ -22,7 +22,7 @@ struct CoveringSpheresProblem : ConstrainedProblem {
     return cat(c,r);
   }
 
-  virtual void phi(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) { NIY }
+  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) { NIY }
 
   virtual double phi(arr& df, arr& Hf, arr& g, arr& Jg, const arr& c_r) {
     uint s=c_r.N/4;

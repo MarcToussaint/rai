@@ -184,22 +184,22 @@ void NonlinearlyWarpedSquaredCost::fv(arr& y, arr& J,const arr& x) {
 
 //===========================================================================
 
-void ParticleAroundWalls2::getStructure(uintA& variableDimensions, uintA& featureTimes, TermTypeA& featureTypes){
+void ParticleAroundWalls2::getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes){
   variableDimensions = consts<uint>(n,T);
 
   if(&featureTimes) featureTimes.clear();
   if(&featureTypes) featureTypes.clear();
   for(uint t=0;t<T;t++){
     if(&featureTimes) featureTimes.append( consts<uint>(t, n) );
-    if(&featureTypes) featureTypes.append( consts(sumOfSqrTT, n) );
+    if(&featureTypes) featureTypes.append( consts(OT_sumOfSqr, n) );
     if(t==T/4 || t==T/2 || t==3*T/4 || t==T-1){
       if(&featureTimes) featureTimes.append( consts<uint>(t, n) );
-      if(&featureTypes) featureTypes.append( consts(ineqTT, n) );
+      if(&featureTypes) featureTypes.append( consts(OT_ineq, n) );
     }
   }
 }
 
-void ParticleAroundWalls2::phi(arr& phi, arrA& J, arrA& H, TermTypeA& tt, const arr& x){
+void ParticleAroundWalls2::phi(arr& phi, arrA& J, arrA& H, ObjectiveTypeA& tt, const arr& x){
 
   uint M=x.N + 4*3;
   phi.resize(M);
@@ -236,7 +236,7 @@ void ParticleAroundWalls2::phi(arr& phi, arrA& J, arrA& H, TermTypeA& tt, const 
         if(&J){ J(m).resize(k+1,n).setZero(); J(m)(3,i) = 1.;  J(m)(2,i) = -3.;  J(m)(1,i) = +3.;  J(m)(0,i) = -1.; }
       }
       if(&J && t<k) J(m) = J(m).sub(k-t,-1,0,-1); //cut the prefix Jacobians
-      if(&tt) tt(m) = sumOfSqrTT;
+      if(&tt) tt(m) = OT_sumOfSqr;
       m++;
     }
 
@@ -259,7 +259,7 @@ void ParticleAroundWalls2::phi(arr& phi, arrA& J, arrA& H, TermTypeA& tt, const 
           phi(m) = (x_bar(k,i)+i+1.);  //``lower than -i-1''
           if(&J){ J(m).resize(k+1,n).setZero(); J(m)(k,i) = +1.; }
         }
-        if(&tt) tt(m) = ineqTT;
+        if(&tt) tt(m) = OT_ineq;
         m++;
       }
     }
