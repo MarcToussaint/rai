@@ -737,7 +737,9 @@ void Graph::writeHtml(std::ostream& os, std::istream& is) {
 void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, int nodesOrEdges, int focusIndex) {
   if(!withoutHeader){
     os <<"digraph G{" <<endl;
-    os <<"graph [ rankdir=\"LR\", ranksep=0.05 ];" <<endl;
+    os <<"graph [ rankdir=\"LR\", ranksep=0.05";
+    if(hasRenderingInfo(NULL)) os <<getRenderingInfo(NULL).dotstyle;
+    os << " ];" <<endl;
     os <<"node [ fontsize=9, width=.3, height=.3 ];" <<endl;
     os <<"edge [ arrowtail=dot, arrowsize=.5, fontsize=6 ];" <<endl;
     index(true);
@@ -753,17 +755,17 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
         label <<k;
         newline=true;
       }
-      label <<"\" ";
+      label <<'"';
     }else if(n->parents.N){
       label <<"label=\"(" <<n->parents(0)->keys.last();
       for(uint i=1;i<n->parents.N;i++) label <<' ' <<n->parents(i)->keys.last();
-      label <<")\" ";
+      label <<")\"";
     }
 
     mlr::String shape;
-    if(n->keys.contains("box")) shape <<" shape=box"; else shape <<" shape=ellipse";
-    if(focusIndex==(int)n->index) shape <<" color=red";
-    if(hasRenderingInfo(n)) shape <<' ' <<getRenderingInfo(n).dotstyle;
+    if(n->keys.contains("box")) shape <<", shape=box"; else shape <<", shape=ellipse";
+    if(focusIndex==(int)n->index) shape <<", color=red";
+    if(hasRenderingInfo(n)) shape <<getRenderingInfo(n).dotstyle;
 
 
     if(defaultEdges && n->parents.N==2){ //an edge
@@ -825,7 +827,7 @@ ParseInfo& Graph::getParseInfo(Node* n){
 }
 
 RenderingInfo& Graph::getRenderingInfo(Node* n){
-  CHECK(&n->container==this,"");
+  CHECK(!n || &n->container==this,"");
 #if 1
   if(!ri) ri=new ArrayG<RenderingInfo>(*this);
   return ri->operator()(n);
