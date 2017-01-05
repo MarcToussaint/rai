@@ -168,7 +168,7 @@ cleanLocks: force
 
 cleanAll: force
 	@find $(BASE) -type d -name 'Make.lock' -delete -print
-	@find $(BASE) \( -type f -or -type l \) \( -name '*.o' -or -name 'lib*.so' -or -name 'lib*.a' \) -delete -print
+	@find $(BASE) \( -type f -or -type l \) \( -name '*.o' -or -name 'lib*.so' -or -name 'lib*.a' -or -name 'x.exe' \) -delete -print
 
 cleanLibs: force
 	@find $(BASE)/lib -type f \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
@@ -341,7 +341,12 @@ runPath/%: %
 cleanPath/%: %
 	@echo "                                                ***** clean " $*
 	@-rm -f $*/Makefile.dep
-	@-$(MAKE) -C $* -f makefile clean --no-print-directory
+	@-$(MAKE) -C $* -f Makefile clean --no-print-directory
+
+cleanPath/%: $(BASE)/src/%
+	@echo "                                                ***** clean " $<
+	@-rm -f $</Makefile.dep
+	@-$(MAKE) -C $< -f Makefile clean --no-print-directory
 
 makePythonPath/%: %
 	make --directory=$< pywrapper
