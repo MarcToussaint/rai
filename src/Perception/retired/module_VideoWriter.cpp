@@ -22,7 +22,7 @@ void VideoEncoderModule::close(){
 void VideoEncoderModule::step(){
   //-- grab from shared memory (necessary?)
   uint rev = img.readAccess();
-  double time = img.var->revisionTime();
+  double time = img.data->revisionTime();
   byteA image = img();
   img.deAccess();
 

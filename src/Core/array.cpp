@@ -105,9 +105,9 @@ arr grid(const arr& lo, const arr& hi, const uintA& steps){
   if(lo.N==3) {
     X.resize(TUP(steps(0)+1, steps(1)+1, steps(2)+1, 3));
     for(i=0; i<X.d0; i++) for(j=0; j<X.d1; j++) for(k=0; k<X.d2; k++) {
-          X.operator()(TUP(i, j, k, 0))=lo(0)+(hi(0)-lo(0))*i/steps(0);
-          X.operator()(TUP(i, j, k, 1))=lo(1)+(hi(1)-lo(1))*j/steps(1);
-          X.operator()(TUP(i, j, k, 2))=lo(2)+(hi(2)-lo(2))*k/steps(2);
+          X.elem(TUP(i, j, k, 0))=lo(0)+(hi(0)-lo(0))*i/steps(0);
+          X.elem(TUP(i, j, k, 1))=lo(1)+(hi(1)-lo(1))*j/steps(1);
+          X.elem(TUP(i, j, k, 2))=lo(2)+(hi(2)-lo(2))*k/steps(2);
         }
     X.reshape(X.d0*X.d1*X.d2, 3);
     return X;

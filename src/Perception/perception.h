@@ -41,7 +41,7 @@ struct GenericDisplayViewer : Thread {
     : Thread("GenericDisplayViewer", -1.)
     , gl(NULL)
     , var(this, var_name, true){}
-  virtual void open(){ gl = new OpenGL(STRING("ImageViewer '"<<var.var->name()<<'\'')); }
+  virtual void open(){ gl = new OpenGL(STRING("ImageViewer '"<<var.data->name()<<'\'')); }
   virtual void step(){
     gl->background = var.get()->display;
     if(gl->height!= gl->background.d0 || gl->width!= gl->background.d1)

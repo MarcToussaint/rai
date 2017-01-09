@@ -109,7 +109,7 @@ void PR2Interface::initialize(mlr::KinematicWorld* realWorld, mlr::KinematicWorl
 
     cout <<"** Waiting for ROS message on initial configuration.." <<endl;
     while(true) {
-      this->ctrl_obs.var->waitForNextRevision(); // TODO why .var???
+      this->ctrl_obs.data->waitForNextRevision(); // TODO why .var???
       cout << "REMOTE joint dimension = " << this->ctrl_obs.get()->q.N << endl;
       cout << "LOCAL  joint dimension = " << this->realWorld->q.N << endl;
 

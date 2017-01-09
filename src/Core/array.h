@@ -97,7 +97,7 @@ template<class T> struct Array {
   /// @name constructors
   Array();
   Array(const Array<T>& a);                 //copy constructor
-  Array(const Array<T>& a, uint i);         //reference constructor
+  Array(const Array<T>& a, uint i);         //reference constructor -> remove!
   Array(const Array<T>& a, uint i, uint j); //reference constructor
   Array(const Array<T>& a, uint i, uint j, uint k); //reference constructor
   explicit Array(uint D0);
@@ -162,8 +162,8 @@ template<class T> struct Array {
   void setCarray(const T **buffer, uint D0, uint D1);
   void referTo(const T *buffer, uint n);
   void referTo(const Array<T>& a);
-  void referToRange(const Array<T>& a, int i, int I);
-  void referToDim(const Array<T>& a, uint i);
+  void referToRange(const Array<T>& a, int i, int I); // -> referTo(a,{i,I})
+  void referToDim(const Array<T>& a, uint i); // -> referTo
   void referToDim(const Array<T>& a, uint i, uint j);
   void referToDim(const Array<T>& a, uint i, uint j, uint k);
   void takeOver(Array<T>& a);  //a becomes a reference to its previously owned memory!
@@ -172,6 +172,7 @@ template<class T> struct Array {
   
   /// @name access by reference (direct memory access)
   T& elem(int i) const;
+  T& elem(const Array<uint> &I) const;
   T& scalar() const;
   T& first() const;
   T& last(int i=-1) const;
@@ -179,12 +180,12 @@ template<class T> struct Array {
   T& operator()(uint i) const;
   T& operator()(uint i, uint j) const;
   T& operator()(uint i, uint j, uint k) const;
-  T& operator()(const Array<uint> &I) const;
   Array<T> operator[](uint i) const;     // calls referToDim(*this, i)
-  Array<T> refDim(uint i, uint j) const; // calls referToDim(*this, i, j)
+  Array<T> operator[](std::initializer_list<uint> list) const; //-> remove
+  Array<T> refDim(uint i, uint j) const; // -> ()(i,j,{}) calls referToDim(*this, i, j)
   Array<T> refDim(uint i, uint j, uint k) const; // calls referToDim(*this, i, j, k)
-  Array<T> refRange(int i, int I) const; // calls referToRange(*this, i, I)
-  Array<T> refRange(uint i, int j, int J) const;
+  Array<T> refRange(int i, int I) const; // -> ()({i,I}) calls referToRange(*this, i, I)
+  Array<T> refRange(uint i, int j, int J) const; //-> ()(i,{j,J})
   Array<T>& operator()(){ return *this; } //TODO: replace by scalar reference!
   T** getCarray(Array<T*>& Cpointers) const;
   
@@ -207,17 +208,17 @@ template<class T> struct Array {
   T& min() const;
   T& max() const;
   void minmax(T& minVal, T& maxVal) const;
-  uint minIndex() const;
-  uint maxIndex() const;
-  void maxIndeces(uint& m1, uint& m2) const; //best and 2nd best
-  void maxIndex(uint& i, uint& j) const;
-  void maxIndex(uint& i, uint& j, uint& k) const;
+  uint minIndex() const; // -> argmin
+  uint maxIndex() const; // -> argmax
+  void maxIndeces(uint& m1, uint& m2) const; //best and 2nd best -> remove
+  void maxIndex(uint& i, uint& j) const; //-> remove, or return uintA
+  void maxIndex(uint& i, uint& j, uint& k) const; //-> remove
   int findValue(const T& x) const;
   void findValues(mlr::Array<uint>& indices, const T& x) const;
   bool contains(const T& x) const { return findValue(x)!=-1; }
   bool containsDoubles() const;
-  uint getMemsize() const;
-  void getIndexTuple(Array<uint> &I, uint i) const;
+  uint getMemsize() const; // -> remove
+  void getIndexTuple(Array<uint> &I, uint i) const; // -> remove?
   
   /// @name appending etc
   T& append();
@@ -457,8 +458,8 @@ template<class T> mlr::Array<T> ARRAY(const T& i, const T& j, const T& k, const 
 template<class T> mlr::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p) { mlr::Array<T> z(8); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; z(7)=p; return z; }
 template<class T> mlr::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p, const T& q) { mlr::Array<T> z(9); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; z(7)=p; z(8)=q; return z; }
 
-template<class T> mlr::Array<T> ARRAY(uint D0, std::initializer_list<T> init) {  mlr::Array<T> z(init); z.reshape(D0); return z; }
-template<class T> mlr::Array<T> ARRAY(uint D0, uint D1, std::initializer_list<T> init) {  mlr::Array<T> z(init); z.reshape(D0, D1); return z; }
+template<class T> mlr::Array<T> ARRAY(uint D0, std::initializer_list<T> init) {  mlr::Array<T> z(init); z.reshape(D0); return z; } //-> constructor
+template<class T> mlr::Array<T> ARRAY(uint D0, uint D1, std::initializer_list<T> init) {  mlr::Array<T> z(init); z.reshape(D0, D1); return z; } //-> constructor
 
 template<class T> mlr::Array<T*> LIST() {                                    mlr::Array<T*> z(0); return z; }
 template<class T> mlr::Array<T*> LIST(const T& i) {                                    mlr::Array<T*> z(1); z(0)=(T*)&i; return z; }

@@ -225,15 +225,6 @@ template<class T> mlr::Array<T>& mlr::Array<T>::reshapeFlat() {
 /// return the size of memory allocated in bytes
 template<class T> uint mlr::Array<T>::getMemsize() const { return M*sizeof(T); }
 
-/// multi-dimensional (tensor) access
-template<class T> T& mlr::Array<T>::operator()(const Array<uint> &I) const {
-  CHECK_EQ(I.N , nd, "wrong dimensions");
-  uint i, j;
-  i=0;
-  for(j=0; j<nd; j++) i = i*dim(j) + I(j);
-  return p[i];
-}
-
 /// I becomes the index tuple for the absolute index i
 template<class T> void mlr::Array<T>::getIndexTuple(Array<uint> &I, uint i) const {
   uint j;
@@ -739,6 +730,15 @@ template<class T> T& mlr::Array<T>::elem(int i) const {
   return p[i];
 }
 
+/// multi-dimensional (tensor) access
+template<class T> T& mlr::Array<T>::elem(const Array<uint> &I) const {
+  CHECK_EQ(I.N , nd, "wrong dimensions");
+  uint i, j;
+  i=0;
+  for(j=0; j<nd; j++) i = i*dim(j) + I.elem(j);
+  return p[i];
+}
+
 /// a random element
 template<class T> T& mlr::Array<T>::rndElem() const {
   return elem(rnd(N));
@@ -805,6 +805,16 @@ template<class T> mlr::Array<T> mlr::Array<T>::operator[](uint i) const {
   }
   z.p=p+i*z.N;
 #endif
+  return z;
+}
+
+template<class T> mlr::Array<T> mlr::Array<T>::operator[](std::initializer_list<uint> ix) const{
+  mlr::Array<T> z;
+  uint *ixp=ix.begin();
+  if(ix.size()==1) z.referToDim(*this, ixp[0]);
+  else if(ix.size()==2) z.referToDim(*this, ixp[0], ixp[1]);
+  else if(ix.size()==3) z.referToDim(*this, ixp[0], ixp[1], ixp[2]);
+  else NIY;
   return z;
 }
 
@@ -1517,9 +1527,9 @@ mlr::Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
   if(dim==3) {
     resize(TUP(steps+1, steps+1, steps+1, 3));
     for(i=0; i<d0; i++) for(j=0; j<d1; j++) for(k=0; k<d2; k++) {
-          operator()(TUP(i, j, k, 0))=lo+(hi-lo)*i/steps;
-          operator()(TUP(i, j, k, 1))=lo+(hi-lo)*j/steps;
-          operator()(TUP(i, j, k, 2))=lo+(hi-lo)*k/steps;
+          elem(TUP(i, j, k, 0))=lo+(hi-lo)*i/steps;
+          elem(TUP(i, j, k, 1))=lo+(hi-lo)*j/steps;
+          elem(TUP(i, j, k, 2))=lo+(hi-lo)*k/steps;
         }
     reshape(d0*d1*d2, 3);
     return;
@@ -2050,7 +2060,7 @@ template<class T> void checkNormalization(mlr::Array<T>& v, double tol) {
     case 4:
       for(j=0; j<v.d1; j++) for(k=0; k<v.d2; k++) {
           for(l=0; l<v.N/(v.d0*v.d1*v.d2); l++) {
-            for(p=0, i=0; i<v.d0; i++) p+=v(TUP(i, j, k, l));
+            for(p=0, i=0; i<v.d0; i++) p+=v.elem(TUP(i, j, k, l));
             CHECK(fabs(1.-p)<tol, "distribution is not normalized: " <<v <<" " <<p);
           }
         }
@@ -2256,7 +2266,7 @@ template<class T> mlr::Array<T> sum(const mlr::Array<T>& v, uint d) {
       if(i == d) j++;
       IS(i) = IV(j);
     }
-    S(IS) += x(k);
+    S.elem(IS) += x(k);
   }
 //  S.reshape(S.N); //(mt: Hä? Hab ich das gemacht???)
   return S;
@@ -2881,9 +2891,9 @@ template<class T> void tensorEquation(mlr::Array<T> &X, const mlr::Array<T> &A, 
     for(j=0; j<B.nd; j++) Ib(j)=I(pickB(j));
     //DEBUG_TENSOR(cout <<"i=" <<i <<" I=" <<I <<" i/res=" <<i/res <<" Ia=" <<Ia <<" Ib=" <<Ib <<endl;)
     if(!sum) {
-      X.elem(i) = A(Ia) * B(Ib);
+      X.elem(i) = A.elem(Ia) * B.elem(Ib);
     } else {
-      X.elem(i/res) += A(Ia) * B(Ib);
+      X.elem(i/res) += A.elem(Ia) * B.elem(Ib);
     }
   }
 }

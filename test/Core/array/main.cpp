@@ -117,6 +117,9 @@ void TEST(Basics){
   CHECK_EQ(a(2,1),7.,"");
   CHECK_EQ(a[1],a[2],"");
 
+  //range access:
+  cout <<"\nrows 1-3:\n" <<a({1,3}) <<endl;
+
   //access (copy and reference) of subarrays
   cout <<"\nrefRange(2,4) =\n" <<a.refRange(2,4) <<endl;
   a.refRange(2,4) *= 10.;
@@ -813,6 +816,7 @@ int MAIN(int argc, char **argv){
   mlr::initCmdLine(argc, argv);
 
   testBasics();
+  return 0;
   testCheatSheet();
   testInitializationList();
   testSimpleIterators();

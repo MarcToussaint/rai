@@ -275,18 +275,18 @@ inline bool operator==(const RevisionedAccessGatedClass&,const RevisionedAccessG
 struct Access{
   mlr::String name; ///< name; by default the access' name; redefine to a variable's name to autoconnect
   Thread *thread;  ///< which module is this a member of
-  RevisionedAccessGatedClass *data;   ///< which variable does it access
+  RevisionedAccessGatedClass *_data;   ///< which variable does it access
   struct Node* registryNode;
-  Access(const char* _name, Thread *_thread, RevisionedAccessGatedClass *_var):name(_name), thread(_thread), data(_var){}
+  Access(const char* _name, Thread *_thread, RevisionedAccessGatedClass *_data):name(_name), thread(_thread), _data(_data){}
   virtual ~Access(){}
-  bool hasNewRevision(){ return data->hasNewRevision(); }
-  int readAccess(){  return data->readAccess((Thread*)thread); }
-  int writeAccess(){ return data->writeAccess((Thread*)thread); }
-  int deAccess(){    return data->deAccess((Thread*)thread); }
-  int waitForNextRevision(){ return data->waitForNextRevision(); }
-  int waitForRevisionGreaterThan(int rev){    return data->waitForRevisionGreaterThan(rev); }
-//  double& tstamp(){ return var->data_time; } ///< reference to the data's time. AccessData should be locked while accessing this.
-  double& dataTime(){ return data->data_time; } ///< reference to the data's time. AccessData should be locked while accessing this.
+  bool hasNewRevision(){ return _data->hasNewRevision(); }
+  int readAccess(){  return _data->readAccess((Thread*)thread); }
+  int writeAccess(){ return _data->writeAccess((Thread*)thread); }
+  int deAccess(){    return _data->deAccess((Thread*)thread); }
+  int waitForNextRevision(){ return _data->waitForNextRevision(); }
+  int waitForRevisionGreaterThan(int rev){    return _data->waitForRevisionGreaterThan(rev); }
+//  double& tstamp(){ return _data->data_time; } ///< reference to the data's time. AccessData should be locked while accessing this.
+  double& dataTime(){ return _data->data_time; } ///< reference to the data's time. AccessData should be locked while accessing this.
 };
 
 
@@ -295,46 +295,46 @@ struct Access{
     the variable's content */
 template<class T>
 struct Access_typed:Access{
-  AccessData<T> *d;
+  AccessData<T> *data;
 
   /// A "copy" of acc: An access to the same variable as acc refers to, but now for '_thred'
   Access_typed(Thread* _thread, const Access_typed<T>& acc, bool moduleListens=false)
-    : Access(acc.name, _thread, NULL), d(NULL){
-    d = acc.d;
+    : Access(acc.name, _thread, NULL), data(NULL){
     data = acc.data;
+    _data = acc._data;
     if(thread){
-      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, d->registryNode}, this);
-      if(moduleListens) thread->listenTo(*data);
+      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
+      if(moduleListens) thread->listenTo(*_data);
     }else{
-      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {d->registryNode}, this);
+      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {data->registryNode}, this);
     }
   }
 
   /// searches for globally registrated variable 'name', checks type equivalence, and becomes an access for '_thred'
   Access_typed(Thread* _thread, const char* name, bool moduleListens=false)
-    : Access(name, _thread, NULL), d(NULL){
-    d = registry().find<AccessData<T> >({"AccessData", name});
-    if(!d){ //this is the ONLY place where a variable should be created
+    : Access(name, _thread, NULL), data(NULL){
+    data = registry().find<AccessData<T> >({"AccessData", name});
+    if(!data){ //this is the ONLY place where a variable should be created
       Node_typed<AccessData<T> > *vnode = registry().newNode<AccessData<T> >({"AccessData", name}, {});
-      d = &vnode->value;
-      d->name = name;
-      d->registryNode = vnode;
+      data = &vnode->value;
+      data->name = name;
+      data->registryNode = vnode;
     }
-    data = dynamic_cast<RevisionedAccessGatedClass*>(d);
+    _data = dynamic_cast<RevisionedAccessGatedClass*>(data);
     if(thread){
-      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, d->registryNode}, this);
-      if(moduleListens) thread->listenTo(*data);
+      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
+      if(moduleListens) thread->listenTo(*_data);
     }else{
-      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {d->registryNode}, this);
+      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {data->registryNode}, this);
     }
   }
 
   ~Access_typed(){ delete registryNode; }
-  T& operator()(){ CHECK(d->rwlock.isLocked(),"direct variable access without locking it before");  return d->value; }
-  T* operator->(){ CHECK(d->rwlock.isLocked(),"direct variable access without locking it before");  return &(d->value); }
-  typename AccessData<T>::ReadToken get(){ return d->get((Thread*)thread); } ///< read access to the variable's data
-  typename AccessData<T>::WriteToken set(){ return d->set((Thread*)thread); } ///< write access to the variable's data
-  typename AccessData<T>::WriteToken set(const double& dataTime){ return d->set(dataTime, (Thread*)thread); } ///< write access to the variable's data
+  T& operator()(){ CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return data->value; }
+  T* operator->(){ CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return &(data->value); }
+  typename AccessData<T>::ReadToken get(){ return data->get((Thread*)thread); } ///< read access to the variable's data
+  typename AccessData<T>::WriteToken set(){ return data->set((Thread*)thread); } ///< write access to the variable's data
+  typename AccessData<T>::WriteToken set(const double& dataTime){ return data->set(dataTime, (Thread*)thread); } ///< write access to the variable's data
 };
 
 inline bool operator==(const Access&,const Access&){ return false; }
