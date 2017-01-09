@@ -78,15 +78,6 @@ template<class T> mlr::Array<T>::Array():d(&d0) {
 /// copy constructor
 template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a):Array() { operator=(a); }
 
-/// reference constructor
-template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i):Array() { referToDim(a, i); }
-
-/// reference constructor
-template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i, uint j):Array() { referToDim(a, i, j); }
-
-/// reference constructor
-template<class T> mlr::Array<T>::Array(const mlr::Array<T>& a, uint i, uint j, uint k):Array() { referToDim(a, i, j, k); }
-
 /// constructor with resize
 template<class T> mlr::Array<T>::Array(uint i):Array() { resize(i); }
 
@@ -100,7 +91,16 @@ template<class T> mlr::Array<T>::Array(uint i, uint j, uint k):Array() { resize(
 template<class T> mlr::Array<T>::Array(const T* p, uint size):Array() { referTo(p, size); }
 
 /// initialization via {1., 2., 3., ...} lists..
-template<class T> mlr::Array<T>::Array(std::initializer_list<T> list):Array() { operator=(list); }
+template<class T> mlr::Array<T>::Array(std::initializer_list<T> values):Array() { operator=(values); }
+
+/// initialization via {1., 2., 3., ...} lists, with certain dimensionality
+template<class T> mlr::Array<T>::Array(uint D0, std::initializer_list<T> values){ operator=(values); reshape(D0); }
+
+/// initialization via {1., 2., 3., ...} lists, with certain dimensionality
+template<class T> mlr::Array<T>::Array(uint D0, uint D1, std::initializer_list<T> values){ operator=(values); reshape(D0, D1); }
+
+/// initialization via {1., 2., 3., ...} lists, with certain dimensionality
+template<class T> mlr::Array<T>::Array(uint D0, uint D1, uint D2, std::initializer_list<T> values){ operator=(values); reshape(D0, D1, D2); }
 
 template<class T> mlr::Array<T>::Array(mlr::FileToken& f):Array() {
   read(f.getIs());
@@ -762,26 +762,66 @@ template<class T> T& mlr::Array<T>::last(int i) const {
   return p[N+i];
 }
 
-/// 1D access (throws an error if not 1D or out of range)
+/// 1D reference access (throws an error if not 1D or out of range)
 template<class T> T& mlr::Array<T>::operator()(uint i) const {
   CHECK(nd==1 && i<d0,
         "1D range error (" <<nd <<"=1, " <<i <<"<" <<d0 <<")");
   return p[i];
 }
 
-/// 2D access
+/// 2D reference access
 template<class T> T& mlr::Array<T>::operator()(uint i, uint j) const {
   CHECK(nd==2 && i<d0 && j<d1 && !isSparseMatrix(*this),
         "2D range error (" <<nd <<"=2, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<")");
   return p[i*d1+j];
 }
 
-/// 3D access
+/// 3D reference access
 template<class T> T& mlr::Array<T>::operator()(uint i, uint j, uint k) const {
   CHECK(nd==3 && i<d0 && j<d1 && k<d2 && !isSparseMatrix(*this),
         "3D range error (" <<nd <<"=3, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<", " <<k <<"<" <<d2 <<")");
   return p[(i*d1+j)*d2+k];
 }
+
+template<class T> mlr::Array<T> mlr::Array<T>::operator()(std::pair<int, int> I) const {
+  mlr::Array<T> z;
+  z.referToRange(*this, I.first, I.second);
+  //  if(I.size()==2) z.referToRange(*this, I.begin()[0], I.begin()[1]);
+  //  else if(I.size()==0) z.referTo(*this);
+  //  else if(I.size()==1) z.referToDim(*this, I.begin()[0]);
+  //  else HALT("range list needs 0,1, or 2 entries exactly");
+  return z;
+}
+
+/// range reference access
+template<class T> mlr::Array<T> mlr::Array<T>::operator()(uint i, std::pair<int, int> J) const {
+  mlr::Array<T> z;
+  z.referToRange(*this, i, J.first, J.second);
+//  if(J.size()==2)
+//  else if(J.size()==0) z.referToDim(*this, i);
+//  else if(J.size()==1) z.referToDim(*this, i, J.begin()[0]);
+//  else HALT("range list needs 0,1, or 2 entries exactly");
+  return z;
+}
+
+///// range reference access
+//template<class T> mlr::Array<T> mlr::Array<T>::operator()(uint i, std::initializer_list<int> J) const {
+//  CHECK_EQ(J.size(), 0, "the {} notation here must be empty or a pair");
+//  mlr::Array<T> z;
+//  z.referToDim(*this, i);
+//  return z;
+//}
+
+/// range reference access
+template<class T> mlr::Array<T> mlr::Array<T>::operator()(uint i, uint j, std::initializer_list<int> K) const {
+  mlr::Array<T> z;
+  if(K.size()==2){ NIY; }
+  else if(K.size()==0) z.referToDim(*this, i, j);
+  else if(K.size()==1) z.referToDim(*this, i, j, K.begin()[0]);
+  else HALT("range list needs 0,1, or 2 entries exactly");
+  return z;
+}
+
 
 /// get a subarray (e.g., row of a matrix); use in conjuction with operator()() to get a reference
 template<class T> mlr::Array<T> mlr::Array<T>::operator[](uint i) const {
@@ -817,60 +857,6 @@ template<class T> mlr::Array<T> mlr::Array<T>::operator[](std::initializer_list<
   else NIY;
   return z;
 }
-
-/// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
-template<class T> mlr::Array<T> mlr::Array<T>::refDim(uint i, uint j) const {
-  return Array(*this, i, j);
-}
-
-/// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
-template<class T> mlr::Array<T> mlr::Array<T>::refDim(uint i, uint j, uint k) const { return Array(*this, i, j, k); }
-
-/// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
-template<class T> mlr::Array<T> mlr::Array<T>::refRange(int i, int I) const {
-  mlr::Array<T> z;
-  z.reference=true; z.memMove=memMove;
-
-  CHECK(nd<=3, "not implemented yet");
-  if(i<0) i+=d0;
-  if(I<0) I+=d0;
-  CHECK(i>=0 && I>=0 && i<=I && I<d0, "range error");
-  if(nd==1) {
-    z.nd=1;  z.d0=I+1-i; z.d1=0; z.d2=0;  z.N=z.d0;
-    z.p=p+i;
-  }
-  if(nd==2) {
-    z.nd=2;  z.d0=I+1-i; z.d1=d1; z.d2=0;  z.N=z.d0*z.d1;
-    z.p=p+i*d1;
-  }
-  if(nd==3) {
-    z.nd=3;  z.d0=I+1-i; z.d1=d1; z.d2=d2;  z.N=z.d0*z.d1*z.d2;
-    z.p=p+i*d1*d2;
-  }
-  return z;
-}
-
-/// get a subarray (e.g., row of a rank-3 tensor); use in conjuction with operator()() to get a reference
-template<class T> mlr::Array<T> mlr::Array<T>::refRange(uint i, int j, int J) const {
-  mlr::Array<T> z;
-  z.reference=true; z.memMove=memMove;
-
-  CHECK(nd>1 && nd<=3, "does not work for vectors")
-  if(j<0) j+=d1;
-  if(J<0) J+=d1;
-  CHECK(i<d0 && j>=0 && J>=0 && j<=J && J<d1, "range error");
-
-  if(nd==2) {
-    z.nd=1;  z.d0=J+1-j; z.N=z.d0;
-    z.p=p+i*d1+j;
-  }
-  if(nd==3) {
-    z.nd=3;  z.d0=J+1-j; z.d1=d2; z.N=z.d0*z.d1;
-    z.p=p+i*d1*d2+j*d2;
-  }
-  return z;
-}
-
 
 /// convert a subarray into a reference (e.g. a[3]()+=.123)
 //template<class T> T& mlr::Array<T>::operator()() const { return scalar(); } //return (*this); }
@@ -1170,10 +1156,10 @@ template<class T> T*** mlr::Array<T>::getPointers(Array<T**>& array3d, Array<T*>
 
 //***** assignments
 
-template<class T> mlr::Array<T>& mlr::Array<T>::operator=(std::initializer_list<T> list) {
-  resize(list.size());
+template<class T> mlr::Array<T>& mlr::Array<T>::operator=(std::initializer_list<T> values) {
+  resize(values.size());
   uint i=0;
-  for(T t : list) elem(i++)=t;
+  for(T t : values) elem(i++)=t;
   return *this;
 }
 
@@ -1425,6 +1411,27 @@ template<class T> void mlr::Array<T>::referToRange(const mlr::Array<T>& a, int i
   if(a.nd==3) {
     nd=3;  d0=I+1-i; d1=a.d1; d2=a.d2;  N=d0*d1*d2;
     p=a.p+i*d1*d2;
+  }
+}
+
+/// make this array a subarray reference to \c a
+template<class T> void mlr::Array<T>::referToRange(const Array<T>& a, uint i, int j, int J) {
+  CHECK(a.nd>1, "does not make sense");
+  CHECK(a.nd<=3, "not implemented yet");
+  freeMEM();
+  resetD();
+  reference=true; memMove=a.memMove;
+  if(j<0) j+=a.d1;
+  if(J<0) J+=a.d1;
+  if(j>J) return;
+  CHECK((uint)j<a.d1 && (uint)J<a.d1, "SubRange range error (" <<j <<"<" <<a.d1 <<", " <<J <<"<" <<a.d1 <<")");
+  if(a.nd==2) {
+    nd=1;  d0=J+1-j; d1=0; d2=0;  N=d0;
+    p = &a(i,j);
+  }
+  if(a.nd==3) {
+    nd=2;  d0=J+1-j; d1=a.d2; d2=0;  N=d0*d1;
+    p = &a(i,j,0);
   }
 }
 

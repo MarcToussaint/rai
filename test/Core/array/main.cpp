@@ -118,11 +118,22 @@ void TEST(Basics){
   CHECK_EQ(a[1],a[2],"");
 
   //range access:
+  cout <<"\nall rows:\n" <<a({0,-1}) <<endl;
+  cout <<"\nrow 3:\n" <<a({3,3}) <<endl;
+  cout <<"\nrow 3:\n" <<a(3, {0,-1}) <<endl;
   cout <<"\nrows 1-3:\n" <<a({1,3}) <<endl;
+  cout <<"\nentries 1-4 of row 3:\n" <<a(3, {1,4}) <<endl;
+
+  ints.setStraightPerm(8);
+  ints.reshape(2,2,2);
+  cout <<"\nint:\n" <<ints <<endl;
+  cout <<"\nentries (1,0,{}):\n" <<ints(1, {0,0}) <<endl;
+  cout <<"\nentries (1,0,{}):\n" <<ints(1, 0, {}) <<endl;
+//  cout <<"\nentries (1,0,{}):\n" <<ints(1, 0, {0,-1}) <<endl;
 
   //access (copy and reference) of subarrays
-  cout <<"\nrefRange(2,4) =\n" <<a.refRange(2,4) <<endl;
-  a.refRange(2,4) *= 10.;
+  cout <<"\n({2,4}) =\n" <<a({2,4}) <<endl;
+  a({2,4}) *= 10.;
   cout <<"\nrows manipulated:\n" <<a <<endl;
 
   //setting arrays ``by hand''

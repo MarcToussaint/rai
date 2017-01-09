@@ -104,7 +104,7 @@ mlr::Quaternion conv_quaternion2quaternion(const geometry_msgs::Quaternion& q){
 }
 
 void conv_pose2transXYPhi(arr& q, uint qIndex, const geometry_msgs::PoseWithCovarianceStamped& pose){
-  q.refRange(qIndex, qIndex+3) = conv_pose2transXYPhi(pose);
+  q({qIndex, qIndex+3}) = conv_pose2transXYPhi(pose);
 }
 
 arr conv_pose2transXYPhi(const geometry_msgs::PoseWithCovarianceStamped& pose){
