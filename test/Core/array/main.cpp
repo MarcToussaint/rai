@@ -89,6 +89,10 @@ void TEST(Basics){
   cout <<"\nsubarray (of the original) [2:4,:] (in MATLAB notation)\n" <<a.sub(2,4,0,-1) <<endl;
   CHECK_EQ(a.last(),a.N-1,"");
 
+  //reshape
+  cout <<a.copy().reshape(5,7) <<endl;
+  cout <<a <<endl;
+
   //easier looping:
   cout <<"\neasier looping:\n";
   for(double& e: a) e++;
@@ -144,6 +148,25 @@ void TEST(Basics){
   copy(a, ints); //copying between different types
   CHECK_EQ(a(2),-2,"");
 
+  //using initialization lists within expressions
+  //arr b = a + {2,2,2,2,2}; //does not compile
+  a += {2,2,2,2,2}; //here it is considered as direct argument
+  cout <<"\nadded {2,2,2,2,2}:\n" <<a <<endl;
+
+  //inverse
+  arr A = randn(3,3);
+  cout <<"\nA:\n" <<A <<endl;
+  cout <<"\n(1/A):\n" <<(1/A) <<endl;
+  cout <<"\n(1/A)*A:\n" <<(1/A)*A <<endl;
+  cout <<"\n(1/A)*A:\n" <<(A|A) <<endl;
+
+  //concatenation
+  a = {1.,2,3};
+  arr b = {4.,5,6};
+  cout <<"\na,b: " <<(a,b,b,a,b) <<endl;
+//  cout <<"\na <<b: " <<(a.copy()() <<b) <<endl;
+  cout <<"\na: " <<a <<endl;
+
   //TRY DEBUGGING with GDB:
   //set a breakpoint here
   //in gdb (or a watch console of your IDE) type 'print gdb(a)' and 'print gdb(ints)'
@@ -162,7 +185,6 @@ void TEST(Basics){
 
   //commuting I/O-operators:
   a.resize(3,7,2);
-  arr b;
   rndInteger(a,1,9,false);
   cout <<"\nbefore save/load:\n " <<a <<endl;
 
@@ -588,19 +610,16 @@ void TEST(Inverse){
 void TEST(GaussElimintation) {
   cout << "\n*** Gaussian elimination with partial pivoting \n";
   if (mlr::lapackSupported) {
-    arr A;
-    A.append(ARR(7., 2., 4., 3.));
-    A.append(ARR(3., 2., 6., 5.));
-    A.append(ARR(7., 5., 3., 7.));
-    A.reshape(4,3);
-    cout << "A = " << A << endl;
+    arr A = arr(3,3, {7., 2., 4., 2., 6., 5., 5., 3., 7.});
+    cout <<"A=\n" <<A << endl;
 
-    arr b = ARR(9., 5., 2.);
-    cout << "b = " << b << endl;
+    arr b = arr(3,2, {9., 5., 2., 1., 2., 3.});
+    cout <<"b=\n" <<b << endl;
 
     arr X;
     lapack_mldivide(X, A, b);
-    cout << "X = " << endl << X << endl;
+    cout <<"X=\n" <<X << endl;
+    cout <<"A*X=\n" <<A*X << endl;
   }
 }
 
@@ -827,6 +846,7 @@ int MAIN(int argc, char **argv){
   mlr::initCmdLine(argc, argv);
 
   testBasics();
+  testGaussElimintation();
   return 0;
   testCheatSheet();
   testInitializationList();

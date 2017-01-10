@@ -299,6 +299,7 @@ arr inverse(const arr& A) { arr B; inverse(B, A); return B; }
 
 /// Pseudo Inverse based on SVD; computes \f$B\f$ such that \f$ABA = A\f$
 uint inverse_SVD(arr& Ainv, const arr& A) {
+  CHECK_EQ(A.nd, 2, "requires a matrix");
   unsigned i, j, k, m=A.d0, n=A.d1, r;
   arr U, V, w, winv;
   Ainv.resize(n, m);
@@ -1387,6 +1388,7 @@ void blas_MsymMsym(arr& X, const arr& A, const arr& B) {
 arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
   arr x;
   if(b.nd==2){ //b is a matrix (unusual) repeat for each col:
+    MLR_MSG("TODO: directly call lapack with the matrix!")
     arr bT = ~b;
     x.resizeAs(bT);
     for(uint i=0;i<bT.d0;i++) x[i]() = lapack_Ainv_b_sym(A, bT[i]);
@@ -1547,18 +1549,21 @@ const char *potrf_ERR="\n\
 *                positive definite, and the factorization could not be\n\
 *                completed.\n";
 
-void lapack_mldivide(arr& X, const arr& A, const arr& b) {
-  CHECK_EQ(A.nd , 2, "A in Ax=b must be a NxM Matrix.");
-  CHECK_EQ(b.nd , 1, "b in Ax=b must be a Vector.");
-  CHECK_EQ(A.d1 , b.d0, "b and A must have the same amount of rows in Ax=b.");
+void lapack_mldivide(arr& X, const arr& A, const arr& B) {
+  CHECK_EQ(A.nd, 2, "A in Ax=b must be a NxN matrix.");
+  CHECK_EQ(A.d0, A.d1, "A in Ax=b must be square matrix.");
+  CHECK(B.nd==1 || B.nd==2, "b in Ax=b must be a vector or matrix.");
+  CHECK_EQ(A.d0, B.d0, "b and A must have the same amount of rows in Ax=b.");
 
-  X = b;
-  arr LU = A;
-  integer N = A.d1, NRHS = 1, LDA = A.d0, INFO;
+  X = ~B;
+  arr LU = ~A;
+  integer N = A.d0, NRHS = (B.nd==1?1:B.d1), LDA = A.d1, INFO;
   mlr::Array<integer> IPIV(N);
 
   dgesv_(&N, &NRHS, LU.p, &LDA, IPIV.p, X.p, &LDA, &INFO);
   CHECK(!INFO, "LAPACK gaussian elemination error info = " <<INFO);
+
+  X = ~X;
 }
 
 void lapack_choleskySymPosDef(arr& Achol, const arr& A) {

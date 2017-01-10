@@ -188,10 +188,10 @@ template<class T> struct Array {
   Array<T> operator[](std::initializer_list<uint> list) const; //-> remove
   Array<T>& operator()(){ return *this; } //TODO: replace by scalar reference!
   T** getCarray(Array<T*>& Cpointers) const;
+
   
   /// @name access by copy
-  uint dim(uint k) const;
-  Array<uint> dim() const;
+  mlr::Array<T> copy() const;
   Array<T> sub(int i, int I) const;
   Array<T> sub(int i, int I, int j, int J) const;
   Array<T> sub(int i, int I, int j, int J, int k, int K) const;
@@ -201,7 +201,11 @@ template<class T> struct Array {
   Array<T> col(uint col_index) const;
   Array<T> cols(uint start_col, uint end_col) const;
 
-  void getMatrixBlock(Array<T>& B, uint lo0, uint lo1) const;
+  /// @name dimensionality access
+  uint dim(uint k) const;
+  Array<uint> dim() const;
+
+  void getMatrixBlock(Array<T>& B, uint lo0, uint lo1) const; // -> return array
   void getVectorBlock(Array<T>& B, uint lo) const;
   void copyInto(T *buffer) const;
   void copyInto2D(T **buffer) const;
@@ -304,6 +308,13 @@ template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z); //in
 template<class T> Array<T> operator*(const Array<T>& y, const Array<T>& z); //inner product
 template<class T> Array<T> operator*(const Array<T>& y, T z);
 template<class T> Array<T> operator*(T y, const Array<T>& z);
+template<class T> Array<T> operator/(int mustBeOne, const Array<T>& z_tobeinverted);
+template<class T> Array<T> operator/(const Array<T>& y, T z);
+template<class T> Array<T> operator|(const Array<T>& A, const Array<T>& B); //A^-1 B
+template<class T> Array<T> operator,(const Array<T>& y, const Array<T>& z); //concat
+
+template<class T> Array<T>& operator<<(Array<T>& x, const Array<T>& y); //append
+
 template<class T> bool operator==(const Array<T>& v, const Array<T>& w);
 template<class T> bool operator==(const Array<T>& v, const T *w);
 template<class T> bool operator!=(const Array<T>& v, const Array<T>& w);
@@ -337,7 +348,7 @@ UpdateOperator(%=)
 BinaryOperator(+ , +=);
 BinaryOperator(- , -=);
 //BinaryOperator(% , *=);
-BinaryOperator(/ , /=);
+//BinaryOperator(/ , /=);
 #undef BinaryOperator
 
 /// @} //name
@@ -694,7 +705,7 @@ template<class T> mlr::Array<T> elemWisemax(const T& x,const mlr::Array<T>& y);
 /// @name concatenating arrays together
 /// @{
 
-template<class T> mlr::Array<T> cat(const mlr::Array<T>& y, const mlr::Array<T>& z) { mlr::Array<T> x; x.append(y); x.append(z); return x; }
+template<class T> mlr::Array<T> cat(const mlr::Array<T>& y, const mlr::Array<T>& z) { mlr::Array<T> x(y); x.append(z); return x; }
 template<class T> mlr::Array<T> cat(const mlr::Array<T>& y, const mlr::Array<T>& z, const mlr::Array<T>& w) { mlr::Array<T> x; x.append(y); x.append(z); x.append(w); return x; }
 template<class T> mlr::Array<T> cat(const mlr::Array<T>& a, const mlr::Array<T>& b, const mlr::Array<T>& c, const mlr::Array<T>& d) { mlr::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); return x; }
 template<class T> mlr::Array<T> cat(const mlr::Array<T>& a, const mlr::Array<T>& b, const mlr::Array<T>& c, const mlr::Array<T>& d, const mlr::Array<T>& e) { mlr::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); x.append(e); return x; }
@@ -752,7 +763,6 @@ template<class T> void tensorMultiply(mlr::Array<T> &X, const mlr::Array<T> &Y, 
 template<class T> void tensorAdd(mlr::Array<T> &X, const mlr::Array<T> &Y, const uintA &Yid);
 template<class T> void tensorMultiply_old(mlr::Array<T> &x, const mlr::Array<T> &y, const uintA &d, const uintA &ids);
 template<class T> void tensorDivide(mlr::Array<T> &X, const mlr::Array<T> &Y, const uintA &Yid);
-template<class T> void tensorAdd(mlr::Array<T> &X, const mlr::Array<T> &Y, const uintA &Yid);
 
 
 //===========================================================================
@@ -798,7 +808,7 @@ void blas_A_At(arr& X, const arr& A);
 void blas_At_A(arr& X, const arr& A);
 void lapack_cholesky(arr& C, const arr& A);
 uint lapack_SVD(arr& U, arr& d, arr& Vt, const arr& A);
-void lapack_mldivide(arr& X, const arr& A, const arr& b);
+void lapack_mldivide(arr& X, const arr& A, const arr& B);
 void lapack_LU(arr& LU, const arr& A);
 void lapack_RQ(arr& R, arr& Q, const arr& A);
 void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs);

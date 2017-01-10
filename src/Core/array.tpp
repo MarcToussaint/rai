@@ -975,6 +975,9 @@ template<class T> bool mlr::Array<T>::containsDoubles() const {
 }
 
 
+/// non-reference copy (to apply followup operators, like x.copy().reshape(3,5))
+template<class T> mlr::Array<T> mlr::Array<T>::copy() const { return mlr::Array<T>(*this); }
+
 /** @brief a sub array of a 1D Array (corresponds to matlab [i:I]); when
   the upper limit I is -1, it is replaced by the max limit (like
   [i:]) */
@@ -3348,6 +3351,20 @@ template<class T> Array<T> operator*(const Array<T>& y, T z) {             Array
 /// scalar multiplication
 template<class T> Array<T> operator*(T y, const Array<T>& z) {             Array<T> x(z); x*=y; return x; }
 
+/// inverse
+template<class T> Array<T> operator/(int y, const Array<T>& z) {  Array<T> x=inverse(z); CHECK_EQ(y,1,""); return x; }
+/// scalar division
+template<class T> Array<T> operator/(const Array<T>& y, T z) {             Array<T> x(y); x/=z; return x; }
+
+/// A^-1 B
+template<class T> Array<T> operator|(const Array<T>& A, const Array<T>& B){ Array<T> x; lapack_mldivide(x, A, B); return x; }
+
+/// contatenation of two arrays
+template<class T> Array<T> operator,(const Array<T>& y, const Array<T>& z){ Array<T> x(y); x.append(z); return x; }
+
+/// x.append(y)
+template<class T> Array<T>& operator<<(Array<T>& x, const Array<T>& y){ x.append(y); return x; }
+
 /// index-wise (elem-wise) product (x_i = y_i z_i   or  X_{ij} = y_i Z_{ij}  or  X_{ijk} = Y_{ij} Z_{jk}   etc)
 template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Array<T> x; indexWiseProduct(x, y, z); return x; }
 
@@ -3397,7 +3414,7 @@ UpdateOperator(%=)
 BinaryOperator(+ , +=);
 BinaryOperator(- , -=);
 //BinaryOperator(% , *=);
-BinaryOperator(/ , /=);
+//BinaryOperator(/ , /=);
 #undef BinaryOperator
 
 /// allows a notation such as x <<"[0 1; 2 3]"; to initialize an array x
