@@ -36,7 +36,7 @@ void TEST(Dynamics){
   arr u;
   bool friction=false;
   VectorFunction diffEqn = [&G,&u,&friction](arr& y,arr&,const arr& x){
-    G.setJointState(x[0], x[1], true);
+    G.setJointState(x[0], x[1]);
     if(!u.N) u.resize(x.d1).setZero();
     if(friction) u = -10. * x[1];
     G.clearForces();

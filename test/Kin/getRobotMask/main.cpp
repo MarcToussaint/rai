@@ -20,6 +20,8 @@ int main(int argc, char** argv) {
 
   testGetRobotMask();
 
+  cout <<"DONE -- view the output images" <<endl;
+
   return 0;
 }
 

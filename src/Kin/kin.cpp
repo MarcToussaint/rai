@@ -911,6 +911,15 @@ void mlr::KinematicWorld::calc_fwdPropagateVelocities(){
       if(j->type==JT_hingeX){
         q_vel.setZero();
         q_angvel.set(qdot(j->qIndex) ,0., 0.);
+      }else if(j->type==JT_transX){
+        q_vel.set(qdot(j->qIndex), 0., 0.);
+        q_angvel.setZero();
+      }else if(j->type==JT_rigid){
+        q_vel.setZero();
+        q_angvel.setZero();
+      }else if(j->type==JT_transXYPhi){
+        q_vel.set(qdot(j->qIndex), qdot(j->qIndex+1), 0.);
+        q_angvel.set(0.,0.,qdot(j->qIndex+2));
       }else NIY;
 
       Matrix R = j->X.rot.getMatrix();
