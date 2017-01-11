@@ -1,7 +1,7 @@
 #ifndef TASKSPACECONTROLLER_H
 #define TASKSPACECONTROLLER_H
 
-#include <Ors/ors.h>
+#include <Kin/kin.h>
 #include <Motion/taskMaps.h>
 #include <Core/array.h>
 #include <RosCom/roscom.h>

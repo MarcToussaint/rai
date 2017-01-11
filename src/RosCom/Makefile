@@ -3,7 +3,7 @@ NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
 ROS = 1
-DEPEND = Core Hardware Hardware_gamepad Motion Ors Gui Logic
+DEPEND = Core Hardware Hardware_gamepad Motion Kin Gui Logic
 
 #CXXFLAGS += -DROS_PACKAGE_NAME='"pr2_module"'
 

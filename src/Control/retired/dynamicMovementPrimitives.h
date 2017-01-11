@@ -17,7 +17,7 @@
 
 #include <Core/util.h>
 #include <Core/array.h>
-#include <Ors/ors.h>
+#include <Kin/kin.h>
 
 
 struct DynamicMovementPrimitives {

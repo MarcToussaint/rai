@@ -2,7 +2,7 @@ BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
-DEPEND = Core Ors RosCom
+DEPEND = Core Kin RosCom
 
 ROS = 1
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )

@@ -846,8 +846,6 @@ int MAIN(int argc, char **argv){
   mlr::initCmdLine(argc, argv);
 
   testBasics();
-  testGaussElimintation();
-  return 0;
   testCheatSheet();
   testInitializationList();
   testSimpleIterators();

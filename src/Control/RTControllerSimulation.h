@@ -3,7 +3,7 @@
 
 #include <Core/array.h>
 #include <Core/thread.h>
-#include <Ors/ors.h>
+#include <Kin/kin.h>
 #include <Control/ctrlMsg.h>
 
 struct RTControllerSimulation : Thread {

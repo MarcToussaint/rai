@@ -34,17 +34,8 @@ mlr::Vector& NoVector = *((mlr::Vector*)NULL);
 mlr::Transformation& NoTransformation = *((mlr::Transformation*)NULL);
 
 namespace mlr {
-  double scalarProduct(const mlr::Quaternion& a, const mlr::Quaternion& b);
-}
 
-//===========================================================================
-/** @brief The ors namespace contains the main data structures of ors.
- *
- * This namespace defines some core data structures for robot
- * simulation and linking to external simulation engines. In
- * particular, using ors we can implement a soc::SocSystemAbstraction.
- */
-namespace mlr {
+double scalarProduct(const mlr::Quaternion& a, const mlr::Quaternion& b);
 
 double& Vector::operator()(uint i) {
   CHECK(i<3,"out of range");

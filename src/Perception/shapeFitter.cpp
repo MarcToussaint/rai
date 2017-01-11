@@ -1,7 +1,7 @@
 #include "shapeFitter.h"
 #include <Optim/optimization.h>
 //#include <MT/vision.h>
-#include <Ors/ors.h>
+#include <Kin/kin.h>
 //#include <MT/calibration.h>
 
 #if 0

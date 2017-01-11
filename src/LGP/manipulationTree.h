@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include <Ors/ors.h>
+#include <Kin/kin.h>
 #include <Logic/fol_mcts_world.h>
 #include "LGP.h"
 #include <Logic/fol.h>

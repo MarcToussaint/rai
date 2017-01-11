@@ -4,7 +4,7 @@
 #include <Core/thread.h>
 #include <Core/array.h>
 #include <RosCom/roscom.h>
-#include <Ors/ors.h>
+#include <Kin/kin.h>
 #include <RosCom/pr2DynamicSimulation.h>
 #include <Control/taskSpaceController.h>
 #include <RosCom/subscribeAlvarMarkers.h>

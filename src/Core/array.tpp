@@ -3355,6 +3355,8 @@ template<class T> Array<T> operator*(T y, const Array<T>& z) {             Array
 template<class T> Array<T> operator/(int y, const Array<T>& z) {  Array<T> x=inverse(z); CHECK_EQ(y,1,""); return x; }
 /// scalar division
 template<class T> Array<T> operator/(const Array<T>& y, T z) {             Array<T> x(y); x/=z; return x; }
+/// element-wise division
+template<class T> Array<T> operator/(const Array<T>& y, const Array<T>& z) { Array<T> x(y); x/=z; return x; }
 
 /// A^-1 B
 template<class T> Array<T> operator|(const Array<T>& A, const Array<T>& B){ Array<T> x; lapack_mldivide(x, A, B); return x; }

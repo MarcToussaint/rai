@@ -310,6 +310,7 @@ template<class T> Array<T> operator*(const Array<T>& y, T z);
 template<class T> Array<T> operator*(T y, const Array<T>& z);
 template<class T> Array<T> operator/(int mustBeOne, const Array<T>& z_tobeinverted);
 template<class T> Array<T> operator/(const Array<T>& y, T z);
+template<class T> Array<T> operator/(const Array<T>& y, const Array<T>& z); //element-wise devision
 template<class T> Array<T> operator|(const Array<T>& A, const Array<T>& B); //A^-1 B
 template<class T> Array<T> operator,(const Array<T>& y, const Array<T>& z); //concat
 

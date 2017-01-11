@@ -9,7 +9,7 @@
 #endif
 
 #include <Core/thread.h>
-#include <Ors/ors.h>
+#include <Kin/kin.h>
 #include <Core/array.tpp>
 #include <Gui/opengl.h>
 #include <map>

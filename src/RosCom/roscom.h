@@ -20,7 +20,7 @@
 #include <Core/thread.h>
 #include <Core/array.h>
 #include <Geo/geo.h>
-#include <Ors/ors.h>
+#include <Kin/kin.h>
 #include <Control/ctrlMsg.h>
 #include <ros_msg/JointState.h>
 
