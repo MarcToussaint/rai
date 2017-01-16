@@ -94,13 +94,13 @@ template<class T> mlr::Array<T>::Array(const T* p, uint size):Array() { referTo(
 template<class T> mlr::Array<T>::Array(std::initializer_list<T> values):Array() { operator=(values); }
 
 /// initialization via {1., 2., 3., ...} lists, with certain dimensionality
-template<class T> mlr::Array<T>::Array(uint D0, std::initializer_list<T> values){ operator=(values); reshape(D0); }
+template<class T> mlr::Array<T>::Array(uint D0, std::initializer_list<T> values):Array() { operator=(values); reshape(D0); }
 
 /// initialization via {1., 2., 3., ...} lists, with certain dimensionality
-template<class T> mlr::Array<T>::Array(uint D0, uint D1, std::initializer_list<T> values){ operator=(values); reshape(D0, D1); }
+template<class T> mlr::Array<T>::Array(uint D0, uint D1, std::initializer_list<T> values):Array() { operator=(values); reshape(D0, D1); }
 
 /// initialization via {1., 2., 3., ...} lists, with certain dimensionality
-template<class T> mlr::Array<T>::Array(uint D0, uint D1, uint D2, std::initializer_list<T> values){ operator=(values); reshape(D0, D1, D2); }
+template<class T> mlr::Array<T>::Array(uint D0, uint D1, uint D2, std::initializer_list<T> values):Array() { operator=(values); reshape(D0, D1, D2); }
 
 template<class T> mlr::Array<T>::Array(mlr::FileToken& f):Array() {
   read(f.getIs());
@@ -1774,7 +1774,7 @@ template<class T> void mlr::Array<T>::read(std::istream& is) {
     uint i=0;
     d=0;
     for(;;) {
-      mlr::skip(is, " \r\t");
+      mlr::skip(is, " \r\t", NULL, true);
       is.get(c);
       if(c==']' || !is.good()) { is.clear(); break; }
       if(c==';' || c=='\n') {  //set an array width

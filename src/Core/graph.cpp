@@ -157,9 +157,9 @@ void Node::write(std::ostream& os) const {
       writeValue(os);
       os <<'>';
     } else {
-      os <<" = < ";
+      os <<" = \" ";
       writeValue(os);
-      os <<'>';
+      os <<'"';
     }
   }
 }

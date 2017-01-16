@@ -69,8 +69,8 @@ int main(int argc,char** argv){
   ChoiceConstraintFunction F;
 //  RandomLPFunction F;
 //  SimpleConstraintFunction F;
-//  testConstraint(F, F.dim_x());
-  testConstraint2(F, F.dim_x());
+  testConstraint(F, F.dim_x());
+//  testConstraint2(F, F.dim_x());
 
 //  testCoveringSphere();
 
