@@ -330,9 +330,9 @@ endif
 
 ifeq ($(PHYSX),1)
 CXXFLAGS += -DMLR_PHYSX -D_DEBUG -DPX_DISABLE_FLUIDS -DCORELIB -DPX32 -DLINUX
-CPATH := $(CPATH):$(MLR_LIBPATH)/include/physx
+CPATH := $(CPATH):$(HOME)/opt/include:$(HOME)/opt/include/physx
 #PhysX/Include:$(MLR_LIBPATH)/PhysX/Include/extensions:$(MLR_LIBPATH)/PhysX/Include/foundation:$(MLR_LIBPATH)/PhysX/Include/deprecated
-#LPATH := $(MLR_LIBPATH)/PhysX/Lib/linux64/:$(LPATH)
+LPATH := $(HOME)/opt/lib/physx:$(LPATH)
 LIBS += -Wl,--start-group -lpthread -lrt\
 -lLowLevelCHECKED \
 -lLowLevelClothCHECKED \
