@@ -104,8 +104,6 @@ struct Body {
 
 //===========================================================================
 
-struct JointLocker;
-
 /// a joint
 struct Joint {
   KinematicWorld& world;
@@ -115,8 +113,6 @@ struct Joint {
   Joint *mimic;         ///< if non-NULL, this joint's state is identical to another's
   uint agent;           ///< associate this Joint to a specific agent (0=default robot)
   bool constrainToZeroVel; ///< HACK yet: when creating new 'virtual' joints, constrain them to zero vel in paths
-
-  JointLocker *locker;  ///< object toi abstract the dynamic locking of joints
 
   mlr::String name;      ///< name
   Enum<JointType> type;       ///< joint type
@@ -137,7 +133,6 @@ struct Joint {
     qIndex=j.qIndex; mimic=reinterpret_cast<Joint*>(j.mimic?1l:0l); agent=j.agent; constrainToZeroVel=j.constrainToZeroVel;
     name=j.name; type=j.type; A=j.A; Q=j.Q; B=j.B; X=j.X; axis=j.axis; limits=j.limits; q0=j.q0; H=j.H;
     ats=j.ats;
-    locker=j.locker;
   }
   void reset();
   void parseAts();

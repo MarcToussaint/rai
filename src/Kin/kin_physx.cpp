@@ -41,7 +41,6 @@
 #pragma GCC diagnostic pop
 
 #include "kin_physx.h"
-#include "kin_locker.h"
 #include <Gui/opengl.h>
 
 using namespace physx;
@@ -235,21 +234,21 @@ void PhysXInterface::step(double tau) {
     ((PxRigidDynamic*)s->actors(b_COUNT))->setKinematicTarget(OrsTrans2PxTrans(b->X));
   }
 
-  mlr::Array<PxTransform> goal_poses(world.joints.N);
-  for_list(mlr::Joint, j, world.joints) {
-    PxD6Joint *px_joint = s->joints(j_COUNT);
-    if(j->locker and j->locker->lock()) {
-      s->lockJoint(px_joint, j);
-    }
-    else if(j->locker and j->locker->unlock()) {
-      s->unlockJoint(px_joint, j);  
-    }
+  //  mlr::Array<PxTransform> goal_poses(world.joints.N);
+  // for_list(mlr::Joint, j, world.joints) {
+  //   PxD6Joint *px_joint = s->joints(j_COUNT);
+    // if(j->locker and j->locker->lock()) {
+    //   s->lockJoint(px_joint, j);
+    // }
+    // else if(j->locker and j->locker->unlock()) {
+    //   s->unlockJoint(px_joint, j);  
+    // }
     //if(px_joint) { 
       //PxRigidActor *actor0 = s->actors(j->ito);
       ////PxTransform goal_pose = actor0->getGlobalPose();
       //goal_poses(j_COUNT) = actor0->getGlobalPose();
     //}
-  }
+  //  }
   
   //-- dynamic simulation
   s->gScene->simulate(tau);
@@ -270,7 +269,7 @@ void PhysXInterface::step(double tau) {
 }
 
 void PhysXInterface::setArticulatedBodiesKinematic(uint agent){
-  for(mlr::Joint* j:world.joints){
+  for(mlr::Joint* j:world.joints) if(j->type!=mlr::JT_free){
     if(j->agent==agent){
       if(j->from->type==mlr::BT_dynamic) j->from->type=mlr::BT_kinematic;
       if(j->to->type==mlr::BT_dynamic) j->to->type=mlr::BT_kinematic;
@@ -297,7 +296,9 @@ void sPhysXInterface::addJoint(mlr::Joint *jj) {
   PxTransform A = OrsTrans2PxTrans(jj->A);
   PxTransform B = OrsTrans2PxTrans(jj->B);
   switch(jj->type) {
-    case mlr::JT_hingeX: 
+    case mlr::JT_free: //do nothing
+      break;
+    case mlr::JT_hingeX:
     case mlr::JT_hingeY:
     case mlr::JT_hingeZ: {
 
@@ -439,6 +440,7 @@ void sPhysXInterface::addBody(mlr::Body *b, physx::PxMaterial *mMaterial) {
       }
       break;
       case mlr::ST_cylinder:
+      case mlr::ST_ssBox:
       case mlr::ST_mesh: {
         // Note: physx can't decompose meshes itself.
         // Physx doesn't support triangle meshes in dynamic objects! See:
@@ -492,10 +494,10 @@ void PhysXInterface::pullFromPhysx(double tau) {
   for_list(PxRigidActor, a, s->actors) {
     PxTrans2OrsTrans(world.bodies(a_COUNT)->X, a->getGlobalPose());
     if(a->getType() == PxActorType::eRIGID_DYNAMIC) {
+#if 0
       PxRigidBody *px_body = (PxRigidBody*) a;
       PxVec3 vel = px_body->getLinearVelocity();
       PxVec3 angvel = px_body->getAngularVelocity();
-#if 0
       mlr::Vector newvel(vel[0], vel[1], vel[2]);
       mlr::Vector newangvel(angvel[0], angvel[1], angvel[2]);
       mlr::Body *b = world.bodies(a_COUNT);

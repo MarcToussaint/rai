@@ -563,7 +563,7 @@ mlr::Joint::~Joint() {
 
 void mlr::Joint::reset() { 
   ats.clear(); A.setZero(); B.setZero(); Q.setZero(); X.setZero(); axis.setZero(); limits.clear(); q0=0.; H=1.; type=JT_none;
-  locker=NULL;
+//  locker=NULL;
 }
 
 void mlr::Joint::parseAts() {
@@ -2582,6 +2582,8 @@ bool mlr::KinematicWorld::checkConsistency(){
     CHECK_EQ(j,joints(j->index),"");
     CHECK(j->from->outLinks.findValue(j)>=0,"");
     CHECK(j->to->inLinks.findValue(j)>=0,"");
+    CHECK_GE(j->type.x, 0, "");
+    CHECK_LE(j->type.x, JT_free, "");
     j->ats.checkConsistency();
   }
   for(Shape *s: shapes){

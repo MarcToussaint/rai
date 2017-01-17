@@ -55,8 +55,8 @@ struct Node {
   template<class T> bool isOfType() const{ return type==typeid(T); }
   template<class T> T *getValue();    ///< query whether node type is equal to (or derived from) T, return the value if so
   template<class T> const T *getValue() const; ///< as above
-  template<class T> T& get(){ T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"'"); return *x; }
-  template<class T> const T& get() const{ const T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"'"); return *x; }
+  template<class T> T& get(){ T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
+  template<class T> const T& get() const{ const T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
   Graph& graph() { return get<Graph>(); }
   const Graph& graph() const { return get<Graph>(); }
   bool isBoolAndTrue() const{ if(type!=typeid(bool)) return false; return *((bool*)value_ptr) == true; }

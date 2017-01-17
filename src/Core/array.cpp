@@ -68,6 +68,7 @@ const char* arrayBrackets="  ";
 arr& NoArr = *((arr*)NULL);
 arrA& NoArrA = *((arrA*)NULL);
 uintA& NoUintA = *((uintA*)NULL);
+uintAA& NoUintAA = *((uintAA*)NULL);
 
 /* LAPACK notes
 Use the documentation at
