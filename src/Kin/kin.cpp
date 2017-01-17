@@ -849,6 +849,11 @@ void mlr::KinematicWorld::transformJoint(mlr::Joint *e, const mlr::Transformatio
 }
 
 void mlr::KinematicWorld::makeLinkTree() {
+//  for(Shape *s: shapes) {
+//    if(s->mesh.V.N) s->mesh.transform(s->rel);
+//    if(s->sscCore.V.N) s->sscCore.transform(s->rel);
+//    s->rel.setZero();
+//  }
   for(Joint *j: joints) {
     for(Shape *s: j->to->shapes)  s->rel = j->B * s->rel;
     for(Joint *j2: j->to->outLinks) j2->A = j->B * j2->A;
@@ -861,26 +866,23 @@ void mlr::KinematicWorld::makeLinkTree() {
     on the edges, this calculates the absolute frames of all other nodes (propagating forward
     through trees and testing consistency of loops). */
 void mlr::KinematicWorld::calc_fwdPropagateFrames() {
-  mlr::Transformation f;
-  BodyL todoBodies = bodies;
-  for(Body *b: todoBodies) {
+  for(Body *b: bodies) {
     for(Joint *j:b->outLinks){ //this has no bailout for loopy graphs!
-      f = b->X;
-      f.appendTransformation(j->A);
-      j->X = f;
+      j->X = b->X;
+      j->X.appendTransformation(j->A);
       if(j->type==JT_hingeX || j->type==JT_transX)  j->axis = j->X.rot.getX();
       if(j->type==JT_hingeY || j->type==JT_transY)  j->axis = j->X.rot.getY();
       if(j->type==JT_hingeZ || j->type==JT_transZ)  j->axis = j->X.rot.getZ();
       if(j->type==JT_transXYPhi)  j->axis = j->X.rot.getZ();
       if(j->type==JT_phiTransXY)  j->axis = j->X.rot.getZ();
+
+      j->to->X=j->X;
 #if 1
-      f.appendTransformation(j->Q);
+      j->to->X.appendTransformation(j->Q);
 #else
-      j->applyTransformation(f, q);
+      j->applyTransformation(j->to->X, q);
 #endif
-      if(!isLinkTree) f.appendTransformation(j->B);
-      j->to->X=f;
-//      todoBodies.setAppend(j->to);
+      if(!isLinkTree) j->to->X.appendTransformation(j->B);
     }
   }
   calc_fwdPropagateShapeFrames();
@@ -890,7 +892,7 @@ void mlr::KinematicWorld::calc_fwdPropagateShapeFrames() {
   for(Shape *s: shapes) {
     if(s->body){
       s->X = s->body->X;
-      s->X.appendTransformation(s->rel);
+      /*if(!isLinkTree)*/ s->X.appendTransformation(s->rel);
     }else{
       s->X = s->rel;
     }
@@ -1245,24 +1247,24 @@ void mlr::KinematicWorld::calc_Q_from_q(int agent){
       CHECK_EQ(j->qIndex,n,"joint indexing is inconsistent");
       switch(j->type) {
         case JT_hingeX: {
-          j->Q.rot.setRadX(q(n));
+          j->Q.rot.setRadX(q.elem(n));
           n++;
         } break;
 
         case JT_hingeY: {
-          j->Q.rot.setRadY(q(n));
+          j->Q.rot.setRadY(q.elem(n));
           n++;
         } break;
 
         case JT_hingeZ: {
-          j->Q.rot.setRadZ(q(n));
+          j->Q.rot.setRadZ(q.elem(n));
           n++;
         } break;
 
         case JT_universal:{
           mlr::Quaternion rot1, rot2;
-          rot1.setRadX(q(n));
-          rot2.setRadY(q(n+1));
+          rot1.setRadX(q.elem(n));
+          rot2.setRadY(q.elem(n+1));
           j->Q.rot = rot1*rot2;
           n+=2;
         } break;
@@ -1283,39 +1285,39 @@ void mlr::KinematicWorld::calc_Q_from_q(int agent){
         } break;
 
         case JT_transX: {
-          j->Q.pos = q(n)*Vector_x;
+          j->Q.pos = q.elem(n)*Vector_x;
           n++;
         } break;
 
         case JT_transY: {
-          j->Q.pos = q(n)*Vector_y;
+          j->Q.pos = q.elem(n)*Vector_y;
           n++;
         } break;
 
         case JT_transZ: {
-          j->Q.pos = q(n)*Vector_z;
+          j->Q.pos = q.elem(n)*Vector_z;
           n++;
         } break;
 
         case JT_transXY: {
-          j->Q.pos.set(q(n), q(n+1), 0.);
+          j->Q.pos.set(q.elem(n), q.elem(n+1), 0.);
           n+=2;
         } break;
 
         case JT_trans3: {
-          j->Q.pos.set(q(n), q(n+1), q(n+2));
+          j->Q.pos.set(q.elem(n), q.elem(n+1), q.elem(n+2));
           n+=3;
         } break;
 
         case JT_transXYPhi: {
-          j->Q.pos.set(q(n), q(n+1), 0.);
-          j->Q.rot.setRadZ(q(n+2));
+          j->Q.pos.set(q.elem(n), q.elem(n+1), 0.);
+          j->Q.rot.setRadZ(q.elem(n+2));
           n+=3;
         } break;
 
         case JT_phiTransXY: {
-          j->Q.rot.setRadZ(q(n));
-          j->Q.pos = j->Q.rot*Vector(q(n+1), q(n+2), 0.);
+          j->Q.rot.setRadZ(q.elem(n));
+          j->Q.pos = j->Q.rot*Vector(q.elem(n+1), q.elem(n+2), 0.);
           n+=3;
         } break;
 

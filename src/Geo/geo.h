@@ -194,7 +194,7 @@ struct Transformation {
   double* getAffineMatrixGL(double *m) const;       // in OpenGL format (transposed memory storage!!)
   double* getInverseAffineMatrixGL(double *m) const;// in OpenGL format (transposed memory storage!!)
   
-  void applyOnPointArray(arr& pts);
+  void applyOnPointArray(arr& pts) const;
 
   void write(std::ostream& os) const;
   void read(std::istream& is);

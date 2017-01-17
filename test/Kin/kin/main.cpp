@@ -150,6 +150,8 @@ void TEST(KinematicSpeed){
   for(uint k=0;k<NUM;k++){
     rndUniform(x,-.5,.5,false);
     G.setJointState(x);
+//    G.watch();
+//    mlr::wait(.1);
   }
   cout <<"kinematics timing: "<< mlr::timerRead() <<"sec" <<endl;
 #endif

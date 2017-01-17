@@ -269,6 +269,10 @@ void mlr::Mesh::translate(double dx, double dy, double dz) {
   for(i=0; i<V.d0; i++) {  V(i, 0)+=dx;  V(i, 1)+=dy;  V(i, 2)+=dz;  }
 }
 
+void mlr::Mesh::transform(const mlr::Transformation& t){
+  t.applyOnPointArray(V);
+}
+
 mlr::Vector mlr::Mesh::center() {
   arr Vmean = sum(V,0);
   Vmean /= (double)V.d0;
@@ -2111,6 +2115,8 @@ ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> doub
   }
   return d;
 };
+
+
 
 
 

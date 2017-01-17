@@ -1121,7 +1121,7 @@ double* Transformation::getInverseAffineMatrixGL(double *m) const {
   return m;
 }
 
-void Transformation::applyOnPointArray(arr& pts){
+void Transformation::applyOnPointArray(arr& pts) const{
   if(!(pts.nd==2 && pts.d1==3)){
     LOG(-1) <<"wrong pts dimensions for transformation:" <<pts.dim();
     return;

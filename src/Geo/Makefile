@@ -2,6 +2,8 @@ BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
+OPTIM = fast_debug
+
 QHULL = 1
 GJK = 1
 LEWINER = 1

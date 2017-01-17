@@ -62,6 +62,7 @@ struct Mesh : GLDrawer {
   void scale(double f);
   void scale(double sx, double sy, double sz);
   void translate(double dx, double dy, double dz);
+  void transform(const Transformation& t);
   Vector center();
   void box();
   void addMesh(const mlr::Mesh& mesh2);
