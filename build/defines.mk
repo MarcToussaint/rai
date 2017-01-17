@@ -334,20 +334,20 @@ CPATH := $(CPATH):$(HOME)/opt/include:$(HOME)/opt/include/physx
 #PhysX/Include:$(MLR_LIBPATH)/PhysX/Include/extensions:$(MLR_LIBPATH)/PhysX/Include/foundation:$(MLR_LIBPATH)/PhysX/Include/deprecated
 LPATH := $(HOME)/opt/lib/physx:$(LPATH)
 LIBS += -Wl,--start-group -lpthread -lrt\
--lLowLevelCHECKED \
--lLowLevelClothCHECKED \
--lPhysX3CharacterKinematicCHECKED \
--lPhysX3CHECKED \
--lPhysX3CommonCHECKED \
--lPhysX3CookingCHECKED \
--lPhysX3ExtensionsCHECKED \
--lPhysX3VehicleCHECKED \
--lPhysXProfileSDKCHECKED \
--lPhysXVisualDebuggerSDKCHECKED \
--lPvdRuntimeCHECKED \
--lPxTaskCHECKED \
--lSceneQueryCHECKED \
--lSimulationControllerCHECKED 
+-lLowLevel \
+-lLowLevelCloth \
+-lPhysX3CharacterKinematic \
+-lPhysX3 \
+-lPhysX3Common \
+-lPhysX3Cooking \
+-lPhysX3Extensions \
+-lPhysX3Vehicle \
+-lPhysXProfileSDK \
+-lPhysXVisualDebuggerSDK \
+-lPvdRuntime \
+-lPxTask \
+-lSceneQuery \
+-lSimulationController 
 endif
 
 ifeq ($(PORTAUDIO),1)
