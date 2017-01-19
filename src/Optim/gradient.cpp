@@ -22,7 +22,7 @@
 OptGrad::OptGrad(arr& _x, const ScalarFunction& _f,  OptOptions _o):
   x(_x), f(_f), o(_o), it(0), evals(0), numTinySteps(0){
   alpha = o.initStep;
-  reinit();
+  if(f) reinit();
 }
 
 void OptGrad::reinit(const arr& _x){

@@ -32,7 +32,7 @@ OptNewton::OptNewton(arr& _x, const ScalarFunction& _f,  OptOptions _o):
   alpha = o.initStep;
   beta = o.damping;
   additionalRegularizer=NULL;
-  reinit(_x);
+  if(f) reinit(_x);
 }
 
 void OptNewton::reinit(const arr& _x){
@@ -97,9 +97,21 @@ OptNewton::StopCriterion OptNewton::step(){
       }
     }
   }
+
+  //restrict stepsize
   double maxDelta = absMax(Delta);
   if(o.maxStep>0. && maxDelta>o.maxStep){  Delta *= o.maxStep/maxDelta; maxDelta = o.maxStep; }
   double alphaLimit = o.maxStep/maxDelta;
+
+  //...due to bounds
+  if(bound_lo.N && bound_hi.N){
+    double a=1.;
+    for(uint i=0;i<x.N;i++){
+      if(x(i)+a*Delta(i)>bound_hi(i)) a = (bound_hi(i)-x(i))/Delta(i);
+      if(x(i)+a*Delta(i)<bound_lo(i)) a = (bound_lo(i)-x(i))/Delta(i);
+    }
+    Delta *= a;
+  }
   if(o.verbose>1) cout <<" \t|Delta|=" <<std::setw(11) <<maxDelta <<flush;
 
   //lazy stopping criterion: stop without any update

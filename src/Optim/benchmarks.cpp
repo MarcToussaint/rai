@@ -97,7 +97,11 @@ struct _ChoiceFunction : ScalarFunction {
     if(condition.N!=x.N){
       condition.resize(x.N);
       double cond = mlr::getParameter<double>("condition");
-      for(uint i=0; i<x.N; i++) condition(i) = pow(cond,0.5*i/(x.N-1));
+      if(x.N>1){
+        for(uint i=0; i<x.N; i++) condition(i) = pow(cond,0.5*i/(x.N-1));
+      }else{
+        condition = cond;
+      }
     }
 
     arr y = x;

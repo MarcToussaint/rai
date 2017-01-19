@@ -119,7 +119,7 @@ double DefaultKernelFunction::k(const arr& x1, const arr& x2, arr& gx1, arr& Hx1
       case Gauss: hyperParam1 = ARR( mlr::sqr(mlr::getParameter<double>("ML/KernelWidth")) );  break;
     }
   }
-  double k = ::exp(-sqrDistance(x1,x2)/hyperParam1.scalar());
+  double k = hyperParam2.scalar()*::exp(-sqrDistance(x1,x2)/hyperParam1.scalar());
   double a = -2.*k/hyperParam1.scalar();
   if(&gx1) gx1 = a * (x1-x2);
   if(&Hx1) Hx1 = (-2.*a/hyperParam1.scalar())*((x1-x2)^(x1-x2)) + a*eye(x1.N);
