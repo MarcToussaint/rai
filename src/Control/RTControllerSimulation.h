@@ -24,7 +24,7 @@ struct RTControllerSimulation : Thread {
   arr Kp_base, Kd_base, limits;
   arr I_term;
 
-  RTControllerSimulation(ors::KinematicWorld realWorld, double tau=0.01, bool gravity=false, double _systematicErrorSdv=0.);
+  RTControllerSimulation(mlr::KinematicWorld realWorld, double tau=0.01, bool gravity=false, double _systematicErrorSdv=0.);
   virtual ~RTControllerSimulation() {}
 
   void open();

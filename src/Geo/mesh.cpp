@@ -1954,7 +1954,7 @@ void mlr::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint 
 }
 
 
-void ors::Mesh::setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res) {
+void mlr::Mesh::setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res) {
   MarchingCubes mc(res, res, res);
   mc.init_all() ;
 

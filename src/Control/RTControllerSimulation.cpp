@@ -2,16 +2,16 @@
 #include <Motion/taskMaps.h>
 //#include "../../../usr/DD/Bachelorarbeit/src/objectGenerator.h"
 
-void force(ors::KinematicWorld* world, arr& fR) {
+void force(mlr::KinematicWorld* world, arr& fR) {
   world->stepSwift();
   //world->contactsToForces(100.0);
 
-  for(ors::Proxy* p : world->proxies) {
+  for(mlr::Proxy* p : world->proxies) {
     if(world->shapes(p->a)->name == "endeffR" && world->shapes(p->b)->name == "b") {
       if(p->d <= 0.0) {
-        ors::Vector trans = p->posB - p->posA;
-        ors::Vector force = 100.0*trans;
-        ors::Vector torque = (p->posA - world->shapes(p->a)->body->X.pos) ^ force;
+        mlr::Vector trans = p->posB - p->posA;
+        mlr::Vector force = 100.0*trans;
+        mlr::Vector torque = (p->posA - world->shapes(p->a)->body->X.pos) ^ force;
         fR(0) = force(0);
         fR(1) = force(1);
         fR(2) = force(2);
@@ -24,9 +24,9 @@ void force(ors::KinematicWorld* world, arr& fR) {
   }
 }
 
-void forceSimulateContactOnly(ors::KinematicWorld* world, arr& fR) {
+void forceSimulateContactOnly(mlr::KinematicWorld* world, arr& fR) {
   world->stepSwift();
-  for(ors::Proxy* p : world->proxies) {
+  for(mlr::Proxy* p : world->proxies) {
     if(world->shapes(p->a)->name == "endeffR" && world->shapes(p->b)->name == "b") {
       if(p->d <= 0.02) {
         fR(2) = -4.0;
@@ -136,7 +136,7 @@ void RTControlStep(
 
 }
 
-RTControllerSimulation::RTControllerSimulation(ors::KinematicWorld realWorld, double tau, bool gravity, double _systematicErrorSdv)
+RTControllerSimulation::RTControllerSimulation(mlr::KinematicWorld realWorld, double tau, bool gravity, double _systematicErrorSdv)
   : Thread("DynmSim", -1.)
   , ctrl_ref(this, "ctrl_ref", true)
   , ctrl_obs(this, "ctrl_obs")
@@ -145,8 +145,8 @@ RTControllerSimulation::RTControllerSimulation(ors::KinematicWorld realWorld, do
   , gravity(gravity)
   , stepCount(0)
   , systematicErrorSdv(_systematicErrorSdv) {
-  //world = new ors::KinematicWorld(realWorld);
-  world = new ors::KinematicWorld(mlr::mlrPath("data/pr2_model/pr2_model.ors"));
+  //world = new mlr::KinematicWorld(realWorld);
+  world = new mlr::KinematicWorld(mlr::mlrPath("data/pr2_model/pr2_model.ors"));
 
   //Object o(*world);
   //o.generateObject("b", 0.16, 0.16, 0.1, 0.55, -0.1, 0.55); //0.5 for x
@@ -155,10 +155,10 @@ RTControllerSimulation::RTControllerSimulation(ors::KinematicWorld realWorld, do
 }
 
 void RTControllerSimulation::open() {
-  //world = new ors::KinematicWorld;
+  //world = new mlr::KinematicWorld;
   //world->copy(modelWorld.get()());
-  //world = new ors::KinematicWorld(modelWorld.get());
-  //world = new ors::KinematicWorld(mlr::mlrPath("data/pr2_model/pr2_model.ors"));
+  //world = new mlr::KinematicWorld(modelWorld.get());
+  //world = new mlr::KinematicWorld(mlr::mlrPath("data/pr2_model/pr2_model.ors"));
 
 
 
