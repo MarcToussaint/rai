@@ -1385,14 +1385,6 @@ void blas_MsymMsym(arr& X, const arr& A, const arr& B) {
 #endif
 }
 
-arr blas_solve_L_b(const arr& L, const arr& b) {
-  HALT("there is a bug")
-  arr x = b;
-  cblas_dtrsm(CblasColMajor, CblasLeft, CblasLower, CblasNoTrans, CblasNonUnit, b.d0, 1, 1.0, L.p, L.d0, x.p, x.d0);
-  //cblas_dtrsm(CblasRowMajor, CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit, b.d0, 1, 1.0, L.p, L.d0, x.p, 1);
-  return x;
-}
-
 #endif //MLR_NOBLAS
 
 arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
@@ -1688,6 +1680,8 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
 };
 double lapack_determinantSymPosDef(const arr& A) { NICO; }
 void lapack_mldivide(arr& X, const arr& A, const arr& b) { NICO; }
+arr lapack_Ainv_b_symPosDef_givenCholesky(const arr& U, const arr&b) { return inverse(U)*b; }
+arr lapack_Ainv_b_triangular(const arr& L, const arr& b) { return inverse(L)*b; }
 #endif
 
 
