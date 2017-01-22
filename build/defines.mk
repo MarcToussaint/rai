@@ -172,12 +172,13 @@ LIBS      += -lgsl
 endif
 
 ifeq ($(OCTAVE),1)
-CXXFLAGS += -DMLR_OCTAVE
+CXXFLAGS += -DMLR_OCTAVE -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4
 ifeq ($(ARCH_LINUX),1)
 CPATH := $(CPATH):/usr/include/octave-3.6.2
 LPATHS += /usr/lib/octave/3.6.2
 else
-LPATHS += /usr/lib/octave-3.2.4
+CPATH := $(CPATH):/usr/include/octave-3.8.1:/usr/include/octave-3.8.1/octave
+LPATHS += /usr/lib/octave-3.8.1
 endif
 LIBS	+= -loctinterp -loctave
 # TIP!!!: run 'mkoctfile --verbose main.cpp' and have a look at the compile options!
@@ -329,24 +330,24 @@ endif
 
 ifeq ($(PHYSX),1)
 CXXFLAGS += -DMLR_PHYSX -D_DEBUG -DPX_DISABLE_FLUIDS -DCORELIB -DPX32 -DLINUX
-CPATH := $(CPATH):$(MLR_LIBPATH)/include/physx
+CPATH := $(CPATH):$(HOME)/opt/include:$(HOME)/opt/include/physx
 #PhysX/Include:$(MLR_LIBPATH)/PhysX/Include/extensions:$(MLR_LIBPATH)/PhysX/Include/foundation:$(MLR_LIBPATH)/PhysX/Include/deprecated
-#LPATH := $(MLR_LIBPATH)/PhysX/Lib/linux64/:$(LPATH)
+LPATH := $(HOME)/opt/lib/physx:$(LPATH)
 LIBS += -Wl,--start-group -lpthread -lrt\
--lLowLevelCHECKED \
--lLowLevelClothCHECKED \
--lPhysX3CharacterKinematicCHECKED \
--lPhysX3CHECKED \
--lPhysX3CommonCHECKED \
--lPhysX3CookingCHECKED \
--lPhysX3ExtensionsCHECKED \
--lPhysX3VehicleCHECKED \
--lPhysXProfileSDKCHECKED \
--lPhysXVisualDebuggerSDKCHECKED \
--lPvdRuntimeCHECKED \
--lPxTaskCHECKED \
--lSceneQueryCHECKED \
--lSimulationControllerCHECKED 
+-lLowLevel \
+-lLowLevelCloth \
+-lPhysX3CharacterKinematic \
+-lPhysX3 \
+-lPhysX3Common \
+-lPhysX3Cooking \
+-lPhysX3Extensions \
+-lPhysX3Vehicle \
+-lPhysXProfileSDK \
+-lPhysXVisualDebuggerSDK \
+-lPvdRuntime \
+-lPxTask \
+-lSceneQuery \
+-lSimulationController 
 endif
 
 ifeq ($(PORTAUDIO),1)

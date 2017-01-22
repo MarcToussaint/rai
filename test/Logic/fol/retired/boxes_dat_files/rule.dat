@@ -1,0 +1,49 @@
+### RULES
+
+Rule activate_pickup {
+     X, Y, Z
+     (pickup X Y)! (hand X) (object Y) (inhandNil X) (busy X)! (busy Y)! (active_pickup X Y)! 
+     out1 { (pickup X Y)=2.1 (active_pickup X Y) (busy X) (busy Y) }
+}
+
+Rule terminate_pickup {
+     X, Y, Z
+     (pickup X Y) (active_pickup X Y) (busy X) (busy Y) (hand X) (object Y) (inhandNil X)
+     out1 { (inhand X Y) (inhandNil X)! (pickup X Y)! (active_pickup X Y)! (busy X)! }
+}
+
+Rule activate_positioning {
+     X, Y
+     (positioning X)! (hand X) (object Y) (inhand X Y) (material Y) (inPosition Y)! (busy X)! (active_positioning X)! 
+     out1 { (positioning X)=3.1 (active_positioning X) (busy X) }
+}
+
+Rule terminate_positioning {
+     X, Y
+     (positioning X) (active_positioning X) (busy X) (hand X) (object Y) (inhand X Y) (material Y)
+     out1 { (inPosition Y)  (positioning X)! (active_positioning X)! (busy X)! }
+}
+
+Rule activate_release {
+     X, Y
+     (release X)! (hand X) (object Y) (inhand X Y) (material Y) (busy X)! (active_release X)!
+     out1 { (release X)=1.0 (active_release X) (busy X) }
+}
+
+Rule terminate_release {
+     X, Y
+     (release X) (active_release X) (busy X) (hand X) (object Y) (inhand X Y) (material Y)
+     out1 { (release X)! (inhand X Y)! (inhandNil X) (active_release X)! (busy X)! (busy Y)! }
+}
+
+Rule activate_screwing {
+     X, Y, Z, U, V, W
+     (screwing X)! (hand X) (screw Y) (inhand X Y) (wall Z) (ground W) (inPosition Z) (inPosition W) (hand U) (inhand U Z) (hand V) (inhand V W) (fixed Z W)! (active_screwing X)! (busy X)! (busy U)! (busy V)!  (used Y)!
+     out1 { (screwing X)=8.0 (active_screwing X) (busy X) (busy U) (busy V) (inPosition Z) (inPosition W) }
+}
+
+Rule terminate_screwing {
+     X, Y, Z, U, V, W
+     (screwing X) (active_screwing X) (busy X) (busy U) (busy V) (hand X) (screw Y) (inhand X Y) (wall Z) (ground W) (inPosition Z) (inPosition W) (hand U) (inhand U Z) (hand V) (inhand V W)
+     out1 { (screwing X)! (fixed Z W) (used Y) (inPosition Z) (inPosition W) (busy X)! (busy U)! (busy V)! (inhand X Y)! (inhandNil X) (active_screwing X)! }
+}

@@ -66,7 +66,7 @@ void RTControlStep(
     const CtrlMsg& cmd,
     const arr& Kp_base, const arr& Kd_base,
     const arr& limits,
-    ors::Joint* j_baseTranslationRotation
+    mlr::Joint* j_baseTranslationRotation
     ){
 
   //-- PD terms
@@ -174,7 +174,7 @@ void RTControllerSimulation::open() {
   Kp_base.resize(world->q.N).setZero();
   Kd_base.resize(world->q.N).setZero();
   limits.resize(world->q.N,5).setZero();
-  for(ors::Joint* j: world->joints) if(j->qDim()>0){
+  for(mlr::Joint* j: world->joints) if(j->qDim()>0){
     arr *info;
     info = j->ats.find<arr>("gains");  if(info){
       for(uint i=0;i<j->qDim();i++){ Kp_base(j->qIndex+i)=info->elem(0); Kd_base(j->qIndex+i)=info->elem(1); }

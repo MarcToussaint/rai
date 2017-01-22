@@ -1,0 +1,109 @@
+## A KeyValueGraph is..
+
+Three ways to describe what a KeyValueGraph is:
+
+-- a graph, where each item (node/edge) has some keys and can store a
+   value of any type
+
+   [Actually a hyper graph: items can be nodes, edges (linking two
+   nodes), or higher-order objects (linking arbitrary other items)]
+
+-- a key-value list, where items can have parent/child relations and
+   values can be of any type
+
+   [Actually a multi-map: items can have multiple keys, but at most
+   one value]
+
+-- the data structure which is one-to-one with the following file
+   format
+
+
+## File format
+
+item:
+[multiple keys] [(multiple parents)] [=] [value]
+
+value:
+none -> boolean
+true,false -> boolean
+number -> double
+'string' -> MT::String
+"string" -> MT::String
+[doubles] -> arr
+<TypeTag ...> -> arbitrary type
+(item-names) -> ItemL (subset of previously defined items)
+{ item-list } -> KeyValueGraph (new subgraph of this item)
+
+predefined TypeTags:
+<T ...> -> Transformation
+<d ...> -> arr
+<u ...> -> uintA
+
+
+## XML alike
+
+Nesting KeyValueGraphs (item values are sub-KeyValueGraphs) leads to
+XML-type data structure with the following differences: values have
+explicit C++-types (instead of just strings); items (may) have
+explicit parents (graph structure). Converting from and to XML is
+rather simple. [To be done generically.]
+
+
+## Example
+
+See the example.g!
+
+
+## FUTURE features
+
+* values that are read from files:
+
+<Mesh:meshfile.off>
+
+* include other files:
+
+#include "..."
+
+* conversions to XML
+
+
+## relational factor graphs
+
+item-name[range-variables](parent-names){ properties }
+
+Example 1:
+
+Variable x[t] { dim=2 }
+
+reads ``create a //Variable// named //x[t]// for each instantiation of
+//t//''
+
+
+Example 2:
+
+Variable x[t] { dim=2 }
+Factor f[t](x[t],x[t+1]) { f=[.9 .1 .1 .9] }
+Factor evidence(x[0]) { f=[1 0] }
+
+reads ``create a //Variable// named //x[t]// for each time slice;
+create a //Factor f[t]// for each time slice coupling to //x[t]// and
+//x[t+1]// with the specified Markov kernel; create a single factor
+coupling to x[0] with the specified evidence'' -- this defines a
+simple Markov chain!
+
+
+Example 3:
+
+Variable on[a,b]
+Variable ball[a]
+Variable table[a]
+Variable free[a]
+
+Variable move[a,b,c]
+
+Factor move-condition[a,b,c](on[a,b],free[c]) { coupling... }
+
+defines a relational factor graph with predicates for different
+instantiations of the logical variables a,b,c (somewhere one has to
+specify that a,b,c are instances of the \emph{same} domain!
+

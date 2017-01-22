@@ -10,37 +10,37 @@
 struct sSendPositionCommandsToBaxter{
   ros::NodeHandle nh;
   ros::Publisher pubL, pubR, pubLg, pubRg, pubHead, pubGripper;
-  ors::KinematicWorld baxterModel;
+  mlr::KinematicWorld baxterModel;
 };
 
-baxter_core_msgs::JointCommand conv_qRef2baxterMessage(const arr& q_ref, const ors::KinematicWorld& baxterModel, const char* prefix){
+baxter_core_msgs::JointCommand conv_qRef2baxterMessage(const arr& q_ref, const mlr::KinematicWorld& baxterModel, const char* prefix){
   baxter_core_msgs::JointCommand msg;
   msg.mode = 1;
-  for(ors::Joint *j:baxterModel.joints) if(j->name.startsWith(prefix)){
+  for(mlr::Joint *j:baxterModel.joints) if(j->name.startsWith(prefix)){
     msg.command.push_back(q_ref(j->qIndex));
     msg.names.push_back(j->name.p);
   }
   return msg;
 }
 
-bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const ors::KinematicWorld& baxterModel){
+bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const mlr::KinematicWorld& baxterModel){
   uint n = msg.name.size();
   if(!n) return false;
   for(uint i=0;i<n;i++){
-    ors::Joint *j = baxterModel.getJointByName(msg.name[i].c_str(), false);
+    mlr::Joint *j = baxterModel.getJointByName(msg.name[i].c_str(), false);
     if(j) qReal(j->qIndex) = msg.position[i];
   }
   return true;
 }
 
-bool baxter_get_q_qdot_u(arr& q, arr& v, arr& u, const sensor_msgs::JointState& msg, const ors::KinematicWorld& baxterModel){
+bool baxter_get_q_qdot_u(arr& q, arr& v, arr& u, const sensor_msgs::JointState& msg, const mlr::KinematicWorld& baxterModel){
   uint n = msg.name.size();
   if(!n) return false;
   if(&q && q.N!=baxterModel.q.N) q.resize(baxterModel.q.N).setZero();
   if(&v && v.N!=baxterModel.q.N) v.resize(baxterModel.q.N).setZero();
   if(&u && u.N!=baxterModel.q.N) u.resize(baxterModel.q.N).setZero();
   for(uint i=0;i<n;i++){
-    ors::Joint *j = baxterModel.getJointByName(msg.name[i].c_str(), false);
+    mlr::Joint *j = baxterModel.getJointByName(msg.name[i].c_str(), false);
     if(j){
       if(&q) q(j->qIndex) = msg.position[i];
       if(&v) v(j->qIndex) = msg.velocity[i];
@@ -50,29 +50,29 @@ bool baxter_get_q_qdot_u(arr& q, arr& v, arr& u, const sensor_msgs::JointState& 
   return true;
 }
 
-arr baxter_getEfforts(const sensor_msgs::JointState& msg, const ors::KinematicWorld& baxterModel){
+arr baxter_getEfforts(const sensor_msgs::JointState& msg, const mlr::KinematicWorld& baxterModel){
   uint n = msg.name.size();
   if(!n) return arr();
   arr u(baxterModel.q.N);
   u.setZero();
   for(uint i=0;i<n;i++){
-    ors::Joint *j = baxterModel.getJointByName(msg.name[i].c_str(), false);
+    mlr::Joint *j = baxterModel.getJointByName(msg.name[i].c_str(), false);
     if(j) u(j->qIndex) = msg.effort[i];
   }
   return u;
 }
 
-baxter_core_msgs::HeadPanCommand getHeadMsg(const arr& q_ref, const ors::KinematicWorld& baxterModel){
+baxter_core_msgs::HeadPanCommand getHeadMsg(const arr& q_ref, const mlr::KinematicWorld& baxterModel){
   baxter_core_msgs::HeadPanCommand msg;
-  ors::Joint *j = baxterModel.getJointByName("head_pan");
+  mlr::Joint *j = baxterModel.getJointByName("head_pan");
   msg.target = q_ref(j->qIndex);
   msg.speed_ratio = 1.;
   return msg;
 }
 
-baxter_core_msgs::EndEffectorCommand getGripperMsg(const arr& q_ref, const ors::KinematicWorld& baxterModel){
+baxter_core_msgs::EndEffectorCommand getGripperMsg(const arr& q_ref, const mlr::KinematicWorld& baxterModel){
   baxter_core_msgs::EndEffectorCommand msg;
-  ors::Joint *j = baxterModel.getJointByName("l_gripper_l_finger_joint");
+  mlr::Joint *j = baxterModel.getJointByName("l_gripper_l_finger_joint");
   mlr::String str;
 
   double position = q_ref(j->qIndex) / j->limits(1) * 100.0;
@@ -91,7 +91,7 @@ baxter_core_msgs::EndEffectorCommand getGripperMsg(const arr& q_ref, const ors::
 }
 
 
-SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const ors::KinematicWorld& kw)
+SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const mlr::KinematicWorld& kw)
   : Thread("SendPositionCommandsToBaxter"),
     ctrl_ref(this, "ctrl_ref", true),
     s(NULL),

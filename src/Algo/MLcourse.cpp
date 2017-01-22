@@ -111,7 +111,7 @@ arr RidgeRegression::evaluate(const arr& X, arr& bayesSigma2){
 
 //===========================================================================
 
-double DefaultKernelFunction::k(const arr& x1, const arr& x2, arr& g1, arr& g2){
+double DefaultKernelFunction::k(const arr& x1, const arr& x2, arr& gx1, arr& Hx1){
   if(!type){
     type = (KernelType) mlr::getParameter<uint>("ML/KernelType",1);
     switch(type){
@@ -119,8 +119,10 @@ double DefaultKernelFunction::k(const arr& x1, const arr& x2, arr& g1, arr& g2){
       case Gauss: hyperParam1 = ARR( mlr::sqr(mlr::getParameter<double>("ML/KernelWidth")) );  break;
     }
   }
-  double k = ::exp(-sqrDistance(x1,x2)/hyperParam1.scalar());
-  if(&g1 || &g2) NIY;
+  double k = hyperParam2.scalar()*::exp(-sqrDistance(x1,x2)/hyperParam1.scalar());
+  double a = -2.*k/hyperParam1.scalar();
+  if(&gx1) gx1 = a * (x1-x2);
+  if(&Hx1) Hx1 = (-2.*a/hyperParam1.scalar())*((x1-x2)^(x1-x2)) + a*eye(x1.N);
   return k;
 };
 DefaultKernelFunction defaultKernelFunction;
@@ -145,7 +147,7 @@ KernelRidgeRegression::KernelRidgeRegression(const arr& X, const arr& y, KernelF
   //-- compute alpha
   alpha = lapack_Ainv_b_sym(kernelMatrix_lambda, y-mu);
 
-  sigma = sqrt(sumOfSqr(kernelMatrix*alpha-y)/(X.d0-1));
+  sigmaSqr = sumOfSqr(kernelMatrix*alpha-y)/double(y.N/*-beta.N*/); //beta.N are the degrees of freedom that we substract (=1 for const model)
 }
 
 arr KernelRidgeRegression::evaluate(const arr& Z, arr& bayesSigma2){
@@ -160,6 +162,47 @@ arr KernelRidgeRegression::evaluate(const arr& Z, arr& bayesSigma2){
     }
   }
   return mu + kappa * alpha;
+}
+
+double KernelRidgeRegression::evaluate(const arr& x, arr& g, arr& H, double plusSigma, bool onlySigma){
+  arr kappa(X.d0);
+  arr Jkappa(X.d0, x.N);
+  arr Hkappa(X.d0, x.N, x.N);
+  for(uint i=0;i<X.d0;i++) kappa(i) = kernel.k(x, X[i], Jkappa[i](), Hkappa[i]());
+
+  double fx = 0.;
+  if(&g) g = zeros(x.N);
+  if(&H) H = zeros(x.N, x.N);
+
+  if(!onlySigma){
+    fx += mu + scalarProduct(alpha, kappa);
+    if(&g) g += ~alpha * Jkappa;
+    if(&H) H += ~alpha * Hkappa;
+  }
+
+  if(plusSigma){
+//    arr gx, Hx;
+//    fx += plusSigma * ;
+////    if(&g) g += plusSigma*(gx + g2);
+////    if(&H) H += plusSigma*(gx + g2);
+
+    if(!invKernelMatrix_lambda.N) invKernelMatrix_lambda = inverse_SymPosDef(kernelMatrix_lambda);
+
+    arr Kinv_k = invKernelMatrix_lambda*kappa;
+    arr J_Kinv_k = ~Jkappa*Kinv_k;
+    double k_Kinv_k = kernel.k(x, x) - scalarProduct(kappa, Kinv_k);
+    fx += plusSigma * ::sqrt(k_Kinv_k);
+    if(&g) g -= (plusSigma/sqrt(k_Kinv_k)) * J_Kinv_k;
+    if(&H) H -= (plusSigma/(k_Kinv_k*sqrt(k_Kinv_k))) * (J_Kinv_k^J_Kinv_k) + (plusSigma/sqrt(k_Kinv_k)) * (~Jkappa*invKernelMatrix_lambda*Jkappa + ~Kinv_k*Hkappa);
+  }
+
+  return fx;
+}
+
+ScalarFunction KernelRidgeRegression::getF(double plusSigma){
+  return [this,plusSigma](arr& g, arr& H, const arr& x) -> double{
+    return this->evaluate(x, g, H, plusSigma, false);
+  };
 }
 
 //===========================================================================

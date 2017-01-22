@@ -6,7 +6,7 @@ const unsigned int image_width = 640; //kinect resolution
 const unsigned int image_height = 480; //kinect resolution
 const unsigned int depth_size = image_width*image_height;
 
-ors::Camera kinectCam;
+mlr::Camera kinectCam;
 
 void Kinect2PointCloud::step(){
   depth = kinect_depth.get();

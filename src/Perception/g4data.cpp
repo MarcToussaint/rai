@@ -50,7 +50,7 @@ void readNode(Graph *i, uintA &hsitoi, uintA &itohsi, int ind) {
   if(hsi >= hsitoi.N) {
     hsitoiN = hsitoi.N;
     hsitoi.resizeCopy(hsi+1);
-    hsitoi.refRange(hsitoiN, hsi)() = -1;
+    hsitoi({hsitoiN, hsi})() = -1;
   }
   hsitoi(hsi) = ind;
   itohsi.append(hsi);
@@ -263,7 +263,7 @@ void G4Rec::load(const char *recdir, bool interpolate) {
   dataquatprev = data[0].sub(0, -1, 3, -1);
   for(uint f = 1; f < data.d0; f++) {
     for(uint i = 0; i < data.d1; i++) {
-      dataquat.referToRange(data.refDim(f, i)(), 3, -1);
+      dataquat.referToRange(data(f, i, {})(), 3, -1);
       if(sum(dataquat % dataquatprev[i]) < 0)
         dataquat *= -1.;
       if(!length(dataquatprev[i]) || length(dataquat))
@@ -281,9 +281,9 @@ void G4Rec::load(const char *recdir, bool interpolate) {
         else if(t+no < nframes) { // interpolate between t-1 and t+missingno(i)
           arr s0 = data[t-1][i];
           arr sF = data[t+no][i];
-          ors::Quaternion q0(s0(3), s0(4), s0(5), s0(6));
-          ors::Quaternion qF(sF(3), sF(4), sF(5), sF(6));
-          ors::Quaternion qt;
+          mlr::Quaternion q0(s0(3), s0(4), s0(5), s0(6));
+          mlr::Quaternion qF(sF(3), sF(4), sF(5), sF(6));
+          mlr::Quaternion qt;
 
           arr diff = sF - s0;
           for(uint tt = 0; tt < no; tt++) {
@@ -325,7 +325,7 @@ void G4Rec::load(const char *recdir, bool interpolate) {
       for(Node *lock: pair->graph()) {
         from = (uint)lock->graph().get<double>("from");
         to = (uint)lock->graph().get<double>("to");
-        ann->refRange(from, to) = 1;
+        ann->operator()({from, to}) = 1;
       }
       NIY; //don't get the following
       //pair->graph().append("ann", ann);
@@ -424,11 +424,11 @@ arr G4Rec::query(const char *type, const char *sensor, uint f) {
 
   if(0 == strcmp(type, "pose")) {
     arr x;
-    x.append(kvg.get<arr>("pos").refDim(is, f));
-    x.append(kvg.get<arr>("quat").refDim(is, f));
+    x.append(kvg.get<arr>("pos")(is, f, {}));
+    x.append(kvg.get<arr>("quat")(is, f, {}));
     return x;
   }
-  return i->get<arr>().refDim(is, f);
+  return i->get<arr>()(is, f, {});
 }
 
 /* arr G4Rec::query(const char *type, const char *sensor1, const char *sensor2) { */
@@ -452,7 +452,7 @@ arr G4Rec::query(const char *type, const char *sensor, uint f) {
 /*   sid2 = skvg2->get<double>("sid"); */
 /*   i2 = s->kvg.getValue<arr>("hsitoi")->elem(HSI(hid2, sid2)); */
 
-/*   return s->kvg.getValue<arr>(type)->refDim(i1, i2); */
+/*   return s->kvg.getValue<arr>(type)->operator()(i1, i2, {}); */
 /* } */
 
 /* arr G4Data::query(const char *type, const char *sensor1, const char *sensor2, uint f) { */
@@ -473,7 +473,7 @@ arr G4Rec::query(const char *type, const char *sensor, uint f) {
 /*   sid2 = skvg2->get<double>("sid"); */
 /*   i2 = s->kvg.getValue<arr>("hsitoi")->elem(HSI(hid2, sid2)); */
 
-/*   return s->kvg.getValue<arr>("bam", type)->refDim(i1, i2, f); */
+/*   return s->kvg.getValue<arr>("bam", type)->operator()(i1, i2,  f, {}); */
 /* } */
 
 void G4Rec::computeDPos(const char *sensor) {
@@ -487,8 +487,8 @@ void G4Rec::computeDPos(const char *sensor) {
   posX = query("pos", sensor);
   posY = query("pos");
   quatX = query("quat", sensor);
-  ors::Vector pX, pY, p, A;
-  ors::Quaternion qX;
+  mlr::Vector pX, pY, p, A;
+  mlr::Quaternion qX;
   for(uint is = 0; is < nsensors; is++) {
     for(uint f = 0; f < nframes; f++) {
       pX.set(posX[f].p);
@@ -514,7 +514,7 @@ void G4Rec::computeDQuat(const char *sensor) {
   arr quatX, quatY;
   quatX = query("quat", sensor);
   quatY = query("quat");
-  ors::Quaternion qX, qY, quat, A;
+  mlr::Quaternion qX, qY, quat, A;
   for(uint j = 0; j < nsensors; j++) {
     for(uint f = 0; f < nframes; f++) {
       qX.set(quatX[f].p);

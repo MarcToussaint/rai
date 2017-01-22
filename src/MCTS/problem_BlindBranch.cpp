@@ -30,7 +30,7 @@ MCTS_Environment::TransitionReturn BlindBranch::transition(const MCTS_Environmen
 }
 
 MCTS_Environment::TransitionReturn BlindBranch::transition_randomly(){
-  if(mlr::rnd.uni()<.5) return transition(actions(0));
+  if(rnd.uni()<.5) return transition(actions(0));
   return transition(actions(1));
 }
 

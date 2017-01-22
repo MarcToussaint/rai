@@ -589,7 +589,7 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
     yi[t] = y_loc;
     if(&J) {
       for(i=0; i<di; i++) for(j=0; j<z.d1; j++) //copy into the right place...
-          Ji(TUP(t,i,t,j)) = J_loc(i,j);
+          Ji.elem(TUP(t,i,t,j)) = J_loc(i,j);
     }
   }
   //then collect all pair potentials
@@ -598,9 +598,9 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
     yij[t] = y_loc;
     if(&J) {
       for(i=0; i<dij; i++) for(j=0; j<z.d1; j++) //copy into the right place...
-          Jij(TUP(t,i,t  ,j)) = Ji_loc(i,j);
+          Jij.elem(TUP(t,i,t  ,j)) = Ji_loc(i,j);
       for(i=0; i<dij; i++) for(j=0; j<z.d1; j++) //copy into the right place...
-          Jij(TUP(t,i,t+1,j)) = Jj_loc(i,j);
+          Jij.elem(TUP(t,i,t+1,j)) = Jj_loc(i,j);
     }
   }
   yi.reshape((T+1)*di);

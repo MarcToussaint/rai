@@ -25,7 +25,7 @@ bool sphereDetector(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl::N
 bool cylinderDetector(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl::Normal>::Ptr inCloudNormal, pcl::ModelCoefficients::Ptr outCoefficients, pcl::PointIndices::Ptr outInliersPlane, double min_radius, double max_radius);
 //bool cylinderDetector(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl::Normal>::Ptr inCloudNormal, pcl::ModelCoefficients::Ptr outCoefficients, pcl::PointIndices::Ptr outInliersPlane, double min_radius, double max_radius);
 
-bool IsABox(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::Normal>::Ptr normal, std::vector<pcl::ModelCoefficients::Ptr> &outCoefficients, ors::Quaternion &orientation, arr&center, arr&length);
+bool IsABox(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::Normal>::Ptr normal, std::vector<pcl::ModelCoefficients::Ptr> &outCoefficients, mlr::Quaternion &orientation, arr&center, arr&length);
 
 bool planeFindingWithNormals(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::Normal>::Ptr inCloudNormal);
 

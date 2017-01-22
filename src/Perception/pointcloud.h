@@ -28,13 +28,13 @@ struct ObjectBelief {
   }
   //pose
   // TODO: make pointers
-  ors::Vector position;
-  ors::Quaternion rotation;
+  mlr::Vector position;
+  mlr::Quaternion rotation;
 
   arr poseCov;
 
   // primitive shapes
-  ors::ShapeType shapeType;
+  mlr::ShapeType shapeType;
   arr shapeParams;
 
   // TODO: make pointer, such that the using app does not need to implicitly
@@ -95,8 +95,8 @@ struct ObjectTransformator : public Module {
   void close() {}
 
   ACCESS(ObjectBeliefSet, kinect_objects)
-  ACCESS(ors::KinematicWorld, geoState)
-  ors::KinematicWorld geo;
+  ACCESS(mlr::KinematicWorld, geoState)
+  mlr::KinematicWorld geo;
 };
 
 #endif // MLR_PCL

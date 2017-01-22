@@ -113,7 +113,7 @@ inline void operator>>(istream&, Module&){ NIY }
 inline void operator<<(ostream& os, const Module& m){ os <<"Module '" <<m.name <<'\''; }
 
 inline void operator>>(istream&, Access&){ NIY }
-inline void operator<<(ostream& os, const Access& a){ os <<"Access '" <<a.name <<"' from '" <<(a.thread?a.thread->name:mlr::String("NIL")) <<"' to '" << (a.var ? a.var->name : String("??")) <<'\''; }
+inline void operator<<(ostream& os, const Access& a){ os <<"Access '" <<a.name <<"' from '" <<(a.thread?a.thread->name:mlr::String("NIL")) <<"' to '" << (a.var ? a.data->name : String("??")) <<'\''; }
 
 
 //===========================================================================
@@ -135,7 +135,7 @@ struct Recorder : Thread {
   void step(){
     uint rev = access.readAccess();
     buffer = access();
-    double time = access.var->revisionTime();
+    double time = access.data->revisionTime();
     access.deAccess();
     mlr::String tag;
     tag.resize(30, false);
