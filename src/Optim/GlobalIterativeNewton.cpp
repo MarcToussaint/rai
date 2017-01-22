@@ -9,6 +9,7 @@ GlobalIterativeNewton::GlobalIterativeNewton(const ScalarFunction& f, const arr&
     best(NULL) {
   newton.bound_lo = bounds_lo;
   newton.bound_hi = bounds_hi;
+  newton.o.verbose = 0;
 }
 
 GlobalIterativeNewton::~GlobalIterativeNewton(){

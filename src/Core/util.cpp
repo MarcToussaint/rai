@@ -26,6 +26,8 @@
 #  include <sys/inotify.h>
 #  include <sys/stat.h>
 #  include <poll.h>
+#  include <X11/Xlib.h>
+#  include <X11/Xutil.h>
 #endif
 #ifdef __CYGWIN__
 #include "cygwin_compat.h"
@@ -529,19 +531,66 @@ void wait(double sec, bool msg_on_fail) {
 }
 
 /// wait for an ENTER at the console
-bool wait() {
+bool wait(bool useX11) {
   if(!mlr::getInteractivity()){
     mlr::wait(.5);
     return true;
   }
-  char c[10];
-  std::cout <<" -- hit a key to continue..." <<std::flush;
-  //cbreak(); getch();
-  std::cin.getline(c, 10);
-  std::cout <<"\r" <<std::flush;
-  if(c[0]==' ') return true;
-  else return false;
-  return true;
+  if(!useX11){
+    char c[10];
+    std::cout <<" -- hit a key to continue..." <<std::flush;
+    //cbreak(); getch();
+    std::cin.getline(c, 10);
+    std::cout <<"\r" <<std::flush;
+    if(c[0]==' ') return true;
+    else return false;
+    return true;
+  }else{
+    char c = x11_getKey();
+    if(c==' ') return true;
+    return false;
+  }
+}
+
+int x11_getKey(){
+  mlr::String txt="PRESS KEY";
+  int key=0;
+
+  Display *disp = XOpenDisplay(NULL);
+  CHECK(disp, "Cannot open display");
+
+  Window win = XCreateSimpleWindow(disp, DefaultRootWindow(disp),
+                                   10, 10, 165, 24,
+                                   2, 0x000000, 0xaaaaaa);
+  XSelectInput (disp, win, KeyPressMask | ExposureMask );
+  XMapWindow(disp, win);
+
+  GC gc = XCreateGC(disp, win, 0, NULL);
+  XSetFont(disp, gc,  XLoadFont(disp,"-adobe-courier-bold-r-*-*-*-220-*-*-*-*-*-*"));
+  XSetForeground(disp, gc, 0x606060);
+
+  bool quit=false;
+  for(;!quit;){
+    XEvent ev;
+    XNextEvent(disp, &ev);
+    switch(ev.type){
+      case Expose:      /* Expose-Event => Bild zeichnen */
+        if (ev.xexpose.count == 0) {
+          XDrawString(disp, win, gc, 0, 20, txt.p, txt.N);
+          XFlush(disp);
+        }
+        break;
+      case KeyPress:
+        char string[4];
+        XLookupString(&ev.xkey, string, 4, NULL, NULL);
+        key = string[0];
+        quit=true;
+        break;
+    }
+  }
+
+  XCloseDisplay(disp);
+  return key;
 }
 
 /// the integral shared memory size -- not implemented for Windows!

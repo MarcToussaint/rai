@@ -1435,8 +1435,11 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
     arr sig, eig;
     lapack_EigenDecomp(A, sig, eig);
 #endif
-    THROW("lapack_Ainv_b_sym error info = " <<INFO
-         <<". Typically this is because A is not pos-def.\nsmallest "<<k<<" eigenvalues=" <<sig);
+    mlr::errString <<"lapack_Ainv_b_sym error info = " <<INFO
+                  <<". Typically this is because A is not pos-def.\nsmallest "<<k<<" eigenvalues=" <<sig;
+    throw(mlr::errString.p);
+//    THROW("lapack_Ainv_b_sym error info = " <<INFO
+//         <<". Typically this is because A is not pos-def.\nsmallest "<<k<<" eigenvalues=" <<sig);
   }
   return x;
 }

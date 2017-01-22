@@ -88,6 +88,9 @@ extern int interactivity;
 void open(std::ofstream& fs, const char *name, const char *errmsg="");
 void open(std::ifstream& fs, const char *name, const char *errmsg="");
 
+//----- basic ui
+int x11_getKey();
+
 //----- strings and streams
 bool contains(const char *s, char c);
 char skip(std::istream& is, const char *skipSymbols=" \n\r\t", const char *stopSymbols=NULL, bool skipCommentLines=true);
@@ -147,7 +150,7 @@ double toTime(const tm& t);
 char *date();
 char *date(double sec);
 void wait(double sec, bool msg_on_fail=true);
-bool wait();
+bool wait(bool useX11=true);
 
 //----- memory
 long mem();

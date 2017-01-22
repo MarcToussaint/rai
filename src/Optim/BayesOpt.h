@@ -30,8 +30,7 @@ struct BayesOpt{
 
 private:
   void addDataPoint(const arr& x, double y); //and update the regressions
+  void reOptimizeAlphaMinima();
   arr pickNextPoint();
   void reduceLengthScale();
-
-
 };

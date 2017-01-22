@@ -44,6 +44,8 @@ void BayesOpt::step(){
 //  report();
 
   addDataPoint(x, fx);
+
+  reOptimizeAlphaMinima();
 }
 
 void BayesOpt::run(uint maxIt){
@@ -61,20 +63,29 @@ void BayesOpt::report(bool display){
   arr y_grid = f_now->evaluate(X_grid, s_grid);
   s_grid = sqrt(s_grid);
 
-  arr y2_grid = f_smaller->evaluate(X_grid);
+  arr s2_grid;
+  arr y2_grid = f_smaller->evaluate(X_grid, s2_grid);
+  s2_grid = sqrt(s2_grid);
 
   arr locmin_X(0u,data_X.d1), locmin_y;
   for(auto& l:alphaMinima_now.localMinima){
     locmin_X.append(l.x);
     locmin_y.append(l.fx);
   }
+  arr locmin2_X(0u,data_X.d1), locmin2_y;
+  for(auto& l:alphaMinima_smaller.localMinima){
+    locmin2_X.append(l.x);
+    locmin2_y.append(l.fx);
+  }
 
   plotGnuplot();
   plotClear();
   plotFunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
   plotFunction(X_grid, y2_grid);
+  plotFunction(X_grid, y2_grid-s2_grid);
   plotPoints(data_X, data_y);
   plotPoints(locmin_X, locmin_y);
+  plotPoints(locmin2_X, locmin2_y);
   plot(false);
 }
 
@@ -95,7 +106,7 @@ void BayesOpt::addDataPoint(const arr& x, double y){
   f_smaller = new KernelRidgeRegression(data_X, data_y, *kernel_smaller, -1., fmean);
 }
 
-arr BayesOpt::pickNextPoint(){
+void BayesOpt::reOptimizeAlphaMinima(){
   alphaMinima_now.newton.f = f_now->getF(-1.);
   alphaMinima_smaller.newton.f = f_smaller->getF(-1.);
 
@@ -103,17 +114,16 @@ arr BayesOpt::pickNextPoint(){
   alphaMinima_now.run(20);
   alphaMinima_smaller.reOptimizeAllPoints();
   alphaMinima_smaller.run(20);
+}
 
+arr BayesOpt::pickNextPoint(){
   arr x_now = alphaMinima_now.best->x;
   arr x_sma = alphaMinima_smaller.best->x;
 
-  double fx_0 = f_now->evaluate(x_now, NoArr, NoArr, 0., false);
-  double fx_1 = f_smaller->evaluate(x_sma, NoArr, NoArr, 0., false);
+  double fx_0 = f_now->evaluate(x_now, NoArr, NoArr, -2., false);
+  double fx_1 = f_smaller->evaluate(x_sma, NoArr, NoArr, -1., false);
 
-  double sig_0 = f_now->evaluate(x_now, NoArr, NoArr, -1., true);
-  double sig_1 = f_smaller->evaluate(x_sma, NoArr, NoArr, -1., true);
-
-  if(fx_1-1.*sig_1 < fx_0 - 2.* sig_0){
+  if(fx_1 < fx_0){
     reduceLengthScale();
     return x_sma;
   }
@@ -122,6 +132,7 @@ arr BayesOpt::pickNextPoint(){
 }
 
 void BayesOpt::reduceLengthScale(){
+  cout <<"REDUCING LENGTH SCALE!!" <<endl;
   kernel_now->hyperParam1 = kernel_smaller->hyperParam1;
   kernel_smaller->hyperParam1 /= 2.;
 }
