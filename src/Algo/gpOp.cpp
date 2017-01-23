@@ -67,6 +67,13 @@ void GaussianProcessOptimized::recompute(){
   }
 }
 
+void GaussianProcessOptimized::clearData() {
+  X.clear();
+  Y.clear();
+  L.clear();
+  GinvY.clear();
+}
+
 double GaussianProcessOptimized::evaluate(const arr& x) {
   double y, nonsense;
   evaluate(x, y, true, nonsense, false);
