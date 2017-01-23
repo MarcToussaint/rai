@@ -26,7 +26,7 @@ struct sImageViewer{
 };
 
 void ImageViewer::open(){ 
-  s = new sImageViewer(STRING("ImageViewer '"<<img.var->name()<<'\''));
+  s = new sImageViewer(STRING("ImageViewer '"<<img.data->name<<'\''));
   s->gl.openWindow();
   s->gl.update();
 }
@@ -59,7 +59,7 @@ struct sVideoEncoder{
 };
 
 void VideoEncoder::open(){
-  s = new sVideoEncoder(STRING("z." <<img.var->name <<'.' <<mlr::getNowString() <<".avi"), fps, is_rgb);
+  s = new sVideoEncoder(STRING("z." <<img.data->name <<'.' <<mlr::getNowString() <<".avi"), fps, is_rgb);
 }
 
 void VideoEncoder::close(){
@@ -70,7 +70,7 @@ void VideoEncoder::close(){
 void VideoEncoder::step(){
   //-- grab from shared memory (necessary?)
   uint rev = img.readAccess();
-  double time = img.var->revisionTime();
+  double time = img.data->revisionTime();
   s->buffer = img();
   img.deAccess();
 
@@ -102,7 +102,7 @@ struct sVideoEncoderX264{
 };
 
 void VideoEncoderX264::open(){
-    s = new sVideoEncoderX264(STRING("z." <<img.var->name <<'.' <<mlr::getNowString() <<".264"), fps, is_rgb);
+    s = new sVideoEncoderX264(STRING("z." <<img.data->name <<'.' <<mlr::getNowString() <<".264"), fps, is_rgb);
 }
 
 void VideoEncoderX264::close(){
@@ -115,7 +115,7 @@ void VideoEncoderX264::close(){
 void VideoEncoderX264::step(){
     //-- grab from shared memory (necessary?)
     int nextRevision = img.readAccess();
-    double time = img.v->revision_time;
+    double time = img.data->revision_time;
     s->buffer = img();
     img.deAccess();
 
@@ -138,7 +138,7 @@ void VideoEncoderX264::step(){
 struct sPointCloudViewer{
   OpenGL gl;
   sPointCloudViewer():gl("PointCloudViewer",640,480){}
-  ors::Mesh pc;
+  mlr::Mesh pc;
 };
 
 void glDrawAxes(void*){

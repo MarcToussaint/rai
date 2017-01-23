@@ -9,7 +9,7 @@
 #endif
 
 #include <Core/thread.h>
-#include <Ors/ors.h>
+#include <Kin/kin.h>
 #include <Core/array.tpp>
 #include <Gui/opengl.h>
 #include <map>
@@ -41,7 +41,7 @@ struct GenericDisplayViewer : Thread {
     : Thread("GenericDisplayViewer", -1.)
     , gl(NULL)
     , var(this, var_name, true){}
-  virtual void open(){ gl = new OpenGL(STRING("ImageViewer '"<<var.var->name()<<'\'')); }
+  virtual void open(){ gl = new OpenGL(STRING("ImageViewer '"<<var.data->name()<<'\'')); }
   virtual void step(){
     gl->background = var.get()->display;
     if(gl->height!= gl->background.d0 || gl->width!= gl->background.d1)
@@ -280,7 +280,7 @@ struct AllViewer : Thread {
   Access_typed<arr> kinect_pointColors;
   Access_typed<PlaneA> planes_now;
 
-  ors::Mesh kinect;
+  mlr::Mesh kinect;
   PlaneA planes_now_copy;
   OpenGL gl;
 

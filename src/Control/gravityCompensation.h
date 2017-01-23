@@ -2,14 +2,14 @@
 #define GRAVITYCOMPENSATION_H
 
 #include <Core/array.h>
-#include <Ors/ors.h>
+#include <Kin/kin.h>
 #include <Motion/taskMaps.h>
 
 struct GravityCompensation {
 
   struct CV;
 
-  ors::KinematicWorld world;
+  mlr::KinematicWorld world;
 
   arr TLeftArm, TRightArm, THead;
   StringA leftJoints = {"l_shoulder_pan_joint","l_shoulder_lift_joint","l_upper_arm_roll_joint","l_elbow_flex_joint",
@@ -32,7 +32,7 @@ struct GravityCompensation {
   arr compensateFTL(const arr& q);
   arr compensateFTR(const arr& q);
 
-  GravityCompensation(const ors::KinematicWorld& world);
+  GravityCompensation(const mlr::KinematicWorld& world);
 
   arr featuresGC(arr q, arr qSign, const mlr::String& joint);
 
@@ -70,7 +70,7 @@ struct GravityCompensation {
   arr compensate(arr q, bool compensateLeftArm, bool compensateRightArm, bool compensateHead);
   arr compensate(arr q, StringA joints);
 
-  GravityCompensation(const ors::KinematicWorld& world);
+  GravityCompensation(const mlr::KinematicWorld& world);
 
   //for debugging
   void testForLimits();

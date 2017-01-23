@@ -66,7 +66,9 @@ const char* arrayBrackets="  ";
 }
 
 arr& NoArr = *((arr*)NULL);
+arrA& NoArrA = *((arrA*)NULL);
 uintA& NoUintA = *((uintA*)NULL);
+uintAA& NoUintAA = *((uintAA*)NULL);
 
 /* LAPACK notes
 Use the documentation at
@@ -104,9 +106,9 @@ arr grid(const arr& lo, const arr& hi, const uintA& steps){
   if(lo.N==3) {
     X.resize(TUP(steps(0)+1, steps(1)+1, steps(2)+1, 3));
     for(i=0; i<X.d0; i++) for(j=0; j<X.d1; j++) for(k=0; k<X.d2; k++) {
-          X.operator()(TUP(i, j, k, 0))=lo(0)+(hi(0)-lo(0))*i/steps(0);
-          X.operator()(TUP(i, j, k, 1))=lo(1)+(hi(1)-lo(1))*j/steps(1);
-          X.operator()(TUP(i, j, k, 2))=lo(2)+(hi(2)-lo(2))*k/steps(2);
+          X.elem(TUP(i, j, k, 0))=lo(0)+(hi(0)-lo(0))*i/steps(0);
+          X.elem(TUP(i, j, k, 1))=lo(1)+(hi(1)-lo(1))*j/steps(1);
+          X.elem(TUP(i, j, k, 2))=lo(2)+(hi(2)-lo(2))*k/steps(2);
         }
     X.reshape(X.d0*X.d1*X.d2, 3);
     return X;
@@ -298,6 +300,7 @@ arr inverse(const arr& A) { arr B; inverse(B, A); return B; }
 
 /// Pseudo Inverse based on SVD; computes \f$B\f$ such that \f$ABA = A\f$
 uint inverse_SVD(arr& Ainv, const arr& A) {
+  CHECK_EQ(A.nd, 2, "requires a matrix");
   unsigned i, j, k, m=A.d0, n=A.d1, r;
   arr U, V, w, winv;
   Ainv.resize(n, m);
@@ -764,7 +767,7 @@ double determinantSubroutine(double **A, uint n) {
     }
     d+=((i&1)?-1.:1.) * A[i][0] * determinantSubroutine(B, n-1);
   }
-  delete[] B;
+  delete[] B; B=NULL;
   return d;
 }
 
@@ -998,7 +1001,7 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     uint i, j, *k, *kstop;
     y.resize(A.d0); y.setZero();
     double *Ap=A.p;
-    uintA& A_elems = dynamic_cast<SparseMatrix*>(A.special)->elems;
+    uintA& A_elems = dynamic_cast<mlr::SparseMatrix*>(A.special)->elems;
     for(k=A_elems.p, kstop=A_elems.p+A_elems.N; k!=kstop; Ap++) {
       i=*k; k++;
       j=*k; k++;
@@ -1007,20 +1010,20 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     return;
   }
   if(isSparseMatrix(A) && isSparseVector(x)) {
-    SparseVector *sx = dynamic_cast<SparseVector*>(x.special);
+    mlr::SparseVector *sx = dynamic_cast<mlr::SparseVector*>(x.special);
     CHECK(x.nd==1 && A.nd==2 && sx->N==A.d1, "not a proper matrix-vector multiplication");
     uint i, j, n, *k, *kstop, *l, *lstop;
     y.clear(); y.nd=1; y.d0=A.d0;
-    y.special = new SparseMatrix(y, A.d0); //aux=y_sparse=new uintA [2];
-    uintA& y_elems= dynamic_cast<SparseMatrix*>(y.special)->elems;
-    uintA& y_col= dynamic_cast<SparseMatrix*>(y.special)->cols(0);
+    y.special = new mlr::SparseMatrix(y, A.d0); //aux=y_sparse=new uintA [2];
+    uintA& y_elems= dynamic_cast<mlr::SparseMatrix*>(y.special)->elems;
+    uintA& y_col= dynamic_cast<mlr::SparseMatrix*>(y.special)->cols(0);
     y_col.resize(y.d0); y_col=(uint)-1;
     double *xp=x.p;
     uintA& x_elems = sx->elems;
     uint *slot;
     for(k=x_elems.p, kstop=x_elems.p+x_elems.N; k!=kstop; xp++) {
       j=*k; k++;
-      uintA& A_col = dynamic_cast<SparseMatrix*>(A.special)->cols(j);
+      uintA& A_col = dynamic_cast<mlr::SparseMatrix*>(A.special)->cols(j);
       for(l=A_col.p, lstop=A_col.p+A_col.N; l!=lstop;) {
         i =*l; l++;
         n =*l; l++;
@@ -1041,7 +1044,7 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     uint i, j, *k, *kstop, d1=A.d1;
     y.resize(A.d0); y.setZero();
     double *xp=x.p;
-    uintA& elems = dynamic_cast<SparseMatrix*>(x.special)->elems;
+    uintA& elems = dynamic_cast<mlr::SparseMatrix*>(x.special)->elems;
     for(k=elems.p, kstop=elems.p+elems.N; k!=kstop; xp++) {
       j=*k; k++;
       for(i=0; i<A.d0; i++) {
@@ -1387,6 +1390,7 @@ void blas_MsymMsym(arr& X, const arr& A, const arr& B) {
 arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
   arr x;
   if(b.nd==2){ //b is a matrix (unusual) repeat for each col:
+    MLR_MSG("TODO: directly call lapack with the matrix!")
     arr bT = ~b;
     x.resizeAs(bT);
     for(uint i=0;i<bT.d0;i++) x[i]() = lapack_Ainv_b_sym(A, bT[i]);
@@ -1432,8 +1436,11 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
     arr sig, eig;
     lapack_EigenDecomp(A, sig, eig);
 #endif
-    THROW("lapack_Ainv_b_sym error info = " <<INFO
-         <<". Typically this is because A is not pos-def.\nsmallest "<<k<<" eigenvalues=" <<sig);
+    mlr::errString <<"lapack_Ainv_b_sym error info = " <<INFO
+                  <<". Typically this is because A is not pos-def.\nsmallest "<<k<<" eigenvalues=" <<sig;
+    throw(mlr::errString.p);
+//    THROW("lapack_Ainv_b_sym error info = " <<INFO
+//         <<". Typically this is because A is not pos-def.\nsmallest "<<k<<" eigenvalues=" <<sig);
   }
   return x;
 }
@@ -1496,7 +1503,7 @@ void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs) {
 }
 
 arr lapack_kSmallestEigenValues_sym(const arr& A, uint k){
-  CHECK(k<A.d0,"");
+  if(k>A.d0) k=A.d0; //  CHECK(k<=A.d0,"");
   integer N=A.d0, KD=A.d1-1, LDAB=A.d1, INFO;
   mlr::Array<integer> IWORK(5*N), IFAIL(N);
   arr WORK(10*(3*N)), Acopy=A;
@@ -1547,18 +1554,21 @@ const char *potrf_ERR="\n\
 *                positive definite, and the factorization could not be\n\
 *                completed.\n";
 
-void lapack_mldivide(arr& X, const arr& A, const arr& b) {
-  CHECK_EQ(A.nd , 2, "A in Ax=b must be a NxM Matrix.");
-  CHECK_EQ(b.nd , 1, "b in Ax=b must be a Vector.");
-  CHECK_EQ(A.d1 , b.d0, "b and A must have the same amount of rows in Ax=b.");
+void lapack_mldivide(arr& X, const arr& A, const arr& B) {
+  CHECK_EQ(A.nd, 2, "A in Ax=b must be a NxN matrix.");
+  CHECK_EQ(A.d0, A.d1, "A in Ax=b must be square matrix.");
+  CHECK(B.nd==1 || B.nd==2, "b in Ax=b must be a vector or matrix.");
+  CHECK_EQ(A.d0, B.d0, "b and A must have the same amount of rows in Ax=b.");
 
-  X = b;
-  arr LU = A;
-  integer N = A.d1, NRHS = 1, LDA = A.d0, INFO;
+  X = ~B;
+  arr LU = ~A;
+  integer N = A.d0, NRHS = (B.nd==1?1:B.d1), LDA = A.d1, INFO;
   mlr::Array<integer> IPIV(N);
 
   dgesv_(&N, &NRHS, LU.p, &LDA, IPIV.p, X.p, &LDA, &INFO);
   CHECK(!INFO, "LAPACK gaussian elemination error info = " <<INFO);
+
+  X = ~X;
 }
 
 void lapack_choleskySymPosDef(arr& Achol, const arr& A) {
@@ -1680,7 +1690,7 @@ arr lapack_Ainv_b_triangular(const arr& L, const arr& b) { return inverse(L)*b; 
 // RowShifted
 //
 
-RowShifted::RowShifted(arr& X):Z(X), real_d1(0), symmetric(false), nextInSum(NULL) {
+RowShifted::RowShifted(arr& X):Z(X), real_d1(0), symmetric(false) {
   type = SpecialArray::RowShiftedST;
   Z.special = this;
 }
@@ -1691,8 +1701,7 @@ RowShifted::RowShifted(arr& X, RowShifted &aux):
   rowShift(aux.rowShift),
   rowLen(aux.rowLen),
   colPatches(aux.colPatches),
-  symmetric(aux.symmetric),
-  nextInSum(NULL)
+  symmetric(aux.symmetric)
 {
   type = SpecialArray::RowShiftedST;
   Z.special=this;
@@ -1717,7 +1726,6 @@ RowShifted *makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1) {
 }
 
 RowShifted::~RowShifted() {
-  if(nextInSum) delete nextInSum;
   Z.special = NULL;
 }
 
@@ -1735,8 +1743,8 @@ void RowShifted::reshift(){
     double *Zp = Z.p + i*Z.d1;
     double *Zlead = Zp;
     double *Ztrail = Zp + Z.d1-1;
-    while(*Ztrail==0. && Ztrail>=Zlead) Ztrail--;
-    while(*Zlead==0. && Zlead<=Ztrail) Zlead++;
+    while(Ztrail>=Zlead && *Ztrail==0.) Ztrail--;
+    while(Zlead<=Ztrail && *Zlead==0. ) Zlead++;
     if(Ztrail<Zlead){ //all zeros
       rowLen.p[i]=0.;
     }else{
@@ -1811,9 +1819,6 @@ arr unpackRowShifted(const arr& Y) {
       if(Yaux->symmetric) X(j+rs,i) = Y(i,j);
     }
   }
-  if(Yaux->nextInSum){
-    X += unpackRowShifted(*Yaux->nextInSum);
-  }
   return X;
 }
 
@@ -1866,14 +1871,6 @@ arr RowShifted::At_A() {
       }
     }
   }
-  if(nextInSum){
-    arr R2 = comp_At_A(*nextInSum);
-    CHECK(isRowShifted(R2), "");
-    CHECK(R2.d1<=R.d1,"NIY"); //swap...
-    for(uint i=0;i<R2.d0;i++) for(uint j=0;j<R2.d1;j++){
-      R(i,j) += R2(i,j);
-    }
-  }
   return R;
 }
 
@@ -1911,7 +1908,6 @@ arr RowShifted::A_At() {
       for(uint k=a;k<b;k++) *Rij += Zi[k-rs_i]*Zj[k-rs_j];
     }
   }
-  if(nextInSum) NIY;
   return R;
 }
 
@@ -1934,7 +1930,6 @@ arr RowShifted::At_x(const arr& x) {
     for(;yp!=ypstop;){ *yp += xi * *Zp;  Zp++;  yp++; }
 #endif
   }
-  if(nextInSum) y += comp_At_x(*nextInSum, x);
   return y;
 }
 
@@ -1956,7 +1951,6 @@ arr RowShifted::A_x(const arr& x) {
     }
     y(i) = sum;
   }
-  if(nextInSum) NIY;
   return y;
 }
 

@@ -89,6 +89,10 @@ void TEST(Basics){
   cout <<"\nsubarray (of the original) [2:4,:] (in MATLAB notation)\n" <<a.sub(2,4,0,-1) <<endl;
   CHECK_EQ(a.last(),a.N-1,"");
 
+  //reshape
+  cout <<a.copy().reshape(5,7) <<endl;
+  cout <<a <<endl;
+
   //easier looping:
   cout <<"\neasier looping:\n";
   for(double& e: a) e++;
@@ -117,9 +121,23 @@ void TEST(Basics){
   CHECK_EQ(a(2,1),7.,"");
   CHECK_EQ(a[1],a[2],"");
 
+  //range access:
+  cout <<"\nall rows:\n" <<a({0,-1}) <<endl;
+  cout <<"\nrow 3:\n" <<a({3,3}) <<endl;
+  cout <<"\nrow 3:\n" <<a(3, {0,-1}) <<endl;
+  cout <<"\nrows 1-3:\n" <<a({1,3}) <<endl;
+  cout <<"\nentries 1-4 of row 3:\n" <<a(3, {1,4}) <<endl;
+
+  ints.setStraightPerm(8);
+  ints.reshape(2,2,2);
+  cout <<"\nint:\n" <<ints <<endl;
+  cout <<"\nentries (1,0,{}):\n" <<ints(1, {0,0}) <<endl;
+  cout <<"\nentries (1,0,{}):\n" <<ints(1, 0, {}) <<endl;
+//  cout <<"\nentries (1,0,{}):\n" <<ints(1, 0, {0,-1}) <<endl;
+
   //access (copy and reference) of subarrays
-  cout <<"\nrefRange(2,4) =\n" <<a.refRange(2,4) <<endl;
-  a.refRange(2,4) *= 10.;
+  cout <<"\n({2,4}) =\n" <<a({2,4}) <<endl;
+  a({2,4}) *= 10.;
   cout <<"\nrows manipulated:\n" <<a <<endl;
 
   //setting arrays ``by hand''
@@ -129,6 +147,25 @@ void TEST(Basics){
   cout <<"\nset by hand:\n" <<ints <<endl;
   copy(a, ints); //copying between different types
   CHECK_EQ(a(2),-2,"");
+
+  //using initialization lists within expressions
+  //arr b = a + {2,2,2,2,2}; //does not compile
+  a += {2,2,2,2,2}; //here it is considered as direct argument
+  cout <<"\nadded {2,2,2,2,2}:\n" <<a <<endl;
+
+  //inverse
+  arr A = randn(3,3);
+  cout <<"\nA:\n" <<A <<endl;
+  cout <<"\n(1/A):\n" <<(1/A) <<endl;
+  cout <<"\n(1/A)*A:\n" <<(1/A)*A <<endl;
+  cout <<"\n(1/A)*A:\n" <<(A|A) <<endl;
+
+  //concatenation
+  a = {1.,2,3};
+  arr b = {4.,5,6};
+  cout <<"\na,b: " <<(a,b,b,a,b) <<endl;
+//  cout <<"\na <<b: " <<(a.copy()() <<b) <<endl;
+  cout <<"\na: " <<a <<endl;
 
   //TRY DEBUGGING with GDB:
   //set a breakpoint here
@@ -148,7 +185,6 @@ void TEST(Basics){
 
   //commuting I/O-operators:
   a.resize(3,7,2);
-  arr b;
   rndInteger(a,1,9,false);
   cout <<"\nbefore save/load:\n " <<a <<endl;
 
@@ -258,7 +294,7 @@ void TEST(Exception){
   cout <<"\n*** exception handling\n";
   arr A;
   A.append(10);
-  cout <<"accessing our of range..." <<endl;
+  cout <<"accessing out of range..." <<endl;
   bool caught=false;
   try{
     cout <<A(2);
@@ -288,7 +324,7 @@ void TEST(MemoryBound){
 
 void TEST(BinaryIO){
   cout <<"\n*** acsii and binary IO\n";
-  arr a,b; a.resize(10000,100); rndUniform(a,0.,1.,false);
+  arr a,b; a.resize(1000,100); rndUniform(a,0.,1.,false);
 
   ofstream fout("z.ascii"),bout("z.bin",ios::binary);
   ifstream fin("z.ascii") ,bin("z.bin",ios::binary);
@@ -383,15 +419,17 @@ void TEST(Gnuplot){
   arr X(30,30);
   for(i=0;i<X.d0;i++) for(j=0;j<X.d1;j++) X(i,j)=sin(.2*i)*sin(.1*j);
   gnuplot(X);
+  mlr::wait(.5);
 
   X.resize(100);
   for(i=0;i<X.d0;i++) X(i)=sin(.3*i);
   gnuplot(X);
+  mlr::wait(.5);
 
   X.resize(100,2);
   for(i=0;i<X.d0;i++){ X(i,0)=MLR_PI*(2./(X.d0-1)*i-1.); X(i,1)=sin(X(i,0)); }
   gnuplot(X);
-  mlr::wait(1.);
+  mlr::wait(.5);
 }
 
 //===========================================================================
@@ -416,7 +454,7 @@ void TEST(Determinant){
 
 void TEST(MM){
   cout <<"\n*** matrix multiplication speeds\n";
-  uint M=10000,N=100,O=100;
+  uint M=3000,N=100,O=100;
   arr A(M,N),B(N,O),C,D;
   rndUniform(A,-1,1,false);
   rndUniform(B,-1,1,false);
@@ -448,7 +486,7 @@ void TEST(MM){
 
 void TEST(SVD){
   cout <<"\n*** singular value decomposition\n";
-  uint m=1000,n=500,r=2,svdr;
+  uint m=300,n=100,r=2,svdr;
   arr L(m,r),R(r,n),A,U,d,V,D;
   rndUniform(L,-1,1,false);
   rndUniform(R,-1,1,false);
@@ -510,7 +548,7 @@ void TEST(PCA) {
 
 void TEST(Inverse){
   cout <<"\n*** matrix inverse\n";
-  uint m=500,n=500,svdr;
+  uint m=200,n=200,svdr;
   arr A(m,n),invA,I;
   rndUniform(A,-1,1,false);
   I.setId(m);
@@ -572,19 +610,16 @@ void TEST(Inverse){
 void TEST(GaussElimintation) {
   cout << "\n*** Gaussian elimination with partial pivoting \n";
   if (mlr::lapackSupported) {
-    arr A;
-    A.append(ARR(7., 2., 4., 3.));
-    A.append(ARR(3., 2., 6., 5.));
-    A.append(ARR(7., 5., 3., 7.));
-    A.reshape(4,3);
-    cout << "A = " << A << endl;
+    arr A = arr(3,3, {7., 2., 4., 2., 6., 5., 5., 3., 7.});
+    cout <<"A=\n" <<A << endl;
 
-    arr b = ARR(9., 5., 2.);
-    cout << "b = " << b << endl;
+    arr b = arr(3,2, {9., 5., 2., 1., 2., 3.});
+    cout <<"b=\n" <<b << endl;
 
     arr X;
     lapack_mldivide(X, A, b);
-    cout << "X = " << endl << X << endl;
+    cout <<"X=\n" <<X << endl;
+    cout <<"A*X=\n" <<A*X << endl;
   }
 }
 
@@ -807,8 +842,8 @@ void TEST(EigenValues){
 
 //===========================================================================
 
-int MAIN(int argc, char *argv[]){
-
+int MAIN(int argc, char **argv){
+  mlr::initCmdLine(argc, argv);
 
   testBasics();
   testCheatSheet();
@@ -819,7 +854,7 @@ int MAIN(int argc, char *argv[]){
   testStdVectorCompat();
   testMatlab();
   testException();
-  testMemoryBound();
+//  testMemoryBound();
   testBinaryIO();
   testExpression();
   testPermutation();

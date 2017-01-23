@@ -80,7 +80,7 @@ ScalarFunction HoleFunction(){ return _HoleFunction; }
 
 //===========================================================================
 
-struct _ChoiceFunction:ScalarFunction {
+struct _ChoiceFunction : ScalarFunction {
   enum Which { none=0, sum, square, hole, rosenbrock, rastrigin } which;
   arr condition;
   _ChoiceFunction():which(none){
@@ -97,7 +97,11 @@ struct _ChoiceFunction:ScalarFunction {
     if(condition.N!=x.N){
       condition.resize(x.N);
       double cond = mlr::getParameter<double>("condition");
-      for(uint i=0; i<x.N; i++) condition(i) = pow(cond,0.5*i/(x.N-1));
+      if(x.N>1){
+        for(uint i=0; i<x.N; i++) condition(i) = pow(cond,0.5*i/(x.N-1));
+      }else{
+        condition = cond;
+      }
     }
 
     arr y = x;
@@ -184,97 +188,22 @@ void NonlinearlyWarpedSquaredCost::fv(arr& y, arr& J,const arr& x) {
 
 //===========================================================================
 
-uint ParticleAroundWalls::dim_phi(uint t){
-  uint T=get_T();
-  if(t==T/2 || t==T/4 || t==3*T/4 || t==T) return 2*dim_x(t);
-  return dim_x(t);
-}
-
-uint ParticleAroundWalls::dim_g(uint t){
-  uint T=get_T();
-  if(t==T/2 || t==T/4 || t==3*T/4 || t==T) return dim_x(t);
-  return 0;
-}
-
-void ParticleAroundWalls::phi_t(arr& phi, arr& J, TermTypeA& tt, uint t){
-  uint T=get_T(), n=dim_x(t), k=get_k();
-
-  //-- construct x_bar
-  arr x_bar;
-  if(t>=k) {
-    x_bar.referToRange(x, t-k, t);
-  } else { //x_bar includes the prefix
-    x_bar.resize(k+1,n);
-    for(int i=t-k; i<=(int)t; i++) x_bar[i-t+k]() = (i<0)? zeros(n) : x[i];
-  }
-
-  //-- assert some dimensions
-  CHECK_EQ(x_bar.d0,k+1,"");
-  CHECK_EQ(x_bar.d1,n,"");
-  CHECK(t<=T,"");
-
-  //-- transition costs: append to phi
-  if(k==1)  phi = x_bar[1]-x_bar[0]; //penalize velocity
-  if(k==2)  phi = x_bar[2]-2.*x_bar[1]+x_bar[0]; //penalize acceleration
-  if(k==3)  phi = x_bar[3]-3.*x_bar[2]+3.*x_bar[1]-x_bar[0]; //penalize jerk
-  if(&tt) tt = consts(sumOfSqrTT, n);
-
-  //-- wall constraints: append to phi
-  //Note: here we append to phi ONLY in certain time slices ->
-  //the dimensionality of phi may very with time slices; see dim_phi(uint t)
-  for(uint i=0;i<n;i++){ //add barrier costs to each dimension
-    if(t==T/4)   phi.append((i+1.-x_bar(k,i)));  //``greater than i+1''
-    if(t==T/2)   phi.append((x_bar(k,i)+i+1.));  //``lower than -i-1''
-    if(t==3*T/4) phi.append((i+1.-x_bar(k,i)));  //``greater than i+1''
-    if(t==T)     phi.append((x_bar(k,i)+i+1.));  //``lower than -i-1''
-  }
-  if(&tt && (t==T/4 || t==T/2 || t==3*T/4 || t==T) ) tt.append(ineqTT, n);
-
-  uint m=phi.N;
-  CHECK_EQ(m,dim_phi(t),"");
-  if(&tt) CHECK_EQ(m,tt.N,"");
-
-  if(&J){ //we also need to return the Jacobian
-    J.resize(m,k+1,n).setZero();
-
-    //-- transition costs
-    for(uint i=0;i<n;i++){
-      if(k==1){ J(i,1,i) = 1.;  J(i,0,i) = -1.; }
-      if(k==2){ J(i,2,i) = 1.;  J(i,1,i) = -2.;  J(i,0,i) = 1.; }
-      if(k==3){ J(i,3,i) = 1.;  J(i,2,i) = -3.;  J(i,1,i) = +3.;  J(i,0,i) = -1.; }
-    }
-
-    //-- wall constraints
-    for(uint i=0;i<n;i++){
-      if(t==T/4)   J(n+i,k,i) = -1.;
-      if(t==T/2)   J(n+i,k,i) = +1.;
-      if(t==3*T/4) J(n+i,k,i) = -1.;
-      if(t==T)     J(n+i,k,i) = +1.;
-    }
-  }
-
-  J.reshape(m,(k+1)*n);
-  if(&J && t<k) J.delColumns(0,(k-t)*n);
-}
-
-//===========================================================================
-
-void ParticleAroundWalls2::getStructure(uintA& variableDimensions, uintA& featureTimes, TermTypeA& featureTypes){
+void ParticleAroundWalls2::getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes){
   variableDimensions = consts<uint>(n,T);
 
   if(&featureTimes) featureTimes.clear();
   if(&featureTypes) featureTypes.clear();
   for(uint t=0;t<T;t++){
     if(&featureTimes) featureTimes.append( consts<uint>(t, n) );
-    if(&featureTypes) featureTypes.append( consts(sumOfSqrTT, n) );
+    if(&featureTypes) featureTypes.append( consts(OT_sumOfSqr, n) );
     if(t==T/4 || t==T/2 || t==3*T/4 || t==T-1){
       if(&featureTimes) featureTimes.append( consts<uint>(t, n) );
-      if(&featureTypes) featureTypes.append( consts(ineqTT, n) );
+      if(&featureTypes) featureTypes.append( consts(OT_ineq, n) );
     }
   }
 }
 
-void ParticleAroundWalls2::phi(arr& phi, arrA& J, arrA& H, TermTypeA& tt, const arr& x){
+void ParticleAroundWalls2::phi(arr& phi, arrA& J, arrA& H, ObjectiveTypeA& tt, const arr& x){
 
   uint M=x.N + 4*3;
   phi.resize(M);
@@ -311,7 +240,7 @@ void ParticleAroundWalls2::phi(arr& phi, arrA& J, arrA& H, TermTypeA& tt, const 
         if(&J){ J(m).resize(k+1,n).setZero(); J(m)(3,i) = 1.;  J(m)(2,i) = -3.;  J(m)(1,i) = +3.;  J(m)(0,i) = -1.; }
       }
       if(&J && t<k) J(m) = J(m).sub(k-t,-1,0,-1); //cut the prefix Jacobians
-      if(&tt) tt(m) = sumOfSqrTT;
+      if(&tt) tt(m) = OT_sumOfSqr;
       m++;
     }
 
@@ -334,7 +263,7 @@ void ParticleAroundWalls2::phi(arr& phi, arrA& J, arrA& H, TermTypeA& tt, const 
           phi(m) = (x_bar(k,i)+i+1.);  //``lower than -i-1''
           if(&J){ J(m).resize(k+1,n).setZero(); J(m)(k,i) = +1.; }
         }
-        if(&tt) tt(m) = ineqTT;
+        if(&tt) tt(m) = OT_ineq;
         m++;
       }
     }

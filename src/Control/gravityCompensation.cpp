@@ -107,7 +107,7 @@ arr GravityCompensation::compensateFTR(const arr& q) {
   return featuresFT(q, "endeffR")*betaFTR;
 }
 
-GravityCompensation::GravityCompensation(const ors::KinematicWorld& world) : world(world) {
+GravityCompensation::GravityCompensation(const mlr::KinematicWorld& world) : world(world) {
   TLeftArm = zeros(leftJoints.N, world.getJointStateDimension());
   for(uint i = 0; i < leftJoints.N; i++) {
     TLeftArm(i, world.getJointByName(leftJoints(i))->qIndex) = 1;
@@ -253,8 +253,8 @@ arr GravityCompensation::featuresGC(arr q, arr qSign, const mlr::String& joint) 
   if(stictionFeature) Phi = catCol(Phi, sign(qSign.sub(0,-1,index,index)));
 
   //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(posTMT, world, "endeffL"), q));
-  //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"endeffL",ors::Vector(0.,0.,1.)), q));
-  //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"endeffL",ors::Vector(1.,0.,0.)), q));
+  //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"endeffL",mlr::Vector(0.,0.,1.)), q));
+  //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"endeffL",mlr::Vector(1.,0.,0.)), q));
 
   return Phi;
 
@@ -264,9 +264,9 @@ arr GravityCompensation::featuresFT(arr q, mlr::String endeff) {
   if(q.nd < 2) q = ~q;
 
   arr Phi = ones(q.d0,1);
-  Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world, endeff, ors::Vector(1.0,0.0,0.0)), q)); //TODO distinguish between axes!!
-  Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world, endeff, ors::Vector(0.0,1.0,0.0)), q));
-  Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world, endeff, ors::Vector(0.0,0.0,1.0)), q));
+  Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world, endeff, mlr::Vector(1.0,0.0,0.0)), q)); //TODO distinguish between axes!!
+  Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world, endeff, mlr::Vector(0.0,1.0,0.0)), q));
+  Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world, endeff, mlr::Vector(0.0,0.0,1.0)), q));
   return Phi;
 }
 
@@ -431,10 +431,10 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
 
     //Different Body Parts TODO: add more, if one like
     //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(posTMT, world, "endeffL"), Q));
-    //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"endeffL",ors::Vector(1.,0.,0.)), Q));
+    //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"endeffL",mlr::Vector(1.,0.,0.)), Q));
 
     //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(posTMT, world, "l_forearm_link_0"), Q));
-    //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"l_forearm_link_0",ors::Vector(1.,0.,0.)), Q));
+    //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"l_forearm_link_0",mlr::Vector(1.,0.,0.)), Q));
 
 
 
@@ -497,10 +497,10 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
 
 
     //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(posTMT, world, "endeffR"), Q));
-    //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"endeffR",ors::Vector(1.,0.,0.)), Q));
+    //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"endeffR",mlr::Vector(1.,0.,0.)), Q));
 
     //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(posTMT, world, "r_forearm_link_0"), Q));
-    //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"r_forearm_link_0",ors::Vector(1.,0.,0.)), Q));
+    //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"r_forearm_link_0",mlr::Vector(1.,0.,0.)), Q));
 
     return Phi;
 
@@ -522,7 +522,7 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
 
     //TODO dynamics feature has no effect because gravity compensations seems not to work for the head
     // add dynamics features
-    //* arr Phi_tmp;
+    // arr Phi_tmp;
     for (uint t = 0; t < Q.d0; t++) {
       world.setJointState(Q[t], Q[t]*0.);
 
@@ -548,7 +548,7 @@ struct CV : public CrossValidation {
     return sqrt(sumOfSqr(y_pred-y)/y.N); //returns RMSE on test data
   }
 
-  void calculateBetaWithCV(arr& optimalBeta, const StringA& joints, const arr& Phi, const arr& lambdas, const arr& Q, const arr& U, ors::KinematicWorld& world, bool verbose, arr& m) {
+  void calculateBetaWithCV(arr& optimalBeta, const StringA& joints, const arr& Phi, const arr& lambdas, const arr& Q, const arr& U, mlr::KinematicWorld& world, bool verbose, arr& m) {
     m = zeros(joints.N);
     //double su = 0.0;
 
@@ -682,7 +682,7 @@ arr GravityCompensation::compensate(arr q, StringA joints) {
   return u;
 }
 
-GravityCompensation::GravityCompensation(const ors::KinematicWorld& world) : world(world) {
+GravityCompensation::GravityCompensation(const mlr::KinematicWorld& world) : world(world) {
   TLeftArm = zeros(leftJoints.N, world.getJointStateDimension());
   for(uint i = 0; i < leftJoints.N; i++) {
     TLeftArm(i, world.getJointByName(leftJoints(i))->qIndex) = 1;

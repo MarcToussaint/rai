@@ -19,7 +19,7 @@
 bool KOMO_Problem::checkStructure(const arr& x){
   arr y;
   arrA J, H;
-  TermTypeA tt, featureTypes;
+  ObjectiveTypeA tt, featureTypes;
 //  uint T=get_T();
   uint k=get_k();
   uintA variableDimensions, featureTimes;
@@ -44,7 +44,7 @@ bool KOMO_Problem::checkStructure(const arr& x){
 }
 
 void KOMO_Problem::report(const arr& phi){
-  TermTypeA featureTypes;
+  ObjectiveTypeA featureTypes;
   uint k=get_k();
   uintA variableDimensions, featureTimes;
   getStructure(variableDimensions, featureTimes, featureTypes);
@@ -58,7 +58,7 @@ void KOMO_Problem::report(const arr& phi){
 }
 
 
-void KOMO_GraphProblem::getStructure(uintA& variableDimensions, uintAA& featureVariables, TermTypeA& featureTypes){
+void KOMO_GraphProblem::getStructure(uintA& variableDimensions, uintAA& featureVariables, ObjectiveTypeA& featureTypes){
   uintA featureTimes;
   KOMO.getStructure(variableDimensions, featureTimes, featureTypes);
 
@@ -77,7 +77,7 @@ void KOMO_GraphProblem::getStructure(uintA& variableDimensions, uintAA& featureV
 }
 
 void KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x){
-  TermTypeA featureTypes; //TODO: redundant -> remove
+  ObjectiveTypeA featureTypes; //TODO: redundant -> remove
   KOMO.phi(phi, J, H, featureTypes, x);
 }
 
@@ -85,14 +85,10 @@ void KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x){
 Conv_KOMO_ConstrainedProblem::Conv_KOMO_ConstrainedProblem(KOMO_Problem& P) : KOMO(P){
   KOMO.getStructure(variableDimensions, featureTimes, featureTypes);
   varDimIntegral = integral(variableDimensions);
-
-  ConstrainedProblem::operator=( [this](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) -> void{
-    return f(phi, J, H, tt, x);
-  } );
 }
 
-void Conv_KOMO_ConstrainedProblem::f(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){
-  KOMO.phi(phi, J_KOMO, H_KOMO, tt, x);
+void Conv_KOMO_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x){
+  KOMO.phi(phi, (&J?J_KOMO:NoArrA), (&H?H_KOMO:NoArrA), tt, x);
 
   //-- construct a row-shifed J from the array of featureJs
   if(&J){
@@ -105,7 +101,7 @@ void Conv_KOMO_ConstrainedProblem::f(arr& phi, arr& J, arr& H, TermTypeA& tt, co
     for(uint i=0; i<phi.N; i++) {
       arr& Ji = J_KOMO(i);
       CHECK(Ji.N<=J.d1,"");
-      //        J.refRange(i, 0, J_KOMO(i).N-1) = J_KOMO(i);
+      //        J({i, 0, J_KOMO(i}).N-1) = J_KOMO(i);
       memmove(&J(i,0), Ji.p, Ji.sizeT*Ji.N);
       uint t=featureTimes(i);
       if(t<=k) Jaux->rowShift(i) = 0;

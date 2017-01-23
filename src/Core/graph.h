@@ -33,8 +33,8 @@ struct RenderingInfo;
 struct GraphEditCallback;
 typedef mlr::Array<Node*> NodeL;
 typedef mlr::Array<GraphEditCallback*> GraphEditCallbackL;
-extern NodeL& NoNodeL; //this is a reference to NULL! I use it for optional arguments
-extern Graph& NoGraph; //this is a reference to NULL! I use it for optional arguments
+extern NodeL& NoNodeL; //this is a reference to NULL! (for optional arguments)
+extern Graph& NoGraph; //this is a reference to NULL! (for optional arguments)
 
 //===========================================================================
 
@@ -55,8 +55,8 @@ struct Node {
   template<class T> bool isOfType() const{ return type==typeid(T); }
   template<class T> T *getValue();    ///< query whether node type is equal to (or derived from) T, return the value if so
   template<class T> const T *getValue() const; ///< as above
-  template<class T> T& get(){ T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"'"); return *x; }
-  template<class T> const T& get() const{ const T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"'"); return *x; }
+  template<class T> T& get(){ T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
+  template<class T> const T& get() const{ const T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
   Graph& graph() { return get<Graph>(); }
   const Graph& graph() const { return get<Graph>(); }
   bool isBoolAndTrue() const{ if(type!=typeid(bool)) return false; return *((bool*)value_ptr) == true; }
@@ -85,7 +85,9 @@ struct Graph : NodeL {
   GraphEditCallbackL callbacks; ///< list of callbacks that are informed about creation and destruction of nodes
 
   ArrayG<ParseInfo> *pi;     ///< optional annotation of nodes: when detailed file parsing is enabled
-  ArrayG<RenderingInfo> *ri; ///< optional annotation of nodes: dot style commands
+//  ArrayG<RenderingInfo> *ri; ///< optional annotation of nodes: dot style commands
+  ArrayG<RenderingInfo> *ri;
+//  mlr::Array<RenderingInfo> ri; ///< optional annotation of nodes: dot style commands
 
   //-- constructors
   Graph();                                               ///< empty graph
@@ -101,10 +103,11 @@ struct Graph : NodeL {
 
   //-- copy operator
   Graph& operator=(const Graph& G){  copy(G);  return *this;  }
-  void copy(const Graph& G, bool appendInsteadOfClear=false, bool allowCopySubgraphToNonsubgraph=false);
+  void copy(const Graph& G, bool appendInsteadOfClear=false, bool enforceCopySubgraphToNonsubgraph=false);
   
   //-- adding nodes
   template<class T> Node_typed<T>* newNode(const StringA& keys, const NodeL& parents, const T& x); ///<exactly equivalent to calling a Node_typed constructor
+  template<class T> Node_typed<T>* newNode(const StringA& keys, const NodeL& parents); ///<exactly equivalent to calling a Node_typed constructor
   template<class T> Node_typed<T>* newNode(const T& x); ///<exactly equivalent to calling a Node_typed constructor
   Node_typed<int>* newNode(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
   Graph& newNode(const Nod& ni); ///< (internal) append a node initializer
@@ -167,6 +170,8 @@ struct Graph : NodeL {
   void writeHtml(std::ostream& os, std::istream& is);
   void writeParseInfo(std::ostream& os);
 
+  void displayDot();
+
   //private:
   friend struct Node;
   friend struct sGraphView;
@@ -187,18 +192,34 @@ struct GraphEditCallback {
   virtual void cb_graphDestruct(){}
 };
 
+
 //===========================================================================
 
 /// To associate additional objects with each node, this simple array stores such
 /// objects, resizes automatically and is accessible by node pointer
 template<class T>
-struct ArrayG : mlr::Array<T>, GraphEditCallback {
+struct ArrayG : mlr::Array<T*>, GraphEditCallback {
+  //why a list: the cb_new/delete call insert/remove, which requires memMove
   Graph& G;
-  ArrayG(Graph& _G):G(_G){ this->memMove=true;  this->resize(G.N);  G.callbacks.append(this); }
-  ~ArrayG(){ G.callbacks.removeValue(this); }
-  T& operator()(Node *n) const { return this->elem(n->index); }
-  virtual void cb_new(Node *n){ this->insert(n->index, T()); }
-  virtual void cb_delete(Node *n){ this->remove(n->index); }
+  ArrayG(Graph& _G):G(_G){
+    this->memMove=true;
+    this->resize(G.N+1).setZero();
+    G.callbacks.append(this);
+  }
+  ~ArrayG(){
+    G.callbacks.removeValue(this);
+    for(T* x:*this) if(x){ delete x; x=NULL; }
+    this->clear();
+  }
+  T& operator()(Node *n){
+    CHECK_EQ(this->N, G.N+1,"");
+//    if(this->N != G.N+1) listResizeCopy(*this, G.N+1); //redundant, given the callback mechanisms...
+    T* &x = (!n? this->elem(0) : this->elem(n->index+1)); //x is a reference!
+    if(!x) x = new T(); //...assigned here
+    return *x;
+  }
+  virtual void cb_new(Node *n){ this->insert(n->index+1, (T*)NULL); }
+  virtual void cb_delete(Node *n){ T* &x = this->elem(n->index+1); if(x){ delete x; x=NULL; } this->remove(n->index+1); }
 };
 
 //===========================================================================
@@ -250,6 +271,8 @@ NodeL neighbors(Node*);
 /// annotations to a node for rendering; esp dot
 struct RenderingInfo{
   mlr::String dotstyle;
+  bool skip;
+  RenderingInfo() : skip(false){}
   void write(ostream& os) const{ os <<dotstyle; }
 };
 stdOutPipe(RenderingInfo)
@@ -272,16 +295,156 @@ struct Type_typed_readable:Type_typed<T> {
 typedef mlr::Array<std::shared_ptr<Type> > TypeInfoL;
 
 //===========================================================================
+//===========================================================================
+//
+// definition of template methods
+//
+//===========================================================================
+//===========================================================================
+
+
+//===========================================================================
+//
+//  typed Node
+//
+
+template<class T>
+struct Node_typed : Node {
+  T value;
+
+  Node_typed():value(NULL) { HALT("shouldn't be called, right? You always want to append to a container"); }
+
+  Node_typed(Graph& container, const T& _value)
+    : Node(typeid(T), &this->value, container), value(_value) {
+    if(isGraph()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
+    if(&container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_new(this);
+  }
+
+  Node_typed(Graph& container, const StringA& keys, const NodeL& parents)
+    : Node(typeid(T), &this->value, container, keys, parents), value() {
+    if(isGraph()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
+    if(&container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_new(this);
+  }
+
+  Node_typed(Graph& container, const StringA& keys, const NodeL& parents, const T& _value)
+    : Node(typeid(T), &this->value, container, keys, parents), value(_value) {
+    if(isGraph()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
+    if(&container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_new(this);
+  }
+
+  virtual ~Node_typed(){
+    if(&container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_delete(this);
+  }
+
+  virtual void copyValue(Node *it) {
+    Node_typed<T> *itt = dynamic_cast<Node_typed<T>*>(it);
+    CHECK(itt,"can't assign to wrong type");
+    value = itt->value;
+  }
+
+  virtual bool hasEqualValue(Node *it) {
+    Node_typed<T> *itt = dynamic_cast<Node_typed<T>*>(it);
+    CHECK(itt,"can't compare to wrong type");
+    return value == itt->value;
+  }
+
+  virtual void writeValue(std::ostream &os) const {
+    if(typeid(T)==typeid(NodeL)) listWrite(*getValue<NodeL>(), os, " ");
+    else os <<value;
+  }
+  
+  virtual void copyValueInto(void *value_ptr) const {
+    *((T*)value_ptr) = value;
+  }
+
+  virtual const std::type_info& getValueType() const {
+    return typeid(T);
+  }
+  
+  virtual Node* newClone(Graph& container) const {
+    if(isGraph()){
+      Node_typed<Graph> *n = container.newSubgraph(keys, parents);
+      n->value.copy(graph());
+      return n;
+    }
+    return container.newNode<T>(keys, parents, value);
+  }
+};
+
+//===========================================================================
+//
+// Node & Graph template methods
+//
+
+template<class T> T* Node::getValue() {
+  Node_typed<T>* typed = dynamic_cast<Node_typed<T>*>(this);
+  if(!typed) return NULL;
+  return &typed->value;
+}
+
+template<class T> const T* Node::getValue() const {
+  const Node_typed<T>* typed = dynamic_cast<const Node_typed<T>*>(this);
+  if(!typed) return NULL;
+  return &typed->value;
+}
+
+template<class T> Nod::Nod(const char* key, const T& x){
+  n = G.newNode<T>(x);
+  n->keys.append(STRING(key));
+}
+
+template<class T> Nod::Nod(const char* key, const StringA& parents, const T& x)
+  : parents(parents){
+  n = G.newNode<T>(x);
+  n->keys.append(STRING(key));
+}
+
+template<class T> T& Graph::get(const char *key) const {
+  Node *n = findNodeOfType(typeid(T), {key});
+  if(!n) HALT("no node of type '" <<typeid(T).name() <<"' with key '"<< key<< "' found");
+  return n->get<T>();
+}
+
+template<class T> T& Graph::get(const StringA& keys) const {
+  Node *n = findNodeOfType(typeid(T), keys);
+  if(!n) HALT("no node of type '" <<typeid(T).name() <<"' with keys '"<< keys<< "' found");
+  return n->get<T>();
+}
+
+template<class T> const T& Graph::get(const char *key, const T& defaultValue) const{
+  Node *n = findNodeOfType(typeid(T), {key});
+  if(!n) return defaultValue;
+  return n->get<T>();
+}
+
+template<class T> mlr::Array<T*> Graph::getValuesOfType(const char* key) {
+  NodeL nodes;
+  if(!key) nodes = findNodesOfType(typeid(T));
+  else nodes = findNodesOfType(typeid(T), {key});
+  mlr::Array<T*> ret;
+  for(Node *n: nodes) ret.append(n->getValue<T>());
+  return ret;
+}
+
+template<class T> Node_typed<T> *Graph::newNode(const StringA& keys, const NodeL& parents, const T& x){
+  return new Node_typed<T>(*this, keys, parents, x);
+}
+
+template<class T> Node_typed<T> *Graph::newNode(const StringA& keys, const NodeL& parents){
+  return new Node_typed<T>(*this, keys, parents);
+}
+
+template<class T> Node_typed<T> *Graph::newNode(const T& x){
+  return new Node_typed<T>(*this, x);
+}
+
+//===========================================================================
 
 // macro for declaring types (in *.cpp files)
 #define REGISTER_TYPE(Key, T) \
   RUN_ON_INIT_BEGIN(Decl_Type##_##Key) \
   registry().newNode<std::shared_ptr<Type> >({mlr::String("Decl_Type"), mlr::String(#Key)}, NodeL(), std::make_shared<Type_typed_readable<T> >()); \
   RUN_ON_INIT_END(Decl_Type##_##Key)
-
-//===========================================================================
-
-#include "graph.tpp"
 
 #endif
 

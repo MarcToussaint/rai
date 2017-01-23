@@ -150,10 +150,10 @@ void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float cal
     initialised = true;
   }
 
-  ors::Quaternion orsquats = fmc.world.getShapeByName("endeffBase") -> X.rot;
-//  ors::Joint *trans = fmc.world.getJointByName("worldTranslationRotation");
+  mlr::Quaternion orsquats = fmc.world.getShapeByName("endeffBase") -> X.rot;
+//  mlr::Joint *trans = fmc.world.getJointByName("worldTranslationRotation");
 //  orsquats.setRad( q(trans->qIndex+2),{0.,0.,1.} );
-  ors::Quaternion orsquatsacc;
+  mlr::Quaternion orsquatsacc;
 
   //update the movement of the right Hand
   updateMovement(cal_pose_rh, old_pos_rh, old_effpos_r, effPosR);
@@ -193,7 +193,7 @@ void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float cal
   //base movement
   arr drive_des;
   double y_c,x_c,phi_c;
-  ors::Joint *trans = fmc.world.getJointByName("worldTranslationRotation");
+  mlr::Joint *trans = fmc.world.getJointByName("worldTranslationRotation");
   x_c = base->y_ref(trans->qIndex+0);
   y_c = base->y_ref(trans->qIndex+1);
   phi_c = base->y_ref(trans->qIndex+2);

@@ -17,8 +17,8 @@
 
 uint eval_cost=0;
 Singleton<OptOptions> globalOptOptions;
-const char* TermTypeString[]={"noTT", "fTT", "sumOfSqrTT", "ineqTT", "eqTT" };
-TermTypeA& NoTermTypeA = *((TermTypeA*)NULL);
+const char* ObjectiveTypeString[]={"OT_none", "OT_f", "OT_sumOfSqr", "OT_ineq", "OT_eq" };
+ObjectiveTypeA& NoTermTypeA = *((ObjectiveTypeA*)NULL);
 
 //===========================================================================
 //
@@ -26,29 +26,83 @@ TermTypeA& NoTermTypeA = *((TermTypeA*)NULL);
 //
 
 
-bool checkJacobianCP(const ConstrainedProblem &P, const arr& x, double tolerance){
+bool checkJacobianCP(ConstrainedProblem &P, const arr& x, double tolerance){
   VectorFunction F = [&P](arr& phi, arr& J, const arr& x){
-    return P(phi, J, NoArr, NoTermTypeA, x);
+    return P.phi(phi, J, NoArr, NoTermTypeA, x);
   };
   return checkJacobian(F, x, tolerance);
 }
 
-bool checkHessianCP(const ConstrainedProblem &P, const arr& x, double tolerance){
+bool checkHessianCP(ConstrainedProblem &P, const arr& x, double tolerance){
   uint i;
   arr phi, J;
-  TermTypeA tt;
-  P(phi, NoArr, NoArr, tt, x);
-  for(i=0;i<tt.N;i++) if(tt(i)==fTT) break;
+  ObjectiveTypeA tt;
+  P.phi(phi, NoArr, NoArr, tt, x); //TODO: only call getStructure
+  for(i=0;i<tt.N;i++) if(tt(i)==OT_f) break;
   if(i==tt.N){
     MLR_MSG("no f-term in this KOM problem");
     return true;
   }
   ScalarFunction F = [&P,&phi,&J,i](arr& g, arr& H, const arr& x) -> double{
-    P(phi, J, H, NoTermTypeA, x);
+    P.phi(phi, J, H, NoTermTypeA, x);
     g = J[i];
     return phi(i);
   };
   return checkHessian(F, x, tolerance);
+}
+
+//===========================================================================
+//
+// optimization options
+//
+
+OptOptions::OptOptions() {
+  verbose    = mlr::getParameter<uint>  ("opt/verbose", 1);
+  fmin_return=NULL;
+  stopTolerance= mlr::getParameter<double>("opt/stopTolerance", 1e-2);
+  stopFTolerance= mlr::getParameter<double>("opt/stopFTolerance", 1e-1);
+  stopGTolerance= mlr::getParameter<double>("opt/stopGTolerance", -1.);
+  stopEvals = mlr::getParameter<uint>  ("opt/stopEvals", 1000);
+  stopIters = mlr::getParameter<uint>  ("opt/stopIters", 1000);
+  stopLineSteps = mlr::getParameter<uint>  ("opt/stopLineSteps", 10);
+  stopTinySteps = mlr::getParameter<uint>  ("opt/stopTinySteps", 10);
+  initStep  = mlr::getParameter<double>("opt/initStep", 1.);
+  minStep   = mlr::getParameter<double>("opt/minStep", -1.);
+  maxStep   = mlr::getParameter<double>("opt/maxStep", .5);
+  damping   = mlr::getParameter<double>("opt/damping", .1);
+  stepInc   = mlr::getParameter<double>("opt/stepInc", 2.);
+  stepDec   = mlr::getParameter<double>("opt/stepDec", .1);
+  dampingInc= mlr::getParameter<double>("opt/dampingInc", 2.);
+  dampingDec= mlr::getParameter<double>("opt/dampingDec", .5);
+  wolfe     = mlr::getParameter<double>("opt/wolfe", .01);
+  nonStrictSteps= mlr::getParameter<uint>  ("opt/nonStrictSteps", 0);
+  allowOverstep= mlr::getParameter<bool>  ("opt/allowOverstep", false);
+  constrainedMethod = (ConstrainedMethodType)mlr::getParameter<int>("opt/constrainedMethod", anyTimeAula);
+  muInit = mlr::getParameter<double>("opt/muInit", 1.);
+  muLBInit = mlr::getParameter<double>("opt/muLBInit", 1.);
+  aulaMuInc = mlr::getParameter<double>("opt/aulaMuInc", 2.);
+}
+
+void OptOptions::write(std::ostream& os) const{
+#define WRT(x) os <<#x <<" = " <<x <<endl;
+  WRT(verbose);
+//  double *fmin_return);
+  WRT(stopTolerance);
+  WRT(stopEvals);
+  WRT(stopIters);
+  WRT(initStep);
+  WRT(minStep);
+  WRT(maxStep);
+  WRT(damping);
+  WRT(stepInc);
+  WRT(stepDec);
+  WRT(dampingInc);
+  WRT(dampingDec);
+  WRT(nonStrictSteps);
+  WRT(allowOverstep);
+  WRT(constrainedMethod);
+  WRT(aulaMuInc);
+#undef WRT
 }
 
 //===========================================================================
@@ -80,7 +134,7 @@ uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions o) {
   double a=o.initStep;
   
   fx = f(grad_x, NoArr, x);  evals++;
-  if(o.verbose>1) cout <<"*** optGradDescent: starting point x=" <<(x.N<20?x:ARR()) <<" f(x)=" <<fx <<" a=" <<a <<endl;
+  if(o.verbose>1) cout <<"*** optGradDescent: starting point x=" <<(x.N<20?x:arr()) <<" f(x)=" <<fx <<" a=" <<a <<endl;
   ofstream fil;
   if(o.verbose>0) fil.open("z.opt");
   if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<a <<' ' <<x <<endl;
@@ -91,7 +145,7 @@ uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions o) {
     y = x - a*grad_x;
     fy = f(grad_y, NoArr, y);  evals++;
     CHECK_EQ(fy,fy, "cost seems to be NAN: fy=" <<fy);
-    if(o.verbose>1) cout <<"optGradDescent " <<evals <<' ' <<eval_cost <<" \tprobing y=" <<(y.N<20?y:ARR()) <<" \tf(y)=" <<fy <<" \t|grad|=" <<length(grad_y) <<" \ta=" <<a;
+    if(o.verbose>1) cout <<"optGradDescent " <<evals <<' ' <<eval_cost <<" \tprobing y=" <<(y.N<20?y:arr()) <<" \tf(y)=" <<fy <<" \t|grad|=" <<length(grad_y) <<" \ta=" <<a;
     
     if(fy <= fx) {
       if(o.verbose>1) cout <<" - ACCEPT" <<endl;
@@ -118,5 +172,5 @@ uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions o) {
 
 
 RUN_ON_INIT_BEGIN(optimization)
-TermTypeA::memMove=true;
+ObjectiveTypeA::memMove=true;
 RUN_ON_INIT_END(optimization)

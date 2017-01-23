@@ -33,7 +33,7 @@ void Collector::step()
         if (!has_tabletop_transform)
         {
           tf::TransformListener listener;
-          ors::Transformation tf;
+          mlr::Transformation tf;
           if (ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener, tf))
           {
             tabletop_srcFrame.set() = tf;
@@ -48,10 +48,10 @@ void Collector::step()
           tf::TransformListener listener;
           tf::StampedTransform baseTransform;
           try{
-            ors::Transformation tf = ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener);
+            mlr::Transformation tf = ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener);
 
             //MT: really add the meter here? This seems hidden magic numbers in the code. And only for Baxter..?
-            ors::Transformation inv;
+            mlr::Transformation inv;
             inv.setInverse(tf);
             inv.addRelativeTranslation(0,0,-1);
             inv.setInverse(inv);
@@ -86,7 +86,7 @@ void Collector::step()
         if (!has_tabletop_transform)
         {
           tf::TransformListener listener;
-          ors::Transformation tf;
+          mlr::Transformation tf;
           if (ros_getTransform("/base_footprint", msg.header.frame_id, listener, tf))
           {
             tabletop_srcFrame.set() = tf;
@@ -112,7 +112,7 @@ void Collector::step()
         if (!has_alvar_transform)
         {
           tf::TransformListener listener;
-          ors::Transformation tf;
+          mlr::Transformation tf;
           if (ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener, tf))
           {
             alvar_srcFrame.set() = tf;
@@ -129,7 +129,7 @@ void Collector::step()
             listener.waitForTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), ros::Duration(1.0));
             listener.lookupTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), baseTransform);
             tf = conv_transform2transformation(baseTransform);
-            ors::Transformation inv;
+            mlr::Transformation inv;
             inv.setInverse(tf);
             inv.addRelativeTranslation(0,0,-1);
             inv.setInverse(inv);
@@ -168,7 +168,7 @@ void Collector::step()
                 listener.waitForTransform("/world", msg.header.frame_id, ros::Time(0), ros::Duration(1.0));
                 listener.lookupTransform("/world", msg.header.frame_id, ros::Time(0), baseTransform);
                 tf = conv_transform2transformation(baseTransform);
-                ors::Transformation inv;
+                mlr::Transformation inv;
                 inv.setInverse(tf);
                 inv.addRelativeTranslation(0,0,-1);
                 inv.setInverse(inv);
@@ -207,7 +207,7 @@ void Collector::step()
                 listener.waitForTransform("/world", msg.header.frame_id, ros::Time(0), ros::Duration(1.0));
                 listener.lookupTransform("/world", msg.header.frame_id, ros::Time(0), baseTransform);
                 tf = conv_transform2transformation(baseTransform);
-                ors::Transformation inv;
+                mlr::Transformation inv;
                 inv.setInverse(tf);
                 inv.addRelativeTranslation(0,0,-1);
                 inv.setInverse(inv);
@@ -231,7 +231,7 @@ void Collector::step()
   }
   else // If 'simulate', make a fake cluster and alvar
   {
-    ors::Mesh box;
+    mlr::Mesh box;
     box.setBox();
     box.subDivide();
     box.subDivide();
@@ -244,14 +244,14 @@ void Collector::step()
                                          "/base_footprint");  // frame
     fake_cluster->frame.setZero();
     fake_cluster->frame.addRelativeTranslation(0.6, 0., 1.05);
-    ors::Quaternion rot;
+    mlr::Quaternion rot;
 
 //    int tick = perceptual_inputs.readAccess();
 //    perceptual_inputs.deAccess();
 //    cout << "tick: " << tick << endl;
-//    rot.setDeg(0.01 * tick, ors::Vector(0.1, 0.25, 1));
+//    rot.setDeg(0.01 * tick, mlr::Vector(0.1, 0.25, 1));
 
-    rot.setDeg(30, ors::Vector(0.1, 0.25, 1));
+    rot.setDeg(30, mlr::Vector(0.1, 0.25, 1));
     fake_cluster->frame.addRelativeRotation(rot);
     percepts.append( fake_cluster );
 
@@ -285,10 +285,10 @@ Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker)
 }
 
 Plane conv_ROSTable2Plane(const object_recognition_msgs::Table& table){
-  ors::Transformation t = conv_pose2transformation(table.pose);
+  mlr::Transformation t = conv_pose2transformation(table.pose);
   arr hull = conv_points2arr(table.convex_hull);
   arr center = ARR(t.pos.x, t.pos.y, t.pos.z);
-  ors::Vector norm = t.rot*ors::Vector(0,0,1);
+  mlr::Vector norm = t.rot*mlr::Vector(0,0,1);
 
   arr normal = ARR(norm.x, norm.y, norm.z);
   Plane toReturn = Plane(normal, center, hull, table.header.frame_id);
