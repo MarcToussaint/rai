@@ -84,6 +84,9 @@ void OrsPoseViewer::open() {
     gl.add(changeColor);
   }
   gl.add(changeColor2);
+  gl.camera.focus(0.6, -0.1, 0.65);
+  gl.width = 1280;
+  gl.height = 960;
 }
 
 void OrsPoseViewer::step(){
