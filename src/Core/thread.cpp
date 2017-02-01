@@ -158,10 +158,10 @@ bool ConditionVariable::waitForValueEq(int i, bool userHasLocked, double seconds
   if(!userHasLocked) mutex.lock(); else CHECK_EQ(mutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
   while(value!=i) {
     if(seconds<0.){
-      waitForSignal(true);
+      waitForSignal(userHasLocked);
       //int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
     }else{
-      bool succ = waitForSignal(seconds, true);
+      bool succ = waitForSignal(seconds, userHasLocked);
       if(!succ){
         if(!userHasLocked) mutex.unlock();
         return false;
@@ -214,24 +214,23 @@ void ConditionVariable::waitUntil(double absTime, bool userHasLocked) {
 
 //===========================================================================
 //
-// RevisionedAccessGatedClass
+// RevisionedRWLock
 //
 
-RevisionedAccessGatedClass::RevisionedAccessGatedClass(const char *_name):name(_name), revision(0), registryNode(NULL) {
-  registryNode = registry().newNode<RevisionedAccessGatedClass* >({"Variable", name}, {}, this);
-  listeners.memMove=true;
-}
+//RevisionedRWLock::RevisionedRWLock(const char *_name):name(_name), revision(0), registryNode(NULL) {
+////  registryNode = registry().newNode<RevisionedRWLock* >({"AccessData", name}, {}, this);
+//}
 
-RevisionedAccessGatedClass::~RevisionedAccessGatedClass() {
+RevisionedRWLock::~RevisionedRWLock() {
   for(Thread *th: listeners) th->listensTo.removeValue(this);
-  delete registryNode;
+//  delete registryNode;
 }
 
-bool RevisionedAccessGatedClass::hasNewRevision(){
+bool RevisionedRWLock::hasNewRevision(){
   return revision.getValue() > last_revision;
 }
 
-int RevisionedAccessGatedClass::readAccess(Thread *th) {
+int RevisionedRWLock::readAccess(Thread *th) {
 //  engine().acc->queryReadAccess(this, p);
   rwlock.readLock();
 //  engine().acc->logReadAccess(this, p);
@@ -239,32 +238,18 @@ int RevisionedAccessGatedClass::readAccess(Thread *th) {
   return last_revision;
 }
 
-//bool RevisionedAccessGatedClass::readAccessIfNewer(Thread*){
-//  rwlock.readLock();
-//  int rev = revision.getValue();
-//  if(rev > last_revision){
-//    last_revision = rev;
-//    return true;
-//  }else{
-//    rwlock.unlock();
-//    return false;
-//  }
-//  HALT("shouldn't be here")
-//  return false;
-//}
-
-int RevisionedAccessGatedClass::writeAccess(Thread *th) {
+int RevisionedRWLock::writeAccess(Thread *th) {
 //  engine().acc->queryWriteAccess(this, p);
   rwlock.writeLock();
-  last_revision = revision.incrementValue();
+  int i = revision.incrementValue();
   revision_time = mlr::clockTime();
 //  engine().acc->logWriteAccess(this, p);
 //  if(listeners.N && !th){ HALT("I need to know the calling thread when threads listen to variables"); }
   for(Thread *l: listeners) if(l!=th) l->threadStep();
-  return last_revision;
+  return i;
 }
 
-int RevisionedAccessGatedClass::deAccess(Thread *th) {
+int RevisionedRWLock::deAccess(Thread *th) {
 //  Module_Thread *p = m?(Module_Thread*) m->thread:NULL;
   if(rwlock.state == -1) { //log a revision after write access
     //MT logService.logRevision(this);
@@ -273,20 +258,20 @@ int RevisionedAccessGatedClass::deAccess(Thread *th) {
   } else {
 //    engine().acc->logReadDeAccess(this,p);
   }
-  last_revision = revision.getValue();
+  int i = revision.getValue();
   rwlock.unlock();
-  return last_revision;
+  return i;
 }
 
-double RevisionedAccessGatedClass::revisionTime(){
+double RevisionedRWLock::revisionTime(){
   return revision_time;
 }
 
-int RevisionedAccessGatedClass::revisionNumber(){
+int RevisionedRWLock::revisionNumber(){
   return revision.getValue();
 }
 
-int RevisionedAccessGatedClass::waitForNextRevision(){
+int RevisionedRWLock::waitForNextRevision(){
   revision.lock();
   revision.waitForSignal(true);
   int rev = revision.value;
@@ -294,7 +279,7 @@ int RevisionedAccessGatedClass::waitForNextRevision(){
   return rev;
 }
 
-int RevisionedAccessGatedClass::waitForRevisionGreaterThan(int rev) {
+int RevisionedRWLock::waitForRevisionGreaterThan(int rev) {
   revision.lock();
   revision.waitForValueGreaterThan(rev, true);
   rev = revision.value;
@@ -423,7 +408,7 @@ Thread::~Thread() {
         That's because the 'virtual table is destroyed' before calling the destructor (google 'call virtual function\
         in destructor') but now the destructor has to call 'threadClose' which triggers a Thread::close(), which is\
         pure virtual while you're trying to destroy the Thread.")
-  for(RevisionedAccessGatedClass *v:listensTo){
+  for(RevisionedRWLock *v:listensTo){
     v->rwlock.writeLock();
     v->listeners.removeValue(this);
     v->rwlock.unlock();
@@ -432,7 +417,7 @@ Thread::~Thread() {
   delete registryNode;
 }
 
-void Thread::threadOpen(int priority) {
+void Thread::threadOpen(bool wait, int priority) {
   state.lock();
   if(!isClosed()){ state.unlock(); return; } //this is already open -- or has just beend opened (parallel call to threadOpen)
 #ifndef MLR_QThread
@@ -457,6 +442,7 @@ void Thread::threadOpen(int priority) {
 #endif
   state.value=tsOPENING;
   state.unlock();
+  if(wait) waitForOpened();
 }
 
 void Thread::threadClose() {
@@ -492,14 +478,14 @@ void Thread::threadStep(uint steps, bool wait) {
   if(wait) waitForIdle();
 }
 
-void Thread::listenTo(RevisionedAccessGatedClass& var) {
+void Thread::listenTo(RevisionedRWLock& var) {
   var.rwlock.writeLock();  //don't want to increase revision and broadcast!
   var.listeners.setAppend(this);
   var.rwlock.unlock();
   listensTo.setAppend(&var);
 }
 
-void Thread::stopListenTo(RevisionedAccessGatedClass& var){
+void Thread::stopListenTo(RevisionedRWLock& var){
   listensTo.removeValue(&var);
   var.rwlock.writeLock();
   var.listeners.removeValue(this);
@@ -540,14 +526,17 @@ void Thread::threadLoop() {
 //  state.setValue(tsBEATING);
 //}
 
-void Thread::threadStop() {
-  CHECK(!isClosed(), "called stop to closed thread");
-  state.setValue(tsIDLE);
+void Thread::threadStop(bool wait) {
+  //CHECK(!isClosed(), "called stop to closed thread");
+  if(!isClosed()){
+    state.setValue(tsIDLE);
+    if(wait) waitForIdle();
+  }
 }
 
 void Thread::main() {
   tid = syscall(SYS_gettid);
-  cout <<"*** Entering Thread '" <<name <<"'" <<endl;
+  if(verbose>0) cout <<"*** Entering Thread '" <<name <<"'" <<endl;
   //http://linux.die.net/man/3/setpriority
   //if(Thread::threadPriority) setRRscheduling(Thread::threadPriority);
   //if(Thread::threadPriority) setNice(Thread::threadPriority);
@@ -590,12 +579,12 @@ void Thread::main() {
 
     //-- make a step
     //engine().acc->logStepBegin(module);
-    stepMutex.lock();
     timer.cycleStart();
+    stepMutex.lock();
     step(); //virtual step routine
+    stepMutex.unlock();
     step_count++;
     timer.cycleDone();
-    stepMutex.unlock();
     //engine().acc->logStepEnd(module);
 
     //-- broadcast in case somebody was waiting for a finished step
@@ -607,7 +596,7 @@ void Thread::main() {
   stepMutex.lock();
   close(); //virtual close routine
   stepMutex.unlock();
-  cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
+  if(verbose>0) cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
 }
 
 
@@ -655,8 +644,8 @@ void closeModules(){
   for(Node* th:threads){ th->get<Thread*>()->close(); }
 }
 
-RevisionedAccessGatedClassL getVariables(){
-  return registry().getValuesOfType<RevisionedAccessGatedClass>();
+RevisionedRWLockL getVariables(){
+  return registry().getValuesOfType<RevisionedRWLock>();
 }
 
 void threadOpenModules(bool waitForOpened, bool setSignalHandler){
@@ -789,7 +778,7 @@ TStream::Register::~Register() {
 }
 
 RUN_ON_INIT_BEGIN(thread)
-RevisionedAccessGatedClassL::memMove=true;
+RevisionedRWLockL::memMove=true;
 ThreadL::memMove=true;
 RUN_ON_INIT_END(thread)
 

@@ -15,7 +15,7 @@
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
-#include "opt-convert.h"
+#include "convert.h"
 
 //the Convert is essentially only a ``garbage collector'', creating all the necessary conversion objects and then deleting them on destruction
 Convert::Convert(const ScalarFunction& p):kom(NULL), cstyle_fs(NULL), cstyle_fv(NULL), data(NULL) { sf=p; }
@@ -110,7 +110,7 @@ ScalarFunction convert_VectorFunction_ScalarFunction(const VectorFunction& f) {
   };
 }
 
-void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& _x) {
+void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& _x) {
   //probing dimensionality
   uint T=f.get_T();
   uint k=f.get_k();
@@ -175,12 +175,12 @@ void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& 
     }
     if(dim_z){ //append the constant variable to x_bar
       x_bar.insColumns(x_bar.d1, dim_z);
-      for(uint i=0;i<=k;i++) x_bar[i].refRange(-dim_z, -1)=z;
+      for(uint i=0;i<=k;i++) x_bar[i]({-dim_z, -1})=z;
     }
 
     //query
     arr phi_t, J_t, Jz_t;
-    TermTypeA tt_t;
+    ObjectiveTypeA tt_t;
     f.phi_t(phi_t, (&J?J_t:NoArr), tt_t, t, x_bar);
     CHECK_EQ(phi_t.N,dimphi_t,"");
     phi.setVectorBlock(phi_t, M);
@@ -232,7 +232,7 @@ void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& 
 }
 
 ConstrainedProblem convert_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f){
-  return [&f](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) -> void {
+  return [&f](arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) -> void {
     conv_KOrderMarkovFunction_ConstrainedProblem(f, phi, J, H, tt, x);
   };
 }
@@ -254,7 +254,7 @@ void conv_KOrderMarkovFunction_VectorFunction(KOrderMarkovFunction& f, arr& phi,
   for(uint t=0; t<=T-k; t++) {
     m_t = f->get_m(t);
     arr phi_t,J_t;
-    f->phi_t(phi_t, (&J?J_t:NoArr), t, x.refRange(t, t+k));
+    f->phi_t(phi_t, (&J?J_t:NoArr), t, x({t, t+k}));
     CHECK_EQ(phi_t.N,m_t,"");
     phi.setVectorBlock(phi_t, M);
     if(&J) {
@@ -325,7 +325,7 @@ void conv_KOrderMarkovFunction_VectorFunction(KOrderMarkovFunction& f, arr& phi,
     }
     if(dim_z){ //append the constant variable to x_bar
       x_bar.insColumns(x_bar.d1, dim_z);
-      for(uint i=0;i<=k;i++) x_bar[i].refRange(-dim_z, -1)=z;
+      for(uint i=0;i<=k;i++) x_bar[i]({-dim_z, -1})=z;
     }
 
     //query
@@ -534,12 +534,12 @@ double conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction &f, arr
 
     //split up: push cost terms into y
     if (dimf_t) {
-      y.setVectorBlock(phi.refRange(M, M+dimf_t-1), y_count);
+      y.setVectorBlock(phi({M, M+dimf_t-1}), y_count);
       if(getJ) {
-        Jy.setMatrixBlock(J.refRange(M, M+dimf_t-1), y_count, 0);
+        Jy.setMatrixBlock(J({M, M+dimf_t-1}), y_count, 0);
         for(uint i=0; i<dimf_t; i++) Jy_aux->rowShift(y_count+i) = J_aux->rowShift(M+i);
         if(dimz){
-          Jyz->setMatrixBlock(Jz->refRange(M, M+dimf_t-1), y_count, 0);
+          Jyz->setMatrixBlock(Jz->operator()({M, M+dimf_t-1}), y_count, 0);
           for(uint i=0; i<dimf_t; i++) Jyz_aux->rowShift(y_count+i) = Jz_aux->rowShift(M+i);
         }
       }
@@ -547,12 +547,12 @@ double conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction &f, arr
       y_count += dimf_t;
     }
     //split up: push inequality terms into g
-    if(&g && dimg_t) g.setVectorBlock(phi.refRange(M, M+dimg_t-1), g_count);
+    if(&g && dimg_t) g.setVectorBlock(phi({M, M+dimg_t-1}), g_count);
     if(&Jg && dimg_t) {
-      Jg.setMatrixBlock(J.refRange(M, M+dimg_t-1), g_count, 0);
+      Jg.setMatrixBlock(J({M, M+dimg_t-1}), g_count, 0);
       for(uint i=0; i<dimg_t; i++) Jg_aux->rowShift(g_count+i) = J_aux->rowShift(M+i);
       if(dimz){
-        Jgz->setMatrixBlock(Jz->refRange(M, M+dimg_t-1), g_count, 0);
+        Jgz->setMatrixBlock(Jz->operator()({M, M+dimg_t-1}), g_count, 0);
         for(uint i=0; i<dimg_t; i++) Jgz_aux->rowShift(g_count+i) = Jz_aux->rowShift(M+i);
       }
     }
@@ -560,12 +560,12 @@ double conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction &f, arr
     g_count += dimg_t;
 
     //split up: push equality terms into h
-    if(&h && dimh_t) h.setVectorBlock(phi.refRange(M, M+dimh_t-1), h_count);
+    if(&h && dimh_t) h.setVectorBlock(phi({M, M+dimh_t-1}), h_count);
     if(&Jh && dimh_t) {
-      Jh.setMatrixBlock(J.refRange(M, M+dimh_t-1), h_count, 0);
+      Jh.setMatrixBlock(J({M, M+dimh_t-1}), h_count, 0);
       for(uint i=0; i<dimh_t; i++) Jh_aux->rowShift(h_count+i) = J_aux->rowShift(M+i);
       if(dimz){
-        Jhz->setMatrixBlock(Jz->refRange(M, M+dimh_t-1), h_count, 0);
+        Jhz->setMatrixBlock(Jz->operator()({M, M+dimh_t-1}), h_count, 0);
         for(uint i=0; i<dimh_t; i++) Jhz_aux->rowShift(h_count+i) = Jz_aux->rowShift(M+i);
       }
     }
@@ -591,6 +591,6 @@ double conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction &f, arr
 //===========================================================================
 
 RUN_ON_INIT_BEGIN()
-  mlr::Array<TermType>::memMove=true;
+  mlr::Array<ObjectiveType>::memMove=true;
 RUN_ON_INIT_END()
 

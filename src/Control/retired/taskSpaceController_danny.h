@@ -1,7 +1,7 @@
 #ifndef TASKSPACECONTROLLER_H
 #define TASKSPACECONTROLLER_H
 
-#include <Ors/ors.h>
+#include <Kin/kin.h>
 #include <Motion/taskMaps.h>
 #include <Core/array.h>
 #include <RosCom/roscom.h>
@@ -12,7 +12,7 @@
 struct LinTaskSpaceAccLaw {
   TaskMap* map;
 
-  ors::KinematicWorld* world;
+  mlr::KinematicWorld* world;
 
   mlr::String name;
 
@@ -37,7 +37,7 @@ struct LinTaskSpaceAccLaw {
   bool trajectoryDotActive = false;
   bool trajectoryDDotActive = false;
 
-  LinTaskSpaceAccLaw(TaskMap* map, ors::KinematicWorld* world, mlr::String name = "nonameLaw");
+  LinTaskSpaceAccLaw(TaskMap* map, mlr::KinematicWorld* world, mlr::String name = "nonameLaw");
 
   void setRef(const arr& yRef = NoArr, const arr& yDotRef = NoArr, const arr& yDDotRef = NoArr);
 
@@ -79,7 +79,7 @@ struct ConstrainedTaskLaw : LinTaskSpaceAccLaw {
   arr force;
   arr alpha;
   double gamma = 0.0;
-  ConstrainedTaskLaw(TaskMap* map, ors::KinematicWorld* world, mlr::String name = "") : LinTaskSpaceAccLaw(map, world, name) {}
+  ConstrainedTaskLaw(TaskMap* map, mlr::KinematicWorld* world, mlr::String name = "") : LinTaskSpaceAccLaw(map, world, name) {}
   void setForce(arr force);
   arr getForce();
   void setAlpha(arr alpha);
@@ -91,13 +91,13 @@ struct ConstrainedTaskLaw : LinTaskSpaceAccLaw {
 
 struct TaskSpaceController {
   mlr::Array<LinTaskSpaceAccLaw*> taskSpaceAccLaws;
-  ors::KinematicWorld* world;
+  mlr::KinematicWorld* world;
 
   bool gravity = false;
 
   mlr::Array<ConstrainedTaskLaw*> constrainedTaskLaws;
 
-  TaskSpaceController(ors::KinematicWorld* world) : world(world) {}
+  TaskSpaceController(mlr::KinematicWorld* world) : world(world) {}
   ~TaskSpaceController() {}
 
   void addLinTaskSpaceAccLaw(LinTaskSpaceAccLaw* law);

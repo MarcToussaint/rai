@@ -79,7 +79,7 @@ bool planeFindingWithNormals(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointClo
 
 }
 
-bool IsABox(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::Normal>::Ptr normal, std::vector<pcl::ModelCoefficients::Ptr> &outCoefficients, ors::Quaternion &orientation, arr& center, arr& length)
+bool IsABox(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::Normal>::Ptr normal, std::vector<pcl::ModelCoefficients::Ptr> &outCoefficients, mlr::Quaternion &orientation, arr& center, arr& length)
 {
 
     //std::vector<pcl::ModelCoefficients::Ptr> outCoefficients;

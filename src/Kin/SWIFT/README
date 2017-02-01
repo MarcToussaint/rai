@@ -1,0 +1,155 @@
+--------------------------------------------------------------------------------
+- SWIFT++ (Speedy Walking via Improved Feature Testing for Non-Convex Objects) -
+--------------------------------------------------------------------------------
+
+SWIFT++ is a collision detection package capable of detecting intersection,
+performing tolerance verification, computing approximate and exact distance,
+and determining contacts amidst a scene composed of general polyhedral models.
+It is a powerful package from its input interface to its query interface.
+There are many features available but the basic principles are rather simple
+and straightforward.
+
+
+------------------------------------------
+-- Contents of the SWIFT++ distribution --
+------------------------------------------
+
+1) README    -- This file.
+
+2) CONTACT   -- Contact information.
+                Ming Lin: PI for the Collide research group
+                Stephen Ehmann: the author of SWIFT++.
+
+3) LICENSE   -- License information.  Make sure that you understand the
+                contents before using SWIFT.
+
+4) Makefile  -- Main makefile.
+
+5) swiftpp.dsp -- VC++ 6.0 project file.
+
+6) doc/      -- Documentation directory.  Contains the user manual for the
+                decomposer program and for SWIFT++ in various document formats.
+
+7) decomposer/ -- Decomposer program
+
+8) include/  -- The directory containing the header files for the SWIFT++
+                source.  SWIFT.h in the include/ directory is the file that
+                applications using SWIFT++ must include.
+
+9) src/      -- The directory containing the main SWIFT++ source.  A Makefile
+                resides in this directory which is used to create object files.
+
+10) lib/     -- The library libSWIFT++.a will be placed in this directory.
+
+11) bin/     -- The decomposer program is put in this directory.
+
+12) example/ -- An example application that uses SWIFT++.  There are also
+                example model files in this directory.
+
+
+-------------------
+-- Getting Qhull --
+-------------------
+
+SWIFT++ requires the Qhull library in order to function.
+SWIFT has been tested with Qhull v 2.6 and Qhull v 3.0.  Use other versions
+at your own risk.  The web site is: http://www.geom.umn.edu/software/qhull/.
+To make things easiest, download Qhull version 3.0.
+
+-------------------------
+-- Building under Unix --
+-------------------------
+
+1) Look through the configuration file in the include/ directory called
+   SWIFT_config.h and set all desired options.  Various compile-time features
+   may be selected including floating point type, debugging, etc.  Read
+   SWIFT_config.h and the user manual for full details.
+
+2) Look through SWIFT/Makefile and do the following:
+    - Set CC to point to the proper compiler and set CFLAGS to the desired
+      compile flags
+    - Make sure that the Qhull library exists somewhere on the system.  Make
+      sure that the QHULL_DIR variable in the Makefile points to its location
+      (the Qhull include files as well as the compiled library should be in the
+      same place).  The QHULL_DIR variable should point to the directory where
+      the header file qhull_a.h lives.
+
+3) Type ``make'' in this directory and the decomposer program (used to
+   preprocess models for SWIFT++) will be created as well as lib/libSWIFT++.a.
+   There may be a few warnings which can be safely ignored.
+
+4) Don't forget to point the -I flags in your application Makefile to the
+	distribution of Qhull on your system.
+
+5) When you link, don't forget to link qhull after linking SWIFT++.
+
+
+To build and run the example program:
+-------------------------------------
+
+1) First build the SWIFT++ library as desired (see above steps 1-5).
+
+2) Type ``make example''.
+
+3) To run the example program enter the example/ directory and type
+   ``example -h'' for a list of options.  Also, read the USAGE file located
+   there for information about the example program and what it does.
+
+
+-----------------------------
+-- Building using VC++ 6.0 --
+-----------------------------
+
+1) Unpack the qhull distribution and put it in the SWIFT++ directory as
+	qhull3.0 (i.e. move the directory qhull3.0 to the SWIFT++ directory).
+
+2) Go into the decomposer/ directory, load decomposer_c.dsw, set the active
+	project to decomposer_c, and build it.  You may want to set the active
+	configuration as Release mode if you want the code to be optimized.
+	If you want to build a graphical decomposer program, see the next
+    subsection.
+
+3) Load the swiftpp.dsw workspace into VC++ 6.0, set swiftpp to be the active
+	project and build it.  You may want to set Release mode as the active
+	configuration if you want the code to be optimized.
+
+4) You can also build the example program by going into the example/ directory,
+	loading the example.dsw file, and building the example project.  The
+	executable example.exe will be placed in the Debug or Release diretories.
+
+
+To build the graphical decomposer in VC++ 6.0
+---------------------------------------------
+
+1) Install ActiveTcl from
+   http://www.activestate.com/Products/Download/Get.plex?id=ActiveTcl.
+   The following assumes that you have installed it in C:\Tcl.
+
+2) Build the decomposer_g project.
+
+3) Put C:\Tcl\bin in your path.
+
+4) Copy decomposer/bin/decomposer.tcl to the same directory as decomposer_g.exe.
+
+5) Run decomposer_g.exe -h to obtain information on the various command line
+   options available (should be very similar to the command line decomposer).
+
+
+-------------------------------------------------
+-- Using and Understanding the SWIFT++ library --
+-------------------------------------------------
+
+1) Include the file include/SWIFT.h in the application source code.
+
+2) Read the included user manuals for a full treatment of how to use the
+   SWIFT++ library effectively.  It is in the doc/ directory in .dvi, .ps, and
+   .pdf formats.
+
+
+---------------------
+-- Troubleshooting --
+---------------------
+
+Contact Stephen Ehmann (ehmann@cs.unc.edu) if you have problems with any part
+of the distribution.
+

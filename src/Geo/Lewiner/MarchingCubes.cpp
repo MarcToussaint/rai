@@ -101,7 +101,7 @@ void MarchingCubes::run( MCreal iso )
     process_cube( ) ;
   }
 
-  printf("Marching Cubes ran in %lf secs.\n", (double)(clock() - time)/CLOCKS_PER_SEC) ;
+  //printf("Marching Cubes ran in %lf secs.\n", (double)(clock() - time)/CLOCKS_PER_SEC) ;
 }
 //_____________________________________________________________________________
 

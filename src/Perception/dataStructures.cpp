@@ -19,8 +19,8 @@ void DisplayPrimitives::glDraw(struct OpenGL& gl){
 }
 
 void Plane::glDraw(){
-  ors::Vector p(nx,ny,nz);
-  ors::Vector axis = Vector_z ^ p;
+  mlr::Vector p(nx,ny,nz);
+  mlr::Vector axis = Vector_z ^ p;
   double angle = acos(p.z / p.length());
   p *= -c/(p*p);
   glLoadIdentity();

@@ -31,8 +31,8 @@ GaussianProcess::GaussianProcess() :
 /** set Gauss cov function, its parameters, and GP prior
  */
 void GaussianProcess::setGaussKernelGP(
-  void *_kernelP,
-  double _mu){
+    void *_kernelP,
+    double _mu){
   mu = _mu;
   mu_func = const_0;
   priorP = NULL;
@@ -48,9 +48,9 @@ void GaussianProcess::setGaussKernelGP(
 /** set Gauss cov function, its parameters, and GP prior
  */
 void GaussianProcess::setGaussKernelGP(
-  void *_kernelP,
-  double(*_mu)(const arr&, const void*),
-  void *_priorP){
+    void *_kernelP,
+    double(*_mu)(const arr&, const void*),
+    void *_priorP){
   mu_func = _mu;
   priorP = _priorP;
   mu = 0;
@@ -114,8 +114,6 @@ void GaussianProcess::recompute(){
 
 void GaussianProcess::appendObservation(const arr& x, double y){
   uint N=X.d0;
-  
-  static arr k, m, M, xi;
   X.append(x); //append it to the data
   Y.append(y);
   X.reshape(N+1, x.N);
@@ -146,13 +144,13 @@ double GaussianProcess::max_var(){
   return cov(kernelP, ARR(0.), ARR(0.));
 }
 
-void GaussianProcess::evaluate(const arr& x, double& y, double& sig){
+void GaussianProcess::evaluate(const arr& x, double& y, double& sig, bool calcSig){
   uint i, N=Y.N, dN=dY.N;
-  /*static*/ arr k, xi, Ginvk;
+  /*static*/ arr k, xi, Ginvk; //danny: why was there a static
   if(N+dN==0){ //no data
     y = mu_func(x, priorP) + mu;
     sig=::sqrt(cov(kernelP, x, x));
-    return; 
+    return;
   }
   if(k.N!=N+dN) k.resize(N+dN);
   for(i=0; i<N; i++){ xi.referToDim(X, i); k(i)=cov(kernelP, x, xi); }
@@ -160,19 +158,21 @@ void GaussianProcess::evaluate(const arr& x, double& y, double& sig){
   for(i=0; i<dN; i++){ xi.referToDim(dX, i); k(N+i)=covF_D(dI(i), kernelP, x, xi); }
   
   y = scalarProduct(k, GinvY) + mu_func(x, priorP) + mu;
-  innerProduct(Ginvk, Ginv, k);
-  sig = cov(kernelP, x, x) - scalarProduct(k, Ginvk);
-  //if(sig<=10e-10) {
+  if(calcSig) {
+    innerProduct(Ginvk, Ginv, k);
+    sig = cov(kernelP, x, x) - scalarProduct(k, Ginvk);
+    //if(sig<=10e-10) {
     //cout << "---" << endl;
     //cout << "x==" << x << endl;
     //cout << "k==" << k << endl;
     //cout << "Ginv==" << Ginv << endl;
     //cout << "kGinvk==" << scalarProduct(k, Ginvk) << endl;
-    //sig=::sqrt(sig); 
-    //cout << "sig==" << sig << endl; 
-  //}
-  //else 
-  sig = ::sqrt(sig);
+    //sig=::sqrt(sig);
+    //cout << "sig==" << sig << endl;
+    //}
+    //else
+    sig = ::sqrt(sig);
+  }
 }
 
 double GaussianProcess::log_likelihood() {
@@ -260,7 +260,7 @@ void GaussianProcess::gradient(arr& grad, const arr& x){
   uint i, d, N=Y.N, dN=dY.N, dim;
   dim = X.d1?X.d1:dX.d1;
   arr dk(dim);
-  static arr xi, dxi;
+  /*static*/ arr xi, dxi; //danny: why was there a static?
   grad.resize(x.N);
   grad.setZero();
   // take the gradient in the function value observations
@@ -268,6 +268,7 @@ void GaussianProcess::gradient(arr& grad, const arr& x){
     xi.referToDim(X, i);
     dcov(dk, kernelP, x, xi);
     grad += GinvY(i) * dk;
+    //cout << dk << endl;
   }
   // derivative observations
   for(i=0; i<dN; i++){
@@ -344,12 +345,13 @@ end
 *
 */
 void GaussianProcess::hessianPos (arr& hess, const arr& x){
+  //Danny: I think that this is wrong.. Or at least numerical Hessian checking fails
   CHECK(X.N || dX.N , "can't recompute Hessian without data");
   CHECK((X.N && x.N==X.d1) || (dX.N && x.N==dX.d1), "dimensions don't match!");
   uint i, j, n, N=Y.N, dN=dY.N, dim;
   dim = X.d1?X.d1:dX.d1;
   arr d2k(N+dN, dim, dim);
-  static arr xn, dxn;
+  /*static*/ arr xn, dxn; //danny: why was there a static
   d2k.setZero();
   hess.resize(dim, dim);
   hess.setZero();
@@ -377,9 +379,16 @@ void GaussianProcess::hessianPos (arr& hess, const arr& x){
   }
 }
 
+void GaussianProcess::gradientV(arr& grad, const arr& x) {
+  arr k, dk;
+  k_star(x, k);
+  dk_star(x, dk);
+  grad = -2.0*~k*Ginv*dk;
+}
+
 void GaussianProcess::evaluate(const arr& X, arr& Y, arr& S){
   uint i;
-  static arr xi;
+  arr xi;
   Y.resize(X.d0); S.resize(X.d0);
   for(i=0; i<X.d0; i++){ xi.referToDim(X, i); evaluate(xi, Y(i), S(i)); }
 }

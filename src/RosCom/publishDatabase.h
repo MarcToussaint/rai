@@ -8,7 +8,7 @@
 
 struct PublishDatabase : Thread{
   Access_typed<FilterObjects> object_database;
-  ACCESSname(ors::KinematicWorld, modelWorld)
+  ACCESSname(mlr::KinematicWorld, modelWorld)
 
   PublishDatabase();
 

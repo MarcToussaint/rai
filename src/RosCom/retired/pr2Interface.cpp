@@ -84,7 +84,7 @@ void PR2Interface::step() {
   }
 }
 
-void PR2Interface::initialize(ors::KinematicWorld* realWorld, ors::KinematicWorld* realWorldSimulation, ors::KinematicWorld* modelWorld, TaskSpaceController* controller) {
+void PR2Interface::initialize(mlr::KinematicWorld* realWorld, mlr::KinematicWorld* realWorldSimulation, mlr::KinematicWorld* modelWorld, TaskSpaceController* controller) {
 
   cout << "TODO: nochmal eine World mehr" << endl;
 
@@ -109,7 +109,7 @@ void PR2Interface::initialize(ors::KinematicWorld* realWorld, ors::KinematicWorl
 
     cout <<"** Waiting for ROS message on initial configuration.." <<endl;
     while(true) {
-      this->ctrl_obs.var->waitForNextRevision(); // TODO why .var???
+      this->ctrl_obs.data->waitForNextRevision(); // TODO why .var???
       cout << "REMOTE joint dimension = " << this->ctrl_obs.get()->q.N << endl;
       cout << "LOCAL  joint dimension = " << this->realWorld->q.N << endl;
 
@@ -128,7 +128,7 @@ void PR2Interface::initialize(ors::KinematicWorld* realWorld, ors::KinematicWorl
 
     /*arr Kp_base = zeros(this->realWorld->getJointStateDimension());
     arr Kd_base = zeros(this->realWorld->getJointStateDimension());
-    for_list(ors::Joint, j, this->realWorld->joints) if(j->qDim()>0){
+    for_list(mlr::Joint, j, this->realWorld->joints) if(j->qDim()>0){
       arr *info;
       info = j->ats.getValue<arr>("gains");
       if(info){
@@ -180,7 +180,7 @@ void PR2Interface::initialize(ors::KinematicWorld* realWorld, ors::KinematicWorl
     this->ctrl_ref.set() = ctrlMsg;
 
 
-    this->dynamicSimulation->initializeSimulation(new ors::KinematicWorld(*this->realWorld));
+    this->dynamicSimulation->initializeSimulation(new mlr::KinematicWorld(*this->realWorld));
     this->dynamicSimulation->startSimulation();
   }
   this->realWorld->watch(false);
@@ -189,7 +189,7 @@ void PR2Interface::initialize(ors::KinematicWorld* realWorld, ors::KinematicWorl
   cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;
 }
 
-void PR2Interface::initialize(ors::KinematicWorld* realWorld, ors::KinematicWorld* modelWorld, TaskSpaceController* controller) {
+void PR2Interface::initialize(mlr::KinematicWorld* realWorld, mlr::KinematicWorld* modelWorld, TaskSpaceController* controller) {
   this->initialize(realWorld, realWorld, modelWorld, controller);
 }
 
@@ -269,7 +269,7 @@ void PR2Interface::goToPosition(arr pos, mlr::String shape, double executionTime
 
 void PR2Interface::goToTasks(mlr::Array<LinTaskSpaceAccLaw*> laws, double executionTime, bool useMotionPlanner) {
   if(useMotionPlanner) {
-    ors::KinematicWorld copiedWorld(*this->modelWorld);
+    mlr::KinematicWorld copiedWorld(*this->modelWorld);
     MotionProblem MP(copiedWorld);
 
     MP.x0 = modelWorld->getJointState(); //TODO nix modelWorld, copiedWorld?
@@ -420,10 +420,10 @@ REGISTER_MODULE(PR2Interface)
 
 
 
-void showTrajectory(const arr& traj, ors::KinematicWorld& _world, bool copyWorld, double delay, mlr::String text) {
-  ors::KinematicWorld* world;
+void showTrajectory(const arr& traj, mlr::KinematicWorld& _world, bool copyWorld, double delay, mlr::String text) {
+  mlr::KinematicWorld* world;
   if(copyWorld) {
-    world = new ors::KinematicWorld(_world);
+    world = new mlr::KinematicWorld(_world);
   } else {
     world = &_world;
   }

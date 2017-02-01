@@ -14,7 +14,7 @@
 
 #include "mesh.h"
 #include "qhull.h"
-#include <Optim/optimization.h>
+#include <Optim/lagrangian.h>
 
 #include <limits>
 
@@ -39,15 +39,15 @@ bool orsDrawWires=false;
 // Mesh code
 //
 
-ors::Mesh::Mesh() :
+mlr::Mesh::Mesh() :
     parsing_pos_start(0),
     parsing_pos_end(std::numeric_limits<long>::max()){}
 
-void ors::Mesh::clear() {
+void mlr::Mesh::clear() {
   V.clear(); Vn.clear(); T.clear(); Tn.clear(); C.clear(); //strips.clear();
 }
 
-void ors::Mesh::setBox() {
+void mlr::Mesh::setBox() {
   double verts[24] = {
     -.5, -.5, -.5 ,
     +.5, -.5, -.5 ,
@@ -73,7 +73,7 @@ void ors::Mesh::setBox() {
   //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
 }
 
-void ors::Mesh::setTetrahedron() {
+void mlr::Mesh::setTetrahedron() {
   double s2=MLR_SQRT2/3., s6=sqrt(6.)/3.;
   double verts[12] = { 0., 0., 1. , 2.*s2, 0., -1./3., -s2, s6, -1./3., -s2, -s6, -1./3. };
   uint   tris [12] = { 0, 1, 2, 0, 2, 3, 0, 3, 1, 1, 3, 2 };
@@ -84,7 +84,7 @@ void ors::Mesh::setTetrahedron() {
   //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
 }
 
-void ors::Mesh::setOctahedron() {
+void mlr::Mesh::setOctahedron() {
   double verts[18] = {
     1, 0, 0,
     -1, 0, 0,
@@ -104,7 +104,7 @@ void ors::Mesh::setOctahedron() {
   //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
 }
 
-void ors::Mesh::setDodecahedron() {
+void mlr::Mesh::setDodecahedron() {
   double a = 1/sqrt(3.), b = sqrt((3.-sqrt(5.))/6.), c=sqrt((3.+sqrt(5.))/6.);
   double verts[60] = {
     a, a, a,
@@ -142,7 +142,7 @@ void ors::Mesh::setDodecahedron() {
   T.reshape(36, 3);
 }
 
-void ors::Mesh::setSphere(uint fineness) {
+void mlr::Mesh::setSphere(uint fineness) {
   setOctahedron();
   for(uint k=0; k<fineness; k++) {
     subDivide();
@@ -150,7 +150,7 @@ void ors::Mesh::setSphere(uint fineness) {
   }
 }
 
-void ors::Mesh::setHalfSphere(uint fineness) {
+void mlr::Mesh::setHalfSphere(uint fineness) {
   setOctahedron();
   V.resizeCopy(5, 3);
   T.resizeCopy(4, 3);
@@ -160,7 +160,7 @@ void ors::Mesh::setHalfSphere(uint fineness) {
   }
 }
 
-void ors::Mesh::setCylinder(double r, double l, uint fineness) {
+void mlr::Mesh::setCylinder(double r, double l, uint fineness) {
   uint div = 4 * (1 <<fineness);
   V.resize(2*div+2, 3);
   T.resize(4*div, 3);
@@ -197,7 +197,7 @@ void ors::Mesh::setCylinder(double r, double l, uint fineness) {
   }
 }
 
-void ors::Mesh::setSSBox(double x, double y, double z, double r, uint fineness){
+void mlr::Mesh::setSSBox(double x, double y, double z, double r, uint fineness){
   setSphere(fineness);
   scale(r);
   for(uint i=0;i<V.d0;i++){
@@ -207,7 +207,7 @@ void ors::Mesh::setSSBox(double x, double y, double z, double r, uint fineness){
   }
 }
 
-void ors::Mesh::setCappedCylinder(double r, double l, uint fineness) {
+void mlr::Mesh::setCappedCylinder(double r, double l, uint fineness) {
   uint i;
   setSphere(fineness);
   scale(r);
@@ -217,7 +217,7 @@ void ors::Mesh::setCappedCylinder(double r, double l, uint fineness) {
 /** @brief add triangles according to the given grid; grid has to be a 2D
   Array, the elements of which are indices referring to vertices in
   the vertex list (V) */
-void ors::Mesh::setGrid(uint X, uint Y) {
+void mlr::Mesh::setGrid(uint X, uint Y) {
   CHECK(X>1 && Y>1, "grid has to be at least 2x2");
   CHECK_EQ(V.d0,X*Y, "don't have X*Y mesh-vertices to create grid faces");
   uint i, j, k=T.d0;
@@ -232,13 +232,13 @@ void ors::Mesh::setGrid(uint X, uint Y) {
   }
 }
 
-void ors::Mesh::setRandom(uint vertices){
+void mlr::Mesh::setRandom(uint vertices){
   V.resize(vertices,3);
   rndUniform(V, -1., 1.);
   makeConvexHull();
 }
 
-void ors::Mesh::subDivide() {
+void mlr::Mesh::subDivide() {
   uint v=V.d0, t=T.d0;
   V.resizeCopy(v+3*t, 3);
   uintA newT(4*t, 3);
@@ -257,26 +257,30 @@ void ors::Mesh::subDivide() {
   T = newT;
 }
 
-void ors::Mesh::scale(double f) {  V *= f; }
+void mlr::Mesh::scale(double f) {  V *= f; }
 
-void ors::Mesh::scale(double sx, double sy, double sz) {
+void mlr::Mesh::scale(double sx, double sy, double sz) {
   uint i;
   for(i=0; i<V.d0; i++) {  V(i, 0)*=sx;  V(i, 1)*=sy;  V(i, 2)*=sz;  }
 }
 
-void ors::Mesh::translate(double dx, double dy, double dz) {
+void mlr::Mesh::translate(double dx, double dy, double dz) {
   uint i;
   for(i=0; i<V.d0; i++) {  V(i, 0)+=dx;  V(i, 1)+=dy;  V(i, 2)+=dz;  }
 }
 
-ors::Vector ors::Mesh::center() {
+void mlr::Mesh::transform(const mlr::Transformation& t){
+  t.applyOnPointArray(V);
+}
+
+mlr::Vector mlr::Mesh::center() {
   arr Vmean = sum(V,0);
   Vmean /= (double)V.d0;
   for(uint i=0; i<V.d0; i++) V[i]() -= Vmean;
   return Vector(Vmean);
 }
 
-void ors::Mesh::box() {
+void mlr::Mesh::box() {
   double x, X, y, Y, z, Z, m;
   x=X=V(0, 0);
   y=Y=V(0, 1);
@@ -296,14 +300,14 @@ void ors::Mesh::box() {
   scale(1./m);
 }
 
-void ors::Mesh::addMesh(const Mesh& mesh2) {
+void mlr::Mesh::addMesh(const Mesh& mesh2) {
   uint n=V.d0, t=T.d0;
   V.append(mesh2.V);
   T.append(mesh2.T);
   for(; t<T.d0; t++) {  T(t, 0)+=n;  T(t, 1)+=n;  T(t, 2)+=n;  }
 }
 
-void ors::Mesh::makeConvexHull() {
+void mlr::Mesh::makeConvexHull() {
   if(!V.N) return;
 #ifndef  MLR_ORS_ONLY_BASICS
   getTriangulatedHull(T, V);
@@ -312,7 +316,7 @@ void ors::Mesh::makeConvexHull() {
     #endif
 }
 
-void ors::Mesh::makeTriangleFan(){
+void mlr::Mesh::makeTriangleFan(){
   T.clear();
   for(uint i=1;i+1<V.d0;i++){
     T.append(TUP(0,i,i+1));
@@ -321,71 +325,75 @@ void ors::Mesh::makeTriangleFan(){
 }
 
 void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
-  ConstrainedProblem F=[&X](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x){
-    phi.resize(5+X.d0);
-    if(&tt){ tt.resize(5+X.d0); tt=ineqTT; }
-    if(&J) {  J.resize(5+X.d0,11); J.setZero(); }
-    if(&H) {  H.resize(11,11); H.setZero(); }
+  struct fitSSBoxProblem : ConstrainedProblem{
+    const arr& X;
+    fitSSBoxProblem(const arr& X):X(X){}
+    void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x){
+      phi.resize(5+X.d0);
+      if(&tt){ tt.resize(5+X.d0); tt=OT_ineq; }
+      if(&J) {  J.resize(5+X.d0,11); J.setZero(); }
+      if(&H) {  H.resize(11,11); H.setZero(); }
 
-    //-- the scalar objective
-    double a=x(0), b=x(1), c=x(2), r=x(3);
-    phi(0) = a*b*c + 2.*r*(a*b + a*c +b*c) + 4./3.*r*r*r;
-    if(&tt) tt(0) = fTT;
-    if(&J){
-      J(0,0) = b*c + 2.*r*(b+c);
-      J(0,1) = a*c + 2.*r*(a+c);
-      J(0,2) = a*b + 2.*r*(a+b);
-      J(0,3) = 2.*(a*b + a*c +b*c) + 4.*r*r;
+      //-- the scalar objective
+      double a=x(0), b=x(1), c=x(2), r=x(3);
+      phi(0) = a*b*c + 2.*r*(a*b + a*c +b*c) + 4./3.*r*r*r;
+      if(&tt) tt(0) = OT_f;
+      if(&J){
+        J(0,0) = b*c + 2.*r*(b+c);
+        J(0,1) = a*c + 2.*r*(a+c);
+        J(0,2) = a*b + 2.*r*(a+b);
+        J(0,3) = 2.*(a*b + a*c +b*c) + 4.*r*r;
+      }
+      if(&H){
+        H(0,1) = H(1,0) = c + 2.*r;
+        H(0,2) = H(2,0) = b + 2.*r;
+        H(0,3) = H(3,0) = 2.*(b+c);
+
+        H(1,2) = H(2,1) = a + 2.*r;
+        H(1,3) = H(3,1) = 2.*(a+c);
+
+        H(2,3) = H(3,2) = 2.*(a+b);
+
+        H(3,3) = 8.*r;
+      }
+
+      //-- positive
+      double w=100.;
+      phi(1) = -w*(a-.01);
+      phi(2) = -w*(b-.01);
+      phi(3) = -w*(c-.01);
+      phi(4) = -w*(r-.01);
+      if(&J){
+        J(1,0) = -w;
+        J(2,1) = -w;
+        J(3,2) = -w;
+        J(4,3) = -w;
+      }
+
+      //-- all constraints
+      for(uint i=0;i<X.d0;i++){
+        arr y, Jy;
+        y = X[i];
+        y.append(x);
+        phi(i+5) = DistanceFunction_SSBox(Jy, NoArr, y);
+        //      Jy({3,5})() *= -1.;
+        if(&J) J[i+5] = Jy({3,-1});
+      }
     }
-    if(&H){
-      H(0,1) = H(1,0) = c + 2.*r;
-      H(0,2) = H(2,0) = b + 2.*r;
-      H(0,3) = H(3,0) = 2.*(b+c);
-
-      H(1,2) = H(2,1) = a + 2.*r;
-      H(1,3) = H(3,1) = 2.*(a+c);
-
-      H(2,3) = H(3,2) = 2.*(a+b);
-
-      H(3,3) = 8.*r;
-    }
-
-    //-- positive
-    double w=100.;
-    phi(1) = -w*(a-.01);
-    phi(2) = -w*(b-.01);
-    phi(3) = -w*(c-.01);
-    phi(4) = -w*(r-.01);
-    if(&J){
-      J(1,0) = -w;
-      J(2,1) = -w;
-      J(3,2) = -w;
-      J(4,3) = -w;
-    }
-
-    //-- all constraints
-    for(uint i=0;i<X.d0;i++){
-      arr y, Jy;
-      y = X[i];
-      y.append(x);
-      phi(i+5) = DistanceFunction_SSBox(Jy, NoArr, y);
-      //      Jy.refRange(3,5)() *= -1.;
-      if(&J) J[i+5] = Jy.refRange(3,-1);
-    }
-  };
+  } F(X);
 
   //initialization
   x.resize(11);
-  ors::Quaternion rot;
+  mlr::Quaternion rot;
   rot.setRandom();
   arr tX = X * rot.getArr(); //rotate points (with rot^{-1})
   arr ma = max(tX,0), mi = min(tX,0);  //get coordinate-wise min and max
-  x.refRange(0,2)() = (ma-mi)/2.;   //sizes
+  x({0,2})() = (ma-mi)/2.;   //sizes
   x(3) = 1.; //sum(ma-mi)/6.;  //radius
-  x.refRange(4,6)() = rot.getArr() * (mi+.5*(ma-mi)); //center (rotated back)
-  x.refRange(7,10)() = conv_quat2arr(rot);
-  rndGauss(x.refRange(7,10)(), .1, true);
-  x.refRange(7,10)() /= length(x.refRange(7,10)());
+  x({4,6})() = rot.getArr() * (mi+.5*(ma-mi)); //center (rotated back)
+  x({7,10})() = conv_quat2arr(rot);
+  rndGauss(x({7,10})(), .1, true);
+  x({7,10})() /= length(x({7,10})());
 
   if(verbose>1){
     checkJacobianCP(F, x, 1e-4);
@@ -411,7 +419,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
   g = opt.UCP.get_sumOfGviolations();
 }
 
-void ors::Mesh::makeSSBox(arr& x_ret, Transformation& t_ret, const arr& X, uint trials, int verbose){
+void mlr::Mesh::makeSSBox(arr& x_ret, Transformation& t_ret, const arr& X, uint trials, int verbose){
   if(!X.N){ clear(); return; }
 
   arr x,x_best;
@@ -435,8 +443,8 @@ void ors::Mesh::makeSSBox(arr& x_ret, Transformation& t_ret, const arr& X, uint 
 
   Transformation t;
   t.setZero();
-  t.pos.set( x.refRange(4,6) );
-  t.rot.set( x.refRange(7,-1) );
+  t.pos.set( x({4,6}) );
+  t.rot.set( x({7,-1}) );
   t.rot.normalize();
   setSSBox(2.*x(0), 2.*x(1), 2.*x(2), x(3));
   t.applyOnPointArray(V);
@@ -445,7 +453,7 @@ void ors::Mesh::makeSSBox(arr& x_ret, Transformation& t_ret, const arr& X, uint 
     t_ret = t;
 }
 
-void ors::Mesh::setSSCvx(const ors::Mesh& m, double r, uint fineness){
+void mlr::Mesh::setSSCvx(const mlr::Mesh& m, double r, uint fineness){
   Mesh ball;
   ball.setSphere(fineness);
   ball.scale(r);
@@ -464,7 +472,7 @@ void ors::Mesh::setSSCvx(const ors::Mesh& m, double r, uint fineness){
   normals of the vertices (N); average normals are averaged over
   all adjacent triangles that are in the triangle list or member of
   a strip */
-void ors::Mesh::computeNormals() {
+void mlr::Mesh::computeNormals() {
   uint i;
   Vector a, b, c;
   Tn.resize(T.d0, 3);
@@ -490,7 +498,7 @@ void ors::Mesh::computeNormals() {
 /** @brief add triangles according to the given grid; grid has to be a 2D
   Array, the elements of which are indices referring to vertices in
   the vertex list (V) */
-/*void ors::Mesh::gridToTriangles(const uintA &grid){
+/*void mlr::Mesh::gridToTriangles(const uintA &grid){
   uint i, j, k=T.d0;
   T.resizeCopy(T.d0+2*(grid.d0-1)*(grid.d1-1), 3);
   for(i=0;i<grid.d0-1;i++) for(j=0;j<grid.d1-1;j++){
@@ -520,7 +528,7 @@ void ors::Mesh::computeNormals() {
   the x-axis (the first index)); grid has to be a 2D Array, the
   elements of which are indices referring to vertices in the vertex
   list (V) */
-/*void ors::Mesh::gridToStrips(const uintA& grid){
+/*void mlr::Mesh::gridToStrips(const uintA& grid){
   CHECK(grid.d0>1 && grid.d1>1, "grid has to be at least 2x2");
   uint i, j, k=strips.N, l;
   strips.resizeCopy(strips.N+grid.d0-1);
@@ -546,7 +554,7 @@ void ors::Mesh::computeNormals() {
 /** @brief add strips according to the given grid (sliced in strips along
   the x-axis (the first index)); it is assumed that the vertices in
   the list V linearly correspond to points in the XxY grid */
-/*void ors::Mesh::gridToStrips(uint X, uint Y){
+/*void mlr::Mesh::gridToStrips(uint X, uint Y){
   CHECK(X>1 && Y>1, "grid has to be at least 2x2");
   uint i, j, k=strips.N, l;
   strips.resizeCopy(strips.N+Y-1);
@@ -563,7 +571,7 @@ void ors::Mesh::computeNormals() {
   }
 }*/
 
-void deleteZeroTriangles(ors::Mesh& m) {
+void deleteZeroTriangles(mlr::Mesh& m) {
   uintA newT;
   newT.resizeAs(m.T);
   uint i, j;
@@ -575,7 +583,7 @@ void deleteZeroTriangles(ors::Mesh& m) {
   m.T=newT;
 }
 
-void permuteVertices(ors::Mesh& m, uintA& p) {
+void permuteVertices(mlr::Mesh& m, uintA& p) {
   CHECK_EQ(p.N,m.V.d0, "");
   uint i;
   arr x(p.N, 3);
@@ -598,7 +606,7 @@ void permuteVertices(ors::Mesh& m, uintA& p) {
 
 /** @brief delete all void triangles (with vertex indices (0, 0, 0)) and void
   vertices (not used for triangles or strips) */
-void ors::Mesh::deleteUnusedVertices() {
+void mlr::Mesh::deleteUnusedVertices() {
   if(!V.N) return;
   uintA p;
   uintA u;
@@ -629,7 +637,7 @@ bool COMP(uint i, uint j) {
 
 /** @brief delete all void triangles (with vertex indices (0, 0, 0)) and void
   vertices (not used for triangles or strips) */
-void ors::Mesh::fuseNearVertices(double tol) {
+void mlr::Mesh::fuseNearVertices(double tol) {
   if(!V.N) return;
   uintA p;
   uint i, j;
@@ -670,7 +678,7 @@ void ors::Mesh::fuseNearVertices(double tol) {
   cout <<"#V=" <<V.d0 <<", done" <<endl;
 }
 
-void getVertexNeighorsList(const ors::Mesh& m, intA& Vt, intA& VT) {
+void getVertexNeighorsList(const mlr::Mesh& m, intA& Vt, intA& VT) {
   uint i, j;
   Vt.resize(m.V.d0);  Vt.setZero();
   VT.resize(m.V.d0, 100);
@@ -681,9 +689,9 @@ void getVertexNeighorsList(const ors::Mesh& m, intA& Vt, intA& VT) {
   }
 }
 
-void getTriNormals(const ors::Mesh& m, arr& Tn) {
+void getTriNormals(const mlr::Mesh& m, arr& Tn) {
   uint i;
-  ors::Vector a, b, c;
+  mlr::Vector a, b, c;
   Tn.resize(m.T.d0, 3); //tri normals
   for(i=0; i<m.T.d0; i++) {
     a.set(&m.V(m.T(i, 0), 0)); b.set(&m.V(m.T(i, 1), 0)); c.set(&m.V(m.T(i, 2), 0));
@@ -693,7 +701,7 @@ void getTriNormals(const ors::Mesh& m, arr& Tn) {
 }
 
 /// flips all faces
-void ors::Mesh::flipFaces() {
+void mlr::Mesh::flipFaces() {
   uint i, a;
   for(i=0; i<T.d0; i++) {
     a=T(i, 0);
@@ -703,7 +711,7 @@ void ors::Mesh::flipFaces() {
 }
 
 /// check whether this is really a closed mesh, and flip inconsistent faces
-void ors::Mesh::clean() {
+void mlr::Mesh::clean() {
   uint i, j, idist=0;
   Vector a, b, c, m;
   double mdist=0.;
@@ -829,7 +837,7 @@ void ors::Mesh::clean() {
   computeNormals();
 }
 
-void getEdgeNeighborsList(const ors::Mesh& m, uintA& EV, uintA& Et, intA& ET) {
+void getEdgeNeighborsList(const mlr::Mesh& m, uintA& EV, uintA& Et, intA& ET) {
   intA Vt, VT;
   getVertexNeighorsList(m, Vt, VT);
   
@@ -880,7 +888,7 @@ void getEdgeNeighborsList(const ors::Mesh& m, uintA& EV, uintA& Et, intA& ET) {
        <<"\nneighs=\n" <<ET <<endl;
 }
 
-void getTriNeighborsList(const ors::Mesh& m, uintA& Tt, intA& TT) {
+void getTriNeighborsList(const mlr::Mesh& m, uintA& Tt, intA& TT) {
   intA Vt, VT;
   getVertexNeighorsList(m, Vt, VT);
   
@@ -906,7 +914,7 @@ void getTriNeighborsList(const ors::Mesh& m, uintA& Tt, intA& TT) {
   //cout <<Tt <<TT <<endl;
 }
 
-void ors::Mesh::skin(uint start) {
+void mlr::Mesh::skin(uint start) {
   intA TT;
   uintA Tt;
   getTriNeighborsList(*this, Tt, TT);
@@ -944,13 +952,13 @@ void ors::Mesh::skin(uint start) {
   cout <<T <<endl;
 }
 
-ors::Vector ors::Mesh::getMeanVertex() const {
+mlr::Vector mlr::Mesh::getMeanVertex() const {
   arr Vmean = sum(V,0);
   Vmean /= (double)V.d0;
   return Vector(Vmean);
 }
 
-void ors::Mesh::getBox(double& dx, double& dy, double& dz) const {
+void mlr::Mesh::getBox(double& dx, double& dy, double& dz) const {
   dx=dy=dz=0.;
   for(uint i=0;i<V.d0;i++){
     dx=mlr::MAX(dx, fabs(V(i,0)));
@@ -959,7 +967,7 @@ void ors::Mesh::getBox(double& dx, double& dy, double& dz) const {
   }
 }
 
-double ors::Mesh::getRadius() const {
+double mlr::Mesh::getRadius() const {
   double r=0.;
   for(uint i=0;i<V.d0;i++) r=mlr::MAX(r, sumOfSqr(V[i]));
   return sqrt(r);
@@ -969,10 +977,10 @@ double triArea(const arr& a, const arr& b, const arr& c){
   return .5*length(crossProduct(b-a, c-a));
 }
 
-double ors::Mesh::getArea() const{
+double mlr::Mesh::getArea() const{
   CHECK(T.d1==3,"");
   double A=0.;
-  ors::Vector a,b,c;
+  mlr::Vector a,b,c;
   for(uint i=0;i<T.d0;i++){
     a.set(V.p+3*T.p[3*i+0]);
     b.set(V.p+3*T.p[3*i+1]);
@@ -982,9 +990,9 @@ double ors::Mesh::getArea() const{
   return .5*A;
 }
 
-double ors::Mesh::getVolume() const{
+double mlr::Mesh::getVolume() const{
   CHECK(T.d1==3,"");
-  ors::Vector z = getMeanVertex(), a,b,c;
+  mlr::Vector z = getMeanVertex(), a,b,c;
   double vol=0.;
   for(uint i=0;i<T.d0;i++){
     a.set(V.p+3*T.p[3*i+0]);
@@ -995,7 +1003,29 @@ double ors::Mesh::getVolume() const{
   return vol/6.;
 }
 
-double ors::Mesh::getCircum() const{
+double mlr::Mesh::meshMetric(const mlr::Mesh& trueMesh, const mlr::Mesh& estimatedMesh) {
+  //basically a Haussdorf metric, stupidly realized by brute force algorithm
+  auto haussdorfDistanceOneSide = [](const arr& V1, const arr& V2)->double {
+    double distance = 0.0;
+    for(uint i = 0; i < V1.d0; i++) {
+      double shortestDistance = std::numeric_limits<double>::infinity();
+      for(uint j = 0; j < V2.d0; j++) {
+        double d = length(V2[j]-V1[i]);
+        if(d < shortestDistance) {
+          shortestDistance = d;
+        }
+      }
+      if(shortestDistance > distance) {
+        distance = shortestDistance;
+      }
+    }
+    return distance;
+  };
+
+  return mlr::MAX(haussdorfDistanceOneSide(trueMesh.V, estimatedMesh.V), haussdorfDistanceOneSide(estimatedMesh.V, trueMesh.V));
+}
+
+double mlr::Mesh::getCircum() const{
   if(!T.N) return 0.;
   CHECK(T.d1==2,"");
   double A=0.;
@@ -1003,15 +1033,15 @@ double ors::Mesh::getCircum() const{
   return A;
 }
 
-void ors::Mesh::write(std::ostream& os) const {
+void mlr::Mesh::write(std::ostream& os) const {
   os <<"Mesh: " <<V.d0 <<" vertices, " <<T.d0 <<" triangles" <<endl;
 }
 
-void ors::Mesh::readFile(const char* filename) {
+void mlr::Mesh::readFile(const char* filename) {
   read(FILE(filename).getIs(), filename+(strlen(filename)-3), filename);
 }
 
-void ors::Mesh::read(std::istream& is, const char* fileExtension, const char* filename) {
+void mlr::Mesh::read(std::istream& is, const char* fileExtension, const char* filename) {
   bool loaded=false;
   if(!strcmp(fileExtension, "obj")) { readObjFile(is); loaded=true; }
   if(!strcmp(fileExtension, "off")) { readOffFile(is); loaded=true; }
@@ -1021,7 +1051,7 @@ void ors::Mesh::read(std::istream& is, const char* fileExtension, const char* fi
   if(!loaded) HALT("can't read fileExtension '" <<fileExtension <<"'");
 }
 
-void ors::Mesh::writeTriFile(const char* filename) {
+void mlr::Mesh::writeTriFile(const char* filename) {
   ofstream os;
   mlr::open(os, filename);
   os <<"TRI" <<endl <<endl
@@ -1033,7 +1063,7 @@ void ors::Mesh::writeTriFile(const char* filename) {
   T.write(os, " ", "\n ", "  ");
 }
 
-void ors::Mesh::readTriFile(std::istream& is) {
+void mlr::Mesh::readTriFile(std::istream& is) {
   uint i, nV, nT;
   is >>PARSE("TRI") >>nV >>nT;
   V.resize(nV, 3);
@@ -1042,7 +1072,7 @@ void ors::Mesh::readTriFile(std::istream& is) {
   for(i=0; i<T.N; i++) is >>T.elem(i);
 }
 
-void ors::Mesh::writeOffFile(const char* filename) {
+void mlr::Mesh::writeOffFile(const char* filename) {
   ofstream os;
   mlr::open(os, filename);
   uint i;
@@ -1051,7 +1081,7 @@ void ors::Mesh::writeOffFile(const char* filename) {
   for(i=0; i<T.d0; i++) os <<3 <<' ' <<T(i, 0) <<' ' <<T(i, 1) <<' ' <<T(i, 2) <<endl;
 }
 
-void ors::Mesh::readOffFile(std::istream& is) {
+void mlr::Mesh::readOffFile(std::istream& is) {
   uint i, k, nVertices, nFaces, nEdges, alpha;
   bool color;
   mlr::String tag;
@@ -1075,7 +1105,7 @@ void ors::Mesh::readOffFile(std::istream& is) {
   }
 }
 
-void ors::Mesh::readPlyFile(std::istream& is) {
+void mlr::Mesh::readPlyFile(std::istream& is) {
   uint i, k, nVertices, nFaces;
   mlr::String str;
   is >>PARSE("ply") >>PARSE("format") >>str;
@@ -1100,7 +1130,7 @@ void ors::Mesh::readPlyFile(std::istream& is) {
 }
 
 #ifdef MLR_extern_ply
-void ors::Mesh::writePLY(const char *fn, bool bin) {
+void mlr::Mesh::writePLY(const char *fn, bool bin) {
   struct PlyFace { unsigned char nverts;  int *verts; };
   struct Vertex { float x,  y,  z ;  };
   uint _nverts = V.d0;
@@ -1162,7 +1192,7 @@ void ors::Mesh::writePLY(const char *fn, bool bin) {
   free_ply(ply);
 }
 
-void ors::Mesh::readPLY(const char *fn) {
+void mlr::Mesh::readPLY(const char *fn) {
   struct PlyFace {    unsigned char nverts;  int *verts; };
   struct Vertex {    double x,  y,  z ;  byte r,g,b; };
   uint _nverts=0, _ntrigs=0;
@@ -1246,11 +1276,11 @@ void ors::Mesh::readPLY(const char *fn) {
   free_ply(ply);
 }
 #else
-void ors::Mesh::writePLY(const char *fn, bool bin) { NICO }
-void ors::Mesh::readPLY(const char *fn) { NICO }
+void mlr::Mesh::writePLY(const char *fn, bool bin) { NICO }
+void mlr::Mesh::readPLY(const char *fn) { NICO }
 #endif
 
-void ors::Mesh::readStlFile(std::istream& is) {
+void mlr::Mesh::readStlFile(std::istream& is) {
   //first check if binary
   if(mlr::parse(is, "solid", true)) { //is ascii
     mlr::String name;
@@ -1311,7 +1341,7 @@ void ors::Mesh::readStlFile(std::istream& is) {
   }
 }
 
-/*void ors::Mesh::getOBJ(char* filename){
+/*void mlr::Mesh::getOBJ(char* filename){
   if(!glm){
   glm = glmReadOBJ(filename);
   glmReverseWinding(glm);
@@ -1339,7 +1369,7 @@ char *strn(std::istream& is){
 }
 
 /** initialises the ascii-obj file "filename"*/
-void ors::Mesh::readObjFile(std::istream& is) {
+void mlr::Mesh::readObjFile(std::istream& is) {
   // make a first pass through the file to get a count of the number
   // of vertices, normals, texcoords & triangles
   uint nV, nN, nTex, nT;
@@ -1600,8 +1630,8 @@ uintA getSubMeshPositions(const char* filename) {
 
 #ifdef MLR_GL
 
-/// GL routine to draw a ors::Mesh
-void ors::Mesh::glDraw(struct OpenGL&) {
+/// GL routine to draw a mlr::Mesh
+void mlr::Mesh::glDraw(struct OpenGL&) {
   if(!T.N){  //-- draw point cloud
     if(!V.N) return;
     CHECK(V.nd==2 && V.d1==3, "wrong dimension");
@@ -1671,13 +1701,15 @@ void ors::Mesh::glDraw(struct OpenGL&) {
   GLboolean turnOnLight=false;
   if(C.N) { glGetBooleanv(GL_LIGHTING, &turnOnLight); glDisable(GL_LIGHTING); }
 
-  glShadeModel(GL_FLAT);
+  //glShadeModel(GL_FLAT);
+  glShadeModel(GL_SMOOTH);
   glEnableClientState(GL_VERTEX_ARRAY);
   glEnableClientState(GL_NORMAL_ARRAY);
   if(C.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
 
   glVertexPointer(3, GL_DOUBLE, 0, V.p);
   glNormalPointer(GL_DOUBLE, 0, Vn.p);
+
   if(C.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
 
   glDrawElements(GL_TRIANGLES, T.N, GL_UNSIGNED_INT, T.p);
@@ -1723,9 +1755,9 @@ void ors::Mesh::glDraw(struct OpenGL&) {
 #endif
 }
 #else //MLR_GL
-void ors::Mesh::glDraw(struct OpenGL&) { NICO }
+void mlr::Mesh::glDraw(struct OpenGL&) { NICO }
 void glDrawMesh(void*) { NICO }
-void glTransform(const ors::Transformation&) { NICO }
+void glTransform(const mlr::Transformation&) { NICO }
 #endif
 
 //==============================================================================
@@ -1765,10 +1797,10 @@ void inertiaCylinder(double *I, double& mass, double density, double height, dou
 
 #ifdef MLR_extern_GJK
 GJK_point_type& NoPointType = *((GJK_point_type*)NULL);
-double GJK_sqrDistance(const ors::Mesh& mesh1, const ors::Mesh& mesh2,
-                       const ors::Transformation& t1, const ors::Transformation& t2,
-                       ors::Vector& p1, ors::Vector& p2,
-                       ors::Vector& e1, ors::Vector& e2,
+double GJK_sqrDistance(const mlr::Mesh& mesh1, const mlr::Mesh& mesh2,
+                       const mlr::Transformation& t1, const mlr::Transformation& t2,
+                       mlr::Vector& p1, mlr::Vector& p2,
+                       mlr::Vector& e1, mlr::Vector& e2,
                        GJK_point_type& pt1, GJK_point_type& pt2){
   // convert meshes to 'Object_structures'
   Object_structure m1,m2;
@@ -1869,9 +1901,9 @@ double GJK_sqrDistance(const ors::Mesh& mesh1, const ors::Mesh& mesh2,
   return d2;
 }
 #else
-double GJK_distance(ors::Mesh& mesh1, ors::Mesh& mesh2,
-                    ors::Transformation& t1, ors::Transformation& t2,
-                    ors::Vector& p1, ors::Vector& p2){ NICO }
+double GJK_distance(mlr::Mesh& mesh1, mlr::Mesh& mesh2,
+                    mlr::Transformation& t1, mlr::Transformation& t2,
+                    mlr::Vector& p1, mlr::Vector& p2){ NICO }
 #endif
 
 
@@ -1884,10 +1916,10 @@ double GJK_distance(ors::Mesh& mesh1, ors::Mesh& mesh2,
 #  include "Lewiner/MarchingCubes.h"
 
 
-void ors::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint res) {
+void mlr::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint res) {
   MarchingCubes mc(res, res, res);
   mc.init_all() ;
-
+  double startTime = mlr::timerRead();
   //compute data
   uint k=0, j=0, i=0;
   float x=lo, y=lo, z=lo;
@@ -1901,7 +1933,7 @@ void ors::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint 
       }
     }
   }
-
+  cout << "calculation of data took: " << mlr::timerRead() - startTime << " seconds" << endl;
   mc.run();
   mc.clean_temps();
 
@@ -1921,8 +1953,46 @@ void ors::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint 
   }
 }
 
+
+void mlr::Mesh::setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res) {
+  MarchingCubes mc(res, res, res);
+  mc.init_all() ;
+
+  //compute data
+  uint k=0, j=0, i=0;
+  float x, y, z;
+  for(k=0; k<res; k++) {
+    z = zLo+k*(zHi-zLo)/res;
+    for(j=0; j<res; j++) {
+      y = yLo+j*(yHi-yLo)/res;
+      for(i=0; i<res; i++) {
+        x = xLo+i*(xHi-xLo)/res;
+        mc.set_data(f(NoArr, NoArr, ARR((double)x, (double)y, (double)z)), i, j, k) ;
+      }
+    }
+  }
+
+  mc.run();
+  mc.clean_temps();
+
+  //convert to Mesh
+  clear();
+  V.resize(mc.nverts(), 3);
+  T.resize(mc.ntrigs(), 3);
+  for(i=0; i<V.d0; i++) {
+    V(i, 0)=xLo+mc.vert(i)->x*(xHi-xLo)/res;
+    V(i, 1)=yLo+mc.vert(i)->y*(yHi-yLo)/res;
+    V(i, 2)=zLo+mc.vert(i)->z*(zHi-zLo)/res;
+  }
+  for(i=0; i<T.d0; i++) {
+    T(i, 0)=mc.trig(i)->v1;
+    T(i, 1)=mc.trig(i)->v2;
+    T(i, 2)=mc.trig(i)->v3;
+  }
+}
+
 #else //extern_Lewiner
-void ors::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint res) {
+void mlr::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint res) {
   NICO
 }
 #endif
@@ -1930,7 +2000,7 @@ void ors::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint 
 
 //===========================================================================
 
-DistanceFunction_Sphere::DistanceFunction_Sphere(const ors::Transformation& _t, double _r):t(_t),r(_r){
+DistanceFunction_Sphere::DistanceFunction_Sphere(const mlr::Transformation& _t, double _r):t(_t),r(_r){
   ScalarFunction::operator=( [this](arr& g, arr& H, const arr& x)->double{ return f(g,H,x); } );
 }
 
@@ -1962,7 +2032,7 @@ double DistanceFunction_Sphere::f(arr& g, arr& H, const arr& x){
 
 //===========================================================================
 
-DistanceFunction_Cylinder::DistanceFunction_Cylinder(const ors::Transformation& _t, double _r, double _dz):t(_t),r(_r),dz(_dz){
+DistanceFunction_Cylinder::DistanceFunction_Cylinder(const mlr::Transformation& _t, double _r, double _dz):t(_t),r(_r),dz(_dz){
   ScalarFunction::operator=( [this](arr& g, arr& H, const arr& x)->double{ return f(g,H,x); } );
 }
 
@@ -2013,7 +2083,7 @@ double DistanceFunction_Cylinder::f(arr& g, arr& H, const arr& x){
 
 //===========================================================================
 
-void closestPointOnBox(arr& closest, arr& signs, const ors::Transformation& t, double dx, double dy, double dz, const arr& x){
+void closestPointOnBox(arr& closest, arr& signs, const mlr::Transformation& t, double dx, double dy, double dz, const arr& x){
   arr rot = t.rot.getArr();
   arr a_rel = (~rot)*(x-conv_vec2arr(t.pos)); //point in box coordinates
   arr dim = {dx, dy, dz};
@@ -2037,7 +2107,7 @@ void closestPointOnBox(arr& closest, arr& signs, const ors::Transformation& t, d
 
 //===========================================================================
 
-DistanceFunction_Box::DistanceFunction_Box(const ors::Transformation& _t, double _dx, double _dy, double _dz, double _r):t(_t),dx(_dx),dy(_dy),dz(_dz), r(_r){
+DistanceFunction_Box::DistanceFunction_Box(const mlr::Transformation& _t, double _dx, double _dy, double _dz, double _r):t(_t),dx(_dx),dy(_dy),dz(_dz), r(_r){
   ScalarFunction::operator=( [this](arr& g, arr& H, const arr& x)->double{ return f(g,H,x); } );
 }
 
@@ -2085,28 +2155,30 @@ double DistanceFunction_Box::f(arr& g, arr& H, const arr& x){
 
 ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> double{
   CHECK_EQ(x.N, 14, "pt + abcr + pose");
-  ors::Transformation t;
-  t.pos.set( x.refRange(7,9) );
-  t.rot.set( x.refRange(10,13) );
+  mlr::Transformation t;
+  t.pos.set( x({7,9}) );
+  t.rot.set( x({10,13}) );
   t.rot.normalize();
   arr closest, signs;
-  closestPointOnBox(closest, signs, t, x(3), x(4), x(5), x.refRange(0,2));
-  arr grad = x.refRange(0,2) - closest;
+  closestPointOnBox(closest, signs, t, x(3), x(4), x(5), x({0,2}));
+  arr grad = x({0,2}) - closest;
   double d = length(grad);
   grad /= d;
   d -= x(6);
   if(&g){
     g.resize(14);
     g.setZero();
-    g.refRange(0,2) = grad;
-    g.refRange(7,9) = - grad;
-    g.refRange(3,5) = - signs%(t.rot / ors::Vector(grad)).getArr();
+    g({0,2}) = grad;
+    g({7,9}) = - grad;
+    g({3,5}) = - signs%(t.rot / mlr::Vector(grad)).getArr();
     g(6) = -1.;
-    g.refRange(10,13) = ~grad*crossProduct(t.rot.getJacobian(), (x.refRange(0,2)-t.pos.getArr()));
-    g.refRange(10,13)() /= -sqrt(sumOfSqr(x.refRange(10,13))); //account for the potential non-normalization of q
+    g({10,13}) = ~grad*crossProduct(t.rot.getJacobian(), (x({0,2})-t.pos.getArr()));
+    g({10,13})() /= -sqrt(sumOfSqr(x({10,13}))); //account for the potential non-normalization of q
   }
   return d;
 };
+
+
 
 
 

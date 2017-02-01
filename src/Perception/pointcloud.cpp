@@ -276,8 +276,8 @@ void ObjectClusterer::step() {
 }
 
 ObjectFitter::ObjectFitter() : Thread("ObectFitter"), s(new sObjectFitter(this)) {
-//  biros().getVariable<PointCloudSet>(objectClusters, "ObjectClusters", this, true);
-//  biros().getVariable<ObjectSet>(objects, "Objects", this, true);
+//  biros().getAccessData<PointCloudSet>(objectClusters, "ObjectClusters", this, true);
+//  biros().getAccessData<ObjectSet>(objects, "Objects", this, true);
   NIY//listenTo(objectClusters);
 }
 
@@ -427,7 +427,7 @@ void ObjectFilter::step() {
     cyl->rotation.setDiff(ARR(0,0,1), ARR(cyl_pos(i,3), cyl_pos(i,4), cyl_pos(i,5)));
     cyl->shapeParams(RADIUS) = cyl_pos(i,6);//.025;
     cyl->shapeParams(HEIGHT) = length(ARR(cyl_pos(i,3), cyl_pos(i,4), cyl_pos(i,5)));
-    cyl->shapeType = ors::cylinderST;
+    cyl->shapeType = mlr::ST_cylinder;
     //cyl->pcl_object = pcl_cyls(i);
     out_objects->append(cyl);
   }
@@ -435,7 +435,7 @@ void ObjectFilter::step() {
     ObjectBelief *sph = new ObjectBelief;
     sph->position = ARR(sph_pos(i,0), sph_pos(i,1), sph_pos(i,2));
     sph->shapeParams(RADIUS) = sph_pos(i,3);
-    sph->shapeType = ors::sphereST;
+    sph->shapeType = mlr::ST_sphere;
     //sph->pcl_object = pcl_sph(i);
     out_objects->append(sph);
   }
@@ -451,19 +451,19 @@ ObjectTransformator::ObjectTransformator(const char* name) : Thread(name) {
 void ObjectTransformator::open() {
 }
 
-void createOrsObject(ors::KinematicWorld& world, ors::Body& body, const ObjectBelief *object, const arr& transformation) {
-  ors::Transformation t;
+void createOrsObject(mlr::KinematicWorld& world, mlr::Body& body, const ObjectBelief *object, const arr& transformation) {
+  mlr::Transformation t;
   t.pos = object->position;
   t.rot = object->rotation;
 
-  ors::Transformation sensor_to_ors;
+  mlr::Transformation sensor_to_ors;
   sensor_to_ors.setAffineMatrix(transformation.p);
 
   t.appendTransformation(sensor_to_ors);
 
   arr size = ARR(0., 0., object->shapeParams(HEIGHT), object->shapeParams(RADIUS));
  
-  ors::Shape* s = new ors::Shape(world, body);
+  mlr::Shape* s = new mlr::Shape(world, body);
   for (uint i = 0; i < 4; ++i) s->size[i] = size(i);
   for (uint i = 0; i < 3; ++i) s->color[i] = .3;
   s->type = object->shapeType;
@@ -472,12 +472,12 @@ void createOrsObject(ors::KinematicWorld& world, ors::Body& body, const ObjectBe
   body.X = t; 
 }
 
-void moveObject(intA& used, const ShapeL& objects, const ors::Vector& pos, const ors::Quaternion& rot) {
+void moveObject(intA& used, const ShapeL& objects, const mlr::Vector& pos, const mlr::Quaternion& rot) {
   double max = std::numeric_limits<double>::max();
   int max_index = -1;
   for(uint i=0; i<objects.N; ++i) {
     if(used.contains(i)) continue;
-    ors::Vector diff_ = objects(i)->X.pos - pos;
+    mlr::Vector diff_ = objects(i)->X.pos - pos;
     double diff = length(ARR(diff_.x, diff_.y, diff_.z));
     if(diff < max) {
       max = diff;
@@ -498,12 +498,12 @@ void ObjectTransformator::step() {
   ShapeL cylinders;
   ShapeL spheres;
   for (int i=geo.shapes.N-1;i>=0;i--) {
-    if (strncmp(geo.shapes(i)->name, "thing", 5) == 0 && geo.shapes(i)->type == ors::cylinderST) {
-      ors::Shape *s = geo.shapes(i);
+    if (strncmp(geo.shapes(i)->name, "thing", 5) == 0 && geo.shapes(i)->type == mlr::ST_cylinder) {
+      mlr::Shape *s = geo.shapes(i);
       cylinders.append(s);
     }
-    else if (strncmp(geo.shapes(i)->name, "thing", 5) == 0 && geo.shapes(i)->type == ors::sphereST) {
-      ors::Shape *s = geo.shapes(i);
+    else if (strncmp(geo.shapes(i)->name, "thing", 5) == 0 && geo.shapes(i)->type == mlr::ST_sphere) {
+      mlr::Shape *s = geo.shapes(i);
       spheres.append(s);
     }
   }
@@ -514,11 +514,11 @@ void ObjectTransformator::step() {
   intA used;
   used.clear();
   for(uint i=0;i<kinect_objects->N && i<spheres.N + cylinders.N;i++){
-    if (kinect_objects->elem(i)->shapeType == ors::cylinderST && c < cylinders.N) {
+    if (kinect_objects->elem(i)->shapeType == mlr::ST_cylinder && c < cylinders.N) {
       moveObject(used, cylinders, kinect_objects->elem(i)->position, kinect_objects->elem(i)->rotation);
       ++c;
     }
-    else if (kinect_objects->elem(i)->shapeType == ors::sphereST && s < spheres.N) {
+    else if (kinect_objects->elem(i)->shapeType == mlr::ST_sphere && s < spheres.N) {
       spheres(s)->X.pos = kinect_objects->elem(i)->position;
       spheres(s)->X.rot = kinect_objects->elem(i)->rotation;
       spheres(s)->rel.setDifference(spheres(s)->body->X, spheres(s)->X);

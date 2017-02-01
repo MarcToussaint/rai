@@ -1,6 +1,39 @@
 #include "RTControllerSimulation.h"
 #include <Motion/taskMaps.h>
+#include "../../../usr/DD/Bachelorarbeit/src/objectGenerator.h"
 
+void force(mlr::KinematicWorld* world, arr& fR) {
+  world->stepSwift();
+  //world->contactsToForces(100.0);
+
+  for(mlr::Proxy* p : world->proxies) {
+    if(world->shapes(p->a)->name == "endeffR" && world->shapes(p->b)->name == "b") {
+      if(p->d <= 0.0) {
+        mlr::Vector trans = p->posB - p->posA;
+        mlr::Vector force = 100.0*trans;
+        mlr::Vector torque = (p->posA - world->shapes(p->a)->body->X.pos) ^ force;
+        fR(0) = force(0);
+        fR(1) = force(1);
+        fR(2) = force(2);
+        fR(3) = torque(0);
+        fR(4) = torque(1);
+        fR(5) = torque(2);
+        cout << fR(2) << endl;
+      }
+    }
+  }
+}
+
+void forceSimulateContactOnly(mlr::KinematicWorld* world, arr& fR) {
+  world->stepSwift();
+  for(mlr::Proxy* p : world->proxies) {
+    if(world->shapes(p->a)->name == "endeffR" && world->shapes(p->b)->name == "b") {
+      if(p->d <= 0.02) {
+        fR(2) = -4.0;
+      }
+    }
+  }
+}
 
 void calcFTintegral(arr& f_errIntegral, const arr& f_ref, const arr& f_obs, const arr& J_ft_inv, const double& f_gamma){
   // check if f_err has same dimension as f_ref, otherwise reset to zero
@@ -33,7 +66,7 @@ void RTControlStep(
     const CtrlMsg& cmd,
     const arr& Kp_base, const arr& Kd_base,
     const arr& limits,
-    ors::Joint* j_baseTranslationRotation
+    mlr::Joint* j_baseTranslationRotation
     ){
 
   //-- PD terms
@@ -98,34 +131,53 @@ void RTControlStep(
     if(velM<0. && u(i)<0.) u(i)*=(1.+velM); //decrease effort close to velocity margin
     if(velM>0. && u(i)>0.) u(i)*=(1.-velM); //decrease effort close to velocity margin
       */
-    clip(u(i), -cmd.effLimitRatio*limits(i,3), cmd.effLimitRatio*limits(i,3));
+    //clip(u(i), -cmd.effLimitRatio*limits(i,3), cmd.effLimitRatio*limits(i,3));
   }
 
 }
 
-RTControllerSimulation::RTControllerSimulation(double tau, bool gravity, double _systematicErrorSdv)
+RTControllerSimulation::RTControllerSimulation(mlr::KinematicWorld realWorld, double tau, bool gravity, double _systematicErrorSdv)
   : Thread("DynmSim", -1.)
   , ctrl_ref(this, "ctrl_ref", true)
   , ctrl_obs(this, "ctrl_obs")
-  , modelWorld(this, "modelWorld")
+  //, modelWorld(this, "modelWorld")
   , tau(tau)
-  , gravity(gravity),
-    stepCount(0),
-    systematicErrorSdv(_systematicErrorSdv){
+  , gravity(gravity)
+  , stepCount(0)
+  , systematicErrorSdv(_systematicErrorSdv) {
+  //world = new mlr::KinematicWorld(realWorld);
+  world = new mlr::KinematicWorld(mlr::mlrPath("data/pr2_model/pr2_model.ors"));
 
+  //Object o(*world);
+  //o.generateObject("b", 0.16, 0.16, 0.1, 0.55, -0.1, 0.55); //0.5 for x
+
+  //Object o(*world);
+  //o.generateObject("b", 0.16, 0.16, 0.1, 0.55, -0.1, 0.55); //0.5 for x
+  //Object ob(*world);
+  //ob.generateObject("trueShape", 0.17, 0.17, 0.12, 0.55, -0.1, 0.55, false);
 }
 
 void RTControllerSimulation::open() {
-  world = new ors::KinematicWorld(modelWorld.get());
+  //world = new mlr::KinematicWorld;
+  //world->copy(modelWorld.get()());
+  //world = new mlr::KinematicWorld(modelWorld.get());
+  //world = new mlr::KinematicWorld(mlr::mlrPath("data/pr2_model/pr2_model.ors"));
+
+
+
+  makeConvexHulls(world->shapes);
   arr q, qDot;
   world->getJointState(q,qDot);
+
+  //makeConvexHulls(world->shapes);
+
   I_term = zeros(q.N);
 
   // read ctrl parameters from dfg file:
   Kp_base.resize(world->q.N).setZero();
   Kd_base.resize(world->q.N).setZero();
   limits.resize(world->q.N,5).setZero();
-  for(ors::Joint* j: world->joints) if(j->qDim()>0){
+  for(mlr::Joint* j: world->joints) if(j->qDim()>0){
     arr *info;
     info = j->ats.find<arr>("gains");  if(info){
       for(uint i=0;i<j->qDim();i++){ Kp_base(j->qIndex+i)=info->elem(0); Kd_base(j->qIndex+i)=info->elem(1); }
@@ -162,7 +214,7 @@ void RTControllerSimulation::step() {
     systematicError.resize(q.N);
     rndGauss(systematicError, systematicErrorSdv, false);
   }
-
+  arr fR = zeros(6);
   if(cmd.q.N==q.N){
 #if 0
     //TODO: use exactly same conditions as in RT controller
@@ -173,8 +225,15 @@ void RTControllerSimulation::step() {
     if(systematicError.N) u += systematicError;
 #endif
 
+
+    //force(world, fR);
+    forceSimulateContactOnly(world, fR);
+    //u(3) = 0.0;
     world->stepDynamics(u, tau, 0., this->gravity);
+
   }
+
+  //cout << fR(2) << endl;
 
   checkNan(q);
   checkNan(qDot);
@@ -187,6 +246,7 @@ void RTControllerSimulation::step() {
   this->ctrl_obs().q = q;
   this->ctrl_obs().qdot = qDot;
   this->ctrl_obs().u_bias = u;
+  this->ctrl_obs().fR = fR;
   this->ctrl_obs.deAccess();
 
   mlr::wait(tau); //TODO: why does this change something??? FISHY!

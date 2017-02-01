@@ -42,11 +42,11 @@ struct RidgeRegression{
   arr getMultiOutputSquaredErrors(const arr& X, const arr& y);
 };
 
-struct DefaultKernelFunction:KernelFunction{
+struct DefaultKernelFunction : KernelFunction{
   enum KernelType{ readFromCfg=0, Gauss=1 } type;
   arr hyperParam1,hyperParam2;
   DefaultKernelFunction(KernelType _type=readFromCfg):type(_type){}
-  virtual double k(const arr& x1, const arr& x2, arr& g1, arr& g2);
+  virtual double k(const arr& x1, const arr& x2, arr& gx1, arr& Hx1);
 };
 extern DefaultKernelFunction defaultKernelFunction;
 
@@ -55,11 +55,14 @@ struct KernelRidgeRegression{
   arr kernelMatrix_lambda; ///< X X^T + lambda I
   arr invKernelMatrix_lambda; ///< (X X^T + lambda I)^-1
   arr alpha; ///< (X X^T + lambda I)^-1 y
-  double sigma; ///< mean squared error on training data; estimate of noise
+  double sigmaSqr; ///< mean squared error on training data; estimate of noise
   double mu; ///< fixed global bias (default=0)
   KernelFunction& kernel;
   KernelRidgeRegression(const arr& X, const arr& y, KernelFunction& kernel=defaultKernelFunction, double lambda=-1, double mu=0.);
-  arr evaluate(const arr& X, arr& bayesSigma2=NoArr);
+  arr evaluate(const arr& X, arr& bayesSigma2=NoArr); ///< returns f(x) and \s^2(x) for a set of points X
+
+  double evaluate(const arr& x, arr& df_x, arr& H, double plusSigma, bool onlySigma); ///< returns f(x) + coeff*\sigma(x) and its gradient and Hessian
+  ScalarFunction getF(double plusSigma);
 };
 
 struct KernelLogisticRegression{
@@ -85,7 +88,6 @@ struct KernelCRF{
 
 struct CrossValidation {
   arr scoreMeans, scoreSDVs, scoreTrains, lambdas;
-
   bool verbose = true;
   
   virtual void  train(const arr& X, const arr& y, double lambda, arr& beta) = 0;

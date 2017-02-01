@@ -126,12 +126,13 @@ struct GaussianProcess {
   void appendDerivativeObservation(const arr& x, double dy, uint i);
   void appendGradientObservation(const arr& x, const arr& dydx);
   
-  void evaluate(const arr& x, double& y, double& sig);   ///< evaluate the GP at some point - returns y and sig (=standard deviation)
+  void evaluate(const arr& x, double& y, double& sig, bool calcSig = true);   ///< evaluate the GP at some point - returns y and sig (=standard deviation)
   void evaluate(const arr& X, arr& Y, arr& S);   ///< evaluate the GP at some array of points - returns all y's and sig's
   double log_likelihood();
   double max_var(); // the variance when no data present
   void gradient(arr& grad, const arr& x);           ///< evaluate the gradient dy/dx of the mean at some point
   void hessianPos (arr& hess, const arr& x);           ///< evaluate the hessian dy/dx1dx2 of the mean at some point
+  void gradientV(arr& grad, const arr& x); ///< variance gradient
   void k_star(const arr& x, arr& k);
   void dk_star(const arr& x, arr& k);
   
@@ -271,7 +272,6 @@ inline void randomFunction(GaussianProcess& gp, arr& Xbase, bool illustrate, boo
   
   gp.obsVar=orgObsVar;
 }
-
 
 
 #ifdef  MLR_IMPLEMENTATION

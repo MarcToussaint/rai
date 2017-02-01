@@ -1,4 +1,4 @@
-double UnconstrainedProblem::lagrangian(arr& dL, arr& HL, const arr& _x){
+double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x){
   //-- evaluate constrained problem and buffer
   if(_x!=x){
     x=_x;
@@ -71,7 +71,7 @@ double UnconstrainedProblem::lagrangian(arr& dL, arr& HL, const arr& _x){
   return L;
 }
 
-void UnconstrainedProblem::aulaUpdate(double lambdaStepsize, double muInc, double *L_x, arr &dL_x, arr &HL_x){
+void LagrangianProblem::aulaUpdate(double lambdaStepsize, double muInc, double *L_x, arr &dL_x, arr &HL_x){
   if(!lambda.N) lambda=zeros(g_x.N);
   if(!kappa .N) kappa =zeros(h_x.N);
 
@@ -92,13 +92,13 @@ void UnconstrainedProblem::aulaUpdate(double lambdaStepsize, double muInc, doubl
   }
 }
 
-bool UnconstrainedProblem::anyTimeAulaUpdateStopCriterion(const arr& dL_x){
+bool LagrangianProblem::anyTimeAulaUpdateStopCriterion(const arr& dL_x){
 //  cout <<"checking gradient norms: dL_x =" <<length(dL_x) <<" df_x=" <<length(df_x) <<endl;
   if(length(dL_x) < .1 * length(df_x)) return true;
   return false;
 }
 
-void UnconstrainedProblem::anyTimeAulaUpdate(double lambdaStepsize, double muInc, double *L_x, arr& dL_x, arr& HL_x){
+void LagrangianProblem::anyTimeAulaUpdate(double lambdaStepsize, double muInc, double *L_x, arr& dL_x, arr& HL_x){
   if(!lambda.N) lambda=zeros(g_x.N);
   if(!kappa .N) kappa =zeros(h_x.N);
 
@@ -159,7 +159,7 @@ uint optConstrained(arr& x, arr& dual, const ConstrainedProblem& P, OptOptions o
 
   ofstream fil(STRING("z."<<MethodName[opt.constrainedMethod]));
 
-  UnconstrainedProblem UCP(P);
+  LagrangianProblem UCP(P);
 
   //uint stopTolInc;
 

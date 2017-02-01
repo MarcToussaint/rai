@@ -97,19 +97,18 @@ template<class T> struct Array {
   /// @name constructors
   Array();
   Array(const Array<T>& a);                 //copy constructor
-  Array(const Array<T>& a, uint i);         //reference constructor
-  Array(const Array<T>& a, uint i, uint j); //reference constructor
-  Array(const Array<T>& a, uint i, uint j, uint k); //reference constructor
   explicit Array(uint D0);
   explicit Array(uint D0, uint D1);
   explicit Array(uint D0, uint D1, uint D2);
   explicit Array(const T* p, uint size);    //reference!
-  Array(std::initializer_list<T> list);
-//  template<class S> Array(std::initializer_list<S> list); //this is only implemented for T=mlr::String and S=const char* !
+  Array(std::initializer_list<T> values);
+  Array(uint D0, std::initializer_list<T> values);
+  Array(uint D0, uint D1, std::initializer_list<T> values);
+  Array(uint D0, uint D1, uint D2, std::initializer_list<T> values);
   Array(mlr::FileToken&); //read from a file
   ~Array();
   
-  Array<T>& operator=(std::initializer_list<T> list);
+  Array<T>& operator=(std::initializer_list<T> values);
   Array<T>& operator=(const T& v);
   Array<T>& operator=(const Array<T>& a);
 
@@ -162,8 +161,9 @@ template<class T> struct Array {
   void setCarray(const T **buffer, uint D0, uint D1);
   void referTo(const T *buffer, uint n);
   void referTo(const Array<T>& a);
-  void referToRange(const Array<T>& a, int i, int I);
-  void referToDim(const Array<T>& a, uint i);
+  void referToRange(const Array<T>& a, int i, int I); // -> referTo(a,{i,I})
+  void referToRange(const Array<T>& a, uint i, int j, int J); // -> referTo(a,{i,I})
+  void referToDim(const Array<T>& a, uint i); // -> referTo
   void referToDim(const Array<T>& a, uint i, uint j);
   void referToDim(const Array<T>& a, uint i, uint j, uint k);
   void takeOver(Array<T>& a);  //a becomes a reference to its previously owned memory!
@@ -172,6 +172,7 @@ template<class T> struct Array {
   
   /// @name access by reference (direct memory access)
   T& elem(int i) const;
+  T& elem(const Array<uint> &I) const;
   T& scalar() const;
   T& first() const;
   T& last(int i=-1) const;
@@ -179,18 +180,18 @@ template<class T> struct Array {
   T& operator()(uint i) const;
   T& operator()(uint i, uint j) const;
   T& operator()(uint i, uint j, uint k) const;
-  T& operator()(const Array<uint> &I) const;
+  Array<T> operator()(std::pair<int, int> I) const;
+  Array<T> operator()(uint i, std::pair<int, int> J) const;
+//  Array<T> operator()(uint i, std::initializer_list<int> J ) const;
+  Array<T> operator()(uint i, uint j, std::initializer_list<int> K) const;
   Array<T> operator[](uint i) const;     // calls referToDim(*this, i)
-  Array<T> refDim(uint i, uint j) const; // calls referToDim(*this, i, j)
-  Array<T> refDim(uint i, uint j, uint k) const; // calls referToDim(*this, i, j, k)
-  Array<T> refRange(int i, int I) const; // calls referToRange(*this, i, I)
-  Array<T> refRange(uint i, int j, int J) const;
+  Array<T> operator[](std::initializer_list<uint> list) const; //-> remove
   Array<T>& operator()(){ return *this; } //TODO: replace by scalar reference!
   T** getCarray(Array<T*>& Cpointers) const;
+
   
   /// @name access by copy
-  uint dim(uint k) const;
-  Array<uint> dim() const;
+  mlr::Array<T> copy() const;
   Array<T> sub(int i, int I) const;
   Array<T> sub(int i, int I, int j, int J) const;
   Array<T> sub(int i, int I, int j, int J, int k, int K) const;
@@ -200,24 +201,28 @@ template<class T> struct Array {
   Array<T> col(uint col_index) const;
   Array<T> cols(uint start_col, uint end_col) const;
 
-  void getMatrixBlock(Array<T>& B, uint lo0, uint lo1) const;
+  /// @name dimensionality access
+  uint dim(uint k) const;
+  Array<uint> dim() const;
+
+  void getMatrixBlock(Array<T>& B, uint lo0, uint lo1) const; // -> return array
   void getVectorBlock(Array<T>& B, uint lo) const;
   void copyInto(T *buffer) const;
   void copyInto2D(T **buffer) const;
   T& min() const;
   T& max() const;
   void minmax(T& minVal, T& maxVal) const;
-  uint minIndex() const;
-  uint maxIndex() const;
-  void maxIndeces(uint& m1, uint& m2) const; //best and 2nd best
-  void maxIndex(uint& i, uint& j) const;
-  void maxIndex(uint& i, uint& j, uint& k) const;
+  uint minIndex() const; // -> argmin
+  uint maxIndex() const; // -> argmax
+  void maxIndeces(uint& m1, uint& m2) const; //best and 2nd best -> remove
+  void maxIndex(uint& i, uint& j) const; //-> remove, or return uintA
+  void maxIndex(uint& i, uint& j, uint& k) const; //-> remove
   int findValue(const T& x) const;
   void findValues(mlr::Array<uint>& indices, const T& x) const;
   bool contains(const T& x) const { return findValue(x)!=-1; }
   bool containsDoubles() const;
-  uint getMemsize() const;
-  void getIndexTuple(Array<uint> &I, uint i) const;
+  uint getMemsize() const; // -> remove
+  void getIndexTuple(Array<uint> &I, uint i) const; // -> remove?
   
   /// @name appending etc
   T& append();
@@ -303,6 +308,14 @@ template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z); //in
 template<class T> Array<T> operator*(const Array<T>& y, const Array<T>& z); //inner product
 template<class T> Array<T> operator*(const Array<T>& y, T z);
 template<class T> Array<T> operator*(T y, const Array<T>& z);
+template<class T> Array<T> operator/(int mustBeOne, const Array<T>& z_tobeinverted);
+template<class T> Array<T> operator/(const Array<T>& y, T z);
+template<class T> Array<T> operator/(const Array<T>& y, const Array<T>& z); //element-wise devision
+template<class T> Array<T> operator|(const Array<T>& A, const Array<T>& B); //A^-1 B
+template<class T> Array<T> operator,(const Array<T>& y, const Array<T>& z); //concat
+
+template<class T> Array<T>& operator<<(Array<T>& x, const Array<T>& y); //append
+
 template<class T> bool operator==(const Array<T>& v, const Array<T>& w);
 template<class T> bool operator==(const Array<T>& v, const T *w);
 template<class T> bool operator!=(const Array<T>& v, const Array<T>& w);
@@ -336,7 +349,7 @@ UpdateOperator(%=)
 BinaryOperator(+ , +=);
 BinaryOperator(- , -=);
 //BinaryOperator(% , *=);
-BinaryOperator(/ , /=);
+//BinaryOperator(/ , /=);
 #undef BinaryOperator
 
 /// @} //name
@@ -416,7 +429,9 @@ typedef mlr::Array<mlr::String*> StringL;
 /// @{
 
 extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional arguments
+extern arrA& NoArrA; //this is a pointer to NULL!!!! I use it for optional arguments
 extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
+extern uintAA& NoUintAA; //this is a pointer to NULL!!!! I use it for optional arguments
 
 //===========================================================================
 /// @}
@@ -440,7 +455,7 @@ typedef std::function<void(arr& y, arr& J, const arr& x)> VectorFunction;
 
 /// a kernel function
 struct KernelFunction {
-  virtual double k(const arr& x1, const arr& x2, arr& g1=NoArr, arr& g2=NoArr) = 0;
+  virtual double k(const arr& x1, const arr& x2, arr& g1=NoArr, arr& Hx1=NoArr) = 0;
   virtual ~KernelFunction(){}
 };
 
@@ -669,6 +684,8 @@ template<class T> mlr::Array<T> max(const mlr::Array<T>& v, uint d);
 
 template<class T> T trace(const mlr::Array<T>& v);
 template<class T> T var(const mlr::Array<T>& v);
+template<class T> mlr::Array<T> mean(const mlr::Array<T>& v);
+template<class T> mlr::Array<T> stdDev(const mlr::Array<T>& v);
 template<class T> T minDiag(const mlr::Array<T>& v);
 template<class T> T absMax(const mlr::Array<T>& x);
 template<class T> T absMin(const mlr::Array<T>& x);
@@ -693,7 +710,7 @@ template<class T> mlr::Array<T> elemWisemax(const T& x,const mlr::Array<T>& y);
 /// @name concatenating arrays together
 /// @{
 
-template<class T> mlr::Array<T> cat(const mlr::Array<T>& y, const mlr::Array<T>& z) { mlr::Array<T> x; x.append(y); x.append(z); return x; }
+template<class T> mlr::Array<T> cat(const mlr::Array<T>& y, const mlr::Array<T>& z) { mlr::Array<T> x(y); x.append(z); return x; }
 template<class T> mlr::Array<T> cat(const mlr::Array<T>& y, const mlr::Array<T>& z, const mlr::Array<T>& w) { mlr::Array<T> x; x.append(y); x.append(z); x.append(w); return x; }
 template<class T> mlr::Array<T> cat(const mlr::Array<T>& a, const mlr::Array<T>& b, const mlr::Array<T>& c, const mlr::Array<T>& d) { mlr::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); return x; }
 template<class T> mlr::Array<T> cat(const mlr::Array<T>& a, const mlr::Array<T>& b, const mlr::Array<T>& c, const mlr::Array<T>& d, const mlr::Array<T>& e) { mlr::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); x.append(e); return x; }
@@ -751,7 +768,6 @@ template<class T> void tensorMultiply(mlr::Array<T> &X, const mlr::Array<T> &Y, 
 template<class T> void tensorAdd(mlr::Array<T> &X, const mlr::Array<T> &Y, const uintA &Yid);
 template<class T> void tensorMultiply_old(mlr::Array<T> &x, const mlr::Array<T> &y, const uintA &d, const uintA &ids);
 template<class T> void tensorDivide(mlr::Array<T> &X, const mlr::Array<T> &Y, const uintA &Yid);
-template<class T> void tensorAdd(mlr::Array<T> &X, const mlr::Array<T> &Y, const uintA &Yid);
 
 
 //===========================================================================
@@ -795,9 +811,10 @@ void blas_MM(arr& X, const arr& A, const arr& B);
 void blas_MsymMsym(arr& X, const arr& A, const arr& B);
 void blas_A_At(arr& X, const arr& A);
 void blas_At_A(arr& X, const arr& A);
+
 void lapack_cholesky(arr& C, const arr& A);
 uint lapack_SVD(arr& U, arr& d, arr& Vt, const arr& A);
-void lapack_mldivide(arr& X, const arr& A, const arr& b);
+void lapack_mldivide(arr& X, const arr& A, const arr& B);
 void lapack_LU(arr& LU, const arr& A);
 void lapack_RQ(arr& R, arr& Q, const arr& A);
 void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs);
@@ -809,6 +826,8 @@ double lapack_determinantSymPosDef(const arr& A);
 inline arr lapack_inverseSymPosDef(const arr& A){ arr Ainv; lapack_inverseSymPosDef(Ainv, A); return Ainv; }
 arr lapack_Ainv_b_sym(const arr& A, const arr& b);
 void lapack_min_Ax_b(arr& x,const arr& A, const arr& b);
+arr lapack_Ainv_b_symPosDef_givenCholesky(const arr& U, const arr&b);
+arr lapack_Ainv_b_triangular(const arr& L, const arr& b);
 
 
 //===========================================================================
@@ -824,12 +843,12 @@ arr comp_At(arr& A);
 arr comp_A_x(arr& A, const arr& x);
 
 struct SpecialArray{
-  enum Type { noneST, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };
+  enum Type { ST_none, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };
   Type type;
   virtual ~SpecialArray(){}
 };
 
-template<class T> bool isNotSpecial(const mlr::Array<T>& X){ return !X.special || X.special->type==SpecialArray::noneST; }
+template<class T> bool isNotSpecial(const mlr::Array<T>& X){ return !X.special || X.special->type==SpecialArray::ST_none; }
 template<class T> bool isRowShifted(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::RowShiftedST; }
 template<class T> bool isSparseMatrix(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseMatrixST; }
 template<class T> bool isSparseVector(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseVectorST; }
@@ -841,7 +860,6 @@ struct RowShifted : SpecialArray {
   uintA rowLen;     ///< number of non-zeros in the row
   uintA colPatches; ///< column-patch: (nd=2,d0=real_d1,d1=2) range of non-zeros in a COLUMN; starts with 'a', ends with 'b'-1
   bool symmetric;   ///< flag: if true, this stores a symmetric (banded) matrix: only the upper triangle
-  arr *nextInSum;
   
   RowShifted(arr& X);
   RowShifted(arr& X, RowShifted &aux);
@@ -862,6 +880,8 @@ inline RowShifted* castRowShifted(arr& X) {
   return dynamic_cast<RowShifted*>(X.special); //((RowShifted*)X.aux);
 }
 
+namespace mlr {
+
 struct SparseVector: SpecialArray{
   uint N; ///< original size
   uintA elems; ///< for every non-zero (in memory order), the index
@@ -875,6 +895,8 @@ struct SparseMatrix : SpecialArray{
   template<class T> SparseMatrix(mlr::Array<T>& X);
   template<class T> SparseMatrix(mlr::Array<T>& X, uint d0);
 };
+
+}//namespace mlr
 
 //struct RowSparseMatrix : SpecialArray {
 //  RowSparseMatrix()

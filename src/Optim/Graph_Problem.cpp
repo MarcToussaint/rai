@@ -15,16 +15,12 @@
 
 #include "Graph_Problem.h"
 
-Graph_ConstrainedProblem::Graph_ConstrainedProblem(GraphProblem& _G) : G(_G){
+Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G) : G(_G){
   G.getStructure(variableDimensions, featureVariables, featureTypes);
   varDimIntegral = integral(variableDimensions);
-
-  ConstrainedProblem::operator=( [this](arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) -> void{
-    f(phi, J, H, tt, x);
-  } );
 }
 
-void Graph_ConstrainedProblem::f(arr& phi, arr& J, arr& H, TermTypeA& tt, const arr& x) {
+void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
   G.phi(phi, J_G, H_G, x);
 
   if(&tt) tt = featureTypes;

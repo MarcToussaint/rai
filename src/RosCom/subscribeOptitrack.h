@@ -19,7 +19,7 @@ struct Optitrack : Thread{
 
   SubscribeOptitrack* sub;
 
-  Optitrack():Thread("Optitrack", -1){}
+  Optitrack() : Thread("Optitrack", -1){}
   ~Optitrack(){}
 
   virtual void open();

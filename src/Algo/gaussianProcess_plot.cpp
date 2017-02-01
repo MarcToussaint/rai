@@ -22,7 +22,7 @@ void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause){
   dim = gp.X.d1 ? gp.X.d1 : gp.dX.d1;
   CHECK(dim > 0, "still no data here. I have no clue about dimensionality!?!");
   
-  X.setGrid(dim, lo, hi, 10000);
+  X.setGrid(dim, lo, hi, 100);
   gp.evaluate(X, Y, S);
   plotClear();
   switch(dim){
@@ -35,9 +35,9 @@ void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause){
       plotPoints(gp.dX, gp.dY);
       break;
     case 2:
-      plotFunction(X, Y);
-      plotFunction(X, Y+S);
-      plotFunction(X, Y-S);
+      //plotFunction(X, Y);
+      //plotFunction(X, Y+S);
+      //plotFunction(X, Y-S);
       plotPoints(gp.X, gp.Y);
       plotPoints(gp.dX, gp.dY);
       break;

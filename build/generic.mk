@@ -27,7 +27,7 @@ ifndef OBJS
 OBJS = main.o
 endif
 ifndef OUTPUT
-OUTPUT = cleanLocks x.exe
+OUTPUT = x.exe
 endif
 ifndef SRCS
 SRCS = $(OBJS:%.o=%.cpp)
@@ -70,7 +70,7 @@ ifeq ($(OPTIM),debug)
 CXXFLAGS := -g -Wall $(CXXFLAGS)#-Wno-int-to-pointer-cast#-Wno-invalid-offsetof
 endif
 ifeq ($(OPTIM),fast_debug)
-CXXFLAGS := -g -O3 -Wall $(CXXFLAGS)
+CXXFLAGS := -g -O -Wall $(CXXFLAGS)
 endif
 ifeq ($(OPTIM),penibel)
 CXXFLAGS := -g -Wall -Wextra $(CXXFLAGS)
@@ -136,6 +136,7 @@ CXXFLAGS := $(DEPEND:%=-DMLR_%) $(CXXFLAGS)
 # export Linux/MSVC include/lib paths
 #
 ################################################################################
+
 CPATH := $(CPATH):$(CPATHS:%=:%:)
 LPATH := $(LPATH):$(LPATHS:%=:%:)
 LDFLAGS += $(LPATHS:%=-L%)
@@ -168,7 +169,7 @@ cleanLocks: force
 
 cleanAll: force
 	@find $(BASE) -type d -name 'Make.lock' -delete -print
-	@find $(BASE) \( -type f -or -type l \) \( -name '*.o' -or -name 'lib*.so' -or -name 'lib*.a' \) -delete -print
+	@find $(BASE) \( -type f -or -type l \) \( -name '*.o' -or -name 'lib*.so' -or -name 'lib*.a' -or -name 'x.exe' \) -delete -print
 
 cleanLibs: force
 	@find $(BASE)/lib -type f \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
@@ -341,7 +342,12 @@ runPath/%: %
 cleanPath/%: %
 	@echo "                                                ***** clean " $*
 	@-rm -f $*/Makefile.dep
-	@-$(MAKE) -C $* -f makefile clean --no-print-directory
+	@-$(MAKE) -C $* -f Makefile clean --no-print-directory
+
+cleanPath/%: $(BASE)/src/%
+	@echo "                                                ***** clean " $<
+	@-rm -f $</Makefile.dep
+	@-$(MAKE) -C $< -f Makefile clean --no-print-directory
 
 makePythonPath/%: %
 	make --directory=$< pywrapper

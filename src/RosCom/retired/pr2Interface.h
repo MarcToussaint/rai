@@ -4,7 +4,7 @@
 #include <Core/thread.h>
 #include <Core/array.h>
 #include <RosCom/roscom.h>
-#include <Ors/ors.h>
+#include <Kin/kin.h>
 #include <RosCom/pr2DynamicSimulation.h>
 #include <Control/taskSpaceController.h>
 #include <RosCom/subscribeAlvarMarkers.h>
@@ -14,8 +14,8 @@ struct PR2Interface : Thread {
   ACCESS(CtrlMsg, ctrl_obs)
   ACCESS(AlvarMarkers, ar_pose_markers)
 
-  ors::KinematicWorld* realWorld;
-  ors::KinematicWorld* modelWorld;
+  mlr::KinematicWorld* realWorld;
+  mlr::KinematicWorld* modelWorld;
 
   DynamicSimulation* dynamicSimulation;
 
@@ -35,8 +35,8 @@ struct PR2Interface : Thread {
   ~PR2Interface() {threadCloseModules();}
   virtual void step();
 
-  void initialize(ors::KinematicWorld* realWorld, ors::KinematicWorld* realWorldSimulation, ors::KinematicWorld* modelWorld, TaskSpaceController* controller = NULL);
-  void initialize(ors::KinematicWorld* realWorld, ors::KinematicWorld* modelWorld, TaskSpaceController* controller = NULL);
+  void initialize(mlr::KinematicWorld* realWorld, mlr::KinematicWorld* realWorldSimulation, mlr::KinematicWorld* modelWorld, TaskSpaceController* controller = NULL);
+  void initialize(mlr::KinematicWorld* realWorld, mlr::KinematicWorld* modelWorld, TaskSpaceController* controller = NULL);
   void startInterface();
   void sendCommand(const arr& u0, const arr& Kp, const arr& Kd, const arr& K_ft, const arr& J_ft_inv, const arr& fRef, const double& gamma);
   void goToPosition(arr pos, mlr::String shape, double executionTime = 10.0, bool useMotionPlaner = true, mlr::String name = "goToPosition");
@@ -51,6 +51,6 @@ struct PR2Interface : Thread {
   void clearLog();
 };
 
-void showTrajectory(const arr& traj, ors::KinematicWorld& _world, bool copyWorld = true, double delay = 0.03, mlr::String text = "");
+void showTrajectory(const arr& traj, mlr::KinematicWorld& _world, bool copyWorld = true, double delay = 0.03, mlr::String text = "");
 
 #endif // PR2INTERFACE_H
