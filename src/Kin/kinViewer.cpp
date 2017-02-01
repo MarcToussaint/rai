@@ -74,6 +74,25 @@ void OrsPathViewer::step(){
 void changeColor(void*){  orsDrawColors=false; glColor(.5, 1., .5, .7); }
 void changeColor2(void*){  orsDrawColors=true; orsDrawAlpha=1.; }
 
+OrsPoseViewer::OrsPoseViewer(const StringA& poseVarNames, const mlr::KinematicWorld& world, double beatIntervalSec)
+  : Thread("OrsPoseViewer", beatIntervalSec){
+  for(const String& varname: poseVarNames){
+    poses.append( new Access_typed<arr>(this, varname, true) );
+    copies.append( new mlr::KinematicWorld() );
+  }
+  copy = world;
+  computeMeshNormals(copy.shapes);
+  for(mlr::KinematicWorld *w: copies) w->copy(copy, true);
+}
+
+void OrsPoseViewer::recopyKinematics(const mlr::KinematicWorld& world){
+  stepMutex.lock();
+  copy = world;
+  computeMeshNormals(copy.shapes);
+  for(mlr::KinematicWorld *w: copies) w->copy(copy, true);
+  stepMutex.unlock();
+}
+
 void OrsPoseViewer::open() {
   gl.add(glStandardScene, 0);
   gl.camera.setDefault();
@@ -84,9 +103,9 @@ void OrsPoseViewer::open() {
     gl.add(changeColor);
   }
   gl.add(changeColor2);
-  gl.camera.focus(0.6, -0.1, 0.65);
-  gl.width = 1280;
-  gl.height = 960;
+  //  gl.camera.focus(0.6, -0.1, 0.65);
+  //  gl.width = 1280;
+  //  gl.height = 960;
 }
 
 void OrsPoseViewer::step(){
@@ -110,9 +129,25 @@ void ComputeCameraView::open(){
 void ComputeCameraView::step(){
   if(!frame--){
     modelWorld.readAccess();
+
+#if 1
+    mlr::Shape *kinectShape = modelWorld().getShapeByName("endeffKinect");
+    if(kinectShape){ //otherwise 'copy' is not up-to-date yet
+      gl.lock.writeLock();
+      gl.camera.setKinect();
+      gl.camera.X = kinectShape->X * gl.camera.X;
+      gl.renderInBack(true, true, 580, 480);
+      cameraView.set() = gl.captureImage;
+//      modelDepthView.set() = gl.captureDepth;
+      gl.lock.unlock();
+    }
+    modelWorld.deAccess();
+#else
     gl.renderInBack();
     modelWorld.deAccess();
     cameraView.set() = gl.captureImage;
+#endif
+
     frame=skipFrames;
   }
 }

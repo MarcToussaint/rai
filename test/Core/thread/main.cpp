@@ -24,7 +24,7 @@ void TEST(Thread){
   MyThread t1(x, 1, .5), t2(x, 2, .5);
 
   t1.threadLoop();
-  t2.listenTo(x); //whenever t1 modifies x, t2 is stepped
+  t2.listenTo(x.revLock); //whenever t1 modifies x, t2 is stepped
   
   mlr::wait(3.);
 

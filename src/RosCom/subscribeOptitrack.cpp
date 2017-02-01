@@ -3,11 +3,11 @@
 
 void Optitrack::open()
 {
-  this->listenTo(*tf_messages.data);
+  this->listenTo(tf_messages.data->revLock);
   sub = new SubscribeOptitrack();
 }
 void Optitrack::close(){
-  this->stopListenTo(*tf_messages.data);
+  this->stopListenTo(tf_messages.data->revLock);
   delete sub;
 }
 

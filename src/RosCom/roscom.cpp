@@ -418,7 +418,7 @@ void initialSyncJointStateWithROS(mlr::KinematicWorld& world,
        << "   If nothing is happening: is the controller running?" << endl;
 
   for (uint trials = 0; trials < 20; trials++) {
-    ctrl_obs.data->waitForNextRevision();
+    ctrl_obs.waitForNextRevision();
     cout << "REMOTE joint dimension=" << ctrl_obs.get()->q.N << endl;
     cout << "LOCAL  joint dimension=" << world.q.N << endl;
 
@@ -439,7 +439,7 @@ void syncJointStateWitROS(mlr::KinematicWorld& world,
   if (not useRos) { return; }
 
   for (uint trials = 0; trials < 2; trials++) {
-    ctrl_obs.data->waitForNextRevision();
+    ctrl_obs.waitForNextRevision();
 
     if (ctrl_obs.get()->q.N == world.q.N and ctrl_obs.get()->qdot.N == world.q.N) {
       // set current state

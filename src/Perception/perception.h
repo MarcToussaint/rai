@@ -41,7 +41,7 @@ struct GenericDisplayViewer : Thread {
     : Thread("GenericDisplayViewer", -1.)
     , gl(NULL)
     , var(this, var_name, true){}
-  virtual void open(){ gl = new OpenGL(STRING("ImageViewer '"<<var.data->name()<<'\'')); }
+  virtual void open(){ gl = new OpenGL(STRING("GenericDisplayViewer '"<<var.data->name()<<'\'')); }
   virtual void step(){
     gl->background = var.get()->display;
     if(gl->height!= gl->background.d0 || gl->width!= gl->background.d1)
@@ -181,28 +181,6 @@ BEGIN_MODULE(AudioReader)    AudioPoller_PA *poller; ACCESS(byteA, pcms16ne2c) E
 BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; ACCESS(byteA, pcms16ne2c) END_MODULE()
 #else
 
-struct ImageViewer : Thread {
-  struct sImageViewer *s;
-  Access_typed<byteA> img;
-  ImageViewer(const char* img_name="rgb") : Thread(STRING("ImageViewer_"<<img_name), -1), img(this, img_name, true){}
-  ~ImageViewer(){}
-  void open();
-  void step();
-  void close();
-};
-
-struct PointCloudViewer : Thread {
-  struct sPointCloudViewer *s;
-  Access_typed<arr> pts;
-  Access_typed<arr> cols;
-  PointCloudViewer(const char* pts_name="kinect_points", const char* cols_name="kinect_pointColors")
-    : Thread(STRING("PointCloudViewer_"<<pts_name <<'_' <<cols_name), .1),
-      pts(this, pts_name),
-      cols(this, cols_name){}
-  void open();
-  void step();
-  void close();
-};
 
 struct OpencvCamera : Thread {
   struct sOpencvCamera *s;

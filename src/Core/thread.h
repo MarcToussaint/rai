@@ -38,7 +38,7 @@ void close(const ThreadL& P);
 /// a basic read/write access lock
 struct RWLock {
   pthread_rwlock_t lock;
-  int state; ///< -1==write locked, positive=numer of readers, 0=unlocked
+  int state;         ///< -1==write locked, positive=numer of readers, 0=unlocked
   Mutex stateMutex;
   RWLock();
   ~RWLock();
@@ -81,7 +81,7 @@ struct ConditionVariable {
 // Timing helpers
 //
 
-/// a simple struct to realize a strict tic tac timing (call step() once in a loop)
+/// a simple struct to realize a strict tic tac timing (called in step() once in a loop)
 struct Metronome {
   double ticInterval;
   timespec ticTime;
@@ -94,7 +94,7 @@ struct Metronome {
   double getTimeSinceTic();       ///< time since last tic
 };
 
-/// a really simple thing to meassure cycle and busy times
+/// to meassure cycle and busy times
 struct CycleTimer {
   uint steps;
   double busyDt, busyDtMean, busyDtMax;  ///< internal variables to measure step time
@@ -128,6 +128,7 @@ struct Thread{
 #else
   struct sThread *thread;
 #endif
+  Mutex stepMutex;
   uint step_count;
   Metronome metronome;          ///< used for beat-looping
   CycleTimer timer;
@@ -146,12 +147,12 @@ struct Thread{
   virtual ~Thread();
 
   /// @name to be called from `outside' (e.g. the main) to start/step/close the thread
-  void threadOpen(int priority=0);      ///< start the thread (in idle mode) (should be positive for changes)
+  void threadOpen(bool wait=false, int priority=0);      ///< start the thread (in idle mode) (should be positive for changes)
   void threadClose();                   ///< close the thread (stops looping and waits for idle mode before joining the thread)
   void threadStep(uint steps=1, bool wait=false);     ///< trigger (multiple) step (idle -> working mode) (wait until idle? otherwise calling during non-idle -> error)
   void threadLoop();                    ///< loop, either with fixed beat or at full speed
 //  void threadLoopWithBeat(double beatIntervalSec);  ///< loop with a fixed beat (cycle time)
-  void threadStop();                    ///< stop looping
+  void threadStop(bool wait=false);     ///< stop looping
   void threadCancel();                  ///< a hard kill (pthread_cancel) of the thread
 
   void waitForOpened();                 ///< caller waits until opening is done (working -> idle mode)
@@ -198,16 +199,14 @@ struct Thread{
 // access gated (rwlocked) variables (shared memory)
 //
 
-/// Deriving from this allows to make variables/classes revisioned read-write access gated
+/// This RW lock counts revisions and broadcasts accesses to listeners; who is accessing can be logged; it has a unique name
 struct RevisionedRWLock {
-  mlr::String name;           ///< AccessData name
   RWLock rwlock;              ///< rwLock (usually handled via read/writeAccess)
   ConditionVariable revision; ///< revision (= number of write accesses) number
   int last_revision;          ///< last revision that has been accessed (read or write)
   double revision_time;       ///< clock time of last write access
   double data_time;           ///< time stamp of the original data source
   ThreadL listeners;          ///< list of threads that are being signaled a threadStep on write access
-  struct Node* registryNode;  ///< these objects are globally registered, so that new Accesses can connect with them
 
   /// @name c'tor/d'tor
   virtual ~RevisionedRWLock();
@@ -226,16 +225,31 @@ struct RevisionedRWLock {
   double revisionTime();
   int revisionNumber();
 };
-inline void operator<<(ostream& os, const RevisionedRWLock& v){ os <<"AccessData '" <<v.name <<'\''; }
+
 
 //===========================================================================
+
+template<class T>
+struct RToken{
+  RevisionedRWLock& revLock;
+  T *x;
+  Thread *th;
+  RToken(RevisionedRWLock& _revLock, T *var, Thread* th=NULL) : revLock(_revLock), x(var), th(th){ revLock.readAccess(th); }
+  ~RToken(){ revLock.deAccess(th); }
+  const T* operator->(){ return x; }
+  operator const T&(){ return *x; }
+  const T& operator()(){ return *x; }
+};
 
 template<class T>
 struct WToken{
   RevisionedRWLock& revLock;
   T *x;
-  WToken(RevisionedRWLock& _revLock, T *var) : revLock(_revLock), x(var){ revLock.writeAccess(); }
-  ~WToken(){ revLock.deAccess(); }
+  Thread *th;
+  WToken(RevisionedRWLock& _revLock, T *var, Thread* th=NULL) : revLock(_revLock), x(var), th(th){ revLock.writeAccess(th); }
+  WToken(const double& dataTime, RevisionedRWLock& _revLock, T *var, Thread* th=NULL) : revLock(_revLock), x(var), th(th){ revLock.writeAccess(th); revLock.data_time=dataTime; }
+
+  ~WToken(){ revLock.deAccess(th); }
   void operator=(const T& y){ *x=y; }
   T* operator->(){ return x; }
   operator T&(){ return *x; }
@@ -246,45 +260,42 @@ struct WToken{
 
 /// A variable is an access gated data field of type T
 template<class T>
-struct AccessData : RevisionedRWLock{
+struct AccessData {
+  RevisionedRWLock revLock;
   T value;
+  mlr::String name;           ///< name
+  struct Node* registryNode;  ///< these objects are globally registered, so that new Accesses can connect with them
+
 
   AccessData() = default;
   AccessData(const AccessData&){ HALT("not allowed"); }
   void operator=(const AccessData&){ HALT("not allowed"); }
-//  ReadToken get(Thread *th=NULL){ return ReadToken(this, th); } ///< read access to the variable's data
-//  WriteToken set(Thread *th=NULL){ return WriteToken(this, th); } ///< write access to the variable's data
-//  WriteToken set(const double& dataTime, Thread *th=NULL){ return WriteToken(dataTime, this, th); } ///< write access to the variable's data
+  RToken<T> get(Thread *th=NULL){ return RToken<T>(revLock, &value, th); } ///< read access to the variable's data
+  WToken<T> set(Thread *th=NULL){ return WToken<T>(revLock, &value, th); } ///< write access to the variable's data
+  WToken<T> set(const double& dataTime, Thread *th=NULL){ return WToken<T>(dataTime, revLock, &value, th); } ///< write access to the variable's data
+
 };
 
-inline bool operator==(const RevisionedRWLock&,const RevisionedRWLock&){ return false; }
+template<class T> bool operator==(const AccessData<T>&,const AccessData<T>&){ return false; }
+template<class T> void operator<<(ostream& os, const AccessData<T>& v){ os <<"AccessData '" <<v.name <<'\''; }
+
 
 //===========================================================================
 
 //-- Token-wise access
-template<class T>
-struct ReadToken{
-  AccessData<T> *v;
-  Thread *th;
-  ReadToken(AccessData<T> *v, Thread *th):v(v), th(th){ v->readAccess(th); }
-  ~ReadToken(){ v->deAccess(th); }
-  const T* operator->(){ return &v->value; }
-  operator const T&(){ return v->value; }
-  const T& operator()(){ return v->value; }
-};
 
-template<class T>
-struct WriteToken{
-  AccessData<T> *v;
-  Thread *th;
-  WriteToken(AccessData<T> *v, Thread *th):v(v), th(th){ v->writeAccess(th); }
-  WriteToken(const double& dataTime, AccessData<T> *v, Thread *th):v(v), th(th){ v->writeAccess(th); v->data_time=dataTime; }
-  ~WriteToken(){ v->deAccess(th); }
-  WriteToken& operator=(const T& x){ v->value=x; return *this; }
-  T* operator->(){ return &v->value; }
-  operator T&(){ return v->value; }
-  T& operator()(){ return v->value; }
-};
+//template<class T>
+//struct WriteToken{
+//  AccessData<T> *v;
+//  Thread *th;
+//  WriteToken(AccessData<T> *v, Thread *th):v(v), th(th){ v->writeAccess(th); }
+//  WriteToken(const double& dataTime, AccessData<T> *v, Thread *th):v(v), th(th){ v->writeAccess(th); v->data_time=dataTime; }
+//  ~WriteToken(){ v->deAccess(th); }
+//  WriteToken& operator=(const T& x){ v->value=x; return *this; }
+//  T* operator->(){ return &v->value; }
+//  operator T&(){ return v->value; }
+//  T& operator()(){ return v->value; }
+//};
 
 //===========================================================================
 //
@@ -295,7 +306,7 @@ struct WriteToken{
     is the base class of Access_typed */
 
 struct Access{
-  mlr::String name; ///< name; by default the access' name; redefine to a variable's name to autoconnect
+  mlr::String name; ///< name; by default the RevLock's name; redefine to a variable's name to autoconnect
   Thread *thread;  ///< which module is this a member of
   RevisionedRWLock *revLock;   ///< which variable does it access
   struct Node* registryNode;
@@ -342,7 +353,7 @@ struct Access_typed : Access{
       data->name = name;
       data->registryNode = vnode;
     }
-    revLock = dynamic_cast<RevisionedRWLock*>(data);
+    revLock = &data->revLock; //dynamic_cast<RevisionedRWLock*>(data);
     if(thread){
       registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
       if(moduleListens) thread->listenTo(*revLock);
@@ -352,11 +363,11 @@ struct Access_typed : Access{
   }
 
   ~Access_typed(){ delete registryNode; }
-  T& operator()(){ CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return data->value; }
-  T* operator->(){ CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return &(data->value); }
-  ReadToken<T> get(){ return ReadToken<T>(data, thread); } ///< read access to the variable's data
-  WriteToken<T> set(){ return WriteToken<T>(data, thread); } ///< write access to the variable's data
-  WriteToken<T> set(const double& dataTime){ return WriteToken<T>(dataTime, data, thread); } ///< write access to the variable's data
+  T& operator()(){ CHECK(data->revLock.rwlock.isLocked(),"direct variable access without locking it before");  return data->value; }
+  T* operator->(){ CHECK(data->revLock.rwlock.isLocked(),"direct variable access without locking it before");  return &(data->value); }
+  RToken<T> get(){ return RToken<T>(data->revLock, &data->value, thread); } ///< read access to the variable's data
+  WToken<T> set(){ return WToken<T>(data->revLock, &data->value, thread); } ///< write access to the variable's data
+  WToken<T> set(const double& dataTime){ return WToken<T>(dataTime, data->revLock, &data->value, thread); } ///< write access to the variable's data
 };
 
 inline bool operator==(const Access&,const Access&){ return false; }

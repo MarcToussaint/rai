@@ -417,7 +417,7 @@ Thread::~Thread() {
   delete registryNode;
 }
 
-void Thread::threadOpen(int priority) {
+void Thread::threadOpen(bool wait, int priority) {
   state.lock();
   if(!isClosed()){ state.unlock(); return; } //this is already open -- or has just beend opened (parallel call to threadOpen)
 #ifndef MLR_QThread
@@ -442,6 +442,7 @@ void Thread::threadOpen(int priority) {
 #endif
   state.value=tsOPENING;
   state.unlock();
+  if(wait) waitForOpened();
 }
 
 void Thread::threadClose() {
@@ -525,9 +526,12 @@ void Thread::threadLoop() {
 //  state.setValue(tsBEATING);
 //}
 
-void Thread::threadStop() {
-  CHECK(!isClosed(), "called stop to closed thread");
-  state.setValue(tsIDLE);
+void Thread::threadStop(bool wait) {
+  //CHECK(!isClosed(), "called stop to closed thread");
+  if(!isClosed()){
+    state.setValue(tsIDLE);
+    if(wait) waitForIdle();
+  }
 }
 
 void Thread::main() {
@@ -573,7 +577,9 @@ void Thread::main() {
     //-- make a step
     //engine().acc->logStepBegin(module);
     timer.cycleStart();
+    stepMutex.lock();
     step(); //virtual step routine
+    stepMutex.unlock();
     step_count++;
     timer.cycleDone();
     //engine().acc->logStepEnd(module);
