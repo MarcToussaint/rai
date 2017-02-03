@@ -2738,6 +2738,14 @@ mlr::KinematicSwitch::KinematicSwitch()
   jB.setZero();
 }
 
+mlr::KinematicSwitch::KinematicSwitch(OperatorSymbol op, JointType type, const char* ref1, const char* ref2, const mlr::KinematicWorld& K, uint _timeOfApplication, const mlr::Transformation& jFrom, const mlr::Transformation& jTo)
+  : symbol(op), jointType(type), timeOfApplication(_timeOfApplication), fromId(UINT_MAX), toId(UINT_MAX){
+  if(ref1) fromId = K.getShapeByName(ref1)->index;
+  if(ref2) toId = K.getShapeByName(ref2)->index;
+  if(&jFrom) jA = jFrom;
+  if(&jTo)   jB = jTo;
+}
+
 #define STEP(t) (floor(t*double(stepsPerPhase) + .500001))-1
 
 void mlr::KinematicSwitch::setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T){
