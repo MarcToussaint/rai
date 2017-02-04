@@ -406,7 +406,7 @@ void sPhysXInterface::unlockJoint(PxD6Joint *joint, mlr::Joint *ors_joint) {
 }
 
 void sPhysXInterface::addBody(mlr::Body *b, physx::PxMaterial *mMaterial) {
-  PxRigidDynamic* actor;
+  PxRigidDynamic* actor=NULL;
   switch(b->type) {
     case mlr::BT_static:
       actor = (PxRigidDynamic*) mPhysics->createRigidStatic(OrsTrans2PxTrans(b->X));
