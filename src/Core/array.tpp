@@ -1237,8 +1237,7 @@ template<class T> void mlr::Array<T>::setDiag(const T& x, int d) {
   if(d!=-1) resize(d, d);
   if(d==-1) d=(int)mlr::MIN(d0, d1);
   setZero();
-  uint i;
-  for(i=0; i<(uint)d; i++) operator()(i, i)=x;
+  for(uint i=0; i<(uint)d; i++) p[i*d+i]=x; //operator()(i, i)=x;
   //mtype=diagMT;
 }
 

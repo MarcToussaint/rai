@@ -2498,7 +2498,13 @@ arr mlr::KinematicWorld::getHmetric() const{
   for(mlr::Joint *j:joints){
     double h=j->H;
     CHECK(h>0.,"Hmetric should be larger than 0");
-    for(uint k=0;k<j->qDim();k++) H(j->qIndex+k)=h;
+    if(j->type==JT_transXYPhi){
+      H(j->qIndex+0)=h*10.;
+      H(j->qIndex+1)=h*10.;
+      H(j->qIndex+2)=h;
+    }else{
+      for(uint k=0;k<j->qDim();k++) H(j->qIndex+k)=h;
+    }
   }
   return H;
 }

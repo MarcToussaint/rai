@@ -1322,12 +1322,13 @@ void blas_MM(arr& X, const arr& A, const arr& B) {
 }
 
 void blas_A_At(arr& X, const arr& A) {
-  X.resize(A.d0, A.d0);
+  uint n=A.d0;
+  X.resize(n,n);
   cblas_dsyrk(CblasRowMajor, CblasUpper, CblasNoTrans,
               X.d0, A.d1,
               1.f, A.p, A.d1,
               0., X.p, X.d1);
-  for(uint i=0; i<X.d0; i++) for(uint j=0; j<i; j++) X(i,j) = X(j,i);
+  for(uint i=0; i<n; i++) for(uint j=0; j<i; j++) X.p[i*n+j] = X.p[j*n+i]; //fill in the lower triangle
 #if 0//test
   mlr::useLapack=false;
   std::cout  <<"blas_MM error = " <<maxDiff(A*~A, X, 0) <<std::endl;
@@ -1336,12 +1337,13 @@ void blas_A_At(arr& X, const arr& A) {
 }
 
 void blas_At_A(arr& X, const arr& A) {
-  X.resize(A.d1, A.d1);
+  uint n=A.d1;
+  X.resize(n,n);
   cblas_dsyrk(CblasRowMajor, CblasUpper, CblasTrans,
               X.d0, A.d0,
               1.f, A.p, A.d1,
               0., X.p, X.d1);
-  for(uint i=0; i<X.d0; i++) for(uint j=0; j<i; j++) X(i,j) = X(j,i);
+  for(uint i=0; i<n; i++) for(uint j=0; j<i; j++) X.p[i*n+j] = X.p[j*n+i]; //fill in the lower triangle
 #if 0//test
   mlr::useLapack=false;
   std::cout  <<"blas_MM error = " <<maxDiff(~A*A, X, 0) <<std::endl;
@@ -1409,7 +1411,7 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
     if(!isRowShifted(A)) {
       dposv_((char*)"L", &N, &NRHS, Acol.p, &N, x.p, &N, &INFO);
     } else {
-      //assumes symmetric and upper triangle (see check's above)
+      //assumes symmetric and upper banded
       dpbsv_((char*)"L", &N, &KD, &NRHS, Acol.p, &LDAB, x.p, &N, &INFO);
     }
   }catch(...){
@@ -1599,8 +1601,7 @@ void lapack_inverseSymPosDef(arr& Ainv, const arr& A) {
   dpotri_((char*)"L", &N, Ainv.p, &N, &INFO);
   CHECK(!INFO, "lapack_inverseSymPosDef error info = " <<INFO);
   //fill in the lower triangular elements
-  uint i, j;
-  for(i=0; i<(uint)N; i++) for(j=0; j<i; j++) Ainv(i, j)=Ainv(j, i);
+  for(uint i=0; i<(uint)N; i++) for(uint j=0; j<i; j++) Ainv.p[i*N+j]=Ainv.p[j*N+i]; //fill in the lower triangle
 }
 
 double lapack_determinantSymPosDef(const arr& A) {
