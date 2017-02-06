@@ -1063,7 +1063,10 @@ void mlr::KinematicWorld::analyzeJointStateDimensions() {
 uint mlr::KinematicWorld::getJointStateDimension(int agent) const {
   if(agent==-1) agent=q_agent;
   CHECK(agent!=INT_MAX,"");
-  if(!qdim.N) ((KinematicWorld*)this)->analyzeJointStateDimensions();
+  if(!qdim.N){
+    CHECK(!q.N && !qdim.N,"you've change q-dim (locked joints?) without clearing q,qdot");
+    ((KinematicWorld*)this)->analyzeJointStateDimensions();
+  }
   CHECK((uint)agent<qdim.N,"don't have that agent (analyzeJointStateDimensions before?)");
   return qdim(agent);
 }
@@ -2021,6 +2024,7 @@ void mlr::KinematicWorld::init(const Graph& G) {
     Body *b=new Body(*this);
     if(n->keys.N>1) b->name=n->keys.last();
     b->ats.copy(n->graph(), false, true);
+    if(n->keys.N>2) b->ats.newNode<bool>({n->keys.last(-1)});
     b->parseAts();
   }
 
@@ -2040,6 +2044,7 @@ void mlr::KinematicWorld::init(const Graph& G) {
     }
     if(n->keys.N>1) s->name=n->keys.last();
     s->ats.copy(n->graph(), false, true);
+    if(n->keys.N>2) s->ats.newNode<bool>({n->keys.last(-1)});
     s->parseAts();
   }
   
@@ -2057,6 +2062,7 @@ void mlr::KinematicWorld::init(const Graph& G) {
     Joint *j=new Joint(*this, from, to);
     if(n->keys.N>1) j->name=n->keys.last();
     j->ats.copy(n->graph(), false, true);
+    if(n->keys.N>2) j->ats.newNode<bool>({n->keys.last(-1)});
     j->parseAts();
 
     //if the joint is coupled to another:
