@@ -4,7 +4,7 @@
 #include <Gui/opengl.h>
 #include <Geo/geo.h>
 
-struct Kinect2PointCloud: Thread{
+struct Kinect2PointCloud : Thread{
   ACCESS(byteA, kinect_rgb)
   ACCESSlisten(uint16A, kinect_depth)
 

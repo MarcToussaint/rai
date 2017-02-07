@@ -566,7 +566,7 @@ int x11_getKey(){
   XMapWindow(disp, win);
 
   GC gc = XCreateGC(disp, win, 0, NULL);
-  XSetFont(disp, gc,  XLoadFont(disp,"-adobe-courier-bold-r-*-*-*-220-*-*-*-*-*-*"));
+  XSetFont(disp, gc,  XLoadFont(disp,"fixed")); //-adobe-courier-bold-r-*-*-*-220-*-*-*-*-*-*"));
   XSetForeground(disp, gc, 0x606060);
 
   bool quit=false;

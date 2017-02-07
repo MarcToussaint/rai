@@ -164,7 +164,7 @@ struct SubscriberConvNoHeader : SubscriberType{
     if(mlr::getParameter<bool>("useRos")){
       nh = new ros::NodeHandle;
       registry().newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
-      cout <<"subscibing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> ..." <<std::flush;
+      cout <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> ..." <<std::flush;
       sub = nh->subscribe( topic_name, 1, &SubscriberConvNoHeader::callback, this);
       cout <<"done" <<endl;
     }
@@ -174,7 +174,7 @@ struct SubscriberConvNoHeader : SubscriberType{
     if(mlr::getParameter<bool>("useRos")){
       nh = new ros::NodeHandle;
       registry().newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
-      cout <<"subscibing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> ..." <<std::flush;
+      cout <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> ..." <<std::flush;
       sub = nh->subscribe( topic_name, 1, &SubscriberConvNoHeader::callback, this);
       cout <<"done" <<endl;
     }
