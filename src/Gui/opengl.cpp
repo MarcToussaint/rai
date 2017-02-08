@@ -949,10 +949,23 @@ struct CstyleDrawer : GLDrawer{
   void glDraw(OpenGL&){ call(classP); }
 };
 
+struct CstyleInitCall : OpenGL::GLInitCall{
+  void *classP;
+  void (*call)(void*);
+  CstyleInitCall(void (*call)(void*), void* classP): classP(classP), call(call){}
+  bool glInit(OpenGL&){ call(classP); return true; }
+};
+
 /// add a draw routine
 void OpenGL::add(void (*call)(void*), void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
   drawers.append(new CstyleDrawer(call, classP));
+}
+
+/// add a draw routine
+void OpenGL::addInit(void (*call)(void*), void* classP) {
+  CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
+  initCalls.append(new CstyleInitCall(call, classP));
 }
 
 /// add a draw routine to a view

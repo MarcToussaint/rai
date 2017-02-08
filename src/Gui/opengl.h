@@ -176,6 +176,7 @@ struct OpenGL {
   /// @name adding drawing routines and callbacks
   void clear();
   void add(void (*call)(void*), void* classP=NULL);
+  void addInit(void (*call)(void*), void* classP=NULL);
   void add(GLDrawer& c){ drawers.append(&c); }
   void addDrawer(GLDrawer *c){ drawers.append(c); }
   void remove(void (*call)(void*), const void* classP=0);
