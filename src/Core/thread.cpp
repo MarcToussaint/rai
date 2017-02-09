@@ -87,31 +87,61 @@ ConditionVariable::ConditionVariable(int initialValue) {
 }
 
 ConditionVariable::~ConditionVariable() {
+  for(ConditionVariable *c:listensTo){
+    c->lock();
+    c->listeners.removeValue(this);
+    c->unlock();
+  }
+  for(ConditionVariable *c:listeners){
+    c->lock();
+    c->listensTo.removeValue(this);
+    c->unlock();
+  }
+
   int rc = pthread_cond_destroy(&cond);    if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
-void ConditionVariable::setValue(int i, bool signalOnlyFirstInQueue) {
+void ConditionVariable::setValue(int i, ConditionVariable* excludeListener) {
   mutex.lock();
   value=i;
-  broadcast(signalOnlyFirstInQueue);
+  broadcast(excludeListener);
   mutex.unlock();
 }
 
-int ConditionVariable::incrementValue(bool signalOnlyFirstInQueue) {
+int ConditionVariable::incrementValue(ConditionVariable* excludeListener) {
   mutex.lock();
   value++;
-  broadcast(signalOnlyFirstInQueue);
+  broadcast(excludeListener);
   int i=value;
   mutex.unlock();
   return i;
 }
 
-void ConditionVariable::broadcast(bool signalOnlyFirstInQueue) {
-  if(!signalOnlyFirstInQueue) {
+void ConditionVariable::broadcast(ConditionVariable* excludeListener) {
+//  if(!signalOnlyFirstInQueue) {
     int rc = pthread_cond_signal(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  } else {
-    int rc = pthread_cond_broadcast(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  }
+//  } else {
+//    int rc = pthread_cond_broadcast(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+//  }
+  for(ConditionVariable *c:listeners) if(c!=excludeListener) c->setValue(1, this);
+}
+
+void ConditionVariable::listenTo(ConditionVariable* c){
+  mutex.lock();
+  c->lock();
+  c->listeners.append(this);
+  listensTo.append(c);
+  c->unlock();
+  mutex.unlock();
+}
+
+void ConditionVariable::stopListenTo(ConditionVariable* c){
+  mutex.lock();
+  c->lock();
+  c->listeners.removeValue(this);
+  listensTo.removeValue(c);
+  c->unlock();
+  mutex.unlock();
 }
 
 void ConditionVariable::lock() {
@@ -241,7 +271,7 @@ int RevisionedRWLock::readAccess(Thread *th) {
 int RevisionedRWLock::writeAccess(Thread *th) {
 //  engine().acc->queryWriteAccess(this, p);
   rwlock.writeLock();
-  int i = revision.incrementValue();
+  int i = revision.incrementValue(&th->state);
   revision_time = mlr::clockTime();
 //  engine().acc->logWriteAccess(this, p);
 //  if(listeners.N && !th){ HALT("I need to know the calling thread when threads listen to variables"); }
@@ -479,17 +509,25 @@ void Thread::threadStep(uint steps, bool wait) {
 }
 
 void Thread::listenTo(RevisionedRWLock& var) {
+#if 0
   var.rwlock.writeLock();  //don't want to increase revision and broadcast!
   var.listeners.setAppend(this);
   var.rwlock.unlock();
   listensTo.setAppend(&var);
+#else
+  state.listenTo(&var.revision);
+#endif
 }
 
 void Thread::stopListenTo(RevisionedRWLock& var){
+#if 0
   listensTo.removeValue(&var);
   var.rwlock.writeLock();
   var.listeners.removeValue(this);
   var.rwlock.unlock();
+#else
+  state.stopListenTo(&var.revision);
+#endif
 }
 
 bool Thread::isIdle() {
@@ -572,7 +610,7 @@ void Thread::main() {
     state.waitForValueNotEq(tsIDLE, true);
     if(state.value==tsCLOSE) { state.unlock();  break; }
     if(state.value==tsBEATING) waitForTic=true; else waitForTic=false;
-    if(state.value>0) state.value--; //count down
+    if(state.value>0) state.value--; //count down the steps
     state.unlock();
 
     if(waitForTic) metronome.waitForTic();
@@ -780,6 +818,7 @@ TStream::Register::~Register() {
 RUN_ON_INIT_BEGIN(thread)
 RevisionedRWLockL::memMove=true;
 ThreadL::memMove=true;
+ConditionVariableL::memMove=true;
 RUN_ON_INIT_END(thread)
 
 #endif //MLR_MSVC

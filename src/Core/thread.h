@@ -55,13 +55,17 @@ struct ConditionVariable {
   int value;
   Mutex mutex;
   pthread_cond_t  cond;
+  ConditionVariableL listeners;   ///< list of other condition variables that are being broadcasted on a setValue access
+  ConditionVariableL listensTo;   ///< list of other condition variables that are being broadcasted on a setValue access
 
   ConditionVariable(int initialState=0);
   ~ConditionVariable();
 
-  void setValue(int i, bool signalOnlyFirstInQueue=false); ///< sets state and broadcasts
-  int  incrementValue(bool signalOnlyFirstInQueue=false);   ///< increase value by 1
-  void broadcast(bool signalOnlyFirstInQueue=false);       ///< just broadcast
+  void setValue(int i, ConditionVariable* excludeListener=NULL); ///< sets state and broadcasts
+  int  incrementValue(ConditionVariable* excludeListener=NULL);   ///< increase value by 1
+  void broadcast(ConditionVariable* excludeListener=NULL);       ///< just broadcast
+  void listenTo(ConditionVariable *c);
+  void stopListenTo(ConditionVariable *c);
 
   void lock();   //the user can manually lock/unlock, if he needs atomic state access for longer -> use userHasLocked=true below!
   void unlock();
