@@ -23,8 +23,8 @@ struct Gamepad2Tasks{
   mlr::String robot;
   CtrlTask *homing, *endeffR, *endeffL, *base, *torso, *head, *headAxes, *limits, *coll,  *gripperL, *gripperR;
 
-  Gamepad2Tasks(TaskController& _TC, const arr& q0);
+  Gamepad2Tasks(TaskController& _TC, const mlr::KinematicWorld& K, const arr& q0);
   mlr::Array<CtrlTask*> getTasks();
-  bool updateTasks(arr& gamepadState);
+  bool updateTasks(arr& gamepadState, const mlr::KinematicWorld& K);
 };
 

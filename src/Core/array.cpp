@@ -164,6 +164,12 @@ void transpose(arr& A) {
   for(i=1; i<n; i++) for(j=0; j<i; j++) { z=A(j, i); A(j, i)=A(i, j); A(i, j)=z; }
 }
 
+arr oneover(const arr& A){
+  arr B = A;
+  for(double& b:B) b=1./b;
+  return B;
+}
+
 namespace mlr {
 /// use this to turn on Lapack routines [default true if MLR_LAPACK is defined]
 extern bool useLapack;
@@ -391,13 +397,15 @@ void inverse_SymPosDef(arr& Ainv, const arr& A) {
 }
 
 arr pseudoInverse(const arr& A, const arr& Winv, double eps) {
-  arr At, E, AAt, AAt_inv, Ainv;
-  transpose(At, A);
-  if(&Winv) AAt = A*Winv*At; else AAt = A*At;
+  arr AAt;
+  arr At = ~A;
+  if(&Winv){
+    if(Winv.nd==1) AAt = A*(Winv%At); else AAt = A*Winv*At;
+  }else AAt = A*At;
   if(eps) for(uint i=0;i<AAt.d0;i++) AAt(i,i) += eps;
-  inverse_SymPosDef(AAt_inv, AAt);
-  Ainv = At * AAt_inv;
-  if(&Winv) Ainv = Winv * Ainv;
+  arr AAt_inv = inverse_SymPosDef(AAt);
+  arr Ainv = At * AAt_inv;
+  if(&Winv) if(Winv.nd==1) Ainv = Winv%Ainv; else Ainv = Winv*Ainv;
   return Ainv;
 }
 
@@ -1323,6 +1331,7 @@ void blas_MM(arr& X, const arr& A, const arr& B) {
 
 void blas_A_At(arr& X, const arr& A) {
   uint n=A.d0;
+  CHECK(n,"blas doesn't like n=0 !");
   X.resize(n,n);
   cblas_dsyrk(CblasRowMajor, CblasUpper, CblasNoTrans,
               X.d0, A.d1,
@@ -1338,6 +1347,7 @@ void blas_A_At(arr& X, const arr& A) {
 
 void blas_At_A(arr& X, const arr& A) {
   uint n=A.d1;
+  CHECK(n,"blas doesn't like n=0 !");
   X.resize(n,n);
   cblas_dsyrk(CblasRowMajor, CblasUpper, CblasTrans,
               X.d0, A.d0,
@@ -1984,13 +1994,13 @@ arr unpack(const arr& X) {
   return NoArr;
 }
 
-arr comp_At_A(arr& A) {
+arr comp_At_A(const arr& A) {
   if(isNotSpecial(A)) { arr X; blas_At_A(X,A); return X; }
   if(isRowShifted(A)) return ((RowShifted*)A.special)->At_A();
   return NoArr;
 }
 
-arr comp_A_At(arr& A) {
+arr comp_A_At(const arr& A) {
   if(isNotSpecial(A)) { arr X; blas_A_At(X,A); return X; }
   if(isRowShifted(A)) return ((RowShifted*)A.special)->A_At();
   return NoArr;
@@ -2002,19 +2012,19 @@ arr comp_A_At(arr& A) {
 //  return NoArr;
 //}
 
-arr comp_At_x(arr& A, const arr& x) {
+arr comp_At_x(const arr& A, const arr& x) {
   if(isNotSpecial(A)) { arr y; innerProduct(y, ~A, x); return y; }
   if(isRowShifted(A)) return ((RowShifted*)A.special)->At_x(x);
   return NoArr;
 }
 
-arr comp_At(arr& A) {
+arr comp_At(const arr& A) {
   if(isNotSpecial(A)) { return ~A; }
   if(isRowShifted(A)) return ((RowShifted*)A.special)->At();
   return NoArr;
 }
 
-arr comp_A_x(arr& A, const arr& x) {
+arr comp_A_x(const arr& A, const arr& x) {
   if(isNotSpecial(A)) { arr y; innerProduct(y, A, x); return y; }
   if(isRowShifted(A)) return ((RowShifted*)A.special)->A_x(x);
   return NoArr;
@@ -2218,6 +2228,8 @@ void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 //  for(const char* t : list) append(mlr::String(t));
 //}
 //}
+
+
 
 
 

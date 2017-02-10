@@ -573,6 +573,8 @@ uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort=true);
 void svd(arr& U, arr& V, const arr& A);
 void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc = 0);
 
+arr  oneover(const arr& A); //element-wise reciprocal (devision, 1./A)
+
 void mldivide(arr& X, const arr& A, const arr& b);
 
 uint inverse(arr& Ainv, const arr& A);
@@ -836,11 +838,11 @@ arr lapack_Ainv_b_triangular(const arr& L, const arr& b);
 /// @{
 
 arr unpack(const arr& X);
-arr comp_At_A(arr& A);
-arr comp_A_At(arr& A);
-arr comp_At_x(arr& A, const arr& x);
-arr comp_At(arr& A);
-arr comp_A_x(arr& A, const arr& x);
+arr comp_At_A(const arr& A);
+arr comp_A_At(const arr& A);
+arr comp_At_x(const arr& A, const arr& x);
+arr comp_At(const arr& A);
+arr comp_A_x(const arr& A, const arr& x);
 
 struct SpecialArray{
   enum Type { ST_none, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };

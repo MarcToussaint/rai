@@ -968,6 +968,7 @@ void mlr::KinematicWorld::clearJointErrors() {
 }
 
 arr mlr::KinematicWorld::naturalQmetric(double power) const {
+  HALT("don't use this anymore. use getHmetric instead");
 #if 0
   if(!q.N) getJointStateDimension();
   arr Wdiag(q.N);

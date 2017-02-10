@@ -1278,7 +1278,11 @@ Mutex::~Mutex() {
 
 void Mutex::lock() {
   int rc = pthread_mutex_lock(&mutex);
-  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  if(rc){
+    //don't use HALT here, because log uses mutexing as well -> can lead to recursive HALT...
+    cerr <<STRING("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+    exit(1);
+  }
   recursive++;
   state=syscall(SYS_gettid);
   MUTEX_DUMP(cout <<"Mutex-lock: " <<state <<" (rec: " <<recursive << ")" <<endl);

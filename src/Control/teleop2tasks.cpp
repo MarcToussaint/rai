@@ -19,39 +19,39 @@
 #include <Motion/taskMaps.h>
 #include <Hardware/gamepad/gamepad.h>
 
-Teleop2Tasks::Teleop2Tasks(TaskController& _MP):fmc(_MP){
-  effPosR = fmc.addPDTask("MoveEffTo_endeffR", .2, 1.8,new TaskMap_Default(posTMT, fmc.world,"endeffR",NoVector,"base_footprint"));
-  effPosR->y_ref = {0.8, -.5, 1.};
+Teleop2Tasks::Teleop2Tasks(TaskController& _MP, const mlr::KinematicWorld& K):fmc(_MP){
+  effPosR = fmc.addPDTask("MoveEffTo_endeffR", .2, 1.8,new TaskMap_Default(posTMT, K,"endeffR",NoVector,"base_footprint"));
+  effPosR->PD().y_target = {0.8, -.5, 1.};
 
-  effPosL = fmc.addPDTask("MoveEffTo_endeffL", .2, 1.8,new TaskMap_Default(posTMT,fmc.world,"endeffL",NoVector,"base_footprint"));
-  effPosL->y_ref = {0.8, .5, 1.};
+  effPosL = fmc.addPDTask("MoveEffTo_endeffL", .2, 1.8,new TaskMap_Default(posTMT,K,"endeffL",NoVector,"base_footprint"));
+  effPosL->PD().y_target = {0.8, .5, 1.};
 
-  fc = fmc.addPDTask("fc_endeffL", .2, 1.8,new TaskMap_Default(posTMT,fmc.world, "endeffForceL",NoVector,"base_footprint"));
-  fc->y_ref ={0.8,0.5,1.};
+  fc = fmc.addPDTask("fc_endeffL", .2, 1.8,new TaskMap_Default(posTMT,K, "endeffForceL",NoVector,"base_footprint"));
+  fc->PD().y_target ={0.8,0.5,1.};
   fc->f_ref = {15.,15.,15.};
   fc->f_alpha = .075;
   fc->active = true;
 
-  int jointID = fmc.world.getJointByName("r_gripper_joint")->qIndex;
-  gripperR = fmc.addPDTask("gripperR", .3, 1.8, new TaskMap_qItself(jointID, fmc.world.q.N));
-  gripperR->setTarget({0.01});
-    //gripperR->y_ref = {.08};  // open gripper 8cm
+  int jointID = K.getJointByName("r_gripper_joint")->qIndex;
+  gripperR = fmc.addPDTask("gripperR", .3, 1.8, new TaskMap_qItself(jointID, K.q.N));
+  gripperR->PD().setTarget({0.01});
+    //gripperR->PD().y_target = {.08};  // open gripper 8cm
 
-  jointID = fmc.world.getJointByName("l_gripper_joint")->qIndex;
-  gripperL = fmc.addPDTask("gripperL", .3, 1.8, new TaskMap_qItself(jointID, fmc.world.q.N));
-  gripperL->setTarget({0.01});
-  //gripperL->y_ref = {.08};  // open gripper 8cm
+  jointID = K.getJointByName("l_gripper_joint")->qIndex;
+  gripperL = fmc.addPDTask("gripperL", .3, 1.8, new TaskMap_qItself(jointID, K.q.N));
+  gripperL->PD().setTarget({0.01});
+  //gripperL->PD().y_target = {.08};  // open gripper 8cm
 
-  effOrientationR = fmc.addPDTask("orientationR", .2, 1.8,new TaskMap_Default(quatTMT,fmc.world, "endeffR"));
-  effOrientationR->y_ref = {1., 0., 0., 0.};
-  effOrientationR->flipTargetSignOnNegScalarProduct = true;
+  effOrientationR = fmc.addPDTask("orientationR", .2, 1.8,new TaskMap_Default(quatTMT,K, "endeffR"));
+  effOrientationR->PD().y_target = {1., 0., 0., 0.};
+  effOrientationR->PD().flipTargetSignOnNegScalarProduct = true;
 
-  effOrientationL = fmc.addPDTask("orientationL", .2,1.8,new TaskMap_Default(quatTMT,fmc.world, "endeffL"));
-  effOrientationL->y_ref = {1., 0., 0., 0.};
-  effOrientationL->flipTargetSignOnNegScalarProduct = true;
+  effOrientationL = fmc.addPDTask("orientationL", .2,1.8,new TaskMap_Default(quatTMT,K, "endeffL"));
+  effOrientationL->PD().y_target = {1., 0., 0., 0.};
+  effOrientationL->PD().flipTargetSignOnNegScalarProduct = true;
 
-  base = fmc.addPDTask("basepos", .2,.8,new TaskMap_qItself(fmc.world, "worldTranslationRotation"));
-  base->y_ref={0.,0.,0.};
+  base = fmc.addPDTask("basepos", .2,.8,new TaskMap_qItself(K, "worldTranslationRotation"));
+  base->PD().y_target={0.,0.,0.};
   base->active =false;
 }
 
@@ -97,14 +97,14 @@ void Teleop2Tasks::updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effpo
   old_effpos +=pos_div;
 
   if(effPos){
-    effPos->setTarget(old_effpos);
+    effPos->PD().setTarget(old_effpos);
 //    effPos->setCompliance( c_in_this_direction = 1., c_in_other_directions=.1, direction=ARR(.7,.7,0) );
   }
   copy(old_pos, pos);
 }
 
 
-void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float calibrated_gripper_lh, float calibrated_gripper_rh, arr drive, int button){
+void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float calibrated_gripper_lh, float calibrated_gripper_rh, arr drive, int button, const mlr::KinematicWorld& K){
 
   effPosR->active = true;
   effPosL->active = false;
@@ -150,8 +150,8 @@ void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float cal
     initialised = true;
   }
 
-  mlr::Quaternion orsquats = fmc.world.getShapeByName("endeffBase") -> X.rot;
-//  mlr::Joint *trans = fmc.world.getJointByName("worldTranslationRotation");
+  mlr::Quaternion orsquats = K.getShapeByName("endeffBase") -> X.rot;
+//  mlr::Joint *trans = K.getJointByName("worldTranslationRotation");
 //  orsquats.setRad( q(trans->qIndex+2),{0.,0.,1.} );
   mlr::Quaternion orsquatsacc;
 
@@ -166,7 +166,7 @@ void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float cal
       (double)cal_pose_rh(6));
   quat = conv_quat2arr(orsquats * orsquatsacc);
   if(rotate){
-    if(effOrientationR) effOrientationR->setTarget(quat);
+    if(effOrientationR) effOrientationR->PD().setTarget(quat);
   }
 
 
@@ -181,22 +181,22 @@ void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float cal
       (double)cal_pose_lh(5),
       (double)cal_pose_lh(6));
   quat = conv_quat2arr(orsquats * orsquatsacc);
-  if(effOrientationL) effOrientationL->setTarget(quat);
+  if(effOrientationL) effOrientationL->PD().setTarget(quat);
 
   //gripper
   double cal_gripper;
   cal_gripper =  calibrated_gripper_rh;
-  if(gripperR) gripperR->setTarget({cal_gripper});
+  if(gripperR) gripperR->PD().setTarget({cal_gripper});
   cal_gripper =  calibrated_gripper_lh;
-  if(gripperL) gripperL->setTarget({cal_gripper});
+  if(gripperL) gripperL->PD().setTarget({cal_gripper});
 
   //base movement
   arr drive_des;
   double y_c,x_c,phi_c;
-  mlr::Joint *trans = fmc.world.getJointByName("worldTranslationRotation");
-  x_c = base->y_ref(trans->qIndex+0);
-  y_c = base->y_ref(trans->qIndex+1);
-  phi_c = base->y_ref(trans->qIndex+2);
+  mlr::Joint *trans = K.getJointByName("worldTranslationRotation");
+  x_c = base->PD().y_target(trans->qIndex+0);
+  y_c = base->PD().y_target(trans->qIndex+1);
+  phi_c = base->PD().y_target(trans->qIndex+2);
 
   if(false) //drive indicator
   {
@@ -207,10 +207,10 @@ void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float cal
   }
 
 
-  base->setTarget({x_c,y_c,phi_c});
-  fmc.qNullCostRef.y_ref(trans->qIndex+0) = base->y_ref(trans->qIndex+0);
-  fmc.qNullCostRef.y_ref(trans->qIndex+1) = base->y_ref(trans->qIndex+1);
-  fmc.qNullCostRef.y_ref(trans->qIndex+2) = base->y_ref(trans->qIndex+2);
+  base->PD().setTarget({x_c,y_c,phi_c});
+  fmc.qNullCostRef.PD().y_target(trans->qIndex+0) = base->PD().y_target(trans->qIndex+0);
+  fmc.qNullCostRef.PD().y_target(trans->qIndex+1) = base->PD().y_target(trans->qIndex+1);
+  fmc.qNullCostRef.PD().y_target(trans->qIndex+2) = base->PD().y_target(trans->qIndex+2);
 
 }
 
