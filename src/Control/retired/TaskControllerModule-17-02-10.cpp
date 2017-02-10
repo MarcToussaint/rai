@@ -94,7 +94,7 @@ void TaskControllerModule::open(){
 
   makeConvexHulls(modelWorld.set()->shapes);
  // modelWorld.set() = realWorld;
-  taskController = new TaskController(modelWorld.set()(), false);
+  taskController = new TaskControlMethods(modelWorld.set()(), false);
 
   modelWorld.get()->getJointState(q_model, qdot_model);
 

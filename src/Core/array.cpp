@@ -405,7 +405,7 @@ arr pseudoInverse(const arr& A, const arr& Winv, double eps) {
   if(eps) for(uint i=0;i<AAt.d0;i++) AAt(i,i) += eps;
   arr AAt_inv = inverse_SymPosDef(AAt);
   arr Ainv = At * AAt_inv;
-  if(&Winv) if(Winv.nd==1) Ainv = Winv%Ainv; else Ainv = Winv*Ainv;
+  if(&Winv){ if(Winv.nd==1) Ainv = Winv%Ainv; else Ainv = Winv*Ainv; }
   return Ainv;
 }
 

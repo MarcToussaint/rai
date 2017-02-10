@@ -19,7 +19,7 @@
 #include <Motion/taskMaps.h>
 #include <Hardware/gamepad/gamepad.h>
 
-Teleop2Tasks::Teleop2Tasks(TaskController& _MP, const mlr::KinematicWorld& K):fmc(_MP){
+Teleop2Tasks::Teleop2Tasks(TaskControlMethods& _MP, const mlr::KinematicWorld& K):fmc(_MP){
   effPosR = fmc.addPDTask("MoveEffTo_endeffR", .2, 1.8,new TaskMap_Default(posTMT, K,"endeffR",NoVector,"base_footprint"));
   effPosR->PD().y_target = {0.8, -.5, 1.};
 

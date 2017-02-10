@@ -15,7 +15,7 @@
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
-#include "taskController.h"
+#include "taskControl.h"
 #include <Kin/kin_swift.h>
 #include <Motion/motion.h>
 #include <Motion/taskMaps.h>
@@ -251,7 +251,7 @@ void ConstraintForceTask::updateConstraintControl(const arr& _g, const double& l
 
 //===========================================================================
 
-TaskController::TaskController(mlr::KinematicWorld& _world, bool _useSwift)
+TaskControlMethods::TaskControlMethods(mlr::KinematicWorld& _world, bool _useSwift)
   : world(_world), qNullCostRef(NULL, NULL), useSwift(_useSwift) {
   computeMeshNormals(world.shapes);
   if(useSwift) {
@@ -264,11 +264,11 @@ TaskController::TaskController(mlr::KinematicWorld& _world, bool _useSwift)
   qNullCostRef.setTarget( world.q );
 }
 
-CtrlTask* TaskController::addPDTask(const char* name, double decayTime, double dampingRatio, TaskMap *map){
+CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, double dampingRatio, TaskMap *map){
   return tasks.append(new CtrlTask(name, map, decayTime, dampingRatio, 1., 1.));
 }
 
-CtrlTask* TaskController::addPDTask(const char* name,
+CtrlTask* TaskControlMethods::addPDTask(const char* name,
                                          double decayTime, double dampingRatio,
                                          TaskMap_DefaultType type,
                                          const char* iShapeName, const mlr::Vector& ivec,
@@ -277,7 +277,7 @@ CtrlTask* TaskController::addPDTask(const char* name,
                                    decayTime, dampingRatio, 1., 1.));
 }
 
-ConstraintForceTask* TaskController::addConstraintForceTask(const char* name, TaskMap *map){
+ConstraintForceTask* TaskControlMethods::addConstraintForceTask(const char* name, TaskMap *map){
   ConstraintForceTask *t = new ConstraintForceTask(map);
   t->name=name;
   t->desiredApproach.name=STRING(name <<"_PD");
@@ -287,7 +287,7 @@ ConstraintForceTask* TaskController::addConstraintForceTask(const char* name, Ta
   return t;
 }
 
-void TaskController::lockJointGroup(const char* groupname, bool lockThem){
+void TaskControlMethods::lockJointGroup(const char* groupname, bool lockThem){
   if(!groupname){
     if(lockThem){
       lockJoints = consts<bool>(true, world.q.N);
@@ -306,7 +306,7 @@ void TaskController::lockJointGroup(const char* groupname, bool lockThem){
   }
 }
 
-void TaskController::getTaskCoeffs(arr& yddot_des, arr& J){
+void TaskControlMethods::getTaskCoeffs(arr& yddot_des, arr& J){
   yddot_des.clear();
   if(&J) J.clear();
   arr J_y, a_des;
@@ -322,17 +322,17 @@ void TaskController::getTaskCoeffs(arr& yddot_des, arr& J){
   if(&J) J.reshape(yddot_des.N, world.q.N);
 }
 
-void TaskController::reportCurrentState(){
-  cout <<"** TaskController" <<endl;
+void TaskControlMethods::reportCurrentState(){
+  cout <<"** TaskControlMethods" <<endl;
   for(CtrlTask* t: tasks) t->reportState(cout);
 }
 
-void TaskController::setState(const arr& q, const arr& qdot){
+void TaskControlMethods::setState(const arr& q, const arr& qdot){
   world.setJointState(q, qdot);
   if(useSwift) world.stepSwift();
 }
 
-void TaskController::updateConstraintControllers(){
+void TaskControlMethods::updateConstraintControllers(){
   arr y;
   for(ConstraintForceTask* t: forceTasks){
     if(t->active){
@@ -342,7 +342,7 @@ void TaskController::updateConstraintControllers(){
   }
 }
 
-arr TaskController::getDesiredConstraintForces(){
+arr TaskControlMethods::getDesiredConstraintForces(){
   arr Jl(world.q.N, 1);
   Jl.setZero();
   arr y, J_y;
@@ -357,7 +357,7 @@ arr TaskController::getDesiredConstraintForces(){
   return Jl;
 }
 
-arr TaskController::operationalSpaceControl(){
+arr TaskControlMethods::operationalSpaceControl(){
   arr yddot_des, J;
   getTaskCoeffs(yddot_des, J); //this corresponds to $J_\phi$ and $c$ in the reference (they include C^{1/2})
   if(!yddot_des.N && !qNullCostRef.active) return zeros(world.q.N,1).reshape(world.q.N);
@@ -384,7 +384,7 @@ arr TaskController::operationalSpaceControl(){
   return q_ddot;
 }
 
-arr TaskController::getDesiredLinAccLaw(arr &Kp, arr &Kd, arr &k) {
+arr TaskControlMethods::getDesiredLinAccLaw(arr &Kp, arr &Kd, arr &k) {
   arr Kp_y, Kd_y, k_y, C_y;
   qNullCostRef.y=world.q;
   qNullCostRef.v=world.qdot;
@@ -431,7 +431,7 @@ arr TaskController::getDesiredLinAccLaw(arr &Kp, arr &Kd, arr &k) {
 }
 
 
-arr TaskController::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, const arr& M, const arr& F) {
+arr TaskControlMethods::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, const arr& M, const arr& F) {
   uint n=F.N;
 
 //  arr q0, q, qDot;
@@ -479,7 +479,7 @@ arr TaskController::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, const
   return u0 + Kp*world.q + Kd*world.qdot;
 }
 
-void TaskController::fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0){
+void TaskControlMethods::fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0){
   arr M, F;
   world.equationOfMotion(M, F, false);
 
@@ -494,7 +494,7 @@ void TaskController::fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0){
   }
 }
 
-void TaskController::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma) {
+void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma) {
   uint nForceTasks=0;
   for(CtrlTask* law : this->tasks) if(law->active && law->f_ref.N){
     nForceTasks++;

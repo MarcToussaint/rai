@@ -15,15 +15,15 @@
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
-#include <Control/taskController.h>
+#include <Control/taskControl.h>
 
 struct Gamepad2Tasks{
-  TaskController& TC;
+  TaskControlMethods& TC;
   const arr q0;
   mlr::String robot;
   CtrlTask *homing, *endeffR, *endeffL, *base, *torso, *head, *headAxes, *limits, *coll,  *gripperL, *gripperR;
 
-  Gamepad2Tasks(TaskController& _TC, const mlr::KinematicWorld& K, const arr& q0);
+  Gamepad2Tasks(TaskControlMethods& _TC, const mlr::KinematicWorld& K, const arr& q0);
   mlr::Array<CtrlTask*> getTasks();
   bool updateTasks(arr& gamepadState, const mlr::KinematicWorld& K);
 };

@@ -105,9 +105,9 @@ struct ConstraintForceTask{
 //===========================================================================
 
 /**
- * TaskController contains all individual motions/CtrlTasks.
+ * TaskControlMethods contains all individual motions/CtrlTasks.
  */
-struct TaskController {
+struct TaskControlMethods {
   mlr::KinematicWorld& world;
   mlr::Array<CtrlTask*> tasks;
   mlr::Array<ConstraintForceTask*> forceTasks;
@@ -115,7 +115,7 @@ struct TaskController {
   boolA lockJoints;
   bool useSwift;
 
-  TaskController(mlr::KinematicWorld& _world, bool _useSwift=true);
+  TaskControlMethods(mlr::KinematicWorld& _world, bool _useSwift=true);
 
   /// @{ @name adding tasks
   CtrlTask* addPDTask(const char* name, double decayTime, double dampingRatio, TaskMap *map);
