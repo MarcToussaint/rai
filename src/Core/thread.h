@@ -27,9 +27,9 @@ typedef mlr::Array<ConditionVariable*> ConditionVariableL;
 typedef mlr::Array<RevisionedRWLock*> RevisionedRWLockL;
 typedef mlr::Array<Thread*> ThreadL;
 
-void stop(const ThreadL& P);
-void wait(const ThreadL& P);
-void close(const ThreadL& P);
+//void stop(const ThreadL& P);
+//void wait(const ThreadL& P);
+//void close(const ThreadL& P);
 
 #ifndef MLR_MSVC
 
@@ -55,19 +55,20 @@ struct ConditionVariable {
   int value;
   Mutex mutex;
   pthread_cond_t  cond;
-  ConditionVariableL listeners;   ///< list of other condition variables that are being broadcasted on a setValue access
-  ConditionVariableL listensTo;   ///< list of other condition variables that are being broadcasted on a setValue access
+  ConditionVariableL listeners;   ///< list of other condition variables that are being signaled on a setValue access
+  ConditionVariableL listensTo;   ///< ...
+  ConditionVariableL messengers;  ///< set(!) of condition variables that send signals (via the listen mechanism) - is cleared by the user only
 
   ConditionVariable(int initialState=0);
-  ~ConditionVariable();
+  virtual ~ConditionVariable(); //virtual, to enforce polymorphism
 
-  void setValue(int i, ConditionVariable* excludeListener=NULL); ///< sets state and broadcasts
-  int  incrementValue(ConditionVariable* excludeListener=NULL);   ///< increase value by 1
-  void broadcast(ConditionVariable* excludeListener=NULL);       ///< just broadcast
+  void setValue(int i, ConditionVariable* messenger=NULL); ///< sets state and broadcasts
+  int  incrementValue(ConditionVariable* messenger=NULL);   ///< increase value by 1
+  void broadcast(ConditionVariable* messenger=NULL);       ///< just broadcast
   void listenTo(ConditionVariable *c);
   void stopListenTo(ConditionVariable *c);
 
-  void lock();   //the user can manually lock/unlock, if he needs atomic state access for longer -> use userHasLocked=true below!
+  void lock();   //the user can manually lock/unlock, if he needs locked state access for longer -> use userHasLocked=true below!
   void unlock();
 
   int  getValue(bool userHasLocked=false) const;
@@ -77,126 +78,7 @@ struct ConditionVariable {
   void waitForValueNotEq(int i, bool userHasLocked=false); ///< return value is the state after the waiting
   void waitForValueGreaterThan(int i, bool userHasLocked=false); ///< return value is the state after the waiting
   void waitForValueSmallerThan(int i, bool userHasLocked=false); ///< return value is the state after the waiting
-  void waitUntil(double absTime, bool userHasLocked=false);
 };
-
-//===========================================================================
-//
-// Timing helpers
-//
-
-/// a simple struct to realize a strict tic tac timing (called in step() once in a loop)
-struct Metronome {
-  double ticInterval;
-  timespec ticTime;
-  uint tics;
-
-  Metronome(double ticIntervalSec); ///< set tic tac time in micro seconds
-
-  void reset(double ticIntervalSec);
-  void waitForTic();              ///< waits until the next tic
-  double getTimeSinceTic();       ///< time since last tic
-};
-
-/// to meassure cycle and busy times
-struct CycleTimer {
-  uint steps;
-  double busyDt, busyDtMean, busyDtMax;  ///< internal variables to measure step time
-  double cyclDt, cyclDtMean, cyclDtMax;  ///< internal variables to measure step time
-  timespec now, lastTime;
-  const char* name;                    ///< name
-  CycleTimer(const char *_name=NULL);
-  ~CycleTimer();
-  void reset();
-  void cycleStart();
-  void cycleDone();
-  void report();
-};
-
-
-//===========================================================================
-/**
- * A Thread does some calculation and shares the result via a AccessData.
- *
- * Inherit from the class Thread to create your own process.
- * You need to implement open(), close(), and step().
- * step() should contain the actual calculation.
- */
-struct Thread{
-  mlr::String name;
-  ConditionVariable state;       ///< the condition variable indicates the state of the thread: positive=steps-to-go, otherwise it is a ThreadState
-  RevisionedRWLockL listensTo;   ///< a list of variables this thread listens to (a step is triggered when the var's revision increases)
-  pid_t tid;                     ///< system thread id
-#ifndef MLR_QThread
-  pthread_t thread;
-#else
-  struct sThread *thread;
-#endif
-  Mutex stepMutex;              ///< This is set whenever the 'main' is in step (or open, or close) --- use this in all service methods callable from outside!!
-  uint step_count;              ///< how often the step was called
-  Metronome metronome;          ///< used for beat-looping
-  CycleTimer timer;             ///< measure how the time spend per cycle, within step, idle
-  struct Node* registryNode;    ///< every thread registers itself globally
-  int verbose;
-
-  /// @name c'tor/d'tor
-  /** DON'T open drivers/devices/files or so here in the constructor,
-   * but in open(). Sometimes a module might be created only to see
-   * which accesses it needs. The default constructure should really
-   * do nothing
-   *
-   * beatIntervalSec=0. indicates full speed looping, beatIntervalSec=-1. indicates no looping (steps triggered by listening)
-   */
-  Thread(const char* _name, double beatIntervalSec=-1.);
-  virtual ~Thread();
-
-  /// @name to be called from `outside' (e.g. the main) to start/step/close the thread
-  void threadOpen(bool wait=false, int priority=0);      ///< start the thread (in idle mode) (should be positive for changes)
-  void threadClose();                   ///< close the thread (stops looping and waits for idle mode before joining the thread)
-  void threadStep(uint steps=1, bool wait=false);     ///< trigger (multiple) step (idle -> working mode) (wait until idle? otherwise calling during non-idle -> error)
-  void threadLoop();                    ///< loop, either with fixed beat or at full speed
-//  void threadLoopWithBeat(double beatIntervalSec);  ///< loop with a fixed beat (cycle time)
-  void threadStop(bool wait=false);     ///< stop looping
-  void threadCancel();                  ///< a hard kill (pthread_cancel) of the thread
-
-  void waitForOpened();                 ///< caller waits until opening is done (working -> idle mode)
-  void waitForIdle();                   ///< caller waits until step is done (working -> idle mode)
-  bool isIdle();                        ///< check if in idle mode
-  bool isClosed();                      ///< check if closed
-
-  /// @name listen to a variable
-  void listenTo(RevisionedRWLock& var);
-  void stopListenTo(RevisionedRWLock& var);
-
-  /** use this to open drivers/devices/files and initialize
-   *  parameters; this is called within the thread */
-  virtual void open() = 0;
-
-  /** The most important method of all of this: step does the actual
-   *  computation of the thread. Access
-   *  the variables by calling the x.get(), x.set() or
-   *  x.[read|write|de]Access(), where ACCESS(TYPE, x) was
-   *  declared. */
-  virtual void step(){ LOG(-1) <<"you're calling the 'pseudo-pure virtual' step(), which should be overloaded (are you in a destructor?)"; }
-
-  /** use this to close drivers/devices/files; this is called within
-   *  the thread */
-  virtual void close() = 0;
-
-  void main(); //this is the thread main - should be private!
-};
-
-// macro for a most standard declaration of a module
-#define BEGIN_MODULE(name) \
-  struct name : Thread { \
-    struct s##name *s; \
-    name(): Thread(#name), s(NULL) {} \
-    virtual void open(); \
-    virtual void step(); \
-    virtual void close();
-
-#define END_MODULE() };
-
 
 //===========================================================================
 //
@@ -210,7 +92,6 @@ struct RevisionedRWLock {
   int last_revision;          ///< last revision that has been accessed (read or write)
   double revision_time;       ///< clock time of last write access
   double data_time;           ///< time stamp of the original data source
-  ThreadL listeners;          ///< list of threads that are being signaled a threadStep on write access
 
   /// @name c'tor/d'tor
   virtual ~RevisionedRWLock();
@@ -261,6 +142,122 @@ struct WToken{
 };
 
 //===========================================================================
+//
+// Timing helpers
+//
+
+/// a simple struct to realize a strict tic tac timing (called in step() once in a loop)
+struct Metronome {
+  double ticInterval;
+  timespec ticTime;
+  uint tics;
+
+  Metronome(double ticIntervalSec); ///< set tic tac time in micro seconds
+
+  void reset(double ticIntervalSec);
+  void waitForTic();              ///< waits until the next tic
+  double getTimeSinceTic();       ///< time since last tic
+};
+
+/// to meassure cycle and busy times
+struct CycleTimer {
+  uint steps;
+  double busyDt, busyDtMean, busyDtMax;  ///< internal variables to measure step time
+  double cyclDt, cyclDtMean, cyclDtMax;  ///< internal variables to measure step time
+  timespec now, lastTime;
+  const char* name;                    ///< name
+  CycleTimer(const char *_name=NULL);
+  ~CycleTimer();
+  void reset();
+  void cycleStart();
+  void cycleDone();
+  void report();
+};
+
+
+//===========================================================================
+/**
+ * A Thread does some calculation and shares the result via a AccessData.
+ *
+ * Inherit from the class Thread to create your own process.
+ * You need to implement open(), close(), and step().
+ * step() should contain the actual calculation.
+ */
+struct Thread{
+  mlr::String name;
+  ConditionVariable status;       ///< the condition variable indicates the state of the thread: positive=steps-to-go, otherwise it is a ThreadState
+  pid_t tid;                     ///< system thread id
+#ifndef MLR_QThread
+  pthread_t thread;
+#else
+  struct sThread *thread;
+#endif
+  Mutex stepMutex;              ///< This is set whenever the 'main' is in step (or open, or close) --- use this in all service methods callable from outside!!
+  uint step_count;              ///< how often the step was called
+  Metronome metronome;          ///< used for beat-looping
+  CycleTimer timer;             ///< measure how the time spend per cycle, within step, idle
+  struct Node* registryNode;    ///< every thread registers itself globally
+  int verbose;
+
+  /// @name c'tor/d'tor
+  /** DON'T open drivers/devices/files or so here in the constructor,
+   * but in open(). Sometimes a module might be created only to see
+   * which accesses it needs. The default constructure should really
+   * do nothing
+   *
+   * beatIntervalSec=0. indicates full speed looping, beatIntervalSec=-1. indicates no looping (steps triggered by listening)
+   */
+  Thread(const char* _name, double beatIntervalSec=-1.);
+  virtual ~Thread();
+
+  /// @name to be called from `outside' (e.g. the main) to start/step/close the thread
+  void threadOpen(bool wait=false, int priority=0);      ///< start the thread (in idle mode) (should be positive for changes)
+  void threadClose();                   ///< close the thread (stops looping and waits for idle mode before joining the thread)
+  void threadStep();                    ///< trigger (multiple) step (idle -> working mode) (wait until idle? otherwise calling during non-idle -> error)
+  void threadLoop();                    ///< loop, either with fixed beat or at full speed
+  void threadStop(bool wait=false);     ///< stop looping
+  void threadCancel();                  ///< a hard kill (pthread_cancel) of the thread
+
+  void waitForOpened();                 ///< caller waits until opening is done (working -> idle mode)
+  void waitForIdle();                   ///< caller waits until step is done (working -> idle mode)
+  bool isIdle();                        ///< check if in idle mode
+  bool isClosed();                      ///< check if closed
+
+  /// @name listen to a variable
+  void listenTo(RevisionedRWLock& var);
+  void stopListenTo(RevisionedRWLock& var);
+
+  /** use this to open drivers/devices/files and initialize
+   *  parameters; this is called within the thread */
+  virtual void open() = 0;
+
+  /** The most important method of all of this: step does the actual
+   *  computation of the thread. Access
+   *  the variables by calling the x.get(), x.set() or
+   *  x.[read|write|de]Access(), where ACCESS(TYPE, x) was
+   *  declared. */
+  virtual void step(){ LOG(-1) <<"you're calling the 'pseudo-pure virtual' step(), which should be overloaded (are you in a destructor?)"; }
+
+  /** use this to close drivers/devices/files; this is called within
+   *  the thread */
+  virtual void close() = 0;
+
+  void main(); //this is the thread main - should be private!
+};
+
+// macro for a most standard declaration of a module
+#define BEGIN_MODULE(name) \
+  struct name : Thread { \
+    struct s##name *s; \
+    name(): Thread(#name), s(NULL) {} \
+    virtual void open(); \
+    virtual void step(); \
+    virtual void close();
+
+#define END_MODULE() };
+
+
+//===========================================================================
 
 /// A variable is an access gated data field of type T
 template<class T>
@@ -270,14 +267,12 @@ struct AccessData {
   mlr::String name;           ///< name
   struct Node* registryNode;  ///< these objects are globally registered, so that new Accesses can connect with them
 
-
   AccessData() = default;
   AccessData(const AccessData&){ HALT("not allowed"); }
   void operator=(const AccessData&){ HALT("not allowed"); }
   RToken<T> get(Thread *th=NULL){ return RToken<T>(revLock, &value, th); } ///< read access to the variable's data
   WToken<T> set(Thread *th=NULL){ return WToken<T>(revLock, &value, th); } ///< write access to the variable's data
   WToken<T> set(const double& dataTime, Thread *th=NULL){ return WToken<T>(dataTime, revLock, &value, th); } ///< write access to the variable's data
-
 };
 
 template<class T> bool operator==(const AccessData<T>&,const AccessData<T>&){ return false; }

@@ -101,29 +101,30 @@ ConditionVariable::~ConditionVariable() {
   int rc = pthread_cond_destroy(&cond);    if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
-void ConditionVariable::setValue(int i, ConditionVariable* excludeListener) {
+void ConditionVariable::setValue(int i, ConditionVariable* messenger) {
   mutex.lock();
   value=i;
-  broadcast(excludeListener);
+  broadcast(messenger);
   mutex.unlock();
 }
 
-int ConditionVariable::incrementValue(ConditionVariable* excludeListener) {
+int ConditionVariable::incrementValue(ConditionVariable* messenger) {
   mutex.lock();
   value++;
-  broadcast(excludeListener);
+  broadcast(messenger);
   int i=value;
   mutex.unlock();
   return i;
 }
 
-void ConditionVariable::broadcast(ConditionVariable* excludeListener) {
-//  if(!signalOnlyFirstInQueue) {
-    int rc = pthread_cond_signal(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-//  } else {
-//    int rc = pthread_cond_broadcast(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-//  }
-  for(ConditionVariable *c:listeners) if(c!=excludeListener) c->setValue(1, this);
+void ConditionVariable::broadcast(ConditionVariable* messenger) {
+  //remember the messengers:
+  if(messenger) messengers.setAppend(messenger);
+  //signal to all waiters:
+  int rc = pthread_cond_signal(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  //int rc = pthread_cond_broadcast(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  //setValue to all listeners:
+  for(ConditionVariable *c:listeners) if(c!=messenger) c->setValue(1, this);
 }
 
 void ConditionVariable::listenTo(ConditionVariable* c){
@@ -227,21 +228,6 @@ void ConditionVariable::waitForValueSmallerThan(int i, bool userHasLocked) {
 }
 
 
-void ConditionVariable::waitUntil(double absTime, bool userHasLocked) {
-  NIY;
-  /*  int rc;
-    timespec ts;
-    ts.tv_sec  = tp.tv_sec;
-    ts.tv_nsec = tp.tv_usec * 1000;
-    ts.tv_sec += WAIT_TIME_SECONDS;
-
-    rc = pthread_mutex_lock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-    rc = pthread_cond_timedwait(&cond, &mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-    rc = pthread_mutex_unlock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-    */
-}
-
-
 //===========================================================================
 //
 // RevisionedRWLock
@@ -252,7 +238,6 @@ void ConditionVariable::waitUntil(double absTime, bool userHasLocked) {
 //}
 
 RevisionedRWLock::~RevisionedRWLock() {
-  for(Thread *th: listeners) th->listensTo.removeValue(this);
 //  delete registryNode;
 }
 
@@ -271,11 +256,11 @@ int RevisionedRWLock::readAccess(Thread *th) {
 int RevisionedRWLock::writeAccess(Thread *th) {
 //  engine().acc->queryWriteAccess(this, p);
   rwlock.writeLock();
-  int i = revision.incrementValue(&th->state);
+  int i = revision.incrementValue(&th->status);
   revision_time = mlr::clockTime();
 //  engine().acc->logWriteAccess(this, p);
 //  if(listeners.N && !th){ HALT("I need to know the calling thread when threads listen to variables"); }
-  for(Thread *l: listeners) if(l!=th) l->threadStep();
+//  for(Thread *l: listeners) if(l!=th) l->threadStep();
   return i;
 }
 
@@ -428,7 +413,7 @@ protected:
 };
 #endif
 
-Thread::Thread(const char* _name, double beatIntervalSec): name(_name), state(tsCLOSE), tid(0), thread(0), step_count(0), metronome(beatIntervalSec), registryNode(NULL)  {
+Thread::Thread(const char* _name, double beatIntervalSec): name(_name), status(tsCLOSE), tid(0), thread(0), step_count(0), metronome(beatIntervalSec), registryNode(NULL)  {
   registryNode = registry().newNode<Thread*>({"Thread", name}, {}, this);
   if(name.N>14) name.resize(14, true);
 }
@@ -438,18 +423,18 @@ Thread::~Thread() {
         That's because the 'virtual table is destroyed' before calling the destructor (google 'call virtual function\
         in destructor') but now the destructor has to call 'threadClose' which triggers a Thread::close(), which is\
         pure virtual while you're trying to destroy the Thread.")
-  for(RevisionedRWLock *v:listensTo){
-    v->rwlock.writeLock();
-    v->listeners.removeValue(this);
-    v->rwlock.unlock();
-  }
+//  for(RevisionedRWLock *v:listensTo){
+//    v->rwlock.writeLock();
+//    v->listeners.removeValue(this);
+//    v->rwlock.unlock();
+//  }
   if(!isClosed()) threadClose();
   delete registryNode;
 }
 
 void Thread::threadOpen(bool wait, int priority) {
-  state.lock();
-  if(!isClosed()){ state.unlock(); return; } //this is already open -- or has just beend opened (parallel call to threadOpen)
+  status.lock();
+  if(!isClosed()){ status.unlock(); return; } //this is already open -- or has just beend opened (parallel call to threadOpen)
 #ifndef MLR_QThread
   int rc;
   pthread_attr_t atts;
@@ -470,13 +455,13 @@ void Thread::threadOpen(bool wait, int priority) {
   thread = new sThread(this, "hallo");
   thread->open();
 #endif
-  state.value=tsOPENING;
-  state.unlock();
+  status.value=tsOPENING;
+  status.unlock();
   if(wait) waitForOpened();
 }
 
 void Thread::threadClose() {
-  state.setValue(tsCLOSE);
+  status.setValue(tsCLOSE);
   if(!thread) return;
 #ifndef MLR_QThread
   int rc;
@@ -501,11 +486,9 @@ void Thread::threadCancel() {
   thread=0;
 }
 
-void Thread::threadStep(uint steps, bool wait) {
+void Thread::threadStep() {
   if(isClosed()) threadOpen();
-  //CHECK_EQ(state.value,tsIDLE, "never step while thread is busy!");
-  state.setValue(steps);
-  if(wait) waitForIdle();
+  status.setValue(1);
 }
 
 void Thread::listenTo(RevisionedRWLock& var) {
@@ -515,7 +498,7 @@ void Thread::listenTo(RevisionedRWLock& var) {
   var.rwlock.unlock();
   listensTo.setAppend(&var);
 #else
-  state.listenTo(&var.revision);
+  status.listenTo(&var.revision);
 #endif
 }
 
@@ -526,32 +509,32 @@ void Thread::stopListenTo(RevisionedRWLock& var){
   var.listeners.removeValue(this);
   var.rwlock.unlock();
 #else
-  state.stopListenTo(&var.revision);
+  status.stopListenTo(&var.revision);
 #endif
 }
 
 bool Thread::isIdle() {
-  return state.getValue()==tsIDLE;
+  return status.getValue()==tsIDLE;
 }
 
 bool Thread::isClosed() {
-  return state.getValue()==tsCLOSE;
+  return status.getValue()==tsCLOSE;
 }
 
 void Thread::waitForOpened() {
-  state.waitForValueNotEq(tsOPENING);
+  status.waitForValueNotEq(tsOPENING);
 }
 
 void Thread::waitForIdle() {
-  state.waitForValueEq(tsIDLE);
+  status.waitForValueEq(tsIDLE);
 }
 
 void Thread::threadLoop() {
   if(isClosed()) threadOpen();
   if(metronome.ticInterval>1e-10){
-    state.setValue(tsBEATING);
+    status.setValue(tsBEATING);
   }else{
-    state.setValue(tsLOOPING);
+    status.setValue(tsLOOPING);
   }
 }
 
@@ -567,7 +550,7 @@ void Thread::threadLoop() {
 void Thread::threadStop(bool wait) {
   //CHECK(!isClosed(), "called stop to closed thread");
   if(!isClosed()){
-    state.setValue(tsIDLE);
+    status.setValue(tsIDLE);
     if(wait) waitForIdle();
   }
 }
@@ -584,34 +567,34 @@ void Thread::main() {
     try{
       open(); //virtual open routine
     } catch(const std::exception& ex) {
-      state.setValue(tsFAILURE);
+      status.setValue(tsFAILURE);
       cerr << "*** open() of Thread'" << name << "'failed: " << ex.what() << " -- closing it again" << endl;
     } catch(...) {
-      state.setValue(tsFAILURE);
+      status.setValue(tsFAILURE);
       cerr <<"*** open() of Thread '" <<name <<"' failed! -- closing it again";
       return;
     }
   }
 
-  state.lock();
-  if(state.value==tsOPENING){
-    state.value=tsIDLE;
-    state.broadcast();
+  status.lock();
+  if(status.value==tsOPENING){
+    status.value=tsIDLE;
+    status.broadcast();
   }
   //if not =tsOPENING anymore -> the state was set on looping or beating already
-  state.unlock();
+  status.unlock();
 
 
   timer.reset();
   bool waitForTic=false;
   for(;;){
     //-- wait for a non-idle state
-    state.lock();
-    state.waitForValueNotEq(tsIDLE, true);
-    if(state.value==tsCLOSE) { state.unlock();  break; }
-    if(state.value==tsBEATING) waitForTic=true; else waitForTic=false;
-    if(state.value>0) state.value--; //count down the steps
-    state.unlock();
+    status.lock();
+    status.waitForValueNotEq(tsIDLE, true);
+    if(status.value==tsCLOSE) { status.unlock();  break; }
+    if(status.value==tsBEATING) waitForTic=true; else waitForTic=false;
+    if(status.value>0) status.value=tsIDLE; //step command -> reset to idle
+    status.unlock();
 
     if(waitForTic) metronome.waitForTic();
 
@@ -625,10 +608,10 @@ void Thread::main() {
     timer.cycleDone();
     //engine().acc->logStepEnd(module);
 
-    //-- broadcast in case somebody was waiting for a finished step
-    state.lock();
-    state.broadcast();
-    state.unlock();
+//    //-- broadcast in case somebody was waiting for a finished step
+//    status.lock();
+//    status.broadcast();
+//    status.unlock();
   };
 
   stepMutex.lock();
@@ -725,17 +708,17 @@ void modulesReportCycleTimes(){
 // Utils
 //
 
-void stop(const ThreadL& P) {
-  for_list(Thread,  p,  P) p->threadStop();
-}
+//void stop(const ThreadL& P) {
+//  for_list(Thread,  p,  P) p->threadStop();
+//}
 
-void wait(const ThreadL& P) {
-  for_list(Thread,  p,  P) p->waitForIdle();
-}
+//void wait(const ThreadL& P) {
+//  for_list(Thread,  p,  P) p->waitForIdle();
+//}
 
-void close(const ThreadL& P) {
-  for_list(Thread,  p,  P) p->threadClose();
-}
+//void close(const ThreadL& P) {
+//  for_list(Thread,  p,  P) p->threadClose();
+//}
 
 //===========================================================================
 //
