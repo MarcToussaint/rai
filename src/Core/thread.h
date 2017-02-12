@@ -52,32 +52,33 @@ struct RWLock {
 
 /// a basic condition variable
 struct ConditionVariable {
-  int value;
+  int status;
   Mutex mutex;
   pthread_cond_t  cond;
-  ConditionVariableL listeners;   ///< list of other condition variables that are being signaled on a setValue access
+  ConditionVariableL listeners;   ///< list of other condition variables that are being signaled on a setStatus access
   ConditionVariableL listensTo;   ///< ...
   ConditionVariableL messengers;  ///< set(!) of condition variables that send signals (via the listen mechanism) - is cleared by the user only
+  struct Node* registryNode;      ///< every threading object registers itself globally
 
-  ConditionVariable(int initialState=0);
+  ConditionVariable(int initialStatus=0);
   virtual ~ConditionVariable(); //virtual, to enforce polymorphism
 
-  void setValue(int i, ConditionVariable* messenger=NULL); ///< sets state and broadcasts
-  int  incrementValue(ConditionVariable* messenger=NULL);   ///< increase value by 1
+  void setStatus(int i, ConditionVariable* messenger=NULL); ///< sets state and broadcasts
+  int  incrementStatus(ConditionVariable* messenger=NULL);   ///< increase value by 1
   void broadcast(ConditionVariable* messenger=NULL);       ///< just broadcast
   void listenTo(ConditionVariable *c);
   void stopListenTo(ConditionVariable *c);
 
-  void lock();   //the user can manually lock/unlock, if he needs locked state access for longer -> use userHasLocked=true below!
-  void unlock();
+  void statusLock();   //the user can manually lock/unlock, if he needs locked state access for longer -> use userHasLocked=true below!
+  void statusUnlock();
 
-  int  getValue(bool userHasLocked=false) const;
+  int  getStatus(bool userHasLocked=false) const;
   void waitForSignal(bool userHasLocked=false);
   bool waitForSignal(double seconds, bool userHasLocked=false);
-  bool waitForValueEq(int i, bool userHasLocked=false, double seconds=-1);    ///< return value is the state after the waiting
-  void waitForValueNotEq(int i, bool userHasLocked=false); ///< return value is the state after the waiting
-  void waitForValueGreaterThan(int i, bool userHasLocked=false); ///< return value is the state after the waiting
-  void waitForValueSmallerThan(int i, bool userHasLocked=false); ///< return value is the state after the waiting
+  bool waitForStatusEq(int i, bool userHasLocked=false, double seconds=-1);    ///< return value is the state after the waiting
+  void waitForStatusNotEq(int i, bool userHasLocked=false); ///< return value is the state after the waiting
+  void waitForStatusGreaterThan(int i, bool userHasLocked=false); ///< return value is the state after the waiting
+  void waitForStatusSmallerThan(int i, bool userHasLocked=false); ///< return value is the state after the waiting
 };
 
 //===========================================================================
@@ -86,11 +87,9 @@ struct ConditionVariable {
 //
 
 /// This RW lock counts revisions and broadcasts accesses to listeners; who is accessing can be logged; it has a unique name
-struct RevisionedRWLock {
+struct RevisionedRWLock : ConditionVariable{
   RWLock rwlock;              ///< rwLock (usually handled via read/writeAccess)
-  ConditionVariable revision; ///< revision (= number of write accesses) number
-  int last_revision;          ///< last revision that has been accessed (read or write)
-  double revision_time;       ///< clock time of last write access
+  double write_time;          ///< clock time of last write access
   double data_time;           ///< time stamp of the original data source
 
   /// @name c'tor/d'tor
@@ -101,14 +100,6 @@ struct RevisionedRWLock {
   int readAccess(Thread* th=NULL);  //might set the caller to sleep
   int writeAccess(Thread* th=NULL); //might set the caller to sleep
   int deAccess(Thread* th=NULL);
-
-  /// @name syncing via a variable
-  bool hasNewRevision();
-  /// the caller is set to sleep
-  int waitForNextRevision();
-  int waitForRevisionGreaterThan(int rev); //returns the revision
-  double revisionTime();
-  int revisionNumber();
 };
 
 
@@ -119,8 +110,10 @@ struct RToken{
   RevisionedRWLock& revLock;
   T *x;
   Thread *th;
-  RToken(RevisionedRWLock& _revLock, T *var, Thread* th=NULL) : revLock(_revLock), x(var), th(th){ revLock.readAccess(th); }
-  ~RToken(){ revLock.deAccess(th); }
+  int *last_access_revision;
+  RToken(RevisionedRWLock& _revLock, T *var, Thread* th=NULL, int* last_access_revision=NULL)
+    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){ revLock.readAccess(th); }
+  ~RToken(){ int r = revLock.deAccess(th); if(last_access_revision) *last_access_revision=r; }
   const T* operator->(){ return x; }
   operator const T&(){ return *x; }
   const T& operator()(){ return *x; }
@@ -131,10 +124,12 @@ struct WToken{
   RevisionedRWLock& revLock;
   T *x;
   Thread *th;
-  WToken(RevisionedRWLock& _revLock, T *var, Thread* th=NULL) : revLock(_revLock), x(var), th(th){ revLock.writeAccess(th); }
-  WToken(const double& dataTime, RevisionedRWLock& _revLock, T *var, Thread* th=NULL) : revLock(_revLock), x(var), th(th){ revLock.writeAccess(th); revLock.data_time=dataTime; }
-
-  ~WToken(){ revLock.deAccess(th); }
+  int *last_access_revision;
+  WToken(RevisionedRWLock& _revLock, T *var, Thread* th=NULL, int* last_access_revision=NULL)
+    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){ revLock.writeAccess(th); }
+  WToken(const double& dataTime, RevisionedRWLock& _revLock, T *var, Thread* th=NULL, int* last_access_revision=NULL)
+    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){ revLock.writeAccess(th); revLock.data_time=dataTime; }
+  ~WToken(){ int r = revLock.deAccess(th); if(last_access_revision) *last_access_revision=r; }
   void operator=(const T& y){ *x=y; }
   T* operator->(){ return x; }
   operator T&(){ return *x; }
@@ -182,10 +177,11 @@ struct CycleTimer {
  * Inherit from the class Thread to create your own process.
  * You need to implement open(), close(), and step().
  * step() should contain the actual calculation.
+ *
+ * the condition variable indicates the state of the thread: positive=do steps, otherwise it is a ThreadState
  */
-struct Thread{
+struct Thread : ConditionVariable{
   mlr::String name;
-  ConditionVariable status;       ///< the condition variable indicates the state of the thread: positive=steps-to-go, otherwise it is a ThreadState
   pid_t tid;                     ///< system thread id
 #ifndef MLR_QThread
   pthread_t thread;
@@ -196,7 +192,6 @@ struct Thread{
   uint step_count;              ///< how often the step was called
   Metronome metronome;          ///< used for beat-looping
   CycleTimer timer;             ///< measure how the time spend per cycle, within step, idle
-  struct Node* registryNode;    ///< every thread registers itself globally
   int verbose;
 
   /// @name c'tor/d'tor
@@ -224,8 +219,8 @@ struct Thread{
   bool isClosed();                      ///< check if closed
 
   /// @name listen to a variable
-  void listenTo(RevisionedRWLock& var);
-  void stopListenTo(RevisionedRWLock& var);
+//  void listenTo(RevisionedRWLock& var);
+//  void stopListenTo(RevisionedRWLock& var);
 
   /** use this to open drivers/devices/files and initialize
    *  parameters; this is called within the thread */
@@ -261,18 +256,17 @@ struct Thread{
 
 /// A variable is an access gated data field of type T
 template<class T>
-struct AccessData {
-  RevisionedRWLock revLock;
+struct AccessData : RevisionedRWLock {
   T value;
   mlr::String name;           ///< name
-  struct Node* registryNode;  ///< these objects are globally registered, so that new Accesses can connect with them
+//  struct Node* registryNode;  ///< these objects are globally registered, so that new Accesses can connect with them
 
   AccessData() = default;
   AccessData(const AccessData&){ HALT("not allowed"); }
   void operator=(const AccessData&){ HALT("not allowed"); }
-  RToken<T> get(Thread *th=NULL){ return RToken<T>(revLock, &value, th); } ///< read access to the variable's data
-  WToken<T> set(Thread *th=NULL){ return WToken<T>(revLock, &value, th); } ///< write access to the variable's data
-  WToken<T> set(const double& dataTime, Thread *th=NULL){ return WToken<T>(dataTime, revLock, &value, th); } ///< write access to the variable's data
+  RToken<T> get(Thread *th=NULL){ return RToken<T>(this, &value, th); } ///< read access to the variable's data
+  WToken<T> set(Thread *th=NULL){ return WToken<T>(this, &value, th); } ///< write access to the variable's data
+  WToken<T> set(const double& dataTime, Thread *th=NULL){ return WToken<T>(dataTime, this, &value, th); } ///< write access to the variable's data
 };
 
 template<class T> bool operator==(const AccessData<T>&,const AccessData<T>&){ return false; }
@@ -309,14 +303,15 @@ struct Access{
   Thread *thread;  ///< which module is this a member of
   RevisionedRWLock *revLock;   ///< which variable does it access
   struct Node* registryNode;
-  Access(const char* _name, Thread *_thread, RevisionedRWLock *_revLock):name(_name), thread(_thread), revLock(_revLock){}
+  int last_accessed_revision;          ///< last revision that has been accessed (read or write)
+  Access(const char* _name, Thread *_thread, RevisionedRWLock *_revLock):name(_name), thread(_thread), revLock(_revLock), last_accessed_revision(0){}
   virtual ~Access(){}
-  bool hasNewRevision(){ return revLock->hasNewRevision(); }
+  bool hasNewRevision(){ return revLock->getStatus()>last_accessed_revision; }
   int readAccess(){  return revLock->readAccess((Thread*)thread); }
   int writeAccess(){ return revLock->writeAccess((Thread*)thread); }
-  int deAccess(){    return revLock->deAccess((Thread*)thread); }
-  int waitForNextRevision(){ return revLock->waitForNextRevision(); }
-  int waitForRevisionGreaterThan(int rev){    return revLock->waitForRevisionGreaterThan(rev); }
+  int deAccess(){    last_accessed_revision = revLock->deAccess((Thread*)thread); return last_accessed_revision; }
+  void waitForNextRevision(){ revLock->waitForStatusGreaterThan(last_accessed_revision); }
+  void waitForRevisionGreaterThan(int rev){ revLock->waitForStatusGreaterThan(rev); }
 //  double& tstamp(){ return _data->data_time; } ///< reference to the data's time. AccessData should be locked while accessing this.
   double& dataTime(){ return revLock->data_time; } ///< reference to the data's time. AccessData should be locked while accessing this.
 };
@@ -336,7 +331,7 @@ struct Access_typed : Access{
     revLock = acc.revLock;
     if(thread){
       registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
-      if(moduleListens) thread->listenTo(*revLock);
+      if(moduleListens) thread->listenTo(revLock);
     }else{
       registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {data->registryNode}, this);
     }
@@ -352,21 +347,21 @@ struct Access_typed : Access{
       data->name = name;
       data->registryNode = vnode;
     }
-    revLock = &data->revLock; //dynamic_cast<RevisionedRWLock*>(data);
+    revLock = data; //dynamic_cast<RevisionedRWLock*>(data);
     if(thread){
       registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
-      if(moduleListens) thread->listenTo(*revLock);
+      if(moduleListens) thread->listenTo(revLock);
     }else{
       registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {data->registryNode}, this);
     }
   }
 
   ~Access_typed(){ delete registryNode; }
-  T& operator()(){ CHECK(data->revLock.rwlock.isLocked(),"direct variable access without locking it before");  return data->value; }
-  T* operator->(){ CHECK(data->revLock.rwlock.isLocked(),"direct variable access without locking it before");  return &(data->value); }
-  RToken<T> get(){ return RToken<T>(data->revLock, &data->value, thread); } ///< read access to the variable's data
-  WToken<T> set(){ return WToken<T>(data->revLock, &data->value, thread); } ///< write access to the variable's data
-  WToken<T> set(const double& dataTime){ return WToken<T>(dataTime, data->revLock, &data->value, thread); } ///< write access to the variable's data
+  T& operator()(){ CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return data->value; }
+  T* operator->(){ CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return &(data->value); }
+  RToken<T> get(){ return RToken<T>(*data, &data->value, thread, &last_accessed_revision); } ///< read access to the variable's data
+  WToken<T> set(){ return WToken<T>(*data, &data->value, thread, &last_accessed_revision); } ///< write access to the variable's data
+  WToken<T> set(const double& dataTime){ return WToken<T>(dataTime, *data, &data->value, thread, &last_accessed_revision); } ///< write access to the variable's data
 };
 
 inline bool operator==(const Access&,const Access&){ return false; }
@@ -476,14 +471,14 @@ struct ConditionVariable {
   ConditionVariable(int initialState=0) {}
   ~ConditionVariable() {}
 
-  void setValue(int i, bool signalOnlyFirstInQueue=false) { value=i; }
-  int  incrementValue(bool signalOnlyFirstInQueue=false) { value++; }
+  void setStatus(int i, bool signalOnlyFirstInQueue=false) { value=i; }
+  int  incrementStatus(bool signalOnlyFirstInQueue=false) { value++; }
   void broadcast(bool signalOnlyFirstInQueue=false) {}
 
   void lock() {}
   void unlock() {}
 
-  int  getValue(bool userHasLocked=false) const { return value; }
+  int  getStatus(bool userHasLocked=false) const { return value; }
 };
 
 #endif //MLR_MSVC

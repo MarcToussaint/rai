@@ -185,7 +185,7 @@ BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; ACCESS(byteA, pcms16ne2c
 struct OpencvCamera : Thread {
   struct sOpencvCamera *s;
   Access_typed<byteA> rgb;
-  std::map<int,double> properties; bool set(int prop, double value);
+  std::map<int,double> properties; bool set(int prop, double status);
   OpencvCamera(const char* rgb_name="rgb") : Thread(STRING("OpencvCamera_"<<rgb_name), 0.), rgb(this, rgb_name){}
   void open();
   void step();
@@ -196,7 +196,7 @@ struct CvtGray : Thread {
   struct sCvtGray *s;
   Access_typed<byteA> rgb;
   Access_typed<byteA> gray;
-  std::map<int,double> properties; bool set(int prop, double value);
+  std::map<int,double> properties; bool set(int prop, double status);
   CvtGray(const char* rgb_name="rgb", const char* gray_name="gray")
     : Thread(STRING("CvtGray_"<<rgb_name), -1), rgb(this, rgb_name, true), gray(this, gray_name){}
   void open();

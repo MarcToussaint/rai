@@ -475,7 +475,7 @@ namespace mlr {
     }
     void write(std::ostream& os) const{
       if(x<0) os <<"none";
-      os <<names[x];
+      else os <<names[x];
     }
   };
   template<class T> std::istream& operator>>(std::istream& is, Enum<T>& x){ x.read(is); return is; }

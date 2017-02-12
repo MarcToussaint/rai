@@ -847,7 +847,7 @@ bool glUI::clickCallback(OpenGL& gl) {
   int t=top;
   if(t!=-1) {
     cout <<"CLICK! on button #" <<t <<endl;
-    gl.watching.setValue(0);
+    gl.watching.setStatus(0);
     return false;
   }
   return true;
@@ -1271,8 +1271,8 @@ void OpenGL::Select(bool ignoreLock) {
 int OpenGL::watch(const char *txt) {
   update(STRING(txt<<" - press ENTER to continue"));
   if(mlr::getInteractivity()){
-    watching.setValue(1);
-    while(watching.getValue()!=0){
+    watching.setStatus(1);
+    while(watching.getStatus()!=0){
       processEvents();
       sleepForEvents();
     }
@@ -1288,10 +1288,10 @@ int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool wai
   captureImg |= _captureImg;
   captureDep |= _captureDep;
   if(txt) text.clear() <<txt;
-  isUpdating.waitForValueEq(0);
-  isUpdating.setValue(1);
+  isUpdating.waitForStatusEq(0);
+  isUpdating.setStatus(1);
   postRedrawEvent(false);
-  if(captureImg || captureDep || waitForCompletedDraw){ processEvents();  isUpdating.waitForValueEq(0);  processEvents(); }//{ mlr::wait(.01); processEvents(); mlr::wait(.01); }
+  if(captureImg || captureDep || waitForCompletedDraw){ processEvents();  isUpdating.waitForStatusEq(0);  processEvents(); }//{ mlr::wait(.01); processEvents(); mlr::wait(.01); }
   return pressedkey;
 }
 
@@ -1436,7 +1436,7 @@ void OpenGL::Key(unsigned char key, int _x, int _y) {
   bool cont=true;
   for(uint i=0; i<keyCalls.N; i++) cont=cont && keyCalls(i)->keyCallback(*this);
   
-  if(key==13 || key==27 || key=='q' || mlr::contains(exitkeys, key)) watching.setValue(0);
+  if(key==13 || key==27 || key=='q' || mlr::contains(exitkeys, key)) watching.setStatus(0);
   lock.unlock();
 }
 
@@ -1564,7 +1564,7 @@ void OpenGL::Motion(int _x, int _y) {
     //cam->focus();
 #endif
     postRedrawEvent(true);
-    if(immediateExitLoop) watching.setValue(0);
+    if(immediateExitLoop) watching.setStatus(0);
   }
   if(mouse_button==3) {  //translation || (mouse_button==1 && (modifiers&GLUT_ACTIVE_SHIFT) && !(modifiers&GLUT_ACTIVE_CTRL))){
     /*    mlr::Vector trans = s->downVec - vec;
@@ -1670,8 +1670,8 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
 
   CHECK_EQ(w%4,0,"should be devidable by 4!!");
 
-  isUpdating.waitForValueEq(0);
-  isUpdating.setValue(1);
+  isUpdating.waitForStatusEq(0);
+  isUpdating.setStatus(1);
 
 //  s->beginGlContext();
 
@@ -1770,7 +1770,7 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
   // Return to onscreen rendering:
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
-  isUpdating.setValue(0);
+  isUpdating.setStatus(0);
 //  s->endGlContext();
 #endif
 }

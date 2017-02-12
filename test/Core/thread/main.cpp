@@ -180,7 +180,7 @@ void TEST(ModuleSorter1){
   for(uint i=0;i<N;i++) vars(i)->set() = rnd(100);
 
   for(uint k=0;k<20;k++){
-    if(moduleShutdown().getValue()) break;
+    if(moduleShutdown().getStatus()) break;
     for(uint i=0;i<N;i++) cout <<vars(i)->get() <<' ';  cout <<endl;
     stepModules();
     mlr::wait(.1);

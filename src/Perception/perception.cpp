@@ -43,7 +43,7 @@ void VideoEncoder::close(){
 void VideoEncoder::step(){
   //-- grab from shared memory (necessary?)
   uint rev = img.readAccess();
-  double time = img.data->revLock.revisionTime();
+  double time = img.data->write_time;
   s->buffer = img();
   img.deAccess();
 
@@ -88,7 +88,7 @@ void VideoEncoderX264::close(){
 void VideoEncoderX264::step(){
     //-- grab from shared memory (necessary?)
     int nextRevision = img.readAccess();
-    double time = img.data->revLock.revision_time;
+    double time = img.data->write_time;
     s->buffer = img();
     img.deAccess();
 

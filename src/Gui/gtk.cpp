@@ -115,7 +115,7 @@ int gtkPopupMenuChoice(StringL& choices) {
   menuChoice.setValue(-1);
   gtk_widget_show_all(menu);
   gtk_menu_shell_select_first(GTK_MENU_SHELL(menu), false);
-  menuChoice.waitForValueNotEq(-1);
+  menuChoice.waitForStatusNotEq(-1);
   gtk_widget_destroy(menu);
   int choice = menuChoice.getValue();
   return choice>=0?choice:0;
