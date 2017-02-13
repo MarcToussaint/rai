@@ -183,6 +183,11 @@ CtrlTask::CtrlTask(const char* name, TaskMap* map, const Graph& params)
   if((n=params["prec"])) prec = n->get<arr>();
 }
 
+CtrlTask::~CtrlTask(){
+  if(map) delete map; map=NULL;
+  if(ref) delete ref; ref=NULL;
+}
+
 void CtrlTask::update(double tau, const mlr::KinematicWorld& world){
   map->phi(y, J_y, world);
   if(world.qdot.N) v = J_y*world.qdot; else v.resize(y.N).setZero();

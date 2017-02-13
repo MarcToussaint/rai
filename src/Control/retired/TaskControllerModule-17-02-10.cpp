@@ -1,4 +1,4 @@
-#include "TaskControllerModule.h"
+#include "TaskControlThread.h"
 #include <Gui/opengl.h>
 #include <RosCom/baxter.h>
 
@@ -9,15 +9,15 @@ void lowPassUpdate(arr& lowPass, const arr& signal, double rate=.1){
 }
 
 #ifdef MLR_ROS
-struct sTaskControllerModule{
+struct sTaskControlThread{
    ACCESSname(sensor_msgs::JointState, jointState)
 };
 #else
-struct sTaskControllerModule{};
+struct sTaskControlThread{};
 #endif
 
-TaskControllerModule::TaskControllerModule(const char* _robot, const mlr::KinematicWorld& world)
-  : Thread("TaskControllerModule", .01)
+TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWorld& world)
+  : Thread("TaskControlThread", .01)
   , s(NULL)
   , taskController(NULL)
   , oldfashioned(true)
@@ -30,7 +30,7 @@ TaskControllerModule::TaskControllerModule(const char* _robot, const mlr::Kinema
   , compensateFTSensors(false)
 {
 
-  s = new sTaskControllerModule();
+  s = new sTaskControlThread();
   useRos = mlr::getParameter<bool>("useRos",false);
   oldfashioned = mlr::getParameter<bool>("oldfashinedTaskControl", true);
   useDynSim = !oldfashioned && !useRos; //mlr::getParameter<bool>("useDynSim", true);
@@ -74,13 +74,13 @@ TaskControllerModule::TaskControllerModule(const char* _robot, const mlr::Kinema
 
 }
 
-TaskControllerModule::~TaskControllerModule(){
+TaskControlThread::~TaskControlThread(){
 }
 
 void changeColor(void*){  orsDrawColors=false; glColor(.5, 1., .5, .7); }
 void changeColor2(void*){  orsDrawColors=true; orsDrawAlpha=1.; }
 
-void TaskControllerModule::open(){
+void TaskControlThread::open(){
   //gc = new GravityCompensation(realWorld);
   if(compensateGravity) {  
     //gc->loadBetas();
@@ -119,7 +119,7 @@ void TaskControllerModule::open(){
 }
 
 
-void TaskControllerModule::step(){
+void TaskControlThread::step(){
   static uint t=0;
   t++;
 
@@ -393,6 +393,6 @@ void TaskControllerModule::step(){
   }
 }
 
-void TaskControllerModule::close(){
+void TaskControlThread::close(){
   delete taskController;
 }

@@ -119,6 +119,7 @@ struct CtrlTask{
   CtrlTask(const char* name, TaskMap* map);
   CtrlTask(const char* name, TaskMap* map, double decayTime, double dampingRatio, double maxVel, double maxAcc);
   CtrlTask(const char* name, TaskMap* map, const Graph& params);
+  ~CtrlTask();
 
   void update(double tau, const mlr::KinematicWorld& world);
 

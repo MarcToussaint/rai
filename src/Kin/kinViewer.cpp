@@ -19,6 +19,15 @@
 
 //===========================================================================
 
+OrsViewer::OrsViewer(const char* varname, bool computeCameraView)
+  : Thread("OrsViewer", .2),
+    modelWorld(this, varname, false),
+    modelCameraView(this, "modelCameraView"),
+    modelDepthView(this, "modelDepthView"),
+    computeCameraView(computeCameraView){}
+
+OrsViewer::~OrsViewer(){ threadClose(); }
+
 void OrsViewer::open(){
   copy.gl(modelWorld.name);
 }
@@ -48,6 +57,24 @@ void OrsViewer::step(){
 }
 
 //===========================================================================
+
+void OrsPathViewer::setConfigurations(const WorldL& cs){
+  configurations.writeAccess();
+  listResize(configurations(), cs.N);
+  for(uint i=0;i<cs.N;i++) configurations()(i)->copy(*cs(i), true);
+  configurations.deAccess();
+}
+
+void OrsPathViewer::clear(){
+  listDelete(configurations.set()());
+}
+
+OrsPathViewer::OrsPathViewer(const char* varname, double beatIntervalSec, int tprefix)
+  : Thread("OrsPathViewer", beatIntervalSec),
+    configurations(this, varname, true),
+    t(0), tprefix(tprefix), writeToFiles(false){}
+
+OrsPathViewer::~OrsPathViewer(){ threadClose(); clear(); }
 
 void OrsPathViewer::open(){
   copy.gl(configurations.name);
@@ -85,6 +112,11 @@ OrsPoseViewer::OrsPoseViewer(const StringA& poseVarNames, const mlr::KinematicWo
   for(mlr::KinematicWorld *w: copies) w->copy(copy, true);
 }
 
+OrsPoseViewer::~OrsPoseViewer(){
+  listDelete(copies);
+  listDelete(poses);
+}
+
 void OrsPoseViewer::recopyKinematics(const mlr::KinematicWorld& world){
   stepMutex.lock();
   copy = world;
@@ -119,11 +151,25 @@ void OrsPoseViewer::step(){
   gl.update("PoseViewer", false, false, true);
 }
 
+void OrsPoseViewer::close(){
+  gl.clear();
+}
+
 //===========================================================================
+
+ComputeCameraView::ComputeCameraView(uint skipFrames)
+  : Thread("ComputeCameraView"),
+    modelWorld(this, "modelWorld", true),
+    cameraView(this, "cameraView"),
+    skipFrames(skipFrames), frame(0){}
 
 void ComputeCameraView::open(){
   gl.add(glStandardLight);
   gl.addDrawer(&modelWorld.set()());
+}
+
+void ComputeCameraView::close(){
+  gl.clear();
 }
 
 void ComputeCameraView::step(){

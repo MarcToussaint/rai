@@ -404,7 +404,7 @@ protected:
 };
 #endif
 
-Thread::Thread(const char* _name, double beatIntervalSec): ConditionVariable(tsCLOSE), name(_name), tid(0), thread(0), step_count(0), metronome(beatIntervalSec) {
+Thread::Thread(const char* _name, double beatIntervalSec): ConditionVariable(tsCLOSE), name(_name), tid(0), thread(0), step_count(0), metronome(beatIntervalSec), verbose(0) {
   registryNode = registry().newNode<Thread*>({"Thread", name}, {}, this);
   if(name.N>14) name.resize(14, true);
 }

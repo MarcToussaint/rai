@@ -195,7 +195,7 @@ bool skipUntil(std::istream& is, const char *tag) {
 bool parse(std::istream& is, const char *str, bool silent) {
   if(!is.good()) { if(!silent) MLR_MSG("bad stream tag when scanning for `" <<str <<"'"); return false; }  //is.clear(); }
   uint i, n=strlen(str);
-  char *buf=new char [n+1]; buf[n]=0;
+  char buf[n+1]; buf[n]=0;
   mlr::skip(is, " \n\r\t");
   is.read(buf, n);
   if(!is.good() || strcmp(str, buf)) {
@@ -205,7 +205,6 @@ bool parse(std::istream& is, const char *str, bool silent) {
                           <<"' failed! (read instead: `" <<buf <<"')");
     return false;
   }
-  delete[] buf;
   return true;
 }
 
