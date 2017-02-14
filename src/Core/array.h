@@ -100,7 +100,7 @@ template<class T> struct Array {
   explicit Array(uint D0);
   explicit Array(uint D0, uint D1);
   explicit Array(uint D0, uint D1, uint D2);
-  explicit Array(const T* p, uint size);    //reference!
+  explicit Array(const T* p, uint size, bool byReference=true);    //reference!
   Array(std::initializer_list<T> values);
   Array(uint D0, std::initializer_list<T> values);
   Array(uint D0, uint D1, std::initializer_list<T> values);

@@ -81,9 +81,13 @@ struct OrsPoseViewer : Thread {
 struct ComputeCameraView : Thread {
   Access_typed<mlr::KinematicWorld> modelWorld;
   Access_typed<byteA> cameraView;
+  //-- internal (private)
   OpenGL gl;
+  mlr::KinematicWorld copy;
   uint skipFrames, frame;
+
   ComputeCameraView(uint skipFrames=0);
+  ~ComputeCameraView();
   void open();
   void step();
   void close();

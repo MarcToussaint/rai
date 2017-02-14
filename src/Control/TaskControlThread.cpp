@@ -74,6 +74,7 @@ TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWor
 }
 
 TaskControlThread::~TaskControlThread(){
+  threadClose();
   if(s) delete s; s=NULL;
 }
 

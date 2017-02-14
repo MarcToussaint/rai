@@ -410,15 +410,10 @@ Thread::Thread(const char* _name, double beatIntervalSec): ConditionVariable(tsC
 }
 
 Thread::~Thread() {
-  CHECK(isClosed(),"As a safety measure: always close a Thread BEFORE you destroy a Thread.\
-        That's because the 'virtual table is destroyed' before calling the destructor (google 'call virtual function\
+  CHECK(isClosed(),"Call 'threadClose()' in the destructor of the DERIVED class! \
+        That's because the 'virtual table is destroyed' before calling the destructor ~Thread (google 'call virtual function\
         in destructor') but now the destructor has to call 'threadClose' which triggers a Thread::close(), which is\
-        pure virtual while you're trying to destroy the Thread.")
-//  for(RevisionedRWLock *v:listensTo){
-//    v->rwlock.writeLock();
-//    v->listeners.removeValue(this);
-//    v->rwlock.unlock();
-//  }
+        pure virtual while you're trying to call ~Thread.")
   if(!isClosed()) threadClose();
   delete registryNode;
 }

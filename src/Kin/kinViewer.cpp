@@ -113,6 +113,7 @@ OrsPoseViewer::OrsPoseViewer(const StringA& poseVarNames, const mlr::KinematicWo
 }
 
 OrsPoseViewer::~OrsPoseViewer(){
+  threadClose();
   listDelete(copies);
   listDelete(poses);
 }
@@ -163,9 +164,14 @@ ComputeCameraView::ComputeCameraView(uint skipFrames)
     cameraView(this, "cameraView"),
     skipFrames(skipFrames), frame(0){}
 
+ComputeCameraView::~ComputeCameraView(){
+  modelWorld.stopListening();
+  threadClose();
+}
+
 void ComputeCameraView::open(){
   gl.add(glStandardLight);
-  gl.addDrawer(&modelWorld.set()());
+  gl.addDrawer(&copy);
 }
 
 void ComputeCameraView::close(){
@@ -174,25 +180,20 @@ void ComputeCameraView::close(){
 
 void ComputeCameraView::step(){
   if(!frame--){
-    modelWorld.readAccess();
+    copy = modelWorld.get();
+//    modelWorld.readAccess();
 
-#if 1
-    mlr::Shape *kinectShape = modelWorld().getShapeByName("endeffKinect");
+    mlr::Shape *kinectShape = copy.getShapeByName("endeffKinect");
     if(kinectShape){ //otherwise 'copy' is not up-to-date yet
       gl.lock.writeLock();
       gl.camera.setKinect();
       gl.camera.X = kinectShape->X * gl.camera.X;
+      gl.lock.unlock();
       gl.renderInBack(true, true, 580, 480);
       cameraView.set() = gl.captureImage;
-//      modelDepthView.set() = gl.captureDepth;
-      gl.lock.unlock();
+//      depthView.set() = gl.captureDepth;
     }
-    modelWorld.deAccess();
-#else
-    gl.renderInBack();
-    modelWorld.deAccess();
-    cameraView.set() = gl.captureImage;
-#endif
+//    modelWorld.deAccess();
 
     frame=skipFrames;
   }

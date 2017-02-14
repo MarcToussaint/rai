@@ -1749,7 +1749,7 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
 
   //-- draw!
-  Draw(w, h, NULL, true);
+  Draw(w, h, NULL, false);
   glFlush();
 
   //-- read

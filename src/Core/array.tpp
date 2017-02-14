@@ -88,7 +88,7 @@ template<class T> mlr::Array<T>::Array(uint i, uint j):Array() { resize(i, j); }
 template<class T> mlr::Array<T>::Array(uint i, uint j, uint k):Array() { resize(i, j, k); }
 
 /// this becomes a reference on the C-array \c p
-template<class T> mlr::Array<T>::Array(const T* p, uint size):Array() { referTo(p, size); }
+template<class T> mlr::Array<T>::Array(const T* p, uint size, bool byReference):Array() { if(byReference) referTo(p, size); else setCarray(p, size); }
 
 /// initialization via {1., 2., 3., ...} lists..
 template<class T> mlr::Array<T>::Array(std::initializer_list<T> values):Array() { operator=(values); }

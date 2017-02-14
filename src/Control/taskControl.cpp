@@ -310,9 +310,16 @@ arr TaskControlMethods::inverseKinematics(arr& qdot){
     }
   }
   if(!y.N) return zeros(Hmetric.d0);
-
   J.reshape(y.N, J.N/y.N);
-  arr Jinv = pseudoInverse(J, oneover(Hmetric), 1e-8);
+
+  arr Winv = oneover(Hmetric);
+  if(lockJoints.N){
+    uint n=J.d1;
+    CHECK_EQ(lockJoints.N, n, "");
+    for(uint i=0;i<n;i++) if(lockJoints(i)) Winv(i) = 0.;
+  }
+
+  arr Jinv = pseudoInverse(J, Winv, 1e-8);
   if(&qdot) qdot = Jinv*v;
   return Jinv*y;
 }

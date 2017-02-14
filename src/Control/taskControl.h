@@ -77,7 +77,7 @@ struct MotionProfile_PD: MotionProfile{
   void getDesiredLinAccLaw(arr& Kp_y, arr& Kd_y, arr& a0_y);
 
   double error();
-  bool isConverged(double tolerance=1e-2);
+  bool isConverged(double tolerance=2.5e-3);
   virtual bool isDone(){ return isConverged(); }
 };
 

@@ -333,6 +333,7 @@ struct Access_typed{
   int deAccess(){    last_accessed_revision = data->deAccess((Thread*)thread); return last_accessed_revision; }
   void waitForNextRevision(){ data->waitForStatusGreaterThan(last_accessed_revision); }
   void waitForRevisionGreaterThan(int rev){ data->waitForStatusGreaterThan(rev); }
+  void stopListening(){ thread->stopListenTo(data); }
 };
 
 #define ACCESS(type, name) Access_typed<type> name = Access_typed<type>(this, #name);
