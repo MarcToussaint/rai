@@ -111,8 +111,8 @@ struct RToken{
   T *x;
   Thread *th;
   int *last_access_revision;
-  RToken(RevisionedRWLock& _revLock, T *var, Thread* th=NULL, int* last_access_revision=NULL)
-    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){ revLock.readAccess(th); }
+  RToken(RevisionedRWLock& _revLock, T *var, Thread* th=NULL, int* last_access_revision=NULL, bool isAlreadyLocked=false)
+    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){ if(!isAlreadyLocked) revLock.readAccess(th); }
   ~RToken(){ int r = revLock.deAccess(th); if(last_access_revision) *last_access_revision=r; }
   const T* operator->(){ return x; }
   operator const T&(){ return *x; }

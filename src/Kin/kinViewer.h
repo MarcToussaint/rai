@@ -66,7 +66,7 @@ struct OrsPoseViewer : Thread {
   mlr::KinematicWorld copy;
   WorldL copies;
 
-  OrsPoseViewer(const StringA& poseVarNames, const mlr::KinematicWorld& world, double beatIntervalSec=.2);
+  OrsPoseViewer(const StringA& poseVarNames, const mlr::KinematicWorld& world, double beatIntervalSec=-1.);
   ~OrsPoseViewer();
 
   void recopyKinematics(const mlr::KinematicWorld& world);

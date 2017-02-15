@@ -32,7 +32,7 @@ void MotionProfile_Sine::update(arr& yRef, arr& ydotRef, double tau, const arr& 
 //===========================================================================
 
 MotionProfile_PD::MotionProfile_PD()
-  : kp(0.), kd(0.), maxVel(0.), maxAcc(0.), flipTargetSignOnNegScalarProduct(false), makeTargetModulo2PI(false){}
+  : kp(0.), kd(0.), maxVel(0.), maxAcc(0.), flipTargetSignOnNegScalarProduct(false), makeTargetModulo2PI(false), tolerance(1e-3){}
 
 MotionProfile_PD::MotionProfile_PD(const arr& _y_target, double decayTime, double dampingRatio, double maxVel, double maxAcc)
   : MotionProfile_PD() {
@@ -143,10 +143,11 @@ double MotionProfile_PD::error(){
   return maxDiff(y_ref, y_target) + maxDiff(v_ref, v_target);
 }
 
-bool MotionProfile_PD::isConverged(double tolerance){
+bool MotionProfile_PD::isConverged(double _tolerance){
+  if(_tolerance<0.) _tolerance=tolerance;
   return (y_ref.N && y_ref.N==y_target.N && v_ref.N==v_target.N
-          && maxDiff(y_ref, y_target)<tolerance
-          && maxDiff(v_ref, v_target)<tolerance); //TODO what if Kp = 0, then it should not count?!?
+          && maxDiff(y_ref, y_target)<_tolerance
+          && maxDiff(v_ref, v_target)<_tolerance); //TODO what if Kp = 0, then it should not count?!?
 }
 
 //===========================================================================

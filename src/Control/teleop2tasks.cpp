@@ -32,13 +32,11 @@ Teleop2Tasks::Teleop2Tasks(TaskControlMethods& _MP, const mlr::KinematicWorld& K
   fc->f_alpha = .075;
   fc->active = true;
 
-  int jointID = K.getJointByName("r_gripper_joint")->qIndex;
-  gripperR = fmc.addPDTask("gripperR", .3, 1.8, new TaskMap_qItself(jointID, K.q.N));
+  gripperR = fmc.addPDTask("gripperR", .3, 1.8, new TaskMap_qItself(QIP_byJointNames, {"r_gripper_joint"}, K));
   gripperR->PD().setTarget({0.01});
     //gripperR->PD().y_target = {.08};  // open gripper 8cm
 
-  jointID = K.getJointByName("l_gripper_joint")->qIndex;
-  gripperL = fmc.addPDTask("gripperL", .3, 1.8, new TaskMap_qItself(jointID, K.q.N));
+  gripperL = fmc.addPDTask("gripperL", .3, 1.8, new TaskMap_qItself(QIP_byJointNames, {"l_gripper_joint"}, K));
   gripperL->PD().setTarget({0.01});
   //gripperL->PD().y_target = {.08};  // open gripper 8cm
 
@@ -50,7 +48,7 @@ Teleop2Tasks::Teleop2Tasks(TaskControlMethods& _MP, const mlr::KinematicWorld& K
   effOrientationL->PD().y_target = {1., 0., 0., 0.};
   effOrientationL->PD().flipTargetSignOnNegScalarProduct = true;
 
-  base = fmc.addPDTask("basepos", .2,.8,new TaskMap_qItself(K, "worldTranslationRotation"));
+  base = fmc.addPDTask("basepos", .2,.8,new TaskMap_qItself(QIP_byJointNames, {"worldTranslationRotation"}, K));
   base->PD().y_target={0.,0.,0.};
   base->active =false;
 }

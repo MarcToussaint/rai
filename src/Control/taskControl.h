@@ -63,6 +63,7 @@ struct MotionProfile_PD: MotionProfile{
   double maxVel, maxAcc;
   bool flipTargetSignOnNegScalarProduct;
   bool makeTargetModulo2PI;
+  double tolerance;
   MotionProfile_PD();
   MotionProfile_PD(const arr& _y_target, double decayTime, double dampingRatio, double maxVel=0., double maxAcc=0.);
   MotionProfile_PD(const Graph& params);
@@ -77,8 +78,8 @@ struct MotionProfile_PD: MotionProfile{
   void getDesiredLinAccLaw(arr& Kp_y, arr& Kd_y, arr& a0_y);
 
   double error();
-  bool isConverged(double tolerance=2.5e-3);
-  virtual bool isDone(){ return isConverged(); }
+  bool isConverged(double tolerance);
+  virtual bool isDone(){ return isConverged(tolerance); }
 };
 
 //===========================================================================

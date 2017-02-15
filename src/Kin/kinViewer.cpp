@@ -104,12 +104,13 @@ void changeColor2(void*){  orsDrawColors=true; orsDrawAlpha=1.; }
 OrsPoseViewer::OrsPoseViewer(const StringA& poseVarNames, const mlr::KinematicWorld& world, double beatIntervalSec)
   : Thread("OrsPoseViewer", beatIntervalSec){
   for(const String& varname: poseVarNames){
-    poses.append( new Access_typed<arr>(this, varname, true) );
+    poses.append( new Access_typed<arr>(this, varname, (beatIntervalSec<0.)) ); //listen only when beatInterval=1.
     copies.append( new mlr::KinematicWorld() );
   }
   copy = world;
   computeMeshNormals(copy.shapes);
   for(mlr::KinematicWorld *w: copies) w->copy(copy, true);
+  threadLoop();
 }
 
 OrsPoseViewer::~OrsPoseViewer(){
