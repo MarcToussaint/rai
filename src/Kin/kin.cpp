@@ -2774,8 +2774,12 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     CHECK_EQ(symbol, deleteJoint, "");
     CHECK(to,"");
     mlr::Body *b = to->body;
-    CHECK_EQ(b->inLinks.N, 1,"");
-    from = b->inLinks(0)->from->shapes.first();
+    CHECK_LE(b->inLinks.N, 1,"");
+    if(b->inLinks.N){
+      from = b->inLinks(0)->from->shapes.first();
+    }else{
+      return;
+    }
   }
 
   if(symbol==deleteJoint){

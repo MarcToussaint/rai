@@ -19,9 +19,9 @@
 
 //===========================================================================
 
-OrsViewer::OrsViewer(const char* varname, bool computeCameraView)
-  : Thread("OrsViewer", .2),
-    modelWorld(this, varname, false),
+OrsViewer::OrsViewer(const char* varname, double beatIntervalSec, bool computeCameraView)
+  : Thread("OrsViewer", beatIntervalSec),
+    modelWorld(this, varname, (beatIntervalSec<0.)),
     modelCameraView(this, "modelCameraView"),
     modelDepthView(this, "modelDepthView"),
     computeCameraView(computeCameraView){}
@@ -71,7 +71,7 @@ void OrsPathViewer::clear(){
 
 OrsPathViewer::OrsPathViewer(const char* varname, double beatIntervalSec, int tprefix)
   : Thread("OrsPathViewer", beatIntervalSec),
-    configurations(this, varname, true),
+    configurations(this, varname, (beatIntervalSec<0.)),
     t(0), tprefix(tprefix), writeToFiles(false){}
 
 OrsPathViewer::~OrsPathViewer(){ threadClose(); clear(); }

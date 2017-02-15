@@ -30,7 +30,7 @@ struct OrsViewer : Thread {
   mlr::KinematicWorld copy;
   bool computeCameraView;
 
-  OrsViewer(const char* varname="modelWorld", bool computeCameraView=false);
+  OrsViewer(const char* varname="modelWorld", double beatIntervalSec=-1., bool computeCameraView=false);
   ~OrsViewer();
   void open();
   void step();
