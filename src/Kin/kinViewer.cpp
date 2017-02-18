@@ -102,7 +102,7 @@ void changeColor(void*){  orsDrawColors=false; glColor(.5, 1., .5, .7); }
 void changeColor2(void*){  orsDrawColors=true; orsDrawAlpha=1.; }
 
 OrsPoseViewer::OrsPoseViewer(const StringA& poseVarNames, const mlr::KinematicWorld& world, double beatIntervalSec)
-  : Thread("OrsPoseViewer", beatIntervalSec){
+  : Thread("OrsPoseViewer", beatIntervalSec), gl(STRING("OrsPoseViewer:" <<poseVarNames)){
   for(const String& varname: poseVarNames){
     poses.append( new Access_typed<arr>(this, varname, (beatIntervalSec<0.)) ); //listen only when beatInterval=1.
     copies.append( new mlr::KinematicWorld() );
@@ -150,7 +150,7 @@ void OrsPoseViewer::step(){
       copies(i)->setJointState(q);
   }
   gl.lock.unlock();
-  gl.update("PoseViewer", false, false, true);
+  gl.update(NULL, false, false, true);
 }
 
 void OrsPoseViewer::close(){

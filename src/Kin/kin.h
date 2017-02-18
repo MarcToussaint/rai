@@ -140,7 +140,7 @@ struct Joint {
   void applyTransformation(mlr::Transformation& f, const arr& q);
   void write(std::ostream& os) const;
   void read(std::istream& is);
-  Joint &data() { return *this; }
+  mlr::String tag(){ return STRING(name <<':' <<type <<':' <<from->name <<'-' <<to->name); }
 };
 
 //===========================================================================

@@ -243,6 +243,7 @@ public:
   String& operator=(const String& s);
   void operator=(const char *s);
   void set(const char *s, uint n);
+  void printf(const char *format, ...);
   void resize(uint n, bool copy); //low-level resizing the string buffer - with additinal final 0
   void append(char x);
   String& setRandom();

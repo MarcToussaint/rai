@@ -18,6 +18,7 @@
 #include <string.h>
 #include <signal.h>
 #include <stdexcept>
+#include <stdarg.h>
 #if defined MLR_Linux || defined MLR_Cygwin || defined MLR_Darwin
 #  include <limits.h>
 #  include <sys/time.h>
@@ -844,7 +845,6 @@ mlr::String::String(const String& s) : std::iostream(&buffer) { init(); this->op
 /// copy constructor for an ordinary C-string (needs to be 0-terminated)
 mlr::String::String(const char *s) : std::iostream(&buffer) { init(); this->operator=(s); }
 
-
 mlr::String::String(const std::string& s) : std::iostream(&buffer) { init(); this->operator=(s.c_str()); }
 
 mlr::String::String(std::istream& is) : std::iostream(&buffer) { init(); read(is, "", "", 0); }
@@ -918,6 +918,15 @@ void mlr::String::operator=(const char *s) {
 }
 
 void mlr::String::set(const char *s, uint n) { resize(n, false); memmove(p, s, n); }
+
+void mlr::String::printf(const char *format, ...){
+  resize(100, false);
+  va_list valist;
+  va_start(valist, format);
+  int len = vsnprintf(p, 100, format, valist);
+  va_end(valist);
+  resize(len, true);
+}
 
 /// shorthand for the !strcmp command
 bool mlr::String::operator==(const char *s) const { return p && !strcmp(p, s); }
@@ -995,7 +1004,7 @@ mlr::String mlr::getNowString() {
 
   mlr::String str;
   str.resize(19, false); //-- just enough
-  sprintf(str.p, "%02d-%02d-%02d--%02d-%02d-%02d",
+  sprintf(str.p, "%02d-%02d-%02d-%02d:%02d:%02d",
     now->tm_year-100,
     now->tm_mon+1,
     now->tm_mday,
