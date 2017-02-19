@@ -108,7 +108,8 @@ struct Quaternion {
   Quaternion(const arr& q) { CHECK_EQ(q.N,4, "");  set(q.p); }
   Quaternion(const Quaternion& q) { set(q.w, q.x, q.y, q.z); }
   double *p() { return &w; }
-  
+
+  double& operator()(uint i){ CHECK(i<4,"out of range"); return (&w)[i]; }
   void set(double w, double x, double y, double z);
   void set(const arr& q);
   void set(double* p);

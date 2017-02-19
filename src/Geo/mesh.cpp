@@ -359,10 +359,10 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
 
       //-- positive
       double w=100.;
-      phi(1) = -w*(a-.01);
-      phi(2) = -w*(b-.01);
-      phi(3) = -w*(c-.01);
-      phi(4) = -w*(r-.01);
+      phi(1) = -w*(a-.001);
+      phi(2) = -w*(b-.001);
+      phi(3) = -w*(c-.001);
+      phi(4) = -w*(r-.001);
       if(&J){
         J(1,0) = -w;
         J(2,1) = -w;
@@ -1047,8 +1047,8 @@ void mlr::Mesh::read(std::istream& is, const char* fileExtension, const char* fi
   if(!strcmp(fileExtension, "off")) { readOffFile(is); loaded=true; }
   if(!strcmp(fileExtension, "ply")) { readPLY(filename); loaded=true; }
   if(!strcmp(fileExtension, "tri")) { readTriFile(is); loaded=true; }
-  if(!strcmp(fileExtension, "stl") || !strcmp(fileExtension, "STL")) { readStlFile(is); loaded=true; }
-  if(!loaded) HALT("can't read fileExtension '" <<fileExtension <<"'");
+  if(!strcmp(fileExtension, "stl") || !strcmp(fileExtension, "STL")) { loaded = readStlFile(is); }
+  if(!loaded) HALT("can't read fileExtension '" <<fileExtension <<"' file '" <<filename <<"'");
 }
 
 void mlr::Mesh::writeTriFile(const char* filename) {
@@ -1280,7 +1280,7 @@ void mlr::Mesh::writePLY(const char *fn, bool bin) { NICO }
 void mlr::Mesh::readPLY(const char *fn) { NICO }
 #endif
 
-void mlr::Mesh::readStlFile(std::istream& is) {
+bool mlr::Mesh::readStlFile(std::istream& is) {
   //first check if binary
   if(mlr::parse(is, "solid", true)) { //is ascii
     mlr::String name;

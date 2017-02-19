@@ -156,7 +156,7 @@ struct Shape : GLDrawer{
   Transformation rel;  ///< relative translation/rotation of the bodies geometry
   Enum<ShapeType> type;
   double size[4];  //TODO: obsolete: directly translate to mesh?
-  double color[3]; //TODO: obsolete: directly translate to mesh?
+  double color[4]; //TODO: obsolete: directly translate to mesh?
   Mesh mesh, sscCore;
   double mesh_radius;
   bool cont;           ///< are contacts registered (or filtered in the callback)

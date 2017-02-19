@@ -243,7 +243,7 @@ mlr::Shape::~Shape() {
 
 void mlr::Shape::copy(const Shape& s, bool referenceMeshOnCopy){
   name=s.name; X=s.X; rel=s.rel; type=s.type;
-  memmove(size, s.size, 4*sizeof(double)); memmove(color, s.color, 3*sizeof(double));
+  memmove(size, s.size, 4*sizeof(double)); memmove(color, s.color, 4*sizeof(double));
   if(!referenceMeshOnCopy){
     mesh=s.mesh;
     sscCore=s.sscCore;
@@ -268,7 +268,11 @@ void mlr::Shape::parseAts() {
   mlr::FileToken fil;
   ats.get(rel, "rel");
   if(ats.get(x, "size"))          { CHECK_EQ(x.N,4,"size=[] needs 4 entries"); memmove(size, x.p, 4*sizeof(double)); }
-  if(ats.get(x, "color"))         { CHECK(x.N>=3,"color=[] needs at least 3 entries"); memmove(color, x.p, 3*sizeof(double)); }
+  if(ats.get(x, "color"))         {
+    CHECK(x.N==3 || x.N==4,"");
+    if(x.N==3){ memmove(color, x.p, 3*sizeof(double)); color[3]=1.; }
+    else memmove(color, x.p, 4*sizeof(double));
+  }
   if(ats.get(d, "type"))       { type=(ShapeType)(int)d;}
   else if(ats.get(str, "type")) { str>> type; }
   if(ats["contact"])           { cont=true; }
@@ -333,7 +337,7 @@ void mlr::Shape::parseAts() {
       ats.newNode<bool>({"rel_includes_mesh_center"}, {}, true);
     }
     mesh_radius = mesh.getRadius();
-    mesh.getBox(size[0], size[1], size[2]);
+//    mesh.getBox(size[0], size[1], size[2]);
 //    size[3]=0.;
   }
 
@@ -359,7 +363,7 @@ void mlr::Shape::parseAts() {
 void mlr::Shape::reset() {
   type=ST_none;
   size[0]=size[1]=size[2]=size[3]=1.;
-  color[0]=color[1]=color[2]=.8;
+  color[0]=color[1]=color[2]=.8; color[3]=1.;
   ats.clear();
   X.setZero();
   rel.setZero();
@@ -370,10 +374,10 @@ void mlr::Shape::reset() {
 
 void mlr::Shape::write(std::ostream& os) const {
   os <<"type=" <<type <<' ';
-  os <<"size=[" <<size[0] <<' '<<size[1] <<' '<<size[2] <<' '<<size[3] <<"] ";
+//  os <<"size=[" <<size[0] <<' '<<size[1] <<' '<<size[2] <<' '<<size[3] <<"] ";
   if(!rel.isZero()) os <<"rel=<T " <<rel <<" > ";
   for(Node * a: ats)
-  if(a->keys(0)!="rel" && a->keys(0)!="type" && a->keys(0)!="size") os <<*a <<' ';
+    if(a->keys.N && a->keys(0)!="rel" && a->keys(0)!="type" /*&& a->keys(0)!="size"*/) os <<*a <<' ';
 }
 
 void mlr::Shape::read(std::istream& is) {
@@ -387,7 +391,7 @@ void mlr::Shape::read(std::istream& is) {
 void mlr::Shape::glDraw(OpenGL& gl) {
   //set name (for OpenGL selection)
   glPushName((index <<2) | 1);
-  if(orsDrawColors && !orsDrawIndexColors) glColor(color[0], color[1], color[2], orsDrawAlpha);
+  if(orsDrawColors && !orsDrawIndexColors) glColor(color[0], color[1], color[2], color[3]*orsDrawAlpha);
   if(orsDrawIndexColors) glColor3b((index>>16)&0xff, (index>>8)&0xff, index&0xff);
 
 
@@ -3435,17 +3439,16 @@ void animateConfiguration(mlr::KinematicWorld& C, Inotify *ino) {
   const int steps = 50;
   for(i=x0.N; i--;) {
     x=x0;
-    const double upper_lim = lim(i,1);
-    const double lower_lim = lim(i,0);
-    const double delta = upper_lim - lower_lim;
-    const double center = lower_lim + delta / 2.;
-    const double offset = acos( 2. * (x0(i) - center) / delta );
+    double upper_lim = lim(i,1);
+    double lower_lim = lim(i,0);
+    double delta = upper_lim - lower_lim;
+    double center = lower_lim + .5*delta;
+    if(delta<=1e-10){ center=x0(i); delta=1.; }
+    double offset = acos( 2. * (x0(i) - center) / delta );
 
     for(t=0; t<steps; t++) {
       if(C.gl().pressedkey==13 || C.gl().pressedkey==27 || C.gl().pressedkey=='q') return;
       if(ino && ino->pollForModification()) return;
-      if (lim(i,0)==lim(i,1))
-        break;
 
       x(i) = center + (delta*(0.5*cos(MLR_2PI*t/steps + offset)));
       // Joint limits
