@@ -415,7 +415,7 @@ uintA shapesToShapeIndices(const mlr::Array<mlr::Shape*>& shapes);
 
 void lib_ors();
 void makeConvexHulls(ShapeL& shapes);
-void makeSSBoxApproximations(ShapeL& shapes);
+void computeOptimalSSBoxes(ShapeL& shapes);
 void computeMeshNormals(ShapeL& shapes);
 double forceClosureFromProxies(mlr::KinematicWorld& C, uint bodyIndex,
                                double distanceThreshold=0.01,

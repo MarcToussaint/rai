@@ -324,7 +324,8 @@ void mlr::Shape::parseAts() {
       CHECK(size[3]>1e-10,"");
       sscCore.setBox();
       sscCore.scale(size[0]-2.*size[3], size[1]-2.*size[3], size[2]-2.*size[3]);
-      mesh.setSSCvx(sscCore, size[3]);
+      mesh.setSSBox(size[0], size[1], size[2], size[3]);
+//      mesh.setSSCvx(sscCore, size[3]);
       break;
     default: NIY;
   }
@@ -510,14 +511,14 @@ void makeConvexHulls(ShapeL& shapes){
   for(mlr::Shape *s: shapes) s->mesh.makeConvexHull();
 }
 
-void makeSSBoxApproximations(ShapeL& shapes){
-//  for(mlr::Shape *s: shapes) s->mesh.makeSSBox(s->mesh.V);
+void computeOptimalSSBoxes(ShapeL& shapes){
+//  for(mlr::Shape *s: shapes) s->mesh.computeOptimalSSBox(s->mesh.V);
   for(uint i=0;i<shapes.N;i++){
     mlr::Shape *s=shapes(i);
     if(!(s->type==mlr::ST_mesh && s->mesh.V.N)) continue;
     mlr::Transformation t;
     arr x;
-    s->mesh.makeSSBox(x, t, s->mesh.V);
+    s->mesh.computeOptimalSSBox(x, t, s->mesh.V);
     s->type = mlr::ST_ssBox;
     s->size[0]=2.*x(0); s->size[1]=2.*x(1); s->size[2]=2.*x(2); s->size[3]=x(3);
     s->mesh.setSSBox(s->size[0], s->size[1], s->size[2], s->size[3]);

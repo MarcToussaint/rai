@@ -51,7 +51,7 @@ struct Mesh : GLDrawer {
   void setHalfSphere(uint fineness=3);
   void setCylinder(double r, double l, uint fineness=3);
   void setCappedCylinder(double r, double l, uint fineness=3);
-  void setSSBox(double x, double y, double z, double r, uint fineness=3);
+  void setSSBox(double x_width, double y_width, double z_height, double r, uint fineness=3);
   void setSSCvx(const mlr::Mesh& m, double r, uint fineness=3);
   void setImplicitSurface(ScalarFunction f, double lo=-10., double hi=+10., uint res=100);
   void setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res);
@@ -69,7 +69,7 @@ struct Mesh : GLDrawer {
   void addMesh(const mlr::Mesh& mesh2);
   void makeConvexHull();
   void makeTriangleFan();
-  void makeSSBox(arr& x, mlr::Transformation& t, const arr& X, uint trials=10, int verbose=0);
+  void computeOptimalSSBox(arr& x, mlr::Transformation& t, const arr& X, uint trials=10, int verbose=0);
   
   /// @name internal computations & cleanup
   void computeNormals();

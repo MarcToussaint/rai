@@ -197,13 +197,14 @@ void mlr::Mesh::setCylinder(double r, double l, uint fineness) {
   }
 }
 
-void mlr::Mesh::setSSBox(double x, double y, double z, double r, uint fineness){
+void mlr::Mesh::setSSBox(double x_width, double y_width, double z_height, double r, uint fineness){
+  CHECK(r>=0. && x_width>=2.*r && y_width>=2.*r && z_height>=2.*r, "width/height includes radius!");
   setSphere(fineness);
   scale(r);
   for(uint i=0;i<V.d0;i++){
-    V(i,0) += .5*mlr::sign(V(i,0))*x;
-    V(i,1) += .5*mlr::sign(V(i,1))*y;
-    V(i,2) += .5*mlr::sign(V(i,2))*z;
+    V(i,0) += mlr::sign(V(i,0))*(.5*x_width-r);
+    V(i,1) += mlr::sign(V(i,1))*(.5*y_width-r);
+    V(i,2) += mlr::sign(V(i,2))*(.5*z_height-r);
   }
 }
 
@@ -335,7 +336,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
       if(&H) {  H.resize(11,11); H.setZero(); }
 
       //-- the scalar objective
-      double a=x(0), b=x(1), c=x(2), r=x(3);
+      double a=x(0), b=x(1), c=x(2), r=x(3); //these are box-wall-coordinates --- not WIDTH!
       phi(0) = a*b*c + 2.*r*(a*b + a*c +b*c) + 4./3.*r*r*r;
       if(&tt) tt(0) = OT_f;
       if(&J){
@@ -419,7 +420,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
   g = opt.UCP.get_sumOfGviolations();
 }
 
-void mlr::Mesh::makeSSBox(arr& x_ret, Transformation& t_ret, const arr& X, uint trials, int verbose){
+void mlr::Mesh::computeOptimalSSBox(arr& x_ret, Transformation& t_ret, const arr& X, uint trials, int verbose){
   if(!X.N){ clear(); return; }
 
   arr x,x_best;
@@ -432,6 +433,11 @@ void mlr::Mesh::makeSSBox(arr& x_ret, Transformation& t_ret, const arr& X, uint 
   }
 
   x = x_best;
+
+  //convert box wall coordinates to box width (incl radius)
+  x(0) = 2.*(x(0)+x(3));
+  x(1) = 2.*(x(1)+x(3));
+  x(2) = 2.*(x(2)+x(3));
 
   if(x_ret!=NoArr)
     x_ret=x;
@@ -446,7 +452,7 @@ void mlr::Mesh::makeSSBox(arr& x_ret, Transformation& t_ret, const arr& X, uint 
   t.pos.set( x({4,6}) );
   t.rot.set( x({7,-1}) );
   t.rot.normalize();
-  setSSBox(2.*x(0), 2.*x(1), 2.*x(2), x(3));
+  setSSBox(x(0), x(1), x(2), x(3));
   t.applyOnPointArray(V);
 
   if(t_ret!=NoTransformation)
@@ -1339,6 +1345,7 @@ bool mlr::Mesh::readStlFile(std::istream& is) {
     }
     copy(V,Vfloat);
   }
+  return true;
 }
 
 /*void mlr::Mesh::getOBJ(char* filename){
@@ -2083,6 +2090,7 @@ double DistanceFunction_Cylinder::f(arr& g, arr& H, const arr& x){
 
 //===========================================================================
 
+/// dx, dy, dz are box-wall-coordinates: width=2*dx...; t is box transform; x is query point in world
 void closestPointOnBox(arr& closest, arr& signs, const mlr::Transformation& t, double dx, double dy, double dz, const arr& x){
   arr rot = t.rot.getArr();
   arr a_rel = (~rot)*(x-conv_vec2arr(t.pos)); //point in box coordinates
@@ -2154,7 +2162,8 @@ double DistanceFunction_Box::f(arr& g, arr& H, const arr& x){
 }
 
 ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> double{
-  CHECK_EQ(x.N, 14, "pt + abcr + pose");
+  // x{0,2} are box-wall-coordinates, not width!
+  CHECK_EQ(x.N, 14, "query-pt + abcr + pose");
   mlr::Transformation t;
   t.pos.set( x({7,9}) );
   t.rot.set( x({10,13}) );
