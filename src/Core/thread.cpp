@@ -95,6 +95,7 @@ ConditionVariable::~ConditionVariable() {
   for(ConditionVariable *c:listeners){
     c->statusLock();
     c->listensTo.removeValue(this);
+    c->messengers.removeValue(this, false);
     c->statusUnlock();
   }
 
@@ -141,6 +142,7 @@ void ConditionVariable::stopListenTo(ConditionVariable* c){
   c->statusLock();
   c->listeners.removeValue(this);
   listensTo.removeValue(c);
+  messengers.removeValue(c, false);
   c->statusUnlock();
   mutex.unlock();
 }

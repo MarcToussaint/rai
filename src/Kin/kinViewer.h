@@ -60,13 +60,14 @@ struct OrsPathViewer : Thread {
 //===========================================================================
 
 struct OrsPoseViewer : Thread {
+  Access_typed<mlr::KinematicWorld> modelWorld;
   mlr::Array<Access_typed<arr>*> poses; ///< poses to be watched
   //-- internal (private)
   OpenGL gl;
   mlr::KinematicWorld copy;
   WorldL copies;
 
-  OrsPoseViewer(const StringA& poseVarNames, const mlr::KinematicWorld& world, double beatIntervalSec=-1.);
+  OrsPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec=-1.);
   ~OrsPoseViewer();
 
   void recopyKinematics(const mlr::KinematicWorld& world);

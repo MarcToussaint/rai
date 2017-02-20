@@ -116,7 +116,7 @@ void TEST(GJK_Jacobians) {
     CHECK_ZERO(l2-d2, 1e-6,"");
   };
 
-  TaskMap_GJK gjk(W, Graph(STRING("type=GJK_vec ref1=s1 ref2=s2")), true);
+  TaskMap_GJK gjk(W, "s1", "s2", true);
 
   for(uint k=0;k<30;k++){
     rndGauss(q, .3);

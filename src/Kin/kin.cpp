@@ -331,16 +331,16 @@ void mlr::Shape::parseAts() {
   }
 
   //center the mesh:
-  if(mesh.V.N){
+  if(type==mlr::ST_mesh && mesh.V.N){
     Vector c = mesh.center();
     if(c.length()>1e-8 && !ats["rel_includes_mesh_center"]){
       rel.addRelativeTranslation(c);
       ats.newNode<bool>({"rel_includes_mesh_center"}, {}, true);
     }
-    mesh_radius = mesh.getRadius();
-//    mesh.getBox(size[0], size[1], size[2]);
-//    size[3]=0.;
   }
+
+  //compute the bounding radius
+  if(mesh.V.N) mesh_radius = mesh.getRadius();
 
   //add inertia to the body
   if(body) {
@@ -507,8 +507,8 @@ uintA shapesToShapeIndices(const mlr::Array<mlr::Shape*>& shapes) {
   return I;
 }
 
-void makeConvexHulls(ShapeL& shapes){
-  for(mlr::Shape *s: shapes) s->mesh.makeConvexHull();
+void makeConvexHulls(ShapeL& shapes, bool onlyContactShapes){
+  for(mlr::Shape *s: shapes) if(!onlyContactShapes || s->cont) s->mesh.makeConvexHull();
 }
 
 void computeOptimalSSBoxes(ShapeL& shapes){
@@ -887,6 +887,7 @@ void mlr::KinematicWorld::calc_fwdPropagateFrames() {
 #else
       j->applyTransformation(j->to->X, q);
 #endif
+      CHECK_EQ(j->to->X.pos.x, j->to->X.pos.x, "");
       if(!isLinkTree) j->to->X.appendTransformation(j->B);
     }
   }
@@ -2149,7 +2150,7 @@ end_header\n";
 }
 
 /// dump the list of current proximities on the screen
-void mlr::KinematicWorld::reportProxies(std::ostream *os, double belowMargin) {
+void mlr::KinematicWorld::reportProxies(std::ostream *os, double belowMargin) const{
   (*os) <<"Proximity report: #" <<proxies.N <<endl;
   for_list(Proxy, p, proxies) {
     if(belowMargin>0. && p->d>belowMargin) continue;
@@ -2719,8 +2720,8 @@ void mlr::KinematicWorld::glDraw(OpenGL& gl) {
   if(orsDrawProxies) for(Proxy *proxy: proxies) {
     glLoadIdentity();
     if(!proxy->colorCode){
-      if(proxy->d>0.) glColor(.75,.75,.75);
-      else glColor(.75,.5,.5);
+      if(proxy->d>0.) glColor(.8,.2,.2);
+      else glColor(1,0,0);
     }else glColor(proxy->colorCode);
     glBegin(GL_LINES);
     glVertex3dv(proxy->posA.p());

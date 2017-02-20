@@ -179,6 +179,7 @@ void TaskControlThread::step(){
 
   q_model += taskController->inverseKinematics(qdot_model);
   modelWorld().setJointState(q_model, qdot_model);
+  modelWorld().stepSwift();
 
   if(verbose) taskController->reportCurrentState();
   ctrlTasks.deAccess();

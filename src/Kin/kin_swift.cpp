@@ -57,7 +57,7 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
   INDEXshape2swift.resize(world.shapes.N);  INDEXshape2swift=-1;
   
   //cout <<" -- SwiftInterface init";
-  for_list(mlr::Shape, s,  world.shapes) {
+  for_list(mlr::Shape, s,  world.shapes) if(s->cont){
     //cout <<'.' <<flush;
     add=true;
     switch(s->type) {
@@ -127,7 +127,7 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
     }
   }
   
-  initActivations(world);
+  initActivations(world, 4);
   
   pushToSwift(world);
   //cout <<"...done" <<endl;

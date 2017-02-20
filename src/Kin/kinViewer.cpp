@@ -24,7 +24,9 @@ OrsViewer::OrsViewer(const char* varname, double beatIntervalSec, bool computeCa
     modelWorld(this, varname, (beatIntervalSec<0.)),
     modelCameraView(this, "modelCameraView"),
     modelDepthView(this, "modelDepthView"),
-    computeCameraView(computeCameraView){}
+    computeCameraView(computeCameraView){
+  if(beatIntervalSec>=0.) threadLoop();
+}
 
 OrsViewer::~OrsViewer(){ threadClose(); }
 
@@ -101,16 +103,18 @@ void OrsPathViewer::step(){
 void changeColor(void*){  orsDrawColors=false; glColor(.5, 1., .5, .7); }
 void changeColor2(void*){  orsDrawColors=true; orsDrawAlpha=1.; }
 
-OrsPoseViewer::OrsPoseViewer(const StringA& poseVarNames, const mlr::KinematicWorld& world, double beatIntervalSec)
-  : Thread("OrsPoseViewer", beatIntervalSec), gl(STRING("OrsPoseViewer:" <<poseVarNames)){
+OrsPoseViewer::OrsPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec)
+  : Thread("OrsPoseViewer", beatIntervalSec),
+    modelWorld(this, modelVarName, false),
+    gl(STRING("OrsPoseViewer:" <<poseVarNames)){
   for(const String& varname: poseVarNames){
     poses.append( new Access_typed<arr>(this, varname, (beatIntervalSec<0.)) ); //listen only when beatInterval=1.
     copies.append( new mlr::KinematicWorld() );
   }
-  copy = world;
+  copy = modelWorld.get();
   computeMeshNormals(copy.shapes);
   for(mlr::KinematicWorld *w: copies) w->copy(copy, true);
-  threadLoop();
+  if(beatIntervalSec>=0.) threadLoop();
 }
 
 OrsPoseViewer::~OrsPoseViewer(){
@@ -120,11 +124,11 @@ OrsPoseViewer::~OrsPoseViewer(){
 }
 
 void OrsPoseViewer::recopyKinematics(const mlr::KinematicWorld& world){
-  stepMutex.lock();
   copy = world;
   computeMeshNormals(copy.shapes);
+  gl.lock.writeLock();
   for(mlr::KinematicWorld *w: copies) w->copy(copy, true);
-  stepMutex.unlock();
+  gl.lock.unlock();
 }
 
 void OrsPoseViewer::open() {
@@ -143,6 +147,8 @@ void OrsPoseViewer::open() {
 }
 
 void OrsPoseViewer::step(){
+  listCopy(copies.first()->proxies, modelWorld.get()->proxies);
+//  cout <<copy.proxies.N <<endl;
   gl.lock.writeLock();
   for(uint i=0;i<copies.N;i++){
     arr q=poses(i)->get();

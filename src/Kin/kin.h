@@ -338,7 +338,7 @@ struct KinematicWorld : GLDrawer{
   void read(std::istream& is);
   void glDraw(struct OpenGL&);
 
-  void reportProxies(std::ostream *os=&std::cout, double belowMargin=-1.);
+  void reportProxies(std::ostream *os=&std::cout, double belowMargin=-1.) const;
   void writePlyFile(const char* filename) const; //TODO: move outside
 };
 
@@ -414,7 +414,7 @@ uintA shapesToShapeIndices(const mlr::Array<mlr::Shape*>& shapes);
 //
 
 void lib_ors();
-void makeConvexHulls(ShapeL& shapes);
+void makeConvexHulls(ShapeL& shapes, bool onlyContactShapes=true);
 void computeOptimalSSBoxes(ShapeL& shapes);
 void computeMeshNormals(ShapeL& shapes);
 double forceClosureFromProxies(mlr::KinematicWorld& C, uint bodyIndex,

@@ -590,12 +590,17 @@ template<class T> void mlr::Array<T>::removePerm(uint i) {
 }
 
 /// remove (delete) a subsequence of the array -- the array becomes 1D!  [only with memMove!] (throws error if value does not exist)
-template<class T> void mlr::Array<T>::removeValue(const T& x) {
+template<class T> bool mlr::Array<T>::removeValue(const T& x, bool errorIfMissing) {
   CHECK(memMove, "only with memMove");
   uint i;
   for(i=0; i<N; i++) if(p[i]==x) break;
-  CHECK(i<N, "value to remove not found");
+  if(errorIfMissing){
+    CHECK(i<N, "value to remove not found");
+  }else{
+    if(i==N) return false;
+  }
   remove(i, 1);
+  return true;
 }
 
 /// remove (delete) a subsequence of the array -- the array becomes 1D!  [only with memMove!]
@@ -603,21 +608,6 @@ template<class T> void mlr::Array<T>::removeAllValues(const T& x) {
   CHECK(memMove, "only with memMove");
   uint i;
   for(i=0; i<N; i++) if(p[i]==x) { remove(i, 1); i--; }
-}
-
-/** @brief remove (delete) a subsequence of the array -- the array becomes 1D!  [only with memMove!]
- Returns true if value was found and deleted.
- Returns false if value was not found.*/
-template<class T> bool mlr::Array<T>::removeValueSafe(const T& x) {
-  CHECK(memMove, "only with memMove");
-  uint i;
-  for(i=0; i<N; i++) if(p[i]==x) break;
-  if(i >= N)
-    return false;
-  else {
-    remove(i, 1);
-    return true;
-  }
 }
 
 /// replace n elements at pos i by the sequence x -- the array becomes 1D!  [only with memMove!]

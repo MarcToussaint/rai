@@ -238,7 +238,7 @@ template<class T> struct Array {
   void replace(uint i, uint n, const Array<T>& x);
   void remove(uint i, uint n=1);
   void removePerm(uint i);          //more efficient for sets, works also for non-memMove arrays
-  void removeValue(const T& x);
+  bool removeValue(const T& x, bool errorIfMissing=true);
   bool removeValueSafe(const T& x); //? same as if((i=findValue(x))!=-1) remove[Perm](i);
   void removeAllValues(const T& x);
   void delRows(uint i, uint k=1);

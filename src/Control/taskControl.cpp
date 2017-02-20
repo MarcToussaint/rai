@@ -168,7 +168,7 @@ void MotionProfile_Path::update(arr& yRef, arr& ydotRef, double tau, const arr& 
 //===========================================================================
 
 CtrlTask::CtrlTask(const char* name, TaskMap* map)
-  : map(map), name(name), active(true), ref(NULL), prec(ARR(10.)){
+  : map(map), name(name), active(true), ref(NULL), prec(ARR(1.)){
   //  ref = new MotionProfile_PD();
 }
 
@@ -320,7 +320,9 @@ arr TaskControlMethods::inverseKinematics(arr& qdot){
     for(uint i=0;i<n;i++) if(lockJoints(i)) Winv(i) = 0.;
   }
 
-  arr Jinv = pseudoInverse(J, Winv, 1e-6);
+  arr Jinv = pseudoInverse(J, Winv, 1e2);
+  checkNan(Jinv);
+  checkNan(y);
   if(&qdot) qdot = Jinv*v;
   return Jinv*y;
 }
