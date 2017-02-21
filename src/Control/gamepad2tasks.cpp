@@ -31,7 +31,7 @@ Gamepad2Tasks::Gamepad2Tasks(TaskControlMethods& _TC, const mlr::KinematicWorld&
     endeffR = new CtrlTask("endeffR", new TaskMap_Default(posTMT, K, "endeffR", NoVector, "base_footprint"), .5, .8, 1., 1.);
     endeffL = new CtrlTask("endeffL", new TaskMap_Default(posTMT, K, "endeffL", NoVector, "base_footprint"), .5, .8, 1., 1.);
     //  base = new CtrlTask("endeffBase", new TaskMap_qItself(MP.world, "worldTranslationRotation"), .2, .8, 1., 1.);
-    //  torso = new CtrlTask("torso_lift_link", new TaskMap_Default(posTMT, MP.world, "torso_lift_link_0"), .2, .8, 1., 1.);
+    //  torso = new CtrlTask("torso_lift_link", new TaskMap_Default(posTMT, MP.world, "torso_lift_link_1"), .2, .8, 1., 1.);
     head = new CtrlTask("endeffHead", new TaskMap_Default(gazeAtTMT, K, "endeffHead", Vector_z, "base_footprint"), .5, 1., 1., 1.);
     if(robot=="pr2") headAxes = new CtrlTask("endeffHead", new TaskMap_qItself(QIP_byJointNames, {"head_pan_joint", "head_tilt_joint"}, K), .5, 1., 1., 1.);
     if(robot=="baxter") headAxes = new CtrlTask("endeffHead", new TaskMap_qItself(QIP_byJointNames, {"head_pan"}, K), .5, 1., 1., 1.);
@@ -39,7 +39,7 @@ Gamepad2Tasks::Gamepad2Tasks(TaskControlMethods& _TC, const mlr::KinematicWorld&
     coll = new CtrlTask("collisions", new TaskMap_Proxy(allPTMT, {0u}, .1), .2, .8, 1., 1.);
     if(robot=="pr2") {
       base = new CtrlTask("endeffBase", new TaskMap_qItself(QIP_byJointNames, {"worldTranslationRotation"}, K), .2, .8, 1., 1.);
-      torso = new CtrlTask("torso_lift_link", new TaskMap_Default(posTMT, K, "torso_lift_link_0"), .2, .8, 1., 1.);
+      torso = new CtrlTask("torso_lift_link", new TaskMap_Default(posTMT, K, "torso_lift_link_1"), .2, .8, 1., 1.);
       gripperL = new CtrlTask("gripperL", new TaskMap_qItself(QIP_byJointNames, {"l_gripper_joint"}, K), 2., .8, 1., 1.);
       gripperR = new CtrlTask("gripperR", new TaskMap_qItself(QIP_byJointNames, {"r_gripper_joint"}, K), 2., .8, 1., 1.);
     }

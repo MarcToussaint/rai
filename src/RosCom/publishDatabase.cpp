@@ -382,7 +382,7 @@ void PublishDatabase::step()
     if (new_clusters.contains(id) == 0)
     {
       // Remove ID from the world
-      stored_clusters.removeValueSafe(id);
+      stored_clusters.removeValue(id, false);
       delete modelWorld().getBodyByName(STRING("cluster_" << id));
     }
   }
@@ -391,7 +391,7 @@ void PublishDatabase::step()
     if (new_alvars.contains(id) == 0)
     {
       // Remove ID from the world
-      stored_alvars.removeValueSafe(id);
+      stored_alvars.removeValue(id, false);
       delete modelWorld().getBodyByName(STRING("alvar_" << id));
     }
   }
@@ -400,7 +400,7 @@ void PublishDatabase::step()
     if (new_optitrackmarkers.contains(id) == 0)
     {
       // Remove ID from the world
-      stored_optitrackmarkers.removeValueSafe(id);
+      stored_optitrackmarkers.removeValue(id, false);
       delete modelWorld().getBodyByName(STRING("optitrackmarker_" << id));
     }
   }
@@ -409,7 +409,7 @@ void PublishDatabase::step()
     if (new_optitrackbodies.contains(id) == 0)
     {
       // Remove ID from the world
-      stored_optitrackbodies.removeValueSafe(id);
+      stored_optitrackbodies.removeValue(id, false);
       delete modelWorld().getBodyByName(STRING("optitrackbody_" << id));
     }
   }
@@ -418,7 +418,7 @@ void PublishDatabase::step()
     if (new_planes.contains(id) == 0)
     {
       // Remove ID from the world
-      stored_planes.removeValueSafe(id);
+      stored_planes.removeValue(id, false);
       delete modelWorld().getBodyByName(STRING("plane_" << id));
     }
   }

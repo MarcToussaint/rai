@@ -20,7 +20,6 @@ TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWor
   : Thread("TaskControlThread", .01)
   , s(NULL)
   , taskController(NULL)
-  , oldfashioned(true)
   , useRos(false)
   , requiresInitialSync(true)
   , syncModelStateWithReal(false)
@@ -32,8 +31,7 @@ TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWor
 
   s = new sTaskControlThread();
   useRos = mlr::getParameter<bool>("useRos",false);
-  oldfashioned = mlr::getParameter<bool>("oldfashinedTaskControl", true);
-  useDynSim = !oldfashioned && !useRos; //mlr::getParameter<bool>("useDynSim", true);
+  useDynSim = !useRos; //mlr::getParameter<bool>("useDynSim", true);
 
   robot = mlr::getParameter<mlr::String>("robot");
 
@@ -68,8 +66,6 @@ TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWor
 
   q0 = realWorld.q;
 
-  qSign.set()() = zeros(q0.N);
-
   fRInitialOffset = ARR(-0.17119, 0.544316, -1.2, 0.023718, 0.00802182, 0.0095804);
 }
 
@@ -92,12 +88,10 @@ void TaskControlThread::open(){
     gc->learnFTModel();
   }
 
-  if(useRos || !oldfashioned) syncModelStateWithReal=true;
+  if(useRos) syncModelStateWithReal=true;
 
-  if(!oldfashioned && !useRos) {
-    dynSim = new RTControllerSimulation(realWorld, 0.01, false, 0.);
-    dynSim->threadLoop();
-  }
+//    dynSim = new RTControllerSimulation(realWorld, 0.01, false, 0.);
+//    dynSim->threadLoop();
 }
 
 
@@ -108,33 +102,22 @@ void TaskControlThread::step(){
   mlr::Joint *trans = realWorld.getJointByName("worldTranslationRotation", false);
 
   //-- read real state
-  if(useRos || !oldfashioned){
+  if(useRos){
     bool succ=true;
     qdot_last = qdot_real;
     if(robot=="pr2"){
       ctrl_obs.waitForRevisionGreaterThan(0);
-      if(useRos)  pr2_odom.waitForRevisionGreaterThan(0);
+      pr2_odom.waitForRevisionGreaterThan(0);
+
+      //update q_read from both, ctrl_obs and pr2_odom
       q_real = ctrl_obs.get()->q;
       qdot_real = ctrl_obs.get()->qdot;
       arr pr2odom = pr2_odom.get();
       if(q_real.N==realWorld.q.N && pr2odom.N==3){
         q_real({trans->qIndex, trans->qIndex+2}) = pr2odom;
       }
-
-      if(qLastReading.d0 > 0) {
-        qSign.writeAccess();
-        for(uint i = 0; i < q_real.N; i++) {
-          double si = sign(q_real(i)-qLastReading(i));
-          if(si != qSign()(i) && si != 0) {
-            qSign()(i) = si;
-          }
-        }
-        //cout << qSign() << endl;
-        qSign.deAccess();
-      }
-      qLastReading = q_real;
     }
-    if(robot=="baxter" && useRos){
+    if(robot=="baxter"){
 #ifdef MLR_ROS
       s->jointState.waitForRevisionGreaterThan(20);
       q_real = realWorld.q;
@@ -158,12 +141,12 @@ void TaskControlThread::step(){
         if(q_history.d0>1) lowPassUpdate(qdot_lowPass, (q_history[0]-q_history[1])/.01);
         if(q_history.d0>2) lowPassUpdate(qddot_lowPass, (q_history[0]-2.*q_history[1]+q_history[2])/(.01*.01));
         //if(q_history.d0 > 1) cout << sign(q_model-q_history[1]) << endl;
-        if(oldfashioned) syncModelStateWithReal = false;
+        syncModelStateWithReal = false;
       }
       requiresInitialSync = false;
     }else{
-      cout <<"** Waiting for ROS message on initial configuration.." <<endl;
-      if(t>10000){
+      LOG(-1) <<"** Waiting for ROS message on initial configuration.." <<endl;
+      if(t>300){
         HALT("sync'ing real robot with simulated failed")
       }
     }
@@ -232,9 +215,10 @@ void TaskControlThread::step(){
   }
 
   //-- send the computed movement to the robot
-  if(!requiresInitialSync && (useRos || useDynSim)){
+//  if(!requiresInitialSync && (useRos || useDynSim)){
+//    LOG(0) <<"send";
     ctrl_ref.set() = refs;
-  }
+//  }
 }
 
 void TaskControlThread::close(){
