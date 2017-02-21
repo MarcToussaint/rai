@@ -611,7 +611,7 @@ void PhysXInterface::pushToPhysx() { NICO }
 void PhysXInterface::pullFromPhysx(double tau) { NICO }
 void PhysXInterface::setArticulatedBodiesKinematic(uint agent) { NICO }
 void PhysXInterface::ShutdownPhysX() { NICO }
-void PhysXInterface::glDraw() { NICO }
+void PhysXInterface::glDraw(OpenGL&) { NICO }
 void PhysXInterface::addForce(mlr::Vector& force, mlr::Body* b) { NICO }
 void PhysXInterface::addForce(mlr::Vector& force, mlr::Body* b, mlr::Vector& pos) { NICO }
 

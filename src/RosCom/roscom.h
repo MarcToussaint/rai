@@ -89,9 +89,8 @@ struct Subscriber : SubscriberType {
     if(mlr::getParameter<bool>("useRos", false)){
       nh = new ros::NodeHandle;
       registry().newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
-      cout <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<"> ..." <<std::flush;
+      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<"> into access '" <<access.name <<'\'';
       sub  = nh->subscribe( topic_name, 100, &Subscriber::callback, this);
-      cout <<"done" <<endl;
     }
   }
   ~Subscriber(){
@@ -119,9 +118,8 @@ struct SubscriberConv : SubscriberType {
       nh = new ros::NodeHandle;
       listener = new tf::TransformListener;
       registry().newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
-      cout <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> ..." <<std::flush;
+      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into access '" <<access.name <<'\'';
       sub = nh->subscribe(topic_name, 1, &SubscriberConv::callback, this);
-      cout <<"done" <<endl;
     }
   }
   SubscriberConv(const char* topic_name, const char* var_name, Access_typed<mlr::Transformation> *_frame=NULL)
@@ -130,9 +128,8 @@ struct SubscriberConv : SubscriberType {
       nh = new ros::NodeHandle;
       listener = new tf::TransformListener;
       registry().newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
-      cout <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> ..." <<std::flush;
+      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into access '" <<access.name <<'\'';
       sub = nh->subscribe(topic_name, 1, &SubscriberConv::callback, this);
-      cout <<"done" <<endl;
     }
   }
   ~SubscriberConv(){
@@ -164,9 +161,8 @@ struct SubscriberConvNoHeader : SubscriberType{
     if(mlr::getParameter<bool>("useRos")){
       nh = new ros::NodeHandle;
       registry().newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
-      cout <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> ..." <<std::flush;
+      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into access '" <<access.name <<'\'';
       sub = nh->subscribe( topic_name, 1, &SubscriberConvNoHeader::callback, this);
-      cout <<"done" <<endl;
     }
   }
   SubscriberConvNoHeader(const char* topic_name, const char* var_name)
@@ -174,9 +170,8 @@ struct SubscriberConvNoHeader : SubscriberType{
     if(mlr::getParameter<bool>("useRos")){
       nh = new ros::NodeHandle;
       registry().newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
-      cout <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> ..." <<std::flush;
+      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into access '" <<access.name <<'\'';
       sub = nh->subscribe( topic_name, 1, &SubscriberConvNoHeader::callback, this);
-      cout <<"done" <<endl;
     }
   }
 
@@ -206,16 +201,27 @@ struct PublisherConv : Thread {
         access(this, _access, true),
         nh(NULL),
         topic_name(_topic_name){
-    if(mlr::getParameter<bool>("useRos"))
+    if(mlr::getParameter<bool>("useRos")){
+      LOG(0) <<"publishing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> from access '" <<access.name <<'\'';
       nh = new ros::NodeHandle;
+      threadOpen();
+    }
   }
   PublisherConv(const char* _topic_name, const char* var_name)
       : Thread(STRING("Publisher_"<<var_name <<"->" <<_topic_name), -1),
         access(this, var_name, true),
         nh(NULL),
         topic_name(_topic_name){
-    if(mlr::getParameter<bool>("useRos"))
+    if(mlr::getParameter<bool>("useRos")){
+      LOG(0) <<"publishing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> from access '" <<access.name <<'\'';
       nh = new ros::NodeHandle;
+      threadOpen();
+    }
+  }
+  ~PublisherConv(){
+    threadClose();
+    pub.shutdown();
+    if(nh) delete nh;
   }
   void open(){
     if(nh) pub = nh->advertise<msg_type>(topic_name, 1);
@@ -224,8 +230,6 @@ struct PublisherConv : Thread {
     if(nh) pub.publish(conv(access.get()));
   }
   void close(){
-//    delete pub;
-//    delete nh;
   }
 };
 

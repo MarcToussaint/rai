@@ -24,8 +24,6 @@ struct TaskControlThread : Thread {
   ACCESS(bool, fixBase)
   ACCESS(arr, pr2_odom)
 
-  ACCESS(arr, qSign)
-
 //private:
   mlr::KinematicWorld realWorld;
   TaskControlMethods *taskController;
@@ -33,7 +31,6 @@ struct TaskControlThread : Thread {
   arr q_model, qdot_model; //< model state
   arr q0; //< homing pose
   mlr::String robot;
-  bool oldfashioned;
   bool useRos;
   bool requiresInitialSync;
   bool syncModelStateWithReal; //< whether the step() should reinit the state from the ros message
@@ -47,8 +44,6 @@ struct TaskControlThread : Thread {
 
   arr q_history, qdot_last, a_last, q_lowPass, qdot_lowPass, qddot_lowPass, aErrorIntegral, u_lowPass;
   arr model_error_g;
-
-  arr qLastReading;
 
   arr fRInitialOffset;
 
