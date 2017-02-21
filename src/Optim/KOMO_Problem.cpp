@@ -111,4 +111,8 @@ void Conv_KOMO_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA&
     Jaux->reshift();
     Jaux->computeColPatches(true);
   }
+
+  if(&H){
+    NIY
+  }
 }
