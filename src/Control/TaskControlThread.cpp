@@ -2,7 +2,6 @@
 #include <Gui/opengl.h>
 #include <RosCom/baxter.h>
 
-
 void lowPassUpdate(arr& lowPass, const arr& signal, double rate=.1){
   if(lowPass.N!=signal.N){ lowPass=zeros(signal.N); return; }
   lowPass = (1.-rate)*lowPass + rate*signal;
@@ -160,7 +159,38 @@ void TaskControlThread::step(){
   taskController->tasks = ctrlTasks();
   taskController->updateCtrlTasks(.01, modelWorld());
 
-  q_model += taskController->inverseKinematics_hierarchical(); //(qdot_model);
+#if 0
+  q_model += taskController->inverseKinematics(qdot_model);
+#else
+  //TODO: encapsulate in TaskControllerMethod
+  arr q_now = q_model;
+  double alpha = 1.;
+  double cost, cost2;
+  arr dq = alpha*taskController->inverseKinematics(qdot_model, q_now-q_model, &cost);
+  for(uint k=0;k<10;k++){
+    q_model += dq;
+    modelWorld().setJointState(q_model, qdot_model);
+    taskController->updateCtrlTasks(.0, modelWorld());
+    arr dq2 = alpha*taskController->inverseKinematics(qdot_model, q_now-q_model, &cost2);
+    if(cost2<cost){ //accept
+      cost=cost2;
+      dq=dq2;
+      alpha *= 1.2;
+      if(alpha>1.) alpha=1.;
+    }else{ //reject
+      q_model -= dq; //undo the step
+      dq *= .2;
+      alpha *= .2;
+//      cout <<"reject-" <<std::flush;
+    }
+    if(absMax(dq)<1e-5*alpha){
+//      cout <<"STOP k=" <<k <<endl;
+      break;
+    }
+  }
+  IK_cost.set() = cost;
+  if(cost>1000.) cout <<"IK cost=" <<std::setprecision(5) <<cost <<endl;
+#endif
   modelWorld().setJointState(q_model, qdot_model);
   modelWorld().stepSwift();
 

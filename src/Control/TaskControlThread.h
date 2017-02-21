@@ -19,10 +19,11 @@ struct TaskControlThread : Thread {
   ACCESS(CtrlMsg, ctrl_ref) //< the message send to the RTController
   ACCESS(CtrlMsg, ctrl_obs) //< the message received from the RTController
   ACCESS(mlr::Array<CtrlTask*>, ctrlTasks)
-  ACCESS(mlr::String, effects)
   ACCESS(mlr::KinematicWorld, modelWorld)
   ACCESS(bool, fixBase)
   ACCESS(arr, pr2_odom)
+
+  ACCESS(double, IK_cost)
 
 //private:
   mlr::KinematicWorld realWorld;

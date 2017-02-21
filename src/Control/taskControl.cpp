@@ -299,7 +299,7 @@ void TaskControlMethods::lockJointGroup(const char* groupname, mlr::KinematicWor
   }
 }
 
-arr TaskControlMethods::inverseKinematics(arr& qdot){
+arr TaskControlMethods::inverseKinematics(arr& qdot, const arr& nullRef, double* cost){
   arr y,v,J;
   for(CtrlTask* t: tasks) {
     if(t->active && t->ref) {
@@ -318,11 +318,14 @@ arr TaskControlMethods::inverseKinematics(arr& qdot){
     for(uint i=0;i<n;i++) if(lockJoints(i)) Winv(i) = 0.;
   }
 
-  arr Jinv = pseudoInverse(J, Winv, 1e2);
+  arr Jinv = pseudoInverse(J, Winv, 1e0);
   checkNan(Jinv);
   checkNan(y);
   if(&qdot) qdot = Jinv*v;
-  return Jinv*y;
+  arr dq = Jinv*y;
+  if(&nullRef) dq += nullRef - Jinv*(J*nullRef);
+  if(cost) *cost = sumOfSqr(y) + sum(nullRef%Hmetric%nullRef);
+  return dq;
 }
 
 arr TaskControlMethods::inverseKinematics_hierarchical(){

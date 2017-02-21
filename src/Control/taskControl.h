@@ -154,7 +154,7 @@ struct TaskControlMethods {
   void updateCtrlTasks(double tau, const mlr::KinematicWorld& world);
   void lockJointGroup(const char *groupname, mlr::KinematicWorld& world, bool lockThem=true);
 
-  arr inverseKinematics(arr& qdot);
+  arr inverseKinematics(arr& qdot, const arr& nullRef=NoArr, double* cost=NULL);
   arr inverseKinematics_hierarchical();
   arr operationalSpaceControl();
   arr calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, const arr& q, const arr& qdot, const arr& M, const arr& F); ///< returns the linearized control law
