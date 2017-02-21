@@ -177,7 +177,7 @@ void TaskControlThread::step(){
   taskController->tasks = ctrlTasks();
   taskController->updateCtrlTasks(.01, modelWorld());
 
-  q_model += taskController->inverseKinematics(qdot_model);
+  q_model += taskController->inverseKinematics_hierarchical(); //(qdot_model);
   modelWorld().setJointState(q_model, qdot_model);
   modelWorld().stepSwift();
 

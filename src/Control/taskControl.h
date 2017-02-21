@@ -109,6 +109,7 @@ struct CtrlTask{
   MotionProfile *ref;  ///< non-NULL iff this is a pos/vel task
   arr y_ref, v_ref;    ///< update() will define compute these references (reference=NOW, target=FUTURE)
   arr prec;            ///< Cholesky(!) of C, not C itself: sumOfSqr(prec*(y-y_ref)) is the error, and prec*J the Jacobian
+  uint hierarchy;      ///< hierarchy level in hiearchycal inverse kinematics: higher = higher priority
 
   //-- compliance task
   arr C;               ///< non-empty iff this is a compliance task; defines the task space compliance coefficients
@@ -154,6 +155,7 @@ struct TaskControlMethods {
   void lockJointGroup(const char *groupname, mlr::KinematicWorld& world, bool lockThem=true);
 
   arr inverseKinematics(arr& qdot);
+  arr inverseKinematics_hierarchical();
   arr operationalSpaceControl();
   arr calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, const arr& q, const arr& qdot, const arr& M, const arr& F); ///< returns the linearized control law
   arr getDesiredLinAccLaw(arr &Kp, arr &Kd, arr &u0, const arr& q, const arr& qdot); ///< returns the linearized control law
