@@ -59,7 +59,7 @@ struct Vector {
   double radius() const;
   double phi() const;
   double theta() const;
-  arr getArr() const{ return arr(&x,3); }
+  arr getArr() const{ return arr(&x, 3, false); }
 
   Vector getNormalVectorNormalToThis() const;
   void generateOrthonormalSystem(Vector& u, Vector& v) const;

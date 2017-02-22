@@ -299,6 +299,78 @@ void TaskControlMethods::lockJointGroup(const char* groupname, mlr::KinematicWor
   }
 }
 
+double TaskControlMethods::getIKCosts(const arr& q, const arr& q0, arr& g, arr& H){
+  double c=0.;
+  arr y,J;
+  if(&g){ CHECK(&q,""); g = zeros(q.N); }
+  if(&H){ CHECK(&q,""); H = zeros(q.N, q.N); }
+  for(CtrlTask* t: tasks) {
+    if(t->active && t->ref) {
+      y = t->prec%(t->y_ref - t->y);
+      J = t->prec%(t->J_y);
+      c += sumOfSqr(y);
+      if(&g) g -= 2.*~(~y*J);
+      if(&H) H += 2.*comp_At_A(J);
+    }
+  }
+
+  if(&q && &q0){
+    arr dq = q-q0;
+    c += sum(dq%Hmetric%dq);
+    if(&g) g += 2.*dq%Hmetric;
+    if(&H) H += 2.*diag(Hmetric);
+  }
+  return c;
+}
+
+#if 0 //methods taken from TaskControlThread -> could be integrated here
+  arr q_now = q_model;
+  double alpha = 1.;
+  double cost2;
+  arr dq = alpha*taskController->inverseKinematics(qdot_model, q_now-q_model, &cost);
+  for(uint k=0;k<10;k++){
+    q_model += dq;
+    modelWorld().setJointState(q_model, qdot_model);
+    modelWorld().stepSwift();
+    taskController->updateCtrlTasks(.0, modelWorld());
+    arr dq2 = alpha*taskController->inverseKinematics(qdot_model, q_now-q_model, &cost2);
+    if(cost2<cost){ //accept
+      cost=cost2;
+      dq=dq2;
+      alpha *= 1.2;
+      if(alpha>1.) alpha=1.;
+    }else{ //reject
+      q_model -= dq; //undo the step
+      dq *= .5;
+      alpha *= .5;
+      cout <<"reject-" <<std::flush;
+    }
+    if(absMax(dq)<1e-5*alpha){
+      cout <<"STOP k=" <<k <<endl;
+      break;
+    }
+  }
+//#endif
+  if(true || cost>10.){ //calling an optimizer!
+    cout <<"HIGH COST IK! " <<cost <<" -> calling newton..." <<std::flush;
+    auto f = [this, &q_base](arr& g, arr& H, const arr& x)->double{
+      this->modelWorld().setJointState(x);
+      this->modelWorld().stepSwift();
+      this->taskController->updateCtrlTasks(0., this->modelWorld());
+      double c = this->taskController->getIKCosts(x, q_base, g, H);
+      return c;
+    };
+    q_model = q_base;
+    optNewton(q_model, f, OPT(stopTolerance=1e-8, maxStep=1e-1, damping=1e1));
+//    checkGradient(f, q_base, 1e-4);
+    modelWorld().setJointState(q_model, qdot_model);
+    modelWorld().stepSwift();
+    taskController->updateCtrlTasks(0., modelWorld());
+    cost = taskController->getIKCosts(q_model, q_base);
+    cout <<" cost=" <<cost <<endl;
+  }
+#endif
+
 arr TaskControlMethods::inverseKinematics(arr& qdot, const arr& nullRef, double* cost){
   arr y,v,J;
   for(CtrlTask* t: tasks) {

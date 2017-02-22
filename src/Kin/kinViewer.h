@@ -70,7 +70,7 @@ struct OrsPoseViewer : Thread {
   OrsPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec=-1.);
   ~OrsPoseViewer();
 
-  void recopyKinematics(const mlr::KinematicWorld& world);
+  void recopyKinematics();
 
   void open();
   void step();

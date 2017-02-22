@@ -123,12 +123,15 @@ OrsPoseViewer::~OrsPoseViewer(){
   listDelete(poses);
 }
 
-void OrsPoseViewer::recopyKinematics(const mlr::KinematicWorld& world){
-  copy = world;
+void OrsPoseViewer::recopyKinematics(){
+//  copy = world;
+//  gl.lock.writeLock();
+  stepMutex.lock();
+  copy = modelWorld.get();
   computeMeshNormals(copy.shapes);
-  gl.lock.writeLock();
   for(mlr::KinematicWorld *w: copies) w->copy(copy, true);
-  gl.lock.unlock();
+  stepMutex.unlock();
+//  gl.lock.unlock();
 }
 
 void OrsPoseViewer::open() {

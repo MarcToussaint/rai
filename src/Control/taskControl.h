@@ -154,6 +154,7 @@ struct TaskControlMethods {
   void updateCtrlTasks(double tau, const mlr::KinematicWorld& world);
   void lockJointGroup(const char *groupname, mlr::KinematicWorld& world, bool lockThem=true);
 
+  double getIKCosts(const arr& q=NoArr, const arr& q0=NoArr, arr& g=NoArr, arr& H=NoArr);
   arr inverseKinematics(arr& qdot, const arr& nullRef=NoArr, double* cost=NULL);
   arr inverseKinematics_hierarchical();
   arr operationalSpaceControl();
