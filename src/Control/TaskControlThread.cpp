@@ -1,7 +1,6 @@
 #include "TaskControlThread.h"
 #include <Gui/opengl.h>
 #include <RosCom/baxter.h>
-#include <Optim/newton.h>
 
 void lowPassUpdate(arr& lowPass, const arr& signal, double rate=.1){
   if(lowPass.N!=signal.N){ lowPass=zeros(signal.N); return; }
@@ -161,9 +160,9 @@ void TaskControlThread::step(){
   taskController->updateCtrlTasks(.01, modelWorld()); //update with time increment
 
   //-- compute IK step
-  double maxQStep = 1e-2;
+  double maxQStep = 1e-1;
   arr dq = taskController->inverseKinematics(qdot_model); //, .01*(q0-q_model));
-  double l = absMax(dq);
+  double l = length(dq);
   if(l>maxQStep) dq *= maxQStep/l;
   q_model += dq;
 
@@ -181,7 +180,6 @@ void TaskControlThread::step(){
     modelWorld().stepSwift();
     taskController->updateCtrlTasks(0., modelWorld()); //update without time increment
   }
-
 
   if(verbose) taskController->reportCurrentState();
   ctrlTasks.deAccess();

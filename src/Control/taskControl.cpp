@@ -390,7 +390,7 @@ arr TaskControlMethods::inverseKinematics(arr& qdot, const arr& nullRef, double*
     for(uint i=0;i<n;i++) if(lockJoints(i)) Winv(i) = 0.;
   }
 
-  arr Jinv = pseudoInverse(J, Winv, 1e2);
+  arr Jinv = pseudoInverse(J, Winv, 1e-2);
   checkNan(Jinv);
   checkNan(y);
   if(&qdot) qdot = Jinv*v;

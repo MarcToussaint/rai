@@ -22,7 +22,6 @@ struct TaskControlThread : Thread {
   ACCESS(mlr::KinematicWorld, modelWorld)
   ACCESS(bool, fixBase)
   ACCESS(arr, pr2_odom)
-
   ACCESS(double, IK_cost)
 
 //private:
