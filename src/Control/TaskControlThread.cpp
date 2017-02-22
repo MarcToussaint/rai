@@ -162,7 +162,7 @@ void TaskControlThread::step(){
 
   //-- compute IK step
   double maxQStep = 1e-2;
-  arr dq = taskController->inverseKinematics(qdot_model, .01*(q0-q_model));
+  arr dq = taskController->inverseKinematics(qdot_model); //, .01*(q0-q_model));
   double l = absMax(dq);
   if(l>maxQStep) dq *= maxQStep/l;
   q_model += dq;
