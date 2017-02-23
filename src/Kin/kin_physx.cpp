@@ -413,10 +413,11 @@ void sPhysXInterface::addBody(mlr::Body *b, physx::PxMaterial *mMaterial) {
   }
   CHECK(actor, "create actor failed!");
   for_list(mlr::Shape,  s,  b->shapes) {
+    if(s->name.startsWith("coll_")) continue; //these are the 'pink' collision boundary shapes..
     PxGeometry* geometry;
     switch(s->type) {
       case mlr::ST_box: {
-        geometry = new PxBoxGeometry(s->size[0], s->size[1], s->size[2]);
+        geometry = new PxBoxGeometry(.5*s->size[0], .5*s->size[1], .5*s->size[2]);
       }
       break;
       case mlr::ST_sphere: {

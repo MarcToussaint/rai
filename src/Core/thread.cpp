@@ -517,8 +517,8 @@ void Thread::waitForIdle() {
   waitForStatusEq(tsIDLE);
 }
 
-void Thread::threadLoop() {
-  if(isClosed()) threadOpen();
+void Thread::threadLoop(bool waitForOpened) {
+  if(isClosed()) threadOpen(waitForOpened);
   if(metronome.ticInterval>1e-10){
     setStatus(tsBEATING);
   }else{

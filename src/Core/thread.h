@@ -209,7 +209,7 @@ struct Thread : ConditionVariable{
   void threadOpen(bool wait=false, int priority=0);      ///< start the thread (in idle mode) (should be positive for changes)
   void threadClose();                   ///< close the thread (stops looping and waits for idle mode before joining the thread)
   void threadStep();                    ///< trigger (multiple) step (idle -> working mode) (wait until idle? otherwise calling during non-idle -> error)
-  void threadLoop();                    ///< loop, either with fixed beat or at full speed
+  void threadLoop(bool waitForOpened=false);  ///< loop, either with fixed beat or at full speed
   void threadStop(bool wait=false);     ///< stop looping
   void threadCancel();                  ///< a hard kill (pthread_cancel) of the thread
 
