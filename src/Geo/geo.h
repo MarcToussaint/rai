@@ -268,8 +268,8 @@ struct Camera {
   void watchDirection(const Vector& d);
   void upright(const Vector& up=Vector(0,0,1));
   void glSetProjectionMatrix();
-  void glConvertToTrueDepth(double &d);
-  void glConvertToLinearDepth(double &d);
+  double glConvertToTrueDepth(double d);
+  double glConvertToLinearDepth(double d);
   void setKinect();
   void setDefault();
 };

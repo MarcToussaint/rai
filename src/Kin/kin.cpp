@@ -3618,9 +3618,9 @@ void editConfiguration(const char* filename, mlr::KinematicWorld& C) {
     try {
       mlr::lineCount=1;
       W <<FILE(filename);
-      C.gl().lock.writeLock();
+      C.gl().dataLock.writeLock();
       C = W;
-      C.gl().lock.unlock();
+      C.gl().dataLock.unlock();
     } catch(const char* msg) {
       cout <<"line " <<mlr::lineCount <<": " <<msg <<" -- please check the file and press ENTER" <<endl;
       C.gl().watch();

@@ -126,6 +126,7 @@ void ConditionVariable::broadcast(ConditionVariable* messenger) {
   //int rc = pthread_cond_broadcast(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   //setStatus to all listeners:
   for(ConditionVariable *c:listeners) if(c!=messenger) c->setStatus(1, this);
+  for(auto& c:callbacks) c()(this, status);
 }
 
 void ConditionVariable::listenTo(ConditionVariable* c){

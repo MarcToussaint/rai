@@ -5,10 +5,11 @@
 #include <Geo/geo.h>
 
 struct Kinect2PointCloud : Thread{
+  //inputs
   ACCESS(byteA, kinect_rgb)
   ACCESSlisten(uint16A, kinect_depth)
-
-//  ACCESS(mlr::Transformation, kinect_frame)
+  ACCESS(mlr::Transformation, kinect_frame)
+  //outputs
   ACCESS(arr, kinect_points)
   ACCESS(arr, kinect_pointColors)
 
@@ -16,8 +17,8 @@ struct Kinect2PointCloud : Thread{
   uint16A depth;
   byteA rgb; //helpers
 
-  Kinect2PointCloud() : Thread("Kinect2PointCloud"){}
-  virtual ~Kinect2PointCloud(){}
+  Kinect2PointCloud();
+  virtual ~Kinect2PointCloud();
 
   void open(){}
   void step();

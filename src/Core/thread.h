@@ -35,6 +35,20 @@ typedef mlr::Array<Thread*> ThreadL;
 
 //===========================================================================
 
+template<class F> struct Callback{
+  const void* id;
+  std::function<F> callback;
+  Callback() : id(NULL) {}
+  Callback(const void* _id) : id(_id) {}
+  Callback(const void* _id,const std::function<F>& c) : id(_id), callback(c) {}
+  std::function<F>& operator()(){ CHECK(callback,"is not initialized!!"); return callback; }
+};
+template<class F> bool operator==(const Callback<F>& a, const Callback<F>& b){ return a.id==b.id; }
+
+template<class F> using Callbacks = mlr::Array<Callback<F> >;
+
+//===========================================================================
+
 /// a basic read/write access lock
 struct RWLock {
   pthread_rwlock_t lock;
@@ -58,6 +72,7 @@ struct ConditionVariable {
   ConditionVariableL listeners;   ///< list of other condition variables that are being signaled on a setStatus access
   ConditionVariableL listensTo;   ///< ...
   ConditionVariableL messengers;  ///< set(!) of condition variables that send signals (via the listen mechanism) - is cleared by the user only
+  Callbacks<void(ConditionVariable*,int)> callbacks;
   struct Node* registryNode;      ///< every threading object registers itself globally
 
   ConditionVariable(int initialStatus=0);
@@ -291,19 +306,19 @@ struct Access_typed{
   struct Node* registryNode;
 
   /// A "copy" of acc: An access to the same variable as acc refers to, but now for '_thred'
-  Access_typed(Thread* _thread, const Access_typed<T>& acc, bool moduleListens=false)
+  Access_typed(Thread* _thread, const Access_typed<T>& acc, bool threadListens=false)
     : data(NULL), name(acc.name), thread(_thread), last_accessed_revision(0), registryNode(NULL){
     data = acc.data;
     if(thread){
       registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
-      if(moduleListens) thread->listenTo(data);
+      if(threadListens) thread->listenTo(data);
     }else{
       registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {data->registryNode}, this);
     }
   }
 
   /// searches for globally registrated variable 'name', checks type equivalence, and becomes an access for '_thred'
-  Access_typed(Thread* _thread, const char* name, bool moduleListens=false)
+  Access_typed(Thread* _thread, const char* name, bool threadListens=false)
     : data(NULL), name(name), thread(_thread), last_accessed_revision(0), registryNode(NULL){
     data = registry().find<AccessData<T> >({"AccessData", name});
     if(!data){ //this is the ONLY place where a variable should be created
@@ -314,7 +329,7 @@ struct Access_typed{
     }
     if(thread){
       registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
-      if(moduleListens) thread->listenTo(data);
+      if(threadListens) thread->listenTo(data);
     }else{
       registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {data->registryNode}, this);
     }

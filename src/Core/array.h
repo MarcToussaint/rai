@@ -605,6 +605,7 @@ void add_alpha_channel(byteA &img, byte alpha);
 void make_grey(byteA &img);
 void make_RGB(byteA &img);
 void flip_image(byteA &img);
+void flip_image(floatA &img);
 
 void scanArrFile(const char* name);
 

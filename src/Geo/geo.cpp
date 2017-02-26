@@ -1567,13 +1567,13 @@ void Camera::glSetProjectionMatrix() {
 }
 
 /// convert from gluPerspective's non-linear [0, 1] depth to the true [zNear, zFar] depth
-void Camera::glConvertToTrueDepth(double &d) {
-  d = zNear + (zFar-zNear)*d/(zFar/zNear*(1.-d)+1.);
+double Camera::glConvertToTrueDepth(double d) {
+  return zNear + (zFar-zNear)*d/(zFar/zNear*(1.-d)+1.);
 }
 
 /// convert from gluPerspective's non-linear [0, 1] depth to the linear [0, 1] depth
-void Camera::glConvertToLinearDepth(double &d) {
-  d = d/(zFar/zNear*(1.-d)+1.);
+double Camera::glConvertToLinearDepth(double d) {
+  return d/(zFar/zNear*(1.-d)+1.);
 }
 
 void Camera::setKinect(){

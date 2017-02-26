@@ -8,17 +8,23 @@ const unsigned int depth_size = image_width*image_height;
 
 mlr::Camera kinectCam;
 
+Kinect2PointCloud::Kinect2PointCloud() : Thread("Kinect2PointCloud"){
+  threadOpen();
+}
+
+Kinect2PointCloud::~Kinect2PointCloud(){
+  threadClose();
+}
+
 void Kinect2PointCloud::step(){
   depth = kinect_depth.get();
   rgb = kinect_rgb.get();
 
   images2pointcloud(pts, cols, rgb, depth);
 
-//  kinect_frame.readAccess();
-//  if(!kinect_frame().isZero()){
-//    kinect_frame().applyOnPointArray(pts);
-//  }
-//  kinect_frame.deAccess();
+  kinect_frame.readAccess();
+  if(!kinect_frame().isZero()) kinect_frame().applyOnPointArray(pts);
+  kinect_frame.deAccess();
 
   kinect_points.set() = pts;
   kinect_pointColors.set() = cols;

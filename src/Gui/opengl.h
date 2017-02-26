@@ -157,7 +157,7 @@ struct OpenGL {
   floatA captureDepth;
   double backgroundZoom;
   arr P; //camera projection matrix
-  RWLock lock; //locked during draw callbacks (anything that uses the calls)
+  RWLock dataLock; //'data' means anything: member fields (camera, variables), drawers, data the drawers access
 //  uint fbo, render_buf;
   uint fboId;
   uint rboColor;
@@ -177,8 +177,8 @@ struct OpenGL {
   void clear();
   void add(void (*call)(void*), void* classP=NULL);
   void addInit(void (*call)(void*), void* classP=NULL);
-  void add(GLDrawer& c){ drawers.append(&c); }
-  void addDrawer(GLDrawer *c){ drawers.append(c); }
+  void add(GLDrawer& c){ dataLock.writeLock(); drawers.append(&c); dataLock.unlock(); }
+  void addDrawer(GLDrawer *c){ dataLock.writeLock(); drawers.append(c); dataLock.unlock(); }
   void remove(void (*call)(void*), const void* classP=0);
   //template<class T> void add(const T& x) { add(x.staticDraw, &x); } ///< add a class or struct with a staticDraw routine
   void addHoverCall(GLHoverCall *c){ hoverCalls.append(c); }

@@ -907,7 +907,9 @@ OpenGL::OpenGL(void *container)
 
 OpenGL::~OpenGL() {
   clear();
+  dataLock.writeLock();
   delete s;
+  dataLock.unlock();
   s=NULL;
 //  MLR_MSG("destructing OpenGL=" <<this);
 }
@@ -959,25 +961,33 @@ struct CstyleInitCall : OpenGL::GLInitCall{
 /// add a draw routine
 void OpenGL::add(void (*call)(void*), void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
+  dataLock.writeLock();
   drawers.append(new CstyleDrawer(call, classP));
+  dataLock.unlock();
 }
 
 /// add a draw routine
 void OpenGL::addInit(void (*call)(void*), void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
+  dataLock.writeLock();
   initCalls.append(new CstyleInitCall(call, classP));
+  dataLock.unlock();
 }
 
 /// add a draw routine to a view
 void OpenGL::addView(uint v, void (*call)(void*), void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
+  dataLock.writeLock();
   if(v>=views.N) views.resizeCopy(v+1);
   views(v).drawers.append(new CstyleDrawer(call, classP));
+  dataLock.unlock();
 }
 
 void OpenGL::setViewPort(uint v, double l, double r, double b, double t) {
+  dataLock.writeLock();
   if(v>=views.N) views.resizeCopy(v+1);
   views(v).le=l;  views(v).ri=r;  views(v).bo=b;  views(v).to=t;
+  dataLock.unlock();
 }
 
 /// remove a draw routine
@@ -991,6 +1001,7 @@ void OpenGL::setViewPort(uint v, double l, double r, double b, double t) {
 
 /// clear the list of all draw and callback routines
 void OpenGL::clear() {
+  dataLock.writeLock();
   for(auto& x:drawers) if(CstyleDrawer* d = dynamic_cast<CstyleDrawer*>(x)) delete d;
   views.clear();
   drawers.clear();
@@ -998,6 +1009,7 @@ void OpenGL::clear() {
   hoverCalls.clear();
   clickCalls.clear();
   keyCalls.clear();
+  dataLock.unlock();
 }
 
 void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool ignoreLock) {
@@ -1005,7 +1017,7 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool ignoreLock) {
 
   if(!ignoreLock){
     openglAccess().lock();
-    lock.readLock(); //now accessing user data
+    dataLock.readLock(); //now accessing user data
   }
 
   //clear bufferer
@@ -1170,7 +1182,7 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool ignoreLock) {
   //CHECK(s<=1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
   
   if(!ignoreLock){
-    lock.unlock(); //now de-accessing user data
+    dataLock.unlock(); //now de-accessing user data
     openglAccess().unlock();
   }
 #endif
@@ -1179,7 +1191,7 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool ignoreLock) {
 void OpenGL::Select(bool ignoreLock) {
   if(!ignoreLock){
     openglAccess().lock();
-    lock.readLock();
+    dataLock.readLock();
   }
 
 #ifdef MLR_GL
@@ -1261,7 +1273,7 @@ void OpenGL::Select(bool ignoreLock) {
   s->endGlContext();
 #endif
   if(!ignoreLock){
-    lock.unlock();
+    dataLock.unlock();
     openglAccess().unlock();
   }
 }
@@ -1415,7 +1427,7 @@ void getSphereVector(mlr::Vector& vec, int _x, int _y, int le, int ri, int bo, i
 }
 
 void OpenGL::Reshape(int _width, int _height) {
-  lock.writeLock();
+  dataLock.writeLock();
   CALLBACK_DEBUG(printf("Window %d Reshape Callback:  %d %d\n", 0, _width, _height));
   width=_width;
   height=_height;
@@ -1423,11 +1435,11 @@ void OpenGL::Reshape(int _width, int _height) {
   if(height%2) height = 2*(height/2);
   camera.setWHRatio((double)width/height);
   for(uint v=0; v<views.N; v++) views(v).camera.setWHRatio((views(v).ri-views(v).le)*width/((views(v).to-views(v).bo)*height));
-  lock.unlock();
+  dataLock.unlock();
 }
 
 void OpenGL::Key(unsigned char key, int _x, int _y) {
-  lock.writeLock();
+  dataLock.writeLock();
   _y = height-_y;
   CALLBACK_DEBUG(printf("Window %d Keyboard Callback:  %d (`%c') %d %d\n", 0, key, (char)key, _x, _y));
   mouseposx=_x; mouseposy=_y;
@@ -1437,11 +1449,11 @@ void OpenGL::Key(unsigned char key, int _x, int _y) {
   for(uint i=0; i<keyCalls.N; i++) cont=cont && keyCalls(i)->keyCallback(*this);
   
   if(key==13 || key==27 || key=='q' || mlr::contains(exitkeys, key)) watching.setStatus(0);
-  lock.unlock();
+  dataLock.unlock();
 }
 
 void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
-  lock.writeLock();
+  dataLock.writeLock();
   int w=width, h=height;
   _y = h-_y;
   CALLBACK_DEBUG(printf("Window %d Mouse Click Callback:  %d %d %d %d\n", 0, button, downPressed, _x, _y));
@@ -1465,12 +1477,12 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   CALLBACK_DEBUG(cout <<"associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
   
   if(!downPressed) {  //down press
-    if(mouseIsDown){ lock.unlock(); return; } //the button is already down (another button was pressed...)
+    if(mouseIsDown){ dataLock.unlock(); return; } //the button is already down (another button was pressed...)
     //CHECK(!mouseIsDown, "I thought the mouse is up...");
     mouseIsDown=true;
     drawFocus=true;
   } else {
-    if(!mouseIsDown){ lock.unlock(); return; } //the button is already up (another button was pressed...)
+    if(!mouseIsDown){ dataLock.unlock(); return; } //the button is already up (another button was pressed...)
     //CHECK(mouseIsDown, "mouse-up event although the mouse is not down???");
     mouseIsDown=false;
     drawFocus=false;
@@ -1504,25 +1516,25 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   if(!downPressed) {
     for(uint i=0; i<clickCalls.N; i++) cont=cont && clickCalls(i)->clickCallback(*this);
   }
-  if(!cont) { postRedrawEvent(true); lock.unlock(); return; }
+  if(!cont) { postRedrawEvent(true); dataLock.unlock(); return; }
 
   postRedrawEvent(true);
-  lock.unlock();
+  dataLock.unlock();
 }
 
 void OpenGL::MouseWheel(int wheel, int direction, int x, int y) {
-  lock.writeLock();
+  dataLock.writeLock();
   CALLBACK_DEBUG(printf("Window %d Mouse Wheel Callback:  %d %d %d %d\n", 0, wheel, direction, x, y));
   if(direction>0) camera.X.pos += camera.X.rot*Vector_z * (.1 * (camera.X.pos-camera.foc).length());
   else            camera.X.pos -= camera.X.rot*Vector_z * (.1 * (camera.X.pos-camera.foc).length());
   postRedrawEvent(true);
-  lock.unlock();
+  dataLock.unlock();
 }
 
 
 void OpenGL::Motion(int _x, int _y) {
 #ifdef MLR_GL
-  lock.writeLock();
+  dataLock.writeLock();
   int w=width, h=height;
   _y = h-_y;
   CALLBACK_DEBUG(printf("Window %d Mouse Motion Callback:  %d %d\n", 0, _x, _y));
@@ -1543,7 +1555,7 @@ void OpenGL::Motion(int _x, int _y) {
     bool ud=false;
     for(uint i=0; i<hoverCalls.N; i++) ud=ud || hoverCalls(i)->hoverCallback(*this);
     if(ud) postRedrawEvent(true);
-    lock.unlock();
+    dataLock.unlock();
     return;
   }
   if(mouse_button==1) {  //rotation // && !(modifiers&GLUT_ACTIVE_SHIFT) && !(modifiers&GLUT_ACTIVE_CTRL)){
@@ -1579,7 +1591,7 @@ void OpenGL::Motion(int _x, int _y) {
     cam->X.pos = s->downPos + s->downRot*Vector_z * dy * s->downPos.length();
     postRedrawEvent(true);
   }
-  lock.unlock();
+  dataLock.unlock();
 #else
   NICO
 #endif

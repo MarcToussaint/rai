@@ -475,7 +475,7 @@ namespace mlr {
       CHECK(!strcmp(names[x], str.p), "");
     }
     void write(std::ostream& os) const{
-      if(x<0) os <<"none";
+      if(x<0) os <<"init";
       else os <<names[x];
     }
   };
