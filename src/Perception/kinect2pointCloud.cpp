@@ -1,13 +1,5 @@
 #include "kinect2pointCloud.h"
 
-//REGISTER_MODULE(Kinect2PointCloud)
-
-const unsigned int image_width = 640; //kinect resolution
-const unsigned int image_height = 480; //kinect resolution
-const unsigned int depth_size = image_width*image_height;
-
-mlr::Camera kinectCam;
-
 Kinect2PointCloud::Kinect2PointCloud() : Thread("Kinect2PointCloud"){
   threadOpen();
 }
@@ -32,28 +24,30 @@ void Kinect2PointCloud::step(){
 
 
 void images2pointcloud(arr& pts, arr& cols, const byteA& rgb, const uint16A& depth){
+  CHECK_EQ(rgb.d2, 3, "");
+  uint H=rgb.d0, W=rgb.d1;
+  CHECK_EQ(H, 480, "");
+  CHECK_EQ(W, 640, "");
+
+  CHECK_EQ(depth.d0, H,"");
+  CHECK_EQ(depth.d1, W,"");
+
   depthData2pointCloud(pts, depth);
 
-  if(rgb.N!=3*image_width*image_height){
-    MLR_MSG("kinect rgb data has wrong dimension: rgb.dim=" <<rgb.dim());
-    return;
-  }
-
-  cols.resize(image_width*image_height, 3);
+  cols.resize(W, H, 3);
   for(uint i=0;i<rgb.N;i++) cols.elem(i) = (double)rgb.elem(i)/255.;
 }
 
 void depthData2pointCloud(arr& pts, const uint16A& depth){
-  if(depth.N!=image_width*image_height){
-    MLR_MSG("kinect depth data has wrong dimension: depth.dim=" <<depth.dim());
-    return;
-  }
+  uint H=depth.d0, W=depth.d1;
+  CHECK_EQ(H, 480, "");
+  CHECK_EQ(W, 640, "");
 
-  pts.resize(image_width*image_height, 3);
+  pts.resize(H*W, 3);
 
   float constant = 1.0f / 580; //focal length of kinect in pixels
-  int centerX = (image_width >> 1);
-  int centerY = (image_height >> 1);
+  int centerX = (W >> 1);
+  int centerY = (H >> 1);
 
   int i = 0;
   for(int y=-centerY+1; y<=centerY; y++) for(int x=-centerX+1; x<=centerX; x++, i++) {
@@ -69,4 +63,6 @@ void depthData2pointCloud(arr& pts, const uint16A& depth){
       pts(i, 2) = -1.;
     }
   }
+
+  pts.reshape(H, W, 3);
 }

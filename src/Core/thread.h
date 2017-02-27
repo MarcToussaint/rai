@@ -305,18 +305,6 @@ struct Access_typed{
   int last_accessed_revision;          ///< last revision that has been accessed (read or write)
   struct Node* registryNode;
 
-  /// A "copy" of acc: An access to the same variable as acc refers to, but now for '_thred'
-  Access_typed(Thread* _thread, const Access_typed<T>& acc, bool threadListens=false)
-    : data(NULL), name(acc.name), thread(_thread), last_accessed_revision(0), registryNode(NULL){
-    data = acc.data;
-    if(thread){
-      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
-      if(threadListens) thread->listenTo(data);
-    }else{
-      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {data->registryNode}, this);
-    }
-  }
-
   /// searches for globally registrated variable 'name', checks type equivalence, and becomes an access for '_thred'
   Access_typed(Thread* _thread, const char* name, bool threadListens=false)
     : data(NULL), name(name), thread(_thread), last_accessed_revision(0), registryNode(NULL){
@@ -327,6 +315,18 @@ struct Access_typed{
       data->name = name;
       data->registryNode = vnode;
     }
+    if(thread){
+      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
+      if(threadListens) thread->listenTo(data);
+    }else{
+      registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {data->registryNode}, this);
+    }
+  }
+
+  /// A "copy" of acc: An access to the same variable as acc refers to, but now for '_thred'
+  Access_typed(Thread* _thread, const Access_typed<T>& acc, bool threadListens=false)
+    : data(NULL), name(acc.name), thread(_thread), last_accessed_revision(0), registryNode(NULL){
+    data = acc.data;
     if(thread){
       registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
       if(threadListens) thread->listenTo(data);

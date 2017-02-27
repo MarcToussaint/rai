@@ -39,9 +39,10 @@ bool orsDrawWires=false;
 // Mesh code
 //
 
-mlr::Mesh::Mesh() :
-    parsing_pos_start(0),
-    parsing_pos_end(std::numeric_limits<long>::max()){}
+mlr::Mesh::Mesh()
+  : glX(0)
+    /*parsing_pos_start(0),
+    parsing_pos_end(std::numeric_limits<long>::max())*/{}
 
 void mlr::Mesh::clear() {
   V.clear(); Vn.clear(); T.clear(); Tn.clear(); C.clear(); //strips.clear();
@@ -1383,15 +1384,15 @@ void mlr::Mesh::readObjFile(std::istream& is) {
   nV = nN = nTex = nT = 0;
   int v, n, t;
 
-  // we only want to parse the relevant subpart/submesh of the mesh therefore
-  // jump to the right position and stop parsing at the right positon.
-  if (parsing_pos_start > -1)
-    is.seekg(parsing_pos_start); //  fseek(file, parsing_pos_start, SEEK_SET);
+//  // we only want to parse the relevant subpart/submesh of the mesh therefore
+//  // jump to the right position and stop parsing at the right positon.
+//  if (parsing_pos_start > -1)
+//    is.seekg(parsing_pos_start); //  fseek(file, parsing_pos_start, SEEK_SET);
 
 //  while ((sscanf(strn(is), "%s", str.p) != EOF) && (ftell(file) < parsing_pos_end)) {
   strn(is);
   for(bool ex=false;!ex;){
-    if(parsing_pos_start>-1 && is.tellg()>=parsing_pos_end) break;
+//    if(parsing_pos_start>-1 && is.tellg()>=parsing_pos_end) break;
     switch(str.p[0]) {
       case '\0':
         is.clear();
@@ -1457,8 +1458,8 @@ void mlr::Mesh::readObjFile(std::istream& is) {
   // rewind to beginning of file and read in the data this pass
   is.seekg(0);
   is.clear();
-  if (parsing_pos_start > -1)
-    is.seekg(parsing_pos_start); //  fseek(file, parsing_pos_start, SEEK_SET);
+//  if (parsing_pos_start > -1)
+//    is.seekg(parsing_pos_start); //  fseek(file, parsing_pos_start, SEEK_SET);
   
   /* on the second pass through the file, read all the data into the
      allocated arrays */
@@ -1468,7 +1469,7 @@ void mlr::Mesh::readObjFile(std::istream& is) {
 //  while ((sscanf(strn(is), "%s", str.p) != EOF) && (ftell(file) < parsing_pos_end)) {
   strn(is);
   for(bool ex=false;!ex;){
-    if(parsing_pos_start>-1 && is.tellg()>=parsing_pos_end) break;
+//    if(parsing_pos_start>-1 && is.tellg()>=parsing_pos_end) break;
     switch(str.p[0]) {
       case '\0':
         is.clear();
@@ -1766,6 +1767,15 @@ void mlr::Mesh::glDraw(struct OpenGL&) { NICO }
 void glDrawMesh(void*) { NICO }
 void glTransform(const mlr::Transformation&) { NICO }
 #endif
+
+//==============================================================================
+
+extern OpenGL& NoOpenGL;
+
+void glDrawMeshes(void *P){
+  MeshA& meshes = *((MeshA*)P);
+  for(mlr::Mesh& mesh:meshes) mesh.glDraw(NoOpenGL);
+}
 
 //==============================================================================
 

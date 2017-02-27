@@ -19,6 +19,10 @@
 #include <Core/array.h>
 #include "geo.h"
 
+namespace mlr { struct Mesh; }
+typedef mlr::Array<mlr::Mesh> MeshA;
+void glDrawMeshes(void*);
+
 /// @file
 /// @ingroup group_geo
 /// @addtogroup group_geo
@@ -30,11 +34,13 @@ namespace mlr {
 /// a mesh (arrays of vertices, triangles, colors & normals)
 struct Mesh : GLDrawer {
   arr V;                ///< vertices
-  arr Vn;               ///< triangle normals
-  arr C;                ///< vertex colors
+  arr Vn;               ///< triangle normals (optional)
+  arr C;                ///< vertex colors (optional, may be just 3 numbers -> global color)
   
-  uintA T;              ///< triangles (faces)
-  arr   Tn;             ///< triangle normals
+  uintA T;              ///< triangles (faces, empty -> point cloud)
+  arr   Tn;             ///< triangle normals (optional)
+
+  mlr::Transformation glX; ///< transform (only used for drawing! Otherwise use applyOnPoints)  (optional)
 
   long parsing_pos_start;
   long parsing_pos_end;
@@ -109,6 +115,7 @@ struct Mesh : GLDrawer {
 stdOutPipe(mlr::Mesh)
 
 //===========================================================================
+
 //
 // operators
 //

@@ -1172,14 +1172,19 @@ double* Transformation::getInverseAffineMatrixGL(double *m) const {
 }
 
 void Transformation::applyOnPointArray(arr& pts) const{
-  if(!(pts.nd==2 && pts.d1==3)){
+  if(!((pts.nd==2 && pts.d1==3) || (pts.nd==3 && pts.d2==3))){
     LOG(-1) <<"wrong pts dimensions for transformation:" <<pts.dim();
     return;
   }
   arr R = ~rot.getArr(); //transposed, only to make it applicable to an n-times-3 array
   arr t = conv_vec2arr(pos);
   pts = pts * R;
-  for(uint i=0;i<pts.d0;i++) pts[i]() += t; //inefficient...
+  for(double *p=pts.p, *pstop=pts.p+pts.N; p<pstop; p+=3){
+    p[0] += pos.x;
+    p[1] += pos.y;
+    p[2] += pos.z;
+  }
+// for(uint i=0;i<pts.d0;i++) pts[i]() += t; //inefficient...
 }
 
 bool Transformation::isZero() const {
