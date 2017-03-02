@@ -1,46 +1,47 @@
 #pragma once
+
 #include <Core/array.h>
 #include <Kin/kin.h>
 
-struct FilterObject {
-  enum FilterObjectType { cluster, plane, alvar, optitrackmarker, optitrackbody };
+struct Percept;
+typedef mlr::Array<Percept*> Percepts;
 
-  const std::string type_name() { return m.at(this->type); }
+struct Percept {
+  enum Type { cluster, plane, alvar, optitrackmarker, optitrackbody };
 
   uint id;
-  double relevance = 1;
-  mlr::Transformation transform;
+  mlr::Enum<Type> type;
+  double relevance = 1; //mt: what is relevance?
+  mlr::Transformation transform; //mt: really two different transforms??? don't like that
   mlr::Transformation frame;
-  FilterObjectType type;
-  FilterObject();
-  virtual ~FilterObject(){}
+  Percept();
+  virtual ~Percept(){}
 
-  virtual double idMatchingCost(const FilterObject& other) = 0;
+  virtual double idMatchingCost(const Percept& other) = 0;
   virtual void write(ostream& os) const;
 
-private:
-  std::map<FilterObjectType, std::string> m = {
-    std::make_pair(FilterObjectType::cluster, "cluster"),
-    std::make_pair(FilterObjectType::alvar, "alvar"),
-    std::make_pair(FilterObjectType::plane, "plane"),
-    std::make_pair(FilterObjectType::optitrackmarker, "optitrack_marker"),
-    std::make_pair(FilterObjectType::optitrackbody, "optitrack_body")
-  };
-
+//private:
+//  std::map<Type, std::string> m = {
+//    std::make_pair(Type::cluster, "cluster"),
+//    std::make_pair(Type::alvar, "alvar"),
+//    std::make_pair(Type::plane, "plane"),
+//    std::make_pair(Type::optitrackmarker, "optitrack_marker"),
+//    std::make_pair(Type::optitrackbody, "optitrack_body")
+//  };
 };
 
-struct Cluster:FilterObject {
+struct Cluster : Percept {
   arr mean;
   arr points;
   std::string frame_id;
 
   Cluster(arr mean, arr points, std::string frame_id);
   Cluster(const Cluster &obj);
-  virtual double idMatchingCost(const FilterObject& other);
+  virtual double idMatchingCost(const Percept& other);
   virtual void write(ostream& os) const;
 };
 
-struct Plane:FilterObject {
+struct Plane : Percept {
   arr normal;
   arr center; // not really necesarily center - but at least a point on the plane
   arr hull;
@@ -48,28 +49,28 @@ struct Plane:FilterObject {
 
   Plane(arr normal, arr center, arr hull, std::string frame_id);
   Plane(const Plane &obj);
-  virtual double idMatchingCost(const FilterObject& other);
+  virtual double idMatchingCost(const Percept& other);
   virtual void write(ostream& os) const;
 };
 
-struct Alvar:FilterObject {
+struct Alvar : Percept {
   std::string frame_id;
 
   Alvar(std::string frame_id);
   Alvar(const Alvar &obj);
-  virtual double idMatchingCost(const FilterObject& other);
+  virtual double idMatchingCost(const Percept& other);
   virtual void write(ostream& os) const;
 };
 
 
 
-struct OptitrackMarker:FilterObject {
+struct OptitrackMarker : Percept {
   std::string frame_id;
 
   OptitrackMarker(std::string frame_id):
       frame_id(frame_id)
   {
-    this->type = FilterObjectType::optitrackmarker;
+    this->type = Type::optitrackmarker;
   }
 
   OptitrackMarker(const OptitrackMarker &obj)
@@ -82,25 +83,20 @@ struct OptitrackMarker:FilterObject {
     this->frame = obj.frame;
   }
 
-  virtual double idMatchingCost(const FilterObject& other){
+  virtual double idMatchingCost(const Percept& other){
     if(other.type!=optitrackmarker) return -1.;
     mlr::Vector dist = (this->frame * this->transform.pos) - (dynamic_cast<const OptitrackMarker*>(&other)->frame * dynamic_cast<const OptitrackMarker*>(&other)->transform.pos);
     return dist.length();
   }
-
-//  virtual void write(ostream& os) const{
-//    os <<"alvar" <<id <<": mean=" <<mean;
-//    FilterObject::write(os);
-//  }
 };
 
-struct OptitrackBody:FilterObject {
+struct OptitrackBody : Percept {
   std::string frame_id;
 
   OptitrackBody(std::string frame_id):
       frame_id(frame_id)
   {
-    this->type = FilterObjectType::optitrackbody;
+    this->type = Type::optitrackbody;
   }
 
   OptitrackBody(const OptitrackBody &obj)
@@ -113,33 +109,12 @@ struct OptitrackBody:FilterObject {
     this->frame = obj.frame;
   }
 
-  virtual double idMatchingCost(const FilterObject& other){
+  virtual double idMatchingCost(const Percept& other){
     if(other.type!=optitrackbody) return -1.;
     mlr::Vector dist = (this->frame * this->transform.pos) - (dynamic_cast<const OptitrackBody*>(&other)->frame * dynamic_cast<const OptitrackBody*>(&other)->transform.pos);
     return dist.length();
   }
-
-//  virtual void write(ostream& os) const{
-//    os <<"alvar" <<id <<": mean=" <<mean;
-//    FilterObject::write(os);
-//  }
 };
 
-//struct Plane:FilterObject {
-////  Plane() {}
-//  Plane(arr mean,
-//        arr points,
-//        std::string frame_id):
-//      mean(mean),
-//      points(points),
-//      frame_id(frame_id)
-//  {}
-//  arr mean;
-//  arr points;
-//  std::string frame_id;
-//};
-
-
-typedef mlr::Array<FilterObject*> FilterObjects;
 
 

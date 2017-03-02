@@ -30,7 +30,7 @@
 
 PublishDatabase::PublishDatabase()
   : Thread("PublishDatabase", -1),
-    object_database(this, "object_database", true),
+    percepts_filtered(this, "percepts_filtered", true),
     nh(NULL)
 {}
 
@@ -56,7 +56,7 @@ void PublishDatabase::close()
   }
 }
 
-visualization_msgs::Marker conv_FilterObject2Marker(const FilterObject& object)
+visualization_msgs::Marker conv_Percept2Marker(const Percept& object)
 {
   visualization_msgs::Marker new_marker;
   new_marker.type = visualization_msgs::Marker::POINTS;
@@ -76,7 +76,7 @@ visualization_msgs::Marker conv_FilterObject2Marker(const FilterObject& object)
   return new_marker;
 }
 
-object_recognition_msgs::Table conv_FilterObject2Table(const FilterObject& object)
+object_recognition_msgs::Table conv_Percept2Table(const Percept& object)
 {
   const Plane& plane = dynamic_cast<const Plane&>(object);
   object_recognition_msgs::Table new_table;
@@ -88,7 +88,7 @@ object_recognition_msgs::Table conv_FilterObject2Table(const FilterObject& objec
   return new_table;
 }
 
-visualization_msgs::Marker conv_FilterObject2TableMarker(const FilterObject& object)
+visualization_msgs::Marker conv_Percept2TableMarker(const Percept& object)
 {
   visualization_msgs::Marker new_marker;
   const Plane& plane = dynamic_cast<const Plane&>(object);
@@ -108,7 +108,7 @@ visualization_msgs::Marker conv_FilterObject2TableMarker(const FilterObject& obj
   return new_marker;
 }
 
-ar::AlvarMarker conv_FilterObject2Alvar(const FilterObject& object)
+ar::AlvarMarker conv_Percept2Alvar(const Percept& object)
 {
   ar::AlvarMarker new_marker;
   new_marker.header.frame_id = dynamic_cast<const Alvar&>(object).frame_id;
@@ -117,7 +117,7 @@ ar::AlvarMarker conv_FilterObject2Alvar(const FilterObject& object)
   return new_marker;
 }
 
-geometry_msgs::TransformStamped conv_FilterObject2OptitrackMarker(const FilterObject& object)
+geometry_msgs::TransformStamped conv_Percept2OptitrackMarker(const Percept& object)
 {
     geometry_msgs::TransformStamped new_marker;
     new_marker.header.frame_id = dynamic_cast<const OptitrackMarker&>(object).frame_id;
@@ -126,7 +126,7 @@ geometry_msgs::TransformStamped conv_FilterObject2OptitrackMarker(const FilterOb
     return new_marker;
 }
 
-geometry_msgs::TransformStamped conv_FilterObject2OptitrackBody(const FilterObject& object)
+geometry_msgs::TransformStamped conv_Percept2OptitrackBody(const Percept& object)
 {
     geometry_msgs::TransformStamped new_marker;
     new_marker.header.frame_id = dynamic_cast<const OptitrackBody&>(object).frame_id;
@@ -273,18 +273,18 @@ void PublishDatabase::syncPlane(const Plane* plane)
   /* If we change the mean, we compare the transformed mean to an untransformed mean later...*/
   modelWorld.deAccess();
 }
-void PublishDatabase::step()
-{
-  int rev = object_database.writeAccess();
+
+void PublishDatabase::step(){
+  int rev = percepts_filtered.writeAccess();
 
   if (rev == revision)
   {
-    object_database.deAccess();
+    percepts_filtered.deAccess();
     return;
   }
   revision = rev;
 
-  FilterObjects objectDatabase = object_database();
+  Percepts objectDatabase = percepts_filtered();
 
   visualization_msgs::MarkerArray cluster_markers, plane_markers;
   object_recognition_msgs::TableArray table_array;
@@ -298,43 +298,43 @@ void PublishDatabase::step()
   {
     switch ( objectDatabase(i)->type )
     {
-      case FilterObject::FilterObjectType::alvar:
+      case Percept::Type::alvar:
       {
-        ar::AlvarMarker alvar = conv_FilterObject2Alvar(*objectDatabase(i));
+        ar::AlvarMarker alvar = conv_Percept2Alvar(*objectDatabase(i));
         ar_markers.markers.push_back(alvar);
         ar_markers.header.frame_id = alvar.header.frame_id;
         syncAlvar(dynamic_cast<Alvar*>(objectDatabase(i)));
         new_alvars.append(objectDatabase(i)->id);
         break;
       }
-      case FilterObject::FilterObjectType::cluster:
+      case Percept::Type::cluster:
       {
-        visualization_msgs::Marker marker = conv_FilterObject2Marker(*objectDatabase(i));
+        visualization_msgs::Marker marker = conv_Percept2Marker(*objectDatabase(i));
         cluster_markers.markers.push_back(marker);
         syncCluster(dynamic_cast<Cluster*>(objectDatabase(i)));
         new_clusters.append(objectDatabase(i)->id);
         break;
       }
-      case FilterObject::FilterObjectType::optitrackbody:
+      case Percept::Type::optitrackbody:
       {
-        geometry_msgs::TransformStamped optitrackbody = conv_FilterObject2OptitrackBody(*objectDatabase(i));
+        geometry_msgs::TransformStamped optitrackbody = conv_Percept2OptitrackBody(*objectDatabase(i));
         optitrackbody_markers.transforms.push_back(optitrackbody);
         syncOptitrackBody(dynamic_cast<OptitrackBody*>(objectDatabase(i)));
         new_optitrackbodies.append(objectDatabase(i)->id);
         break;
       }
-      case FilterObject::FilterObjectType::optitrackmarker:
+      case Percept::Type::optitrackmarker:
       {
-        geometry_msgs::TransformStamped optitrackmarker = conv_FilterObject2OptitrackMarker(*objectDatabase(i));
+        geometry_msgs::TransformStamped optitrackmarker = conv_Percept2OptitrackMarker(*objectDatabase(i));
         optitrackmarker_markers.transforms.push_back(optitrackmarker);
         syncOptitrackMarker(dynamic_cast<OptitrackMarker*>(objectDatabase(i)));
         new_optitrackmarkers.append(objectDatabase(i)->id);
         break;
       }
-      case FilterObject::FilterObjectType::plane:
+      case Percept::Type::plane:
       {
-        object_recognition_msgs::Table table = conv_FilterObject2Table(*objectDatabase(i));
-        visualization_msgs::Marker marker = conv_FilterObject2TableMarker(*objectDatabase(i));
+        object_recognition_msgs::Table table = conv_Percept2Table(*objectDatabase(i));
+        visualization_msgs::Marker marker = conv_Percept2TableMarker(*objectDatabase(i));
         plane_markers.markers.push_back(marker);
 
         table_array.tables.push_back(table);
@@ -350,7 +350,7 @@ void PublishDatabase::step()
       }
     }
   }
-  object_database.deAccess();
+  percepts_filtered.deAccess();
 
   // Publish ROS messages
   if(nh){

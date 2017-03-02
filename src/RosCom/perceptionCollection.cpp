@@ -17,7 +17,7 @@ Collector::Collector(const bool simulate)
 
 void Collector::step()
 {
-  FilterObjects percepts;
+  Percepts percepts;
   percepts.clear();
 
   if (!simulate)
@@ -246,8 +246,8 @@ void Collector::step()
     fake_cluster->frame.addRelativeTranslation(0.6, 0., 1.05);
     mlr::Quaternion rot;
 
-//    int tick = perceptual_inputs.readAccess();
-//    perceptual_inputs.deAccess();
+//    int tick = percepts_input.readAccess();
+//    percepts_input.deAccess();
 //    cout << "tick: " << tick << endl;
 //    rot.setDeg(0.01 * tick, mlr::Vector(0.1, 0.25, 1));
 
@@ -272,7 +272,7 @@ void Collector::step()
   }
 
   if (percepts.N > 0){
-    perceptual_inputs.set() = percepts;
+    percepts_input.set() = percepts;
   }
 }
 

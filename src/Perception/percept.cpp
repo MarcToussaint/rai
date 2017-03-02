@@ -1,15 +1,13 @@
-#include "filterObject.h"
+#include "percept.h"
 
 
-
-
-FilterObject::FilterObject(){
+Percept::Percept(){
   transform.setZero();
   frame.setZero();
 }
 
-void FilterObject::write(ostream& os) const{
-  os <<" trans=" <<transform <<" frame=" <<frame;
+void Percept::write(ostream& os) const{
+  os <<" trans=" <<transform <<" frame=" <<frame <<" type=" <<type;
 }
 
 //============================================================================
@@ -18,7 +16,7 @@ Cluster::Cluster(arr mean, arr points, std::string frame_id)
   : mean(mean),
     points(points),
     frame_id(frame_id) {
-  this->type = FilterObjectType::cluster;
+  this->type = Type::cluster;
 }
 
 
@@ -33,7 +31,7 @@ Cluster::Cluster(const Cluster& obj) {
   this->frame = obj.frame;
 }
 
-double Cluster::idMatchingCost(const FilterObject& other){
+double Cluster::idMatchingCost(const Percept& other){
   if(other.type!=cluster) return -1.;
   mlr::Vector diff = (this->frame * mlr::Vector(this->mean)) -
                      (dynamic_cast<const Cluster*>(&other)->frame * mlr::Vector(dynamic_cast<const Cluster*>(&other)->mean));
@@ -42,7 +40,7 @@ double Cluster::idMatchingCost(const FilterObject& other){
 
 void Cluster::write(ostream& os) const{
   os <<"cluster_" <<id <<": mean=" <<mean;
-  FilterObject::write(os);
+  Percept::write(os);
 }
 
 //============================================================================
@@ -52,7 +50,7 @@ Plane::Plane(arr normal, arr center, arr hull, std::string frame_id)
     center(center),
     hull(hull),
     frame_id(frame_id){
-  this->type = FilterObjectType::plane;
+  this->type = Type::plane;
 }
 
 Plane::Plane(const Plane& obj){
@@ -67,7 +65,7 @@ Plane::Plane(const Plane& obj){
   this->frame = obj.frame;
 }
 
-double Plane::idMatchingCost(const FilterObject& other){
+double Plane::idMatchingCost(const Percept& other){
   if(other.type!=plane) return -1.;
   mlr::Vector diff = (this->frame * mlr::Vector(this->center)) -
                      (dynamic_cast<const Plane*>(&other)->frame * mlr::Vector(dynamic_cast<const Plane*>(&other)->center));
@@ -77,14 +75,14 @@ double Plane::idMatchingCost(const FilterObject& other){
 
 void Plane::write(ostream& os) const{
   os <<"plane_" <<id <<": center=" <<center <<" normal=" <<normal;
-  FilterObject::write(os);
+  Percept::write(os);
 }
 
 //============================================================================
 
 Alvar::Alvar(std::string frame_id)
   : frame_id(frame_id) {
-  this->type = FilterObjectType::alvar;
+  this->type = Type::alvar;
 }
 
 
@@ -97,7 +95,7 @@ Alvar::Alvar(const Alvar& obj){
   this->frame = obj.frame;
 }
 
-double Alvar::idMatchingCost(const FilterObject& other){
+double Alvar::idMatchingCost(const Percept& other){
   if(other.type!=alvar) return -1.;
   mlr::Vector dist = (this->frame * this->transform.pos) - (dynamic_cast<const Alvar*>(&other)->frame * dynamic_cast<const Alvar*>(&other)->transform.pos);
   return dist.length();
@@ -105,7 +103,7 @@ double Alvar::idMatchingCost(const FilterObject& other){
 
 void Alvar::write(ostream& os) const{
   os <<"alvar_" <<id <<":";
-  FilterObject::write(os);
+  Percept::write(os);
 }
 
 
