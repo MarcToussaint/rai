@@ -128,19 +128,9 @@ void glColor(int col) {
 
 void glColor(float r, float g, float b, float alpha) {
   float amb=1.f, diff=1.f, spec=.5f;
-  GLfloat ambient[4], diffuse[4], specular[4];
-  ambient[0] = r*amb;
-  ambient[1] = g*amb;
-  ambient[2] = b*amb;
-  ambient[3] = alpha;
-  diffuse[0] = r*diff;
-  diffuse[1] = g*diff;
-  diffuse[2] = b*diff;
-  diffuse[3] = alpha;
-  specular[0] = spec*.5f*(1.+r);
-  specular[1] = spec*.5f*(1.+g);
-  specular[2] = spec*.5f*(1.+b);
-  specular[3] = alpha;
+  GLfloat ambient[4]  = { r*amb , g*amb , b*amb , alpha };
+  GLfloat diffuse[4]  = { r*diff, g*diff, b*diff, alpha };
+  GLfloat specular[4] = { spec*.5f*(1.+r), spec*.5f*(1.+g), spec*.5f*(1.+b), alpha };
 #if 0
   glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, diffuse);
 #else
@@ -1685,7 +1675,7 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
   isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
 
-//  s->beginGlContext();
+  s->beginGlContext();
 
   if(!rboColor || !rboDepth){ //need to initialize
     glewInit();

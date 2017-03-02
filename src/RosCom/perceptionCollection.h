@@ -19,6 +19,8 @@ Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker);
 OptitrackMarker conv_tf2OptitrackMarker(const geometry_msgs::TransformStamped& msg);
 OptitrackBody conv_tf2OptitrackBody(const geometry_msgs::TransformStamped& msg);
 
+/** listens to ros topics, such as Alvar and OptiTrack and TableTop, and pipes them into the perceptual_inputs
+ */
 struct Collector : Thread{
   Access_typed<visualization_msgs::MarkerArray> tabletop_clusters;
   Access_typed<ar::AlvarMarkers> ar_pose_markers;

@@ -560,14 +560,14 @@ int x11_getKey(){
   CHECK(disp, "Cannot open display");
 
   Window win = XCreateSimpleWindow(disp, DefaultRootWindow(disp),
-                                   10, 10, 165, 45, //24
-                                   2, 0x000000, 0x000000);
+                                   10, 10, 80, 50, //24
+                                   2, 0x000000, 0x20a0f0);
   XSelectInput (disp, win, KeyPressMask | ExposureMask | ButtonPressMask );
   XMapWindow(disp, win);
 
   GC gc = XCreateGC(disp, win, 0, NULL);
   XSetFont(disp, gc,  XLoadFont(disp,"fixed")); //-adobe-courier-bold-r-*-*-*-220-*-*-*-*-*-*"));
-  XSetForeground(disp, gc, 0x606060);
+  XSetForeground(disp, gc, 0x000000);
 
   bool quit=false;
   for(;!quit;){
@@ -576,7 +576,7 @@ int x11_getKey(){
     switch(ev.type){
       case Expose:
         if (ev.xexpose.count == 0) {
-          XDrawString(disp, win, gc, 0, 30, txt.p, txt.N);
+          XDrawString(disp, win, gc, 12, 30, txt.p, txt.N);
           XFlush(disp);
         }
         break;

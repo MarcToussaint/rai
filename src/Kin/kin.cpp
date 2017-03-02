@@ -342,6 +342,18 @@ void mlr::Shape::parseAts() {
   //compute the bounding radius
   if(mesh.V.N) mesh_radius = mesh.getRadius();
 
+  //colored box?
+  if(ats["coloredBox"]){
+    CHECK_EQ(mesh.V.d0, 8, "I need a box");
+    mesh.C.resize(mesh.T.d0, 3);
+    for(uint i=0;i<mesh.C.d0;i++){
+      if(i==2 || i==3) mesh.C[i] = arr(color, 3);
+      else if(i>=4 && i<=7) mesh.C[i] = 1.;
+      else mesh.C[i] = .5;
+    }
+  }
+
+
   //add inertia to the body
   if(body) {
     Matrix I;

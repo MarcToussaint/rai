@@ -60,11 +60,11 @@ void mlr::Mesh::setBox() {
     -.5, +.5, +.5
   };
   uint   tris [36] = {
-    0, 3, 2, 2, 1, 0,
-    4, 5, 6, 6, 7, 4,
+    0, 3, 2, 2, 1, 0, //bottom
+    4, 5, 6, 6, 7, 4, //top
     1, 5, 4, 4, 0, 1,
-    2, 6, 5, 5, 1, 2,
     3, 7, 6, 6, 2, 3,
+    2, 6, 5, 5, 1, 2,
     0, 4, 7, 7, 3, 0
   };
   V.setCarray(verts, 24);
@@ -313,9 +313,10 @@ void mlr::Mesh::makeConvexHull() {
   if(!V.N) return;
 #ifndef  MLR_ORS_ONLY_BASICS
   getTriangulatedHull(T, V);
+  C.clear();
 #else
-  NICO
-    #endif
+  NICO;
+#endif
 }
 
 void mlr::Mesh::makeTriangleFan(){
@@ -1638,6 +1639,8 @@ uintA getSubMeshPositions(const char* filename) {
 
 #ifdef MLR_GL
 
+extern void glColor(float r, float g, float b, float alpha);
+
 /// GL routine to draw a mlr::Mesh
 void mlr::Mesh::glDraw(struct OpenGL&) {
   if(!T.N){  //-- draw point cloud
@@ -1645,35 +1648,21 @@ void mlr::Mesh::glDraw(struct OpenGL&) {
     CHECK(V.nd==2 && V.d1==3, "wrong dimension");
     glPointSize(3.);
     glDisable(GL_LIGHTING);
-  #if 1
+
     glEnableClientState(GL_VERTEX_ARRAY);
+    if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
+
     glVertexPointer(3, GL_DOUBLE, V.d1-3, V.p);
-    if(C.N==V.N){
-      glEnableClientState(GL_COLOR_ARRAY);
-      glColorPointer(3, GL_DOUBLE, C.d1-3, C.p );
-    }else glDisableClientState(GL_COLOR_ARRAY);
+    if(C.N==V.N) glColorPointer(3, GL_DOUBLE, C.d1-3, C.p );
+
     glDrawArrays(GL_POINTS, 0, V.d0);
     glDisableClientState(GL_VERTEX_ARRAY);
-  #else
-    glBegin(GL_POINTS);
-    if(C.N!=V.N){
-      const double *p=V.begin(), *pstop=V.end();
-      for(; p!=pstop; p+=V.d1)
-        glVertex3dv(p);
-    }else{
-      const double *p=V.begin(), *pstop=V.end(), *c=C.begin();
-      for(; p!=pstop; p+=V.d1, c+=C.d1){
-        glVertex3dv(p);
-        glColor3dv(c);
-      }
-    }
-    glEnd();
-  #endif
+
     glEnable(GL_LIGHTING);
     glPointSize(1.);
     return;
   }
-  if(T.d1==2){
+  if(T.d1==2){ //-- draw lines
     glBegin(GL_LINES);
     for(uint t=0; t<T.d0; t++) {
       glVertex3dv(&V(T(t, 0), 0));
@@ -1702,27 +1691,47 @@ void mlr::Mesh::glDraw(struct OpenGL&) {
     glVertexPointer(3, GL_DOUBLE, 0, V.p);
     if(C.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
     glDrawElements(GL_LINE_STRIP, T.N, GL_UNSIGNED_INT, T.p);
-    //glDrawArrays(GL_LINE_STRIP, 0, V.d0);
 #endif
   }
 #if 1
-  GLboolean turnOnLight=false;
-  if(C.N) { glGetBooleanv(GL_LIGHTING, &turnOnLight); glDisable(GL_LIGHTING); }
+  if(!C.N || C.d0==V.d0){ //we have colors for each vertex -> use index arrays
+    //  glShadeModel(GL_FLAT);
+    glShadeModel(GL_SMOOTH);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_NORMAL_ARRAY);
+    if(C.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
+    if(C.N) glDisable(GL_LIGHTING); //because lighting requires ambiance colors to be set..., not just color..
 
-  //glShadeModel(GL_FLAT);
-  glShadeModel(GL_SMOOTH);
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glEnableClientState(GL_NORMAL_ARRAY);
-  if(C.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
+    glVertexPointer(3, GL_DOUBLE, 0, V.p);
+    glNormalPointer(GL_DOUBLE, 0, Vn.p);
+    if(C.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
 
-  glVertexPointer(3, GL_DOUBLE, 0, V.p);
-  glNormalPointer(GL_DOUBLE, 0, Vn.p);
+    glDrawElements(GL_TRIANGLES, T.N, GL_UNSIGNED_INT, T.p);
 
-  if(C.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
+    if(C.N) glEnable(GL_LIGHTING);
+  }else{
+    CHECK_EQ(C.d0, T.d0, ""); //we have colors for each tri -> render tris directly and with tri-normals
+    CHECK_EQ(Tn.d0, T.d0, "");
+    glShadeModel(GL_FLAT);
+    glBegin(GL_TRIANGLES);
+    GLboolean light=true;
+    glGetBooleanv(GL_LIGHTING, &light); //this doesn't work!!?? even when disabled, returns true; never changes 'light'
+    for(uint t=0; t<T.d0; t++) {
+      uint   *tri  = T.p  + 3*t; //&T(t, 0);
+      double *col  = C.p  + 3*t; //&C(t, 0);
+      double *norm = Tn.p + 3*t; //&Tn(t, 0);
 
-  glDrawElements(GL_TRIANGLES, T.N, GL_UNSIGNED_INT, T.p);
+      GLfloat ambient[4] = { (float)col[0], (float)col[1], (float)col[2], 1.f };
+      if(!light) glColor4fv(ambient);
+      else       glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, ambient);
 
-  if(turnOnLight) { glEnable(GL_LIGHTING); }
+      glNormal3dv(norm);
+      glVertex3dv(V.p + 3*tri[0]); //&V(tri[0],0);
+      glVertex3dv(V.p + 3*tri[1]);
+      glVertex3dv(V.p + 3*tri[2]);
+    }
+    glEnd();
+  }
 #elif 1 //simple with vertex normals
   uint i, v;
   glShadeModel(GL_SMOOTH);
@@ -1735,17 +1744,6 @@ void mlr::Mesh::glDraw(struct OpenGL&) {
   }
   glEnd();
 #else //simple with triangle normals
-  uint t, v;
-  computeNormals();
-  glBegin(GL_TRIANGLES);
-  for(t=0; t<T.d0; t++) {
-    glNormal3dv(&Tn(t, 0));
-    if(C.d0==T.d0)  glColor(C(t, 0), C(t, 1), C(t, 2),1.);
-    v=T(t, 0);  if(C.d0==V.d0) glColor3dv(&C(v, 0));  glVertex3dv(&V(v, 0));
-    v=T(t, 1);  if(C.d0==V.d0) glColor3dv(&C(v, 0));  glVertex3dv(&V(v, 0));
-    v=T(t, 2);  if(C.d0==V.d0) glColor3dv(&C(v, 0));  glVertex3dv(&V(v, 0));
-  }
-  glEnd();
 #if 0 //draw normals
   glColor(.5, 1., .0);
   Vector a, b, c, x;
@@ -1762,7 +1760,9 @@ void mlr::Mesh::glDraw(struct OpenGL&) {
 #endif
 #endif
 }
+
 #else //MLR_GL
+
 void mlr::Mesh::glDraw(struct OpenGL&) { NICO }
 void glDrawMesh(void*) { NICO }
 void glTransform(const mlr::Transformation&) { NICO }
