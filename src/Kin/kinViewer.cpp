@@ -177,7 +177,6 @@ ComputeCameraView::ComputeCameraView(uint skipFrames)
 }
 
 ComputeCameraView::~ComputeCameraView(){
-  modelWorld.stopListening();
   threadClose();
 }
 

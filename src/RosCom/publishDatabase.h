@@ -8,7 +8,7 @@
 
 /// 'publishes' to both, ROS topics and modelWorld
 struct PublishDatabase : Thread{
-  Access_typed<Percepts> percepts_filtered;
+  Access_typed<PerceptL> percepts_filtered;
   ACCESSname(mlr::KinematicWorld, modelWorld)
 
   PublishDatabase();
@@ -27,11 +27,6 @@ struct PublishDatabase : Thread{
 
 private:
   //TODO: these should be virtual methods of Percept
-  void syncCluster(const Cluster* cluster);
-  void syncPlane(const Plane* plane);
-  void syncAlvar(const Alvar* alvar);
-  void syncOptitrackMarker(const OptitrackMarker* optitrackmarker);
-  void syncOptitrackBody(const OptitrackBody* optitrackbody);
   mlr::Array<uint> stored_clusters, stored_alvars, stored_planes, stored_optitrackmarkers, stored_optitrackbodies;
   int revision = -1;
 };

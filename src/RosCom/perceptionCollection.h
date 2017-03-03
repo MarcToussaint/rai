@@ -32,7 +32,7 @@ struct Collector : Thread{
   ACCESSname(mlr::Transformation, alvar_srcFrame)
   ACCESSname(mlr::Transformation, optitrack_srcFrame)
 
-  ACCESSname(Percepts, percepts_input)
+  ACCESSname(PerceptL, percepts_input)
 
   Collector(const bool simulate = false);
 

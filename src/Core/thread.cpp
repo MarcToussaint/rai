@@ -148,6 +148,18 @@ void ConditionVariable::stopListenTo(ConditionVariable* c){
   mutex.unlock();
 }
 
+void ConditionVariable::stopListening(){
+  mutex.lock();
+  for(ConditionVariable *c:listensTo){
+    c->statusLock();
+    c->listeners.removeValue(this);
+    c->statusUnlock();
+  }
+  listensTo.clear();
+  messengers.clear();
+  mutex.unlock();
+}
+
 void ConditionVariable::statusLock() {
   mutex.lock();
 }
@@ -450,6 +462,7 @@ void Thread::threadOpen(bool wait, int priority) {
 }
 
 void Thread::threadClose() {
+  stopListening();
   setStatus(tsCLOSE);
   if(!thread) return;
 #ifndef MLR_QThread

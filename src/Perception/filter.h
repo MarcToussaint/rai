@@ -8,15 +8,17 @@
 
 /// clears the perceptual inputs (which is a FIFO) and merges these into the filtered percepts
 struct Filter : Thread{
-  Access_typed<Percepts> percepts_input;
-  Access_typed<Percepts> percepts_filtered;
+  Access_typed<PerceptL> percepts_input;
+  Access_typed<PerceptL> percepts_filtered;
 
   Filter();
+  ~Filter();
 
   virtual void open(){}
   virtual void step();
   virtual void close(){}
 
+  int verbose = 2;
 private:
   double relevance_decay_factor = 0.99;
   double relevance_threshold = 0.25;
@@ -26,8 +28,8 @@ private:
 
   arr costs;
 
-  arr createCostMatrix(const Percepts& perceptualInputs, const Percepts& objectDatabase);
-  Percepts assign(const Percepts& perceps, const Percepts& database, const Hungarian& ha);
+  arr createCostMatrix(const PerceptL& perceptualInputs, const PerceptL& objectDatabase);
+  PerceptL assign(const PerceptL& perceps, const PerceptL& database, const Hungarian& ha);
 
   int revision = -1;
 };

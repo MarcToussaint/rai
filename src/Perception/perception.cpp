@@ -611,15 +611,15 @@ void draw1(void*){
 
 
 
-void AllViewer::open() {
-  gl.add(glStandardScene, 0);
-  gl.add(kinect);
-  gl.add(glDrawPlanes, &planes_now_copy);
-}
+//void AllViewer::open() {
+//  gl.add(glStandardScene, 0);
+//  gl.add(kinect);
+//  gl.add(glDrawPlanes, &planes_now_copy);
+//}
 
-void AllViewer::step(){
-  kinect.V = kinect_points.get();
-  kinect.C = kinect_pointColors.get();
-  planes_now_copy = planes_now.get();
-  gl.update();
-}
+//void AllViewer::step(){
+//  kinect.V = kinect_points.get();
+//  kinect.C = kinect_pointColors.get();
+//  planes_now_copy = planes_now.get();
+//  gl.update();
+//}

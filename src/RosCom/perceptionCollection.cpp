@@ -17,7 +17,7 @@ Collector::Collector(const bool simulate)
 
 void Collector::step()
 {
-  Percepts percepts;
+  PerceptL percepts;
   percepts.clear();
 
   if (!simulate)

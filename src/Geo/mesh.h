@@ -70,7 +70,7 @@ struct Mesh : GLDrawer {
   void scale(double sx, double sy, double sz);
   void translate(double dx, double dy, double dz);
   void transform(const Transformation& t);
-  Vector center();
+  mlr::Vector center();
   void box();
   void addMesh(const mlr::Mesh& mesh2);
   void makeConvexHull();
@@ -83,7 +83,7 @@ struct Mesh : GLDrawer {
   void fuseNearVertices(double tol=1e-5);
   void clean();
   void flipFaces();
-  Vector getMeanVertex() const;
+  arr getMean() const;
   void getBox(double& dx, double& dy, double& dz) const;
   double getRadius() const;
   double getArea() const;

@@ -311,11 +311,30 @@ void mlr::Mesh::addMesh(const Mesh& mesh2) {
 
 void mlr::Mesh::makeConvexHull() {
   if(!V.N) return;
-#ifndef  MLR_ORS_ONLY_BASICS
-  getTriangulatedHull(T, V);
-  C.clear();
+#if 1
+  V = getHull(V, T);
+  if(C.N) C = mean(C);
 #else
-  NICO;
+  uintA H = getHullIndices(V, T);
+  intA Hinv = consts<int>(-1, V.d0);
+  for(uint i=0;i<H.N;i++) Hinv(H(i)) = i;
+
+//  if(C.N==V.N){
+//    arr Cnew(H.N, 3);
+//    for(uint i=0;i<H.N;i++) Cnew[i] = C[H.elem(i)];
+//    C=Cnew;
+//  }
+
+  arr Vnew(H.N, 3);
+  for(uint i=0;i<H.N;i++) Vnew[i] = V[H.elem(i)];
+  V=Vnew;
+
+  for(uint i=0;i<T.d0;i++){
+    T(i,0) = Hinv(T(i,0));
+    T(i,1) = Hinv(T(i,1));
+    T(i,2) = Hinv(T(i,2));
+  }
+
 #endif
 }
 
@@ -323,6 +342,7 @@ void mlr::Mesh::makeTriangleFan(){
   T.clear();
   for(uint i=1;i+1<V.d0;i++){
     T.append(TUP(0,i,i+1));
+    T.append(TUP(0,i+1,i));
   }
   T.reshape(T.N/3,3);
 }
@@ -960,10 +980,8 @@ void mlr::Mesh::skin(uint start) {
   cout <<T <<endl;
 }
 
-mlr::Vector mlr::Mesh::getMeanVertex() const {
-  arr Vmean = sum(V,0);
-  Vmean /= (double)V.d0;
-  return Vector(Vmean);
+arr mlr::Mesh::getMean() const {
+  return mean(V);
 }
 
 void mlr::Mesh::getBox(double& dx, double& dy, double& dz) const {
@@ -1000,7 +1018,8 @@ double mlr::Mesh::getArea() const{
 
 double mlr::Mesh::getVolume() const{
   CHECK(T.d1==3,"");
-  mlr::Vector z = getMeanVertex(), a,b,c;
+  mlr::Vector z = getMean();
+  mlr::Vector a,b,c;
   double vol=0.;
   for(uint i=0;i<T.d0;i++){
     a.set(V.p+3*T.p[3*i+0]);
@@ -1643,6 +1662,15 @@ extern void glColor(float r, float g, float b, float alpha);
 
 /// GL routine to draw a mlr::Mesh
 void mlr::Mesh::glDraw(struct OpenGL&) {
+  if(C.nd==1){
+    CHECK(C.N==3 || C.N==4, "need a basic color");
+    GLboolean light=true;
+    glGetBooleanv(GL_LIGHTING, &light); //this doesn't work!!?? even when disabled, returns true; never changes 'light'
+    GLfloat col[4] = { (float)C(0), (float)C(1), (float)C(2), (C.N==3?1.f:(float)C(3)) };
+    glColor4fv(col);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, col);
+  }
+
   if(!T.N){  //-- draw point cloud
     if(!V.N) return;
     CHECK(V.nd==2 && V.d1==3, "wrong dimension");
@@ -1662,6 +1690,7 @@ void mlr::Mesh::glDraw(struct OpenGL&) {
     glPointSize(1.);
     return;
   }
+
   if(T.d1==2){ //-- draw lines
     glBegin(GL_LINES);
     for(uint t=0; t<T.d0; t++) {
@@ -1671,46 +1700,31 @@ void mlr::Mesh::glDraw(struct OpenGL&) {
     glEnd();
     return;
   }
-  if(V.d0!=Vn.d0 || T.d0!=Tn.d0) {
-    computeNormals();
-  }
-  if(orsDrawWires) {
-#if 0
-    uint t;
-    for(t=0; t<T.d0; t++) {
-      glBegin(GL_LINE_LOOP);
-      glVertex3dv(&V(T(t, 0), 0));
-      glVertex3dv(&V(T(t, 1), 0));
-      glVertex3dv(&V(T(t, 2), 0));
-      glEnd();
-    }
-#else
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_NORMAL_ARRAY);
-    if(C.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
-    glVertexPointer(3, GL_DOUBLE, 0, V.p);
-    if(C.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
-    glDrawElements(GL_LINE_STRIP, T.N, GL_UNSIGNED_INT, T.p);
-#endif
-  }
+
+  //-- draw a mesh
+  if(V.d0!=Vn.d0 || T.d0!=Tn.d0) computeNormals();
+
 #if 1
-  if(!C.N || C.d0==V.d0){ //we have colors for each vertex -> use index arrays
+  if(!C.N || C.nd==1 || C.d0==V.d0){ //we have colors for each vertex -> use index arrays
+
     //  glShadeModel(GL_FLAT);
     glShadeModel(GL_SMOOTH);
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
-    if(C.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
-    if(C.N) glDisable(GL_LIGHTING); //because lighting requires ambiance colors to be set..., not just color..
+    if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
+    if(C.N==V.N) glDisable(GL_LIGHTING); //because lighting requires ambiance colors to be set..., not just color..
 
     glVertexPointer(3, GL_DOUBLE, 0, V.p);
     glNormalPointer(GL_DOUBLE, 0, Vn.p);
-    if(C.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
+    if(C.N==V.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
 
     glDrawElements(GL_TRIANGLES, T.N, GL_UNSIGNED_INT, T.p);
 
     if(C.N) glEnable(GL_LIGHTING);
-  }else{
-    CHECK_EQ(C.d0, T.d0, ""); //we have colors for each tri -> render tris directly and with tri-normals
+
+  }else{ //we have colors for each tri -> render tris directly and with tri-normals
+
+    CHECK_EQ(C.d0, T.d0, "");
     CHECK_EQ(Tn.d0, T.d0, "");
     glShadeModel(GL_FLAT);
     glBegin(GL_TRIANGLES);
@@ -1759,6 +1773,28 @@ void mlr::Mesh::glDraw(struct OpenGL&) {
   }
 #endif
 #endif
+
+  if(orsDrawWires) { //on top of mesh
+#if 0
+    uint t;
+    for(t=0; t<T.d0; t++) {
+      glBegin(GL_LINE_LOOP);
+      glVertex3dv(&V(T(t, 0), 0));
+      glVertex3dv(&V(T(t, 1), 0));
+      glVertex3dv(&V(T(t, 2), 0));
+      glEnd();
+    }
+#else
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
+
+    glVertexPointer(3, GL_DOUBLE, 0, V.p);
+    if(C.N==V.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
+    glDrawElements(GL_LINE_STRIP, T.N, GL_UNSIGNED_INT, T.p);
+#endif
+  }
+
 }
 
 #else //MLR_GL

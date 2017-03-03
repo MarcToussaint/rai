@@ -83,6 +83,7 @@ struct ConditionVariable {
   void broadcast(ConditionVariable* messenger=NULL);       ///< just broadcast
   void listenTo(ConditionVariable *c);
   void stopListenTo(ConditionVariable *c);
+  void stopListening();
 
   void statusLock();   //the user can manually lock/unlock, if he needs locked state access for longer -> use userHasLocked=true below!
   void statusUnlock();

@@ -313,7 +313,7 @@ double forceClosure(const arr& C, const arr& Cn, const mlr::Vector& center,
 
 //===========================================================================
 
-void getTriangulatedHull(uintA& T, arr& V) {
+arr getHull(const arr& V, uintA& T) {
   auto lock = qhullMutex();
 
   int exitcode;
@@ -321,42 +321,46 @@ void getTriangulatedHull(uintA& T, arr& V) {
   static char* cmd = (char*) "qhull Qt ";
   exitcode = qh_new_qhull(V.d1, V.d0, V.p, false, cmd, NULL, stderr);
   if(exitcode) HALT("qh_new_qhull error - exitcode " <<exitcode);
+
+
   qh_triangulate();
-  
+
   facetT *facet;
   vertexT *vertex, **vertexp;
   uint f, i, v;
-  
+
   arr Vnew;
   Vnew.resize(qh num_vertices, dim);
-  T.resize(qh num_facets, dim);
   i=0;
   FORALLvertices {
     vertex->id = i;
     memmove(&Vnew(i, 0), vertex->point,  dim*sizeof(double));
     i++;
   }
-  f=0;
-  FORALLfacets {
-    i=0;
-    FOREACHvertex_(facet->vertices) {
-      if(i<3) T(f, i)=vertex->id; else MLR_MSG("face " <<f <<" has " <<i <<" vertices" <<endl);
-      i++;
+  if(&T){ //retrieve also the triangulation
+    T.resize(qh num_facets, dim);
+    f=0;
+    FORALLfacets {
+      i=0;
+      FOREACHvertex_(facet->vertices) {
+        if(i<3) T(f, i)=vertex->id; else MLR_MSG("face " <<f <<" has " <<i <<" vertices" <<endl);
+        i++;
+      }
+      if(facet->toporient) {
+        v=T(f, 0);  T(f, 0)=T(f, 1);  T(f, 1)=v;
+      }
+      f++;
     }
-    if(facet->toporient) {
-      v=T(f, 0);  T(f, 0)=T(f, 1);  T(f, 1)=v;
-    }
-    f++;
+    CHECK_EQ(f,T.d0, "");
   }
-  CHECK_EQ(f,T.d0, "");
-  
+
   qh_freeqhull(!qh_ALL);
   int curlong, totlong;
   qh_memfreeshort(&curlong, &totlong);
   if(curlong || totlong)
     MLR_MSG("qhull internal warning (main): did not free " <<totlong <<" bytes of long memory (" <<curlong <<" pieces)\n");
     
-  V=Vnew;
+  return Vnew;
 }
 
 void getDelaunayEdges(uintA& E, const arr& V) {

@@ -12,11 +12,15 @@ struct sImageViewer{
   sImageViewer(const char* tit) : gl(tit) {}
 };
 
-ImageViewer::ImageViewer(const char* img_name) : Thread(STRING("ImageViewer_"<<img_name), -1), img(this, img_name, true){
+ImageViewer::ImageViewer(const char* img_name)
+  : Thread(STRING("ImageViewer_"<<img_name), -1),
+    img(this, img_name, true){
   threadOpen();
 }
 
-ImageViewer::~ImageViewer(){ threadClose(); }
+ImageViewer::~ImageViewer(){
+  threadClose();
+}
 
 void ImageViewer::open(){
   s = new sImageViewer(STRING("ImageViewer: "<<img.data->name));
@@ -45,7 +49,7 @@ void ImageViewer::step(){
 
 struct sPointCloudViewer{
   OpenGL gl;
-  sPointCloudViewer(const char* tit):gl(tit,640,480){}
+  sPointCloudViewer(const char* tit) : gl(tit,640,480){}
   mlr::Mesh pc;
 };
 
@@ -100,7 +104,6 @@ void PointCloudViewer::step(){
 
 struct sMeshAViewer{
   OpenGL gl;
-
   mlr::Mesh pc;
 };
 

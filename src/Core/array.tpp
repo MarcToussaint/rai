@@ -3618,25 +3618,22 @@ template struct mlr::Array<bool>;
 //
 
 template<class T> char listWrite(const mlr::Array<std::shared_ptr<T> >& L, std::ostream& os, const char *ELEMSEP, const char *delim) {
-  uint i;
   if(delim) os <<delim[0];
-  for(i=0; i<L.N; i++) { if(i) os <<ELEMSEP;  if(L.elem(i)) os <<*L.elem(i); else os <<"<NULL>"; }
+  for(uint i=0; i<L.N; i++) { if(i) os <<ELEMSEP;  if(L.elem(i)) os <<*L.elem(i); else os <<"<NULL>"; }
   if(delim) os <<delim[1] <<std::flush;
   return '#';
 }
 
 template<class T> char listWrite(const mlr::Array<T*>& L, std::ostream& os, const char *ELEMSEP, const char *delim) {
-  uint i;
   if(delim) os <<delim[0];
-  for(i=0; i<L.N; i++) { if(i) os <<ELEMSEP;  if(L.elem(i)) os <<*L.elem(i); else os <<"<NULL>"; }
+  for(uint i=0; i<L.N; i++) { if(i) os <<ELEMSEP;  if(L.elem(i)) os <<*L.elem(i); else os <<"<NULL>"; }
   if(delim) os <<delim[1] <<std::flush;
   return '#';
 }
 
 template<class T> void listWriteNames(const mlr::Array<T*>& L, std::ostream& os) {
-  uint i;
   os <<'(';
-  for(i=0; i<L.N; i++) { if(i) os <<' ';  if(L.elem(i)) os <<L.elem(i)->name; else os <<"<NULL>"; }
+  for(uint i=0; i<L.N; i++) { if(i) os <<' ';  if(L.elem(i)) os <<L.elem(i)->name; else os <<"<NULL>"; }
   os <<')' <<std::flush;
 }
 
@@ -3657,15 +3654,13 @@ template<class T> void listRead(mlr::Array<T*>& L, std::istream& is, const char 
 template<class T> void listClone(mlr::Array<T*>& L, const mlr::Array<T*>& M) {
   listDelete(L);
   L.resizeAs(M);
-  uint i;
-  for(i=0; i<L.N; i++) L.elem(i)=M.elem(i)->newClone();
+  for(uint i=0; i<L.N; i++) L.elem(i)=M.elem(i)->newClone();
 }
 
 template<class T> void listResize(mlr::Array<T*>& L, uint N) {
   listDelete(L);
   L.resize(N);
-  uint i;
-  for(i=0; i<N; i++) L.elem(i)=new T();
+  for(uint i=0; i<N; i++) L.elem(i)=new T();
 }
 
 template<class T> void listResizeCopy(mlr::Array<T*>& L, uint N) {

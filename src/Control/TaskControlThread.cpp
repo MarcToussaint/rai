@@ -155,6 +155,9 @@ void TaskControlThread::step(){
 
   //now operational space control
   modelWorld.writeAccess();
+
+//  if(!(step_count%20)) modelWorld().gl().update();
+
   ctrlTasks.readAccess();
   taskController->tasks = ctrlTasks();
   taskController->updateCtrlTasks(.01, modelWorld()); //update with time increment
