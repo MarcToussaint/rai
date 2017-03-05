@@ -82,7 +82,7 @@ void glDrawRect(float x1, float y1, float z1, float x2, float y2, float z2,
                 float x3, float y3, float z3, float x4, float y4, float z4);
 void glDrawRect(float x, float y, float z, float rad);
 void glDrawFloor(float x, float r, float g, float b);
-void glDrawBox(float x, float y, float z);
+void glDrawBox(float x, float y, float z, bool linesOnly=false);
 void glDrawDiamond(float dx, float dy, float dz);
 void glDrawDiamond(float x, float y, float z, float dx, float dy, float dz);
 void glDrawSphere(float radius);

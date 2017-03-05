@@ -271,13 +271,17 @@ void mlr::Mesh::translate(double dx, double dy, double dz) {
   for(i=0; i<V.d0; i++) {  V(i, 0)+=dx;  V(i, 1)+=dy;  V(i, 2)+=dz;  }
 }
 
+void mlr::Mesh::translate(const arr& d){
+  CHECK_EQ(d.N,3,"");
+  translate(d.elem(0), d.elem(1), d.elem(2));
+}
+
 void mlr::Mesh::transform(const mlr::Transformation& t){
   t.applyOnPointArray(V);
 }
 
 mlr::Vector mlr::Mesh::center() {
-  arr Vmean = sum(V,0);
-  Vmean /= (double)V.d0;
+  arr Vmean = mean(V);
   for(uint i=0; i<V.d0; i++) V[i]() -= Vmean;
   return Vector(Vmean);
 }
@@ -345,6 +349,14 @@ void mlr::Mesh::makeTriangleFan(){
     T.append(TUP(0,i+1,i));
   }
   T.reshape(T.N/3,3);
+}
+
+void mlr::Mesh::makeLineStrip(){
+  T.resize(V.d0, 2);
+  T[0] = {V.d0-1, 0};
+  for(uint i=1;i<V.d0;i++){
+    T[i] = {i-1, i};
+  }
 }
 
 void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
@@ -1692,6 +1704,7 @@ void mlr::Mesh::glDraw(struct OpenGL&) {
   }
 
   if(T.d1==2){ //-- draw lines
+    glLineWidth(3.f);
     glBegin(GL_LINES);
     for(uint t=0; t<T.d0; t++) {
       glVertex3dv(&V(T(t, 0), 0));

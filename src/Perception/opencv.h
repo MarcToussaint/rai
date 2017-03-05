@@ -31,20 +31,20 @@
 #undef MIN
 #undef MAX
 
-inline cv::Mat cvMAT(const byteA& img){
+inline cv::Mat conv_Arr2CvRef(const byteA& img){
   if(img.nd==2) return cv::Mat(img.d0, img.d1, CV_8UC1, img.p);
   if(img.nd==3) return cv::Mat(img.d0, img.d1, CV_8UC3, img.p);
   return cv::Mat();
 }
 
-inline cv::Mat cvMAT(const floatA& img){
+inline cv::Mat conv_Arr2CvRef(const floatA& img){
   if(img.nd==1) return cv::Mat(img.d0, 1, CV_32FC3, img.p);
   if(img.nd==2) return cv::Mat(img.d0, img.d1, CV_32FC1, img.p);
   if(img.nd==3) return cv::Mat(img.d0, img.d1, CV_32FC3, img.p);
   return cv::Mat();
 }
 
-inline cv::Mat cvMAT(const doubleA& img){
+inline cv::Mat conv_Arr2CvRef(const doubleA& img){
   if(img.nd==2) return cv::Mat(img.d0, img.d1, CV_64FC1, img.p);
   if(img.nd==3) return cv::Mat(img.d0, img.d1, CV_64FC3, img.p);
   return cv::Mat();
@@ -66,7 +66,7 @@ void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSd
 
 inline char cvShow(const byteA& img, const char *window="opencv", bool wait=false) { NICO }
 inline char cvShow(const floatA& img, const char *window="opencv", bool wait=false) { NICO };
-void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSdv, uint range); { NICO };
+void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSdv, uint range) { NICO };
 
 #endif //MLR_OPENCV
 

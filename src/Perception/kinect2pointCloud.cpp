@@ -12,30 +12,13 @@ void Kinect2PointCloud::step(){
   depth = kinect_depth.get();
   rgb = kinect_rgb.get();
 
-  images2pointcloud(pts, cols, rgb, depth);
+  depthData2pointCloud(pts, depth);
 
   kinect_frame.readAccess();
   if(!kinect_frame().isZero()) kinect_frame().applyOnPointArray(pts);
   kinect_frame.deAccess();
 
   kinect_points.set() = pts;
-  kinect_pointColors.set() = cols;
-}
-
-
-void images2pointcloud(arr& pts, arr& cols, const byteA& rgb, const uint16A& depth){
-  CHECK_EQ(rgb.d2, 3, "");
-  uint H=rgb.d0, W=rgb.d1;
-  CHECK_EQ(H, 480, "");
-  CHECK_EQ(W, 640, "");
-
-  CHECK_EQ(depth.d0, H,"");
-  CHECK_EQ(depth.d1, W,"");
-
-  depthData2pointCloud(pts, depth);
-
-  cols.resize(W, H, 3);
-  for(uint i=0;i<rgb.N;i++) cols.elem(i) = (double)rgb.elem(i)/255.;
 }
 
 void depthData2pointCloud(arr& pts, const uint16A& depth){

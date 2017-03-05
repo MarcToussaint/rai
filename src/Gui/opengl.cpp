@@ -292,7 +292,7 @@ void glDrawFloor(float x, float r, float g, float b) {
 #endif
 }
 
-void glDrawBox(float x, float y, float z) {
+void glDrawBox(float x, float y, float z, bool linesOnly) {
   static GLfloat n[6][3] = {
     {-1.0, 0.0, 0.0},
     {0.0, 1.0, 0.0},
@@ -309,6 +309,11 @@ void glDrawBox(float x, float y, float z) {
     {5, 6, 2, 1},
     {7, 4, 0, 3}
   };
+  static GLint edges[12][2] = {
+    {0,1}, {1,2}, {2,3}, {3,0},
+    {4,5}, {5,6}, {6,7}, {7,4},
+    {0,4}, {1,5}, {2,6}, {3,7}
+  };
   GLfloat v[8][3];
   GLint i;
   
@@ -319,13 +324,22 @@ void glDrawBox(float x, float y, float z) {
   v[0][2] = v[3][2] = v[4][2] = v[7][2] =  -z / 2;
   v[1][2] = v[2][2] = v[5][2] = v[6][2] =  z / 2;
   
-  for(i = 5; i >= 0; i--) {
+  if(!linesOnly){
     glBegin(GL_QUADS);
-    glNormal3fv(&n[i][0]);
-    glVertex3fv(&v[faces[i][0]][0]);
-    glVertex3fv(&v[faces[i][1]][0]);
-    glVertex3fv(&v[faces[i][2]][0]);
-    glVertex3fv(&v[faces[i][3]][0]);
+    for(i = 5; i >= 0; i--) {
+      glNormal3fv(n[i]);
+      glVertex3fv(v[faces[i][0]]);
+      glVertex3fv(v[faces[i][1]]);
+      glVertex3fv(v[faces[i][2]]);
+      glVertex3fv(v[faces[i][3]]);
+    }
+    glEnd();
+  }else{
+    glBegin(GL_LINES);
+    for(uint i=0;i<12;i++) {
+      glVertex3fv(v[edges[i][0]]);
+      glVertex3fv(v[edges[i][1]]);
+    }
     glEnd();
   }
 }

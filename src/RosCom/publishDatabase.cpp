@@ -299,7 +299,7 @@ void PublishDatabase::step(){
   {
     switch ( objectDatabase(i)->type )
     {
-      case Percept::Type::alvar:
+      case Percept::Type::PT_alvar:
       {
         ar::AlvarMarker alvar = conv_Percept2Alvar(*objectDatabase(i));
         ar_markers.markers.push_back(alvar);
@@ -309,7 +309,7 @@ void PublishDatabase::step(){
         new_alvars.append(objectDatabase(i)->id);
         break;
       }
-      case Percept::Type::cluster:
+      case Percept::Type::PT_cluster:
       {
         visualization_msgs::Marker marker = conv_Percept2Marker(*objectDatabase(i));
         cluster_markers.markers.push_back(marker);
@@ -318,7 +318,7 @@ void PublishDatabase::step(){
         new_clusters.append(objectDatabase(i)->id);
         break;
       }
-      case Percept::Type::optitrackbody:
+      case Percept::Type::PT_optitrackbody:
       {
         geometry_msgs::TransformStamped optitrackbody = conv_Percept2OptitrackBody(*objectDatabase(i));
         optitrackbody_markers.transforms.push_back(optitrackbody);
@@ -327,7 +327,7 @@ void PublishDatabase::step(){
         new_optitrackbodies.append(objectDatabase(i)->id);
         break;
       }
-      case Percept::Type::optitrackmarker:
+      case Percept::Type::PT_optitrackmarker:
       {
         geometry_msgs::TransformStamped optitrackmarker = conv_Percept2OptitrackMarker(*objectDatabase(i));
         optitrackmarker_markers.transforms.push_back(optitrackmarker);
@@ -336,7 +336,7 @@ void PublishDatabase::step(){
         new_optitrackmarkers.append(objectDatabase(i)->id);
         break;
       }
-      case Percept::Type::plane:
+      case Percept::Type::PT_plane:
       {
         object_recognition_msgs::Table table = conv_Percept2Table(*objectDatabase(i));
         visualization_msgs::Marker marker = conv_Percept2TableMarker(*objectDatabase(i));

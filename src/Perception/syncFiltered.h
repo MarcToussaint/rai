@@ -6,12 +6,13 @@
 /// syncs percepts with modelWorld
 struct SyncFiltered : Thread{
   Access_typed<PerceptL> percepts_filtered;
-  ACCESSname(mlr::KinematicWorld, percWorld)
+  ACCESS(mlr::KinematicWorld, percWorld)
+  ACCESS(mlr::KinematicWorld, modelWorld)
 
   SyncFiltered();
   ~SyncFiltered();
 
-  virtual void open(){}
+  virtual void open();
   virtual void step();
   virtual void close(){}
 };

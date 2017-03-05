@@ -49,10 +49,10 @@ VideoEncoder_OpenCV::VideoEncoder_OpenCV(const char* filename, uint fps){
 void VideoEncoder_OpenCV::addFrame(const byteA& img){
   if(!s->video) s->open(img.d1, img.d0);
   IplImage ipl_img;
-  cv::Mat ref=cvMAT(img);
+  cv::Mat ref=conv_Arr2CvRef(img);
   cvGetImage(&ref, &ipl_img);
   cvWriteFrame(s->video, &ipl_img);
-//  s->video <<cvMAT(img);
+//  s->video <<conv_Arr2CvRef(img);
   s->numFrames++;
 }
 

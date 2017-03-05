@@ -372,7 +372,7 @@ void closeModules();
 void threadOpenModules(bool waitForOpened, bool setSignalHandler=true);
 void threadCloseModules();
 void threadCancelModules();
-void modulesReportCycleTimes();
+void threadReportCycleTimes();
 
 
 // ================================================

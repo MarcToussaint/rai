@@ -32,7 +32,7 @@ Filter::~Filter(){
 
 void Filter::step(){
 
-  if(step_count<10){
+  if(step_count<0){
     percepts_input.writeAccess();
     percepts_filtered.writeAccess();
 
@@ -50,10 +50,12 @@ void Filter::step(){
   percepts_filtered.writeAccess();
 
   if(verbose>0) cout <<"FILTER: #inputs=" <<percepts_input().N <<" #database=" <<percepts_filtered().N <<endl;
-//  if(verbose>1){
-//    for(Percept *p:inputs) cout <<"  in: " <<(*p) <<endl;
-////    for(Percept *p:inputs) LOG(0) <<"  in: " <<*p;
-//  }
+  if(verbose>1){
+    cout <<"INPUTS:" <<endl;
+    for(Percept *p:percepts_input()) cout <<(*p) <<endl;
+    cout <<"DATABASE:" <<endl;
+    for(Percept *p:percepts_filtered()) cout <<(*p) <<endl;
+  }
 
   // If empty inputs, do nothing.
   if (percepts_input().N == 0 && percepts_input().N == 0) {
@@ -65,35 +67,20 @@ void Filter::step(){
   PerceptL filtered;
 
   // For each type of inputs, run the algorithm.
-  for (auto const& type : {Percept::Type::alvar,
-                           Percept::Type::cluster,
-                           Percept::Type::plane,
-                           Percept::Type::optitrackbody,
-                           Percept::Type::optitrackmarker})
-  {
-    // Grab the subset from the inputs matching this type
-    PerceptL input_ofType;
-    for (Percept *p : percepts_input()) {
-      if (p->type == type) {
-        input_ofType.append(p);
-      }
-    }
+  for (int t=0; t<=Percept::Type::PT_end; t++){
+    Percept::Type type = Percept::Type(t);
+    //collect input and database percepts of given type
+    PerceptL input_ofType, database_ofType;
+    for (Percept *p : percepts_input())     if(p->type==type)  input_ofType.append(p);
+    for (Percept *p : percepts_filtered())  if(p->type==type)  database_ofType.append(p);
 
-    // Find all matching object of this type
-    PerceptL database_ofType;
-    for (Percept *p : percepts_filtered()) {
-      if (p->type == type) {
-        database_ofType.append(p);
-      }
-    }
+    //no percepts at all of this type..
+    if(!input_ofType.N && !database_ofType.N) continue;
 
-    if (input_ofType.N == 0 && database_ofType.N == 0)
-      continue;
-
-    // Create bipartite costs
+    //create bipartite costs
     costs = createCostMatrix(input_ofType, database_ofType);
 
-    // Run Hungarian algorithm
+    //run Hungarian algorithm
     Hungarian ha(costs);
 
     // Now we have the optimal matching. Assign values.
@@ -121,16 +108,14 @@ void Filter::step(){
   percepts_input.deAccess();
 }
 
-PerceptL Filter::assign(const PerceptL& input, const PerceptL& database, const Hungarian& ha)
-{
-  PerceptL new_objects;
-  std::unordered_set<int> matched_ids;
+PerceptL Filter::assign(const PerceptL& inputs, const PerceptL& database, const Hungarian& ha) {
+  PerceptL new_database;
 
   uint num_old = database.N;
-  uint num_new = input.N;
+  uint num_new = inputs.N;
 
-  for (uint i = 0; i < ha.starred.dim(0); ++i ) {
-    uint col = ha.starred[i]().maxIndex();
+  for (uint i = 0; i < ha.starred.dim(0); ++i ) { //index over inputs
+    uint col = ha.starred[i]().maxIndex();        //index over database
     // 3 cases:
     // 1) Existed before, no longer exists. If i > num_new
     // 2) Existed before and still exists. If costs < distannce_threshold
@@ -139,61 +124,57 @@ PerceptL Filter::assign(const PerceptL& input, const PerceptL& database, const H
     // Existed before, doesn't exist now.
     if ( i >= num_new ) {
       //std::cout<< "Existed before, doesn't now." << std::endl;
-      Percept *new_obj = database(col);
-      new_obj->relevance *= relevance_decay_factor;
-      new_objects.append(new_obj);
+      Percept *old_obj = database(col);
+      old_obj->relevance *= relevance_decay_factor;
+      if(old_obj->relevance > relevance_threshold)
+        new_database.append(old_obj);
+      //otherwise the object is lost/discarded
     } else {
       if ( ( col < num_old ) && (costs(i, col) < distance_threshold) ) { // Existed before
         //std::cout<< "Existed before, does now" << std::endl;
-        Percept *new_obj = input(i);
-        if (new_obj->type != Percept::Type::alvar)
+        Percept *new_obj = inputs(i);
+        Percept *old_obj = database(col);
+        if (new_obj->type != Percept::Type::PT_alvar)
           new_obj->id = database(col)->id;
-        new_objects.append( new_obj );
+        old_obj->fuse(new_obj);
+        new_database.append( old_obj );
       } else { // This didn't exist before. Add it in
         //std::cout<< "Didn't exist before, or not close enough." << std::endl;
-        Percept *new_obj = input(i);
-        if (new_obj->type != Percept::Type::alvar) {
-          new_obj->id = maxId;
-          maxId++;
+        Percept *new_obj = inputs(i);
+        if (new_obj->type != Percept::Type::PT_alvar) {
+          new_obj->id = nextId;
+          nextId++;
         }
-        new_objects.append(new_obj);
+        new_database.append(new_obj);
         //std::cout << "Didn't exist before. Col >= num_old: " << col << ' ' << num_old << std::endl;
       }
     }
-    matched_ids.insert(new_objects(i)->id);
     //std::cout << "Assigning \t" << i << "\tMatches:\t" << matched_ids(i).id << "\t Relevance: " << perceps(i).relevance << std::endl;
   }
 
-  // For each of the old objects, update the relevance factor.
-  for ( uint i = 0; i < database.N; ++i ) {
-    if ( matched_ids.find(database(i)->id) == matched_ids.end() ) {
-      Percept *new_obj = database(i);
-      new_obj->relevance *= relevance_decay_factor;
-      new_objects.append(new_obj);      
-    }
-  }
-  PerceptL cleaned;
-  uint count = new_objects.N;
-  for ( uint i = 0; i < count; ++i ) {
-    if(new_objects(i)->relevance > relevance_threshold) {
-      cleaned.append(new_objects(i));
-    }
-  }
+  //mt: this is already done in case 1) above!
+//  // For each of the old objects, update the relevance factor.
+//  for ( uint i = 0; i < database.N; ++i ) {
+//    if ( matched_ids.find(database(i)->id) == matched_ids.end() ) {
+//      Percept *new_obj = database(i);
+//      new_obj->relevance *= relevance_decay_factor;
+//      new_database.append(new_obj);
+//    }
+//  }
 
-  return cleaned;
+  return new_database;
 }
 
-arr Filter::createCostMatrix(const PerceptL& newObjects, const PerceptL& oldObjects)
-{
+arr Filter::createCostMatrix(const PerceptL& inputs, const PerceptL& database) {
   // First, make a padded out matrix to ensure it is bipartite.
-  uint num_new = newObjects.N;
-  uint num_old = oldObjects.N;
+  uint num_new = inputs.N;
+  uint num_old = database.N;
   uint dims = std::max(num_old, num_new);
-  arr costs = ones(dims, dims) * -1.0;
+  arr costs = -ones(dims, dims);
 
   // Assign costs
   for (uint i=0; i<num_new; ++i) for (uint j=0; j<num_old; ++j) {
-    costs(i,j) = newObjects(i)->idMatchingCost(*oldObjects(j));
+    costs(i,j) = inputs(i)->idMatchingCost(*database(j));
   }
 
   // For every element that hasn't been set, set the costs to the max.

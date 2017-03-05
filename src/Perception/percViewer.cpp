@@ -13,7 +13,12 @@ PercViewer::~PercViewer(){
 
 void glDrawPercepts(void *P){
   PerceptL& percepts = *((PerceptL*)P);
-  for(Percept *p:percepts) p->glDraw(NoOpenGL);
+  for(Percept *p:percepts){
+    glPushMatrix();
+    glTransform(p->transform);
+    p->glDraw(NoOpenGL);
+    glPopMatrix();
+  }
 }
 
 void PercViewer::open(){

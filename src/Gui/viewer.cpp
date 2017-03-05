@@ -57,10 +57,10 @@ void glDrawAxes(void*){
   glDrawAxes(1.);
 }
 
-PointCloudViewer::PointCloudViewer(const char* pts_name, const char* cols_name)
-  : Thread(STRING("PointCloudViewer_"<<pts_name <<'_' <<cols_name), .1),
+PointCloudViewer::PointCloudViewer(const char* pts_name, const char* rgb_name)
+  : Thread(STRING("PointCloudViewer_"<<pts_name <<'_' <<rgb_name), .1),
     pts(this, pts_name),
-    cols(this, cols_name){
+    rgb(this, rgb_name){
   threadLoop();
 }
 
@@ -69,7 +69,7 @@ PointCloudViewer::~PointCloudViewer(){
 }
 
 void PointCloudViewer::open(){
-  s = new sPointCloudViewer(STRING("PointCloudViewer: "<<pts.name <<' ' <<cols.name));
+  s = new sPointCloudViewer(STRING("PointCloudViewer: "<<pts.name <<' ' <<rgb.name));
 #if 0
   s->gl.add(glDrawAxes);
   s->gl.add(s->pc);
@@ -89,8 +89,13 @@ void PointCloudViewer::close(){
 void PointCloudViewer::step(){
   s->gl.dataLock.writeLock();
   s->pc.V=pts.get();
-  s->pc.C=cols.get();
+  copy(s->pc.C, rgb.get()());
   uint n=s->pc.V.N/3;
+  if(s->pc.C.N!=n){
+    s->gl.dataLock.unlock();
+    return;
+  }
+  s->pc.C /= 255.;
   s->pc.V.reshape(n,3);
   s->pc.C.reshape(n,3);
   s->gl.dataLock.unlock();

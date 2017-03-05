@@ -88,10 +88,9 @@ struct ComputeCameraView : Thread {
   //-- internal (private)
   OpenGL gl;
   mlr::KinematicWorld copy;
-  uint skipFrames, frame;
   bool getDepth;
 
-  ComputeCameraView(uint skipFrames=0);
+  ComputeCameraView(double beatIntervalSec=-1.);
   ~ComputeCameraView();
   void open();
   void step();

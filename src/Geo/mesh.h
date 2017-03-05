@@ -69,12 +69,14 @@ struct Mesh : GLDrawer {
   void scale(double f);
   void scale(double sx, double sy, double sz);
   void translate(double dx, double dy, double dz);
+  void translate(const arr& d);
   void transform(const Transformation& t);
   mlr::Vector center();
   void box();
   void addMesh(const mlr::Mesh& mesh2);
   void makeConvexHull();
   void makeTriangleFan();
+  void makeLineStrip();
   void computeOptimalSSBox(arr& x, mlr::Transformation& t, const arr& X, uint trials=10, int verbose=0);
   
   /// @name internal computations & cleanup

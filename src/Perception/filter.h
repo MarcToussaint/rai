@@ -24,12 +24,12 @@ private:
   double relevance_threshold = 0.25;
   double distance_threshold = 0.5;
 
-  uint maxId = 0;
+  uint nextId = 1;
 
   arr costs;
 
-  arr createCostMatrix(const PerceptL& perceptualInputs, const PerceptL& objectDatabase);
-  PerceptL assign(const PerceptL& perceps, const PerceptL& database, const Hungarian& ha);
+  arr createCostMatrix(const PerceptL& inputs, const PerceptL& database);
+  PerceptL assign(const PerceptL& inputs, const PerceptL& database, const Hungarian& ha);
 
   int revision = -1;
 };

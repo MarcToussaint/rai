@@ -18,7 +18,7 @@
 #include "syncFiltered.h"
 
 SyncFiltered::SyncFiltered()
-  : Thread("SyncFiltered", -1),
+  : Thread("SyncFiltered", -1.),
     percepts_filtered(this, "percepts_filtered", true) {
   threadOpen();
 }
@@ -27,24 +27,26 @@ SyncFiltered::~SyncFiltered(){
   threadClose();
 }
 
+void SyncFiltered::open(){
+  percWorld.set() = modelWorld.get();
+}
 
 void SyncFiltered::step(){
-  percepts_filtered.writeAccess();
-
-  PerceptL database = percepts_filtered();
-
   uintA existingIDs;
 
-  for(Percept *p:database){
+  percepts_filtered.writeAccess();
+  for(Percept *p:percepts_filtered()){
     p->syncWith(percWorld.set());
     existingIDs.append(p->id);
   }
+  percepts_filtered.deAccess();
 
   // delete non-existing bodies
   percWorld.writeAccess();
   for(mlr::Body *b:percWorld().bodies){
     if(b->name.startsWith("perc_")){
       uint id;
+      b->name.resetIstream();
       b->name >>PARSE("perc_") >>id;
       if(!existingIDs.contains(id)){
         delete b;
@@ -52,6 +54,7 @@ void SyncFiltered::step(){
     }
   }
   percWorld.deAccess();
+
 }
 
 
