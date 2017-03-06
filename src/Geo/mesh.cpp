@@ -521,15 +521,16 @@ void mlr::Mesh::computeNormals() {
   Vn.setZero();
   //triangle normals and contributions
   for(i=0; i<T.d0; i++) {
-    a.set(&V(T(i, 0), 0));
-    b.set(&V(T(i, 1), 0));
-    c.set(&V(T(i, 2), 0));
+    uint *t=T.p+3*i;
+    a.set(V.p+3*t[0]);
+    b.set(V.p+3*t[1]);
+    c.set(V.p+3*t[2]);
 
     b-=a; c-=a; a=b^c; if(!a.isZero) a.normalize();
     Tn(i, 0)=a.x;  Tn(i, 1)=a.y;  Tn(i, 2)=a.z;
-    Vn(T(i, 0), 0)+=a.x;  Vn(T(i, 0), 1)+=a.y;  Vn(T(i, 0), 2)+=a.z;
-    Vn(T(i, 1), 0)+=a.x;  Vn(T(i, 1), 1)+=a.y;  Vn(T(i, 1), 2)+=a.z;
-    Vn(T(i, 2), 0)+=a.x;  Vn(T(i, 2), 1)+=a.y;  Vn(T(i, 2), 2)+=a.z;
+    Vn(t[0], 0)+=a.x;  Vn(t[0], 1)+=a.y;  Vn(t[0], 2)+=a.z;
+    Vn(t[1], 0)+=a.x;  Vn(t[1], 1)+=a.y;  Vn(t[1], 2)+=a.z;
+    Vn(t[2], 0)+=a.x;  Vn(t[2], 1)+=a.y;  Vn(t[2], 2)+=a.z;
   }
   Vector d;
   for(i=0; i<Vn.d0; i++) { d.set(&Vn(i, 0)); Vn[i]()/=d.length(); }
@@ -1823,7 +1824,14 @@ extern OpenGL& NoOpenGL;
 
 void glDrawMeshes(void *P){
   MeshA& meshes = *((MeshA*)P);
-  for(mlr::Mesh& mesh:meshes) mesh.glDraw(NoOpenGL);
+  double GLmatrix[16];
+  for(mlr::Mesh& mesh:meshes){
+    glPushMatrix();
+    mesh.glX.getAffineMatrixGL(GLmatrix);
+    glLoadMatrixd(GLmatrix);
+    mesh.glDraw(NoOpenGL);
+    glPopMatrix();
+  }
 }
 
 //==============================================================================

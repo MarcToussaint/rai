@@ -188,8 +188,8 @@ struct OpenGL {
   void setViewPort(uint view, double l, double r, double b, double t);
   
   /// @name the core draw routines (actually only for internal use)
-  void Draw(int w, int h, mlr::Camera *cam=NULL, bool ignoreLock=false);
-  void Select(bool ignoreLock=false);
+  void Draw(int w, int h, mlr::Camera *cam=NULL, bool callerHasAlreadyLocked=false);
+  void Select(bool callerHasAlreadyLocked=false);
   void renderInBack(bool captureImg=true, bool captureDepth=false, int w=-1, int h=-1);
 
   /// @name showing, updating, and watching
@@ -243,6 +243,17 @@ protected:
 
 
 //===========================================================================
+
+struct SingleGLAccess{
+  Mutex openglMutex;
+  void lock(){ openglMutex.lock(); }
+  void unlock(){ openglMutex.unlock(); }
+};
+
+extern Singleton<SingleGLAccess> singleGLAccess;
+
+//===========================================================================
+
 //
 // simplest UI
 //

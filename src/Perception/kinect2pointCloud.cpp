@@ -29,6 +29,7 @@ void depthData2pointCloud(arr& pts, const uint16A& depth){
   pts.resize(H*W, 3);
 
   float constant = 1.0f / 580; //focal length of kinect in pixels
+//  float constant = 1.0f / 420; //focal length of kinect in pixels
   int centerX = (W >> 1);
   int centerY = (H >> 1);
 

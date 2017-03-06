@@ -23,16 +23,7 @@ OpenGL& NoOpenGL = *((OpenGL*)(NULL));
 
 //===========================================================================
 
-struct OpenGLEngineAccess{
-  Mutex openglMutex;
-  void lock(){ openglMutex.lock(); }
-  void unlock(){ openglMutex.unlock(); }
-};
-
-Singleton<OpenGLEngineAccess> openglAccess;
-
-void openGlLock(){ openglAccess().lock(); }
-void openGlUnlock(){ openglAccess().unlock(); }
+Singleton<SingleGLAccess> singleGLAccess;
 
 //===========================================================================
 
@@ -1016,11 +1007,11 @@ void OpenGL::clear() {
   dataLock.unlock();
 }
 
-void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool ignoreLock) {
+void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
 #ifdef MLR_GL
 
-  if(!ignoreLock){
-    openglAccess().lock();
+  if(!callerHasAlreadyLocked){
+    singleGLAccess().lock();
     dataLock.readLock(); //now accessing user data
   }
 
@@ -1185,16 +1176,16 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool ignoreLock) {
   if(s!=1) MLR_MSG("OpenGL name stack has not depth 1 (pushs>pops) in DRAW mode:" <<s);
   //CHECK(s<=1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
   
-  if(!ignoreLock){
+  if(!callerHasAlreadyLocked){
     dataLock.unlock(); //now de-accessing user data
-    openglAccess().unlock();
+    singleGLAccess().unlock();
   }
 #endif
 }
 
-void OpenGL::Select(bool ignoreLock) {
-  if(!ignoreLock){
-    openglAccess().lock();
+void OpenGL::Select(bool callerHasAlreadyLocked) {
+  if(!callerHasAlreadyLocked){
+    singleGLAccess().lock();
     dataLock.readLock();
   }
 
@@ -1276,9 +1267,9 @@ void OpenGL::Select(bool ignoreLock) {
 
   s->endGlContext();
 #endif
-  if(!ignoreLock){
+  if(!callerHasAlreadyLocked){
     dataLock.unlock();
-    openglAccess().unlock();
+    singleGLAccess().unlock();
   }
 }
 
@@ -1682,6 +1673,8 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
   if(w<0) w=width;
   if(h<0) h=height;
 
+  singleGLAccess().lock();
+  dataLock.readLock();
   xBackgroundContext().makeCurrent();
 
   CHECK_EQ(w%4,0,"should be devidable by 4!!");
@@ -1765,7 +1758,7 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
 
   //-- draw!
-  Draw(w, h, NULL, false);
+  Draw(w, h, NULL, true);
   glFlush();
 
   //-- read
@@ -1787,7 +1780,9 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
   isUpdating.setStatus(0);
-//  s->endGlContext();
+
+  dataLock.unlock();
+  singleGLAccess().unlock();
 #endif
 }
 

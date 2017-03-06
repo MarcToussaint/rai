@@ -199,7 +199,9 @@ void ComputeCameraView::step(){
     gl.camera.setKinect();
     gl.camera.X = kinectShape->X * gl.camera.X;
     gl.dataLock.unlock();
+    orsDrawJoints = orsDrawMarkers = orsDrawProxies = false;
     gl.renderInBack(true, getDepth, 640, 480);
+    orsDrawJoints = orsDrawMarkers = orsDrawProxies = true;
     flip_image(gl.captureImage);
     flip_image(gl.captureDepth);
     cameraView.set() = gl.captureImage;

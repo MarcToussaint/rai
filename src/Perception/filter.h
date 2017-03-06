@@ -18,7 +18,7 @@ struct Filter : Thread{
   virtual void step();
   virtual void close(){}
 
-  int verbose = 2;
+  int verbose = 0;
 private:
   double relevance_decay_factor = 0.99;
   double relevance_threshold = 0.25;

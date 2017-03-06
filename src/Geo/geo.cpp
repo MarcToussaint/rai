@@ -1586,12 +1586,13 @@ void Camera::setKinect(){
   setPosition(0., 0., 0.);
   focus(0., 0., 5.);
   setZRange(.1, 50.);
-#if 0
+#if 1
   heightAbs=heightAngle = 0;
-#else
-  heightAbs=10; heightAngle=45;
-#endif
   focalLength = 580./480.;
+#else
+  heightAngle=45;
+#endif
+  whRatio = 640./480.;
 }
 
 void Camera::setDefault(){

@@ -19,10 +19,9 @@
 #include "filter.h"
 
 Filter::Filter()
-  : Thread("filter", -1),
+  : Thread("Filter", -1.),
     percepts_input(this, "percepts_input", true), //listens!!
-    percepts_filtered(this, "percepts_filtered", false)
-{
+    percepts_filtered(this, "percepts_filtered") {
   threadOpen();
 }
 
@@ -32,7 +31,7 @@ Filter::~Filter(){
 
 void Filter::step(){
 
-  if(step_count<0){
+  if(false){ //just copy!
     percepts_input.writeAccess();
     percepts_filtered.writeAccess();
 
