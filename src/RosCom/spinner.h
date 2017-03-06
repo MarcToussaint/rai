@@ -10,3 +10,4 @@ struct RosCom_Spinner : Thread {
   void step();
   void close(){}
 };
+
