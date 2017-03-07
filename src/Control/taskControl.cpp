@@ -22,11 +22,14 @@
 
 //===========================================================================
 
-void MotionProfile_Sine::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot){
+CT_Status MotionProfile_Sine::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot){
   t+=tau;
+  if(t>1.) t=1.;
   if(y_init.N!=y.N) y_init=y; //initialization
   yRef = y_init + (.5*(1.-cos(MLR_PI*t/T))) * (y_target - y_init);
   ydotRef = zeros(y.N);
+  if(t>=1.) return CT_done;
+  return CT_running;
 }
 
 //===========================================================================
@@ -73,7 +76,7 @@ void MotionProfile_PD::setGainsAsNatural(double decayTime, double dampingRatio) 
   setGains(mlr::sqr(1./lambda), 2.*dampingRatio/lambda);
 }
 
-void MotionProfile_PD::update(arr& yRef, arr& vRef, double tau, const arr& y, const arr& ydot){
+CT_Status MotionProfile_PD::update(arr& yRef, arr& vRef, double tau, const arr& y, const arr& ydot){
   //only on initialization the true state is used; otherwise ignored!
   if(y_ref.N!=y.N){ y_ref=y; v_ref=ydot; }
 //   y_ref=y; v_ref=ydot;//TODO: exactly DONT DO THAT!
@@ -95,6 +98,9 @@ void MotionProfile_PD::update(arr& yRef, arr& vRef, double tau, const arr& y, co
 
   yRef = y_ref;
   vRef = v_ref;
+
+  if(isConverged(-1.)) return CT_conv;
+  return CT_running;
 }
 
 arr MotionProfile_PD::getDesiredAcceleration(){
@@ -158,17 +164,19 @@ MotionProfile_Path::MotionProfile_Path(const arr& path, double executionTime) : 
   spline.setUniformNonperiodicBasis();
 }
 
-void MotionProfile_Path::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot){
+CT_Status MotionProfile_Path::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot){
   phase += tau/executionTime;
   if(phase > 1.) phase=1.;
   yRef    = spline.eval(phase);
   ydotRef = spline.eval(phase, 1)/executionTime;
+  if(phase>=1.) return CT_done;
+  return CT_running;
 }
 
 //===========================================================================
 
 CtrlTask::CtrlTask(const char* name, TaskMap* map)
-  : map(map), name(name), active(true), ref(NULL), prec(ARR(1.)), hierarchy(1){
+  : map(map), name(name), active(true), status(CT_init), ref(NULL), prec(ARR(1.)), hierarchy(1){
   //  ref = new MotionProfile_PD();
 }
 
@@ -189,10 +197,16 @@ CtrlTask::~CtrlTask(){
   if(ref) delete ref; ref=NULL;
 }
 
-void CtrlTask::update(double tau, const mlr::KinematicWorld& world){
+CT_Status CtrlTask::update(double tau, const mlr::KinematicWorld& world){
   map->phi(y, J_y, world);
   if(world.qdot.N) v = J_y*world.qdot; else v.resize(y.N).setZero();
-  if(ref) ref->update(y_ref, v_ref, tau, y, v);
+  CT_Status s=status;
+  if(ref) s = ref->update(y_ref, v_ref, tau, y, v);
+  if(s!=status){ //new status
+    status=s;
+    for(auto& c:callbacks) c(this, status);
+  }
+  return status;
 }
 
 MotionProfile_PD& CtrlTask::PD(){
@@ -390,7 +404,7 @@ arr TaskControlMethods::inverseKinematics(arr& qdot, const arr& nullRef, double*
     for(uint i=0;i<n;i++) if(lockJoints(i)) Winv(i) = 0.;
   }
 
-  arr Jinv = pseudoInverse(J, Winv, 1e-2);
+  arr Jinv = pseudoInverse(J, Winv, 1e-1);
   checkNan(Jinv);
   checkNan(y);
   if(&qdot) qdot = Jinv*v;

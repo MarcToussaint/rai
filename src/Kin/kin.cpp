@@ -342,6 +342,18 @@ void mlr::Shape::parseAts() {
   //compute the bounding radius
   if(mesh.V.N) mesh_radius = mesh.getRadius();
 
+  //colored box?
+  if(ats["coloredBox"]){
+    CHECK_EQ(mesh.V.d0, 8, "I need a box");
+    mesh.C.resize(mesh.T.d0, 3);
+    for(uint i=0;i<mesh.C.d0;i++){
+      if(i==2 || i==3) mesh.C[i] = arr(color, 3);
+      else if(i>=4 && i<=7) mesh.C[i] = 1.;
+      else mesh.C[i] = .5;
+    }
+  }
+
+
   //add inertia to the body
   if(body) {
     Matrix I;
@@ -3618,9 +3630,9 @@ void editConfiguration(const char* filename, mlr::KinematicWorld& C) {
     try {
       mlr::lineCount=1;
       W <<FILE(filename);
-      C.gl().lock.writeLock();
+      C.gl().dataLock.writeLock();
       C = W;
-      C.gl().lock.unlock();
+      C.gl().dataLock.unlock();
     } catch(const char* msg) {
       cout <<"line " <<mlr::lineCount <<": " <<msg <<" -- please check the file and press ENTER" <<endl;
       C.gl().watch();

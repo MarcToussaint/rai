@@ -68,6 +68,7 @@ const char* arrayBrackets="  ";
 arr& NoArr = *((arr*)NULL);
 arrA& NoArrA = *((arrA*)NULL);
 uintA& NoUintA = *((uintA*)NULL);
+byteA& NoByteA = *((byteA*)NULL);
 uintAA& NoUintAA = *((uintAA*)NULL);
 
 /* LAPACK notes
@@ -928,6 +929,22 @@ void flip_image(byteA &img) {
     memmove(c, a, n);
     memmove(a, b, n);
     memmove(b, c, n);
+  }
+}
+
+void flip_image(floatA &img) {
+  if(!img.N) return;
+  uint h=img.d0, n=img.N/img.d0;
+  floatA line(n);
+  float *a, *b, *c;
+  uint s=sizeof(float);
+  for(uint i=0; i<h/2; i++) {
+    a=img.p+i*n;
+    b=img.p+(h-1-i)*n;
+    c=line.p;
+    memmove(c, a, n*s);
+    memmove(a, b, n*s);
+    memmove(b, c, n*s);
   }
 }
 

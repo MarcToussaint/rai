@@ -14,8 +14,6 @@
 #include <Gui/opengl.h>
 #include <map>
 
-#include "plane.h"
-
 //===========================================================================
 //
 // fwd declarations
@@ -253,27 +251,27 @@ struct Patcher : Thread {
   void close();
 };
 
-struct AllViewer : Thread {
-  Access_typed<arr> kinect_points;
-  Access_typed<arr> kinect_pointColors;
-  Access_typed<PlaneA> planes_now;
+//struct AllViewer : Thread {
+//  Access_typed<arr> kinect_points;
+//  Access_typed<arr> kinect_pointColors;
+//  Access_typed<PlaneA> planes_now;
 
-  mlr::Mesh kinect;
-  PlaneA planes_now_copy;
-  OpenGL gl;
+//  mlr::Mesh kinect;
+//  PlaneA planes_now_copy;
+//  OpenGL gl;
 
-  AllViewer()
-    : Thread("AllViewer", .1),
-      kinect_points(this, "kinect_points"),
-      kinect_pointColors(this, "kinect_pointColors"),
-      planes_now(this, "planes_now"),
-      gl("AllViewer"){}
-  ~AllViewer(){}
-  void open();
-  void step();
-  void close() {}
+//  AllViewer()
+//    : Thread("AllViewer", .1),
+//      kinect_points(this, "kinect_points"),
+//      kinect_pointColors(this, "kinect_pointColors"),
+//      planes_now(this, "planes_now"),
+//      gl("AllViewer"){}
+//  ~AllViewer(){}
+//  void open();
+//  void step();
+//  void close() {}
 
-};
+//};
 
 //BEGIN_MODULE(ImageViewer)      ACCESS(byteA, img)       END_MODULE()
 //BEGIN_MODULE(PointCloudViewer) ACCESSlisten(arr, kinect_points)         ACCESS(arr, kinect_pointColors)        END_MODULE()

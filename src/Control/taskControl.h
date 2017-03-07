@@ -31,7 +31,7 @@
 
 struct CtrlTask;
 typedef mlr::Array<CtrlTask*> CtrlTaskL;
-
+enum CT_Status { CT_init=-1, CT_running, CT_conv, CT_done, CT_stalled };
 
 //===========================================================================
 
@@ -39,7 +39,7 @@ typedef mlr::Array<CtrlTask*> CtrlTaskL;
 /// [perhaps an adaptive phase, or Peter's adaptation to object motions, could be a modest way to incorporate feedback in the future]
 struct MotionProfile{
   virtual ~MotionProfile(){}
-  virtual void update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot) = 0;
+  virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot) = 0;
   virtual bool isDone() = 0;
 };
 
@@ -50,7 +50,7 @@ struct MotionProfile_Sine : MotionProfile{
   double t;
   double T;
   MotionProfile_Sine(const arr& y_target, double duration) : y_target(y_target), t(0.), T(duration){}
-  virtual void update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
+  virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
   virtual bool isDone(){ return t>=T; }
 };
 
@@ -72,7 +72,7 @@ struct MotionProfile_PD: MotionProfile{
   void setGains(double _kp, double _kd);
   void setGainsAsNatural(double decayTime, double dampingRatio); ///< the decayTime is the to decay to 10% of the initial offset/error
 
-  virtual void update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
+  virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
 
   arr getDesiredAcceleration();
   void getDesiredLinAccLaw(arr& Kp_y, arr& Kd_y, arr& a0_y);
@@ -89,7 +89,7 @@ struct MotionProfile_Path: MotionProfile{
   double executionTime;
   double phase;
   MotionProfile_Path(const arr& path, double executionTime);
-  virtual void update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
+  virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
   virtual bool isDone(){ return phase>=1.; }
 };
 
@@ -101,6 +101,8 @@ struct CtrlTask{
   TaskMap *map;      ///< this defines the task space
   mlr::String name;  ///< just for easier reporting
   bool active;       ///< also non-active tasks are updates (states evaluated), but don't enter the TaskControlMethods
+  CT_Status status;
+  mlr::Array<std::function<void(CtrlTask*,int)> > callbacks;
 
   //-- this is always kept up-to-date (in update)
   arr y, v, J_y;     ///< update() will evaluate these for a given kinematic configuration
@@ -123,7 +125,7 @@ struct CtrlTask{
   CtrlTask(const char* name, TaskMap* map, const Graph& params);
   ~CtrlTask();
 
-  void update(double tau, const mlr::KinematicWorld& world);
+  CT_Status update(double tau, const mlr::KinematicWorld& world);
 
   arr getPrec();
   void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const mlr::KinematicWorld& world);

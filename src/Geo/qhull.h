@@ -41,6 +41,6 @@ double forceClosure(const arr& X,  //contact points (size Nx3)
                     arr *dFdX=NULL);    //optional: also compute gradient
 
 
-void getTriangulatedHull(uintA& T, arr& V);
+arr getHull(const arr& V, uintA& T=NoUintA);
 
 void getDelaunayEdges(uintA& E, const arr& V);

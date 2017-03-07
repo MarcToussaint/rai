@@ -25,7 +25,7 @@ OrsViewer::OrsViewer(const char* varname, double beatIntervalSec, bool computeCa
     modelCameraView(this, "modelCameraView"),
     modelDepthView(this, "modelDepthView"),
     computeCameraView(computeCameraView){
-  if(beatIntervalSec>=0.) threadLoop();
+  if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
 
 OrsViewer::~OrsViewer(){ threadClose(); }
@@ -35,14 +35,14 @@ void OrsViewer::open(){
 }
 
 void OrsViewer::step(){
-  copy.gl().lock.writeLock();
+  copy.gl().dataLock.writeLock();
   copy = modelWorld.get();
-  copy.gl().lock.unlock();
+  copy.gl().dataLock.unlock();
   copy.gl().update(NULL, false, false, true);
   if(computeCameraView){
     mlr::Shape *kinectShape = copy.getShapeByName("endeffKinect");
     if(kinectShape){ //otherwise 'copy' is not up-to-date yet
-      copy.gl().lock.writeLock();
+      copy.gl().dataLock.writeLock();
       mlr::Camera cam = copy.gl().camera;
       copy.gl().camera.setKinect();
       copy.gl().camera.X = kinectShape->X * copy.gl().camera.X;
@@ -53,7 +53,7 @@ void OrsViewer::step(){
       modelCameraView.set() = copy.gl().captureImage;
       modelDepthView.set() = copy.gl().captureDepth;
       copy.gl().camera = cam;
-      copy.gl().lock.unlock();
+      copy.gl().dataLock.unlock();
     }
   }
 }
@@ -83,13 +83,13 @@ void OrsPathViewer::open(){
 }
 
 void OrsPathViewer::step(){
-  copy.gl().lock.writeLock();
+  copy.gl().dataLock.writeLock();
   configurations.readAccess();
   uint T=configurations().N;
   if(t>=T) t=0;
   if(T) copy.copy(*configurations()(t), true);
   configurations.deAccess();
-  copy.gl().lock.unlock();
+  copy.gl().dataLock.unlock();
   if(T){
     copy.gl().captureImg=writeToFiles;
     copy.gl().update(STRING(" (time " <<tprefix+int(t) <<'/' <<tprefix+int(T) <<')').p, false, false, true);
@@ -150,13 +150,13 @@ void OrsPoseViewer::open() {
 void OrsPoseViewer::step(){
   listCopy(copies.first()->proxies, modelWorld.get()->proxies);
 //  cout <<copy.proxies.N <<endl;
-  gl.lock.writeLock();
+  gl.dataLock.writeLock();
   for(uint i=0;i<copies.N;i++){
     arr q=poses(i)->get();
     if(q.N==copies(i)->getJointStateDimension())
       copies(i)->setJointState(q);
   }
-  gl.lock.unlock();
+  gl.dataLock.unlock();
   gl.update(NULL, false, false, true);
 }
 
@@ -166,14 +166,18 @@ void OrsPoseViewer::close(){
 
 //===========================================================================
 
-ComputeCameraView::ComputeCameraView(uint skipFrames)
-  : Thread("ComputeCameraView"),
-    modelWorld(this, "modelWorld", true),
-    cameraView(this, "cameraView"),
-    skipFrames(skipFrames), frame(0){}
+ComputeCameraView::ComputeCameraView(double beatIntervalSec)
+  : Thread("ComputeCameraView", beatIntervalSec),
+    modelWorld(this, "modelWorld", (beatIntervalSec<.0)),
+    cameraView(this, "kinect_rgb"), //"cameraView"),
+    cameraDepth(this, "kinect_depth"), //"cameraDepth"),
+    cameraFrame(this, "kinect_frame"), //"cameraFrame"),
+    getDepth(true){
+  if(beatIntervalSec<0.) threadOpen();
+  else threadLoop();
+}
 
 ComputeCameraView::~ComputeCameraView(){
-  modelWorld.stopListening();
   threadClose();
 }
 
@@ -187,23 +191,30 @@ void ComputeCameraView::close(){
 }
 
 void ComputeCameraView::step(){
-  if(!frame--){
-    copy = modelWorld.get();
-//    modelWorld.readAccess();
+  copy = modelWorld.get();
 
-    mlr::Shape *kinectShape = copy.getShapeByName("endeffKinect");
-    if(kinectShape){ //otherwise 'copy' is not up-to-date yet
-      gl.lock.writeLock();
-      gl.camera.setKinect();
-      gl.camera.X = kinectShape->X * gl.camera.X;
-      gl.lock.unlock();
-      gl.renderInBack(true, true, 580, 480);
-      cameraView.set() = gl.captureImage;
-//      depthView.set() = gl.captureDepth;
+  mlr::Shape *kinectShape = copy.getShapeByName("endeffKinect");
+  if(kinectShape){ //otherwise 'copy' is not up-to-date yet
+    gl.dataLock.writeLock();
+    gl.camera.setKinect();
+    gl.camera.X = kinectShape->X * gl.camera.X;
+    gl.dataLock.unlock();
+    orsDrawJoints = orsDrawMarkers = orsDrawProxies = false;
+    gl.renderInBack(true, getDepth, 640, 480);
+    orsDrawJoints = orsDrawMarkers = orsDrawProxies = true;
+    flip_image(gl.captureImage);
+    flip_image(gl.captureDepth);
+    cameraView.set() = gl.captureImage;
+    if(getDepth){
+      floatA& D = gl.captureDepth;
+      uint16A depth_image(D.d0, D.d1);
+      for(uint i=0;i<D.N;i++){
+        depth_image.elem(i)
+            = (uint16_t) (gl.camera.glConvertToTrueDepth(D.elem(i)) * 1000.); // conv. from [m] -> [mm]
+      }
+      cameraDepth.set() = depth_image;
     }
-//    modelWorld.deAccess();
-
-    frame=skipFrames;
+    cameraFrame.set() = kinectShape->X;
   }
 }
 

@@ -1,6 +1,6 @@
 #pragma once
 #include <Core/thread.h>
-#include <RosCom/filterObject.h>
+#include <Perception/percept.h>
 #include <RosCom/roscom.h>
 
 #ifdef MLR_ROS_INDIGO
@@ -19,6 +19,8 @@ Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker);
 OptitrackMarker conv_tf2OptitrackMarker(const geometry_msgs::TransformStamped& msg);
 OptitrackBody conv_tf2OptitrackBody(const geometry_msgs::TransformStamped& msg);
 
+/** listens to ros topics, such as Alvar and OptiTrack and TableTop, and pipes them into the percepts_input
+ */
 struct Collector : Thread{
   Access_typed<visualization_msgs::MarkerArray> tabletop_clusters;
   Access_typed<ar::AlvarMarkers> ar_pose_markers;
@@ -30,7 +32,7 @@ struct Collector : Thread{
   ACCESSname(mlr::Transformation, alvar_srcFrame)
   ACCESSname(mlr::Transformation, optitrack_srcFrame)
 
-  ACCESSname(FilterObjects, perceptual_inputs)
+  ACCESSname(PerceptL, percepts_input)
 
   Collector(const bool simulate = false);
 

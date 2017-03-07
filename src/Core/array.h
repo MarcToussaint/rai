@@ -430,6 +430,7 @@ typedef mlr::Array<mlr::String*> StringL;
 extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional arguments
 extern arrA& NoArrA; //this is a pointer to NULL!!!! I use it for optional arguments
 extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
+extern byteA& NoByteA; //this is a pointer to NULL!!!! I use it for optional arguments
 extern uintAA& NoUintAA; //this is a pointer to NULL!!!! I use it for optional arguments
 
 //===========================================================================
@@ -605,6 +606,7 @@ void add_alpha_channel(byteA &img, byte alpha);
 void make_grey(byteA &img);
 void make_RGB(byteA &img);
 void flip_image(byteA &img);
+void flip_image(floatA &img);
 
 void scanArrFile(const char* name);
 

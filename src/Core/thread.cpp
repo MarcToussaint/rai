@@ -126,6 +126,7 @@ void ConditionVariable::broadcast(ConditionVariable* messenger) {
   //int rc = pthread_cond_broadcast(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   //setStatus to all listeners:
   for(ConditionVariable *c:listeners) if(c!=messenger) c->setStatus(1, this);
+  for(auto& c:callbacks) c()(this, status);
 }
 
 void ConditionVariable::listenTo(ConditionVariable* c){
@@ -144,6 +145,18 @@ void ConditionVariable::stopListenTo(ConditionVariable* c){
   listensTo.removeValue(c);
   messengers.removeValue(c, false);
   c->statusUnlock();
+  mutex.unlock();
+}
+
+void ConditionVariable::stopListening(){
+  mutex.lock();
+  for(ConditionVariable *c:listensTo){
+    c->statusLock();
+    c->listeners.removeValue(this);
+    c->statusUnlock();
+  }
+  listensTo.clear();
+  messengers.clear();
   mutex.unlock();
 }
 
@@ -449,6 +462,7 @@ void Thread::threadOpen(bool wait, int priority) {
 }
 
 void Thread::threadClose() {
+  stopListening();
   setStatus(tsCLOSE);
   if(!thread) return;
 #ifndef MLR_QThread
@@ -517,8 +531,8 @@ void Thread::waitForIdle() {
   waitForStatusEq(tsIDLE);
 }
 
-void Thread::threadLoop() {
-  if(isClosed()) threadOpen();
+void Thread::threadLoop(bool waitForOpened) {
+  if(isClosed()) threadOpen(waitForOpened);
   if(metronome.ticInterval>1e-10){
     setStatus(tsBEATING);
   }else{
@@ -672,7 +686,7 @@ void threadOpenModules(bool waitForOpened, bool setSignalHandler){
 void threadCloseModules(){
   NodeL threads = registry().getNodesOfType<Thread*>();
   for(Node *th: threads) th->get<Thread*>()->threadClose();
-  modulesReportCycleTimes();
+  threadReportCycleTimes();
 }
 
 void threadCancelModules(){
@@ -680,7 +694,7 @@ void threadCancelModules(){
   for(Node *th: threads) th->get<Thread*>()->threadCancel();
 }
 
-void modulesReportCycleTimes(){
+void threadReportCycleTimes(){
   cout <<"Cycle times for all Modules (msec):" <<endl;
   NodeL threads = registry().getNodesOfType<Thread*>();
   for(Node *th: threads){

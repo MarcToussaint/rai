@@ -1,53 +1,37 @@
 #include "kinect2pointCloud.h"
 
-//REGISTER_MODULE(Kinect2PointCloud)
+Kinect2PointCloud::Kinect2PointCloud() : Thread("Kinect2PointCloud"){
+  threadOpen();
+}
 
-const unsigned int image_width = 640; //kinect resolution
-const unsigned int image_height = 480; //kinect resolution
-const unsigned int depth_size = image_width*image_height;
-
-mlr::Camera kinectCam;
+Kinect2PointCloud::~Kinect2PointCloud(){
+  threadClose();
+}
 
 void Kinect2PointCloud::step(){
   depth = kinect_depth.get();
   rgb = kinect_rgb.get();
 
-  images2pointcloud(pts, cols, rgb, depth);
-
-//  kinect_frame.readAccess();
-//  if(!kinect_frame().isZero()){
-//    kinect_frame().applyOnPointArray(pts);
-//  }
-//  kinect_frame.deAccess();
-
-  kinect_points.set() = pts;
-  kinect_pointColors.set() = cols;
-}
-
-
-void images2pointcloud(arr& pts, arr& cols, const byteA& rgb, const uint16A& depth){
   depthData2pointCloud(pts, depth);
 
-  if(rgb.N!=3*image_width*image_height){
-    MLR_MSG("kinect rgb data has wrong dimension: rgb.dim=" <<rgb.dim());
-    return;
-  }
+  kinect_frame.readAccess();
+  if(!kinect_frame().isZero()) kinect_frame().applyOnPointArray(pts);
+  kinect_frame.deAccess();
 
-  cols.resize(image_width*image_height, 3);
-  for(uint i=0;i<rgb.N;i++) cols.elem(i) = (double)rgb.elem(i)/255.;
+  kinect_points.set() = pts;
 }
 
 void depthData2pointCloud(arr& pts, const uint16A& depth){
-  if(depth.N!=image_width*image_height){
-    MLR_MSG("kinect depth data has wrong dimension: depth.dim=" <<depth.dim());
-    return;
-  }
+  uint H=depth.d0, W=depth.d1;
+  CHECK_EQ(H, 480, "");
+  CHECK_EQ(W, 640, "");
 
-  pts.resize(image_width*image_height, 3);
+  pts.resize(H*W, 3);
 
   float constant = 1.0f / 580; //focal length of kinect in pixels
-  int centerX = (image_width >> 1);
-  int centerY = (image_height >> 1);
+//  float constant = 1.0f / 420; //focal length of kinect in pixels
+  int centerX = (W >> 1);
+  int centerY = (H >> 1);
 
   int i = 0;
   for(int y=-centerY+1; y<=centerY; y++) for(int x=-centerX+1; x<=centerX; x++, i++) {
@@ -63,4 +47,6 @@ void depthData2pointCloud(arr& pts, const uint16A& depth){
       pts(i, 2) = -1.;
     }
   }
+
+  pts.reshape(H, W, 3);
 }
