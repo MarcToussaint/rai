@@ -536,11 +536,11 @@ void Quaternion::addY(double angle){
   set(a.w, a.x, a.y, a.z);
 }
 
-void Quaternion::addZ(double angle){
-  if(!angle){ return; }
-  angle/=2.;
-  double cw=cos(angle);
-  double cz=sin(angle);
+void Quaternion::addZ(double radians){
+  if(!radians){ return; }
+  radians/=2.;
+  double cw=cos(radians);
+  double cz=sin(radians);
 
   Quaternion a;
   a.w = w*cw - z*cz;
@@ -709,6 +709,16 @@ void Quaternion::setDiff(const Vector& from, const Vector& to) {
 
 /// L1-norm to zero (i.e., identical rotation)
 double Quaternion::diffZero() const { return (w>0.?fabs(w-1.):fabs(w+1.))+fabs(x)+fabs(y)+fabs(z); }
+
+double Quaternion::sqrDiffZero() const { return (w>0.?mlr::sqr(w-1.):mlr::sqr(w+1.))+mlr::sqr(x)+mlr::sqr(y)+mlr::sqr(z); }
+
+/// return the squared-error between two quads, modulo flipping
+double Quaternion::sqrDiff(const Quaternion& _q2) const{
+  arr q1(&w, 4, true);
+  arr q2(&_q2.w, 4, true);
+  if(scalarProduct(q1,q2)>=0) return sqrDistance(q1, q2);
+  return sqrDistance(-q1,q2);
+}
 
 /// gets rotation angle (in rad [0, 2pi])
 double Quaternion::getRad() const {

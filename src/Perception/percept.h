@@ -21,7 +21,7 @@ struct Percept : GLDrawer{
 
   virtual void syncWith(mlr::KinematicWorld& K) = 0;
   virtual double idMatchingCost(const Percept& other) = 0;
-  virtual double fuse(const Percept* other);
+  virtual double fuse(Percept* other);
   virtual void write(ostream& os) const;
   virtual void glDraw(OpenGL&){ NIY }
   virtual Percept* newClone() const = 0;
@@ -56,7 +56,7 @@ struct PercMesh : Percept {
 
   virtual void syncWith(mlr::KinematicWorld& K){ }
   virtual double idMatchingCost(const Percept& other){ return 0.; }
-  virtual double fuse(const Percept* other);
+  virtual double fuse(Percept* other);
   virtual void write(ostream& os) const{ os <<"#V=" <<mesh.V.N; }
   virtual void glDraw(OpenGL& gl){ mesh.glDraw(gl); }
   virtual Percept* newClone() const{ return new PercMesh(*this); }
@@ -70,7 +70,7 @@ struct Plane : Percept {
 
   virtual void syncWith(mlr::KinematicWorld& K);
   virtual double idMatchingCost(const Percept& other);
-  virtual double fuse(const Percept* other);
+  virtual double fuse(Percept* other);
   virtual void write(ostream& os) const;
   virtual void glDraw(OpenGL&);
   virtual Percept* newClone() const{ return new Plane(*this); }
@@ -83,7 +83,7 @@ struct PercBox : Percept {
 
   virtual void syncWith(mlr::KinematicWorld& K);
   virtual double idMatchingCost(const Percept& other) { return 0.; }
-  virtual double fuse(const Percept* other);
+  virtual double fuse(Percept* other);
   virtual void write(ostream& os) const { Percept::write(os); os <<"size=" <<size; }
   virtual void glDraw(OpenGL&);
   virtual Percept* newClone() const{ return new PercBox(*this); }

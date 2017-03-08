@@ -16,7 +16,7 @@ Percept::Percept(Type type, const mlr::Transformation& t)
   : type(type), transform(t), frame(0){
 }
 
-double Percept::fuse(const Percept* other){
+double Percept::fuse(Percept* other){
   transform.pos = (1.-alpha)*transform.pos + alpha*other->transform.pos;
   transform.rot.setInterpolate(alpha, transform.rot, other->transform.rot);
   return 0.;
@@ -63,7 +63,7 @@ void Cluster::write(ostream& os) const{
 
 //============================================================================
 
-double PercMesh::fuse(const Percept* other){
+double PercMesh::fuse(Percept* other){
   Percept::fuse(other);
   const PercMesh *x = dynamic_cast<const PercMesh*>(other);
   CHECK(x,"can't fuse " <<type <<" with "<<other->type);
@@ -89,7 +89,7 @@ double Plane::idMatchingCost(const Percept& other){
 
 }
 
-double Plane::fuse(const Percept* other){
+double Plane::fuse(Percept* other){
   Percept::fuse(other);
   const Plane *x = dynamic_cast<const Plane*>(other);
   CHECK(x,"can't fuse " <<type <<" with "<<other->type);
@@ -155,7 +155,19 @@ PercBox::PercBox(const mlr::Transformation& t, const arr& size)
   : Percept(Type::PT_box, t), size(size){
 }
 
-double PercBox::fuse(const Percept* other){
+double PercBox::fuse(Percept* other){
+//  //perform a swapping test
+  if(size(0)>.9*size(1) && size(0)<1.*size(1)){ //almost quadratic shape
+     mlr::Quaternion qdiff;
+     qdiff = Quaternion_Id / transform.rot * other->transform.rot;
+     double score_0 = qdiff.sqrDiffZero();
+     qdiff.addZ(-0.5*MLR_PI);  double score_1 = qdiff.sqrDiffZero();
+     qdiff.addZ(+MLR_PI);  double score_2 = qdiff.sqrDiffZero();
+     ////  LOG(0) <<"base=" <<transform.rot <<" in=" <<other->transform.rot;
+     if(score_1<score_0 && score_1<score_2) other->transform.rot.addZ(-0.5*MLR_PI);
+     if(score_2<score_0 && score_2<score_1) other->transform.rot.addZ(+0.5*MLR_PI);
+  }
+
   Percept::fuse(other);
   const PercBox *x = dynamic_cast<const PercBox*>(other);
   CHECK(x,"can't fuse " <<type <<" with "<<other->type);
@@ -164,7 +176,7 @@ double PercBox::fuse(const Percept* other){
 }
 
 void PercBox::syncWith(mlr::KinematicWorld &K){
-  mlr::String box_name = STRING("box_" << id);
+  mlr::String box_name = STRING("perc_" << id);
 
   mlr::Body *body = K.getBodyByName(box_name, false);
   if (not body) {

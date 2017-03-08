@@ -134,12 +134,14 @@ struct Quaternion {
   void multiply(double f);
   void alignWith(const Vector& v);
 
-  void addX(double angle);
-  void addY(double angle);
-  void addZ(double angle);
+  void addX(double radians);
+  void addY(double radians);
+  void addZ(double radians);
   void append(const Quaternion& q);
 
   double diffZero() const;
+  double sqrDiffZero() const;
+  double sqrDiff(const Quaternion& q2) const;
   bool isNormalized() const;
   double getDeg() const;
   double getRad() const;
@@ -348,8 +350,8 @@ std::ostream& operator<<(std::ostream&, const Transformation&);
 /// of a 'cross-product-matrix'
 void quatDiff(arr& y, arr& J1, arr& J2, const Quaternion& q1, const Quaternion& q2);
 
-} //END of namespace
 
+} //END of namespace
 
 //===========================================================================
 //

@@ -99,6 +99,7 @@ void TaskControlThread::step(){
   t++;
 
   mlr::Joint *trans = realWorld.getJointByName("worldTranslationRotation", false);
+  bool resetCtrlTasksState = false;
 
   //-- read real state
   if(useRos){
@@ -133,6 +134,8 @@ void TaskControlThread::step(){
         q_model = q_real;
         qdot_model = qdot_real;
         modelWorld.set()->setJointState(q_model, qdot_model);
+        resetCtrlTasksState = true;
+        //history stuff -> delete?
         q_history.prepend(q_real); q_history.reshape(q_history.N/q_real.N, q_real.N);
         if(q_history.d0>5) q_history.resizeCopy(5, q_real.N);
 
@@ -148,6 +151,7 @@ void TaskControlThread::step(){
       if(t>300){
         HALT("sync'ing real robot with simulated failed")
       }
+      return;
     }
   }
 
@@ -158,8 +162,11 @@ void TaskControlThread::step(){
 
 //  if(!(step_count%20)) modelWorld().gl().update();
 
-  ctrlTasks.readAccess();
+  ctrlTasks.writeAccess();
   taskController->tasks = ctrlTasks();
+  if(resetCtrlTasksState)
+    taskController -> resetCtrlTasksState();
+
   taskController->updateCtrlTasks(.01, modelWorld()); //update with time increment
 
   //-- compute IK step

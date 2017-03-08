@@ -14,7 +14,8 @@ void rosCheckInit(const char* node_name){
   if(mlr::getParameter<bool>("useRos", false)){
     mutex.lock();
     if(!inited) {
-      ros::init(mlr::argc, mlr::argv, node_name, ros::init_options::NoSigintHandler);
+      mlr::String nodeName = mlr::getParameter<mlr::String>("rosNodeName", STRING(node_name));
+      ros::init(mlr::argc, mlr::argv, nodeName.p, ros::init_options::NoSigintHandler);
       inited = true;
     }
     mutex.unlock();

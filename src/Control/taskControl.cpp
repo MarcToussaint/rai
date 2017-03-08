@@ -271,6 +271,11 @@ void TaskControlMethods::updateCtrlTasks(double tau, const mlr::KinematicWorld& 
   for(CtrlTask* t: tasks) t->update(tau, world);
 }
 
+void TaskControlMethods::resetCtrlTasksState(){
+  qNullCostRef.resetState();
+  for(CtrlTask* t: tasks) t->resetState();
+}
+
 CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, double dampingRatio, TaskMap *map){
   return tasks.append(new CtrlTask(name, map, decayTime, dampingRatio, 1., 1.));
 }

@@ -40,6 +40,7 @@ enum CT_Status { CT_init=-1, CT_running, CT_conv, CT_done, CT_stalled };
 struct MotionProfile{
   virtual ~MotionProfile(){}
   virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot) = 0;
+  virtual void resetState() = 0;
   virtual bool isDone() = 0;
 };
 
@@ -51,6 +52,7 @@ struct MotionProfile_Sine : MotionProfile{
   double T;
   MotionProfile_Sine(const arr& y_target, double duration) : y_target(y_target), t(0.), T(duration){}
   virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
+  virtual void resetState(){ y_init.clear(); t=0.; }
   virtual bool isDone(){ return t>=T; }
 };
 
@@ -73,6 +75,7 @@ struct MotionProfile_PD: MotionProfile{
   void setGainsAsNatural(double decayTime, double dampingRatio); ///< the decayTime is the to decay to 10% of the initial offset/error
 
   virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
+  virtual void resetState(){ y_ref.clear(); v_ref.clear(); }
 
   arr getDesiredAcceleration();
   void getDesiredLinAccLaw(arr& Kp_y, arr& Kd_y, arr& a0_y);
@@ -90,6 +93,7 @@ struct MotionProfile_Path: MotionProfile{
   double phase;
   MotionProfile_Path(const arr& path, double executionTime);
   virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
+  virtual void resetState(){ NIY }
   virtual bool isDone(){ return phase>=1.; }
 };
 
@@ -126,6 +130,7 @@ struct CtrlTask{
   ~CtrlTask();
 
   CT_Status update(double tau, const mlr::KinematicWorld& world);
+  void resetState(){ if(ref) ref->resetState(); status=CT_init; }
 
   arr getPrec();
   void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const mlr::KinematicWorld& world);
@@ -154,6 +159,8 @@ struct TaskControlMethods {
   CtrlTask* addPDTask(const char* name, double decayTime, double dampingRatio, TaskMap *map);
 
   void updateCtrlTasks(double tau, const mlr::KinematicWorld& world);
+  void resetCtrlTasksState();
+
   void lockJointGroup(const char *groupname, mlr::KinematicWorld& world, bool lockThem=true);
 
   double getIKCosts(const arr& q=NoArr, const arr& q0=NoArr, arr& g=NoArr, arr& H=NoArr);
