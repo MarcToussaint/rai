@@ -11,6 +11,7 @@
 #include <std_msgs/Float32MultiArray.h>
 #include <geometry_msgs/WrenchStamped.h>
 #include <sensor_msgs/Image.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <std_msgs/String.h>
 #include <sensor_msgs/JointState.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -23,7 +24,7 @@
 #include <Kin/kin.h>
 #include <Control/ctrlMsg.h>
 #include <ros_msg/JointState.h>
-
+#include <PCL/conv.h>
 
 //===========================================================================
 //
@@ -52,6 +53,7 @@ timespec            conv_time2timespec(const ros::Time&);
 arr                 conv_wrench2arr(const geometry_msgs::WrenchStamped& msg);
 byteA               conv_image2byteA(const sensor_msgs::Image& msg);
 uint16A             conv_image2uint16A(const sensor_msgs::Image& msg);
+Pcl                 conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg);
 arr                 conv_points2arr(const std::vector<geometry_msgs::Point>& pts);
 arr                 conv_colors2arr(const std::vector<std_msgs::ColorRGBA>& pts);
 CtrlMsg             conv_JointState2CtrlMsg(const marc_controller_pkg::JointState& msg);
@@ -113,10 +115,10 @@ struct SubscriberConv : SubscriberType {
   ros::Subscriber sub;
   tf::TransformListener *listener;
   SubscriberConv(const char* topic_name, Access_typed<var_type>& _access, Access_typed<mlr::Transformation> *_frame=NULL)
-    : access(NULL, _access), frame(_frame) {
+    : access(NULL, _access), frame(_frame), listener(NULL) {
     if(mlr::getParameter<bool>("useRos")){
       nh = new ros::NodeHandle;
-      listener = new tf::TransformListener;
+      if(frame) listener = new tf::TransformListener;
       registry().newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
       LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into access '" <<access.name <<'\'';
       sub = nh->subscribe(topic_name, 1, &SubscriberConv::callback, this);
@@ -126,20 +128,20 @@ struct SubscriberConv : SubscriberType {
     : access(NULL, var_name), frame(_frame) {
     if(mlr::getParameter<bool>("useRos")){
       nh = new ros::NodeHandle;
-      listener = new tf::TransformListener;
+      if(frame) listener = new tf::TransformListener;
       registry().newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
       LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into access '" <<access.name <<'\'';
       sub = nh->subscribe(topic_name, 1, &SubscriberConv::callback, this);
     }
   }
   ~SubscriberConv(){
-    delete listener;
+    if(listener) delete listener;
     delete nh;
   }
   void callback(const typename msg_type::ConstPtr& msg) {
     double time=conv_time2double(msg->header.stamp);
     access.set( time ) = conv(*msg);
-    if(frame){
+    if(frame && listener){
       frame->set( time ) = ros_getTransform("/base_link", msg->header.frame_id, *listener);
     }
   }

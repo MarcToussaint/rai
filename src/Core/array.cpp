@@ -986,6 +986,16 @@ void make_RGB2BGRA(byteA &img) {
   img=tmp;
 }
 
+/// make a grey image and RGA image
+void swap_RGB_BGR(byteA &img) {
+  CHECK(img.nd==3 && img.d2==3, "make_RGB2RGBA requires color image as input");
+  byte *b=img.p, *bstop=img.p+img.N;
+  byte z;
+  for(;b<bstop; b+=3) {
+    z=b[0]; b[0]=b[2]; b[2]=z;
+  }
+}
+
 
 uintA getIndexTuple(uint i, const uintA &d) {
   CHECK(i<product(d), "out of range");
@@ -2231,10 +2241,11 @@ template mlr::Array<arr>::~Array();
 
 #include "util.tpp"
 
-template mlr::Array<double> mlr::getParameter<mlr::Array<double> >(char const*);
-template mlr::Array<float> mlr::getParameter<mlr::Array<float> >(char const*);
-template mlr::Array<uint> mlr::getParameter<mlr::Array<uint> >(char const*);
-template bool mlr::checkParameter<mlr::Array<double> >(char const*);
+template mlr::Array<double> mlr::getParameter<arr>(char const*);
+template mlr::Array<double> mlr::getParameter<arr>(char const*, const arr&);
+template mlr::Array<float> mlr::getParameter<floatA>(char const*);
+template mlr::Array<uint> mlr::getParameter<uintA>(char const*);
+template bool mlr::checkParameter<arr>(char const*);
 template void mlr::getParameter(uintA&, const char*, const uintA&);
 
 void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }

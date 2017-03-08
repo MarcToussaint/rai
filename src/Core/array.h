@@ -605,6 +605,8 @@ void read_ppm(byteA &img, const char *file_name, bool swap_rows=true);
 void add_alpha_channel(byteA &img, byte alpha);
 void make_grey(byteA &img);
 void make_RGB(byteA &img);
+void make_RGB2BGRA(byteA &img);
+void swap_RGB_BGR(byteA &img);
 void flip_image(byteA &img);
 void flip_image(floatA &img);
 

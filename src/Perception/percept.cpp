@@ -16,6 +16,11 @@ Percept::Percept(Type type, const mlr::Transformation& t)
   : type(type), transform(t), frame(0){
 }
 
+double Percept::idMatchingCost(const Percept& other){
+  mlr::Vector diff = (this->transform.pos - other.transform.pos);
+  return diff.length();
+}
+
 double Percept::fuse(Percept* other){
   transform.pos = (1.-alpha)*transform.pos + alpha*other->transform.pos;
   transform.rot.setInterpolate(alpha, transform.rot, other->transform.rot);
@@ -86,7 +91,6 @@ double Plane::idMatchingCost(const Percept& other){
   CHECK(otherPlane,"");
   mlr::Vector diff = (this->transform.pos - otherPlane->transform.pos);
   return diff.length();
-
 }
 
 double Plane::fuse(Percept* other){
@@ -151,13 +155,13 @@ void Plane::glDraw(OpenGL& gl){
 //PercBox::PercBox(const PercBox& box)
 //  : Percept(box), size(box.size) {}
 
-PercBox::PercBox(const mlr::Transformation& t, const arr& size)
-  : Percept(Type::PT_box, t), size(size){
+PercBox::PercBox(const mlr::Transformation& t, const arr& size, const arr& color)
+  : Percept(Type::PT_box, t), size(size), color(color){
 }
 
 double PercBox::fuse(Percept* other){
 //  //perform a swapping test
-  if(size(0)>.9*size(1) && size(0)<1.*size(1)){ //almost quadratic shape
+  if(size(0)>.8*size(1) && size(0)<1.2*size(1)){ //almost quadratic shape
      mlr::Quaternion qdiff;
      qdiff = Quaternion_Id / transform.rot * other->transform.rot;
      double score_0 = qdiff.sqrDiffZero();
@@ -171,7 +175,8 @@ double PercBox::fuse(Percept* other){
   Percept::fuse(other);
   const PercBox *x = dynamic_cast<const PercBox*>(other);
   CHECK(x,"can't fuse " <<type <<" with "<<other->type);
-  size = x->size;
+  size = (1.-alpha)*size + alpha*x->size;
+  color = (1.-alpha)*color + alpha*x->color;
   return 0.;
 }
 
@@ -195,10 +200,16 @@ void PercBox::syncWith(mlr::KinematicWorld &K){
   shape->size[1] = size(1);
   shape->size[2] = size(2);
   shape->size[3] = 0.;
+  shape->color[0] = color(0);
+  shape->color[1] = color(1);
+  shape->color[2] = color(2);
+  shape->color[3] = .8;
+  shape->mesh.C = color;
 }
 
 void PercBox::glDraw(OpenGL&){
   CHECK_EQ(size.N, 3, "");
+  glDrawAxes(.2);
   glLineWidth(3);
   glDrawBox(size.elem(0), size.elem(1), size.elem(2), true);
 }

@@ -15,6 +15,9 @@ struct Kinect2PointCloud : Thread{
   arr pts,cols;
   uint16A depth;
   byteA rgb; //helpers
+  mlr::Transformation frame;
+  int depthShift_dx,depthShift_dy;
+  arr frameShift;
 
   Kinect2PointCloud();
   virtual ~Kinect2PointCloud();
@@ -25,4 +28,4 @@ struct Kinect2PointCloud : Thread{
 };
 
 /// convert raw depth data to a pointcloud (no color)
-void depthData2pointCloud(arr& pts, const uint16A& depth);
+void depthData2pointCloud(arr& pts, const uint16A& depth, int depthShift_dx=0, int depthShift_dy=0);

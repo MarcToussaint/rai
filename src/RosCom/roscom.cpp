@@ -2,6 +2,9 @@
 
 #include "roscom.h"
 
+#include <pcl/point_cloud.h>
+#include <pcl_conversions/pcl_conversions.h>
+
 bool rosOk(){
   return ros::ok();
 }
@@ -225,6 +228,16 @@ uint16A conv_image2uint16A(const sensor_msgs::Image& msg){
   byteA data = conv_stdvec2arr<byte>(msg.data);
   uint16A ref((const uint16_t*)data.p, data.N/2);
   return ref.reshape(msg.height, msg.width);
+}
+
+Pcl conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg){
+  pcl::PCLPointCloud2 pcl_pc2;
+  pcl_conversions::toPCL(msg, pcl_pc2);
+  LOG(0) <<"size=" <<pcl_pc2.data.size();
+  Pcl cloud;
+  pcl::fromPCLPointCloud2(pcl_pc2, cloud);
+  LOG(0) <<"size=" <<cloud.size();
+  return cloud;
 }
 
 CtrlMsg conv_JointState2CtrlMsg(const marc_controller_pkg::JointState& msg){
