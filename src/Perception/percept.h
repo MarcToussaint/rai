@@ -81,7 +81,7 @@ struct PercBox : Percept {
 
   PercBox(const mlr::Transformation& t, const arr& size);
 
-  virtual void syncWith(mlr::KinematicWorld& K) {}
+  virtual void syncWith(mlr::KinematicWorld& K);
   virtual double idMatchingCost(const Percept& other) { return 0.; }
   virtual double fuse(const Percept* other);
   virtual void write(ostream& os) const { Percept::write(os); os <<"size=" <<size; }

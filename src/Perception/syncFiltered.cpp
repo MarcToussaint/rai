@@ -17,9 +17,10 @@
     -----------------------------------------------------------------  */
 #include "syncFiltered.h"
 
-SyncFiltered::SyncFiltered()
+SyncFiltered::SyncFiltered(const char* outputWorld_name)
   : Thread("SyncFiltered", -1.),
-    percepts_filtered(this, "percepts_filtered", true) {
+    percepts_filtered(this, "percepts_filtered", true),
+    outputWorld(this, outputWorld_name){
   threadOpen();
 }
 
@@ -28,7 +29,7 @@ SyncFiltered::~SyncFiltered(){
 }
 
 void SyncFiltered::open(){
-  percWorld.set() = modelWorld.get();
+//  outputWorld.set() = modelWorld.get();
 }
 
 void SyncFiltered::step(){
@@ -36,14 +37,14 @@ void SyncFiltered::step(){
 
   percepts_filtered.writeAccess();
   for(Percept *p:percepts_filtered()){
-    p->syncWith(percWorld.set());
+    p->syncWith(outputWorld.set());
     existingIDs.append(p->id);
   }
   percepts_filtered.deAccess();
 
   // delete non-existing bodies
-  percWorld.writeAccess();
-  for(mlr::Body *b:percWorld().bodies){
+  outputWorld.writeAccess();
+  for(mlr::Body *b:outputWorld().bodies){
     if(b->name.startsWith("perc_")){
       uint id;
       b->name.resetIstream();
@@ -53,7 +54,7 @@ void SyncFiltered::step(){
       }
     }
   }
-  percWorld.deAccess();
+  outputWorld.deAccess();
 
 }
 

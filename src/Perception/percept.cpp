@@ -1,7 +1,7 @@
 #include "percept.h"
 #include <Gui/opengl.h>
 
-double alpha = 1.;
+double alpha = .2;
 
 
 template<> const char* mlr::Enum<Percept::Type>::names []=
@@ -161,6 +161,28 @@ double PercBox::fuse(const Percept* other){
   CHECK(x,"can't fuse " <<type <<" with "<<other->type);
   size = x->size;
   return 0.;
+}
+
+void PercBox::syncWith(mlr::KinematicWorld &K){
+  mlr::String box_name = STRING("box_" << id);
+
+  mlr::Body *body = K.getBodyByName(box_name, false);
+  if (not body) {
+    //cout << plane_name << " does not exist yet; adding it..." << endl;
+    body = new mlr::Body(K);
+    body->name = box_name;
+    mlr::Shape *shape = new mlr::Shape(K, *body);
+    shape->name = box_name;
+    shape->type = mlr::ST_box;
+  }
+  body->X = transform;
+  for(mlr::Shape *s:body->shapes) s->X = body->X * s->rel;
+
+  mlr::Shape *shape = body->shapes(0);
+  shape->size[0] = size(0);
+  shape->size[1] = size(1);
+  shape->size[2] = size(2);
+  shape->size[3] = 0.;
 }
 
 void PercBox::glDraw(OpenGL&){
