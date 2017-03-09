@@ -160,16 +160,21 @@ PercBox::PercBox(const mlr::Transformation& t, const arr& size, const arr& color
 }
 
 double PercBox::fuse(Percept* other){
-//  //perform a swapping test
-  if(size(0)>.8*size(1) && size(0)<1.2*size(1)){ //almost quadratic shape
-     mlr::Quaternion qdiff;
-     qdiff = Quaternion_Id / transform.rot * other->transform.rot;
-     double score_0 = qdiff.sqrDiffZero();
-     qdiff.addZ(-0.5*MLR_PI);  double score_1 = qdiff.sqrDiffZero();
-     qdiff.addZ(+MLR_PI);  double score_2 = qdiff.sqrDiffZero();
-     ////  LOG(0) <<"base=" <<transform.rot <<" in=" <<other->transform.rot;
-     if(score_1<score_0 && score_1<score_2) other->transform.rot.addZ(-0.5*MLR_PI);
-     if(score_2<score_0 && score_2<score_1) other->transform.rot.addZ(+0.5*MLR_PI);
+  //check flip by 180
+  mlr::Quaternion qdiff;
+  qdiff = (-transform.rot) * other->transform.rot;
+  double score_0 = qdiff.sqrDiffZero();
+  qdiff.addZ(+MLR_PI);  double score_1 = qdiff.sqrDiffZero(); //flip by 180
+  if(score_1<score_0) other->transform.rot.addZ(-MLR_PI);
+
+  if(size(0)>.8*size(1) && size(0)<1.2*size(1)){ //almost quadratic shape -> check flip by 90
+    qdiff = (-transform.rot) * other->transform.rot;
+    double score_0 = qdiff.sqrDiffZero();
+    qdiff.addZ(-0.5*MLR_PI);  double score_1 = qdiff.sqrDiffZero();
+    qdiff.addZ(    +MLR_PI);  double score_2 = qdiff.sqrDiffZero();
+    ////  LOG(0) <<"base=" <<transform.rot <<" in=" <<other->transform.rot;
+    if(score_1<score_0 && score_1<score_2) other->transform.rot.addZ(-0.5*MLR_PI);
+    if(score_2<score_0 && score_2<score_1) other->transform.rot.addZ(+0.5*MLR_PI);
   }
 
   Percept::fuse(other);

@@ -34,6 +34,24 @@ void ImageViewer::step(){
   s->gl.dataLock.writeLock();
   s->gl.background = img.get();
   if(flipImage) flip_image(s->gl.background);
+#if 1 //draw a center
+  uint ci = s->gl.background.d0/2;
+  uint cj = s->gl.background.d1/2;
+  uint skip = s->gl.background.d1*s->gl.background.d2;
+  byte *p, *pstop;
+  p=&s->gl.background(ci-5, cj-5, 0);
+  pstop=&s->gl.background(ci-5, cj+5, 0);
+  for(;p<=pstop;p++) *p = 0;
+  p=&s->gl.background(ci+5, cj-5, 0);
+  pstop=&s->gl.background(ci+5, cj+5, 0);
+  for(;p<=pstop;p++) *p = 0;
+  p=&s->gl.background(ci-5, cj-5, 0);
+  pstop=&s->gl.background(ci+5, cj-5, 0);
+  for(;p<=pstop;p+=skip) p[0]=p[1]=p[2]=0;
+  p=&s->gl.background(ci-5, cj+5, 0);
+  pstop=&s->gl.background(ci+5, cj+5, 0);
+  for(;p<=pstop;p+=skip) p[0]=p[1]=p[2]=0;
+#endif
   s->gl.dataLock.unlock();
   if(!s->gl.background.N) return;
   if(s->gl.height!= s->gl.background.d0 || s->gl.width!= s->gl.background.d1)

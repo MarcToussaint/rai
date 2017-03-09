@@ -17,6 +17,8 @@ void glDrawPercepts(void *P){
   for(Percept *p:percepts){
     glPushMatrix();
     glTransform(p->transform);
+    glColor3f(0,0,0);
+    glDrawText(STRING(p->id),0,0,0, true);
     p->glDraw(NoOpenGL);
     glPopMatrix();
   }
@@ -28,6 +30,9 @@ void PercViewer::open(){
   gl->add(glDrawMeshes, &modelCopy);
   gl->add(glDrawPercepts, &copy);
   gl->camera.setDefault();
+  gl->camera.setPosition(2., -3., 3.);
+  gl->camera.focus(.5, 0, .6);
+  gl->camera.upright();
 
   modelWorld.writeAccess();
   modelCopy.resize(modelWorld().shapes.N);

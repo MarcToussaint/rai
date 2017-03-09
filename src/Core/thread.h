@@ -363,7 +363,8 @@ struct Access_typed{
 
 extern Singleton<ConditionVariable> moduleShutdown;
 Node *getVariable(const char* name);
-template <class T> T* getVariable(const char* name){  return dynamic_cast<T*>(registry().get<RevisionedRWLock*>({"AccessData",name}));  }
+//template <class T> T* getVariable(const char* name){  return dynamic_cast<T*>(registry().get<RevisionedRWLock*>({"AccessData",name}));  }
+template <class T> T& getVariable(const char* name){  return registry().get<T>({"AccessData",name});  }
 template <class T> T* getThread(const char* name){  return dynamic_cast<T*>(registry().get<Thread*>({"Thread",name}));  }
 RevisionedRWLockL getVariables();
 void openModules();

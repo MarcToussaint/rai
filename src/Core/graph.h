@@ -407,7 +407,7 @@ template<class T> T& Graph::get(const char *key) const {
 
 template<class T> T& Graph::get(const StringA& keys) const {
   Node *n = findNodeOfType(typeid(T), keys);
-  if(!n) HALT("no node of type '" <<typeid(T).name() <<"' with keys '"<< keys<< "' found");
+  if(!n) HALT("no node of type '" <<typeid(T).name() <<"' with keys '"<< keys<< "' found. Here is the full Graph:" <<*this);
   return n->get<T>();
 }
 

@@ -191,12 +191,13 @@ static GLboolean glLightIsOn = false;
 void glPushLightOff() { glGetBooleanv(GL_LIGHTING, &glLightIsOn); glDisable(GL_LIGHTING); }
 void glPopLight() { if(glLightIsOn) glEnable(GL_LIGHTING); }
 
-void glDrawText(const char* txt, float x, float y, float z) {
+void glDrawText(const char* txt, float x, float y, float z, bool largeFont) {
   if(!txt) return;
   glDisable(GL_DEPTH_TEST);
   glPushLightOff();
   glRasterPos3f(x, y, z);
   void *font=GLUT_BITMAP_HELVETICA_12;
+  if(largeFont) font = GLUT_BITMAP_HELVETICA_18;
   while(*txt) {
     switch(*txt) {
       case '\n':
@@ -1490,7 +1491,11 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   
   //check object clicked on
   if(!downPressed) {
-    if(reportSelects) Select(true);
+    if(reportSelects){
+      singleGLAccess().lock();
+      Select(true);
+      singleGLAccess().unlock();
+    }
   }
   
   //mouse scroll wheel:
@@ -1498,7 +1503,9 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   if(mouse_button==5 && !downPressed) cam->X.pos -= s->downRot*Vector_z * (.1 * (s->downPos-s->downFoc).length());
   
   if(mouse_button==3) {  //selection
+    singleGLAccess().lock();
     Select(true);
+    singleGLAccess().unlock();
     if(topSelection){
       cam->focus(topSelection->x, topSelection->y, topSelection->z);
 //      uint name=topSelection->name;
