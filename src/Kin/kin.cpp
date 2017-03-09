@@ -243,7 +243,7 @@ mlr::Shape::~Shape() {
 
 void mlr::Shape::copy(const Shape& s, bool referenceMeshOnCopy){
   name=s.name; X=s.X; rel=s.rel; type=s.type;
-  memmove(size, s.size, 4*sizeof(double)); memmove(color, s.color, 3*sizeof(double));
+  memmove(size, s.size, 4*sizeof(double)); memmove(color, s.color, 4*sizeof(double));
   if(!referenceMeshOnCopy){
     mesh=s.mesh;
     sscCore=s.sscCore;
@@ -268,7 +268,11 @@ void mlr::Shape::parseAts() {
   mlr::FileToken fil;
   ats.get(rel, "rel");
   if(ats.get(x, "size"))          { CHECK_EQ(x.N,4,"size=[] needs 4 entries"); memmove(size, x.p, 4*sizeof(double)); }
-  if(ats.get(x, "color"))         { CHECK(x.N>=3,"color=[] needs at least 3 entries"); memmove(color, x.p, 3*sizeof(double)); }
+  if(ats.get(x, "color"))         {
+    CHECK(x.N==3 || x.N==4,"");
+    if(x.N==3){ memmove(color, x.p, 3*sizeof(double)); color[3]=1.; }
+    else memmove(color, x.p, 4*sizeof(double));
+  }
   if(ats.get(d, "type"))       { type=(ShapeType)(int)d;}
   else if(ats.get(str, "type")) { str>> type; }
   if(ats["contact"])           { cont=true; }
@@ -320,22 +324,35 @@ void mlr::Shape::parseAts() {
       CHECK(size[3]>1e-10,"");
       sscCore.setBox();
       sscCore.scale(size[0]-2.*size[3], size[1]-2.*size[3], size[2]-2.*size[3]);
-      mesh.setSSCvx(sscCore, size[3]);
+      mesh.setSSBox(size[0], size[1], size[2], size[3]);
+//      mesh.setSSCvx(sscCore, size[3]);
       break;
     default: NIY;
   }
 
   //center the mesh:
-  if(mesh.V.N){
+  if(type==mlr::ST_mesh && mesh.V.N){
     Vector c = mesh.center();
     if(c.length()>1e-8 && !ats["rel_includes_mesh_center"]){
       rel.addRelativeTranslation(c);
       ats.newNode<bool>({"rel_includes_mesh_center"}, {}, true);
     }
-    mesh_radius = mesh.getRadius();
-    mesh.getBox(size[0], size[1], size[2]);
-//    size[3]=0.;
   }
+
+  //compute the bounding radius
+  if(mesh.V.N) mesh_radius = mesh.getRadius();
+
+  //colored box?
+  if(ats["coloredBox"]){
+    CHECK_EQ(mesh.V.d0, 8, "I need a box");
+    mesh.C.resize(mesh.T.d0, 3);
+    for(uint i=0;i<mesh.C.d0;i++){
+      if(i==2 || i==3) mesh.C[i] = arr(color, 3);
+      else if(i>=4 && i<=7) mesh.C[i] = 1.;
+      else mesh.C[i] = .5;
+    }
+  }
+
 
   //add inertia to the body
   if(body) {
@@ -359,7 +376,7 @@ void mlr::Shape::parseAts() {
 void mlr::Shape::reset() {
   type=ST_none;
   size[0]=size[1]=size[2]=size[3]=1.;
-  color[0]=color[1]=color[2]=.8;
+  color[0]=color[1]=color[2]=.8; color[3]=1.;
   ats.clear();
   X.setZero();
   rel.setZero();
@@ -370,10 +387,10 @@ void mlr::Shape::reset() {
 
 void mlr::Shape::write(std::ostream& os) const {
   os <<"type=" <<type <<' ';
-  os <<"size=[" <<size[0] <<' '<<size[1] <<' '<<size[2] <<' '<<size[3] <<"] ";
+//  os <<"size=[" <<size[0] <<' '<<size[1] <<' '<<size[2] <<' '<<size[3] <<"] ";
   if(!rel.isZero()) os <<"rel=<T " <<rel <<" > ";
   for(Node * a: ats)
-  if(a->keys(0)!="rel" && a->keys(0)!="type" && a->keys(0)!="size") os <<*a <<' ';
+    if(a->keys.N && a->keys(0)!="rel" && a->keys(0)!="type" /*&& a->keys(0)!="size"*/) os <<*a <<' ';
 }
 
 void mlr::Shape::read(std::istream& is) {
@@ -387,7 +404,7 @@ void mlr::Shape::read(std::istream& is) {
 void mlr::Shape::glDraw(OpenGL& gl) {
   //set name (for OpenGL selection)
   glPushName((index <<2) | 1);
-  if(orsDrawColors && !orsDrawIndexColors) glColor(color[0], color[1], color[2], orsDrawAlpha);
+  if(orsDrawColors && !orsDrawIndexColors) glColor(color[0], color[1], color[2], color[3]*orsDrawAlpha);
   if(orsDrawIndexColors) glColor3b((index>>16)&0xff, (index>>8)&0xff, index&0xff);
 
 
@@ -502,18 +519,18 @@ uintA shapesToShapeIndices(const mlr::Array<mlr::Shape*>& shapes) {
   return I;
 }
 
-void makeConvexHulls(ShapeL& shapes){
-  for(mlr::Shape *s: shapes) s->mesh.makeConvexHull();
+void makeConvexHulls(ShapeL& shapes, bool onlyContactShapes){
+  for(mlr::Shape *s: shapes) if(!onlyContactShapes || s->cont) s->mesh.makeConvexHull();
 }
 
-void makeSSBoxApproximations(ShapeL& shapes){
-//  for(mlr::Shape *s: shapes) s->mesh.makeSSBox(s->mesh.V);
+void computeOptimalSSBoxes(ShapeL& shapes){
+//  for(mlr::Shape *s: shapes) s->mesh.computeOptimalSSBox(s->mesh.V);
   for(uint i=0;i<shapes.N;i++){
     mlr::Shape *s=shapes(i);
     if(!(s->type==mlr::ST_mesh && s->mesh.V.N)) continue;
     mlr::Transformation t;
     arr x;
-    s->mesh.makeSSBox(x, t, s->mesh.V);
+    s->mesh.computeOptimalSSBox(x, t, s->mesh.V);
     s->type = mlr::ST_ssBox;
     s->size[0]=2.*x(0); s->size[1]=2.*x(1); s->size[2]=2.*x(2); s->size[3]=x(3);
     s->mesh.setSSBox(s->size[0], s->size[1], s->size[2], s->size[3]);
@@ -882,6 +899,7 @@ void mlr::KinematicWorld::calc_fwdPropagateFrames() {
 #else
       j->applyTransformation(j->to->X, q);
 #endif
+      CHECK_EQ(j->to->X.pos.x, j->to->X.pos.x, "");
       if(!isLinkTree) j->to->X.appendTransformation(j->B);
     }
   }
@@ -968,6 +986,7 @@ void mlr::KinematicWorld::clearJointErrors() {
 }
 
 arr mlr::KinematicWorld::naturalQmetric(double power) const {
+  HALT("don't use this anymore. use getHmetric instead");
 #if 0
   if(!q.N) getJointStateDimension();
   arr Wdiag(q.N);
@@ -1063,7 +1082,10 @@ void mlr::KinematicWorld::analyzeJointStateDimensions() {
 uint mlr::KinematicWorld::getJointStateDimension(int agent) const {
   if(agent==-1) agent=q_agent;
   CHECK(agent!=INT_MAX,"");
-  if(!qdim.N) ((KinematicWorld*)this)->analyzeJointStateDimensions();
+  if(!qdim.N){
+    CHECK(!q.N && !qdim.N,"you've change q-dim (locked joints?) without clearing q,qdot");
+    ((KinematicWorld*)this)->analyzeJointStateDimensions();
+  }
   CHECK((uint)agent<qdim.N,"don't have that agent (analyzeJointStateDimensions before?)");
   return qdim(agent);
 }
@@ -2021,6 +2043,7 @@ void mlr::KinematicWorld::init(const Graph& G) {
     Body *b=new Body(*this);
     if(n->keys.N>1) b->name=n->keys.last();
     b->ats.copy(n->graph(), false, true);
+    if(n->keys.N>2) b->ats.newNode<bool>({n->keys.last(-1)});
     b->parseAts();
   }
 
@@ -2040,6 +2063,7 @@ void mlr::KinematicWorld::init(const Graph& G) {
     }
     if(n->keys.N>1) s->name=n->keys.last();
     s->ats.copy(n->graph(), false, true);
+    if(n->keys.N>2) s->ats.newNode<bool>({n->keys.last(-1)});
     s->parseAts();
   }
   
@@ -2057,6 +2081,7 @@ void mlr::KinematicWorld::init(const Graph& G) {
     Joint *j=new Joint(*this, from, to);
     if(n->keys.N>1) j->name=n->keys.last();
     j->ats.copy(n->graph(), false, true);
+    if(n->keys.N>2) j->ats.newNode<bool>({n->keys.last(-1)});
     j->parseAts();
 
     //if the joint is coupled to another:
@@ -2137,7 +2162,7 @@ end_header\n";
 }
 
 /// dump the list of current proximities on the screen
-void mlr::KinematicWorld::reportProxies(std::ostream *os, double belowMargin) {
+void mlr::KinematicWorld::reportProxies(std::ostream *os, double belowMargin) const{
   (*os) <<"Proximity report: #" <<proxies.N <<endl;
   for_list(Proxy, p, proxies) {
     if(belowMargin>0. && p->d>belowMargin) continue;
@@ -2498,7 +2523,13 @@ arr mlr::KinematicWorld::getHmetric() const{
   for(mlr::Joint *j:joints){
     double h=j->H;
     CHECK(h>0.,"Hmetric should be larger than 0");
-    for(uint k=0;k<j->qDim();k++) H(j->qIndex+k)=h;
+    if(j->type==JT_transXYPhi){
+      H(j->qIndex+0)=h*10.;
+      H(j->qIndex+1)=h*10.;
+      H(j->qIndex+2)=h;
+    }else{
+      for(uint k=0;k<j->qDim();k++) H(j->qIndex+k)=h;
+    }
   }
   return H;
 }
@@ -2701,8 +2732,8 @@ void mlr::KinematicWorld::glDraw(OpenGL& gl) {
   if(orsDrawProxies) for(Proxy *proxy: proxies) {
     glLoadIdentity();
     if(!proxy->colorCode){
-      if(proxy->d>0.) glColor(.75,.75,.75);
-      else glColor(.75,.5,.5);
+      if(proxy->d>0.) glColor(.8,.2,.2);
+      else glColor(1,0,0);
     }else glColor(proxy->colorCode);
     glBegin(GL_LINES);
     glVertex3dv(proxy->posA.p());
@@ -2738,6 +2769,14 @@ mlr::KinematicSwitch::KinematicSwitch()
   jB.setZero();
 }
 
+mlr::KinematicSwitch::KinematicSwitch(OperatorSymbol op, JointType type, const char* ref1, const char* ref2, const mlr::KinematicWorld& K, uint _timeOfApplication, const mlr::Transformation& jFrom, const mlr::Transformation& jTo)
+  : symbol(op), jointType(type), timeOfApplication(_timeOfApplication), fromId(UINT_MAX), toId(UINT_MAX){
+  if(ref1) fromId = K.getShapeByName(ref1)->index;
+  if(ref2) toId = K.getShapeByName(ref2)->index;
+  if(&jFrom) jA = jFrom;
+  if(&jTo)   jB = jTo;
+}
+
 #define STEP(t) (floor(t*double(stepsPerPhase) + .500001))-1
 
 void mlr::KinematicSwitch::setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T){
@@ -2753,8 +2792,12 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     CHECK_EQ(symbol, deleteJoint, "");
     CHECK(to,"");
     mlr::Body *b = to->body;
-    CHECK_EQ(b->inLinks.N, 1,"");
-    from = b->inLinks(0)->from->shapes.first();
+    CHECK_LE(b->inLinks.N, 1,"");
+    if(b->inLinks.N){
+      from = b->inLinks(0)->from->shapes.first();
+    }else{
+      return;
+    }
   }
 
   if(symbol==deleteJoint){
@@ -3410,17 +3453,16 @@ void animateConfiguration(mlr::KinematicWorld& C, Inotify *ino) {
   const int steps = 50;
   for(i=x0.N; i--;) {
     x=x0;
-    const double upper_lim = lim(i,1);
-    const double lower_lim = lim(i,0);
-    const double delta = upper_lim - lower_lim;
-    const double center = lower_lim + delta / 2.;
-    const double offset = acos( 2. * (x0(i) - center) / delta );
+    double upper_lim = lim(i,1);
+    double lower_lim = lim(i,0);
+    double delta = upper_lim - lower_lim;
+    double center = lower_lim + .5*delta;
+    if(delta<=1e-10){ center=x0(i); delta=1.; }
+    double offset = acos( 2. * (x0(i) - center) / delta );
 
     for(t=0; t<steps; t++) {
       if(C.gl().pressedkey==13 || C.gl().pressedkey==27 || C.gl().pressedkey=='q') return;
       if(ino && ino->pollForModification()) return;
-      if (lim(i,0)==lim(i,1))
-        break;
 
       x(i) = center + (delta*(0.5*cos(MLR_2PI*t/steps + offset)));
       // Joint limits
@@ -3588,9 +3630,9 @@ void editConfiguration(const char* filename, mlr::KinematicWorld& C) {
     try {
       mlr::lineCount=1;
       W <<FILE(filename);
-      C.gl().lock.writeLock();
+      C.gl().dataLock.writeLock();
       C = W;
-      C.gl().lock.unlock();
+      C.gl().dataLock.unlock();
     } catch(const char* msg) {
       cout <<"line " <<mlr::lineCount <<": " <<msg <<" -- please check the file and press ENTER" <<endl;
       C.gl().watch();

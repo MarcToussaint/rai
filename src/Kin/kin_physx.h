@@ -29,29 +29,26 @@ namespace physx {
  * @ingroup ors_interfaces
  * @{
  */
-struct PhysXInterface {
+struct PhysXInterface : GLDrawer{
   mlr::KinematicWorld& world;
   struct sPhysXInterface *s;
   
   PhysXInterface(mlr::KinematicWorld& _world);
   ~PhysXInterface();
   
-  void step(double tau=1./60.);
+  void step(double tau=.03);
   
   void pushToPhysx();
-  void pullFromPhysx(double tau = 1./60.);
+  void pullFromPhysx(double tau = .03);
 
   void setArticulatedBodiesKinematic(uint agent=0);
   void ShutdownPhysX();
 
-  void glDraw();
+  void glDraw(OpenGL&);
 
   void addForce(mlr::Vector& force, mlr::Body* b);
   void addForce(mlr::Vector& force, mlr::Body* b, mlr::Vector& pos);
 };
-
-void glPhysXInterface(void *classP);
-
 
 void bindOrsToPhysX(mlr::KinematicWorld& graph, OpenGL& gl, PhysXInterface& physx);
 

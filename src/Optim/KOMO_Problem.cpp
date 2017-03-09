@@ -111,4 +111,14 @@ void Conv_KOMO_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA&
     Jaux->reshift();
     Jaux->computeColPatches(true);
   }
+
+  if(&H){
+    bool hasFterm = (tt.findValue(OT_f) != -1);
+    if(hasFterm){
+      CHECK(H_KOMO.N, "this problem has f-terms -- I need a Hessian!");
+      NIY
+    }else{
+      H.clear();
+    }
+  }
 }

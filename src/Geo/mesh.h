@@ -19,6 +19,10 @@
 #include <Core/array.h>
 #include "geo.h"
 
+namespace mlr { struct Mesh; }
+typedef mlr::Array<mlr::Mesh> MeshA;
+void glDrawMeshes(void*);
+
 /// @file
 /// @ingroup group_geo
 /// @addtogroup group_geo
@@ -30,11 +34,13 @@ namespace mlr {
 /// a mesh (arrays of vertices, triangles, colors & normals)
 struct Mesh : GLDrawer {
   arr V;                ///< vertices
-  arr Vn;               ///< triangle normals
-  arr C;                ///< vertex colors
+  arr Vn;               ///< triangle normals (optional)
+  arr C;                ///< vertex colors (optional, may be just 3 numbers -> global color)
   
-  uintA T;              ///< triangles (faces)
-  arr   Tn;             ///< triangle normals
+  uintA T;              ///< triangles (faces, empty -> point cloud)
+  arr   Tn;             ///< triangle normals (optional)
+
+  mlr::Transformation glX; ///< transform (only used for drawing! Otherwise use applyOnPoints)  (optional)
 
   long parsing_pos_start;
   long parsing_pos_end;
@@ -51,7 +57,7 @@ struct Mesh : GLDrawer {
   void setHalfSphere(uint fineness=3);
   void setCylinder(double r, double l, uint fineness=3);
   void setCappedCylinder(double r, double l, uint fineness=3);
-  void setSSBox(double x, double y, double z, double r, uint fineness=3);
+  void setSSBox(double x_width, double y_width, double z_height, double r, uint fineness=3);
   void setSSCvx(const mlr::Mesh& m, double r, uint fineness=3);
   void setImplicitSurface(ScalarFunction f, double lo=-10., double hi=+10., uint res=100);
   void setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res);
@@ -63,13 +69,15 @@ struct Mesh : GLDrawer {
   void scale(double f);
   void scale(double sx, double sy, double sz);
   void translate(double dx, double dy, double dz);
+  void translate(const arr& d);
   void transform(const Transformation& t);
-  Vector center();
+  mlr::Vector center();
   void box();
   void addMesh(const mlr::Mesh& mesh2);
   void makeConvexHull();
   void makeTriangleFan();
-  void makeSSBox(arr& x, mlr::Transformation& t, const arr& X, uint trials=10, int verbose=0);
+  void makeLineStrip();
+  void computeOptimalSSBox(arr& x, mlr::Transformation& t, const arr& X, uint trials=10, int verbose=0);
   
   /// @name internal computations & cleanup
   void computeNormals();
@@ -77,7 +85,7 @@ struct Mesh : GLDrawer {
   void fuseNearVertices(double tol=1e-5);
   void clean();
   void flipFaces();
-  Vector getMeanVertex() const;
+  arr getMean() const;
   void getBox(double& dx, double& dy, double& dz) const;
   double getRadius() const;
   double getArea() const;
@@ -98,7 +106,7 @@ struct Mesh : GLDrawer {
   void readObjFile(std::istream& is);
   void readOffFile(std::istream& is);
   void readPlyFile(std::istream& is);
-  void readStlFile(std::istream& is);
+  bool readStlFile(std::istream& is);
   void writeTriFile(const char* filename);
   void writeOffFile(const char* filename);
   void writePLY(const char *fn, bool bin);
@@ -109,6 +117,7 @@ struct Mesh : GLDrawer {
 stdOutPipe(mlr::Mesh)
 
 //===========================================================================
+
 //
 // operators
 //

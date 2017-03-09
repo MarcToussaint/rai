@@ -203,6 +203,7 @@ void init5(void){
 void draw5(void*){
   glStandardLight(NULL);
 
+  glDisable(GL_CULL_FACE);
   glDrawTexQuad(texName,
                 -2.0, -1.0, 0.0,
                 -2.0, 1.0, 0.0,
@@ -295,6 +296,9 @@ void TEST(Image) {
 
 int MAIN(int argc,char **argv){
   mlr::initCmdLine(argc,argv);
+
+  testTexture();
+  return 0;
 
 //  testMultipleViews(); return 0.;
 //  testImage(); return 0.;

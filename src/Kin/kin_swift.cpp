@@ -57,7 +57,7 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
   INDEXshape2swift.resize(world.shapes.N);  INDEXshape2swift=-1;
   
   //cout <<" -- SwiftInterface init";
-  for_list(mlr::Shape, s,  world.shapes) {
+  for_list(mlr::Shape, s,  world.shapes) if(s->cont){
     //cout <<'.' <<flush;
     add=true;
     switch(s->type) {
@@ -127,7 +127,7 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
     }
   }
   
-  initActivations(world);
+  initActivations(world, 4);
   
   pushToSwift(world);
   //cout <<"...done" <<endl;
@@ -314,8 +314,10 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       proxy->a=a;
       proxy->b=b;
       proxy->d = -.0;
-      if(world.shapes(a)->type==mlr::ST_mesh) proxy->cenA = world.shapes(a)->X * world.shapes(a)->mesh.getMeanVertex(); else proxy->cenA = world.shapes(a)->X.pos;
-      if(world.shapes(b)->type==mlr::ST_mesh) proxy->cenB = world.shapes(b)->X * world.shapes(b)->mesh.getMeanVertex(); else proxy->cenB = world.shapes(b)->X.pos;
+//      if(world.shapes(a)->type==mlr::ST_mesh) proxy->cenA = world.shapes(a)->X * world.shapes(a)->mesh.getMeanVertex(); else proxy->cenA = world.shapes(a)->X.pos;
+//      if(world.shapes(b)->type==mlr::ST_mesh) proxy->cenB = world.shapes(b)->X * world.shapes(b)->mesh.getMeanVertex(); else proxy->cenB = world.shapes(b)->X.pos;
+      proxy->cenA = world.shapes(a)->X.pos;
+      proxy->cenB = world.shapes(b)->X.pos;
       proxy->cenN = proxy->cenA - proxy->cenB; //normal always points from b to a
       proxy->cenD = proxy->cenN.length();
       proxy->cenN /= proxy->cenD;

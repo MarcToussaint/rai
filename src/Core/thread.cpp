@@ -81,51 +81,97 @@ bool RWLock::isLocked() {
 // ConditionVariable
 //
 
-ConditionVariable::ConditionVariable(int initialValue) {
+ConditionVariable::ConditionVariable(int initialStatus)
+  : status(initialStatus), registryNode(NULL){
   int rc = pthread_cond_init(&cond, NULL);    if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  value=initialValue;
 }
 
 ConditionVariable::~ConditionVariable() {
+  for(ConditionVariable *c:listensTo){
+    c->statusLock();
+    c->listeners.removeValue(this);
+    c->statusUnlock();
+  }
+  for(ConditionVariable *c:listeners){
+    c->statusLock();
+    c->listensTo.removeValue(this);
+    c->messengers.removeValue(this, false);
+    c->statusUnlock();
+  }
+
   int rc = pthread_cond_destroy(&cond);    if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
-void ConditionVariable::setValue(int i, bool signalOnlyFirstInQueue) {
+void ConditionVariable::setStatus(int i, ConditionVariable* messenger) {
   mutex.lock();
-  value=i;
-  broadcast(signalOnlyFirstInQueue);
+  status=i;
+  broadcast(messenger);
   mutex.unlock();
 }
 
-int ConditionVariable::incrementValue(bool signalOnlyFirstInQueue) {
+int ConditionVariable::incrementStatus(ConditionVariable* messenger) {
   mutex.lock();
-  value++;
-  broadcast(signalOnlyFirstInQueue);
-  int i=value;
+  status++;
+  broadcast(messenger);
+  int i=status;
   mutex.unlock();
   return i;
 }
 
-void ConditionVariable::broadcast(bool signalOnlyFirstInQueue) {
-  if(!signalOnlyFirstInQueue) {
-    int rc = pthread_cond_signal(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  } else {
-    int rc = pthread_cond_broadcast(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  }
+void ConditionVariable::broadcast(ConditionVariable* messenger) {
+  //remember the messengers:
+  if(messenger) messengers.setAppend(messenger);
+  //signal to all waiters:
+  int rc = pthread_cond_signal(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  //int rc = pthread_cond_broadcast(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  //setStatus to all listeners:
+  for(ConditionVariable *c:listeners) if(c!=messenger) c->setStatus(1, this);
+  for(auto& c:callbacks) c()(this, status);
 }
 
-void ConditionVariable::lock() {
+void ConditionVariable::listenTo(ConditionVariable* c){
   mutex.lock();
-}
-
-void ConditionVariable::unlock() {
+  c->statusLock();
+  c->listeners.append(this);
+  listensTo.append(c);
+  c->statusUnlock();
   mutex.unlock();
 }
 
-int ConditionVariable::getValue(bool userHasLocked) const {
+void ConditionVariable::stopListenTo(ConditionVariable* c){
+  mutex.lock();
+  c->statusLock();
+  c->listeners.removeValue(this);
+  listensTo.removeValue(c);
+  messengers.removeValue(c, false);
+  c->statusUnlock();
+  mutex.unlock();
+}
+
+void ConditionVariable::stopListening(){
+  mutex.lock();
+  for(ConditionVariable *c:listensTo){
+    c->statusLock();
+    c->listeners.removeValue(this);
+    c->statusUnlock();
+  }
+  listensTo.clear();
+  messengers.clear();
+  mutex.unlock();
+}
+
+void ConditionVariable::statusLock() {
+  mutex.lock();
+}
+
+void ConditionVariable::statusUnlock() {
+  mutex.unlock();
+}
+
+int ConditionVariable::getStatus(bool userHasLocked) const {
   Mutex *m = (Mutex*)&mutex; //sorry: to allow for 'const' access
   if(!userHasLocked) m->lock(); else CHECK_EQ(m->state,syscall(SYS_gettid),"user must have locked before calling this!");
-  int i=value;
+  int i=status;
   if(!userHasLocked) m->unlock();
   return i;
 }
@@ -154,14 +200,14 @@ bool ConditionVariable::waitForSignal(double seconds, bool userHasLocked) {
   return rc!=ETIMEDOUT;
 }
 
-bool ConditionVariable::waitForValueEq(int i, bool userHasLocked, double seconds) {
+bool ConditionVariable::waitForStatusEq(int i, bool userHasLocked, double seconds) {
   if(!userHasLocked) mutex.lock(); else CHECK_EQ(mutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
-  while(value!=i) {
+  while(status!=i) {
     if(seconds<0.){
-      waitForSignal(true);
+      waitForSignal(userHasLocked);
       //int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
     }else{
-      bool succ = waitForSignal(seconds, true);
+      bool succ = waitForSignal(seconds, userHasLocked);
       if(!succ){
         if(!userHasLocked) mutex.unlock();
         return false;
@@ -172,98 +218,67 @@ bool ConditionVariable::waitForValueEq(int i, bool userHasLocked, double seconds
   return true;
 }
 
-void ConditionVariable::waitForValueNotEq(int i, bool userHasLocked) {
+void ConditionVariable::waitForStatusNotEq(int i, bool userHasLocked) {
   if(!userHasLocked) mutex.lock(); else CHECK_EQ(mutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
-  while(value==i) {
+  while(status==i) {
     int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
   if(!userHasLocked) mutex.unlock();
 }
 
-void ConditionVariable::waitForValueGreaterThan(int i, bool userHasLocked) {
+void ConditionVariable::waitForStatusGreaterThan(int i, bool userHasLocked) {
   if(!userHasLocked) mutex.lock(); else CHECK_EQ(mutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
-  while(value<=i) {
+  while(status<=i) {
     int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
   if(!userHasLocked) mutex.unlock();
 }
 
-void ConditionVariable::waitForValueSmallerThan(int i, bool userHasLocked) {
+void ConditionVariable::waitForStatusSmallerThan(int i, bool userHasLocked) {
   if(!userHasLocked) mutex.lock(); else CHECK_EQ(mutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
-  while(value>=i) {
+  while(status>=i) {
     int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
   if(!userHasLocked) mutex.unlock();
-}
-
-
-void ConditionVariable::waitUntil(double absTime, bool userHasLocked) {
-  NIY;
-  /*  int rc;
-    timespec ts;
-    ts.tv_sec  = tp.tv_sec;
-    ts.tv_nsec = tp.tv_usec * 1000;
-    ts.tv_sec += WAIT_TIME_SECONDS;
-
-    rc = pthread_mutex_lock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-    rc = pthread_cond_timedwait(&cond, &mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-    rc = pthread_mutex_unlock(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-    */
 }
 
 
 //===========================================================================
 //
-// RevisionedAccessGatedClass
+// RevisionedRWLock
 //
 
-//RevisionedAccessGatedClass::RevisionedAccessGatedClass(const char *_name):name(_name), revision(0), registryNode(NULL) {
-////  registryNode = registry().newNode<RevisionedAccessGatedClass* >({"AccessData", name}, {}, this);
+//RevisionedRWLock::RevisionedRWLock(const char *_name):name(_name), revision(0), registryNode(NULL) {
+////  registryNode = registry().newNode<RevisionedRWLock* >({"AccessData", name}, {}, this);
 //}
 
-RevisionedAccessGatedClass::~RevisionedAccessGatedClass() {
-  for(Thread *th: listeners) th->listensTo.removeValue(this);
+RevisionedRWLock::~RevisionedRWLock() {
 //  delete registryNode;
 }
 
-bool RevisionedAccessGatedClass::hasNewRevision(){
-  return revision.getValue() > last_revision;
-}
+//bool RevisionedRWLock::hasNewRevision(){
+//  return revision.getStatus() > last_revision;
+//}
 
-int RevisionedAccessGatedClass::readAccess(Thread *th) {
+int RevisionedRWLock::readAccess(Thread *th) {
 //  engine().acc->queryReadAccess(this, p);
   rwlock.readLock();
 //  engine().acc->logReadAccess(this, p);
-  last_revision = revision.getValue();
-  return last_revision;
+  return getStatus();
 }
 
-//bool RevisionedAccessGatedClass::readAccessIfNewer(Thread*){
-//  rwlock.readLock();
-//  int rev = revision.getValue();
-//  if(rev > last_revision){
-//    last_revision = rev;
-//    return true;
-//  }else{
-//    rwlock.unlock();
-//    return false;
-//  }
-//  HALT("shouldn't be here")
-//  return false;
-//}
-
-int RevisionedAccessGatedClass::writeAccess(Thread *th) {
+int RevisionedRWLock::writeAccess(Thread *th) {
 //  engine().acc->queryWriteAccess(this, p);
   rwlock.writeLock();
-  int i = revision.incrementValue();
-  revision_time = mlr::clockTime();
+  int i = incrementStatus(th);
+  write_time = mlr::clockTime();
 //  engine().acc->logWriteAccess(this, p);
 //  if(listeners.N && !th){ HALT("I need to know the calling thread when threads listen to variables"); }
-  for(Thread *l: listeners) if(l!=th) l->threadStep();
+//  for(Thread *l: listeners) if(l!=th) l->threadStep();
   return i;
 }
 
-int RevisionedAccessGatedClass::deAccess(Thread *th) {
+int RevisionedRWLock::deAccess(Thread *th) {
 //  Module_Thread *p = m?(Module_Thread*) m->thread:NULL;
   if(rwlock.state == -1) { //log a revision after write access
     //MT logService.logRevision(this);
@@ -272,34 +287,26 @@ int RevisionedAccessGatedClass::deAccess(Thread *th) {
   } else {
 //    engine().acc->logReadDeAccess(this,p);
   }
-  int i = revision.getValue();
+  int i = getStatus();
   rwlock.unlock();
   return i;
 }
 
-double RevisionedAccessGatedClass::revisionTime(){
-  return revision_time;
-}
+//int RevisionedRWLock::waitForNextRevision(){
+//  revision.statusLock();
+//  revision.waitForSignal(true);
+//  int rev = revision.status;
+//  revision.statusUnlock();
+//  return rev;
+//}
 
-int RevisionedAccessGatedClass::revisionNumber(){
-  return revision.getValue();
-}
-
-int RevisionedAccessGatedClass::waitForNextRevision(){
-  revision.lock();
-  revision.waitForSignal(true);
-  int rev = revision.value;
-  revision.unlock();
-  return rev;
-}
-
-int RevisionedAccessGatedClass::waitForRevisionGreaterThan(int rev) {
-  revision.lock();
-  revision.waitForValueGreaterThan(rev, true);
-  rev = revision.value;
-  revision.unlock();
-  return rev;
-}
+//int RevisionedRWLock::waitForRevisionGreaterThan(int rev) {
+//  revision.statusLock();
+//  revision.waitForStatusGreaterThan(rev, true);
+//  rev = revision.status;
+//  revision.statusUnlock();
+//  return rev;
+//}
 
 
 //===========================================================================
@@ -412,28 +419,23 @@ protected:
 };
 #endif
 
-Thread::Thread(const char* _name, double beatIntervalSec): name(_name), state(tsCLOSE), tid(0), thread(0), step_count(0), metronome(beatIntervalSec), registryNode(NULL)  {
+Thread::Thread(const char* _name, double beatIntervalSec): ConditionVariable(tsCLOSE), name(_name), tid(0), thread(0), step_count(0), metronome(beatIntervalSec), verbose(0) {
   registryNode = registry().newNode<Thread*>({"Thread", name}, {}, this);
   if(name.N>14) name.resize(14, true);
 }
 
 Thread::~Thread() {
-  CHECK(isClosed(),"As a safety measure: always close a Thread BEFORE you destroy a Thread.\
-        That's because the 'virtual table is destroyed' before calling the destructor (google 'call virtual function\
+  CHECK(isClosed(),"Call 'threadClose()' in the destructor of the DERIVED class! \
+        That's because the 'virtual table is destroyed' before calling the destructor ~Thread (google 'call virtual function\
         in destructor') but now the destructor has to call 'threadClose' which triggers a Thread::close(), which is\
-        pure virtual while you're trying to destroy the Thread.")
-  for(RevisionedAccessGatedClass *v:listensTo){
-    v->rwlock.writeLock();
-    v->listeners.removeValue(this);
-    v->rwlock.unlock();
-  }
+        pure virtual while you're trying to call ~Thread.")
   if(!isClosed()) threadClose();
   delete registryNode;
 }
 
-void Thread::threadOpen(int priority) {
-  state.lock();
-  if(!isClosed()){ state.unlock(); return; } //this is already open -- or has just beend opened (parallel call to threadOpen)
+void Thread::threadOpen(bool wait, int priority) {
+  statusLock();
+  if(!isClosed()){ statusUnlock(); return; } //this is already open -- or has just beend opened (parallel call to threadOpen)
 #ifndef MLR_QThread
   int rc;
   pthread_attr_t atts;
@@ -454,12 +456,14 @@ void Thread::threadOpen(int priority) {
   thread = new sThread(this, "hallo");
   thread->open();
 #endif
-  state.value=tsOPENING;
-  state.unlock();
+  status=tsOPENING;
+  statusUnlock();
+  if(wait) waitForOpened();
 }
 
 void Thread::threadClose() {
-  state.setValue(tsCLOSE);
+  stopListening();
+  setStatus(tsCLOSE);
   if(!thread) return;
 #ifndef MLR_QThread
   int rc;
@@ -484,49 +488,55 @@ void Thread::threadCancel() {
   thread=0;
 }
 
-void Thread::threadStep(uint steps, bool wait) {
+void Thread::threadStep() {
   if(isClosed()) threadOpen();
-  //CHECK_EQ(state.value,tsIDLE, "never step while thread is busy!");
-  state.setValue(steps);
-  if(wait) waitForIdle();
+  setStatus(1);
 }
 
-void Thread::listenTo(RevisionedAccessGatedClass& var) {
-  var.rwlock.writeLock();  //don't want to increase revision and broadcast!
-  var.listeners.setAppend(this);
-  var.rwlock.unlock();
-  listensTo.setAppend(&var);
-}
+//void Thread::listenTo(RevisionedRWLock& var) {
+//#if 0
+//  var.rwlock.writeLock();  //don't want to increase revision and broadcast!
+//  var.listeners.setAppend(this);
+//  var.rwlock.unlock();
+//  listensTo.setAppend(&var);
+//#else
+//  listenTo(&var.revision);
+//#endif
+//}
 
-void Thread::stopListenTo(RevisionedAccessGatedClass& var){
-  listensTo.removeValue(&var);
-  var.rwlock.writeLock();
-  var.listeners.removeValue(this);
-  var.rwlock.unlock();
-}
+//void Thread::stopListenTo(RevisionedRWLock& var){
+//#if 0
+//  listensTo.removeValue(&var);
+//  var.rwlock.writeLock();
+//  var.listeners.removeValue(this);
+//  var.rwlock.unlock();
+//#else
+//  stopListenTo(&var.revision);
+//#endif
+//}
 
 bool Thread::isIdle() {
-  return state.getValue()==tsIDLE;
+  return getStatus()==tsIDLE;
 }
 
 bool Thread::isClosed() {
-  return state.getValue()==tsCLOSE;
+  return getStatus()==tsCLOSE;
 }
 
 void Thread::waitForOpened() {
-  state.waitForValueNotEq(tsOPENING);
+  waitForStatusNotEq(tsOPENING);
 }
 
 void Thread::waitForIdle() {
-  state.waitForValueEq(tsIDLE);
+  waitForStatusEq(tsIDLE);
 }
 
-void Thread::threadLoop() {
-  if(isClosed()) threadOpen();
+void Thread::threadLoop(bool waitForOpened) {
+  if(isClosed()) threadOpen(waitForOpened);
   if(metronome.ticInterval>1e-10){
-    state.setValue(tsBEATING);
+    setStatus(tsBEATING);
   }else{
-    state.setValue(tsLOOPING);
+    setStatus(tsLOOPING);
   }
 }
 
@@ -536,12 +546,15 @@ void Thread::threadLoop() {
 //  else
 //    metronome->reset(beatIntervalSec);
 //  if(isClosed()) threadOpen();
-//  state.setValue(tsBEATING);
+//  state.setStatus(tsBEATING);
 //}
 
-void Thread::threadStop() {
-  CHECK(!isClosed(), "called stop to closed thread");
-  state.setValue(tsIDLE);
+void Thread::threadStop(bool wait) {
+  //CHECK(!isClosed(), "called stop to closed thread");
+  if(!isClosed()){
+    setStatus(tsIDLE);
+    if(wait) waitForIdle();
+  }
 }
 
 void Thread::main() {
@@ -551,54 +564,61 @@ void Thread::main() {
   //if(Thread::threadPriority) setRRscheduling(Thread::threadPriority);
   //if(Thread::threadPriority) setNice(Thread::threadPriority);
 
-  try{
-    open(); //virtual open routine
-  } catch(const std::exception& ex) {
-    state.setValue(tsFAILURE);
-    cerr << "*** open() of Thread'" << name << "'failed: " << ex.what() << " -- closing it again" << endl;        
-  } catch(...) {
-    state.setValue(tsFAILURE);
-    cerr <<"*** open() of Thread '" <<name <<"' failed! -- closing it again";
-    return;
+  {
+    auto mux = stepMutex();
+    try{
+      open(); //virtual open routine
+    } catch(const std::exception& ex) {
+      setStatus(tsFAILURE);
+      cerr << "*** open() of Thread'" << name << "'failed: " << ex.what() << " -- closing it again" << endl;
+    } catch(...) {
+      setStatus(tsFAILURE);
+      cerr <<"*** open() of Thread '" <<name <<"' failed! -- closing it again";
+      return;
+    }
   }
 
-  state.lock();
-  if(state.value==tsOPENING){
-    state.value=tsIDLE;
-    state.broadcast();
+  statusLock();
+  if(status==tsOPENING){
+    status=tsIDLE;
+    broadcast();
   }
   //if not =tsOPENING anymore -> the state was set on looping or beating already
-  state.unlock();
+  statusUnlock();
 
 
   timer.reset();
   bool waitForTic=false;
   for(;;){
     //-- wait for a non-idle state
-    state.lock();
-    state.waitForValueNotEq(tsIDLE, true);
-    if(state.value==tsCLOSE) { state.unlock();  break; }
-    if(state.value==tsBEATING) waitForTic=true; else waitForTic=false;
-    if(state.value>0) state.value--; //count down
-    state.unlock();
+    statusLock();
+    waitForStatusNotEq(tsIDLE, true);
+    if(status==tsCLOSE) { statusUnlock();  break; }
+    if(status==tsBEATING) waitForTic=true; else waitForTic=false;
+    if(status>0) status=tsIDLE; //step command -> reset to idle
+    statusUnlock();
 
     if(waitForTic) metronome.waitForTic();
 
     //-- make a step
     //engine().acc->logStepBegin(module);
     timer.cycleStart();
+    stepMutex.lock();
     step(); //virtual step routine
+    stepMutex.unlock();
     step_count++;
     timer.cycleDone();
     //engine().acc->logStepEnd(module);
 
-    //-- broadcast in case somebody was waiting for a finished step
-    state.lock();
-    state.broadcast();
-    state.unlock();
+//    //-- broadcast in case somebody was waiting for a finished step
+//    status.lock();
+//    status.broadcast();
+//    status.unlock();
   };
 
+  stepMutex.lock();
   close(); //virtual close routine
+  stepMutex.unlock();
   if(verbose>0) cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
 }
 
@@ -611,10 +631,10 @@ void Thread::main() {
 Singleton<ConditionVariable> moduleShutdown;
 
 void signalhandler(int s){
-  int calls = moduleShutdown().incrementValue();
+  int calls = moduleShutdown().incrementStatus();
   cerr <<"\n*** System received signal " <<s <<" -- count=" <<calls <<endl;
   if(calls==1){
-    LOG(0) <<" -- waiting for main loop to break on moduleShutdown().getValue()" <<endl;
+    LOG(0) <<" -- waiting for main loop to break on moduleShutdown().getStatus()" <<endl;
   }
   if(calls==2){
     LOG(0) <<" -- smoothly closing modules directly" <<endl;
@@ -647,8 +667,8 @@ void closeModules(){
   for(Node* th:threads){ th->get<Thread*>()->close(); }
 }
 
-RevisionedAccessGatedClassL getVariables(){
-  return registry().getValuesOfType<RevisionedAccessGatedClass>();
+RevisionedRWLockL getVariables(){
+  return registry().getValuesOfType<RevisionedRWLock>();
 }
 
 void threadOpenModules(bool waitForOpened, bool setSignalHandler){
@@ -666,7 +686,7 @@ void threadOpenModules(bool waitForOpened, bool setSignalHandler){
 void threadCloseModules(){
   NodeL threads = registry().getNodesOfType<Thread*>();
   for(Node *th: threads) th->get<Thread*>()->threadClose();
-  modulesReportCycleTimes();
+  threadReportCycleTimes();
 }
 
 void threadCancelModules(){
@@ -674,7 +694,7 @@ void threadCancelModules(){
   for(Node *th: threads) th->get<Thread*>()->threadCancel();
 }
 
-void modulesReportCycleTimes(){
+void threadReportCycleTimes(){
   cout <<"Cycle times for all Modules (msec):" <<endl;
   NodeL threads = registry().getNodesOfType<Thread*>();
   for(Node *th: threads){
@@ -690,17 +710,17 @@ void modulesReportCycleTimes(){
 // Utils
 //
 
-void stop(const ThreadL& P) {
-  for_list(Thread,  p,  P) p->threadStop();
-}
+//void stop(const ThreadL& P) {
+//  for_list(Thread,  p,  P) p->threadStop();
+//}
 
-void wait(const ThreadL& P) {
-  for_list(Thread,  p,  P) p->waitForIdle();
-}
+//void wait(const ThreadL& P) {
+//  for_list(Thread,  p,  P) p->waitForIdle();
+//}
 
-void close(const ThreadL& P) {
-  for_list(Thread,  p,  P) p->threadClose();
-}
+//void close(const ThreadL& P) {
+//  for_list(Thread,  p,  P) p->threadClose();
+//}
 
 //===========================================================================
 //
@@ -781,8 +801,9 @@ TStream::Register::~Register() {
 }
 
 RUN_ON_INIT_BEGIN(thread)
-RevisionedAccessGatedClassL::memMove=true;
+RevisionedRWLockL::memMove=true;
 ThreadL::memMove=true;
+ConditionVariableL::memMove=true;
 RUN_ON_INIT_END(thread)
 
 #endif //MLR_MSVC

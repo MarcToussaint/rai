@@ -18,6 +18,7 @@
 #include <string.h>
 #include <signal.h>
 #include <stdexcept>
+#include <stdarg.h>
 #if defined MLR_Linux || defined MLR_Cygwin || defined MLR_Darwin
 #  include <limits.h>
 #  include <sys/time.h>
@@ -195,7 +196,7 @@ bool skipUntil(std::istream& is, const char *tag) {
 bool parse(std::istream& is, const char *str, bool silent) {
   if(!is.good()) { if(!silent) MLR_MSG("bad stream tag when scanning for `" <<str <<"'"); return false; }  //is.clear(); }
   uint i, n=strlen(str);
-  char *buf=new char [n+1]; buf[n]=0;
+  char buf[n+1]; buf[n]=0;
   mlr::skip(is, " \n\r\t");
   is.read(buf, n);
   if(!is.good() || strcmp(str, buf)) {
@@ -205,7 +206,6 @@ bool parse(std::istream& is, const char *str, bool silent) {
                           <<"' failed! (read instead: `" <<buf <<"')");
     return false;
   }
-  delete[] buf;
   return true;
 }
 
@@ -560,23 +560,23 @@ int x11_getKey(){
   CHECK(disp, "Cannot open display");
 
   Window win = XCreateSimpleWindow(disp, DefaultRootWindow(disp),
-                                   10, 10, 165, 24,
-                                   2, 0x000000, 0xaaaaaa);
-  XSelectInput (disp, win, KeyPressMask | ExposureMask );
+                                   10, 10, 80, 50, //24
+                                   2, 0x000000, 0x20a0f0);
+  XSelectInput (disp, win, KeyPressMask | ExposureMask | ButtonPressMask );
   XMapWindow(disp, win);
 
   GC gc = XCreateGC(disp, win, 0, NULL);
-  XSetFont(disp, gc,  XLoadFont(disp,"-adobe-courier-bold-r-*-*-*-220-*-*-*-*-*-*"));
-  XSetForeground(disp, gc, 0x606060);
+  XSetFont(disp, gc,  XLoadFont(disp,"fixed")); //-adobe-courier-bold-r-*-*-*-220-*-*-*-*-*-*"));
+  XSetForeground(disp, gc, 0x000000);
 
   bool quit=false;
   for(;!quit;){
     XEvent ev;
     XNextEvent(disp, &ev);
     switch(ev.type){
-      case Expose:      /* Expose-Event => Bild zeichnen */
+      case Expose:
         if (ev.xexpose.count == 0) {
-          XDrawString(disp, win, gc, 0, 20, txt.p, txt.N);
+          XDrawString(disp, win, gc, 12, 30, txt.p, txt.N);
           XFlush(disp);
         }
         break;
@@ -584,6 +584,9 @@ int x11_getKey(){
         char string[4];
         XLookupString(&ev.xkey, string, 4, NULL, NULL);
         key = string[0];
+        quit=true;
+        break;
+      case ButtonPress:
         quit=true;
         break;
     }
@@ -842,7 +845,6 @@ mlr::String::String(const String& s) : std::iostream(&buffer) { init(); this->op
 /// copy constructor for an ordinary C-string (needs to be 0-terminated)
 mlr::String::String(const char *s) : std::iostream(&buffer) { init(); this->operator=(s); }
 
-
 mlr::String::String(const std::string& s) : std::iostream(&buffer) { init(); this->operator=(s.c_str()); }
 
 mlr::String::String(std::istream& is) : std::iostream(&buffer) { init(); read(is, "", "", 0); }
@@ -916,6 +918,15 @@ void mlr::String::operator=(const char *s) {
 }
 
 void mlr::String::set(const char *s, uint n) { resize(n, false); memmove(p, s, n); }
+
+void mlr::String::printf(const char *format, ...){
+  resize(100, false);
+  va_list valist;
+  va_start(valist, format);
+  int len = vsnprintf(p, 100, format, valist);
+  va_end(valist);
+  resize(len, true);
+}
 
 /// shorthand for the !strcmp command
 bool mlr::String::operator==(const char *s) const { return p && !strcmp(p, s); }
@@ -993,7 +1004,7 @@ mlr::String mlr::getNowString() {
 
   mlr::String str;
   str.resize(19, false); //-- just enough
-  sprintf(str.p, "%02d-%02d-%02d--%02d-%02d-%02d",
+  sprintf(str.p, "%02d-%02d-%02d-%02d:%02d:%02d",
     now->tm_year-100,
     now->tm_mon+1,
     now->tm_mday,
@@ -1275,7 +1286,11 @@ Mutex::~Mutex() {
 
 void Mutex::lock() {
   int rc = pthread_mutex_lock(&mutex);
-  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  if(rc){
+    //don't use HALT here, because log uses mutexing as well -> can lead to recursive HALT...
+    cerr <<STRING("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+    exit(1);
+  }
   recursive++;
   state=syscall(SYS_gettid);
   MUTEX_DUMP(cout <<"Mutex-lock: " <<state <<" (rec: " <<recursive << ")" <<endl);

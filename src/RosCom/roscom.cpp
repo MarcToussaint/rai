@@ -2,6 +2,9 @@
 
 #include "roscom.h"
 
+#include <pcl/point_cloud.h>
+#include <pcl_conversions/pcl_conversions.h>
+
 bool rosOk(){
   return ros::ok();
 }
@@ -14,7 +17,8 @@ void rosCheckInit(const char* node_name){
   if(mlr::getParameter<bool>("useRos", false)){
     mutex.lock();
     if(!inited) {
-      ros::init(mlr::argc, mlr::argv, node_name, ros::init_options::NoSigintHandler);
+      mlr::String nodeName = mlr::getParameter<mlr::String>("rosNodeName", STRING(node_name));
+      ros::init(mlr::argc, mlr::argv, nodeName.p, ros::init_options::NoSigintHandler);
       inited = true;
     }
     mutex.unlock();
@@ -226,6 +230,16 @@ uint16A conv_image2uint16A(const sensor_msgs::Image& msg){
   return ref.reshape(msg.height, msg.width);
 }
 
+Pcl conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg){
+  pcl::PCLPointCloud2 pcl_pc2;
+  pcl_conversions::toPCL(msg, pcl_pc2);
+  LOG(0) <<"size=" <<pcl_pc2.data.size();
+  Pcl cloud;
+  pcl::fromPCLPointCloud2(pcl_pc2, cloud);
+  LOG(0) <<"size=" <<cloud.size();
+  return cloud;
+}
+
 CtrlMsg conv_JointState2CtrlMsg(const marc_controller_pkg::JointState& msg){
   return CtrlMsg(conv_stdvec2arr(msg.q), conv_stdvec2arr(msg.qdot), conv_stdvec2arr(msg.fL), conv_stdvec2arr(msg.fR),conv_stdvec2arr(msg.u_bias), conv_stdvec2arr(msg.fL_err), conv_stdvec2arr(msg.fR_err));
 
@@ -418,7 +432,7 @@ void initialSyncJointStateWithROS(mlr::KinematicWorld& world,
        << "   If nothing is happening: is the controller running?" << endl;
 
   for (uint trials = 0; trials < 20; trials++) {
-    ctrl_obs.data->waitForNextRevision();
+    ctrl_obs.waitForNextRevision();
     cout << "REMOTE joint dimension=" << ctrl_obs.get()->q.N << endl;
     cout << "LOCAL  joint dimension=" << world.q.N << endl;
 
@@ -439,7 +453,7 @@ void syncJointStateWitROS(mlr::KinematicWorld& world,
   if (not useRos) { return; }
 
   for (uint trials = 0; trials < 2; trials++) {
-    ctrl_obs.data->waitForNextRevision();
+    ctrl_obs.waitForNextRevision();
 
     if (ctrl_obs.get()->q.N == world.q.N and ctrl_obs.get()->qdot.N == world.q.N) {
       // set current state

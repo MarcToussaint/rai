@@ -30,7 +30,7 @@
 
 PublishDatabase::PublishDatabase()
   : Thread("PublishDatabase", -1),
-    object_database(this, "object_database", true),
+    percepts_filtered(this, "percepts_filtered", true),
     nh(NULL)
 {}
 
@@ -56,7 +56,7 @@ void PublishDatabase::close()
   }
 }
 
-visualization_msgs::Marker conv_FilterObject2Marker(const FilterObject& object)
+visualization_msgs::Marker conv_Percept2Marker(const Percept& object)
 {
   visualization_msgs::Marker new_marker;
   new_marker.type = visualization_msgs::Marker::POINTS;
@@ -76,24 +76,24 @@ visualization_msgs::Marker conv_FilterObject2Marker(const FilterObject& object)
   return new_marker;
 }
 
-object_recognition_msgs::Table conv_FilterObject2Table(const FilterObject& object)
+object_recognition_msgs::Table conv_Percept2Table(const Percept& object)
 {
   const Plane& plane = dynamic_cast<const Plane&>(object);
   object_recognition_msgs::Table new_table;
   new_table.pose = conv_transformation2pose(plane.transform);
-  new_table.convex_hull = conv_arr2points(plane.hull);
+  new_table.convex_hull = conv_arr2points(plane.hull.V);
   new_table.header.stamp = ros::Time(0.);
   new_table.header.frame_id = plane.frame_id;
 
   return new_table;
 }
 
-visualization_msgs::Marker conv_FilterObject2TableMarker(const FilterObject& object)
+visualization_msgs::Marker conv_Percept2TableMarker(const Percept& object)
 {
   visualization_msgs::Marker new_marker;
   const Plane& plane = dynamic_cast<const Plane&>(object);
   new_marker.type = visualization_msgs::Marker::POINTS;
-  new_marker.points = conv_arr2points( plane.hull );
+  new_marker.points = conv_arr2points( plane.hull.V );
   new_marker.id = plane.id;
   new_marker.scale.x = .1;
   new_marker.scale.y = .1;
@@ -108,7 +108,7 @@ visualization_msgs::Marker conv_FilterObject2TableMarker(const FilterObject& obj
   return new_marker;
 }
 
-ar::AlvarMarker conv_FilterObject2Alvar(const FilterObject& object)
+ar::AlvarMarker conv_Percept2Alvar(const Percept& object)
 {
   ar::AlvarMarker new_marker;
   new_marker.header.frame_id = dynamic_cast<const Alvar&>(object).frame_id;
@@ -117,7 +117,7 @@ ar::AlvarMarker conv_FilterObject2Alvar(const FilterObject& object)
   return new_marker;
 }
 
-geometry_msgs::TransformStamped conv_FilterObject2OptitrackMarker(const FilterObject& object)
+geometry_msgs::TransformStamped conv_Percept2OptitrackMarker(const Percept& object)
 {
     geometry_msgs::TransformStamped new_marker;
     new_marker.header.frame_id = dynamic_cast<const OptitrackMarker&>(object).frame_id;
@@ -126,7 +126,7 @@ geometry_msgs::TransformStamped conv_FilterObject2OptitrackMarker(const FilterOb
     return new_marker;
 }
 
-geometry_msgs::TransformStamped conv_FilterObject2OptitrackBody(const FilterObject& object)
+geometry_msgs::TransformStamped conv_Percept2OptitrackBody(const Percept& object)
 {
     geometry_msgs::TransformStamped new_marker;
     new_marker.header.frame_id = dynamic_cast<const OptitrackBody&>(object).frame_id;
@@ -135,6 +135,7 @@ geometry_msgs::TransformStamped conv_FilterObject2OptitrackBody(const FilterObje
     return new_marker;
 }
 
+#if 0 //deprecated, these are now virtual members of percept
 void PublishDatabase::syncCluster(const Cluster* cluster)
 {
   modelWorld.writeAccess();
@@ -238,8 +239,7 @@ void PublishDatabase::syncOptitrackMarker(const OptitrackMarker* optitrackmarker
   modelWorld.deAccess();
 }
 
-void PublishDatabase::syncPlane(const Plane* plane)
-{
+void PublishDatabase::syncPlane(const Plane* plane){
   modelWorld.writeAccess();
   mlr::String plane_name = STRING("plane_" << plane->id);
 
@@ -260,8 +260,8 @@ void PublishDatabase::syncPlane(const Plane* plane)
   body->X = plane->frame * plane->transform;
 
   //plane->frame = body->X;
-  body->shapes(0)->mesh.V = plane->hull;
-  body->shapes(0)->mesh.makeTriangleFan();
+  body->shapes(0)->mesh = plane->hull;
+//  body->shapes(0)->mesh.makeTriangleFan();
 
   mlr::Vector cen = body->shapes(0)->mesh.center();
   body->X.addRelativeTranslation(cen);
@@ -273,18 +273,19 @@ void PublishDatabase::syncPlane(const Plane* plane)
   /* If we change the mean, we compare the transformed mean to an untransformed mean later...*/
   modelWorld.deAccess();
 }
-void PublishDatabase::step()
-{
-  int rev = object_database.writeAccess();
+#endif
+
+void PublishDatabase::step(){
+  int rev = percepts_filtered.writeAccess();
 
   if (rev == revision)
   {
-    object_database.deAccess();
+    percepts_filtered.deAccess();
     return;
   }
   revision = rev;
 
-  FilterObjects objectDatabase = object_database();
+  PerceptL objectDatabase = percepts_filtered();
 
   visualization_msgs::MarkerArray cluster_markers, plane_markers;
   object_recognition_msgs::TableArray table_array;
@@ -298,48 +299,53 @@ void PublishDatabase::step()
   {
     switch ( objectDatabase(i)->type )
     {
-      case FilterObject::FilterObjectType::alvar:
+      case Percept::Type::PT_alvar:
       {
-        ar::AlvarMarker alvar = conv_FilterObject2Alvar(*objectDatabase(i));
+        ar::AlvarMarker alvar = conv_Percept2Alvar(*objectDatabase(i));
         ar_markers.markers.push_back(alvar);
         ar_markers.header.frame_id = alvar.header.frame_id;
-        syncAlvar(dynamic_cast<Alvar*>(objectDatabase(i)));
+//        syncAlvar(dynamic_cast<Alvar*>(objectDatabase(i)));
+        dynamic_cast<Alvar*>(objectDatabase(i))->syncWith(modelWorld.set());
         new_alvars.append(objectDatabase(i)->id);
         break;
       }
-      case FilterObject::FilterObjectType::cluster:
+      case Percept::Type::PT_cluster:
       {
-        visualization_msgs::Marker marker = conv_FilterObject2Marker(*objectDatabase(i));
+        visualization_msgs::Marker marker = conv_Percept2Marker(*objectDatabase(i));
         cluster_markers.markers.push_back(marker);
-        syncCluster(dynamic_cast<Cluster*>(objectDatabase(i)));
+//        syncCluster(dynamic_cast<Cluster*>(objectDatabase(i)));
+        dynamic_cast<Cluster*>(objectDatabase(i))->syncWith(modelWorld.set());
         new_clusters.append(objectDatabase(i)->id);
         break;
       }
-      case FilterObject::FilterObjectType::optitrackbody:
+      case Percept::Type::PT_optitrackbody:
       {
-        geometry_msgs::TransformStamped optitrackbody = conv_FilterObject2OptitrackBody(*objectDatabase(i));
+        geometry_msgs::TransformStamped optitrackbody = conv_Percept2OptitrackBody(*objectDatabase(i));
         optitrackbody_markers.transforms.push_back(optitrackbody);
-        syncOptitrackBody(dynamic_cast<OptitrackBody*>(objectDatabase(i)));
+//        syncOptitrackBody(dynamic_cast<OptitrackBody*>(objectDatabase(i)));
+        dynamic_cast<OptitrackBody*>(objectDatabase(i))->syncWith(modelWorld.set());
         new_optitrackbodies.append(objectDatabase(i)->id);
         break;
       }
-      case FilterObject::FilterObjectType::optitrackmarker:
+      case Percept::Type::PT_optitrackmarker:
       {
-        geometry_msgs::TransformStamped optitrackmarker = conv_FilterObject2OptitrackMarker(*objectDatabase(i));
+        geometry_msgs::TransformStamped optitrackmarker = conv_Percept2OptitrackMarker(*objectDatabase(i));
         optitrackmarker_markers.transforms.push_back(optitrackmarker);
-        syncOptitrackMarker(dynamic_cast<OptitrackMarker*>(objectDatabase(i)));
+//        syncOptitrackMarker(dynamic_cast<OptitrackMarker*>(objectDatabase(i)));
+        dynamic_cast<OptitrackMarker*>(objectDatabase(i))->syncWith(modelWorld.set());
         new_optitrackmarkers.append(objectDatabase(i)->id);
         break;
       }
-      case FilterObject::FilterObjectType::plane:
+      case Percept::Type::PT_plane:
       {
-        object_recognition_msgs::Table table = conv_FilterObject2Table(*objectDatabase(i));
-        visualization_msgs::Marker marker = conv_FilterObject2TableMarker(*objectDatabase(i));
+        object_recognition_msgs::Table table = conv_Percept2Table(*objectDatabase(i));
+        visualization_msgs::Marker marker = conv_Percept2TableMarker(*objectDatabase(i));
         plane_markers.markers.push_back(marker);
 
         table_array.tables.push_back(table);
         table_array.header.frame_id = table.header.frame_id;
-        syncPlane(dynamic_cast<Plane*>(objectDatabase(i)));
+//        syncPlane(dynamic_cast<Plane*>(objectDatabase(i)));
+        dynamic_cast<Plane*>(objectDatabase(i))->syncWith(modelWorld.set());
         new_planes.append(objectDatabase(i)->id);
         break;
       }
@@ -350,7 +356,7 @@ void PublishDatabase::step()
       }
     }
   }
-  object_database.deAccess();
+  percepts_filtered.deAccess();
 
   // Publish ROS messages
   if(nh){
@@ -382,7 +388,7 @@ void PublishDatabase::step()
     if (new_clusters.contains(id) == 0)
     {
       // Remove ID from the world
-      stored_clusters.removeValueSafe(id);
+      stored_clusters.removeValue(id, false);
       delete modelWorld().getBodyByName(STRING("cluster_" << id));
     }
   }
@@ -391,7 +397,7 @@ void PublishDatabase::step()
     if (new_alvars.contains(id) == 0)
     {
       // Remove ID from the world
-      stored_alvars.removeValueSafe(id);
+      stored_alvars.removeValue(id, false);
       delete modelWorld().getBodyByName(STRING("alvar_" << id));
     }
   }
@@ -400,7 +406,7 @@ void PublishDatabase::step()
     if (new_optitrackmarkers.contains(id) == 0)
     {
       // Remove ID from the world
-      stored_optitrackmarkers.removeValueSafe(id);
+      stored_optitrackmarkers.removeValue(id, false);
       delete modelWorld().getBodyByName(STRING("optitrackmarker_" << id));
     }
   }
@@ -409,7 +415,7 @@ void PublishDatabase::step()
     if (new_optitrackbodies.contains(id) == 0)
     {
       // Remove ID from the world
-      stored_optitrackbodies.removeValueSafe(id);
+      stored_optitrackbodies.removeValue(id, false);
       delete modelWorld().getBodyByName(STRING("optitrackbody_" << id));
     }
   }
@@ -418,7 +424,7 @@ void PublishDatabase::step()
     if (new_planes.contains(id) == 0)
     {
       // Remove ID from the world
-      stored_planes.removeValueSafe(id);
+      stored_planes.removeValue(id, false);
       delete modelWorld().getBodyByName(STRING("plane_" << id));
     }
   }

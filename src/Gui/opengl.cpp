@@ -23,16 +23,7 @@ OpenGL& NoOpenGL = *((OpenGL*)(NULL));
 
 //===========================================================================
 
-struct OpenGLEngineAccess{
-  Mutex openglMutex;
-  void lock(){ openglMutex.lock(); }
-  void unlock(){ openglMutex.unlock(); }
-};
-
-Singleton<OpenGLEngineAccess> openglAccess;
-
-void openGlLock(){ openglAccess().lock(); }
-void openGlUnlock(){ openglAccess().unlock(); }
+Singleton<SingleGLAccess> singleGLAccess;
 
 //===========================================================================
 
@@ -127,20 +118,10 @@ void glColor(int col) {
 }
 
 void glColor(float r, float g, float b, float alpha) {
-  float amb=1.f, diff=1.f, spec=.5f;
-  GLfloat ambient[4], diffuse[4], specular[4];
-  ambient[0] = r*amb;
-  ambient[1] = g*amb;
-  ambient[2] = b*amb;
-  ambient[3] = alpha;
-  diffuse[0] = r*diff;
-  diffuse[1] = g*diff;
-  diffuse[2] = b*diff;
-  diffuse[3] = alpha;
-  specular[0] = spec*.5f*(1.+r);
-  specular[1] = spec*.5f*(1.+g);
-  specular[2] = spec*.5f*(1.+b);
-  specular[3] = alpha;
+  float amb=1.f, diff=1.f, spec=.25f;
+  GLfloat ambient[4]  = { r*amb , g*amb , b*amb , alpha };
+  GLfloat diffuse[4]  = { r*diff, g*diff, b*diff, alpha };
+  GLfloat specular[4] = { spec*(1.f+r), spec*(1.f+g), spec*(1.f+b), alpha };
 #if 0
   glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, diffuse);
 #else
@@ -302,7 +283,7 @@ void glDrawFloor(float x, float r, float g, float b) {
 #endif
 }
 
-void glDrawBox(float x, float y, float z) {
+void glDrawBox(float x, float y, float z, bool linesOnly) {
   static GLfloat n[6][3] = {
     {-1.0, 0.0, 0.0},
     {0.0, 1.0, 0.0},
@@ -319,6 +300,11 @@ void glDrawBox(float x, float y, float z) {
     {5, 6, 2, 1},
     {7, 4, 0, 3}
   };
+  static GLint edges[12][2] = {
+    {0,1}, {1,2}, {2,3}, {3,0},
+    {4,5}, {5,6}, {6,7}, {7,4},
+    {0,4}, {1,5}, {2,6}, {3,7}
+  };
   GLfloat v[8][3];
   GLint i;
   
@@ -329,13 +315,22 @@ void glDrawBox(float x, float y, float z) {
   v[0][2] = v[3][2] = v[4][2] = v[7][2] =  -z / 2;
   v[1][2] = v[2][2] = v[5][2] = v[6][2] =  z / 2;
   
-  for(i = 5; i >= 0; i--) {
+  if(!linesOnly){
     glBegin(GL_QUADS);
-    glNormal3fv(&n[i][0]);
-    glVertex3fv(&v[faces[i][0]][0]);
-    glVertex3fv(&v[faces[i][1]][0]);
-    glVertex3fv(&v[faces[i][2]][0]);
-    glVertex3fv(&v[faces[i][3]][0]);
+    for(i = 5; i >= 0; i--) {
+      glNormal3fv(n[i]);
+      glVertex3fv(v[faces[i][0]]);
+      glVertex3fv(v[faces[i][1]]);
+      glVertex3fv(v[faces[i][2]]);
+      glVertex3fv(v[faces[i][3]]);
+    }
+    glEnd();
+  }else{
+    glBegin(GL_LINES);
+    for(uint i=0;i<12;i++) {
+      glVertex3fv(v[edges[i][0]]);
+      glVertex3fv(v[edges[i][1]]);
+    }
     glEnd();
   }
 }
@@ -628,7 +623,8 @@ uint glImageTexture(const byteA &img) {
   
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glGenTextures(1, &texName);
-  
+
+//  glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texName);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -846,7 +842,7 @@ bool glUI::clickCallback(OpenGL& gl) {
   int t=top;
   if(t!=-1) {
     cout <<"CLICK! on button #" <<t <<endl;
-    gl.watching.setValue(0);
+    gl.watching.setStatus(0);
     return false;
   }
   return true;
@@ -906,7 +902,9 @@ OpenGL::OpenGL(void *container)
 
 OpenGL::~OpenGL() {
   clear();
+  dataLock.writeLock();
   delete s;
+  dataLock.unlock();
   s=NULL;
 //  MLR_MSG("destructing OpenGL=" <<this);
 }
@@ -948,22 +946,43 @@ struct CstyleDrawer : GLDrawer{
   void glDraw(OpenGL&){ call(classP); }
 };
 
+struct CstyleInitCall : OpenGL::GLInitCall{
+  void *classP;
+  void (*call)(void*);
+  CstyleInitCall(void (*call)(void*), void* classP): classP(classP), call(call){}
+  bool glInit(OpenGL&){ call(classP); return true; }
+};
+
 /// add a draw routine
 void OpenGL::add(void (*call)(void*), void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
+  dataLock.writeLock();
   drawers.append(new CstyleDrawer(call, classP));
+  dataLock.unlock();
+}
+
+/// add a draw routine
+void OpenGL::addInit(void (*call)(void*), void* classP) {
+  CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
+  dataLock.writeLock();
+  initCalls.append(new CstyleInitCall(call, classP));
+  dataLock.unlock();
 }
 
 /// add a draw routine to a view
 void OpenGL::addView(uint v, void (*call)(void*), void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
+  dataLock.writeLock();
   if(v>=views.N) views.resizeCopy(v+1);
   views(v).drawers.append(new CstyleDrawer(call, classP));
+  dataLock.unlock();
 }
 
 void OpenGL::setViewPort(uint v, double l, double r, double b, double t) {
+  dataLock.writeLock();
   if(v>=views.N) views.resizeCopy(v+1);
   views(v).le=l;  views(v).ri=r;  views(v).bo=b;  views(v).to=t;
+  dataLock.unlock();
 }
 
 /// remove a draw routine
@@ -977,6 +996,7 @@ void OpenGL::setViewPort(uint v, double l, double r, double b, double t) {
 
 /// clear the list of all draw and callback routines
 void OpenGL::clear() {
+  dataLock.writeLock();
   for(auto& x:drawers) if(CstyleDrawer* d = dynamic_cast<CstyleDrawer*>(x)) delete d;
   views.clear();
   drawers.clear();
@@ -984,14 +1004,15 @@ void OpenGL::clear() {
   hoverCalls.clear();
   clickCalls.clear();
   keyCalls.clear();
+  dataLock.unlock();
 }
 
-void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool ignoreLock) {
+void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
 #ifdef MLR_GL
 
-  if(!ignoreLock){
-    openglAccess().lock();
-    lock.readLock(); //now accessing user data
+  if(!callerHasAlreadyLocked){
+    singleGLAccess().lock();
+    dataLock.readLock(); //now accessing user data
   }
 
   //clear bufferer
@@ -1155,17 +1176,17 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool ignoreLock) {
   if(s!=1) MLR_MSG("OpenGL name stack has not depth 1 (pushs>pops) in DRAW mode:" <<s);
   //CHECK(s<=1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
   
-  if(!ignoreLock){
-    lock.unlock(); //now de-accessing user data
-    openglAccess().unlock();
+  if(!callerHasAlreadyLocked){
+    dataLock.unlock(); //now de-accessing user data
+    singleGLAccess().unlock();
   }
 #endif
 }
 
-void OpenGL::Select(bool ignoreLock) {
-  if(!ignoreLock){
-    openglAccess().lock();
-    lock.readLock();
+void OpenGL::Select(bool callerHasAlreadyLocked) {
+  if(!callerHasAlreadyLocked){
+    singleGLAccess().lock();
+    dataLock.readLock();
   }
 
 #ifdef MLR_GL
@@ -1246,9 +1267,9 @@ void OpenGL::Select(bool ignoreLock) {
 
   s->endGlContext();
 #endif
-  if(!ignoreLock){
-    lock.unlock();
-    openglAccess().unlock();
+  if(!callerHasAlreadyLocked){
+    dataLock.unlock();
+    singleGLAccess().unlock();
   }
 }
 
@@ -1257,8 +1278,8 @@ void OpenGL::Select(bool ignoreLock) {
 int OpenGL::watch(const char *txt) {
   update(STRING(txt<<" - press ENTER to continue"));
   if(mlr::getInteractivity()){
-    watching.setValue(1);
-    while(watching.getValue()!=0){
+    watching.setStatus(1);
+    while(watching.getStatus()!=0){
       processEvents();
       sleepForEvents();
     }
@@ -1274,10 +1295,10 @@ int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool wai
   captureImg |= _captureImg;
   captureDep |= _captureDep;
   if(txt) text.clear() <<txt;
-  isUpdating.waitForValueEq(0);
-  isUpdating.setValue(1);
+  isUpdating.waitForStatusEq(0);
+  isUpdating.setStatus(1);
   postRedrawEvent(false);
-  if(captureImg || captureDep || waitForCompletedDraw){ processEvents();  isUpdating.waitForValueEq(0);  processEvents(); }//{ mlr::wait(.01); processEvents(); mlr::wait(.01); }
+  if(captureImg || captureDep || waitForCompletedDraw){ processEvents();  isUpdating.waitForStatusEq(0);  processEvents(); }//{ mlr::wait(.01); processEvents(); mlr::wait(.01); }
   return pressedkey;
 }
 
@@ -1401,7 +1422,7 @@ void getSphereVector(mlr::Vector& vec, int _x, int _y, int le, int ri, int bo, i
 }
 
 void OpenGL::Reshape(int _width, int _height) {
-  lock.writeLock();
+  dataLock.writeLock();
   CALLBACK_DEBUG(printf("Window %d Reshape Callback:  %d %d\n", 0, _width, _height));
   width=_width;
   height=_height;
@@ -1409,11 +1430,11 @@ void OpenGL::Reshape(int _width, int _height) {
   if(height%2) height = 2*(height/2);
   camera.setWHRatio((double)width/height);
   for(uint v=0; v<views.N; v++) views(v).camera.setWHRatio((views(v).ri-views(v).le)*width/((views(v).to-views(v).bo)*height));
-  lock.unlock();
+  dataLock.unlock();
 }
 
 void OpenGL::Key(unsigned char key, int _x, int _y) {
-  lock.writeLock();
+  dataLock.writeLock();
   _y = height-_y;
   CALLBACK_DEBUG(printf("Window %d Keyboard Callback:  %d (`%c') %d %d\n", 0, key, (char)key, _x, _y));
   mouseposx=_x; mouseposy=_y;
@@ -1422,12 +1443,12 @@ void OpenGL::Key(unsigned char key, int _x, int _y) {
   bool cont=true;
   for(uint i=0; i<keyCalls.N; i++) cont=cont && keyCalls(i)->keyCallback(*this);
   
-  if(key==13 || key==27 || key=='q' || mlr::contains(exitkeys, key)) watching.setValue(0);
-  lock.unlock();
+  if(key==13 || key==27 || key=='q' || mlr::contains(exitkeys, key)) watching.setStatus(0);
+  dataLock.unlock();
 }
 
 void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
-  lock.writeLock();
+  dataLock.writeLock();
   int w=width, h=height;
   _y = h-_y;
   CALLBACK_DEBUG(printf("Window %d Mouse Click Callback:  %d %d %d %d\n", 0, button, downPressed, _x, _y));
@@ -1451,12 +1472,12 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   CALLBACK_DEBUG(cout <<"associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
   
   if(!downPressed) {  //down press
-    if(mouseIsDown){ lock.unlock(); return; } //the button is already down (another button was pressed...)
+    if(mouseIsDown){ dataLock.unlock(); return; } //the button is already down (another button was pressed...)
     //CHECK(!mouseIsDown, "I thought the mouse is up...");
     mouseIsDown=true;
     drawFocus=true;
   } else {
-    if(!mouseIsDown){ lock.unlock(); return; } //the button is already up (another button was pressed...)
+    if(!mouseIsDown){ dataLock.unlock(); return; } //the button is already up (another button was pressed...)
     //CHECK(mouseIsDown, "mouse-up event although the mouse is not down???");
     mouseIsDown=false;
     drawFocus=false;
@@ -1490,25 +1511,25 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   if(!downPressed) {
     for(uint i=0; i<clickCalls.N; i++) cont=cont && clickCalls(i)->clickCallback(*this);
   }
-  if(!cont) { postRedrawEvent(true); lock.unlock(); return; }
+  if(!cont) { postRedrawEvent(true); dataLock.unlock(); return; }
 
   postRedrawEvent(true);
-  lock.unlock();
+  dataLock.unlock();
 }
 
 void OpenGL::MouseWheel(int wheel, int direction, int x, int y) {
-  lock.writeLock();
+  dataLock.writeLock();
   CALLBACK_DEBUG(printf("Window %d Mouse Wheel Callback:  %d %d %d %d\n", 0, wheel, direction, x, y));
   if(direction>0) camera.X.pos += camera.X.rot*Vector_z * (.1 * (camera.X.pos-camera.foc).length());
   else            camera.X.pos -= camera.X.rot*Vector_z * (.1 * (camera.X.pos-camera.foc).length());
   postRedrawEvent(true);
-  lock.unlock();
+  dataLock.unlock();
 }
 
 
 void OpenGL::Motion(int _x, int _y) {
 #ifdef MLR_GL
-  lock.writeLock();
+  dataLock.writeLock();
   int w=width, h=height;
   _y = h-_y;
   CALLBACK_DEBUG(printf("Window %d Mouse Motion Callback:  %d %d\n", 0, _x, _y));
@@ -1529,7 +1550,7 @@ void OpenGL::Motion(int _x, int _y) {
     bool ud=false;
     for(uint i=0; i<hoverCalls.N; i++) ud=ud || hoverCalls(i)->hoverCallback(*this);
     if(ud) postRedrawEvent(true);
-    lock.unlock();
+    dataLock.unlock();
     return;
   }
   if(mouse_button==1) {  //rotation // && !(modifiers&GLUT_ACTIVE_SHIFT) && !(modifiers&GLUT_ACTIVE_CTRL)){
@@ -1550,7 +1571,7 @@ void OpenGL::Motion(int _x, int _y) {
     //cam->focus();
 #endif
     postRedrawEvent(true);
-    if(immediateExitLoop) watching.setValue(0);
+    if(immediateExitLoop) watching.setStatus(0);
   }
   if(mouse_button==3) {  //translation || (mouse_button==1 && (modifiers&GLUT_ACTIVE_SHIFT) && !(modifiers&GLUT_ACTIVE_CTRL))){
     /*    mlr::Vector trans = s->downVec - vec;
@@ -1565,7 +1586,7 @@ void OpenGL::Motion(int _x, int _y) {
     cam->X.pos = s->downPos + s->downRot*Vector_z * dy * s->downPos.length();
     postRedrawEvent(true);
   }
-  lock.unlock();
+  dataLock.unlock();
 #else
   NICO
 #endif
@@ -1652,14 +1673,16 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
   if(w<0) w=width;
   if(h<0) h=height;
 
+  singleGLAccess().lock();
+  dataLock.readLock();
   xBackgroundContext().makeCurrent();
 
   CHECK_EQ(w%4,0,"should be devidable by 4!!");
 
-  isUpdating.waitForValueEq(0);
-  isUpdating.setValue(1);
+  isUpdating.waitForStatusEq(0);
+  isUpdating.setStatus(1);
 
-//  s->beginGlContext();
+  s->beginGlContext();
 
   if(!rboColor || !rboDepth){ //need to initialize
     glewInit();
@@ -1756,8 +1779,10 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
   // Return to onscreen rendering:
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
-  isUpdating.setValue(0);
-//  s->endGlContext();
+  isUpdating.setStatus(0);
+
+  dataLock.unlock();
+  singleGLAccess().unlock();
 #endif
 }
 

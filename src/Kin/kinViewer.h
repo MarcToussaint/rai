@@ -30,13 +30,8 @@ struct OrsViewer : Thread {
   mlr::KinematicWorld copy;
   bool computeCameraView;
 
-  OrsViewer(const char* varname="modelWorld", bool computeCameraView=false)
-    : Thread("OrsViewer", .2),
-      modelWorld(this, varname, false),
-      modelCameraView(this, "modelCameraView"),
-      modelDepthView(this, "modelDepthView"),
-      computeCameraView(computeCameraView){}
-  ~OrsViewer(){ threadClose(); }
+  OrsViewer(const char* varname="modelWorld", double beatIntervalSec=-1., bool computeCameraView=false);
+  ~OrsViewer();
   void open();
   void step();
   void close() {}
@@ -52,47 +47,34 @@ struct OrsPathViewer : Thread {
   int tprefix;
   bool writeToFiles;
 
-  void setConfigurations(const WorldL& cs){
-    configurations.writeAccess();
-    listResize(configurations(), cs.N);
-    for(uint i=0;i<cs.N;i++) configurations()(i)->copy(*cs(i), true);
-    configurations.deAccess();
-  }
-  void clear(){
-    listDelete(configurations.set()());
-  }
+  void setConfigurations(const WorldL& cs);
+  void clear();
 
-  OrsPathViewer(const char* varname, double beatIntervalSec=.2, int tprefix=0)
-    : Thread("OrsPathViewer", beatIntervalSec),
-      configurations(this, varname, true),
-      tprefix(tprefix), writeToFiles(false){}
-  ~OrsPathViewer(){ threadClose(); }
+  OrsPathViewer(const char* varname, double beatIntervalSec=.2, int tprefix=0);
+  ~OrsPathViewer();
   void open();
   void step();
-  void close() {}
+  void close(){}
 };
 
 //===========================================================================
 
 struct OrsPoseViewer : Thread {
+  Access_typed<mlr::KinematicWorld> modelWorld;
   mlr::Array<Access_typed<arr>*> poses; ///< poses to be watched
   //-- internal (private)
   OpenGL gl;
+  mlr::KinematicWorld copy;
   WorldL copies;
 
-  OrsPoseViewer(const StringA& poseVarNames, mlr::KinematicWorld& world, double beatIntervalSec=.2)
-    : Thread("OrsPoseViewer", beatIntervalSec){
-    for(const String& varname: poseVarNames){
-      poses.append( new Access_typed<arr>(this, varname, true) );
-      copies.append( new mlr::KinematicWorld() );
-    }
-    computeMeshNormals(world.shapes);
-    for(mlr::KinematicWorld *w: copies) w->copy(world, true);
-  }
-  ~OrsPoseViewer(){}
+  OrsPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec=-1.);
+  ~OrsPoseViewer();
+
+  void recopyKinematics(const mlr::KinematicWorld& world=NoWorld);
+
   void open();
   void step();
-  void close() {}
+  void close();
 };
 
 //===========================================================================
@@ -100,15 +82,18 @@ struct OrsPoseViewer : Thread {
 struct ComputeCameraView : Thread {
   Access_typed<mlr::KinematicWorld> modelWorld;
   Access_typed<byteA> cameraView;
+  Access_typed<uint16A> cameraDepth;
+  Access_typed<mlr::Transformation> cameraFrame;
+
+  //-- internal (private)
   OpenGL gl;
-  uint skipFrames, frame;
-  ComputeCameraView(uint skipFrames=0)
-    : Thread("OrsViewer"),
-      modelWorld(this, "modelWorld", true),
-      cameraView(this, "cameraView"),
-      skipFrames(skipFrames), frame(0){}
+  mlr::KinematicWorld copy;
+  bool getDepth;
+
+  ComputeCameraView(double beatIntervalSec=-1.);
+  ~ComputeCameraView();
   void open();
   void step();
-  void close() {}
+  void close();
 };
 

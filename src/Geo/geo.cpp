@@ -536,11 +536,11 @@ void Quaternion::addY(double angle){
   set(a.w, a.x, a.y, a.z);
 }
 
-void Quaternion::addZ(double angle){
-  if(!angle){ return; }
-  angle/=2.;
-  double cw=cos(angle);
-  double cz=sin(angle);
+void Quaternion::addZ(double radians){
+  if(!radians){ return; }
+  radians/=2.;
+  double cw=cos(radians);
+  double cz=sin(radians);
 
   Quaternion a;
   a.w = w*cw - z*cz;
@@ -709,6 +709,16 @@ void Quaternion::setDiff(const Vector& from, const Vector& to) {
 
 /// L1-norm to zero (i.e., identical rotation)
 double Quaternion::diffZero() const { return (w>0.?fabs(w-1.):fabs(w+1.))+fabs(x)+fabs(y)+fabs(z); }
+
+double Quaternion::sqrDiffZero() const { return (w>0.?mlr::sqr(w-1.):mlr::sqr(w+1.))+mlr::sqr(x)+mlr::sqr(y)+mlr::sqr(z); }
+
+/// return the squared-error between two quads, modulo flipping
+double Quaternion::sqrDiff(const Quaternion& _q2) const{
+  arr q1(&w, 4, true);
+  arr q2(&_q2.w, 4, true);
+  if(scalarProduct(q1,q2)>=0) return sqrDistance(q1, q2);
+  return sqrDistance(-q1,q2);
+}
 
 /// gets rotation angle (in rad [0, 2pi])
 double Quaternion::getRad() const {
@@ -1172,14 +1182,19 @@ double* Transformation::getInverseAffineMatrixGL(double *m) const {
 }
 
 void Transformation::applyOnPointArray(arr& pts) const{
-  if(!(pts.nd==2 && pts.d1==3)){
+  if(!((pts.nd==2 && pts.d1==3) || (pts.nd==3 && pts.d2==3))){
     LOG(-1) <<"wrong pts dimensions for transformation:" <<pts.dim();
     return;
   }
   arr R = ~rot.getArr(); //transposed, only to make it applicable to an n-times-3 array
   arr t = conv_vec2arr(pos);
   pts = pts * R;
-  for(uint i=0;i<pts.d0;i++) pts[i]() += t; //inefficient...
+  for(double *p=pts.p, *pstop=pts.p+pts.N; p<pstop; p+=3){
+    p[0] += pos.x;
+    p[1] += pos.y;
+    p[2] += pos.z;
+  }
+// for(uint i=0;i<pts.d0;i++) pts[i]() += t; //inefficient...
 }
 
 bool Transformation::isZero() const {
@@ -1567,13 +1582,13 @@ void Camera::glSetProjectionMatrix() {
 }
 
 /// convert from gluPerspective's non-linear [0, 1] depth to the true [zNear, zFar] depth
-void Camera::glConvertToTrueDepth(double &d) {
-  d = zNear + (zFar-zNear)*d/(zFar/zNear*(1.-d)+1.);
+double Camera::glConvertToTrueDepth(double d) {
+  return zNear + (zFar-zNear)*d/(zFar/zNear*(1.-d)+1.);
 }
 
 /// convert from gluPerspective's non-linear [0, 1] depth to the linear [0, 1] depth
-void Camera::glConvertToLinearDepth(double &d) {
-  d = d/(zFar/zNear*(1.-d)+1.);
+double Camera::glConvertToLinearDepth(double d) {
+  return d/(zFar/zNear*(1.-d)+1.);
 }
 
 void Camera::setKinect(){
@@ -1581,12 +1596,13 @@ void Camera::setKinect(){
   setPosition(0., 0., 0.);
   focus(0., 0., 5.);
   setZRange(.1, 50.);
-#if 0
+#if 1
   heightAbs=heightAngle = 0;
-#else
-  heightAbs=10; heightAngle=45;
-#endif
   focalLength = 580./480.;
+#else
+  heightAngle=45;
+#endif
+  whRatio = 640./480.;
 }
 
 void Camera::setDefault(){

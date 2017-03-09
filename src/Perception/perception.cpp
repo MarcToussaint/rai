@@ -13,33 +13,6 @@ void lib_Perception(){ MLR_MSG("loading"); }
 //REGISTER_MODULE (AudioReader)
 //REGISTER_MODULE (AudioWriter)
 
-//===========================================================================
-//
-// ImageViewer
-//
-
-//REGISTER_MODULE (ImageViewer)
-
-struct sImageViewer{
-  OpenGL gl;
-  sImageViewer(const char* tit) : gl(tit) {}
-};
-
-void ImageViewer::open(){ 
-  s = new sImageViewer(STRING("ImageViewer '"<<img.data->name<<'\''));
-  s->gl.openWindow();
-  s->gl.update();
-}
-void ImageViewer::close(){ delete s; }
-void ImageViewer::step(){ 
-  s->gl.lock.writeLock();
-  s->gl.background = img.get();
-  s->gl.lock.unlock();
-  if(!s->gl.background.N) return;
-  if(s->gl.height!= s->gl.background.d0 || s->gl.width!= s->gl.background.d1)
-    s->gl.resize(s->gl.background.d1, s->gl.background.d0);
-  s->gl.update(name, false, false, true);
-}
 
 
 //===========================================================================
@@ -70,7 +43,7 @@ void VideoEncoder::close(){
 void VideoEncoder::step(){
   //-- grab from shared memory (necessary?)
   uint rev = img.readAccess();
-  double time = img.data->revisionTime();
+  double time = img.data->write_time;
   s->buffer = img();
   img.deAccess();
 
@@ -115,7 +88,7 @@ void VideoEncoderX264::close(){
 void VideoEncoderX264::step(){
     //-- grab from shared memory (necessary?)
     int nextRevision = img.readAccess();
-    double time = img.data->revision_time;
+    double time = img.data->write_time;
     s->buffer = img();
     img.deAccess();
 
@@ -128,39 +101,6 @@ void VideoEncoderX264::step(){
     sprintf(tag.p, "%6i %13.6f", s->revision, time);
     s->timeTagFile <<tag <<endl;
     s->revision = nextRevision;
-}
-
-//===========================================================================
-//
-// PointCloudViewer
-//
-
-struct sPointCloudViewer{
-  OpenGL gl;
-  sPointCloudViewer():gl("PointCloudViewer",640,480){}
-  mlr::Mesh pc;
-};
-
-void glDrawAxes(void*){
-  glDrawAxes(1.);
-}
-
-void PointCloudViewer::open(){
-  s = new sPointCloudViewer;
-  s->gl.add(glDrawAxes);
-  s->gl.add(s->pc);
-  s->gl.camera.setKinect();
-//  s->gl.reportSelects = true;
-}
-
-void PointCloudViewer::close(){
-  delete s;
-}
-
-void PointCloudViewer::step(){
-  s->pc.V=pts.get();
-  s->pc.C=cols.get();
-  s->gl.update();
 }
 
 //===========================================================================
@@ -298,8 +238,8 @@ void CvtGray::step(){
   _gray.resize(_rgb.d0,_rgb.d1);
 
   if(!_rgb.N) return;
-  cv::Mat ref=cvMAT(_gray);
-  cv::Mat src=cvMAT(_rgb);
+  cv::Mat ref=conv_Arr2CvRef(_gray);
+  cv::Mat src=conv_Arr2CvRef(_rgb);
   cv::cvtColor(src, ref, CV_RGB2GRAY);
 
   gray.set() = _gray;
@@ -320,8 +260,8 @@ void CvtHsv::step() {
   hsvA.resizeAs(rgbA);
 
   if (!rgbA.N) return;
-  cv::Mat ref=cvMAT(hsvA);
-  cv::Mat src=cvMAT(rgbA);
+  cv::Mat ref=conv_Arr2CvRef(hsvA);
+  cv::Mat src=conv_Arr2CvRef(rgbA);
   cv::cvtColor(src, ref, CV_RGB2HSV);
 
   hsv.set() = hsvA;
@@ -478,8 +418,8 @@ void CannyFilter::step() {
   gray = grayImage.get();
   if(!gray.N) return;
   canny.resizeAs(gray);
-  cv::Mat ref = cvMAT(canny);
-  cv::Canny(cvMAT(gray), ref, cannyThreshold, 4.f*cannyThreshold, 3);
+  cv::Mat ref = conv_Arr2CvRef(canny);
+  cv::Canny(conv_Arr2CvRef(gray), ref, cannyThreshold, 4.f*cannyThreshold, 3);
   cannyImage.set() = canny;
 }
 
@@ -543,10 +483,10 @@ void SURFer::step() {
 
   std::vector<cv::KeyPoint> keypoints;
   std::vector<float> descriptors;
-  //(*surf)(cvMAT(gray), cv::Mat(), keypoints, descriptors);
+  //(*surf)(conv_Arr2CvRef(gray), cv::Mat(), keypoints, descriptors);
 
   display=gray;
-  cv::Mat ref = cvMAT(display);
+  cv::Mat ref = conv_Arr2CvRef(display);
   for(uint i=0; i<keypoints.size(); i++) {
     circle(ref, keypoints[i].pt, 3, cv::Scalar(255));
   }
@@ -573,9 +513,9 @@ void HoughLineFilter::step() {
   if(!gray.N) return;
 
   std::vector<cv::Vec4i> lines;
-  cv::HoughLinesP(cvMAT(gray), lines, 1, CV_PI/180, 50, 30, 10);
+  cv::HoughLinesP(conv_Arr2CvRef(gray), lines, 1, CV_PI/180, 50, 30, 10);
   display = gray;
-  cv::Mat ref=cvMAT(display);
+  cv::Mat ref=conv_Arr2CvRef(display);
   for(uint i=0; i<lines.size(); i++) {
     cv::line(ref, cv::Point(lines[i][0], lines[i][1]),
         cv::Point(lines[i][2], lines[i][3]), cv::Scalar(255), 3);
@@ -671,15 +611,15 @@ void draw1(void*){
 
 
 
-void AllViewer::open() {
-  gl.add(glStandardScene, 0);
-  gl.add(kinect);
-  gl.add(glDrawPlanes, &planes_now_copy);
-}
+//void AllViewer::open() {
+//  gl.add(glStandardScene, 0);
+//  gl.add(kinect);
+//  gl.add(glDrawPlanes, &planes_now_copy);
+//}
 
-void AllViewer::step(){
-  kinect.V = kinect_points.get();
-  kinect.C = kinect_pointColors.get();
-  planes_now_copy = planes_now.get();
-  gl.update();
-}
+//void AllViewer::step(){
+//  kinect.V = kinect_points.get();
+//  kinect.C = kinect_pointColors.get();
+//  planes_now_copy = planes_now.get();
+//  gl.update();
+//}

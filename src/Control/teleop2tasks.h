@@ -15,7 +15,7 @@
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
-#include <Control/taskController.h>
+#include <Control/taskControl.h>
 
 struct Teleop2Tasks{
   //data of previous loop cycle
@@ -39,14 +39,14 @@ struct Teleop2Tasks{
   int old_button = 0;
 
   bool initialised = false;
-  TaskController& fmc;
+  TaskControlMethods& fmc;
   CtrlTask *effPosR, *gripperR, *effOrientationR;
   CtrlTask *effPosL, *gripperL, *effOrientationL;
   CtrlTask *base, *fc;
-  Teleop2Tasks(TaskController& _MP);
+  Teleop2Tasks(TaskControlMethods& _MP, const mlr::KinematicWorld& K);
   mlr::Array<CtrlTask*> getTasks();
   void updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effPos, CtrlTask *effPos);
   void deactivateTasks();
-  void updateTasks( floatA cal_pose_rh, floatA cal_pose_lh, float calibrated_gripper_lh, float calibrated_gripper_rh, arr drive, int button);
+  void updateTasks( floatA cal_pose_rh, floatA cal_pose_lh, float calibrated_gripper_lh, float calibrated_gripper_rh, arr drive, int button, const mlr::KinematicWorld& K);
 };
 

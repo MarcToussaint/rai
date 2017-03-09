@@ -17,7 +17,7 @@ Collector::Collector(const bool simulate)
 
 void Collector::step()
 {
-  FilterObjects percepts;
+  PerceptL percepts;
   percepts.clear();
 
   if (!simulate)
@@ -246,8 +246,8 @@ void Collector::step()
     fake_cluster->frame.addRelativeTranslation(0.6, 0., 1.05);
     mlr::Quaternion rot;
 
-//    int tick = perceptual_inputs.readAccess();
-//    perceptual_inputs.deAccess();
+//    int tick = percepts_input.readAccess();
+//    percepts_input.deAccess();
 //    cout << "tick: " << tick << endl;
 //    rot.setDeg(0.01 * tick, mlr::Vector(0.1, 0.25, 1));
 
@@ -272,7 +272,7 @@ void Collector::step()
   }
 
   if (percepts.N > 0){
-    perceptual_inputs.set() = percepts;
+    percepts_input.set() = percepts;
   }
 }
 
@@ -286,13 +286,12 @@ Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker)
 
 Plane conv_ROSTable2Plane(const object_recognition_msgs::Table& table){
   mlr::Transformation t = conv_pose2transformation(table.pose);
-  arr hull = conv_points2arr(table.convex_hull);
-  arr center = ARR(t.pos.x, t.pos.y, t.pos.z);
-  mlr::Vector norm = t.rot*mlr::Vector(0,0,1);
-
-  arr normal = ARR(norm.x, norm.y, norm.z);
-  Plane toReturn = Plane(normal, center, hull, table.header.frame_id);
-  toReturn.transform = t;
+  mlr::Mesh hull;
+  hull.V = conv_points2arr(table.convex_hull);
+  hull.makeLineStrip();
+  Plane toReturn = Plane(t, hull);
+  toReturn.frame_id = table.header.frame_id;
+//  toReturn.transform = t;
   return toReturn;
 }
 

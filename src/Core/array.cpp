@@ -68,6 +68,7 @@ const char* arrayBrackets="  ";
 arr& NoArr = *((arr*)NULL);
 arrA& NoArrA = *((arrA*)NULL);
 uintA& NoUintA = *((uintA*)NULL);
+byteA& NoByteA = *((byteA*)NULL);
 uintAA& NoUintAA = *((uintAA*)NULL);
 
 /* LAPACK notes
@@ -162,6 +163,12 @@ void transpose(arr& A) {
   uint n=A.d0, i, j;
   double z;
   for(i=1; i<n; i++) for(j=0; j<i; j++) { z=A(j, i); A(j, i)=A(i, j); A(i, j)=z; }
+}
+
+arr oneover(const arr& A){
+  arr B = A;
+  for(double& b:B) b=1./b;
+  return B;
 }
 
 namespace mlr {
@@ -391,13 +398,15 @@ void inverse_SymPosDef(arr& Ainv, const arr& A) {
 }
 
 arr pseudoInverse(const arr& A, const arr& Winv, double eps) {
-  arr At, E, AAt, AAt_inv, Ainv;
-  transpose(At, A);
-  if(&Winv) AAt = A*Winv*At; else AAt = A*At;
+  arr AAt;
+  arr At = ~A;
+  if(&Winv){
+    if(Winv.nd==1) AAt = A*(Winv%At); else AAt = A*Winv*At;
+  }else AAt = A*At;
   if(eps) for(uint i=0;i<AAt.d0;i++) AAt(i,i) += eps;
-  inverse_SymPosDef(AAt_inv, AAt);
-  Ainv = At * AAt_inv;
-  if(&Winv) Ainv = Winv * Ainv;
+  arr AAt_inv = inverse_SymPosDef(AAt);
+  arr Ainv = At * AAt_inv;
+  if(&Winv){ if(Winv.nd==1) Ainv = Winv%Ainv; else Ainv = Winv*Ainv; }
   return Ainv;
 }
 
@@ -923,6 +932,22 @@ void flip_image(byteA &img) {
   }
 }
 
+void flip_image(floatA &img) {
+  if(!img.N) return;
+  uint h=img.d0, n=img.N/img.d0;
+  floatA line(n);
+  float *a, *b, *c;
+  uint s=sizeof(float);
+  for(uint i=0; i<h/2; i++) {
+    a=img.p+i*n;
+    b=img.p+(h-1-i)*n;
+    c=line.p;
+    memmove(c, a, n*s);
+    memmove(a, b, n*s);
+    memmove(b, c, n*s);
+  }
+}
+
 /// make grey scale image
 void make_grey(byteA &img) {
   CHECK(img.nd==3 && (img.d2==3 || img.d1==4), "makeGray requires color image as input");
@@ -959,6 +984,16 @@ void make_RGB2BGRA(byteA &img) {
       tmp(i, j, 3) = 255;
     }
   img=tmp;
+}
+
+/// make a grey image and RGA image
+void swap_RGB_BGR(byteA &img) {
+  CHECK(img.nd==3 && img.d2==3, "make_RGB2RGBA requires color image as input");
+  byte *b=img.p, *bstop=img.p+img.N;
+  byte z;
+  for(;b<bstop; b+=3) {
+    z=b[0]; b[0]=b[2]; b[2]=z;
+  }
 }
 
 
@@ -1322,12 +1357,14 @@ void blas_MM(arr& X, const arr& A, const arr& B) {
 }
 
 void blas_A_At(arr& X, const arr& A) {
-  X.resize(A.d0, A.d0);
+  uint n=A.d0;
+  CHECK(n,"blas doesn't like n=0 !");
+  X.resize(n,n);
   cblas_dsyrk(CblasRowMajor, CblasUpper, CblasNoTrans,
               X.d0, A.d1,
               1.f, A.p, A.d1,
               0., X.p, X.d1);
-  for(uint i=0; i<X.d0; i++) for(uint j=0; j<i; j++) X(i,j) = X(j,i);
+  for(uint i=0; i<n; i++) for(uint j=0; j<i; j++) X.p[i*n+j] = X.p[j*n+i]; //fill in the lower triangle
 #if 0//test
   mlr::useLapack=false;
   std::cout  <<"blas_MM error = " <<maxDiff(A*~A, X, 0) <<std::endl;
@@ -1336,12 +1373,14 @@ void blas_A_At(arr& X, const arr& A) {
 }
 
 void blas_At_A(arr& X, const arr& A) {
-  X.resize(A.d1, A.d1);
+  uint n=A.d1;
+  CHECK(n,"blas doesn't like n=0 !");
+  X.resize(n,n);
   cblas_dsyrk(CblasRowMajor, CblasUpper, CblasTrans,
               X.d0, A.d0,
               1.f, A.p, A.d1,
               0., X.p, X.d1);
-  for(uint i=0; i<X.d0; i++) for(uint j=0; j<i; j++) X(i,j) = X(j,i);
+  for(uint i=0; i<n; i++) for(uint j=0; j<i; j++) X.p[i*n+j] = X.p[j*n+i]; //fill in the lower triangle
 #if 0//test
   mlr::useLapack=false;
   std::cout  <<"blas_MM error = " <<maxDiff(~A*A, X, 0) <<std::endl;
@@ -1409,7 +1448,7 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
     if(!isRowShifted(A)) {
       dposv_((char*)"L", &N, &NRHS, Acol.p, &N, x.p, &N, &INFO);
     } else {
-      //assumes symmetric and upper triangle (see check's above)
+      //assumes symmetric and upper banded
       dpbsv_((char*)"L", &N, &KD, &NRHS, Acol.p, &LDAB, x.p, &N, &INFO);
     }
   }catch(...){
@@ -1599,8 +1638,7 @@ void lapack_inverseSymPosDef(arr& Ainv, const arr& A) {
   dpotri_((char*)"L", &N, Ainv.p, &N, &INFO);
   CHECK(!INFO, "lapack_inverseSymPosDef error info = " <<INFO);
   //fill in the lower triangular elements
-  uint i, j;
-  for(i=0; i<(uint)N; i++) for(j=0; j<i; j++) Ainv(i, j)=Ainv(j, i);
+  for(uint i=0; i<(uint)N; i++) for(uint j=0; j<i; j++) Ainv.p[i*N+j]=Ainv.p[j*N+i]; //fill in the lower triangle
 }
 
 double lapack_determinantSymPosDef(const arr& A) {
@@ -1983,13 +2021,13 @@ arr unpack(const arr& X) {
   return NoArr;
 }
 
-arr comp_At_A(arr& A) {
+arr comp_At_A(const arr& A) {
   if(isNotSpecial(A)) { arr X; blas_At_A(X,A); return X; }
   if(isRowShifted(A)) return ((RowShifted*)A.special)->At_A();
   return NoArr;
 }
 
-arr comp_A_At(arr& A) {
+arr comp_A_At(const arr& A) {
   if(isNotSpecial(A)) { arr X; blas_A_At(X,A); return X; }
   if(isRowShifted(A)) return ((RowShifted*)A.special)->A_At();
   return NoArr;
@@ -2001,19 +2039,19 @@ arr comp_A_At(arr& A) {
 //  return NoArr;
 //}
 
-arr comp_At_x(arr& A, const arr& x) {
+arr comp_At_x(const arr& A, const arr& x) {
   if(isNotSpecial(A)) { arr y; innerProduct(y, ~A, x); return y; }
   if(isRowShifted(A)) return ((RowShifted*)A.special)->At_x(x);
   return NoArr;
 }
 
-arr comp_At(arr& A) {
+arr comp_At(const arr& A) {
   if(isNotSpecial(A)) { return ~A; }
   if(isRowShifted(A)) return ((RowShifted*)A.special)->At();
   return NoArr;
 }
 
-arr comp_A_x(arr& A, const arr& x) {
+arr comp_A_x(const arr& A, const arr& x) {
   if(isNotSpecial(A)) { arr y; innerProduct(y, A, x); return y; }
   if(isRowShifted(A)) return ((RowShifted*)A.special)->A_x(x);
   return NoArr;
@@ -2203,10 +2241,11 @@ template mlr::Array<arr>::~Array();
 
 #include "util.tpp"
 
-template mlr::Array<double> mlr::getParameter<mlr::Array<double> >(char const*);
-template mlr::Array<float> mlr::getParameter<mlr::Array<float> >(char const*);
-template mlr::Array<uint> mlr::getParameter<mlr::Array<uint> >(char const*);
-template bool mlr::checkParameter<mlr::Array<double> >(char const*);
+template mlr::Array<double> mlr::getParameter<arr>(char const*);
+template mlr::Array<double> mlr::getParameter<arr>(char const*, const arr&);
+template mlr::Array<float> mlr::getParameter<floatA>(char const*);
+template mlr::Array<uint> mlr::getParameter<uintA>(char const*);
+template bool mlr::checkParameter<arr>(char const*);
 template void mlr::getParameter(uintA&, const char*, const uintA&);
 
 void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
@@ -2217,6 +2256,8 @@ void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 //  for(const char* t : list) append(mlr::String(t));
 //}
 //}
+
+
 
 
 

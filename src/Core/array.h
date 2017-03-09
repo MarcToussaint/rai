@@ -100,7 +100,7 @@ template<class T> struct Array {
   explicit Array(uint D0);
   explicit Array(uint D0, uint D1);
   explicit Array(uint D0, uint D1, uint D2);
-  explicit Array(const T* p, uint size);    //reference!
+  explicit Array(const T* p, uint size, bool byReference=true);    //reference!
   Array(std::initializer_list<T> values);
   Array(uint D0, std::initializer_list<T> values);
   Array(uint D0, uint D1, std::initializer_list<T> values);
@@ -238,8 +238,7 @@ template<class T> struct Array {
   void replace(uint i, uint n, const Array<T>& x);
   void remove(uint i, uint n=1);
   void removePerm(uint i);          //more efficient for sets, works also for non-memMove arrays
-  void removeValue(const T& x);
-  bool removeValueSafe(const T& x); //? same as if((i=findValue(x))!=-1) remove[Perm](i);
+  bool removeValue(const T& x, bool errorIfMissing=true);
   void removeAllValues(const T& x);
   void delRows(uint i, uint k=1);
   void delColumns(uint i, uint k=1);
@@ -431,6 +430,7 @@ typedef mlr::Array<mlr::String*> StringL;
 extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional arguments
 extern arrA& NoArrA; //this is a pointer to NULL!!!! I use it for optional arguments
 extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
+extern byteA& NoByteA; //this is a pointer to NULL!!!! I use it for optional arguments
 extern uintAA& NoUintAA; //this is a pointer to NULL!!!! I use it for optional arguments
 
 //===========================================================================
@@ -573,6 +573,8 @@ uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort=true);
 void svd(arr& U, arr& V, const arr& A);
 void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc = 0);
 
+arr  oneover(const arr& A); //element-wise reciprocal (devision, 1./A)
+
 void mldivide(arr& X, const arr& A, const arr& b);
 
 uint inverse(arr& Ainv, const arr& A);
@@ -603,7 +605,10 @@ void read_ppm(byteA &img, const char *file_name, bool swap_rows=true);
 void add_alpha_channel(byteA &img, byte alpha);
 void make_grey(byteA &img);
 void make_RGB(byteA &img);
+void make_RGB2BGRA(byteA &img);
+void swap_RGB_BGR(byteA &img);
 void flip_image(byteA &img);
+void flip_image(floatA &img);
 
 void scanArrFile(const char* name);
 
@@ -836,11 +841,11 @@ arr lapack_Ainv_b_triangular(const arr& L, const arr& b);
 /// @{
 
 arr unpack(const arr& X);
-arr comp_At_A(arr& A);
-arr comp_A_At(arr& A);
-arr comp_At_x(arr& A, const arr& x);
-arr comp_At(arr& A);
-arr comp_A_x(arr& A, const arr& x);
+arr comp_At_A(const arr& A);
+arr comp_A_At(const arr& A);
+arr comp_At_x(const arr& A, const arr& x);
+arr comp_At(const arr& A);
+arr comp_A_x(const arr& A, const arr& x);
 
 struct SpecialArray{
   enum Type { ST_none, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };

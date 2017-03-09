@@ -4,10 +4,11 @@
 #include <Core/array.h>
 #include <RosCom/roscom.h>
 
-#include <RosCom/filterObject.h>
+#include <Perception/percept.h>
 
+/// 'publishes' to both, ROS topics and modelWorld
 struct PublishDatabase : Thread{
-  Access_typed<FilterObjects> object_database;
+  Access_typed<PerceptL> percepts_filtered;
   ACCESSname(mlr::KinematicWorld, modelWorld)
 
   PublishDatabase();
@@ -25,11 +26,7 @@ struct PublishDatabase : Thread{
   virtual void close();
 
 private:
-  void syncCluster(const Cluster* cluster);
-  void syncPlane(const Plane* plane);
-  void syncAlvar(const Alvar* alvar);
-  void syncOptitrackMarker(const OptitrackMarker* optitrackmarker);
-  void syncOptitrackBody(const OptitrackBody* optitrackbody);
+  //TODO: these should be virtual methods of Percept
   mlr::Array<uint> stored_clusters, stored_alvars, stored_planes, stored_optitrackmarkers, stored_optitrackbodies;
   int revision = -1;
 };

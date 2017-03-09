@@ -1,6 +1,6 @@
 #include "RTControllerSimulation.h"
 #include <Motion/taskMaps.h>
-//#include "../../../usr/DD/Bachelorarbeit/src/objectGenerator.h"
+#include "../../../usr/DD/Bachelorarbeit/src/objectGenerator.h"
 
 void force(mlr::KinematicWorld* world, arr& fR) {
   world->stepSwift();
@@ -150,6 +150,9 @@ RTControllerSimulation::RTControllerSimulation(mlr::KinematicWorld realWorld, do
 
   //Object o(*world);
   //o.generateObject("b", 0.16, 0.16, 0.1, 0.55, -0.1, 0.55); //0.5 for x
+
+  //Object o(*world);
+  //o.generateObject("b", 0.16, 0.16, 0.1, 0.55, -0.1, 0.55); //0.5 for x
   //Object ob(*world);
   //ob.generateObject("trueShape", 0.17, 0.17, 0.12, 0.55, -0.1, 0.55, false);
 }
@@ -225,7 +228,7 @@ void RTControllerSimulation::step() {
 
     //force(world, fR);
     forceSimulateContactOnly(world, fR);
-    u(3) = 0.0;
+    //u(3) = 0.0;
     world->stepDynamics(u, tau, 0., this->gravity);
 
   }

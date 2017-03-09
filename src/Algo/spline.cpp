@@ -28,6 +28,13 @@ void plotFunction(const arr& f, double x0=0., double x1=0.);
 
 namespace mlr{
 
+Spline::Spline(uint degree) : degree(degree){}
+
+Spline::Spline(uint T, const arr& X, uint degree) : points(X){
+  CHECK(points.nd==2,"");
+  setUniformNonperiodicBasis(T, points.d0-1, degree);
+}
+
 void Spline::plotBasis() {
   plotClear();
   arr b_sum(basis.d0);
@@ -36,6 +43,8 @@ void Spline::plotBasis() {
   for(uint i=0; i<points.d0; i++) plotFunction(basis_trans[i], -1, 1);
   plot();
 }
+
+
 
 arr Spline::getCoeffs(double t, uint K, uint derivative) const {
   arr b(K+1), b_0(K+1), db(K+1), db_0(K+1), ddb(K+1), ddb_0(K+1);
@@ -125,6 +134,10 @@ void Spline::setBasisAndTimeGradient(uint T, uint K) {
   basis_timeGradient=dbt;
 }
 
+void Spline::setUniformNonperiodicBasis() {
+  setUniformNonperiodicBasis(0, points.d0-1, degree);
+}
+
 void Spline::setUniformNonperiodicBasis(uint T, uint K, uint _degree) {
   degree=_degree;
   uint i, m;
@@ -135,7 +148,7 @@ void Spline::setUniformNonperiodicBasis(uint T, uint K, uint _degree) {
     else if(i>=m-degree) times(i)=1.;
     else times(i) = double(i-degree)/double(m-2*degree);
   }
-  setBasis(T, K);
+  if(T) setBasis(T, K);
 //  setBasisAndTimeGradient();
 }
 

@@ -68,7 +68,7 @@ void bindOrsToPhysX(mlr::KinematicWorld& graph, OpenGL& gl, PhysXInterface& phys
   
   MLR_MSG("I don't understand this: why do you need a 2nd opengl window? (This is only for sanity check in the example.)")
   gl.add(glStandardScene, NULL);
-  gl.add(glPhysXInterface, &physx);
+  gl.add(physx);
   gl.setClearColors(1., 1., 1., 1.);
   
   mlr::Body* glCamera = graph.getBodyByName("glCamera");
@@ -193,7 +193,7 @@ PhysXInterface::PhysXInterface(mlr::KinematicWorld& _world): world(_world), s(NU
   s->gScene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
 
   //-- Create objects
-  PxMaterial* mMaterial = mPhysics->createMaterial(1.f, 1.f, 0.5f);
+  PxMaterial* mMaterial = mPhysics->createMaterial(10.f, 10.f, 0.1f);
 
   //Create ground plane
   //PxReal d = 0.0f;
@@ -234,38 +234,15 @@ void PhysXInterface::step(double tau) {
     ((PxRigidDynamic*)s->actors(b_COUNT))->setKinematicTarget(OrsTrans2PxTrans(b->X));
   }
 
-  //  mlr::Array<PxTransform> goal_poses(world.joints.N);
-  // for_list(mlr::Joint, j, world.joints) {
-  //   PxD6Joint *px_joint = s->joints(j_COUNT);
-    // if(j->locker and j->locker->lock()) {
-    //   s->lockJoint(px_joint, j);
-    // }
-    // else if(j->locker and j->locker->unlock()) {
-    //   s->unlockJoint(px_joint, j);  
-    // }
-    //if(px_joint) { 
-      //PxRigidActor *actor0 = s->actors(j->ito);
-      ////PxTransform goal_pose = actor0->getGlobalPose();
-      //goal_poses(j_COUNT) = actor0->getGlobalPose();
-    //}
-  //  }
-  
   //-- dynamic simulation
   s->gScene->simulate(tau);
   
-  //for_list(mlr::Joint, jj, world.joints) {
-    //PxD6Joint *px_joint = s->joints(jj_COUNT);
-    //if(px_joint) { 
-      //px_joint->setDrivePosition(goal_poses(jj_COUNT));
-    //}
-  //}
   //...perform useful work here using previous frame's state data
   while(!s->gScene->fetchResults()) {
   }
   
   //-- pull state of all objects
   pullFromPhysx(tau);
-  
 }
 
 void PhysXInterface::setArticulatedBodiesKinematic(uint agent){
@@ -345,7 +322,18 @@ void sPhysXInterface::addJoint(mlr::Joint *jj) {
     case mlr::JT_trans3: {
       break; 
     }
-    case mlr::JT_transX: 
+    case mlr::JT_transXYPhi: {
+      PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(jj->from->index), A, actors(jj->to->index), B.getInverse());
+      CHECK(desc, "PhysX joint creation failed.");
+
+      desc->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
+      desc->setMotion(PxD6Axis::eY, PxD6Motion::eFREE);
+      desc->setMotion(PxD6Axis::eSWING2, PxD6Motion::eFREE);
+
+      joints(jj->index) = desc;
+      break;
+    }
+    case mlr::JT_transX:
     case mlr::JT_transY:
     case mlr::JT_transZ:
     {
@@ -406,7 +394,7 @@ void sPhysXInterface::unlockJoint(PxD6Joint *joint, mlr::Joint *ors_joint) {
 }
 
 void sPhysXInterface::addBody(mlr::Body *b, physx::PxMaterial *mMaterial) {
-  PxRigidDynamic* actor;
+  PxRigidDynamic* actor=NULL;
   switch(b->type) {
     case mlr::BT_static:
       actor = (PxRigidDynamic*) mPhysics->createRigidStatic(OrsTrans2PxTrans(b->X));
@@ -425,10 +413,11 @@ void sPhysXInterface::addBody(mlr::Body *b, physx::PxMaterial *mMaterial) {
   }
   CHECK(actor, "create actor failed!");
   for_list(mlr::Shape,  s,  b->shapes) {
+    if(s->name.startsWith("coll_")) continue; //these are the 'pink' collision boundary shapes..
     PxGeometry* geometry;
     switch(s->type) {
       case mlr::ST_box: {
-        geometry = new PxBoxGeometry(.5 * s->size[0], .5 * s->size[1], .5 * s->size[2]);
+        geometry = new PxBoxGeometry(.5*s->size[0], .5*s->size[1], .5*s->size[2]);
       }
       break;
       case mlr::ST_sphere: {
@@ -514,7 +503,8 @@ void PhysXInterface::pullFromPhysx(double tau) {
 }
 
 void PhysXInterface::pushToPhysx() {
-  PxMaterial* mMaterial = mPhysics->createMaterial(1.f, 1.f, 0.5f);
+  HALT("why here?");
+  PxMaterial* mMaterial = mPhysics->createMaterial(3.f, 3.f, 0.2f);
   for_list(mlr::Body, b, world.bodies) {
     if(s->actors.N > b_COUNT) {
       s->actors(b_COUNT)->setGlobalPose(OrsTrans2PxTrans(b->X));
@@ -590,12 +580,8 @@ void DrawActor(PxRigidActor* actor, mlr::Body *body) {
   delete [] shapes;
 }
 
-void PhysXInterface::glDraw() {
+void PhysXInterface::glDraw(OpenGL&) {
   for_list(PxRigidActor, a, s->actors)  DrawActor(a, world.bodies(a_COUNT));
-}
-
-void glPhysXInterface(void *classP) {
-  ((PhysXInterface*)classP)->glDraw();
 }
 
 void PhysXInterface::addForce(mlr::Vector& force, mlr::Body* b) {
@@ -626,7 +612,7 @@ void PhysXInterface::pushToPhysx() { NICO }
 void PhysXInterface::pullFromPhysx(double tau) { NICO }
 void PhysXInterface::setArticulatedBodiesKinematic(uint agent) { NICO }
 void PhysXInterface::ShutdownPhysX() { NICO }
-void PhysXInterface::glDraw() { NICO }
+void PhysXInterface::glDraw(OpenGL&) { NICO }
 void PhysXInterface::addForce(mlr::Vector& force, mlr::Body* b) { NICO }
 void PhysXInterface::addForce(mlr::Vector& force, mlr::Body* b, mlr::Vector& pos) { NICO }
 

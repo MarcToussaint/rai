@@ -49,7 +49,7 @@ ScalarFunction cost = [](arr &g, arr &H, const arr &x) -> double{
 
 
 void TEST(BSpline){
-  uint K=6,T=100; //6 spline point, path of length T=100
+  uint K=6,T=100; //6 spline point, discrete path with T=100
 
   arr X(K,2); //spline points
   rndUniform(X,-1,1,false);
@@ -168,7 +168,7 @@ int MAIN(int argc,char** argv){
   mlr::initCmdLine(argc, argv);
 
   testBSpline();
-  testPath();
+//  testPath();
 
 
   return 0;

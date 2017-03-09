@@ -59,7 +59,7 @@ struct Vector {
   double radius() const;
   double phi() const;
   double theta() const;
-  arr getArr() const{ return arr(&x,3); }
+  arr getArr() const{ return arr(&x, 3, false); }
 
   Vector getNormalVectorNormalToThis() const;
   void generateOrthonormalSystem(Vector& u, Vector& v) const;
@@ -108,7 +108,8 @@ struct Quaternion {
   Quaternion(const arr& q) { CHECK_EQ(q.N,4, "");  set(q.p); }
   Quaternion(const Quaternion& q) { set(q.w, q.x, q.y, q.z); }
   double *p() { return &w; }
-  
+
+  double& operator()(uint i){ CHECK(i<4,"out of range"); return (&w)[i]; }
   void set(double w, double x, double y, double z);
   void set(const arr& q);
   void set(double* p);
@@ -133,12 +134,14 @@ struct Quaternion {
   void multiply(double f);
   void alignWith(const Vector& v);
 
-  void addX(double angle);
-  void addY(double angle);
-  void addZ(double angle);
+  void addX(double radians);
+  void addY(double radians);
+  void addZ(double radians);
   void append(const Quaternion& q);
 
   double diffZero() const;
+  double sqrDiffZero() const;
+  double sqrDiff(const Quaternion& q2) const;
   bool isNormalized() const;
   double getDeg() const;
   double getRad() const;
@@ -267,8 +270,8 @@ struct Camera {
   void watchDirection(const Vector& d);
   void upright(const Vector& up=Vector(0,0,1));
   void glSetProjectionMatrix();
-  void glConvertToTrueDepth(double &d);
-  void glConvertToLinearDepth(double &d);
+  double glConvertToTrueDepth(double d);
+  double glConvertToLinearDepth(double d);
   void setKinect();
   void setDefault();
 };
@@ -347,8 +350,8 @@ std::ostream& operator<<(std::ostream&, const Transformation&);
 /// of a 'cross-product-matrix'
 void quatDiff(arr& y, arr& J1, arr& J2, const Quaternion& q1, const Quaternion& q2);
 
-} //END of namespace
 
+} //END of namespace
 
 //===========================================================================
 //

@@ -140,7 +140,7 @@ struct Joint {
   void applyTransformation(mlr::Transformation& f, const arr& q);
   void write(std::ostream& os) const;
   void read(std::istream& is);
-  Joint &data() { return *this; }
+  mlr::String tag(){ return STRING(name <<':' <<type <<':' <<from->name <<'-' <<to->name); }
 };
 
 //===========================================================================
@@ -156,7 +156,7 @@ struct Shape : GLDrawer{
   Transformation rel;  ///< relative translation/rotation of the bodies geometry
   Enum<ShapeType> type;
   double size[4];  //TODO: obsolete: directly translate to mesh?
-  double color[3]; //TODO: obsolete: directly translate to mesh?
+  double color[4]; //TODO: obsolete: directly translate to mesh?
   Mesh mesh, sscCore;
   double mesh_radius;
   bool cont;           ///< are contacts registered (or filtered in the callback)
@@ -338,7 +338,7 @@ struct KinematicWorld : GLDrawer{
   void read(std::istream& is);
   void glDraw(struct OpenGL&);
 
-  void reportProxies(std::ostream *os=&std::cout, double belowMargin=-1.);
+  void reportProxies(std::ostream *os=&std::cout, double belowMargin=-1.) const;
   void writePlyFile(const char* filename) const; //TODO: move outside
 };
 
@@ -352,6 +352,7 @@ struct KinematicSwitch{ //TODO: move to src/Motion
   uint fromId, toId;
   mlr::Transformation jA,jB;
   KinematicSwitch();
+  KinematicSwitch(OperatorSymbol op, JointType type, const char* ref1, const char* ref2, const mlr::KinematicWorld& K, uint _timeOfApplication, const mlr::Transformation& jFrom=NoTransformation, const mlr::Transformation& jTo=NoTransformation);
   void setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T);
 //  KinematicSwitch(const Node *specs, const KinematicWorld& world, uint T);
   void apply(KinematicWorld& G);
@@ -413,8 +414,8 @@ uintA shapesToShapeIndices(const mlr::Array<mlr::Shape*>& shapes);
 //
 
 void lib_ors();
-void makeConvexHulls(ShapeL& shapes);
-void makeSSBoxApproximations(ShapeL& shapes);
+void makeConvexHulls(ShapeL& shapes, bool onlyContactShapes=true);
+void computeOptimalSSBoxes(ShapeL& shapes);
 void computeMeshNormals(ShapeL& shapes);
 double forceClosureFromProxies(mlr::KinematicWorld& C, uint bodyIndex,
                                double distanceThreshold=0.01,

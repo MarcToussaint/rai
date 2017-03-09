@@ -28,6 +28,8 @@ struct GaussianProcessOptimized {
 
   void recompute();
 
+  void clearData();
+
   double evaluate(const arr& x);
   double evaluateVariance(const arr& x);
   void evaluate(const arr& x, double& y, double& sig);

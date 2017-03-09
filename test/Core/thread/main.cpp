@@ -24,7 +24,7 @@ void TEST(Thread){
   MyThread t1(x, 1, .5), t2(x, 2, .5);
 
   t1.threadLoop();
-  t2.listenTo(x); //whenever t1 modifies x, t2 is stepped
+  t2.listenTo(x.revLock); //whenever t1 modifies x, t2 is stepped
   
   mlr::wait(3.);
 
@@ -180,7 +180,7 @@ void TEST(ModuleSorter1){
   for(uint i=0;i<N;i++) vars(i)->set() = rnd(100);
 
   for(uint k=0;k<20;k++){
-    if(moduleShutdown().getValue()) break;
+    if(moduleShutdown().getStatus()) break;
     for(uint i=0;i<N;i++) cout <<vars(i)->get() <<' ';  cout <<endl;
     stepModules();
     mlr::wait(.1);

@@ -88,7 +88,7 @@ template<class T> mlr::Array<T>::Array(uint i, uint j):Array() { resize(i, j); }
 template<class T> mlr::Array<T>::Array(uint i, uint j, uint k):Array() { resize(i, j, k); }
 
 /// this becomes a reference on the C-array \c p
-template<class T> mlr::Array<T>::Array(const T* p, uint size):Array() { referTo(p, size); }
+template<class T> mlr::Array<T>::Array(const T* p, uint size, bool byReference):Array() { if(byReference) referTo(p, size); else setCarray(p, size); }
 
 /// initialization via {1., 2., 3., ...} lists..
 template<class T> mlr::Array<T>::Array(std::initializer_list<T> values):Array() { operator=(values); }
@@ -590,12 +590,17 @@ template<class T> void mlr::Array<T>::removePerm(uint i) {
 }
 
 /// remove (delete) a subsequence of the array -- the array becomes 1D!  [only with memMove!] (throws error if value does not exist)
-template<class T> void mlr::Array<T>::removeValue(const T& x) {
+template<class T> bool mlr::Array<T>::removeValue(const T& x, bool errorIfMissing) {
   CHECK(memMove, "only with memMove");
   uint i;
   for(i=0; i<N; i++) if(p[i]==x) break;
-  CHECK(i<N, "value to remove not found");
+  if(errorIfMissing){
+    CHECK(i<N, "value to remove not found");
+  }else{
+    if(i==N) return false;
+  }
   remove(i, 1);
+  return true;
 }
 
 /// remove (delete) a subsequence of the array -- the array becomes 1D!  [only with memMove!]
@@ -603,21 +608,6 @@ template<class T> void mlr::Array<T>::removeAllValues(const T& x) {
   CHECK(memMove, "only with memMove");
   uint i;
   for(i=0; i<N; i++) if(p[i]==x) { remove(i, 1); i--; }
-}
-
-/** @brief remove (delete) a subsequence of the array -- the array becomes 1D!  [only with memMove!]
- Returns true if value was found and deleted.
- Returns false if value was not found.*/
-template<class T> bool mlr::Array<T>::removeValueSafe(const T& x) {
-  CHECK(memMove, "only with memMove");
-  uint i;
-  for(i=0; i<N; i++) if(p[i]==x) break;
-  if(i >= N)
-    return false;
-  else {
-    remove(i, 1);
-    return true;
-  }
 }
 
 /// replace n elements at pos i by the sequence x -- the array becomes 1D!  [only with memMove!]
@@ -1237,8 +1227,7 @@ template<class T> void mlr::Array<T>::setDiag(const T& x, int d) {
   if(d!=-1) resize(d, d);
   if(d==-1) d=(int)mlr::MIN(d0, d1);
   setZero();
-  uint i;
-  for(i=0; i<(uint)d; i++) operator()(i, i)=x;
+  for(uint i=0; i<(uint)d; i++) p[i*d+i]=x; //operator()(i, i)=x;
   //mtype=diagMT;
 }
 
@@ -3629,25 +3618,22 @@ template struct mlr::Array<bool>;
 //
 
 template<class T> char listWrite(const mlr::Array<std::shared_ptr<T> >& L, std::ostream& os, const char *ELEMSEP, const char *delim) {
-  uint i;
   if(delim) os <<delim[0];
-  for(i=0; i<L.N; i++) { if(i) os <<ELEMSEP;  if(L.elem(i)) os <<*L.elem(i); else os <<"<NULL>"; }
+  for(uint i=0; i<L.N; i++) { if(i) os <<ELEMSEP;  if(L.elem(i)) os <<*L.elem(i); else os <<"<NULL>"; }
   if(delim) os <<delim[1] <<std::flush;
   return '#';
 }
 
 template<class T> char listWrite(const mlr::Array<T*>& L, std::ostream& os, const char *ELEMSEP, const char *delim) {
-  uint i;
   if(delim) os <<delim[0];
-  for(i=0; i<L.N; i++) { if(i) os <<ELEMSEP;  if(L.elem(i)) os <<*L.elem(i); else os <<"<NULL>"; }
+  for(uint i=0; i<L.N; i++) { if(i) os <<ELEMSEP;  if(L.elem(i)) os <<*L.elem(i); else os <<"<NULL>"; }
   if(delim) os <<delim[1] <<std::flush;
   return '#';
 }
 
 template<class T> void listWriteNames(const mlr::Array<T*>& L, std::ostream& os) {
-  uint i;
   os <<'(';
-  for(i=0; i<L.N; i++) { if(i) os <<' ';  if(L.elem(i)) os <<L.elem(i)->name; else os <<"<NULL>"; }
+  for(uint i=0; i<L.N; i++) { if(i) os <<' ';  if(L.elem(i)) os <<L.elem(i)->name; else os <<"<NULL>"; }
   os <<')' <<std::flush;
 }
 
@@ -3668,15 +3654,13 @@ template<class T> void listRead(mlr::Array<T*>& L, std::istream& is, const char 
 template<class T> void listClone(mlr::Array<T*>& L, const mlr::Array<T*>& M) {
   listDelete(L);
   L.resizeAs(M);
-  uint i;
-  for(i=0; i<L.N; i++) L.elem(i)=M.elem(i)->newClone();
+  for(uint i=0; i<L.N; i++) L.elem(i)=M.elem(i)->newClone();
 }
 
 template<class T> void listResize(mlr::Array<T*>& L, uint N) {
   listDelete(L);
   L.resize(N);
-  uint i;
-  for(i=0; i<N; i++) L.elem(i)=new T();
+  for(uint i=0; i<N; i++) L.elem(i)=new T();
 }
 
 template<class T> void listResizeCopy(mlr::Array<T*>& L, uint N) {
