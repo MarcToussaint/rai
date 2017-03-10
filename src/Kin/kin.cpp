@@ -3444,7 +3444,7 @@ void _glDrawOdeWorld(dWorldID world)
 }
 */
 
-void animateConfiguration(mlr::KinematicWorld& C, Inotify *ino) {
+int animateConfiguration(mlr::KinematicWorld& C, Inotify *ino) {
   arr x, x0;
   uint t, i;
   C.getJointState(x0);
@@ -3461,8 +3461,8 @@ void animateConfiguration(mlr::KinematicWorld& C, Inotify *ino) {
     double offset = acos( 2. * (x0(i) - center) / delta );
 
     for(t=0; t<steps; t++) {
-      if(C.gl().pressedkey==13 || C.gl().pressedkey==27 || C.gl().pressedkey=='q') return;
-      if(ino && ino->pollForModification()) return;
+      if(C.gl().pressedkey==13 || C.gl().pressedkey==27 || C.gl().pressedkey=='q') return C.gl().pressedkey;
+      if(ino && ino->pollForModification()) return 13;
 
       x(i) = center + (delta*(0.5*cos(MLR_2PI*t/steps + offset)));
       // Joint limits
@@ -3472,7 +3472,7 @@ void animateConfiguration(mlr::KinematicWorld& C, Inotify *ino) {
     }
   }
   C.setJointState(x0);
-  C.gl().update("", false, false, true);
+  return C.gl().update("", false, false, true);
 }
 
 

@@ -243,6 +243,24 @@ void TEST(Limits){
 }
 
 //===========================================================================
+
+void TEST(JointGroups){
+  mlr::KinematicWorld G("testGroups.g");
+
+  for(;;){
+    cout <<"Agent 0" <<endl;
+    G.setAgent(0);
+    int key=animateConfiguration(G);
+    if(key==27 || key=='q') break;
+    cout <<"Agent 1" <<endl;
+    G.setAgent(1);
+    key=animateConfiguration(G);
+    if(key==27 || key=='q') break;
+  }
+
+}
+
+//===========================================================================
 //
 // set state test
 //
@@ -563,6 +581,9 @@ void TEST(InverseKinematics) {
 int MAIN(int argc,char **argv){
   mlr::initCmdLine(argc, argv);
 
+  testJointGroups();
+  return 0;
+
   testLoadSave();
   testCopy();
   testPlayStateSequence();
@@ -574,6 +595,7 @@ int MAIN(int argc,char **argv){
   testDynamics();
   testContacts();
   testLimits();
+  testJointGroups();
 #ifdef MLR_ODE
 //  testMeshShapesInOde();
   testPlayTorqueSequenceInOde();

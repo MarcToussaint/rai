@@ -451,7 +451,7 @@ inline void displayTrajectory(const arr& x, int steps, mlr::KinematicWorld& G, c
   displayTrajectory(x, steps, G, {}, tag, delay, dim_z, copyG);
 }
 void editConfiguration(const char* orsfile, mlr::KinematicWorld& G);
-void animateConfiguration(mlr::KinematicWorld& G, struct Inotify *ino=NULL);
+int animateConfiguration(mlr::KinematicWorld& G, struct Inotify *ino=NULL);
 //void init(mlr::KinematicWorld& G, OpenGL& gl, const char* orsFile);
 void bindOrsToOpenGL(mlr::KinematicWorld& graph, OpenGL& gl); //TODO: should be outdated!
 /// @} // END of group ors_interface_opengl

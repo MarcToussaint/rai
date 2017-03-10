@@ -37,16 +37,16 @@ struct Percept : GLDrawer{
 };
 stdOutPipe(Percept)
 
-struct Cluster : Percept {
+struct PercCluster : Percept {
   arr mean;
   arr points;
 
-  Cluster(arr mean, arr points, std::string frame_id);
-  Cluster(const Cluster &obj);
+  PercCluster(arr mean, arr points, std::string frame_id);
+  PercCluster(const PercCluster &obj);
   virtual void syncWith(mlr::KinematicWorld& K);
   virtual double idMatchingCost(const Percept& other);
   virtual void write(ostream& os) const;
-  virtual Percept* newClone() const{ return new Cluster(*this); }
+  virtual Percept* newClone() const{ return new PercCluster(*this); }
 };
 
 struct PercMesh : Percept {
@@ -62,18 +62,18 @@ struct PercMesh : Percept {
   virtual Percept* newClone() const{ return new PercMesh(*this); }
 };
 
-struct Plane : Percept {
+struct PercPlane : Percept {
   mlr::Mesh hull;
 
-  Plane();
-  Plane(const mlr::Transformation& t, const mlr::Mesh& hull);
+  PercPlane();
+  PercPlane(const mlr::Transformation& t, const mlr::Mesh& hull);
 
   virtual void syncWith(mlr::KinematicWorld& K);
   virtual double idMatchingCost(const Percept& other);
   virtual double fuse(Percept* other);
   virtual void write(ostream& os) const;
   virtual void glDraw(OpenGL&);
-  virtual Percept* newClone() const{ return new Plane(*this); }
+  virtual Percept* newClone() const{ return new PercPlane(*this); }
 };
 
 struct PercBox : Percept {
@@ -90,15 +90,15 @@ struct PercBox : Percept {
   virtual Percept* newClone() const{ return new PercBox(*this); }
 };
 
-struct Alvar : Percept {
+struct PercAlvar : Percept {
 
-  Alvar(std::string _frame_id);
-  Alvar(const Alvar &obj);
+  PercAlvar(std::string _frame_id);
+  PercAlvar(const PercAlvar &obj);
 
   virtual void syncWith(mlr::KinematicWorld& K);
   virtual double idMatchingCost(const Percept& other);
   virtual void write(ostream& os) const;
-  virtual Percept* newClone() const{ return new Alvar(*this); }
+  virtual Percept* newClone() const{ return new PercAlvar(*this); }
 };
 
 

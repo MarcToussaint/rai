@@ -34,7 +34,7 @@ void Percept::write(ostream& os) const{
 
 //============================================================================
 
-Cluster::Cluster(arr mean, arr points, std::string _frame_id)
+PercCluster::PercCluster(arr mean, arr points, std::string _frame_id)
   : Percept(Type::PT_cluster),
     mean(mean),
     points(points) {
@@ -42,7 +42,7 @@ Cluster::Cluster(arr mean, arr points, std::string _frame_id)
 }
 
 
-Cluster::Cluster(const Cluster& obj)
+PercCluster::PercCluster(const PercCluster& obj)
   : Percept(obj){
   this->frame_id = obj.frame_id;
   this->mean = obj.mean;
@@ -54,14 +54,14 @@ Cluster::Cluster(const Cluster& obj)
   this->frame = obj.frame;
 }
 
-double Cluster::idMatchingCost(const Percept& other){
+double PercCluster::idMatchingCost(const Percept& other){
   if(other.type!=PT_cluster) return -1.;
   mlr::Vector diff = (this->frame * mlr::Vector(this->mean)) -
-                     (dynamic_cast<const Cluster*>(&other)->frame * mlr::Vector(dynamic_cast<const Cluster*>(&other)->mean));
+                     (dynamic_cast<const PercCluster*>(&other)->frame * mlr::Vector(dynamic_cast<const PercCluster*>(&other)->mean));
   return diff.length();
 }
 
-void Cluster::write(ostream& os) const{
+void PercCluster::write(ostream& os) const{
   os <<"cluster_" <<id <<": mean=" <<mean;
   Percept::write(os);
 }
@@ -78,35 +78,35 @@ double PercMesh::fuse(Percept* other){
 
 //============================================================================
 
-Plane::Plane()
+PercPlane::PercPlane()
   : Percept(Type::PT_plane) {}
 
-Plane::Plane(const mlr::Transformation& t, const mlr::Mesh& hull)
+PercPlane::PercPlane(const mlr::Transformation& t, const mlr::Mesh& hull)
   : Percept(Type::PT_plane, t), hull(hull) {}
 
-double Plane::idMatchingCost(const Percept& other){
+double PercPlane::idMatchingCost(const Percept& other){
   if(other.type!=PT_plane) return -1.;
-  const Plane* otherPlane = dynamic_cast<const Plane*>(&other);
+  const PercPlane* otherPlane = dynamic_cast<const PercPlane*>(&other);
   if(!otherPlane){ MLR_MSG("WHY?????"); return -1.; }
   CHECK(otherPlane,"");
   mlr::Vector diff = (this->transform.pos - otherPlane->transform.pos);
   return diff.length();
 }
 
-double Plane::fuse(Percept* other){
+double PercPlane::fuse(Percept* other){
   Percept::fuse(other);
-  const Plane *x = dynamic_cast<const Plane*>(other);
+  const PercPlane *x = dynamic_cast<const PercPlane*>(other);
   CHECK(x,"can't fuse " <<type <<" with "<<other->type);
   hull = x->hull;
   return 0.;
 }
 
-void Plane::write(ostream& os) const{
+void PercPlane::write(ostream& os) const{
   Percept::write(os);
 //  os <<"plane_" <<id <<":"; // center=" <<center <<" normal=" <<normal;
 }
 
-void Plane::syncWith(mlr::KinematicWorld &K){
+void PercPlane::syncWith(mlr::KinematicWorld &K){
   mlr::String plane_name = STRING("perc_" << id);
 
   mlr::Body *body = K.getBodyByName(plane_name, false);
@@ -130,7 +130,7 @@ void Plane::syncWith(mlr::KinematicWorld &K){
   for(mlr::Shape *s:body->shapes) s->X = body->X * s->rel;
 }
 
-void Plane::glDraw(OpenGL& gl){
+void PercPlane::glDraw(OpenGL& gl){
   hull.glDraw(gl);
 
 //  if(hull.C.N==3){
@@ -221,12 +221,12 @@ void PercBox::glDraw(OpenGL&){
 
 //============================================================================
 
-Alvar::Alvar(std::string _frame_id)
+PercAlvar::PercAlvar(std::string _frame_id)
   : Percept(Type::PT_alvar){
   frame_id = _frame_id;
 }
 
-Alvar::Alvar(const Alvar& obj)
+PercAlvar::PercAlvar(const PercAlvar& obj)
   : Percept(obj){
   this->frame_id = obj.frame_id;
   this->type = obj.type;
@@ -236,20 +236,20 @@ Alvar::Alvar(const Alvar& obj)
   this->frame = obj.frame;
 }
 
-double Alvar::idMatchingCost(const Percept& other){
+double PercAlvar::idMatchingCost(const Percept& other){
   if(other.type!=PT_alvar) return -1.;
-  mlr::Vector dist = (this->frame * this->transform.pos) - (dynamic_cast<const Alvar*>(&other)->frame * dynamic_cast<const Alvar*>(&other)->transform.pos);
+  mlr::Vector dist = (this->frame * this->transform.pos) - (dynamic_cast<const PercAlvar*>(&other)->frame * dynamic_cast<const PercAlvar*>(&other)->transform.pos);
   return dist.length();
 }
 
-void Alvar::write(ostream& os) const{
+void PercAlvar::write(ostream& os) const{
   os <<"alvar_" <<id <<":";
   Percept::write(os);
 }
 
 //============================================================================
 
-void Cluster::syncWith(mlr::KinematicWorld& K){
+void PercCluster::syncWith(mlr::KinematicWorld& K){
   mlr::String cluster_name = STRING("perc_" << id);
 
   mlr::Body *body = K.getBodyByName(cluster_name, false);
@@ -282,7 +282,7 @@ void Cluster::syncWith(mlr::KinematicWorld& K){
 
 //============================================================================
 
-void Alvar::syncWith(mlr::KinematicWorld& K){
+void PercAlvar::syncWith(mlr::KinematicWorld& K){
   mlr::String alvar_name = STRING("perc_" << id);
 
   mlr::Body *body = K.getBodyByName(alvar_name, false);
