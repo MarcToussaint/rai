@@ -13,9 +13,9 @@
 #endif
 #include <object_recognition_msgs/TableArray.h>
 
-Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker);
-Plane conv_ROSTable2Plane(const object_recognition_msgs::Table& table);
-Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker);
+PercCluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker);
+PercPlane conv_ROSTable2Plane(const object_recognition_msgs::Table& table);
+PercAlvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker);
 OptitrackMarker conv_tf2OptitrackMarker(const geometry_msgs::TransformStamped& msg);
 OptitrackBody conv_tf2OptitrackBody(const geometry_msgs::TransformStamped& msg);
 

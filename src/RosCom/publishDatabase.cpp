@@ -60,13 +60,13 @@ visualization_msgs::Marker conv_Percept2Marker(const Percept& object)
 {
   visualization_msgs::Marker new_marker;
   new_marker.type = visualization_msgs::Marker::POINTS;
-  new_marker.points = conv_arr2points( dynamic_cast<const Cluster&>(object).points);
+  new_marker.points = conv_arr2points( dynamic_cast<const PercCluster&>(object).points);
   new_marker.id = object.id;
   new_marker.scale.x = .001;
   new_marker.scale.y = .001;
   new_marker.lifetime = ros::Duration(0.5);
   new_marker.header.stamp = ros::Time(0.);
-  new_marker.header.frame_id = dynamic_cast<const Cluster&>(object).frame_id;
+  new_marker.header.frame_id = dynamic_cast<const PercCluster&>(object).frame_id;
 
   new_marker.color.a = object.relevance;
   new_marker.color.r = (double)((new_marker.id*10000)%97)/97;
@@ -78,7 +78,7 @@ visualization_msgs::Marker conv_Percept2Marker(const Percept& object)
 
 object_recognition_msgs::Table conv_Percept2Table(const Percept& object)
 {
-  const Plane& plane = dynamic_cast<const Plane&>(object);
+  const PercPlane& plane = dynamic_cast<const PercPlane&>(object);
   object_recognition_msgs::Table new_table;
   new_table.pose = conv_transformation2pose(plane.transform);
   new_table.convex_hull = conv_arr2points(plane.hull.V);
@@ -91,7 +91,7 @@ object_recognition_msgs::Table conv_Percept2Table(const Percept& object)
 visualization_msgs::Marker conv_Percept2TableMarker(const Percept& object)
 {
   visualization_msgs::Marker new_marker;
-  const Plane& plane = dynamic_cast<const Plane&>(object);
+  const PercPlane& plane = dynamic_cast<const PercPlane&>(object);
   new_marker.type = visualization_msgs::Marker::POINTS;
   new_marker.points = conv_arr2points( plane.hull.V );
   new_marker.id = plane.id;
@@ -111,7 +111,7 @@ visualization_msgs::Marker conv_Percept2TableMarker(const Percept& object)
 ar::AlvarMarker conv_Percept2Alvar(const Percept& object)
 {
   ar::AlvarMarker new_marker;
-  new_marker.header.frame_id = dynamic_cast<const Alvar&>(object).frame_id;
+  new_marker.header.frame_id = dynamic_cast<const PercAlvar&>(object).frame_id;
   new_marker.pose.pose = conv_transformation2pose(object.transform);
   new_marker.id = object.id;
   return new_marker;
@@ -136,7 +136,7 @@ geometry_msgs::TransformStamped conv_Percept2OptitrackBody(const Percept& object
 }
 
 #if 0 //deprecated, these are now virtual members of percept
-void PublishDatabase::syncCluster(const Cluster* cluster)
+void PublishDatabase::syncCluster(const PercCluster* cluster)
 {
   modelWorld.writeAccess();
   mlr::String cluster_name = STRING("cluster_" << cluster->id);
@@ -305,7 +305,7 @@ void PublishDatabase::step(){
         ar_markers.markers.push_back(alvar);
         ar_markers.header.frame_id = alvar.header.frame_id;
 //        syncAlvar(dynamic_cast<Alvar*>(objectDatabase(i)));
-        dynamic_cast<Alvar*>(objectDatabase(i))->syncWith(modelWorld.set());
+        dynamic_cast<PercAlvar*>(objectDatabase(i))->syncWith(modelWorld.set());
         new_alvars.append(objectDatabase(i)->id);
         break;
       }
@@ -314,7 +314,7 @@ void PublishDatabase::step(){
         visualization_msgs::Marker marker = conv_Percept2Marker(*objectDatabase(i));
         cluster_markers.markers.push_back(marker);
 //        syncCluster(dynamic_cast<Cluster*>(objectDatabase(i)));
-        dynamic_cast<Cluster*>(objectDatabase(i))->syncWith(modelWorld.set());
+        dynamic_cast<PercCluster*>(objectDatabase(i))->syncWith(modelWorld.set());
         new_clusters.append(objectDatabase(i)->id);
         break;
       }
@@ -345,7 +345,7 @@ void PublishDatabase::step(){
         table_array.tables.push_back(table);
         table_array.header.frame_id = table.header.frame_id;
 //        syncPlane(dynamic_cast<Plane*>(objectDatabase(i)));
-        dynamic_cast<Plane*>(objectDatabase(i))->syncWith(modelWorld.set());
+        dynamic_cast<PercPlane*>(objectDatabase(i))->syncWith(modelWorld.set());
         new_planes.append(objectDatabase(i)->id);
         break;
       }

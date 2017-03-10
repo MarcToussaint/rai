@@ -4,11 +4,11 @@
 
 cd $1
 LASTFILE=`ls -Art | tail -n 1`
-if [ "$LASTFILE" = $2 ]; then
-    tput sgr0 && echo "         * UpToDate " $1/$2
-else
-    if mkdir Make.lock 2> /dev/null
-    then    # lock did not exist and was created successfully
+if mkdir Make.lock 2> /dev/null
+then    # lock did not exist and was created successfully
+    if [ "$LASTFILE" = $2 ]; then
+	tput sgr0 && echo "         * UpToDate " $1/$2
+    else
 	tput setaf 3 && echo "       *** Make     " $1 && tput sgr0
 	MAKEFLAGS='-j4 -k' make  -f Makefile $3
 	if [ $? = 0 ] ; then # success
@@ -19,15 +19,15 @@ else
 	    echo "     ***** FAILED   " $1/$2
 	    tput sgr0
 	fi
-	rm -rf Make.lock
-    else
-	tput setaf 0 && echo "         * Waiting  " $1/$2 && tput sgr0
-	while [ -d Make.lock ]
-	do
-	    sleep 0.2
-	done
-	tput setaf 0 && echo "         * DoneWait " $1/$2 && tput sgr0
     fi
+    rm -rf Make.lock
+else
+    tput setaf 0 && echo "         * Waiting  " $1/$2 && tput sgr0
+    while [ -d Make.lock ]
+    do
+	sleep 0.2
+    done
+    tput setaf 0 && echo "         * DoneWait " $1/$2 && tput sgr0
 fi
 
 exit 0

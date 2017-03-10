@@ -67,7 +67,7 @@ void Collector::step()
 #endif
 
         for(auto & marker : msg.markers){
-          Cluster* new_cluster = new Cluster(conv_ROSMarker2Cluster( marker ));
+          PercCluster* new_cluster = new PercCluster(conv_ROSMarker2Cluster( marker ));
           new_cluster->frame = tabletop_srcFrame.get();
           percepts.append( new_cluster );
         }
@@ -95,7 +95,7 @@ void Collector::step()
         }
 
         for(auto & table : msg.tables){
-          Plane* new_plane = new Plane(conv_ROSTable2Plane( table ));
+          PercPlane* new_plane = new PercPlane(conv_ROSTable2Plane( table ));
           new_plane->frame = tabletop_srcFrame.get(); //tf
           percepts.append( new_plane );
         }
@@ -144,7 +144,7 @@ void Collector::step()
         }
 #endif
 
-        Alvar* new_alvar = new Alvar( conv_ROSAlvar2Alvar(marker) );
+        PercAlvar* new_alvar = new PercAlvar( conv_ROSAlvar2Alvar(marker) );
         new_alvar->frame = alvar_srcFrame.get();
         percepts.append( new_alvar );
       }
@@ -239,9 +239,9 @@ void Collector::step()
     rndUniform(box.V, -0.05, 0.05, true);
     box.scale(0.1);
 
-    Cluster* fake_cluster = new Cluster( ARR(0.6, 0., 0.05),  // mean
-                                         box.V,               // points
-                                         "/base_footprint");  // frame
+    PercCluster* fake_cluster = new PercCluster( ARR(0.6, 0., 0.05),  // mean
+                                                 box.V,               // points
+                                                 "/base_footprint");  // frame
     fake_cluster->frame.setZero();
     fake_cluster->frame.addRelativeTranslation(0.6, 0., 1.05);
     mlr::Quaternion rot;
@@ -255,7 +255,7 @@ void Collector::step()
     fake_cluster->frame.addRelativeRotation(rot);
     percepts.append( fake_cluster );
 
-    Alvar* fake_alvar = new Alvar("/base_footprint");
+    PercAlvar* fake_alvar = new PercAlvar("/base_footprint");
     fake_alvar->frame.setZero();
 
     arr pos = { 0.9, 0.3, 1.5 };
@@ -277,27 +277,27 @@ void Collector::step()
 }
 
 
-Cluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker)
+PercCluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker)
 {
   arr points = conv_points2arr(marker.points);
   arr mean = sum(points,0)/(double)points.d0;
-  return Cluster(mean, points, marker.header.frame_id);
+  return PercCluster(mean, points, marker.header.frame_id);
 }
 
-Plane conv_ROSTable2Plane(const object_recognition_msgs::Table& table){
+PercPlane conv_ROSTable2Plane(const object_recognition_msgs::Table& table){
   mlr::Transformation t = conv_pose2transformation(table.pose);
   mlr::Mesh hull;
   hull.V = conv_points2arr(table.convex_hull);
   hull.makeLineStrip();
-  Plane toReturn = Plane(t, hull);
+  PercPlane toReturn = PercPlane(t, hull);
   toReturn.frame_id = table.header.frame_id;
 //  toReturn.transform = t;
   return toReturn;
 }
 
-Alvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker)
+PercAlvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker)
 {
-  Alvar new_alvar(marker.header.frame_id);
+  PercAlvar new_alvar(marker.header.frame_id);
   new_alvar.id = marker.id;
   new_alvar.transform = conv_pose2transformation(marker.pose.pose);
   return new_alvar;
