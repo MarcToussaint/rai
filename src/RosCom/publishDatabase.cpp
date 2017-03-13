@@ -68,7 +68,7 @@ visualization_msgs::Marker conv_Percept2Marker(const Percept& object)
   new_marker.header.stamp = ros::Time(0.);
   new_marker.header.frame_id = dynamic_cast<const PercCluster&>(object).frame_id;
 
-  new_marker.color.a = object.relevance;
+  new_marker.color.a = object.precision;
   new_marker.color.r = (double)((new_marker.id*10000)%97)/97;
   new_marker.color.g = (double)((new_marker.id*10000)%91)/91;
   new_marker.color.b = (double)((new_marker.id*10000)%89)/89;
@@ -100,7 +100,7 @@ visualization_msgs::Marker conv_Percept2TableMarker(const Percept& object)
   new_marker.lifetime = ros::Duration(0.5);
   new_marker.header.stamp = ros::Time(0.);
   new_marker.header.frame_id = plane.frame_id;
-  new_marker.color.a = plane.relevance;
+  new_marker.color.a = plane.precision;
   new_marker.color.r = 1.0;
   new_marker.color.g = 0;
   new_marker.color.b = 0;
@@ -113,7 +113,7 @@ ar::AlvarMarker conv_Percept2Alvar(const Percept& object)
   ar::AlvarMarker new_marker;
   new_marker.header.frame_id = dynamic_cast<const PercAlvar&>(object).frame_id;
   new_marker.pose.pose = conv_transformation2pose(object.transform);
-  new_marker.id = object.id;
+  new_marker.id = dynamic_cast<const PercAlvar&>(object).alvarId;
   return new_marker;
 }
 

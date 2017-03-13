@@ -42,9 +42,6 @@ struct TaskControlThread : Thread {
 
   GravityCompensation* gc;
 
-  arr q_history, qdot_last, a_last, q_lowPass, qdot_lowPass, qddot_lowPass, aErrorIntegral, u_lowPass;
-  arr model_error_g;
-
   arr fRInitialOffset;
 
 

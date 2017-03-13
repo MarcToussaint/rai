@@ -1623,7 +1623,7 @@ struct XBackgroundContext{
     static int visual_attribs[] = { None };
     int context_attribs[] = { GLX_CONTEXT_MAJOR_VERSION_ARB, 3, GLX_CONTEXT_MINOR_VERSION_ARB, 0, None };
 
-    dpy = XOpenDisplay(0);
+    dpy = NULL; //XOpenDisplay(0);
     fbcount = 0;
     fbc = NULL;
 
@@ -1656,6 +1656,11 @@ struct XBackgroundContext{
     XSync(dpy, False);
 
     makeCurrent();
+  }
+
+  ~XBackgroundContext(){
+    XFree(ctx);
+    XFree(dpy);
   }
 
   void makeCurrent(){

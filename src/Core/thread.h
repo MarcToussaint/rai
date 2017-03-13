@@ -279,9 +279,9 @@ struct AccessData : RevisionedRWLock {
   AccessData() = default;
   AccessData(const AccessData&){ HALT("not allowed"); }
   void operator=(const AccessData&){ HALT("not allowed"); }
-  RToken<T> get(Thread *th=NULL){ return RToken<T>(this, &value, th); } ///< read access to the variable's data
-  WToken<T> set(Thread *th=NULL){ return WToken<T>(this, &value, th); } ///< write access to the variable's data
-  WToken<T> set(const double& dataTime, Thread *th=NULL){ return WToken<T>(dataTime, this, &value, th); } ///< write access to the variable's data
+  RToken<T> get(Thread *th=NULL){ return RToken<T>(*this, &value, th); } ///< read access to the variable's data
+  WToken<T> set(Thread *th=NULL){ return WToken<T>(*this, &value, th); } ///< write access to the variable's data
+  WToken<T> set(const double& dataTime, Thread *th=NULL){ return WToken<T>(dataTime, *this, &value, th); } ///< write access to the variable's data
 };
 
 template<class T> bool operator==(const AccessData<T>&,const AccessData<T>&){ return false; }
@@ -305,6 +305,8 @@ struct Access_typed{
   Thread *thread;  ///< which thread is this a member of
   int last_accessed_revision;          ///< last revision that has been accessed (read or write)
   struct Node* registryNode;
+
+  Access_typed(const char* name) : Access_typed(NULL, name, false){}
 
   /// searches for globally registrated variable 'name', checks type equivalence, and becomes an access for '_thred'
   Access_typed(Thread* _thread, const char* name, bool threadListens=false)
@@ -364,7 +366,7 @@ struct Access_typed{
 extern Singleton<ConditionVariable> moduleShutdown;
 Node *getVariable(const char* name);
 //template <class T> T* getVariable(const char* name){  return dynamic_cast<T*>(registry().get<RevisionedRWLock*>({"AccessData",name}));  }
-template <class T> T& getVariable(const char* name){  return registry().get<T>({"AccessData",name});  }
+template <class T> T& getVariable(const char* name){  return registry().get<T&>({"AccessData",name});  }
 template <class T> T* getThread(const char* name){  return dynamic_cast<T*>(registry().get<Thread*>({"Thread",name}));  }
 RevisionedRWLockL getVariables();
 void openModules();

@@ -15,13 +15,16 @@
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
+
 #include <unordered_set>
 #include "filter.h"
+#include <Control/taskControl.h>
 
 Filter::Filter()
   : Thread("Filter", -1.),
     percepts_input(this, "percepts_input", true), //listens!!
-    percepts_filtered(this, "percepts_filtered") {
+    percepts_filtered(this, "percepts_filtered"),
+    modelWorld(this, "modelWorld"){
   threadOpen();
 }
 
@@ -29,7 +32,32 @@ Filter::~Filter(){
   threadClose();
 }
 
+void Filter::open(){
+  Access_typed<mlr::KinematicWorld> modelWorld(this, "modelWorld");
+  modelWorld.readAccess();
+  for(mlr::Body *b:modelWorld().bodies){
+    if(b->ats["percept"]){
+      LOG(0) <<"ADDING this body " <<b->name <<" to the percept database, which ats:" <<endl;
+      LOG(0) <<*b <<"--" <<b->ats <<endl;
+      mlr::Shape *s=b->shapes.first();
+      switch(s->type){
+        case mlr::ST_box:{
+          Percept *p = new PercBox(s->X, arr(s->size, 3), arr(s->color, 3));
+          p->id = nextId++;
+          p->bodyId = b->index;
+          percepts_filtered.set()->append(p);
+        } break;
+        default: NIY
+      }
+    }
+  }
+  modelWorld.deAccess();
+}
+
 void Filter::step(){
+
+//  createNewPercepts = true;
+//  verbose = 1;
 
   if(false){ //just copy!
     percepts_input.writeAccess();
@@ -63,9 +91,22 @@ void Filter::step(){
     return;
   }
 
-  PerceptL filtered;
+  PerceptL newCreations;
 
-  // For each type of inputs, run the algorithm.
+  if(verbose>0){
+    cout <<"FILTER - before:";
+//    cout <<"newCreations:\n"; listWrite(newCreations, cout, "\n");
+    cout <<"\ndatabase:\n"; listWrite(percepts_filtered(), cout, "\n");
+    cout <<"\ninput:\n"; listWrite(percepts_input(), cout, "\n");
+    cout <<endl;
+  }
+
+  //-- step 1: discount precision of old percepts
+  // in forward models, the variance of two Gaussians is ADDED -> precision is 1/variance
+  for(Percept *p:percepts_filtered()) p->precision = 1./(1./p->precision + 1./precision_transition);
+
+  //-- step 2: compute matches within types and fuse
+  // For each type of inputs, run the matching
   for (int t=0; t<=Percept::Type::PT_end; t++){
     Percept::Type type = Percept::Type(t);
     //collect input and database percepts of given type
@@ -82,12 +123,50 @@ void Filter::step(){
     //run Hungarian algorithm
     Hungarian ha(costs);
 
+#if 0
     // Now we have the optimal matching. Assign values.
     PerceptL assignedObjects = assign(input_ofType, database_ofType, ha);
-
     filtered.append(assignedObjects);
+#else
+    for(uint i=0;i<input_ofType.N;i++){
+      Percept *perc = input_ofType(i);
+      int j=ha.getMatch_row(i);
+      if(j>=(int)database_ofType.N) j=-1;
+      if(j==-1){ //nothing to merge with
+        if(createNewPercepts){ //add this percept as a new object to the database
+          perc->id = nextId++;
+          perc->precision = 1.;
+          newCreations.append(perc);
+        }else{
+          perc->id = 0; //will be deleted
+        }
+      }else{
+        Percept *obj = database_ofType(j);
+        perc->id = obj->id;
+        obj->fuse(perc);
+      }
+    }
+#endif
   }
 
+  //-- step 3: remove all database objects with too low precision and append new creations
+  for(uint i=percepts_filtered().N;i--;){
+    Percept *p = percepts_filtered()(i);
+    if(p->precision<precision_threshold){
+      delete p;
+      p=NULL;
+      percepts_filtered().remove(i);
+    }
+  }
+  percepts_filtered().append(newCreations);
+  newCreations.clear();
+
+  //-- step 4: clean up remaining percepts
+  for(Percept* p : percepts_input()){
+    if(!p->id) delete p;
+  }
+  percepts_input().clear();
+#if 0
   //-- delete objects in percepts and database that are not filtered
   for (Percept* p : percepts_input()) {
     if (!filtered.contains(p))
@@ -100,9 +179,60 @@ void Filter::step(){
       delete p;
   }
   percepts_filtered().clear();
-
-  // Set the variable
   percepts_filtered() = filtered;
+#endif
+
+  //-- step 5: now sync with modelWorld using inverse kinematics
+  modelWorld.writeAccess();
+  modelWorld->setAgent(1);
+  TaskControlMethods taskController(modelWorld());
+  arr q=modelWorld().q;
+  // create task costs on the modelWorld for each percept
+  for(Percept *p:percepts_filtered()){
+    if(p->bodyId>=0){
+      mlr::Body *b = modelWorld->bodies(p->bodyId);
+      CtrlTask *t;
+
+      t = new CtrlTask(STRING("syncPos_" <<b->name), new TaskMap_Default(posTMT, b->shapes.first()->index));
+      t->ref = new MotionProfile_Const( p->transform.pos.getArr() );
+      taskController.tasks.append(t);
+
+      t = new CtrlTask(STRING("syncQuat_" <<b->name), new TaskMap_Default(quatTMT, b->shapes.first()->index));
+      t->ref = new MotionProfile_Const( p->transform.rot.getArr4d(), true );
+      taskController.tasks.append(t);
+    }
+  }
+
+  double cost=0.;
+  taskController.updateCtrlTasks(0., modelWorld()); //this computes their value and Jacobians
+  arr dq = taskController.inverseKinematics(NoArr, NoArr, &cost);
+  q += dq;
+
+  if(verbose>=0){
+    taskController.reportCurrentState();
+    LOG(0) <<"FILTER: IK cost=" <<cost <<" perc q vector = " <<q <<endl;
+  }
+
+  //cleanup tasks
+  listDelete(taskController.tasks);
+
+
+//  modelWorld.deAccess();
+//  modelWorld.writeAccess();
+  modelWorld->setAgent(1);
+  modelWorld->setJointState(q);
+  modelWorld->setAgent(0);
+  modelWorld.deAccess();
+
+
+  if(verbose>0){
+    cout <<"FILTER - after:";
+//    cout <<"newCreations:\n"; listWrite(newCreations, cout, "\n");
+    cout <<"\ndatabase:\n"; listWrite(percepts_filtered(), cout, "\n");
+    cout <<"\ninput:\n"; listWrite(percepts_input(), cout, "\n");
+    cout <<endl;
+  }
+
   percepts_filtered.deAccess();
   percepts_input.deAccess();
 }
@@ -124,8 +254,8 @@ PerceptL Filter::assign(const PerceptL& inputs, const PerceptL& database, const 
     if ( i >= num_new ) {
       //std::cout<< "Existed before, doesn't now." << std::endl;
       Percept *old_obj = database(col);
-      old_obj->relevance *= relevance_decay_factor;
-      if(old_obj->relevance > relevance_threshold)
+      old_obj->precision *= relevance_decay_factor;
+      if(old_obj->precision > precision_threshold)
         new_database.append(old_obj);
       //otherwise the object is lost/discarded
     } else {

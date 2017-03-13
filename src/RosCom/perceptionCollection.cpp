@@ -255,7 +255,7 @@ void Collector::step()
     fake_cluster->frame.addRelativeRotation(rot);
     percepts.append( fake_cluster );
 
-    PercAlvar* fake_alvar = new PercAlvar("/base_footprint");
+    PercAlvar* fake_alvar = new PercAlvar(10, "/base_footprint");
     fake_alvar->frame.setZero();
 
     arr pos = { 0.9, 0.3, 1.5 };
@@ -266,7 +266,7 @@ void Collector::step()
     rndUniform(alv_rot, -0.01, 0.01, true);
     rot.setRpy(alv_rot(0), alv_rot(1), alv_rot(2));
     fake_alvar->frame.addRelativeRotation(rot);
-    fake_alvar->id = 10;
+    fake_alvar->alvarId = 10;
     percepts.append( fake_alvar );
     mlr::wait(0.01);
   }
@@ -297,8 +297,7 @@ PercPlane conv_ROSTable2Plane(const object_recognition_msgs::Table& table){
 
 PercAlvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker)
 {
-  PercAlvar new_alvar(marker.header.frame_id);
-  new_alvar.id = marker.id;
+  PercAlvar new_alvar(marker.id, marker.header.frame_id);
   new_alvar.transform = conv_pose2transformation(marker.pose.pose);
   return new_alvar;
 }

@@ -22,6 +22,17 @@
 
 //===========================================================================
 
+CT_Status MotionProfile_Const::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot){
+  if(flipTargetSignOnNegScalarProduct && scalarProduct(y_target, y) < 0){
+    y_target = -y_target;
+  }
+  yRef = y_target;
+  ydotRef = zeros(y.N);
+  return CT_running;
+}
+
+//===========================================================================
+
 CT_Status MotionProfile_Sine::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot){
   t+=tau;
   if(t>1.) t=1.;
@@ -212,7 +223,7 @@ CT_Status CtrlTask::update(double tau, const mlr::KinematicWorld& world){
 MotionProfile_PD& CtrlTask::PD(){
   if(!ref) ref = new MotionProfile_PD();
   MotionProfile_PD *pd = dynamic_cast<MotionProfile_PD*>(ref);
-  CHECK(pd, "");
+  CHECK(pd, "you've created a non-PD ref for this before, of type " <<typeid(*ref).name());
   return *pd;
 }
 
@@ -248,7 +259,7 @@ void CtrlTask::reportState(ostream& os){
   os <<"  CtrlTask " <<name;
   if(!active) cout <<" INACTIVE";
   if(y_ref.N==y.N && v_ref.N==v.N){
-    os <<":  y_target=" <<PD().y_target <<" \ty_ref=" <<y_ref <<" \ty=" <<y
+    os <<": "/*y_target=" <<PD().y_target */<<" \ty_ref=" <<y_ref <<" \ty=" <<y
       <<"  y-err=" <<length(y_ref-y)
      <<"  v-err=" <<length(v_ref-v)
     <<endl;
@@ -415,7 +426,10 @@ arr TaskControlMethods::inverseKinematics(arr& qdot, const arr& nullRef, double*
   if(&qdot) qdot = Jinv*v;
   arr dq = Jinv*y;
   if(&nullRef) dq += nullRef - Jinv*(J*nullRef);
-  if(cost) *cost = sumOfSqr(y) + sum(nullRef%Hmetric%nullRef);
+  if(cost){
+    *cost = sumOfSqr(y);
+    if(&nullRef) *cost += sum(nullRef%Hmetric%nullRef);
+  }
   return dq;
 }
 

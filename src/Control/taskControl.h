@@ -46,6 +46,17 @@ struct MotionProfile{
 
 //===========================================================================
 
+struct MotionProfile_Const : MotionProfile{
+  arr y_target;
+  bool flipTargetSignOnNegScalarProduct;
+  MotionProfile_Const(const arr& y_target, bool flip=false) : y_target(y_target), flipTargetSignOnNegScalarProduct(flip) {}
+  virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
+  virtual void resetState(){}
+  virtual bool isDone(){ return false; }
+};
+
+//===========================================================================
+
 struct MotionProfile_Sine : MotionProfile{
   arr y_init, y_target;
   double t;

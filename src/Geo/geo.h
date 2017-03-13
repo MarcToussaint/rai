@@ -153,6 +153,7 @@ struct Quaternion {
   Vector getZ() const;
   Matrix getMatrix() const;
   arr    getArr() const;
+  arr    getArr4d() const{ return arr(&w, 4, false); }
   double* getMatrix(double* m) const;
   double* getMatrixOde(double* m) const; //in Ode foramt: 3x4 memory storae
   double* getMatrixGL(double* m) const;  //in OpenGL format: transposed 4x4 memory storage
@@ -200,6 +201,7 @@ struct Transformation {
   double* getInverseAffineMatrix(double *m) const;  // 4x4 matrix with 3x3=R^{-1}   and bottom-row=R^{-1}*translation
   double* getAffineMatrixGL(double *m) const;       // in OpenGL format (transposed memory storage!!)
   double* getInverseAffineMatrixGL(double *m) const;// in OpenGL format (transposed memory storage!!)
+  arr getArr7d();
   
   void applyOnPointArray(arr& pts) const;
 
@@ -358,9 +360,9 @@ void quatDiff(arr& y, arr& J1, arr& J2, const Quaternion& q1, const Quaternion& 
 // conversions to arr
 //
 
-inline arr conv_vec2arr(const mlr::Vector& v) {      return arr(&v.x, 3); }
-inline arr conv_quat2arr(const mlr::Quaternion& q) { return arr(&q.w, 4); }
-inline arr conv_mat2arr(const mlr::Matrix& m) {      return arr(&m.m00, 9); }
+inline arr conv_vec2arr(const mlr::Vector& v) {      return arr(&v.x, 3, false); }
+inline arr conv_quat2arr(const mlr::Quaternion& q) { return arr(&q.w, 4, false); }
+inline arr conv_mat2arr(const mlr::Matrix& m) {      return arr(&m.m00, 9, false); }
 
 
 //===========================================================================

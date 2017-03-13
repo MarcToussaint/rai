@@ -90,7 +90,7 @@ struct ComputeCameraView : Thread {
   mlr::KinematicWorld copy;
   bool getDepth;
 
-  ComputeCameraView(double beatIntervalSec=-1.);
+  ComputeCameraView(double beatIntervalSec=-1., const char* modelWorld_name="modelWorld");
   ~ComputeCameraView();
   void open();
   void step();

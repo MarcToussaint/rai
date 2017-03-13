@@ -13,6 +13,25 @@
     --------------------------------------------------------------  */
 
 
+/* Note (mt): The Hungarian does a /perfect/ weighted bi-partite graph matching.
+ * Perfect means that the mathching has full caridinality, i.e., all vertices have
+ * a match (in the other partite). Non-perfect minimum weight matching can be reduced
+ * to perfect matching by just expanding the graph (having O+P vertices); see also
+ * (section 1.5.1 of Guido Schäfer's Master's thesis
+ * http://homepages.cwi.nl/~schaefer/ftp/pdf/masters-thesis.pdf
+ *
+ * The Hungarian is not really efficient. More efficient implementations of graph matching are found here:
+ * http://pub.ist.ac.at/~vnk/software.html#BLOSSOM5
+ * and here
+ * https://www.cs.purdue.edu/homes/apothen/software.html
+ *
+ * General info:
+ * https://en.wikipedia.org/wiki/Matching_(graph_theory)
+ * https://en.wikipedia.org/wiki/Blossom_algorithm
+ *
+ * If it is not an efficiency bottleneck, we stick with Hungarian first.
+ */
+
 #include "hungarian.h"
 
 Hungarian::Hungarian(const arr& cost_matrix)

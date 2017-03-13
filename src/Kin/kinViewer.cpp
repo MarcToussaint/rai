@@ -166,9 +166,9 @@ void OrsPoseViewer::close(){
 
 //===========================================================================
 
-ComputeCameraView::ComputeCameraView(double beatIntervalSec)
+ComputeCameraView::ComputeCameraView(double beatIntervalSec, const char* modelWorld_name)
   : Thread("ComputeCameraView", beatIntervalSec),
-    modelWorld(this, "modelWorld", (beatIntervalSec<.0)),
+    modelWorld(this, modelWorld_name, (beatIntervalSec<.0)),
     cameraView(this, "kinect_rgb"), //"cameraView"),
     cameraDepth(this, "kinect_depth"), //"cameraDepth"),
     cameraFrame(this, "kinect_frame"), //"cameraFrame"),

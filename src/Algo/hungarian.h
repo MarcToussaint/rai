@@ -22,6 +22,8 @@ struct Hungarian {
   Hungarian(const arr& cost_matrix);
   ~Hungarian();
 
+  uint getMatch_row(uint i){ return starred[i].maxIndex(); }
+
 private:
   arr primed;
   uint dim;

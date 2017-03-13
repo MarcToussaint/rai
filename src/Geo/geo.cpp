@@ -1181,6 +1181,18 @@ double* Transformation::getInverseAffineMatrixGL(double *m) const {
   return m;
 }
 
+arr Transformation::getArr7d(){
+  arr t(7);
+  t.p[0]=pos.x;
+  t.p[1]=pos.y;
+  t.p[2]=pos.z;
+  t.p[3]=rot.w;
+  t.p[4]=rot.x;
+  t.p[5]=rot.y;
+  t.p[6]=rot.z;
+  return t;
+}
+
 void Transformation::applyOnPointArray(arr& pts) const{
   if(!((pts.nd==2 && pts.d1==3) || (pts.nd==3 && pts.d2==3))){
     LOG(-1) <<"wrong pts dimensions for transformation:" <<pts.dim();

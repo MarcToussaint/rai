@@ -1086,7 +1086,7 @@ uint mlr::KinematicWorld::getJointStateDimension(int agent) const {
     CHECK(!q.N && !qdim.N,"you've change q-dim (locked joints?) without clearing q,qdot");
     ((KinematicWorld*)this)->analyzeJointStateDimensions();
   }
-  CHECK((uint)agent<qdim.N,"don't have that agent (analyzeJointStateDimensions before?)");
+  CHECK((uint)agent<qdim.N,"don't have agent # " <<agent <<" (analyzeJointStateDimensions returned [" <<qdim <<"])");
   return qdim(agent);
 }
 
@@ -1239,7 +1239,7 @@ arr mlr::KinematicWorld::calc_q_from_Q(mlr::Joint* j) {
 }
 
 void mlr::KinematicWorld::calc_q_from_Q(int agent) {
-  if(agent == -1) agent = q_agent;
+  if(agent==-1) agent = q_agent;
 //  mlr::Quaternion rot;
   
   uint N=getJointStateDimension(agent);
@@ -1858,8 +1858,8 @@ ShapeL mlr::KinematicWorld::getShapesByAgent(const uint agent) const {
       for(mlr::Shape* s : tmp) {
         if (!agent_shapes.contains(s)) agent_shapes.append(s);
       }
-    } 
-  }  
+    }
+  }
   return agent_shapes;
 }
 
@@ -2520,7 +2520,7 @@ mlr::Proxy* mlr::KinematicWorld::getContact(uint a, uint b) const {
 
 arr mlr::KinematicWorld::getHmetric() const{
   arr H = zeros(getJointStateDimension());
-  for(mlr::Joint *j:joints){
+  for(mlr::Joint *j:joints) if(j->agent==q_agent){
     double h=j->H;
     CHECK(h>0.,"Hmetric should be larger than 0");
     if(j->type==JT_transXYPhi){

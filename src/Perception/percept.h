@@ -10,8 +10,9 @@ struct Percept : GLDrawer{
   enum Type { PT_cluster, PT_plane, PT_box, PT_mesh, PT_alvar, PT_optitrackmarker, PT_optitrackbody, PT_end };
 
   uint id = 0;
+  int bodyId = -1;
   mlr::Enum<Type> type;
-  double relevance = 1.; //mt: what is relevance? mt: replace -> timeSincePerceived
+  double precision = 1.; //mt: what is relevance? mt: replace -> timeSincePerceived
   mlr::Transformation transform; //mt: really two different transforms??? don't like that
   mlr::Transformation frame;
   std::string frame_id;
@@ -42,7 +43,7 @@ struct PercCluster : Percept {
   arr points;
 
   PercCluster(arr mean, arr points, std::string frame_id);
-  PercCluster(const PercCluster &obj);
+
   virtual void syncWith(mlr::KinematicWorld& K);
   virtual double idMatchingCost(const Percept& other);
   virtual void write(ostream& os) const;
@@ -65,7 +66,6 @@ struct PercMesh : Percept {
 struct PercPlane : Percept {
   mlr::Mesh hull;
 
-  PercPlane();
   PercPlane(const mlr::Transformation& t, const mlr::Mesh& hull);
 
   virtual void syncWith(mlr::KinematicWorld& K);
@@ -91,9 +91,9 @@ struct PercBox : Percept {
 };
 
 struct PercAlvar : Percept {
+  uint alvarId;
 
-  PercAlvar(std::string _frame_id);
-  PercAlvar(const PercAlvar &obj);
+  PercAlvar(uint alvarId, std::string _frame_id);
 
   virtual void syncWith(mlr::KinematicWorld& K);
   virtual double idMatchingCost(const Percept& other);
@@ -113,7 +113,7 @@ struct OptitrackMarker : Percept {
     : Percept(PT_optitrackmarker) {
     this->frame_id = obj.frame_id;
     this->type = obj.type;
-    this->relevance = obj.relevance;
+    this->precision = obj.precision;
     this->id = obj.id;
     this->transform = obj.transform;
     this->frame = obj.frame;
@@ -137,7 +137,7 @@ struct OptitrackBody : Percept {
   OptitrackBody(const OptitrackBody &obj)
     : Percept(Type::PT_optitrackbody) {
     this->frame_id = obj.frame_id;
-    this->relevance = obj.relevance;
+    this->precision = obj.precision;
     this->id = obj.id;
     this->transform = obj.transform;
     this->frame = obj.frame;

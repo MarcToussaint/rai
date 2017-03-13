@@ -22,13 +22,14 @@ double Percept::idMatchingCost(const Percept& other){
 }
 
 double Percept::fuse(Percept* other){
+  precision += other->precision;
   transform.pos = (1.-alpha)*transform.pos + alpha*other->transform.pos;
   transform.rot.setInterpolate(alpha, transform.rot, other->transform.rot);
   return 0.;
 }
 
 void Percept::write(ostream& os) const{
-  os <<type <<'_' <<id <<" <" <<transform <<">:";
+  os <<type <<'_' <<id <<" (" <<precision <<") <" <<transform <<">:";
 //  os <<" trans=" <<transform <<" frame=" <<frame <<" type=" <<type;
 }
 
@@ -42,17 +43,17 @@ PercCluster::PercCluster(arr mean, arr points, std::string _frame_id)
 }
 
 
-PercCluster::PercCluster(const PercCluster& obj)
-  : Percept(obj){
-  this->frame_id = obj.frame_id;
-  this->mean = obj.mean;
-  this->points = obj.points;
-  this->type = obj.type;
-  this->relevance = obj.relevance;
-  this->id = obj.id;
-  this->transform = obj.transform;
-  this->frame = obj.frame;
-}
+//PercCluster::PercCluster(const PercCluster& obj)
+//  : Percept(obj){
+//  this->frame_id = obj.frame_id;
+//  this->mean = obj.mean;
+//  this->points = obj.points;
+//  this->type = obj.type;
+//  this->precision = obj.precision;
+//  this->id = obj.id;
+//  this->transform = obj.transform;
+//  this->frame = obj.frame;
+//}
 
 double PercCluster::idMatchingCost(const Percept& other){
   if(other.type!=PT_cluster) return -1.;
@@ -77,9 +78,6 @@ double PercMesh::fuse(Percept* other){
 }
 
 //============================================================================
-
-PercPlane::PercPlane()
-  : Percept(Type::PT_plane) {}
 
 PercPlane::PercPlane(const mlr::Transformation& t, const mlr::Mesh& hull)
   : Percept(Type::PT_plane, t), hull(hull) {}
@@ -221,20 +219,20 @@ void PercBox::glDraw(OpenGL&){
 
 //============================================================================
 
-PercAlvar::PercAlvar(std::string _frame_id)
-  : Percept(Type::PT_alvar){
+PercAlvar::PercAlvar(uint alvarId, std::string _frame_id)
+  : Percept(Type::PT_alvar), alvarId(alvarId){
   frame_id = _frame_id;
 }
 
-PercAlvar::PercAlvar(const PercAlvar& obj)
-  : Percept(obj){
-  this->frame_id = obj.frame_id;
-  this->type = obj.type;
-  this->relevance = obj.relevance;
-  this->id = obj.id;
-  this->transform = obj.transform;
-  this->frame = obj.frame;
-}
+//PercAlvar::PercAlvar(const PercAlvar& obj)
+//  : Percept(obj){
+//  this->frame_id = obj.frame_id;
+//  this->type = obj.type;
+//  this->precision = obj.precision;
+//  this->id = obj.id;
+//  this->transform = obj.transform;
+//  this->frame = obj.frame;
+//}
 
 double PercAlvar::idMatchingCost(const Percept& other){
   if(other.type!=PT_alvar) return -1.;

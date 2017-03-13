@@ -104,7 +104,6 @@ void TaskControlThread::step(){
   //-- read real state
   if(useRos){
     bool succ=true;
-    qdot_last = qdot_real;
     if(robot=="pr2"){
       ctrl_obs.waitForRevisionGreaterThan(0);
       pr2_odom.waitForRevisionGreaterThan(0);
@@ -117,6 +116,7 @@ void TaskControlThread::step(){
         q_real({trans->qIndex, trans->qIndex+2}) = pr2odom;
       }
     }
+
     if(robot=="baxter"){
 #ifdef MLR_ROS
       s->jointState.waitForRevisionGreaterThan(20);
@@ -130,19 +130,16 @@ void TaskControlThread::step(){
 
     if(succ && q_real.N==realWorld.q.N && qdot_real.N==realWorld.q.N){ //we received a good reading
       realWorld.setJointState(q_real, qdot_real);
+
       if(syncModelStateWithReal){
         q_model = q_real;
         qdot_model = qdot_real;
         modelWorld.set()->setJointState(q_model, qdot_model);
-        resetCtrlTasksState = true;
-        //history stuff -> delete?
-        q_history.prepend(q_real); q_history.reshape(q_history.N/q_real.N, q_real.N);
-        if(q_history.d0>5) q_history.resizeCopy(5, q_real.N);
-
-        if(q_history.d0>0) lowPassUpdate(q_lowPass, q_history[0]);
-        if(q_history.d0>1) lowPassUpdate(qdot_lowPass, (q_history[0]-q_history[1])/.01);
-        if(q_history.d0>2) lowPassUpdate(qddot_lowPass, (q_history[0]-2.*q_history[1]+q_history[2])/(.01*.01));
-        //if(q_history.d0 > 1) cout << sign(q_model-q_history[1]) << endl;
+        if(requiresInitialSync){ //this was the first initial sync!! -> reset ctrl tasks
+          ctrlTasks.writeAccess();
+          if(resetCtrlTasksState) taskController->resetCtrlTasksState();
+          ctrlTasks.deAccess();
+        }
         syncModelStateWithReal = false;
       }
       requiresInitialSync = false;
@@ -156,96 +153,88 @@ void TaskControlThread::step(){
   }
 
   //-- compute the feedback controller step and iterate to compute a forward reference
+  {
+    modelWorld.writeAccess();
+    //  if(!(step_count%20)) modelWorld().gl().update(); //only for debugging
 
-  //now operational space control
-  modelWorld.writeAccess();
+    ctrlTasks.writeAccess();
+    taskController->tasks = ctrlTasks();
 
-//  if(!(step_count%20)) modelWorld().gl().update();
+    taskController->updateCtrlTasks(.01, modelWorld()); //update with time increment
 
-  ctrlTasks.writeAccess();
-  taskController->tasks = ctrlTasks();
-  if(resetCtrlTasksState)
-    taskController -> resetCtrlTasksState();
+    //-- compute IK step
+    double maxQStep = 1e-1;
+    arr dq = taskController->inverseKinematics(qdot_model); //, .01*(q0-q_model));
+    double l = length(dq);
+    if(l>maxQStep) dq *= maxQStep/l;
+    q_model += dq;
 
-  taskController->updateCtrlTasks(.01, modelWorld()); //update with time increment
-
-  //-- compute IK step
-  double maxQStep = 1e-1;
-  arr dq = taskController->inverseKinematics(qdot_model); //, .01*(q0-q_model));
-  double l = length(dq);
-  if(l>maxQStep) dq *= maxQStep/l;
-  q_model += dq;
-
-  //set/test the new configuration
-  modelWorld().setJointState(q_model, qdot_model);
-  modelWorld().stepSwift();
-  taskController->updateCtrlTasks(0., modelWorld()); //update without time increment
-  double cost = taskController->getIKCosts();
-  IK_cost.set() = cost;
-
-  if(cost>1000.){ //reject!
-    LOG(-1) <<"HIGH COST IK! " <<cost;
-    q_model -= .9*dq;
+    //set/test the new configuration
     modelWorld().setJointState(q_model, qdot_model);
     modelWorld().stepSwift();
     taskController->updateCtrlTasks(0., modelWorld()); //update without time increment
-  }
+    double cost = taskController->getIKCosts();
+    IK_cost.set() = cost;
 
-  if(verbose) taskController->reportCurrentState();
-  ctrlTasks.deAccess();
-  modelWorld.deAccess();
+    //check the costs
+    if(cost>1000.){ //reject!
+      LOG(-1) <<"HIGH COST IK! " <<cost;
+      q_model -= .9*dq;
+      modelWorld().setJointState(q_model, qdot_model);
+      modelWorld().stepSwift();
+      taskController->updateCtrlTasks(0., modelWorld()); //update without time increment
+    }
+
+    if(verbose) taskController->reportCurrentState();
+    ctrlTasks.deAccess();
+    modelWorld.deAccess();
+  }
 
   //TODO: construct the compliance matrix..
 
-  ctrl_q_ref.set() = q_model;
+  //    //-- compute the force feedback control coefficients
+  //    uint count=0;
+  //    ctrlTasks.readAccess();
+  //    taskController->tasks = ctrlTasks();
+  //    for(CtrlTask *t : taskController->tasks) {
+  //      if(t->active && t->f_ref.N){
+  //        count++;
+  //        if(count!=1) HALT("you have multiple active force control tasks - NIY");
+  //        t->getForceControlCoeffs(refs.fL, refs.u_bias, refs.KiFTL, refs.J_ft_invL, realWorld);
+  //      }
+  //    }
+  //    if(count==1) refs.Kp = .5;
+  //    ctrlTasks.deAccess();
 
-  //-- first zero references
+  //-- output: set variables
+  {
+    CtrlMsg refs;
+    refs.q =  q_model;
+    refs.qdot = zeros(q_model.N);
+    refs.fL_gamma = 1.;
+    refs.Kp = ARR(1.);
+    refs.Kd = ARR(1.);
+    refs.Ki = ARR(0.2);
+    refs.fL = zeros(6);
+    refs.fR = zeros(6);
+    refs.KiFTL.clear();
+    refs.J_ft_invL.clear();
+    refs.u_bias = zeros(q_model.N);
+    refs.intLimitRatio = 0.7;
+    refs.qd_filt = .99;
 
-//    //-- compute the force feedback control coefficients
-//    uint count=0;
-//    ctrlTasks.readAccess();
-//    taskController->tasks = ctrlTasks();
-//    for(CtrlTask *t : taskController->tasks) {
-//      if(t->active && t->f_ref.N){
-//        count++;
-//        if(count!=1) HALT("you have multiple active force control tasks - NIY");
-//        t->getForceControlCoeffs(refs.fL, refs.u_bias, refs.KiFTL, refs.J_ft_invL, realWorld);
-//      }
-//    }
-//    if(count==1) refs.Kp = .5;
-//    ctrlTasks.deAccess();
+    ctrl_q_ref.set() = refs.q;
 
-  CtrlMsg refs;
-  refs.q =  q_model;
-  refs.qdot = zeros(q_model.N);
-  refs.fL_gamma = 1.;
-  refs.Kp = ARR(1.);
-  refs.Kd = ARR(1.);
-  refs.Ki = ARR(0.2);
-  refs.fL = zeros(6);
-  refs.fR = zeros(6);
-  refs.KiFTL.clear();
-  refs.J_ft_invL.clear();
-  refs.u_bias = zeros(q_model.N);
-  refs.intLimitRatio = 0.7;
-  refs.qd_filt = .99;
-
-  ctrl_q_ref.set() = refs.q;
-
-  //-- send base motion command
-  if(useRos) {
+    //-- set base motion command as velocities
     if (!fixBase.get() && trans && trans->qDim()==3) {
       refs.qdot(trans->qIndex+0) = qdot_model(trans->qIndex+0);
       refs.qdot(trans->qIndex+1) = qdot_model(trans->qIndex+1);
       refs.qdot(trans->qIndex+2) = qdot_model(trans->qIndex+2);
     }
-  }
 
-  //-- send the computed movement to the robot
-//  if(!requiresInitialSync && (useRos || useDynSim)){
-//    LOG(0) <<"send";
+    //-- send the computed movement to the robot
     ctrl_ref.set() = refs;
-//  }
+  }
 }
 
 void TaskControlThread::close(){
