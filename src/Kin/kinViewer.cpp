@@ -100,9 +100,6 @@ void OrsPathViewer::step(){
 
 //===========================================================================
 
-void changeColor(void*){  orsDrawColors=false; glColor(.5, 1., .5, .7); }
-void changeColor2(void*){  orsDrawColors=true; orsDrawAlpha=1.; }
-
 OrsPoseViewer::OrsPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec)
   : Thread("OrsPoseViewer", beatIntervalSec),
     modelWorld(this, modelVarName, false),
@@ -136,12 +133,7 @@ void OrsPoseViewer::open() {
   gl.add(glStandardScene, 0);
   gl.camera.setDefault();
 
-  gl.add(changeColor2);
-  for(uint i=0;i<copies.N;i++){
-    gl.add(*copies(i));
-    gl.add(changeColor);
-  }
-  gl.add(changeColor2);
+  for(uint i=0;i<copies.N;i++) gl.add(*copies(i));
   //  gl.camera.focus(0.6, -0.1, 0.65);
   //  gl.width = 1280;
   //  gl.height = 960;
@@ -192,6 +184,7 @@ void ComputeCameraView::close(){
 
 void ComputeCameraView::step(){
   copy = modelWorld.get();
+  copy.orsDrawJoints = copy.orsDrawMarkers = copy.orsDrawProxies = false;
 
   mlr::Shape *kinectShape = copy.getShapeByName("endeffKinect");
   if(kinectShape){ //otherwise 'copy' is not up-to-date yet
@@ -199,9 +192,7 @@ void ComputeCameraView::step(){
     gl.camera.setKinect();
     gl.camera.X = kinectShape->X * gl.camera.X;
     gl.dataLock.unlock();
-    orsDrawJoints = orsDrawMarkers = orsDrawProxies = false;
     gl.renderInBack(true, getDepth, 640, 480);
-    orsDrawJoints = orsDrawMarkers = orsDrawProxies = true;
     flip_image(gl.captureImage);
     flip_image(gl.captureDepth);
     cameraView.set() = gl.captureImage;

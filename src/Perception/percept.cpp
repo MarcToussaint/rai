@@ -178,8 +178,10 @@ double PercBox::fuse(Percept* other){
   Percept::fuse(other);
   const PercBox *x = dynamic_cast<const PercBox*>(other);
   CHECK(x,"can't fuse " <<type <<" with "<<other->type);
-  size = (1.-alpha)*size + alpha*x->size;
-  color = (1.-alpha)*color + alpha*x->color;
+  if(x->size.N!=size.N) size.N=x->size.N;
+  else size = (1.-alpha)*size + alpha*x->size;
+  if(x->color.N!=color.N) color = x->color;
+  else color = (1.-alpha)*color + alpha*x->color;
   return 0.;
 }
 
@@ -199,14 +201,7 @@ void PercBox::syncWith(mlr::KinematicWorld &K){
   for(mlr::Shape *s:body->shapes) s->X = body->X * s->rel;
 
   mlr::Shape *shape = body->shapes(0);
-  shape->size[0] = size(0);
-  shape->size[1] = size(1);
-  shape->size[2] = size(2);
-  shape->size[3] = 0.;
-  shape->color[0] = color(0);
-  shape->color[1] = color(1);
-  shape->color[2] = color(2);
-  shape->color[3] = .8;
+  shape->size = size;
   shape->mesh.C = color;
 }
 
@@ -261,7 +256,7 @@ void PercCluster::syncWith(mlr::KinematicWorld& K){
     shape = new mlr::Shape(K, *body);
     shape->name = cluster_name;
     shape->type = mlr::ST_marker;
-    shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
+    shape->size = consts<double>(.2,3);
 //    stored_clusters.append(id);
   }
   body->X = frame;
@@ -291,7 +286,7 @@ void PercAlvar::syncWith(mlr::KinematicWorld& K){
     mlr::Shape *shape = new mlr::Shape(K, *body);
     shape->name = alvar_name;
     shape->type = mlr::ST_marker;
-    shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
+    shape->size = consts<double>(.2,3);
 //    stored_alvars.append(id);
   }
 
@@ -310,7 +305,7 @@ void OptitrackBody::syncWith(mlr::KinematicWorld &K){
     mlr::Shape *shape = new mlr::Shape(K, *body);
     shape->name = optitrackbody_name;
     shape->type = mlr::ST_marker;
-    shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .1;
+    shape->size = consts<double>(.1,3);
 //    stored_optitrackbodies.append(id);
   }
 
@@ -329,7 +324,7 @@ void OptitrackMarker::syncWith(mlr::KinematicWorld &K){
     mlr::Shape *shape = new mlr::Shape(K, *body);
     shape->name = optitrackmarker_name;
     shape->type = mlr::ST_sphere;
-    shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .03;
+    shape->size = consts<double>(.03, 3);
 //    stored_optitrackmarkers.append(id);
   }
 

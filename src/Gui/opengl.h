@@ -70,6 +70,7 @@ void glStandardLight(void*);
 void glStandardScene(void*);
 void glColor(float r, float g, float b, float a=1.f);
 void glColor(int col);
+void glColor(const arr& col);
 void glDrawText(const char* txt, float x, float y, float z, bool largeFont=false);
 //void glShadowTransform();
 void glTransform(const mlr::Transformation& t);

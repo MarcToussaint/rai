@@ -50,14 +50,6 @@
 #  include <GL/glu.h>
 #endif
 
-//global options
-bool orsDrawJoints=true, orsDrawShapes=true, orsDrawBodies=true, orsDrawProxies=true, orsDrawMarkers=true, orsDrawColors=true, orsDrawIndexColors=false;
-bool orsDrawMeshes=true, orsDrawCores=false, orsDrawZlines=false;
-bool orsDrawBodyNames=false;
-double orsDrawAlpha=1.;
-uint orsDrawLimit=0;
-
-
 #define ORS_NO_DYNAMICS_IN_FRAMES
 
 #define SL_DEBUG_LEVEL 1
@@ -243,7 +235,7 @@ mlr::Shape::~Shape() {
 
 void mlr::Shape::copy(const Shape& s, bool referenceMeshOnCopy){
   name=s.name; X=s.X; rel=s.rel; type=s.type;
-  memmove(size, s.size, 4*sizeof(double)); memmove(color, s.color, 4*sizeof(double));
+  size=s.size;
   if(!referenceMeshOnCopy){
     mesh=s.mesh;
     sscCore=s.sscCore;
@@ -267,11 +259,11 @@ void mlr::Shape::parseAts() {
   mlr::String str;
   mlr::FileToken fil;
   ats.get(rel, "rel");
-  if(ats.get(x, "size"))          { CHECK_EQ(x.N,4,"size=[] needs 4 entries"); memmove(size, x.p, 4*sizeof(double)); }
-  if(ats.get(x, "color"))         {
-    CHECK(x.N==3 || x.N==4,"");
-    if(x.N==3){ memmove(color, x.p, 3*sizeof(double)); color[3]=1.; }
-    else memmove(color, x.p, 4*sizeof(double));
+  ats.get(size, "size");
+  if(ats.get(mesh.C, "color")){
+    CHECK(mesh.C.N==3 || mesh.C.N==4,"");
+//    if(x.N==3){ memmove(color, x.p, 3*sizeof(double)); color[3]=1.; }
+    //    else memmove(color, x.p, 4*sizeof(double));
   }
   if(ats.get(d, "type"))       { type=(ShapeType)(int)d;}
   else if(ats.get(str, "type")) { str>> type; }
@@ -284,26 +276,26 @@ void mlr::Shape::parseAts() {
     case mlr::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
     case mlr::ST_box:
       mesh.setBox();
-      mesh.scale(size[0], size[1], size[2]);
+      mesh.scale(size(0), size(1), size(2));
       break;
     case mlr::ST_sphere:
       mesh.setSphere();
-      mesh.scale(size[3], size[3], size[3]);
+      mesh.scale(size(3), size(3), size(3));
       break;
     case mlr::ST_cylinder:
-      CHECK(size[3]>1e-10,"");
-      mesh.setCylinder(size[3], size[2]);
+      CHECK(size(3)>1e-10,"");
+      mesh.setCylinder(size(3), size(2));
       break;
     case mlr::ST_capsule:
-      CHECK(size[3]>1e-10,"");
-//      mesh.setCappedCylinder(size[3], size[2]);
+      CHECK(size(3)>1e-10,"");
+//      mesh.setCappedCylinder(size(3), size(2));
       sscCore.setBox();
-      sscCore.scale(0., 0., size[2]);
-      mesh.setSSCvx(sscCore, size[3]);
+      sscCore.scale(0., 0., size(2));
+      mesh.setSSCvx(sscCore, size(3));
       break;
     case mlr::ST_retired_SSBox:
       HALT("deprecated?");
-      mesh.setSSBox(size[0], size[1], size[2], size[3]);
+      mesh.setSSBox(size(0), size(1), size(2), size(3));
       break;
     case mlr::ST_marker:
       break;
@@ -312,20 +304,19 @@ void mlr::Shape::parseAts() {
       CHECK(mesh.V.N, "mesh needs to be loaded to draw mesh object");
       sscCore = mesh;
       sscCore.makeConvexHull();
-      size[3]=0.;
       break;
     case mlr::ST_ssCvx:
-      CHECK(size[3]>1e-10,"");
+      CHECK(size(3)>1e-10,"");
       CHECK(mesh.V.N, "mesh needs to be loaded to draw mesh object");
       sscCore=mesh;
-      mesh.setSSCvx(sscCore, size[3]);
+      mesh.setSSCvx(sscCore, size(3));
       break;
     case mlr::ST_ssBox:
-      CHECK(size[3]>1e-10,"");
+      CHECK(size.N==4 && size(3)>1e-10,"");
       sscCore.setBox();
-      sscCore.scale(size[0]-2.*size[3], size[1]-2.*size[3], size[2]-2.*size[3]);
-      mesh.setSSBox(size[0], size[1], size[2], size[3]);
-//      mesh.setSSCvx(sscCore, size[3]);
+      sscCore.scale(size(0)-2.*size(3), size(1)-2.*size(3), size(2)-2.*size(3));
+      mesh.setSSBox(size(0), size(1), size(2), size(3));
+//      mesh.setSSCvx(sscCore, size(3));
       break;
     default: NIY;
   }
@@ -345,9 +336,10 @@ void mlr::Shape::parseAts() {
   //colored box?
   if(ats["coloredBox"]){
     CHECK_EQ(mesh.V.d0, 8, "I need a box");
+    arr col=mesh.C;
     mesh.C.resize(mesh.T.d0, 3);
     for(uint i=0;i<mesh.C.d0;i++){
-      if(i==2 || i==3) mesh.C[i] = arr(color, 3);
+      if(i==2 || i==3) mesh.C[i] = col; //arr(color, 3);
       else if(i>=4 && i<=7) mesh.C[i] = 1.;
       else mesh.C[i] = .5;
     }
@@ -359,10 +351,10 @@ void mlr::Shape::parseAts() {
     Matrix I;
     double mass=-1.;
     switch(type) {
-      case ST_sphere:   inertiaSphere(I.p(), mass, 1000., size[3]);  break;
-      case ST_box:      inertiaBox(I.p(), mass, 1000., size[0], size[1], size[2]);  break;
+      case ST_sphere:   inertiaSphere(I.p(), mass, 1000., size(3));  break;
+      case ST_box:      inertiaBox(I.p(), mass, 1000., size(0), size(1), size(2));  break;
       case ST_capsule:
-      case ST_cylinder: inertiaCylinder(I.p(), mass, 1000., size[2], size[3]);  break;
+      case ST_cylinder: inertiaCylinder(I.p(), mass, 1000., size(2), size(3));  break;
       case ST_none:
       default: ;
     }
@@ -375,19 +367,19 @@ void mlr::Shape::parseAts() {
 
 void mlr::Shape::reset() {
   type=ST_none;
-  size[0]=size[1]=size[2]=size[3]=1.;
-  color[0]=color[1]=color[2]=.8; color[3]=1.;
+  size = {1.,1.,1.};
   ats.clear();
   X.setZero();
   rel.setZero();
   mesh.V.clear();
+  mesh.C = consts<double>(.8, 3); //color[0]=color[1]=color[2]=.8; color[3]=1.;
   mesh_radius=0.;
   cont=false;
 }
 
 void mlr::Shape::write(std::ostream& os) const {
   os <<"type=" <<type <<' ';
-//  os <<"size=[" <<size[0] <<' '<<size[1] <<' '<<size[2] <<' '<<size[3] <<"] ";
+//  os <<"size=[" <<size(0) <<' '<<size(1) <<' '<<size(2) <<' '<<size(3) <<"] ";
   if(!rel.isZero()) os <<"rel=<T " <<rel <<" > ";
   for(Node * a: ats)
     if(a->keys.N && a->keys(0)!="rel" && a->keys(0)!="type" /*&& a->keys(0)!="size"*/) os <<*a <<' ';
@@ -404,88 +396,88 @@ void mlr::Shape::read(std::istream& is) {
 void mlr::Shape::glDraw(OpenGL& gl) {
   //set name (for OpenGL selection)
   glPushName((index <<2) | 1);
-  if(orsDrawColors && !orsDrawIndexColors) glColor(color[0], color[1], color[2], color[3]*orsDrawAlpha);
-  if(orsDrawIndexColors) glColor3b((index>>16)&0xff, (index>>8)&0xff, index&0xff);
+  if(world.orsDrawColors && !world.orsDrawIndexColors) glColor(mesh.C); //color[0], color[1], color[2], color[3]*world.orsDrawAlpha);
+  if(world.orsDrawIndexColors) glColor3b((index>>16)&0xff, (index>>8)&0xff, index&0xff);
 
 
   double GLmatrix[16];
   X.getAffineMatrixGL(GLmatrix);
   glLoadMatrixd(GLmatrix);
 
-  if(!orsDrawShapes) {
-    double scale=.33*(size[0]+size[1]+size[2] + 2.*size[3]); //some scale
+  if(!world.orsDrawShapes) {
+    double scale=.33*(size(0)+size(1)+size(2) + 2.*size(3)); //some scale
     if(!scale) scale=1.;
     scale*=.3;
     glDrawAxes(scale);
     glColor(0, 0, .5);
     glDrawSphere(.1*scale);
   }
-  if(orsDrawShapes) {
+  if(world.orsDrawShapes) {
     switch(type) {
       case mlr::ST_none: LOG(-1) <<"Shape '" <<name <<"' has no joint type";  break;
       case mlr::ST_box:
-        if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
-        else glDrawBox(size[0], size[1], size[2]);
+        if(world.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        else if(world.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
+        else glDrawBox(size(0), size(1), size(2));
         break;
       case mlr::ST_sphere:
-        if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
-        else glDrawSphere(size[3]);
+        if(world.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        else if(world.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
+        else glDrawSphere(size(3));
         break;
       case mlr::ST_cylinder:
-        if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
-        else glDrawCylinder(size[3], size[2]);
+        if(world.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        else if(world.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
+        else glDrawCylinder(size(3), size(2));
         break;
       case mlr::ST_capsule:
-        if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
-        else glDrawCappedCylinder(size[3], size[2]);
+        if(world.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        else if(world.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
+        else glDrawCappedCylinder(size(3), size(2));
         break;
       case mlr::ST_retired_SSBox:
         HALT("deprecated??");
-        if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(orsDrawMeshes){
-          if(!mesh.V.N) mesh.setSSBox(size[0], size[1], size[2], size[3]);
+        if(world.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        else if(world.orsDrawMeshes){
+          if(!mesh.V.N) mesh.setSSBox(size(0), size(1), size(2), size(3));
           mesh.glDraw(gl);
         }else NIY;
         break;
       case mlr::ST_marker:
-        if(orsDrawMarkers){
-          glDrawDiamond(size[0]/5., size[0]/5., size[0]/5.); glDrawAxes(size[0]);
+        if(world.orsDrawMarkers){
+          glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.); glDrawAxes(size(0));
         }
         break;
       case mlr::ST_mesh:
         CHECK(mesh.V.N, "mesh needs to be loaded to draw mesh object");
-        if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        if(world.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
         break;
       case mlr::ST_ssCvx:
         CHECK(sscCore.V.N, "sscCore needs to be loaded to draw mesh object");
-        if(!mesh.V.N) mesh.setSSCvx(sscCore, size[3]);
-        if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        if(!mesh.V.N) mesh.setSSCvx(sscCore, size(3));
+        if(world.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
         break;
       case mlr::ST_ssBox:
         if(!mesh.V.N || !sscCore.V.N){
           sscCore.setBox();
-          sscCore.scale(size[0]-2.*size[3], size[1]-2.*size[3], size[2]-2.*size[3]);
-          mesh.setSSCvx(sscCore, size[3]);
+          sscCore.scale(size(0)-2.*size(3), size(1)-2.*size(3), size(2)-2.*size(3));
+          mesh.setSSCvx(sscCore, size(3));
         }
-        if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        if(world.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
         break;
       case mlr::ST_pointCloud:
         CHECK(mesh.V.N, "mesh needs to be loaded to draw point cloud object");
-        if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        if(world.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
         break;
 
       default: HALT("can't draw that geom yet");
     }
   }
-  if(orsDrawZlines) {
+  if(world.orsDrawZlines) {
     glColor(0, .7, 0);
     glBegin(GL_LINES);
     glVertex3d(0., 0., 0.);
@@ -493,7 +485,7 @@ void mlr::Shape::glDraw(OpenGL& gl) {
     glEnd();
   }
 
-  if(orsDrawBodyNames && body){
+  if(world.orsDrawBodyNames && body){
     glColor(1,1,1);
     glDrawText(body->name, 0, 0, 0);
   }
@@ -532,8 +524,8 @@ void computeOptimalSSBoxes(ShapeL& shapes){
     arr x;
     s->mesh.computeOptimalSSBox(x, t, s->mesh.V);
     s->type = mlr::ST_ssBox;
-    s->size[0]=2.*x(0); s->size[1]=2.*x(1); s->size[2]=2.*x(2); s->size[3]=x(3);
-    s->mesh.setSSBox(s->size[0], s->size[1], s->size[2], s->size[3]);
+    s->size(0)=2.*x(0); s->size(1)=2.*x(1); s->size(2)=2.*x(2); s->size(3)=x(3);
+    s->mesh.setSSBox(s->size(0), s->size(1), s->size(2), s->size(3));
     s->rel.appendTransformation(t);
   }
 }
@@ -2138,10 +2130,12 @@ end_header\n";
   mlr::Vector v;
   for(Shape * s: shapes) {
     m = &s->mesh;
+    arr col = m->C;
+    CHECK(col.N==3,"");
     t = s->X;
     if(m->C.d0!=m->V.d0) {
       m->C.resizeAs(m->V);
-      for(j=0; j<m->C.d0; j++) { m->C(j, 0)=s->color[0]; m->C(j, 1)=s->color[1]; m->C(j, 2)=s->color[2]; }
+      for(j=0; j<m->C.d0; j++) m->C[j]=col;
     }
     for(j=0; j<m->V.d0; j++) {
       v.set(m->V(j, 0), m->V(j, 1), m->V(j, 2));
@@ -2288,7 +2282,7 @@ void mlr::KinematicWorld::kinematicsProxyDist(arr& y, arr& J, Proxy *p, double m
 //  //costs
 //  if(a->type==mlr::ST_sphere && b->type==mlr::ST_sphere){
 //    mlr::Vector diff=a->X.pos-b->X.pos;
-//    double d = diff.length() - a->size[3] - b->size[3];
+//    double d = diff.length() - a->size(3) - b->size(3);
 //    y(0) = d;
 //    if(&J){
 //      arr Jpos;
@@ -2326,7 +2320,7 @@ void mlr::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, Proxy *p, double m
   //costs
   if(a->type==mlr::ST_sphere && b->type==mlr::ST_sphere){
     mlr::Vector diff=a->X.pos-b->X.pos;
-    double d = diff.length() - a->size[3] - b->size[3];
+    double d = diff.length() - a->size(3) - b->size(3);
     y(0) = 1. - d/margin;
     if(&J){
       arr Jpos;
@@ -3553,9 +3547,9 @@ EditConfigurationHoverCall::EditConfigurationHoverCall(mlr::KinematicWorld& _ors
 }
 
 struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
-  mlr::KinematicWorld &ors;
+  mlr::KinematicWorld &K;
   bool &exit;
-  EditConfigurationKeyCall(mlr::KinematicWorld& _ors, bool& _exit): ors(_ors), exit(_exit){}
+  EditConfigurationKeyCall(mlr::KinematicWorld& _K, bool& _exit): K(_K), exit(_exit){}
   bool keyCallback(OpenGL& gl) {
     if(gl.pressedkey==' '){ //grab a body
       if(movingBody) { movingBody=NULL; return true; }
@@ -3566,8 +3560,8 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
       if(!top) { cout <<"No object below mouse!" <<endl;  return false; }
       uint i=top->name;
       //cout <<"HOVER call: id = 0x" <<std::hex <<gl.topSelection->name <<endl;
-      if((i&3)==1) s=ors.shapes(i>>2);
-      if((i&3)==2) j=ors.joints(i>>2);
+      if((i&3)==1) s=K.shapes(i>>2);
+      if((i&3)==2) j=K.joints(i>>2);
       if(s) {
         cout <<"selected shape " <<s->name <<" of body " <<s->body->name <<endl;
         selx=top->x;
@@ -3583,13 +3577,13 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
       }
       return true;
     }else switch(gl.pressedkey) {
-      case '1':  orsDrawBodies^=1;  break;
-      case '2':  orsDrawShapes^=1;  break;
-      case '3':  orsDrawJoints^=1;  orsDrawMarkers^=1; break;
-      case '4':  orsDrawProxies^=1;  break;
+      case '1':  K.orsDrawBodies^=1;  break;
+      case '2':  K.orsDrawShapes^=1;  break;
+      case '3':  K.orsDrawJoints^=1;  K.orsDrawMarkers^=1; break;
+      case '4':  K.orsDrawProxies^=1;  break;
       case '5':  gl.reportSelects^=1;  break;
       case '6':  gl.reportEvents^=1;  break;
-      case '7':  ors.writePlyFile("z.ply");  break;
+      case '7':  K.writePlyFile("z.ply");  break;
       case 'j':  gl.camera.X.pos += gl.camera.X.rot*mlr::Vector(0, 0, .1);  break;
       case 'k':  gl.camera.X.pos -= gl.camera.X.rot*mlr::Vector(0, 0, .1);  break;
       case 'i':  gl.camera.X.pos += gl.camera.X.rot*mlr::Vector(0, .1, 0);  break;

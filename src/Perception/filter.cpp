@@ -42,7 +42,7 @@ void Filter::open(){
       mlr::Shape *s=b->shapes.first();
       switch(s->type){
         case mlr::ST_box:{
-          Percept *p = new PercBox(s->X, arr(s->size, 3), arr(s->color, 3));
+          Percept *p = new PercBox(s->X, s->size, s->mesh.C);
           p->id = nextId++;
           p->bodyId = b->index;
           percepts_filtered.set()->append(p);

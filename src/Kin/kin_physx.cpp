@@ -417,15 +417,15 @@ void sPhysXInterface::addBody(mlr::Body *b, physx::PxMaterial *mMaterial) {
     PxGeometry* geometry;
     switch(s->type) {
       case mlr::ST_box: {
-        geometry = new PxBoxGeometry(.5*s->size[0], .5*s->size[1], .5*s->size[2]);
+        geometry = new PxBoxGeometry(.5*s->size(0), .5*s->size(1), .5*s->size(2));
       }
       break;
       case mlr::ST_sphere: {
-        geometry = new PxSphereGeometry(s->size[3]);
+        geometry = new PxSphereGeometry(s->size(3));
       }
       break;
       case mlr::ST_capsule: {
-        geometry = new PxCapsuleGeometry(s->size[3], s->size[2]);
+        geometry = new PxCapsuleGeometry(s->size(3), s->size(2));
       }
       break;
       case mlr::ST_cylinder:
@@ -534,7 +534,7 @@ void DrawActor(PxRigidActor* actor, mlr::Body *body) {
 
     // use the color of the first shape of the body for the entire body
     mlr::Shape *s = body->shapes(0);
-    glColor(s->color[0], s->color[1], s->color[2], .8);
+    glColor(s->mesh.C);
 
     mlr::Transformation f;
     double mat[16];

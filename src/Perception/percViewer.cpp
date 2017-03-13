@@ -39,6 +39,9 @@ void PercViewer::open(){
   for(mlr::Shape *s:modelWorld().shapes){
     mlr::Mesh& m=modelCopy(s->index);
     m = s->mesh;
+    if(!m.C.N) m.C = {.6, .6, .6, .3};
+    if(m.C.N==3) m.C.append(.3);
+    if(m.C.N==4) m.C(3)=.3;
     m.glX = s->X;
 
   }

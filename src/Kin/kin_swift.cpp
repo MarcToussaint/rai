@@ -93,22 +93,22 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
         switch(s->type) {
           case mlr::ST_box:
             s->mesh.setBox();
-            s->mesh.scale(s->size[0], s->size[1], s->size[2]);
+            s->mesh.scale(s->size(0), s->size(1), s->size(2));
             break;
           case mlr::ST_sphere:
             s->mesh.setSphere();
-            s->mesh.scale(s->size[3], s->size[3], s->size[3]);
+            s->mesh.scale(s->size(3), s->size(3), s->size(3));
             break;
           case mlr::ST_cylinder:
-            CHECK(s->size[3]>1e-10,"");
-            s->mesh.setCylinder(s->size[3], s->size[2]);
+            CHECK(s->size(3)>1e-10,"");
+            s->mesh.setCylinder(s->size(3), s->size(2));
             break;
           case mlr::ST_capsule:
-            CHECK(s->size[3]>1e-10,"");
-            s->mesh.setCappedCylinder(s->size[3], s->size[2]);
+            CHECK(s->size(3)>1e-10,"");
+            s->mesh.setCappedCylinder(s->size(3), s->size(2));
             break;
           case mlr::ST_retired_SSBox:
-            s->mesh.setSSBox(s->size[0], s->size[1], s->size[2], s->size[3]);
+            s->mesh.setSSBox(s->size(0), s->size(1), s->size(2), s->size(3));
             break;
           default:
             break;

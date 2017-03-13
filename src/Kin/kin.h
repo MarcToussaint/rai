@@ -151,16 +151,15 @@ struct Shape : GLDrawer{
   uint index;
   Body *body;
   
-  mlr::String name;     ///< name
+  mlr::String name;    ///< name
   Transformation X;
   Transformation rel;  ///< relative translation/rotation of the bodies geometry
   Enum<ShapeType> type;
-  double size[4];  //TODO: obsolete: directly translate to mesh?
-  double color[4]; //TODO: obsolete: directly translate to mesh?
+  arr size;
   Mesh mesh, sscCore;
   double mesh_radius;
   bool cont;           ///< are contacts registered (or filtered in the callback)
-  Graph ats;   ///< list of any-type attributes
+  Graph ats;           ///< list of any-type attributes
   
   Shape(KinematicWorld& _world, Body& b, const Shape *copyShape=NULL, bool referenceMeshOnCopy=false); //new Shape, being added to graph and body's shape lists
   virtual ~Shape();
@@ -205,6 +204,13 @@ struct KinematicWorld : GLDrawer{
 
   bool isLinkTree;
   static uint setJointStateCount;
+
+  //global options
+  bool orsDrawJoints=true, orsDrawShapes=true, orsDrawBodies=true, orsDrawProxies=true, orsDrawMarkers=true, orsDrawColors=true, orsDrawIndexColors=false;
+  bool orsDrawMeshes=true, orsDrawCores=false, orsDrawZlines=false;
+  bool orsDrawBodyNames=false;
+  double orsDrawAlpha=1.;
+  uint orsDrawLimit=0;
   
   /// @name constructors
   KinematicWorld();
@@ -439,11 +445,6 @@ void transferKI_ft_BetweenTwoWorlds(arr& KI_ft_To, const arr& KI_ft_From, const 
 /// @{
 // OPENGL interface
 struct OpenGL;
-
-//-- global draw options
-extern bool orsDrawJoints, orsDrawBodies, orsDrawGeoms, orsDrawProxies, orsDrawMeshes, orsDrawCores, orsDrawZlines, orsDrawBodyNames, orsDrawMarkers, orsDrawColors, orsDrawIndexColors;
-extern double orsDrawAlpha;
-extern uint orsDrawLimit;
 
 void displayState(const arr& x, mlr::KinematicWorld& G, const char *tag);
 void displayTrajectory(const arr& x, int steps, mlr::KinematicWorld& G, const KinematicSwitchL& switches, const char *tag, double delay=0., uint dim_z=0, bool copyG=false);

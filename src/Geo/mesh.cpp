@@ -317,7 +317,7 @@ void mlr::Mesh::makeConvexHull() {
   if(!V.N) return;
 #if 1
   V = getHull(V, T);
-  if(C.N) C = mean(C);
+  if(C.nd==2) C = mean(C);
 #else
   uintA H = getHullIndices(V, T);
   intA Hinv = consts<int>(-1, V.d0);
