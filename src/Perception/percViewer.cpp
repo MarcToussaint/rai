@@ -50,6 +50,13 @@ void PercViewer::close(){
 }
 
 void PercViewer::step(){
+  percepts.readAccess();
+  if(!percepts().N){ percepts.deAccess(); return; }
+  gl->dataLock.writeLock();
+  listClone(copy, percepts.get()());
+  gl->dataLock.unlock();
+  percepts.deAccess();
+
   mlr::Array<mlr::Transformation> X;
   modelWorld.readAccess();
   X.resize(modelWorld().shapes.N);
@@ -57,7 +64,6 @@ void PercViewer::step(){
   modelWorld.deAccess();
 
   gl->dataLock.writeLock();
-  listClone(copy, percepts.get()());
   if(X.N==modelCopy.N) for(uint i=0;i<X.N;i++) modelCopy(i).glX = X(i);
   gl->dataLock.unlock();
 

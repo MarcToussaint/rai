@@ -93,14 +93,6 @@ void Filter::step(){
 
   PerceptL newCreations;
 
-  if(verbose>0){
-    cout <<"FILTER - before:";
-//    cout <<"newCreations:\n"; listWrite(newCreations, cout, "\n");
-    cout <<"\ndatabase:\n"; listWrite(percepts_filtered(), cout, "\n");
-    cout <<"\ninput:\n"; listWrite(percepts_input(), cout, "\n");
-    cout <<endl;
-  }
-
   //-- step 1: discount precision of old percepts
   // in forward models, the variance of two Gaussians is ADDED -> precision is 1/variance
   for(Percept *p:percepts_filtered()) p->precision = 1./(1./p->precision + 1./precision_transition);
@@ -208,9 +200,9 @@ void Filter::step(){
   arr dq = taskController.inverseKinematics(NoArr, NoArr, &cost);
   q += dq;
 
-  if(verbose>=0){
-    taskController.reportCurrentState();
+  if(verbose>0){
     LOG(0) <<"FILTER: IK cost=" <<cost <<" perc q vector = " <<q <<endl;
+    taskController.reportCurrentState();
   }
 
   //cleanup tasks
@@ -225,12 +217,9 @@ void Filter::step(){
   modelWorld.deAccess();
 
 
-  if(verbose>0){
-    cout <<"FILTER - after:";
-//    cout <<"newCreations:\n"; listWrite(newCreations, cout, "\n");
-    cout <<"\ndatabase:\n"; listWrite(percepts_filtered(), cout, "\n");
-    cout <<"\ninput:\n"; listWrite(percepts_input(), cout, "\n");
-    cout <<endl;
+  if(verbose>1){
+    cout <<"AFTER FILTER: DATABASE:" <<endl;
+    for(Percept *p:percepts_filtered()) cout <<(*p) <<endl;
   }
 
   percepts_filtered.deAccess();
