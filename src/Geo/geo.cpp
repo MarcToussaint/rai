@@ -30,6 +30,9 @@ const mlr::Vector Vector_y(0, 1, 0);
 const mlr::Vector Vector_z(0, 0, 1);
 const mlr::Transformation Transformation_Id(mlr::Transformation().setZero());
 const mlr::Quaternion Quaternion_Id(1, 0, 0, 0);
+const mlr::Quaternion Quaternion_x(MLR_SQRT2/2., MLR_SQRT2/2., 0, 0);
+const mlr::Quaternion Quaternion_y(MLR_SQRT2/2., 0, MLR_SQRT2/2., 0);
+const mlr::Quaternion Quaternion_z(MLR_SQRT2/2., 0, 0, MLR_SQRT2/2.);
 mlr::Vector& NoVector = *((mlr::Vector*)NULL);
 mlr::Transformation& NoTransformation = *((mlr::Transformation*)NULL);
 

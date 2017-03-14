@@ -372,6 +372,7 @@ void mlr::Shape::reset() {
   X.setZero();
   rel.setZero();
   mesh.V.clear();
+  mesh.C.clear();
   mesh.C = consts<double>(.8, 3); //color[0]=color[1]=color[2]=.8; color[3]=1.;
   mesh_radius=0.;
   cont=false;

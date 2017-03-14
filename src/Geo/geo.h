@@ -375,6 +375,9 @@ extern const mlr::Vector Vector_y;
 extern const mlr::Vector Vector_z;
 extern const mlr::Transformation Transformation_Id;
 extern const mlr::Quaternion Quaternion_Id;
+extern const mlr::Quaternion Quaternion_x;
+extern const mlr::Quaternion Quaternion_y;
+extern const mlr::Quaternion Quaternion_z;
 extern mlr::Vector& NoVector;
 extern mlr::Transformation& NoTransformation;
 
