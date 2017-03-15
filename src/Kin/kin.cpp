@@ -2764,8 +2764,8 @@ mlr::KinematicSwitch::KinematicSwitch()
   jB.setZero();
 }
 
-mlr::KinematicSwitch::KinematicSwitch(OperatorSymbol op, JointType type, const char* ref1, const char* ref2, const mlr::KinematicWorld& K, uint _timeOfApplication, const mlr::Transformation& jFrom, const mlr::Transformation& jTo)
-  : symbol(op), jointType(type), timeOfApplication(_timeOfApplication), fromId(UINT_MAX), toId(UINT_MAX){
+mlr::KinematicSwitch::KinematicSwitch(OperatorSymbol op, JointType type, const char* ref1, const char* ref2, const mlr::KinematicWorld& K, uint _timeOfApplication, const mlr::Transformation& jFrom, const mlr::Transformation& jTo, uint agent)
+  : symbol(op), jointType(type), timeOfApplication(_timeOfApplication), fromId(UINT_MAX), toId(UINT_MAX), agent(agent){
   if(ref1) fromId = K.getShapeByName(ref1)->index;
   if(ref2) toId = K.getShapeByName(ref2)->index;
   if(&jFrom) jA = jFrom;
@@ -2804,6 +2804,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
   G.isLinkTree=false;
   if(symbol==addJointZero || symbol==addActuated){
     Joint *j = new Joint(G, from->body, to->body);
+    if(agent) j->agent=agent;
     if(symbol==addJointZero) j->constrainToZeroVel=true;
     else                     j->constrainToZeroVel=false;
     j->type=jointType;
@@ -2814,6 +2815,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
   }
   if(symbol==addJointAtFrom){
     Joint *j = new Joint(G, from->body, to->body);
+    if(agent) j->agent=agent;
     j->constrainToZeroVel=true;
     j->type=jointType;
     j->B.setDifference(from->body->X, to->body->X);
@@ -2822,6 +2824,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
   }
   if(symbol==addJointAtTo){
     Joint *j = new Joint(G, from->body, to->body);
+    if(agent) j->agent=agent;
     j->constrainToZeroVel=true;
     j->type=jointType;
     j->A.setDifference(from->body->X, to->body->X);

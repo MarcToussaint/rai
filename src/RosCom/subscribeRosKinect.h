@@ -16,8 +16,8 @@ struct SubscribeRosKinect{
     : kinect_rgb(NULL, "kinect_rgb"),
       kinect_depth(NULL, "kinect_depth"),
       kinect_frame(NULL, "kinect_frame"),
-      subRgb("/kinect_head/rgb/image_rect_color", kinect_rgb, &kinect_frame),
-      subDepth("/kinect_head/depth/image_rect_raw", kinect_depth){
+      subRgb("/kinect_head/rgb/image_rect_color", kinect_rgb),
+      subDepth("/kinect_head/depth_registered/image_rect_raw", kinect_depth, &kinect_frame){
 //      subDepth("/kinect_head/depth/image_raw", kinect_depth, &kinect_frame){
   }
   ~SubscribeRosKinect(){

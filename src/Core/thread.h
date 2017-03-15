@@ -349,6 +349,7 @@ struct Access_typed{
   int readAccess(){  return data->readAccess((Thread*)thread); }
   int writeAccess(){ return data->writeAccess((Thread*)thread); }
   int deAccess(){    last_accessed_revision = data->deAccess((Thread*)thread); return last_accessed_revision; }
+  int getRevision(){ return data->getStatus(); }
   void waitForNextRevision(){ data->waitForStatusGreaterThan(last_accessed_revision); }
   void waitForRevisionGreaterThan(int rev){ data->waitForStatusGreaterThan(rev); }
   void stopListening(){ thread->stopListenTo(data); }

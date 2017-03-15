@@ -37,17 +37,22 @@ void Filter::open(){
   modelWorld.readAccess();
   for(mlr::Body *b:modelWorld().bodies){
     if(b->ats["percept"]){
-      LOG(0) <<"ADDING this body " <<b->name <<" to the percept database, which ats:" <<endl;
-      LOG(0) <<*b <<"--" <<b->ats <<endl;
-      mlr::Shape *s=b->shapes.first();
-      switch(s->type){
-        case mlr::ST_box:{
-          Percept *p = new PercBox(s->X, s->size, s->mesh.C);
-          p->id = nextId++;
-          p->bodyId = b->index;
-          percepts_filtered.set()->append(p);
-        } break;
-        default: NIY
+      //first check if it already is in the percept list
+      bool done=false;
+      for(Percept *p:percepts_filtered.get()()) if(p->bodyId==(int)b->index) done=true;
+      if(!done){
+        LOG(0) <<"ADDING this body " <<b->name <<" to the percept database, which ats:" <<endl;
+        LOG(0) <<*b <<"--" <<b->ats <<endl;
+        mlr::Shape *s=b->shapes.first();
+        switch(s->type){
+          case mlr::ST_box:{
+            Percept *p = new PercBox(s->X, s->size, s->mesh.C);
+            p->id = nextId++;
+            p->bodyId = b->index;
+            percepts_filtered.set()->append(p);
+          } break;
+          default: NIY
+        }
       }
     }
   }

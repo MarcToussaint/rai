@@ -61,5 +61,5 @@ struct PhysXThread : Thread{
   }
 };
 
-PhysXThread* newPhysXThread(){ return new PhysXThread(); }
+Thread* newPhysXThread(){ return new PhysXThread(); }
 

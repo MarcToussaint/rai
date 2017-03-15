@@ -206,7 +206,7 @@ void PercBox::syncWith(mlr::KinematicWorld &K){
 }
 
 void PercBox::glDraw(OpenGL&){
-  CHECK_EQ(size.N, 3, "");
+  CHECK(size.N==3 || size.N==4, "");
   glDrawAxes(.2);
   glLineWidth(3);
   glDrawBox(size.elem(0), size.elem(1), size.elem(2), true);

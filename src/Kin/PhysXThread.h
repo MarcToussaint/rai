@@ -1,3 +1,3 @@
 #pragma once
 
-struct PhysXThread* newPhysXThread();
+struct Thread* newPhysXThread();

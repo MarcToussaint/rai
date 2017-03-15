@@ -17,9 +17,10 @@ void Kinect2PointCloud::step(){
   rgb = kinect_rgb.get();
 
   depthData2pointCloud(pts, depth, depthShift_dx, depthShift_dy);
+  cout <<depthShift_dx <<' ' <<depthShift_dy <<endl;
 
   frame = kinect_frame.get();
-  if(frameShift.N) frame.pos += frameShift;
+  if(frameShift.N) frame.addRelativeTranslation(frameShift(0), frameShift(1), frameShift(2));
   if(!frame.isZero()) frame.applyOnPointArray(pts);
 
   kinect_points.set() = pts;

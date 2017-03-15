@@ -70,7 +70,7 @@ floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray&);
 
 //-- get transformations
 mlr::Transformation ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener);
-mlr::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener);
+mlr::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener, tf::Transform* returnRosTransform=NULL);
 bool ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener, mlr::Transformation& result);
 
 
@@ -142,7 +142,7 @@ struct SubscriberConv : SubscriberType {
     double time=conv_time2double(msg->header.stamp);
     access.set( time ) = conv(*msg);
     if(frame && listener){
-      frame->set( time ) = ros_getTransform("/base_link", msg->header.frame_id, *listener);
+      frame->set( time ) = ros_getTransform("/base_link", msg->header, *listener);
     }
   }
 };
