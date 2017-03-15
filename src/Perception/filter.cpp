@@ -141,10 +141,10 @@ void Filter::step(){
 #endif
   }
 
-  //-- step 3: remove all database objects with too low precision and append new creations
+  //-- step 3: remove all database objects with too low precision and no body match; and append new creations
   for(uint i=percepts_filtered().N;i--;){
     Percept *p = percepts_filtered()(i);
-    if(p->precision<precision_threshold){
+    if(p->precision<precision_threshold && p->bodyId>=0){
       delete p;
       p=NULL;
       percepts_filtered().remove(i);
@@ -158,6 +158,7 @@ void Filter::step(){
     if(!p->id) delete p;
   }
   percepts_input().clear();
+
 #if 0
   //-- delete objects in percepts and database that are not filtered
   for (Percept* p : percepts_input()) {
@@ -174,11 +175,12 @@ void Filter::step(){
   percepts_filtered() = filtered;
 #endif
 
-  //-- step 5: now sync with modelWorld using inverse kinematics
+  //-- step 5: sync with modelWorld using inverse kinematics
   modelWorld.writeAccess();
   modelWorld->setAgent(1);
   TaskControlMethods taskController(modelWorld());
   arr q=modelWorld().q;
+
   // create task costs on the modelWorld for each percept
   for(Percept *p:percepts_filtered()){
     if(p->bodyId>=0){
@@ -196,7 +198,7 @@ void Filter::step(){
   }
 
   double cost=0.;
-  taskController.updateCtrlTasks(0., modelWorld()); //this computes their value and Jacobians
+  taskController.updateCtrlTasks(0., modelWorld()); //computes their values and Jacobians
   arr dq = taskController.inverseKinematics(NoArr, NoArr, &cost);
   q += dq;
 
@@ -205,17 +207,14 @@ void Filter::step(){
     taskController.reportCurrentState();
   }
 
-  //cleanup tasks
-  listDelete(taskController.tasks);
+  listDelete(taskController.tasks); //cleanup tasks
 
-
-//  modelWorld.deAccess();
-//  modelWorld.writeAccess();
   modelWorld->setAgent(1);
   modelWorld->setJointState(q);
   modelWorld->setAgent(0);
   modelWorld.deAccess();
 
+  //-- done
 
   if(verbose>1){
     cout <<"AFTER FILTER: DATABASE:" <<endl;
