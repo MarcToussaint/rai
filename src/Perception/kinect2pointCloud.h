@@ -9,6 +9,7 @@ struct Kinect2PointCloud : Thread{
   ACCESS(byteA, kinect_rgb)
   ACCESSlisten(uint16A, kinect_depth)
   ACCESS(mlr::Transformation, kinect_frame)
+  ACCESS(arr, pr2_odom)
   //outputs
   ACCESS(arr, kinect_points)
 
