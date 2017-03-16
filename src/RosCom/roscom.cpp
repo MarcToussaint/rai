@@ -237,6 +237,11 @@ uint16A conv_image2uint16A(const sensor_msgs::Image& msg){
   return ref.reshape(msg.height, msg.width);
 }
 
+floatA conv_laserScan2arr(const sensor_msgs::LaserScan& msg){
+  floatA data = conv_stdvec2arr<float>(msg.ranges);
+  return data;
+}
+
 Pcl conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg){
   pcl::PCLPointCloud2 pcl_pc2;
   pcl_conversions::toPCL(msg, pcl_pc2);

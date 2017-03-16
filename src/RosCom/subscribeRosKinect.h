@@ -1,8 +1,6 @@
 #pragma once
 #include "roscom.h"
 
-//#include <sensor_msgs/PointCloud2.h>
-
 struct SubscribeRosKinect{
   Access_typed<byteA> kinect_rgb;
   Access_typed<uint16A> kinect_depth;
