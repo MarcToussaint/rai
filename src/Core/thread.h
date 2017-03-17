@@ -19,8 +19,11 @@
 #include "array.h"
 #include "graph.h"
 
+//#include <memory>
 #include <bits/shared_ptr.h>
+using std::shared_ptr;
 template<class T> using ptr = std::shared_ptr<T>;
+
 
 enum ThreadState { tsIDLE=0, tsCLOSE=-1, tsOPENING=-2, tsLOOPING=-3, tsBEATING=-4, tsFAILURE=-5, tsEndOfMain=-6 }; //positive states indicate steps-to-go
 struct ConditionVariable;
@@ -92,8 +95,8 @@ struct ConditionVariable {
   void setStatus(int i, ConditionVariable* messenger=NULL); ///< sets state and broadcasts
   int  incrementStatus(ConditionVariable* messenger=NULL);   ///< increase value by 1
   void broadcast(ConditionVariable* messenger=NULL);       ///< just broadcast
-  void listenTo(ConditionVariable *c);
-  void stopListenTo(ConditionVariable *c);
+  void listenTo(ConditionVariable& c);
+  void stopListenTo(ConditionVariable& c);
   void stopListening();
 
   void statusLock();   //the user can manually lock/unlock, if he needs locked state access for longer -> use userHasLocked=true below!
@@ -312,7 +315,7 @@ template<class T> void operator<<(ostream& os, const AccessData<T>& v){ os <<"Ac
     the variable's content */
 template<class T>
 struct Access_typed{
-  AccessData<T> *data;
+  shared_ptr<AccessData<T>> data;
   mlr::String name; ///< name; by default the RevLock's name; redefine to a variable's name to autoconnect
   Thread *thread;  ///< which thread is this a member of
   int last_accessed_revision;          ///< last revision that has been accessed (read or write)
@@ -322,17 +325,20 @@ struct Access_typed{
 
   /// searches for globally registrated variable 'name', checks type equivalence, and becomes an access for '_thred'
   Access_typed(Thread* _thread, const char* name, bool threadListens=false)
-    : data(NULL), name(name), thread(_thread), last_accessed_revision(0), registryNode(NULL){
-    data = registry().find<AccessData<T> >({"AccessData", name});
-    if(!data){ //this is the ONLY place where a variable should be created
-      Node_typed<AccessData<T> > *vnode = registry().newNode<AccessData<T> >({"AccessData", name}, {});
-      data = &vnode->value;
+    : name(name), thread(_thread), last_accessed_revision(0), registryNode(NULL){
+    shared_ptr<AccessData<T>> *existing = registry().find<shared_ptr<AccessData<T>>>({"AccessData", name});
+    if(existing){
+      data = *existing;
+    }else{ //this is the ONLY place where a variable should be created
+      data = shared_ptr<AccessData<T>>(new AccessData<T>);
       data->name = name;
+      Node_typed<shared_ptr<AccessData<T>>> *vnode = registry().newNode<shared_ptr<AccessData<T>>>({"AccessData", name}, {}, data);
       data->registryNode = vnode;
+//      data = &vnode->value;
     }
     if(thread){
       registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
-      if(threadListens) thread->listenTo(data);
+      if(threadListens) thread->listenTo(*data);
     }else{
       registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {data->registryNode}, this);
     }
@@ -344,7 +350,7 @@ struct Access_typed{
     data = acc.data;
     if(thread){
       registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
-      if(threadListens) thread->listenTo(data);
+      if(threadListens) thread->listenTo(*data);
     }else{
       registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {data->registryNode}, this);
     }

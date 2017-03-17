@@ -129,22 +129,22 @@ void ConditionVariable::broadcast(ConditionVariable* messenger) {
   for(auto* c:callbacks) c->call()(this, status);
 }
 
-void ConditionVariable::listenTo(ConditionVariable* c){
+void ConditionVariable::listenTo(ConditionVariable& c){
   mutex.lock();
-  c->statusLock();
-  c->listeners.append(this);
-  listensTo.append(c);
-  c->statusUnlock();
+  c.statusLock();
+  c.listeners.append(this);
+  listensTo.append(&c);
+  c.statusUnlock();
   mutex.unlock();
 }
 
-void ConditionVariable::stopListenTo(ConditionVariable* c){
+void ConditionVariable::stopListenTo(ConditionVariable& c){
   mutex.lock();
-  c->statusLock();
-  c->listeners.removeValue(this);
-  listensTo.removeValue(c);
-  messengers.removeValue(c, false);
-  c->statusUnlock();
+  c.statusLock();
+  c.listeners.removeValue(this);
+  listensTo.removeValue(&c);
+  messengers.removeValue(&c, false);
+  c.statusUnlock();
   mutex.unlock();
 }
 
@@ -461,17 +461,18 @@ void Thread::threadOpen(bool wait, int priority) {
 void Thread::threadClose(double timeoutForce) {
   stopListening();
   setStatus(tsCLOSE);
-  if(!thread) return;
-  bool ended = waitForStatusEq(tsEndOfMain, false, .1);
-  if(!ended){
-    LOG(-1) <<"timeout to end Thread::main";
-    if(timeoutForce>0.){
-      ended = waitForStatusEq(tsEndOfMain, false, timeoutForce);
-      if(!ended){
-        threadCancel();
-        return;
-      }
-    }
+  if(!thread){ setStatus(tsEndOfMain); return; }
+  for(;;){
+    bool ended = waitForStatusEq(tsEndOfMain, false, .2);
+    if(ended) break;
+    LOG(-1) <<"timeout to end Thread::main of '" <<name <<"'";
+//    if(timeoutForce>0.){
+//      ended = waitForStatusEq(tsEndOfMain, false, timeoutForce);
+//      if(!ended){
+//        threadCancel();
+//        return;
+//      }
+//    }
   }
 #ifndef MLR_QThread
   int rc;
@@ -699,7 +700,7 @@ void threadOpenModules(bool waitForOpened, bool setSignalHandler){
 void threadCloseModules(){
   NodeL threads = registry().getNodesOfType<Thread*>();
   for(Node *th: threads) th->get<Thread*>()->threadClose();
-  threadReportCycleTimes();
+//  threadReportCycleTimes();
 }
 
 void threadCancelModules(){
