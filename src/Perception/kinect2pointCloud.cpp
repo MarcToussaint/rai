@@ -1,4 +1,5 @@
 #include "kinect2pointCloud.h"
+#include <Kin/kin.h>
 
 Kinect2PointCloud::Kinect2PointCloud()
   : Thread("Kinect2PointCloud"){
@@ -19,7 +20,22 @@ void Kinect2PointCloud::step(){
   depthData2pointCloud(pts, depth, depthShift_dx, depthShift_dy);
   cout <<depthShift_dx <<' ' <<depthShift_dy <<endl;
 
-  frame = kinect_frame.get();
+  frame = kinect_frame.get(); //this is relative to "/base_link"
+  arr basePose = pr2_odom.get();
+
+  if(basePose.N){
+    mlr::Transformation base;
+    base.pos.set(basePose(0), basePose(1), 0);
+    base.rot.setRad(basePose(2), 0,0,1);
+    frame = base*frame;
+  }
+
+  //verbose to compare ros kinect frame with modelWorld..
+//  cout <<"KINECT frame=" <<frame <<" -- base pose=" <<basePose <<endl;
+//  Access_typed<mlr::KinematicWorld> K(NULL, "modelWorld");
+//  mlr::Transformation k = K.get()->getShapeByName("endeffKinect")->X;
+//  cout <<"ors: frame=" <<k <<" real/k" <<frame/k <<" k/real" <<k/frame <<endl;
+
   if(frameShift.N) frame.addRelativeTranslation(frameShift(0), frameShift(1), frameShift(2));
   if(!frame.isZero()) frame.applyOnPointArray(pts);
 
