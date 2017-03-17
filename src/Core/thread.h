@@ -19,7 +19,10 @@
 #include "array.h"
 #include "graph.h"
 
-enum ThreadState { tsIDLE=0, tsCLOSE=-1, tsOPENING=-2, tsLOOPING=-3, tsBEATING=-4, tsFAILURE=-5 }; //positive states indicate steps-to-go
+#include <bits/shared_ptr.h>
+template<class T> using ptr = std::shared_ptr<T>;
+
+enum ThreadState { tsIDLE=0, tsCLOSE=-1, tsOPENING=-2, tsLOOPING=-3, tsBEATING=-4, tsFAILURE=-5, tsEndOfMain=-6 }; //positive states indicate steps-to-go
 struct ConditionVariable;
 struct RevisionedRWLock;
 struct Thread;
@@ -36,16 +39,24 @@ typedef mlr::Array<Thread*> ThreadL;
 //===========================================================================
 
 template<class F> struct Callback{
-  const void* id;
+  const void* id; //needed to delete callbacks from callback lists!
   std::function<F> callback;
   Callback() : id(NULL) {}
   Callback(const void* _id) : id(_id) {}
-  Callback(const void* _id,const std::function<F>& c) : id(_id), callback(c) {}
-  std::function<F>& operator()(){ CHECK(callback,"is not initialized!!"); return callback; }
+  Callback(const void* _id, const std::function<F>& c) : id(_id), callback(c) {}
+  std::function<F>& call(){ CHECK(callback,"is not initialized!!"); return callback; }
 };
 template<class F> bool operator==(const Callback<F>& a, const Callback<F>& b){ return a.id==b.id; }
 
-template<class F> using Callbacks = mlr::Array<Callback<F> >;
+template<class F>
+struct CallbackL : mlr::Array<Callback<F>*>{
+  void delRemove(const void* id){
+    Callback<F>* c = listFindValue(*this, Callback<F>(id));
+    CHECK(c,"");
+    this->removeValue(c);
+    delete c;
+  }
+};
 
 //===========================================================================
 
@@ -72,7 +83,7 @@ struct ConditionVariable {
   ConditionVariableL listeners;   ///< list of other condition variables that are being signaled on a setStatus access
   ConditionVariableL listensTo;   ///< ...
   ConditionVariableL messengers;  ///< set(!) of condition variables that send signals (via the listen mechanism) - is cleared by the user only
-  Callbacks<void(ConditionVariable*,int)> callbacks;
+  CallbackL<void(ConditionVariable*,int)> callbacks;
   struct Node* registryNode;      ///< every threading object registers itself globally
 
   ConditionVariable(int initialStatus=0);
@@ -223,7 +234,7 @@ struct Thread : ConditionVariable{
 
   /// @name to be called from `outside' (e.g. the main) to start/step/close the thread
   void threadOpen(bool wait=false, int priority=0);      ///< start the thread (in idle mode) (should be positive for changes)
-  void threadClose();                   ///< close the thread (stops looping and waits for idle mode before joining the thread)
+  void threadClose(double timeoutForce=-1.);                   ///< close the thread (stops looping and waits for idle mode before joining the thread)
   void threadStep();                    ///< trigger (multiple) step (idle -> working mode) (wait until idle? otherwise calling during non-idle -> error)
   void threadLoop(bool waitForOpened=false);  ///< loop, either with fixed beat or at full speed
   void threadStop(bool wait=false);     ///< stop looping
@@ -282,6 +293,7 @@ struct AccessData : RevisionedRWLock {
   RToken<T> get(Thread *th=NULL){ return RToken<T>(*this, &value, th); } ///< read access to the variable's data
   WToken<T> set(Thread *th=NULL){ return WToken<T>(*this, &value, th); } ///< write access to the variable's data
   WToken<T> set(const double& dataTime, Thread *th=NULL){ return WToken<T>(dataTime, *this, &value, th); } ///< write access to the variable's data
+  T& lockedGet(){ CHECK(rwlock.isLocked(),"direct variable access without locking it before");  return value; }
 };
 
 template<class T> bool operator==(const AccessData<T>&,const AccessData<T>&){ return false; }

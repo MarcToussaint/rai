@@ -20,7 +20,7 @@
 //===========================================================================
 
 OrsViewer::OrsViewer(const char* varname, double beatIntervalSec, bool computeCameraView)
-  : Thread("OrsViewer", beatIntervalSec),
+  : Thread(STRING("OrsViewer_"<<varname), beatIntervalSec),
     modelWorld(this, varname, (beatIntervalSec<0.)),
     modelCameraView(this, "modelCameraView"),
     modelDepthView(this, "modelDepthView"),
@@ -31,7 +31,7 @@ OrsViewer::OrsViewer(const char* varname, double beatIntervalSec, bool computeCa
 OrsViewer::~OrsViewer(){ threadClose(); }
 
 void OrsViewer::open(){
-  copy.gl(modelWorld.name);
+  copy.gl(STRING("OrsViewer: "<<modelWorld.name));
 }
 
 void OrsViewer::step(){
@@ -72,14 +72,14 @@ void OrsPathViewer::clear(){
 }
 
 OrsPathViewer::OrsPathViewer(const char* varname, double beatIntervalSec, int tprefix)
-  : Thread("OrsPathViewer", beatIntervalSec),
+  : Thread(STRING("OrsPathViewer_"<<varname), beatIntervalSec),
     configurations(this, varname, (beatIntervalSec<0.)),
     t(0), tprefix(tprefix), writeToFiles(false){}
 
 OrsPathViewer::~OrsPathViewer(){ threadClose(); clear(); }
 
 void OrsPathViewer::open(){
-  copy.gl(configurations.name);
+  copy.gl(STRING("OrsPathViewer: "<<configurations.name));
 }
 
 void OrsPathViewer::step(){
@@ -101,9 +101,9 @@ void OrsPathViewer::step(){
 //===========================================================================
 
 OrsPoseViewer::OrsPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec)
-  : Thread("OrsPoseViewer", beatIntervalSec),
+  : Thread(STRING("OrsPoseViewer_"<<poseVarNames), beatIntervalSec),
     modelWorld(this, modelVarName, false),
-    gl(STRING("OrsPoseViewer:" <<poseVarNames)){
+    gl(STRING("OrsPoseViewer: " <<poseVarNames)){
   for(const String& varname: poseVarNames){
     poses.append( new Access_typed<arr>(this, varname, (beatIntervalSec<0.)) ); //listen only when beatInterval=1.
     copies.append( new mlr::KinematicWorld() );
