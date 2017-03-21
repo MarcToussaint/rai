@@ -142,7 +142,7 @@ void PercPlane::glDraw(OpenGL& gl){
 //  glTransform(t);
   glRotatef(-90.f, 0.f, 1.f, 0.f);
   glLineWidth(3.f);
-  glScalef(.3, .3, .3);
+  glScalef(.1, .1, .1);
   glDrawAxis();
 //  glPopMatrix();
   glLineWidth(1.f);
@@ -207,7 +207,7 @@ void PercBox::syncWith(mlr::KinematicWorld &K){
 
 void PercBox::glDraw(OpenGL&){
   CHECK(size.N==3 || size.N==4, "");
-  glDrawAxes(.2);
+  glDrawAxes(.1);
   glLineWidth(3);
   glDrawBox(size.elem(0), size.elem(1), size.elem(2), true);
 }

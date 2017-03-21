@@ -1238,7 +1238,7 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
   }
 
 #else
-  Draw(width(),height());
+  Draw(width, height, NULL, true);
 #endif
   glLoadIdentity();
   
