@@ -162,7 +162,7 @@ bool ros_getTransform(const std::string& from, const std::string& to, tf::Transf
 }
 
 
-mlr::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener){
+mlr::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener, tf::Transform* returnRosTransform){
   mlr::Transformation X;
   X.setZero();
   try{
@@ -170,6 +170,7 @@ mlr::Transformation ros_getTransform(const std::string& from, const std_msgs::He
     listener.waitForTransform(from, to.frame_id, to.stamp, ros::Duration(0.05));
     listener.lookupTransform(from, to.frame_id, to.stamp, transform);
     X = conv_transform2transformation(transform);
+    if(returnRosTransform) *returnRosTransform=transform;
   }
   catch (tf::TransformException &ex) {
     ROS_ERROR("%s",ex.what());
@@ -220,14 +221,25 @@ arr conv_wrench2arr(const geometry_msgs::WrenchStamped& msg){
 
 byteA conv_image2byteA(const sensor_msgs::Image& msg){
   uint channels = msg.data.size()/(msg.height*msg.width);
-  if(channels==4) return conv_stdvec2arr<byte>(msg.data).reshape(msg.height, msg.width, 4);
-  return conv_stdvec2arr<byte>(msg.data).reshape(msg.height, msg.width, 3);
+  byteA img;
+  if(channels==4){
+    img=conv_stdvec2arr<byte>(msg.data).reshape(msg.height, msg.width, 4);
+  }else{
+    img=conv_stdvec2arr<byte>(msg.data).reshape(msg.height, msg.width, 3);
+    swap_RGB_BGR(img);
+  }
+  return img;
 }
 
 uint16A conv_image2uint16A(const sensor_msgs::Image& msg){
   byteA data = conv_stdvec2arr<byte>(msg.data);
   uint16A ref((const uint16_t*)data.p, data.N/2);
   return ref.reshape(msg.height, msg.width);
+}
+
+floatA conv_laserScan2arr(const sensor_msgs::LaserScan& msg){
+  floatA data = conv_stdvec2arr<float>(msg.ranges);
+  return data;
 }
 
 Pcl conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg){
@@ -297,7 +309,7 @@ mlr::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::Ma
     s->size[1] = marker.scale.y;
     s->size[2] = marker.scale.z;
     s->size[3] = .25*(marker.scale.x+marker.scale.y);
-    s->X = s->rel = ros_getTransform("base_link", marker.header, listener) * conv_pose2transformation(marker.pose);
+    s->X = s->rel = ros_getTransform("/base_link", marker.header, listener) * conv_pose2transformation(marker.pose);
   }
   return world;
 }

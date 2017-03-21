@@ -12,6 +12,7 @@
 #include <geometry_msgs/WrenchStamped.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/LaserScan.h>
 #include <std_msgs/String.h>
 #include <sensor_msgs/JointState.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -53,6 +54,7 @@ timespec            conv_time2timespec(const ros::Time&);
 arr                 conv_wrench2arr(const geometry_msgs::WrenchStamped& msg);
 byteA               conv_image2byteA(const sensor_msgs::Image& msg);
 uint16A             conv_image2uint16A(const sensor_msgs::Image& msg);
+floatA              conv_laserScan2arr(const sensor_msgs::LaserScan& msg);
 Pcl                 conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg);
 arr                 conv_points2arr(const std::vector<geometry_msgs::Point>& pts);
 arr                 conv_colors2arr(const std::vector<std_msgs::ColorRGBA>& pts);
@@ -70,7 +72,7 @@ floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray&);
 
 //-- get transformations
 mlr::Transformation ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener);
-mlr::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener);
+mlr::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener, tf::Transform* returnRosTransform=NULL);
 bool ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener, mlr::Transformation& result);
 
 
@@ -142,7 +144,7 @@ struct SubscriberConv : SubscriberType {
     double time=conv_time2double(msg->header.stamp);
     access.set( time ) = conv(*msg);
     if(frame && listener){
-      frame->set( time ) = ros_getTransform("/base_link", msg->header.frame_id, *listener);
+      frame->set( time ) = ros_getTransform("/base_link", msg->header, *listener);
     }
   }
 };

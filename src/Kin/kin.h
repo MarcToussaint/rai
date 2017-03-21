@@ -357,8 +357,13 @@ struct KinematicSwitch{ //TODO: move to src/Motion
   uint timeOfApplication;
   uint fromId, toId;
   mlr::Transformation jA,jB;
+  uint agent;
   KinematicSwitch();
-  KinematicSwitch(OperatorSymbol op, JointType type, const char* ref1, const char* ref2, const mlr::KinematicWorld& K, uint _timeOfApplication, const mlr::Transformation& jFrom=NoTransformation, const mlr::Transformation& jTo=NoTransformation);
+  KinematicSwitch(OperatorSymbol op, JointType type,
+                  const char* ref1, const char* ref2,
+                  const mlr::KinematicWorld& K, uint _timeOfApplication,
+                  const mlr::Transformation& jFrom=NoTransformation, const mlr::Transformation& jTo=NoTransformation,
+                  uint agent=0);
   void setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T);
 //  KinematicSwitch(const Node *specs, const KinematicWorld& world, uint T);
   void apply(KinematicWorld& G);

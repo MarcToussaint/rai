@@ -19,7 +19,12 @@
 #include "array.h"
 #include "graph.h"
 
-enum ThreadState { tsIDLE=0, tsCLOSE=-1, tsOPENING=-2, tsLOOPING=-3, tsBEATING=-4, tsFAILURE=-5 }; //positive states indicate steps-to-go
+//#include <memory>
+#include <bits/shared_ptr.h>
+using std::shared_ptr;
+
+
+enum ThreadState { tsIDLE=0, tsCLOSE=-1, tsOPENING=-2, tsLOOPING=-3, tsBEATING=-4, tsFAILURE=-5, tsEndOfMain=-6 }; //positive states indicate steps-to-go
 struct ConditionVariable;
 struct RevisionedRWLock;
 struct Thread;
@@ -36,16 +41,24 @@ typedef mlr::Array<Thread*> ThreadL;
 //===========================================================================
 
 template<class F> struct Callback{
-  const void* id;
+  const void* id; //needed to delete callbacks from callback lists!
   std::function<F> callback;
   Callback() : id(NULL) {}
   Callback(const void* _id) : id(_id) {}
-  Callback(const void* _id,const std::function<F>& c) : id(_id), callback(c) {}
-  std::function<F>& operator()(){ CHECK(callback,"is not initialized!!"); return callback; }
+  Callback(const void* _id, const std::function<F>& c) : id(_id), callback(c) {}
+  std::function<F>& call(){ CHECK(callback,"is not initialized!!"); return callback; }
 };
 template<class F> bool operator==(const Callback<F>& a, const Callback<F>& b){ return a.id==b.id; }
 
-template<class F> using Callbacks = mlr::Array<Callback<F> >;
+template<class F>
+struct CallbackL : mlr::Array<Callback<F>*>{
+  void delRemove(const void* id){
+    Callback<F>* c = listFindValue(*this, Callback<F>(id));
+    CHECK(c,"");
+    this->removeValue(c);
+    delete c;
+  }
+};
 
 //===========================================================================
 
@@ -72,17 +85,17 @@ struct ConditionVariable {
   ConditionVariableL listeners;   ///< list of other condition variables that are being signaled on a setStatus access
   ConditionVariableL listensTo;   ///< ...
   ConditionVariableL messengers;  ///< set(!) of condition variables that send signals (via the listen mechanism) - is cleared by the user only
-  Callbacks<void(ConditionVariable*,int)> callbacks;
+  CallbackL<void(ConditionVariable*,int)> callbacks;
   struct Node* registryNode;      ///< every threading object registers itself globally
 
   ConditionVariable(int initialStatus=0);
   virtual ~ConditionVariable(); //virtual, to enforce polymorphism
 
   void setStatus(int i, ConditionVariable* messenger=NULL); ///< sets state and broadcasts
-  int  incrementStatus(ConditionVariable* messenger=NULL);   ///< increase value by 1
-  void broadcast(ConditionVariable* messenger=NULL);       ///< just broadcast
-  void listenTo(ConditionVariable *c);
-  void stopListenTo(ConditionVariable *c);
+  int  incrementStatus(ConditionVariable* messenger=NULL);  ///< increase value by 1
+  void broadcast(ConditionVariable* messenger=NULL);        ///< wake up listeners and call callbacks with current status
+  void listenTo(ConditionVariable& c);
+  void stopListenTo(ConditionVariable& c);
   void stopListening();
 
   void statusLock();   //the user can manually lock/unlock, if he needs locked state access for longer -> use userHasLocked=true below!
@@ -128,8 +141,13 @@ struct RToken{
   Thread *th;
   int *last_access_revision;
   RToken(RevisionedRWLock& _revLock, T *var, Thread* th=NULL, int* last_access_revision=NULL, bool isAlreadyLocked=false)
-    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){ if(!isAlreadyLocked) revLock.readAccess(th); }
-  ~RToken(){ int r = revLock.deAccess(th); if(last_access_revision) *last_access_revision=r; }
+    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){
+      if(!isAlreadyLocked) revLock.readAccess(th);
+    }
+  ~RToken(){
+    int r = revLock.deAccess(th);
+    if(last_access_revision) *last_access_revision=r;
+  }
   const T* operator->(){ return x; }
   operator const T&(){ return *x; }
   const T& operator()(){ return *x; }
@@ -142,10 +160,17 @@ struct WToken{
   Thread *th;
   int *last_access_revision;
   WToken(RevisionedRWLock& _revLock, T *var, Thread* th=NULL, int* last_access_revision=NULL)
-    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){ revLock.writeAccess(th); }
+    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){
+    revLock.writeAccess(th);
+  }
   WToken(const double& dataTime, RevisionedRWLock& _revLock, T *var, Thread* th=NULL, int* last_access_revision=NULL)
-    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){ revLock.writeAccess(th); revLock.data_time=dataTime; }
-  ~WToken(){ int r = revLock.deAccess(th); if(last_access_revision) *last_access_revision=r; }
+    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){
+    revLock.writeAccess(th); revLock.data_time=dataTime;
+  }
+  ~WToken(){
+    int r = revLock.deAccess(th);
+    if(last_access_revision) *last_access_revision=r;
+  }
   void operator=(const T& y){ *x=y; }
   T* operator->(){ return x; }
   operator T&(){ return *x; }
@@ -157,18 +182,20 @@ struct WToken{
 // Timing helpers
 //
 
-/// a simple struct to realize a strict tic tac timing (called in step() once in a loop)
+/// a simple struct to realize a strict tic tac timing (called in thread::main once each step if looping)
 struct Metronome {
   double ticInterval;
   timespec ticTime;
   uint tics;
 
-  Metronome(double ticIntervalSec); ///< set tic tac time in micro seconds
+  Metronome(double ticIntervalSec); ///< set tic tac time in seconds
 
   void reset(double ticIntervalSec);
   void waitForTic();              ///< waits until the next tic
   double getTimeSinceTic();       ///< time since last tic
 };
+
+//===========================================================================
 
 /// to meassure cycle and busy times
 struct CycleTimer {
@@ -176,7 +203,7 @@ struct CycleTimer {
   double busyDt, busyDtMean, busyDtMax;  ///< internal variables to measure step time
   double cyclDt, cyclDtMean, cyclDtMax;  ///< internal variables to measure step time
   timespec now, lastTime;
-  const char* name;                    ///< name
+  const char* name;                      ///< name
   CycleTimer(const char *_name=NULL);
   ~CycleTimer();
   void reset();
@@ -223,7 +250,7 @@ struct Thread : ConditionVariable{
 
   /// @name to be called from `outside' (e.g. the main) to start/step/close the thread
   void threadOpen(bool wait=false, int priority=0);      ///< start the thread (in idle mode) (should be positive for changes)
-  void threadClose();                   ///< close the thread (stops looping and waits for idle mode before joining the thread)
+  void threadClose(double timeoutForce=-1.);                   ///< close the thread (stops looping and waits for idle mode before joining the thread)
   void threadStep();                    ///< trigger (multiple) step (idle -> working mode) (wait until idle? otherwise calling during non-idle -> error)
   void threadLoop(bool waitForOpened=false);  ///< loop, either with fixed beat or at full speed
   void threadStop(bool wait=false);     ///< stop looping
@@ -282,6 +309,7 @@ struct AccessData : RevisionedRWLock {
   RToken<T> get(Thread *th=NULL){ return RToken<T>(*this, &value, th); } ///< read access to the variable's data
   WToken<T> set(Thread *th=NULL){ return WToken<T>(*this, &value, th); } ///< write access to the variable's data
   WToken<T> set(const double& dataTime, Thread *th=NULL){ return WToken<T>(dataTime, *this, &value, th); } ///< write access to the variable's data
+  T& lockedGet(){ CHECK(rwlock.isLocked(),"direct variable access without locking it before");  return value; }
 };
 
 template<class T> bool operator==(const AccessData<T>&,const AccessData<T>&){ return false; }
@@ -300,7 +328,7 @@ template<class T> void operator<<(ostream& os, const AccessData<T>& v){ os <<"Ac
     the variable's content */
 template<class T>
 struct Access_typed{
-  AccessData<T> *data;
+  shared_ptr<AccessData<T>> data;
   mlr::String name; ///< name; by default the RevLock's name; redefine to a variable's name to autoconnect
   Thread *thread;  ///< which thread is this a member of
   int last_accessed_revision;          ///< last revision that has been accessed (read or write)
@@ -310,17 +338,20 @@ struct Access_typed{
 
   /// searches for globally registrated variable 'name', checks type equivalence, and becomes an access for '_thred'
   Access_typed(Thread* _thread, const char* name, bool threadListens=false)
-    : data(NULL), name(name), thread(_thread), last_accessed_revision(0), registryNode(NULL){
-    data = registry().find<AccessData<T> >({"AccessData", name});
-    if(!data){ //this is the ONLY place where a variable should be created
-      Node_typed<AccessData<T> > *vnode = registry().newNode<AccessData<T> >({"AccessData", name}, {});
-      data = &vnode->value;
+    : name(name), thread(_thread), last_accessed_revision(0), registryNode(NULL){
+    shared_ptr<AccessData<T>> *existing = registry().find<shared_ptr<AccessData<T>>>({"AccessData", name});
+    if(existing){
+      data = *existing;
+    }else{ //this is the ONLY place where a variable should be created
+      data = shared_ptr<AccessData<T>>(new AccessData<T>);
       data->name = name;
+      Node_typed<shared_ptr<AccessData<T>>> *vnode = registry().newNode<shared_ptr<AccessData<T>>>({"AccessData", name}, {}, data);
       data->registryNode = vnode;
+//      data = &vnode->value;
     }
     if(thread){
       registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
-      if(threadListens) thread->listenTo(data);
+      if(threadListens) thread->listenTo(*data);
     }else{
       registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {data->registryNode}, this);
     }
@@ -332,7 +363,7 @@ struct Access_typed{
     data = acc.data;
     if(thread){
       registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
-      if(threadListens) thread->listenTo(data);
+      if(threadListens) thread->listenTo(*data);
     }else{
       registryNode = registry().newNode<Access_typed<T>* >({"Access", name}, {data->registryNode}, this);
     }
@@ -349,6 +380,7 @@ struct Access_typed{
   int readAccess(){  return data->readAccess((Thread*)thread); }
   int writeAccess(){ return data->writeAccess((Thread*)thread); }
   int deAccess(){    last_accessed_revision = data->deAccess((Thread*)thread); return last_accessed_revision; }
+  int getRevision(){ return data->getStatus(); }
   void waitForNextRevision(){ data->waitForStatusGreaterThan(last_accessed_revision); }
   void waitForRevisionGreaterThan(int rev){ data->waitForStatusGreaterThan(rev); }
   void stopListening(){ thread->stopListenTo(data); }

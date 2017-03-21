@@ -5,18 +5,17 @@
 #include <PCL/conv.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl_ros/transforms.h>
 
 struct SubscribeRosKinect2PCL{
+  struct sSubscribeRosKinect2PCL *s;
   Access_typed<Pcl> cloud;
   Access_typed<mlr::Transformation> kinect_frame;
-  SubscriberConv<sensor_msgs::PointCloud2, Pcl, &conv_pointcloud22pcl> subPoints;
 
-  SubscribeRosKinect2PCL(const char* cloud_name="pclRawInput")
-    : cloud(NULL, cloud_name),
-      kinect_frame(NULL, "kinect_frame"),
-      subPoints("/kinect_head/depth_registered/points", cloud){
-  }
-  ~SubscribeRosKinect2PCL(){
-  }
 
+  SubscribeRosKinect2PCL(const char* cloud_name="pclRawInput", const char* topic_name = "/kinect_head/depth_registered/points");
+  ~SubscribeRosKinect2PCL();
+
+  void callback(const typename sensor_msgs::PointCloud2::ConstPtr& msg);
 };
