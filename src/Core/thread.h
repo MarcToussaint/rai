@@ -93,8 +93,8 @@ struct ConditionVariable {
   virtual ~ConditionVariable(); //virtual, to enforce polymorphism
 
   void setStatus(int i, ConditionVariable* messenger=NULL); ///< sets state and broadcasts
-  int  incrementStatus(ConditionVariable* messenger=NULL);   ///< increase value by 1
-  void broadcast(ConditionVariable* messenger=NULL);       ///< just broadcast
+  int  incrementStatus(ConditionVariable* messenger=NULL);  ///< increase value by 1
+  void broadcast(ConditionVariable* messenger=NULL);        ///< wake up listeners and call callbacks with current status
   void listenTo(ConditionVariable& c);
   void stopListenTo(ConditionVariable& c);
   void stopListening();
@@ -142,8 +142,13 @@ struct RToken{
   Thread *th;
   int *last_access_revision;
   RToken(RevisionedRWLock& _revLock, T *var, Thread* th=NULL, int* last_access_revision=NULL, bool isAlreadyLocked=false)
-    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){ if(!isAlreadyLocked) revLock.readAccess(th); }
-  ~RToken(){ int r = revLock.deAccess(th); if(last_access_revision) *last_access_revision=r; }
+    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){
+      if(!isAlreadyLocked) revLock.readAccess(th);
+    }
+  ~RToken(){
+    int r = revLock.deAccess(th);
+    if(last_access_revision) *last_access_revision=r;
+  }
   const T* operator->(){ return x; }
   operator const T&(){ return *x; }
   const T& operator()(){ return *x; }
@@ -156,10 +161,17 @@ struct WToken{
   Thread *th;
   int *last_access_revision;
   WToken(RevisionedRWLock& _revLock, T *var, Thread* th=NULL, int* last_access_revision=NULL)
-    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){ revLock.writeAccess(th); }
+    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){
+    revLock.writeAccess(th);
+  }
   WToken(const double& dataTime, RevisionedRWLock& _revLock, T *var, Thread* th=NULL, int* last_access_revision=NULL)
-    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){ revLock.writeAccess(th); revLock.data_time=dataTime; }
-  ~WToken(){ int r = revLock.deAccess(th); if(last_access_revision) *last_access_revision=r; }
+    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){
+    revLock.writeAccess(th); revLock.data_time=dataTime;
+  }
+  ~WToken(){
+    int r = revLock.deAccess(th);
+    if(last_access_revision) *last_access_revision=r;
+  }
   void operator=(const T& y){ *x=y; }
   T* operator->(){ return x; }
   operator T&(){ return *x; }
@@ -171,18 +183,20 @@ struct WToken{
 // Timing helpers
 //
 
-/// a simple struct to realize a strict tic tac timing (called in step() once in a loop)
+/// a simple struct to realize a strict tic tac timing (called in thread::main once each step if looping)
 struct Metronome {
   double ticInterval;
   timespec ticTime;
   uint tics;
 
-  Metronome(double ticIntervalSec); ///< set tic tac time in micro seconds
+  Metronome(double ticIntervalSec); ///< set tic tac time in seconds
 
   void reset(double ticIntervalSec);
   void waitForTic();              ///< waits until the next tic
   double getTimeSinceTic();       ///< time since last tic
 };
+
+//===========================================================================
 
 /// to meassure cycle and busy times
 struct CycleTimer {
@@ -190,7 +204,7 @@ struct CycleTimer {
   double busyDt, busyDtMean, busyDtMax;  ///< internal variables to measure step time
   double cyclDt, cyclDtMean, cyclDtMax;  ///< internal variables to measure step time
   timespec now, lastTime;
-  const char* name;                    ///< name
+  const char* name;                      ///< name
   CycleTimer(const char *_name=NULL);
   ~CycleTimer();
   void reset();

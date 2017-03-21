@@ -155,7 +155,7 @@ void TaskControlThread::step(){
   //-- compute the feedback controller step and iterate to compute a forward reference
   {
     modelWorld.writeAccess();
-    //  if(!(step_count%20)) modelWorld().gl().update(); //only for debugging
+//    if(!(step_count%20)) modelWorld().gl().update(); //only for debugging
 
     ctrlTasks.writeAccess();
     taskController->tasks = ctrlTasks();
