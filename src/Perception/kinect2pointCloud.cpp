@@ -18,7 +18,7 @@ void Kinect2PointCloud::step(){
   rgb = kinect_rgb.get();
 
   depthData2pointCloud(pts, depth, depthShift_dx, depthShift_dy);
-  cout <<depthShift_dx <<' ' <<depthShift_dy <<endl;
+//  cout <<depthShift_dx <<' ' <<depthShift_dy <<endl;
 
   frame = kinect_frame.get(); //this is relative to "/base_link"
   arr basePose = pr2_odom.get();

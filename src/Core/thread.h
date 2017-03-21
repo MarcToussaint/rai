@@ -22,7 +22,6 @@
 //#include <memory>
 #include <bits/shared_ptr.h>
 using std::shared_ptr;
-template<class T> using ptr = std::shared_ptr<T>;
 
 
 enum ThreadState { tsIDLE=0, tsCLOSE=-1, tsOPENING=-2, tsLOOPING=-3, tsBEATING=-4, tsFAILURE=-5, tsEndOfMain=-6 }; //positive states indicate steps-to-go
