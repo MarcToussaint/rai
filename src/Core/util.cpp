@@ -1280,6 +1280,11 @@ Mutex::Mutex() {
 }
 
 Mutex::~Mutex() {
+  if(state==-1){ //forced destroy
+    int rc = pthread_mutex_destroy(&mutex);
+    LOG(-1) <<"pthread forced destroy returned " <<rc <<" '" <<strerror(rc) <<"'";
+    return;
+  }
   CHECK(!state, "Mutex destroyed without unlocking first");
   int rc = pthread_mutex_destroy(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
@@ -1302,6 +1307,7 @@ void Mutex::unlock() {
   int rc = pthread_mutex_unlock(&mutex);
   if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
+
 #else//MLR_MSVC
 Mutex::Mutex() {}
 Mutex::~Mutex() {}
