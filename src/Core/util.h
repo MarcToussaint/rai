@@ -605,14 +605,14 @@ struct Mutex {
 
 template<class T>
 struct Singleton {
+  static Mutex mutex;
   static T *singleton;
 
   T *getSingleton() const {
     if(!singleton) {
-      static Mutex m;
-      m.lock();
+      mutex.lock();
       if(!singleton) singleton = new T;
-      m.unlock();
+      mutex.unlock();
     }
     return singleton;
   }
@@ -628,9 +628,20 @@ struct Singleton {
     }
   }
 
-  T& operator()() const{ return *getSingleton(); }
+  struct Token{
+    const Singleton<T>& base;
+    Token(Singleton<T>& _base) : base(_base){ base.getSingleton(); base.mutex.lock(); }
+    ~Token(){ base.mutex.unlock(); }
+    T* operator->(){ return base.getSingleton(); }
+    operator T&(){ return *base.getSingleton(); }
+    T& operator()(){ return *base.getSingleton(); }
+  };
+
+  Token operator()(){ return Token(*this); }
 };
+
 template<class T> T *Singleton<T>::singleton=NULL;
+template<class T> Mutex Singleton<T>::mutex;
 
 
 //===========================================================================
@@ -708,6 +719,7 @@ template <typename T> T clip(T& x, const T& lower, const T& upper) {
 }
 
 std::string getcwd_string();
+const char* NAME(const std::type_info& type);
 
 //===========================================================================
 //

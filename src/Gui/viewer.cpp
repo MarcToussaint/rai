@@ -127,11 +127,6 @@ void PointCloudViewer::step(){
 // MeshAViewer
 //
 
-struct sMeshAViewer{
-  OpenGL gl;
-  mlr::Mesh pc;
-};
-
 MeshAViewer::MeshAViewer(const char* meshes_name)
   : Thread(STRING("MeshAViewer_"<<meshes_name), .1),
     meshes(this, meshes_name){

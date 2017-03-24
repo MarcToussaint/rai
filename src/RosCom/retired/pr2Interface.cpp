@@ -104,7 +104,7 @@ void PR2Interface::initialize(mlr::KinematicWorld* realWorld, mlr::KinematicWorl
     new RosCom_Spinner();
     new SubscriberConvNoHeader<marc_controller_pkg::JointState, CtrlMsg, &conv_JointState2CtrlMsg>("/marc_rt_controller/jointState", ctrl_obs);
     new PublisherConv<marc_controller_pkg::JointState, CtrlMsg, &conv_CtrlMsg2JointState>("/marc_rt_controller/jointReference", ctrl_ref);
-    new Subscriber<AlvarMarkers>("/ar_pose_marker", (Access_typed<AlvarMarkers>&)ar_pose_markers);
+    new Subscriber<AlvarMarkers>("/ar_pose_marker", (Access<AlvarMarkers>&)ar_pose_markers);
     threadOpenModules(true);
 
     cout <<"** Waiting for ROS message on initial configuration.." <<endl;

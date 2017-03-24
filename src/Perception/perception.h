@@ -34,7 +34,7 @@ class AudioWriter_libav;
 template<class T>
 struct GenericDisplayViewer : Thread {
   OpenGL *gl;
-  Access_typed<T> var;
+  Access<T> var;
   GenericDisplayViewer(const char* var_name)
     : Thread("GenericDisplayViewer", -1.)
     , gl(NULL)
@@ -182,7 +182,7 @@ BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; ACCESS(byteA, pcms16ne2c
 
 struct OpencvCamera : Thread {
   struct sOpencvCamera *s;
-  Access_typed<byteA> rgb;
+  Access<byteA> rgb;
   std::map<int,double> properties; bool set(int prop, double status);
   OpencvCamera(const char* rgb_name="rgb") : Thread(STRING("OpencvCamera_"<<rgb_name), 0.), rgb(this, rgb_name){}
   void open();
@@ -192,8 +192,8 @@ struct OpencvCamera : Thread {
 
 struct CvtGray : Thread {
   struct sCvtGray *s;
-  Access_typed<byteA> rgb;
-  Access_typed<byteA> gray;
+  Access<byteA> rgb;
+  Access<byteA> gray;
   std::map<int,double> properties; bool set(int prop, double status);
   CvtGray(const char* rgb_name="rgb", const char* gray_name="gray")
     : Thread(STRING("CvtGray_"<<rgb_name), -1), rgb(this, rgb_name, true), gray(this, gray_name){}
@@ -204,8 +204,8 @@ struct CvtGray : Thread {
 
 struct MotionFilter : Thread {
   struct sMotionFilter *s;
-  Access_typed<byteA> rgb;
-  Access_typed<byteA> motion;
+  Access<byteA> rgb;
+  Access<byteA> motion;
   MotionFilter(const char* rgb_name="rgb", const char* motion_name="motion")
     : Thread(STRING("MotionFilter_"<<rgb_name), -1), rgb(this, rgb_name, true), motion(this, motion_name){}
   void open();
@@ -215,9 +215,9 @@ struct MotionFilter : Thread {
 
 struct DifferenceFilter : Thread {
   struct sDifferenceFilter *s;
-  Access_typed<byteA> i1;
-  Access_typed<byteA> i2;
-  Access_typed<byteA> diffImage;
+  Access<byteA> i1;
+  Access<byteA> i2;
+  Access<byteA> diffImage;
   DifferenceFilter(const char* i1_name="i1", const char* i2_name="i2", const char* diffImage_name="diffImage")
     : Thread(STRING("DifferenceFilter_"<<i1_name), -1), i1(this, i1_name, true), i2(this, i2_name), diffImage(this, diffImage_name){}
   void open();
@@ -227,8 +227,8 @@ struct DifferenceFilter : Thread {
 
 struct CannyFilter : Thread {
   struct sCannyFilter *s;
-  Access_typed<byteA> grayImage;
-  Access_typed<byteA> cannyImage;
+  Access<byteA> grayImage;
+  Access<byteA> cannyImage;
   CannyFilter(const char* grayImage_name="grayImage", const char* cannyImage_name="cannyImage")
     : Thread(STRING("CannyFilter_"<<grayImage_name<<"_" <<cannyImage_name), -1),
       grayImage(this, grayImage_name, true),
@@ -240,8 +240,8 @@ struct CannyFilter : Thread {
 
 struct Patcher : Thread {
   struct sPatcher *s;
-  Access_typed<byteA> rgbImage;
-  Access_typed<Patching> patchImage;
+  Access<byteA> rgbImage;
+  Access<Patching> patchImage;
   Patcher(const char* rgbImage_name="rgbImage", const char* patchImage_name="patchImage")
     : Thread(STRING("Patcher"<<rgbImage_name<<"_" <<patchImage_name), -1),
       rgbImage(this, rgbImage_name, true),
@@ -252,9 +252,9 @@ struct Patcher : Thread {
 };
 
 //struct AllViewer : Thread {
-//  Access_typed<arr> kinect_points;
-//  Access_typed<arr> kinect_pointColors;
-//  Access_typed<PlaneA> planes_now;
+//  Access<arr> kinect_points;
+//  Access<arr> kinect_pointColors;
+//  Access<PlaneA> planes_now;
 
 //  mlr::Mesh kinect;
 //  PlaneA planes_now_copy;
@@ -272,6 +272,17 @@ struct Patcher : Thread {
 //  void close() {}
 
 //};
+
+// macro for a most standard declaration of a module
+#define BEGIN_MODULE(name) \
+  struct name : Thread { \
+    struct s##name *s; \
+    name(): Thread(#name), s(NULL) {} \
+    virtual void open(); \
+    virtual void step(); \
+    virtual void close();
+
+#define END_MODULE() };
 
 //BEGIN_MODULE(ImageViewer)      ACCESS(byteA, img)       END_MODULE()
 //BEGIN_MODULE(PointCloudViewer) ACCESSlisten(arr, kinect_points)         ACCESS(arr, kinect_pointColors)        END_MODULE()

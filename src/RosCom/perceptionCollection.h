@@ -22,17 +22,17 @@ OptitrackBody conv_tf2OptitrackBody(const geometry_msgs::TransformStamped& msg);
 /** listens to ros topics, such as Alvar and OptiTrack and TableTop, and pipes them into the percepts_input
  */
 struct Collector : Thread{
-  Access_typed<visualization_msgs::MarkerArray> tabletop_clusters;
-  Access_typed<ar::AlvarMarkers> ar_pose_markers;
-  Access_typed<std::vector<geometry_msgs::TransformStamped>> opti_markers;
-  Access_typed<std::vector<geometry_msgs::TransformStamped>> opti_bodies;
-  Access_typed<object_recognition_msgs::TableArray> tabletop_tableArray;
+  Access<visualization_msgs::MarkerArray> tabletop_clusters;
+  Access<ar::AlvarMarkers> ar_pose_markers;
+  Access<std::vector<geometry_msgs::TransformStamped>> opti_markers;
+  Access<std::vector<geometry_msgs::TransformStamped>> opti_bodies;
+  Access<object_recognition_msgs::TableArray> tabletop_tableArray;
 
-  ACCESSname(mlr::Transformation, tabletop_srcFrame)
-  ACCESSname(mlr::Transformation, alvar_srcFrame)
-  ACCESSname(mlr::Transformation, optitrack_srcFrame)
+  ACCESS(mlr::Transformation, tabletop_srcFrame)
+  ACCESS(mlr::Transformation, alvar_srcFrame)
+  ACCESS(mlr::Transformation, optitrack_srcFrame)
 
-  ACCESSname(PerceptL, percepts_input)
+  ACCESS(PerceptL, percepts_input)
 
   Collector(const bool simulate = false);
 

@@ -6,8 +6,8 @@
 arr conv_pressureState2arr(const pr2_msgs::PressureState& msg);
 
 struct SubscribeLaserScan{
-  Access_typed<arr> fingerPressures_left;
-  Access_typed<arr> fingerPressures_right;
+  Access<arr> fingerPressures_left;
+  Access<arr> fingerPressures_right;
   SubscriberConv<pr2_msgs::PressureState, arr, &conv_pressureState2arr> subLeft;
   SubscriberConv<pr2_msgs::PressureState, arr, &conv_pressureState2arr> subRight;
 

@@ -38,7 +38,7 @@ typedef mlr::Array<Module*> ModuleL;
 
 //struct Module : Thread {
 //  Module(const char* name=NULL, double beatIntervalSec=-1.):Thread(name, beatIntervalSec){
-////    registry().newNode<Module*>({"Module", name}, {}, this);
+////    registry()->newNode<Module*>({"Module", name}, {}, this);
 //  }
 //  virtual ~Module(){}
 //  virtual void step(){ HALT("you should not run a virtual module"); }
@@ -52,27 +52,27 @@ inline bool operator==(const Module&,const Module&){ return false; }
 
 //===========================================================================
 //
-/** Instead of declaring 'Access_typed<TYPE> name;' as a module
+/** Instead of declaring 'Access<TYPE> name;' as a module
     member, use the macro ACCESS(TYPE, name). This is almost
     equivalent, but automatically assigns the name. */
 
 #if 1
 
 #define ACCESSold(type, name)\
-struct __##name##__Access:Access_typed<type>{ \
-  __##name##__Access():Access_typed<type>(NULL, #name){} \
+struct __##name##__Access:Access<type>{ \
+  __##name##__Access():Access<type>(NULL, #name){} \
 } name;
 
 #else
 
-#define ACCESS(type, name) Access_typed<type> name = Access_typed<type>(this, #name);
+#define ACCESS(type, name) Access<type> name = Access<type>(this, #name);
 
 
 #endif
 
-#define ACCESS(type, name) Access_typed<type> name = Access_typed<type>(this, #name);
-#define ACCESSlisten(type, name) Access_typed<type> name = Access_typed<type>(this, #name, true);
-#define ACCESSname(type, name) Access_typed<type> name = Access_typed<type>(NULL, #name);
+#define ACCESS(type, name) Access<type> name = Access<type>(this, #name);
+#define ACCESSlisten(type, name) Access<type> name = Access<type>(this, #name, true);
+#define ACCESSname(type, name) Access<type> name = Access<type>(NULL, #name);
 
 //===========================================================================
 //
@@ -83,7 +83,7 @@ struct __##name##__Access:Access_typed<type>{ \
 
 #define REGISTER_MODULE(name) \
   RUN_ON_INIT_BEGIN(Decl_Module##_##name) \
-  registry().newNode<std::shared_ptr<Type> >({mlr::String("Decl_Module"), mlr::String(#name)}, NodeL(), std::make_shared<Type_typed<name, void> >()); \
+  registry()->newNode<std::shared_ptr<Type> >({mlr::String("Decl_Module"), mlr::String(#name)}, NodeL(), std::make_shared<Type_typed<name, void> >()); \
   RUN_ON_INIT_END(Decl_Module##_##name)
 
 
@@ -123,7 +123,7 @@ inline void operator<<(ostream& os, const Access& a){ os <<"Access '" <<a.name <
 
 template <class T>
 struct Recorder : Thread {
-  Access_typed<T> access;
+  Access<T> access;
   T buffer;
   ofstream fil;
 
@@ -155,7 +155,7 @@ struct Recorder : Thread {
 
 template<class T>
 struct FileReplay : Thread {
-  Access_typed<T> access;
+  Access<T> access;
   T x;
   FileReplay(const char* file_name, const char* var_name, double beatIntervalSec)
     : Thread(STRING("FileReplay_"<<var_name), beatIntervalSec),

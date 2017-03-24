@@ -1,11 +1,12 @@
 #include "roscom.h"
 
 struct SubscribeOptitrack{
-  ACCESSname(tf::tfMessage, tf_messages)
+  Access<tf::tfMessage> tf_messages;
   Subscriber<tf::tfMessage> sub;
 
   SubscribeOptitrack()
-    : sub("/tf", tf_messages) {
+    : tf_messages(NULL, "tf_messages"),
+      sub("/tf", tf_messages) {
   }
   ~SubscribeOptitrack(){
   }
@@ -13,9 +14,9 @@ struct SubscribeOptitrack{
 };
 
 struct Optitrack : Thread{
-  ACCESSname(tf::tfMessage, tf_messages)
-  ACCESSname(std::vector<geometry_msgs::TransformStamped>, opti_markers)
-  ACCESSname(std::vector<geometry_msgs::TransformStamped>, opti_bodies)
+  ACCESS(tf::tfMessage, tf_messages)
+  ACCESS(std::vector<geometry_msgs::TransformStamped>, opti_markers)
+  ACCESS(std::vector<geometry_msgs::TransformStamped>, opti_bodies)
 
   SubscribeOptitrack* sub;
 

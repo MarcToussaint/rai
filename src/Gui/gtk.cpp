@@ -99,7 +99,7 @@ void gtkProcessEvents(){
   gtkUnlock();
 }
 
-ConditionVariable menuChoice(-1);
+Signaler menuChoice(-1);
 static void menuitem_response(int choice) { menuChoice.setValue(choice); }
 
 int gtkPopupMenuChoice(StringL& choices) {

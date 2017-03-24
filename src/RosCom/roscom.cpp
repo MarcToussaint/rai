@@ -435,7 +435,7 @@ void PerceptionObjects2Ors::step(){
 //===========================================================================
 // Helper function so sync ors with the real PR2
 void initialSyncJointStateWithROS(mlr::KinematicWorld& world,
-    Access_typed<CtrlMsg>& ctrl_obs, bool useRos) {
+    Access<CtrlMsg>& ctrl_obs, bool useRos) {
 
   if (not useRos) { return; }
 
@@ -460,7 +460,7 @@ void initialSyncJointStateWithROS(mlr::KinematicWorld& world,
 }
 
 void syncJointStateWitROS(mlr::KinematicWorld& world,
-    Access_typed<CtrlMsg>& ctrl_obs, bool useRos) {
+    Access<CtrlMsg>& ctrl_obs, bool useRos) {
 
   if (not useRos) { return; }
 

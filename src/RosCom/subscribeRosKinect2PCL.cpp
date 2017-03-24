@@ -17,7 +17,7 @@ SubscribeRosKinect2PCL::SubscribeRosKinect2PCL(const char* cloud_name, const cha
   if(mlr::getParameter<bool>("useRos")){
     s->nh = new ros::NodeHandle;
     s->listener = new tf::TransformListener;
-    //      registry().newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
+    //      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
     LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(Pcl).name() <<"> into access '" <<cloud.name <<'\'';
     s->sub = s->nh->subscribe(topic_name, 1, &SubscribeRosKinect2PCL::callback, this);
   }

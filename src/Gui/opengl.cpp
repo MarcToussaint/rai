@@ -1017,7 +1017,7 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
 #ifdef MLR_GL
 
   if(!callerHasAlreadyLocked){
-    singleGLAccess().lock();
+    singleGLAccess.mutex.lock();
     dataLock.readLock(); //now accessing user data
   }
 
@@ -1184,14 +1184,14 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
   
   if(!callerHasAlreadyLocked){
     dataLock.unlock(); //now de-accessing user data
-    singleGLAccess().unlock();
+    singleGLAccess.mutex.unlock();
   }
 #endif
 }
 
 void OpenGL::Select(bool callerHasAlreadyLocked) {
   if(!callerHasAlreadyLocked){
-    singleGLAccess().lock();
+    singleGLAccess.mutex.lock();
     dataLock.readLock();
   }
 
@@ -1275,7 +1275,7 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
 #endif
   if(!callerHasAlreadyLocked){
     dataLock.unlock();
-    singleGLAccess().unlock();
+    singleGLAccess.mutex.unlock();
   }
 }
 
@@ -1497,9 +1497,9 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   //check object clicked on
   if(!downPressed) {
     if(reportSelects){
-      singleGLAccess().lock();
+      auto sgl = singleGLAccess();
       Select(true);
-      singleGLAccess().unlock();
+//      singleGLAccess()->unlock();
     }
   }
   
@@ -1508,9 +1508,11 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   if(mouse_button==5 && !downPressed) cam->X.pos -= s->downRot*Vector_z * (.1 * (s->downPos-s->downFoc).length());
   
   if(mouse_button==3) {  //selection
-    singleGLAccess().lock();
-    Select(true);
-    singleGLAccess().unlock();
+    {
+      auto sgl = singleGLAccess();
+      Select(true);
+    }
+//    singleGLAccess()->unlock();
     if(topSelection){
       cam->focus(topSelection->x, topSelection->y, topSelection->z);
 //      uint name=topSelection->name;
@@ -1690,9 +1692,9 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
   if(w<0) w=width;
   if(h<0) h=height;
 
-  singleGLAccess().lock();
+  auto mut=singleGLAccess();
   dataLock.readLock();
-  xBackgroundContext().makeCurrent();
+  xBackgroundContext()->makeCurrent();
 
   CHECK_EQ(w%4,0,"should be devidable by 4!!");
 
@@ -1799,7 +1801,7 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
   isUpdating.setStatus(0);
 
   dataLock.unlock();
-  singleGLAccess().unlock();
+//  singleGLAccess()->unlock();
 #endif
 }
 

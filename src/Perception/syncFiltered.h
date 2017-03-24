@@ -5,8 +5,8 @@
 
 /// syncs percepts with modelWorld
 struct SyncFiltered : Thread{
-  Access_typed<PerceptL> percepts_filtered;
-  Access_typed<mlr::KinematicWorld> outputWorld;
+  Access<PerceptL> percepts_filtered;
+  Access<mlr::KinematicWorld> outputWorld;
   ACCESS(mlr::KinematicWorld, modelWorld)
 
   SyncFiltered(const char* outputWorld_name);

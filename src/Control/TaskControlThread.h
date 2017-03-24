@@ -32,6 +32,7 @@ struct TaskControlThread : Thread {
   arr q0; //< homing pose
   mlr::String robot;
   bool useRos;
+  bool useSwift;
   bool requiresInitialSync;
   bool syncModelStateWithReal; //< whether the step() should reinit the state from the ros message
   bool verbose;

@@ -175,7 +175,7 @@ struct Shape : GLDrawer{
 
 /// a data structure to store proximity information (when two shapes become close) --
 /// as return value from external collision libs
-struct Proxy {
+struct Proxy : GLDrawer {
   //TODO: have a ProxyL& L as above...
   int a;              ///< index of shape A (-1==world) //TODO: would it be easier if this were mlr::Shape* ? YES -> Do it!
   int b;              ///< index of shape B
@@ -185,6 +185,7 @@ struct Proxy {
   double d, cenD;           ///< distance (positive) or penetration (negative) between A and B
   uint colorCode;
   Proxy();
+  void glDraw(OpenGL&);
 };
 
 //===========================================================================
@@ -411,7 +412,9 @@ stdPipes(KinematicWorld);
 //
 
 namespace mlr {
-void glDrawGraph(void *classP);
+void glDrawGraph(void*);
+void glDrawProxies(void*);
+
 }
 
 #ifndef MLR_ORS_ONLY_BASICS

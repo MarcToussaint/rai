@@ -20,6 +20,7 @@ TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWor
   , s(NULL)
   , taskController(NULL)
   , useRos(false)
+  , useSwift(true)
   , requiresInitialSync(true)
   , syncModelStateWithReal(false)
   , verbose(false)
@@ -29,8 +30,16 @@ TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWor
 {
 
   s = new sTaskControlThread();
+
+  useSwift = mlr::getParameter<bool>("useSwift",true);
   useRos = mlr::getParameter<bool>("useRos",false);
   useDynSim = !useRos; //mlr::getParameter<bool>("useDynSim", true);
+
+  double hyper = mlr::getParameter<double>("hyperSpeed", -1.);
+  if(!useRos && hyper>0.){
+    this->metronome.reset(.01/hyper);
+  }
+
 
   robot = mlr::getParameter<mlr::String>("robot");
 
@@ -171,7 +180,7 @@ void TaskControlThread::step(){
 
     //set/test the new configuration
     modelWorld().setJointState(q_model, qdot_model);
-    modelWorld().stepSwift();
+    if(useSwift) modelWorld().stepSwift();
     taskController->updateCtrlTasks(0., modelWorld()); //update without time increment
     double cost = taskController->getIKCosts();
     IK_cost.set() = cost;
@@ -181,7 +190,7 @@ void TaskControlThread::step(){
       LOG(-1) <<"HIGH COST IK! " <<cost;
       q_model -= .9*dq;
       modelWorld().setJointState(q_model, qdot_model);
-      modelWorld().stepSwift();
+      if(useSwift) modelWorld().stepSwift();
       taskController->updateCtrlTasks(0., modelWorld()); //update without time increment
     }
 

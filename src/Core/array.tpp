@@ -948,17 +948,12 @@ template<class T> void mlr::Array<T>::findValues(mlr::Array<uint>& indices, cons
     if(p[i]==x) indices.append(i);
 }
 
-// TL 17.07.08
-/** @brief whether at least one object is contained more than once
-   */
+/** @brief whether at least one object is contained more than once  */
 template<class T> bool mlr::Array<T>::containsDoubles() const {
-  if(N < 2)
-    return false;
-  uint i, j;
-  for(i=0; i<N-1; i++) {
-    for(j=i+1; j<N; j++) {
-      if(p[i]==p[j])
-        return true;
+  if(N<2) return false;
+  for(uint i=0; i<N; i++) {
+    for(uint j=0; j<i; j++) {
+      if(p[i]==p[j]) return true;
     }
   }
   return false;

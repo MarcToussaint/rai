@@ -276,8 +276,8 @@ void ObjectClusterer::step() {
 }
 
 ObjectFitter::ObjectFitter() : Thread("ObectFitter"), s(new sObjectFitter(this)) {
-//  biros().getAccessData<PointCloudSet>(objectClusters, "ObjectClusters", this, true);
-//  biros().getAccessData<ObjectSet>(objects, "Objects", this, true);
+//  biros().getVariableData<PointCloudSet>(objectClusters, "ObjectClusters", this, true);
+//  biros().getVariableData<ObjectSet>(objects, "Objects", this, true);
   NIY//listenTo(objectClusters);
 }
 

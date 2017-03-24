@@ -163,8 +163,8 @@ struct OpenGL {
   uint fboId;
   uint rboColor;
   uint rboDepth;
-  ConditionVariable isUpdating;
-  ConditionVariable watching;
+  Signaler isUpdating;
+  Signaler watching;
 
   /// @name constructors & destructors
   OpenGL(const char* title="mlr::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
@@ -246,9 +246,9 @@ protected:
 //===========================================================================
 
 struct SingleGLAccess{
-  Mutex openglMutex;
-  void lock(){ openglMutex.lock(); }
-  void unlock(){ openglMutex.unlock(); }
+//  Mutex openglMutex;
+//  void lock(){ openglMutex.lock(); }
+//  void unlock(){ openglMutex.unlock(); }
 };
 
 extern Singleton<SingleGLAccess> singleGLAccess;

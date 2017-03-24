@@ -40,59 +40,59 @@
 //
 
 RWLock::RWLock() {
-  int rc = pthread_rwlock_init(&lock, NULL);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  state=0;
+  int rc = pthread_rwlock_init(&rwLock, NULL);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  rwCount=0;
 }
 
 RWLock::~RWLock() {
-  CHECK(!state, "Destroying locked RWLock");
-  int rc = pthread_rwlock_destroy(&lock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  CHECK(!rwCount, "Destroying locked RWLock");
+  int rc = pthread_rwlock_destroy(&rwLock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
 void RWLock::readLock() {
-  int rc = pthread_rwlock_rdlock(&lock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  stateMutex.lock();
-  state++;
-  stateMutex.unlock();
+  int rc = pthread_rwlock_rdlock(&rwLock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  rwCountMutex.lock();
+  rwCount++;
+  rwCountMutex.unlock();
 }
 
 void RWLock::writeLock() {
-  int rc = pthread_rwlock_wrlock(&lock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  stateMutex.lock();
-  state=-1;
-  stateMutex.unlock();
+  int rc = pthread_rwlock_wrlock(&rwLock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  rwCountMutex.lock();
+  rwCount=-1;
+  rwCountMutex.unlock();
 }
 
 void RWLock::unlock() {
-  stateMutex.lock();
-  if(state>0) state--; else state=0;
-  stateMutex.unlock();
-  int rc = pthread_rwlock_unlock(&lock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  rwCountMutex.lock();
+  if(rwCount>0) rwCount--; else rwCount=0;
+  rwCountMutex.unlock();
+  int rc = pthread_rwlock_unlock(&rwLock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
 bool RWLock::isLocked() {
-  return state!=0;
+  return rwCount!=0;
 }
 
 
 
 //===========================================================================
 //
-// ConditionVariable
+// Signaler
 //
 
-ConditionVariable::ConditionVariable(int initialStatus)
+Signaler::Signaler(int initialStatus)
   : status(initialStatus), registryNode(NULL){
   int rc = pthread_cond_init(&cond, NULL);    if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
-ConditionVariable::~ConditionVariable() {
-  for(ConditionVariable *c:listensTo){
+Signaler::~Signaler() {
+  for(Signaler *c:listensTo){
     c->statusLock();
     c->listeners.removeValue(this);
     c->statusUnlock();
   }
-  for(ConditionVariable *c:listeners){
+  for(Signaler *c:listeners){
     c->statusLock();
     c->listensTo.removeValue(this);
     c->messengers.removeValue(this, false);
@@ -102,87 +102,87 @@ ConditionVariable::~ConditionVariable() {
   int rc = pthread_cond_destroy(&cond);    if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
-void ConditionVariable::setStatus(int i, ConditionVariable* messenger) {
-  mutex.lock();
+void Signaler::setStatus(int i, Signaler* messenger) {
+  statusMutex.lock();
   status=i;
   broadcast(messenger);
-  mutex.unlock();
+  statusMutex.unlock();
 }
 
-int ConditionVariable::incrementStatus(ConditionVariable* messenger) {
-  mutex.lock();
+int Signaler::incrementStatus(Signaler* messenger) {
+  statusMutex.lock();
   status++;
   broadcast(messenger);
   int i=status;
-  mutex.unlock();
+  statusMutex.unlock();
   return i;
 }
 
-void ConditionVariable::broadcast(ConditionVariable* messenger) {
+void Signaler::broadcast(Signaler* messenger) {
   //remember the messengers:
   if(messenger) messengers.setAppend(messenger);
   //signal to all waiters:
   int rc = pthread_cond_signal(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   //int rc = pthread_cond_broadcast(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   //setStatus to all listeners:
-  for(ConditionVariable *c:listeners) if(c!=messenger) c->setStatus(1, this);
+  for(Signaler *c:listeners) if(c!=messenger) c->setStatus(1, this);
   for(auto* c:callbacks) c->call()(this, status);
 }
 
-void ConditionVariable::listenTo(ConditionVariable& c){
-  mutex.lock();
+void Signaler::listenTo(Signaler& c){
+  statusMutex.lock();
   c.statusLock();
   c.listeners.append(this);
   listensTo.append(&c);
   c.statusUnlock();
-  mutex.unlock();
+  statusMutex.unlock();
 }
 
-void ConditionVariable::stopListenTo(ConditionVariable& c){
-  mutex.lock();
+void Signaler::stopListenTo(Signaler& c){
+  statusMutex.lock();
   c.statusLock();
   c.listeners.removeValue(this);
   listensTo.removeValue(&c);
   messengers.removeValue(&c, false);
   c.statusUnlock();
-  mutex.unlock();
+  statusMutex.unlock();
 }
 
-void ConditionVariable::stopListening(){
-  mutex.lock();
-  for(ConditionVariable *c:listensTo){
+void Signaler::stopListening(){
+  statusMutex.lock();
+  for(Signaler *c:listensTo){
     c->statusLock();
     c->listeners.removeValue(this);
     c->statusUnlock();
   }
   listensTo.clear();
   messengers.clear();
-  mutex.unlock();
+  statusMutex.unlock();
 }
 
-void ConditionVariable::statusLock() {
-  mutex.lock();
+void Signaler::statusLock() {
+  statusMutex.lock();
 }
 
-void ConditionVariable::statusUnlock() {
-  mutex.unlock();
+void Signaler::statusUnlock() {
+  statusMutex.unlock();
 }
 
-int ConditionVariable::getStatus(bool userHasLocked) const {
-  Mutex *m = (Mutex*)&mutex; //sorry: to allow for 'const' access
+int Signaler::getStatus(bool userHasLocked) const {
+  Mutex *m = (Mutex*)&statusMutex; //sorry: to allow for 'const' access
   if(!userHasLocked) m->lock(); else CHECK_EQ(m->state,syscall(SYS_gettid),"user must have locked before calling this!");
   int i=status;
   if(!userHasLocked) m->unlock();
   return i;
 }
 
-void ConditionVariable::waitForSignal(bool userHasLocked) {
-  if(!userHasLocked) mutex.lock(); else CHECK_EQ(mutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
-  int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  if(!userHasLocked) mutex.unlock();
+void Signaler::waitForSignal(bool userHasLocked) {
+  if(!userHasLocked) statusMutex.lock(); // else CHECK_EQ(mutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
+  int rc = pthread_cond_wait(&cond, &statusMutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  if(!userHasLocked) statusMutex.unlock();
 }
 
-bool ConditionVariable::waitForSignal(double seconds, bool userHasLocked) {
+bool Signaler::waitForSignal(double seconds, bool userHasLocked) {
   struct timespec timeout;
   clock_gettime(CLOCK_REALTIME, &timeout); //CLOCK_MONOTONIC, &timeout);
   long secs = (long)(floor(seconds));
@@ -194,80 +194,80 @@ bool ConditionVariable::waitForSignal(double seconds, bool userHasLocked) {
     timeout.tv_nsec-=1000000000l;
   }
 
-  if(!userHasLocked) mutex.lock(); // else CHECK_EQ(mutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
-  int rc = pthread_cond_timedwait(&cond, &mutex.mutex, &timeout);
+  if(!userHasLocked) statusMutex.lock(); // else CHECK_EQ(mutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
+  int rc = pthread_cond_timedwait(&cond, &statusMutex.mutex, &timeout);
   if(rc && rc!=ETIMEDOUT) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  if(!userHasLocked) mutex.unlock();
+  if(!userHasLocked) statusMutex.unlock();
   return rc!=ETIMEDOUT;
 }
 
-bool ConditionVariable::waitForStatusEq(int i, bool userHasLocked, double seconds) {
-  if(!userHasLocked) mutex.lock(); else CHECK_EQ(mutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
+bool Signaler::waitForStatusEq(int i, bool userHasLocked, double seconds) {
+  if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
   while(status!=i) {
     if(seconds<0.){
-      int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+      int rc = pthread_cond_wait(&cond, &statusMutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
     }else{
       bool succ = waitForSignal(seconds, true);
       if(!succ){
-        if(!userHasLocked) mutex.unlock();
+        if(!userHasLocked) statusMutex.unlock();
         return false;
       }
     }
   }
-  if(!userHasLocked) mutex.unlock();
+  if(!userHasLocked) statusMutex.unlock();
   return true;
 }
 
-void ConditionVariable::waitForStatusNotEq(int i, bool userHasLocked) {
-  if(!userHasLocked) mutex.lock(); else CHECK_EQ(mutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
+void Signaler::waitForStatusNotEq(int i, bool userHasLocked) {
+  if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
   while(status==i) {
-    int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+    int rc = pthread_cond_wait(&cond, &statusMutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
-  if(!userHasLocked) mutex.unlock();
+  if(!userHasLocked) statusMutex.unlock();
 }
 
-void ConditionVariable::waitForStatusGreaterThan(int i, bool userHasLocked) {
-  if(!userHasLocked) mutex.lock(); else CHECK_EQ(mutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
+void Signaler::waitForStatusGreaterThan(int i, bool userHasLocked) {
+  if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
   while(status<=i) {
-    int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+    int rc = pthread_cond_wait(&cond, &statusMutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
-  if(!userHasLocked) mutex.unlock();
+  if(!userHasLocked) statusMutex.unlock();
 }
 
-void ConditionVariable::waitForStatusSmallerThan(int i, bool userHasLocked) {
-  if(!userHasLocked) mutex.lock(); else CHECK_EQ(mutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
+void Signaler::waitForStatusSmallerThan(int i, bool userHasLocked) {
+  if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
   while(status>=i) {
-    int rc = pthread_cond_wait(&cond, &mutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+    int rc = pthread_cond_wait(&cond, &statusMutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
-  if(!userHasLocked) mutex.unlock();
+  if(!userHasLocked) statusMutex.unlock();
 }
 
 
 //===========================================================================
 //
-// RevisionedRWLock
+// VariableBase
 //
 
-//RevisionedRWLock::RevisionedRWLock(const char *_name):name(_name), revision(0), registryNode(NULL) {
-////  registryNode = registry().newNode<RevisionedRWLock* >({"AccessData", name}, {}, this);
+//VariableBase::VariableBase(const char *_name):name(_name), revision(0), registryNode(NULL) {
+////  registryNode = registry()->newNode<VariableBase* >({"VariableData", name}, {}, this);
 //}
 
-RevisionedRWLock::~RevisionedRWLock() {
+VariableBase::~VariableBase() {
 //  delete registryNode;
 }
 
-//bool RevisionedRWLock::hasNewRevision(){
+//bool VariableBase::hasNewRevision(){
 //  return revision.getStatus() > last_revision;
 //}
 
-int RevisionedRWLock::readAccess(Thread *th) {
+int VariableBase::readAccess(Thread *th) {
 //  engine().acc->queryReadAccess(this, p);
   rwlock.readLock();
 //  engine().acc->logReadAccess(this, p);
   return getStatus();
 }
 
-int RevisionedRWLock::writeAccess(Thread *th) {
+int VariableBase::writeAccess(Thread *th) {
 //  engine().acc->queryWriteAccess(this, p);
   rwlock.writeLock();
   write_time = mlr::clockTime();
@@ -275,10 +275,10 @@ int RevisionedRWLock::writeAccess(Thread *th) {
   return getStatus()+1;
 }
 
-int RevisionedRWLock::deAccess(Thread *th) {
+int VariableBase::deAccess(Thread *th) {
 //  Module_Thread *p = m?(Module_Thread*) m->thread:NULL;
   int i;
-  if(rwlock.state == -1) { //log a revision after write access
+  if(rwlock.rwCount == -1) { //log a revision after write access
     i = incrementStatus(th);
 //    engine().acc->logWriteDeAccess(this,p);
   } else {
@@ -289,7 +289,7 @@ int RevisionedRWLock::deAccess(Thread *th) {
   return i;
 }
 
-//int RevisionedRWLock::waitForNextRevision(){
+//int VariableBase::waitForNextRevision(){
 //  revision.statusLock();
 //  revision.waitForSignal(true);
 //  int rev = revision.status;
@@ -297,7 +297,7 @@ int RevisionedRWLock::deAccess(Thread *th) {
 //  return rev;
 //}
 
-//int RevisionedRWLock::waitForRevisionGreaterThan(int rev) {
+//int VariableBase::waitForRevisionGreaterThan(int rev) {
 //  revision.statusLock();
 //  revision.waitForStatusGreaterThan(rev, true);
 //  rev = revision.status;
@@ -385,9 +385,11 @@ void CycleTimer::cycleDone() {
   steps++;
 }
 
-void CycleTimer::report(){
-  printf("busy=[%5.1f %5.1f] cycle=[%5.1f %5.1f] load=%4.1f%% steps=%i\n", busyDtMean, busyDtMax, cyclDtMean, cyclDtMax, 100.*busyDtMean/cyclDtMean, steps);
-  fflush(stdout);
+mlr::String CycleTimer::report(){
+  mlr::String s;
+  s.printf("busy=[%5.1f %5.1f] cycle=[%5.1f %5.1f] load=%4.1f%% steps=%i", busyDtMean, busyDtMax, cyclDtMean, cyclDtMax, 100.*busyDtMean/cyclDtMean, steps);
+  return s;
+//  fflush(stdout);
 }
 
 
@@ -416,8 +418,15 @@ protected:
 };
 #endif
 
-Thread::Thread(const char* _name, double beatIntervalSec): ConditionVariable(tsEndOfMain), name(_name), tid(0), thread(0), step_count(0), metronome(beatIntervalSec), verbose(0) {
-  registryNode = registry().newNode<Thread*>({"Thread", name}, {}, this);
+Thread::Thread(const char* _name, double beatIntervalSec)
+  : Signaler(tsEndOfMain),
+     name(_name),
+     tid(0),
+     thread(0),
+     step_count(0),
+     metronome(beatIntervalSec),
+     verbose(0) {
+  registryNode = registry()->newNode<Thread*>({"Thread", name}, {}, this);
   if(name.N>14) name.resize(14, true);
 }
 
@@ -505,7 +514,7 @@ void Thread::threadStep() {
   setStatus(1);
 }
 
-//void Thread::listenTo(RevisionedRWLock& var) {
+//void Thread::listenTo(VariableBase& var) {
 //#if 0
 //  var.rwlock.writeLock();  //don't want to increase revision and broadcast!
 //  var.listeners.setAppend(this);
@@ -516,7 +525,7 @@ void Thread::threadStep() {
 //#endif
 //}
 
-//void Thread::stopListenTo(RevisionedRWLock& var){
+//void Thread::stopListenTo(VariableBase& var){
 //#if 0
 //  listensTo.removeValue(&var);
 //  var.rwlock.writeLock();
@@ -642,13 +651,13 @@ void Thread::main() {
 // controlling threads
 //
 
-Singleton<ConditionVariable> moduleShutdown;
+Singleton<Signaler> moduleShutdown;
 
 void signalhandler(int s){
-  int calls = moduleShutdown().incrementStatus();
+  int calls = moduleShutdown()->incrementStatus();
   cerr <<"\n*** System received signal " <<s <<" -- count=" <<calls <<endl;
   if(calls==1){
-    LOG(0) <<" -- waiting for main loop to break on moduleShutdown().getStatus()" <<endl;
+    LOG(0) <<" -- waiting for main loop to break on moduleShutdown()->getStatus()" <<endl;
   }
   if(calls==2){
     LOG(0) <<" -- smoothly closing modules directly" <<endl;
@@ -667,27 +676,31 @@ void signalhandler(int s){
 }
 
 void openModules(){
-  NodeL threads = registry().getNodesOfType<Thread*>();
+  NodeL threads = registry()->getNodesOfType<Thread*>();
   for(Node* th:threads){ th->get<Thread*>()->open(); }
 }
 
 void stepModules(){
-  NodeL threads = registry().getNodesOfType<Thread*>();
+  NodeL threads = registry()->getNodesOfType<Thread*>();
   for(Node* th:threads){ th->get<Thread*>()->step(); }
 }
 
 void closeModules(){
-  NodeL threads = registry().getNodesOfType<Thread*>();
+  NodeL threads = registry()->getNodesOfType<Thread*>();
   for(Node* th:threads){ th->get<Thread*>()->close(); }
 }
 
-RevisionedRWLockL getVariables(){
-  return registry().getValuesOfType<RevisionedRWLock>();
+VariableBase::Ptr getVariable(const char* name){
+  return registry()->get<VariableBase::Ptr>({"VariableData", name});
+}
+
+VariableBaseL getVariables(){
+  return registry()->getValuesOfType<VariableBase>();
 }
 
 void threadOpenModules(bool waitForOpened, bool setSignalHandler){
   if(setSignalHandler) signal(SIGINT, signalhandler);
-  NodeL threads = registry().getNodesOfType<Thread*>();
+  NodeL threads = registry()->getNodesOfType<Thread*>();
   for(Node *th: threads) th->get<Thread*>()->threadOpen();
   if(waitForOpened) for(Node *th: threads) th->get<Thread*>()->waitForOpened();
   for(Node *th: threads){
@@ -698,23 +711,22 @@ void threadOpenModules(bool waitForOpened, bool setSignalHandler){
 }
 
 void threadCloseModules(){
-  NodeL threads = registry().getNodesOfType<Thread*>();
+  NodeL threads = registry()->getNodesOfType<Thread*>();
   for(Node *th: threads) th->get<Thread*>()->threadClose();
 //  threadReportCycleTimes();
 }
 
 void threadCancelModules(){
-  NodeL threads = registry().getNodesOfType<Thread*>();
+  NodeL threads = registry()->getNodesOfType<Thread*>();
   for(Node *th: threads) th->get<Thread*>()->threadCancel();
 }
 
 void threadReportCycleTimes(){
   cout <<"Cycle times for all Threads (msec):" <<endl;
-  NodeL threads = registry().getNodesOfType<Thread*>();
+  NodeL threads = registry()->getNodesOfType<Thread*>();
   for(Node *th: threads){
     Thread *thread=th->get<Thread*>();
-    cout <<std::setw(30) <<thread->name <<" : ";
-    thread->timer.report();
+    cout <<std::setw(30) <<thread->name <<" : " <<thread->timer.report() <<endl;
   }
 }
 
@@ -815,9 +827,9 @@ TStream::Register::~Register() {
 }
 
 RUN_ON_INIT_BEGIN(thread)
-RevisionedRWLockL::memMove=true;
+VariableBaseL::memMove=true;
 ThreadL::memMove=true;
-ConditionVariableL::memMove=true;
+SignalerL::memMove=true;
 RUN_ON_INIT_END(thread)
 
 #endif //MLR_MSVC

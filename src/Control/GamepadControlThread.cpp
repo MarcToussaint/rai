@@ -45,7 +45,7 @@ void GamepadControlThread::step(){
 
   if(step_count>10 && stopButtons(gamepad)) threadClose();
 
-//  if(step_count>10 && gamepad_shutdown) moduleShutdown().incrementValue();
+//  if(step_count>10 && gamepad_shutdown) moduleShutdown()->incrementValue();
 }
 
 void GamepadControlThread::close(){

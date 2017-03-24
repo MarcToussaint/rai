@@ -741,26 +741,52 @@ mlr::Proxy::Proxy() {
   colorCode = 0;
 }
 
+void mlr::Proxy::glDraw(OpenGL& gl){
+  glLoadIdentity();
+  if(!colorCode){
+    if(d>0.) glColor(.8,.2,.2);
+    else glColor(1,0,0);
+  }else glColor(colorCode);
+  glBegin(GL_LINES);
+  glVertex3dv(posA.p());
+  glVertex3dv(posB.p());
+  glEnd();
+  mlr::Transformation f;
+  f.pos=posA;
+  f.rot.setDiff(mlr::Vector(0, 0, 1), posA-posB);
+  double GLmatrix[16];
+  f.getAffineMatrixGL(GLmatrix);
+  glLoadMatrixd(GLmatrix);
+  glDisable(GL_CULL_FACE);
+  glDrawDisk(.02);
+  glEnable(GL_CULL_FACE);
+
+  f.pos=posB;
+  f.getAffineMatrixGL(GLmatrix);
+  glLoadMatrixd(GLmatrix);
+  glDrawDisk(.02);
+}
+
 //===========================================================================
 //
 // Graph implementations
 //
 
 namespace mlr{
-struct sKinematicWorld{
-  OpenGL *gl;
-  SwiftInterface *swift;
-  PhysXInterface *physx;
-  OdeInterface *ode;
-  bool swiftIsReference;
-  sKinematicWorld():gl(NULL), swift(NULL), physx(NULL), ode(NULL), swiftIsReference(false) {}
-  ~sKinematicWorld(){
-    if(gl) delete gl;
-    if(swift && !swiftIsReference) delete swift;
-    if(physx) delete physx;
-    if(ode) delete ode;
-  }
-};
+  struct sKinematicWorld{
+    OpenGL *gl;
+    SwiftInterface *swift;
+    PhysXInterface *physx;
+    OdeInterface *ode;
+    bool swiftIsReference;
+    sKinematicWorld():gl(NULL), swift(NULL), physx(NULL), ode(NULL), swiftIsReference(false) {}
+    ~sKinematicWorld(){
+      if(gl) delete gl;
+      if(swift && !swiftIsReference) delete swift;
+      if(physx) delete physx;
+      if(ode) delete ode;
+    }
+  };
 }
 
 mlr::KinematicWorld::KinematicWorld():s(NULL),q_agent(0),isLinkTree(false) {
@@ -2724,30 +2750,7 @@ void mlr::KinematicWorld::glDraw(OpenGL& gl) {
   }
 
   //proxies
-  if(orsDrawProxies) for(Proxy *proxy: proxies) {
-    glLoadIdentity();
-    if(!proxy->colorCode){
-      if(proxy->d>0.) glColor(.8,.2,.2);
-      else glColor(1,0,0);
-    }else glColor(proxy->colorCode);
-    glBegin(GL_LINES);
-    glVertex3dv(proxy->posA.p());
-    glVertex3dv(proxy->posB.p());
-    glEnd();
-    mlr::Transformation f;
-    f.pos=proxy->posA;
-    f.rot.setDiff(mlr::Vector(0, 0, 1), proxy->posA-proxy->posB);
-    f.getAffineMatrixGL(GLmatrix);
-    glLoadMatrixd(GLmatrix);
-    glDisable(GL_CULL_FACE);
-    glDrawDisk(.02);
-    glEnable(GL_CULL_FACE);
-
-    f.pos=proxy->posB;
-    f.getAffineMatrixGL(GLmatrix);
-    glLoadMatrixd(GLmatrix);
-    glDrawDisk(.02);
-  }
+  if(orsDrawProxies) for(Proxy *proxy: proxies) proxy->glDraw(gl);
 
   glPopMatrix();
 }
@@ -3253,6 +3256,13 @@ void bindOrsToOpenGL(mlr::KinematicWorld& graph, OpenGL& gl) {
 /// static GL routine to draw a mlr::KinematicWorld
 void mlr::glDrawGraph(void *classP) {
   ((mlr::KinematicWorld*)classP)->glDraw(NoOpenGL);
+}
+
+void mlr::glDrawProxies(void *P){
+  ProxyL& proxies = *((ProxyL*)P);
+  glPushMatrix();
+  for(mlr::Proxy* p:proxies) p->glDraw(NoOpenGL);
+  glPopMatrix();
 }
 
 

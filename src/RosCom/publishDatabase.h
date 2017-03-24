@@ -8,8 +8,8 @@
 
 /// 'publishes' to both, ROS topics and modelWorld
 struct PublishDatabase : Thread{
-  Access_typed<PerceptL> percepts_filtered;
-  ACCESSname(mlr::KinematicWorld, modelWorld)
+  Access<PerceptL> percepts_filtered;
+  ACCESS(mlr::KinematicWorld, modelWorld)
 
   PublishDatabase();
 

@@ -19,8 +19,8 @@
 
 //===========================================================================
 
-OrsViewer::OrsViewer(const char* varname, double beatIntervalSec, bool computeCameraView)
-  : Thread(STRING("OrsViewer_"<<varname), beatIntervalSec),
+OrsViewer_old::OrsViewer_old(const char* varname, double beatIntervalSec, bool computeCameraView)
+  : Thread(STRING("OrsViewer_old_"<<varname), beatIntervalSec),
     modelWorld(this, varname, (beatIntervalSec<0.)),
     modelCameraView(this, "modelCameraView"),
     modelDepthView(this, "modelDepthView"),
@@ -28,13 +28,13 @@ OrsViewer::OrsViewer(const char* varname, double beatIntervalSec, bool computeCa
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
 
-OrsViewer::~OrsViewer(){ threadClose(); }
+OrsViewer_old::~OrsViewer_old(){ threadClose(); }
 
-void OrsViewer::open(){
-  copy.gl(STRING("OrsViewer: "<<modelWorld.name));
+void OrsViewer_old::open(){
+  copy.gl(STRING("OrsViewer_old: "<<modelWorld.name));
 }
 
-void OrsViewer::step(){
+void OrsViewer_old::step(){
   copy.gl().dataLock.writeLock();
   copy = modelWorld.get();
   copy.gl().dataLock.unlock();
@@ -56,6 +56,58 @@ void OrsViewer::step(){
       copy.gl().dataLock.unlock();
     }
   }
+}
+
+//===========================================================================
+
+OrsViewer::OrsViewer(const char* world_name, double beatIntervalSec)
+  : Thread(STRING("OrsViewer_"<<world_name), beatIntervalSec),
+    world(this, world_name, (beatIntervalSec<0.)){
+  if(beatIntervalSec>=0.) threadLoop(); else threadStep();
+}
+
+OrsViewer::~OrsViewer(){
+  threadClose();
+}
+
+void OrsViewer::open(){
+  gl = new OpenGL(STRING("OrsViewer: "<<world.name));
+  gl->add(glStandardScene);
+  gl->add(glDrawMeshes, &meshesCopy);
+  gl->add(mlr::glDrawProxies, &proxiesCopy);
+  gl->camera.setDefault();
+}
+
+void OrsViewer::close(){
+  listDelete(proxiesCopy);
+  delete gl;
+}
+
+void OrsViewer::step(){
+  //-- get transforms, or all shapes if their number changed, and proxies
+  mlr::Array<mlr::Transformation> X;
+  world.readAccess();
+  if(world->shapes.N!=meshesCopy.N){ //need to copy meshes
+    uint n=world->shapes.N;
+    gl->dataLock.writeLock();
+    meshesCopy.resize(n);
+    for(uint i=0;i<n;i++) meshesCopy.elem(i) = world->shapes.elem(i)->mesh;
+    gl->dataLock.unlock();
+  }
+  X.resize(world->shapes.N);
+  for(mlr::Shape *s:world().shapes) X(s->index) = s->X;
+  gl->dataLock.writeLock();
+  listCopy(proxiesCopy, world->proxies);
+  gl->dataLock.unlock();
+  world.deAccess();
+
+  //-- set transforms to mesh display
+  gl->dataLock.writeLock();
+  CHECK_EQ(X.N, meshesCopy.N, "");
+  for(uint i=0;i<X.N;i++) meshesCopy(i).glX = X(i);
+  gl->dataLock.unlock();
+
+  gl->update(NULL, false, false, true);
 }
 
 //===========================================================================
@@ -105,7 +157,7 @@ OrsPoseViewer::OrsPoseViewer(const char* modelVarName, const StringA& poseVarNam
     modelWorld(this, modelVarName, false),
     gl(STRING("OrsPoseViewer: " <<poseVarNames)){
   for(const String& varname: poseVarNames){
-    poses.append( new Access_typed<arr>(this, varname, (beatIntervalSec<0.)) ); //listen only when beatInterval=1.
+    poses.append( new Access<arr>(this, varname, (beatIntervalSec<0.)) ); //listen only when beatInterval=1.
     copies.append( new mlr::KinematicWorld() );
   }
   copy = modelWorld.get();

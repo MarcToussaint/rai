@@ -33,7 +33,7 @@ Filter::~Filter(){
 }
 
 void Filter::open(){
-  Access_typed<mlr::KinematicWorld> modelWorld(this, "modelWorld");
+  Access<mlr::KinematicWorld> modelWorld(this, "modelWorld");
   modelWorld.readAccess();
   for(mlr::Body *b:modelWorld().bodies){
     if(b->ats["percept"]){

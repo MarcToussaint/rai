@@ -697,8 +697,6 @@ namespace mlr {
   }
 
 struct LogServer {
-  Mutex mutex;
-
   LogServer() {
     signal(SIGUSR2, mlr::handleSIGUSR2);
     timerStartTime=mlr::cpuTime();
@@ -739,7 +737,7 @@ mlr::LogToken mlr::LogObject::getToken(int log_level, const char* code_file, con
 }
 
 mlr::LogToken::~LogToken(){
-  mlr::logServer().mutex.lock();
+  auto mut = mlr::logServer(); //keep the mutex
   if(log.logFileLevel>=log_level){
     if(!log.fil.is_open()) mlr::open(log.fil, STRING("z.log."<<log.key));
     log.fil <<code_func <<':' <<code_file <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
@@ -753,11 +751,11 @@ mlr::LogToken::~LogToken(){
 #endif
       if(log_level==-1){ mlr::errString <<" -- WARNING";    cout <<mlr::errString <<endl; }
       if(log_level==-2){ mlr::errString <<" -- ERROR  ";    cerr <<mlr::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
-      if(log_level==-3){ mlr::errString <<" -- HARD EXIT!"; cerr <<mlr::errString <<endl; mlr::logServer().mutex.unlock(); exit(1); }
+      if(log_level==-3){ mlr::errString <<" -- HARD EXIT!"; cerr <<mlr::errString <<endl; /*mlr::logServer().mutex.unlock();*/ exit(1); }
       if(log_level<=-2) raise(SIGUSR2);
     }
   }
-  mlr::logServer().mutex.unlock();
+//  mlr::logServer().mutex.unlock();
 }
 
 void setLogLevels(int fileLogLevel, int consoleLogLevel){
@@ -1374,7 +1372,7 @@ void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDF
   }
   
   if(pauseMouse) cmd <<"\n pause mouse" <<std::endl;
-  gnuplotServer().send(cmd.p, persist);
+  gnuplotServer()->send(cmd.p, persist);
 
   if(!mlr::getInteractivity()){
     mlr::wait(.5);
@@ -1431,6 +1429,12 @@ std::string getcwd_string() {
    return std::string(buff);
 }
 
+const char* NAME(const std::type_info& type){
+  const char* name = type.name();
+  while(*name>='0' && *name<='9') name++;
+  return name;
+}
+
 //===========================================================================
 //
 // explicit instantiations
@@ -1462,4 +1466,6 @@ template mlr::String mlr::getParameter<mlr::String>(const char*, const mlr::Stri
 
 template bool mlr::checkParameter<uint>(const char*);
 template bool mlr::checkParameter<bool>(const char*);
+
+
 

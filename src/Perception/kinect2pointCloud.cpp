@@ -32,7 +32,7 @@ void Kinect2PointCloud::step(){
 
   //verbose to compare ros kinect frame with modelWorld..
 //  cout <<"KINECT frame=" <<frame <<" -- base pose=" <<basePose <<endl;
-//  Access_typed<mlr::KinematicWorld> K(NULL, "modelWorld");
+//  Access<mlr::KinematicWorld> K(NULL, "modelWorld");
 //  mlr::Transformation k = K.get()->getShapeByName("endeffKinect")->X;
 //  cout <<"ors: frame=" <<k <<" real/k" <<frame/k <<" k/real" <<k/frame <<endl;
 

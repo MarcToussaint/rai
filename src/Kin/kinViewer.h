@@ -21,17 +21,17 @@
 
 //===========================================================================
 
-struct OrsViewer : Thread {
-  Access_typed<mlr::KinematicWorld> modelWorld;
+struct OrsViewer_old : Thread {
+  Access<mlr::KinematicWorld> modelWorld;
   //-- outputs
-  Access_typed<byteA> modelCameraView;
-  Access_typed<floatA> modelDepthView;
+  Access<byteA> modelCameraView;
+  Access<floatA> modelDepthView;
   //-- internal (private)
   mlr::KinematicWorld copy;
   bool computeCameraView;
 
-  OrsViewer(const char* varname="modelWorld", double beatIntervalSec=-1., bool computeCameraView=false);
-  ~OrsViewer();
+  OrsViewer_old(const char* varname="modelWorld", double beatIntervalSec=-1., bool computeCameraView=false);
+  ~OrsViewer_old();
   void open();
   void step();
   void close() {}
@@ -39,8 +39,22 @@ struct OrsViewer : Thread {
 
 //===========================================================================
 
+struct OrsViewer : Thread {
+  Access<mlr::KinematicWorld> world;
+  MeshA meshesCopy;
+  ProxyL proxiesCopy;
+  struct OpenGL *gl;
+  OrsViewer(const char* world_name="modelWorld", double beatIntervalSec=-1.);
+  ~OrsViewer();
+  void open();
+  void step();
+  void close();
+};
+
+//===========================================================================
+
 struct OrsPathViewer : Thread {
-  Access_typed<WorldL> configurations;
+  Access<WorldL> configurations;
   //-- internal (private)
   mlr::KinematicWorld copy;
   uint t;
@@ -60,8 +74,8 @@ struct OrsPathViewer : Thread {
 //===========================================================================
 
 struct OrsPoseViewer : Thread {
-  Access_typed<mlr::KinematicWorld> modelWorld;
-  mlr::Array<Access_typed<arr>*> poses; ///< poses to be watched
+  Access<mlr::KinematicWorld> modelWorld;
+  mlr::Array<Access<arr>*> poses; ///< poses to be watched
   //-- internal (private)
   OpenGL gl;
   mlr::KinematicWorld copy;
@@ -80,10 +94,10 @@ struct OrsPoseViewer : Thread {
 //===========================================================================
 
 struct ComputeCameraView : Thread {
-  Access_typed<mlr::KinematicWorld> modelWorld;
-  Access_typed<byteA> cameraView;
-  Access_typed<uint16A> cameraDepth;
-  Access_typed<mlr::Transformation> cameraFrame;
+  Access<mlr::KinematicWorld> modelWorld;
+  Access<byteA> cameraView;
+  Access<uint16A> cameraDepth;
+  Access<mlr::Transformation> cameraFrame;
 
   //-- internal (private)
   OpenGL gl;

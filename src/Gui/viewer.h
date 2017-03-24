@@ -7,7 +7,7 @@ typedef mlr::Array<mlr::Mesh> MeshA;
 
 struct ImageViewer : Thread {
   struct sImageViewer *s;
-  Access_typed<byteA> img;
+  Access<byteA> img;
   bool flipImage = false;
   ImageViewer(const char* img_name="rgb");
   ~ImageViewer();
@@ -18,8 +18,8 @@ struct ImageViewer : Thread {
 
 struct PointCloudViewer : Thread {
   struct sPointCloudViewer *s;
-  Access_typed<arr> pts;
-  Access_typed<byteA> rgb;
+  Access<arr> pts;
+  Access<byteA> rgb;
   PointCloudViewer(const char* pts_name="kinect_points", const char* rgb_name="kinect_rgb");
   ~PointCloudViewer();
   void open();
@@ -28,7 +28,7 @@ struct PointCloudViewer : Thread {
 };
 
 struct MeshAViewer : Thread {
-  Access_typed<MeshA> meshes;
+  Access<MeshA> meshes;
   MeshA copy;
   struct OpenGL *gl;
   MeshAViewer(const char* meshes_name="visionDisplay");

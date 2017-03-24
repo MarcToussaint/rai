@@ -2,10 +2,10 @@
 #include "roscom.h"
 
 struct SubscribeRosKinect{
-  Access_typed<byteA> kinect_rgb;
-  Access_typed<uint16A> kinect_depth;
-  Access_typed<mlr::Transformation> kinect_frame;
-//  Access_typed<visualization_msgs::MarkerArray> tableTopObjects;
+  Access<byteA> kinect_rgb;
+  Access<uint16A> kinect_depth;
+  Access<mlr::Transformation> kinect_frame;
+//  Access<visualization_msgs::MarkerArray> tableTopObjects;
   SubscriberConv<sensor_msgs::Image, byteA, &conv_image2byteA> subRgb;
   SubscriberConv<sensor_msgs::Image, uint16A, &conv_image2uint16A> subDepth;
 //  SubscriberConv<sensor_msgs::PointCloud2, uint16A, &conv_pointcloud2uint16A> subPoints;

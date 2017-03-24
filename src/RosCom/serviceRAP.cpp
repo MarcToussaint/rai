@@ -5,7 +5,7 @@
 
 #include <ros/ros.h>
 struct sServiceRAP{
-  Access_typed<RelationalMachine> RM;
+  Access<RelationalMachine> RM;
   ros::NodeHandle nh;
   ros::ServiceServer service;
   bool cb_service(mlr_srv::StringString::Request& _request, mlr_srv::StringString::Response& response);

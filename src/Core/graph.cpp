@@ -48,7 +48,7 @@ stdOutPipe(ParseInfo)
 
 //-- query existing types
 inline Node *reg_findType(const char* key) {
-  NodeL types = registry().getNodesOfType<std::shared_ptr<Type> >();
+  NodeL types = registry()->getNodesOfType<std::shared_ptr<Type> >();
   for(Node *ti: types) {
     if(mlr::String(ti->get<std::shared_ptr<Type> >()->typeId().name())==key) return ti;
     if(ti->matches(key)) return ti;
@@ -950,10 +950,10 @@ struct RegistryInitializer{
         if(n+1<mlr::argc && mlr::argv[n+1][0]!='-'){
           mlr::String value;
           value <<'=' <<mlr::argv[n+1];
-          registry().readNode(value, false, false, key);
+          registry()->readNode(value, false, false, key);
           n++;
         }else{
-          registry().newNode<bool>({key}, {}, true);
+          registry()->newNode<bool>({key}, {}, true);
         }
       }else{
         MLR_MSG("non-parsed cmd line argument:" <<mlr::argv[n]);
@@ -961,7 +961,7 @@ struct RegistryInitializer{
     }
 
     mlr::String cfgFileName="MT.cfg";
-    if(registry()["cfg"]) cfgFileName = registry().get<mlr::String>("cfg");
+    if(registry()()["cfg"]) cfgFileName = registry()->get<mlr::String>("cfg");
     LOG(3) <<"opening config file '" <<cfgFileName <<"'";
     ifstream fil;
     fil.open(cfgFileName);
@@ -979,13 +979,13 @@ struct RegistryInitializer{
 Singleton<RegistryInitializer> registryInitializer;
 
 bool getParameterFromGraph(const std::type_info& type, void* data, const char* key){
-  registryInitializer();
-  Node *n = registry().findNodeOfType(type, {key});
+  registryInitializer()();
+  Node *n = registry()->findNodeOfType(type, {key});
   if(n){
     n->copyValueInto(data);
     return true;
   }else{
-    n = registry().findNode({key});
+    n = registry()->findNode({key});
     if(n && n->isOfType<double>()){
       if(type==typeid(int)){ *((int*)data) = (int)n->get<double>(); return true; }
       if(type==typeid(uint)){ *((uint*)data) = (uint)n->get<double>(); return true; }
