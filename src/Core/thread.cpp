@@ -253,7 +253,7 @@ void Signaler::waitForStatusSmallerThan(int i, bool userHasLocked) {
 //}
 
 VariableBase::~VariableBase() {
-//  delete registryNode;
+//  registry()->delNode(registryNode);
 }
 
 //bool VariableBase::hasNewRevision(){
@@ -436,7 +436,7 @@ Thread::~Thread() {
         in destructor') but now the destructor has to call 'threadClose' which triggers a Thread::close(), which is\
         pure virtual while you're trying to call ~Thread.")
   if(!isClosed()) threadClose();
-  delete registryNode;
+  registry()->delNode(registryNode);
 }
 
 void Thread::threadOpen(bool wait, int priority) {
