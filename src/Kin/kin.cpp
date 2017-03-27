@@ -2837,16 +2837,22 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
   if(symbol==addSliderMechanism){
     Body *slider1 = new Body(G); //{ type=ST_box size=[.2 .1 .05 0] color=[0 0 0] }
     Body *slider2 = new Body(G); //{ type=ST_box size=[.2 .1 .05 0] color=[1 0 0] }
+    Shape *s1 = new Shape(G, *slider1); s1->type=ST_box; s1->size={.2,.1,.05}; s1->mesh.C={0.,0,0};
+    Shape *s2 = new Shape(G, *slider2); s2->type=ST_box; s2->size={.2,.1,.05}; s2->mesh.C={1.,0,0};
+
+    //placement of the slider1 on the table -> fixed
     Joint *j1 = new Joint(G, from->body, slider1);
     j1->type = JT_transXYPhi;
     j1->constrainToZeroVel=true;
     j1->A = from->rel * jA;
+    //the actual sliding translation -> articulated
     Joint *j2 = new Joint(G, slider1, slider2);
     j2->type = JT_transX;
     j2->constrainToZeroVel=false;
+    //orientation of the object on the slider2 -> fixed
     Joint *j3 = new Joint(G, slider2, to->body);
     j3->type = JT_hingeZ;
-    j3->constrainToZeroVel=false;
+    j3->constrainToZeroVel=true;
     j3->B = jB * (-to->rel);
     return;
   }
