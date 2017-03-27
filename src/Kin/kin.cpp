@@ -2762,7 +2762,7 @@ void mlr::KinematicWorld::glDraw(OpenGL& gl) {
 //
 
 mlr::KinematicSwitch::KinematicSwitch()
-  : symbol(none), jointType(JT_none), timeOfApplication(UINT_MAX), fromId(UINT_MAX), toId(UINT_MAX){
+  : symbol(none), jointType(JT_none), timeOfApplication(UINT_MAX), fromId(UINT_MAX), toId(UINT_MAX), agent(0){
   jA.setZero();
   jB.setZero();
 }
