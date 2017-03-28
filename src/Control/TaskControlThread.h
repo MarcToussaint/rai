@@ -30,6 +30,7 @@ struct TaskControlThread : Thread {
   arr q_real, qdot_real; //< real state
   arr q_model, qdot_model; //< model state
   arr q0; //< homing pose
+  arr Kp_base, Kd_base; //< Kp, Kd parameters defined in the model file
   mlr::String robot;
   bool useRos;
   bool useSwift;

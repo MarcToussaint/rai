@@ -129,7 +129,7 @@ struct CtrlTask{
   uint hierarchy;      ///< hierarchy level in hiearchycal inverse kinematics: higher = higher priority
 
   //-- compliance task
-  arr C;               ///< non-empty iff this is a compliance task; defines the task space compliance coefficients
+  arr complianceDirection;             ///< non-empty iff this is a compliance task; defines the task space compliance coefficients
 
   //-- if this is a force ctrl task
   arr f_ref;           ///< non-empty iff this is a force limit control task; defines the box limits (abs value in all dimensions)
@@ -177,6 +177,7 @@ struct TaskControlMethods {
   double getIKCosts(const arr& q=NoArr, const arr& q0=NoArr, arr& g=NoArr, arr& H=NoArr);
   arr inverseKinematics(arr& qdot, const arr& nullRef=NoArr, double* cost=NULL);
   arr inverseKinematics_hierarchical();
+  arr getComplianceProjection();
   arr operationalSpaceControl();
   arr calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, const arr& q, const arr& qdot, const arr& M, const arr& F); ///< returns the linearized control law
   arr getDesiredLinAccLaw(arr &Kp, arr &Kd, arr &u0, const arr& q, const arr& qdot); ///< returns the linearized control law

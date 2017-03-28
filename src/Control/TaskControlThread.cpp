@@ -74,6 +74,18 @@ TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWor
 
   q0 = realWorld.q;
 
+  Kp_base = zeros(realWorld.q.N);
+  Kd_base = zeros(realWorld.q.N);
+  for(mlr::Joint* j:realWorld.joints) if(j->qDim()>0){
+    arr *gains = j->ats.find<arr>("gains");
+    if(gains){
+      for(uint i=0;i<j->qDim();i++){
+        Kp_base(j->qIndex+i)=gains->elem(0);
+        Kd_base(j->qIndex+i)=gains->elem(1);
+      }
+    }
+  }
+
   fRInitialOffset = ARR(-0.17119, 0.544316, -1.2, 0.023718, 0.00802182, 0.0095804);
 }
 
@@ -104,11 +116,7 @@ void TaskControlThread::open(){
 
 
 void TaskControlThread::step(){
-  static uint t=0;
-  t++;
-
   mlr::Joint *trans = realWorld.getJointByName("worldTranslationRotation", false);
-  bool resetCtrlTasksState = false;
 
   //-- read real state
   if(useRos){
@@ -144,17 +152,12 @@ void TaskControlThread::step(){
         q_model = q_real;
         qdot_model = qdot_real;
         modelWorld.set()->setJointState(q_model, qdot_model);
-        if(requiresInitialSync){ //this was the first initial sync!! -> reset ctrl tasks
-          ctrlTasks.writeAccess();
-          if(resetCtrlTasksState) taskController->resetCtrlTasksState();
-          ctrlTasks.deAccess();
-        }
-        syncModelStateWithReal = false;
+        syncModelStateWithReal = false; //continue sync'n; or only once?
       }
       requiresInitialSync = false;
     }else{
       LOG(-1) <<"** Waiting for ROS message on initial configuration.." <<endl;
-      if(t>300){
+      if(step_count>300){
         HALT("sync'ing real robot with simulated failed")
       }
       return;
@@ -162,6 +165,7 @@ void TaskControlThread::step(){
   }
 
   //-- compute the feedback controller step and iterate to compute a forward reference
+  arr CompProj;
   {
     modelWorld.writeAccess();
 //    if(!(step_count%20)) modelWorld().gl().update(); //only for debugging
@@ -172,8 +176,16 @@ void TaskControlThread::step(){
     taskController->updateCtrlTasks(.01, modelWorld()); //update with time increment
 
     //-- compute IK step
-    double maxQStep = 1e-1;
-    arr dq = taskController->inverseKinematics(qdot_model); //, .01*(q0-q_model));
+    double maxQStep = 2e-1;
+    arr dq;
+    if(syncModelStateWithReal){
+      arr nullStep = .1 * (q0-q_model); //this is the 'null step' (point of zero-cost)
+      double l = length(nullStep);
+      if(l>maxQStep) nullStep *= maxQStep/l;
+      dq = taskController->inverseKinematics(qdot_model, nullStep);
+    }else{
+      dq = taskController->inverseKinematics(qdot_model); //don't include a null step
+    }
     double l = length(dq);
     if(l>maxQStep) dq *= maxQStep/l;
     q_model += dq;
@@ -195,12 +207,23 @@ void TaskControlThread::step(){
     }
 
     if(verbose) taskController->reportCurrentState();
+
+    // get compliance projection matrix
+    CompProj = taskController->getComplianceProjection();
+
     ctrlTasks.deAccess();
     modelWorld.deAccess();
   }
 
-  //TODO: construct the compliance matrix..
+  //project gains if there are compliance tasks
+  arr Kp = diag(Kp_base);
+  arr Kd = diag(Kd_base);
+  if(CompProj.N){
+    Kp = CompProj*Kp*CompProj;
+    Kd = CompProj*Kd*CompProj;
+  }
 
+  //TODO: construct force tasks
   //    //-- compute the force feedback control coefficients
   //    uint count=0;
   //    ctrlTasks.readAccess();
@@ -221,9 +244,9 @@ void TaskControlThread::step(){
     refs.q =  q_model;
     refs.qdot = zeros(q_model.N);
     refs.fL_gamma = 1.;
-    refs.Kp = ARR(1.);
-    refs.Kd = ARR(1.);
-    refs.Ki = ARR(0.2);
+    refs.Kp = Kp; //ARR(1.);
+    refs.Kd = Kd; //ARR(1.);
+    refs.Ki = ARR(.0); //ARR(0.2);
     refs.fL = zeros(6);
     refs.fR = zeros(6);
     refs.KiFTL.clear();

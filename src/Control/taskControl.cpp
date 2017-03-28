@@ -464,6 +464,46 @@ arr TaskControlMethods::inverseKinematics_hierarchical(){
   return dq;
 }
 
+arr TaskControlMethods::getComplianceProjection(){
+  arr P;
+  uint count=0;
+  for(CtrlTask* t: tasks) {
+    if(t->active && t->complianceDirection.N) {
+      if(!P.N) P = eye(t->J_y.d1);
+
+      CHECK(!count,"only implemented for ONE compliance task yet -> subtract more dimensions?");
+      CHECK_EQ(t->complianceDirection.N, t->y.N, "compliance direction has wrong dim");
+      double factor = length(t->complianceDirection);
+      CHECK(factor>0 && factor<=1., "compliance direction needs length in (0,1]");
+
+      arr J = t->J_y;
+
+      if(lockJoints.N){
+        uint n=J.d1;
+        CHECK_EQ(lockJoints.N, n, "");
+        for(uint i=0;i<n;i++) if(lockJoints(i)) for(uint j=0;j<J.d0;j++) J(j,i) = 0.; //zeroing all locked joint Jacobians;
+      }
+
+#if 1
+      arr Winv = oneover(Hmetric);
+      if(lockJoints.N){
+        uint n=J.d1;
+        CHECK_EQ(lockJoints.N, n, "");
+        for(uint i=0;i<n;i++) if(lockJoints(i)) Winv(i) = 0.;
+      }
+      arr Jinv = pseudoInverse(J, Winv, 1e-1);
+      arr d = Jinv * t->complianceDirection;
+#else
+      arr d = ~J * t->complianceDirection;
+#endif
+      P -= factor*d*~d/(sumOfSqr(d)+1e-6);
+
+      count++;
+    }
+  }
+  return P;
+}
+
 void TaskControlMethods::reportCurrentState(){
   cout <<"** TaskControlMethods" <<endl;
   for(CtrlTask* t: tasks) t->reportState(cout);
