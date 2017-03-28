@@ -75,7 +75,7 @@ baxter_core_msgs::EndEffectorCommand getGripperMsg(const arr& q_ref, const mlr::
   mlr::Joint *j = baxterModel.getJointByName("l_gripper_l_finger_joint");
   mlr::String str;
 
-  double position = q_ref(j->qIndex) / j->limits(1) * 100.0;
+  double position = q_ref(j->qIndex) / (j->limits(1) - j->limits(0)) * 100.0;
 
 //  str <<"{ \"position\":" <<1000.*q_ref(j->qIndex) <<", \"dead zone\":5.0, \"force\": 40.0, \"holding force\": 30.0, \"velocity\": 50.0 }";
   str <<"{ \"position\":" << position<<", \"dead zone\":5.0, \"force\": 40.0, \"holding force\": 30.0, \"velocity\": 50.0 }";
@@ -90,24 +90,26 @@ baxter_core_msgs::EndEffectorCommand getGripperMsg(const arr& q_ref, const mlr::
   return msg;
 }
 
-
 SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const mlr::KinematicWorld& kw)
   : Thread("SendPositionCommandsToBaxter"),
-    ctrl_ref(this, "ctrl_ref", true),
+    ctrl_ref(NULL, "ctrl_ref", true),
     s(NULL),
     baxterModel(kw){
+
+    if(mlr::getParameter<bool>("useRos",false)){
+      s = new sSendPositionCommandsToBaxter;
+      s->pubR = s->nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/right/joint_command", 1);
+      s->pubL = s->nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/left/joint_command", 1);
+      s->pubRg = s->nh.advertise<std_msgs::Empty>("robot/limb/right/suppress_gravity_compensation", 1);
+      s->pubLg = s->nh.advertise<std_msgs::Empty>("robot/limb/left/suppress_gravity_compensation", 1);
+      s->pubHead = s->nh.advertise<baxter_core_msgs::HeadPanCommand>("robot/head/command_head_pan", 1);
+      s->pubGripper = s->nh.advertise<baxter_core_msgs::EndEffectorCommand>("robot/end_effector/left_gripper/command", 1);
+    }
+
 }
 
 void SendPositionCommandsToBaxter::open(){
-  if(mlr::getParameter<bool>("useRos",false)){
-    s = new sSendPositionCommandsToBaxter;
-    s->pubR = s->nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/right/joint_command", 1);
-    s->pubL = s->nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/left/joint_command", 1);
-    s->pubRg = s->nh.advertise<std_msgs::Empty>("robot/limb/right/suppress_gravity_compensation", 1);
-    s->pubLg = s->nh.advertise<std_msgs::Empty>("robot/limb/left/suppress_gravity_compensation", 1);
-    s->pubHead = s->nh.advertise<baxter_core_msgs::HeadPanCommand>("robot/head/command_head_pan", 1);
-    s->pubGripper = s->nh.advertise<baxter_core_msgs::EndEffectorCommand>("robot/end_effector/left_gripper/command", 1);
-  }
+  this->threadLoop();
 }
 
 void SendPositionCommandsToBaxter::step(){
