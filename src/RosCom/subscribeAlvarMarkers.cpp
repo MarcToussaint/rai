@@ -10,7 +10,10 @@
   #include <ar_track_alvar/AlvarMarkers.h>
   namespace ar = ar_track_alvar;
 #endif
-
+#ifdef MLR_ROS_KINETIC
+  #include <ar_track_alvar_msgs/AlvarMarkers.h>
+  namespace ar = ar_track_alvar_msgs;
+#endif
 // ============================================================================
 // void ROSMODULE_markers::step() {
 //   modelWorld.writeAccess();
