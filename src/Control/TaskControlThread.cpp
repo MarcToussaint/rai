@@ -22,7 +22,7 @@ TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWor
   , useRos(false)
   , useSwift(true)
   , requiresInitialSync(true)
-  , syncModelStateWithReal(false)
+  , syncMode(false)
   , verbose(false)
   , useDynSim(true)
   , compensateGravity(false)
@@ -34,6 +34,11 @@ TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWor
   useSwift = mlr::getParameter<bool>("useSwift",true);
   useRos = mlr::getParameter<bool>("useRos",false);
   useDynSim = !useRos; //mlr::getParameter<bool>("useDynSim", true);
+  syncMode = mlr::getParameter<bool>("controller_syncMode", false);
+  kp_factor = mlr::getParameter<double>("controller_kp_factor", 1.);
+  kd_factor = mlr::getParameter<double>("controller_kd_factor", 1.);
+  ki_factor = mlr::getParameter<double>("controller_ki_factor", .2);
+
 
   double hyper = mlr::getParameter<double>("hyperSpeed", -1.);
   if(!useRos && hyper>0.){
@@ -108,7 +113,7 @@ void TaskControlThread::open(){
     gc->learnFTModel();
   }
 
-  if(useRos) syncModelStateWithReal=true;
+  if(useRos) requiresInitialSync=true;
 
 //    dynSim = new RTControllerSimulation(realWorld, 0.01, false, 0.);
 //    dynSim->threadLoop();
@@ -148,11 +153,10 @@ void TaskControlThread::step(){
     if(succ && q_real.N==realWorld.q.N && qdot_real.N==realWorld.q.N){ //we received a good reading
       realWorld.setJointState(q_real, qdot_real);
 
-      if(syncModelStateWithReal){
+      if(requiresInitialSync || syncMode){
         q_model = q_real;
         qdot_model = qdot_real;
         modelWorld.set()->setJointState(q_model, qdot_model);
-        syncModelStateWithReal = false; //continue sync'n; or only once?
       }
       requiresInitialSync = false;
     }else{
@@ -164,8 +168,13 @@ void TaskControlThread::step(){
     }
   }
 
+  double lowPass=.01;
+  if(!q_model_lowPass.N) q_model_lowPass = q_model;
+  else{ q_model_lowPass *= 1.-lowPass; q_model_lowPass += lowPass * q_model; }
+
   //-- compute the feedback controller step and iterate to compute a forward reference
   arr CompProj;
+//  arr M, F;
   {
     modelWorld.writeAccess();
 //    if(!(step_count%20)) modelWorld().gl().update(); //only for debugging
@@ -178,11 +187,8 @@ void TaskControlThread::step(){
     //-- compute IK step
     double maxQStep = 2e-1;
     arr dq;
-    if(syncModelStateWithReal){
-      arr nullStep = .1 * (q0-q_model); //this is the 'null step' (point of zero-cost)
-      double l = length(nullStep);
-      if(l>maxQStep) nullStep *= maxQStep/l;
-      dq = taskController->inverseKinematics(qdot_model, nullStep);
+    if(syncMode){
+      dq = taskController->inverseKinematics(qdot_model, q_model_lowPass - q_model);
     }else{
       dq = taskController->inverseKinematics(qdot_model); //don't include a null step
     }
@@ -211,16 +217,27 @@ void TaskControlThread::step(){
     // get compliance projection matrix
     CompProj = taskController->getComplianceProjection();
 
+//    modelWorld().equationOfMotion(M,F);
+
     ctrlTasks.deAccess();
     modelWorld.deAccess();
   }
 
+  //set gains
+
   //project gains if there are compliance tasks
-  arr Kp = diag(Kp_base);
-  arr Kd = diag(Kd_base);
+  arr Kp = diag(Kp_base);  Kp *= kp_factor;
+  arr Kd = diag(Kd_base);  Kd *= kd_factor;
+//  arr Ki = diag(Kp_base);  Ki *= ki_factor;
+  arr Ki = ARR(ki_factor);
+
+//  Kp = M*Kp; DANGER!!
+//  Kd = M*Kd;
+
   if(CompProj.N){
     Kp = CompProj*Kp*CompProj;
     Kd = CompProj*Kd*CompProj;
+    Ki = CompProj*diag(Kp_base*ki_factor)*CompProj;
   }
 
   //TODO: construct force tasks
@@ -246,13 +263,13 @@ void TaskControlThread::step(){
     refs.fL_gamma = 1.;
     refs.Kp = Kp; //ARR(1.);
     refs.Kd = Kd; //ARR(1.);
-    refs.Ki = ARR(.0); //ARR(0.2);
+    refs.Ki = Ki; //ARR(.2);
     refs.fL = zeros(6);
     refs.fR = zeros(6);
     refs.KiFTL.clear();
     refs.J_ft_invL.clear();
     refs.u_bias = zeros(q_model.N);
-    refs.intLimitRatio = 0.7;
+    refs.intLimitRatio = 1.;
     refs.qd_filt = .99;
 
     ctrl_q_ref.set() = refs.q;

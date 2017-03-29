@@ -31,11 +31,13 @@ struct TaskControlThread : Thread {
   arr q_model, qdot_model; //< model state
   arr q0; //< homing pose
   arr Kp_base, Kd_base; //< Kp, Kd parameters defined in the model file
+  double kp_factor, kd_factor, ki_factor;
   mlr::String robot;
+  arr q_model_lowPass;
   bool useRos;
   bool useSwift;
-  bool requiresInitialSync;
-  bool syncModelStateWithReal; //< whether the step() should reinit the state from the ros message
+  bool requiresInitialSync; //< whether the step() should reinit the state from the ros message
+  bool syncMode;
   bool verbose;
   bool useDynSim;
   bool compensateGravity;
