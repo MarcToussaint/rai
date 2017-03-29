@@ -117,6 +117,9 @@ struct Graph : NodeL {
   Node_typed<Graph>* newSubgraph(const StringA& keys, const NodeL& parents, const Graph& x=NoGraph);
   void appendDict(const std::map<std::string, std::string>& dict);
 
+  //-- deleting nodes
+  void delNode(Node *n) { delete n; }
+
   //-- basic node retrieval -- users usually use the higher-level wrappers below
   Node* findNode (const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;  ///< returns NULL if not found
   NodeL findNodes(const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;

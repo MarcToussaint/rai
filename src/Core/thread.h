@@ -360,7 +360,7 @@ struct Access{
     }
   }
 
-  ~Access(){ delete registryNode; }
+  ~Access(){ registry()->delNode(registryNode); }
   T& operator()(){ CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return data->value; }
   T* operator->(){ CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return &(data->value); }
   RToken<T> get(){ return RToken<T>(*data, &data->value, thread, &last_accessed_revision); } ///< read access to the variable's data
