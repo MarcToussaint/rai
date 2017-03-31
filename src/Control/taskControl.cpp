@@ -35,12 +35,19 @@ CT_Status MotionProfile_Const::update(arr& yRef, arr& ydotRef, double tau, const
 
 CT_Status MotionProfile_Sine::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot){
   t+=tau;
-  if(t>1.) t=1.;
+  if(t>T) t=T;
   if(y_init.N!=y.N) y_init=y; //initialization
+  if(y_target.N!=y.N) y_target = zeros(y.N);
   yRef = y_init + (.5*(1.-cos(MLR_PI*t/T))) * (y_target - y_init);
   ydotRef = zeros(y.N);
-  if(t>=1.) return CT_done;
+  y_err = yRef - y;
+  if(t>=T-1e-6/* && length(y_err)<1e-3*/) return CT_done;
   return CT_running;
+}
+
+bool MotionProfile_Sine::isDone(){
+    NIY;
+    return t>=T && length(y_err)<1e-3;
 }
 
 //===========================================================================
@@ -223,8 +230,28 @@ CT_Status CtrlTask::update(double tau, const mlr::KinematicWorld& world){
 MotionProfile_PD& CtrlTask::PD(){
   if(!ref) ref = new MotionProfile_PD();
   MotionProfile_PD *pd = dynamic_cast<MotionProfile_PD*>(ref);
-  CHECK(pd, "you've created a non-PD ref for this before, of type " <<typeid(*ref).name());
+  if(!pd){
+      LOG(-1) <<"you've created a non-PD ref for this before, of type " <<typeid(*ref).name();
+      delete ref;
+      ref = new MotionProfile_PD();
+      pd = dynamic_cast<MotionProfile_PD*>(ref);
+  }
   return *pd;
+}
+
+void CtrlTask::setRef(MotionProfile *_ref){
+    CHECK(!ref, "ref is already set");
+    ref = _ref;
+}
+
+void CtrlTask::setTarget(const arr& y_target){
+    CHECK(ref,"need a ref to set target");
+    if(typeid(*ref)==typeid(MotionProfile_PD))
+        dynamic_cast<MotionProfile_PD*>(ref)->setTarget(y_target);
+    else if(typeid(*ref)==typeid(MotionProfile_Sine))
+        dynamic_cast<MotionProfile_Sine*>(ref)->y_target = y_target;
+    else HALT("can't set target");
+    ref->resetState();
 }
 
 arr CtrlTask::getPrec(){

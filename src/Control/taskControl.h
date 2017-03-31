@@ -58,13 +58,12 @@ struct MotionProfile_Const : MotionProfile{
 //===========================================================================
 
 struct MotionProfile_Sine : MotionProfile{
-  arr y_init, y_target;
-  double t;
-  double T;
+  arr y_init, y_target, y_err;
+  double t, T;
   MotionProfile_Sine(const arr& y_target, double duration) : y_target(y_target), t(0.), T(duration){}
   virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
   virtual void resetState(){ y_init.clear(); t=0.; }
-  virtual bool isDone(){ return t>=T; }
+  virtual bool isDone();
 };
 
 //===========================================================================
@@ -147,6 +146,8 @@ struct CtrlTask{
   void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const mlr::KinematicWorld& world);
 
   MotionProfile_PD& PD();
+  void setRef(MotionProfile *_ref);
+  void setTarget(const arr& y_target);
 
   void reportState(ostream& os);
 };
