@@ -716,6 +716,12 @@ void mlr::Joint::applyTransformation(mlr::Transformation& f, const arr& q){
   }
 }
 
+void mlr::Joint::makeRigid(){
+    A.appendTransformation(Q);
+    Q.setZero();
+    type = JT_rigid;
+}
+
 void mlr::Joint::write(std::ostream& os) const {
   os <<"type=" <<type <<' ';
   if(!A.isZero()) os <<"from=<T " <<A <<" > ";
@@ -2183,25 +2189,25 @@ end_header\n";
 }
 
 /// dump the list of current proximities on the screen
-void mlr::KinematicWorld::reportProxies(std::ostream *os, double belowMargin) const{
-  (*os) <<"Proximity report: #" <<proxies.N <<endl;
+void mlr::KinematicWorld::reportProxies(std::ostream& os, double belowMargin, bool brief) const{
+  os <<"Proximity report: #" <<proxies.N <<endl;
   for_list(Proxy, p, proxies) {
     if(belowMargin>0. && p->d>belowMargin) continue;
     mlr::Shape *a = shapes(p->a);
     mlr::Shape *b = shapes(p->b);
-    (*os)
-        <<p_COUNT <<" ("
+    os  <<p_COUNT <<" ("
         <<a->name <<':' <<a->body->name <<")-("
         <<b->name <<':' <<b->body->name
-        <<") d=" <<p->d
-        <<" |A-B|=" <<(p->posB-p->posA).length()
+        <<") d=" <<p->d;
+    if(!brief)
+     os <<" |A-B|=" <<(p->posB-p->posA).length()
         <<" cenD=" <<p->cenD
 //        <<" d^2=" <<(p->posB-p->posA).lengthSqr()
         <<" v=" <<(p->posB-p->posA)
         <<" normal=" <<p->normal
         <<" posA=" <<p->posA
-        <<" posB=" <<p->posB
-        <<endl;
+        <<" posB=" <<p->posB;
+    os <<endl;
   }
 }
 

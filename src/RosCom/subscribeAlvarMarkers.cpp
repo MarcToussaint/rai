@@ -1,6 +1,5 @@
-#include "subscribeAlvarMarkers.h"
-
 #ifdef MLR_ROS
+#include "subscribeAlvarMarkers.h"
 
 #ifdef MLR_ROS_INDIGO
   #include <ar_track_alvar_msgs/AlvarMarkers.h>
@@ -86,6 +85,6 @@ void syncMarkers(mlr::KinematicWorld& world, const ar::AlvarMarkers& markers) {
   }
 }
 #else
-void setBody(mlr::Body& body, const AlvarMarker& marker) {}
-void syncMarkers(mlr::KinematicWorld& world, AlvarMarkers& markers) {}
+//void setBody(mlr::Body& body, const AlvarMarker& marker) {}
+//void syncMarkers(mlr::KinematicWorld& world, AlvarMarkers& markers) {}
 #endif

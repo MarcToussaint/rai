@@ -1,3 +1,4 @@
+#ifdef MLR_ROS
 #include <RosCom/roscom.h>
 #include "perceptionCollection.h"
 
@@ -317,5 +318,4 @@ OptitrackBody conv_tf2OptitrackBody(const geometry_msgs::TransformStamped& msg)
   new_optitrackbody.transform = conv_transform2transformation(msg.transform);
   return new_optitrackbody;
 }
-
-
+#endif

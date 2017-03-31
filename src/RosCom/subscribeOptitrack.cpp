@@ -1,3 +1,4 @@
+#ifdef MLR_ROS
 #include <tf/tfMessage.h>
 #include "subscribeOptitrack.h"
 
@@ -49,5 +50,4 @@ void Optitrack::step()
       opti_markers.set() = markers;
   }
 }
-
-
+#endif

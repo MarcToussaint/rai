@@ -1,12 +1,12 @@
 #pragma once
-#include "roscom.h"
+//#include "roscom.h"
 
-#include <sensor_msgs/PointCloud2.h>
+//#include <sensor_msgs/PointCloud2.h>
 #include <PCL/conv.h>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl_ros/transforms.h>
+//#include <pcl/point_cloud.h>
+//#include <pcl/point_types.h>
+//#include <pcl_conversions/pcl_conversions.h>
+//#include <pcl_ros/transforms.h>
 
 struct SubscribeRosKinect2PCL{
   struct sSubscribeRosKinect2PCL *s;

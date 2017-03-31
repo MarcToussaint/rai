@@ -57,7 +57,7 @@ bool sServiceRAP::cb_service(mlr_srv::StringString::Request& _request, mlr_srv::
 #else
 
 struct sServiceRAP{};
-ServiceRAP::ServiceRAP() : RM(NULL, "RM"){}
+ServiceRAP::ServiceRAP() : s(NULL){}
 ServiceRAP::~ServiceRAP(){}
 
 #endif

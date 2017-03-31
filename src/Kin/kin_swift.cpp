@@ -216,6 +216,12 @@ void SwiftInterface::deactivate(mlr::Shape *s1, mlr::Shape *s2) {
   scene->Deactivate(INDEXshape2swift(s1->index), INDEXshape2swift(s2->index));
 }
 
+void SwiftInterface::activate(mlr::Shape *s1, mlr::Shape *s2) {
+  if(INDEXshape2swift(s1->index)==-1 || INDEXshape2swift(s2->index)==-1) return;
+  //cout <<"deactivating shape pair " <<s1->name <<'-' <<s2->name <<endl;
+  scene->Activate(INDEXshape2swift(s1->index), INDEXshape2swift(s2->index));
+}
+
 void SwiftInterface::activate(mlr::Shape *s) {
   if(INDEXshape2swift(s->index)==-1) return;
   scene->Activate(INDEXshape2swift(s->index));

@@ -138,6 +138,7 @@ struct Joint {
   void parseAts();
   uint qDim();
   void applyTransformation(mlr::Transformation& f, const arr& q);
+  void makeRigid();
   void write(std::ostream& os) const;
   void read(std::istream& is);
   mlr::String tag(){ return STRING(name <<':' <<type <<':' <<from->name <<'-' <<to->name); }
@@ -345,7 +346,7 @@ struct KinematicWorld : GLDrawer{
   void read(std::istream& is);
   void glDraw(struct OpenGL&);
 
-  void reportProxies(std::ostream *os=&std::cout, double belowMargin=-1.) const;
+  void reportProxies(std::ostream& os=std::cout, double belowMargin=-1., bool brief=true) const;
   void writePlyFile(const char* filename) const; //TODO: move outside
 };
 

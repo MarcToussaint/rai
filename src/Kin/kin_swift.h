@@ -44,6 +44,7 @@ struct SwiftInterface {
 //  void close();
   void activate(mlr::Shape *s);
   void deactivate(mlr::Shape *s);
+  void activate(mlr::Shape *s1, mlr::Shape *s2);
   void deactivate(mlr::Shape *s1, mlr::Shape *s2);
   void deactivate(const mlr::Array<mlr::Shape*>& shapes);
   void deactivate(const mlr::Array<mlr::Body*>& bodies);

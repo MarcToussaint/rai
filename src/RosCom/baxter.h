@@ -1,10 +1,10 @@
 #include <Core/array.h>
 #include <Core/thread.h>
 #include <Control/ctrlMsg.h>
+#include <Kin/kin.h>
 
 #ifdef MLR_ROS
 #include <sensor_msgs/JointState.h>
-#include <Kin/kin.h>
 bool baxter_get_q_qdot_u(arr& q, arr& q_dot, arr& u, const sensor_msgs::JointState& msg, const mlr::KinematicWorld& baxterModel);
 //TODO: redundant -> remove
 bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const mlr::KinematicWorld& baxterModel);
