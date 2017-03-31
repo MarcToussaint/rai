@@ -100,7 +100,7 @@ void gtkProcessEvents(){
 }
 
 Signaler menuChoice(-1);
-static void menuitem_response(int choice) { menuChoice.setValue(choice); }
+static void menuitem_response(int choice) { menuChoice.setStatus(choice); }
 
 int gtkPopupMenuChoice(StringL& choices) {
   //create menu
@@ -112,12 +112,12 @@ int gtkPopupMenuChoice(StringL& choices) {
     gtk_signal_connect_object(GTK_OBJECT(item), "activate",
                               GTK_SIGNAL_FUNC(menuitem_response), (gpointer)(ulong)s_COUNT);
   }
-  menuChoice.setValue(-1);
+  menuChoice.setStatus(-1);
   gtk_widget_show_all(menu);
   gtk_menu_shell_select_first(GTK_MENU_SHELL(menu), false);
   menuChoice.waitForStatusNotEq(-1);
   gtk_widget_destroy(menu);
-  int choice = menuChoice.getValue();
+  int choice = menuChoice.getStatus();
   return choice>=0?choice:0;
 }
 

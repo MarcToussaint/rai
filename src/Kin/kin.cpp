@@ -2835,6 +2835,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     return;
   }
   if(symbol==addSliderMechanism){
+    HALT("I think it is better if there is fixed slider mechanisms in the world, that may jump; no dynamic creation of bodies");
     Body *slider1 = new Body(G); //{ type=ST_box size=[.2 .1 .05 0] color=[0 0 0] }
     Body *slider2 = new Body(G); //{ type=ST_box size=[.2 .1 .05 0] color=[1 0 0] }
     Shape *s1 = new Shape(G, *slider1); s1->type=ST_box; s1->size={.2,.1,.05}; s1->mesh.C={0.,0,0};
