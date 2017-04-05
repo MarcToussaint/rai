@@ -3,7 +3,7 @@
 
 #include <Core/array.h>
 #include <Kin/kin.h>
-#include <Motion/taskMaps.h>
+#include <Kin/taskMaps.h>
 
 struct GravityCompensation {
 

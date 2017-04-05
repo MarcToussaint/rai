@@ -2,7 +2,7 @@
 #define TASKSPACECONTROLLER_H
 
 #include <Kin/kin.h>
-#include <Motion/taskMaps.h>
+#include <Kin/taskMaps.h>
 #include <Core/array.h>
 #include <RosCom/roscom.h>
 #include <Algo/spline.h>
