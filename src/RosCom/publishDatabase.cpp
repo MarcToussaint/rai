@@ -153,7 +153,7 @@ void PublishDatabase::syncCluster(const PercCluster* cluster)
     shape = new mlr::Shape(modelWorld(), *body);
     shape->name = cluster_name;
     shape->type = mlr::ST_marker;
-    shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
+    shape->size(0) = shape->size(1) = shape->size(2) = shape->size(3) = .2;
     stored_clusters.append(cluster->id);
   }
   body->X = cluster->frame;
@@ -184,7 +184,7 @@ void PublishDatabase::syncAlvar(const Alvar* alvar)
     mlr::Shape *shape = new mlr::Shape(modelWorld(), *body);
     shape->name = alvar_name;
     shape->type = mlr::ST_marker;
-    shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
+    shape->size(0) = shape->size(1) = shape->size(2) = shape->size(3) = .2;
     stored_alvars.append(alvar->id);
   }
 
@@ -207,7 +207,7 @@ void PublishDatabase::syncOptitrackBody(const OptitrackBody* optitrackbody)
     mlr::Shape *shape = new mlr::Shape(modelWorld(), *body);
     shape->name = optitrackbody_name;
     shape->type = mlr::ST_marker;
-    shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .1;
+    shape->size(0) = shape->size(1) = shape->size(2) = shape->size(3) = .1;
     stored_optitrackbodies.append(optitrackbody->id);
   }
 
@@ -230,7 +230,7 @@ void PublishDatabase::syncOptitrackMarker(const OptitrackMarker* optitrackmarker
     mlr::Shape *shape = new mlr::Shape(modelWorld(), *body);
     shape->name = optitrackmarker_name;
     shape->type = mlr::ST_sphere;
-    shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .03;
+    shape->size(0) = shape->size(1) = shape->size(2) = shape->size(3) = .03;
     stored_optitrackmarkers.append(optitrackmarker->id);
   }
 
@@ -255,7 +255,7 @@ void PublishDatabase::syncPlane(const Plane* plane){
     shape = new mlr::Shape(modelWorld(), *body);
     shape->name = plane_name;
     shape->type = mlr::ST_marker;
-    shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
+    shape->size(0) = shape->size(1) = shape->size(2) = shape->size(3) = .2;
     stored_planes.append(plane->id);
   }
   body->X = plane->frame * plane->transform;

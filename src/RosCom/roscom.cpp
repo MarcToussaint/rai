@@ -305,10 +305,10 @@ mlr::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::Ma
         s->mesh.C = conv_colors2arr(marker.colors);
       }else NIY;
     }
-    s->size[0] = marker.scale.x;
-    s->size[1] = marker.scale.y;
-    s->size[2] = marker.scale.z;
-    s->size[3] = .25*(marker.scale.x+marker.scale.y);
+    s->size(0) = marker.scale.x;
+    s->size(1) = marker.scale.y;
+    s->size(2) = marker.scale.z;
+    s->size(3) = .25*(marker.scale.x+marker.scale.y);
     s->X = s->rel = ros_getTransform("/base_link", marker.header, listener) * conv_pose2transformation(marker.pose);
   }
   return world;
@@ -346,8 +346,8 @@ void PerceptionObjects2Ors::step(){
       s = new mlr::Shape(modelWorld(), NoBody);
       if(marker.type==marker.CYLINDER){
         s->type = mlr::ST_cylinder;
-        s->size[3] = .5*(marker.scale.x+marker.scale.y);
-        s->size[2] = marker.scale.z;
+        s->size(3) = .5*(marker.scale.x+marker.scale.y);
+        s->size(2) = marker.scale.z;
       }else if(marker.type==marker.POINTS){
         s->type = mlr::ST_mesh;
         s->mesh.V = conv_points2arr(marker.points);

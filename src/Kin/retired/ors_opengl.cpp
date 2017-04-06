@@ -92,7 +92,7 @@ void mlr::Shape::glDraw(OpenGL& gl) {
   glLoadMatrixd(GLmatrix);
 
   if(!orsDrawShapes) {
-    double scale=.33*(size[0]+size[1]+size[2] + 2.*size[3]); //some scale
+    double scale=.33*(size(0)+size(1)+size(2) + 2.*size(3)); //some scale
     if(!scale) scale=1.;
     scale*=.3;
     glDrawAxes(scale);
@@ -105,34 +105,34 @@ void mlr::Shape::glDraw(OpenGL& gl) {
       case mlr::ST_box:
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else if(orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
-        else glDrawBox(size[0], size[1], size[2]);
+        else glDrawBox(size(0), size(1), size(2));
         break;
       case mlr::ST_sphere:
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else if(orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
-        else glDrawSphere(size[3]);
+        else glDrawSphere(size(3));
         break;
       case mlr::ST_cylinder:
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else if(orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
-        else glDrawCylinder(size[3], size[2]);
+        else glDrawCylinder(size(3), size(2));
         break;
       case mlr::ST_capsule:
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else if(orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
-        else glDrawCappedCylinder(size[3], size[2]);
+        else glDrawCappedCylinder(size(3), size(2));
         break;
       case mlr::ST_retired_SSBox:
         HALT("deprecated??");
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else if(orsDrawMeshes){
-          if(!mesh.V.N) mesh.setSSBox(size[0], size[1], size[2], size[3]);
+          if(!mesh.V.N) mesh.setSSBox(size(0), size(1), size(2), size(3));
           mesh.glDraw(gl);
         }else NIY;
         break;
       case mlr::ST_marker:
         if(orsDrawMarkers){
-          glDrawDiamond(size[0]/5., size[0]/5., size[0]/5.); glDrawAxes(size[0]);
+          glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.); glDrawAxes(size(0));
         }
         break;
       case mlr::ST_mesh:
@@ -142,15 +142,15 @@ void mlr::Shape::glDraw(OpenGL& gl) {
         break;
       case mlr::ST_ssCvx:
         CHECK(sscCore.V.N, "sscCore needs to be loaded to draw mesh object");
-        if(!mesh.V.N) mesh.setSSCvx(sscCore, size[3]);
+        if(!mesh.V.N) mesh.setSSCvx(sscCore, size(3));
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
         break;
       case mlr::ST_ssBox:
         if(!mesh.V.N || !sscCore.V.N){
           sscCore.setBox();
-          sscCore.scale(size[0], size[1], size[2]);
-          mesh.setSSCvx(sscCore, size[3]);
+          sscCore.scale(size(0), size(1), size(2));
+          mesh.setSSCvx(sscCore, size(3));
         }
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);

@@ -118,7 +118,7 @@ void PercPlane::syncWith(mlr::KinematicWorld &K){
 //    shape = new mlr::Shape(K, *body);
 //    shape->name = plane_name;
 //    shape->type = mlr::ST_marker;
-//    shape->size[0] = shape->size[1] = shape->size[2] = shape->size[3] = .2;
+//    shape->size(0) = shape->size(1) = shape->size(2) = shape->size(3) = .2;
 //    stored_planes.append(id);
   }
   body->X = transform;
