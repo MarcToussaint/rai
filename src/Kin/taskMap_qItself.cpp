@@ -92,7 +92,7 @@ void TaskMap_qItself::phi(arr& q, arr& J, const mlr::KinematicWorld& G, int t) {
     uint qIndex=0;
     for(uint b:selectedBodies){
       mlr::Joint *j = G.bodies.elem(b)->inLinks.scalar();
-      CHECK_GE(j->qIndex, qIndex, "selectedBodies does not add joints in sorted order! I'm not sure this is correct!");
+//      CHECK_GE(j->qIndex, qIndex, "selectedBodies does not add joints in sorted order! I'm not sure this is correct!");
       qIndex = j->qIndex;
       for(uint k=0;k<j->qDim();k++){
         q(m) = G.q.elem(qIndex+k);

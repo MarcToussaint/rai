@@ -831,7 +831,7 @@ void KOMO::reportProxies(std::ostream& os){
 }
 
 
-Graph KOMO::getReport(bool gnuplt, int reportFeatures) {
+Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs) {
   if(featureValues.N>1){ //old optimizer -> remove some time..
     arr tmp;
     for(auto& p:featureValues) tmp.append(p);
@@ -842,8 +842,14 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures) {
     featureTypes = ARRAY<ObjectiveTypeA>(ttmp);
   }
 
-  const arr& phi = featureValues.scalar();
-  const ObjectiveTypeA& tt = featureTypes.scalar();
+  bool wasRun = featureValues.N!=0;
+
+  arr phi;
+  ObjectiveTypeA tt;
+  if(wasRun){
+      phi.referTo( featureValues.scalar() );
+      tt.referTo( featureTypes.scalar() );
+  }
 
   //-- collect all task costs and constraints
   StringA name; name.resize(tasks.N);
@@ -855,29 +861,32 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures) {
     for(uint i=0; i<tasks.N; i++) {
       Task *task = tasks(i);
       if(task->prec.N>t && task->prec(t)){
-        uint d=task->map->dim_phi(configurations({t,t+k_order}), t);
-        for(uint j=0;j<d;j++) CHECK(tt(M+j)==task->type,"");
-        if(d){
-          if(task->type==OT_sumOfSqr){
-            for(uint j=0;j<d;j++) err(t,i) += mlr::sqr(phi(M+j)); //sumOfSqr(phi.sub(M,M+d-1));
-            taskC(i) += err(t,i);
+          uint d=0;
+          if(wasRun){
+              d=task->map->dim_phi(configurations({t,t+k_order}), t);
+              for(uint j=0;j<d;j++) CHECK(tt(M+j)==task->type,"");
+              if(d){
+                  if(task->type==OT_sumOfSqr){
+                      for(uint j=0;j<d;j++) err(t,i) += mlr::sqr(phi(M+j)); //sumOfSqr(phi.sub(M,M+d-1));
+                      taskC(i) += err(t,i);
+                  }
+                  if(task->type==OT_ineq){
+                      for(uint j=0;j<d;j++) err(t,i) += mlr::MAX(0., phi(M+j));
+                      taskG(i) += err(t,i);
+                  }
+                  if(task->type==OT_eq){
+                      for(uint j=0;j<d;j++) err(t,i) += fabs(phi(M+j));
+                      taskG(i) += err(t,i);
+                  }
+                  M += d;
+              }
           }
-          if(task->type==OT_ineq){
-            for(uint j=0;j<d;j++) err(t,i) += mlr::MAX(0., phi(M+j));
-            taskG(i) += err(t,i);
-          }
-          if(task->type==OT_eq){
-            for(uint j=0;j<d;j++) err(t,i) += fabs(phi(M+j));
-            taskG(i) += err(t,i);
-          }
-          M += d;
-        }
-        if(reportFeatures==1){
-            cout <<std::setw(4) <<t <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d
+          if(reportFeatures==1){
+            featuresOs <<std::setw(4) <<t <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d
                 <<' ' <<std::setw(40) <<task->name
                <<" k=" <<task->map->order <<" ot=" <<task->type <<" prec=" <<std::setw(4) <<task->prec(t);
-            if(task->target.N<5) cout <<" y*=[" <<task->target <<']'; else cout<<"y*=[..]";
-            cout <<" y^2=" <<err(t,i) <<endl;
+            if(task->target.N<5) featuresOs <<" y*=[" <<task->target <<']'; else featuresOs<<"y*=[..]";
+            featuresOs <<" y^2=" <<err(t,i) <<endl;
         }
       }
     }

@@ -16,7 +16,7 @@
 #include "manipulationTree.h"
 #include <MCTS/solver_PlainMC.h>
 
-#define DEBUG(x) //x
+#define DEBUG(x) x
 #define DEL_INFEASIBLE(x) x
 
 uint COUNT_kin=0;
@@ -167,7 +167,7 @@ void ManipulationTree_Node::solvePoseProblem(){
 //  }
 
   DEBUG( FILE("z.fol") <<fol; )
-  DEBUG( komo.MP->reportFeatures(true, FILE("z.problem")); )
+  DEBUG( komo.getReport(false, 1, FILE("z.problem")); )
   komo.reset();
   try{
     komo.run();
@@ -179,7 +179,7 @@ void ManipulationTree_Node::solvePoseProblem(){
   COUNT_poseOpt++;
   poseCount++;
 
-  DEBUG( komo.MP->reportFeatures(true, FILE("z.problem")); )
+  DEBUG( komo.getReport(false, 1, FILE("z.problem")); )
 
   Graph result = komo.getReport();
   DEBUG( FILE("z.problem.cost") <<result; )
@@ -231,7 +231,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   }
 
   DEBUG( FILE("z.fol") <<fol; )
-  DEBUG( komo.MP->reportFeatures(true, FILE("z.problem")); )
+  DEBUG( komo.getReport(false, 1, FILE("z.problem")); )
   komo.reset();
   try{
     komo.run();
@@ -243,7 +243,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   COUNT_seqOpt++;
   seqCount++;
 
-  DEBUG( komo.MP->reportFeatures(true, FILE("z.problem")); )
+  DEBUG( komo.getReport(false, 1, FILE("z.problem")); )
 //  komo.checkGradients();
 
   Graph result = komo.getReport();
@@ -284,7 +284,7 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   }
 
   DEBUG( FILE("z.fol") <<fol; )
-  DEBUG( komo.MP->reportFeatures(true, FILE("z.problem")); )
+  DEBUG( komo.getReport(false, 1, FILE("z.problem")); )
   komo.reset();
   try{
     komo.run();
@@ -296,7 +296,7 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   COUNT_pathOpt++;
   pathCount++;
 
-  DEBUG( komo.MP->reportFeatures(true, FILE("z.problem")); )
+  DEBUG( komo.getReport(false, 1, FILE("z.problem")); )
 //  komo.checkGradients();
 
   Graph result = komo.getReport();

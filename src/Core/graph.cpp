@@ -738,7 +738,7 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
   if(!withoutHeader){
     os <<"digraph G{" <<endl;
     os <<"graph [ rankdir=\"LR\", ranksep=0.05";
-    if(hasRenderingInfo(NULL)) os <<getRenderingInfo(NULL).dotstyle;
+    if(hasRenderingInfo(NULL)) os <<' ' <<getRenderingInfo(NULL).dotstyle;
     os << " ];" <<endl;
     os <<"node [ fontsize=9, width=.3, height=.3 ];" <<endl;
     os <<"edge [ arrowtail=dot, arrowsize=.5, fontsize=6 ];" <<endl;
@@ -765,7 +765,7 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
     mlr::String shape;
     if(n->keys.contains("box")) shape <<", shape=box"; else shape <<", shape=ellipse";
     if(focusIndex==(int)n->index) shape <<", color=red";
-    if(hasRenderingInfo(n)) shape <<getRenderingInfo(n).dotstyle;
+    if(hasRenderingInfo(n)) shape <<' ' <<getRenderingInfo(n).dotstyle;
 
 
     if(defaultEdges && n->parents.N==2){ //an edge
