@@ -27,7 +27,7 @@
 
 
 #include <Gui/opengl.h>
-#include <Gui/plot.h>
+#include <Plot/plot.h>
 #include "kin.h"
 
 #include "kin_actionInterface.h"

@@ -9,7 +9,9 @@ Mutex m;
 struct MyThread: Thread{
   VariableData<double>& x;
   uint n;
-  MyThread(VariableData<double>& x, uint n, double beat):Thread(STRING("MyThread_"<<n), beat), x(x), n(n){}
+  MyThread(VariableData<double>& x, uint n, double beat):Thread(STRING("MyThread_"<<n), beat), x(x), n(n){
+    threadOpen();
+  }
   void open(){}
   void close(){}
   void step(){
@@ -21,10 +23,10 @@ struct MyThread: Thread{
 void TEST(Thread){
   VariableData<double> x;
   x.value = 0.;
-  MyThread t1(x, 1, .5), t2(x, 2, .5);
+  MyThread t1(x, 1, .5), t2(x, 2, -1);
 
   t1.threadLoop();
-  t2.listenTo(x.revLock); //whenever t1 modifies x, t2 is stepped
+  t2.listenTo(x); //whenever t1 modifies x, t2 is stepped
   
   mlr::wait(3.);
 
@@ -105,8 +107,8 @@ void TEST(Way1){
 //
 
 struct MySystem{
-  ACCESSname(arr, x)
-  ACCESSname(double, s)
+  Access<arr> x = Access<arr>(NULL, "x");
+  Access<double> s = Access<double>(NULL, "s");
   ComputeSum cs;
 };
 
@@ -172,7 +174,7 @@ void TEST(ModuleSorter1){
   for(uint i=0;i<N-1;i++)
     ps.append( new PairSorter(STRING("int"<<i), STRING("int"<<i+1)) );
   cout <<registry() <<endl <<"----------------------------" <<endl;
-  auto vars = registry()->getValuesOfType<VariableData<int> >();
+  auto vars = getVariablesOfType<int>();
   CHECK_EQ(vars.N, N, "");
 
   threadOpenModules(true);

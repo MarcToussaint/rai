@@ -82,7 +82,7 @@ Task* newTask(const Node* specs, const mlr::KinematicWorld& world, uint Tinterva
 //
 
 /// This class allows you to DESCRIBE a motion planning problem, nothing more
-struct MotionProblem {
+struct KOMO {
   //engines to compute things
   mlr::KinematicWorld& world;  ///< the original world
   WorldL configurations;       ///< copies for each time slice; including kinematic switches
@@ -115,9 +115,9 @@ struct MotionProblem {
   arr dualMatrix;
   mlr::Array<ObjectiveTypeA> ttMatrix;
 
-  MotionProblem(mlr::KinematicWorld& _world, bool useSwift=true);
+  KOMO(mlr::KinematicWorld& _world, bool useSwift=true);
   
-  MotionProblem& operator=(const MotionProblem& other);
+  KOMO& operator=(const KOMO& other);
 
   //-- setting time aspects
   void setTiming(uint timeSteps, double duration);
@@ -173,9 +173,9 @@ struct MotionProblem {
 //
 
 struct MotionProblemFunction:KOrderMarkovFunction {
-  MotionProblem& MP;
+  KOMO& MP;
 
-  MotionProblemFunction(MotionProblem& _P):MP(_P) {}
+  MotionProblemFunction(KOMO& _P):MP(_P) {}
 
   uint dim_g_h(){ uint d=0; for(uint t=0;t<=MP.T;t++) d += dim_g(t) + dim_h(t); return d; }
 
@@ -201,9 +201,9 @@ struct MotionProblemFunction:KOrderMarkovFunction {
 //
 
 struct MotionProblem_EndPoseFunction{
-  MotionProblem& MP;
+  KOMO& MP;
 
-  MotionProblem_EndPoseFunction(MotionProblem& _MP);
+  MotionProblem_EndPoseFunction(KOMO& _MP);
 
   //VectorFunction definitions
   void Phi(arr& phi, arr& J, ObjectiveTypeA& tt, const arr& x);

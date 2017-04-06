@@ -4,7 +4,7 @@
 #include <Algo/spline.h>
 #include <Algo/algos.h>
 #include <Gui/opengl.h>
-#include <Gui/plot.h>
+#include <Plot/plot.h>
 #include <GL/gl.h>
 #include <Optim/optimization.h>
 
@@ -87,7 +87,7 @@ void TEST(Kinematics){
 
 void TEST(QuaternionKinematics){
   mlr::KinematicWorld G("kinematicTestQuat.g");
-  orsDrawJoints=false;
+  G.orsDrawJoints=false;
 
   for(uint k=0;k<3;k++){
     mlr::Quaternion target;
@@ -106,8 +106,6 @@ void TEST(QuaternionKinematics){
       G.watch(false, STRING("test quaternion task spaces -- time " <<t));
     }
   }
-
-  orsDrawJoints=true;
 }
 
 //===========================================================================
@@ -247,7 +245,7 @@ void TEST(Limits){
 void TEST(JointGroups){
   mlr::KinematicWorld G("testGroups.g");
 
-  for(;;){
+  for(uint k=0;k<2;k++){
     cout <<"Agent 0" <<endl;
     G.setAgent(0);
     int key=animateConfiguration(G);
@@ -580,9 +578,6 @@ void TEST(InverseKinematics) {
 
 int MAIN(int argc,char **argv){
   mlr::initCmdLine(argc, argv);
-
-  testJointGroups();
-  return 0;
 
   testLoadSave();
   testCopy();

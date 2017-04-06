@@ -695,7 +695,7 @@ VariableBase::Ptr getVariable(const char* name){
 }
 
 VariableBaseL getVariables(){
-  return registry()->getValuesOfType<VariableBase>();
+  return registry()->getValuesOfType<VariableBase::Ptr>();
 }
 
 void threadOpenModules(bool waitForOpened, bool setSignalHandler){

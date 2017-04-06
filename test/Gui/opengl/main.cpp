@@ -1,4 +1,4 @@
-#include <Gui/plot.h>
+#include <Plot/plot.h>
 #include <Gui/opengl.h>
 #include <Geo/mesh.h>
 #ifdef MLR_QT

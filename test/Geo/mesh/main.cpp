@@ -30,7 +30,7 @@ void TEST(Sphere) {
   gl.add(mesh);
   gl.watch();
 
-  getTriangulatedHull(mesh.T,mesh.V);
+  getHull(mesh.V, mesh.T);
 
   gl.watch();
 }

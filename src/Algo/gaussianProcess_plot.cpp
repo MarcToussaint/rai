@@ -13,7 +13,7 @@
     --------------------------------------------------------------  */
 
 #include "gaussianProcess.h"
-#include <Gui/plot.h>
+#include <Plot/plot.h>
 
 void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause){
   arr X, Y, Z, S;

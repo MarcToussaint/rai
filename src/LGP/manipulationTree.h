@@ -55,7 +55,7 @@ struct ManipulationTree_Node{
   bool isTerminal=false;
 
   //-- specs and results of the three optimization problems
-//  MotionProblem *poseProblem, *seqProblem, *pathProblem;
+//  KOMO *poseProblem, *seqProblem, *pathProblem;
   PlainMC *rootMC;
   MCStatistics *mcStats;
   KOMO *poseProblem, *seqProblem, *pathProblem;

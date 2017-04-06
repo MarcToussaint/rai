@@ -162,7 +162,7 @@ void ManipulationTree_Node::solvePoseProblem(){
   komo.setSquaredFixSwitchedObjects(-1., -1., 1e3);
 
   komo.setAbstractTask(0., *folState);
-//  for(mlr::KinematicSwitch *sw: poseProblem->MP->switches){
+//  for(mlr::KinematicSwitch *sw: poseProblem->switches){
 //    sw->timeOfApplication=2;
 //  }
 
@@ -198,9 +198,9 @@ void ManipulationTree_Node::solvePoseProblem(){
   if(!poseFeasible)
     labelInfeasible();
 
-  effKinematics = *poseProblem->MP->configurations.last();
+  effKinematics = *poseProblem->configurations.last();
 
-  for(mlr::KinematicSwitch *sw: poseProblem->MP->switches){
+  for(mlr::KinematicSwitch *sw: poseProblem->switches){
 //    CHECK_EQ(sw->timeOfApplication, 1, "need to do this before the optimization..");
     if(sw->timeOfApplication>=2) sw->apply(effKinematics);
   }

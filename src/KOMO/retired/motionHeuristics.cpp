@@ -24,7 +24,7 @@
 // the rest is on the three base routines
 //
 
-void threeStepGraspHeuristic(arr& x, MotionProblem& MP, uint shapeId, uint verbose) {
+void threeStepGraspHeuristic(arr& x, KOMO& MP, uint shapeId, uint verbose) {
   uint T = MP.T;
   //double duration = sys.getTau() * T;
   
@@ -71,7 +71,7 @@ void threeStepGraspHeuristic(arr& x, MotionProblem& MP, uint shapeId, uint verbo
 }
 
 #if 0 //setInterpolatingCosts is need refactoring...
-void setGraspGoals_Schunk(MotionProblem& MP, uint T, uint shapeId, uint side, uint phase) {
+void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
   MP.setState(MP.x0, MP.v0);;
   
   //load parameters only once!
@@ -106,7 +106,7 @@ void setGraspGoals_Schunk(MotionProblem& MP, uint T, uint shapeId, uint side, ui
   Task *c;
   c = MP.addTask("graspCenter",
                    new TaskMap_Default(posTMT, "graspCenter"));
-  MP.setInterpolatingCosts(c, MotionProblem::early_restConst,
+  MP.setInterpolatingCosts(c, KOMO::early_restConst,
                           target, positionPrec, NoArr, -1., .8);
 
   //-- up: align either with cylinder axis or one of the box sides -- works good
@@ -126,7 +126,7 @@ void setGraspGoals_Schunk(MotionProblem& MP, uint T, uint shapeId, uint side, ui
   }
   c = MP.addTask("upAlign",
                    new TaskMap_Default(vecAlignTMT, MP.world, "graspCenter", ivec, target_shape->name, jvec));
-  MP.setInterpolatingCosts(c, MotionProblem::early_restConst,
+  MP.setInterpolatingCosts(c, KOMO::early_restConst,
                           target, alignmentPrec, NoArr, -1., .8);
   //test current state: flip if necessary
   c->map.phi(initial, NoArr, MP.world);
@@ -144,7 +144,7 @@ void setGraspGoals_Schunk(MotionProblem& MP, uint T, uint shapeId, uint side, ui
   c = MP.addTask("graspContacts", new TaskMap_Proxy(vectorPTMT, shapes, .05, true));
   double grip=.8; //specifies the desired proxy value
   target = ARR(grip,grip,grip);
-  MP.setInterpolatingCosts(c, MotionProblem::early_restConst,
+  MP.setInterpolatingCosts(c, KOMO::early_restConst,
                           target, fingerDistPrec, ARR(0.,0.,0.), 0., 0.8);
   for (uint t=0; t<=T; t++) { //interpolation: 0 up to 4/5 of the trajectory, then interpolating in the last 1/5
     if (5*t<4*T) c->target[t]()=0.;
@@ -155,7 +155,7 @@ void setGraspGoals_Schunk(MotionProblem& MP, uint T, uint shapeId, uint side, ui
   shapes = {shapeId};
   c = MP.addTask("otherCollisions", new TaskMap_Proxy(allExceptListedPTMT, shapes, .04, true));
   target = ARR(0.);
-  MP.setInterpolatingCosts(c, MotionProblem::final_restConst, target, colPrec, target, colPrec);
+  MP.setInterpolatingCosts(c, KOMO::final_restConst, target, colPrec, target, colPrec);
   c->map.phi(initial, NoArr, MP.world);
   if (initial(0)>0.) { //we are in collision/proximity -> depart slowly
     double a=initial(0);
@@ -167,15 +167,15 @@ void setGraspGoals_Schunk(MotionProblem& MP, uint T, uint shapeId, uint side, ui
   c = MP.addTask("oppose12",
                     new TaskMap_Default(vecAlignTMT, MP.world, "tipNormal1", NoVector, "tipNormal2", NoVector));
   target = ARR(-1.);
-  MP.setInterpolatingCosts(c, MotionProblem::early_restConst,
+  MP.setInterpolatingCosts(c, KOMO::early_restConst,
                           target, oppositionPrec, ARR(0.,0.,0.), 0., 0.8);
-  //M.setInterpolatingCosts(c, MotionProblem::constFinalMid, target, oppositionPrec);
+  //M.setInterpolatingCosts(c, KOMO::constFinalMid, target, oppositionPrec);
 
 
   c = MP.addTask("oppose13",
                     new TaskMap_Default(vecAlignTMT, MP.world, "tipNormal1", NoVector, "tipNormal3", NoVector));
   target = ARR(-1.);
-  MP.setInterpolatingCosts(c, MotionProblem::final_restConst, target, oppositionPrec);
+  MP.setInterpolatingCosts(c, KOMO::final_restConst, target, oppositionPrec);
 
   
   //MLR_MSG("TODO: fingers should be in relaxed position, or aligned with surface (otherwise they remain ``hooked'' as in previous posture)");
@@ -187,15 +187,15 @@ void setGraspGoals_Schunk(MotionProblem& MP, uint T, uint shapeId, uint side, ui
   c = MP.addTask("limits",
                  new TaskMap_qLimits(limits));
   target=0.;
-  MP.setInterpolatingCosts(c, MotionProblem::final_restConst, target, limPrec, target, limPrec);
+  MP.setInterpolatingCosts(c, KOMO::final_restConst, target, limPrec, target, limPrec);
 
   //-- homing
   c = MP.addTask("qitself",
                  new TaskMap_qItself());
-  MP.setInterpolatingCosts(c, MotionProblem::final_restConst, target, zeroQPrec, target, zeroQPrec);
+  MP.setInterpolatingCosts(c, KOMO::final_restConst, target, zeroQPrec, target, zeroQPrec);
 }
 
-void setGraspGoals_PR2(MotionProblem& MP, uint T, uint shapeId, uint side, uint phase) {
+void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
   MP.setState(MP.x0, MP.v0);;
 
   //load parameters only once!
@@ -228,7 +228,7 @@ void setGraspGoals_PR2(MotionProblem& MP, uint T, uint shapeId, uint side, uint 
   Task *c;
   c = MP.addTask("graspCenter",
                     new TaskMap_Default(posTMT, MP.world, "graspCenter"));
-  MP.setInterpolatingCosts(c, MotionProblem::early_restConst,
+  MP.setInterpolatingCosts(c, KOMO::early_restConst,
                           target, positionPrec, NoArr, -1., .8);
 
   //-- align either with cylinder axis or one of the box sides -- works good
@@ -252,7 +252,7 @@ void setGraspGoals_PR2(MotionProblem& MP, uint T, uint shapeId, uint side, uint 
   }
   c = MP.addTask("upAlign",
                     new TaskMap_Default(vecAlignTMT, MP.world, "graspCenter", ivec, target_shape->name, jvec));
-  MP.setInterpolatingCosts(c, MotionProblem::early_restConst,
+  MP.setInterpolatingCosts(c, KOMO::early_restConst,
                           target, alignmentPrec, NoArr, -1., .8);
   //test current state: flip if necessary
   c->map.phi(initial, NoArr, MP.world);
@@ -269,7 +269,7 @@ void setGraspGoals_PR2(MotionProblem& MP, uint T, uint shapeId, uint side, uint 
   for(mlr::Shape *s: MP.world.shapes) cout <<' ' <<s->name;
   double grip=.98; //specifies the desired proxy value
   target = ARR(grip,grip);
-  MP.setInterpolatingCosts(c, MotionProblem::early_restConst,
+  MP.setInterpolatingCosts(c, KOMO::early_restConst,
                           target, fingerDistPrec, ARR(0.,0.), 0., 0.8);
   for (uint t=.8*T; t<=T; t++) { //interpolation: 0 up to 4/5 of the trajectory, then interpolating in the last 1/5
     double a=double(t-.8*T)/(.2*T);
@@ -296,7 +296,7 @@ void setGraspGoals_PR2(MotionProblem& MP, uint T, uint shapeId, uint side, uint 
   //-- homing
   c = MP.addTask("qitself",
                     new TaskMap_qItself());
-  MP.setInterpolatingCosts(c, MotionProblem::final_restConst, target, zeroQPrec, target, zeroQPrec);
+  MP.setInterpolatingCosts(c, KOMO::final_restConst, target, zeroQPrec, target, zeroQPrec);
 
   return;
 
@@ -309,11 +309,11 @@ void setGraspGoals_PR2(MotionProblem& MP, uint T, uint shapeId, uint side, uint 
   c = MP.addTask("limits",
                     new TaskMap_qLimits(limits));
   target=0.;
-  MP.setInterpolatingCosts(c, MotionProblem::final_restConst, target, limPrec, target, limPrec);
+  MP.setInterpolatingCosts(c, KOMO::final_restConst, target, limPrec, target, limPrec);
 
 }
 #else
-void setGraspGoals_PR2(MotionProblem& MP, uint T, uint shapeId, uint side, uint phase) {
+void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
   NIY
 }
 #endif
@@ -321,7 +321,7 @@ void setGraspGoals_PR2(MotionProblem& MP, uint T, uint shapeId, uint side, uint 
 void reattachShape(mlr::KinematicWorld& ors, SwiftInterface *swift, const char* objShape, const char* toBody);
 
 #if 0
-void setPlaceGoals(MotionProblem& MP, uint T, uint shapeId, int belowToShapeId, const arr& locationTo){
+void setPlaceGoals(KOMO& MP, uint T, uint shapeId, int belowToShapeId, const arr& locationTo){
   CHECK(belowToShapeId == -1 || &locationTo == NULL, "Only one thing at a time");
   MP.setState(MP.x0, MP.v0);;
   
@@ -428,7 +428,7 @@ void setPlaceGoals(MotionProblem& MP, uint T, uint shapeId, int belowToShapeId, 
   MP.vars().append(V);
 }
 
-void setHomingGoals(MotionProblem& M, uint T){
+void setHomingGoals(KOMO& M, uint T){
   M.setState(M.x0, M.v0);;
   
   //deactivate all variables
@@ -472,7 +472,7 @@ void setHomingGoals(MotionProblem& M, uint T){
 #endif
 
 
-double keyframeOptimizer(arr& x, MotionProblem& MP, bool x_is_initialized, uint verbose) {
+double keyframeOptimizer(arr& x, KOMO& MP, bool x_is_initialized, uint verbose) {
 
 //  MotionProblem_EndPoseFunction MF(MP);
 

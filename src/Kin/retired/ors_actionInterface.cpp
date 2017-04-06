@@ -27,7 +27,7 @@
 #include "kin_ode.h"
 #include "kin_actionInterface.h"
 #include <Gui/opengl.h>
-#include <Gui/plot.h>
+#include <Plot/plot.h>
 #include <sstream>
 #include <limits.h>
 #include <unistd.h>

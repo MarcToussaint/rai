@@ -38,7 +38,7 @@
 
 #ifndef MLR_ORS_ONLY_BASICS
 #  include <Core/graph.h>
-//#  include <Gui/plot.h>
+//#  include <Plot/plot.h>
 #endif
 
 #ifdef MLR_extern_ply

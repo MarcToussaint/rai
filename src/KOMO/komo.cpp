@@ -84,7 +84,7 @@ void KOMO::init(const Graph& specs){
   FILE("z.komo.model") <<world;
 
 //  if(MP) delete MP;
-//  MP = new MotionProblem(world);
+//  MP = new KOMO(world);
   if(stepsPerPhase>=0) setTiming(maxPhase, stepsPerPhase, duration);
 //  MP->k_order=k_order;
 
@@ -153,7 +153,7 @@ void KOMO::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese){
 
 void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhase, uint _k_order, bool _useSwift){
 //  if(MP) delete MP;
-//  MP = new MotionProblem(world, useSwift);
+//  MP = new KOMO(world, useSwift);
   useSwift = _useSwift;
   maxPhase = _phases;
   stepsPerPhase = _stepsPerPhase;
@@ -622,7 +622,7 @@ void setTasks(KOMO& MP,
   double zeroVelPrec = mlr::getParameter<double>("KOMO/moveTo/finalVelocityZeroPrecision", 1e1);
   double alignPrec = mlr::getParameter<double>("KOMO/moveTo/alignPrecision", 1e3);
 
-  //-- set up the MotionProblem
+  //-- set up the KOMO
   target.cont=false; //turn off contact penalization with the target
 
 //  MP.world.swift().initActivations(MP.world);
@@ -673,7 +673,7 @@ void setTasks(KOMO& MP,
 
 void KOMO::setMoveTo(mlr::KinematicWorld& world, mlr::Shape& endeff, mlr::Shape& target, byte whichAxesToAlign){
 //  if(MP) delete MP;
-//  MP = new MotionProblem(world);
+//  MP = new KOMO(world);
   this->world = world;
 
   setTasks(*this, endeff, target, whichAxesToAlign, 1, -1, -1.);
@@ -739,7 +739,7 @@ bool KOMO::displayTrajectory(double delay, bool watch){
 //  return displayTrajectory(watch?-1:1, "KOMO planned trajectory", delay);
   const char* tag = "KOMO planned trajectory";
   if(!gl){
-    gl = new OpenGL ("MotionProblem display");
+    gl = new OpenGL ("KOMO display");
     gl->camera.setDefault();
   }
 
@@ -765,7 +765,7 @@ bool KOMO::displayTrajectory(double delay, bool watch){
 
 mlr::Camera& KOMO::displayCamera(){
   if(!gl){
-    gl = new OpenGL ("MotionProblem display");
+    gl = new OpenGL ("KOMO display");
     gl->camera.setDefault();
   }
   return gl->camera;
@@ -773,9 +773,9 @@ mlr::Camera& KOMO::displayCamera(){
 
 //===========================================================================
 
-#define MotionProblem KOMO
+#define KOMO KOMO
 
-void MotionProblem::setupConfigurations(){
+void KOMO::setupConfigurations(){
 
   //IMPORTANT: The configurations need to include the k prefix configurations!
   //Therefore configurations(0) is for time=-k and configurations(k+t) is for time=t
@@ -802,7 +802,7 @@ void MotionProblem::setupConfigurations(){
   }
 }
 
-void MotionProblem::set_x(const arr& x){
+void KOMO::set_x(const arr& x){
   if(!configurations.N) setupConfigurations();
   CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
 
@@ -821,17 +821,17 @@ void MotionProblem::set_x(const arr& x){
   CHECK_EQ(x_count, x.N, "");
 }
 
-void MotionProblem::reportProxies(std::ostream& os){
+void KOMO::reportProxies(std::ostream& os){
     int t=0;
     for(auto &K:configurations){
-        os <<" **** MotionProblem PROXY REPORT t=" <<t-k_order <<endl;
+        os <<" **** KOMO PROXY REPORT t=" <<t-k_order <<endl;
         K->reportProxies(os);
         t++;
     }
 }
 
 
-Graph MotionProblem::getReport(bool gnuplt, int reportFeatures) {
+Graph KOMO::getReport(bool gnuplt, int reportFeatures) {
   if(featureValues.N>1){ //old optimizer -> remove some time..
     arr tmp;
     for(auto& p:featureValues) tmp.append(p);
@@ -927,14 +927,14 @@ Graph MotionProblem::getReport(bool gnuplt, int reportFeatures) {
   fil2.close();
 
   if(gnuplt){
-    cout <<"MotionProblem Report\n" <<report <<endl;
+    cout <<"KOMO Report\n" <<report <<endl;
     gnuplot("load 'z.costReport.plt'");
   }
 
   return report;
 }
 
-arr MotionProblem::getInitialization(){
+arr KOMO::getInitialization(){
   if(!configurations.N) setupConfigurations();
   CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
   arr x;
@@ -942,7 +942,7 @@ arr MotionProblem::getInitialization(){
   return x;
 }
 
-void MotionProblem::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes){
+void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes){
   variableDimensions.resize(MP.T);
   for(uint t=0;t<MP.T;t++) variableDimensions(t) = MP.configurations(t+MP.k_order)->getJointStateDimension();
 
@@ -959,7 +959,7 @@ void MotionProblem::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variabl
   dimPhi = featureTimes.N;
 }
 
-void MotionProblem::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, ObjectiveTypeA& tt, const arr& x){
+void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, ObjectiveTypeA& tt, const arr& x){
   //-- set the trajectory
   MP.set_x(x);
 

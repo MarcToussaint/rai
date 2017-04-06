@@ -19,7 +19,7 @@
 #include <KOMO/komo.h>
 
 #include <Gui/opengl.h>
-#include <Gui/plot.h>
+#include <Plot/plot.h>
 
 namespace mlr {
   struct sRRTPlanner {
@@ -99,7 +99,7 @@ arr buildTrajectory(RRT& rrt, uint node, bool forward) {
   return q;
 }
     
-mlr::RRTPlanner::RRTPlanner(mlr::KinematicWorld *G, MotionProblem &problem, double stepsize, bool verbose) : 
+mlr::RRTPlanner::RRTPlanner(mlr::KinematicWorld *G, KOMO &problem, double stepsize, bool verbose) : 
    G(G), problem(problem) {
     arr q; G->getJointState(q);
     s = new mlr::sRRTPlanner(this, RRT(q, stepsize), verbose);

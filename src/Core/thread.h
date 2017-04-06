@@ -29,7 +29,6 @@ struct Signaler;
 struct VariableBase;
 struct Thread;
 typedef mlr::Array<Signaler*> SignalerL;
-typedef mlr::Array<VariableBase*> VariableBaseL;
 typedef mlr::Array<Thread*> ThreadL;
 
 //void stop(const ThreadL& P);
@@ -238,6 +237,8 @@ struct VariableBase : Signaler{
   typedef std::shared_ptr<VariableBase> Ptr;
 };
 
+typedef mlr::Array<VariableBase::Ptr*> VariableBaseL;
+
 //===========================================================================
 
 template<class T>
@@ -388,10 +389,26 @@ struct Access{
 
 extern Singleton<Signaler> moduleShutdown;
 VariableBase::Ptr getVariable(const char* name);
-//template<class T> VariableData<T>& getVariable(const char* name){ return *registry()->get<shared_ptr<VariableData<T>>>({"VariableData", name}); }
+template<class T> VariableData<T>& getVariable(const char* name){
+    VariableBase::Ptr v = getVariable(name);
+    if(!v) HALT("can't find variable of name '" <<name <<"'");
+    shared_ptr<VariableData<T>> var = std::dynamic_pointer_cast<VariableData<T>>(v);
+    if(!var) HALT("can't convert variable of type '" <<NAME(v->type) <<"' to '" <<NAME(typeid(T)) <<"'");
+    return *var;
+}
+VariableBaseL getVariables();
+template<class T> mlr::Array<VariableData<T>*> getVariablesOfType(){
+    mlr::Array<VariableData<T>*> ret;
+    VariableBaseL vars = getVariables();
+    for(VariableBase::Ptr* v : vars){
+        shared_ptr<VariableData<T>> var = std::dynamic_pointer_cast<VariableData<T>>(*v);
+        if(var) ret.append(var.get());
+    }
+    return ret;
+}
+
 //template <class T> T& getVariable(const char* name){  return registry()->get<T&>({"VariableData",name});  }
 template <class T> T* getThread(const char* name){  return dynamic_cast<T*>(registry()->get<Thread*>({"Thread",name}));  }
-VariableBaseL getVariables();
 void openModules();
 void stepModules();
 void closeModules();

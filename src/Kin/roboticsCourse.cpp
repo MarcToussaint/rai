@@ -17,7 +17,7 @@
 #include <Kin/kin_swift.h>
 #include <Kin/kin_physx.h>
 #include <Gui/opengl.h>
-#include <Gui/plot.h>
+#include <Plot/plot.h>
 #include <Algo/algos.h>
 
 void drawEnv(void*){ glStandardLight(NULL); glDrawFloor(10., .9, .9, .9); }

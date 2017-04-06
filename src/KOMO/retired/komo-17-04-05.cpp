@@ -1,6 +1,6 @@
 //===========================================================================
 
-void setTasks(MotionProblem& MP,
+void setTasks(KOMO& MP,
               mlr::Shape &endeff,
               mlr::Shape& target,
               byte whichAxesToAlign,
@@ -18,7 +18,7 @@ arr moveTo(mlr::KinematicWorld& world,
            int timeSteps,
            double duration){
 
-  MotionProblem MP(world);
+  KOMO MP(world);
 
   setTasks(MP, endeff, target, whichAxesToAlign, iterate, timeSteps, duration);
 

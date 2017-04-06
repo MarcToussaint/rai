@@ -153,7 +153,7 @@ struct KOMO{
 
   //===========================================================================
   //
-  // internal (kind of private); old interface of 'MotionProblem'; kept for compatibility
+  // internal (kind of private); old interface of 'KOMO'; kept for compatibility
   //
 
   Task* addTask(const char* name, TaskMap *map, const ObjectiveType& termType); ///< manually add a task

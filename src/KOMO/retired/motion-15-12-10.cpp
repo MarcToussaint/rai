@@ -209,7 +209,7 @@ mlr::KinematicSwitch* newSwitch(const Node *specs, const mlr::KinematicWorld& wo
 
 //===========================================================================
 
-MotionProblem::MotionProblem(mlr::KinematicWorld& _world, bool useSwift)
+KOMO::KOMO(mlr::KinematicWorld& _world, bool useSwift)
     : world(_world) , useSwift(useSwift), T(0), tau(0.), k_order(2)
 {
   if(useSwift) {
@@ -221,7 +221,7 @@ MotionProblem::MotionProblem(mlr::KinematicWorld& _world, bool useSwift)
   setTiming(mlr::getParameter<uint>("timeSteps", 50), mlr::getParameter<double>("duration", 5.));
 }
 
-MotionProblem& MotionProblem::operator=(const MotionProblem& other) {
+KOMO& KOMO::operator=(const KOMO& other) {
   world = const_cast<mlr::KinematicWorld&>(other.world);
   useSwift = other.useSwift;
   tasks = other.tasks;
@@ -237,12 +237,12 @@ MotionProblem& MotionProblem::operator=(const MotionProblem& other) {
   return *this;
 }
 
-void MotionProblem::setTiming(uint timeSteps, double duration){
+void KOMO::setTiming(uint timeSteps, double duration){
   T = timeSteps;
   if(T) tau = duration/T; else tau=duration;
 }
 
-arr MotionProblem::getH_rate_diag() {
+arr KOMO::getH_rate_diag() {
   //transition cost metric
   arr W_diag;
   if(mlr::checkParameter<arr>("Wdiag")) {
@@ -253,14 +253,14 @@ arr MotionProblem::getH_rate_diag() {
   return mlr::getParameter<double>("Hrate", 1.)*W_diag;
 }
 
-Task* MotionProblem::addTask(const char* name, TaskMap *m){
+Task* KOMO::addTask(const char* name, TaskMap *m){
   Task *t = new Task(m);
   t->name=name;
   tasks.append(t);
   return t;
 }
 
-bool MotionProblem::parseTask(const Node *n, int Tinterval, uint Tzero){
+bool KOMO::parseTask(const Node *n, int Tinterval, uint Tzero){
   if(Tinterval==-1) Tinterval=T;
   //-- task?
   Task *task = newTask(n, world, Tinterval, Tzero);
@@ -280,7 +280,7 @@ bool MotionProblem::parseTask(const Node *n, int Tinterval, uint Tzero){
   return false;
 }
 
-void MotionProblem::parseTasks(const Graph& specs, int Tinterval, uint Tzero){
+void KOMO::parseTasks(const Graph& specs, int Tinterval, uint Tzero){
   for(Node *n:specs) parseTask(n, Tinterval, Tzero);
 
   //-- add TransitionTask for InvKinematics
@@ -296,7 +296,7 @@ void MotionProblem::parseTasks(const Graph& specs, int Tinterval, uint Tzero){
 }
 
 #if 0
-void MotionProblem::setInterpolatingCosts(
+void KOMO::setInterpolatingCosts(
   Task *c,
   TaskCostInterpolationType inType,
   const arr& y_finalTarget, double y_finalPrec, const arr& y_midTarget, double y_midPrec, double earlyFraction) {
@@ -348,13 +348,13 @@ void MotionProblem::setInterpolatingCosts(
 }
 #endif
 
-void MotionProblem::setState(const arr& q, const arr& v) {
+void KOMO::setState(const arr& q, const arr& v) {
   world.setJointState(q, v);
   if(useSwift) world.stepSwift();
 }
 
 
-uint MotionProblem::dim_phi(const mlr::KinematicWorld &G, uint t) {
+uint KOMO::dim_phi(const mlr::KinematicWorld &G, uint t) {
   uint m=0;
   for(Task *c: tasks) {
     if(c->active && c->prec.N>t && c->prec(t)) m += c->dim_phi(G, t); //counts also constraints
@@ -362,7 +362,7 @@ uint MotionProblem::dim_phi(const mlr::KinematicWorld &G, uint t) {
   return m;
 }
 
-uint MotionProblem::dim_g(const mlr::KinematicWorld &G, uint t) {
+uint KOMO::dim_g(const mlr::KinematicWorld &G, uint t) {
   uint m=0;
   for(Task *c: tasks) {
     if(c->map.type==OT_ineq && c->active && c->prec.N>t && c->prec(t))  m += c->map.dim_phi(G);
@@ -370,7 +370,7 @@ uint MotionProblem::dim_g(const mlr::KinematicWorld &G, uint t) {
   return m;
 }
 
-uint MotionProblem::dim_h(const mlr::KinematicWorld &G, uint t) {
+uint KOMO::dim_h(const mlr::KinematicWorld &G, uint t) {
   uint m=0;
   for(Task *c: tasks) {
     if(c->map.type==OT_eq && c->active && c->prec.N>t && c->prec(t))  m += c->map.dim_phi(G);
@@ -378,7 +378,7 @@ uint MotionProblem::dim_h(const mlr::KinematicWorld &G, uint t) {
   return m;
 }
 
-void MotionProblem::setConfigurationStates(){
+void KOMO::setConfigurationStates(){
   //IMPORTANT: The configurations need to include the k prefix configurations!
   //Therefore configurations(0) is for time=-k and configurations(k+t) is for time=t
   if(configurations.N!=k_order+T+1){
@@ -398,13 +398,13 @@ void MotionProblem::setConfigurationStates(){
   }
 }
 
-void MotionProblem::temporallyAlignKinematicSwitchesInConfiguration(uint t){
+void KOMO::temporallyAlignKinematicSwitchesInConfiguration(uint t){
   for(mlr::KinematicSwitch *sw:switches) if(sw->timeOfApplication<=t){
     sw->temporallyAlign(*configurations(t+k_order-1), *configurations(t+k_order));
   }
 }
 
-void MotionProblem::displayTrajectory(int steps, const char* tag, double delay){
+void KOMO::displayTrajectory(int steps, const char* tag, double delay){
   OpenGL gl;
 
   uint num;
@@ -427,7 +427,7 @@ void MotionProblem::displayTrajectory(int steps, const char* tag, double delay){
     gl.watch(STRING(tag <<" (time " <<std::setw(3) <<T <<'/' <<T <<')').p);
 }
 
-bool MotionProblem::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const WorldL &G, double tau) {
+bool KOMO::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const WorldL &G, double tau) {
   phi.clear();
   if(&tt) tt.clear();
   if(&J) J.clear();
@@ -464,7 +464,7 @@ bool MotionProblem::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const W
   return ineqHold;
 }
 
-StringA MotionProblem::getPhiNames(const mlr::KinematicWorld& G, uint t){
+StringA KOMO::getPhiNames(const mlr::KinematicWorld& G, uint t){
   StringA names(dim_phi(G, t));
   uint m=0;
   for(Task *c: tasks) if(c->active && c->prec.N>t && c->prec(t)){
@@ -491,12 +491,12 @@ StringA MotionProblem::getPhiNames(const mlr::KinematicWorld& G, uint t){
   return names;
 }
 
-void MotionProblem::activateAllTaskCosts(bool active) {
+void KOMO::activateAllTaskCosts(bool active) {
   for(Task *c: tasks) c->active=active;
 }
 
-void MotionProblem::reportFeatures(bool brief) {
-  cout <<"*** MotionProblem -- FeatureReport " <<endl;
+void KOMO::reportFeatures(bool brief) {
+  cout <<"*** KOMO -- FeatureReport " <<endl;
 
   cout <<"  useSwift=" <<useSwift <<endl;
   cout <<"  T=" <<T <<endl;
@@ -555,8 +555,8 @@ void MotionProblem::reportFeatures(bool brief) {
 
 }
 
-void MotionProblem::costReport(bool gnuplt) {
-  cout <<"*** MotionProblem -- CostReport" <<endl;
+void KOMO::costReport(bool gnuplt) {
+  cout <<"*** KOMO -- CostReport" <<endl;
   if(phiMatrix.N!=T+1){
     CHECK(phiMatrix.N==0,"");
     phiMatrix.resize(T+1);
@@ -653,7 +653,7 @@ void MotionProblem::costReport(bool gnuplt) {
   if(gnuplt) gnuplot("load 'z.costReport.plt'");
 }
 
-Graph MotionProblem::getReport() {
+Graph KOMO::getReport() {
   if(phiMatrix.N!=T+1){
     CHECK(phiMatrix.N==0,"");
     phiMatrix.resize(T+1);
@@ -703,11 +703,11 @@ Graph MotionProblem::getReport() {
   return report;
 }
 
-arr MotionProblem::getInitialization(){
+arr KOMO::getInitialization(){
   return replicate(x0, T+1);
 }
 
-void MotionProblem::inverseKinematics(arr& y, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x){
+void KOMO::inverseKinematics(arr& y, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x){
   CHECK(!T,"");
 //  CHECK(!k_order,"");
 //  CHECK(!switches.N,"");
@@ -837,7 +837,7 @@ void MotionProblem_EndPoseFunction::fv(arr& phi, arr& J, const arr& x){
   //-- transition costs
   NIY;
 //  arr h = MP.H_rate_diag;
-//  if(MP.transitionType==MotionProblem::kinematic){
+//  if(MP.transitionType==KOMO::kinematic){
 //    h *= MP.tau/double(MP.T);
 //    h=sqrt(h);
 //  } else {
@@ -871,7 +871,7 @@ void MotionProblem_EndPoseFunction::fv(arr& phi, arr& J, const arr& x){
 
 //===========================================================================
 
-MotionProblem_EndPoseFunction::MotionProblem_EndPoseFunction(MotionProblem& _MP)
+MotionProblem_EndPoseFunction::MotionProblem_EndPoseFunction(KOMO& _MP)
   : MP(_MP){
 //  ConstrainedProblem::operator=( [this](arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) -> void {
 //    this->Phi(phi, J, H, tt, x);

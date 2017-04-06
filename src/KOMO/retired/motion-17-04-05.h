@@ -60,7 +60,7 @@ stdOutPipe(Task)
 /// This class allows you to DESCRIBE a motion planning problem, nothing more
 //
 
-struct MotionProblem {
+struct KOMO {
   mlr::KinematicWorld& world;  ///< the original world, which also defines the 'start conditions'
   WorldL configurations;       ///< copies for each time slice; including kinematic switches; only these are optimized
   bool useSwift;
@@ -80,10 +80,10 @@ struct MotionProblem {
 
   struct OpenGL *gl; //internal only: used in 'displayTrajectory'
 
-  MotionProblem(mlr::KinematicWorld& originalWorld, bool useSwift=true);
-  ~MotionProblem();
+  KOMO(mlr::KinematicWorld& originalWorld, bool useSwift=true);
+  ~KOMO();
   
-  MotionProblem& operator=(const MotionProblem& other);
+  KOMO& operator=(const KOMO& other);
 
   /// setting the numer of time steps and total duration in seconds
   void setTiming(uint steps, double duration);
@@ -119,8 +119,8 @@ struct MotionProblem {
   /// inverse kinematics problem (which is the special case T=0) returned as a @ConstrainedProblem@
   /// as input to optimizers
   struct Conv_MotionProblem_InvKinProblem : ConstrainedProblem{
-    MotionProblem& MP;
-    Conv_MotionProblem_InvKinProblem(MotionProblem& P) : MP(P){}
+    KOMO& MP;
+    Conv_MotionProblem_InvKinProblem(KOMO& P) : MP(P){}
 
     void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x){
       MP.inverseKinematics(phi, J, H, tt, x);
@@ -129,10 +129,10 @@ struct MotionProblem {
   void inverseKinematics(arr& y, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
 
   struct Conv_MotionProblem_KOMO_Problem : KOMO_Problem{
-    MotionProblem& MP;
+    KOMO& MP;
     uint dimPhi;
 
-    Conv_MotionProblem_KOMO_Problem(MotionProblem& P) : MP(P){}
+    Conv_MotionProblem_KOMO_Problem(KOMO& P) : MP(P){}
 
     virtual uint get_k(){ return MP.k_order; }
     virtual void getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes);

@@ -1,5 +1,5 @@
 #include <Algo/spline.h>
-#include <Gui/plot.h>
+#include <Plot/plot.h>
 #include <Kin/kin.h>
 
 ScalarFunction cost = [](arr &g, arr &H, const arr &x) -> double{

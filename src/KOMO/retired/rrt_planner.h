@@ -17,7 +17,7 @@
 
 #include <Core/array.h>
 
-struct MotionProblem;
+struct KOMO;
 struct OpenGL;
 
 namespace mlr { 
@@ -27,11 +27,11 @@ namespace mlr {
       struct sRRTPlanner *s;
     public:
       KinematicWorld *G;                 ///< the graph to plan in
-      MotionProblem& problem;   ///< the MotionProblem gives the feasibility test for new states
+      KOMO& problem;   ///< the KOMO gives the feasibility test for new states
 
       arr joint_max, joint_min; ///< in which range are the joints allowed (boundaries for the sample space)
 
-      RRTPlanner(mlr::KinematicWorld* G, MotionProblem &problem, double stepsize, bool verbose = false);
+      RRTPlanner(mlr::KinematicWorld* G, KOMO &problem, double stepsize, bool verbose = false);
 
       arr getTrajectoryTo(const arr& target, int max_iter=0); ///< returns the trajectory created by the RRT
   };

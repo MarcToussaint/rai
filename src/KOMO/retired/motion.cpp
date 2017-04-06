@@ -1,5 +1,5 @@
-void MotionProblem::costReport(bool gnuplt) {
-  cout <<"*** MotionProblem -- CostReport" <<endl;
+void KOMO::costReport(bool gnuplt) {
+  cout <<"*** KOMO -- CostReport" <<endl;
 
   HALT("deprecated")
   arr& phi = phiMatrix.scalar();
@@ -100,7 +100,7 @@ void MotionProblem::costReport(bool gnuplt) {
   if(gnuplt) gnuplot("load 'z.costReport.plt'");
 }
 
-void MotionProblem::temporallyAlignKinematicSwitchesInConfiguration(uint t){
+void KOMO::temporallyAlignKinematicSwitchesInConfiguration(uint t){
   for(mlr::KinematicSwitch *sw:switches) if(sw->timeOfApplication<=t){
     sw->temporallyAlign(*configurations(t+k_order-1), *configurations(t+k_order), sw->timeOfApplication==t);
   }

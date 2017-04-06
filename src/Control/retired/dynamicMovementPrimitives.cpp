@@ -13,7 +13,7 @@
     --------------------------------------------------------------  */
 
 #include "dynamicMovementPrimitives.h"
-#include <Gui/plot.h>
+#include <Plot/plot.h>
 #include <KOMO/komo.h>
 
 DynamicMovementPrimitives::DynamicMovementPrimitives(arr &y_ref_, uint nBase_, double dt_, double lambda_) {

@@ -1338,7 +1338,7 @@ struct GnuplotServer{
     }
     FILE("z.plotcmd") <<cmd; //for debugging..
     fputs(cmd, gp);
-    fflush(gp) ;
+    fflush(gp);
   #else
     NIY;
   #endif

@@ -1,5 +1,5 @@
 #include "BayesOpt.h"
-#include <Gui/plot.h>
+//#include <Plot/plot.h>
 
 #include <Algo/MLcourse.h>
 
@@ -78,15 +78,15 @@ void BayesOpt::report(bool display){
     locmin2_y.append(l.fx);
   }
 
-  plotGnuplot();
-  plotClear();
-  plotFunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
-  plotFunction(X_grid, y2_grid);
-  plotFunction(X_grid, y2_grid-s2_grid);
-  plotPoints(data_X, data_y);
-  plotPoints(locmin_X, locmin_y);
-  plotPoints(locmin2_X, locmin2_y);
-  plot(false);
+//  plotGnuplot();
+//  plotClear();
+//  plotFunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
+//  plotFunction(X_grid, y2_grid);
+//  plotFunction(X_grid, y2_grid-s2_grid);
+//  plotPoints(data_X, data_y);
+//  plotPoints(locmin_X, locmin_y);
+//  plotPoints(locmin2_X, locmin2_y);
+//  plot(false);
 }
 
 void BayesOpt::addDataPoint(const arr& x, double y){

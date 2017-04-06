@@ -270,7 +270,7 @@ void PR2Interface::goToPosition(arr pos, mlr::String shape, double executionTime
 void PR2Interface::goToTasks(mlr::Array<LinTaskSpaceAccLaw*> laws, double executionTime, bool useMotionPlanner) {
   if(useMotionPlanner) {
     mlr::KinematicWorld copiedWorld(*this->modelWorld);
-    MotionProblem MP(copiedWorld);
+    KOMO MP(copiedWorld);
 
     MP.x0 = modelWorld->getJointState(); //TODO nix modelWorld, copiedWorld?
 
