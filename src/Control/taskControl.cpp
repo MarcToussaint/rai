@@ -17,8 +17,8 @@
     -----------------------------------------------------------------  */
 #include "taskControl.h"
 #include <Kin/kin_swift.h>
-#include <Motion/motion.h>
-#include <Motion/taskMaps.h>
+#include <KOMO/komo.h>
+#include <Kin/taskMaps.h>
 
 //===========================================================================
 

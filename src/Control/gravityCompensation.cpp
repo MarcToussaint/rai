@@ -1,6 +1,6 @@
 #include "gravityCompensation.h"
 #include <Algo/MLcourse.h>
-#include <Motion/taskMaps.h>
+#include <Kin/taskMaps.h>
 
 struct GravityCompensation::CV : public CrossValidation {
   void  train(const arr& X, const arr& y, double param, arr& beta) {

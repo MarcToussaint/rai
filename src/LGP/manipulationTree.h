@@ -19,7 +19,7 @@
 #include <Logic/fol_mcts_world.h>
 #include "LGP.h"
 #include <Logic/fol.h>
-#include <Motion/komo.h>
+#include <KOMO/komo.h>
 
 struct ManipulationTree_Node;
 struct PlainMC;

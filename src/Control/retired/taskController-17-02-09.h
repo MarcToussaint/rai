@@ -17,7 +17,7 @@
     -----------------------------------------------------------------  */
 #pragma once
 
-#include <Motion/taskMaps.h>
+#include <Kin/taskMaps.h>
 
 /**
  * @file

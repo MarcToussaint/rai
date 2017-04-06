@@ -4,7 +4,7 @@
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>
 #include <Kin/kin.h>
-#include <Motion/taskMaps.h>
+#include <Kin/taskMaps.h>
 
 mlr::Vector p1, p2;
 mlr::Vector e1, e2;

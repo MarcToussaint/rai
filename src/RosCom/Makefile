@@ -4,7 +4,7 @@ OUTPUT = lib$(NAME).so
 
 ROS = 1
 PCL = 1
-DEPEND = Core Hardware Hardware_gamepad Motion Kin Gui Logic
+DEPEND = Core Hardware Hardware_gamepad KOMO Kin Gui Logic
 
 #CXXFLAGS += -DROS_PACKAGE_NAME='"pr2_module"'
 

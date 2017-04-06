@@ -16,7 +16,7 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
 #include "teleop2tasks.h"
-#include <Motion/taskMaps.h>
+#include <Kin/taskMaps.h>
 #include <Hardware/gamepad/gamepad.h>
 
 Teleop2Tasks::Teleop2Tasks(TaskControlMethods& _MP, const mlr::KinematicWorld& K):fmc(_MP){

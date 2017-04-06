@@ -9,7 +9,7 @@
 #include <Core/thread.h>
 #include <devTools/logging.h>
 //#include <Hardware/kinect.h>
-#include <Motion/motion.h>
+#include <KOMO/komo.h>
 
 SET_LOG(pointcloud, INFO)
 
