@@ -26,7 +26,7 @@ void GamepadControlThread::step(){
   if(!g2t){
     TaskControlThread *taskController = getThread<TaskControlThread>("TaskControlThread");
     CHECK(taskController,"that didn't work");
-    taskController->waitForStatusSmallerThan(tsOPENING);
+    taskController->waitForStatusSmallerThan(tsToOpen);
     tc = taskController->taskController;
     if(!tc) return;
     g2t = new Gamepad2Tasks(*tc, modelWorld.get(), taskController->q0);

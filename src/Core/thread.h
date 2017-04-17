@@ -24,7 +24,7 @@ using std::shared_ptr;
 using std::make_shared;
 
 
-enum ThreadState { tsIDLE=0, tsCLOSE=-1, tsOPENING=-2, tsLOOPING=-3, tsBEATING=-4, tsFAILURE=-5, tsEndOfMain=-6 }; //positive states indicate steps-to-go
+enum ThreadState { tsIsClosed=-6, tsToOpen=-2, tsLOOPING=-3, tsBEATING=-4, tsIDLE=0, tsToStep=1, tsToClose=-1,  tsFAILURE=-5,  }; //positive states indicate steps-to-go
 struct Signaler;
 struct VariableBase;
 struct Thread;
@@ -156,12 +156,8 @@ struct CycleTimer {
  */
 struct Thread : Signaler{
   mlr::String name;
-  pid_t tid;                     ///< system thread id
-#ifndef MLR_QThread
-  pthread_t thread;
-#else
-  struct sThread *thread;
-#endif
+  pthread_t thread;             ///< the underlying pthread; NULL iff not opened
+  pid_t tid;                    ///< system thread id
   Mutex stepMutex;              ///< This is set whenever the 'main' is in step (or open, or close) --- use this in all service methods callable from outside!!
   uint step_count;              ///< how often the step was called
   Metronome metronome;          ///< used for beat-looping
@@ -353,6 +349,19 @@ struct Access{
   Access(Thread* _thread, const Access<T>& acc, bool threadListens=false)
     : data(NULL), name(acc.name), thread(_thread), last_accessed_revision(0), registryNode(NULL){
     data = acc.data;
+    if(thread){
+      registryNode = registry()->newNode<Access<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
+      if(threadListens) thread->listenTo(*data);
+    }else{
+      registryNode = registry()->newNode<Access<T>* >({"Access", name}, {data->registryNode}, this);
+    }
+  }
+
+  /// A "copy" of acc: An access to the same variable as acc refers to, but now for '_thred'
+  Access(Thread* _thread, VariableBase& var, bool threadListens=false)
+    : data(NULL), name(var.name), thread(_thread), last_accessed_revision(0), registryNode(NULL){
+      CHECK(var.type == typeid(T), "types don't match!");
+    data = shared_ptr<VariableData<T>>(dynamic_cast<VariableData<T>*>(&var));
     if(thread){
       registryNode = registry()->newNode<Access<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
       if(threadListens) thread->listenTo(*data);

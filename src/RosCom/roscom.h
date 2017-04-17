@@ -69,6 +69,8 @@ geometry_msgs::Transform conv_transformation2transform(const mlr::Transformation
 std::vector<geometry_msgs::Point> conv_arr2points(const arr& pts);
 marc_controller_pkg::JointState   conv_CtrlMsg2JointState(const CtrlMsg& ctrl);
 floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray&);
+visualization_msgs::Marker conv_Shape2Marker(const mlr::Shape& sh);
+visualization_msgs::MarkerArray conv_Kin2Markers(const mlr::KinematicWorld& K);
 
 //-- get transformations
 mlr::Transformation ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener);
@@ -198,11 +200,11 @@ struct PublisherConv : Thread {
   Access<var_type> access;
   ros::NodeHandle *nh;
   ros::Publisher pub;
-  const char* topic_name;
+  mlr::String topic_name;
 
-  PublisherConv(const char* _topic_name, Access<var_type>& _access)
-      : Thread(STRING("Publisher_"<<_access.name <<"->" <<_topic_name), -1),
-        access(this, _access, true),
+  PublisherConv(const char* _topic_name, const Access<var_type>& _access, double beatIntervalSec=-1.)
+      : Thread(STRING("Publisher_"<<_access.name <<"->" <<_topic_name), beatIntervalSec),
+        access(this, _access, beatIntervalSec<0.),
         nh(NULL),
         topic_name(_topic_name){
     if(mlr::getParameter<bool>("useRos")){
@@ -211,9 +213,9 @@ struct PublisherConv : Thread {
       threadOpen();
     }
   }
-  PublisherConv(const char* _topic_name, const char* var_name)
-      : Thread(STRING("Publisher_"<<var_name <<"->" <<_topic_name), -1),
-        access(this, var_name, true),
+  PublisherConv(const char* _topic_name, const char* var_name, double beatIntervalSec=-1.)
+      : Thread(STRING("Publisher_"<<var_name <<"->" <<_topic_name), beatIntervalSec),
+        access(this, var_name, beatIntervalSec<0.),
         nh(NULL),
         topic_name(_topic_name){
     if(mlr::getParameter<bool>("useRos")){
@@ -228,7 +230,7 @@ struct PublisherConv : Thread {
     if(nh) delete nh;
   }
   void open(){
-    if(nh) pub = nh->advertise<msg_type>(topic_name, 1);
+    if(nh) pub = nh->advertise<msg_type>(topic_name.p, 1);
   }
   void step(){
     if(nh) pub.publish(conv(access.get()));

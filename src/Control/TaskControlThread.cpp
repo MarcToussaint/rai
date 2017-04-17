@@ -33,6 +33,8 @@ TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWor
 
   useSwift = mlr::getParameter<bool>("useSwift",true);
   useRos = mlr::getParameter<bool>("useRos",false);
+  if(useRos && mlr::checkParameter<bool>("taskControllerNoUseRos"))
+      useRos = false;
   useDynSim = !useRos; //mlr::getParameter<bool>("useDynSim", true);
   syncMode = mlr::getParameter<bool>("controller_syncMode", false);
   kp_factor = mlr::getParameter<double>("controller_kp_factor", 1.);
@@ -73,7 +75,7 @@ TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWor
     }
   }
 
-  if(robot != "pr2" && robot != "baxter") {
+  if(robot!="pr2" && robot!="baxter" && robot!="none") {
     HALT("robot not known!")
   }
 
@@ -146,6 +148,14 @@ void TaskControlThread::step(){
       succ = baxter_update_qReal(q_real, s->jointState.get(), realWorld);
 #endif
       qdot_real = zeros(q_real.N);
+    }
+
+    if(robot=="none"){
+        if(requiresInitialSync || syncMode){
+            q_real = q_model;
+            qdot_real = qdot_model;
+        }
+        requiresInitialSync = false;
     }
 
     ctrl_q_real.set() = q_real;

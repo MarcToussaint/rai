@@ -329,6 +329,58 @@ floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray &msg){
 }
 
 //===========================================================================
+
+visualization_msgs::Marker conv_Shape2Marker(const mlr::Shape& sh){
+  visualization_msgs::Marker new_marker;
+  new_marker.header.stamp = ros::Time::now();
+  new_marker.header.frame_id = "map";
+  new_marker.ns = "roopi";
+  new_marker.id = sh.index;
+  new_marker.action = visualization_msgs::Marker::ADD;
+  new_marker.lifetime = ros::Duration();
+  new_marker.pose = conv_transformation2pose(sh.X);
+  new_marker.color.r = 0.0f;
+  new_marker.color.g = 1.0f;
+  new_marker.color.b = 0.0f;
+  new_marker.color.a = 1.0f;
+
+#if 0
+  switch(sh.type){
+    case mlr::ST_box:{
+      new_marker.type = visualization_msgs::Marker::CUBE;
+      new_marker.scale.x = .001 * sh.size(0);
+      new_marker.scale.y = .001 * sh.size(1);
+      new_marker.scale.z = .001 * sh.size(2);
+    } break;
+    case mlr::ST_mesh:{
+      new_marker.type = visualization_msgs::Marker::POINTS;
+      new_marker.points = conv_arr2points(sh.mesh.V);
+      new_marker.scale.x = .001;
+      new_marker.scale.y = .001;
+      new_marker.scale.z = .001;
+    } break;
+//      ST_box=0, ST_sphere, ST_capsule, ST_mesh, ST_cylinder, ST_marker, ST_retired_SSBox, ST_pointCloud, ST_ssCvx, ST_ssBox };
+    default: break;
+  }
+#else
+  new_marker.type = visualization_msgs::Marker::SPHERE;
+  new_marker.scale.x = .1;
+  new_marker.scale.y = .1;
+  new_marker.scale.z = .1;
+
+#endif
+
+  return new_marker;
+}
+
+visualization_msgs::MarkerArray conv_Kin2Markers(const mlr::KinematicWorld& K){
+  visualization_msgs::MarkerArray M;
+  for(mlr::Shape *s:K.shapes) M.markers.push_back( conv_Shape2Marker(*s) );
+//  M.header.frame_id = "1";
+  return M;
+}
+
+//===========================================================================
 //
 // OLD
 //
@@ -631,8 +683,6 @@ void syncJointStateWitROS(mlr::KinematicWorld& world,
 //REGISTER_MODULE(RosCom_KinectSync)
 //REGISTER_MODULE(RosCom_HeadCamsSync)
 //REGISTER_MODULE(RosCom_ArmCamsSync)
-
-
 
 
 

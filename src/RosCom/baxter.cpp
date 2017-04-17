@@ -1,6 +1,6 @@
 #include "baxter.h"
 
-#ifdef MLR_ROS
+#ifdef MLR_ROS_BAXTER
 
 #include "roscom.h"
 #include <baxter_core_msgs/HeadPanCommand.h>
@@ -142,4 +142,6 @@ void SendPositionCommandsToBaxter::close(){
   if(s) delete s;
 }
 
+#else
+bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const mlr::KinematicWorld& baxterModel){ NICO }
 #endif

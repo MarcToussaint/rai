@@ -26,9 +26,6 @@
 #endif //__CYGWIN __
 #  include <unistd.h>
 #endif
-#ifdef MLR_QThread
-#  include <QtCore/QThread>
-#endif
 #include <errno.h>
 
 
@@ -125,7 +122,11 @@ void Signaler::broadcast(Signaler* messenger) {
   int rc = pthread_cond_signal(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   //int rc = pthread_cond_broadcast(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   //setStatus to all listeners:
-  for(Signaler *c:listeners) if(c!=messenger) c->setStatus(1, this);
+  for(Signaler *c:listeners) if(c!=messenger){
+    Thread *th = dynamic_cast<Thread*>(c);
+    if(th) th->threadStep();
+    else c->setStatus(1, this);
+  }
   for(auto* c:callbacks) c->call()(this, status);
 }
 
@@ -419,10 +420,10 @@ protected:
 #endif
 
 Thread::Thread(const char* _name, double beatIntervalSec)
-  : Signaler(tsEndOfMain),
+  : Signaler(tsIsClosed),
      name(_name),
-     tid(0),
      thread(0),
+     tid(0),
      step_count(0),
      metronome(beatIntervalSec),
      verbose(0) {
@@ -431,17 +432,17 @@ Thread::Thread(const char* _name, double beatIntervalSec)
 }
 
 Thread::~Thread() {
-  CHECK(isClosed(),"Call 'threadClose()' in the destructor of the DERIVED class! \
-        That's because the 'virtual table is destroyed' before calling the destructor ~Thread (google 'call virtual function\
-        in destructor') but now the destructor has to call 'threadClose' which triggers a Thread::close(), which is\
-        pure virtual while you're trying to call ~Thread.")
-  if(!isClosed()) threadClose();
+  if(thread)
+      HALT("Call 'threadClose()' in the destructor of the DERIVED class! \
+           That's because the 'virtual table is destroyed' before calling the destructor ~Thread (google 'call virtual function\
+           in destructor') but now the destructor has to call 'threadClose' which triggers a Thread::close(), which is\
+           pure virtual while you're trying to call ~Thread.")
   registry()->delNode(registryNode);
 }
 
 void Thread::threadOpen(bool wait, int priority) {
   statusLock();
-  if(!isClosed()){ statusUnlock(); return; } //this is already open -- or has just beend opened (parallel call to threadOpen)
+  if(thread){ statusUnlock(); return; } //this is already open -- or has just beend opened (parallel call to threadOpen)
 #ifndef MLR_QThread
   int rc;
   pthread_attr_t atts;
@@ -462,17 +463,24 @@ void Thread::threadOpen(bool wait, int priority) {
   thread = new sThread(this, "hallo");
   thread->open();
 #endif
-  status=tsOPENING;
+  status=tsToOpen;
   statusUnlock();
-  if(wait) waitForOpened();
+  if(wait) waitForStatusNotEq(tsToOpen);
+  if(metronome.ticInterval>0.){
+      if(metronome.ticInterval>1e-10){
+          setStatus(tsBEATING);
+      }else{
+          setStatus(tsLOOPING);
+      }
+  }
 }
 
 void Thread::threadClose(double timeoutForce) {
   stopListening();
-  setStatus(tsCLOSE);
-  if(!thread){ setStatus(tsEndOfMain); return; }
+  setStatus(tsToClose);
+  if(!thread){ setStatus(tsIsClosed); return; }
   for(;;){
-    bool ended = waitForStatusEq(tsEndOfMain, false, .2);
+    bool ended = waitForStatusEq(tsIsClosed, false, .2);
     if(ended) break;
     LOG(-1) <<"timeout to end Thread::main of '" <<name <<"'";
 //    if(timeoutForce>0.){
@@ -496,7 +504,7 @@ void Thread::threadClose(double timeoutForce) {
 
 void Thread::threadCancel() {
   stopListening();
-  setStatus(tsCLOSE);
+  setStatus(tsToClose);
   if(!thread) return;
 #ifndef MLR_QThread
   int rc;
@@ -510,8 +518,8 @@ void Thread::threadCancel() {
 }
 
 void Thread::threadStep() {
-  if(isClosed()) threadOpen();
-  setStatus(1);
+  threadOpen();
+  setStatus(tsToStep);
 }
 
 //void Thread::listenTo(VariableBase& var) {
@@ -541,11 +549,12 @@ bool Thread::isIdle() {
 }
 
 bool Thread::isClosed() {
-  return getStatus()==tsEndOfMain;
+  return !thread; //getStatus()==tsIsClosed;
 }
 
 void Thread::waitForOpened() {
-  waitForStatusNotEq(tsOPENING);
+  waitForStatusNotEq(tsIsClosed);
+  waitForStatusNotEq(tsToOpen);
 }
 
 void Thread::waitForIdle() {
@@ -553,7 +562,7 @@ void Thread::waitForIdle() {
 }
 
 void Thread::threadLoop(bool waitForOpened) {
-  if(isClosed()) threadOpen(waitForOpened);
+  threadOpen(waitForOpened);
   if(metronome.ticInterval>1e-10){
     setStatus(tsBEATING);
   }else{
@@ -561,18 +570,8 @@ void Thread::threadLoop(bool waitForOpened) {
   }
 }
 
-//void Thread::threadLoopWithBeat(double beatIntervalSec) {
-//  if(!metronome)
-//    metronome=new Metronome("threadTiccer", beatIntervalSec);
-//  else
-//    metronome->reset(beatIntervalSec);
-//  if(isClosed()) threadOpen();
-//  state.setStatus(tsBEATING);
-//}
-
 void Thread::threadStop(bool wait) {
-  //CHECK(!isClosed(), "called stop to closed thread");
-  if(!isClosed()){
+  if(thread){
     setStatus(tsIDLE);
     if(wait) waitForIdle();
   }
@@ -600,7 +599,7 @@ void Thread::main() {
   }
 
   statusLock();
-  if(status==tsOPENING){
+  if(status==tsToOpen){
     status=tsIDLE;
     broadcast();
   }
@@ -614,7 +613,7 @@ void Thread::main() {
     //-- wait for a non-idle state
     statusLock();
     waitForStatusNotEq(tsIDLE, true);
-    if(status==tsCLOSE) { statusUnlock();  break; }
+    if(status==tsToClose) { statusUnlock();  break; }
     if(status==tsBEATING) waitForTic=true; else waitForTic=false;
     if(status>0) status=tsIDLE; //step command -> reset to idle
     statusUnlock();
@@ -642,7 +641,7 @@ void Thread::main() {
   stepMutex.unlock();
   if(verbose>0) cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
 
-  setStatus(tsEndOfMain);
+  setStatus(tsIsClosed);
 }
 
 

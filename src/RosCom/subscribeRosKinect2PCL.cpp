@@ -1,5 +1,12 @@
 #ifdef MLR_ROS
+
 #include "subscribeRosKinect2PCL.h"
+#include "roscom.h"
+#include <tf/tf.h>
+//#include <pcl/point_cloud.h>
+//#include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl_ros/transforms.h>
 
 struct sSubscribeRosKinect2PCL{
   ros::NodeHandle *nh = NULL;
