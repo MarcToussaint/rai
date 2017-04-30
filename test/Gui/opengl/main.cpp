@@ -85,6 +85,7 @@ static void draw2(void*){
   glStandardLight(NULL);
   glDrawAxes(1.);
   glColor(1.,1.,1.);
+  glDisable(GL_CULL_FACE);
 }
 
 void TEST(Mesh) {
@@ -196,40 +197,45 @@ void TEST(Menu){
 
 byteA texImg;
 static GLuint texName;
-void init5(void){
-  read_ppm(texImg,"box.ppm");
-  texName=glImageTexture(texImg);
-}
 void draw5(void*){
-  glStandardLight(NULL);
+  glStandardScene(NULL);
 
+#if 1
   glDisable(GL_CULL_FACE);
-  glDrawTexQuad(texName,
-                -2.0, -1.0, 0.0,
-                -2.0, 1.0, 0.0,
-                0.0, 1.0, 0.0,
-                0.0, -1.0, 0.0);
-
   glEnable(GL_TEXTURE_2D);
-  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-  glBindTexture(GL_TEXTURE_2D, texName);
-  glBegin(GL_QUADS);
-  glTexCoord2f(0.0, 0.0); glVertex3f(1.0, -1.0, 0.0);
-  glTexCoord2f(0.0, 1.0); glVertex3f(1.0, 1.0, 0.0);
-  glTexCoord2f(1.0, 1.0); glVertex3f(2.41421, 1.0, -1.41421);
-  glTexCoord2f(1.0, 0.0); glVertex3f(2.41421, -1.0, -1.41421);
-  glEnd();
-  glFlush();
-  glDisable(GL_TEXTURE_2D);
 
-  glColor(1,0,0);
-//  glutSolidTeapot(1.);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, 3, texImg.d1, texImg.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, texImg.p);
+
+  glBegin(GL_POLYGON);
+  glTexCoord2f(0., 1.);  glVertex3f(0., 0., 1.);
+  glTexCoord2f(1., 1.);  glVertex3f(1., 0., 1.);
+  glTexCoord2f(1., 0.);  glVertex3f(1., 1., 1.);
+  glTexCoord2f(0., 0.);  glVertex3f(0., 1., 1.);
+  glEnd();
+
+  glDisable(GL_TEXTURE_2D);
+  glEnable(GL_CULL_FACE);
+#endif
+
+  glDrawTexQuad(texImg,
+                0.0, 0.0, 1.5,
+                1.0, 0.0, 2.5,
+                1.0, 1.0, 2.5,
+                0.0, 1.0, 1.5,
+                3.,2.);
 
 }
 
 void TEST(Texture) {
   OpenGL gl;
-  init5();
+  read_ppm(texImg, "box.ppm", false);
+//  texName=glImageTexture(texImg);
+  gl.background = texImg;
   gl.add(draw5,0);
   gl.watch();
 }
@@ -297,12 +303,8 @@ void TEST(Image) {
 int MAIN(int argc,char **argv){
   mlr::initCmdLine(argc,argv);
 
-  testTexture();
-  return 0;
-
-//  testMultipleViews(); return 0.;
-//  testImage(); return 0.;
 //  glutInit(&argc,argv);
+
   testTeapot();
   testOfflineRendering();
   testGrab();

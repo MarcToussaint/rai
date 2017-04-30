@@ -253,9 +253,9 @@ template<class T> struct Array {
   /// @name sorting and permuting this array
   void sort(ElemCompare comp=lowerEqual);
   bool isSorted(ElemCompare comp=lowerEqual) const;
-  uint rankInSorted(const T& x, ElemCompare comp=lowerEqual) const;
+  uint rankInSorted(const T& x, ElemCompare comp=lowerEqual, bool rankAfterIfEqual=false) const;
   int findValueInSorted(const T& x, ElemCompare comp=lowerEqual) const;
-  uint insertInSorted(const T& x, ElemCompare comp=lowerEqual);
+  uint insertInSorted(const T& x, ElemCompare comp=lowerEqual, bool insertAfterIfEqual=false);
   uint setAppendInSorted(const T& x, ElemCompare comp=lowerEqual);
   void removeValueInSorted(const T& x, ElemCompare comp=lowerEqual);
   void reverse();

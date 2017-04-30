@@ -20,8 +20,6 @@
 #include <memory>
 #include <tuple>
 
-using std::tuple;
-
 /** This is an abstraction of an environment for MCTS. The environment essentially only needs to simulate (=transition
  *  forward the state for given actions), and for each transition return the observation and reward. Additionally, it
  *  needs to provide the set of feasible decisions for the current state. For the MCTS solver, states, actions, and
@@ -50,40 +48,43 @@ struct MCTS_Environment {
     };
 
 
-    MCTS_Environment() = default;
+  MCTS_Environment() = default;
   virtual ~MCTS_Environment(){}
 
-    /// Perform the action; return the resulting observation and reward
-    virtual TransitionReturn transition(const Handle& action) = 0;
+  /// Perform the action; return the resulting observation and reward
+  virtual TransitionReturn transition(const Handle& action) = 0;
 
-    /// Perform a random action
-    virtual TransitionReturn transition_randomly(){
+  /// Perform a random action
+  virtual TransitionReturn transition_randomly(){
       std::vector<Handle> actions = get_actions();
       return transition(actions[rand()%actions.size()]);
-    }
+  }
 
-    /// Get the available actions in the current state
-    virtual const std::vector<Handle> get_actions() = 0;
+  /// Get the available actions in the current state
+  virtual const std::vector<Handle> get_actions() = 0;
 
-    /// Return whether action is feasible in current state
-    virtual bool is_feasible_action(const Handle& action){ return true; }
+  /// Return whether action is feasible in current state
+  virtual bool is_feasible_action(const Handle& action){ return true; }
 
-    /// Get the current state
-    virtual const Handle get_state() = 0;
+  /// Get the current state
+  virtual const Handle get_state() = 0;
 
-    /// Return whether the current state is a terminal state
-    virtual bool is_terminal_state() const = 0;
+  /// Get the current state
+  virtual void set_state(const Handle& state){ std::cerr <<"not implemented for world of type " <<typeid(this).name() <<std::endl; exit(-1); }
 
-    /// Makes the current state the future start state set by reset_state().
-    virtual void make_current_state_default() = 0;
+  /// Return whether the current state is a terminal state
+  virtual bool is_terminal_state() const = 0;
 
-    /// Reset the environment's state to the start state
-    virtual void reset_state() = 0;
+  /// Makes the current state the future start state set by reset_state().
+  virtual void make_current_state_default() = 0;
 
-    /// static information on the environment
-    enum InfoTag{ getGamma, hasTerminal, isDeterministic, hasMaxReward, getMaxReward, hasMinReward, getMinReward, isMarkov, writeState };
-    virtual bool get_info(InfoTag tag) const = 0;
-    virtual double get_info_value(InfoTag tag) const = 0;
+  /// Reset the environment's state to the start state
+  virtual void reset_state() = 0;
+
+  /// static information on the environment
+  enum InfoTag{ getGamma, hasTerminal, isDeterministic, hasMaxReward, getMaxReward, hasMinReward, getMinReward, isMarkov, writeState };
+  virtual bool get_info(InfoTag tag) const = 0;
+  virtual double get_info_value(InfoTag tag) const = 0;
 };
 
 extern std::shared_ptr<const MCTS_Environment::SAO> NoHandle;

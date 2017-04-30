@@ -100,7 +100,7 @@ void glMakeStdSimplex(int num);
 void glMakeTorus(int num);
 void glDrawRobotArm(float a, float b, float c, float d, float e, float f);
 uint glImageTexture(const byteA &img);
-void glDrawTexQuad(uint texture,
+void glDrawTexQuad(const byteA &img,
                    float x1, float y1, float z1, float x2, float y2, float z2,
                    float x3, float y3, float z3, float x4, float y4, float z4,
                    float mulX=1., float mulY=1.);

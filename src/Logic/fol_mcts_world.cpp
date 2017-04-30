@@ -245,7 +245,12 @@ bool FOL_World::is_feasible_action(const MCTS_Environment::Handle& action){
 }
 
 const MCTS_Environment::Handle FOL_World::get_state(){
-  return Handle(new State());
+  return Handle(new State(state));
+}
+
+void FOL_World::set_state(const MCTS_Environment::Handle& _state){
+  const State *s = std::dynamic_pointer_cast<const State>(_state).get();
+  setState(s->state);
 }
 
 bool FOL_World::is_terminal_state() const{

@@ -25,8 +25,9 @@ struct FOL_World:MCTS_Environment{
     Node *rule;
     NodeL substitution;
     int id;
-    Decision(bool waitDecision, Node *rule, const NodeL& substitution, int id):waitDecision(waitDecision),rule(rule), substitution(substitution), id(id) {}
-    bool operator==(const SAO & other) const {
+    Decision(bool waitDecision, Node *rule, const NodeL& substitution, int id)
+      : waitDecision(waitDecision), rule(rule), substitution(substitution), id(id) {}
+    virtual bool operator==(const SAO & other) const {
       auto decision = dynamic_cast<const Decision *>(&other);
       if(decision==nullptr) return false;
       if(decision->waitDecision!=waitDecision) return false;
@@ -40,10 +41,12 @@ struct FOL_World:MCTS_Environment{
       return std::hash<int>()(id);
     }
   };
+
   struct Observation:SAO{
     int id;
-    Observation(int id): id(id) {}
-    bool operator==(const SAO & other) const {
+    Observation(int id)
+      : id(id) {}
+    virtual bool operator==(const SAO & other) const {
       auto ob = dynamic_cast<const Observation *>(&other);
       return ob!=nullptr && ob->id==id;
     }
@@ -52,7 +55,19 @@ struct FOL_World:MCTS_Environment{
       return std::hash<int>()(id);
     }
   };
-  struct State:SAO {};
+
+  struct State:SAO {
+    Graph *state;
+    State(Graph* state):state(state){}
+    virtual bool operator==(const SAO & other) const {
+      auto ob = dynamic_cast<const State*>(&other);
+      return ob!=nullptr && ob->state==state;
+    }
+    void write(ostream& os) const { os <<*state; }
+//    virtual size_t get_hash() const {
+//      return std::hash<int>()(id);
+//    }
+  };
 
   uint T_step, start_T_step; ///< discrete "time": decision steps so far
   double T_real, start_T_real;///< real time so far;
@@ -90,6 +105,8 @@ struct FOL_World:MCTS_Environment{
   virtual const std::vector<Handle> get_actions();
   virtual bool is_feasible_action(const Handle& action);
   virtual const Handle get_state();
+  virtual void set_state(const Handle& _state);
+
   virtual bool is_terminal_state() const;
   virtual void make_current_state_default();
   virtual void reset_state();

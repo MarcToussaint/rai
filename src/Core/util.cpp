@@ -533,7 +533,7 @@ void wait(double sec, bool msg_on_fail) {
 /// wait for an ENTER at the console
 bool wait(bool useX11) {
   if(!mlr::getInteractivity()){
-    mlr::wait(.5);
+    mlr::wait(.05);
     return true;
   }
   if(!useX11){
@@ -1375,7 +1375,7 @@ void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDF
   gnuplotServer()->send(cmd.p, persist);
 
   if(!mlr::getInteractivity()){
-    mlr::wait(.5);
+    mlr::wait(.05);
   }
 }
 

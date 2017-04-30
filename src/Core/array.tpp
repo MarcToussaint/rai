@@ -1552,15 +1552,23 @@ template<class T> bool mlr::Array<T>::isSorted(ElemCompare comp) const {
 
 
 /// fast find method in a sorted array, returns index where x would fit into array
-template<class T> uint mlr::Array<T>::rankInSorted(const T& x, ElemCompare comp) const {
+template<class T> uint mlr::Array<T>::rankInSorted(const T& x, ElemCompare comp, bool rankAfterIfEqual) const {
   if(!N) return 0;
   T *lo=p, *hi=p+N-1, *mi;
-  if(comp(x, *lo)) return 0;
-  if(comp(*hi, x)) return N;
+  if(!rankAfterIfEqual){
+    if(comp(x, *lo)) return 0;
+  }else{
+    if(comp(*hi, x)) return N;
+  }
   for(;;){
     if(lo+1>=hi) return hi-p;
     mi=lo+(hi-lo)/2; //works (the minus operator on pointers gives #objects)
-    if(comp(*mi, x)) lo=mi; else hi=mi;
+    if(comp(*mi, x)){
+      if(!rankAfterIfEqual && comp(x, *mi)) hi=mi; //x and mi are equal -> we crop from hi
+      else lo=mi;
+    }else{
+      hi=mi;
+    }
   }
   HALT("you shouldn't be here");
   return 0;
@@ -1575,8 +1583,8 @@ template<class T> int mlr::Array<T>::findValueInSorted(const T& x, ElemCompare c
 }
 
 /// fast insert method in a sorted array, the array remains sorted
-template<class T> uint mlr::Array<T>::insertInSorted(const T& x, ElemCompare comp) {
-  uint cand_pos = rankInSorted(x, comp);
+template<class T> uint mlr::Array<T>::insertInSorted(const T& x, ElemCompare comp, bool insertAfterIfEqual) {
+  uint cand_pos = rankInSorted(x, comp, insertAfterIfEqual);
   insert(cand_pos, x);
   return cand_pos;
 }

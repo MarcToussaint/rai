@@ -24,6 +24,7 @@ template<class T> struct PriorityQueueEntry{
   void write(std::ostream& os) const{ os <<'[' <<p <<": " <<*x <<']' <<endl; }
   static bool cmp(const PriorityQueueEntry<T>& a, const PriorityQueueEntry<T>& b);
 };
+
 template<class T> stdOutPipe(PriorityQueueEntry<T>)
 
 template<class T>
@@ -36,14 +37,14 @@ template<class T> struct PriorityQueue : mlr::Array<PriorityQueueEntry<T> > {
     mlr::Array<PriorityQueueEntry<T> >::memMove = true;
   }
 
-  void add(double p, const T& x){
+  void add(double p, const T& x, bool fromBackIfEqual=false){
     PriorityQueueEntry<T> e = {p, x};
-    mlr::Array<PriorityQueueEntry<T> >::insertInSorted(e, PriorityQueueEntry<T>::cmp);
+    mlr::Array<PriorityQueueEntry<T> >::insertInSorted(e, PriorityQueueEntry<T>::cmp, fromBackIfEqual);
   }
 
   T pop(){
     T x=mlr::Array<PriorityQueueEntry<T> >::first().x;
-    remove(0);
+    mlr::Array<PriorityQueueEntry<T> >::remove(0);
     return x;
   }
 
