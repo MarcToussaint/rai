@@ -58,15 +58,17 @@ struct FOL_World:MCTS_Environment{
 
   struct State:SAO {
     Graph *state;
-    State(Graph* state):state(state){}
+    uint T_step;
+    double T_real;
+    double R_total;
+
+    State(Graph* state, FOL_World& fol_state)
+      : state(state), T_step(fol_state.T_step), T_real(fol_state.T_real), R_total(fol_state.R_total) {}
     virtual bool operator==(const SAO & other) const {
       auto ob = dynamic_cast<const State*>(&other);
       return ob!=nullptr && ob->state==state;
     }
     void write(ostream& os) const { os <<*state; }
-//    virtual size_t get_hash() const {
-//      return std::hash<int>()(id);
-//    }
   };
 
   uint T_step, start_T_step; ///< discrete "time": decision steps so far
@@ -76,6 +78,7 @@ struct FOL_World:MCTS_Environment{
   //-- parameters
   bool hasWait;
   double gamma, stepCost, timeCost, deadEndCost;
+  uint maxHorizon;
 
   bool deadEnd, successEnd;
   Graph KB;     ///< current knowledge base
@@ -104,7 +107,7 @@ struct FOL_World:MCTS_Environment{
   virtual TransitionReturn transition(const Handle& action); //returns (observation, reward)
   virtual const std::vector<Handle> get_actions();
   virtual bool is_feasible_action(const Handle& action);
-  virtual const Handle get_state();
+  virtual const Handle get_stateCopy();
   virtual void set_state(const Handle& _state);
 
   virtual bool is_terminal_state() const;

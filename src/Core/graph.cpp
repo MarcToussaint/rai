@@ -375,6 +375,8 @@ Node* Graph::edit(Node *ed){
 void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubgraphToNonsubgraph){
   DEBUG(G.checkConsistency());
 
+  CHECK(this!=&G, "Graph self copy -- never do this");
+
   if(!enforceCopySubgraphToNonsubgraph){
     if(G.isNodeOfGraph && !this->isNodeOfGraph){
       HALT("Typically you should not copy a subgraph into a non-subgraph (or call the copy operator with a subgraph).\
@@ -621,7 +623,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
           is.clear();
           mlr::String substr;
           substr.read(is,"",">",false);
-          PARSERR("could not parse value of type '" <<str <<"' -- no such type has been registered; converting this to string: '"<<substr<<"'", pinfo);
+//          PARSERR("could not parse value of type '" <<str <<"' -- no such type has been registered; converting this to string: '"<<substr<<"'", pinfo);
           str = STRING('<' <<str <<' ' <<substr <<'>');
           node = newNode<mlr::String>(keys, parents, str);
         } else {

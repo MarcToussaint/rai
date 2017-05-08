@@ -20,12 +20,14 @@
 
 //===========================================================================
 
+struct AStar;
 struct AStar_Node;
 typedef mlr::Array<AStar_Node*> AStar_NodeL;
 
 //===========================================================================
 
 struct AStar_Node{
+  AStar& astar;
   MCTS_Environment& world;
   MCTS_Environment::Handle action;
   MCTS_Environment::Handle state;
@@ -33,10 +35,11 @@ struct AStar_Node{
 
   AStar_Node *parent;
   mlr::Array<AStar_Node*> children;
+
   uint d;               ///< decision depth of this node
   double time;          ///< real time
-  double g=-1.; ///< cost-so-far, path cost (TODO: replace by array of bounds)
-  double h=-1.; ///< cost-so-far, path cost (TODO: replace by array of bounds)
+  double g=0.; ///< cost-so-far, path cost (TODO: replace by array of bounds)
+  double h=0.; ///< cost-so-far, path cost (TODO: replace by array of bounds)
 
   uint graphIndex=0; ///< internal: for output of graphs (to display)
 
@@ -45,10 +48,12 @@ struct AStar_Node{
   bool isTerminal=false;
 
   /// root node init
-  AStar_Node(MCTS_Environment& world);
+  AStar_Node(AStar& astar, MCTS_Environment& world);
 
   /// child node creation
   AStar_Node(AStar_Node* parent, const MCTS_Environment::Handle& a);
+
+  ~AStar_Node(){ NIY; }
 
   //- computations on the node
   void expand();           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
@@ -71,6 +76,7 @@ struct AStar_Node{
   void getAll(AStar_NodeL& L);
   AStar_NodeL getAll(){ AStar_NodeL L; getAll(L); return L; }
 };
+stdOutPipe(AStar_Node)
 
 
 //===========================================================================
@@ -79,11 +85,14 @@ struct AStar{
   AStar_Node *root;
   PriorityQueue<AStar_Node*> queue;
   mlr::Array<AStar_Node*> solutions;
+  uint size, depth;
 
   AStar(MCTS_Environment& world);
 
   bool step();
   void run();
+
+  void reportQueue();
 };
 
 //===========================================================================

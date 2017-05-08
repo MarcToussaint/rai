@@ -67,7 +67,7 @@ struct MCTS_Environment {
   virtual bool is_feasible_action(const Handle& action){ return true; }
 
   /// Get the current state
-  virtual const Handle get_state() = 0;
+  virtual const Handle get_stateCopy() = 0;
 
   /// Get the current state
   virtual void set_state(const Handle& state){ std::cerr <<"not implemented for world of type " <<typeid(this).name() <<std::endl; exit(-1); }
@@ -85,7 +85,10 @@ struct MCTS_Environment {
   enum InfoTag{ getGamma, hasTerminal, isDeterministic, hasMaxReward, getMaxReward, hasMinReward, getMinReward, isMarkov, writeState };
   virtual bool get_info(InfoTag tag) const = 0;
   virtual double get_info_value(InfoTag tag) const = 0;
+
+  virtual void write(std::ostream& os) const{ std::cerr <<"NOT OVERLOADED!" <<std::endl; }
 };
+inline std::ostream& operator<<(std::ostream& os, const MCTS_Environment& E){ E.write(os); return os; }
 
 extern std::shared_ptr<const MCTS_Environment::SAO> NoHandle;
 

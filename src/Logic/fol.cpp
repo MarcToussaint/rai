@@ -620,24 +620,25 @@ bool forwardChaining_propositional(Graph& KB, Node* q){
 
 double evaluateFunction(Graph& func, Graph& state, int verbose){
   double f=0.;
-  for(Node *tree:func){
+  for(Node *tree:func){ //trees are additive; within a tree, only one leaf contributes
     double ftree=0.;
     Graph& treeG = tree->graph();
-    for(Node *term:treeG){
-      if(term==treeG.last()) break;
-      Graph& termG = term->graph();
-      if(verbose>2) LOG(0) <<"testing tree term " <<termG <<endl;
-      NodeL subs = getRuleSubstitutions2(state, term, 0);
+    for(Node *leaf:treeG){ //every tree is a list of leafs (terms), each leaf a graph
+      if(leaf==treeG.last()) break;
+      Graph& leafG = leaf->graph();
+      if(verbose>2) LOG(0) <<"testing tree leaf " <<leafG <<endl;
+      NodeL subs = getRuleSubstitutions2(state, leaf, 0); //a leaf is like a rule -> can be tested for substitutions
       if(subs.d0){
-        CHECK(termG.last()->isOfType<double>(),"");
-        double fterm = termG.last()->get<double>();
-        ftree += fterm;
-        if(verbose>0) LOG(0) <<"tree term HIT " <<termG <<" with f-value " <<fterm <<endl;
-        break;
+//        cout <<"STATE=" <<state <<endl;
+        CHECK(leafG.last()->isOfType<double>(),"");
+        double fleaf = leafG.last()->get<double>(); //the last attribute is the reward
+        ftree += fleaf;
+        if(verbose>0) LOG(0) <<"tree leaf HIT " <<leafG <<" with f-value " <<fleaf <<endl;
+        break; //if a leaf evaluates true, no further leafs are considered
       }
     }
     CHECK(treeG.last()->isOfType<double>(),"");
-    f += treeG.last()->get<double>() * ftree;
+    f += treeG.last()->get<double>() * ftree; //the last attribute is a weight of the whole tree
   }
   return f;
 }

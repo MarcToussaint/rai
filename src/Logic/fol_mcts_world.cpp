@@ -44,12 +44,12 @@ void FOL_World::Decision::write(ostream& os) const{
 }
 
 FOL_World::FOL_World()
-    : hasWait(true), gamma(0.9), stepCost(0.1), timeCost(1.), deadEndCost(100.),
+    : hasWait(true), gamma(0.9), stepCost(0.1), timeCost(1.), deadEndCost(100.), maxHorizon(100),
       state(NULL), lastDecisionInState(NULL), verbose(0), verbFil(0),
       lastStepReward(0.), lastStepDuration(0.), lastStepProbability(1.), lastStepObservation(0), count(0) {}
 
 FOL_World::FOL_World(istream& is)
-    : hasWait(true), gamma(0.9), stepCost(0.1), timeCost(1.), deadEndCost(100.),
+    : hasWait(true), gamma(0.9), stepCost(0.1), timeCost(1.), deadEndCost(100.), maxHorizon(100),
       state(NULL), lastDecisionInState(NULL), verbose(0), verbFil(0),
       lastStepReward(0.), lastStepDuration(0.), lastStepProbability(1.), lastStepObservation(0), count(0) {
   init(is);
@@ -76,6 +76,7 @@ void FOL_World::init(istream& is){
     stepCost = params->get<double>("stepCost", stepCost);
     timeCost = params->get<double>("timeCost", timeCost);
     deadEndCost = params->get<double>("deadEndCost", deadEndCost);
+    maxHorizon = (uint)params->get<double>("maxHorizon", maxHorizon);
   }
 
   if(verbose>1){
@@ -128,13 +129,6 @@ MCTS_Environment::TransitionReturn FOL_World::transition(const Handle& action){
   }else{
     lastDecisionInState = createNewFact(*state, {Wait_keyword});
     lastDecisionInState->keys.append("decision");
-  }
-
-  //-- check for rewards
-  if(rewardFct){
-    lastStepReward += evaluateFunction(*rewardFct, *state, verbose-3);
-  }else{
-    if(successEnd) lastStepReward += 100.;
   }
 
   //-- apply effects of decision
@@ -202,7 +196,14 @@ MCTS_Environment::TransitionReturn FOL_World::transition(const Handle& action){
 
   //-- check for QUIT
   successEnd = getEqualFactInKB(*state, Quit_literal);
-  deadEnd = (T_step>100);
+  deadEnd = (T_step>maxHorizon);
+
+  //-- check for rewards
+  if(rewardFct){
+    lastStepReward += evaluateFunction(*rewardFct, *state, verbose-3);
+  }else{
+    if(successEnd) lastStepReward += 100.;
+  }
 
   if(deadEnd) lastStepReward -= deadEndCost;
 
@@ -244,13 +245,14 @@ bool FOL_World::is_feasible_action(const MCTS_Environment::Handle& action){
   return substitutedRulePreconditionHolds(*state, d->rule, d->substitution);
 }
 
-const MCTS_Environment::Handle FOL_World::get_state(){
-  return Handle(new State(state));
+const MCTS_Environment::Handle FOL_World::get_stateCopy(){
+  return std::make_shared<const State>(createStateCopy(), *this);
 }
 
 void FOL_World::set_state(const MCTS_Environment::Handle& _state){
   const State *s = std::dynamic_pointer_cast<const State>(_state).get();
-  setState(s->state);
+  setState(s->state, s->T_step);
+  T_real = s->T_real;
 }
 
 bool FOL_World::is_terminal_state() const{
@@ -367,9 +369,13 @@ Graph* FOL_World::getState(){
 }
 
 void FOL_World::setState(Graph *s, int setT_step){
+  if(state){
+    CHECK(s->isNodeOfGraph != state->isNodeOfGraph,"you are setting the state to itself");
+  }
   if(!state) state = &KB.newSubgraph({"STATE"}, {s->isNodeOfGraph})->value;
   state->copy(*s);
   {  //reqire the parent! NOT NICE!
+      //if (state) already existed (3 lines above), then is it not a child of *s -> make it a chile of *s
     Node *n=state->isNodeOfGraph;
     n->parents.scalar()->parentOf.removeValue(n);
     n->parents.scalar() = s->isNodeOfGraph;
