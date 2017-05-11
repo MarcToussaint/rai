@@ -111,7 +111,7 @@ struct FOL_World:MCTS_Environment{
   virtual void set_state(const Handle& _state);
 
   virtual bool is_terminal_state() const;
-  virtual void make_current_state_default();
+  virtual void make_current_state_new_start();
   virtual void reset_state();
 
   virtual bool get_info(InfoTag tag) const;

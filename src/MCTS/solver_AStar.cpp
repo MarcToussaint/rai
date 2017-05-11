@@ -68,7 +68,6 @@ void AStar_Node::getGraph(Graph& G, Node* n) {
   }else{
     n = G.newNode<bool>({STRING("a:"<<*action)}, {n}, true);
   }
-  graphIndex = n->index;
   n->keys.append(STRING("d:" <<d <<" t:" <<time <<' '));
   n->keys.append(STRING("f:" <<g+h <<" g:" <<g <<" h:" <<h));
 //  if(mcStats && mcStats->n) n->keys.append(STRING("MC best:" <<mcStats->X.first() <<" n:" <<mcStats->n));

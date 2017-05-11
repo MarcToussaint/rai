@@ -705,8 +705,13 @@ void Graph::writeParseInfo(std::ostream& os) {
     os <<"NODE '" <<*n <<"' " <<getParseInfo(n) <<endl;
 }
 
-void Graph::displayDot(){
-  writeDot(FILE("z.dot"), false, false, 0);
+void Graph::displayDot(Node *highlight){
+  if(highlight){
+    CHECK(highlight->container==this,"");
+    writeDot(FILE("z.dot"), false, false, 0, highlight->index);
+  }else{
+    writeDot(FILE("z.dot"), false, false, 0);
+  }
   int r;
   r = system("dot -Tpdf z.dot > z.pdf");  if(r) LOG(-1) <<"could not startup dot";
   r = system("evince z.pdf &");  if(r) LOG(-1) <<"could not startup evince";

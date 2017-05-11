@@ -176,7 +176,7 @@ struct Graph : NodeL {
   void writeHtml(std::ostream& os, std::istream& is);
   void writeParseInfo(std::ostream& os);
 
-  void displayDot();
+  void displayDot(Node *highlight=NULL);
 
   //private:
   friend struct Node;

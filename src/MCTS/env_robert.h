@@ -79,8 +79,8 @@ public:
         }
         return action_container;
     }
-    virtual void make_current_state_default() {
-        env_marc->make_current_state_default();
+    virtual void make_current_state_new_start() {
+        env_marc->make_current_state_new_start();
     }
     virtual void reset_state() {
         env_marc->reset_state();

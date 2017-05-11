@@ -278,7 +278,7 @@ bool FOL_World::is_terminal_state() const{
   return false;
 }
 
-void FOL_World::make_current_state_default() {
+void FOL_World::make_current_state_new_start() {
   if(!start_state) start_state = &KB.newSubgraph({"START_STATE"}, state->isNodeOfGraph->parents)->value;
   start_state->copy(*state);
   start_state->isNodeOfGraph->keys(0)="START_STATE";

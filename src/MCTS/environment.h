@@ -76,7 +76,7 @@ struct MCTS_Environment {
   virtual bool is_terminal_state() const = 0;
 
   /// Makes the current state the future start state set by reset_state().
-  virtual void make_current_state_default() = 0;
+  virtual void make_current_state_new_start() = 0;
 
   /// Reset the environment's state to the start state
   virtual void reset_state() = 0;
