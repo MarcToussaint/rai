@@ -21,18 +21,14 @@
 
 uint COUNT_kin=0;
 uint COUNT_evals=0;
-uint COUNT_poseOpt=0;
-uint COUNT_seqOpt=0;
-uint COUNT_pathOpt=0;
+uintA COUNT_opt=consts<uint>(0, 4);
 
 ManipulationTree_Node::ManipulationTree_Node(mlr::KinematicWorld& kin, FOL_World& _fol, uint levels)
   : parent(NULL), step(0),
     fol(_fol), folState(NULL), folDecision(NULL), folAddToState(NULL),
     startKinematics(kin), effKinematics(),
-    L(levels),
-    rootMC(NULL), mcStats(NULL),
-    poseProblem(NULL), seqProblem(NULL), pathProblem(NULL),
-    mcCount(0), mcCost(0.) {
+    L(levels), bound(0.),
+    rootMC(NULL), mcStats(NULL), mcCount(0), mcCost(0.) {
   //this is the root node!
   fol.reset_state();
   folState = fol.createStateCopy();
@@ -42,16 +38,19 @@ ManipulationTree_Node::ManipulationTree_Node(mlr::KinematicWorld& kin, FOL_World
   constraints = zeros(L);
   h = zeros(L);
   count = consts<uint>(0, L);
+  count(0) = 1;
   feasible = consts<bool>(true, L);
+  komoProblem = consts<KOMO*>(NULL, L);
+  opt.resize(L);
+  bound=0.;
 }
 
 ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS_Environment::Handle& a)
   : parent(parent), fol(parent->fol),
      folState(NULL), folDecision(NULL), folAddToState(NULL),
     startKinematics(parent->startKinematics), effKinematics(),
-    L(parent->L),
-    rootMC(NULL), mcStats(NULL),
-    poseProblem(NULL), seqProblem(NULL), pathProblem(NULL) {
+    L(parent->L), bound(0.),
+    rootMC(NULL), mcStats(NULL), mcCount(0), mcCost(0.) {
   step=parent->step+1;
   parent->children.append(this);
   fol.setState(parent->folState, parent->step);
@@ -68,9 +67,13 @@ ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS
   cost = zeros(L);
   h = zeros(L);
   count = consts<uint>(0, L);
+  count(0) = 1;
   feasible = consts<bool>(true, L);
-  cost(0) = parent->cost(0) - ret.reward; //cost-so-far
+  cost(0) = parent->cost(0) - 0.1*ret.reward; //cost-so-far
   constraints = zeros(L);
+  komoProblem = consts<KOMO*>(NULL, L);
+  opt.resize(L);
+  bound = parent->bound - 0.1*ret.reward;
 //  h(0) = 0.; //heuristic
 }
 
@@ -141,10 +144,122 @@ void ManipulationTree_Node::addMCRollouts(uint num, int stepAbort){
   mcCount += num;
 //  mcStats->report();
 //  auto a = rootMC->getBestAction();
-//  cout <<"******** BEST ACTION " <<*a <<endl;
+  //  cout <<"******** BEST ACTION " <<*a <<endl;
 }
 
+void ManipulationTree_Node::optLevel(uint level){
+  komoProblem(level) = new KOMO();
+  KOMO& komo(*komoProblem(level));
+
+  //-- prepare the komo problem
+  switch(level){
+  case 1:{
+      //pose: propagate eff kinematics
+      if(!parent) effKinematics = startKinematics;
+      else{
+        CHECK(parent->effKinematics.q.N,"");
+        effKinematics = parent->effKinematics;
+      }
+
+      komo.setModel(effKinematics);
+      komo.setTiming(1., 2, 5., 1, false);
+
+      komo.setHoming(-1., -1., 1e-2);
+      komo.setSquaredQVelocities(.5); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
+//      komo.setSquaredFixJointVelocities(-1., -1., 1e3);
+      komo.setSquaredFixSwitchedObjects(-1., -1., 1e3);
+
+      komo.setAbstractTask(0., *folState);
+  } break;
+  case 2:{
+      komo.setModel(startKinematics);
+      komo.setTiming(time, 2, 5., 1, false);
+
+      komo.setHoming(-1., -1., 1e-2);
+      komo.setSquaredQVelocities();
+      komo.setSquaredFixJointVelocities(-1., -1., 1e3);
+      komo.setSquaredFixSwitchedObjects(-1., -1., 1e3);
+
+      for(ManipulationTree_Node *node:getTreePath()){
+        komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
+      }
+  } break;
+  case 3:{
+      komo.setModel(startKinematics);
+      komo.setTiming(time, 10, 5., 2, false);
+
+      komo.setHoming(-1., -1., 1e-2);
+      komo.setSquaredQAccelerations();
+//      komo.setSquaredQVelocities();
+      komo.setSquaredFixJointVelocities(-1., -1., 1e3);
+      komo.setSquaredFixSwitchedObjects(-1., -1., 1e3);
+
+      for(ManipulationTree_Node *node:getTreePath()){
+        komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
+      }
+  } break;
+  }
+
+  //-- optimize
+  DEBUG( FILE("z.fol") <<fol; )
+  DEBUG( komo.getReport(false, 1, FILE("z.problem")); )
+  komo.reset();
+  try{
+    komo.run();
+  } catch(const char* msg){
+    cout <<"KOMO FAILED: " <<msg <<endl;
+  }
+  COUNT_evals += komo.opt->newton.evals;
+  COUNT_kin += mlr::KinematicWorld::setJointStateCount;
+  COUNT_opt(level)++;
+  count(level)++;
+
+  DEBUG( komo.getReport(false, 1, FILE("z.problem")); )
+
+  Graph result = komo.getReport();
+  DEBUG( FILE("z.problem.cost") <<result; )
+  double cost_here = result.get<double>({"total","sqrCosts"});
+  double constraints_here = result.get<double>({"total","constraints"});
+  bool feas = (constraints_here<.5);
+
+  //-- post process komo problem for level==1
+  if(level==1){
+      cost_here -= 0.1*ret.reward; //account for the symbolic costs
+      if(parent) cost_here += parent->cost(level); //this is sequentially additive cost
+
+      effKinematics = *komo.configurations.last();
+
+      for(mlr::KinematicSwitch *sw: komo.switches){
+    //    CHECK_EQ(sw->timeOfApplication, 1, "need to do this before the optimization..");
+        if(sw->timeOfApplication>=2) sw->apply(effKinematics);
+      }
+      effKinematics.topSort();
+      DEBUG( effKinematics.checkConsistency(); )
+      effKinematics.getJointState();
+  }else{
+      cost_here += cost(0); //account for the symbolic costs
+  }
+
+  //-- read out and update bound
+  //update the bound
+  if(feas){
+    if(count(level)==1/*&& count({2,-1})==0 (also no higher levels)*/ || cost_here<bound) bound=cost_here;
+  }
+
+  if(count(level)==1 || cost_here<cost(level)){
+    cost(level) = cost_here;
+    constraints(level) = constraints_here;
+    feasible(level) = feas;
+    opt(level) = komo.x;
+  }
+
+  if(!feasible(level))
+    labelInfeasible();
+}
+
+#ifdef OLD
 void ManipulationTree_Node::solvePoseProblem(){
+  uint level=1;
 
   //reset the effective kinematics:
   if(parent && !parent->effKinematics.q.N){
@@ -182,8 +297,8 @@ void ManipulationTree_Node::solvePoseProblem(){
   }
   COUNT_evals += komo.opt->newton.evals;
   COUNT_kin += mlr::KinematicWorld::setJointStateCount;
-  COUNT_poseOpt++;
-  count(1)++;
+  COUNT_opt(level)++;
+  count(level)++;
 
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); )
 
@@ -191,18 +306,24 @@ void ManipulationTree_Node::solvePoseProblem(){
   DEBUG( FILE("z.problem.cost") <<result; )
   double cost_here = result.get<double>({"total","sqrCosts"});
   double constraints_here = result.get<double>({"total","constraints"});
+  bool feas = (constraints_here<.5);
 
-  if(parent) cost_here += parent->cost(1);
-  cost_here -= ret.reward; //add the symbolic transition cost
+  cost_here -= 0.1*ret.reward; //account for the symbolic costs
+  if(parent) cost_here += parent->cost(level); //this is sequentially additive cost
 
-  if(!pose.N || cost_here<cost(1)){
-    cost(1) = cost_here;
-    constraints(1) = constraints_here;
-    feasible(1) = (constraints_here<.5);
+  //update the bound
+  if(feas){
+    if(count(level)==1/*&& count({2,-1})==0 (also no higher levels)*/ || cost_here<bound) bound=cost_here;
+  }
+
+  if(count(level)==1 || cost_here<cost(level)){
+    cost(level) = cost_here;
+    constraints(level) = constraints_here;
+    feasible(level) = feas;
     pose = komo.x;
   }
 
-  if(!feasible(1))
+  if(!feasible(level))
     labelInfeasible();
 
   effKinematics = *komo.configurations.last();
@@ -217,8 +338,9 @@ void ManipulationTree_Node::solvePoseProblem(){
 }
 
 void ManipulationTree_Node::solveSeqProblem(int verbose){
+  uint level=2;
 
-  if(!step){ feasible(2)=true; return; } //there is no sequence to compute
+  if(!step){ feasible(level)=true; return; } //there is no sequence to compute
 
   //-- collect 'path nodes'
   ManipulationTree_NodeL treepath = getTreePath();
@@ -247,8 +369,8 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   }
   COUNT_evals += komo.opt->newton.evals;
   COUNT_kin += mlr::KinematicWorld::setJointStateCount;
-  COUNT_seqOpt++;
-  count(2)++;
+  COUNT_opt(level)++;
+  count(level)++;
 
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); )
 //  komo.checkGradients();
@@ -257,23 +379,30 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   DEBUG( FILE("z.problem.cost") <<result; )
   double cost_here = result.get<double>({"total","sqrCosts"});
   double constraints_here = result.get<double>({"total","constraints"});
+  bool feas = (constraints_here<.5);
 
-  cost_here -= ret.reward; //add the symbolic transition cost
+  cost_here += cost(0); //account for the symbolic costs
 
-  if(!seq.N || cost_here<cost(2)){
-    cost(2) = cost_here;
-    constraints(2) = constraints_here;
-    feasible(2) = (constraints_here<.5);
+  //update the bound
+  if(feas){
+    if(!count(level)/*actually !count({1,-1}) (also no higher levels)*/ || cost_here<bound) bound=cost_here;
+  }
+
+  if(!seq.N || cost_here<cost(level)){
+    cost(level) = cost_here;
+    constraints(level) = constraints_here;
+    feasible(level) = (constraints_here<.5);
     seq = komo.x;
   }
 
-  if(!feasible(2))
+  if(!feasible(level))
     labelInfeasible();
 }
 
 void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
+  uint level=3;
 
-  if(!step){ feasible(3)=true; return; } //there is no path to compute
+  if(!step){ feasible(level)=true; return; } //there is no path to compute
 
   //-- collect 'path nodes'
   ManipulationTree_NodeL treepath = getTreePath();
@@ -302,8 +431,8 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   }
   COUNT_evals += komo.opt->newton.evals;
   COUNT_kin += mlr::KinematicWorld::setJointStateCount;
-  COUNT_pathOpt++;
-  count(3)++;
+  COUNT_opt(level)++;
+  count(level)++;
 
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); )
 //  komo.checkGradients();
@@ -312,19 +441,26 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   DEBUG( FILE("z.problem.cost") <<result; )
   double cost_here = result.get<double>({"total","sqrCosts"});
   double constraints_here = result.get<double>({"total","constraints"});
+  bool feas = (constraints_here<.5);
 
-  cost_here -= ret.reward; //add the symbolic transition cost
+  cost_here += cost(0); //account for the symbolic costs
 
-  if(!path.N || cost_here<cost(3)){
-    cost(3) = cost_here;
-    constraints(3) = constraints_here;
-    feasible(3) = (constraints_here<.5);
+  //update the bound
+  if(feas){
+    if(!count(level)/*actually !count({1,-1}) (also no higher levels)*/ || cost_here<bound) bound=cost_here;
+  }
+
+  if(!path.N || cost_here<cost(level)){
+    cost(level) = cost_here;
+    constraints(level) = constraints_here;
+    feasible(level) = (constraints_here<.5);
     path = komo.x;
   }
 
-  if(!feasible(3))
+  if(!feasible(level))
     labelInfeasible();
 }
+#endif
 
 void ManipulationTree_Node::setInfeasible(){
   isInfeasible = true;
@@ -499,13 +635,13 @@ void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
   }else{
     n = G.newNode<bool>({STRING("a:"<<*decision)}, {n}, true);
   }
-  n->keys.append(STRING("s:" <<step <<" t:" <<time <<' ' <<folState->isNodeOfGraph->keys.scalar()));
+  n->keys.append(STRING("s:" <<step <<" t:" <<time <<" bound:" <<bound <<" feas:" <<!isInfeasible <<" term:" <<isTerminal <<' ' <<folState->isNodeOfGraph->keys.scalar()));
+  for(uint l=0;l<L;l++)
+      n->keys.append(STRING("L" <<l <<" #:" <<count(l) <<" c:" <<cost(l) <<"|" <<constraints(l) <<" h:" <<h(l) <<" f:" <<feasible(l) <<" terminal:" <<isTerminal));
+
   if(mcStats && mcStats->n) n->keys.append(STRING("MC best:" <<mcStats->X.first() <<" n:" <<mcStats->n));
-  n->keys.append(STRING("sym  g:" <<cost(0) <<" h:" <<h(0) <<" f:" <<f() <<" terminal:" <<isTerminal));
+//  n->keys.append(STRING("sym  g:" <<cost(0) <<" h:" <<h(0) <<" f:" <<f() <<" terminal:" <<isTerminal));
   n->keys.append(STRING("MC   #" <<mcCount <<" f:" <<mcCost));
-  n->keys.append(STRING("pose #" <<count(1) <<" f:" <<cost(1) <<" g:" <<constraints(1) <<" feasible:" <<feasible(1)));
-  n->keys.append(STRING("seq  #" <<count(2) <<" f:" <<cost(2) <<" g:" <<constraints(2) <<" feasible:" <<feasible(2)));
-  n->keys.append(STRING("path #" <<count(3) <<" f:" <<cost(3) <<" g:" <<constraints(3) <<" feasible:" <<feasible(3)));
   if(folAddToState) n->keys.append(STRING("symAdd:" <<*folAddToState));
   if(note.N) n->keys.append(note);
 

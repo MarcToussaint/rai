@@ -26,7 +26,8 @@ struct PlainMC;
 struct MCStatistics;
 typedef mlr::Array<ManipulationTree_Node*> ManipulationTree_NodeL;
 
-extern uint COUNT_kin, COUNT_evals, COUNT_poseOpt, COUNT_seqOpt, COUNT_pathOpt;
+extern uint COUNT_kin, COUNT_evals;
+extern uintA COUNT_opt;
 
 //===========================================================================
 
@@ -60,15 +61,19 @@ struct ManipulationTree_Node{
   boolA feasible;   ///< feasibility for each level
   uintA count;      ///< how often was this level evaluated
   double f(uint level=0){ return cost(level)+h(level); }
+  double bound=0.;
 
   // temporary stuff -- only for convenience to display and store
-//  KOMO *poseProblem, *seqProblem, *pathProblem;
+  // MC stuff -- TODO
   PlainMC *rootMC; //only the root node owns an MC rollout generator
   MCStatistics *mcStats;
-  KOMO *poseProblem, *seqProblem, *pathProblem; //
-  arr pose, seq, path;
   uint mcCount;
   double mcCost;
+
+  mlr::Array<KOMO*> komoProblem;
+  arrA opt;
+//  KOMO *poseProblem, *seqProblem, *pathProblem; //storing these allows to display optimized paths -- otherwise we could make them temporary to the methods
+//  arr pose, seq, path;
 
   // display helpers
   mlr::String note;
@@ -83,6 +88,8 @@ struct ManipulationTree_Node{
   void expand();           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
   arr generateRootMCRollouts(uint num, int stepAbort, const mlr::Array<MCTS_Environment::Handle>& prefixDecisions);
   void addMCRollouts(uint num,int stepAbort);
+
+  void optLevel(uint level);
   void solvePoseProblem(); ///< solve the effective pose problem
   void solveSeqProblem(int verbose=0);  ///< compute a sequence of key poses along the decision path
   void solvePathProblem(uint microSteps, int verbose=0); ///< compute a full path along the decision path
