@@ -251,6 +251,7 @@ const MCTS_Environment::Handle FOL_World::get_stateCopy(){
 
 void FOL_World::set_state(const MCTS_Environment::Handle& _state){
   const State *s = std::dynamic_pointer_cast<const State>(_state).get();
+  CHECK(s, "the given handle was not a FOL_World::State handle");
   setState(s->state, s->T_step);
   T_real = s->T_real;
 }

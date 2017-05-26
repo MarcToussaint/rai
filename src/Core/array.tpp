@@ -1588,9 +1588,9 @@ template<class T> int mlr::Array<T>::findValueInSorted(const T& x, ElemCompare c
 template<class T> uint mlr::Array<T>::insertInSorted(const T& x, ElemCompare comp, bool insertAfterIfEqual) {
   uint cand_pos = rankInSorted(x, comp, insertAfterIfEqual);
   insert(cand_pos, x);
-  if(true){
-      for(uint i=0;i<N-1;i++) CHECK(comp(elem(i),elem(i+1)), "this is not sorted!");
-  }
+//  if(true){
+//      for(uint i=0;i<N-1;i++) CHECK(comp(elem(i),elem(i+1)), "this is not sorted!");
+//  }
   return cand_pos;
 }
 

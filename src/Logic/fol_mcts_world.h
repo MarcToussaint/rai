@@ -20,6 +20,7 @@
 #include <Core/graph.h>
 
 struct FOL_World:MCTS_Environment{
+
   struct Decision:SAO{
     bool waitDecision;
     Node *rule;

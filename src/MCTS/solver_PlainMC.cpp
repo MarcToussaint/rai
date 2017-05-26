@@ -17,9 +17,9 @@
 
 void MCStatistics::add(double R, uint topSize){
   n++;
-  if(X.N<topSize) X.insertInSorted(R, mlr::greater);
+  if(X.N<topSize) X.insertInSorted(R, mlr::greaterEqual);
   else if(R>X.last()){
-    X.insertInSorted(R, mlr::greater);
+    X.insertInSorted(R, mlr::greaterEqual);
     X.popLast();
   }
 }

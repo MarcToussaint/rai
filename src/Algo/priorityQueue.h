@@ -30,7 +30,11 @@ template<class T> stdOutPipe(PriorityQueueEntry<T>)
 template<class T>
 bool PriorityQueueEntry<T>::cmp(const PriorityQueueEntry<T>& a, const PriorityQueueEntry<T>& b){
   return a.p <= b.p;
-};
+}
+
+template<class T> bool operator<=(const PriorityQueueEntry<T>& a, const PriorityQueueEntry<T>& b){
+  return a.p <= b.p;
+}
 
 template<class T> struct PriorityQueue : mlr::Array<PriorityQueueEntry<T> > {
   PriorityQueue(){
@@ -39,7 +43,7 @@ template<class T> struct PriorityQueue : mlr::Array<PriorityQueueEntry<T> > {
 
   void add(double p, const T& x, bool fromBackIfEqual=false){
     PriorityQueueEntry<T> e = {p, x};
-    mlr::Array<PriorityQueueEntry<T> >::insertInSorted(e, PriorityQueueEntry<T>::cmp, fromBackIfEqual);
+    mlr::Array<PriorityQueueEntry<T> >::insertInSorted(e, PriorityQueueEntry<T>::cmp, fromBackIfEqual); //'fromBack' makes it a FIFO (breadth first search); otherwise LIFO (depth first search)
   }
 
   T pop(){

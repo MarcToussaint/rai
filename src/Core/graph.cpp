@@ -707,7 +707,7 @@ void Graph::writeParseInfo(std::ostream& os) {
 
 void Graph::displayDot(Node *highlight){
   if(highlight){
-    CHECK(highlight->container==this,"");
+    CHECK(&highlight->container==this,"");
     writeDot(FILE("z.dot"), false, false, 0, highlight->index);
   }else{
     writeDot(FILE("z.dot"), false, false, 0);

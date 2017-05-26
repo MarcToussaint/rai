@@ -33,16 +33,15 @@ extern uint COUNT_kin, COUNT_evals, COUNT_poseOpt, COUNT_seqOpt, COUNT_pathOpt;
 struct ManipulationTree_Node{
   ManipulationTree_Node *parent;
   mlr::Array<ManipulationTree_Node*> children;
-  uint s;               ///< decision depth/step of this node
+  uint step;            ///< decision depth/step of this node
   double time;          ///< real time
-  uint graphIndex=0;
 
-  //-- info on the state and action this node represents
+  //-- info on the symbolic state and action this node represents
   FOL_World& fol; ///< the symbolic KB (all Graphs below are subgraphs of this large KB)
   FOL_World::Handle decision; ///< the decision that led to this node
+  FOL_World::TransitionReturn ret;
   Graph *folState; ///< the symbolic state after the decision
   Node  *folDecision; ///< the predicate in the folState that represents the decision
-  double folReward;  ///< the reward collected with this transition step
   Graph *folAddToState; ///< facts that are added to the state /after/ the fol.transition, e.g., infeasibility predicates
 
   //-- kinematics: the kinematic structure of the world after the decision path
@@ -50,25 +49,32 @@ struct ManipulationTree_Node{
   mlr::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
 
   bool isExpanded=false;
-  bool hasEffKinematics=false;
   bool isInfeasible=false;
   bool isTerminal=false;
 
-  //-- specs and results of the three optimization problems
-//  KOMO *poseProblem, *seqProblem, *pathProblem;
-  PlainMC *rootMC;
-  MCStatistics *mcStats;
-  KOMO *poseProblem, *seqProblem, *pathProblem;
-  Graph *poseProblemSpecs, *seqProblemSpecs, *pathProblemSpecs;
-  arr pose, seq, path;
-  uint mcCount, poseCount, seqCount, pathCount;
-  double symCost, poseCost, poseConstraints, seqCost, seqConstraints, pathCost, pathConstraints;
-  bool symTerminal, poseFeasible, seqFeasible, pathFeasible;
+  //-- bound values
+  uint L;           ///< number of bound levels
+  arr cost;         ///< cost-so-far for each level
+  arr constraints;  ///< constraint violation (so-far) -- when significantly>0 indicates infeasibility
+  arr h;            ///< cost-to-go heuristic for each level
+  boolA feasible;   ///< feasibility for each level
+  uintA count;      ///< how often was this level evaluated
+  double f(uint level=0){ return cost(level)+h(level); }
 
-  bool inFringe1, inFringe2;
+  // temporary stuff -- only for convenience to display and store
+//  KOMO *poseProblem, *seqProblem, *pathProblem;
+  PlainMC *rootMC; //only the root node owns an MC rollout generator
+  MCStatistics *mcStats;
+  KOMO *poseProblem, *seqProblem, *pathProblem; //
+  arr pose, seq, path;
+  uint mcCount;
+  double mcCost;
+
+  // display helpers
+  mlr::String note;
 
   /// root node init
-  ManipulationTree_Node(mlr::KinematicWorld& kin, FOL_World& fol);
+  ManipulationTree_Node(mlr::KinematicWorld& kin, FOL_World& fol, uint levels);
 
   /// child node creation
   ManipulationTree_Node(ManipulationTree_Node *parent, FOL_World::Handle& a);
@@ -82,7 +88,8 @@ struct ManipulationTree_Node{
   void solvePathProblem(uint microSteps, int verbose=0); ///< compute a full path along the decision path
 
   //-- helpers
-  void labelInfeasible(); ///< sets the infeasible label AND removes all children!
+  void setInfeasible(); ///< set this and all children infeasible
+  void labelInfeasible(); ///< sets this infeasible AND propagates this label to others
   ManipulationTree_NodeL getTreePath(); ///< return the decision path in terms of a list of nodes (just walking to the root)
   ManipulationTree_Node* getRoot(); ///< return the decision path in terms of a list of nodes (just walking to the root)
   void getAllChildren(ManipulationTree_NodeL& tree);

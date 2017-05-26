@@ -13,21 +13,21 @@
     --------------------------------------------------------------  */
 
 
-#include "solver_AStar.h"
+#include "solver_MBTS.h"
 
-AStar_Node::AStar_Node(AStar &astar, MCTS_Environment& world)
-  : astar(astar), world(world), parent(NULL), d(0), time(0.){
-  astar.size++;
+MBTS_Node::MBTS_Node(MBTS &MBTS, MCTS_Environment& world)
+  : MBTS(MBTS), world(world), parent(NULL), d(0), time(0.){
+  MBTS.size++;
   //this is the root node!
   world.reset_state();
   state = world.get_stateCopy();
 //  folState = fol.createStateCopy();
 }
 
-AStar_Node::AStar_Node(AStar_Node* parent, const MCTS_Environment::Handle& a)
-  : astar(parent->astar), world(parent->world), action(a), parent(parent), d(parent->d+1){
-  astar.size++;
-  if(d>astar.depth) astar.depth=d;
+MBTS_Node::MBTS_Node(MBTS_Node* parent, const MCTS_Environment::Handle& a)
+  : MBTS(parent->MBTS), world(parent->world), action(a), parent(parent), d(parent->d+1){
+  MBTS.size++;
+  if(d>MBTS.depth) MBTS.depth=d;
   parent->children.append(this);
   world.set_state(parent->state);
   CHECK(a,"giving a 'NULL' shared pointer??");
@@ -39,22 +39,22 @@ AStar_Node::AStar_Node(AStar_Node* parent, const MCTS_Environment::Handle& a)
   h = 0.; //heuristic
 }
 
-void AStar_Node::expand(){
+void MBTS_Node::expand(){
   CHECK(!isExpanded && !children.N,"");
   if(isTerminal) return;
-//  FILE("z.1") <<world <<endl;
+  FILE("z.1") <<world <<endl;
   world.set_state(state);
-//  FILE("z.2") <<world <<endl;
+  FILE("z.2") <<world <<endl;
   auto actions = world.get_actions();
   for(const MCTS_Environment::Handle& a:actions){
-    new AStar_Node(this, a);
+    new MBTS_Node(this, a);
   }
   isExpanded=true;
 }
 
-AStar_NodeL AStar_Node::getTreePath(){
-  AStar_NodeL path;
-  AStar_Node *node=this;
+MBTS_NodeL MBTS_Node::getTreePath(){
+  MBTS_NodeL path;
+  MBTS_Node *node=this;
   for(;node;){
       path.prepend(node);
       node = node->parent;
@@ -62,7 +62,7 @@ AStar_NodeL AStar_Node::getTreePath(){
   return path;
 }
 
-void AStar_Node::getGraph(Graph& G, Node* n) {
+void MBTS_Node::getGraph(Graph& G, Node* n) {
   if(!n){
     n = G.newNode<bool>({"a:<ROOT>"}, NodeL(), true);
   }else{
@@ -92,52 +92,79 @@ void AStar_Node::getGraph(Graph& G, Node* n) {
 //  if(inFringe2) G.getRenderingInfo(n).dotstyle <<" peripheries=3";
 
 //  n->keys.append(STRING("reward:" <<effPoseReward));
-  for(AStar_Node *ch:children) ch->getGraph(G, n);
+  for(MBTS_Node *ch:children) ch->getGraph(G, n);
 }
 
-void AStar_Node::getAll(AStar_NodeL& L){
+void MBTS_Node::getAll(MBTS_NodeL& L){
   L.append(this);
-  for(AStar_Node *ch:children) ch->getAll(L);
+  for(MBTS_Node *ch:children) ch->getAll(L);
 }
 
-void AStar_Node::write(ostream& os, bool recursive) const{
+void MBTS_Node::write(ostream& os, bool recursive) const{
   if(action) os <<" a= " <<*action;
   else os <<" a=<ROOT>";
   cout <<"d:" <<d <<" t:" <<time <<" f:" <<g+h <<" g:" <<g <<" h:" <<h <<endl;
-  if(recursive) for(AStar_Node *n:children) n->write(os);
+  if(recursive) for(MBTS_Node *n:children) n->write(os);
 }
 
 //===========================================================================
 
-AStar::AStar(MCTS_Environment& world) : root(NULL), size(0), depth(0){
-  root = new AStar_Node(*this, world);
-  queue.add(0., root);
+MBTS::MBTS(MCTS_Environment &world, MBTS_Heuristic &heuristic, uint L)
+    : root(NULL), heuristic(heuristic), size(0), depth(0){
+    root = new NodeT(*this, world);
+    queue.resize(L);
+    queue(0).add(0., root);
 }
 
-bool AStar::step(){
-  if(!queue.N){
-    LOG(-1) <<"AStar: queue is empty -> failure?";
-    return false;
+bool MBTS::step(int level){
+    if(!queue(level).N){
+        if(level==0) LOG(-1) <<"MBTS: queue is empty -> failure?";
+        return false;
+    }
+    MBTS_Node *next =  queue.pop();
+
+  if(level>0 && next->parent){
+      CHECK(next->parent->isEvaluated(level-1),"");
   }
-  auto next =  queue.pop();
-  if(next->isTerminal){
+
+  //evaluate
+  MBTS_Heuristic::Return ret = heuristic.evaluate(next, level);
+  if(level==0 && ret.terminal){
     solutions.append(next);
     return true;
   }
-  next->expand();
-  for(AStar_Node* ch:next->children){
-    queue.add(- ch->g - ch->h, ch, true);
+  next->g(level) = ret.g;
+  next->h(level) = ret.h;
+  if(!ret.feasible) next->labelInfeasible();
+  next->isEvaluated(level)=true;
+
+  //-- expand (feed same-level queue)
+  if(level==0){
+      next->expand();
+      for(MBTS_Node* ch:next->children){
+          queue(0).add(ch->g(level) + ch->h(level), ch, true);
+      }
   }
+
+  if(level==1){
+      for(MBTS_Node* ch:next->children){
+          queue(1).add(ch->g(level) + ch->h(level), ch, true);
+      }
+  }
+
+  //-- propagate (feed higher level queues)
+
+
   return false;
 }
 
-void AStar::reportQueue(){
-  cout <<"AStar QUEUE:" <<endl;
-  for(const PriorityQueueEntry<AStar_Node*>& n:queue){
+void MBTS::reportQueue(){
+  cout <<"MBTS QUEUE:" <<endl;
+  for(const PriorityQueueEntry<MBTS_Node*>& n:queue){
     cout <<"p=" <<n.p <<" f=" <<n.x->g+n.x->h <<" g=" <<n.x->g <<" h=" <<n.x->h <<" d=" <<n.x->d <<" a=" <<*n.x->action <<endl;
   }
 }
 
 RUN_ON_INIT_BEGIN(manipulationTree)
-AStar_NodeL::memMove = true;
+MBTS_NodeL::memMove = true;
 RUN_ON_INIT_END(manipulationTree)
