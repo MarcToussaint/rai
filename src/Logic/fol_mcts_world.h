@@ -104,6 +104,7 @@ struct FOL_World:MCTS_Environment{
   FOL_World(istream& fil);
   virtual ~FOL_World();
   void init(istream& fil);
+  void init(const char* filename){ init(mlr::FileToken(filename)); }
 
   virtual TransitionReturn transition(const Handle& action); //returns (observation, reward)
   virtual const std::vector<Handle> get_actions();

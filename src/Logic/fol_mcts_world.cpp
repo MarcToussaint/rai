@@ -396,6 +396,7 @@ Graph* FOL_World::createStateCopy(){
 void FOL_World::addAgent(const char* name){
 //  Node* n = KB.newNode<bool>({name}, {}, true); //already exists in kinematic part
   Node* n = KB[name];
+  CHECK(n, "Node '" <<name <<"' was not declared");
   start_state->newNode<bool>({}, {KB["agent"], n}, true);
   start_state->newNode<bool>({}, {KB["free"], n}, true);
 }

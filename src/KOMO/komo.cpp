@@ -443,6 +443,21 @@ void KOMO::setHandover(double time, const char* oldHolder, const char* object, c
 
 }
 
+void KOMO::setPush(double time, const char* stick, const char* object, const char* table, int verbose){
+  if(verbose>0) cout <<"KOMO_setPush t=" <<time <<" stick=" <<stick <<" object=" <<object <<" table=" <<table <<endl;
+
+  setTask(time, 4., new TaskMap_Default(vecAlignTMT, world, stick, -Vector_y, "slider1b", Vector_x), OT_sumOfSqr, {1.}, 1e2);
+  setTask(time, 4., new TaskMap_Default(vecAlignTMT, world, stick, Vector_z, NULL, Vector_z), OT_sumOfSqr, {1.}, 1e2);
+  setTask(time, 4., new TaskMap_Default(posDiffTMT, world, stick, NoVector, "slider1b", {.12, .0, .0}), OT_sumOfSqr, {}, 1e2);
+
+  setKS_slider(time, true, object, "slider1", table);
+
+//  if(stepsPerPhase>2){ //velocities down and up
+//    setTask(time-.15, time+.15, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,0.}, 1e1, 1); // no motion
+//  }
+}
+
+
 void KOMO::setAttach(double time, const char* endeff, const char* object1, const char* object2, mlr::Transformation& rel, int verbose){
   if(verbose>0) cout <<"KOMO_setAttach t=" <<time <<" endeff=" <<endeff <<" obj1=" <<object1 <<" obj2=" <<object2 <<endl;
 
@@ -496,28 +511,19 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
     if(!n->parents.N) continue;
     StringL symbols;
     for(Node *p:n->parents) symbols.append(&p->keys.last());
-    if(n->keys.N && n->keys.last()=="komoGrasp"){
-      double time=n->get<double>();
-      setGrasp(phase+time, *symbols(0), *symbols(1), verbose);
-    }
-    else if(n->keys.N && n->keys.last()=="komoPlace"){
-      double time=n->get<double>();
-      setPlace(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
-    }
-    else if(n->keys.N && n->keys.last()=="komoHandover"){
-      double time=n->get<double>();
-      setHandover(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
-    }
-    else if(n->keys.N && n->keys.last()=="komoAttach"){
-      double time=n->get<double>();
-      Node *attachableSymbol = facts.getNode("attachable");
-      CHECK(attachableSymbol!=NULL,"");
-      Node *attachableFact = facts.getEdge({attachableSymbol, n->parents(1), n->parents(2)});
-      mlr::Transformation rel = attachableFact->get<mlr::Transformation>();
-      setAttach(phase+time, *symbols(0), *symbols(1), *symbols(2), rel, verbose);
-    }
-    else if(n->keys.N && n->keys.last().startsWith("komo")){
-      HALT("UNKNOWN komo TAG: '" <<n->keys.last() <<"'");
+    if(n->keys.N && n->keys.last().startsWith("komo")){
+      double time=n->get<double>(); //komo tag needs to be double valued!
+      if(n->keys.last()=="komoGrasp")         setGrasp(phase+time, *symbols(0), *symbols(1), verbose);
+      else if(n->keys.last()=="komoPlace")    setPlace(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
+      else if(n->keys.last()=="komoHandover") setHandover(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
+      else if(n->keys.last()=="komoPush")     setPush(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
+      else if(n->keys.last()=="komoAttach"){
+        Node *attachableSymbol = facts.getNode("attachable");
+        CHECK(attachableSymbol!=NULL,"");
+        Node *attachableFact = facts.getEdge({attachableSymbol, n->parents(1), n->parents(2)});
+        mlr::Transformation rel = attachableFact->get<mlr::Transformation>();
+        setAttach(phase+time, *symbols(0), *symbols(1), *symbols(2), rel, verbose);
+      }else HALT("UNKNOWN komo TAG: '" <<n->keys.last() <<"'");
     }
   }
 }

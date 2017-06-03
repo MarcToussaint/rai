@@ -23,6 +23,7 @@ struct OptLGP{
   MNodeL fringe_done;  //list of terminal nodes that have been path tested
 
   OptLGP(mlr::KinematicWorld& kin, FOL_World& fol);
+  ~OptLGP();
 
   //-- for methods called in the run loop
 private:
@@ -37,6 +38,7 @@ public:
 
   // output
   mlr::String report();
+  void initDisplay();
   void updateDisplay();
 
   //-- kind of a gui:
@@ -44,5 +46,7 @@ public:
   mlr::String queryForChoice();
   bool execChoice(mlr::String cmd);
   bool execRandomChoice();
+
+  void player(StringA cmds={});
 
 };

@@ -9,9 +9,21 @@ OptLGP::OptLGP(mlr::KinematicWorld &kin, FOL_World &fol){
 //  threadOpenModules(true);
 }
 
+OptLGP::~OptLGP(){
+    listDelete(views);
+}
+
+void OptLGP::initDisplay(){
+    views.resize(4);
+    views(1) = new OrsPathViewer("pose", 1., -0);
+    views(2) = new OrsPathViewer("sequence", 1., -0);
+    views(3) = new OrsPathViewer("path", .1, -1);
+    int r=system("evince z.pdf &");
+    if(r) LOG(-1) <<"could not startup evince";
+}
 
 void OptLGP::updateDisplay(){
-  for(uint i=1;i<4;i++){
+  for(uint i=1;i<views.N;i++){
       if(displayFocus->komoProblem(i) && displayFocus->komoProblem(i)->configurations.N)
           views(i)->setConfigurations(displayFocus->komoProblem(i)->configurations);
       else views(i)->clear();
@@ -50,9 +62,10 @@ void OptLGP::printChoices(){
   cout <<"\nCHOICES:" <<endl;
   cout <<"(q) quit" <<endl;
   cout <<"(u) up" <<endl;
-  cout <<"(p) pose problem" <<endl;
-  cout <<"(s) sequence problem" <<endl;
-  cout <<"(x) path problem" <<endl;
+  cout <<"(e) expand node" <<endl;
+  cout <<"(p) pose optim" <<endl;
+  cout <<"(s) sequence optim" <<endl;
+  cout <<"(x) path optim" <<endl;
   cout <<"(m) MC planning" <<endl;
   uint c=0;
   for(MNode* a:displayFocus->children){
@@ -84,26 +97,51 @@ bool OptLGP::execRandomChoice(){
   return execChoice(cmd);
 }
 
+void OptLGP::player(StringA cmds){
+    bool interactive = mlr::getParameter<bool>("interact", false);
+    bool random = mlr::getParameter<bool>("random", false);
+
+    root->expand();
+
+    initDisplay();
+
+    for(uint s=0;;s++){
+        updateDisplay();
+        printChoices();
+
+        if(random){
+            if(!execRandomChoice()) break;
+        }else{
+            if(!interactive && s<cmds.N){
+                if(s>=cmds.N) break;
+                if(!execChoice(cmds(s))) break;
+            }else{
+                mlr::String cmd = queryForChoice();
+                if(!execChoice(cmd)) break;
+            }
+        }
+    }
+}
+
 bool OptLGP::execChoice(mlr::String cmd){
     cout <<"COMMAND: '" <<cmd <<"'" <<endl;
 
     if(cmd=="q") return false;
     else if(cmd=="u"){ if(displayFocus->parent) displayFocus = displayFocus->parent; }
+    else if(cmd=="e") displayFocus->expand();
     else if(cmd=="p") displayFocus->optLevel(1);
     else if(cmd=="s") displayFocus->optLevel(2);
     else if(cmd=="x") displayFocus->optLevel(3);
     //  else if(cmd=="m") node->addMCRollouts(100,10);
     else{
-        int choice;
+        int choice=-1;
         cmd >>choice;
         cout <<"CHOICE=" <<choice <<endl;
-        if(choice>=(int)displayFocus->children.N){
+        if(choice<0 || choice>=(int)displayFocus->children.N){
             cout <<"--- there is no such choice" <<endl;
         }else{
             displayFocus = displayFocus->children(choice);
-            if(!displayFocus->isExpanded){
-                displayFocus->expand();
-            }
+            if(!displayFocus->isExpanded) displayFocus->expand();
         }
     }
     return true;
@@ -197,14 +235,8 @@ void OptLGP::run(int verbose, bool display){
     fringe_pose.append(root);
 
     if(display){
-        views.resize(4);
-        views(1) = new OrsPathViewer("pose", 1., -0);
-        views(2) = new OrsPathViewer("sequence", 1., -0);
-        views(3) = new OrsPathViewer("path", .1, -1);
-
+        initDisplay();
         updateDisplay();
-        int r=system("evince z.pdf &");
-        if(r) LOG(-1) <<"could not startup evince";
     }
 
     ofstream fil("z.dat");

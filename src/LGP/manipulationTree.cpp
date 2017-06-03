@@ -77,7 +77,8 @@ ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS
 }
 
 void ManipulationTree_Node::expand(){
-  CHECK(!isExpanded && !children.N,"");
+  if(isExpanded){ LOG(-1) <<"MNode '" <<*this <<"' is already expanded"; return; }
+  CHECK(!children.N,"");
   if(isTerminal) return;
   fol.setState(folState, step);
   auto actions = fol.get_actions();
@@ -156,7 +157,11 @@ void ManipulationTree_Node::optLevel(uint level){
       //pose: propagate eff kinematics
       if(!parent) effKinematics = startKinematics;
       else{
-        CHECK(parent->effKinematics.q.N,"");
+        if(!parent->effKinematics.q.N){
+            LOG(-1) <<"I can't compute a pose when no pose was comp. for parent (I need the effKin)";
+            return;
+        }
+//        CHECK(parent->effKinematics.q.N,"");
         effKinematics = parent->effKinematics;
       }
 
