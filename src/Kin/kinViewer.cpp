@@ -126,9 +126,14 @@ void OrsPathViewer::clear(){
 OrsPathViewer::OrsPathViewer(const char* varname, double beatIntervalSec, int tprefix)
   : Thread(STRING("OrsPathViewer_"<<varname), beatIntervalSec),
     configurations(this, varname, (beatIntervalSec<0.)),
-    t(0), tprefix(tprefix), writeToFiles(false){}
+    t(0), tprefix(tprefix), writeToFiles(false){
+  if(beatIntervalSec>=0.) threadLoop(); else threadStep();
+}
 
-OrsPathViewer::~OrsPathViewer(){ threadClose(); clear(); }
+OrsPathViewer::~OrsPathViewer(){
+  threadClose();
+  clear();
+}
 
 void OrsPathViewer::open(){
   copy.gl(STRING("OrsPathViewer: "<<configurations.name));

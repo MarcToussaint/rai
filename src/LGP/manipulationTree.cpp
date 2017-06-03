@@ -15,6 +15,7 @@
 
 #include "manipulationTree.h"
 #include <MCTS/solver_PlainMC.h>
+#include <KOMO/komo.h>
 
 #define DEBUG(x) x
 #define DEL_INFEASIBLE(x) //x
@@ -24,7 +25,7 @@ uint COUNT_evals=0;
 uintA COUNT_opt=consts<uint>(0, 4);
 
 ManipulationTree_Node::ManipulationTree_Node(mlr::KinematicWorld& kin, FOL_World& _fol, uint levels)
-  : parent(NULL), step(0),
+    : parent(NULL), step(0),
     fol(_fol), folState(NULL), folDecision(NULL), folAddToState(NULL),
     startKinematics(kin), effKinematics(),
     L(levels), bound(0.),
@@ -36,9 +37,8 @@ ManipulationTree_Node::ManipulationTree_Node(mlr::KinematicWorld& kin, FOL_World
   rootMC->verbose = 0;
   cost = zeros(L);
   constraints = zeros(L);
-  h = zeros(L);
   count = consts<uint>(0, L);
-  count(0) = 1;
+  count(l_symbolic) = 1;
   feasible = consts<bool>(true, L);
   komoProblem = consts<KOMO*>(NULL, L);
   opt.resize(L);
@@ -65,16 +65,15 @@ ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS
   decision = a;
   rootMC = parent->rootMC;
   cost = zeros(L);
-  h = zeros(L);
   count = consts<uint>(0, L);
-  count(0) = 1;
+  count(l_symbolic) = 1;
   feasible = consts<bool>(true, L);
-  cost(0) = parent->cost(0) - 0.1*ret.reward; //cost-so-far
+  cost(l_symbolic) = parent->cost(l_symbolic) - 0.1*ret.reward; //cost-so-far
   constraints = zeros(L);
   komoProblem = consts<KOMO*>(NULL, L);
   opt.resize(L);
   bound = parent->bound - 0.1*ret.reward;
-//  h(0) = 0.; //heuristic
+//  h(l_symbolic) = 0.; //heuristic
 }
 
 void ManipulationTree_Node::expand(){
@@ -237,7 +236,7 @@ void ManipulationTree_Node::optLevel(uint level){
       DEBUG( effKinematics.checkConsistency(); )
       effKinematics.getJointState();
   }else{
-      cost_here += cost(0); //account for the symbolic costs
+      cost_here += cost(l_symbolic); //account for the symbolic costs
   }
 
   //-- read out and update bound
@@ -381,7 +380,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   double constraints_here = result.get<double>({"total","constraints"});
   bool feas = (constraints_here<.5);
 
-  cost_here += cost(0); //account for the symbolic costs
+  cost_here += cost(l_symbolic); //account for the symbolic costs
 
   //update the bound
   if(feas){
@@ -443,7 +442,7 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   double constraints_here = result.get<double>({"total","constraints"});
   bool feas = (constraints_here<.5);
 
-  cost_here += cost(0); //account for the symbolic costs
+  cost_here += cost(l_symbolic); //account for the symbolic costs
 
   //update the bound
   if(feas){
@@ -526,9 +525,9 @@ ManipulationTree_Node* ManipulationTree_Node::getRoot(){
   return n;
 }
 
-void ManipulationTree_Node::getAllChildren(ManipulationTree_NodeL& tree){
-  for(ManipulationTree_Node* c:children) c->getAllChildren(tree);
-  tree.append(this);
+void ManipulationTree_Node::getAll(ManipulationTree_NodeL& L){
+  L.append(this);
+  for(ManipulationTree_Node *ch:children) ch->getAll(L);
 }
 
 ManipulationTree_Node *ManipulationTree_Node::treePolicy_random(){
@@ -550,7 +549,7 @@ bool ManipulationTree_Node::recomputeAllFolStates(){
       time = parent->time + ret.duration;
       isTerminal = fol.successEnd;
       if(fol.deadEnd){
-        if(!feasible(2) && !feasible(3)) //seq or path have already proven it feasible! Despite the logic...
+        if(!feasible(l_seq) && !feasible(l_path)) //seq or path have already proven it feasible! Despite the logic...
           isInfeasible=true;
         return false;
       }
@@ -558,7 +557,7 @@ bool ManipulationTree_Node::recomputeAllFolStates(){
       if(folAddToState) applyEffectLiterals(*folState, *folAddToState, {}, NULL);
       folDecision = folState->getNode("decision");
     }else{
-      if(!feasible(2) && !feasible(3)) //seq or path have already proven it feasible! Despite the logic...
+      if(!feasible(l_seq) && !feasible(l_path)) //seq or path have already proven it feasible! Despite the logic...
         isInfeasible=true;
       return false;
     }
@@ -623,9 +622,9 @@ void ManipulationTree_Node::write(ostream& os, bool recursive) const{
   for(uint i=0;i<step+1;i++) os <<"  ";
   os <<" state= " <<*folState->isNodeOfGraph <<endl;
   for(uint i=0;i<step+1;i++) os <<"  ";  os <<" depth=" <<step <<endl;
-  for(uint i=0;i<step+1;i++) os <<"  ";  os <<" poseCost=" <<cost(1) <<endl;
-  for(uint i=0;i<step+1;i++) os <<"  ";  os <<" seqCost=" <<cost(2) <<endl;
-  for(uint i=0;i<step+1;i++) os <<"  ";  os <<" pathCost=" <<cost(3) <<endl;
+  for(uint i=0;i<step+1;i++) os <<"  ";  os <<" poseCost=" <<cost(l_pose) <<endl;
+  for(uint i=0;i<step+1;i++) os <<"  ";  os <<" seqCost=" <<cost(l_seq) <<endl;
+  for(uint i=0;i<step+1;i++) os <<"  ";  os <<" pathCost=" <<cost(l_path) <<endl;
   if(recursive) for(ManipulationTree_Node *n:children) n->write(os);
 }
 
@@ -637,10 +636,10 @@ void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
   }
   n->keys.append(STRING("s:" <<step <<" t:" <<time <<" bound:" <<bound <<" feas:" <<!isInfeasible <<" term:" <<isTerminal <<' ' <<folState->isNodeOfGraph->keys.scalar()));
   for(uint l=0;l<L;l++)
-      n->keys.append(STRING("L" <<l <<" #:" <<count(l) <<" c:" <<cost(l) <<"|" <<constraints(l) <<" h:" <<h(l) <<" f:" <<feasible(l) <<" terminal:" <<isTerminal));
+      n->keys.append(STRING("L" <<l <<" #:" <<count(l) <<" c:" <<cost(l) <<"|" <<constraints(l) <<" f:" <<feasible(l) <<" terminal:" <<isTerminal));
 
   if(mcStats && mcStats->n) n->keys.append(STRING("MC best:" <<mcStats->X.first() <<" n:" <<mcStats->n));
-//  n->keys.append(STRING("sym  g:" <<cost(0) <<" h:" <<h(0) <<" f:" <<f() <<" terminal:" <<isTerminal));
+//  n->keys.append(STRING("sym  g:" <<cost(l_symbolic) <<" h:" <<h(l_symbolic) <<" f:" <<f() <<" terminal:" <<isTerminal));
   n->keys.append(STRING("MC   #" <<mcCount <<" f:" <<mcCost));
   if(folAddToState) n->keys.append(STRING("symAdd:" <<*folAddToState));
   if(note.N) n->keys.append(note);
@@ -650,10 +649,10 @@ void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
     if(isTerminal)  G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=violet";
     else G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=red";
   }else if(isTerminal){
-    if(count(2) || count(3)) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=cyan";
+    if(count(l_seq) || count(l_path)) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=cyan";
     else G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=blue";
   }else{
-    if(sum(count) - count(0)>0) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=green";
+    if(sum(count) - count(l_symbolic)>0) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=green";
   }
 //  if(inFringe1) G.getRenderingInfo(n).dotstyle <<" color=green";
 //  if(inFringe1) G.getRenderingInfo(n).dotstyle <<" peripheries=2";
@@ -661,11 +660,6 @@ void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
 
 //  n->keys.append(STRING("reward:" <<effPoseReward));
   for(ManipulationTree_Node *ch:children) ch->getGraph(G, n);
-}
-
-void ManipulationTree_Node::getAll(ManipulationTree_NodeL& L){
-  L.append(this);
-  for(ManipulationTree_Node *ch:children) ch->getAll(L);
 }
 
 RUN_ON_INIT_BEGIN(manipulationTree)

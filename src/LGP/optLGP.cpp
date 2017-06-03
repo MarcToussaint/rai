@@ -1,0 +1,249 @@
+#include "optLGP.h"
+
+#include <Kin/kinViewer.h>
+#include <KOMO/komo.h>
+
+OptLGP::OptLGP(mlr::KinematicWorld &kin, FOL_World &fol){
+  root = new MNode(kin, fol, 4);
+  displayFocus = root;
+//  threadOpenModules(true);
+}
+
+
+void OptLGP::updateDisplay(){
+  for(uint i=1;i<4;i++){
+      if(displayFocus->komoProblem(i) && displayFocus->komoProblem(i)->configurations.N)
+          views(i)->setConfigurations(displayFocus->komoProblem(i)->configurations);
+      else views(i)->clear();
+  }
+//  if(node->komoProblem(2) && node->komoProblem(2)->configurations.N)
+//    seqView.setConfigurations(node->komoProblem(2)->configurations);
+//  else seqView.clear();
+//  if(node->komoProblem(3) && node->komoProblem(3)->configurations.N)
+//    pathView.setConfigurations(node->komoProblem(3)->configurations);
+//  else pathView.clear();
+
+  //generate the tree pdf
+  MNodeL all = root->getAll();
+  for(auto& n:all) n->note.clear();
+
+  for(auto& n:all) if(n->isInfeasible) n->note <<"INFEASIBLE ";
+  for(auto& n:fringe_expand)      n->note <<"EXPAND ";
+  for(auto& n:terminals) n->note <<"TERMINAL ";
+  for(auto& n:fringe_pose)  n->note <<"POSE ";
+  for(auto& n:fringe_pose2) n->note <<"POSE2 ";
+  for(auto& n:fringe_seq)  n->note <<"SEQ ";
+  for(auto& n:fringe_path)  n->note <<"PATH ";
+  for(auto& n:fringe_done) n->note <<"DONE";
+
+  Graph dot=root->getGraph();
+  dot.writeDot(FILE("z.dot"));
+  int r = system("dot -Tpdf z.dot > z.pdf");
+  if(r) LOG(-1) <<"could not startup dot";
+}
+
+void OptLGP::printChoices(){
+  //-- query UI
+  cout <<"********************" <<endl;
+  cout <<"NODE:\n" <<*displayFocus <<endl;
+  cout <<"--------------------" <<endl;
+  cout <<"\nCHOICES:" <<endl;
+  cout <<"(q) quit" <<endl;
+  cout <<"(u) up" <<endl;
+  cout <<"(p) pose problem" <<endl;
+  cout <<"(s) sequence problem" <<endl;
+  cout <<"(x) path problem" <<endl;
+  cout <<"(m) MC planning" <<endl;
+  uint c=0;
+  for(MNode* a:displayFocus->children){
+    cout <<"(" <<c++ <<") DECISION: " <<*a->decision <<endl;
+  }
+}
+
+mlr::String OptLGP::queryForChoice(){
+  mlr::String cmd;
+  std::string tmp;
+  getline(std::cin, tmp);
+  cmd=tmp.c_str();
+  return cmd;
+}
+
+bool OptLGP::execRandomChoice(){
+  mlr::String cmd;
+  if(rnd.uni()<.5){
+    switch(rnd.num(5)){
+      case 0: cmd="u"; break;
+      case 1: cmd="p"; break;
+      case 2: cmd="s"; break;
+      case 3: cmd="x"; break;
+      case 4: cmd="m"; break;
+    }
+  }else{
+    cmd <<rnd(displayFocus->children.N);
+  }
+  return execChoice(cmd);
+}
+
+bool OptLGP::execChoice(mlr::String cmd){
+    cout <<"COMMAND: '" <<cmd <<"'" <<endl;
+
+    if(cmd=="q") return false;
+    else if(cmd=="u"){ if(displayFocus->parent) displayFocus = displayFocus->parent; }
+    else if(cmd=="p") displayFocus->optLevel(1);
+    else if(cmd=="s") displayFocus->optLevel(2);
+    else if(cmd=="x") displayFocus->optLevel(3);
+    //  else if(cmd=="m") node->addMCRollouts(100,10);
+    else{
+        int choice;
+        cmd >>choice;
+        cout <<"CHOICE=" <<choice <<endl;
+        if(choice>=(int)displayFocus->children.N){
+            cout <<"--- there is no such choice" <<endl;
+        }else{
+            displayFocus = displayFocus->children(choice);
+            if(!displayFocus->isExpanded){
+                displayFocus->expand();
+            }
+        }
+    }
+    return true;
+}
+
+MNode *OptLGP::getBest(MNodeL &fringe, uint level){
+    if(!fringe.N) return NULL;
+    MNode* best=NULL;
+    for(MNode* n:fringe){
+        if(n->isInfeasible || !n->count(level)) continue;
+        if(!best || (n->feasible(level) && n->cost(level)<best->cost(level))) best=n;
+    }
+    return best;
+}
+
+MNode *OptLGP::popBest(MNodeL &fringe, uint level){
+    if(!fringe.N) return NULL;
+    MNode* best=getBest(fringe, level);
+    if(!best) return NULL;
+    fringe.removeValue(best);
+    return best;
+}
+
+void OptLGP::expandBest(){ //expand
+    MNode *n =  popBest(fringe_expand, 0);
+    CHECK(n,"");
+    n->expand();
+    for(MNode* ch:n->children){
+        if(ch->isTerminal){
+            terminals.append(ch);
+            MNodeL path = ch->getTreePath();
+            for(MNode *n:path) if(!n->count(1)) fringe_pose2.append(n); //pose2 is a FIFO
+        }else{
+            fringe_expand.append(ch);
+        }
+        if(n->count(1)) fringe_pose.append(ch);
+    }
+}
+
+void OptLGP::optBestOnLevel(int level, MNodeL &fringe, MNodeL *addIfTerminal, MNodeL *addChildren){ //optimize a seq
+    if(!fringe.N) return;
+    MNode* n = popBest(fringe, level-1);
+    if(n && !n->count(level)){
+        n->optLevel(level);
+        if(n->feasible(level)){
+            if(addIfTerminal && n->isTerminal) addIfTerminal->append(n);
+            if(addChildren) for(MNode* c:n->children) addChildren->append(c);
+        }
+        displayFocus = n;
+    }
+}
+
+void OptLGP::optFirstOnLevel(int level, MNodeL &fringe, MNodeL *addIfTerminal){
+    if(!fringe.N) return;
+    MNode *n =  fringe.popFirst();
+    if(n && !n->count(level)){
+        n->optLevel(level);
+        if(n->feasible(level)){
+            if(addIfTerminal && n->isTerminal) addIfTerminal->append(n);
+        }
+        displayFocus = n;
+    }
+}
+
+void OptLGP::clearFromInfeasibles(MNodeL &fringe){
+    for(uint i=fringe.N;i--;)
+        if(fringe.elem(i)->isInfeasible) fringe.remove(i);
+}
+
+mlr::String OptLGP::report(){
+    MNode *bpose = getBest(terminals, 1);
+    MNode *bseq  = getBest(terminals, 2);
+    MNode *bpath = getBest(fringe_done, 3);
+
+    mlr::String out;
+    out <<"TIME= " <<mlr::cpuTime() <<" KIN= " <<COUNT_kin <<" EVALS= " <<COUNT_evals
+       <<" POSE= " <<COUNT_opt(1) <<" SEQ= " <<COUNT_opt(2) <<" PATH= " <<COUNT_opt(3)
+      <<" bestPose= " <<(bpose?bpose->cost(1):100.)
+     <<" bestSeq = " <<(bseq ?bseq ->cost(2):100.)
+    <<" pathPath= " <<(bpath?bpath->cost(3):100.)
+    <<" #solutions= " <<fringe_done.N;
+
+    if(bseq) displayFocus=bseq;
+    if(bpath) displayFocus=bpath;
+
+    return out;
+}
+
+void OptLGP::run(int verbose, bool display){
+    fringe_expand.append(root);
+    fringe_pose.append(root);
+
+    if(display){
+        views.resize(4);
+        views(1) = new OrsPathViewer("pose", 1., -0);
+        views(2) = new OrsPathViewer("sequence", 1., -0);
+        views(3) = new OrsPathViewer("path", .1, -1);
+
+        updateDisplay();
+        int r=system("evince z.pdf &");
+        if(r) LOG(-1) <<"could not startup evince";
+    }
+
+    ofstream fil("z.dat");
+
+    for(uint k=0;k<10000;k++){
+
+        expandBest();
+
+        if(rnd.uni()<.5) optBestOnLevel(l_pose, fringe_pose, &fringe_seq, &fringe_pose);
+
+        optFirstOnLevel(l_pose, fringe_pose2, &fringe_seq);
+        optBestOnLevel(l_seq, fringe_seq, &fringe_path, NULL);
+        optBestOnLevel(l_path, fringe_path, &fringe_done, NULL);
+
+        //-- update queues (if something got infeasible)
+        clearFromInfeasibles(fringe_expand);
+        clearFromInfeasibles(fringe_pose);
+        clearFromInfeasibles(fringe_pose2);
+        clearFromInfeasibles(fringe_seq);
+        clearFromInfeasibles(fringe_path);
+        clearFromInfeasibles(terminals);
+
+        mlr::String out=report();
+
+        fil <<out <<endl;
+        if(verbose>0) cout <<out <<endl;
+
+        if(display && !(k%10)) updateDisplay();
+
+        if(fringe_done.N>10) break;
+    }
+
+    fil.close();
+
+    //this generates the movie!
+    if(display && verbose>1){
+        views(3)->writeToFiles=true;
+        updateDisplay();
+    }
+
+    if(display) listDelete(views);
+}

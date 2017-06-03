@@ -17,9 +17,7 @@
 
 #include <Kin/kin.h>
 #include <Logic/fol_mcts_world.h>
-#include "LGP.h"
 #include <Logic/fol.h>
-#include <KOMO/komo.h>
 
 struct ManipulationTree_Node;
 struct PlainMC;
@@ -28,6 +26,8 @@ typedef mlr::Array<ManipulationTree_Node*> ManipulationTree_NodeL;
 
 extern uint COUNT_kin, COUNT_evals;
 extern uintA COUNT_opt;
+
+enum LEVEL{ l_symbolic=0, l_pose=1, l_seq=2, l_path=3 };
 
 //===========================================================================
 
@@ -57,10 +57,8 @@ struct ManipulationTree_Node{
   uint L;           ///< number of bound levels
   arr cost;         ///< cost-so-far for each level
   arr constraints;  ///< constraint violation (so-far) -- when significantly>0 indicates infeasibility
-  arr h;            ///< cost-to-go heuristic for each level
   boolA feasible;   ///< feasibility for each level
   uintA count;      ///< how often was this level evaluated
-  double f(uint level=0){ return cost(level)+h(level); }
   double bound=0.;
 
   // temporary stuff -- only for convenience to display and store
@@ -70,10 +68,8 @@ struct ManipulationTree_Node{
   uint mcCount;
   double mcCost;
 
-  mlr::Array<KOMO*> komoProblem;
-  arrA opt;
-//  KOMO *poseProblem, *seqProblem, *pathProblem; //storing these allows to display optimized paths -- otherwise we could make them temporary to the methods
-//  arr pose, seq, path;
+  mlr::Array<struct KOMO*> komoProblem; //komo problems for all levels
+  arrA opt; //these are the optima computed
 
   // display helpers
   mlr::String note;
@@ -86,52 +82,31 @@ struct ManipulationTree_Node{
 
   //- computations on the node
   void expand();           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
+  void optLevel(uint level);
+  //MC stuff -- TODO
   arr generateRootMCRollouts(uint num, int stepAbort, const mlr::Array<MCTS_Environment::Handle>& prefixDecisions);
   void addMCRollouts(uint num,int stepAbort);
 
-  void optLevel(uint level);
-  void solvePoseProblem(); ///< solve the effective pose problem
-  void solveSeqProblem(int verbose=0);  ///< compute a sequence of key poses along the decision path
-  void solvePathProblem(uint microSteps, int verbose=0); ///< compute a full path along the decision path
-
   //-- helpers
-  void setInfeasible(); ///< set this and all children infeasible
-  void labelInfeasible(); ///< sets this infeasible AND propagates this label to others
   ManipulationTree_NodeL getTreePath(); ///< return the decision path in terms of a list of nodes (just walking to the root)
   ManipulationTree_Node* getRoot(); ///< return the decision path in terms of a list of nodes (just walking to the root)
-  void getAllChildren(ManipulationTree_NodeL& tree);
+  void getAll(ManipulationTree_NodeL& L);
+  ManipulationTree_NodeL getAll(){ ManipulationTree_NodeL L; getAll(L); return L; }
+  void checkConsistency();
+private:
+  void setInfeasible(); ///< set this and all children infeasible
+  void labelInfeasible(); ///< sets this infeasible AND propagates this label up-down to others
   ManipulationTree_Node *treePolicy_random(); ///< returns leave -- by descending children randomly
   ManipulationTree_Node *treePolicy_softMax(double temperature);
   bool recomputeAllFolStates();
   void recomputeAllMCStats(bool excludeLeafs=true);
-
-  void checkConsistency();
+public:
 
   void write(ostream& os=cout, bool recursive=false) const;
   void getGraph(Graph& G, Node *n=NULL);
   Graph getGraph(){ Graph G; getGraph(G, NULL); G.checkConsistency(); return G; }
-  void getAll(ManipulationTree_NodeL& L);
-  ManipulationTree_NodeL getAll(){ ManipulationTree_NodeL L; getAll(L); return L; }
 };
 
 inline ostream& operator<<(ostream& os, const ManipulationTree_Node& n){ n.write(os); return os; }
 
 //===========================================================================
-
-//struct ManipulationTree{
-//  ManipulationTree_Node root;
-
-//  LGP lgp;
-
-//  ManipulationTree(const mlr::KinematicWorld& world_root, const Graph& symbols_root)
-//    : root(world_root, symbols_root), fol(FILE("fol.g")), mc(fol) {}
-
-//  ManipulationTree_Node& getRndNode();
-//  void addRollout(){
-//    mc.addRollout(100);
-//  }
-
-//  void optimEffPose(ManipulationTree_Node& n);
-//  void optimPath(ManipulationTree_Node& n);
-
-//}
