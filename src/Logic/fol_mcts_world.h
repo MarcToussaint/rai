@@ -130,6 +130,7 @@ struct FOL_World:MCTS_Environment{
     for(const mlr::String& s:symbols) parents.append(KB[s]);
     start_state->newNode<T>({}, parents, x);
   }
+  void addTerminalRule(const StringAA& literals);
 
   //-- internal access
   Graph* getState();

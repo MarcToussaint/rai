@@ -420,6 +420,7 @@ typedef mlr::Array<uintA>    uintAA;
 
 namespace mlr { struct String; }
 typedef mlr::Array<mlr::String> StringA;
+typedef mlr::Array<StringA> StringAA;
 typedef mlr::Array<mlr::String*> StringL;
 
 //===========================================================================

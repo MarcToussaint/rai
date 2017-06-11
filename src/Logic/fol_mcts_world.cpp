@@ -412,3 +412,20 @@ void FOL_World::addFact(const StringA& symbols){
   for(const mlr::String& s:symbols) parents.append(KB[s]);
   start_state->newNode<bool>({}, parents, true);
 }
+
+void FOL_World::addTerminalRule(const StringAA& literals){
+  //first create a new rule
+  Graph& rule = KB.newSubgraph({"Rule"}, {})->value;
+  worldRules.append(rule.isNodeOfGraph);
+  Graph& preconditions = rule.newSubgraph({}, {})->value;
+  Graph& effect = rule.newSubgraph({}, {})->value;
+  effect.newNode<bool>({},{Quit_keyword}, true); //adds the (QUIT) to the effect
+
+  for(const StringA& lit:literals){
+      NodeL parents;
+      for(const mlr::String& s:lit) parents.append(KB[s]);
+      preconditions.newNode<bool>({}, parents, true);
+  }
+
+  cout <<"CREATED RULE NODE:" <<*rule.isNodeOfGraph <<endl;
+}

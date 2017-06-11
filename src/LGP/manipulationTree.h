@@ -90,6 +90,7 @@ struct ManipulationTree_Node{
   //-- helpers
   ManipulationTree_NodeL getTreePath(); ///< return the decision path in terms of a list of nodes (just walking to the root)
   ManipulationTree_Node* getRoot(); ///< return the decision path in terms of a list of nodes (just walking to the root)
+  ManipulationTree_Node* getChildByAction(Node  *folDecision); ///<
   void getAll(ManipulationTree_NodeL& L);
   ManipulationTree_NodeL getAll(){ ManipulationTree_NodeL L; getAll(L); return L; }
   void checkConsistency();

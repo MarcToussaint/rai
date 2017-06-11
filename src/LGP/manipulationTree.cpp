@@ -530,6 +530,14 @@ ManipulationTree_Node* ManipulationTree_Node::getRoot(){
   return n;
 }
 
+ManipulationTree_Node *ManipulationTree_Node::getChildByAction(Node *folDecision){
+  for(ManipulationTree_Node *ch:children){
+      if(tuplesAreEqual(ch->folDecision->parents, folDecision->parents)) return ch;
+  }
+  LOG(-1) <<"a child with action '" <<*folDecision <<"' does not exist";
+  return NULL;
+}
+
 void ManipulationTree_Node::getAll(ManipulationTree_NodeL& L){
   L.append(this);
   for(ManipulationTree_Node *ch:children) ch->getAll(L);

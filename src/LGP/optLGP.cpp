@@ -10,16 +10,18 @@ OptLGP::OptLGP(mlr::KinematicWorld &kin, FOL_World &fol){
 }
 
 OptLGP::~OptLGP(){
-    listDelete(views);
+    views.clear();
 }
 
 void OptLGP::initDisplay(){
-    views.resize(4);
-    views(1) = new OrsPathViewer("pose", 1., -0);
-    views(2) = new OrsPathViewer("sequence", 1., -0);
-    views(3) = new OrsPathViewer("path", .1, -1);
-    int r=system("evince z.pdf &");
-    if(r) LOG(-1) <<"could not startup evince";
+    if(!views.N){
+        views.resize(4);
+        views(1) = make_shared<OrsPathViewer>("pose", 1., -0);
+        views(2) = make_shared<OrsPathViewer>("sequence", 1., -0);
+        views(3) = make_shared<OrsPathViewer>("path", .1, -1);
+        int r=system("evince z.pdf &");
+        if(r) LOG(-1) <<"could not startup evince";
+    }
 }
 
 void OptLGP::updateDisplay(){
@@ -121,6 +123,31 @@ void OptLGP::player(StringA cmds){
             }
         }
     }
+}
+
+void OptLGP::optFixedSequence(mlr::String &seq){
+    Graph& tmp = root->fol.KB.newSubgraph({"TMP"},{})->value;
+    tmp.read(seq);
+
+    cout <<"TMP:" <<*tmp.isNodeOfGraph <<endl;
+
+    initDisplay();
+
+    MNode *node = root;
+
+    for(Node *actionLiteral:tmp){
+        node->expand();
+        MNode *next = node->getChildByAction(actionLiteral);
+        if(!next) LOG(-2) <<"action '" <<*actionLiteral <<"' is not a child of '" <<*node <<"'";
+        node = next;
+    }
+
+    node->optLevel(1);
+    node->optLevel(2);
+    node->optLevel(3);
+
+    displayFocus = node;
+    updateDisplay();
 }
 
 bool OptLGP::execChoice(mlr::String cmd){
@@ -277,5 +304,5 @@ void OptLGP::run(int verbose, bool display){
         updateDisplay();
     }
 
-    if(display) listDelete(views);
+    if(display) views.clear();
 }

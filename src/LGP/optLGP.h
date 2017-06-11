@@ -8,7 +8,7 @@ struct OrsPathViewer;
 struct OptLGP{
   MNode *root, *displayFocus;
 
-  mlr::Array<OrsPathViewer*> views; //displays for the 3 different levels
+  mlr::Array<std::shared_ptr<OrsPathViewer>> views; //displays for the 3 different levels
 
   //-- these are lists or queues; I don't maintain them sorted because their evaluation (e.g. f(n)=g(n)+h(n)) changes continuously
   // while new bounds are computed. Therefore, whenever I pop from these lists, I find the minimum w.r.t. a heuristic. The
@@ -48,5 +48,7 @@ public:
   bool execRandomChoice();
 
   void player(StringA cmds={});
+
+  void optFixedSequence(mlr::String& seq);
 
 };
