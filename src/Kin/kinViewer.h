@@ -21,6 +21,10 @@
 
 //===========================================================================
 
+void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix=0, int w=-1, int h=-1);
+
+//===========================================================================
+
 struct OrsViewer_old : Thread {
   Access<mlr::KinematicWorld> modelWorld;
   //-- outputs

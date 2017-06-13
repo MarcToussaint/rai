@@ -157,6 +157,24 @@ void OrsPathViewer::step(){
 
 //===========================================================================
 
+void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix, int w, int h){
+  mlr::KinematicWorld copy;
+  for(uint t=0;t<cs.N;t++){
+    copy.copy(*cs(t), true);
+#if 0 //render on screen
+    copy.gl().resize(w,h);
+    copy.gl().captureImg=true;
+    copy.gl().update(STRING(" (time " <<tprefix+int(t) <<'/' <<tprefix+int(cs.N) <<')').p, false, false, true);
+#else
+    copy.gl().text.clear() <<"time " <<tprefix+int(t) <<'/' <<tprefix+int(cs.N);
+    copy.gl().renderInBack(true, false, w, h);
+#endif
+    write_ppm(copy.gl().captureImage, STRING(filePrefix<<std::setw(3)<<std::setfill('0')<<t<<".ppm"));
+  }
+}
+
+//===========================================================================
+
 OrsPoseViewer::OrsPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec)
   : Thread(STRING("OrsPoseViewer_"<<poseVarNames), beatIntervalSec),
     modelWorld(this, modelVarName, false),

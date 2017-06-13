@@ -24,6 +24,11 @@ void OptLGP::initDisplay(){
     }
 }
 
+void OptLGP::renderToFile(uint i, const char* filePrefix){
+    CHECK(displayFocus->komoProblem(i) && displayFocus->komoProblem(i)->configurations.N, "level " <<i <<" has not been computed for the current 'displayFocus'");
+    renderConfigurations(displayFocus->komoProblem(i)->configurations, filePrefix, -2, 600, 600);
+}
+
 void OptLGP::updateDisplay(){
   for(uint i=1;i<views.N;i++){
       if(displayFocus->komoProblem(i) && displayFocus->komoProblem(i)->configurations.N)

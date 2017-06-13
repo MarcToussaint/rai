@@ -40,6 +40,7 @@ public:
   mlr::String report();
   void initDisplay();
   void updateDisplay();
+  void renderToFile(uint i=3, const char* filePrefix="vid/z.path.");
 
   //-- kind of a gui:
   void printChoices();
