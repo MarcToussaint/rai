@@ -143,14 +143,16 @@ void OrsPathViewer::step(){
   copy.gl().dataLock.writeLock();
   configurations.readAccess();
   uint T=configurations().N;
-  if(t>=T) t=0;
-  if(T) copy.copy(*configurations()(t), true);
+  if(t>=T*1.1) t=0;
+  uint tt=t;
+  if(tt>=T) tt=T-1;
+  if(T) copy.copy(*configurations()(tt), true);
   configurations.deAccess();
   copy.gl().dataLock.unlock();
   if(T){
     copy.gl().captureImg=writeToFiles;
-    copy.gl().update(STRING(" (time " <<tprefix+int(t) <<'/' <<tprefix+int(T) <<')').p, false, false, true);
-    if(writeToFiles) write_ppm(copy.gl().captureImage,STRING("vid/z.path."<<std::setw(3)<<std::setfill('0')<<tprefix+int(t)<<".ppm"));
+    copy.gl().update(STRING(" (time " <<tprefix+int(tt) <<'/' <<tprefix+int(T) <<')').p, false, false, true);
+    if(writeToFiles) write_ppm(copy.gl().captureImage,STRING("vid/z.path."<<std::setw(3)<<std::setfill('0')<<tprefix+int(tt)<<".ppm"));
   }
   t++;
 }

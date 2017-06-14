@@ -19,7 +19,7 @@
 #include <Kin/kin_swift.h>
 #include <Kin/taskMaps.h>
 #include <Gui/opengl.h>
-#include <Kin/taskMap_FixAttachedObjects.h>
+#include <Kin/taskMap_FixSwitchedObjects.h>
 #include <Kin/taskMap_AboveBox.h>
 #include <Kin/taskMap_AlignStacking.h>
 #include <Kin/taskMap_GJK.h>

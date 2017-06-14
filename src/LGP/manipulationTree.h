@@ -81,7 +81,7 @@ struct ManipulationTree_Node{
   ManipulationTree_Node(ManipulationTree_Node *parent, FOL_World::Handle& a);
 
   //- computations on the node
-  void expand();           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
+  void expand(int verbose=0);           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
   void optLevel(uint level);
   //MC stuff -- TODO
   arr generateRootMCRollouts(uint num, int stepAbort, const mlr::Array<MCTS_Environment::Handle>& prefixDecisions);

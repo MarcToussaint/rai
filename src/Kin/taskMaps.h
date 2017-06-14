@@ -22,7 +22,7 @@
 #include "taskMap_default.h"
 #include "taskMap_qLimits.h"
 #include "taskMap_pushConsistent.h"
-#include "taskMap_FixAttachedObjects.h"
+#include "taskMap_FixSwitchedObjects.h"
 #include "taskMap_AboveBox.h"
 #include "taskMap_AlignStacking.h"
 #include "taskMap_linTrans.h"

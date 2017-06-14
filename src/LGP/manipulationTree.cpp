@@ -76,12 +76,15 @@ ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS
 //  h(l_symbolic) = 0.; //heuristic
 }
 
-void ManipulationTree_Node::expand(){
+void ManipulationTree_Node::expand(int verbose){
   if(isExpanded){ LOG(-1) <<"MNode '" <<*this <<"' is already expanded"; return; }
   CHECK(!children.N,"");
   if(isTerminal) return;
   fol.setState(folState, step);
-  auto actions = fol.get_actions();
+      int tmp=fol.verbose;
+      fol.verbose=verbose;
+      auto actions = fol.get_actions();
+      fol.verbose=tmp;
   for(FOL_World::Handle& a:actions){
 //    cout <<"  EXPAND DECISION: " <<*a <<endl;
     new ManipulationTree_Node(this, a);
@@ -151,6 +154,8 @@ void ManipulationTree_Node::optLevel(uint level){
   komoProblem(level) = new KOMO();
   KOMO& komo(*komoProblem(level));
 
+  cout <<"########## OPTIM lev " <<level <<endl;
+
   //-- prepare the komo problem
   switch(level){
   case 1:{
@@ -192,7 +197,7 @@ void ManipulationTree_Node::optLevel(uint level){
       komo.setModel(startKinematics);
       komo.setTiming(time, 10, 5., 2, false);
 
-      komo.setHoming(-1., -1., 1e-2);
+//      komo.setHoming(-1., -1., 1e-2);
       komo.setSquaredQAccelerations();
 //      komo.setSquaredQVelocities();
       komo.setSquaredFixJointVelocities(-1., -1., 1e3);
@@ -209,6 +214,7 @@ void ManipulationTree_Node::optLevel(uint level){
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); )
   komo.reset();
   try{
+      komo.verbose=3;
     komo.run();
   } catch(const char* msg){
     cout <<"KOMO FAILED: " <<msg <<endl;
@@ -218,9 +224,10 @@ void ManipulationTree_Node::optLevel(uint level){
   COUNT_opt(level)++;
   count(level)++;
 
-  DEBUG( komo.getReport(false, 1, FILE("z.problem")); )
+  DEBUG( komo.getReport(false, 1, FILE("z.problem")); );
+//  komo.checkGradients();
 
-  Graph result = komo.getReport();
+  Graph result = komo.getReport(true);
   DEBUG( FILE("z.problem.cost") <<result; )
   double cost_here = result.get<double>({"total","sqrCosts"});
   double constraints_here = result.get<double>({"total","constraints"});
@@ -260,6 +267,36 @@ void ManipulationTree_Node::optLevel(uint level){
   if(!feasible(level))
     labelInfeasible();
 }
+
+//void ManipulationTree_Node::createEffKinematics(){
+//  KOMO komo;
+
+//  CHECK(!effKinematics.q.N, "has been created before");
+
+//  if(!parent) effKinematics = startKinematics;
+//  else{
+//      if(!parent->effKinematics.q.N){
+//          LOG(-1) <<"I can't compute a pose when no pose was comp. for parent (I need the effKin)";
+//          return;
+//      }
+//      effKinematics = parent->effKinematics;
+//  }
+
+//  komo.setModel(effKinematics);
+//  komo.setAbstractTask(0., *folState);
+
+
+//  effKinematics = *komo.configurations.last();
+
+//  for(uint t=0;t<komo.T;t++){
+//      for(mlr::KinematicSwitch *sw: komo.switches){
+//          if(sw->timeOfApplication==t) sw->apply(effKinematics);
+//      }
+//  }
+//  effKinematics.topSort();
+//  DEBUG( effKinematics.checkConsistency(); )
+//          effKinematics.getJointState();
+//}
 
 #ifdef OLD
 void ManipulationTree_Node::solvePoseProblem(){

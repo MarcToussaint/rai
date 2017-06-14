@@ -108,7 +108,7 @@ void OptLGP::player(StringA cmds){
     bool interactive = mlr::getParameter<bool>("interact", false);
     bool random = mlr::getParameter<bool>("random", false);
 
-    root->expand();
+    root->expand(5);
 
     initDisplay();
 
@@ -141,9 +141,12 @@ void OptLGP::optFixedSequence(mlr::String &seq){
     MNode *node = root;
 
     for(Node *actionLiteral:tmp){
+        node->optLevel(1); //optimize poses along the path
         node->expand();
         MNode *next = node->getChildByAction(actionLiteral);
         if(!next) LOG(-2) <<"action '" <<*actionLiteral <<"' is not a child of '" <<*node <<"'";
+        displayFocus = node;
+        updateDisplay();
         node = next;
     }
 
