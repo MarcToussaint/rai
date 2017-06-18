@@ -3997,10 +3997,6 @@ template<class vert, class edge> bool graphTopsort(mlr::Array<vert*>& V, mlr::Ar
   //success!
   V.permuteInv(newIndex);
   for_list(vert,  vv,  V) vv->index = vv_COUNT;
-//  for(edge *e: E) {
-//    e->ifrom=e->from->index;
-//    e->ito  =e->to->index;
-//  }
 
   //-- reindex edges as well:
   newIndex.resize(E.N);
@@ -4009,10 +4005,35 @@ template<class vert, class edge> bool graphTopsort(mlr::Array<vert*>& V, mlr::Ar
   E.permuteInv(newIndex);
   for_list(edge, e, E) e->index=e_COUNT;
 
-  //permute vertex array:
-  //graphMakeLists(V, E);
-  
   return true;
+}
+
+template<class vert, class edge> mlr::Array<vert*> graphGetTopsortOrder(mlr::Array<vert*>& V, mlr::Array<edge*>& E) {
+  mlr::Array<vert*> noInputs;
+  mlr::Array<vert*>::memMove=true;
+  intA inputs(V.N);
+  mlr::Array<vert*> order;
+
+  for_list(vert,  v,  V) v->index = v_COUNT;
+
+  for(vert *v:V) {
+    inputs(v->index)=v->inLinks.N;
+    if(!inputs(v->index)) noInputs.append(v);
+  }
+
+  while(noInputs.N) {
+    v=noInputs.popFirst();
+    order.append(v);
+
+    for_list(edge,  e,  v->outLinks) {
+      inputs(e->to->index)--;
+      if(!inputs(e->to->index)) noInputs.append(e->to);
+    }
+  }
+
+  CHECK_EQ(order.N, V.N, "can't top sort");
+
+  return order;
 }
 
 template<class vert, class edge>

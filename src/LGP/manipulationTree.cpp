@@ -225,7 +225,7 @@ void ManipulationTree_Node::optLevel(uint level){
   count(level)++;
 
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); );
-//  komo.checkGradients();
+  komo.checkGradients();
 
   Graph result = komo.getReport(true);
   DEBUG( FILE("z.problem.cost") <<result; )
@@ -266,6 +266,12 @@ void ManipulationTree_Node::optLevel(uint level){
 
   if(!feasible(level))
     labelInfeasible();
+
+#if 0 //DEBUG
+  for(uint i=0;i<komo.configurations.N;i++){
+      FILE(STRING("z.config."<<i)) <<*komo.configurations(i);
+  }
+#endif
 }
 
 //void ManipulationTree_Node::createEffKinematics(){

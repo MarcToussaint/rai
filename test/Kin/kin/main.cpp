@@ -30,9 +30,31 @@ void TEST(LoadSave){
 // Jacobian test
 //
 
+void testJacobianInFile(const char* filename, const char* shape){
+  mlr::KinematicWorld K(filename);
+
+  mlr::Shape *sh=K.getShapeByName(shape);
+
+  VectorFunction f = ( [&sh, &K](arr& y, arr& J, const arr& x) -> void
+  {
+    K.setJointState(x);
+    K.kinematicsPos(y, J, sh->body, NoVector);
+    if(&J) cout <<"J=" <<J <<endl;
+  } );
+
+  checkJacobian(f, K.q, 1e-4);
+
+//  mlr::wait();
+}
+
+//===========================================================================
+//
+// Jacobian test
+//
+
 void TEST(Kinematics){
 
-  struct MyFct:VectorFunction{
+  struct MyFct : VectorFunction{
     enum Mode {Pos, Vec, Quat, RelPos, RelVec, RelRot} mode;
     mlr::KinematicWorld& W;
     mlr::Body *b, *b2;
@@ -50,6 +72,7 @@ void TEST(Kinematics){
           case RelVec: W.kinematicsRelVec(y,J,b,vec,b2); break;
           case RelRot: W.kinematicsRelRot(y,J,b,b2); break;
         }
+        //if(&J) cout <<"\nJ=" <<J <<endl;
       } );
     }
     VectorFunction& operator()(){ return *this; }
@@ -57,7 +80,9 @@ void TEST(Kinematics){
 
 //  mlr::KinematicWorld G("arm7.g");
   mlr::KinematicWorld G("kinematicTests.g");
-  //mlr::KinematicWorld G("../../../data/pr2_model/pr2_model.ors");
+//  mlr::KinematicWorld G("../../../data/pr2_model/pr2_model.ors");
+//  mlr::KinematicWorld G("../../../projects/17-LGP-push/quatJacTest.g");
+//  G.watch(true);
 
   for(uint k=0;k<10;k++){
     mlr::Body *b = G.bodies.rndElem();
@@ -67,7 +92,6 @@ void TEST(Kinematics){
     vec2.setRandom();
     arr x(G.getJointStateDimension());
     rndUniform(x,-.5,.5,false);
-//    x/=sqrt(sumOfSqr(x({0,3})));
 
     cout <<"kinematicsPos:   "; checkJacobian(MyFct(MyFct::Pos   , G, b, vec, b2, vec2)(), x, 1e-5);
     cout <<"kinematicsRelPos:"; checkJacobian(MyFct(MyFct::RelPos, G, b, vec, b2, vec2)(), x, 1e-5);

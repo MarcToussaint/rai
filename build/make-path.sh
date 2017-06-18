@@ -10,7 +10,7 @@ then    # lock did not exist and was created successfully
 	tput sgr0 && echo "         * UpToDate " $1/$2
     else
 	tput setaf 3 && echo "       *** Make     " $1 && tput sgr0
-	MAKEFLAGS='-j4 -k' make  -f Makefile $3
+        MAKEFLAGS='-j4 -k' nice -10 make -f Makefile $3
 	if [ $? = 0 ] ; then # success
 	    touch $2
 	    tput setaf 2 && echo "       *** Done     " $1 && tput sgr0

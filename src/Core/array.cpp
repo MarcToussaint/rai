@@ -1200,15 +1200,16 @@ bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance, bool 
 
 bool checkJacobian(const VectorFunction& f,
                    const arr& x, double tolerance, bool verbose) {
+  arr x_copy=x;
   arr y, J, dx, dy, JJ;
-  f(y, J, x);
+  f(y, J, x_copy);
   if(isRowShifted(J)) J = unpack(J);
 
   JJ.resize(y.N, x.N);
   double eps=CHECK_EPS;
   uint i, k;
   for(i=0; i<x.N; i++) {
-    dx=x;
+    dx=x_copy;
     dx.elem(i) += eps;
     f(dy, NoArr, dx);
     dy = (dy-y)/eps;

@@ -16,7 +16,7 @@
 #include "taskMap.h"
 #include "taskMap_qItself.h"
 #include "taskMap_GJK.h"
-#include "taskMap_FixAttachedObjects.h"
+#include "taskMap_FixSwitchedObjects.h"
 
 //===========================================================================
 
@@ -42,6 +42,16 @@ void TaskMap::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
   uint offset = G.N-1-k; //G.N might contain more configurations than the order of THIS particular task -> the front ones are not used
   for(uint i=0;i<=k;i++)
     phi(y_bar(i), (&J?J_bar(i):NoArr), *G(offset+i), t-k+i);
+ 
+ // check for quaternion flipping
+  if(k==1 && flipTargetSignOnNegScalarProduct && scalarProduct(y_bar(1), y_bar(0))<0.){
+      if (&J) J_bar(0) = -J_bar(0);
+      y_bar(0)*=-1.;
+  }
+  // NIY
+  if(k==2 && flipTargetSignOnNegScalarProduct) HALT("Quaternion flipping NIY for acceleration");
+  if(k==3 && flipTargetSignOnNegScalarProduct) HALT("Quaternion flipping NIY for jerk");
+
   if(k==1)  y = (y_bar(1)-y_bar(0))/tau; //penalize velocity
   if(k==2)  y = (y_bar(2)-2.*y_bar(1)+y_bar(0))/tau2; //penalize acceleration
   if(k==3)  y = (y_bar(3)-3.*y_bar(2)+3.*y_bar(1)-y_bar(0))/tau3; //penalize jerk

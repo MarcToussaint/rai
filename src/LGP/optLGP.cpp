@@ -130,9 +130,10 @@ void OptLGP::player(StringA cmds){
     }
 }
 
-void OptLGP::optFixedSequence(mlr::String &seq){
+void OptLGP::optFixedSequence(const mlr::String& seq){
     Graph& tmp = root->fol.KB.newSubgraph({"TMP"},{})->value;
-    tmp.read(seq);
+    mlr::String tmpseq(seq);
+    tmp.read(tmpseq);
 
     cout <<"TMP:" <<*tmp.isNodeOfGraph <<endl;
 

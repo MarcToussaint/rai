@@ -56,6 +56,8 @@ void TaskMap_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau,
     pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G, tau, t);
 
     TaskMap_Default quat(quatDiffTMT, j0->to->shapes.first()->index);
+    // flipp the quaternion sign if necessary
+    quat.flipTargetSignOnNegScalarProduct = true;
     quat.order=1;
     quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G, tau, t);
 #else //relative velocities
@@ -64,6 +66,7 @@ void TaskMap_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau,
     pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G, tau, t);
 
     TaskMap_Default quat(quatDiffTMT, j0->to->shapes.first()->index/*, NoVector, j0->from->shapes.first()->index*/);
+    quat.flipTargetSignOnNegScalarProduct = true;
     quat.order=1;
     quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G, tau, t);
 #endif
@@ -102,8 +105,56 @@ void TaskMap_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau,
     pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G, tau, t);
 
     TaskMap_Default quat(quatDiffTMT, b0->shapes.first()->index);
+    // flipp the quaternion sign if necessary
+    quat.flipTargetSignOnNegScalarProduct = true;
     quat.order=1;
     quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G, tau, t);
+
+    if(false && &J && t==3){
+//        analyzeJointStateDimensions();
+        //-- clean up the graph
+//        G.elem(-1)->analyzeJointStateDimensions();
+//        G.elem(-1)->checkConsistency();
+//        G.elem(-1)->topSort();
+//        G.elem(-1)->jointSort();
+//        G.elem(-1)->calc_missingAB_from_BodyAndJointFrames();
+//        G.elem(-1)->analyzeJointStateDimensions();
+//        G.elem(-1)->calc_q_from_Q();
+//        G.elem(-1)->calc_fwdPropagateFrames();
+
+//        G.elem(-1)->checkConsistency();
+//        G.elem(-2)->checkConsistency();
+//        FILE("z.last") <<*G.elem(-1);
+//        cout <<"\n*** A ***\n" <<J*sqrt(1000.) <<endl;
+//        cout <<"\n*** C ***\n" <<Jt*sqrt(1000.) <<endl;
+
+//        if(true){
+//          const char* filename="z.last";
+//          const char* shape="obj1";
+//          mlr::KinematicWorld K(*G.elem(-1));
+//          FILE("z.last2") <<K;
+////          mlr::KinematicWorld K(filename);
+////          K.setJointState(G.elem(-1)->q);
+//          mlr::Shape *sh=K.getShapeByName(shape);
+//          TaskMap_Default pos(posDiffTMT, sh->index);
+//          arr y,J;
+//          pos.phi(y, J, K);
+//          cout <<"\n*** B ***\n" <<J*sqrt(1000.) <<endl;
+
+
+//          VectorFunction f = ( [&pos, &K](arr& y, arr& J, const arr& x) -> void
+//          {
+//              K.setJointState(x);
+//                  pos.phi(y,J,K);
+//          } );
+
+//          checkJacobian(f, K.q, 1e-4);
+
+//          exit(0);
+////          mlr::wait();
+//        }
+
+    }
 
 //    if(sumOfSqr(y)>1e-3) cout <<"body " <<b0->name <<" causes switch costs " <<sumOfSqr(y) <<" at t=" <<t <<" y=" <<y <<endl;
 #else //relative velocities
@@ -112,6 +163,8 @@ void TaskMap_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau,
     pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G, tau, t);
 
     TaskMap_Default quat(quatDiffTMT, j0->to->shapes.first()->index/*, NoVector, j0->from->shapes.first()->index*/);
+    // flipp the quaternion sign if necessary
+    quat.flipTargetSignOnNegScalarProduct = true;
     quat.order=1;
     quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G, tau, t);
 #endif

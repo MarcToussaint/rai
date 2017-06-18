@@ -904,6 +904,19 @@ void mlr::KinematicWorld::makeLinkTree() {
   isLinkTree=true;
 }
 
+void mlr::KinematicWorld::jointSort(){
+  BodyL order = graphGetTopsortOrder(bodies, joints);
+  JointL joints_new;
+  for(mlr::Body *b: order) if(b->inLinks.N) joints_new.append(b->inLinks.scalar());
+  CHECK_EQ(joints_new.N, joints.N, "");
+  joints = joints_new;
+  for_list(mlr::Joint, j, joints) j->index=j_COUNT;
+  qdim.clear();
+  q.clear();
+  qdot.clear();
+  analyzeJointStateDimensions();
+}
+
 /** @brief KINEMATICS: given the (absolute) frames of root nodes and the relative frames
     on the edges, this calculates the absolute frames of all other nodes (propagating forward
     through trees and testing consistency of loops). */
@@ -1388,8 +1401,8 @@ void mlr::KinematicWorld::setJointState(const arr& _q, const arr& _qdot, int age
 
   uint N=getJointStateDimension(agent);
   CHECK(_q.N==N && (!(&_qdot) || _qdot.N==N), "wrong joint state dimensionalities");
-  if(&_q!=&q) q=_q;
-  if(&_qdot){ if(&_qdot!=&qdot) qdot=_qdot; }else qdot.clear();
+  q=_q;
+  if(&_qdot) qdot=_qdot; else qdot.clear();
 
   calc_Q_from_q(agent);
 
@@ -2057,6 +2070,7 @@ void mlr::KinematicWorld::read(std::istream& is) {
 //  cout <<"***KVG:\n" <<G <<endl;
   init(G);
 }
+
 void mlr::KinematicWorld::init(const Graph& G) {
   clear();
 
@@ -2127,8 +2141,9 @@ void mlr::KinematicWorld::init(const Graph& G) {
 
   //-- clean up the graph
   analyzeJointStateDimensions();
+//  topSort();
+  jointSort();
   checkConsistency();
-  topSort();
   //makeLinkTree();
   calc_missingAB_from_BodyAndJointFrames();
   analyzeJointStateDimensions();
@@ -2628,22 +2643,37 @@ bool mlr::KinematicWorld::checkConsistency(){
   for(Body *b: bodies){
     CHECK(&b->world, "");
     CHECK(&b->world==this,"");
-    CHECK_EQ(b,bodies(b->index),"");
+    CHECK_EQ(b, bodies(b->index), "");
     for(Joint *j: b->outLinks) CHECK_EQ(j->from,b,"");
     for(Joint *j: b->inLinks)  CHECK_EQ(j->to,b,"");
     for(Shape *s: b->shapes)   CHECK_EQ(s->body,b,"");
     b->ats.checkConsistency();
   }
+
   for(Joint *j: joints){
     CHECK(&j->world && j->from && j->to, "");
     CHECK(&j->world==this,"");
-    CHECK_EQ(j,joints(j->index),"");
+    CHECK_EQ(j, joints(j->index), "");
     CHECK(j->from->outLinks.findValue(j)>=0,"");
     CHECK(j->to->inLinks.findValue(j)>=0,"");
     CHECK_GE(j->type.x, 0, "");
     CHECK_LE(j->type.x, JT_free, "");
     j->ats.checkConsistency();
   }
+
+  //check topsort
+  intA level = consts<int>(0, bodies.N);
+  //compute levels
+  for(Joint *j: joints) level(j->to->index) = level(j->from->index)+1;
+
+  for(Joint *j: joints){
+      CHECK(level(j->from->index) < level(j->to->index), "joint does not go forward");
+      if(j->index) CHECK_LE(level(joints(j->index-1)->to->index), level(j->to->index), "joints are not sorted");
+  }
+  for(Body *b: bodies){
+    for(Joint *j: b->inLinks)  CHECK(level(j->from->index) < level(b->index), "topsort failed");
+  }
+
   for(Shape *s: shapes){
     CHECK(&s->world, "");
     CHECK(&s->world==this,"");
@@ -3480,6 +3510,7 @@ int animateConfiguration(mlr::KinematicWorld& C, Inotify *ino) {
     double center = lower_lim + .5*delta;
     if(delta<=1e-10){ center=x0(i); delta=1.; }
     double offset = acos( 2. * (x0(i) - center) / delta );
+    if(offset!=offset) offset=0.; //if NAN
 
     for(t=0; t<steps; t++) {
       if(C.gl().pressedkey==13 || C.gl().pressedkey==27 || C.gl().pressedkey=='q') return C.gl().pressedkey;
@@ -3487,6 +3518,7 @@ int animateConfiguration(mlr::KinematicWorld& C, Inotify *ino) {
 
       x(i) = center + (delta*(0.5*cos(MLR_2PI*t/steps + offset)));
       // Joint limits
+      checkNan(x);
       C.setJointState(x);
       C.gl().update(STRING("DOF = " <<i), false, false, true);
       mlr::wait(0.01);

@@ -50,6 +50,6 @@ public:
 
   void player(StringA cmds={});
 
-  void optFixedSequence(mlr::String& seq);
+  void optFixedSequence(const mlr::String& seq);
 
 };
