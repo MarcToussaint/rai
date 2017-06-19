@@ -154,7 +154,7 @@ void ManipulationTree_Node::optLevel(uint level){
   komoProblem(level) = new KOMO();
   KOMO& komo(*komoProblem(level));
 
-  cout <<"########## OPTIM lev " <<level <<endl;
+  //cout <<"########## OPTIM lev " <<level <<endl;
 
   //-- prepare the komo problem
   switch(level){
@@ -195,9 +195,10 @@ void ManipulationTree_Node::optLevel(uint level){
   } break;
   case 3:{
       komo.setModel(startKinematics);
-      komo.setTiming(time, 10, 5., 2, false);
+      uint stepsPerPhase = mlr::getParameter<uint>("LGP/stepsPerPhase", 10);
+      komo.setTiming(time, stepsPerPhase, 5., 2, false);
 
-//      komo.setHoming(-1., -1., 1e-2);
+      komo.setHoming(-1., -1., 1e-2);
       komo.setSquaredQAccelerations();
 //      komo.setSquaredQVelocities();
       komo.setSquaredFixJointVelocities(-1., -1., 1e3);
@@ -214,7 +215,7 @@ void ManipulationTree_Node::optLevel(uint level){
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); )
   komo.reset();
   try{
-      komo.verbose=3;
+//      komo.verbose=3;
     komo.run();
   } catch(const char* msg){
     cout <<"KOMO FAILED: " <<msg <<endl;
@@ -225,9 +226,9 @@ void ManipulationTree_Node::optLevel(uint level){
   count(level)++;
 
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); );
-  komo.checkGradients();
+//  komo.checkGradients();
 
-  Graph result = komo.getReport(true);
+  Graph result = komo.getReport();
   DEBUG( FILE("z.problem.cost") <<result; )
   double cost_here = result.get<double>({"total","sqrCosts"});
   double constraints_here = result.get<double>({"total","constraints"});

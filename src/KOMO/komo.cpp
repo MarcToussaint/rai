@@ -793,14 +793,10 @@ void KOMO::setupConfigurations(){
     world.swift().setCutoff(2.*mlr::getParameter<double>("swiftCutoff", 0.11));
   }
   computeMeshNormals(world.shapes);
-  world.checkConsistency();
 
   configurations.append(new mlr::KinematicWorld())->copy(world, true);
-  configurations.last()->checkConsistency();
-
   for(uint s=1;s<k_order+T;s++){
     configurations.append(new mlr::KinematicWorld())->copy(*configurations(s-1), true);
-    configurations.last()->checkConsistency();
     CHECK(configurations(s)==configurations.last(), "");
     //apply potential graph switches
     for(mlr::KinematicSwitch *sw:switches){
@@ -811,7 +807,7 @@ void KOMO::setupConfigurations(){
     }
     configurations(s)->jointSort();
     configurations(s)->calc_q_from_Q();
-    configurations.last()->checkConsistency();
+    //configurations.last()->checkConsistency();
   }
 }
 

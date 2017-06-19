@@ -82,7 +82,7 @@ void TaskMap_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau,
   arr yi, Ji;
   uint M=7;
   mlr::Array<mlr::Body*> switchedBodies = getSwitchedBodies(*G.elem(-2), *G.elem(-1));
-  y.resize(M*switchedBodies.d0);
+  y.resize(M*switchedBodies.d0).setZero();
   if(&J){
     uint xbarDim=0;
     for(auto& W:G) xbarDim+=W->q.N;
@@ -94,11 +94,8 @@ void TaskMap_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau,
     CHECK(b0->index == b1->index, "");
     CHECK(b0->shapes.first()->index == b1->shapes.first()->index, "");
 
-    if(b0->name.startsWith("slider")) continue;
+    if(b0->name.startsWith("slider")) continue; //warning: this introduces zeros in y and J -- but should be ok
 
-    if(t==39){
-        cout <<"t=" <<t <<" switched bodies:" <<b0->name <<' ' <<b1->name <<endl;
-    }
 #if 1 //absolute velocities
     TaskMap_Default pos(posDiffTMT, b0->shapes.first()->index);
     pos.order=1;
@@ -106,11 +103,13 @@ void TaskMap_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau,
 
     TaskMap_Default quat(quatDiffTMT, b0->shapes.first()->index);
     // flipp the quaternion sign if necessary
-    quat.flipTargetSignOnNegScalarProduct = true;
+    quat.flipTargetSignOnNegScalarProduct = true;  ///WARNING: somehow that doesn't work! The effect on grasping is strange (test when grasping rotated stick)
     quat.order=1;
     quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G, tau, t);
 
-    if(false && &J && t==3){
+#if 0
+    if(&J && t==3){
+        cout <<"switched bodies:" <<b0->name <<' ' <<b1->name <<endl;
 //        analyzeJointStateDimensions();
         //-- clean up the graph
 //        G.elem(-1)->analyzeJointStateDimensions();
@@ -122,39 +121,43 @@ void TaskMap_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau,
 //        G.elem(-1)->calc_q_from_Q();
 //        G.elem(-1)->calc_fwdPropagateFrames();
 
-//        G.elem(-1)->checkConsistency();
-//        G.elem(-2)->checkConsistency();
-//        FILE("z.last") <<*G.elem(-1);
-//        cout <<"\n*** A ***\n" <<J*sqrt(1000.) <<endl;
-//        cout <<"\n*** C ***\n" <<Jt*sqrt(1000.) <<endl;
+        arr yt,Jt;
+        pos.phi(yt, Jt, *G.last(), t);
 
-//        if(true){
+        G.elem(-1)->checkConsistency();
+        G.elem(-2)->checkConsistency();
+        FILE("z.last") <<*G.elem(-1);
+        cout <<"\n*** A ***\n" <<J*sqrt(1000.) <<endl;
+        cout <<"\n*** C ***\n" <<Jt*sqrt(1000.) <<endl;
+
+        if(true){
 //          const char* filename="z.last";
-//          const char* shape="obj1";
-//          mlr::KinematicWorld K(*G.elem(-1));
-//          FILE("z.last2") <<K;
-////          mlr::KinematicWorld K(filename);
-////          K.setJointState(G.elem(-1)->q);
-//          mlr::Shape *sh=K.getShapeByName(shape);
-//          TaskMap_Default pos(posDiffTMT, sh->index);
-//          arr y,J;
-//          pos.phi(y, J, K);
-//          cout <<"\n*** B ***\n" <<J*sqrt(1000.) <<endl;
+          const char* shape="obj1";
+          mlr::KinematicWorld K(*G.elem(-1));
+          FILE("z.last2") <<K;
+//          mlr::KinematicWorld K(filename);
+//          K.setJointState(G.elem(-1)->q);
+          mlr::Shape *sh=K.getShapeByName(shape);
+          TaskMap_Default pos(posDiffTMT, sh->index);
+          arr y,J;
+          pos.phi(y, J, K);
+          cout <<"\n*** B ***\n" <<J*sqrt(1000.) <<endl;
 
 
-//          VectorFunction f = ( [&pos, &K](arr& y, arr& J, const arr& x) -> void
-//          {
-//              K.setJointState(x);
-//                  pos.phi(y,J,K);
-//          } );
+          VectorFunction f = ( [&pos, &K](arr& y, arr& J, const arr& x) -> void
+          {
+              K.setJointState(x);
+                  pos.phi(y,J,K);
+          } );
 
-//          checkJacobian(f, K.q, 1e-4);
+          checkJacobian(f, K.q, 1e-4);
 
 //          exit(0);
-////          mlr::wait();
-//        }
+//          mlr::wait();
+        }
 
     }
+#endif
 
 //    if(sumOfSqr(y)>1e-3) cout <<"body " <<b0->name <<" causes switch costs " <<sumOfSqr(y) <<" at t=" <<t <<" y=" <<y <<endl;
 #else //relative velocities
