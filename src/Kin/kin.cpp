@@ -2838,6 +2838,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     Joint *j = G.getJointByBodies(from->body, to->body);
     CHECK(j,"can't find joint between '"<<from->name <<"--" <<to->name <<"' Deleted before?");
     delete j;
+    G.jointSort();
     return;
   }
   G.isLinkTree=false;
@@ -2849,6 +2850,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     j->type=jointType;
     j->A = from->rel * jA;
     j->B = jB * (-to->rel);
+    G.jointSort();
     G.calc_fwdPropagateFrames();
     return;
   }
@@ -2859,6 +2861,8 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     j->type=jointType;
     j->B.setDifference(from->body->X, to->body->X);
     j->A.setZero();
+    G.jointSort();
+    G.calc_fwdPropagateFrames();
     return;
   }
   if(symbol==addJointAtTo){
@@ -2868,6 +2872,8 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     j->type=jointType;
     j->A.setDifference(from->body->X, to->body->X);
     j->B.setZero();
+    G.jointSort();
+    G.calc_fwdPropagateFrames();
     return;
   }
   if(symbol==addSliderMechanism){
@@ -2891,6 +2897,9 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     j3->type = JT_hingeZ;
     j3->constrainToZeroVel=true;
     j3->B = jB * (-to->rel);
+
+    G.jointSort();
+    G.calc_fwdPropagateFrames();
     return;
   }
   HALT("shouldn't be here!");

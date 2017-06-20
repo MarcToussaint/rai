@@ -291,6 +291,7 @@ struct VariableData : VariableBase {
 
   VariableData() : VariableBase(typeid(T), &value), value() {} // default constructor for value always initializes, also primitive types 'bool' or 'int'
   VariableData(const VariableData&) : VariableBase(typeid(T), &value){ HALT("not allowed"); }
+  ~VariableData(){ CHECK(!rwlock.isLocked(), "can't destroy a variable when it is currently accessed!"); }
   void operator=(const VariableData&){ HALT("not allowed"); }
   RToken<T> get(Thread *th=NULL){ return RToken<T>(*this, &value, th); } ///< read access to the variable's data
   WToken<T> set(Thread *th=NULL){ return WToken<T>(*this, &value, th); } ///< write access to the variable's data
