@@ -34,7 +34,7 @@ struct TaskMap {
     };
   }
 
-  TaskMap():order(0) {}
+  TaskMap():order(0), flipTargetSignOnNegScalarProduct(false) {}
   virtual ~TaskMap() {}
   virtual mlr::String shortTag(const mlr::KinematicWorld& K){ NIY; }
 
