@@ -5,7 +5,7 @@ OUTPUT = lib$(NAME).so
 
 GL = 0
 
-DEPEND = Core
+DEPEND = Core 
 
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )
 OBJS = $(SRCS:%.cpp=%.o)
