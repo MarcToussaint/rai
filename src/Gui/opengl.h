@@ -216,8 +216,6 @@ public: //driver dependent methods
   void openWindow();
   void closeWindow();
   void postRedrawEvent(bool fromWithinCallback);
-  void processEvents();
-  void sleepForEvents();
 #if !defined MLR_MSVC && !defined MLR_QTGL
   Display* xdisplay();
   Drawable xdraw();

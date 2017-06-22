@@ -28,27 +28,147 @@ Singleton<SingleGLAccess> singleGLAccess;
 //===========================================================================
 
 #ifdef MLR_FREEGLUT
-#  include "opengl_freeglut.cxx"
-#endif
 
-#ifdef MLR_GTKGL
-#  include "opengl_gtk.cxx"
-#endif
+#include <GL/freeglut.h>
+#include <GL/glx.h>
+//===========================================================================
+//
+// A singleton to ensure once initialization
+//
 
-#ifdef MLR_FLTK
-#  include "opengl_fltk.cxx"
-#endif
+Mutex& OpenGLMutex();
 
-#ifdef MLR_QTGL
-#  include "opengl_qt.cxx"
-#endif
+struct OpenGLProcess : Thread {
+    mlr::Array<OpenGL*> glwins;
+    OpenGLProcess() : Thread("OpenGLProcess", .01){
+        int argc=1;
+        char *argv[1]={(char*)"x"};
+        glutInit(&argc, argv);
+        threadLoop();
+    }
+    ~OpenGLProcess(){
+        threadClose();
+        glutExit();
+    }
+    void open(){}
+    void step(){
+       OpenGLMutex().lock();
+       glutMainLoopEvent();
+       OpenGLMutex().unlock();
+    }
+    void close(){}
+};
 
-#if !defined MLR_FREEGLUT && !defined MLR_GTKGL && !defined MLR_FLTK && !defined MLR_QTGL
-#  include "opengl_void.cxx"
-#else
-#  define MLR_GLUT
-#endif
+Singleton<OpenGLProcess> singleFreeglut;
 
+Mutex& OpenGLMutex(){ return singleFreeglut.mutex; }
+
+
+
+struct SFG_Display_dummy {
+  _XDisplay *Display;
+};
+
+extern SFG_Display_dummy fgDisplay;
+
+
+//===========================================================================
+//
+// OpenGL hidden self
+//
+
+struct sOpenGL {
+  sOpenGL(OpenGL *gl): gl(gl), windowID(-1) {}
+  sOpenGL(OpenGL *gl, void *container){ NIY }
+  ~sOpenGL(){ gl->closeWindow(); }
+
+  void beginGlContext(){}
+  void endGlContext(){}
+
+  //-- private OpenGL data
+  OpenGL *gl;
+  mlr::Vector downVec,downPos,downFoc;
+  mlr::Quaternion downRot;
+
+  //-- engine specific data
+  int windowID;                        ///< id of this window in the global glwins list
+
+  //-- callbacks
+  static void _Void() { }
+  static void _Draw() { auto fg=singleFreeglut();  OpenGL *gl=fg->glwins(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
+  static void _Key(unsigned char key, int x, int y) {        singleFreeglut()->glwins(glutGetWindow())->Key(key,x,y); }
+  static void _Mouse(int button, int updown, int x, int y) { singleFreeglut()->glwins(glutGetWindow())->Mouse(button,updown,x,y); }
+  static void _Motion(int x, int y) {                        singleFreeglut()->glwins(glutGetWindow())->Motion(x,y); }
+  static void _PassiveMotion(int x, int y) {                 singleFreeglut()->glwins(glutGetWindow())->Motion(x,y); }
+  static void _Reshape(int w,int h) {                        singleFreeglut()->glwins(glutGetWindow())->Reshape(w,h); }
+  static void _MouseWheel(int wheel, int dir, int x, int y){ singleFreeglut()->glwins(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
+
+  void accessWindow() {  //same as above, but also sets gl cocntext (glXMakeCurrent)
+    CHECK(windowID>=0,"window is not created");
+    glutSetWindow(windowID);
+  }
+  void deaccessWindow() {
+#ifndef MLR_MSVC
+    glXMakeCurrent(fgDisplay.Display, None, NULL);
+#endif
+  }
+};
+
+
+//===========================================================================
+//
+// OpenGL implementations
+//
+
+void OpenGL::openWindow(){
+  if(s->windowID==-1){
+    {
+      auto mut = singleFreeglut();
+      glutInitWindowSize(width, height);
+      //  glutInitWindowPosition(posx,posy);
+      glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
+
+      s->windowID = glutCreateWindow(title);
+      if(singleFreeglut()->glwins.N<(uint)s->windowID+1) singleFreeglut()->glwins.resizeCopy(s->windowID+1);
+      singleFreeglut()->glwins(s->windowID) = this;
+
+      glutDisplayFunc(s->_Draw);
+      glutKeyboardFunc(s->_Key);
+      glutMouseFunc(s->_Mouse) ;
+      glutMotionFunc(s->_Motion) ;
+      glutPassiveMotionFunc(s->_PassiveMotion) ;
+      glutReshapeFunc(s->_Reshape);
+      glutMouseWheelFunc(s->_MouseWheel) ;
+    }
+  }
+}
+
+void OpenGL::closeWindow(){
+  if(s->windowID!=-1){
+    auto fg=singleFreeglut();
+    glutDestroyWindow(s->windowID);
+    fg->glwins(s->windowID)=NULL;
+  }
+}
+
+void OpenGL::postRedrawEvent(bool fromWithinCallback) {
+    auto fg=singleFreeglut();
+    s->accessWindow();
+    glutPostRedisplay();
+    s->deaccessWindow();
+}
+
+void OpenGL::resize(int w,int h) {
+  openWindow();
+  {
+    auto fg=singleFreeglut();
+    s->accessWindow();
+    glutReshapeWindow(w,h);
+    s->deaccessWindow();
+  }
+}
+
+#endif
 
 //===========================================================================
 //
@@ -57,9 +177,6 @@ Singleton<SingleGLAccess> singleGLAccess;
 
 template mlr::Array<glUI::Button>::Array();
 template mlr::Array<glUI::Button>::~Array();
-
-
-
 
 
 
@@ -1291,10 +1408,11 @@ int OpenGL::watch(const char *txt) {
   update(STRING(txt<<" - press ENTER to continue"));
   if(mlr::getInteractivity()){
     watching.setStatus(1);
-    while(watching.getStatus()!=0){
-      processEvents();
-      sleepForEvents();
-    }
+    watching.waitForStatusEq(0);
+//    while(watching.getStatus()!=0){
+//      processEvents();
+//      sleepForEvents();
+//    }
   }else{
     mlr::wait(.5);
   }
@@ -1310,7 +1428,7 @@ int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool wai
   isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
   postRedrawEvent(false);
-  if(captureImg || captureDep || waitForCompletedDraw){ processEvents();  isUpdating.waitForStatusEq(0);  processEvents(); }//{ mlr::wait(.01); processEvents(); mlr::wait(.01); }
+  if(captureImg || captureDep || waitForCompletedDraw){ isUpdating.waitForStatusEq(0); }//{ mlr::wait(.01); processEvents(); mlr::wait(.01); }
   return pressedkey;
 }
 
