@@ -164,7 +164,8 @@ void TEST(Copy){
 void TEST(KinematicSpeed){
 #define NUM 10000
 #if 1
-  mlr::KinematicWorld G("../../../data/pr2_model/pr2_model.ors");
+  mlr::KinematicWorld G("kinematicTests.g");
+  //  mlr::KinematicWorld G("../../../data/pr2_model/pr2_model.ors");
   G.makeLinkTree();
   uint n=G.getJointStateDimension();
   arr x(n);
@@ -367,7 +368,8 @@ void TEST(FollowRedundantSequence){
   Z *= .8;
   T=Z.d0;
   G.setJointState(x);
-  G.kinematicsPos(y, NoArr, G.bodies.last(), rel);
+  mlr::Body *endeff = G.getBodyByName("arm7");
+  G.kinematicsPos(y, NoArr, endeff, rel);
   for(t=0;t<T;t++) Z[t]() += y; //adjust coordinates to be inside the arm range
   plotLine(Z);
   G.gl().add(glDrawPlot,&plotModule);
@@ -376,7 +378,7 @@ void TEST(FollowRedundantSequence){
   for(t=0;t<T;t++){
     //Z[t] is the desired endeffector trajectory
     //x is the full joint state, z the endeffector position, J the Jacobian
-    G.kinematicsPos(y, J, G.bodies.last(), rel);  //get the new endeffector position
+    G.kinematicsPos(y, J, endeff, rel);  //get the new endeffector position
     invJ = ~J*inverse_SymPosDef(J*~J);
     x += invJ * (Z[t]-y);                  //simulate a time step (only kinematically)
     G.setJointState(x);

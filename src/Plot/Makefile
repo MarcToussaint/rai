@@ -3,9 +3,9 @@ NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 -include $(BASE)/build/config.mk
 
-GL = 0
+GL = 1
 
-DEPEND = Core 
+DEPEND = Core Gui
 
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )
 OBJS = $(SRCS:%.cpp=%.o)

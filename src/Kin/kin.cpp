@@ -32,6 +32,7 @@
 #include "kin_physx.h"
 #include "kin_ode.h"
 #include <Geo/qhull.h>
+#include <GeoOptim/geoOptim.h>
 #include <Gui/opengl.h>
 #include <Algo/algos.h>
 #include <iomanip>
@@ -523,7 +524,7 @@ void computeOptimalSSBoxes(ShapeL& shapes){
     if(!(s->type==mlr::ST_mesh && s->mesh.V.N)) continue;
     mlr::Transformation t;
     arr x;
-    s->mesh.computeOptimalSSBox(x, t, s->mesh.V);
+    computeOptimalSSBox(s->mesh, x, t, s->mesh.V);
     s->type = mlr::ST_ssBox;
     s->size(0)=2.*x(0); s->size(1)=2.*x(1); s->size(2)=2.*x(2); s->size(3)=x(3);
     s->mesh.setSSBox(s->size(0), s->size(1), s->size(2), s->size(3));

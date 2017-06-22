@@ -77,7 +77,6 @@ struct Mesh : GLDrawer {
   void makeConvexHull();
   void makeTriangleFan();
   void makeLineStrip();
-  void computeOptimalSSBox(arr& x, mlr::Transformation& t, const arr& X, uint trials=10, int verbose=0);
   
   /// @name internal computations & cleanup
   void computeNormals();

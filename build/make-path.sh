@@ -4,6 +4,9 @@
 
 cd $1
 LASTFILE=`ls -Art | tail -n 1`
+
+#echo "MAKE_PATH: in path" $1 "checking newest file is" $2 "newest file=" $LASTFILE
+
 if mkdir Make.lock 2> /dev/null
 then    # lock did not exist and was created successfully
     if [ "$LASTFILE" = $2 ]; then
@@ -22,12 +25,12 @@ then    # lock did not exist and was created successfully
     fi
     rm -rf Make.lock
 else
-    tput setaf 0 && echo "         * Waiting  " $1/$2 && tput sgr0
+    echo "         * Waiting  " $1/$2
     while [ -d Make.lock ]
     do
 	sleep 0.2
     done
-    tput setaf 0 && echo "         * DoneWait " $1/$2 && tput sgr0
+    echo "         * DoneWait " $1/$2
 fi
 
 exit 0
