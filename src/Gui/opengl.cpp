@@ -47,8 +47,9 @@ struct OpenGLProcess : Thread {
         threadLoop();
     }
     ~OpenGLProcess(){
-        threadClose();
-        glutExit();
+//        CHECK(!glwins.N, "there are still OpenGL windows open");
+        thread=0; //AWKWARD: This is called in deinit; pthread was already shutdown; we can't join the thread anymore //threadClose();
+//        glutExit(); //also glut as already shut down during deinit
     }
     void open(){}
     void step(){

@@ -10,7 +10,7 @@ void draw1(void*){
 
 struct Proc:public Thread{
   OpenGL *gl;
-  Proc(const char* name):Thread(name, 0.5){
+  Proc(const char* name):Thread(name, 0.05){
     threadOpen();
   }
   ~Proc(){

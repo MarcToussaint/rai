@@ -680,7 +680,7 @@ void setTasks(KOMO& MP,
 void KOMO::setMoveTo(mlr::KinematicWorld& world, mlr::Shape& endeff, mlr::Shape& target, byte whichAxesToAlign){
 //  if(MP) delete MP;
 //  MP = new KOMO(world);
-  this->world = world;
+  setModel(world);
 
   setTasks(*this, endeff, target, whichAxesToAlign, 1, -1, -1.);
   reset();
@@ -716,10 +716,8 @@ void KOMO::run(){
   }else{
     arr a,b,c,d,e;
     Conv_KOMO_ConstrainedProblem P0(komo_problem);
-    P0.phi(a,b,c,NoTermTypeA, x); //TODO: why???
     Conv_linearlyReparameterize_ConstrainedProblem P(P0, splineB);
-    P.phi(a,b,NoArr,NoTermTypeA,z);
-    opt = new OptConstrained(x, dual, P);
+    opt = new OptConstrained(z, dual, P);
     opt->run();
   }
   if(verbose>0){
