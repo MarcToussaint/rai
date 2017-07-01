@@ -1564,11 +1564,7 @@ bool lapack_isPositiveSemiDefinite(const arr& symmA) {
   arr d, V;
   lapack_EigenDecomp(symmA, d, V);
   // d is nondecreasing ??!??
-  uint i;
-  FOR1D(d, i)
-  if(d(i) < 0.)
-    return false;
-
+  for(double x:d) if(x<0.) return false;
   return true;
 }
 

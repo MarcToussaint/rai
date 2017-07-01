@@ -25,12 +25,7 @@
 #include <string.h>
 #include <functional>
 #include <memory>
-
-//-- TODO: old, remove
-#define FOR1D(x, i)   for(i=0;i<x.N;i++)
-#define FOR1D_DOWN(x, i)   for(i=x.N;i--;)
-#define FOR2D(x, i, j) for(i=0;i<x.d0;i++) for(j=0;j<x.d1;j++)
-#define FOR3D(x, i, j, k) for(i=0;i<x.d0;i++) for(j=0;j<x.d1;j++) for(k=0;k<x.d2;k++)
+#include <vector>
 
 //-- don't require previously defined iterators
 #define for_list(Type, it, X)     Type *it=NULL; for(uint it##_COUNT=0;   it##_COUNT<X.N && ((it=X(it##_COUNT)) || true); it##_COUNT++)
@@ -69,6 +64,7 @@ namespace mlr {
 /// @addtogroup group_array
 /// @{
 
+
 /** Simple array container to store arbitrary-dimensional arrays (tensors).
   Can buffer more memory than necessary for faster
   resize; enables non-const reference of subarrays; enables fast
@@ -77,7 +73,7 @@ namespace mlr {
   Please see also the reference for the \ref array.h
   header, which contains lots of functions that can be applied on
   Arrays. */
-template<class T> struct Array {
+template<class T> struct Array : std::vector<T> {
   T *p;     ///< the pointer on the linear memory allocated
   uint N;   ///< number of elements
   uint nd;  ///< number of dimensions
@@ -92,6 +88,7 @@ template<class T> struct Array {
   //-- special: arrays can be sparse/packed/etc and augmented with aux data to support this
   SpecialArray *special; ///< arbitrary auxiliary data, depends on special
 
+  typedef std::vector<T> vec_type;
   typedef bool (*ElemCompare)(const T& a, const T& b);
 
   /// @name constructors
@@ -113,12 +110,12 @@ template<class T> struct Array {
   Array<T>& operator=(const Array<T>& a);
 
   /// @name iterators
-  typedef T* iterator;
-  typedef const T* const_iterator;
-  iterator begin() { return p; }
-  iterator end() { return p+N; }
-  const_iterator begin() const { return p; }
-  const_iterator end() const { return p+N; }
+//  typedef T* iterator;
+//  typedef const T* const_iterator;
+//  iterator begin() { return p; }
+//  iterator end() { return p+N; }
+//  const_iterator begin() const { return p; }
+//  const_iterator end() const { return p+N; }
 
   /// @name resizing
   Array<T>& resize(uint D0);
@@ -182,7 +179,6 @@ template<class T> struct Array {
   T& operator()(uint i, uint j, uint k) const;
   Array<T> operator()(std::pair<int, int> I) const;
   Array<T> operator()(uint i, std::pair<int, int> J) const;
-//  Array<T> operator()(uint i, std::initializer_list<int> J ) const;
   Array<T> operator()(uint i, uint j, std::initializer_list<int> K) const;
   Array<T> operator[](uint i) const;     // calls referToDim(*this, i)
   Array<T> operator[](std::initializer_list<uint> list) const; //-> remove
@@ -410,7 +406,7 @@ typedef mlr::Array<uint>   uintA;
 typedef mlr::Array<int>    intA;
 typedef mlr::Array<char>   charA;
 typedef mlr::Array<byte>   byteA;
-typedef mlr::Array<bool>   boolA;
+typedef mlr::Array<unsigned char>   boolA;
 typedef mlr::Array<uint16_t>   uint16A;
 typedef mlr::Array<uint32_t>   uint32A;
 typedef mlr::Array<const char*>  CstrList;
@@ -656,7 +652,7 @@ template<class T> void inverse2d(mlr::Array<T>& Ainv, const mlr::Array<T>& A);
 template<class T> mlr::Array<T> replicate(const mlr::Array<T>& A, uint d0);
 template<class T> mlr::Array<T> integral(const mlr::Array<T>& x);
 
-template<class T> uintA size(const mlr::Array<T>& x) { return x.dim(); }
+template<class T> uintA size(const mlr::Array<T>& x) { return x.dim(); } //TODO: remove
 template<class T> void checkNan(const mlr::Array<T>& x);
 template<class T> void sort(mlr::Array<T>& x);
 
