@@ -2730,6 +2730,8 @@ void mlr::KinematicWorld::glDraw(OpenGL& gl) {
 
   glPushMatrix();
 
+  glColor(.5, .5, .5);
+
   //bodies
   if(orsDrawBodies) for(Shape *s: shapes) {
     s->glDraw(gl);
