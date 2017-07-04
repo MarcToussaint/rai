@@ -37,27 +37,58 @@ Singleton<SingleGLAccess> singleGLAccess;
 //
 
 Mutex& OpenGLMutex();
+static uint GLProcessCount = 0;
 
-struct OpenGLProcess : Thread {
-    mlr::Array<OpenGL*> glwins;
-    OpenGLProcess() : Thread("OpenGLProcess", .01){
-        int argc=1;
-        char *argv[1]={(char*)"x"};
-        glutInit(&argc, argv);
-        threadLoop();
+struct GLThread : Thread {
+  GLThread() : Thread("GLSpinner", .01) {}
+  ~GLThread() { threadClose(); } //when this is destroyed in deinit, looping had to be stopped (otherwise pthread error)
+  void open(){}
+  void step(){
+    OpenGLMutex().lock();
+    glutMainLoopEvent();
+    OpenGLMutex().unlock();
+  }
+  void close(){}
+};
+
+class OpenGLProcess {
+private:
+  uint numWins;
+  mlr::Array<OpenGL*> glwins;
+  GLThread th;
+
+public:
+  OpenGLProcess() : numWins(0) {
+    CHECK(GLProcessCount==0,"");
+    GLProcessCount++;
+    int argc=1;
+    char *argv[1]={(char*)"x"};
+    glutInit(&argc, argv);
+  }
+  ~OpenGLProcess(){
+    CHECK(!numWins, "there are still OpenGL windows open");
+    glutExit(); //also glut as already shut down during deinit
+  }
+
+  void addGL(uint i, OpenGL* gl){
+    if(glwins.N<=i) glwins.resizeCopy(i+1);
+    glwins(i) = gl;
+    if(!numWins) th.threadLoop(); //start looping
+    numWins++;
+  }
+  void delGL(uint i, OpenGL* gl){
+    CHECK_EQ(glwins(i), gl, "");
+    glwins(i)=NULL;
+    numWins--;
+    if(!numWins){
+        OpenGLMutex().unlock();
+        th.threadClose(); //Stop(true); //stop looping (maybe wait here; or even threadClose())
+        OpenGLMutex().lock();
     }
-    ~OpenGLProcess(){
-//        CHECK(!glwins.N, "there are still OpenGL windows open");
-        thread=0; //AWKWARD: This is called in deinit; pthread was already shutdown; we can't join the thread anymore //threadClose();
-//        glutExit(); //also glut as already shut down during deinit
-    }
-    void open(){}
-    void step(){
-       OpenGLMutex().lock();
-       glutMainLoopEvent();
-       OpenGLMutex().unlock();
-    }
-    void close(){}
+  }
+  OpenGL* getGL(uint i){
+    return glwins(i);
+  }
 };
 
 Singleton<OpenGLProcess> singleFreeglut;
@@ -96,13 +127,13 @@ struct sOpenGL {
 
   //-- callbacks
   static void _Void() { }
-  static void _Draw() { auto fg=singleFreeglut();  OpenGL *gl=fg->glwins(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
-  static void _Key(unsigned char key, int x, int y) {        singleFreeglut()->glwins(glutGetWindow())->Key(key,x,y); }
-  static void _Mouse(int button, int updown, int x, int y) { singleFreeglut()->glwins(glutGetWindow())->Mouse(button,updown,x,y); }
-  static void _Motion(int x, int y) {                        singleFreeglut()->glwins(glutGetWindow())->Motion(x,y); }
-  static void _PassiveMotion(int x, int y) {                 singleFreeglut()->glwins(glutGetWindow())->Motion(x,y); }
-  static void _Reshape(int w,int h) {                        singleFreeglut()->glwins(glutGetWindow())->Reshape(w,h); }
-  static void _MouseWheel(int wheel, int dir, int x, int y){ singleFreeglut()->glwins(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
+  static void _Draw() { auto fg=singleFreeglut();  OpenGL *gl=fg->getGL(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
+  static void _Key(unsigned char key, int x, int y) {        singleFreeglut()->getGL(glutGetWindow())->Key(key,x,y); }
+  static void _Mouse(int button, int updown, int x, int y) { singleFreeglut()->getGL(glutGetWindow())->Mouse(button,updown,x,y); }
+  static void _Motion(int x, int y) {                        singleFreeglut()->getGL(glutGetWindow())->Motion(x,y); }
+  static void _PassiveMotion(int x, int y) {                 singleFreeglut()->getGL(glutGetWindow())->Motion(x,y); }
+  static void _Reshape(int w,int h) {                        singleFreeglut()->getGL(glutGetWindow())->Reshape(w,h); }
+  static void _MouseWheel(int wheel, int dir, int x, int y){ singleFreeglut()->getGL(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
 
   void accessWindow() {  //same as above, but also sets gl cocntext (glXMakeCurrent)
     CHECK(windowID>=0,"window is not created");
@@ -124,14 +155,13 @@ struct sOpenGL {
 void OpenGL::openWindow(){
   if(s->windowID==-1){
     {
-      auto mut = singleFreeglut();
+      auto fg = singleFreeglut();
       glutInitWindowSize(width, height);
       //  glutInitWindowPosition(posx,posy);
       glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
 
       s->windowID = glutCreateWindow(title);
-      if(singleFreeglut()->glwins.N<(uint)s->windowID+1) singleFreeglut()->glwins.resizeCopy(s->windowID+1);
-      singleFreeglut()->glwins(s->windowID) = this;
+      fg->addGL(s->windowID, this);
 
       glutDisplayFunc(s->_Draw);
       glutKeyboardFunc(s->_Key);
@@ -148,15 +178,15 @@ void OpenGL::closeWindow(){
   if(s->windowID!=-1){
     auto fg=singleFreeglut();
     glutDestroyWindow(s->windowID);
-    fg->glwins(s->windowID)=NULL;
+    fg->delGL(s->windowID, this);
   }
 }
 
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {
-    auto fg=singleFreeglut();
-    s->accessWindow();
-    glutPostRedisplay();
-    s->deaccessWindow();
+  auto fg=singleFreeglut();
+  s->accessWindow();
+  glutPostRedisplay();
+  s->deaccessWindow();
 }
 
 void OpenGL::resize(int w,int h) {
@@ -230,7 +260,7 @@ void glColor(int col) {
     {1.0, 1.0, 1.0, 1.0}, // white
     {0.2, 1.0, 0.2, 1.0}
   }; // green
-  
+
   col = col%6; //if(col<0) col=0; if(col>5) col=5;
   glColor(colorsTab[col][0], colorsTab[col][1], colorsTab[col][2], colorsTab[col][3]);
 }
@@ -395,7 +425,7 @@ void glDrawFloor(float x, float r, float g, float b) {
     glVertex3f(x, i*x/5., 0.001);
     glEnd();
   }
-  
+
   glColor(.25, .25, .25);
   glBegin(GL_LINE_STRIP);
   glVertex3f(-x, -x, 0.002);
@@ -431,14 +461,14 @@ void glDrawBox(float x, float y, float z, bool linesOnly) {
   };
   GLfloat v[8][3];
   GLint i;
-  
+
   v[0][0] = v[1][0] = v[2][0] = v[3][0] = -x / 2;
   v[4][0] = v[5][0] = v[6][0] = v[7][0] =  x / 2;
   v[0][1] = v[1][1] = v[4][1] = v[5][1] =  -y / 2;
   v[2][1] = v[3][1] = v[6][1] = v[7][1] =  y / 2;
   v[0][2] = v[3][2] = v[4][2] = v[7][2] =  -z / 2;
   v[1][2] = v[2][2] = v[5][2] = v[6][2] =  z / 2;
-  
+
   if(!linesOnly){
     glBegin(GL_QUADS);
     for(i = 5; i >= 0; i--) {
@@ -548,14 +578,14 @@ void glDrawCappedCylinder(float radius, float length) {
   GLUquadric *style1=gluNewQuadric();
   GLUquadric *style2=gluNewQuadric();
   GLUquadric *style3=gluNewQuadric();
-  
+
   glTranslatef(0, 0, -length/2);
   gluCylinder(style1, radius, radius, length, 20, 1);
   glTranslatef(0, 0, length);
   gluSphere(style2, radius, 10, 10);
   glTranslatef(0, 0, -length);
   gluSphere(style3, radius, 10, 10);
-  
+
   gluDeleteQuadric(style1);
   gluDeleteQuadric(style2);
   gluDeleteQuadric(style3);
@@ -595,7 +625,7 @@ void glDrawGridBox(float x1, float y1, float z1, float x2, float y2, float z2) {
   glVertex3f(x1, y2, z1+0.001);
   glVertex3f(x1, y1, z1+0.001);
   glEnd();
-  
+
   glBegin(GL_LINES);
   glVertex3f(x2, y2, z1 +0.001);
   glVertex3f(x2, y2, z2 +0.001);
@@ -609,7 +639,7 @@ void glDrawKhepera() {
   glColor3f(.3, .3, .3);
   gluCylinder(style, 1.5, 1.5, 2, 20, 1);
   glPopMatrix();
-  
+
   glColor3f(1, 0, 0);
   glBegin(GL_LINES);
   glVertex3f(0, 2, 0);
@@ -659,7 +689,7 @@ void glMakeStdSimplex(int num) {
 
 void glMakeTorus(int num) {
   glNewList(num, GL_COMPILE);
-  
+
   GLint i, j, rings, sides;
   float theta1, phi1, theta2, phi2;
   float v0[03], v1[3], v2[3], v3[3];
@@ -668,69 +698,69 @@ void glMakeTorus(int num) {
   float innerRadius=0.4;
   float outerRadius=0.8;
   float scalFac;
-  
+
   rings = 8;
   sides = 10;
   scalFac=1/(outerRadius*2);
-  
+
   for(i=0; i<rings; i++) {
     theta1 = (float)i * 2.0 * MLR_PI / rings;
     theta2 = (float)(i + 1) * 2.0 * MLR_PI / rings;
     for(j=0; j<sides; j++) {
       phi1 = (float)j * 2.0 * MLR_PI / sides;
       phi2 = (float)(j + 1) * 2.0 * MLR_PI / sides;
-      
+
       v0[0] = cos(theta1) * (outerRadius + innerRadius * cos(phi1));
       v0[1] =-sin(theta1) * (outerRadius + innerRadius * cos(phi1));
       v0[2] = innerRadius * sin(phi1);
-      
+
       v1[0] = cos(theta2) * (outerRadius + innerRadius * cos(phi1));
       v1[1] =-sin(theta2) * (outerRadius + innerRadius * cos(phi1));
       v1[2] = innerRadius * sin(phi1);
-      
+
       v2[0] = cos(theta2) * (outerRadius + innerRadius * cos(phi2));
       v2[1] =-sin(theta2) * (outerRadius + innerRadius * cos(phi2));
       v2[2] = innerRadius * sin(phi2);
-      
+
       v3[0] = cos(theta1) * (outerRadius + innerRadius * cos(phi2));
       v3[1] =-sin(theta1) * (outerRadius + innerRadius * cos(phi2));
       v3[2] = innerRadius * sin(phi2);
-      
+
       n0[0] = cos(theta1) * (cos(phi1));
       n0[1] =-sin(theta1) * (cos(phi1));
       n0[2] = sin(phi1);
-      
+
       n1[0] = cos(theta2) * (cos(phi1));
       n1[1] =-sin(theta2) * (cos(phi1));
       n1[2] = sin(phi1);
-      
+
       n2[0] = cos(theta2) * (cos(phi2));
       n2[1] =-sin(theta2) * (cos(phi2));
       n2[2] = sin(phi2);
-      
+
       n3[0] = cos(theta1) * (cos(phi2));
       n3[1] =-sin(theta1) * (cos(phi2));
       n3[2] = sin(phi2);
-      
+
       t0[0] = v0[0]*scalFac + 0.5;
       t0[1] = v0[1]*scalFac + 0.5;
       t0[2] = v0[2]*scalFac + 0.5;
-      
+
       t1[0] = v1[0]*scalFac + 0.5;
       t1[1] = v1[1]*scalFac + 0.5;
       t1[2] = v1[2]*scalFac + 0.5;
-      
+
       t2[0] = v2[0]*scalFac + 0.5;
       t2[1] = v2[1]*scalFac + 0.5;
       t2[2] = v2[2]*scalFac + 0.5;
-      
+
       t3[0] = v3[0]*scalFac + 0.5;
       t3[1] = v3[1]*scalFac + 0.5;
       t3[2] = v3[2]*scalFac + 0.5;
-      
+
       if((i+j)%2) glColor3f(0., 1., 0.);
       else glColor3f(0., 0., 1.);
-      
+
       glBegin(GL_POLYGON);
       glNormal3fv(n3); glTexCoord3fv(t3); glVertex3fv(v3);
       glNormal3fv(n2); glTexCoord3fv(t2); glVertex3fv(v2);
@@ -744,7 +774,7 @@ void glMakeTorus(int num) {
 
 uint glImageTexture(const byteA &img) {
   GLuint texName;
-  
+
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glGenTextures(1, &texName);
 
@@ -884,7 +914,7 @@ void glRasterImage(float x, float y, byteA &img, float zoom) {
     img.insColumns(img.d1, add*P);
     if(P>1) img.reshape(img.d0, img.d1/P, P);
   }
-  
+
   switch(img.d2) {
     case 0:
     case 1:  glDrawPixels(img.d1, img.d0, GL_LUMINANCE, GL_UNSIGNED_BYTE, img.p);        break;
@@ -1032,11 +1062,8 @@ OpenGL::OpenGL(void *container)
 
 OpenGL::~OpenGL() {
   clear();
-  dataLock.writeLock();
   delete s;
-  dataLock.unlock();
   s=NULL;
-//  MLR_MSG("destructing OpenGL=" <<this);
 }
 
 OpenGL* OpenGL::newClone() const {
@@ -1052,7 +1079,7 @@ void OpenGL::init() {
   camera.focus(0, 0, 0);
   camera.setZRange(.1, 1000.);
   camera.setHeightAngle(12.);
-  
+
   drawFocus=false;
   clearR=clearG=clearB=1.; clearA=0.;
   drawers.memMove=true;
@@ -1060,12 +1087,12 @@ void OpenGL::init() {
   mouse_button=0;
   mouseIsDown=false;
   mouseView=-1;
-  
+
   reportEvents=false;
   reportSelects=false;
   immediateExitLoop=false;
   exitkeys="";
-  
+
   backgroundZoom=1;
 };
 
@@ -1150,7 +1177,7 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
   glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
   glClearColor(clearR, clearG, clearB, clearA);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  
+
   //raster an image as background
   if(background.N) {
     glMatrixMode(GL_PROJECTION);
@@ -1161,7 +1188,7 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
     glDisable(GL_DEPTH_TEST);
     glRasterImage(0, 0, background, backgroundZoom); //.5*w/background.d1);
   }
-  
+
   //OpenGL initialization
   glEnable(GL_DEPTH_TEST);  glDepthFunc(GL_LESS);
   glEnable(GL_BLEND);  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1179,7 +1206,7 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
   if(!cam) camera.glSetProjectionMatrix();
   else     cam->glSetProjectionMatrix();
   //glLineWidth(2);
-  
+
   //**extract the camera projection matrix
 #if 0
   //this is the calibration matrix corresponding to OpenGL's ``viewport''
@@ -1201,7 +1228,7 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
   //the full camera projection matrix:
   P = Kview*P;
   //cout <<"OpenGL's P=" <<P <<endl;
-  
+
   /*
   double zn=camera.zNear, zf=camera.zFar, f=1./tan(MLR_PI/180.*camera.heightAngle/2.);
   arr Frust(4, 4); Frust.setZero();
@@ -1227,10 +1254,10 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
     double size = .005 * (camera.X.pos-camera.foc).length();
     glDrawDiamond(topSelection->x, topSelection->y, topSelection->z, size, size, size);
   }*/
-  
+
   //std color: black:
   glColor(.3, .3, .5);
-  
+
   //draw central view
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -1251,7 +1278,7 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
     glDrawText(text, 10, 20, 0);
     glLoadIdentity();
   }
-  
+
   //draw subviews
   for(uint v=0; v<views.N; v++) {
     GLView *vi=&views(v);
@@ -1284,7 +1311,7 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
       glDrawText(vi->text, -.95, .85, 0.);
     }
   }
-  
+
   //cout <<"UNLOCK draw" <<endl;
 
   if(captureImg){
@@ -1305,7 +1332,7 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
   glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &s);
   if(s!=1) MLR_MSG("OpenGL name stack has not depth 1 (pushs>pops) in DRAW mode:" <<s);
   //CHECK(s<=1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
-  
+
   if(!callerHasAlreadyLocked){
     dataLock.unlock(); //now de-accessing user data
     singleGLAccess.mutex.unlock();
@@ -1321,15 +1348,15 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
 
 #ifdef MLR_GL
   uint i, j, k;
-  
+
   s->beginGlContext();
-  
+
   glSelectBuffer(1000, selectionBuffer);
   glRenderMode(GL_SELECT);
-  
+
 #if 1
   GLint w=width, h=height;
-  
+
   //projection
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -1343,7 +1370,7 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
     gluPickMatrix((GLdouble)mouseposx, (GLdouble)mouseposy, 2., 2., viewport);
     vi->camera.glSetProjectionMatrix();
   }
-  
+
   //draw objects
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -1365,34 +1392,34 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
   Draw(width, height, NULL, true);
 #endif
   glLoadIdentity();
-  
+
   GLint n;
   n=glRenderMode(GL_RENDER);
   selection.resize(n);
-  
+
   GLuint *obj, maxD=(GLuint)(-1);
   topSelection=NULL;
   for(j=0, i=0; i<(uint)n; i++) {
     obj=selectionBuffer+j;
     j+=3+obj[0];
-    
+
     //get name as superposition of all names
     selection(i).name = 0;
     for(k=0; k<obj[0]; k++) selection(i).name |= obj[3+k];
-    
+
     //get dim and dmax
     selection(i).dmin=(double)obj[1]/maxD;  //camera.glConvertToTrueDepth(selection(i).dmin);
     selection(i).dmax=(double)obj[2]/maxD;  //camera.glConvertToTrueDepth(selection(i).dmax);
-    
+
     //get top-most selection
     if(!topSelection || selection(i).dmin < topSelection->dmin) topSelection = &selection(i);
   }
-  
+
   if(topSelection) {
     topSelection->x=0; topSelection->y=0; topSelection->z=topSelection->dmin;
     unproject(topSelection->x, topSelection->y, topSelection->z);
   }
-  
+
   if(reportSelects) reportSelection();
 
   s->endGlContext();
@@ -1570,10 +1597,10 @@ void OpenGL::Key(unsigned char key, int _x, int _y) {
   CALLBACK_DEBUG(printf("Window %d Keyboard Callback:  %d (`%c') %d %d\n", 0, key, (char)key, _x, _y));
   mouseposx=_x; mouseposy=_y;
   pressedkey=key;
-  
+
   bool cont=true;
   for(uint i=0; i<keyCalls.N; i++) cont=cont && keyCalls(i)->keyCallback(*this);
-  
+
   if(key==13 || key==27 || key=='q' || mlr::contains(exitkeys, key)) watching.setStatus(0);
   dataLock.unlock();
 }
@@ -1587,7 +1614,7 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   if(downPressed) mouse_button=-1-mouse_button;
   mouseposx=_x; mouseposy=_y;
   lastEvent.set(mouse_button, -1, _x, _y, 0., 0.);
-  
+
   GLView *v;
   mlr::Camera *cam=&camera;
   mlr::Vector vec;
@@ -1601,7 +1628,7 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   }
   if(mouseView==-1) getSphereVector(vec, _x, _y, 0, w, 0, h);
   CALLBACK_DEBUG(cout <<"associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
-  
+
   if(!downPressed) {  //down press
     if(mouseIsDown){ dataLock.unlock(); return; } //the button is already down (another button was pressed...)
     //CHECK(!mouseIsDown, "I thought the mouse is up...");
@@ -1618,7 +1645,7 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   s->downRot=cam->X.rot;
   s->downPos=cam->X.pos;
   s->downFoc=cam->foc;
-  
+
   //check object clicked on
   if(!downPressed) {
     if(reportSelects){
@@ -1627,11 +1654,11 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
 //      singleGLAccess()->unlock();
     }
   }
-  
+
   //mouse scroll wheel:
   if(mouse_button==4 && !downPressed) cam->X.pos += s->downRot*Vector_z * (.1 * (s->downPos-s->downFoc).length());
   if(mouse_button==5 && !downPressed) cam->X.pos -= s->downRot*Vector_z * (.1 * (s->downPos-s->downFoc).length());
-  
+
   if(mouse_button==3) {  //selection
     {
       auto sgl = singleGLAccess();
@@ -1965,7 +1992,7 @@ void glUI::glDraw() {
   glOrtho(0., viewPort[2], viewPort[3], .0, -1., 1.);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  
+
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   Button *b;

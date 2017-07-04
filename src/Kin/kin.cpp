@@ -2669,7 +2669,7 @@ bool mlr::KinematicWorld::checkConsistency(){
 
   for(Joint *j: joints){
       CHECK(level(j->from->index) < level(j->to->index), "joint does not go forward");
-//      if(j->index) CHECK_LE(level(joints(j->index-1)->to->index), level(j->to->index), "joints are not sorted");
+      if(j->index) CHECK_LE(level(joints(j->index-1)->to->index), level(j->to->index), "joints are not sorted");
   }
   for(Body *b: bodies){
     for(Joint *j: b->inLinks)  CHECK(level(j->from->index) < level(b->index), "topsort failed");
@@ -2711,9 +2711,7 @@ void mlr::KinematicWorld::meldFixedJoints(int verbose) {
     a->inertia += b->inertia;
     b->mass = 0.;
   }
-  qdim.clear();
-  proxies.clear();
-  analyzeJointStateDimensions();
+  jointSort();
   calc_q_from_Q();
   checkConsistency();
   //-- remove fixed joints and reindex

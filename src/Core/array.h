@@ -64,6 +64,7 @@ namespace mlr {
 /// @addtogroup group_array
 /// @{
 
+template<class T> struct ArrayIterationEnumerated;
 
 /** Simple array container to store arbitrary-dimensional arrays (tensors).
   Can buffer more memory than necessary for faster
@@ -110,6 +111,7 @@ template<class T> struct Array : std::vector<T> {
   Array<T>& operator=(const Array<T>& a);
 
   /// @name iterators
+  ArrayIterationEnumerated<T> enumerated(){ return ArrayIterationEnumerated<T>(*this); }
 //  typedef T* iterator;
 //  typedef const T* const_iterator;
 //  iterator begin() { return p; }
@@ -292,7 +294,33 @@ template<class T> struct Array : std::vector<T> {
 //  void init();
 };
 
+
 //===========================================================================
+///
+/// @name alternative iterators
+/// @{
+
+template<class T> struct ArrayItEnumerated{
+    T* p;
+    uint i;
+    T& operator()(){ return *p; } //access to value by user
+    void operator++(){ p++; i++; }
+    ArrayItEnumerated<T>& operator*(){ return *this; } //in for(auto& it:array.enumerated())  it is assigned to *iterator
+};
+
+template<class T> struct ArrayIterationEnumerated{
+    Array<T>& x;
+    ArrayIterationEnumerated(Array<T>& x):x(x){}
+    ArrayItEnumerated<T> begin() { return {x.p, 0}; }
+    ArrayItEnumerated<T> end() { return {x.p+x.N, x.N}; }
+    //  const_iterator begin() const { return p; }
+    //  const_iterator end() const { return p+N; }
+};
+
+template<class T> bool operator!=(const ArrayItEnumerated<T>& i, const ArrayItEnumerated<T>& j){ return i.p!=j.p; }
+
+//===========================================================================
+/// @}
 /// @name basic Array operators
 /// @{
 
@@ -406,7 +434,7 @@ typedef mlr::Array<uint>   uintA;
 typedef mlr::Array<int>    intA;
 typedef mlr::Array<char>   charA;
 typedef mlr::Array<byte>   byteA;
-typedef mlr::Array<unsigned char>   boolA;
+typedef mlr::Array<byte>   boolA;
 typedef mlr::Array<uint16_t>   uint16A;
 typedef mlr::Array<uint32_t>   uint32A;
 typedef mlr::Array<const char*>  CstrList;

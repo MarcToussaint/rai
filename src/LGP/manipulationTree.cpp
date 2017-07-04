@@ -39,7 +39,7 @@ ManipulationTree_Node::ManipulationTree_Node(mlr::KinematicWorld& kin, FOL_World
   constraints = zeros(L);
   count = consts<uint>(0, L);
   count(l_symbolic) = 1;
-  feasible = consts<bool>(true, L);
+  feasible = consts<byte>(true, L);
   komoProblem = consts<KOMO*>(NULL, L);
   opt.resize(L);
   bound=0.;
@@ -67,7 +67,7 @@ ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS
   cost = zeros(L);
   count = consts<uint>(0, L);
   count(l_symbolic) = 1;
-  feasible = consts<bool>(true, L);
+  feasible = consts<byte>(true, L);
   cost(l_symbolic) = parent->cost(l_symbolic) - 0.1*ret.reward; //cost-so-far
   constraints = zeros(L);
   komoProblem = consts<KOMO*>(NULL, L);

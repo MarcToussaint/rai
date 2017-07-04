@@ -340,12 +340,12 @@ CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, doub
 void TaskControlMethods::lockJointGroup(const char* groupname, mlr::KinematicWorld& world, bool lockThem){
   if(!groupname){
     if(lockThem){
-      lockJoints = consts<bool>(true, world.q.N);
+      lockJoints = consts<byte>(true, world.q.N);
       world.qdot.setZero();
     }else lockJoints.clear();
     return;
   }
-  if(!lockJoints.N) lockJoints = consts<bool>(false, world.q.N);
+  if(!lockJoints.N) lockJoints = consts<byte>(false, world.q.N);
   for(mlr::Joint *j:world.joints){
     if(j->ats.getNode(groupname)){
       for(uint i=0;i<j->qDim();i++){

@@ -2746,7 +2746,7 @@ void SWIFT_Tri_Mesh::Compute_Center_Of_Mass( )
 void SWIFT_Tri_Mesh::Compute_Radius( )
 {
     int i;
-    SWIFT_Real d;
+    SWIFT_Real d = 0.0;
     radius = 0.0;
     for( i = 0; i < Num_Vertices(); i++ ) {
         d = Center().Dist_Sq( verts[i].Coords() );

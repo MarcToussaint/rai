@@ -143,5 +143,9 @@ void SendPositionCommandsToBaxter::close(){
 }
 
 #else
+
+#ifdef MLR_ROS
 bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const mlr::KinematicWorld& baxterModel){ NICO }
+#endif
+
 #endif
