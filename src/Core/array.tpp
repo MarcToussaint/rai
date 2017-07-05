@@ -1142,6 +1142,9 @@ template<class T> void mlr::Array<T>::referTo(const T *buffer, uint n) {
   reference=true;
   nd=1; d0=n; d1=d2=0; N=n;
   p=(T*)buffer;
+  vec_type::_M_impl._M_start = p;
+  vec_type::_M_impl._M_finish = p+N;
+  vec_type::_M_impl._M_end_of_storage = p+N;
 }
 
 /** @brief returns an ordinary 2-dimensional C-pointer to the Array content.
@@ -1400,6 +1403,9 @@ template<class T> void mlr::Array<T>::referTo(const mlr::Array<T>& a) {
   reference=true; memMove=a.memMove;
   N=a.N; nd=a.nd; d0=a.d0; d1=a.d1; d2=a.d2;
   p=a.p;
+  vec_type::_M_impl._M_start = p;
+  vec_type::_M_impl._M_finish = p+N;
+  vec_type::_M_impl._M_end_of_storage = p+N;
 }
 
 /// make this array a subarray reference to \c a
@@ -1424,6 +1430,9 @@ template<class T> void mlr::Array<T>::referToRange(const mlr::Array<T>& a, int i
     nd=3;  d0=I+1-i; d1=a.d1; d2=a.d2;  N=d0*d1*d2;
     p=a.p+i*d1*d2;
   }
+  vec_type::_M_impl._M_start = p;
+  vec_type::_M_impl._M_finish = p+N;
+  vec_type::_M_impl._M_end_of_storage = p+N;
 }
 
 /// make this array a subarray reference to \c a
@@ -1445,6 +1454,9 @@ template<class T> void mlr::Array<T>::referToRange(const Array<T>& a, uint i, in
     nd=2;  d0=J+1-j; d1=a.d2; d2=0;  N=d0*d1;
     p = &a(i,j,0);
   }
+  vec_type::_M_impl._M_start = p;
+  vec_type::_M_impl._M_finish = p+N;
+  vec_type::_M_impl._M_end_of_storage = p+N;
 }
 
 /// make this array a subarray reference to \c a
@@ -1482,6 +1494,9 @@ template<class T> void mlr::Array<T>::referToDim(const mlr::Array<T>& a, uint i,
   } else {
     NIY // TODO
   }
+  vec_type::_M_impl._M_start = p;
+  vec_type::_M_impl._M_finish = p+N;
+  vec_type::_M_impl._M_end_of_storage = p+N;
 }
 
 /// make this array a subarray reference to \c a
@@ -1502,6 +1517,9 @@ template<class T> void mlr::Array<T>::referToDim(const mlr::Array<T>& a, uint i,
     if(nd>3) { d=new uint[nd];  memmove(d, a.d+3, nd*sizeof(uint)); }
   }
   p=a.p+(i*a.N+(j*a.N+(k*a.N/a.d2))/a.d1)/a.d0;
+  vec_type::_M_impl._M_start = p;
+  vec_type::_M_impl._M_finish = p+N;
+  vec_type::_M_impl._M_end_of_storage = p+N;
 }
 
 /** @brief takes over the memory buffer from a; afterwards, this is a
@@ -1515,6 +1533,7 @@ template<class T> void mlr::Array<T>::takeOver(mlr::Array<T>& a) {
   M=a.M;
   a.reference=true;
   a.M=0;
+  HALT("vec not done yet");
 }
 
 template<class T> void mlr::Array<T>::swap(Array<T>& a) {
@@ -1524,6 +1543,7 @@ template<class T> void mlr::Array<T>::swap(Array<T>& a) {
   T* p_tmp = p;
   p=a.p;
   a.p=p_tmp;
+  HALT("vec not done yet");
 }
 
 /** @brief return a `dim'-dimensional grid with `steps' intervals
