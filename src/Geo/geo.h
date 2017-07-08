@@ -142,6 +142,7 @@ struct Quaternion {
   double diffZero() const;
   double sqrDiffZero() const;
   double sqrDiff(const Quaternion& q2) const;
+  double normalization() const;
   bool isNormalized() const;
   double getDeg() const;
   double getRad() const;

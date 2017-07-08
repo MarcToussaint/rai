@@ -20,6 +20,7 @@
 #include <Kin/taskMaps.h>
 #include <Gui/opengl.h>
 #include <Kin/taskMap_FixSwitchedObjects.h>
+#include <Kin/taskMap_QuaternionNorms.h>
 #include <Kin/taskMap_AboveBox.h>
 #include <Kin/taskMap_AlignStacking.h>
 #include <Kin/taskMap_GJK.h>
@@ -281,15 +282,19 @@ void KOMO::setSquaredQVelocities(double startTime, double endTime, double prec){
   setTask(startTime, endTime, map, OT_sumOfSqr, NoArr, prec, 1);
 }
 
-void KOMO::setSquaredFixJointVelocities(double startTime, double endTime, double prec){
+void KOMO::setFixEffectiveJoints(double startTime, double endTime, double prec){
   auto *map = new TaskMap_Transition(world, true);
   map->velCoeff = 1.;
   map->accCoeff = 0.;
   setTask(startTime, endTime, map, OT_eq, NoArr, prec, 1);
 }
 
-void KOMO::setSquaredFixSwitchedObjects(double startTime, double endTime, double prec){
-  setTask(startTime, endTime, new TaskMap_FixSwichedObjects(), OT_eq, NoArr, prec, 1);
+void KOMO::setFixSwitchedObjects(double startTime, double endTime, double prec){
+    setTask(startTime, endTime, new TaskMap_FixSwichedObjects(), OT_eq, NoArr, prec, 1);
+}
+
+void KOMO::setSquaredQuaternionNorms(double startTime, double endTime, double prec){
+    setTask(startTime, endTime, new TaskMap_QuaternionNorms(), OT_sumOfSqr, NoArr, prec);
 }
 
 void KOMO::setHoldStill(double startTime, double endTime, const char* shape, double prec){
@@ -316,6 +321,7 @@ void KOMO::setLastTaskToBeVelocity(){
   tasks.last()->map->order = 1; //set to be velocity!
 }
 
+/// a standard pick up: lower-attached-lift; centered, from top
 void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int verbose, double weightFromTop, double timeToLift){
   if(verbose>0) cout <<"KOMO_setGrasp t=" <<time <<" endeff=" <<endeffRef <<" obj=" <<object <<endl;
 //  mlr::String& endeffRef = world.getShapeByName(graspRef)->body->inLinks.first()->from->shapes.first()->name;
@@ -340,7 +346,12 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
   //disconnect object from table
   setKinematicSwitch(time, true, "delete", NULL, object);
   //connect graspRef with object
+#if 1
   setKinematicSwitch(time, true, "ballZero", endeffRef, object);
+#else
+  setKinematicSwitch(time, true, "freeZero", endeffRef, object);
+  setTask(time, time, new TaskMap_Default(posDiffTMT, world, endeffRef, NoVector, object, NoVector), OT_eq, NoArr, 1e3);
+#endif
 
   if(stepsPerPhase>2){ //velocities down and up
     setTask(time-timeToLift, time, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
@@ -348,6 +359,7 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
   }
 }
 
+/// slide on table while grasping rigidly (kinematic loop)
 void KOMO::setGraspSlide(double startTime, double endTime, const char* endeffRef, const char* object, const char* placeRef, int verbose, double weightFromTop){
   if(verbose>0) cout <<"KOMO_setGraspSlide t=" <<startTime <<" endeff=" <<endeffRef <<" obj=" <<object <<endl;
 
@@ -369,14 +381,13 @@ void KOMO::setGraspSlide(double startTime, double endTime, const char* endeffRef
 
   //connect object to table
   mlr::Transformation rel = 0;
-  double above = .5*(height(world.getShapeByName(object)) + height(world.getShapeByName(placeRef)));
-  rel.addRelativeTranslation( 0., 0., above);
+  rel.pos.set(0,0, .5*(height(world.getShapeByName(object)) + height(world.getShapeByName(placeRef))));
   setKinematicSwitch(endTime, true, "transXYPhiZero", placeRef, object, rel );
 
   //-- slide constraints!
   setTask(startTime, endTime,
           new TaskMap_LinTrans(new TaskMap_Default(posDiffTMT, world, object, NoVector, placeRef), ~ARR(0,0,1), ARR(0)),
-                               OT_sumOfSqr, ARR(above), 1e2);
+                               OT_sumOfSqr, ARR(rel.pos.z), 1e2);
 
   if(stepsPerPhase>2){ //velocities down and up
     setTask(startTime-.15, startTime, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
@@ -384,6 +395,7 @@ void KOMO::setGraspSlide(double startTime, double endTime, const char* endeffRef
   }
 }
 
+/// standard place on a table
 void KOMO::setPlace(double time, const char* endeffRef, const char* object, const char* placeRef, int verbose){
   if(verbose>0) cout <<"KOMO_setPlace t=" <<time <<" endeff=" <<endeffRef <<" obj=" <<object <<" place=" <<placeRef <<endl;
 
@@ -405,57 +417,62 @@ void KOMO::setPlace(double time, const char* endeffRef, const char* object, cons
   setKinematicSwitch(time, true, "delete", endeffRef, object);
 
   //connect object to table
-//  if(!effKinMode)  setKinematicSwitch(time, true, "rigidAtTo", placeRef, object); //OLD!!
   mlr::Transformation rel = 0;
-  rel.addRelativeTranslation( 0., 0., .5*(height(world.getShapeByName(object)) + height(world.getShapeByName(placeRef))));
+  rel.pos.set(0,0, .5*(height(world.getShapeByName(object)) + height(world.getShapeByName(placeRef))));
   setKinematicSwitch(time, true, "transXYPhiZero", placeRef, object, rel );
 }
 
+/// place with a specific relative pose -> no effective DOFs!
 void KOMO::setPlaceFixed(double time, const char* endeffRef, const char* object, const char* placeRef, const mlr::Transformation& relPose, int verbose){
   if(verbose>0) cout <<"KOMO_setPlace t=" <<time <<" endeff=" <<endeffRef <<" obj=" <<object <<" place=" <<placeRef <<endl;
 
-  if(stepsPerPhase>2){ //velocities down and up
-    setTask(time-.15, time, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
-    setTask(time, time+.15, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,.1}, 1e1, 1); // move up
-  }
   //disconnect object from grasp ref
   setKinematicSwitch(time, true, "delete", endeffRef, object);
 
   //connect object to table
   setKinematicSwitch(time, true, "rigidZero", placeRef, object, relPose );
+
+  if(stepsPerPhase>2){ //velocities down and up
+    setTask(time-.15, time, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
+    setTask(time, time+.15, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,.1}, 1e1, 1); // move up
+  }
 }
 
+/// switch attachemend (-> ball eDOF)
 void KOMO::setHandover(double time, const char* oldHolder, const char* object, const char* newHolder, int verbose){
   if(verbose>0) cout <<"KOMO_setHandover t=" <<time <<" oldHolder=" <<oldHolder <<" obj=" <<object <<" newHolder=" <<newHolder <<endl;
 
   //hand center at object center (could be replaced by touch)
-  setTask(time, time, new TaskMap_Default(posDiffTMT, world, newHolder, NoVector, object, NoVector), OT_eq, NoArr, 1e3);
-
-//  setTask(time, time, new TaskMap_Default(vecAlignTMT, world, newHolder, Vector_y, object, Vector_x), OT_sumOfSqr, {-1.}, 1e1);
 
   //disconnect object from table
   setKinematicSwitch(time, true, "delete", oldHolder, object);
   //connect graspRef with object
+#if 0
+  setKinematicSwitch(time, true, "ballZero", newHolder, object); //why does this not work??
+#else
   setKinematicSwitch(time, true, "freeZero", newHolder, object);
+  setTask(time, time, new TaskMap_Default(posDiffTMT, world, newHolder, NoVector, object, NoVector), OT_eq, NoArr, 1e3);
+#endif
 
-  if(stepsPerPhase>2){ //velocities down and up
-    setTask(time-.15, time+.15, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,0.}, 1e1, 1); // no motion
-  }
+//  if(stepsPerPhase>2){ //velocities: no motion
+//    setTask(time-.15, time+.15, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,0.}, 1e1, 1); // no motion
+//  }
 
 }
 
-void KOMO::setPush(double time, const char* stick, const char* object, const char* table, int verbose){
-  if(verbose>0) cout <<"KOMO_setPush t=" <<time <<" stick=" <<stick <<" object=" <<object <<" table=" <<table <<endl;
+void KOMO::setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose){
+  if(verbose>0) cout <<"KOMO_setPush t=" <<startTime <<" stick=" <<stick <<" object=" <<object <<" table=" <<table <<endl;
 
-  setTask(time, 4., new TaskMap_Default(vecAlignTMT, world, stick, -Vector_y, "slider1b", Vector_x), OT_sumOfSqr, {1.}, 1e2);
-  setTask(time, 4., new TaskMap_Default(vecAlignTMT, world, stick, Vector_z, NULL, Vector_z), OT_sumOfSqr, {1.}, 1e2);
-  setTask(time, 4., new TaskMap_Default(posDiffTMT, world, stick, NoVector, "slider1b", {.12, .0, .0}), OT_sumOfSqr, {}, 1e2);
+  setTask(startTime, startTime+1., new TaskMap_Default(vecAlignTMT, world, stick, -Vector_y, "slider1b", Vector_x), OT_sumOfSqr, {1.}, 1e2);
+  setTask(startTime, startTime+1., new TaskMap_Default(vecAlignTMT, world, stick, Vector_z, NULL, Vector_z), OT_sumOfSqr, {1.}, 1e2);
+  setTask(startTime, startTime+1., new TaskMap_Default(posDiffTMT, world, stick, NoVector, "slider1b", {.12, .0, .0}), OT_sumOfSqr, {}, 1e2);
 
-  setKS_slider(time, true, object, "slider1", table);
+  setKS_slider(startTime, true, object, "slider1", table);
 
-//  if(stepsPerPhase>2){ //velocities down and up
-//    setTask(time-.15, time+.15, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,0.}, 1e1, 1); // no motion
-//  }
+  if(stepsPerPhase>2){ //velocities down and up
+    setTask(startTime-.3, startTime, new TaskMap_Default(posTMT, world, stick), OT_sumOfSqr, {0.,0.,-.1}, 1e2, 1); //move down
+//    setTask(time, time+.15, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,.1}, 1e1, 1); // move up
+  }
 }
 
 
@@ -517,7 +534,7 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
       if(n->keys.last()=="komoGrasp")         setGrasp(phase+time, *symbols(0), *symbols(1), verbose);
       else if(n->keys.last()=="komoPlace")    setPlace(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
       else if(n->keys.last()=="komoHandover") setHandover(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
-      else if(n->keys.last()=="komoPush")     setPush(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
+      else if(n->keys.last()=="komoPush")     setPush(phase+time, phase+time+1., *symbols(0), *symbols(1), *symbols(2), verbose); //TODO: the +1. assumes pushes always have duration 1
       else if(n->keys.last()=="komoAttach"){
         Node *attachableSymbol = facts.getNode("attachable");
         CHECK(attachableSymbol!=NULL,"");
@@ -595,22 +612,22 @@ void KOMO::setConfigFromFile(){
 
 void KOMO::setPoseOpt(){
   setTiming(1., 2, 5., 1, false);
-  setSquaredFixJointVelocities();
-  setSquaredFixSwitchedObjects();
+  setFixEffectiveJoints();
+  setFixSwitchedObjects();
   setSquaredQVelocities();
 }
 
 void KOMO::setSequenceOpt(double _phases){
   setTiming(_phases, 2, 5., 1, false);
-  setSquaredFixJointVelocities();
-  setSquaredFixSwitchedObjects();
+  setFixEffectiveJoints();
+  setFixSwitchedObjects();
   setSquaredQVelocities();
 }
 
 void KOMO::setPathOpt(double _phases, uint stepsPerPhase, double timePerPhase){
   setTiming(_phases, stepsPerPhase, timePerPhase, 2, false);
-  setSquaredFixJointVelocities();
-  setSquaredFixSwitchedObjects();
+  setFixEffectiveJoints();
+  setFixSwitchedObjects();
   setSquaredQAccelerations();
 }
 

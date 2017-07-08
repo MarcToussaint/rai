@@ -16,8 +16,8 @@
 #include "taskMap_transition.h"
 #include "taskMap_qItself.h"
 
-TaskMap_Transition::TaskMap_Transition(const mlr::KinematicWorld& G, bool fixJointsOnly)
-  : fixJointsOnly(fixJointsOnly){
+TaskMap_Transition::TaskMap_Transition(const mlr::KinematicWorld& G, bool effectiveJointsOnly)
+  : effectiveJointsOnly(effectiveJointsOnly){
   posCoeff = mlr::getParameter<double>("Motion/TaskMapTransition/posCoeff",.0);
   velCoeff = mlr::getParameter<double>("Motion/TaskMapTransition/velCoeff",.0);
   accCoeff = mlr::getParameter<double>("Motion/TaskMapTransition/accCoeff",1.);
@@ -34,7 +34,7 @@ TaskMap_Transition::TaskMap_Transition(const mlr::KinematicWorld& G, bool fixJoi
 }
 
 uint TaskMap_Transition::dim_phi(const WorldL& G, int t){
-  bool handleSwitches=fixJointsOnly;
+  bool handleSwitches=effectiveJointsOnly;
   uint qN=G(0)->q.N;
   for(uint i=0;i<G.N;i++) if(G.elem(i)->q.N!=qN){ handleSwitches=true; break; }
 //  handleSwitches=true;
@@ -43,7 +43,7 @@ uint TaskMap_Transition::dim_phi(const WorldL& G, int t){
     return G.last()->getJointStateDimension();
   }else{
 //    for(uint i=0;i<G.N;i++) cout <<i <<' ' <<G(i)->joints.N <<' ' <<G(i)->q.N <<' ' <<G(i)->getJointStateDimension() <<endl;
-    mlr::Array<mlr::Joint*> matchingJoints = getMatchingJoints(G.sub(-1-order,-1), fixJointsOnly);
+    mlr::Array<mlr::Joint*> matchingJoints = getMatchingJoints(G.sub(-1-order,-1), effectiveJointsOnly);
     uint ydim=0;
     for(uint i=0;i<matchingJoints.d0;i++){
 //      cout <<i <<' ' <<matchingJoints(i,0)->qIndex <<' ' <<matchingJoints(i,0)->qDim() <<' ' <<matchingJoints(i,0)->name <<endl;
@@ -64,7 +64,7 @@ void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& G, double tau, int t)
     return;
   }
 
-  bool handleSwitches=fixJointsOnly;
+  bool handleSwitches=effectiveJointsOnly;
   uint qN=G(0)->q.N;
   for(uint i=0;i<G.N;i++) if(G(i)->q.N!=qN){ handleSwitches=true; break; }
 //  handleSwitches=true;
@@ -130,7 +130,7 @@ void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& G, double tau, int t)
       }
     }
   }else{ //with switches
-    mlr::Array<mlr::Joint*> matchingJoints = getMatchingJoints(G.sub(-1-order,-1), fixJointsOnly);
+    mlr::Array<mlr::Joint*> matchingJoints = getMatchingJoints(G.sub(-1-order,-1), effectiveJointsOnly);
     double h = H_rate*sqrt(tau), tau2=tau*tau;
 
 //    getSwitchedJoints(*G.elem(-2), *G.elem(-1), true);

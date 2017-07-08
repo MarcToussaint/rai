@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or (at
@@ -42,11 +42,11 @@ void TaskMap::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
   uint offset = G.N-1-k; //G.N might contain more configurations than the order of THIS particular task -> the front ones are not used
   for(uint i=0;i<=k;i++)
     phi(y_bar(i), (&J?J_bar(i):NoArr), *G(offset+i), t-k+i);
- 
+
   // check for quaternion flipping
-  if(k==1 && flipTargetSignOnNegScalarProduct && scalarProduct(y_bar(1), y_bar(0))<0.){
-      if(&J) J_bar(0) = -J_bar(0);
-      y_bar(0)*=-1.;
+  if(k==1 && flipTargetSignOnNegScalarProduct && scalarProduct(y_bar(1), y_bar(0))<-.9){
+      if(&J) J_bar(0) *= -1.;
+      y_bar(0) *= -1.;
   }
   // NIY
   if(k==2 && flipTargetSignOnNegScalarProduct) HALT("Quaternion flipping NIY for acceleration");

@@ -88,8 +88,9 @@ struct KOMO{
   void setHoming(double startTime=-1., double endTime=-1., double prec=1e-1);
   void setSquaredQAccelerations(double startTime=-1., double endTime=-1., double prec=1.);
   void setSquaredQVelocities(double startTime=-1., double endTime=-1., double prec=1.);
-  void setSquaredFixJointVelocities(double startTime=-1., double endTime=-1., double prec=1e2);
-  void setSquaredFixSwitchedObjects(double startTime=-1., double endTime=-1., double prec=1e2);
+  void setFixEffectiveJoints(double startTime=-1., double endTime=-1., double prec=1e2);
+  void setFixSwitchedObjects(double startTime=-1., double endTime=-1., double prec=1e2);
+  void setSquaredQuaternionNorms(double startTime=-1., double endTime=-1., double prec=1e1);
 
   //-- tasks (tasks) mid-level
   void setHoldStill(double startTime, double endTime, const char* shape, double prec=1e2);
@@ -118,7 +119,7 @@ struct KOMO{
   void setPlaceFixed(double time, const char* endeffRef, const char* object, const char* placeRef, const mlr::Transformation& worldPose, int verbose=0);
   void setGraspSlide(double startTime, double endTime, const char* endeffRef, const char* object, const char* placeRef, int verbose=0, double weightFromTop=1e1);
   void setHandover(double time, const char* endeffRef, const char* object, const char* prevHolder, int verbose=0);
-  void setPush(double time, const char* stick, const char* object, const char* table, int verbose=0);
+  void setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose=0);
   void setAttach(double time, const char* endeff, const char* object1, const char* object2, mlr::Transformation& rel, int verbose=0);
 
   //-- tasks high-level, fine (for real world execution)

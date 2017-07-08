@@ -145,8 +145,8 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
 
   komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
-  komo.setSquaredFixJointVelocities(-1., -1., 1e3);
-  komo.setSquaredFixSwitchedObjects(-1., -1., 1e3);
+  komo.setFixEffectiveJoints(-1., -1., 1e3);
+  komo.setFixSwitchedObjects(-1., -1., 1e3);
 
   for(ManipulationTree_Node *node:treepath){
     komo.setAbstractTask(node->time, *node->folState);
@@ -217,7 +217,7 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   komo.setTiming(time, microSteps, 5., 2);
 
   komo.setSquaredQAccelerations();
-  komo.setSquaredFixJointVelocities(-1., -1., 1e3);
+  komo.setFixEffectiveJoints(-1., -1., 1e3);
 
   for(ManipulationTree_Node *node:treepath) /*if(node->folDecision)*/{
     komo.setAbstractTask(node->time, *node->folState);

@@ -667,16 +667,27 @@ void mlr::Joint::applyTransformation(mlr::Transformation& f, const arr& q){
     } break;
 
     case JT_quatBall:{
-      mlr::Quaternion r;
-      r.set(q.p+qIndex);
-      r.normalize();
-      f.addRelativeRotation(r);
+      mlr::Quaternion rot;
+      rot.set(q.p+qIndex);
+      {
+          double n=rot.normalization();
+          if(n<.5 || n>2.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+      }
+      rot.normalize();
+      rot.isZero=false;
+      f.addRelativeRotation(rot);
     } break;
 
     case JT_free:{
       mlr::Transformation t;
       t.pos.set(q.p+qIndex);
       t.rot.set(q.p+qIndex+3);
+      {
+          double n=t.rot.normalization();
+          if(n<.5 || n>2.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+      }
+      t.rot.normalize();
+      t.rot.isZero=false;
       f.appendTransformation(t);
     } break;
 
@@ -1332,6 +1343,10 @@ void mlr::KinematicWorld::calc_Q_from_q(int agent){
 
         case JT_quatBall:{
           j->Q.rot.set(q.p+n);
+          {
+              double n=j->Q.rot.normalization();
+              if(n<.5 || n>2.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+          }
           j->Q.rot.normalize();
           j->Q.rot.isZero=false; //WHY? (gradient check fails without!)
           n+=4;
@@ -1340,6 +1355,10 @@ void mlr::KinematicWorld::calc_Q_from_q(int agent){
         case JT_free:{
           j->Q.pos.set(q.p+n);
           j->Q.rot.set(q.p+n+3);
+          {
+              double n=j->Q.rot.normalization();
+              if(n<.5 || n>2.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+          }
           j->Q.rot.normalize();
           j->Q.rot.isZero=false;
           n+=7;

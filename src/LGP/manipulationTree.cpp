@@ -175,8 +175,9 @@ void ManipulationTree_Node::optLevel(uint level){
 
       komo.setHoming(-1., -1., 1e-2);
       komo.setSquaredQVelocities(.5); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
-//      komo.setSquaredFixJointVelocities(-1., -1., 1e3);
-      komo.setSquaredFixSwitchedObjects(-1., -1., 1e3);
+//      komo.setFixEffectiveJoints(-1., -1., 1e3);
+      komo.setFixSwitchedObjects(-1., -1., 1e3);
+      komo.setSquaredQuaternionNorms();
 
       komo.setAbstractTask(0., *folState);
   } break;
@@ -186,8 +187,9 @@ void ManipulationTree_Node::optLevel(uint level){
 
       komo.setHoming(-1., -1., 1e-2);
       komo.setSquaredQVelocities();
-      komo.setSquaredFixJointVelocities(-1., -1., 1e3);
-      komo.setSquaredFixSwitchedObjects(-1., -1., 1e3);
+      komo.setFixEffectiveJoints(-1., -1., 1e3);
+      komo.setFixSwitchedObjects(-1., -1., 1e3);
+      komo.setSquaredQuaternionNorms();
 
       for(ManipulationTree_Node *node:getTreePath()){
         komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
@@ -201,8 +203,9 @@ void ManipulationTree_Node::optLevel(uint level){
       komo.setHoming(-1., -1., 1e-2);
       komo.setSquaredQAccelerations();
 //      komo.setSquaredQVelocities();
-      komo.setSquaredFixJointVelocities(-1., -1., 1e3);
-      komo.setSquaredFixSwitchedObjects(-1., -1., 1e3);
+      komo.setFixEffectiveJoints(-1., -1., 1e3);
+      komo.setFixSwitchedObjects(-1., -1., 1e3);
+      komo.setSquaredQuaternionNorms();
 
       for(ManipulationTree_Node *node:getTreePath()){
         komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
@@ -228,7 +231,7 @@ void ManipulationTree_Node::optLevel(uint level){
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); );
 //  komo.checkGradients();
 
-  Graph result = komo.getReport();
+  Graph result = komo.getReport(/*(level==3)*/);
   DEBUG( FILE("z.problem.cost") <<result; )
   double cost_here = result.get<double>({"total","sqrCosts"});
   double constraints_here = result.get<double>({"total","constraints"});
@@ -327,8 +330,8 @@ void ManipulationTree_Node::solvePoseProblem(){
 
   komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
-//  komo.setSquaredFixJointVelocities(-1., -1., 1e3);
-  komo.setSquaredFixSwitchedObjects(-1., -1., 1e3);
+//  komo.setFixEffectiveJoints(-1., -1., 1e3);
+  komo.setFixSwitchedObjects(-1., -1., 1e3);
 
   komo.setAbstractTask(0., *folState);
 //  for(mlr::KinematicSwitch *sw: poseProblem->switches){
@@ -400,8 +403,8 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
 
   komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
-  komo.setSquaredFixJointVelocities(-1., -1., 1e3);
-  komo.setSquaredFixSwitchedObjects(-1., -1., 1e3);
+  komo.setFixEffectiveJoints(-1., -1., 1e3);
+  komo.setFixSwitchedObjects(-1., -1., 1e3);
 
   for(ManipulationTree_Node *node:treepath){
     komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
@@ -462,8 +465,8 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
 
   komo.setHoming(-1., -1., 1e-2); //gradient bug??
   komo.setSquaredQAccelerations();
-  komo.setSquaredFixJointVelocities(-1., -1., 1e3);
-  komo.setSquaredFixSwitchedObjects(-1., -1., 1e3);
+  komo.setFixEffectiveJoints(-1., -1., 1e3);
+  komo.setFixSwitchedObjects(-1., -1., 1e3);
 
   for(ManipulationTree_Node *node:treepath){
     komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);

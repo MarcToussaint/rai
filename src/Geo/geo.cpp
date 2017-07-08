@@ -485,6 +485,10 @@ void Quaternion::multiply(double f) {
   x*=f; y*=f; z*=f;
 }
 
+double Quaternion::normalization() const{
+  return sqrt(w*w + x*x + y*y + z*z);
+}
+
 bool Quaternion::isNormalized() const {
   double n=w*w + x*x + y*y + z*z;
   return fabs(n-1.)<1e-6;
