@@ -28,5 +28,5 @@ struct TaskMap_GJK:TaskMap{
   TaskMap_GJK(const mlr::KinematicWorld& W, const Graph& specs, bool exact);
   virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& W, int t=-1);
   virtual uint dim_phi(const mlr::KinematicWorld& G){ if(negScalar) return 1;  return 3; }
-  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("TaskMap_GJK"<<(i<0?"WORLD":G.shapes(i)->name) <<'_' <<(j<0?"WORLD":G.shapes(j)->name)); }
+  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("TaskMap_GJK"<<(i<0?"WORLD":G.shapes(i)->name) <<':' <<(j<0?"WORLD":G.shapes(j)->name)); }
 };

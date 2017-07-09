@@ -26,5 +26,5 @@ struct TaskMap_AboveBox : TaskMap {
 
   virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1);
   virtual uint dim_phi(const mlr::KinematicWorld& G){ return 4; }
-  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("TM_AboveBox"<<'_'<<(i<0?"WORLD":G.shapes(i)->name) <<'_' <<(j<0?"WORLD":G.shapes(j)->name)); }
+  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("AboveBox:"<<(i<0?"WORLD":G.shapes(i)->name) <<':' <<(j<0?"WORLD":G.shapes(j)->name)); }
 };

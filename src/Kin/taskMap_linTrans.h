@@ -28,5 +28,5 @@ struct TaskMap_LinTrans : TaskMap {
 
   virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1);
   virtual uint dim_phi(const mlr::KinematicWorld& G);
-  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("LinTrans_"<<map->shortTag((G))); }
+  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("LinTrans:"<<map->shortTag((G))); }
 };

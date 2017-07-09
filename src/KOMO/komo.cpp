@@ -441,15 +441,15 @@ void KOMO::setHandover(double time, const char* oldHolder, const char* object, c
   setKinematicSwitch(time, true, "delete", oldHolder, object);
   //connect graspRef with object
 #if 1
-  setKinematicSwitch(time, true, "ballZero", newHolder, object); //why does this not work??
+  setKinematicSwitch(time, true, "ballZero", newHolder, object); //why does this sometimes lead to worse motions?
 #else
   setKinematicSwitch(time, true, "freeZero", newHolder, object);
   setTask(time, time, new TaskMap_Default(posDiffTMT, world, newHolder, NoVector, object, NoVector), OT_eq, NoArr, 1e3);
 #endif
 
-//  if(stepsPerPhase>2){ //velocities: no motion
-//    setTask(time-.15, time+.15, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,0.}, 1e1, 1); // no motion
-//  }
+  if(stepsPerPhase>2){ //velocities: no motion
+    setTask(time-.15, time+.15, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,0.}, 1e1, 1); // no motion
+  }
 
 }
 

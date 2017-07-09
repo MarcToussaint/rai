@@ -166,7 +166,6 @@ void ManipulationTree_Node::optLevel(uint level){
             LOG(-1) <<"I can't compute a pose when no pose was comp. for parent (I need the effKin)";
             return;
         }
-//        CHECK(parent->effKinematics.q.N,"");
         effKinematics = parent->effKinematics;
       }
 
@@ -175,8 +174,8 @@ void ManipulationTree_Node::optLevel(uint level){
 
       komo.setHoming(-1., -1., 1e-2);
       komo.setSquaredQVelocities(.5); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
-//      komo.setFixEffectiveJoints(-1., -1., 1e3);
-      komo.setFixSwitchedObjects(-1., -1., 1e3);
+      //komo.setFixEffectiveJoints(-1., -1., 1e2);
+      komo.setFixSwitchedObjects(-1., -1., 1e2);
       komo.setSquaredQuaternionNorms();
 
       komo.setAbstractTask(0., *folState);
@@ -187,8 +186,8 @@ void ManipulationTree_Node::optLevel(uint level){
 
       komo.setHoming(-1., -1., 1e-2);
       komo.setSquaredQVelocities();
-      komo.setFixEffectiveJoints(-1., -1., 1e3);
-      komo.setFixSwitchedObjects(-1., -1., 1e3);
+      komo.setFixEffectiveJoints(-1., -1., 1e2);
+      komo.setFixSwitchedObjects(-1., -1., 1e2);
       komo.setSquaredQuaternionNorms();
 
       for(ManipulationTree_Node *node:getTreePath()){
@@ -202,9 +201,9 @@ void ManipulationTree_Node::optLevel(uint level){
 
       komo.setHoming(-1., -1., 1e-2);
       komo.setSquaredQAccelerations();
-//      komo.setSquaredQVelocities();
-      komo.setFixEffectiveJoints(-1., -1., 1e3);
-      komo.setFixSwitchedObjects(-1., -1., 1e3);
+      //komo.setSquaredQVelocities();
+      komo.setFixEffectiveJoints(-1., -1., 1e2);
+      komo.setFixSwitchedObjects(-1., -1., 1e2);
       komo.setSquaredQuaternionNorms();
 
       for(ManipulationTree_Node *node:getTreePath()){

@@ -26,5 +26,5 @@ struct TaskMap_AlignStacking : TaskMap {
 
   virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1);
   virtual uint dim_phi(const mlr::KinematicWorld& G){ return 2; }
-  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("TM_AlignStacking"<<'_'<<(i<0?"WORLD":G.shapes(i)->name)); }
+  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("AlignStacking:"<<(i<0?"WORLD":G.shapes(i)->name)); }
 };

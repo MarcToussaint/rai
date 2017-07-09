@@ -30,5 +30,5 @@ struct TaskMap_Transition:TaskMap {
   virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1){ HALT("can only be of higher order"); }
   virtual uint dim_phi(const mlr::KinematicWorld& G){ return G.getJointStateDimension(); }
   virtual uint dim_phi(const WorldL& G, int t);
-  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("Transition_"<<(effectiveJointsOnly?"EFF":"") <<"_pos" <<posCoeff <<"_vel" <<velCoeff<<"_acc"<<accCoeff); }
+  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("Transition:"<<(effectiveJointsOnly?"eDOF":"") <<":pos" <<posCoeff <<":vel" <<velCoeff<<":acc"<<accCoeff); }
 };
