@@ -44,7 +44,7 @@ void TaskMap::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
     phi(y_bar(i), (&J?J_bar(i):NoArr), *G(offset+i), t-k+i);
 
   // check for quaternion flipping
-  if(k==1 && flipTargetSignOnNegScalarProduct && scalarProduct(y_bar(1), y_bar(0))<-.9){
+  if(k==1 && flipTargetSignOnNegScalarProduct && scalarProduct(y_bar(1), y_bar(0))<-.0){
       if(&J) J_bar(0) *= -1.;
       y_bar(0) *= -1.;
   }

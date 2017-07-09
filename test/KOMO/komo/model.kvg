@@ -1,0 +1,9 @@
+Include = '../../../data/pr2_model/pr2_model.ors'
+
+Include = '../../../data/pr2_model/pr2_modify_fixHead.ors'
+Include = '../../../data/pr2_model/pr2_modify_fixGrippers.ors'
+Include = '../../../data/pr2_model/pr2_modify_fixLeft.ors'
+
+Include = '../../../examples/Kin/kinEdit/regal.ors'
+
+shape endeff(r_wrist_roll_link){ rel=<T t(.2 0 0)> type=5 color=[1 0 0] size=[.1 0 0 0]}

@@ -44,13 +44,13 @@ void TaskMap_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau,
     if(b0->name.startsWith("slider")) continue; //warning: this introduces zeros in y and J -- but should be ok
 
 #if 1 //absolute velocities
-    TaskMap_Default pos(posDiffTMT, b0->shapes.first()->index);
+    TaskMap_Default pos(posTMT, b0->shapes.first()->index);
     pos.order=1;
     pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G, tau, t);
 
-    TaskMap_Default quat(quatDiffTMT, b0->shapes.first()->index);
+    TaskMap_Default quat(quatTMT, b0->shapes.first()->index); //mt: NOT quatDiffTMT!! (this would compute the diff to world, which zeros the w=1...)
     // flip the quaternion sign if necessary
-    quat.flipTargetSignOnNegScalarProduct = true;  ///WARNING: somehow that doesn't always work! (Now (flip only when<-.9) mostly works.) The effect on grasping is strange (test when grasping rotated stick)
+    quat.flipTargetSignOnNegScalarProduct = true;
     quat.order=1;
     quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G, tau, t);
 

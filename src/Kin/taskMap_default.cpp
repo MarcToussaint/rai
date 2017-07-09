@@ -270,7 +270,7 @@ void TaskMap_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
     G.kinematicsQuat(y, J, body_i);
     if(!body_j){ //relative to world
        //diff to world, which is Id
-      if(y(0)>0.) y(0) -= 1.; else y(0) += 1.;
+      if(y(0)>=0.) y(0) -= 1.; else y(0) += 1.;
     }else{
       arr y2, J2;
       G.kinematicsQuat(y2, J2, body_j);

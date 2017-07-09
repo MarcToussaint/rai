@@ -303,14 +303,7 @@ void KOMO::setHoldStill(double startTime, double endTime, const char* shape, dou
 }
 
 void KOMO::setPosition(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec){
-#if 0
-  mlr::String map;
-  map <<"map=pos ref1="<<shape;
-  if(shapeRel) map <<" ref2=" <<shapeRel;
-  setTask(startTime, endTime, map, type, target, prec);
-#else
   setTask(startTime, endTime, new TaskMap_Default(posTMT, world, shape, NoVector, shapeRel, NoVector), type, target, prec);
-#endif
 }
 
 void KOMO::setVelocity(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec){
