@@ -309,6 +309,9 @@ mlr::Array<mlr::Joint*> getMatchingJoints(const WorldL& G, bool zeroVelJointsOnl
 //===========================================================================
 
 mlr::Array<mlr::Joint*> getSwitchedJoints(const mlr::KinematicWorld& G0, const mlr::KinematicWorld& G1, int verbose){
+
+  HALT("retired: we only look at switched objects");
+
   mlr::Array<mlr::Joint*> switchedJoints;
 
   for(mlr::Joint *j1:G1.joints) {
@@ -344,14 +347,14 @@ mlr::Array<mlr::Body*> getSwitchedBodies(const mlr::KinematicWorld& G0, const ml
   mlr::Array<mlr::Body*> switchedBodies;
 
   for(mlr::Body *b1:G1.bodies) {
-    if(b1->index>=G0.bodies.N) continue;
+    if(b1->index>=G0.bodies.N) continue; //b1 does not exist in G0 -> not a switched body
     mlr::Body *b0 = G0.bodies(b1->index);
     if(b0->inLinks.N != b1->inLinks.N){ switchedBodies.append({b0,b1}); continue; }
     if(b0->inLinks.N){
       CHECK(b0->inLinks.N==1,"not a tree!?");
       mlr::Joint *j0 = b0->inLinks.scalar();
       mlr::Joint *j1 = b1->inLinks.scalar();
-      if(j0->type!=j1->type){
+      if(j0->type!=j1->type || j0->from->index!=j1->from->index){ //different joint type; or attached to different parent
         switchedBodies.append({b0,b1});
       }
     }

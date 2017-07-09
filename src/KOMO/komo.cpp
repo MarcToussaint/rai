@@ -440,7 +440,7 @@ void KOMO::setHandover(double time, const char* oldHolder, const char* object, c
   //disconnect object from table
   setKinematicSwitch(time, true, "delete", oldHolder, object);
   //connect graspRef with object
-#if 0
+#if 1
   setKinematicSwitch(time, true, "ballZero", newHolder, object); //why does this not work??
 #else
   setKinematicSwitch(time, true, "freeZero", newHolder, object);
