@@ -230,7 +230,7 @@ void ManipulationTree_Node::optLevel(uint level){
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); );
 //  komo.checkGradients();
 
-  Graph result = komo.getReport((level==3));
+  Graph result = komo.getReport(/*(level==3)*/);
   DEBUG( FILE("z.problem.cost") <<result; )
   double cost_here = result.get<double>({"total","sqrCosts"});
   double constraints_here = result.get<double>({"total","constraints"});

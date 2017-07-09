@@ -3,7 +3,8 @@
 #include <Kin/kinViewer.h>
 #include <KOMO/komo.h>
 
-OptLGP::OptLGP(mlr::KinematicWorld &kin, FOL_World &fol){
+OptLGP::OptLGP(mlr::KinematicWorld &kin, FOL_World &fol)
+    : verbose(3), numSteps(0), fil("z.optLGP.dat"){
   root = new MNode(kin, fol, 4);
   displayFocus = root;
 //  threadOpenModules(true);
@@ -247,6 +248,10 @@ void OptLGP::clearFromInfeasibles(MNodeL &fringe){
         if(fringe.elem(i)->isInfeasible) fringe.remove(i);
 }
 
+uint OptLGP::numFoundSolutions(){
+    return fringe_done.N;
+}
+
 mlr::String OptLGP::report(){
     MNode *bpose = getBest(terminals, 1);
     MNode *bseq  = getBest(terminals, 2);
@@ -266,52 +271,51 @@ mlr::String OptLGP::report(){
     return out;
 }
 
-void OptLGP::run(int verbose, bool display){
+void OptLGP::step(){
+    expandBest();
+
+    if(rnd.uni()<.5) optBestOnLevel(l_pose, fringe_pose, &fringe_seq, &fringe_pose);
+    optFirstOnLevel(l_pose, fringe_pose2, &fringe_seq);
+    optBestOnLevel(l_seq, fringe_seq, &fringe_path, NULL);
+    optBestOnLevel(l_path, fringe_path, &fringe_done, NULL);
+
+    //-- update queues (if something got infeasible)
+    clearFromInfeasibles(fringe_expand);
+    clearFromInfeasibles(fringe_pose);
+    clearFromInfeasibles(fringe_pose2);
+    clearFromInfeasibles(fringe_seq);
+    clearFromInfeasibles(fringe_path);
+    clearFromInfeasibles(terminals);
+
+    if(verbose>0){
+        mlr::String out=report();
+        fil <<out <<endl;
+        if(verbose>1) cout <<out <<endl;
+        if(verbose>2 && !(numSteps%10)) updateDisplay();
+    }
+    numSteps++;
+}
+
+void OptLGP::init(){
     fringe_expand.append(root);
     fringe_pose.append(root);
-
-    if(display){
+    if(verbose>2){
         initDisplay();
         updateDisplay();
     }
+}
 
-    ofstream fil("z.dat");
+void OptLGP::run(uint steps){
+    init();
 
-    for(uint k=0;k<10000;k++){
-
-        expandBest();
-
-        if(rnd.uni()<.5) optBestOnLevel(l_pose, fringe_pose, &fringe_seq, &fringe_pose);
-
-        optFirstOnLevel(l_pose, fringe_pose2, &fringe_seq);
-        optBestOnLevel(l_seq, fringe_seq, &fringe_path, NULL);
-        optBestOnLevel(l_path, fringe_path, &fringe_done, NULL);
-
-        //-- update queues (if something got infeasible)
-        clearFromInfeasibles(fringe_expand);
-        clearFromInfeasibles(fringe_pose);
-        clearFromInfeasibles(fringe_pose2);
-        clearFromInfeasibles(fringe_seq);
-        clearFromInfeasibles(fringe_path);
-        clearFromInfeasibles(terminals);
-
-        mlr::String out=report();
-
-        fil <<out <<endl;
-        if(verbose>0) cout <<out <<endl;
-
-        if(display && !(k%10)) updateDisplay();
+    for(uint k=0;k<steps;k++){
+        step();
 
         if(fringe_done.N>10) break;
     }
 
-    fil.close();
-
     //this generates the movie!
-    if(display && verbose>1){
-        views(3)->writeToFiles=true;
-        updateDisplay();
-    }
+    if(verbose>2) renderToFile();
 
-    if(display) views.clear();
+    if(verbose>2) views.clear();
 }

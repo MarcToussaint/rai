@@ -19,9 +19,9 @@
 #include <Core/array.h>
 #include <Core/graph.h>
 
-struct FOL_World:MCTS_Environment{
+struct FOL_World : MCTS_Environment{
 
-  struct Decision:SAO{
+  struct Decision : SAO{
     bool waitDecision;
     Node *rule;
     NodeL substitution;
