@@ -13,12 +13,7 @@
     --------------------------------------------------------------  */
 
 #include "spline.h"
-
-//fwd declarations
-void plot(bool wait=true, const char* txt=0);
-void plotClear();
-void plotFunction(const arr& f, double x0=0., double x1=0.);
-
+#include "plot.h"
 
 //==============================================================================
 //

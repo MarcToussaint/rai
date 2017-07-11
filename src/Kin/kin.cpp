@@ -3288,14 +3288,6 @@ void transferKI_ft_BetweenTwoWorlds(arr& KI_ft_To, const arr& KI_ft_From, const 
 
 
 
-
-extern void glDrawRect(float, float, float, float, float, float,
-                       float, float, float, float, float, float);
-
-extern void glDrawText(const char* txt, float x, float y, float z);
-
-//void glColor(float *rgb);//{ glColor(rgb[0], rgb[1], rgb[2], 1.); }
-
 #ifndef MLR_ORS_ONLY_BASICS
 
 /**

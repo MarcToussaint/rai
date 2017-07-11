@@ -1,3 +1,5 @@
+#pragma once
+
 #include "optimization.h"
 
 /// functions \f$ \phi_t:(x_{t-k},..,x_t) \mapsto y\in\mathbb{R}^{m_t} \f$ over a chain \f$x_0,..,x_T\f$ of variables
