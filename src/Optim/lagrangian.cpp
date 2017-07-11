@@ -262,7 +262,7 @@ const char* MethodName[]={ "NoMethod", "SquaredPenalty", "AugmentedLagrangian", 
 //==============================================================================
 
 OptConstrained::OptConstrained(arr& x, arr &dual, ConstrainedProblem& P, OptOptions opt)
-  : UCP(P, opt, dual), newton(x, UCP, opt), dual(dual), opt(opt), its(0), earlyPhase(true){
+  : UCP(P, opt, dual), newton(x, UCP, opt), dual(dual), opt(opt), its(0), earlyPhase(false){
 
   fil.open(STRING("z."<<MethodName[opt.constrainedMethod]));
 
@@ -282,6 +282,7 @@ bool OptConstrained::step(){
 
   arr x_old = newton.x;
 
+  //run newton on the Lagrangian problem
   if(opt.constrainedMethod==squaredPenaltyFixed){
     newton.run();
   }else{
@@ -318,7 +319,7 @@ bool OptConstrained::step(){
   }
 
   //stopping criteron
-  if(its>=2 && absMax(x_old-newton.x)<opt.stopTolerance){
+  if(its>=2 && absMax(x_old-newton.x) < (earlyPhase?5.:1.)*opt.stopTolerance){
     if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion Delta<" <<opt.stopTolerance <<endl;
     if(earlyPhase) earlyPhase=false;
     else{
@@ -346,7 +347,7 @@ bool OptConstrained::step(){
 }
 
 uint OptConstrained::run(){
-  earlyPhase=true;
+//  earlyPhase=true;
   while(!step());
   return newton.evals;
 }

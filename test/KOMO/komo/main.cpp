@@ -23,10 +23,6 @@ void TEST(EasyPR2){
   mlr::KinematicWorld G("model.kvg");
   G.meldFixedJoints();
   G.removeUselessBodies();
-//  mlr::KinematicWorld G2=G;
-//  G2.meldFixedJoints();
-//  G2.removeUselessBodies();
-//  G2 >>FILE("z.ors");
   makeConvexHulls(G.shapes);
   for(mlr::Shape *s:G.shapes) s->cont=true;
   cout <<"configuration space dim=" <<G.q.N <<endl;
@@ -63,7 +59,7 @@ void TEST(EasyAlign){
   mlr::KinematicWorld G("test.ors");
   KOMO komo;
   komo.setMoveTo(G, *G.getShapeByName("endeff"), *G.getShapeByName("target"), 7); //aligns all 3 axes
-  komo.setSpline(5);
+//  komo.setSpline(5);
   komo.run();
   for(uint i=0;i<2;i++) komo.displayTrajectory();
 }
@@ -76,7 +72,7 @@ void TEST(EasyAlign2){
   s->rel.addRelativeRotationDeg(90,1,0,0);
   KOMO komo;
   komo.setMoveTo(G, *G.getShapeByName("endeff"), *s, 7);
-  komo.setSpline(10);
+//  komo.setSpline(10);
   komo.run();
   for(uint i=0;i<2;i++) komo.displayTrajectory();
 }
@@ -86,11 +82,11 @@ void TEST(EasyAlign2){
 int main(int argc,char** argv){
   mlr::initCmdLine(argc,argv);
 
-//  testEasy();
-//  testEasyAlign();
-//  testEasyAlign2();
+  testEasy();
+  testEasyAlign();
+  testEasyAlign2();
   testEasyPR2();
-//  testFinalPosePR2();
+
   return 0;
 }
 

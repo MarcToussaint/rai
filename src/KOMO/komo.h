@@ -59,10 +59,11 @@ struct KOMO{
   void setFact(const char* fact);
 
   //-- setup the problem
-  void setModel(const mlr::KinematicWorld& W,
+  void setModel(const mlr::KinematicWorld& K,
+                bool _useSwift=true,  //disabling swift: no collisions, much faster
                 bool meldFixedJoints=false, bool makeConvexHulls=false, bool computeOptimalSSBoxes=false, bool activateAllContacts=false);
   void useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese=true);
-  void setTiming(double _phases=1., uint _stepsPerPhase=10, double durationPerPhase=5., uint _k_order=2, bool _useSwift=true);
+  void setTiming(double _phases=1., uint _stepsPerPhase=10, double durationPerPhase=5., uint _k_order=2);
   void activateCollisions(const char* s1, const char* s2);
   void deactivateCollisions(const char* s1, const char* s2);
 
@@ -75,7 +76,7 @@ struct KOMO{
   /** THESE ARE THE TWO MOST IMPORTANT METHODS TO DEFINE A PROBLEM
    * they allow the user to add a cost task, or a kinematic switch in the problem definition
    * Typically, the user does not call them directly, but uses the many methods below
-   * However, think of all of the below as examples for how to set arbirary tasks/switches yourself */
+   * Think of all of the below as examples for how to set arbirary tasks/switches yourself */
   struct Task* setTask(double startTime, double endTime, TaskMap* map, ObjectiveType type=OT_sumOfSqr, const arr& target=NoArr, double prec=1e2, uint order=0);
   void setKinematicSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const mlr::Transformation& jFrom=NoTransformation, const mlr::Transformation& jTo=NoTransformation);
 
@@ -180,17 +181,6 @@ struct KOMO{
 
 //===========================================================================
 
-/// Return a trajectory that moves the endeffector to a desired target position
-//arr moveTo(mlr::KinematicWorld& world, //in initial state
-//           mlr::Shape& endeff,         //endeffector to be moved
-//           mlr::Shape &target,         //target shape
-//           byte whichAxesToAlign=0,    //bit coded options to align axes
-//           uint iterate=1,
-//           int timeSteps=-1,
-//           double duration=-1.);            //usually the optimization methods may be called just once; multiple calls -> safety
-
-//===========================================================================
-
 inline arr finalPoseTo(mlr::KinematicWorld& world,
                        mlr::Shape &endeff,
                        mlr::Shape& target,
@@ -201,6 +191,5 @@ inline arr finalPoseTo(mlr::KinematicWorld& world,
   komo.setMoveTo(world, endeff, target, whichAxesToAlign);
   komo.run();
   return komo.x;
-//  return moveTo(world, endeff, target, whichAxesToAlign, iterate, 1, 5.);
 }
 

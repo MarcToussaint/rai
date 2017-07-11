@@ -169,8 +169,8 @@ void ManipulationTree_Node::optLevel(uint level){
         effKinematics = parent->effKinematics;
       }
 
-      komo.setModel(effKinematics);
-      komo.setTiming(1., 2, 5., 1, false);
+      komo.setModel(effKinematics, false);
+      komo.setTiming(1., 2, 5., 1);
 
       komo.setHoming(-1., -1., 1e-2);
       komo.setSquaredQVelocities(.5); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
@@ -181,8 +181,8 @@ void ManipulationTree_Node::optLevel(uint level){
       komo.setAbstractTask(0., *folState);
   } break;
   case 2:{
-      komo.setModel(startKinematics);
-      komo.setTiming(time, 2, 5., 1, false);
+      komo.setModel(startKinematics, false);
+      komo.setTiming(time, 2, 5., 1);
 
       komo.setHoming(-1., -1., 1e-2);
       komo.setSquaredQVelocities();
@@ -195,9 +195,9 @@ void ManipulationTree_Node::optLevel(uint level){
       }
   } break;
   case 3:{
-      komo.setModel(startKinematics);
+      komo.setModel(startKinematics, false);
       uint stepsPerPhase = mlr::getParameter<uint>("LGP/stepsPerPhase", 10);
-      komo.setTiming(time, stepsPerPhase, 5., 2, false);
+      komo.setTiming(time, stepsPerPhase, 5., 2);
 
       komo.setHoming(-1., -1., 1e-2);
       komo.setSquaredQAccelerations();

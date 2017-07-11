@@ -99,10 +99,13 @@ void KOMO::setFact(const char* fact){
   parseTask(specs.last());
 }
 
-void KOMO::setModel(const mlr::KinematicWorld& W,
+void KOMO::setModel(const mlr::KinematicWorld& K,
+                    bool _useSwift,
                     bool meldFixedJoints, bool makeConvexHulls, bool computeOptimalSSBoxes, bool activateAllContacts){
 
-  world.copy(W);
+  world.copy(K);
+
+  useSwift = _useSwift;
 
   if(meldFixedJoints){
     world.meldFixedJoints();
@@ -153,10 +156,7 @@ void KOMO::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese){
   FILE("z.komo.model") <<world;
 }
 
-void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhase, uint _k_order, bool _useSwift){
-//  if(MP) delete MP;
-//  MP = new KOMO(world, useSwift);
-  useSwift = _useSwift;
+void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhase, uint _k_order){
   maxPhase = _phases;
   stepsPerPhase = _stepsPerPhase;
   if(stepsPerPhase>=0){
@@ -590,6 +590,7 @@ void KOMO::setConfigFromFile(){
   mlr::KinematicWorld W(mlr::getParameter<mlr::String>("KOMO/modelfile"));
   setModel(
         W,
+        mlr::getParameter<bool>("KOMO/useSwift", true),
         mlr::getParameter<bool>("KOMO/meldFixedJoints", false),
         mlr::getParameter<bool>("KOMO/makeConvexHulls", true),
         mlr::getParameter<bool>("KOMO/computeOptimalSSBoxes", false),
@@ -604,21 +605,21 @@ void KOMO::setConfigFromFile(){
 }
 
 void KOMO::setPoseOpt(){
-  setTiming(1., 2, 5., 1, false);
+  setTiming(1., 2, 5., 1);
   setFixEffectiveJoints();
   setFixSwitchedObjects();
   setSquaredQVelocities();
 }
 
 void KOMO::setSequenceOpt(double _phases){
-  setTiming(_phases, 2, 5., 1, false);
+  setTiming(_phases, 2, 5., 1);
   setFixEffectiveJoints();
   setFixSwitchedObjects();
   setSquaredQVelocities();
 }
 
 void KOMO::setPathOpt(double _phases, uint stepsPerPhase, double timePerPhase){
-  setTiming(_phases, stepsPerPhase, timePerPhase, 2, false);
+  setTiming(_phases, stepsPerPhase, timePerPhase, 2);
   setFixEffectiveJoints();
   setFixSwitchedObjects();
   setSquaredQAccelerations();
@@ -771,7 +772,7 @@ bool KOMO::displayTrajectory(double delay, bool watch){
     }
   }
   if(watch){
-    int key = gl->watch(STRING(tag <<" (time " <<std::setw(3) <<T <<'/' <<T <<')').p);
+    int key = gl->watch(STRING(tag <<" (time " <<std::setw(3) <<T-1 <<'/' <<T <<')').p);
     return !(key==27 || key=='q');
   }else
     return false;
@@ -1000,6 +1001,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, Obje
   uint M=0;
   for(uint t=0;t<MP.T;t++){
     for(Task *task: MP.tasks) if(task->prec.N>t && task->prec(t)){
+        //TODO: sightly more efficient: pass only the configurations that correspond to the map->order
       task->map->phi(y, (&J?Jy:NoArr), MP.configurations({t,t+MP.k_order}), MP.tau, t);
       if(!y.N) continue;
       if(absMax(y)>1e10) MLR_MSG("WARNING y=" <<y);

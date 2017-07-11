@@ -69,7 +69,7 @@ OptOptions::OptOptions() {
   initStep  = mlr::getParameter<double>("opt/initStep", 1.);
   minStep   = mlr::getParameter<double>("opt/minStep", -1.);
   maxStep   = mlr::getParameter<double>("opt/maxStep", .2);
-  damping   = mlr::getParameter<double>("opt/damping", 1e-2);
+  damping   = mlr::getParameter<double>("opt/damping", .1);
   stepInc   = mlr::getParameter<double>("opt/stepInc", 2.);
   stepDec   = mlr::getParameter<double>("opt/stepDec", .1);
   dampingInc= mlr::getParameter<double>("opt/dampingInc", 2.);
