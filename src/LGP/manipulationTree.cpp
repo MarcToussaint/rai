@@ -17,7 +17,7 @@
 #include <MCTS/solver_PlainMC.h>
 #include <KOMO/komo.h>
 
-#define DEBUG(x) x
+#define DEBUG(x) //x
 #define DEL_INFEASIBLE(x) //x
 
 uint COUNT_kin=0;
@@ -230,7 +230,7 @@ void ManipulationTree_Node::optLevel(uint level){
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); );
 //  komo.checkGradients();
 
-  Graph result = komo.getReport(/*(level==3)*/);
+  Graph result = komo.getReport((komo.verbose>0 && level==3));
   DEBUG( FILE("z.problem.cost") <<result; )
   double cost_here = result.get<double>({"total","sqrCosts"});
   double constraints_here = result.get<double>({"total","constraints"});
@@ -560,9 +560,9 @@ void ManipulationTree_Node::labelInfeasible(){
   //TODO: resort all queues
 }
 
-ManipulationTree_NodeL ManipulationTree_Node::getTreePath(){
+ManipulationTree_NodeL ManipulationTree_Node::getTreePath() const{
   ManipulationTree_NodeL path;
-  ManipulationTree_Node *node=this;
+  ManipulationTree_Node *node=(ManipulationTree_Node*)this;
   for(;node;){
     path.prepend(node);
     node = node->parent;
@@ -673,17 +673,23 @@ void ManipulationTree_Node::checkConsistency(){
   for(auto* ch:children) ch->checkConsistency();
 }
 
-void ManipulationTree_Node::write(ostream& os, bool recursive) const{
+void ManipulationTree_Node::write(ostream& os, bool recursive, bool path) const{
   os <<"------- NODE -------\ns=" <<step <<" t=" <<time;
-  if(decision) os <<" a= " <<*decision <<endl;
+  if(decision) os <<" a=" <<*decision <<endl;
   else os <<" a=<ROOT>"<<endl;
 
-  for(uint i=0;i<step+1;i++) os <<"  ";
-  os <<" state= " <<*folState->isNodeOfGraph <<endl;
-  for(uint i=0;i<step+1;i++) os <<"  ";  os <<" depth=" <<step <<endl;
-  for(uint i=0;i<step+1;i++) os <<"  ";  os <<" poseCost=" <<cost(l_pose) <<endl;
-  for(uint i=0;i<step+1;i++) os <<"  ";  os <<" seqCost=" <<cost(l_seq) <<endl;
-  for(uint i=0;i<step+1;i++) os <<"  ";  os <<" pathCost=" <<cost(l_path) <<endl;
+  os <<"\t state= " <<*folState->isNodeOfGraph <<endl;
+  if(path){
+      os <<"\t decision path:";
+      ManipulationTree_NodeL _path = getTreePath();
+      for(ManipulationTree_Node *nn: _path)
+          if(nn->decision) os <<*nn->decision <<' '; else os <<" <ROOT> ";
+      os <<endl;
+  }
+  os <<"\t depth=" <<step <<endl;
+  os <<"\t poseCost=" <<cost(l_pose) <<endl;
+  os <<"\t seqCost=" <<cost(l_seq) <<endl;
+  os <<"\t pathCost=" <<cost(l_path) <<endl;
   if(recursive) for(ManipulationTree_Node *n:children) n->write(os);
 }
 

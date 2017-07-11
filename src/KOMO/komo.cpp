@@ -321,7 +321,7 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
 
   //-- position the hand & graspRef
   //hand upright
-  setTask(time, time, new TaskMap_Default(vecTMT, world, endeffRef, Vector_z), OT_sumOfSqr, {0.,0.,1.}, weightFromTop);
+//  setTask(time, time, new TaskMap_Default(vecTMT, world, endeffRef, Vector_z), OT_sumOfSqr, {0.,0.,1.}, weightFromTop);
 
   //hand center at object center (could be replaced by touch)
 //  setTask(time, time, new TaskMap_Default(posDiffTMT, world, endeffRef, NoVector, object, NoVector), OT_eq, NoArr, 1e3);
@@ -440,7 +440,7 @@ void KOMO::setHandover(double time, const char* oldHolder, const char* object, c
   //disconnect object from table
   setKinematicSwitch(time, true, "delete", oldHolder, object);
   //connect graspRef with object
-#if 1
+#if 0
   setKinematicSwitch(time, true, "ballZero", newHolder, object); //why does this sometimes lead to worse motions?
 #else
   setKinematicSwitch(time, true, "freeZero", newHolder, object);
@@ -463,8 +463,8 @@ void KOMO::setPush(double startTime, double endTime, const char* stick, const ch
   setKS_slider(startTime, true, object, "slider1", table);
 
   if(stepsPerPhase>2){ //velocities down and up
-    setTask(startTime-.3, startTime, new TaskMap_Default(posTMT, world, stick), OT_sumOfSqr, {0.,0.,-.1}, 1e2, 1); //move down
-//    setTask(time, time+.15, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,.1}, 1e1, 1); // move up
+    setTask(startTime-.3, startTime, new TaskMap_Default(posTMT, world, stick), OT_sumOfSqr, {0.,0., -.2}, 1e2, 1); //move down
+    setTask(startTime+1., startTime+1.3, new TaskMap_Default(posTMT, world, stick), OT_sumOfSqr, {0.,0., .2}, 1e2, 1); // move up
   }
 }
 

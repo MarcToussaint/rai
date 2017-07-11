@@ -222,7 +222,14 @@ void OptLGP::optBestOnLevel(int level, MNodeL &fringe, MNodeL *addIfTerminal, MN
     if(!fringe.N) return;
     MNode* n = popBest(fringe, level-1);
     if(n && !n->count(level)){
-        n->optLevel(level);
+        try{
+            n->optLevel(level);
+        }catch(const char* err){
+            LOG(-1) <<"opt(level=" <<level <<") has failed for the following node:";
+            n->write(cout, false, true);
+            LOG(-3) <<"node optimization failed";
+        }
+
         if(n->feasible(level)){
             if(addIfTerminal && n->isTerminal) addIfTerminal->append(n);
             if(addChildren) for(MNode* c:n->children) addChildren->append(c);
@@ -235,7 +242,14 @@ void OptLGP::optFirstOnLevel(int level, MNodeL &fringe, MNodeL *addIfTerminal){
     if(!fringe.N) return;
     MNode *n =  fringe.popFirst();
     if(n && !n->count(level)){
-        n->optLevel(level);
+        try{
+            n->optLevel(level);
+        }catch(const char* err){
+            LOG(-1) <<"opt(level=" <<level <<") has failed for the following node:";
+            n->write(cout, false, true);
+            LOG(-3) <<"node optimization failed";
+        }
+
         if(n->feasible(level)){
             if(addIfTerminal && n->isTerminal) addIfTerminal->append(n);
         }
@@ -252,7 +266,7 @@ uint OptLGP::numFoundSolutions(){
     return fringe_done.N;
 }
 
-mlr::String OptLGP::report(){
+mlr::String OptLGP::report(bool detailed){
     MNode *bpose = getBest(terminals, 1);
     MNode *bseq  = getBest(terminals, 2);
     MNode *bpath = getBest(fringe_done, 3);
@@ -267,6 +281,11 @@ mlr::String OptLGP::report(){
 
     if(bseq) displayFocus=bseq;
     if(bpath) displayFocus=bpath;
+
+    if(detailed){
+      out <<"\n*** found solutions:" <<endl;
+      for(MNode *n:fringe_done) n->write(out, false, true);
+    }
 
     return out;
 }
@@ -313,6 +332,8 @@ void OptLGP::run(uint steps){
 
         if(fringe_done.N>10) break;
     }
+
+    if(verbose>0) report(true);
 
     //this generates the movie!
     if(verbose>2) renderToFile();

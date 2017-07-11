@@ -45,7 +45,7 @@ public:
 
   // output
   uint numFoundSolutions();
-  mlr::String report();
+  mlr::String report(bool detailed=false);
   void initDisplay();
   void updateDisplay();
   void renderToFile(uint i=3, const char* filePrefix="vid/z.path.");

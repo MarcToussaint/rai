@@ -88,7 +88,7 @@ struct ManipulationTree_Node{
   void addMCRollouts(uint num,int stepAbort);
 
   //-- helpers
-  ManipulationTree_NodeL getTreePath(); ///< return the decision path in terms of a list of nodes (just walking to the root)
+  ManipulationTree_NodeL getTreePath() const; ///< return the decision path in terms of a list of nodes (just walking to the root)
   ManipulationTree_Node* getRoot(); ///< return the decision path in terms of a list of nodes (just walking to the root)
   ManipulationTree_Node* getChildByAction(Node  *folDecision); ///<
   void getAll(ManipulationTree_NodeL& L);
@@ -103,7 +103,7 @@ private:
   void recomputeAllMCStats(bool excludeLeafs=true);
 public:
 
-  void write(ostream& os=cout, bool recursive=false) const;
+  void write(ostream& os=cout, bool recursive=false, bool path=true) const;
   void getGraph(Graph& G, Node *n=NULL);
   Graph getGraph(){ Graph G; getGraph(G, NULL); G.checkConsistency(); return G; }
 };

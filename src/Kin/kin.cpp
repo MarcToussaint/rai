@@ -933,25 +933,23 @@ void mlr::KinematicWorld::jointSort(){
     on the edges, this calculates the absolute frames of all other nodes (propagating forward
     through trees and testing consistency of loops). */
 void mlr::KinematicWorld::calc_fwdPropagateFrames() {
-  for(Body *b: bodies) {
-    for(Joint *j:b->outLinks){ //this has no bailout for loopy graphs!
-      j->X = b->X;
-      j->X.appendTransformation(j->A);
-      if(j->type==JT_hingeX || j->type==JT_transX)  j->axis = j->X.rot.getX();
-      if(j->type==JT_hingeY || j->type==JT_transY)  j->axis = j->X.rot.getY();
-      if(j->type==JT_hingeZ || j->type==JT_transZ)  j->axis = j->X.rot.getZ();
-      if(j->type==JT_transXYPhi)  j->axis = j->X.rot.getZ();
-      if(j->type==JT_phiTransXY)  j->axis = j->X.rot.getZ();
+  for(Joint *j:joints){
+    j->X = j->from->X;
+    j->X.appendTransformation(j->A);
+    if(j->type==JT_hingeX || j->type==JT_transX)  j->axis = j->X.rot.getX();
+    if(j->type==JT_hingeY || j->type==JT_transY)  j->axis = j->X.rot.getY();
+    if(j->type==JT_hingeZ || j->type==JT_transZ)  j->axis = j->X.rot.getZ();
+    if(j->type==JT_transXYPhi)  j->axis = j->X.rot.getZ();
+    if(j->type==JT_phiTransXY)  j->axis = j->X.rot.getZ();
 
-      j->to->X=j->X;
+    j->to->X=j->X;
 #if 1
-      j->to->X.appendTransformation(j->Q);
+    j->to->X.appendTransformation(j->Q);
 #else
-      j->applyTransformation(j->to->X, q);
+    j->applyTransformation(j->to->X, q);
 #endif
-      CHECK_EQ(j->to->X.pos.x, j->to->X.pos.x, "");
-      if(!isLinkTree) j->to->X.appendTransformation(j->B);
-    }
+    CHECK_EQ(j->to->X.pos.x, j->to->X.pos.x, "");
+    if(!isLinkTree) j->to->X.appendTransformation(j->B);
   }
   calc_fwdPropagateShapeFrames();
 }
@@ -969,38 +967,34 @@ void mlr::KinematicWorld::calc_fwdPropagateShapeFrames() {
 
 void mlr::KinematicWorld::calc_fwdPropagateVelocities(){
   mlr::Transformation f;
-  BodyL todoBodies = bodies;
   Vector q_vel, q_angvel;
-  for(Body *b: todoBodies) {
-    for(Joint *j:b->outLinks){ //this has no bailout for loopy graphs!
+  for(Joint *j : joints){ //this has no bailout for loopy graphs!
+    Body *from = j->from;
+    Body *to = j->to;
+    to->vel = from->vel;
+    to->angvel = from->angvel;
 
-      Body *to = j->to;
-      to->vel = b->vel;
-      to->angvel = b->angvel;
-
-      if(j->type==JT_hingeX){
+    if(j->type==JT_hingeX){
         q_vel.setZero();
         q_angvel.set(qdot(j->qIndex) ,0., 0.);
-      }else if(j->type==JT_transX){
+    }else if(j->type==JT_transX){
         q_vel.set(qdot(j->qIndex), 0., 0.);
         q_angvel.setZero();
-      }else if(j->type==JT_rigid){
+    }else if(j->type==JT_rigid){
         q_vel.setZero();
         q_angvel.setZero();
-      }else if(j->type==JT_transXYPhi){
+    }else if(j->type==JT_transXYPhi){
         q_vel.set(qdot(j->qIndex), qdot(j->qIndex+1), 0.);
         q_angvel.set(0.,0.,qdot(j->qIndex+2));
-      }else NIY;
+    }else NIY;
 
-      Matrix R = j->X.rot.getMatrix();
-      Vector qV(R*q_vel); //relative vel in global coords
-      Vector qW(R*q_angvel); //relative ang vel in global coords
-      to->vel += b->angvel^(to->X.pos - b->X.pos);
-      if(!isLinkTree) to->vel += qW^(to->X.pos - j->X.pos);
-      to->vel += qV;
-      to->angvel += qW;
-      todoBodies.setAppend(j->to);
-    }
+    Matrix R = j->X.rot.getMatrix();
+    Vector qV(R*q_vel); //relative vel in global coords
+    Vector qW(R*q_angvel); //relative ang vel in global coords
+    to->vel += from->angvel^(to->X.pos - from->X.pos);
+    if(!isLinkTree) to->vel += qW^(to->X.pos - j->X.pos);
+    to->vel += qV;
+    to->angvel += qW;
   }
 }
 

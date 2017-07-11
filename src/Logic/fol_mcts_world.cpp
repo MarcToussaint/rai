@@ -393,24 +393,22 @@ Graph* FOL_World::createStateCopy(){
   return new_state;
 }
 
+void FOL_World::addFact(const StringA& symbols){
+  NodeL parents;
+  for(const mlr::String& s:symbols){
+      parents.append(KB[s]);
+      CHECK(parents.last(), "Node '" <<s <<"' was not declared");
+  }
+  start_state->newNode<bool>({}, parents, true);
+}
+
 void FOL_World::addAgent(const char* name){
-//  Node* n = KB.newNode<bool>({name}, {}, true); //already exists in kinematic part
-  Node* n = KB[name];
-  CHECK(n, "Node '" <<name <<"' was not declared");
-  start_state->newNode<bool>({}, {KB["agent"], n}, true);
-  start_state->newNode<bool>({}, {KB["free"], n}, true);
+  addFact({"agent", name});
+  addFact({"free", name});
 }
 
 void FOL_World::addObject(const char* name){
-//  Node* n = KB.newNode<bool>({name}, {}, true);
-  Node* n = KB[name];
-  start_state->newNode<bool>({}, {KB["object"], n}, true);
-}
-
-void FOL_World::addFact(const StringA& symbols){
-  NodeL parents;
-  for(const mlr::String& s:symbols) parents.append(KB[s]);
-  start_state->newNode<bool>({}, parents, true);
+  addFact({"object", name});
 }
 
 void FOL_World::addTerminalRule(const StringAA& literals){
