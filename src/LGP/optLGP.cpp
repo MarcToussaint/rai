@@ -22,6 +22,7 @@ void OptLGP::initDisplay(){
         views(3) = make_shared<OrsPathViewer>("path", .1, -1);
         int r=system("evince z.pdf &");
         if(r) LOG(-1) <<"could not startup evince";
+        for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
     }
 }
 
@@ -242,7 +243,7 @@ void OptLGP::optFirstOnLevel(int level, MNodeL &fringe, MNodeL *addIfTerminal){
     if(!fringe.N) return;
     MNode *n =  fringe.popFirst();
     if(n && !n->count(level)){
-        try{
+       try{
             n->optLevel(level);
         }catch(const char* err){
             LOG(-1) <<"opt(level=" <<level <<") has failed for the following node:";
