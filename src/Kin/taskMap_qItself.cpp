@@ -48,7 +48,7 @@ TaskMap_qItself::TaskMap_qItself(TaskMap_qItself_PickMode pickMode, const String
   if(pickMode==QIP_byJointGroups){
     for(mlr::Joint *j:K.joints){
       bool pick=false;
-      for(const mlr::String& s:picks) if(j->ats.getNode(s)){ pick=true; break; }
+      for(const mlr::String& s:picks) if(j->to->ats.getNode(s)){ pick=true; break; }
       if(pick) selectedBodies.append(j->to->index);
     }
     return;
@@ -56,7 +56,7 @@ TaskMap_qItself::TaskMap_qItself(TaskMap_qItself_PickMode pickMode, const String
   if(pickMode==QIP_byJointNames){
     for(mlr::Joint *j:K.joints){
       bool pick=false;
-      for(const mlr::String& s:picks) if(j->name==s){ pick=true; break; }
+      for(const mlr::String& s:picks) if(j->to->name==s){ pick=true; break; }
       if(pick) selectedBodies.append(j->to->index);
     }
     return;
@@ -72,7 +72,7 @@ void TaskMap_qItself::phi(arr& q, arr& J, const mlr::KinematicWorld& G, int t) {
   if(!selectedBodies.N){
     G.getJointState(q);
     if(relative_q0){
-      for(mlr::Joint* j:G.joints) if(j->q0 && j->qDim()==1) q(j->qIndex) -= j->q0;
+      for(mlr::Joint* j:G.joints) if(j->q0.N && j->qDim()==1) q(j->qIndex) -= j->q0.scalar();
     }
 //    if(M.N){
 //      if(M.nd==1){
@@ -91,13 +91,13 @@ void TaskMap_qItself::phi(arr& q, arr& J, const mlr::KinematicWorld& G, int t) {
     uint m=0;
     uint qIndex=0;
     for(uint b:selectedBodies){
-      mlr::Joint *j = G.bodies.elem(b)->inLinks.scalar();
+      mlr::Joint *j = G.bodies.elem(b)->joint();
 //      CHECK_GE(j->qIndex, qIndex, "selectedBodies does not add joints in sorted order! I'm not sure this is correct!");
       qIndex = j->qIndex;
       for(uint k=0;k<j->qDim();k++){
         q(m) = G.q.elem(qIndex+k);
-        if(relative_q0) q(m) -= j->q0;
-        if(&J) J(m,qIndex+k) = 1.;
+        if(relative_q0) q(m) -= j->q0(k);
+        if(&J) J(m, qIndex+k) = 1.;
         m++;
       }
     }
@@ -186,7 +186,7 @@ void TaskMap_qItself::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
 uint TaskMap_qItself::dim_phi(const mlr::KinematicWorld& G) {
   if(selectedBodies.N){
     uint n=0;
-    for(uint b:selectedBodies) n+=G.bodies.elem(b)->inLinks.scalar()->qDim();
+    for(uint b:selectedBodies) n+=G.bodies.elem(b)->joint()->qDim();
     return n;
   }
 //  if(M.nd==2) return M.d0;
@@ -321,8 +321,8 @@ mlr::Array<mlr::Joint*> getSwitchedJoints(const mlr::KinematicWorld& G0, const m
     }
     mlr::Joint *j0 = G0.getJointByBodyIndices(j1->from->index, j1->to->index);
     if(!j0 || j0->type!=j1->type){
-      if(G0.bodies(j1->to->index)->inLinks.N==1){ //out-body had (in G0) one inlink...
-        j0 = G0.bodies(j1->to->index)->inLinks.scalar();
+      if(G0.bodies(j1->to->index)->hasJoint()){ //out-body had (in G0) one inlink...
+        j0 = G0.bodies(j1->to->index)->joint();
       }
       switchedJoints.append({j0,j1});
 //      }
@@ -343,17 +343,16 @@ mlr::Array<mlr::Joint*> getSwitchedJoints(const mlr::KinematicWorld& G0, const m
 
 //===========================================================================
 
-mlr::Array<mlr::Body*> getSwitchedBodies(const mlr::KinematicWorld& G0, const mlr::KinematicWorld& G1, int verbose){
-  mlr::Array<mlr::Body*> switchedBodies;
+mlr::Array<mlr::Frame*> getSwitchedBodies(const mlr::KinematicWorld& G0, const mlr::KinematicWorld& G1, int verbose){
+  mlr::Array<mlr::Frame*> switchedBodies;
 
-  for(mlr::Body *b1:G1.bodies) {
+  for(mlr::Frame *b1:G1.bodies) {
     if(b1->index>=G0.bodies.N) continue; //b1 does not exist in G0 -> not a switched body
-    mlr::Body *b0 = G0.bodies(b1->index);
-    if(b0->inLinks.N != b1->inLinks.N){ switchedBodies.append({b0,b1}); continue; }
-    if(b0->inLinks.N){
-      CHECK(b0->inLinks.N==1,"not a tree!?");
-      mlr::Joint *j0 = b0->inLinks.scalar();
-      mlr::Joint *j1 = b1->inLinks.scalar();
+    mlr::Frame *b0 = G0.bodies(b1->index);
+    if(b0->hasJoint() != b1->hasJoint()){ switchedBodies.append({b0,b1}); continue; }
+    if(b0->hasJoint()){
+      mlr::Joint *j0 = b0->joint();
+      mlr::Joint *j1 = b1->joint();
       if(j0->type!=j1->type || j0->from->index!=j1->from->index){ //different joint type; or attached to different parent
         switchedBodies.append({b0,b1});
       }

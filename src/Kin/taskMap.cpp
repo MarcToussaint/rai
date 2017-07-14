@@ -187,7 +187,7 @@ TaskMap *TaskMap::newTaskMap(const Node* specs, const mlr::KinematicWorld& world
     for(uint i=2;i<specs->parents.N;i++){
       mlr::Shape *s = world.getShapeByName(specs->parents(i)->keys.last());
       if(!s){
-        mlr::Body *b = world.getBodyByName(specs->parents(i)->keys.last());
+        mlr::Frame *b = world.getBodyByName(specs->parents(i)->keys.last());
         CHECK(b,"No shape or body '" <<specs->parents(i)->keys.last() <<"'");
         for(mlr::Shape *s:b->shapes) shapes.append(s->index);
       }else{

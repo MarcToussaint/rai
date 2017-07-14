@@ -73,7 +73,7 @@ void PairCollisionConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, 
 //===========================================================================
 
 void PlaneConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
-  mlr::Body *body_i = G.shapes(i)->body;
+  mlr::Frame *body_i = G.shapes(i)->body;
   mlr::Vector vec_i = G.shapes(i)->rel.pos;
 
   arr y_eff, J_eff;
@@ -100,8 +100,8 @@ void ConstraintStickiness::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int
 void PointEqualityConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
   mlr::Vector vec_i = i<0?ivec: G.shapes(i)->rel*ivec;
   mlr::Vector vec_j = j<0?jvec: G.shapes(j)->rel*jvec;
-  mlr::Body *body_i = i<0?NULL: G.shapes(i)->body;
-  mlr::Body *body_j = j<0?NULL: G.shapes(j)->body;
+  mlr::Frame *body_i = i<0?NULL: G.shapes(i)->body;
+  mlr::Frame *body_j = j<0?NULL: G.shapes(j)->body;
   mlr::Vector pi = body_i ? body_i->X * vec_i : vec_i;
   mlr::Vector pj = body_j ? body_j->X * vec_j : vec_j;
   y = conv_vec2arr(pi-pj);

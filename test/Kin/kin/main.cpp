@@ -56,21 +56,21 @@ void TEST(Kinematics){
 
   struct MyFct : VectorFunction{
     enum Mode {Pos, Vec, Quat, RelPos, RelVec, RelRot} mode;
-    mlr::KinematicWorld& W;
-    mlr::Body *b, *b2;
+    mlr::KinematicWorld& K;
+    mlr::Frame *b, *b2;
     mlr::Vector &vec, &vec2;
-    MyFct(Mode _mode, mlr::KinematicWorld &_W,
-          mlr::Body *_b, mlr::Vector &_vec, mlr::Body *_b2, mlr::Vector &_vec2)
-      : mode(_mode), W(_W), b(_b), b2(_b2), vec(_vec), vec2(_vec2){
+    MyFct(Mode _mode, mlr::KinematicWorld &_K,
+          mlr::Frame *_b, mlr::Vector &_vec, mlr::Frame *_b2, mlr::Vector &_vec2)
+      : mode(_mode), K(_K), b(_b), b2(_b2), vec(_vec), vec2(_vec2){
       VectorFunction::operator= ( [this](arr& y, arr& J, const arr& x) -> void{
-        W.setJointState(x);
+        K.setJointState(x);
         switch(mode){
-          case Pos:    W.kinematicsPos(y,J,b,vec); break;
-          case Vec:    W.kinematicsVec(y,J,b,vec); break;
-          case Quat:   W.kinematicsQuat(y,J,b); break;
-          case RelPos: W.kinematicsRelPos(y,J,b,vec,b2,vec2); break;
-          case RelVec: W.kinematicsRelVec(y,J,b,vec,b2); break;
-          case RelRot: W.kinematicsRelRot(y,J,b,b2); break;
+          case Pos:    K.kinematicsPos(y,J,b,vec); break;
+          case Vec:    K.kinematicsVec(y,J,b,vec); break;
+          case Quat:   K.kinematicsQuat(y,J,b); break;
+          case RelPos: K.kinematicsRelPos(y,J,b,vec,b2,vec2); break;
+          case RelVec: K.kinematicsRelVec(y,J,b,vec,b2); break;
+          case RelRot: K.kinematicsRelRot(y,J,b,b2); break;
         }
         //if(&J) cout <<"\nJ=" <<J <<endl;
       } );
@@ -85,9 +85,9 @@ void TEST(Kinematics){
 //  G.watch(true);
 
   for(uint k=0;k<10;k++){
-    mlr::Body *b = G.bodies.rndElem();
-    mlr::Body *b2 = G.bodies.rndElem();
-    mlr::Vector vec, vec2;
+    mlr::Frame *b = G.bodies.rndElem();
+    mlr::Frame *b2 = G.bodies.rndElem();
+    mlr::Vector vec=0, vec2=0;
     vec.setRandom();
     vec2.setRandom();
     arr x(G.getJointStateDimension());
@@ -152,7 +152,7 @@ void TEST(Copy){
   g1.readRaw(FILE("z.1"));
   g2.readRaw(FILE("z.2"));
 
-  CHECK_EQ(g1,g2,"copy operator failed!")
+  CHECK_EQ(g1, g2, "copy operator failed!")
   cout <<"** copy operator success" <<endl;
 }
 
@@ -368,7 +368,7 @@ void TEST(FollowRedundantSequence){
   Z *= .8;
   T=Z.d0;
   G.setJointState(x);
-  mlr::Body *endeff = G.getBodyByName("arm7");
+  mlr::Frame *endeff = G.getBodyByName("arm7");
   G.kinematicsPos(y, NoArr, endeff, rel);
   for(t=0;t<T;t++) Z[t]() += y; //adjust coordinates to be inside the arm range
   plotLine(Z);
@@ -570,8 +570,8 @@ void TEST(InverseKinematics) {
   // reachable to check if the IK handle it
   mlr::KinematicWorld world("drawer.g");
 
-  mlr::Body* drawer = world.getBodyByName("cabinet_drawer");
-  mlr::Body* marker = world.getBodyByName("marker");
+  mlr::Frame* drawer = world.getBodyByName("cabinet_drawer");
+  mlr::Frame* marker = world.getBodyByName("marker");
   arr destination = conv_vec2arr(marker->X.pos);
 
   cout << "destination: " << destination << endl;

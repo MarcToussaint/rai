@@ -28,12 +28,12 @@ TaskMap_AlignStacking::TaskMap_AlignStacking(const mlr::KinematicWorld& G, const
 
 void TaskMap_AlignStacking::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
   mlr::Shape *s=G.shapes(i);
-  mlr::Body *b=s->body;
+  mlr::Frame *b=s->body;
 
-  mlr::Joint *j=b->inLinks.first();
+  mlr::Joint *j=b->joint();
   CHECK(j,"has no support??");
 
-  mlr::Body *b_support=j->from;
+  mlr::Frame *b_support=b->from();
 
 #if 0//if there were multiple supporters
   uint n=G.getJointStateDimension();

@@ -466,11 +466,10 @@ namespace mlr {
     operator enum_T() const{ return x; }
     void read(std::istream& is){
       mlr::String str(is);
-      int i=0;
-      for(const char* n:names){
+      for(int i=0; names[i]; i++){
+        const char* n = names[i];
         if(!n) LOG(-2) <<"enum_T " <<typeid(enum_T).name() <<' ' <<str <<" out of range";
         if(str==n){ x=(enum_T)(i); break; }
-        i++;
       }
       CHECK(!strcmp(names[x], str.p), "");
     }

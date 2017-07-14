@@ -18,7 +18,7 @@
 #include "taskMap_default.h"
 
 uint TaskMap_FixSwichedObjects::dim_phi(const WorldL& G, int t){
-  mlr::Array<mlr::Body*> switchedBodies = getSwitchedBodies(*G.elem(-2), *G.elem(-1));
+  mlr::Array<mlr::Frame*> switchedBodies = getSwitchedBodies(*G.elem(-2), *G.elem(-1));
   return switchedBodies.d0*7;
 }
 
@@ -28,7 +28,7 @@ void TaskMap_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau,
   CHECK(order==1,"");
 
   uint M=7;
-  mlr::Array<mlr::Body*> switchedBodies = getSwitchedBodies(*G.elem(-2), *G.elem(-1));
+  mlr::Array<mlr::Frame*> switchedBodies = getSwitchedBodies(*G.elem(-2), *G.elem(-1));
   y.resize(M*switchedBodies.d0).setZero();
   if(&J){
     uint xbarDim=0;
@@ -36,8 +36,8 @@ void TaskMap_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau,
     J.resize(M*switchedBodies.d0, xbarDim).setZero();
   }
   for(uint i=0;i<switchedBodies .d0;i++){
-    mlr::Body *b0 = switchedBodies(i,0);    CHECK(&b0->world==G.elem(-2),"");
-    mlr::Body *b1 = switchedBodies(i,1);    CHECK(&b1->world==G.elem(-1),"");
+    mlr::Frame *b0 = switchedBodies(i,0);    CHECK(&b0->world==G.elem(-2),"");
+    mlr::Frame *b1 = switchedBodies(i,1);    CHECK(&b1->world==G.elem(-1),"");
     CHECK(b0->index == b1->index, "");
     CHECK(b0->shapes.first()->index == b1->shapes.first()->index, "");
 

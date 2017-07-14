@@ -28,9 +28,9 @@ void TaskMap_PushConsistent::phi(arr& y, arr& J, const WorldL& G, double tau, in
   const mlr::KinematicWorld& G2 = *G.elem(-1);
   const mlr::KinematicWorld& G1 = *G.elem(-2);
 
-  mlr::Body *body_i1 = G1.shapes(i)->body;
-  mlr::Body *body_i2 = G2.shapes(i)->body;
-  mlr::Body *body_j2 = G2.shapes(j)->body;
+  mlr::Frame *body_i1 = G1.shapes(i)->body;
+  mlr::Frame *body_i2 = G2.shapes(i)->body;
+  mlr::Frame *body_j2 = G2.shapes(j)->body;
 
   arr yi1, yi2, yj2, Ji1, Ji2, Jj2;
   G1.kinematicsPos(yi1, Ji1, body_i1);

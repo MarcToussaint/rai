@@ -102,8 +102,8 @@ void TaskMap_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
     if(referenceIds.nd==2){  i=referenceIds(t,0); j=referenceIds(t,1); }
   }
 
-  mlr::Body *body_i = i<0?NULL: G.shapes(i)->body;
-  mlr::Body *body_j = j<0?NULL: G.shapes(j)->body;
+  mlr::Frame *body_i = i<0?NULL: G.shapes(i)->body;
+  mlr::Frame *body_j = j<0?NULL: G.shapes(j)->body;
 
   if(type==posTMT){
     mlr::Vector vec_i = i<0?ivec: G.shapes(i)->rel*ivec;

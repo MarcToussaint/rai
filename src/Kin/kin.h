@@ -22,6 +22,8 @@
 #include <Geo/geo.h>
 #include <Geo/mesh.h>
 
+#include "frame.h"
+
 /// @file
 /// @ingroup group_ors
 
@@ -40,24 +42,23 @@ namespace mlr{
 
 /// @addtogroup ors_basic_data_structures
 /// @{
-enum ShapeType { ST_none=-1, ST_box=0, ST_sphere, ST_capsule, ST_mesh, ST_cylinder, ST_marker, ST_retired_SSBox, ST_pointCloud, ST_ssCvx, ST_ssBox };
-enum JointType { JT_none=-1, JT_hingeX=0, JT_hingeY=1, JT_hingeZ=2, JT_transX=3, JT_transY=4, JT_transZ=5, JT_transXY=6, JT_trans3=7, JT_transXYPhi=8, JT_universal=9, JT_rigid=10, JT_quatBall=11, JT_phiTransXY=12, JT_glue, JT_free };
-enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static };
+//enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static };
 /// @}
 
 struct Joint;
 struct Shape;
-struct Body;
+struct Frame;
 struct KinematicWorld;
 struct Proxy;
 struct KinematicSwitch;
+
 } // END of namespace
 
 //===========================================================================
 
 typedef mlr::Array<mlr::Joint*> JointL;
 typedef mlr::Array<mlr::Shape*> ShapeL;
-typedef mlr::Array<mlr::Body*>  BodyL;
+typedef mlr::Array<mlr::Frame*>  BodyL;
 typedef mlr::Array<mlr::Proxy*> ProxyL;
 typedef mlr::Array<mlr::KinematicSwitch*> KinematicSwitchL;
 typedef mlr::Array<mlr::KinematicWorld*> WorldL;
@@ -70,79 +71,7 @@ namespace mlr {
 
 //===========================================================================
 
-/// a rigid body (inertia properties, lists of attached joints & shapes)
-struct Body {
-  KinematicWorld& world;
-  uint index;          ///< unique identifier TODO:do we really need index??
-  JointL inLinks, outLinks;       ///< lists of in and out joints
-  
-  mlr::String name;     ///< name
-  Transformation X;    ///< body's absolute pose
-  Graph ats;   ///< list of any-type attributes
-  
-  //dynamic properties
-  Enum<BodyType> type;          ///< is globally fixed?
-  double mass;           ///< its mass
-  Matrix inertia;      ///< its inertia tensor
-  Vector com;          ///< its center of gravity
-  Vector force, torque; ///< current forces applying on the body
-  Vector vel, angvel;   ///< linear and angular velocities
-  
-  ShapeL shapes;
-  
-  Body(KinematicWorld& _world, const Body *copyBody=NULL);
-  ~Body();
-  void operator=(const Body& b) {
-    name=b.name; X=b.X; ats=b.ats;
-    type=b.type; mass=b.mass; inertia=b.inertia; com=b.com; force=b.force; torque=b.torque;
-  }
-  void reset();
-  void parseAts();
-  void write(std::ostream& os) const;
-  void read(std::istream& is);
-};
 
-//===========================================================================
-
-/// a joint
-struct Joint {
-  KinematicWorld& world;
-  uint index;           ///< unique identifier
-  uint qIndex;          ///< index where this joint appears in the q-state-vector
-  Body *from, *to;      ///< pointers to from and to bodies
-  Joint *mimic;         ///< if non-NULL, this joint's state is identical to another's
-  uint agent;           ///< associate this Joint to a specific agent (0=default robot)
-  bool constrainToZeroVel; ///< HACK yet: when creating new 'virtual' joints, constrain them to zero vel in paths
-
-  mlr::String name;      ///< name
-  Enum<JointType> type;       ///< joint type
-  Transformation A;     ///< transformation from parent body to joint (attachment, usually static)
-  Transformation Q;     ///< transformation within the joint (usually dynamic)
-  Transformation B;     ///< transformation from joint to child body (attachment, usually static)
-  Transformation X;     ///< joint pose in world coordinates (same as from->X*A)
-  Vector axis;          ///< joint axis (same as X.rot.getX() for standard hinge joints)
-  arr limits;           ///< joint limits (lo, up, [maxvel, maxeffort])
-  double q0;            ///< joint null position
-  double H;             ///< control cost factor
-  Graph ats;    ///< list of any-type attributes
-  
-  Joint(KinematicWorld& G, Body *f, Body *t, const Joint *copyJoint=NULL); //new Shape, being added to graph and body's joint lists
-  ~Joint();
-  Joint(const Joint &j);
-  void operator=(const Joint& j) {
-    qIndex=j.qIndex; mimic=reinterpret_cast<Joint*>(j.mimic?1l:0l); agent=j.agent; constrainToZeroVel=j.constrainToZeroVel;
-    name=j.name; type=j.type; A=j.A; Q=j.Q; B=j.B; X=j.X; axis=j.axis; limits=j.limits; q0=j.q0; H=j.H;
-    ats=j.ats;
-  }
-  void reset();
-  void parseAts();
-  uint qDim();
-  void applyTransformation(mlr::Transformation& f, const arr& q);
-  void makeRigid();
-  void write(std::ostream& os) const;
-  void read(std::istream& is);
-  mlr::String tag(){ return STRING(name <<':' <<type <<':' <<from->name <<'-' <<to->name); }
-};
 
 //===========================================================================
 
@@ -150,7 +79,7 @@ struct Joint {
 struct Shape : GLDrawer{
   KinematicWorld& world;
   uint index;
-  Body *body;
+  Frame *body;
   
   mlr::String name;    ///< name
   Transformation X;
@@ -162,7 +91,7 @@ struct Shape : GLDrawer{
   bool cont;           ///< are contacts registered (or filtered in the callback)
   Graph ats;           ///< list of any-type attributes
   
-  Shape(KinematicWorld& _world, Body& b, const Shape *copyShape=NULL, bool referenceMeshOnCopy=false); //new Shape, being added to graph and body's shape lists
+  Shape(KinematicWorld& _world, Frame& b, const Shape *copyShape=NULL, bool referenceMeshOnCopy=false); //new Shape, being added to graph and body's shape lists
   virtual ~Shape();
   void copy(const Shape& s, bool referenceMeshOnCopy=false);
   void reset();
@@ -227,10 +156,10 @@ struct KinematicWorld : GLDrawer{
   void init(const Graph& G);
 
   /// @name access
-  Body *getBodyByName(const char* name, bool warnIfNotExist=true) const;
+  Frame *getBodyByName(const char* name, bool warnIfNotExist=true) const;
   Shape *getShapeByName(const char* name, bool warnIfNotExist=true) const;
   Joint *getJointByName(const char* name, bool warnIfNotExist=true) const;
-  Joint *getJointByBodies(const Body* from, const Body* to) const;
+  Joint *getJointByBodies(const Frame* from, const Frame* to) const;
   Joint *getJointByBodyNames(const char* from, const char* to) const;
   Joint *getJointByBodyIndices(uint ifrom, uint ito) const;
 
@@ -243,16 +172,16 @@ struct KinematicWorld : GLDrawer{
 
   /// @name changes of configuration
   void clear();
-  void makeTree(Body *root){ reconfigureRoot(root); makeLinkTree(); }
+  void makeTree(Frame *root){ reconfigureRoot(root); makeLinkTree(); }
   //-- low level: don't use..
   void revertJoint(Joint *e);
-  void reconfigureRoot(Body *root);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
+  void reconfigureRoot(Frame *root);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
   void transformJoint(Joint *e, const mlr::Transformation &f); ///< A <- A*f, B <- f^{-1}*B
   void zeroGaugeJoints();         ///< A <- A*Q, Q <- Id
   void makeLinkTree();            ///< modify transformations so that B's become identity
   void topSort(){ graphTopsort(bodies, joints); qdim.clear(); q.clear(); qdot.clear(); analyzeJointStateDimensions(); }
   void jointSort();
-  void glueBodies(Body *a, Body *b);
+  void glueBodies(Frame *a, Frame *b);
   void meldFixedJoints(int verbose=0);         ///< prune fixed joints; shapes of fixed bodies are reassociated to non-fixed boides
   void removeUselessBodies(int verbose=0);     ///< prune non-articulated bodies; they become shapes of other bodies
   bool checkConsistency();
@@ -282,26 +211,26 @@ struct KinematicWorld : GLDrawer{
   void setAgent(uint agent);
 
   /// @name kinematics
-  void kinematicsPos (arr& y, arr& J, Body *b, const Vector& rel=NoVector) const; //TODO: make vector& not vector*
-  void kinematicsVec (arr& y, arr& J, Body *b, const mlr::Vector& vec=NoVector) const;
-  void kinematicsQuat(arr& y, arr& J, Body *b) const;
-  void hessianPos(arr& H, Body *b, mlr::Vector *rel=0) const;
-  void axesMatrix(arr& J, Body *b) const;
-  void kinematicsRelPos (arr& y, arr& J, Body *b1, const mlr::Vector& vec1, Body *b2, const mlr::Vector& vec2) const;
-  void kinematicsRelVec (arr& y, arr& J, Body *b1, const mlr::Vector& vec1, Body *b2) const;
-  void kinematicsRelRot (arr& y, arr& J, Body *b1, Body *b2) const;
+  void kinematicsPos (arr& y, arr& J, Frame *b, const Vector& rel=NoVector) const; //TODO: make vector& not vector*
+  void kinematicsVec (arr& y, arr& J, Frame *b, const mlr::Vector& vec=NoVector) const;
+  void kinematicsQuat(arr& y, arr& J, Frame *b) const;
+  void hessianPos(arr& H, Frame *b, mlr::Vector *rel=0) const;
+  void axesMatrix(arr& J, Frame *b) const;
+  void kinematicsRelPos (arr& y, arr& J, Frame *b1, const mlr::Vector& vec1, Frame *b2, const mlr::Vector& vec2) const;
+  void kinematicsRelVec (arr& y, arr& J, Frame *b1, const mlr::Vector& vec1, Frame *b2) const;
+  void kinematicsRelRot (arr& y, arr& J, Frame *b1, Frame *b2) const;
 
   void kinematicsProxyDist(arr& y, arr& J, Proxy *p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
   void kinematicsProxyCost(arr& y, arr& J, Proxy *p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
   void kinematicsProxyCost(arr& y, arr& J, double margin=.02, bool useCenterDist=true) const;
   void kinematicsProxyConstraint(arr& g, arr& J, Proxy *p, double margin=.02) const;
   void kinematicsContactConstraints(arr& y, arr &J) const; //TODO: deprecated?
-  void kinematicsPos_wrtFrame(arr& y, arr& J, Body *b, const mlr::Vector& rel, Shape *s) const;
+  void kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const mlr::Vector& rel, Shape *s) const;
   void getLimitsMeasure(arr &x, const arr& limits, double margin=.1) const;
   void kinematicsLimitsCost(arr& y, arr& J, const arr& limits, double margin=.1) const;
 
   /// @name High level (inverse) kinematics
-  void inverseKinematicsPos(Body& body, const arr& ytarget, const mlr::Vector& rel_offset=NoVector, int max_iter=3);
+  void inverseKinematicsPos(Frame& body, const arr& ytarget, const mlr::Vector& rel_offset=NoVector, int max_iter=3);
 
   /// @name dynamics
   void fwdDynamics(arr& qdd, const arr& qd, const arr& tau);
@@ -322,8 +251,8 @@ struct KinematicWorld : GLDrawer{
 
   /// @name forces and gravity
   void clearForces();
-  void addForce(mlr::Vector force, Body *n);
-  void addForce(mlr::Vector force, Body *n, mlr::Vector pos);
+  void addForce(mlr::Vector force, Frame *n);
+  void addForce(mlr::Vector force, Frame *n, mlr::Vector pos);
   void contactsToForces(double hook=.01, double damp=.0003);
   void gravityToForces();
   void frictionToForces(double coeff);
@@ -386,7 +315,7 @@ stdOutPipe(mlr::KinematicSwitch)
 // constants
 //
 
-extern mlr::Body& NoBody;
+extern mlr::Frame& NoBody;
 extern mlr::Shape& NoShape;
 extern mlr::Joint& NoJoint;
 extern mlr::KinematicWorld& NoWorld;
@@ -401,7 +330,7 @@ namespace mlr {
 //std::istream& operator>>(std::istream&, Body&);
 //std::istream& operator>>(std::istream&, Joint&);
 //std::istream& operator>>(std::istream&, Shape&);
-std::ostream& operator<<(std::ostream&, const Body&);
+std::ostream& operator<<(std::ostream&, const Frame&);
 std::ostream& operator<<(std::ostream&, const Joint&);
 std::ostream& operator<<(std::ostream&, const Shape&);
 stdPipes(KinematicWorld);

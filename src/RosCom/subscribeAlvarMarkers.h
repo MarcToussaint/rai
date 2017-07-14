@@ -43,7 +43,7 @@
 /**
  * Set the transformation of the body to the transformation of the alvar maker.
  */
-void setBody(mlr::Body& body, const ar::AlvarMarker& marker);
+void setBody(mlr::Frame& body, const ar::AlvarMarker& marker);
 
 /**
  * Sync all markers from the msg with the ors world.

@@ -169,20 +169,20 @@ void SwiftInterface::initActivations(const mlr::KinematicWorld& world, uint pare
     }
   }
   //shapes within a body
-  for(mlr::Body *b: world.bodies) deactivate(b->shapes);
+  for(mlr::Frame *b: world.bodies) deactivate(b->shapes);
   //deactivate along edges...
   for_list(mlr::Joint, e, world.joints) {
     //cout <<"deactivating edge pair"; listWriteNames({e->from, e->to}, cout); cout <<endl;
-    deactivate(mlr::Array<mlr::Body*>({ e->from, e->to }));
+    deactivate(mlr::Array<mlr::Frame*>({ e->from, e->to }));
   }
   //deactivate along trees...
-  for_list(mlr::Body,  b,  world.bodies) {
-    mlr::Array<mlr::Body*> group, children;
+  for_list(mlr::Frame,  b,  world.bodies) {
+    mlr::Array<mlr::Frame*> group, children;
     group.append(b);
     for(uint l=0; l<parentLevelsToDeactivate; l++) {
       //listWriteNames(group, cout);
       children.clear();
-      for_list(mlr::Body,  b2,  group) {
+      for_list(mlr::Frame,  b2,  group) {
         for_list(mlr::Joint,  e,  b2->outLinks) {
           children.setAppend(e->to);
           //listWriteNames(children, cout);
@@ -194,10 +194,10 @@ void SwiftInterface::initActivations(const mlr::KinematicWorld& world, uint pare
   }
 }
 
-void SwiftInterface::deactivate(const mlr::Array<mlr::Body*>& bodies) {
+void SwiftInterface::deactivate(const mlr::Array<mlr::Frame*>& bodies) {
   //cout <<"deactivating body group "; listWriteNames(bodies, cout); cout <<endl;
   mlr::Array<mlr::Shape*> shapes;
-  for_list(mlr::Body, b, bodies) shapes.setAppend(b->shapes);
+  for_list(mlr::Frame, b, bodies) shapes.setAppend(b->shapes);
   deactivate(shapes);
 }
 
@@ -413,7 +413,7 @@ void SwiftInterface::swiftQueryExactDistance() {
 //  void close();
   void SwiftInterface::deactivate(mlr::Shape *s1, mlr::Shape *s2) {}
   void SwiftInterface::deactivate(const mlr::Array<mlr::Shape*>& shapes) {}
-  void SwiftInterface::deactivate(const mlr::Array<mlr::Body*>& bodies) {}
+  void SwiftInterface::deactivate(const mlr::Array<mlr::Frame*>& bodies) {}
   void SwiftInterface::initActivations(const KinematicWorld &world, uint parentLevelsToDeactivate=3) {}
   void SwiftInterface::swiftQueryExactDistance() {}
 #endif
