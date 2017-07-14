@@ -16,12 +16,14 @@
 //mlr::Body::Body(const Body& b) { reset(); *this=b; }
 
 mlr::Frame::Frame(KinematicWorld& _world, const Frame* copyBody)
-  : world(_world), type(BT_dynamic){
+  : world(_world){
 
   index=world.bodies.N;
   world.bodies.append(this);
   if(copyBody){
-    *this=*copyBody;
+    const Frame& b = *copyBody;
+    name=b.name; X=b.X; ats=b.ats;
+//    type=b.type; mass=b.mass; inertia=b.inertia; com=b.com; force=b.force; torque=b.torque;
     if(copyBody->hasJoint()){
       Joint *j = copyBody->joint();
       new Joint(world.bodies(j->from->index), this, j);
@@ -47,16 +49,13 @@ void mlr::Frame::parseAts(const Graph& ats) {
   //mass properties
   double d;
   if(ats.get(d, "mass")) {
-    mass=d;
-    inertia.setId();
-    inertia *= .2*d;
+    inertia = new FrameInertia(this);
+    inertia->mass=d;
+    inertia->matrix.setId();
+    inertia->matrix *= .2*d;
+    inertia->type=BT_dynamic;
+    inertia->read(ats);
   }
-
-  type=BT_dynamic;
-  if(ats["fixed"])       type=BT_static;
-  if(ats["static"])      type=BT_static;
-  if(ats["kinematic"])   type=BT_kinematic;
-  if(ats.get(d,"dyntype")) type=(BodyType)d;
 
   // SHAPE handling //TODO: remove this code!
   Node* item;
@@ -98,8 +97,8 @@ void mlr::Frame::parseAts(const Graph& ats) {
 
 void mlr::Frame::write(std::ostream& os) const {
   if(!X.isZero()) os <<"pose=<T " <<X <<" > ";
-  if(mass) os <<"mass=" <<mass <<' ';
-  if(type!=BT_dynamic) os <<"dyntype=" <<(int)type <<' ';
+//  if(mass) os <<"mass=" <<mass <<' ';
+//  if(type!=BT_dynamic) os <<"dyntype=" <<(int)type <<' ';
 //  uint i; Node *a;
 //  for(Type *  a:  ats)
 //      if(a->keys(0)!="X" && a->keys(0)!="pose") os <<*a <<' ';
@@ -768,8 +767,9 @@ void mlr::Shape::read(const Graph& ats) {
       default: ;
     }
     if(mass>0.){
-      frame->mass += mass;
-      frame->inertia += I;
+      NIY;
+//      frame->mass += mass;
+//      frame->inertia += I;
     }
   }
 }
@@ -882,3 +882,12 @@ void mlr::Shape::glDraw(OpenGL& gl) {
 }
 
 #endif
+
+
+void mlr::FrameInertia::read(const Graph& ats){
+  double d;
+  if(ats["fixed"])       type=BT_static;
+  if(ats["static"])      type=BT_static;
+  if(ats["kinematic"])   type=BT_kinematic;
+  if(ats.get(d,"dyntype")) type=(BodyType)d;
+}

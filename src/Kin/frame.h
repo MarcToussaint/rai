@@ -33,19 +33,17 @@ struct Frame {
   //attachments to the frame
   struct FrameRel  *rel=NULL;        ///< this frame is a child or a parent frame, with fixed relative transformation
   struct Shape *shape=NULL;       ///< this frame has a (collision or visual) geometry
-//  struct FrameInertia *inertia=NULL; ///< this frame has inertia (is a mass)
+  struct FrameInertia *inertia=NULL; ///< this frame has inertia (is a mass)
 
-
-//  JointL inLinks;
   FrameL outLinks;       ///< lists of in and out joints
 
   //dynamic properties
-  Enum<BodyType> type;          ///< is globally fixed?
-  double mass=0.;           ///< its mass
-  Matrix inertia=0;      ///< its inertia tensor
-  Vector com=0;          ///< its center of gravity
-  Vector force=0, torque=0; ///< current forces applying on the body
-  Vector vel=0, angvel=0;   ///< linear and angular velocities
+//  Enum<BodyType> type;          ///< is globally fixed?
+//  double mass=0.;           ///< its mass
+//  Matrix inertia=0;      ///< its inertia tensor
+//  Vector com=0;          ///< its center of gravity
+//  Vector force=0, torque=0; ///< current forces applying on the body
+//  Vector vel=0, angvel=0;   ///< linear and angular velocities
 
   Frame(KinematicWorld& _world, const Frame *copyBody=NULL);
   ~Frame();
@@ -56,8 +54,6 @@ struct Frame {
   bool hasJoint() const;
 
   void operator=(const Frame& b) {
-    name=b.name; X=b.X; ats=b.ats;
-    type=b.type; mass=b.mass; inertia=b.inertia; com=b.com; force=b.force; torque=b.torque;
   }
   void parseAts(const Graph &ats);
   void write(std::ostream& os) const;
@@ -125,7 +121,14 @@ struct FrameGeom{
 struct FrameInertia{
   arr centerOfMass;
   double mass;
-  arr inertiaTensor;
+  Matrix matrix;
+  Enum<BodyType> type;
+  Vector force=0, torque=0; ///< current forces applying on the body
+  Vector vel=0, angvel=0;   ///< linear and angular velocities
+
+  FrameInertia(Frame *f) : type(BT_dynamic) {}
+
+  void read(const Graph& ats);
 };
 
 } //namespace mlr

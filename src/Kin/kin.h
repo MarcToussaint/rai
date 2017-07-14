@@ -151,7 +151,6 @@ struct KinematicWorld : GLDrawer{
   void revertJoint(Joint *e);
   void reconfigureRoot(Frame *root);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
   void transformJoint(Joint *e, const mlr::Transformation &f); ///< A <- A*f, B <- f^{-1}*B
-  void zeroGaugeJoints();         ///< A <- A*Q, Q <- Id
   void makeLinkTree();            ///< modify transformations so that B's become identity
   void topSort(){ graphTopsort(bodies, joints); qdim.clear(); q.clear(); qdot.clear(); analyzeJointStateDimensions(); }
   void jointSort();

@@ -292,20 +292,14 @@ void mlr::KinematicWorld::transformJoint(mlr::Joint *e, const mlr::Transformatio
 }
 
 void mlr::KinematicWorld::makeLinkTree() {
-//  for(Shape *s: shapes) {
-//    if(s->mesh.V.N) s->mesh.transform(s->rel);
-//    if(s->sscCore.V.N) s->sscCore.transform(s->rel);
-//    s->rel.setZero();
-//  }
-  NIY;
-#if 0
   for(Joint *j: joints) {
-    if(j->to->shape) j->to->shape->rel = j->B * j->to->shape->rel;
-    for(Joint *j2: j->to->outLinks) j2->A = j->B * j2->A;
+    for(Frame *f: j->to->outLinks){
+      if(f->rel) f->rel->rel = j->B * f->rel->rel;
+      if(f->rel && f->rel->joint) f->rel->joint->A = j->B * f->rel->joint->A;
+    }
     j->B.setZero();
   }
   isLinkTree=true;
-#endif
 }
 
 void mlr::KinematicWorld::jointSort(){
@@ -377,6 +371,8 @@ void mlr::KinematicWorld::calc_fwdPropagateFrames() {
 }
 
 void mlr::KinematicWorld::calc_fwdPropagateVelocities(){
+  NIY;
+#if 0
   mlr::Transformation f;
   Vector q_vel, q_angvel;
   for(Joint *j : joints){ //this has no bailout for loopy graphs!
@@ -407,6 +403,7 @@ void mlr::KinematicWorld::calc_fwdPropagateVelocities(){
     to->vel += qV;
     to->angvel += qW;
   }
+#endif
 }
 
 void mlr::KinematicWorld::calc_missingAB_from_BodyAndJointFrames() {
@@ -587,18 +584,6 @@ arr mlr::KinematicWorld::getLimits() const {
   }
 //  cout <<"limits=" <<limits <<endl;
   return limits;
-}
-
-void mlr::KinematicWorld::zeroGaugeJoints() {
-  Joint *e;
-  mlr::Vector w;
-  for(Frame *n: bodies) if(n->type!=BT_static && n->hasJoint()) {
-    e=n->joint();
-    if(e) {
-      e->A.appendTransformation(e->Q);
-      e->Q.setZero();
-    }
-  }
 }
 
 arr mlr::KinematicWorld::calc_q_from_Q(mlr::Joint* j) {
@@ -1002,7 +987,7 @@ void mlr::KinematicWorld::inertia(arr& M) {
         
         vj = tj ^(Xa.pos-Xj.pos);
         
-        tmp = a->mass * (vi*vj);
+        tmp = a->inertia->mass * (vi*vj);
         //tmp += scalarProduct(a->a.inertia, ti, tj);
         
         M(j1_idx, j2_idx) += tmp;
@@ -1477,32 +1462,34 @@ void mlr::KinematicWorld::glueBodies(Frame *f, Frame *t) {
 
 /// clear all forces currently stored at bodies
 void mlr::KinematicWorld::clearForces() {
-  for(Frame *  n:  bodies) {
-    n->force.setZero();
-    n->torque.setZero();
+  for(Frame *f:  bodies) if(f->inertia){
+    f->inertia->force.setZero();
+    f->inertia->torque.setZero();
   }
 }
 
 /// apply a force on body n 
-void mlr::KinematicWorld::addForce(mlr::Vector force, mlr::Frame *n) {
-  n->force += force;
+void mlr::KinematicWorld::addForce(mlr::Vector force, mlr::Frame *f) {
+  CHECK(f->inertia, "");
+  f->inertia->force += force;
   if (!s->physx) {
     NIY;
   }
   else {
-    s->physx->addForce(force, n);
+    s->physx->addForce(force, f);
   }
   //n->torque += (pos - n->X.p) ^ force;
 }
 
 /// apply a force on body n at position pos (in world coordinates)
-void mlr::KinematicWorld::addForce(mlr::Vector force, mlr::Frame *n, mlr::Vector pos) {
-  n->force += force;
+void mlr::KinematicWorld::addForce(mlr::Vector force, mlr::Frame *f, mlr::Vector pos) {
+  CHECK(f->inertia, "");
+  f->inertia->force += force;
   if (!s->physx) {
     NIY;
   }
   else {
-    s->physx->addForce(force, n, pos);
+    s->physx->addForce(force, f, pos);
   }
   //n->torque += (pos - n->X.p) ^ force;
 }
@@ -1527,7 +1514,7 @@ NIY;
 
 void mlr::KinematicWorld::gravityToForces() {
   mlr::Vector g(0, 0, -9.81);
-  for(Frame *  n:  bodies) n->force += n->mass * g;
+  for(Frame *f: bodies) if(f->inertia) f->inertia->force += f->inertia->mass * g;
 }
 
 /// compute forces from the current contacts
@@ -1764,11 +1751,11 @@ double mlr::KinematicWorld::getCenterOfMass(arr& x_) const {
   double M=0.;
   mlr::Vector x;
   x.setZero();
-  for(Frame *  n:  bodies) {
-    M+=n->mass;
-    x+=n->mass*n->X.pos;
+  for(Frame *f: bodies) if(f->inertia){
+    M += f->inertia->mass;
+    x += f->inertia->mass*f->X.pos;
   }
-  x/=M;
+  x /= M;
   x_ = conv_vec2arr(x);
   return M;
 }
@@ -1778,10 +1765,10 @@ void mlr::KinematicWorld::getComGradient(arr &grad) const {
   double M=0.;
   arr J(3, getJointStateDimension());
   grad.resizeAs(J); grad.setZero();
-  for(Frame * n: bodies) {
-    M += n->mass;
-    kinematicsPos(NoArr, J, n);
-    grad += n->mass * J;
+  for(Frame *f: bodies) if(f->inertia){
+    M += f->inertia->mass;
+    kinematicsPos(NoArr, J, f);
+    grad += f->inertia->mass * J;
   }
   grad/=M;
 }
@@ -1820,14 +1807,14 @@ double mlr::KinematicWorld::getEnergy() {
   calc_fwdPropagateVelocities();
   
   E=0.;
-  for(Frame *b: bodies) {
-    m=b->mass;
-    mlr::Quaternion &rot = b->X.rot;
-    I=(rot).getMatrix() * b->inertia * (-rot).getMatrix();
-    v=b->vel.length();
-    w=b->angvel;
+  for(Frame *f: bodies) if(f->inertia){
+    m=f->inertia->mass;
+    mlr::Quaternion &rot = f->X.rot;
+    I=(rot).getMatrix() * f->inertia->matrix * (-rot).getMatrix();
+    v=f->inertia->vel.length();
+    w=f->inertia->angvel;
     E += .5*m*v*v;
-    E += 9.81 * m * (b->X*b->com).z;
+    E += 9.81 * m * (f->X*f->inertia->com).z;
     E += .5*(w*(I*w));
   }
   
