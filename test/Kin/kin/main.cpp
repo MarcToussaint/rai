@@ -38,7 +38,7 @@ void testJacobianInFile(const char* filename, const char* shape){
   VectorFunction f = ( [&sh, &K](arr& y, arr& J, const arr& x) -> void
   {
     K.setJointState(x);
-    K.kinematicsPos(y, J, sh->body, NoVector);
+    K.kinematicsPos(y, J, sh->frame, NoVector);
     if(&J) cout <<"J=" <<J <<endl;
   } );
 
@@ -116,8 +116,8 @@ void TEST(QuaternionKinematics){
   for(uint k=0;k<3;k++){
     mlr::Quaternion target;
     target.setRandom();
-    G.getShapeByName("ref")->rel.rot = target;
-    G.getShapeByName("marker")->rel.rot = target;
+    G.getBodyByName("ref")->rel->rel.rot = target;
+    G.getBodyByName("marker")->rel->rel.rot = target;
     arr x;
     G.getJointState(x);
     for(uint t=0;t<100;t++){
@@ -360,7 +360,7 @@ void TEST(FollowRedundantSequence){
   uint t,T,n=G.getJointStateDimension();
   arr x(n),y,J,invJ;
   x=.8;     //initialize with intermediate joint positions (non-singular positions)
-  mlr::Vector rel = G.getShapeByName("endeff")->rel.pos; //this frame describes the relative position of the endeffector wrt. 7th body
+  mlr::Vector rel = G.getBodyByName("endeff")->rel->rel.pos; //this frame describes the relative position of the endeffector wrt. 7th body
 
   //-- generate a random endeffector trajectory
   arr Z,Zt; //desired and true endeffector trajectories

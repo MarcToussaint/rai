@@ -73,33 +73,6 @@ namespace mlr {
 
 
 
-//===========================================================================
-
-/// a shape (geometric shape like cylinder/mesh or just marker, associated to a body)
-struct Shape : GLDrawer{
-  KinematicWorld& world;
-  uint index;
-  Frame *body;
-  
-  mlr::String name;    ///< name
-  Transformation X;
-  Transformation rel;  ///< relative translation/rotation of the bodies geometry
-  Enum<ShapeType> type;
-  arr size;
-  Mesh mesh, sscCore;
-  double mesh_radius;
-  bool cont;           ///< are contacts registered (or filtered in the callback)
-  Graph ats;           ///< list of any-type attributes
-  
-  Shape(KinematicWorld& _world, Frame& b, const Shape *copyShape=NULL, bool referenceMeshOnCopy=false); //new Shape, being added to graph and body's shape lists
-  virtual ~Shape();
-  void copy(const Shape& s, bool referenceMeshOnCopy=false);
-  void reset();
-  void parseAts();
-  void write(std::ostream& os) const;
-  void read(std::istream& is);
-  void glDraw(OpenGL&);
-};
 
 //===========================================================================
 
@@ -129,6 +102,7 @@ struct KinematicWorld : GLDrawer{
   arr q, qdot; ///< the current joint configuration vector and velocities
   uint q_agent; ///< the agent index of the current q,qdot
   BodyL  bodies;
+  FrameL fwdActiveSet;
   JointL joints;
   ShapeL shapes;
   ProxyL proxies; ///< list of current proximities between bodies
@@ -191,7 +165,6 @@ struct KinematicWorld : GLDrawer{
   void calc_q_from_Q(int agent=-1);  ///< updates (q,qdot) based on the joint's Q transformations
   arr calc_q_from_Q(Joint* j);  ///< returns (q,qdot) for a given joint  based on the joint's Q transformations
   void calc_fwdPropagateFrames();    ///< elementary forward kinematics; also computes all Shape frames
-  void calc_fwdPropagateShapeFrames();   ///< same as above, but only shape frames (body frames are assumed up-to-date)
   void calc_fwdPropagateVelocities();    ///< elementary forward kinematics; also computes all Shape frames
   void calc_Q_from_BodyFrames();    ///< fill in the joint transformations assuming that body poses are known (makes sense when reading files)
   void calc_missingAB_from_BodyAndJointFrames();    ///< fill in the missing joint relative transforms (A & B) if body and joint world poses are known

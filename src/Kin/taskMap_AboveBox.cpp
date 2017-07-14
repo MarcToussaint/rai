@@ -37,7 +37,7 @@ void TaskMap_AboveBox::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
   }
   CHECK(s2->type==mlr::ST_ssBox,"");//s1 should be the board
   arr pos,posJ;
-  G.kinematicsRelPos(pos, posJ, s1->body, s1->rel.pos, s2->body, s2->rel.pos);
+  G.kinematicsRelPos(pos, posJ, s1->frame, NoVector, s2->frame, NoVector);
   arr range(3);
   double d1 = .5*s1->size(0) + s1->size(3);
   d1 =.05; //TODO: fixed! support size/radius of object on top

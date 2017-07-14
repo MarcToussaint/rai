@@ -4048,7 +4048,7 @@ template<class vert, class edge> bool graphTopsort(mlr::Array<vert*>& V, mlr::Ar
   return true;
 }
 
-template<class vert, class edge> mlr::Array<vert*> graphGetTopsortOrder(mlr::Array<vert*>& V, mlr::Array<edge*>& E) {
+template<class vert> mlr::Array<vert*> graphGetTopsortOrder(mlr::Array<vert*>& V) {
   mlr::Array<vert*> fringe;
   mlr::Array<vert*>::memMove=true;
   intA inputs(V.N);
@@ -4065,9 +4065,9 @@ template<class vert, class edge> mlr::Array<vert*> graphGetTopsortOrder(mlr::Arr
     v=fringe.popFirst();
     order.append(v);
 
-    for(edge* e : v->outLinks) {
-      inputs(e->to->index)--;
-      if(!inputs(e->to->index)) fringe.append(e->to);
+    for(vert* to : v->outLinks) {
+      inputs(to->index)--;
+      if(!inputs(to->index)) fringe.append(to);
     }
   }
 

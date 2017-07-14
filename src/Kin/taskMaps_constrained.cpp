@@ -73,8 +73,8 @@ void PairCollisionConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, 
 //===========================================================================
 
 void PlaneConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
-  mlr::Frame *body_i = G.shapes(i)->body;
-  mlr::Vector vec_i = G.shapes(i)->rel.pos;
+  mlr::Frame *body_i = G.shapes(i)->frame;
+  mlr::Vector vec_i = 0;
 
   arr y_eff, J_eff;
   G.kinematicsPos(y_eff, (&J?J_eff:NoArr), body_i, vec_i);
@@ -98,10 +98,10 @@ void ConstraintStickiness::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int
 //===========================================================================
 
 void PointEqualityConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
-  mlr::Vector vec_i = i<0?ivec: G.shapes(i)->rel*ivec;
-  mlr::Vector vec_j = j<0?jvec: G.shapes(j)->rel*jvec;
-  mlr::Frame *body_i = i<0?NULL: G.shapes(i)->body;
-  mlr::Frame *body_j = j<0?NULL: G.shapes(j)->body;
+  mlr::Vector vec_i = ivec;
+  mlr::Vector vec_j = jvec;
+  mlr::Frame *body_i = i<0?NULL: G.shapes(i)->frame;
+  mlr::Frame *body_j = j<0?NULL: G.shapes(j)->frame;
   mlr::Vector pi = body_i ? body_i->X * vec_i : vec_i;
   mlr::Vector pj = body_j ? body_j->X * vec_j : vec_j;
   y = conv_vec2arr(pi-pj);
@@ -151,7 +151,7 @@ void VelAlignConstraint::phi(arr& y, arr& J, const WorldL& G, double tau, int t)
 
   // compute body j orientation
   arr y_j,J_j,J_bar_j;
-  G(G.N-1)->kinematicsVec(y_j, (&J?J_bar_j:NoArr), G(G.N-1)->shapes(j)->body, jvec);
+  G(G.N-1)->kinematicsVec(y_j, (&J?J_bar_j:NoArr), G(G.N-1)->shapes(j)->frame, jvec);
 
   if(&J){
     J_j = zeros(G.N, y_j.N, J_bar_j.d1);
@@ -167,7 +167,7 @@ void VelAlignConstraint::phi(arr& y, arr& J, const WorldL& G, double tau, int t)
   J_bar.resize(k+1);
 
   for(uint c=0;c<=k;c++) {
-    G(G.N-1-c)->kinematicsPos(y_bar(c), (&J?J_bar(c):NoArr), G(G.N-1-c)->shapes(i)->body, ivec);
+    G(G.N-1-c)->kinematicsPos(y_bar(c), (&J?J_bar(c):NoArr), G(G.N-1-c)->shapes(i)->frame, ivec);
   }
 
   arr dy_i, dJ_i;

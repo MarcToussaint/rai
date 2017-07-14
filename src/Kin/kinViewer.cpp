@@ -45,7 +45,7 @@ void OrsViewer_old::step(){
       copy.gl().dataLock.writeLock();
       mlr::Camera cam = copy.gl().camera;
       copy.gl().camera.setKinect();
-      copy.gl().camera.X = kinectShape->X * copy.gl().camera.X;
+      copy.gl().camera.X = kinectShape->frame->X * copy.gl().camera.X;
 //      openGlLock();
       copy.gl().renderInBack(true, true, 580, 480);
 //      copy.glGetMasks(580, 480, true);
@@ -95,7 +95,7 @@ void OrsViewer::step(){
     gl->dataLock.unlock();
   }
   X.resize(world->shapes.N);
-  for(mlr::Shape *s:world().shapes) X(s->index) = s->X;
+  for(mlr::Shape *s:world().shapes) X(s->index) = s->frame->X;
   gl->dataLock.writeLock();
   listCopy(proxiesCopy, world->proxies);
   gl->dataLock.unlock();
@@ -267,7 +267,7 @@ void ComputeCameraView::step(){
   if(kinectShape){ //otherwise 'copy' is not up-to-date yet
     gl.dataLock.writeLock();
     gl.camera.setKinect();
-    gl.camera.X = kinectShape->X * gl.camera.X;
+    gl.camera.X = kinectShape->frame->X * gl.camera.X;
     gl.dataLock.unlock();
     gl.renderInBack(true, getDepth, 640, 480);
     flip_image(gl.captureImage);
@@ -282,7 +282,7 @@ void ComputeCameraView::step(){
       }
       cameraDepth.set() = depth_image;
     }
-    cameraFrame.set() = kinectShape->X;
+    cameraFrame.set() = kinectShape->frame->X;
   }
 }
 

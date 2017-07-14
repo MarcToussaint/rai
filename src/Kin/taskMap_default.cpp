@@ -102,12 +102,12 @@ void TaskMap_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
     if(referenceIds.nd==2){  i=referenceIds(t,0); j=referenceIds(t,1); }
   }
 
-  mlr::Frame *body_i = i<0?NULL: G.shapes(i)->body;
-  mlr::Frame *body_j = j<0?NULL: G.shapes(j)->body;
+  mlr::Frame *body_i = i<0?NULL: G.shapes(i)->frame;
+  mlr::Frame *body_j = j<0?NULL: G.shapes(j)->frame;
 
   if(type==posTMT){
-    mlr::Vector vec_i = i<0?ivec: G.shapes(i)->rel*ivec;
-    mlr::Vector vec_j = j<0?jvec: G.shapes(j)->rel*jvec;
+    mlr::Vector vec_i = ivec;
+    mlr::Vector vec_j = jvec;
     CHECK(body_i,"");
     if(body_j==NULL) { //simple, no j reference
       G.kinematicsPos(y, J, body_i, vec_i);
@@ -138,8 +138,8 @@ void TaskMap_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
   }
 
   if(type==posDiffTMT){
-    mlr::Vector vec_i = i<0?ivec: G.shapes(i)->rel*ivec;
-    mlr::Vector vec_j = j<0?jvec: G.shapes(j)->rel*jvec;
+    mlr::Vector vec_i = ivec;
+    mlr::Vector vec_j = jvec;
     G.kinematicsPos(y, J, body_i, vec_i);
     if(!body_j){ //relative to world
       y -= conv_vec2arr(vec_j);
@@ -153,7 +153,7 @@ void TaskMap_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
   }
 
   if(type==vecTMT){
-    mlr::Vector vec_i = i<0?ivec: G.shapes(i)->rel.rot*ivec;
+    mlr::Vector vec_i = ivec;
 //    mlr::Vector vec_j = j<0?jvec: G.shapes(j)->rel.rot*jvec;
     if(vec_i.isZero) MLR_MSG("attached vector is zero -- can't control that");
     if(body_j==NULL) { //simple, no j reference
@@ -172,8 +172,8 @@ void TaskMap_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
   }
 
   if(type==vecDiffTMT){
-    mlr::Vector vec_i = i<0?ivec: G.shapes(i)->rel.rot*ivec;
-    mlr::Vector vec_j = j<0?jvec: G.shapes(j)->rel.rot*jvec;
+    mlr::Vector vec_i = ivec;
+    mlr::Vector vec_j = jvec;
     G.kinematicsVec(y, J, body_i, vec_i);
     if(!body_j){ //relative to world
       if(vec_i.isZero) MLR_MSG("attached vector is zero -- can't control that");
@@ -192,8 +192,8 @@ void TaskMap_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
   if(type==vecAlignTMT) {
     CHECK(fabs(ivec.length()-1.)<1e-4,"vector references must be normalized");
     CHECK(fabs(jvec.length()-1.)<1e-4,"vector references must be normalized");
-    mlr::Vector vec_i = i<0?ivec: G.shapes(i)->rel.rot*ivec;
-    mlr::Vector vec_j = j<0?jvec: G.shapes(j)->rel.rot*jvec;
+    mlr::Vector vec_i = ivec;
+    mlr::Vector vec_j = jvec;
     arr zi,Ji,zj,Jj;
     G.kinematicsVec(zi, Ji, body_i, vec_i);
     if(body_j==NULL) {
@@ -233,10 +233,10 @@ void TaskMap_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
     // jvec := relative position on the target shape; where in the target shape should we look.
     //         If j is not set, the target shape is WORLD and jvec is a vector in world coordinates
 
-    mlr::Vector vec_i = G.shapes(i)->rel*ivec;
-    mlr::Vector vec_xi = G.shapes(i)->rel.rot*Vector_x;
-    mlr::Vector vec_yi = G.shapes(i)->rel.rot*Vector_y;
-    mlr::Vector vec_j = j<0?jvec: G.shapes(j)->rel*jvec;
+    mlr::Vector vec_i = ivec;
+    mlr::Vector vec_xi = Vector_x;
+    mlr::Vector vec_yi = Vector_y;
+    mlr::Vector vec_j = jvec;
     arr pi,Jpi, xi,Jxi, yi,Jyi, pj,Jpj;
     G.kinematicsPos(pi, Jpi, body_i, vec_i);
     G.kinematicsVec(xi, Jxi, body_i, vec_xi);
@@ -318,8 +318,8 @@ uint TaskMap_Default::dim_phi(const mlr::KinematicWorld& G) {
 mlr::String TaskMap_Default::shortTag(const mlr::KinematicWorld& G){
   mlr::String s="Default";
   s <<':' <<TaskMap_DefaultType2String[type];
-  s <<':' <<(i<0?"WORLD":G.shapes(i)->name);
-  s <<'/' <<(j<0?"WORLD":G.shapes(j)->name);
+  s <<':' <<(i<0?"WORLD":G.shapes(i)->frame->name);
+  s <<'/' <<(j<0?"WORLD":G.shapes(j)->frame->name);
   return s;
 }
 
