@@ -3732,7 +3732,7 @@ template<class T> void listDelete(mlr::Array<T*>& L) {
 }
 
 template<class T> void listReindex(mlr::Array<T*>& L) {
-  for(uint i=0;i<L.N;i++) L.elem(i)->index=i;
+  for(uint i=0;i<L.N;i++) L.elem(i)->ID=i;
 }
 
 template<class T> T* listFindByName(const mlr::Array<T*>& L, const char* name) {
@@ -4054,11 +4054,11 @@ template<class vert> mlr::Array<vert*> graphGetTopsortOrder(mlr::Array<vert*>& V
   intA inputs(V.N);
   mlr::Array<vert*> order;
 
-  for_list(vert,  v,  V) v->index = v_COUNT;
+  for_list(vert,  v,  V) v->ID = v_COUNT;
 
   for(vert *v:V) {
-    inputs(v->index)=v->numInputs(); //inLinks.N;
-    if(!inputs(v->index)) fringe.append(v);
+    inputs(v->ID)=v->numInputs(); //inLinks.N;
+    if(!inputs(v->ID)) fringe.append(v);
   }
 
   while(fringe.N) {
@@ -4066,8 +4066,8 @@ template<class vert> mlr::Array<vert*> graphGetTopsortOrder(mlr::Array<vert*>& V
     order.append(v);
 
     for(vert* to : v->outLinks) {
-      inputs(to->index)--;
-      if(!inputs(to->index)) fringe.append(to);
+      inputs(to->ID)--;
+      if(!inputs(to->ID)) fringe.append(to);
     }
   }
 

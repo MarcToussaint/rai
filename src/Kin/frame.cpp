@@ -16,17 +16,17 @@
 //mlr::Body::Body(const Body& b) { reset(); *this=b; }
 
 mlr::Frame::Frame(KinematicWorld& _world, const Frame* copyBody)
-  : world(_world){
+  : K(_world){
 
-  index=world.bodies.N;
-  world.bodies.append(this);
+  ID=K.bodies.N;
+  K.bodies.append(this);
   if(copyBody){
     const Frame& b = *copyBody;
     name=b.name; X=b.X; ats=b.ats;
 //    type=b.type; mass=b.mass; inertia=b.inertia; com=b.com; force=b.force; torque=b.torque;
     if(copyBody->hasJoint()){
       Joint *j = copyBody->joint();
-      new Joint(world.bodies(j->from->index), this, j);
+      new Joint(K.bodies(j->from->ID), this, j);
     }
   }
 }
@@ -35,8 +35,9 @@ mlr::Frame::~Frame() {
   if(rel) delete rel;
   while(outLinks.N) delete outLinks.last();
   if(shape) delete shape;
-  world.bodies.removeValue(this);
-  listReindex(world.bodies);
+  K.bodies.removeValue(this);
+  listReindex(K.bodies);
+  K.jointSort();
 }
 
 void mlr::Frame::parseAts(const Graph& ats) {
@@ -116,9 +117,8 @@ mlr::FrameRel::~FrameRel(){
 }
 
 mlr::Joint *mlr::Frame::joint() const{
-  CHECK(rel, "this is not a relative frame");
-  CHECK(rel->joint, "this is not a joint");
-    return rel->joint;
+  if(!rel) return NULL;
+  return rel->joint;
 }
 
 mlr::Frame *mlr::Frame::from() const{
@@ -137,12 +137,10 @@ bool mlr::Frame::hasJoint() const{
 
 
 mlr::Joint::Joint(Frame *f, Frame *t, Joint *copyJoint)
-  : index(0), qIndex(UINT_MAX), q0(0.), H(1.), mimic(NULL), from(f), to(t), constrainToZeroVel(false), agent(0) {
+  : qIndex(UINT_MAX), q0(0.), H(1.), mimic(NULL), from(f), to(t), constrainToZeroVel(false), agent(0) {
   to->rel = new FrameRel(from, to);
   to->rel->joint = this;
   CHECK_EQ(to->joint()->to, to, "");
-  index = from->world.joints.N;
-  from->world.joints.append(this);
   if(copyJoint){
       qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l); agent=copyJoint->agent; constrainToZeroVel=copyJoint->constrainToZeroVel;
       type=copyJoint->type; A=copyJoint->A; Q=copyJoint->Q; B=copyJoint->B; X=copyJoint->X; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H;
@@ -151,8 +149,6 @@ mlr::Joint::Joint(Frame *f, Frame *t, Joint *copyJoint)
 
 mlr::Joint::~Joint() {
   to->rel->joint = NULL;
-  from->world.joints.removeValue(this);
-  listReindex(from->world.joints);
 }
 
 void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
@@ -630,8 +626,8 @@ mlr::Shape::Shape(Frame* b, const Shape *copyShape, bool referenceMeshOnCopy)
 
   CHECK(b,"");
   CHECK(!b->shape, "this frame already has a geom attached");
-  index=b->world.shapes.N;
-  b->world.shapes.append(this);
+  ID=b->K.shapes.N;
+  b->K.shapes.append(this);
   b->shape = this;
   if(copyShape){
     const Shape& s = *copyShape;
@@ -656,8 +652,8 @@ mlr::Shape::Shape(Frame* b, const Shape *copyShape, bool referenceMeshOnCopy)
 
 mlr::Shape::~Shape() {
   frame->shape = NULL;
-  frame->world.shapes.removeValue(this);
-  listReindex(frame->world.shapes);
+  frame->K.shapes.removeValue(this);
+  listReindex(frame->K.shapes);
 }
 
 void mlr::Shape::read(const Graph& ats) {
@@ -755,6 +751,7 @@ void mlr::Shape::read(const Graph& ats) {
 
 
   //add inertia to the body
+#if 0
   if(frame) {
     Matrix I;
     double mass=-1.;
@@ -767,11 +764,13 @@ void mlr::Shape::read(const Graph& ats) {
       default: ;
     }
     if(mass>0.){
+      if(!body->inertia) body->iner
       NIY;
 //      frame->mass += mass;
 //      frame->inertia += I;
     }
   }
+#endif
 }
 
 void mlr::Shape::write(std::ostream& os) const {
@@ -783,16 +782,16 @@ void mlr::Shape::write(std::ostream& os) const {
 #ifdef MLR_GL
 void mlr::Shape::glDraw(OpenGL& gl) {
   //set name (for OpenGL selection)
-  glPushName((index <<2) | 1);
-  if(frame->world.orsDrawColors && !frame->world.orsDrawIndexColors) glColor(mesh.C); //color[0], color[1], color[2], color[3]*world.orsDrawAlpha);
-  if(frame->world.orsDrawIndexColors) glColor3b((index>>16)&0xff, (index>>8)&0xff, index&0xff);
+  glPushName((ID <<2) | 1);
+  if(frame->K.orsDrawColors && !frame->K.orsDrawIndexColors) glColor(mesh.C); //color[0], color[1], color[2], color[3]*world.orsDrawAlpha);
+  if(frame->K.orsDrawIndexColors) glColor3b((ID>>16)&0xff, (ID>>8)&0xff, ID&0xff);
 
 
   double GLmatrix[16];
   frame->X.getAffineMatrixGL(GLmatrix);
   glLoadMatrixd(GLmatrix);
 
-  if(!frame->world.orsDrawShapes) {
+  if(!frame->K.orsDrawShapes) {
     double scale=.33*(size(0)+size(1)+size(2) + 2.*size(3)); //some scale
     if(!scale) scale=1.;
     scale*=.3;
@@ -800,51 +799,51 @@ void mlr::Shape::glDraw(OpenGL& gl) {
     glColor(0, 0, .5);
     glDrawSphere(.1*scale);
   }
-  if(frame->world.orsDrawShapes) {
+  if(frame->K.orsDrawShapes) {
     switch(type) {
       case mlr::ST_none: LOG(-1) <<"Shape '" <<frame->name <<"' has no joint type";  break;
       case mlr::ST_box:
-        if(frame->world.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(frame->world.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
+        if(frame->K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        else if(frame->K.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
         else glDrawBox(size(0), size(1), size(2));
         break;
       case mlr::ST_sphere:
-        if(frame->world.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(frame->world.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
+        if(frame->K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        else if(frame->K.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
         else glDrawSphere(size(3));
         break;
       case mlr::ST_cylinder:
-        if(frame->world.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(frame->world.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
+        if(frame->K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        else if(frame->K.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
         else glDrawCylinder(size(3), size(2));
         break;
       case mlr::ST_capsule:
-        if(frame->world.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(frame->world.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
+        if(frame->K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        else if(frame->K.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
         else glDrawCappedCylinder(size(3), size(2));
         break;
       case mlr::ST_retired_SSBox:
         HALT("deprecated??");
-        if(frame->world.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(frame->world.orsDrawMeshes){
+        if(frame->K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        else if(frame->K.orsDrawMeshes){
           if(!mesh.V.N) mesh.setSSBox(size(0), size(1), size(2), size(3));
           mesh.glDraw(gl);
         }else NIY;
         break;
       case mlr::ST_marker:
-        if(frame->world.orsDrawMarkers){
+        if(frame->K.orsDrawMarkers){
           glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.); glDrawAxes(size(0));
         }
         break;
       case mlr::ST_mesh:
         CHECK(mesh.V.N, "mesh needs to be loaded to draw mesh object");
-        if(frame->world.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        if(frame->K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
         break;
       case mlr::ST_ssCvx:
         CHECK(sscCore.V.N, "sscCore needs to be loaded to draw mesh object");
         if(!mesh.V.N) mesh.setSSCvx(sscCore, size(3));
-        if(frame->world.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        if(frame->K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
         break;
       case mlr::ST_ssBox:
@@ -853,19 +852,19 @@ void mlr::Shape::glDraw(OpenGL& gl) {
           sscCore.scale(size(0)-2.*size(3), size(1)-2.*size(3), size(2)-2.*size(3));
           mesh.setSSCvx(sscCore, size(3));
         }
-        if(frame->world.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        if(frame->K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
         break;
       case mlr::ST_pointCloud:
         CHECK(mesh.V.N, "mesh needs to be loaded to draw point cloud object");
-        if(frame->world.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        if(frame->K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
         break;
 
       default: HALT("can't draw that geom yet");
     }
   }
-  if(frame->world.orsDrawZlines) {
+  if(frame->K.orsDrawZlines) {
     glColor(0, .7, 0);
     glBegin(GL_LINES);
     glVertex3d(0., 0., 0.);
@@ -873,7 +872,7 @@ void mlr::Shape::glDraw(OpenGL& gl) {
     glEnd();
   }
 
-  if(frame->world.orsDrawBodyNames && frame){
+  if(frame->K.orsDrawBodyNames && frame){
     glColor(1,1,1);
     glDrawText(frame->name, 0, 0, 0);
   }

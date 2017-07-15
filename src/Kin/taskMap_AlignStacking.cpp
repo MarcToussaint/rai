@@ -23,7 +23,7 @@ TaskMap_AlignStacking::TaskMap_AlignStacking(int iShape)
 TaskMap_AlignStacking::TaskMap_AlignStacking(const mlr::KinematicWorld& G, const char* iShapeName)
   :i(-1){
   mlr::Shape *a = iShapeName ? G.getShapeByName(iShapeName):NULL;
-  if(a) i=a->index;
+  if(a) i=a->ID;
 }
 
 void TaskMap_AlignStacking::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){

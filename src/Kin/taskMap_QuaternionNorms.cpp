@@ -22,7 +22,8 @@ void TaskMap_QuaternionNorms::phi(arr &y, arr &J, const mlr::KinematicWorld &G, 
     y.resize(n);
     if(&J) J.resize(n, G.q.N).setZero();
     uint i=0;
-    for(const mlr::Joint* j:G.joints) if(j->type==mlr::JT_quatBall || j->type==mlr::JT_free){
+    mlr::Joint *j;
+    for(const mlr::Frame* f: G.bodies) if((j=f->joint()) && (j->type==mlr::JT_quatBall || j->type==mlr::JT_free)){
         arr q;
         if(j->type==mlr::JT_quatBall) q.referToRange(G.q, j->qIndex, j->qIndex+3);
         if(j->type==mlr::JT_free)     q.referToRange(G.q, j->qIndex+3, j->qIndex+6);
@@ -39,7 +40,8 @@ void TaskMap_QuaternionNorms::phi(arr &y, arr &J, const mlr::KinematicWorld &G, 
 
 uint TaskMap_QuaternionNorms::dim_phi(const mlr::KinematicWorld &G){
     uint i=0;
-    for(const mlr::Joint* j:G.joints){
+    const mlr::Joint *j;
+    for(const mlr::Frame* f:G.bodies) if((j=f->joint())){
         if(j->type==mlr::JT_quatBall || j->type==mlr::JT_free) i++;
     }
     return i;

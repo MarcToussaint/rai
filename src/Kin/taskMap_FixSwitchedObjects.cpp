@@ -36,19 +36,19 @@ void TaskMap_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau,
     J.resize(M*switchedBodies.d0, xbarDim).setZero();
   }
   for(uint i=0;i<switchedBodies .d0;i++){
-    mlr::Frame *b0 = switchedBodies(i,0);    CHECK(&b0->world==G.elem(-2),"");
-    mlr::Frame *b1 = switchedBodies(i,1);    CHECK(&b1->world==G.elem(-1),"");
-    CHECK(b0->index == b1->index, "");
-    CHECK(b0->shape->index == b1->shape->index, "");
+    mlr::Frame *b0 = switchedBodies(i,0);    CHECK(&b0->K==G.elem(-2),"");
+    mlr::Frame *b1 = switchedBodies(i,1);    CHECK(&b1->K==G.elem(-1),"");
+    CHECK(b0->ID == b1->ID, "");
+    CHECK(b0->shape->ID == b1->shape->ID, "");
 
     if(b0->name.startsWith("slider")) continue; //warning: this introduces zeros in y and J -- but should be ok
 
 #if 1 //absolute velocities
-    TaskMap_Default pos(posTMT, b0->shape->index);
+    TaskMap_Default pos(posTMT, b0->shape->ID);
     pos.order=1;
     pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G, tau, t);
 
-    TaskMap_Default quat(quatTMT, b0->shape->index); //mt: NOT quatDiffTMT!! (this would compute the diff to world, which zeros the w=1...)
+    TaskMap_Default quat(quatTMT, b0->shape->ID); //mt: NOT quatDiffTMT!! (this would compute the diff to world, which zeros the w=1...)
     // flip the quaternion sign if necessary
     quat.flipTargetSignOnNegScalarProduct = true;
     quat.order=1;

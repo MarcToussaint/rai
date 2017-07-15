@@ -613,7 +613,7 @@ int MAIN(int argc,char **argv){
   testKinematicSpeed();
   testFollowRedundantSequence();
   testInverseKinematics();
-  testDynamics();
+//  testDynamics();
   testContacts();
   testLimits();
   testJointGroups();

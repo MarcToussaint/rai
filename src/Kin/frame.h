@@ -22,28 +22,19 @@ namespace mlr{
 
 /// a rigid body (inertia properties, lists of attached joints & shapes)
 struct Frame {
-  struct KinematicWorld& world;
-  uint index;          ///< unique identifier TODO:do we really need index??
-
+  struct KinematicWorld& K;
+  uint ID;          ///< unique identifier TODO:do we really need index??
   mlr::String name;     ///< name
   Transformation X=0;    ///< body's absolute pose
 
-  Graph ats;   ///< list of any-type attributes
+  FrameL outLinks;       ///< lists of in and out joints
 
   //attachments to the frame
   struct FrameRel  *rel=NULL;        ///< this frame is a child or a parent frame, with fixed relative transformation
   struct Shape *shape=NULL;       ///< this frame has a (collision or visual) geometry
   struct FrameInertia *inertia=NULL; ///< this frame has inertia (is a mass)
 
-  FrameL outLinks;       ///< lists of in and out joints
-
-  //dynamic properties
-//  Enum<BodyType> type;          ///< is globally fixed?
-//  double mass=0.;           ///< its mass
-//  Matrix inertia=0;      ///< its inertia tensor
-//  Vector com=0;          ///< its center of gravity
-//  Vector force=0, torque=0; ///< current forces applying on the body
-//  Vector vel=0, angvel=0;   ///< linear and angular velocities
+  Graph ats;   ///< list of any-type attributes
 
   Frame(KinematicWorld& _world, const Frame *copyBody=NULL);
   ~Frame();
@@ -53,8 +44,6 @@ struct Frame {
   uint numInputs() const;
   bool hasJoint() const;
 
-  void operator=(const Frame& b) {
-  }
   void parseAts(const Graph &ats);
   void write(std::ostream& os) const;
 };
@@ -79,8 +68,6 @@ struct FrameRel{
 };
 
 struct Joint{
-  uint index;
-
   // joint information
   uint dim;
   uint qIndex;
@@ -123,6 +110,7 @@ struct FrameInertia{
   double mass;
   Matrix matrix;
   Enum<BodyType> type;
+  Vector com=0;          ///< its center of gravity
   Vector force=0, torque=0; ///< current forces applying on the body
   Vector vel=0, angvel=0;   ///< linear and angular velocities
 
@@ -139,7 +127,7 @@ namespace mlr{
 
 /// a shape (geometric shape like cylinder/mesh or just marker, associated to a body)
 struct Shape : GLDrawer{
-  uint index;
+  uint ID;
   Frame *frame;
 
   Enum<ShapeType> type;

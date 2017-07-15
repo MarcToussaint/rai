@@ -19,6 +19,7 @@ struct PhysXThread : Thread{
   }
 
   void open(){
+#if 0
     physxWorld.writeAccess();
     physxWorld() = modelWorld.get();
     for(uint i=physxWorld().joints.N;i--;){
@@ -29,6 +30,7 @@ struct PhysXThread : Thread{
       }
     }
     physxWorld.deAccess();
+#endif
     px = new PhysXInterface(physxWorld.set());
     px->setArticulatedBodiesKinematic();
     view = new OrsViewer("physxWorld", .1);

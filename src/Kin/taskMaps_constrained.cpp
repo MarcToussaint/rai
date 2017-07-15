@@ -138,8 +138,8 @@ VelAlignConstraint::VelAlignConstraint(const mlr::KinematicWorld& G,
                    const char* jShapeName, const mlr::Vector& _jvec, double _target) {
   mlr::Shape *a = iShapeName ? G.getShapeByName(iShapeName):NULL;
   mlr::Shape *b = jShapeName ? G.getShapeByName(jShapeName):NULL;
-  if(a) i=a->index;
-  if(b) j=b->index;
+  if(a) i=a->ID;
+  if(b) j=b->ID;
   if(&_ivec) ivec=_ivec; else ivec.setZero();
   if(&_jvec) jvec=_jvec; else jvec.setZero();
   order = 1;

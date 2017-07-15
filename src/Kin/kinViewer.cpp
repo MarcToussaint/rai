@@ -95,7 +95,7 @@ void OrsViewer::step(){
     gl->dataLock.unlock();
   }
   X.resize(world->shapes.N);
-  for(mlr::Shape *s:world().shapes) X(s->index) = s->frame->X;
+  for(mlr::Shape *s:world().shapes) X(s->ID) = s->frame->X;
   gl->dataLock.writeLock();
   listCopy(proxiesCopy, world->proxies);
   gl->dataLock.unlock();

@@ -98,7 +98,8 @@ void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& G, double tau, int t)
     if(order>=3) NIY; //  y = (x_bar[3]-3.*x_bar[2]+3.*x_bar[1]-x_bar[0])/tau3; //penalize jerk
 
     //multiply with h...
-    for(mlr::Joint *j:G.last()->joints) for(uint i=0;i<j->qDim();i++)
+    mlr::Joint *j;
+    for(mlr::Frame *f:G.last()->bodies) if((j=f->joint())) for(uint i=0;i<j->qDim();i++)
       y(j->qIndex+i) *= h*j->H;
 
     if(&J) {
@@ -120,7 +121,8 @@ void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& G, double tau, int t)
         //      if(order>=3){ J(i,3,i) = 1.;  J(i,2,i) = -3.;  J(i,1,i) = +3.;  J(i,0,i) = -1.; }
       }
       J.reshape(y.N, G.N*n);
-      for(mlr::Joint *j:G.last()->joints) for(uint i=0;i<j->qDim();i++){
+      mlr::Joint *j;
+      for(mlr::Frame *f: G.last()->bodies) if((j=f->joint())) for(uint i=0;i<j->qDim();i++){
 #if 0
         J[j->qIndex+i] *= h*j->H;
 #else //EQUIVALENT, but profiled - optimized for speed

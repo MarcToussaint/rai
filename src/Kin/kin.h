@@ -101,9 +101,10 @@ struct KinematicWorld : GLDrawer{
   uintA qdim;  ///< dimensionality depending on the agent number
   arr q, qdot; ///< the current joint configuration vector and velocities
   uint q_agent; ///< the agent index of the current q,qdot
-  BodyL  bodies;
+  FrameL  bodies;
   FrameL fwdActiveSet;
-  JointL joints;
+
+//  JointL joints;
   ShapeL shapes;
   ProxyL proxies; ///< list of current proximities between bodies
 
@@ -152,7 +153,6 @@ struct KinematicWorld : GLDrawer{
   void reconfigureRoot(Frame *root);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
   void transformJoint(Joint *e, const mlr::Transformation &f); ///< A <- A*f, B <- f^{-1}*B
   void makeLinkTree();            ///< modify transformations so that B's become identity
-  void topSort(){ graphTopsort(bodies, joints); qdim.clear(); q.clear(); qdot.clear(); analyzeJointStateDimensions(); }
   void jointSort();
   void glueBodies(Frame *a, Frame *b);
   void meldFixedJoints(int verbose=0);         ///< prune fixed joints; shapes of fixed bodies are reassociated to non-fixed boides
@@ -166,7 +166,7 @@ struct KinematicWorld : GLDrawer{
   void calc_fwdPropagateFrames();    ///< elementary forward kinematics; also computes all Shape frames
   void calc_fwdPropagateVelocities();    ///< elementary forward kinematics; also computes all Shape frames
   void calc_Q_from_BodyFrames();    ///< fill in the joint transformations assuming that body poses are known (makes sense when reading files)
-  void calc_missingAB_from_BodyAndJointFrames();    ///< fill in the missing joint relative transforms (A & B) if body and joint world poses are known
+//  void calc_missingAB_from_BodyAndJointFrames();    ///< fill in the missing joint relative transforms (A & B) if body and joint world poses are known
   void clearJointErrors();
   void analyzeJointStateDimensions(); ///< sort of private: count the joint dimensionalities and assign j->q_index
 

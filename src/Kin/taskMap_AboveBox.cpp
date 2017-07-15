@@ -24,8 +24,8 @@ TaskMap_AboveBox::TaskMap_AboveBox(const mlr::KinematicWorld& G, const char* iSh
   :i(-1), j(-1){
   mlr::Shape *a = iShapeName ? G.getShapeByName(iShapeName):NULL;
   mlr::Shape *b = jShapeName ? G.getShapeByName(jShapeName):NULL;
-  if(a) i=a->index;
-  if(b) j=b->index;
+  if(a) i=a->ID;
+  if(b) j=b->ID;
 }
 
 void TaskMap_AboveBox::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){

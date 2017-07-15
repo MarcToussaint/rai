@@ -8,8 +8,8 @@ TaskMap_PushConsistent::TaskMap_PushConsistent(const mlr::KinematicWorld &G,
                                                const char* iShapeName, const char* jShapeName) : i(-1), j(-1){
   mlr::Shape *a = iShapeName ? G.getShapeByName(iShapeName):NULL;
   mlr::Shape *b = jShapeName ? G.getShapeByName(jShapeName):NULL;
-  if(a) i=a->index;
-  if(b) j=b->index;
+  if(a) i=a->ID;
+  if(b) j=b->ID;
   order=1;
 }
 

@@ -41,8 +41,8 @@ TaskMap_Default::TaskMap_Default(TaskMap_DefaultType _type, const mlr::Kinematic
   :type(_type), i(-1), j(-1){
   mlr::Shape *a = iShapeName ? G.getShapeByName(iShapeName):NULL;
   mlr::Shape *b = jShapeName ? G.getShapeByName(jShapeName):NULL;
-  if(a) i=a->index;
-  if(b) j=b->index;
+  if(a) i=a->ID;
+  if(b) j=b->ID;
   if(&_ivec) ivec=_ivec; else ivec.setZero();
   if(&_jvec) jvec=_jvec; else jvec.setZero();
 }
@@ -62,8 +62,8 @@ TaskMap_Default::TaskMap_Default(const Graph& specs, const mlr::KinematicWorld& 
   else if(Type=="vecAlign") type=vecAlignTMT;
   else if(Type=="gazeAt") type=gazeAtTMT;
   else HALT("unknown type " <<Type);
-  if((it=specs["sym2"]) || (it=specs["ref1"])){ auto name=it->get<mlr::String>(); auto *s=G.getShapeByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); i=s->index; }
-  if((it=specs["sym3"]) || (it=specs["ref2"])){ auto name=it->get<mlr::String>(); auto *s=G.getShapeByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); j=s->index; }
+  if((it=specs["sym2"]) || (it=specs["ref1"])){ auto name=it->get<mlr::String>(); auto *s=G.getShapeByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); i=s->ID; }
+  if((it=specs["sym3"]) || (it=specs["ref2"])){ auto name=it->get<mlr::String>(); auto *s=G.getShapeByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); j=s->ID; }
   if((it=specs["vec1"])) ivec = mlr::Vector(it->get<arr>());  else ivec.setZero();
   if((it=specs["vec2"])) jvec = mlr::Vector(it->get<arr>());  else jvec.setZero();
 }
@@ -85,8 +85,8 @@ TaskMap_Default::TaskMap_Default(const Node *specs, const mlr::KinematicWorld& G
   else if(Type=="vecAlign") type=vecAlignTMT;
   else if(Type=="gazeAt") type=gazeAtTMT;
   else HALT("unknown type " <<Type);
-  if(ref1){ mlr::Shape *s=G.getShapeByName(ref1); CHECK(s,"shape name '" <<ref1 <<"' does not exist"); i=s->index; }
-  if(ref2){ mlr::Shape *s=G.getShapeByName(ref2); CHECK(s,"shape name '" <<ref2 <<"' does not exist"); j=s->index; }
+  if(ref1){ mlr::Shape *s=G.getShapeByName(ref1); CHECK(s,"shape name '" <<ref1 <<"' does not exist"); i=s->ID; }
+  if(ref2){ mlr::Shape *s=G.getShapeByName(ref2); CHECK(s,"shape name '" <<ref2 <<"' does not exist"); j=s->ID; }
   if(specs->isGraph()){
     const Graph& params = specs->graph();
     Node *it;
