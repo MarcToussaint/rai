@@ -412,16 +412,19 @@ void TEST(Dynamics){
 
   arr u;
   bool friction=false;
-  VectorFunction diffEqn = [&G,&u,&friction](arr& y,arr&,const arr& x){
+  VectorFunction diffEqn = [&G,&u,&friction](arr& y, arr&, const arr& x){
+    checkNan(x);
     G.setJointState(x[0], x[1]);
     if(!u.N) u.resize(x.d1).setZero();
-    if(friction) u = -10. * x[1];
+    if(friction) u = -1e-0 * x[1];
+    checkNan(u);
     G.clearForces();
     G.gravityToForces();
     /*if(T2::addContactsToDynamics){
         G.contactsToForces(100.,10.);
       }*/
     G.fwdDynamics(y, x[1], u);
+    checkNan(y);
   };
   
   uint t,T=720,n=G.getJointStateDimension();
@@ -455,7 +458,7 @@ void TEST(Dynamics){
       G.gl().text.clear() <<"t=" <<t <<"  torque controlled damping (acc = - vel)\n(checking consistency of forward and inverse dynamics),  energy=" <<G.getEnergy();
     }else{
       //cout <<q <<qd <<qdd <<' ' <<G.getEnergy() <<endl;
-      arr x=cat(q,qd).reshape(2,q.N);
+      arr x=cat(q, qd).reshape(2, q.N);
       mlr::rk4_2ndOrder(x, x, diffEqn, dt);
       q=x[0]; qd=x[1];
       if(t>300){
@@ -613,7 +616,7 @@ int MAIN(int argc,char **argv){
   testKinematicSpeed();
   testFollowRedundantSequence();
   testInverseKinematics();
-//  testDynamics();
+  testDynamics();
   testContacts();
   testLimits();
   testJointGroups();

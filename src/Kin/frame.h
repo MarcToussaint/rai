@@ -112,7 +112,6 @@ struct FrameInertia{
   Enum<BodyType> type;
   Vector com=0;          ///< its center of gravity
   Vector force=0, torque=0; ///< current forces applying on the body
-  Vector vel=0, angvel=0;   ///< linear and angular velocities
 
   FrameInertia(Frame *f) : type(BT_dynamic) {}
 

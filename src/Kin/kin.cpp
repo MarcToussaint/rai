@@ -368,40 +368,55 @@ void mlr::KinematicWorld::calc_fwdPropagateFrames() {
 #endif
 }
 
-void mlr::KinematicWorld::calc_fwdPropagateVelocities(){
-  NIY;
-#if 0
+arr mlr::KinematicWorld::calc_fwdPropagateVelocities(){
+  arr vel(bodies.N, 2, 3);  //for every frame we have a linVel and angVel, each 3D
+  vel.setZero();
   mlr::Transformation f;
-  Vector q_vel, q_angvel;
-  for(Joint *j : joints){ //this has no bailout for loopy graphs!
-    Frame *from = j->from;
-    Frame *to = j->to;
-    to->vel = from->vel;
-    to->angvel = from->angvel;
+  Vector linVel, angVel, q_vel, q_angvel;
+  for(Frame *f : fwdActiveSet){ //this has no bailout for loopy graphs!
+    if(f->rel){
+      Frame *from = f->rel->from;
+      Joint *j = f->rel->joint;
+      if(j){
+        linVel = vel(from->ID, 0, {});
+        angVel = vel(from->ID, 1, {});
 
-    if(j->type==JT_hingeX){
-        q_vel.setZero();
-        q_angvel.set(qdot(j->qIndex) ,0., 0.);
-    }else if(j->type==JT_transX){
-        q_vel.set(qdot(j->qIndex), 0., 0.);
-        q_angvel.setZero();
-    }else if(j->type==JT_rigid){
-        q_vel.setZero();
-        q_angvel.setZero();
-    }else if(j->type==JT_transXYPhi){
-        q_vel.set(qdot(j->qIndex), qdot(j->qIndex+1), 0.);
-        q_angvel.set(0.,0.,qdot(j->qIndex+2));
-    }else NIY;
+        if(j->type==JT_hingeX){
+          q_vel.setZero();
+          q_angvel.set(qdot(j->qIndex) ,0., 0.);
+        }else if(j->type==JT_transX){
+          q_vel.set(qdot(j->qIndex), 0., 0.);
+          q_angvel.setZero();
+        }else if(j->type==JT_rigid){
+          q_vel.setZero();
+          q_angvel.setZero();
+        }else if(j->type==JT_transXYPhi){
+          q_vel.set(qdot(j->qIndex), qdot(j->qIndex+1), 0.);
+          q_angvel.set(0.,0.,qdot(j->qIndex+2));
+        }else NIY;
 
-    Matrix R = j->X.rot.getMatrix();
-    Vector qV(R*q_vel); //relative vel in global coords
-    Vector qW(R*q_angvel); //relative ang vel in global coords
-    to->vel += from->angvel^(to->X.pos - from->X.pos);
-    if(!isLinkTree) to->vel += qW^(to->X.pos - j->X.pos);
-    to->vel += qV;
-    to->angvel += qW;
+        Matrix R = j->X.rot.getMatrix();
+        Vector qV(R*q_vel); //relative vel in global coords
+        Vector qW(R*q_angvel); //relative ang vel in global coords
+        linVel += angVel^(f->X.pos - from->X.pos);
+        if(!isLinkTree) linVel += qW^(f->X.pos - j->X.pos);
+        linVel += qV;
+        angVel += qW;
+
+        for(uint i=0;i<3;i++) vel(f->ID, 0, i) = linVel(i);
+        for(uint i=0;i<3;i++) vel(f->ID, 1, i) = angVel(i);
+      }else{
+        linVel = vel(from->ID, 0, {});
+        angVel = vel(from->ID, 1, {});
+
+        linVel += angVel^(f->X.pos - from->X.pos);
+
+        for(uint i=0;i<3;i++) vel(f->ID, 0, i) = linVel(i);
+        for(uint i=0;i<3;i++) vel(f->ID, 1, i) = angVel(i);
+      }
+    }
   }
-#endif
+  return vel;
 }
 
 /** @brief given the absolute frames of all nodes and the two rigid (relative)
@@ -1746,15 +1761,18 @@ double mlr::KinematicWorld::getEnergy() {
   mlr::Matrix I;
   mlr::Vector w;
 
-  calc_fwdPropagateVelocities();
+  arr vel = calc_fwdPropagateVelocities();
   
   E=0.;
   for(Frame *f: bodies) if(f->inertia){
+    Vector linVel = vel(f->ID, 0, {});
+    Vector angVel = vel(f->ID, 1, {});
+
     m=f->inertia->mass;
     mlr::Quaternion &rot = f->X.rot;
     I=(rot).getMatrix() * f->inertia->matrix * (-rot).getMatrix();
-    v=f->inertia->vel.length();
-    w=f->inertia->angvel;
+    v = linVel.length();
+    w = angVel;
     E += .5*m*v*v;
     E += 9.81 * m * (f->X*f->inertia->com).z;
     E += .5*(w*(I*w));

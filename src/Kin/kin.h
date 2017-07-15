@@ -101,6 +101,7 @@ struct KinematicWorld : GLDrawer{
   uintA qdim;  ///< dimensionality depending on the agent number
   arr q, qdot; ///< the current joint configuration vector and velocities
   uint q_agent; ///< the agent index of the current q,qdot
+
   FrameL  bodies;
   FrameL fwdActiveSet;
 
@@ -164,7 +165,7 @@ struct KinematicWorld : GLDrawer{
   void calc_q_from_Q(int agent=-1);  ///< updates (q,qdot) based on the joint's Q transformations
   arr calc_q_from_Q(Joint* j);  ///< returns (q,qdot) for a given joint  based on the joint's Q transformations
   void calc_fwdPropagateFrames();    ///< elementary forward kinematics; also computes all Shape frames
-  void calc_fwdPropagateVelocities();    ///< elementary forward kinematics; also computes all Shape frames
+  arr calc_fwdPropagateVelocities();    ///< elementary forward kinematics; also computes all Shape frames
   void calc_Q_from_BodyFrames();    ///< fill in the joint transformations assuming that body poses are known (makes sense when reading files)
 //  void calc_missingAB_from_BodyAndJointFrames();    ///< fill in the missing joint relative transforms (A & B) if body and joint world poses are known
   void clearJointErrors();
