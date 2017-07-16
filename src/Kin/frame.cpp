@@ -32,9 +32,8 @@ mlr::Frame::Frame(KinematicWorld& _world, const Frame* copyBody)
 }
 
 mlr::Frame::~Frame() {
-  if(rel) delete rel;
-  while(outLinks.N) delete outLinks.last();
-  if(shape) delete shape;
+  if(rel) delete rel; rel=NULL;
+  if(shape) delete shape; shape=NULL;
   K.bodies.removeValue(this);
   listReindex(K.bodies);
   K.jointSort();
@@ -552,6 +551,16 @@ void mlr::Joint::read(const Graph &G){
     mlr::String str;
     G.get(A, "A");
     G.get(A, "from");
+    if(!A.isZero()){
+      Frame *f = new Frame(from->K);
+      FrameRel *rel = new FrameRel(from, f);
+      rel->rel = A;
+      from->outLinks.removeValue(to);
+      from = f;
+      from->outLinks.append(to);
+      to->rel->from = f;
+      A.setZero();
+    }
     if(G["BinvA"]) B.setInverse(A);
     G.get(B, "B");
     G.get(B, "to");
