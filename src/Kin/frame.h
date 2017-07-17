@@ -123,7 +123,6 @@ namespace mlr{
 
 /// a shape (geometric shape like cylinder/mesh or just marker, associated to a body)
 struct Shape : GLDrawer{
-  uint ID;
   Frame *frame;
 
   Enum<ShapeType> type;

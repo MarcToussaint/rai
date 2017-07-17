@@ -22,15 +22,15 @@ TaskMap_AboveBox::TaskMap_AboveBox(int iShape, int jShape)
 
 TaskMap_AboveBox::TaskMap_AboveBox(const mlr::KinematicWorld& G, const char* iShapeName, const char* jShapeName)
   :i(-1), j(-1){
-  mlr::Shape *a = iShapeName ? G.getShapeByName(iShapeName):NULL;
-  mlr::Shape *b = jShapeName ? G.getShapeByName(jShapeName):NULL;
+  mlr::Frame *a = iShapeName ? G.getBodyByName(iShapeName):NULL;
+  mlr::Frame *b = jShapeName ? G.getBodyByName(jShapeName):NULL;
   if(a) i=a->ID;
   if(b) j=b->ID;
 }
 
 void TaskMap_AboveBox::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
-  mlr::Shape *s1=G.shapes(i);
-  mlr::Shape *s2=G.shapes(j);
+  mlr::Shape *s1=G.bodies(i)->shape;
+  mlr::Shape *s2=G.bodies(j)->shape;
   if(s2->type!=mlr::ST_ssBox){ //switch roles
     mlr::Shape *z=s1;
     s1=s2; s2=z;

@@ -66,7 +66,7 @@ Simulator::Simulator(const char* orsFile){
     }*/
   
   //G.makeLinkTree();
-  makeConvexHulls(s->G.shapes);
+  makeConvexHulls(s->G.bodies);
 
   //OPENGL
   s->G.gl().add(glDrawPlot, &plotModule);

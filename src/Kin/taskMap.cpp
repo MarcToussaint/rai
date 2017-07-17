@@ -169,7 +169,7 @@ TaskMap *TaskMap::newTaskMap(const Node* specs, const mlr::KinematicWorld& world
   }else if(type=="collisionPairs"){
     uintA shapes;
     for(uint i=2;i<specs->parents.N;i++){
-      mlr::Shape *s = world.getShapeByName(specs->parents(i)->keys.last());
+      mlr::Frame *s = world.getBodyByName(specs->parents(i)->keys.last());
       CHECK(s,"No Shape '" <<specs->parents(i)->keys.last() <<"'");
       shapes.append(s->ID);
     }
@@ -177,7 +177,7 @@ TaskMap *TaskMap::newTaskMap(const Node* specs, const mlr::KinematicWorld& world
   }else if(type=="collisionExceptPairs"){
     uintA shapes;
     for(uint i=2;i<specs->parents.N;i++){
-      mlr::Shape *s = world.getShapeByName(specs->parents(i)->keys.last());
+      mlr::Frame *s = world.getBodyByName(specs->parents(i)->keys.last());
       CHECK(s,"No Shape '" <<specs->parents(i)->keys.last() <<"'");
       shapes.append(s->ID);
     }
@@ -185,14 +185,9 @@ TaskMap *TaskMap::newTaskMap(const Node* specs, const mlr::KinematicWorld& world
   }else if(type=="collisionExcept"){
     uintA shapes;
     for(uint i=2;i<specs->parents.N;i++){
-      mlr::Shape *s = world.getShapeByName(specs->parents(i)->keys.last());
-      if(!s){
-        mlr::Frame *b = world.getBodyByName(specs->parents(i)->keys.last());
-        CHECK(b,"No shape or body '" <<specs->parents(i)->keys.last() <<"'");
-        if(b->shape) shapes.append(b->shape->ID);
-      }else{
-        shapes.append(s->ID);
-      }
+      mlr::Frame *s = world.getBodyByName(specs->parents(i)->keys.last());
+      CHECK(s, "No shape or body '" <<specs->parents(i)->keys.last() <<"'");
+      shapes.append(s->ID);
     }
     map = new TaskMap_ProxyConstraint(allExceptListedPTMT, shapes, (params?params->get<double>("margin", 0.1):0.1));
   }else if(type=="proxy"){

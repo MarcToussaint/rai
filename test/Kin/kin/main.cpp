@@ -611,7 +611,7 @@ int MAIN(int argc,char **argv){
 
   testLoadSave();
   testCopy();
-//  testPlayStateSequence();
+  testPlayStateSequence();
   testKinematics();
   testQuaternionKinematics();
   testKinematicSpeed();

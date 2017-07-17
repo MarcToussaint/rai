@@ -674,8 +674,6 @@ mlr::Shape::Shape(Frame* b, const Shape *copyShape, bool referenceMeshOnCopy)
 
   CHECK(b,"");
   CHECK(!b->shape, "this frame already has a geom attached");
-  ID=b->K.shapes.N;
-  b->K.shapes.append(this);
   b->shape = this;
   if(copyShape){
     const Shape& s = *copyShape;
@@ -699,8 +697,6 @@ mlr::Shape::Shape(Frame* b, const Shape *copyShape, bool referenceMeshOnCopy)
 }
 
 mlr::Shape::~Shape() {
-  frame->K.shapes.removeValue(this);
-  listReindex(frame->K.shapes);
   frame->shape = NULL;
 }
 
@@ -830,9 +826,9 @@ void mlr::Shape::write(std::ostream& os) const {
 #ifdef MLR_GL
 void mlr::Shape::glDraw(OpenGL& gl) {
   //set name (for OpenGL selection)
-  glPushName((ID <<2) | 1);
+  glPushName((frame->ID <<2) | 1);
   if(frame->K.orsDrawColors && !frame->K.orsDrawIndexColors) glColor(mesh.C); //color[0], color[1], color[2], color[3]*world.orsDrawAlpha);
-  if(frame->K.orsDrawIndexColors) glColor3b((ID>>16)&0xff, (ID>>8)&0xff, ID&0xff);
+  if(frame->K.orsDrawIndexColors) glColor3b((frame->ID>>16)&0xff, (frame->ID>>8)&0xff, frame->ID&0xff);
 
 
   double GLmatrix[16];

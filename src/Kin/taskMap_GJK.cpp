@@ -15,30 +15,31 @@
 
 #include "taskMap_GJK.h"
 
-TaskMap_GJK::TaskMap_GJK(const mlr::Shape* s1, const mlr::Shape* s2, bool exact, bool negative) : exact(exact), negScalar(negative){
+TaskMap_GJK::TaskMap_GJK(const mlr::Frame* s1, const mlr::Frame *s2, bool exact, bool negative) : exact(exact), negScalar(negative){
   CHECK(s1 && s2,"");
+  CHECK(s1->shape && s2->shape, "");
   i = s1->ID;
   j = s2->ID;
 }
 
 TaskMap_GJK::TaskMap_GJK(const mlr::KinematicWorld& W, const char* s1, const char* s2, bool exact, bool negative) : exact(exact), negScalar(negative){
   CHECK(s1 && s2,"");
-  mlr::Shape *s;
-  s=W.getShapeByName(s1); CHECK(s,"shape name '" <<s1 <<"' does not exist"); i=s->ID;
-  s=W.getShapeByName(s2); CHECK(s,"shape name '" <<s2 <<"' does not exist"); j=s->ID;
+  mlr::Frame *s;
+  s=W.getBodyByName(s1); CHECK(s,"shape name '" <<s1 <<"' does not exist"); i=s->ID;
+  s=W.getBodyByName(s2); CHECK(s,"shape name '" <<s2 <<"' does not exist"); j=s->ID;
 }
 
 TaskMap_GJK::TaskMap_GJK(const mlr::KinematicWorld& W, const Graph& specs, bool exact) : exact(exact){
   Node *it;
-  if((it=specs["sym2"])){ auto name=it->get<mlr::String>(); auto *s=W.getShapeByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); i=s->ID; }
-  if((it=specs["sym3"])){ auto name=it->get<mlr::String>(); auto *s=W.getShapeByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); j=s->ID; }
+  if((it=specs["sym2"])){ auto name=it->get<mlr::String>(); auto *s=W.getBodyByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); i=s->ID; }
+  if((it=specs["sym3"])){ auto name=it->get<mlr::String>(); auto *s=W.getBodyByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); j=s->ID; }
 //  if((it=specs["vec1"])) vec1 = mlr::Vector(it->get<arr>());  else vec1.setZero();
 //  if((it=specs["vec2"])) vec2 = mlr::Vector(it->get<arr>());  else vec2.setZero();
 }
 
 void TaskMap_GJK::phi(arr& v, arr& J, const mlr::KinematicWorld& W, int t){
-  mlr::Shape *s1 = i<0?NULL: W.shapes(i);
-  mlr::Shape *s2 = j<0?NULL: W.shapes(j);
+  mlr::Shape *s1 = i<0?NULL: W.bodies(i)->shape;
+  mlr::Shape *s2 = j<0?NULL: W.bodies(j)->shape;
   CHECK(s1 && s2,"");
   CHECK(s1->sscCore.V.N,"");
   CHECK(s2->sscCore.V.N,"");

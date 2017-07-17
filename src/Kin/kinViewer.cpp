@@ -87,15 +87,18 @@ void OrsViewer::step(){
   //-- get transforms, or all shapes if their number changed, and proxies
   mlr::Array<mlr::Transformation> X;
   world.readAccess();
-  if(world->shapes.N!=meshesCopy.N){ //need to copy meshes
-    uint n=world->shapes.N;
+  if(world->bodies.N!=meshesCopy.N){ //need to copy meshes
+    uint n=world->bodies.N;
     gl->dataLock.writeLock();
     meshesCopy.resize(n);
-    for(uint i=0;i<n;i++) meshesCopy.elem(i) = world->shapes.elem(i)->mesh;
+    for(uint i=0;i<n;i++){
+      if(world->bodies.elem(i)->shape) meshesCopy.elem(i) = world->bodies.elem(i)->shape->mesh;
+      else meshesCopy.elem(i).clear();
+    }
     gl->dataLock.unlock();
   }
-  X.resize(world->shapes.N);
-  for(mlr::Shape *s:world().shapes) X(s->ID) = s->frame->X;
+  X.resize(world->bodies.N);
+  for(mlr::Frame *f:world().bodies) X(f->ID) = f->X;
   gl->dataLock.writeLock();
   listCopy(proxiesCopy, world->proxies);
   gl->dataLock.unlock();
@@ -186,7 +189,7 @@ OrsPoseViewer::OrsPoseViewer(const char* modelVarName, const StringA& poseVarNam
     copies.append( new mlr::KinematicWorld() );
   }
   copy = modelWorld.get();
-  computeMeshNormals(copy.shapes);
+  computeMeshNormals(copy.bodies);
   for(mlr::KinematicWorld *w: copies) w->copy(copy, true);
   if(beatIntervalSec>=0.) threadLoop();
 }
@@ -201,7 +204,7 @@ void OrsPoseViewer::recopyKinematics(const mlr::KinematicWorld& world){
   stepMutex.lock();
   if(&world) copy=world;
   else copy = modelWorld.get();
-  computeMeshNormals(copy.shapes);
+  computeMeshNormals(copy.bodies);
   for(mlr::KinematicWorld *w: copies) w->copy(copy, true);
   stepMutex.unlock();
 }

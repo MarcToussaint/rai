@@ -102,11 +102,11 @@ struct KinematicWorld : GLDrawer{
   arr q, qdot; ///< the current joint configuration vector and velocities
   uint q_agent; ///< the agent index of the current q,qdot
 
-  FrameL  bodies;
+  FrameL bodies;
   FrameL fwdActiveSet;
 
 //  JointL joints;
-  ShapeL shapes;
+//  ShapeL shapes;
   ProxyL proxies; ///< list of current proximities between bodies
 
   bool isLinkTree;
@@ -324,7 +324,7 @@ void glDrawProxies(void*);
 #ifndef MLR_ORS_ONLY_BASICS
 
 uintA stringListToShapeIndices(const mlr::Array<const char*>& names, const ShapeL& shapes);
-uintA shapesToShapeIndices(const mlr::Array<mlr::Shape*>& shapes);
+uintA shapesToShapeIndices(const FrameL &shapes);
 
 //===========================================================================
 //
@@ -332,9 +332,9 @@ uintA shapesToShapeIndices(const mlr::Array<mlr::Shape*>& shapes);
 //
 
 void lib_ors();
-void makeConvexHulls(ShapeL& shapes, bool onlyContactShapes=true);
-void computeOptimalSSBoxes(ShapeL& shapes);
-void computeMeshNormals(ShapeL& shapes);
+void makeConvexHulls(FrameL& frames, bool onlyContactShapes=true);
+void computeOptimalSSBoxes(FrameL& frames);
+void computeMeshNormals(FrameL& frames);
 double forceClosureFromProxies(mlr::KinematicWorld& C, uint bodyIndex,
                                double distanceThreshold=0.01,
                                double mu=.5,     //friction coefficient
