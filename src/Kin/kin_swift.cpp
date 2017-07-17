@@ -53,12 +53,12 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
 
   scene=new SWIFT_Scene(false, false);
 
-  INDEXswift2shape.resize(world.bodies.N);  INDEXswift2shape=-1;
-  INDEXshape2swift.resize(world.bodies.N);  INDEXshape2swift=-1;
+  INDEXswift2shape.resize(world.frames.N);  INDEXswift2shape=-1;
+  INDEXshape2swift.resize(world.frames.N);  INDEXshape2swift=-1;
   
   //cout <<" -- SwiftInterface init";
   mlr::Shape *s;
-  for(mlr::Frame *f: world.bodies) if((s=f->shape) && s->cont){
+  for(mlr::Frame *f: world.frames) if((s=f->shape) && s->cont){
     //cout <<'.' <<flush;
     add=true;
     switch(s->type) {
@@ -162,7 +162,7 @@ void SwiftInterface::initActivations(const mlr::KinematicWorld& world, uint pare
   //cout <<"collision active shapes: ";
   //for_list(Type,  s,  world.shapes) if(s->cont) cout <<s->name <<' ';
   
-  for(mlr::Frame *f: world.bodies) if(f->shape){
+  for(mlr::Frame *f: world.frames) if(f->shape){
     if(!f->shape->cont) {
       if(INDEXshape2swift(f->ID)!=-1) scene->Deactivate(INDEXshape2swift(f->ID));
     } else {
@@ -170,14 +170,14 @@ void SwiftInterface::initActivations(const mlr::KinematicWorld& world, uint pare
     }
   }
   //shapes within a body
-//  for(mlr::Frame *b: world.bodies) deactivate(b->shapes);
+//  for(mlr::Frame *b: world.frames) deactivate(b->shapes);
   //deactivate along edges...
-  for(mlr::Frame *f: world.bodies) if(f->rel){
+  for(mlr::Frame *f: world.frames) if(f->rel){
     //cout <<"deactivating edge pair"; listWriteNames({e->from, e->to}, cout); cout <<endl;
     deactivate({ f->rel->from, f });
   }
   //deactivate along trees...
-  for_list(mlr::Frame,  b,  world.bodies) {
+  for_list(mlr::Frame,  b,  world.frames) {
     mlr::Array<mlr::Frame*> group, children;
     group.append(b);
     for(uint l=0; l<parentLevelsToDeactivate; l++) {
@@ -228,9 +228,9 @@ void SwiftInterface::deactivate(mlr::Frame *s) {
 
 void SwiftInterface::pushToSwift(const mlr::KinematicWorld& world) {
   //CHECK_EQ(INDEXshape2swift.N,world.shapes.N,"the number of shapes has changed");
-  CHECK(INDEXshape2swift.N <= world.bodies.N, "the number of shapes has changed");
+  CHECK(INDEXshape2swift.N <= world.frames.N, "the number of shapes has changed");
   mlr::Matrix rot;
-  for(mlr::Frame *f: world.bodies) {
+  for(mlr::Frame *f: world.frames) {
     rot = f->X.rot.getMatrix();
     if(f->ID<INDEXshape2swift.N && INDEXshape2swift(f->ID)!=-1) {
       scene->Set_Object_Transformation(INDEXshape2swift(f->ID), rot.p(), f->X.pos.p());
@@ -261,7 +261,7 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
   if(dumpReport) {
     cout <<"contacts: np=" <<np <<endl;
     for(k=0, i=0; i<np; i++) {
-      cout <<"* Shape '" <<world.bodies(oids[i <<1])->name <<"' vs. Shape '" <<world.bodies(oids[(i <<1)+1])->name <<"'" <<endl;
+      cout <<"* Shape '" <<world.frames(oids[i <<1])->name <<"' vs. Shape '" <<world.frames(oids[(i <<1)+1])->name <<"'" <<endl;
       cout <<"  #contacts = " <<num_contacts[i] <<endl;
       for(j=0; j<num_contacts[i]; j++, k++) {
         cout <<"  - contact " <<j <<endl;
@@ -297,10 +297,10 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
         proxy->normal.set(&normals[3*k+0]);
         proxy->normal.normalize();
         //swift returns nearest points in the local frame -> transform them
-        proxy->posA.set(&nearest_pts[6*k+0]);  proxy->posA = world.bodies(a)->X * proxy->posA;
-        proxy->posB.set(&nearest_pts[6*k+3]);  proxy->posB = world.bodies(b)->X * proxy->posB;
-        proxy->cenA = world.bodies(a)->X.pos;
-        proxy->cenB = world.bodies(b)->X.pos;
+        proxy->posA.set(&nearest_pts[6*k+0]);  proxy->posA = world.frames(a)->X * proxy->posA;
+        proxy->posB.set(&nearest_pts[6*k+3]);  proxy->posB = world.frames(b)->X * proxy->posB;
+        proxy->cenA = world.frames(a)->X.pos;
+        proxy->cenB = world.frames(b)->X.pos;
 //        if(world.shapes(a)->type==mlr::ST_mesh) proxy->cenA = world.shapes(a)->X * world.shapes(a)->mesh.getMeanVertex(); else proxy->cenA = world.shapes(a)->X.pos;
 //        if(world.shapes(b)->type==mlr::ST_mesh) proxy->cenB = world.shapes(b)->X * world.shapes(b)->mesh.getMeanVertex(); else proxy->cenB = world.shapes(b)->X.pos;
         proxy->cenN = proxy->cenA - proxy->cenB; //normal always points from b to a
@@ -316,8 +316,8 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       proxy->d = -.0;
 //      if(world.shapes(a)->type==mlr::ST_mesh) proxy->cenA = world.shapes(a)->X * world.shapes(a)->mesh.getMeanVertex(); else proxy->cenA = world.shapes(a)->X.pos;
 //      if(world.shapes(b)->type==mlr::ST_mesh) proxy->cenB = world.shapes(b)->X * world.shapes(b)->mesh.getMeanVertex(); else proxy->cenB = world.shapes(b)->X.pos;
-      proxy->cenA = world.bodies(a)->X.pos;
-      proxy->cenB = world.bodies(b)->X.pos;
+      proxy->cenA = world.frames(a)->X.pos;
+      proxy->cenB = world.frames(b)->X.pos;
       proxy->cenN = proxy->cenA - proxy->cenB; //normal always points from b to a
       proxy->cenD = proxy->cenN.length();
       proxy->cenN /= proxy->cenD;
@@ -332,7 +332,7 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       k++;
     }
 
-    double ab_radius = mlr::MAX(proxy->d,0.) + 1.1*(world.bodies(a)->shape->mesh_radius + world.bodies(b)->shape->mesh_radius);
+    double ab_radius = mlr::MAX(proxy->d,0.) + 1.1*(world.frames(a)->shape->mesh_radius + world.frames(b)->shape->mesh_radius);
     if(proxy->cenD>ab_radius){
       //MLR_MSG("shit");
     }
@@ -346,7 +346,7 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
     arr v, dists, _dists;
     intA idx, _idx;
     mlr::Shape *s;
-    for(mlr::Frame *f: world.bodies) if(s=f->shape){
+    for(mlr::Frame *f: world.frames) if(s=f->shape){
       if(!s->cont || s==global_ANN_shape) continue;
       
       //relative rotation and translation of shapes
@@ -408,7 +408,7 @@ void SwiftInterface::swiftQueryExactDistance() {
 //  void close();
   void SwiftInterface::deactivate(mlr::Shape *s1, mlr::Shape *s2) {}
   void SwiftInterface::deactivate(const mlr::Array<mlr::Shape*>& shapes) {}
-  void SwiftInterface::deactivate(const mlr::Array<mlr::Frame*>& bodies) {}
+  void SwiftInterface::deactivate(const mlr::Array<mlr::Frame*>& frames) {}
   void SwiftInterface::initActivations(const KinematicWorld &world, uint parentLevelsToDeactivate=3) {}
   void SwiftInterface::swiftQueryExactDistance() {}
 #endif

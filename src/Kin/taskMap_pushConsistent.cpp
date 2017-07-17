@@ -6,8 +6,8 @@ TaskMap_PushConsistent::TaskMap_PushConsistent(int iShape, int jShape) : i(iShap
 
 TaskMap_PushConsistent::TaskMap_PushConsistent(const mlr::KinematicWorld &G,
                                                const char* iShapeName, const char* jShapeName) : i(-1), j(-1){
-  mlr::Frame *a = iShapeName ? G.getBodyByName(iShapeName):NULL;
-  mlr::Frame *b = jShapeName ? G.getBodyByName(jShapeName):NULL;
+  mlr::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
+  mlr::Frame *b = jShapeName ? G.getFrameByName(jShapeName):NULL;
   if(a) i=a->ID;
   if(b) j=b->ID;
   order=1;
@@ -28,9 +28,9 @@ void TaskMap_PushConsistent::phi(arr& y, arr& J, const WorldL& G, double tau, in
   const mlr::KinematicWorld& G2 = *G.elem(-1);
   const mlr::KinematicWorld& G1 = *G.elem(-2);
 
-  mlr::Frame *body_i1 = G1.bodies(i);
-  mlr::Frame *body_i2 = G2.bodies(i);
-  mlr::Frame *body_j2 = G2.bodies(j);
+  mlr::Frame *body_i1 = G1.frames(i);
+  mlr::Frame *body_i2 = G2.frames(i);
+  mlr::Frame *body_j2 = G2.frames(j);
 
   arr yi1, yi2, yj2, Ji1, Ji2, Jj2;
   G1.kinematicsPos(yi1, Ji1, body_i1);

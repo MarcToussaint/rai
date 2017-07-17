@@ -18,8 +18,8 @@
 mlr::Frame::Frame(KinematicWorld& _world, const Frame* copyBody)
   : K(_world){
 
-  ID=K.bodies.N;
-  K.bodies.append(this);
+  ID=K.frames.N;
+  K.frames.append(this);
   if(copyBody){
     const Frame& b = *copyBody;
     name=b.name; X=b.X; ats=b.ats;
@@ -32,8 +32,8 @@ mlr::Frame::~Frame() {
   while(outLinks.N) delete outLinks.last()->rel;
   if(rel) delete rel;
   if(shape) delete shape;
-  K.bodies.removeValue(this);
-  listReindex(K.bodies);
+  K.frames.removeValue(this);
+  listReindex(K.frames);
   K.jointSort();
 }
 
@@ -145,7 +145,7 @@ bool mlr::Frame::hasJoint() const{
 
 
 mlr::Joint::Joint(Frame *f, Frame *t, Joint *copyJoint)
-  : qIndex(UINT_MAX), q0(0.), H(1.), mimic(NULL), from(f), to(t), constrainToZeroVel(false), agent(0) {
+  : qIndex(UINT_MAX), q0(0.), H(1.), mimic(NULL), from(f), to(t), constrainToZeroVel(false) {
   if(!to->rel){
     to->rel = new FrameRel(from, to);
     to->rel->joint = this;
@@ -158,8 +158,8 @@ mlr::Joint::Joint(Frame *f, Frame *t, Joint *copyJoint)
   }
   CHECK_EQ(to->joint()->to, to, "");
   if(copyJoint){
-      qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l); agent=copyJoint->agent; constrainToZeroVel=copyJoint->constrainToZeroVel;
-      type=copyJoint->type; A=copyJoint->A; Q=copyJoint->Q; B=copyJoint->B; X=copyJoint->X; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H;
+      qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l); constrainToZeroVel=copyJoint->constrainToZeroVel;
+      type=copyJoint->type; A=copyJoint->A; Q=copyJoint->Q; B=copyJoint->B; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H;
   }
 }
 
@@ -604,7 +604,7 @@ void mlr::Joint::read(const Graph &G){
     }
 
     G.get(Q, "Q");
-    G.get(X, "X");
+//    G.get(X, "X");
     G.get(H, "ctrl_H");
     if(G.get(d, "type")) type=(JointType)d;
     else if(G.get(str, "type")) { str >>type; }
@@ -622,8 +622,6 @@ void mlr::Joint::read(const Graph &G){
         Q.setZero();
         q0 = calc_q_from_Q(Q);
     }
-
-    if(G.get(d, "agent")) agent=(uint)d;
 
     //axis
     arr axis;

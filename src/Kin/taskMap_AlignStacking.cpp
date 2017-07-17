@@ -22,12 +22,12 @@ TaskMap_AlignStacking::TaskMap_AlignStacking(int iShape)
 
 TaskMap_AlignStacking::TaskMap_AlignStacking(const mlr::KinematicWorld& G, const char* iShapeName)
   :i(-1){
-  mlr::Frame *a = iShapeName ? G.getBodyByName(iShapeName):NULL;
+  mlr::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
   if(a) i=a->ID;
 }
 
 void TaskMap_AlignStacking::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
-  mlr::Frame *b=G.bodies(i);
+  mlr::Frame *b=G.frames(i);
 
   mlr::Joint *j=b->joint();
   CHECK(j,"has no support??");

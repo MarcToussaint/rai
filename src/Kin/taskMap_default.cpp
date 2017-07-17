@@ -39,8 +39,8 @@ TaskMap_Default::TaskMap_Default(TaskMap_DefaultType _type, const mlr::Kinematic
                                const char* iShapeName, const mlr::Vector& _ivec,
                                const char* jShapeName, const mlr::Vector& _jvec)
   :type(_type), i(-1), j(-1){
-  mlr::Frame *a = iShapeName ? G.getBodyByName(iShapeName):NULL;
-  mlr::Frame *b = jShapeName ? G.getBodyByName(jShapeName):NULL;
+  mlr::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
+  mlr::Frame *b = jShapeName ? G.getFrameByName(jShapeName):NULL;
   if(a) i=a->ID;
   if(b) j=b->ID;
   if(&_ivec) ivec=_ivec; else ivec.setZero();
@@ -62,8 +62,8 @@ TaskMap_Default::TaskMap_Default(const Graph& specs, const mlr::KinematicWorld& 
   else if(Type=="vecAlign") type=vecAlignTMT;
   else if(Type=="gazeAt") type=gazeAtTMT;
   else HALT("unknown type " <<Type);
-  if((it=specs["sym2"]) || (it=specs["ref1"])){ auto name=it->get<mlr::String>(); auto *s=G.getBodyByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); i=s->ID; }
-  if((it=specs["sym3"]) || (it=specs["ref2"])){ auto name=it->get<mlr::String>(); auto *s=G.getBodyByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); j=s->ID; }
+  if((it=specs["sym2"]) || (it=specs["ref1"])){ auto name=it->get<mlr::String>(); auto *s=G.getFrameByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); i=s->ID; }
+  if((it=specs["sym3"]) || (it=specs["ref2"])){ auto name=it->get<mlr::String>(); auto *s=G.getFrameByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); j=s->ID; }
   if((it=specs["vec1"])) ivec = mlr::Vector(it->get<arr>());  else ivec.setZero();
   if((it=specs["vec2"])) jvec = mlr::Vector(it->get<arr>());  else jvec.setZero();
 }
@@ -85,8 +85,8 @@ TaskMap_Default::TaskMap_Default(const Node *specs, const mlr::KinematicWorld& G
   else if(Type=="vecAlign") type=vecAlignTMT;
   else if(Type=="gazeAt") type=gazeAtTMT;
   else HALT("unknown type " <<Type);
-  if(ref1){ mlr::Frame *s=G.getBodyByName(ref1); CHECK(s,"shape name '" <<ref1 <<"' does not exist"); i=s->ID; }
-  if(ref2){ mlr::Frame *s=G.getBodyByName(ref2); CHECK(s,"shape name '" <<ref2 <<"' does not exist"); j=s->ID; }
+  if(ref1){ mlr::Frame *s=G.getFrameByName(ref1); CHECK(s,"shape name '" <<ref1 <<"' does not exist"); i=s->ID; }
+  if(ref2){ mlr::Frame *s=G.getFrameByName(ref2); CHECK(s,"shape name '" <<ref2 <<"' does not exist"); j=s->ID; }
   if(specs->isGraph()){
     const Graph& params = specs->graph();
     Node *it;
@@ -102,8 +102,8 @@ void TaskMap_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
     if(referenceIds.nd==2){  i=referenceIds(t,0); j=referenceIds(t,1); }
   }
 
-  mlr::Frame *body_i = i<0?NULL: G.bodies(i);
-  mlr::Frame *body_j = j<0?NULL: G.bodies(j);
+  mlr::Frame *body_i = i<0?NULL: G.frames(i);
+  mlr::Frame *body_j = j<0?NULL: G.frames(j);
 
   if(type==posTMT){
     mlr::Vector vec_i = ivec;
@@ -318,8 +318,8 @@ uint TaskMap_Default::dim_phi(const mlr::KinematicWorld& G) {
 mlr::String TaskMap_Default::shortTag(const mlr::KinematicWorld& G){
   mlr::String s="Default";
   s <<':' <<TaskMap_DefaultType2String[type];
-  s <<':' <<(i<0?"WORLD":G.bodies(i)->name);
-  s <<'/' <<(j<0?"WORLD":G.bodies(j)->name);
+  s <<':' <<(i<0?"WORLD":G.frames(i)->name);
+  s <<'/' <<(j<0?"WORLD":G.frames(j)->name);
   return s;
 }
 

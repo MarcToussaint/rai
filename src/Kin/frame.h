@@ -20,6 +20,8 @@ typedef mlr::Array<mlr::Shape*> ShapeL;
 
 namespace mlr{
 
+//===========================================================================
+
 /// a rigid body (inertia properties, lists of attached joints & shapes)
 struct Frame {
   struct KinematicWorld& K;
@@ -48,6 +50,8 @@ struct Frame {
   void write(std::ostream& os) const;
 };
 
+//===========================================================================
+
 struct FrameRel{
   Frame *from;
   Frame *to;
@@ -63,6 +67,8 @@ struct FrameRel{
     os <<rel;
   }
 };
+
+//===========================================================================
 
 struct Joint{
   // joint information
@@ -80,15 +86,15 @@ struct Joint{
   Transformation A=0;     ///< transformation from parent body to joint (attachment, usually static)
   Transformation Q=0;     ///< transformation within the joint (usually dynamic)
   Transformation B=0;     ///< transformation from joint to child body (attachment, usually static)
-  Transformation X=0;     ///< joint pose in world coordinates (same as from->X*A)
+//  Transformation X=0;     ///< joint pose in world coordinates (same as from->X*A)
   Vector axis=0;          ///< joint axis (same as X.rot.getX() for standard hinge joints)
   Enum<JointType> type;   ///< joint type
   bool constrainToZeroVel;
-  uint agent;           ///< associate this Joint to a specific agent (0=default robot)
 
   Joint(Frame* _from, Frame* _to, Joint* copyJoint=NULL);
   ~Joint();
 
+  const Transformation& X() const{ return from->X; }
   uint qDim(){ return dim; }
   void calc_Q_from_q(const arr& q, uint n);
   arr calc_q_from_Q(const Transformation &Q) const;
@@ -96,6 +102,8 @@ struct Joint{
   void write(std::ostream& os) const;
   void read(const Graph& G);
 };
+
+//===========================================================================
 
 struct FrameGeom{
   struct GeomStore& store;
@@ -115,11 +123,7 @@ struct FrameInertia{
   void read(const Graph& ats);
 };
 
-} //namespace mlr
-
 //===========================================================================
-
-namespace mlr{
 
 /// a shape (geometric shape like cylinder/mesh or just marker, associated to a body)
 struct Shape : GLDrawer{
@@ -137,5 +141,7 @@ struct Shape : GLDrawer{
   void write(std::ostream& os) const;
   void glDraw(OpenGL&);
 };
+
+//===========================================================================
 
 }// namespace mlr

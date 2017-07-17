@@ -25,21 +25,21 @@ TaskMap_GJK::TaskMap_GJK(const mlr::Frame* s1, const mlr::Frame *s2, bool exact,
 TaskMap_GJK::TaskMap_GJK(const mlr::KinematicWorld& W, const char* s1, const char* s2, bool exact, bool negative) : exact(exact), negScalar(negative){
   CHECK(s1 && s2,"");
   mlr::Frame *s;
-  s=W.getBodyByName(s1); CHECK(s,"shape name '" <<s1 <<"' does not exist"); i=s->ID;
-  s=W.getBodyByName(s2); CHECK(s,"shape name '" <<s2 <<"' does not exist"); j=s->ID;
+  s=W.getFrameByName(s1); CHECK(s,"shape name '" <<s1 <<"' does not exist"); i=s->ID;
+  s=W.getFrameByName(s2); CHECK(s,"shape name '" <<s2 <<"' does not exist"); j=s->ID;
 }
 
 TaskMap_GJK::TaskMap_GJK(const mlr::KinematicWorld& W, const Graph& specs, bool exact) : exact(exact){
   Node *it;
-  if((it=specs["sym2"])){ auto name=it->get<mlr::String>(); auto *s=W.getBodyByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); i=s->ID; }
-  if((it=specs["sym3"])){ auto name=it->get<mlr::String>(); auto *s=W.getBodyByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); j=s->ID; }
+  if((it=specs["sym2"])){ auto name=it->get<mlr::String>(); auto *s=W.getFrameByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); i=s->ID; }
+  if((it=specs["sym3"])){ auto name=it->get<mlr::String>(); auto *s=W.getFrameByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); j=s->ID; }
 //  if((it=specs["vec1"])) vec1 = mlr::Vector(it->get<arr>());  else vec1.setZero();
 //  if((it=specs["vec2"])) vec2 = mlr::Vector(it->get<arr>());  else vec2.setZero();
 }
 
 void TaskMap_GJK::phi(arr& v, arr& J, const mlr::KinematicWorld& W, int t){
-  mlr::Shape *s1 = i<0?NULL: W.bodies(i)->shape;
-  mlr::Shape *s2 = j<0?NULL: W.bodies(j)->shape;
+  mlr::Shape *s1 = i<0?NULL: W.frames(i)->shape;
+  mlr::Shape *s2 = j<0?NULL: W.frames(j)->shape;
   CHECK(s1 && s2,"");
   CHECK(s1->sscCore.V.N,"");
   CHECK(s2->sscCore.V.N,"");

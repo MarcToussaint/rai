@@ -169,7 +169,7 @@ TaskMap *TaskMap::newTaskMap(const Node* specs, const mlr::KinematicWorld& world
   }else if(type=="collisionPairs"){
     uintA shapes;
     for(uint i=2;i<specs->parents.N;i++){
-      mlr::Frame *s = world.getBodyByName(specs->parents(i)->keys.last());
+      mlr::Frame *s = world.getFrameByName(specs->parents(i)->keys.last());
       CHECK(s,"No Shape '" <<specs->parents(i)->keys.last() <<"'");
       shapes.append(s->ID);
     }
@@ -177,7 +177,7 @@ TaskMap *TaskMap::newTaskMap(const Node* specs, const mlr::KinematicWorld& world
   }else if(type=="collisionExceptPairs"){
     uintA shapes;
     for(uint i=2;i<specs->parents.N;i++){
-      mlr::Frame *s = world.getBodyByName(specs->parents(i)->keys.last());
+      mlr::Frame *s = world.getFrameByName(specs->parents(i)->keys.last());
       CHECK(s,"No Shape '" <<specs->parents(i)->keys.last() <<"'");
       shapes.append(s->ID);
     }
@@ -185,7 +185,7 @@ TaskMap *TaskMap::newTaskMap(const Node* specs, const mlr::KinematicWorld& world
   }else if(type=="collisionExcept"){
     uintA shapes;
     for(uint i=2;i<specs->parents.N;i++){
-      mlr::Frame *s = world.getBodyByName(specs->parents(i)->keys.last());
+      mlr::Frame *s = world.getFrameByName(specs->parents(i)->keys.last());
       CHECK(s, "No shape or body '" <<specs->parents(i)->keys.last() <<"'");
       shapes.append(s->ID);
     }

@@ -98,15 +98,12 @@ struct KinematicWorld : GLDrawer{
   struct sKinematicWorld *s;
 
   /// @name data fields
-  uintA qdim;  ///< dimensionality depending on the agent number
+  uint qdim;  ///< dimensionality
   arr q, qdot; ///< the current joint configuration vector and velocities
-  uint q_agent; ///< the agent index of the current q,qdot
 
-  FrameL bodies;
+  FrameL frames;
   FrameL fwdActiveSet;
 
-//  JointL joints;
-//  ShapeL shapes;
   ProxyL proxies; ///< list of current proximities between bodies
 
   bool isLinkTree;
@@ -132,19 +129,13 @@ struct KinematicWorld : GLDrawer{
   void init(const Graph& G);
 
   /// @name access
-  Frame *getBodyByName(const char* name, bool warnIfNotExist=true) const;
-  Shape *getShapeByName(const char* name, bool warnIfNotExist=true) const;
-  Joint *getJointByName(const char* name, bool warnIfNotExist=true) const;
+  Frame *getFrameByName(const char* name, bool warnIfNotExist=true) const;
   Joint *getJointByBodies(const Frame* from, const Frame* to) const;
   Joint *getJointByBodyNames(const char* from, const char* to) const;
   Joint *getJointByBodyIndices(uint ifrom, uint ito) const;
 
   bool checkUniqueNames() const;
-  void setShapeNames();
   void prefixNames();
-
-  ShapeL getShapesByAgent(const uint agent) const;
-  uintA getShapeIdxByAgent(const uint agent) const;
 
   /// @name changes of configuration
   void clear();
@@ -159,29 +150,26 @@ struct KinematicWorld : GLDrawer{
   void meldFixedJoints(int verbose=0);         ///< prune fixed joints; shapes of fixed bodies are reassociated to non-fixed boides
   void removeUselessBodies(int verbose=0);     ///< prune non-articulated bodies; they become shapes of other bodies
   bool checkConsistency();
-  
+  void analyzeJointStateDimensions(); ///< sort of private: count the joint dimensionalities and assign j->q_index
+
   /// @name computations on the graph
-  void calc_Q_from_q(int agent=-1); ///< from the set (q,qdot) compute the joint's Q transformations
-  void calc_q_from_Q(int agent=-1);  ///< updates (q,qdot) based on the joint's Q transformations
-  arr calc_q_from_Q(Joint* j);  ///< returns (q,qdot) for a given joint  based on the joint's Q transformations
+  void calc_Q_from_q(); ///< from the set (q,qdot) compute the joint's Q transformations
+  void calc_q_from_Q();  ///< updates (q,qdot) based on the joint's Q transformations
   void calc_fwdPropagateFrames();    ///< elementary forward kinematics; also computes all Shape frames
   arr calc_fwdPropagateVelocities();    ///< elementary forward kinematics; also computes all Shape frames
   void calc_Q_from_BodyFrames();    ///< fill in the joint transformations assuming that body poses are known (makes sense when reading files)
 //  void calc_missingAB_from_BodyAndJointFrames();    ///< fill in the missing joint relative transforms (A & B) if body and joint world poses are known
-  void clearJointErrors();
-  void analyzeJointStateDimensions(); ///< sort of private: count the joint dimensionalities and assign j->q_index
 
 
   /// @name get state
-  uint getJointStateDimension(int agent=-1) const;
-  void getJointState(arr &_q, arr& _qdot=NoArr, int agent=-1) const;
-  arr getJointState(int agent=-1) const;
+  uint getJointStateDimension() const;
+  void getJointState(arr &_q, arr& _qdot=NoArr) const;
+  arr getJointState() const;
   arr naturalQmetric(double power=.5) const;               ///< returns diagonal of a natural metric in q-space, depending on tree depth
   arr getLimits() const;
 
   /// @name set state
-  void setJointState(const arr& _q, const arr& _qdot=NoArr, int agent=-1);
-  void setAgent(uint agent);
+  void setJointState(const arr& _q, const arr& _qdot=NoArr);
 
   /// @name kinematics
   void kinematicsPos (arr& y, arr& J, Frame *b, const Vector& rel=NoVector) const; //TODO: make vector& not vector*
@@ -216,7 +204,6 @@ struct KinematicWorld : GLDrawer{
   void getComGradient(arr &grad) const;
 
   double getEnergy();
-  double getJointErrors() const;
   mlr::Proxy* getContact(uint a, uint b) const;
 
   /// @name get infos
@@ -262,13 +249,11 @@ struct KinematicSwitch{ //TODO: move to src/Motion
   uint timeOfApplication;
   uint fromId, toId;
   mlr::Transformation jA,jB;
-  uint agent;
   KinematicSwitch();
   KinematicSwitch(OperatorSymbol op, JointType type,
                   const char* ref1, const char* ref2,
                   const mlr::KinematicWorld& K, uint _timeOfApplication,
-                  const mlr::Transformation& jFrom=NoTransformation, const mlr::Transformation& jTo=NoTransformation,
-                  uint agent=0);
+                  const mlr::Transformation& jFrom=NoTransformation, const mlr::Transformation& jTo=NoTransformation);
   void setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T);
 //  KinematicSwitch(const Node *specs, const KinematicWorld& world, uint T);
   void apply(KinematicWorld& G);

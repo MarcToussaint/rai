@@ -33,12 +33,12 @@ void TEST(LoadSave){
 void testJacobianInFile(const char* filename, const char* shape){
   mlr::KinematicWorld K(filename);
 
-  mlr::Shape *sh=K.getShapeByName(shape);
+  mlr::Frame *a=K.getFrameByName(shape);
 
-  VectorFunction f = ( [&sh, &K](arr& y, arr& J, const arr& x) -> void
+  VectorFunction f = ( [&a, &K](arr& y, arr& J, const arr& x) -> void
   {
     K.setJointState(x);
-    K.kinematicsPos(y, J, sh->frame, NoVector);
+    K.kinematicsPos(y, J, a, NoVector);
     if(&J) cout <<"J=" <<J <<endl;
   } );
 
@@ -85,8 +85,8 @@ void TEST(Kinematics){
 //  G.watch(true);
 
   for(uint k=0;k<10;k++){
-    mlr::Frame *b = G.bodies.rndElem();
-    mlr::Frame *b2 = G.bodies.rndElem();
+    mlr::Frame *b = G.frames.rndElem();
+    mlr::Frame *b2 = G.frames.rndElem();
     mlr::Vector vec=0, vec2=0;
     vec.setRandom();
     vec2.setRandom();
@@ -116,9 +116,9 @@ void TEST(QuaternionKinematics){
   for(uint k=0;k<3;k++){
     mlr::Quaternion target;
     target.setRandom();
-    G.getBodyByName("ref")->rel->rel.rot = target;
-    G.getBodyByName("marker")->rel->rel.rot = target;
-    mlr::Frame *endeff = G.getBodyByName("endeff");
+    G.getFrameByName("ref")->rel->rel.rot = target;
+    G.getFrameByName("marker")->rel->rel.rot = target;
+    mlr::Frame *endeff = G.getFrameByName("endeff");
     arr x;
     G.getJointState(x);
     for(uint t=0;t<100;t++){
@@ -267,24 +267,6 @@ void TEST(Limits){
 }
 
 //===========================================================================
-
-void TEST(JointGroups){
-  mlr::KinematicWorld G("testGroups.g");
-
-  for(uint k=0;k<2;k++){
-    cout <<"Agent 0" <<endl;
-    G.setAgent(0);
-    int key=animateConfiguration(G);
-    if(key==27 || key=='q') break;
-    cout <<"Agent 1" <<endl;
-    G.setAgent(1);
-    key=animateConfiguration(G);
-    if(key==27 || key=='q') break;
-  }
-
-}
-
-//===========================================================================
 //
 // set state test
 //
@@ -361,7 +343,7 @@ void TEST(FollowRedundantSequence){
   uint t,T,n=G.getJointStateDimension();
   arr x(n),y,J,invJ;
   x=.8;     //initialize with intermediate joint positions (non-singular positions)
-  mlr::Vector rel = G.getBodyByName("endeff")->rel->rel.pos; //this frame describes the relative position of the endeffector wrt. 7th body
+  mlr::Vector rel = G.getFrameByName("endeff")->rel->rel.pos; //this frame describes the relative position of the endeffector wrt. 7th body
 
   //-- generate a random endeffector trajectory
   arr Z, Zt; //desired and true endeffector trajectories
@@ -369,7 +351,7 @@ void TEST(FollowRedundantSequence){
   Z *= .8;
   T=Z.d0;
   G.setJointState(x);
-  mlr::Frame *endeff = G.getBodyByName("arm7");
+  mlr::Frame *endeff = G.getFrameByName("arm7");
   G.kinematicsPos(y, NoArr, endeff, rel);
   for(t=0;t<T;t++) Z[t]() += y; //adjust coordinates to be inside the arm range
   plotLine(Z);
@@ -574,8 +556,8 @@ void TEST(InverseKinematics) {
   // reachable to check if the IK handle it
   mlr::KinematicWorld world("drawer.g");
 
-  mlr::Frame* drawer = world.getBodyByName("cabinet_drawer");
-  mlr::Frame* marker = world.getBodyByName("marker");
+  mlr::Frame* drawer = world.getFrameByName("cabinet_drawer");
+  mlr::Frame* marker = world.getFrameByName("marker");
   arr destination = conv_vec2arr(marker->X.pos);
 
   cout << "destination: " << destination << endl;
@@ -620,7 +602,6 @@ int MAIN(int argc,char **argv){
 //  testDynamics();
   testContacts();
   testLimits();
-  testJointGroups();
 #ifdef MLR_ODE
 //  testMeshShapesInOde();
   testPlayTorqueSequenceInOde();

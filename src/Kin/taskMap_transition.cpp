@@ -55,15 +55,6 @@ uint TaskMap_Transition::dim_phi(const WorldL& G, int t){
 }
 
 void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
-  if(G.last()->q_agent!=0){ //we're referring to a graph set to non-zero agent!
-    HALT("what is this code about? why is the q_agent involved here?");
-    uint n=G.last()->getJointStateDimension();
-    CHECK(n!=H_rate_diag.N,"just checking...");
-    y.resize(n).setZero();
-    if(&J) J.resize(y.N, order+1, n).setZero();
-    return;
-  }
-
   bool handleSwitches=effectiveJointsOnly;
   uint qN=G(0)->q.N;
   for(uint i=0;i<G.N;i++) if(G(i)->q.N!=qN){ handleSwitches=true; break; }
@@ -99,7 +90,7 @@ void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& G, double tau, int t)
 
     //multiply with h...
     mlr::Joint *j;
-    for(mlr::Frame *f:G.last()->bodies) if((j=f->joint())) for(uint i=0;i<j->qDim();i++)
+    for(mlr::Frame *f:G.last()->frames) if((j=f->joint())) for(uint i=0;i<j->qDim();i++)
       y(j->qIndex+i) *= h*j->H;
 
     if(&J) {
@@ -122,7 +113,7 @@ void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& G, double tau, int t)
       }
       J.reshape(y.N, G.N*n);
       mlr::Joint *j;
-      for(mlr::Frame *f: G.last()->bodies) if((j=f->joint())) for(uint i=0;i<j->qDim();i++){
+      for(mlr::Frame *f: G.last()->frames) if((j=f->joint())) for(uint i=0;i<j->qDim();i++){
 #if 0
         J[j->qIndex+i] *= h*j->H;
 #else //EQUIVALENT, but profiled - optimized for speed

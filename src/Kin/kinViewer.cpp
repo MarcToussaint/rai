@@ -40,12 +40,12 @@ void OrsViewer_old::step(){
   copy.gl().dataLock.unlock();
   copy.gl().update(NULL, false, false, true);
   if(computeCameraView){
-    mlr::Shape *kinectShape = copy.getShapeByName("endeffKinect");
+    mlr::Frame *kinectShape = copy.getFrameByName("endeffKinect");
     if(kinectShape){ //otherwise 'copy' is not up-to-date yet
       copy.gl().dataLock.writeLock();
       mlr::Camera cam = copy.gl().camera;
       copy.gl().camera.setKinect();
-      copy.gl().camera.X = kinectShape->frame->X * copy.gl().camera.X;
+      copy.gl().camera.X = kinectShape->X * copy.gl().camera.X;
 //      openGlLock();
       copy.gl().renderInBack(true, true, 580, 480);
 //      copy.glGetMasks(580, 480, true);
@@ -87,18 +87,18 @@ void OrsViewer::step(){
   //-- get transforms, or all shapes if their number changed, and proxies
   mlr::Array<mlr::Transformation> X;
   world.readAccess();
-  if(world->bodies.N!=meshesCopy.N){ //need to copy meshes
-    uint n=world->bodies.N;
+  if(world->frames.N!=meshesCopy.N){ //need to copy meshes
+    uint n=world->frames.N;
     gl->dataLock.writeLock();
     meshesCopy.resize(n);
     for(uint i=0;i<n;i++){
-      if(world->bodies.elem(i)->shape) meshesCopy.elem(i) = world->bodies.elem(i)->shape->mesh;
+      if(world->frames.elem(i)->shape) meshesCopy.elem(i) = world->frames.elem(i)->shape->mesh;
       else meshesCopy.elem(i).clear();
     }
     gl->dataLock.unlock();
   }
-  X.resize(world->bodies.N);
-  for(mlr::Frame *f:world().bodies) X(f->ID) = f->X;
+  X.resize(world->frames.N);
+  for(mlr::Frame *f:world().frames) X(f->ID) = f->X;
   gl->dataLock.writeLock();
   listCopy(proxiesCopy, world->proxies);
   gl->dataLock.unlock();
@@ -189,7 +189,7 @@ OrsPoseViewer::OrsPoseViewer(const char* modelVarName, const StringA& poseVarNam
     copies.append( new mlr::KinematicWorld() );
   }
   copy = modelWorld.get();
-  computeMeshNormals(copy.bodies);
+  computeMeshNormals(copy.frames);
   for(mlr::KinematicWorld *w: copies) w->copy(copy, true);
   if(beatIntervalSec>=0.) threadLoop();
 }
@@ -204,7 +204,7 @@ void OrsPoseViewer::recopyKinematics(const mlr::KinematicWorld& world){
   stepMutex.lock();
   if(&world) copy=world;
   else copy = modelWorld.get();
-  computeMeshNormals(copy.bodies);
+  computeMeshNormals(copy.frames);
   for(mlr::KinematicWorld *w: copies) w->copy(copy, true);
   stepMutex.unlock();
 }
@@ -266,11 +266,11 @@ void ComputeCameraView::step(){
   copy = modelWorld.get();
   copy.orsDrawJoints = copy.orsDrawMarkers = copy.orsDrawProxies = false;
 
-  mlr::Shape *kinectShape = copy.getShapeByName("endeffKinect");
+  mlr::Frame *kinectShape = copy.getFrameByName("endeffKinect");
   if(kinectShape){ //otherwise 'copy' is not up-to-date yet
     gl.dataLock.writeLock();
     gl.camera.setKinect();
-    gl.camera.X = kinectShape->frame->X * gl.camera.X;
+    gl.camera.X = kinectShape->X * gl.camera.X;
     gl.dataLock.unlock();
     gl.renderInBack(true, getDepth, 640, 480);
     flip_image(gl.captureImage);
@@ -285,7 +285,7 @@ void ComputeCameraView::step(){
       }
       cameraDepth.set() = depth_image;
     }
-    cameraFrame.set() = kinectShape->frame->X;
+    cameraFrame.set() = kinectShape->X;
   }
 }
 
