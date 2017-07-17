@@ -118,11 +118,12 @@ void TEST(QuaternionKinematics){
     target.setRandom();
     G.getBodyByName("ref")->rel->rel.rot = target;
     G.getBodyByName("marker")->rel->rel.rot = target;
+    mlr::Frame *endeff = G.getBodyByName("endeff");
     arr x;
     G.getJointState(x);
     for(uint t=0;t<100;t++){
       arr y,J;
-      G.kinematicsQuat(y, J, G.bodies.last());  //get the new endeffector position
+      G.kinematicsQuat(y, J, endeff);  //get the new endeffector position
       arr Jinv = pseudoInverse(J, NoArr, 1e-4); //~J*inverse_SymPosDef(J*~J);
       if(scalarProduct(conv_quat2arr(target),y)<0.) target.flipSign();
       x += 0.05 * Jinv * (conv_quat2arr(target)-y);                  //simulate a time step (only kinematically)
@@ -363,7 +364,7 @@ void TEST(FollowRedundantSequence){
   mlr::Vector rel = G.getBodyByName("endeff")->rel->rel.pos; //this frame describes the relative position of the endeffector wrt. 7th body
 
   //-- generate a random endeffector trajectory
-  arr Z,Zt; //desired and true endeffector trajectories
+  arr Z, Zt; //desired and true endeffector trajectories
   generateSequence(Z, 200, 3); //3D random sequence with limits [-1,1]
   Z *= .8;
   T=Z.d0;
@@ -610,13 +611,13 @@ int MAIN(int argc,char **argv){
 
   testLoadSave();
   testCopy();
-  testPlayStateSequence();
+//  testPlayStateSequence();
   testKinematics();
   testQuaternionKinematics();
   testKinematicSpeed();
   testFollowRedundantSequence();
   testInverseKinematics();
-  testDynamics();
+//  testDynamics();
   testContacts();
   testLimits();
   testJointGroups();

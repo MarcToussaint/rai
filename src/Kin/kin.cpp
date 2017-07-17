@@ -212,6 +212,7 @@ mlr::KinematicWorld::KinematicWorld(const char* filename):s(NULL),q_agent(0),isL
   s=new sKinematicWorld;
   init(filename);
 }
+
 mlr::KinematicWorld::~KinematicWorld() {
   clear();
   delete s;
@@ -228,7 +229,7 @@ void mlr::KinematicWorld::clear() {
   qdot.clear();
   listDelete(proxies); checkConsistency();
   while(shapes.N){ delete shapes.last(); checkConsistency(); }
-  while(bodies.N){ delete bodies.last(); checkConsistency();}
+  while(bodies.N){ delete bodies.last(); checkConsistency(); }
   isLinkTree=false;
 }
 
@@ -236,11 +237,12 @@ void mlr::KinematicWorld::copy(const mlr::KinematicWorld& G, bool referenceMeshe
   clear();
 #if 1
   listCopy(proxies, G.proxies);
-  for(Frame *b:G.bodies) new Frame(*this, b);
-  for(Shape *s:G.shapes){
-//    if(referenceMeshesAndSwiftOnCopy && !s->mesh.Vn.N) s->mesh.computeNormals(); // the copy references these normals -> if they're not precomputed, you can never display the copy
-    new Shape((s->frame?bodies(s->frame->ID):NULL), s, referenceMeshesAndSwiftOnCopy);
-  }
+  for(Frame *f:G.bodies) new Frame(*this, f);
+  for(Frame *f:G.bodies) if(f->rel) new FrameRel(bodies(f->rel->from->ID), bodies(f->ID), f->rel);
+//  for(Shape *s:G.shapes){
+////    if(referenceMeshesAndSwiftOnCopy && !s->mesh.Vn.N) s->mesh.computeNormals(); // the copy references these normals -> if they're not precomputed, you can never display the copy
+//    new Shape((s->frame?bodies(s->frame->ID):NULL), s, referenceMeshesAndSwiftOnCopy);
+//  }
 //  for(Joint *j:G.joints){
 //    Joint *jj=
 //        new Joint(*this, bodies(j->from->index), bodies(j->to->index), j);
@@ -672,9 +674,10 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *b, const mlr::Vec
   //get Jacobian
   uint N=getJointStateDimension();
   J.resize(3, N).setZero();
-  if(b->hasJoint()) { //body a has no inLinks -> zero jacobian
+  while(b) { //loop backward down the kinematic tree
+    if(!b->rel) break; //frame has no inlink -> done
     Joint *j=b->joint();
-    while(j) { //loop backward down the kinematic tree
+    if(j) {
       uint j_idx=j->qIndex;
       if(j->agent==q_agent && j_idx>=N) CHECK(j->type==JT_glue || j->type==JT_rigid, "");
       if(j->agent==q_agent && j_idx<N){
@@ -725,9 +728,8 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *b, const mlr::Vec
           for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
         }
       }
-      if(!j->from->hasJoint()) break;
-      j=j->from->joint();
     }
+    b = b->rel->from;
   }
 }
 
@@ -1228,9 +1230,9 @@ void mlr::KinematicWorld::stepDynamics(const arr& Bu_control, double tau, double
 
 /** @brief prototype for \c operator<< */
 void mlr::KinematicWorld::write(std::ostream& os) const {
-  for(Frame *b: bodies) {
-    os <<"body " <<b->name <<" { ";
-    b->write(os);  os <<" }\n";
+  for(Frame *f: bodies) {
+    os <<"body " <<f->name <<" { ";
+    f->write(os);  os <<" }\n";
   }
   os <<std::endl;
   for(Shape *s: shapes) {
@@ -1240,12 +1242,17 @@ void mlr::KinematicWorld::write(std::ostream& os) const {
     s->write(os);  os <<" }\n";
   }
   os <<std::endl;
-//  for(Joint *j: joints) {
-//    os <<"joint ";
-////    if (j->to->name.N) os <<j->name <<' ';
-//    os <<"(" <<j->from->name <<' ' <<j->to->name <<"){ ";
-//    j->write(os);  os <<" }\n";
-//  }
+  for(Frame *f: fwdActiveSet) if(f->rel) {
+    if(f->rel->joint){
+      os <<"joint ";
+      os <<"(" <<f->joint()->from->name <<' ' <<f->name <<"){ ";
+      f->joint()->write(os);  os <<" }\n";
+    }else{
+      os <<"rel ";
+      os <<"(" <<f->rel->from->name <<' ' <<f->name <<"){ ";
+      f->rel->write(os);  os <<" }\n";
+    }
+  }
 }
 
 #define DEBUG(x) //x
@@ -3189,27 +3196,40 @@ void GraphToTree(mlr::Array<mlr::Link>& tree, const mlr::KinematicWorld& C) {
 
   for(mlr::Frame* body : C.bodies) {
     mlr::Link& link=tree(body->ID);
-    if(body->hasJoint() && body->joint()->qDim()) { //is not a root
-      CHECK_EQ(body->hasJoint(),1, "this is not a tree");
-      mlr::Joint *j=body->joint();
+    if(body->rel) { //is not a root
+      if(body->hasJoint()){
+        mlr::Joint *j = body->joint();
       
-      link.type   = j->type;
-      link.qIndex = j->qIndex;
-      link.parent = j->from->ID;
+        link.type   = j->type;
+        link.qIndex = j->qIndex;
+        link.parent = j->from->ID;
 
-      if(body->inertia)
-        link.com = j->B*body->inertia->com;
-      else
-        link.com = j->B.pos;
+        if(body->inertia)
+          link.com = j->B*body->inertia->com;
+        else
+          link.com = j->B.pos;
 
-      if(j->from->hasJoint()) link.A=j->from->joint()->B;
-      else link.A=j->from->X;
-      link.A.appendTransformation(j->A);
+        if(j->from->hasJoint()) link.A=j->from->joint()->B;
+        else link.A.setZero();
+        link.A.appendTransformation(j->A);
       
-      link.X = j->from->X;
-      link.X.appendTransformation(j->A);
-      
-      link.Q=j->Q;
+        link.X = body->X;
+        link.Q=j->Q;
+      }else{
+        mlr::FrameRel *rel = body->rel;
+        link.type   = mlr::JT_rigid;
+        link.qIndex = -1;
+        link.parent = rel->from->ID;
+        if(body->inertia)
+          link.com = body->inertia->com;
+        else
+          link.com.setZero();
+        if(rel->from->hasJoint()) link.A=rel->from->joint()->B;
+        else link.A.setZero();
+        link.A.appendTransformation(rel->rel);
+        link.X = body->X;
+        link.Q.setZero();
+      }
     } else {
 //      CHECK_EQ(body->hasJoint(),0, "dammit");
       
@@ -3238,40 +3258,20 @@ void GraphToTree(mlr::Array<mlr::Link>& tree, const mlr::KinematicWorld& C) {
 void updateGraphToTree(mlr::Array<mlr::Link>& tree, const mlr::KinematicWorld& C) {
   CHECK_EQ(tree.N,C.bodies.N, "");
   
-  uint i;
-  mlr::Frame *p;
-  mlr::Joint *e;
-  mlr::Transformation f;
-  i=0;
-  for_list(mlr::Frame, n, C.bodies) {
-    i=n_COUNT;
-    if(n->hasJoint()) {
-      e=n->joint();
-      p=e->from;
-      
-      if(!p->hasJoint()) {
-        f=p->X;
-        f.appendTransformation(e->A);
-        tree(i).A=f;
-      }
-      
-      f = p->X;
-      f.appendTransformation(e->A);
-      tree(i).X=f;
-      
-      tree(i).Q=e->Q;
-    } else {
-      tree(i).com=n->X.pos;
-    }
-    if(n->inertia){
-      tree(i).force=n->inertia->force;
-      tree(i).torque=n->inertia->torque;
+  for(mlr::Frame *f: C.bodies) {
+    uint i = f->ID;
+    if(f->hasJoint()) tree(i).Q = f->joint()->Q;
+    tree(i).X = f->X;
+    tree(i).X = f->X;
+    if(f->inertia){
+      tree(i).force=f->inertia->force;
+      tree(i).torque=f->inertia->torque;
     }else{
       tree(i).force.setZero();
       tree(i).torque.setZero();
     }
   }
-  for(i=0; i<tree.N; i++) tree(i).updateFeatherstones();
+  for(mlr::Link& l:tree) l.updateFeatherstones();
 }
 
 

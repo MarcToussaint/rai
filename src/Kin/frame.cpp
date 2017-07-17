@@ -23,17 +23,15 @@ mlr::Frame::Frame(KinematicWorld& _world, const Frame* copyBody)
   if(copyBody){
     const Frame& b = *copyBody;
     name=b.name; X=b.X; ats=b.ats;
-//    type=b.type; mass=b.mass; inertia=b.inertia; com=b.com; force=b.force; torque=b.torque;
-    if(copyBody->hasJoint()){
-      Joint *j = copyBody->joint();
-      new Joint(K.bodies(j->from->ID), this, j);
-    }
+    //we cannot copy rel! because we can't know if the frames already exist. KinematicWorld::copy copies the rel's
+    if(copyBody->shape) new Shape(this, copyBody->shape);
   }
 }
 
 mlr::Frame::~Frame() {
-  if(rel) delete rel; rel=NULL;
-  if(shape) delete shape; shape=NULL;
+  while(outLinks.N) delete outLinks.last()->rel;
+  if(rel) delete rel;
+  if(shape) delete shape;
   K.bodies.removeValue(this);
   listReindex(K.bodies);
   K.jointSort();
@@ -110,9 +108,20 @@ std::ostream& operator<<(std::ostream& os, const Shape& x) { x.write(os); return
 std::ostream& operator<<(std::ostream& os, const Joint& x) { x.write(os); return os; }
 }
 
+mlr::FrameRel::FrameRel(mlr::Frame *_from, mlr::Frame *_to, mlr::FrameRel *copyRel) : from(_from), to(_to) {
+  from->outLinks.append(to);
+  to->rel = this;
+  if(copyRel){
+    rel = copyRel->rel;
+    if(copyRel->joint)
+      joint = new Joint(from, to, copyRel->joint);
+  }
+}
+
 mlr::FrameRel::~FrameRel(){
   from->outLinks.removeValue(to);
   if(joint) delete joint;
+  to->rel = NULL;
 }
 
 mlr::Joint *mlr::Frame::joint() const{
@@ -121,12 +130,12 @@ mlr::Joint *mlr::Frame::joint() const{
 }
 
 mlr::Frame *mlr::Frame::from() const{
-    CHECK(rel, "this is not a relative frame");
-    return rel->from;
+  CHECK(rel, "this is not a relative frame");
+  return rel->from;
 }
 
 uint mlr::Frame::numInputs() const{
-    if(rel) return 1;
+  if(rel) return 1;
     return 0;
 }
 
@@ -137,8 +146,16 @@ bool mlr::Frame::hasJoint() const{
 
 mlr::Joint::Joint(Frame *f, Frame *t, Joint *copyJoint)
   : qIndex(UINT_MAX), q0(0.), H(1.), mimic(NULL), from(f), to(t), constrainToZeroVel(false), agent(0) {
-  to->rel = new FrameRel(from, to);
-  to->rel->joint = this;
+  if(!to->rel){
+    to->rel = new FrameRel(from, to);
+    to->rel->joint = this;
+  }else{
+    if(to->rel->joint){
+      CHECK_EQ(to->rel->joint, this,"");
+    }else{
+      to->rel->joint = this;
+    }
+  }
   CHECK_EQ(to->joint()->to, to, "");
   if(copyJoint){
       qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l); agent=copyJoint->agent; constrainToZeroVel=copyJoint->constrainToZeroVel;
@@ -549,21 +566,43 @@ void mlr::Joint::read(std::istream& is) {
 void mlr::Joint::read(const Graph &G){
     double d=0.;
     mlr::String str;
+
+    if(G["BinvA"]) B.setInverse(A);
+    G.get(B, "B");
+    G.get(B, "to");
+    if(!B.isZero()){
+      //new frame between: from -> f -> to
+      Frame *f = new Frame(from->K);
+      if(to->name) f->name <<'>' <<to->name;
+      //disconnect from -> to
+      from->outLinks.removeValue(to);
+      //connect f -> to
+      to->rel->from = f;
+      to->rel->rel = B;
+      to->rel->joint = NULL;
+      f->outLinks.append(to);
+      //connect from -> f
+      FrameRel *rel = new FrameRel(from, f);
+      rel->joint = this;
+      to = f;
+      B.setZero();
+    }
+
     G.get(A, "A");
     G.get(A, "from");
     if(!A.isZero()){
+      //new frame between: from -> f -> to
       Frame *f = new Frame(from->K);
+      if(to->name) f->name <<'>' <<to->name;
       FrameRel *rel = new FrameRel(from, f);
       rel->rel = A;
       from->outLinks.removeValue(to);
       from = f;
-      from->outLinks.append(to);
+      f->outLinks.append(to);
       to->rel->from = f;
       A.setZero();
     }
-    if(G["BinvA"]) B.setInverse(A);
-    G.get(B, "B");
-    G.get(B, "to");
+
     G.get(Q, "Q");
     G.get(X, "X");
     G.get(H, "ctrl_H");
@@ -660,9 +699,9 @@ mlr::Shape::Shape(Frame* b, const Shape *copyShape, bool referenceMeshOnCopy)
 }
 
 mlr::Shape::~Shape() {
-  frame->shape = NULL;
   frame->K.shapes.removeValue(this);
   listReindex(frame->K.shapes);
+  frame->shape = NULL;
 }
 
 void mlr::Shape::read(const Graph& ats) {

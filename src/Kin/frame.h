@@ -55,16 +55,13 @@ struct FrameRel{
 
   struct Joint *joint=NULL;    ///< this frame is an articulated joint
 
-  FrameRel(Frame* _from, Frame* _to) : from(_from), to(_to) {
-    from->outLinks.append(to);
-    if(to->rel){
-      CHECK_EQ(to->rel, this,"");
-    }else{
-      to->rel = this;
-    }
-  }
+  FrameRel(Frame* _from, Frame* _to, FrameRel * copyRel=NULL);
 
   ~FrameRel();
+
+  void write(std::ostream& os) const{
+    os <<rel;
+  }
 };
 
 struct Joint{
