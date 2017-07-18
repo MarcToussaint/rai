@@ -284,27 +284,6 @@ void mlr::KinematicWorld::copy(const mlr::KinematicWorld& G, bool referenceMeshe
 #endif
 }
 
-/** @brief transforms (e.g., translates or rotates) the joints coordinate system):
-  `adds' the transformation f to A and its inverse to B */
-void mlr::KinematicWorld::transformJoint(mlr::Joint *e, const mlr::Transformation &f) {
-  e->A = e->A * f;
-  e->B = -f * e->B;
-}
-
-void mlr::KinematicWorld::makeLinkTree() {
-  Joint *j;
-  for(Frame *g: frames) {
-    if((j=g->joint())){
-      for(Frame *f: g->outLinks){
-        if(f->rel) f->rel->rel = j->B * f->rel->rel;
-        if(f->rel && f->rel->joint) f->rel->joint->A = j->B * f->rel->joint->A;
-      }
-      j->B.setZero();
-    }
-  }
-  isLinkTree=true;
-}
-
 void mlr::KinematicWorld::jointSort(){
   fwdActiveSet = graphGetTopsortOrder<Frame>(frames);
   qdim=0;
@@ -348,7 +327,7 @@ void mlr::KinematicWorld::calc_fwdPropagateFrames() {
         CHECK_EQ(j->to, rel->to, "");
         CHECK_EQ(j->to, f, "");
         f->X = j->from->X;
-        f->X.appendTransformation(j->A);
+//        f->X.appendTransformation(j->A);
         if(j->type==JT_hingeX || j->type==JT_transX)  j->axis = f->X.rot.getX();
         if(j->type==JT_hingeY || j->type==JT_transY)  j->axis = f->X.rot.getY();
         if(j->type==JT_hingeZ || j->type==JT_transZ)  j->axis = f->X.rot.getZ();
@@ -357,8 +336,8 @@ void mlr::KinematicWorld::calc_fwdPropagateFrames() {
 
 //        j->X = f->X;
         f->X.appendTransformation(j->Q);
-        CHECK_EQ(j->to->X.pos.x, j->to->X.pos.x, "NAN transformation:" <<j->from->X <<'*' <<j->A <<'*' <<j->Q);
-        if(!isLinkTree) f->X.appendTransformation(j->B);
+        CHECK_EQ(j->to->X.pos.x, j->to->X.pos.x, "NAN transformation:" <<j->from->X <<'*' <<j->Q);
+//        if(!isLinkTree) f->X.appendTransformation(j->B);
       }else{
         f->X = rel->from->X;
         f->X.appendTransformation(rel->rel);
@@ -425,10 +404,10 @@ arr mlr::KinematicWorld::calc_fwdPropagateVelocities(){
 void mlr::KinematicWorld::calc_Q_from_BodyFrames() {
   Joint *j;
   for(Frame *f:frames) if((j=f->joint())){
-    mlr::Transformation A(j->from->X), B(j->to->X);
-    A.appendTransformation(j->A);
-    B.appendInvTransformation(j->B);
-    j->Q.setDifference(A, B);
+//    mlr::Transformation A(j->from->X), B(j->to->X);
+//    A.appendTransformation(j->A);
+//    B.appendInvTransformation(j->B);
+    j->Q.setDifference(j->from->X, j->to->X);
   }
 }
 
@@ -949,7 +928,7 @@ void mlr::KinematicWorld::inertia(arr& M) {
       j1_idx=j1->qIndex;
       
       Xi = j1->from->X;
-      Xi.appendTransformation(j1->A);
+//      Xi.appendTransformation(j1->A);
       ti = Xi.rot.getX();
       
       vi = ti ^(Xa.pos-Xi.pos);
@@ -959,7 +938,7 @@ void mlr::KinematicWorld::inertia(arr& M) {
         j2_idx=j2->qIndex;
         
         Xj = j2->from->X;
-        Xj.appendTransformation(j2->A);
+//        Xj.appendTransformation(j2->A);
         tj = Xj.rot.getX();
         
         vj = tj ^(Xa.pos-Xj.pos);
@@ -1406,16 +1385,6 @@ void mlr::KinematicWorld::reportProxies(std::ostream& os, double belowMargin, bo
 bool ProxySortComp(const mlr::Proxy *a, const mlr::Proxy *b) {
   return (a->a < b->a) || (a->a==b->a && a->b<b->b) || (a->a==b->a && a->b==b->b && a->d < b->d);
 }
-
-void mlr::KinematicWorld::glueBodies(Frame *f, Frame *t) {
-  Joint *j = new Joint(f, t);
-  j->A.setDifference(f->X, t->X);
-  j->type=JT_rigid;
-  j->Q.setZero();
-  j->B.setZero();
-  isLinkTree=false;
-}
-
 
 /// clear all forces currently stored at bodies
 void mlr::KinematicWorld::clearForces() {
@@ -1912,22 +1881,22 @@ void mlr::KinematicWorld::glDraw(OpenGL& gl) {
     //set name (for OpenGL selection)
     glPushName((fr->ID <<2) | 2);
 
-    double s=e->A.pos.length()+e->B.pos.length(); //some scale
-    s*=.25;
+//    double s=e->A.pos.length()+e->B.pos.length(); //some scale
+    double s=.1;
 
-    //from body to joint
-    f=e->from->X;
-    f.getAffineMatrixGL(GLmatrix);
-    glLoadMatrixd(GLmatrix);
-    glColor(1, 1, 0);
-    //glDrawSphere(.1*s);
-    glBegin(GL_LINES);
-    glVertex3f(0, 0, 0);
-    glVertex3f(e->A.pos.x, e->A.pos.y, e->A.pos.z);
-    glEnd();
+//    //from body to joint
+//    f=e->from->X;
+//    f.getAffineMatrixGL(GLmatrix);
+//    glLoadMatrixd(GLmatrix);
+//    glColor(1, 1, 0);
+//    //glDrawSphere(.1*s);
+//    glBegin(GL_LINES);
+//    glVertex3f(0, 0, 0);
+//    glVertex3f(e->A.pos.x, e->A.pos.y, e->A.pos.z);
+//    glEnd();
 
     //joint frame A
-    f.appendTransformation(e->A);
+//    f.appendTransformation(e->A);
     f.getAffineMatrixGL(GLmatrix);
     glLoadMatrixd(GLmatrix);
     glDrawAxes(s);
@@ -1940,14 +1909,14 @@ void mlr::KinematicWorld::glDraw(OpenGL& gl) {
     glLoadMatrixd(GLmatrix);
     glDrawAxes(s);
 
-    //from joint to body
-    glColor(1, 0, 1);
-    glBegin(GL_LINES);
-    glVertex3f(0, 0, 0);
-    glVertex3f(e->B.pos.x, e->B.pos.y, e->B.pos.z);
-    glEnd();
-    glTranslatef(e->B.pos.x, e->B.pos.y, e->B.pos.z);
-    //glDrawSphere(.1*s);
+//    //from joint to body
+//    glColor(1, 0, 1);
+//    glBegin(GL_LINES);
+//    glVertex3f(0, 0, 0);
+//    glVertex3f(e->B.pos.x, e->B.pos.y, e->B.pos.z);
+//    glEnd();
+//    glTranslatef(e->B.pos.x, e->B.pos.y, e->B.pos.z);
+//    //glDrawSphere(.1*s);
 
     glPopName();
     i++;
@@ -2016,7 +1985,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     if(symbol==addJointZero) j->constrainToZeroVel=true;
     else                     j->constrainToZeroVel=false;
     j->type=jointType;
-    j->B = jB;
+//    j->B = jB;
     G.jointSort();
     G.calc_fwdPropagateFrames();
     return;
@@ -2025,8 +1994,9 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     Joint *j = new Joint(from, to);
     j->constrainToZeroVel=true;
     j->type=jointType;
-    j->B.setDifference(from->X, to->X);
-    j->A.setZero();
+    NIY;
+//    j->B.setDifference(from->X, to->X);
+//    j->A.setZero();
     G.jointSort();
     G.calc_fwdPropagateFrames();
     return;
@@ -2035,8 +2005,9 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     Joint *j = new Joint(from, to);
     j->constrainToZeroVel=true;
     j->type=jointType;
-    j->A.setDifference(from->X, to->X);
-    j->B.setZero();
+    NIY;
+//    j->A.setDifference(from->X, to->X);
+//    j->B.setZero();
     G.jointSort();
     G.calc_fwdPropagateFrames();
     return;
@@ -2060,50 +2031,13 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     Joint *j3 = new Joint(slider2, to);
     j3->type = JT_hingeZ;
     j3->constrainToZeroVel=true;
-    j3->B = jB;
+    NIY;//j3->B = jB;
 
     G.jointSort();
     G.calc_fwdPropagateFrames();
     return;
   }
   HALT("shouldn't be here!");
-}
-
-void mlr::KinematicSwitch::temporallyAlign(const mlr::KinematicWorld& Gprevious, mlr::KinematicWorld& G, bool copyFromBodies){
-  if(symbol==addJointAtFrom){
-    Joint *j = G.getJointByBodies(G.frames(fromId), G.frames(toId));
-    if(!j/* || j->type!=jointType*/) HALT("");
-    if(copyFromBodies){
-      j->B.setDifference(Gprevious.frames(fromId)->X, Gprevious.frames(toId)->X);
-    }else{//copy from previous, if exists
-      Joint *jprev = Gprevious.getJointByBodies(Gprevious.frames(fromId), Gprevious.frames(toId));
-      if(!jprev || jprev->type!=j->type){//still copy from bodies
-        j->B.setDifference(Gprevious.frames(fromId)->X, Gprevious.frames(toId)->X);
-      }else{
-        j->B = jprev->B;
-      }
-    }
-//    j->A.setZero();
-    G.calc_fwdPropagateFrames();
-    return;
-  }
-  if(symbol==addJointAtTo){
-    Joint *j = G.getJointByBodies(G.frames(fromId), G.frames(toId));
-    if(!j || j->type!=jointType) return; //HALT(""); //return;
-    if(copyFromBodies){
-      j->A.setDifference(Gprevious.frames(fromId)->X, Gprevious.frames(toId)->X);
-    }else{
-      Joint *jprev = Gprevious.getJointByBodies(Gprevious.frames(fromId), Gprevious.frames(toId));
-      if(!jprev || jprev->type!=j->type){
-        j->A.setDifference(Gprevious.frames(fromId)->X, Gprevious.frames(toId)->X);
-      }else{
-        j->A = jprev->A;
-      }
-    }
-//    j->B.setZero();
-    G.calc_fwdPropagateFrames();
-    return;
-  }
 }
 
 mlr::String mlr::KinematicSwitch::shortTag(const mlr::KinematicWorld* G) const{
@@ -2721,7 +2655,8 @@ struct EditConfigurationClickCall:OpenGL::GLClickCall {
       mlr::Joint *j = ors->frames(i>>2)->joint();
       gl.text
           <<"edge selection: " <<j->from->name <<' ' <<j->to->name
-         <<"\nA=" <<j->A <<"\nQ=" <<j->Q <<"\nB=" <<j->B <<endl;
+//         <<"\nA=" <<j->A <<"\nQ=" <<j->Q <<"\nB=" <<j->B
+         <<endl;
 //      listWrite(j->ats, gl.text, "\n");
       cout <<gl.text;
     }
@@ -2753,7 +2688,8 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
       if(j) {
         gl.text
             <<"edge selection: " <<j->from->name <<' ' <<j->to->name
-           <<"\nA=" <<j->A <<"\nQ=" <<j->Q <<"\nB=" <<j->B <<endl;
+//           <<"\nA=" <<j->A <<"\nQ=" <<j->Q <<"\nB=" <<j->B
+          <<endl;
 //        listWrite(j->ats, gl.text, "\n");
       }
     } else {
@@ -3178,14 +3114,16 @@ void GraphToTree(mlr::Array<mlr::Link>& tree, const mlr::KinematicWorld& C) {
         link.qIndex = j->qIndex;
         link.parent = j->from->ID;
 
-        if(body->inertia)
-          link.com = j->B*body->inertia->com;
-        else
-          link.com = j->B.pos;
+//        if(body->inertia)
+//          link.com = j->B*body->inertia->com;
+//        else
+//          link.com = j->B.pos;
+        link.com.setZero();
 
-        if(j->from->hasJoint()) link.A=j->from->joint()->B;
-        else link.A.setZero();
-        link.A.appendTransformation(j->A);
+//        if(j->from->hasJoint()) link.A=j->from->joint()->B;
+//        else
+        link.A.setZero();
+//        link.A.appendTransformation(j->A);
       
         link.X = body->X;
         link.Q=j->Q;
@@ -3198,8 +3136,9 @@ void GraphToTree(mlr::Array<mlr::Link>& tree, const mlr::KinematicWorld& C) {
           link.com = body->inertia->com;
         else
           link.com.setZero();
-        if(rel->from->hasJoint()) link.A=rel->from->joint()->B;
-        else link.A.setZero();
+//        if(rel->from->hasJoint()) link.A=rel->from->joint()->B;
+//        else
+          link.A.setZero();
         link.A.appendTransformation(rel->rel);
         link.X = body->X;
         link.Q.setZero();

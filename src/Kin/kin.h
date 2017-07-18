@@ -139,12 +139,11 @@ struct KinematicWorld : GLDrawer{
 
   /// @name changes of configuration
   void clear();
-  void makeTree(Frame *root){ reconfigureRoot(root); makeLinkTree(); }
+//  void makeTree(Frame *root){ reconfigureRoot(root); makeLinkTree(); }
   //-- low level: don't use..
   void revertJoint(Joint *e);
   void reconfigureRoot(Frame *root);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
   void transformJoint(Joint *e, const mlr::Transformation &f); ///< A <- A*f, B <- f^{-1}*B
-  void makeLinkTree();            ///< modify transformations so that B's become identity
   void jointSort();
   void glueBodies(Frame *a, Frame *b);
   void meldFixedJoints(int verbose=0);         ///< prune fixed joints; shapes of fixed bodies are reassociated to non-fixed boides

@@ -167,7 +167,7 @@ void TEST(KinematicSpeed){
 #if 1
   mlr::KinematicWorld G("kinematicTests.g");
   //  mlr::KinematicWorld G("../../../data/pr2_model/pr2_model.ors");
-  G.makeLinkTree();
+//  G.makeLinkTree();
   uint n=G.getJointStateDimension();
   arr x(n);
   mlr::timerStart();

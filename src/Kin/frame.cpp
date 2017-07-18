@@ -159,7 +159,7 @@ mlr::Joint::Joint(Frame *f, Frame *t, Joint *copyJoint)
   CHECK_EQ(to->joint()->to, to, "");
   if(copyJoint){
       qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l); constrainToZeroVel=copyJoint->constrainToZeroVel;
-      type=copyJoint->type; A=copyJoint->A; Q=copyJoint->Q; B=copyJoint->B; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H;
+      type=copyJoint->type; Q=copyJoint->Q; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H;
   }
 }
 
@@ -567,6 +567,8 @@ void mlr::Joint::read(const Graph &G){
     double d=0.;
     mlr::String str;
 
+    mlr::Transformation A, B;
+
     if(G["BinvA"]) B.setInverse(A);
     G.get(B, "B");
     G.get(B, "to");
@@ -655,8 +657,8 @@ void mlr::Joint::read(const Graph &G){
 
 void mlr::Joint::write(std::ostream& os) const {
   os <<"type=" <<type <<' ';
-  if(!A.isZero()) os <<"from=<T " <<A <<" > ";
-  if(!B.isZero()) os <<"to=<T " <<B <<" > ";
+//  if(!A.isZero()) os <<"from=<T " <<A <<" > ";
+//  if(!B.isZero()) os <<"to=<T " <<B <<" > ";
   if(!Q.isZero()) os <<"Q=<T " <<Q <<" > ";
 }
 

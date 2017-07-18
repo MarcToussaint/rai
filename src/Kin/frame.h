@@ -83,9 +83,9 @@ struct Joint{
 
   Frame* from;
   Frame* to;
-  Transformation A=0;     ///< transformation from parent body to joint (attachment, usually static)
+//  Transformation A=0;     ///< transformation from parent body to joint (attachment, usually static)
   Transformation Q=0;     ///< transformation within the joint (usually dynamic)
-  Transformation B=0;     ///< transformation from joint to child body (attachment, usually static)
+//  Transformation B=0;     ///< transformation from joint to child body (attachment, usually static)
 //  Transformation X=0;     ///< joint pose in world coordinates (same as from->X*A)
   Vector axis=0;          ///< joint axis (same as X.rot.getX() for standard hinge joints)
   Enum<JointType> type;   ///< joint type
