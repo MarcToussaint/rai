@@ -335,8 +335,8 @@ void mlr::KinematicWorld::calc_fwdPropagateFrames() {
         if(j->type==JT_phiTransXY)  j->axis = f->X.rot.getZ();
 
 //        j->X = f->X;
-        f->X.appendTransformation(j->Q);
-        CHECK_EQ(j->to->X.pos.x, j->to->X.pos.x, "NAN transformation:" <<j->from->X <<'*' <<j->Q);
+        f->X.appendTransformation(rel->rel);
+        CHECK_EQ(j->to->X.pos.x, j->to->X.pos.x, "NAN transformation:" <<j->from->X <<'*' <<rel->rel);
 //        if(!isLinkTree) f->X.appendTransformation(j->B);
       }else{
         f->X = rel->from->X;
@@ -402,12 +402,11 @@ arr mlr::KinematicWorld::calc_fwdPropagateVelocities(){
     frames A & B of each edge, this calculates the dynamic (relative) joint
     frame X for each edge (which includes joint transformation and errors) */
 void mlr::KinematicWorld::calc_Q_from_BodyFrames() {
-  Joint *j;
-  for(Frame *f:frames) if((j=f->joint())){
+  for(Frame *f:frames) if(f->rel){
 //    mlr::Transformation A(j->from->X), B(j->to->X);
 //    A.appendTransformation(j->A);
 //    B.appendInvTransformation(j->B);
-    j->Q.setDifference(j->from->X, j->to->X);
+    f->rel->rel.setDifference(f->rel->from->X, f->rel->to->X);
   }
 }
 
@@ -566,7 +565,7 @@ void mlr::KinematicWorld::calc_q_from_Q() {
   for(Frame *f: frames) if((j=f->joint())){
     if(j->mimic) continue; //don't count dependent joints
     CHECK_EQ(j->qIndex,n,"joint indexing is inconsistent");
-    arr joint_q = j->calc_q_from_Q(j->Q);
+    arr joint_q = j->calc_q_from_Q(f->rel->rel);
     //TODO is there a better way?
     for(uint i=0; i<joint_q.N; ++i)
       q(n+i) = joint_q(i);
@@ -656,7 +655,7 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *b, const mlr::Vec
           if(j->mimic) NIY;
           arr R = j->X().rot.getArr();
           J.setMatrixBlock(R.sub(0,-1,0,1), 0, j_idx);
-          mlr::Vector tmp = j->axis ^ (pos_world-(j->X().pos + j->X().rot*j->Q.pos));
+          mlr::Vector tmp = j->axis ^ (pos_world-(j->X().pos + j->X().rot*b->rel->rel.pos));
           J(0, j_idx+2) += tmp.x;
           J(1, j_idx+2) += tmp.y;
           J(2, j_idx+2) += tmp.z;
@@ -667,7 +666,7 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *b, const mlr::Vec
           J(0, j_idx) += tmp.x;
           J(1, j_idx) += tmp.y;
           J(2, j_idx) += tmp.z;
-          arr R = (j->X().rot*j->Q.rot).getArr();
+          arr R = (j->X().rot*b->rel->rel.rot).getArr();
           J.setMatrixBlock(R.sub(0,-1,0,1), 0, j_idx+1);
         }
         if(j->type==JT_trans3 || j->type==JT_free) {
@@ -677,8 +676,8 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *b, const mlr::Vec
         }
         if(j->type==JT_quatBall || j->type==JT_free) {
           uint offset = (j->type==JT_free)?3:0;
-          arr Jrot = j->X().rot.getArr() * j->Q.rot.getJacobian(); //transform w-vectors into world coordinate
-          Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(j->X().pos+j->X().rot*j->Q.pos)) ); //cross-product of all 4 w-vectors with lever
+          arr Jrot = j->X().rot.getArr() * b->rel->rel.rot.getJacobian(); //transform w-vectors into world coordinate
+          Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(j->X().pos+j->X().rot*b->rel->rel.pos)) ); //cross-product of all 4 w-vectors with lever
           Jrot /= sqrt(sumOfSqr( q({j->qIndex+offset, j->qIndex+offset+3}) )); //account for the potential non-normalization of q
           for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
         }
@@ -851,7 +850,7 @@ void mlr::KinematicWorld::axesMatrix(arr& J, Frame *b) const {
         }
         if(j->type==JT_quatBall || j->type==JT_free) {
           uint offset = (j->type==JT_free)?3:0;
-          arr Jrot = j->X().rot.getArr() * j->Q.rot.getJacobian(); //transform w-vectors into world coordinate
+          arr Jrot = j->X().rot.getArr() * b->rel->rel.rot.getJacobian(); //transform w-vectors into world coordinate
           Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset,j->qIndex+offset+3}))); //account for the potential non-normalization of q
           for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
         }
@@ -1904,7 +1903,7 @@ void mlr::KinematicWorld::glDraw(OpenGL& gl) {
     glRotatef(90, 0, 1, 0);  glDrawCylinder(.05*s, .3*s);  glRotatef(-90, 0, 1, 0);
 
     //joint frame B
-    f.appendTransformation(e->Q);
+    f.appendTransformation(fr->rel->rel);
     f.getAffineMatrixGL(GLmatrix);
     glLoadMatrixd(GLmatrix);
     glDrawAxes(s);
@@ -3126,7 +3125,7 @@ void GraphToTree(mlr::Array<mlr::Link>& tree, const mlr::KinematicWorld& C) {
 //        link.A.appendTransformation(j->A);
       
         link.X = body->X;
-        link.Q=j->Q;
+        link.Q = body->rel->rel;
       }else{
         mlr::FrameRel *rel = body->rel;
         link.type   = mlr::JT_rigid;
@@ -3173,7 +3172,7 @@ void updateGraphToTree(mlr::Array<mlr::Link>& tree, const mlr::KinematicWorld& C
   
   for(mlr::Frame *f: C.frames) {
     uint i = f->ID;
-    if(f->hasJoint()) tree(i).Q = f->joint()->Q;
+    if(f->hasJoint()) tree(i).Q = f->rel->rel;
     tree(i).X = f->X;
     tree(i).X = f->X;
     if(f->inertia){

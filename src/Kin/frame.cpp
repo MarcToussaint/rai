@@ -159,7 +159,7 @@ mlr::Joint::Joint(Frame *f, Frame *t, Joint *copyJoint)
   CHECK_EQ(to->joint()->to, to, "");
   if(copyJoint){
       qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l); constrainToZeroVel=copyJoint->constrainToZeroVel;
-      type=copyJoint->type; Q=copyJoint->Q; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H;
+      type=copyJoint->type; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H;
   }
 }
 
@@ -168,8 +168,9 @@ mlr::Joint::~Joint() {
 }
 
 void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
+  mlr::Transformation &Q = to->rel->rel;
     if(mimic){
-        Q = mimic->Q;
+        Q = mimic->to->rel->rel;
     }else{
         Q.setZero();
         switch(type) {
@@ -605,13 +606,13 @@ void mlr::Joint::read(const Graph &G){
       A.setZero();
     }
 
-    G.get(Q, "Q");
+    G.get(to->rel->rel, "Q");
 //    G.get(X, "X");
     G.get(H, "ctrl_H");
     if(G.get(d, "type")) type=(JointType)d;
     else if(G.get(str, "type")) { str >>type; }
     else type=JT_hingeX;
-    if(type==JT_rigid && !Q.isZero()){ A.appendTransformation(Q); Q.setZero(); }
+//    if(type==JT_rigid && !Q.isZero()){ A.appendTransformation(Q); Q.setZero(); }
 
     dim = getDimFromType();
 
@@ -621,8 +622,8 @@ void mlr::Joint::read(const Graph &G){
     }else if(G.get(q0, "q")){
       calc_Q_from_q(q0, 0);
     }else{
-        Q.setZero();
-        q0 = calc_q_from_Q(Q);
+        to->rel->rel.setZero();
+        q0 = calc_q_from_Q(to->rel->rel);
     }
 
     //axis
@@ -659,7 +660,7 @@ void mlr::Joint::write(std::ostream& os) const {
   os <<"type=" <<type <<' ';
 //  if(!A.isZero()) os <<"from=<T " <<A <<" > ";
 //  if(!B.isZero()) os <<"to=<T " <<B <<" > ";
-  if(!Q.isZero()) os <<"Q=<T " <<Q <<" > ";
+//  if(!Q.isZero()) os <<"Q=<T " <<Q <<" > ";
 }
 
 //===========================================================================
