@@ -346,7 +346,8 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
     arr v, dists, _dists;
     intA idx, _idx;
     mlr::Shape *s;
-    for(mlr::Frame *f: world.frames) if((s=f->shape)){
+    for(mlr::Frame *f: world.frames) if((s=f->shape)
+                                        ){
       if(!s->cont || s==global_ANN_shape) continue;
       
       //relative rotation and translation of shapes

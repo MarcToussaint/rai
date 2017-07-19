@@ -328,7 +328,7 @@ mlr::Array<mlr::Joint*> getSwitchedJoints(const mlr::KinematicWorld& G0, const m
     }
     mlr::Joint *j0 = G0.getJointByBodyIndices(j1->from->ID, j1->to->ID);
     if(!j0 || j0->type!=j1->type){
-      if(G0.frames(j1->to->ID)->hasJoint()){ //out-body had (in G0) one inlink...
+      if(G0.frames(j1->to->ID)->joint()){ //out-body had (in G0) one inlink...
         j0 = G0.frames(j1->to->ID)->joint();
       }
       switchedJoints.append({j0,j1});
@@ -356,10 +356,10 @@ mlr::Array<mlr::Frame*> getSwitchedBodies(const mlr::KinematicWorld& G0, const m
   for(mlr::Frame *b1:G1.frames) {
     if(b1->ID>=G0.frames.N) continue; //b1 does not exist in G0 -> not a switched body
     mlr::Frame *b0 = G0.frames(b1->ID);
-    if(b0->hasJoint() != b1->hasJoint()){ switchedBodies.append({b0,b1}); continue; }
-    if(b0->hasJoint()){
-      mlr::Joint *j0 = b0->joint();
-      mlr::Joint *j1 = b1->joint();
+    mlr::Joint *j0 = b0->joint();
+    mlr::Joint *j1 = b1->joint();
+    if(!j0 != !j1){ switchedBodies.append({b0,b1}); continue; }
+    if(j0){
       if(j0->type!=j1->type || j0->from->ID!=j1->from->ID){ //different joint type; or attached to different parent
         switchedBodies.append({b0,b1});
       }

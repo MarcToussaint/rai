@@ -129,21 +129,6 @@ mlr::Joint *mlr::Frame::joint() const{
   return rel->joint;
 }
 
-mlr::Frame *mlr::Frame::from() const{
-  CHECK(rel, "this is not a relative frame");
-  return rel->from;
-}
-
-uint mlr::Frame::numInputs() const{
-  if(rel) return 1;
-    return 0;
-}
-
-bool mlr::Frame::hasJoint() const{
-    return rel && rel->joint;
-}
-
-
 mlr::Joint::Joint(Frame *f, Frame *t, Joint *copyJoint)
   : qIndex(UINT_MAX), q0(0.), H(1.), mimic(NULL), from(f), to(t), constrainToZeroVel(false) {
   if(!to->rel){

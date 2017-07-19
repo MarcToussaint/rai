@@ -480,8 +480,8 @@ void mlr::KinematicWorld::reconfigureRoot(Frame *root) {
     mstop=list.p+list.N;
     for(m=list.p; m!=mstop; m++) {
       level((*m)->ID)=i;
-      if((*m)->hasJoint()){ //for_list(Joint,  e,  (*m)->inLinks) {
-        Joint *j = (*m)->joint();
+      Joint *j;
+      if((j = (*m)->joint())){ //for_list(Joint,  e,  (*m)->inLinks) {
         if(!level(j->from->ID)) revertJoint(j);
       }
       for(Frame *f: (*m)->outLinks) list2.append(f);
@@ -739,8 +739,7 @@ void mlr::KinematicWorld::hessianPos(arr& H, Frame *b, mlr::Vector *rel) const {
   pos_a = b->X.pos;
   if(rel) pos_a += b->X.rot*(*rel);
   
-  if(b->hasJoint()) {
-    j1=b->joint();
+  if((j1=b->joint())) {
     while(j1) {
       j1_idx=j1->qIndex;
 
@@ -786,11 +785,11 @@ void mlr::KinematicWorld::hessianPos(arr& H, Frame *b, mlr::Vector *rel) const {
         }
         else NIY;
 
-        if(!j2->from->hasJoint()) break;
         j2=j2->from->joint();
+        if(!j2) break;
       }
-      if(!j1->from->hasJoint()) break;
       j1=j1->from->joint();
+      if(!j1) break;
     }
   }
 }
@@ -837,8 +836,8 @@ void mlr::KinematicWorld::axesMatrix(arr& J, Frame *b) const {
   uint N = getJointStateDimension();
   J.resize(3, N).setZero();
   while(b->rel) { //loop backward down the kinematic tree
-    if(b->hasJoint()){
-      Joint *j=b->joint();
+    mlr::Joint *j;
+    if((j=b->joint())){
       uint j_idx=j->qIndex;
       if(j_idx>=N) CHECK(j->type==JT_glue || j->type==JT_rigid, "");
       if(j_idx<N){
@@ -947,11 +946,11 @@ void mlr::KinematicWorld::inertia(arr& M) {
         
         M(j1_idx, j2_idx) += tmp;
         
-        if(!j2->from->hasJoint()) break;
         j2=j2->from->joint();
+        if(!j2) break;
       }
-      if(!j1->from->hasJoint()) break;
       j1=j1->from->joint();
+      if(!j1) break;
     }
   }
   //symmetric: fill in other half
@@ -1030,7 +1029,7 @@ mlr::Frame* mlr::KinematicWorld::getFrameByName(const char* name, bool warnIfNot
 
 /// find joint connecting two bodies
 mlr::Joint* mlr::KinematicWorld::getJointByBodies(const Frame* from, const Frame* to) const {
-  if(to->hasJoint() && to->joint()->from==from) return to->joint();
+  if(to->joint() && to->joint()->from==from) return to->joint();
   return NULL;
 }
 
@@ -1778,7 +1777,7 @@ bool mlr::KinematicWorld::checkConsistency(){
     CHECK(&b->K==this,"");
     CHECK_EQ(b, frames(b->ID), "");
     for(Frame *f: b->outLinks) CHECK_EQ(f->rel->from, b, "");
-    if(b->hasJoint())  CHECK_EQ(b->joint()->to, b, "");
+    if(b->joint())  CHECK_EQ(b->joint()->to, b, "");
     if(b->shape) CHECK_EQ(b->shape->frame, b, "");
     b->ats.checkConsistency();
   }
@@ -1805,7 +1804,7 @@ bool mlr::KinematicWorld::checkConsistency(){
       CHECK(level(f->rel->from->ID) < level(f->ID), "joint does not go forward");
   }
   for(Frame *b: frames){
-    if(b->hasJoint())  CHECK(level(b->joint()->from->ID) < level(b->ID), "topsort failed");
+    if(b->joint())  CHECK(level(b->joint()->from->ID) < level(b->ID), "topsort failed");
   }
 
   for(Frame *f: frames) if(f->shape){
@@ -1963,8 +1962,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     CHECK_EQ(symbol, deleteJoint, "");
     CHECK(to,"");
     mlr::Frame *b = to;
-    CHECK_LE(b->hasJoint(), 1,"");
-    if(b->hasJoint()){
+    if(b->joint()){
       from = b->joint()->from;
     }else{
       return;
@@ -3106,8 +3104,8 @@ void GraphToTree(mlr::Array<mlr::Link>& tree, const mlr::KinematicWorld& C) {
   for(mlr::Frame* body : C.frames) {
     mlr::Link& link=tree(body->ID);
     if(body->rel) { //is not a root
-      if(body->hasJoint()){
-        mlr::Joint *j = body->joint();
+      mlr::Joint *j;
+      if((j=body->joint())){
       
         link.type   = j->type;
         link.qIndex = j->qIndex;
@@ -3172,7 +3170,7 @@ void updateGraphToTree(mlr::Array<mlr::Link>& tree, const mlr::KinematicWorld& C
   
   for(mlr::Frame *f: C.frames) {
     uint i = f->ID;
-    if(f->hasJoint()) tree(i).Q = f->rel->rel;
+    if(f->rel) tree(i).Q = f->rel->rel;
     tree(i).X = f->X;
     tree(i).X = f->X;
     if(f->inertia){

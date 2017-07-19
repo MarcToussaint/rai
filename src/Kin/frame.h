@@ -24,16 +24,15 @@ namespace mlr{
 
 /// a rigid body (inertia properties, lists of attached joints & shapes)
 struct Frame {
-  struct KinematicWorld& K;
-  uint ID;          ///< unique identifier TODO:do we really need index??
-  mlr::String name;     ///< name
-  Transformation X=0;    ///< body's absolute pose
+  struct KinematicWorld& K;  ///< a Frame is uniquely associated with a KinematicConfiguration
+  uint ID;                   ///< unique identifier
+  mlr::String name;          ///< name
+  Transformation X=0;        ///< body's absolute pose
+  FrameL outLinks;           ///< lists of in and out joints
 
-  FrameL outLinks;       ///< lists of in and out joints
-
-  //attachments to the frame
-  struct FrameRel  *rel=NULL;        ///< this frame is a child or a parent frame, with fixed relative transformation
-  struct Shape *shape=NULL;       ///< this frame has a (collision or visual) geometry
+  //optional attachments to the frame
+  struct FrameRel *rel=NULL;         ///< this frame is a child or a parent frame, with fixed relative transformation
+  struct Shape *shape=NULL;          ///< this frame has a (collision or visual) geometry
   struct FrameInertia *inertia=NULL; ///< this frame has inertia (is a mass)
 
   Graph ats;   ///< list of any-type attributes
@@ -42,9 +41,7 @@ struct Frame {
   ~Frame();
 
   struct Joint* joint() const;
-  struct Frame* from() const;
-  uint numInputs() const;
-  bool hasJoint() const;
+  uint numInputs() const{ if(rel) return 1; return 0; }
 
   void parseAts(const Graph &ats);
   void write(std::ostream& os) const;
@@ -74,12 +71,12 @@ struct Joint{
   // joint information
   uint dim;
   uint qIndex;
-  byte generator; ///< (7bits), h in Featherstone's code (indicates basis vectors of the Lie algebra, but including the middle quaternion w)
-  arr limits;        ///< joint limits (lo, up, [maxvel, maxeffort])
-  arr q0;            ///< joint null position
-  double H=1.;          ///< control cost scalar
+  byte generator;   ///< (7bits), h in Featherstone's code (indicates basis vectors of the Lie algebra, but including the middle quaternion w)
+  arr limits;       ///< joint limits (lo, up, [maxvel, maxeffort])
+  arr q0;           ///< joint null position
+  double H=1.;      ///< control cost scalar
 
-  Joint *mimic;       ///< if non-NULL, this joint's state is identical to another's
+  Joint *mimic;     ///< if non-NULL, this joint's state is identical to another's
 
   Frame* from;
   Frame* to;
