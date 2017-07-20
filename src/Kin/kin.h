@@ -359,7 +359,7 @@ void bindOrsToOpenGL(mlr::KinematicWorld& graph, OpenGL& gl); //TODO: should be 
 /// @todo is all the following stuff really featherstone? MT: yes
 /// @{
 namespace mlr {
-struct Link {
+struct F_Link {
   int type;
   int qIndex;
   int parent;
@@ -381,19 +381,19 @@ struct Link {
   }
 };
 
-typedef mlr::Array<mlr::Link> LinkTree;
+typedef mlr::Array<mlr::F_Link> F_LinkTree;
 
-void equationOfMotion(arr& M, arr& F, const LinkTree& tree,  const arr& qd);
-void fwdDynamics_MF(arr& qdd, const LinkTree& tree, const arr& qd, const arr& u);
-void fwdDynamics_aba_nD(arr& qdd, const LinkTree& tree, const arr& qd, const arr& tau);
-void fwdDynamics_aba_1D(arr& qdd, const LinkTree& tree, const arr& qd, const arr& tau);
-void invDynamics(arr& tau, const LinkTree& tree, const arr& qd, const arr& qdd);
+void equationOfMotion(arr& M, arr& F, const F_LinkTree& tree,  const arr& qd);
+void fwdDynamics_MF(arr& qdd, const F_LinkTree& tree, const arr& qd, const arr& u);
+void fwdDynamics_aba_nD(arr& qdd, const F_LinkTree& tree, const arr& qd, const arr& tau);
+void fwdDynamics_aba_1D(arr& qdd, const F_LinkTree& tree, const arr& qd, const arr& tau);
+void invDynamics(arr& tau, const F_LinkTree& tree, const arr& qd, const arr& qdd);
 
 }
-stdOutPipe(mlr::Link);
+stdOutPipe(mlr::F_Link)
 
-void GraphToTree(mlr::LinkTree& tree, const mlr::KinematicWorld& C);
-void updateGraphToTree(mlr::LinkTree& tree, const mlr::KinematicWorld& C);
+void GraphToTree(mlr::F_LinkTree& tree, const mlr::KinematicWorld& C);
+void updateGraphToTree(mlr::F_LinkTree& tree, const mlr::KinematicWorld& C);
 /// @}
 
 

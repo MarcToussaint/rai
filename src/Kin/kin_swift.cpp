@@ -172,9 +172,9 @@ void SwiftInterface::initActivations(const mlr::KinematicWorld& world, uint pare
   //shapes within a body
 //  for(mlr::Frame *b: world.frames) deactivate(b->shapes);
   //deactivate along edges...
-  for(mlr::Frame *f: world.frames) if(f->rel){
+  for(mlr::Frame *f: world.frames) if(f->link){
     //cout <<"deactivating edge pair"; listWriteNames({e->from, e->to}, cout); cout <<endl;
-    deactivate({ f->rel->from, f });
+    deactivate({ f->link->from, f });
   }
   //deactivate along trees...
   for_list(mlr::Frame,  b,  world.frames) {
@@ -346,8 +346,7 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
     arr v, dists, _dists;
     intA idx, _idx;
     mlr::Shape *s;
-    for(mlr::Frame *f: world.frames) if((s=f->shape)
-                                        ){
+    for(mlr::Frame *f: world.frames) if((s=f->shape)){
       if(!s->cont || s==global_ANN_shape) continue;
       
       //relative rotation and translation of shapes

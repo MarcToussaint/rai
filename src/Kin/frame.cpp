@@ -29,8 +29,8 @@ mlr::Frame::Frame(KinematicWorld& _world, const Frame* copyBody)
 }
 
 mlr::Frame::~Frame() {
-  while(outLinks.N) delete outLinks.last()->rel;
-  if(rel) delete rel;
+  while(outLinks.N) delete outLinks.last()->link;
+  if(link) delete link;
   if(shape) delete shape;
   K.frames.removeValue(this);
   listReindex(K.frames);
@@ -108,39 +108,43 @@ std::ostream& operator<<(std::ostream& os, const Shape& x) { x.write(os); return
 std::ostream& operator<<(std::ostream& os, const Joint& x) { x.write(os); return os; }
 }
 
-mlr::FrameRel::FrameRel(mlr::Frame *_from, mlr::Frame *_to, mlr::FrameRel *copyRel) : from(_from), to(_to) {
+mlr::Link::Link(mlr::Frame *_from, mlr::Frame *_to, mlr::Link *copyLink)
+  : from(_from), to(_to) {
+  CHECK(!to->link, "the Frame already has a Link")
+  to->link = this;
   from->outLinks.append(to);
-  to->rel = this;
-  if(copyRel){
-    rel = copyRel->rel;
-    if(copyRel->joint)
-      joint = new Joint(from, to, copyRel->joint);
+  if(copyLink){
+    Q = copyLink->Q;
+    if(copyLink->joint)
+      new Joint(this, copyLink->joint);
   }
 }
 
-mlr::FrameRel::~FrameRel(){
+mlr::Link::~Link(){
   from->outLinks.removeValue(to);
   if(joint) delete joint;
-  to->rel = NULL;
+  to->link = NULL;
 }
 
 mlr::Joint *mlr::Frame::joint() const{
-  if(!rel) return NULL;
-  return rel->joint;
+  if(!link) return NULL;
+  return link->joint;
 }
 
-mlr::Joint::Joint(Frame *f, Frame *t, Joint *copyJoint)
-  : qIndex(UINT_MAX), q0(0.), H(1.), mimic(NULL), from(f), to(t), constrainToZeroVel(false) {
-  if(!to->rel){
-    to->rel = new FrameRel(from, to);
-    to->rel->joint = this;
-  }else{
-    if(to->rel->joint){
-      CHECK_EQ(to->rel->joint, this,"");
-    }else{
-      to->rel->joint = this;
-    }
-  }
+mlr::Joint::Joint(Link *_link, Joint *copyJoint)
+  : qIndex(UINT_MAX), q0(0.), H(1.), mimic(NULL), link(_link), from(_link->from), to(_link->to), constrainToZeroVel(false) {
+  CHECK(!link->joint, "the Link already has a Joint");
+  link -> joint = this;
+//  if(!to->link){
+//    to->link = new Link(from, to);
+//    to->link->joint = this;
+//  }else{
+//    if(to->link->joint){
+//      CHECK_EQ(to->link->joint, this,"");
+//    }else{
+//      to->link->joint = this;
+//    }
+//  }
   CHECK_EQ(to->joint()->to, to, "");
   if(copyJoint){
       qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l); constrainToZeroVel=copyJoint->constrainToZeroVel;
@@ -149,13 +153,13 @@ mlr::Joint::Joint(Frame *f, Frame *t, Joint *copyJoint)
 }
 
 mlr::Joint::~Joint() {
-  to->rel->joint = NULL;
+  link->joint = NULL;
 }
 
 void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
-  mlr::Transformation &Q = to->rel->rel;
+  mlr::Transformation &Q = link->Q;
     if(mimic){
-        Q = mimic->to->rel->rel;
+        Q = mimic->link->Q;
     }else{
         Q.setZero();
         switch(type) {
@@ -239,7 +243,7 @@ void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
     CHECK_EQ(Q.pos.x, Q.pos.x, "NAN transform");
     CHECK_EQ(Q.rot.w, Q.rot.w, "NAN transform");
 
-//    to->rel->rel = A * Q * B; //total rel transformation
+//    link->link = A * Q * B; //total rel transformation
 }
 
 arr mlr::Joint::calc_q_from_Q(const mlr::Transformation &Q) const{
@@ -353,202 +357,6 @@ uint mlr::Joint::getDimFromType() const {
   return 0;
 }
 
-#if 0
-mlr::Joint::Joint(KinematicWorld& G, Frame *f, Frame *t, const Joint* copyJoint)
-  : world(G), index(0), qIndex(UINT_MAX), from(f), to(t), mimic(NULL), agent(0), constrainToZeroVel(false), q0(0.), H(1.) {
-  reset();
-  if(copyJoint) *this=*copyJoint;
-  index=world.joints.N;
-  world.joints.append(this);
-  f->outLinks.append(this);
-  t-> inLinks.append(this);
-  world.q.clear();
-  world.qdot.clear();
-  world.qdim.clear();
-}
-
-mlr::Joint::~Joint() {
-  world.checkConsistency();
-  reset();
-  if(from){ from->outLinks.removeValue(this); listReindex(from->outLinks); }
-  if(to){   to->inLinks.removeValue(this); listReindex(to->inLinks); }
-  world.joints.removeValue(this);
-  listReindex(world.joints);
-  world.q.clear();
-  world.qdot.clear();
-  world.qdim.clear();
-}
-
-void mlr::Joint::reset() {
-  ats.clear(); A.setZero(); B.setZero(); Q.setZero(); X.setZero(); axis.setZero(); limits.clear(); q0=0.; H=1.; type=JT_none;
-//  locker=NULL;
-}
-
-void mlr::Joint::parseAts() {
-  //interpret some of the attributes
-  double d=0.;
-  mlr::String str;
-  ats.get(A, "A");
-  ats.get(A, "from");
-  if(ats["BinvA"]) B.setInverse(A);
-  ats.get(B, "B");
-  ats.get(B, "to");
-  ats.get(Q, "Q");
-  ats.get(X, "X");
-  ats.get(H, "ctrl_H");
-  if(ats.get(d, "type")) type=(JointType)d;
-  else if(ats.get(str, "type")) { str>> type; }
-  else type=JT_hingeX;
-  if(type==JT_rigid && !Q.isZero()){ A.appendTransformation(Q); Q.setZero(); }
-  if(ats.get(d, "q")){
-    q0=d;
-    if(type==JT_hingeX) Q.addRelativeRotationRad(d, 1., 0., 0.);
-    if(type==JT_rigid)  A.addRelativeRotationRad(d, 1., 0., 0.);
-    if(type==JT_transX) Q.addRelativeTranslation(d, 0., 0.);
-  }else q0=0.;
-  if(ats.get(d, "agent")) agent=(uint)d;
-  if(ats["fixed"]) agent=UINT_MAX;
-  //axis
-  arr axis;
-  ats.get(axis, "axis");
-  if(axis.N) {
-    CHECK_EQ(axis.N,3,"");
-    Vector ax(axis);
-    Transformation f;
-    f.setZero();
-    f.rot.setDiff(Vector_x, ax);
-    A = A * f;
-    B = -f * B;
-  }
-  //limit
-  arr ctrl_limits;
-  ats.get(limits, "limits");
-  if(limits.N && type!=JT_rigid && !mimic){
-    CHECK_EQ(limits.N,2*qDim(), "parsed limits have wrong dimension");
-  }
-  ats.get(ctrl_limits, "ctrl_limits");
-  if(ctrl_limits.N && type!=JT_rigid){
-    if(!limits.N) limits.resizeAs(ctrl_limits).setZero();
-    CHECK_EQ(3,ctrl_limits.N, "parsed ctrl_limits have wrong dimension");
-    limits.append(ctrl_limits);
-  }
-  //coupled to another joint requires post-processing by the Graph::read!!
-  if(ats["mimic"]) mimic=(Joint*)1;
-}
-
-void mlr::Joint::applyTransformation(mlr::Transformation& f, const arr& q){
-  switch(type) {
-    case JT_hingeX:{
-//      f.addRelativeRotationRad(q.elem(qIndex),1.,0.,0.);
-      f.rot.addX(q.elem(qIndex));
-    } break;
-
-    case JT_hingeY: {
-//      f.addRelativeRotationRad(q.elem(qIndex),0.,1.,0.);
-      f.rot.addY(q.elem(qIndex));
-    } break;
-
-    case JT_hingeZ: {
-//      f.addRelativeRotationRad(q.elem(qIndex),0.,0.,1.);
-      f.rot.addZ(q.elem(qIndex));
-    } break;
-
-    case JT_universal:{
-      f.addRelativeRotationRad(q.elem(qIndex),1.,0.,0.);
-      f.addRelativeRotationRad(q.elem(qIndex+1),0.,1.,0.);
-    } break;
-
-    case JT_quatBall:{
-      mlr::Quaternion rot;
-      rot.set(q.p+qIndex);
-      {
-          double n=rot.normalization();
-          if(n<.5 || n>2.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
-      }
-      rot.normalize();
-      rot.isZero=false;
-      f.addRelativeRotation(rot);
-    } break;
-
-    case JT_free:{
-      mlr::Transformation t;
-      t.pos.set(q.p+qIndex);
-      t.rot.set(q.p+qIndex+3);
-      {
-          double n=t.rot.normalization();
-          if(n<.5 || n>2.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
-      }
-      t.rot.normalize();
-      t.rot.isZero=false;
-      f.appendTransformation(t);
-    } break;
-
-    case JT_transX: {
-      f.addRelativeTranslation(q.elem(qIndex),0.,0.);
-    } break;
-
-    case JT_transY: {
-      f.addRelativeTranslation(0., q.elem(qIndex), 0.);
-    } break;
-
-    case JT_transZ: {
-      f.addRelativeTranslation(0., 0., q.elem(qIndex));
-    } break;
-
-    case JT_transXY: {
-      f.addRelativeTranslation(q.elem(qIndex), q.elem(qIndex+1), 0.);
-    } break;
-
-    case JT_trans3: {
-      f.addRelativeTranslation(q.elem(qIndex), q.elem(qIndex+1), q.elem(qIndex+2));
-    } break;
-
-    case JT_transXYPhi: {
-      f.addRelativeTranslation(q.elem(qIndex), q.elem(qIndex+1), 0.);
-      f.addRelativeRotationRad(q.elem(qIndex+2),0.,0.,1.);
-    } break;
-
-    case JT_phiTransXY: {
-      f.addRelativeRotationRad(q.elem(qIndex+2),0.,0.,1.);
-      f.addRelativeTranslation(q.elem(qIndex), q.elem(qIndex+1), 0.);
-    } break;
-
-    case JT_glue:
-    case JT_rigid:
-      break;
-    default: NIY;
-  }
-}
-
-void mlr::Joint::makeRigid(){
-    A.appendTransformation(Q);
-    Q.setZero();
-    type = JT_rigid;
-}
-
-void mlr::Joint::write(std::ostream& os) const {
-  os <<"type=" <<type <<' ';
-  if(!A.isZero()) os <<"from=<T " <<A <<" > ";
-  if(!B.isZero()) os <<"to=<T " <<B <<" > ";
-  if(!Q.isZero()) os <<"Q=<T " <<Q <<" > ";
-  for(Node * a: ats)
-  if(a->keys(0)!="A" && a->keys(0)!="from"
-      && a->keys(0)!="axis" //because this was subsumed in A during read
-      && a->keys(0)!="B" && a->keys(0)!="to"
-      && a->keys(0)!="Q" && a->keys(0)!="q"
-      && a->keys(0)!="type") os <<*a <<' ';
-}
-
-void mlr::Joint::read(std::istream& is) {
-  reset();
-  ats.read(is);
-  if(!is.good()) HALT("joint (" <<from->name <<' ' <<to->name <<") read read error");
-  parseAts();
-}
-
-
-#endif
-
 void mlr::Joint::read(const Graph &G){
     double d=0.;
     mlr::String str;
@@ -562,17 +370,21 @@ void mlr::Joint::read(const Graph &G){
       //new frame between: from -> f -> to
       Frame *f = new Frame(from->K);
       if(to->name) f->name <<'>' <<to->name;
+
       //disconnect from -> to
       from->outLinks.removeValue(to);
-      //connect f -> to
-      to->rel->from = f;
-      to->rel->rel = B;
-      to->rel->joint = NULL;
+
+      //connect f -> to, with old Link and no joint
       f->outLinks.append(to);
-      //connect from -> f
-      FrameRel *rel = new FrameRel(from, f);
-      rel->joint = this;
-      to = f;
+      to->link->from = f;
+      to->link->Q = B;
+      to->link->joint = NULL;
+
+      //connect from -> f, with new Link and this joint
+      this->link = new Link(from, f);
+      this->link->joint = this;
+      this->to = f;
+
       B.setZero();
     }
 
@@ -582,16 +394,22 @@ void mlr::Joint::read(const Graph &G){
       //new frame between: from -> f -> to
       Frame *f = new Frame(from->K);
       if(to->name) f->name <<'>' <<to->name;
-      FrameRel *rel = new FrameRel(from, f);
-      rel->rel = A;
+
+      //disconnect from -> to
       from->outLinks.removeValue(to);
-      from = f;
+
+      //connect from -> f with new Link and no joint
+      f->link = new Link(from, f);
+      f->link->Q = A;
+
+      //connect f -> to with old Link and this joint
       f->outLinks.append(to);
-      to->rel->from = f;
+      this->from = link->from = f;
+
       A.setZero();
     }
 
-    G.get(to->rel->rel, "Q");
+    G.get(link->Q, "Q");
 //    G.get(X, "X");
     G.get(H, "ctrl_H");
     if(G.get(d, "type")) type=(JointType)d;
@@ -607,8 +425,8 @@ void mlr::Joint::read(const Graph &G){
     }else if(G.get(q0, "q")){
       calc_Q_from_q(q0, 0);
     }else{
-        to->rel->rel.setZero();
-        q0 = calc_q_from_Q(to->rel->rel);
+        link->Q.setZero();
+        q0 = calc_q_from_Q(link->Q);
     }
 
     //axis

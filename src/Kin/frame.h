@@ -31,7 +31,7 @@ struct Frame {
   FrameL outLinks;           ///< lists of in and out joints
 
   //optional attachments to the frame
-  struct FrameRel *rel=NULL;         ///< this frame is a child or a parent frame, with fixed relative transformation
+  struct Link *link=NULL;         ///< this frame is a child or a parent frame, with fixed relative transformation
   struct Shape *shape=NULL;          ///< this frame has a (collision or visual) geometry
   struct FrameInertia *inertia=NULL; ///< this frame has inertia (is a mass)
 
@@ -41,7 +41,7 @@ struct Frame {
   ~Frame();
 
   struct Joint* joint() const;
-  uint numInputs() const{ if(rel) return 1; return 0; }
+  uint numInputs() const{ if(link) return 1; return 0; }
 
   void parseAts(const Graph &ats);
   void write(std::ostream& os) const;
@@ -49,19 +49,18 @@ struct Frame {
 
 //===========================================================================
 
-struct FrameRel{
+struct Link{
   Frame *from;
   Frame *to;
-  mlr::Transformation rel=0;
+  mlr::Transformation Q=0;
 
   struct Joint *joint=NULL;    ///< this frame is an articulated joint
 
-  FrameRel(Frame* _from, Frame* _to, FrameRel * copyRel=NULL);
-
-  ~FrameRel();
+  Link(Frame* _from, Frame* _to, Link * copyRel=NULL);
+  ~Link();
 
   void write(std::ostream& os) const{
-    os <<rel;
+    os <<Q;
   }
 };
 
@@ -78,20 +77,19 @@ struct Joint{
 
   Joint *mimic;     ///< if non-NULL, this joint's state is identical to another's
 
-  Frame* from;
-  Frame* to;
-//  Transformation A=0;     ///< transformation from parent body to joint (attachment, usually static)
-//  Transformation Q=0;     ///< transformation within the joint (usually dynamic)
-//  Transformation B=0;     ///< transformation from joint to child body (attachment, usually static)
-//  Transformation X=0;     ///< joint pose in world coordinates (same as from->X*A)
+  Link *link;
+  Frame *from; //TODO: remove; add Link *link;
+  Frame *to;   //TODO: remove
   Vector axis=0;          ///< joint axis (same as X.rot.getX() for standard hinge joints)
   Enum<JointType> type;   ///< joint type
   bool constrainToZeroVel;
 
-  Joint(Frame* _from, Frame* _to, Joint* copyJoint=NULL);
+  Joint(Link *_link, Joint* copyJoint=NULL);
+  Joint(Frame* _from, Frame* _to, Joint* copyJoint=NULL) : Joint(new Link(_from, _to), copyJoint) {}
   ~Joint();
 
   const Transformation& X() const{ return from->X; }
+  const Transformation& Q() const{ return link->Q; }
   uint qDim(){ return dim; }
   void calc_Q_from_q(const arr& q, uint n);
   arr calc_q_from_Q(const Transformation &Q) const;

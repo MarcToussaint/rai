@@ -116,8 +116,8 @@ void TEST(QuaternionKinematics){
   for(uint k=0;k<3;k++){
     mlr::Quaternion target;
     target.setRandom();
-    G.getFrameByName("ref")->rel->rel.rot = target;
-    G.getFrameByName("marker")->rel->rel.rot = target;
+    G.getFrameByName("ref")->link->Q.rot = target;
+    G.getFrameByName("marker")->link->Q.rot = target;
     mlr::Frame *endeff = G.getFrameByName("endeff");
     arr x;
     G.getJointState(x);
@@ -343,7 +343,7 @@ void TEST(FollowRedundantSequence){
   uint t,T,n=G.getJointStateDimension();
   arr x(n),y,J,invJ;
   x=.8;     //initialize with intermediate joint positions (non-singular positions)
-  mlr::Vector rel = G.getFrameByName("endeff")->rel->rel.pos; //this frame describes the relative position of the endeffector wrt. 7th body
+  mlr::Vector rel = G.getFrameByName("endeff")->link->Q.pos; //this frame describes the relative position of the endeffector wrt. 7th body
 
   //-- generate a random endeffector trajectory
   arr Z, Zt; //desired and true endeffector trajectories

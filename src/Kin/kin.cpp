@@ -159,7 +159,7 @@ void computeOptimalSSBoxes(FrameL &frames){
     s->type = mlr::ST_ssBox;
     s->size(0)=2.*x(0); s->size(1)=2.*x(1); s->size(2)=2.*x(2); s->size(3)=x(3);
     s->mesh.setSSBox(s->size(0), s->size(1), s->size(2), s->size(3));
-    s->frame->rel->rel.appendTransformation(t);
+    s->frame->link->Q.appendTransformation(t);
   }
 }
 
@@ -238,7 +238,7 @@ void mlr::KinematicWorld::copy(const mlr::KinematicWorld& G, bool referenceMeshe
 #if 1
   listCopy(proxies, G.proxies);
   for(Frame *f:G.frames) new Frame(*this, f);
-  for(Frame *f:G.frames) if(f->rel) new FrameRel(frames(f->rel->from->ID), frames(f->ID), f->rel);
+  for(Frame *f:G.frames) if(f->link) new Link(frames(f->link->from->ID), frames(f->ID), f->link);
 //  for(Shape *s:G.shapes){
 ////    if(referenceMeshesAndSwiftOnCopy && !s->mesh.Vn.N) s->mesh.computeNormals(); // the copy references these normals -> if they're not precomputed, you can never display the copy
 //    new Shape((s->frame?bodies(s->frame->ID):NULL), s, referenceMeshesAndSwiftOnCopy);
@@ -319,7 +319,7 @@ void mlr::KinematicWorld::calc_fwdPropagateFrames() {
   }
 #else
   for(Frame *f : fwdActiveSet){
-    FrameRel *rel = f->rel;
+    Link *rel = f->link;
     if(rel){
       Joint *j = rel->joint;
       if(j){
@@ -335,12 +335,12 @@ void mlr::KinematicWorld::calc_fwdPropagateFrames() {
         if(j->type==JT_phiTransXY)  j->axis = f->X.rot.getZ();
 
 //        j->X = f->X;
-        f->X.appendTransformation(rel->rel);
-        CHECK_EQ(j->to->X.pos.x, j->to->X.pos.x, "NAN transformation:" <<j->from->X <<'*' <<rel->rel);
+        f->X.appendTransformation(rel->Q);
+        CHECK_EQ(j->to->X.pos.x, j->to->X.pos.x, "NAN transformation:" <<j->from->X <<'*' <<rel->Q);
 //        if(!isLinkTree) f->X.appendTransformation(j->B);
       }else{
         f->X = rel->from->X;
-        f->X.appendTransformation(rel->rel);
+        f->X.appendTransformation(rel->Q);
       }
     }
   }
@@ -353,9 +353,9 @@ arr mlr::KinematicWorld::calc_fwdPropagateVelocities(){
   mlr::Transformation f;
   Vector linVel, angVel, q_vel, q_angvel;
   for(Frame *f : fwdActiveSet){ //this has no bailout for loopy graphs!
-    if(f->rel){
-      Frame *from = f->rel->from;
-      Joint *j = f->rel->joint;
+    if(f->link){
+      Frame *from = f->link->from;
+      Joint *j = f->link->joint;
       if(j){
         linVel = vel(from->ID, 0, {});
         angVel = vel(from->ID, 1, {});
@@ -402,11 +402,11 @@ arr mlr::KinematicWorld::calc_fwdPropagateVelocities(){
     frames A & B of each edge, this calculates the dynamic (relative) joint
     frame X for each edge (which includes joint transformation and errors) */
 void mlr::KinematicWorld::calc_Q_from_BodyFrames() {
-  for(Frame *f:frames) if(f->rel){
+  for(Frame *f:frames) if(f->link){
 //    mlr::Transformation A(j->from->X), B(j->to->X);
 //    A.appendTransformation(j->A);
 //    B.appendInvTransformation(j->B);
-    f->rel->rel.setDifference(f->rel->from->X, f->rel->to->X);
+    f->link->Q.setDifference(f->link->from->X, f->link->to->X);
   }
 }
 
@@ -565,7 +565,7 @@ void mlr::KinematicWorld::calc_q_from_Q() {
   for(Frame *f: frames) if((j=f->joint())){
     if(j->mimic) continue; //don't count dependent joints
     CHECK_EQ(j->qIndex,n,"joint indexing is inconsistent");
-    arr joint_q = j->calc_q_from_Q(f->rel->rel);
+    arr joint_q = j->calc_q_from_Q(f->link->Q);
     //TODO is there a better way?
     for(uint i=0; i<joint_q.N; ++i)
       q(n+i) = joint_q(i);
@@ -629,7 +629,7 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *b, const mlr::Vec
   uint N=getJointStateDimension();
   J.resize(3, N).setZero();
   while(b) { //loop backward down the kinematic tree
-    if(!b->rel) break; //frame has no inlink -> done
+    if(!b->link) break; //frame has no inlink -> done
     Joint *j=b->joint();
     if(j) {
       uint j_idx=j->qIndex;
@@ -655,7 +655,7 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *b, const mlr::Vec
           if(j->mimic) NIY;
           arr R = j->X().rot.getArr();
           J.setMatrixBlock(R.sub(0,-1,0,1), 0, j_idx);
-          mlr::Vector tmp = j->axis ^ (pos_world-(j->X().pos + j->X().rot*b->rel->rel.pos));
+          mlr::Vector tmp = j->axis ^ (pos_world-(j->X().pos + j->X().rot*b->link->Q.pos));
           J(0, j_idx+2) += tmp.x;
           J(1, j_idx+2) += tmp.y;
           J(2, j_idx+2) += tmp.z;
@@ -666,7 +666,7 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *b, const mlr::Vec
           J(0, j_idx) += tmp.x;
           J(1, j_idx) += tmp.y;
           J(2, j_idx) += tmp.z;
-          arr R = (j->X().rot*b->rel->rel.rot).getArr();
+          arr R = (j->X().rot*b->link->Q.rot).getArr();
           J.setMatrixBlock(R.sub(0,-1,0,1), 0, j_idx+1);
         }
         if(j->type==JT_trans3 || j->type==JT_free) {
@@ -676,14 +676,14 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *b, const mlr::Vec
         }
         if(j->type==JT_quatBall || j->type==JT_free) {
           uint offset = (j->type==JT_free)?3:0;
-          arr Jrot = j->X().rot.getArr() * b->rel->rel.rot.getJacobian(); //transform w-vectors into world coordinate
-          Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(j->X().pos+j->X().rot*b->rel->rel.pos)) ); //cross-product of all 4 w-vectors with lever
+          arr Jrot = j->X().rot.getArr() * b->link->Q.rot.getJacobian(); //transform w-vectors into world coordinate
+          Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(j->X().pos+j->X().rot*b->link->Q.pos)) ); //cross-product of all 4 w-vectors with lever
           Jrot /= sqrt(sumOfSqr( q({j->qIndex+offset, j->qIndex+offset+3}) )); //account for the potential non-normalization of q
           for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
         }
       }
     }
-    b = b->rel->from;
+    b = b->link->from;
   }
 }
 
@@ -835,7 +835,7 @@ void mlr::KinematicWorld::kinematicsQuat(arr& y, arr& J, Frame *b) const { //TOD
 void mlr::KinematicWorld::axesMatrix(arr& J, Frame *b) const {
   uint N = getJointStateDimension();
   J.resize(3, N).setZero();
-  while(b->rel) { //loop backward down the kinematic tree
+  while(b->link) { //loop backward down the kinematic tree
     mlr::Joint *j;
     if((j=b->joint())){
       uint j_idx=j->qIndex;
@@ -849,14 +849,14 @@ void mlr::KinematicWorld::axesMatrix(arr& J, Frame *b) const {
         }
         if(j->type==JT_quatBall || j->type==JT_free) {
           uint offset = (j->type==JT_free)?3:0;
-          arr Jrot = j->X().rot.getArr() * b->rel->rel.rot.getJacobian(); //transform w-vectors into world coordinate
+          arr Jrot = j->X().rot.getArr() * b->link->Q.rot.getJacobian(); //transform w-vectors into world coordinate
           Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset,j->qIndex+offset+3}))); //account for the potential non-normalization of q
           for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
         }
         //all other joints: J=0 !!
       }
     }
-    b = b->rel->from;
+    b = b->link->from;
   }
 }
 
@@ -958,7 +958,7 @@ void mlr::KinematicWorld::inertia(arr& M) {
 }
 
 void mlr::KinematicWorld::equationOfMotion(arr& M, arr& F, bool gravity) {
-  mlr::LinkTree tree; //TODO: HACK!! Danny: Why was there a static? This fails if there are more than 2 worlds
+  mlr::F_LinkTree tree; //TODO: HACK!! Danny: Why was there a static? This fails if there are more than 2 worlds
   if(!tree.N) GraphToTree(tree, *this);
   else updateGraphToTree(tree, *this);
   if(gravity){
@@ -972,7 +972,7 @@ void mlr::KinematicWorld::equationOfMotion(arr& M, arr& F, bool gravity) {
 /** @brief return the joint accelerations \f$\ddot q\f$ given the
   joint torques \f$\tau\f$ (computed via Featherstone's Articulated Body Algorithm in O(n)) */
 void mlr::KinematicWorld::fwdDynamics(arr& qdd, const arr& qd, const arr& tau) {
-  static mlr::LinkTree tree;
+  static mlr::F_LinkTree tree;
   if(!tree.N) GraphToTree(tree, *this);
   else updateGraphToTree(tree, *this);
   //cout <<tree <<endl;
@@ -984,7 +984,7 @@ void mlr::KinematicWorld::fwdDynamics(arr& qdd, const arr& qd, const arr& tau) {
 /** @brief return the necessary joint torques \f$\tau\f$ to achieve joint accelerations
   \f$\ddot q\f$ (computed via the Recursive Newton-Euler Algorithm in O(n)) */
 void mlr::KinematicWorld::inverseDynamics(arr& tau, const arr& qd, const arr& qdd) {
-  static mlr::LinkTree tree;
+  static mlr::F_LinkTree tree;
   if(!tree.N) GraphToTree(tree, *this);
   else updateGraphToTree(tree, *this);
   mlr::invDynamics(tau, tree, qd, qdd);
@@ -1194,15 +1194,15 @@ void mlr::KinematicWorld::write(std::ostream& os) const {
     s->write(os);  os <<" }\n";
   }
   os <<std::endl;
-  for(Frame *f: fwdActiveSet) if(f->rel) {
-    if(f->rel->joint){
+  for(Frame *f: fwdActiveSet) if(f->link) {
+    if(f->link->joint){
       os <<"joint ";
       os <<"(" <<f->joint()->from->name <<' ' <<f->name <<"){ ";
       f->joint()->write(os);  os <<" }\n";
     }else{
       os <<"rel ";
-      os <<"(" <<f->rel->from->name <<' ' <<f->name <<"){ ";
-      f->rel->write(os);  os <<" }\n";
+      os <<"(" <<f->link->from->name <<' ' <<f->name <<"){ ";
+      f->link->write(os);  os <<" }\n";
     }
   }
 }
@@ -1248,8 +1248,8 @@ void mlr::KinematicWorld::init(const Graph& G) {
       }else{ //create a new frame
         Frame* f = new Frame(*this);
         if(n->keys.N>1) f->name=n->keys.last();
-        f->rel = new FrameRel(b, f);
-        if(hasRel) n->graph().get(f->rel->rel, "rel");
+        f->link = new Link(b, f);
+        if(hasRel) n->graph().get(f->link->Q, "rel");
         s = new Shape(f);
       }
     }else{
@@ -1776,7 +1776,7 @@ bool mlr::KinematicWorld::checkConsistency(){
     CHECK(&b->K, "");
     CHECK(&b->K==this,"");
     CHECK_EQ(b, frames(b->ID), "");
-    for(Frame *f: b->outLinks) CHECK_EQ(f->rel->from, b, "");
+    for(Frame *f: b->outLinks) CHECK_EQ(f->link->from, b, "");
     if(b->joint())  CHECK_EQ(b->joint()->to, b, "");
     if(b->shape) CHECK_EQ(b->shape->frame, b, "");
     b->ats.checkConsistency();
@@ -1798,10 +1798,10 @@ bool mlr::KinematicWorld::checkConsistency(){
   intA level = consts<int>(0, frames.N);
   //compute levels
   for(Frame *f: fwdActiveSet)
-    if(f->rel) level(f->ID) = level(f->rel->from->ID)+1;
+    if(f->link) level(f->ID) = level(f->link->from->ID)+1;
 
-  for(Frame *f: frames) if(f->rel){
-      CHECK(level(f->rel->from->ID) < level(f->ID), "joint does not go forward");
+  for(Frame *f: frames) if(f->link){
+      CHECK(level(f->link->from->ID) < level(f->ID), "joint does not go forward");
   }
   for(Frame *b: frames){
     if(b->joint())  CHECK(level(b->joint()->from->ID) < level(b->ID), "topsort failed");
@@ -1902,7 +1902,7 @@ void mlr::KinematicWorld::glDraw(OpenGL& gl) {
     glRotatef(90, 0, 1, 0);  glDrawCylinder(.05*s, .3*s);  glRotatef(-90, 0, 1, 0);
 
     //joint frame B
-    f.appendTransformation(fr->rel->rel);
+    f.appendTransformation(fr->link->Q);
     f.getAffineMatrixGL(GLmatrix);
     glLoadMatrixd(GLmatrix);
     glDrawAxes(s);
@@ -3061,7 +3061,7 @@ void FrameToMatrix(arr &X, const mlr::Transformation& f) {
   //cout <<"\nz=" <<z <<"\nr=" <<r <<"\nR=" <<R <<"\nX=" <<X <<endl;
 }
 
-void mlr::Link::setFeatherstones() {
+void mlr::F_Link::setFeatherstones() {
   switch(type) {
     case -1:     CHECK_EQ(parent,-1, ""); _h.clear();  break;
     case JT_rigid:
@@ -3082,7 +3082,7 @@ void mlr::Link::setFeatherstones() {
   updateFeatherstones();
 }
 
-void mlr::Link::updateFeatherstones() {
+void mlr::F_Link::updateFeatherstones() {
   FrameToMatrix(_A, A);
   FrameToMatrix(_Q, Q);
   
@@ -3096,14 +3096,14 @@ void mlr::Link::updateFeatherstones() {
   _f(3)=fo.x;  _f(4)=fo.y;  _f(5)=fo.z;
 }
 
-void GraphToTree(mlr::Array<mlr::Link>& tree, const mlr::KinematicWorld& C) {
+void GraphToTree(mlr::Array<mlr::F_Link>& tree, const mlr::KinematicWorld& C) {
   tree.resize(C.frames.N);
   
-  for(mlr::Link& link:tree){ link.parent=-1; link.qIndex=-1; }
+  for(mlr::F_Link& link:tree){ link.parent=-1; link.qIndex=-1; }
 
   for(mlr::Frame* body : C.frames) {
-    mlr::Link& link=tree(body->ID);
-    if(body->rel) { //is not a root
+    mlr::F_Link& link=tree(body->ID);
+    if(body->link) { //is not a root
       mlr::Joint *j;
       if((j=body->joint())){
       
@@ -3123,9 +3123,9 @@ void GraphToTree(mlr::Array<mlr::Link>& tree, const mlr::KinematicWorld& C) {
 //        link.A.appendTransformation(j->A);
       
         link.X = body->X;
-        link.Q = body->rel->rel;
+        link.Q = body->link->Q;
       }else{
-        mlr::FrameRel *rel = body->rel;
+        mlr::Link *rel = body->link;
         link.type   = mlr::JT_rigid;
         link.qIndex = -1;
         link.parent = rel->from->ID;
@@ -3136,7 +3136,7 @@ void GraphToTree(mlr::Array<mlr::Link>& tree, const mlr::KinematicWorld& C) {
 //        if(rel->from->hasJoint()) link.A=rel->from->joint()->B;
 //        else
           link.A.setZero();
-        link.A.appendTransformation(rel->rel);
+        link.A.appendTransformation(rel->Q);
         link.X = body->X;
         link.Q.setZero();
       }
@@ -3162,15 +3162,15 @@ void GraphToTree(mlr::Array<mlr::Link>& tree, const mlr::KinematicWorld& C) {
     }
   }
 
-  for(mlr::Link& link:tree) link.setFeatherstones();
+  for(mlr::F_Link& link:tree) link.setFeatherstones();
 }
 
-void updateGraphToTree(mlr::Array<mlr::Link>& tree, const mlr::KinematicWorld& C) {
+void updateGraphToTree(mlr::Array<mlr::F_Link>& tree, const mlr::KinematicWorld& C) {
   CHECK_EQ(tree.N,C.frames.N, "");
   
   for(mlr::Frame *f: C.frames) {
     uint i = f->ID;
-    if(f->rel) tree(i).Q = f->rel->rel;
+    if(f->link) tree(i).Q = f->link->Q;
     tree(i).X = f->X;
     tree(i).X = f->X;
     if(f->inertia){
@@ -3181,7 +3181,7 @@ void updateGraphToTree(mlr::Array<mlr::Link>& tree, const mlr::KinematicWorld& C
       tree(i).torque.setZero();
     }
   }
-  for(mlr::Link& l:tree) l.updateFeatherstones();
+  for(mlr::F_Link& l:tree) l.updateFeatherstones();
 }
 
 
@@ -3542,7 +3542,7 @@ void Featherstone::fwdDynamics_old(arr& qdd,
 /* Articulated Body Dynamics - exactly as in my `simulationSoftware notes',
    following the notation of Featherstone's recent short survey paper */
 void mlr::fwdDynamics_aba_nD(arr& qdd,
-                             const mlr::LinkTree& tree,
+                             const mlr::F_LinkTree& tree,
                              const arr& qd,
                              const arr& tau) {
   int par;
@@ -3615,7 +3615,7 @@ void mlr::fwdDynamics_aba_nD(arr& qdd,
 //===========================================================================
 
 void mlr::fwdDynamics_aba_1D(arr& qdd,
-                             const mlr::LinkTree& tree,
+                             const mlr::F_LinkTree& tree,
                              const arr& qd,
                              const arr& tau) {
   int par;
@@ -3680,7 +3680,7 @@ void mlr::fwdDynamics_aba_1D(arr& qdd,
 //===========================================================================
 
 void mlr::invDynamics(arr& tau,
-                      const mlr::LinkTree& tree,
+                      const mlr::F_LinkTree& tree,
                       const arr& qd,
                       const arr& qdd) {
   int par;
@@ -3731,7 +3731,7 @@ void mlr::invDynamics(arr& tau,
 //===========================================================================
 
 void mlr::equationOfMotion(arr& H, arr& C,
-                           const mlr::LinkTree& tree,
+                           const mlr::F_LinkTree& tree,
                            const arr& qd) {
                            
   /*function  [H, C] = HandC( model, q, qd, f_ext, grav_accn )
@@ -3836,7 +3836,7 @@ void mlr::equationOfMotion(arr& H, arr& C,
 //===========================================================================
 
 void mlr::fwdDynamics_MF(arr& qdd,
-                         const mlr::LinkTree& tree,
+                         const mlr::F_LinkTree& tree,
                          const arr& qd,
                          const arr& u) {
                          
@@ -3849,17 +3849,17 @@ void mlr::fwdDynamics_MF(arr& qdd,
 }
 
 // #else ///MLR_FEATHERSTONE
-// void GraphToTree(mlr::LinkTree& tree, const mlr::KinematicWorld& C) { NIY; }
-// void updateGraphToTree(mlr::LinkTree& tree, const mlr::KinematicWorld& C) { NIY; }
+// void GraphToTree(mlr::F_LinkTree& tree, const mlr::KinematicWorld& C) { NIY; }
+// void updateGraphToTree(mlr::F_LinkTree& tree, const mlr::KinematicWorld& C) { NIY; }
 // void Featherstone::equationOfMotion(arr& H, arr& C,
-//                                     const mlr::LinkTree& tree,
+//                                     const mlr::F_LinkTree& tree,
 //                                     const arr& qd) { NIY; }
 // void Featherstone::fwdDynamics_MF(arr& qdd,
-//                                   const mlr::LinkTree& tree,
+//                                   const mlr::F_LinkTree& tree,
 //                                   const arr& qd,
 //                                   const arr& tau) { NIY; }
 // void Featherstone::invDynamics(arr& tau,
-//                                const mlr::LinkTree& tree,
+//                                const mlr::F_LinkTree& tree,
 //                                const arr& qd,
 //                                const arr& qdd) { NIY; }
 // #endif
