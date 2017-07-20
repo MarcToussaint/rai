@@ -132,7 +132,7 @@ mlr::Joint *mlr::Frame::joint() const{
 }
 
 mlr::Joint::Joint(Link *_link, Joint *copyJoint)
-  : qIndex(UINT_MAX), q0(0.), H(1.), mimic(NULL), link(_link), from(_link->from), to(_link->to), constrainToZeroVel(false) {
+  : qIndex(UINT_MAX), q0(0.), H(1.), mimic(NULL), link(_link), constrainToZeroVel(false) {
   CHECK(!link->joint, "the Link already has a Joint");
   link -> joint = this;
 //  if(!to->link){
@@ -145,7 +145,6 @@ mlr::Joint::Joint(Link *_link, Joint *copyJoint)
 //      to->link->joint = this;
 //    }
 //  }
-  CHECK_EQ(to->joint()->to, to, "");
   if(copyJoint){
       qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l); constrainToZeroVel=copyJoint->constrainToZeroVel;
       type=copyJoint->type; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H;
@@ -368,6 +367,8 @@ void mlr::Joint::read(const Graph &G){
     G.get(B, "to");
     if(!B.isZero()){
       //new frame between: from -> f -> to
+      Frame *to = link->to;
+      Frame *from = link->from;
       Frame *f = new Frame(from->K);
       if(to->name) f->name <<'>' <<to->name;
 
@@ -383,7 +384,6 @@ void mlr::Joint::read(const Graph &G){
       //connect from -> f, with new Link and this joint
       this->link = new Link(from, f);
       this->link->joint = this;
-      this->to = f;
 
       B.setZero();
     }
@@ -392,6 +392,8 @@ void mlr::Joint::read(const Graph &G){
     G.get(A, "from");
     if(!A.isZero()){
       //new frame between: from -> f -> to
+      Frame *to = link->to;
+      Frame *from = link->from;
       Frame *f = new Frame(from->K);
       if(to->name) f->name <<'>' <<to->name;
 
@@ -404,7 +406,7 @@ void mlr::Joint::read(const Graph &G){
 
       //connect f -> to with old Link and this joint
       f->outLinks.append(to);
-      this->from = link->from = f;
+      link->from = f;
 
       A.setZero();
     }

@@ -323,10 +323,10 @@ void mlr::KinematicWorld::calc_fwdPropagateFrames() {
     if(rel){
       Joint *j = rel->joint;
       if(j){
-        CHECK_EQ(j->from, rel->from, "");
-        CHECK_EQ(j->to, rel->to, "");
-        CHECK_EQ(j->to, f, "");
-        f->X = j->from->X;
+        CHECK_EQ(j->from(), rel->from, "");
+        CHECK_EQ(j->to(), rel->to, "");
+        CHECK_EQ(j->to(), f, "");
+        f->X = j->from()->X;
 //        f->X.appendTransformation(j->A);
         if(j->type==JT_hingeX || j->type==JT_transX)  j->axis = f->X.rot.getX();
         if(j->type==JT_hingeY || j->type==JT_transY)  j->axis = f->X.rot.getY();
@@ -336,7 +336,7 @@ void mlr::KinematicWorld::calc_fwdPropagateFrames() {
 
 //        j->X = f->X;
         f->X.appendTransformation(rel->Q);
-        CHECK_EQ(j->to->X.pos.x, j->to->X.pos.x, "NAN transformation:" <<j->from->X <<'*' <<rel->Q);
+        CHECK_EQ(j->to()->X.pos.x, j->to()->X.pos.x, "NAN transformation:" <<j->from()->X <<'*' <<rel->Q);
 //        if(!isLinkTree) f->X.appendTransformation(j->B);
       }else{
         f->X = rel->from->X;
@@ -432,7 +432,7 @@ arr mlr::KinematicWorld::naturalQmetric(double power) const {
   Joint *j;
   for(Frame *f: frames) if((j=f->joint())){
     for(uint i=0; i<j->qDim(); i++) {
-      Wdiag(j->qIndex+i) = ::pow(BM(j->to->ID), power);
+      Wdiag(j->qIndex+i) = ::pow(BM(j->to()->ID), power);
     }
   }
   return Wdiag;
@@ -442,7 +442,7 @@ arr mlr::KinematicWorld::naturalQmetric(double power) const {
 /** @brief revert the topological orientation of a joint (edge),
    e.g., when choosing another body as root of a tree */
 void mlr::KinematicWorld::revertJoint(mlr::Joint *j) {
-  cout <<"reverting edge (" <<j->from->name <<' ' <<j->to->name <<")" <<endl;
+  cout <<"reverting edge (" <<j->from()->name <<' ' <<j->to()->name <<")" <<endl;
   NIY;
 #if 0
   //revert
@@ -482,7 +482,7 @@ void mlr::KinematicWorld::reconfigureRoot(Frame *root) {
       level((*m)->ID)=i;
       Joint *j;
       if((j = (*m)->joint())){ //for_list(Joint,  e,  (*m)->inLinks) {
-        if(!level(j->from->ID)) revertJoint(j);
+        if(!level(j->from()->ID)) revertJoint(j);
       }
       for(Frame *f: (*m)->outLinks) list2.append(f);
     }
@@ -785,10 +785,10 @@ void mlr::KinematicWorld::hessianPos(arr& H, Frame *b, mlr::Vector *rel) const {
         }
         else NIY;
 
-        j2=j2->from->joint();
+        j2=j2->from()->joint();
         if(!j2) break;
       }
-      j1=j1->from->joint();
+      j1=j1->from()->joint();
       if(!j1) break;
     }
   }
@@ -925,7 +925,7 @@ void mlr::KinematicWorld::inertia(arr& M) {
     while(j1) {
       j1_idx=j1->qIndex;
       
-      Xi = j1->from->X;
+      Xi = j1->from()->X;
 //      Xi.appendTransformation(j1->A);
       ti = Xi.rot.getX();
       
@@ -935,7 +935,7 @@ void mlr::KinematicWorld::inertia(arr& M) {
       while(j2) {
         j2_idx=j2->qIndex;
         
-        Xj = j2->from->X;
+        Xj = j2->from()->X;
 //        Xj.appendTransformation(j2->A);
         tj = Xj.rot.getX();
         
@@ -946,10 +946,10 @@ void mlr::KinematicWorld::inertia(arr& M) {
         
         M(j1_idx, j2_idx) += tmp;
         
-        j2=j2->from->joint();
+        j2=j2->from()->joint();
         if(!j2) break;
       }
-      j1=j1->from->joint();
+      j1=j1->from()->joint();
       if(!j1) break;
     }
   }
@@ -1029,7 +1029,7 @@ mlr::Frame* mlr::KinematicWorld::getFrameByName(const char* name, bool warnIfNot
 
 /// find joint connecting two bodies
 mlr::Joint* mlr::KinematicWorld::getJointByBodies(const Frame* from, const Frame* to) const {
-  if(to->joint() && to->joint()->from==from) return to->joint();
+  if(to->joint() && to->joint()->from()==from) return to->joint();
   return NULL;
 }
 
@@ -1197,7 +1197,7 @@ void mlr::KinematicWorld::write(std::ostream& os) const {
   for(Frame *f: fwdActiveSet) if(f->link) {
     if(f->link->joint){
       os <<"joint ";
-      os <<"(" <<f->joint()->from->name <<' ' <<f->name <<"){ ";
+      os <<"(" <<f->joint()->from()->name <<' ' <<f->name <<"){ ";
       f->joint()->write(os);  os <<" }\n";
     }else{
       os <<"rel ";
@@ -1777,18 +1777,18 @@ bool mlr::KinematicWorld::checkConsistency(){
     CHECK(&b->K==this,"");
     CHECK_EQ(b, frames(b->ID), "");
     for(Frame *f: b->outLinks) CHECK_EQ(f->link->from, b, "");
-    if(b->joint())  CHECK_EQ(b->joint()->to, b, "");
+    if(b->joint())  CHECK_EQ(b->joint()->to(), b, "");
     if(b->shape) CHECK_EQ(b->shape->frame, b, "");
     b->ats.checkConsistency();
   }
 
   Joint *j;
   for(Frame *f: frames) if((j=f->joint())){
-    CHECK(j->from && j->to, "");
+    CHECK(j->from() && j->to(), "");
 //    CHECK(&j->world==this,"");
 //    CHECK_EQ(j, joints(j->ID), "");
-    CHECK(j->from->outLinks.findValue(j->to)>=0,"");
-    CHECK_EQ(j->to->joint(), j,"");
+    CHECK(j->from()->outLinks.findValue(j->to())>=0,"");
+    CHECK_EQ(j->to()->joint(), j,"");
     CHECK_GE(j->type.x, 0, "");
     CHECK_LE(j->type.x, JT_free, "");
 //    j->ats.checkConsistency();
@@ -1804,7 +1804,7 @@ bool mlr::KinematicWorld::checkConsistency(){
       CHECK(level(f->link->from->ID) < level(f->ID), "joint does not go forward");
   }
   for(Frame *b: frames){
-    if(b->joint())  CHECK(level(b->joint()->from->ID) < level(b->ID), "topsort failed");
+    if(b->joint())  CHECK(level(b->joint()->from()->ID) < level(b->ID), "topsort failed");
   }
 
   for(Frame *f: frames) if(f->shape){
@@ -1963,7 +1963,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     CHECK(to,"");
     mlr::Frame *b = to;
     if(b->joint()){
-      from = b->joint()->from;
+      from = b->joint()->from();
     }else{
       return;
     }
@@ -2179,7 +2179,7 @@ void transferQbetweenTwoWorlds(arr& qto, const arr& qfrom, const mlr::KinematicW
   match = -1;
   mlr::Joint* jfrom;
   for(mlr::Frame* f: from.frames) if((jfrom=f->joint())){
-    mlr::Joint* jto = to.getJointByBodyNames(jfrom->from->name, jfrom->to->name);
+    mlr::Joint* jto = to.getJointByBodyNames(jfrom->from()->name, jfrom->to()->name);
     if(!jto || !jfrom->qDim() || !jto->qDim()) continue;
     CHECK_EQ(jfrom->qDim(), jto->qDim(), "joints must have same dimensionality");
     for(uint i=0; i<jfrom->qDim(); i++){
@@ -2651,7 +2651,7 @@ struct EditConfigurationClickCall:OpenGL::GLClickCall {
     if((i&3)==2) {
       mlr::Joint *j = ors->frames(i>>2)->joint();
       gl.text
-          <<"edge selection: " <<j->from->name <<' ' <<j->to->name
+          <<"edge selection: " <<j->from()->name <<' ' <<j->to()->name
 //         <<"\nA=" <<j->A <<"\nQ=" <<j->Q <<"\nB=" <<j->B
          <<endl;
 //      listWrite(j->ats, gl.text, "\n");
@@ -2684,7 +2684,7 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
       }
       if(j) {
         gl.text
-            <<"edge selection: " <<j->from->name <<' ' <<j->to->name
+            <<"edge selection: " <<j->from()->name <<' ' <<j->to()->name
 //           <<"\nA=" <<j->A <<"\nQ=" <<j->Q <<"\nB=" <<j->B
           <<endl;
 //        listWrite(j->ats, gl.text, "\n");
@@ -2733,7 +2733,7 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
         movingBody=s;
       }
       if(j) {
-        cout <<"selected joint " <<j->to->ID <<" connecting " <<j->from->name <<"--" <<j->to->name <<endl;
+        cout <<"selected joint " <<j->to()->ID <<" connecting " <<j->from()->name <<"--" <<j->to()->name <<endl;
       }
       return true;
     }else switch(gl.pressedkey) {
@@ -3109,7 +3109,7 @@ void GraphToTree(mlr::Array<mlr::F_Link>& tree, const mlr::KinematicWorld& C) {
       
         link.type   = j->type;
         link.qIndex = j->qIndex;
-        link.parent = j->from->ID;
+        link.parent = j->from()->ID;
 
 //        if(body->inertia)
 //          link.com = j->B*body->inertia->com;

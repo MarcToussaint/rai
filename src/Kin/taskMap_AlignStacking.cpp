@@ -32,7 +32,7 @@ void TaskMap_AlignStacking::phi(arr& y, arr& J, const mlr::KinematicWorld& G, in
   mlr::Joint *j=b->joint();
   CHECK(j,"has no support??");
 
-  mlr::Frame *b_support = j->from;
+  mlr::Frame *b_support = j->from();
 
 #if 0//if there were multiple supporters
   uint n=G.getJointStateDimension();

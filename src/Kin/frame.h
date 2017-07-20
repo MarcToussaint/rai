@@ -78,8 +78,6 @@ struct Joint{
   Joint *mimic;     ///< if non-NULL, this joint's state is identical to another's
 
   Link *link;
-  Frame *from; //TODO: remove; add Link *link;
-  Frame *to;   //TODO: remove
   Vector axis=0;          ///< joint axis (same as X.rot.getX() for standard hinge joints)
   Enum<JointType> type;   ///< joint type
   bool constrainToZeroVel;
@@ -88,8 +86,11 @@ struct Joint{
   Joint(Frame* _from, Frame* _to, Joint* copyJoint=NULL) : Joint(new Link(_from, _to), copyJoint) {}
   ~Joint();
 
-  const Transformation& X() const{ return from->X; }
+  const Transformation& X() const{ return link->from->X; }
   const Transformation& Q() const{ return link->Q; }
+  Frame *from() const{ return link->from; }
+  Frame *to() const{ return link->to; }
+
   uint qDim(){ return dim; }
   void calc_Q_from_q(const arr& q, uint n);
   arr calc_q_from_Q(const Transformation &Q) const;

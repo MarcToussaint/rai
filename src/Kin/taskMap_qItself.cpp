@@ -135,7 +135,7 @@ void TaskMap_qItself::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
       mlr::Joint *j = f->joint();
       if(j){
         for(uint i=0;i<=k;i++){
-          mlr::Joint *jmatch = G(offset+i)->getJointByBodyNames(j->from->name, j->to->name);
+          mlr::Joint *jmatch = G(offset+i)->getJointByBodyNames(j->from()->name, j->to()->name);
           if(jmatch && j->type!=jmatch->type) jmatch=NULL;
           if(!jmatch){ useIt(j_idx) = false; break; }
           jointMatchLists(i, j_idx) = jmatch;
@@ -240,7 +240,7 @@ void TaskMap_qZeroVels::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
 
   mlr::Joint *j;
   for(mlr::Frame *f:G.last()->frames) if((j=f->joint()) && j->constrainToZeroVel){
-    mlr::Joint *jmatch = G.last(-2)->getJointByBodyIndices(j->from->ID, j->to->ID);
+    mlr::Joint *jmatch = G.last(-2)->getJointByBodyIndices(j->from()->ID, j->to()->ID);
     if(jmatch && j->type!=jmatch->type) jmatch=NULL;
     if(jmatch){
       for(uint i=0;i<j->qDim();i++){
@@ -298,7 +298,7 @@ mlr::Array<mlr::Joint*> getMatchingJoints(const WorldL& G, bool zeroVelJointsOnl
     matchIsGood=true;
 
     for(uint k=0;k<G.N-1;k++){ //go through other configs
-      mlr::Joint *jmatch = G(k)->getJointByBodyIndices(j->from->ID, j->to->ID);
+      mlr::Joint *jmatch = G(k)->getJointByBodyIndices(j->from()->ID, j->to()->ID);
       if(!jmatch || j->type!=jmatch->type || j->constrainToZeroVel!=jmatch->constrainToZeroVel){
         matchIsGood=false;
         break;
@@ -322,14 +322,14 @@ mlr::Array<mlr::Joint*> getSwitchedJoints(const mlr::KinematicWorld& G0, const m
 
   mlr::Joint *j1;
   for(mlr::Frame *f: G1.frames) if((j1=f->joint())){
-    if(j1->from->ID>=G0.frames.N || j1->to->ID>=G0.frames.N){
+    if(j1->from()->ID>=G0.frames.N || j1->to()->ID>=G0.frames.N){
       switchedJoints.append({NULL,j1});
       continue;
     }
-    mlr::Joint *j0 = G0.getJointByBodyIndices(j1->from->ID, j1->to->ID);
+    mlr::Joint *j0 = G0.getJointByBodyIndices(j1->from()->ID, j1->to()->ID);
     if(!j0 || j0->type!=j1->type){
-      if(G0.frames(j1->to->ID)->joint()){ //out-body had (in G0) one inlink...
-        j0 = G0.frames(j1->to->ID)->joint();
+      if(G0.frames(j1->to()->ID)->joint()){ //out-body had (in G0) one inlink...
+        j0 = G0.frames(j1->to()->ID)->joint();
       }
       switchedJoints.append({j0,j1});
 //      }
@@ -340,8 +340,8 @@ mlr::Array<mlr::Joint*> getSwitchedJoints(const mlr::KinematicWorld& G0, const m
   if(verbose){
     for(uint i=0;i<switchedJoints.d0;i++){
       cout <<"Switch: "
-          <<switchedJoints(i,0)->from->name <<'-' <<switchedJoints(i,0)->to->name
-         <<" -> " <<switchedJoints(i,1)->from->name <<'-' <<switchedJoints(i,1)->to->name <<endl;
+          <<switchedJoints(i,0)->from()->name <<'-' <<switchedJoints(i,0)->to()->name
+         <<" -> " <<switchedJoints(i,1)->from()->name <<'-' <<switchedJoints(i,1)->to()->name <<endl;
     }
   }
 
@@ -360,7 +360,7 @@ mlr::Array<mlr::Frame*> getSwitchedBodies(const mlr::KinematicWorld& G0, const m
     mlr::Joint *j1 = b1->joint();
     if(!j0 != !j1){ switchedBodies.append({b0,b1}); continue; }
     if(j0){
-      if(j0->type!=j1->type || j0->from->ID!=j1->from->ID){ //different joint type; or attached to different parent
+      if(j0->type!=j1->type || j0->from()->ID!=j1->from()->ID){ //different joint type; or attached to different parent
         switchedBodies.append({b0,b1});
       }
     }
