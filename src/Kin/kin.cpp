@@ -323,10 +323,7 @@ void mlr::KinematicWorld::calc_fwdPropagateFrames() {
     if(rel){
       Joint *j = rel->joint;
       if(j){
-        CHECK_EQ(j->from(), rel->from, "");
-        CHECK_EQ(j->to(), rel->to, "");
-        CHECK_EQ(j->to(), f, "");
-        f->X = j->from()->X;
+        f->X = rel->from->X;
 //        f->X.appendTransformation(j->A);
         if(j->type==JT_hingeX || j->type==JT_transX)  j->axis = f->X.rot.getX();
         if(j->type==JT_hingeY || j->type==JT_transY)  j->axis = f->X.rot.getY();
@@ -1029,7 +1026,7 @@ mlr::Frame* mlr::KinematicWorld::getFrameByName(const char* name, bool warnIfNot
 
 /// find joint connecting two bodies
 mlr::Joint* mlr::KinematicWorld::getJointByBodies(const Frame* from, const Frame* to) const {
-  if(to->joint() && to->joint()->from()==from) return to->joint();
+  if(to->joint() && to->from()==from) return to->joint();
   return NULL;
 }
 
@@ -1197,7 +1194,7 @@ void mlr::KinematicWorld::write(std::ostream& os) const {
   for(Frame *f: fwdActiveSet) if(f->link) {
     if(f->link->joint){
       os <<"joint ";
-      os <<"(" <<f->joint()->from()->name <<' ' <<f->name <<"){ ";
+      os <<"(" <<f->from()->name <<' ' <<f->name <<"){ ";
       f->joint()->write(os);  os <<" }\n";
     }else{
       os <<"rel ";
@@ -1777,7 +1774,7 @@ bool mlr::KinematicWorld::checkConsistency(){
     CHECK(&b->K==this,"");
     CHECK_EQ(b, frames(b->ID), "");
     for(Frame *f: b->outLinks) CHECK_EQ(f->link->from, b, "");
-    if(b->joint())  CHECK_EQ(b->joint()->to(), b, "");
+    if(b->joint())  CHECK_EQ(b->link->to, b, "");
     if(b->shape) CHECK_EQ(b->shape->frame, b, "");
     b->ats.checkConsistency();
   }
@@ -1804,7 +1801,7 @@ bool mlr::KinematicWorld::checkConsistency(){
       CHECK(level(f->link->from->ID) < level(f->ID), "joint does not go forward");
   }
   for(Frame *b: frames){
-    if(b->joint())  CHECK(level(b->joint()->from()->ID) < level(b->ID), "topsort failed");
+    if(b->joint())  CHECK(level(b->from()->ID) < level(b->ID), "topsort failed");
   }
 
   for(Frame *f: frames) if(f->shape){
@@ -1963,7 +1960,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     CHECK(to,"");
     mlr::Frame *b = to;
     if(b->joint()){
-      from = b->joint()->from();
+      from = b->from();
     }else{
       return;
     }

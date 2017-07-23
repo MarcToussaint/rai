@@ -11,10 +11,6 @@
 // Frame
 //
 
-//mlr::Body::Body() { reset(); }
-
-//mlr::Body::Body(const Body& b) { reset(); *this=b; }
-
 mlr::Frame::Frame(KinematicWorld& _world, const Frame* copyBody)
   : K(_world){
 
@@ -23,8 +19,9 @@ mlr::Frame::Frame(KinematicWorld& _world, const Frame* copyBody)
   if(copyBody){
     const Frame& b = *copyBody;
     name=b.name; X=b.X; ats=b.ats;
-    //we cannot copy rel! because we can't know if the frames already exist. KinematicWorld::copy copies the rel's
+    //we cannot copy link! because we can't know if the frames already exist. KinematicWorld::copy copies the rel's !!
     if(copyBody->shape) new Shape(this, copyBody->shape);
+    if(copyBody->inertia) new Inertia(this, copyBody->inertia);
   }
 }
 
@@ -32,6 +29,7 @@ mlr::Frame::~Frame() {
   while(outLinks.N) delete outLinks.last()->link;
   if(link) delete link;
   if(shape) delete shape;
+  if(inertia) delete inertia;
   K.frames.removeValue(this);
   listReindex(K.frames);
   K.jointSort();
@@ -47,7 +45,7 @@ void mlr::Frame::parseAts(const Graph& ats) {
   //mass properties
   double d;
   if(ats.get(d, "mass")) {
-    inertia = new FrameInertia(this);
+    inertia = new Inertia(this);
     inertia->mass=d;
     inertia->matrix.setId();
     inertia->matrix *= .2*d;
@@ -129,6 +127,11 @@ mlr::Link::~Link(){
 mlr::Joint *mlr::Frame::joint() const{
   if(!link) return NULL;
   return link->joint;
+}
+
+mlr::Frame *mlr::Frame::from() const{
+  if(!link) return NULL;
+  return link->from;
 }
 
 mlr::Joint::Joint(Link *_link, Joint *copyJoint)
@@ -576,12 +579,11 @@ void mlr::Shape::read(const Graph& ats) {
 
   //center the mesh:
   if(type==mlr::ST_mesh && mesh.V.N){
-    NIY;
-//    Vector c = mesh.center();
-//    if(c.length()>1e-8 && !ats["rel_includes_mesh_center"]){
-//      rel.addRelativeTranslation(c);
-//      ats.newNode<bool>({"rel_includes_mesh_center"}, {}, true);
-//    }
+    Vector c = mesh.center();
+    if(c.length()>1e-8 && !ats["rel_includes_mesh_center"]){
+      frame->link->Q.addRelativeTranslation(c);
+      frame->ats.newNode<bool>({"rel_includes_mesh_center"}, {}, true);
+    }
   }
 
   //compute the bounding radius
@@ -733,10 +735,27 @@ void mlr::Shape::glDraw(OpenGL& gl) {
 #endif
 
 
-void mlr::FrameInertia::read(const Graph& ats){
+mlr::Inertia::Inertia(mlr::Frame *f, Inertia *copyInertia) : frame(f), type(BT_dynamic) {
+  CHECK(!frame->inertia, "this frame already has inertia");
+  frame->inertia = this;
+  if(copyInertia){
+    NIY;
+  }
+}
+
+mlr::Inertia::~Inertia(){
+  frame->inertia = NULL;
+}
+
+void mlr::Inertia::read(const Graph& ats){
   double d;
   if(ats["fixed"])       type=BT_static;
   if(ats["static"])      type=BT_static;
   if(ats["kinematic"])   type=BT_kinematic;
   if(ats.get(d,"dyntype")) type=(BodyType)d;
 }
+
+
+RUN_ON_INIT_BEGIN(frame)
+JointL::memMove=true;
+RUN_ON_INIT_END(frame)

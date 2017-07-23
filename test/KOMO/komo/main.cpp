@@ -8,7 +8,7 @@ void TEST(Easy){
   mlr::KinematicWorld G("test.ors");
   cout <<"configuration space dim=" <<G.q.N <<endl;
   KOMO komo;
-  komo.setMoveTo(G, *G.getShapeByName("endeff"), *G.getShapeByName("target"));
+  komo.setMoveTo(G, *G.getFrameByName("endeff"), *G.getFrameByName("target"));
 //  komo.checkGradients();
 //  komo.setSpline(3);
 //  komo.checkGradients();
@@ -23,8 +23,8 @@ void TEST(EasyPR2){
   mlr::KinematicWorld G("model.kvg");
   G.meldFixedJoints();
   G.removeUselessBodies();
-  makeConvexHulls(G.shapes);
-  for(mlr::Shape *s:G.shapes) s->cont=true;
+  makeConvexHulls(G.frames);
+  for(mlr::Frame* a:G.frames) if(a->shape) a->shape->cont=true;
   cout <<"configuration space dim=" <<G.q.N <<endl;
   double rand = mlr::getParameter<double>("KOMO/moveTo/randomizeInitialPose", .0);
   if(rand){
@@ -33,7 +33,7 @@ void TEST(EasyPR2){
     G.setJointState(G.q);
   }
   KOMO komo;
-  komo.setMoveTo(G, *G.getShapeByName("endeff"), *G.getShapeByName("target"));
+  komo.setMoveTo(G, *G.getFrameByName("endeff"), *G.getFrameByName("target"));
 //  komo.setSpline(10);
   komo.run();
   for(uint i=0;i<2;i++) komo.displayTrajectory();
@@ -45,10 +45,10 @@ void TEST(FinalPosePR2){
   mlr::KinematicWorld G("model.kvg");
   G.meldFixedJoints();
   G.removeUselessBodies();
-  makeConvexHulls(G.shapes);
-  for(mlr::Shape *s:G.shapes) s->cont=true;
+  makeConvexHulls(G.frames);
+  for(mlr::Frame* a:G.frames) if(a->shape) a->shape->cont=true;
   cout <<"configuration space dim=" <<G.q.N <<endl;
-  arr x = finalPoseTo(G, *G.getShapeByName("endeff"), *G.getShapeByName("target"));
+  arr x = finalPoseTo(G, *G.getFrameByName("endeff"), *G.getFrameByName("target"));
   G.setJointState(x.reshape(x.N));
   G.gl().watch();
 }
@@ -58,7 +58,7 @@ void TEST(FinalPosePR2){
 void TEST(EasyAlign){
   mlr::KinematicWorld G("test.ors");
   KOMO komo;
-  komo.setMoveTo(G, *G.getShapeByName("endeff"), *G.getShapeByName("target"), 7); //aligns all 3 axes
+  komo.setMoveTo(G, *G.getFrameByName("endeff"), *G.getFrameByName("target"), 7); //aligns all 3 axes
 //  komo.setSpline(5);
   komo.run();
   for(uint i=0;i<2;i++) komo.displayTrajectory();
@@ -68,10 +68,10 @@ void TEST(EasyAlign){
 
 void TEST(EasyAlign2){
   mlr::KinematicWorld G("test.ors");
-  mlr::Shape *s = G.getShapeByName("target");
-  s->rel.addRelativeRotationDeg(90,1,0,0);
+  mlr::Frame *a = G.getFrameByName("target");
+  a->link->Q.addRelativeRotationDeg(90,1,0,0);
   KOMO komo;
-  komo.setMoveTo(G, *G.getShapeByName("endeff"), *s, 7);
+  komo.setMoveTo(G, *G.getFrameByName("endeff"), *a, 7);
 //  komo.setSpline(10);
   komo.run();
   for(uint i=0;i<2;i++) komo.displayTrajectory();

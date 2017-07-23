@@ -134,8 +134,8 @@ struct KOMO{
 
   //-- deprecated
   void setMoveTo(mlr::KinematicWorld& world, //in initial state
-                 mlr::Shape& endeff,         //endeffector to be moved
-                 mlr::Shape &target,         //target shape
+                 mlr::Frame& endeff,         //endeffector to be moved
+                 mlr::Frame& target,         //target shape
                  byte whichAxesToAlign=0);   //bit coded options to align axes
 
   //===========================================================================
@@ -182,8 +182,8 @@ struct KOMO{
 //===========================================================================
 
 inline arr finalPoseTo(mlr::KinematicWorld& world,
-                       mlr::Shape &endeff,
-                       mlr::Shape& target,
+                       mlr::Frame& endeff,
+                       mlr::Frame& target,
                        byte whichAxesToAlign=0,
                        uint iterate=1){
   KOMO komo(world);
