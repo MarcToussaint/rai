@@ -1235,24 +1235,18 @@ void mlr::KinematicWorld::init(const Graph& G) {
     CHECK(n->parents.N<=1,"shapes must have no or one parent");
     CHECK(n->isGraph(),"shape must have value Graph");
     
-    Shape *s;
+    Frame* f = new Frame(*this);
+    if(n->keys.N>1) f->name=n->keys.last();
+    f->ats.copy(n->graph(), false, true);
+    Shape *s = new Shape(f);
+    s->read(f->ats);
+
     if(n->parents.N==1){
       Frame *b = listFindByName(frames, n->parents(0)->keys.last());
       CHECK(b, "");
-      bool hasRel = n->graph()["rel"];
-      if(!b->shape && !hasRel){ //directly attached to the frame
-        s = new Shape(b);
-      }else{ //create a new frame
-        Frame* f = new Frame(*this);
-        if(n->keys.N>1) f->name=n->keys.last();
-        f->link = new Link(b, f);
-        if(hasRel) n->graph().get(f->link->Q, "rel");
-        s = new Shape(f);
-      }
-    }else{
-      s=new Shape(NULL);
+      f->link = new Link(b, f);
+      if(f->ats["rel"]) n->graph().get(f->link->Q, "rel");
     }
-    s->read(n->graph());
   }
   
   uint nCoupledJoints=0;
@@ -1271,6 +1265,14 @@ void mlr::KinematicWorld::init(const Graph& G) {
 //    j->ats.copy(n->graph(), false, true);
 //    if(n->keys.N>2) j->ats.newNode<bool>({n->keys.last()});
     j->read(n->graph());
+//    j->to()->ats.append(n->graph());
+    if(n->keys.N>1){
+      if(j->to()->name){
+        LOG(-1) <<"Frame already has a name (ignoring joint naming): "<<j->to()->name <<" != " <<n->keys.last();
+      }else{
+        j->to()->name = n->keys.last();
+      }
+    }
 
     //if the joint is coupled to another:
     if(j->mimic) nCoupledJoints++;
@@ -1280,10 +1282,12 @@ void mlr::KinematicWorld::init(const Graph& G) {
     Joint *j;
     for(Frame *f: frames) if((j=f->joint()) && j->mimic){
       mlr::String jointName;
-//      bool good = j->ats.get(jointName, "mimic");
+//      bool good = f->ats.get(jointName, "mimic");
 //      CHECK(good, "something is wrong");
       if(!jointName.N){ j->mimic=NULL; continue; }
-      j->mimic = getFrameByName(jointName)->joint();
+      mlr::Frame *mimicFrame = getFrameByName(jointName);
+      CHECK(mimicFrame, "");
+      j->mimic = mimicFrame->joint();
       if(!j->mimic) HALT("The joint '" <<*j <<"' is declared coupled to '" <<jointName <<"' -- but that doesn't exist!");
       j->type = j->mimic->type;
     }

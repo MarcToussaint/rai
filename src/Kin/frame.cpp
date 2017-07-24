@@ -53,42 +53,11 @@ void mlr::Frame::parseAts(const Graph& ats) {
     inertia->read(ats);
   }
 
-  // SHAPE handling //TODO: remove this code!
-  Node* item;
-  // a mesh which consists of multiple convex sub meshes creates multiple
-  // shapes that belong to the same body
-  item = ats.getNode("meshes");
-  if(item){
-    HALT("this is deprecated");
-    mlr::FileToken *file = item->getValue<mlr::FileToken>();
-    CHECK(file,"somethings wrong");
-
-    // if mesh is not .obj we only have one shape
-    if(!file->name.endsWith("obj")) {
-      new Shape(this);
-    }else{  // if .obj file create Shape for all submeshes
-      auto subMeshPositions = getSubMeshPositions(file->name);
-      for(uint i=0;i<subMeshPositions.d0;i++){
-        auto parsing_pos = subMeshPositions[i];
-        Shape *s = new Shape(this);
-        s->mesh.parsing_pos_start = parsing_pos(0);
-        s->mesh.parsing_pos_end = parsing_pos(1);
-    //TODO: use Shape::parseAts instead of doing the same things here again!!
-        s->mesh.readObjFile(file->getIs());
-        s->type=ST_mesh;
-      }
-    }
-  }
-
   // add shape if there is no shape exists yet
   if(ats.getNode("type") && !shape){
     shape = new Shape(this);
+    shape->read(ats);
   }
-
-  // copy body attributes to shapes
-  if(shape) shape->read(ats);
-  //TODO check if this works! coupled to the listDelete below
-  Node *it=ats["type"]; if(it){ delete it; }
 }
 
 void mlr::Frame::write(std::ostream& os) const {
@@ -360,115 +329,121 @@ uint mlr::Joint::getDimFromType() const {
 }
 
 void mlr::Joint::read(const Graph &G){
-    double d=0.;
-    mlr::String str;
+  double d=0.;
+  mlr::String str;
 
-    mlr::Transformation A, B;
+  mlr::Transformation A=0, B=0;
 
-    if(G["BinvA"]) B.setInverse(A);
-    G.get(B, "B");
-    G.get(B, "to");
-    if(!B.isZero()){
-      //new frame between: from -> f -> to
-      Frame *to = link->to;
-      Frame *from = link->from;
-      Frame *f = new Frame(from->K);
-      if(to->name) f->name <<'>' <<to->name;
+  G.get(A, "A");
+  G.get(A, "from");
+  if(G["BinvA"]) B.setInverse(A);
+  G.get(B, "B");
+  G.get(B, "to");
 
-      //disconnect from -> to
-      from->outLinks.removeValue(to);
+  //axis
+  arr axis;
+  if(G.get(axis, "axis")) {
+    CHECK_EQ(axis.N, 3, "");
+    Vector ax(axis);
+    Transformation f;
+    f.setZero();
+    f.rot.setDiff(Vector_x, ax);
+    A = A * f;
+    B = -f * B;
+  }
 
-      //connect f -> to, with old Link and no joint
-      f->outLinks.append(to);
-      to->link->from = f;
-      to->link->Q = B;
-      to->link->joint = NULL;
+  if(!B.isZero()){
+    //new frame between: from -> f -> to
+    Frame *to = link->to;
+    Frame *from = link->from;
+    Frame *f = new Frame(from->K);
+    if(to->name) f->name <<'>' <<to->name;
 
-      //connect from -> f, with new Link and this joint
-      this->link = new Link(from, f);
-      this->link->joint = this;
+    //disconnect from -> to
+    from->outLinks.removeValue(to);
 
-      B.setZero();
-    }
+    //connect f -> to, with old Link and no joint
+    f->outLinks.append(to);
+    to->link->from = f;
+    to->link->Q = B;
+    to->link->joint = NULL;
 
-    G.get(A, "A");
-    G.get(A, "from");
-    if(!A.isZero()){
-      //new frame between: from -> f -> to
-      Frame *to = link->to;
-      Frame *from = link->from;
-      Frame *f = new Frame(from->K);
-      if(to->name) f->name <<'>' <<to->name;
+    //connect from -> f, with new Link and this joint
+    this->link = new Link(from, f);
+    this->link->joint = this;
 
-      //disconnect from -> to
-      from->outLinks.removeValue(to);
+    B.setZero();
+  }
 
-      //connect from -> f with new Link and no joint
-      f->link = new Link(from, f);
-      f->link->Q = A;
+  if(!A.isZero()){
+    //new frame between: from -> f -> to
+    Frame *to = link->to;
+    Frame *from = link->from;
+    Frame *f = new Frame(from->K);
+    if(to->name) f->name <<'>' <<to->name;
 
-      //connect f -> to with old Link and this joint
-      f->outLinks.append(to);
-      link->from = f;
+    //disconnect from -> to
+    from->outLinks.removeValue(to);
 
-      A.setZero();
-    }
+    //connect from -> f with new Link and no joint
+    f->link = new Link(from, f);
+    f->link->Q = A;
 
-    G.get(link->Q, "Q");
-//    G.get(X, "X");
-    G.get(H, "ctrl_H");
-    if(G.get(d, "type")) type=(JointType)d;
-    else if(G.get(str, "type")) { str >>type; }
-    else type=JT_hingeX;
-//    if(type==JT_rigid && !Q.isZero()){ A.appendTransformation(Q); Q.setZero(); }
+    //connect f -> to with old Link and this joint
+    f->outLinks.append(to);
+    link->from = f;
 
-    dim = getDimFromType();
+    A.setZero();
+  }
 
-    if(G.get(d, "q")){
-      q0 = consts<double>(d, dim);
-      calc_Q_from_q(q0, 0);
-    }else if(G.get(q0, "q")){
-      calc_Q_from_q(q0, 0);
-    }else{
-        link->Q.setZero();
-        q0 = calc_q_from_Q(link->Q);
-    }
+  G.get(link->Q, "Q");
+  G.get(H, "ctrl_H");
+  if(G.get(d, "type")) type=(JointType)d;
+  else if(G.get(str, "type")) { str >>type; }
+  else type=JT_hingeX;
 
-    //axis
-    arr axis;
-    if(G.get(axis, "axis")) {
-      CHECK_EQ(axis.N, 3, "");
-      Vector ax(axis);
-      Transformation f;
-      f.setZero();
-      f.rot.setDiff(Vector_x, ax);
-      A = A * f;
-      B = -f * B;
-    }
+  dim = getDimFromType();
 
-    //limit
-    arr ctrl_limits;
-    G.get(limits, "limits");
-    if(limits.N && type!=JT_rigid && !mimic){
-      CHECK_EQ(limits.N, 2*qDim(), "parsed limits have wrong dimension");
-    }
-    G.get(ctrl_limits, "ctrl_limits");
-    if(ctrl_limits.N && type!=JT_rigid){
-      if(!limits.N) limits.resizeAs(ctrl_limits).setZero();
-      CHECK_EQ(3,ctrl_limits.N, "parsed ctrl_limits have wrong dimension");
-      limits.append(ctrl_limits);
-    }
+  if(G.get(d, "q")){
+    q0 = consts<double>(d, dim);
+    calc_Q_from_q(q0, 0);
+  }else if(G.get(q0, "q")){
+    calc_Q_from_q(q0, 0);
+  }else{
+    link->Q.setZero();
+    q0 = calc_q_from_Q(link->Q);
+  }
 
-    //coupled to another joint requires post-processing by the Graph::read!!
-    if(G["mimic"]) mimic=(Joint*)1;
+  //limit
+  arr ctrl_limits;
+  G.get(limits, "limits");
+  if(limits.N && type!=JT_rigid && !mimic){
+    CHECK_EQ(limits.N, 2*qDim(), "parsed limits have wrong dimension");
+  }
+  G.get(ctrl_limits, "ctrl_limits");
+  if(ctrl_limits.N && type!=JT_rigid){
+    if(!limits.N) limits.resizeAs(ctrl_limits).setZero();
+    CHECK_EQ(3,ctrl_limits.N, "parsed ctrl_limits have wrong dimension");
+    limits.append(ctrl_limits);
+  }
 
+  //coupled to another joint requires post-processing by the Graph::read!!
+  if(G["mimic"]){
+    mimic=(Joint*)1;
+  }
 }
 
 void mlr::Joint::write(std::ostream& os) const {
   os <<"type=" <<type <<' ';
-//  if(!A.isZero()) os <<"from=<T " <<A <<" > ";
-//  if(!B.isZero()) os <<"to=<T " <<B <<" > ";
-//  if(!Q.isZero()) os <<"Q=<T " <<Q <<" > ";
+  if(H) os <<"ctrl_H="<<H <<' ';
+  if(limits.N) os <<"limits=[" <<limits <<"] ";
+  if(mimic){
+    os <<"mimic=" <<mimic->to()->name <<' ';
+  }
+
+  Node *n;
+  if((n=to()->ats["Q"])) os <<*n <<' ';
+  if((n=to()->ats["q"])) os <<*n <<' ';
 }
 
 //===========================================================================
@@ -579,11 +554,13 @@ void mlr::Shape::read(const Graph& ats) {
 
   //center the mesh:
   if(type==mlr::ST_mesh && mesh.V.N){
-    Vector c = mesh.center();
-    if(c.length()>1e-8 && !ats["rel_includes_mesh_center"]){
-      frame->link->Q.addRelativeTranslation(c);
-      frame->ats.newNode<bool>({"rel_includes_mesh_center"}, {}, true);
+    if(ats["rel_includes_mesh_center"]){
+      mesh.center();
     }
+//    if(c.length()>1e-8 && !ats["rel_includes_mesh_center"]){
+//      frame->link->Q.addRelativeTranslation(c);
+//      frame->ats.newNode<bool>({"rel_includes_mesh_center"}, {}, true);
+//    }
   }
 
   //compute the bounding radius
@@ -627,8 +604,13 @@ void mlr::Shape::read(const Graph& ats) {
 
 void mlr::Shape::write(std::ostream& os) const {
   os <<"type=" <<type <<' ';
-//  os <<"size=[" <<size(0) <<' '<<size(1) <<' '<<size(2) <<' '<<size(3) <<"] ";
-//  if(!rel.isZero()) os <<"rel=<T " <<rel <<" > ";
+  os <<"size=[" <<size <<"] ";
+
+  Node *n;
+  if((n=frame->ats["color"])) os <<*n <<' ';
+  if((n=frame->ats["mesh"])) os <<*n <<' ';
+  if((n=frame->ats["meshscale"])) os <<*n <<' ';
+  if(cont) os <<"contact, ";
 }
 
 #ifdef MLR_GL
