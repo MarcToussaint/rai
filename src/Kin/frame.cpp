@@ -739,7 +739,12 @@ mlr::Inertia::Inertia(mlr::Frame *f, Inertia *copyInertia) : frame(f), type(BT_d
   CHECK(!frame->inertia, "this frame already has inertia");
   frame->inertia = this;
   if(copyInertia){
-    NIY;
+    mass = copyInertia->mass;
+    matrix = copyInertia->matrix;
+    type = copyInertia->type;
+    com = copyInertia->com;
+    force = copyInertia->force;
+    torque = copyInertia->torque;
   }
 }
 

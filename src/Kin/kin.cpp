@@ -1749,6 +1749,42 @@ void mlr::KinematicWorld::removeUselessBodies(int verbose) {
   calc_q_from_Q();
 }
 
+void mlr::KinematicWorld::pruneRigidJoints(int verbose){
+  mlr::Joint *j;
+  for(Frame *f:frames) if((j=f->joint())){
+    if(j->type == mlr::JT_rigid) delete j; //that's all there is to do
+  }
+}
+
+void mlr::KinematicWorld::reconnectLinksToClosestJoints(){
+  for(Frame *f:frames) if(f->link && !f->link->joint){
+    Frame *from = f->link->from;
+    while(from->link && !from->link->joint){
+      from = from->link->from;
+    }
+    if(from != f->link->from){ //needs rewiring
+      f->link->from->outLinks.removeValue(f);
+      from->outLinks.append(f);
+      f->link->from = from;
+    }
+  }
+}
+
+void mlr::KinematicWorld::pruneUselessFrames(int verbose){
+  for(Frame *f:frames){
+    if(!f->name && !f->joint() && !f->shape && !f->inertia){
+      delete f; //that's all there is to do
+    }
+  }
+}
+
+void mlr::KinematicWorld::optimizeTree(){
+  pruneRigidJoints();
+  reconnectLinksToClosestJoints();
+  pruneUselessFrames();
+  checkConsistency();
+}
+
 bool mlr::KinematicWorld::checkConsistency(){
   if(qdim>0){
     uint N=getJointStateDimension();

@@ -148,6 +148,10 @@ struct KinematicWorld : GLDrawer{
   void glueBodies(Frame *a, Frame *b);
   void meldFixedJoints(int verbose=0);         ///< prune fixed joints; shapes of fixed bodies are reassociated to non-fixed boides
   void removeUselessBodies(int verbose=0);     ///< prune non-articulated bodies; they become shapes of other bodies
+  void pruneRigidJoints(int verbose=0);        ///< delete rigid joints -> they become just links
+  void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
+  void pruneUselessFrames(int verbose=0);      ///< delete frames that have no name, joint, and shape
+  void optimizeTree();                         ///< call the three above methods in this order
   bool checkConsistency();
   void analyzeJointStateDimensions(); ///< sort of private: count the joint dimensionalities and assign j->q_index
 
