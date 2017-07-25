@@ -133,6 +133,7 @@ struct KinematicWorld : GLDrawer{
   Joint *getJointByBodies(const Frame* from, const Frame* to) const;
   Joint *getJointByBodyNames(const char* from, const char* to) const;
   Joint *getJointByBodyIndices(uint ifrom, uint ito) const;
+  StringA getJointNames();
 
   bool checkUniqueNames() const;
   void prefixNames();

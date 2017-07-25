@@ -118,8 +118,12 @@ mlr::Joint::Joint(Link *_link, Joint *copyJoint)
 //    }
 //  }
   if(copyJoint){
-      qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l); constrainToZeroVel=copyJoint->constrainToZeroVel;
-      type=copyJoint->type; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H;
+    qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l); constrainToZeroVel=copyJoint->constrainToZeroVel;
+    type=copyJoint->type; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H;
+
+    if(copyJoint->mimic){
+      mimic = link->to->K.frames(copyJoint->mimic->link->to->ID)->joint();
+    }
   }
 }
 
@@ -354,24 +358,12 @@ void mlr::Joint::read(const Graph &G){
 
   if(!B.isZero()){
     //new frame between: from -> f -> to
-    Frame *to = link->to;
-    Frame *from = link->from;
-    Frame *f = new Frame(from->K);
-    if(to->name) f->name <<'>' <<to->name;
+    CHECK(link->to->outLinks.N==1,"");
+    Frame *follow = link->to->outLinks.scalar();
 
-    //disconnect from -> to
-    from->outLinks.removeValue(to);
-
-    //connect f -> to, with old Link and no joint
-    f->outLinks.append(to);
-    to->link->from = f;
-    to->link->Q = B;
-    to->link->joint = NULL;
-
-    //connect from -> f, with new Link and this joint
-    this->link = new Link(from, f);
-    this->link->joint = this;
-
+    CHECK(follow->link, "");
+    CHECK(!follow->joint(), "");
+    follow->link->Q = B;
     B.setZero();
   }
 

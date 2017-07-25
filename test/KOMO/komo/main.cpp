@@ -21,8 +21,7 @@ void TEST(Easy){
 void TEST(EasyPR2){
   //NOTE: this uses a 25-DOF whole-body-motion model of the PR2
   mlr::KinematicWorld G("model.kvg");
-  G.meldFixedJoints();
-  G.removeUselessBodies();
+  G.optimizeTree();
   makeConvexHulls(G.frames);
   for(mlr::Frame* a:G.frames) if(a->shape) a->shape->cont=true;
   cout <<"configuration space dim=" <<G.q.N <<endl;
@@ -69,7 +68,7 @@ void TEST(EasyAlign){
 void TEST(EasyAlign2){
   mlr::KinematicWorld G("test.ors");
   mlr::Frame *a = G.getFrameByName("target");
-  a->link->Q.addRelativeRotationDeg(90,1,0,0);
+  a->X.addRelativeRotationDeg(90,1,0,0);
   KOMO komo;
   komo.setMoveTo(G, *G.getFrameByName("endeff"), *a, 7);
 //  komo.setSpline(10);
@@ -82,9 +81,9 @@ void TEST(EasyAlign2){
 int main(int argc,char** argv){
   mlr::initCmdLine(argc,argv);
 
-  testEasy();
-  testEasyAlign();
-  testEasyAlign2();
+//  testEasy();
+//  testEasyAlign();
+//  testEasyAlign2();
   testEasyPR2();
 
   return 0;

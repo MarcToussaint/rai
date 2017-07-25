@@ -239,15 +239,6 @@ void mlr::KinematicWorld::copy(const mlr::KinematicWorld& G, bool referenceMeshe
   listCopy(proxies, G.proxies);
   for(Frame *f:G.frames) new Frame(*this, f);
   for(Frame *f:G.frames) if(f->link) new Link(frames(f->link->from->ID), frames(f->ID), f->link);
-//  for(Shape *s:G.shapes){
-////    if(referenceMeshesAndSwiftOnCopy && !s->mesh.Vn.N) s->mesh.computeNormals(); // the copy references these normals -> if they're not precomputed, you can never display the copy
-//    new Shape((s->frame?bodies(s->frame->ID):NULL), s, referenceMeshesAndSwiftOnCopy);
-//  }
-//  for(Joint *j:G.joints){
-//    Joint *jj=
-//        new Joint(*this, bodies(j->from->index), bodies(j->to->index), j);
-//    if(j->mimic) jj->mimic = joints(j->mimic->index);
-//  }
   if(referenceMeshesAndSwiftOnCopy){
     s->swift = G.s->swift;
     s->swiftIsReference=true;
@@ -286,9 +277,9 @@ void mlr::KinematicWorld::copy(const mlr::KinematicWorld& G, bool referenceMeshe
 
 void mlr::KinematicWorld::jointSort(){
   fwdActiveSet = graphGetTopsortOrder<Frame>(frames);
-  qdim=0;
-  q.clear();
-  qdot.clear();
+//  qdim=0;
+//  q.clear();
+//  qdot.clear();
   analyzeJointStateDimensions();
 }
 
@@ -493,7 +484,7 @@ void mlr::KinematicWorld::reconfigureRoot(Frame *root) {
 void mlr::KinematicWorld::analyzeJointStateDimensions() {
   Joint *j;
   qdim=0;
-  for(Frame *f: frames) if((j=f->joint())) {
+  for(Frame *f: fwdActiveSet) if((j=f->joint())) {
     if(!j->mimic){
       j->qIndex = qdim;
       qdim += j->qDim();
@@ -559,7 +550,7 @@ void mlr::KinematicWorld::calc_q_from_Q() {
 
   uint n=0;
   Joint *j;
-  for(Frame *f: frames) if((j=f->joint())){
+  for(Frame *f: fwdActiveSet) if((j=f->joint())){
     if(j->mimic) continue; //don't count dependent joints
     CHECK_EQ(j->qIndex,n,"joint indexing is inconsistent");
     arr joint_q = j->calc_q_from_Q(f->link->Q);
@@ -574,12 +565,11 @@ void mlr::KinematicWorld::calc_q_from_Q() {
 void mlr::KinematicWorld::calc_Q_from_q(){
   uint n=0;
   Joint *j;
-  for(Frame *f: frames) if((j=f->joint())){
+  for(Frame *f: fwdActiveSet) if((j=f->joint())){
     if(!j->mimic) CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
     j->calc_Q_from_q(q, j->qIndex);
-    n += j->dim;
+    if(!j->mimic) n += j->dim;
   }
-
   CHECK_EQ(n, q.N, "");
 }
 
@@ -1046,6 +1036,16 @@ mlr::Joint* mlr::KinematicWorld::getJointByBodyIndices(uint ifrom, uint ito) con
   return getJointByBodies(f, t);
 }
 
+StringA mlr::KinematicWorld::getJointNames(){
+  StringA names(q.N);
+  Joint *j;
+  for(Frame *f:frames) if((j=f->joint())){
+    if(!j->dim) names(j->qIndex) = f->name;
+    else for(uint i=0;i<j->dim;i++) names(j->qIndex+i) <<f->name <<':' <<i;
+  }
+  return names;
+}
+
 /** @brief creates uniques names by prefixing the node-index-number to each name */
 void mlr::KinematicWorld::prefixNames() {
   for(Frame *a: frames) a->name=STRING(a->ID<< a->name);
@@ -1260,19 +1260,15 @@ void mlr::KinematicWorld::init(const Graph& G) {
     Frame *to=listFindByName(frames, n->parents(1)->keys.last());
     CHECK(from,"JOINT: from '" <<n->parents(0)->keys.last() <<"' does not exist ["<<*n <<"]");
     CHECK(to,"JOINT: to '" <<n->parents(1)->keys.last() <<"' does not exist ["<<*n <<"]");
-    Joint *j=new Joint(from, to);
-//    if(n->keys.N>1) j->name=n->keys.last();
-//    j->ats.copy(n->graph(), false, true);
-//    if(n->keys.N>2) j->ats.newNode<bool>({n->keys.last()});
-    j->read(n->graph());
-//    j->to()->ats.append(n->graph());
-    if(n->keys.N>1){
-      if(j->to()->name){
-        LOG(-1) <<"Frame already has a name (ignoring joint naming): "<<j->to()->name <<" != " <<n->keys.last();
-      }else{
-        j->to()->name = n->keys.last();
-      }
-    }
+
+    Frame *f=new Frame(*this);
+    if(n->keys.N>1) f->name=n->keys.last();
+    f->ats.copy(n->graph(), false, true);
+
+    Joint *j=new Joint(from, f);
+    Link *l=new Link(f, to);
+
+    j->read(f->ats);
 
     //if the joint is coupled to another:
     if(j->mimic) nCoupledJoints++;
@@ -1282,8 +1278,8 @@ void mlr::KinematicWorld::init(const Graph& G) {
     Joint *j;
     for(Frame *f: frames) if((j=f->joint()) && j->mimic){
       mlr::String jointName;
-//      bool good = f->ats.get(jointName, "mimic");
-//      CHECK(good, "something is wrong");
+      bool good = f->ats.get(jointName, "mimic");
+      CHECK(good, "something is wrong");
       if(!jointName.N){ j->mimic=NULL; continue; }
       mlr::Frame *mimicFrame = getFrameByName(jointName);
       CHECK(mimicFrame, "");
@@ -1798,7 +1794,7 @@ bool mlr::KinematicWorld::checkConsistency(){
 
     uint myqdim = 0;
     Joint *j;
-    for(Frame *f: frames) if((j=f->joint())){
+    for(Frame *f: fwdActiveSet) if((j=f->joint())){
       if(j->mimic){
         CHECK_EQ(j->qIndex, j->mimic->qIndex, "");
       }else{
@@ -1809,26 +1805,28 @@ bool mlr::KinematicWorld::checkConsistency(){
     CHECK_EQ(myqdim, qdim, "qdim is wrong");
   }
 
-  for(Frame *b: frames){
-    CHECK(&b->K, "");
-    CHECK(&b->K==this,"");
-    CHECK_EQ(b, frames(b->ID), "");
-    for(Frame *f: b->outLinks) CHECK_EQ(f->link->from, b, "");
-    if(b->joint())  CHECK_EQ(b->link->to, b, "");
-    if(b->shape) CHECK_EQ(b->shape->frame, b, "");
-    b->ats.checkConsistency();
+  for(Frame *a: frames){
+    CHECK(&a->K, "");
+    CHECK(&a->K==this,"");
+    CHECK_EQ(a, frames(a->ID), "");
+    for(Frame *b: a->outLinks) CHECK_EQ(b->link->from, a, "");
+    if(a->joint())  CHECK_EQ(a->link->to, a, "");
+    if(a->shape) CHECK_EQ(a->shape->frame, a, "");
+    a->ats.checkConsistency();
   }
 
   Joint *j;
   for(Frame *f: frames) if((j=f->joint())){
     CHECK(j->from() && j->to(), "");
-//    CHECK(&j->world==this,"");
-//    CHECK_EQ(j, joints(j->ID), "");
     CHECK(j->from()->outLinks.findValue(j->to())>=0,"");
     CHECK_EQ(j->to()->joint(), j,"");
     CHECK_GE(j->type.x, 0, "");
     CHECK_LE(j->type.x, JT_free, "");
-//    j->ats.checkConsistency();
+
+    if(j->mimic){
+      CHECK(j->mimic>(void*)1, "mimic was not parsed correctly");
+      CHECK(frames.contains(j->mimic->to()), "mimic points to a frame outside this kinematic configuration");
+    }
   }
 
   //check topsort
@@ -2639,6 +2637,7 @@ int animateConfiguration(mlr::KinematicWorld& C, Inotify *ino) {
   arr lim = C.getLimits();
   C.gl().pressedkey=0;
   const int steps = 50;
+  StringA jointNames = C.getJointNames();
   for(i=x0.N; i--;) {
     x=x0;
     double upper_lim = lim(i,1);
@@ -2657,7 +2656,7 @@ int animateConfiguration(mlr::KinematicWorld& C, Inotify *ino) {
       // Joint limits
       checkNan(x);
       C.setJointState(x);
-      C.gl().update(STRING("DOF = " <<i), false, false, true);
+      C.gl().update(STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lim[i] <<"]"), false, false, true);
       mlr::wait(0.01);
     }
   }

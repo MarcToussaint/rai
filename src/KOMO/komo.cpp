@@ -696,6 +696,7 @@ void KOMO::setMoveTo(mlr::KinematicWorld& world, mlr::Frame& endeff, mlr::Frame&
 //  if(MP) delete MP;
 //  MP = new KOMO(world);
   setModel(world);
+  world.checkConsistency();
 
   setTasks(*this, endeff, target, whichAxesToAlign, 1, -1, -1.);
   reset();
