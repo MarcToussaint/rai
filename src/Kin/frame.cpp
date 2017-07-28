@@ -136,7 +136,7 @@ void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
     if(mimic){
         Q = mimic->link->Q;
     }else{
-        Q.setZero();
+//        Q.setZero();
         switch(type) {
         case JT_hingeX: {
             Q.rot.setRadX(q.elem(_qIndex));
@@ -397,9 +397,15 @@ void mlr::Joint::read(const Graph &G){
   dim = getDimFromType();
 
   if(G.get(d, "q")){
-    q0 = consts<double>(d, dim);
-    calc_Q_from_q(q0, 0);
+    if(!dim){ //HACK convention
+      link->Q.rot.setRad(d, 1., 0., 0.);
+    }else{
+      CHECK(dim, "setting q (in config file) for 0-dim joint");
+      q0 = consts<double>(d, dim);
+      calc_Q_from_q(q0, 0);
+    }
   }else if(G.get(q0, "q")){
+    CHECK_EQ(q0.N, dim, "given q (in config file) does not match dim");
     calc_Q_from_q(q0, 0);
   }else{
     link->Q.setZero();

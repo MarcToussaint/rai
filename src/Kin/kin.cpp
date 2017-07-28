@@ -1759,13 +1759,16 @@ void mlr::KinematicWorld::pruneRigidJoints(int verbose){
 void mlr::KinematicWorld::reconnectLinksToClosestJoints(){
   for(Frame *f:frames) if(f->link && !f->link->joint){
     Frame *from = f->link->from;
-    while(from->link && !from->link->joint){
+    mlr::Transformation Q=0;
+    while(from->link && !from->link->joint){ //walk down links until this is a joint
+      Q = from->link->Q * Q;                 //accumulate transforms
       from = from->link->from;
     }
-    if(from != f->link->from){ //needs rewiring
+    if(from != f->link->from){ //if we walked -> we need rewiring
       f->link->from->outLinks.removeValue(f);
       from->outLinks.append(f);
       f->link->from = from;
+      f->link->Q = Q * f->link->Q;  //preprend accumulated transform to f->link
     }
   }
 }
@@ -1824,6 +1827,7 @@ bool mlr::KinematicWorld::checkConsistency(){
     CHECK_LE(j->type.x, JT_free, "");
 
     if(j->mimic){
+      CHECK(j->dim==0, "");
       CHECK(j->mimic>(void*)1, "mimic was not parsed correctly");
       CHECK(frames.contains(j->mimic->to()), "mimic points to a frame outside this kinematic configuration");
     }
