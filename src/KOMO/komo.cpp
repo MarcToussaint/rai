@@ -836,8 +836,8 @@ void KOMO::set_x(const arr& x){
     uint s = t+k_order;
     uint x_dim = dim_x(t); //configurations(s)->getJointStateDimension();
     if(x_dim){
-      if(x.nd==1) configurations(s)->setJointState(x({x_count, x_count+x_dim-1}));
-      else        configurations(s)->setJointState(x[t]);
+      if(x.nd==1)  configurations(s)->setJointState(x({x_count, x_count+x_dim-1}));
+      else         configurations(s)->setJointState(x[t]);
       if(useSwift) configurations(s)->stepSwift();
       x_count += x_dim;
     }

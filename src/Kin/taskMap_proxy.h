@@ -3,6 +3,8 @@
 
 //===========================================================================
 
+//TODO: change naming: TMP_...
+
 enum PTMtype {
   allPTMT, //phi=sum over all proxies (as is standard)
   listedVsListedPTMT, //phi=sum over all proxies between listed shapes

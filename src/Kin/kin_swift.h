@@ -48,7 +48,7 @@ struct SwiftInterface {
   void deactivate(mlr::Frame *s1, mlr::Frame *s2);
   void deactivate(const mlr::Array<mlr::Frame*>& bodies);
 
-  void initActivations(const mlr::KinematicWorld& world, uint parentLevelsToDeactivate=3);
+  void initActivations(const mlr::KinematicWorld& world, uint parentLevelsToDeactivate=1);
   void swiftQueryExactDistance();
 };
 /** @} */

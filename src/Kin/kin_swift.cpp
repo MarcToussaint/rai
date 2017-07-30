@@ -167,6 +167,7 @@ void SwiftInterface::initActivations(const mlr::KinematicWorld& world, uint pare
       if(INDEXshape2swift(f->ID)!=-1) scene->Deactivate(INDEXshape2swift(f->ID));
     } else {
       if(INDEXshape2swift(f->ID)!=-1) scene->Activate(INDEXshape2swift(f->ID));
+//      cout <<"activating " <<f->name <<endl;
     }
   }
   //shapes within a body
@@ -177,19 +178,17 @@ void SwiftInterface::initActivations(const mlr::KinematicWorld& world, uint pare
     deactivate({ f->link->from, f });
   }
   //deactivate along trees...
-  for_list(mlr::Frame,  b,  world.frames) {
-    mlr::Array<mlr::Frame*> group, children;
+  for(mlr::Frame *b: world.frames) {
+    FrameL group, children;
     group.append(b);
-    for(uint l=0; l<parentLevelsToDeactivate; l++) {
-      //listWriteNames(group, cout);
+    for(mlr::Frame *b2: b->outLinks) if(!b2->link->joint) group.append(b2); //all all rigid links as well
+    for(uint l=0; l<parentLevelsToDeactivate; l++){
       children.clear();
-      for_list(mlr::Frame,  b2,  group) {
-        for_list(mlr::Frame,  b2to,  b2->outLinks) {
-          children.setAppend(b2to);
-          //listWriteNames(children, cout);
-        }
+      for(mlr::Frame *b2: group) for(mlr::Frame *b2to: b2->outLinks) {
+        children.setAppend(b2to);
       }
       group.setAppend(children);
+      for(mlr::Frame *ch:children) for(mlr::Frame *b2: ch->outLinks) if(!b2->link->joint) group.setAppend(b2); //all all rigid links as well
     }
     deactivate(group);
   }

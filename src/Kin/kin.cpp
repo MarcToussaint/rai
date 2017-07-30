@@ -1184,11 +1184,9 @@ void mlr::KinematicWorld::write(std::ostream& os) const {
   }
   os <<std::endl;
   for(Frame *f: frames) if(f->shape){
-    Shape *s = f->shape;
     os <<"shape ";
-    if(s->frame->name.N) os <<s->frame->name <<' ';
-    os <<"(" <<(s->frame?(char*)s->frame->name:"") <<"){ ";
-    s->write(os);  os <<" }\n";
+    os <<"(" <<f->name <<"){ ";
+    f->shape->write(os);  os <<" }\n";
   }
   os <<std::endl;
   for(Frame *f: fwdActiveSet) if(f->link) {
@@ -1197,7 +1195,7 @@ void mlr::KinematicWorld::write(std::ostream& os) const {
       os <<"(" <<f->from()->name <<' ' <<f->name <<"){ ";
       f->joint()->write(os);  os <<" }\n";
     }else{
-      os <<"rel ";
+      os <<"link ";
       os <<"(" <<f->link->from->name <<' ' <<f->name <<"){ ";
       f->link->write(os);  os <<" }\n";
     }

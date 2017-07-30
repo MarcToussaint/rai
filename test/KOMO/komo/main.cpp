@@ -24,7 +24,6 @@ void TEST(EasyPR2){
   G.optimizeTree();
   makeConvexHulls(G.frames);
   G.calc_fwdPropagateFrames();
-  for(mlr::Frame* a:G.frames) if(a->shape) a->shape->cont=true;
   cout <<"configuration space dim=" <<G.q.N <<endl;
   double rand = mlr::getParameter<double>("KOMO/moveTo/randomizeInitialPose", .0);
   if(rand){
@@ -36,6 +35,7 @@ void TEST(EasyPR2){
   komo.setMoveTo(G, *G.getFrameByName("endeff"), *G.getFrameByName("target"));
 //  komo.setSpline(10);
   komo.run();
+  cout <<komo.getReport(false) <<endl;
   for(uint i=0;i<2;i++) komo.displayTrajectory();
 }
 
@@ -82,9 +82,9 @@ void TEST(EasyAlign2){
 int main(int argc,char** argv){
   mlr::initCmdLine(argc,argv);
 
-  testEasy();
-  testEasyAlign();
-  testEasyAlign2();
+//  testEasy();
+//  testEasyAlign();
+//  testEasyAlign2();
   testEasyPR2();
 
   return 0;
