@@ -820,7 +820,6 @@ void KOMO::setupConfigurations(){
     for(mlr::KinematicSwitch *sw:switches){
       if(sw->timeOfApplication+k_order==s){
         sw->apply(*configurations(s));
-        //          if(MP.useSwift) configurations(t)->swift().initActivations(*configurations(t));
       }
     }
     configurations(s)->jointSort();

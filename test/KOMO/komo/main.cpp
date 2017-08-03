@@ -19,7 +19,7 @@ void TEST(Easy){
 //===========================================================================
 
 void TEST(EasyPR2){
-  //NOTE: this uses a 25-DOF whole-body-motion model of the PR2
+  //NOTE: this uses a 25-DOF whole-body-motion model of thbe PR2
   mlr::KinematicWorld G("model.kvg");
   G.optimizeTree();
   makeConvexHulls(G.frames);

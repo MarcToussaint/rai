@@ -2047,33 +2047,39 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
   Frame *from=NULL, *to=NULL;
   if(fromId!=UINT_MAX) from=G.frames(fromId);
   if(toId!=UINT_MAX) to=G.frames(toId);
-  if(fromId==UINT_MAX){
-    CHECK_EQ(symbol, deleteJoint, "");
-    CHECK(to,"");
-    mlr::Frame *b = to;
-    if(b->link){
-      from = b->link->from;
-    }else{
-      return;
-    }
-  }
 
   if(symbol==deleteJoint){
-    Link *link = G.getLinkByBodies(from, to);
-    CHECK(link, "can't find joint between '"<<from->name <<"--" <<to->name <<"' Deleted before?");
-    delete link;
+    //this deletes ALL links downward from to until a named or shape-attached one!
+    Frame *f = to;
+    uint i=0;
+    for(;;){
+      if(!f->link) break;
+      Frame *from = f->link->from;
+      delete f->link;
+      i++;
+      if(from->name.N || from->shape || from->inertia) break;
+      f = from;
+    }
+    if(!i){
+      LOG(-1) <<"there were no deletable links below '" <<to->name <<"'! Deleted before?";
+    }
     G.jointSort();
+//    G.checkConsistency();
     return;
   }
-  G.isLinkTree=false;
+//  G.isLinkTree=false;
   if(symbol==addJointZero || symbol==addActuated){
     Joint *j = new Joint(from, to);
     if(symbol==addJointZero) j->constrainToZeroVel=true;
     else                     j->constrainToZeroVel=false;
     j->type=jointType;
-//    j->B = jB;
+    if(!jA.isZero()){
+      j->link->insertPreLink(jA);
+    }
+    if(!jB.isZero()) NIY;
     G.jointSort();
     G.calc_fwdPropagateFrames();
+    G.checkConsistency();
     return;
   }
   if(symbol==addJointAtFrom){
@@ -2085,6 +2091,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
 //    j->A.setZero();
     G.jointSort();
     G.calc_fwdPropagateFrames();
+    G.checkConsistency();
     return;
   }
   if(symbol==addJointAtTo){
@@ -2096,6 +2103,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
 //    j->B.setZero();
     G.jointSort();
     G.calc_fwdPropagateFrames();
+    G.checkConsistency();
     return;
   }
   if(symbol==addSliderMechanism){
@@ -2121,6 +2129,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
 
     G.jointSort();
     G.calc_fwdPropagateFrames();
+    G.checkConsistency();
     return;
   }
   HALT("shouldn't be here!");

@@ -622,11 +622,9 @@ void TEST(InverseKinematics) {
 int MAIN(int argc,char **argv){
   mlr::initCmdLine(argc, argv);
 
-  testGraph();
-  return 0;
-
   testLoadSave();
   testCopy();
+  testGraph();
   testPlayStateSequence();
   testKinematics();
   testQuaternionKinematics();

@@ -72,6 +72,7 @@ struct Link{
   Link(Frame* _from, Frame* _to, Link * copyRel=NULL);
   ~Link();
 
+  Link* insertPreLink(const mlr::Transformation& A);
   void write(std::ostream& os) const{
     os <<Q;
   }

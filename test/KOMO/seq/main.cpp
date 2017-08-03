@@ -29,7 +29,7 @@ void TEST(KomoSequence){
 
   Graph result = komo.getReport(true);
 
-  while(komo.displayTrajectory(.1, true));
+  for(uint i=0;i<2;i++) if(!komo.displayTrajectory(.1, true)) break;
 }
 
 //===========================================================================

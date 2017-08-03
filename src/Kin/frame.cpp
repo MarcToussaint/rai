@@ -93,6 +93,25 @@ mlr::Link::~Link(){
   to->link = NULL;
 }
 
+mlr::Link* mlr::Link::insertPreLink(const mlr::Transformation &A){
+  //new frame between: from -> f -> to
+  Frame *f = new Frame(from->K);
+  if(to->name) f->name <<'>' <<to->name;
+
+  //disconnect from -> to
+  from->outLinks.removeValue(to);
+
+  //connect from -> f with new Link and no joint
+  f->link = new Link(from, f);
+  f->link->Q = A;
+
+  //connect f -> to with old Link and this joint
+  f->outLinks.append(to);
+  from = f;
+
+  return f->link;
+}
+
 mlr::Joint *mlr::Frame::joint() const{
   if(!link) return NULL;
   return link->joint;
@@ -106,7 +125,11 @@ mlr::Frame *mlr::Frame::from() const{
 mlr::Joint::Joint(Link *_link, Joint *copyJoint)
   : dim(0), qIndex(UINT_MAX), q0(0.), H(1.), mimic(NULL), link(_link), constrainToZeroVel(false) {
   CHECK(!link->joint, "the Link already has a Joint");
-  link -> joint = this;
+  link->joint = this;
+  link->to->K.qdim=0;
+  link->to->K.q.clear();
+  link->to->K.qdot.clear();
+
 //  if(!to->link){
 //    to->link = new Link(from, to);
 //    to->link->joint = this;
@@ -128,6 +151,11 @@ mlr::Joint::Joint(Link *_link, Joint *copyJoint)
 }
 
 mlr::Joint::~Joint() {
+  if(dim){
+    link->to->K.qdim=0;
+    link->to->K.q.clear();
+    link->to->K.qdot.clear();
+  }
   link->joint = NULL;
 }
 
@@ -136,7 +164,6 @@ void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
     if(mimic){
         Q = mimic->link->Q;
     }else{
-//        Q.setZero();
         switch(type) {
         case JT_hingeX: {
             Q.rot.setRadX(q.elem(_qIndex));
@@ -210,7 +237,6 @@ void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
 
         case JT_glue:
         case JT_rigid:
-            Q.setZero();
             break;
         default: NIY;
         }
@@ -368,22 +394,23 @@ void mlr::Joint::read(const Graph &G){
   }
 
   if(!A.isZero()){
-    //new frame between: from -> f -> to
-    Frame *to = link->to;
-    Frame *from = link->from;
-    Frame *f = new Frame(from->K);
-    if(to->name) f->name <<'>' <<to->name;
+    link->insertPreLink(A);
+//    //new frame between: from -> f -> to
+//    Frame *to = link->to;
+//    Frame *from = link->from;
+//    Frame *f = new Frame(from->K);
+//    if(to->name) f->name <<'>' <<to->name;
 
-    //disconnect from -> to
-    from->outLinks.removeValue(to);
+//    //disconnect from -> to
+//    from->outLinks.removeValue(to);
 
-    //connect from -> f with new Link and no joint
-    f->link = new Link(from, f);
-    f->link->Q = A;
+//    //connect from -> f with new Link and no joint
+//    f->link = new Link(from, f);
+//    f->link->Q = A;
 
-    //connect f -> to with old Link and this joint
-    f->outLinks.append(to);
-    link->from = f;
+//    //connect f -> to with old Link and this joint
+//    f->outLinks.append(to);
+//    link->from = f;
 
     A.setZero();
   }
@@ -452,7 +479,7 @@ void mlr::Joint::write(std::ostream& os) const {
 
 mlr::Shape::Shape(Frame* b, const Shape *copyShape, bool referenceMeshOnCopy)
   : frame(b), type(ST_none) {
-  size = {1.,1.,1.};
+  size = {1.,1.,1.,.1};
   mesh.C = consts<double>(.8, 3); //color[0]=color[1]=color[2]=.8; color[3]=1.;
 
   CHECK(b,"");

@@ -438,6 +438,7 @@ template<class T> void mlr::Array<T>::freeMEM() {
 ///this was a reference; becomes a copy
 template<class T> mlr::Array<T>& mlr::Array<T>::dereference(){
   CHECK(reference,"can only dereference a reference!");
+  NIY; //not for the new vector versoin..
   uint n=N;
   T* pold=p;
   reference=false;
@@ -733,8 +734,7 @@ template<class T> void mlr::Array<T>::resizeDim(uint k, uint dk) {
 
 /// return a uint-Array that contains (acutally refers to) the dimensions of 'this'
 template<class T> mlr::Array<uint> mlr::Array<T>::dim() const {
-  Array<uint> dims(d, nd);
-  dims.dereference();
+  Array<uint> dims(d, nd, false);
   return dims;
 }
 
