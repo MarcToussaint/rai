@@ -247,7 +247,7 @@ void ManipulationTree_Node::optLevel(uint level){
     //    CHECK_EQ(sw->timeOfApplication, 1, "need to do this before the optimization..");
         if(sw->timeOfApplication>=2) sw->apply(effKinematics);
       }
-      effKinematics.topSort();
+      effKinematics.jointSort();
       DEBUG( effKinematics.checkConsistency(); )
       effKinematics.getJointState();
   }else{

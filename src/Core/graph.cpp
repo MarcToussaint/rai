@@ -98,6 +98,11 @@ Node::~Node() {
   container.index();
 }
 
+void Node::addParent(Node *p){
+  parents.append(p);
+  p->parentOf.append(this);
+}
+
 bool Node::matches(const char *key){
   for(const mlr::String& k:keys) if(k==key) return true;
   return false;
@@ -120,7 +125,7 @@ void Node::write(std::ostream& os) const {
     os <<'(';
     for_list(Node, it, parents) {
       if(it_COUNT) os <<' ';
-      if(it->keys.N){
+      if(it->keys.N && it->keys.last().N){
         os <<it->keys.last();
       }else{  //relative numerical reference
         os <<(int)it->index - (int)index;
@@ -779,7 +784,8 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
       os <<n->parents(0)->index <<" -> " <<n->parents(1)->index <<" [ " <<label <<"];" <<endl;
     }else{
       if(n->isGraph()){
-        os <<"subgraph cluster_" <<n->index <<" { " <<label /*<<" rank=same"*/ <<endl;
+        os <<"subgraph cluster_" <<n->index <<" { " /*<<" rank=same"*/ <<endl;
+        os <<n->index <<" [ " <<label <<" shape=box ];" <<endl;
         n->graph().writeDot(os, true, defaultEdges, +1);
         os <<"}" <<endl;
         n->graph().writeDot(os, true, defaultEdges, -1);
@@ -787,17 +793,17 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
         if(nodesOrEdges>=0){
           os <<n->index <<" [ " <<label <<shape <<" ];" <<endl;
         }
-        if(nodesOrEdges<=0){
+      }
+      if(nodesOrEdges<=0){
           for_list(Node, pa, n->parents) {
-            if(hasRenderingInfo(pa) && getRenderingInfo(pa).skip) continue;
-            if(pa->index<n->index)
-              os <<pa->index <<" -> " <<n->index <<" [ ";
-            else
-              os <<n->index <<" -> " <<pa->index <<" [ ";
-            os <<"label=" <<pa_COUNT;
-            os <<" ];" <<endl;
+              if(hasRenderingInfo(pa) && getRenderingInfo(pa).skip) continue;
+//              if(pa->index<n->index)
+                  os <<pa->index <<" -> " <<n->index <<" [ ";
+//              else
+//                  os <<n->index <<" -> " <<pa->index <<" [ ";
+              os <<"label=" <<pa_COUNT;
+              os <<" ];" <<endl;
           }
-        }
       }
     }
   }

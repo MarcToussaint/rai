@@ -267,12 +267,11 @@ void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_f
   CHECK(m,"this only works for the default position task map");
   CHECK(m->type==posTMT,"this only works for the default positioni task map");
   CHECK(m->i>=0,"this only works for the default position task map");
-  mlr::Body *body = world.shapes(m->i)->body;
-  mlr::Vector vec = world.shapes(m->i)->rel*m->ivec;
-  mlr::Shape* l_ft_sensor = world.getShapeByName("l_ft_sensor");
+  mlr::Frame *body = world.frames(m->i);
+  mlr::Frame* l_ft_sensor = world.getFrameByName("l_ft_sensor");
   arr J_ft, J;
-  world.kinematicsPos         (NoArr, J,   body, vec);
-  world.kinematicsPos_wrtFrame(NoArr, J_ft,body, vec, l_ft_sensor);
+  world.kinematicsPos         (NoArr, J,   body, m->ivec);
+  world.kinematicsPos_wrtFrame(NoArr, J_ft,body, m->ivec, l_ft_sensor);
 
   //-- compute the control coefficients
   u_bias = ~J*f_ref;
@@ -346,8 +345,9 @@ void TaskControlMethods::lockJointGroup(const char* groupname, mlr::KinematicWor
     return;
   }
   if(!lockJoints.N) lockJoints = consts<byte>(false, world.q.N);
-  for(mlr::Joint *j:world.joints){
-    if(j->ats.getNode(groupname)){
+  mlr::Joint *j;
+  for(mlr::Frame *f : world.frames) if((j=f->joint())){
+    if(f->ats.getNode(groupname)){
       for(uint i=0;i<j->qDim();i++){
         lockJoints(j->qIndex+i) = lockThem;
         if(lockThem && world.qdot.N) world.qdot(j->qIndex+i) = 0.;
@@ -706,12 +706,11 @@ void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, d
   for(CtrlTask* task : this->tasks) if(task->active && task->f_ref.N){
     nForceTasks++;
     TaskMap_Default* map = dynamic_cast<TaskMap_Default*>(task->map);
-    mlr::Body* body = world.shapes(map->i)->body;
-    mlr::Vector vec = world.shapes(map->i)->rel.pos;
-    mlr::Shape* lFtSensor = world.getShapeByName("r_ft_sensor");
+    mlr::Frame* body = world.frames(map->i);
+    mlr::Frame* lFtSensor = world.getFrameByName("r_ft_sensor");
     arr y, J, J_ft;
     task->map->phi(y, J, world);
-    world.kinematicsPos_wrtFrame(NoArr, J_ft, body, vec, lFtSensor);
+    world.kinematicsPos_wrtFrame(NoArr, J_ft, body, map->ivec, lFtSensor);
     J_ft_inv = -~conv_vec2arr(map->ivec)*inverse_SymPosDef(J_ft*~J_ft)*J_ft;
     K_ft = -~J*task->f_alpha;
     fRef = task->f_ref;

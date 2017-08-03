@@ -862,6 +862,10 @@ arr mlr::Mesh::getMean() const {
   return mean(V);
 }
 
+mlr::Vector mlr::Mesh::getCenter() const {
+  return Vector(getMean());
+}
+
 void mlr::Mesh::getBox(double& dx, double& dy, double& dz) const {
   dx=dy=dz=0.;
   for(uint i=0;i<V.d0;i++){

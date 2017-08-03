@@ -130,6 +130,7 @@ struct KinematicWorld : GLDrawer{
 
   /// @name access
   Frame *getFrameByName(const char* name, bool warnIfNotExist=true) const;
+  Link  *getLinkByBodies(const Frame* from, const Frame* to) const;
   Joint *getJointByBodies(const Frame* from, const Frame* to) const;
   Joint *getJointByBodyNames(const char* from, const char* to) const;
   Joint *getJointByBodyIndices(uint ifrom, uint ito) const;
@@ -190,9 +191,12 @@ struct KinematicWorld : GLDrawer{
   void kinematicsProxyCost(arr& y, arr& J, double margin=.02, bool useCenterDist=true) const;
   void kinematicsProxyConstraint(arr& g, arr& J, Proxy *p, double margin=.02) const;
   void kinematicsContactConstraints(arr& y, arr &J) const; //TODO: deprecated?
-  void kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const mlr::Vector& rel, Shape *s) const;
+  void kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const mlr::Vector& rel, Frame *s) const;
   void getLimitsMeasure(arr &x, const arr& limits, double margin=.1) const;
   void kinematicsLimitsCost(arr& y, arr& J, const arr& limits, double margin=.1) const;
+
+  /// @name active set selection
+  void setAgent(uint){ NIY }
 
   /// @name High level (inverse) kinematics
   void inverseKinematicsPos(Frame& body, const arr& ytarget, const mlr::Vector& rel_offset=NoVector, int max_iter=3);
@@ -239,6 +243,7 @@ struct KinematicWorld : GLDrawer{
   void write(std::ostream& os) const;
   void read(std::istream& is);
   void glDraw(struct OpenGL&);
+  Graph getGraph() const;
 
   void reportProxies(std::ostream& os=std::cout, double belowMargin=-1., bool brief=true) const;
   void writePlyFile(const char* filename) const; //TODO: move outside

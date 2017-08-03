@@ -7,11 +7,11 @@ void force(mlr::KinematicWorld* world, arr& fR) {
   //world->contactsToForces(100.0);
 
   for(mlr::Proxy* p : world->proxies) {
-    if(world->shapes(p->a)->name == "endeffR" && world->shapes(p->b)->name == "b") {
+    if(world->frames(p->a)->name == "endeffR" && world->frames(p->b)->name == "b") {
       if(p->d <= 0.0) {
         mlr::Vector trans = p->posB - p->posA;
         mlr::Vector force = 100.0*trans;
-        mlr::Vector torque = (p->posA - world->shapes(p->a)->body->X.pos) ^ force;
+        mlr::Vector torque = (p->posA - world->frames(p->a)->X.pos) ^ force;
         fR(0) = force(0);
         fR(1) = force(1);
         fR(2) = force(2);
@@ -27,7 +27,7 @@ void force(mlr::KinematicWorld* world, arr& fR) {
 void forceSimulateContactOnly(mlr::KinematicWorld* world, arr& fR) {
   world->stepSwift();
   for(mlr::Proxy* p : world->proxies) {
-    if(world->shapes(p->a)->name == "endeffR" && world->shapes(p->b)->name == "b") {
+    if(world->frames(p->a)->name == "endeffR" && world->frames(p->b)->name == "b") {
       if(p->d <= 0.02) {
         fR(2) = -4.0;
       }
@@ -165,7 +165,7 @@ void RTControllerSimulation::open() {
 
 
 
-  makeConvexHulls(world->shapes);
+  makeConvexHulls(world->frames);
   arr q, qDot;
   world->getJointState(q,qDot);
 
@@ -177,15 +177,16 @@ void RTControllerSimulation::open() {
   Kp_base.resize(world->q.N).setZero();
   Kd_base.resize(world->q.N).setZero();
   limits.resize(world->q.N,5).setZero();
-  for(mlr::Joint* j: world->joints) if(j->qDim()>0){
+  mlr::Joint *j;
+  for(mlr::Frame* f: world->frames) if((j=f->joint()) && j->qDim()>0){
     arr *info;
-    info = j->ats.find<arr>("gains");  if(info){
+    info = f->ats.find<arr>("gains");  if(info){
       for(uint i=0;i<j->qDim();i++){ Kp_base(j->qIndex+i)=info->elem(0); Kd_base(j->qIndex+i)=info->elem(1); }
     }
-    info = j->ats.find<arr>("limits");  if(info){
+    info = f->ats.find<arr>("limits");  if(info){
       for(uint i=0;i<j->qDim();i++){ limits(j->qIndex+i,0)=info->elem(0); limits(j->qIndex+i,1)=info->elem(1); }
     }
-    info = j->ats.find<arr>("ctrl_limits");  if(info){
+    info = f->ats.find<arr>("ctrl_limits");  if(info){
       for(uint i=0;i<j->qDim();i++){ limits(j->qIndex+i,2)=info->elem(0); limits(j->qIndex+i,3)=info->elem(1); limits(j->qIndex+i,4)=info->elem(2); }
     }
   }
@@ -198,7 +199,7 @@ void RTControllerSimulation::open() {
   this->ctrl_obs().u_bias = zeros(q.d0);
   this->ctrl_obs.deAccess();
 
-  j_baseTranslationRotation = world->getJointByName("worldTranslationRotation");
+  j_baseTranslationRotation = world->getFrameByName("worldTranslationRotation")->joint();
 }
 
 void RTControllerSimulation::step() {

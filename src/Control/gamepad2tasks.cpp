@@ -141,7 +141,7 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState, const mlr::KinematicWorld& K)
       mlr::Vector vel(gamepadLeftRight, gamepadForwardBack, gamepadUpDown);
       if(sel==down){
         vel.set ( .5*gamepadLeftRight, .5*gamepadRotate, 2.*gamepadForwardBack );
-        vel = K.getShapeByName("endeffBase") -> X.rot * vel;
+        vel = K.getFrameByName("endeffBase") -> X.rot * vel;
       }
 //      vel = MP.world.getShapeByName("endeffBase")->X.rot*vel;
       arr ve;
@@ -164,7 +164,7 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState, const mlr::KinematicWorld& K)
     case 1: { //homing
       cout <<"homing" <<endl;
       homing->PD().setTarget(q0);
-      mlr::Joint *j = K.getJointByName("worldTranslationRotation");
+      mlr::Joint *j = K.getFrameByName("worldTranslationRotation")->joint();
       if(j){
         arr b;
         base->map->phi(b, NoArr, K);

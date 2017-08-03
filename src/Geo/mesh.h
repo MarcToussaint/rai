@@ -84,6 +84,7 @@ struct Mesh : GLDrawer {
   void fuseNearVertices(double tol=1e-5);
   void clean();
   void flipFaces();
+  mlr::Vector getCenter() const;
   arr getMean() const;
   void getBox(double& dx, double& dy, double& dz) const;
   double getRadius() const;

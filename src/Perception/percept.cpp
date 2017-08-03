@@ -107,13 +107,12 @@ void PercPlane::write(ostream& os) const{
 void PercPlane::syncWith(mlr::KinematicWorld &K){
   mlr::String plane_name = STRING("perc_" << id);
 
-  mlr::Body *body = K.getBodyByName(plane_name, false);
+  mlr::Frame *body = K.getFrameByName(plane_name, false);
   if (not body) {
     //cout << plane_name << " does not exist yet; adding it..." << endl;
-    body = new mlr::Body(K);
+    body = new mlr::Frame(K);
     body->name = plane_name;
-    mlr::Shape *shape = new mlr::Shape(K, *body);
-    shape->name = plane_name;
+    mlr::Shape *shape = new mlr::Shape(body);
     shape->type = mlr::ST_pointCloud;
 //    shape = new mlr::Shape(K, *body);
 //    shape->name = plane_name;
@@ -123,9 +122,7 @@ void PercPlane::syncWith(mlr::KinematicWorld &K){
   }
   body->X = transform;
 
-  body->shapes(0)->mesh = hull;
-
-  for(mlr::Shape *s:body->shapes) s->X = body->X * s->rel;
+  body->shape->mesh = hull;
 }
 
 void PercPlane::glDraw(OpenGL& gl){
@@ -188,21 +185,17 @@ double PercBox::fuse(Percept* other){
 void PercBox::syncWith(mlr::KinematicWorld &K){
   mlr::String box_name = STRING("perc_" << id);
 
-  mlr::Body *body = K.getBodyByName(box_name, false);
+  mlr::Frame *body = K.getFrameByName(box_name, false);
   if (not body) {
     //cout << plane_name << " does not exist yet; adding it..." << endl;
-    body = new mlr::Body(K);
+    body = new mlr::Frame(K);
     body->name = box_name;
-    mlr::Shape *shape = new mlr::Shape(K, *body);
-    shape->name = box_name;
+    mlr::Shape *shape = new mlr::Shape(body);
     shape->type = mlr::ST_box;
   }
   body->X = transform;
-  for(mlr::Shape *s:body->shapes) s->X = body->X * s->rel;
-
-  mlr::Shape *shape = body->shapes(0);
-  shape->size = size;
-  shape->mesh.C = color;
+  body->shape->size = size;
+  body->shape->mesh.C = color;
 }
 
 void PercBox::glDraw(OpenGL&){
@@ -245,28 +238,19 @@ void PercAlvar::write(ostream& os) const{
 void PercCluster::syncWith(mlr::KinematicWorld& K){
   mlr::String cluster_name = STRING("perc_" << id);
 
-  mlr::Body *body = K.getBodyByName(cluster_name, false);
+  mlr::Frame *body = K.getFrameByName(cluster_name, false);
   if (not body) {
     //cout << cluster_name << " does not exist yet; adding it..." << endl;
-    body = new mlr::Body(K);
+    body = new mlr::Frame(K);
     body->name = cluster_name;
-    mlr::Shape *shape = new mlr::Shape(K, *body);
-    shape->name = cluster_name;
+    mlr::Shape *shape = new mlr::Shape(body);
     shape->type = mlr::ST_pointCloud;
-    shape = new mlr::Shape(K, *body);
-    shape->name = cluster_name;
+    shape = new mlr::Shape(body);
     shape->type = mlr::ST_marker;
     shape->size = consts<double>(.2,3);
 //    stored_clusters.append(id);
   }
   body->X = frame;
-  //frame = body->X;
-  body->shapes(0)->mesh.V = points;
-
-  mlr::Vector cen = body->shapes(0)->mesh.center();
-  body->X.addRelativeTranslation(cen);
-  body->shapes(0)->rel.rot = body->X.rot;
-  body->X.rot.setZero();
 
   transform = body->X;
   //((Cluster*)cluster)->mean = ARR(cen.x, cen.y, cen.z);
@@ -278,59 +262,52 @@ void PercCluster::syncWith(mlr::KinematicWorld& K){
 void PercAlvar::syncWith(mlr::KinematicWorld& K){
   mlr::String alvar_name = STRING("perc_" << id);
 
-  mlr::Body *body = K.getBodyByName(alvar_name, false);
+  mlr::Frame *body = K.getFrameByName(alvar_name, false);
   if (not body) {
 //    cout << alvar_name << " does not exist yet; adding it..." << endl;
-    body = new mlr::Body(K);
+    body = new mlr::Frame(K);
     body->name = alvar_name;
-    mlr::Shape *shape = new mlr::Shape(K, *body);
-    shape->name = alvar_name;
+    mlr::Shape *shape = new mlr::Shape(body);
     shape->type = mlr::ST_marker;
     shape->size = consts<double>(.2,3);
 //    stored_alvars.append(id);
   }
 
   body->X = frame * transform;
-  body->shapes.first()->X = body->X;
 }
 
 void OptitrackBody::syncWith(mlr::KinematicWorld &K){
   mlr::String optitrackbody_name = STRING("perc_" << id);
 
-  mlr::Body *body = K.getBodyByName(optitrackbody_name, false);
+  mlr::Frame *body = K.getFrameByName(optitrackbody_name, false);
   if (not body) {
     cout << optitrackbody_name << " does not exist yet; adding it..." << endl;
-    body = new mlr::Body(K);
+    body = new mlr::Frame(K);
     body->name = optitrackbody_name;
-    mlr::Shape *shape = new mlr::Shape(K, *body);
-    shape->name = optitrackbody_name;
+    mlr::Shape *shape = new mlr::Shape(body);
     shape->type = mlr::ST_marker;
     shape->size = consts<double>(.1,3);
 //    stored_optitrackbodies.append(id);
   }
 
   body->X = frame * transform;
-  body->shapes.first()->X = body->X;
 }
 
 void OptitrackMarker::syncWith(mlr::KinematicWorld &K){
   mlr::String optitrackmarker_name = STRING("perc_" << id);
 
-  mlr::Body *body = K.getBodyByName(optitrackmarker_name, false);
+  mlr::Frame *body = K.getFrameByName(optitrackmarker_name, false);
   if (not body) {
     cout << optitrackmarker_name << " does not exist yet; adding it..." << endl;
-    body = new mlr::Body(K);
+    body = new mlr::Frame(K);
     body->name = optitrackmarker_name;
-    mlr::Shape *shape = new mlr::Shape(K, *body);
-    shape->name = optitrackmarker_name;
+    mlr::Shape *shape = new mlr::Shape(body);
     shape->type = mlr::ST_sphere;
     shape->size = consts<double>(.03, 3);
 //    stored_optitrackmarkers.append(id);
   }
 
   body->X = frame * transform;
-
-  //((Alvar*)alvar)->transform = body->X;
 }
 
 

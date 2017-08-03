@@ -35,20 +35,20 @@ Filter::~Filter(){
 void Filter::open(){
   Access<mlr::KinematicWorld> modelWorld(this, "modelWorld");
   modelWorld.readAccess();
-  for(mlr::Body *b:modelWorld().bodies){
+  for(mlr::Frame *b:modelWorld().frames){
     if(b->ats["percept"]){
       //first check if it already is in the percept list
       bool done=false;
-      for(Percept *p:percepts_filtered.get()()) if(p->bodyId==(int)b->index) done=true;
+      for(Percept *p:percepts_filtered.get()()) if(p->bodyId==(int)b->ID) done=true;
       if(!done){
         LOG(0) <<"ADDING this body " <<b->name <<" to the percept database, which ats:" <<endl;
         LOG(0) <<*b <<"--" <<b->ats <<endl;
-        mlr::Shape *s=b->shapes.first();
+        mlr::Shape *s=b->shape;
         switch(s->type){
           case mlr::ST_box:{
-            Percept *p = new PercBox(s->X, s->size, s->mesh.C);
+            Percept *p = new PercBox(b->X, s->size, s->mesh.C);
             p->id = nextId++;
-            p->bodyId = b->index;
+            p->bodyId = b->ID;
             percepts_filtered.set()->append(p);
           } break;
           default: NIY
@@ -189,14 +189,14 @@ void Filter::step(){
   // create task costs on the modelWorld for each percept
   for(Percept *p:percepts_filtered()){
     if(p->bodyId>=0){
-      mlr::Body *b = modelWorld->bodies(p->bodyId);
+      mlr::Frame *b = modelWorld->frames(p->bodyId);
       CtrlTask *t;
 
-      t = new CtrlTask(STRING("syncPos_" <<b->name), new TaskMap_Default(posTMT, b->shapes.first()->index));
+      t = new CtrlTask(STRING("syncPos_" <<b->name), new TaskMap_Default(posTMT, b->ID));
       t->ref = new MotionProfile_Const( p->transform.pos.getArr() );
       taskController.tasks.append(t);
 
-      t = new CtrlTask(STRING("syncQuat_" <<b->name), new TaskMap_Default(quatTMT, b->shapes.first()->index));
+      t = new CtrlTask(STRING("syncQuat_" <<b->name), new TaskMap_Default(quatTMT, b->ID));
       t->ref = new MotionProfile_Const( p->transform.rot.getArr4d(), true );
       taskController.tasks.append(t);
     }

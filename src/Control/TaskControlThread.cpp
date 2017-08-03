@@ -83,8 +83,9 @@ TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWor
 
   Kp_base = zeros(realWorld.q.N);
   Kd_base = zeros(realWorld.q.N);
-  for(mlr::Joint* j:realWorld.joints) if(j->qDim()>0){
-    arr *gains = j->ats.find<arr>("gains");
+  mlr::Joint *j;
+  for(mlr::Frame* f:realWorld.frames) if((j=f->joint()) && j->qDim()>0){
+    arr *gains = f->ats.find<arr>("gains");
     if(gains){
       for(uint i=0;i<j->qDim();i++){
         Kp_base(j->qIndex+i)=gains->elem(0);
@@ -104,7 +105,7 @@ TaskControlThread::~TaskControlThread(){
 void TaskControlThread::open(){
   modelWorld.set() = realWorld;
   modelWorld.get()->getJointState(q_model, qdot_model);
-  makeConvexHulls(modelWorld.set()->shapes);
+  makeConvexHulls(modelWorld.set()->frames);
 
   taskController = new TaskControlMethods(modelWorld.get());
 
@@ -123,7 +124,7 @@ void TaskControlThread::open(){
 
 
 void TaskControlThread::step(){
-  mlr::Joint *trans = realWorld.getJointByName("worldTranslationRotation", false);
+  mlr::Joint *trans = realWorld.getFrameByName("worldTranslationRotation", false)->joint();
 
   //-- read real state
   if(useRos){

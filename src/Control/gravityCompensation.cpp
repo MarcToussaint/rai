@@ -50,7 +50,7 @@ void GravityCompensation::learnGCModel() {
   joints.append(headJoints);
 
   for(mlr::String joint : joints) {
-    uint index = world.getJointByName(joint)->qIndex;
+    uint index = world.getFrameByName(joint)->joint()->qIndex;
     double c;
     betasGC[joint] = cv.calculateBetaWithCV(featuresGC(q, qSign, joint), u.sub(0,-1,index,index), lambdas, false, c);
     cout << c << endl;
@@ -61,7 +61,7 @@ arr GravityCompensation::compensate(const arr& q, const arr& qSign, const String
   arr u = zeros(world.getJointStateDimension());
 
   for(mlr::String joint : joints) {
-    uint index = world.getJointByName(joint)->qIndex;
+    uint index = world.getFrameByName(joint)->joint()->qIndex;
     u(index) = (featuresGC(q, qSign, joint)*betasGC.find(joint)->second).first();
   }
   clip(u, -7.0, 7.0); //TODO: More sophisticated clipping!
@@ -110,15 +110,15 @@ arr GravityCompensation::compensateFTR(const arr& q) {
 GravityCompensation::GravityCompensation(const mlr::KinematicWorld& world) : world(world) {
   TLeftArm = zeros(leftJoints.N, world.getJointStateDimension());
   for(uint i = 0; i < leftJoints.N; i++) {
-    TLeftArm(i, world.getJointByName(leftJoints(i))->qIndex) = 1;
+    TLeftArm(i, world.getFrameByName(leftJoints(i))->joint()->qIndex) = 1;
   }
   TRightArm = zeros(rightJoints.N, world.getJointStateDimension());
   for(uint i = 0; i < rightJoints.N; i++) {
-    TRightArm(i, world.getJointByName(rightJoints(i))->qIndex) = 1;
+    TRightArm(i, world.getFrameByName(rightJoints(i))->joint()->qIndex) = 1;
   }
   THead = zeros(headJoints.N, world.getJointStateDimension());
   for(uint i = 0; i < headJoints.N; i++) {
-    THead(i, world.getJointByName(headJoints(i))->qIndex) = 1;
+    THead(i, world.getFrameByName(headJoints(i))->joint()->qIndex) = 1;
   }
 }
 
@@ -130,7 +130,7 @@ arr GravityCompensation::featuresGC(arr q, arr qSign, const mlr::String& joint) 
     qSign = ~qSign;
   }
 
-  uint index = world.getJointByName(joint)->qIndex;
+  uint index = world.getFrameByName(joint)->joint()->qIndex;
   arr T;
   FeatureType featureType;
   bool dynamicFeature, cosFeature, sinFeature, stictionFeature;

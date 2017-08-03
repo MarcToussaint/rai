@@ -97,7 +97,7 @@ void TaskMap_qItself::phi(arr& q, arr& J, const mlr::KinematicWorld& G, int t) {
       qIndex = j->qIndex;
       for(uint k=0;k<j->qDim();k++){
         q(m) = G.q.elem(qIndex+k);
-        if(relative_q0) q(m) -= j->q0(k);
+        if(relative_q0 && j->q0.N) q(m) -= j->q0(k);
         if(&J) J(m, qIndex+k) = 1.;
         m++;
       }
@@ -125,34 +125,36 @@ void TaskMap_qItself::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
   for(uint i=0;i<=k;i++) if(q_bar(i).N!=qN){ handleSwitches=true; break; }
   if(handleSwitches){
     CHECK(!selectedBodies.N,"doesn't work for this...")
-    uint nJoints = G(offset)->frames.N;
-    JointL jointMatchLists(k+1, nJoints); //for each joint of [0], find if the others have it
+    uint nFrames = G(offset)->frames.N;
+    JointL jointMatchLists(k+1, nFrames); //for each joint of [0], find if the others have it
     jointMatchLists.setZero();
-    boolA useIt(nJoints);
+    boolA useIt(nFrames);
     useIt = true;
-    for(uint j_idx=0; j_idx<nJoints; j_idx++){
-      mlr::Frame *f = G(offset)->frames(j_idx);
+    for(uint i=0; i<nFrames; i++){
+      mlr::Frame *f = G(offset)->frames(i);
       mlr::Joint *j = f->joint();
       if(j){
-        for(uint i=0;i<=k;i++){
-          mlr::Joint *jmatch = G(offset+i)->getJointByBodyNames(j->from()->name, j->to()->name);
+        for(uint s=0;s<=k;s++){
+          mlr::Joint *jmatch = G(offset+s)->getJointByBodyNames(j->from()->name, j->to()->name);
           if(jmatch && j->type!=jmatch->type) jmatch=NULL;
-          if(!jmatch){ useIt(j_idx) = false; break; }
-          jointMatchLists(i, j_idx) = jmatch;
+          if(!jmatch){ useIt(i) = false; break; }
+          jointMatchLists(s, i) = jmatch;
         }
+      }else{
+        useIt(i) = false;
       }
     }
 
     arrA q_bar_mapped(k+1), J_bar_mapped(k+1);
     uint qidx, qdim;
-    for(uint j_idx=0; j_idx<nJoints; j_idx++){
-      if(useIt(j_idx)){
-        for(uint i=0;i<=k;i++){
-          qidx=jointMatchLists(i,j_idx)->qIndex;
-          qdim=jointMatchLists(i,j_idx)->qDim();
+    for(uint i=0; i<nFrames; i++){
+      if(useIt(i)){
+        for(uint s=0;s<=k;s++){
+          qidx = jointMatchLists(s,i)->qIndex;
+          qdim = jointMatchLists(s,i)->qDim();
           if(qdim){
-            q_bar_mapped(i).append(q_bar(i)({qidx, qidx+qdim-1}));
-            J_bar_mapped(i).append(J_bar(i)({qidx, qidx+qdim-1}));
+            q_bar_mapped(s).append(q_bar(s)({qidx, qidx+qdim-1}));
+            J_bar_mapped(s).append(J_bar(s)({qidx, qidx+qdim-1}));
           }
         }
       }

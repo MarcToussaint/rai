@@ -277,9 +277,6 @@ void mlr::KinematicWorld::copy(const mlr::KinematicWorld& G, bool referenceMeshe
 
 void mlr::KinematicWorld::jointSort(){
   fwdActiveSet = graphGetTopsortOrder<Frame>(frames);
-//  qdim=0;
-//  q.clear();
-//  qdot.clear();
   analyzeJointStateDimensions();
 }
 
@@ -486,9 +483,11 @@ void mlr::KinematicWorld::analyzeJointStateDimensions() {
   qdim=0;
   for(Frame *f: fwdActiveSet) if((j=f->joint())) {
     if(!j->mimic){
+      j->dim = j->getDimFromType();
       j->qIndex = qdim;
       qdim += j->qDim();
     }else{
+      j->dim = 0;
       j->qIndex = j->mimic->qIndex;
     }
   }
@@ -678,7 +677,7 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *b, const mlr::Vec
   of the i-th body W.R.T. the 6 axes of an arbitrary shape-frame, NOT the robot's joints (3 x 6 tensor)
   WARNING: this does not check if s is actually in the kinematic chain from root to b.
 */
-void mlr::KinematicWorld::kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const mlr::Vector& rel, Shape *s) const {
+void mlr::KinematicWorld::kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const mlr::Vector& rel, Frame *s) const {
   if(!b && &J){ J.resize(3, getJointStateDimension()).setZero();  return; }
 
   //get position
@@ -689,8 +688,8 @@ void mlr::KinematicWorld::kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const
 
   //get Jacobian
   J.resize(3, 6).setZero();
-  mlr::Vector diff = pos_world - s->frame->X.pos;
-  mlr::Array<mlr::Vector> axes = {s->frame->X.rot.getX(), s->frame->X.rot.getY(), s->frame->X.rot.getZ()};
+  mlr::Vector diff = pos_world - s->X.pos;
+  mlr::Array<mlr::Vector> axes = {s->X.rot.getX(), s->X.rot.getY(), s->X.rot.getZ()};
 
   //3 translational axes
   for(uint i=0;i<3;i++){
@@ -1015,6 +1014,12 @@ mlr::Frame* mlr::KinematicWorld::getFrameByName(const char* name, bool warnIfNot
 //}
 
 /// find joint connecting two bodies
+mlr::Link* mlr::KinematicWorld::getLinkByBodies(const Frame* from, const Frame* to) const {
+  if(to->link && to->link->from==from) return to->link;
+  return NULL;
+}
+
+/// find joint connecting two bodies
 mlr::Joint* mlr::KinematicWorld::getJointByBodies(const Frame* from, const Frame* to) const {
   if(to->joint() && to->from()==from) return to->joint();
   return NULL;
@@ -1212,6 +1217,53 @@ void mlr::KinematicWorld::read(std::istream& is) {
   init(G);
 }
 
+Graph mlr::KinematicWorld::getGraph() const {
+#if 1
+  Graph G;
+  //first just create nodes
+  for(Frame *f: frames) G.newNode<bool>({f->name}, {});
+  for(Frame *f: frames) {
+    Node *n = G.elem(f->ID);
+    if(f->link){
+      n->addParent(G.elem(f->link->from->ID));
+      if(f->link->joint){
+        n->keys.append(STRING("joint " <<f->link->joint->type));
+      }else{
+        n->keys.append(STRING("link " <<f->link->Q));
+      }
+    }
+    if(f->shape){
+      n->keys.append(STRING("shape " <<f->shape->type));
+    }
+  }
+#else
+  Graph G;
+  //first just create nodes
+  for(Frame *f: frames) G.newSubgraph({f->name}, {});
+
+  for(Frame *f: frames) {
+    Graph &ats = G.elem(f->ID)->graph();
+
+    ats.newNode<mlr::Transformation>({"X"}, {}, f->X);
+
+    if(f->shape){
+      ats.newNode<int>({"shape"}, {}, f->shape->type);
+    }
+
+    if(f->link){
+      G.elem(f->ID)->addParent(G.elem(f->link->from->ID));
+      if(f->link->joint){
+        ats.newNode<int>({"joint"}, {}, f->joint()->type);
+      }else{
+        ats.newNode<mlr::Transformation>({"Q"}, {}, f->link->Q);
+      }
+    }
+  }
+#endif
+  G.checkConsistency();
+  return G;
+}
+
 void mlr::KinematicWorld::init(const Graph& G) {
   clear();
 
@@ -1264,7 +1316,7 @@ void mlr::KinematicWorld::init(const Graph& G) {
     f->ats.copy(n->graph(), false, true);
 
     Joint *j=new Joint(from, f);
-    Link *l=new Link(f, to);
+    new Link(f, to);
 
     j->read(f->ats);
 
@@ -1999,17 +2051,17 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     CHECK_EQ(symbol, deleteJoint, "");
     CHECK(to,"");
     mlr::Frame *b = to;
-    if(b->joint()){
-      from = b->from();
+    if(b->link){
+      from = b->link->from;
     }else{
       return;
     }
   }
 
   if(symbol==deleteJoint){
-    Joint *j = G.getJointByBodies(from, to);
-    CHECK(j, "can't find joint between '"<<from->name <<"--" <<to->name <<"' Deleted before?");
-    delete j;
+    Link *link = G.getLinkByBodies(from, to);
+    CHECK(link, "can't find joint between '"<<from->name <<"--" <<to->name <<"' Deleted before?");
+    delete link;
     G.jointSort();
     return;
   }

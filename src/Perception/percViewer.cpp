@@ -35,15 +35,17 @@ void PercViewer::open(){
   gl->camera.upright();
 
   modelWorld.writeAccess();
-  modelCopy.resize(modelWorld().shapes.N);
-  for(mlr::Shape *s:modelWorld().shapes){
-    mlr::Mesh& m=modelCopy(s->index);
-    m = s->mesh;
-    if(!m.C.N) m.C = {.6, .6, .6, .3};
-    if(m.C.N==3) m.C.append(.3);
-    if(m.C.N==4) m.C(3)=.3;
-    m.glX = s->X;
-
+  modelCopy.resize(modelWorld().frames.N);
+  for(mlr::Frame *f: modelWorld().frames){
+    mlr::Shape *s = f->shape;
+    if(s){
+      mlr::Mesh& m=modelCopy(f->ID);
+      m = s->mesh;
+      if(!m.C.N) m.C = {.6, .6, .6, .3};
+      if(m.C.N==3) m.C.append(.3);
+      if(m.C.N==4) m.C(3)=.3;
+      m.glX = f->X;
+    }
   }
   modelWorld.deAccess();
 }
@@ -62,8 +64,8 @@ void PercViewer::step(){
 
   mlr::Array<mlr::Transformation> X;
   modelWorld.readAccess();
-  X.resize(modelWorld().shapes.N);
-  for(mlr::Shape *s:modelWorld().shapes) X(s->index) = s->X;
+  X.resize(modelWorld().frames.N);
+  for(mlr::Frame *f:modelWorld().frames) X(f->ID) = f->X;
   modelWorld.deAccess();
 
   gl->dataLock.writeLock();

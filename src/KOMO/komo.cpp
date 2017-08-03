@@ -29,10 +29,14 @@
 
 //===========================================================================
 
-double height(mlr::Frame* f){
-  CHECK(f,"");
-  CHECK(f->shape,"");
-  return f->shape->size(2);// + s->size(3);
+double height(const mlr::KinematicWorld& K, const char* name){
+    mlr::Frame *f = K.getFrameByName(name);
+    mlr::Shape *s = f->shape;
+    if(!s){
+        for(mlr::Frame *b:f->outLinks) if(b->name==name && b->shape){ s=b->shape; break; }
+    }
+    CHECK(s, "");
+    return s->size(2);// + s->size(3);
 }
 
 KOMO::KOMO() : T(0), tau(0.), k_order(2), useSwift(true), opt(NULL), gl(NULL), verbose(1), komo_problem(*this){
@@ -234,7 +238,7 @@ void KOMO::setKS_placeOn(double time, bool before, const char* obj, const char* 
 
   //connect object to table
   mlr::Transformation rel = 0;
-  rel.addRelativeTranslation( 0., 0., .5*(height(world.getFrameByName(obj)) + height(world.getFrameByName(table))));
+  rel.addRelativeTranslation( 0., 0., .5*(height(world, obj) + height(world, table)));
   if(!actuated)
     setKinematicSwitch(time, before, "transXYPhiZero", table, obj, rel );
   else
@@ -253,7 +257,7 @@ void KOMO::setKS_slider(double time, bool before, const char* obj, const char* s
   setKinematicSwitch(time, before, "delete", NULL, slidera);
 
   mlr::Transformation rel = 0;
-  rel.addRelativeTranslation( 0., 0., .5*(height(world.getFrameByName(obj)) + height(world.getFrameByName(table))));
+  rel.addRelativeTranslation( 0., 0., .5*(height(world, obj) + height(world, table)));
 
   setKinematicSwitch(time, true, "transXYPhiZero", table, slidera, rel);
   setKinematicSwitch(time, true, "hingeZZero", sliderb, obj);
@@ -377,7 +381,7 @@ void KOMO::setGraspSlide(double startTime, double endTime, const char* endeffRef
 
   //connect object to table
   mlr::Transformation rel = 0;
-  rel.pos.set(0,0, .5*(height(world.getFrameByName(object)) + height(world.getFrameByName(placeRef))));
+  rel.pos.set(0,0, .5*(height(world, object) + height(world, placeRef)));
   setKinematicSwitch(endTime, true, "transXYPhiZero", placeRef, object, rel );
 
   //-- slide constraints!
@@ -414,7 +418,7 @@ void KOMO::setPlace(double time, const char* endeffRef, const char* object, cons
 
   //connect object to table
   mlr::Transformation rel = 0;
-  rel.pos.set(0,0, .5*(height(world.getFrameByName(object)) + height(world.getFrameByName(placeRef))));
+  rel.pos.set(0,0, .5*(height(world, object) + height(world, placeRef)));
   setKinematicSwitch(time, true, "transXYPhiZero", placeRef, object, rel );
 }
 
@@ -588,9 +592,8 @@ void KOMO::setLimits(bool hardConstraint, double margin, double prec){
 
 
 void KOMO::setConfigFromFile(){
-//  Graph model;
-//  FILE(mlr::getParameter<mlr::String>("KOMO/modelfile")) >>model;
   mlr::KinematicWorld W(mlr::getParameter<mlr::String>("KOMO/modelfile"));
+//  W.optimizeTree();
   setModel(
         W,
         mlr::getParameter<bool>("KOMO/useSwift", true),

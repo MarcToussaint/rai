@@ -106,6 +106,37 @@ void TEST(Kinematics){
 
 //===========================================================================
 //
+// Graph export test
+//
+
+void TEST(Graph){
+
+
+//  mlr::KinematicWorld G("arm7.g");
+//  mlr::KinematicWorld K("kinematicTests.g");
+  mlr::KinematicWorld K("../../../data/pr2_model/pr2_model.ors");
+//  mlr::KinematicWorld G("../../../projects/17-LGP-push/quatJacTest.g");
+//  G.watch(true);
+
+  K.prefixNames();
+  {
+    Graph G = K.getGraph();
+    G.displayDot();
+    mlr::wait();
+  }
+
+  K.optimizeTree();
+  {
+    Graph G = K.getGraph();
+    G.displayDot();
+    mlr::wait();
+  }
+
+}
+
+
+//===========================================================================
+//
 // Jacobian test
 //
 
@@ -590,6 +621,9 @@ void TEST(InverseKinematics) {
 
 int MAIN(int argc,char **argv){
   mlr::initCmdLine(argc, argv);
+
+  testGraph();
+  return 0;
 
   testLoadSave();
   testCopy();

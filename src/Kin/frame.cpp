@@ -104,7 +104,7 @@ mlr::Frame *mlr::Frame::from() const{
 }
 
 mlr::Joint::Joint(Link *_link, Joint *copyJoint)
-  : qIndex(UINT_MAX), q0(0.), H(1.), mimic(NULL), link(_link), constrainToZeroVel(false) {
+  : dim(0), qIndex(UINT_MAX), q0(0.), H(1.), mimic(NULL), link(_link), constrainToZeroVel(false) {
   CHECK(!link->joint, "the Link already has a Joint");
   link -> joint = this;
 //  if(!to->link){
@@ -428,6 +428,7 @@ void mlr::Joint::read(const Graph &G){
   //coupled to another joint requires post-processing by the Graph::read!!
   if(G["mimic"]){
     mimic=(Joint*)1;
+    dim=0;
   }
 }
 

@@ -26,11 +26,10 @@ void TEST(KomoSequence){
 
   komo.reset();
   komo.run();
-//  komo.checkGradients();
 
   Graph result = komo.getReport(true);
 
-  for(;;) komo.displayTrajectory(.1, true);
+  while(komo.displayTrajectory(.1, true));
 }
 
 //===========================================================================
