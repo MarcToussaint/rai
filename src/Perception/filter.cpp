@@ -19,6 +19,7 @@
 #include <unordered_set>
 #include "filter.h"
 #include <Control/taskControl.h>
+#include <Kin/frame.h>
 
 Filter::Filter()
   : Thread("Filter", -1.),

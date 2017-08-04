@@ -13,6 +13,7 @@
     --------------------------------------------------------------  */
 
 #include "taskMap_proxy.h"
+#include <Kin/proxy.h>
 
 TaskMap_Proxy::TaskMap_Proxy(PTMtype _type,
                            uintA _shapes,

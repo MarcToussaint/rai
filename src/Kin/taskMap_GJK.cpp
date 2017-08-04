@@ -14,6 +14,7 @@
 
 
 #include "taskMap_GJK.h"
+#include "frame.h"
 
 TaskMap_GJK::TaskMap_GJK(const mlr::Frame* s1, const mlr::Frame *s2, bool exact, bool negative) : exact(exact), negScalar(negative){
   CHECK(s1 && s2,"");
@@ -103,5 +104,9 @@ void TaskMap_GJK::phi(arr& v, arr& J, const mlr::KinematicWorld& W, int t){
     v = ARR(-l);
   }
 //  CHECK_ZERO(l2-d2, 1e-6,"");
+}
+
+mlr::String TaskMap_GJK::shortTag(const mlr::KinematicWorld &G){
+  return STRING("TaskMap_GJK"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }
 

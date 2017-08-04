@@ -37,7 +37,7 @@ struct sSimulator {
 
 void Simulator::anchorKinematicChainIn(const char* bodyName){
   s->G.reconfigureRoot(s->G.getFrameByName(bodyName));
-  s->G.calc_fwdPropagateFrames();
+//  s->G.calc_fwdPropagateFrames();
   
   NIY;
 //  if(s->G.swift().isOpen){

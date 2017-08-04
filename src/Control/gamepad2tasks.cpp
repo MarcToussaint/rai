@@ -18,6 +18,7 @@
 #include "gamepad2tasks.h"
 #include <Kin/taskMaps.h>
 #include <Hardware/gamepad/gamepad.h>
+#include <Kin/frame.h>
 
 Gamepad2Tasks::Gamepad2Tasks(TaskControlMethods& _TC, const mlr::KinematicWorld& K, const arr& _q0)
   : TC(_TC), q0(_q0),

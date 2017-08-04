@@ -1,5 +1,6 @@
 #include "percept.h"
 #include <Gui/opengl.h>
+#include <Kin/frame.h>
 
 double alpha = .2;
 

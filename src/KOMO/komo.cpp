@@ -16,6 +16,8 @@
 #include "komo.h"
 #include <Algo/spline.h>
 #include <iomanip>
+#include <Kin/frame.h>
+#include <Kin/switch.h>
 #include <Kin/kin_swift.h>
 #include <Kin/taskMaps.h>
 #include <Gui/opengl.h>
@@ -71,8 +73,7 @@ void KOMO::init(const Graph& specs){
   }
 
   if(glob["meldFixedJoints"]){
-    world.meldFixedJoints();
-    world.removeUselessBodies();
+    world.optimizeTree();
   }
 
   if(glob["makeConvexHulls"])
@@ -113,8 +114,7 @@ void KOMO::setModel(const mlr::KinematicWorld& K,
   useSwift = _useSwift;
 
   if(meldFixedJoints){
-    world.meldFixedJoints();
-    world.removeUselessBodies();
+    world.optimizeTree();
   }
 
   if(makeConvexHulls){
@@ -592,10 +592,10 @@ void KOMO::setLimits(bool hardConstraint, double margin, double prec){
 
 
 void KOMO::setConfigFromFile(){
-  mlr::KinematicWorld W(mlr::getParameter<mlr::String>("KOMO/modelfile"));
-//  W.optimizeTree();
+  mlr::KinematicWorld K(mlr::getParameter<mlr::String>("KOMO/modelfile"));
+//  K.optimizeTree();
   setModel(
-        W,
+        K,
         mlr::getParameter<bool>("KOMO/useSwift", true),
         mlr::getParameter<bool>("KOMO/meldFixedJoints", false),
         mlr::getParameter<bool>("KOMO/makeConvexHulls", true),
@@ -822,7 +822,7 @@ void KOMO::setupConfigurations(){
         sw->apply(*configurations(s));
       }
     }
-    configurations(s)->jointSort();
+    configurations(s)->calc_fwdActiveSet();
     configurations(s)->calc_q_from_Q();
     //configurations.last()->checkConsistency();
   }

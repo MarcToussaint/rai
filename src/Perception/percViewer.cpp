@@ -1,5 +1,6 @@
 #include "percViewer.h"
 #include <Gui/opengl.h>
+#include <Kin/frame.h>
 
 PercViewer::PercViewer(const char* percepts_name)
   : Thread(STRING("PercViewer_"<<percepts_name), -1.),

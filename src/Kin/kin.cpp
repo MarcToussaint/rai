@@ -28,9 +28,12 @@
 #include <sstream>
 #include <climits>
 #include "kin.h"
+#include "frame.h"
+#include "proxy.h"
 #include "kin_swift.h"
 #include "kin_physx.h"
 #include "kin_ode.h"
+#include "kin_feather.h"
 #include <Geo/qhull.h>
 #include <GeoOptim/geoOptim.h>
 #include <Gui/opengl.h>
@@ -71,7 +74,7 @@ uint mlr::KinematicWorld::setJointStateCount = 0;
 // contants
 //
 
-mlr::Frame& NoBody = *((mlr::Frame*)NULL);
+mlr::Frame& NoFrame = *((mlr::Frame*)NULL);
 mlr::Shape& NoShape = *((mlr::Shape*)NULL);
 mlr::Joint& NoJoint = *((mlr::Joint*)NULL);
 mlr::KinematicWorld& NoWorld = *((mlr::KinematicWorld*)NULL);
@@ -84,48 +87,7 @@ template<> const char* mlr::Enum<mlr::JointType>::names []={
   "JT_hingeX", "JT_hingeY", "JT_hingeZ", "JT_transX", "JT_transY", "JT_transZ", "JT_transXY", "JT_trans3", "JT_transXYPhi", "JT_universal", "JT_rigid", "JT_quatBall", "JT_phiTransXY", "JT_glue", "JT_free", NULL
 };
 
-template<> const char* mlr::Enum<mlr::KinematicSwitch::OperatorSymbol>::names []={
-  "deleteJoint", "addJointZero", "addJointAtFrom", "addJointAtTo", "addArticulated", NULL
-};
 
-
-
-//===========================================================================
-//
-// Proxy
-//
-
-mlr::Proxy::Proxy() {
-  colorCode = 0;
-}
-
-#ifdef MLR_GL
-void mlr::Proxy::glDraw(OpenGL& gl){
-  glLoadIdentity();
-  if(!colorCode){
-    if(d>0.) glColor(.8,.2,.2);
-    else glColor(1,0,0);
-  }else glColor(colorCode);
-  glBegin(GL_LINES);
-  glVertex3dv(posA.p());
-  glVertex3dv(posB.p());
-  glEnd();
-  mlr::Transformation f;
-  f.pos=posA;
-  f.rot.setDiff(mlr::Vector(0, 0, 1), posA-posB);
-  double GLmatrix[16];
-  f.getAffineMatrixGL(GLmatrix);
-  glLoadMatrixd(GLmatrix);
-  glDisable(GL_CULL_FACE);
-  glDrawDisk(.02);
-  glEnable(GL_CULL_FACE);
-
-  f.pos=posB;
-  f.getAffineMatrixGL(GLmatrix);
-  glLoadMatrixd(GLmatrix);
-  glDrawDisk(.02);
-}
-#endif
 
 uintA stringListToShapeIndices(const mlr::Array<const char*>& names, const mlr::KinematicWorld& K) {
   uintA I(names.N);
@@ -197,20 +159,16 @@ namespace mlr{
   };
 }
 
-mlr::KinematicWorld::KinematicWorld():s(NULL), qdim(0), isLinkTree(false) {
+mlr::KinematicWorld::KinematicWorld() : s(NULL), qdim(0) {
   frames.memMove=proxies.memMove=true;
   s=new sKinematicWorld;
 }
 
-mlr::KinematicWorld::KinematicWorld(const mlr::KinematicWorld& other):s(NULL),qdim(0),isLinkTree(false)  {
-  frames.memMove=proxies.memMove=true;
-  s=new sKinematicWorld;
+mlr::KinematicWorld::KinematicWorld(const mlr::KinematicWorld& other) : KinematicWorld() {
   copy( other );
 }
 
-mlr::KinematicWorld::KinematicWorld(const char* filename):s(NULL),qdim(0),isLinkTree(false)  {
-  frames.memMove=proxies.memMove=true;
-  s=new sKinematicWorld;
+mlr::KinematicWorld::KinematicWorld(const char* filename) : KinematicWorld() {
   init(filename);
 }
 
@@ -225,29 +183,37 @@ void mlr::KinematicWorld::init(const char* filename) {
 }
 
 void mlr::KinematicWorld::clear() {
+  reset_q();
+  listDelete(proxies); checkConsistency();
+  while(frames.N){ delete frames.last(); checkConsistency(); }
+}
+
+void mlr::KinematicWorld::reset_q(){
   qdim=0;
   q.clear();
   qdot.clear();
-  listDelete(proxies); checkConsistency();
-  while(frames.N){ delete frames.last(); checkConsistency(); }
-  isLinkTree=false;
+  fwdActiveSet.clear();
 }
 
-void mlr::KinematicWorld::copy(const mlr::KinematicWorld& G, bool referenceMeshesAndSwiftOnCopy) {
+void mlr::KinematicWorld::calc_fwdActiveSet(){
+  fwdActiveSet = graphGetTopsortOrder<Frame>(frames);
+  analyzeJointStateDimensions();
+}
+
+void mlr::KinematicWorld::copy(const mlr::KinematicWorld& K, bool referenceMeshesAndSwiftOnCopy) {
   clear();
 #if 1
-  listCopy(proxies, G.proxies);
-  for(Frame *f:G.frames) new Frame(*this, f);
-  for(Frame *f:G.frames) if(f->link) new Link(frames(f->link->from->ID), frames(f->ID), f->link);
+  listCopy(proxies, K.proxies);
+  for(Frame *f:K.frames) new Frame(*this, f);
+  for(Frame *f:K.frames) if(f->link) new Link(frames(f->link->from->ID), frames(f->ID), f->link);
   if(referenceMeshesAndSwiftOnCopy){
-    s->swift = G.s->swift;
+    s->swift = K.s->swift;
     s->swiftIsReference=true;
   }
-  q = G.q;
-  qdot = G.qdot;
-  qdim = G.qdim;
-  isLinkTree = G.isLinkTree;
-  jointSort();
+  q = K.q;
+  qdot = K.qdot;
+  qdim = K.qdim;
+  calc_fwdActiveSet();
 #else
   q = G.q;
   qdot = G.qdot;
@@ -273,11 +239,6 @@ void mlr::KinematicWorld::copy(const mlr::KinematicWorld& G, bool referenceMeshe
     b->shapes.append(s);
   }
 #endif
-}
-
-void mlr::KinematicWorld::jointSort(){
-  fwdActiveSet = graphGetTopsortOrder<Frame>(frames);
-  analyzeJointStateDimensions();
 }
 
 /** @brief KINEMATICS: given the (absolute) frames of root nodes and the relative frames
@@ -363,7 +324,7 @@ arr mlr::KinematicWorld::calc_fwdPropagateVelocities(){
         Vector qV(R*q_vel); //relative vel in global coords
         Vector qW(R*q_angvel); //relative ang vel in global coords
         linVel += angVel^(f->X.pos - from->X.pos);
-        if(!isLinkTree) linVel += qW^(f->X.pos - j->X().pos);
+        /*if(!isLinkTree) */linVel += qW^(f->X.pos - j->X().pos);
         linVel += qV;
         angVel += qW;
 
@@ -426,28 +387,28 @@ arr mlr::KinematicWorld::naturalQmetric(double power) const {
 
 /** @brief revert the topological orientation of a joint (edge),
    e.g., when choosing another body as root of a tree */
-void mlr::KinematicWorld::revertJoint(mlr::Joint *j) {
-  cout <<"reverting edge (" <<j->from()->name <<' ' <<j->to()->name <<")" <<endl;
-  NIY;
-#if 0
-  //revert
-  j->from->outLinks.removeValue(j);
-  j->to->inLinks.removeValue(j);
-  Frame *b=j->from; j->from=j->to; j->to=b;
-  j->from->outLinks.append(j);
-  j->to->inLinks.append(j);
-  listReindex(j->from->outLinks);
-  listReindex(j->from->inLinks);
-  checkConsistency();
+//void mlr::KinematicWorld::revertJoint(mlr::Joint *j) {
+//  cout <<"reverting edge (" <<j->from()->name <<' ' <<j->to()->name <<")" <<endl;
+//  NIY;
+//#if 0
+//  //revert
+//  j->from->outLinks.removeValue(j);
+//  j->to->inLinks.removeValue(j);
+//  Frame *b=j->from; j->from=j->to; j->to=b;
+//  j->from->outLinks.append(j);
+//  j->to->inLinks.append(j);
+//  listReindex(j->from->outLinks);
+//  listReindex(j->from->inLinks);
+//  checkConsistency();
 
-  mlr::Transformation f;
-  f=j->A;
-  j->A.setInverse(j->B);
-  j->B.setInverse(f);
-  f=j->Q;
-  j->Q.setInverse(f);
-#endif
-}
+//  mlr::Transformation f;
+//  f=j->A;
+//  j->A.setInverse(j->B);
+//  j->B.setInverse(f);
+//  f=j->Q;
+//  j->Q.setInverse(f);
+//#endif
+//}
 
 /** @brief re-orient all joints (edges) such that n becomes
   the root of the configuration */
@@ -467,7 +428,7 @@ void mlr::KinematicWorld::reconfigureRoot(Frame *root) {
       level((*m)->ID)=i;
       Joint *j;
       if((j = (*m)->joint())){ //for_list(Joint,  e,  (*m)->inLinks) {
-        if(!level(j->from()->ID)) revertJoint(j);
+        NIY; //if(!level(j->from()->ID)) revertJoint(j);
       }
       for(Frame *f: (*m)->outLinks) list2.append(f);
     }
@@ -597,8 +558,8 @@ void mlr::KinematicWorld::setJointState(const arr& _q, const arr& _qdot) {
 
 /** @brief return the jacobian \f$J = \frac{\partial\phi_i(q)}{\partial q}\f$ of the position
   of the i-th body (3 x n tensor)*/
-void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *b, const mlr::Vector& rel) const {
-  if(!b){
+void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const mlr::Vector& rel) const {
+  if(!a){
     MLR_MSG("WARNING: calling kinematics for NULL body");
     if(&y) y.resize(3).setZero();
     if(&J) J.resize(3, getJointStateDimension()).setZero();
@@ -606,17 +567,17 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *b, const mlr::Vec
   }
 
   //get position
-  mlr::Vector pos_world = b->X.pos;
-  if(&rel) pos_world += b->X.rot*rel;
+  mlr::Vector pos_world = a->X.pos;
+  if(&rel) pos_world += a->X.rot*rel;
   if(&y) y = conv_vec2arr(pos_world); //return the output
   if(!&J) return; //do not return the Jacobian
 
   //get Jacobian
   uint N=getJointStateDimension();
   J.resize(3, N).setZero();
-  while(b) { //loop backward down the kinematic tree
-    if(!b->link) break; //frame has no inlink -> done
-    Joint *j=b->joint();
+  while(a) { //loop backward down the kinematic tree
+    if(!a->link) break; //frame has no inlink -> done
+    Joint *j=a->joint();
     if(j) {
       uint j_idx=j->qIndex;
       if(j_idx>=N) CHECK(j->type==JT_glue || j->type==JT_rigid, "");
@@ -641,7 +602,7 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *b, const mlr::Vec
           if(j->mimic) NIY;
           arr R = j->X().rot.getArr();
           J.setMatrixBlock(R.sub(0,-1,0,1), 0, j_idx);
-          mlr::Vector tmp = j->axis ^ (pos_world-(j->X().pos + j->X().rot*b->link->Q.pos));
+          mlr::Vector tmp = j->axis ^ (pos_world-(j->X().pos + j->X().rot*a->link->Q.pos));
           J(0, j_idx+2) += tmp.x;
           J(1, j_idx+2) += tmp.y;
           J(2, j_idx+2) += tmp.z;
@@ -652,7 +613,7 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *b, const mlr::Vec
           J(0, j_idx) += tmp.x;
           J(1, j_idx) += tmp.y;
           J(2, j_idx) += tmp.z;
-          arr R = (j->X().rot*b->link->Q.rot).getArr();
+          arr R = (j->X().rot*a->link->Q.rot).getArr();
           J.setMatrixBlock(R.sub(0,-1,0,1), 0, j_idx+1);
         }
         if(j->type==JT_trans3 || j->type==JT_free) {
@@ -662,14 +623,14 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *b, const mlr::Vec
         }
         if(j->type==JT_quatBall || j->type==JT_free) {
           uint offset = (j->type==JT_free)?3:0;
-          arr Jrot = j->X().rot.getArr() * b->link->Q.rot.getJacobian(); //transform w-vectors into world coordinate
-          Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(j->X().pos+j->X().rot*b->link->Q.pos)) ); //cross-product of all 4 w-vectors with lever
+          arr Jrot = j->X().rot.getArr() * a->link->Q.rot.getJacobian(); //transform w-vectors into world coordinate
+          Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(j->X().pos+j->X().rot*a->link->Q.pos)) ); //cross-product of all 4 w-vectors with lever
           Jrot /= sqrt(sumOfSqr( q({j->qIndex+offset, j->qIndex+offset+3}) )); //account for the potential non-normalization of q
           for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
         }
       }
     }
-    b = b->link->from;
+    a = a->link->from;
   }
 }
 
@@ -709,7 +670,7 @@ void mlr::KinematicWorld::kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const
 
 /** @brief return the Hessian \f$H = \frac{\partial^2\phi_i(q)}{\partial q\partial q}\f$ of the position
   of the i-th body (3 x n x n tensor) */
-void mlr::KinematicWorld::hessianPos(arr& H, Frame *b, mlr::Vector *rel) const {
+void mlr::KinematicWorld::hessianPos(arr& H, Frame *a, mlr::Vector *rel) const {
   HALT("this is buggy: a sign error: see examples/Kin/ors testKinematics");
   Joint *j1, *j2;
   uint j1_idx, j2_idx;
@@ -722,10 +683,10 @@ void mlr::KinematicWorld::hessianPos(arr& H, Frame *b, mlr::Vector *rel) const {
   H.setZero();
   
   //get reference frame
-  pos_a = b->X.pos;
-  if(rel) pos_a += b->X.rot*(*rel);
+  pos_a = a->X.pos;
+  if(rel) pos_a += a->X.rot*(*rel);
   
-  if((j1=b->joint())) {
+  if((j1=a->joint())) {
     while(j1) {
       j1_idx=j1->qIndex;
 
@@ -783,15 +744,15 @@ void mlr::KinematicWorld::hessianPos(arr& H, Frame *b, mlr::Vector *rel) const {
 /* takes the joint state x and returns the jacobian dz of
    the position of the ith body (w.r.t. all joints) -> 2D array */
 /// Jacobian of the i-th body's z-orientation vector
-void mlr::KinematicWorld::kinematicsVec(arr& y, arr& J, Frame *b, const mlr::Vector& vec) const {
+void mlr::KinematicWorld::kinematicsVec(arr& y, arr& J, Frame *a, const mlr::Vector& vec) const {
   //get the vectoreference frame
   mlr::Vector vec_referene;
-  if(&vec) vec_referene = b->X.rot*vec;
-  else     vec_referene = b->X.rot.getZ();
+  if(&vec) vec_referene = a->X.rot*vec;
+  else     vec_referene = a->X.rot.getZ();
   if(&y) y = conv_vec2arr(vec_referene); //return the vec
   if(&J){
     arr A;
-    axesMatrix(A, b);
+    axesMatrix(A, a);
     J = crossProduct(A, conv_vec2arr(vec_referene));
   }
 }
@@ -799,12 +760,12 @@ void mlr::KinematicWorld::kinematicsVec(arr& y, arr& J, Frame *b, const mlr::Vec
 /* takes the joint state x and returns the jacobian dz of
    the position of the ith body (w.r.t. all joints) -> 2D array */
 /// Jacobian of the i-th body's z-orientation vector
-void mlr::KinematicWorld::kinematicsQuat(arr& y, arr& J, Frame *b) const { //TODO: allow for relative quat
-  mlr::Quaternion rot_b = b->X.rot;
+void mlr::KinematicWorld::kinematicsQuat(arr& y, arr& J, Frame *a) const { //TODO: allow for relative quat
+  mlr::Quaternion rot_b = a->X.rot;
   if(&y) y = conv_quat2arr(rot_b); //return the vec
   if(&J){
     arr A;
-    axesMatrix(A, b);
+    axesMatrix(A, a);
     J.resize(4, A.d1);
     for(uint i=0;i<J.d1;i++){
       mlr::Quaternion tmp(0., 0.5*A(0,i), 0.5*A(1,i), 0.5*A(2,i) ); //this is unnormalized!!
@@ -818,12 +779,12 @@ void mlr::KinematicWorld::kinematicsQuat(arr& y, arr& J, Frame *b) const { //TOD
 }
 
 //* This Jacobian directly gives the implied rotation vector: multiplied with \dot q it gives the angular velocity of body b */
-void mlr::KinematicWorld::axesMatrix(arr& J, Frame *b) const {
+void mlr::KinematicWorld::axesMatrix(arr& J, Frame *a) const {
   uint N = getJointStateDimension();
   J.resize(3, N).setZero();
-  while(b->link) { //loop backward down the kinematic tree
+  while(a->link) { //loop backward down the kinematic tree
     mlr::Joint *j;
-    if((j=b->joint())){
+    if((j=a->joint())){
       uint j_idx=j->qIndex;
       if(j_idx>=N) CHECK(j->type==JT_glue || j->type==JT_rigid, "");
       if(j_idx<N){
@@ -835,55 +796,55 @@ void mlr::KinematicWorld::axesMatrix(arr& J, Frame *b) const {
         }
         if(j->type==JT_quatBall || j->type==JT_free) {
           uint offset = (j->type==JT_free)?3:0;
-          arr Jrot = j->X().rot.getArr() * b->link->Q.rot.getJacobian(); //transform w-vectors into world coordinate
+          arr Jrot = j->X().rot.getArr() * a->link->Q.rot.getJacobian(); //transform w-vectors into world coordinate
           Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset,j->qIndex+offset+3}))); //account for the potential non-normalization of q
           for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
         }
         //all other joints: J=0 !!
       }
     }
-    b = b->link->from;
+    a = a->link->from;
   }
 }
 
 /// The position vec1, attached to b1, relative to the frame of b2 (plus vec2)
-void mlr::KinematicWorld::kinematicsRelPos(arr& y, arr& J, Frame *b1, const mlr::Vector& vec1, Frame *b2, const mlr::Vector& vec2) const {
+void mlr::KinematicWorld::kinematicsRelPos(arr& y, arr& J, Frame *a, const mlr::Vector& vec1, Frame *b, const mlr::Vector& vec2) const {
   arr y1,y2,J1,J2;
-  kinematicsPos(y1, J1, b1, vec1);
-  kinematicsPos(y2, J2, b2, vec2);
-  arr Rinv = ~(b2->X.rot.getArr());
+  kinematicsPos(y1, J1, a, vec1);
+  kinematicsPos(y2, J2, b, vec2);
+  arr Rinv = ~(b->X.rot.getArr());
   y = Rinv * (y1 - y2);
   if(&J){
     arr A;
-    axesMatrix(A, b2);
+    axesMatrix(A, b);
     J = Rinv * (J1 - J2 - crossProduct(A, y1 - y2));
   }
 }
 
 /// The vector vec1, attached to b1, relative to the frame of b2
-void mlr::KinematicWorld::kinematicsRelVec(arr& y, arr& J, Frame *b1, const mlr::Vector& vec1, Frame *b2) const {
+void mlr::KinematicWorld::kinematicsRelVec(arr& y, arr& J, Frame *a, const mlr::Vector& vec1, Frame *b) const {
   arr y1,J1;
-  kinematicsVec(y1, J1, b1, vec1);
+  kinematicsVec(y1, J1, a, vec1);
 //  kinematicsVec(y2, J2, b2, vec2);
-  arr Rinv = ~(b2->X.rot.getArr());
+  arr Rinv = ~(b->X.rot.getArr());
   y = Rinv * y1;
   if(&J){
     arr A;
-    axesMatrix(A, b2);
+    axesMatrix(A, b);
     J = Rinv * (J1 - crossProduct(A, y1));
   }
 }
 
 /// The position vec1, attached to b1, relative to the frame of b2 (plus vec2)
-void mlr::KinematicWorld::kinematicsRelRot(arr& y, arr& J, Frame *b1, Frame *b2) const {
-  mlr::Quaternion rot_b = b1->X.rot;
+void mlr::KinematicWorld::kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) const {
+  mlr::Quaternion rot_b = a->X.rot;
   if(&y) y = conv_vec2arr(rot_b.getVec());
   if(&J){
     double phi=acos(rot_b.w);
     double s=2.*phi/sin(phi);
     double ss=-2./(1.-mlr::sqr(rot_b.w)) * (1.-phi/tan(phi));
     arr A;
-    axesMatrix(A, b1);
+    axesMatrix(A, a);
     J = 0.5 * (rot_b.w*A*s + crossProduct(A, y));
     J -= 0.5 * ss/s/s*(y*~y*A);
   }
@@ -1014,10 +975,10 @@ mlr::Frame* mlr::KinematicWorld::getFrameByName(const char* name, bool warnIfNot
 //}
 
 /// find joint connecting two bodies
-mlr::Link* mlr::KinematicWorld::getLinkByBodies(const Frame* from, const Frame* to) const {
-  if(to->link && to->link->from==from) return to->link;
-  return NULL;
-}
+//mlr::Link* mlr::KinematicWorld::getLinkByBodies(const Frame* from, const Frame* to) const {
+//  if(to->link && to->link->from==from) return to->link;
+//  return NULL;
+//}
 
 /// find joint connecting two bodies
 mlr::Joint* mlr::KinematicWorld::getJointByBodies(const Frame* from, const Frame* to) const {
@@ -1340,14 +1301,9 @@ void mlr::KinematicWorld::init(const Graph& G) {
   }
 
   //-- clean up the graph
-  analyzeJointStateDimensions();
-//  topSort();
-  jointSort();
-  checkConsistency();
-  //makeLinkTree();
-//  calc_missingAB_from_BodyAndJointFrames();
-  analyzeJointStateDimensions();
+  calc_fwdActiveSet();
   calc_q_from_Q();
+  checkConsistency();
   calc_fwdPropagateFrames();
 }
 
@@ -1780,24 +1736,24 @@ double mlr::KinematicWorld::getEnergy() {
   return E;
 }
 
-void mlr::KinematicWorld::removeUselessBodies(int verbose) {
-  //-- remove bodies and their in-joints
-  for_list_rev(Frame, b, frames) if(!b->shape && !b->outLinks.N) {
-    if(verbose>0) LOG(0) <<" -- removing useless body " <<b->name <<endl;
-    delete b;
-  }
-  //-- reindex
-  listReindex(frames);
-//  listReindex(joints);
-  checkConsistency();
-//  for(Joint * j: joints) j->ID=j_COUNT;  j->ifrom = j->from->index;  j->ito = j->to->index;  }
-//  for(Shape *s: shapes) s->ibody = s->body->index;
-  //-- clear all previous index related things
-  qdim=0;
-  proxies.clear();
-  analyzeJointStateDimensions();
-  calc_q_from_Q();
-}
+//void mlr::KinematicWorld::removeUselessBodies(int verbose) {
+//  //-- remove bodies and their in-joints
+//  for_list_rev(Frame, b, frames) if(!b->shape && !b->outLinks.N) {
+//    if(verbose>0) LOG(0) <<" -- removing useless body " <<b->name <<endl;
+//    delete b;
+//  }
+//  //-- reindex
+//  listReindex(frames);
+////  listReindex(joints);
+//  checkConsistency();
+////  for(Joint * j: joints) j->ID=j_COUNT;  j->ifrom = j->from->index;  j->ito = j->to->index;  }
+////  for(Shape *s: shapes) s->ibody = s->body->index;
+//  //-- clear all previous index related things
+//  qdim=0;
+//  proxies.clear();
+//  analyzeJointStateDimensions();
+//  calc_q_from_Q();
+//}
 
 void mlr::KinematicWorld::pruneRigidJoints(int verbose){
   mlr::Joint *j;
@@ -1889,11 +1845,8 @@ bool mlr::KinematicWorld::checkConsistency(){
   for(Frame *f: fwdActiveSet)
     if(f->link) level(f->ID) = level(f->link->from->ID)+1;
 
-  for(Frame *f: frames) if(f->link){
-      CHECK(level(f->link->from->ID) < level(f->ID), "joint does not go forward");
-  }
-  for(Frame *b: frames){
-    if(b->joint())  CHECK(level(b->from()->ID) < level(b->ID), "topsort failed");
+  for(Frame *f: fwdActiveSet) if(f->link){
+    CHECK(level(f->link->from->ID) < level(f->ID), "joint does not go forward");
   }
 
   for(Frame *f: frames) if(f->shape){
@@ -1902,47 +1855,47 @@ bool mlr::KinematicWorld::checkConsistency(){
   return true;
 }
 
-void mlr::KinematicWorld::meldFixedJoints(int verbose) {
-  NIY
-#if 0
-  checkConsistency();
-  for(Joint *j: joints) if(j->type==JT_rigid) {
-    if(verbose>0) LOG(0) <<" -- melding fixed joint (" <<j->from->name <<' ' <<j->to->name <<" )" <<endl;
-    Frame *a = j->from;
-    Frame *b = j->to;
-    Transformation bridge = j->A * j->Q * j->B;
-    //reassociate shapes with a
-    if(b->shape){
-      b->shape->frame=a;
-      CHECK(a->shape==NULL,"");
-      a->shape = b->shape;
-    }
-    b->shape = NULL;
-    //joints from b-to-c now become joints a-to-c
-    for(Frame *f: b->outLinks) {
-      Joint *j = f->joint();
-      if(j){
-        j->from = a;
-        j->A = bridge * j->A;
-        a->outLinks.append(f);
-      }
-    }
-    b->outLinks.clear();
-    //reassociate mass
-    a->mass += b->mass;
-    a->inertia += b->inertia;
-    b->mass = 0.;
-  }
-  jointSort();
-  calc_q_from_Q();
-  checkConsistency();
-  //-- remove fixed joints and reindex
-  for_list_rev(Joint, jj, joints) if(jj->type==JT_rigid) delete jj;
-  listReindex(joints);
-  //for(Joint * j: joints) { j->ID=j_COUNT;  j->ifrom = j->from->index;  j->ito = j->to->index;  }
-  checkConsistency();
-#endif
-}
+//void mlr::KinematicWorld::meldFixedJoints(int verbose) {
+//  NIY
+//#if 0
+//  checkConsistency();
+//  for(Joint *j: joints) if(j->type==JT_rigid) {
+//    if(verbose>0) LOG(0) <<" -- melding fixed joint (" <<j->from->name <<' ' <<j->to->name <<" )" <<endl;
+//    Frame *a = j->from;
+//    Frame *b = j->to;
+//    Transformation bridge = j->A * j->Q * j->B;
+//    //reassociate shapes with a
+//    if(b->shape){
+//      b->shape->frame=a;
+//      CHECK(a->shape==NULL,"");
+//      a->shape = b->shape;
+//    }
+//    b->shape = NULL;
+//    //joints from b-to-c now become joints a-to-c
+//    for(Frame *f: b->outLinks) {
+//      Joint *j = f->joint();
+//      if(j){
+//        j->from = a;
+//        j->A = bridge * j->A;
+//        a->outLinks.append(f);
+//      }
+//    }
+//    b->outLinks.clear();
+//    //reassociate mass
+//    a->mass += b->mass;
+//    a->inertia += b->inertia;
+//    b->mass = 0.;
+//  }
+//  jointSort();
+//  calc_q_from_Q();
+//  checkConsistency();
+//  //-- remove fixed joints and reindex
+//  for_list_rev(Joint, jj, joints) if(jj->type==JT_rigid) delete jj;
+//  listReindex(joints);
+//  //for(Joint * j: joints) { j->ID=j_COUNT;  j->ifrom = j->from->index;  j->ito = j->to->index;  }
+//  checkConsistency();
+//#endif
+//}
 
 /// GL routine to draw a mlr::KinematicWorld
 #ifdef MLR_GL
@@ -2017,218 +1970,6 @@ void mlr::KinematicWorld::glDraw(OpenGL& gl) {
 }
 #endif
 
-//===========================================================================
-//
-// Kinematic Switch
-//
-
-mlr::KinematicSwitch::KinematicSwitch()
-  : symbol(none), jointType(JT_none), timeOfApplication(UINT_MAX), fromId(UINT_MAX), toId(UINT_MAX){
-  jA.setZero();
-  jB.setZero();
-}
-
-mlr::KinematicSwitch::KinematicSwitch(OperatorSymbol op, JointType type, const char* ref1, const char* ref2, const mlr::KinematicWorld& K, uint _timeOfApplication, const mlr::Transformation& jFrom, const mlr::Transformation& jTo)
-  : symbol(op), jointType(type), timeOfApplication(_timeOfApplication), fromId(UINT_MAX), toId(UINT_MAX){
-  if(ref1) fromId = K.getFrameByName(ref1)->ID;
-  if(ref2) toId = K.getFrameByName(ref2)->ID;
-  if(&jFrom) jA = jFrom;
-  if(&jTo)   jB = jTo;
-}
-
-#define STEP(t) (floor(t*double(stepsPerPhase) + .500001))-1
-
-void mlr::KinematicSwitch::setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T){
-  if(stepsPerPhase<0) stepsPerPhase=T;
-  timeOfApplication = STEP(time)+(before?0:1);
-}
-
-void mlr::KinematicSwitch::apply(KinematicWorld& G){
-  Frame *from=NULL, *to=NULL;
-  if(fromId!=UINT_MAX) from=G.frames(fromId);
-  if(toId!=UINT_MAX) to=G.frames(toId);
-
-  if(symbol==deleteJoint){
-    //this deletes ALL links downward from to until a named or shape-attached one!
-    Frame *f = to;
-    uint i=0;
-    for(;;){
-      if(!f->link) break;
-      Frame *from = f->link->from;
-      delete f->link;
-      i++;
-      if(from->name.N || from->shape || from->inertia) break;
-      f = from;
-    }
-    if(!i){
-      LOG(-1) <<"there were no deletable links below '" <<to->name <<"'! Deleted before?";
-    }
-    G.jointSort();
-//    G.checkConsistency();
-    return;
-  }
-//  G.isLinkTree=false;
-  if(symbol==addJointZero || symbol==addActuated){
-    Joint *j = new Joint(from, to);
-    if(symbol==addJointZero) j->constrainToZeroVel=true;
-    else                     j->constrainToZeroVel=false;
-    j->type=jointType;
-    if(!jA.isZero()){
-      j->link->insertPreLink(jA);
-    }
-    if(!jB.isZero()) NIY;
-    G.jointSort();
-    G.calc_fwdPropagateFrames();
-    G.checkConsistency();
-    return;
-  }
-  if(symbol==addJointAtFrom){
-    Joint *j = new Joint(from, to);
-    j->constrainToZeroVel=true;
-    j->type=jointType;
-    NIY;
-//    j->B.setDifference(from->X, to->X);
-//    j->A.setZero();
-    G.jointSort();
-    G.calc_fwdPropagateFrames();
-    G.checkConsistency();
-    return;
-  }
-  if(symbol==addJointAtTo){
-    Joint *j = new Joint(from, to);
-    j->constrainToZeroVel=true;
-    j->type=jointType;
-    NIY;
-//    j->A.setDifference(from->X, to->X);
-//    j->B.setZero();
-    G.jointSort();
-    G.calc_fwdPropagateFrames();
-    G.checkConsistency();
-    return;
-  }
-  if(symbol==addSliderMechanism){
-    HALT("I think it is better if there is fixed slider mechanisms in the world, that may jump; no dynamic creation of bodies");
-    Frame *slider1 = new Frame(G); //{ type=ST_box size=[.2 .1 .05 0] color=[0 0 0] }
-    Frame *slider2 = new Frame(G); //{ type=ST_box size=[.2 .1 .05 0] color=[1 0 0] }
-    Shape *s1 = new Shape(slider1); s1->type=ST_box; s1->size={.2,.1,.05}; s1->mesh.C={0.,0,0};
-    Shape *s2 = new Shape(slider2); s2->type=ST_box; s2->size={.2,.1,.05}; s2->mesh.C={1.,0,0};
-
-    //placement of the slider1 on the table -> fixed
-    Joint *j1 = new Joint(from, slider1);
-    j1->type = JT_transXYPhi;
-    j1->constrainToZeroVel=true;
-    //the actual sliding translation -> articulated
-    Joint *j2 = new Joint(slider1, slider2);
-    j2->type = JT_transX;
-    j2->constrainToZeroVel=false;
-    //orientation of the object on the slider2 -> fixed
-    Joint *j3 = new Joint(slider2, to);
-    j3->type = JT_hingeZ;
-    j3->constrainToZeroVel=true;
-    NIY;//j3->B = jB;
-
-    G.jointSort();
-    G.calc_fwdPropagateFrames();
-    G.checkConsistency();
-    return;
-  }
-  HALT("shouldn't be here!");
-}
-
-mlr::String mlr::KinematicSwitch::shortTag(const mlr::KinematicWorld* G) const{
-  mlr::String str;
-  str <<"  timeOfApplication=" <<timeOfApplication;
-  str <<"  symbol=" <<symbol;
-  str <<"  jointType=" <<jointType;
-  str <<"  fromId=" <<(fromId==UINT_MAX?"NULL":(G?G->frames(fromId)->name:STRING(fromId)));
-  str <<"  toId=" <<(G?G->frames(toId)->name:STRING(toId)) <<endl;
-  return str;
-}
-
-void mlr::KinematicSwitch::write(std::ostream& os) const{
-  os <<"  timeOfApplication=" <<timeOfApplication;
-  os <<"  symbol=" <<symbol;
-  os <<"  jointType=" <<jointType;
-  os <<"  fromId=" <<fromId;
-  os <<"  toId=" <<toId <<endl;
-}
-
-//===========================================================================
-
-mlr::KinematicSwitch* mlr::KinematicSwitch::newSwitch(const Node *specs, const mlr::KinematicWorld& world, int stepsPerPhase, uint T){
-  if(specs->parents.N<2) return NULL;
-
-  //-- get tags
-  mlr::String& tt=specs->parents(0)->keys.last();
-  mlr::String& type=specs->parents(1)->keys.last();
-  const char *ref1=NULL, *ref2=NULL;
-  if(specs->parents.N>2) ref1=specs->parents(2)->keys.last().p;
-  if(specs->parents.N>3) ref2=specs->parents(3)->keys.last().p;
-
-  if(tt!="MakeJoint") return NULL;
-  mlr::KinematicSwitch* sw = newSwitch(type, ref1, ref2, world, stepsPerPhase + 1);
-
-  if(specs->isGraph()){
-    const Graph& params = specs->graph();
-    sw->setTimeOfApplication(params.get<double>("time",1.), params.get<bool>("time", false), stepsPerPhase, T);
-//    sw->timeOfApplication = *stepsPerPhase + 1;
-    params.get(sw->jA, "from");
-    params.get(sw->jB, "to");
-  }
-  return sw;
-}
-
-mlr::KinematicSwitch* mlr::KinematicSwitch::newSwitch(const mlr::String& type, const char* ref1, const char* ref2, const mlr::KinematicWorld& world, uint _timeOfApplication, const mlr::Transformation& jFrom, const mlr::Transformation& jTo){
-  //-- create switch
-  mlr::KinematicSwitch *sw= new mlr::KinematicSwitch();
-  if(type=="addRigid"){ sw->symbol=mlr::KinematicSwitch::addJointZero; sw->jointType=mlr::JT_rigid; }
-//  else if(type=="addRigidRel"){ sw->symbol = mlr::KinematicSwitch::addJointAtTo; sw->jointType=mlr::JT_rigid; }
-  else if(type=="rigidAtTo"){ sw->symbol = mlr::KinematicSwitch::addJointAtTo; sw->jointType=mlr::JT_rigid; }
-  else if(type=="rigidAtFrom"){ sw->symbol = mlr::KinematicSwitch::addJointAtFrom; sw->jointType=mlr::JT_rigid; }
-  else if(type=="rigidZero"){ sw->symbol = mlr::KinematicSwitch::addJointZero; sw->jointType=mlr::JT_rigid; }
-  else if(type=="transXActuated"){ sw->symbol = mlr::KinematicSwitch::addActuated; sw->jointType=mlr::JT_transX; }
-  else if(type=="transXYPhiAtFrom"){ sw->symbol = mlr::KinematicSwitch::addJointAtFrom; sw->jointType=mlr::JT_transXYPhi; }
-  else if(type=="transXYPhiZero"){ sw->symbol = mlr::KinematicSwitch::addJointZero; sw->jointType=mlr::JT_transXYPhi; }
-  else if(type=="transXYPhiActuated"){ sw->symbol = mlr::KinematicSwitch::addActuated; sw->jointType=mlr::JT_transXYPhi; }
-  else if(type=="freeAtTo"){ sw->symbol = mlr::KinematicSwitch::addJointAtTo; sw->jointType=mlr::JT_free; }
-  else if(type=="freeZero"){ sw->symbol = mlr::KinematicSwitch::addJointZero; sw->jointType=mlr::JT_free; }
-  else if(type=="freeActuated"){ sw->symbol = mlr::KinematicSwitch::addActuated; sw->jointType=mlr::JT_free; }
-  else if(type=="ballZero"){ sw->symbol = mlr::KinematicSwitch::addJointZero; sw->jointType=mlr::JT_quatBall; }
-  else if(type=="hingeZZero"){ sw->symbol = mlr::KinematicSwitch::addJointZero; sw->jointType=mlr::JT_hingeZ; }
-  else if(type=="sliderMechanism"){ sw->symbol = mlr::KinematicSwitch::addSliderMechanism; }
-  else if(type=="delete"){ sw->symbol = mlr::KinematicSwitch::deleteJoint; }
-  else HALT("unknown type: "<< type);
-  if(ref1) sw->fromId = world.getFrameByName(ref1)->ID;
-  if(ref2) sw->toId = world.getFrameByName(ref2)->ID;
-//  if(!ref2){
-//    CHECK_EQ(sw->symbol, mlr::KinematicSwitch::deleteJoint, "");
-//    mlr::Body *b = fromShape->body;
-//    if(b->hasJoint()==1){
-////      CHECK_EQ(b->outLinks.N, 0, "");
-//      sw->toId = sw->fromId;
-//      sw->fromId = b->joint()->from->shapes.first()->index;
-//    }else if(b->outLinks.N==1){
-//      CHECK_EQ(b->hasJoint(), 0, "");
-//      sw->toId = b->outLinks(0)->from->shapes.first()->index;
-//    }else if(b->hasJoint()==0 && b->outLinks.N==0){
-//      MLR_MSG("No link to delete for shape '" <<ref1 <<"'");
-//      delete sw;
-//      return NULL;
-//    }else HALT("that's ambiguous");
-//  }else{
-
-  sw->timeOfApplication = _timeOfApplication;
-  if(&jFrom) sw->jA = jFrom;
-  if(&jTo) sw->jB = jTo;
-  return sw;
-}
-
-const char* mlr::KinematicSwitch::name(mlr::KinematicSwitch::OperatorSymbol s){
-  HALT("deprecated");
-  static const char* names[] = { "deleteJoint", "addJointZero", "addJointAtFrom", "addJointAtTo", "addArticulated" };
-  if(s==none) return "none";
-  return names[(int)s];
-}
 
 
 //===========================================================================
@@ -2511,6 +2252,8 @@ void displayState(const arr& x, mlr::KinematicWorld& G, const char *tag){
 }
 
 void displayTrajectory(const arr& _x, int steps, mlr::KinematicWorld& G, const KinematicSwitchL& switches, const char *tag, double delay, uint dim_z, bool copyG) {
+  NIY;
+#if 0
   if(!steps) return;
   mlr::Shape *s;
   for(mlr::Frame *f : G.frames) if((s=f->shape)){
@@ -2556,6 +2299,7 @@ void displayTrajectory(const arr& _x, int steps, mlr::KinematicWorld& G, const K
   if(steps==1)
     Gcopy->gl().watch(STRING(tag <<" (time " <<std::setw(3) <<T <<'/' <<T <<')').p);
   if(copyG) delete Gcopy;
+#endif
 }
 
 /* please don't remove yet: code for displaying edges might be useful...
@@ -2931,1038 +2675,6 @@ void displayState(const arr&, mlr::KinematicWorld&, const char*) { NICO }
 //===========================================================================
 //===========================================================================
 
-/** interface and implementation to Featherstone's Articulated Body Algorithm
-
-  See resources from http://users.rsise.anu.edu.au/~roy/spatial/index.html
-
-  This is a direct port of the following two files
-  http://users.rsise.anu.edu.au/~roy/spatial/ws04spatial.txt
-  http://users.rsise.anu.edu.au/~roy/spatial/ws04abadyn.txt
-
-  See also his slides on the spatial vector algebra
-  http://users.rsise.anu.edu.au/~roy/spatial/slidesX4.pdf
-
-  main changes for porting to C:
-
-  indexing of arrays start from 0
-
-  referencing sub arrays with [i] rather than {i}
-
-  NOTE: Featherstone's rotation matricies have opposite convention than mine
-*/
-namespace Featherstone {
-/// returns a cross-product matrix X such that \f$v \times y = X y\f$
-void skew(arr& X, const double *v);
-
-/// as above
-arr skew(const double *v);
-
-/** @brief MM6 coordinate transform from X-axis rotation.  Xrotx(h)
-  calculates the MM6 coordinate transform matrix (for motion
-  vectors) induced by a rotation about the +X axis by an angle h (in
-  radians).  Positive rotation is anticlockwise: +Y axis rotates
-  towards +Z axis.
-*/
-void Xrotx(arr& X, double h);
-
-/** @brief MM6 coordinate transform from Y-axis rotation.  Xroty(h)
-  calculates the MM6 coordinate transform matrix (for motion
-  vectors) induced by a rotation about the +Y axis by an angle h (in
-  radians).  Positive rotation is anticlockwise: +Z axis rotates
-  towards +X axis.
-*/
-void Xroty(arr& X, double h);
-
-/** @brief MM6 coordinate transform from Z-axis rotation.  Xrotz(h)
-  calculates the MM6 coordinate transform matrix (for motion
-  vectors) induced by a rotation about the +Z axis by an angle h (in
-  radians).  Positive rotation is anticlockwise: +X axis rotates
-  towards +Y axis.
-*/
-void Xrotz(arr& X, double h);
-
-
-/** @brief MM6 coordinate transform from 3D translation vector.
-  Xtrans(r) calculates the MM6 coordinate transform matrix (for
-  motion vectors) induced by a shift of origin specified by the 3D
-  vector r, which contains the x, y and z coordinates of the new
-  location of the origin relative to the old.
-*/
-void Xtrans(arr& X, double* r);
-
-
-/** @brief Calculate RBI from mass, CoM and rotational inertia.
-  RBmci(m, c, I) calculate MF6 rigid-body inertia tensor for a body
-  with mass m, centre of mass at c, and (3x3) rotational inertia
-  about CoM of I.
-*/
-void RBmci(arr& rbi, double m, double *c, const mlr::Matrix& I);
-
-/** @brief MM6 cross-product tensor from M6 vector.  crossM(v)
-  calculates the MM6 cross-product tensor of motion vector v such
-  that crossM(v) * m = v X m (cross-product of v and m) where m is
-  any motion vector or any matrix or tensor mapping to M6.
-*/
-void crossM(arr& vcross, const arr& v);
-
-/// as above
-arr crossM(const arr& v);
-
-/** @brief FF6 cross-product tensor from M6 vector.  crossF(v)
-  calculates the FF6 cross-product tensor of motion vector v such
-  that crossF(v) * f = v X f (cross-product of v and f) where f is
-  any force vector or any matrix or tensor mapping to F6.
-*/
-void crossF(arr& vcross, const arr& v);
-
-/// as above
-arr crossF(const arr& v);
-}
-//#define Qstate
-
-#if 0
-mlr::Body *robotbody(uint i, const Featherstone::Robot& robot) { return robot.C->nodes(i); }
-
-uint Featherstone::Robot::N() const { return C->nodes.N; }
-
-int Featherstone::Robot::parent(uint i) const {
-  mlr::Joint *e=C->nodes(i)->joint();
-  if(e) return e->from->index;
-  return -1;
-}
-
-byte Featherstone::Robot::dof(uint i) const {
-  mlr::Body *n=C->nodes(i);
-  if(n->fixed) return 0;
-  if(n->hasJoint()) {
-    switch(n->joint()->type) {
-      case 0: return 1;
-#ifndef Qstate
-      case 4: return 3;
-#else
-      case 4: return 4;
-#endif
-    }
-  }
-  return 6;
-}
-
-const arr Featherstone::Robot::S(uint i) const {
-  byte d_i=dof(i);
-  arr S;
-  mlr::Quaternion r;
-  mlr::Matrix R;
-  arr Ss, rr;
-  switch(d_i) {
-    case 0: S.resize(6, (uint)0); S.setZero(); break;
-    case 1: S.resize(6, 1); S.setZero(); S(0, 0)=1.; break;
-    case 3:
-      S.resize(6, 3); S.setZero();
-      S(0, 0)=1.; S(1, 1)=1.; S(2, 2)=1.;
-      break;
-      r = C->nodes(i)->joint()->X.r;
-      r.invert();
-      r.getMatrix(R.m);
-      memmove(S.p, R.m, 9*sizeof(double));
-      break;
-    case 4:
-      S.resize(6, 4); S.setZero();
-      r = C->nodes(i)->joint()->X.r;
-      r.invert();
-      r.getMatrix(R.m);
-      S(0, 0)= 0;  S(0, 1)= R(0, 0);  S(0, 2)= R(0, 1);  S(0, 3)= R(0, 2);
-      S(1, 0)= 0;  S(1, 1)= R(1, 0);  S(1, 2)= R(1, 1);  S(1, 3)= R(1, 2);
-      S(2, 0)= 0;  S(2, 1)= R(2, 0);  S(2, 2)= R(2, 1);  S(2, 3)= R(2, 2);
-      S *= 2.;
-      break;
-    case 6:
-      S.resize(6, 6); S.setZero();
-      //S(0, 3)=1.; S(1, 4)=1.; S(2, 5)=1.;
-      S(3, 0)=1.; S(4, 1)=1.; S(5, 2)=1.;
-      break; //S(1, 1)=S(2, 2)=1.; break;
-      //case 6: S.setId(6); break;
-    default: NIY;
-  }
-  return S;
-}
-
-/* returns the transformation from the parent link to the i-th link */
-const arr Featherstone::Robot::Xlink(uint i) const {
-  //slide 15
-  mlr::Transformation f;
-  mlr::Joint *e1=C->nodes(i)->firstIn;
-  if(!e1) {
-    f.setZero();
-  } else {
-    mlr::Joint *e0=e1->from->firstIn;
-    if(e0) {
-      f = e0->B;
-      f.addRelativeFrame(e1->A);
-      //f.addRelativeFrame(e1->X);
-    } else {
-      //NIY;
-      f = e1->from->X;
-      f.addRelativeFrame(e1->A);
-      //f.addRelativeFrame(e1->X);
-    }
-  }
-  arr X;
-  FrameToMatrix(X, f);
-  return X;
-}
-
-const arr Featherstone::Robot::Ilink(uint i) const {
-  //taken from slide 27
-  mlr::Joint *e=C->nodes(i)->firstIn;
-  double m=C->nodes(i)->mass;
-  mlr::Vector com;
-  if(e) com = e->B.p; else com = C->nodes(i)->X.p;
-  //arr Ic(3, 3);  Ic.setDiag(.1*m);
-  arr I;
-  RBmci(I, m, com.v, C->nodes(i)->inertia);
-  return I;
-}
-
-const arr Featherstone::Robot::force(uint i) const {
-  mlr::Body *n=C->nodes(i);
-  CHECK(n, "is not a body with input joint");
-  mlr::Joint *e=n->firstIn;
-  //CHECK(e, "is not a body with input joint");
-  mlr::Transformation g;
-  g=n->X;
-  if(e) g.subRelativeFrame(e->B);
-  mlr::Vector fo = g.r/n->force;
-  mlr::Vector to;
-  if(e) to = g.r/(n->torque + (g.r*e->B.p)^n->force);
-  else  to = g.r/(n->torque);
-  arr f(6);
-  f(0)=to.x;  f(1)=to.y;  f(2)=to.z;
-  f(3)=fo.x;  f(4)=fo.y;  f(5)=fo.z;
-  return f;
-}
-#endif
-
-void Featherstone::skew(arr& X, const double *v) {
-  X.resize(3, 3);  X.setZero();
-  X(0, 1) = -v[2];  X(1, 0) = v[2];
-  X(1, 2) = -v[0];  X(2, 1) = v[0];
-  X(2, 0) = -v[1];  X(0, 2) = v[1];
-}
-
-arr Featherstone::skew(const double *v) { arr X; skew(X, v); return X; }
-
-void FrameToMatrix(arr &X, const mlr::Transformation& f) {
-  arr z(3, 3);  z.setZero();
-  arr r(3, 3);  Featherstone::skew(r, &f.pos.x);
-  arr R(3, 3);  f.rot.getMatrix(R.p);
-  transpose(R);
-  X.resize(6, 6);  X.setBlockMatrix(R, z, R*~r, R); //[[unklar!!]]
-  //cout <<"\nz=" <<z <<"\nr=" <<r <<"\nR=" <<R <<"\nX=" <<X <<endl;
-}
-
-void mlr::F_Link::setFeatherstones() {
-  switch(type) {
-    case -1:     CHECK_EQ(parent,-1, ""); _h.clear();  break;
-    case JT_rigid:
-    case JT_transXYPhi:
-      qIndex=-1;
-      _h=zeros(6);
-      break;
-    case JT_hingeX: _h.resize(6); _h.setZero(); _h(0)=1.; break;
-    case JT_hingeY: _h.resize(6); _h.setZero(); _h(1)=1.; break;
-    case JT_hingeZ: _h.resize(6); _h.setZero(); _h(2)=1.; break;
-    case JT_transX: _h.resize(6); _h.setZero(); _h(3)=1.; break;
-    case JT_transY: _h.resize(6); _h.setZero(); _h(4)=1.; break;
-    case JT_transZ: _h.resize(6); _h.setZero(); _h(5)=1.; break;
-    default: NIY;
-  }
-  Featherstone::RBmci(_I, mass, com.p(), inertia);
-  
-  updateFeatherstones();
-}
-
-void mlr::F_Link::updateFeatherstones() {
-  FrameToMatrix(_A, A);
-  FrameToMatrix(_Q, Q);
-  
-  mlr::Transformation XQ;
-  XQ=X;
-  XQ.appendTransformation(Q);
-  mlr::Vector fo = XQ.rot/force;
-  mlr::Vector to = XQ.rot/(torque + ((XQ.rot*com)^force));
-  _f.resize(6);
-  _f(0)=to.x;  _f(1)=to.y;  _f(2)=to.z;
-  _f(3)=fo.x;  _f(4)=fo.y;  _f(5)=fo.z;
-}
-
-void GraphToTree(mlr::Array<mlr::F_Link>& tree, const mlr::KinematicWorld& C) {
-  tree.resize(C.frames.N);
-  
-  for(mlr::F_Link& link:tree){ link.parent=-1; link.qIndex=-1; }
-
-  for(mlr::Frame* body : C.frames) {
-    mlr::F_Link& link=tree(body->ID);
-    if(body->link) { //is not a root
-      mlr::Joint *j;
-      if((j=body->joint())){
-      
-        link.type   = j->type;
-        link.qIndex = j->qIndex;
-        link.parent = j->from()->ID;
-
-//        if(body->inertia)
-//          link.com = j->B*body->inertia->com;
-//        else
-//          link.com = j->B.pos;
-        link.com.setZero();
-
-//        if(j->from->hasJoint()) link.A=j->from->joint()->B;
-//        else
-        link.A.setZero();
-//        link.A.appendTransformation(j->A);
-      
-        link.X = body->X;
-        link.Q = body->link->Q;
-      }else{
-        mlr::Link *rel = body->link;
-        link.type   = mlr::JT_rigid;
-        link.qIndex = -1;
-        link.parent = rel->from->ID;
-        if(body->inertia)
-          link.com = body->inertia->com;
-        else
-          link.com.setZero();
-//        if(rel->from->hasJoint()) link.A=rel->from->joint()->B;
-//        else
-          link.A.setZero();
-        link.A.appendTransformation(rel->Q);
-        link.X = body->X;
-        link.Q.setZero();
-      }
-    } else {
-//      CHECK_EQ(body->hasJoint(),0, "dammit");
-      
-      link.type=-1;
-      link.qIndex=-1;
-      link.parent=-1;
-      if(body->inertia)
-        link.com = body->X*body->inertia->com;
-      else
-        link.com = body->X.pos;
-      link.A.setZero();
-      link.X.setZero();
-      link.Q.setZero();
-    }
-    if(body->inertia){
-      link.mass=body->inertia->mass; CHECK(link.mass>0. || link.qIndex==-1, "a moving link without mass -> this will diverge");
-      link.inertia=body->inertia->matrix;
-      link.force=body->inertia->force;
-      link.torque=body->inertia->torque;
-    }
-  }
-
-  for(mlr::F_Link& link:tree) link.setFeatherstones();
-}
-
-void updateGraphToTree(mlr::Array<mlr::F_Link>& tree, const mlr::KinematicWorld& C) {
-  CHECK_EQ(tree.N,C.frames.N, "");
-  
-  for(mlr::Frame *f: C.frames) {
-    uint i = f->ID;
-    if(f->link) tree(i).Q = f->link->Q;
-    tree(i).X = f->X;
-    tree(i).X = f->X;
-    if(f->inertia){
-      tree(i).force=f->inertia->force;
-      tree(i).torque=f->inertia->torque;
-    }else{
-      tree(i).force.setZero();
-      tree(i).torque.setZero();
-    }
-  }
-  for(mlr::F_Link& l:tree) l.updateFeatherstones();
-}
-
-
-/*
------------ Xrotx.m ----------------------------------------------------------
-*/
-void Featherstone::Xrotx(arr& X, double h) {
-  /*
-  % Xrotx  MM6 coordinate transform from X-axis rotation.
-  % Xrotx(h) calculates the MM6 coordinate transform matrix (for motion
-  % vectors) induced by a rotation about the +X axis by an angle h (in radians).
-  % Positive rotation is anticlockwise: +Y axis rotates towards +Z axis.
-  */
-  double c = cos(h), s = sin(h);
-  X.resize(6, 6); X.setZero();
-  X(0, 0)= X(3, 3)= 1.;
-  X(1, 1)= X(2, 2)= X(4, 4)= X(5, 5)= c;
-  X(1, 2)= X(4, 5)=  s;
-  X(2, 1)= X(5, 4)= -s;
-  /* X = [
-     1  0  0  0  0  0 ;
-     0  c  s  0  0  0 ;
-     0 -s  c  0  0  0 ;
-     0  0  0  1  0  0 ;
-     0  0  0  0  c  s ;
-     0  0  0  0 -s  c
-      ]; */
-}
-
-/*
------------ Xroty.m ----------------------------------------------------------
-*/
-void Featherstone::Xroty(arr& X, double h) {
-  /*
-  % Xroty  MM6 coordinate transform from Y-axis rotation.
-  % Xroty(h) calculates the MM6 coordinate transform matrix (for motion
-  % vectors) induced by a rotation about the +Y axis by an angle h (in radians).
-  % Positive rotation is anticlockwise: +Z axis rotates towards +X axis.
-  */
-  double c = cos(h), s = sin(h);
-  X.resize(6, 6);  X.setZero();
-  X(1, 1)= X(4, 4)= 1.;
-  X(0, 0)= X(2, 2)= X(3, 3)= X(5, 5)= c;
-  X(0, 2)= X(3, 5)= -s;
-  X(2, 0)= X(5, 3)=  s;
-  /* X = [
-     c  0 -s  0  0  0 ;
-     0  1  0  0  0  0 ;
-     s  0  c  0  0  0 ;
-     0  0  0  c  0 -s ;
-     0  0  0  0  1  0 ;
-     0  0  0  s  0  c
-     ]; */
-}
-
-/*
------------ Xrotz.m ----------------------------------------------------------
-*/
-void Featherstone::Xrotz(arr& X, double h) {
-  /*
-  % Xrotz  MM6 coordinate transform from Z-axis rotation.
-  % Xrotz(h) calculates the MM6 coordinate transform matrix (for motion
-  % vectors) induced by a rotation about the +Z axis by an angle h (in radians).
-  % Positive rotation is anticlockwise: +X axis rotates towards +Y axis.
-  */
-  double c = cos(h), s = sin(h);
-  X.resize(6, 6);  X.setZero();
-  X(2, 2)= X(5, 5)= 1.;
-  X(0, 0)= X(1, 1)= X(3, 3)= X(4, 4)= c;
-  X(0, 1)= X(3, 4)=  s;
-  X(1, 0)= X(4, 3)= -s;
-  /* X = [
-     c  s  0  0  0  0 ;
-     -s  c  0  0  0  0 ;
-     0  0  1  0  0  0 ;
-     0  0  0  c  s  0 ;
-     0  0  0 -s  c  0 ;
-     0  0  0  0  0  1 ]; */
-}
-
-
-/*
------------ Xtrans.m ---------------------------------------------------------
-*/
-void Featherstone::Xtrans(arr& X, double* r) {
-  /*
-  % Xtrans  MM6 coordinate transform from 3D translation vector.
-  % Xtrans(r) calculates the MM6 coordinate transform matrix (for motion
-  % vectors) induced by a shift of origin specified by the 3D vector r, which
-  % contains the x, y and z coordinates of the new location of the origin
-  % relative to the old.
-  */
-  X.resize(6, 6);  X.setId();
-  X.setMatrixBlock(-skew(r), 3, 0);
-  /* X = [
-      1     0     0    0  0  0 ;
-      0     1     0    0  0  0 ;
-      0     0     1    0  0  0 ;
-      0     r(3) -r(2) 1  0  0 ;
-     -r(3)  0     r(1) 0  1  0 ;
-      r(2) -r(1)  0    0  0  1
-     ]; */
-}
-
-/*
------------ RBmci.m ----------------------------------------------------------
-*/
-void Featherstone::RBmci(arr& rbi, double m, double *c, const mlr::Matrix& I) {
-  /*
-  % RBmci  Calculate RBI from mass, CoM and rotational inertia.
-  % RBmci(m, c, I) calculate MF6 rigid-body inertia tensor for a body with
-  % mass m, centre of mass at c, and (3x3) rotational inertia about CoM of I.
-  */
-  arr C(3, 3);
-  skew(C, c);
-  //C = [ 0, -c(3), c(2); c(3), 0, -c(1); -c(2), c(1), 0 ];
-  arr II;
-  II.referTo(&I.m00, 9);
-  II.reshape(3, 3);
-  
-  rbi.setBlockMatrix(II + m*C*~C, m*C, m*~C, m*eye(3));
-  //rbi = [ I + m*C*C', m*C; m*C', m*eye(3) ];
-}
-
-//===========================================================================
-void Featherstone::crossF(arr& vcross, const arr& v) {
-  /*
-  % crossF  FF6 cross-product tensor from M6 vector.
-  % crossF(v) calculates the FF6 cross-product tensor of motion vector v
-  % such that crossF(v) * f = v X f (cross-product of v and f) where f is any
-  % force vector or any matrix or tensor mapping to F6.
-  */
-  crossM(vcross, v);
-  transpose(vcross);
-  vcross *= (double)-1.;
-  //vcross = -crossM(v)';
-}
-
-arr Featherstone::crossF(const arr& v) { arr X; crossF(X, v); return X; }
-
-//===========================================================================
-void Featherstone::crossM(arr& vcross, const arr& v) {
-  /*
-  % crossM  MM6 cross-product tensor from M6 vector.
-  % crossM(v) calculates the MM6 cross-product tensor of motion vector v
-  % such that crossM(v) * m = v X m (cross-product of v and m) where m is any
-  % motion vector or any matrix or tensor mapping to M6.
-  */
-  CHECK(v.nd==1 && v.N==6, "");
-  vcross.resize(6, 6);  vcross.setZero();
-  
-  arr vc;  skew(vc, v.p);
-  vcross.setMatrixBlock(vc, 0, 0);
-  vcross.setMatrixBlock(vc, 3, 3);
-  vcross.setMatrixBlock(skew(v.p+3), 3, 0);
-  /* vcross = [
-      0    -v(3)  v(2)   0     0     0    ;
-      v(3)  0    -v(1)   0     0     0    ;
-     -v(2)  v(1)  0      0     0     0    ;
-      0    -v(6)  v(5)   0    -v(3)  v(2) ;
-      v(6)  0    -v(4)   v(3)  0    -v(1) ;
-     -v(5)  v(4)  0     -v(2)  v(1)  0
-     ]; */
-}
-
-arr Featherstone::crossM(const arr& v) { arr X; crossM(X, v); return X; }
-
-//===========================================================================
-#if 0
-void Featherstone::invdyn_old(arr& tau, const Robot& robot, const arr& qd, const arr& qdd, const arr& grav) {
-  /*
-  % INVDYN  Calculate robot inverse dynamics.
-  % invdyn(robot, q, qd, qdd) calculates the inverse dynamics of a robot using
-  % the recursive Newton-Euler algorithm, evaluated in link coordinates.
-  % Gravity is simulated by a fictitious base acceleration of [0, 0, 9.81] m/s^2
-  % in base coordinates.  This can be overridden by supplying a 3D vector as
-  % an optional fifth argument.
-  */
-  
-  arr grav_accn(6);
-  grav_accn.setZero();
-  if(!grav.N) {
-    //grav_accn(5)=9.81;
-  } else {
-    grav_accn.setVectorBlock(grav, 3);
-  }
-  
-  uint i, N=robot.N(), d_i, n;
-  mlr::Array<arr> S(N), qd_i(N), qdd_i(N), tau_i(N);
-  arr Xup(N, 6, 6), v(N, 6), f(N, 6), a(N, 6);
-  arr Q;
-  
-  for(i=0, n=0; i<N; i++) {
-    d_i=robot.dof(i);
-    if(d_i) {
-      qd_i(i) .referToRange(qd , n, n+d_i-1);
-      qdd_i(i).referToRange(qdd, n, n+d_i-1);
-      tau_i(i).referToRange(tau, n, n+d_i-1);
-    } else {
-      qd_i(i) .clear(); qd_i(i). resize(0);
-      qdd_i(i).clear(); qdd_i(i).resize(0);
-      tau_i(i).clear(); tau_i(i).resize(0);
-    }
-    n += d_i;
-    S(i) = robot.S(i);
-    if(robot.C->nodes(i)->hasJoint()) {
-      FrameToMatrix(Q, robot.C->nodes(i)->joint()->X);
-      Xup[i] = Q * robot.Xlink(i); //the transformation from the i-th to the j-th
-    } else {
-      Xup[i] = robot.Xlink(i); //the transformation from the i-th to the j-th
-    }
-  }
-  CHECK(n==qd.N && n==qdd.N && n==tau.N, "")
-  
-  for(i=0; i<N; i++) {
-    if(robot.parent(i) == -1) {
-      v[i] = S(i) * qd_i(i);
-      a[i] = Xup[i]*grav_accn + S(i)*qdd_i(i);
-    } else {
-      v[i] = Xup[i] * v[robot.parent(i)] + S(i) * qd_i(i);
-      a[i] = Xup[i] * a[robot.parent(i)] + S(i) * qdd_i(i) + crossM(v[i])*S(i)*qd_i(i);
-    }
-    f[i] = robot.Ilink(i)*a[i] + crossF(v[i])*robot.Ilink(i)*v[i] - robot.force(i);
-    
-#if 0
-    if(i) {
-      mlr::Transformation f, r, g;
-      f=robot.C->nodes(i)->X;
-      f.subRelativeFrame(robot.C->nodes(i)->joint()->B);
-      arr vi(6);  vi.setVectorBlock(arr((f.r/f.w).v, 3), 0);  vi.setVectorBlock(arr((f.r/f.v).v, 3), 3);
-      arr ai(6);  ai.setVectorBlock(arr((f.r/f.b).v, 3), 0);  ai.setVectorBlock(arr((f.r/f.a).v, 3), 3);
-      
-      cout <<"\ni=" <<i <<"\nv_i=" <<v[i] <<"\nf.(w, v)=" <<vi <<endl;
-      cout <<"\na_i=" <<a[i] <<"\nf.(b, a)=" <<ai <<endl;
-      CHECK(maxDiff(vi, v[i])<1e-4, "");
-    }
-#endif
-  }
-  
-  
-  for(i=N; i--;) {
-    if(robot.dof(i)) {
-      tau_i(i) = ~S(i) * f[i];
-    }
-    if(robot.parent(i) != -1) {
-      f[robot.parent(i)] = f[robot.parent(i)] + ~Xup[i]*f[i];
-    }
-  }
-}
-
-
-//===========================================================================
-
-void Featherstone::fwdDynamics_old(arr& qdd,
-                                   const Robot& robot,
-                                   const arr& qd,
-                                   const arr& tau,
-                                   const arr& grav) {
-  /*
-  % FDab  Forward Dynamics via Articulated-Body Algorithm
-  % FDab(model, q, qd, tau, f_ext, grav_accn) calculates the forward dynamics of a
-  % kinematic tree via the articulated-body algorithm.  q, qd and tau are
-  % vectors of joint position, velocity and force variables; and the return
-  % value is a vector of joint acceleration variables.  f_ext is a cell array
-  % specifying external forces acting on the bodies.  If f_ext == {} then
-  % there are no external forces; otherwise, f_ext{i} is a spatial force
-  % vector giving the force acting on body i, expressed in body i
-  % coordinates.  Empty cells in f_ext are interpreted as zero forces.
-  % grav_accn is a 3D vector expressing the linear acceleration due to
-  % gravity.  The arguments f_ext and grav_accn are optional, and default to
-  % the values {} and [0, 0, -9.81], respectively, if omitted.
-  */
-  
-  //CHANGE: default is gravity zero (assume to be included in external forces)
-  arr a_grav(6);
-  a_grav.setZero();
-  if(grav.N) {
-    a_grav.setVectorBlock(grav, 3);
-  }
-  
-  int par;
-  uint i, N=robot.N(), d_i, n;
-  mlr::Array<arr> h(N), qd_i(N), qdd_i(N), tau_i(N), I_h(N), h_I_h(N), inv_h_I_h(N), tau__h_fA(N);
-  arr Xup(N, 6, 6), v(N, 6), dh_dq(N, 6), f(N, 6), IA(N, 6, 6), fA(N, 6), a(N, 6);
-  arr vJ, Ia, fa;
-  arr Q;
-  
-  for(i=0, n=0; i<N; i++) {
-    //for general multi-dimensional joints, pick the sub-arrays
-    d_i=robot.dof(i);
-    if(d_i) {
-      qd_i(i) .referToRange(qd , n, n+d_i-1);
-      qdd_i(i).referToRange(qdd, n, n+d_i-1);
-      tau_i(i).referToRange(tau, n, n+d_i-1);
-    } else {
-      qd_i(i) .clear(); qd_i(i). resize(0);
-      qdd_i(i).clear(); qdd_i(i).resize(0);
-      tau_i(i).clear(); tau_i(i).resize(0);
-    }
-    n += d_i;
-    
-    h(i) = robot.S(i);
-    vJ = h(i) * qd_i(i); //equation (2), vJ = relative vel across joint i
-    if(robot.C->nodes(i)->hasJoint()) {
-      FrameToMatrix(Q, robot.C->nodes(i)->joint()->X);
-      Xup[i] = Q * robot.Xlink(i); //the transformation from the i-th to the j-th
-    } else {
-      Xup[i] = robot.Xlink(i); //the transformation from the i-th to the j-th
-    }
-    if(robot.parent(i) == -1) {
-      v[i] = vJ;
-      dh_dq[i] = 0.;
-    } else {
-      v[i] = Xup[i] * v[robot.parent(i)] + vJ;
-      dh_dq[i] = crossM(v[i]) * vJ;  //WHY??
-    }
-    // v[i] = total velocity, but in joint coordinates
-    IA[i] = robot.Ilink(i);
-    fA[i] = crossF(v[i]) * robot.Ilink(i) * v[i] - robot.force(i); //1st equation below (13)
-  }
-  
-  for(i=N; i--;) {
-    I_h(i) = IA[i] * h(i);
-    if(robot.dof(i)) {
-      h_I_h(i)      = ~h(i)*I_h(i);
-      tau__h_fA(i) = tau_i(i) - ~h(i)*fA[i]; //[change from above] last term in (13), 2nd equation below (13)
-    } else {
-      h_I_h(i).clear();
-      tau__h_fA(i).clear();
-    }
-    inverse(inv_h_I_h(i), h_I_h(i));
-    par = robot.parent(i);
-    if(par != -1) {
-      Ia = IA[i] - I_h(i)*inv_h_I_h(i)*~I_h(i);
-      fa = fA[i] + Ia*dh_dq[i] + I_h(i)*inv_h_I_h(i)*tau__h_fA(i);
-      IA[par] = IA[par] + ~Xup[i] * Ia * Xup[i];         //equation (12)
-      fA[par] = fA[par] + ~Xup[i] * fa;                  //equation (13)
-    }
-  }
-  
-  for(i=0; i<N; i++) {
-    par=robot.parent(i);
-    if(par == -1) {
-      a[i] = Xup[i] * a_grav + dh_dq[i]; //[change from above]
-    } else {
-      a[i] = Xup[i] * a[par] + dh_dq[i]; //[change from above]
-    }
-    if(robot.dof(i)) {
-      qdd_i(i) = inverse(h_I_h(i))*(tau__h_fA(i) - ~I_h(i)*a[i]); //equation (14)
-    }
-    a[i] = a[i] + h(i)*qdd_i(i); //equation above (14)
-  }
-}
-#endif
-
-//===========================================================================
-
-/* Articulated Body Dynamics - exactly as in my `simulationSoftware notes',
-   following the notation of Featherstone's recent short survey paper */
-void mlr::fwdDynamics_aba_nD(arr& qdd,
-                             const mlr::F_LinkTree& tree,
-                             const arr& qd,
-                             const arr& tau) {
-  int par;
-  uint i, N=tree.N, d_i, n;
-  mlr::Array<arr> h(N), qd_i(N), qdd_i(N), tau_i(N), I_h(N), h_I_h(N), u(N);
-  arr Xup(N, 6, 6), v(N, 6), dh_dq(N, 6), IA(N, 6, 6), fA(N, 6), a(N, 6);
-  qdd.resizeAs(tau);
-  
-  for(i=0, n=0; i<N; i++) {
-    d_i=tree(i).dof();
-    if(d_i) {
-      qd_i(i) .referToRange(qd , n, n+d_i-1);
-      qdd_i(i).referToRange(qdd, n, n+d_i-1);
-      tau_i(i).referToRange(tau, n, n+d_i-1);
-    } else {
-      qd_i(i) .clear(); qd_i(i). resize(0);
-      qdd_i(i).clear(); qdd_i(i).resize(0);
-      tau_i(i).clear(); tau_i(i).resize(0);
-    }
-    n += d_i;
-    h(i) = tree(i)._h;
-    h(i).reshape(6, d_i);
-    Xup[i] = tree(i)._Q * tree(i)._A; //the transformation from the i-th to the j-th
-  }
-  CHECK(n==qd.N && n==qdd.N && n==tau.N, "")
-  
-  for(i=0; i<N; i++) {
-    par = tree(i).parent;
-    if(par == -1) {
-      v[i] = h(i) * qd_i(i);
-      dh_dq[i] = 0.;
-    } else {
-      v[i] = Xup[i] * v[par] + h(i) * qd_i(i);
-      dh_dq[i] = Featherstone::crossM(v[i]) * h(i) * qd_i(i);
-    }
-    IA[i] = tree(i)._I;
-    fA[i] = Featherstone::crossF(v[i]) * tree(i)._I * v[i] - tree(i)._f;
-  }
-  
-  for(i=N; i--;) {
-    par = tree(i).parent;
-    I_h(i) = IA[i] * h(i);
-    if(tree(i).dof()) {
-      h_I_h(i) = ~h(i)*I_h(i);
-      u(i) = tau_i(i) - ~I_h(i)*dh_dq[i] - ~h(i)*fA[i];
-    } else {
-      h_I_h(i).clear(); h_I_h(i).resize(0);
-      u(i).clear(); u(i).resize(0);
-    }
-    if(par != -1) {
-      IA[par]() += ~Xup[i] * (IA[i] - I_h(i)*inverse(h_I_h(i))*~I_h(i)) * Xup[i];
-      fA[par]() += ~Xup[i] * (fA[i] + IA[i]*dh_dq[i] + I_h(i)*inverse(h_I_h(i))*u(i));
-    }
-  }
-  
-  for(i=0; i<N; i++) {
-    par=tree(i).parent;
-    if(par == -1) {
-      a[i] = 0; //Xup[i] * grav_accn;
-    } else {
-      a[i]() = Xup[i] * a[par];
-    }
-    if(tree(i).dof()) {
-      qdd_i(i) = inverse(h_I_h(i))*(u(i) - ~I_h(i)*a[i]);
-    }
-    a[i] = a[i] + dh_dq[i] + h(i)*qdd_i(i);
-  }
-}
-
-//===========================================================================
-
-void mlr::fwdDynamics_aba_1D(arr& qdd,
-                             const mlr::F_LinkTree& tree,
-                             const arr& qd,
-                             const arr& tau) {
-  int par;
-  uint i, N=tree.N, iq;
-  arr h(N, 6), I_h(N, 6), h_I_h(N), inv_h_I_h(N), taui(N), tau__h_fA(N);
-  arr Xup(N, 6, 6), v(N, 6), dh_dq(N, 6), IA(N, 6, 6), fA(N, 6), a(N, 6);
-  arr vJ, Ia, fa;
-  qdd.resizeAs(tau);
-  
-  //fwd: compute the velocities v[i] and external + Coriolis forces fA[i] of all bodies
-  for(i=0; i<N; i++) {
-    iq = tree(i).qIndex;
-    par = tree(i).parent;
-    Xup[i]() = tree(i)._Q * tree(i)._A; //the transformation from the i-th to the j-th
-    if(par != -1) {
-      h[i]() = tree(i)._h;
-      vJ = h[i] * qd(iq); //equation (2), vJ = relative vel across joint i
-      v[i]() = Xup[i] * v[par] + vJ; //eq (27)
-      dh_dq[i]() = Featherstone::crossM(v[i]) * vJ;  //WHY??
-      taui(i)=tau(iq);
-    } else {
-      h[i]() = 0.;
-      v[i]() = 0.;
-      dh_dq[i] = 0.;
-      taui(i)=0.;
-    }
-    // v[i] = total velocity, but in joint coordinates
-    IA[i] = tree(i)._I;
-    //first part of eq (29)
-    fA[i] = Featherstone::crossF(v[i]) * (tree(i)._I * v[i]) - tree(i)._f;
-  }
-  
-  //bwd: propagate tree inertia
-  for(i=N; i--;) {
-    par = tree(i).parent;
-    //eq (28)
-    I_h[i]()      = IA[i] * h[i];
-    h_I_h(i)      = scalarProduct(h[i], I_h[i]);
-    inv_h_I_h(i)  = 1./h_I_h(i);
-    tau__h_fA(i) = taui(i) - scalarProduct(h[i], fA[i]); //[change from above] last term in (13), 2nd equation below (13)
-    if(par != -1) {
-      Ia = IA[i] - I_h[i]*(inv_h_I_h(i)*~I_h[i]);
-      fa = fA[i] + Ia*dh_dq[i] + I_h[i]*(inv_h_I_h(i)*tau__h_fA(i));
-      IA[par] = IA[par] + ~Xup[i] * Ia * Xup[i];         //equation (12)
-      fA[par] = fA[par] + ~Xup[i] * fa;                  //equation (13)
-    }
-  }
-  
-  for(i=0; i<N; i++) {
-    iq = tree(i).qIndex;
-    par= tree(i).parent;
-    if(par != -1) {
-      a[i] = Xup[i] * a[par] + dh_dq[i]; //[change from above]
-      qdd(iq) = inv_h_I_h(i)*(tau__h_fA(i) - scalarProduct(I_h[i], a[i])); //equation (14)
-      a[i] = a[i] + h[i]*qdd(iq); //equation above (14)
-    } else {
-      a[i] = dh_dq[i]; //[change from above]
-    }
-  }
-}
-
-//===========================================================================
-
-void mlr::invDynamics(arr& tau,
-                      const mlr::F_LinkTree& tree,
-                      const arr& qd,
-                      const arr& qdd) {
-  int par;
-  uint i, N=tree.N, d_i, n;
-  mlr::Array<arr> h(N), qd_i(N), qdd_i(N), tau_i(N);
-  arr Xup(N, 6, 6), v(N, 6), fJ(N, 6), a(N, 6);
-  tau.resizeAs(qdd);
-  
-  for(i=0, n=0; i<N; i++) {
-    d_i=tree(i).dof();
-    if(d_i) {
-      qd_i(i) .referToRange(qd , n, n+d_i-1);
-      qdd_i(i).referToRange(qdd, n, n+d_i-1);
-      tau_i(i).referToRange(tau, n, n+d_i-1);
-    } else {
-      qd_i(i) .clear(); qd_i(i). resize(0);
-      qdd_i(i).clear(); qdd_i(i).resize(0);
-      tau_i(i).clear(); tau_i(i).resize(0);
-    }
-    n += d_i;
-    h(i) = tree(i)._h;
-    h(i).reshape(6, d_i);
-    Xup[i] = tree(i)._Q * tree(i)._A; //the transformation from the i-th to the j-th
-  }
-  CHECK(n==qd.N && n==qdd.N && n==tau.N, "")
-  
-  for(i=0; i<N; i++) {
-    par = tree(i).parent;
-    if(par == -1) {
-      v[i] = h(i) * qd_i(i);
-      a[i] = h(i) * qdd_i(i);
-    } else {
-      v[i] = Xup[i] * v[par] + h(i) * qd_i(i);
-      a[i] = Xup[i] * a[par] + h(i) * qdd_i(i) + Featherstone::crossM(v[i]) * h(i) * qd_i(i);
-    }
-    //see featherstone-orin paper for definition of fJ (different to fA; it's about force equilibrium at a joint)
-    fJ[i] = tree(i)._I*a[i] + Featherstone::crossF(v[i]) * tree(i)._I * v[i] - tree(i)._f;
-  }
-  
-  for(i=N; i--;) {
-    par = tree(i).parent;
-    if(tree(i).dof()) tau_i(i) = ~h(i) * fJ[i];
-    if(par != -1)     fJ[par]() += ~Xup[i] * fJ[i];
-  }
-}
-
-
-//===========================================================================
-
-void mlr::equationOfMotion(arr& H, arr& C,
-                           const mlr::F_LinkTree& tree,
-                           const arr& qd) {
-                           
-  /*function  [H, C] = HandC( model, q, qd, f_ext, grav_accn )
-  
-  % HandC  Calculate coefficients of equation of motion.
-  % [H, C]=HandC(model, q, qd, f_ext, grav_accn) calculates the coefficients of
-  % the joint-space equation of motion, tau=H(q)qdd+C(d, qd, f_ext), where q,
-  % qd and qdd are the joint position, velocity and acceleration vectors, H
-  % is the joint-space inertia matrix, C is the vector of gravity,
-  % external-force and velocity-product terms, and tau is the joint force
-  % vector.  Algorithm: recursive Newton-Euler for C, and
-  % Composite-Rigid-Body for H.  f_ext is a cell array specifying external
-  % forces acting on the bodies.  If f_ext == {} then there are no external
-  % forces; otherwise, f_ext{i} is a spatial force vector giving the force
-  % acting on body i, expressed in body i coordinates.  Empty cells in f_ext
-  % are interpreted as zero forces.  grav_accn is a 3D vector expressing the
-  % linear acceleration due to gravity.  The arguments f_ext and grav_accn
-  % are optional, and default to the values {} and [0, 0, -9.81], respectively,
-  % if omitted.
-  */
-  
-  int par;
-  int iq, jq;
-  uint i, j, N=tree.N;
-  //CHECK_EQ(N-1,qd.N,"vels don't have right dimension")
-  arr h(N, 6);
-  arr Xup(N, 6, 6), v(N, 6), dh_dq(N, 6), IC(N, 6, 6), fvp(N, 6), avp(N, 6);
-  arr vJ, fh;
-  
-  avp.setZero();
-  
-  for(i=0; i<N; i++) {
-    iq  = tree(i).qIndex;
-    par = tree(i).parent;
-    Xup[i]() = tree(i)._Q * tree(i)._A; //the transformation from the i-th to the j-th
-    if(par!=-1) {
-      h[i]() = tree(i)._h;
-      if(iq!=-1) {//is not a fixed joint
-        vJ = h[i] * qd(iq); //equation (2), vJ = relative vel across joint i
-      } else{
-        vJ = zeros(6);
-      }
-      v[i]() = Xup[i] * v[par] + vJ;
-      dh_dq[i]() = Featherstone::crossM(v[i]) * vJ;  //WHY??
-      avp[i]() = Xup[i]*avp[par] + Featherstone::crossM(v[i])*vJ;
-    } else {
-      h[i]() = 0.;
-      v[i]() = 0.;
-      dh_dq[i] = 0.;
-      avp[i]() = 0.;
-    }
-    // v[i] = total velocity, but in joint coordinates
-    IC[i]() = tree(i)._I;
-    fvp[i] = tree(i)._I*avp[i] + Featherstone::crossF(v[i])*(tree(i)._I*v[i]) - tree(i)._f;
-  }
-  
-  C = zeros(qd.N);
-  
-  for(i=N; i--;) {
-    iq  = tree(i).qIndex;
-    par = tree(i).parent;
-    if(iq!=-1) {
-      C(iq) += scalarProduct(h[i], fvp[i]);
-    }
-    if(par!=-1) {
-      fvp[par]() += ~Xup[i] * fvp[i];
-      IC[par]() += ~Xup[i] * IC[i] * Xup[i];
-    }
-  }
-  
-  H = zeros(qd.N, qd.N);
-  
-  for(i=0; i<N; i++) {
-    iq = tree(i).qIndex;
-    fh = IC[i] * h[i];
-    if((int)iq!=-1) {
-      H(iq, iq) += scalarProduct(h[i], fh);
-    }
-    j = i;
-    while(tree(j).parent!=-1) {
-      fh = ~Xup[j] * fh;
-      j  = tree(j).parent;
-      jq = tree(j).qIndex;
-      if(jq!=-1 && iq!=-1) {
-        double Hij = scalarProduct(h[j], fh);
-        H(iq, jq) += Hij;
-        H(jq, iq) += Hij;
-      }
-    }
-  }
-  
-  //add friction for non-filled joints
-  boolA filled(qd.N);
-  filled=false;
-  for(i=0;i<N;i++){ iq = tree(i).qIndex; if(iq!=-1) filled(iq)=true; }
-  for(i=0;i<qd.N;i++) if(!filled(i)){
-    H(i,i) = 1.;
-//    C(i) = -100.*qd(i);
-  }
-}
-
-//===========================================================================
-
-void mlr::fwdDynamics_MF(arr& qdd,
-                         const mlr::F_LinkTree& tree,
-                         const arr& qd,
-                         const arr& u) {
-                         
-  arr M, Minv, F;
-  equationOfMotion(M, F, tree, qd);
-  inverse(Minv, M);
-//  inverse_SymPosDef(Minv, M);
-  
-  qdd = Minv * (u - F);
-}
-
-// #else ///MLR_FEATHERSTONE
-// void GraphToTree(mlr::F_LinkTree& tree, const mlr::KinematicWorld& C) { NIY; }
-// void updateGraphToTree(mlr::F_LinkTree& tree, const mlr::KinematicWorld& C) { NIY; }
-// void Featherstone::equationOfMotion(arr& H, arr& C,
-//                                     const mlr::F_LinkTree& tree,
-//                                     const arr& qd) { NIY; }
-// void Featherstone::fwdDynamics_MF(arr& qdd,
-//                                   const mlr::F_LinkTree& tree,
-//                                   const arr& qd,
-//                                   const arr& tau) { NIY; }
-// void Featherstone::invDynamics(arr& tau,
-//                                const mlr::F_LinkTree& tree,
-//                                const arr& qd,
-//                                const arr& qdd) { NIY; }
-// #endif
-/** @} */
 
 
 //===========================================================================

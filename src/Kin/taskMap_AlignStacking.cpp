@@ -14,6 +14,7 @@
 
 
 #include "taskMap_AlignStacking.h"
+#include "frame.h"
 
 TaskMap_AlignStacking::TaskMap_AlignStacking(int iShape)
   : i(iShape){
@@ -77,4 +78,8 @@ void TaskMap_AlignStacking::phi(arr& y, arr& J, const mlr::KinematicWorld& G, in
   if(&J) J = (J1-J2)({0,1});
 
 #endif
+}
+
+mlr::String TaskMap_AlignStacking::shortTag(const mlr::KinematicWorld &G){
+  return STRING("AlignStacking:"<<(i<0?"WORLD":G.frames(i)->name));
 }

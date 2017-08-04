@@ -30,6 +30,10 @@ typedef mlr::Array<mlr::Frame*> FrameL;
 typedef mlr::Array<mlr::Joint*> JointL;
 typedef mlr::Array<mlr::Shape*> ShapeL;
 
+extern mlr::Frame& NoFrame;
+//extern mlr::Shape& NoShape;
+//extern mlr::Joint& NoJoint;
+
 namespace mlr{
 
 //===========================================================================
@@ -43,7 +47,7 @@ struct Frame {
   FrameL outLinks;           ///< lists of in and out joints
   Graph ats;                 ///< list of any-type attributes
 
-  //optional attachments to the frame
+  //attachments to the frame
   struct Link *link=NULL;            ///< this frame is a child or a parent frame, with fixed or articulated relative transformation
   struct Shape *shape=NULL;          ///< this frame has a (collision or visual) geometry
   struct Inertia *inertia=NULL; ///< this frame has inertia (is a mass)
@@ -58,6 +62,7 @@ struct Frame {
   void parseAts(const Graph &ats);
   void write(std::ostream& os) const;
 };
+stdOutPipe(Frame)
 
 //===========================================================================
 
@@ -116,6 +121,8 @@ struct Joint{
   void write(std::ostream& os) const;
   void read(const Graph& G);
 };
+
+stdOutPipe(Joint)
 
 //===========================================================================
 

@@ -1,6 +1,8 @@
 #include "RTControllerSimulation.h"
 #include <Kin/taskMaps.h>
 #include "../../../usr/DD/Bachelorarbeit/src/objectGenerator.h"
+#include <Kin/proxy.h>
+#include <Kin/frame.h>
 
 void force(mlr::KinematicWorld* world, arr& fR) {
   world->stepSwift();

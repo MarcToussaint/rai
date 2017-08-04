@@ -5,6 +5,7 @@
 #include <Gui/opengl.h>
 #include <Kin/kin.h>
 #include <Kin/taskMaps.h>
+#include <Kin/frame.h>
 
 mlr::Vector p1, p2;
 mlr::Vector e1, e2;
@@ -49,7 +50,7 @@ void TEST(GJK_Jacobians) {
   s1.frame->name="s1";
   s2.frame->name="s2";
 
-  K.jointSort();
+  K.calc_fwdActiveSet();
   K.calc_q_from_Q();
   K.calc_fwdPropagateFrames();
   arr q = K.getJointState();

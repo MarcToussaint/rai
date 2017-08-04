@@ -1,6 +1,7 @@
 #include <Kin/kin.h>
 #include <Kin/kin_swift.h>
 #include <Gui/opengl.h>
+#include <Kin/frame.h>
 
 void TEST(Swift) {
   mlr::KinematicWorld G("swift_test.g");

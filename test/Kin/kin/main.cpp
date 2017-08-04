@@ -1,4 +1,5 @@
 #include <Kin/kin.h>
+#include <Kin/frame.h>
 #include <Kin/kin_swift.h>
 #include <Kin/kin_ode.h>
 #include <Algo/spline.h>
@@ -122,14 +123,14 @@ void TEST(Graph){
   {
     Graph G = K.getGraph();
     G.displayDot();
-    mlr::wait();
+    mlr::wait(.5);
   }
 
   K.optimizeTree();
   {
     Graph G = K.getGraph();
     G.displayDot();
-    mlr::wait();
+    mlr::wait(.5);
   }
 
 }

@@ -13,85 +13,44 @@
     --------------------------------------------------------------  */
 
 
-#ifndef MLR_ors_h
-#define MLR_ors_h
+#ifndef MLR_kin_h
+#define MLR_kin_h
 
-#include <Core/util.h>
 #include <Core/array.h>
-#include <Core/graph.h>
 #include <Geo/geo.h>
-#include <Geo/mesh.h>
-
-#include "frame.h"
-
-/// @file
-/// @ingroup group_ors
 
 struct OpenGL;
 struct PhysXInterface;
 struct SwiftInterface;
 struct OdeInterface;
 
-/// @addtogroup group_ors
-/// @{
-
 //===========================================================================
 
-
 namespace mlr{
-
-/// @addtogroup ors_basic_data_structures
-/// @{
-//enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static };
-/// @}
 
 struct Joint;
 struct Shape;
 struct Frame;
-struct KinematicWorld;
 struct Proxy;
+struct KinematicWorld;
 struct KinematicSwitch;
 
-} // END of namespace
+} // namespace mlr
 
 //===========================================================================
 
-typedef mlr::Array<mlr::Joint*> JointL;
-typedef mlr::Array<mlr::Shape*> ShapeL;
-typedef mlr::Array<mlr::Frame*>  BodyL;
+extern mlr::KinematicWorld& NoWorld;
+
+//typedef mlr::Array<mlr::Joint*> JointL;
+//typedef mlr::Array<mlr::Shape*> ShapeL;
+typedef mlr::Array<mlr::Frame*> FrameL;
 typedef mlr::Array<mlr::Proxy*> ProxyL;
 typedef mlr::Array<mlr::KinematicSwitch*> KinematicSwitchL;
 typedef mlr::Array<mlr::KinematicWorld*> WorldL;
 
 //===========================================================================
 
-namespace mlr {
-/// @addtogroup ors_basic_data_structures
-/// @{
-
-//===========================================================================
-
-
-
-
-//===========================================================================
-
-/// a data structure to store proximity information (when two shapes become close) --
-/// as return value from external collision libs
-struct Proxy : GLDrawer {
-  //TODO: have a ProxyL& L as above...
-  int a;              ///< index of shape A (-1==world) //TODO: would it be easier if this were mlr::Shape* ? YES -> Do it!
-  int b;              ///< index of shape B
-  Vector posA, cenA;  ///< contact or closest point position on surface of shape A (in world coordinates)
-  Vector posB, cenB;  ///< contact or closest point position on surface of shape B (in world coordinates)
-  Vector normal, cenN;   ///< contact normal, pointing from B to A (proportional to posA-posB)
-  double d, cenD;           ///< distance (positive) or penetration (negative) between A and B
-  uint colorCode;
-  Proxy();
-  void glDraw(OpenGL&);
-};
-
-//===========================================================================
+namespace mlr{
 
 /// data structure to store a whole physical situation (lists of bodies, joints, shapes, proxies)
 struct KinematicWorld : GLDrawer{
@@ -106,7 +65,6 @@ struct KinematicWorld : GLDrawer{
 
   ProxyL proxies; ///< list of current proximities between bodies
 
-  bool isLinkTree;
   static uint setJointStateCount;
 
   //global options
@@ -121,8 +79,8 @@ struct KinematicWorld : GLDrawer{
   KinematicWorld(const mlr::KinematicWorld& other);
   KinematicWorld(const char* filename);
   virtual ~KinematicWorld();
-  void operator=(const mlr::KinematicWorld& G){ copy(G); }
-  void copy(const mlr::KinematicWorld& G, bool referenceMeshesAndSwiftOnCopy=false);
+  void operator=(const mlr::KinematicWorld& K){ copy(K); }
+  void copy(const mlr::KinematicWorld& K, bool referenceMeshesAndSwiftOnCopy=false);
   
   /// @name initializations
   void init(const char* filename);
@@ -130,7 +88,7 @@ struct KinematicWorld : GLDrawer{
 
   /// @name access
   Frame *getFrameByName(const char* name, bool warnIfNotExist=true) const;
-  Link  *getLinkByBodies(const Frame* from, const Frame* to) const;
+//  Link  *getLinkByBodies(const Frame* from, const Frame* to) const;
   Joint *getJointByBodies(const Frame* from, const Frame* to) const;
   Joint *getJointByBodyNames(const char* from, const char* to) const;
   Joint *getJointByBodyIndices(uint ifrom, uint ito) const;
@@ -141,20 +99,15 @@ struct KinematicWorld : GLDrawer{
 
   /// @name changes of configuration
   void clear();
-//  void makeTree(Frame *root){ reconfigureRoot(root); makeLinkTree(); }
-  //-- low level: don't use..
-  void revertJoint(Joint *e);
+  void reset_q();
+  void calc_fwdActiveSet();
   void reconfigureRoot(Frame *root);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
-  void transformJoint(Joint *e, const mlr::Transformation &f); ///< A <- A*f, B <- f^{-1}*B
-  void jointSort();
-  void glueBodies(Frame *a, Frame *b);
-  void meldFixedJoints(int verbose=0);         ///< prune fixed joints; shapes of fixed bodies are reassociated to non-fixed boides
-  void removeUselessBodies(int verbose=0);     ///< prune non-articulated bodies; they become shapes of other bodies
   void pruneRigidJoints(int verbose=0);        ///< delete rigid joints -> they become just links
   void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
   void pruneUselessFrames(int verbose=0);      ///< delete frames that have no name, joint, and shape
   void optimizeTree();                         ///< call the three above methods in this order
   bool checkConsistency();
+
   void analyzeJointStateDimensions(); ///< sort of private: count the joint dimensionalities and assign j->q_index
 
   /// @name computations on the graph
@@ -163,8 +116,6 @@ struct KinematicWorld : GLDrawer{
   void calc_fwdPropagateFrames();    ///< elementary forward kinematics; also computes all Shape frames
   arr calc_fwdPropagateVelocities();    ///< elementary forward kinematics; also computes all Shape frames
   void calc_Q_from_BodyFrames();    ///< fill in the joint transformations assuming that body poses are known (makes sense when reading files)
-//  void calc_missingAB_from_BodyAndJointFrames();    ///< fill in the missing joint relative transforms (A & B) if body and joint world poses are known
-
 
   /// @name get state
   uint getJointStateDimension() const;
@@ -177,14 +128,14 @@ struct KinematicWorld : GLDrawer{
   void setJointState(const arr& _q, const arr& _qdot=NoArr);
 
   /// @name kinematics
-  void kinematicsPos (arr& y, arr& J, Frame *b, const Vector& rel=NoVector) const; //TODO: make vector& not vector*
-  void kinematicsVec (arr& y, arr& J, Frame *b, const mlr::Vector& vec=NoVector) const;
-  void kinematicsQuat(arr& y, arr& J, Frame *b) const;
-  void hessianPos(arr& H, Frame *b, mlr::Vector *rel=0) const;
-  void axesMatrix(arr& J, Frame *b) const;
-  void kinematicsRelPos (arr& y, arr& J, Frame *b1, const mlr::Vector& vec1, Frame *b2, const mlr::Vector& vec2) const;
-  void kinematicsRelVec (arr& y, arr& J, Frame *b1, const mlr::Vector& vec1, Frame *b2) const;
-  void kinematicsRelRot (arr& y, arr& J, Frame *b1, Frame *b2) const;
+  void kinematicsPos (arr& y, arr& J, Frame *a, const Vector& rel=NoVector) const; //TODO: make vector& not vector*
+  void kinematicsVec (arr& y, arr& J, Frame *a, const Vector& vec=NoVector) const;
+  void kinematicsQuat(arr& y, arr& J, Frame *a) const;
+  void hessianPos(arr& H, Frame *a, Vector *rel=0) const;
+  void axesMatrix(arr& J, Frame *a) const;
+  void kinematicsRelPos (arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b, const Vector& vec2) const;
+  void kinematicsRelVec (arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b) const;
+  void kinematicsRelRot (arr& y, arr& J, Frame *a, Frame *b) const;
 
   void kinematicsProxyDist(arr& y, arr& J, Proxy *p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
   void kinematicsProxyCost(arr& y, arr& J, Proxy *p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
@@ -247,61 +198,14 @@ struct KinematicWorld : GLDrawer{
 
   void reportProxies(std::ostream& os=std::cout, double belowMargin=-1., bool brief=true) const;
   void writePlyFile(const char* filename) const; //TODO: move outside
+
+  friend struct KinematicSwitch;
 };
 
-//===========================================================================
-
-struct KinematicSwitch{ //TODO: move to src/Motion
-  enum OperatorSymbol{ none=-1, deleteJoint=0, addJointZero, addJointAtFrom, addJointAtTo, addActuated, addSliderMechanism };
-  Enum<OperatorSymbol> symbol;
-  Enum<JointType> jointType;
-  uint timeOfApplication;
-  uint fromId, toId;
-  mlr::Transformation jA,jB;
-  KinematicSwitch();
-  KinematicSwitch(OperatorSymbol op, JointType type,
-                  const char* ref1, const char* ref2,
-                  const mlr::KinematicWorld& K, uint _timeOfApplication,
-                  const mlr::Transformation& jFrom=NoTransformation, const mlr::Transformation& jTo=NoTransformation);
-  void setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T);
-//  KinematicSwitch(const Node *specs, const KinematicWorld& world, uint T);
-  void apply(KinematicWorld& G);
-  void temporallyAlign(const KinematicWorld& Gprevious, KinematicWorld& G, bool copyFromBodies);
-  mlr::String shortTag(const KinematicWorld* G) const;
-  void write(std::ostream& os) const;
-  static KinematicSwitch* newSwitch(const Node *specs, const mlr::KinematicWorld& world, int stepsPerPhase, uint T);
-  static KinematicSwitch* newSwitch(const mlr::String& type, const char* ref1, const char* ref2, const mlr::KinematicWorld& world, uint _timeOfApplication, const mlr::Transformation& jFrom=NoTransformation, const mlr::Transformation& jTo=NoTransformation);
-  static const char* name(OperatorSymbol s);
-};
-/// @} // END of group ors_basic_data_structures
-} // END ors namespace
-stdOutPipe(mlr::KinematicSwitch)
-
-//===========================================================================
-//
-// constants
-//
-
-extern mlr::Frame& NoBody;
-extern mlr::Shape& NoShape;
-extern mlr::Joint& NoJoint;
-extern mlr::KinematicWorld& NoWorld;
+} //namespace mlr
 
 
-//===========================================================================
-//
-// operators
-//
-
-namespace mlr {
-//std::istream& operator>>(std::istream&, Body&);
-//std::istream& operator>>(std::istream&, Joint&);
-//std::istream& operator>>(std::istream&, Shape&);
-std::ostream& operator<<(std::ostream&, const Frame&);
-std::ostream& operator<<(std::ostream&, const Joint&);
-std::ostream& operator<<(std::ostream&, const Shape&);
-stdPipes(KinematicWorld);
-}
+stdPipes(mlr::KinematicWorld)
 
 
 //===========================================================================
@@ -311,13 +215,9 @@ stdPipes(KinematicWorld);
 
 namespace mlr {
 void glDrawGraph(void*);
-void glDrawProxies(void*);
-
 }
 
-#ifndef MLR_ORS_ONLY_BASICS
-
-uintA stringListToShapeIndices(const mlr::Array<const char*>& names, const ShapeL& shapes);
+uintA stringListToShapeIndices(const mlr::Array<const char*>& names, const FrameL& shapes);
 uintA shapesToShapeIndices(const FrameL &shapes);
 
 //===========================================================================
@@ -341,16 +241,6 @@ void transferKdBetweenTwoWorlds(arr& KdTo, const arr& KdFrom, const mlr::Kinemat
 void transferU0BetweenTwoWorlds(arr& u0To, const arr& u0From, const mlr::KinematicWorld& to, const mlr::KinematicWorld& from);
 void transferKI_ft_BetweenTwoWorlds(arr& KI_ft_To, const arr& KI_ft_From, const mlr::KinematicWorld& to, const mlr::KinematicWorld& from);
 
-//===========================================================================
-// routines using external interfaces.
-//===========================================================================
-/// @addtogroup ors_interfaces
-/// @{
-//===========================================================================
-/// @defgroup ors_interface_opengl Interface to OpenGL.
-/// @{
-// OPENGL interface
-struct OpenGL;
 
 void displayState(const arr& x, mlr::KinematicWorld& G, const char *tag);
 void displayTrajectory(const arr& x, int steps, mlr::KinematicWorld& G, const KinematicSwitchL& switches, const char *tag, double delay=0., uint dim_z=0, bool copyG=false);
@@ -359,64 +249,8 @@ inline void displayTrajectory(const arr& x, int steps, mlr::KinematicWorld& G, c
 }
 void editConfiguration(const char* orsfile, mlr::KinematicWorld& G);
 int animateConfiguration(mlr::KinematicWorld& G, struct Inotify *ino=NULL);
-//void init(mlr::KinematicWorld& G, OpenGL& gl, const char* orsFile);
-void bindOrsToOpenGL(mlr::KinematicWorld& graph, OpenGL& gl); //TODO: should be outdated!
-/// @} // END of group ors_interface_opengl
 
 
-//===========================================================================
-/// @defgroup ors_interface_featherstone FEATHERSTONE Interface.
-/// @todo is all the following stuff really featherstone? MT: yes
-/// @{
-namespace mlr {
-struct F_Link {
-  int type;
-  int qIndex;
-  int parent;
-  mlr::Transformation
-  X, A, Q;
-  mlr::Vector com, force, torque;
-  double mass;
-  mlr::Matrix inertia;
-  uint dof() { if(type>=JT_hingeX && type<=JT_transZ) return 1; else return 0; }
-  
-  arr _h, _A, _Q, _I, _f; //featherstone types
-  void setFeatherstones();
-  void updateFeatherstones();
-  void write(ostream& os) const {
-    os <<"*type=" <<type <<" index=" <<qIndex <<" parent=" <<parent <<endl
-       <<" XAQ=" <<X <<A <<Q <<endl
-       <<" cft=" <<com <<force <<torque <<endl
-       <<" mass=" <<mass <<inertia <<endl;
-  }
-};
 
-typedef mlr::Array<mlr::F_Link> F_LinkTree;
-
-void equationOfMotion(arr& M, arr& F, const F_LinkTree& tree,  const arr& qd);
-void fwdDynamics_MF(arr& qdd, const F_LinkTree& tree, const arr& qd, const arr& u);
-void fwdDynamics_aba_nD(arr& qdd, const F_LinkTree& tree, const arr& qd, const arr& tau);
-void fwdDynamics_aba_1D(arr& qdd, const F_LinkTree& tree, const arr& qd, const arr& tau);
-void invDynamics(arr& tau, const F_LinkTree& tree, const arr& qd, const arr& qdd);
-
-}
-stdOutPipe(mlr::F_Link)
-
-void GraphToTree(mlr::F_LinkTree& tree, const mlr::KinematicWorld& C);
-void updateGraphToTree(mlr::F_LinkTree& tree, const mlr::KinematicWorld& C);
-/// @}
-
-
-//===========================================================================
-/// @defgroup ors_interface_blender Blender interface.
-/// @{
-inline void readBlender(const char* filename, mlr::Mesh& mesh, mlr::KinematicWorld& bl){ NICO }
-/// @}
-
-/// @} // END of group ors_interfaces
-//===========================================================================
-#endif //MLR_ORS_ONLY_BASICS
-
-/// @}
 
 #endif //MLR_ors_h

@@ -14,6 +14,7 @@
 
 
 #include "taskMap_AboveBox.h"
+#include "frame.h"
 
 TaskMap_AboveBox::TaskMap_AboveBox(int iShape, int jShape)
   : i(iShape), j(jShape){
@@ -31,6 +32,7 @@ TaskMap_AboveBox::TaskMap_AboveBox(const mlr::KinematicWorld& G, const char* iSh
 void TaskMap_AboveBox::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
   mlr::Shape *s1=G.frames(i)->shape;
   mlr::Shape *s2=G.frames(j)->shape;
+  CHECK(s1 && s2,"I need shapes!");
   if(s2->type!=mlr::ST_ssBox){ //switch roles
     mlr::Shape *z=s1;
     s1=s2; s2=z;
@@ -67,4 +69,8 @@ void TaskMap_AboveBox::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
     J[2] =  posJ[1];
     J[3] = -posJ[1];
   }
+}
+
+mlr::String TaskMap_AboveBox::shortTag(const mlr::KinematicWorld &G){
+  return STRING("AboveBox:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }

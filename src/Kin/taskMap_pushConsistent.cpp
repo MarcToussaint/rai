@@ -1,4 +1,5 @@
 #include "taskMap_pushConsistent.h"
+#include "frame.h"
 
 TaskMap_PushConsistent::TaskMap_PushConsistent(int iShape, int jShape) : i(iShape), j(jShape){
   order=1;
@@ -67,4 +68,8 @@ void TaskMap_PushConsistent::phi(arr& y, arr& J, const WorldL& G, double tau, in
     J.setMatrixBlock(J2, 0, qidx-J2.d1);
   }
 #endif
+}
+
+mlr::String TaskMap_PushConsistent::shortTag(const mlr::KinematicWorld &G){
+  return STRING("PushConsistent:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }

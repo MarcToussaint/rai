@@ -18,6 +18,7 @@
 #include <Core/thread.h>
 #include <Gui/opengl.h>
 #include "kin.h"
+#include <Geo/mesh.h>
 
 //===========================================================================
 

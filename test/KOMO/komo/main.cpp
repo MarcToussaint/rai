@@ -1,4 +1,5 @@
 #include <Kin/kin.h>
+#include <Kin/frame.h>
 #include <Gui/opengl.h>
 #include <KOMO/komo.h>
 
@@ -42,15 +43,13 @@ void TEST(EasyPR2){
 //===========================================================================
 
 void TEST(FinalPosePR2){
-  mlr::KinematicWorld G("model.kvg");
-  G.meldFixedJoints();
-  G.removeUselessBodies();
-  makeConvexHulls(G.frames);
-  for(mlr::Frame* a:G.frames) if(a->shape) a->shape->cont=true;
-  cout <<"configuration space dim=" <<G.q.N <<endl;
-  arr x = finalPoseTo(G, *G.getFrameByName("endeff"), *G.getFrameByName("target"));
-  G.setJointState(x.reshape(x.N));
-  G.gl().watch();
+  mlr::KinematicWorld K("model.kvg");
+  K.optimizeTree();
+  makeConvexHulls(K.frames);
+  cout <<"configuration space dim=" <<K.q.N <<endl;
+  arr x = finalPoseTo(K, *K.getFrameByName("endeff"), *K.getFrameByName("target"));
+  K.setJointState(x.reshape(x.N));
+  K.gl().watch();
 }
 
 //===========================================================================

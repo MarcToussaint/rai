@@ -23,6 +23,7 @@
 
 
 #include "kin_swift.h"
+#include "proxy.h"
 #include <Algo/ann.h>
 
 #ifdef MLR_extern_SWIFT

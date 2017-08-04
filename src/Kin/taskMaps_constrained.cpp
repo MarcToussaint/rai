@@ -13,6 +13,8 @@
     --------------------------------------------------------------  */
 
 #include "taskMaps.h"
+#include "proxy.h"
+#include "frame.h"
 
 //===========================================================================
 
@@ -22,6 +24,13 @@ void CollisionConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int 
 }
 
 //===========================================================================
+
+
+PairCollisionConstraint::PairCollisionConstraint(const mlr::KinematicWorld &G, const char *iShapeName, const char *jShapeName, double _margin)
+  : i(G.getFrameByName(iShapeName)->ID),
+    j(G.getFrameByName(jShapeName)->ID),
+    margin(_margin) {
+}
 
 void PairCollisionConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
   if(t>=0 && referenceIds.N){
@@ -72,6 +81,9 @@ void PairCollisionConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, 
 
 //===========================================================================
 
+PlaneConstraint::PlaneConstraint(const mlr::KinematicWorld &G, const char *iShapeName, const arr &_planeParams)
+  : i(G.getFrameByName(iShapeName)->ID), planeParams(_planeParams){}
+
 void PlaneConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
   mlr::Frame *body_i = G.frames(i);
   mlr::Vector vec_i = 0;
@@ -118,6 +130,12 @@ void PointEqualityConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, 
 }
 
 //===========================================================================
+
+ContactEqualityConstraint::ContactEqualityConstraint(const mlr::KinematicWorld &G, const char *iShapeName, const char *jShapeName, double _margin)
+  : i(G.getFrameByName(iShapeName)->ID),
+    j(G.getFrameByName(jShapeName)->ID),
+    margin(_margin) {
+}
 
 void ContactEqualityConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
   y.resize(1) = 0.;

@@ -14,6 +14,7 @@
 
 
 #include "kinViewer.h"
+#include "proxy.h"
 
 #include <iomanip>
 

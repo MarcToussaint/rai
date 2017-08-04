@@ -1,6 +1,7 @@
 #include <KOMO/komo.h>
 #include <string>
 #include <map>
+#include <Core/graph.h>
 
 using namespace std;
 

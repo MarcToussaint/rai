@@ -32,7 +32,7 @@ mlr::Frame::~Frame() {
   if(inertia) delete inertia;
   K.frames.removeValue(this);
   listReindex(K.frames);
-  K.jointSort();
+  K.calc_fwdActiveSet();
 }
 
 void mlr::Frame::parseAts(const Graph& ats) {
@@ -126,9 +126,7 @@ mlr::Joint::Joint(Link *_link, Joint *copyJoint)
   : dim(0), qIndex(UINT_MAX), q0(0.), H(1.), mimic(NULL), link(_link), constrainToZeroVel(false) {
   CHECK(!link->joint, "the Link already has a Joint");
   link->joint = this;
-  link->to->K.qdim=0;
-  link->to->K.q.clear();
-  link->to->K.qdot.clear();
+  link->to->K.reset_q();
 
 //  if(!to->link){
 //    to->link = new Link(from, to);
@@ -151,11 +149,7 @@ mlr::Joint::Joint(Link *_link, Joint *copyJoint)
 }
 
 mlr::Joint::~Joint() {
-  if(dim){
-    link->to->K.qdim=0;
-    link->to->K.q.clear();
-    link->to->K.qdot.clear();
-  }
+  if(dim) link->to->K.reset_q();
   link->joint = NULL;
 }
 

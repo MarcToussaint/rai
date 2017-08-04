@@ -49,11 +49,7 @@ struct PairCollisionConstraint:TaskMap {
   PairCollisionConstraint(double _margin)
     : i(-1), j(-1), margin(_margin){
   }
-  PairCollisionConstraint(const mlr::KinematicWorld& G, const char* iShapeName, const char* jShapeName, double _margin=.02)
-    : i(G.getFrameByName(iShapeName)->ID),
-      j(G.getFrameByName(jShapeName)->ID),
-      margin(_margin) {
-  }
+  PairCollisionConstraint(const mlr::KinematicWorld& G, const char* iShapeName, const char* jShapeName, double _margin=.02);
 
   virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1);
   virtual uint dim_phi(const mlr::KinematicWorld& G){ return 1; }
@@ -65,8 +61,7 @@ struct PlaneConstraint:TaskMap {
   int i;       ///< which shapes does it refer to?
   arr planeParams;  ///< parameters of the variable (e.g., liner coefficients, limits, etc)
 
-  PlaneConstraint(const mlr::KinematicWorld& G, const char* iShapeName, const arr& _planeParams)
-    : i(G.getFrameByName(iShapeName)->ID), planeParams(_planeParams){}
+  PlaneConstraint(const mlr::KinematicWorld& G, const char* iShapeName, const arr& _planeParams);
 
   virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=1);
   virtual uint dim_phi(const mlr::KinematicWorld& G){ return 1; }
@@ -111,11 +106,7 @@ struct ContactEqualityConstraint:TaskMap {
   int i;       ///< which shapes does it refer to?
   int j;       ///< which shapes does it refer to?
   double margin;
-  ContactEqualityConstraint(const mlr::KinematicWorld& G, const char* iShapeName, const char* jShapeName,double _margin)
-    : i(G.getFrameByName(iShapeName)->ID),
-      j(G.getFrameByName(jShapeName)->ID),
-      margin(_margin) {
-  }
+  ContactEqualityConstraint(const mlr::KinematicWorld& G, const char* iShapeName, const char* jShapeName,double _margin);
   virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=1);
   virtual uint dim_phi(const mlr::KinematicWorld& G){
     return 1;
@@ -156,3 +147,4 @@ struct qItselfConstraint:TaskMap {
 };
 
 //===========================================================================
+

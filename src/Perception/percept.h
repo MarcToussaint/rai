@@ -2,6 +2,7 @@
 
 #include <Core/array.h>
 #include <Kin/kin.h>
+#include <Geo/mesh.h>
 
 struct Percept;
 typedef mlr::Array<Percept*> PerceptL;

@@ -18,7 +18,9 @@
 #include "taskControl.h"
 #include <Kin/kin_swift.h>
 #include <KOMO/komo.h>
+#include <Kin/frame.h>
 #include <Kin/taskMaps.h>
+#include <Core/graph.h>
 
 //===========================================================================
 

@@ -4,6 +4,7 @@
 #include <Core/array.h>
 #include <Kin/kin.h>
 #include <Kin/taskMaps.h>
+#include <map>
 
 struct GravityCompensation {
 

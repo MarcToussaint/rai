@@ -16,6 +16,7 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
 #include "syncFiltered.h"
+#include <Kin/frame.h>
 
 SyncFiltered::SyncFiltered(const char* outputWorld_name)
   : Thread("SyncFiltered", -1.),

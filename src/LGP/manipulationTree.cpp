@@ -16,6 +16,7 @@
 #include "manipulationTree.h"
 #include <MCTS/solver_PlainMC.h>
 #include <KOMO/komo.h>
+#include <Kin/switch.h>
 
 #define DEBUG(x) //x
 #define DEL_INFEASIBLE(x) //x
@@ -247,7 +248,7 @@ void ManipulationTree_Node::optLevel(uint level){
     //    CHECK_EQ(sw->timeOfApplication, 1, "need to do this before the optimization..");
         if(sw->timeOfApplication>=2) sw->apply(effKinematics);
       }
-      effKinematics.jointSort();
+      effKinematics.calc_fwdActiveSet();
       DEBUG( effKinematics.checkConsistency(); )
       effKinematics.getJointState();
   }else{

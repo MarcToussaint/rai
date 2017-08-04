@@ -1,6 +1,7 @@
 #include "TaskControlThread.h"
 #include <Gui/opengl.h>
 #include <RosCom/baxter.h>
+#include <Kin/frame.h>
 
 void lowPassUpdate(arr& lowPass, const arr& signal, double rate=.1){
   if(lowPass.N!=signal.N){ lowPass=zeros(signal.N); return; }
