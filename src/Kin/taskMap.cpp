@@ -17,6 +17,7 @@
 #include "taskMap_qItself.h"
 #include "taskMap_GJK.h"
 #include "taskMap_FixSwitchedObjects.h"
+#include "frame.h"
 
 //===========================================================================
 

@@ -440,6 +440,7 @@ void mlr::KinematicWorld::reconfigureRoot(Frame *root) {
 }
 
 void mlr::KinematicWorld::analyzeJointStateDimensions() {
+  if(!fwdActiveSet.N) calc_fwdActiveSet();
   Joint *j;
   qdim=0;
   for(Frame *f: fwdActiveSet) if((j=f->joint())) {
@@ -476,6 +477,7 @@ void mlr::KinematicWorld::getJointState(arr &_q, arr& _qdot) const {
 
 arr mlr::KinematicWorld::getJointState() const {
   if(!qdim) ((KinematicWorld*)this)->analyzeJointStateDimensions();
+  if(q.N!=qdim) ((KinematicWorld*)this)->calc_q_from_Q();
   CHECK_EQ(q.N, qdim, "");
   return q;
 }

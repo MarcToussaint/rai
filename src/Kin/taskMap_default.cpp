@@ -13,6 +13,7 @@
     --------------------------------------------------------------  */
 
 #include "taskMap_default.h"
+#include "frame.h"
 
 const char* TaskMap_DefaultType2String[] = {
 "no",      ///< non-initialization

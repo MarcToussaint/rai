@@ -15,7 +15,7 @@
 
 #include "taskMap_QuaternionNorms.h"
 #include "taskMap_qItself.h"
-
+#include "frame.h"
 
 void TaskMap_QuaternionNorms::phi(arr &y, arr &J, const mlr::KinematicWorld &G, int t){
     uint n=dim_phi(G);

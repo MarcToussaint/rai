@@ -15,6 +15,7 @@
 
 #include <climits>
 #include "taskMap_qItself.h"
+#include "frame.h"
 
 TaskMap_qItself::TaskMap_qItself(bool relative_q0) : moduloTwoPi(true), relative_q0(relative_q0) {}
 

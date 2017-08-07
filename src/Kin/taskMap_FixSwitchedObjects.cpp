@@ -16,6 +16,7 @@
 #include "taskMap_FixSwitchedObjects.h"
 #include "taskMap_qItself.h"
 #include "taskMap_default.h"
+#include "frame.h"
 
 uint TaskMap_FixSwichedObjects::dim_phi(const WorldL& G, int t){
   mlr::Array<mlr::Frame*> switchedBodies = getSwitchedBodies(*G.elem(-2), *G.elem(-1));

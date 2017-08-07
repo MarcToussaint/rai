@@ -116,7 +116,7 @@ struct Joint{
   arr calc_q_from_Q(const Transformation &Q) const;
   uint getDimFromType() const;
 
-  void makeRigid(){ NIY }
+  void makeRigid();
 
   void write(std::ostream& os) const;
   void read(const Graph& G);

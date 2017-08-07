@@ -15,6 +15,7 @@
 
 #include "taskMap_transition.h"
 #include "taskMap_qItself.h"
+#include "frame.h"
 
 TaskMap_Transition::TaskMap_Transition(const mlr::KinematicWorld& G, bool effectiveJointsOnly)
   : effectiveJointsOnly(effectiveJointsOnly){

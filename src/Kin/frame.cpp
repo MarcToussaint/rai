@@ -70,9 +70,9 @@ void mlr::Frame::write(std::ostream& os) const {
 }
 
 namespace mlr {
-std::ostream& operator<<(std::ostream& os, const Frame& x) { x.write(os); return os; }
-std::ostream& operator<<(std::ostream& os, const Shape& x) { x.write(os); return os; }
-std::ostream& operator<<(std::ostream& os, const Joint& x) { x.write(os); return os; }
+//std::ostream& operator<<(std::ostream& os, const Frame& x) { x.write(os); return os; }
+//std::ostream& operator<<(std::ostream& os, const Shape& x) { x.write(os); return os; }
+//std::ostream& operator<<(std::ostream& os, const Joint& x) { x.write(os); return os; }
 }
 
 mlr::Link::Link(mlr::Frame *_from, mlr::Frame *_to, mlr::Link *copyLink)
@@ -352,9 +352,13 @@ uint mlr::Joint::getDimFromType() const {
   return 0;
 }
 
+void mlr::Joint::makeRigid(){
+  type=JT_rigid; link->to->K.reset_q();
+}
+
 void mlr::Joint::read(const Graph &G){
-  double d=0.;
-  mlr::String str;
+    double d=0.;
+    mlr::String str;
 
   mlr::Transformation A=0, B=0;
 
