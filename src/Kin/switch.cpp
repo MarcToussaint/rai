@@ -40,6 +40,20 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
   if(toId!=UINT_MAX) to=G.frames(toId);
 
   if(symbol==deleteJoint){
+#if 1
+    //first search for the joint below frame
+    Frame *f = to;
+    for(;;){
+      if(!f->link) break;
+      if(f->link->joint) break;
+      f = f->link->from;
+    }
+    if(!f->link){
+      LOG(-1) <<"there were no deletable links below '" <<to->name <<"'! Deleted before?";
+    }else{
+      delete f->link;
+    }
+#else
     //this deletes ALL links downward from to until a named or shape-attached one!
     Frame *f = to;
     uint i=0;
@@ -54,20 +68,32 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     if(!i){
       LOG(-1) <<"there were no deletable links below '" <<to->name <<"'! Deleted before?";
     }
+#endif
     G.calc_fwdActiveSet();
 //    G.checkConsistency();
     return;
   }
 //  G.isLinkTree=false;
   if(symbol==addJointZero || symbol==addActuated){
-    Joint *j = new Joint(from, to);
+    //first find lowest frame below to
+    Frame *f = to;
+    mlr::Transformation Q = 0;
+    while(f->link){
+      Q = f->link->Q * Q;
+      f = f->link->from;
+    }
+
+    Joint *j = new Joint(from, f);
     if(symbol==addJointZero) j->constrainToZeroVel=true;
     else                     j->constrainToZeroVel=false;
     j->type = jointType;
     if(!jA.isZero()){
       j->link->insertPreLink(jA);
     }
-    if(!jB.isZero()) NIY;
+    if(!Q.isZero()){
+      j->link->insertPostLink(-Q);
+      G.checkConsistency();
+    }
     G.calc_fwdActiveSet();
     G.calc_fwdPropagateFrames();
     G.checkConsistency();

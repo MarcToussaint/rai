@@ -623,6 +623,9 @@ void TEST(InverseKinematics) {
 int MAIN(int argc,char **argv){
   mlr::initCmdLine(argc, argv);
 
+  testPlayStateSequence();
+  return 0;
+
   testLoadSave();
   testCopy();
   testGraph();

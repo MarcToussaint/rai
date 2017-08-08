@@ -621,6 +621,10 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
         node = newNode<arr>(keys, parents, reals);
       } break;
       case '<': { //any type parser
+#if 0
+        str.read(is, "", ">", true);
+        node = newNode<mlr::String>(keys, parents, str);
+#else
         str.read(is, " \t", " \t\n\r()`-=~!@#$%^&*()+[]{};'\\:|,./<>?", false);
         //      str.read(is, " \t", " \t\n\r()`1234567890-=~!@#$%^&*()_+[]{};'\\:|,./<>?", false);
         node = readTypeIntoNode(*this, str, is);
@@ -636,6 +640,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
           node->parents = parents;
         }
         mlr::parse(is, ">");
+#endif
       } break;
       case '{': { // sub graph
         Node_typed<Graph> *subgraph = this->newSubgraph(keys, parents);

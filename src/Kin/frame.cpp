@@ -112,6 +112,27 @@ mlr::Link* mlr::Link::insertPreLink(const mlr::Transformation &A){
   return f->link;
 }
 
+mlr::Link* mlr::Link::insertPostLink(const mlr::Transformation &B){
+  //new frame between: from -> f -> to
+  Frame *f = new Frame(from->K);
+  if(to->name) f->name <<'<' <<to->name;
+
+  //disconnect from -> to
+  from->outLinks.removeValue(to);
+
+  //connect f->to with new Link and no joint
+  to->link = NULL;
+  to->link = new Link(f, to);
+  to->link->Q = B;
+
+  //connect from->to: associate to->link to f
+  from->outLinks.append(f);
+  f->link = this;
+  this->to = f;
+
+  return to->link;
+}
+
 mlr::Joint *mlr::Frame::joint() const{
   if(!link) return NULL;
   return link->joint;

@@ -440,7 +440,6 @@ void mlr::KinematicWorld::reconfigureRoot(Frame *root) {
 }
 
 void mlr::KinematicWorld::analyzeJointStateDimensions() {
-  if(!fwdActiveSet.N) calc_fwdActiveSet();
   Joint *j;
   qdim=0;
   for(Frame *f: fwdActiveSet) if((j=f->joint())) {
