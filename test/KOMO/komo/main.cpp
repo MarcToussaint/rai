@@ -24,7 +24,7 @@ void TEST(EasyPR2){
   G.meldFixedJoints();
   G.removeUselessBodies();
   makeConvexHulls(G.shapes);
-  for(mlr::Shape *s:G.shapes) s->cont=true;
+  //for(mlr::Shape *s:G.shapes) s->cont=true;
   cout <<"configuration space dim=" <<G.q.N <<endl;
   double rand = mlr::getParameter<double>("KOMO/moveTo/randomizeInitialPose", .0);
   if(rand){

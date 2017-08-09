@@ -161,7 +161,7 @@ void SwiftInterface::initActivations(const mlr::KinematicWorld& world, uint pare
   //cout <<"collision active shapes: ";
   //for_list(Type,  s,  world.shapes) if(s->cont) cout <<s->name <<' ';
   
-  for_list(mlr::Shape, s, world.shapes) {
+  for(mlr::Shape *s: world.shapes) {
     if(!s->cont) {
       if(INDEXshape2swift(s->index)!=-1) scene->Deactivate(INDEXshape2swift(s->index));
     } else {

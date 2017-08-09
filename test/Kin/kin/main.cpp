@@ -162,10 +162,10 @@ void TEST(Copy){
 //
 
 void TEST(KinematicSpeed){
-#define NUM 10000
+#define NUM 100000
 #if 1
-  mlr::KinematicWorld G("kinematicTests.g");
-  //  mlr::KinematicWorld G("../../../data/pr2_model/pr2_model.ors");
+  //mlr::KinematicWorld G("kinematicTests.g");
+  mlr::KinematicWorld G("../../../data/pr2_model/pr2_model.ors");
   G.makeLinkTree();
   uint n=G.getJointStateDimension();
   arr x(n);
