@@ -53,7 +53,7 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
   
   if(scene) delete scene;
 
-  scene=new SWIFT_Scene(false, false);
+  scene = new SWIFT_Scene(false, false);
 
   INDEXswift2shape.resize(world.frames.N);  INDEXswift2shape=-1;
   INDEXshape2swift.resize(world.frames.N);  INDEXshape2swift=-1;
@@ -183,7 +183,7 @@ void SwiftInterface::initActivations(const mlr::KinematicWorld& world, uint pare
   for(mlr::Frame *b: world.frames) {
     FrameL group, children;
     group.append(b);
-    for(mlr::Frame *b2: b->outLinks) if(!b2->link->joint) group.append(b2); //all all rigid links as well
+    for(mlr::Frame *b2: b->outLinks) if(!b2->link->joint) group.append(b2); //all rigid links as well
     for(uint l=0; l<parentLevelsToDeactivate; l++){
       children.clear();
       for(mlr::Frame *b2: group) for(mlr::Frame *b2to: b2->outLinks) {
@@ -232,11 +232,13 @@ void SwiftInterface::pushToSwift(const mlr::KinematicWorld& world) {
   CHECK(INDEXshape2swift.N <= world.frames.N, "the number of shapes has changed");
   mlr::Matrix rot;
   for(mlr::Frame *f: world.frames) {
-    rot = f->X.rot.getMatrix();
-    if(f->ID<INDEXshape2swift.N && INDEXshape2swift(f->ID)!=-1) {
-      scene->Set_Object_Transformation(INDEXshape2swift(f->ID), rot.p(), f->X.pos.p());
-      if(!f->shape->cont) scene->Deactivate(INDEXshape2swift(f->ID));
-      //else         scene->Activate( INDEXshape2swift(f->ID) );
+    if(f->shape){
+      if(f->ID<INDEXshape2swift.N && INDEXshape2swift(f->ID)!=-1) {
+        rot = f->X.rot.getMatrix();
+        scene->Set_Object_Transformation(INDEXshape2swift(f->ID), rot.p(), f->X.pos.p());
+        if(!f->shape->cont) scene->Deactivate(INDEXshape2swift(f->ID));
+        //else         scene->Activate( INDEXshape2swift(f->ID) );
+      }
     }
   }
 }
@@ -308,7 +310,7 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
         proxy->cenD = proxy->cenN.length();
         proxy->cenN /= proxy->cenD;
       }
-      
+
     //penetrating pair of objects
     if(num_contacts[i]==-1) {
       proxy=world.proxies(k);

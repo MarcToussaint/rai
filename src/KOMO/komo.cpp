@@ -273,7 +273,7 @@ void KOMO::setKS_slider(double time, bool before, const char* obj, const char* s
 void KOMO::setHoming(double startTime, double endTime, double prec){
   uintA bodies;
   mlr::Joint *j;
-  for(mlr::Frame *f:world.frames) if((j=f->joint()) && j->qDim()>0) bodies.append(f->ID);
+  for(mlr::Frame *f:world.frames) if((j=f->joint()) && !j->constrainToZeroVel && j->qDim()>0) bodies.append(f->ID);
   setTask(startTime, endTime, new TaskMap_qItself(bodies, true), OT_sumOfSqr, NoArr, prec); //world.q, prec);
 }
 
@@ -813,6 +813,9 @@ void KOMO::setupConfigurations(){
   computeMeshNormals(world.frames);
 
   configurations.append(new mlr::KinematicWorld())->copy(world, true);
+  configurations.last()->calc_fwdActiveSet();
+  configurations.last()->calc_q_from_Q();
+  configurations.last()->checkConsistency();
   for(uint s=1;s<k_order+T;s++){
     configurations.append(new mlr::KinematicWorld())->copy(*configurations(s-1), true);
     CHECK(configurations(s)==configurations.last(), "");
@@ -824,7 +827,7 @@ void KOMO::setupConfigurations(){
     }
     configurations(s)->calc_fwdActiveSet();
     configurations(s)->calc_q_from_Q();
-    //configurations.last()->checkConsistency();
+    configurations(s)->checkConsistency();
   }
 }
 

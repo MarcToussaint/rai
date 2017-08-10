@@ -67,6 +67,7 @@ void TEST(EasyAlign){
 
 void TEST(EasyAlign2){
   mlr::KinematicWorld G("test.ors");
+  G.optimizeTree();
   mlr::Frame *a = G.getFrameByName("target");
   a->X.addRelativeRotationDeg(90,1,0,0);
   KOMO komo;
@@ -83,8 +84,8 @@ int main(int argc,char** argv){
 
 //  testEasy();
 //  testEasyAlign();
-  testEasyAlign2();
-//  testEasyPR2();
+//  testEasyAlign2();
+  testEasyPR2();
 
   return 0;
 }

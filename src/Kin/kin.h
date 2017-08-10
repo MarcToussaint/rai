@@ -41,7 +41,7 @@ struct KinematicSwitch;
 
 extern mlr::KinematicWorld& NoWorld;
 
-//typedef mlr::Array<mlr::Joint*> JointL;
+typedef mlr::Array<mlr::Joint*> JointL;
 //typedef mlr::Array<mlr::Shape*> ShapeL;
 typedef mlr::Array<mlr::Frame*> FrameL;
 typedef mlr::Array<mlr::Proxy*> ProxyL;
@@ -62,6 +62,7 @@ struct KinematicWorld : GLDrawer{
 
   FrameL frames;
   FrameL fwdActiveSet;
+  JointL fwdActiveJoints;
 
   ProxyL proxies; ///< list of current proximities between bodies
 

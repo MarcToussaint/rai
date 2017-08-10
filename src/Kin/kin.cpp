@@ -193,11 +193,14 @@ void mlr::KinematicWorld::reset_q(){
   q.clear();
   qdot.clear();
   fwdActiveSet.clear();
+  fwdActiveJoints.clear();
 }
 
 void mlr::KinematicWorld::calc_fwdActiveSet(){
   fwdActiveSet = graphGetTopsortOrder<Frame>(frames);
   analyzeJointStateDimensions();
+  fwdActiveJoints.clear();
+  for(Frame *f:fwdActiveSet) if(f->link && f->link->joint) fwdActiveJoints.append(f->link->joint);
 }
 
 void mlr::KinematicWorld::copy(const mlr::KinematicWorld& K, bool referenceMeshesAndSwiftOnCopy) {
@@ -267,26 +270,20 @@ void mlr::KinematicWorld::calc_fwdPropagateFrames() {
     if(!isLinkTree) j->to->X.appendTransformation(j->B);
   }
 #else
-  for(Frame *f : fwdActiveSet){
-    Link *rel = f->link;
-    if(rel){
-      Joint *j = rel->joint;
-      if(j){
-        f->X = rel->from->X;
-//        f->X.appendTransformation(j->A);
-        if(j->type==JT_hingeX || j->type==JT_transX)  j->axis = f->X.rot.getX();
-        if(j->type==JT_hingeY || j->type==JT_transY)  j->axis = f->X.rot.getY();
-        if(j->type==JT_hingeZ || j->type==JT_transZ)  j->axis = f->X.rot.getZ();
-        if(j->type==JT_transXYPhi)  j->axis = f->X.rot.getZ();
-        if(j->type==JT_phiTransXY)  j->axis = f->X.rot.getZ();
-
-//        j->X = f->X;
-        f->X.appendTransformation(rel->Q);
-        CHECK_EQ(j->to()->X.pos.x, j->to()->X.pos.x, "NAN transformation:" <<j->from()->X <<'*' <<rel->Q);
-//        if(!isLinkTree) f->X.appendTransformation(j->B);
-      }else{
-        f->X = rel->from->X;
-        f->X.appendTransformation(rel->Q);
+  for(Frame *f:fwdActiveSet){
+    if(f->link){
+      Transformation &from = f->link->from->X;
+      Transformation &to = f->X;
+      to = from;
+      to.appendTransformation(f->link->Q);
+      CHECK_EQ(to.pos.x, to.pos.x, "NAN transformation:" <<from <<'*' <<f->link->Q);
+      if(f->link->joint){
+        Joint *j = f->link->joint;
+        if(j->type==JT_hingeX || j->type==JT_transX)  j->axis = from.rot.getX();
+        if(j->type==JT_hingeY || j->type==JT_transY)  j->axis = from.rot.getY();
+        if(j->type==JT_hingeZ || j->type==JT_transZ)  j->axis = from.rot.getZ();
+        if(j->type==JT_transXYPhi)  j->axis = from.rot.getZ();
+        if(j->type==JT_phiTransXY)  j->axis = from.rot.getZ();
       }
     }
   }
@@ -525,8 +522,7 @@ void mlr::KinematicWorld::calc_q_from_Q() {
 
 void mlr::KinematicWorld::calc_Q_from_q(){
   uint n=0;
-  Joint *j;
-  for(Frame *f: fwdActiveSet) if((j=f->joint())){
+  for(Joint *j: fwdActiveJoints){
     if(!j->mimic) CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
     j->calc_Q_from_q(q, j->qIndex);
     if(!j->mimic) n += j->dim;
@@ -1696,8 +1692,7 @@ mlr::Proxy* mlr::KinematicWorld::getContact(uint a, uint b) const {
 
 arr mlr::KinematicWorld::getHmetric() const{
   arr H = zeros(getJointStateDimension());
-  Joint *j;
-  for(Frame *f: frames) if((j=f->joint())){
+  for(Joint *j: fwdActiveJoints){
     double h=j->H;
     CHECK(h>0.,"Hmetric should be larger than 0");
     if(j->type==JT_transXYPhi){

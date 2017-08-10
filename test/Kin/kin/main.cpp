@@ -195,17 +195,17 @@ void TEST(Copy){
 //
 
 void TEST(KinematicSpeed){
-#define NUM 10000
+#define NUM 100000
 #if 1
-  mlr::KinematicWorld G("kinematicTests.g");
-  //  mlr::KinematicWorld G("../../../data/pr2_model/pr2_model.ors");
-//  G.makeLinkTree();
-  uint n=G.getJointStateDimension();
+//  mlr::KinematicWorld K("kinematicTests.g");
+  mlr::KinematicWorld K("../../../data/pr2_model/pr2_model.ors");
+  K.optimizeTree();
+  uint n=K.getJointStateDimension();
   arr x(n);
   mlr::timerStart();
   for(uint k=0;k<NUM;k++){
     rndUniform(x,-.5,.5,false);
-    G.setJointState(x);
+    K.setJointState(x);
 //    G.watch();
 //    mlr::wait(.1);
   }
@@ -622,9 +622,6 @@ void TEST(InverseKinematics) {
 
 int MAIN(int argc,char **argv){
   mlr::initCmdLine(argc, argv);
-
-  testPlayStateSequence();
-  return 0;
 
   testLoadSave();
   testCopy();
