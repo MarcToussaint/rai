@@ -53,6 +53,8 @@ struct Node {
   Node(const std::type_info& _type, void *_value_ptr, Graph& _container, const StringA& _keys, const NodeL& _parents);
   virtual ~Node();
 
+  void addParent(Node *p);
+
   //-- get value
   template<class T> bool isOfType() const{ return type==typeid(T); }
   template<class T> T *getValue();    ///< query whether node type is equal to (or derived from) T, return the value if so

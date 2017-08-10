@@ -98,6 +98,11 @@ Node::~Node() {
   container.index();
 }
 
+void Node::addParent(Node *p){
+  parents.append(p);
+  p->parentOf.append(this);
+}
+
 bool Node::matches(const char *key){
   for(const mlr::String& k:keys) if(k==key) return true;
   return false;

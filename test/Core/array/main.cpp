@@ -858,9 +858,6 @@ void TEST(EigenValues){
 int MAIN(int argc, char **argv){
   mlr::initCmdLine(argc, argv);
 
-  testIterations();
-  return 0;
-
   testBasics();
   testIterations();
   testCheatSheet();
