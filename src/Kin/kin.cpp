@@ -2453,7 +2453,7 @@ int animateConfiguration(mlr::KinematicWorld& C, Inotify *ino) {
 
     for(t=0; t<steps; t++) {
       if(C.gl().pressedkey==13 || C.gl().pressedkey==27 || C.gl().pressedkey=='q') return C.gl().pressedkey;
-      if(ino && ino->pollForModification()) return 13;
+      if(ino && ino->pollForModification()) return -1;
 
       x(i) = center + (delta*(0.5*cos(MLR_2PI*t/steps + offset)));
       // Joint limits
@@ -2635,11 +2635,12 @@ void editConfiguration(const char* filename, mlr::KinematicWorld& C) {
     if(exit) break;
     cout <<"animating.." <<endl;
     //while(ino.pollForModification());
-    animateConfiguration(C, &ino);
+    int ret = animateConfiguration(C, &ino);
     if(exit) break;
     cout <<"watching..." <<endl;
-#if 0
-    ino.waitForModification();
+#if 1
+    if(ret!=-1)
+      ino.waitForModification(true);
 #else
     C.gl().watch();
 #endif

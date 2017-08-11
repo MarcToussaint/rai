@@ -1248,8 +1248,9 @@ bool Inotify::pollForModification(bool block, bool verbose){
       }
     }
     if(event->len
-       && (event->mask & (IN_MODIFY|IN_CREATE|IN_DELETE))
-       && !strcmp(event->name, fil->name.p) ) return true; //report modification on specific file
+            && (event->mask & (IN_MODIFY|IN_CREATE|IN_DELETE))
+//            && !strcmp(event->name, fil->name.p)
+            ) return true; //report modification on specific file
     i += sizeof(struct inotify_event) + event->len;
   }
 
