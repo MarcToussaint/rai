@@ -2406,8 +2406,8 @@ void mlr::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, Proxy *p, double m
     arr Jpos;
     mlr::Vector arel, brel;
     if(p->d>0.) { //we have a gradient on pos only when outside
-      arel=a->X.rot/(p->posA-a->X.pos);
-      brel=b->X.rot/(p->posB-b->X.pos);
+      arel=a->body->X.rot/(p->posA-a->body->X.pos);
+      brel=b->body->X.rot/(p->posB-b->body->X.pos);
       CHECK(p->normal.isNormalized(), "proxy normal is not normalized");
       arr normal; normal.referTo(&p->normal.x, 3); normal.reshape(1, 3);
           
@@ -2416,8 +2416,8 @@ void mlr::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, Proxy *p, double m
     }
         
     if(useCenterDist && d2>0.){
-      arel=a->X.rot/(p->cenA-a->X.pos);
-      brel=b->X.rot/(p->cenB-b->X.pos);
+      arel=a->body->X.rot/(p->cenA-a->body->X.pos);
+      brel=b->body->X.rot/(p->cenB-b->body->X.pos);
 //      CHECK(p->cenN.isNormalized(), "proxy normal is not normalized");
       if(!p->cenN.isNormalized()){
         MLR_MSG("proxy->cenN is not normalized: objects seem to be at exactly the same place");
