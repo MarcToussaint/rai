@@ -19,8 +19,9 @@
 
 struct TaskMap_AboveBox : TaskMap {
   int i, j;               ///< which shapes does it refer to?
-  TaskMap_AboveBox(int iShape=-1, int jShape=-1);
+  double margin;
 
+  TaskMap_AboveBox(int iShape=-1, int jShape=-1);
   TaskMap_AboveBox(const mlr::KinematicWorld& G,
                    const char* iShapeName=NULL, const char* jShapeName=NULL);
 

@@ -77,6 +77,8 @@ namespace mlr {
 
 mlr::Link::Link(mlr::Frame *_from, mlr::Frame *_to, mlr::Link *copyLink)
   : from(_from), to(_to) {
+  CHECK(from, "needs a non-NULL frame");
+  CHECK(to, "needs a non-NULL frame");
   CHECK(!to->link, "the Frame already has a Link")
   to->link = this;
   from->outLinks.append(to);
@@ -102,14 +104,15 @@ mlr::Link* mlr::Link::insertPreLink(const mlr::Transformation &A){
   from->outLinks.removeValue(to);
 
   //connect from -> f with new Link and no joint
-  f->link = new Link(from, f);
-  f->link->Q = A;
+  Link *newLink = new Link(from, f);
+  newLink->Q = A;
+  f->link = newLink;
 
   //connect f -> to with old Link and this joint
   f->outLinks.append(to);
   from = f;
 
-  return f->link;
+  return newLink;
 }
 
 mlr::Link* mlr::Link::insertPostLink(const mlr::Transformation &B){
@@ -121,16 +124,18 @@ mlr::Link* mlr::Link::insertPostLink(const mlr::Transformation &B){
   from->outLinks.removeValue(to);
 
   //connect f->to with new Link and no joint
-  to->link = NULL;
-  to->link = new Link(f, to);
-  to->link->Q = B;
+  CHECK_EQ(to->link, this, "");
+  to->link = NULL; //setting this to NULL enables the new in the next line
+  Link *newLink = new Link(f, to);
+  newLink->Q = B;
+  to->link = newLink;
 
   //connect from->to: associate to->link to f
   from->outLinks.append(f);
   f->link = this;
   this->to = f;
 
-  return to->link;
+  return newLink;
 }
 
 mlr::Joint *mlr::Frame::joint() const{
@@ -203,7 +208,7 @@ void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
             Q.rot.set(q.p+_qIndex);
             {
                 double n=Q.rot.normalization();
-//                if(n<.5 || n>2.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+                if(n<.5 || n>2.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
             }
             Q.rot.normalize();
             Q.rot.isZero=false; //WHY? (gradient check fails without!)
@@ -214,7 +219,21 @@ void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
             Q.rot.set(q.p+_qIndex+3);
             {
                 double n=Q.rot.normalization();
-//                if(n<.5 || n>2.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+                if(n<.5 || n>2.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+            }
+            Q.rot.normalize();
+            Q.rot.isZero=false;
+        } break;
+
+        case JT_XBall:{
+            Q.pos.x = q.elem(_qIndex);
+            Q.pos.y = 0.;
+            Q.pos.z = 0.;
+            Q.pos.isZero = false;
+            Q.rot.set(q.p+_qIndex+1);
+            {
+                double n=Q.rot.normalization();
+                if(n<.5 || n>2.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
             }
             Q.rot.normalize();
             Q.rot.isZero=false;
@@ -250,7 +269,6 @@ void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
             Q.pos = Q.rot*Vector(q.elem(_qIndex+1), q.elem(_qIndex+2), 0.);
         } break;
 
-        case JT_glue:
         case JT_rigid:
             break;
         default: NIY;
@@ -340,7 +358,6 @@ arr mlr::Joint::calc_q_from_Q(const mlr::Transformation &Q) const{
         q(1)=Q.pos.y;
         q(2)=Q.pos.z;
     } break;
-    case JT_glue:
     case JT_rigid:
         break;
     case JT_free:
@@ -352,6 +369,14 @@ arr mlr::Joint::calc_q_from_Q(const mlr::Transformation &Q) const{
         q(4)=Q.rot.x;
         q(5)=Q.rot.y;
         q(6)=Q.rot.z;
+        break;
+    case JT_XBall:
+        q.resize(5);
+        q(0)=Q.pos.x;
+        q(1)=Q.rot.w;
+        q(2)=Q.rot.x;
+        q(3)=Q.rot.y;
+        q(4)=Q.rot.z;
         break;
     default: NIY;
     }
@@ -368,7 +393,8 @@ uint mlr::Joint::getDimFromType() const {
   if(type==JT_universal) return 2;
   if(type==JT_quatBall) return 4;
   if(type==JT_free) return 7;
-  if(type==JT_glue || type==JT_rigid || type==JT_none) return 0;
+  if(type==JT_rigid || type==JT_none) return 0;
+  if(type==JT_XBall) return 5;
   HALT("shouldn't be here");
   return 0;
 }

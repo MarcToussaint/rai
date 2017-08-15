@@ -5,7 +5,7 @@
 //===========================================================================
 
 template<> const char* mlr::Enum<mlr::KinematicSwitch::OperatorSymbol>::names []={
-  "deleteJoint", "addJointZero", "addJointAtFrom", "addJointAtTo", "addArticulated", NULL
+  "deleteJoint", "addJointZero", "addJointAtFrom", "addJointAtTo", "addArticulated", "addSliderMechanism", "insertJoint", NULL
 };
 
 //===========================================================================
@@ -74,18 +74,26 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     return;
   }
 //  G.isLinkTree=false;
-  if(symbol==addJointZero || symbol==addActuated){
+  if(symbol==addJointZero || symbol==addActuated || symbol==insertJoint){
     //first find lowest frame below to
-    Frame *f = to;
     mlr::Transformation Q = 0;
-    while(f->link){
-      Q = f->link->Q * Q;
-      f = f->link->from;
+    while(to->link){
+      if(to->link->joint) break; //don't jump over joints
+      Q = to->link->Q * Q;
+      to = to->link->from;
     }
 
-    Joint *j = new Joint(from, f);
-    if(symbol==addJointZero) j->constrainToZeroVel=true;
-    else                     j->constrainToZeroVel=false;
+    Joint *j = NULL;
+    if(symbol!=insertJoint){
+      j = new Joint(from, to);
+    }else{
+      CHECK(!from, "from should not be specified");
+      CHECK(to->link, "to needs to have a link already");
+      Link *l = to->link->insertPostLink(mlr::Transformation(0));
+      j = new Joint(l);
+    }
+    if(symbol==addActuated) j->constrainToZeroVel=false;
+    else                    j->constrainToZeroVel=true;
     j->type = jointType;
     if(!jA.isZero()){
       j->link->insertPreLink(jA);
@@ -192,6 +200,8 @@ mlr::KinematicSwitch* mlr::KinematicSwitch::newSwitch(const mlr::String& type, c
   else if(type=="hingeZZero"){ sw->symbol = mlr::KinematicSwitch::addJointZero; sw->jointType=mlr::JT_hingeZ; }
   else if(type=="sliderMechanism"){ sw->symbol = mlr::KinematicSwitch::addSliderMechanism; }
   else if(type=="delete"){ sw->symbol = mlr::KinematicSwitch::deleteJoint; }
+  else if(type=="JT_XBall"){ sw->symbol = mlr::KinematicSwitch::addJointZero; sw->jointType=mlr::JT_XBall; }
+  else if(type=="insert_transX"){ sw->symbol = mlr::KinematicSwitch::insertJoint; sw->jointType=mlr::JT_transX; }
   else HALT("unknown type: "<< type);
   if(ref1) sw->fromId = world.getFrameByName(ref1)->ID;
   if(ref2) sw->toId = world.getFrameByName(ref2)->ID;

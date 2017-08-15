@@ -13,14 +13,14 @@
     --------------------------------------------------------------  */
 
 
-#include "taskMap_AboveBox.h"
+#include "taskMap_InsideBox.h"
 #include "frame.h"
 
-TaskMap_AboveBox::TaskMap_AboveBox(int iShape, int jShape)
+TaskMap_InsideBox::TaskMap_InsideBox(int iShape, int jShape)
   : i(iShape), j(jShape), margin(.01){
 }
 
-TaskMap_AboveBox::TaskMap_AboveBox(const mlr::KinematicWorld& G, const char* iShapeName, const char* jShapeName)
+TaskMap_InsideBox::TaskMap_InsideBox(const mlr::KinematicWorld& G, const char* iShapeName, const char* jShapeName)
   :i(-1), j(-1), margin(.01){
   mlr::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
   mlr::Frame *b = jShapeName ? G.getFrameByName(jShapeName):NULL;
@@ -28,52 +28,38 @@ TaskMap_AboveBox::TaskMap_AboveBox(const mlr::KinematicWorld& G, const char* iSh
   if(b) j=b->ID;
 }
 
-void TaskMap_AboveBox::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
+void TaskMap_InsideBox::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
   mlr::Shape *pnt=G.frames(i)->shape;
   mlr::Shape *box=G.frames(j)->shape;
   CHECK(pnt && box,"I need shapes!");
-//  if(box->type!=mlr::ST_ssBox){ //switch roles
-//    mlr::Shape *z=pnt;
-//    pnt=box; box=z;
-//  }
-  CHECK(box->type==mlr::ST_ssBox,"the 2nd shape needs to be a box"); //s1 should be the board
+  CHECK(box->type==mlr::ST_ssBox || box->type==mlr::ST_box,"the 2nd shape needs to be a box"); //s1 should be the board
   arr pos,posJ;
   G.kinematicsRelPos(pos, posJ, pnt->frame, NoVector, box->frame, NoVector);
-#if 0
-  arr range(3);
-  double d1 = .5*pnt->size(0) + pnt->size(3);
-  d1 =.05; //TODO: fixed! support size/radius of object on top
-  double d2 = .5*box->size(0) + box->size(3);
-  range(0) = fabs(d1 - d2);
-  d1 = .5*pnt->size(1) + pnt->size(3);
-  d1 =.05; //TODO: fixed! support size/radius of object on top
-  d2 = .5*box->size(1) + box->size(3);
-  range(1) = fabs(d1 - d2);
-  range(2)=0.;
-#else
-  arr range = { .5*box->size(0)-margin, .5*box->size(1)-margin };
-#endif
-//  if(verbose>2) cout <<pos <<range
-//                    <<pos-range <<-pos-range
-//                   <<"\n 10=" <<s1->size(0)
-//                  <<" 20=" <<s2->size(0)
-//                 <<" 11=" <<s1->size(1)
-//                <<" 21=" <<s2->size(1)
-//               <<endl;
-  y.resize(4);
+  arr range = box->size;
+  range *= .5;
+  range -= margin;
+  for(double& r:range) if(r<.01) r=.01;
+
+  y.resize(6);
   y(0) =  pos(0) - range(0);
   y(1) = -pos(0) - range(0);
   y(2) =  pos(1) - range(1);
   y(3) = -pos(1) - range(1);
+  y(4) =  pos(2) - range(2);
+  y(5) = -pos(2) - range(2);
   if(&J){
-    J.resize(4, posJ.d1);
+    J.resize(6, posJ.d1);
     J[0] =  posJ[0];
     J[1] = -posJ[0];
     J[2] =  posJ[1];
     J[3] = -posJ[1];
+    J[4] =  posJ[2];
+    J[5] = -posJ[2];
   }
 }
 
-mlr::String TaskMap_AboveBox::shortTag(const mlr::KinematicWorld &G){
-  return STRING("AboveBox:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
+uint TaskMap_InsideBox::dim_phi(const mlr::KinematicWorld &G){ return 6; }
+
+mlr::String TaskMap_InsideBox::shortTag(const mlr::KinematicWorld &G){
+    return STRING("InsideBox:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }

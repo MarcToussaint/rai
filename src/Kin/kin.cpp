@@ -84,7 +84,7 @@ template<> const char* mlr::Enum<mlr::ShapeType>::names []={
 };
 
 template<> const char* mlr::Enum<mlr::JointType>::names []={
-  "JT_hingeX", "JT_hingeY", "JT_hingeZ", "JT_transX", "JT_transY", "JT_transZ", "JT_transXY", "JT_trans3", "JT_transXYPhi", "JT_universal", "JT_rigid", "JT_quatBall", "JT_phiTransXY", "JT_glue", "JT_free", NULL
+  "JT_hingeX", "JT_hingeY", "JT_hingeZ", "JT_transX", "JT_transY", "JT_transZ", "JT_transXY", "JT_trans3", "JT_transXYPhi", "JT_universal", "JT_rigid", "JT_quatBall", "JT_phiTransXY", "JT_XBall", "JT_free", NULL
 };
 
 
@@ -279,7 +279,7 @@ void mlr::KinematicWorld::calc_fwdPropagateFrames() {
       CHECK_EQ(to.pos.x, to.pos.x, "NAN transformation:" <<from <<'*' <<f->link->Q);
       if(f->link->joint){
         Joint *j = f->link->joint;
-        if(j->type==JT_hingeX || j->type==JT_transX)  j->axis = from.rot.getX();
+        if(j->type==JT_hingeX || j->type==JT_transX || j->type==JT_XBall)  j->axis = from.rot.getX();
         if(j->type==JT_hingeY || j->type==JT_transY)  j->axis = from.rot.getY();
         if(j->type==JT_hingeZ || j->type==JT_transZ)  j->axis = from.rot.getZ();
         if(j->type==JT_transXYPhi)  j->axis = from.rot.getZ();
@@ -577,7 +577,7 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const mlr::Vec
     Joint *j=a->joint();
     if(j) {
       uint j_idx=j->qIndex;
-      if(j_idx>=N) CHECK(j->type==JT_glue || j->type==JT_rigid, "");
+      if(j_idx>=N) CHECK(j->type==JT_rigid, "");
       if(j_idx<N){
         if(j->type==JT_hingeX || j->type==JT_hingeY || j->type==JT_hingeZ) {
           mlr::Vector tmp = j->axis ^ (pos_world-j->X().pos);
@@ -585,7 +585,7 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const mlr::Vec
           J(1, j_idx) += tmp.y;
           J(2, j_idx) += tmp.z;
         }
-        else if(j->type==JT_transX || j->type==JT_transY || j->type==JT_transZ) {
+        else if(j->type==JT_transX || j->type==JT_transY || j->type==JT_transZ || j->type==JT_XBall) {
           J(0, j_idx) += j->axis.x;
           J(1, j_idx) += j->axis.y;
           J(2, j_idx) += j->axis.z;
@@ -613,17 +613,26 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const mlr::Vec
           arr R = (j->X().rot*a->link->Q.rot).getArr();
           J.setMatrixBlock(R.sub(0,-1,0,1), 0, j_idx+1);
         }
+        if(j->type==JT_XBall) {
+          if(j->mimic) NIY;
+          arr R = conv_vec2arr(j->X().rot.getX());
+          R.reshape(3,1);
+          J.setMatrixBlock(R, 0, j_idx);
+        }
         if(j->type==JT_trans3 || j->type==JT_free) {
           if(j->mimic) NIY;
           arr R = j->X().rot.getArr();
           J.setMatrixBlock(R, 0, j_idx);
         }
-        if(j->type==JT_quatBall || j->type==JT_free) {
-          uint offset = (j->type==JT_free)?3:0;
+        if(j->type==JT_quatBall || j->type==JT_free || j->type==JT_XBall) {
+          uint offset = 0;
+          if(j->type==JT_XBall) offset=1;
+          if(j->type==JT_free) offset=3;
           arr Jrot = j->X().rot.getArr() * a->link->Q.rot.getJacobian(); //transform w-vectors into world coordinate
           Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(j->X().pos+j->X().rot*a->link->Q.pos)) ); //cross-product of all 4 w-vectors with lever
           Jrot /= sqrt(sumOfSqr( q({j->qIndex+offset, j->qIndex+offset+3}) )); //account for the potential non-normalization of q
-          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
+//          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
+          J.setMatrixBlock(Jrot, 0, j_idx+offset);
         }
       }
     }
@@ -783,7 +792,7 @@ void mlr::KinematicWorld::axesMatrix(arr& J, Frame *a) const {
     mlr::Joint *j;
     if((j=a->joint())){
       uint j_idx=j->qIndex;
-      if(j_idx>=N) CHECK(j->type==JT_glue || j->type==JT_rigid, "");
+      if(j_idx>=N) CHECK(j->type==JT_rigid, "");
       if(j_idx<N){
         if((j->type>=JT_hingeX && j->type<=JT_hingeZ) || j->type==JT_transXYPhi || j->type==JT_phiTransXY) {
           if(j->type==JT_transXYPhi) j_idx += 2; //refer to the phi only
@@ -791,11 +800,14 @@ void mlr::KinematicWorld::axesMatrix(arr& J, Frame *a) const {
           J(1, j_idx) += j->axis.y;
           J(2, j_idx) += j->axis.z;
         }
-        if(j->type==JT_quatBall || j->type==JT_free) {
-          uint offset = (j->type==JT_free)?3:0;
+        if(j->type==JT_quatBall || j->type==JT_free || j->type==JT_XBall) {
+          uint offset = 0;
+          if(j->type==JT_XBall) offset=1;
+          if(j->type==JT_free) offset=3;
           arr Jrot = j->X().rot.getArr() * a->link->Q.rot.getJacobian(); //transform w-vectors into world coordinate
           Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset,j->qIndex+offset+3}))); //account for the potential non-normalization of q
-          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
+//          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
+          J.setMatrixBlock(Jrot, 0, j_idx+offset);
         }
         //all other joints: J=0 !!
       }
@@ -1784,7 +1796,7 @@ void mlr::KinematicWorld::pruneUselessFrames(int verbose){
 }
 
 void mlr::KinematicWorld::optimizeTree(){
-  pruneRigidJoints();
+//  pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
   reconnectLinksToClosestJoints();
   pruneUselessFrames();
   checkConsistency();
@@ -1826,7 +1838,7 @@ bool mlr::KinematicWorld::checkConsistency(){
     CHECK(j->from()->outLinks.findValue(j->to())>=0,"");
     CHECK_EQ(j->to()->joint(), j,"");
     CHECK_GE(j->type.x, 0, "");
-    CHECK_LE(j->type.x, JT_free, "");
+    CHECK(j->type.x<=JT_free, "");
 
     if(j->mimic){
       CHECK(j->dim==0, "");

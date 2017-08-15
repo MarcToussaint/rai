@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright 2016 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-
+    
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or (at
@@ -14,17 +14,18 @@
 
 
 #pragma once
+
 #include "taskMap.h"
 
-//===========================================================================
+struct TaskMap_InsideBox : TaskMap {
+  int i, j;               ///< which shapes does it refer to?
+  double margin;
 
-struct TaskMap_LinTrans : TaskMap {
-  TaskMap *map;
-  arr A,a;
-
-  TaskMap_LinTrans(TaskMap *map, const arr& A, const arr& a) : map(map), A(A), a(a){}
+  TaskMap_InsideBox(int iShape=-1, int jShape=-1);
+  TaskMap_InsideBox(const mlr::KinematicWorld& G,
+                   const char* iShapeName=NULL, const char* jShapeName=NULL);
 
   virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1);
   virtual uint dim_phi(const mlr::KinematicWorld& G);
-  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("LinTrans:"<<map->shortTag((G))); }
+  virtual mlr::String shortTag(const mlr::KinematicWorld& G);
 };

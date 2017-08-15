@@ -18,13 +18,12 @@
 
 //===========================================================================
 
-struct TaskMap_LinTrans : TaskMap {
+struct TaskMap_Norm : TaskMap {
   TaskMap *map;
-  arr A,a;
 
-  TaskMap_LinTrans(TaskMap *map, const arr& A, const arr& a) : map(map), A(A), a(a){}
+  TaskMap_Norm(TaskMap *map) : map(map){}
 
   virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1);
   virtual uint dim_phi(const mlr::KinematicWorld& G);
-  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("LinTrans:"<<map->shortTag((G))); }
+  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("Norm:"<<map->shortTag((G))); }
 };

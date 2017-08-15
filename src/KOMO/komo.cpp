@@ -24,8 +24,10 @@
 #include <Kin/taskMap_FixSwitchedObjects.h>
 #include <Kin/taskMap_QuaternionNorms.h>
 #include <Kin/taskMap_AboveBox.h>
+#include <Kin/taskMap_InsideBox.h>
 #include <Kin/taskMap_AlignStacking.h>
 #include <Kin/taskMap_GJK.h>
+#include <Kin/taskMap_linTrans.h>
 #include <Optim/optimization.h>
 #include <Optim/convert.h>
 
@@ -148,13 +150,13 @@ void KOMO::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese){
       for(const mlr::String& s:groupNames) if(f->ats.getNode(s)){ lock=true; break; }
     }
     if(lock) j->makeRigid();
-//        j->type = mlr::JT_rigid;
   }
-  world.qdim=0;
-  world.q.clear();
-  world.qdot.clear();
+  world.reset_q();
+
+  world.optimizeTree();
 
   world.getJointState();
+
 
 //  world.meldFixedJoints();
 //  world.removeUselessBodies();
@@ -348,10 +350,37 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
   //connect graspRef with object
 #if 1
   setKinematicSwitch(time, true, "ballZero", endeffRef, object);
+//  setKinematicSwitch(time, true, "insert_transX", NULL, object);
+//  setTask(time, time, new TaskMap_InsideBox(world, endeffRef, object), OT_ineq, NoArr, 1e2);
 #else
   setKinematicSwitch(time, true, "freeZero", endeffRef, object);
-  setTask(time, time, new TaskMap_Default(posDiffTMT, world, endeffRef, NoVector, object, NoVector), OT_eq, NoArr, 1e3);
+  setTask(time, time, new TaskMap_InsideBox(world, endeffRef, object), OT_ineq, NoArr, 1e2);
+//  setTask(time, time, new TaskMap_Default(posDiffTMT, world, endeffRef, NoVector, object, NoVector), OT_eq, NoArr, 1e3);
 #endif
+
+  if(stepsPerPhase>2){ //velocities down and up
+    setTask(time-timeToLift, time, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
+    setTask(time, time+timeToLift, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,.1}, 1e1, 1); // move up
+  }
+}
+
+/// a standard pick up: lower-attached-lift; centered, from top
+void KOMO::setGraspStick(double time, const char* endeffRef, const char* object, int verbose, double weightFromTop, double timeToLift){
+  if(verbose>0) cout <<"KOMO_setGraspStick t=" <<time <<" endeff=" <<endeffRef <<" obj=" <<object <<endl;
+
+  //disconnect object from table
+  setKinematicSwitch(time, true, "delete", NULL, object);
+
+  //connect graspRef with object
+  setKinematicSwitch(time, true, "ballZero", endeffRef, object);
+  setKinematicSwitch(time, true, "insert_transX", NULL, object);
+//  setTask(time, time,
+//          new TaskMap_LinTrans(
+//              new TaskMap_Default(posDiffTMT, world, endeffRef, NoVector, object, NoVector),
+//              arr(2,3,{0,1,0,0,0,1}), {}),
+//          OT_eq, NoArr, 1e3);
+  setTask(time, time, new TaskMap_InsideBox(world, endeffRef, object), OT_ineq, NoArr, 1e2);
+
 
   if(stepsPerPhase>2){ //velocities down and up
     setTask(time-timeToLift, time, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
@@ -615,6 +644,7 @@ void KOMO::setPoseOpt(){
   setFixEffectiveJoints();
   setFixSwitchedObjects();
   setSquaredQVelocities();
+  setSquaredQuaternionNorms();
 }
 
 void KOMO::setSequenceOpt(double _phases){
@@ -622,6 +652,7 @@ void KOMO::setSequenceOpt(double _phases){
   setFixEffectiveJoints();
   setFixSwitchedObjects();
   setSquaredQVelocities();
+  setSquaredQuaternionNorms();
 }
 
 void KOMO::setPathOpt(double _phases, uint stepsPerPhase, double timePerPhase){
@@ -629,6 +660,7 @@ void KOMO::setPathOpt(double _phases, uint stepsPerPhase, double timePerPhase){
   setFixEffectiveJoints();
   setFixSwitchedObjects();
   setSquaredQAccelerations();
+  setSquaredQuaternionNorms();
 }
 
 void setTasks(KOMO& MP,
@@ -761,6 +793,7 @@ void KOMO::reportProblem(std::ostream& os){
     for(Task* t:tasks) os <<"    " <<*t <<endl;
     for(mlr::KinematicSwitch* sw:switches){
         os <<"    ";
+        CHECK_LE(sw->timeOfApplication+k_order, configurations.N, "switch time is beyond time horizon");
         sw->write(os, configurations(sw->timeOfApplication+k_order));
         os <<endl;
     }
