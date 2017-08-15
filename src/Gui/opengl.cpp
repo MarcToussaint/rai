@@ -1381,7 +1381,7 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
     camera.glSetProjectionMatrix();
   } else {
     GLView *vi=&views(mouseView);
-    GLint viewport[4] = { (GLint)vi->le*w, (GLint)vi->bo*h, (GLint)(vi->ri-vi->le)*w, (GLint)(vi->to-vi->bo)*h};
+    GLint viewport[4] = { (GLint)(vi->le*w), (GLint)(vi->bo*h), (GLint)((vi->ri-vi->le)*w), (GLint)((vi->to-vi->bo)*h)};
     gluPickMatrix((GLdouble)mouseposx, (GLdouble)mouseposy, 2., 2., viewport);
     vi->camera.glSetProjectionMatrix();
   }
