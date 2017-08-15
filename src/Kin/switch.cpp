@@ -138,12 +138,14 @@ mlr::String mlr::KinematicSwitch::shortTag(const mlr::KinematicWorld* G) const{
   return str;
 }
 
-void mlr::KinematicSwitch::write(std::ostream& os) const{
-  os <<"  timeOfApplication=" <<timeOfApplication;
+void mlr::KinematicSwitch::write(std::ostream& os, mlr::KinematicWorld* K) const{
+  os <<"SWITCH  timeOfApplication=" <<timeOfApplication;
   os <<"  symbol=" <<symbol;
   os <<"  jointType=" <<jointType;
-  os <<"  fromId=" <<fromId;
-  os <<"  toId=" <<toId <<endl;
+  os <<"  fromId=" <<(int)fromId;
+  if(K && fromId<UINT_MAX) os <<"'" <<K->frames(fromId)->name <<"'";
+  os <<"  toId=" <<toId;
+  if(K) os <<"'" <<K->frames(toId)->name <<"'";
 }
 
 //===========================================================================

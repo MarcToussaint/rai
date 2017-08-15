@@ -2774,6 +2774,17 @@ template<class T> mlr::Array<T> elemWiseMax(const T& v, const mlr::Array<T>& w) 
   return z;
 }
 
+template<class T> void writeConsecutiveConstant(std::ostream &os, const mlr::Array<T> &x){
+    uint yi=0;
+    T y=x.elem(yi);
+    for(uint i=1;i<x.N-1;i++) if(x.elem(i)!=y){
+        os <<'(' <<yi <<".." <<i-1 <<')' <<y <<' ';
+        yi=i;
+        y = x.elem(yi);
+    }
+    os <<'(' <<yi <<".." <<x.N-1 <<')' <<y;
+}
+
 //===========================================================================
 //
 /// @name tensor operations

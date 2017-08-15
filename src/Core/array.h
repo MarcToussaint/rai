@@ -734,6 +734,8 @@ template<class T> mlr::Array<T> elemWiseMax(const mlr::Array<T>& v, const mlr::A
 template<class T> mlr::Array<T> elemWisemax(const mlr::Array<T>& x,const T& y);
 template<class T> mlr::Array<T> elemWisemax(const T& x,const mlr::Array<T>& y);
 
+template<class T> void writeConsecutiveConstant(std::ostream& os, const mlr::Array<T>& x);
+
 
 //===========================================================================
 /// @}

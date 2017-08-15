@@ -32,7 +32,6 @@ typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
 
 /// symbols to declare of which type an objective feature is
 enum ObjectiveType { OT_none=0, OT_f, OT_sumOfSqr, OT_ineq, OT_eq };
-extern const char* ObjectiveTypeString[];
 typedef mlr::Array<ObjectiveType> ObjectiveTypeA;
 extern ObjectiveTypeA& NoTermTypeA;
 

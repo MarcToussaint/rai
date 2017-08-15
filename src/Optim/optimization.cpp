@@ -17,8 +17,11 @@
 
 uint eval_cost=0;
 Singleton<OptOptions> globalOptOptions;
-const char* ObjectiveTypeString[]={"OT_none", "OT_f", "OT_sumOfSqr", "OT_ineq", "OT_eq" };
 ObjectiveTypeA& NoTermTypeA = *((ObjectiveTypeA*)NULL);
+
+template<> const char* mlr::Enum<ObjectiveType>::names []={
+  "OT_none", "OT_f", "OT_sumOfSqr", "OT_ineq", "OT_eq", NULL
+};
 
 //===========================================================================
 //

@@ -747,6 +747,25 @@ void KOMO::run(){
   if(verbose>1) cout <<getReport(false);
 }
 
+void KOMO::reportProblem(std::ostream& os){
+    os <<"KOMO Problem:" <<endl;
+    os <<"  x-dim:" <<x.N <<"  dual-dim:" <<dual.N <<endl;
+    os <<"  T:" <<T <<" k:" <<k_order <<" phases:" <<maxPhase <<" stepsPerPhase:" <<stepsPerPhase <<" tau:" <<tau <<endl;
+    os <<"  #configurations:" <<configurations.N <<" q-dims: ";
+    uintA dims(configurations.N);
+    for(uint i=0;i<configurations.N;i++) dims(i)=configurations(i)->q.N;
+    writeConsecutiveConstant(os, dims);
+    os <<endl;
+
+    os <<"  usingSwift:" <<useSwift <<endl;
+    for(Task* t:tasks) os <<"    " <<*t <<endl;
+    for(mlr::KinematicSwitch* sw:switches){
+        os <<"    ";
+        sw->write(os, configurations(sw->timeOfApplication+k_order));
+        os <<endl;
+    }
+}
+
 
 void KOMO::checkGradients(){
   CHECK(T,"");
@@ -930,7 +949,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
     Task *c = tasks(i);
     Graph *g = &report.newSubgraph({c->name}, {})->value;
     g->newNode<double>({"order"}, {}, c->map->order);
-    g->newNode<mlr::String>({"type"}, {}, STRING(ObjectiveTypeString[c->type]));
+    g->newNode<mlr::String>({"type"}, {}, STRING(c->type.name()));
     g->newNode<double>({"sqrCosts"}, {}, taskC(i));
     g->newNode<double>({"constraints"}, {}, taskG(i));
     totalC += taskC(i);

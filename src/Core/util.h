@@ -473,10 +473,11 @@ namespace mlr {
       }
       CHECK(!strcmp(names[x], str.p), "");
     }
-    void write(std::ostream& os) const{
-      if(x<0) os <<"init";
-      else os <<names[x];
+    const char* name() const{
+        if(x<0) return "init";
+        else return names[x];
     }
+    void write(std::ostream& os) const{ os <<name(); }
   };
   template<class T> std::istream& operator>>(std::istream& is, Enum<T>& x){ x.read(is); return is; }
   template<class T> std::ostream& operator<<(std::ostream& os, const Enum<T>& x){ x.write(os); return os; }
@@ -501,7 +502,7 @@ private:
   
 public:
   /// ...
-  Rnd() { ready=false; };
+  Rnd() { ready=false; }
   
   
 public:/// @name initialization

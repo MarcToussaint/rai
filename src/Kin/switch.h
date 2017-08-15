@@ -36,7 +36,7 @@ struct KinematicSwitch{
   void apply(KinematicWorld& G);
   void temporallyAlign(const KinematicWorld& Gprevious, KinematicWorld& G, bool copyFromBodies);
   mlr::String shortTag(const KinematicWorld* G) const;
-  void write(std::ostream& os) const;
+  void write(std::ostream& os, mlr::KinematicWorld *K=NULL) const;
   static KinematicSwitch* newSwitch(const Node *specs, const mlr::KinematicWorld& world, int stepsPerPhase, uint T);
   static KinematicSwitch* newSwitch(const mlr::String& type, const char* ref1, const char* ref2, const mlr::KinematicWorld& world, uint _timeOfApplication, const mlr::Transformation& jFrom=NoTransformation, const mlr::Transformation& jTo=NoTransformation);
   static const char* name(OperatorSymbol s);

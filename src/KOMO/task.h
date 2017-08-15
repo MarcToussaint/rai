@@ -5,7 +5,7 @@
 
 struct Task {
   TaskMap *map;
-  const ObjectiveType type;  ///< element of {sumOfSqr, inequality, equality}
+  const mlr::Enum<ObjectiveType> type;  ///< element of {sumOfSqr, inequality, equality}
   mlr::String name;
   arr target, prec;     ///< optional linear, time-dependent, rescaling (with semantics of target & precision)
 
@@ -21,9 +21,11 @@ struct Task {
   bool isActive(uint t){ return (prec.N>t && prec(t)); }
   void write(std::ostream& os) const{
     os <<"TASK '" <<name <<"'"
-      <<" type=" <<type
-     <<" target=" <<target
-    <<" prec=" <<prec;
+      <<"  type=" <<type
+      <<"  order=" <<map->order
+      <<"  target=[" <<target <<']'
+      <<"  prec=";
+    writeConsecutiveConstant(os,prec);
   }
 
   static Task* newTask(const Node* specs, const mlr::KinematicWorld& world, int stepsPerPhase, uint T); ///< create a new Task from specs
