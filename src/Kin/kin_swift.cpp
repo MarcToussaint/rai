@@ -183,14 +183,18 @@ void SwiftInterface::initActivations(const mlr::KinematicWorld& world, uint pare
   for(mlr::Frame *b: world.frames) {
     FrameL group, children;
     group.append(b);
-    for(mlr::Frame *b2: b->outLinks) if(!b2->link->joint) group.append(b2); //all rigid links as well
+    //all rigid links as well
+    for(uint i=0;i<group.N;i++){
+      for(mlr::Frame *b2: group(i)->outLinks) if(!b2->link->joint) group.setAppend(b2);
+    }
     for(uint l=0; l<parentLevelsToDeactivate; l++){
       children.clear();
-      for(mlr::Frame *b2: group) for(mlr::Frame *b2to: b2->outLinks) {
-        children.setAppend(b2to);
-      }
+      for(mlr::Frame *b2: group) for(mlr::Frame *b2to: b2->outLinks) children.setAppend(b2to);
       group.setAppend(children);
-      for(mlr::Frame *ch:children) for(mlr::Frame *b2: ch->outLinks) if(!b2->link->joint) group.setAppend(b2); //all all rigid links as well
+      //all rigid links as well
+      for(uint i=0;i<group.N;i++){
+        for(mlr::Frame *b2: group(i)->outLinks) if(!b2->link->joint) group.setAppend(b2);
+      }
     }
     deactivate(group);
   }
