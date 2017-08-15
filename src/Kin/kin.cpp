@@ -2638,7 +2638,7 @@ void editConfiguration(const char* filename, mlr::KinematicWorld& C) {
     int ret = animateConfiguration(C, &ino);
     if(exit) break;
     cout <<"watching..." <<endl;
-#if 1
+#if 0
     if(ret!=-1)
       ino.waitForModification(true);
 #else

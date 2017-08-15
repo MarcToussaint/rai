@@ -186,6 +186,8 @@ struct OpenGL {
   void addClickCall(GLClickCall *c){ clickCalls.append(c); }
   void addKeyCall(GLKeyCall *c){ keyCalls.append(c); }
   void addView(uint view, void (*call)(void*), void* classP=0);
+  void addSubView(uint view, GLDrawer& c);
+  void setSubViewTiles(uint cols, uint rows);
   void setViewPort(uint view, double l, double r, double b, double t);
   
   /// @name the core draw routines (actually only for internal use)

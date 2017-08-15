@@ -1135,6 +1135,21 @@ void OpenGL::addView(uint v, void (*call)(void*), void* classP) {
   dataLock.unlock();
 }
 
+void OpenGL::addSubView(uint v, GLDrawer &c){
+  dataLock.writeLock();
+  if(v>=views.N) views.resizeCopy(v+1);
+  views(v).drawers.append(&c);
+  dataLock.unlock();
+}
+
+void OpenGL::setSubViewTiles(uint cols, uint rows){
+  for(uint i=0;i<views.N;i++){
+    double x=i%cols;
+    double y=rows - 1 - i/cols;
+    setViewPort(i, x/cols, (x+1)/cols, y/rows, (y+1)/rows);
+  }
+}
+
 void OpenGL::setViewPort(uint v, double l, double r, double b, double t) {
   dataLock.writeLock();
   if(v>=views.N) views.resizeCopy(v+1);
@@ -1282,7 +1297,7 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
   //draw subviews
   for(uint v=0; v<views.N; v++) {
     GLView *vi=&views(v);
-    glViewport(vi->le*w, vi->bo*h, (vi->ri-vi->le)*w, (vi->to-vi->bo)*h);
+    glViewport(vi->le*w, vi->bo*h, (vi->ri-vi->le)*w+1, (vi->to-vi->bo)*h+1);
     //glMatrixMode(GL_MODELVIEW);
     //glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
@@ -2042,5 +2057,6 @@ bool glUI::checkMouse(int _x, int _y) {
 #  include"opengl_Cygwin.moccpp"
 #endif
 #endif
+
 
 
