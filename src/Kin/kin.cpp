@@ -1015,8 +1015,7 @@ StringA mlr::KinematicWorld::getJointNames(){
   StringA names(q.N);
   Joint *j;
   for(Frame *f:frames) if((j=f->joint())){
-    if(!j->dim) names(j->qIndex) = f->name;
-    else for(uint i=0;i<j->dim;i++) names(j->qIndex+i) <<f->name <<':' <<i;
+    for(uint i=0;i<j->dim;i++) names(j->qIndex+i) <<f->name <<':' <<i;
   }
   return names;
 }
