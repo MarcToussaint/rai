@@ -27,8 +27,13 @@ struct OptLGP{
   MNodeL fringe_path;  //list of terminal nodes that have been seq tested
   MNodeL fringe_done;  //list of terminal nodes that have been path tested
 
+  //high-level
   OptLGP(mlr::KinematicWorld& kin, FOL_World& fol);
   ~OptLGP();
+
+  FOL_World& fol(){ return root->fol; }
+  const mlr::KinematicWorld& kin(){ return root->startKinematics; }
+
 
   //-- for methods called in the run loop
 private:
@@ -48,7 +53,7 @@ public:
   mlr::String report(bool detailed=false);
   void initDisplay();
   void updateDisplay();
-  void renderToFile(uint i=3, const char* filePrefix="vid/z.path.");
+  void renderToVideo(uint level=3, const char* filePrefix="vid/z.path.");
 
   //-- kind of a gui:
   void printChoices();
@@ -58,6 +63,5 @@ public:
 
   void player(StringA cmds={});
 
-  void optFixedSequence(const mlr::String& seq);
-
+  void optFixedSequence(const mlr::String& seq, bool fullPathOnly=false);
 };

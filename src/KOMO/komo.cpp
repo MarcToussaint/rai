@@ -228,10 +228,14 @@ Task *KOMO::setTask(double startTime, double endTime, TaskMap *map, ObjectiveTyp
   return task;
 }
 
-void KOMO::setKinematicSwitch(double time, bool before, const char* type, const char* ref1, const char* ref2, const mlr::Transformation& jFrom, const mlr::Transformation& jTo){
-  mlr::KinematicSwitch *sw = mlr::KinematicSwitch::newSwitch(type, ref1, ref2, world, 0/*STEP(time)+(before?0:1)*/, jFrom, jTo );
+void KOMO::setKinematicSwitch(double time, bool before, mlr::KinematicSwitch *sw){
   sw->setTimeOfApplication(time, before, stepsPerPhase, T);
   switches.append(sw);
+}
+
+void KOMO::setKinematicSwitch(double time, bool before, const char* type, const char* ref1, const char* ref2, const mlr::Transformation& jFrom, const mlr::Transformation& jTo){
+  mlr::KinematicSwitch *sw = mlr::KinematicSwitch::newSwitch(type, ref1, ref2, world, 0/*STEP(time)+(before?0:1)*/, jFrom, jTo );
+  setKinematicSwitch(time, before, sw);
 }
 
 void KOMO::setKS_placeOn(double time, bool before, const char* obj, const char* table, bool actuated){
@@ -350,8 +354,8 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
   //connect graspRef with object
 #if 1
   setKinematicSwitch(time, true, "ballZero", endeffRef, object);
-  //  setKinematicSwitch(time, true, "insert_transX", NULL, object);
-  //  setTask(time, time, new TaskMap_InsideBox(world, endeffRef, object), OT_ineq, NoArr, 1e2);
+  setKinematicSwitch(time, true, "insert_transX", NULL, object);
+  setTask(time, time, new TaskMap_InsideBox(world, endeffRef, object), OT_ineq, NoArr, 1e2);
 #else
   setKinematicSwitch(time, true, "freeZero", endeffRef, object);
   setTask(time, time, new TaskMap_InsideBox(world, endeffRef, object), OT_ineq, NoArr, 1e2);
@@ -425,12 +429,12 @@ void KOMO::setGraspSlide(double startTime, double endTime, const char* endeffRef
 }
 
 /// standard place on a table
-void KOMO::setPlace(double time, const char* endeffRef, const char* object, const char* placeRef, int verbose){
-  if(verbose>0) cout <<"KOMO_setPlace t=" <<time <<" endeff=" <<endeffRef <<" obj=" <<object <<" place=" <<placeRef <<endl;
+void KOMO::setPlace(double time, const char* object, const char* placeRef, int verbose){
+  if(verbose>0) cout <<"KOMO_setPlace t=" <<time <<" obj=" <<object <<" place=" <<placeRef <<endl;
 
   if(stepsPerPhase>2){ //velocities down and up
     setTask(time-.15, time, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
-    setTask(time, time+.15, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,.1}, 1e1, 1); // move up
+//    setTask(time, time+.15, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,.1}, 1e1, 1); // move up
   }
 
   //place roughly at center ;-(
@@ -443,7 +447,7 @@ void KOMO::setPlace(double time, const char* endeffRef, const char* object, cons
   setTask(time, time, new TaskMap_AboveBox(world, object, placeRef), OT_ineq, NoArr, 1e2);
 
   //disconnect object from grasp ref
-  setKinematicSwitch(time, true, "delete", endeffRef, object);
+  setKinematicSwitch(time, true, "delete", NULL, object);
 
   //connect object to table
   mlr::Transformation rel = 0;
@@ -504,6 +508,23 @@ void KOMO::setPush(double startTime, double endTime, const char* stick, const ch
   }
 }
 
+void KOMO::setDrop(double time, const char* object, const char* from, const char* to, int verbose){
+
+  //disconnect object from anything
+  setKinematicSwitch(time, true, "delete", NULL, object);
+
+  //connect to world with lift
+//  setKinematicSwitch(time, true, "JT_trans3", "world", object);
+  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::addActuated, mlr::JT_transZ, "world", object, world, 0));
+  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::insertJoint, mlr::JT_transXY, NULL, object, world, 0));
+
+
+  if(stepsPerPhase>2){ //velocities down and up
+    setTask(time, time+.2, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); // move down
+  }
+
+
+}
 
 void KOMO::setAttach(double time, const char* endeff, const char* object1, const char* object2, mlr::Transformation& rel, int verbose){
   if(verbose>0) cout <<"KOMO_setAttach t=" <<time <<" endeff=" <<endeff <<" obj1=" <<object1 <<" obj2=" <<object2 <<endl;
@@ -561,9 +582,10 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
     if(n->keys.N && n->keys.last().startsWith("komo")){
       double time=n->get<double>(); //komo tag needs to be double valued!
       if(n->keys.last()=="komoGrasp")         setGrasp(phase+time, *symbols(0), *symbols(1), verbose);
-      else if(n->keys.last()=="komoPlace")    setPlace(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
+      else if(n->keys.last()=="komoPlace")    setPlace(phase+time, *symbols(0), *symbols(1), verbose);
       else if(n->keys.last()=="komoHandover") setHandover(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
       else if(n->keys.last()=="komoPush")     setPush(phase+time, phase+time+1., *symbols(0), *symbols(1), *symbols(2), verbose); //TODO: the +1. assumes pushes always have duration 1
+      else if(n->keys.last()=="komoDrop")     setDrop(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
       else if(n->keys.last()=="komoAttach"){
         Node *attachableSymbol = facts.getNode("attachable");
         CHECK(attachableSymbol!=NULL,"");

@@ -14,13 +14,11 @@ template<> const char* mlr::Enum<mlr::KinematicSwitch::OperatorSymbol>::names []
 //
 
 mlr::KinematicSwitch::KinematicSwitch()
-  : symbol(none), jointType(JT_none), timeOfApplication(UINT_MAX), fromId(UINT_MAX), toId(UINT_MAX){
-  jA.setZero();
-  jB.setZero();
+  : symbol(none), jointType(JT_none), timeOfApplication(UINT_MAX), fromId(UINT_MAX), toId(UINT_MAX), jA(0), jB(0){
 }
 
 mlr::KinematicSwitch::KinematicSwitch(OperatorSymbol op, JointType type, const char* ref1, const char* ref2, const mlr::KinematicWorld& K, uint _timeOfApplication, const mlr::Transformation& jFrom, const mlr::Transformation& jTo)
-  : symbol(op), jointType(type), timeOfApplication(_timeOfApplication), fromId(UINT_MAX), toId(UINT_MAX){
+  : symbol(op), jointType(type), timeOfApplication(_timeOfApplication), fromId(UINT_MAX), toId(UINT_MAX), jA(0), jB(0){
   if(ref1) fromId = K.getFrameByName(ref1)->ID;
   if(ref2) toId = K.getFrameByName(ref2)->ID;
   if(&jFrom) jA = jFrom;
@@ -73,7 +71,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
 //    G.checkConsistency();
     return;
   }
-//  G.isLinkTree=false;
+
   if(symbol==addJointZero || symbol==addActuated || symbol==insertJoint){
     //first find lowest frame below to
     mlr::Transformation Q = 0;
@@ -201,6 +199,8 @@ mlr::KinematicSwitch* mlr::KinematicSwitch::newSwitch(const mlr::String& type, c
   else if(type=="sliderMechanism"){ sw->symbol = mlr::KinematicSwitch::addSliderMechanism; }
   else if(type=="delete"){ sw->symbol = mlr::KinematicSwitch::deleteJoint; }
   else if(type=="JT_XBall"){ sw->symbol = mlr::KinematicSwitch::addJointZero; sw->jointType=mlr::JT_XBall; }
+  else if(type=="JT_transZ"){ sw->symbol = mlr::KinematicSwitch::addJointZero; sw->jointType=mlr::JT_transZ; }
+  else if(type=="JT_trans3"){ sw->symbol = mlr::KinematicSwitch::addJointZero; sw->jointType=mlr::JT_trans3; }
   else if(type=="insert_transX"){ sw->symbol = mlr::KinematicSwitch::insertJoint; sw->jointType=mlr::JT_transX; }
   else HALT("unknown type: "<< type);
   if(ref1) sw->fromId = world.getFrameByName(ref1)->ID;

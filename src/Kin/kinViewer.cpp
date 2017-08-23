@@ -164,8 +164,9 @@ void OrsPathViewer::step(){
 
 //===========================================================================
 
-void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix, int w, int h){
+void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix, int w, int h, mlr::Camera *camera){
   mlr::KinematicWorld copy;
+  copy.orsDrawMarkers=false;
   for(uint t=0;t<cs.N;t++){
     copy.copy(*cs(t), true);
 #if 0 //render on screen
@@ -173,6 +174,12 @@ void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix,
     copy.gl().captureImg=true;
     copy.gl().update(STRING(" (time " <<tprefix+int(t) <<'/' <<tprefix+int(cs.N) <<')').p, false, false, true);
 #else
+    if(camera){
+        copy.gl().camera = *camera;
+    }else{
+        copy.gl().camera.setDefault();
+        copy.gl().camera.focus(.5, 0., .7);
+    }
     copy.gl().text.clear() <<"time " <<tprefix+int(t) <<'/' <<tprefix+int(cs.N);
     copy.gl().renderInBack(true, false, w, h);
 #endif

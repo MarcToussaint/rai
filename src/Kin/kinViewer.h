@@ -22,7 +22,7 @@
 
 //===========================================================================
 
-void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix=0, int w=-1, int h=-1);
+void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix=0, int w=-1, int h=-1, mlr::Camera *camera=NULL);
 
 //===========================================================================
 

@@ -26,9 +26,9 @@ void OptLGP::initDisplay(){
     }
 }
 
-void OptLGP::renderToFile(uint i, const char* filePrefix){
-    CHECK(displayFocus->komoProblem(i) && displayFocus->komoProblem(i)->configurations.N, "level " <<i <<" has not been computed for the current 'displayFocus'");
-    renderConfigurations(displayFocus->komoProblem(i)->configurations, filePrefix, -2, 600, 600);
+void OptLGP::renderToVideo(uint level, const char* filePrefix){
+    CHECK(displayFocus->komoProblem(level) && displayFocus->komoProblem(level)->configurations.N, "level " <<level <<" has not been computed for the current 'displayFocus'");
+    renderConfigurations(displayFocus->komoProblem(level)->configurations, filePrefix, -2, 600, 600, &views(3)->copy.gl().camera);
 }
 
 void OptLGP::updateDisplay(){
@@ -132,7 +132,7 @@ void OptLGP::player(StringA cmds){
     }
 }
 
-void OptLGP::optFixedSequence(const mlr::String& seq){
+void OptLGP::optFixedSequence(const mlr::String& seq, bool fullPathOnly){
     Graph& tmp = root->fol.KB.newSubgraph({"TMP"},{})->value;
     mlr::String tmpseq(seq);
     tmp.read(tmpseq);
@@ -144,7 +144,7 @@ void OptLGP::optFixedSequence(const mlr::String& seq){
     MNode *node = root;
 
     for(Node *actionLiteral:tmp){
-        node->optLevel(1); //optimize poses along the path
+        if(!fullPathOnly) node->optLevel(1); //optimize poses along the path
         node->expand();
         MNode *next = node->getChildByAction(actionLiteral);
         if(!next) LOG(-2) <<"action '" <<*actionLiteral <<"' is not a child of '" <<*node <<"'";
@@ -153,8 +153,8 @@ void OptLGP::optFixedSequence(const mlr::String& seq){
         node = next;
     }
 
-    node->optLevel(1);
-    node->optLevel(2);
+    if(!fullPathOnly) node->optLevel(1);
+    if(!fullPathOnly) node->optLevel(2);
     node->optLevel(3);
 
     displayFocus = node;
@@ -337,7 +337,7 @@ void OptLGP::run(uint steps){
     if(verbose>0) report(true);
 
     //this generates the movie!
-    if(verbose>2) renderToFile();
+    if(verbose>2) renderToVideo();
 
     if(verbose>2) views.clear();
 }

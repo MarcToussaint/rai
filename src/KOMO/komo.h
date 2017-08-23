@@ -78,6 +78,7 @@ struct KOMO{
    * Typically, the user does not call them directly, but uses the many methods below
    * Think of all of the below as examples for how to set arbirary tasks/switches yourself */
   struct Task* setTask(double startTime, double endTime, TaskMap* map, ObjectiveType type=OT_sumOfSqr, const arr& target=NoArr, double prec=1e2, uint order=0);
+  void setKinematicSwitch(double time, bool before, mlr::KinematicSwitch* sw);
   void setKinematicSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const mlr::Transformation& jFrom=NoTransformation, const mlr::Transformation& jTo=NoTransformation);
 
   //===========================================================================
@@ -116,12 +117,14 @@ struct KOMO{
 
   //-- tasks (cost/constraint terms) high-level (rough, for LGP)
   void setGrasp(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=1e1, double timeToLift=.15);
-  void setPlace(double time, const char* endeffRef, const char* object, const char* placeRef, int verbose=0);
+  void setPlace(double time, const char* object, const char* placeRef, int verbose=0);
   void setGraspStick(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=1e1, double timeToLift=.15);
   void setPlaceFixed(double time, const char* endeffRef, const char* object, const char* placeRef, const mlr::Transformation& worldPose, int verbose=0);
   void setGraspSlide(double startTime, double endTime, const char* endeffRef, const char* object, const char* placeRef, int verbose=0, double weightFromTop=1e1);
   void setHandover(double time, const char* endeffRef, const char* object, const char* prevHolder, int verbose=0);
   void setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose=0);
+  void setDrop(double time, const char* object, const char* from, const char* to, int verbose=0);
+
   void setAttach(double time, const char* endeff, const char* object1, const char* object2, mlr::Transformation& rel, int verbose=0);
 
   //-- tasks high-level, fine (for real world execution)

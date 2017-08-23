@@ -69,7 +69,7 @@ struct KinematicWorld : GLDrawer{
   static uint setJointStateCount;
 
   //global options
-  bool orsDrawJoints=true, orsDrawShapes=true, orsDrawBodies=true, orsDrawProxies=true, orsDrawMarkers=true, orsDrawColors=true, orsDrawIndexColors=false;
+  bool orsDrawJoints=false, orsDrawShapes=true, orsDrawBodies=true, orsDrawProxies=true, orsDrawMarkers=true, orsDrawColors=true, orsDrawIndexColors=false;
   bool orsDrawMeshes=true, orsDrawCores=false, orsDrawZlines=false;
   bool orsDrawBodyNames=false;
   double orsDrawAlpha=1.;

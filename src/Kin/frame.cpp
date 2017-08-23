@@ -329,7 +329,7 @@ arr mlr::Joint::calc_q_from_Q(const mlr::Transformation &Q) const{
         q(0)=Q.pos.z;
     } break;
     case JT_transXY: {
-        q.resize(1);
+        q.resize(2);
         q(0)=Q.pos.x;
         q(1)=Q.pos.y;
     } break;

@@ -393,10 +393,16 @@ Graph* FOL_World::createStateCopy(){
   return new_state;
 }
 
+Node* FOL_World::addSymbol(const char* name){
+  return KB.newNode<bool>({name}, {}, true);
+}
+
 void FOL_World::addFact(const StringA& symbols){
   NodeL parents;
   for(const mlr::String& s:symbols){
-      parents.append(KB[s]);
+      Node *sym = KB[s];
+      if(!sym) sym=addSymbol(s);
+      parents.append(sym);
       CHECK(parents.last(), "Node '" <<s <<"' was not declared");
   }
   start_state->newNode<bool>({}, parents, true);
