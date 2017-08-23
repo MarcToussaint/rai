@@ -3,8 +3,11 @@
 void TaskMap_LinTrans::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
   map->phi(y, J, G, t);
   if(!norm){
-    y = A*y + a;
-    if(&J) J = A*J;
+    if(A.N){
+        y = A*y;
+        if(&J) J = A*J;
+    }
+    if(a.N) y += a;
   }
   if(norm){
     double l = sqrt(sumOfSqr(y));
