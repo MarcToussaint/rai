@@ -1233,6 +1233,17 @@ Graph mlr::KinematicWorld::getGraph() const {
   return G;
 }
 
+void mlr::KinematicWorld::report(std::ostream &os) const {
+  os <<"Kin: qdim=" <<qdim
+    <<" q.N=" <<q.N
+   <<" #frames=" <<frames.N
+  <<" #activeFrames=" <<fwdActiveSet.N
+  <<" #activeJoints=" <<fwdActiveJoints.N
+  <<" #proxies=" <<proxies.N
+  <<" #evals=" <<setJointStateCount
+  <<endl;
+}
+
 void mlr::KinematicWorld::init(const Graph& G) {
   clear();
 
@@ -1533,8 +1544,8 @@ void mlr::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, Proxy *p, double m
     arr Jpos;
     mlr::Vector arel, brel;
     if(p->d>0.) { //we have a gradient on pos only when outside
-      arel=a->body->X.rot/(p->posA-a->body->X.pos);
-      brel=b->body->X.rot/(p->posB-b->body->X.pos);
+      arel=a->X.rot/(p->posA-a->X.pos);
+      brel=b->X.rot/(p->posB-b->X.pos);
       CHECK(p->normal.isNormalized(), "proxy normal is not normalized");
       arr normal; normal.referTo(&p->normal.x, 3); normal.reshape(1, 3);
           
@@ -1543,8 +1554,8 @@ void mlr::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, Proxy *p, double m
     }
         
     if(useCenterDist && d2>0.){
-      arel=a->body->X.rot/(p->cenA-a->body->X.pos);
-      brel=b->body->X.rot/(p->cenB-b->body->X.pos);
+      arel=a->X.rot/(p->cenA-a->X.pos);
+      brel=b->X.rot/(p->cenB-b->X.pos);
 //      CHECK(p->cenN.isNormalized(), "proxy normal is not normalized");
       if(!p->cenN.isNormalized()){
         MLR_MSG("proxy->cenN is not normalized: objects seem to be at exactly the same place");
@@ -2444,15 +2455,14 @@ void _glDrawOdeWorld(dWorldID world)
 }
 */
 
-int animateConfiguration(mlr::KinematicWorld& C, Inotify *ino) {
+int animateConfiguration(mlr::KinematicWorld& K, Inotify *ino) {
   arr x, x0;
-  uint t, i;
-  C.getJointState(x0);
-  arr lim = C.getLimits();
-  C.gl().pressedkey=0;
+  K.getJointState(x0);
+  arr lim = K.getLimits();
+  K.gl().pressedkey=0;
   const int steps = 50;
-  StringA jointNames = C.getJointNames();
-  for(i=x0.N; i--;) {
+  StringA jointNames = K.getJointNames();
+  for(uint i=x0.N; i--;) {
     x=x0;
     double upper_lim = lim(i,1);
     double lower_lim = lim(i,0);
@@ -2462,20 +2472,21 @@ int animateConfiguration(mlr::KinematicWorld& C, Inotify *ino) {
     double offset = acos( 2. * (x0(i) - center) / delta );
     if(offset!=offset) offset=0.; //if NAN
 
-    for(t=0; t<steps; t++) {
-      if(C.gl().pressedkey==13 || C.gl().pressedkey==27 || C.gl().pressedkey=='q') return C.gl().pressedkey;
-      if(ino && ino->pollForModification()) return -1;
+    for(uint t=0; t<steps; t++) {
+      if(ino && ino->poll(false, true)) return -1;
 
       x(i) = center + (delta*(0.5*cos(MLR_2PI*t/steps + offset)));
       // Joint limits
       checkNan(x);
-      C.setJointState(x);
-      C.gl().update(STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lim[i] <<"]"), false, false, true);
+      K.setJointState(x);
+      int key = K.gl().update(STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lim[i] <<"]"), false, false, true);
+      K.gl().pressedkey=0;
+      if(key==13 || key==32 || key==27 || key=='q') return key;
       mlr::wait(0.01);
     }
   }
-  C.setJointState(x0);
-  return C.gl().update("", false, false, true);
+  K.setJointState(x0);
+  return K.gl().update("", false, false, true);
 }
 
 
@@ -2561,7 +2572,7 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
   bool &exit;
   EditConfigurationKeyCall(mlr::KinematicWorld& _K, bool& _exit): K(_K), exit(_exit){}
   bool keyCallback(OpenGL& gl) {
-    if(gl.pressedkey==' '){ //grab a body
+    if(false && gl.pressedkey==' '){ //grab a body
       if(movingBody) { movingBody=NULL; return true; }
       mlr::Joint *j=NULL;
       mlr::Frame *s=NULL;
@@ -2621,12 +2632,12 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
   }
 };
 
-void editConfiguration(const char* filename, mlr::KinematicWorld& C) {
+void editConfiguration(const char* filename, mlr::KinematicWorld& K) {
 //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
   bool exit=false;
 //  C.gl().addHoverCall(new EditConfigurationHoverCall(C));
-  C.gl().addKeyCall(new EditConfigurationKeyCall(C,exit));
-  C.gl().addClickCall(new EditConfigurationClickCall(C));
+  K.gl().addKeyCall(new EditConfigurationKeyCall(K,exit));
+  K.gl().addClickCall(new EditConfigurationClickCall(K));
   Inotify ino(filename);
   for(;!exit;) {
     cout <<"reloading `" <<filename <<"' ... " <<std::endl;
@@ -2634,26 +2645,34 @@ void editConfiguration(const char* filename, mlr::KinematicWorld& C) {
     try {
       mlr::lineCount=1;
       W <<FILE(filename);
-      C.gl().dataLock.writeLock();
-      C = W;
-      C.gl().dataLock.unlock();
+      K.gl().dataLock.writeLock();
+      K = W;
+      K.gl().dataLock.unlock();
+      K.report();
     } catch(const char* msg) {
       cout <<"line " <<mlr::lineCount <<": " <<msg <<" -- please check the file and press ENTER" <<endl;
-      C.gl().watch();
+      K.gl().watch();
       continue;
     }
-    C.gl().update();
+    K.gl().update();
     if(exit) break;
     cout <<"animating.." <<endl;
     //while(ino.pollForModification());
-    int ret = animateConfiguration(C, &ino);
-    if(exit) break;
+    int key = animateConfiguration(K, &ino);
+    K.gl().pressedkey=0;
+    if(key=='q') break;
+    if(key==-1) continue;
     cout <<"watching..." <<endl;
-#if 0
-    if(ret!=-1)
-      ino.waitForModification(true);
+#if 1
+    for(;;){
+        key = K.gl().update();
+        K.gl().pressedkey=0;
+        if(key==13 || key==32 || key==27 || key=='q') break;
+        if(ino.poll(false, true)) break;
+        mlr::wait(.02);
+    }
 #else
-    C.gl().watch();
+    K.gl().watch();
 #endif
     if(!mlr::getInteractivity()){
       exit=true;

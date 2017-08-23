@@ -566,10 +566,10 @@ struct Inotify{
   mlr::FileToken *fil;
   Inotify(const char *filename);
   ~Inotify();
-  bool pollForModification(bool block=false, bool verbose=false);
+  bool poll(bool block=false, bool verbose=false);
 
-  void waitAndReport(){ pollForModification(false, true); }
-  void waitForModification(bool verbose=false){ while(!pollForModification(true, verbose)); }
+//  void waitAndReport(){ pollForModification(false, true); }
+//  void waitForModification(bool verbose=false){ while(!pollForModification(true, verbose)); }
 };
 
 

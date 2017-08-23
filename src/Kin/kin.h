@@ -197,6 +197,8 @@ struct KinematicWorld : GLDrawer{
   void glDraw(struct OpenGL&);
   Graph getGraph() const;
 
+  //some info
+  void report(std::ostream& os=std::cout) const;
   void reportProxies(std::ostream& os=std::cout, double belowMargin=-1., bool brief=true) const;
   void writePlyFile(const char* filename) const; //TODO: move outside
 

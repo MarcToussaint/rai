@@ -93,6 +93,14 @@ void TEST(Paths){
   std::cout <<mlr::mlrPath("here") <<endl;
 }
 
+void TEST(Inotify){
+  Inotify I(".");
+  for(uint i=0;i<3;i++){
+    mlr::wait(1.);
+    I.poll(false, true);
+    cout <<i <<"sec" <<endl;
+  }
+}
 
 int MAIN(int argc,char** argv){
   mlr::initCmdLine(argc,argv);
@@ -107,6 +115,7 @@ int MAIN(int argc,char** argv){
   testTimer();
   testLogging();
   testException();
+  testInotify();
 
   return 0;
 }
