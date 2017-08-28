@@ -67,7 +67,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
       LOG(-1) <<"there were no deletable links below '" <<to->name <<"'! Deleted before?";
     }
 #endif
-    G.calc_fwdActiveSet();
+    G.calc_q();
 //    G.checkConsistency();
     return;
   }
@@ -100,7 +100,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
       j->link->insertPostLink(-Q);
       G.checkConsistency();
     }
-    G.calc_fwdActiveSet();
+    G.calc_q();
     G.calc_fwdPropagateFrames();
     G.checkConsistency();
     return;
@@ -126,7 +126,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     j3->constrainToZeroVel=true;
     NIY;//j3->B = jB;
 
-    G.calc_fwdActiveSet();
+    G.calc_q();
     G.calc_fwdPropagateFrames();
     G.checkConsistency();
     return;

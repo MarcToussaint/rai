@@ -56,11 +56,11 @@ namespace mlr{
 struct KinematicWorld : GLDrawer{
   struct sKinematicWorld *s;
 
-  /// @name data fields
-  uint qdim;  ///< dimensionality
-  arr q, qdot; ///< the current joint configuration vector and velocities
-
+  //-- fundamental structure
   FrameL frames;
+
+  //-- derived: computed with calc_q(); reset with reset_q()
+  arr q, qdot; ///< the current joint configuration vector and velocities
   FrameL fwdActiveSet;
   JointL fwdActiveJoints;
 
@@ -101,7 +101,8 @@ struct KinematicWorld : GLDrawer{
   /// @name changes of configuration
   void clear();
   void reset_q();
-  void calc_fwdActiveSet();
+  void calc_activeSets();
+  void calc_q();
   void reconfigureRoot(Frame *root);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
   void pruneRigidJoints(int verbose=0);        ///< delete rigid joints -> they become just links
   void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
@@ -109,7 +110,7 @@ struct KinematicWorld : GLDrawer{
   void optimizeTree();                         ///< call the three above methods in this order
   bool checkConsistency();
 
-  void analyzeJointStateDimensions(); ///< sort of private: count the joint dimensionalities and assign j->q_index
+  uint analyzeJointStateDimensions() const; ///< sort of private: count the joint dimensionalities and assign j->q_index
 
   /// @name computations on the graph
   void calc_Q_from_q(); ///< from the set (q,qdot) compute the joint's Q transformations
@@ -124,6 +125,9 @@ struct KinematicWorld : GLDrawer{
   arr getJointState() const;
   arr naturalQmetric(double power=.5) const;               ///< returns diagonal of a natural metric in q-space, depending on tree depth
   arr getLimits() const;
+
+  /// @name active set selection
+  void setActiveJointsByName(const StringA&);
 
   /// @name set state
   void setJointState(const arr& _q, const arr& _qdot=NoArr);
@@ -195,6 +199,7 @@ struct KinematicWorld : GLDrawer{
   void write(std::ostream& os) const;
   void read(std::istream& is);
   void glDraw(struct OpenGL&);
+  void glDraw_sub(struct OpenGL&);
   Graph getGraph() const;
 
   //some info

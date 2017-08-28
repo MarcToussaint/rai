@@ -248,9 +248,8 @@ void ManipulationTree_Node::optLevel(uint level){
     //    CHECK_EQ(sw->timeOfApplication, 1, "need to do this before the optimization..");
         if(sw->timeOfApplication>=2) sw->apply(effKinematics);
       }
-      effKinematics.calc_fwdActiveSet();
+      effKinematics.calc_q();
       DEBUG( effKinematics.checkConsistency(); )
-      effKinematics.getJointState();
   }else{
       cost_here += cost(l_symbolic); //account for the symbolic costs
   }

@@ -1,6 +1,7 @@
 #include <climits>
 #include "frame.h"
 #include "kin.h"
+#include "uncertainty.h"
 
 #ifdef MLR_GL
 #include <Gui/opengl.h>
@@ -11,17 +12,17 @@
 // Frame
 //
 
-mlr::Frame::Frame(KinematicWorld& _world, const Frame* copyBody)
+mlr::Frame::Frame(KinematicWorld& _world, const Frame* copyFrame)
   : K(_world){
 
   ID=K.frames.N;
   K.frames.append(this);
-  if(copyBody){
-    const Frame& b = *copyBody;
-    name=b.name; X=b.X; ats=b.ats;
+  if(copyFrame){
+    const Frame& f = *copyFrame;
+    name=f.name; X=f.X; ats=f.ats; active=f.active;
     //we cannot copy link! because we can't know if the frames already exist. KinematicWorld::copy copies the rel's !!
-    if(copyBody->shape) new Shape(this, copyBody->shape);
-    if(copyBody->inertia) new Inertia(this, copyBody->inertia);
+    if(copyFrame->shape) new Shape(this, copyFrame->shape);
+    if(copyFrame->inertia) new Inertia(this, copyFrame->inertia);
   }
 }
 
@@ -32,7 +33,7 @@ mlr::Frame::~Frame() {
   if(inertia) delete inertia;
   K.frames.removeValue(this);
   listReindex(K.frames);
-  K.calc_fwdActiveSet();
+  K.calc_q();
 }
 
 void mlr::Frame::parseAts(const Graph& ats) {
@@ -154,22 +155,17 @@ mlr::Joint::Joint(Link *_link, Joint *copyJoint)
   link->joint = this;
   link->to->K.reset_q();
 
-//  if(!to->link){
-//    to->link = new Link(from, to);
-//    to->link->joint = this;
-//  }else{
-//    if(to->link->joint){
-//      CHECK_EQ(to->link->joint, this,"");
-//    }else{
-//      to->link->joint = this;
-//    }
-//  }
   if(copyJoint){
     qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l); constrainToZeroVel=copyJoint->constrainToZeroVel;
     type=copyJoint->type; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H;
+    active=copyJoint->active;
 
     if(copyJoint->mimic){
       mimic = link->to->K.frames(copyJoint->mimic->link->to->ID)->joint();
+    }
+
+    if(copyJoint->uncertainty){
+      new Uncertainty(this, copyJoint->uncertainty);
     }
   }
 }
@@ -480,7 +476,7 @@ void mlr::Joint::read(const Graph &G){
     CHECK_EQ(q0.N, dim, "given q (in config file) does not match dim");
     calc_Q_from_q(q0, 0);
   }else{
-    link->Q.setZero();
+//    link->Q.setZero();
     q0 = calc_q_from_Q(link->Q);
   }
 

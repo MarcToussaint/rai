@@ -29,6 +29,7 @@
 #include <climits>
 #include "kin.h"
 #include "frame.h"
+#include "uncertainty.h"
 #include "proxy.h"
 #include "kin_swift.h"
 #include "kin_physx.h"
@@ -159,7 +160,7 @@ namespace mlr{
   };
 }
 
-mlr::KinematicWorld::KinematicWorld() : s(NULL), qdim(0) {
+mlr::KinematicWorld::KinematicWorld() : s(NULL) {
   frames.memMove=proxies.memMove=true;
   s=new sKinematicWorld;
 }
@@ -189,23 +190,27 @@ void mlr::KinematicWorld::clear() {
 }
 
 void mlr::KinematicWorld::reset_q(){
-  qdim=0;
   q.clear();
   qdot.clear();
   fwdActiveSet.clear();
   fwdActiveJoints.clear();
 }
 
-void mlr::KinematicWorld::calc_fwdActiveSet(){
+void mlr::KinematicWorld::calc_activeSets(){
   fwdActiveSet = graphGetTopsortOrder<Frame>(frames);
-  analyzeJointStateDimensions();
   fwdActiveJoints.clear();
-  for(Frame *f:fwdActiveSet) if(f->link && f->link->joint) fwdActiveJoints.append(f->link->joint);
+  for(Frame *f:fwdActiveSet)
+      if(f->link && f->link->joint && f->link->joint->active)
+          fwdActiveJoints.append(f->link->joint);
+}
+
+void mlr::KinematicWorld::calc_q(){
+  calc_activeSets();
+  calc_q_from_Q();
 }
 
 void mlr::KinematicWorld::copy(const mlr::KinematicWorld& K, bool referenceMeshesAndSwiftOnCopy) {
   clear();
-#if 1
   listCopy(proxies, K.proxies);
   for(Frame *f:K.frames) new Frame(*this, f);
   for(Frame *f:K.frames) if(f->link) new Link(frames(f->link->from->ID), frames(f->ID), f->link);
@@ -215,61 +220,13 @@ void mlr::KinematicWorld::copy(const mlr::KinematicWorld& K, bool referenceMeshe
   }
   q = K.q;
   qdot = K.qdot;
-  qdim = K.qdim;
-  calc_fwdActiveSet();
-#else
-  q = G.q;
-  qdot = G.qdot;
-  qdim = G.qdim;
-  isLinkTree = G.isLinkTree;
-  listCopy(proxies, G.proxies);
-  listCopy(joints, G.joints);
-  for(Joint *j: joints) if(j->mimic){
-    mlr::String jointName;
-    bool good = j->ats.find<mlr::String>(jointName, "mimic");
-    CHECK(good, "something is wrong");
-    j->mimic = listFindByName(G.joints, jointName);
-    if(!j->mimic) HALT("The joint '" <<*j <<"' is declared coupled to '" <<jointName <<"' -- but that doesn't exist!");
-    j->type = j->mimic->type;
-  }
-  listCopy(shapes, G.shapes);
-  listCopy(bodies, G.bodies);
-  graphMakeLists(bodies, joints);
-  for(Body *  b:  bodies) b->shapes.clear();
-  for(Shape *  s:  shapes) {
-    b=bodies(s->ibody);
-    s->body=b;
-    b->shapes.append(s);
-  }
-#endif
+  calc_activeSets();
 }
 
 /** @brief KINEMATICS: given the (absolute) frames of root nodes and the relative frames
     on the edges, this calculates the absolute frames of all other nodes (propagating forward
     through trees and testing consistency of loops). */
 void mlr::KinematicWorld::calc_fwdPropagateFrames() {
-#if 0
-  Transformation X;
-  for(Joint *j:joints){
-    X = j->from->X;
-    X.appendTransformation(j->A);
-    if(j->type==JT_hingeX || j->type==JT_transX)  j->axis = X.rot.getX();
-    if(j->type==JT_hingeY || j->type==JT_transY)  j->axis = X.rot.getY();
-    if(j->type==JT_hingeZ || j->type==JT_transZ)  j->axis = X.rot.getZ();
-    if(j->type==JT_transXYPhi)  j->axis = X.rot.getZ();
-    if(j->type==JT_phiTransXY)  j->axis = X.rot.getZ();
-
-    j->X = X;
-    j->to->X=X;
-#if 1
-    j->to->X.appendTransformation(j->Q);
-#else
-    j->applyTransformation(j->to->X, q);
-#endif
-    CHECK_EQ(j->to->X.pos.x, j->to->X.pos.x, "NAN transformation:" <<j->from->X <<'*' <<j->A <<'*' <<j->Q);
-    if(!isLinkTree) j->to->X.appendTransformation(j->B);
-  }
-#else
   for(Frame *f:fwdActiveSet){
     if(f->link){
       Transformation &from = f->link->from->X;
@@ -287,7 +244,6 @@ void mlr::KinematicWorld::calc_fwdPropagateFrames() {
       }
     }
   }
-#endif
 }
 
 arr mlr::KinematicWorld::calc_fwdPropagateVelocities(){
@@ -436,34 +392,32 @@ void mlr::KinematicWorld::reconfigureRoot(Frame *root) {
 //  graphTopsort(bodies, joints);
 }
 
-void mlr::KinematicWorld::analyzeJointStateDimensions() {
-  Joint *j;
-  qdim=0;
-  for(Frame *f: fwdActiveSet) if((j=f->joint())) {
+uint mlr::KinematicWorld::analyzeJointStateDimensions() const{
+  uint qdim=0;
+  for(Joint *j: fwdActiveJoints){
     if(!j->mimic){
       j->dim = j->getDimFromType();
       j->qIndex = qdim;
-      qdim += j->qDim();
+      if(!j->uncertainty)
+        qdim += j->qDim();
+      else
+        qdim += 2*j->qDim();
     }else{
       j->dim = 0;
       j->qIndex = j->mimic->qIndex;
     }
   }
+  return qdim;
 }
 
 /** @brief returns the joint (actuator) dimensionality */
 uint mlr::KinematicWorld::getJointStateDimension() const {
-  if(!qdim){
-    CHECK(!q.N && !qdot.N,"you've change q-dim (locked joints?) without clearing q,qdot");
-    ((KinematicWorld*)this)->analyzeJointStateDimensions();
-  }
-  return qdim;
+  if(!q.nd) return analyzeJointStateDimensions();
+  return q.N;
 }
 
 void mlr::KinematicWorld::getJointState(arr &_q, arr& _qdot) const {
-  if(!qdim) ((KinematicWorld*)this)->analyzeJointStateDimensions();
-  if(q.N!=getJointStateDimension()) ((KinematicWorld*)this)->calc_q_from_Q();
-
+  if(!q.nd) ((KinematicWorld*)this)->calc_q();
   _q=q;
   if(&_qdot){
     _qdot=qdot;
@@ -472,9 +426,7 @@ void mlr::KinematicWorld::getJointState(arr &_q, arr& _qdot) const {
 }
 
 arr mlr::KinematicWorld::getJointState() const {
-  if(!qdim) ((KinematicWorld*)this)->analyzeJointStateDimensions();
-  if(q.N!=qdim) ((KinematicWorld*)this)->calc_q_from_Q();
-  CHECK_EQ(q.N, qdim, "");
+  if(!q.nd) ((KinematicWorld*)this)->calc_q();
   return q;
 }
 
@@ -503,19 +455,21 @@ arr mlr::KinematicWorld::getLimits() const {
 
 void mlr::KinematicWorld::calc_q_from_Q() {
   uint N=getJointStateDimension();
-  q.resize(N);
+  q.resize(N).setZero();
   qdot.resize(N).setZero();
 
   uint n=0;
-  Joint *j;
-  for(Frame *f: fwdActiveSet) if((j=f->joint())){
+  for(Joint *j: fwdActiveJoints){
     if(j->mimic) continue; //don't count dependent joints
-    CHECK_EQ(j->qIndex,n,"joint indexing is inconsistent");
-    arr joint_q = j->calc_q_from_Q(f->link->Q);
-    //TODO is there a better way?
-    for(uint i=0; i<joint_q.N; ++i)
-      q(n+i) = joint_q(i);
-    n += joint_q.N;
+    CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
+    arr joint_q = j->calc_q_from_Q(j->link->Q);
+    CHECK_EQ(joint_q.N, j->dim, "");
+    q.setVectorBlock(joint_q, j->qIndex);
+    n += j->dim;
+    if(j->uncertainty){
+      q.setVectorBlock(j->uncertainty->sigma, j->qIndex+j->dim);
+      n += j->dim;
+    }
   }
   CHECK_EQ(n,N,"");
 }
@@ -525,9 +479,30 @@ void mlr::KinematicWorld::calc_Q_from_q(){
   for(Joint *j: fwdActiveJoints){
     if(!j->mimic) CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
     j->calc_Q_from_q(q, j->qIndex);
-    if(!j->mimic) n += j->dim;
+    if(!j->mimic){
+      n += j->dim;
+      if(j->uncertainty){
+        j->uncertainty->sigma = q.sub(j->qIndex+j->dim, j->qIndex+2*j->dim-1);
+        n += j->dim;
+      }
+    }
   }
   CHECK_EQ(n, q.N, "");
+}
+
+/// @name active set selection
+void mlr::KinematicWorld::setActiveJointsByName(const StringA& names){
+  for(Joint *j: fwdActiveJoints) j->active=false;
+  for(const String& s:names){
+      Frame *f = getFrameByName(s);
+      CHECK(f, "");
+      CHECK(f->joint(), "");
+      f->joint()->active=true;
+  }
+  reset_q();
+  checkConsistency();
+  calc_q();
+  checkConsistency();
 }
 
 
@@ -575,7 +550,7 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const mlr::Vec
   while(a) { //loop backward down the kinematic tree
     if(!a->link) break; //frame has no inlink -> done
     Joint *j=a->joint();
-    if(j) {
+    if(j && j->active) {
       uint j_idx=j->qIndex;
       if(j_idx>=N) CHECK(j->type==JT_rigid, "");
       if(j_idx<N){
@@ -1234,8 +1209,7 @@ Graph mlr::KinematicWorld::getGraph() const {
 }
 
 void mlr::KinematicWorld::report(std::ostream &os) const {
-  os <<"Kin: qdim=" <<qdim
-    <<" q.N=" <<q.N
+  os <<"Kin: q.N=" <<q.N
    <<" #frames=" <<frames.N
   <<" #activeFrames=" <<fwdActiveSet.N
   <<" #activeJoints=" <<fwdActiveJoints.N
@@ -1319,9 +1293,23 @@ void mlr::KinematicWorld::init(const Graph& G) {
     }
   }
 
+  NodeL ucs = G.getNodes("Uncertainty");
+  for(Node *n: ucs) {
+    CHECK_EQ(n->keys(0), "Uncertainty", "");
+    CHECK_EQ(n->parents.N, 1,"Uncertainties must have one parent");
+    CHECK(n->isGraph(),"Uncertainties must have value Graph");
+
+    Frame* f = getFrameByName(n->parents(0)->keys.last());
+    CHECK(f, "");
+    Joint *j = f->joint();
+    CHECK(j, "Uncertainty parent must be a joint");
+    Uncertainty *uc = new Uncertainty(j);
+    uc->read(n->graph());
+  }
+
+
   //-- clean up the graph
-  calc_fwdActiveSet();
-  calc_q_from_Q();
+  calc_q();
   checkConsistency();
   calc_fwdPropagateFrames();
 }
@@ -1813,23 +1801,27 @@ void mlr::KinematicWorld::optimizeTree(){
 }
 
 bool mlr::KinematicWorld::checkConsistency(){
-  if(qdim>0){
-    uint N=getJointStateDimension();
-    CHECK_EQ(N, qdim, "");
-    if(q.N) CHECK_EQ(N, q.N, "");
+  //check qdim
+  if(q.nd){
+    uint N = analyzeJointStateDimensions();
+    CHECK_EQ(1, q.nd, "");
+    CHECK_EQ(N, q.N, "");
     if(qdot.N) CHECK_EQ(N, qdot.N, "");
 
+    //count yourself and check...
     uint myqdim = 0;
-    Joint *j;
-    for(Frame *f: fwdActiveSet) if((j=f->joint())){
+    for(Joint *j: fwdActiveJoints) {
       if(j->mimic){
         CHECK_EQ(j->qIndex, j->mimic->qIndex, "");
       }else{
         CHECK_EQ(j->qIndex, myqdim, "joint indexing is inconsistent");
-        myqdim += j->qDim();
+        if(!j->uncertainty)
+          myqdim += j->qDim();
+        else
+          myqdim += 2*j->qDim();
       }
     }
-    CHECK_EQ(myqdim, qdim, "qdim is wrong");
+    CHECK_EQ(myqdim, N, "qdim is wrong");
   }
 
   for(Frame *a: frames){
@@ -1862,9 +1854,17 @@ bool mlr::KinematicWorld::checkConsistency(){
   //compute levels
   for(Frame *f: fwdActiveSet)
     if(f->link) level(f->ID) = level(f->link->from->ID)+1;
-
+  //check levels are strictly increasing across links
   for(Frame *f: fwdActiveSet) if(f->link){
     CHECK(level(f->link->from->ID) < level(f->ID), "joint does not go forward");
+  }
+
+  //check active sets
+  for(Frame *f: fwdActiveSet) CHECK(f->active, "");
+  boolA jointIsInActiveSet = consts<byte>(false, frames.N);
+  for(Joint *j: fwdActiveJoints){ CHECK(j->active, ""); jointIsInActiveSet.elem(j->to()->ID)=true; }
+  if(q.nd){
+      for(Frame *f: frames) if(f->joint() && f->joint()->active) CHECK(jointIsInActiveSet(f->ID), "");
   }
 
   for(Frame *f: frames) if(f->shape){
@@ -1915,9 +1915,27 @@ bool mlr::KinematicWorld::checkConsistency(){
 //#endif
 //}
 
+void mlr::KinematicWorld::glDraw(OpenGL& gl) {
+  arr q_org = getJointState();
+  glDraw_sub(gl);
+  for(Joint *j:fwdActiveJoints) if(j->uncertainty){
+    for(uint i=0;i<j->qDim();i++){
+      arr q=q_org;
+      q(j->qIndex+i) -= j->uncertainty->sigma(i);
+      setJointState(q);
+      glDraw_sub(gl);
+      q=q_org;
+      q(j->qIndex+i) += j->uncertainty->sigma(i);
+      setJointState(q);
+      glDraw_sub(gl);
+    }
+  }
+  setJointState(q_org);
+}
+
 /// GL routine to draw a mlr::KinematicWorld
 #ifdef MLR_GL
-void mlr::KinematicWorld::glDraw(OpenGL& gl) {
+void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
   uint i=0;
   mlr::Transformation f;
   double GLmatrix[16];
@@ -1926,7 +1944,7 @@ void mlr::KinematicWorld::glDraw(OpenGL& gl) {
 
   glColor(.5, .5, .5);
 
-  //bodies
+  //shapes
   if(orsDrawBodies) for(Frame *f: frames) if(f->shape){
     f->shape->glDraw(gl);
     i++;
@@ -2462,6 +2480,7 @@ int animateConfiguration(mlr::KinematicWorld& K, Inotify *ino) {
   K.gl().pressedkey=0;
   const int steps = 50;
   StringA jointNames = K.getJointNames();
+
   for(uint i=x0.N; i--;) {
     x=x0;
     double upper_lim = lim(i,1);
@@ -2482,7 +2501,7 @@ int animateConfiguration(mlr::KinematicWorld& K, Inotify *ino) {
       int key = K.gl().update(STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lim[i] <<"]"), false, false, true);
       K.gl().pressedkey=0;
       if(key==13 || key==32 || key==27 || key=='q') return key;
-      mlr::wait(0.01);
+//      mlr::wait(0.01);
     }
   }
   K.setJointState(x0);

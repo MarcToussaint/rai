@@ -46,6 +46,7 @@ struct Frame {
   Transformation X=0;        ///< body's absolute pose
   FrameL outLinks;           ///< lists of in and out joints
   Graph ats;                 ///< list of any-type attributes
+  bool active=true;          ///< if false, this frame is skipped in computations (e.g. in fwd propagation)
 
   //attachments to the frame
   struct Link *link=NULL;            ///< this frame is a child or a parent frame, with fixed or articulated relative transformation
@@ -72,6 +73,7 @@ struct Link{
   Frame *to;
   mlr::Transformation Q=0;
 
+  //attachments to the link
   struct Joint *joint=NULL;    ///< this link is an articulated joint
 
   Link(Frame* _from, Frame* _to, Link * copyRel=NULL);
@@ -102,6 +104,10 @@ struct Joint{
   Vector axis=0;          ///< joint axis (same as X.rot.getX() for standard hinge joints)
   Enum<JointType> type;   ///< joint type
   bool constrainToZeroVel;
+  bool active=true; ///< if false, this joint is not considered part of the q-vector
+
+  //attachments to the joint
+  struct Uncertainty *uncertainty=NULL;
 
   Joint(Link *_link, Joint* copyJoint=NULL);
   Joint(Frame* _from, Frame* _to, Joint* copyJoint=NULL) : Joint(new Link(_from, _to), copyJoint) {}

@@ -55,12 +55,13 @@ TaskMap_qItself::TaskMap_qItself(TaskMap_qItself_PickMode pickMode, const String
     return;
   }
   if(pickMode==QIP_byJointNames){
-    for(mlr::Frame *f: K.frames){
-      bool pick=false;
-      for(const mlr::String& s:picks) if(f->name==s){ pick=true; break; }
-      if(pick) selectedBodies.append(f->ID);
-    }
-    return;
+      for(const mlr::String& s:picks){
+          mlr::Frame *f = K.getFrameByName(s);
+          if(!f) HALT("pick '" <<s <<"' not found");
+          if(!f->joint()) HALT("pick '" <<s <<"' is not a joint");
+          selectedBodies.append(f->ID);
+      }
+      return;
   }
   NIY
 }

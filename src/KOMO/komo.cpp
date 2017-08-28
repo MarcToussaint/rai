@@ -151,12 +151,10 @@ void KOMO::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese){
     }
     if(lock) j->makeRigid();
   }
+
   world.reset_q();
-
   world.optimizeTree();
-
   world.getJointState();
-
 
 //  world.meldFixedJoints();
 //  world.removeUselessBodies();
@@ -887,7 +885,7 @@ void KOMO::setupConfigurations(){
   computeMeshNormals(world.frames);
 
   configurations.append(new mlr::KinematicWorld())->copy(world, true);
-  configurations.last()->calc_fwdActiveSet();
+  configurations.last()->calc_q();
   configurations.last()->calc_q_from_Q();
   configurations.last()->checkConsistency();
   for(uint s=1;s<k_order+T;s++){
@@ -899,7 +897,7 @@ void KOMO::setupConfigurations(){
         sw->apply(*configurations(s));
       }
     }
-    configurations(s)->calc_fwdActiveSet();
+    configurations(s)->calc_q();
     configurations(s)->calc_q_from_Q();
     configurations(s)->checkConsistency();
   }
@@ -1055,15 +1053,16 @@ arr KOMO::getInitialization(){
 }
 
 void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes){
-  variableDimensions.resize(MP.T);
-  for(uint t=0;t<MP.T;t++) variableDimensions(t) = MP.configurations(t+MP.k_order)->getJointStateDimension();
+  CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
+  variableDimensions.resize(komo.T);
+  for(uint t=0;t<komo.T;t++) variableDimensions(t) = komo.configurations(t+komo.k_order)->getJointStateDimension();
 
   featureTimes.clear();
   featureTypes.clear();
-  for(uint t=0;t<MP.T;t++){
-    for(Task *task: MP.tasks) if(task->prec.N>t && task->prec(t)){
+  for(uint t=0;t<komo.T;t++){
+    for(Task *task: komo.tasks) if(task->prec.N>t && task->prec(t)){
 //      CHECK(task->prec.N<=MP.T,"");
-      uint m = task->map->dim_phi(MP.configurations({t,t+MP.k_order}), t); //dimensionality of this task
+      uint m = task->map->dim_phi(komo.configurations({t,t+komo.k_order}), t); //dimensionality of this task
       featureTimes.append(consts<uint>(t, m));
       featureTypes.append(consts<ObjectiveType>(task->type, m));
     }
@@ -1073,7 +1072,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
 
 void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, ObjectiveTypeA& tt, const arr& x){
   //-- set the trajectory
-  MP.set_x(x);
+  komo.set_x(x);
 
 
   CHECK(dimPhi,"getStructure must be called first");
@@ -1083,10 +1082,10 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, Obje
 
   arr y, Jy;
   uint M=0;
-  for(uint t=0;t<MP.T;t++){
-    for(Task *task: MP.tasks) if(task->prec.N>t && task->prec(t)){
+  for(uint t=0;t<komo.T;t++){
+    for(Task *task: komo.tasks) if(task->prec.N>t && task->prec(t)){
         //TODO: sightly more efficient: pass only the configurations that correspond to the map->order
-      task->map->phi(y, (&J?Jy:NoArr), MP.configurations({t,t+MP.k_order}), MP.tau, t);
+      task->map->phi(y, (&J?Jy:NoArr), komo.configurations({t,t+komo.k_order}), komo.tau, t);
       if(!y.N) continue;
       if(absMax(y)>1e10) MLR_MSG("WARNING y=" <<y);
 
@@ -1100,7 +1099,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, Obje
       phi.setVectorBlock(y, M);
       if(&J){
         Jy *= sqrt(task->prec(t));
-        if(t<MP.k_order) Jy.delColumns(0,(MP.k_order-t)*MP.configurations(0)->q.N); //delete the columns that correspond to the prefix!!
+        if(t<komo.k_order) Jy.delColumns(0,(komo.k_order-t)*komo.configurations(0)->q.N); //delete the columns that correspond to the prefix!!
         for(uint i=0;i<y.N;i++) J(M+i) = Jy[i]; //copy it to J(M+i); which is the Jacobian of the M+i'th feature w.r.t. its variables
       }
       if(&tt) for(uint i=0;i<y.N;i++) tt(M+i) = task->type;
@@ -1111,6 +1110,6 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, Obje
   }
 
   CHECK_EQ(M, dimPhi, "");
-  MP.featureValues = ARRAY<arr>(phi);
-  if(&tt) MP.featureTypes = ARRAY<ObjectiveTypeA>(tt);
+  komo.featureValues = ARRAY<arr>(phi);
+  if(&tt) komo.featureTypes = ARRAY<ObjectiveTypeA>(tt);
 }
