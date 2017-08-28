@@ -82,9 +82,9 @@ void TEST(EasyAlign2){
 int main(int argc,char** argv){
   mlr::initCmdLine(argc,argv);
 
-//  testEasy();
-//  testEasyAlign();
-//  testEasyAlign2();
+  testEasy();
+  testEasyAlign();
+  testEasyAlign2();
   testEasyPR2();
 
   return 0;

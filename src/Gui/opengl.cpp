@@ -1686,7 +1686,7 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
       cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
     }else{
       double x=mouseposx, y=mouseposy;
-      unproject(x, y, d);
+      unproject(x, y, d, true);
       cam->focus(x, y, d);
     }
 #else

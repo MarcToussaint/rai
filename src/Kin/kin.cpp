@@ -466,6 +466,7 @@ void mlr::KinematicWorld::calc_q_from_Q() {
     CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
     arr joint_q = j->calc_q_from_Q(j->link->Q);
     CHECK_EQ(joint_q.N, j->dim, "");
+    if(!j->dim) continue; //nothing to do
     q.setVectorBlock(joint_q, j->qIndex);
     n += j->dim;
     if(j->uncertainty){
