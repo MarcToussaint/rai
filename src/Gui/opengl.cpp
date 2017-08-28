@@ -1678,16 +1678,26 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   if(mouse_button==5 && !downPressed) cam->X.pos -= s->downRot*Vector_z * (.1 * (s->downPos-s->downFoc).length());
 
   if(mouse_button==3) {  //selection
+#if 1
+    captureDepth.resize(h, w);
+    glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
+    double d = captureDepth(mouseposy, mouseposx);
+    if(d<.01 || d>.9999){
+      cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
+    }else{
+      double x=mouseposx, y=mouseposy;
+      unproject(x, y, d);
+      cam->focus(x, y, d);
+    }
+#else
     {
       auto sgl = singleGLAccess();
       Select(true);
     }
-//    singleGLAccess()->unlock();
     if(topSelection){
       cam->focus(topSelection->x, topSelection->y, topSelection->z);
-//      uint name=topSelection->name;
-//      cout <<"RIGHT CLICK call: id = 0x" <<std::hex <<topSelection->name <<endl;
     }
+#endif
   }
 
   //step through all callbacks

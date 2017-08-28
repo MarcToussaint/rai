@@ -1953,11 +1953,9 @@ void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
   glColor(.5, .5, .5);
 
   //shapes
-  mlr::timerStart();
   if(orsDrawBodies) for(Frame *f: frames) if(f->shape){
     f->shape->glDraw(gl);
     i++;
-    cout <<i <<' ' <<f->name <<' ' <<mlr::timerRead() <<endl;
     if(orsDrawLimit && i>=orsDrawLimit) break;
   }
 
