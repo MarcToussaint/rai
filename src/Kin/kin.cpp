@@ -174,9 +174,10 @@ mlr::KinematicWorld::KinematicWorld(const char* filename) : KinematicWorld() {
 }
 
 mlr::KinematicWorld::~KinematicWorld() {
-  clear();
+  //delete OpenGL and the extensions first!
   delete s;
   s=NULL;
+  clear();
 }
 
 void mlr::KinematicWorld::init(const char* filename) {
@@ -187,6 +188,7 @@ void mlr::KinematicWorld::clear() {
   reset_q();
   listDelete(proxies); checkConsistency();
   while(frames.N){ delete frames.last(); checkConsistency(); }
+  reset_q();
 }
 
 void mlr::KinematicWorld::reset_q(){
@@ -1209,10 +1211,16 @@ Graph mlr::KinematicWorld::getGraph() const {
 }
 
 void mlr::KinematicWorld::report(std::ostream &os) const {
+  uint nShapes=0, nUc=0;
+  for(Frame *f:fwdActiveSet) if(f->shape) nShapes++;
+  for(Joint *j:fwdActiveJoints) if(j->uncertainty) nUc++;
+
   os <<"Kin: q.N=" <<q.N
    <<" #frames=" <<frames.N
   <<" #activeFrames=" <<fwdActiveSet.N
   <<" #activeJoints=" <<fwdActiveJoints.N
+  <<" #activeShapes=" <<nShapes
+  <<" #activeUncertainties=" <<nUc
   <<" #proxies=" <<proxies.N
   <<" #evals=" <<setJointStateCount
   <<endl;
@@ -1945,9 +1953,11 @@ void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
   glColor(.5, .5, .5);
 
   //shapes
+  mlr::timerStart();
   if(orsDrawBodies) for(Frame *f: frames) if(f->shape){
     f->shape->glDraw(gl);
     i++;
+    cout <<i <<' ' <<f->name <<' ' <<mlr::timerRead() <<endl;
     if(orsDrawLimit && i>=orsDrawLimit) break;
   }
 

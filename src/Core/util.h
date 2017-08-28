@@ -335,7 +335,7 @@ extern String errString;
 }
 
 //----- error handling:
-#  define MLR_HERE "@" << __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<": "
+#  define MLR_HERE "@" << __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<":" <<mlr::realTime() <<"s "
 
 #ifndef HALT
 #  define MLR_MSG(msg){ LOG(-1) <<msg; }

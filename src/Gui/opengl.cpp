@@ -1356,6 +1356,8 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
 }
 
 void OpenGL::Select(bool callerHasAlreadyLocked) {
+  if(reportEvents){ LOG(0) <<MLR_HERE <<" Select entry"; }
+
   if(!callerHasAlreadyLocked){
     singleGLAccess.mutex.lock();
     dataLock.readLock();
@@ -1443,6 +1445,7 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
     dataLock.unlock();
     singleGLAccess.mutex.unlock();
   }
+  if(reportEvents){ LOG(0) <<MLR_HERE <<" Select done"; }
 }
 
 /** @brief watch in interactive mode and wait for an exiting event
