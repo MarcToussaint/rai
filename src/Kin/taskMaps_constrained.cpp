@@ -19,7 +19,7 @@
 //===========================================================================
 
 void CollisionConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
-  G.kinematicsProxyCost(y, J, margin, false);
+  G.kinematicsProxyCost(y, J, margin, true);
   y -= .5;
 }
 

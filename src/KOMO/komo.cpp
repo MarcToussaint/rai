@@ -621,7 +621,7 @@ void KOMO::setCollisions(bool hardConstraint, double margin, double prec){
   if(hardConstraint){ //interpreted as hard constraint (default)
     setTask(0., -1., new CollisionConstraint(margin), OT_ineq, NoArr, prec);
   }else{ //cost term
-    setTask(0., -1., new TaskMap_Proxy(allPTMT, {0u}, margin), OT_sumOfSqr, NoArr, prec);
+    setTask(0., -1., new TaskMap_Proxy(allPTMT, {0u}, margin, true  ), OT_sumOfSqr, NoArr, prec);
   }
 }
 
