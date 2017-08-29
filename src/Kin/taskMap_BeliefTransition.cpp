@@ -39,9 +39,13 @@ void TaskMap_BeliefTransition::phi(arr &y, arr &J, const WorldL &G, double tau, 
   if(viewError){
     arr y_view, J_view;
     viewError->phi(y_view, J_view, G, tau, t);
+    y_view *= 2.;
+    J_view *= 2.;
     xi = 1. - Forsyth(J_xi, y_view, 1.);
     J_xi = - J_xi * J_view;
     J_xi.reshape(G.N, G.elem(-1)->q.N);
+    xi *= 2.;
+    J_xi *= 2.;
   }
 
   for(mlr::Joint *j1 : G.elem(-1)->fwdActiveJoints) if(j1->uncertainty){
@@ -51,6 +55,7 @@ void TaskMap_BeliefTransition::phi(arr &y, arr &J, const WorldL &G, double tau, 
     CHECK_EQ(j0->dim, j1->dim, "");
     for(uint d=j0->dim;d<2*j0->dim;d++){
       y(i) = G.elem(-1)->q(j1->qIndex+d) - (1.-tau*xi)*G.elem(-2)->q(j0->qIndex+d) - tau*b0;
+//      if(y(i)<0.) y(i)=0.; //hack: the finite integration may lead to negative values
       if(&J){
         J(i, G.N-1, j1->qIndex+d) = 1.;
         J(i, G.N-2, j0->qIndex+d) = -(1.-tau*xi);

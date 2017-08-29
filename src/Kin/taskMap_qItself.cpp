@@ -19,31 +19,6 @@
 
 TaskMap_qItself::TaskMap_qItself(bool relative_q0) : moduloTwoPi(true), relative_q0(relative_q0) {}
 
-//TaskMap_qItself::TaskMap_qItself(uint singleQ, uint qN) : moduloTwoPi(true), relative_q0(false) { M=zeros(1,qN); M(0,singleQ)=1.; }
-
-//TaskMap_qItself::TaskMap_qItself(const mlr::KinematicWorld& G, mlr::Joint* j)
-//  : moduloTwoPi(true), relative_q0(false)  {
-//  M = zeros(j->qDim(), G.getJointStateDimension() );
-//  M.setMatrixBlock(eye(j->qDim()), 0, j->qIndex);
-//}
-
-//TaskMap_qItself::TaskMap_qItself(const mlr::KinematicWorld& G, const char* jointName)
-//  : moduloTwoPi(true), relative_q0(false)  {
-//  mlr::Joint *j = G.getJointByName(jointName);
-//  if(!j) return;
-//  M = zeros(j->qDim(), G.getJointStateDimension() );
-//  M.setMatrixBlock(eye(j->qDim()), 0, j->qIndex);
-//}
-
-//TaskMap_qItself::TaskMap_qItself(const mlr::KinematicWorld& G, const char* jointName1, const char* jointName2)
-//  : moduloTwoPi(true), relative_q0(false)  {
-//  mlr::Joint *j1 = G.getJointByName(jointName1);
-//  mlr::Joint *j2 = G.getJointByName(jointName2);
-//  M = zeros(j1->qDim() + j2->qDim(), G.getJointStateDimension() );
-//  M.setMatrixBlock(eye(j1->qDim()), 0, j1->qIndex);
-//  M.setMatrixBlock(eye(j2->qDim()), j1->qDim(), j2->qIndex);
-//}
-
 TaskMap_qItself::TaskMap_qItself(TaskMap_qItself_PickMode pickMode, const StringA& picks, const mlr::KinematicWorld& K, bool relative_q0)
   : moduloTwoPi(true), relative_q0(relative_q0) {
   if(pickMode==QIP_byJointGroups){
@@ -74,18 +49,9 @@ void TaskMap_qItself::phi(arr& q, arr& J, const mlr::KinematicWorld& G, int t) {
   if(!selectedBodies.N){
     G.getJointState(q);
     if(relative_q0){
-      mlr::Joint *j;
-      for(mlr::Frame* f: G.frames) if((j=f->joint()) && j->q0.N && j->qDim()==1) q(j->qIndex) -= j->q0.scalar();
+      for(mlr::Joint* j: G.fwdActiveJoints) if(j->q0.N && j->qDim()==1) q(j->qIndex) -= j->q0.scalar();
     }
-//    if(M.N){
-//      if(M.nd==1){
-//        q=M%q; if(&J) J.setDiag(M); //this fails if the dimensionalities of q are non-stationary!
-//      }else{
-//        q=M*q; if(&J) J=M;
-//      }
-//    }else{
-      if(&J) J.setId(q.N);
-//    }
+    if(&J) J.setId(q.N);
   }else{
     uint n=dim_phi(G);
     q.resize(n);
@@ -95,7 +61,7 @@ void TaskMap_qItself::phi(arr& q, arr& J, const mlr::KinematicWorld& G, int t) {
     uint qIndex=0;
     for(uint b:selectedBodies){
       mlr::Joint *j = G.frames.elem(b)->joint();
-//      CHECK_GE(j->qIndex, qIndex, "selectedBodies does not add joints in sorted order! I'm not sure this is correct!");
+      CHECK(j, "selected frame " <<b <<" ('" <<G.frames.elem(b)->name <<"') is not a joint");
       qIndex = j->qIndex;
       for(uint k=0;k<j->qDim();k++){
         q(m) = G.q.elem(qIndex+k);
@@ -104,7 +70,7 @@ void TaskMap_qItself::phi(arr& q, arr& J, const mlr::KinematicWorld& G, int t) {
         m++;
       }
     }
-    CHECK_EQ(n,m,"");
+    CHECK_EQ(n, m,"");
   }
 }
 
@@ -119,9 +85,8 @@ void TaskMap_qItself::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
   uint offset = G.N-1-k; //G.N might contain more configurations than the order of THIS particular task -> the front ones are not used
   for(uint i=0;i<=k;i++){
     phi(q_bar(i), J_bar(i), *G(offset+i), t-k+i);
-//    q_bar(i) = G(offset+i)->q;
-//    J_bar(i).setId(q_bar(i).N);
   }
+
   bool handleSwitches=false;
   uint qN=q_bar(0).N;
   for(uint i=0;i<=k;i++) if(q_bar(i).N!=qN){ handleSwitches=true; break; }
@@ -170,7 +135,6 @@ void TaskMap_qItself::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
   if(k==2)  y = (q_bar(2)-2.*q_bar(1)+q_bar(0))/tau2; //penalize acceleration
   if(k==3)  y = (q_bar(3)-3.*q_bar(2)+3.*q_bar(1)-q_bar(0))/tau3; //penalize jerk
   if(&J) {
-#if 1
     uintA qidx(G.N);
     qidx(0)=0;
     for(uint i=1;i<G.N;i++) qidx(i) = qidx(i-1)+G(i-1)->q.N;
@@ -178,15 +142,6 @@ void TaskMap_qItself::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
     if(k==1){ J.setMatrixBlock(J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(   -J_bar(0), 0, qidx(offset+0));  J/=tau; }
     if(k==2){ J.setMatrixBlock(J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(-2.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(J_bar(0)   , 0, qidx(offset+0));  J/=tau2; }
     if(k==3){ J.setMatrixBlock(J_bar(3), 0, qidx(offset+3));  J.setMatrixBlock(-3.*J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(3.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau3; }
-#else
-    J = zeros(G.N, y.N, J_bar(0).d1);
-    if(k==1){ J[offset+1]() =  J_bar(1);  J[offset+0]() =    -J_bar(0);  J/=tau; }
-    if(k==2){ J[offset+2]() =  J_bar(2);  J[offset+1]() = -2.*J_bar(1);  J[offset+0]() = J_bar(0);  J/=tau2; }
-    if(k==3){ J[offset+3]() =  J_bar(3);  J[offset+2]() = -3.*J_bar(2);  J[offset+1]() = 3.*J_bar(1);  J[offset+0]() = -J_bar(0);  J/=tau3; }
-    arr tmp(J);
-    tensorPermutation(J, tmp, TUP(1u,0u,2u));
-    J.reshape(y.N, G.N*J_bar(0).d1);
-#endif
   }
 }
 

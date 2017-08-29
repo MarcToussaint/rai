@@ -845,6 +845,7 @@ void KOMO::plotTrajectory(){
   ofstream fil2("z.trajectories.plt");
   fil2 <<"set key autotitle columnheader" <<endl;
   fil2 <<"set title 'trajectories'" <<endl;
+  fil2 <<"set term qt 2" <<endl;
   fil2 <<"plot 'z.trajectories' \\" <<endl;
   for(uint i=1;i<=jointNames.N;i++) fil2 <<(i>1?"  ,''":"     ") <<" u 0:"<<i<<" w l lw 3 lc " <<i <<" lt " <<1-((i/10)%2) <<" \\" <<endl;
 //    if(dualSolution.N) for(uint i=0;i<tasks.N;i++) fil <<"  ,'' u 0:"<<1+tasks.N+i<<" w l \\" <<endl;
