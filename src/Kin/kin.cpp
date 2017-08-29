@@ -766,9 +766,10 @@ void mlr::KinematicWorld::kinematicsQuat(arr& y, arr& J, Frame *a) const { //TOD
 void mlr::KinematicWorld::axesMatrix(arr& J, Frame *a) const {
   uint N = getJointStateDimension();
   J.resize(3, N).setZero();
+
   while(a->link) { //loop backward down the kinematic tree
-    mlr::Joint *j;
-    if((j=a->joint())){
+    Joint *j=a->joint();
+    if(j && j->active) {
       uint j_idx=j->qIndex;
       if(j_idx>=N) CHECK(j->type==JT_rigid, "");
       if(j_idx<N){
@@ -991,9 +992,21 @@ mlr::Joint* mlr::KinematicWorld::getJointByBodyIndices(uint ifrom, uint ito) con
 
 StringA mlr::KinematicWorld::getJointNames(){
   StringA names(q.N);
-  Joint *j;
-  for(Frame *f:frames) if((j=f->joint())){
-    for(uint i=0;i<j->dim;i++) names(j->qIndex+i) <<f->name <<':' <<i;
+  for(Joint *j:fwdActiveJoints){
+    mlr::String name=j->to()->name;
+    if(!name) name <<'q' <<j->qIndex;
+    if(j->dim){
+      for(uint i=0;i<j->dim;i++) names(j->qIndex+i) <<name <<':' <<i;
+    }else{
+      names(j->qIndex) <<name;
+    }
+    if(j->uncertainty){
+      if(j->dim){
+        for(uint i=j->dim;i<2*j->dim;i++) names(j->qIndex+i) <<name <<":UC:" <<i;
+      }else{
+        names(j->qIndex+1) <<name <<":UC";
+      }
+    }
   }
   return names;
 }

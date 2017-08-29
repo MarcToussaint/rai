@@ -14,6 +14,7 @@ void TEST(Easy){
 //  komo.setSpline(3);
 //  komo.checkGradients();
   komo.run();
+  komo.plotTrajectory();
   for(uint i=0;i<2;i++) komo.displayTrajectory();
 }
 

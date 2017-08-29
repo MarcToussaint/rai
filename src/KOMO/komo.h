@@ -155,6 +155,7 @@ struct KOMO{
   Graph getReport(bool gnuplt=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot task costs; output detailed cost features per time slice)
   void reportProxies(ostream& os=std::cout); ///< report the proxies (collisions) for each time slice
   void checkGradients();          ///< checks all gradients numerically
+  void plotTrajectory();
   bool displayTrajectory(double delay=0.01, bool watch=false); ///< display the
   mlr::Camera& displayCamera();   ///< access to the display camera to change the view
 

@@ -831,6 +831,29 @@ void KOMO::checkGradients(){
   }
 }
 
+void KOMO::plotTrajectory(){
+  ofstream fil("z.trajectories");
+  StringA jointNames = world.getJointNames();
+  //first line: legend
+  for(auto s:jointNames) fil <<s <<' ';
+  fil <<endl;
+
+  x.reshape(T, world.q.N);
+  x.write(fil, NULL, NULL, "  ");
+  fil.close();
+
+  ofstream fil2("z.trajectories.plt");
+  fil2 <<"set key autotitle columnheader" <<endl;
+  fil2 <<"set title 'trajectories'" <<endl;
+  fil2 <<"plot 'z.trajectories' \\" <<endl;
+  for(uint i=1;i<=jointNames.N;i++) fil2 <<(i>1?"  ,''":"     ") <<" u 0:"<<i<<" w l lw 3 lc " <<i <<" lt " <<1-((i/10)%2) <<" \\" <<endl;
+//    if(dualSolution.N) for(uint i=0;i<tasks.N;i++) fil <<"  ,'' u 0:"<<1+tasks.N+i<<" w l \\" <<endl;
+  fil2 <<endl;
+  fil2.close();
+
+  gnuplot("load 'z.trajectories.plt'");
+}
+
 bool KOMO::displayTrajectory(double delay, bool watch){
 //  return displayTrajectory(watch?-1:1, "KOMO planned trajectory", delay);
   const char* tag = "KOMO planned trajectory";
@@ -1113,3 +1136,4 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, Obje
   komo.featureValues = ARRAY<arr>(phi);
   if(&tt) komo.featureTypes = ARRAY<ObjectiveTypeA>(tt);
 }
+
