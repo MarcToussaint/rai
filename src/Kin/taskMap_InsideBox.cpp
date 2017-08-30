@@ -20,12 +20,13 @@ TaskMap_InsideBox::TaskMap_InsideBox(int iShape, int jShape)
   : i(iShape), j(jShape), margin(.01){
 }
 
-TaskMap_InsideBox::TaskMap_InsideBox(const mlr::KinematicWorld& G, const char* iShapeName, const char* jShapeName)
-  :i(-1), j(-1), margin(.01){
+TaskMap_InsideBox::TaskMap_InsideBox(const mlr::KinematicWorld& G, const char* iShapeName, const mlr::Vector &_ivec, const char* jShapeName, double _margin)
+  :i(-1), j(-1), margin(_margin){
   mlr::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
   mlr::Frame *b = jShapeName ? G.getFrameByName(jShapeName):NULL;
   if(a) i=a->ID;
   if(b) j=b->ID;
+  if(&_ivec) ivec=_ivec; else ivec.setZero();
 }
 
 void TaskMap_InsideBox::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
@@ -34,7 +35,7 @@ void TaskMap_InsideBox::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t)
   CHECK(pnt && box,"I need shapes!");
   CHECK(box->type==mlr::ST_ssBox || box->type==mlr::ST_box,"the 2nd shape needs to be a box"); //s1 should be the board
   arr pos,posJ;
-  G.kinematicsRelPos(pos, posJ, pnt->frame, NoVector, box->frame, NoVector);
+  G.kinematicsRelPos(pos, posJ, pnt->frame, ivec, box->frame, NoVector);
   arr range = box->size;
   range *= .5;
   range -= margin;

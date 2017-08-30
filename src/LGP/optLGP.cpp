@@ -132,7 +132,7 @@ void OptLGP::player(StringA cmds){
     }
 }
 
-void OptLGP::optFixedSequence(const mlr::String& seq, bool fullPathOnly){
+void OptLGP::optFixedSequence(const mlr::String& seq, bool fullPathOnly, bool collisions){
     Graph& tmp = root->fol.KB.newSubgraph({"TMP"},{})->value;
     mlr::String tmpseq(seq);
     tmp.read(tmpseq);
@@ -155,7 +155,7 @@ void OptLGP::optFixedSequence(const mlr::String& seq, bool fullPathOnly){
 
     if(!fullPathOnly) node->optLevel(1);
     if(!fullPathOnly) node->optLevel(2);
-    node->optLevel(3);
+    node->optLevel(3, collisions);
 
     displayFocus = node;
     updateDisplay();

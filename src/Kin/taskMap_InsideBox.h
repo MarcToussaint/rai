@@ -19,11 +19,12 @@
 
 struct TaskMap_InsideBox : TaskMap {
   int i, j;               ///< which shapes does it refer to?
+  mlr::Vector ivec;       ///< additional position or vector
   double margin;
 
   TaskMap_InsideBox(int iShape=-1, int jShape=-1);
   TaskMap_InsideBox(const mlr::KinematicWorld& G,
-                   const char* iShapeName=NULL, const char* jShapeName=NULL);
+                   const char* iShapeName=NULL, const mlr::Vector& ivec=NoVector, const char* jShapeName=NULL, double _margin=.03);
 
   virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1);
   virtual uint dim_phi(const mlr::KinematicWorld& G);

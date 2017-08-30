@@ -151,7 +151,7 @@ void ManipulationTree_Node::addMCRollouts(uint num, int stepAbort){
   //  cout <<"******** BEST ACTION " <<*a <<endl;
 }
 
-void ManipulationTree_Node::optLevel(uint level){
+void ManipulationTree_Node::optLevel(uint level, bool collisions){
   komoProblem(level) = new KOMO();
   KOMO& komo(*komoProblem(level));
 
@@ -196,16 +196,16 @@ void ManipulationTree_Node::optLevel(uint level){
       }
   } break;
   case 3:{
-      komo.setModel(startKinematics, false);
+      komo.setModel(startKinematics, collisions);
       uint stepsPerPhase = mlr::getParameter<uint>("LGP/stepsPerPhase", 10);
       komo.setTiming(time, stepsPerPhase, 5., 2);
 
       komo.setHoming(-1., -1., 1e-2);
       komo.setSquaredQAccelerations();
-      //komo.setSquaredQVelocities();
       komo.setFixEffectiveJoints(-1., -1., 1e2);
       komo.setFixSwitchedObjects(-1., -1., 1e2);
       komo.setSquaredQuaternionNorms();
+      if(collisions) komo.setCollisions(false);
 
       for(ManipulationTree_Node *node:getTreePath()){
         komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
@@ -578,7 +578,7 @@ ManipulationTree_Node* ManipulationTree_Node::getRoot(){
 
 ManipulationTree_Node *ManipulationTree_Node::getChildByAction(Node *folDecision){
   for(ManipulationTree_Node *ch:children){
-      if(tuplesAreEqual(ch->folDecision->parents, folDecision->parents)) return ch;
+    if(tuplesAreEqual(ch->folDecision->parents, folDecision->parents)) return ch;
   }
   LOG(-1) <<"a child with action '" <<*folDecision <<"' does not exist";
   return NULL;

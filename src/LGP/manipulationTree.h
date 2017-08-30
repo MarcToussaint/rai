@@ -82,7 +82,7 @@ struct ManipulationTree_Node{
 
   //- computations on the node
   void expand(int verbose=0);           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
-  void optLevel(uint level);
+  void optLevel(uint level, bool collisions=false);
   //MC stuff -- TODO
   arr generateRootMCRollouts(uint num, int stepAbort, const mlr::Array<MCTS_Environment::Handle>& prefixDecisions);
   void addMCRollouts(uint num,int stepAbort);

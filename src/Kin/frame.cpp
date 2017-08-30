@@ -171,7 +171,7 @@ mlr::Joint::Joint(Link *_link, Joint *copyJoint)
 }
 
 mlr::Joint::~Joint() {
-  if(dim) link->to->K.reset_q();
+  link->to->K.reset_q();
   link->joint = NULL;
 }
 

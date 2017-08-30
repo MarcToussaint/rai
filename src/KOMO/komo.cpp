@@ -353,7 +353,8 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
 #if 1
   setKinematicSwitch(time, true, "ballZero", endeffRef, object);
   setKinematicSwitch(time, true, "insert_transX", NULL, object);
-  setTask(time, time, new TaskMap_InsideBox(world, endeffRef, object), OT_ineq, NoArr, 1e2);
+//  setKinematicSwitch(time, true, "insert_trans3", NULL, object);
+  setTask(time, time, new TaskMap_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e2);
 #else
   setKinematicSwitch(time, true, "freeZero", endeffRef, object);
   setTask(time, time, new TaskMap_InsideBox(world, endeffRef, object), OT_ineq, NoArr, 1e2);
@@ -381,7 +382,7 @@ void KOMO::setGraspStick(double time, const char* endeffRef, const char* object,
 //              new TaskMap_Default(posDiffTMT, world, endeffRef, NoVector, object, NoVector),
 //              arr(2,3,{0,1,0,0,0,1}), {}),
 //          OT_eq, NoArr, 1e3);
-  setTask(time, time, new TaskMap_InsideBox(world, endeffRef, object), OT_ineq, NoArr, 1e2);
+  setTask(time, time, new TaskMap_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e2);
 
 
   if(stepsPerPhase>2){ //velocities down and up
@@ -495,8 +496,10 @@ void KOMO::setPush(double startTime, double endTime, const char* stick, const ch
   if(verbose>0) cout <<"KOMO_setPush t=" <<startTime <<" stick=" <<stick <<" object=" <<object <<" table=" <<table <<endl;
 
   setTask(startTime, startTime+1., new TaskMap_Default(vecAlignTMT, world, stick, -Vector_y, "slider1b", Vector_x), OT_sumOfSqr, {1.}, 1e2);
-  setTask(startTime, startTime+1., new TaskMap_Default(vecAlignTMT, world, stick, Vector_z, NULL, Vector_z), OT_sumOfSqr, {1.}, 1e2);
-  setTask(startTime, startTime+1., new TaskMap_Default(posDiffTMT, world, stick, NoVector, "slider1b", {.12, .0, .0}), OT_sumOfSqr, {}, 1e2);
+//  setTask(startTime, startTime+1., new TaskMap_Default(vecAlignTMT, world, stick, Vector_x, "slider1b", Vector_x), OT_sumOfSqr, {0.}, 1e1);
+  setTask(startTime, startTime+1., new TaskMap_Default(vecAlignTMT, world, stick, Vector_x, NULL, Vector_z), OT_sumOfSqr, {0.}, 1e2);
+//  setTask(startTime, startTime+1., new TaskMap_Default(posDiffTMT, world, stick, NoVector, "slider1b", {.12, .0, .0}), OT_sumOfSqr, {}, 1e2);
+  setTask(startTime, startTime+1., new TaskMap_InsideBox(world, "slider1b", {.12, .0, .0}, stick), OT_ineq);
 
   setKS_slider(startTime, true, object, "slider1", table);
 
@@ -906,7 +909,7 @@ void KOMO::setupConfigurations(){
     makeConvexHulls(world.frames);
     world.swift().setCutoff(2.*mlr::getParameter<double>("swiftCutoff", 0.11));
   }
-  computeMeshNormals(world.frames);
+  computeMeshNormals(world.frames, true);
 
   configurations.append(new mlr::KinematicWorld())->copy(world, true);
   configurations.last()->calc_q();

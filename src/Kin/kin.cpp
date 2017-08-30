@@ -126,11 +126,11 @@ void computeOptimalSSBoxes(FrameL &frames){
   }
 }
 
-void computeMeshNormals(FrameL& frames){
+void computeMeshNormals(FrameL& frames, bool force){
   for(mlr::Frame *f: frames) if(f->shape){
     mlr::Shape *s = f->shape;
-    if(s->mesh.V.d0!=s->mesh.Vn.d0 || s->mesh.T.d0!=s->mesh.Tn.d0) s->mesh.computeNormals();
-    if(s->sscCore.V.d0!=s->sscCore.Vn.d0 || s->sscCore.T.d0!=s->sscCore.Tn.d0) s->sscCore.computeNormals();
+    if(force || s->mesh.V.d0!=s->mesh.Vn.d0 || s->mesh.T.d0!=s->mesh.Tn.d0) s->mesh.computeNormals();
+    if(force || s->sscCore.V.d0!=s->sscCore.Vn.d0 || s->sscCore.T.d0!=s->sscCore.Tn.d0) s->sscCore.computeNormals();
   }
 }
 

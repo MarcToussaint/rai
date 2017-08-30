@@ -39,6 +39,7 @@ struct OptLGP{
 private:
   MNode* getBest(MNodeL& fringe, uint level);
   MNode* popBest(MNodeL& fringe, uint level);
+  MNode* getBest(){ return getBest(fringe_done, 3); }
   void expandBest();
   void optBestOnLevel(int level, MNodeL& fringe, MNodeL* addIfTerminal, MNodeL* addChildren);
   void optFirstOnLevel(int level, MNodeL& fringe, MNodeL* addIfTerminal);
@@ -63,5 +64,5 @@ public:
 
   void player(StringA cmds={});
 
-  void optFixedSequence(const mlr::String& seq, bool fullPathOnly=false);
+  void optFixedSequence(const mlr::String& seq, bool fullPathOnly=false, bool collisions=false);
 };
