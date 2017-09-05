@@ -362,8 +362,9 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
 #endif
 
   if(stepsPerPhase>2){ //velocities down and up
-    setTask(time-timeToLift, time, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
-    setTask(time, time+timeToLift, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,.1}, 1e1, 1); // move up
+    setTask(time-timeToLift, time-2.*timeToLift/3, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
+    setTask(time-timeToLift/3,  time+timeToLift/3, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,0.}, 1e1, 1); //move down
+    setTask(time+2.*timeToLift/3, time+timeToLift, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,.1}, 1e1, 1); // move up
   }
 }
 
@@ -428,16 +429,18 @@ void KOMO::setGraspSlide(double startTime, double endTime, const char* endeffRef
 }
 
 /// standard place on a table
-void KOMO::setPlace(double time, const char* object, const char* placeRef, int verbose){
+void KOMO::setPlace(double time, const char* endeff, const char* object, const char* placeRef, int verbose){
   if(verbose>0) cout <<"KOMO_setPlace t=" <<time <<" obj=" <<object <<" place=" <<placeRef <<endl;
 
   if(stepsPerPhase>2){ //velocities down and up
-    setTask(time-.15, time, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
-//    setTask(time, time+.15, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,.1}, 1e1, 1); // move up
+    if(endeff){
+      setTask(time-.15, time-.10, new TaskMap_Default(posTMT, world, endeff), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
+      setTask(time-.05, time+.05, new TaskMap_Default(posTMT, world, endeff), OT_sumOfSqr, {0.,0.,0. }, 1e2, 1); //hold still
+      setTask(time+.10, time+.15, new TaskMap_Default(posTMT, world, endeff), OT_sumOfSqr, {0.,0.,+.1}, 1e1, 1); //move up
+    }else{
+      setTask(time-.15, time, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
+    }
   }
-
-  //place roughly at center ;-(
-//  setTask(time, time, new TaskMap_Default(posDiffTMT, world, object, NoVector, placeRef, NoVector), OT_sumOfSqr, {0.,0.,.1}, 1e-1);
 
   //place upright
   setTask(time-.02, time, new TaskMap_Default(vecTMT, world, object, Vector_z), OT_sumOfSqr, {0.,0.,1.}, 1e2);
@@ -448,7 +451,7 @@ void KOMO::setPlace(double time, const char* object, const char* placeRef, int v
   //disconnect object from grasp ref
   setKinematicSwitch(time, true, "delete", NULL, object);
 
-  //connect object to table
+  //connect object to placeRef
   mlr::Transformation rel = 0;
   rel.pos.set(0,0, .5*(height(world, object) + height(world, placeRef)));
   setKinematicSwitch(time, true, "transXYPhiZero", placeRef, object, rel );
@@ -583,8 +586,10 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
     if(n->keys.N && n->keys.last().startsWith("komo")){
       double time=n->get<double>(); //komo tag needs to be double valued!
       if(n->keys.last()=="komoGrasp")         setGrasp(phase+time, *symbols(0), *symbols(1), verbose);
-      else if(n->keys.last()=="komoPlace")    setPlace(phase+time, *symbols(0), *symbols(1), verbose);
-      else if(n->keys.last()=="komoHandover") setHandover(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
+      else if(n->keys.last()=="komoPlace"){
+        if(symbols.N==2) setPlace(phase+time, NULL, *symbols(0), *symbols(1), verbose);
+        else  setPlace(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
+      }else if(n->keys.last()=="komoHandover") setHandover(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
       else if(n->keys.last()=="komoPush")     setPush(phase+time, phase+time+1., *symbols(0), *symbols(1), *symbols(2), verbose); //TODO: the +1. assumes pushes always have duration 1
       else if(n->keys.last()=="komoDrop")     setDrop(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
       else if(n->keys.last()=="komoAttach"){

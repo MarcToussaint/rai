@@ -90,8 +90,8 @@ struct KOMO{
   void setHoming(double startTime=-1., double endTime=-1., double prec=1e-1);
   void setSquaredQAccelerations(double startTime=-1., double endTime=-1., double prec=1.);
   void setSquaredQVelocities(double startTime=-1., double endTime=-1., double prec=1.);
-  void setFixEffectiveJoints(double startTime=-1., double endTime=-1., double prec=1e2);
-  void setFixSwitchedObjects(double startTime=-1., double endTime=-1., double prec=1e2);
+  void setFixEffectiveJoints(double startTime=-1., double endTime=-1., double prec=1e3);
+  void setFixSwitchedObjects(double startTime=-1., double endTime=-1., double prec=1e3);
   void setSquaredQuaternionNorms(double startTime=-1., double endTime=-1., double prec=1e1);
 
   //-- tasks (tasks) mid-level
@@ -117,7 +117,7 @@ struct KOMO{
 
   //-- tasks (cost/constraint terms) high-level (rough, for LGP)
   void setGrasp(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=1e1, double timeToLift=.15);
-  void setPlace(double time, const char* object, const char* placeRef, int verbose=0);
+  void setPlace(double time, const char *endeff, const char* object, const char* placeRef, int verbose=0);
   void setGraspStick(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=1e1, double timeToLift=.15);
   void setPlaceFixed(double time, const char* endeffRef, const char* object, const char* placeRef, const mlr::Transformation& worldPose, int verbose=0);
   void setGraspSlide(double startTime, double endTime, const char* endeffRef, const char* object, const char* placeRef, int verbose=0, double weightFromTop=1e1);
