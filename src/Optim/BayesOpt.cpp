@@ -1,9 +1,9 @@
 #include "BayesOpt.h"
-//#include <Plot/plot.h>
+#include <Plot/plot.h>
 
 #include <Algo/MLcourse.h>
 
-BayesOpt::BayesOpt(const ScalarFunction& _f, const arr& bounds_lo, const arr& bounds_hi, double init_lengthScale, OptOptions o)
+BayesOpt::BayesOpt(const ScalarFunction& _f, const arr& bounds_lo, const arr& bounds_hi, double init_lengthScale, double prior_var, OptOptions o)
   : f(_f),
     bounds_lo(bounds_lo), bounds_hi(bounds_hi),
     f_now(NULL), f_smaller(NULL),
@@ -18,7 +18,7 @@ BayesOpt::BayesOpt(const ScalarFunction& _f, const arr& bounds_lo, const arr& bo
   kernel_now->type = kernel_smaller->type = DefaultKernelFunction::Gauss; //TODO: ugly!!
 
   kernel_now->hyperParam1 = ARR(init_lengthScale);
-  kernel_now->hyperParam2 = ARR(1.);
+  kernel_now->hyperParam2 = ARR(prior_var);
   kernel_smaller->hyperParam1 = kernel_now->hyperParam1;
   kernel_smaller->hyperParam1 /= 2.;
   kernel_smaller->hyperParam2 = kernel_now->hyperParam2;
@@ -52,7 +52,7 @@ void BayesOpt::run(uint maxIt){
   for(uint i=0;i<maxIt;i++) step();
 }
 
-void BayesOpt::report(bool display){
+void BayesOpt::report(bool display, const ScalarFunction& f){
   if(!f_now) return;
   cout <<"mean=" <<f_now->mu <<" var=" <<kernel_now->hyperParam2.scalar() <<endl;
 
@@ -62,6 +62,9 @@ void BayesOpt::report(bool display){
   X_grid += repmat(bounds_lo, X_grid.d0, 1);
   arr y_grid = f_now->evaluate(X_grid, s_grid);
   s_grid = sqrt(s_grid);
+
+  arr f_grid(X_grid.d0);
+  if(f) for(uint i=0;i<X_grid.d0;i++) f_grid(i) = f(NoArr, NoArr, X_grid[i]);
 
   arr s2_grid;
   arr y2_grid = f_smaller->evaluate(X_grid, s2_grid);
@@ -78,15 +81,17 @@ void BayesOpt::report(bool display){
     locmin2_y.append(l.fx);
   }
 
-//  plotGnuplot();
-//  plotClear();
-//  plotFunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
+  plotGnuplot();
+  plotClear();
+  plotFunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
 //  plotFunction(X_grid, y2_grid);
-//  plotFunction(X_grid, y2_grid-s2_grid);
-//  plotPoints(data_X, data_y);
+  plotFunction(X_grid, y_grid-2.*s_grid);
+  plotFunction(X_grid, y2_grid-2.*s2_grid);
+  if(f) plotFunction(X_grid, f_grid);
+  plotPoints(data_X, data_y);
 //  plotPoints(locmin_X, locmin_y);
 //  plotPoints(locmin2_X, locmin2_y);
-//  plot(false);
+  plot(false);
 }
 
 void BayesOpt::addDataPoint(const arr& x, double y){
@@ -107,8 +112,8 @@ void BayesOpt::addDataPoint(const arr& x, double y){
 }
 
 void BayesOpt::reOptimizeAlphaMinima(){
-  alphaMinima_now.newton.f = f_now->getF(-1.);
-  alphaMinima_smaller.newton.f = f_smaller->getF(-1.);
+  alphaMinima_now.newton.f = f_now->getF(-2.);
+  alphaMinima_smaller.newton.f = f_smaller->getF(-2.);
 
   alphaMinima_now.reOptimizeAllPoints();
   alphaMinima_now.run(20);

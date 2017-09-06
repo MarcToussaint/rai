@@ -84,6 +84,7 @@ void GlobalIterativeNewton::reOptimizeAllPoints(){
   arr X;
   for(LocalMinimum& m:localMinima) X.append(m.x);
   X.reshape(localMinima.N, X.N/localMinima.N);
+  rndGauss(X, .01, true);
   localMinima.clear();
   for(uint i=0;i<X.d0;i++) addRunFrom(*this, X[i]);
 }

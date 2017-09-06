@@ -116,7 +116,10 @@ double DefaultKernelFunction::k(const arr& x1, const arr& x2, arr& gx1, arr& Hx1
     type = (KernelType) mlr::getParameter<uint>("ML/KernelType",1);
     switch(type){
       case readFromCfg: HALT("???");  break;
-      case Gauss: hyperParam1 = ARR( mlr::sqr(mlr::getParameter<double>("ML/KernelWidth")) );  break;
+      case Gauss:
+        hyperParam1 = ARR( mlr::sqr(mlr::getParameter<double>("ML/KernelWidth")) );
+        hyperParam2 = ARR( mlr::sqr(mlr::getParameter<double>("ML/PriorSdv")) );
+        break;
     }
   }
   double k = hyperParam2.scalar()*::exp(-sqrDistance(x1,x2)/hyperParam1.scalar());

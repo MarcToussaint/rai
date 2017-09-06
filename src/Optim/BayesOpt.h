@@ -21,12 +21,12 @@ struct BayesOpt{
   double lengthScale;
 
   //lengthScale is always relative to hi-lo
-  BayesOpt(const ScalarFunction& f, const arr& bounds_lo, const arr& bounds_hi, double init_lengthScale=1., OptOptions o=NOOPT);
+  BayesOpt(const ScalarFunction& f, const arr& bounds_lo, const arr& bounds_hi, double init_lengthScale=1., double prior_var=1., OptOptions o=NOOPT);
   ~BayesOpt();
 
   void step();
   void run(uint maxIt=10);
-  void report(bool display=true);
+  void report(bool display=true, const ScalarFunction& f=ScalarFunction());
 
 private:
   void addDataPoint(const arr& x, double y); //and update the regressions
