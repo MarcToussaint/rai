@@ -279,11 +279,11 @@ void FeatherstoneInterface::update(){
           F_Link& link=tree(f->ID);
           link.ID = f->ID;
           link.X = f->X;
-          if(f->link) { //is not a root
-              link.parent = f->link->from->ID;
-              link.Q = f->link->Q;
+          if(f->parent) { //is not a root
+              link.parent = f->parent->ID;
+              link.Q = f->Q;
               mlr::Joint *j;
-              if((j=f->joint())){
+              if((j=f->joint)){
                   link.type   = j->type;
                   link.qIndex = j->qIndex;
               }else{
@@ -302,7 +302,7 @@ void FeatherstoneInterface::update(){
       for(mlr::Frame *f: K.frames) {
         F_Link& link=tree(f->ID);
         link.X = f->X;
-        if(f->link) link.Q = f->link->Q;
+        if(f->parent) link.Q = f->Q;
 
         if(f->inertia){
           link.force=f->inertia->force;

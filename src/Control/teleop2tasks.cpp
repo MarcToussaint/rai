@@ -192,7 +192,7 @@ void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float cal
   //base movement
   arr drive_des;
   double y_c,x_c,phi_c;
-  mlr::Joint *trans = K.getFrameByName("worldTranslationRotation")->joint();
+  mlr::Joint *trans = K.getFrameByName("worldTranslationRotation")->joint;
   x_c = base->PD().y_target(trans->qIndex+0);
   y_c = base->PD().y_target(trans->qIndex+1);
   phi_c = base->PD().y_target(trans->qIndex+2);

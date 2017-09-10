@@ -165,7 +165,7 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState, const mlr::KinematicWorld& K)
     case 1: { //homing
       cout <<"homing" <<endl;
       homing->PD().setTarget(q0);
-      mlr::Joint *j = K.getFrameByName("worldTranslationRotation")->joint();
+      mlr::Joint *j = K.getFrameByName("worldTranslationRotation")->joint;
       if(j){
         arr b;
         base->map->phi(b, NoArr, K);

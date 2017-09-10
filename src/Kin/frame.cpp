@@ -12,31 +12,33 @@
 // Frame
 //
 
-mlr::Frame::Frame(KinematicWorld& _world, const Frame* copyFrame)
-  : K(_world){
+mlr::Frame::Frame(KinematicWorld& _K, const Frame* copyFrame)
+  : K(_K){
 
   ID=K.frames.N;
   K.frames.append(this);
   if(copyFrame){
     const Frame& f = *copyFrame;
+    Q = copyFrame->Q;
     name=f.name; X=f.X; ats=f.ats; active=f.active;
     //we cannot copy link! because we can't know if the frames already exist. KinematicWorld::copy copies the rel's !!
-    if(copyFrame->shape) new Shape(this, copyFrame->shape);
-    if(copyFrame->inertia) new Inertia(this, copyFrame->inertia);
+    if(copyFrame->joint) new Joint(*this, copyFrame->joint);
+    if(copyFrame->shape) new Shape(*this, copyFrame->shape);
+    if(copyFrame->inertia) new Inertia(*this, copyFrame->inertia);
   }
 }
 
 mlr::Frame::~Frame() {
-  while(outLinks.N) delete outLinks.last()->link;
-  if(link) delete link;
+  if(joint) delete joint;
   if(shape) delete shape;
   if(inertia) delete inertia;
+  if(parent) unLink();
+  while(outLinks.N) outLinks.last()->unLink();
   K.frames.removeValue(this);
   listReindex(K.frames);
-  K.calc_q();
 }
 
-void mlr::Frame::parseAts(const Graph& ats) {
+void mlr::Frame::read(const Graph& ats) {
   //interpret some of the attributes
   arr x;
   mlr::String str;
@@ -46,7 +48,7 @@ void mlr::Frame::parseAts(const Graph& ats) {
   //mass properties
   double d;
   if(ats.get(d, "mass")) {
-    inertia = new Inertia(this);
+    inertia = new Inertia(*this);
     inertia->mass=d;
     inertia->matrix.setId();
     inertia->matrix *= .2*d;
@@ -56,15 +58,19 @@ void mlr::Frame::parseAts(const Graph& ats) {
 
   // add shape if there is no shape exists yet
   if(ats.getNode("type") && !shape){
-    shape = new Shape(this);
+    shape = new Shape(*this);
     shape->read(ats);
   }
 }
 
 void mlr::Frame::write(std::ostream& os) const {
   if(shape) shape->write(os);
-  if(link) link->write(os);
-  else if(!X.isZero()) os <<" X=<T " <<X <<" > ";
+  if(parent){
+    if(joint) joint->write(os);
+    if(!Q.isZero()) os <<" Q=<T " <<Q <<" > ";
+  }else{
+    if(!X.isZero()) os <<" X=<T " <<X <<" > ";
+  }
 //  if(mass) os <<"mass=" <<mass <<' ';
 //  if(type!=BT_dynamic) os <<"dyntype=" <<(int)type <<' ';
 //  uint i; Node *a;
@@ -72,95 +78,58 @@ void mlr::Frame::write(std::ostream& os) const {
 //      if(a->keys(0)!="X" && a->keys(0)!="pose") os <<*a <<' ';
 }
 
-namespace mlr {
-//std::ostream& operator<<(std::ostream& os, const Frame& x) { x.write(os); return os; }
-//std::ostream& operator<<(std::ostream& os, const Shape& x) { x.write(os); return os; }
-//std::ostream& operator<<(std::ostream& os, const Joint& x) { x.write(os); return os; }
-}
+mlr::Frame* mlr::Frame::insertPreLink(const mlr::Transformation &A){
+  //new frame between: parent -> f -> this
+  Frame *f = new Frame(K);
+  if(name) f->name <<'>' <<name;
 
-mlr::Link::Link(mlr::Frame *_from, mlr::Frame *_to, mlr::Link *copyLink)
-  : from(_from), to(_to) {
-  CHECK(from, "needs a non-NULL frame");
-  CHECK(to, "needs a non-NULL frame");
-  CHECK(!to->link, "the Frame already has a Link")
-  to->link = this;
-  from->outLinks.append(to);
-  if(copyLink){
-    Q = copyLink->Q;
-    if(copyLink->joint)
-      new Joint(this, copyLink->joint);
+  if(parent){
+    f->linkFrom(parent);
+    parent->outLinks.removeValue(this);
   }
+  parent=f;
+  parent->outLinks.append(this);
+
+  f->Q = A;
+
+  return f;
 }
 
-mlr::Link::~Link(){
-  from->outLinks.removeValue(to);
-  if(joint) delete joint;
-  to->link = NULL;
+mlr::Frame* mlr::Frame::insertPostLink(const mlr::Transformation &B){
+  NIY;
+  //new frame between: parent -> this -> f
+  Frame *f = new Frame(K);
+  if(name) f->name <<'<' <<name;
+
+  //reconnect all outlinks from -> to
+  f->outLinks = outLinks;
+  for(Frame *b:outLinks) b->parent = f;
+  outLinks.clear();
+  f->Q = B;
+  f->linkFrom(this);
+
+  return f;
 }
 
-mlr::Link* mlr::Link::insertPreLink(const mlr::Transformation &A){
-  //new frame between: from -> f -> to
-  Frame *f = new Frame(from->K);
-  if(to->name) f->name <<'>' <<to->name;
-
-  //disconnect from -> to
-  from->outLinks.removeValue(to);
-
-  //connect from -> f with new Link and no joint
-  Link *newLink = new Link(from, f);
-  newLink->Q = A;
-  f->link = newLink;
-
-  //connect f -> to with old Link and this joint
-  f->outLinks.append(to);
-  from = f;
-
-  return newLink;
+void mlr::Frame::unLink(){
+  CHECK(parent,"");
+  parent->outLinks.removeValue(this);
+  parent=NULL;
+  Q.setZero();
+  if(joint){ delete joint; joint=NULL; }
 }
 
-mlr::Link* mlr::Link::insertPostLink(const mlr::Transformation &B){
-  //new frame between: from -> f -> to
-  Frame *f = new Frame(from->K);
-  if(to->name) f->name <<'<' <<to->name;
-
-  //disconnect from -> to
-  from->outLinks.removeValue(to);
-
-  //connect f->to with new Link and no joint
-  CHECK_EQ(to->link, this, "");
-  to->link = NULL; //setting this to NULL enables the new in the next line
-  Link *newLink = new Link(f, to);
-  newLink->Q = B;
-  to->link = newLink;
-
-  //connect from->to: associate to->link to f
-  from->outLinks.append(f);
-  f->link = this;
-  this->to = f;
-
-  return newLink;
+void mlr::Frame::linkFrom(mlr::Frame *_parent){
+  CHECK(!parent,"");
+  parent=_parent;
+  parent->outLinks.append(this);
 }
 
-void mlr::Link::write(std::ostream &os) const{
-  if(joint) joint->write(os);
-  if(!Q.isZero()) os <<" Q=<T " <<Q <<" > ";
-}
-
-mlr::Joint *mlr::Frame::joint() const{
-  if(!link) return NULL;
-  return link->joint;
-}
-
-mlr::Frame *mlr::Frame::from() const{
-  if(!link) return NULL;
-  return link->from;
-}
-
-mlr::Joint::Joint(Link *_link, Joint *copyJoint)
-  : dim(0), qIndex(UINT_MAX), q0(0.), H(1.), mimic(NULL), link(_link), constrainToZeroVel(false) {
-  CHECK(!link->joint, "the Link already has a Joint");
-  link->joint = this;
-  link->to->K.reset_q();
+mlr::Joint::Joint(Frame &f, Joint *copyJoint)
+  : frame(f), dim(0), qIndex(UINT_MAX), q0(0.), H(1.), mimic(NULL){
+  CHECK(!frame.joint, "the Link already has a Joint");
+  frame.joint = this;
+  frame.K.reset_q();
 
   if(copyJoint){
     qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l); constrainToZeroVel=copyJoint->constrainToZeroVel;
@@ -168,7 +137,7 @@ mlr::Joint::Joint(Link *_link, Joint *copyJoint)
     active=copyJoint->active;
 
     if(copyJoint->mimic){
-      mimic = link->to->K.frames(copyJoint->mimic->link->to->ID)->joint();
+      mimic = frame.K.frames(copyJoint->mimic->frame.ID)->joint;
     }
 
     if(copyJoint->uncertainty){
@@ -178,14 +147,15 @@ mlr::Joint::Joint(Link *_link, Joint *copyJoint)
 }
 
 mlr::Joint::~Joint() {
-  link->to->K.reset_q();
-  link->joint = NULL;
+  frame.K.reset_q();
+  frame.joint = NULL;
+  //if(frame.parent) frame.unLink();
 }
 
 void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
-  mlr::Transformation &Q = link->Q;
+  mlr::Transformation &Q = frame.Q;
     if(mimic){
-        Q = mimic->link->Q;
+        Q = mimic->frame.Q;
     }else{
         switch(type) {
         case JT_hingeX: {
@@ -403,12 +373,12 @@ uint mlr::Joint::getDimFromType() const {
 }
 
 void mlr::Joint::makeRigid(){
-  type=JT_rigid; link->to->K.reset_q();
+  type=JT_rigid; frame.K.reset_q();
 }
 
 void mlr::Joint::read(const Graph &G){
-    double d=0.;
-    mlr::String str;
+  double d=0.;
+  mlr::String str;
 
   mlr::Transformation A=0, B=0;
 
@@ -432,38 +402,21 @@ void mlr::Joint::read(const Graph &G){
 
   if(!B.isZero()){
     //new frame between: from -> f -> to
-    CHECK(link->to->outLinks.N==1,"");
-    Frame *follow = link->to->outLinks.scalar();
+    CHECK(frame.outLinks.N==1,"");
+    Frame *follow = frame.outLinks.scalar();
 
-    CHECK(follow->link, "");
-    CHECK(!follow->joint(), "");
-    follow->link->Q = B;
+    CHECK(follow->parent, "");
+    CHECK(!follow->joint, "");
+    follow->Q = B;
     B.setZero();
   }
 
   if(!A.isZero()){
-    link->insertPreLink(A);
-//    //new frame between: from -> f -> to
-//    Frame *to = link->to;
-//    Frame *from = link->from;
-//    Frame *f = new Frame(from->K);
-//    if(to->name) f->name <<'>' <<to->name;
-
-//    //disconnect from -> to
-//    from->outLinks.removeValue(to);
-
-//    //connect from -> f with new Link and no joint
-//    f->link = new Link(from, f);
-//    f->link->Q = A;
-
-//    //connect f -> to with old Link and this joint
-//    f->outLinks.append(to);
-//    link->from = f;
-
+    frame.insertPreLink(A);
     A.setZero();
   }
 
-  G.get(link->Q, "Q");
+  G.get(frame.Q, "Q");
   G.get(H, "ctrl_H");
   if(G.get(d, "type")) type=(JointType)d;
   else if(G.get(str, "type")) { str >>type; }
@@ -473,7 +426,7 @@ void mlr::Joint::read(const Graph &G){
 
   if(G.get(d, "q")){
     if(!dim){ //HACK convention
-      link->Q.rot.setRad(d, 1., 0., 0.);
+      frame.Q.rot.setRad(d, 1., 0., 0.);
     }else{
       CHECK(dim, "setting q (in config file) for 0-dim joint");
       q0 = consts<double>(d, dim);
@@ -484,7 +437,7 @@ void mlr::Joint::read(const Graph &G){
     calc_Q_from_q(q0, 0);
   }else{
 //    link->Q.setZero();
-    q0 = calc_q_from_Q(link->Q);
+    q0 = calc_q_from_Q(frame.Q);
   }
 
   //limit
@@ -512,12 +465,12 @@ void mlr::Joint::write(std::ostream& os) const {
   if(H) os <<" ctrl_H="<<H;
   if(limits.N) os <<" limits=[" <<limits <<"]";
   if(mimic){
-    os <<" mimic=" <<mimic->to()->name;
+    os <<" mimic=" <<mimic->frame.name;
   }
 
   Node *n;
-  if((n=to()->ats["Q"])) os <<*n <<' ';
-  if((n=to()->ats["q"])) os <<*n <<' ';
+  if((n=frame.ats["Q"])) os <<*n <<' ';
+  if((n=frame.ats["q"])) os <<*n <<' ';
 }
 
 //===========================================================================
@@ -525,14 +478,13 @@ void mlr::Joint::write(std::ostream& os) const {
 // Shape
 //
 
-mlr::Shape::Shape(Frame* b, const Shape *copyShape, bool referenceMeshOnCopy)
-  : frame(b), type(ST_none) {
+mlr::Shape::Shape(Frame &f, const Shape *copyShape, bool referenceMeshOnCopy)
+  : frame(f), type(ST_none) {
   size = {1.,1.,1.,.1};
   mesh.C = consts<double>(.8, 3); //color[0]=color[1]=color[2]=.8; color[3]=1.;
 
-  CHECK(b,"");
-  CHECK(!b->shape, "this frame already has a geom attached");
-  b->shape = this;
+  CHECK(!frame.shape, "this frame already has a geom attached");
+  frame.shape = this;
   if(copyShape){
     const Shape& s = *copyShape;
     type=s.type;
@@ -555,7 +507,7 @@ mlr::Shape::Shape(Frame* b, const Shape *copyShape, bool referenceMeshOnCopy)
 }
 
 mlr::Shape::~Shape() {
-  frame->shape = NULL;
+  frame.shape = NULL;
 }
 
 void mlr::Shape::read(const Graph& ats) {
@@ -632,8 +584,8 @@ void mlr::Shape::read(const Graph& ats) {
       mesh.center();
     }
 //    if(c.length()>1e-8 && !ats["rel_includes_mesh_center"]){
-//      frame->link->Q.addRelativeTranslation(c);
-//      frame->ats.newNode<bool>({"rel_includes_mesh_center"}, {}, true);
+//      frame.link->Q.addRelativeTranslation(c);
+//      frame.ats.newNode<bool>({"rel_includes_mesh_center"}, {}, true);
 //    }
   }
 
@@ -669,8 +621,8 @@ void mlr::Shape::read(const Graph& ats) {
     if(mass>0.){
       if(!body->inertia) body->iner
       NIY;
-//      frame->mass += mass;
-//      frame->inertia += I;
+//      frame.mass += mass;
+//      frame.inertia += I;
     }
   }
 #endif
@@ -681,28 +633,28 @@ void mlr::Shape::write(std::ostream& os) const {
   os <<" size=[" <<size <<"]";
 
   Node *n;
-  if((n=frame->ats["color"])) os <<*n <<' ';
-  if((n=frame->ats["mesh"])) os <<*n <<' ';
-  if((n=frame->ats["meshscale"])) os <<*n <<' ';
+  if((n=frame.ats["color"])) os <<*n <<' ';
+  if((n=frame.ats["mesh"])) os <<*n <<' ';
+  if((n=frame.ats["meshscale"])) os <<*n <<' ';
   if(cont) os <<"contact, ";
 }
 
 #ifdef MLR_GL
 void mlr::Shape::glDraw(OpenGL& gl) {
   //set name (for OpenGL selection)
-  glPushName((frame->ID <<2) | 1);
-  if(frame->K.orsDrawColors && !frame->K.orsDrawIndexColors){
+  glPushName((frame.ID <<2) | 1);
+  if(frame.K.orsDrawColors && !frame.K.orsDrawIndexColors){
     if(mesh.C.N) glColor(mesh.C); //color[0], color[1], color[2], color[3]*world.orsDrawAlpha);
     else   glColor(.5, .5, .5);
   }
-  if(frame->K.orsDrawIndexColors) glColor3b((frame->ID>>16)&0xff, (frame->ID>>8)&0xff, frame->ID&0xff);
+  if(frame.K.orsDrawIndexColors) glColor3b((frame.ID>>16)&0xff, (frame.ID>>8)&0xff, frame.ID&0xff);
 
 
   double GLmatrix[16];
-  frame->X.getAffineMatrixGL(GLmatrix);
+  frame.X.getAffineMatrixGL(GLmatrix);
   glLoadMatrixd(GLmatrix);
 
-  if(!frame->K.orsDrawShapes) {
+  if(!frame.K.orsDrawShapes) {
     double scale=.33*(size(0)+size(1)+size(2) + 2.*size(3)); //some scale
     if(!scale) scale=1.;
     scale*=.3;
@@ -710,51 +662,51 @@ void mlr::Shape::glDraw(OpenGL& gl) {
     glColor(0, 0, .5);
     glDrawSphere(.1*scale);
   }
-  if(frame->K.orsDrawShapes) {
+  if(frame.K.orsDrawShapes) {
     switch(type) {
-      case mlr::ST_none: LOG(-1) <<"Shape '" <<frame->name <<"' has no joint type";  break;
+      case mlr::ST_none: LOG(-1) <<"Shape '" <<frame.name <<"' has no joint type";  break;
       case mlr::ST_box:
-        if(frame->K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(frame->K.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
+        if(frame.K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        else if(frame.K.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
         else glDrawBox(size(0), size(1), size(2));
         break;
       case mlr::ST_sphere:
-        if(frame->K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(frame->K.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
+        if(frame.K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        else if(frame.K.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
         else glDrawSphere(size(3));
         break;
       case mlr::ST_cylinder:
-        if(frame->K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(frame->K.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
+        if(frame.K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        else if(frame.K.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
         else glDrawCylinder(size(3), size(2));
         break;
       case mlr::ST_capsule:
-        if(frame->K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(frame->K.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
+        if(frame.K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        else if(frame.K.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
         else glDrawCappedCylinder(size(3), size(2));
         break;
       case mlr::ST_retired_SSBox:
         HALT("deprecated??");
-        if(frame->K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(frame->K.orsDrawMeshes){
+        if(frame.K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        else if(frame.K.orsDrawMeshes){
           if(!mesh.V.N) mesh.setSSBox(size(0), size(1), size(2), size(3));
           mesh.glDraw(gl);
         }else NIY;
         break;
       case mlr::ST_marker:
-        if(frame->K.orsDrawMarkers){
+        if(frame.K.orsDrawMarkers){
           glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.); glDrawAxes(size(0));
         }
         break;
       case mlr::ST_mesh:
         CHECK(mesh.V.N, "mesh needs to be loaded to draw mesh object");
-        if(frame->K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        if(frame.K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
         break;
       case mlr::ST_ssCvx:
         CHECK(sscCore.V.N, "sscCore needs to be loaded to draw mesh object");
         if(!mesh.V.N) mesh.setSSCvx(sscCore, size(3));
-        if(frame->K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        if(frame.K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
         break;
       case mlr::ST_ssBox:
@@ -763,29 +715,29 @@ void mlr::Shape::glDraw(OpenGL& gl) {
           sscCore.scale(size(0)-2.*size(3), size(1)-2.*size(3), size(2)-2.*size(3));
           mesh.setSSCvx(sscCore, size(3));
         }
-        if(frame->K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        if(frame.K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
         break;
       case mlr::ST_pointCloud:
         CHECK(mesh.V.N, "mesh needs to be loaded to draw point cloud object");
-        if(frame->K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
+        if(frame.K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
         break;
 
       default: HALT("can't draw that geom yet");
     }
   }
-  if(frame->K.orsDrawZlines) {
+  if(frame.K.orsDrawZlines) {
     glColor(0, .7, 0);
     glBegin(GL_LINES);
     glVertex3d(0., 0., 0.);
-    glVertex3d(0., 0., -frame->X.pos.z);
+    glVertex3d(0., 0., -frame.X.pos.z);
     glEnd();
   }
 
-  if(frame->K.orsDrawBodyNames && frame){
+  if(frame.K.orsDrawBodyNames){
     glColor(1,1,1);
-    glDrawText(frame->name, 0, 0, 0);
+    glDrawText(frame.name, 0, 0, 0);
   }
 
   glPopName();
@@ -794,9 +746,9 @@ void mlr::Shape::glDraw(OpenGL& gl) {
 #endif
 
 
-mlr::Inertia::Inertia(mlr::Frame *f, Inertia *copyInertia) : frame(f), type(BT_dynamic) {
-  CHECK(!frame->inertia, "this frame already has inertia");
-  frame->inertia = this;
+mlr::Inertia::Inertia(Frame &f, Inertia *copyInertia) : frame(f), type(BT_dynamic) {
+  CHECK(!frame.inertia, "this frame already has inertia");
+  frame.inertia = this;
   if(copyInertia){
     mass = copyInertia->mass;
     matrix = copyInertia->matrix;
@@ -808,7 +760,7 @@ mlr::Inertia::Inertia(mlr::Frame *f, Inertia *copyInertia) : frame(f), type(BT_d
 }
 
 mlr::Inertia::~Inertia(){
-  frame->inertia = NULL;
+  frame.inertia = NULL;
 }
 
 void mlr::Inertia::read(const Graph& ats){

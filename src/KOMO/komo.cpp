@@ -140,7 +140,7 @@ void KOMO::setModel(const mlr::KinematicWorld& K,
 
 void KOMO::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese){
   mlr::Joint *j;
-  for(mlr::Frame *f:world.frames) if((j=f->joint())){
+  for(mlr::Frame *f:world.frames) if((j=f->joint)){
     bool lock;
     if(OnlyTheseOrNotThese){ //only these
       lock=true;
@@ -277,7 +277,7 @@ void KOMO::setKS_slider(double time, bool before, const char* obj, const char* s
 void KOMO::setHoming(double startTime, double endTime, double prec){
   uintA bodies;
   mlr::Joint *j;
-  for(mlr::Frame *f:world.frames) if((j=f->joint()) && !j->constrainToZeroVel && j->qDim()>0) bodies.append(f->ID);
+  for(mlr::Frame *f:world.frames) if((j=f->joint) && !j->constrainToZeroVel && j->qDim()>0) bodies.append(f->ID);
   setTask(startTime, endTime, new TaskMap_qItself(bodies, true), OT_sumOfSqr, NoArr, prec); //world.q, prec);
 }
 

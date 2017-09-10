@@ -40,8 +40,8 @@ void TEST(GJK_Jacobians) {
   mlr::Joint j1(&base, &b1), J1(&b1, &B1), j2(&base, &b2), J2(&b2, &B2);
   mlr::Shape s1(&B1), s2(&B2);
   j1.type = j2.type = mlr::JT_trans3;
-  j1.link->insertPreLink(mlr::Transformation(0))->Q.addRelativeTranslation(1,1,1);
-  j2.link->insertPreLink(mlr::Transformation(0))->Q.addRelativeTranslation(-1,-1,1);
+  j1.frame->insertPreLink(mlr::Transformation(0))->Q.addRelativeTranslation(1,1,1);
+  j2.frame->insertPreLink(mlr::Transformation(0))->Q.addRelativeTranslation(-1,-1,1);
   J1.type = J2.type = mlr::JT_quatBall;
   s1.type = s2.type = mlr::ST_ssCvx;
   s1.size(3) = .5;  s2.size(3) = .5;

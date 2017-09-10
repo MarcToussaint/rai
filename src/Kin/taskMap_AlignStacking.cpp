@@ -30,7 +30,7 @@ TaskMap_AlignStacking::TaskMap_AlignStacking(const mlr::KinematicWorld& G, const
 void TaskMap_AlignStacking::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
   mlr::Frame *b=G.frames(i);
 
-  mlr::Joint *j=b->joint();
+  mlr::Joint *j=b->joint;
   CHECK(j,"has no support??");
 
   mlr::Frame *b_support = j->from();

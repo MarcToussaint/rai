@@ -68,7 +68,7 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
       case mlr::ST_mesh: {
         //check if there is a specific swiftfile!
         mlr::String *filename;
-        filename = s->frame->ats.find<mlr::String>("swiftfile");
+        filename = s->frame.ats.find<mlr::String>("swiftfile");
         if(filename) {
           r=scene->Add_General_Object(*filename, INDEXshape2swift(f->ID), false);
           if(!r) HALT("--failed!");
@@ -175,9 +175,9 @@ void SwiftInterface::initActivations(const mlr::KinematicWorld& world, uint pare
   //shapes within a body
 //  for(mlr::Frame *b: world.frames) deactivate(b->shapes);
   //deactivate along edges...
-  for(mlr::Frame *f: world.frames) if(f->link){
+  for(mlr::Frame *f: world.frames) if(f->parent){
     //cout <<"deactivating edge pair"; listWriteNames({e->from, e->to}, cout); cout <<endl;
-    deactivate({ f->link->from, f });
+    deactivate({ f->parent, f });
   }
   //deactivate along trees...
   for(mlr::Frame *b: world.frames) {
@@ -185,7 +185,7 @@ void SwiftInterface::initActivations(const mlr::KinematicWorld& world, uint pare
     group.append(b);
     //all rigid links as well
     for(uint i=0;i<group.N;i++){
-      for(mlr::Frame *b2: group(i)->outLinks) if(!b2->link->joint) group.setAppend(b2);
+      for(mlr::Frame *b2: group(i)->outLinks) if(!b2->joint) group.setAppend(b2);
     }
     for(uint l=0; l<parentLevelsToDeactivate; l++){
       children.clear();
@@ -193,7 +193,7 @@ void SwiftInterface::initActivations(const mlr::KinematicWorld& world, uint pare
       group.setAppend(children);
       //all rigid links as well
       for(uint i=0;i<group.N;i++){
-        for(mlr::Frame *b2: group(i)->outLinks) if(!b2->link->joint) group.setAppend(b2);
+        for(mlr::Frame *b2: group(i)->outLinks) if(!b2->joint) group.setAppend(b2);
       }
     }
     deactivate(group);
@@ -358,7 +358,7 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       
       //relative rotation and translation of shapes
       mlr::Transformation rel;
-      rel.setDifference(global_ANN_shape->frame->X, s->frame->X);
+      rel.setDifference(global_ANN_shape->frame.X, s->frame.X);
       rel.rot.getMatrix(R.p);
       t = conv_vec2arr(rel.pos);
       
@@ -375,11 +375,11 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       
       proxy = new mlr::Proxy;
       world.proxies.append(proxy);
-      proxy->a=global_ANN_shape->frame->ID;
-      proxy->b=s->frame->ID;
+      proxy->a=global_ANN_shape->frame.ID;
+      proxy->b=s->frame.ID;
       proxy->d = _dists(0);
-      proxy->posA.set(&global_ANN_shape->mesh.V(_idx(0), 0));  proxy->posA = global_ANN_shape->frame->X * proxy->posA;
-      proxy->posB.set(&s->mesh.V(_i, 0));                      proxy->posB = s->frame->X * proxy->posB;
+      proxy->posA.set(&global_ANN_shape->mesh.V(_idx(0), 0));  proxy->posA = global_ANN_shape->frame.X * proxy->posA;
+      proxy->posB.set(&s->mesh.V(_i, 0));                      proxy->posB = s->frame.X * proxy->posB;
       proxy->normal = proxy->posA - proxy->posB;
       proxy->normal.normalize();
     }

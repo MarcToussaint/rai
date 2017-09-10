@@ -348,7 +348,7 @@ void TaskControlMethods::lockJointGroup(const char* groupname, mlr::KinematicWor
   }
   if(!lockJoints.N) lockJoints = consts<byte>(false, world.q.N);
   mlr::Joint *j;
-  for(mlr::Frame *f : world.frames) if((j=f->joint())){
+  for(mlr::Frame *f : world.frames) if((j=f->joint)){
     if(f->ats.getNode(groupname)){
       for(uint i=0;i<j->qDim();i++){
         lockJoints(j->qIndex+i) = lockThem;

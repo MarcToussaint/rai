@@ -49,7 +49,7 @@ void TaskMap_BeliefTransition::phi(arr &y, arr &J, const WorldL &G, double tau, 
   }
 
   for(mlr::Joint *j1 : G.elem(-1)->fwdActiveJoints) if(j1->uncertainty){
-    mlr::Joint *j0 = G.elem(-2)->frames(j1->to()->ID)->joint();
+    mlr::Joint *j0 = G.elem(-2)->frames(j1->frame.ID)->joint;
     CHECK(j0, "");
     CHECK(j0->uncertainty, "");
     CHECK_EQ(j0->dim, j1->dim, "");

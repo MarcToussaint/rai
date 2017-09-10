@@ -42,14 +42,14 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     //first search for the joint below frame
     Frame *f = to;
     for(;;){
-      if(!f->link) break;
-      if(f->link->joint) break;
-      f = f->link->from;
+      if(!f->parent) break;
+      if(f->joint) break;
+      f = f->parent;
     }
-    if(!f->link){
+    if(!f->joint){
       LOG(-1) <<"there were no deletable links below '" <<to->name <<"'! Deleted before?";
     }else{
-      delete f->link;
+      f->unLink();
     }
 #else
     //this deletes ALL links downward from to until a named or shape-attached one!
@@ -68,37 +68,39 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     }
 #endif
     G.calc_q();
-//    G.checkConsistency();
+    G.checkConsistency();
     return;
   }
 
   if(symbol==addJointZero || symbol==addActuated || symbol==insertJoint){
     //first find lowest frame below to
-    mlr::Transformation Q = 0;
-    while(to->link){
-      if(to->link->joint) break; //don't jump over joints
-      Q = to->link->Q * Q;
-      to = to->link->from;
+//    mlr::Transformation Q = 0;
+    while(to->parent){
+      if(to->joint) break; //don't jump over joints
+//      Q = to->Q * Q;
+      to = to->parent;
     }
 
     Joint *j = NULL;
     if(symbol!=insertJoint){
-      j = new Joint(from, to);
+//      if(!Q.isZero()){ //append another rigid link with -Q
+//        to->insertPreLink(-Q);
+//        to = to->parent;
+//      }
+      if(to->parent) to->unLink();
+      to->linkFrom(from);
+      j = new Joint(*to);
     }else{
       CHECK(!from, "from should not be specified");
-      CHECK(to->link, "to needs to have a link already");
-      Link *l = to->link->insertPostLink(mlr::Transformation(0));
-      j = new Joint(l);
+      CHECK(to->parent, "to needs to have a link already");
+      Frame *l = to->insertPreLink(mlr::Transformation(0));
+      j = new Joint(*l);
     }
     if(symbol==addActuated) j->constrainToZeroVel=false;
     else                    j->constrainToZeroVel=true;
     j->type = jointType;
     if(!jA.isZero()){
-      j->link->insertPreLink(jA);
-    }
-    if(!Q.isZero()){
-      j->link->insertPostLink(-Q);
-      G.checkConsistency();
+      j->frame.insertPreLink(jA);
     }
     G.calc_q();
     G.calc_fwdPropagateFrames();
@@ -109,19 +111,22 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     HALT("I think it is better if there is fixed slider mechanisms in the world, that may jump; no dynamic creation of bodies");
     Frame *slider1 = new Frame(G); //{ type=ST_box size=[.2 .1 .05 0] color=[0 0 0] }
     Frame *slider2 = new Frame(G); //{ type=ST_box size=[.2 .1 .05 0] color=[1 0 0] }
-    Shape *s1 = new Shape(slider1); s1->type=ST_box; s1->size={.2,.1,.05}; s1->mesh.C={0.,0,0};
-    Shape *s2 = new Shape(slider2); s2->type=ST_box; s2->size={.2,.1,.05}; s2->mesh.C={1.,0,0};
+    Shape *s1 = new Shape(*slider1); s1->type=ST_box; s1->size={.2,.1,.05}; s1->mesh.C={0.,0,0};
+    Shape *s2 = new Shape(*slider2); s2->type=ST_box; s2->size={.2,.1,.05}; s2->mesh.C={1.,0,0};
 
     //placement of the slider1 on the table -> fixed
-    Joint *j1 = new Joint(from, slider1);
+    slider1->linkFrom(from);
+    Joint *j1 = new Joint(*slider1);
     j1->type = JT_transXYPhi;
     j1->constrainToZeroVel=true;
     //the actual sliding translation -> articulated
-    Joint *j2 = new Joint(slider1, slider2);
+    slider2->linkFrom(slider1);
+    Joint *j2 = new Joint(*slider2);
     j2->type = JT_transX;
     j2->constrainToZeroVel=false;
     //orientation of the object on the slider2 -> fixed
-    Joint *j3 = new Joint(slider2, to);
+    to->linkFrom(slider2);
+    Joint *j3 = new Joint(*to);
     j3->type = JT_hingeZ;
     j3->constrainToZeroVel=true;
     NIY;//j3->B = jB;

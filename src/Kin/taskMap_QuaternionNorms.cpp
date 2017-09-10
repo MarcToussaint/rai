@@ -22,8 +22,7 @@ void TaskMap_QuaternionNorms::phi(arr &y, arr &J, const mlr::KinematicWorld &G, 
     y.resize(n);
     if(&J) J.resize(n, G.q.N).setZero();
     uint i=0;
-    mlr::Joint *j;
-    for(const mlr::Frame* f: G.frames) if((j=f->joint()) && (j->type==mlr::JT_quatBall || j->type==mlr::JT_free || j->type==mlr::JT_XBall)){
+    for(const mlr::Joint *j: G.fwdActiveJoints) if(j->type==mlr::JT_quatBall || j->type==mlr::JT_free || j->type==mlr::JT_XBall){
         arr q;
         if(j->type==mlr::JT_quatBall) q.referToRange(G.q, j->qIndex+0, j->qIndex+3);
         if(j->type==mlr::JT_XBall)    q.referToRange(G.q, j->qIndex+1, j->qIndex+4);
@@ -42,8 +41,7 @@ void TaskMap_QuaternionNorms::phi(arr &y, arr &J, const mlr::KinematicWorld &G, 
 
 uint TaskMap_QuaternionNorms::dim_phi(const mlr::KinematicWorld &G){
     uint i=0;
-    const mlr::Joint *j;
-    for(const mlr::Frame* f:G.frames) if((j=f->joint())){
+    for(const mlr::Joint* j:G.fwdActiveJoints){
         if(j->type==mlr::JT_quatBall || j->type==mlr::JT_free || j->type==mlr::JT_XBall) i++;
     }
     return i;

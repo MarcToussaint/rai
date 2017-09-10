@@ -180,7 +180,7 @@ void RTControllerSimulation::open() {
   Kd_base.resize(world->q.N).setZero();
   limits.resize(world->q.N,5).setZero();
   mlr::Joint *j;
-  for(mlr::Frame* f: world->frames) if((j=f->joint()) && j->qDim()>0){
+  for(mlr::Frame* f: world->frames) if((j=f->joint) && j->qDim()>0){
     arr *info;
     info = f->ats.find<arr>("gains");  if(info){
       for(uint i=0;i<j->qDim();i++){ Kp_base(j->qIndex+i)=info->elem(0); Kd_base(j->qIndex+i)=info->elem(1); }
@@ -201,7 +201,7 @@ void RTControllerSimulation::open() {
   this->ctrl_obs().u_bias = zeros(q.d0);
   this->ctrl_obs.deAccess();
 
-  j_baseTranslationRotation = world->getFrameByName("worldTranslationRotation")->joint();
+  j_baseTranslationRotation = world->getFrameByName("worldTranslationRotation")->joint;
 }
 
 void RTControllerSimulation::step() {

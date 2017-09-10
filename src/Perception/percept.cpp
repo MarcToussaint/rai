@@ -113,7 +113,7 @@ void PercPlane::syncWith(mlr::KinematicWorld &K){
     //cout << plane_name << " does not exist yet; adding it..." << endl;
     body = new mlr::Frame(K);
     body->name = plane_name;
-    mlr::Shape *shape = new mlr::Shape(body);
+    mlr::Shape *shape = new mlr::Shape(*body);
     shape->type = mlr::ST_pointCloud;
 //    shape = new mlr::Shape(K, *body);
 //    shape->name = plane_name;
@@ -191,7 +191,7 @@ void PercBox::syncWith(mlr::KinematicWorld &K){
     //cout << plane_name << " does not exist yet; adding it..." << endl;
     body = new mlr::Frame(K);
     body->name = box_name;
-    mlr::Shape *shape = new mlr::Shape(body);
+    mlr::Shape *shape = new mlr::Shape(*body);
     shape->type = mlr::ST_box;
   }
   body->X = transform;
@@ -244,9 +244,9 @@ void PercCluster::syncWith(mlr::KinematicWorld& K){
     //cout << cluster_name << " does not exist yet; adding it..." << endl;
     body = new mlr::Frame(K);
     body->name = cluster_name;
-    mlr::Shape *shape = new mlr::Shape(body);
+    mlr::Shape *shape = new mlr::Shape(*body);
     shape->type = mlr::ST_pointCloud;
-    shape = new mlr::Shape(body);
+    shape = new mlr::Shape(*body);
     shape->type = mlr::ST_marker;
     shape->size = consts<double>(.2,3);
 //    stored_clusters.append(id);
@@ -268,7 +268,7 @@ void PercAlvar::syncWith(mlr::KinematicWorld& K){
 //    cout << alvar_name << " does not exist yet; adding it..." << endl;
     body = new mlr::Frame(K);
     body->name = alvar_name;
-    mlr::Shape *shape = new mlr::Shape(body);
+    mlr::Shape *shape = new mlr::Shape(*body);
     shape->type = mlr::ST_marker;
     shape->size = consts<double>(.2,3);
 //    stored_alvars.append(id);
@@ -285,7 +285,7 @@ void OptitrackBody::syncWith(mlr::KinematicWorld &K){
     cout << optitrackbody_name << " does not exist yet; adding it..." << endl;
     body = new mlr::Frame(K);
     body->name = optitrackbody_name;
-    mlr::Shape *shape = new mlr::Shape(body);
+    mlr::Shape *shape = new mlr::Shape(*body);
     shape->type = mlr::ST_marker;
     shape->size = consts<double>(.1,3);
 //    stored_optitrackbodies.append(id);
@@ -302,7 +302,7 @@ void OptitrackMarker::syncWith(mlr::KinematicWorld &K){
     cout << optitrackmarker_name << " does not exist yet; adding it..." << endl;
     body = new mlr::Frame(K);
     body->name = optitrackmarker_name;
-    mlr::Shape *shape = new mlr::Shape(body);
+    mlr::Shape *shape = new mlr::Shape(*body);
     shape->type = mlr::ST_sphere;
     shape->size = consts<double>(.03, 3);
 //    stored_optitrackmarkers.append(id);

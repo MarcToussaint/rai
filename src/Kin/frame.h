@@ -42,79 +42,64 @@ namespace mlr{
 struct Frame {
   struct KinematicWorld& K;  ///< a Frame is uniquely associated with a KinematicConfiguration
   uint ID;                   ///< unique identifier
-  mlr::String name;          ///< name
-  Transformation X=0;        ///< body's absolute pose
+  String name;               ///< name
+  Frame *parent=NULL;        ///< parent frame
   FrameL outLinks;           ///< lists of in and out joints
+  Transformation Q=0;        ///< relative transform to parent
+  Transformation X=0;        ///< body's absolute pose
   Graph ats;                 ///< list of any-type attributes
   bool active=true;          ///< if false, this frame is skipped in computations (e.g. in fwd propagation)
 
   //attachments to the frame
-  struct Link *link=NULL;            ///< this frame is a child or a parent frame, with fixed or articulated relative transformation
+  struct Joint *joint=NULL;          ///< this frame is an articulated joint
   struct Shape *shape=NULL;          ///< this frame has a (collision or visual) geometry
   struct Inertia *inertia=NULL; ///< this frame has inertia (is a mass)
 
-  Frame(KinematicWorld& _world, const Frame *copyBody=NULL);
+  Frame(KinematicWorld& _K, const Frame *copyBody=NULL);
   ~Frame();
 
-  struct Joint* joint() const;
-  Frame *from() const;
-  uint numInputs() const{ if(link) return 1; return 0; } //TODO: remove: use KinConf specific topSort, not generic; remove generic top sort..
+  uint numInputs() const{ if(parent) return 1; return 0; } //TODO: remove: use KinConf specific topSort, not generic; remove generic top sort..
 
-  void parseAts(const Graph &ats);
+  Frame* insertPreLink(const mlr::Transformation& A);
+  Frame* insertPostLink(const mlr::Transformation& B);
+  void unLink();
+  void linkFrom(Frame *_parent);
+
+  void read(const Graph &ats);
   void write(std::ostream& os) const;
 };
 stdOutPipe(Frame)
 
 //===========================================================================
 
-/// a Frame with Link has a relative transformation 'Q' from the predecessor frame 'from'
-struct Link{
-  Frame *from;
-  Frame *to;
-  mlr::Transformation Q=0;
-
-  //attachments to the link
-  struct Joint *joint=NULL;    ///< this link is an articulated joint
-
-  Link(Frame* _from, Frame* _to, Link * copyRel=NULL);
-  ~Link();
-
-  Link* insertPreLink(const mlr::Transformation& A);
-  Link* insertPostLink(const mlr::Transformation& B);
-  void write(std::ostream& os) const;
-};
-
-//===========================================================================
-
 /// for a Frame with Joint-Link, the relative transformation 'Q' is articulated
 struct Joint{
+  Frame& frame;
+
   // joint information
   uint dim;
   uint qIndex;
-  byte generator;   ///< (7bits), h in Featherstone's code (indicates basis vectors of the Lie algebra, but including the middle quaternion w)
-  arr limits;       ///< joint limits (lo, up, [maxvel, maxeffort])
-  arr q0;           ///< joint null position
-  double H=1.;      ///< control cost scalar
+  byte generator;    ///< (7bits), h in Featherstone's code (indicates basis vectors of the Lie algebra, but including the middle quaternion w)
+  arr limits;        ///< joint limits (lo, up, [maxvel, maxeffort])
+  arr q0;            ///< joint null position
+  double H=1.;       ///< control cost scalar
 
-  Joint *mimic;     ///< if non-NULL, this joint's state is identical to another's
+  Joint *mimic=NULL; ///< if non-NULL, this joint's state is identical to another's
 
-  Link *link;
   Vector axis=0;          ///< joint axis (same as X.rot.getX() for standard hinge joints)
   Enum<JointType> type;   ///< joint type
-  bool constrainToZeroVel;
-  bool active=true; ///< if false, this joint is not considered part of the q-vector
+  bool constrainToZeroVel=false;
+  bool active=true;  ///< if false, this joint is not considered part of the q-vector
 
   //attachments to the joint
   struct Uncertainty *uncertainty=NULL;
 
-  Joint(Link *_link, Joint* copyJoint=NULL);
-  Joint(Frame* _from, Frame* _to, Joint* copyJoint=NULL) : Joint(new Link(_from, _to), copyJoint) {}
+  Joint(Frame& f, Joint* copyJoint=NULL);
   ~Joint();
 
-  const Transformation& X() const{ return link->from->X; }
-  const Transformation& Q() const{ return link->Q; }
-  Frame *from() const{ return link->from; }
-  Frame *to() const{ return link->to; }
+  const Transformation& X() const{ return frame.parent->X; }
+  const Transformation& Q() const{ return frame.Q; }
+  Frame *from() const{ return frame.parent; }
 
   uint qDim(){ return dim; }
   void calc_Q_from_q(const arr& q, uint n);
@@ -140,14 +125,14 @@ struct FrameGeom{
 
 /// a Frame with Inertia has mass and, in physical simulation, has forces associated with it
 struct Inertia{
-  Frame *frame;
+  Frame& frame;
   double mass;
-  Matrix matrix;
+  Matrix matrix=0;
   Enum<BodyType> type;
   Vector com=0;             ///< its center of mass
   Vector force=0, torque=0; ///< current forces applying on the body
 
-  Inertia(Frame *f, mlr::Inertia *copyInertia=NULL);
+  Inertia(Frame& f, mlr::Inertia *copyInertia=NULL);
   ~Inertia();
 
   void read(const Graph& ats);
@@ -157,7 +142,7 @@ struct Inertia{
 
 /// a Frame with Shape is a collision or visual object
 struct Shape : GLDrawer{
-  Frame *frame;
+  Frame& frame;
 
   Enum<ShapeType> type;
   arr size;
@@ -165,7 +150,7 @@ struct Shape : GLDrawer{
   double mesh_radius=0.;
   bool cont=false;           ///< are contacts registered (or filtered in the callback)
 
-  Shape(Frame* b, const Shape *copyShape=NULL, bool referenceMeshOnCopy=false); //new Shape, being added to graph and body's shape lists
+  Shape(Frame& f, const Shape *copyShape=NULL, bool referenceMeshOnCopy=false); //new Shape, being added to graph and body's shape lists
   virtual ~Shape();
   void read(const Graph &ats);
   void write(std::ostream& os) const;

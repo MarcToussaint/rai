@@ -33,7 +33,7 @@ TaskMap_qItself::TaskMap_qItself(TaskMap_qItself_PickMode pickMode, const String
       for(const mlr::String& s:picks){
           mlr::Frame *f = K.getFrameByName(s);
           if(!f) HALT("pick '" <<s <<"' not found");
-          if(!f->joint()) HALT("pick '" <<s <<"' is not a joint");
+          if(!f->joint) HALT("pick '" <<s <<"' is not a joint");
           selectedBodies.append(f->ID);
       }
       return;
@@ -60,7 +60,7 @@ void TaskMap_qItself::phi(arr& q, arr& J, const mlr::KinematicWorld& G, int t) {
     uint m=0;
     uint qIndex=0;
     for(uint b:selectedBodies){
-      mlr::Joint *j = G.frames.elem(b)->joint();
+      mlr::Joint *j = G.frames.elem(b)->joint;
       CHECK(j, "selected frame " <<b <<" ('" <<G.frames.elem(b)->name <<"') is not a joint");
       qIndex = j->qIndex;
       for(uint k=0;k<j->qDim();k++){
@@ -99,10 +99,10 @@ void TaskMap_qItself::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
     useIt = true;
     for(uint i=0; i<nFrames; i++){
       mlr::Frame *f = G(offset)->frames(i);
-      mlr::Joint *j = f->joint();
+      mlr::Joint *j = f->joint;
       if(j){
         for(uint s=0;s<=k;s++){
-          mlr::Joint *jmatch = G(offset+s)->getJointByBodyNames(j->from()->name, j->to()->name);
+          mlr::Joint *jmatch = G(offset+s)->getJointByBodyNames(j->from()->name, j->frame.name);
           if(jmatch && j->type!=jmatch->type) jmatch=NULL;
           if(!jmatch){ useIt(i) = false; break; }
           jointMatchLists(s, i) = jmatch;
@@ -149,7 +149,7 @@ void TaskMap_qItself::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
 uint TaskMap_qItself::dim_phi(const mlr::KinematicWorld& G) {
   if(selectedBodies.N){
     uint n=0;
-    for(uint b:selectedBodies) n+=G.frames.elem(b)->joint()->qDim();
+    for(uint b:selectedBodies) n+=G.frames.elem(b)->joint->qDim();
     return n;
   }
 //  if(M.nd==2) return M.d0;
@@ -198,8 +198,8 @@ void TaskMap_qZeroVels::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
   uint offset = G.N-1-k; //G.N might contain more configurations than the order of THIS particular task -> the front ones are not used
 
   mlr::Joint *j;
-  for(mlr::Frame *f:G.last()->frames) if((j=f->joint()) && j->constrainToZeroVel){
-    mlr::Joint *jmatch = G.last(-2)->getJointByBodyIndices(j->from()->ID, j->to()->ID);
+  for(mlr::Frame *f:G.last()->frames) if((j=f->joint) && j->constrainToZeroVel){
+    mlr::Joint *jmatch = G.last(-2)->getJointByBodyIndices(j->from()->ID, j->frame.ID);
     if(jmatch && j->type!=jmatch->type) jmatch=NULL;
     if(jmatch){
       for(uint i=0;i<j->qDim();i++){
@@ -251,13 +251,13 @@ mlr::Array<mlr::Joint*> getMatchingJoints(const WorldL& G, bool zeroVelJointsOnl
   bool matchIsGood;
 
   mlr::Joint *j;
-  for(mlr::Frame *f:G.last()->frames) if((j=f->joint()) && (!zeroVelJointsOnly || j->constrainToZeroVel)){
+  for(mlr::Frame *f:G.last()->frames) if((j=f->joint) && (!zeroVelJointsOnly || j->constrainToZeroVel)){
     matches.setZero();
     matches.last() = j;
     matchIsGood=true;
 
     for(uint k=0;k<G.N-1;k++){ //go through other configs
-      mlr::Joint *jmatch = G(k)->getJointByBodyIndices(j->from()->ID, j->to()->ID);
+      mlr::Joint *jmatch = G(k)->getJointByBodyIndices(j->from()->ID, j->frame.ID);
       if(!jmatch || j->type!=jmatch->type || j->constrainToZeroVel!=jmatch->constrainToZeroVel){
         matchIsGood=false;
         break;
@@ -280,15 +280,15 @@ mlr::Array<mlr::Joint*> getSwitchedJoints(const mlr::KinematicWorld& G0, const m
   mlr::Array<mlr::Joint*> switchedJoints;
 
   mlr::Joint *j1;
-  for(mlr::Frame *f: G1.frames) if((j1=f->joint())){
-    if(j1->from()->ID>=G0.frames.N || j1->to()->ID>=G0.frames.N){
+  for(mlr::Frame *f: G1.frames) if((j1=f->joint)){
+    if(j1->from()->ID>=G0.frames.N || j1->frame.ID>=G0.frames.N){
       switchedJoints.append({NULL,j1});
       continue;
     }
-    mlr::Joint *j0 = G0.getJointByBodyIndices(j1->from()->ID, j1->to()->ID);
+    mlr::Joint *j0 = G0.getJointByBodyIndices(j1->from()->ID, j1->frame.ID);
     if(!j0 || j0->type!=j1->type){
-      if(G0.frames(j1->to()->ID)->joint()){ //out-body had (in G0) one inlink...
-        j0 = G0.frames(j1->to()->ID)->joint();
+      if(G0.frames(j1->frame.ID)->joint){ //out-body had (in G0) one inlink...
+        j0 = G0.frames(j1->frame.ID)->joint;
       }
       switchedJoints.append({j0,j1});
 //      }
@@ -299,8 +299,8 @@ mlr::Array<mlr::Joint*> getSwitchedJoints(const mlr::KinematicWorld& G0, const m
   if(verbose){
     for(uint i=0;i<switchedJoints.d0;i++){
       cout <<"Switch: "
-          <<switchedJoints(i,0)->from()->name <<'-' <<switchedJoints(i,0)->to()->name
-         <<" -> " <<switchedJoints(i,1)->from()->name <<'-' <<switchedJoints(i,1)->to()->name <<endl;
+          <<switchedJoints(i,0)->from()->name <<'-' <<switchedJoints(i,0)->frame.name
+         <<" -> " <<switchedJoints(i,1)->from()->name <<'-' <<switchedJoints(i,1)->frame.name <<endl;
     }
   }
 
@@ -315,8 +315,8 @@ mlr::Array<mlr::Frame*> getSwitchedBodies(const mlr::KinematicWorld& G0, const m
   for(mlr::Frame *b1:G1.frames) {
     if(b1->ID>=G0.frames.N) continue; //b1 does not exist in G0 -> not a switched body
     mlr::Frame *b0 = G0.frames(b1->ID);
-    mlr::Joint *j0 = b0->joint();
-    mlr::Joint *j1 = b1->joint();
+    mlr::Joint *j0 = b0->joint;
+    mlr::Joint *j1 = b1->joint;
     if(!j0 != !j1){ switchedBodies.append({b0,b1}); continue; }
     if(j0){
       if(j0->type!=j1->type || j0->from()->ID!=j1->from()->ID){ //different joint type; or attached to different parent

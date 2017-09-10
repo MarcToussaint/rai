@@ -85,7 +85,7 @@ TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWor
   Kp_base = zeros(realWorld.q.N);
   Kd_base = zeros(realWorld.q.N);
   mlr::Joint *j;
-  for(mlr::Frame* f:realWorld.frames) if((j=f->joint()) && j->qDim()>0){
+  for(mlr::Frame* f:realWorld.frames) if((j=f->joint) && j->qDim()>0){
     arr *gains = f->ats.find<arr>("gains");
     if(gains){
       for(uint i=0;i<j->qDim();i++){
@@ -125,7 +125,7 @@ void TaskControlThread::open(){
 
 
 void TaskControlThread::step(){
-  mlr::Joint *trans = realWorld.getFrameByName("worldTranslationRotation", false)->joint();
+  mlr::Joint *trans = realWorld.getFrameByName("worldTranslationRotation", false)->joint;
 
   //-- read real state
   if(useRos){
