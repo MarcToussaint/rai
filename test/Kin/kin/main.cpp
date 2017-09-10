@@ -622,9 +622,6 @@ void TEST(InverseKinematics) {
 int MAIN(int argc,char **argv){
   mlr::initCmdLine(argc, argv);
 
-  testDynamics();
-  return 0;
-
   testLoadSave();
   testCopy();
   testGraph();
@@ -634,7 +631,7 @@ int MAIN(int argc,char **argv){
   testKinematicSpeed();
   testFollowRedundantSequence();
   testInverseKinematics();
-//  testDynamics();
+  testDynamics();
   testContacts();
   testLimits();
 #ifdef MLR_ODE
