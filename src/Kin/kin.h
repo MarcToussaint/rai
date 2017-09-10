@@ -23,6 +23,7 @@ struct OpenGL;
 struct PhysXInterface;
 struct SwiftInterface;
 struct OdeInterface;
+struct FeatherstoneInterface;
 
 //===========================================================================
 
@@ -159,8 +160,8 @@ struct KinematicWorld : GLDrawer{
   void inverseKinematicsPos(Frame& body, const arr& ytarget, const mlr::Vector& rel_offset=NoVector, int max_iter=3);
 
   /// @name dynamics
-  void fwdDynamics(arr& qdd, const arr& qd, const arr& tau);
-  void inverseDynamics(arr& tau, const arr& qd, const arr& qdd);
+  void fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bool gravity=true);
+  void inverseDynamics(arr& tau, const arr& qd, const arr& qdd, bool gravity=true);
   void equationOfMotion(arr& M, arr& F, bool gravity=true);
   void inertia(arr& M);
 
@@ -188,6 +189,7 @@ struct KinematicWorld : GLDrawer{
   void swiftDelete();
   PhysXInterface& physx();
   OdeInterface& ode();
+  FeatherstoneInterface& fs();
   void watch(bool pause=false, const char* txt=NULL);
   void glAnimate();
   void glGetMasks(int w=-1, int h=-1, bool rgbIndices=true);

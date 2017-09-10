@@ -149,6 +149,7 @@ namespace mlr{
     SwiftInterface *swift;
     PhysXInterface *physx;
     OdeInterface *ode;
+    FeatherstoneInterface *fs = NULL;
     bool swiftIsReference;
     sKinematicWorld():gl(NULL), swift(NULL), physx(NULL), ode(NULL), swiftIsReference(false) {}
     ~sKinematicWorld(){
@@ -893,41 +894,39 @@ void mlr::KinematicWorld::inertia(arr& M) {
 }
 
 void mlr::KinematicWorld::equationOfMotion(arr& M, arr& F, bool gravity) {
-  mlr::F_LinkTree tree; //TODO: HACK!! Danny: Why was there a static? This fails if there are more than 2 worlds
-  if(!tree.N) GraphToTree(tree, *this);
-  else updateGraphToTree(tree, *this);
   if(gravity){
     clearForces();
     gravityToForces();
   }
+  fs().update();
   //  cout <<tree <<endl;
   if(!qdot.N) qdot.resize(q.N).setZero();
-  mlr::equationOfMotion(M, F, tree, qdot);
+  fs().equationOfMotion(M, F, qdot);
 }
 
 /** @brief return the joint accelerations \f$\ddot q\f$ given the
   joint torques \f$\tau\f$ (computed via Featherstone's Articulated Body Algorithm in O(n)) */
-void mlr::KinematicWorld::fwdDynamics(arr& qdd, const arr& qd, const arr& tau) {
-  static mlr::F_LinkTree tree;
-  if(!tree.N) GraphToTree(tree, *this);
-  else updateGraphToTree(tree, *this);
-  if(true){
+void mlr::KinematicWorld::fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bool gravity) {
+  if(gravity){
     clearForces();
     gravityToForces();
   }
-//  cout <<tree <<endl;
-//  mlr::fwdDynamics_aba_1D(qdd, tree, qd, tau);
-//  mlr::fwdDynamics_aba_nD(qdd, tree, qd, tau);
-  mlr::fwdDynamics_MF(qdd, tree, qd, tau);
+  fs().update();
+  //  cout <<tree <<endl;
+  fs().fwdDynamics_MF(qdd, qd, tau);
+//  fs().fwdDynamics_aba_1D(qdd, qd, tau); //works
+//  mlr::fwdDynamics_aba_nD(qdd, tree, qd, tau); //does not work
 }
 
 /** @brief return the necessary joint torques \f$\tau\f$ to achieve joint accelerations
   \f$\ddot q\f$ (computed via the Recursive Newton-Euler Algorithm in O(n)) */
-void mlr::KinematicWorld::inverseDynamics(arr& tau, const arr& qd, const arr& qdd) {
-  static mlr::F_LinkTree tree;
-  if(!tree.N) GraphToTree(tree, *this);
-  else updateGraphToTree(tree, *this);
-  mlr::invDynamics(tau, tree, qd, qdd);
+void mlr::KinematicWorld::inverseDynamics(arr& tau, const arr& qd, const arr& qdd, bool gravity) {
+  if(gravity){
+    clearForces();
+    gravityToForces();
+  }
+  fs().update();
+  fs().invDynamics(tau, qd, qdd);
 }
 
 /*void mlr::KinematicWorld::impulsePropagation(arr& qd1, const arr& qd0){
@@ -1056,6 +1055,11 @@ PhysXInterface& mlr::KinematicWorld::physx(){
 OdeInterface& mlr::KinematicWorld::ode(){
   if(!s->ode) s->ode = new OdeInterface(*this);
   return *s->ode;
+}
+
+FeatherstoneInterface& mlr::KinematicWorld::fs(){
+  if(!s->fs) s->fs = new FeatherstoneInterface(*this);
+  return *s->fs;
 }
 
 void mlr::KinematicWorld::watch(bool pause, const char* txt){

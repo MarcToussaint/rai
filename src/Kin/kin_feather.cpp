@@ -231,22 +231,22 @@ void FrameToMatrix(arr &X, const mlr::Transformation& f) {
   //cout <<"\nz=" <<z <<"\nr=" <<r <<"\nR=" <<R <<"\nX=" <<X <<endl;
 }
 
-uint mlr::F_Link::dof() { if(type>=JT_hingeX && type<=JT_transZ) return 1; else return 0; }
+uint F_Link::dof() { if(type>=mlr::JT_hingeX && type<=mlr::JT_transZ) return 1; else return 0; }
 
-void mlr::F_Link::setFeatherstones() {
+void F_Link::setFeatherstones() {
   switch(type) {
   case -1:     CHECK_EQ(parent,-1, ""); _h.clear();  break;
-    case JT_rigid:
-    case JT_transXYPhi:
+    case mlr::JT_rigid:
+    case mlr::JT_transXYPhi:
       qIndex=-1;
       _h=zeros(6);
       break;
-    case JT_hingeX: _h.resize(6); _h.setZero(); _h(0)=1.; break;
-    case JT_hingeY: _h.resize(6); _h.setZero(); _h(1)=1.; break;
-    case JT_hingeZ: _h.resize(6); _h.setZero(); _h(2)=1.; break;
-    case JT_transX: _h.resize(6); _h.setZero(); _h(3)=1.; break;
-    case JT_transY: _h.resize(6); _h.setZero(); _h(4)=1.; break;
-    case JT_transZ: _h.resize(6); _h.setZero(); _h(5)=1.; break;
+    case mlr::JT_hingeX: _h.resize(6); _h.setZero(); _h(0)=1.; break;
+    case mlr::JT_hingeY: _h.resize(6); _h.setZero(); _h(1)=1.; break;
+    case mlr::JT_hingeZ: _h.resize(6); _h.setZero(); _h(2)=1.; break;
+    case mlr::JT_transX: _h.resize(6); _h.setZero(); _h(3)=1.; break;
+    case mlr::JT_transY: _h.resize(6); _h.setZero(); _h(4)=1.; break;
+    case mlr::JT_transZ: _h.resize(6); _h.setZero(); _h(5)=1.; break;
     default: NIY;
   }
   Featherstone::RBmci(_I, mass, com.p(), inertia);
@@ -254,94 +254,67 @@ void mlr::F_Link::setFeatherstones() {
   updateFeatherstones();
 }
 
-void mlr::F_Link::updateFeatherstones() {
-  FrameToMatrix(_A, A);
+void F_Link::updateFeatherstones() {
   FrameToMatrix(_Q, Q);
 
-  mlr::Transformation XQ;
-  XQ=X;
-  XQ.appendTransformation(Q);
-  mlr::Vector fo = XQ.rot/force;
-  mlr::Vector to = XQ.rot/(torque + ((XQ.rot*com)^force));
+//  mlr::Transformation XQ;
+//  XQ=X;
+//  XQ.appendTransformation(Q);
+  mlr::Vector fo = X.rot/force;
+  mlr::Vector to = X.rot/(torque + ((X.rot*com)^force));
   _f.resize(6);
   _f(0)=to.x;  _f(1)=to.y;  _f(2)=to.z;
   _f(3)=fo.x;  _f(4)=fo.y;  _f(5)=fo.z;
 }
 
-void GraphToTree(mlr::Array<mlr::F_Link>& tree, const mlr::KinematicWorld& K) {
-  CHECK_EQ(K.frames, K.fwdActiveSet, "Featherstone requires a sorted optimized frame tree (call optimizeTree and fwdIndexIDs)");
-  tree.resize(K.frames.N);
+void FeatherstoneInterface::update(){
+  if(tree.N != K.frames.N){ //new instance -> create the tree
+      CHECK_EQ(K.frames, K.fwdActiveSet, "Featherstone requires a sorted optimized frame tree (call optimizeTree and fwdIndexIDs)");
+      tree.clear();
+      tree.resize(K.frames.N);
 
-  for(mlr::F_Link& link:tree){ link.parent=-1; link.qIndex=-1; link.com.setZero(); }
+      for(F_Link& link:tree){ link.parent=-1; link.qIndex=-1; link.com.setZero(); } //TODO: remove
 
-  for(mlr::Frame* f : K.frames) {
-    mlr::F_Link& link=tree(f->ID);
-    link.ID = f->ID;
-    if(f->link) { //is not a root
-      mlr::Joint *j;
-      if((j=f->joint())){
-
-        link.type   = j->type;
-        link.qIndex = j->qIndex;
-        link.parent = j->from()->ID;
-
-        if(f->inertia) link.com = f->inertia->com;
-
-        link.A.setZero();
-
-        link.X = j->X();
-        link.Q = j->Q();
-      }else{
-        mlr::Link *rel = f->link;
-        link.type   = mlr::JT_rigid;
-        link.parent = rel->from->ID;
-        if(f->inertia) link.com = f->inertia->com;
-        link.A = rel->Q;
-        link.X = f->X;
-        link.Q.setZero();
+      for(mlr::Frame* f : K.frames) {
+          F_Link& link=tree(f->ID);
+          link.ID = f->ID;
+          link.X = f->X;
+          if(f->link) { //is not a root
+              link.parent = f->link->from->ID;
+              link.Q = f->link->Q;
+              mlr::Joint *j;
+              if((j=f->joint())){
+                  link.type   = j->type;
+                  link.qIndex = j->qIndex;
+              }else{
+                  link.type   = mlr::JT_rigid;
+              }
+          }
+          if(f->inertia){
+              link.com = f->inertia->com;
+              link.mass=f->inertia->mass; CHECK(link.mass>0. || link.qIndex==-1, "a moving link without mass -> this will diverge");
+              link.inertia=f->inertia->matrix;
+              link.force=f->inertia->force;
+              link.torque=f->inertia->torque;
+          }
       }
-    } else {
-      link.type=-1;
-      link.qIndex=-1;
-      link.parent=-1;
-      if(f->inertia) link.com = f->X*f->inertia->com;
-      else           link.com = f->X.pos;
-      link.A.setZero();
-      link.X.setZero();
-      link.Q.setZero();
-    }
-    if(f->inertia){
-      link.mass=f->inertia->mass; CHECK(link.mass>0. || link.qIndex==-1, "a moving link without mass -> this will diverge");
-      link.inertia=f->inertia->matrix;
-      link.force=f->inertia->force;
-      link.torque=f->inertia->torque;
-    }
-  }
-
-  for(mlr::F_Link& link:tree) link.setFeatherstones();
-}
-
-void updateGraphToTree(mlr::Array<mlr::F_Link>& tree, const mlr::KinematicWorld& K) {
-  CHECK_EQ(tree.N, K.frames.N, "");
-
-  for(mlr::Frame *f: K.frames) {
-    mlr::F_Link& link=tree(f->ID);
-    if(f->joint()){
-        link.Q = f->link->Q;
-        link.X = f->joint()->X();
-    }else{
+  }else{ //just update an existing structure
+      for(mlr::Frame *f: K.frames) {
+        F_Link& link=tree(f->ID);
         link.X = f->X;
-    }
+        if(f->link) link.Q = f->link->Q;
 
-    if(f->inertia){
-      link.force=f->inertia->force;
-      link.torque=f->inertia->torque;
-    }else{
-      link.force.setZero();
-      link.torque.setZero();
-    }
+        if(f->inertia){
+          link.force=f->inertia->force;
+          link.torque=f->inertia->torque;
+        }else{
+          link.force.setZero();
+          link.torque.setZero();
+        }
+      }
   }
-  for(mlr::F_Link& l:tree) l.updateFeatherstones();
+
+  for(F_Link& link:tree) link.setFeatherstones();
 }
 
 
@@ -701,8 +674,7 @@ void Featherstone::fwdDynamics_old(arr& qdd,
 
 /* Articulated Body Dynamics - exactly as in my `simulationSoftware notes',
    following the notation of Featherstone's recent short survey paper */
-void mlr::fwdDynamics_aba_nD(arr& qdd,
-                             const mlr::F_LinkTree& tree,
+void FeatherstoneInterface::fwdDynamics_aba_nD(arr& qdd,
                              const arr& qd,
                              const arr& tau) {
   int par;
@@ -725,7 +697,7 @@ void mlr::fwdDynamics_aba_nD(arr& qdd,
     n += d_i;
     h(i) = tree(i)._h;
     h(i).reshape(6, d_i);
-    Xup[i] = tree(i)._Q * tree(i)._A; //the transformation from the i-th to the j-th
+    Xup[i] = tree(i)._Q; //the transformation from the i-th to the j-th
   }
   CHECK(n==qd.N && n==qdd.N && n==tau.N, "")
 
@@ -774,63 +746,76 @@ void mlr::fwdDynamics_aba_nD(arr& qdd,
 
 //===========================================================================
 
-void mlr::fwdDynamics_aba_1D(arr& qdd,
-                             const mlr::F_LinkTree& tree,
+void FeatherstoneInterface::fwdDynamics_aba_1D(arr& qdd,
                              const arr& qd,
                              const arr& tau) {
   int par;
-  uint i, N=tree.N, iq;
+  int iq;
+  uint i, N=tree.N;
   arr h(N, 6), I_h(N, 6), h_I_h(N), inv_h_I_h(N), taui(N), tau__h_fA(N);
   arr Xup(N, 6, 6), v(N, 6), dh_dq(N, 6), IA(N, 6, 6), fA(N, 6), a(N, 6);
   arr vJ, Ia, fa;
   qdd.resizeAs(tau);
 
+  h.setZero();
+  v.setZero();
+  dh_dq.setZero();
+  taui.setZero();
+
   //fwd: compute the velocities v[i] and external + Coriolis forces fA[i] of all bodies
+  // v[i] = total velocity, but in joint coordinates
   for(i=0; i<N; i++) {
-    iq = tree(i).qIndex;
-    par = tree(i).parent;
-    Xup[i]() = tree(i)._Q * tree(i)._A; //the transformation from the i-th to the j-th
-    if(par != -1) {
-      h[i]() = tree(i)._h;
-      vJ = h[i] * qd(iq); //equation (2), vJ = relative vel across joint i
-      v[i]() = Xup[i] * v[par] + vJ; //eq (27)
-      dh_dq[i]() = Featherstone::crossM(v[i]) * vJ;  //WHY??
-      taui(i)=tau(iq);
-    } else {
-      h[i]() = 0.;
-      v[i]() = 0.;
-      dh_dq[i] = 0.;
-      taui(i)=0.;
+    F_Link &link = tree(i);
+    iq  = link.qIndex;
+    par = link.parent;
+    Xup[i]() = link._Q; //the transformation from the i-th to the j-th
+    if(par!=-1) {
+      h[i]() = link._h;
+      if(iq!=-1) {//is not a fixed joint
+        vJ = h[i] * qd(iq); //equation (2), vJ = relative vel across joint i
+        v[i]() = Xup[i] * v[par] + vJ; //eq (27)
+        dh_dq[i]() = Featherstone::crossM(v[i]) * vJ;  //WHY??
+        taui(i) = tau(iq);
+      } else{
+        v[i]() = Xup[i] * v[par]; //eq (27)
+      }
     }
-    // v[i] = total velocity, but in joint coordinates
-    IA[i] = tree(i)._I;
-    //first part of eq (29)
-    fA[i] = Featherstone::crossF(v[i]) * (tree(i)._I * v[i]) - tree(i)._f;
+    IA[i]() = tree(i)._I;
+    fA[i]() = Featherstone::crossF(v[i]) * (tree(i)._I * v[i]) - tree(i)._f;  //first part of eq (29)
   }
 
   //bwd: propagate tree inertia
   for(i=N; i--;) {
-    par = tree(i).parent;
+    F_Link &link = tree(i);
+    par = link.parent;
     //eq (28)
-    I_h[i]()      = IA[i] * h[i];
-    h_I_h(i)      = scalarProduct(h[i], I_h[i]);
-    inv_h_I_h(i)  = 1./h_I_h(i);
-    tau__h_fA(i) = taui(i) - scalarProduct(h[i], fA[i]); //[change from above] last term in (13), 2nd equation below (13)
-    if(par != -1) {
-      Ia = IA[i] - I_h[i]*(inv_h_I_h(i)*~I_h[i]);
-      fa = fA[i] + Ia*dh_dq[i] + I_h[i]*(inv_h_I_h(i)*tau__h_fA(i));
-      IA[par] = IA[par] + ~Xup[i] * Ia * Xup[i];         //equation (12)
-      fA[par] = fA[par] + ~Xup[i] * fa;                  //equation (13)
+    if(par!=-1){
+      if(link.qIndex!=-1) {
+        I_h[i]()     = IA[i] * h[i];
+        h_I_h(i)     = scalarProduct(h[i], I_h[i]);
+        inv_h_I_h(i) = 1./h_I_h(i);
+        tau__h_fA(i) = taui(i) - scalarProduct(h[i], fA[i]); //[change from above] last term in (13), 2nd equation below (13)
+        Ia = IA[i] - I_h[i]*(inv_h_I_h(i)*~I_h[i]);
+        fa = fA[i] + Ia*dh_dq[i] + I_h[i]*(inv_h_I_h(i)*tau__h_fA(i));
+        IA[par] = IA[par] + ~Xup[i] * Ia * Xup[i];         //equation (12)
+        fA[par] = fA[par] + ~Xup[i] * fa;                  //equation (13)
+      }else{
+        IA[par] = IA[par] + ~Xup[i] * IA[i] * Xup[i];         //equation (12)
+        fA[par] = fA[par] + ~Xup[i] * fA[i];                  //equation (13)
+      }
     }
   }
 
   for(i=0; i<N; i++) {
-    iq = tree(i).qIndex;
-    par= tree(i).parent;
+    F_Link &link = tree(i);
+    iq = link.qIndex;
+    par= link.parent;
     if(par != -1) {
       a[i] = Xup[i] * a[par] + dh_dq[i]; //[change from above]
-      qdd(iq) = inv_h_I_h(i)*(tau__h_fA(i) - scalarProduct(I_h[i], a[i])); //equation (14)
-      a[i] = a[i] + h[i]*qdd(iq); //equation above (14)
+      if(iq!=-1){
+        qdd(iq) = inv_h_I_h(i)*(tau__h_fA(i) - scalarProduct(I_h[i], a[i])); //equation (14)
+        a[i] = a[i] + h[i]*qdd(iq); //equation above (14)
+      }
     } else {
       a[i] = dh_dq[i]; //[change from above]
     }
@@ -839,8 +824,7 @@ void mlr::fwdDynamics_aba_1D(arr& qdd,
 
 //===========================================================================
 
-void mlr::invDynamics(arr& tau,
-                      const mlr::F_LinkTree& tree,
+void FeatherstoneInterface::invDynamics(arr& tau,
                       const arr& qd,
                       const arr& qdd) {
   int par;
@@ -867,7 +851,7 @@ void mlr::invDynamics(arr& tau,
     }else{
         h(i).resize(6,0u);
     }
-    Xup[i] = tree(i)._Q * tree(i)._A; //the transformation from the i-th to the j-th
+    Xup[i] = tree(i)._Q; //the transformation from the i-th to the j-th
   }
   CHECK(n==qd.N && n==qdd.N && n==tau.N, "")
 
@@ -894,8 +878,7 @@ void mlr::invDynamics(arr& tau,
 
 //===========================================================================
 
-void mlr::equationOfMotion(arr& H, arr& C,
-                           const mlr::F_LinkTree& tree,
+void FeatherstoneInterface::equationOfMotion(arr& H, arr& C,
                            const arr& qd) {
 
   /*function  [H, C] = HandC( model, q, qd, f_ext, grav_accn )
@@ -925,34 +908,32 @@ void mlr::equationOfMotion(arr& H, arr& C,
   arr Xup(N, 6, 6), v(N, 6), dh_dq(N, 6), IC(N, 6, 6), fvp(N, 6), avp(N, 6);
   arr vJ, fh;
 
+  h.setZero();
+  v.setZero();
+  dh_dq.setZero();
   avp.setZero();
 
   for(i=0; i<N; i++) {
     iq  = tree(i).qIndex;
     par = tree(i).parent;
-    Xup[i]() = tree(i)._Q * tree(i)._A; //the transformation from the i-th to the j-th
+    Xup[i]() = tree(i)._Q; //the transformation from the i-th to the j-th
     if(par!=-1) {
       h[i]() = tree(i)._h;
       if(iq!=-1) {//is not a fixed joint
         vJ = h[i] * qd(iq); //equation (2), vJ = relative vel across joint i
+        v[i]() = Xup[i]*v[par] + vJ;
+        dh_dq[i]() = Featherstone::crossM(v[i]) * vJ;  //WHY??
+        avp[i]() = Xup[i]*avp[par] + Featherstone::crossM(v[i])*vJ;
       } else{
-        vJ = zeros(6);
+        v[i]() = Xup[i] * v[par];
+        avp[i]() = Xup[i] * avp[par];
       }
-      v[i]() = Xup[i] * v[par] + vJ;
-      dh_dq[i]() = Featherstone::crossM(v[i]) * vJ;  //WHY??
-      avp[i]() = Xup[i]*avp[par] + Featherstone::crossM(v[i])*vJ;
-    } else {
-      h[i]() = 0.;
-      v[i]() = 0.;
-      dh_dq[i] = 0.;
-      avp[i]() = 0.;
     }
-    // v[i] = total velocity, but in joint coordinates
     IC[i]() = tree(i)._I;
-    fvp[i] = tree(i)._I*avp[i] + Featherstone::crossF(v[i])*(tree(i)._I*v[i]) - tree(i)._f;
+    fvp[i]() = tree(i)._I*avp[i] + Featherstone::crossF(v[i])*(tree(i)._I*v[i]) - tree(i)._f;
   }
 
-  C = zeros(qd.N);
+  C.resize(qd.N).setZero();
 
   for(i=N; i--;) {
     iq  = tree(i).qIndex;
@@ -966,7 +947,7 @@ void mlr::equationOfMotion(arr& H, arr& C,
     }
   }
 
-  H = zeros(qd.N, qd.N);
+  H.resize(qd.N, qd.N).setZero();
 
   for(i=0; i<N; i++) {
     iq = tree(i).qIndex;
@@ -993,21 +974,18 @@ void mlr::equationOfMotion(arr& H, arr& C,
   for(i=0;i<N;i++){ iq = tree(i).qIndex; if(iq!=-1) filled(iq)=true; }
   for(i=0;i<qd.N;i++) if(!filled(i)){
     H(i,i) = 1.;
-//    C(i) = -100.*qd(i);
+    //C(i) = -100.*qd(i);
   }
 }
 
 //===========================================================================
 
-void mlr::fwdDynamics_MF(arr& qdd,
-                         const mlr::F_LinkTree& tree,
+void FeatherstoneInterface::fwdDynamics_MF(arr& qdd,
                          const arr& qd,
                          const arr& u) {
 
   arr M, Minv, F;
-  equationOfMotion(M, F, tree, qd);
-
-  cout <<"M=" <<M <<"F=" <<F <<endl;
+  equationOfMotion(M, F, qd);
   inverse(Minv, M);
 //  inverse_SymPosDef(Minv, M);
 
@@ -1015,17 +993,17 @@ void mlr::fwdDynamics_MF(arr& qdd,
 }
 
 // #else ///MLR_FEATHERSTONE
-// void GraphToTree(mlr::F_LinkTree& tree, const mlr::KinematicWorld& C) { NIY; }
-// void updateGraphToTree(mlr::F_LinkTree& tree, const mlr::KinematicWorld& C) { NIY; }
+// void GraphToTree(F_LinkTree& tree, const mlr::KinematicWorld& C) { NIY; }
+// void updateGraphToTree(F_LinkTree& tree, const mlr::KinematicWorld& C) { NIY; }
 // void Featherstone::equationOfMotion(arr& H, arr& C,
-//                                     const mlr::F_LinkTree& tree,
+//                                     const F_LinkTree& tree,
 //                                     const arr& qd) { NIY; }
 // void Featherstone::fwdDynamics_MF(arr& qdd,
-//                                   const mlr::F_LinkTree& tree,
+//                                   const F_LinkTree& tree,
 //                                   const arr& qd,
 //                                   const arr& tau) { NIY; }
 // void Featherstone::invDynamics(arr& tau,
-//                                const mlr::F_LinkTree& tree,
+//                                const F_LinkTree& tree,
 //                                const arr& qd,
 //                                const arr& qdd) { NIY; }
 // #endif

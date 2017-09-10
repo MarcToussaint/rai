@@ -17,49 +17,50 @@
 #define MLR_kin_feather_h
 
 #include <Geo/geo.h>
-
-namespace mlr {
-
-struct KinematicWorld;
+#include <Kin/kin.h>
 
 struct F_Link {
-  int ID;
-  int type;
-  int qIndex;
-  int parent;
-  mlr::Transformation X, A, Q;
-  mlr::Vector com, force, torque;
-  double mass;
-  mlr::Matrix inertia;
+  int ID=-1;
+  int type=-1;
+  int qIndex=-1;
+  int parent=-1;
+  mlr::Transformation X=0, Q=0;
+  mlr::Vector com=0, force=0, torque=0;
+  double mass=0.;
+  mlr::Matrix inertia=0;
   uint dof();
 
-  arr _h, _A, _Q, _I, _f; //featherstone types
+  arr _h, _Q, _I, _f; //featherstone types
 
-  F_Link() : ID(-1), parent(-1){}
+  F_Link(){}
   void setFeatherstones();
   void updateFeatherstones();
   void write(ostream& os) const {
     os <<"*type=" <<type <<" index=" <<qIndex <<" parent=" <<parent <<endl
-       <<" XAQ=" <<X <<A <<Q <<endl
+       <<" XQ,Q=" <<X <<", " <<Q <<endl
        <<" cft=" <<com <<force <<torque <<endl
        <<" mass=" <<mass <<inertia <<endl;
   }
 };
-stdOutPipe(mlr::F_Link)
+stdOutPipe(F_Link)
 
-typedef Array<mlr::F_Link> F_LinkTree;
+typedef mlr::Array<F_Link> F_LinkTree;
 
-void equationOfMotion(arr& M, arr& F, const F_LinkTree& tree,  const arr& qd);
-void fwdDynamics_MF(arr& qdd, const F_LinkTree& tree, const arr& qd, const arr& u);
-void fwdDynamics_aba_nD(arr& qdd, const F_LinkTree& tree, const arr& qd, const arr& tau);
-void fwdDynamics_aba_1D(arr& qdd, const F_LinkTree& tree, const arr& qd, const arr& tau);
-void invDynamics(arr& tau, const F_LinkTree& tree, const arr& qd, const arr& qdd);
+struct FeatherstoneInterface{
+  mlr::KinematicWorld& K;
 
-} //namespace mlr
+  mlr::Array<F_Link> tree;
 
-stdOutPipe(mlr::F_Link)
+  FeatherstoneInterface(mlr::KinematicWorld& K):K(K){}
 
-void GraphToTree(mlr::F_LinkTree& tree, const mlr::KinematicWorld& C);
-void updateGraphToTree(mlr::F_LinkTree& tree, const mlr::KinematicWorld& C);
+  void update();
+
+  void equationOfMotion(arr& M, arr& F,  const arr& qd);
+  void fwdDynamics_MF(arr& qdd, const arr& qd, const arr& u);
+  void fwdDynamics_aba_nD(arr& qdd, const arr& qd, const arr& tau);
+  void fwdDynamics_aba_1D(arr& qdd, const arr& qd, const arr& tau);
+  void invDynamics(arr& tau, const arr& qd, const arr& qdd);
+};
+
 
 #endif

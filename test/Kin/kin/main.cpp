@@ -434,12 +434,10 @@ void TEST(Dynamics){
     if(!u.N) u.resize(x.d1).setZero();
     if(friction) u = -1e-0 * x[1];
     checkNan(u);
-    G.clearForces();
-    G.gravityToForces();
     /*if(T2::addContactsToDynamics){
         G.contactsToForces(100.,10.);
       }*/
-    G.fwdDynamics(y, x[1], u);
+    G.fwdDynamics(y, x[1], u, true);
     checkNan(y);
   };
   
