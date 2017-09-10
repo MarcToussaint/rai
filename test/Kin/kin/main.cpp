@@ -422,7 +422,8 @@ void TEST(FollowRedundantSequence){
 //---------- test standard dynamic control
 void TEST(Dynamics){
   mlr::KinematicWorld G("arm7.g");
-//  G.makeLinkTree();
+  G.optimizeTree();
+  G.fwdIndexIDs();
   cout <<G <<endl;
 
   arr u;
@@ -462,7 +463,7 @@ void TEST(Dynamics){
       //G.clearForces();
       //G.gravityToForces();
       G.fwdDynamics(qdd, qd, u);
-      CHECK(maxDiff(qdd,qdd_,0)<1e-5,"dynamics and inverse dynamics inconsistent");
+      CHECK(maxDiff(qdd,qdd_,0)<1e-5,"dynamics and inverse dynamics inconsistent:\n" <<qdd <<'\n' <<qdd_);
       //cout <<q <<qd <<qdd <<endl;
       cout <<"test dynamics: fwd-inv error =" <<maxDiff(qdd,qdd_,0) <<endl;
       q  += .5*dt*qd;
@@ -622,6 +623,9 @@ void TEST(InverseKinematics) {
 
 int MAIN(int argc,char **argv){
   mlr::initCmdLine(argc, argv);
+
+  testDynamics();
+  return 0;
 
   testLoadSave();
   testCopy();

@@ -23,6 +23,7 @@ namespace mlr {
 struct KinematicWorld;
 
 struct F_Link {
+  int ID;
   int type;
   int qIndex;
   int parent;
@@ -33,6 +34,8 @@ struct F_Link {
   uint dof();
 
   arr _h, _A, _Q, _I, _f; //featherstone types
+
+  F_Link() : ID(-1), parent(-1){}
   void setFeatherstones();
   void updateFeatherstones();
   void write(ostream& os) const {
@@ -42,7 +45,7 @@ struct F_Link {
        <<" mass=" <<mass <<inertia <<endl;
   }
 };
-
+stdOutPipe(mlr::F_Link)
 
 typedef Array<mlr::F_Link> F_LinkTree;
 

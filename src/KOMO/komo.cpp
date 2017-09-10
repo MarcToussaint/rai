@@ -352,9 +352,9 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
   //connect graspRef with object
 #if 1
   setKinematicSwitch(time, true, "ballZero", endeffRef, object);
-  setKinematicSwitch(time, true, "insert_transX", NULL, object);
+//  setKinematicSwitch(time, true, "insert_transX", NULL, object);
 //  setKinematicSwitch(time, true, "insert_trans3", NULL, object);
-  setTask(time, time, new TaskMap_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e2);
+//  setTask(time, time, new TaskMap_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e2);
 #else
   setKinematicSwitch(time, true, "freeZero", endeffRef, object);
   setTask(time, time, new TaskMap_InsideBox(world, endeffRef, object), OT_ineq, NoArr, 1e2);

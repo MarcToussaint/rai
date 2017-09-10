@@ -62,7 +62,9 @@ void mlr::Frame::parseAts(const Graph& ats) {
 }
 
 void mlr::Frame::write(std::ostream& os) const {
-  if(!X.isZero()) os <<"pose=<T " <<X <<" > ";
+  if(shape) shape->write(os);
+  if(link) link->write(os);
+  else if(!X.isZero()) os <<" X=<T " <<X <<" > ";
 //  if(mass) os <<"mass=" <<mass <<' ';
 //  if(type!=BT_dynamic) os <<"dyntype=" <<(int)type <<' ';
 //  uint i; Node *a;
@@ -137,6 +139,11 @@ mlr::Link* mlr::Link::insertPostLink(const mlr::Transformation &B){
   this->to = f;
 
   return newLink;
+}
+
+void mlr::Link::write(std::ostream &os) const{
+  if(joint) joint->write(os);
+  if(!Q.isZero()) os <<" Q=<T " <<Q <<" > ";
 }
 
 mlr::Joint *mlr::Frame::joint() const{
@@ -501,11 +508,11 @@ void mlr::Joint::read(const Graph &G){
 }
 
 void mlr::Joint::write(std::ostream& os) const {
-  os <<"type=" <<type <<' ';
-  if(H) os <<"ctrl_H="<<H <<' ';
-  if(limits.N) os <<"limits=[" <<limits <<"] ";
+  os <<" joint=" <<type;
+  if(H) os <<" ctrl_H="<<H;
+  if(limits.N) os <<" limits=[" <<limits <<"]";
   if(mimic){
-    os <<"mimic=" <<mimic->to()->name <<' ';
+    os <<" mimic=" <<mimic->to()->name;
   }
 
   Node *n;
@@ -670,8 +677,8 @@ void mlr::Shape::read(const Graph& ats) {
 }
 
 void mlr::Shape::write(std::ostream& os) const {
-  os <<"type=" <<type <<' ';
-  os <<"size=[" <<size <<"] ";
+  os <<" shape=" <<type;
+  os <<" size=[" <<size <<"]";
 
   Node *n;
   if((n=frame->ats["color"])) os <<*n <<' ';

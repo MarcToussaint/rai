@@ -900,6 +900,7 @@ void mlr::KinematicWorld::equationOfMotion(arr& M, arr& F, bool gravity) {
     clearForces();
     gravityToForces();
   }
+  //  cout <<tree <<endl;
   if(!qdot.N) qdot.resize(q.N).setZero();
   mlr::equationOfMotion(M, F, tree, qdot);
 }
@@ -910,9 +911,13 @@ void mlr::KinematicWorld::fwdDynamics(arr& qdd, const arr& qd, const arr& tau) {
   static mlr::F_LinkTree tree;
   if(!tree.N) GraphToTree(tree, *this);
   else updateGraphToTree(tree, *this);
-  //cout <<tree <<endl;
-  //mlr::fwdDynamics_aba_1D(qdd, tree, qd, tau);
-  //mlr::fwdDynamics_aba_nD(qdd, tree, qd, tau);
+  if(true){
+    clearForces();
+    gravityToForces();
+  }
+//  cout <<tree <<endl;
+//  mlr::fwdDynamics_aba_1D(qdd, tree, qd, tau);
+//  mlr::fwdDynamics_aba_nD(qdd, tree, qd, tau);
   mlr::fwdDynamics_MF(qdd, tree, qd, tau);
 }
 
@@ -1143,8 +1148,11 @@ void mlr::KinematicWorld::stepDynamics(const arr& Bu_control, double tau, double
 
 /** @brief prototype for \c operator<< */
 void mlr::KinematicWorld::write(std::ostream& os) const {
-  for(Frame *f: frames) {
-    os <<"body " <<f->name <<" { ";
+  for(Frame *f: frames) if(!f->name.N) f->name <<f->ID;
+  for(Frame *f: fwdActiveSet) {
+    os <<"frame " <<f->name;
+    if(f->link) os <<'(' <<f->link->from->name <<')';
+    os <<" { ";
     f->write(os);  os <<" }\n";
   }
   os <<std::endl;
@@ -1820,6 +1828,13 @@ void mlr::KinematicWorld::optimizeTree(){
   reconnectLinksToClosestJoints();
   pruneUselessFrames();
   checkConsistency();
+}
+
+void mlr::KinematicWorld::fwdIndexIDs(){
+  CHECK_EQ(fwdActiveSet.N ,frames.N, "");
+  frames = fwdActiveSet;
+  uint i=0;
+  for(Frame *f: frames) f->ID = i++;
 }
 
 bool mlr::KinematicWorld::checkConsistency(){

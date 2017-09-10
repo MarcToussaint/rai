@@ -32,7 +32,7 @@ OptNewton::OptNewton(arr& _x, const ScalarFunction& _f,  OptOptions _o):
   alpha = o.initStep;
   beta = o.damping;
   additionalRegularizer=NULL;
-//  if(f) reinit(_x);
+  if(f) reinit(_x);
 }
 
 void OptNewton::reinit(const arr& _x){

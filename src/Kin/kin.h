@@ -108,6 +108,7 @@ struct KinematicWorld : GLDrawer{
   void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
   void pruneUselessFrames(int verbose=0);      ///< delete frames that have no name, joint, and shape
   void optimizeTree();                         ///< call the three above methods in this order
+  void fwdIndexIDs();
   bool checkConsistency();
 
   uint analyzeJointStateDimensions() const; ///< sort of private: count the joint dimensionalities and assign j->q_index

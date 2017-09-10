@@ -268,89 +268,77 @@ void mlr::F_Link::updateFeatherstones() {
   _f(3)=fo.x;  _f(4)=fo.y;  _f(5)=fo.z;
 }
 
-void GraphToTree(mlr::Array<mlr::F_Link>& tree, const mlr::KinematicWorld& C) {
-  tree.resize(C.frames.N);
+void GraphToTree(mlr::Array<mlr::F_Link>& tree, const mlr::KinematicWorld& K) {
+  CHECK_EQ(K.frames, K.fwdActiveSet, "Featherstone requires a sorted optimized frame tree (call optimizeTree and fwdIndexIDs)");
+  tree.resize(K.frames.N);
 
-  for(mlr::F_Link& link:tree){ link.parent=-1; link.qIndex=-1; }
+  for(mlr::F_Link& link:tree){ link.parent=-1; link.qIndex=-1; link.com.setZero(); }
 
-  for(mlr::Frame* body : C.frames) {
-    mlr::F_Link& link=tree(body->ID);
-    if(body->link) { //is not a root
+  for(mlr::Frame* f : K.frames) {
+    mlr::F_Link& link=tree(f->ID);
+    link.ID = f->ID;
+    if(f->link) { //is not a root
       mlr::Joint *j;
-      if((j=body->joint())){
+      if((j=f->joint())){
 
         link.type   = j->type;
         link.qIndex = j->qIndex;
         link.parent = j->from()->ID;
 
-//        if(body->inertia)
-//          link.com = j->B*body->inertia->com;
-//        else
-//          link.com = j->B.pos;
-        link.com.setZero();
+        if(f->inertia) link.com = f->inertia->com;
 
-//        if(j->from->hasJoint()) link.A=j->from->joint()->B;
-//        else
         link.A.setZero();
-//        link.A.appendTransformation(j->A);
 
-        link.X = body->X;
-        link.Q = body->link->Q;
+        link.X = j->X();
+        link.Q = j->Q();
       }else{
-        mlr::Link *rel = body->link;
+        mlr::Link *rel = f->link;
         link.type   = mlr::JT_rigid;
-        link.qIndex = -1;
         link.parent = rel->from->ID;
-        if(body->inertia)
-          link.com = body->inertia->com;
-        else
-          link.com.setZero();
-//        if(rel->from->hasJoint()) link.A=rel->from->joint()->B;
-//        else
-          link.A.setZero();
-        link.A.appendTransformation(rel->Q);
-        link.X = body->X;
+        if(f->inertia) link.com = f->inertia->com;
+        link.A = rel->Q;
+        link.X = f->X;
         link.Q.setZero();
       }
     } else {
-//      CHECK_EQ(body->hasJoint(),0, "dammit");
-
       link.type=-1;
       link.qIndex=-1;
       link.parent=-1;
-      if(body->inertia)
-        link.com = body->X*body->inertia->com;
-      else
-        link.com = body->X.pos;
+      if(f->inertia) link.com = f->X*f->inertia->com;
+      else           link.com = f->X.pos;
       link.A.setZero();
       link.X.setZero();
       link.Q.setZero();
     }
-    if(body->inertia){
-      link.mass=body->inertia->mass; CHECK(link.mass>0. || link.qIndex==-1, "a moving link without mass -> this will diverge");
-      link.inertia=body->inertia->matrix;
-      link.force=body->inertia->force;
-      link.torque=body->inertia->torque;
+    if(f->inertia){
+      link.mass=f->inertia->mass; CHECK(link.mass>0. || link.qIndex==-1, "a moving link without mass -> this will diverge");
+      link.inertia=f->inertia->matrix;
+      link.force=f->inertia->force;
+      link.torque=f->inertia->torque;
     }
   }
 
   for(mlr::F_Link& link:tree) link.setFeatherstones();
 }
 
-void updateGraphToTree(mlr::Array<mlr::F_Link>& tree, const mlr::KinematicWorld& C) {
-  CHECK_EQ(tree.N,C.frames.N, "");
+void updateGraphToTree(mlr::Array<mlr::F_Link>& tree, const mlr::KinematicWorld& K) {
+  CHECK_EQ(tree.N, K.frames.N, "");
 
-  for(mlr::Frame *f: C.frames) {
-    uint i = f->ID;
-    if(f->link) tree(i).Q = f->link->Q;
-    tree(i).X = f->X;
-    tree(i).X = f->X;
-    if(f->inertia){
-      tree(i).force=f->inertia->force;
-      tree(i).torque=f->inertia->torque;
+  for(mlr::Frame *f: K.frames) {
+    mlr::F_Link& link=tree(f->ID);
+    if(f->joint()){
+        link.Q = f->link->Q;
+        link.X = f->joint()->X();
     }else{
-      tree(i).force.setZero();
-      tree(i).torque.setZero();
+        link.X = f->X;
+    }
+
+    if(f->inertia){
+      link.force=f->inertia->force;
+      link.torque=f->inertia->torque;
+    }else{
+      link.force.setZero();
+      link.torque.setZero();
     }
   }
   for(mlr::F_Link& l:tree) l.updateFeatherstones();
@@ -873,8 +861,12 @@ void mlr::invDynamics(arr& tau,
       tau_i(i).clear(); tau_i(i).resize(0);
     }
     n += d_i;
-    h(i) = tree(i)._h;
-    h(i).reshape(6, d_i);
+    if(d_i!=0){
+        h(i) = tree(i)._h;
+        h(i).reshape(6, d_i);
+    }else{
+        h(i).resize(6,0u);
+    }
     Xup[i] = tree(i)._Q * tree(i)._A; //the transformation from the i-th to the j-th
   }
   CHECK(n==qd.N && n==qdd.N && n==tau.N, "")
@@ -1014,6 +1006,8 @@ void mlr::fwdDynamics_MF(arr& qdd,
 
   arr M, Minv, F;
   equationOfMotion(M, F, tree, qd);
+
+  cout <<"M=" <<M <<"F=" <<F <<endl;
   inverse(Minv, M);
 //  inverse_SymPosDef(Minv, M);
 

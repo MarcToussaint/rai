@@ -81,9 +81,7 @@ struct Link{
 
   Link* insertPreLink(const mlr::Transformation& A);
   Link* insertPostLink(const mlr::Transformation& B);
-  void write(std::ostream& os) const{
-    os <<Q;
-  }
+  void write(std::ostream& os) const;
 };
 
 //===========================================================================
