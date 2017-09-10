@@ -1,6 +1,8 @@
 #include <Core/util.h>
 #include <Kin/kin.h>
 #include <Gui/opengl.h>
+#include <Kin/frame.h>
+#include <Kin/proxy.h>
 
 double
 pqp_RectDist(double Rab[9], double Tab[3],
@@ -145,8 +147,8 @@ double distance_(mlr::Frame& A, mlr::Frame& B, mlr::Vector& Pa, mlr::Vector& Pb)
 void TEST(Distance){
   mlr::KinematicWorld K;
   mlr::Frame A(K), B(K);
-  new mlr::Shape(&A);
-  new mlr::Shape(&B);
+  new mlr::Shape(A);
+  new mlr::Shape(B);
   A.shape->type = B.shape->type = mlr::ST_ssBox;
   A.shape->size = ARR(.6, .6, .1, .05);
   B.shape->size = ARR(.6, .6, .1, .05);

@@ -28,6 +28,12 @@ mlr::Frame::Frame(KinematicWorld& _K, const Frame* copyFrame)
   }
 }
 
+mlr::Frame::Frame(Frame *_parent)
+  : Frame(parent->K){
+  CHECK(_parent, "");
+  linkFrom(_parent);
+}
+
 mlr::Frame::~Frame() {
   if(joint) delete joint;
   if(shape) delete shape;
@@ -146,6 +152,11 @@ mlr::Joint::Joint(Frame &f, Joint *copyJoint)
   }
 }
 
+mlr::Joint::Joint(Frame &from, Frame &f, Joint *copyJoint)
+  : Joint(f, copyJoint){
+  frame.linkFrom(&from);
+}
+
 mlr::Joint::~Joint() {
   frame.K.reset_q();
   frame.joint = NULL;
@@ -181,7 +192,7 @@ void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
             Q.rot.set(q.p+_qIndex);
             {
                 double n=Q.rot.normalization();
-                if(n<.5 || n>2.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+                if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
             }
             Q.rot.normalize();
             Q.rot.isZero=false; //WHY? (gradient check fails without!)
@@ -192,7 +203,7 @@ void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
             Q.rot.set(q.p+_qIndex+3);
             {
                 double n=Q.rot.normalization();
-                if(n<.5 || n>2.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+                if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
             }
             Q.rot.normalize();
             Q.rot.isZero=false;
@@ -206,7 +217,7 @@ void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
             Q.rot.set(q.p+_qIndex+1);
             {
                 double n=Q.rot.normalization();
-                if(n<.5 || n>2.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+                if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
             }
             Q.rot.normalize();
             Q.rot.isZero=false;

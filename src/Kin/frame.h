@@ -56,6 +56,7 @@ struct Frame {
   struct Inertia *inertia=NULL; ///< this frame has inertia (is a mass)
 
   Frame(KinematicWorld& _K, const Frame *copyBody=NULL);
+  Frame(Frame *_parent);
   ~Frame();
 
   uint numInputs() const{ if(parent) return 1; return 0; } //TODO: remove: use KinConf specific topSort, not generic; remove generic top sort..
@@ -95,6 +96,7 @@ struct Joint{
   struct Uncertainty *uncertainty=NULL;
 
   Joint(Frame& f, Joint* copyJoint=NULL);
+  Joint(Frame& from, Frame& f, Joint* copyJoint=NULL);
   ~Joint();
 
   const Transformation& X() const{ return frame.parent->X; }

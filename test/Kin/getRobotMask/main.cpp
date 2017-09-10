@@ -1,6 +1,6 @@
 #include <Kin/kin.h>
 #include <Gui/opengl.h>
-
+#include <Kin/frame.h>
 
 void TEST(GetRobotMask){
   mlr::KinematicWorld robot("../../../data/pr2_model/pr2_model.ors");
