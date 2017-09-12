@@ -40,6 +40,8 @@ struct Mesh : GLDrawer {
   uintA T;              ///< triangles (faces, empty -> point cloud)
   arr   Tn;             ///< triangle normals (optional)
 
+  uintAA graph;         ///< for every vertex, the set of neighboring vertices
+
   mlr::Transformation glX; ///< transform (only used for drawing! Otherwise use applyOnPoints)  (optional)
 
   long parsing_pos_start;
@@ -71,13 +73,16 @@ struct Mesh : GLDrawer {
   void translate(double dx, double dy, double dz);
   void translate(const arr& d);
   void transform(const Transformation& t);
-  mlr::Vector center();
+  Vector center();
   void box();
   void addMesh(const mlr::Mesh& mesh2);
   void makeConvexHull();
   void makeTriangleFan();
   void makeLineStrip();
-  
+
+  /// @name support function
+  uint support(const arr &dir);
+
   /// @name internal computations & cleanup
   void computeNormals();
   void deleteUnusedVertices();

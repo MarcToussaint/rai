@@ -1,5 +1,7 @@
 BASE = ../../..
 
+LIBS += -lccd
+
 GL=1
 DEPEND = Core Gui Geo Kin
 

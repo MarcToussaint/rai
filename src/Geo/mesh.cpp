@@ -2127,3 +2127,41 @@ ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> doub
 
 
 
+
+uint mlr::Mesh::support(const arr &dir){
+  if(!graph.N){ //build graph
+      graph.resize(V.d0);
+      for(uint i=0;i<T.d0;i++){
+          graph(T(i,0)).setAppend(T(i,1));
+          graph(T(i,0)).setAppend(T(i,2));
+          graph(T(i,1)).setAppend(T(i,0));
+          graph(T(i,1)).setAppend(T(i,2));
+          graph(T(i,2)).setAppend(T(i,0));
+          graph(T(i,2)).setAppend(T(i,1));
+      }
+  }
+
+  arr q(V.d0);
+  for(uint i=0;i<V.d0;i++) q(i) = scalarProduct(dir, V[i]);
+  return argmax(q);
+
+#if 0
+  uint v=0;
+  arr q;
+  double ma = scalarProduct(dir, V[v]);
+  for(;;){
+      //comput scalar product for all neighbors
+      uintA &neigh=graph(v);
+      q.resize(neigh.N);
+      for(uint i=0;i<neigh.N;i++) q(i) = scalarProduct(dir, V[neigh(i)]);
+      uint bestNeighbor = argmax(q);
+      if(q(bestNeighbor)>ma){
+          v = neigh(bestNeighbor);
+          ma = q(bestNeighbor);
+      }else{
+          return v;
+      }
+  }
+  return -1;
+#endif
+}
