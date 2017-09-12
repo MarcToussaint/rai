@@ -198,7 +198,7 @@ void ManipulationTree_Node::optLevel(uint level, bool collisions){
   case 3:{
       komo.setModel(startKinematics, collisions);
       uint stepsPerPhase = mlr::getParameter<uint>("LGP/stepsPerPhase", 10);
-      komo.setTiming(time, stepsPerPhase, 5., 2);
+      komo.setTiming(time+.5, stepsPerPhase, 5., 2);
 
       komo.setHoming(-1., -1., 1e-2);
       komo.setSquaredQAccelerations();

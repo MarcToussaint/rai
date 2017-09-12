@@ -54,7 +54,7 @@ public:
   mlr::String report(bool detailed=false);
   void initDisplay();
   void updateDisplay();
-  void renderToVideo(uint level=3, const char* filePrefix="vid/z.path.");
+  void renderToVideo(uint level=3, const char* filePrefix="z.vid/z.path.");
 
   //-- kind of a gui:
   void printChoices();

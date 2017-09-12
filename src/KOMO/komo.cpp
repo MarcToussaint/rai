@@ -353,8 +353,8 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
 #if 1
   setKinematicSwitch(time, true, "ballZero", endeffRef, object);
 //  setKinematicSwitch(time, true, "insert_transX", NULL, object);
-//  setKinematicSwitch(time, true, "insert_trans3", NULL, object);
-//  setTask(time, time, new TaskMap_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e2);
+  setKinematicSwitch(time, true, "insert_trans3", NULL, object);
+  setTask(time, time, new TaskMap_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e2);
 #else
   setKinematicSwitch(time, true, "freeZero", endeffRef, object);
   setTask(time, time, new TaskMap_InsideBox(world, endeffRef, object), OT_ineq, NoArr, 1e2);
@@ -392,42 +392,6 @@ void KOMO::setGraspStick(double time, const char* endeffRef, const char* object,
   }
 }
 
-/// slide on table while grasping rigidly (kinematic loop)
-void KOMO::setGraspSlide(double startTime, double endTime, const char* endeffRef, const char* object, const char* placeRef, int verbose, double weightFromTop){
-  if(verbose>0) cout <<"KOMO_setGraspSlide t=" <<startTime <<" endeff=" <<endeffRef <<" obj=" <<object <<endl;
-
-  //-- grasp part
-  //hand upright
-  setTask(startTime, startTime, new TaskMap_Default(vecTMT, world, endeffRef, Vector_z), OT_sumOfSqr, {0.,0.,1.}, weightFromTop);
-
-  //disconnect object from table
-  setKinematicSwitch(startTime, true, "delete", placeRef, object);
-  //connect graspRef with object
-  setKinematicSwitch(startTime, true, "ballZero", endeffRef, object);
-
-  //-- place part
-  //place inside box support
-  setTask(endTime, endTime, new TaskMap_AboveBox(world, object, placeRef), OT_ineq, NoArr, 1e2);
-
-  //disconnect object from grasp ref
-  setKinematicSwitch(endTime, true, "delete", endeffRef, object);
-
-  //connect object to table
-  mlr::Transformation rel = 0;
-  rel.pos.set(0,0, .5*(height(world, object) + height(world, placeRef)));
-  setKinematicSwitch(endTime, true, "transXYPhiZero", placeRef, object, rel );
-
-  //-- slide constraints!
-  setTask(startTime, endTime,
-          new TaskMap_LinTrans(new TaskMap_Default(posDiffTMT, world, object, NoVector, placeRef), ~ARR(0,0,1), ARR(0)),
-                               OT_sumOfSqr, ARR(rel.pos.z), 1e2);
-
-  if(stepsPerPhase>2){ //velocities down and up
-    setTask(startTime-.15, startTime, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
-    setTask(endTime, endTime+.15, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,.1}, 1e1, 1); // move up
-  }
-}
-
 /// standard place on a table
 void KOMO::setPlace(double time, const char* endeff, const char* object, const char* placeRef, int verbose){
   if(verbose>0) cout <<"KOMO_setPlace t=" <<time <<" obj=" <<object <<" place=" <<placeRef <<endl;
@@ -438,7 +402,7 @@ void KOMO::setPlace(double time, const char* endeff, const char* object, const c
       setTask(time-.05, time+.05, new TaskMap_Default(posTMT, world, endeff), OT_sumOfSqr, {0.,0.,0. }, 1e2, 1); //hold still
       setTask(time+.10, time+.15, new TaskMap_Default(posTMT, world, endeff), OT_sumOfSqr, {0.,0.,+.1}, 1e1, 1); //move up
     }else{
-      setTask(time-.15, time, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
+//      setTask(time-.15, time, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
     }
   }
 
@@ -509,6 +473,49 @@ void KOMO::setPush(double startTime, double endTime, const char* stick, const ch
   if(stepsPerPhase>2){ //velocities down and up
     setTask(startTime-.3, startTime, new TaskMap_Default(posTMT, world, stick), OT_sumOfSqr, {0.,0., -.2}, 1e2, 1); //move down
     setTask(startTime+1., startTime+1.3, new TaskMap_Default(posTMT, world, stick), OT_sumOfSqr, {0.,0., .2}, 1e2, 1); // move up
+  }
+}
+
+void KOMO::setSlide(double time, const char* endeff, const char* object, const char* placeRef, int verbose){
+
+  double startTime = time;
+  double endTime = time+5.;
+
+  if(verbose>0) cout <<"KOMO_setSlide t=" <<startTime <<" endeff=" <<endeff <<" obj=" <<object <<endl;
+
+  //-- grasp part
+  //hand upright
+  setTask(startTime, startTime, new TaskMap_Default(vecTMT, world, endeff, Vector_z), OT_sumOfSqr, {0.,0.,1.}, 1e-2);
+
+  //disconnect object from table
+  setKinematicSwitch(startTime, true, "delete", placeRef, object);
+  //connect graspRef with object
+  setKinematicSwitch(startTime, true, "ballZero", endeff, object);
+  setKinematicSwitch(time, true, "insert_trans3", NULL, object);
+  setTask(time, time, new TaskMap_InsideBox(world, endeff, NoVector, object), OT_ineq, NoArr, 1e2);
+
+  //-- place part
+  //place inside box support
+  setTask(endTime, endTime, new TaskMap_AboveBox(world, object, placeRef), OT_ineq, NoArr, 1e2);
+
+  //disconnect object from grasp ref
+  setKinematicSwitch(endTime, true, "delete", endeff, object);
+
+  //connect object to table
+  mlr::Transformation rel = 0;
+  rel.pos.set(0,0, .5*(height(world, object) + height(world, placeRef)));
+  setKinematicSwitch(endTime, true, "transXYPhiZero", placeRef, object, rel );
+
+  //-- slide constraints!
+  setTask(startTime, endTime,
+          new TaskMap_LinTrans(new TaskMap_Default(posDiffTMT, world, object, NoVector, placeRef), ~ARR(0,0,1), ARR(0)),
+          OT_sumOfSqr, ARR(rel.pos.z), 1e2);
+  setTask(startTime, endTime,
+          new TaskMap_Default(vecDiffTMT, world, object, Vector_z, placeRef, Vector_z), OT_sumOfSqr, {}, 1e2);
+
+  if(stepsPerPhase>2){ //velocities down and up
+    setTask(startTime-.15, startTime, new TaskMap_Default(posTMT, world, endeff), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
+    setTask(endTime, endTime+.15, new TaskMap_Default(posTMT, world, endeff), OT_sumOfSqr, {0.,0.,.1}, 1e1, 1); // move up
   }
 }
 
@@ -591,6 +598,7 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
         else  setPlace(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
       }else if(n->keys.last()=="komoHandover") setHandover(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
       else if(n->keys.last()=="komoPush")     setPush(phase+time, phase+time+1., *symbols(0), *symbols(1), *symbols(2), verbose); //TODO: the +1. assumes pushes always have duration 1
+      else if(n->keys.last()=="komoSlide")    setSlide(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
       else if(n->keys.last()=="komoDrop")     setDrop(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
       else if(n->keys.last()=="komoAttach"){
         Node *attachableSymbol = facts.getNode("attachable");
