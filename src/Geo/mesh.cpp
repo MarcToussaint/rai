@@ -359,17 +359,21 @@ void mlr::Mesh::makeLineStrip(){
 }
 
 void mlr::Mesh::setSSCvx(const mlr::Mesh& m, double r, uint fineness){
-  Mesh ball;
-  ball.setSphere(fineness);
-  ball.scale(r);
+  if(r>0.){
+    Mesh ball;
+    ball.setSphere(fineness);
+    ball.scale(r);
 
-  clear();
-  for(uint i=0;i<m.V.d0;i++){
-    ball.translate(m.V(i,0), m.V(i,1), m.V(i,2));
-    addMesh(ball);
-    ball.translate(-m.V(i,0), -m.V(i,1), -m.V(i,2));
+    clear();
+    for(uint i=0;i<m.V.d0;i++){
+      ball.translate(m.V(i,0), m.V(i,1), m.V(i,2));
+      addMesh(ball);
+      ball.translate(-m.V(i,0), -m.V(i,1), -m.V(i,2));
+    }
+    makeConvexHull();
+  }else{
+    operator=(m);
   }
-  makeConvexHull();
 }
 
 

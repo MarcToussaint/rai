@@ -16,16 +16,14 @@
 #include "TM_StaticStability.h"
 #include "frame.h"
 
-TM_StaticStability::TM_StaticStability(int iShape, int jShape)
-  : i(iShape), j(jShape), margin(.01){
+TM_StaticStability::TM_StaticStability(int iShape, double _margin)
+  : i(iShape), margin(_margin){
 }
 
-TM_StaticStability::TM_StaticStability(const mlr::KinematicWorld& G, const char* iShapeName, const char* jShapeName)
-  :i(-1), j(-1), margin(.01){
+TM_StaticStability::TM_StaticStability(const mlr::KinematicWorld& G, const char* iShapeName, double _margin)
+  :i(-1), margin(_margin){
   mlr::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
-  mlr::Frame *b = jShapeName ? G.getFrameByName(jShapeName):NULL;
   if(a) i=a->ID;
-  if(b) j=b->ID;
 }
 
 FrameL getShapesAbove(mlr::Frame *a){
@@ -44,24 +42,47 @@ void TM_StaticStability::phi(arr& y, arr& J, const mlr::KinematicWorld& K, int t
   //get average center of all shapes
   arr cog(3) ,J_cog(3, K.getJointStateDimension());
   cog.setZero(); J_cog.setZero();
-  uint n=0;
-  for(mlr::Frame *b:aboves) /*if(b!=a)*/{
+  double M=0.;
+  for(mlr::Frame *b:aboves) if(b!=a){
+    double mass=0.;
+    if(b->shape) mass=1.;
+    if(b->inertia) mass=b->inertia->mass;
     arr y,J;
     K.kinematicsPos(y, J, b);
-    cog += y;
-    J_cog += J;
-    n++;
+    cog += mass*y;
+    J_cog += mass*J;
+    M += mass;
   }
-  cog  /= (double)n;
-  J_cog /= (double)n;
-
+  CHECK(M>0., "");
+  cog  /= M;
+  J_cog /= M;
 
   //align avg with object center
   K.kinematicsPos(y, J, a);
   y = (y-cog)({0,1});
   if(&J) J=(J-J_cog)({0,1});
+
+#if 1
+  CHECK(a->shape, "");
+  CHECK(a->shape->type==mlr::ST_ssBox, "the supporting shape needs to be a box");
+  arr range = { .5*a->shape->size(0)-margin, .5*a->shape->size(1)-margin };
+  arr pos=y, posJ=J;
+
+  y.resize(4);
+  y(0) =  pos(0) - range(0);
+  y(1) = -pos(0) - range(0);
+  y(2) =  pos(1) - range(1);
+  y(3) = -pos(1) - range(1);
+  if(&J){
+    J.resize(4, posJ.d1);
+    J[0] =  posJ[0];
+    J[1] = -posJ[0];
+    J[2] =  posJ[1];
+    J[3] = -posJ[1];
+  }
+#endif
 }
 
 mlr::String TM_StaticStability::shortTag(const mlr::KinematicWorld &K){
-  return STRING("StaticStability:"<<(i<0?"WORLD":K.frames(i)->name) <<':' <<(j<0?"WORLD":K.frames(j)->name));
+  return STRING("StaticStability:"<<(i<0?"WORLD":K.frames(i)->name));
 }

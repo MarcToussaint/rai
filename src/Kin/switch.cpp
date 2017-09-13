@@ -74,12 +74,14 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
 
   if(symbol==addJointZero || symbol==addActuated || symbol==insertJoint){
     //first find lowest frame below to
-//    mlr::Transformation Q = 0;
+    mlr::Transformation Q = 0;
     while(to->parent){
       if(to->joint) break; //don't jump over joints
-//      Q = to->Q * Q;
+      Q = to->Q * Q;
       to = to->parent;
     }
+    if(!Q.isZero())
+      jA.appendTransformation(-Q);
 
     Joint *j = NULL;
     if(symbol!=insertJoint){

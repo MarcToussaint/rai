@@ -16,21 +16,21 @@
 #include "taskMap_AboveBox.h"
 #include "frame.h"
 
-TaskMap_AboveBox::TaskMap_AboveBox(int iShape, int jShape)
-  : i(iShape), j(jShape), margin(.01){
+TaskMap_AboveBox::TaskMap_AboveBox(int iShape, int jShape, double _margin)
+  : i(iShape), j(jShape), margin(_margin){
 }
 
-TaskMap_AboveBox::TaskMap_AboveBox(const mlr::KinematicWorld& G, const char* iShapeName, const char* jShapeName)
-  :i(-1), j(-1), margin(.01){
-  mlr::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
-  mlr::Frame *b = jShapeName ? G.getFrameByName(jShapeName):NULL;
+TaskMap_AboveBox::TaskMap_AboveBox(const mlr::KinematicWorld& K, const char* iShapeName, const char* jShapeName, double _margin)
+  :i(-1), j(-1), margin(_margin){
+  mlr::Frame *a = iShapeName ? K.getFrameByName(iShapeName):NULL;
+  mlr::Frame *b = jShapeName ? K.getFrameByName(jShapeName):NULL;
   if(a) i=a->ID;
   if(b) j=b->ID;
 }
 
-void TaskMap_AboveBox::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
-  mlr::Shape *pnt=G.frames(i)->shape;
-  mlr::Shape *box=G.frames(j)->shape;
+void TaskMap_AboveBox::phi(arr& y, arr& J, const mlr::KinematicWorld& K, int t){
+  mlr::Shape *pnt=K.frames(i)->shape;
+  mlr::Shape *box=K.frames(j)->shape;
   CHECK(pnt && box,"I need shapes!");
 //  if(box->type!=mlr::ST_ssBox){ //switch roles
 //    mlr::Shape *z=pnt;
@@ -38,7 +38,7 @@ void TaskMap_AboveBox::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
 //  }
   CHECK(box->type==mlr::ST_ssBox,"the 2nd shape needs to be a box"); //s1 should be the board
   arr pos,posJ;
-  G.kinematicsRelPos(pos, posJ, &pnt->frame, NoVector, &box->frame, NoVector);
+  K.kinematicsRelPos(pos, posJ, &pnt->frame, NoVector, &box->frame, NoVector);
 #if 0
   arr range(3);
   double d1 = .5*pnt->size(0) + pnt->size(3);

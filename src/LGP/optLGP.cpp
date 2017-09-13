@@ -20,8 +20,10 @@ void OptLGP::initDisplay(){
         views(1) = make_shared<OrsPathViewer>("pose", 1., -0);
         views(2) = make_shared<OrsPathViewer>("sequence", 1., -0);
         views(3) = make_shared<OrsPathViewer>("path", .1, -1);
-        int r=system("evince z.pdf &");
-        if(r) LOG(-1) <<"could not startup evince";
+        if(mlr::getParameter<bool>("LGP/displayTree", 1)){
+          int r=system("evince z.pdf &");
+          if(r) LOG(-1) <<"could not startup evince";
+        }
         for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
     }
 }

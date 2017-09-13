@@ -150,8 +150,8 @@ void TEST(Distance){
   new mlr::Shape(A);
   new mlr::Shape(B);
   A.shape->type = B.shape->type = mlr::ST_ssBox;
-  A.shape->size = ARR(.6, .6, .1, .05);
-  B.shape->size = ARR(.6, .6, .1, .05);
+  A.shape->size = ARR(1.6, 1.6, .0, .0);
+  B.shape->size = ARR(1.6, 1.6, .0, .0);
   for(uint k=0;k<20;k++){
     A.X.setRandom(); A.X.pos(2) += 2.;
     B.X.setRandom(); B.X.pos(2) += 2.;

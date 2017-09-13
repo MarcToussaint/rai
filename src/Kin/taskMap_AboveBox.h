@@ -21,9 +21,9 @@ struct TaskMap_AboveBox : TaskMap {
   int i, j;               ///< which shapes does it refer to?
   double margin;
 
-  TaskMap_AboveBox(int iShape=-1, int jShape=-1);
+  TaskMap_AboveBox(int iShape=-1, int jShape=-1, double _margin=.01);
   TaskMap_AboveBox(const mlr::KinematicWorld& G,
-                   const char* iShapeName=NULL, const char* jShapeName=NULL);
+                   const char* iShapeName=NULL, const char* jShapeName=NULL, double _margin=.01);
 
   virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1);
   virtual uint dim_phi(const mlr::KinematicWorld& G){ return 4; }

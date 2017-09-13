@@ -13,7 +13,7 @@
  */
 #include "assert.h"
 
-#define GATHER_STATISTICS
+//#define GATHER_STATISTICS
 
 /** defining TEST_BACKUP_PROCEDURE disables the default simplex
  * distance routine, in order to test the (otherwise extremely
