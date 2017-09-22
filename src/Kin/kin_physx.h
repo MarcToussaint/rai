@@ -41,7 +41,7 @@ struct PhysXInterface : GLDrawer{
   void pushToPhysx();
   void pullFromPhysx(double tau = .03);
 
-  void setArticulatedBodiesKinematic(uint agent=0);
+  void setArticulatedBodiesKinematic();
   void ShutdownPhysX();
 
   void glDraw(OpenGL&);

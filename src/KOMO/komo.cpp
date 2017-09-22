@@ -380,6 +380,43 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
   }
 }
 
+/// slide on table while grasping rigidly (kinematic loop)
+void KOMO::setGraspSlide(double startTime, double endTime, const char* endeffRef, const char* object, const char* placeRef, int verbose, double weightFromTop){
+  if(verbose>0) cout <<"KOMO_setGraspSlide t=" <<startTime <<" endeff=" <<endeffRef <<" obj=" <<object <<endl;
+
+  //-- grasp part
+  //hand upright
+  setTask(startTime, startTime, new TaskMap_Default(vecTMT, world, endeffRef, Vector_z), OT_sumOfSqr, {0.,0.,1.}, weightFromTop);
+
+  //disconnect object from table
+  setKinematicSwitch(startTime, true, "delete", placeRef, object);
+  //connect graspRef with object
+  setKinematicSwitch(startTime, true, "ballZero", endeffRef, object);
+
+  //-- place part
+  //place inside box support
+  setTask(endTime, endTime, new TaskMap_AboveBox(world, object, placeRef), OT_ineq, NoArr, 1e2);
+
+  //disconnect object from grasp ref
+  setKinematicSwitch(endTime, true, "delete", endeffRef, object);
+
+  //connect object to table
+  mlr::Transformation rel = 0;
+  rel.pos.set(0,0, .5*(shapeSize(world, object) + shapeSize(world, placeRef)));
+  setKinematicSwitch(endTime, true, "transXYPhiZero", placeRef, object, rel );
+
+  //-- slide constraints!
+  setTask(startTime, endTime,
+          new TaskMap_LinTrans(new TaskMap_Default(posDiffTMT, world, object, NoVector, placeRef), ~ARR(0,0,1), ARR(0)),
+                               OT_sumOfSqr, ARR(rel.pos.z), 1e2);
+
+  if(stepsPerPhase>2){ //velocities down and up
+    setTask(startTime-.15, startTime, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
+    setTask(endTime, endTime+.15, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,.1}, 1e1, 1); // move up
+  }
+}
+
+
 /// a standard pick up: lower-attached-lift; centered, from top
 void KOMO::setGraspStick(double time, const char* endeffRef, const char* object, int verbose, double weightFromTop, double timeToLift){
   if(verbose>0) cout <<"KOMO_setGraspStick t=" <<time <<" endeff=" <<endeffRef <<" obj=" <<object <<endl;
