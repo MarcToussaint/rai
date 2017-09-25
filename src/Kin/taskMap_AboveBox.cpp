@@ -36,7 +36,7 @@ void TaskMap_AboveBox::phi(arr& y, arr& J, const mlr::KinematicWorld& K, int t){
 //    mlr::Shape *z=pnt;
 //    pnt=box; box=z;
 //  }
-  CHECK(box->type==mlr::ST_ssBox,"the 2nd shape needs to be a box"); //s1 should be the board
+  CHECK(box->type()==mlr::ST_ssBox,"the 2nd shape needs to be a box"); //s1 should be the board
   arr pos,posJ;
   K.kinematicsRelPos(pos, posJ, &pnt->frame, NoVector, &box->frame, NoVector);
 #if 0

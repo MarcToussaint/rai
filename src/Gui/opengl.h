@@ -88,6 +88,7 @@ void glDrawDiamond(float dx, float dy, float dz);
 void glDrawDiamond(float x, float y, float z, float dx, float dy, float dz);
 void glDrawSphere(float radius);
 void glDrawDisk(float radius);
+void glDrawProxy(const arr& p1, const arr& p2, double diskSize=.02, int colorCode=0);
 void glDrawCylinder(float radius, float length, bool closed=true);
 void glDrawCappedCylinder(float radius, float length);
 void glDrawAxis();
@@ -180,7 +181,7 @@ struct OpenGL {
   void addInit(void (*call)(void*), void* classP=NULL);
   void add(GLDrawer& c){ dataLock.writeLock(); drawers.append(&c); dataLock.unlock(); }
   void addDrawer(GLDrawer *c){ dataLock.writeLock(); drawers.append(c); dataLock.unlock(); }
-  void remove(void (*call)(void*), const void* classP=0);
+  void remove(GLDrawer& c){ dataLock.writeLock(); drawers.removeValue(&c); dataLock.unlock(); }
   //template<class T> void add(const T& x) { add(x.staticDraw, &x); } ///< add a class or struct with a staticDraw routine
   void addHoverCall(GLHoverCall *c){ hoverCalls.append(c); }
   void addClickCall(GLClickCall *c){ clickCalls.append(c); }

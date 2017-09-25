@@ -82,11 +82,11 @@ void TaskMap_GJK::phi(arr& v, arr& J, const mlr::KinematicWorld& W, int t){
   mlr::Shape *s1 = i<0?NULL: W.frames(i)->shape;
   mlr::Shape *s2 = j<0?NULL: W.frames(j)->shape;
   CHECK(s1 && s2,"");
-  CHECK(s1->type==mlr::ST_mesh || s1->type==mlr::ST_ssCvx,"");
-  CHECK(s2->type==mlr::ST_mesh || s2->type==mlr::ST_ssCvx,"");
-  mlr::Mesh *m1, *m2;
-  if(s1->type==mlr::ST_mesh) m1=&s1->mesh; else m1=&s1->sscCore;
-  if(s2->type==mlr::ST_mesh) m2=&s2->mesh; else m2=&s2->sscCore;
+  CHECK(s1->type()==mlr::ST_mesh || s1->type()==mlr::ST_ssCvx,"");
+  CHECK(s2->type()==mlr::ST_mesh || s2->type()==mlr::ST_ssCvx,"");
+  const mlr::Mesh *m1, *m2;
+  if(s1->type()==mlr::ST_mesh) m1=&s1->mesh(); else m1=&s1->sscCore();
+  if(s2->type()==mlr::ST_mesh) m2=&s2->mesh(); else m2=&s2->sscCore();
   CHECK(m1->V.N,"");
   CHECK(m1->V.N,"");
   mlr::Vector p1, p2, e1, e2;
@@ -153,8 +153,8 @@ void TaskMap_GJK::phi(arr& v, arr& J, const mlr::KinematicWorld& W, int t){
 
   //reduce by radii
   double rad=0.;
-  if(s1->type==mlr::ST_ssCvx) rad += s1->size(3);
-  if(s2->type==mlr::ST_ssCvx) rad += s2->size(3);
+  if(s1->type()==mlr::ST_ssCvx) rad += s1->size(3);
+  if(s2->type()==mlr::ST_ssCvx) rad += s2->size(3);
   double l2=sumOfSqr(v), l=sqrt(l2);
   double fac = (l-rad)/l;
   if(&J){

@@ -64,7 +64,7 @@ void TM_StaticStability::phi(arr& y, arr& J, const mlr::KinematicWorld& K, int t
 
 #if 1
   CHECK(a->shape, "");
-  CHECK(a->shape->type==mlr::ST_ssBox, "the supporting shape needs to be a box");
+  CHECK(a->shape->type()==mlr::ST_ssBox, "the supporting shape needs to be a box");
   arr range = { .5*a->shape->size(0)-margin, .5*a->shape->size(1)-margin };
   arr pos=y, posJ=J;
 

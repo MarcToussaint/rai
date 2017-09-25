@@ -22,19 +22,19 @@ void mlr::Proxy::glDraw(OpenGL& gl){
   glVertex3dv(posA.p());
   glVertex3dv(posB.p());
   glEnd();
+  glDisable(GL_CULL_FACE);
   mlr::Transformation f;
   f.pos=posA;
   f.rot.setDiff(mlr::Vector(0, 0, 1), posA-posB);
   double GLmatrix[16];
   f.getAffineMatrixGL(GLmatrix);
   glLoadMatrixd(GLmatrix);
-  glDisable(GL_CULL_FACE);
   glDrawDisk(.02);
-  glEnable(GL_CULL_FACE);
 
   f.pos=posB;
   f.getAffineMatrixGL(GLmatrix);
   glLoadMatrixd(GLmatrix);
   glDrawDisk(.02);
+  glEnable(GL_CULL_FACE);
 }
 #endif

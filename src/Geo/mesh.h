@@ -178,7 +178,7 @@ extern ScalarFunction DistanceFunction_SSBox;
 // GJK interface
 //
 
-enum GJK_point_type { GJK_vertex=1, GJK_edge, GJK_face };
+enum GJK_point_type { GJK_none=0, GJK_vertex, GJK_edge, GJK_face };
 extern GJK_point_type& NoPointType;
 double GJK_sqrDistance(const mlr::Mesh& mesh1, const mlr::Mesh& mesh2,
                     const mlr::Transformation& t1, const mlr::Transformation& t2,

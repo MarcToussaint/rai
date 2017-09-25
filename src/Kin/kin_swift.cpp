@@ -63,7 +63,7 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
   for(mlr::Frame *f: world.frames) if((s=f->shape) && s->cont){
     //cout <<'.' <<flush;
     add=true;
-    switch(s->type) {
+    switch(s->type()) {
       case mlr::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
       case mlr::ST_mesh: {
         //check if there is a specific swiftfile!
@@ -76,10 +76,10 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
       } break;
       case mlr::ST_pointCloud: {
         //for now, assume there is only ONE pointCloudObject!
-        CHECK(s->mesh.V.N, "");
+        CHECK(s->mesh().V.N, "");
         global_ANN=new ANN;
         global_ANN_shape=s;
-        global_ANN->setX(s->mesh.V);
+        global_ANN->setX(s->mesh().V);
         global_ANN->calculate();
         add=false;
       } break;
@@ -90,36 +90,36 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
         break;
     }
     if(add) {
-      if(!s->mesh.V.d0){
-        switch(s->type) {
+      if(!s->mesh().V.d0){
+        switch(s->type()) {
           case mlr::ST_box:
-            s->mesh.setBox();
-            s->mesh.scale(s->size(0), s->size(1), s->size(2));
+            s->mesh().setBox();
+            s->mesh().scale(s->size(0), s->size(1), s->size(2));
             break;
           case mlr::ST_sphere:
-            s->mesh.setSphere();
-            s->mesh.scale(s->size(3), s->size(3), s->size(3));
+            s->mesh().setSphere();
+            s->mesh().scale(s->size(3), s->size(3), s->size(3));
             break;
           case mlr::ST_cylinder:
             CHECK(s->size(3)>1e-10,"");
-            s->mesh.setCylinder(s->size(3), s->size(2));
+            s->mesh().setCylinder(s->size(3), s->size(2));
             break;
           case mlr::ST_capsule:
             CHECK(s->size(3)>1e-10,"");
-            s->mesh.setCappedCylinder(s->size(3), s->size(2));
+            s->mesh().setCappedCylinder(s->size(3), s->size(2));
             break;
           case mlr::ST_retired_SSBox:
-            s->mesh.setSSBox(s->size(0), s->size(1), s->size(2), s->size(3));
+            s->mesh().setSSBox(s->size(0), s->size(1), s->size(2), s->size(3));
             break;
           default:
             break;
         }
-        s->mesh_radius = s->mesh.getRadius();
+        s->mesh_radius = s->mesh().getRadius();
       }
-      CHECK(s->mesh.V.d0,"no mesh to add to SWIFT, something was wrongly initialized");
+      CHECK(s->mesh().V.d0,"no mesh to add to SWIFT, something was wrongly initialized");
       r=scene->Add_Convex_Object(
-          s->mesh.V.p, (int*)s->mesh.T.p,
-          s->mesh.V.d0, s->mesh.T.d0, INDEXshape2swift(f->ID), false,
+          s->mesh().V.p, (int*)s->mesh().T.p,
+          s->mesh().V.d0, s->mesh().T.d0, INDEXshape2swift(f->ID), false,
           DEFAULT_ORIENTATION, DEFAULT_TRANSLATION, DEFAULT_SCALE,
           DEFAULT_BOX_SETTING, DEFAULT_BOX_ENLARGE_REL, 2.);
       if(!r) HALT("--failed!");
@@ -141,8 +141,8 @@ void SwiftInterface::reinitShape(const mlr::Frame *f) {
   
   mlr::Shape *s = f->shape;
   CHECK(s,"");
-  bool r=scene->Add_Convex_Object(s->mesh.V.p, (int*)s->mesh.T.p,
-                                  s->mesh.V.d0, s->mesh.T.d0, sw, false,
+  bool r=scene->Add_Convex_Object(s->mesh().V.p, (int*)s->mesh().T.p,
+                                  s->mesh().V.d0, s->mesh().T.d0, sw, false,
                                   DEFAULT_ORIENTATION, DEFAULT_TRANSLATION, DEFAULT_SCALE,
                                   DEFAULT_BOX_SETTING, DEFAULT_BOX_ENLARGE_REL, cutoff);
   if(!r) HALT("--failed!");
@@ -308,8 +308,8 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
         proxy->posB.set(&nearest_pts[6*k+3]);  proxy->posB = world.frames(b)->X * proxy->posB;
         proxy->cenA = world.frames(a)->X.pos;
         proxy->cenB = world.frames(b)->X.pos;
-//        if(world.shapes(a)->type==mlr::ST_mesh) proxy->cenA = world.shapes(a)->X * world.shapes(a)->mesh.getMeanVertex(); else proxy->cenA = world.shapes(a)->X.pos;
-//        if(world.shapes(b)->type==mlr::ST_mesh) proxy->cenB = world.shapes(b)->X * world.shapes(b)->mesh.getMeanVertex(); else proxy->cenB = world.shapes(b)->X.pos;
+//        if(world.shapes(a)->type==mlr::ST_mesh) proxy->cenA = world.shapes(a)->X * world.shapes(a)->mesh().getMeanVertex(); else proxy->cenA = world.shapes(a)->X.pos;
+//        if(world.shapes(b)->type==mlr::ST_mesh) proxy->cenB = world.shapes(b)->X * world.shapes(b)->mesh().getMeanVertex(); else proxy->cenB = world.shapes(b)->X.pos;
         proxy->cenN = proxy->cenA - proxy->cenB; //normal always points from b to a
         proxy->cenD = proxy->cenN.length();
         proxy->cenN /= proxy->cenD;
@@ -321,8 +321,8 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       proxy->a=a;
       proxy->b=b;
       proxy->d = -.0;
-//      if(world.shapes(a)->type==mlr::ST_mesh) proxy->cenA = world.shapes(a)->X * world.shapes(a)->mesh.getMeanVertex(); else proxy->cenA = world.shapes(a)->X.pos;
-//      if(world.shapes(b)->type==mlr::ST_mesh) proxy->cenB = world.shapes(b)->X * world.shapes(b)->mesh.getMeanVertex(); else proxy->cenB = world.shapes(b)->X.pos;
+//      if(world.shapes(a)->type==mlr::ST_mesh) proxy->cenA = world.shapes(a)->X * world.shapes(a)->mesh().getMeanVertex(); else proxy->cenA = world.shapes(a)->X.pos;
+//      if(world.shapes(b)->type==mlr::ST_mesh) proxy->cenB = world.shapes(b)->X * world.shapes(b)->mesh().getMeanVertex(); else proxy->cenB = world.shapes(b)->X.pos;
       proxy->cenA = world.frames(a)->X.pos;
       proxy->cenB = world.frames(b)->X.pos;
       proxy->cenN = proxy->cenA - proxy->cenB; //normal always points from b to a
@@ -363,8 +363,8 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       t = conv_vec2arr(rel.pos);
       
       //check for each vertex
-      for(i=0; i<s->mesh.V.d0; i++) {
-        v = s->mesh.V[i];
+      for(i=0; i<s->mesh().V.d0; i++) {
+        v = s->mesh().V[i];
         v = R*v + t;
         global_ANN->getkNN(dists, idx, v, 1);
         if(!i || dists(0)<_dists(0)) {
@@ -378,8 +378,8 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       proxy->a=global_ANN_shape->frame.ID;
       proxy->b=s->frame.ID;
       proxy->d = _dists(0);
-      proxy->posA.set(&global_ANN_shape->mesh.V(_idx(0), 0));  proxy->posA = global_ANN_shape->frame.X * proxy->posA;
-      proxy->posB.set(&s->mesh.V(_i, 0));                      proxy->posB = s->frame.X * proxy->posB;
+      proxy->posA.set(&global_ANN_shape->mesh().V(_idx(0), 0));  proxy->posA = global_ANN_shape->frame.X * proxy->posA;
+      proxy->posB.set(&s->mesh().V(_i, 0));                      proxy->posB = s->frame.X * proxy->posB;
       proxy->normal = proxy->posA - proxy->posB;
       proxy->normal.normalize();
     }

@@ -139,7 +139,8 @@ struct KinematicWorld : GLDrawer{
   void kinematicsVec (arr& y, arr& J, Frame *a, const Vector& vec=NoVector) const;
   void kinematicsQuat(arr& y, arr& J, Frame *a) const;
   void hessianPos(arr& H, Frame *a, Vector *rel=0) const;
-  void axesMatrix(arr& J, Frame *a) const;
+  void jacobianPos(arr& J, Frame *a, const mlr::Vector& pos_world) const; //usually called internally with kinematicsPos
+  void axesMatrix(arr& J, Frame *a) const; //usually called internally with kinematicsVec or Quat
   void kinematicsRelPos (arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b, const Vector& vec2) const;
   void kinematicsRelVec (arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b) const;
   void kinematicsRelRot (arr& y, arr& J, Frame *a, Frame *b) const;

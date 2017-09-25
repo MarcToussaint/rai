@@ -108,18 +108,6 @@ LIBS += -lSWIFT++
 QHULL := 1
 endif
 
-ifeq ($(GJK),1)
-DEPEND +=  extern_GJK
-endif
-
-ifeq ($(LEWINER),1)
-DEPEND += extern_Lewiner
-endif
-
-ifeq ($(PLY),1)
-DEPEND += extern_ply
-endif
-
 ifeq ($(SOLID),1)
 CXXFLAGS  += -DMLR_SOLID
 CPATH     := $(CPATH):$(LIBPATH)/FreeSOLID-2.1.1/include

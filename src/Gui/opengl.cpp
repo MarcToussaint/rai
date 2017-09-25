@@ -547,15 +547,40 @@ void glDrawAxes(double scale) {
   }
 }
 
-void glDrawSphere(float radius) {
-  GLUquadric *style=gluNewQuadric();
-  gluSphere(style, radius, 10, 10); // last two value for detail
-  gluDeleteQuadric(style);
-}
 
 void glDrawDisk(float radius) {
   GLUquadric *style=gluNewQuadric();
   gluDisk(style, 0, radius, 10, 1);
+  gluDeleteQuadric(style);
+}
+
+void glDrawProxy(const arr& p1, const arr& p2, double diskSize, int colorCode) {
+    glLoadIdentity();
+    if(!colorCode) glColor(.8,.2,.2);
+    else glColor(colorCode);
+    glBegin(GL_LINES);
+    glVertex3dv(p1.p);
+    glVertex3dv(p2.p);
+    glEnd();
+    glDisable(GL_CULL_FACE);
+    mlr::Transformation f;
+    f.pos=p1;
+    f.rot.setDiff(mlr::Vector(0, 0, 1), mlr::Vector(p1-p2));
+    double GLmatrix[16];
+    f.getAffineMatrixGL(GLmatrix);
+    glLoadMatrixd(GLmatrix);
+    glDrawDisk(diskSize);
+
+    f.pos=p2;
+    f.getAffineMatrixGL(GLmatrix);
+    glLoadMatrixd(GLmatrix);
+    glDrawDisk(diskSize);
+    glEnable(GL_CULL_FACE);
+}
+
+void glDrawSphere(float radius) {
+  GLUquadric *style=gluNewQuadric();
+  gluSphere(style, radius, 10, 10); // last two value for detail
   gluDeleteQuadric(style);
 }
 

@@ -33,10 +33,10 @@ void TaskMap_InsideBox::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t)
   mlr::Shape *pnt=G.frames(i)->shape;
   mlr::Shape *box=G.frames(j)->shape;
   CHECK(pnt && box,"I need shapes!");
-  CHECK(box->type==mlr::ST_ssBox || box->type==mlr::ST_box,"the 2nd shape needs to be a box"); //s1 should be the board
+  CHECK(box->type()==mlr::ST_ssBox || box->type()==mlr::ST_box,"the 2nd shape needs to be a box"); //s1 should be the board
   arr pos,posJ;
   G.kinematicsRelPos(pos, posJ, &pnt->frame, ivec, &box->frame, NoVector);
-  arr range = box->size;
+  arr range = box->size();
   range *= .5;
   range -= margin;
   for(double& r:range) if(r<.01) r=.01;

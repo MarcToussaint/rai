@@ -4,8 +4,6 @@ OUTPUT = lib$(NAME).so
 
 #OPTIM = fast_debug
 
-LIBS += -lccd
-
 GL = 1
 PHYSX = 1
 ODE = 0

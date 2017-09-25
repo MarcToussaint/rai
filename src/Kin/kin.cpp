@@ -108,29 +108,32 @@ uintA shapesToShapeIndices(const FrameL& frames) {
 }
 
 void makeConvexHulls(FrameL& frames, bool onlyContactShapes){
-  for(mlr::Frame *f: frames) if(f->shape && (!onlyContactShapes || f->shape->cont)) f->shape->mesh.makeConvexHull();
+  for(mlr::Frame *f: frames) if(f->shape && (!onlyContactShapes || f->shape->cont)) f->shape->mesh().makeConvexHull();
 }
 
 void computeOptimalSSBoxes(FrameL &frames){
-//  for(mlr::Shape *s: shapes) s->mesh.computeOptimalSSBox(s->mesh.V);
+  NIY;
+#if 0
+  //  for(mlr::Shape *s: shapes) s->mesh.computeOptimalSSBox(s->mesh.V);
   mlr::Shape *s;
   for(mlr::Frame *f: frames) if((s=f->shape)){
-    if(!(s->type==mlr::ST_mesh && s->mesh.V.N)) continue;
+    if(!(s->type()==mlr::ST_mesh && s->mesh.V.N)) continue;
     mlr::Transformation t;
     arr x;
     computeOptimalSSBox(s->mesh, x, t, s->mesh.V);
-    s->type = mlr::ST_ssBox;
+    s->type() = mlr::ST_ssBox;
     s->size(0)=2.*x(0); s->size(1)=2.*x(1); s->size(2)=2.*x(2); s->size(3)=x(3);
     s->mesh.setSSBox(s->size(0), s->size(1), s->size(2), s->size(3));
     s->frame.Q.appendTransformation(t);
   }
+#endif
 }
 
 void computeMeshNormals(FrameL& frames, bool force){
   for(mlr::Frame *f: frames) if(f->shape){
     mlr::Shape *s = f->shape;
-    if(force || s->mesh.V.d0!=s->mesh.Vn.d0 || s->mesh.T.d0!=s->mesh.Tn.d0) s->mesh.computeNormals();
-    if(force || s->sscCore.V.d0!=s->sscCore.Vn.d0 || s->sscCore.T.d0!=s->sscCore.Tn.d0) s->sscCore.computeNormals();
+    if(force || s->mesh().V.d0!=s->mesh().Vn.d0 || s->mesh().T.d0!=s->mesh().Tn.d0) s->mesh().computeNormals();
+    if(force || s->sscCore().V.d0!=s->sscCore().Vn.d0 || s->sscCore().T.d0!=s->sscCore().Tn.d0) s->sscCore().computeNormals();
   }
 }
 
@@ -212,13 +215,13 @@ void mlr::KinematicWorld::calc_q(){
   calc_q_from_Q();
 }
 
-void mlr::KinematicWorld::copy(const mlr::KinematicWorld& K, bool referenceMeshesAndSwiftOnCopy) {
+void mlr::KinematicWorld::copy(const mlr::KinematicWorld& K, bool referenceSwiftOnCopy) {
   clear();
   listCopy(proxies, K.proxies);
   for(Frame *f:K.frames) new Frame(*this, f);
   for(Frame *f:K.frames) if(f->parent) frames(f->ID)->linkFrom(frames(f->parent->ID));
 //  for(Frame *f:K.frames) if(f->joint) new Joint(frames(f->ID), f->joint);
-  if(referenceMeshesAndSwiftOnCopy){
+  if(referenceSwiftOnCopy){
     s->swift = K.s->swift;
     s->swiftIsReference=true;
   }
@@ -547,6 +550,10 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const mlr::Vec
   if(&y) y = conv_vec2arr(pos_world); //return the output
   if(!&J) return; //do not return the Jacobian
 
+  jacobianPos(J, a, pos_world);
+}
+
+void mlr::KinematicWorld::jacobianPos(arr& J, Frame *a, const mlr::Vector& pos_world) const {
   //get Jacobian
   uint N=getJointStateDimension();
   J.resize(3, N).setZero();
@@ -730,14 +737,14 @@ void mlr::KinematicWorld::hessianPos(arr& H, Frame *a, mlr::Vector *rel) const {
 /// Jacobian of the i-th body's z-orientation vector
 void mlr::KinematicWorld::kinematicsVec(arr& y, arr& J, Frame *a, const mlr::Vector& vec) const {
   //get the vectoreference frame
-  mlr::Vector vec_referene;
-  if(&vec) vec_referene = a->X.rot*vec;
-  else     vec_referene = a->X.rot.getZ();
-  if(&y) y = conv_vec2arr(vec_referene); //return the vec
+  mlr::Vector vec_world;
+  if(&vec) vec_world = a->X.rot*vec;
+  else     vec_world = a->X.rot.getZ();
+  if(&y) y = conv_vec2arr(vec_world); //return the vec
   if(&J){
     arr A;
     axesMatrix(A, a);
-    J = crossProduct(A, conv_vec2arr(vec_referene));
+    J = crossProduct(A, conv_vec2arr(vec_world));
   }
 }
 
@@ -1204,7 +1211,7 @@ Graph mlr::KinematicWorld::getGraph() const {
       }
     }
     if(f->shape){
-      n->keys.append(STRING("shape " <<f->shape->type));
+      n->keys.append(STRING("shape " <<f->shape->type()));
     }
   }
 #else
@@ -1354,7 +1361,7 @@ void mlr::KinematicWorld::writePlyFile(const char* filename) const {
   uint nT=0,nV=0;
   uint j;
   mlr::Mesh *m;
-  for(Frame *f: frames) if(f->shape) { nV += f->shape->mesh.V.d0; nT += f->shape->mesh.T.d0; }
+  for(Frame *f: frames) if(f->shape) { nV += f->shape->mesh().V.d0; nT += f->shape->mesh().T.d0; }
   
   os <<"\
 ply\n\
@@ -1375,7 +1382,7 @@ end_header\n";
   mlr::Vector v;
   Shape * s;
   for(Frame *f: frames) if((s=f->shape)){
-    m = &s->mesh;
+    m = &s->mesh();
     arr col = m->C;
     CHECK(col.N==3,"");
     t = s->frame.X;
@@ -1393,7 +1400,7 @@ end_header\n";
   }
   uint offset=0;
   for(Frame *f: frames) if((s=f->shape)){
-    m=&s->mesh;
+    m=&s->mesh();
     for(j=0; j<m->T.d0; j++) {
       os <<"3 " <<offset+m->T(j, 0) <<' ' <<offset+m->T(j, 1) <<' ' <<offset+m->T(j, 2) <<endl;
     }
@@ -1540,7 +1547,7 @@ void mlr::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, Proxy *p, double m
   if(!addValues){ y.setZero();  if(&J) J.setZero(); }
 
   //costs
-  if(a->shape->type==mlr::ST_sphere && b->shape->type==mlr::ST_sphere){
+  if(a->shape->type()==mlr::ST_sphere && b->shape->type()==mlr::ST_sphere){
     mlr::Vector diff=a->X.pos-b->X.pos;
     double d = diff.length() - a->shape->size(3) - b->shape->size(3);
     y(0) = 1. - d/margin;

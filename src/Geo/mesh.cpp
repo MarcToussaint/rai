@@ -364,6 +364,7 @@ void mlr::Mesh::setSSCvx(const mlr::Mesh& m, double r, uint fineness){
     ball.setSphere(fineness);
     ball.scale(r);
 
+    arr c=C;
     clear();
     for(uint i=0;i<m.V.d0;i++){
       ball.translate(m.V(i,0), m.V(i,1), m.V(i,2));
@@ -371,8 +372,11 @@ void mlr::Mesh::setSSCvx(const mlr::Mesh& m, double r, uint fineness){
       ball.translate(-m.V(i,0), -m.V(i,1), -m.V(i,2));
     }
     makeConvexHull();
+    C=c;
   }else{
+    arr c=C;
     operator=(m);
+    C=c;
   }
 }
 
@@ -1744,6 +1748,7 @@ void inertiaCylinder(double *I, double& mass, double density, double height, dou
 
 #ifdef MLR_extern_GJK
 GJK_point_type& NoPointType = *((GJK_point_type*)NULL);
+template<> const char* mlr::Enum<GJK_point_type>::names []={ "GJK_none", "GJK_vertex", "GJK_edge", "GJK_face", NULL };
 double GJK_sqrDistance(const mlr::Mesh& mesh1, const mlr::Mesh& mesh2,
                        const mlr::Transformation& t1, const mlr::Transformation& t2,
                        mlr::Vector& p1, mlr::Vector& p2,

@@ -94,7 +94,7 @@ void OrsViewer::step(){
     gl->dataLock.writeLock();
     meshesCopy.resize(n);
     for(uint i=0;i<n;i++){
-      if(world->frames.elem(i)->shape) meshesCopy.elem(i) = world->frames.elem(i)->shape->mesh;
+      if(world->frames.elem(i)->shape) meshesCopy.elem(i) = world->frames.elem(i)->shape->mesh();
       else meshesCopy.elem(i).clear();
     }
     gl->dataLock.unlock();

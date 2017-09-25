@@ -489,15 +489,21 @@ void mlr::Joint::write(std::ostream& os) const {
 // Shape
 //
 
-mlr::Shape::Shape(Frame &f, const Shape *copyShape, bool referenceMeshOnCopy)
-  : frame(f), type(ST_none) {
-  size = {1.,1.,1.,.1};
-  mesh.C = consts<double>(.8, 3); //color[0]=color[1]=color[2]=.8; color[3]=1.;
+mlr::Shape::Shape(Frame &f, const Shape *copyShape)
+  : frame(f), store(_GeomStore())/*, type(ST_none)*/ {
+//  size = {1.,1.,1.,.1};
+//  mesh.C = consts<double>(.8, 3); //color[0]=color[1]=color[2]=.8; color[3]=1.;
 
   CHECK(!frame.shape, "this frame already has a geom attached");
   frame.shape = this;
   if(copyShape){
     const Shape& s = *copyShape;
+    CHECK(&store==&s.store,"copying shapes that refer to different geom stores is not possible");
+    mesh_radius=s.mesh_radius;
+    cont=s.cont;
+    geomID = s.geomID;
+
+#if 0
     type=s.type;
     size=s.size;
     if(!referenceMeshOnCopy){
@@ -513,7 +519,7 @@ mlr::Shape::Shape(Frame &f, const Shape *copyShape, bool referenceMeshOnCopy)
       sscCore.C.referTo(s.sscCore.C);
       sscCore.Vn.referTo(s.sscCore.Vn);
     }
-    mesh_radius=s.mesh_radius; cont=s.cont;
+#endif
   }
 }
 
@@ -522,77 +528,15 @@ mlr::Shape::~Shape() {
 }
 
 void mlr::Shape::read(const Graph& ats) {
-  double d;
-  arr x;
-  mlr::String str;
-  mlr::FileToken fil;
-  mlr::Transformation t;
-  ats.get(size, "size");
-  if(ats.get(mesh.C, "color")){
-    CHECK(mesh.C.N==3 || mesh.C.N==4,"");
-//    if(x.N==3){ memmove(color, x.p, 3*sizeof(double)); color[3]=1.; }
-    //    else memmove(color, x.p, 4*sizeof(double));
-  }
-  if(ats.get(d, "type"))       { type=(ShapeType)(int)d;}
-  else if(ats.get(str, "type")) { str>> type; }
-  if(ats["contact"])           { cont=true; }
-  if(ats.get(fil, "mesh"))     { mesh.read(fil.getIs(), fil.name.getLastN(3).p, fil.name); }
-  if(ats.get(d, "meshscale"))  { mesh.scale(d); }
 
-  //create mesh for basic shapes
-  switch(type) {
-    case mlr::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
-    case mlr::ST_box:
-      mesh.setBox();
-      mesh.scale(size(0), size(1), size(2));
-      break;
-    case mlr::ST_sphere:
-      mesh.setSphere();
-      mesh.scale(size(3), size(3), size(3));
-      break;
-    case mlr::ST_cylinder:
-      CHECK(size(3)>1e-10,"");
-      mesh.setCylinder(size(3), size(2));
-      break;
-    case mlr::ST_capsule:
-      CHECK(size(3)>1e-10,"");
-//      mesh.setCappedCylinder(size(3), size(2));
-      sscCore.setBox();
-      sscCore.scale(0., 0., size(2));
-      mesh.setSSCvx(sscCore, size(3));
-      break;
-    case mlr::ST_retired_SSBox:
-      HALT("deprecated?");
-      mesh.setSSBox(size(0), size(1), size(2), size(3));
-      break;
-    case mlr::ST_marker:
-      break;
-    case mlr::ST_mesh:
-    case mlr::ST_pointCloud:
-      CHECK(mesh.V.N, "mesh needs to be loaded to draw mesh object");
-      sscCore = mesh;
-      sscCore.makeConvexHull();
-      break;
-    case mlr::ST_ssCvx:
-      CHECK(size(3)>1e-10,"");
-      CHECK(mesh.V.N, "mesh needs to be loaded to draw mesh object");
-      sscCore=mesh;
-      mesh.setSSCvx(sscCore, size(3));
-      break;
-    case mlr::ST_ssBox:
-      CHECK(size.N==4 && size(3)>1e-10,"");
-      sscCore.setBox();
-      sscCore.scale(size(0)-2.*size(3), size(1)-2.*size(3), size(2)-2.*size(3));
-      mesh.setSSBox(size(0), size(1), size(2), size(3));
-//      mesh.setSSCvx(sscCore, size(3));
-      break;
-    default: NIY;
-  }
+  geom().read(ats);
+
+  if(ats["contact"])           { cont=true; }
 
   //center the mesh:
-  if(type==mlr::ST_mesh && mesh.V.N){
+  if(type()==mlr::ST_mesh && mesh().V.N){
     if(ats["rel_includes_mesh_center"]){
-      mesh.center();
+      mesh().center();
     }
 //    if(c.length()>1e-8 && !ats["rel_includes_mesh_center"]){
 //      frame.link->Q.addRelativeTranslation(c);
@@ -601,20 +545,7 @@ void mlr::Shape::read(const Graph& ats) {
   }
 
   //compute the bounding radius
-  if(mesh.V.N) mesh_radius = mesh.getRadius();
-
-  //colored box?
-  if(ats["coloredBox"]){
-    CHECK_EQ(mesh.V.d0, 8, "I need a box");
-    arr col=mesh.C;
-    mesh.C.resize(mesh.T.d0, 3);
-    for(uint i=0;i<mesh.C.d0;i++){
-      if(i==2 || i==3) mesh.C[i] = col; //arr(color, 3);
-      else if(i>=4 && i<=7) mesh.C[i] = 1.;
-      else mesh.C[i] = .5;
-    }
-  }
-
+  if(mesh().V.N) mesh_radius = mesh().getRadius();
 
   //add inertia to the body
 #if 0
@@ -640,8 +571,8 @@ void mlr::Shape::read(const Graph& ats) {
 }
 
 void mlr::Shape::write(std::ostream& os) const {
-  os <<" shape=" <<type;
-  os <<" size=[" <<size <<"]";
+  os <<" shape=" <<geom().type;
+  os <<" size=[" <<geom().size <<"]";
 
   Node *n;
   if((n=frame.ats["color"])) os <<*n <<' ';
@@ -655,7 +586,7 @@ void mlr::Shape::glDraw(OpenGL& gl) {
   //set name (for OpenGL selection)
   glPushName((frame.ID <<2) | 1);
   if(frame.K.orsDrawColors && !frame.K.orsDrawIndexColors){
-    if(mesh.C.N) glColor(mesh.C); //color[0], color[1], color[2], color[3]*world.orsDrawAlpha);
+    if(mesh().C.N) glColor(mesh().C); //color[0], color[1], color[2], color[3]*world.orsDrawAlpha);
     else   glColor(.5, .5, .5);
   }
   if(frame.K.orsDrawIndexColors) glColor3b((frame.ID>>16)&0xff, (frame.ID>>8)&0xff, frame.ID&0xff);
@@ -674,69 +605,7 @@ void mlr::Shape::glDraw(OpenGL& gl) {
     glDrawSphere(.1*scale);
   }
   if(frame.K.orsDrawShapes) {
-    switch(type) {
-      case mlr::ST_none: LOG(-1) <<"Shape '" <<frame.name <<"' has no joint type";  break;
-      case mlr::ST_box:
-        if(frame.K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(frame.K.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
-        else glDrawBox(size(0), size(1), size(2));
-        break;
-      case mlr::ST_sphere:
-        if(frame.K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(frame.K.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
-        else glDrawSphere(size(3));
-        break;
-      case mlr::ST_cylinder:
-        if(frame.K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(frame.K.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
-        else glDrawCylinder(size(3), size(2));
-        break;
-      case mlr::ST_capsule:
-        if(frame.K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(frame.K.orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
-        else glDrawCappedCylinder(size(3), size(2));
-        break;
-      case mlr::ST_retired_SSBox:
-        HALT("deprecated??");
-        if(frame.K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(frame.K.orsDrawMeshes){
-          if(!mesh.V.N) mesh.setSSBox(size(0), size(1), size(2), size(3));
-          mesh.glDraw(gl);
-        }else NIY;
-        break;
-      case mlr::ST_marker:
-        if(frame.K.orsDrawMarkers){
-          glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.); glDrawAxes(size(0));
-        }
-        break;
-      case mlr::ST_mesh:
-        CHECK(mesh.V.N, "mesh needs to be loaded to draw mesh object");
-        if(frame.K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else mesh.glDraw(gl);
-        break;
-      case mlr::ST_ssCvx:
-        CHECK(sscCore.V.N, "sscCore needs to be loaded to draw mesh object");
-        if(!mesh.V.N) mesh.setSSCvx(sscCore, size(3));
-        if(frame.K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else mesh.glDraw(gl);
-        break;
-      case mlr::ST_ssBox:
-        if(!mesh.V.N || !sscCore.V.N){
-          sscCore.setBox();
-          sscCore.scale(size(0)-2.*size(3), size(1)-2.*size(3), size(2)-2.*size(3));
-          mesh.setSSCvx(sscCore, size(3));
-        }
-        if(frame.K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else mesh.glDraw(gl);
-        break;
-      case mlr::ST_pointCloud:
-        CHECK(mesh.V.N, "mesh needs to be loaded to draw point cloud object");
-        if(frame.K.orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else mesh.glDraw(gl);
-        break;
-
-      default: HALT("can't draw that geom yet");
-    }
+    geom().glDraw(gl);
   }
   if(frame.K.orsDrawZlines) {
     glColor(0, .7, 0);
