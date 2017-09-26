@@ -29,7 +29,7 @@ mlr::Frame::Frame(KinematicWorld& _K, const Frame* copyFrame)
 }
 
 mlr::Frame::Frame(Frame *_parent)
-  : Frame(parent->K){
+  : Frame(_parent->K){
   CHECK(_parent, "");
   linkFrom(_parent);
 }
@@ -46,37 +46,25 @@ mlr::Frame::~Frame() {
 
 void mlr::Frame::read(const Graph& ats) {
   //interpret some of the attributes
-  arr x;
-  mlr::String str;
   ats.get(X, "X");
   ats.get(X, "pose");
+  ats.get(Q, "Q");
 
-  //mass properties
-  double d;
-  if(ats.get(d, "mass")) {
-    inertia = new Inertia(*this);
-    inertia->mass=d;
-    inertia->matrix.setId();
-    inertia->matrix *= .2*d;
-    inertia->type=BT_dynamic;
-    inertia->read(ats);
-  }
-
-  // add shape if there is no shape exists yet
-  if(ats.getNode("type") && !shape){
-    shape = new Shape(*this);
-    shape->read(ats);
-  }
+  if(ats["joint"]){ joint = new Joint(*this); joint->read(ats); }
+  if(ats["shape"]){ shape = new Shape(*this); shape->read(ats); }
+  if(ats["mass"]){ inertia = new Inertia(*this); inertia->read(ats); }
 }
 
 void mlr::Frame::write(std::ostream& os) const {
-  if(shape) shape->write(os);
   if(parent){
-    if(joint) joint->write(os);
     if(!Q.isZero()) os <<" Q=<T " <<Q <<" > ";
   }else{
     if(!X.isZero()) os <<" X=<T " <<X <<" > ";
   }
+  if(joint) joint->write(os);
+  if(shape) shape->write(os);
+  if(inertia) inertia->write(os);
+
 //  if(mass) os <<"mass=" <<mass <<' ';
 //  if(type!=BT_dynamic) os <<"dyntype=" <<(int)type <<' ';
 //  uint i; Node *a;
@@ -429,8 +417,10 @@ void mlr::Joint::read(const Graph &G){
 
   G.get(frame.Q, "Q");
   G.get(H, "ctrl_H");
-  if(G.get(d, "type")) type=(JointType)d;
-  else if(G.get(str, "type")) { str >>type; }
+  if(G.get(d, "joint"))        type=(JointType)d;
+  else if(G.get(str, "joint")) { str >>type; }
+  else if(G.get(d, "type"))    type=(JointType)d;
+  else if(G.get(str, "type"))  { str >>type; }
   else type=JT_hingeX;
 
   dim = getDimFromType();
@@ -455,7 +445,7 @@ void mlr::Joint::read(const Graph &G){
   arr ctrl_limits;
   G.get(limits, "limits");
   if(limits.N && type!=JT_rigid && !mimic){
-    CHECK_EQ(limits.N, 2*qDim(), "parsed limits have wrong dimension");
+    CHECK(limits.N==2*qDim() || limits.N==2*qDim()+3, "parsed limits have wrong dimension: either lo-hi or lo-hi-vel-eff-acc");
   }
   G.get(ctrl_limits, "ctrl_limits");
   if(ctrl_limits.N && type!=JT_rigid){
@@ -643,12 +633,22 @@ mlr::Inertia::~Inertia(){
   frame.inertia = NULL;
 }
 
-void mlr::Inertia::read(const Graph& ats){
+void mlr::Inertia::write(std::ostream &os) const{
+  os <<" mass=" <<mass;
+}
+
+void mlr::Inertia::read(const Graph& G){
   double d;
-  if(ats["fixed"])       type=BT_static;
-  if(ats["static"])      type=BT_static;
-  if(ats["kinematic"])   type=BT_kinematic;
-  if(ats.get(d,"dyntype")) type=(BodyType)d;
+  if(G.get(d, "mass")) {
+    mass=d;
+    matrix.setId();
+    matrix *= .2*d;
+    type=BT_dynamic;
+  }
+  if(G["fixed"])       type=BT_static;
+  if(G["static"])      type=BT_static;
+  if(G["kinematic"])   type=BT_kinematic;
+  if(G.get(d,"dyntype")) type=(BodyType)d;
 }
 
 

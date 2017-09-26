@@ -80,10 +80,6 @@ mlr::Shape& NoShape = *((mlr::Shape*)NULL);
 mlr::Joint& NoJoint = *((mlr::Joint*)NULL);
 mlr::KinematicWorld& NoWorld = *((mlr::KinematicWorld*)NULL);
 
-template<> const char* mlr::Enum<mlr::ShapeType>::names []={
-  "ST_box", "ST_sphere", "ST_capsule", "ST_mesh", "ST_cylinder", "ST_marker", "ST_SSBox", "ST_pointCloud", "ST_ssCvx", "ST_ssBox", NULL
-};
-
 template<> const char* mlr::Enum<mlr::JointType>::names []={
   "JT_hingeX", "JT_hingeY", "JT_hingeZ", "JT_transX", "JT_transY", "JT_transZ", "JT_transXY", "JT_trans3", "JT_transXYPhi", "JT_universal", "JT_rigid", "JT_quatBall", "JT_phiTransXY", "JT_XBall", "JT_free", NULL
 };
@@ -956,7 +952,7 @@ bool mlr::KinematicWorld::checkUniqueNames() const {
 mlr::Frame* mlr::KinematicWorld::getFrameByName(const char* name, bool warnIfNotExist) const {
   for(Frame *b: frames) if(b->name==name) return b;
   if(strcmp("glCamera", name)!=0)
-  if(warnIfNotExist) MLR_MSG("cannot find Body named '" <<name <<"' in Graph");
+    if(warnIfNotExist) MLR_MSG("cannot find Body named '" <<name <<"' in Graph");
   return 0;
 }
 
@@ -1005,11 +1001,7 @@ StringA mlr::KinematicWorld::getJointNames(){
   for(Joint *j:fwdActiveJoints){
     mlr::String name=j->frame.name;
     if(!name) name <<'q' <<j->qIndex;
-    if(j->dim){
-      for(uint i=0;i<j->dim;i++) names(j->qIndex+i) <<name <<':' <<i;
-    }else{
-      names(j->qIndex) <<name;
-    }
+    for(uint i=0;i<j->dim;i++) names(j->qIndex+i) <<name <<':' <<i;
     if(j->uncertainty){
       if(j->dim){
         for(uint i=j->dim;i<2*j->dim;i++) names(j->qIndex+i) <<name <<":UC:" <<i;
@@ -1158,31 +1150,31 @@ void mlr::KinematicWorld::stepDynamics(const arr& Bu_control, double tau, double
 
 /** @brief prototype for \c operator<< */
 void mlr::KinematicWorld::write(std::ostream& os) const {
-  for(Frame *f: frames) if(!f->name.N) f->name <<f->ID;
+  for(Frame *f: frames) if(!f->name.N) f->name <<'#' <<f->ID;
   for(Frame *f: fwdActiveSet) {
     os <<"frame " <<f->name;
     if(f->parent) os <<'(' <<f->parent->name <<')';
-    os <<" { ";
+    os <<" \t{ ";
     f->write(os);  os <<" }\n";
   }
   os <<std::endl;
-  for(Frame *f: frames) if(f->shape){
-    os <<"shape ";
-    os <<"(" <<f->name <<"){ ";
-    f->shape->write(os);  os <<" }\n";
-  }
-  os <<std::endl;
-  for(Frame *f: fwdActiveSet) if(f->parent) {
-    if(f->joint){
-      os <<"joint ";
-      os <<"(" <<f->parent->name <<' ' <<f->name <<"){ ";
-      f->joint->write(os);  os <<" }\n";
-    }else{
-      os <<"link ";
-      os <<"(" <<f->parent->name <<' ' <<f->name <<"){ ";
-      f->write(os);  os <<" }\n";
-    }
-  }
+//  for(Frame *f: frames) if(f->shape){
+//    os <<"shape ";
+//    os <<"(" <<f->name <<"){ ";
+//    f->shape->write(os);  os <<" }\n";
+//  }
+//  os <<std::endl;
+//  for(Frame *f: fwdActiveSet) if(f->parent) {
+//    if(f->joint){
+//      os <<"joint ";
+//      os <<"(" <<f->parent->name <<' ' <<f->name <<"){ ";
+//      f->joint->write(os);  os <<" }\n";
+//    }else{
+//      os <<"link ";
+//      os <<"(" <<f->parent->name <<' ' <<f->name <<"){ ";
+//      f->write(os);  os <<" }\n";
+//    }
+//  }
 }
 
 #define DEBUG(x) //x
@@ -1261,11 +1253,26 @@ void mlr::KinematicWorld::report(std::ostream &os) const {
 void mlr::KinematicWorld::init(const Graph& G) {
   clear();
 
+  NodeL fs = G.getNodes("frame");
+  for(Node *n: fs) {
+    CHECK_EQ(n->keys(0),"frame","");
+    CHECK(n->isGraph(), "frame must have value Graph");
+    CHECK_LE(n->parents.N, 1,"frames must have no or one parent: specs=" <<*n <<' ' <<n->index);
+
+    Frame *b = NULL;
+    if(!n->parents.N) b = new Frame(*this);
+    if(n->parents.N==1) b = new Frame( getFrameByName(n->parents(0)->keys.last()) );
+    if(n->keys.N>1) b->name=n->keys.last();
+    b->ats.copy(n->graph(), false, true);
+    if(n->keys.N>2) b->ats.newNode<bool>({n->keys.last(-1)});
+    b->read(b->ats);
+  }
+
   NodeL bs = G.getNodes("body");
   for(Node *n:  bs) {
     CHECK_EQ(n->keys(0),"body","");
     CHECK(n->isGraph(), "bodies must have value Graph");
-    
+
     Frame *b=new Frame(*this);
     if(n->keys.N>1) b->name=n->keys.last();
     b->ats.copy(n->graph(), false, true);
@@ -2506,6 +2513,7 @@ int animateConfiguration(mlr::KinematicWorld& K, Inotify *ino) {
   arr lim = K.getLimits();
   K.gl().pressedkey=0;
   const int steps = 50;
+  K.checkConsistency();
   StringA jointNames = K.getJointNames();
 
   for(uint i=x0.N; i--;) {

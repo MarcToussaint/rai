@@ -114,7 +114,6 @@ struct Joint{
   void write(std::ostream& os) const;
   void read(const Graph& G);
 };
-
 stdOutPipe(Joint)
 
 //===========================================================================
@@ -138,8 +137,10 @@ struct Inertia{
   Inertia(Frame& f, mlr::Inertia *copyInertia=NULL);
   ~Inertia();
 
-  void read(const Graph& ats);
+  void write(std::ostream& os) const;
+  void read(const Graph& G);
 };
+stdOutPipe(Inertia)
 
 //===========================================================================
 

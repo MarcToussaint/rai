@@ -590,6 +590,8 @@ void mlr::Mesh::fuseNearVertices(double tol) {
   deleteUnusedVertices();
   
   cout <<"#V=" <<V.d0 <<", done" <<endl;
+
+  C.clear();
 }
 
 void getVertexNeighorsList(const mlr::Mesh& m, intA& Vt, intA& VT) {

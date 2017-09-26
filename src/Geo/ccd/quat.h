@@ -18,8 +18,8 @@
 #ifndef __CCD_QUAT_H__
 #define __CCD_QUAT_H__
 
-#include <ccd/compiler.h>
-#include <ccd/vec3.h>
+#include <Geo/ccd/compiler.h>
+#include <Geo/ccd/vec3.h>
 
 #ifdef __cplusplus
 extern "C" {
