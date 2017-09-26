@@ -5,6 +5,10 @@
 
 Singleton<mlr::GeomStore> _GeomStore;
 
+template<> const char* mlr::Enum<mlr::ShapeType>::names []={
+  "ST_box", "ST_sphere", "ST_capsule", "ST_mesh", "ST_cylinder", "ST_marker", "ST_SSBox", "ST_pointCloud", "ST_ssCvx", "ST_ssBox", NULL
+};
+
 mlr::Geom::Geom(mlr::GeomStore &_store) : store(_store), type(ST_none) {
     ID=store.geoms.N;
     store.geoms.append(this);
@@ -29,8 +33,10 @@ void mlr::Geom::read(const Graph &ats){
       //    if(x.N==3){ memmove(color, x.p, 3*sizeof(double)); color[3]=1.; }
       //    else memmove(color, x.p, 4*sizeof(double));
   }
-  if(ats.get(d, "type"))       { type=(ShapeType)(int)d;}
-  else if(ats.get(str, "type")) { str>> type; }
+  if(ats.get(d, "shape"))        { type=(ShapeType)(int)d;}
+  else if(ats.get(str, "shape")) { str>> type; }
+  else if(ats.get(d, "type"))    { type=(ShapeType)(int)d;}
+  else if(ats.get(str, "type"))  { str>> type; }
   if(ats.get(fil, "mesh"))     { mesh.read(fil.getIs(), fil.name.getLastN(3).p, fil.name); }
   if(ats.get(d, "meshscale"))  { mesh.scale(d); }
 

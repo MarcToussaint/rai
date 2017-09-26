@@ -2,6 +2,8 @@ BASE   = ../../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = libextern_$(NAME).a
 
+
+QHULL = 1
 MLR_NO_CXX11 = 1
 
 #CXXFLAGS += -DSWIFT_DECOMP -DDECOMP_GRAPHICS -O3 -fPIC -w -IRAPID -I/usr/include/tcl8.5

@@ -19,8 +19,8 @@
 #define MLR_CCD
 #ifdef MLR_CCD
 
-#include <ccd/ccd.h>
-#include <ccd/quat.h> // for work with quaternions
+#include <Geo/ccd/ccd.h>
+#include <Geo/ccd/quat.h> // for work with quaternions
 
 void support_mesh(const void *_obj, const ccd_vec3_t *_dir, ccd_vec3_t *v){
   mlr::Mesh *m = (mlr::Mesh*)_obj;
