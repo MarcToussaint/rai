@@ -107,8 +107,8 @@ struct KinematicWorld : GLDrawer{
   void reconfigureRoot(Frame *root);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
   void pruneRigidJoints(int verbose=0);        ///< delete rigid joints -> they become just links
   void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
-  void pruneUselessFrames(int verbose=0);      ///< delete frames that have no name, joint, and shape
-  void optimizeTree();                         ///< call the three above methods in this order
+  void pruneUselessFrames(bool preserveNamed=true);  ///< delete frames that have no name, joint, and shape
+  void optimizeTree(bool preserveNamed=true);        ///< call the three above methods in this order
   void fwdIndexIDs();
   bool checkConsistency();
 

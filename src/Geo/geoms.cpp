@@ -39,6 +39,7 @@ void mlr::Geom::read(const Graph &ats){
   else if(ats.get(str, "type"))  { str>> type; }
   if(ats.get(fil, "mesh"))     { mesh.read(fil.getIs(), fil.name.getLastN(3).p, fil.name); }
   if(ats.get(d, "meshscale"))  { mesh.scale(d); }
+  if(ats.get(x, "meshscale"))  { mesh.scale(x(0), x(1), x(2)); }
 
   //create mesh for basic shapes
   switch(type) {

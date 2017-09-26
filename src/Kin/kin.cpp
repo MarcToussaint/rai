@@ -1150,7 +1150,7 @@ void mlr::KinematicWorld::stepDynamics(const arr& Bu_control, double tau, double
 
 /** @brief prototype for \c operator<< */
 void mlr::KinematicWorld::write(std::ostream& os) const {
-  for(Frame *f: frames) if(!f->name.N) f->name <<'#' <<f->ID;
+  for(Frame *f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
   for(Frame *f: fwdActiveSet) {
     os <<"frame " <<f->name;
     if(f->parent) os <<'(' <<f->parent->name <<')';
@@ -1184,6 +1184,7 @@ void mlr::KinematicWorld::read(std::istream& is) {
   Graph G(is);
   G.checkConsistency();
 //  cout <<"***KVG:\n" <<G <<endl;
+  FILE("z.G") <<G;
   init(G);
 }
 
@@ -1300,7 +1301,6 @@ void mlr::KinematicWorld::init(const Graph& G) {
     }
   }
   
-  uint nCoupledJoints=0;
   NodeL js = G.getNodes("joint");
   for(Node *n: js) {
     CHECK_EQ(n->keys(0),"joint","joints must be declared as joint: specs=" <<*n <<' ' <<n->index);
@@ -1321,12 +1321,10 @@ void mlr::KinematicWorld::init(const Graph& G) {
 
     Joint *j=new Joint(*f);
     j->read(f->ats);
-
-    //if the joint is coupled to another:
-    if(j->mimic) nCoupledJoints++;
   }
 
-  if(nCoupledJoints){
+  //if the joint is coupled to another:
+  {
     Joint *j;
     for(Frame *f: frames) if((j=f->joint) && j->mimic){
       mlr::String jointName;
@@ -1814,18 +1812,19 @@ void mlr::KinematicWorld::reconnectLinksToClosestJoints(){
   }
 }
 
-void mlr::KinematicWorld::pruneUselessFrames(int verbose){
-  for(Frame *f:frames){
-    if(!f->name && !f->joint && !f->shape && !f->inertia){
+void mlr::KinematicWorld::pruneUselessFrames(bool preserveNamed){
+  for(uint i=frames.N;i--;){
+    Frame *f=frames.elem(i);
+    if((!preserveNamed || !f->name) && !f->outLinks.N && !f->joint && !f->shape && !f->inertia){
       delete f; //that's all there is to do
     }
   }
 }
 
-void mlr::KinematicWorld::optimizeTree(){
-//  pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
+void mlr::KinematicWorld::optimizeTree(bool preserveNamed){
+  if(!preserveNamed) pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
   reconnectLinksToClosestJoints();
-  pruneUselessFrames();
+  pruneUselessFrames(preserveNamed);
   checkConsistency();
 }
 
