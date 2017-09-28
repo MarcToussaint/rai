@@ -50,6 +50,8 @@ void mlr::Frame::read(const Graph& ats) {
   ats.get(X, "pose");
   ats.get(Q, "Q");
 
+  if(ats["type"]) ats["type"]->keys.last() = "shape"; //compatibility with old convention: 'body { type... }' generates shape
+
   if(ats["joint"]){ joint = new Joint(*this); joint->read(ats); }
   if(ats["shape"]){ shape = new Shape(*this); shape->read(ats); }
   if(ats["mass"]){ inertia = new Inertia(*this); inertia->read(ats); }
