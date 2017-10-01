@@ -2176,3 +2176,24 @@ uint mlr::Mesh::support(const arr &dir){
   return -1;
 #endif
 }
+
+void mlr::Mesh::supportMargin(uintA &verts, const arr &dir, double margin, int initialization){
+  if(initialization<0 || !graph.N) initialization=support(dir);
+
+  arr p = V[initialization];
+  double max = scalarProduct(p, dir);
+
+  boolA done(V.d0); done=false;
+  uintA queue = { (uint) initialization };
+  verts.clear();
+
+  for(;queue.N;){
+      uint i = queue.popFirst();
+      if(done(i)) continue;
+      done(i) = true;
+      if(scalarProduct(V[i], dir)>=max-margin){
+          verts.append(i);
+          for(uint j : graph(i)) if(!done(j)) queue.append(j);
+      }
+  }
+}

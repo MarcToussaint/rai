@@ -82,6 +82,7 @@ struct Mesh : GLDrawer {
 
   /// @name support function
   uint support(const arr &dir);
+  void supportMargin(uintA& verts, const arr& dir, double margin, int initialization=-1);
 
   /// @name internal computations & cleanup
   void computeNormals();

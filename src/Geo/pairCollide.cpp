@@ -10,7 +10,7 @@ extern "C"{
 #include <ccd/ccd.h>
 #include <ccd/quat.h>
 
-PairCollision::PairCollision(const mlr::Mesh &mesh1, const mlr::Mesh &mesh2, const mlr::Transformation &t1, const mlr::Transformation &t2)
+PairCollision::PairCollision(mlr::Mesh &mesh1, mlr::Mesh &mesh2, mlr::Transformation &t1, mlr::Transformation &t2)
     : mesh1(mesh1), mesh2(mesh2), t1(t1), t2(t2) {
 
     double d2 = GJK_sqrDistance(); //mesh1, mesh2, t1, t2, p1, p2, e1, e2, pt1.x, pt2.x);
@@ -54,6 +54,7 @@ void PairCollision::write(std::ostream &os) const{
     }
     os <<"  closest points: " <<p1 <<"  " <<p2 <<endl;
     os <<"  simplex #: " <<simplex1.d0 <<"  " <<simplex2.d0 <<endl;
+    if(eig1.N || eig2.N) os <<"  EIG #: " <<eig1.d0<<'-' <<eig2.d0 <<endl;
 }
 
 
@@ -132,8 +133,8 @@ double PairCollision::GJK_libccd_penetration(const mlr::Mesh& m1,const mlr::Mesh
   if(simplexType(2, 2)){
       d=coll_2on2(p1, p2, normal, simplex1, simplex2);
   }
-  if(simplexType(2, 3))  NIY;
-  if(simplexType(3, 2))  NIY;
+  if(simplexType(2, 3)) LOG(-1) <<"SIMPLEX TYPES 2 & 3 - NIY";
+  if(simplexType(3, 2)) LOG(-1) <<"SIMPLEX TYPES 3 & 2 - NIY";
 
   return fabs(d);
 }
@@ -268,6 +269,42 @@ void PairCollision::kinDistance(arr &y, arr &J,
             ////      v *= fac;
             //    }
 
+}
+
+void PairCollision::marginAnalysis(double margin){
+    mlr::Mesh M1(mesh1); t1.applyOnPointArray(M1.V);
+    mlr::Mesh M2(mesh2); t2.applyOnPointArray(M2.V);
+
+    uintA pts1, pts2;
+    M1.supportMargin(pts1, -normal, margin);
+    M2.supportMargin(pts2, normal, margin);
+//    cout <<"margin analysis: #1=" <<pts1.N <<"  #2=" <<pts2.N <<endl;
+
+    simplex1.resize(0,3);
+    for(uint i:pts1) simplex1.append(M1.V[i]);
+
+    simplex2.resize(0,3);
+    for(uint i:pts2) simplex2.append(M2.V[i]);
+
+    //eigen value analysis
+    m1 = mean(simplex1);
+    m2 = mean(simplex2);
+    arr var1 = covar(simplex1);
+    arr var2 = covar(simplex2);
+
+    arr sig1, sig2, vec1, vec2;
+    lapack_EigenDecomp(var1, sig1, vec1);
+    lapack_EigenDecomp(var2, sig2, vec2);
+
+    eig1.resize(0,3);
+    eig2.resize(0,3);
+    for(uint i=0;i<3;i++){
+        if(sig1(i)>1e-8) eig1.append(sqrt(sig1(i)) * vec1[i]);
+        if(sig2(i)>1e-8) eig2.append(sqrt(sig2(i)) * vec2[i]);
+    }
+
+    cout <<"EIG1: " <<eig1 <<endl;
+    cout <<"EIG2: " <<eig2 <<endl;
 }
 
 double coll_1on3(arr &pInTri, arr& normal, const arr &pts1, const arr &pts2){

@@ -1,19 +1,20 @@
 #include "mesh.h"
 
 struct PairCollision : GLDrawer{
-  const mlr::Mesh &mesh1;
-  const mlr::Mesh& mesh2;
-  const mlr::Transformation& t1;
-  const mlr::Transformation& t2;
+  mlr::Mesh& mesh1;
+  mlr::Mesh& mesh2;
+  mlr::Transformation& t1;
+  mlr::Transformation& t2;
 
   double distance;
   arr p1, p2; //closest points
   arr normal;
   arr simplex1;
   arr simplex2;
+  arr m1, m2, eig1, eig2;
 
-  PairCollision(const mlr::Mesh& mesh1, const mlr::Mesh& mesh2,
-                const mlr::Transformation& t1, const mlr::Transformation& t2);
+  PairCollision(mlr::Mesh& mesh1, mlr::Mesh& mesh2,
+                mlr::Transformation& t1, mlr::Transformation& t2);
 
   void write(std::ostream& os) const;
 
@@ -27,6 +28,8 @@ struct PairCollision : GLDrawer{
                    const arr& Jp1, const arr& Jp2,
                    const arr& Jx1, const arr& Jx2,
                    double rad1=0., double rad2=0.);
+
+  void marginAnalysis(double margin);
 
 private:
   double GJK_libccd_penetration(const mlr::Mesh& m1,const mlr::Mesh& m2);

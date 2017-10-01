@@ -2378,13 +2378,13 @@ template<class T> T sumOfSqr(const mlr::Array<T>& v) {
 }
 
 /// \f$\sqrt{\sum_i x_i^2}\f$
-template<class T> T length(const mlr::Array<T>& v) { return (T)::sqrt((double)sumOfSqr(v)); }
+template<class T> T length(const mlr::Array<T>& x) { return (T)::sqrt((double)sumOfSqr(x)); }
 
-template<class T> T var(const mlr::Array<T>& v) { T m=sum(v)/v.N; return sumOfSqr(v)/v.N-m*m; }
+template<class T> T var(const mlr::Array<T>& x) { T m=sum(x)/x.N; return sumOfSqr(x)/x.N-m*m; }
 
-template<class T> mlr::Array<T> mean(const mlr::Array<T>& v) {
-  return sum(v, 0)/T(v.d0);
-}
+template<class T> mlr::Array<T> mean(const mlr::Array<T>& X) { return sum(X, 0)/T(X.d0); }
+
+template<class T> arr covar(const mlr::Array<T>& X) { arr m=mean(X); return ((~X)*X)/T(X.d0)-m*~m; }
 
 template<class T> mlr::Array<T> stdDev(const mlr::Array<T>& v) {
   CHECK(v.d0 > 1, "empirical standard deviation makes sense only for N>1")
