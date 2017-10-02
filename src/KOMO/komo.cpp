@@ -374,9 +374,9 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
 #endif
 
   if(stepsPerPhase>2){ //velocities down and up
-    setTask(time-timeToLift, time-2.*timeToLift/3, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
+    setTask(time-timeToLift, time-2.*timeToLift/3, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,-.1}, 1e0, 1); //move down
     setTask(time-timeToLift/3,  time+timeToLift/3, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,0.}, 1e1, 1); //move down
-    setTask(time+2.*timeToLift/3, time+timeToLift, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,.1}, 1e1, 1); // move up
+    setTask(time+2.*timeToLift/3, time+timeToLift, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,.1}, 1e0, 1); // move up
   }
 }
 
@@ -472,18 +472,21 @@ void KOMO::setPlace(double time, const char* endeff, const char* object, const c
 }
 
 /// place with a specific relative pose -> no effective DOFs!
-void KOMO::setPlaceFixed(double time, const char* endeffRef, const char* object, const char* placeRef, const mlr::Transformation& relPose, int verbose){
-  if(verbose>0) cout <<"KOMO_setPlace t=" <<time <<" endeff=" <<endeffRef <<" obj=" <<object <<" place=" <<placeRef <<endl;
+void KOMO::setPlaceFixed(double time, const char* endeff, const char* object, const char* placeRef, const mlr::Transformation& relPose, int verbose){
+  if(verbose>0) cout <<"KOMO_setPlace t=" <<time <<" endeff=" <<endeff <<" obj=" <<object <<" place=" <<placeRef <<endl;
 
   //disconnect object from grasp ref
-  setKinematicSwitch(time, true, "delete", endeffRef, object);
+  setKinematicSwitch(time, true, "delete", endeff, object);
 
   //connect object to table
   setKinematicSwitch(time, true, "rigidZero", placeRef, object, relPose );
 
   if(stepsPerPhase>2){ //velocities down and up
-    setTask(time-.15, time, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
-    setTask(time, time+.15, new TaskMap_Default(posTMT, world, endeffRef), OT_sumOfSqr, {0.,0.,.1}, 1e1, 1); // move up
+    if(endeff){
+        setTask(time-.15, time-.10, new TaskMap_Default(posTMT, world, endeff), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
+        setTask(time-.05, time+.05, new TaskMap_Default(posTMT, world, endeff), OT_sumOfSqr, {0.,0.,0. }, 1e2, 1); //hold still
+        setTask(time+.10, time+.15, new TaskMap_Default(posTMT, world, endeff), OT_sumOfSqr, {0.,0.,+.1}, 1e1, 1); //move up
+    }
   }
 }
 
@@ -605,26 +608,42 @@ void KOMO::setSlideAlong(double time, const char* stick, const char* object, con
 
 void KOMO::setDrop(double time, const char* object, const char* from, const char* to, int verbose){
 
-  //require the object outside the margin of its bounding box
-  double negMargin = .5*shapeSize(world, object, 0)+.05; //how much outside the bounding box?
-  setTask(time, time+.5,
-          new TM_Max(new TaskMap_AboveBox(world, object, from, -negMargin)), //this is the max selection -- only one of the four numbers need to be outside the BB
-          OT_eq, {}, 1e1); //NOTE: usually this is an inequality constraint <0; here we say this should be zero for a negative margin (->outside support)
+  if(from){ //require the object outside the margin of its bounding box
+    double negMargin = .5*shapeSize(world, object, 0)+.05; //how much outside the bounding box?
+    setTask(time, time+.5,
+            new TM_Max(new TaskMap_AboveBox(world, object, from, -negMargin)), //this is the max selection -- only one of the four numbers need to be outside the BB
+            OT_eq, {}, 1e1); //NOTE: usually this is an inequality constraint <0; here we say this should be zero for a negative margin (->outside support)
+  }
 
   //disconnect object from anything
   setKinematicSwitch(time, true, "delete", NULL, object);
 
   //connect to world with lift
 //  setKinematicSwitch(time, true, "JT_trans3", "world", object);
-  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::addActuated, mlr::JT_transZ, "world", object, world, 0));
+  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::addActuated, mlr::JT_transZ, to, object, world, 0));
   setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::insertJoint, mlr::JT_transXY, NULL, object, world, 0));
 
 
-  if(stepsPerPhase>2){ //velocities down and up
-    setTask(time, time+.2, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); // move down
-  }
+//  if(stepsPerPhase>2){ //velocities down and up
+//    setTask(time, time+.2, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); // move down
+//  }
+}
+
+void KOMO::setDropEdge(double time, const char* object, const char* to, int verbose){
+
+  //disconnect object from anything
+  setKinematicSwitch(time, true, "delete", NULL, object);
+
+  //connect to world with lift
+//  setKinematicSwitch(time, true, "JT_trans3", "world", object);
+  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::addActuated, mlr::JT_hingeX, to, object, world, 0));
+  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::insertActuated, mlr::JT_transZ, NULL, object, world, 0));
+  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::insertJoint, mlr::JT_trans3, NULL, object, world, 0));
 
 
+//  if(stepsPerPhase>2){ //velocities down and up
+//    setTask(time, time+.2, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); // move down
+//  }
 }
 
 void KOMO::setAttach(double time, const char* endeff, const char* object1, const char* object2, mlr::Transformation& rel, int verbose){

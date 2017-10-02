@@ -202,7 +202,7 @@ struct OpenGL {
   int timedupdate(double sec);
   void resize(int w, int h);
   void setClearColors(float r, float g, float b, float a);
-  void unproject(double &x, double &y, double &z, bool resetCamera=false);
+  void unproject(double &x, double &y, double &z, bool resetCamera=false, int subView=-1);
   
   /// @name info & I/O
   void reportSelection();

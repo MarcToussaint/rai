@@ -1531,7 +1531,7 @@ void OpenGL::setClearColors(float r, float g, float b, float a) {
 /** @brief inverse projection: given a 2D+depth coordinates in the
   camera view (e.g. as a result of selection) computes the world 3D
   coordinates */
-void OpenGL::unproject(double &x, double &y, double &z,bool resetCamera) {
+void OpenGL::unproject(double &x, double &y, double &z, bool resetCamera, int subView) {
 #ifdef MLR_GL
   double _x, _y, _z;
   GLdouble modelMatrix[16], projMatrix[16];
@@ -1545,6 +1545,15 @@ void OpenGL::unproject(double &x, double &y, double &z,bool resetCamera) {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
   }
+  if(subView!=-1){
+    GLView *vi=&views(subView);
+    glViewport(vi->le*width, vi->bo*height, (vi->ri-vi->le)*width+1, (vi->to-vi->bo)*height+1);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    vi->camera.glSetProjectionMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    }
   glGetDoublev(GL_MODELVIEW_MATRIX, modelMatrix);
   glGetDoublev(GL_PROJECTION_MATRIX, projMatrix);
   glGetIntegerv(GL_VIEWPORT, viewPort);
@@ -1713,7 +1722,7 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
       cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
     }else{
       double x=mouseposx, y=mouseposy;
-      unproject(x, y, d, true);
+      unproject(x, y, d, true, mouseView);
       cam->focus(x, y, d);
     }
 #else

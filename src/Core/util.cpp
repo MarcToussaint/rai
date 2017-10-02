@@ -917,13 +917,14 @@ void mlr::String::operator=(const char *s) {
 
 void mlr::String::set(const char *s, uint n) { resize(n, false); memmove(p, s, n); }
 
-void mlr::String::printf(const char *format, ...){
+mlr::String& mlr::String::printf(const char *format, ...){
   resize(100, false);
   va_list valist;
   va_start(valist, format);
   int len = vsnprintf(p, 100, format, valist);
   va_end(valist);
   resize(len, true);
+  return *this;
 }
 
 /// shorthand for the !strcmp command

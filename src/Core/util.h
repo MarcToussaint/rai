@@ -193,6 +193,7 @@ std::istream& operator>>(std::istream& is, const PARSE&);
 //
 
 #define STRING(x) (((mlr::String&)(mlr::String().stream() <<x)))
+#define STRINGF(format,...) (mlr::String().printf(format, __VA_ARGS__))
 #define STREAM(x) (((mlr::String&)(mlr::String().stream() <<x)).stream())
 
 namespace mlr {
@@ -243,7 +244,7 @@ public:
   String& operator=(const String& s);
   void operator=(const char *s);
   void set(const char *s, uint n);
-  void printf(const char *format, ...);
+  String& printf(const char *format, ...);
   void resize(uint n, bool copy); //low-level resizing the string buffer - with additinal final 0
   void append(char x);
   String& setRandom();

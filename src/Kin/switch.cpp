@@ -72,7 +72,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     return;
   }
 
-  if(symbol==addJointZero || symbol==addActuated || symbol==insertJoint){
+  if(symbol==addJointZero || symbol==addActuated || symbol==insertJoint || symbol==insertActuated){
     //first find lowest frame below to
     mlr::Transformation Q = 0;
     while(to->parent){
@@ -84,7 +84,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
       jA.appendTransformation(-Q);
 
     Joint *j = NULL;
-    if(symbol!=insertJoint){
+    if(symbol!=insertJoint && symbol!=insertActuated){
 //      if(!Q.isZero()){ //append another rigid link with -Q
 //        to->insertPreLink(-Q);
 //        to = to->parent;
@@ -98,7 +98,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
       Frame *l = to->insertPreLink(mlr::Transformation(0));
       j = new Joint(*l);
     }
-    if(symbol==addActuated) j->constrainToZeroVel=false;
+    if(symbol==addActuated || symbol==insertActuated) j->constrainToZeroVel=false;
     else                    j->constrainToZeroVel=true;
     j->type = jointType;
     if(!jA.isZero()){

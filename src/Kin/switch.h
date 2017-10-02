@@ -21,7 +21,7 @@
 namespace mlr{
 
 struct KinematicSwitch{
-  enum OperatorSymbol{ none=-1, deleteJoint=0, addJointZero, addJointAtFrom, addJointAtTo, addActuated, addSliderMechanism, insertJoint };
+  enum OperatorSymbol{ none=-1, deleteJoint=0, addJointZero, addJointAtFrom, addJointAtTo, addActuated, addSliderMechanism, insertJoint, insertActuated };
   Enum<OperatorSymbol> symbol;
   Enum<JointType> jointType;
   uint timeOfApplication;
