@@ -65,7 +65,7 @@ struct Frame {
   Frame* insertPreLink(const mlr::Transformation& A);
   Frame* insertPostLink(const mlr::Transformation& B);
   void unLink();
-  void linkFrom(Frame *_parent);
+  void linkFrom(Frame *_parent, bool adoptRelTransform=false);
 
   void read(const Graph &ats);
   void write(std::ostream& os) const;
@@ -108,6 +108,7 @@ struct Joint{
   void calc_Q_from_q(const arr& q, uint n);
   arr calc_q_from_Q(const Transformation &Q) const;
   uint getDimFromType() const;
+  arr get_h() const;
 
   void makeRigid();
 
@@ -128,7 +129,7 @@ struct FrameGeom{
 /// a Frame with Inertia has mass and, in physical simulation, has forces associated with it
 struct Inertia{
   Frame& frame;
-  double mass;
+  double mass=-1.;
   Matrix matrix=0;
   Enum<BodyType> type;
   Vector com=0;             ///< its center of mass
@@ -136,6 +137,9 @@ struct Inertia{
 
   Inertia(Frame& f, mlr::Inertia *copyInertia=NULL);
   ~Inertia();
+
+  void defaultInertiaByShape();
+  arr getFrameRelativeWrench();
 
   void write(std::ostream& os) const;
   void read(const Graph& G);

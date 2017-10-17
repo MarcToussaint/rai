@@ -161,8 +161,8 @@ template<class T> struct Array : std::vector<T> {
   void referTo(const T *buffer, uint n);
   void referTo(const Array<T>& a);
   void referToRange(const Array<T>& a, int i, int I); // -> referTo(a,{i,I})
-  void referToRange(const Array<T>& a, uint i, int j, int J); // -> referTo(a,{i,I})
-  void referToDim(const Array<T>& a, uint i); // -> referTo
+  void referToRange(const Array<T>& a, int i, int j, int J); // -> referTo(a,{i,I})
+  void referToDim(const Array<T>& a, int i); // -> referTo
   void referToDim(const Array<T>& a, uint i, uint j);
   void referToDim(const Array<T>& a, uint i, uint j, uint k);
   void takeOver(Array<T>& a);  //a becomes a reference to its previously owned memory!
@@ -180,11 +180,11 @@ template<class T> struct Array : std::vector<T> {
   T& operator()(uint i, uint j) const;
   T& operator()(uint i, uint j, uint k) const;
   Array<T> operator()(std::pair<int, int> I) const;
-  Array<T> operator()(uint i, std::pair<int, int> J) const;
+  Array<T> operator()(int i, std::pair<int, int> J) const;
   Array<T> operator()(uint i, uint j, std::initializer_list<int> K) const;
-  Array<T> operator[](uint i) const;     // calls referToDim(*this, i)
+  Array<T> operator[](int i) const;     // calls referToDim(*this, i)
   Array<T> operator[](std::initializer_list<uint> list) const; //-> remove
-  Array<T>& operator()(){ return *this; } //TODO: replace by scalar reference!
+  Array<T>& operator()(){ return *this; } //TODO: make this the scalar reference!
   T** getCarray(Array<T*>& Cpointers) const;
 
   
@@ -240,7 +240,7 @@ template<class T> struct Array : std::vector<T> {
   void removeAllValues(const T& x);
   void delRows(uint i, uint k=1);
   void delColumns(uint i, uint k=1);
-  void insRows(uint i, uint k=1);
+  void insRows(int i, uint k=1);
   void insColumns(uint i, uint k=1);
   void resizeDim(uint k, uint dk);
   void setAppend(const T& x); //? same as if(findValue(x)==-1) append(x)

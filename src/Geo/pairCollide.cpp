@@ -302,9 +302,6 @@ void PairCollision::marginAnalysis(double margin){
         if(sig1(i)>1e-8) eig1.append(sqrt(sig1(i)) * vec1[i]);
         if(sig2(i)>1e-8) eig2.append(sqrt(sig2(i)) * vec2[i]);
     }
-
-    cout <<"EIG1: " <<eig1 <<endl;
-    cout <<"EIG2: " <<eig2 <<endl;
 }
 
 double coll_1on3(arr &pInTri, arr& normal, const arr &pts1, const arr &pts2){

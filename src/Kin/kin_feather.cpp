@@ -241,12 +241,12 @@ void F_Link::setFeatherstones() {
       qIndex=-1;
       _h=zeros(6);
       break;
-    case mlr::JT_hingeX: _h.resize(6); _h.setZero(); _h(0)=1.; break;
-    case mlr::JT_hingeY: _h.resize(6); _h.setZero(); _h(1)=1.; break;
-    case mlr::JT_hingeZ: _h.resize(6); _h.setZero(); _h(2)=1.; break;
-    case mlr::JT_transX: _h.resize(6); _h.setZero(); _h(3)=1.; break;
-    case mlr::JT_transY: _h.resize(6); _h.setZero(); _h(4)=1.; break;
-    case mlr::JT_transZ: _h.resize(6); _h.setZero(); _h(5)=1.; break;
+    case mlr::JT_hingeX: _h.resize(6).setZero(); _h(0)=1.; break;
+    case mlr::JT_hingeY: _h.resize(6).setZero(); _h(1)=1.; break;
+    case mlr::JT_hingeZ: _h.resize(6).setZero(); _h(2)=1.; break;
+    case mlr::JT_transX: _h.resize(6).setZero(); _h(3)=1.; break;
+    case mlr::JT_transY: _h.resize(6).setZero(); _h(4)=1.; break;
+    case mlr::JT_transZ: _h.resize(6).setZero(); _h(5)=1.; break;
     default: NIY;
   }
   Featherstone::RBmci(_I, mass, com.p(), inertia);

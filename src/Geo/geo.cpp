@@ -1200,6 +1200,16 @@ arr Transformation::getArr7d(){
   return t;
 }
 
+arr Transformation::getWrenchTransform(){
+  arr z(3, 3);  z.setZero();
+  arr r = skew(pos.getArr()); //(3, 3);  Featherstone::skew(r, &pos.x); skew pos
+  arr R = rot.getArr(); //(3, 3);  rot.getMatrix(R.p);
+  transpose(R);
+  arr X(6, 6);  X.setBlockMatrix(R, z, R*~r, R); //[[unklar!!]]
+  return X;
+  //cout <<"\nz=" <<z <<"\nr=" <<r <<"\nR=" <<R <<"\nX=" <<X <<endl;
+}
+
 void Transformation::applyOnPointArray(arr& pts) const{
   if(!((pts.nd==2 && pts.d1==3) || (pts.nd==3 && pts.d2==3))){
     LOG(-1) <<"wrong pts dimensions for transformation:" <<pts.dim();

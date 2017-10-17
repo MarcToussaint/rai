@@ -181,8 +181,9 @@ struct KinematicWorld : GLDrawer{
   void addForce(mlr::Vector force, Frame *n);
   void addForce(mlr::Vector force, Frame *n, mlr::Vector pos);
   void contactsToForces(double hook=.01, double damp=.0003);
-  void gravityToForces();
+  void gravityToForces(double g=-9.81);
   void frictionToForces(double coeff);
+  void NewtonEuler_backward();
   
   /// @name extensions on demand
   OpenGL& gl(const char* window_title=NULL);

@@ -115,10 +115,11 @@ void mlr::Frame::unLink(){
   if(joint){ delete joint; joint=NULL; }
 }
 
-void mlr::Frame::linkFrom(mlr::Frame *_parent){
+void mlr::Frame::linkFrom(mlr::Frame *_parent, bool adoptRelTransform){
   CHECK(!parent,"");
   parent=_parent;
   parent->outLinks.append(this);
+  if(adoptRelTransform) Q = X/parent->X;
 }
 
 mlr::Joint::Joint(Frame &f, Joint *copyJoint)
@@ -373,6 +374,23 @@ uint mlr::Joint::getDimFromType() const {
   return 0;
 }
 
+arr mlr::Joint::get_h() const{
+  arr h(6);
+  h.setZero();
+  switch(type) {
+  case mlr::JT_rigid:
+  case mlr::JT_transXYPhi: break;
+  case mlr::JT_hingeX: h.resize(6).setZero(); h(0)=1.; break;
+  case mlr::JT_hingeY: h.resize(6).setZero(); h(1)=1.; break;
+  case mlr::JT_hingeZ: h.resize(6).setZero(); h(2)=1.; break;
+  case mlr::JT_transX: h.resize(6).setZero(); h(3)=1.; break;
+  case mlr::JT_transY: h.resize(6).setZero(); h(4)=1.; break;
+  case mlr::JT_transZ: h.resize(6).setZero(); h(5)=1.; break;
+  default: NIY;
+  }
+  return h;
+}
+
 void mlr::Joint::makeRigid(){
   type=JT_rigid; frame.K.reset_q();
 }
@@ -538,28 +556,6 @@ void mlr::Shape::read(const Graph& ats) {
 
   //compute the bounding radius
   if(mesh().V.N) mesh_radius = mesh().getRadius();
-
-  //add inertia to the body
-#if 0
-  if(frame) {
-    Matrix I;
-    double mass=-1.;
-    switch(type) {
-      case ST_sphere:   inertiaSphere(I.p(), mass, 1000., size(3));  break;
-      case ST_box:      inertiaBox(I.p(), mass, 1000., size(0), size(1), size(2));  break;
-      case ST_capsule:
-      case ST_cylinder: inertiaCylinder(I.p(), mass, 1000., size(2), size(3));  break;
-      case ST_none:
-      default: ;
-    }
-    if(mass>0.){
-      if(!body->inertia) body->iner
-      NIY;
-//      frame.mass += mass;
-//      frame.inertia += I;
-    }
-  }
-#endif
 }
 
 void mlr::Shape::write(std::ostream& os) const {
@@ -635,6 +631,30 @@ mlr::Inertia::~Inertia(){
   frame.inertia = NULL;
 }
 
+void mlr::Inertia::defaultInertiaByShape(){
+  CHECK(frame.shape, "");
+
+  //add inertia to the body
+  Matrix I;
+  switch(frame.shape->type()) {
+  case ST_sphere:   inertiaSphere(I.p(), mass, 1000., frame.shape->size(3));  break;
+  case ST_ssBox:
+  case ST_box:      inertiaBox(I.p(), mass, 1000., frame.shape->size(0), frame.shape->size(1), frame.shape->size(2));  break;
+  case ST_capsule:
+  case ST_cylinder: inertiaCylinder(I.p(), mass, 1000., frame.shape->size(2), frame.shape->size(3));  break;
+  default: HALT("not implemented for this shape type");
+  }
+}
+
+arr mlr::Inertia::getFrameRelativeWrench(){
+  arr f(6);
+  mlr::Vector fo = frame.X.rot/force;
+  mlr::Vector to = frame.X.rot/(torque + ((frame.X.rot*com)^force));
+  f(0)=to.x;  f(1)=to.y;  f(2)=to.z;
+  f(3)=fo.x;  f(4)=fo.y;  f(5)=fo.z;
+  return f;
+}
+
 void mlr::Inertia::write(std::ostream &os) const{
   os <<" mass=" <<mass;
 }
@@ -652,7 +672,6 @@ void mlr::Inertia::read(const Graph& G){
   if(G["kinematic"])   type=BT_kinematic;
   if(G.get(d,"dyntype")) type=(BodyType)d;
 }
-
 
 RUN_ON_INIT_BEGIN(frame)
 JointL::memMove=true;

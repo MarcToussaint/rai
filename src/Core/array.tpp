@@ -193,6 +193,7 @@ template<class T> mlr::Array<T>& mlr::Array<T>::reshape(const Array<uint> &newD)
 
 template<class T> mlr::Array<T>& mlr::Array<T>::resizeAs(const mlr::Array<T>& a) {
   CHECK(this!=&a, "never do this!!!");
+  CHECK(!reference || N==a.N, "resize of a reference (e.g. subarray) is not allowed! (only a resize without changing memory size)");
   nd=a.nd; d0=a.d0; d1=a.d1; d2=a.d2;
   resetD();
   if(nd>3) { d=new uint[nd];  memmove(d, a.d, nd*sizeof(uint)); }
@@ -664,14 +665,15 @@ template<class T> void mlr::Array<T>::delRows(uint i, uint k) {
 }
 
 /// inserts k rows at the i-th row [must be 2D]
-template<class T> void mlr::Array<T>::insRows(uint i, uint k) {
+template<class T> void mlr::Array<T>::insRows(int i, uint k) {
   CHECK(memMove, "only with memMove");
   CHECK_EQ(nd,2, "only for matricies");
-  CHECK(i<=d0, "range check error");
-  uint n=d0;
+  if(i<0) i+=d0;
+  CHECK(i>=0 && i<(int)d0, "range error (" <<i <<">=" <<d0 <<")");
+  int n=d0;
   resizeCopy(d0+k, d1);
-  memmove(p+(i+k)*d1, p+i*d1, sizeT*d1*(n-i));
-  memset (p+ i   *d1, 0     , sizeT*d1*k);
+  if(n>i) memmove(p+(i+k)*d1, p+i*d1, sizeT*d1*(n-i));
+  if(k)   memset (p+ i   *d1, 0     , sizeT*d1*k);
 }
 
 /// deletes k columns starting from the i-th (i==d1 -> deletes the last k columns)
@@ -809,7 +811,7 @@ template<class T> mlr::Array<T> mlr::Array<T>::operator()(std::pair<int, int> I)
 }
 
 /// range reference access
-template<class T> mlr::Array<T> mlr::Array<T>::operator()(uint i, std::pair<int, int> J) const {
+template<class T> mlr::Array<T> mlr::Array<T>::operator()(int i, std::pair<int, int> J) const {
   mlr::Array<T> z;
   z.referToRange(*this, i, J.first, J.second);
 //  if(J.size()==2)
@@ -839,7 +841,7 @@ template<class T> mlr::Array<T> mlr::Array<T>::operator()(uint i, uint j, std::i
 
 
 /// get a subarray (e.g., row of a matrix); use in conjuction with operator()() to get a reference
-template<class T> mlr::Array<T> mlr::Array<T>::operator[](uint i) const {
+template<class T> mlr::Array<T> mlr::Array<T>::operator[](int i) const {
 //  return Array(*this, i);
   mlr::Array<T> z;
 #if 1
@@ -1436,15 +1438,17 @@ template<class T> void mlr::Array<T>::referToRange(const mlr::Array<T>& a, int i
 }
 
 /// make this array a subarray reference to \c a
-template<class T> void mlr::Array<T>::referToRange(const Array<T>& a, uint i, int j, int J) {
+template<class T> void mlr::Array<T>::referToRange(const Array<T>& a, int i, int j, int J) {
   CHECK(a.nd>1, "does not make sense");
   CHECK(a.nd<=3, "not implemented yet");
   freeMEM();
   resetD();
   reference=true; memMove=a.memMove;
+  if(i<0) i+=a.d0;
   if(j<0) j+=a.d1;
   if(J<0) J+=a.d1;
   if(j>J) return;
+  CHECK((uint)i<a.d0, "SubRange range error (" <<i <<"<" <<a.d0 <<")");
   CHECK((uint)j<a.d1 && (uint)J<a.d1, "SubRange range error (" <<j <<"<" <<a.d1 <<", " <<J <<"<" <<a.d1 <<")");
   if(a.nd==2) {
     nd=1;  d0=J+1-j; d1=0; d2=0;  N=d0;
@@ -1460,9 +1464,11 @@ template<class T> void mlr::Array<T>::referToRange(const Array<T>& a, uint i, in
 }
 
 /// make this array a subarray reference to \c a
-template<class T> void mlr::Array<T>::referToDim(const mlr::Array<T>& a, uint i) {
+template<class T> void mlr::Array<T>::referToDim(const mlr::Array<T>& a, int i) {
   CHECK(a.nd>1, "can't create subarray of array less than 2 dimensions");
-  CHECK(i<a.d0, "SubDim range error (" <<i <<"<" <<a.d0 <<")");
+  if(i<0) i+=a.d0;
+
+  CHECK(i>=0 && i<(int)a.d0, "SubDim range error (" <<i <<"<" <<a.d0 <<")");
   freeMEM();
   reference=true; memMove=a.memMove;
   if(a.nd==2) {

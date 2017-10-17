@@ -1151,7 +1151,7 @@ void mlr::KinematicWorld::stepDynamics(const arr& Bu_control, double tau, double
 /** @brief prototype for \c operator<< */
 void mlr::KinematicWorld::write(std::ostream& os) const {
   for(Frame *f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
-  for(Frame *f: fwdActiveSet) {
+  for(Frame *f: frames) { //fwdActiveSet) {
     os <<"frame " <<f->name;
     if(f->parent) os <<'(' <<f->parent->name <<')';
     os <<" \t{ ";
@@ -1474,9 +1474,46 @@ void mlr::KinematicWorld::addForce(mlr::Vector force, mlr::Frame *f, mlr::Vector
   //n->torque += (pos - n->X.p) ^ force;
 }
 
-void mlr::KinematicWorld::gravityToForces() {
-  mlr::Vector g(0, 0, -9.81);
-  for(Frame *f: frames) if(f->inertia) f->inertia->force += f->inertia->mass * g;
+void mlr::KinematicWorld::gravityToForces(double g) {
+  mlr::Vector grav(0, 0, g);
+  for(Frame *f: frames) if(f->inertia) f->inertia->force += f->inertia->mass * grav;
+}
+
+/** similar to invDynamics using NewtonEuler; but only computing the backward pass */
+void mlr::KinematicWorld::NewtonEuler_backward(){
+  uint N=fwdActiveSet.N;
+  mlr::Array<arr> h(N);
+  arr Q(N, 6, 6);
+  arr force(frames.N,6);
+  force.setZero();
+
+  for(uint i=0; i<N; i++) {
+    h(i).resize(6).setZero();
+    Frame *f = fwdActiveSet.elem(i);
+    if(f->joint){
+      h(i) = f->joint->get_h();
+    }
+    if(f->parent){
+      Q[i] = f->Q.getWrenchTransform();
+    }else{
+      Q[i].setId();
+    }
+    if(f->inertia){
+      force[f->ID] = f->inertia->getFrameRelativeWrench();
+    }
+  }
+
+  for(uint i=N; i--;) {
+    Frame *f = fwdActiveSet.elem(i);
+    if(f->parent) force[f->parent->ID] += ~Q[i] * force[f->ID];
+  }
+
+  for(Frame *f:frames){
+    mlr::Transformation R = f->X; //rotate to world, but no translate to origin
+    R.pos.setZero();
+    force[f->ID] = ~R.getWrenchTransform() * force[f->ID];
+    cout <<f->name <<":\t " <<force[f->ID] <<endl;
+  }
 }
 
 /// compute forces from the current contacts
