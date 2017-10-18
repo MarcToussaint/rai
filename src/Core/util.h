@@ -233,7 +233,7 @@ public:
   /// @name access
   operator char*();
   operator const char*() const;
-  char &operator()(uint i) const;
+  char &operator()(int i) const;
   std::iostream& stream();            ///< explicitly returns this as an std::iostream&
   String& operator()();               ///< explicitly return this as a (non-const!) String&
   String getSubString(uint start, uint end) const;

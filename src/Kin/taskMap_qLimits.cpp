@@ -18,14 +18,16 @@
 //===========================================================================
 
 void TaskMap_qLimits::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
-  if(!limits.N) limits=G.getLimits();
+//  if(!limits.N)
+      limits=G.getLimits(); //G might change joint ordering (kinematic switches), need to query limits every time
   G.kinematicsLimitsCost(y, J, limits);
 }
 
 //===========================================================================
 
 void LimitsConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
-  if(!limits.N) limits = G.getLimits();
+//  if(!limits.N)
+      limits = G.getLimits();
   G.kinematicsLimitsCost(y, J, limits, margin);
   y -= .5;
 }

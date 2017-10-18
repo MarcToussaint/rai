@@ -432,6 +432,20 @@ arr mlr::KinematicWorld::getJointState() const {
   return q;
 }
 
+arr mlr::KinematicWorld::getJointState(const StringA& joints) const {
+  if(!q.nd) ((KinematicWorld*)this)->calc_q();
+  arr x(joints.N);
+  for(uint i=0;i<joints.N;i++){
+      String s = joints.elem(i);
+      uint d=0;
+      if(s(-2)==':'){ d=s(-1)-'0'; s.resize(s.N-2,true); }
+      Joint *j = getFrameByName(s)->joint;
+      CHECK(!j->dim || d<j->dim,"");
+      x(i) = q(j->qIndex+d);
+  }
+  return x;
+}
+
 /** @brief returns the vector of joint limts */
 arr mlr::KinematicWorld::getLimits() const {
   uint N=getJointStateDimension();

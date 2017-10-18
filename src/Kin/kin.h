@@ -125,6 +125,7 @@ struct KinematicWorld : GLDrawer{
   uint getJointStateDimension() const;
   void getJointState(arr &_q, arr& _qdot=NoArr) const;
   arr getJointState() const;
+  arr getJointState(const StringA&) const;
   arr naturalQmetric(double power=.5) const;               ///< returns diagonal of a natural metric in q-space, depending on tree depth
   arr getLimits() const;
 

@@ -863,7 +863,11 @@ mlr::String::operator char*() { return p; }
 mlr::String::operator const char*() const { return p; }
 
 /// returns the i-th char
-char& mlr::String::operator()(uint i) const { CHECK(i<=N, "String range error (" <<i <<"<=" <<N <<")"); return p[i]; }
+char& mlr::String::operator()(int i) const {
+    if(i<0) i+=N;
+    CHECK((uint)i<=N, "String range error (" <<i <<"<=" <<N <<")");
+    return p[i];
+}
 
 /// return the substring from `start` to (exclusive) `end`.
 mlr::String mlr::String::getSubString(uint start, uint end) const {
