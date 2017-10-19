@@ -45,9 +45,9 @@ void Filter::open(){
         LOG(0) <<"ADDING this body " <<b->name <<" to the percept database, which ats:" <<endl;
         LOG(0) <<*b <<"--" <<b->ats <<endl;
         mlr::Shape *s=b->shape;
-        switch(s->type){
+        switch(s->type()){
           case mlr::ST_box:{
-            Percept *p = new PercBox(b->X, s->size, s->mesh.C);
+            Percept *p = new PercBox(b->X, s->size(), s->mesh().C);
             p->id = nextId++;
             p->bodyId = b->ID;
             percepts_filtered.set()->append(p);

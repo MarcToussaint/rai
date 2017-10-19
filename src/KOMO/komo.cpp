@@ -1264,3 +1264,11 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, Obje
   if(&tt) komo.featureTypes = ARRAY<ObjectiveTypeA>(tt);
 }
 
+
+arr KOMO::getPath(const StringA &joints){
+    arr X(T,joints.N);
+    for(uint t=0;t<T;t++){
+        X[t] = configurations(t+k_order)->getJointState(joints);
+    }
+    return X;
+}

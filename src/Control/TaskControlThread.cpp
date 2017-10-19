@@ -125,7 +125,8 @@ void TaskControlThread::open(){
 
 
 void TaskControlThread::step(){
-  mlr::Joint *trans = realWorld.getFrameByName("worldTranslationRotation", false)->joint;
+  mlr::Frame *transF = realWorld.getFrameByName("worldTranslationRotation", false);
+  mlr::Joint *trans = (transF?transF->joint:NULL);
 
   //-- read real state
   if(useRos){

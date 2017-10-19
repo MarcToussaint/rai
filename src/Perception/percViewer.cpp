@@ -41,7 +41,7 @@ void PercViewer::open(){
     mlr::Shape *s = f->shape;
     if(s){
       mlr::Mesh& m=modelCopy(f->ID);
-      m = s->mesh;
+      m = s->mesh();
       if(!m.C.N) m.C = {.6, .6, .6, .3};
       if(m.C.N==3) m.C.append(.3);
       if(m.C.N==4) m.C(3)=.3;

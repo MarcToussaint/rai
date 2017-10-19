@@ -109,6 +109,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     G.checkConsistency();
     return;
   }
+
   if(symbol==addSliderMechanism){
     HALT("I think it is better if there is fixed slider mechanisms in the world, that may jump; no dynamic creation of bodies");
     Frame *slider1 = new Frame(G); //{ type=ST_box size=[.2 .1 .05 0] color=[0 0 0] }
@@ -138,6 +139,23 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     G.checkConsistency();
     return;
   }
+
+  if(symbol==addJointAtTo){
+    if(to->parent) to->unLink();
+    to->linkFrom(from, true);
+//    Joint *j = new Joint(*to);
+//    j->constrainToZeroVel=true;
+//    j->type = jointType;
+
+//    jA.setDifference(from->X, to->X);
+//    j->frame.insertPreLink(jA);
+
+    G.calc_q();
+    G.calc_fwdPropagateFrames();
+    G.checkConsistency();
+    return;
+  }
+
   HALT("shouldn't be here!");
 }
 

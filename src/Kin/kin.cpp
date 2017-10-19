@@ -1010,7 +1010,7 @@ mlr::Joint* mlr::KinematicWorld::getJointByBodyIndices(uint ifrom, uint ito) con
   return getJointByBodies(f, t);
 }
 
-StringA mlr::KinematicWorld::getJointNames(){
+StringA mlr::KinematicWorld::getJointNames() const{
   StringA names(q.N);
   for(Joint *j:fwdActiveJoints){
     mlr::String name=j->frame.name;

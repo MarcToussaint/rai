@@ -114,7 +114,7 @@ void PercPlane::syncWith(mlr::KinematicWorld &K){
     body = new mlr::Frame(K);
     body->name = plane_name;
     mlr::Shape *shape = new mlr::Shape(*body);
-    shape->type = mlr::ST_pointCloud;
+    shape->type() = mlr::ST_pointCloud;
 //    shape = new mlr::Shape(K, *body);
 //    shape->name = plane_name;
 //    shape->type = mlr::ST_marker;
@@ -123,7 +123,7 @@ void PercPlane::syncWith(mlr::KinematicWorld &K){
   }
   body->X = transform;
 
-  body->shape->mesh = hull;
+  body->shape->mesh() = hull;
 }
 
 void PercPlane::glDraw(OpenGL& gl){
@@ -192,11 +192,11 @@ void PercBox::syncWith(mlr::KinematicWorld &K){
     body = new mlr::Frame(K);
     body->name = box_name;
     mlr::Shape *shape = new mlr::Shape(*body);
-    shape->type = mlr::ST_box;
+    shape->type() = mlr::ST_box;
   }
   body->X = transform;
-  body->shape->size = size;
-  body->shape->mesh.C = color;
+  body->shape->size() = size;
+  body->shape->mesh().C = color;
 }
 
 void PercBox::glDraw(OpenGL&){
@@ -245,10 +245,10 @@ void PercCluster::syncWith(mlr::KinematicWorld& K){
     body = new mlr::Frame(K);
     body->name = cluster_name;
     mlr::Shape *shape = new mlr::Shape(*body);
-    shape->type = mlr::ST_pointCloud;
+    shape->type() = mlr::ST_pointCloud;
     shape = new mlr::Shape(*body);
-    shape->type = mlr::ST_marker;
-    shape->size = consts<double>(.2,3);
+    shape->type() = mlr::ST_marker;
+    shape->size() = consts<double>(.2,3);
 //    stored_clusters.append(id);
   }
   body->X = frame;
@@ -269,8 +269,8 @@ void PercAlvar::syncWith(mlr::KinematicWorld& K){
     body = new mlr::Frame(K);
     body->name = alvar_name;
     mlr::Shape *shape = new mlr::Shape(*body);
-    shape->type = mlr::ST_marker;
-    shape->size = consts<double>(.2,3);
+    shape->type() = mlr::ST_marker;
+    shape->size() = consts<double>(.2,3);
 //    stored_alvars.append(id);
   }
 
@@ -286,8 +286,8 @@ void OptitrackBody::syncWith(mlr::KinematicWorld &K){
     body = new mlr::Frame(K);
     body->name = optitrackbody_name;
     mlr::Shape *shape = new mlr::Shape(*body);
-    shape->type = mlr::ST_marker;
-    shape->size = consts<double>(.1,3);
+    shape->type() = mlr::ST_marker;
+    shape->size() = consts<double>(.1,3);
 //    stored_optitrackbodies.append(id);
   }
 
@@ -303,8 +303,8 @@ void OptitrackMarker::syncWith(mlr::KinematicWorld &K){
     body = new mlr::Frame(K);
     body->name = optitrackmarker_name;
     mlr::Shape *shape = new mlr::Shape(*body);
-    shape->type = mlr::ST_sphere;
-    shape->size = consts<double>(.03, 3);
+    shape->type() = mlr::ST_sphere;
+    shape->size() = consts<double>(.03, 3);
 //    stored_optitrackmarkers.append(id);
   }
 
