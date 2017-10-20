@@ -79,7 +79,7 @@ struct Joint{
   Frame& frame;
 
   // joint information
-  uint dim;
+  uint dim=0;
   uint qIndex;
   byte generator;    ///< (7bits), h in Featherstone's code (indicates basis vectors of the Lie algebra, but including the middle quaternion w)
   arr limits;        ///< joint limits (lo, up, [maxvel, maxeffort])

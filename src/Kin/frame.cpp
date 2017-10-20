@@ -123,7 +123,7 @@ void mlr::Frame::linkFrom(mlr::Frame *_parent, bool adoptRelTransform){
 }
 
 mlr::Joint::Joint(Frame &f, Joint *copyJoint)
-  : frame(f), dim(0), qIndex(UINT_MAX), q0(0.), H(1.), mimic(NULL){
+  : frame(f), qIndex(UINT_MAX), q0(0.){
   CHECK(!frame.joint, "the Link already has a Joint");
   frame.joint = this;
   frame.K.reset_q();
