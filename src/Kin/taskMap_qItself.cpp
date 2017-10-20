@@ -38,6 +38,13 @@ TaskMap_qItself::TaskMap_qItself(TaskMap_qItself_PickMode pickMode, const String
       }
       return;
   }
+  if(pickMode==QIP_byExcludeJointNames){
+      for(mlr::Frame *f: K.fwdActiveSet) if(f->joint){
+          if(picks.contains(f->name)) continue;
+          selectedBodies.append(f->ID);
+      }
+      return;
+  }
   NIY
 }
 

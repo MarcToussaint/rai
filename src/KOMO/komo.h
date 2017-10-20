@@ -104,7 +104,7 @@ struct KOMO{
   void setLastTaskToBeVelocity();
   void setCollisions(bool hardConstraint, double margin=.05, double prec=1.);
   void setLimits(bool hardConstraint, double margin=.05, double prec=1.);
-  void setSlowAround(double time, double delta, double prec=10.);
+  void setSlowAround(double time, double delta, double prec=10., bool hardConstrained=false);
 
   //-- kinematic switches mid-level
   void setKS_placeOn(double time, bool before, const char* obj, const char* table, bool actuated=false);

@@ -664,9 +664,11 @@ void KOMO::setAttach(double time, const char* endeff, const char* object1, const
 
 }
 
-void KOMO::setSlowAround(double time, double delta, double prec){
-  if(stepsPerPhase>2) //otherwise: no velocities
-    setTask(time-delta, time+delta, new TaskMap_qItself(), OT_sumOfSqr, NoArr, prec, 1);
+void KOMO::setSlowAround(double time, double delta, double prec, bool hardConstrained){
+  if(stepsPerPhase>2){ //otherwise: no velocities
+      if(!hardConstrained) setTask(time-delta, time+delta, new TaskMap_qItself(), OT_sumOfSqr, NoArr, prec, 1);
+      else setTask(time-delta, time+delta, new TaskMap_qItself(), OT_eq, NoArr, prec, 1);
+  }
   //#    _MinSumOfSqr_qItself_vel(MinSumOfSqr qItself){ order=1 time=[0.98 1] scale=1e1 } #slow down
 }
 

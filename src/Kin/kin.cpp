@@ -1015,7 +1015,9 @@ StringA mlr::KinematicWorld::getJointNames() const{
   for(Joint *j:fwdActiveJoints){
     mlr::String name=j->frame.name;
     if(!name) name <<'q' <<j->qIndex;
-    for(uint i=0;i<j->dim;i++) names(j->qIndex+i) <<name <<':' <<i;
+    if(j->dim==1) names(j->qIndex) <<name;
+    else for(uint i=0;i<j->dim;i++) names(j->qIndex+i) <<name <<':' <<i;
+
     if(j->uncertainty){
       if(j->dim){
         for(uint i=j->dim;i<2*j->dim;i++) names(j->qIndex+i) <<name <<":UC:" <<i;

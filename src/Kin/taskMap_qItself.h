@@ -19,7 +19,7 @@
 
 //===========================================================================
 
-enum TaskMap_qItself_PickMode{ QIP_byJointNames, QIP_byBodyNames, QIP_byJointGroups };
+enum TaskMap_qItself_PickMode{ QIP_byJointNames, QIP_byBodyNames, QIP_byJointGroups, QIP_byExcludeJointNames };
 
 struct TaskMap_qItself:TaskMap {
   uintA selectedBodies; ///< optionally, select only a subset of joints, indicated by the BODIES! indices (reason: body indices are stable across kinematic switches)

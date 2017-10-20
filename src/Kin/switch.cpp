@@ -225,8 +225,9 @@ mlr::KinematicSwitch* mlr::KinematicSwitch::newSwitch(const mlr::String& type, c
   else if(type=="delete"){ sw->symbol = mlr::KinematicSwitch::deleteJoint; }
   else if(type=="JT_XBall"){ sw->symbol = mlr::KinematicSwitch::addJointZero; sw->jointType=mlr::JT_XBall; }
   else if(type=="JT_transZ"){ sw->symbol = mlr::KinematicSwitch::addJointZero; sw->jointType=mlr::JT_transZ; }
+  else if(type=="JT_transX"){ sw->symbol = mlr::KinematicSwitch::addJointZero; sw->jointType=mlr::JT_transX; }
   else if(type=="JT_trans3"){ sw->symbol = mlr::KinematicSwitch::addJointZero; sw->jointType=mlr::JT_trans3; }
-  else if(type=="insert_transX"){ sw->symbol = mlr::KinematicSwitch::insertJoint; sw->jointType=mlr::JT_transX; }
+  else if(type=="insert_transX"){ sw->symbol = mlr::KinematicSwitch::insertJoint; sw->jointType=mlr::JT_transY; }
   else if(type=="insert_trans3"){ sw->symbol = mlr::KinematicSwitch::insertJoint; sw->jointType=mlr::JT_trans3; }
   else HALT("unknown type: "<< type);
   if(ref1) sw->fromId = world.getFrameByName(ref1)->ID;
