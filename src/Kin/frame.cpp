@@ -58,6 +58,10 @@ void mlr::Frame::read(const Graph& ats) {
 }
 
 void mlr::Frame::write(std::ostream& os) const {
+  os <<"frame " <<name;
+  if(parent) os <<'(' <<parent->name <<')';
+  os <<" \t{ ";
+
   if(parent){
     if(!Q.isZero()) os <<" Q=<T " <<Q <<" > ";
   }else{
@@ -67,6 +71,7 @@ void mlr::Frame::write(std::ostream& os) const {
   if(shape) shape->write(os);
   if(inertia) inertia->write(os);
 
+  os <<" }\n";
 //  if(mass) os <<"mass=" <<mass <<' ';
 //  if(type!=BT_dynamic) os <<"dyntype=" <<(int)type <<' ';
 //  uint i; Node *a;

@@ -25,23 +25,24 @@ TaskMap_qItself::TaskMap_qItself(TaskMap_qItself_PickMode pickMode, const String
     for(mlr::Frame *f: K.frames){
       bool pick=false;
       for(const mlr::String& s:picks) if(f->ats.getNode(s)){ pick=true; break; }
-      if(pick) selectedBodies.append(f->ID);
+      if(pick) selectedBodies.setAppend(f->ID);
     }
     return;
   }
   if(pickMode==QIP_byJointNames){
-      for(const mlr::String& s:picks){
+      for(mlr::String s:picks){
+          if(s(-2)==':') s.resize(s.N-2,true);
           mlr::Frame *f = K.getFrameByName(s);
           if(!f) HALT("pick '" <<s <<"' not found");
           if(!f->joint) HALT("pick '" <<s <<"' is not a joint");
-          selectedBodies.append(f->ID);
+          selectedBodies.setAppend(f->ID);
       }
       return;
   }
   if(pickMode==QIP_byExcludeJointNames){
       for(mlr::Frame *f: K.fwdActiveSet) if(f->joint){
           if(picks.contains(f->name)) continue;
-          selectedBodies.append(f->ID);
+          selectedBodies.setAppend(f->ID);
       }
       return;
   }
@@ -90,14 +91,21 @@ void TaskMap_qItself::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
   arrA q_bar(k+1), J_bar(k+1);
   //-- read out the task variable from the k+1 configurations
   uint offset = G.N-1-k; //G.N might contain more configurations than the order of THIS particular task -> the front ones are not used
+  //before reading out, check if, in selectedBodies mode, some of the selected ones where switched
+  uintA selectedBodies_org = selectedBodies;
+  if(selectedBodies.N){
+      mlr::Array<mlr::Frame*> sw = getSwitchedBodies(*G.elem(-2), *G.elem(-1));
+      for(mlr::Frame *a:sw) selectedBodies.removeValue(a->ID, false);
+  }
   for(uint i=0;i<=k;i++){
     phi(q_bar(i), J_bar(i), *G(offset+i), t-k+i);
   }
+  selectedBodies = selectedBodies_org;
 
   bool handleSwitches=false;
   uint qN=q_bar(0).N;
   for(uint i=0;i<=k;i++) if(q_bar(i).N!=qN){ handleSwitches=true; break; }
-  if(handleSwitches){
+  if(handleSwitches){ //when bodies are selected, switches don't have to be handled
     CHECK(!selectedBodies.N,"doesn't work for this...")
     uint nFrames = G(offset)->frames.N;
     JointL jointMatchLists(k+1, nFrames); //for each joint of [0], find if the others have it
@@ -152,14 +160,12 @@ void TaskMap_qItself::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
   }
 }
 
-
 uint TaskMap_qItself::dim_phi(const mlr::KinematicWorld& G) {
   if(selectedBodies.N){
     uint n=0;
     for(uint b:selectedBodies) n+=G.frames.elem(b)->joint->qDim();
     return n;
   }
-//  if(M.nd==2) return M.d0;
   return G.getJointStateDimension();
 }
 

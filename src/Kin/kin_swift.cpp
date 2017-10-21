@@ -44,7 +44,7 @@ SwiftInterface::~SwiftInterface() {
   if(scene) delete scene;
   if(global_ANN) delete global_ANN;
   scene=NULL;
-  cout <<" -- SwiftInterface closed" <<endl;
+  //cout <<" -- SwiftInterface closed" <<endl;
 }
 
 SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
