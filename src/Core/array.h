@@ -239,7 +239,7 @@ template<class T> struct Array : std::vector<T> {
   bool removeValue(const T& x, bool errorIfMissing=true);
   void removeAllValues(const T& x);
   void delRows(uint i, uint k=1);
-  void delColumns(uint i, uint k=1);
+  void delColumns(int i, uint k=1);
   void insRows(int i, uint k=1);
   void insColumns(uint i, uint k=1);
   void resizeDim(uint k, uint dk);

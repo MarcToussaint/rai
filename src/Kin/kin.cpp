@@ -537,6 +537,20 @@ void mlr::KinematicWorld::setJointState(const arr& _q, const arr& _qdot) {
   calc_fwdPropagateFrames();
 }
 
+void mlr::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
+  setJointStateCount++; //global counter
+
+  CHECK_EQ(_q.N, joints.N, "");
+  for(uint i=0;i<_q.N;i++){
+    q( getFrameByName(joints(i))->joint->qIndex ) = _q(i);
+  }
+  qdot.clear();
+
+  calc_Q_from_q();
+
+  calc_fwdPropagateFrames();
+}
+
 
 
 //===========================================================================
