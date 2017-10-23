@@ -269,15 +269,11 @@ void KOMO::setKS_slider(double time, bool before, const char* obj, const char* s
   mlr::String slidera = STRING(slider <<'a');
   mlr::String sliderb = STRING(slider <<'b');
 
-  //disconnect object from grasp ref
-  setKinematicSwitch(time, before, "delete", NULL, slidera);
-
   mlr::Transformation rel = 0;
   rel.addRelativeTranslation( 0., 0., .5*(shapeSize(world, obj) + shapeSize(world, table)));
 
   setKinematicSwitch(time, true, "transXYPhiZero", table, slidera, rel);
   setKinematicSwitch(time, true, "hingeZZero", sliderb, obj);
-
 //  setKinematicSwitch(time, before, "sliderMechanism", table, obj, rel );
 
 //  if(!actuated)

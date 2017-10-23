@@ -111,11 +111,14 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
   }
 
   if(symbol==addSliderMechanism){
-    HALT("I think it is better if there is fixed slider mechanisms in the world, that may jump; no dynamic creation of bodies");
+//    HALT("I think it is better if there is fixed slider mechanisms in the world, that may jump; no dynamic creation of bodies");
     Frame *slider1 = new Frame(G); //{ type=ST_box size=[.2 .1 .05 0] color=[0 0 0] }
     Frame *slider2 = new Frame(G); //{ type=ST_box size=[.2 .1 .05 0] color=[1 0 0] }
     Shape *s1 = new Shape(*slider1); s1->type()=ST_box; s1->size()={.2,.1,.05}; s1->mesh().C={0.,0,0};
     Shape *s2 = new Shape(*slider2); s2->type()=ST_box; s2->size()={.2,.1,.05}; s2->mesh().C={1.,0,0};
+
+    //unlink to
+    if(to->parent) to->unLink();
 
     //placement of the slider1 on the table -> fixed
     slider1->linkFrom(from);
@@ -132,7 +135,11 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     Joint *j3 = new Joint(*to);
     j3->type = JT_hingeZ;
     j3->constrainToZeroVel=true;
-    NIY;//j3->B = jB;
+
+    //    NIY;//j3->B = jB;
+    if(!jA.isZero()){
+      slider1->insertPreLink(jA);
+    }
 
     G.calc_q();
     G.calc_fwdPropagateFrames();
@@ -229,6 +236,7 @@ mlr::KinematicSwitch* mlr::KinematicSwitch::newSwitch(const mlr::String& type, c
   else if(type=="JT_trans3"){ sw->symbol = mlr::KinematicSwitch::addJointZero; sw->jointType=mlr::JT_trans3; }
   else if(type=="insert_transX"){ sw->symbol = mlr::KinematicSwitch::insertJoint; sw->jointType=mlr::JT_transY; }
   else if(type=="insert_trans3"){ sw->symbol = mlr::KinematicSwitch::insertJoint; sw->jointType=mlr::JT_trans3; }
+  else if(type=="createSlider"){ sw->symbol = mlr::KinematicSwitch::addSliderMechanism; }
   else HALT("unknown type: "<< type);
   if(ref1) sw->fromId = world.getFrameByName(ref1)->ID;
   if(ref2) sw->toId = world.getFrameByName(ref2)->ID;
