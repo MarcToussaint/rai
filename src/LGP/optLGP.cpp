@@ -208,22 +208,24 @@ MNode *OptLGP::popBest(MNodeL &fringe, uint level){
     return best;
 }
 
-bool OptLGP::expandBest(int stopOnDepth){ //expand
-    MNode *n =  popBest(fringe_expand, 0);
+MNode *OptLGP::expandBest(int stopOnDepth){ //expand
+//    MNode *n =  popBest(fringe_expand, 0);
+    MNode *n =  fringe_expand.popFirst();
+
     CHECK(n,"");
-    if(stopOnDepth>0 && n->step>(uint)stopOnDepth) return false;
+    if(stopOnDepth>0 && n->step>(uint)stopOnDepth) return NULL;
     n->expand();
     for(MNode* ch:n->children){
         if(ch->isTerminal){
             terminals.append(ch);
             MNodeL path = ch->getTreePath();
-            for(MNode *n:path) if(!n->count(1)) fringe_pose2.setAppend(n); //pose2 is a FIFO
+            for(MNode *n:path) if(!n->count(1)) fringe_pose2.append(n); //pose2 is a FIFO
         }else{
             fringe_expand.append(ch);
         }
         if(n->count(1)) fringe_pose.append(ch);
     }
-    return true;
+    return n;
 }
 
 void OptLGP::optBestOnLevel(int level, MNodeL &fringe, MNodeL *addIfTerminal, MNodeL *addChildren){ //optimize a seq
@@ -326,8 +328,9 @@ void OptLGP::step(){
 void OptLGP::buildTree(uint depth){
     init();
 
-    for(;;){
-        bool b = expandBest(depth);
+    mlr::timerRead(true);
+    for(uint k=0;;k++){
+        MNode *b = expandBest(depth);
         if(!b) return;
 
         if(verbose>0){
@@ -336,6 +339,7 @@ void OptLGP::buildTree(uint depth){
             if(verbose>1) cout <<out <<endl;
 //            if(verbose>2) updateDisplay();
         }
+//        if(!(k%1000)) cout <<" #= " <<k <<" d= " <<b->step <<' ' <<mlr::timerRead(true) <<endl;
 //        mlr::wait();
     }
 }

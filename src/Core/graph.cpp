@@ -87,20 +87,25 @@ Node::Node(const std::type_info& _type, void* _value_ptr, Graph& _container, con
   container.NodeL::append(this);
   if(parents.N) for(Node *i: parents){
     CHECK(i,"you gave me a NULL parent");
-    i->parentOf.append(this);
+i->numChildren++;//    i->parentOf.append(this);
   }
 }
 
 Node::~Node() {
-  for(Node *i: parents) i->parentOf.removeValue(this);
-  for(Node *i: parentOf) i->parents.removeValue(this);
-  container.removeValue(this);
-  container.index();
+  if(numChildren) LOG(-1) <<"It is not allowed to delete nodes that still have children";
+  for(Node *i: parents) i->numChildren--; //i->parentOf.removeValue(this);
+//  for(Node *i: parentOf) i->parents.removeValue(this);
+  if(this==container.last()){ //great: this is very efficient to remove without breaking indexing
+    container.resizeCopy(container.N-1);
+  }else{
+    container.removeValue(this);
+    container.isIndexed=false;//  container.index();
+  }
 }
 
 void Node::addParent(Node *p){
   parents.append(p);
-  p->parentOf.append(this);
+p->numChildren++;//  p->parentOf.append(this);
 }
 
 bool Node::matches(const char *key){
@@ -116,6 +121,8 @@ bool Node::matches(const StringA &query_keys) {
 }
 
 void Node::write(std::ostream& os) const {
+  if(!container.isIndexed) container.index();
+
   //-- write keys
   keys.write(os, " ", "", "\0\0");
   
@@ -216,7 +223,12 @@ Graph::~Graph() {
 void Graph::clear() {
   if(ri){ delete ri; ri=NULL; }
   if(pi){ delete pi; pi=NULL; }
-  while(N) delete last();
+  while(N){
+    Node **n = NodeL::p+N-1; //last
+//    while((*n)->numChildren){ n--; CHECK(n>=p,""); }
+    delete *n;
+  }
+  isIndexed=true;
 }
 
 Graph& Graph::newNode(const Nod& ni){
@@ -225,7 +237,7 @@ Graph& Graph::newNode(const Nod& ni){
     Node *p = getNode(s);
     CHECK(p,"parent " <<p <<" of " <<*clone <<" does not exist!");
     clone->parents.append(p);
-    p->parentOf.append(clone);
+p->numChildren++;//    p->parentOf.append(clone);
   }
   return *this;
 }
@@ -366,10 +378,12 @@ Node* Graph::edit(Node *ed){
     if(&ed->container==this){ delete ed; ed=NULL; }
   }else{ //nothing to merge, append
     if(&ed->container!=this){
+      if(!isIndexed) index();
+      if(!ed->container.isIndexed) ed->container.index();
       Node *it = ed->newClone(*this);
       for(uint i=0;i<it->parents.N;i++){
         it->parents(i) = elem(it->parents(i)->index);
-        it->parents(i)->parentOf.append(it);
+it->parents(i)->numChildren++;//        it->parents(i)->parentOf.append(it);
       }
     }
     return ed;
@@ -379,6 +393,8 @@ Node* Graph::edit(Node *ed){
 
 void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubgraphToNonsubgraph){
   DEBUG(G.checkConsistency());
+  if(!G.isIndexed) HALT("can't copy non-indexed graph");
+
 
   CHECK(this!=&G, "Graph self copy -- never do this");
 
@@ -420,7 +436,7 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
   }
 
   //-- the new nodes are not parent of anybody yet
-  for(Node *n:newNodes) CHECK(n->parentOf.N==0,"");
+  for(Node *n:newNodes) CHECK(n->numChildren==0 && n->parentOf.N==0,"");
 
   //-- now copy subgraphs
   for(Node *n:newNodes) if(n->isGraph()){
@@ -433,7 +449,7 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
       Node *p=n->parents(i); //the parent in the origin graph
       if(isChildOfGraph(p->container)) continue;
       if(&p->container==&G){ //parent is directly in G, no need for complicated search
-        p->parentOf.removeValue(n);   //original parent is not parent of copy
+p->numChildren--;//        p->parentOf.removeValue(n);   //original parent is not parent of copy
         p = newNodes.elem(p->index);  //the true parent in the new graph
       }else{
         const Graph *newg=this, *oldg=&G;
@@ -445,10 +461,10 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
         }
         CHECK(newg->N==oldg->N,"different size!!\n" <<*newg <<"**\n" <<*oldg);
         CHECK(p==oldg->elem(p->index),""); //we found the parent in oldg
-        p->parentOf.removeValue(n);   //original parent is not parent of copy
+p->numChildren--;//        p->parentOf.removeValue(n);   //original parent is not parent of copy
         p = newg->elem(p->index);     //the true parent in the new graph
       }
-      p->parentOf.append(n);       //connect both ways
+p->numChildren++;//      p->parentOf.append(n);       //connect both ways
       n->parents(i)=p;
     }
   }
@@ -760,6 +776,8 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
     os <<"node [ fontsize=9, width=.3, height=.3 ];" <<endl;
     os <<"edge [ arrowtail=dot, arrowsize=.5, fontsize=6 ];" <<endl;
     index(true);
+  }else{
+    if(!isIndexed) index();
   }
   for(Node *n: list()) {
     if(hasRenderingInfo(n) && getRenderingInfo(n).skip) continue;
@@ -885,9 +903,9 @@ bool Graph::checkConsistency() const{
   uint idx=0;
   for(Node *node: *this){
     CHECK_EQ(&node->container, this, "");
-    CHECK_EQ(node->index, idx, "");
-    for(Node *j: node->parents)  CHECK(j->parentOf.findValue(node) != -1,"");
-    for(Node *j: node->parentOf) CHECK(j->parents.findValue(node) != -1,"");
+    if(isIndexed) CHECK_EQ(node->index, idx, "");
+//    for(Node *j: node->parents)  CHECK(j->parentOf.findValue(node) != -1,"");
+//    for(Node *j: node->parentOf) CHECK(j->parents.findValue(node) != -1,"");
     for(Node *parent: node->parents) if(&parent->container!=this){
       //check that parent is contained in a super-graph of this
       const Graph *parentGraph = this;
@@ -924,6 +942,7 @@ uint Graph::index(bool subKVG, uint start){
       else G.index(false, 0);
     }
   }
+  isIndexed=true;
   return idx;
 }
 

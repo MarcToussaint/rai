@@ -40,7 +40,7 @@ private:
   MNode* getBest(MNodeL& fringe, uint level);
   MNode* popBest(MNodeL& fringe, uint level);
   MNode* getBest(){ return getBest(fringe_done, 3); }
-  bool expandBest(int stopOnLevel=-1);
+  MNode *expandBest(int stopOnLevel=-1);
   void optBestOnLevel(int level, MNodeL& fringe, MNodeL* addIfTerminal, MNodeL* addChildren);
   void optFirstOnLevel(int level, MNodeL& fringe, MNodeL* addIfTerminal);
   void clearFromInfeasibles(MNodeL& fringe);

@@ -47,6 +47,7 @@ struct Node {
   StringA keys;
   NodeL parents;
   NodeL parentOf;
+  uint numChildren=0;
   uint index;
 
   Node(const std::type_info& _type, void *_value_ptr, Graph& _container);
@@ -86,6 +87,7 @@ stdOutPipe(Node)
 
 struct Graph : NodeL {
   Node *isNodeOfGraph; ///< THIS is a subgraph of another graph; isNodeOfGraph points to the node that equals THIS graph
+  bool isIndexed=true;
 
   GraphEditCallbackL callbacks; ///< list of callbacks that are informed about creation and destruction of nodes
 

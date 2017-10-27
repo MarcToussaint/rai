@@ -378,9 +378,9 @@ void FOL_World::setState(Graph *s, int setT_step){
   {  //reqire the parent! NOT NICE!
       //if (state) already existed (3 lines above), then is it not a child of *s -> make it a chile of *s
     Node *n=state->isNodeOfGraph;
-    n->parents.scalar()->parentOf.removeValue(n);
+n->parents.scalar()->numChildren--;//    n->parents.scalar()->parentOf.removeValue(n);
     n->parents.scalar() = s->isNodeOfGraph;
-    n->parents.scalar()->parentOf.append(n);
+n->parents.scalar()->numChildren++;//    n->parents.scalar()->parentOf.append(n);
   }
   if(setT_step>=0) T_step = setT_step;
   DEBUG(KB.checkConsistency();)
@@ -389,6 +389,7 @@ void FOL_World::setState(Graph *s, int setT_step){
 
 Graph* FOL_World::createStateCopy(){
   Graph* new_state = &KB.newSubgraph({STRING("STATE_"<<count++)}, state->isNodeOfGraph->parents)->value;
+  state->index();
   new_state->copy(*state);
   return new_state;
 }

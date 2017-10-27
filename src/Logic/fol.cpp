@@ -280,8 +280,8 @@ Node* createNewSubstitutedLiteral(Graph& facts, Node* literal, const NodeL& subs
        CHECK(subst(arg->index)!=NULL,"a variable (=argument in local scope) requires a substitution, no?");
       //CHECK(arg->container.N==subst.N, "somehow the substitution does not fit the container of literal arguments");
       fact->parents(i) = subst(arg->index);
-      arg->parentOf.removeValue(fact);
-      fact->parents(i)->parentOf.append(fact);
+arg->numChildren--;//      arg->parentOf.removeValue(fact);
+fact->parents(i)->numChildren++;//      fact->parents(i)->parentOf.append(fact);
     }
   }
 //  cout <<*fact <<endl;
