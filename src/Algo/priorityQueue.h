@@ -41,9 +41,9 @@ template<class T> struct PriorityQueue : mlr::Array<PriorityQueueEntry<T> > {
     mlr::Array<PriorityQueueEntry<T> >::memMove = true;
   }
 
-  void add(double p, const T& x, bool fromBackIfEqual=false){
+  void add(double p, const T& x, bool fromBackIfEqual=false){ //'fromBack=true' makes it a FIFO (breadth first search); otherwise LIFO (depth first search)
     PriorityQueueEntry<T> e = {p, x};
-    mlr::Array<PriorityQueueEntry<T> >::insertInSorted(e, PriorityQueueEntry<T>::cmp, fromBackIfEqual); //'fromBack' makes it a FIFO (breadth first search); otherwise LIFO (depth first search)
+    mlr::Array<PriorityQueueEntry<T> >::insertInSorted(e, PriorityQueueEntry<T>::cmp, fromBackIfEqual);
   }
 
   T pop(){

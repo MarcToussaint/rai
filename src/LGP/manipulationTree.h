@@ -80,6 +80,8 @@ struct ManipulationTree_Node{
   /// child node creation
   ManipulationTree_Node(ManipulationTree_Node *parent, FOL_World::Handle& a);
 
+  ~ManipulationTree_Node();
+
   //- computations on the node
   void expand(int verbose=0);           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
   void optLevel(uint level, bool collisions=false);

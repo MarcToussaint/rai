@@ -297,7 +297,7 @@ extern Singleton<Graph> registry;
 // are registered
 template<class T>
 struct Type_typed_readable:Type_typed<T> {
-  virtual Node* readIntoNewNode(Graph& container, std::istream& is) const { Node_typed<T> *n = container.newNode<T>(T()); is >>n->value; return n; }
+  virtual Node* readIntoNewNode(Graph& container, std::istream& is) const { Node_typed<T> *n = container.newNode<T>(T(0)); is >>n->value; return n; }
 };
 
 typedef mlr::Array<std::shared_ptr<Type> > TypeInfoL;

@@ -505,30 +505,36 @@ void KOMO::setHandover(double time, const char* oldHolder, const char* object, c
   if(stepsPerPhase>2){ //velocities: no motion
     setTask(time-.15, time+.15, new TaskMap_Default(posTMT, world, object), OT_sumOfSqr, {0.,0.,0.}, 1e1, 1); // no motion
   }
-
 }
 
 void KOMO::setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose){
   if(verbose>0) cout <<"KOMO_setPush t=" <<startTime <<" stick=" <<stick <<" object=" <<object <<" table=" <<table <<endl;
 
   //stick normal alignes with slider direction
-  setTask(startTime, startTime+1., new TaskMap_Default(vecAlignTMT, world, stick, -Vector_y, "slider1b", Vector_x), OT_sumOfSqr, {1.}, 1e2);
+  setTask(startTime, endTime, new TaskMap_Default(vecAlignTMT, world, stick, -Vector_y, "slider1b", Vector_x), OT_sumOfSqr, {1.}, 1e2);
   //stick horizontal is orthogonal to world vertical
-  setTask(startTime, startTime+1., new TaskMap_Default(vecAlignTMT, world, stick, Vector_x, NULL, Vector_z), OT_sumOfSqr, {0.}, 1e2);
+  setTask(startTime, endTime, new TaskMap_Default(vecAlignTMT, world, stick, Vector_x, NULL, Vector_z), OT_sumOfSqr, {0.}, 1e2);
 
   double dist = .5*shapeSize(world, object, 0)+.01;
-  setTask(startTime, startTime+1., new TaskMap_InsideBox(world, "slider1b", {dist, .0, .0}, stick), OT_ineq);
-//  setTask(startTime, startTime+1., new TaskMap_Default(posDiffTMT, world, stick, NoVector, "slider1b", {dist, .0, .0}), OT_sumOfSqr, {}, 1e2);
+  setTask(startTime, endTime, new TaskMap_InsideBox(world, "slider1b", {dist, .0, .0}, stick), OT_ineq);
+//  setTask(startTime, endTime, new TaskMap_Default(posDiffTMT, world, stick, NoVector, "slider1b", {dist, .0, .0}), OT_sumOfSqr, {}, 1e2);
 
   setKS_slider(startTime, true, object, "slider1", table);
 
   setTask(startTime, endTime, new TaskMap_AboveBox(world, object, table), OT_ineq, NoArr, 1e2);
 
+#if 1
+  //connect object to placeRef
+  mlr::Transformation rel = 0;
+  rel.pos.set(0,0, .5*(shapeSize(world, object) + shapeSize(world, table)));
+  setKinematicSwitch(endTime, true, "transXYPhiZero", table, object, rel );
+#endif
+
   if(stepsPerPhase>2){ //velocities down and up
     setTask(startTime-.3, startTime-.1, new TaskMap_Default(posTMT, world, stick), OT_sumOfSqr, {0.,0., -.2}, 1e2, 1); //move down
     setTask(startTime-.05, startTime-.0, new TaskMap_Default(posTMT, world, stick), OT_sumOfSqr, {0.,0., 0}, 1e2, 1); //hold still
-    setTask(startTime+1.0, startTime+1.05, new TaskMap_Default(posTMT, world, stick), OT_sumOfSqr, {0.,0., 0}, 1e2, 1); //hold still
-    setTask(startTime+1.1, startTime+1.3, new TaskMap_Default(posTMT, world, stick), OT_sumOfSqr, {0.,0., .2}, 1e2, 1); // move up
+    setTask(endTime+.0, endTime+.05, new TaskMap_Default(posTMT, world, stick), OT_sumOfSqr, {0.,0., 0}, 1e2, 1); //hold still
+    setTask(endTime+.1, endTime+.3, new TaskMap_Default(posTMT, world, stick), OT_sumOfSqr, {0.,0., .2}, 1e2, 1); // move up
   }
 }
 

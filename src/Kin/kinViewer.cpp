@@ -148,11 +148,12 @@ void OrsPathViewer::step(){
   copy.gl().dataLock.writeLock();
   configurations.readAccess();
   uint T=configurations().N;
-  if(t>=T*1.1) t=0;
+  if(t>=T*1.1) t=-tprefix;
   uint tt=t;
   if(tt>=T) tt=T-1;
   if(T) copy.copy(*configurations()(tt), true);
   configurations.deAccess();
+  copy.checkConsistency();
   copy.gl().dataLock.unlock();
   if(T){
     copy.gl().captureImg=writeToFiles;

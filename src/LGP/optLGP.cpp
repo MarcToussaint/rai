@@ -5,6 +5,7 @@
 
 OptLGP::OptLGP(mlr::KinematicWorld &kin, FOL_World &fol)
     : verbose(3), numSteps(0), fil("z.optLGP.dat"){
+  verbose = mlr::getParameter<int>("LGP/vebose", 3);
   root = new MNode(kin, fol, 4);
   displayFocus = root;
 //  threadOpenModules(true);
@@ -12,12 +13,14 @@ OptLGP::OptLGP(mlr::KinematicWorld &kin, FOL_World &fol)
 
 OptLGP::~OptLGP(){
     views.clear();
+    delete root;
+    root=NULL;
 }
 
 void OptLGP::initDisplay(){
     if(!views.N){
         views.resize(4);
-        views(1) = make_shared<OrsPathViewer>("pose", 1., -0);
+        views(1) = make_shared<OrsPathViewer>("pose", 1., -1);
         views(2) = make_shared<OrsPathViewer>("sequence", 1., -0);
         views(3) = make_shared<OrsPathViewer>("path", .1, -1);
         if(mlr::getParameter<bool>("LGP/displayTree", 1)){
@@ -205,20 +208,22 @@ MNode *OptLGP::popBest(MNodeL &fringe, uint level){
     return best;
 }
 
-void OptLGP::expandBest(){ //expand
+bool OptLGP::expandBest(int stopOnDepth){ //expand
     MNode *n =  popBest(fringe_expand, 0);
     CHECK(n,"");
+    if(stopOnDepth>0 && n->step>(uint)stopOnDepth) return false;
     n->expand();
     for(MNode* ch:n->children){
         if(ch->isTerminal){
             terminals.append(ch);
             MNodeL path = ch->getTreePath();
-            for(MNode *n:path) if(!n->count(1)) fringe_pose2.append(n); //pose2 is a FIFO
+            for(MNode *n:path) if(!n->count(1)) fringe_pose2.setAppend(n); //pose2 is a FIFO
         }else{
             fringe_expand.append(ch);
         }
         if(n->count(1)) fringe_pose.append(ch);
     }
+    return true;
 }
 
 void OptLGP::optBestOnLevel(int level, MNodeL &fringe, MNodeL *addIfTerminal, MNodeL *addChildren){ //optimize a seq
@@ -316,6 +321,23 @@ void OptLGP::step(){
         if(verbose>2 && !(numSteps%10)) updateDisplay();
     }
     numSteps++;
+}
+
+void OptLGP::buildTree(uint depth){
+    init();
+
+    for(;;){
+        bool b = expandBest(depth);
+        if(!b) return;
+
+        if(verbose>0){
+            mlr::String out=report();
+            fil <<out <<endl;
+            if(verbose>1) cout <<out <<endl;
+//            if(verbose>2) updateDisplay();
+        }
+//        mlr::wait();
+    }
 }
 
 void OptLGP::init(){

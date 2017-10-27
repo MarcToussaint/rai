@@ -34,8 +34,6 @@ ManipulationTree_Node::ManipulationTree_Node(mlr::KinematicWorld& kin, FOL_World
   //this is the root node!
   fol.reset_state();
   folState = fol.createStateCopy();
-  rootMC = new PlainMC(fol);
-  rootMC->verbose = 0;
   cost = zeros(L);
   constraints = zeros(L);
   count = consts<uint>(0, L);
@@ -77,15 +75,20 @@ ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS
 //  h(l_symbolic) = 0.; //heuristic
 }
 
+ManipulationTree_Node::~ManipulationTree_Node(){
+    for(ManipulationTree_Node *ch:children) delete ch;
+    for(KOMO* k:komoProblem) if(k) delete k;
+}
+
 void ManipulationTree_Node::expand(int verbose){
-  if(isExpanded){ LOG(-1) <<"MNode '" <<*this <<"' is already expanded"; return; }
+    if(isExpanded) return; //{ LOG(-1) <<"MNode '" <<*this <<"' is already expanded"; return; }
   CHECK(!children.N,"");
   if(isTerminal) return;
   fol.setState(folState, step);
-      int tmp=fol.verbose;
-      fol.verbose=verbose;
-      auto actions = fol.get_actions();
-      fol.verbose=tmp;
+  int tmp=fol.verbose;
+  fol.verbose=verbose;
+  auto actions = fol.get_actions();
+  fol.verbose=tmp;
   for(FOL_World::Handle& a:actions){
 //    cout <<"  EXPAND DECISION: " <<*a <<endl;
     new ManipulationTree_Node(this, a);
@@ -248,6 +251,8 @@ void ManipulationTree_Node::optLevel(uint level, bool collisions){
     //    CHECK_EQ(sw->timeOfApplication, 1, "need to do this before the optimization..");
         if(sw->timeOfApplication>=2) sw->apply(effKinematics);
       }
+
+      effKinematics.reset_q();
       effKinematics.calc_q();
       DEBUG( effKinematics.checkConsistency(); )
   }else{

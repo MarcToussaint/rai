@@ -2,7 +2,7 @@ BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
-#OPTIM = fast_debug
+OPTIM = fast_debug
 
 DEPEND = Core
 

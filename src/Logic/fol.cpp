@@ -127,15 +127,27 @@ bool getEqualFactInKB(Graph& KB, Node *fact, bool checkAlsoValue){
       }else HALT("unknown aggregate mode '" <<graph.last()->keys.last() <<"'");
     }else HALT("unknown special literal key'" <<fact->keys.last() <<"'");
   }
+#if 0
   //first find the section of all facts that derive from the same symbols
   NodeL candidates=fact->parents(0)->parentOf;
-//  for(uint p=1;p<fact->parents.N;p++)
-//    candidates = setSection(candidates, fact->parents(p)->parentOf);
+  for(uint p=1;p<fact->parents.N;p++)
+    candidates = setSection(candidates, fact->parents(p)->parentOf);
+#else
+  NodeL& candidates = KB;
+#endif
   //now check only these candidates
   for(Node *fact1:candidates) if(&fact1->container==&KB && fact1!=fact){
     if(factsAreEqual(fact, fact1, checkAlsoValue)) return true;
   }
   return false;
+}
+
+/// return the subset of 'literals' that matches with a fact (calling match(lit0, lit1))
+Node *getEqualFactInList(Node* fact, NodeL& facts, bool checkAlsoValue){
+//  NodeL candidates=facts;
+//  for(Node *p:fact->parents) candidates = setSection(candidates, p->parentOf);
+  for(Node *fact1:facts) if(factsAreEqual(fact, fact1, checkAlsoValue)) return fact1; //matches.append(fact1);
+  return NULL;
 }
 
 ///// try to find a fact within 'facts' that is exactly equal to 'literal'
@@ -153,9 +165,13 @@ bool getEqualFactInKB(Graph& KB, Node *fact, bool checkAlsoValue){
 
 /// check if subst is a feasible substitution for a literal (by checking with all facts that have same predicate)
 bool getEqualFactInKB(Graph& KB, Node* literal, const NodeL& subst, const Graph* subst_scope, bool checkAlsoValue){
+#if 0
   //TODO: this should construct the tuple, call the above method, then additionally checkForValue -> write a method that checks value only
   NodeL candidates = literal->parents(0)->parentOf;
-//  NodeL candidates = getLiteralsOfScope(KB);
+  NodeL candidates = getLiteralsOfScope(KB);
+#else
+  NodeL& candidates = KB;
+#endif
   for(Node *fact:candidates) if(&fact->container==&KB && fact!=literal){
     if(factsAreEqual(fact, literal, subst, subst_scope, checkAlsoValue)) return true;
   }
@@ -164,6 +180,7 @@ bool getEqualFactInKB(Graph& KB, Node* literal, const NodeL& subst, const Graph*
 
 /// find, modulo ignoring variables (i.e., for all possible subst), all facts that match the tuple (from those, possible substitutions can be found)
 NodeL getPotentiallyEqualFactsInKB(Graph& KB, Node* tuple, const Graph& varScope, bool checkAlsoValue){
+#if 0
   Node *rarestSymbol=NULL;
   uint rarestSymbolN=0;
   for(Node *sym:tuple->parents) if(&sym->container!=&varScope){ //loop through all grounded symbols, not variables
@@ -172,21 +189,16 @@ NodeL getPotentiallyEqualFactsInKB(Graph& KB, Node* tuple, const Graph& varScope
       rarestSymbolN = sym->parentOf.N;
     }
   }
-  const NodeL& candidates = rarestSymbol->parentOf;
+  const NodeL& candidates = rarestSymbol->parentOf;//that totally doesn't scale!!!
+#else
+  const NodeL& candidates = KB;
+#endif
   NodeL matches;
   for(Node *fact:candidates) if(&fact->container==&KB && fact!=tuple){
     if(factsAreEqual(fact, tuple, NoNodeL, &varScope, checkAlsoValue, true))
       matches.append(fact);
   }
   return matches;
-}
-
-/// return the subset of 'literals' that matches with a fact (calling match(lit0, lit1))
-Node *getEqualFactInList(Node* fact, NodeL& facts, bool checkAlsoValue){
-//  NodeL candidates=facts;
-//  for(Node *p:fact->parents) candidates = setSection(candidates, p->parentOf);
-  for(Node *fact1:facts) if(factsAreEqual(fact, fact1, checkAlsoValue)) return fact1; //matches.append(fact1);
-  return NULL;
 }
 
 /// check if all facts can be matched with one in scope
@@ -218,11 +230,11 @@ bool allFactsHaveEqualsInKB(Graph& KB, NodeL& literals, const NodeL& subst, cons
 void removeInfeasibleSymbolsFromDomain(Graph& facts, NodeL& domain, Node* literal, Graph *varScope){
   CHECK(getNumOfVariables(literal, varScope)==1," remove Infeasible works only for literals with one open variable!");
   Node *var = getFirstVariable(literal, varScope);
-  Node *predicate = literal->parents(0);
+//  Node *predicate = literal->parents(0);
 
   NodeL dom;
   dom.anticipateMEM(domain.N);
-  for(Node *fact:predicate->parentOf) if(&fact->container==&facts){
+  for(Node *fact:facts){ //for(Node *fact:predicate->parentOf) if(&fact->container==&facts){
     //-- check that all arguments are the same, except for var!
     bool match=true;
     Node *value=NULL;
@@ -289,7 +301,7 @@ bool applySubstitutedLiteral(Graph& facts, Node* literal, const NodeL& subst, Gr
 
   //first collect tuple matches
   NodeL matches;
-  for(Node *fact:literal->parents(0)->parentOf) if(&fact->container==&facts){
+  for(Node *fact:facts){ //for(Node *fact:literal->parents(0)->parentOf) if(&fact->container==&facts){
     if(factsAreEqual(fact, literal, subst, subst_scope, false)) matches.append(fact);
   }
 
@@ -403,6 +415,7 @@ bool substitutedRulePreconditionHolds(Graph& KB, Node* rule, const NodeL& subst,
    mlr::Array<unsigned char> domainIsConstrained(vars.N);
    mlr::Array<NodeL> domainsForThisRel(vars.N);
    if(vars.N) domainIsConstrained = false;
+
    for(Node *rel:relations) if(nFreeVars(rel->index)>0){ //first go through all (non-negated) relations...
      if(!rel->isOfType<bool>() || rel->get<bool>()==true){ //normal (not negated boolean)
        for(auto& d:domainsForThisRel) d.clear();
