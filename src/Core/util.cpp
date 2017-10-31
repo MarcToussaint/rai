@@ -533,7 +533,7 @@ void wait(double sec, bool msg_on_fail) {
 /// wait for an ENTER at the console
 bool wait(bool useX11) {
   if(!mlr::getInteractivity()){
-    mlr::wait(.05);
+    mlr::wait(.1);
     return true;
   }
   if(!useX11){

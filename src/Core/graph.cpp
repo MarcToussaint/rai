@@ -19,7 +19,7 @@
 #include "array.tpp"
 #include "graph.h"
 
-#define DEBUG(x)
+#define DEBUG(x) //x
 
 NodeL& NoNodeL=*((NodeL*)NULL);
 Graph& NoGraph=*((Graph*)NULL);
@@ -238,14 +238,23 @@ Graph::~Graph() {
 void Graph::clear() {
   if(ri){ delete ri; ri=NULL; }
   if(pi){ delete pi; pi=NULL; }
-  checkConsistency();
+  DEBUG(checkConsistency();)
+  if(!isNodeOfGraph){ //this is not a subgraph; save to delete connections in batch -> faster
+    NodeL all = getAllNodesRecursively();
+    for(Node *n:all){
+        n->parents.clear();
+        n->numChildren=0;
+        n->parentOf.clear();
+        n->keys.clear();
+    }
+    DEBUG(checkConsistency();)
+  }
   //delete all subgraphs first to remove potential children
   for(Node *n:*this) if(n->isGraph()) n->graph().clear();
   while(N){
     Node **n = NodeL::p+N-1; //last
     if(!isDoubleLinked) while((*n)->numChildren){ n--; CHECK(n>=p,"can't find a node without children"); }
     delete *n;
-    checkConsistency();
   }
   isIndexed=true;
 }
@@ -418,7 +427,7 @@ Node* Graph::edit(Node *ed){
 }
 
 void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubgraphToNonsubgraph){
-  DEBUG(G.checkConsistency());
+  DEBUG(G.checkConsistency();)
   if(!G.isIndexed) HALT("can't copy non-indexed graph");
 
   CHECK(this!=&G, "Graph self copy -- never do this");

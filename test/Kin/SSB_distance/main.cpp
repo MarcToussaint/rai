@@ -30,7 +30,7 @@ inline void clip(double& x, double r){
 
 
 double distance_SSPoints(mlr::Frame& A, mlr::Frame& B,mlr::Vector& Pa, mlr::Vector& Pb){
-  CHECK(A.shape && A.shape->type==mlr::ST_retired_SSBox && B.shape && B.shape->type==mlr::ST_retired_SSBox,"");
+  CHECK(A.shape && A.shape->type()==mlr::ST_retired_SSBox && B.shape && B.shape->type()==mlr::ST_retired_SSBox,"");
   CHECK(!A.shape->size(0) && !B.shape->size(0) && !A.shape->size(1) && !B.shape->size(1) && !A.shape->size(2) && !B.shape->size(2), "can only handle SSpoints");
   Pa = A.X.pos;
   Pb = B.X.pos;
@@ -43,7 +43,7 @@ double distance_SSPoints(mlr::Frame& A, mlr::Frame& B,mlr::Vector& Pa, mlr::Vect
 }
 
 double distance_SSLinePoint(mlr::Frame& A, mlr::Frame& B,mlr::Vector& Pa, mlr::Vector& Pb){
-  CHECK(A.shape && A.shape->type==mlr::ST_retired_SSBox && B.shape && B.shape->type==mlr::ST_retired_SSBox,"");
+  CHECK(A.shape && A.shape->type()==mlr::ST_retired_SSBox && B.shape && B.shape->type()==mlr::ST_retired_SSBox,"");
   CHECK(!B.shape->size(0) && !A.shape->size(1) && !B.shape->size(1) && !A.shape->size(2) && !B.shape->size(2), "can only handle SSLinePoint");
   if(!A.shape->size(0)){ //SSLinePoint
     return distance_SSPoints(A, B, Pa, Pb);
@@ -66,7 +66,7 @@ double distance_SSLinePoint(mlr::Frame& A, mlr::Frame& B,mlr::Vector& Pa, mlr::V
 }
 
 double distance_SSLines(mlr::Frame& A, mlr::Frame& B,mlr::Vector& Pa, mlr::Vector& Pb){
-  CHECK(A.shape && A.shape->type==mlr::ST_retired_SSBox && B.shape && B.shape->type==mlr::ST_retired_SSBox,"");
+  CHECK(A.shape && A.shape->type()==mlr::ST_retired_SSBox && B.shape && B.shape->type()==mlr::ST_retired_SSBox,"");
   CHECK(!A.shape->size(1) && !B.shape->size(1) && !A.shape->size(2) && !B.shape->size(2), "can only handle SS line segments (cylinders)");
   if(!B.shape->size(0)){ //SSLinePoint
     return distance_SSLinePoint(A, B, Pa, Pb);
@@ -99,7 +99,7 @@ double distance_SSLines(mlr::Frame& A, mlr::Frame& B,mlr::Vector& Pa, mlr::Vecto
 }
 
 double distance_SSRects(mlr::Frame& A, mlr::Frame& B, mlr::Vector& Pa, mlr::Vector& Pb){
-  CHECK(A.shape && A.shape->type==mlr::ST_ssBox && B.shape && B.shape->type==mlr::ST_ssBox,"");
+  CHECK(A.shape && A.shape->type()==mlr::ST_ssBox && B.shape && B.shape->type()==mlr::ST_ssBox,"");
   CHECK(!A.shape->size(2) && !B.shape->size(2), "can only handle spheres, cylinders & rectangles yet - no boxes");
   if(!A.shape->size(1) && !B.shape->size(1)){ //SSLines
     return distance_SSLines(A, B, Pa, Pb);
@@ -130,8 +130,8 @@ double distance_SSRects(mlr::Frame& A, mlr::Frame& B, mlr::Vector& Pa, mlr::Vect
  * In the code this is transformed back and forth... */
 double distance_(mlr::Frame& A, mlr::Frame& B, mlr::Vector& Pa, mlr::Vector& Pb){
   CHECK(A.shape && B.shape, "");
-  arr& As = A.shape->size;
-  arr& Bs = B.shape->size;
+  arr& As = A.shape->size();
+  arr& Bs = B.shape->size();
   As(0)-=2.*As(3);  As(1)-=2.*As(3);  As(2)-=2.*As(3);
   Bs(0)-=2.*Bs(3);  Bs(1)-=2.*Bs(3);  Bs(2)-=2.*Bs(3);
   A.X.pos -= 0.5*(A.X.rot*mlr::Vector(As(0), As(1), As(2)));
@@ -149,9 +149,9 @@ void TEST(Distance){
   mlr::Frame A(K), B(K);
   new mlr::Shape(A);
   new mlr::Shape(B);
-  A.shape->type = B.shape->type = mlr::ST_ssBox;
-  A.shape->size = ARR(1.6, 1.6, .0, .0);
-  B.shape->size = ARR(1.6, 1.6, .0, .0);
+  A.shape->type() = B.shape->type() = mlr::ST_ssBox;
+  A.shape->size() = ARR(1.6, 1.6, .0, .0);
+  B.shape->size() = ARR(1.6, 1.6, .0, .0);
   for(uint k=0;k<20;k++){
     A.X.setRandom(); A.X.pos(2) += 2.;
     B.X.setRandom(); B.X.pos(2) += 2.;

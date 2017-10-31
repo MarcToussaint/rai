@@ -1487,7 +1487,7 @@ int OpenGL::watch(const char *txt) {
 //      sleepForEvents();
 //    }
   }else{
-    mlr::wait(.5);
+    mlr::wait(.1);
   }
   return pressedkey;
 }
