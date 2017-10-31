@@ -89,6 +89,7 @@ struct KinematicWorld : GLDrawer{
   void init(const Graph& G);
 
   /// @name access
+  Frame *operator[](const char* name){ return getFrameByName(name, true); }
   Frame *getFrameByName(const char* name, bool warnIfNotExist=true) const;
 //  Link  *getLinkByBodies(const Frame* from, const Frame* to) const;
   Joint *getJointByBodies(const Frame* from, const Frame* to) const;

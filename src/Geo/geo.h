@@ -174,6 +174,7 @@ struct Transformation {
   
   Transformation() {}
   Transformation(int zero){ CHECK_EQ(zero,0,"this is only for initialization with zero"); setZero(); }
+  Transformation(const Vector _pos, const Quaternion _rot) : pos(_pos), rot(_rot) {}
   Transformation(const Transformation &t) : pos(t.pos), rot(t.rot) {}
   Transformation(const char* init) { setText(init); }
   void operator=(const Transformation& f){ memcpy(this, &f, sizeof(Transformation)); }

@@ -92,7 +92,7 @@ i->numChildren++;//    i->parentOf.append(this);
 }
 
 Node::~Node() {
-  if(numChildren) LOG(-1) <<"It is not allowed to delete nodes that still have children";
+  if(numChildren) LOG(-2) <<"It is not allowed to delete nodes that still have children";
   for(Node *i: parents) i->numChildren--; //i->parentOf.removeValue(this);
 //  for(Node *i: parentOf) i->parents.removeValue(this);
   if(this==container.last()){ //great: this is very efficient to remove without breaking indexing
@@ -223,10 +223,12 @@ Graph::~Graph() {
 void Graph::clear() {
   if(ri){ delete ri; ri=NULL; }
   if(pi){ delete pi; pi=NULL; }
+  checkConsistency();
   while(N){
     Node **n = NodeL::p+N-1; //last
 //    while((*n)->numChildren){ n--; CHECK(n>=p,""); }
     delete *n;
+    checkConsistency();
   }
   isIndexed=true;
 }
@@ -359,6 +361,14 @@ Node* Graph::getEdge(const NodeL& parents) const{
 NodeL Graph::getNodesOfDegree(uint deg) {
   NodeL ret;
   for(Node *n: (*this)) if(n->parents.N==deg) ret.append(n);
+  return ret;
+}
+
+NodeL Graph::getAllNodesRecursively() const{
+  NodeL ret = *this;
+  NodeL below;
+  for(Node *n:ret) if(n->isGraph()) below.append(n->graph().getAllNodesRecursively());
+  ret.append(below);
   return ret;
 }
 
@@ -901,6 +911,14 @@ bool Graph::isChildOfGraph(const Graph& G) const{
 
 bool Graph::checkConsistency() const{
   uint idx=0;
+
+#if 1 //this is expensive: fill all the parentsOf lists
+  NodeL ALL = getAllNodesRecursively();
+  for(Node *n: ALL) n->parentOf.clear();
+  for(Node *n: ALL) for(Node *p:n->parents) p->parentOf.append(n);
+  for(Node *n: ALL) CHECK_EQ(n->numChildren, n->parentOf.N, "");
+#endif
+
   for(Node *node: *this){
     CHECK_EQ(&node->container, this, "");
     if(isIndexed) CHECK_EQ(node->index, idx, "");

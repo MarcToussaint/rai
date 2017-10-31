@@ -386,7 +386,14 @@ struct Access{
   void waitForNextRevision(){ data->waitForStatusGreaterThan(last_accessed_revision); }
   void waitForRevisionGreaterThan(int rev){ data->waitForStatusGreaterThan(rev); }
   void stopListening(){ thread->stopListenTo(data); }
+
+  void write(ostream& os){
+      readAccess();
+      os <<"VAR " <<name <<" [" <<data->getStatus() <<"] " <<data->value <<endl;
+      deAccess();
+  }
 };
+template<class T> std::ostream& operator<<(std::ostream& os, Access<T>& x){ x.write(os); return os; }
 
 #define ACCESS(type, name) Access<type> name = Access<type>(this, #name);
 #define ACCESSlisten(type, name) Access<type> name = Access<type>(this, #name, true);

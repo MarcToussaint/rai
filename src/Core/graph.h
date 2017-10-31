@@ -143,6 +143,7 @@ struct Graph : NodeL {
   NodeL getNodesOfDegree(uint deg);
   template<class T> NodeL getNodesOfType(){ return findNodesOfType(typeid(T)); }
   template<class T> NodeL getNodesOfType(const char* key){ return findNodesOfType(typeid(T), {key}); }
+  NodeL getAllNodesRecursively() const;
 
   //-- get values directly
   template<class T> T* find(const char *key)     const { Node *n = findNodeOfType(typeid(T), {key}); if(!n) return NULL;  return n->getValue<T>(); }
