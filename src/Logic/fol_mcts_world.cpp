@@ -46,12 +46,11 @@ void FOL_World::Decision::write(ostream& os) const{
 FOL_World::FOL_World()
     : hasWait(true), gamma(0.9), stepCost(0.1), timeCost(1.), deadEndCost(100.), maxHorizon(100),
       state(NULL), lastDecisionInState(NULL), verbose(0), verbFil(0),
-      lastStepReward(0.), lastStepDuration(0.), lastStepProbability(1.), lastStepObservation(0), count(0) {}
-
-FOL_World::FOL_World(istream& is)
-    : hasWait(true), gamma(0.9), stepCost(0.1), timeCost(1.), deadEndCost(100.), maxHorizon(100),
-      state(NULL), lastDecisionInState(NULL), verbose(0), verbFil(0),
       lastStepReward(0.), lastStepDuration(0.), lastStepProbability(1.), lastStepObservation(0), count(0) {
+  KB.isDoubleLinked=false;
+}
+
+FOL_World::FOL_World(istream& is) : FOL_World(){
   init(is);
 }
 
@@ -375,12 +374,13 @@ void FOL_World::setState(Graph *s, int setT_step){
   }
   if(!state) state = &KB.newSubgraph({"STATE"}, {s->isNodeOfGraph})->value;
   state->copy(*s);
-  {  //reqire the parent! NOT NICE!
-      //if (state) already existed (3 lines above), then is it not a child of *s -> make it a chile of *s
+  DEBUG(KB.checkConsistency();)
+  {
+      //the old state hat a parent: its predecessor; this was copied to the new state
+      //but the new state needs the old state as parent -> swap parents
     Node *n=state->isNodeOfGraph;
-n->parents.scalar()->numChildren--;//    n->parents.scalar()->parentOf.removeValue(n);
-    n->parents.scalar() = s->isNodeOfGraph;
-n->parents.scalar()->numChildren++;//    n->parents.scalar()->parentOf.append(n);
+    CHECK_EQ(n->parents.N, 1, "");
+    n->swapParent(0, s->isNodeOfGraph);
   }
   if(setT_step>=0) T_step = setT_step;
   DEBUG(KB.checkConsistency();)

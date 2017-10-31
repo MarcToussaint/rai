@@ -55,6 +55,8 @@ struct Node {
   virtual ~Node();
 
   void addParent(Node *p);
+  void removeParent(Node *p);
+  void swapParent(uint i, Node *p);
 
   //-- get value
   template<class T> bool isOfType() const{ return type==typeid(T); }
@@ -88,13 +90,12 @@ stdOutPipe(Node)
 struct Graph : NodeL {
   Node *isNodeOfGraph; ///< THIS is a subgraph of another graph; isNodeOfGraph points to the node that equals THIS graph
   bool isIndexed=true;
+  bool isDoubleLinked=true;
 
   GraphEditCallbackL callbacks; ///< list of callbacks that are informed about creation and destruction of nodes
 
   ArrayG<ParseInfo> *pi;     ///< optional annotation of nodes: when detailed file parsing is enabled
-//  ArrayG<RenderingInfo> *ri; ///< optional annotation of nodes: dot style commands
-  ArrayG<RenderingInfo> *ri;
-//  mlr::Array<RenderingInfo> ri; ///< optional annotation of nodes: dot style commands
+  ArrayG<RenderingInfo> *ri; ///< optional annotation of nodes: dot style commands
 
   //-- constructors
   Graph();                                               ///< empty graph

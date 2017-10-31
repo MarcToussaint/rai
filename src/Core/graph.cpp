@@ -81,20 +81,17 @@ Node::Node(const std::type_info& _type, void* _value_ptr, Graph& _container)
 }
 
 Node::Node(const std::type_info& _type, void* _value_ptr, Graph& _container, const StringA& _keys, const NodeL& _parents)
-  : type(_type), value_ptr(_value_ptr), container(_container), keys(_keys), parents(_parents){
-  CHECK(&container!=&NoGraph, "This is a NoGraph (NULL) -- don't do that anymore!");
+  : type(_type), value_ptr(_value_ptr), container(_container), keys(_keys){
+  CHECK(&container!=&NoGraph, "This is a NGraph (NULL) -- don't do that anymore!");
   index=container.N;
   container.NodeL::append(this);
-  if(parents.N) for(Node *i: parents){
-    CHECK(i,"you gave me a NULL parent");
-i->numChildren++;//    i->parentOf.append(this);
-  }
+  if(_parents.N) for(Node *p: _parents) addParent(p);
 }
 
 Node::~Node() {
+  if(container.isDoubleLinked) while(parentOf.N) parentOf.last()->removeParent(this);
   if(numChildren) LOG(-2) <<"It is not allowed to delete nodes that still have children";
-  for(Node *i: parents) i->numChildren--; //i->parentOf.removeValue(this);
-//  for(Node *i: parentOf) i->parents.removeValue(this);
+  while(parents.N) removeParent(parents.last());
   if(this==container.last()){ //great: this is very efficient to remove without breaking indexing
     container.resizeCopy(container.N-1);
   }else{
@@ -104,8 +101,26 @@ Node::~Node() {
 }
 
 void Node::addParent(Node *p){
+  CHECK(p,"you gave me a NULL parent");
   parents.append(p);
-p->numChildren++;//  p->parentOf.append(this);
+  p->numChildren++;
+  if(container.isDoubleLinked) p->parentOf.append(this);
+}
+
+void Node::removeParent(Node *p){
+  if(p==parents.last()) parents.removeLast(); else parents.removeValue(p);
+  CHECK(p->numChildren,"");
+  p->numChildren--;
+  if(container.isDoubleLinked) p->parentOf.removeValue(this);
+}
+
+void Node::swapParent(uint i, Node *p){
+  CHECK(p,"you gave me a NULL parent");
+  parents(i)->numChildren--;
+  if(container.isDoubleLinked) parents(i)->parentOf.removeValue(this);
+  parents(i) = p;
+  parents(i)->numChildren++;
+  if(container.isDoubleLinked) parents(i)->parentOf.append(this);
 }
 
 bool Node::matches(const char *key){
@@ -224,9 +239,11 @@ void Graph::clear() {
   if(ri){ delete ri; ri=NULL; }
   if(pi){ delete pi; pi=NULL; }
   checkConsistency();
+  //delete all subgraphs first to remove potential children
+  for(Node *n:*this) if(n->isGraph()) n->graph().clear();
   while(N){
     Node **n = NodeL::p+N-1; //last
-//    while((*n)->numChildren){ n--; CHECK(n>=p,""); }
+    if(!isDoubleLinked) while((*n)->numChildren){ n--; CHECK(n>=p,"can't find a node without children"); }
     delete *n;
     checkConsistency();
   }
@@ -238,8 +255,7 @@ Graph& Graph::newNode(const Nod& ni){
   for(const mlr::String& s:ni.parents){
     Node *p = getNode(s);
     CHECK(p,"parent " <<p <<" of " <<*clone <<" does not exist!");
-    clone->parents.append(p);
-p->numChildren++;//    p->parentOf.append(clone);
+    clone->addParent(p);
   }
   return *this;
 }
@@ -248,6 +264,7 @@ Node_typed<Graph>* Graph::newSubgraph(const StringA& keys, const NodeL& parents,
   Node_typed<Graph>* n = newNode<Graph>(keys, parents, Graph());
   DEBUG( CHECK(n->value.isNodeOfGraph && &n->value.isNodeOfGraph->container==this,"") )
   if(&x) n->value.copy(x);
+  n->value.isDoubleLinked = isDoubleLinked;
   return n;
 }
 
@@ -392,8 +409,7 @@ Node* Graph::edit(Node *ed){
       if(!ed->container.isIndexed) ed->container.index();
       Node *it = ed->newClone(*this);
       for(uint i=0;i<it->parents.N;i++){
-        it->parents(i) = elem(it->parents(i)->index);
-it->parents(i)->numChildren++;//        it->parents(i)->parentOf.append(it);
+        it->swapParent(i, elem(it->parents(i)->index));
       }
     }
     return ed;
@@ -404,7 +420,6 @@ it->parents(i)->numChildren++;//        it->parents(i)->parentOf.append(it);
 void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubgraphToNonsubgraph){
   DEBUG(G.checkConsistency());
   if(!G.isIndexed) HALT("can't copy non-indexed graph");
-
 
   CHECK(this!=&G, "Graph self copy -- never do this");
 
@@ -457,10 +472,10 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
   for(Node *n:newNodes){
     for(uint i=0;i<n->parents.N;i++){
       Node *p=n->parents(i); //the parent in the origin graph
+      Node *newp=NULL;
       if(isChildOfGraph(p->container)) continue;
       if(&p->container==&G){ //parent is directly in G, no need for complicated search
-p->numChildren--;//        p->parentOf.removeValue(n);   //original parent is not parent of copy
-        p = newNodes.elem(p->index);  //the true parent in the new graph
+        newp = newNodes.elem(p->index);  //the true parent in the new graph
       }else{
         const Graph *newg=this, *oldg=&G;
         while(&p->container!=oldg){  //find the container while iterating backward also in the newG
@@ -471,11 +486,9 @@ p->numChildren--;//        p->parentOf.removeValue(n);   //original parent is no
         }
         CHECK(newg->N==oldg->N,"different size!!\n" <<*newg <<"**\n" <<*oldg);
         CHECK(p==oldg->elem(p->index),""); //we found the parent in oldg
-p->numChildren--;//        p->parentOf.removeValue(n);   //original parent is not parent of copy
-        p = newg->elem(p->index);     //the true parent in the new graph
+        newp = newg->elem(p->index);     //the true parent in the new graph
       }
-p->numChildren++;//      p->parentOf.append(n);       //connect both ways
-      n->parents(i)=p;
+      n->swapParent(i, newp);
     }
   }
 
@@ -549,8 +562,6 @@ void writeFromStream(std::ostream& os, std::istream& is, istream::pos_type beg, 
 
 Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::String prefixedKey) {
   mlr::String str;
-  StringA keys;
-  NodeL parents;
 
   ParseInfo pinfo;
   pinfo.beg=is.tellg();
@@ -558,6 +569,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
   if(verbose) { cout <<"\nNODE (line="<<mlr::lineCount <<")"; }
 
   //-- read keys
+  StringA keys;
   if(!prefixedKey.N){
     mlr::skip(is," \t\n\r");
     pinfo.keys_beg=is.tellg();
@@ -574,6 +586,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
   if(verbose) { cout <<" keys:" <<keys <<flush; }
 
   //-- read parents
+  NodeL parents;
   char c=mlr::getNextChar(is," \t"); //don't skip new lines
   if(c=='(') {
     pinfo.parents_beg=is.tellg();
@@ -912,18 +925,23 @@ bool Graph::isChildOfGraph(const Graph& G) const{
 bool Graph::checkConsistency() const{
   uint idx=0;
 
-#if 1 //this is expensive: fill all the parentsOf lists
+#if 0 //this is expensive: fill all the parentsOf lists
   NodeL ALL = getAllNodesRecursively();
-  for(Node *n: ALL) n->parentOf.clear();
-  for(Node *n: ALL) for(Node *p:n->parents) p->parentOf.append(n);
+  if(!isDoubleListed){
+      for(Node *n: ALL) n->parentOf.clear();
+      for(Node *n: ALL) for(Node *p:n->parents) p->parentOf.append(n);
+  }
   for(Node *n: ALL) CHECK_EQ(n->numChildren, n->parentOf.N, "");
 #endif
 
   for(Node *node: *this){
     CHECK_EQ(&node->container, this, "");
     if(isIndexed) CHECK_EQ(node->index, idx, "");
-//    for(Node *j: node->parents)  CHECK(j->parentOf.findValue(node) != -1,"");
-//    for(Node *j: node->parentOf) CHECK(j->parents.findValue(node) != -1,"");
+    if(isDoubleLinked){
+      CHECK_EQ(node->numChildren, node->parentOf.N, "");
+      for(Node *j: node->parents)  CHECK(j->parentOf.findValue(node) != -1,"");
+      for(Node *j: node->parentOf) CHECK(j->parents.findValue(node) != -1,"");
+    }
     for(Node *parent: node->parents) if(&parent->container!=this){
       //check that parent is contained in a super-graph of this
       const Graph *parentGraph = this;
