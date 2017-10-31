@@ -534,6 +534,9 @@ template<class T> T mlr::Array<T>::popFirst() { T x; x=elem(0); remove(0);   ret
 /// remove and return the last element of the array (must have size>1)
 template<class T> T mlr::Array<T>::popLast() { T x=elem(N-1); resizeCopy(N-1); return x; }
 
+/// remove and return the last element of the array (must have size>1)
+template<class T> void mlr::Array<T>::removeLast() { resizeCopy(N-1); }
+
 /// reverse this array
 template<class T> void mlr::Array<T>::reverse() {
   mlr::Array<T> L2;

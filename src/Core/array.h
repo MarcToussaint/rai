@@ -247,6 +247,7 @@ template<class T> struct Array : std::vector<T> {
   void setAppend(const Array<T>& x);
   T popFirst();
   T popLast();
+  void removeLast();
   
   /// @name sorting and permuting this array
   void sort(ElemCompare comp=lowerEqual);
