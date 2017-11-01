@@ -65,6 +65,7 @@ struct Node {
   template<class T> std::shared_ptr<T> getPtr() const;  ///< query whether node type is equal to (or derived from) shared_ptr<T>, return the shared_ptr if so
   template<class T> T& get(){ T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
   template<class T> const T& get() const{ const T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
+  template<class T> bool getFromString(T& x) const;
   Graph& graph() { return get<Graph>(); }
   const Graph& graph() const { return get<Graph>(); }
   bool isBoolAndTrue() const{ if(type!=typeid(bool)) return false; return *((bool*)value_ptr) == true; }
@@ -152,8 +153,8 @@ struct Graph : NodeL {
   template<class T> T& get(const char *key) const;
   template<class T> T& get(const StringA &keys) const;
   template<class T> const T& get(const char *key, const T& defaultValue) const;
-  template<class T> bool get(T& x, const char *key)     const { Node *n = findNodeOfType(typeid(T), {key}); if(!n) return false;  x=n->get<T>();  return true; }
-  template<class T> bool get(T& x, const StringA &keys) const { Node *n = findNodeOfType(typeid(T), keys);  if(!n) return false;  x=n->get<T>();  return true; }
+  template<class T> bool get(T& x, const char *key)     const { return get<T>(x, {key}); }
+  template<class T> bool get(T& x, const StringA &keys) const;
 
   //-- get lists of all values of a certain type T (or derived from T)
   template<class T> mlr::Array<T*> getValuesOfType(const char* key=NULL);
@@ -409,6 +410,14 @@ template<class T> std::shared_ptr<T> Node::getPtr() const {
 //  return typed->value;
 }
 
+template<class T> bool Node::getFromString(T& x) const{
+  if(!isOfType<mlr::String>()) return false;
+  mlr::String str = get<mlr::String>();
+  str >>x;
+  if(str.stream().good()) return true;
+  return false;
+}
+
 template<class T> Nod::Nod(const char* key, const T& x){
   n = G.newNode<T>(x);
   n->keys.append(STRING(key));
@@ -436,6 +445,17 @@ template<class T> const T& Graph::get(const char *key, const T& defaultValue) co
   Node *n = findNodeOfType(typeid(T), {key});
   if(!n) return defaultValue;
   return n->get<T>();
+}
+
+template<class T> bool Graph::get(T& x, const StringA &keys) const {
+  Node *n = findNodeOfType(typeid(T), keys);
+  if(!n){
+    n = findNodeOfType(typeid(mlr::String), keys);
+    if(!n) return false;
+    return n->getFromString<T>(x);
+  }
+  x=n->get<T>();
+  return true;
 }
 
 template<class T> mlr::Array<T*> Graph::getValuesOfType(const char* key) {

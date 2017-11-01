@@ -675,7 +675,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
 #else
         str.read(is, " \t", " \t\n\r()`-=~!@#$%^&*()+[]{};'\\:|,./<>?", false);
         //      str.read(is, " \t", " \t\n\r()`1234567890-=~!@#$%^&*()_+[]{};'\\:|,./<>?", false);
-        node = readTypeIntoNode(*this, str, is);
+//        node = readTypeIntoNode(*this, str, is);
         if(!node) {
           is.clear();
           mlr::String substr;
