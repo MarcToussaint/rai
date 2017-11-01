@@ -153,7 +153,7 @@ struct Graph : NodeL {
   template<class T> T& get(const char *key) const;
   template<class T> T& get(const StringA &keys) const;
   template<class T> const T& get(const char *key, const T& defaultValue) const;
-  template<class T> bool get(T& x, const char *key)     const { return get<T>(x, {key}); }
+  template<class T> bool get(T& x, const char *key)     const { return get<T>(x, StringA({key})); }
   template<class T> bool get(T& x, const StringA &keys) const;
 
   //-- get lists of all values of a certain type T (or derived from T)
