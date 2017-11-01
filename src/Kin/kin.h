@@ -205,10 +205,12 @@ struct KinematicWorld : GLDrawer{
 
   /// @name I/O
   void write(std::ostream& os) const;
+  void writeURDF(std::ostream& os, const char *robotName="myrobot") const;
   void read(std::istream& is);
   void glDraw(struct OpenGL&);
   void glDraw_sub(struct OpenGL&);
   Graph getGraph() const;
+  mlr::Array<struct Link*> getLinks();
 
   //some info
   void report(std::ostream& os=std::cout) const;

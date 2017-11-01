@@ -1204,7 +1204,79 @@ void mlr::KinematicWorld::write(std::ostream& os) const {
 //      os <<"(" <<f->parent->name <<' ' <<f->name <<"){ ";
 //      f->write(os);  os <<" }\n";
 //    }
-//  }
+  //  }
+}
+
+void mlr::KinematicWorld::writeURDF(std::ostream &os, const char* robotName) const{
+  os <<"<?xml version=\"1.0\"?>\n";
+  os <<"<robot name=\"" <<robotName <<"\">\n";
+
+  //-- write base_link first
+
+  FrameL bases;
+  for(Frame *a:frames){ if(!a->parent) a->getRigidSubFrames(bases); }
+  os <<"<link name=\"base_link\">\n";
+  for(Frame *a:frames){
+    if(a->shape && a->shape->type()!=ST_mesh && a->shape->type()!=ST_marker){
+      os <<"  <visual>\n    <geometry>\n";
+      arr& size = a->shape->size();
+      switch(a->shape->type()){
+      case ST_box:       os <<"      <box size=\"" <<size({0,2}) <<"\" />\n";  break;
+      case ST_cylinder:  os <<"      <cylinder length=\"" <<size(2) <<"\" radius=\"" <<size(3) <<"\" />\n";  break;
+      case ST_sphere:    os <<"      <sphere radius=\"" <<size(3) <<"\" />\n";  break;
+      case ST_mesh:      os <<"      <mesh filename=\"" <<a->ats.get<mlr::FileToken>("mesh").name <<'"';
+        if(a->ats["meshscale"]) os <<" scale=\"" <<a->ats.get<arr>("meshscale") <<'"';
+        os <<" />\n";  break;
+      default:           os <<"      <UNKNOWN_" <<a->shape->type() <<" />\n";  break;
+      }
+      os <<"      <material> <color rgba=\"" <<a->shape->mesh().C <<"\" /> </material>\n";
+      os <<"    </geometry>\n";
+      //      os <<"  <origin xyz=\"" <<a->Q.pos.x <<' ' <<a->Q.pos.y <<' ' <<a->Q.pos.z <<"\" />\n";
+      os <<"  <inertial>  <mass value=\"1\"/>  </inertial>\n";
+      os <<"  </visual>\n";
+    }
+  }
+  os <<"</link>" <<endl;
+
+  for(Frame* a:frames) if(a->joint){
+    os <<"<link name=\"" <<a->name <<"\">\n";
+
+    FrameL shapes;
+    a->getRigidSubFrames(shapes);
+    for(Frame *b:shapes){
+      if(b->shape && b->shape->type()!=ST_mesh && b->shape->type()!=ST_marker){
+        os <<"  <visual>\n    <geometry>\n";
+        arr& size = b->shape->size();
+        switch(b->shape->type()){
+        case ST_box:       os <<"      <box size=\"" <<size({0,2}) <<"\" />\n";  break;
+        case ST_cylinder:  os <<"      <cylinder length=\"" <<size(2) <<"\" radius=\"" <<size(3) <<"\" />\n";  break;
+        case ST_sphere:    os <<"      <sphere radius=\"" <<size(3) <<"\" />\n";  break;
+        case ST_mesh:      os <<"      <mesh filename=\"" <<b->ats.get<mlr::FileToken>("mesh").name <<'"';
+          if(b->ats["meshscale"]) os <<" scale=\"" <<b->ats.get<arr>("meshscale") <<'"';
+          os <<" />\n";  break;
+        default:           os <<"      <UNKNOWN_" <<b->shape->type() <<" />\n";  break;
+        }
+        os <<"      <material> <color rgba=\"" <<b->shape->mesh().C <<"\" /> </material>\n";
+        os <<"    </geometry>\n";
+        os <<"  <origin xyz=\"" <<b->Q.pos.getArr() <<"\" rpy=\"" <<b->Q.rot.getEulerRPY() <<"\" />\n";
+        os <<"  <inertial>  <mass value=\"1\"/>  </inertial>\n";
+        os <<"  </visual>\n";
+      }
+    }
+    os <<"</link>" <<endl;
+
+    os <<"<joint name=\"" <<a->name <<"\" type=\"fixed\" >\n";
+    mlr::Transformation Q=0;
+    Frame *p=a->parent;
+    while(p && !p->joint){ Q=p->Q*Q; p=p->parent; }
+    if(!p)    os <<"  <parent link=\"base_link\"/>\n";
+    else      os <<"  <parent link=\"" <<p->name <<"\"/>\n";
+    os <<"  <child  link=\"" <<a->name <<"\"/>\n";
+    os <<"  <origin xyz=\"" <<Q.pos.getArr() <<"\" rpy=\"" <<Q.rot.getEulerRPY() <<"\" />\n";
+    os <<"</joint>" <<endl;
+  }
+
+  os <<"</robot>";
 }
 
 #define DEBUG(x) //x
@@ -1263,6 +1335,34 @@ Graph mlr::KinematicWorld::getGraph() const {
 #endif
   G.checkConsistency();
   return G;
+}
+
+namespace mlr{
+struct Link{
+  Frame* joint=NULL;
+  FrameL frames;
+  Frame *from(){
+    Frame *a = joint->parent;
+    while(a && !a->joint) a=a->parent;
+    return a;
+  }
+};
+}
+
+mlr::Array<mlr::Link *> mlr::KinematicWorld::getLinks(){
+  mlr::Array<Link*> links;
+
+  FrameL bases;
+  for(Frame *a:frames){ if(!a->parent) a->getRigidSubFrames(bases); }
+  Link *l = links.append(new Link);
+  l->frames = bases;
+
+  for(Frame *a:frames) if(a->joint){
+    Link *l = links.append(new Link);
+    l->joint = a;
+    a->getRigidSubFrames(l->frames);
+  }
+  return links;
 }
 
 void mlr::KinematicWorld::report(std::ostream &os) const {

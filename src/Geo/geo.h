@@ -158,6 +158,29 @@ struct Quaternion {
   double* getMatrix(double* m) const;
   double* getMatrixOde(double* m) const; //in Ode foramt: 3x4 memory storae
   double* getMatrixGL(double* m) const;  //in OpenGL format: transposed 4x4 memory storage
+  arr getEulerRPY(){
+    double roll, pitch, yaw;
+
+    // roll (x-axis rotation)
+    double sinr = +2.0 * (w * x + y * z);
+    double cosr = +1.0 - 2.0 * (x * x + y * y);
+    roll = atan2(sinr, cosr);
+
+    // pitch (y-axis rotation)
+    double sinp = +2.0 * (w * y - z * x);
+    if (fabs(sinp) >= 1)
+      pitch = copysign(M_PI / 2, sinp); // use 90 degrees if out of range
+    else
+      pitch = asin(sinp);
+
+    // yaw (z-axis rotation)
+    double siny = +2.0 * (w * z + x * y);
+    double cosy = +1.0 - 2.0 * (y * y + z * z);
+    yaw = atan2(siny, cosy);
+
+    return {roll, pitch, yaw};
+  }
+
 
   arr getJacobian() const;
   arr getMatrixJacobian() const;
