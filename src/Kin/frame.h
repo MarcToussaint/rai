@@ -114,6 +114,9 @@ struct Joint{
   uint getDimFromType() const;
   arr get_h() const;
 
+  //access the K's q vector
+  double& getQ(){ return frame.K.q.elem(qIndex); }
+
   void makeRigid();
 
   void write(std::ostream& os) const;

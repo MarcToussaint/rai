@@ -69,6 +69,7 @@ struct KOMO{
 
   //-- higher-level defaults
   void setConfigFromFile();
+  void setIKOpt();
   void setPoseOpt();
   void setSequenceOpt(double _phases);
   void setPathOpt(double _phases, uint stepsPerPhase=20, double timePerPhase=5.);

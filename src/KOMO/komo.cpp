@@ -789,6 +789,12 @@ void KOMO::setConfigFromFile(){
         );
 }
 
+void KOMO::setIKOpt(){
+  setTiming(1, 1);
+  setSquaredQVelocities();
+  setSquaredQuaternionNorms();
+}
+
 void KOMO::setPoseOpt(){
   setTiming(1., 2, 5., 1);
   setFixEffectiveJoints();
