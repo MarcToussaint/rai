@@ -396,6 +396,10 @@ arr mlr::Joint::get_h() const{
   return h;
 }
 
+double& mlr::Joint::getQ(){
+  return frame.K.q.elem(qIndex);
+}
+
 void mlr::Joint::makeRigid(){
   type=JT_rigid; frame.K.reset_q();
 }

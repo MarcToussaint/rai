@@ -1,14 +1,16 @@
 BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
+-include $(BASE)/build/config.mk
 
-ROS = 1
-PCL = 1
-DEPEND = Core KOMO Kin Gui Logic
+GL = 1
+GTK = 1
+#GTKGL = 1
+FREEGLUT = 1
+GRAPHVIZ = 1
+GL2PS = 1
 
-#CXXFLAGS += -DROS_PACKAGE_NAME='"pr2_module"'
-
-#CPATHS += $(BASE)/projects/marc_controller_pkg/msg_gen/cpp/include
+DEPEND = Core Geo
 
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )
 OBJS = $(SRCS:%.cpp=%.o)

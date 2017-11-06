@@ -17,7 +17,6 @@ BASE_REAL = $(shell realpath $(BASE))
 ################################################################################
 include $(BASE)/build/config.mk
 
-
 ################################################################################
 #
 # standard objects to be compiled, output file
@@ -353,8 +352,8 @@ cleanPath/%: $(BASE)/src/%
 makePythonPath/%: %
 	make --directory=$< pywrapper
 
-#$(BASE)/build/config.mk: $(BASE)/build/config.mk.default
-#	cp $< $@
+$(BASE)/build/config.mk: $(BASE)/build/config.mk.default
+	cp $< $@
 
 zip::
 	cd ..;  rm -f $(NAME).tgz;  tar cvzf $(NAME).tgz $(NAME) --dereference --exclude-vcs --exclude-from tar.exclude --exclude-from $(NAME)/tar.exclude

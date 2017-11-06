@@ -115,7 +115,7 @@ struct Joint{
   arr get_h() const;
 
   //access the K's q vector
-  double& getQ(){ return frame.K.q.elem(qIndex); }
+  double& getQ();
 
   void makeRigid();
 
