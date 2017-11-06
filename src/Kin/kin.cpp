@@ -1711,6 +1711,31 @@ void mlr::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, Proxy *p, double m
   mlr::Frame *b = frames(p->b);
   CHECK(a->shape,"");
   CHECK(b->shape,"");
+
+#if 1
+  if(!p->coll) p->calc_coll();
+
+
+  arr Jp1, Jp2, Jx1, Jx2;
+  if(&J){
+    jacobianPos(Jp1, a, p->coll->p1);
+    jacobianPos(Jp2, b, p->coll->p2);
+    axesMatrix(Jx1, a);
+    axesMatrix(Jx2, b);
+  }
+
+  arr y_dist, J_dist;
+  p->coll->kinDistance(y_dist, (&J?J_dist:NoArr), Jp1, Jp2, Jx1, Jx2);
+
+
+  y.resize(1);
+  if(&J) J.resize(1, getJointStateDimension());
+  if(!addValues){ y.setZero();  if(&J) J.setZero(); }
+
+  y += ARR(1.-y_dist.scalar()/margin);
+  if(&J)  J -= (1./margin)*J_dist;
+
+#else
   CHECK(a->shape->mesh_radius>0.,"");
   CHECK(b->shape->mesh_radius>0.,"");
 
@@ -1768,6 +1793,7 @@ void mlr::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, Proxy *p, double m
       }
     }
   }
+#endif
 }
 
 /// measure (=scalar kinematics) for the contact cost summed over all bodies
@@ -2144,12 +2170,8 @@ void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
 
   glColor(.5, .5, .5);
 
-  //shapes
-  if(orsDrawBodies) for(Frame *f: frames) if(f->shape){
-    f->shape->glDraw(gl);
-    i++;
-    if(orsDrawLimit && i>=orsDrawLimit) break;
-  }
+  //proxies
+  if(orsDrawProxies) for(Proxy *proxy: proxies) proxy->glDraw(gl);
 
   //joints
   Joint *e;
@@ -2199,8 +2221,12 @@ void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
     if(orsDrawLimit && i>=orsDrawLimit) break;
   }
 
-  //proxies
-  if(orsDrawProxies) for(Proxy *proxy: proxies) proxy->glDraw(gl);
+  //shapes
+  if(orsDrawBodies) for(Frame *f: frames) if(f->shape){
+    f->shape->glDraw(gl);
+    i++;
+    if(orsDrawLimit && i>=orsDrawLimit) break;
+  }
 
   glPopMatrix();
 }

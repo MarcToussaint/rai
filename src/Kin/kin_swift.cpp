@@ -260,7 +260,7 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       &nearest_pts,
       &normals);
   } catch(const char *msg) {
-    listResize(world.proxies, 0);
+    listDelete(world.proxies);
     cout <<"... catching error '" <<msg <<"' -- SWIFT failed! .. no proxies for this posture!!..." <<endl;
     return;
   }
@@ -279,13 +279,8 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
     }
   }
   
-  //count total number of new proxies:
-  for(k=0, i=0; i<np; i++) {
-    if(num_contacts[i]>=0) k+=num_contacts[i];
-    if(num_contacts[i]==-1) k++;
-  }
   
-  listResize(world.proxies, k);
+  listDelete(world.proxies);
   
   //add contacts to list
   mlr::Proxy *proxy;
@@ -296,8 +291,8 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
     //CHECK(ids(a)==a && ids(b)==b, "shape index does not coincide with swift index");
     
     //non-penetrating pair of objects
-    if(num_contacts[i]>=0) for(j=0; j<num_contacts[i]; j++, k++) {
-        proxy=world.proxies(k);
+    if(num_contacts[i]>=0) { //only add one proxy!for(j=0; j<num_contacts[i]; j++, k++) {
+        proxy = new mlr::Proxy(world);
         proxy->a=a;
         proxy->b=b;
         proxy->d = dists[k];
@@ -317,7 +312,7 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
 
     //penetrating pair of objects
     if(num_contacts[i]==-1) {
-      proxy=world.proxies(k);
+      proxy = new mlr::Proxy(world);
       proxy->a=a;
       proxy->b=b;
       proxy->d = -.0;
@@ -336,7 +331,6 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       
       ///! IN PENETRATION we measure d as -1+(distance between object centers) - that gives a well-defined (though non-smooth) gradient!
 //      proxy->d += -1.+(proxy->posA-proxy->posB).length();
-      k++;
     }
 
     double ab_radius = mlr::MAX(proxy->d,0.) + 1.1*(world.frames(a)->shape->mesh_radius + world.frames(b)->shape->mesh_radius);
@@ -344,8 +338,7 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       //MLR_MSG("shit");
     }
   }
-  CHECK_EQ(k , (int)world.proxies.N, "");
-  
+
   //add pointClound stuff to list
   if(global_ANN) {
     uint i, _i=0;
@@ -373,8 +366,7 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       }
       if(_dists(0)>cutoff) continue;
       
-      proxy = new mlr::Proxy;
-      world.proxies.append(proxy);
+      proxy = new mlr::Proxy(world);
       proxy->a=global_ANN_shape->frame.ID;
       proxy->b=s->frame.ID;
       proxy->d = _dists(0);

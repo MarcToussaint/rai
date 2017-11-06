@@ -18,6 +18,7 @@
 
 #include "taskMap_qItself.h"
 #include "taskMap_GJK.h"
+#include "taskMap_PairCollision.h"
 #include "taskMap_transition.h"
 #include "taskMap_default.h"
 #include "taskMap_qLimits.h"

@@ -1,4 +1,5 @@
-#include "pairCollide.h"
+
+#include "pairCollision.h"
 
 #ifdef MLR_extern_GJK
 extern "C"{
@@ -10,8 +11,8 @@ extern "C"{
 #include <ccd/ccd.h>
 #include <ccd/quat.h>
 
-PairCollision::PairCollision(mlr::Mesh &mesh1, mlr::Mesh &mesh2, mlr::Transformation &t1, mlr::Transformation &t2)
-    : mesh1(mesh1), mesh2(mesh2), t1(t1), t2(t2) {
+PairCollision::PairCollision(const mlr::Mesh &mesh1, const mlr::Mesh &mesh2, mlr::Transformation &t1, mlr::Transformation &t2, double rad1, double rad2)
+    : mesh1(mesh1), mesh2(mesh2), t1(t1), t2(t2), rad1(rad1), rad2(rad2) {
 
     double d2 = GJK_sqrDistance(); //mesh1, mesh2, t1, t2, p1, p2, e1, e2, pt1.x, pt2.x);
 
@@ -21,28 +22,18 @@ PairCollision::PairCollision(mlr::Mesh &mesh1, mlr::Mesh &mesh2, mlr::Transforma
       //THIS IS COSTLY!! DO WITHIN THE SUPPORT FUNCTION!
       mlr::Mesh M1(mesh1); t1.applyOnPointArray(M1.V);
       mlr::Mesh M2(mesh2); t2.applyOnPointArray(M2.V);
-      distance = - GJK_libccd_penetration(M1, M2);
+      distance = - libccd_MPR(M1, M2);
     }
 
-//    double rad=rad1+rad2;
-//    if(rad>0.){
-//        arr d = p1-p2;
-//        double l = length(d);
-//        CHECK_LE(fabs(fabs(distance)-l), 1e-10, "");
-//        p1 -= (rad1/distance)*d;
-//        for(uint i=0;i<simplex1.d0;i++) simplex1[i] -= (rad1/distance)*d;
-//        p2 += (rad2/distance)*d;
-//        for(uint i=0;i<simplex2.d0;i++) simplex2[i] += (rad2/distance)*d;
+    //ensure that the normal always points 'against obj1' (along p1-p2 relative to NON-penetration)
+    if(mlr::sign(distance) * scalarProduct(normal, p1-p2) < 0.)
+        normal *= -1.;
 
-//        distance -= rad;
+    CHECK(mlr::sign(distance) * scalarProduct(normal, p1-p2)  > 0., "");
 
-////        double fac = (l-rad)/l;
-////        if(&J){
-////        arr d_fac = (1.-(l-rad)/l)/l2 *(~v)*J;
-////        J = J*fac + v*d_fac;
-////      }
-////      v *= fac;
-//    }
+    CHECK_ZERO(scalarProduct(normal, p1-p2) - distance, 1e-6, "");
+
+    //in current state, the rad1, rad2, have not been used at all!!
 }
 
 void PairCollision::write(std::ostream &os) const{
@@ -71,7 +62,7 @@ void center_mesh(const void *obj, ccd_vec3_t *center){
     memmove(center->v, &c.x, 3*sizeof(double));
 }
 
-double PairCollision::GJK_libccd_penetration(const mlr::Mesh& m1,const mlr::Mesh& m2){
+double PairCollision::libccd_MPR(const mlr::Mesh& m1,const mlr::Mesh& m2){
   ccd_t ccd;
   CCD_INIT(&ccd); // initialize ccd_t struct
 
@@ -182,21 +173,30 @@ double PairCollision::GJK_sqrDistance(){
 
 
 void PairCollision::glDraw(OpenGL &){
+    arr P1=p1, P2=p2;
+    if(rad1>0.) P1 -= rad1*normal;
+    if(rad2>0.) P2 += rad2*normal;
+
     glColor(0., 1., 0., 1.);
-    glDrawDiamond(p1(0), p1(1), p1(2), .01, .01, .01);
+    glDrawDiamond(P1(0), P1(1), P1(2), .01, .01, .01);
+    arr v;
     for(uint i=0;i<simplex1.d0;i++){
-        arr v = simplex1[i];
+        v = simplex1[i];
+        if(rad1>0.) v -= rad1*normal;
         glDrawDiamond(v(0), v(1), v(2), .02, .02, .02);
     }
+
     glColor(0., 0., 1., 1.);
-    glDrawDiamond(p2(0), p2(1), p2(2), .01, .01, .01);
+    glDrawDiamond(P2(0), P2(1), P2(2), .01, .01, .01);
     for(uint i=0;i<simplex2.d0;i++){
-        arr v = simplex2[i];
+        v = simplex2[i];
+        if(rad2>0.) v += rad2*normal;
         glDrawDiamond(v(0), v(1), v(2), .02, .02, .02);
     }
+
     glColor(1., 0., 0., 1.);
     glLineWidth(5.f);
-    glDrawProxy(p1, p2, .05);
+    glDrawProxy(P1, P2, .05);
     glLineWidth(2.f);
     glLoadIdentity();
 }
@@ -205,70 +205,67 @@ void PairCollision::kinVector(arr& y, arr& J,
                              const arr &Jp1, const arr &Jp2,
                              const arr &Jx1, const arr &Jx2){
     y = p1 - p2;
-    if(!&J) return;
-    J = Jp1 - Jp2;
-    if(simplexType(1, 3) || simplexType(3, 1)){
-      J = normal*(~normal*J);
-      arr Jv;
-      if(simplex1.d0==1) Jv = crossProduct(Jx2, p1-p2); //K.kinematicsVec(vec, Jv, &s2.frame, s2.frame.X.rot/(p1-p2));
-      if(simplex2.d0==1) Jv = crossProduct(Jx1, p1-p2); //K.kinematicsVec(vec, Jv, &s1.frame, s1.frame.X.rot/(p1-p2));
-      J += Jv;
-    }
-    if(simplexType(2, 2)){
-      arr Jv, a, b;
-      J = normal*(~normal*J);
+    if(&J){
+        J = Jp1 - Jp2;
+        if(simplexType(1, 3) || simplexType(3, 1)){
+            J = normal*(~normal*J);
+            arr Jv;
+            if(simplex1.d0==1) Jv = crossProduct(Jx2, p1-p2); //K.kinematicsVec(vec, Jv, &s2.frame, s2.frame.X.rot/(p1-p2));
+            if(simplex2.d0==1) Jv = crossProduct(Jx1, p1-p2); //K.kinematicsVec(vec, Jv, &s1.frame, s1.frame.X.rot/(p1-p2));
+            J += Jv;
+        }
+        if(simplexType(2, 2)){
+            arr Jv, a, b;
+            J = normal*(~normal*J);
 
-      //get edges
-      a = simplex1[1]-simplex1[0]; //edge
-      a /= length(a);
-      b = simplex2[1]-simplex2[0]; //edge
-      b /= length(b);
-      double ab=scalarProduct(a,b);
+            //get edges
+            a = simplex1[1]-simplex1[0]; //edge
+            a /= length(a);
+            b = simplex2[1]-simplex2[0]; //edge
+            b /= length(b);
+            double ab=scalarProduct(a,b);
 
-      Jv = crossProduct(Jx1, a);      //K.kinematicsVec(vec, Jv, &s1.frame, s1.frame.X.rot/e1);
-      J += (a-b*ab) * (1./(1.-ab*ab)) * (~(p1-p2)*(b*~b -eye(3,3))) * Jv;
+            Jv = crossProduct(Jx1, a);      //K.kinematicsVec(vec, Jv, &s1.frame, s1.frame.X.rot/e1);
+            J += (a-b*ab) * (1./(1.-ab*ab)) * (~(p1-p2)*(b*~b -eye(3,3))) * Jv;
 
-      Jv = crossProduct(Jx2, b);      //K.kinematicsVec(vec, Jv, &s2.frame, s2.frame.X.rot/e2);
-      J += (b-a*ab) * (1./(1.-ab*ab)) * (~(p1-p2)*(a*~a -eye(3,3))) * Jv;
+            Jv = crossProduct(Jx2, b);      //K.kinematicsVec(vec, Jv, &s2.frame, s2.frame.X.rot/e2);
+            J += (b-a*ab) * (1./(1.-ab*ab)) * (~(p1-p2)*(a*~a -eye(3,3))) * Jv;
+        }
+        if(simplexType(1, 2) || simplexType(2, 1)){
+            arr vec, Jv, n;
+            if(simplex1.d0==2) { n = simplex1[1]-simplex1[0];  n /= length(n); }
+            if(simplex2.d0==2) { n = simplex2[1]-simplex2[0];  n /= length(n); }
+            J = J - n*(~n*J);
+            if(simplex1.d0==2) Jv = crossProduct(Jx1, p1-p2);  //K.kinematicsVec(vec, Jv, &s1.frame, s1.frame.X.rot/(p1-p2));
+            if(simplex2.d0==2) Jv = crossProduct(Jx2, p1-p2);  //K.kinematicsVec(vec, Jv, &s2.frame, s2.frame.X.rot/(p1-p2));
+            J += n*(~n*Jv);
+        }
     }
-    if(simplexType(1, 2) || simplexType(2, 1)){
-      arr vec, Jv, n;
-      if(simplex1.d0==2) { n = simplex1[1]-simplex1[0];  n /= length(n); }
-      if(simplex2.d0==2) { n = simplex2[1]-simplex2[0];  n /= length(n); }
-      J = J - n*(~n*J);
-      if(simplex1.d0==2) Jv = crossProduct(Jx1, p1-p2);  //K.kinematicsVec(vec, Jv, &s1.frame, s1.frame.X.rot/(p1-p2));
-      if(simplex2.d0==2) Jv = crossProduct(Jx2, p1-p2);  //K.kinematicsVec(vec, Jv, &s2.frame, s2.frame.X.rot/(p1-p2));
-      J += n*(~n*Jv);
+
+    //-- account for radii
+    if(rad1>0. || rad2>0.){
+      double rad=rad1+rad2;
+      double fac = (distance-rad)/distance;
+      if(&J){
+        arr d_fac = ((1.-(distance-rad)/distance)/distance) *((~normal)*J);
+        J = J*fac + y*d_fac;
+      }
+      y *= fac;
     }
+
+//    if(&J) cout <<"PENE = " <<scalarProduct(y, normal) <<endl;
 }
 
 void PairCollision::kinDistance(arr &y, arr &J,
                                 const arr &Jp1, const arr &Jp2,
-                                const arr &Jx1, const arr &Jx2,
-                                double rad1, double rad2){
-    NIY;
-//    kinVector(y, J, Jp1, Jp2, Jx1, Jx2);
-
-            //    double rad=rad1+rad2;
-            //    if(rad>0.){
-            //        arr d = p1-p2;
-            //        double l = length(d);
-            //        CHECK_LE(fabs(fabs(distance)-l), 1e-10, "");
-            //        p1 -= (rad1/distance)*d;
-            //        for(uint i=0;i<simplex1.d0;i++) simplex1[i] -= (rad1/distance)*d;
-            //        p2 += (rad2/distance)*d;
-            //        for(uint i=0;i<simplex2.d0;i++) simplex2[i] += (rad2/distance)*d;
-
-            //        distance -= rad;
-
-            ////        double fac = (l-rad)/l;
-            ////        if(&J){
-            ////        arr d_fac = (1.-(l-rad)/l)/l2 *(~v)*J;
-            ////        J = J*fac + v*d_fac;
-            ////      }
-            ////      v *= fac;
-            //    }
-
+                                const arr &Jx1, const arr &Jx2){
+  y = ARR(distance-rad1-rad2);
+  if(&J){
+    arr y_vec;
+    kinVector(y_vec, J, Jp1, Jp2, Jx1, Jx2);
+    J = ~normal*J;
+    CHECK_ZERO(fabs(y(0))-length(y_vec), 1e-6, "");
+  }
 }
 
 void PairCollision::marginAnalysis(double margin){
@@ -314,7 +311,7 @@ double coll_1on3(arr &pInTri, arr& normal, const arr &pts1, const arr &pts2){
 
   //compute normal of tri (plane eq first three parameters)
   arr a=tri[1]-tri[0], b=tri[2]-tri[0];
-  normal = crossProduct(a, b);
+  normal = crossProduct(b, a);
   normal /= length(normal);
 
   //find plane eq offset parameter
@@ -330,7 +327,7 @@ double coll_2on2(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2
 
   //compute normal
   arr a=pts1[1]-pts1[0], b=pts2[1]-pts2[0];
-  normal = crossProduct(a, b);
+  normal = crossProduct(b, a);
   normal /= length(normal);
 
   //distance

@@ -6,11 +6,12 @@
 #include <Kin/kin.h>
 #include <Kin/taskMaps.h>
 #include <Kin/frame.h>
-#include <Geo/pairCollide.h>
+#include <Geo/pairCollision.h>
+#include <Kin/kin_swift.h>
 
 extern bool orsDrawWires;
 
-
+//===========================================================================
 
 void TEST(GJK_Jacobians) {
   mlr::KinematicWorld K;
@@ -41,14 +42,14 @@ void TEST(GJK_Jacobians) {
 //  gl.add(K);
 
 
-  VectorFunction f = [&K, &s1, &s2](arr& v, arr& J, const arr& x) -> void {
+  VectorFunction f = [&K, &s1, &s2](arr& y, arr& J, const arr& x) -> void {
     K.setJointState(x);
 
     mlr::Mesh *m1, *m2;
     if(s1.type()==mlr::ST_mesh) m1=&s1.mesh(); else m1=&s1.sscCore();
     if(s2.type()==mlr::ST_mesh) m2=&s2.mesh(); else m2=&s2.sscCore();
 
-    PairCollision coll(*m1, *m2, s1.frame.X, s2.frame.X/*, s1.size(3), s2.size(3)*/);
+    PairCollision coll(*m1, *m2, s1.frame.X, s2.frame.X, s1.size(3), s2.size(3));
 
     arr Jp1, Jp2, Jx1, Jx2;
     K.jacobianPos(Jp1, &s1.frame, coll.p1);
@@ -56,37 +57,18 @@ void TEST(GJK_Jacobians) {
     K.axesMatrix(Jx1, &s1.frame);
     K.axesMatrix(Jx2, &s2.frame);
 
-    coll.kinVector(v, J, Jp1, Jp2, Jx1, Jx2);
-
-    //reduce by radiipt1==GJK_vertex && pt2==GJK_face
-#if 1
-    double rad=0.;
-    if(s1.type()==mlr::ST_ssCvx) rad += s1.size(3);
-    if(s2.type()==mlr::ST_ssCvx) rad += s2.size(3);
-    double l2=sumOfSqr(v), l=sqrt(l2);
-//    if(s1.type()==mlr::ST_ssCvx) p1 -= s1.size(3)/l*mlr::Vector(v);
-//    if(s2.type()==mlr::ST_ssCvx) p2 += s2.size(3)/l*mlr::Vector(v);
-    if(rad>0.){
-      double fac = (l-rad)/l;
-      if(&J){
-        arr d_fac = (1.-(l-rad)/l)/l2 *(~v)*J;
-        J = J*fac + v*d_fac;
-      }
-      v *= fac;
-    }
-//    if(d2>1e-10)
-//      CHECK_ZERO(l2-d2, 1e-6,"");
-#endif
+    coll.kinVector(y, J, Jp1, Jp2, Jx1, Jx2);
   };
 
-  TaskMap_GJK gjk(K, "s1", "s2", true);
+//  TaskMap_GJK gjk(K, "s1", "s2", true);
+  TaskMap_PairCollision gjk(K, "s1", "s2", true);
 
   for(uint k=0;k<100;k++){
     rndGauss(q, 1.);
     K.setJointState(q);
 
-    PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X);
-    cout <<collInfo;
+    PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(3), s2.size(3));
+//    cout <<collInfo;
 
     arr y,y2,J;
     //test both, the explicit code above as well as the wrapped TaskMap_GJK
@@ -96,27 +78,90 @@ void TEST(GJK_Jacobians) {
     gjk.phi(y, NoArr, K);
     checkJacobian(gjk.vf(K), q, 1e-4);
 
-    cout <<"distances: " <<length(y2) <<' ' <<length(y) <<endl;
+    CHECK_ZERO(fabs(y(0)) - length(y2), 1e-6, "");
+
+//    cout <<"distances: " <<length(y2) <<' ' <<y <<endl;
 //    cout <<"vec=" <<y <<" sqr=" <<sumOfSqr(y) <<" f=" <<y2 <<endl;
 
     gl.add(collInfo);
     gl.add(K);
     gl.update();
-    gl.watch();
-    if(collInfo.simplex1.d0==2 && collInfo.simplex2.d0==3){
-      gl.watch();
-    }
+//    gl.watch();
 
     gl.remove(collInfo);
     gl.remove(K);
   }
 }
 
+//===========================================================================
+
+void TEST(GJK_Jacobians2) {
+  mlr::KinematicWorld K;
+  mlr::Frame base(K);
+  for(uint i=0;i<5;i++){
+    mlr::Frame *a = new mlr::Frame(K);
+    a->name <<"obj_" <<i;
+
+    mlr::Joint *j = new mlr::Joint(base, *a);
+    j->type = mlr::JT_free;
+    j->frame.Q.setRandom();
+    j->frame.Q.pos.z += 1.;
+
+    mlr::Shape *s = new mlr::Shape(*a);
+    s->cont=true;
+    s->type() = mlr::ST_ssCvx; //ST_mesh;
+    s->size(3) = .02 + .1*rnd.uni();
+    s->sscCore().setRandom();
+    s->mesh().C = {.5,.8,.5,.4};
+  }
+  K.calc_activeSets();
+  K.calc_fwdPropagateFrames();
+
+  K.gl().update();
+
+  K.swift().initActivations(K, 0);
+  K.stepSwift();
+  K.reportProxies();
+  K.orsDrawProxies=true;
+
+
+  VectorFunction f = [&K](arr& y, arr& J, const arr& x) -> void {
+    K.setJointState(x);
+    K.stepSwift();
+    K.kinematicsProxyCost(y, (&J?J:NoArr), .2);
+  };
+
+  checkJacobian(f, K.q, 1e-4);
+
+  K.gl().watch();
+
+
+  arr q = K.getJointState();
+  arr y,J;
+  for(uint t=0;t<1000;t++){
+    K.setJointState(q);
+    K.stepSwift();
+
+//    K.reportProxies();
+
+    K.kinematicsProxyCost(y, J, .2);
+    cout <<"contact meassure = " <<y(0) <<endl;
+    K.watch(false, STRING("t=" <<t <<"  movement along negative contact gradient (using SWIFT to get contacts)"));
+    q -= 1e-4*J;
+
+//    checkJacobian(f, q, 1e-4);
+  }
+}
+
+//===========================================================================
 
 int MAIN(int argc, char** argv){
   mlr::initCmdLine(argc, argv);
 
-  testGJK_Jacobians();
+  rnd.clockSeed();
+
+//  testGJK_Jacobians();
+  testGJK_Jacobians2();
 
   return 0;
 }

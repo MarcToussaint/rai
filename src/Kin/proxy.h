@@ -17,6 +17,7 @@
 #define MLR_proxy_h
 
 #include <Geo/geo.h>
+#include <Geo/pairCollision.h>
 
 //===========================================================================
 
@@ -25,6 +26,8 @@ namespace mlr {
 /// a data structure to store proximity information (when two shapes become close) --
 /// as return value from external collision libs
 struct Proxy : GLDrawer {
+  struct KinematicWorld& K;  ///< a Proxy is uniquely associated with a KinematicConfiguration
+
   //TODO: have a ProxyL& L as above...
   int a;              ///< index of shape A (-1==world) //TODO: would it be easier if this were mlr::Shape* ? YES -> Do it!
   int b;              ///< index of shape B
@@ -32,8 +35,13 @@ struct Proxy : GLDrawer {
   Vector posB, cenB;  ///< contact or closest point position on surface of shape B (in world coordinates)
   Vector normal, cenN;   ///< contact normal, pointing from B to A (proportional to posA-posB)
   double d, cenD;           ///< distance (positive) or penetration (negative) between A and B
-  uint colorCode;
-  Proxy();
+  uint colorCode = 0;
+  PairCollision *coll=NULL;
+
+  Proxy(KinematicWorld& _K);
+  ~Proxy();
+
+  void calc_coll();
   void glDraw(OpenGL&);
 };
 
