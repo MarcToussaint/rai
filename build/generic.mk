@@ -50,7 +50,7 @@ YACC = bison -d
 
 LINK	= $(CXX)
 CPATHS	+= $(BASE)/src $(BASE)/include
-LPATHS	+= $(BASE)/src /usr/local/lib
+LPATHS	+= $(BASE_REAL)/lib /usr/local/lib
 LIBS += -lrt
 SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefined
 
@@ -320,15 +320,15 @@ includeAll.cxx: force
 
 makeDepend/extern_%: %
 	+@-$(BASE)/build/make-path.sh $< libextern_$*.a
-	@cd $(BASE)/src && ln -sf $(NAME)/$*/libextern_$*.a libextern_$*.a
+	@cd $(BASE)/lib && ln -sf ../src/$(NAME)/$*/libextern_$*.a libextern_$*.a
 
 makeDepend/Hardware_%: $(BASE)/src/Hardware/%
 	+@-$(BASE)/build/make-path.sh $< libHardware_$*.so
-	@cd $(BASE)/src && ln -sf Hardware/$*/libHardware_$*.so libHardware_$*.so
+	@cd $(BASE)/lib && ln -sf ../src/Hardware/$*/libHardware_$*.so libHardware_$*.so
 
 makeDepend/%: $(BASE)/src/%
 	+@-$(BASE)/build/make-path.sh $< lib$*.so
-	@cd $(BASE)/src && ln -sf $*/lib$*.so lib$*.so
+	@cd $(BASE)/lib && ln -sf ../src/$*/lib$*.so lib$*.so
 
 makePath/%: %
 	+@-$(BASE)/build/make-path.sh $< x.exe

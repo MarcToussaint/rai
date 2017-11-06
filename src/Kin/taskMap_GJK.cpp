@@ -82,8 +82,8 @@ void TaskMap_GJK::phi(arr& v, arr& J, const mlr::KinematicWorld& W, int t){
   mlr::Shape *s1 = i<0?NULL: W.frames(i)->shape;
   mlr::Shape *s2 = j<0?NULL: W.frames(j)->shape;
   CHECK(s1 && s2,"");
-  CHECK(s1->type()==mlr::ST_mesh || s1->type()==mlr::ST_ssCvx,"");
-  CHECK(s2->type()==mlr::ST_mesh || s2->type()==mlr::ST_ssCvx,"");
+  CHECK(s1->type()==mlr::ST_mesh || s1->type()==mlr::ST_ssCvx || s1->type()==mlr::ST_ssBox,"");
+  CHECK(s2->type()==mlr::ST_mesh || s2->type()==mlr::ST_ssCvx || s2->type()==mlr::ST_ssBox,"");
   const mlr::Mesh *m1, *m2;
   if(s1->type()==mlr::ST_mesh) m1=&s1->mesh(); else m1=&s1->sscCore();
   if(s2->type()==mlr::ST_mesh) m2=&s2->mesh(); else m2=&s2->sscCore();
