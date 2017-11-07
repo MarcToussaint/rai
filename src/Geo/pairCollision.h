@@ -1,3 +1,5 @@
+#pragma once
+
 #include "mesh.h"
 
 struct PairCollision : GLDrawer{

@@ -94,6 +94,10 @@ PxTransform OrsTrans2PxTrans(const mlr::Transformation& f) {
   return PxTransform(PxVec3(f.pos.x, f.pos.y, f.pos.z), PxQuat(f.rot.x, f.rot.y, f.rot.z, f.rot.w));
 }
 
+PxTransform Id_PxTrans() {
+  return PxTransform(PxVec3(0.f, 0.f, 0.f), PxQuat(0.f, 0.f, 0.f, 1.f));
+}
+
 // ============================================================================
 //stuff from Samples/PxToolkit
 
@@ -206,12 +210,11 @@ PhysXInterface::PhysXInterface(mlr::KinematicWorld& _world): world(_world), s(NU
   PxShape* planeShape = plane->createShape(PxPlaneGeometry(), *mMaterial);
   CHECK(planeShape, "create shape failed!");
   s->gScene->addActor(*plane);
-  // create ORS equivalent in PhysX
-  // loop through ors
-  for(mlr::Frame *b: world.frames) s->addBody(b, mMaterial);
 
-  /// ADD joints here!
-  for(mlr::Joint *jj : world.fwdActiveJoints) s->addJoint(jj);
+  //-- create Kin equivalent in PhysX
+  // loop through kin
+  for(mlr::Frame *b : world.frames) s->addBody(b, mMaterial);
+  for(mlr::Joint *j : world.fwdActiveJoints) s->addJoint(j);
 
   /// save data for the PVD
   if(mlr::getParameter<bool>("physx_debugger", false)) {
@@ -269,8 +272,8 @@ void PhysXInterface::setArticulatedBodiesKinematic(){
 void sPhysXInterface::addJoint(mlr::Joint *jj) {
   while(joints.N <= jj->frame.ID+1)
     joints.append(NULL);
-  PxTransform A(PxIDENTITY);// = OrsTrans2PxTrans(jj->A);
-  PxTransform B(PxIDENTITY);// = OrsTrans2PxTrans(jj->B);
+  PxTransform A = Id_PxTrans();
+  PxTransform B = Id_PxTrans();
   switch(jj->type) {
     case mlr::JT_free: //do nothing
       break;
@@ -417,7 +420,7 @@ void sPhysXInterface::addBody(mlr::Frame *b, physx::PxMaterial *mMaterial) {
   for(mlr::Shape *s: bShapes) {
     if(s->frame.name.startsWith("coll_")) continue; //these are the 'pink' collision boundary shapes..
     PxGeometry* geometry;
-    switch(s->type) {
+    switch(s->type()) {
       case mlr::ST_box: {
         geometry = new PxBoxGeometry(.5*s->size(0), .5*s->size(1), .5*s->size(2));
       }
@@ -442,7 +445,7 @@ void sPhysXInterface::addBody(mlr::Frame *b, physx::PxMaterial *mMaterial) {
         floatA Vfloat;
 
         Vfloat.clear();
-        copy(Vfloat, s->mesh.V); //convert vertices from double to float array..
+        copy(Vfloat, s->mesh().V); //convert vertices from double to float array..
         PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
             *mPhysics, *mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
             PxConvexFlag::eCOMPUTE_CONVEX | PxConvexFlag::eINFLATE_CONVEX);
@@ -463,7 +466,7 @@ void sPhysXInterface::addBody(mlr::Frame *b, physx::PxMaterial *mMaterial) {
     //actor = PxCreateDynamic(*mPhysics, OrsTrans2PxTrans(s->X), *geometry, *mMaterial, 1.f);
   }
   if(b->inertia->type == mlr::BT_dynamic) {
-    if(b->inertia->mass) {
+    if(b->inertia->mass>0.) {
       PxRigidBodyExt::setMassAndUpdateInertia(*actor, b->inertia->mass);
     }
     else {
@@ -476,9 +479,8 @@ void sPhysXInterface::addBody(mlr::Frame *b, physx::PxMaterial *mMaterial) {
   gScene->addActor(*actor);
   actor->userData = b;
 
-  actors.append(actor);
-  //WARNING: actors must be aligned (indexed) exactly as G->bodies
-  // TODO: we could use the data void pointer of an actor instead?
+  while(actors.N<=b->ID) actors.append(NULL);
+  actors(b->ID) = actor;
 }
 
 void PhysXInterface::pullFromPhysx(double tau) {
@@ -499,15 +501,15 @@ void PhysXInterface::pullFromPhysx(double tau) {
 #endif
     }
   }
-  world.calc_fwdPropagateShapeFrames();
-  world.calc_Q_from_BodyFrames();
+  world.calc_activeSets();
+  world.calc_fwdPropagateFrames();
   world.calc_q_from_Q();
 }
 
 void PhysXInterface::pushToPhysx() {
   HALT("why here?");
   PxMaterial* mMaterial = mPhysics->createMaterial(3.f, 3.f, 0.2f);
-  for_list(mlr::Body, b, world.bodies) {
+  for_list(mlr::Frame, b, world.frames) {
     if(s->actors.N > b_COUNT) {
       s->actors(b_COUNT)->setGlobalPose(OrsTrans2PxTrans(b->X));
     } else {
@@ -525,7 +527,7 @@ void PhysXInterface::ShutdownPhysX() {
   mPhysics->release();
 }
 
-void DrawActor(PxRigidActor* actor, mlr::Body *body) {
+void DrawActor(PxRigidActor* actor, mlr::Frame *frame) {
   PxU32 nShapes = actor->getNbShapes();
   PxShape** shapes=new PxShape*[nShapes];
   //cout <<"#shapes=" <<nShapes;
@@ -535,8 +537,8 @@ void DrawActor(PxRigidActor* actor, mlr::Body *body) {
     PxShape *shape = shapes[nShapes];
 
     // use the color of the first shape of the body for the entire body
-    mlr::Shape *s = body->shapes(0);
-    glColor(s->mesh.C);
+    mlr::Shape *s = frame->shape;
+    glColor(s->mesh().C);
 
     mlr::Transformation f;
     double mat[16];
@@ -583,16 +585,16 @@ void DrawActor(PxRigidActor* actor, mlr::Body *body) {
 }
 
 void PhysXInterface::glDraw(OpenGL&) {
-  for_list(PxRigidActor, a, s->actors)  DrawActor(a, world.bodies(a_COUNT));
+  for_list(PxRigidActor, a, s->actors)  DrawActor(a, world.frames(a_COUNT));
 }
 
-void PhysXInterface::addForce(mlr::Vector& force, mlr::Body* b) {
+void PhysXInterface::addForce(mlr::Vector& force, mlr::Frame* b) {
   PxVec3 px_force = PxVec3(force.x, force.y, force.z);
   PxRigidBody *actor = (PxRigidBody*) (s->actors(b->ID)); // dynamic_cast fails for missing RTTI in physx
   actor->addForce(px_force);
 }
 
-void PhysXInterface::addForce(mlr::Vector& force, mlr::Body* b, mlr::Vector& pos) {
+void PhysXInterface::addForce(mlr::Vector& force, mlr::Frame* b, mlr::Vector& pos) {
   PxVec3 px_force = PxVec3(force.x, force.y, force.z);
   PxVec3 px_pos = PxVec3(pos.x, pos.y, pos.z);
   PxRigidBody *actor = (PxRigidBody*)(s->actors(b->ID));
