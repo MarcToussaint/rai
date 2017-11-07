@@ -43,5 +43,6 @@ private:
 //return normals and closes points for 1-on-3 simplices or 2-on-2 simplices
 double coll_1on3(arr& pInTri, arr& normal, const arr& pts1, const arr& pts2);
 double coll_2on2(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2);
+double coll_2on3(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2);
 
 stdOutPipe(PairCollision)

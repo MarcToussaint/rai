@@ -8,6 +8,7 @@
 #include <Kin/frame.h>
 #include <Geo/pairCollision.h>
 #include <Kin/kin_swift.h>
+#include <Kin/taskMap_QuaternionNorms.h>
 
 extern bool orsDrawWires;
 
@@ -98,7 +99,7 @@ void TEST(GJK_Jacobians) {
 void TEST(GJK_Jacobians2) {
   mlr::KinematicWorld K;
   mlr::Frame base(K);
-  for(uint i=0;i<5;i++){
+  for(uint i=0;i<20;i++){
     mlr::Frame *a = new mlr::Frame(K);
     a->name <<"obj_" <<i;
 
@@ -112,7 +113,7 @@ void TEST(GJK_Jacobians2) {
     s->type() = mlr::ST_ssCvx; //ST_mesh;
     s->size(3) = .02 + .1*rnd.uni();
     s->sscCore().setRandom();
-    s->mesh().C = {.5,.8,.5,.4};
+    s->mesh().C = {.5,.5,.8,.6};
   }
   K.calc_activeSets();
   K.calc_fwdPropagateFrames();
@@ -133,24 +134,32 @@ void TEST(GJK_Jacobians2) {
 
   checkJacobian(f, K.q, 1e-4);
 
-  K.gl().watch();
-
 
   arr q = K.getJointState();
-  arr y,J;
+  double y_last=0.;
   for(uint t=0;t<1000;t++){
     K.setJointState(q);
     K.stepSwift();
 
+    TaskMap_QuaternionNorms qn;
 //    K.reportProxies();
 
+    arr y,J;
     K.kinematicsProxyCost(y, J, .2);
-    cout <<"contact meassure = " <<y(0) <<endl;
-    K.watch(false, STRING("t=" <<t <<"  movement along negative contact gradient (using SWIFT to get contacts)"));
-    q -= 1e-4*J;
+
+    arr y2, J2;
+    qn.phi(y2, J2, K);
+
+    cout <<"contact meassure = " <<y_last - y(0) <<' ' <<y2(0) <<endl;
+    y_last = y(0);
+    K.watch(false, STRING("t=" <<t <<"  movement along negative contact gradient"));
+
+    q -= 1e-3*J + 1e-2*(~y2*J2);
 
 //    checkJacobian(f, q, 1e-4);
   }
+
+  K.gl().watch();
 }
 
 //===========================================================================
@@ -160,7 +169,7 @@ int MAIN(int argc, char** argv){
 
   rnd.clockSeed();
 
-//  testGJK_Jacobians();
+  testGJK_Jacobians();
   testGJK_Jacobians2();
 
   return 0;
