@@ -169,7 +169,7 @@ int MAIN(int argc, char** argv){
 
   rnd.clockSeed();
 
-  testGJK_Jacobians();
+//  testGJK_Jacobians();
   testGJK_Jacobians2();
 
   return 0;
