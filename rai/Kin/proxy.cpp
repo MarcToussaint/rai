@@ -9,22 +9,20 @@
 // Proxy
 //
 
-mlr::Proxy::Proxy(KinematicWorld &_K) : K(_K) {
-  K.proxies.append(this);
+mlr::Proxy::Proxy() {
 }
 
 mlr::Proxy::~Proxy() {
   if(coll) delete coll;
-  if(this==K.proxies.last()) K.proxies.resizeCopy(K.proxies.N-1);
-  else K.proxies.removeValue(this);
 }
 
 
-void mlr::Proxy::calc_coll(){
+void mlr::Proxy::calc_coll(const KinematicWorld& K){
   mlr::Shape *s1 = K.frames(a)->shape;
   mlr::Shape *s2 = K.frames(b)->shape;
   coll = new PairCollision(s1->sscCore(), s2->sscCore(), s1->frame.X, s2->frame.X, s1->size(3), s2->size(3));
 }
+typedef mlr::Array<mlr::Proxy*> ProxyL;
 
 #ifdef MLR_GL
 void mlr::Proxy::glDraw(OpenGL& gl){

@@ -46,6 +46,7 @@ typedef mlr::Array<mlr::Joint*> JointL;
 //typedef mlr::Array<mlr::Shape*> ShapeL;
 typedef mlr::Array<mlr::Frame*> FrameL;
 typedef mlr::Array<mlr::Proxy*> ProxyL;
+typedef mlr::Array<mlr::Proxy> ProxyA;
 typedef mlr::Array<mlr::KinematicSwitch*> KinematicSwitchL;
 typedef mlr::Array<mlr::KinematicWorld*> WorldL;
 
@@ -65,7 +66,7 @@ struct KinematicWorld : GLDrawer{
   FrameL fwdActiveSet;
   JointL fwdActiveJoints;
 
-  ProxyL proxies; ///< list of current proximities between bodies
+  ProxyA proxies; ///< list of current proximities between bodies
 
   static uint setJointStateCount;
 
@@ -148,10 +149,10 @@ struct KinematicWorld : GLDrawer{
   void kinematicsRelVec (arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b) const;
   void kinematicsRelRot (arr& y, arr& J, Frame *a, Frame *b) const;
 
-  void kinematicsProxyDist(arr& y, arr& J, Proxy *p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
-  void kinematicsProxyCost(arr& y, arr& J, Proxy *p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
+  void kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
+  void kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
   void kinematicsProxyCost(arr& y, arr& J, double margin=.02, bool useCenterDist=true) const;
-  void kinematicsProxyConstraint(arr& g, arr& J, Proxy *p, double margin=.02) const;
+  void kinematicsProxyConstraint(arr& g, arr& J, const Proxy& p, double margin=.02) const;
   void kinematicsContactConstraints(arr& y, arr &J) const; //TODO: deprecated?
   void kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const mlr::Vector& rel, Frame *s) const;
   void getLimitsMeasure(arr &x, const arr& limits, double margin=.1) const;
@@ -174,7 +175,7 @@ struct KinematicWorld : GLDrawer{
   void getComGradient(arr &grad) const;
 
   double getEnergy();
-  mlr::Proxy* getContact(uint a, uint b) const;
+  const Proxy *getContact(uint a, uint b) const;
 
   /// @name get infos
   arr getHmetric() const;

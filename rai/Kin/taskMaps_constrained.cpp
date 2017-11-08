@@ -41,8 +41,8 @@ void PairCollisionConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, 
   y.resize(1) = -1.; //default value if not overwritten below
   if(&J) J.resize(1,G.q.N).setZero();
   if(j>=0){ //against a concrete j
-    for(mlr::Proxy *p: G.proxies){
-      if((p->a==i && p->b==j) || (p->a==j && p->b==i)){
+    for(const mlr::Proxy& p: G.proxies){
+      if((p.a==i && p.b==j) || (p.a==j && p.b==i)){
         G.kinematicsProxyConstraint(y, J, p, margin);
         break;
       }
@@ -50,13 +50,13 @@ void PairCollisionConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, 
   }else if(j==-1){ //against all objects
     NIY; //this doesn't work, don't know why
     //first collect all relevant proxies
-    ProxyL P;
-    for(mlr::Proxy *p: G.proxies) if((p->a==i) || (p->b==i)) P.append(p);
+    mlr::Array<const mlr::Proxy*> P;
+    for(const mlr::Proxy& p: G.proxies) if((p.a==i) || (p.b==i)) P.append(&p);
     //Compute the softmax
     double alpha = 10.;
     double yHat=0.,yNorm=0.;
-    for(mlr::Proxy *p: P){
-      G.kinematicsProxyConstraint(y, NoArr, p, margin);
+    for(const mlr::Proxy* p: P){
+      G.kinematicsProxyConstraint(y, NoArr, *p, margin);
       double yi=y.scalar();
       double expyi=::exp(alpha*yi);
       yNorm += expyi;
@@ -67,8 +67,8 @@ void PairCollisionConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, 
     if(&J){
       J.resize(1,G.getJointStateDimension()).setZero();
       arr Ji;
-      for(mlr::Proxy *p: P){
-        G.kinematicsProxyConstraint(y, Ji, p, margin);
+      for(const mlr::Proxy* p: P){
+        G.kinematicsProxyConstraint(y, Ji, *p, margin);
         double yi=y.scalar();
         double expyi=::exp(alpha*yi);
         J += expyi * (1.+alpha*(yi-yHat)) * Ji;
@@ -140,8 +140,8 @@ ContactEqualityConstraint::ContactEqualityConstraint(const mlr::KinematicWorld &
 void ContactEqualityConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
   y.resize(1) = 0.;
   if(&J) J.resize(1,G.q.N).setZero();
-  for(mlr::Proxy *p: G.proxies){
-    if((p->a==i && p->b==j) || (p->a==j && p->b==i)){
+  for(const mlr::Proxy& p: G.proxies){
+    if((p.a==i && p.b==j) || (p.a==j && p.b==i)){
       G.kinematicsProxyConstraint(y, J, p, margin);
       break;
     }

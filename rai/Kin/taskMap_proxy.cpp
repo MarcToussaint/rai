@@ -37,44 +37,44 @@ void TaskMap_Proxy::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
 
   switch(type) {
     case allPTMT:
-      for(mlr::Proxy *p: G.proxies)  if(p->d<margin) {
+      for(const mlr::Proxy& p: G.proxies)  if(p.d<margin) {
         G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
-        p->colorCode = 1;
+//        p.colorCode = 1;
       }
 //      cout <<"allPTMT=" <<y.scalar() <<endl;
 //      G.reportProxies();
       break;
     case listedVsListedPTMT:
-      for(mlr::Proxy *p: G.proxies)  if(p->d<margin) {
-        if(shapes.contains(p->a) && shapes.contains(p->b)) {
+      for(const mlr::Proxy& p: G.proxies)  if(p.d<margin) {
+        if(shapes.contains(p.a) && shapes.contains(p.b)) {
           G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
-          p->colorCode = 2;
+//          p.colorCode = 2;
         }
       }
       break;
     case allVsListedPTMT: {
       if(t && shapes.nd==2) shapes_t.referToDim(shapes,t);
-      for(mlr::Proxy *p: G.proxies)  if(p->d<margin) {
-        if(shapes_t.contains(p->a) || shapes_t.contains(p->b)) {
+      for(const mlr::Proxy& p: G.proxies)  if(p.d<margin) {
+        if(shapes_t.contains(p.a) || shapes_t.contains(p.b)) {
           G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
-          p->colorCode = 2;
+//          p.colorCode = 2;
         }
       }
     } break;
     case allExceptListedPTMT:
-      for(mlr::Proxy *p: G.proxies)  if(p->d<margin) {
-        if(!(shapes.contains(p->a) && shapes.contains(p->b))) {
+      for(const mlr::Proxy& p: G.proxies)  if(p.d<margin) {
+        if(!(shapes.contains(p.a) && shapes.contains(p.b))) {
           G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
-          p->colorCode = 3;
+//          p.colorCode = 3;
         }
       }
       break;
     case bipartitePTMT:
-      for(mlr::Proxy *p: G.proxies)  if(p->d<margin) {
-        if((shapes.contains(p->a) && shapes2.contains(p->b)) ||
-            (shapes.contains(p->b) && shapes2.contains(p->a))) {
+      for(const mlr::Proxy& p: G.proxies)  if(p.d<margin) {
+        if((shapes.contains(p.a) && shapes2.contains(p.b)) ||
+            (shapes.contains(p.b) && shapes2.contains(p.a))) {
           G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
-          p->colorCode = 4;
+//          p.colorCode = 4;
         }
       }
       break;
@@ -82,15 +82,15 @@ void TaskMap_Proxy::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
       shapes.reshape(shapes.N/2,2);
       // only explicit paris in 2D array shapes
       uint j;
-      for(mlr::Proxy *p: G.proxies) if(p->d<margin) {
+      for(const mlr::Proxy& p: G.proxies) if(p.d<margin) {
         for(j=0; j<shapes.d0; j++) {
-          if((shapes(j,0)==(uint)p->a && shapes(j,1)==(uint)p->b) || (shapes(j,0)==(uint)p->b && shapes(j,1)==(uint)p->a))
+          if((shapes(j,0)==(uint)p.a && shapes(j,1)==(uint)p.b) || (shapes(j,0)==(uint)p.b && shapes(j,1)==(uint)p.a))
             break;
         }
         if(j<shapes.d0) { //if a pair was found
           if(useDistNotCost) G.kinematicsProxyDist(y, J, p, margin, useCenterDist, true);
           else G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
-          p->colorCode = 5;
+//          p.colorCode = 5;
         }
       }
     } break;
@@ -98,14 +98,14 @@ void TaskMap_Proxy::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
       shapes.reshape(shapes.N/2,2);
       // only explicit paris in 2D array shapes
       uint j;
-      for(mlr::Proxy *p: G.proxies)  if(p->d<margin) {
+      for(const mlr::Proxy& p: G.proxies)  if(p.d<margin) {
         for(j=0; j<shapes.d0; j++) {
-          if((shapes(j,0)==(uint)p->a && shapes(j,1)==(uint)p->b) || (shapes(j,0)==(uint)p->b && shapes(j,1)==(uint)p->a))
+          if((shapes(j,0)==(uint)p.a && shapes(j,1)==(uint)p.b) || (shapes(j,0)==(uint)p.b && shapes(j,1)==(uint)p.a))
             break;
         }
         if(j==shapes.d0) { //if a pair was not found
           G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
-          p->colorCode = 5;
+//          p.colorCode = 5;
         }
       }
     } break;
@@ -115,14 +115,14 @@ void TaskMap_Proxy::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
       y.resize(shapes.d0, 1);  y.setZero();
       if(&J){ J.resize(shapes.d0,J.d1);  J.setZero(); }
       uint j;
-      for(mlr::Proxy *p: G.proxies)  if(p->d<margin) {
+      for(const mlr::Proxy& p: G.proxies)  if(p.d<margin) {
         for(j=0; j<shapes.d0; j++) {
-          if((shapes(j,0)==(uint)p->a && shapes(j,1)==(uint)p->b) || (shapes(j,0)==(uint)p->b && shapes(j,1)==(uint)p->a))
+          if((shapes(j,0)==(uint)p.a && shapes(j,1)==(uint)p.b) || (shapes(j,0)==(uint)p.b && shapes(j,1)==(uint)p.a))
             break;
         }
         if(j<shapes.d0) {
           G.kinematicsProxyCost(y[j](), (&J?J[j]():NoArr), p, margin, useCenterDist, true);
-          p->colorCode = 5;
+//          p.colorCode = 5;
         }
       }
       y.reshape(shapes.d0);

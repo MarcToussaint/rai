@@ -260,7 +260,7 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       &nearest_pts,
       &normals);
   } catch(const char *msg) {
-    listDelete(world.proxies);
+    world.proxies.clear();
     cout <<"... catching error '" <<msg <<"' -- SWIFT failed! .. no proxies for this posture!!..." <<endl;
     return;
   }
@@ -280,67 +280,67 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
   }
   
   
-  listDelete(world.proxies);
+  world.proxies.resize(np);
   
   //add contacts to list
-  mlr::Proxy *proxy;
+
   int a, b;
   for(k=0, i=0; i<np; i++) {
+    mlr::Proxy &proxy = world.proxies.elem(i);
     a=INDEXswift2shape(oids[i <<1]);
     b=INDEXswift2shape(oids[(i <<1)+1]);
     //CHECK(ids(a)==a && ids(b)==b, "shape index does not coincide with swift index");
     
     //non-penetrating pair of objects
     if(num_contacts[i]>=0) { //only add one proxy!for(j=0; j<num_contacts[i]; j++, k++) {
-        proxy = new mlr::Proxy(world);
-        proxy->a=a;
-        proxy->b=b;
-        proxy->d = dists[k];
-        proxy->normal.set(&normals[3*k+0]);
-        proxy->normal.normalize();
+        proxy.a=a;
+        proxy.b=b;
+        proxy.d = dists[k];
+        proxy.normal.set(&normals[3*k+0]);
+        proxy.normal.normalize();
         //swift returns nearest points in the local frame -> transform them
-        proxy->posA.set(&nearest_pts[6*k+0]);  proxy->posA = world.frames(a)->X * proxy->posA;
-        proxy->posB.set(&nearest_pts[6*k+3]);  proxy->posB = world.frames(b)->X * proxy->posB;
-        proxy->cenA = world.frames(a)->X.pos;
-        proxy->cenB = world.frames(b)->X.pos;
-//        if(world.shapes(a)->type==mlr::ST_mesh) proxy->cenA = world.shapes(a)->X * world.shapes(a)->mesh().getMeanVertex(); else proxy->cenA = world.shapes(a)->X.pos;
-//        if(world.shapes(b)->type==mlr::ST_mesh) proxy->cenB = world.shapes(b)->X * world.shapes(b)->mesh().getMeanVertex(); else proxy->cenB = world.shapes(b)->X.pos;
-        proxy->cenN = proxy->cenA - proxy->cenB; //normal always points from b to a
-        proxy->cenD = proxy->cenN.length();
-        proxy->cenN /= proxy->cenD;
+        proxy.posA.set(&nearest_pts[6*k+0]);  proxy.posA = world.frames(a)->X * proxy.posA;
+        proxy.posB.set(&nearest_pts[6*k+3]);  proxy.posB = world.frames(b)->X * proxy.posB;
+        proxy.cenA = world.frames(a)->X.pos;
+        proxy.cenB = world.frames(b)->X.pos;
+//        if(world.shapes(a)->type==mlr::ST_mesh) proxy.cenA = world.shapes(a)->X * world.shapes(a)->mesh().getMeanVertex(); else proxy.cenA = world.shapes(a)->X.pos;
+//        if(world.shapes(b)->type==mlr::ST_mesh) proxy.cenB = world.shapes(b)->X * world.shapes(b)->mesh().getMeanVertex(); else proxy.cenB = world.shapes(b)->X.pos;
+        proxy.cenN = proxy.cenA - proxy.cenB; //normal always points from b to a
+        proxy.cenD = proxy.cenN.length();
+        proxy.cenN /= proxy.cenD;
       }
 
     //penetrating pair of objects
     if(num_contacts[i]==-1) {
-      proxy = new mlr::Proxy(world);
-      proxy->a=a;
-      proxy->b=b;
-      proxy->d = -.0;
-//      if(world.shapes(a)->type==mlr::ST_mesh) proxy->cenA = world.shapes(a)->X * world.shapes(a)->mesh().getMeanVertex(); else proxy->cenA = world.shapes(a)->X.pos;
-//      if(world.shapes(b)->type==mlr::ST_mesh) proxy->cenB = world.shapes(b)->X * world.shapes(b)->mesh().getMeanVertex(); else proxy->cenB = world.shapes(b)->X.pos;
-      proxy->cenA = world.frames(a)->X.pos;
-      proxy->cenB = world.frames(b)->X.pos;
-      proxy->cenN = proxy->cenA - proxy->cenB; //normal always points from b to a
-      proxy->cenD = proxy->cenN.length();
-      proxy->cenN /= proxy->cenD;
+      proxy.a=a;
+      proxy.b=b;
+      proxy.d = -.0;
+//      if(world.shapes(a)->type==mlr::ST_mesh) proxy.cenA = world.shapes(a)->X * world.shapes(a)->mesh().getMeanVertex(); else proxy.cenA = world.shapes(a)->X.pos;
+//      if(world.shapes(b)->type==mlr::ST_mesh) proxy.cenB = world.shapes(b)->X * world.shapes(b)->mesh().getMeanVertex(); else proxy.cenB = world.shapes(b)->X.pos;
+      proxy.cenA = world.frames(a)->X.pos;
+      proxy.cenB = world.frames(b)->X.pos;
+      proxy.cenN = proxy.cenA - proxy.cenB; //normal always points from b to a
+      proxy.cenD = proxy.cenN.length();
+      proxy.cenN /= proxy.cenD;
       
       //copy to pos..
-      proxy->posA = proxy->cenA;
-      proxy->posB = proxy->cenB;
-      proxy->normal = proxy->cenN;
+      proxy.posA = proxy.cenA;
+      proxy.posB = proxy.cenB;
+      proxy.normal = proxy.cenN;
       
       ///! IN PENETRATION we measure d as -1+(distance between object centers) - that gives a well-defined (though non-smooth) gradient!
-//      proxy->d += -1.+(proxy->posA-proxy->posB).length();
+//      proxy.d += -1.+(proxy.posA-proxy.posB).length();
     }
 
-    double ab_radius = mlr::MAX(proxy->d,0.) + 1.1*(world.frames(a)->shape->mesh_radius + world.frames(b)->shape->mesh_radius);
-    if(proxy->cenD>ab_radius){
+    double ab_radius = mlr::MAX(proxy.d,0.) + 1.1*(world.frames(a)->shape->mesh_radius + world.frames(b)->shape->mesh_radius);
+    if(proxy.cenD>ab_radius){
       //MLR_MSG("shit");
     }
   }
 
   //add pointClound stuff to list
   if(global_ANN) {
+    HALT("deprecated");
     uint i, _i=0;
     arr R(3, 3), t(3);
     arr v, dists, _dists;
@@ -366,7 +366,7 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       }
       if(_dists(0)>cutoff) continue;
       
-      proxy = new mlr::Proxy(world);
+      mlr::Proxy *proxy = new mlr::Proxy();
       proxy->a=global_ANN_shape->frame.ID;
       proxy->b=s->frame.ID;
       proxy->d = _dists(0);
