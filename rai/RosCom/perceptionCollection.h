@@ -3,19 +3,8 @@
 #include <Perception/percept.h>
 #include <RosCom/roscom.h>
 
-#ifdef MLR_ROS_KINETIC
-  #include <ar_track_alvar_msgs/AlvarMarkers.h>
-  namespace ar = ar_track_alvar_msgs;
-#endif
-
-#ifdef MLR_ROS_INDIGO
-  #include <ar_track_alvar_msgs/AlvarMarkers.h>
-  namespace ar = ar_track_alvar_msgs;
-#endif
-#if MLR_ROS_GROOVY
-  #include <ar_track_alvar/AlvarMarkers.h>
-  namespace ar = ar_track_alvar;
-#endif
+#include <ar_track_alvar_msgs/AlvarMarkers.h>
+namespace ar = ar_track_alvar_msgs;
 #include <object_recognition_msgs/TableArray.h>
 
 PercCluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker);

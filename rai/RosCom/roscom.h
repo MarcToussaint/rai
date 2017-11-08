@@ -24,8 +24,10 @@
 #include <Geo/geo.h>
 #include <Kin/kin.h>
 #include <Control/ctrlMsg.h>
-#include <ros_msg/JointState.h>
-#include <PCL/conv.h>
+#include "msgs/JointState.h"
+#ifdef MLR_PCL
+#  include <PCL/conv.h>
+#endif
 
 //===========================================================================
 //
@@ -55,7 +57,9 @@ arr                 conv_wrench2arr(const geometry_msgs::WrenchStamped& msg);
 byteA               conv_image2byteA(const sensor_msgs::Image& msg);
 uint16A             conv_image2uint16A(const sensor_msgs::Image& msg);
 floatA              conv_laserScan2arr(const sensor_msgs::LaserScan& msg);
+#ifdef MLR_PCL
 Pcl                 conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg);
+#endif
 arr                 conv_points2arr(const std::vector<geometry_msgs::Point>& pts);
 arr                 conv_colors2arr(const std::vector<std_msgs::ColorRGBA>& pts);
 CtrlMsg             conv_JointState2CtrlMsg(const marc_controller_pkg::JointState& msg);

@@ -1,18 +1,10 @@
 #ifdef MLR_ROS
 #include "subscribeAlvarMarkers.h"
+#include <Kin/frame.h>
 
-#ifdef MLR_ROS_INDIGO
-  #include <ar_track_alvar_msgs/AlvarMarkers.h>
-  namespace ar = ar_track_alvar_msgs;
-#endif
-#if MLR_ROS_GROOVY
-  #include <ar_track_alvar/AlvarMarkers.h>
-  namespace ar = ar_track_alvar;
-#endif
-#ifdef MLR_ROS_KINETIC
-  #include <ar_track_alvar_msgs/AlvarMarkers.h>
-  namespace ar = ar_track_alvar_msgs;
-#endif
+#include <ar_track_alvar_msgs/AlvarMarkers.h>
+namespace ar = ar_track_alvar_msgs;
+
 // ============================================================================
 // void ROSMODULE_markers::step() {
 //   modelWorld.writeAccess();
@@ -22,7 +14,7 @@
 // }
 
 // ============================================================================
-void setBody(mlr::Body& body, const ar::AlvarMarker& marker) {
+void setBody(mlr::Frame& body, const ar::AlvarMarker& marker) {
   body.X = conv_pose2transformation(marker.pose.pose);
 }
 
@@ -31,28 +23,27 @@ void syncMarkers(mlr::KinematicWorld& world, const ar::AlvarMarkers& markers) {
   bool createdNewMarkers = false;
 
   // transform: torso_lift_link is the reference frame_id
-  mlr::Body *torso = world.getBodyByName("torso_lift_link", false);
+  mlr::Frame *torso = world.getFrameByName("torso_lift_link", false);
   if(!torso) return; //TODO: make this more general!
   mlr::Transformation refFrame = torso->X;
 
   for (const ar::AlvarMarker& marker : markers.markers) {
     mlr::String marker_name = STRING("marker" << marker.id);
 
-    mlr::Body *body = world.getBodyByName(marker_name,false);
+    mlr::Frame *body = world.getFrameByName(marker_name,false);
     if (not body) {
       createdNewMarkers = true;
       cout << marker_name << " does not exist yet; adding it..." << endl;
-      body = new mlr::Body(world);
+      body = new mlr::Frame(world);
       body->name = marker_name;
-      mlr::Shape *shape = new mlr::Shape(world, *body);
-      shape->name = marker_name;
-      shape->type = mlr::ST_marker;
+      mlr::Shape *shape = new mlr::Shape(*body);
+      shape->type() = mlr::ST_marker;
       shape->size(0) = .3; shape->size(1) = .0; shape->size(2) = .0; shape->size(3) = .0;
     }
     mlr::Vector Y_old;
     mlr::Vector Z_old;
-    Z_old = world.getShapeByName(marker_name)->X.rot.getZ();
-    Y_old = world.getShapeByName(marker_name)->X.rot.getY();
+    Z_old = world.getFrameByName(marker_name)->X.rot.getZ();
+    Y_old = world.getFrameByName(marker_name)->X.rot.getY();
     setBody(*body, marker);
     mlr::Transformation T;
 
@@ -76,7 +67,7 @@ void syncMarkers(mlr::KinematicWorld& world, const ar::AlvarMarkers& markers) {
       i++;
    }*/
 
-    world.getShapeByName(marker_name)->X = body->X;
+    world.getFrameByName(marker_name)->X = body->X;
 
   }
 

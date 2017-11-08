@@ -1,5 +1,7 @@
 #ifdef MLR_ROS
 
+#ifdef MLR_PCL
+
 #include "subscribeRosKinect2PCL.h"
 #include "roscom.h"
 #include <tf/tf.h>
@@ -49,4 +51,6 @@ void SubscribeRosKinect2PCL::callback(const sensor_msgs::PointCloud2::ConstPtr& 
   cloud.set( time ) = s->pcl_trans;
   kinect_frame.set( time ) = t;
 }
+#endif
+
 #endif

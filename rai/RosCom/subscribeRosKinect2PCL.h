@@ -1,6 +1,8 @@
 #pragma once
 //#include "roscom.h"
 
+#ifdef MLR_PCL
+
 #include <sensor_msgs/PointCloud2.h>
 #include <PCL/conv.h>
 #include <Geo/geo.h>
@@ -16,3 +18,5 @@ struct SubscribeRosKinect2PCL{
 
   void callback(const typename sensor_msgs::PointCloud2::ConstPtr& msg);
 };
+
+#endif

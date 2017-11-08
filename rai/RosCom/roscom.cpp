@@ -1,9 +1,12 @@
 #ifdef MLR_ROS
 
 #include "roscom.h"
+#include <Kin/frame.h>
 
-#include <pcl/point_cloud.h>
-#include <pcl_conversions/pcl_conversions.h>
+#ifdef MLR_PCL
+#  include <pcl/point_cloud.h>
+#  include <pcl_conversions/pcl_conversions.h>
+#endif
 
 bool rosOk(){
   return ros::ok();
@@ -242,6 +245,7 @@ floatA conv_laserScan2arr(const sensor_msgs::LaserScan& msg){
   return data;
 }
 
+#ifdef MLR_PCL
 Pcl conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg){
   pcl::PCLPointCloud2 pcl_pc2;
   pcl_conversions::toPCL(msg, pcl_pc2);
@@ -251,6 +255,7 @@ Pcl conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg){
   LOG(0) <<"size=" <<cloud.size();
   return cloud;
 }
+#endif
 
 CtrlMsg conv_JointState2CtrlMsg(const marc_controller_pkg::JointState& msg){
   return CtrlMsg(conv_stdvec2arr(msg.q), conv_stdvec2arr(msg.qdot), conv_stdvec2arr(msg.fL), conv_stdvec2arr(msg.fR),conv_stdvec2arr(msg.u_bias), conv_stdvec2arr(msg.fL_err), conv_stdvec2arr(msg.fR_err));
@@ -293,23 +298,24 @@ mlr::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::Ma
   for(const visualization_msgs::Marker& marker:markers.markers){
     mlr::String name;
     name <<"obj" <<marker.id;
-    mlr::Shape *s = world.getShapeByName(name);
+    mlr::Shape *s = world.getFrameByName(name)->shape;
     if(!s){
-      s = new mlr::Shape(world, NoBody);
-      s->name=name;
+      mlr::Frame *f = new mlr::Frame(world);
+      f->name=name;
+      s = new mlr::Shape(*f);
       if(marker.type==marker.CYLINDER){
-        s->type = mlr::ST_cylinder;
+        s->type() = mlr::ST_cylinder;
       }else if(marker.type==marker.POINTS){
-        s->type = mlr::ST_mesh;
-        s->mesh.V = conv_points2arr(marker.points);
-        s->mesh.C = conv_colors2arr(marker.colors);
+        s->type() = mlr::ST_mesh;
+        s->mesh().V = conv_points2arr(marker.points);
+        s->mesh().C = conv_colors2arr(marker.colors);
       }else NIY;
     }
     s->size(0) = marker.scale.x;
     s->size(1) = marker.scale.y;
     s->size(2) = marker.scale.z;
     s->size(3) = .25*(marker.scale.x+marker.scale.y);
-    s->X = s->rel = ros_getTransform("/base_link", marker.header, listener) * conv_pose2transformation(marker.pose);
+    s->frame.X = ros_getTransform("/base_link", marker.header, listener) * conv_pose2transformation(marker.pose);
   }
   return world;
 }
@@ -335,10 +341,10 @@ visualization_msgs::Marker conv_Shape2Marker(const mlr::Shape& sh){
   new_marker.header.stamp = ros::Time::now();
   new_marker.header.frame_id = "map";
   new_marker.ns = "roopi";
-  new_marker.id = sh.index;
+  new_marker.id = sh.frame.ID;
   new_marker.action = visualization_msgs::Marker::ADD;
   new_marker.lifetime = ros::Duration();
-  new_marker.pose = conv_transformation2pose(sh.X);
+  new_marker.pose = conv_transformation2pose(sh.frame.X);
   new_marker.color.r = 0.0f;
   new_marker.color.g = 1.0f;
   new_marker.color.b = 0.0f;
@@ -375,7 +381,7 @@ visualization_msgs::Marker conv_Shape2Marker(const mlr::Shape& sh){
 
 visualization_msgs::MarkerArray conv_Kin2Markers(const mlr::KinematicWorld& K){
   visualization_msgs::MarkerArray M;
-  for(mlr::Shape *s:K.shapes) M.markers.push_back( conv_Shape2Marker(*s) );
+  for(mlr::Frame *f : K.frames) M.markers.push_back( conv_Shape2Marker(*f->shape) );
 //  M.header.frame_id = "1";
   return M;
 }
@@ -393,17 +399,18 @@ void PerceptionObjects2Ors::step(){
   for(visualization_msgs::Marker& marker : perceptionObjects().markers){
     mlr::String name;
     name <<"obj" <<marker.id;
-    mlr::Shape *s = modelWorld->getShapeByName(name);
+    mlr::Shape *s = modelWorld->getFrameByName(name)->shape;
     if(!s){
-      s = new mlr::Shape(modelWorld(), NoBody);
+      mlr::Frame *f = new mlr::Frame(modelWorld());
+      s = new mlr::Shape(*f);
       if(marker.type==marker.CYLINDER){
-        s->type = mlr::ST_cylinder;
+        s->type() = mlr::ST_cylinder;
         s->size(3) = .5*(marker.scale.x+marker.scale.y);
         s->size(2) = marker.scale.z;
       }else if(marker.type==marker.POINTS){
-        s->type = mlr::ST_mesh;
-        s->mesh.V = conv_points2arr(marker.points);
-        s->mesh.C = conv_colors2arr(marker.colors);
+        s->type() = mlr::ST_mesh;
+        s->mesh().V = conv_points2arr(marker.points);
+        s->mesh().C = conv_colors2arr(marker.colors);
       }else NIY;
     }
   }

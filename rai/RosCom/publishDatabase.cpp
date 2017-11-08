@@ -390,7 +390,7 @@ void PublishDatabase::step(){
     {
       // Remove ID from the world
       stored_clusters.removeValue(id, false);
-      delete modelWorld().getBodyByName(STRING("cluster_" << id));
+      delete modelWorld().getFrameByName(STRING("cluster_" << id));
     }
   }
   for (uint id : stored_alvars)
@@ -399,7 +399,7 @@ void PublishDatabase::step(){
     {
       // Remove ID from the world
       stored_alvars.removeValue(id, false);
-      delete modelWorld().getBodyByName(STRING("alvar_" << id));
+      delete modelWorld().getFrameByName(STRING("alvar_" << id));
     }
   }
   for (uint id : stored_optitrackmarkers)
@@ -408,7 +408,7 @@ void PublishDatabase::step(){
     {
       // Remove ID from the world
       stored_optitrackmarkers.removeValue(id, false);
-      delete modelWorld().getBodyByName(STRING("optitrackmarker_" << id));
+      delete modelWorld().getFrameByName(STRING("optitrackmarker_" << id));
     }
   }
   for (uint id : stored_optitrackbodies)
@@ -417,7 +417,7 @@ void PublishDatabase::step(){
     {
       // Remove ID from the world
       stored_optitrackbodies.removeValue(id, false);
-      delete modelWorld().getBodyByName(STRING("optitrackbody_" << id));
+      delete modelWorld().getFrameByName(STRING("optitrackbody_" << id));
     }
   }
   for (uint id : stored_planes)
@@ -426,7 +426,7 @@ void PublishDatabase::step(){
     {
       // Remove ID from the world
       stored_planes.removeValue(id, false);
-      delete modelWorld().getBodyByName(STRING("plane_" << id));
+      delete modelWorld().getFrameByName(STRING("plane_" << id));
     }
   }
   modelWorld.deAccess();

@@ -1,7 +1,7 @@
 #include "serviceRAP.h"
 
 #ifdef MLR_ROS
-#include <mlr_srv/StringString.h>
+#include <msgs/StringString.h>
 
 #include <ros/ros.h>
 struct sServiceRAP{
