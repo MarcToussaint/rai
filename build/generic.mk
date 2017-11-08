@@ -177,6 +177,9 @@ cleanLibs: force
 cleanDepends: force
 	@find $(BASE) -type f -name 'Makefile.dep' -delete -print
 
+installUbuntuPackages: force
+	sudo apt-get install $(DEPEND_UBUNTU)
+
 depend: generate_Makefile.dep
 
 info: force
