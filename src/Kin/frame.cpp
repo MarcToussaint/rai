@@ -44,6 +44,20 @@ mlr::Frame::~Frame() {
   listReindex(K.frames);
 }
 
+void mlr::Frame::getRigidSubFrames(FrameL &F){
+    for(Frame *f:outLinks) if(!f->joint) { F.append(f); f->getRigidSubFrames(F); }
+}
+
+mlr::Frame *mlr::Frame::getUpwardLink(mlr::Transformation &Qtotal){
+    if(&Qtotal) Qtotal.setZero();
+    Frame *p=parent;
+    while(p && !p->parent && !p->joint){
+        if(&Qtotal) Qtotal=p->Q*Qtotal;
+        p=p->parent;
+    }
+    return p;
+}
+
 void mlr::Frame::read(const Graph& ats) {
   //interpret some of the attributes
   ats.get(X, "X");
@@ -128,8 +142,8 @@ void mlr::Frame::linkFrom(mlr::Frame *_parent, bool adoptRelTransform){
 }
 
 mlr::Joint::Joint(Frame &f, Joint *copyJoint)
-  : frame(f), qIndex(UINT_MAX), q0(0.){
-  CHECK(!frame.joint, "the Link already has a Joint");
+    : frame(f), qIndex(UINT_MAX), q0(0.){
+    CHECK(!frame.joint, "the Link already has a Joint");
   frame.joint = this;
   frame.K.reset_q();
 

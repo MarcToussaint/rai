@@ -67,9 +67,11 @@ struct Frame {
   void unLink();
   void linkFrom(Frame *_parent, bool adoptRelTransform=false);
 
-  void getRigidSubFrames(FrameL& F){
-    for(Frame *f:outLinks) if(!f->joint) { F.append(f); f->getRigidSubFrames(F); }
-  }
+  void getRigidSubFrames(FrameL& F);
+
+  Frame* getUpwardLink(mlr::Transformation& Qtotal=NoTransformation);
+
+
 
   void read(const Graph &ats);
   void write(std::ostream& os) const;

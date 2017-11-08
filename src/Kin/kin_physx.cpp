@@ -270,9 +270,17 @@ void PhysXInterface::setArticulatedBodiesKinematic(){
  */
 
 void sPhysXInterface::addJoint(mlr::Joint *jj) {
-  while(joints.N <= jj->frame.ID+1)
+  while(joints.N <= jj->frame.ID)
     joints.append(NULL);
-  PxTransform A = Id_PxTrans();
+
+  mlr::Transformation rel;
+  mlr::Frame *from = jj->frame.getUpwardLink(rel);
+
+  CHECK(jj->frame.inertia, "this joint belongs to a frame '" <<jj->frame.name <<"' without inertia");
+  CHECK(from, "this joint ('" <<jj->frame.name <<"') links from NULL");
+  CHECK(from->inertia, "this joint ('" <<jj->frame.name <<"') links from a frame '" <<from->name <<"' without inertia");
+
+  PxTransform A = OrsTrans2PxTrans(rel);
   PxTransform B = Id_PxTrans();
   switch(jj->type) {
     case mlr::JT_free: //do nothing
@@ -281,7 +289,7 @@ void sPhysXInterface::addJoint(mlr::Joint *jj) {
     case mlr::JT_hingeY:
     case mlr::JT_hingeZ: {
 
-      PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame.ID), B.getInverse());
+      PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(from->ID), A, actors(jj->frame.ID), B.getInverse());
       CHECK(desc, "PhysX joint creation failed.");
 
       if(jj->frame.ats.find<arr>("drive")) {
@@ -484,7 +492,7 @@ void sPhysXInterface::addBody(mlr::Frame *b, physx::PxMaterial *mMaterial) {
 }
 
 void PhysXInterface::pullFromPhysx(double tau) {
-  for_list(PxRigidActor, a, s->actors) {
+  for_list(PxRigidActor, a, s->actors) if(a) {
     PxTrans2OrsTrans(world.frames(a_COUNT)->X, a->getGlobalPose());
     if(a->getType() == PxActorType::eRIGID_DYNAMIC) {
 #if 0
@@ -538,6 +546,8 @@ void DrawActor(PxRigidActor* actor, mlr::Frame *frame) {
 
     // use the color of the first shape of the body for the entire body
     mlr::Shape *s = frame->shape;
+    if(!s) s = frame->outLinks.elem(0)->shape;
+    CHECK(s, "no shape??");
     glColor(s->mesh().C);
 
     mlr::Transformation f;
@@ -585,7 +595,7 @@ void DrawActor(PxRigidActor* actor, mlr::Frame *frame) {
 }
 
 void PhysXInterface::glDraw(OpenGL&) {
-  for_list(PxRigidActor, a, s->actors)  DrawActor(a, world.frames(a_COUNT));
+  for_list(PxRigidActor, a, s->actors) if(a) DrawActor(a, world.frames(a_COUNT));
 }
 
 void PhysXInterface::addForce(mlr::Vector& force, mlr::Frame* b) {
