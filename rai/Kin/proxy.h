@@ -18,6 +18,7 @@
 
 #include <Geo/geo.h>
 #include <Geo/pairCollision.h>
+namespace mlr{ struct KinematicWorld; }
 
 //===========================================================================
 
@@ -26,8 +27,6 @@ namespace mlr {
 /// a data structure to store proximity information (when two shapes become close) --
 /// as return value from external collision libs
 struct Proxy : GLDrawer {
-  struct KinematicWorld& K;  ///< a Proxy is uniquely associated with a KinematicConfiguration
-
   //TODO: have a ProxyL& L as above...
   int a;              ///< index of shape A (-1==world) //TODO: would it be easier if this were mlr::Shape* ? YES -> Do it!
   int b;              ///< index of shape B
@@ -38,10 +37,10 @@ struct Proxy : GLDrawer {
   uint colorCode = 0;
   PairCollision *coll=NULL;
 
-  Proxy(KinematicWorld& _K);
+  Proxy();
   ~Proxy();
 
-  void calc_coll();
+  void calc_coll(const KinematicWorld &K);
   void glDraw(OpenGL&);
 };
 

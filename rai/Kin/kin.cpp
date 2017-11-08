@@ -186,7 +186,7 @@ void mlr::KinematicWorld::init(const char* filename) {
 
 void mlr::KinematicWorld::clear() {
   reset_q();
-  listDelete(proxies);
+  proxies.clear(); //while(proxies.N){ delete proxies.last(); /*checkConsistency();*/ }
   while(frames.N){ delete frames.last(); /*checkConsistency();*/ }
   reset_q();
 }
@@ -213,7 +213,7 @@ void mlr::KinematicWorld::calc_q(){
 
 void mlr::KinematicWorld::copy(const mlr::KinematicWorld& K, bool referenceSwiftOnCopy) {
   clear();
-  listCopy(proxies, K.proxies);
+  proxies = K.proxies;
   for(Frame *f:K.frames) new Frame(*this, f);
   for(Frame *f:K.frames) if(f->parent) frames(f->ID)->linkFrom(frames(f->parent->ID));
 //  for(Frame *f:K.frames) if(f->joint) new Joint(frames(f->ID), f->joint);
@@ -1546,23 +1546,25 @@ end_header\n";
 /// dump the list of current proximities on the screen
 void mlr::KinematicWorld::reportProxies(std::ostream& os, double belowMargin, bool brief) const{
   os <<"Proximity report: #" <<proxies.N <<endl;
-  for_list(Proxy, p, proxies) {
-    if(belowMargin>0. && p->d>belowMargin) continue;
-    mlr::Frame *a = frames(p->a);
-    mlr::Frame *b = frames(p->b);
-    os  <<p_COUNT <<" ("
+  uint i=0;
+  for(const Proxy& p: proxies) {
+    if(belowMargin>0. && p.d>belowMargin) continue;
+    mlr::Frame *a = frames(p.a);
+    mlr::Frame *b = frames(p.b);
+    os  <<i <<" ("
         <<a->name <<")-("
         <<b->name
-        <<") d=" <<p->d;
+        <<") d=" <<p.d;
     if(!brief)
-     os <<" |A-B|=" <<(p->posB-p->posA).length()
-        <<" cenD=" <<p->cenD
-//        <<" d^2=" <<(p->posB-p->posA).lengthSqr()
-        <<" v=" <<(p->posB-p->posA)
-        <<" normal=" <<p->normal
-        <<" posA=" <<p->posA
-        <<" posB=" <<p->posB;
+     os <<" |A-B|=" <<(p.posB-p.posA).length()
+        <<" cenD=" <<p.cenD
+//        <<" d^2=" <<(p.posB-p.posA).lengthSqr()
+        <<" v=" <<(p.posB-p.posA)
+        <<" normal=" <<p.normal
+        <<" posA=" <<p.posA
+        <<" posB=" <<p.posB;
     os <<endl;
+    i++;
   }
 }
 
@@ -1649,15 +1651,14 @@ void mlr::KinematicWorld::NewtonEuler_backward(){
 /// compute forces from the current contacts
 void mlr::KinematicWorld::contactsToForces(double hook, double damp) {
   mlr::Vector trans, transvel, force;
-  uint i;
   int a, b;
-  for(i=0; i<proxies.N; i++) if(proxies(i)->d<0.) {
-      a=proxies(i)->a; b=proxies(i)->b;
+  for(const Proxy& p:proxies) if(p.d<0.) {
+      a=p.a; b=p.b;
       
       //if(!i || proxies(i-1).a!=a || proxies(i-1).b!=b) continue; //no old reference sticking-frame
-      //trans = proxies(i)->rel.p - proxies(i-1).rel.p; //translation relative to sticking-frame
-      trans    = proxies(i)->posB-proxies(i)->posA;
-      //transvel = proxies(i)->velB-proxies(i)->velA;
+      //trans = p.rel.p - proxies(i-1).rel.p; //translation relative to sticking-frame
+      trans    = p.posB-p.posA;
+      //transvel = p.velB-p.velA;
       //d=trans.length();
       
       force.setZero();
@@ -1665,14 +1666,14 @@ void mlr::KinematicWorld::contactsToForces(double hook, double damp) {
       //force += damp * transvel;
       SL_DEBUG(1, cout <<"applying force: [" <<a <<':' <<b <<"] " <<force <<endl);
       
-      if(a!=-1) addForce(force, frames(a), proxies(i)->posA);
-      if(b!=-1) addForce(-force, frames(b), proxies(i)->posB);
+      if(a!=-1) addForce(force, frames(a), p.posA);
+      if(b!=-1) addForce(-force, frames(b), p.posB);
     }
 }
 
-void mlr::KinematicWorld::kinematicsProxyDist(arr& y, arr& J, Proxy *p, double margin, bool useCenterDist, bool addValues) const {
-  mlr::Frame *a = frames(p->a);
-  mlr::Frame *b = frames(p->b);
+void mlr::KinematicWorld::kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin, bool useCenterDist, bool addValues) const {
+  mlr::Frame *a = frames(p.a);
+  mlr::Frame *b = frames(p.b);
 
   y.resize(1);
   if(&J) J.resize(1, getJointStateDimension());
@@ -1691,41 +1692,41 @@ void mlr::KinematicWorld::kinematicsProxyDist(arr& y, arr& J, Proxy *p, double m
 //    }
 //    return;
 //  }
-  y(0) = p->d;
+  y(0) = p.d;
   if(&J){
     arr Jpos;
     mlr::Vector arel, brel;
-    if(p->d>0.) { //we have a gradient on pos only when outside
-      arel=a->X.rot/(p->posA-a->X.pos);
-      brel=b->X.rot/(p->posB-b->X.pos);
-      CHECK(p->normal.isNormalized(), "proxy normal is not normalized");
-      arr normal; normal.referTo(&p->normal.x, 3); normal.reshape(1, 3);
+    if(p.d>0.) { //we have a gradient on pos only when outside
+      arel=a->X.rot/(p.posA-a->X.pos);
+      brel=b->X.rot/(p.posB-b->X.pos);
+      CHECK(p.normal.isNormalized(), "proxy normal is not normalized");
+      arr normal; normal.referTo(&p.normal.x, 3); normal.reshape(1, 3);
       kinematicsPos(NoArr, Jpos, a, arel);  J += (normal*Jpos);
       kinematicsPos(NoArr, Jpos, b, brel);  J -= (normal*Jpos);
     }
   }
 }
 
-void mlr::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, Proxy *p, double margin, bool useCenterDist, bool addValues) const {
-  mlr::Frame *a = frames(p->a);
-  mlr::Frame *b = frames(p->b);
+void mlr::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin, bool useCenterDist, bool addValues) const {
+  mlr::Frame *a = frames(p.a);
+  mlr::Frame *b = frames(p.b);
   CHECK(a->shape,"");
   CHECK(b->shape,"");
 
 #if 1
-  if(!p->coll) p->calc_coll();
+  if(!p.coll) ((Proxy*)&p)->calc_coll(*this);
 
 
   arr Jp1, Jp2, Jx1, Jx2;
   if(&J){
-    jacobianPos(Jp1, a, p->coll->p1);
-    jacobianPos(Jp2, b, p->coll->p2);
+    jacobianPos(Jp1, a, p.coll->p1);
+    jacobianPos(Jp2, b, p.coll->p2);
     axesMatrix(Jx1, a);
     axesMatrix(Jx2, b);
   }
 
   arr y_dist, J_dist;
-  p->coll->kinDistance(y_dist, (&J?J_dist:NoArr), Jp1, Jp2, Jx1, Jx2);
+  p.coll->kinDistance(y_dist, (&J?J_dist:NoArr), Jp1, Jp2, Jx1, Jx2);
 
 
   y.resize(1);
@@ -1800,32 +1801,32 @@ void mlr::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, Proxy *p, double m
 void mlr::KinematicWorld::kinematicsProxyCost(arr &y, arr& J, double margin, bool useCenterDist) const {
   y.resize(1).setZero();
   if(&J) J.resize(1, getJointStateDimension()).setZero();
-  for(Proxy *p:proxies) if(p->d<margin) {
+  for(const Proxy& p:proxies) if(p.d<margin) {
     kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
   }
 }
 
-void mlr::KinematicWorld::kinematicsProxyConstraint(arr& g, arr& J, Proxy *p, double margin) const {
+void mlr::KinematicWorld::kinematicsProxyConstraint(arr& g, arr& J, const Proxy& p, double margin) const {
   if(&J) J.resize(1, getJointStateDimension()).setZero();
 
-  g.resize(1) = margin - p->d;
+  g.resize(1) = margin - p.d;
 
   //Jacobian
   if(&J){
     arr Jpos, normal;
     mlr::Vector arel,brel;
-    mlr::Frame *a = frames(p->a);
-    mlr::Frame *b = frames(p->b);
-    if(p->d>0.) { //we have a gradient on pos only when outside
-      arel=a->X.rot/(p->posA-a->X.pos);
-      brel=b->X.rot/(p->posB-b->X.pos);
-      CHECK(p->normal.isNormalized(), "proxy normal is not normalized");
-      normal.referTo(&p->normal.x, 3);
+    mlr::Frame *a = frames(p.a);
+    mlr::Frame *b = frames(p.b);
+    if(p.d>0.) { //we have a gradient on pos only when outside
+      arel=a->X.rot/(p.posA-a->X.pos);
+      brel=b->X.rot/(p.posB-b->X.pos);
+      CHECK(p.normal.isNormalized(), "proxy normal is not normalized");
+      normal.referTo(&p.normal.x, 3);
     } else { //otherwise take gradient w.r.t. centers...
-      arel=a->X.rot/(p->cenA-a->X.pos);
-      brel=b->X.rot/(p->cenB-b->X.pos);
-      CHECK(p->cenN.isNormalized(), "proxy normal is not normalized");
-      normal.referTo(&p->cenN.x, 3);
+      arel=a->X.rot/(p.cenA-a->X.pos);
+      brel=b->X.rot/(p.cenB-b->X.pos);
+      CHECK(p.cenN.isNormalized(), "proxy normal is not normalized");
+      normal.referTo(&p.cenN.x, 3);
     }
     normal.reshape(1, 3);
 
@@ -1837,24 +1838,24 @@ void mlr::KinematicWorld::kinematicsProxyConstraint(arr& g, arr& J, Proxy *p, do
 void mlr::KinematicWorld::kinematicsContactConstraints(arr& y, arr &J) const {
   J.clear();
   mlr::Vector normal;
-  uint i, con=0;
+  uint con=0;
   Frame *a, *b;
   arr Jpos, dnormal, grad(1, q.N);
 
   y.clear();
-  for(i=0; i<proxies.N; i++) y.append(proxies(i)->d);
+  for(const mlr::Proxy& p: proxies) y.append(p.d);
 
   if(!&J) return; //do not return the Jacobian
 
   mlr::Vector arel, brel;
-  for(i=0; i<proxies.N; i++) {
-    a=frames(proxies(i)->a); b=frames(proxies(i)->b);
+  for(const mlr::Proxy& p: proxies) {
+    a=frames(p.a); b=frames(p.b);
     
-    arel.setZero();  arel=a->X.rot/(proxies(i)->posA-a->X.pos);
-    brel.setZero();  brel=b->X.rot/(proxies(i)->posB-b->X.pos);
+    arel.setZero();  arel=a->X.rot/(p.posA-a->X.pos);
+    brel.setZero();  brel=b->X.rot/(p.posB-b->X.pos);
     
-    CHECK(proxies(i)->normal.isNormalized(), "proxy normal is not normalized");
-    dnormal.referTo(proxies(i)->normal.p(), 3); dnormal.reshape(1, 3);
+    CHECK(p.normal.isNormalized(), "proxy normal is not normalized");
+    dnormal = p.normal.getArr(); dnormal.reshape(1, 3);
     grad.setZero();
     kinematicsPos(NoArr, Jpos, a, arel); grad += dnormal*Jpos; //moving a long normal b->a increases distance
     kinematicsPos(NoArr, Jpos, b, brel); grad -= dnormal*Jpos; //moving b long normal b->a decreases distance
@@ -1930,11 +1931,10 @@ void mlr::KinematicWorld::getComGradient(arr &grad) const {
   grad/=M;
 }
 
-mlr::Proxy* mlr::KinematicWorld::getContact(uint a, uint b) const {
-  uint i;
-  for(i=0; i<proxies.N; i++) if(proxies(i)->d<0.) {
-      if(proxies(i)->a==(int)a && proxies(i)->b==(int)b) return proxies(i);
-      if(proxies(i)->a==(int)b && proxies(i)->b==(int)a) return proxies(i);
+const mlr::Proxy* mlr::KinematicWorld::getContact(uint a, uint b) const {
+  for(const mlr::Proxy& p: proxies) if(p.d<0.) {
+      if(p.a==(int)a && p.b==(int)b) return &p;
+      if(p.a==(int)b && p.b==(int)a) return &p;
     }
   return NULL;
 }
@@ -2171,7 +2171,7 @@ void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
   glColor(.5, .5, .5);
 
   //proxies
-  if(orsDrawProxies) for(Proxy *proxy: proxies) proxy->glDraw(gl);
+  if(orsDrawProxies) for(const Proxy& p: proxies) ((Proxy*)&p)->glDraw(gl);
 
   //joints
   Joint *e;
@@ -2246,16 +2246,16 @@ void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
 double forceClosureFromProxies(mlr::KinematicWorld& K, uint bodyIndex, double distanceThreshold, double mu, double torqueWeights) {
   mlr::Vector c, cn;
   arr C, Cn;
-  for(mlr::Proxy * p: K.proxies){
-    int body_a = K.frames(p->a)?K.frames(p->a)->ID:-1;
-    int body_b = K.frames(p->b)?K.frames(p->b)->ID:-1;
-    if(p->d<distanceThreshold && (body_a==(int)bodyIndex || body_b==(int)bodyIndex)) {
+  for(const mlr::Proxy& p: K.proxies){
+    int body_a = K.frames(p.a)?K.frames(p.a)->ID:-1;
+    int body_b = K.frames(p.b)?K.frames(p.b)->ID:-1;
+    if(p.d<distanceThreshold && (body_a==(int)bodyIndex || body_b==(int)bodyIndex)) {
       if(body_a==(int)bodyIndex) {
-        c = p->posA;
-        cn=-p->normal;
+        c = p.posA;
+        cn=-p.normal;
       } else {
-        c = p->posB;
-        cn= p->normal;
+        c = p.posB;
+        cn= p.normal;
       }
       C.append(conv_vec2arr(c));
       Cn.append(conv_vec2arr(cn));

@@ -4,6 +4,8 @@ OUTPUT = lib$(NAME).so
 
 OPTIM = fast_debug
 
+DEPEND_UBUNTU = liblapack-dev libf2c2-dev gnuplot
+
 LAPACK = 1
 PTHREAD = 1
 CXXFLAGS += -DMLR_CORE_PATH=\"`pwd`\"

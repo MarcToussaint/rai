@@ -4,6 +4,8 @@ OUTPUT = lib$(NAME).so
 
 #OPTIM = fast_debug
 
+DEPEND_UBUNTU = libglew-dev libqhull-dev
+
 QHULL = 1
 GL = 1
 

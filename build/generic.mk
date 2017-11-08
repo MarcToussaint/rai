@@ -49,7 +49,7 @@ UIC = uic
 YACC = bison -d
 
 LINK	= $(CXX)
-CPATHS	+= $(BASE)/src $(BASE)/include
+CPATHS	+= $(BASE)/rai $(BASE)/include
 LPATHS	+= $(BASE_REAL)/lib /usr/local/lib
 LIBS += -lrt
 SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefined
@@ -162,7 +162,7 @@ clean: force
 	rm -f $(OUTPUT) $(OBJS) $(PREOBJS) callgrind.out.* $(CLEAN)
 	@rm -f $(MODULE_NAME)_wrap.* $(MODULE_NAME)py.so $(MODULE_NAME)py.py
 	@find $(BASE) -type d -name 'Make.lock' -delete -print
-	@find $(BASE)/src \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
+	@find $(BASE)/rai \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
 
 cleanLocks: force
 	@find $(BASE) -type d -name 'Make.lock' -delete -print
@@ -172,10 +172,13 @@ cleanAll: force
 	@find $(BASE) \( -type f -or -type l \) \( -name '*.o' -or -name 'lib*.so' -or -name 'lib*.a' -or -name 'x.exe' \) -delete -print
 
 cleanLibs: force
-	@find $(BASE)/src -type f \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
+	@find $(BASE)/rai -type f \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
 
 cleanDepends: force
 	@find $(BASE) -type f -name 'Makefile.dep' -delete -print
+
+installUbuntuPackages: force
+	sudo apt-get install $(DEPEND_UBUNTU)
 
 depend: generate_Makefile.dep
 
@@ -320,15 +323,15 @@ includeAll.cxx: force
 
 makeDepend/extern_%: %
 	+@-$(BASE)/build/make-path.sh $< libextern_$*.a
-	@cd $(BASE)/lib && ln -sf ../src/$(NAME)/$*/libextern_$*.a libextern_$*.a
+	@cd $(BASE)/lib && ln -sf ../rai/$(NAME)/$*/libextern_$*.a libextern_$*.a
 
-makeDepend/Hardware_%: $(BASE)/src/Hardware/%
+makeDepend/Hardware_%: $(BASE)/rai/Hardware/%
 	+@-$(BASE)/build/make-path.sh $< libHardware_$*.so
-	@cd $(BASE)/lib && ln -sf ../src/Hardware/$*/libHardware_$*.so libHardware_$*.so
+	@cd $(BASE)/lib && ln -sf ../rai/Hardware/$*/libHardware_$*.so libHardware_$*.so
 
-makeDepend/%: $(BASE)/src/%
+makeDepend/%: $(BASE)/rai/%
 	+@-$(BASE)/build/make-path.sh $< lib$*.so
-	@cd $(BASE)/lib && ln -sf ../src/$*/lib$*.so lib$*.so
+	@cd $(BASE)/lib && ln -sf ../rai/$*/lib$*.so lib$*.so
 
 makePath/%: %
 	+@-$(BASE)/build/make-path.sh $< x.exe
@@ -344,7 +347,7 @@ cleanPath/%: %
 	@-rm -f $*/Makefile.dep
 	@-$(MAKE) -C $* -f Makefile clean --no-print-directory
 
-cleanPath/%: $(BASE)/src/%
+cleanPath/%: $(BASE)/rai/%
 	@echo "                                                ***** clean " $<
 	@-rm -f $</Makefile.dep
 	@-$(MAKE) -C $< -f Makefile clean --no-print-directory

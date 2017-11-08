@@ -81,7 +81,7 @@ void OrsViewer::open(){
 }
 
 void OrsViewer::close(){
-  listDelete(proxiesCopy);
+  proxiesCopy.clear();
   delete gl;
 }
 
@@ -102,7 +102,7 @@ void OrsViewer::step(){
   X.resize(world->frames.N);
   for(mlr::Frame *f:world().frames) X(f->ID) = f->X;
   gl->dataLock.writeLock();
-  listCopy(proxiesCopy, world->proxies);
+  proxiesCopy = world->proxies;
   gl->dataLock.unlock();
   world.deAccess();
 
@@ -230,7 +230,7 @@ void OrsPoseViewer::open() {
 }
 
 void OrsPoseViewer::step(){
-  listCopy(copies.first()->proxies, modelWorld.get()->proxies);
+  copies.first()->proxies = modelWorld.get()->proxies;
 //  cout <<copy.proxies.N <<endl;
   gl.dataLock.writeLock();
   for(uint i=0;i<copies.N;i++){

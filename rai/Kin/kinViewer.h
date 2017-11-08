@@ -47,7 +47,7 @@ struct OrsViewer_old : Thread {
 struct OrsViewer : Thread {
   Access<mlr::KinematicWorld> world;
   MeshA meshesCopy;
-  ProxyL proxiesCopy;
+  ProxyA proxiesCopy;
   struct OpenGL *gl;
   OrsViewer(const char* world_name="modelWorld", double beatIntervalSec=-1.);
   ~OrsViewer();
