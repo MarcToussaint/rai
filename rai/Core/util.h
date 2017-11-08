@@ -28,10 +28,6 @@
 #include <string.h>
 #include <memory>
 
-#ifdef MLR_ROS
-#  include <ros/ros.h>
-#endif
-
 //----- if no system flag, I assume Linux
 #if !defined MLR_MSVC && !defined MLR_Cygwin && !defined MLR_Linux && !defined MLR_MinGW && !defined MLR_Darwin
 #  define MLR_Linux
