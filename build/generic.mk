@@ -355,8 +355,11 @@ cleanPath/%: $(BASE)/rai/%
 makePythonPath/%: %
 	make --directory=$< pywrapper
 
-$(BASE)/build/config.mk: $(BASE)/build/config.mk.default
+$(BASE)/build/config.mk: $(BASE)/../config.mk
 	cp $< $@
+
+#$(BASE)/build/config.mk: $(BASE)/build/config.mk.default
+#	cp $< $@
 
 zip::
 	cd ..;  rm -f $(NAME).tgz;  tar cvzf $(NAME).tgz $(NAME) --dereference --exclude-vcs --exclude-from tar.exclude --exclude-from $(NAME)/tar.exclude
