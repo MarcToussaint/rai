@@ -60,6 +60,7 @@ KOMO::KOMO() : T(0), tau(0.), k_order(2), useSwift(true), opt(NULL), gl(NULL), v
 }
 
 KOMO::~KOMO(){
+  listDelete(configurations);
   if(gl) delete gl;
   if(opt) delete opt;
 }

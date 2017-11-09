@@ -139,14 +139,12 @@ PxTriangleMesh* createTriangleMesh32(PxPhysics& physics, PxCooking& cooking, con
 // ============================================================================
 
 struct sPhysXInterface {
-  PxScene* gScene;
+  PxScene* gScene = NULL;
   mlr::Array<PxRigidActor*> actors;
   mlr::Array<PxD6Joint*> joints;
 
-  debugger::comm::PvdConnection* connection;
+  debugger::comm::PvdConnection* connection = NULL;
   
-  sPhysXInterface():gScene(NULL) {}
-
   void addBody(mlr::Frame *b, physx::PxMaterial *material);
   void addJoint(mlr::Joint *jj);
 
@@ -227,8 +225,7 @@ PhysXInterface::PhysXInterface(mlr::KinematicWorld& _world): world(_world), s(NU
 }
 
 PhysXInterface::~PhysXInterface() {
-  if(s->connection)
-    s->connection->release();
+  ShutdownPhysX();
   delete s;
 }
 
@@ -276,6 +273,7 @@ void sPhysXInterface::addJoint(mlr::Joint *jj) {
   mlr::Transformation rel;
   mlr::Frame *from = jj->frame.getUpwardLink(rel);
 
+  if(!jj->frame.inertia || !from || !from->inertia) return;
   CHECK(jj->frame.inertia, "this joint belongs to a frame '" <<jj->frame.name <<"' without inertia");
   CHECK(from, "this joint ('" <<jj->frame.name <<"') links from NULL");
   CHECK(from->inertia, "this joint ('" <<jj->frame.name <<"') links from a frame '" <<from->name <<"' without inertia");
@@ -527,12 +525,25 @@ void PhysXInterface::pushToPhysx() {
 }
 
 void PhysXInterface::ShutdownPhysX() {
-  for_list(PxRigidActor, a, s->actors) {
+//  s->mMaterial
+//  s->plane
+//  s->planeShape
+
+  for(PxRigidActor* a: s->actors) {
     s->gScene->removeActor(*a);
     a->release();
   }
-  s->gScene->release();
+  if(s->connection){
+    s->connection->release();
+    s->connection=NULL;
+  }
+  if(s->gScene){
+    s->gScene->release();
+    s->gScene = NULL;
+  }
+  mCooking->release();
   mPhysics->release();
+//  mFoundation->release();
 }
 
 void DrawActor(PxRigidActor* actor, mlr::Frame *frame) {
@@ -595,7 +606,11 @@ void DrawActor(PxRigidActor* actor, mlr::Frame *frame) {
 }
 
 void PhysXInterface::glDraw(OpenGL&) {
-  for_list(PxRigidActor, a, s->actors) if(a) DrawActor(a, world.frames(a_COUNT));
+  uint i=0;
+  for(PxRigidActor* a: s->actors){
+    if(a) DrawActor(a, world.frames(i));
+    i++;
+  }
 }
 
 void PhysXInterface::addForce(mlr::Vector& force, mlr::Frame* b) {

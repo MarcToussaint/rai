@@ -39,9 +39,9 @@ Singleton<SingleGLAccess> singleGLAccess;
 Mutex& OpenGLMutex();
 static uint GLProcessCount = 0;
 
-struct GLThread : Thread {
-  GLThread() : Thread("GLSpinner", .01) {}
-  ~GLThread() { threadClose(); } //when this is destroyed in deinit, looping had to be stopped (otherwise pthread error)
+struct GLSpinner : Thread {
+  GLSpinner() : Thread("GLSpinner", .01) {}
+  ~GLSpinner() { threadClose(); } //when this is destroyed in deinit, looping had to be stopped (otherwise pthread error)
   void open(){}
   void step(){
     OpenGLMutex().lock();
@@ -55,7 +55,7 @@ class OpenGLProcess {
 private:
   uint numWins;
   mlr::Array<OpenGL*> glwins;
-  GLThread th;
+  GLSpinner th;
 
 public:
   OpenGLProcess() : numWins(0) {
@@ -66,6 +66,8 @@ public:
     glutInit(&argc, argv);
   }
   ~OpenGLProcess(){
+//    uint i=0;  for(OpenGL* gl:glwins){ if(gl) delGL(i, gl); i++; }
+//    th.threadClose();
     CHECK(!numWins, "there are still OpenGL windows open");
     glutExit(); //also glut as already shut down during deinit
   }
