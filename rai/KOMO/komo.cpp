@@ -472,9 +472,6 @@ void KOMO::setPlace(double time, const char* endeff, const char* object, const c
 void KOMO::setPlaceFixed(double time, const char* endeff, const char* object, const char* placeRef, const mlr::Transformation& relPose, int verbose){
   if(verbose>0) cout <<"KOMO_setPlace t=" <<time <<" endeff=" <<endeff <<" obj=" <<object <<" place=" <<placeRef <<endl;
 
-  //disconnect object from grasp ref
-  setKinematicSwitch(time, true, "delete", endeff, object);
-
   //connect object to table
   setKinematicSwitch(time, true, "rigidZero", placeRef, object, relPose );
 
@@ -632,16 +629,17 @@ void KOMO::setDrop(double time, const char* object, const char* from, const char
 //  }
 }
 
-void KOMO::setDropEdge(double time, const char* object, const char* to, int verbose){
+void KOMO::setDropEdgeFixed(double time, const char* object, const char* to, const mlr::Transformation &relFrom, const mlr::Transformation &relTo, int verbose){
 
   //disconnect object from anything
   setKinematicSwitch(time, true, "delete", NULL, object);
 
   //connect to world with lift
 //  setKinematicSwitch(time, true, "JT_trans3", "world", object);
-  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::addActuated, mlr::JT_hingeX, to, object, world, 0));
-  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::insertActuated, mlr::JT_transZ, NULL, object, world, 0));
-  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::insertJoint, mlr::JT_trans3, NULL, object, world, 0));
+
+  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::addActuated, mlr::JT_hingeX, to, object, world, 0, relFrom, relTo));
+//  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::insertActuated, mlr::JT_transZ, NULL, object, world, 0));
+//  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::insertJoint, mlr::JT_trans3, NULL, object, world, 0));
 
 
 //  if(stepsPerPhase>2){ //velocities down and up

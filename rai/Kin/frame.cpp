@@ -111,7 +111,6 @@ mlr::Frame* mlr::Frame::insertPreLink(const mlr::Transformation &A){
 }
 
 mlr::Frame* mlr::Frame::insertPostLink(const mlr::Transformation &B){
-  NIY;
   //new frame between: parent -> this -> f
   Frame *f = new Frame(K);
   if(name) f->name <<'<' <<name;

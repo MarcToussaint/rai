@@ -85,10 +85,6 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
 
     Joint *j = NULL;
     if(symbol!=insertJoint && symbol!=insertActuated){
-//      if(!Q.isZero()){ //append another rigid link with -Q
-//        to->insertPreLink(-Q);
-//        to = to->parent;
-//      }
       if(to->parent) to->unLink();
       to->linkFrom(from);
       j = new Joint(*to);
@@ -103,6 +99,9 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     j->type = jointType;
     if(!jA.isZero()){
       j->frame.insertPreLink(jA);
+    }
+    if(!jB.isZero()){
+      j->frame.insertPostLink(jB);
     }
     G.calc_q();
     G.calc_fwdPropagateFrames();

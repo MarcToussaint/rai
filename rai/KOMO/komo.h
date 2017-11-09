@@ -120,14 +120,14 @@ struct KOMO{
   void setGrasp(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=1e1, double timeToLift=.15);
   void setPlace(double time, const char *endeff, const char* object, const char* placeRef, int verbose=0);
   void setGraspStick(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=1e1, double timeToLift=.15);
-  void setPlaceFixed(double time, const char* endeffRef, const char* object, const char* placeRef, const mlr::Transformation& worldPose, int verbose=0);
+  void setPlaceFixed(double time, const char* endeffRef, const char* object, const char* placeRef, const mlr::Transformation& relPose, int verbose=0);
   void setGraspSlide(double startTime, double endTime, const char* endeffRef, const char* object, const char* placeRef, int verbose=0, double weightFromTop=1e1);
   void setHandover(double time, const char* endeffRef, const char* object, const char* prevHolder, int verbose=0);
   void setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose=0);
   void setSlide(double time, const char* stick, const char* object, const char* placeRef, int verbose=0);
   void setSlideAlong(double time, const char *strick,  const char* object, const char* wall, int verbose=0);
   void setDrop(double time, const char* object, const char* from, const char* to, int verbose=0);
-  void setDropEdge(double time, const char* object, const char* to, int verbose=0);
+  void setDropEdgeFixed(double time, const char* object, const char* to, const mlr::Transformation& relFrom, const mlr::Transformation& relTo, int verbose=0);
 
 
   void setAttach(double time, const char* endeff, const char* object1, const char* object2, mlr::Transformation& rel, int verbose=0);
