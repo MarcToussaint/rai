@@ -141,8 +141,10 @@ void TEST(GJK_Jacobians2) {
     K.setJointState(q);
     K.stepSwift();
 
+//    checkJacobian(f, q, 1e-4);
+
     TaskMap_QuaternionNorms qn;
-//    K.reportProxies();
+    K.reportProxies();
 
     arr y,J;
     K.kinematicsProxyCost(y, J, .2);
@@ -156,7 +158,6 @@ void TEST(GJK_Jacobians2) {
 
     q -= 1e-3*J + 1e-2*(~y2*J2);
 
-//    checkJacobian(f, q, 1e-4);
   }
 
   K.gl().watch();

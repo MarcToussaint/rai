@@ -15,6 +15,7 @@ void TEST(Easy){
 //  komo.checkGradients();
   komo.run();
   komo.plotTrajectory();
+  cout <<komo.getReport(false) <<endl;
   for(uint i=0;i<2;i++) komo.displayTrajectory();
 }
 
@@ -37,6 +38,7 @@ void TEST(EasyPR2){
   komo.setMoveTo(G, *G.getFrameByName("endeff"), *G.getFrameByName("target"));
 //  komo.setSpline(10);
   komo.run();
+  komo.plotTrajectory();
   cout <<komo.getReport(false) <<endl;
   for(uint i=0;i<2;i++) komo.displayTrajectory();
 }
@@ -61,6 +63,8 @@ void TEST(EasyAlign){
   komo.setMoveTo(G, *G.getFrameByName("endeff"), *G.getFrameByName("target"), 7); //aligns all 3 axes
 //  komo.setSpline(5);
   komo.run();
+  komo.plotTrajectory();
+  cout <<komo.getReport(false) <<endl;
   for(uint i=0;i<2;i++) komo.displayTrajectory();
 }
 
@@ -75,6 +79,8 @@ void TEST(EasyAlign2){
   komo.setMoveTo(G, *G.getFrameByName("endeff"), *a, 7);
 //  komo.setSpline(10);
   komo.run();
+  komo.plotTrajectory();
+  cout <<komo.getReport(false) <<endl;
   for(uint i=0;i<2;i++) komo.displayTrajectory();
 }
 

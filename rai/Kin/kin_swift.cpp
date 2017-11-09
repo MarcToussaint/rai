@@ -280,6 +280,7 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
   }
   
   
+  for(mlr::Proxy& p:world.proxies) p.del_coll();
   world.proxies.resize(np);
   
   //add contacts to list

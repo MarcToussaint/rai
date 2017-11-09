@@ -13,15 +13,21 @@ mlr::Proxy::Proxy() {
 }
 
 mlr::Proxy::~Proxy() {
-  if(coll) delete coll;
+  del_coll();
 }
 
 
 void mlr::Proxy::calc_coll(const KinematicWorld& K){
   mlr::Shape *s1 = K.frames(a)->shape;
   mlr::Shape *s2 = K.frames(b)->shape;
-  coll = new PairCollision(s1->sscCore(), s2->sscCore(), s1->frame.X, s2->frame.X, s1->size(3), s2->size(3));
+
+  double r1=s1->size(3);
+  double r2=s2->size(3);
+  mlr::Mesh *m1 = &s1->sscCore();  if(!m1->V.N){ m1 = &s1->mesh(); r1=0.; }
+  mlr::Mesh *m2 = &s2->sscCore();  if(!m2->V.N){ m2 = &s2->mesh(); r2=0.; }
+  coll = new PairCollision(*m1, *m2, s1->frame.X, s2->frame.X, r1, r2);
 }
+
 typedef mlr::Array<mlr::Proxy*> ProxyL;
 
 #ifdef MLR_GL

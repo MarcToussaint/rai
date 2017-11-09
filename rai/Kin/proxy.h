@@ -41,6 +41,7 @@ struct Proxy : GLDrawer {
   ~Proxy();
 
   void calc_coll(const KinematicWorld &K);
+  void del_coll(){ if(coll) delete coll; coll=NULL; }
   void glDraw(OpenGL&);
 };
 
