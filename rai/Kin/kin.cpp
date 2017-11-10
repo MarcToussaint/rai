@@ -1728,10 +1728,11 @@ void mlr::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   arr y_dist, J_dist;
   p.coll->kinDistance(y_dist, (&J?J_dist:NoArr), Jp1, Jp2, Jx1, Jx2);
 
-
   y.resize(1);
   if(&J) J.resize(1, getJointStateDimension());
   if(!addValues){ y.setZero();  if(&J) J.setZero(); }
+
+  if(y_dist.scalar()>margin) return;
 
   y += ARR(1.-y_dist.scalar()/margin);
   if(&J)  J -= (1./margin)*J_dist;

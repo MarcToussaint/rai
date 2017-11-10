@@ -49,6 +49,8 @@ void mlr::Geom::read(const Graph &ats){
       mesh.scale(size(0), size(1), size(2));
       break;
   case mlr::ST_sphere:
+//      sscCore.V = arr(1,3, {0.,0.,0.});
+//      mesh.setSSCvx(sscCore, size(3));
       mesh.setSphere();
       mesh.scale(size(3), size(3), size(3));
       break;
@@ -58,6 +60,8 @@ void mlr::Geom::read(const Graph &ats){
       break;
   case mlr::ST_capsule:
       CHECK(size(3)>1e-10,"");
+//      sscCore.V = arr(2,3, {0.,0.,-.5*size(2), 0.,0.,.5*size(2)});
+//      mesh.setSSCvx(sscCore, size(3));
       //      mesh.setCappedCylinder(size(3), size(2));
 //      sscCore.setBox();
 //      sscCore.scale(0., 0., size(2));
