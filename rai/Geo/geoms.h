@@ -22,6 +22,7 @@ struct Geom{
   ~Geom();
 
   void read(const Graph &ats);
+  void createMeshes();
   void glDraw(OpenGL&);
 };
 

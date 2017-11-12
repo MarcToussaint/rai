@@ -18,18 +18,18 @@ void TM_Align::phi(arr& y, arr& J, const mlr::KinematicWorld& K, int t){
 
   arr zi,Ji,zj,Jj;
 
-  K.kinematicsVec(zi, Ji, body_i, Vector_x);
+  K.kinematicsVec(zi, Ji, body_i, Vector_z);
   K.kinematicsVec(zj, Jj, body_j, Vector_x);
   y(0) = scalarProduct(zi, zj);
   if(&J) J[0] = ~zj * Ji + ~zi * Jj;
 
-  K.kinematicsVec(zi, Ji, body_i, Vector_y);
+  K.kinematicsVec(zi, Ji, body_i, Vector_z);
   K.kinematicsVec(zj, Jj, body_j, Vector_y);
   y(1) = scalarProduct(zi, zj);
   if(&J) J[1] = ~zj * Ji + ~zi * Jj;
 
-  K.kinematicsVec(zi, Ji, body_i, Vector_z);
-  K.kinematicsVec(zj, Jj, body_j, Vector_z);
+  K.kinematicsVec(zi, Ji, body_i, Vector_y);
+  K.kinematicsVec(zj, Jj, body_j, Vector_x);
   y(2) = scalarProduct(zi, zj);
   if(&J) J[2] = ~zj * Ji + ~zi * Jj;
 }
