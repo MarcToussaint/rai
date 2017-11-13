@@ -165,11 +165,11 @@ clean: force
 	@find $(BASE)/rai \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
 
 cleanLocks: force
-	@find $(BASE) -type d -name 'Make.lock' -delete -print
+	@find $(PWD) $(BASE) -type d -name 'Make.lock' -delete -print
 
 cleanAll: force
-	@find $(BASE) -type d -name 'Make.lock' -delete -print
-	@find $(BASE) \( -type f -or -type l \) \( -name '*.o' -or -name 'lib*.so' -or -name 'lib*.a' -or -name 'x.exe' \) -delete -print
+	@find $(PWD) $(BASE) -type d -name 'Make.lock' -delete -print
+	@find $(PWD) $(BASE) \( -type f -or -type l \) \( -name '*.o' -or -name 'lib*.so' -or -name 'lib*.a' -or -name 'x.exe' \) -delete -print
 
 cleanLibs: force
 	@find $(BASE)/rai -type f \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
@@ -258,12 +258,14 @@ pywrapper: $(OUTPUT) $(MODULE_NAME)py.so $(MODULE_NAME)py.py
 
 %.so: $(PREOBJS) $(BUILDS) $(OBJS)
 	$(LINK) $(LDFLAGS) -o $@ $(OBJS) $(LIBS) $(SHAREFLAG)
+	cp $@ $(BASE)/lib
 
 %.lib: $(PREOBJS) $(BUILDS) $(OBJS)
 	$(LINK) $(LDFLAGS) -o $@ $(OBJS) $(LIBS) -static ### $(SHAREFLAG)
 
 %.a: $(PREOBJS) $(BUILDS) $(OBJS)
 	ar -crvs $@ $(OBJS)
+	cp $@ $(BASE)/lib
 
 %.mexglx: $(PREOBJS) $(OBJS)
 	mex -cxx $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
@@ -323,15 +325,12 @@ includeAll.cxx: force
 
 makeDepend/extern_%: %
 	+@-$(BASE)/build/make-path.sh $< libextern_$*.a
-	@cd $(BASE)/lib && ln -sf ../rai/$(NAME)/$*/libextern_$*.a libextern_$*.a
 
 makeDepend/Hardware_%: $(BASE)/rai/Hardware/%
 	+@-$(BASE)/build/make-path.sh $< libHardware_$*.so
-	@cd $(BASE)/lib && ln -sf ../rai/Hardware/$*/libHardware_$*.so libHardware_$*.so
 
 makeDepend/%: $(BASE)/rai/%
 	+@-$(BASE)/build/make-path.sh $< lib$*.so
-	@cd $(BASE)/lib && ln -sf ../rai/$*/lib$*.so lib$*.so
 
 makePath/%: %
 	+@-$(BASE)/build/make-path.sh $< x.exe
@@ -351,6 +350,10 @@ cleanPath/%: $(BASE)/rai/%
 	@echo "                                                ***** clean " $<
 	@-rm -f $</Makefile.dep
 	@-$(MAKE) -C $< -f Makefile clean --no-print-directory
+
+initLib/%: $(BASE)/rai/%
+	@echo "                                                ***** init " $*
+	@-$(MAKE) -C $< installUbuntuPackages --no-print-directory
 
 makePythonPath/%: %
 	make --directory=$< pywrapper

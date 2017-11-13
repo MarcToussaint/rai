@@ -11,6 +11,10 @@ test_paths = $(shell find test -maxdepth 3 -name 'Makefile' -printf "%h ")
 
 ################################################################################
 
+init: force
+	@echo "##### calling make installUbuntuPackages in each lib"
+	@find rai -mindepth 1 -maxdepth 1 -type d -exec make installUbuntuPackages -C {} \;
+
 tests: $(test_paths:%=makePath/%)
 
 src: $(src_paths:%=makeDepend/%)
@@ -24,10 +28,6 @@ cleanStart: force
 	git clean -f -d -x
 	cp build/config.mk.default build/config.mk
 	bin/createMakefileLinks.sh
-
-cleanCmake:
-	@find . -type f \( -name 'CMakeCache.txt' -or -name 'CTestTestfile.cmake' -or -name 'cmake_install.cmake' \) -print -delete
-	@find . -type d \( -name 'CMakeFiles' \) -exec rm -Rf {} \;
 
 ################################################################################
 
