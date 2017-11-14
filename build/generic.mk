@@ -351,7 +351,7 @@ cleanPath/%: $(BASE)/rai/%
 	@-rm -f $</Makefile.dep
 	@-$(MAKE) -C $< -f Makefile clean --no-print-directory
 
-initLib/%: $(BASE)/rai/%
+initUbuntuPackages/%: $(BASE)/rai/%
 	@echo "                                                ***** init " $*
 	@-$(MAKE) -C $< installUbuntuPackages --no-print-directory
 
