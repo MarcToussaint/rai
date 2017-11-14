@@ -103,6 +103,7 @@ struct Signaler {
   int  getStatus(bool userHasLocked=false) const;
   void waitForSignal(bool userHasLocked=false);
   bool waitForSignal(double seconds, bool userHasLocked=false);
+  bool waitForEvent(std::function<bool()> f, bool userHasLocked=false);
   bool waitForStatusEq(int i, bool userHasLocked=false, double seconds=-1.);    ///< return value is the state after the waiting
   void waitForStatusNotEq(int i, bool userHasLocked=false); ///< return value is the state after the waiting
   void waitForStatusGreaterThan(int i, bool userHasLocked=false); ///< return value is the state after the waiting
@@ -385,6 +386,11 @@ struct Access{
   int getRevision(){ return data->getStatus(); }
   void waitForNextRevision(){ data->waitForStatusGreaterThan(last_accessed_revision); }
   void waitForRevisionGreaterThan(int rev){ data->waitForStatusGreaterThan(rev); }
+  void waitForValueEq(const T& x){
+    data->waitForEvent( [this, &x]()->bool {
+      return this->data->value==x;
+    } );
+  }
   void stopListening(){ thread->stopListenTo(data); }
 
   void write(ostream& os){
