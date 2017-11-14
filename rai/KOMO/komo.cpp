@@ -790,6 +790,8 @@ void KOMO::setConfigFromFile(){
 
 void KOMO::setIKOpt(){
   setTiming(1, 1);
+  setFixEffectiveJoints();
+  setFixSwitchedObjects();
   setSquaredQVelocities();
   setSquaredQuaternionNorms();
 }

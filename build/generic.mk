@@ -15,7 +15,7 @@ BASE_REAL = $(shell realpath $(BASE))
 # load user options from the local make-config
 #
 ################################################################################
-include $(BASE)/build/config.mk
+-include $(BASE)/build/config.mk
 
 ################################################################################
 #
@@ -355,8 +355,8 @@ cleanPath/%: $(BASE)/rai/%
 makePythonPath/%: %
 	make --directory=$< pywrapper
 
-$(BASE)/build/config.mk: $(BASE)/../config.mk
-	cp $< $@
+#$(BASE)/build/config.mk: $(BASE)/../config.mk
+#	cp $< $@
 
 #$(BASE)/build/config.mk: $(BASE)/build/config.mk.default
 #	cp $< $@

@@ -1198,7 +1198,7 @@ void OpenGL::setViewPort(uint v, double l, double r, double b, double t) {
 /// clear the list of all draw and callback routines
 void OpenGL::clear() {
   dataLock.writeLock();
-  for(auto& x:drawers) if(CstyleDrawer* d = dynamic_cast<CstyleDrawer*>(x)) delete d;
+//  for(auto& x:drawers) if(CstyleDrawer* d = dynamic_cast<CstyleDrawer*>(x)) delete d;
   views.clear();
   drawers.clear();
   initCalls.clear();

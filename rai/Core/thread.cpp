@@ -202,6 +202,16 @@ bool Signaler::waitForSignal(double seconds, bool userHasLocked) {
   return rc!=ETIMEDOUT;
 }
 
+bool Signaler::waitForEvent(std::function<bool()> f, bool userHasLocked){
+  if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
+  while(!f()) {
+    int rc = pthread_cond_wait(&cond, &statusMutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  }
+  if(!userHasLocked) statusMutex.unlock();
+  return true;
+
+}
+
 bool Signaler::waitForStatusEq(int i, bool userHasLocked, double seconds) {
   if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
   while(status!=i) {
