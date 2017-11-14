@@ -41,6 +41,22 @@ void mlr::Geom::read(const Graph &ats){
   if(ats.get(d, "meshscale"))  { mesh.scale(d); }
   if(ats.get(x, "meshscale"))  { mesh.scale(x(0), x(1), x(2)); }
 
+  createMeshes();
+
+  //colored box?
+  if(ats["coloredBox"]){
+      CHECK_EQ(mesh.V.d0, 8, "I need a box");
+      arr col=mesh.C;
+      mesh.C.resize(mesh.T.d0, 3);
+      for(uint i=0;i<mesh.C.d0;i++){
+          if(i==2 || i==3) mesh.C[i] = col; //arr(color, 3);
+          else if(i>=4 && i<=7) mesh.C[i] = 1.;
+          else mesh.C[i] = .5;
+      }
+  }
+}
+
+void mlr::Geom::createMeshes(){
   //create mesh for basic shapes
   switch(type) {
   case mlr::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
@@ -49,8 +65,10 @@ void mlr::Geom::read(const Graph &ats){
       mesh.scale(size(0), size(1), size(2));
       break;
   case mlr::ST_sphere:
-      mesh.setSphere();
-      mesh.scale(size(3), size(3), size(3));
+      sscCore.V = arr(1,3, {0.,0.,0.});
+      mesh.setSSCvx(sscCore, size(3));
+//      mesh.setSphere();
+//      mesh.scale(size(3), size(3), size(3));
       break;
   case mlr::ST_cylinder:
       CHECK(size(3)>1e-10,"");
@@ -58,11 +76,10 @@ void mlr::Geom::read(const Graph &ats){
       break;
   case mlr::ST_capsule:
       CHECK(size(3)>1e-10,"");
+      sscCore.V = arr(2,3, {0.,0.,-.5*size(2), 0.,0.,.5*size(2)});
+      mesh.setSSCvx(sscCore, size(3));
       //      mesh.setCappedCylinder(size(3), size(2));
-//      sscCore.setBox();
-//      sscCore.scale(0., 0., size(2));
-//      mesh.setSSCvx(sscCore, size(3));
-      mesh.setSSBox(2.*size(3), 2.*size(3), size(2)+2.*size(3), size(3));
+      //      mesh.setSSBox(2.*size(3), 2.*size(3), size(2)+2.*size(3), size(3));
       break;
   case mlr::ST_retired_SSBox:
       HALT("deprecated?");
@@ -90,18 +107,6 @@ void mlr::Geom::read(const Graph &ats){
       //      mesh.setSSCvx(sscCore, size(3));
       break;
   default: NIY;
-  }
-
-  //colored box?
-  if(ats["coloredBox"]){
-    CHECK_EQ(mesh.V.d0, 8, "I need a box");
-    arr col=mesh.C;
-    mesh.C.resize(mesh.T.d0, 3);
-    for(uint i=0;i<mesh.C.d0;i++){
-      if(i==2 || i==3) mesh.C[i] = col; //arr(color, 3);
-      else if(i>=4 && i<=7) mesh.C[i] = 1.;
-      else mesh.C[i] = .5;
-    }
   }
 }
 

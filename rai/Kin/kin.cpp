@@ -1557,7 +1557,6 @@ void mlr::KinematicWorld::reportProxies(std::ostream& os, double belowMargin, bo
         <<") d=" <<p.d;
     if(!brief)
      os <<" |A-B|=" <<(p.posB-p.posA).length()
-        <<" cenD=" <<p.cenD
 //        <<" d^2=" <<(p.posB-p.posA).lengthSqr()
         <<" v=" <<(p.posB-p.posA)
         <<" normal=" <<p.normal
@@ -1728,10 +1727,11 @@ void mlr::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   arr y_dist, J_dist;
   p.coll->kinDistance(y_dist, (&J?J_dist:NoArr), Jp1, Jp2, Jx1, Jx2);
 
-
   y.resize(1);
   if(&J) J.resize(1, getJointStateDimension());
   if(!addValues){ y.setZero();  if(&J) J.setZero(); }
+
+  if(y_dist.scalar()>margin) return;
 
   y += ARR(1.-y_dist.scalar()/margin);
   if(&J)  J -= (1./margin)*J_dist;
@@ -1801,7 +1801,7 @@ void mlr::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
 void mlr::KinematicWorld::kinematicsProxyCost(arr &y, arr& J, double margin, bool useCenterDist) const {
   y.resize(1).setZero();
   if(&J) J.resize(1, getJointStateDimension()).setZero();
-  for(const Proxy& p:proxies) if(p.d<margin) {
+  for(const Proxy& p:proxies) /*if(p.d<margin)*/ {
     kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
   }
 }
@@ -1823,10 +1823,10 @@ void mlr::KinematicWorld::kinematicsProxyConstraint(arr& g, arr& J, const Proxy&
       CHECK(p.normal.isNormalized(), "proxy normal is not normalized");
       normal.referTo(&p.normal.x, 3);
     } else { //otherwise take gradient w.r.t. centers...
-      arel=a->X.rot/(p.cenA-a->X.pos);
-      brel=b->X.rot/(p.cenB-b->X.pos);
-      CHECK(p.cenN.isNormalized(), "proxy normal is not normalized");
-      normal.referTo(&p.cenN.x, 3);
+      arel.setZero(); //a->X.rot/(p.cenA-a->X.pos);
+      brel.setZero(); //b->X.rot/(p.cenB-b->X.pos);
+      CHECK(p.normal.isNormalized(), "proxy normal is not normalized");
+      normal.referTo(&p.normal.x, 3);
     }
     normal.reshape(1, 3);
 

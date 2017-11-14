@@ -30,10 +30,10 @@ struct Proxy : GLDrawer {
   //TODO: have a ProxyL& L as above...
   int a;              ///< index of shape A (-1==world) //TODO: would it be easier if this were mlr::Shape* ? YES -> Do it!
   int b;              ///< index of shape B
-  Vector posA, cenA;  ///< contact or closest point position on surface of shape A (in world coordinates)
-  Vector posB, cenB;  ///< contact or closest point position on surface of shape B (in world coordinates)
-  Vector normal, cenN;   ///< contact normal, pointing from B to A (proportional to posA-posB)
-  double d, cenD;           ///< distance (positive) or penetration (negative) between A and B
+  Vector posA;  ///< contact or closest point position on surface of shape A (in world coordinates)
+  Vector posB;  ///< contact or closest point position on surface of shape B (in world coordinates)
+  Vector normal;   ///< contact normal, pointing from B to A (proportional to posA-posB)
+  double d;           ///< distance (positive) or penetration (negative) between A and B
   uint colorCode = 0;
   PairCollision *coll=NULL;
 

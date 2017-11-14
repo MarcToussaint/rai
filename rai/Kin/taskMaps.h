@@ -28,6 +28,7 @@
 #include "taskMap_AlignStacking.h"
 #include "taskMap_linTrans.h"
 #include "taskMap_proxy.h"
+#include "TM_Align.h"
 
 //===========================================================================
 

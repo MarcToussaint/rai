@@ -91,35 +91,39 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
     }
     if(add) {
       if(!s->mesh().V.d0){
-        switch(s->type()) {
-          case mlr::ST_box:
-            s->mesh().setBox();
-            s->mesh().scale(s->size(0), s->size(1), s->size(2));
-            break;
-          case mlr::ST_sphere:
-            s->mesh().setSphere();
-            s->mesh().scale(s->size(3), s->size(3), s->size(3));
-            break;
-          case mlr::ST_cylinder:
-            CHECK(s->size(3)>1e-10,"");
-            s->mesh().setCylinder(s->size(3), s->size(2));
-            break;
-          case mlr::ST_capsule:
-            CHECK(s->size(3)>1e-10,"");
-            s->mesh().setCappedCylinder(s->size(3), s->size(2));
-            break;
-          case mlr::ST_retired_SSBox:
-            s->mesh().setSSBox(s->size(0), s->size(1), s->size(2), s->size(3));
-            break;
-          default:
-            break;
-        }
-        s->mesh_radius = s->mesh().getRadius();
+        HALT("the mesh must have been created earlier");
+//        switch(s->type()) {
+//          case mlr::ST_box:
+//            s->mesh().setBox();
+//            s->mesh().scale(s->size(0), s->size(1), s->size(2));
+//            break;
+//          case mlr::ST_sphere:
+//            s->mesh().setSphere();
+//            s->mesh().scale(s->size(3), s->size(3), s->size(3));
+//            break;
+//          case mlr::ST_cylinder:
+//            CHECK(s->size(3)>1e-10,"");
+//            s->mesh().setCylinder(s->size(3), s->size(2));
+//            break;
+//          case mlr::ST_capsule:
+//            CHECK(s->size(3)>1e-10,"");
+//            s->mesh().setCappedCylinder(s->size(3), s->size(2));
+//            break;
+//          case mlr::ST_retired_SSBox:
+//            s->mesh().setSSBox(s->size(0), s->size(1), s->size(2), s->size(3));
+//            break;
+//          default:
+//            break;
+//        }
+//        s->mesh_radius = s->mesh().getRadius();
       }
-      CHECK(s->mesh().V.d0,"no mesh to add to SWIFT, something was wrongly initialized");
+      mlr::Mesh *mesh = &s->mesh();
+//      if(s->sscCore().V.d0) mesh = &s->sscCore();
+
+      CHECK(mesh->V.d0,"no mesh to add to SWIFT, something was wrongly initialized");
       r=scene->Add_Convex_Object(
-          s->mesh().V.p, (int*)s->mesh().T.p,
-          s->mesh().V.d0, s->mesh().T.d0, INDEXshape2swift(f->ID), false,
+          mesh->V.p, (int*)mesh->T.p,
+          mesh->V.d0, mesh->T.d0, INDEXshape2swift(f->ID), false,
           DEFAULT_ORIENTATION, DEFAULT_TRANSLATION, DEFAULT_SCALE,
           DEFAULT_BOX_SETTING, DEFAULT_BOX_ENLARGE_REL, 2.);
       if(!r) HALT("--failed!");
@@ -135,6 +139,7 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
 }
 
 void SwiftInterface::reinitShape(const mlr::Frame *f) {
+  HALT("why?");
   int sw = INDEXshape2swift(f->ID);
   scene->Delete_Object(sw);
   INDEXswift2shape(sw) = -1;
@@ -302,13 +307,6 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
         //swift returns nearest points in the local frame -> transform them
         proxy.posA.set(&nearest_pts[6*k+0]);  proxy.posA = world.frames(a)->X * proxy.posA;
         proxy.posB.set(&nearest_pts[6*k+3]);  proxy.posB = world.frames(b)->X * proxy.posB;
-        proxy.cenA = world.frames(a)->X.pos;
-        proxy.cenB = world.frames(b)->X.pos;
-//        if(world.shapes(a)->type==mlr::ST_mesh) proxy.cenA = world.shapes(a)->X * world.shapes(a)->mesh().getMeanVertex(); else proxy.cenA = world.shapes(a)->X.pos;
-//        if(world.shapes(b)->type==mlr::ST_mesh) proxy.cenB = world.shapes(b)->X * world.shapes(b)->mesh().getMeanVertex(); else proxy.cenB = world.shapes(b)->X.pos;
-        proxy.cenN = proxy.cenA - proxy.cenB; //normal always points from b to a
-        proxy.cenD = proxy.cenN.length();
-        proxy.cenN /= proxy.cenD;
       }
 
     //penetrating pair of objects
@@ -316,27 +314,12 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       proxy.a=a;
       proxy.b=b;
       proxy.d = -.0;
-//      if(world.shapes(a)->type==mlr::ST_mesh) proxy.cenA = world.shapes(a)->X * world.shapes(a)->mesh().getMeanVertex(); else proxy.cenA = world.shapes(a)->X.pos;
-//      if(world.shapes(b)->type==mlr::ST_mesh) proxy.cenB = world.shapes(b)->X * world.shapes(b)->mesh().getMeanVertex(); else proxy.cenB = world.shapes(b)->X.pos;
-      proxy.cenA = world.frames(a)->X.pos;
-      proxy.cenB = world.frames(b)->X.pos;
-      proxy.cenN = proxy.cenA - proxy.cenB; //normal always points from b to a
-      proxy.cenD = proxy.cenN.length();
-      proxy.cenN /= proxy.cenD;
-      
-      //copy to pos..
-      proxy.posA = proxy.cenA;
-      proxy.posB = proxy.cenB;
-      proxy.normal = proxy.cenN;
-      
-      ///! IN PENETRATION we measure d as -1+(distance between object centers) - that gives a well-defined (though non-smooth) gradient!
-//      proxy.d += -1.+(proxy.posA-proxy.posB).length();
+      proxy.posA = world.frames(a)->X.pos;
+      proxy.posB = world.frames(b)->X.pos;
+      proxy.normal = proxy.posA - proxy.posB; //normal always points from b to a
+      proxy.normal.normalize();
     }
 
-    double ab_radius = mlr::MAX(proxy.d,0.) + 1.1*(world.frames(a)->shape->mesh_radius + world.frames(b)->shape->mesh_radius);
-    if(proxy.cenD>ab_radius){
-      //MLR_MSG("shit");
-    }
   }
 
   //add pointClound stuff to list

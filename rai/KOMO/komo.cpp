@@ -326,6 +326,11 @@ void KOMO::setPosition(double startTime, double endTime, const char* shape, cons
   setTask(startTime, endTime, new TaskMap_Default(posTMT, world, shape, NoVector, shapeRel, NoVector), type, target, prec);
 }
 
+void KOMO::setOrientation(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec){
+//  setTask(startTime, endTime, new TM_Align(world, shape, shapeRel), type, target, prec);
+  setTask(startTime, endTime, new TaskMap_Default(quatDiffTMT, world, shape, NoVector, shapeRel, NoVector), type, target, prec);
+}
+
 void KOMO::setVelocity(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec){
   setTask(startTime, endTime, new TaskMap_Default(posTMT, world, shape, NoVector, shapeRel, NoVector), type, target, prec, 1);
 }
