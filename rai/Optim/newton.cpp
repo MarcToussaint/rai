@@ -146,7 +146,7 @@ OptNewton::StopCriterion OptNewton::step(){
         alpha *= o.stepInc;
       }else{
         //this is the nonStrict case... weird, but well
-        if(alpha<.01){
+        if(alpha<.01 && o.dampingInc!=1.){
           beta*=o.dampingInc;
           alpha*=o.dampingInc*o.dampingInc;
           betaChanged=true;
@@ -162,7 +162,7 @@ OptNewton::StopCriterion OptNewton::step(){
         if(o.verbose>1) cout <<" (evals>stopEvals)" <<endl;
         break; //WARNING: this may lead to non-monotonicity -> make evals high!
       }
-      if(alpha<.01){
+      if(alpha<.01 && o.dampingInc!=1.){
         beta*=o.dampingInc;
         alpha*=o.dampingInc*o.dampingInc;
         betaChanged=true;

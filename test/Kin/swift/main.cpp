@@ -19,7 +19,7 @@ void TEST(Swift) {
 
     G.reportProxies();
 
-    G.watch(false);
+    G.watch(true);
     mlr::wait(.1);
   }
 }

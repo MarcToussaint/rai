@@ -90,6 +90,7 @@ struct OptOptions {
   double stopGTolerance;
   uint   stopEvals;
   uint   stopIters;
+  uint   stopOuters;
   uint   stopLineSteps;
   uint   stopTinySteps;
   double initStep;

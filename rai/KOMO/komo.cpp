@@ -60,6 +60,7 @@ KOMO::KOMO() : T(0), tau(0.), k_order(2), useSwift(true), opt(NULL), gl(NULL), v
 }
 
 KOMO::~KOMO(){
+  listDelete(tasks);
   listDelete(configurations);
   if(gl) delete gl;
   if(opt) delete opt;
@@ -205,6 +206,10 @@ void KOMO::deactivateCollisions(const char* s1, const char* s2){
 //
 
 //#define STEP(t) (floor(t*double(stepsPerPhase) + .500001))-1
+
+void KOMO::clearTasks(){
+  listDelete(tasks);
+}
 
 Task* KOMO::addTask(const char* name, TaskMap *m, const ObjectiveType& termType){
   Task *t = new Task(m, termType);
@@ -910,9 +915,10 @@ void KOMO::setSpline(uint splineT){
   z = pseudoInverse(splineB) * x;
 }
 
-void KOMO::reset(){
+void KOMO::reset(double initNoise){
   x = getInitialization();
-  rndGauss(x,.01,true); //don't initialize at a singular config
+  dual.clear();
+  rndGauss(x, initNoise, true); //don't initialize at a singular config
   if(splineB.N){
     z = pseudoInverse(splineB) * x;
   }

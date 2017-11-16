@@ -21,7 +21,7 @@ struct TaskMap_PairCollision : TaskMap{
   int i, j;               ///< which shapes does it refer to?
   bool negScalar;
 
-  TaskMap_PairCollision(const mlr::Frame *s1, const mlr::Frame *s2, bool negScalar=false);
+  TaskMap_PairCollision(int _i, int _j, bool negScalar=false);
   TaskMap_PairCollision(const mlr::KinematicWorld& K, const char* s1, const char* s2, bool negScalar=false);
   virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& K, int t=-1);
   virtual uint dim_phi(const mlr::KinematicWorld& G){ if(negScalar) return 1;  return 3; }

@@ -67,10 +67,12 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
       case mlr::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
       case mlr::ST_mesh: {
         //check if there is a specific swiftfile!
-        mlr::String *filename;
-        filename = s->frame.ats.find<mlr::String>("swiftfile");
-        if(filename) {
-          r=scene->Add_General_Object(*filename, INDEXshape2swift(f->ID), false);
+        mlr::FileToken *file = s->frame.ats.find<mlr::FileToken>("swiftfile");
+        if(false && file) {
+          r=scene->Add_General_Object(file->name, INDEXshape2swift(f->ID), false);
+          CHECK(INDEXshape2swift(f->ID)>=0, "no object generated from swiftfile");
+          INDEXswift2shape(INDEXshape2swift(f->ID)) = f->ID;
+          add=false;
           if(!r) HALT("--failed!");
         }
       } break;
@@ -298,19 +300,24 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
     //CHECK(ids(a)==a && ids(b)==b, "shape index does not coincide with swift index");
     
     //non-penetrating pair of objects
-    if(num_contacts[i]>=0) { //only add one proxy!for(j=0; j<num_contacts[i]; j++, k++) {
-        proxy.a=a;
-        proxy.b=b;
-        proxy.d = dists[k];
+    if(num_contacts[i]>0) { //only add one proxy!for(j=0; j<num_contacts[i]; j++, k++) {
+      proxy.a=a;
+      proxy.b=b;
+      proxy.d = dists[k];
+      if(proxy.d < 1e-10){
+        proxy.posA = world.frames(a)->X.pos;
+        proxy.posB = world.frames(b)->X.pos;
+        proxy.normal = proxy.posA - proxy.posB; //normal always points from b to a
+        proxy.normal.normalize();
+      }else{
         proxy.normal.set(&normals[3*k+0]);
         proxy.normal.normalize();
         //swift returns nearest points in the local frame -> transform them
         proxy.posA.set(&nearest_pts[6*k+0]);  proxy.posA = world.frames(a)->X * proxy.posA;
         proxy.posB.set(&nearest_pts[6*k+3]);  proxy.posB = world.frames(b)->X * proxy.posB;
       }
-
-    //penetrating pair of objects
-    if(num_contacts[i]==-1) {
+      k += num_contacts[i];
+    }else if(num_contacts[i]==-1) { //penetrating pair of objects
       proxy.a=a;
       proxy.b=b;
       proxy.d = -.0;
@@ -318,6 +325,8 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       proxy.posB = world.frames(b)->X.pos;
       proxy.normal = proxy.posA - proxy.posB; //normal always points from b to a
       proxy.normal.normalize();
+    }else if(num_contacts[i]==0){
+      MLR_MSG("what is this?");
     }
 
   }

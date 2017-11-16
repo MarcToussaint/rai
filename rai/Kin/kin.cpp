@@ -1182,10 +1182,11 @@ void mlr::KinematicWorld::stepDynamics(const arr& Bu_control, double tau, double
 void mlr::KinematicWorld::write(std::ostream& os) const {
   for(Frame *f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
   for(Frame *f: frames) { //fwdActiveSet) {
-    os <<"frame " <<f->name;
-    if(f->parent) os <<'(' <<f->parent->name <<')';
-    os <<" \t{ ";
-    f->write(os);  os <<" }\n";
+//    os <<"frame " <<f->name;
+//    if(f->parent) os <<'(' <<f->parent->name <<')';
+//    os <<" \t{ ";
+    f->write(os);
+//    os <<" }\n";
   }
   os <<std::endl;
 //  for(Frame *f: frames) if(f->shape){
@@ -1715,17 +1716,16 @@ void mlr::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
 #if 1
   if(!p.coll) ((Proxy*)&p)->calc_coll(*this);
 
-
-  arr Jp1, Jp2, Jx1, Jx2;
+  arr Jp1, Jp2/*, Jx1, Jx2*/;
   if(&J){
     jacobianPos(Jp1, a, p.coll->p1);
     jacobianPos(Jp2, b, p.coll->p2);
-    axesMatrix(Jx1, a);
-    axesMatrix(Jx2, b);
+//    axesMatrix(Jx1, a);
+//    axesMatrix(Jx2, b);
   }
 
   arr y_dist, J_dist;
-  p.coll->kinDistance(y_dist, (&J?J_dist:NoArr), Jp1, Jp2, Jx1, Jx2);
+  p.coll->kinDistance(y_dist, (&J?J_dist:NoArr), Jp1, Jp2);
 
   y.resize(1);
   if(&J) J.resize(1, getJointStateDimension());

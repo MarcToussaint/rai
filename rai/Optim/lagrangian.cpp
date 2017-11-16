@@ -328,6 +328,19 @@ bool OptConstrained::step(){
         return true;
      }
   }
+  if(newton.evals>=opt.stopEvals){
+    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX EVALS" <<endl;
+    return true;
+  }
+  if(newton.it>=opt.stopIters){
+    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX ITERS" <<endl;
+    return true;
+  }
+  if(its>=opt.stopOuters){
+    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX OUTERS" <<endl;
+    return true;
+  }
+
 
   //upate Lagrange parameters
   switch(opt.constrainedMethod){

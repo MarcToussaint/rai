@@ -122,9 +122,8 @@ void TEST(GJK_Jacobians2) {
 
   K.swift().initActivations(K, 0);
   K.stepSwift();
-  K.reportProxies();
+//  K.reportProxies();
   K.orsDrawProxies=true;
-
 
   VectorFunction f = [&K](arr& y, arr& J, const arr& x) -> void {
     K.setJointState(x);
@@ -136,6 +135,7 @@ void TEST(GJK_Jacobians2) {
 
 
   arr q = K.getJointState();
+  K.watch(true);
   double y_last=0.;
   for(uint t=0;t<1000;t++){
     K.setJointState(q);

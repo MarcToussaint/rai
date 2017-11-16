@@ -58,6 +58,12 @@ void mlr::Proxy::glDraw(OpenGL& gl){
     f.getAffineMatrixGL(GLmatrix);
     glLoadMatrixd(GLmatrix);
     glDrawDisk(.02);
+
+//    f.pos=.5*(posA+posB);
+//    f.getAffineMatrixGL(GLmatrix);
+//    glLoadMatrixd(GLmatrix);
+//    glDrawText(STRING(a <<'-' <<b <<':' <<d), 0.,0.,0.);
+
     glEnable(GL_CULL_FACE);
   }
 }

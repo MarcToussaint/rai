@@ -64,6 +64,7 @@ void Vector::setRandom(double range) { x=rnd.uni(-range, range); y=rnd.uni(-rang
 void Vector::normalize() {
   if(isZero){
     MLR_MSG("can't normalize length of null vector");
+    return;
   }
   (*this)/=length();
 }

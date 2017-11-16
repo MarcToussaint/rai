@@ -31,8 +31,7 @@ struct PairCollision : GLDrawer{
                  const arr& Jx1, const arr& Jx2);
 
   void kinDistance(arr& y, arr& J,
-                   const arr& Jp1, const arr& Jp2,
-                   const arr& Jx1, const arr& Jx2);
+                   const arr& Jp1, const arr& Jp2);
 
   void marginAnalysis(double margin); ///< analyses not only closest obj support (the simplex) but all points within a margin
 

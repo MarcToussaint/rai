@@ -17,11 +17,8 @@
 #include "frame.h"
 #include <Geo/pairCollision.h>
 
-TaskMap_PairCollision::TaskMap_PairCollision(const mlr::Frame* s1, const mlr::Frame *s2, bool negative) : negScalar(negative){
-  CHECK(s1 && s2,"");
-  CHECK(s1->shape && s2->shape, "");
-  i = s1->ID;
-  j = s2->ID;
+TaskMap_PairCollision::TaskMap_PairCollision(int _i, int _j, bool negative)
+  : i(_i), j(_j), negScalar(negative){
 }
 
 TaskMap_PairCollision::TaskMap_PairCollision(const mlr::KinematicWorld& K, const char* s1, const char* s2, bool negative) : negScalar(negative){
@@ -58,7 +55,7 @@ void TaskMap_PairCollision::phi(arr& y, arr& J, const mlr::KinematicWorld& K, in
   if(!negScalar){
     coll.kinVector(y, J, Jp1, Jp2, Jx1, Jx2);
   }else{
-    coll.kinDistance(y, J, Jp1, Jp2, Jx1, Jx2);
+    coll.kinDistance(y, J, Jp1, Jp2);
     y *= -1.;
     if(&J) J *= -1.;
   }

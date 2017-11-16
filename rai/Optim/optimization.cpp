@@ -67,6 +67,7 @@ OptOptions::OptOptions() {
   stopGTolerance= mlr::getParameter<double>("opt/stopGTolerance", -1.);
   stopEvals = mlr::getParameter<uint>  ("opt/stopEvals", 1000);
   stopIters = mlr::getParameter<uint>  ("opt/stopIters", 1000);
+  stopOuters = mlr::getParameter<uint>  ("opt/stopOuters", 1000);
   stopLineSteps = mlr::getParameter<uint>  ("opt/stopLineSteps", 10);
   stopTinySteps = mlr::getParameter<uint>  ("opt/stopTinySteps", 10);
   initStep  = mlr::getParameter<double>("opt/initStep", 1.);

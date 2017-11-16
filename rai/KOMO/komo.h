@@ -155,7 +155,7 @@ struct KOMO{
 
   //-- optimization macros
   void setSpline(uint splineT);   ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
-  void reset();                   ///< reset the optimizer (initializes x to a default path)
+  void reset(double initNoise=.01);      ///< reset the optimizer (initializes x to a default path)
   void run();                     ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
   arr getPath(const StringA& joints);
   void reportProblem(ostream &os=std::cout);
@@ -172,6 +172,7 @@ struct KOMO{
   //
 
   Task* addTask(const char* name, TaskMap *map, const ObjectiveType& termType); ///< manually add a task
+  void clearTasks();
   bool parseTask(const Node *n, int stepsPerPhase=-1);           ///< read a single task from a node-spec
   void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES
   arr getInitialization();      ///< this reads out the initial state trajectory after 'setupConfigurations'
