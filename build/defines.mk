@@ -7,6 +7,10 @@
 
 ARCH = $(shell uname -m)
 
+ifeq ($(JSON),1)
+LIBS += -ljsoncpp
+endif
+
 ifeq ($(OPENMP),1)
 CXXFLAGS += -fopenmp -DOPENMP
 endif
