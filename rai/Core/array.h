@@ -90,7 +90,7 @@ template<class T> struct Array : std::vector<T> {
   SpecialArray *special; ///< arbitrary auxiliary data, depends on special
 
   typedef std::vector<T> vec_type;
-  typedef bool (*ElemCompare)(const T& a, const T& b);
+  typedef std::function<bool(const T& a, const T& b)> ElemCompare;
 
   /// @name constructors
   Array();
@@ -734,6 +734,7 @@ template<class T> mlr::Array<T> elemWiseMin(const mlr::Array<T>& v, const mlr::A
 template<class T> mlr::Array<T> elemWiseMax(const mlr::Array<T>& v, const mlr::Array<T>& w);
 template<class T> mlr::Array<T> elemWisemax(const mlr::Array<T>& x,const T& y);
 template<class T> mlr::Array<T> elemWisemax(const T& x,const mlr::Array<T>& y);
+template<class T> mlr::Array<T> elemWiseHinge(const mlr::Array<T>& x);
 
 template<class T> void writeConsecutiveConstant(std::ostream& os, const mlr::Array<T>& x);
 

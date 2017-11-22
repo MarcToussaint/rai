@@ -44,3 +44,5 @@ double forceClosure(const arr& X,  //contact points (size Nx3)
 arr getHull(const arr& V, uintA& T=NoUintA);
 
 void getDelaunayEdges(uintA& E, const arr& V);
+
+arr convconv_intersect(const arr& A, const arr& B);

@@ -165,13 +165,84 @@ void TEST(GJK_Jacobians2) {
 
 //===========================================================================
 
+void TEST(GJK_Jacobians3) {
+  mlr::KinematicWorld K;
+  mlr::Frame base(K), B1(K), B2(K);
+  mlr::Joint J1(base, B1), J2(base, B2);
+  mlr::Shape s1(B1), s2(B2);
+  J1.type = mlr::JT_free;
+  J2.type = mlr::JT_rigid;
+//  B1.Q.setRandom();
+  B1.Q.pos = {0.,0., 1.00};
+  B2.Q.pos = {0.,0., 1.21};
+  B1.Q.pos.x += .03;
+  B1.Q.pos.y += .03;
+//  B1.Q.rot.addX(.01);
+  s1.cont=s2.cont = true;
+  B1.name = "1"; B2.name="2";
+
+  s1.type() = s2.type() = mlr::ST_ssBox;
+  s1.size() = {.2, .2, .2, .01 };
+  s2.size() = {.2, .2, .2, .01 };
+  s1.geom().createMeshes();
+
+  K.calc_activeSets();
+  K.calc_fwdPropagateFrames();
+
+  K.gl().update();
+
+  K.swift().initActivations(K, 0);
+  K.stepSwift();
+  K.reportProxies();
+  K.orsDrawProxies=true;
+
+  VectorFunction f = [&K](arr& y, arr& J, const arr& x) -> void {
+    K.setJointState(x);
+    K.stepSwift();
+//    K.kinematicsProxyCost(y, (&J?J:NoArr), .2);
+    TaskMap_PairCollision gjk(1, 2, true);
+    gjk.phi(y, J, K);
+  };
+
+  arr q = K.getJointState();
+  K.watch(true);
+  double y_last=0.;
+  for(uint t=0;t<1000;t++){
+    K.setJointState(q);
+    K.stepSwift();
+//    K.reportProxies(cout, -1., false);
+
+    checkJacobian(f, q, 1e-4);
+
+    TaskMap_QuaternionNorms qn;
+
+    arr y,J;
+    K.kinematicsProxyCost(y, J, .2);
+
+    arr y2, J2;
+    qn.phi(y2, J2, K);
+
+    cout <<"contact meassure = " <<y_last - y(0) <<' ' <<y2(0) <<endl;
+    y_last = y(0);
+    K.watch(true, STRING("t=" <<t <<"  movement along negative contact gradient"));
+
+    q -= 1e-3*J + 1e-2*(~y2*J2);
+
+  }
+
+  K.gl().watch();
+}
+
+//===========================================================================
+
 int MAIN(int argc, char** argv){
   mlr::initCmdLine(argc, argv);
 
   rnd.clockSeed();
 
 //  testGJK_Jacobians();
-  testGJK_Jacobians2();
+//  testGJK_Jacobians2();
+  testGJK_Jacobians3();
 
   return 0;
 }

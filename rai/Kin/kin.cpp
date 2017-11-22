@@ -793,6 +793,27 @@ void mlr::KinematicWorld::kinematicsQuat(arr& y, arr& J, Frame *a) const { //TOD
   }
 }
 
+////* This Jacobian directly gives the implied rotation vector: multiplied with \dot q it gives the angular velocity of body b */
+//void mlr::KinematicWorld::posMatrix(arr& J, Frame *a) const {
+//  uint N = getJointStateDimension();
+//  J.resize(3, N).setZero();
+
+//  while(a) { //loop backward down the kinematic tree
+//    Joint *j=a->joint;
+//    if(j && j->active) {
+//      uint j_idx=j->qIndex;
+//      if(j_idx>=N) CHECK(j->type==JT_rigid, "");
+//      if(j_idx<N){
+//        J(0, j_idx) += j->X().pos.x;
+//        J(1, j_idx) += j->X().pos.y;
+//        J(2, j_idx) += j->X().pos.z;
+//        }
+//      }
+//    }
+//    a = a->parent;
+//  }
+//}
+
 //* This Jacobian directly gives the implied rotation vector: multiplied with \dot q it gives the angular velocity of body b */
 void mlr::KinematicWorld::axesMatrix(arr& J, Frame *a) const {
   uint N = getJointStateDimension();

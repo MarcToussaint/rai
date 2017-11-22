@@ -2766,7 +2766,7 @@ template<class T> mlr::Array<T> elemWiseMin(const mlr::Array<T>& v, const mlr::A
 template<class T> mlr::Array<T> elemWiseMax(const mlr::Array<T>& v, const mlr::Array<T>& w) {
   mlr::Array<T> z;
   z.resizeAs(v);
-  for(uint i=0; i<v.N; i++) z(i) = v.elem(i)>w.elem(i)?v.elem(i):w.elem(i);
+  for(uint i=0; i<v.N; i++) z.elem(i) = v.elem(i)>w.elem(i)?v.elem(i):w.elem(i);
   return z;
 }
 
@@ -2782,6 +2782,14 @@ template<class T> mlr::Array<T> elemWiseMax(const T& v, const mlr::Array<T>& w) 
   z.resizeAs(w.N);
   for(uint i=0; i<w.N; i++) z.elem(i) = v>w.elem(i)?v:w.elem(i);
   return z;
+}
+
+template<class T> mlr::Array<T> elemWiseHinge(const mlr::Array<T> &x) {
+  mlr::Array<T> z;
+  z.resizeAs(x);
+  for(uint i=0; i<x.N; i++) z.elem(i) = x.elem(i)>0?x.elem(i):0;
+  return z;
+
 }
 
 template<class T> void writeConsecutiveConstant(std::ostream &os, const mlr::Array<T> &x){
@@ -4145,3 +4153,4 @@ void maximumSpanningTree(mlr::Array<vert*>& V, mlr::Array<edge*>& E, const Compa
 //}
 
 #endif
+

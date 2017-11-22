@@ -10,6 +10,7 @@ extern "C"{
 #include <Gui/opengl.h>
 #include <ccd/ccd.h>
 #include <ccd/quat.h>
+#include <Geo/qhull.h>
 
 PairCollision::PairCollision(const mlr::Mesh &mesh1, const mlr::Mesh &mesh2, mlr::Transformation &t1, mlr::Transformation &t2, double rad1, double rad2)
   : mesh1(mesh1), mesh2(mesh2), t1(t1), t2(t2), rad1(rad1), rad2(rad2) {
@@ -32,6 +33,9 @@ PairCollision::PairCollision(const mlr::Mesh &mesh1, const mlr::Mesh &mesh2, mlr
   CHECK(mlr::sign(distance) * scalarProduct(normal, p1-p2)  > -1e-10, "");
 
   CHECK_ZERO(scalarProduct(normal, p1-p2) - distance, 1e-5, "");
+
+
+  nearSupportAnalysis(normal);
 
   //in current state, the rad1, rad2, have not been used at all!!
 }
@@ -84,6 +88,7 @@ double PairCollision::libccd_MPR(const mlr::Mesh& m1,const mlr::Mesh& m2){
   //    int intersect = ccdMPRIntersect(&S.m1, &S.m2, &ccd);
   int ret = ccdMPRPenetration(&m1, &m2, &ccd, &depth, &_dir, &_pos, simplex);
 
+  normal.setCarray(_dir.v, 3);
   if(ret<0) return 0.; //no intersection
   //res == 1  // Touching contact on portal's v1.
   //res == 2  // Origin lies on v0-v1 segment.
@@ -130,6 +135,9 @@ double PairCollision::libccd_MPR(const mlr::Mesh& m1,const mlr::Mesh& m2){
   if(simplexType(3, 2)){
     d=coll_2on3(p2, p1, normal, simplex2, simplex1);
   }
+  if(simplexType(3, 3)){
+    d=coll_3on3(p2, p1, normal, simplex2, simplex1);
+  }
 
   return fabs(d);
 }
@@ -174,7 +182,6 @@ double PairCollision::GJK_sqrDistance(){
 
   return d2;
 }
-
 
 void PairCollision::glDraw(OpenGL &){
   arr P1=p1, P2=p2;
@@ -285,13 +292,46 @@ void PairCollision::kinDistance(arr &y, arr &J,
   }
 }
 
-void PairCollision::marginAnalysis(double margin){
+void PairCollision::kinDistance2(arr &y, arr& J,
+                                 const arr& JSimplex1, const arr& JSimplex2){
+  y = ARR(distance-rad1-rad2);
+  if(&J){
+    CHECK_EQ(simplex1.d0, JSimplex1.d0, "");
+    CHECK_EQ(simplex2.d0, JSimplex2.d0, "");
+
+    arr J1 = ~normal * JSimplex1[0];
+    for(uint i=1;i<simplex1.d0;i++){
+      arr Ji = ~normal * JSimplex1[i];
+      J1 = elemWiseMin(J1, Ji);
+    }
+
+    arr J2 = ~normal * JSimplex2[0];
+    for(uint i=1;i<simplex2.d0;i++){
+      arr Ji = ~normal * JSimplex2[i];
+      J2 = elemWiseMax(J2, Ji);
+    }
+
+    J = J1 - J2;
+
+    //-- account for radii
+    if(rad1>0. || rad2>0.){
+      double rad=rad1+rad2;
+      double eps = 1e-12;
+      double fac = (distance-rad)/(distance+eps);
+      arr d_fac = ((1.-fac)/(distance+eps)) *J;
+      J = J*fac + distance*d_fac;
+    }
+  }
+}
+
+
+void PairCollision::nearSupportAnalysis(const arr &normal, double eps){
   mlr::Mesh M1(mesh1); t1.applyOnPointArray(M1.V);
   mlr::Mesh M2(mesh2); t2.applyOnPointArray(M2.V);
 
   uintA pts1, pts2;
-  M1.supportMargin(pts1, -normal, margin);
-  M2.supportMargin(pts2, normal, margin);
+  M1.supportMargin(pts1, -normal, eps);
+  M2.supportMargin(pts2, normal, eps);
   //    cout <<"margin analysis: #1=" <<pts1.N <<"  #2=" <<pts2.N <<endl;
 
   simplex1.resize(0,3);
@@ -300,12 +340,25 @@ void PairCollision::marginAnalysis(double margin){
   simplex2.resize(0,3);
   for(uint i:pts2) simplex2.append(M2.V[i]);
 
-  //eigen value analysis
+  //first get projection
+  mlr::Quaternion R;
+  R.setDiff(normal, Vector_z);
+  arr P = R.getArr();
+  P.delRows(2);
   m1 = mean(simplex1);
   m2 = mean(simplex2);
+
+  arr C = convconv_intersect(simplex1*~P, simplex2*~P);
+
+  simplex1 = C*P + repmat( ~(simplex1[0] - ~P*P*simplex1[0]) ,C.d0, 1);
+  simplex2 = C*P + repmat( ~(simplex2[0] - ~P*P*simplex2[0]) ,C.d0, 1);
+
+  //eigen value analysis
+//  arr p = .5*(m1+m2);
+
+#if 0
   arr var1 = covar(simplex1);
   arr var2 = covar(simplex2);
-
   arr sig1, sig2, vec1, vec2;
   lapack_EigenDecomp(var1, sig1, vec1);
   lapack_EigenDecomp(var2, sig2, vec2);
@@ -316,6 +369,7 @@ void PairCollision::marginAnalysis(double margin){
     if(sig1(i)>1e-8) eig1.append(sqrt(sig1(i)) * vec1[i]);
     if(sig2(i)>1e-8) eig2.append(sqrt(sig2(i)) * vec2[i]);
   }
+#endif
 }
 
 double coll_1on3(arr &pInTri, arr& normal, const arr &pts1, const arr &pts2){
@@ -363,6 +417,15 @@ double coll_2on2(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2
 double coll_2on3(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2){
   CHECK(pts1.nd==2 && pts1.d0==2 && pts1.d1==3, "I need a set of 2 pts1");
   p1 = .5*(pts1[0]+pts1[1]); //take center of line segment as single point
+  p1.reshape(1,3);
+  double d = coll_1on3(p2, normal, p1, pts2);
+  p1.reshape(3);
+  return d;
+}
+
+double coll_3on3(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2){
+  CHECK(pts1.nd==2 && pts1.d0==3 && pts1.d1==3, "I need a set of 2 pts1");
+  p1 = (1./3.)*(pts1[0]+pts1[1]+pts1[2]); //take center of line segment as single point
   p1.reshape(1,3);
   double d = coll_1on3(p2, normal, p1, pts2);
   p1.reshape(3);

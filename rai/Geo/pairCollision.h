@@ -32,8 +32,10 @@ struct PairCollision : GLDrawer{
 
   void kinDistance(arr& y, arr& J,
                    const arr& Jp1, const arr& Jp2);
+  void kinDistance2(arr &y, arr& J,
+                    const arr& JSimplex1, const arr& JSimplex2);
 
-  void marginAnalysis(double margin); ///< analyses not only closest obj support (the simplex) but all points within a margin
+  void nearSupportAnalysis(const arr& normal, double eps=1e-6); ///< analyses not only closest obj support (the simplex) but all points within a margin
 
 private:
   double libccd_MPR(const mlr::Mesh& m1,const mlr::Mesh& m2); //calls ccdMPRPenetration of libccd
@@ -45,5 +47,6 @@ private:
 double coll_1on3(arr& pInTri, arr& normal, const arr& pts1, const arr& pts2);
 double coll_2on2(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2);
 double coll_2on3(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2);
+double coll_3on3(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2);
 
 stdOutPipe(PairCollision)
