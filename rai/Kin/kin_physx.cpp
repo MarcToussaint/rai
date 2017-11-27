@@ -90,7 +90,7 @@ void PxTrans2OrsTrans(mlr::Transformation& f, const PxTransform& pose) {
   f.rot.set(pose.q.w, pose.q.x, pose.q.y, pose.q.z);
 }
 
-PxTransform OrsTrans2PxTrans(const mlr::Transformation& f) {
+PxTransform conv_Transformation2PxTrans(const mlr::Transformation& f) {
   return PxTransform(PxVec3(f.pos.x, f.pos.y, f.pos.z), PxQuat(f.rot.x, f.rot.y, f.rot.z, f.rot.w));
 }
 
@@ -232,7 +232,7 @@ PhysXInterface::~PhysXInterface() {
 void PhysXInterface::step(double tau) {
   //-- push positions of all kinematic objects
   for(mlr::Frame *b: world.frames) if(b->inertia && b->inertia->type==mlr::BT_kinematic) {
-    ((PxRigidDynamic*)s->actors(b->ID))->setKinematicTarget(OrsTrans2PxTrans(b->X));
+    ((PxRigidDynamic*)s->actors(b->ID))->setKinematicTarget(conv_Transformation2PxTrans(b->X));
   }
 
   //-- dynamic simulation
@@ -270,6 +270,8 @@ void sPhysXInterface::addJoint(mlr::Joint *jj) {
   while(joints.N <= jj->frame.ID)
     joints.append(NULL);
 
+//  cout <<"ADDING JOINT " <<jj->frame.parent->name <<'-' <<jj->frame.name <<endl;
+
   mlr::Transformation rel;
   mlr::Frame *from = jj->frame.getUpwardLink(rel);
 
@@ -278,7 +280,7 @@ void sPhysXInterface::addJoint(mlr::Joint *jj) {
   CHECK(from, "this joint ('" <<jj->frame.name <<"') links from NULL");
   CHECK(from->inertia, "this joint ('" <<jj->frame.name <<"') links from a frame '" <<from->name <<"' without inertia");
 
-  PxTransform A = OrsTrans2PxTrans(rel);
+  PxTransform A = conv_Transformation2PxTrans(rel);
   PxTransform B = Id_PxTrans();
   switch(jj->type) {
     case mlr::JT_free: //do nothing
@@ -405,13 +407,13 @@ void sPhysXInterface::addBody(mlr::Frame *b, physx::PxMaterial *mMaterial) {
   if(!b->inertia) return;
   switch(b->inertia->type) {
   case mlr::BT_static:
-    actor = (PxRigidDynamic*) mPhysics->createRigidStatic(OrsTrans2PxTrans(b->X));
+    actor = (PxRigidDynamic*) mPhysics->createRigidStatic(conv_Transformation2PxTrans(b->X));
     break;
   case mlr::BT_dynamic:
-    actor = mPhysics->createRigidDynamic(OrsTrans2PxTrans(b->X));
+    actor = mPhysics->createRigidDynamic(conv_Transformation2PxTrans(b->X));
     break;
   case mlr::BT_kinematic:
-    actor = mPhysics->createRigidDynamic(OrsTrans2PxTrans(b->X));
+    actor = mPhysics->createRigidDynamic(conv_Transformation2PxTrans(b->X));
     actor->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, true);
     break;
   case mlr::BT_none:
@@ -436,7 +438,7 @@ void sPhysXInterface::addBody(mlr::Frame *b, physx::PxMaterial *mMaterial) {
       }
       break;
       case mlr::ST_capsule: {
-        geometry = new PxCapsuleGeometry(s->size(3), s->size(2));
+        geometry = new PxCapsuleGeometry(s->size(3), .5*s->size(2));
       }
       break;
       case mlr::ST_cylinder:
@@ -466,7 +468,12 @@ void sPhysXInterface::addBody(mlr::Frame *b, physx::PxMaterial *mMaterial) {
         NIY;
     }
     if(geometry) {
-      PxShape* shape = actor->createShape(*geometry, *mMaterial, OrsTrans2PxTrans(s->frame.Q));
+      PxShape* shape = NULL;
+      if(&s->frame==b){
+        shape = actor->createShape(*geometry, *mMaterial);
+      }else{
+        shape = actor->createShape(*geometry, *mMaterial, conv_Transformation2PxTrans(s->frame.Q));
+      }
       CHECK(shape, "create shape failed!");
     }
     //actor = PxCreateDynamic(*mPhysics, OrsTrans2PxTrans(s->X), *geometry, *mMaterial, 1.f);
@@ -517,7 +524,7 @@ void PhysXInterface::pushToPhysx() {
   PxMaterial* mMaterial = mPhysics->createMaterial(3.f, 3.f, 0.2f);
   for_list(mlr::Frame, b, world.frames) {
     if(s->actors.N > b_COUNT) {
-      s->actors(b_COUNT)->setGlobalPose(OrsTrans2PxTrans(b->X));
+      s->actors(b_COUNT)->setGlobalPose(conv_Transformation2PxTrans(b->X));
     } else {
       s->addBody(b, mMaterial);
     }
