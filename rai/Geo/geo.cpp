@@ -38,7 +38,7 @@ mlr::Transformation& NoTransformation = *((mlr::Transformation*)NULL);
 
 namespace mlr {
 
-double scalarProduct(const mlr::Quaternion& a, const mlr::Quaternion& b);
+double quatScalarProduct(const mlr::Quaternion& a, const mlr::Quaternion& b);
 
 double& Vector::operator()(uint i) {
   CHECK(i<3,"out of range");
@@ -601,7 +601,7 @@ void Quaternion::setRandom() {
 /// sets this to a smooth interpolation between two rotations
 void Quaternion::setInterpolate(double t, const Quaternion& a, const Quaternion b) {
   double sign=1.;
-  if(scalarProduct(a, b)<0) sign=-1.;
+  if(quatScalarProduct(a, b)<0) sign=-1.;
   w=a.w+t*(sign*b.w-a.w);
   x=a.x+t*(sign*b.x-a.x);
   y=a.y+t*(sign*b.y-a.y);
@@ -724,7 +724,7 @@ double Quaternion::sqrDiffZero() const { return (w>0.?mlr::sqr(w-1.):mlr::sqr(w+
 double Quaternion::sqrDiff(const Quaternion& _q2) const{
   arr q1(&w, 4, true);
   arr q2(&_q2.w, 4, true);
-  if(scalarProduct(q1,q2)>=0) return sqrDistance(q1, q2);
+  if(quatScalarProduct(q1,q2)>=0) return sqrDistance(q1, q2);
   return sqrDistance(-q1,q2);
 }
 
@@ -1647,7 +1647,7 @@ void Camera::setDefault(){
 //==============================================================================
 
 /// use as similarity measure (distance = 1 - |scalarprod|)
-double scalarProduct(const Quaternion& a, const Quaternion& b) {
+double quatScalarProduct(const Quaternion& a, const Quaternion& b) {
   return a.w*b.w+a.x*b.x+a.y*b.y+a.z*b.z;
 }
 
@@ -1659,6 +1659,10 @@ std::ostream& operator<<(std::ostream& os, const Vector& x)    { x.write(os); re
 std::ostream& operator<<(std::ostream& os, const Matrix& x)    { x.write(os); return os; }
 std::ostream& operator<<(std::ostream& os, const Quaternion& x) { x.write(os); return os; }
 std::ostream& operator<<(std::ostream& os, const Transformation& x)     { x.write(os); return os; }
+
+double sqrDistance(const Vector &a, const Vector &b){
+  return (a-b).lengthSqr();
+}
 
 } //namespace mlr
 

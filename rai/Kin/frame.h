@@ -12,8 +12,6 @@
  *  joint: 7bits
  *  body: maybe as is
  *
- * Shape: refer to GeomStore instead of own mesh
- *
  * Collisions: The Proxies in Kin should only call GJK or exact ssbox-distance --> no use of center-of-mesh anymore!
  *
  */
@@ -22,6 +20,7 @@ namespace mlr{
 struct Frame;
 struct Joint;
 struct Shape;
+struct Contact;
 //enum ShapeType { ST_none=-1, ST_box=0, ST_sphere, ST_capsule, ST_mesh, ST_cylinder, ST_marker, ST_retired_SSBox, ST_pointCloud, ST_ssCvx, ST_ssBox };
 enum JointType { JT_none=-1, JT_hingeX=0, JT_hingeY=1, JT_hingeZ=2, JT_transX=3, JT_transY=4, JT_transZ=5, JT_transXY=6, JT_trans3=7, JT_transXYPhi=8, JT_universal=9, JT_rigid=10, JT_quatBall=11, JT_phiTransXY=12, JT_XBall, JT_free };
 enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static };
@@ -52,9 +51,10 @@ struct Frame {
   bool active=true;          ///< if false, this frame is skipped in computations (e.g. in fwd propagation)
 
   //attachments to the frame
-  struct Joint *joint=NULL;          ///< this frame is an articulated joint
-  struct Shape *shape=NULL;          ///< this frame has a (collision or visual) geometry
-  struct Inertia *inertia=NULL; ///< this frame has inertia (is a mass)
+  struct Joint *joint=NULL;      ///< this frame is an articulated joint
+  struct Shape *shape=NULL;      ///< this frame has a (collision or visual) geometry
+  struct Inertia *inertia=NULL;  ///< this frame has inertia (is a mass)
+  Array<Contact*> contacts;
 
   Frame(KinematicWorld& _K, const Frame *copyBody=NULL);
   Frame(Frame *_parent);

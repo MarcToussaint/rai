@@ -35,7 +35,11 @@ PairCollision::PairCollision(const mlr::Mesh &mesh1, const mlr::Mesh &mesh2, mlr
   CHECK_ZERO(scalarProduct(normal, p1-p2) - distance, 1e-5, "");
 
 
-  nearSupportAnalysis(normal);
+//  if(distance-rad1-rad2>0.){
+//    nearSupportAnalysis(normal, 1e-2);
+//  }else{
+//    nearSupportAnalysis(normal, -(distance-rad1-rad2)+1e-2);
+//  }
 
   //in current state, the rad1, rad2, have not been used at all!!
 }
@@ -294,6 +298,9 @@ void PairCollision::kinDistance(arr &y, arr &J,
 
 void PairCollision::kinDistance2(arr &y, arr& J,
                                  const arr& JSimplex1, const arr& JSimplex2){
+
+  HALT("this doesn't make sense");
+
   y = ARR(distance-rad1-rad2);
   if(&J){
     CHECK_EQ(simplex1.d0, JSimplex1.d0, "");
@@ -336,10 +343,22 @@ void PairCollision::nearSupportAnalysis(const arr &normal, double eps){
 
   simplex1.resize(0,3);
   for(uint i:pts1) simplex1.append(M1.V[i]);
+  dSimplex1.resize(simplex1.d0);
+  for(uint i=0;i<simplex1.d0;i++){
+    dSimplex1(i) = scalarProduct(simplex1[i]-p2, normal);
+  }
+//  pullPointsIntoHull(simplex1, M2.V);
 
   simplex2.resize(0,3);
   for(uint i:pts2) simplex2.append(M2.V[i]);
+  dSimplex2.resize(simplex2.d0);
+  for(uint i=0;i<simplex2.d0;i++){
+    dSimplex2(i) = -scalarProduct(simplex2[i]-p1, normal);
+  }
+  pullPointsIntoHull(simplex2, M1.V);
+  pullPointsIntoHull(simplex2, M2.V);
 
+#if 0
   //first get projection
   mlr::Quaternion R;
   R.setDiff(normal, Vector_z);
@@ -350,11 +369,15 @@ void PairCollision::nearSupportAnalysis(const arr &normal, double eps){
 
   arr C = convconv_intersect(simplex1*~P, simplex2*~P);
 
-  simplex1 = C*P + repmat( ~(simplex1[0] - ~P*P*simplex1[0]) ,C.d0, 1);
-  simplex2 = C*P + repmat( ~(simplex2[0] - ~P*P*simplex2[0]) ,C.d0, 1);
+  simplex1 = simplex2 = C*P;
+  for(uint i=0;i<simplex1.d0;i++){
+    simplex1[i] += p2 - ~P*P*p2 + (+dSimplex1(i) - rad1) * normal;
+    simplex2[i] += p1 - ~P*P*p1 + (-dSimplex2(i) + rad2) * normal;
+  }
+#endif
 
   //eigen value analysis
-//  arr p = .5*(m1+m2);
+  //arr p = .5*(m1+m2);
 
 #if 0
   arr var1 = covar(simplex1);

@@ -282,8 +282,15 @@ bool OptConstrained::step(){
 
   arr x_old = newton.x;
 
+  //check for no constraints
+  bool newtonOnce=false;
+  if(UCP.get_dimOfType(OT_ineq)==0 && UCP.get_dimOfType(OT_eq)==0){
+    if(opt.verbose>0) cout <<"** optConstr. NO CONSTRAINTS -> run Newton once and stop" <<endl;
+    newtonOnce=true;
+  }
+
   //run newton on the Lagrangian problem
-  if(opt.constrainedMethod==squaredPenaltyFixed){
+  if(newtonOnce || opt.constrainedMethod==squaredPenaltyFixed){
     newton.run();
   }else{
     double stopTol = newton.o.stopTolerance;
@@ -311,10 +318,14 @@ bool OptConstrained::step(){
     return true;
   }
 
-  //check for no constraints
-  if(UCP.get_dimOfType(OT_ineq) + UCP.get_dimOfType(OT_eq) == 0){
-    if(opt.verbose>0) cout <<"** optConstr. NO CONSTRAINTS -> run Newton againg and stop" <<endl;
-    newton.run();
+  //check for newtonOnce
+  if(newtonOnce){
+    return true;
+  }
+
+  //check for squaredPenaltyFixed method
+  if(opt.constrainedMethod==squaredPenaltyFixed){
+    if(opt.verbose>0) cout <<"** optConstr. squaredPenaltyFixed stops after one outer iteration" <<endl;
     return true;
   }
 

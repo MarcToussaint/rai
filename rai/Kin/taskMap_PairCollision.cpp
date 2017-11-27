@@ -55,7 +55,7 @@ void TaskMap_PairCollision::phi(arr& y, arr& J, const mlr::KinematicWorld& K, in
   if(!negScalar){
     coll.kinVector(y, J, Jp1, Jp2, Jx1, Jx2);
   }else{
-#if 1
+#if 0
     uint n=K.getJointStateDimension();
     arr JS1(coll.simplex1.d0, 3, n), JS2(coll.simplex2.d0, 3, n);
     for(uint i=0;i<coll.simplex1.d0;i++) K.jacobianPos(JS1[i](), &s1->frame, coll.simplex1[i]);

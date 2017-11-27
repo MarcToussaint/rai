@@ -134,6 +134,7 @@ void mlr::Frame::unLink(){
 }
 
 void mlr::Frame::linkFrom(mlr::Frame *_parent, bool adoptRelTransform){
+  if(parent==_parent) return;
   CHECK(!parent,"");
   parent=_parent;
   parent->outLinks.append(this);

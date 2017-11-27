@@ -173,7 +173,7 @@ void TEST(GJK_Jacobians3) {
   J1.type = mlr::JT_free;
   J2.type = mlr::JT_rigid;
 //  B1.Q.setRandom();
-  B1.Q.pos = {0.,0., 1.00};
+  B1.Q.pos = {0.,0., 1.05};
   B2.Q.pos = {0.,0., 1.21};
   B1.Q.pos.x += .03;
   B1.Q.pos.y += .03;
@@ -241,8 +241,8 @@ int MAIN(int argc, char** argv){
   rnd.clockSeed();
 
 //  testGJK_Jacobians();
-//  testGJK_Jacobians2();
-  testGJK_Jacobians3();
+  testGJK_Jacobians2();
+//  testGJK_Jacobians3();
 
   return 0;
 }

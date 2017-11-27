@@ -556,28 +556,44 @@ void glDrawDisk(float radius) {
   gluDeleteQuadric(style);
 }
 
-void glDrawProxy(const arr& p1, const arr& p2, double diskSize, int colorCode) {
-    glLoadIdentity();
-    if(!colorCode) glColor(.8,.2,.2);
-    else glColor(colorCode);
-    glBegin(GL_LINES);
-    glVertex3dv(p1.p);
-    glVertex3dv(p2.p);
-    glEnd();
-    glDisable(GL_CULL_FACE);
-    mlr::Transformation f;
-    f.pos=p1;
+void glDrawProxy(const arr& p1, const arr& p2, double diskSize, int colorCode, const arr& norm, double rad1, double rad2) {
+  glLoadIdentity();
+  if(!colorCode) glColor(.8,.2,.2);
+  else glColor(colorCode);
+  glBegin(GL_LINES);
+  glVertex3dv(p1.p);
+  glVertex3dv(p2.p);
+  glEnd();
+  glDisable(GL_CULL_FACE);
+  mlr::Transformation f;
+  f.pos=p1;
+  if(&norm){
+    f.rot.setDiff(mlr::Vector(0, 0, 1), mlr::Vector(norm));
+  }else{
     f.rot.setDiff(mlr::Vector(0, 0, 1), mlr::Vector(p1-p2));
-    double GLmatrix[16];
-    f.getAffineMatrixGL(GLmatrix);
-    glLoadMatrixd(GLmatrix);
-    glDrawDisk(diskSize);
+  }
+  double GLmatrix[16];
+  f.getAffineMatrixGL(GLmatrix);
+  glLoadMatrixd(GLmatrix);
+  glDrawDisk(diskSize);
 
-    f.pos=p2;
-    f.getAffineMatrixGL(GLmatrix);
-    glLoadMatrixd(GLmatrix);
-    glDrawDisk(diskSize);
-    glEnable(GL_CULL_FACE);
+  f.pos=p2;
+  f.getAffineMatrixGL(GLmatrix);
+  glLoadMatrixd(GLmatrix);
+  glDrawDisk(diskSize);
+  glEnable(GL_CULL_FACE);
+
+  glLoadIdentity();
+  if(&norm && rad1>0.){
+    arr p = p1 - rad1*norm;
+    glColor(0., 1., 0., 1.);
+    glDrawDiamond(p(0), p(1), p(2), .01, .01, .01);
+  }
+  if(&norm && rad1>0.){
+    arr p = p2 + rad2*norm;
+    glColor(0., 0., 1., 1.);
+    glDrawDiamond(p(0), p(1), p(2), .01, .01, .01);
+  }
 }
 
 void glDrawSphere(float radius) {

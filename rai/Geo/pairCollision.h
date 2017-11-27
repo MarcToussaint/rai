@@ -16,6 +16,7 @@ struct PairCollision : GLDrawer{
   arr normal;      ///< normal such that "<normal, p1-p2> = distance" is guaranteed (pointing from obj2 to obj1)
   arr simplex1;    ///< simplex on obj1 defining the collision geometry
   arr simplex2;    ///< simplex on obj2 defining the collision geometry
+  arr dSimplex1, dSimplex2;
   arr m1, m2, eig1, eig2; ///< output of marginAnalysis: mean and eigenvalues of ALL point on the objs (not only simplex) that define the collision
 
   PairCollision(const mlr::Mesh& mesh1, const mlr::Mesh& mesh2,
@@ -26,6 +27,7 @@ struct PairCollision : GLDrawer{
 
   void glDraw(struct OpenGL&);
 
+  double getDistance(){ return distance-rad1-rad2; }
   void kinVector(arr& y, arr& J,
                  const arr& Jp1, const arr& Jp2,
                  const arr& Jx1, const arr& Jx2);

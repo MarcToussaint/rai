@@ -25,6 +25,7 @@
 #ifdef MLR_QHULL
 
 #include "mesh.h"
+#include "qhull.h"
 
 extern "C" {
   #include <qhull/qhull_a.h>
@@ -89,7 +90,7 @@ void getQhullState(uint D, arr& points, arr& vertices, arr& lines) {
 
 //===========================================================================
 
-double distanceToConvexHull(const arr &X, const arr &y, arr *projectedPoint, uintA *faceVertices, bool freeqhull) {
+double distanceToConvexHull(const arr &X, const arr &y, arr& distances, arr &projectedPoints, uintA *faceVertices, bool freeqhull) {
   auto lock = qhullMutex();
 
   int exitcode;
@@ -98,42 +99,51 @@ double distanceToConvexHull(const arr &X, const arr &y, arr *projectedPoint, uin
   exitcode = qh_new_qhull(X.d1, X.d0, X.p, false, cmd, NULL, stderr);
   if(exitcode) HALT("qh_new_qhull error - exitcode " <<exitcode);
   
-  uint i;
   facetT *bestfacet;
   double bestdist;
   boolT isoutside;
   int totpart;
-  
-  bestfacet = qh_findbest(y.p, qh facet_list,
-                          !qh_ALL, !qh_ISnewfacets, !qh_ALL,
-                          &bestdist, &isoutside, &totpart);
-                          
-  /*alternatives??
+
+  arr Y;
+  Y.referTo(y);
+  if(y.nd==1) Y.reshape(1,Y.N);
+
+  for(uint i=0;i<Y.d0;i++){
+    bestfacet = qh_findbest(Y[i].p, qh facet_list,
+                            !qh_ALL, !qh_ISnewfacets, !qh_ALL,
+                            &bestdist, &isoutside, &totpart);
+
+    /*alternatives??
   //qh_findbestfacet(origin0, qh_ALL, &bestdist, &isoutside);
   
   //bestfacet= qh_findbest (origin0, qh facet_list,
    //  qh_ALL, !qh_ISnewfacets, qh_ALL , // qh_NOupper
   //        &bestdist, &isoutside, &totpart);
   */
-  
-  CHECK(length(y)>1e-10 || fabs(bestdist-bestfacet->offset)<1e-10, "inconsistent!");
-  CHECK((isoutside && bestdist>-1e-10) || (!isoutside && bestdist<1e-10), "");
-  
-  if(projectedPoint) {
-    *projectedPoint=y;
-    double *normal=bestfacet->normal;
-    for(i=X.d1; i--;)(*projectedPoint)(i) -= bestdist * normal[i];
-  }
-  
-  if(faceVertices) {
-    faceVertices->clear();
-    vertexT *vertex, **vertexp;
-    FOREACHvertex_(bestfacet->vertices) {
-      i = (vertex->point - (qh first_point))/X.d1;
-      faceVertices->append(i);
+
+    CHECK(length(y)>1e-10 || fabs(bestdist-bestfacet->offset)<1e-10, "inconsistent!");
+    CHECK((isoutside && bestdist>-1e-10) || (!isoutside && bestdist<1e-10), "");
+
+    if(&distances){
+      distances.append(bestdist);
     }
-  }
-  
+
+    if(&projectedPoints) {
+      arr p = Y[i];
+      arr n(bestfacet->normal, 3);
+      projectedPoints.append( p - bestdist*n );
+      if(y.nd==2) projectedPoints.reshape(i+1,X.d1);
+    }
+
+    if(faceVertices) {
+      faceVertices->clear();
+      vertexT *vertex, **vertexp;
+      FOREACHvertex_(bestfacet->vertices) {
+        i = (vertex->point - (qh first_point))/X.d1;
+        faceVertices->append(i);
+      }
+    }
+
 //  if(QHULL_DEBUG_LEVEL>1) {
 //    arr line;
 //    NIY;
@@ -152,6 +162,7 @@ double distanceToConvexHull(const arr &X, const arr &y, arr *projectedPoint, uin
 //    //cout <<"**best facet: " <<bestfacet->id <<endl;
 //    //FOREACHvertex_(facet->vertices) cout <<vertex->id <<' ';
 //  }
+  }
   
   if(freeqhull) {
     qh_freeqhull(!qh_ALL);
@@ -173,7 +184,7 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
   uintA vertices;
   double d;
   
-  d=distanceToConvexHull(X, y, &p, &vertices, freeqhull);
+  d=distanceToConvexHull(X, y, p, NoArr, &vertices, freeqhull);
   
   dDdX.resizeAs(X);
   dDdX.setZero();
@@ -298,7 +309,7 @@ double forceClosure(const arr& C, const arr& Cn, const mlr::Vector& center,
   origin.setZero();
   if(!dFdC) {
     //note: distance to hull is negative if inside the hull
-    d = -distanceToConvexHull(X, origin, 0, 0, true);
+    d = -distanceToConvexHull(X, origin, NoArr, NoArr, NULL, true);
   } else {
     arr dFdX;
     d = -distanceToConvexHullGradient(dFdX, X, origin, true);
@@ -614,13 +625,20 @@ void sort(arr& A){
 }
 
 arr convconv_intersect(const arr &A, const arr &B){
-  arr AA = A; //rndGauss(AA, 1e-4, true);
-  arr BB = B; //rndGauss(BB, 1e-4, true);
+  return B;
+  if(A.d0==1) return A;
+  if(B.d0==1) return B;
+  if(A.d0==2) return A;
+  if(B.d0==2) return B;
+
+  uintA T;
+  arr AA = getHull(A, T); //rndGauss(AA, 1e-4, true);
+  arr BB = getHull(B, T); //rndGauss(BB, 1e-4, true);
   sort(AA);
   sort(BB);
 
-  poly_t Pa = {A.d0, 0, (vec_t*)AA.p};
-  poly_t Pb = {B.d0, 0, (vec_t*)BB.p};
+  poly_t Pa = {(int)A.d0, 0, (vec_t*)AA.p};
+  poly_t Pb = {(int)B.d0, 0, (vec_t*)BB.p};
 
   poly res;
   if(A.d0<B.d0)
@@ -636,4 +654,12 @@ arr convconv_intersect(const arr &A, const arr &B){
 //  cout <<AA <<"\n----\n" <<BB <<"\n----\n" <<C <<endl;
 
   return C;
+}
+
+void pullPointsIntoHull(arr &P, const arr &X){
+  arr pulled, D;
+  distanceToConvexHull(X, P, D, pulled);
+  CHECK_EQ(D.N, P.d0, "");
+  CHECK_EQ(D.N, pulled.d0, "");
+  for(uint i=0;i<D.N;i++) if(D(i)>0.) P[i]()=pulled[i];
 }

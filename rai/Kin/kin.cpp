@@ -29,6 +29,7 @@
 #include <climits>
 #include "kin.h"
 #include "frame.h"
+#include "contact.h"
 #include "uncertainty.h"
 #include "proxy.h"
 #include "kin_swift.h"
@@ -1199,6 +1200,66 @@ void mlr::KinematicWorld::stepDynamics(const arr& Bu_control, double tau, double
   setJointState(x1[0], x1[1]);
 }
 
+double __matchingCost(mlr::Contact *c, mlr::Proxy *p){
+  double cost=0.;
+  if(!p->coll) p->calc_coll(c->a.K);
+  cost += sqrDistance(c->a.X * c->a_rel, p->coll->p1);
+  cost += sqrDistance(c->b.X * c->b_rel, p->coll->p2);
+  //normal costs? Perhaps not, if p does not have a proper normal!
+  return cost;
+}
+
+void __merge(mlr::Contact *c, mlr::Proxy *p){
+  CHECK((int)c->a.ID==p->a && (int)c->b.ID==p->b, "");
+  if(!p->coll) p->calc_coll(c->a.K);
+  c->a_rel = c->a.X / mlr::Vector(p->coll->p1);
+  c->b_rel = c->b.X / mlr::Vector(p->coll->p2);
+  c->a_norm = c->a.X.rot / mlr::Vector(-p->coll->normal);
+  c->b_norm = c->b.X.rot / mlr::Vector( p->coll->normal);
+  c->a_type=c->b_type=1;
+  c->a_rad = c->a.shape->size(3);
+  c->b_rad = c->b.shape->size(3);
+}
+
+void __new(mlr::KinematicWorld& K, mlr::Proxy *p){
+  mlr::Contact *c = new mlr::Contact(*K.frames(p->a), *K.frames(p->b));
+  __merge(c, p);
+}
+
+void mlr::KinematicWorld::filterProxiesToContacts(){
+  for(Proxy& p:proxies){
+    if(!p.coll) p.calc_coll(*this);
+    if(p.coll->distance-(p.coll->rad1+p.coll->rad2)>.01) continue;
+    Frame *a = frames(p.a);
+    Frame *b = frames(p.b);
+    Contact *candidate=NULL;
+    double candidateMatchingCost=0.;
+    for(Contact *c:a->contacts){
+      if((&c->a==a && &c->b==b) || (&c->a==b && &c->b==a)){
+        double cost = __matchingCost(c, &p);
+        if(!candidate || cost<candidateMatchingCost){
+          candidate = c;
+          candidateMatchingCost = cost;
+        }
+        //in any case: adapt the normals:
+        c->a_norm = c->a.X.rot / mlr::Vector(-p.coll->normal);
+        c->b_norm = c->b.X.rot / mlr::Vector( p.coll->normal);
+      }
+    }
+    if(candidate && ::sqrt(candidateMatchingCost)<.02){ //cost is roughly measured in sqr-meters
+      __merge(candidate, &p);
+    }else{
+      __new(*this, &p);
+    }
+  }
+  //phase 2: cleanup old and distant contacts
+  mlr::Array<Contact*> old;
+  for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f){
+    if(c->getDistance()>.01) old.append(c);
+  }
+  for(Contact *c:old) delete c;
+}
+
 /** @brief prototype for \c operator<< */
 void mlr::KinematicWorld::write(std::ostream& os) const {
   for(Frame *f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
@@ -2192,7 +2253,12 @@ void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
   glColor(.5, .5, .5);
 
   //proxies
-  if(orsDrawProxies) for(const Proxy& p: proxies) ((Proxy*)&p)->glDraw(gl);
+//  if(orsDrawProxies) for(const Proxy& p: proxies) ((Proxy*)&p)->glDraw(gl);
+
+  //contacts
+  if(orsDrawProxies) for(const Frame *fr: frames) for(mlr::Contact *c:fr->contacts) if(&c->a==fr){
+    c->glDraw(gl);
+  }
 
   //joints
   Joint *e;

@@ -379,6 +379,10 @@ std::ostream& operator<<(std::ostream&, const Transformation&);
 /// of a 'cross-product-matrix'
 void quatDiff(arr& y, arr& J1, arr& J2, const Quaternion& q1, const Quaternion& q2);
 
+double quatScalarProduct(const mlr::Quaternion& a, const mlr::Quaternion& b);
+
+double sqrDistance(const mlr::Vector& a, const mlr::Vector& b);
+
 
 } //END of namespace
 

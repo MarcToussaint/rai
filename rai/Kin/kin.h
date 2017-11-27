@@ -204,6 +204,9 @@ struct KinematicWorld : GLDrawer{
   void stepOde(double tau);
   void stepDynamics(const arr& u_control, double tau, double dynamicNoise = 0.0, bool gravity = true);
 
+  /// @name contacts
+  void filterProxiesToContacts(); ///< proxies are returns from a collision engine; contacts stable constraints
+
   /// @name I/O
   void write(std::ostream& os) const;
   void writeURDF(std::ostream& os, const char *robotName="myrobot") const;

@@ -623,6 +623,10 @@ template<class T> void mlr::Array<T>::removePerm(uint i) {
 
 /// remove (delete) a subsequence of the array -- the array becomes 1D!  [only with memMove!] (throws error if value does not exist)
 template<class T> bool mlr::Array<T>::removeValue(const T& x, bool errorIfMissing) {
+  if(p[N-1]==x){ //special case: remove last value
+    resizeCopy(N-1);
+    return true;
+  }
   uint i;
   for(i=0; i<N; i++) if(p[i]==x) break;
   if(errorIfMissing){
