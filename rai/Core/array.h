@@ -250,13 +250,13 @@ template<class T> struct Array : std::vector<T> {
   void removeLast();
   
   /// @name sorting and permuting this array
-  void sort(ElemCompare comp=lowerEqual);
-  bool isSorted(ElemCompare comp=lowerEqual) const;
-  uint rankInSorted(const T& x, ElemCompare comp=lowerEqual, bool rankAfterIfEqual=false) const;
-  int findValueInSorted(const T& x, ElemCompare comp=lowerEqual) const;
-  uint insertInSorted(const T& x, ElemCompare comp=lowerEqual, bool insertAfterIfEqual=false);
-  uint setAppendInSorted(const T& x, ElemCompare comp=lowerEqual);
-  void removeValueInSorted(const T& x, ElemCompare comp=lowerEqual);
+  void sort(ElemCompare comp=lowerEqual<T>);
+  bool isSorted(ElemCompare comp=lowerEqual<T>) const;
+  uint rankInSorted(const T& x, ElemCompare comp=lowerEqual<T>, bool rankAfterIfEqual=false) const;
+  int findValueInSorted(const T& x, ElemCompare comp=lowerEqual<T>) const;
+  uint insertInSorted(const T& x, ElemCompare comp=lowerEqual<T>, bool insertAfterIfEqual=false);
+  uint setAppendInSorted(const T& x, ElemCompare comp=lowerEqual<T>);
+  void removeValueInSorted(const T& x, ElemCompare comp=lowerEqual<T>);
   void reverse();
   void reverseRows();
   void permute(uint i, uint j);
