@@ -30,15 +30,15 @@ struct Contact : GLDrawer {
   }
 
   double getDistance(); //calls the task map!
-  TaskMap* getTM_Friction();
-  TaskMap* getTM_ContactNegDistance();
+  TaskMap* getTM_Friction() const;
+  TaskMap* getTM_ContactNegDistance() const;
   void glDraw(OpenGL&);
 };
 
 struct TM_ContactNegDistance : TaskMap {
-  Contact& C;
+  const Contact& C;
 
-  TM_ContactNegDistance(Contact& contact) : C(contact){}
+  TM_ContactNegDistance(const Contact& contact) : C(contact){}
 
   void phi(arr& y, arr& J, const mlr::KinematicWorld& K, int t=-1);
   virtual uint dim_phi(const mlr::KinematicWorld& K){ return 1; }

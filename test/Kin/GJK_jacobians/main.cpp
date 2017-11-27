@@ -128,13 +128,16 @@ void TEST(GJK_Jacobians2) {
   VectorFunction f = [&K](arr& y, arr& J, const arr& x) -> void {
     K.setJointState(x);
     K.stepSwift();
-    K.kinematicsProxyCost(y, (&J?J:NoArr), .2);
+//    K.kinematicsProxyCost(y, (&J?J:NoArr), .2);
+    K.filterProxiesToContacts(.25);
+    K.kinematicsContactCost(y, (&J?J:NoArr), .2);
   };
 
-  checkJacobian(f, K.q, 1e-4);
+//  checkJacobian(f, K.q, 1e-4);
 
 
   arr q = K.getJointState();
+//  K.orsDrawProxies=false;
   K.watch(true);
   double y_last=0.;
   for(uint t=0;t<1000;t++){
@@ -144,10 +147,12 @@ void TEST(GJK_Jacobians2) {
 //    checkJacobian(f, q, 1e-4);
 
     TaskMap_QuaternionNorms qn;
-    K.reportProxies();
+//    K.reportProxies();
 
     arr y,J;
-    K.kinematicsProxyCost(y, J, .2);
+    K.filterProxiesToContacts(.25);
+    K.kinematicsContactCost(y, (&J?J:NoArr), .2);
+//    K.kinematicsProxyCost(y, J, .2);
 
     arr y2, J2;
     qn.phi(y2, J2, K);
@@ -240,8 +245,8 @@ int MAIN(int argc, char** argv){
 
   rnd.clockSeed();
 
-//  testGJK_Jacobians();
-  testGJK_Jacobians2();
+  testGJK_Jacobians();
+//  testGJK_Jacobians2();
 //  testGJK_Jacobians3();
 
   return 0;

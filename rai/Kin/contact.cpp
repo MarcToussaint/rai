@@ -8,7 +8,7 @@ double mlr::Contact::getDistance(){
   return -y.scalar();
 }
 
-TaskMap *mlr::Contact::getTM_ContactNegDistance(){
+TaskMap *mlr::Contact::getTM_ContactNegDistance() const{
   return new TM_ContactNegDistance(*this);
 }
 
@@ -45,10 +45,10 @@ void mlr::TM_ContactNegDistance::phi(arr &y, arr &J, const mlr::KinematicWorld &
   }
   else{
     arr ap, an, bp, bn, Jap, Jan, Jbp, Jbn;
-    K.kinematicsPos(ap, Jap, K.frames(C.a.ID), C.a_rel);
-    K.kinematicsVec(an, Jan, K.frames(C.a.ID), C.a_norm);
-    K.kinematicsPos(bp, Jbp, K.frames(C.b.ID), C.b_rel);
-    K.kinematicsVec(bn, Jbn, K.frames(C.b.ID), C.b_norm);
+    K.kinematicsPos(ap, (&J?Jap:NoArr), K.frames(C.a.ID), C.a_rel);
+    K.kinematicsVec(an, (&J?Jan:NoArr), K.frames(C.a.ID), C.a_norm);
+    K.kinematicsPos(bp, (&J?Jbp:NoArr), K.frames(C.b.ID), C.b_rel);
+    K.kinematicsVec(bn, (&J?Jbn:NoArr), K.frames(C.b.ID), C.b_norm);
 
 
     y = ARR( .5*scalarProduct(bp-ap, an-bn) - (C.a_rad+C.b_rad) );

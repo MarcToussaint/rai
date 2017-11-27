@@ -33,6 +33,7 @@ struct Joint;
 struct Shape;
 struct Frame;
 struct Proxy;
+struct Contact;
 struct KinematicWorld;
 struct KinematicSwitch;
 
@@ -152,6 +153,8 @@ struct KinematicWorld : GLDrawer{
   void kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
   void kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
   void kinematicsProxyCost(arr& y, arr& J, double margin=.02, bool useCenterDist=true) const;
+  void kinematicsContactCost(arr& y, arr& J, const Contact *p, double margin=.02, bool addValues=false) const;
+  void kinematicsContactCost(arr& y, arr& J, double margin=.02) const;
   void kinematicsProxyConstraint(arr& g, arr& J, const Proxy& p, double margin=.02) const;
   void kinematicsContactConstraints(arr& y, arr &J) const; //TODO: deprecated?
   void kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const mlr::Vector& rel, Frame *s) const;
@@ -205,7 +208,8 @@ struct KinematicWorld : GLDrawer{
   void stepDynamics(const arr& u_control, double tau, double dynamicNoise = 0.0, bool gravity = true);
 
   /// @name contacts
-  void filterProxiesToContacts(); ///< proxies are returns from a collision engine; contacts stable constraints
+  void filterProxiesToContacts(double margin=.01); ///< proxies are returns from a collision engine; contacts stable constraints
+  double totalContactPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
 
   /// @name I/O
   void write(std::ostream& os) const;

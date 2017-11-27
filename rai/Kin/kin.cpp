@@ -1226,10 +1226,10 @@ void __new(mlr::KinematicWorld& K, mlr::Proxy *p){
   __merge(c, p);
 }
 
-void mlr::KinematicWorld::filterProxiesToContacts(){
+void mlr::KinematicWorld::filterProxiesToContacts(double margin){
   for(Proxy& p:proxies){
     if(!p.coll) p.calc_coll(*this);
-    if(p.coll->distance-(p.coll->rad1+p.coll->rad2)>.01) continue;
+    if(p.coll->distance-(p.coll->rad1+p.coll->rad2)>margin) continue;
     Frame *a = frames(p.a);
     Frame *b = frames(p.b);
     Contact *candidate=NULL;
@@ -1246,7 +1246,7 @@ void mlr::KinematicWorld::filterProxiesToContacts(){
         c->b_norm = c->b.X.rot / mlr::Vector( p.coll->normal);
       }
     }
-    if(candidate && ::sqrt(candidateMatchingCost)<.02){ //cost is roughly measured in sqr-meters
+    if(candidate && ::sqrt(candidateMatchingCost)<.05){ //cost is roughly measured in sqr-meters
       __merge(candidate, &p);
     }else{
       __new(*this, &p);
@@ -1255,9 +1255,18 @@ void mlr::KinematicWorld::filterProxiesToContacts(){
   //phase 2: cleanup old and distant contacts
   mlr::Array<Contact*> old;
   for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f){
-    if(c->getDistance()>.01) old.append(c);
+    if(c->getDistance()>margin) old.append(c);
   }
   for(Contact *c:old) delete c;
+}
+
+double mlr::KinematicWorld::totalContactPenetration(){
+  double D=0.;
+  for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f){
+    double d = c->getDistance();
+    if(d<0.) D -= d;
+  }
+  return D;
 }
 
 /** @brief prototype for \c operator<< */
@@ -1885,6 +1894,31 @@ void mlr::KinematicWorld::kinematicsProxyCost(arr &y, arr& J, double margin, boo
   if(&J) J.resize(1, getJointStateDimension()).setZero();
   for(const Proxy& p:proxies) /*if(p.d<margin)*/ {
     kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
+  }
+}
+
+void mlr::KinematicWorld::kinematicsContactCost(arr& y, arr& J, const Contact* c, double margin, bool addValues) const {
+  TaskMap *map = c->getTM_ContactNegDistance();
+  arr y_dist, J_dist;
+  map->phi(y_dist, (&J?J_dist:NoArr), *this);
+  y_dist *= -1.;
+  if(&J) J_dist *= -1.;
+
+  y.resize(1);
+  if(&J) J.resize(1, getJointStateDimension());
+  if(!addValues){ y.setZero();  if(&J) J.setZero(); }
+
+  if(y_dist.scalar()>margin) return;
+
+  y += ARR(1.-y_dist.scalar()/margin);
+  if(&J)  J -= (1./margin)*J_dist;
+}
+
+void mlr::KinematicWorld::kinematicsContactCost(arr &y, arr& J, double margin) const {
+  y.resize(1).setZero();
+  if(&J) J.resize(1, getJointStateDimension()).setZero();
+  for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f){
+    kinematicsContactCost(y, J, c, margin, true);
   }
 }
 
