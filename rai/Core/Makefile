@@ -4,7 +4,7 @@ OUTPUT = lib$(NAME).so
 
 OPTIM = fast_debug
 
-DEPEND_UBUNTU = liblapack-dev libf2c2-dev gnuplot libjsoncpp-dev
+DEPEND_UBUNTU = g++ libx11-dev liblapack-dev libf2c2-dev gnuplot libjsoncpp-dev
 
 LAPACK = 1
 PTHREAD = 1

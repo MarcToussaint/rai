@@ -1,17 +1,16 @@
 BASE = .
 
 target: src
-NAME   = $(shell basename $(PWD))
 
 ################################################################################
 
-src_paths =  $(shell find rai -mindepth 1 -maxdepth 1 -type d -not -name 'extern' -not -name 'CMakeFiles' -not -name 'retired' -printf "%f ")
+src_paths =  $(shell find rai -mindepth 1 -maxdepth 1 -type d -not -name 'retired' -printf "%f ")
 
 test_paths = $(shell find test -maxdepth 3 -name 'Makefile' -printf "%h ")
 
 ################################################################################
 
-init: force
+initUbuntuPackages: force
 	@echo "##### calling make installUbuntuPackages in each lib"
 	@find rai -mindepth 1 -maxdepth 1 -type d -exec make installUbuntuPackages -C {} \;
 
