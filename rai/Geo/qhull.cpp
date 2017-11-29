@@ -632,23 +632,24 @@ void sort2Dpoints(arr& A){
   A.permuteRows(perm);
 }
 
+#include <Plot/plot.h>
+
 arr convconv_intersect(const arr &A, const arr &B){
   if(A.d0==1) return A;
   if(B.d0==1) return B;
   if(A.d0==2) return A;
   if(B.d0==2) return B;
 
-  uintA T;
-  arr AA = getHull(A, T); //rndGauss(AA, 1e-4, true);
-  arr BB = getHull(B, T); //rndGauss(BB, 1e-4, true);
+  arr AA = getHull(A); //rndGauss(AA, 1e-4, true);
+  arr BB = getHull(B); //rndGauss(BB, 1e-4, true);
   sort2Dpoints(AA);
   sort2Dpoints(BB);
 
-  poly_t Pa = {(int)A.d0, 0, (vec_t*)AA.p};
-  poly_t Pb = {(int)B.d0, 0, (vec_t*)BB.p};
+  poly_t Pa = {(int)AA.d0, 0, (vec_t*)AA.p};
+  poly_t Pb = {(int)BB.d0, 0, (vec_t*)BB.p};
 
   poly res;
-  if(A.d0<B.d0)
+  if(AA.d0<BB.d0)
     res = poly_clip(&Pa, &Pb);
   else
     res = poly_clip(&Pb, &Pa);
@@ -657,8 +658,16 @@ arr convconv_intersect(const arr &A, const arr &B){
   C.setCarray((double*)res->v, 2*res->len);
   C.reshape(C.N/2,2);
 
+//  plotClear();
+//  plotLine(C+.002, true); cout <<"#C=" <<C.d0 <<endl;
+//  plotLine(C-.002, true);
+//  plotLine(AA, true);
+//  plotLine(BB, true);
+//  plotOpengl();
+//  cout <<"\n====\n" <<AA <<"\n----\n" <<B <<"\n----\n" <<C<<"\n====\n" <<endl;
+//  mlr::wait();
+
   poly_free(res);
-//  cout <<AA <<"\n----\n" <<BB <<"\n----\n" <<C <<endl;
 
   return C;
 }

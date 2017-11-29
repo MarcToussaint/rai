@@ -88,7 +88,8 @@ struct KinematicWorld : GLDrawer{
   
   /// @name initializations
   void init(const char* filename);
-  void init(const Graph& G);
+  void init(const Graph& G, bool addInsteadOfClear=false);
+  void addModel(const char* filename);
 
   /// @name access
   Frame *operator[](const char* name){ return getFrameByName(name, true); }

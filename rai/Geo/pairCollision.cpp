@@ -15,12 +15,12 @@ extern "C"{
 PairCollision::PairCollision(const mlr::Mesh &mesh1, const mlr::Mesh &mesh2, mlr::Transformation &t1, mlr::Transformation &t2, double rad1, double rad2)
   : mesh1(mesh1), mesh2(mesh2), t1(t1), t2(t2), rad1(rad1), rad2(rad2) {
 
-  double d2 = GJK_sqrDistance(); //mesh1, mesh2, t1, t2, p1, p2, e1, e2, pt1.x, pt2.x);
+  double d2 = GJK_sqrDistance();
 
   if(d2>1e-10){
     distance = sqrt(d2);
   }else{
-    //THIS IS COSTLY!! DO WITHIN THE SUPPORT FUNCTION!
+    //THIS IS COSTLY? DO WITHIN THE SUPPORT FUNCTION!
     mlr::Mesh M1(mesh1); t1.applyOnPointArray(M1.V);
     mlr::Mesh M2(mesh2); t2.applyOnPointArray(M2.V);
     distance = - libccd_MPR(M1, M2);
@@ -33,13 +33,6 @@ PairCollision::PairCollision(const mlr::Mesh &mesh1, const mlr::Mesh &mesh2, mlr
   CHECK(mlr::sign(distance) * scalarProduct(normal, p1-p2)  > -1e-10, "");
 
   CHECK_ZERO(scalarProduct(normal, p1-p2) - distance, 1e-5, "");
-
-
-//  if(distance-rad1-rad2>0.){
-//    nearSupportAnalysis(normal, 1e-2);
-//  }else{
-//    nearSupportAnalysis(normal, -(distance-rad1-rad2)+1e-2);
-//  }
 
   //in current state, the rad1, rad2, have not been used at all!!
 }
@@ -194,20 +187,25 @@ void PairCollision::glDraw(OpenGL &){
 
   glColor(0., 1., 0., 1.);
   glDrawDiamond(P1(0), P1(1), P1(2), .01, .01, .01);
-  arr v;
-  for(uint i=0;i<simplex1.d0;i++){
-    v = simplex1[i];
-    if(rad1>0.) v -= rad1*normal;
-    glDrawDiamond(v(0), v(1), v(2), .02, .02, .02);
-  }
+  for(uint i=0;i<simplex1.d0;i++) simplex1[i] -= rad1*normal;
+  glDrawPolygon(simplex1);
+  for(uint i=0;i<simplex1.d0;i++) simplex1[i] += rad1*normal;
+//  arr v;
+//    v = simplex1[i];
+//    if(rad1>0.) v -= rad1*normal;
+//    glDrawDiamond(v(0), v(1), v(2), .02, .02, .02);
+//  }
 
   glColor(0., 0., 1., 1.);
   glDrawDiamond(P2(0), P2(1), P2(2), .01, .01, .01);
-  for(uint i=0;i<simplex2.d0;i++){
-    v = simplex2[i];
-    if(rad2>0.) v += rad2*normal;
-    glDrawDiamond(v(0), v(1), v(2), .02, .02, .02);
-  }
+  for(uint i=0;i<simplex2.d0;i++) simplex2[i] += rad2*normal;
+  glDrawPolygon(simplex2);
+  for(uint i=0;i<simplex2.d0;i++) simplex2[i] -= rad2*normal;
+//  for(uint i=0;i<simplex2.d0;i++){
+//    v = simplex2[i];
+//    if(rad2>0.) v += rad2*normal;
+//    glDrawDiamond(v(0), v(1), v(2), .02, .02, .02);
+//  }
 
   glColor(1., 0., 0., 1.);
   glLineWidth(5.f);
@@ -332,7 +330,7 @@ void PairCollision::kinDistance2(arr &y, arr& J,
 }
 
 
-void PairCollision::nearSupportAnalysis(const arr &normal, double eps){
+void PairCollision::nearSupportAnalysis(double eps){
   mlr::Mesh M1(mesh1); t1.applyOnPointArray(M1.V);
   mlr::Mesh M2(mesh2); t2.applyOnPointArray(M2.V);
 
@@ -355,25 +353,26 @@ void PairCollision::nearSupportAnalysis(const arr &normal, double eps){
   for(uint i=0;i<simplex2.d0;i++){
     dSimplex2(i) = -scalarProduct(simplex2[i]-p1, normal);
   }
-  pullPointsIntoHull(simplex2, M1.V);
-  pullPointsIntoHull(simplex2, M2.V);
+//  pullPointsIntoHull(simplex2, M1.V);
+//  pullPointsIntoHull(simplex2, M2.V);
 
-#if 0
+  m1 = mean(simplex1);
+  m2 = mean(simplex2);
+
+#if 1
   //first get projection
   mlr::Quaternion R;
   R.setDiff(normal, Vector_z);
   arr P = R.getArr();
   P.delRows(2);
-  m1 = mean(simplex1);
-  m2 = mean(simplex2);
 
   arr C = convconv_intersect(simplex1*~P, simplex2*~P);
+//  simplex1 = simplex1*~P*P;
+//  simplex2 = simplex2*~P*P;
 
   simplex1 = simplex2 = C*P;
-  for(uint i=0;i<simplex1.d0;i++){
-    simplex1[i] += p2 - ~P*P*p2 + (+dSimplex1(i) - rad1) * normal;
-    simplex2[i] += p1 - ~P*P*p1 + (-dSimplex2(i) + rad2) * normal;
-  }
+  for(uint i=0;i<simplex1.d0;i++) simplex1[i] += p1 - ~P*P*p1;
+  for(uint i=0;i<simplex2.d0;i++) simplex2[i] += p2 - ~P*P*p2;
 #endif
 
   //eigen value analysis

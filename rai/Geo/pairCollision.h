@@ -37,7 +37,7 @@ struct PairCollision : GLDrawer{
   void kinDistance2(arr &y, arr& J,
                     const arr& JSimplex1, const arr& JSimplex2);
 
-  void nearSupportAnalysis(const arr& normal, double eps=1e-6); ///< analyses not only closest obj support (the simplex) but all points within a margin
+  void nearSupportAnalysis(double eps=1e-6); ///< analyses not only closest obj support (the simplex) but all points within a margin
 
 private:
   double libccd_MPR(const mlr::Mesh& m1,const mlr::Mesh& m2); //calls ccdMPRPenetration of libccd

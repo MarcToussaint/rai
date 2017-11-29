@@ -172,6 +172,7 @@ mlr::KinematicWorld::KinematicWorld(const mlr::KinematicWorld& other) : Kinemati
 
 mlr::KinematicWorld::KinematicWorld(const char* filename) : KinematicWorld() {
   init(filename);
+
 }
 
 mlr::KinematicWorld::~KinematicWorld() {
@@ -182,7 +183,14 @@ mlr::KinematicWorld::~KinematicWorld() {
 }
 
 void mlr::KinematicWorld::init(const char* filename) {
-  *this <<FILE(filename);
+  Graph G(FILE(filename));
+  G.checkConsistency();
+  init(G, false);
+}
+
+void mlr::KinematicWorld::addModel(const char* filename){
+  Graph G(FILE(filename));
+  init(G, true);
 }
 
 void mlr::KinematicWorld::clear() {
@@ -1473,8 +1481,8 @@ void mlr::KinematicWorld::report(std::ostream &os) const {
   <<endl;
 }
 
-void mlr::KinematicWorld::init(const Graph& G) {
-  clear();
+void mlr::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
+  if(!addInsteadOfClear) clear();
 
   NodeL fs = G.getNodes("frame");
   for(Node *n: fs) {

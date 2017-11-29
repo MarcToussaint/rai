@@ -82,6 +82,7 @@ void glDrawRect(float x1, float y1, float z1, float x2, float y2, float z2,
 void glDrawRect(float x1, float y1, float z1, float x2, float y2, float z2,
                 float x3, float y3, float z3, float x4, float y4, float z4);
 void glDrawRect(float x, float y, float z, float rad);
+void glDrawPolygon(const arr& P);
 void glDrawFloor(float x, float r, float g, float b);
 void glDrawBox(float x, float y, float z, bool linesOnly=false);
 void glDrawDiamond(float dx, float dy, float dz);
@@ -91,7 +92,7 @@ void glDrawDisk(float radius);
 void glDrawProxy(const arr& p1, const arr& p2, double diskSize=.02, int colorCode=0, const arr &norm=NoArr, double rad1=0., double rad2=0.);
 void glDrawCylinder(float radius, float length, bool closed=true);
 void glDrawCappedCylinder(float radius, float length);
-void glDrawAxis();
+void glDrawAxis(double scale=-1.);
 void glDrawAxes(double scale);
 void glDrawGridBox(float x);
 void glDrawGridBox(float x1, float y1, float z1, float x2, float y2, float z2);
