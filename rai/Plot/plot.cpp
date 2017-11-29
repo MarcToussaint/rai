@@ -256,8 +256,13 @@ void plotClearPoints() {
   plotModule.s->points.clear();
 }
 
-void plotLine(const arr& X) {
-  plotModule.s->lines.append(X);
+void plotLine(const arr& X, bool closed) {
+  arr& app = plotModule.s->lines.append(X);
+  if(closed && app.d0){
+    arr x;
+    x = app[0];
+    app.append(x);
+  }
 }
 
 void plotPoints(const arr& X, const arr& Y) {

@@ -182,6 +182,7 @@ void OpenGL::closeWindow(){
     glutDestroyWindow(s->windowID);
     fg->delGL(s->windowID, this);
   }
+  s->windowID=-1;
 }
 
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {

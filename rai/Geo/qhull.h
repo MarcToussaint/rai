@@ -21,6 +21,7 @@ void plotQhullState(uint D);
 extern int QHULL_DEBUG_LEVEL;
 const char* qhullVersion();
 void qHullSave();
+void qhull_free();
 
 double distanceToConvexHull(const arr &X,        //points
                             const arr &y,        //query point
@@ -32,7 +33,7 @@ double distanceToConvexHull(const arr &X,        //points
 double distanceToConvexHullGradient(arr& dDdX,       //gradient (or same dim as X)
                                     const arr &X,    //points
                                     const arr &y,    //query point
-                                    bool freeqhull); //free allocated qhull engine after request [true]
+                                    bool freeqhull=true); //free allocated qhull engine after request [true]
 
 double forceClosure(const arr& X,  //contact points (size Nx3)
                     const arr& Xn, //contact normals (size Nx3)

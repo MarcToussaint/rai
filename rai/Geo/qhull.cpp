@@ -90,6 +90,16 @@ void getQhullState(uint D, arr& points, arr& vertices, arr& lines) {
 
 //===========================================================================
 
+void qhull_free(){
+  qh_freeqhull(!qh_ALL);
+  int curlong, totlong;
+  qh_memfreeshort(&curlong, &totlong);
+  if(curlong || totlong)
+    MLR_MSG("qhull internal warning (main): did not free " <<totlong <<" bytes of long memory (" <<curlong <<" pieces)\n");
+}
+
+//===========================================================================
+
 double distanceToConvexHull(const arr &X, const arr &y, arr& distances, arr &projectedPoints, uintA *faceVertices, bool freeqhull) {
   auto lock = qhullMutex();
 
@@ -107,6 +117,8 @@ double distanceToConvexHull(const arr &X, const arr &y, arr& distances, arr &pro
   arr Y;
   Y.referTo(y);
   if(y.nd==1) Y.reshape(1,Y.N);
+  if(&distances) distances.clear();
+  if(&projectedPoints) projectedPoints.clear();
 
   for(uint i=0;i<Y.d0;i++){
     bestfacet = qh_findbest(Y[i].p, qh facet_list,
@@ -130,7 +142,7 @@ double distanceToConvexHull(const arr &X, const arr &y, arr& distances, arr &pro
 
     if(&projectedPoints) {
       arr p = Y[i];
-      arr n(bestfacet->normal, 3);
+      arr n(bestfacet->normal, p.N);
       projectedPoints.append( p - bestdist*n );
       if(y.nd==2) projectedPoints.reshape(i+1,X.d1);
     }
@@ -164,13 +176,7 @@ double distanceToConvexHull(const arr &X, const arr &y, arr& distances, arr &pro
 //  }
   }
   
-  if(freeqhull) {
-    qh_freeqhull(!qh_ALL);
-    int curlong, totlong;
-    qh_memfreeshort(&curlong, &totlong);
-    if(curlong || totlong)
-      MLR_MSG("qhull internal warning (main): did not free " <<totlong <<" bytes of long memory (" <<curlong <<" pieces)\n");
-  }
+  if(freeqhull) qhull_free();
   
   return bestdist;
 }
@@ -184,7 +190,7 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
   uintA vertices;
   double d;
   
-  d=distanceToConvexHull(X, y, p, NoArr, &vertices, freeqhull);
+  d=distanceToConvexHull(X, y, NoArr, p, &vertices, freeqhull);
   
   dDdX.resizeAs(X);
   dDdX.setZero();
@@ -373,6 +379,8 @@ arr getHull(const arr& V, uintA& T) {
     
   return Vnew;
 }
+
+//===========================================================================
 
 void getDelaunayEdges(uintA& E, const arr& V) {
   auto lock = qhullMutex();
@@ -611,7 +619,7 @@ poly poly_clip(poly sub, poly clip){
   return p2;
 }
 
-void sort(arr& A){
+void sort2Dpoints(arr& A){
   arr m = mean(A);
   arr d(A.d0);
   for(uint i=0;i<A.d0;i++){
@@ -625,7 +633,6 @@ void sort(arr& A){
 }
 
 arr convconv_intersect(const arr &A, const arr &B){
-  return B;
   if(A.d0==1) return A;
   if(B.d0==1) return B;
   if(A.d0==2) return A;
@@ -634,8 +641,8 @@ arr convconv_intersect(const arr &A, const arr &B){
   uintA T;
   arr AA = getHull(A, T); //rndGauss(AA, 1e-4, true);
   arr BB = getHull(B, T); //rndGauss(BB, 1e-4, true);
-  sort(AA);
-  sort(BB);
+  sort2Dpoints(AA);
+  sort2Dpoints(BB);
 
   poly_t Pa = {(int)A.d0, 0, (vec_t*)AA.p};
   poly_t Pb = {(int)B.d0, 0, (vec_t*)BB.p};

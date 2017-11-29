@@ -595,7 +595,7 @@ namespace mlr {
 extern bool useLapack;
 }
 
-uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort=true);
+uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort2Dpoints=true);
 void svd(arr& U, arr& V, const arr& A);
 void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc = 0);
 
