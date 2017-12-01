@@ -212,6 +212,20 @@ void PairCollision::glDraw(OpenGL &){
   glDrawProxy(P1, P2, .05);
   glLineWidth(2.f);
   glLoadIdentity();
+
+  if(poly.N){
+    glColor(0., 0., 1., 1.);
+    glDrawPolygon(poly);
+    uint n=poly.d0;
+    for(uint i=0;i<n;i++){
+      mlr::Transformation T;
+      T.pos = .5 *(poly[(i+1)%n] + poly[i]);
+      T.rot.setDiff(Vector_x, polyNorm[i]);
+//      cout <<polyNorm[i] <<' ' <<T.rot <<' ' <<T.rot.getDeg() <<endl;
+      glTransform(T);
+      glDrawAxis(.02);
+    }
+  }
 }
 
 void PairCollision::kinVector(arr& y, arr& J,
@@ -392,6 +406,18 @@ void PairCollision::nearSupportAnalysis(double eps){
     if(sig2(i)>1e-8) eig2.append(sqrt(sig2(i)) * vec2[i]);
   }
 #endif
+}
+
+void PairCollision::computeSupportPolygon(){
+  poly = simplex1 + simplex2;
+  poly *= .5;
+
+  polyNorm.resizeAs(poly);
+  uint n=polyNorm.d0;
+  for(uint i=0;i<n;i++){
+    arr norm = crossProduct(poly[(i+1)%n] - poly[i], normal);
+    polyNorm[i] = norm/length(norm);
+  }
 }
 
 double coll_1on3(arr &pInTri, arr& normal, const arr &pts1, const arr &pts2){

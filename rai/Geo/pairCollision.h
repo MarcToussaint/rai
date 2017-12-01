@@ -19,6 +19,8 @@ struct PairCollision : GLDrawer{
   arr dSimplex1, dSimplex2;
   arr m1, m2, eig1, eig2; ///< output of marginAnalysis: mean and eigenvalues of ALL point on the objs (not only simplex) that define the collision
 
+  arr poly, polyNorm;
+
   PairCollision(const mlr::Mesh& mesh1, const mlr::Mesh& mesh2,
                 mlr::Transformation& t1, mlr::Transformation& t2,
                 double rad1=0., double rad2=0.);
@@ -38,6 +40,8 @@ struct PairCollision : GLDrawer{
                     const arr& JSimplex1, const arr& JSimplex2);
 
   void nearSupportAnalysis(double eps=1e-6); ///< analyses not only closest obj support (the simplex) but all points within a margin
+
+  void computeSupportPolygon();
 
 private:
   double libccd_MPR(const mlr::Mesh& m1,const mlr::Mesh& m2); //calls ccdMPRPenetration of libccd

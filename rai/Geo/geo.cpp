@@ -708,10 +708,16 @@ void Quaternion::setVec(Vector w) {
 
 /// rotation that will rotate 'from' to 'to' on direct path
 void Quaternion::setDiff(const Vector& from, const Vector& to) {
-  double phi=acos(from*to/(from.length()*to.length()));
+  Vector a = from/from.length();
+  Vector b = to/to.length();
+  double scalarProduct = a*b;
+  double phi=acos(scalarProduct);
   if(!phi){ setZero(); return; }
-  Vector axis(from^to);
-  if(axis.isZero) axis=Vector(0, 0, 1)^to;
+  Vector axis(a^b);
+  if(axis.length()<1e-10){ //a and b are co-linear -> rotate around any! axis orthogonal to a or b
+    axis = Vector_x^b; //try x
+    if(axis.length()<1e-10) axis = Vector_y^b; //try y
+  }
   setRad(phi, axis);
 }
 
