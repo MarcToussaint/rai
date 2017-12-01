@@ -20,6 +20,7 @@ mlr::Proxy::~Proxy() {
 void mlr::Proxy::calc_coll(const KinematicWorld& K){
   mlr::Shape *s1 = K.frames(a)->shape;
   mlr::Shape *s2 = K.frames(b)->shape;
+  CHECK(s1 && s2, "");
 
   double r1=s1->size(3);
   double r2=s2->size(3);

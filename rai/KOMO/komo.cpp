@@ -722,7 +722,10 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
       else if(n->keys.last()=="komoPush")     setPush(phase+time, phase+time+1., *symbols(0), *symbols(1), *symbols(2), verbose); //TODO: the +1. assumes pushes always have duration 1
       else if(n->keys.last()=="komoSlide")    setSlide(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
       else if(n->keys.last()=="komoSlideAlong") setSlideAlong(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
-      else if(n->keys.last()=="komoDrop")     setDrop(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
+      else if(n->keys.last()=="komoDrop"){
+        if(symbols.N==2) setDrop(phase+time, *symbols(0), NULL, *symbols(1), verbose);
+        else setDrop(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
+      }
       else if(n->keys.last()=="komoAttach"){
         Node *attachableSymbol = facts.getNode("attachable");
         CHECK(attachableSymbol!=NULL,"");
@@ -1288,9 +1291,9 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, Obje
 
 
 arr KOMO::getPath(const StringA &joints){
-    arr X(T,joints.N);
-    for(uint t=0;t<T;t++){
-        X[t] = configurations(t+k_order)->getJointState(joints);
-    }
-    return X;
+  arr X(T,joints.N);
+  for(uint t=0;t<T;t++){
+    X[t] = configurations(t+k_order)->getJointState(joints);
+  }
+  return X;
 }
