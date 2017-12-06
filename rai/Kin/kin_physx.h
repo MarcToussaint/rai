@@ -45,6 +45,7 @@ struct PhysXInterface : GLDrawer{
   void ShutdownPhysX();
 
   void glDraw(OpenGL&);
+  void watch(bool pause=false, const char* txt=NULL);
 
   void addForce(mlr::Vector& force, mlr::Frame* b);
   void addForce(mlr::Vector& force, mlr::Frame* b, mlr::Vector& pos);

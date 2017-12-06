@@ -142,6 +142,7 @@ struct sPhysXInterface {
   PxScene* gScene = NULL;
   mlr::Array<PxRigidActor*> actors;
   mlr::Array<PxD6Joint*> joints;
+  OpenGL *gl=NULL;
 
   debugger::comm::PvdConnection* connection = NULL;
   
@@ -404,8 +405,9 @@ void sPhysXInterface::unlockJoint(PxD6Joint *joint, mlr::Joint *ors_joint) {
 
 void sPhysXInterface::addBody(mlr::Frame *b, physx::PxMaterial *mMaterial) {
   PxRigidDynamic* actor=NULL;
-  if(!b->inertia) return;
-  switch(b->inertia->type) {
+  mlr::BodyType type = mlr::BT_static;
+  if(b->inertia) type = b->inertia->type;
+  switch(type) {
   case mlr::BT_static:
     actor = (PxRigidDynamic*) mPhysics->createRigidStatic(conv_Transformation2PxTrans(b->X));
     break;
@@ -478,11 +480,10 @@ void sPhysXInterface::addBody(mlr::Frame *b, physx::PxMaterial *mMaterial) {
     }
     //actor = PxCreateDynamic(*mPhysics, OrsTrans2PxTrans(s->X), *geometry, *mMaterial, 1.f);
   }
-  if(b->inertia->type == mlr::BT_dynamic) {
-    if(b->inertia->mass>0.) {
+  if(type == mlr::BT_dynamic) {
+    if(b->inertia && b->inertia->mass>0.) {
       PxRigidBodyExt::setMassAndUpdateInertia(*actor, b->inertia->mass);
-    }
-    else {
+    }else{
       PxRigidBodyExt::updateMassAndInertia(*actor, 1.f);
     }
     actor->setAngularDamping(0.75);
@@ -499,8 +500,8 @@ void sPhysXInterface::addBody(mlr::Frame *b, physx::PxMaterial *mMaterial) {
 void PhysXInterface::pullFromPhysx(double tau) {
   for_list(PxRigidActor, a, s->actors) if(a) {
     PxTrans2OrsTrans(world.frames(a_COUNT)->X, a->getGlobalPose());
-    if(a->getType() == PxActorType::eRIGID_DYNAMIC) {
 #if 0
+    if(a->getType() == PxActorType::eRIGID_DYNAMIC) {
       PxRigidBody *px_body = (PxRigidBody*) a;
       PxVec3 vel = px_body->getLinearVelocity();
       PxVec3 angvel = px_body->getAngularVelocity();
@@ -511,23 +512,16 @@ void PhysXInterface::pullFromPhysx(double tau) {
       b->torque = b->mass * ((b->X.angvel - newangvel)/tau);
       b->X.vel = newvel;
       b->X.angvel = newangvel;
-#endif
     }
+#endif
   }
-  world.calc_activeSets();
-  world.calc_fwdPropagateFrames();
+  world.calc_Q_from_BodyFrames();
   world.calc_q_from_Q();
 }
 
 void PhysXInterface::pushToPhysx() {
-  HALT("why here?");
-  PxMaterial* mMaterial = mPhysics->createMaterial(3.f, 3.f, 0.2f);
-  for_list(mlr::Frame, b, world.frames) {
-    if(s->actors.N > b_COUNT) {
-      s->actors(b_COUNT)->setGlobalPose(conv_Transformation2PxTrans(b->X));
-    } else {
-      s->addBody(b, mMaterial);
-    }
+  for_list(PxRigidActor, a, s->actors) if(a) {
+    a->setGlobalPose(conv_Transformation2PxTrans(world.frames(a_COUNT)->X));
   }
 }
 
@@ -548,6 +542,11 @@ void PhysXInterface::ShutdownPhysX() {
     s->gScene->release();
     s->gScene = NULL;
   }
+  if(s->gl){
+    delete s->gl;
+    s->gl=NULL;
+  }
+
   mCooking->release();
   mPhysics->release();
 //  mFoundation->release();
@@ -618,6 +617,17 @@ void PhysXInterface::glDraw(OpenGL&) {
     if(a) DrawActor(a, world.frames(i));
     i++;
   }
+}
+
+void PhysXInterface::watch(bool pause, const char *txt){
+  if(!s->gl){
+    s->gl = new OpenGL("PHYSX direct");
+    s->gl->add(glStandardScene, NULL);
+    s->gl->add(*this);
+    s->gl->camera.setDefault();
+  }
+  if(pause) s->gl->watch(txt);
+  else s->gl->update(txt);
 }
 
 void PhysXInterface::addForce(mlr::Vector& force, mlr::Frame* b) {

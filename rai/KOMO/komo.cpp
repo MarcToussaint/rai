@@ -33,6 +33,7 @@
 #include <Kin/contact.h>
 #include <Optim/optimization.h>
 #include <Optim/convert.h>
+#include <Kin/kin_physx.h>
 
 //===========================================================================
 
@@ -948,6 +949,25 @@ void KOMO::run(){
   if(verbose>1) cout <<getReport(false);
 }
 
+void KOMO::getPhysicsReference(){
+  x.resize(T, world.q.N);
+  world.physx().pushToPhysx();
+  for(uint t=0;t<T;t++){
+    world.stepPhysx(tau);
+//    K.physx().watch(false, STRING("t="<<t));
+    x[t] = world.q;
+//      K.calc_fwdPropagateFrames();
+//    K.watch();
+  }
+//  K.watch(true);
+  world.setJointState(x[0]);
+  if(configurations.N){
+    for(uint s=0;s<k_order;s++){
+      configurations(s)->setJointState(x[0]);
+    }
+  }
+}
+
 void KOMO::reportProblem(std::ostream& os){
     os <<"KOMO Problem:" <<endl;
     os <<"  x-dim:" <<x.N <<"  dual-dim:" <<dual.N <<endl;
@@ -1089,7 +1109,7 @@ void KOMO::set_x(const arr& x){
       else         configurations(s)->setJointState(x[t]);
       if(useSwift){
         configurations(s)->stepSwift();
-        configurations(s)->filterProxiesToContacts(.2);
+        configurations(s)->filterProxiesToContacts(.01);
       }
       x_count += x_dim;
     }

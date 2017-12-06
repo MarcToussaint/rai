@@ -26,7 +26,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
 
         arr v_ref = {0.,0.,-1.};
         arr Jv_ref = zeros(3, K.q.N);
-        if(a->contacts.N){
+        if(false && a->contacts.N){
           for(mlr::Contact *c:a->contacts){
             if(&c->a == a){
               K.kinematicsVec(pc, (&J?Jc:NoArr), a, c->a_rel);
