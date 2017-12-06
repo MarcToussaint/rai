@@ -171,17 +171,18 @@ template<class T> struct Array : std::vector<T> {
   
   /// @name access by reference (direct memory access)
   T& elem(int i) const;
+  T& elem(const Array<int> &I) const;
   T& elem(const Array<uint> &I) const;
   T& scalar() const;
   T& first() const;
   T& last(int i=-1) const;
   T& rndElem() const;
-  T& operator()(uint i) const;
-  T& operator()(uint i, uint j) const;
-  T& operator()(uint i, uint j, uint k) const;
+  T& operator()(int i) const;
+  T& operator()(int i, int j) const;
+  T& operator()(int i, int j, int k) const;
   Array<T> operator()(std::pair<int, int> I) const;
   Array<T> operator()(int i, std::pair<int, int> J) const;
-  Array<T> operator()(uint i, uint j, std::initializer_list<int> K) const;
+  Array<T> operator()(int i, int j, std::initializer_list<int> K) const;
   Array<T> operator[](int i) const;     // calls referToDim(*this, i)
   Array<T> operator[](std::initializer_list<uint> list) const; //-> remove
   Array<T>& operator()(){ return *this; } //TODO: make this the scalar reference!

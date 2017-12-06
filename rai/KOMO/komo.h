@@ -157,13 +157,14 @@ struct KOMO{
   void setSpline(uint splineT);   ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
   void reset(double initNoise=.01);      ///< reset the optimizer (initializes x to a default path)
   void run();                     ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
+  void getPhysicsReference();
   arr getPath(const StringA& joints);
   void reportProblem(ostream &os=std::cout);
   Graph getReport(bool gnuplt=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot task costs; output detailed cost features per time slice)
   void reportProxies(ostream& os=std::cout); ///< report the proxies (collisions) for each time slice
   void checkGradients();          ///< checks all gradients numerically
   void plotTrajectory();
-  bool displayTrajectory(double delay=0.01, bool watch=false); ///< display the
+  bool displayTrajectory(double delay=0.01, bool watch=true); ///< display the
   mlr::Camera& displayCamera();   ///< access to the display camera to change the view
 
   //===========================================================================
@@ -179,15 +180,17 @@ struct KOMO{
   void set_x(const arr& x);            ///< set the state trajectory of all configurations
   uint dim_x(uint t) { return configurations(t+k_order)->getJointStateDimension(); }
 
-  struct Conv_MotionProblem_KOMO_Problem : KOMO_Problem{
+  struct Conv_MotionProblem_KOMO_Problem : KOMO_Problem {
     KOMO& komo;
     uint dimPhi;
+    arr prevLambda;
+    uintA phiIndex, phiDim;
 
     Conv_MotionProblem_KOMO_Problem(KOMO& _komo) : komo(_komo){}
 
     virtual uint get_k(){ return komo.k_order; }
     virtual void getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes);
-    virtual void phi(arr& phi, arrA& J, arrA& H, ObjectiveTypeA& tt, const arr& x);
+    virtual void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x, arr& lambda);
   } komo_problem;
 
 };

@@ -295,12 +295,13 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
   int a, b;
   for(k=0, i=0; i<np; i++) {
     mlr::Proxy &proxy = world.proxies.elem(i);
-    a=INDEXswift2shape(oids[i <<1]);
-    b=INDEXswift2shape(oids[(i <<1)+1]);
+    a=INDEXswift2shape(oids[k <<1]);
+    b=INDEXswift2shape(oids[(k <<1)+1]);
     //CHECK(ids(a)==a && ids(b)==b, "shape index does not coincide with swift index");
     
     //non-penetrating pair of objects
     if(num_contacts[i]>0) { //only add one proxy!for(j=0; j<num_contacts[i]; j++, k++) {
+      CHECK(num_contacts[i]==1,"");
       proxy.a=a;
       proxy.b=b;
       proxy.d = dists[k];

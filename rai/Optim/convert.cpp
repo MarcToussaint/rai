@@ -108,9 +108,9 @@ ScalarFunction conv_VectorFunction2ScalarFunction(const VectorFunction& f) {
   };
 }
 
-void Conv_linearlyReparameterize_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& z){
+void Conv_linearlyReparameterize_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& z, arr& lambda){
   arr x = B*z;
-  P.phi(phi, J, H, tt, x);
+  P.phi(phi, J, H, tt, x, NoArr);
   if(&J) J = comp_A_x(J,B);
   if(&H && H.N) NIY;
 }

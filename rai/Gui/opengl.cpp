@@ -1235,6 +1235,7 @@ void OpenGL::clear() {
   dataLock.writeLock();
 //  for(auto& x:drawers) if(CstyleDrawer* d = dynamic_cast<CstyleDrawer*>(x)) delete d;
   views.clear();
+//  for(auto* d:drawers) if(dynamic_cast<CstyleDrawer*>(d)) delete d;
   drawers.clear();
   initCalls.clear();
   hoverCalls.clear();
