@@ -30,6 +30,7 @@
 #include <Kin/taskMap_linTrans.h>
 #include <Kin/TM_StaticStability.h>
 #include <Kin/TM_Max.h>
+#include <Kin/contact.h>
 #include <Optim/optimization.h>
 #include <Optim/convert.h>
 
@@ -967,7 +968,6 @@ void KOMO::reportProblem(std::ostream& os){
     }
 }
 
-
 void KOMO::checkGradients(){
   CHECK(T,"");
   if(!splineB.N)
@@ -1087,7 +1087,10 @@ void KOMO::set_x(const arr& x){
     if(x_dim){
       if(x.nd==1)  configurations(s)->setJointState(x({x_count, x_count+x_dim-1}));
       else         configurations(s)->setJointState(x[t]);
-      if(useSwift) configurations(s)->stepSwift();
+      if(useSwift){
+        configurations(s)->stepSwift();
+        configurations(s)->filterProxiesToContacts(.2);
+      }
       x_count += x_dim;
     }
   }
@@ -1095,12 +1098,12 @@ void KOMO::set_x(const arr& x){
 }
 
 void KOMO::reportProxies(std::ostream& os){
-    int t=0;
-    for(auto &K:configurations){
-        os <<" **** KOMO PROXY REPORT t=" <<t-k_order <<endl;
-        K->reportProxies(os);
-        t++;
-    }
+  int t=0;
+  for(auto &K:configurations){
+    os <<" **** KOMO PROXY REPORT t=" <<t-k_order <<endl;
+    K->reportProxies(os);
+    t++;
+  }
 }
 
 
@@ -1226,64 +1229,158 @@ arr KOMO::getInitialization(){
 
 void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes){
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
-  variableDimensions.resize(komo.T);
-  for(uint t=0;t<komo.T;t++) variableDimensions(t) = komo.configurations(t+komo.k_order)->getJointStateDimension();
+  if(&variableDimensions){
+    variableDimensions.resize(komo.T);
+    for(uint t=0;t<komo.T;t++) variableDimensions(t) = komo.configurations(t+komo.k_order)->getJointStateDimension();
+  }
 
-  featureTimes.clear();
-  featureTypes.clear();
+  if(&featureTimes) featureTimes.clear();
+  if(&featureTypes) featureTypes.clear();
+  uint M=0;
+  phiIndex.resize(komo.T, komo.tasks.N); phiIndex.setZero();
+  phiDim.resize(komo.T, komo.tasks.N);   phiDim.setZero();
   for(uint t=0;t<komo.T;t++){
-    for(Task *task: komo.tasks) if(task->prec.N>t && task->prec(t)){
-//      CHECK(task->prec.N<=MP.T,"");
-      uint m = task->map->dim_phi(komo.configurations({t,t+komo.k_order}), t); //dimensionality of this task
-      featureTimes.append(consts<uint>(t, m));
-      featureTypes.append(consts<ObjectiveType>(task->type, m));
+    for(uint i=0;i<komo.tasks.N;i++){
+      Task *task = komo.tasks.elem(i);
+      if(task->prec.N>t && task->prec(t)){
+        //      CHECK(task->prec.N<=MP.T,"");
+        uint m = task->map->dim_phi(komo.configurations({t,t+komo.k_order}), t); //dimensionality of this task
+
+        if(&featureTimes) featureTimes.append(consts<uint>(t, m));
+        if(&featureTypes) featureTypes.append(consts<ObjectiveType>(task->type, m));
+
+        //store indexing phi <-> tasks
+        phiIndex(t, i) = M;
+        phiDim(t, i) = m;
+        M += m;
+      }
     }
   }
-  dimPhi = featureTimes.N;
+  dimPhi = M;
+  CHECK_EQ(M, sum(phiDim), "");
 }
 
-void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, ObjectiveTypeA& tt, const arr& x){
+void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x, arr& lambda){
+  //==================
+  if(&lambda) prevLambda = lambda;
+  const uintA prevPhiIndex=phiIndex, prevPhiDim=phiDim;
+
+#if 0
+  if(&lambda && lambda.N>dimPhi){
+    //store old lambdas directly in the constraints....
+    uint C=0;
+    for(uint t=0;t<komo.T;t++){
+      mlr::KinematicWorld& K = *komo.configurations(t+komo.k_order);
+      for(mlr::Frame *f:K.frames) for(mlr::Contact *c:f->contacts) if(&c->a==f){
+        c->lagrangeParameter = lambda(dimPhi + C);
+        C++;
+      }
+    }
+//    cout <<"ENTER: #" <<C <<" constraints" <<endl;
+    CHECK_EQ(dimPhi+C, lambda.N, "");
+    //cut of the stored lambdas
+    lambda.resizeCopy(dimPhi);
+  }
+#endif
+  //==================
+
   //-- set the trajectory
   komo.set_x(x);
 
-
   CHECK(dimPhi,"getStructure must be called first");
+  getStructure(NoUintA, featureTimes, tt);
   phi.resize(dimPhi);
   if(&tt) tt.resize(dimPhi);
   if(&J) J.resize(dimPhi);
+  if(&lambda && lambda.N){ lambda.resize(dimPhi); lambda.setZero(); }
 
   arr y, Jy;
   uint M=0;
   for(uint t=0;t<komo.T;t++){
-    for(Task *task: komo.tasks) if(task->prec.N>t && task->prec(t)){
-        //TODO: sightly more efficient: pass only the configurations that correspond to the map->order
-      task->map->phi(y, (&J?Jy:NoArr), komo.configurations({t,t+komo.k_order}), komo.tau, t);
-      if(!y.N) continue;
-      if(absMax(y)>1e10) MLR_MSG("WARNING y=" <<y);
+    //build the Ktuple with order given by map
+    WorldL Ktuple = komo.configurations({t, t+komo.k_order});
+    uint Ktuple_dim=0;
+    for(mlr::KinematicWorld *K:Ktuple) Ktuple_dim += K->q.N;
 
-      //linear transform (target shift)
-      if(task->target.N==1) y -= task->target.elem(0);
-      else if(task->target.nd==1) y -= task->target;
-      else if(task->target.nd==2) y -= task->target[t];
-      y *= sqrt(task->prec(t));
+    for(uint i=0;i<komo.tasks.N;i++){
+      Task *task = komo.tasks.elem(i);
+      if(task->prec.N>t && task->prec(t)){
+        //query the task map and check dimensionalities of returns
+        task->map->phi(y, (&J?Jy:NoArr), Ktuple, komo.tau, t);
+        if(&J) CHECK_EQ(y.N, Jy.d0, "");
+        if(&J) CHECK_EQ(Jy.nd, 2, "");
+        if(&J) CHECK_EQ(Jy.d1, Ktuple_dim, "");
+        if(!y.N) continue;
+        if(absMax(y)>1e10) MLR_MSG("WARNING y=" <<y);
 
-      //write into phi and J
-      phi.setVectorBlock(y, M);
-      if(&J){
-        Jy *= sqrt(task->prec(t));
-        if(t<komo.k_order) Jy.delColumns(0,(komo.k_order-t)*komo.configurations(0)->q.N); //delete the columns that correspond to the prefix!!
-        for(uint i=0;i<y.N;i++) J(M+i) = Jy[i]; //copy it to J(M+i); which is the Jacobian of the M+i'th feature w.r.t. its variables
+        //linear transform (target shift)
+        if(task->target.N==1) y -= task->target.elem(0);
+        else if(task->target.nd==1) y -= task->target;
+        else if(task->target.nd==2) y -= task->target[t];
+        y *= sqrt(task->prec(t));
+
+        //write into phi and J
+        phi.setVectorBlock(y, M);
+        if(&J){
+          Jy *= sqrt(task->prec(t));
+          if(t<komo.k_order) Jy.delColumns(0,(komo.k_order-t)*komo.configurations(0)->q.N); //delete the columns that correspond to the prefix!!
+          for(uint i=0;i<y.N;i++) J(M+i) = Jy[i]; //copy it to J(M+i); which is the Jacobian of the M+i'th feature w.r.t. its variables
+        }
+
+        if(&tt) for(uint i=0;i<y.N;i++) tt(M+i) = task->type;
+
+        //transfer Lambda values
+        if(&lambda && lambda.N && y.N==prevPhiDim(t,i)){
+          lambda.setVectorBlock(prevLambda({prevPhiIndex(t,i), prevPhiIndex(t,i)+y.N-1}), M);
+        }
+
+//        //store indexing phi <-> tasks
+//        phiIndex(t, i) = M;
+//        phiDim(t, i) = y.N;
+
+        //counter for features phi
+        M += y.N;
       }
-      if(&tt) for(uint i=0;i<y.N;i++) tt(M+i) = task->type;
-
-      //counter for features phi
-      M += y.N;
     }
   }
 
   CHECK_EQ(M, dimPhi, "");
+//  if(&lambda) CHECK_EQ(prevLambda, lambda, ""); //this ASSERT only holds is none of the tasks is variable dim!
   komo.featureValues = ARRAY<arr>(phi);
   if(&tt) komo.featureTypes = ARRAY<ObjectiveTypeA>(tt);
+
+  //==================
+#if 0
+  uint C=0;
+  bool updateLambda = ((&lambda) && lambda.N==dimPhi);
+  for(uint t=0;t<komo.T;t++){
+    WorldL Ktuple = komo.configurations({t, t+komo.k_order});
+    mlr::KinematicWorld& K = *komo.configurations(t+komo.k_order);
+    for(mlr::Frame *f:K.frames) for(mlr::Contact *c:f->contacts) if(&c->a==f){
+      TaskMap *map = c->getTM_ContactNegDistance();
+      map->phi(y, (&J?Jy:NoArr), Ktuple, komo.tau, t);
+      c->y = y.scalar();
+      phi.append( c->y );
+//      featureTypes.append(OT_ineq);
+      if(&featureTimes) featureTimes.append(t);
+      if(&J){
+        if(t<komo.k_order) Jy.delColumns(0,(komo.k_order-t)*komo.configurations(0)->q.N); //delete the columns that correspond to the prefix!!
+        J.append( Jy ); //copy it to J(M+i); which is the Jacobian of the M+i'th feature w.r.t. its variables
+      }
+      if(&tt) tt.append( OT_ineq );
+
+      if(updateLambda){
+        lambda.append( c->lagrangeParameter );
+//        cout <<"APPENDED: " <<C <<" t=" <<t <<' ' <<*c <<endl;
+      }
+      C++;
+    }
+  }
+  if(updateLambda) CHECK_EQ(lambda.N, phi.N, "");
+//  cout <<"EXIT:  #" <<C <<" constraints" <<endl;
+#endif
+  //==================
+
 }
 
 

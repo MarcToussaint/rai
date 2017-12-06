@@ -61,7 +61,7 @@ OptNewton::StopCriterion OptNewton::step(){
 
   if(!(fx==fx)) HALT("you're calling a newton step with initial function value = NAN");
 
-  //compute Delta
+  //-- compute Delta
   arr R=Hx;
   if(beta) { //Levenberg Marquardt damping
     if(isRowShifted(R)) for(uint i=0; i<R.d0; i++) R(i,0) += beta; //(R(i,0) is the diagonal in the packed matrix!!)
@@ -120,7 +120,8 @@ OptNewton::StopCriterion OptNewton::step(){
     return stopCriterion=stopCrit1;
   }
 
-  for(;!betaChanged;) { //line search
+  //-- line search along Delta
+  for(;!betaChanged;) {
     if(!o.allowOverstep) if(alpha>1.) alpha=1.;
     if(alphaLimit>0. && alpha>alphaLimit) alpha=alphaLimit;
     y = x + alpha*Delta;
@@ -179,12 +180,15 @@ OptNewton::StopCriterion OptNewton::step(){
   if(o.verbose>0) fil <<endl;
 
   //stopping criteria
+
 #define STOPIF(expr, code, ret) if(expr){ if(o.verbose>1) cout <<"\t\t\t\t\t\t--- stopping criterion='" <<#expr <<"'" <<endl; code; return stopCriterion=ret; }
+
   STOPIF(absMax(Delta)<o.stopTolerance, , stopCrit1);
   STOPIF(numTinySteps>10, numTinySteps=0, stopCrit2);
 //  STOPIF(alpha*absMax(Delta)<1e-3*o.stopTolerance, stopCrit2);
   STOPIF(evals>=o.stopEvals, , stopCritEvals);
   STOPIF(it>=o.stopIters, , stopCritEvals);
+
 #undef STOPIF
 
   return stopCriterion=stopNone;

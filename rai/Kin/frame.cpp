@@ -2,6 +2,7 @@
 #include "frame.h"
 #include "kin.h"
 #include "uncertainty.h"
+#include "contact.h"
 
 #ifdef MLR_GL
 #include <Gui/opengl.h>
@@ -39,6 +40,7 @@ mlr::Frame::~Frame() {
   if(shape) delete shape;
   if(inertia) delete inertia;
   if(parent) unLink();
+  while(contacts.N) delete contacts.last();
   while(outLinks.N) outLinks.last()->unLink();
   K.frames.removeValue(this);
   listReindex(K.frames);
@@ -693,6 +695,7 @@ void mlr::Inertia::read(const Graph& G){
   if(G["fixed"])       type=BT_static;
   if(G["static"])      type=BT_static;
   if(G["kinematic"])   type=BT_kinematic;
+  if(G["dynamic"])     type=BT_dynamic;
   if(G.get(d,"dyntype")) type=(BodyType)d;
 }
 

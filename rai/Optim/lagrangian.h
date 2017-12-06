@@ -27,7 +27,7 @@ extern const char* MethodName[];
 // that can include lagrange terms, penalties, log barriers, and augmented lagrangian terms
 //
 
-struct LagrangianProblem : ScalarFunction{ //TODO: rename: UnconstrainedLagrangianProblem
+struct LagrangianProblem : ScalarFunction { //TODO: rename: UnconstrainedLagrangianProblem
   ConstrainedProblem& P;
 
   //-- parameters of the unconstrained (Lagrangian) scalar function
@@ -37,7 +37,7 @@ struct LagrangianProblem : ScalarFunction{ //TODO: rename: UnconstrainedLagrangi
   arr lambda;        ///< lagrange multipliers for inequalities g and equalities h
 
   //-- buffers to avoid recomputing gradients
-  arr x;          ///< point where P was last evaluated
+  arr x;               ///< point where P was last evaluated
   arr phi_x, J_x, H_x; ///< everything else at x
   ObjectiveTypeA tt_x; ///< everything else at x
 
@@ -103,7 +103,7 @@ inline uint optConstrained(arr& x, arr &dual, ConstrainedProblem& P, OptOptions 
 inline void evaluateConstrainedProblem(const arr& x, ConstrainedProblem& P, std::ostream& os){
   arr phi_x;
   ObjectiveTypeA tt_x;
-  P.phi(phi_x, NoArr, NoArr, tt_x, x);
+  P.phi(phi_x, NoArr, NoArr, tt_x, x, NoArr);
   double Ef=0., Eh=0., Eg=0.;
   for(uint i=0;i<phi_x.N;i++){
     if(tt_x(i)==OT_f) Ef += phi_x(i);

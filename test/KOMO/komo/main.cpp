@@ -2,51 +2,92 @@
 #include <Kin/frame.h>
 #include <Gui/opengl.h>
 #include <KOMO/komo.h>
+#include <Kin/TM_ContactConstraints.h>
 
 //===========================================================================
 
 void TEST(Easy){
-  mlr::KinematicWorld G("test.ors");
-  cout <<"configuration space dim=" <<G.q.N <<endl;
+  mlr::KinematicWorld K("arm.g");
+  cout <<"configuration space dim=" <<K.q.N <<endl;
   KOMO komo;
-  komo.setMoveTo(G, *G.getFrameByName("endeff"), *G.getFrameByName("target"));
-//  komo.checkGradients();
-//  komo.setSpline(3);
-//  komo.checkGradients();
+  komo.setModel(K);
+  komo.setPathOpt(1., 100, 5.);
+
+  komo.setPosition(1., 1., "endeff", "target", OT_sumOfSqr);
+  komo.setSlowAround(1., .02);
+  komo.setCollisions(false);
+//  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq);
+
+  komo.reset();
+//  komo.setSpline(5);
   komo.run();
+//  komo.checkGradients();
   komo.plotTrajectory();
-  cout <<komo.getReport(false) <<endl;
+  komo.getReport(true);
+//  komo.reportProxies();
   for(uint i=0;i<2;i++) komo.displayTrajectory();
+//  while(komo.displayTrajectory());
 }
 
 //===========================================================================
 
-void TEST(EasyPR2){
+void TEST(Align){
+  mlr::KinematicWorld K("arm.g");
+  cout <<"configuration space dim=" <<K.q.N <<endl;
+  KOMO komo;
+  komo.setModel(K);
+  komo.setPathOpt(1., 100, 5.);
+
+  komo.setPosition(1., 1., "endeff", "target");
+  komo.setOrientation(1., 1., "endeff", "target", OT_eq);
+  komo.setSlowAround(1., .02);
+  komo.setCollisions(true);
+//  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq);
+
+  komo.reset();
+  komo.run();
+  komo.plotTrajectory();
+  komo.getReport(true);
+  for(uint i=0;i<2;i++) komo.displayTrajectory();
+//  while(komo.displayTrajectory());
+}
+
+//===========================================================================
+
+void TEST(PR2){
   //NOTE: this uses a 25-DOF whole-body-motion model of thbe PR2
-  mlr::KinematicWorld G("model.kvg");
-  G.optimizeTree();
-  makeConvexHulls(G.frames);
-  G.calc_fwdPropagateFrames();
-  cout <<"configuration space dim=" <<G.q.N <<endl;
+  mlr::KinematicWorld K("model.kvg");
+  K.optimizeTree();
+  makeConvexHulls(K.frames);
+  K.calc_fwdPropagateFrames();
+  cout <<"configuration space dim=" <<K.q.N <<endl;
   double rand = mlr::getParameter<double>("KOMO/moveTo/randomizeInitialPose", .0);
   if(rand){
     rnd.seed(mlr::getParameter<uint>("rndSeed", 0));
-    rndGauss(G.q,rand,true);
-    G.setJointState(G.q);
+    rndGauss(K.q,rand,true);
+    K.setJointState(K.q);
   }
+
   KOMO komo;
-  komo.setMoveTo(G, *G.getFrameByName("endeff"), *G.getFrameByName("target"));
+  komo.setModel(K);
+  komo.setPathOpt(1., 100, 10.);
+  komo.setPosition(1., 1., "endeff", "target");
+  komo.setSlowAround(1., .02);
+  komo.setCollisions(false);
+//  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq);
+
+  komo.reset();
 //  komo.setSpline(10);
   komo.run();
   komo.plotTrajectory();
-  cout <<komo.getReport(false) <<endl;
+  komo.getReport(true);
   for(uint i=0;i<2;i++) komo.displayTrajectory();
 }
 
 //===========================================================================
 
 void TEST(FinalPosePR2){
-  mlr::KinematicWorld K("model.kvg");
+  mlr::KinematicWorld K("model.g");
   K.optimizeTree();
   makeConvexHulls(K.frames);
   cout <<"configuration space dim=" <<K.q.N <<endl;
@@ -57,42 +98,12 @@ void TEST(FinalPosePR2){
 
 //===========================================================================
 
-void TEST(EasyAlign){
-  mlr::KinematicWorld G("test.ors");
-  KOMO komo;
-  komo.setMoveTo(G, *G.getFrameByName("endeff"), *G.getFrameByName("target"), 7); //aligns all 3 axes
-//  komo.setSpline(5);
-  komo.run();
-  komo.plotTrajectory();
-  cout <<komo.getReport(false) <<endl;
-  for(uint i=0;i<2;i++) komo.displayTrajectory();
-}
-
-//===========================================================================
-
-void TEST(EasyAlign2){
-  mlr::KinematicWorld G("test.ors");
-  G.optimizeTree();
-  mlr::Frame *a = G.getFrameByName("target");
-  a->X.addRelativeRotationDeg(90,1,0,0);
-  KOMO komo;
-  komo.setMoveTo(G, *G.getFrameByName("endeff"), *a, 7);
-//  komo.setSpline(10);
-  komo.run();
-  komo.plotTrajectory();
-  cout <<komo.getReport(false) <<endl;
-  for(uint i=0;i<2;i++) komo.displayTrajectory();
-}
-
-//===========================================================================
-
 int main(int argc,char** argv){
   mlr::initCmdLine(argc,argv);
 
   testEasy();
-  testEasyAlign();
-  testEasyAlign2();
-  testEasyPR2();
+  testAlign();
+  testPR2();
 
   return 0;
 }

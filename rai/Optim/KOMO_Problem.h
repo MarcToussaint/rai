@@ -22,7 +22,7 @@
 struct KOMO_Problem {
   virtual uint get_k() = 0;
   virtual void getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes)=0;
-  virtual void phi(arr& phi, arrA& J, arrA& H, ObjectiveTypeA& tt, const arr& x) = 0;
+  virtual void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x, arr& lambda) = 0;
 
   bool checkStructure(const arr& x);                 ///< check if Jacobians and Hessians have right dimensions (=clique size)
   void report(const arr& phi=NoArr);
@@ -39,7 +39,7 @@ struct Conv_KOMO_ConstrainedProblem : ConstrainedProblem{
 
   Conv_KOMO_ConstrainedProblem(KOMO_Problem& P);
 
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda);
 };
 
 
@@ -47,5 +47,5 @@ struct KOMO_GraphProblem : GraphProblem{
   KOMO_Problem& KOMO;
   KOMO_GraphProblem(KOMO_Problem& P) : KOMO(P){}
   virtual void getStructure(uintA& variableDimensions, uintAA& featureVariables, ObjectiveTypeA& featureTypes);
-  virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x);
+  virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x, arr& lambda);
 };

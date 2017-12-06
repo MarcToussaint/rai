@@ -756,11 +756,28 @@ template<class T> T& mlr::Array<T>::elem(int i) const {
 }
 
 /// multi-dimensional (tensor) access
+template<class T> T& mlr::Array<T>::elem(const Array<int> &I) const {
+  CHECK_EQ(I.N , nd, "wrong dimensions");
+  uint i, j;
+  i=0;
+  for(j=0; j<nd; j++){
+    int Ij = I.elem(j);
+    if(Ij<0) Ij += dim(j);
+    i = i*dim(j) + Ij;
+  }
+  return p[i];
+}
+
+/// multi-dimensional (tensor) access
 template<class T> T& mlr::Array<T>::elem(const Array<uint> &I) const {
   CHECK_EQ(I.N , nd, "wrong dimensions");
   uint i, j;
   i=0;
-  for(j=0; j<nd; j++) i = i*dim(j) + I.elem(j);
+  for(j=0; j<nd; j++){
+    uint Ij = I.elem(j);
+//    if(Ij<0) Ij += dim(j);
+    i = i*dim(j) + Ij;
+  }
   return p[i];
 }
 
@@ -788,22 +805,28 @@ template<class T> T& mlr::Array<T>::last(int i) const {
 }
 
 /// 1D reference access (throws an error if not 1D or out of range)
-template<class T> T& mlr::Array<T>::operator()(uint i) const {
-  CHECK(nd==1 && i<d0,
+template<class T> T& mlr::Array<T>::operator()(int i) const {
+  if(i<0) i += d0;
+  CHECK(nd==1 && (uint)i<d0,
         "1D range error (" <<nd <<"=1, " <<i <<"<" <<d0 <<")");
   return p[i];
 }
 
 /// 2D reference access
-template<class T> T& mlr::Array<T>::operator()(uint i, uint j) const {
-  CHECK(nd==2 && i<d0 && j<d1 && !isSparseMatrix(*this),
+template<class T> T& mlr::Array<T>::operator()(int i, int j) const {
+  if(i<0) i += d0;
+  if(j<0) j += d1;
+  CHECK(nd==2 && (uint)i<d0 && (uint)j<d1 && !isSparseMatrix(*this),
         "2D range error (" <<nd <<"=2, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<")");
   return p[i*d1+j];
 }
 
 /// 3D reference access
-template<class T> T& mlr::Array<T>::operator()(uint i, uint j, uint k) const {
-  CHECK(nd==3 && i<d0 && j<d1 && k<d2 && !isSparseMatrix(*this),
+template<class T> T& mlr::Array<T>::operator()(int i, int j, int k) const {
+  if(i<0) i += d0;
+  if(j<0) j += d1;
+  if(k<0) k += d2;
+  CHECK(nd==3 && (uint)i<d0 && (uint)j<d1 && (uint)k<d2 && !isSparseMatrix(*this),
         "3D range error (" <<nd <<"=3, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<", " <<k <<"<" <<d2 <<")");
   return p[(i*d1+j)*d2+k];
 }
@@ -838,7 +861,7 @@ template<class T> mlr::Array<T> mlr::Array<T>::operator()(int i, std::pair<int, 
 //}
 
 /// range reference access
-template<class T> mlr::Array<T> mlr::Array<T>::operator()(uint i, uint j, std::initializer_list<int> K) const {
+template<class T> mlr::Array<T> mlr::Array<T>::operator()(int i, int j, std::initializer_list<int> K) const {
   mlr::Array<T> z;
   if(K.size()==2){ NIY; }
   else if(K.size()==0) z.referToDim(*this, i, j);

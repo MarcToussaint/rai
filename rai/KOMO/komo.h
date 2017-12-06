@@ -163,7 +163,7 @@ struct KOMO{
   void reportProxies(ostream& os=std::cout); ///< report the proxies (collisions) for each time slice
   void checkGradients();          ///< checks all gradients numerically
   void plotTrajectory();
-  bool displayTrajectory(double delay=0.01, bool watch=false); ///< display the
+  bool displayTrajectory(double delay=0.01, bool watch=true); ///< display the
   mlr::Camera& displayCamera();   ///< access to the display camera to change the view
 
   //===========================================================================
@@ -179,15 +179,17 @@ struct KOMO{
   void set_x(const arr& x);            ///< set the state trajectory of all configurations
   uint dim_x(uint t) { return configurations(t+k_order)->getJointStateDimension(); }
 
-  struct Conv_MotionProblem_KOMO_Problem : KOMO_Problem{
+  struct Conv_MotionProblem_KOMO_Problem : KOMO_Problem {
     KOMO& komo;
     uint dimPhi;
+    arr prevLambda;
+    uintA phiIndex, phiDim;
 
     Conv_MotionProblem_KOMO_Problem(KOMO& _komo) : komo(_komo){}
 
     virtual uint get_k(){ return komo.k_order; }
     virtual void getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes);
-    virtual void phi(arr& phi, arrA& J, arrA& H, ObjectiveTypeA& tt, const arr& x);
+    virtual void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x, arr& lambda);
   } komo_problem;
 
 };

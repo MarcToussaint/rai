@@ -9,14 +9,14 @@ namespace mlr{
 ///Description of a Contact
 struct Contact : GLDrawer {
   Frame &a, &b;
-  mlr::Vector a_rel, b_rel;   // contact point RELATIVE to the frames
-  mlr::Vector a_norm, b_norm; // normals RELATIVE to the frames, pointing AWAY from the object
-  double a_rad, b_rad;        // the radii for sphere-swept objects: the contact points are on the cvx CORE, not the surface!
+  mlr::Vector a_rel, b_rel;    // contact point RELATIVE to the frames
+  mlr::Vector a_norm, b_norm;  // normals RELATIVE to the frames, pointing AWAY from the object
+  double a_rad, b_rad;         // the radii for sphere-swept objects: the contact points are on the cvx CORE, not the surface!
   uint a_type, b_type;
-  mlr::Vector a_line, b_line; // when of line type, these are the line/axis directions RELATIVE to the frame
+  mlr::Vector a_line, b_line;  // when of line type, these are the line/axis directions RELATIVE to the frame
 
-  double y;                   // place to store the constraint value (typically: neg distance) when the taskmap is called
-  double lagrangeParameter;   // place to store the respective lagrange parameter after an optimization
+  double y=0.;                 // place to store the constraint value (typically: neg distance) when the taskmap is called
+  double lagrangeParameter=0.; // place to store the respective lagrange parameter after an optimization
 
   Contact(Frame &a, Frame &b)
       : a(a), b(b) {
@@ -29,11 +29,17 @@ struct Contact : GLDrawer {
     b.contacts.removeValue(this);
   }
 
-  double getDistance(); //calls the task map!
+  mlr::Vector get_pa() const{ return a.X * (a_rel + a_rad*a_norm); }
+  mlr::Vector get_pb() const{ return b.X * (b_rel + b_rad*b_norm); }
+  double get_pDistance() const{ return (get_pa()-get_pb()).length(); } // get distance between the FIXED contacted points p_a and p_b
+
+  double getDistance() const; // get normal(!) distance (projected onto contact normal), by calling the TM_ContactNegDistance()
   TaskMap* getTM_Friction() const;
   TaskMap* getTM_ContactNegDistance() const;
   void glDraw(OpenGL&);
+  void write(ostream& os) const;
 };
+stdOutPipe(Contact)
 
 struct TM_ContactNegDistance : TaskMap {
   const Contact& C;

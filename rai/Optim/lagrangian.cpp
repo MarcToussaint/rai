@@ -29,6 +29,7 @@ double I_lambda_x(uint i, arr& lambda, arr& g){
 
 LagrangianProblem::LagrangianProblem(ConstrainedProblem& P, OptOptions opt, arr& lambdaInit)
   : P(P), muLB(0.), mu(0.), nu(0.) {
+
   ScalarFunction::operator=( [this](arr& dL, arr& HL, const arr& x) -> double {
     return this->lagrangian(dL, HL, x);
   } );
@@ -51,7 +52,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x){
   //-- evaluate constrained problem and buffer
   if(_x!=x){
     x=_x;
-    P.phi(phi_x, J_x, H_x, tt_x, x);
+    P.phi(phi_x, J_x, H_x, tt_x, x, lambda);
   }else{ //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
   }
   CHECK_EQ(phi_x.N, J_x.d0, "Jacobian size inconsistent");
@@ -61,7 +62,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x){
   //precompute I_lambda_x
   boolA I_lambda_x(phi_x.N);
   if(phi_x.N) I_lambda_x = false;
-  if(mu)       for(uint i=0;i<phi_x.N;i++) if(tt_x.p[i]==OT_ineq) I_lambda_x.p[i] = (phi_x.p[i]>0. || (lambda.N && lambda.p[i]>0.));
+  if(mu)      for(uint i=0;i<phi_x.N;i++) if(tt_x.p[i]==OT_ineq) I_lambda_x.p[i] = (phi_x.p[i]>0. || (lambda.N && lambda.p[i]>0.));
 
   double L=0.; //L value
   for(uint i=0;i<phi_x.N;i++){
@@ -130,7 +131,10 @@ double LagrangianProblem::get_costs(){
 double LagrangianProblem::get_sumOfGviolations(){
   double S=0.;
   for(uint i=0;i<phi_x.N;i++){
-    if(tt_x(i)==OT_ineq && phi_x(i)>0.) S += phi_x(i);
+    if(tt_x(i)==OT_ineq && phi_x(i)>0.){
+      S += phi_x(i);
+//      cout <<"g violation" <<i << phi_x(i) <<' '<<(lambda.N?lambda(i):-1.) <<endl;
+    }
   }
   return S;
 }

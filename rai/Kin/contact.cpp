@@ -1,7 +1,7 @@
 #include "contact.h"
 #include <Gui/opengl.h>
 
-double mlr::Contact::getDistance(){
+double mlr::Contact::getDistance() const{
   TM_ContactNegDistance map(*this);
   arr y;
   map.phi(y, NoArr, a.K);
@@ -79,3 +79,7 @@ void mlr::Contact::glDraw(OpenGL& gl){
 //    glDrawText(STRING(a <<'-' <<b <<':' <<d), 0.,0.,0.);
 }
 #endif
+
+void mlr::Contact::write(std::ostream &os) const{
+  os <<a.name <<'-' <<b.name <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() <<" pDist=" <<get_pDistance() <<" y=" <<y <<" l=" <<lagrangeParameter;
+}

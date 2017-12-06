@@ -570,6 +570,8 @@ void mlr::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
 /** @brief return the jacobian \f$J = \frac{\partial\phi_i(q)}{\partial q}\f$ of the position
   of the i-th body (3 x n tensor)*/
 void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const mlr::Vector& rel) const {
+  CHECK_EQ(&a->K, this, "given frame is not element of this KinematicWorld");
+
   if(!a){
     MLR_MSG("WARNING: calling kinematics for NULL body");
     if(&y) y.resize(3).setZero();
@@ -1237,7 +1239,7 @@ void __new(mlr::KinematicWorld& K, mlr::Proxy *p){
 void mlr::KinematicWorld::filterProxiesToContacts(double margin){
   for(Proxy& p:proxies){
     if(!p.coll) p.calc_coll(*this);
-    if(p.coll->distance-(p.coll->rad1+p.coll->rad2)>margin) continue;
+    if(p.coll->distance>0. && p.coll->distance-(p.coll->rad1+p.coll->rad2)>margin) continue;
     Frame *a = frames(p.a);
     Frame *b = frames(p.b);
     Contact *candidate=NULL;
@@ -1263,7 +1265,7 @@ void mlr::KinematicWorld::filterProxiesToContacts(double margin){
   //phase 2: cleanup old and distant contacts
   mlr::Array<Contact*> old;
   for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f){
-    if(c->getDistance()>margin) old.append(c);
+    if(c->get_pDistance()>margin+.05 || c->getDistance()>margin) old.append(c);
   }
   for(Contact *c:old) delete c;
 }
@@ -1665,6 +1667,11 @@ void mlr::KinematicWorld::reportProxies(std::ostream& os, double belowMargin, bo
     os <<endl;
     i++;
   }
+  os <<"Contact report:" <<endl;
+  for(Frame *a:frames) for(Contact *c:a->contacts) if(&c->a==a){
+    os <<*c <<endl;
+  }
+
 }
 
 bool ProxySortComp(const mlr::Proxy *a, const mlr::Proxy *b) {
