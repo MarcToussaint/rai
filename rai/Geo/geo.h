@@ -346,6 +346,7 @@ Quaternion operator*(const Quaternion& b, const Quaternion& c);
 Quaternion operator/(const Quaternion& b, const Quaternion& c);
 bool       operator==(const Quaternion&, const Quaternion&);
 bool       operator!=(const Quaternion&, const Quaternion&);
+Quaternion operator-(const Quaternion&, const Quaternion&);
 
 // TRANSFORMATION
 Transformation operator-(const Transformation&);

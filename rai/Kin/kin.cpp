@@ -85,6 +85,10 @@ template<> const char* mlr::Enum<mlr::JointType>::names []={
   "JT_hingeX", "JT_hingeY", "JT_hingeZ", "JT_transX", "JT_transY", "JT_transZ", "JT_transXY", "JT_trans3", "JT_transXYPhi", "JT_universal", "JT_rigid", "JT_quatBall", "JT_phiTransXY", "JT_XBall", "JT_free", NULL
 };
 
+template<> const char* mlr::Enum<mlr::BodyType>::names []={
+  "BT_dynamic", "BT_kinematic", "BT_static", NULL
+};
+
 
 
 uintA stringListToShapeIndices(const mlr::Array<const char*>& names, const mlr::KinematicWorld& K) {
@@ -1106,7 +1110,7 @@ void mlr::KinematicWorld::swiftDelete() {
 PhysXInterface& mlr::KinematicWorld::physx(){
   if(!s->physx){
     s->physx = new PhysXInterface(*this);
-    s->physx->setArticulatedBodiesKinematic();
+//    s->physx->setArticulatedBodiesKinematic();
   }
   return *s->physx;
 }
@@ -1451,19 +1455,25 @@ struct Link{
 };
 }
 
-mlr::Array<mlr::Link *> mlr::KinematicWorld::getLinks(){
-  mlr::Array<Link*> links;
+//mlr::Array<mlr::Link *> mlr::KinematicWorld::getLinks(){
+//  mlr::Array<Link*> links;
 
-  FrameL bases;
-  for(Frame *a:frames){ if(!a->parent) a->getRigidSubFrames(bases); }
-  Link *l = links.append(new Link);
-  l->frames = bases;
+//  FrameL bases;
+//  for(Frame *a:frames){ if(!a->parent) a->getRigidSubFrames(bases); }
+//  Link *l = links.append(new Link);
+//  l->frames = bases;
 
-  for(Frame *a:frames) if(a->joint){
-    Link *l = links.append(new Link);
-    l->joint = a;
-    a->getRigidSubFrames(l->frames);
-  }
+//  for(Frame *a:frames) if(a->joint){
+//    Link *l = links.append(new Link);
+//    l->joint = a;
+//    a->getRigidSubFrames(l->frames);
+//  }
+//  return links;
+//}
+
+mlr::Array<mlr::Frame*> mlr::KinematicWorld::getLinks(){
+  FrameL links;
+  for(Frame *a:frames) if(!a->parent || a->joint) links.append(a);
   return links;
 }
 
@@ -1485,21 +1495,6 @@ void mlr::KinematicWorld::report(std::ostream &os) const {
 
 void mlr::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
   if(!addInsteadOfClear) clear();
-
-  NodeL fs = G.getNodes("frame");
-  for(Node *n: fs) {
-    CHECK_EQ(n->keys(0),"frame","");
-    CHECK(n->isGraph(), "frame must have value Graph");
-    CHECK_LE(n->parents.N, 1,"frames must have no or one parent: specs=" <<*n <<' ' <<n->index);
-
-    Frame *b = NULL;
-    if(!n->parents.N) b = new Frame(*this);
-    if(n->parents.N==1) b = new Frame( getFrameByName(n->parents(0)->keys.last()) );
-    if(n->keys.N>1) b->name=n->keys.last();
-    b->ats.copy(n->graph(), false, true);
-    if(n->keys.N>2) b->ats.newNode<bool>({n->keys.last(-1)});
-    b->read(b->ats);
-  }
 
   NodeL bs = G.getNodes("body");
   for(Node *n:  bs) {
@@ -1553,6 +1548,21 @@ void mlr::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
 
     Joint *j=new Joint(*f);
     j->read(f->ats);
+  }
+
+  NodeL fs = G.getNodes("frame");
+  for(Node *n: fs) {
+    CHECK_EQ(n->keys(0),"frame","");
+    CHECK(n->isGraph(), "frame must have value Graph");
+    CHECK_LE(n->parents.N, 1,"frames must have no or one parent: specs=" <<*n <<' ' <<n->index);
+
+    Frame *b = NULL;
+    if(!n->parents.N) b = new Frame(*this);
+    if(n->parents.N==1) b = new Frame( getFrameByName(n->parents(0)->keys.last()) );
+    if(n->keys.N>1) b->name=n->keys.last();
+    b->ats.copy(n->graph(), false, true);
+    if(n->keys.N>2) b->ats.newNode<bool>({n->keys.last(-1)});
+    b->read(b->ats);
   }
 
   //if the joint is coupled to another:
@@ -2273,21 +2283,29 @@ bool mlr::KinematicWorld::checkConsistency(){
 //}
 
 void mlr::KinematicWorld::glDraw(OpenGL& gl) {
-  arr q_org = getJointState();
   glDraw_sub(gl);
+
+  bool displayUncertainties = false;
   for(Joint *j:fwdActiveJoints) if(j->uncertainty){
-    for(uint i=0;i<j->qDim();i++){
-      arr q=q_org;
-      q(j->qIndex+i) -= j->uncertainty->sigma(i);
-      setJointState(q);
-      glDraw_sub(gl);
-      q=q_org;
-      q(j->qIndex+i) += j->uncertainty->sigma(i);
-      setJointState(q);
-      glDraw_sub(gl);
-    }
+    displayUncertainties=true; break;
   }
-  setJointState(q_org);
+
+  if(displayUncertainties){
+    arr q_org = getJointState();
+    for(Joint *j:fwdActiveJoints) if(j->uncertainty){
+      for(uint i=0;i<j->qDim();i++){
+        arr q=q_org;
+        q(j->qIndex+i) -= j->uncertainty->sigma(i);
+        setJointState(q);
+        glDraw_sub(gl);
+        q=q_org;
+        q(j->qIndex+i) += j->uncertainty->sigma(i);
+        setJointState(q);
+        glDraw_sub(gl);
+      }
+    }
+    setJointState(q_org);
+  }
 }
 
 /// GL routine to draw a mlr::KinematicWorld
@@ -3017,7 +3035,7 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
 void editConfiguration(const char* filename, mlr::KinematicWorld& K) {
 //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
   bool exit=false;
-//  C.gl().addHoverCall(new EditConfigurationHoverCall(C));
+//  K.gl().addHoverCall(new EditConfigurationHoverCall(K));
   K.gl().addKeyCall(new EditConfigurationKeyCall(K,exit));
   K.gl().addClickCall(new EditConfigurationClickCall(K));
   Inotify ino(filename);

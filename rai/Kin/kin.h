@@ -219,7 +219,7 @@ struct KinematicWorld : GLDrawer{
   void glDraw(struct OpenGL&);
   void glDraw_sub(struct OpenGL&);
   Graph getGraph() const;
-  mlr::Array<struct Link*> getLinks();
+  Array<Frame*> getLinks();
 
   //some info
   void report(std::ostream& os=std::cout) const;

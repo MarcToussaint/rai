@@ -162,6 +162,12 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     return;
   }
 
+  if(symbol==makeDynamic){
+    CHECK(from->inertia, "can only make frames with intertia dynamic");
+    from->inertia->type=mlr::BT_dynamic;
+    return;
+  }
+
   HALT("shouldn't be here!");
 }
 
@@ -236,6 +242,7 @@ mlr::KinematicSwitch* mlr::KinematicSwitch::newSwitch(const mlr::String& type, c
   else if(type=="insert_transX"){ sw->symbol = mlr::KinematicSwitch::insertJoint; sw->jointType=mlr::JT_transX; }
   else if(type=="insert_trans3"){ sw->symbol = mlr::KinematicSwitch::insertJoint; sw->jointType=mlr::JT_trans3; }
   else if(type=="createSlider"){ sw->symbol = mlr::KinematicSwitch::addSliderMechanism; }
+  else if(type=="makeDynamic"){ sw->symbol = mlr::KinematicSwitch::makeDynamic; }
   else HALT("unknown type: "<< type);
   if(ref1) sw->fromId = world.getFrameByName(ref1)->ID;
   if(ref2) sw->toId = world.getFrameByName(ref2)->ID;

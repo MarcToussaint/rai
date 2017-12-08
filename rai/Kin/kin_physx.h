@@ -36,10 +36,10 @@ struct PhysXInterface : GLDrawer{
   PhysXInterface(mlr::KinematicWorld& _world);
   ~PhysXInterface();
   
-  void step(double tau=.03);
+  void step(double tau=.03, bool withKinematicPush=true);
   
-  void pushToPhysx();
-  void pullFromPhysx(double tau = .03);
+  void pushToPhysx(mlr::KinematicWorld *K=NULL, mlr::KinematicWorld *Kt_1=NULL, double tau=-1., bool onlyKinematic=true);
+  void pullFromPhysx(mlr::KinematicWorld *K=NULL, arr &vels=NoArr);
 
   void setArticulatedBodiesKinematic();
   void ShutdownPhysX();
