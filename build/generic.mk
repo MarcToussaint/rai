@@ -358,8 +358,8 @@ initUbuntuPackages/%: $(BASE)/rai/%
 makePythonPath/%: %
 	make --directory=$< pywrapper
 
-#$(BASE)/build/config.mk: $(BASE)/../config.mk
-#	cp $< $@
+$(BASE)/build/config.mk: $(BASE)/../config.mk
+	cp $< $@
 
 #$(BASE)/build/config.mk: $(BASE)/build/config.mk.default
 #	cp $< $@
