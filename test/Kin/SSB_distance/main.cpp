@@ -159,8 +159,8 @@ void TEST(Distance){
     double d2=(Pa-Pb).length();
     cout <<"d=" <<d <<' ' <<d2 <<' ' <<Pa <<Pb <<endl;
     if(d>0.) CHECK_ZERO(d-d2, 1e-4, "NOT EQUAL!");
-    mlr::Proxy p(K); p.posA=Pa; p.posB=Pb; p.colorCode=1;
-    K.proxies.append( &p );
+    mlr::Proxy p; p.posA=Pa; p.posB=Pb; p.colorCode=1;
+    K.proxies.append( p );
     K.gl().timedupdate(.1);
     K.gl().watch();
     //    K.proxies.clear();
