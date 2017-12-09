@@ -710,11 +710,12 @@ void PhysXInterface::addForce(mlr::Vector& force, mlr::Frame* b, mlr::Vector& po
 PhysXInterface::PhysXInterface(mlr::KinematicWorld& _world) : world(_world), s(NULL) { NICO }
 PhysXInterface::~PhysXInterface() { NICO }
   
-void PhysXInterface::step(double tau) { NICO }
-void PhysXInterface::pushToPhysx() { NICO }
-void PhysXInterface::pullFromPhysx(double tau) { NICO }
+void PhysXInterface::step(double tau, bool withKinematicPush) { NICO }
+void PhysXInterface::pushToPhysx(mlr::KinematicWorld *K, mlr::KinematicWorld *Kt_1, double tau, bool onlyKinematic) { NICO }
+void PhysXInterface::pullFromPhysx(mlr::KinematicWorld *K, arr& vels) { NICO }
 void PhysXInterface::setArticulatedBodiesKinematic() { NICO }
 void PhysXInterface::ShutdownPhysX() { NICO }
+void PhysXInterface::watch(bool pause, const char *txt){ NICO }
 void PhysXInterface::glDraw(OpenGL&) { NICO }
 void PhysXInterface::addForce(mlr::Vector& force, mlr::Frame* b) { NICO }
 void PhysXInterface::addForce(mlr::Vector& force, mlr::Frame* b, mlr::Vector& pos) { NICO }
@@ -725,8 +726,10 @@ void bindOrsToPhysX(mlr::KinematicWorld& graph, OpenGL& gl, PhysXInterface& phys
 #endif
 /** @} */
 
+#ifdef MLR_PHYSX
 RUN_ON_INIT_BEGIN(kin_physx)
 mlr::Array<PxRigidActor*>::memMove=true;
 mlr::Array<PxD6Joint*>::memMove=true;
 mlr::Array<mlr::BodyType>::memMove=true;
 RUN_ON_INIT_END(kin_physx)
+#endif
