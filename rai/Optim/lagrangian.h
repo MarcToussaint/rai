@@ -65,7 +65,7 @@ struct PhaseOneProblem : ConstrainedProblem{
   ConstrainedProblem &f_orig;
 
   PhaseOneProblem(ConstrainedProblem &f_orig):f_orig(f_orig) {}
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x, arr& lambda);
 };
 
 

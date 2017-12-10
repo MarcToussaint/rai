@@ -47,7 +47,7 @@ mlr::Frame::~Frame() {
 }
 
 void mlr::Frame::getRigidSubFrames(FrameL &F){
-    for(Frame *f:outLinks) if(!f->joint) { F.append(f); f->getRigidSubFrames(F); }
+  for(Frame *f:outLinks) if(!f->joint) { F.append(f); f->getRigidSubFrames(F); }
 }
 
 mlr::Frame *mlr::Frame::getUpwardLink(mlr::Transformation &Qtotal){

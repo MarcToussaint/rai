@@ -235,7 +235,7 @@ void LagrangianProblem::aulaUpdate(bool anyTimeVariant, double lambdaStepsize, d
 //
 
 
-void PhaseOneProblem::phi(arr& meta_phi, arr& meta_J, arr& meta_H, ObjectiveTypeA& tt, const arr& x){
+void PhaseOneProblem::phi(arr& meta_phi, arr& meta_J, arr& meta_H, ObjectiveTypeA& tt, const arr& x, arr& lambda){
   NIY;
   arr g, Jg;
 //  f_orig(NoArr, NoArr, g, (&meta_Jg?Jg:NoArr), x.sub(0,-2)); //the underlying problem only receives a x.N-1 dimensional x

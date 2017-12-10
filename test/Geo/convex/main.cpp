@@ -221,24 +221,10 @@ void testConvConvIntersect(){
 
   arr C1 = .5*X;
   arr C2 = .25*X;
-
-
-  C1 = {8,2, {  -0.48, 0.38,
-                -0.48, -0.38,
-                0.48, 0.38,
-                -0.48, 0.38,
-                0.48, 0.38,
-                0.48, -0.38,
-                -0.48, -0.38,
-                0.48, -0.38}};
-  C2 = {4,2, {  -0.02, -0.005,
-    0.02, -0.005,
-    0.02, 0.035,
-    -0.02, 0.035}};
-//  sort2Dpoints(C1);
-//  sort2Dpoints(C2);
+  sort2Dpoints(C1);
+  sort2Dpoints(C2);
   for(uint k=0;k<4;k++){
-//    C2 += .2;
+    C2 += .2;
 
     arr C = convconv_intersect(C1, C2);
     cout <<"#C=" <<C.d0 <<endl;
@@ -295,10 +281,11 @@ void testConvConvIntersect(){
 // }
 
 int MAIN(int argc, char *argv[]){
+  mlr::initCmdLine(argc, argv);
   cout <<"QHull version = " <<qhullVersion() <<endl;
 
-//  testConvexHull();
-//  testForceClosure();
+  //testConvexHull();
+  //testForceClosure();
   //testFCinOrs();
 
   testConvConvIntersect();

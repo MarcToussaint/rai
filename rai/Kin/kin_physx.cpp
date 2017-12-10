@@ -98,6 +98,10 @@ PxTransform Id_PxTrans() {
   return PxTransform(PxVec3(0.f, 0.f, 0.f), PxQuat(0.f, 0.f, 0.f, 1.f));
 }
 
+arr conv_PxVec3_arr(const PxVec3& v){
+  return {v.x, v.y, v.z};
+}
+
 // ============================================================================
 //stuff from Samples/PxToolkit
 
@@ -141,12 +145,13 @@ PxTriangleMesh* createTriangleMesh32(PxPhysics& physics, PxCooking& cooking, con
 struct sPhysXInterface {
   PxScene* gScene = NULL;
   mlr::Array<PxRigidActor*> actors;
+  mlr::Array<mlr::BodyType> actorTypes;
   mlr::Array<PxD6Joint*> joints;
   OpenGL *gl=NULL;
 
   debugger::comm::PvdConnection* connection = NULL;
   
-  void addBody(mlr::Frame *b, physx::PxMaterial *material);
+  void addLink(mlr::Frame *b, physx::PxMaterial *material);
   void addJoint(mlr::Joint *jj);
 
   void lockJoint(PxD6Joint *joint, mlr::Joint *ors_joint);
@@ -212,8 +217,10 @@ PhysXInterface::PhysXInterface(mlr::KinematicWorld& _world): world(_world), s(NU
 
   //-- create Kin equivalent in PhysX
   // loop through kin
-  for(mlr::Frame *b : world.frames) s->addBody(b, mMaterial);
-  for(mlr::Joint *j : world.fwdActiveJoints) s->addJoint(j);
+  s->actors.resize(world.frames.N); s->actors.setZero();
+  s->actorTypes.resize(world.frames.N); s->actorTypes.setZero();
+  for(mlr::Frame *a : world.getLinks()) s->addLink(a, mMaterial);
+//  for(mlr::Joint *j : world.fwdActiveJoints) s->addJoint(j);
 
   /// save data for the PVD
   if(mlr::getParameter<bool>("physx_debugger", false)) {
@@ -230,10 +237,12 @@ PhysXInterface::~PhysXInterface() {
   delete s;
 }
 
-void PhysXInterface::step(double tau) {
+void PhysXInterface::step(double tau, bool withKinematicPush) {
   //-- push positions of all kinematic objects
-  for(mlr::Frame *b: world.frames) if(b->inertia && b->inertia->type==mlr::BT_kinematic) {
-    ((PxRigidDynamic*)s->actors(b->ID))->setKinematicTarget(conv_Transformation2PxTrans(b->X));
+  if(withKinematicPush){
+    for(mlr::Frame *b: world.frames) if(b->inertia && b->inertia->type==mlr::BT_kinematic) {
+      ((PxRigidDynamic*)s->actors(b->ID))->setKinematicTarget(conv_Transformation2PxTrans(b->X));
+    }
   }
 
   //-- dynamic simulation
@@ -244,15 +253,16 @@ void PhysXInterface::step(double tau) {
   }
   
   //-- pull state of all objects
-  pullFromPhysx(tau);
+  pullFromPhysx();
 }
 
 void PhysXInterface::setArticulatedBodiesKinematic(){
+  HALT("NOT SURE IF THIS IS DESIRED");
   for(mlr::Joint* j:world.fwdActiveJoints) if(j->type!=mlr::JT_free){
     if(j->from()->inertia && j->from()->inertia->type==mlr::BT_dynamic) j->from()->inertia->type=mlr::BT_kinematic;
     if(j->frame.inertia   && j->frame.inertia->type==mlr::BT_dynamic) j->frame.inertia->type=mlr::BT_kinematic;
   }
-  for(mlr::Frame *b: world.frames) if(b->inertia){
+  for(mlr::Frame *b: world.frames) if(s->actors(b->ID) && b->inertia){
     if(b->inertia->type==mlr::BT_kinematic)
       ((PxRigidDynamic*)s->actors(b->ID))->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, true);
     if(b->inertia->type==mlr::BT_dynamic)
@@ -268,6 +278,7 @@ void PhysXInterface::setArticulatedBodiesKinematic(){
  */
 
 void sPhysXInterface::addJoint(mlr::Joint *jj) {
+  HALT("REALLY?");
   while(joints.N <= jj->frame.ID)
     joints.append(NULL);
 
@@ -403,10 +414,14 @@ void sPhysXInterface::unlockJoint(PxD6Joint *joint, mlr::Joint *ors_joint) {
   }
 }
 
-void sPhysXInterface::addBody(mlr::Frame *b, physx::PxMaterial *mMaterial) {
+void sPhysXInterface::addLink(mlr::Frame *b, physx::PxMaterial *mMaterial) {
   PxRigidDynamic* actor=NULL;
+
   mlr::BodyType type = mlr::BT_static;
+  if(b->joint) type = mlr::BT_kinematic;
   if(b->inertia) type = b->inertia->type;
+  actorTypes(b->ID) = type;
+
   switch(type) {
   case mlr::BT_static:
     actor = (PxRigidDynamic*) mPhysics->createRigidStatic(conv_Transformation2PxTrans(b->X));
@@ -424,10 +439,16 @@ void sPhysXInterface::addBody(mlr::Frame *b, physx::PxMaterial *mMaterial) {
         break;
   }
   CHECK(actor, "create actor failed!");
-  ShapeL bShapes;
-  if(b->shape) bShapes.append(b->shape);
-  for(mlr::Frame *a:b->outLinks) if(!a->joint && a->shape) bShapes.append(a->shape);
-  for(mlr::Shape *s: bShapes) {
+
+  FrameL parts = {b};
+  b->getRigidSubFrames(parts);
+
+  cout <<MLR_HERE <<"adding '" <<b->name <<"' as " <<type <<" with parts";
+  for(auto* p:parts) cout <<' ' <<p->name; cout <<endl;
+
+  for(mlr::Frame *p: parts){
+    mlr::Shape *s = p->shape;
+    if(!s) continue;
     if(s->frame.name.startsWith("coll_")) continue; //these are the 'pink' collision boundary shapes..
     PxGeometry* geometry;
     switch(s->type()) {
@@ -480,7 +501,7 @@ void sPhysXInterface::addBody(mlr::Frame *b, physx::PxMaterial *mMaterial) {
     }
     //actor = PxCreateDynamic(*mPhysics, OrsTrans2PxTrans(s->X), *geometry, *mMaterial, 1.f);
   }
-  if(type == mlr::BT_dynamic) {
+  if(type != mlr::BT_static) {
     if(b->inertia && b->inertia->mass>0.) {
       PxRigidBodyExt::setMassAndUpdateInertia(*actor, b->inertia->mass);
     }else{
@@ -493,13 +514,22 @@ void sPhysXInterface::addBody(mlr::Frame *b, physx::PxMaterial *mMaterial) {
   gScene->addActor(*actor);
   actor->userData = b;
 
-  while(actors.N<=b->ID) actors.append(NULL);
   actors(b->ID) = actor;
 }
 
-void PhysXInterface::pullFromPhysx(double tau) {
-  for_list(PxRigidActor, a, s->actors) if(a) {
-    PxTrans2OrsTrans(world.frames(a_COUNT)->X, a->getGlobalPose());
+void PhysXInterface::pullFromPhysx(mlr::KinematicWorld *K, arr& vels) {
+  if(!K) K=&world;
+  if(&vels) vels.resize(K->frames.N, 2, 3).setZero();
+  for(mlr::Frame *f : K->frames){
+    if(s->actors.N <= f->ID) continue;
+    PxRigidActor* a = s->actors(f->ID);
+    if(!a) continue;
+    PxTrans2OrsTrans(f->X, a->getGlobalPose());
+    if(&vels && a->getType() == PxActorType::eRIGID_DYNAMIC) {
+      PxRigidBody *px_body = (PxRigidBody*) a;
+      vels(f->ID, 0, {}) = conv_PxVec3_arr(px_body->getLinearVelocity());
+      vels(f->ID, 1, {}) = conv_PxVec3_arr(px_body->getAngularVelocity());
+    }
 #if 0
     if(a->getType() == PxActorType::eRIGID_DYNAMIC) {
       PxRigidBody *px_body = (PxRigidBody*) a;
@@ -515,13 +545,41 @@ void PhysXInterface::pullFromPhysx(double tau) {
     }
 #endif
   }
-  world.calc_Q_from_BodyFrames();
-  world.calc_q_from_Q();
+  K->calc_Q_from_BodyFrames();
+  K->calc_q_from_Q();
 }
 
-void PhysXInterface::pushToPhysx() {
-  for_list(PxRigidActor, a, s->actors) if(a) {
-    a->setGlobalPose(conv_Transformation2PxTrans(world.frames(a_COUNT)->X));
+void PhysXInterface::pushToPhysx(mlr::KinematicWorld *K, mlr::KinematicWorld *Kt_1, double tau, bool onlyKinematic) {
+  if(!K) K=&world;
+  for(mlr::Frame *f : K->frames){
+    if(s->actors.N <= f->ID) continue;
+    PxRigidActor* a = s->actors(f->ID);
+    if(!a) continue; //f is not an actor
+
+    if(f->inertia && f->inertia->type!= s->actorTypes(f->ID)){
+      LOG(0) <<"SWITCHING INERTIA TYPE! " <<f->name;
+      s->actorTypes(f->ID) = f->inertia->type;
+      if(f->inertia->type==mlr::BT_kinematic) ((PxRigidDynamic*)a)->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, true);
+      if(f->inertia->type==mlr::BT_dynamic){
+        ((PxRigidDynamic*)a)->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, false);
+        if(Kt_1){
+          mlr::Vector v = (f->X.pos - Kt_1->frames(f->ID)->X.pos)/tau;
+          ((PxRigidDynamic*)a)->setLinearVelocity(PxVec3(v.x, v.y, v.z));
+
+          mlr::Vector w = (f->X.rot.getJacobian() * (f->X.rot.getArr4d() - Kt_1->frames(f->ID)->X.rot.getArr4d()))/tau;
+          ((PxRigidDynamic*)a)->setAngularVelocity(PxVec3(w.x, w.y, w.z));
+
+          LOG(0) <<"  switch velocity=" <<v <<"  angular=" <<w <<"  position=" <<f->X.pos;
+        }else{
+          LOG(-1) <<"I could not set velocities as K_{t-1} was not given";
+        }
+      }
+    }
+
+    bool isKinematic = (f->joint && !f->inertia) || (f->inertia && f->inertia->type==mlr::BT_kinematic);
+    if(onlyKinematic && !isKinematic) continue;
+    ((PxRigidDynamic*)a)->setKinematicTarget(conv_Transformation2PxTrans(f->X));
+    //    cout <<"pushing " <<f->name <<" : " <<f->X <<endl;
   }
 }
 
@@ -530,7 +588,7 @@ void PhysXInterface::ShutdownPhysX() {
 //  s->plane
 //  s->planeShape
 
-  for(PxRigidActor* a: s->actors) {
+  for(PxRigidActor* a: s->actors) if(a){
     s->gScene->removeActor(*a);
     a->release();
   }
@@ -564,8 +622,7 @@ void DrawActor(PxRigidActor* actor, mlr::Frame *frame) {
     // use the color of the first shape of the body for the entire body
     mlr::Shape *s = frame->shape;
     if(!s) s = frame->outLinks.elem(0)->shape;
-    CHECK(s, "no shape??");
-    glColor(s->mesh().C);
+    if(s) glColor(s->mesh().C);
 
     mlr::Transformation f;
     double mat[16];
@@ -653,11 +710,12 @@ void PhysXInterface::addForce(mlr::Vector& force, mlr::Frame* b, mlr::Vector& po
 PhysXInterface::PhysXInterface(mlr::KinematicWorld& _world) : world(_world), s(NULL) { NICO }
 PhysXInterface::~PhysXInterface() { NICO }
   
-void PhysXInterface::step(double tau) { NICO }
-void PhysXInterface::pushToPhysx() { NICO }
-void PhysXInterface::pullFromPhysx(double tau) { NICO }
+void PhysXInterface::step(double tau, bool withKinematicPush) { NICO }
+void PhysXInterface::pushToPhysx(mlr::KinematicWorld *K, mlr::KinematicWorld *Kt_1, double tau, bool onlyKinematic) { NICO }
+void PhysXInterface::pullFromPhysx(mlr::KinematicWorld *K, arr& vels) { NICO }
 void PhysXInterface::setArticulatedBodiesKinematic() { NICO }
 void PhysXInterface::ShutdownPhysX() { NICO }
+void PhysXInterface::watch(bool pause, const char *txt){ NICO }
 void PhysXInterface::glDraw(OpenGL&) { NICO }
 void PhysXInterface::addForce(mlr::Vector& force, mlr::Frame* b) { NICO }
 void PhysXInterface::addForce(mlr::Vector& force, mlr::Frame* b, mlr::Vector& pos) { NICO }
@@ -667,3 +725,11 @@ void bindOrsToPhysX(mlr::KinematicWorld& graph, OpenGL& gl, PhysXInterface& phys
 
 #endif
 /** @} */
+
+#ifdef MLR_PHYSX
+RUN_ON_INIT_BEGIN(kin_physx)
+mlr::Array<PxRigidActor*>::memMove=true;
+mlr::Array<PxD6Joint*>::memMove=true;
+mlr::Array<mlr::BodyType>::memMove=true;
+RUN_ON_INIT_END(kin_physx)
+#endif

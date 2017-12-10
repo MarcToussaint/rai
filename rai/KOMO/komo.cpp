@@ -677,12 +677,16 @@ void KOMO::setAttach(double time, const char* endeff, const char* object1, const
 
 }
 
-void KOMO::setSlowAround(double time, double delta, double prec, bool hardConstrained){
+void KOMO::setSlow(double startTime, double endTime, double prec, bool hardConstrained){
   if(stepsPerPhase>2){ //otherwise: no velocities
-      if(!hardConstrained) setTask(time-delta, time+delta, new TaskMap_qItself(), OT_sumOfSqr, NoArr, prec, 1);
-      else setTask(time-delta, time+delta, new TaskMap_qItself(), OT_eq, NoArr, prec, 1);
+      if(!hardConstrained) setTask(startTime, endTime, new TaskMap_qItself(), OT_sumOfSqr, NoArr, prec, 1);
+      else setTask(startTime, endTime, new TaskMap_qItself(), OT_eq, NoArr, prec, 1);
   }
   //#    _MinSumOfSqr_qItself_vel(MinSumOfSqr qItself){ order=1 time=[0.98 1] scale=1e1 } #slow down
+}
+
+void KOMO::setSlowAround(double time, double delta, double prec, bool hardConstrained){
+  setSlow(time-delta, time+delta, prec, hardConstrained);
 }
 
 void KOMO::setFine_grasp(double time, const char* endeff, const char* object, double above, double gripSize, const char* gripper, const char* gripper2){
@@ -971,6 +975,20 @@ void KOMO::getPhysicsReference(){
   }
 }
 
+void KOMO::playInPhysics(uint subSteps, bool display){
+  arr vels;
+  PhysXInterface& px = world.physx();
+  for(uint t=0;t<T;t++){
+    px.pushToPhysx(configurations(k_order+t), configurations(k_order+t-2), tau, true);
+    for(uint s=0;s<subSteps;s++){
+      if(display) px.watch(false, STRING("t="<<t<<";"<<s));
+      world.physx().step(tau/subSteps, false);
+    }
+    px.pullFromPhysx(configurations(k_order+t), vels);
+  }
+//  for(uint i=0;i<vels.d0;i++) if(i<world.frames.N) cout <<world.frames(i)->name <<" v=" <<vels[i] <<endl;
+}
+
 void KOMO::reportProblem(std::ostream& os){
     os <<"KOMO Problem:" <<endl;
     os <<"  x-dim:" <<x.N <<"  dual-dim:" <<dual.N <<endl;
@@ -1026,8 +1044,7 @@ void KOMO::plotTrajectory(){
   gnuplot("load 'z.trajectories.plt'");
 }
 
-bool KOMO::displayTrajectory(double delay, bool watch){
-//  return displayTrajectory(watch?-1:1, "KOMO planned trajectory", delay);
+bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPrefix){
   const char* tag = "KOMO planned trajectory";
   if(!gl){
     gl = new OpenGL ("KOMO display");
@@ -1035,6 +1052,7 @@ bool KOMO::displayTrajectory(double delay, bool watch){
   }
 
   for(uint t=0; t<T; t++) {
+    if(saveVideoPrefix) gl->captureImg=true;
     gl->clear();
     gl->add(glStandardScene, 0);
     gl->addDrawer(configurations(t+k_order));
@@ -1045,12 +1063,13 @@ bool KOMO::displayTrajectory(double delay, bool watch){
       gl->update(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
       if(delay) mlr::wait(delay);
     }
+    if(saveVideoPrefix) write_ppm(gl->captureImage, STRING(saveVideoPrefix<<std::setw(3)<<std::setfill('0')<<t<<".ppm"));
   }
   if(watch){
     int key = gl->watch(STRING(tag <<" (time " <<std::setw(3) <<T-1 <<'/' <<T <<')').p);
     return !(key==27 || key=='q');
-  }else
-    return false;
+  }
+  return false;
 }
 
 
@@ -1085,6 +1104,7 @@ void KOMO::setupConfigurations(){
   configurations.last()->checkConsistency();
   for(uint s=1;s<k_order+T;s++){
     configurations.append(new mlr::KinematicWorld())->copy(*configurations(s-1), true);
+    configurations(s)->checkConsistency();
     CHECK(configurations(s)==configurations.last(), "");
     //apply potential graph switches
     for(mlr::KinematicSwitch *sw:switches){

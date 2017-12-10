@@ -106,6 +106,7 @@ struct KOMO{
   void setLastTaskToBeVelocity();
   void setCollisions(bool hardConstraint, double margin=.05, double prec=1.);
   void setLimits(bool hardConstraint, double margin=.05, double prec=1.);
+  void setSlow(double startTime, double endTime, double prec=1e2, bool hardConstrained=false);
   void setSlowAround(double time, double delta, double prec=1e2, bool hardConstrained=false);
 
   //-- kinematic switches mid-level
@@ -158,13 +159,14 @@ struct KOMO{
   void reset(double initNoise=.01);      ///< reset the optimizer (initializes x to a default path)
   void run();                     ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
   void getPhysicsReference();
+  void playInPhysics(uint subSteps=10, bool display=false);
   arr getPath(const StringA& joints);
   void reportProblem(ostream &os=std::cout);
   Graph getReport(bool gnuplt=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot task costs; output detailed cost features per time slice)
   void reportProxies(ostream& os=std::cout); ///< report the proxies (collisions) for each time slice
   void checkGradients();          ///< checks all gradients numerically
   void plotTrajectory();
-  bool displayTrajectory(double delay=0.01, bool watch=true); ///< display the
+  bool displayTrajectory(double delay=0.01, bool watch=true, const char* saveVideoPrefix=NULL); ///< display the trajectory; use "vid/z." as vid prefix
   mlr::Camera& displayCamera();   ///< access to the display camera to change the view
 
   //===========================================================================

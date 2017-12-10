@@ -967,6 +967,17 @@ Quaternion operator/(const Quaternion& b, const Quaternion& c) {
   return a;
 }
 
+/// Euclidean(!) difference between two quaternions
+Quaternion operator-(const Quaternion& b, const Quaternion& c) {
+  Quaternion a;
+  a.w = b.w-c.w;
+  a.x = b.x-c.w;
+  a.y = b.y-c.w;
+  a.z = b.z-c.w;
+  a.isZero = false;
+  return a;
+}
+
 void mult(Vector& a, const Quaternion& b, const Vector& c,bool add){
   if(c.isZero){
     if(!add) a.setZero();

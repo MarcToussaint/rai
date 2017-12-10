@@ -417,10 +417,10 @@ void TEST(Sorted){
 
   for(uint k=0;k<100;k++){
     uint y=rnd(99);
-    if(!x.N || y>x.last()) x.insertInSorted(y, mlr::greater);
+    if(!x.N || y>x.last()) x.insertInSorted(y, mlr::greater<uint>);
     if(x.N>33) x.popLast();
     cout <<x <<endl;
-    CHECK(x.isSorted(mlr::greaterEqual),"");
+    CHECK(x.isSorted(mlr::greaterEqual<uint>),"");
   }
 }
 
