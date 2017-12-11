@@ -43,3 +43,10 @@ struct TaskMap {
   static TaskMap *newTaskMap(const Graph& specs, const mlr::KinematicWorld& K); ///< creates a task map based on specs
   static TaskMap *newTaskMap(const Node* specs, const mlr::KinematicWorld& K); ///< creates a task map based on specs
 };
+
+inline uintA getKtupleDim(const WorldL& Ktuple){
+  uintA dim(Ktuple.N);
+  dim(0)=Ktuple(0)->q.N;
+  for(uint i=1;i<dim.N;i++) dim(i) = dim(i-1)+Ktuple(i)->q.N;
+  return dim;
+}

@@ -549,7 +549,7 @@ void PhysXInterface::pullFromPhysx(mlr::KinematicWorld *K, arr& vels) {
   K->calc_q_from_Q();
 }
 
-void PhysXInterface::pushToPhysx(mlr::KinematicWorld *K, mlr::KinematicWorld *Kt_1, double tau, bool onlyKinematic) {
+void PhysXInterface::pushToPhysx(mlr::KinematicWorld *K, mlr::KinematicWorld *Kt_1, mlr::KinematicWorld *Kt_2, double tau, bool onlyKinematic) {
   if(!K) K=&world;
   for(mlr::Frame *f : K->frames){
     if(s->actors.N <= f->ID) continue;
@@ -563,10 +563,10 @@ void PhysXInterface::pushToPhysx(mlr::KinematicWorld *K, mlr::KinematicWorld *Kt
       if(f->inertia->type==mlr::BT_dynamic){
         ((PxRigidDynamic*)a)->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, false);
         if(Kt_1){
-          mlr::Vector v = (f->X.pos - Kt_1->frames(f->ID)->X.pos)/tau;
+          mlr::Vector v = (Kt_1->frames(f->ID)->X.pos - Kt_2->frames(f->ID)->X.pos)/tau;
           ((PxRigidDynamic*)a)->setLinearVelocity(PxVec3(v.x, v.y, v.z));
 
-          mlr::Vector w = (f->X.rot.getJacobian() * (f->X.rot.getArr4d() - Kt_1->frames(f->ID)->X.rot.getArr4d()))/tau;
+          mlr::Vector w = (f->X.rot.getJacobian() * (Kt_1->frames(f->ID)->X.rot.getArr4d() - Kt_2->frames(f->ID)->X.rot.getArr4d()))/tau;
           ((PxRigidDynamic*)a)->setAngularVelocity(PxVec3(w.x, w.y, w.z));
 
           LOG(0) <<"  switch velocity=" <<v <<"  angular=" <<w <<"  position=" <<f->X.pos;

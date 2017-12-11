@@ -165,6 +165,10 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
   if(symbol==makeDynamic){
     CHECK(from->inertia, "can only make frames with intertia dynamic");
     from->inertia->type=mlr::BT_dynamic;
+    if(from->joint){
+      from->joint->constrainToZeroVel=false;
+      from->joint->H = 0.;
+    }
     return;
   }
 

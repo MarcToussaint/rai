@@ -8,15 +8,14 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
   y.clear();
   if(&J) J.clear();
 
-  //check equal # of frames in each world
   mlr::KinematicWorld& K = *Ktuple(-1);
-  uint nf = K.frames.N;
-  for(auto& K:Ktuple) CHECK_EQ(K->frames.N, nf, "");
 
   if(order==0) HALT("that doesn't make sense");
 
-  arr p0, J0, p1, J1, pc, Jc;
   if(order==1){
+    arr p0, J0, p1, J1, pc, Jc;
+    //check equal # of frames in each world
+    uint nf = K.frames.N;
     for(uint i=0;i<nf;i++){
       mlr::Frame *a = K.frames(i);
       if(a->inertia && a->inertia->type==mlr::BT_dynamic){
@@ -50,8 +49,8 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
 
 
         //z-velocity only, compared to default .1 drop velocity
-#if 0
-        y.append(p0 - .1*v_ref);
+#if 1
+        y.append(p0 - v_ref);
         if(&J){
 //          uint Ktuple_dim = 0;
 //          for(auto *K:Ks) Ktuple_dim += K->q.N;
@@ -59,7 +58,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
 //          tmp.setMatrixBlock(- J0, 0, Ktuple_dim-J0.d1-J1.d1);
 //          tmp.setMatrixBlock(  J1 /*- Jv_ref*/, 0, Ktuple_dim-J1.d1);
           arr tmp = zeros(3, J0.d1);
-          tmp.setMatrixBlock(-.1*Jv_ref, 0, tmp.d1-Jv_ref.d1);
+          tmp.setMatrixBlock(-Jv_ref, 0, tmp.d1-Jv_ref.d1);
           J.append(J0 + tmp);
           J.reshape(y.N, J0.d1);
         }
@@ -81,14 +80,36 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
     }
   }
 
-  if(order==2) NIY;
+  if(order==2){
+    arr acc, Jacc;
+    arr acc_ref = {0.,0.,-1.};
+    arr Jacc_ref = zeros(3, K.q.N);
+    for(mlr::Frame *a:K.frames){
+      if(a->inertia && a->inertia->type==mlr::BT_dynamic){
+        TaskMap_Default pos(posTMT, a->ID);
+        pos.order=2;
+        pos.TaskMap::phi(acc, (&J?Jacc:NoArr), Ktuple, tau, t);
+
+        y.append(acc - acc_ref);
+        if(&J){
+          arr tmp = zeros(3, Jacc.d1);
+          tmp.setMatrixBlock(-Jacc_ref, 0, tmp.d1-Jacc_ref.d1);
+          J.append(Jacc + tmp);
+          J.reshape(y.N, Jacc.d1);
+        }
+      }
+    }
+  }
+
+  uintA KD = getKtupleDim(Ktuple);
+  J.reshape(y.N, KD.last());
 }
 
 uint TM_Gravity::dim_phi(const WorldL &Ktuple, int t){
   mlr::KinematicWorld& K = *Ktuple(-1);
   uint d = 0;
   for(mlr::Frame *a: K.frames) if(a->inertia && a->inertia->type==mlr::BT_dynamic){
-    d+=1;
+    d+=3;
   }
   return d;
 }

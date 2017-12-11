@@ -44,13 +44,15 @@ void TaskMap::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
   for(uint i=0;i<=k;i++)
     phi(y_bar(i), (&J?J_bar(i):NoArr), *Ktuple(offset+i), t-k+i);
 
-  // check for quaternion flipping
-  if(k==1 && flipTargetSignOnNegScalarProduct && scalarProduct(y_bar(1), y_bar(0))<-.0){
-      if(&J) J_bar(0) *= -1.;
-      y_bar(0) *= -1.;
+  // check for quaternion
+  if(k==1 && flipTargetSignOnNegScalarProduct){
+    if(scalarProduct(y_bar(1), y_bar(0))<-.0){ y_bar(0) *= -1.;  if(&J) J_bar(0) *= -1.; }
   }
   // NIY
-  if(k==2 && flipTargetSignOnNegScalarProduct) HALT("Quaternion flipping NIY for acceleration");
+  if(k==2 && flipTargetSignOnNegScalarProduct){
+    if(scalarProduct(y_bar(2), y_bar(0))<-.0){ y_bar(0) *= -1.;  if(&J) J_bar(0) *= -1.; }
+    if(scalarProduct(y_bar(2), y_bar(1))<-.0){ y_bar(1) *= -1.;  if(&J) J_bar(1) *= -1.; }
+  }
   if(k==3 && flipTargetSignOnNegScalarProduct) HALT("Quaternion flipping NIY for jerk");
 
   if(k==1)  y = (y_bar(1)-y_bar(0))/tau; //penalize velocity
