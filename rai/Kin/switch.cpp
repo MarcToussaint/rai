@@ -167,7 +167,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     from->inertia->type=mlr::BT_dynamic;
     if(from->joint){
       from->joint->constrainToZeroVel=false;
-      from->joint->H = 0.;
+      from->joint->H = 1e-1;
     }
     return;
   }
