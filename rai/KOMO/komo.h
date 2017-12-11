@@ -168,6 +168,8 @@ struct KOMO{
   void plotTrajectory();
   bool displayTrajectory(double delay=0.01, bool watch=true, const char* saveVideoPrefix=NULL); ///< display the trajectory; use "vid/z." as vid prefix
   mlr::Camera& displayCamera();   ///< access to the display camera to change the view
+  PhysXInterface& physx(){ return world.physx(); }
+
 
   //===========================================================================
   //

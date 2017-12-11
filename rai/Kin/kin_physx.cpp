@@ -220,7 +220,7 @@ PhysXInterface::PhysXInterface(mlr::KinematicWorld& _world): world(_world), s(NU
   s->actors.resize(world.frames.N); s->actors.setZero();
   s->actorTypes.resize(world.frames.N); s->actorTypes.setZero();
   for(mlr::Frame *a : world.getLinks()) s->addLink(a, mMaterial);
-//  for(mlr::Joint *j : world.fwdActiveJoints) s->addJoint(j);
+//  for(mlr::Joint *j : world.fwdActiveJoints) s->addJoint(j); //DONT ADD JOINTS!!!!
 
   /// save data for the PVD
   if(mlr::getParameter<bool>("physx_debugger", false)) {

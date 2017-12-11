@@ -212,8 +212,8 @@ struct Transformation {
   bool isZero() const;
   double diffZero() const;
   
-  void addRelativeTranslation(const Vector& t);
-  void addRelativeTranslation(double x, double y, double z);
+  Transformation& addRelativeTranslation(const Vector& t);
+  Transformation& addRelativeTranslation(double x, double y, double z);
   void addRelativeRotation(const Quaternion&);
   void addRelativeRotationDeg(double degree, double x, double y, double z);
   void addRelativeRotationRad(double rad, double x, double y, double z);

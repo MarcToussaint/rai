@@ -170,7 +170,7 @@ void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix,
   copy.orsDrawMarkers=false;
   for(uint t=0;t<cs.N;t++){
     copy.copy(*cs(t), true);
-#if 1 //render on screen
+#if 0 //render on screen
     copy.gl().resize(w,h);
     copy.gl().captureImg=true;
     copy.gl().update(STRING(" (time " <<tprefix+int(t) <<'/' <<tprefix+int(cs.N) <<')').p, false, false, true);

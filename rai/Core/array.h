@@ -171,7 +171,7 @@ template<class T> struct Array : std::vector<T> {
   
   /// @name access by reference (direct memory access)
   T& elem(int i) const;
-  T& elem(const Array<int> &I) const;
+//  T& elem(const Array<int> &I) const;
   T& elem(const Array<uint> &I) const;
   T& scalar() const;
   T& first() const;

@@ -639,7 +639,7 @@ void mlr::Shape::glDraw(OpenGL& gl) {
 #endif
 
 
-mlr::Inertia::Inertia(Frame &f, Inertia *copyInertia) : frame(f), type(BT_dynamic) {
+mlr::Inertia::Inertia(Frame &f, Inertia *copyInertia) : frame(f), type(BT_kinematic) {
   CHECK(!frame.inertia, "this frame already has inertia");
   frame.inertia = this;
   if(copyInertia){
@@ -690,7 +690,6 @@ void mlr::Inertia::read(const Graph& G){
     mass=d;
     matrix.setId();
     matrix *= .2*d;
-    type=BT_dynamic;
   }
   if(G["fixed"])       type=BT_static;
   if(G["static"])      type=BT_static;

@@ -1079,12 +1079,14 @@ void Transformation::setRandom() {
 }
 
 /// move the turtle by the vector (x, z, y) WITH RESPECT TO the current orientation/scale
-void Transformation::addRelativeTranslation(double x, double y, double z) {
+Transformation& Transformation::addRelativeTranslation(double x, double y, double z) {
   addRelativeTranslation(Vector(x, y, z));
+  return *this;
 }
 
-void Transformation::addRelativeTranslation(const Vector& x_rel){
+Transformation& Transformation::addRelativeTranslation(const Vector& x_rel){
   pos += rot*x_rel;
+  return *this;
 }
 
 

@@ -756,17 +756,17 @@ template<class T> T& mlr::Array<T>::elem(int i) const {
 }
 
 /// multi-dimensional (tensor) access
-template<class T> T& mlr::Array<T>::elem(const Array<int> &I) const {
-  CHECK_EQ(I.N , nd, "wrong dimensions");
-  uint i, j;
-  i=0;
-  for(j=0; j<nd; j++){
-    int Ij = I.elem(j);
-    if(Ij<0) Ij += dim(j);
-    i = i*dim(j) + Ij;
-  }
-  return p[i];
-}
+//template<class T> T& mlr::Array<T>::elem(const Array<int> &I) const {
+//  CHECK_EQ(I.N , nd, "wrong dimensions");
+//  uint i, j;
+//  i=0;
+//  for(j=0; j<nd; j++){
+//    int Ij = I.elem(j);
+//    if(Ij<0) Ij += dim(j);
+//    i = i*dim(j) + Ij;
+//  }
+//  return p[i];
+//}
 
 /// multi-dimensional (tensor) access
 template<class T> T& mlr::Array<T>::elem(const Array<uint> &I) const {
