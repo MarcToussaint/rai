@@ -390,7 +390,7 @@ LIBS += -rdynamic -lkdl_parser -lurdf -lurdfdom_model -lurdfdom_model_state -lur
 endif
 ifeq ($(ROS_VERSION),kinetic)
 CXXFLAGS  += -DMLR_ROS_KINETIC 
-LIBS += -rdynamic -lkdl_parser -lurdf -lurdfdom_model -lurdfdom_model_state -lurdfdom_sensor -lurdfdom_world -lcollada_parser -lrosconsole_bridge -lroscpp -lxmlrpcpp -ltinyxml -lclass_loader -lPocoFoundation -ldl -lrosconsole -llog4cxx -lroslib -lmessage_filters -lconsole_bridge -lroscpp_serialization -lrostime -lpthread -lcpp_common -lorocos-kdl -ltf -lboost_system -lpcl_ros_tf
+LIBS += -rdynamic -lkdl_parser -lurdf -lurdfdom_model -lurdfdom_model_state -lurdfdom_sensor -lurdfdom_world -lcollada_parser -lrosconsole_bridge -lroscpp -lxmlrpcpp -ltinyxml -lclass_loader -lPocoFoundation -ldl -lrosconsole -llog4cxx -lroslib -lmessage_filters -lconsole_bridge -lroscpp_serialization -lrostime -lpthread -lcpp_common -lorocos-kdl -ltf -lboost_system
 endif
 
 

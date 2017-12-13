@@ -17,7 +17,7 @@ void rosCheckInit(const char* node_name){
   static Mutex mutex;
   static bool inited = false;
 
-  if(mlr::getParameter<bool>("useRos", false)){
+  if(mlr::getParameter<bool>("useRos", true)){
     mutex.lock();
     if(!inited) {
       mlr::String nodeName = mlr::getParameter<mlr::String>("rosNodeName", STRING(node_name));
@@ -328,10 +328,19 @@ std_msgs::Float32MultiArray conv_floatA2Float32Array(const floatA &x){
 
 
 floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray &msg){
-  floatA x;
-  x = conv_stdvec2arr<float>(msg.data);
+  floatA x = conv_stdvec2arr<float>(msg.data);
+  uint nd = msg.layout.dim.size();
+  if(nd==2) x.reshape(msg.layout.dim[0].size, msg.layout.dim[1].size);
+  if(nd==3) x.reshape(msg.layout.dim[0].size, msg.layout.dim[1].size, msg.layout.dim[2].size);
+  if(nd>3) NIY;
   return x;
+}
 
+arr conv_Float32Array2arr(const std_msgs::Float32MultiArray &msg){
+  floatA f = conv_Float32Array2FloatA(msg);
+  arr x;
+  copy(x, f);
+  return x;
 }
 
 //===========================================================================
