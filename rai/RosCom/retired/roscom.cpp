@@ -11,6 +11,150 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 
+void PerceptionObjects2Ors::step(){
+  perceptionObjects.readAccess();
+  modelWorld.readAccess();
+
+  for(visualization_msgs::Marker& marker : perceptionObjects().markers){
+    mlr::String name;
+    name <<"obj" <<marker.id;
+    mlr::Shape *s = modelWorld->getFrameByName(name)->shape;
+    if(!s){
+      mlr::Frame *f = new mlr::Frame(modelWorld());
+      s = new mlr::Shape(*f);
+      if(marker.type==marker.CYLINDER){
+        s->type() = mlr::ST_cylinder;
+        s->size(3) = .5*(marker.scale.x+marker.scale.y);
+        s->size(2) = marker.scale.z;
+      }else if(marker.type==marker.POINTS){
+        s->type() = mlr::ST_mesh;
+        s->mesh().V = conv_points2arr(marker.points);
+        s->mesh().C = conv_colors2arr(marker.colors);
+      }else NIY;
+    }
+  }
+
+  perceptionObjects.deAccess();
+  modelWorld.deAccess();
+}
+
+
+//===========================================================================
+// RosCom_Spinner
+//struct sRosCom_Spinner{
+//};
+
+//void RosCom_Spinner::open(){
+//  rosCheckInit();
+//}
+
+//void RosCom_Spinner::step(){
+//  ros::spinOnce();
+//}
+
+//void RosCom_Spinner::close(){}
+
+//===========================================================================
+// CosCom_ControllerSync
+//struct sRosCom_ControllerSync{
+//  RosCom_ControllerSync *base;
+//  ros::NodeHandle nh;
+//  ros::Subscriber sub_jointState;
+////  ros::Subscriber sub_odom;
+//  ros::Publisher pub_jointReference;
+
+//  void joinstState_callback(const marc_controller_pkg::JointState::ConstPtr& msg){
+//    //  cout <<"** joinstState_callback" <<endl;
+//    CtrlMsg m(conv_stdvec2arr(msg->q), conv_stdvec2arr(msg->qdot), conv_stdvec2arr(msg->fL), conv_stdvec2arr(msg->fR), conv_stdvec2arr(msg->u_bias), conv_stdvec2arr(msg->J_ft_inv), msg->velLimitRatio, msg->effLimitRatio, msg->gamma);
+//    base->ctrl_obs.set() = m;
+//  }
+////  void odom_callback(const marc_controller_pkg::JointState::ConstPtr& msg){
+////    //  cout <<"** joinstState_callback" <<endl;
+////    CtrlMsg m(conv_stdvec2arr(msg->q), conv_stdvec2arr(msg->qdot), conv_stdvec2arr(msg->fL), conv_stdvec2arr(msg->fR), conv_stdvec2arr(msg->u_bias), conv_stdvec2arr(msg->J_ft_inv), msg->velLimitRatio, msg->effLimitRatio, msg->gamma);
+////    base->ctrl_obs.set() = m;
+////  }
+//};
+
+//void RosCom_ControllerSync::open(){
+//  rosCheckInit();
+//  s = new sRosCom_ControllerSync;
+//  s->base=this;
+//  s->sub_jointState = s->nh.subscribe("/marc_rt_controller/jointState", 1, &sRosCom_ControllerSync::joinstState_callback, s);
+////  s->sub_odom = s->nh.subscribe("/robot_pose_ekf/odom_combined", 1, &sRosCom_ControllerSync::joinstState_callback, s);
+//  s->pub_jointReference = s->nh.advertise<marc_controller_pkg::JointState>("/marc_rt_controller/jointReference", 1);
+//  //  s->sub_jointState = s->nh.subscribe("/marc_rt_controller/jointState", 1, &sRosCom::joinstState_callback, s);
+//  //  s->pub_jointReference = s->nh.advertise<marc_controller_pkg::JointState>("/marc_rt_controller/jointReference", 1);
+//}
+
+//void RosCom_ControllerSync::step(){
+//  CtrlMsg m = ctrl_ref.get();
+//  if(!m.q.N) return;
+//  marc_controller_pkg::JointState jointRef;
+//  jointRef.q = conv_arr2stdvec(m.q);
+//  jointRef.qdot= conv_arr2stdvec(m.qdot);
+//  jointRef.fL = conv_arr2stdvec(m.fL);
+//  jointRef.u_bias = conv_arr2stdvec(m.u_bias);
+//  jointRef.Kp = conv_arr2stdvec(m.Kp);
+//  jointRef.Kd = conv_arr2stdvec(m.Kd);
+//  jointRef.Ki = conv_arr2stdvec(m.Ki);
+//  jointRef.KiFT = conv_arr2stdvec(m.KiFT);
+//  jointRef.J_ft_inv = conv_arr2stdvec(m.J_ft_inv);
+//  jointRef.velLimitRatio = m.velLimitRatio;
+//  jointRef.effLimitRatio = m.effLimitRatio;
+//  jointRef.intLimitRatio = m.intLimitRatio;
+//  jointRef.gamma = m.gamma;
+//  s->pub_jointReference.publish(jointRef);
+//}
+
+//void RosCom_ControllerSync::close(){
+//  s->nh.shutdown();
+//  delete s;
+//}
+
+//===========================================================================
+// Helper function so sync ors with the real PR2
+void initialSyncJointStateWithROS(mlr::KinematicWorld& world,
+    Access<CtrlMsg>& ctrl_obs, bool useRos) {
+
+  if (not useRos) { return; }
+
+  //-- wait for first q observation!
+  cout << "** Waiting for ROS message of joints for initial configuration.." << endl
+       << "   If nothing is happening: is the controller running?" << endl;
+
+  for (uint trials = 0; trials < 20; trials++) {
+    ctrl_obs.waitForNextRevision();
+    cout << "REMOTE joint dimension=" << ctrl_obs.get()->q.N << endl;
+    cout << "LOCAL  joint dimension=" << world.q.N << endl;
+
+    if (ctrl_obs.get()->q.N == world.q.N and ctrl_obs.get()->qdot.N == world.q.N) {
+      // set current state
+      cout << "** Updating world state" << endl;
+      world.setJointState(ctrl_obs.get()->q, ctrl_obs.get()->qdot);
+      return;
+    }
+    cout << "retrying..." << endl;
+  }
+  HALT("sync'ing real PR2 with simulated failed");
+}
+
+void syncJointStateWitROS(mlr::KinematicWorld& world,
+    Access<CtrlMsg>& ctrl_obs, bool useRos) {
+
+  if (not useRos) { return; }
+
+  for (uint trials = 0; trials < 2; trials++) {
+    ctrl_obs.waitForNextRevision();
+
+    if (ctrl_obs.get()->q.N == world.q.N and ctrl_obs.get()->qdot.N == world.q.N) {
+      // set current state
+      world.setJointState(ctrl_obs.get()->q, ctrl_obs.get()->qdot);
+      return;
+    }
+  }
+  HALT("sync'ing real PR2 with simulated failed");
+}
+
 
 //===========================================================================
 // RosCom_Spinner
