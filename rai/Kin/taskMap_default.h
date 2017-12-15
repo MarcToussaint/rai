@@ -43,7 +43,7 @@ struct TaskMap_Default:TaskMap {
                  int iShape=-1, const mlr::Vector& ivec=NoVector,
                  int jShape=-1, const mlr::Vector& jvec=NoVector);
 
-  TaskMap_Default(TaskMap_DefaultType type, const mlr::KinematicWorld& G,
+  TaskMap_Default(TaskMap_DefaultType type, const mlr::KinematicWorld& K,
                  const char* iShapeName=NULL, const mlr::Vector& ivec=NoVector,
                  const char* jShapeName=NULL, const mlr::Vector& jvec=NoVector);
 

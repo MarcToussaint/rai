@@ -43,7 +43,7 @@ double shapeSize(const mlr::KinematicWorld& K, const char* name, uint i=2){
   if(!s){
     for(mlr::Frame *b:f->outLinks) if(b->name==name && b->shape){ s=b->shape; break; }
   }
-  CHECK(s, "");
+  if(!s) return 0;
   return s->size(i);
 }
 
@@ -953,7 +953,7 @@ void KOMO::run(){
     cout <<"** optimization time=" <<mlr::timerRead()
       <<" setJointStateCount=" <<mlr::KinematicWorld::setJointStateCount <<endl;
   }
-  if(verbose>1) cout <<getReport(false);
+  if(verbose>1) cout <<getReport(false) <<endl;
 }
 
 void KOMO::getPhysicsReference(){

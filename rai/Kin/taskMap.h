@@ -15,6 +15,7 @@
 
 #pragma once
 #include <Kin/kin.h>
+#include <Kin/frame.h>
 
 /// defines only a map (task space), not yet the costs in this space
 struct TaskMap {
@@ -50,3 +51,15 @@ inline uintA getKtupleDim(const WorldL& Ktuple){
   for(uint i=1;i<dim.N;i++) dim(i) = dim(i-1)+Ktuple(i)->q.N;
   return dim;
 }
+
+//helper with default constructor for task maps that refer to 2 frames
+struct TaskMapInit2Frames : TaskMap {
+  int i,j;
+  TaskMapInit2Frames(const mlr::KinematicWorld &K, const char* i_name, const char* j_name)
+    : i(-1), j(-1){
+    mlr::Frame *a = i_name ? K.getFrameByName(i_name):NULL;
+    mlr::Frame *b = j_name ? K.getFrameByName(j_name):NULL;
+    if(a) i=a->ID;
+    if(b) j=b->ID;
+  }
+};

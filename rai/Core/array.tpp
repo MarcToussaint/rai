@@ -687,8 +687,8 @@ template<class T> void mlr::Array<T>::insRows(int i, uint k) {
 /// deletes k columns starting from the i-th (i==d1 -> deletes the last k columns)
 template<class T> void mlr::Array<T>::delColumns(int i, uint k) {
   CHECK(memMove, "only with memMove");
-  CHECK(k>0, "");
-  CHECK_EQ(nd,2, "only for matricies");
+  CHECK_EQ(nd, 2, "only for matricies");
+  if(!k) return;
   if(i<0) i+=d1;
   CHECK(i+k<=d1, "range check error");
   uint n=d1;

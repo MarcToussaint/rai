@@ -28,7 +28,7 @@ struct TaskMap_Transition:TaskMap {
 
   TaskMap_Transition(const mlr::KinematicWorld& G, bool effectiveJointsOnly=false);
 
-  virtual void phi(arr& y, arr& J, const WorldL& G, double tau, int t=-1);
+  virtual void phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t=-1);
   virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1){ HALT("can only be of higher order"); }
   virtual uint dim_phi(const mlr::KinematicWorld& G){ return G.getJointStateDimension(); }
   virtual uint dim_phi(const WorldL& G, int t);
