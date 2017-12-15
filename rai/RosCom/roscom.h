@@ -9,6 +9,7 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <std_msgs/ColorRGBA.h>
 #include <std_msgs/Float32MultiArray.h>
+#include <std_msgs/Float64MultiArray.h>
 #include <geometry_msgs/WrenchStamped.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -29,12 +30,16 @@
 #  include <PCL/conv.h>
 #endif
 
+/*
+ * TODO:
+ * a single RosCom class; constructor checks rosInit and spawns singleton spinner
+ * has publish/subscribe(Access&) method, stores all pub/subs and cleans them on destruction
+ */
+
 //===========================================================================
 //
 // utils
 //
-
-
 
 void rosCheckInit(const char* node_name="pr2_module");
 bool rosOk();
@@ -66,6 +71,7 @@ CtrlMsg             conv_JointState2CtrlMsg(const marc_controller_pkg::JointStat
 arr                 conv_JointState2arr(const sensor_msgs::JointState& msg);
 mlr::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::MarkerArray& markers);
 std_msgs::Float32MultiArray conv_floatA2Float32Array(const floatA&);
+std_msgs::Float64MultiArray conv_arr2Float64Array(const arr&);
 
 //-- MLR -> ROS
 geometry_msgs::Pose conv_transformation2pose(const mlr::Transformation&);
@@ -165,7 +171,7 @@ struct SubscriberConv : SubscriberType {
 //
 
 template<class msg_type, class var_type, var_type conv(const msg_type&)>
-struct SubscriberConvNoHeader : SubscriberType{
+struct SubscriberConvNoHeader : SubscriberType {
   Access<var_type> access;
   ros::NodeHandle *nh;
   ros::Subscriber sub;
@@ -258,59 +264,3 @@ struct PublisherConv : Thread {
 };
 
 
-//===========================================================================
-//
-// variable declarations
-//
-
-
-//-- a basic message type for communication with the soft hand controller
-struct SoftHandMsg{
-  mlr::String soft_hand_cmd;
-  SoftHandMsg(){}
-  SoftHandMsg(const mlr::String soft_hand_cmd)
-    :soft_hand_cmd(soft_hand_cmd){}
-};
-//inline void operator<<(ostream& os, const CtrlMsg& m){ os<<"BLA"; }
-//inline void operator>>(istream& os, CtrlMsg& m){  }
-
-
-//===========================================================================
-//
-// modules
-//
-//===========================================================================
-/// This module only calls ros:spinOnce() in step() and loops full speed -- to sync the process with the ros server
-
-
-
-// Helper function so sync ors with the real PR2
-/**
- * This starts the initial sync of the world with ctrl_obs from the robot.
- *
- * This is verbose (helps debugging) and retries to connect to the robot multiple times.
- *
- * If useRos==false then nothing happens.
- */
-void initialSyncJointStateWithROS(mlr::KinematicWorld& world, Access<CtrlMsg>& ctrl_obs, bool useRos);
-
-/**
- * Sync the world with ctrl_obs from the robot.
- *
- * If useRos==false then nothing happens.
- */
-void syncJointStateWitROS(mlr::KinematicWorld& world, Access<CtrlMsg>& ctrl_obs, bool useRos);
-
-//===========================================================================
-
-struct PerceptionObjects2Ors : Thread {
-  Access<visualization_msgs::MarkerArray> perceptionObjects;
-  Access<mlr::KinematicWorld> modelWorld;
-  PerceptionObjects2Ors()
-    : Thread("PerceptionObjects2Ors"),
-    perceptionObjects(this, "perceptionObjects", true),
-    modelWorld(this, "modelWorld"){}
-  void open(){}
-  void step();
-  void close(){}
-};
