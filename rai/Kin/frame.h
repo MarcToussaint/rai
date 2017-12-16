@@ -49,6 +49,7 @@ struct Frame {
   Transformation X=0;        ///< body's absolute pose
   Graph ats;                 ///< list of any-type attributes
   bool active=true;          ///< if false, this frame is skipped in computations (e.g. in fwd propagation)
+  int flags=0;               ///< various flags that are used by task maps to impose costs/constraints in KOMO
 
   //attachments to the frame
   struct Joint *joint=NULL;      ///< this frame is an articulated joint
@@ -70,8 +71,6 @@ struct Frame {
   void getRigidSubFrames(FrameL& F);
 
   Frame* getUpwardLink(mlr::Transformation& Qtotal=NoTransformation);
-
-
 
   void read(const Graph &ats);
   void write(std::ostream& os) const;

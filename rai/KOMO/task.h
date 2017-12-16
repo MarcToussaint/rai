@@ -12,12 +12,9 @@ struct Task {
   Task(TaskMap *m, const ObjectiveType& type) : map(m), type(type){}
   ~Task(){ if(map) delete map; map=NULL; }
 
-  void setCostSpecs(int fromTime, int toTime,
-                    const arr& _target=ARR(0.),
-                    double _prec=1.);
+  void setCostSpecs(int fromStep, int toStep, const arr& _target={}, double _prec=1.);
   void setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T,
-                    const arr& _target,
-                    double _prec);
+                    const arr& _target, double _prec, int deltaStep=0);
   bool isActive(uint t){ return (prec.N>t && prec(t)); }
   void write(std::ostream& os) const{
     os <<"TASK '" <<name <<"'"

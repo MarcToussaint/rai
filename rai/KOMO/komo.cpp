@@ -238,12 +238,21 @@ bool KOMO::parseTask(const Node *n, int stepsPerPhase){
   return false;
 }
 
-Task *KOMO::setTask(double startTime, double endTime, TaskMap *map, ObjectiveType type, const arr& target, double prec, uint order){
+Task *KOMO::setTask(double startTime, double endTime, TaskMap *map, ObjectiveType type, const arr& target, double prec, uint order, int deltaStep){
   CHECK(k_order>=order,"");
   map->order = order;
   Task *task = addTask(map->shortTag(world), map, type);
-  task->setCostSpecs(startTime, endTime, stepsPerPhase, T, target, prec);
+  task->setCostSpecs(startTime, endTime, stepsPerPhase, T, target, prec, deltaStep);
   return task;
+}
+
+uint conv_time2step(double time, uint stepsPerPhase){
+  return (floor(time*double(stepsPerPhase) + .500001))-1;
+}
+
+void KOMO::setFlag(double time, mlr::Flag *fl, int deltaStep){
+  fl->stepOfApplication = conv_time2step(time, stepsPerPhase) + deltaStep;
+  flags.append(fl);
 }
 
 void KOMO::setKinematicSwitch(double time, bool before, mlr::KinematicSwitch *sw){
@@ -1112,9 +1121,24 @@ void KOMO::setupConfigurations(){
         sw->apply(*configurations(s));
       }
     }
+    //apply potential PERSISTENT flags
+    for(mlr::Flag *fl:flags){
+      if(fl->persist && fl->stepOfApplication+k_order==s){
+        fl->apply(*configurations(s));
+      }
+    }
     configurations(s)->calc_q();
     configurations(s)->calc_q_from_Q();
     configurations(s)->checkConsistency();
+  }
+
+  //now apply NON-PERSISTENT flags
+  for(uint s=1;s<k_order+T;s++){
+    for(mlr::Flag *fl:flags){
+      if(!fl->persist && fl->stepOfApplication+k_order==s){
+        fl->apply(*configurations(s));
+      }
+    }
   }
 }
 

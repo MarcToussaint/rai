@@ -18,6 +18,7 @@
 #include <Optim/lagrangian.h>
 #include <Optim/KOMO_Problem.h>
 #include "task.h"
+#include <Kin/flag.h>
 
 //===========================================================================
 
@@ -30,6 +31,7 @@ struct KOMO{
   double tau;                  ///< real time duration of single step (used when evaluating task space velocities/accelerations)
   uint k_order;                ///< the (Markov) order of the KOMO problem (default 2)
   mlr::Array<Task*> tasks;     ///< list of tasks
+  mlr::Array<mlr::Flag*> flags;     ///< list of flaggings that are applied to the frames/joints in the configurations and modify tasks
   mlr::Array<mlr::KinematicSwitch*> switches;  ///< list of kinematic switches along the motion
 
   //-- internals
@@ -77,7 +79,8 @@ struct KOMO{
    * they allow the user to add a cost task, or a kinematic switch in the problem definition
    * Typically, the user does not call them directly, but uses the many methods below
    * Think of all of the below as examples for how to set arbirary tasks/switches yourself */
-  struct Task* setTask(double startTime, double endTime, TaskMap* map, ObjectiveType type=OT_sumOfSqr, const arr& target=NoArr, double prec=1e2, uint order=0);
+  struct Task* setTask(double startTime, double endTime, TaskMap* map, ObjectiveType type=OT_sumOfSqr, const arr& target=NoArr, double prec=1e2, uint order=0, int deltaStep=0);
+  void setFlag(double time, mlr::Flag* fl, int deltaStep=0);
   void setKinematicSwitch(double time, bool before, mlr::KinematicSwitch* sw);
   void setKinematicSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const mlr::Transformation& jFrom=NoTransformation, const mlr::Transformation& jTo=NoTransformation);
 
@@ -177,7 +180,7 @@ struct KOMO{
   Task* addTask(const char* name, TaskMap *map, const ObjectiveType& termType); ///< manually add a task
   void clearTasks();
   bool parseTask(const Node *n, int stepsPerPhase=-1);           ///< read a single task from a node-spec
-  void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES
+  void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
   arr getInitialization();      ///< this reads out the initial state trajectory after 'setupConfigurations'
   void set_x(const arr& x);            ///< set the state trajectory of all configurations
   uint dim_x(uint t) { return configurations(t+k_order)->getJointStateDimension(); }

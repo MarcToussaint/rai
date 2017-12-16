@@ -16,6 +16,7 @@
 #include "taskMap_transition.h"
 #include "taskMap_qItself.h"
 #include "frame.h"
+#include "flag.h"
 
 TaskMap_Transition::TaskMap_Transition(const mlr::KinematicWorld& G, bool effectiveJointsOnly)
   : effectiveJointsOnly(effectiveJointsOnly){
@@ -38,7 +39,6 @@ uint TaskMap_Transition::dim_phi(const WorldL& G, int t){
   bool handleSwitches=effectiveJointsOnly;
   uint qN=G(0)->q.N;
   for(uint i=0;i<G.N;i++) if(G.elem(i)->q.N!=qN){ handleSwitches=true; break; }
-//  handleSwitches=true;
 
   if(!handleSwitches){
     return G.last()->getJointStateDimension();
@@ -59,7 +59,6 @@ void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
   bool handleSwitches=effectiveJointsOnly;
   uint qN=Ktuple(0)->q.N;
   for(uint i=0;i<Ktuple.N;i++) if(Ktuple(i)->q.N!=qN){ handleSwitches=true; break; }
-//  handleSwitches=true;
 
   if(!handleSwitches){ //simple implementation
     //-- transition costs
@@ -90,8 +89,11 @@ void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
     if(order>=3) NIY; //  y = (x_bar[3]-3.*x_bar[2]+3.*x_bar[1]-x_bar[0])/tau3; //penalize jerk
 
     //multiply with h...
-    for(mlr::Joint *j:Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++)
-      y(j->qIndex+i) *= h*j->H;
+    for(mlr::Joint *j:Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
+      double hj = h*j->H;
+      if(j->frame.flags &  (1<<FT_noQControlCosts)) hj=0.;
+      else y(j->qIndex+i) *= hj;
+    }
 
     if(&J) {
       uint n = Ktuple.last()->q.N;
@@ -113,19 +115,19 @@ void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
       }
       J.reshape(y.N, Ktuple.N*n);
       for(mlr::Joint *j: Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
+        double hj = h*j->H;
+        if(j->frame.flags & (1<<FT_noQControlCosts)) hj=0.;
 #if 0
-        J[j->qIndex+i] *= h*j->H;
+        J[j->qIndex+i] *= a;
 #else //EQUIVALENT, but profiled - optimized for speed
         uint l = (j->qIndex+i)*J.d1;
-        for(uint k=0;k<J.d1;k++) J.elem(l+k) *= h*j->H;
+        for(uint k=0;k<J.d1;k++) J.elem(l+k) *= hj;
 #endif
       }
     }
   }else{ //with switches
     mlr::Array<mlr::Joint*> matchingJoints = getMatchingJoints(Ktuple.sub(-1-order,-1), effectiveJointsOnly);
     double h = H_rate*sqrt(tau), tau2=tau*tau;
-
-//    getSwitchedJoints(*G.elem(-2), *G.elem(-1), true);
 
     uint ydim=0;
     uintA qidx(Ktuple.N);
@@ -146,7 +148,8 @@ void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
         if(order>=1) qi2 = joints.elem(-2)->qIndex+j;
         if(order>=2 && accCoeff) qi3 = joints.elem(-3)->qIndex+j;
         double hj = h * joints.last()->H;
-        //TODO: adding vels + accs before squareing does not make much sense?
+        if(joints.last()->frame.flags & (1<<FT_noQControlCosts)) hj=0.;
+        //TODO: adding vels + accs before squareing does not make much sense!
         if(order>=0 && posCoeff) y(m) += posCoeff*hj       * (Ktuple.elem(-1)->q(qi1));
         if(order>=1 && velCoeff) y(m) += (velCoeff*hj/tau) * (Ktuple.elem(-1)->q(qi1) -    Ktuple.elem(-2)->q(qi2));
         if(order>=2 && accCoeff) y(m) += (accCoeff*hj/tau2)* (Ktuple.elem(-1)->q(qi1) - 2.*Ktuple.elem(-2)->q(qi2) + Ktuple.elem(-3)->q(qi3));

@@ -3,20 +3,17 @@
 
 //===========================================================================
 
-void Task::setCostSpecs(int fromTime,
-                        int toTime,
-                        const arr& _target,
-                        double _prec){
+void Task::setCostSpecs(int fromStep, int toStep, const arr& _target, double _prec){
   if(&_target) target = _target; else target = {0.};
-  if(fromTime<0) fromTime=0;
-  CHECK(toTime>=fromTime,"");
-  prec.resize(toTime+1).setZero();
-  for(uint t=fromTime;t<=(uint)toTime;t++) prec(t) = _prec;
+  if(fromStep<0) fromStep=0;
+  CHECK(toStep>=fromStep,"");
+  prec.resize(toStep+1).setZero();
+  for(uint t=fromStep;t<=(uint)toStep;t++) prec(t) = _prec;
 }
 
 #define STEP(t) (floor(t*double(stepsPerPhase) + .500001))-1
 
-void Task::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T, const arr& _target, double _prec){
+void Task::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T, const arr& _target, double _prec, int deltaStep){
   if(stepsPerPhase<0) stepsPerPhase=T;
   if(STEP(toTime)>T-1){
       LOG(-1) <<"beyond the time!: endTime=" <<toTime <<" phases=" <<double(T)/stepsPerPhase;
@@ -25,6 +22,8 @@ void Task::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint 
   int tTo = (toTime<0.?T-1:STEP(toTime));
   if(tTo<0) tTo=0;
   if(tFrom>tTo && tFrom-tTo<=(int)map->order) tFrom=tTo;
+
+  if(deltaStep){ tFrom+=deltaStep; tTo+=deltaStep; }
 
   setCostSpecs(tFrom, tTo, _target, _prec);
 }

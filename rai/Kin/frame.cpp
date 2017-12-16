@@ -3,6 +3,7 @@
 #include "kin.h"
 #include "uncertainty.h"
 #include "contact.h"
+#include "flag.h"
 
 #ifdef MLR_GL
 #include <Gui/opengl.h>
@@ -86,6 +87,14 @@ void mlr::Frame::write(std::ostream& os) const {
   if(joint) joint->write(os);
   if(shape) shape->write(os);
   if(inertia) inertia->write(os);
+
+  Enum<FrameFlagType> fl;
+  os <<"FLAGS=";
+  for(int i=0;;i++){
+    fl.x = FrameFlagType(i);
+    if(!fl.name()) break;
+    if(flags & (1<<fl.x)) os <<' ' <<fl.name();
+  }
 
   os <<" }\n";
 //  if(mass) os <<"mass=" <<mass <<' ';
