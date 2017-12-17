@@ -20,8 +20,9 @@
 
 struct TM_Max : TaskMap {
   TaskMap *map;
+  bool neg;
 
-  TM_Max(TaskMap *map) : map(map){}
+  TM_Max(TaskMap *map, bool neg=false) : map(map), neg(neg){}
 
   virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1);
   virtual uint dim_phi(const mlr::KinematicWorld& G){ return 1; }

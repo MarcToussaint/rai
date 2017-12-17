@@ -176,6 +176,12 @@ namespace mlr {
 extern bool useLapack;
 }
 
+void normalizeWithJac(arr& y, arr& J){
+  double l2 = sumOfSqr(y);
+  double l = sqrt(l2);
+  if(J.N) J = (J - (y^y)/l2*J)/l;
+  y = y/l;
+}
 
 
 //===========================================================================

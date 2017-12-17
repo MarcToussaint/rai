@@ -20,7 +20,7 @@ struct Flag {
   bool persist=false;
   bool setTrue=true;
 
-  Flag(FrameFlagType flag, uint frameId, uint stepOfApplication, bool persist=false, bool setTrue=true)
+  Flag(FrameFlagType flag, uint frameId, uint stepOfApplication=0, bool persist=false, bool setTrue=true)
     : flag(flag), frameId(frameId), stepOfApplication(stepOfApplication), persist(persist), setTrue(setTrue){}
   ~Flag(){}
 

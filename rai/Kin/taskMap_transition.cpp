@@ -92,7 +92,7 @@ void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
     for(mlr::Joint *j:Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
       double hj = h*j->H;
       if(j->frame.flags &  (1<<FT_noQControlCosts)) hj=0.;
-      else y(j->qIndex+i) *= hj;
+      y(j->qIndex+i) *= hj;
     }
 
     if(&J) {
@@ -118,7 +118,7 @@ void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
         double hj = h*j->H;
         if(j->frame.flags & (1<<FT_noQControlCosts)) hj=0.;
 #if 0
-        J[j->qIndex+i] *= a;
+        J[j->qIndex+i] *= hj;
 #else //EQUIVALENT, but profiled - optimized for speed
         uint l = (j->qIndex+i)*J.d1;
         for(uint k=0;k<J.d1;k++) J.elem(l+k) *= hj;

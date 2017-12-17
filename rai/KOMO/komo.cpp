@@ -30,6 +30,7 @@
 #include <Kin/taskMap_linTrans.h>
 #include <Kin/TM_StaticStability.h>
 #include <Kin/TM_Max.h>
+#include <Kin/TM_ImpulseExchange.h>
 #include <Kin/contact.h>
 #include <Optim/optimization.h>
 #include <Optim/convert.h>
@@ -296,7 +297,7 @@ void KOMO::setKS_slider(double time, bool before, const char* obj, const char* s
 //  if(!actuated)
 //    setKinematicSwitch(time, before, "hingeZZero", slider, obj, rel );
 //  else
-//    setKinematicSwitch(time, before, "transXActuated", slider, obj, rel );
+  //    setKinematicSwitch(time, before, "transXActuated", slider, obj, rel );
 }
 
 void KOMO::setHoming(double startTime, double endTime, double prec){
@@ -355,14 +356,37 @@ void KOMO::setLastTaskToBeVelocity(){
   tasks.last()->map->order = 1; //set to be velocity!
 }
 
+void KOMO::setImpact(double time, const char *a, const char *b){
+  //objects need to touch
+  setTask(1., 1., new TaskMap_PairCollision(world, a, b, true, false), OT_eq, {}, 1e2);
+
+  //consistent impuls exchange
+  setTask(1., 1., new TM_ImpulsExchange(world, a, b), OT_sumOfSqr, {}, 1e3, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
+  setFlag(1., new mlr::Flag(FT_noQControlCosts, world[a]->ID), +1);
+  setFlag(1., new mlr::Flag(FT_noQControlCosts, world[b]->ID), +1);
+}
+
+void KOMO::setOverTheEdge(double time, const char *object, const char *from, double margin){
+  double negMargin = margin + .5*shapeSize(world, object, 0); //how much outside the bounding box?
+  setTask(time, time+.5,
+          new TM_Max(new TaskMap_AboveBox(world, object, from, -negMargin), true), //this is the max selection -- only one of the four numbers need to be outside the BB
+          OT_ineq, {}, 1e1); //NOTE: usually this is an inequality constraint <0; here we say this should be zero for a negative margin (->outside support)
+}
+
+void KOMO::setFreeGravity(double time, const char *object, const char *base){
+  setKinematicSwitch(2., true, new mlr::KinematicSwitch(mlr::KinematicSwitch::addActuated, mlr::JT_trans3, base, object, world));
+  setFlag(2., new mlr::Flag(FT_gravityAcc, world[object]->ID, 0, true),+1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
+  setFlag(2., new mlr::Flag(FT_noQControlCosts, world[object]->ID, 0, true),+1);
+}
+
 /// a standard pick up: lower-attached-lift; centered, from top
 void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int verbose, double weightFromTop, double timeToLift){
   if(verbose>0) cout <<"KOMO_setGrasp t=" <<time <<" endeff=" <<endeffRef <<" obj=" <<object <<endl;
-//  mlr::String& endeffRef = world.getFrameByName(graspRef)->body->inLinks.first()->from->shapes.first()->name;
+  //  mlr::String& endeffRef = world.getFrameByName(graspRef)->body->inLinks.first()->from->shapes.first()->name;
 
   //-- position the hand & graspRef
   //hand upright
-//  setTask(time, time, new TaskMap_Default(vecTMT, world, endeffRef, Vector_z), OT_sumOfSqr, {0.,0.,1.}, weightFromTop);
+  //  setTask(time, time, new TaskMap_Default(vecTMT, world, endeffRef, Vector_z), OT_sumOfSqr, {0.,0.,1.}, weightFromTop);
 
   //hand center at object center (could be replaced by touch)
 //  setTask(time, time, new TaskMap_Default(posDiffTMT, world, endeffRef, NoVector, object, NoVector), OT_eq, NoArr, 1e3);
@@ -479,9 +503,6 @@ void KOMO::setPlace(double time, const char* endeff, const char* object, const c
   //place inside box support
 //  setTask(time, time, new TM_StaticStability(world, placeRef, .01), OT_ineq);
   setTask(time, time, new TaskMap_AboveBox(world, object, placeRef), OT_ineq, NoArr, 1e2);
-
-  //disconnect object from grasp ref
-  setKinematicSwitch(time, true, "delete", NULL, object);
 
   //connect object to placeRef
   mlr::Transformation rel = 0;
@@ -630,10 +651,7 @@ void KOMO::setSlideAlong(double time, const char* stick, const char* object, con
 void KOMO::setDrop(double time, const char* object, const char* from, const char* to, int verbose){
 
   if(from){ //require the object outside the margin of its bounding box
-    double negMargin = .5*shapeSize(world, object, 0)+.05; //how much outside the bounding box?
-    setTask(time, time+.5,
-            new TM_Max(new TaskMap_AboveBox(world, object, from, -negMargin)), //this is the max selection -- only one of the four numbers need to be outside the BB
-            OT_eq, {}, 1e1); //NOTE: usually this is an inequality constraint <0; here we say this should be zero for a negative margin (->outside support)
+    setOverTheEdge(time, object, from, .05);
   }
 
   //disconnect object from anything

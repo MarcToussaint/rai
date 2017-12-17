@@ -22,7 +22,7 @@ mlr::Frame::Frame(KinematicWorld& _K, const Frame* copyFrame)
   if(copyFrame){
     const Frame& f = *copyFrame;
     Q = copyFrame->Q;
-    name=f.name; X=f.X; ats=f.ats; active=f.active;
+    name=f.name; X=f.X; ats=f.ats; active=f.active; flags=f.flags;
     //we cannot copy link! because we can't know if the frames already exist. KinematicWorld::copy copies the rel's !!
     if(copyFrame->joint) new Joint(*this, copyFrame->joint);
     if(copyFrame->shape) new Shape(*this, copyFrame->shape);

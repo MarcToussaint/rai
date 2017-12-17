@@ -120,6 +120,11 @@ struct KOMO{
   // high-level 'script elements' to define tasks: typically adding multiple tasks to realize some kind of 'action'
   //
 
+  //-- dynamic
+  void setImpact(double time, const char* a, const char* b);
+  void setOverTheEdge(double time, const char* object, const char* from, double margin=.0);
+  void setFreeGravity(double time, const char* object, const char* base="base");
+
   //-- tasks (cost/constraint terms) high-level (rough, for LGP)
   void setGrasp(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=1e1, double timeToLift=.15);
   void setPlace(double time, const char *endeff, const char* object, const char* placeRef, int verbose=0);
