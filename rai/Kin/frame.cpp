@@ -88,12 +88,14 @@ void mlr::Frame::write(std::ostream& os) const {
   if(shape) shape->write(os);
   if(inertia) inertia->write(os);
 
-  Enum<FrameFlagType> fl;
-  os <<"FLAGS=";
-  for(int i=0;;i++){
-    fl.x = FrameFlagType(i);
-    if(!fl.name()) break;
-    if(flags & (1<<fl.x)) os <<' ' <<fl.name();
+  if(flags){
+    Enum<FrameFlagType> fl;
+    os <<" FLAGS=";
+    for(int i=0;;i++){
+      fl.x = FrameFlagType(i);
+      if(!fl.name()) break;
+      if(flags & (1<<fl.x)) os <<' ' <<fl.name();
+    }
   }
 
   os <<" }\n";

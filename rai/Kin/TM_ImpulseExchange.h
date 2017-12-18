@@ -12,5 +12,5 @@ struct TM_ImpulsExchange : TaskMapInit2Frames {
 
   uint dim_phi(const WorldL& Ktuple, int t){ return 6; }
 
-  mlr::String shortTag(const mlr::KinematicWorld& K){ return STRING("ImpulseCollision"); }
+  mlr::String shortTag(const mlr::KinematicWorld& K){ return STRING("ImpulseExchange"); }
 };

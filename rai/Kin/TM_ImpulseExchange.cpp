@@ -20,14 +20,23 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
   if(&J) J = J1+J2;
 
   arr c,Jc;
-  TaskMap_PairCollision coll(*Ktuple(-2), "ball1", "ball2", false, true);
+  TaskMap_PairCollision coll(i, j, false, true);
   coll.phi(c, (&J?Jc:NoArr), *Ktuple(-2), t);
   uintA qdim = getKtupleDim(Ktuple);
   arr Jcc = zeros(3, qdim.last());
   if(&J) Jcc.setMatrixBlock(Jc, 0, qdim(0));
 
-  normalizeWithJac(a2, J2);
-  normalizeWithJac(c, Jcc);
-  y.append(a2 + c);
-  if(&J) J.append(J2 + Jcc);
+  arr d=a2-a1;
+  arr Jd=J2-J1;
+  if(sumOfSqr(d)>1e-10 && sumOfSqr(c)>1e-10){
+    normalizeWithJac(d, Jd);
+    normalizeWithJac(c, Jcc);
+    y.append(a2 + c);
+    if(&J) J.append(J2 + Jcc);
+  }else{
+    d = 1.;
+    Jd.setZero();
+    y.append(d);
+    if(&J) J.append(Jd);
+  }
 }

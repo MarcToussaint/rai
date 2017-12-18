@@ -358,12 +358,12 @@ void KOMO::setLastTaskToBeVelocity(){
 
 void KOMO::setImpact(double time, const char *a, const char *b){
   //objects need to touch
-  setTask(1., 1., new TaskMap_PairCollision(world, a, b, true, false), OT_eq, {}, 1e2);
+  setTask(time, time, new TaskMap_PairCollision(world, a, b, true, false), OT_eq, {}, 1e2);
 
   //consistent impuls exchange
-  setTask(1., 1., new TM_ImpulsExchange(world, a, b), OT_sumOfSqr, {}, 1e3, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
-  setFlag(1., new mlr::Flag(FT_noQControlCosts, world[a]->ID), +1);
-  setFlag(1., new mlr::Flag(FT_noQControlCosts, world[b]->ID), +1);
+  setTask(time, time, new TM_ImpulsExchange(world, a, b), OT_sumOfSqr, {}, 1e3, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
+  setFlag(time, new mlr::Flag(FT_noQControlCosts, world[a]->ID), +1);
+  setFlag(time, new mlr::Flag(FT_noQControlCosts, world[b]->ID), +1);
 }
 
 void KOMO::setOverTheEdge(double time, const char *object, const char *from, double margin){
@@ -374,9 +374,9 @@ void KOMO::setOverTheEdge(double time, const char *object, const char *from, dou
 }
 
 void KOMO::setFreeGravity(double time, const char *object, const char *base){
-  setKinematicSwitch(2., true, new mlr::KinematicSwitch(mlr::KinematicSwitch::addActuated, mlr::JT_trans3, base, object, world));
-  setFlag(2., new mlr::Flag(FT_gravityAcc, world[object]->ID, 0, true),+1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
-  setFlag(2., new mlr::Flag(FT_noQControlCosts, world[object]->ID, 0, true),+1);
+  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::addActuated, mlr::JT_trans3, base, object, world));
+  setFlag(time, new mlr::Flag(FT_gravityAcc, world[object]->ID, 0, true),+1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
+  setFlag(time, new mlr::Flag(FT_noQControlCosts, world[object]->ID, 0, true),+1);
 }
 
 /// a standard pick up: lower-attached-lift; centered, from top

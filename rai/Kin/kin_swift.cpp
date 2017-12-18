@@ -309,7 +309,7 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
         proxy.posA = world.frames(a)->X.pos;
         proxy.posB = world.frames(b)->X.pos;
         proxy.normal = proxy.posA - proxy.posB; //normal always points from b to a
-        proxy.normal.normalize();
+        if(!proxy.normal.isZero) proxy.normal.normalize();
       }else{
         proxy.normal.set(&normals[3*k+0]);
         proxy.normal.normalize();
@@ -325,7 +325,7 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       proxy.posA = world.frames(a)->X.pos;
       proxy.posB = world.frames(b)->X.pos;
       proxy.normal = proxy.posA - proxy.posB; //normal always points from b to a
-      proxy.normal.normalize();
+      if(!proxy.normal.isZero) proxy.normal.normalize();
     }else if(num_contacts[i]==0){
       MLR_MSG("what is this?");
     }

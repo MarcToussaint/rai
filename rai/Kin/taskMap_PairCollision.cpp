@@ -49,10 +49,10 @@ void TaskMap_PairCollision::phi(arr& y, arr& J, const mlr::KinematicWorld& K, in
 
   arr Jp1, Jp2, Jx1, Jx2;
   if(&J){
-      K.jacobianPos(Jp1, &s1->frame, coll.p1);
-      K.jacobianPos(Jp2, &s2->frame, coll.p2);
-      K.axesMatrix(Jx1, &s1->frame);
-      K.axesMatrix(Jx2, &s2->frame);
+    K.jacobianPos(Jp1, &s1->frame, coll.p1);
+    K.jacobianPos(Jp2, &s2->frame, coll.p2);
+    K.axesMatrix(Jx1, &s1->frame);
+    K.axesMatrix(Jx2, &s2->frame);
   }
 
   if(!negScalar){

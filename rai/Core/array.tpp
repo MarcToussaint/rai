@@ -2367,7 +2367,7 @@ template<class T> mlr::Array<T> max(const mlr::Array<T>& v, uint d) {
     for(i=0; i<x.d0; i++) M(i) = max(x[i]);
     return M;
   }
-  if(d==0) {  //sum over first index
+  if(d==0) {  //max over first index
     x.reshape(x.d0, x.N/x.d0);
     M = x[0]; //first row
     for(i=1; i<x.d0; i++) for(j=0; j<x.d1; j++)
