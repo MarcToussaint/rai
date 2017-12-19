@@ -585,7 +585,7 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const mlr::Vec
 
   //get position
   mlr::Vector pos_world = a->X.pos;
-  if(&rel) pos_world += a->X.rot*rel;
+  if(&rel && !rel.isZero) pos_world += a->X.rot*rel;
   if(&y) y = conv_vec2arr(pos_world); //return the output
   if(!&J) return; //do not return the Jacobian
 

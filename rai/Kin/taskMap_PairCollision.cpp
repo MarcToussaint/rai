@@ -71,6 +71,7 @@ void TaskMap_PairCollision::phi(arr& y, arr& J, const mlr::KinematicWorld& K, in
 #endif
     y *= -1.;
     if(&J) J *= -1.;
+    if(&J) checkNan(J);
   }
 
 #else

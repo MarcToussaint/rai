@@ -1,6 +1,7 @@
 #include "switch.h"
 #include "kin.h"
 #include <climits>
+#include "flag.h"
 
 //===========================================================================
 
@@ -90,7 +91,6 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
       if(to->parent) to->unLink();
       to->linkFrom(from);
       j = new Joint(*to);
-      to->Q = to->X / from->X;
     }else{
       CHECK(!from, "from should not be specified");
       CHECK(to->parent, "to needs to have a link already");
@@ -98,7 +98,10 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
       j = new Joint(*l);
     }
     if(symbol==addActuated || symbol==insertActuated) j->constrainToZeroVel=false;
-    else                    j->constrainToZeroVel=true;
+    else{
+      j->constrainToZeroVel=true;
+      j->frame.flags |= (1<<FT_zeroQVel);
+    }
     j->type = jointType;
     if(!jA.isZero()){
       j->frame.insertPreLink(jA);

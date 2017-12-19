@@ -39,7 +39,8 @@ void TaskMap_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau,
   for(uint i=0;i<switchedBodies .d0;i++){
     mlr::Frame *b0 = switchedBodies(i,0);    CHECK(&b0->K==G.elem(-2),"");
     mlr::Frame *b1 = switchedBodies(i,1);    CHECK(&b1->K==G.elem(-1),"");
-    CHECK(b0->ID == b1->ID, "");
+    CHECK_EQ(b0->ID, b1->ID, "");
+    CHECK_EQ(b0->name, b1->name, "");
 
     if(b0->name.startsWith("slider")) continue; //warning: this introduces zeros in y and J -- but should be ok
 

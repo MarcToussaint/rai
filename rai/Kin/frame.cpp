@@ -147,7 +147,8 @@ void mlr::Frame::unLink(){
 }
 
 void mlr::Frame::linkFrom(mlr::Frame *_parent, bool adoptRelTransform){
-  CHECK(!parent,"you need to set a parent to link from");
+  CHECK(_parent,"you need to set a parent to link from");
+  CHECK(!parent,"this frame is already linked to a parent");
   if(parent==_parent) return;
   parent=_parent;
   parent->outLinks.append(this);

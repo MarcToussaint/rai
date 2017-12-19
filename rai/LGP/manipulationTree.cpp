@@ -617,6 +617,7 @@ bool ManipulationTree_Node::recomputeAllFolStates(){
           isInfeasible=true;
         return false;
       }
+      fol.state->index();
       folState->copy(*fol.state);
       if(folAddToState) applyEffectLiterals(*folState, *folAddToState, {}, NULL);
       folDecision = folState->getNode("decision");
