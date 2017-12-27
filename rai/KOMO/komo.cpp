@@ -32,6 +32,7 @@
 #include <Kin/TM_Max.h>
 #include <Kin/TM_ImpulseExchange.h>
 #include <Kin/TM_InertialMotion.h>
+#include <Kin/TM_FlagConstraints.h>
 #include <Kin/contact.h>
 #include <Optim/optimization.h>
 #include <Optim/convert.h>
@@ -321,10 +322,9 @@ void KOMO::setSquaredQVelocities(double startTime, double endTime, double prec){
 }
 
 void KOMO::setFixEffectiveJoints(double startTime, double endTime, double prec){
-  auto *map = new TaskMap_Transition(world, true);
-  map->velCoeff = 1.;
-  map->accCoeff = 0.;
-  setTask(startTime, endTime, map, OT_eq, NoArr, prec, 1);
+//  auto *map = new TaskMap_Transition(world, true);
+  auto *map = new TaskMap_FlagConstraints();
+  setTask(startTime, endTime, map, OT_eq, NoArr, prec, 2);
 }
 
 void KOMO::setFixSwitchedObjects(double startTime, double endTime, double prec){
@@ -365,6 +365,9 @@ void KOMO::setImpact(double time, const char *a, const char *b){
   setTask(time, time, new TM_ImpulsExchange(world, a, b), OT_sumOfSqr, {}, 1e3, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
   setFlag(time, new mlr::Flag(FT_noQControlCosts, world[a]->ID), +1);
   setFlag(time, new mlr::Flag(FT_noQControlCosts, world[b]->ID), +1);
+
+  setFlag(time, new mlr::Flag(FT_impulseExchange, world[a]->ID), +1);
+  setFlag(time, new mlr::Flag(FT_impulseExchange, world[b]->ID), +1);
 }
 
 void KOMO::setOverTheEdge(double time, const char *object, const char *from, double margin){
@@ -767,6 +770,13 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
       else if(n->keys.last()=="komoDrop"){
         if(symbols.N==2) setDrop(phase+time, *symbols(0), NULL, *symbols(1), verbose);
         else setDrop(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
+      }
+      else if(n->keys.last()=="komoThrow"){
+        setInertialMotion(phase+time, phase+time+1., *symbols(0), "base", -.1, 0.);
+      }
+      else if(n->keys.last()=="komoHit"){
+        setImpact(phase+time, *symbols(0), *symbols(1));
+        setTask(phase+time, phase+time+1., new TM_InertialMotion(world, *symbols(1), -.1, 0.), OT_sumOfSqr, {}, 1e2, 2);
       }
       else if(n->keys.last()=="komoAttach"){
         Node *attachableSymbol = facts.getNode("attachable");

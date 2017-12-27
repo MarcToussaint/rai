@@ -97,8 +97,10 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
       Frame *l = to->insertPreLink(mlr::Transformation(0));
       j = new Joint(*l);
     }
-    if(symbol==addActuated || symbol==insertActuated) j->constrainToZeroVel=false;
-    else{
+    if(symbol==addActuated || symbol==insertActuated){
+      j->constrainToZeroVel=false;
+      j->frame.flags &= ~(1<<FT_zeroQVel);
+    }else{
       j->constrainToZeroVel=true;
       j->frame.flags |= (1<<FT_zeroQVel);
     }

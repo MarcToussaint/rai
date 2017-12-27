@@ -11,7 +11,7 @@ void TM_InertialMotion::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
   {
     mlr::Frame *a = K.frames(i);
     if(a->flags & (1<<FT_gravityAcc)) MLR_MSG("frame '" <<a->name <<"' has InertialMotion AND Gravity objectivies");
-    if(!(a->flags & (1<<FT_noQControlCosts))) MLR_MSG("frame '" <<a->name <<"' has InertialMotion AND control cost objectivies");
+    if(a->joint && a->joint->H && !(a->flags & (1<<FT_noQControlCosts))) MLR_MSG("frame '" <<a->name <<"' has InertialMotion AND control cost objectivies");
   }
 
   TaskMap_Default pos(posTMT, i);
@@ -23,6 +23,11 @@ void TM_InertialMotion::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
     J = zeros(3, Jacc.d1);
     J.setMatrixBlock(-Jacc_ref, 0, Jacc.d1-Jacc_ref.d1);
     J += Jacc;
+  }
+
+  if(K.frames(i)->flags & (1<<FT_impulseExchange)){
+    y.setZero();
+    if(&J) J.setZero();
   }
 }
 

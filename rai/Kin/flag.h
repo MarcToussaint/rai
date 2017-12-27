@@ -8,7 +8,8 @@ enum FrameFlagType {
   FT_gravityAcc,
   FT_zeroQVel,
   FT_zeroQAcc,
-  FT_noQControlCosts
+  FT_noQControlCosts,
+  FT_impulseExchange
 };
 
 namespace mlr{

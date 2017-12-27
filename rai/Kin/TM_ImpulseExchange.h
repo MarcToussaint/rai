@@ -1,9 +1,10 @@
 #include "taskMap.h"
 
-struct TM_ImpulsExchange : TaskMapInit2Frames {
+struct TM_ImpulsExchange : TaskMap {
+  int i,j;
 
   TM_ImpulsExchange(const mlr::KinematicWorld &K, const char* i_name, const char* j_name)
-    : TaskMapInit2Frames(K, i_name, j_name){}
+    : i(initIdArg(K, i_name)), j(initIdArg(K, j_name)){}
 
   void phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t=-1);
   uint dim_phi(const mlr::KinematicWorld& K){ return 6; }
@@ -14,10 +15,11 @@ struct TM_ImpulsExchange : TaskMapInit2Frames {
 };
 
 
-struct TM_ImpulsExchange_weak : TaskMapInit2Frames {
+struct TM_ImpulsExchange_weak : TaskMap {
+  int i,j;
 
   TM_ImpulsExchange_weak(const mlr::KinematicWorld &K, const char* i_name, const char* j_name)
-    : TaskMapInit2Frames(K, i_name, j_name){}
+    : i(initIdArg(K, i_name)), j(initIdArg(K, j_name)){}
 
   void phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t=-1);
   uint dim_phi(const mlr::KinematicWorld& K){ return 3; }

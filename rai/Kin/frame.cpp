@@ -56,13 +56,13 @@ mlr::Inertia &mlr::Frame::getInertia(){
 }
 
 mlr::Frame *mlr::Frame::getUpwardLink(mlr::Transformation &Qtotal){
-    if(&Qtotal) Qtotal.setZero();
-    Frame *p=parent;
-    while(p && !p->parent && !p->joint){
-        if(&Qtotal) Qtotal=p->Q*Qtotal;
-        p=p->parent;
-    }
-    return p;
+  if(&Qtotal) Qtotal.setZero();
+  Frame *p=parent;
+  while(p && !p->parent && !p->joint){
+    if(&Qtotal) Qtotal=p->Q*Qtotal;
+    p=p->parent;
+  }
+  return p;
 }
 
 void mlr::Frame::read(const Graph& ats) {
@@ -103,11 +103,11 @@ void mlr::Frame::write(std::ostream& os) const {
   }
 
   os <<" }\n";
-//  if(mass) os <<"mass=" <<mass <<' ';
-//  if(type!=BT_dynamic) os <<"dyntype=" <<(int)type <<' ';
-//  uint i; Node *a;
-//  for(Type *  a:  ats)
-//      if(a->keys(0)!="X" && a->keys(0)!="pose") os <<*a <<' ';
+  //  if(mass) os <<"mass=" <<mass <<' ';
+  //  if(type!=BT_dynamic) os <<"dyntype=" <<(int)type <<' ';
+  //  uint i; Node *a;
+  //  for(Type *  a:  ats)
+  //      if(a->keys(0)!="X" && a->keys(0)!="pose") os <<*a <<' ';
 }
 
 mlr::Frame* mlr::Frame::insertPreLink(const mlr::Transformation &A){
@@ -193,206 +193,278 @@ mlr::Joint::~Joint() {
 
 void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
   mlr::Transformation &Q = frame.Q;
-    if(mimic){
-        Q = mimic->frame.Q;
-    }else{
-        switch(type) {
-        case JT_hingeX: {
-            Q.rot.setRadX(q.elem(_qIndex));
-        } break;
-
-        case JT_hingeY: {
-            Q.rot.setRadY(q.elem(_qIndex));
-        } break;
-
-        case JT_hingeZ: {
-            Q.rot.setRadZ(q.elem(_qIndex));
-        } break;
-
-        case JT_universal:{
-            mlr::Quaternion rot1, rot2;
-            rot1.setRadX(q.elem(_qIndex));
-            rot2.setRadY(q.elem(_qIndex+1));
-            Q.rot = rot1*rot2;
-        } break;
-
-        case JT_quatBall:{
-            Q.rot.set(q.p+_qIndex);
-            {
-                double n=Q.rot.normalization();
-                if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
-            }
-            Q.rot.normalize();
-            Q.rot.isZero=false; //WHY? (gradient check fails without!)
-        } break;
-
-        case JT_free:{
-            Q.pos.set(q.p+_qIndex);
-            Q.rot.set(q.p+_qIndex+3);
-            {
-                double n=Q.rot.normalization();
-                if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
-            }
-            Q.rot.normalize();
-            Q.rot.isZero=false;
-        } break;
-
-        case JT_XBall:{
-            Q.pos.x = q.elem(_qIndex);
-            Q.pos.y = 0.;
-            Q.pos.z = 0.;
-            Q.pos.isZero = false;
-            Q.rot.set(q.p+_qIndex+1);
-            {
-                double n=Q.rot.normalization();
-                if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
-            }
-            Q.rot.normalize();
-            Q.rot.isZero=false;
-        } break;
-
-        case JT_transX: {
-            Q.pos = q.elem(_qIndex)*Vector_x;
-        } break;
-
-        case JT_transY: {
-            Q.pos = q.elem(_qIndex)*Vector_y;
-        } break;
-
-        case JT_transZ: {
-            Q.pos = q.elem(_qIndex)*Vector_z;
-        } break;
-
-        case JT_transXY: {
-            Q.pos.set(q.elem(_qIndex), q.elem(_qIndex+1), 0.);
-        } break;
-
-        case JT_trans3: {
-            Q.pos.set(q.elem(_qIndex), q.elem(_qIndex+1), q.elem(_qIndex+2));
-        } break;
-
-        case JT_transXYPhi: {
-            Q.pos.set(q.elem(_qIndex), q.elem(_qIndex+1), 0.);
-            Q.rot.setRadZ(q.elem(_qIndex+2));
-        } break;
-
-        case JT_phiTransXY: {
-            Q.rot.setRadZ(q.elem(_qIndex));
-            Q.pos = Q.rot*Vector(q.elem(_qIndex+1), q.elem(_qIndex+2), 0.);
-        } break;
-
-        case JT_rigid:
-            break;
-        default: NIY;
-        }
-    }
-    CHECK_EQ(Q.pos.x, Q.pos.x, "NAN transform");
-    CHECK_EQ(Q.rot.w, Q.rot.w, "NAN transform");
-
-//    link->link = A * Q * B; //total rel transformation
-}
-
-arr mlr::Joint::calc_q_from_Q(const mlr::Transformation &Q) const{
-    arr q;
+  if(mimic){
+    Q = mimic->frame.Q;
+  }else{
     switch(type) {
-    case JT_hingeX:
-    case JT_hingeY:
+    case JT_hingeX: {
+      Q.rot.setRadX(q.elem(_qIndex));
+    } break;
+
+    case JT_hingeY: {
+      Q.rot.setRadY(q.elem(_qIndex));
+    } break;
+
     case JT_hingeZ: {
-        q.resize(1);
-        //angle
-        mlr::Vector rotv;
-        Q.rot.getRad(q(0), rotv);
-        if(q(0)>MLR_PI) q(0)-=MLR_2PI;
-        if(type==JT_hingeX && rotv*Vector_x<0.) q(0)=-q(0);
-        if(type==JT_hingeY && rotv*Vector_y<0.) q(0)=-q(0);
-        if(type==JT_hingeZ && rotv*Vector_z<0.) q(0)=-q(0);
+      Q.rot.setRadZ(q.elem(_qIndex));
     } break;
 
-    case JT_universal: {
-        q.resize(2);
-        //angle
-        if(fabs(Q.rot.w)>1e-15) {
-            q(0) = 2.0 * atan(Q.rot.x/Q.rot.w);
-            q(1) = 2.0 * atan(Q.rot.y/Q.rot.w);
-        } else {
-            q(0) = MLR_PI;
-            q(1) = MLR_PI;
-        }
+    case JT_universal:{
+      mlr::Quaternion rot1, rot2;
+      rot1.setRadX(q.elem(_qIndex));
+      rot2.setRadY(q.elem(_qIndex+1));
+      Q.rot = rot1*rot2;
     } break;
 
-    case JT_quatBall: {
-        q.resize(4);
-        q(0)=Q.rot.w;
-        q(1)=Q.rot.x;
-        q(2)=Q.rot.y;
-        q(3)=Q.rot.z;
+    case JT_quatBall:{
+      Q.rot.set(q.p+_qIndex);
+      {
+        double n=Q.rot.normalization();
+        if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+      }
+      Q.rot.normalize();
+      Q.rot.isZero=false; //WHY? (gradient check fails without!)
+    } break;
+
+    case JT_free:{
+      Q.pos.set(q.p+_qIndex);
+      Q.rot.set(q.p+_qIndex+3);
+      {
+        double n=Q.rot.normalization();
+        if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+      }
+      Q.rot.normalize();
+      Q.rot.isZero=false;
+    } break;
+
+    case JT_XBall:{
+      Q.pos.x = q.elem(_qIndex);
+      Q.pos.y = 0.;
+      Q.pos.z = 0.;
+      Q.pos.isZero = false;
+      Q.rot.set(q.p+_qIndex+1);
+      {
+        double n=Q.rot.normalization();
+        if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+      }
+      Q.rot.normalize();
+      Q.rot.isZero=false;
     } break;
 
     case JT_transX: {
-        q.resize(1);
-        q(0)=Q.pos.x;
+      Q.pos = q.elem(_qIndex)*Vector_x;
     } break;
+
     case JT_transY: {
-        q.resize(1);
-        q(0)=Q.pos.y;
+      Q.pos = q.elem(_qIndex)*Vector_y;
     } break;
+
     case JT_transZ: {
-        q.resize(1);
-        q(0)=Q.pos.z;
+      Q.pos = q.elem(_qIndex)*Vector_z;
     } break;
+
     case JT_transXY: {
-        q.resize(2);
-        q(0)=Q.pos.x;
-        q(1)=Q.pos.y;
+      Q.pos.set(q.elem(_qIndex), q.elem(_qIndex+1), 0.);
     } break;
-    case JT_transXYPhi: {
-        q.resize(3);
-        q(0)=Q.pos.x;
-        q(1)=Q.pos.y;
-        mlr::Vector rotv;
-        Q.rot.getRad(q(2), rotv);
-        if(q(2)>MLR_PI) q(2)-=MLR_2PI;
-        if(rotv*Vector_z<0.) q(2)=-q(2);
-    } break;
-    case JT_phiTransXY: {
-        q.resize(3);
-        mlr::Vector rotv;
-        Q.rot.getRad(q(0), rotv);
-        if(q(0)>MLR_PI) q(0)-=MLR_2PI;
-        if(rotv*Vector_z<0.) q(0)=-q(0);
-        mlr::Vector relpos = Q.rot/Q.pos;
-        q(1)=relpos.x;
-        q(2)=relpos.y;
-    } break;
+
     case JT_trans3: {
-        q.resize(3);
-        q(0)=Q.pos.x;
-        q(1)=Q.pos.y;
-        q(2)=Q.pos.z;
+      Q.pos.set(q.elem(_qIndex), q.elem(_qIndex+1), q.elem(_qIndex+2));
     } break;
+
+    case JT_transXYPhi: {
+      Q.pos.set(q.elem(_qIndex), q.elem(_qIndex+1), 0.);
+      Q.rot.setRadZ(q.elem(_qIndex+2));
+    } break;
+
+    case JT_phiTransXY: {
+      Q.rot.setRadZ(q.elem(_qIndex));
+      Q.pos = Q.rot*Vector(q.elem(_qIndex+1), q.elem(_qIndex+2), 0.);
+    } break;
+
     case JT_rigid:
-        break;
-    case JT_free:
-        q.resize(7);
-        q(0)=Q.pos.x;
-        q(1)=Q.pos.y;
-        q(2)=Q.pos.z;
-        q(3)=Q.rot.w;
-        q(4)=Q.rot.x;
-        q(5)=Q.rot.y;
-        q(6)=Q.rot.z;
-        break;
-    case JT_XBall:
-        q.resize(5);
-        q(0)=Q.pos.x;
-        q(1)=Q.rot.w;
-        q(2)=Q.rot.x;
-        q(3)=Q.rot.y;
-        q(4)=Q.rot.z;
-        break;
+      break;
     default: NIY;
     }
-    return q;
+  }
+  CHECK_EQ(Q.pos.x, Q.pos.x, "NAN transform");
+  CHECK_EQ(Q.rot.w, Q.rot.w, "NAN transform");
+
+  //    link->link = A * Q * B; //total rel transformation
+}
+
+arr mlr::Joint::calc_q_from_Q(const mlr::Transformation &Q) const{
+  arr q;
+  switch(type) {
+  case JT_hingeX:
+  case JT_hingeY:
+  case JT_hingeZ: {
+    q.resize(1);
+    //angle
+    mlr::Vector rotv;
+    Q.rot.getRad(q(0), rotv);
+    if(q(0)>MLR_PI) q(0)-=MLR_2PI;
+    if(type==JT_hingeX && rotv*Vector_x<0.) q(0)=-q(0);
+    if(type==JT_hingeY && rotv*Vector_y<0.) q(0)=-q(0);
+    if(type==JT_hingeZ && rotv*Vector_z<0.) q(0)=-q(0);
+  } break;
+
+  case JT_universal: {
+    q.resize(2);
+    //angle
+    if(fabs(Q.rot.w)>1e-15) {
+      q(0) = 2.0 * atan(Q.rot.x/Q.rot.w);
+      q(1) = 2.0 * atan(Q.rot.y/Q.rot.w);
+    } else {
+      q(0) = MLR_PI;
+      q(1) = MLR_PI;
+    }
+  } break;
+
+  case JT_quatBall: {
+    q.resize(4);
+    q(0)=Q.rot.w;
+    q(1)=Q.rot.x;
+    q(2)=Q.rot.y;
+    q(3)=Q.rot.z;
+  } break;
+
+  case JT_transX: {
+    q.resize(1);
+    q(0)=Q.pos.x;
+  } break;
+  case JT_transY: {
+    q.resize(1);
+    q(0)=Q.pos.y;
+  } break;
+  case JT_transZ: {
+    q.resize(1);
+    q(0)=Q.pos.z;
+  } break;
+  case JT_transXY: {
+    q.resize(2);
+    q(0)=Q.pos.x;
+    q(1)=Q.pos.y;
+  } break;
+  case JT_transXYPhi: {
+    q.resize(3);
+    q(0)=Q.pos.x;
+    q(1)=Q.pos.y;
+    mlr::Vector rotv;
+    Q.rot.getRad(q(2), rotv);
+    if(q(2)>MLR_PI) q(2)-=MLR_2PI;
+    if(rotv*Vector_z<0.) q(2)=-q(2);
+  } break;
+  case JT_phiTransXY: {
+    q.resize(3);
+    mlr::Vector rotv;
+    Q.rot.getRad(q(0), rotv);
+    if(q(0)>MLR_PI) q(0)-=MLR_2PI;
+    if(rotv*Vector_z<0.) q(0)=-q(0);
+    mlr::Vector relpos = Q.rot/Q.pos;
+    q(1)=relpos.x;
+    q(2)=relpos.y;
+  } break;
+  case JT_trans3: {
+    q.resize(3);
+    q(0)=Q.pos.x;
+    q(1)=Q.pos.y;
+    q(2)=Q.pos.z;
+  } break;
+  case JT_rigid:
+    break;
+  case JT_free:
+    q.resize(7);
+    q(0)=Q.pos.x;
+    q(1)=Q.pos.y;
+    q(2)=Q.pos.z;
+    q(3)=Q.rot.w;
+    q(4)=Q.rot.x;
+    q(5)=Q.rot.y;
+    q(6)=Q.rot.z;
+    break;
+  case JT_XBall:
+    q.resize(5);
+    q(0)=Q.pos.x;
+    q(1)=Q.rot.w;
+    q(2)=Q.rot.x;
+    q(3)=Q.rot.y;
+    q(4)=Q.rot.z;
+    break;
+  default: NIY;
+  }
+  return q;
+}
+
+arr mlr::Joint::getScrewMatrix(){
+  arr S(2, dim, 3);
+  S.setZero();
+  mlr::Vector axis;
+
+  if(type==JT_hingeX) {
+    axis = X().rot.getX();
+    S(0,0,{}) = axis.getArr();
+    S(1,0,{}) = (-axis ^ X().pos).getArr();
+  }
+  if(type==JT_hingeY) {
+    axis = X().rot.getY();
+    S(0,0,{}) = axis.getArr();
+    S(1,0,{}) = (-axis ^ X().pos).getArr();
+  }
+  if(type==JT_hingeZ) {
+    axis = X().rot.getZ();
+    S(0,0,{}) = axis.getArr();
+    S(1,0,{}) = (-axis ^ X().pos).getArr();
+  }
+  else if(type==JT_transX){
+    axis = X().rot.getX();
+    S(1,0,{}) = axis.getArr();
+  }
+  else if(type==JT_transY){
+    axis = X().rot.getY();
+    S(1,0,{}) = axis.getArr();
+  }
+  else if(type==JT_transZ){
+    axis = X().rot.getZ();
+    S(1,0,{}) = axis.getArr();
+  }
+  else if(type==JT_transXY) {
+    if(mimic) NIY;
+    arr R = X().rot.getArr();
+    S[1] = R({0,1});
+  }
+  else if(type==JT_transXYPhi) {
+    if(mimic) NIY;
+    arr R = X().rot.getArr();
+    axis = R[2];
+    S(1,0,{}) = R[0];
+    S(1,1,{}) = R[1];
+    S(0,2,{}) = axis.getArr();
+    S(1,2,{}) = (-axis ^ (X().pos + X().rot*Q().pos)).getArr();
+  }
+  else if(type==JT_phiTransXY) {
+    if(mimic) NIY;
+    axis = X().rot.getX();
+    S(0,0,{}) = axis.getArr();
+    S(1,0,{}) = (-axis ^ X().pos).getArr();
+    arr R = (X().rot*Q().rot).getArr();
+    S[1] = R({0,1});
+  }
+  if(type==JT_trans3 || type==JT_free) {
+    if(mimic) NIY;
+    arr R = X().rot.getArr();
+    S[1] = R;
+  }
+  if(type==JT_quatBall || type==JT_free) {
+    uint offset=0;
+    if(type==JT_free) offset=3;
+    arr Jrot = X().rot.getArr() * Q().rot.getJacobian(); //transform w-vectors into world coordinate
+    NIY; //Jrot /= sqrt(sumOfSqr( q({qIndex+offset, qIndex+offset+3}) )); //account for the potential non-normalization of q
+    //    Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(X().pos+X().rot*Q().pos)) ); //cross-product of all 4 w-vectors with lever
+    for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) S(0, i+offset, k) = Jrot(k,i);
+    Jrot = crossProduct(Jrot, conv_vec2arr(-(X().pos+X().rot*Q().pos)) ); //cross-product of all 4 w-vectors with lever
+    for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) S(1, i+offset, k) = Jrot(k,i);
+  }
+  return S;
 }
 
 uint mlr::Joint::getDimFromType() const {
@@ -498,7 +570,7 @@ void mlr::Joint::read(const Graph &G){
     CHECK_EQ(q0.N, dim, "given q (in config file) does not match dim");
     calc_Q_from_q(q0, 0);
   }else{
-//    link->Q.setZero();
+    //    link->Q.setZero();
     q0 = calc_q_from_Q(frame.Q);
   }
 
@@ -542,8 +614,8 @@ void mlr::Joint::write(std::ostream& os) const {
 
 mlr::Shape::Shape(Frame &f, const Shape *copyShape)
   : frame(f), store(_GeomStore())/*, type(ST_none)*/ {
-//  size = {1.,1.,1.,.1};
-//  mesh.C = consts<double>(.8, 3); //color[0]=color[1]=color[2]=.8; color[3]=1.;
+  //  size = {1.,1.,1.,.1};
+  //  mesh.C = consts<double>(.8, 3); //color[0]=color[1]=color[2]=.8; color[3]=1.;
 
   CHECK(!frame.shape, "this frame already has a geom attached");
   frame.shape = this;
@@ -589,10 +661,10 @@ void mlr::Shape::read(const Graph& ats) {
     if(ats["rel_includes_mesh_center"]){
       mesh().center();
     }
-//    if(c.length()>1e-8 && !ats["rel_includes_mesh_center"]){
-//      frame.link->Q.addRelativeTranslation(c);
-//      frame.ats.newNode<bool>({"rel_includes_mesh_center"}, {}, true);
-//    }
+    //    if(c.length()>1e-8 && !ats["rel_includes_mesh_center"]){
+    //      frame.link->Q.addRelativeTranslation(c);
+    //      frame.ats.newNode<bool>({"rel_includes_mesh_center"}, {}, true);
+    //    }
   }
 
   //compute the bounding radius

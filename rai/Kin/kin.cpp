@@ -592,6 +592,7 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const mlr::Vec
   jacobianPos(J, a, pos_world);
 }
 
+#if 1
 void mlr::KinematicWorld::jacobianPos(arr& J, Frame *a, const mlr::Vector& pos_world) const {
   //get Jacobian
   uint N=getJointStateDimension();
@@ -663,6 +664,27 @@ void mlr::KinematicWorld::jacobianPos(arr& J, Frame *a, const mlr::Vector& pos_w
     a = a->parent;
   }
 }
+#else
+void mlr::KinematicWorld::jacobianPos(arr& J, Frame *a, const mlr::Vector& pos_world) const {
+  J.resize(3, getJointStateDimension()).setZero();
+  while(a) { //loop backward down the kinematic tree
+    if(!a->parent) break; //frame has no inlink -> done
+    Joint *j=a->joint;
+    if(j && j->active) {
+      uint j_idx=j->qIndex;
+      arr screw = j->getScrewMatrix();
+      for(uint d=0; d<j->dim; d++){
+        mlr::Vector axis = screw(0,d,{});
+        mlr::Vector tmp = axis ^ pos_world;
+        J(0, j_idx+d) += tmp.x + screw(1,d,0);
+        J(1, j_idx+d) += tmp.y + screw(1,d,1);
+        J(2, j_idx+d) += tmp.z + screw(1,d,2);
+      }
+    }
+    a = a->parent;
+  }
+}
+#endif
 
 /** @brief return the jacobian \f$J = \frac{\partial\phi_i(q)}{\partial q}\f$ of the position
   of the i-th body W.R.T. the 6 axes of an arbitrary shape-frame, NOT the robot's joints (3 x 6 tensor)
@@ -2084,7 +2106,7 @@ arr mlr::KinematicWorld::getHmetric() const{
   arr H = zeros(getJointStateDimension());
   for(Joint *j: fwdActiveJoints){
     double h=j->H;
-    CHECK(h>0.,"Hmetric should be larger than 0");
+//    CHECK(h>0.,"Hmetric should be larger than 0");
     if(j->type==JT_transXYPhi){
       H(j->qIndex+0)=h*10.;
       H(j->qIndex+1)=h*10.;

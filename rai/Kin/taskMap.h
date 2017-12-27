@@ -52,16 +52,8 @@ inline uintA getKtupleDim(const WorldL& Ktuple){
   return dim;
 }
 
-int initIdArg(const mlr::KinematicWorld &K, const char* frameName){
+inline int initIdArg(const mlr::KinematicWorld &K, const char* frameName){
   mlr::Frame *a = frameName ? K.getFrameByName(frameName):NULL;
   if(a) return a->ID;
   return -1;
 }
-
-//helper with default constructor for task maps that refer to 2 frames
-struct TaskMapInit2Frames : TaskMap {
-  int i,j;
-  TaskMapInit2Frames(const mlr::KinematicWorld &K, const char* i_name, const char* j_name)
-    : i(initIdArg(K, i_name)), j(initIdArg(K, j_name)){
-  }
-};

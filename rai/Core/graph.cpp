@@ -402,18 +402,7 @@ NodeL Graph::getAllNodesRecursively() const{
 Node* Graph::edit(Node *ed){
   NodeL KVG = findNodesOfType(ed->type, ed->keys);
   //CHECK(KVG.N<=1, "can't edit into multiple nodes yet");
-  Node *n=NULL;
-  if(KVG.N) n=KVG.elem(0);
-  CHECK(n!=ed,"how is this possible?: You're trying to edit with '" <<*ed <<"' but this is the only node using these keys");
-  if(n){
-    CHECK(ed->type==n->type, "can't edit/merge nodes of different types!");
-    if(n->isGraph()){ //merge the KVGs
-      n->graph().edit(ed->graph());
-    }else{ //overwrite the value
-      n->copyValue(ed);
-    }
-    if(&ed->container==this){ delete ed; ed=NULL; }
-  }else{ //nothing to merge, append
+  if(!KVG.N){ //nothing to merge, append
     if(&ed->container!=this){
       if(!isIndexed) index();
       if(!ed->container.isIndexed) ed->container.index();
@@ -424,6 +413,19 @@ Node* Graph::edit(Node *ed){
     }
     return ed;
   }
+
+  uint edited=0;
+  for(Node *n : KVG) if(n!=ed){
+    CHECK(ed->type==n->type, "can't edit/merge nodes of different types!");
+    if(n->isGraph()){ //merge the KVGs
+      n->graph().edit(ed->graph());
+    }else{ //overwrite the value
+      n->copyValue(ed);
+    }
+    edited++;
+  }
+  if(!edited) MLR_MSG("no nodes edited!");
+  if(&ed->container==this){ delete ed; ed=NULL; }
   return NULL;
 }
 

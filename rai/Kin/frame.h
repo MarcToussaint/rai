@@ -90,7 +90,7 @@ struct Joint{
   byte generator;    ///< (7bits), h in Featherstone's code (indicates basis vectors of the Lie algebra, but including the middle quaternion w)
   arr limits;        ///< joint limits (lo, up, [maxvel, maxeffort])
   arr q0;            ///< joint null position
-  double H=1.;       ///< control cost scalar
+  double H=0.;       ///< control cost scalar
 
   Joint *mimic=NULL; ///< if non-NULL, this joint's state is identical to another's
 
@@ -113,6 +113,7 @@ struct Joint{
   uint qDim(){ return dim; }
   void calc_Q_from_q(const arr& q, uint n);
   arr calc_q_from_Q(const Transformation &Q) const;
+  arr getScrewMatrix();
   uint getDimFromType() const;
   arr get_h() const;
 

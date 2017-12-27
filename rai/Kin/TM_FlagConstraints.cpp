@@ -36,7 +36,7 @@ uint TaskMap_FlagConstraints::dim_phi(const WorldL& Ktuple, int t){
   for(mlr::Frame *a : Ktuple.last()->frames){
     if(a->flags & (1<<FT_zeroVel)) d += 7;
     if(a->flags & (1<<FT_zeroAcc)) d += 7;
-//    if(a->flags & (1<<FT_zeroQVel)) if(JointDidNotSwitch(a, Ktuple)) d += a->joint->dim;
+    if(a->flags & (1<<FT_zeroQVel)) if(JointDidNotSwitch(a, Ktuple)) d += a->joint->dim;
   }
   return d;
 }
@@ -53,7 +53,7 @@ void TaskMap_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double t
   }
 
   uint d=0;
-  for(mlr::Frame *a : K.frames){
+  for(mlr::Frame *a : K.frames) if(a->flags){
     if(a->flags & (1<<FT_zeroVel)){
       TaskMap_Default pos(posTMT, a->ID);
       pos.order=1;
@@ -82,15 +82,15 @@ void TaskMap_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double t
       d += 7;
     }
 
-//    if(a->flags & (1<<FT_zeroQVel)) if(JointDidNotSwitch(a, Ktuple)){
-//      uint jdim = a->joint->dim;
+    if(a->flags & (1<<FT_zeroQVel)) if(JointDidNotSwitch(a, Ktuple)){
+      uint jdim = a->joint->dim;
 
-//      TaskMap_qItself q({a->ID}, false);
-//      q.order=1;
-//      q.TaskMap::phi(y({d,d+jdim-1})(), (&J?J({d,d+jdim-1})():NoArr), Ktuple, tau, t);
+      TaskMap_qItself q({a->ID}, false);
+      q.order=1;
+      q.TaskMap::phi(y({d,d+jdim-1})(), (&J?J({d,d+jdim-1})():NoArr), Ktuple, tau, t);
 
-//      d += jdim;
-//    }
+      d += jdim;
+    }
 
   }
 
