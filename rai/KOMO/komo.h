@@ -159,7 +159,7 @@ struct KOMO{
   void setSpline(uint splineT);   ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
   void reset(double initNoise=.01);      ///< reset the optimizer (initializes x to a default path)
   void run();                     ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
-  void getPhysicsReference();
+  void getPhysicsReference(uint subSteps=10, int display=0);
   void playInPhysics(uint subSteps=10, bool display=false);
   arr getPath(const StringA& joints);
   void reportProblem(ostream &os=std::cout);
@@ -219,3 +219,14 @@ inline arr finalPoseTo(mlr::KinematicWorld& world,
   return komo.x;
 }
 
+//===========================================================================
+
+inline arr getVelocities(const arr& q, double tau){
+  arr v;
+  v.resizeAs(q);
+  v.setZero();
+  for(uint t=1;t<q.d0-1;t++){
+    v[t] = (q[t+1]-q[t-1])/(2.*tau);
+  }
+  return v;
+}

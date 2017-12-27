@@ -68,6 +68,7 @@ struct Frame {
   void unLink();
   void linkFrom(Frame *_parent, bool adoptRelTransform=false);
 
+  Inertia& getInertia();
   void getRigidSubFrames(FrameL& F);
 
   Frame* getUpwardLink(mlr::Transformation& Qtotal=NoTransformation);

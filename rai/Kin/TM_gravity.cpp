@@ -16,15 +16,18 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
   if(order==1){
     arr p0, J0, p1, J1, pc, Jc;
     //check equal # of frames in each world
-    uint nf = K.frames.N;
-    for(uint i=0;i<nf;i++){
-      mlr::Frame *a = K.frames(i);
-      if(a->inertia && a->inertia->type==mlr::BT_dynamic){
-        TaskMap_Default pos(posTMT, i);
+    for(mlr::Frame *a:K.frames){
+   //      if(a->inertia && a->inertia->type==mlr::BT_dynamic){
+         if(a->flags & (1<<FT_gravityAcc)){
+//    uint nf = K.frames.N;
+//    for(uint i=0;i<nf;i++){
+//      mlr::Frame *a = K.frames(i);
+//      if(a->inertia && a->inertia->type==mlr::BT_dynamic){
+        TaskMap_Default pos(posTMT, a->ID);
         pos.order=1;
         pos.TaskMap::phi(p0, (&J?J0:NoArr), Ktuple, tau, t);
 
-        arr v_ref = {0.,0.,-1.};
+        arr v_ref = {0.,0.,-.1};
         arr Jv_ref = zeros(3, K.q.N);
         if(false && a->contacts.N){
           for(mlr::Contact *c:a->contacts){

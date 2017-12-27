@@ -100,12 +100,18 @@ void mlr::Geom::createMeshes(){
       mesh.setSSCvx(sscCore, size(3));
       break;
   case mlr::ST_ssBox:
-      CHECK(size.N==4 && size(3)>1e-10,"");
+    if(size(3)<1e-10){
       sscCore.setBox();
-      sscCore.scale(size(0)-2.*size(3), size(1)-2.*size(3), size(2)-2.*size(3));
-      mesh.setSSBox(size(0), size(1), size(2), size(3));
-      //      mesh.setSSCvx(sscCore, size(3));
+      sscCore.scale(size(0), size(1), size(2));
+      mesh = sscCore;
       break;
+    }
+    CHECK(size.N==4 && size(3)>1e-10,"");
+    sscCore.setBox();
+    sscCore.scale(size(0)-2.*size(3), size(1)-2.*size(3), size(2)-2.*size(3));
+    mesh.setSSBox(size(0), size(1), size(2), size(3));
+    //      mesh.setSSCvx(sscCore, size(3));
+    break;
   default: NIY;
   }
 }

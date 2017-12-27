@@ -983,12 +983,15 @@ void KOMO::run(){
   if(verbose>1) cout <<getReport(false) <<endl;
 }
 
-void KOMO::getPhysicsReference(){
-  x.resize(T, world.q.N);
-  world.physx().pushToPhysx();
+void KOMO::getPhysicsReference(uint subSteps, int display){
+  x.resize(T, world.getJointStateDimension());
+  PhysXInterface& px = world.physx();
+  px.pushToPhysx();
   for(uint t=0;t<T;t++){
-    world.stepPhysx(tau);
-//    K.physx().watch(false, STRING("t="<<t));
+    for(uint s=0;s<subSteps;s++){
+      px.step(tau/subSteps, false);
+      if(display) px.watch((display<0), STRING("t="<<t<<";"<<s));
+    }
     x[t] = world.q;
 //      K.calc_fwdPropagateFrames();
 //    K.watch();

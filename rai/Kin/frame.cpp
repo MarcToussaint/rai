@@ -51,6 +51,10 @@ void mlr::Frame::getRigidSubFrames(FrameL &F){
   for(Frame *f:outLinks) if(!f->joint) { F.append(f); f->getRigidSubFrames(F); }
 }
 
+mlr::Inertia &mlr::Frame::getInertia(){
+  if(!inertia) inertia = new Inertia(*this); return *inertia;
+}
+
 mlr::Frame *mlr::Frame::getUpwardLink(mlr::Transformation &Qtotal){
     if(&Qtotal) Qtotal.setZero();
     Frame *p=parent;
@@ -156,8 +160,8 @@ void mlr::Frame::linkFrom(mlr::Frame *_parent, bool adoptRelTransform){
 }
 
 mlr::Joint::Joint(Frame &f, Joint *copyJoint)
-    : frame(f), qIndex(UINT_MAX), q0(0.){
-    CHECK(!frame.joint, "the Link already has a Joint");
+  : frame(f), qIndex(UINT_MAX), q0(0.){
+  CHECK(!frame.joint, "the Link already has a Joint");
   frame.joint = this;
   frame.K.reset_q();
 
