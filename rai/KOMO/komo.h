@@ -123,6 +123,7 @@ struct KOMO{
   //-- dynamic
   void setImpact(double time, const char* a, const char* b);
   void setOverTheEdge(double time, const char* object, const char* from, double margin=.0);
+  void setInertialMotion(double startTime, double endTime, const char *object, const char *base, double g=-9.81, double c=0.);
   void setFreeGravity(double time, const char* object, const char* base="base");
 
   //-- tasks (cost/constraint terms) high-level (rough, for LGP)

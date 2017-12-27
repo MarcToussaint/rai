@@ -31,6 +31,7 @@
 #include <Kin/TM_StaticStability.h>
 #include <Kin/TM_Max.h>
 #include <Kin/TM_ImpulseExchange.h>
+#include <Kin/TM_InertialMotion.h>
 #include <Kin/contact.h>
 #include <Optim/optimization.h>
 #include <Optim/convert.h>
@@ -371,6 +372,14 @@ void KOMO::setOverTheEdge(double time, const char *object, const char *from, dou
   setTask(time, time+.5,
           new TM_Max(new TaskMap_AboveBox(world, object, from, -negMargin), true), //this is the max selection -- only one of the four numbers need to be outside the BB
           OT_ineq, {}, 1e1); //NOTE: usually this is an inequality constraint <0; here we say this should be zero for a negative margin (->outside support)
+}
+
+void KOMO::setInertialMotion(double startTime, double endTime, const char *object, const char *base, double g, double c){
+  setKinematicSwitch(startTime, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::addActuated, mlr::JT_trans3, base, object, world));
+//  setFlag(time, new mlr::Flag(FT_gravityAcc, world[object]->ID, 0, true),+1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
+  setFlag(startTime, new mlr::Flag(FT_noQControlCosts, world[object]->ID, 0, true), +2);
+  setFlag(endTime, new mlr::Flag(FT_noQControlCosts, world[object]->ID, 0, true, false), +1);
+  setTask(startTime, endTime, new TM_InertialMotion(world, object, g, c), OT_sumOfSqr, {}, 1e2, 2);
 }
 
 void KOMO::setFreeGravity(double time, const char *object, const char *base){
