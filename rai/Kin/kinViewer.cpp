@@ -158,7 +158,7 @@ void OrsPathViewer::step(){
   if(T){
     copy.gl().captureImg=writeToFiles;
     copy.gl().update(STRING(" (time " <<tprefix+int(tt) <<'/' <<tprefix+int(T) <<')').p, false, false, true);
-    if(writeToFiles) write_ppm(copy.gl().captureImage,STRING("vid/z.path."<<std::setw(3)<<std::setfill('0')<<tprefix+int(tt)<<".ppm"));
+    if(writeToFiles) write_ppm(copy.gl().captureImage,STRING("vid/z."<<std::setw(3)<<std::setfill('0')<<tprefix+int(tt)<<".ppm"));
   }
   t++;
 }
@@ -168,6 +168,7 @@ void OrsPathViewer::step(){
 void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix, int w, int h, mlr::Camera *camera){
   mlr::KinematicWorld copy;
   copy.orsDrawMarkers=false;
+  system(STRING("rm " <<filePrefix <<"*.ppm"));
   for(uint t=0;t<cs.N;t++){
     copy.copy(*cs(t), true);
 #if 0 //render on screen

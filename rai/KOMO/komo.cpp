@@ -38,30 +38,32 @@
 #include <Optim/convert.h>
 #include <Kin/kin_physx.h>
 
+using namespace mlr;
+
 //===========================================================================
 
-double shapeSize(const mlr::KinematicWorld& K, const char* name, uint i=2){
-  mlr::Frame *f = K.getFrameByName(name);
-  mlr::Shape *s = f->shape;
+double shapeSize(const KinematicWorld& K, const char* name, uint i=2){
+  Frame *f = K.getFrameByName(name);
+  Shape *s = f->shape;
   if(!s){
-    for(mlr::Frame *b:f->outLinks) if(b->name==name && b->shape){ s=b->shape; break; }
+    for(Frame *b:f->outLinks) if(b->name==name && b->shape){ s=b->shape; break; }
   }
   if(!s) return 0;
   return s->size(i);
 }
 
-mlr::Shape *getShape(const mlr::KinematicWorld& K, const char* name){
-  mlr::Frame *f = K.getFrameByName(name);
-  mlr::Shape *s = f->shape;
+Shape *getShape(const KinematicWorld& K, const char* name){
+  Frame *f = K.getFrameByName(name);
+  Shape *s = f->shape;
   if(!s){
-    for(mlr::Frame *b:f->outLinks) if(b->name==name && b->shape){ s=b->shape; break; }
+    for(Frame *b:f->outLinks) if(b->name==name && b->shape){ s=b->shape; break; }
   }
   return s;
 }
 
 
 KOMO::KOMO() : T(0), tau(0.), k_order(2), useSwift(true), opt(NULL), gl(NULL), verbose(1), komo_problem(*this){
-  verbose = mlr::getParameter<int>("KOMO/verbose",1);
+  verbose = getParameter<int>("KOMO/verbose",1);
 }
 
 KOMO::~KOMO(){
@@ -87,7 +89,7 @@ void KOMO::init(const Graph& specs){
   k_order=glob.get<double>("k_order", 2);
 
   if(glob["model"]){
-    mlr::FileToken model = glob.get<mlr::FileToken>("model");
+    FileToken model = glob.get<FileToken>("model");
     world.read(model);
   }else{
     world.init(specs);
@@ -102,12 +104,12 @@ void KOMO::init(const Graph& specs){
 
   if(glob["computeOptimalSSBoxes"]){
     NIY;
-    //for(mlr::Shape *s: world.shapes) s->mesh.computeOptimalSSBox(s->mesh.V);
+    //for(Shape *s: world.shapes) s->mesh.computeOptimalSSBox(s->mesh.V);
     world.gl().watch();
   }
 
   if(glob["activateAllContacts"])
-    for(mlr::Frame *a : world.frames) if(a->shape) a->shape->cont=true;
+    for(Frame *a : world.frames) if(a->shape) a->shape->cont=true;
 
   world.swift().initActivations(world);
   FILE("z.komo.model") <<world;
@@ -126,7 +128,7 @@ void KOMO::setFact(const char* fact){
   parseTask(specs.last());
 }
 
-void KOMO::setModel(const mlr::KinematicWorld& K,
+void KOMO::setModel(const KinematicWorld& K,
                     bool _useSwift,
                     bool meldFixedJoints, bool makeConvexHulls, bool computeOptimalSSBoxes, bool activateAllContacts){
 
@@ -145,12 +147,12 @@ void KOMO::setModel(const mlr::KinematicWorld& K,
 
   if(computeOptimalSSBoxes){
     NIY;
-    //for(mlr::Shape *s: world.shapes) s->mesh.computeOptimalSSBox(s->mesh.V);
+    //for(Shape *s: world.shapes) s->mesh.computeOptimalSSBox(s->mesh.V);
     world.gl().watch();
   }
 
   if(activateAllContacts){
-    for(mlr::Frame *a : world.frames) if(a->shape) a->shape->cont=true;
+    for(Frame *a : world.frames) if(a->shape) a->shape->cont=true;
     world.swift().initActivations(world);
   }
 
@@ -158,15 +160,15 @@ void KOMO::setModel(const mlr::KinematicWorld& K,
 }
 
 void KOMO::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese){
-  mlr::Joint *j;
-  for(mlr::Frame *f:world.frames) if((j=f->joint)){
+  Joint *j;
+  for(Frame *f:world.frames) if((j=f->joint)){
     bool lock;
     if(OnlyTheseOrNotThese){ //only these
       lock=true;
-      for(const mlr::String& s:groupNames) if(f->ats.getNode(s)){ lock=false; break; }
+      for(const String& s:groupNames) if(f->ats.getNode(s)){ lock=false; break; }
     }else{
       lock=false;
-      for(const mlr::String& s:groupNames) if(f->ats.getNode(s)){ lock=true; break; }
+      for(const String& s:groupNames) if(f->ats.getNode(s)){ lock=true; break; }
     }
     if(lock) j->makeRigid();
   }
@@ -194,14 +196,14 @@ void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhas
 }
 
 void KOMO::activateCollisions(const char* s1, const char* s2){
-  mlr::Frame *sh1 = world.getFrameByName(s1);
-  mlr::Frame *sh2 = world.getFrameByName(s2);
+  Frame *sh1 = world.getFrameByName(s1);
+  Frame *sh2 = world.getFrameByName(s2);
   if(sh1 && sh2) world.swift().activate(sh1, sh2);
 }
 
 void KOMO::deactivateCollisions(const char* s1, const char* s2){
-  mlr::Frame *sh1 = world.getFrameByName(s1);
-  mlr::Frame *sh2 = world.getFrameByName(s2);
+  Frame *sh1 = world.getFrameByName(s1);
+  Frame *sh2 = world.getFrameByName(s2);
   if(sh1 && sh2) world.swift().deactivate(sh1, sh2);
 }
 
@@ -232,7 +234,7 @@ bool KOMO::parseTask(const Node *n, int stepsPerPhase){
     return true;
   }
   //-- switch?
-  mlr::KinematicSwitch *sw = mlr::KinematicSwitch::newSwitch(n, world, stepsPerPhase, T);
+  KinematicSwitch *sw = KinematicSwitch::newSwitch(n, world, stepsPerPhase, T);
   if(sw){
     switches.append(sw);
     return true;
@@ -242,7 +244,7 @@ bool KOMO::parseTask(const Node *n, int stepsPerPhase){
 }
 
 Task *KOMO::setTask(double startTime, double endTime, TaskMap *map, ObjectiveType type, const arr& target, double prec, uint order, int deltaStep){
-  CHECK(k_order>=order,"");
+  CHECK_GE(k_order, order, "task requires larger k-order: " <<map->shortTag(world));
   map->order = order;
   Task *task = addTask(map->shortTag(world), map, type);
   task->setCostSpecs(startTime, endTime, stepsPerPhase, T, target, prec, deltaStep);
@@ -253,47 +255,51 @@ uint conv_time2step(double time, uint stepsPerPhase){
   return (floor(time*double(stepsPerPhase) + .500001))-1;
 }
 
-void KOMO::setFlag(double time, mlr::Flag *fl, int deltaStep){
+void KOMO::setFlag(double time, Flag *fl, int deltaStep){
   fl->stepOfApplication = conv_time2step(time, stepsPerPhase) + deltaStep;
   flags.append(fl);
 }
 
-void KOMO::setKinematicSwitch(double time, bool before, mlr::KinematicSwitch *sw){
+void KOMO::setKinematicSwitch(double time, bool before, KinematicSwitch *sw){
   sw->setTimeOfApplication(time, before, stepsPerPhase, T);
   switches.append(sw);
 }
 
-void KOMO::setKinematicSwitch(double time, bool before, const char* type, const char* ref1, const char* ref2, const mlr::Transformation& jFrom, const mlr::Transformation& jTo){
-  mlr::KinematicSwitch *sw = mlr::KinematicSwitch::newSwitch(type, ref1, ref2, world, 0/*STEP(time)+(before?0:1)*/, jFrom, jTo );
+void KOMO::setKinematicSwitch(double time, bool before, const char* type, const char* ref1, const char* ref2, const Transformation& jFrom){
+  KinematicSwitch *sw = KinematicSwitch::newSwitch(type, ref1, ref2, world, 0/*STEP(time)+(before?0:1)*/, jFrom);
   setKinematicSwitch(time, before, sw);
 }
 
 void KOMO::setKS_placeOn(double time, bool before, const char* obj, const char* table, bool actuated){
   //disconnect object from grasp ref
-  setKinematicSwitch(time, before, "delete", NULL, obj);
+//  setKinematicSwitch(time, before, "delete", NULL, obj);
 
   //connect object to table
-  mlr::Transformation rel = 0;
+  Transformation rel = 0;
   rel.addRelativeTranslation( 0., 0., .5*(shapeSize(world, obj) + shapeSize(world, table)));
   if(!actuated)
-    setKinematicSwitch(time, before, "transXYPhiZero", table, obj, rel );
+//    setKinematicSwitch(time, before, "transXYPhiZero", table, obj, rel );
+    setKinematicSwitch(time, before, new KinematicSwitch(SW_effJoint, JT_transXYPhi, table, obj, world, 0, rel));
   else
-    setKinematicSwitch(time, before, "transXYPhiActuated", table, obj, rel );
+//    setKinematicSwitch(time, before, "transXYPhiActuated", table, obj, rel );
+    setKinematicSwitch(time, before, new KinematicSwitch(SW_actJoint, JT_transXYPhi, table, obj, world, 0, rel));
 }
 
 void KOMO::setKS_slider(double time, bool before, const char* obj, const char* slider, const char* table){
   //disconnect object from grasp ref
-  setKinematicSwitch(time, before, "delete", NULL, obj);
+//  setKinematicSwitch(time, before, "delete", NULL, obj);
 
   //the two slider objects
-  mlr::String slidera = STRING(slider <<'a');
-  mlr::String sliderb = STRING(slider <<'b');
+  String slidera = STRING(slider <<'a');
+  String sliderb = STRING(slider <<'b');
 
-  mlr::Transformation rel = 0;
+  Transformation rel = 0;
   rel.addRelativeTranslation( 0., 0., .5*(shapeSize(world, obj) + shapeSize(world, table)));
 
-  setKinematicSwitch(time, true, "transXYPhiZero", table, slidera, rel);
-  setKinematicSwitch(time, true, "hingeZZero", sliderb, obj);
+//  setKinematicSwitch(time, true, "transXYPhiZero", table, slidera, rel);
+//  setKinematicSwitch(time, true, "hingeZZero", sliderb, obj);
+  setKinematicSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, table, slidera, world, 0, rel));
+  setKinematicSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_hingeZ, sliderb, obj, world));
 //  setKinematicSwitch(time, before, "sliderMechanism", table, obj, rel );
 
 //  if(!actuated)
@@ -304,8 +310,8 @@ void KOMO::setKS_slider(double time, bool before, const char* obj, const char* s
 
 void KOMO::setHoming(double startTime, double endTime, double prec){
   uintA bodies;
-  mlr::Joint *j;
-  for(mlr::Frame *f:world.frames) if((j=f->joint) && !j->constrainToZeroVel && j->qDim()>0) bodies.append(f->ID);
+  Joint *j;
+  for(Frame *f:world.frames) if((j=f->joint) && !j->constrainToZeroVel && j->qDim()>0) bodies.append(f->ID);
   setTask(startTime, endTime, new TaskMap_qItself(bodies, true), OT_sumOfSqr, NoArr, prec); //world.q, prec);
 }
 
@@ -322,13 +328,13 @@ void KOMO::setSquaredQVelocities(double startTime, double endTime, double prec){
 }
 
 void KOMO::setFixEffectiveJoints(double startTime, double endTime, double prec){
-//  auto *map = new TaskMap_Transition(world, true);
-  auto *map = new TaskMap_FlagConstraints();
-  setTask(startTime, endTime, map, OT_eq, NoArr, prec, 2);
+//  setTask(startTime, endTime, new TaskMap_Transition(world, true), OT_eq, NoArr, prec, 1); //NOTE: order=1!!
+  setTask(startTime, endTime, new TM_FlagConstraints(), OT_eq, NoArr, prec, k_order);
+  setTask(startTime, endTime, new TM_FlagCosts(), OT_sumOfSqr, NoArr, 1., k_order);
 }
 
 void KOMO::setFixSwitchedObjects(double startTime, double endTime, double prec){
-    setTask(startTime, endTime, new TaskMap_FixSwichedObjects(), OT_eq, NoArr, prec, 1);
+  setTask(startTime, endTime, new TaskMap_FixSwichedObjects(), OT_eq, NoArr, prec, k_order);
 }
 
 void KOMO::setSquaredQuaternionNorms(double startTime, double endTime, double prec){
@@ -336,7 +342,7 @@ void KOMO::setSquaredQuaternionNorms(double startTime, double endTime, double pr
 }
 
 void KOMO::setHoldStill(double startTime, double endTime, const char* shape, double prec){
-  mlr::Frame *s = world.getFrameByName(shape);
+  Frame *s = world.getFrameByName(shape);
   setTask(startTime, endTime, new TaskMap_qItself(TUP(s->ID)), OT_sumOfSqr, NoArr, prec, 1);
 }
 
@@ -362,12 +368,14 @@ void KOMO::setImpact(double time, const char *a, const char *b){
   setTask(time, time, new TaskMap_PairCollision(world, a, b, true, false), OT_eq, {}, 1e2);
 
   //consistent impuls exchange
-  setTask(time, time, new TM_ImpulsExchange(world, a, b), OT_sumOfSqr, {}, 1e3, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
-  setFlag(time, new mlr::Flag(FT_noQControlCosts, world[a]->ID), +1);
-  setFlag(time, new mlr::Flag(FT_noQControlCosts, world[b]->ID), +1);
+  if(k_order>=2){
+    setTask(time, time, new TM_ImpulsExchange(world, a, b), OT_sumOfSqr, {}, 1e3, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
+//    setFlag(time, new Flag(FL_noQControlCosts, world[a]->ID), +1);
+//    setFlag(time, new Flag(FL_noQControlCosts, world[b]->ID), +1);
 
-  setFlag(time, new mlr::Flag(FT_impulseExchange, world[a]->ID), +1);
-  setFlag(time, new mlr::Flag(FT_impulseExchange, world[b]->ID), +1);
+    setFlag(time, new Flag(FL_impulseExchange, world[a]->ID), +1);
+    setFlag(time, new Flag(FL_impulseExchange, world[b]->ID), +1);
+  }
 }
 
 void KOMO::setOverTheEdge(double time, const char *object, const char *from, double margin){
@@ -378,23 +386,25 @@ void KOMO::setOverTheEdge(double time, const char *object, const char *from, dou
 }
 
 void KOMO::setInertialMotion(double startTime, double endTime, const char *object, const char *base, double g, double c){
-  setKinematicSwitch(startTime, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::addActuated, mlr::JT_trans3, base, object, world));
-//  setFlag(time, new mlr::Flag(FT_gravityAcc, world[object]->ID, 0, true),+1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
-  setFlag(startTime, new mlr::Flag(FT_noQControlCosts, world[object]->ID, 0, true), +2);
-  setFlag(endTime, new mlr::Flag(FT_noQControlCosts, world[object]->ID, 0, true, false), +1);
-  setTask(startTime, endTime, new TM_InertialMotion(world, object, g, c), OT_sumOfSqr, {}, 1e2, 2);
+  setKinematicSwitch(startTime, true, new KinematicSwitch(SW_actJoint, JT_trans3, base, object, world));
+//  setFlag(time, new Flag(FT_gravityAcc, world[object]->ID, 0, true),+1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
+//  setFlag(startTime, new Flag(FL_noQControlCosts, world[object]->ID, 0, true), +2);
+//  setFlag(endTime, new Flag(FL_noQControlCosts, world[object]->ID, 0, true, false), +1);
+  if(k_order>=2){
+    setTask(startTime, endTime, new TM_InertialMotion(world, object, g, c), OT_sumOfSqr, {}, 1e2, 2);
+  }
 }
 
 void KOMO::setFreeGravity(double time, const char *object, const char *base){
-  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::addActuated, mlr::JT_trans3, base, object, world));
-  setFlag(time, new mlr::Flag(FT_gravityAcc, world[object]->ID, 0, true),+1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
-  setFlag(time, new mlr::Flag(FT_noQControlCosts, world[object]->ID, 0, true),+1);
+  setKinematicSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_trans3, base, object, world));
+  setFlag(time, new Flag(FL_gravityAcc, world[object]->ID, 0, true),+1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
+  setFlag(time, new Flag(FL_noQControlCosts, world[object]->ID, 0, true),+1);
 }
 
 /// a standard pick up: lower-attached-lift; centered, from top
 void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int verbose, double weightFromTop, double timeToLift){
   if(verbose>0) cout <<"KOMO_setGrasp t=" <<time <<" endeff=" <<endeffRef <<" obj=" <<object <<endl;
-  //  mlr::String& endeffRef = world.getFrameByName(graspRef)->body->inLinks.first()->from->shapes.first()->name;
+  //  String& endeffRef = world.getFrameByName(graspRef)->body->inLinks.first()->from->shapes.first()->name;
 
   //-- position the hand & graspRef
   //hand upright
@@ -409,17 +419,19 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
 //  setTask(time, time, new TaskMap_Default(vecAlignTMT, world, endeffRef, Vector_y, object, Vector_x), OT_sumOfSqr, {-1.}, 1e1);
 
   //hand touches object
-//  mlr::Shape *endeffShape = world.getFrameByName(endeffRef)->body->shapes.first();
+//  Shape *endeffShape = world.getFrameByName(endeffRef)->body->shapes.first();
 //  setTask(time, time, new TaskMap_GJK(endeffShape, world.getFrameByName(object), false), OT_eq, NoArr, 1e3);
 
 
   //disconnect object from table
-  setKinematicSwitch(time, true, "delete", NULL, object);
+//  setKinematicSwitch(time, true, "delete", NULL, object);
   //connect graspRef with object
 #if 1
-  setKinematicSwitch(time, true, "ballZero", endeffRef, object);
+//  setKinematicSwitch(time, true, "ballZero", endeffRef, object);
+  setKinematicSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_quatBall, endeffRef, object, world));
 //  setKinematicSwitch(time, true, "insert_transX", NULL, object);
-  setKinematicSwitch(time, true, "insert_trans3", NULL, object);
+//  setKinematicSwitch(time, true, "insert_trans3", NULL, object);
+  setKinematicSwitch(time, true, new KinematicSwitch(SW_insertEffJoint, JT_trans3, NULL, object, world));
   setTask(time, time, new TaskMap_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e2);
 #else
   setKinematicSwitch(time, true, "freeZero", endeffRef, object);
@@ -443,19 +455,20 @@ void KOMO::setGraspSlide(double startTime, double endTime, const char* endeffRef
   setTask(startTime, startTime, new TaskMap_Default(vecTMT, world, endeffRef, Vector_z), OT_sumOfSqr, {0.,0.,1.}, weightFromTop);
 
   //disconnect object from table
-  setKinematicSwitch(startTime, true, "delete", placeRef, object);
+//  setKinematicSwitch(startTime, true, "delete", placeRef, object);
   //connect graspRef with object
-  setKinematicSwitch(startTime, true, "ballZero", endeffRef, object);
+//  setKinematicSwitch(startTime, true, "ballZero", endeffRef, object);
+  setKinematicSwitch(startTime, true, new KinematicSwitch(SW_effJoint, JT_quatBall, endeffRef, object, world));
 
   //-- place part
   //place inside box support
   setTask(endTime, endTime, new TaskMap_AboveBox(world, object, placeRef), OT_ineq, NoArr, 1e2);
 
   //disconnect object from grasp ref
-  setKinematicSwitch(endTime, true, "delete", endeffRef, object);
+//  setKinematicSwitch(endTime, true, "delete", endeffRef, object);
 
   //connect object to table
-  mlr::Transformation rel = 0;
+  Transformation rel = 0;
   rel.pos.set(0,0, .5*(shapeSize(world, object) + shapeSize(world, placeRef)));
   setKinematicSwitch(endTime, true, "transXYPhiZero", placeRef, object, rel );
 
@@ -476,7 +489,7 @@ void KOMO::setGraspStick(double time, const char* endeffRef, const char* object,
   if(verbose>0) cout <<"KOMO_setGraspStick t=" <<time <<" endeff=" <<endeffRef <<" obj=" <<object <<endl;
 
   //disconnect object from table
-  setKinematicSwitch(time, true, "delete", NULL, object);
+//  setKinematicSwitch(time, true, "delete", NULL, object);
 
   //connect graspRef with object
   setKinematicSwitch(time, true, "ballZero", endeffRef, object);
@@ -517,13 +530,16 @@ void KOMO::setPlace(double time, const char* endeff, const char* object, const c
   setTask(time, time, new TaskMap_AboveBox(world, object, placeRef), OT_ineq, NoArr, 1e2);
 
   //connect object to placeRef
-  mlr::Transformation rel = 0;
+  Transformation rel = 0;
   rel.pos.set(0,0, .5*(shapeSize(world, object) + shapeSize(world, placeRef)));
-  setKinematicSwitch(time, true, "transXYPhiZero", placeRef, object, rel );
+//  setKinematicSwitch(time, true, "transXYPhiZero", placeRef, object, rel );
+  setKinematicSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, placeRef, object, world, 0, rel));
+
+  setFlag(time, new Flag(FL_clear, world[object]->ID, 0, true));
 }
 
 /// place with a specific relative pose -> no effective DOFs!
-void KOMO::setPlaceFixed(double time, const char* endeff, const char* object, const char* placeRef, const mlr::Transformation& relPose, int verbose){
+void KOMO::setPlaceFixed(double time, const char* endeff, const char* object, const char* placeRef, const Transformation& relPose, int verbose){
   if(verbose>0) cout <<"KOMO_setPlace t=" <<time <<" endeff=" <<endeff <<" obj=" <<object <<" place=" <<placeRef <<endl;
 
   //connect object to table
@@ -545,7 +561,7 @@ void KOMO::setHandover(double time, const char* oldHolder, const char* object, c
   //hand center at object center (could be replaced by touch)
 
   //disconnect object from table
-  setKinematicSwitch(time, true, "delete", oldHolder, object);
+//  setKinematicSwitch(time, true, "delete", oldHolder, object);
   //connect graspRef with object
 #if 0
   setKinematicSwitch(time, true, "ballZero", newHolder, object); //why does this sometimes lead to worse motions?
@@ -577,7 +593,7 @@ void KOMO::setPush(double startTime, double endTime, const char* stick, const ch
 
 #if 1
   //connect object to placeRef
-  mlr::Transformation rel = 0;
+  Transformation rel = 0;
   rel.pos.set(0,0, .5*(shapeSize(world, object) + shapeSize(world, table)));
   setKinematicSwitch(endTime, true, "transXYPhiZero", table, object, rel );
 #endif
@@ -602,7 +618,7 @@ void KOMO::setSlide(double time, const char* endeff, const char* object, const c
   setTask(startTime, startTime, new TaskMap_Default(vecTMT, world, endeff, Vector_z), OT_sumOfSqr, {0.,0.,1.}, 1e-2);
 
   //disconnect object from table
-  setKinematicSwitch(startTime, true, "delete", placeRef, object);
+//  setKinematicSwitch(startTime, true, "delete", placeRef, object);
   //connect graspRef with object
   setKinematicSwitch(startTime, true, "ballZero", endeff, object);
   setKinematicSwitch(time, true, "insert_trans3", NULL, object);
@@ -613,10 +629,10 @@ void KOMO::setSlide(double time, const char* endeff, const char* object, const c
   setTask(endTime, endTime, new TaskMap_AboveBox(world, object, placeRef), OT_ineq, NoArr, 1e2);
 
   //disconnect object from grasp ref
-  setKinematicSwitch(endTime, true, "delete", endeff, object);
+//  setKinematicSwitch(endTime, true, "delete", endeff, object);
 
   //connect object to table
-  mlr::Transformation rel = 0;
+  Transformation rel = 0;
   rel.pos.set(0,0, .5*(shapeSize(world, object) + shapeSize(world, placeRef)));
   setKinematicSwitch(endTime, true, "transXYPhiZero", placeRef, object, rel );
 
@@ -646,15 +662,15 @@ void KOMO::setSlideAlong(double time, const char* stick, const char* object, con
 
 
 //    //disconnect object from table
-    setKinematicSwitch(time, true, "delete", NULL, object);
+//    setKinematicSwitch(time, true, "delete", NULL, object);
 //    //connect graspRef with object
 //    setKinematicSwitch(startTime, true, "ballZero", endeff, object);
 
-    mlr::Transformation rel = 0;
+    Transformation rel = 0;
     rel.rot.setDeg(-90, {1, 0, 0});
     rel.pos.set(0, -.5*(shapeSize(world, wall, 1) - shapeSize(world, object)), +.5*(shapeSize(world, wall, 2) + shapeSize(world, object, 1)));
-    setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::addActuated, mlr::JT_transX, wall, object, world, 0));
-    setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::insertJoint, mlr::JT_transZ, NULL, object, world, 0, rel));
+    setKinematicSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transX, wall, object, world, 0));
+    setKinematicSwitch(time, true, new KinematicSwitch(SW_insertEffJoint, JT_transZ, NULL, object, world, 0, rel));
 //    setKinematicSwitch(time, true, "insert_trans3", NULL, object);
 //    setTask(time, time, new TaskMap_InsideBox(world, endeff, NoVector, object), OT_ineq, NoArr, 1e2);
 }
@@ -667,12 +683,16 @@ void KOMO::setDrop(double time, const char* object, const char* from, const char
   }
 
   //disconnect object from anything
-  setKinematicSwitch(time, true, "delete", NULL, object);
+//  setKinematicSwitch(time, true, "delete", NULL, object);
 
   //connect to world with lift
 //  setKinematicSwitch(time, true, "JT_trans3", "world", object);
-  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::addActuated, mlr::JT_transZ, to, object, world, 0));
-  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::insertJoint, mlr::JT_transXY, NULL, object, world, 0));
+  setKinematicSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transZ, to, object, world, 0));
+  setKinematicSwitch(time, true, new KinematicSwitch(SW_insertEffJoint, JT_transXY, NULL, object, world, 0));
+
+  setFlag(time, new Flag(FL_xPosAccCosts, world[object]->ID, 0, true)); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
+//  setFlag(time, new Flag(FT_gravityAcc, world[object]->ID, 0, true),+1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
+//  setFlag(time, new Flag(FT_noQControlCosts, world[object]->ID, 0, true),+1);
 
 
 //  if(stepsPerPhase>2){ //velocities down and up
@@ -680,17 +700,17 @@ void KOMO::setDrop(double time, const char* object, const char* from, const char
 //  }
 }
 
-void KOMO::setDropEdgeFixed(double time, const char* object, const char* to, const mlr::Transformation &relFrom, const mlr::Transformation &relTo, int verbose){
+void KOMO::setDropEdgeFixed(double time, const char* object, const char* to, const Transformation &relFrom, const Transformation &relTo, int verbose){
 
   //disconnect object from anything
-  setKinematicSwitch(time, true, "delete", NULL, object);
+//  setKinematicSwitch(time, true, "delete", NULL, object);
 
   //connect to world with lift
 //  setKinematicSwitch(time, true, "JT_trans3", "world", object);
 
-  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::addActuated, mlr::JT_hingeX, to, object, world, 0, relFrom, relTo));
-//  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::insertActuated, mlr::JT_transZ, NULL, object, world, 0));
-//  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::insertJoint, mlr::JT_trans3, NULL, object, world, 0));
+  setKinematicSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_hingeX, to, object, world, 0, relFrom, relTo));
+//  setKinematicSwitch(time, true, new KinematicSwitch(insertActuated, JT_transZ, NULL, object, world, 0));
+//  setKinematicSwitch(time, true, new KinematicSwitch(SW_insertEffJoint, JT_trans3, NULL, object, world, 0));
 
 
 //  if(stepsPerPhase>2){ //velocities down and up
@@ -698,7 +718,7 @@ void KOMO::setDropEdgeFixed(double time, const char* object, const char* to, con
 //  }
 }
 
-void KOMO::setAttach(double time, const char* endeff, const char* object1, const char* object2, mlr::Transformation& rel, int verbose){
+void KOMO::setAttach(double time, const char* endeff, const char* object1, const char* object2, Transformation& rel, int verbose){
   if(verbose>0) cout <<"KOMO_setAttach t=" <<time <<" endeff=" <<endeff <<" obj1=" <<object1 <<" obj2=" <<object2 <<endl;
 
   //hand center at object center (could be replaced by touch)
@@ -708,9 +728,9 @@ void KOMO::setAttach(double time, const char* endeff, const char* object1, const
 //  setTask(time, time, new TaskMap_Default(vecAlignTMT, world, newHolder, Vector_y, object, Vector_x), OT_sumOfSqr, {-1.}, 1e1);
 
   //disconnect object from grasp ref
-  setKinematicSwitch(time, true, "delete", endeff, object2);
+//  setKinematicSwitch(time, true, "delete", endeff, object2);
 
-//  mlr::Transformation rel = 0;
+//  Transformation rel = 0;
 //  rel.addRelativeTranslation( 0., 0., .5*(shapeSize(world.getFrameByName(object)) + shapeSize(world.getFrameByName(placeRef))));
   setKinematicSwitch(time, true, "rigidZero", object1, object2, rel );
 
@@ -776,13 +796,15 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
       }
       else if(n->keys.last()=="komoHit"){
         setImpact(phase+time, *symbols(0), *symbols(1));
-        setTask(phase+time, phase+time+1., new TM_InertialMotion(world, *symbols(1), -.1, 0.), OT_sumOfSqr, {}, 1e2, 2);
+        if(k_order>=2){
+          setTask(phase+time, phase+time+1., new TM_InertialMotion(world, *symbols(1), -.1, 0.), OT_sumOfSqr, {}, 1e2, 2);
+        }
       }
       else if(n->keys.last()=="komoAttach"){
         Node *attachableSymbol = facts.getNode("attachable");
         CHECK(attachableSymbol!=NULL,"");
         Node *attachableFact = facts.getEdge({attachableSymbol, n->parents(1), n->parents(2)});
-        mlr::Transformation rel = attachableFact->get<mlr::Transformation>();
+        Transformation rel = attachableFact->get<Transformation>();
         setAttach(phase+time, *symbols(0), *symbols(1), *symbols(2), rel, verbose);
       }else HALT("UNKNOWN komo TAG: '" <<n->keys.last() <<"'");
     }
@@ -791,14 +813,14 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
 
 void KOMO::setAlign(double startTime, double endTime, const char* shape, const arr& whichAxis, const char* shapeRel, const arr& whichAxisRel, ObjectiveType type, const arr& target, double prec){
 #if 0
-  mlr::String map;
+  String map;
   map <<"map=vecAlign ref1="<<shape;
   if(whichAxis) map <<" vec1=[" <<whichAxis <<']';
   if(shapeRel) map <<" ref2=" <<shapeRel <<" vec2=" <<;
   if(whichAxisRel) map <<" vec2=[" <<whichAxisRel <<']';
   setTask(startTime, endTime, map, type, target, prec);
 #else
-  setTask(startTime, endTime, new TaskMap_Default(vecAlignTMT, world, shape, mlr::Vector(whichAxis), shapeRel, mlr::Vector(whichAxisRel)), type, target, prec);
+  setTask(startTime, endTime, new TaskMap_Default(vecAlignTMT, world, shape, Vector(whichAxis), shapeRel, Vector(whichAxisRel)), type, target, prec);
 #endif
 
 }
@@ -835,21 +857,21 @@ void KOMO::setLimits(bool hardConstraint, double margin, double prec){
 
 
 void KOMO::setConfigFromFile(){
-  mlr::KinematicWorld K(mlr::getParameter<mlr::String>("KOMO/modelfile"));
+  KinematicWorld K(getParameter<String>("KOMO/modelfile"));
 //  K.optimizeTree();
   setModel(
         K,
-        mlr::getParameter<bool>("KOMO/useSwift", true),
-        mlr::getParameter<bool>("KOMO/meldFixedJoints", false),
-        mlr::getParameter<bool>("KOMO/makeConvexHulls", true),
-        mlr::getParameter<bool>("KOMO/computeOptimalSSBoxes", false),
-        mlr::getParameter<bool>("KOMO/activateAllContact", false)
+        getParameter<bool>("KOMO/useSwift", true),
+        getParameter<bool>("KOMO/meldFixedJoints", false),
+        getParameter<bool>("KOMO/makeConvexHulls", true),
+        getParameter<bool>("KOMO/computeOptimalSSBoxes", false),
+        getParameter<bool>("KOMO/activateAllContact", false)
         );
   setTiming(
-        mlr::getParameter<uint>("KOMO/phases"),
-        mlr::getParameter<uint>("KOMO/stepsPerPhase"),
-        mlr::getParameter<double>("KOMO/durationPerPhase", 5.),
-        mlr::getParameter<uint>("KOMO/k_order", 2)
+        getParameter<uint>("KOMO/phases"),
+        getParameter<uint>("KOMO/stepsPerPhase"),
+        getParameter<double>("KOMO/durationPerPhase", 5.),
+        getParameter<uint>("KOMO/k_order", 2)
         );
 }
 
@@ -886,19 +908,19 @@ void KOMO::setPathOpt(double _phases, uint stepsPerPhase, double timePerPhase){
 }
 
 void setTasks(KOMO& MP,
-              mlr::Frame& endeff,
-              mlr::Frame& target,
+              Frame& endeff,
+              Frame& target,
               byte whichAxesToAlign,
               uint iterate,
               int timeSteps,
               double duration){
 
   //-- parameters
-  double posPrec = mlr::getParameter<double>("KOMO/moveTo/precision", 1e3);
-  double colPrec = mlr::getParameter<double>("KOMO/moveTo/collisionPrecision", -1e0);
-  double margin = mlr::getParameter<double>("KOMO/moveTo/collisionMargin", .1);
-  double zeroVelPrec = mlr::getParameter<double>("KOMO/moveTo/finalVelocityZeroPrecision", 1e1);
-  double alignPrec = mlr::getParameter<double>("KOMO/moveTo/alignPrecision", 1e3);
+  double posPrec = getParameter<double>("KOMO/moveTo/precision", 1e3);
+  double colPrec = getParameter<double>("KOMO/moveTo/collisionPrecision", -1e0);
+  double margin = getParameter<double>("KOMO/moveTo/collisionMargin", .1);
+  double zeroVelPrec = getParameter<double>("KOMO/moveTo/finalVelocityZeroPrecision", 1e1);
+  double alignPrec = getParameter<double>("KOMO/moveTo/alignPrecision", 1e3);
 
   //-- set up the KOMO
   target.shape->cont=false; //turn off contact penalization with the target
@@ -906,7 +928,7 @@ void setTasks(KOMO& MP,
 //  MP.world.swift().initActivations(MP.world);
   //MP.world.watch(false);
 
-  MP.setTiming(1., mlr::getParameter<uint>("timeSteps", 50), mlr::getParameter<double>("duration", 5.));
+  MP.setTiming(1., getParameter<uint>("timeSteps", 50), getParameter<double>("duration", 5.));
   if(timeSteps>=0) MP.setTiming(1., timeSteps, duration);
   if(timeSteps==0) MP.k_order=1;
 
@@ -939,7 +961,7 @@ void setTasks(KOMO& MP,
 
 
   for(uint i=0;i<3;i++) if(whichAxesToAlign&(1<<i)){
-    mlr::Vector axis;
+    Vector axis;
     axis.setZero();
     axis(i)=1.;
     t = MP.addTask(STRING("endeff_align_"<<i),
@@ -949,7 +971,7 @@ void setTasks(KOMO& MP,
   }
 }
 
-void KOMO::setMoveTo(mlr::KinematicWorld& world, mlr::Frame& endeff, mlr::Frame& target, byte whichAxesToAlign){
+void KOMO::setMoveTo(KinematicWorld& world, Frame& endeff, Frame& target, byte whichAxesToAlign){
 //  if(MP) delete MP;
 //  MP = new KOMO(world);
   setModel(world);
@@ -961,7 +983,7 @@ void KOMO::setMoveTo(mlr::KinematicWorld& world, mlr::Frame& endeff, mlr::Frame&
 }
 
 void KOMO::setSpline(uint splineT){
-  mlr::Spline S;
+  Spline S;
   S.setUniformNonperiodicBasis(T-1, splineT, 2);
   uint n=dim_x(0);
   splineB = zeros(S.basis.d0*n, S.basis.d1*n);
@@ -980,8 +1002,8 @@ void KOMO::reset(double initNoise){
 }
 
 void KOMO::run(){
-  mlr::KinematicWorld::setJointStateCount=0;
-  mlr::timerStart();
+  KinematicWorld::setJointStateCount=0;
+  timerStart();
   CHECK(T,"");
   if(opt) delete opt;
   if(!splineB.N){
@@ -996,8 +1018,8 @@ void KOMO::run(){
     opt->run();
   }
   if(verbose>0){
-    cout <<"** optimization time=" <<mlr::timerRead()
-      <<" setJointStateCount=" <<mlr::KinematicWorld::setJointStateCount <<endl;
+    cout <<"** optimization time=" <<timerRead()
+      <<" setJointStateCount=" <<KinematicWorld::setJointStateCount <<endl;
   }
   if(verbose>1) cout <<getReport(false) <<endl;
 }
@@ -1039,23 +1061,33 @@ void KOMO::playInPhysics(uint subSteps, bool display){
 }
 
 void KOMO::reportProblem(std::ostream& os){
-    os <<"KOMO Problem:" <<endl;
-    os <<"  x-dim:" <<x.N <<"  dual-dim:" <<dual.N <<endl;
-    os <<"  T:" <<T <<" k:" <<k_order <<" phases:" <<maxPhase <<" stepsPerPhase:" <<stepsPerPhase <<" tau:" <<tau <<endl;
-    os <<"  #configurations:" <<configurations.N <<" q-dims: ";
-    uintA dims(configurations.N);
-    for(uint i=0;i<configurations.N;i++) dims(i)=configurations(i)->q.N;
-    writeConsecutiveConstant(os, dims);
-    os <<endl;
+  os <<"KOMO Problem:" <<endl;
+  os <<"  x-dim:" <<x.N <<"  dual-dim:" <<dual.N <<endl;
+  os <<"  T:" <<T <<" k:" <<k_order <<" phases:" <<maxPhase <<" stepsPerPhase:" <<stepsPerPhase <<" tau:" <<tau <<endl;
+  os <<"  #configurations:" <<configurations.N <<" q-dims: ";
+  uintA dims(configurations.N);
+  for(uint i=0;i<configurations.N;i++) dims(i)=configurations(i)->q.N;
+  writeConsecutiveConstant(os, dims);
+  os <<endl;
 
-    os <<"  usingSwift:" <<useSwift <<endl;
-    for(Task* t:tasks) os <<"    " <<*t <<endl;
-    for(mlr::KinematicSwitch* sw:switches){
-        os <<"    ";
-        CHECK_LE(sw->timeOfApplication+k_order, configurations.N, "switch time is beyond time horizon");
-        sw->write(os, configurations(sw->timeOfApplication+k_order));
-        os <<endl;
+  os <<"  usingSwift:" <<useSwift <<endl;
+  for(Task* t:tasks) os <<"    " <<*t <<endl;
+  for(KinematicSwitch* sw:switches){
+    os <<"    ";
+    if(sw->timeOfApplication+k_order > configurations.N){
+      LOG(-1) <<"switch time " <<sw->timeOfApplication <<" is beyond time horizon " <<T;
+      sw->write(os, NULL);
+    }else{
+      sw->write(os, configurations(sw->timeOfApplication+k_order));
     }
+    os <<endl;
+  }
+  for(Flag* fl:flags){
+    os <<"    ";
+    CHECK_LE(fl->stepOfApplication+k_order, configurations.N, "flag time is beyond time horizon");
+    fl->write(os, configurations(fl->stepOfApplication+k_order));
+    os <<endl;
+  }
 }
 
 void KOMO::checkGradients(){
@@ -1122,7 +1154,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPref
 }
 
 
-mlr::Camera& KOMO::displayCamera(){
+Camera& KOMO::displayCamera(){
   if(!gl){
     gl = new OpenGL ("KOMO display");
     gl->camera.setDefault();
@@ -1143,26 +1175,26 @@ void KOMO::setupConfigurations(){
 
   if(useSwift) {
     makeConvexHulls(world.frames);
-    world.swift().setCutoff(2.*mlr::getParameter<double>("swiftCutoff", 0.11));
+    world.swift().setCutoff(2.*getParameter<double>("swiftCutoff", 0.11));
   }
   computeMeshNormals(world.frames, true);
 
-  configurations.append(new mlr::KinematicWorld())->copy(world, true);
+  configurations.append(new KinematicWorld())->copy(world, true);
   configurations.last()->calc_q();
   configurations.last()->calc_q_from_Q();
   configurations.last()->checkConsistency();
   for(uint s=1;s<k_order+T;s++){
-    configurations.append(new mlr::KinematicWorld())->copy(*configurations(s-1), true);
+    configurations.append(new KinematicWorld())->copy(*configurations(s-1), true);
     configurations(s)->checkConsistency();
     CHECK(configurations(s)==configurations.last(), "");
     //apply potential graph switches
-    for(mlr::KinematicSwitch *sw:switches){
+    for(KinematicSwitch *sw:switches){
       if(sw->timeOfApplication+k_order==s){
         sw->apply(*configurations(s));
       }
     }
     //apply potential PERSISTENT flags
-    for(mlr::Flag *fl:flags){
+    for(Flag *fl:flags){
       if(fl->persist && fl->stepOfApplication+k_order==s){
         fl->apply(*configurations(s));
       }
@@ -1174,7 +1206,7 @@ void KOMO::setupConfigurations(){
 
   //now apply NON-PERSISTENT flags
   for(uint s=1;s<k_order+T;s++){
-    for(mlr::Flag *fl:flags){
+    for(Flag *fl:flags){
       if(!fl->persist && fl->stepOfApplication+k_order==s){
         fl->apply(*configurations(s));
       }
@@ -1250,11 +1282,11 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
               for(uint j=0;j<d;j++) CHECK(tt(M+j)==task->type,"");
               if(d){
                   if(task->type==OT_sumOfSqr){
-                      for(uint j=0;j<d;j++) err(t,i) += mlr::sqr(phi(M+j)); //sumOfSqr(phi.sub(M,M+d-1));
+                      for(uint j=0;j<d;j++) err(t,i) += sqr(phi(M+j)); //sumOfSqr(phi.sub(M,M+d-1));
                       taskC(i) += err(t,i);
                   }
                   if(task->type==OT_ineq){
-                      for(uint j=0;j<d;j++) err(t,i) += mlr::MAX(0., phi(M+j));
+                      for(uint j=0;j<d;j++) err(t,i) += MAX(0., phi(M+j));
                       taskG(i) += err(t,i);
                   }
                   if(task->type==OT_eq){
@@ -1284,7 +1316,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
     Task *c = tasks(i);
     Graph *g = &report.newSubgraph({c->name}, {})->value;
     g->newNode<double>({"order"}, {}, c->map->order);
-    g->newNode<mlr::String>({"type"}, {}, STRING(c->type.name()));
+    g->newNode<String>({"type"}, {}, STRING(c->type.name()));
     g->newNode<double>({"sqrCosts"}, {}, taskC(i));
     g->newNode<double>({"constraints"}, {}, taskG(i));
     totalC += taskC(i);
@@ -1377,8 +1409,8 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
     //store old lambdas directly in the constraints....
     uint C=0;
     for(uint t=0;t<komo.T;t++){
-      mlr::KinematicWorld& K = *komo.configurations(t+komo.k_order);
-      for(mlr::Frame *f:K.frames) for(mlr::Contact *c:f->contacts) if(&c->a==f){
+      KinematicWorld& K = *komo.configurations(t+komo.k_order);
+      for(Frame *f:K.frames) for(Contact *c:f->contacts) if(&c->a==f){
         c->lagrangeParameter = lambda(dimPhi + C);
         C++;
       }
@@ -1407,7 +1439,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
     //build the Ktuple with order given by map
     WorldL Ktuple = komo.configurations({t, t+komo.k_order});
     uint Ktuple_dim=0;
-    for(mlr::KinematicWorld *K:Ktuple) Ktuple_dim += K->q.N;
+    for(KinematicWorld *K:Ktuple) Ktuple_dim += K->q.N;
 
     for(uint i=0;i<komo.tasks.N;i++){
       Task *task = komo.tasks.elem(i);
@@ -1462,8 +1494,8 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
   bool updateLambda = ((&lambda) && lambda.N==dimPhi);
   for(uint t=0;t<komo.T;t++){
     WorldL Ktuple = komo.configurations({t, t+komo.k_order});
-    mlr::KinematicWorld& K = *komo.configurations(t+komo.k_order);
-    for(mlr::Frame *f:K.frames) for(mlr::Contact *c:f->contacts) if(&c->a==f){
+    KinematicWorld& K = *komo.configurations(t+komo.k_order);
+    for(Frame *f:K.frames) for(Contact *c:f->contacts) if(&c->a==f){
       TaskMap *map = c->getTM_ContactNegDistance();
       map->phi(y, (&J?Jy:NoArr), Ktuple, komo.tau, t);
       c->y = y.scalar();

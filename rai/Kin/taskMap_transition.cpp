@@ -91,7 +91,7 @@ void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
     //multiply with h...
     for(mlr::Joint *j:Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
       double hj = h*j->H;
-      if(j->frame.flags &  (1<<FT_noQControlCosts)) hj=0.;
+      if(j->frame.flags &  (1<<FL_noQControlCosts)) hj=0.;
       y(j->qIndex+i) *= hj;
     }
 
@@ -116,7 +116,7 @@ void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
       J.reshape(y.N, Ktuple.N*n);
       for(mlr::Joint *j: Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
         double hj = h*j->H;
-        if(j->frame.flags & (1<<FT_noQControlCosts)) hj=0.;
+        if(j->frame.flags & (1<<FL_noQControlCosts)) hj=0.;
 #if 0
         J[j->qIndex+i] *= hj;
 #else //EQUIVALENT, but profiled - optimized for speed
@@ -148,7 +148,7 @@ void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
         if(order>=1) qi2 = joints.elem(-2)->qIndex+j;
         if(order>=2 && accCoeff) qi3 = joints.elem(-3)->qIndex+j;
         double hj = h * joints.last()->H;
-        if(joints.last()->frame.flags & (1<<FT_noQControlCosts)) hj=0.;
+        if(joints.last()->frame.flags & (1<<FL_noQControlCosts)) hj=0.;
         //TODO: adding vels + accs before squareing does not make much sense!
         if(order>=0 && posCoeff) y(m) += posCoeff*hj       * (Ktuple.elem(-1)->q(qi1));
         if(order>=1 && velCoeff) y(m) += (velCoeff*hj/tau) * (Ktuple.elem(-1)->q(qi1) -    Ktuple.elem(-2)->q(qi2));

@@ -82,7 +82,7 @@ struct KOMO{
   struct Task* setTask(double startTime, double endTime, TaskMap* map, ObjectiveType type=OT_sumOfSqr, const arr& target=NoArr, double prec=1e2, uint order=0, int deltaStep=0);
   void setFlag(double time, mlr::Flag* fl, int deltaStep=0);
   void setKinematicSwitch(double time, bool before, mlr::KinematicSwitch* sw);
-  void setKinematicSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const mlr::Transformation& jFrom=NoTransformation, const mlr::Transformation& jTo=NoTransformation);
+  void setKinematicSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const mlr::Transformation& jFrom=NoTransformation);
 
   //===========================================================================
   //

@@ -26,7 +26,6 @@ uint TaskMap_FixSwichedObjects::dim_phi(const WorldL& G, int t){
 void TaskMap_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
   //TODO: so far this only fixes switched objects to zero pose vel
   //better: constrain to zero relative velocity with BOTH, pre-attached and post-attached
-  CHECK(order==1,"");
 
   uint M=7;
   mlr::Array<mlr::Frame*> switchedBodies = getSwitchedBodies(*G.elem(-2), *G.elem(-1));
@@ -44,30 +43,30 @@ void TaskMap_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau,
 
     if(b0->name.startsWith("slider")) continue; //warning: this introduces zeros in y and J -- but should be ok
 
-#if 0 //absolute velocities
-    TaskMap_Default pos(posTMT, b0->ID);
-    pos.order=1;
-    pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G, tau, t);
+    if(order==1){ //absolute velocities
+      TaskMap_Default pos(posTMT, b0->ID);
+      pos.order=1;
+      pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G, tau, t);
 
-    TaskMap_Default quat(quatTMT, b0->ID); //mt: NOT quatDiffTMT!! (this would compute the diff to world, which zeros the w=1...)
-    // flip the quaternion sign if necessary
-    quat.flipTargetSignOnNegScalarProduct = true;
-    quat.order=1;
-    quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G, tau, t);
+      TaskMap_Default quat(quatTMT, b0->ID); //mt: NOT quatDiffTMT!! (this would compute the diff to world, which zeros the w=1...)
+      // flip the quaternion sign if necessary
+      quat.flipTargetSignOnNegScalarProduct = true;
+      quat.order=1;
+      quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G, tau, t);
+    }else if(order==2){ //absolute accelerations
+      TaskMap_Default pos(posTMT, b0->ID);
+      pos.order=2;
+      pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G, tau, t);
 
-#elif 1 //absolute accelerations
-    TaskMap_Default pos(posTMT, b0->ID);
-    pos.order=2;
-    pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G, tau, t);
+      TaskMap_Default quat(quatTMT, b0->ID); //mt: NOT quatDiffTMT!! (this would compute the diff to world, which zeros the w=1...)
+      // flip the quaternion sign if necessary
+      quat.flipTargetSignOnNegScalarProduct = true;
+      quat.order=2;
+      quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G, tau, t);
+    }else NIY;
 
-    TaskMap_Default quat(quatTMT, b0->ID); //mt: NOT quatDiffTMT!! (this would compute the diff to world, which zeros the w=1...)
-    // flip the quaternion sign if necessary
-    quat.flipTargetSignOnNegScalarProduct = true;
-    quat.order=2;
-    quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G, tau, t);
-
-//    if(sumOfSqr(y)>1e-3) cout <<"body " <<b0->name <<" causes switch costs " <<sumOfSqr(y) <<" at t=" <<t <<" y=" <<y <<endl;
-#else //relative velocities
+    //    if(sumOfSqr(y)>1e-3) cout <<"body " <<b0->name <<" causes switch costs " <<sumOfSqr(y) <<" at t=" <<t <<" y=" <<y <<endl;
+#if 0 //OBSOLETE: relative velocities
     TaskMap_Default pos(posDiffTMT, b0->shape->index, NoVector, b1->shape->index);
     pos.order=1;
     pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G, tau, t);

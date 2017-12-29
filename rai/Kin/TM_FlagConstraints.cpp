@@ -19,6 +19,8 @@
 #include "frame.h"
 #include "flag.h"
 
+//===========================================================================
+
 bool JointDidNotSwitch(const mlr::Frame *a1, const WorldL& Ktuple){
   CHECK_EQ(&a1->K, Ktuple.last(), "");
   if(a1->ID >= Ktuple(-2)->frames.N) return false;
@@ -31,18 +33,21 @@ bool JointDidNotSwitch(const mlr::Frame *a1, const WorldL& Ktuple){
   return true;
 }
 
-uint TaskMap_FlagConstraints::dim_phi(const WorldL& Ktuple, int t){
+//===========================================================================
+
+uint TM_FlagConstraints::dim_phi(const WorldL& Ktuple, int t){
   uint d=0;
   for(mlr::Frame *a : Ktuple.last()->frames){
-    if(a->flags & (1<<FT_zeroVel)) d += 7;
-    if(a->flags & (1<<FT_zeroAcc)) d += 7;
-    if(a->flags & (1<<FT_zeroQVel)) if(JointDidNotSwitch(a, Ktuple)) d += a->joint->dim;
+    if(a->flags & (1<<FL_zeroVel)) d += 7;
+    if(a->flags & (1<<FL_zeroAcc)) d += 7;
+    if(a->flags & (1<<FL_gravityAcc)) d += 7;
+    if(a->flags & (1<<FL_zeroQVel)) if(JointDidNotSwitch(a, Ktuple)) d += a->joint->dim;
   }
   return d;
 }
 
-void TaskMap_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
-  CHECK(order==2,"");
+void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
+  CHECK_GE(order, 1, "FlagConstraints needs k-order 1");
 
   mlr::KinematicWorld& K = *Ktuple.last();
 
@@ -54,7 +59,7 @@ void TaskMap_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double t
 
   uint d=0;
   for(mlr::Frame *a : K.frames) if(a->flags){
-    if(a->flags & (1<<FT_zeroVel)){
+    if(a->flags & (1<<FL_zeroVel)){
       TaskMap_Default pos(posTMT, a->ID);
       pos.order=1;
       pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple, tau, t);
@@ -68,7 +73,8 @@ void TaskMap_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double t
       d += 7;
     }
 
-    if(a->flags & (1<<FT_zeroAcc)){
+    if(a->flags & (1<<FL_zeroAcc)){
+      CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
       TaskMap_Default pos(posTMT, a->ID);
       pos.order=2;
       pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple, tau, t);
@@ -82,11 +88,76 @@ void TaskMap_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double t
       d += 7;
     }
 
-    if(a->flags & (1<<FT_zeroQVel)) if(JointDidNotSwitch(a, Ktuple)){
+    if(a->flags & (1<<FL_gravityAcc)){
+      CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
+      TaskMap_Default pos(posTMT, a->ID);
+      pos.order=2;
+      pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple, tau, t);
+      y(d+2) += .1; //9.81;
+
+      TaskMap_Default quat(quatTMT, a->ID); //mt: NOT quatDiffTMT!! (this would compute the diff to world, which zeros the w=1...)
+      // flip the quaternion sign if necessary
+      quat.flipTargetSignOnNegScalarProduct = true;
+      quat.order=2;
+      quat.TaskMap::phi(y({d+3,d+6})(), (&J?J({d+3,d+6})():NoArr), Ktuple, tau, t);
+
+      d += 7;
+    }
+
+    if(a->flags & (1<<FL_zeroQVel)) if(JointDidNotSwitch(a, Ktuple)){
       uint jdim = a->joint->dim;
 
       TaskMap_qItself q({a->ID}, false);
       q.order=1;
+      q.TaskMap::phi(y({d,d+jdim-1})(), (&J?J({d,d+jdim-1})():NoArr), Ktuple, tau, t);
+
+      d += jdim;
+    }
+
+  }
+
+  CHECK_EQ(d, y.N, "");
+}
+
+//===========================================================================
+
+uint TM_FlagCosts::dim_phi(const WorldL& Ktuple, int t){
+  uint d=0;
+  for(mlr::Frame *a : Ktuple.last()->frames){
+    if(a->flags & (1<<FL_xPosAccCosts)) d+=3;
+    if(a->flags & (1<<FL_qCtrlCostAcc)) if(JointDidNotSwitch(a, Ktuple)) d += a->joint->dim;
+  }
+  return d;
+}
+
+void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
+  CHECK_GE(order, 1, "FlagConstraints needs k-order 1");
+
+  mlr::KinematicWorld& K = *Ktuple.last();
+
+  y.resize(dim_phi(Ktuple, t)).setZero();
+  if(&J){
+    uintA xbarDim=getKtupleDim(Ktuple);
+    J.resize(y.N, xbarDim.last()).setZero();
+  }
+
+  uint d=0;
+  for(mlr::Frame *a : K.frames) if(a->flags){
+
+    if(a->flags & (1<<FL_xPosAccCosts)){
+      CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
+      TaskMap_Default pos(posTMT, a->ID);
+      pos.order=2;
+      pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple, tau, t);
+
+      d += 3;
+    }
+
+    if(a->flags & (1<<FL_qCtrlCostAcc)) if(JointDidNotSwitch(a, Ktuple)){
+      uint jdim = a->joint->dim;
+
+      TaskMap_qItself q({a->ID}, false);
+      q.order=2;
       q.TaskMap::phi(y({d,d+jdim-1})(), (&J?J({d,d+jdim-1})():NoArr), Ktuple, tau, t);
 
       d += jdim;

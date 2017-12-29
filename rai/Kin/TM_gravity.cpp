@@ -18,7 +18,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
     //check equal # of frames in each world
     for(mlr::Frame *a:K.frames){
    //      if(a->inertia && a->inertia->type==mlr::BT_dynamic){
-         if(a->flags & (1<<FT_gravityAcc)){
+         if(a->flags & (1<<FL_gravityAcc)){
 //    uint nf = K.frames.N;
 //    for(uint i=0;i<nf;i++){
 //      mlr::Frame *a = K.frames(i);
@@ -90,7 +90,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
     arr Jacc_ref = zeros(3, K.q.N);
     for(mlr::Frame *a:K.frames){
 //      if(a->inertia && a->inertia->type==mlr::BT_dynamic){
-      if(a->flags & (1<<FT_gravityAcc)){
+      if(a->flags & (1<<FL_gravityAcc)){
         TaskMap_Default pos(posTMT, a->ID);
         pos.order=2;
         pos.TaskMap::phi(acc, (&J?Jacc:NoArr), Ktuple, tau, t);
@@ -113,7 +113,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
 uint TM_Gravity::dim_phi(const WorldL &Ktuple, int t){
   mlr::KinematicWorld& K = *Ktuple(-1);
   uint d = 0;
-  for(mlr::Frame *a: K.frames) if(a->flags & (1<<FT_gravityAcc)){
+  for(mlr::Frame *a: K.frames) if(a->flags & (1<<FL_gravityAcc)){
     d+=3;
   }
   return d;

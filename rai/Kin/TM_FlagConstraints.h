@@ -19,13 +19,22 @@
 
 //===========================================================================
 
-/// defines a transition cost vector, which is q.N-dimensional and captures
-/// accelerations or velocities over consecutive time steps
-struct TaskMap_FlagConstraints : TaskMap {
-  TaskMap_FlagConstraints(){}
+struct TM_FlagConstraints : TaskMap {
+  TM_FlagConstraints(){}
   virtual void phi(arr& y, arr& J, const WorldL& G, double tau, int t=-1);
   virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1){ HALT("can only be of order 1"); }
   virtual uint dim_phi(const mlr::KinematicWorld& K){ HALT("can only be of order 1"); }
   virtual uint dim_phi(const WorldL& Ktuple, int t);
   virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("FlagConstraints"); }
+};
+
+//===========================================================================
+
+struct TM_FlagCosts : TaskMap {
+  TM_FlagCosts(){}
+  virtual void phi(arr& y, arr& J, const WorldL& G, double tau, int t=-1);
+  virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1){ HALT("can only be of order 1"); }
+  virtual uint dim_phi(const mlr::KinematicWorld& K){ HALT("can only be of order 1"); }
+  virtual uint dim_phi(const WorldL& Ktuple, int t);
+  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("TM_FlagCosts"); }
 };
