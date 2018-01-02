@@ -17,6 +17,7 @@
 #include "taskMap_qItself.h"
 #include "taskMap_default.h"
 #include "frame.h"
+#include "flag.h"
 
 uint TaskMap_FixSwichedObjects::dim_phi(const WorldL& G, int t){
   mlr::Array<mlr::Frame*> switchedBodies = getSwitchedBodies(*G.elem(-2), *G.elem(-1));
@@ -42,6 +43,8 @@ void TaskMap_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau,
     CHECK_EQ(b0->name, b1->name, "");
 
     if(b0->name.startsWith("slider")) continue; //warning: this introduces zeros in y and J -- but should be ok
+
+    if(b1->flags && !(b1->flags & (1<<FL_zeroQVel))) continue;
 
     if(order==1){ //absolute velocities
       TaskMap_Default pos(posTMT, b0->ID);

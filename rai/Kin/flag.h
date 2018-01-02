@@ -8,7 +8,7 @@ enum FrameFlagType {
   FL_gravityAcc,
   FL_zeroQVel,
   FL_zeroQAcc,
-  FL_noQControlCosts,
+  FL_normalControlCosts,
   FL_impulseExchange,
   FL_qCtrlCostAcc,
   FL_xPosAccCosts,

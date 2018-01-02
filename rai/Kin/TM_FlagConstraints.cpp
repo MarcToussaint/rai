@@ -39,8 +39,8 @@ uint TM_FlagConstraints::dim_phi(const WorldL& Ktuple, int t){
   uint d=0;
   for(mlr::Frame *a : Ktuple.last()->frames){
     if(a->flags & (1<<FL_zeroVel)) d += 7;
-    if(a->flags & (1<<FL_zeroAcc)) d += 7;
-    if(a->flags & (1<<FL_gravityAcc)) d += 7;
+    if(a->flags & (1<<FL_zeroAcc) && !(a->flags & (1<<FL_impulseExchange))) d += 7;
+    if(a->flags & (1<<FL_gravityAcc) && !(a->flags & (1<<FL_impulseExchange))) d += 7;
     if(a->flags & (1<<FL_zeroQVel)) if(JointDidNotSwitch(a, Ktuple)) d += a->joint->dim;
   }
   return d;
@@ -73,7 +73,7 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
       d += 7;
     }
 
-    if(a->flags & (1<<FL_zeroAcc)){
+    if(a->flags & (1<<FL_zeroAcc) && !(a->flags & (1<<FL_impulseExchange))){
       CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
       TaskMap_Default pos(posTMT, a->ID);
       pos.order=2;
@@ -88,12 +88,12 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
       d += 7;
     }
 
-    if(a->flags & (1<<FL_gravityAcc)){
+    if(a->flags & (1<<FL_gravityAcc) && !(a->flags & (1<<FL_impulseExchange))){
       CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
       TaskMap_Default pos(posTMT, a->ID);
       pos.order=2;
       pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple, tau, t);
-      y(d+2) += .1; //9.81;
+      y(d+2) += g;
 
       TaskMap_Default quat(quatTMT, a->ID); //mt: NOT quatDiffTMT!! (this would compute the diff to world, which zeros the w=1...)
       // flip the quaternion sign if necessary

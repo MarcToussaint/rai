@@ -11,7 +11,8 @@ void TM_InertialMotion::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
   {
     mlr::Frame *a = K.frames(i);
     if(a->flags & (1<<FL_gravityAcc)) MLR_MSG("frame '" <<a->name <<"' has InertialMotion AND Gravity objectivies");
-    if(a->joint && a->joint->H && !(a->flags & (1<<FL_noQControlCosts))) MLR_MSG("frame '" <<a->name <<"' has InertialMotion AND control cost objectivies");
+    if(a->joint && a->joint->H && !(a->flags && !(a->flags & (1<<FL_normalControlCosts))))
+      MLR_MSG("frame '" <<a->name <<"' has InertialMotion AND control cost objectivies");
   }
 
   TaskMap_Default pos(posTMT, i);

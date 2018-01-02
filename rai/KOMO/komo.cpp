@@ -398,7 +398,6 @@ void KOMO::setInertialMotion(double startTime, double endTime, const char *objec
 void KOMO::setFreeGravity(double time, const char *object, const char *base){
   setKinematicSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_trans3, base, object, world));
   setFlag(time, new Flag(FL_gravityAcc, world[object]->ID, 0, true),+1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
-  setFlag(time, new Flag(FL_noQControlCosts, world[object]->ID, 0, true),+1);
 }
 
 /// a standard pick up: lower-attached-lift; centered, from top
@@ -536,6 +535,7 @@ void KOMO::setPlace(double time, const char* endeff, const char* object, const c
   setKinematicSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, placeRef, object, world, 0, rel));
 
   setFlag(time, new Flag(FL_clear, world[object]->ID, 0, true));
+  setFlag(time, new Flag(FL_zeroQVel, world[object]->ID, 0, true));
 }
 
 /// place with a specific relative pose -> no effective DOFs!
@@ -792,13 +792,18 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
         else setDrop(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
       }
       else if(n->keys.last()=="komoThrow"){
-        setInertialMotion(phase+time, phase+time+1., *symbols(0), "base", -.1, 0.);
+//        setInertialMotion(phase+time, phase+time+1., *symbols(0), "base", -.1, 0.);
+        setKinematicSwitch(phase+time, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", *symbols(0), world));
+        setFlag(phase+time, new Flag(FL_gravityAcc, world[*symbols(0)]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
       }
       else if(n->keys.last()=="komoHit"){
         setImpact(phase+time, *symbols(0), *symbols(1));
-        if(k_order>=2){
-          setTask(phase+time, phase+time+1., new TM_InertialMotion(world, *symbols(1), -.1, 0.), OT_sumOfSqr, {}, 1e2, 2);
-        }
+//        setInertialMotion(phase+time, phase+time+1., *symbols(1), "base", -.1, 0.);
+        setKinematicSwitch(phase+time, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", *symbols(1), world));
+        setFlag(phase+time, new Flag(FL_gravityAcc, world[*symbols(1)]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
+//        if(k_order>=2){
+//          setTask(phase+time, phase+time+1., new TM_InertialMotion(world, *symbols(1), -.1, 0.), OT_sumOfSqr, {}, 1e2, 2);
+//        }
       }
       else if(n->keys.last()=="komoAttach"){
         Node *attachableSymbol = facts.getNode("attachable");

@@ -16,6 +16,7 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
   pos2.order=2;
   pos2.TaskMap::phi(a2, (&J?J2:NoArr), Ktuple, tau, t);
 
+  //first constraint: R = m1 dv1 = - m2 dv2
   y = a1+a2;
   if(&J) J = J1+J2;
 
@@ -25,6 +26,8 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
   uintA qdim = getKtupleDim(Ktuple);
   arr Jcc = zeros(3, qdim.last());
   if(&J) Jcc.setMatrixBlock(Jc, 0, qdim(0));
+
+  // R is || to c:
 
   arr d=a2-a1;
   arr Jd=J2-J1;
