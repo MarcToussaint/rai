@@ -14,6 +14,7 @@ template<> const char* mlr::Enum<FrameFlagType>::names []={
   "FL_qCtrlCostAcc",
   "FL_xPosAccCosts",
   "FL_clear",
+  "FL_xPosVelCosts",
   NULL
 };
 

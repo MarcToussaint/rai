@@ -13,6 +13,7 @@ enum FrameFlagType {
   FL_qCtrlCostAcc,
   FL_xPosAccCosts,
   FL_clear,
+  FL_xPosVelCosts,
 };
 
 namespace mlr{

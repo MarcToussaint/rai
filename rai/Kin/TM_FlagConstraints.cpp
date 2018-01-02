@@ -125,6 +125,7 @@ uint TM_FlagCosts::dim_phi(const WorldL& Ktuple, int t){
   uint d=0;
   for(mlr::Frame *a : Ktuple.last()->frames){
     if(a->flags & (1<<FL_xPosAccCosts)) d+=3;
+    if(a->flags & (1<<FL_xPosVelCosts)) d+=3;
     if(a->flags & (1<<FL_qCtrlCostAcc)) if(JointDidNotSwitch(a, Ktuple)) d += a->joint->dim;
   }
   return d;
@@ -148,6 +149,15 @@ void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
       CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
       TaskMap_Default pos(posTMT, a->ID);
       pos.order=2;
+      pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple, tau, t);
+
+      d += 3;
+    }
+
+    if(a->flags & (1<<FL_xPosVelCosts)){
+      CHECK_GE(order, 1, "FT_velCost needs k-order 2");
+      TaskMap_Default pos(posTMT, a->ID);
+      pos.order=1;
       pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple, tau, t);
 
       d += 3;

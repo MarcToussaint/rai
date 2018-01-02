@@ -31,7 +31,6 @@
 #include <Kin/TM_StaticStability.h>
 #include <Kin/TM_Max.h>
 #include <Kin/TM_ImpulseExchange.h>
-#include <Kin/TM_InertialMotion.h>
 #include <Kin/TM_FlagConstraints.h>
 #include <Kin/contact.h>
 #include <Optim/optimization.h>
@@ -391,7 +390,8 @@ void KOMO::setInertialMotion(double startTime, double endTime, const char *objec
 //  setFlag(startTime, new Flag(FL_noQControlCosts, world[object]->ID, 0, true), +2);
 //  setFlag(endTime, new Flag(FL_noQControlCosts, world[object]->ID, 0, true, false), +1);
   if(k_order>=2){
-    setTask(startTime, endTime, new TM_InertialMotion(world, object, g, c), OT_sumOfSqr, {}, 1e2, 2);
+    NIY;
+//    setTask(startTime, endTime, new TM_InertialMotion(world, object, g, c), OT_sumOfSqr, {}, 1e2, 2);
   }
 }
 
@@ -798,12 +798,28 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
       }
       else if(n->keys.last()=="komoHit"){
         setImpact(phase+time, *symbols(0), *symbols(1));
-//        setInertialMotion(phase+time, phase+time+1., *symbols(1), "base", -.1, 0.);
-        setKinematicSwitch(phase+time, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", *symbols(1), world));
-        setFlag(phase+time, new Flag(FL_gravityAcc, world[*symbols(1)]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
-//        if(k_order>=2){
-//          setTask(phase+time, phase+time+1., new TM_InertialMotion(world, *symbols(1), -.1, 0.), OT_sumOfSqr, {}, 1e2, 2);
-//        }
+        if(symbols.N==2){
+          setKinematicSwitch(phase+time, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", *symbols(1), world));
+          setFlag(phase+time, new Flag(FL_gravityAcc, world[*symbols(1)]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
+        }else if(symbols.N==3){
+          const char* bat = *symbols(0);
+          const char* object = *symbols(1);
+          const char* placeRef = *symbols(2);
+          Transformation rel = 0;
+          rel.pos.set(0,0, .5*(shapeSize(world, object) + shapeSize(world, placeRef)));
+          setKinematicSwitch(phase+time, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, placeRef, object, world, 0, rel));
+
+          setFlag(phase+time, new Flag(FL_clear, world[object]->ID, 0, true));
+          setFlag(phase+time, new Flag(FL_zeroAcc, world[object]->ID, 0, true));
+
+          setKinematicSwitch(phase+time, false, new KinematicSwitch(SW_actJoint, JT_transXYPhi, placeRef, bat, world, 0, rel));
+
+          setFlag(phase+time, new Flag(FL_clear, world[bat]->ID, 0, true), +1);
+          setFlag(phase+time, new Flag(FL_xPosVelCosts, world[bat]->ID, 0, true), +1);
+
+//          setFlag(phase+time, new Flag(FL_clear, world[bat]->ID, 0, true), +3);
+//          setFlag(phase+time, new Flag(FL_zeroQAcc, world[bat]->ID, 0, true), +1);
+        }else NIY;
       }
       else if(n->keys.last()=="komoAttach"){
         Node *attachableSymbol = facts.getNode("attachable");

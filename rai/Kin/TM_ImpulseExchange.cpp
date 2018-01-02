@@ -6,19 +6,41 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
   CHECK(Ktuple.N>=3, "");
   CHECK(order>=2,"");
 
-  arr a1, J1, a2, J2;
+  arr a1, J1, a2, J2, v1, Jv1, v2, Jv2;
 
   TaskMap_Default pos1(posTMT, i);
   pos1.order=2;
   pos1.TaskMap::phi(a1, (&J?J1:NoArr), Ktuple, tau, t);
 
+//  pos1.order=1;
+//  pos1.TaskMap::phi(v1, (&J?Jv1:NoArr), Ktuple, tau, t);
+
   TaskMap_Default pos2(posTMT, j);
   pos2.order=2;
   pos2.TaskMap::phi(a2, (&J?J2:NoArr), Ktuple, tau, t);
 
+  //  pos2.order=1;
+  //  pos2.TaskMap::phi(v2, (&J?Jv2:NoArr), Ktuple, tau, t);
+
+  arr P;
+  {
+    mlr::KinematicWorld &K = *Ktuple.last();
+    mlr::Frame *b = K(j);
+    if(b->joint && b->joint->type==mlr::JT_transXYPhi){
+      arr R = b->joint->X().rot.getArr();
+      arr j1=R[0], j2=R[1];
+      P = (j1^j1) + (j2^j2);
+    }
+  }
+
   //first constraint: R = m1 dv1 = - m2 dv2
   y = a1+a2;
   if(&J) J = J1+J2;
+
+  if(P.N){
+    y = P*y;
+    if(&J) J = P*J;
+  }
 
   arr c,Jc;
   TaskMap_PairCollision coll(i, j, false, true);
@@ -27,8 +49,31 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
   arr Jcc = zeros(3, qdim.last());
   if(&J) Jcc.setMatrixBlock(Jc, 0, qdim(0));
 
-  // R is || to c:
+#if 1
+  arr R  = a1;
+  arr JR = J1;
+  if(sumOfSqr(c)>1e-16){
 
+    // R is || to c
+    normalizeWithJac(c, Jcc);
+    double sign = +1.;
+    if(scalarProduct(c,R)<0.) sign = -1.; //HMM is that sign not bad?
+    y.append(R - c*sign*scalarProduct(c,R));
+    if(&J) J.append(JR - sign*(c*~c*JR + c*~R*Jcc + scalarProduct(c,R)*Jcc));
+
+    // R is pointing exactly in the direction of c (redundant with above! But I need the inequality constraint R^T c > 0 here!!)
+    //fully inelastic:
+//    y.append(scalarProduct(c, v2-v1));
+//    if(&J) J.append(~c*(Jv2-Jv1) + ~(v2-v1)*Jcc);
+
+//    normalizeWithJac(R, JR);
+//    y.append(scalarProduct(c,R) - 1.);
+//    if(&J) J.append(~c*JR + ~R*Jcc);
+  }else{
+    y.append(zeros(3));
+    if(&J) J.append(zeros(3,JR.d1));
+  }
+#else
   arr d=a2-a1;
   arr Jd=J2-J1;
   if(sumOfSqr(d)>1e-16 && sumOfSqr(c)>1e-16){
@@ -42,6 +87,8 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
     y.append(d);
     if(&J) J.append(Jd);
   }
+#endif
+
   checkNan(y);
   if(&J) checkNan(J);
   CHECK_EQ(y.N, dim_phi(*Ktuple.last()), "");
