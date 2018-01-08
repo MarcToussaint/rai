@@ -24,7 +24,7 @@ struct Spline {
   uint degree;
   arr points; ///< the reference points
   arr times;  ///< what times (in [0,1]) the reference points refer to (usually uniform)
-  arr basis, basis_trans, basis_timeGradient;
+  arr basis, basis_trans, basis_timeGradient; ///< these are only used when evaluating the spline over a grid
 
   /// for T>0 this is directly constructing basis functions over a (fine) grid of resolution T
   Spline(uint degree=2);
@@ -43,6 +43,7 @@ struct Spline {
   void setBasisAndTimeGradient(uint T, uint K); ///< as above, but computes also gradient w.r.t. times
   void setUniformNonperiodicBasis(uint T, uint K, uint degree); ///< sets the times uniformly, then computes basis
   void setUniformNonperiodicBasis();
+  void set(uint degree, const arr &points,const arr& times);
 
   /// returns f(t/T) at one of the precomputed grid points of the basis matrix
   arr eval(uint t) const;
