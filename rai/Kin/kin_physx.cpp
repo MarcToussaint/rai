@@ -711,7 +711,7 @@ PhysXInterface::PhysXInterface(mlr::KinematicWorld& _world) : world(_world), s(N
 PhysXInterface::~PhysXInterface() { NICO }
   
 void PhysXInterface::step(double tau, bool withKinematicPush) { NICO }
-void PhysXInterface::pushToPhysx(mlr::KinematicWorld *K, mlr::KinematicWorld *Kt_1, double tau, bool onlyKinematic) { NICO }
+void PhysXInterface::pushToPhysx(mlr::KinematicWorld *K, mlr::KinematicWorld *Kt_1, mlr::KinematicWorld *Kt_2, double tau, bool onlyKinematic) { NICO }
 void PhysXInterface::pullFromPhysx(mlr::KinematicWorld *K, arr& vels) { NICO }
 void PhysXInterface::setArticulatedBodiesKinematic() { NICO }
 void PhysXInterface::ShutdownPhysX() { NICO }

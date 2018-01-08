@@ -93,9 +93,9 @@ int ccdGJKIntersect(const void *obj1, const void *obj2, const ccd_t *ccd, ccd_ve
     ccd_simplex_t simplex;
     int ret = __ccdGJK(obj1, obj2, ccd, &simplex);
     if(ret==-1){
-      uint min_i=0;
+      unsigned int min_i=0;
       ccd_real_t min_l = ccdVec3Len2(&simplex.ps[min_i].v);
-      for(uint i=1;i<=simplex.last;i++){
+      for(unsigned int i=1;i<=simplex.last;i++){
         ccd_real_t l = ccdVec3Len2(&simplex.ps[i].v);
         if(l<min_l){ min_i=i; min_l=l; }
       }
