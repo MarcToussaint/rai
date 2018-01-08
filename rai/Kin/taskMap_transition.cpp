@@ -16,6 +16,7 @@
 #include "taskMap_transition.h"
 #include "taskMap_qItself.h"
 #include "frame.h"
+#include "flag.h"
 
 TaskMap_Transition::TaskMap_Transition(const mlr::KinematicWorld& G, bool effectiveJointsOnly)
   : effectiveJointsOnly(effectiveJointsOnly){
@@ -38,7 +39,6 @@ uint TaskMap_Transition::dim_phi(const WorldL& G, int t){
   bool handleSwitches=effectiveJointsOnly;
   uint qN=G(0)->q.N;
   for(uint i=0;i<G.N;i++) if(G.elem(i)->q.N!=qN){ handleSwitches=true; break; }
-//  handleSwitches=true;
 
   if(!handleSwitches){
     return G.last()->getJointStateDimension();
@@ -55,34 +55,33 @@ uint TaskMap_Transition::dim_phi(const WorldL& G, int t){
   return uint(-1);
 }
 
-void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
+void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
   bool handleSwitches=effectiveJointsOnly;
-  uint qN=G(0)->q.N;
-  for(uint i=0;i<G.N;i++) if(G(i)->q.N!=qN){ handleSwitches=true; break; }
-//  handleSwitches=true;
+  uint qN=Ktuple(0)->q.N;
+  for(uint i=0;i<Ktuple.N;i++) if(Ktuple(i)->q.N!=qN){ handleSwitches=true; break; }
 
   if(!handleSwitches){ //simple implementation
     //-- transition costs
     double h = H_rate*sqrt(tau), tau2=tau*tau;
 //    arr h = sqrt(H_rate_diag)*sqrt(tau);
-    y.resize(G.last()->q.N).setZero();
+    y.resize(Ktuple.last()->q.N).setZero();
     if(order==1) velCoeff = 1.;
-    if(order>=0 && posCoeff) y +=  posCoeff      *(G.elem(-1)->q); //penalize position
+    if(order>=0 && posCoeff) y +=  posCoeff      *(Ktuple.elem(-1)->q); //penalize position
 #if 0
     if(order>=1 && velCoeff) y += (velCoeff/tau) *(G.elem(-2)->q - G.elem(-1)->q); //penalize velocity
     if(order>=2 && accCoeff) y += (accCoeff/tau2)*(G.elem(-3)->q - 2.*G.elem(-2)->q + G.elem(-1)->q); //penalize acceleration
 #else //EQUIVALENT, but profiled - optimized for speed
     if(order>=1 && velCoeff){
-      arr v=G.elem(-2)->q;
-      v -= G.elem(-1)->q;
+      arr v=Ktuple.elem(-2)->q;
+      v -= Ktuple.elem(-1)->q;
       v *= (velCoeff/tau);
       y += v;
     }
     if(order>=2 && accCoeff){
-      arr a=G.elem(-2)->q;
+      arr a=Ktuple.elem(-2)->q;
       a *= -2.;
-      a += G.elem(-3)->q;
-      a += G.elem(-1)->q;
+      a += Ktuple.elem(-3)->q;
+      a += Ktuple.elem(-1)->q;
       a *= (accCoeff/tau2);
       y += a;
     }
@@ -90,51 +89,54 @@ void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& G, double tau, int t)
     if(order>=3) NIY; //  y = (x_bar[3]-3.*x_bar[2]+3.*x_bar[1]-x_bar[0])/tau3; //penalize jerk
 
     //multiply with h...
-    for(mlr::Joint *j:G.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++)
-      y(j->qIndex+i) *= h*j->H;
+    for(mlr::Joint *j:Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
+      double hj = h*j->H;
+      if(j->frame.flags &  (1<<FT_noQControlCosts)) hj=0.;
+      y(j->qIndex+i) *= hj;
+    }
 
     if(&J) {
-      uint n = G.last()->q.N;
-      J.resize(y.N, G.N, n).setZero();
+      uint n = Ktuple.last()->q.N;
+      J.resize(y.N, Ktuple.N, n).setZero();
       for(uint i=0;i<n;i++){
-        if(order>=0 && posCoeff){ J(i,G.N-1-0,i) += posCoeff; }
-        if(order>=1 && velCoeff){ J(i,G.N-1-1,i) += velCoeff/tau;  J(i,G.N-1-0,i) += -velCoeff/tau; }
+        if(order>=0 && posCoeff){ J(i,Ktuple.N-1-0,i) += posCoeff; }
+        if(order>=1 && velCoeff){ J(i,Ktuple.N-1-1,i) += velCoeff/tau;  J(i,Ktuple.N-1-0,i) += -velCoeff/tau; }
 #if 0
         if(order>=2 && accCoeff){ J(i,G.N-1-2,i) += accCoeff/tau2; J(i,G.N-1-1,i) += -2.*accCoeff/tau2;  J(i,G.N-1-0,i) += accCoeff/tau2; }
 #else //EQUIVALENT, but profiled - optimized for speed
         if(order>=2 && accCoeff){
           uint j = i*J.d1*J.d2 + i;
-          J.elem(j+(G.N-3)*J.d2) += accCoeff/tau2;
-          J.elem(j+(G.N-2)*J.d2) += -2.*accCoeff/tau2;
-          J.elem(j+(G.N-1)*J.d2) += accCoeff/tau2;
+          J.elem(j+(Ktuple.N-3)*J.d2) += accCoeff/tau2;
+          J.elem(j+(Ktuple.N-2)*J.d2) += -2.*accCoeff/tau2;
+          J.elem(j+(Ktuple.N-1)*J.d2) += accCoeff/tau2;
         }
 #endif
         //      if(order>=3){ J(i,3,i) = 1.;  J(i,2,i) = -3.;  J(i,1,i) = +3.;  J(i,0,i) = -1.; }
       }
-      J.reshape(y.N, G.N*n);
-      for(mlr::Joint *j: G.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
+      J.reshape(y.N, Ktuple.N*n);
+      for(mlr::Joint *j: Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
+        double hj = h*j->H;
+        if(j->frame.flags & (1<<FT_noQControlCosts)) hj=0.;
 #if 0
-        J[j->qIndex+i] *= h*j->H;
+        J[j->qIndex+i] *= hj;
 #else //EQUIVALENT, but profiled - optimized for speed
         uint l = (j->qIndex+i)*J.d1;
-        for(uint k=0;k<J.d1;k++) J.elem(l+k) *= h*j->H;
+        for(uint k=0;k<J.d1;k++) J.elem(l+k) *= hj;
 #endif
       }
     }
   }else{ //with switches
-    mlr::Array<mlr::Joint*> matchingJoints = getMatchingJoints(G.sub(-1-order,-1), effectiveJointsOnly);
+    mlr::Array<mlr::Joint*> matchingJoints = getMatchingJoints(Ktuple.sub(-1-order,-1), effectiveJointsOnly);
     double h = H_rate*sqrt(tau), tau2=tau*tau;
 
-//    getSwitchedJoints(*G.elem(-2), *G.elem(-1), true);
-
     uint ydim=0;
-    uintA qidx(G.N);
+    uintA qidx(Ktuple.N);
     for(uint i=0;i<matchingJoints.d0;i++) ydim += matchingJoints(i,0)->qDim();
     y.resize(ydim).setZero();
     if(&J) {
       qidx(0)=0;
-      for(uint i=1;i<G.N;i++) qidx(i) = qidx(i-1)+G(i-1)->q.N;
-      J.resize(ydim, qidx.last()+G.last()->q.N).setZero();
+      for(uint i=1;i<Ktuple.N;i++) qidx(i) = qidx(i-1)+Ktuple(i-1)->q.N;
+      J.resize(ydim, qidx.last()+Ktuple.last()->q.N).setZero();
     }
 
     uint m=0;
@@ -146,10 +148,11 @@ void TaskMap_Transition::phi(arr& y, arr& J, const WorldL& G, double tau, int t)
         if(order>=1) qi2 = joints.elem(-2)->qIndex+j;
         if(order>=2 && accCoeff) qi3 = joints.elem(-3)->qIndex+j;
         double hj = h * joints.last()->H;
-        //TODO: adding vels + accs before squareing does not make much sense?
-        if(order>=0 && posCoeff) y(m) += posCoeff*hj       * (G.elem(-1)->q(qi1));
-        if(order>=1 && velCoeff) y(m) += (velCoeff*hj/tau) * (G.elem(-1)->q(qi1) -    G.elem(-2)->q(qi2));
-        if(order>=2 && accCoeff) y(m) += (accCoeff*hj/tau2)* (G.elem(-1)->q(qi1) - 2.*G.elem(-2)->q(qi2) + G.elem(-3)->q(qi3));
+        if(joints.last()->frame.flags & (1<<FT_noQControlCosts)) hj=0.;
+        //TODO: adding vels + accs before squareing does not make much sense!
+        if(order>=0 && posCoeff) y(m) += posCoeff*hj       * (Ktuple.elem(-1)->q(qi1));
+        if(order>=1 && velCoeff) y(m) += (velCoeff*hj/tau) * (Ktuple.elem(-1)->q(qi1) -    Ktuple.elem(-2)->q(qi2));
+        if(order>=2 && accCoeff) y(m) += (accCoeff*hj/tau2)* (Ktuple.elem(-1)->q(qi1) - 2.*Ktuple.elem(-2)->q(qi2) + Ktuple.elem(-3)->q(qi3));
         if(&J){
           if(order>=0 && posCoeff){ J(m, qidx.elem(-1)+qi1) += posCoeff*hj; }
           if(order>=1 && velCoeff){ J(m, qidx.elem(-1)+qi1) += velCoeff*hj/tau;  J(m, qidx.elem(-2)+qi2) += -velCoeff*hj/tau; }

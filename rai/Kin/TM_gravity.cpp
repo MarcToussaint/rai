@@ -1,4 +1,5 @@
 #include "TM_gravity.h"
+#include <Kin/flag.h>
 #include <Kin/frame.h>
 #include <Kin/contact.h>
 #include <Kin/taskMap_default.h>
@@ -82,10 +83,11 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
 
   if(order==2){
     arr acc, Jacc;
-    arr acc_ref = {0.,0.,-1.};
+    arr acc_ref = {0.,0.,-1.}; //-9.81};
     arr Jacc_ref = zeros(3, K.q.N);
     for(mlr::Frame *a:K.frames){
-      if(a->inertia && a->inertia->type==mlr::BT_dynamic){
+//      if(a->inertia && a->inertia->type==mlr::BT_dynamic){
+      if(a->flags & (1<<FT_gravityAcc)){
         TaskMap_Default pos(posTMT, a->ID);
         pos.order=2;
         pos.TaskMap::phi(acc, (&J?Jacc:NoArr), Ktuple, tau, t);
@@ -108,7 +110,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
 uint TM_Gravity::dim_phi(const WorldL &Ktuple, int t){
   mlr::KinematicWorld& K = *Ktuple(-1);
   uint d = 0;
-  for(mlr::Frame *a: K.frames) if(a->inertia && a->inertia->type==mlr::BT_dynamic){
+  for(mlr::Frame *a: K.frames) if(a->flags & (1<<FT_gravityAcc)){
     d+=3;
   }
   return d;

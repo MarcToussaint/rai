@@ -17,11 +17,11 @@
 #include "frame.h"
 #include <Geo/pairCollision.h>
 
-TaskMap_PairCollision::TaskMap_PairCollision(int _i, int _j, bool negative)
-  : i(_i), j(_j), negScalar(negative){
+TaskMap_PairCollision::TaskMap_PairCollision(int _i, int _j, bool negative, bool neglectRadii)
+  : i(_i), j(_j), negScalar(negative), neglectRadii(neglectRadii){
 }
 
-TaskMap_PairCollision::TaskMap_PairCollision(const mlr::KinematicWorld& K, const char* s1, const char* s2, bool negative) : negScalar(negative){
+TaskMap_PairCollision::TaskMap_PairCollision(const mlr::KinematicWorld& K, const char* s1, const char* s2, bool negative, bool neglectRadii) : negScalar(negative), neglectRadii(neglectRadii){
   CHECK(s1 && s2,"");
   mlr::Frame *s;
   s=K.getFrameByName(s1); CHECK(s,"shape name '" <<s1 <<"' does not exist"); i=s->ID;
@@ -42,7 +42,10 @@ void TaskMap_PairCollision::phi(arr& y, arr& J, const mlr::KinematicWorld& K, in
   CHECK(m2->V.N,"");
 
 #if 1
+
   PairCollision coll(*m1, *m2, s1->frame.X, s2->frame.X, s1->size(3), s2->size(3));
+
+  if(neglectRadii) coll.rad1=coll.rad2=0.;
 
   arr Jp1, Jp2, Jx1, Jx2;
   if(&J){

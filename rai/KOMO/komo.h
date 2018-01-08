@@ -18,6 +18,7 @@
 #include <Optim/lagrangian.h>
 #include <Optim/KOMO_Problem.h>
 #include "task.h"
+#include <Kin/flag.h>
 
 //===========================================================================
 
@@ -28,8 +29,9 @@ struct KOMO{
   uint stepsPerPhase;          ///< time slices per phase
   uint T;                      ///< total number of time steps
   double tau;                  ///< real time duration of single step (used when evaluating task space velocities/accelerations)
-  uint k_order;                ///< determine the order of the KOMO problem (default 2)
-  mlr::Array<Task*> tasks;     ///< list of task cost descriptions
+  uint k_order;                ///< the (Markov) order of the KOMO problem (default 2)
+  mlr::Array<Task*> tasks;     ///< list of tasks
+  mlr::Array<mlr::Flag*> flags;     ///< list of flaggings that are applied to the frames/joints in the configurations and modify tasks
   mlr::Array<mlr::KinematicSwitch*> switches;  ///< list of kinematic switches along the motion
 
   //-- internals
@@ -50,13 +52,7 @@ struct KOMO{
   int verbose;                  ///< verbosity level
 
   KOMO();
-  KOMO(const mlr::KinematicWorld& K) : KOMO() { setModel(K); } //for compatibility only
   ~KOMO();
-
-  //-- (not much in use..) specs gives as logic expressions in a Graph (or config file)
-  KOMO(const Graph& specs);
-  void init(const Graph& specs);
-  void setFact(const char* fact);
 
   //-- setup the problem
   void setModel(const mlr::KinematicWorld& K,
@@ -67,18 +63,24 @@ struct KOMO{
   void activateCollisions(const char* s1, const char* s2);
   void deactivateCollisions(const char* s1, const char* s2);
 
-  //-- higher-level defaults
+  //-- higher-level setup defaults
   void setConfigFromFile();
   void setIKOpt();
   void setPoseOpt();
   void setSequenceOpt(double _phases);
   void setPathOpt(double _phases, uint stepsPerPhase=20, double timePerPhase=5.);
 
+  //===========================================================================
+  //
+  // lowest level way to define tasks: basic methods to add any single task or switch
+  //
+
   /** THESE ARE THE TWO MOST IMPORTANT METHODS TO DEFINE A PROBLEM
    * they allow the user to add a cost task, or a kinematic switch in the problem definition
    * Typically, the user does not call them directly, but uses the many methods below
    * Think of all of the below as examples for how to set arbirary tasks/switches yourself */
-  struct Task* setTask(double startTime, double endTime, TaskMap* map, ObjectiveType type=OT_sumOfSqr, const arr& target=NoArr, double prec=1e2, uint order=0);
+  struct Task* setTask(double startTime, double endTime, TaskMap* map, ObjectiveType type=OT_sumOfSqr, const arr& target=NoArr, double prec=1e2, uint order=0, int deltaStep=0);
+  void setFlag(double time, mlr::Flag* fl, int deltaStep=0);
   void setKinematicSwitch(double time, bool before, mlr::KinematicSwitch* sw);
   void setKinematicSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const mlr::Transformation& jFrom=NoTransformation, const mlr::Transformation& jTo=NoTransformation);
 
@@ -115,15 +117,18 @@ struct KOMO{
 
   //===========================================================================
   //
-  // high-level 'scripts' to define tasks: typically adding multiple tasks to realize some kind of 'action'
+  // high-level 'script elements' to define tasks: typically adding multiple tasks to realize some kind of 'action'
   //
+
+  //-- dynamic
+  void setImpact(double time, const char* a, const char* b);
+  void setOverTheEdge(double time, const char* object, const char* from, double margin=.0);
+  void setFreeGravity(double time, const char* object, const char* base="base");
 
   //-- tasks (cost/constraint terms) high-level (rough, for LGP)
   void setGrasp(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=1e1, double timeToLift=.15);
   void setPlace(double time, const char *endeff, const char* object, const char* placeRef, int verbose=0);
-  void setGraspStick(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=1e1, double timeToLift=.15);
   void setPlaceFixed(double time, const char* endeffRef, const char* object, const char* placeRef, const mlr::Transformation& relPose, int verbose=0);
-  void setGraspSlide(double startTime, double endTime, const char* endeffRef, const char* object, const char* placeRef, int verbose=0, double weightFromTop=1e1);
   void setHandover(double time, const char* endeffRef, const char* object, const char* prevHolder, int verbose=0);
   void setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose=0);
   void setSlide(double time, const char* stick, const char* object, const char* placeRef, int verbose=0);
@@ -131,19 +136,15 @@ struct KOMO{
   void setDrop(double time, const char* object, const char* from, const char* to, int verbose=0);
   void setDropEdgeFixed(double time, const char* object, const char* to, const mlr::Transformation& relFrom, const mlr::Transformation& relTo, int verbose=0);
 
-
-  void setAttach(double time, const char* endeff, const char* object1, const char* object2, mlr::Transformation& rel, int verbose=0);
-
-  //-- tasks high-level, fine (for real world execution)
-  void setFine_grasp(double time, const char* endeff, const char* object, double above, double gripSize=.05, const char* gripper=NULL, const char* gripper2=NULL);
-
   //-- tasks - logic level (used within LGP)
   void setAbstractTask(double phase, const Graph& facts, int verbose=0);
 
-  //-- tasks - high-level geometric
+  //DEPRECATED
+  void setGraspStick(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=1e1, double timeToLift=.15);
+  void setGraspSlide(double startTime, double endTime, const char* endeffRef, const char* object, const char* placeRef, int verbose=0, double weightFromTop=1e1);
+  void setAttach(double time, const char* endeff, const char* object1, const char* object2, mlr::Transformation& rel, int verbose=0);
+  void setFine_grasp(double time, const char* endeff, const char* object, double above, double gripSize=.05, const char* gripper=NULL, const char* gripper2=NULL);
   void setTowersAlign();
-
-  //-- deprecated
   void setMoveTo(mlr::KinematicWorld& world, //in initial state
                  mlr::Frame& endeff,         //endeffector to be moved
                  mlr::Frame& target,         //target shape
@@ -176,10 +177,15 @@ struct KOMO{
   // internal (kind of private); old interface of 'KOMO'; kept for compatibility
   //
 
+  //-- (not much in use..) specs gives as logic expressions in a Graph (or config file)
+  KOMO(const mlr::KinematicWorld& K) : KOMO() { setModel(K); } //for compatibility only
+  KOMO(const Graph& specs);
+  void init(const Graph& specs);
+  void setFact(const char* fact);
   Task* addTask(const char* name, TaskMap *map, const ObjectiveType& termType); ///< manually add a task
   void clearTasks();
   bool parseTask(const Node *n, int stepsPerPhase=-1);           ///< read a single task from a node-spec
-  void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES
+  void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
   arr getInitialization();      ///< this reads out the initial state trajectory after 'setupConfigurations'
   void set_x(const arr& x);            ///< set the state trajectory of all configurations
   uint dim_x(uint t) { return configurations(t+k_order)->getJointStateDimension(); }

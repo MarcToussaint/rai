@@ -32,10 +32,10 @@ void mlr::KinematicSwitch::setTimeOfApplication(double time, bool before, int st
   timeOfApplication = STEP(time)+(before?0:1);
 }
 
-void mlr::KinematicSwitch::apply(KinematicWorld& G){
+void mlr::KinematicSwitch::apply(KinematicWorld& K){
   Frame *from=NULL, *to=NULL;
-  if(fromId!=UINT_MAX) from=G.frames(fromId);
-  if(toId!=UINT_MAX) to=G.frames(toId);
+  if(fromId!=UINT_MAX) from=K.frames(fromId);
+  if(toId!=UINT_MAX) to=K.frames(toId);
 
   if(symbol==deleteJoint){
 #if 1
@@ -67,8 +67,8 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
       LOG(-1) <<"there were no deletable links below '" <<to->name <<"'! Deleted before?";
     }
 #endif
-    G.calc_q();
-    G.checkConsistency();
+    K.calc_q();
+    K.checkConsistency();
     return;
   }
 
@@ -103,16 +103,16 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
     if(!jB.isZero()){
       j->frame.insertPostLink(jB);
     }
-    G.calc_q();
-    G.calc_fwdPropagateFrames();
-    G.checkConsistency();
+    K.calc_q();
+    K.calc_fwdPropagateFrames();
+    K.checkConsistency();
     return;
   }
 
   if(symbol==addSliderMechanism){
 //    HALT("I think it is better if there is fixed slider mechanisms in the world, that may jump; no dynamic creation of bodies");
-    Frame *slider1 = new Frame(G); //{ type=ST_box size=[.2 .1 .05 0] color=[0 0 0] }
-    Frame *slider2 = new Frame(G); //{ type=ST_box size=[.2 .1 .05 0] color=[1 0 0] }
+    Frame *slider1 = new Frame(K); //{ type=ST_box size=[.2 .1 .05 0] color=[0 0 0] }
+    Frame *slider2 = new Frame(K); //{ type=ST_box size=[.2 .1 .05 0] color=[1 0 0] }
     Shape *s1 = new Shape(*slider1); s1->type()=ST_box; s1->size()={.2,.1,.05}; s1->mesh().C={0.,0,0};
     Shape *s2 = new Shape(*slider2); s2->type()=ST_box; s2->size()={.2,.1,.05}; s2->mesh().C={1.,0,0};
 
@@ -140,9 +140,9 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
       slider1->insertPreLink(jA);
     }
 
-    G.calc_q();
-    G.calc_fwdPropagateFrames();
-    G.checkConsistency();
+    K.calc_q();
+    K.calc_fwdPropagateFrames();
+    K.checkConsistency();
     return;
   }
 
@@ -156,9 +156,9 @@ void mlr::KinematicSwitch::apply(KinematicWorld& G){
 //    jA.setDifference(from->X, to->X);
 //    j->frame.insertPreLink(jA);
 
-    G.calc_q();
-    G.calc_fwdPropagateFrames();
-    G.checkConsistency();
+    K.calc_q();
+    K.calc_fwdPropagateFrames();
+    K.checkConsistency();
     return;
   }
 

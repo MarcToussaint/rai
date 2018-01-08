@@ -144,7 +144,7 @@ int ccdMPRPenetration(const void *obj1, const void *obj2, const ccd_t *ccd,
         findPenetr(obj1, obj2, ccd, &portal, depth, dir, pos);
     }
 
-    for(uint i=0;i<4;i++){
+    for(unsigned int i=0;i<4;i++){
        simplex[0+i] = portal.ps[i].v1;
        simplex[4+i] = portal.ps[i].v2;
     }

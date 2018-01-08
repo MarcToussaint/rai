@@ -3,6 +3,7 @@
 #include "kin.h"
 #include "uncertainty.h"
 #include "contact.h"
+#include "flag.h"
 
 #ifdef MLR_GL
 #include <Gui/opengl.h>
@@ -21,7 +22,7 @@ mlr::Frame::Frame(KinematicWorld& _K, const Frame* copyFrame)
   if(copyFrame){
     const Frame& f = *copyFrame;
     Q = copyFrame->Q;
-    name=f.name; X=f.X; ats=f.ats; active=f.active;
+    name=f.name; X=f.X; ats=f.ats; active=f.active; flags=f.flags;
     //we cannot copy link! because we can't know if the frames already exist. KinematicWorld::copy copies the rel's !!
     if(copyFrame->joint) new Joint(*this, copyFrame->joint);
     if(copyFrame->shape) new Shape(*this, copyFrame->shape);
@@ -87,6 +88,14 @@ void mlr::Frame::write(std::ostream& os) const {
   if(shape) shape->write(os);
   if(inertia) inertia->write(os);
 
+  Enum<FrameFlagType> fl;
+  os <<"FLAGS=";
+  for(int i=0;;i++){
+    fl.x = FrameFlagType(i);
+    if(!fl.name()) break;
+    if(flags & (1<<fl.x)) os <<' ' <<fl.name();
+  }
+
   os <<" }\n";
 //  if(mass) os <<"mass=" <<mass <<' ';
 //  if(type!=BT_dynamic) os <<"dyntype=" <<(int)type <<' ';
@@ -136,8 +145,8 @@ void mlr::Frame::unLink(){
 }
 
 void mlr::Frame::linkFrom(mlr::Frame *_parent, bool adoptRelTransform){
+  CHECK(!parent,"you need to set a parent to link from");
   if(parent==_parent) return;
-  CHECK(!parent,"");
   parent=_parent;
   parent->outLinks.append(this);
   if(adoptRelTransform) Q = X/parent->X;

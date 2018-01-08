@@ -36,12 +36,12 @@ TaskMap_Default::TaskMap_Default(TaskMap_DefaultType _type,
   if(&_jvec) jvec=_jvec; else jvec.setZero();
 }
 
-TaskMap_Default::TaskMap_Default(TaskMap_DefaultType _type, const mlr::KinematicWorld &G,
+TaskMap_Default::TaskMap_Default(TaskMap_DefaultType _type, const mlr::KinematicWorld &K,
                                const char* iShapeName, const mlr::Vector& _ivec,
                                const char* jShapeName, const mlr::Vector& _jvec)
   :type(_type), i(-1), j(-1){
-  mlr::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
-  mlr::Frame *b = jShapeName ? G.getFrameByName(jShapeName):NULL;
+  mlr::Frame *a = iShapeName ? K.getFrameByName(iShapeName):NULL;
+  mlr::Frame *b = jShapeName ? K.getFrameByName(jShapeName):NULL;
   if(a) i=a->ID;
   if(b) j=b->ID;
   if(&_ivec) ivec=_ivec; else ivec.setZero();

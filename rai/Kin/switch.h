@@ -30,10 +30,10 @@ struct KinematicSwitch{
   KinematicSwitch();
   KinematicSwitch(OperatorSymbol op, JointType type,
                   const char* ref1, const char* ref2,
-                  const mlr::KinematicWorld& K, uint _timeOfApplication,
+                  const mlr::KinematicWorld& K, uint _timeOfApplication=0,
                   const mlr::Transformation& jFrom=NoTransformation, const mlr::Transformation& jTo=NoTransformation);
   void setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T);
-  void apply(KinematicWorld& G);
+  void apply(KinematicWorld& K);
   void temporallyAlign(const KinematicWorld& Gprevious, KinematicWorld& G, bool copyFromBodies);
   mlr::String shortTag(const KinematicWorld* G) const;
   void write(std::ostream& os, mlr::KinematicWorld *K=NULL) const;

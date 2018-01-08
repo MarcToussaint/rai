@@ -579,6 +579,8 @@ inline uintA randperm(uint n) {  uintA z;  z.setRandomPerm(n);  return z; }
 inline arr linspace(double base, double limit, uint n) {  arr z;  z.setGrid(1, base, limit, n);  return z;  }
 arr logspace(double base, double limit, uint n);
 
+void normalizeWithJac(arr& y, arr& J);
+
 
 //===========================================================================
 /// @}
