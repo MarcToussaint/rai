@@ -55,8 +55,8 @@ typedef FittingResultL ObjectSet;
 
 struct ObjectClusterer : public Module {
   ObjectClusterer();
-  ACCESS(PointCloudVar, data_3d)
-  ACCESS(PointCloudSet, point_clouds)
+  VAR(PointCloudVar, data_3d)
+  VAR(PointCloudSet, point_clouds)
 
   void open();
   void step();
@@ -72,8 +72,8 @@ struct ObjectFitter : public Module {
   void step();
   void close();
 
-  ACCESS(PointCloudSet, objectClusters)
-  ACCESS(ObjectSet, objects)
+  VAR(PointCloudSet, objectClusters)
+  VAR(ObjectSet, objects)
 };
 
 
@@ -84,8 +84,8 @@ struct ObjectFilter : public Module {
   void step();
   void close() {}
 
-  ACCESS(ObjectSet, in_objects)
-  ACCESS(ObjectBeliefSet, out_objects)
+  VAR(ObjectSet, in_objects)
+  VAR(ObjectBeliefSet, out_objects)
 };
 
 struct ObjectTransformator : public Module {
@@ -94,8 +94,8 @@ struct ObjectTransformator : public Module {
   void step();
   void close() {}
 
-  ACCESS(ObjectBeliefSet, kinect_objects)
-  ACCESS(mlr::KinematicWorld, geoState)
+  VAR(ObjectBeliefSet, kinect_objects)
+  VAR(mlr::KinematicWorld, geoState)
   mlr::KinematicWorld geo;
 };
 

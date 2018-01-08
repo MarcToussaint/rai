@@ -195,7 +195,7 @@ OrsPoseViewer::OrsPoseViewer(const char* modelVarName, const StringA& poseVarNam
     modelWorld(this, modelVarName, false),
     gl(STRING("OrsPoseViewer: " <<poseVarNames)){
   for(const String& varname: poseVarNames){
-    poses.append( new Access<arr>(this, varname, (beatIntervalSec<0.)) ); //listen only when beatInterval=1.
+    poses.append( new Var<arr>(this, varname, (beatIntervalSec<0.)) ); //listen only when beatInterval=1.
     copies.append( new mlr::KinematicWorld() );
   }
   copy = modelWorld.get();

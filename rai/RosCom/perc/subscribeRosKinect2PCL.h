@@ -9,8 +9,8 @@
 
 struct SubscribeRosKinect2PCL{
   struct sSubscribeRosKinect2PCL *s;
-  Access<Pcl> cloud;
-  Access<mlr::Transformation> kinect_frame;
+  Var<Pcl> cloud;
+  Var<mlr::Transformation> kinect_frame;
 
 
   SubscribeRosKinect2PCL(const char* cloud_name="pclRawInput", const char* topic_name = "/kinect_head/depth_registered/points");

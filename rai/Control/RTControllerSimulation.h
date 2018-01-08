@@ -7,9 +7,9 @@
 #include <Control/ctrlMsg.h>
 
 struct RTControllerSimulation : Thread {
-  Access<CtrlMsg> ctrl_ref;
-  Access<CtrlMsg> ctrl_obs;
-  //Access<mlr::KinematicWorld> modelWorld;
+  Var<CtrlMsg> ctrl_ref;
+  Var<CtrlMsg> ctrl_obs;
+  //Var<mlr::KinematicWorld> modelWorld;
 
   mlr::KinematicWorld* world;
   mlr::Joint *j_baseTranslationRotation;

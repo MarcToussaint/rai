@@ -3,9 +3,9 @@
 #include <Kin/kinViewer.h>
 
 struct PhysXThread : Thread{
-  ACCESS(mlr::KinematicWorld, modelWorld)
-  ACCESS(mlr::KinematicWorld, physxWorld)
-  ACCESS(arr, ctrl_q_ref)
+  VAR(mlr::KinematicWorld, modelWorld)
+  VAR(mlr::KinematicWorld, physxWorld)
+  VAR(arr, ctrl_q_ref)
   PhysXInterface *px;
   OrsViewer *view;
   OpenGL *gl;

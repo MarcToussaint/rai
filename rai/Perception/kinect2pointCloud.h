@@ -6,12 +6,12 @@
 
 struct Kinect2PointCloud : Thread{
   //inputs
-  ACCESS(byteA, kinect_rgb)
+  VAR(byteA, kinect_rgb)
   ACCESSlisten(uint16A, kinect_depth)
-  ACCESS(mlr::Transformation, kinect_frame)
-  ACCESS(arr, pr2_odom)
+  VAR(mlr::Transformation, kinect_frame)
+  VAR(arr, pr2_odom)
   //outputs
-  ACCESS(arr, kinect_points)
+  VAR(arr, kinect_points)
 
   arr pts,cols;
   uint16A depth;

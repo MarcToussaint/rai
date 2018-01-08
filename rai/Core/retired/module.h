@@ -52,27 +52,27 @@ inline bool operator==(const Module&,const Module&){ return false; }
 
 //===========================================================================
 //
-/** Instead of declaring 'Access<TYPE> name;' as a module
-    member, use the macro ACCESS(TYPE, name). This is almost
+/** Instead of declaring 'Var<TYPE> name;' as a module
+    member, use the macro VAR(TYPE, name). This is almost
     equivalent, but automatically assigns the name. */
 
 #if 1
 
 #define ACCESSold(type, name)\
-struct __##name##__Access:Access<type>{ \
-  __##name##__Access():Access<type>(NULL, #name){} \
+struct __##name##__Access:Var<type>{ \
+  __##name##__Access():Var<type>(NULL, #name){} \
 } name;
 
 #else
 
-#define ACCESS(type, name) Access<type> name = Access<type>(this, #name);
+#define VAR(type, name) Var<type> name = Var<type>(this, #name);
 
 
 #endif
 
-#define ACCESS(type, name) Access<type> name = Access<type>(this, #name);
-#define ACCESSlisten(type, name) Access<type> name = Access<type>(this, #name, true);
-#define ACCESSname(type, name) Access<type> name = Access<type>(NULL, #name);
+#define VAR(type, name) Var<type> name = Var<type>(this, #name);
+#define ACCESSlisten(type, name) Var<type> name = Var<type>(this, #name, true);
+#define ACCESSname(type, name) Var<type> name = Var<type>(NULL, #name);
 
 //===========================================================================
 //
@@ -123,7 +123,7 @@ inline void operator<<(ostream& os, const Access& a){ os <<"Access '" <<a.name <
 
 template <class T>
 struct Recorder : Thread {
-  Access<T> access;
+  Var<T> access;
   T buffer;
   ofstream fil;
 
@@ -155,7 +155,7 @@ struct Recorder : Thread {
 
 template<class T>
 struct FileReplay : Thread {
-  Access<T> access;
+  Var<T> access;
   T x;
   FileReplay(const char* file_name, const char* var_name, double beatIntervalSec)
     : Thread(STRING("FileReplay_"<<var_name), beatIntervalSec),

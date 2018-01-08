@@ -98,7 +98,8 @@ template<class T> struct Array : std::vector<T> {
   explicit Array(uint D0);
   explicit Array(uint D0, uint D1);
   explicit Array(uint D0, uint D1, uint D2);
-  explicit Array(const T* p, uint size, bool byReference=true);    //reference!
+  explicit Array(const T* p, uint size, bool byReference=true);      //reference!
+  explicit Array(const std::vector<T>& a, bool byReference=false);   //reference?
   Array(std::initializer_list<T> values);
   Array(uint D0, std::initializer_list<T> values);
   Array(uint D0, uint D1, std::initializer_list<T> values);
@@ -109,6 +110,7 @@ template<class T> struct Array : std::vector<T> {
   Array<T>& operator=(std::initializer_list<T> values);
   Array<T>& operator=(const T& v);
   Array<T>& operator=(const Array<T>& a);
+  Array<T>& operator=(const std::vector<T>& values);
 
   /// @name iterators
   ArrayIterationEnumerated<T> enumerated(){ return ArrayIterationEnumerated<T>(*this); }

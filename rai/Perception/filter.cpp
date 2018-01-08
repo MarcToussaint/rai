@@ -34,7 +34,7 @@ Filter::~Filter(){
 }
 
 void Filter::open(){
-  Access<mlr::KinematicWorld> modelWorld(this, "modelWorld");
+  Var<mlr::KinematicWorld> modelWorld(this, "modelWorld");
   modelWorld.readAccess();
   for(mlr::Frame *b:modelWorld().frames){
     if(b->ats["percept"]){

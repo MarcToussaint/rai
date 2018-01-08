@@ -27,10 +27,10 @@ void renderConfigurations(const WorldL& cs, const char* filePrefix="vid/z.path."
 //===========================================================================
 
 struct OrsViewer_old : Thread {
-  Access<mlr::KinematicWorld> modelWorld;
+  Var<mlr::KinematicWorld> modelWorld;
   //-- outputs
-  Access<byteA> modelCameraView;
-  Access<floatA> modelDepthView;
+  Var<byteA> modelCameraView;
+  Var<floatA> modelDepthView;
   //-- internal (private)
   mlr::KinematicWorld copy;
   bool computeCameraView;
@@ -45,7 +45,7 @@ struct OrsViewer_old : Thread {
 //===========================================================================
 
 struct OrsViewer : Thread {
-  Access<mlr::KinematicWorld> world;
+  Var<mlr::KinematicWorld> world;
   MeshA meshesCopy;
   ProxyA proxiesCopy;
   struct OpenGL *gl;
@@ -59,7 +59,7 @@ struct OrsViewer : Thread {
 //===========================================================================
 
 struct OrsPathViewer : Thread {
-  Access<WorldL> configurations;
+  Var<WorldL> configurations;
   //-- internal (private)
   mlr::KinematicWorld copy;
   uint t;
@@ -79,8 +79,8 @@ struct OrsPathViewer : Thread {
 //===========================================================================
 
 struct OrsPoseViewer : Thread {
-  Access<mlr::KinematicWorld> modelWorld;
-  mlr::Array<Access<arr>*> poses; ///< poses to be watched
+  Var<mlr::KinematicWorld> modelWorld;
+  mlr::Array<Var<arr>*> poses; ///< poses to be watched
   //-- internal (private)
   OpenGL gl;
   mlr::KinematicWorld copy;
@@ -99,10 +99,10 @@ struct OrsPoseViewer : Thread {
 //===========================================================================
 
 struct ComputeCameraView : Thread {
-  Access<mlr::KinematicWorld> modelWorld;
-  Access<byteA> cameraView;
-  Access<uint16A> cameraDepth;
-  Access<mlr::Transformation> cameraFrame;
+  Var<mlr::KinematicWorld> modelWorld;
+  Var<byteA> cameraView;
+  Var<uint16A> cameraDepth;
+  Var<mlr::Transformation> cameraFrame;
 
   //-- internal (private)
   OpenGL gl;

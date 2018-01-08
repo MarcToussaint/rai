@@ -10,7 +10,7 @@ void lowPassUpdate(arr& lowPass, const arr& signal, double rate=.1){
 
 #ifdef MLR_ROS
 struct sTaskControlThread{
-   Access<sensor_msgs::JointState> jointState = Access<sensor_msgs::JointState>(NULL, "jointState");
+   Var<sensor_msgs::JointState> jointState = Var<sensor_msgs::JointState>(NULL, "jointState");
 };
 #else
 struct sTaskControlThread{};

@@ -90,6 +90,8 @@ template<class T> mlr::Array<T>::Array(uint i, uint j, uint k):Array() { resize(
 /// this becomes a reference on the C-array \c p
 template<class T> mlr::Array<T>::Array(const T* p, uint size, bool byReference):Array() { if(byReference) referTo(p, size); else setCarray(p, size); }
 
+template<class T> mlr::Array<T>::Array(const std::vector<T>& a, bool byReference):Array() { if(byReference) referTo(&a.front(), a.size()); else setCarray(&a.front(), a.size()); }
+
 /// initialization via {1., 2., 3., ...} lists..
 template<class T> mlr::Array<T>::Array(std::initializer_list<T> values):Array() { operator=(values); }
 
@@ -1235,6 +1237,12 @@ template<class T> mlr::Array<T>& mlr::Array<T>::operator=(const mlr::Array<T>& a
     special = new RowShifted(*((arr*)this),*((RowShifted*)a.special));
     return *this;
   }
+  return *this;
+}
+
+/// copy operator
+template<class T> mlr::Array<T>& mlr::Array<T>::operator=(const std::vector<T>& a) {
+  setCarray(&a.front(), a.size());
   return *this;
 }
 

@@ -2,8 +2,8 @@
 #include "roscom.h"
 
 struct SubscribeLaserScan{
-  Access<arr> laserScan;
-  Access<mlr::Transformation> laserScan_frame;
+  Var<arr> laserScan;
+  Var<mlr::Transformation> laserScan_frame;
   SubscriberConv<sensor_msgs::LaserScan, byteA, &conv_laserScan2arr> subLaser;
 
   SubscribeLaserScan()

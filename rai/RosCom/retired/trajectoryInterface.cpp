@@ -11,9 +11,9 @@
 #include "spinner.h"
 
 struct sTrajectoryInterface{
-  Access<CtrlMsg> ctrl_ref;
-  Access<CtrlMsg> ctrl_obs;
-  Access<ar::AlvarMarkers> ar_pose_markers;
+  Var<CtrlMsg> ctrl_ref;
+  Var<CtrlMsg> ctrl_obs;
+  Var<ar::AlvarMarkers> ar_pose_markers;
   PublisherConv<marc_controller_pkg::JointState, CtrlMsg, &conv_CtrlMsg2JointState> pub;
   SubscriberConvNoHeader<marc_controller_pkg::JointState, CtrlMsg, &conv_JointState2CtrlMsg> sub;
   Subscriber<ar::AlvarMarkers> markerSub;
@@ -26,7 +26,7 @@ struct sTrajectoryInterface{
     ar_pose_markers(NULL, "ar_pose_markers"),
     pub("/marc_rt_controller/jointReference", ctrl_ref),
     sub("/marc_rt_controller/jointState", ctrl_obs),
-    markerSub("/ar_pose_marker", (Access<ar::AlvarMarkers>&)ar_pose_markers){
+    markerSub("/ar_pose_marker", (Var<ar::AlvarMarkers>&)ar_pose_markers){
   }
 };
 
