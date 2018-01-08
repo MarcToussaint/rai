@@ -2,7 +2,7 @@
 #include <Kin/flag.h>
 #include <Kin/frame.h>
 #include <Kin/contact.h>
-#include <Kin/taskMap_default.h>
+#include <Kin/TM_default.h>
 
 void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
 
@@ -20,7 +20,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
     for(uint i=0;i<nf;i++){
       mlr::Frame *a = K.frames(i);
       if(a->inertia && a->inertia->type==mlr::BT_dynamic){
-        TaskMap_Default pos(posTMT, i);
+        TM_Default pos(TMT_pos, i);
         pos.order=1;
         pos.TaskMap::phi(p0, (&J?J0:NoArr), Ktuple, tau, t);
 
@@ -88,7 +88,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
     for(mlr::Frame *a:K.frames){
 //      if(a->inertia && a->inertia->type==mlr::BT_dynamic){
       if(a->flags & (1<<FT_gravityAcc)){
-        TaskMap_Default pos(posTMT, a->ID);
+        TM_Default pos(TMT_pos, a->ID);
         pos.order=2;
         pos.TaskMap::phi(acc, (&J?Jacc:NoArr), Ktuple, tau, t);
 

@@ -105,7 +105,7 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
     mlr::Shape *s1=effKinematics.getShapeByName(constraint->parents(1)->keys(0));
     mlr::Shape *s2=effKinematics.getShapeByName(constraint->parents(2)->keys(0));
 
-    TaskMap_GJK gjk(s1, s2, true);
+    TM_GJK gjk(s1, s2, true);
 
     gjk.phi(y, (&phiJ?J:NoArr), effKinematics);
     phi.append(y);
@@ -114,7 +114,7 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
   }
 
   //-- support symbols -> constraints of being inside!
-  //LATER: This is is now done by the TaskMap_AboveBox (as used in place)
+  //LATER: This is is now done by the TM_AboveBox (as used in place)
   Node *support=symbolicState_after["Gsupport"];
   for(Node *constraint:support->parentOf) if(&constraint->container==&symbolicState_after){
     mlr::Body *b1=effKinematics.getBodyByName(constraint->parents(1)->keys.last());

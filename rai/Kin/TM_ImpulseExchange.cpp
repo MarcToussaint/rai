@@ -1,6 +1,6 @@
 #include "TM_ImpulseExchange.h"
-#include "taskMap_default.h"
-#include "taskMap_PairCollision.h"
+#include "TM_default.h"
+#include "TM_PairCollision.h"
 
 void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
   CHECK(Ktuple.N>=3, "");
@@ -8,11 +8,11 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
 
   arr a1, J1, a2, J2;
 
-  TaskMap_Default pos1(posTMT, i);
+  TM_Default pos1(TMT_pos, i);
   pos1.order=2;
   pos1.TaskMap::phi(a1, (&J?J1:NoArr), Ktuple, tau, t);
 
-  TaskMap_Default pos2(posTMT, j);
+  TM_Default pos2(TMT_pos, j);
   pos2.order=2;
   pos2.TaskMap::phi(a2, (&J?J2:NoArr), Ktuple, tau, t);
 
@@ -20,7 +20,7 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
   if(&J) J = J1+J2;
 
   arr c,Jc;
-  TaskMap_PairCollision coll(*Ktuple(-2), "ball1", "ball2", false, true);
+  TM_PairCollision coll(*Ktuple(-2), "ball1", "ball2", false, true);
   coll.phi(c, (&J?Jc:NoArr), *Ktuple(-2), t);
   uintA qdim = getKtupleDim(Ktuple);
   arr Jcc = zeros(3, qdim.last());

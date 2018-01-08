@@ -219,12 +219,12 @@ void TrajectoryInterface::gotoPosition(arr x_robot, double T, bool recordData, b
   }
 
   Task *t;
-  t = MP.addTask("tra", new TaskMap_Transition(*world_robot), OT_sumOfSqr);
-  ((TaskMap_Transition*)&t->map)->H_rate_diag = world_robot->getHmetric();
+  t = MP.addTask("tra", new TM_Transition(*world_robot), OT_sumOfSqr);
+  ((TM_Transition*)&t->map)->H_rate_diag = world_robot->getHmetric();
   t->map->order=2;
   t->setCostSpecs(0, MP.T, ARR(0.), 1e0);
 
-  t =MP.addTask("posT", new TaskMap_qItself(), OT_eq);
+  t =MP.addTask("posT", new TM_qItself(), OT_eq);
   t->setCostSpecs(MP.T-2,MP.T, x_robot, 1e0);
 
   arr X_robot = MP.getInitialization();

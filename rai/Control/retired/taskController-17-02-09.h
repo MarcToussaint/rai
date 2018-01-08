@@ -121,7 +121,7 @@ struct TaskControlMethods {
   CtrlTask* addPDTask(const char* name, double decayTime, double dampingRatio, TaskMap *map);
   CtrlTask* addPDTask(const char* name,
                     double decayTime, double dampingRatio,
-                    TaskMap_DefaultType type,
+                    TM_DefaultType type,
                     const char* iShapeName=NULL, const mlr::Vector& ivec=NoVector,
                     const char* jShapeName=NULL, const mlr::Vector& jvec=NoVector);
   ConstraintForceTask* addConstraintForceTask(const char* name, TaskMap *map);

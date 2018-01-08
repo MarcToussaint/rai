@@ -17,7 +17,7 @@
     -----------------------------------------------------------------  */
 #include "taskMap_default.h"
 
-TaskMap_Default::TaskMap_Default(TaskMap_DefaultType _type,
+TM_Default::TM_Default(TM_DefaultType _type,
                                int iShape, const mlr::Vector& _ivec,
                                int jShape, const mlr::Vector& _jvec,
                                const arr& _params):type(_type), i(iShape), j(jShape){
@@ -27,7 +27,7 @@ TaskMap_Default::TaskMap_Default(TaskMap_DefaultType _type,
   if(&_params) params=_params;
 }
 
-TaskMap_Default::TaskMap_Default(TaskMap_DefaultType _type, const mlr::KinematicWorld &G,
+TM_Default::TM_Default(TM_DefaultType _type, const mlr::KinematicWorld &G,
                                const char* iShapeName, const mlr::Vector& _ivec,
                                const char* jShapeName, const mlr::Vector& _jvec,
                                const arr& _params):type(_type), i(-1), j(-1){
@@ -41,13 +41,13 @@ TaskMap_Default::TaskMap_Default(TaskMap_DefaultType _type, const mlr::Kinematic
 }
 
 
-void TaskMap_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G) {
+void TM_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G) {
   mlr::Body *body_i = i<0?NULL: G.shapes(i)->body;
   mlr::Body *body_j = j<0?NULL: G.shapes(j)->body;
 
   //get state
   switch(type) {
-    case posTMT:{
+    case TMT_pos:{
       mlr::Vector vec_i = i<0?ivec: G.shapes(i)->rel*ivec;
       mlr::Vector vec_j = j<0?jvec: G.shapes(j)->rel*jvec;
       if(body_j==NULL) {
@@ -75,7 +75,7 @@ void TaskMap_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G) {
         }
       }
     } break;
-    case vecTMT:{
+    case TMT_vec:{
       mlr::Vector vec_i = i<0?ivec: G.shapes(i)->rel.rot*ivec;
 //      mlr::Vector vec_j = j<0?jvec: G.shapes(j)->rel.rot*jvec;
       if(body_j==NULL) {
@@ -83,7 +83,7 @@ void TaskMap_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G) {
         break;
       }
       //relative
-      MLR_MSG("warning - don't have a correct Jacobian for this TMType yet");
+      MLR_MSG("warning - don't have a correct Jacobian for this TMT_ype yet");
 //      fi = G.bodies(body_i)->X; fi.appendTransformation(irel);
 //      fj = G.bodies(body_j)->X; fj.appendTransformation(jrel);
 //      f.setDifference(fi, fj);
@@ -91,7 +91,7 @@ void TaskMap_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G) {
 //      y = conv_vec2arr(c);
       NIY; //TODO: Jacobian?
     } break;
-    case vecAlignTMT: {
+    case TMT_vecAlign: {
       CHECK(fabs(ivec.length()-1.)<1e-10,"vector references must be normalized");
       CHECK(fabs(jvec.length()-1.)<1e-10,"vector references must be normalized");
       mlr::Vector vec_i = i<0?ivec: G.shapes(i)->rel.rot*ivec;
@@ -111,18 +111,18 @@ void TaskMap_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G) {
         J.reshape(1, G.getJointStateDimension());
       }
     } break;
-    case quatTMT:
+    case TMT_quat:
       if(body_j==NULL) {
         G.kinematicsQuat(y, J, body_i);
         break;
       }
       NIY;
       break;
-    case qItselfTMT:{
+    case TMT_qItself:{
       G.getJointState(y);
       if(&J) J.setId(y.N);
     } break;
-    case qLinearTMT:{
+    case TMT_qLinear:{
       arr q;
       G.getJointState(q);
       if(params.N==q.N){
@@ -131,7 +131,7 @@ void TaskMap_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G) {
         y=params*q; if(&J) J=params;
       }
     } break;
-    case qSquaredTMT: {
+    case TMT_qSquared: {
       arr q;
       G.getJointState(q);
       y.resize(1);  y(0) = scalarProduct(params, q, q);
@@ -141,7 +141,7 @@ void TaskMap_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G) {
         J.reshape(1, q.N);
       }
     } break;
-    case qSingleTMT: {
+    case TMT_qSingle: {
       arr q;
       G.getJointState(q);
       y.resize(1);  y(0)=q(-i);
@@ -151,11 +151,11 @@ void TaskMap_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G) {
         J(0, -i) = 1.;
       }
     } break;
-    case qLimitsTMT:   if(!params.N) params=G.getLimits();  G.kinematicsLimitsCost(y, J, params);  break;
-    case comTMT:       G.getCenterOfMass(y);     y.resizeCopy(2); if(&J) { G.getComGradient(J);  J.resizeCopy(2, J.d1); }  break;
-    case collTMT:      G.kinematicsProxyCost(y, J, params(0));  break;
-    case colConTMT:    G.kinematicsContactConstraints(y, J);  break;
-    case skinTMT: {
+    case TMT_qLimits:   if(!params.N) params=G.getLimits();  G.kinematicsLimitsCost(y, J, params);  break;
+    case TMT_com:       G.getCenterOfMass(y);     y.resizeCopy(2); if(&J) { G.getComGradient(J);  J.resizeCopy(2, J.d1); }  break;
+    case TMT_coll:      G.kinematicsProxyCost(y, J, params(0));  break;
+    case TMT_colCon:    G.kinematicsContactConstraints(y, J);  break;
+    case TMT_skin: {
       arr Ji, zi;
       mlr::Vector vi;
       y.resize(params.N);
@@ -177,22 +177,22 @@ void TaskMap_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G) {
   }
 }
 
-uint TaskMap_Default::dim_phi(const mlr::KinematicWorld& G) {
+uint TM_Default::dim_phi(const mlr::KinematicWorld& G) {
   //get state
   switch(type) {
-    case posTMT: return 3;
-    case vecTMT: return 3;
-    case quatTMT: return 4;
-    case qItselfTMT: return G.getJointStateDimension();
-    case qLinearTMT: return params.d0;
-    case qSquaredTMT: return 1;
-    case qSingleTMT: return 1;
-    case qLimitsTMT: return 1;
-    case comTMT: return 2;
-    case collTMT: return 1;
-    case colConTMT: return 1;
-    case skinTMT: return params.N;
-    case vecAlignTMT: return 1;
-    default:  HALT("no such TMT");
+    case TMT_pos: return 3;
+    case TMT_vec: return 3;
+    case TMT_quat: return 4;
+    case TMT_qItself: return G.getJointStateDimension();
+    case TMT_qLinear: return params.d0;
+    case TMT_qSquared: return 1;
+    case TMT_qSingle: return 1;
+    case TMT_qLimits: return 1;
+    case TMT_com: return 2;
+    case TMT_coll: return 1;
+    case TMT_colCon: return 1;
+    case TMT_skin: return params.N;
+    case TMT_vecAlign: return 1;
+    default:  HALT("no such TMT_");
   }
 }
