@@ -12,7 +12,7 @@ arr baxter_getEfforts(const sensor_msgs::JointState& msg, const mlr::KinematicWo
 #endif
 
 struct SendPositionCommandsToBaxter : Thread {
-  Access<CtrlMsg> ctrl_ref;
+  Var<CtrlMsg> ctrl_ref;
   struct sSendPositionCommandsToBaxter *s;
   mlr::KinematicWorld baxterModel;
 

@@ -1,6 +1,6 @@
 #include "TM_InertialMotion.h"
 #include "flag.h"
-#include "taskMap_default.h"
+#include "TM_default.h"
 
 void TM_InertialMotion::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
   mlr::KinematicWorld& K = *Ktuple(-1);
@@ -15,7 +15,7 @@ void TM_InertialMotion::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
       MLR_MSG("frame '" <<a->name <<"' has InertialMotion AND control cost objectivies");
   }
 
-  TaskMap_Default pos(posTMT, i);
+  TM_Default pos(TMT_pos, i);
   pos.order=2;
   pos.TaskMap::phi(acc, (&J?Jacc:NoArr), Ktuple, tau, t);
 

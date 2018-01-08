@@ -20,37 +20,37 @@
 
 #include "motion.h"
 
-enum TaskMap_DefaultType {
-  noneTMT,     ///< undefined
-  posTMT,      ///< 3D position of reference
-  vecTMT,      ///< 3D vec (orientation)
-  quatTMT,     ///< 4D quaterion
-  vecAlignTMT, ///< 1D vector alignment, can have 2nd reference, param (optional) determins alternative reference world vector
-  qItselfTMT,  ///< q itself as task variable, no param
-  qLinearTMT,  ///< k-dim variable linear in q, no references, param: k-times-n matrix
-  qSingleTMT,  ///< 1D entry of q, reference-integer=index, no param
-  qSquaredTMT, ///< 1D square norm of q, no references, param: n-times-n matrix
-  qLimitsTMT,  ///< 1D meassure for joint limit violation, no references, param: n-times-2 matrix with lower and upper limits for each joint
-  collTMT,     ///< 1D meassure for collision violation, no references, param: 1D number defining the distance margin
-  colConTMT,   ///< 1D meassure collision CONSTRAINT meassure, no references, param: 1D number defining the distance margin
-  comTMT,      ///< 2D vector of the horizontal center of mass, no refs, no param
-  skinTMT      ///< vector of skin pressures...
+enum TM_DefaultType {
+  TMT_none,     ///< undefined
+  TMT_pos,      ///< 3D position of reference
+  TMT_vec,      ///< 3D vec (orientation)
+  TMT_quat,     ///< 4D quaterion
+  TMT_vecAlign, ///< 1D vector alignment, can have 2nd reference, param (optional) determins alternative reference world vector
+  TMT_qItself,  ///< q itself as task variable, no param
+  TMT_qLinear,  ///< k-dim variable linear in q, no references, param: k-times-n matrix
+  TMT_qSingle,  ///< 1D entry of q, reference-integer=index, no param
+  TMT_qSquared, ///< 1D square norm of q, no references, param: n-times-n matrix
+  TMT_qLimits,  ///< 1D meassure for joint limit violation, no references, param: n-times-2 matrix with lower and upper limits for each joint
+  TMT_coll,     ///< 1D meassure for collision violation, no references, param: 1D number defining the distance margin
+  TMT_colCon,   ///< 1D meassure collision CONSTRAINT meassure, no references, param: 1D number defining the distance margin
+  TMT_com,      ///< 2D vector of the horizontal center of mass, no refs, no param
+  TMT_skin      ///< vector of skin pressures...
 };
 
 
 
-struct TaskMap_Default:TaskMap {
-  TaskMap_DefaultType type;
+struct TM_Default:TaskMap {
+  TM_DefaultType type;
   int i, j;               ///< which shapes does it refer to?
   mlr::Vector ivec, jvec; ///< additional position or vector
   arr params;             ///< parameters of the variable (e.g., liner coefficients, limits, etc)
 
-  TaskMap_Default(TaskMap_DefaultType type,
+  TM_Default(TM_DefaultType type,
                  int iShape=-1, const mlr::Vector& ivec=NoVector,
                  int jShape=-1, const mlr::Vector& jvec=NoVector,
                  const arr& params=NoArr);
 
-  TaskMap_Default(TaskMap_DefaultType type, const mlr::KinematicWorld& G,
+  TM_Default(TM_DefaultType type, const mlr::KinematicWorld& G,
                  const char* iShapeName=NULL, const mlr::Vector& ivec=NoVector,
                  const char* jShapeName=NULL, const mlr::Vector& jvec=NoVector,
                  const arr& params=NoArr);

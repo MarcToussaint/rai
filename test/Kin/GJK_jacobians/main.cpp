@@ -8,7 +8,7 @@
 #include <Kin/frame.h>
 #include <Geo/pairCollision.h>
 #include <Kin/kin_swift.h>
-#include <Kin/taskMap_QuaternionNorms.h>
+#include <Kin/TM_QuaternionNorms.h>
 
 extern bool orsDrawWires;
 
@@ -61,8 +61,8 @@ void TEST(GJK_Jacobians) {
     coll.kinVector(y, J, Jp1, Jp2, Jx1, Jx2);
   };
 
-//  TaskMap_GJK gjk(K, "s1", "s2", true);
-  TaskMap_PairCollision gjk(K, "s1", "s2", true);
+//  TM_GJK gjk(K, "s1", "s2", true);
+  TM_PairCollision gjk(K, "s1", "s2", true);
 
   for(uint k=0;k<100;k++){
     rndGauss(q, 1.);
@@ -72,7 +72,7 @@ void TEST(GJK_Jacobians) {
 //    cout <<collInfo;
 
     arr y,y2,J;
-    //test both, the explicit code above as well as the wrapped TaskMap_GJK
+    //test both, the explicit code above as well as the wrapped TM_GJK
     f(y2, NoArr, q);
     checkJacobian(f, q, 1e-4);
 
@@ -146,7 +146,7 @@ void TEST(GJK_Jacobians2) {
 
 //    checkJacobian(f, q, 1e-4);
 
-    TaskMap_QuaternionNorms qn;
+    TM_QuaternionNorms qn;
 //    K.reportProxies();
 
     arr y,J;
@@ -205,7 +205,7 @@ void TEST(GJK_Jacobians3) {
     K.setJointState(x);
     K.stepSwift();
 //    K.kinematicsProxyCost(y, (&J?J:NoArr), .2);
-    TaskMap_PairCollision gjk(1, 2, true);
+    TM_PairCollision gjk(1, 2, true);
     gjk.phi(y, J, K);
   };
 
@@ -219,7 +219,7 @@ void TEST(GJK_Jacobians3) {
 
     checkJacobian(f, q, 1e-4);
 
-    TaskMap_QuaternionNorms qn;
+    TM_QuaternionNorms qn;
 
     arr y,J;
     K.kinematicsProxyCost(y, J, .2);

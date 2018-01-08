@@ -8,9 +8,9 @@
 
 /// clears the perceptual inputs (which is a FIFO) and merges these into the filtered percepts
 struct Filter : Thread{
-  Access<PerceptL> percepts_input;
-  Access<PerceptL> percepts_filtered;
-  Access<mlr::KinematicWorld> modelWorld;
+  Var<PerceptL> percepts_input;
+  Var<PerceptL> percepts_filtered;
+  Var<mlr::KinematicWorld> modelWorld;
 
   Filter();
   ~Filter();

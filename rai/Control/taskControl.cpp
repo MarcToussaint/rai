@@ -265,9 +265,9 @@ arr CtrlTask::getPrec(){
 
 void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const mlr::KinematicWorld& world){
   //-- get necessary Jacobians
-  TaskMap_Default *m = dynamic_cast<TaskMap_Default*>(map);
+  TM_Default *m = dynamic_cast<TM_Default*>(map);
   CHECK(m,"this only works for the default position task map");
-  CHECK(m->type==posTMT,"this only works for the default positioni task map");
+  CHECK(m->type==TMT_pos,"this only works for the default positioni task map");
   CHECK(m->i>=0,"this only works for the default position task map");
   mlr::Frame *body = world.frames(m->i);
   mlr::Frame* l_ft_sensor = world.getFrameByName("l_ft_sensor");
@@ -299,7 +299,7 @@ void CtrlTask::reportState(ostream& os){
 //===========================================================================
 
 TaskControlMethods::TaskControlMethods(const mlr::KinematicWorld& world)
-  : Hmetric(world.getHmetric()), qNullCostRef("qNullPD", new TaskMap_qItself()) {
+  : Hmetric(world.getHmetric()), qNullCostRef("qNullPD", new TM_qItself()) {
   qNullCostRef.PD().setGains(0.,1.);
   qNullCostRef.prec = ::sqrt(mlr::getParameter<double>("Hrate", .1)*Hmetric);
   qNullCostRef.PD().setTarget( world.q );
@@ -321,10 +321,10 @@ CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, doub
 
 //CtrlTask* TaskControlMethods::addPDTask(const char* name,
 //                                         double decayTime, double dampingRatio,
-//                                         TaskMap_DefaultType type,
+//                                         TM_DefaultType type,
 //                                         const char* iShapeName, const mlr::Vector& ivec,
 //                                         const char* jShapeName, const mlr::Vector& jvec){
-//  return tasks.append(new CtrlTask(name, new TaskMap_Default(type, world, iShapeName, ivec, jShapeName, jvec),
+//  return tasks.append(new CtrlTask(name, new TM_Default(type, world, iShapeName, ivec, jShapeName, jvec),
 //                                   decayTime, dampingRatio, 1., 1.));
 //}
 
@@ -707,7 +707,7 @@ void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, d
   uint nForceTasks=0;
   for(CtrlTask* task : this->tasks) if(task->active && task->f_ref.N){
     nForceTasks++;
-    TaskMap_Default* map = dynamic_cast<TaskMap_Default*>(task->map);
+    TM_Default* map = dynamic_cast<TM_Default*>(task->map);
     mlr::Frame* body = world.frames(map->i);
     mlr::Frame* lFtSensor = world.getFrameByName("r_ft_sensor");
     arr y, J, J_ft;

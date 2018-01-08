@@ -38,7 +38,7 @@ struct GravityCompensation {
   arr featuresGC(arr q, arr qSign, const mlr::String& joint);
 
   arr featuresFT(arr q, mlr::String endeff);
-  arr generateTaskMapFeature(TaskMap_Default map, arr Q);
+  arr generateTaskMapFeature(TM_Default map, arr Q);
 
   void testForLimits();
   void removeLimits();
@@ -80,7 +80,7 @@ struct GravityCompensation {
 
   //========= Helper functions, just convenience and good practices
   arr makeQMatrix(arr Q, uint jointIndex);
-  arr generateTaskMapFeature(TaskMap_Default map, arr Q);
+  arr generateTaskMapFeature(TM_Default map, arr Q);
   void generatePredictionsOnDataSet(const arr& Q, const arr& U, const StringA& joints);
 #endif
 };

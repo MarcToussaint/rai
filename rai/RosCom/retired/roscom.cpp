@@ -114,7 +114,7 @@ void PerceptionObjects2Ors::step(){
 //===========================================================================
 // Helper function so sync ors with the real PR2
 void initialSyncJointStateWithROS(mlr::KinematicWorld& world,
-    Access<CtrlMsg>& ctrl_obs, bool useRos) {
+    Var<CtrlMsg>& ctrl_obs, bool useRos) {
 
   if (not useRos) { return; }
 
@@ -139,7 +139,7 @@ void initialSyncJointStateWithROS(mlr::KinematicWorld& world,
 }
 
 void syncJointStateWitROS(mlr::KinematicWorld& world,
-    Access<CtrlMsg>& ctrl_obs, bool useRos) {
+    Var<CtrlMsg>& ctrl_obs, bool useRos) {
 
   if (not useRos) { return; }
 
@@ -231,7 +231,7 @@ void RosCom_ControllerSync::close(){
 //===========================================================================
 // Helper function so sync ors with the real PR2
 void initialSyncJointStateWithROS(mlr::KinematicWorld& world,
-    Access<CtrlMsg>& ctrl_obs, bool useRos) {
+    Var<CtrlMsg>& ctrl_obs, bool useRos) {
 
   if (not useRos) { return; }
 
@@ -256,7 +256,7 @@ void initialSyncJointStateWithROS(mlr::KinematicWorld& world,
 }
 
 void syncJointStateWitROS(mlr::KinematicWorld& world,
-    Access<CtrlMsg>& ctrl_obs, bool useRos) {
+    Var<CtrlMsg>& ctrl_obs, bool useRos) {
 
   if (not useRos) { return; }
 

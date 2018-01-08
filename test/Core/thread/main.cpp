@@ -46,9 +46,9 @@ struct MyType{
 };
 
 struct ComputeSum : Thread {
-  ACCESS(arr, x)    //input
-  ACCESS(double, s) //output
-  ACCESS(MyType, i)
+  VAR(arr, x)    //input
+  VAR(double, s) //output
+  VAR(MyType, i)
 
   ComputeSum():Thread("ComputeSum"){}
   virtual ~ComputeSum(){}
@@ -81,8 +81,8 @@ void TEST(Way0){
 void TEST(Way1){
   Thread *m = new ComputeSum;
 
-  Access<arr> x(NULL, "x");
-  Access<double> s(NULL, "s");
+  Var<arr> x(NULL, "x");
+  Var<double> s(NULL, "s");
 
   x.set() = {1., 2., 3.};
 
@@ -107,8 +107,8 @@ void TEST(Way1){
 //
 
 struct MySystem{
-  Access<arr> x = Access<arr>(NULL, "x");
-  Access<double> s = Access<double>(NULL, "s");
+  Var<arr> x = Var<arr>(NULL, "x");
+  Var<double> s = Var<double>(NULL, "s");
   ComputeSum cs;
 };
 
@@ -152,8 +152,8 @@ void TEST(SystemConnect) {
 //
 
 struct PairSorter:Thread{
-  Access<int> a;
-  Access<int> b;
+  Var<int> a;
+  Var<int> b;
   PairSorter(const char *a_name, const char* b_name)
     : Thread(STRING("S_"<<a_name<<"_"<<b_name)),
       a(this, a_name),

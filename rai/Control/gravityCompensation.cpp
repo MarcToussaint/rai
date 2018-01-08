@@ -253,9 +253,9 @@ arr GravityCompensation::featuresGC(arr q, arr qSign, const mlr::String& joint) 
 
   if(stictionFeature) Phi = catCol(Phi, sign(qSign.sub(0,-1,index,index)));
 
-  //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(posTMT, world, "endeffL"), q));
-  //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"endeffL",mlr::Vector(0.,0.,1.)), q));
-  //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"endeffL",mlr::Vector(1.,0.,0.)), q));
+  //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_pos, world, "endeffL"), q));
+  //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"endeffL",mlr::Vector(0.,0.,1.)), q));
+  //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"endeffL",mlr::Vector(1.,0.,0.)), q));
 
   return Phi;
 
@@ -265,13 +265,13 @@ arr GravityCompensation::featuresFT(arr q, mlr::String endeff) {
   if(q.nd < 2) q = ~q;
 
   arr Phi = ones(q.d0,1);
-  Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world, endeff, mlr::Vector(1.0,0.0,0.0)), q)); //TODO distinguish between axes!!
-  Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world, endeff, mlr::Vector(0.0,1.0,0.0)), q));
-  Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world, endeff, mlr::Vector(0.0,0.0,1.0)), q));
+  Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world, endeff, mlr::Vector(1.0,0.0,0.0)), q)); //TODO distinguish between axes!!
+  Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world, endeff, mlr::Vector(0.0,1.0,0.0)), q));
+  Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world, endeff, mlr::Vector(0.0,0.0,1.0)), q));
   return Phi;
 }
 
-arr GravityCompensation::generateTaskMapFeature(TaskMap_Default map, arr Q) {
+arr GravityCompensation::generateTaskMapFeature(TM_Default map, arr Q) {
   arr phiTemp;
   for (uint t = 0; t < Q.d0; t++) {
     world.setJointState(Q[t]);
@@ -343,7 +343,7 @@ void GravityCompensation::removeLimits() {
 
 #if 0
 
-arr GravityCompensation::generateTaskMapFeature(TaskMap_Default map, arr Q) {
+arr GravityCompensation::generateTaskMapFeature(TM_Default map, arr Q) {
   arr phiTemp;
   for (uint t = 0; t < Q.d0; t++) {
     world.setJointState(Q[t]);
@@ -418,7 +418,7 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
     }
 */
     /*
-    TaskMap_Default posTask(posTMT, world, "endeffR");
+    TM_Default posTask(TMT_pos, world, "endeffR");
       Phi_tmp.clear();
       for (uint t = 0; t<Q.d0; t++) {
         world.setJointState(Q[t],Q[t]*0.);
@@ -431,11 +431,11 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
 
 
     //Different Body Parts TODO: add more, if one like
-    //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(posTMT, world, "endeffL"), Q));
-    //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"endeffL",mlr::Vector(1.,0.,0.)), Q));
+    //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_pos, world, "endeffL"), Q));
+    //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"endeffL",mlr::Vector(1.,0.,0.)), Q));
 
-    //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(posTMT, world, "l_forearm_link_0"), Q));
-    //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"l_forearm_link_0",mlr::Vector(1.,0.,0.)), Q));
+    //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_pos, world, "l_forearm_link_0"), Q));
+    //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"l_forearm_link_0",mlr::Vector(1.,0.,0.)), Q));
 
 
 
@@ -497,11 +497,11 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
 
 
 
-    //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(posTMT, world, "endeffR"), Q));
-    //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"endeffR",mlr::Vector(1.,0.,0.)), Q));
+    //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_pos, world, "endeffR"), Q));
+    //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"endeffR",mlr::Vector(1.,0.,0.)), Q));
 
-    //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(posTMT, world, "r_forearm_link_0"), Q));
-    //Phi = catCol(Phi, generateTaskMapFeature(TaskMap_Default(vecTMT, world,"r_forearm_link_0",mlr::Vector(1.,0.,0.)), Q));
+    //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_pos, world, "r_forearm_link_0"), Q));
+    //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"r_forearm_link_0",mlr::Vector(1.,0.,0.)), Q));
 
     return Phi;
 
@@ -704,7 +704,7 @@ void GravityCompensation::testForLimits() {
   bool limitViolation = false;
   for(uint i = 0; i < Q.d0; i++) {
     world.setJointState(Q[i]);
-    TaskMap_qLimits limits;
+    TM_qLimits limits;
     arr y;
     limits.phi(y,NoArr,world);
     if(y(0) >= 1.0) {

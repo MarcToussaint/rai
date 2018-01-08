@@ -4,7 +4,7 @@
 #include <Core/thread.h>
 
 struct VideoEncoderModule: Thread{
-  ACCESS(byteA, img)
+  VAR(byteA, img)
 
   VideoEncoderModule();
 

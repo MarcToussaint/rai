@@ -105,7 +105,7 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
   //-- graspCenter -> predefined point (xtarget)
   Task *c;
   c = MP.addTask("graspCenter",
-                   new TaskMap_Default(posTMT, "graspCenter"));
+                   new TM_Default(TMT_pos, "graspCenter"));
   MP.setInterpolatingCosts(c, KOMO::early_restConst,
                           target, positionPrec, NoArr, -1., .8);
 
@@ -125,12 +125,12 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
     default: NIY;
   }
   c = MP.addTask("upAlign",
-                   new TaskMap_Default(vecAlignTMT, MP.world, "graspCenter", ivec, target_shape->name, jvec));
+                   new TM_Default(TMT_vecAlign, MP.world, "graspCenter", ivec, target_shape->name, jvec));
   MP.setInterpolatingCosts(c, KOMO::early_restConst,
                           target, alignmentPrec, NoArr, -1., .8);
   //test current state: flip if necessary
   c->map.phi(initial, NoArr, MP.world);
-  if (initial(0)<0.) ((TaskMap_Default*)&c->map)->ivec.set(0., -1., 0.); //flip vector to become positive
+  if (initial(0)<0.) ((TM_Default*)&c->map)->ivec.set(0., -1., 0.); //flip vector to become positive
 
 
   if (phase==0) return;
@@ -141,7 +141,7 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
                       {"tip1Shape", "tip2Shape", "tip3Shape"}, MP.world.shapes);
   shapes.append(shapeId); shapes.append(shapeId); shapes.append(shapeId);
   shapes.reshape(2,3); shapes = ~shapes;
-  c = MP.addTask("graspContacts", new TaskMap_Proxy(vectorPTMT, shapes, .05, true));
+  c = MP.addTask("graspContacts", new TM_Proxy(TMT_vectorP, shapes, .05, true));
   double grip=.8; //specifies the desired proxy value
   target = ARR(grip,grip,grip);
   MP.setInterpolatingCosts(c, KOMO::early_restConst,
@@ -153,7 +153,7 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
   
   //-- collisions with other objects
   shapes = {shapeId};
-  c = MP.addTask("otherCollisions", new TaskMap_Proxy(allExceptListedPTMT, shapes, .04, true));
+  c = MP.addTask("otherCollisions", new TM_Proxy(TMT_allExceptListedP, shapes, .04, true));
   target = ARR(0.);
   MP.setInterpolatingCosts(c, KOMO::final_restConst, target, colPrec, target, colPrec);
   c->map.phi(initial, NoArr, MP.world);
@@ -165,7 +165,7 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
   
   //-- opposing fingers
   c = MP.addTask("oppose12",
-                    new TaskMap_Default(vecAlignTMT, MP.world, "tipNormal1", NoVector, "tipNormal2", NoVector));
+                    new TM_Default(TMT_vecAlign, MP.world, "tipNormal1", NoVector, "tipNormal2", NoVector));
   target = ARR(-1.);
   MP.setInterpolatingCosts(c, KOMO::early_restConst,
                           target, oppositionPrec, ARR(0.,0.,0.), 0., 0.8);
@@ -173,7 +173,7 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
 
 
   c = MP.addTask("oppose13",
-                    new TaskMap_Default(vecAlignTMT, MP.world, "tipNormal1", NoVector, "tipNormal3", NoVector));
+                    new TM_Default(TMT_vecAlign, MP.world, "tipNormal1", NoVector, "tipNormal3", NoVector));
   target = ARR(-1.);
   MP.setInterpolatingCosts(c, KOMO::final_restConst, target, oppositionPrec);
 
@@ -185,13 +185,13 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
   limits <<"[-2. 2.; -2. 2.; -2. 0.2; -2. 2.; -2. 0.2; -3. 3.; -2. 2.; \
       -1.5 1.5; -1.5 1.5; -1.5 1.5; -1.5 1.5; -1.5 1.5; -1.5 1.5; -1.5 1.5; -1.5 1.5; -1.5 1.5 ]";
   c = MP.addTask("limits",
-                 new TaskMap_qLimits(limits));
+                 new TM_qLimits(limits));
   target=0.;
   MP.setInterpolatingCosts(c, KOMO::final_restConst, target, limPrec, target, limPrec);
 
   //-- homing
   c = MP.addTask("qitself",
-                 new TaskMap_qItself());
+                 new TM_qItself());
   MP.setInterpolatingCosts(c, KOMO::final_restConst, target, zeroQPrec, target, zeroQPrec);
 }
 
@@ -227,7 +227,7 @@ void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
   //-- graspCenter -> predefined point (xtarget)
   Task *c;
   c = MP.addTask("graspCenter",
-                    new TaskMap_Default(posTMT, MP.world, "graspCenter"));
+                    new TM_Default(TMT_pos, MP.world, "graspCenter"));
   MP.setInterpolatingCosts(c, KOMO::early_restConst,
                           target, positionPrec, NoArr, -1., .8);
 
@@ -251,12 +251,12 @@ void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
     default: NIY;
   }
   c = MP.addTask("upAlign",
-                    new TaskMap_Default(vecAlignTMT, MP.world, "graspCenter", ivec, target_shape->name, jvec));
+                    new TM_Default(TMT_vecAlign, MP.world, "graspCenter", ivec, target_shape->name, jvec));
   MP.setInterpolatingCosts(c, KOMO::early_restConst,
                           target, alignmentPrec, NoArr, -1., .8);
   //test current state: flip if necessary
   c->map.phi(initial, NoArr, MP.world);
-  if (initial(0)<0.) ((TaskMap_Default*)&c->map)->ivec.set(0,-1,0); //flip vector to become positive
+  if (initial(0)<0.) ((TM_Default*)&c->map)->ivec.set(0,-1,0); //flip vector to become positive
 
   if (phase==0) return;
 
@@ -265,7 +265,7 @@ void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
                {"l_gripper_l_finger_tip_link_0", "l_gripper_r_finger_tip_link_0"}, MP.world.shapes);
   shapes.append(shapeId); shapes.append(shapeId);
   shapes.reshape(2,2); shapes = ~shapes;
-  c = MP.addTask("graspContacts", new TaskMap_Proxy(vectorPTMT, shapes, .1, false));
+  c = MP.addTask("graspContacts", new TM_Proxy(TMT_vectorP, shapes, .1, false));
   for(mlr::Shape *s: MP.world.shapes) cout <<' ' <<s->name;
   double grip=.98; //specifies the desired proxy value
   target = ARR(grip,grip);
@@ -280,7 +280,7 @@ void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
   //-- collisions with other objects
   shapes = {shapeId};
   c = MP.addTask("otherCollisions",
-                 new TaskMap_Proxy(allExceptListedPTMT, shapes, .04, true));
+                 new TM_Proxy(TMT_allExceptListedP, shapes, .04, true));
   target = ARR(0.);
   c->setCostSpecs(0, MP.T, NoArr, colPrec);
 //  arr initial;
@@ -295,7 +295,7 @@ void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
 
   //-- homing
   c = MP.addTask("qitself",
-                    new TaskMap_qItself());
+                    new TM_qItself());
   MP.setInterpolatingCosts(c, KOMO::final_restConst, target, zeroQPrec, target, zeroQPrec);
 
   return;
@@ -307,7 +307,7 @@ void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
   limits <<"[-2. 2.; -2. 2.; -2. 0.2; -2. 2.; -2. 0.2; -3. 3.; -2. 2.; \
       -1.5 1.5; -1.5 1.5; -1.5 1.5; -1.5 1.5; -1.5 1.5; -1.5 1.5; -1.5 1.5; -1.5 1.5; -1.5 1.5 ]";
   c = MP.addTask("limits",
-                    new TaskMap_qLimits(limits));
+                    new TM_qLimits(limits));
   target=0.;
   MP.setInterpolatingCosts(c, KOMO::final_restConst, target, limPrec, target, limPrec);
 
@@ -402,7 +402,7 @@ void setPlaceGoals(KOMO& MP, uint T, uint shapeId, int belowToShapeId, const arr
   
   //collisions except obj-from and obj-to
   uintA shapes = {shapeId, shapeId, belowToShapeId};
-  V = new ProxyTaskVariable("otherCollisions", MP.world, allExceptListedPTMT, shapes, .04, true);
+  V = new ProxyTaskVariable("otherCollisions", MP.world, TMT_allExceptListedP, shapes, .04, true);
   V->y_target = ARR(0.);  V->v_target = ARR(.0);
   V->y_prec = colPrec;
   V->setConstTargetsConstPrecisions(T);

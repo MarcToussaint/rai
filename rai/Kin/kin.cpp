@@ -2409,6 +2409,23 @@ void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
 #endif
 
 
+//===========================================================================
+
+void kinVelocity(arr &y, arr &J, uint frameId, const WorldL &Ktuple, double tau){
+  CHECK_GE(Ktuple.N, 1, "");
+  mlr::KinematicWorld &K0 = *Ktuple(-2);
+  mlr::KinematicWorld &K1 = *Ktuple(-1);
+  mlr::Frame *f0 = K0.frames(frameId);
+  mlr::Frame *f1 = K1.frames(frameId);
+
+  arr y0,J0;
+  K0.kinematicsPos(y0, J0, f0);
+  K1.kinematicsPos(y, J, f1);
+  y -= y0;
+  J -= J0;
+  y /= tau;
+  J /= tau;
+}
 
 //===========================================================================
 //
@@ -3142,3 +3159,4 @@ template mlr::Array<mlr::Shape*>::Array(uint);
 template mlr::Array<mlr::Joint*>::Array();
 #endif
 /** @} */
+

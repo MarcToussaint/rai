@@ -2,11 +2,21 @@
 
 #include "roscom.h"
 #include <Kin/frame.h>
+#include "spinner.h"
 
 #ifdef MLR_PCL
 #  include <pcl/point_cloud.h>
 #  include <pcl_conversions/pcl_conversions.h>
 #endif
+
+RosCom::RosCom(const char* node_name){
+  rosCheckInit(node_name);
+  spinner = new RosCom_Spinner(node_name);
+}
+
+RosCom::~RosCom(){
+  delete spinner;
+}
 
 bool rosOk(){
   return ros::ok();

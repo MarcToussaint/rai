@@ -14,8 +14,8 @@
 
 
 #include "TM_FlagConstraints.h"
-#include "taskMap_qItself.h"
-#include "taskMap_default.h"
+#include "TM_qItself.h"
+#include "TM_default.h"
 #include "frame.h"
 #include "flag.h"
 
@@ -60,11 +60,11 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
   uint d=0;
   for(mlr::Frame *a : K.frames) if(a->flags){
     if(a->flags & (1<<FL_zeroVel)){
-      TaskMap_Default pos(posTMT, a->ID);
+      TM_Default pos(TMT_pos, a->ID);
       pos.order=1;
       pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple, tau, t);
 
-      TaskMap_Default quat(quatTMT, a->ID); //mt: NOT quatDiffTMT!! (this would compute the diff to world, which zeros the w=1...)
+      TM_Default quat(TMT_quat, a->ID); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
       // flip the quaternion sign if necessary
       quat.flipTargetSignOnNegScalarProduct = true;
       quat.order=1;
@@ -75,11 +75,11 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
 
     if(a->flags & (1<<FL_zeroAcc) && !(a->flags & (1<<FL_impulseExchange))){
       CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
-      TaskMap_Default pos(posTMT, a->ID);
+      TM_Default pos(TMT_pos, a->ID);
       pos.order=2;
       pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple, tau, t);
 
-      TaskMap_Default quat(quatTMT, a->ID); //mt: NOT quatDiffTMT!! (this would compute the diff to world, which zeros the w=1...)
+      TM_Default quat(TMT_quat, a->ID); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
       // flip the quaternion sign if necessary
       quat.flipTargetSignOnNegScalarProduct = true;
       quat.order=2;
@@ -90,16 +90,24 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
 
     if(a->flags & (1<<FL_gravityAcc) && !(a->flags & (1<<FL_impulseExchange))){
       CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
-      TaskMap_Default pos(posTMT, a->ID);
+      TM_Default pos(TMT_pos, a->ID);
       pos.order=2;
       pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple, tau, t);
       y(d+2) += g;
 
-      TaskMap_Default quat(quatTMT, a->ID); //mt: NOT quatDiffTMT!! (this would compute the diff to world, which zeros the w=1...)
+      TM_Default quat(TMT_quat, a->ID); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
       // flip the quaternion sign if necessary
       quat.flipTargetSignOnNegScalarProduct = true;
-      quat.order=2;
+      quat.order=1;
       quat.TaskMap::phi(y({d+3,d+6})(), (&J?J({d+3,d+6})():NoArr), Ktuple, tau, t);
+      if(false){ //rotational friction
+        double eps = 1e-2;
+        arr w,Jw;
+        quat.order=1;
+        quat.TaskMap::phi(w, (&J?Jw:NoArr), Ktuple, tau, t);
+        y({d+3,d+6}) += eps*w;
+        if(&J) J({d+3,d+6}) += eps*Jw;
+      }
 
       d += 7;
     }
@@ -107,7 +115,7 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
     if(a->flags & (1<<FL_zeroQVel)) if(JointDidNotSwitch(a, Ktuple)){
       uint jdim = a->joint->dim;
 
-      TaskMap_qItself q({a->ID}, false);
+      TM_qItself q({a->ID}, false);
       q.order=1;
       q.TaskMap::phi(y({d,d+jdim-1})(), (&J?J({d,d+jdim-1})():NoArr), Ktuple, tau, t);
 
@@ -147,7 +155,7 @@ void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
 
     if(a->flags & (1<<FL_xPosAccCosts)){
       CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
-      TaskMap_Default pos(posTMT, a->ID);
+      TM_Default pos(TMT_pos, a->ID);
       pos.order=2;
       pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple, tau, t);
 
@@ -156,7 +164,7 @@ void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
 
     if(a->flags & (1<<FL_xPosVelCosts)){
       CHECK_GE(order, 1, "FT_velCost needs k-order 2");
-      TaskMap_Default pos(posTMT, a->ID);
+      TM_Default pos(TMT_pos, a->ID);
       pos.order=1;
       pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple, tau, t);
 
@@ -166,7 +174,7 @@ void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
     if(a->flags & (1<<FL_qCtrlCostAcc)) if(JointDidNotSwitch(a, Ktuple)){
       uint jdim = a->joint->dim;
 
-      TaskMap_qItself q({a->ID}, false);
+      TM_qItself q({a->ID}, false);
       q.order=2;
       q.TaskMap::phi(y({d,d+jdim-1})(), (&J?J({d,d+jdim-1})():NoArr), Ktuple, tau, t);
 

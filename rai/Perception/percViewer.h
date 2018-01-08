@@ -4,8 +4,8 @@
 #include "percept.h"
 
 struct PercViewer : Thread {
-  Access<PerceptL> percepts;
-  Access<mlr::KinematicWorld> modelWorld;
+  Var<PerceptL> percepts;
+  Var<mlr::KinematicWorld> modelWorld;
   PerceptL copy;
   MeshA modelCopy;
   struct OpenGL *gl;

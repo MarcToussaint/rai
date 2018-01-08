@@ -278,7 +278,8 @@ inline void displayTrajectory(const arr& x, int steps, mlr::KinematicWorld& G, c
 void editConfiguration(const char* orsfile, mlr::KinematicWorld& G);
 int animateConfiguration(mlr::KinematicWorld& G, struct Inotify *ino=NULL);
 
-
+void kinVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);
+void kinAngVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);
 
 
 #endif //MLR_ors_h

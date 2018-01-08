@@ -13,18 +13,18 @@ struct TaskControlThread : Thread {
   struct sTaskControlThread *s;
 
   //protected access points
-  ACCESS(arr, ctrl_q_real)
-  ACCESS(arr, ctrl_q_ref)
+  VAR(arr, ctrl_q_real)
+  VAR(arr, ctrl_q_ref)
 
-  ACCESS(CtrlMsg, ctrl_ref) //< the message send to the RTController
-  ACCESS(CtrlMsg, ctrl_obs) //< the message received from the RTController
-  ACCESS(mlr::Array<CtrlTask*>, ctrlTasks)
-  ACCESS(mlr::String, effects)
-  ACCESS(mlr::KinematicWorld, modelWorld)
-  ACCESS(bool, fixBase)
-  ACCESS(arr, pr2_odom)
+  VAR(CtrlMsg, ctrl_ref) //< the message send to the RTController
+  VAR(CtrlMsg, ctrl_obs) //< the message received from the RTController
+  VAR(mlr::Array<CtrlTask*>, ctrlTasks)
+  VAR(mlr::String, effects)
+  VAR(mlr::KinematicWorld, modelWorld)
+  VAR(bool, fixBase)
+  VAR(arr, pr2_odom)
 
-  ACCESS(arr, qSign)
+  VAR(arr, qSign)
 
 //private:
   mlr::KinematicWorld realWorld;

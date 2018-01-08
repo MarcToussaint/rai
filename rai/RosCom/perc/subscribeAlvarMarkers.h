@@ -23,7 +23,7 @@ namespace ar = ar_track_alvar_msgs;
 
 // /// Simple syncing of the ors world "modelWorld" with ar_pose_marker
 // BEGIN_ROSMODULE("/ar_pose_marker", AlvarMarkers, markers)
-//   ACCESS(KinematicWorld, modelWorld)
+//   VAR(KinematicWorld, modelWorld)
 // END_ROSMODULE()
 
 
@@ -43,8 +43,8 @@ void setBody(mlr::Frame& body, const ar::AlvarMarker& marker);
 void syncMarkers(mlr::KinematicWorld& world, const ar::AlvarMarkers& markers);
 
 struct AlvarSyncer : Thread {
-  Access<mlr::KinematicWorld> modelWorld;
-  Access<ar::AlvarMarkers> ar_pose_markers;
+  Var<mlr::KinematicWorld> modelWorld;
+  Var<ar::AlvarMarkers> ar_pose_markers;
   AlvarSyncer()
    : Thread("AlvarSyncer"),
     modelWorld(this, "modelWorld", true),
@@ -57,7 +57,7 @@ struct AlvarSyncer : Thread {
 };
 
 struct SubscribeAlvar{
-  Access<ar::AlvarMarkers> ar_pose_markers;
+  Var<ar::AlvarMarkers> ar_pose_markers;
   Subscriber<ar::AlvarMarkers> sub;
 
   SubscribeAlvar()
