@@ -72,61 +72,6 @@ KOMO::~KOMO(){
   if(opt) delete opt;
 }
 
-KOMO::KOMO(const Graph& specs) : KOMO(){
-  init(specs);
-//  reset();
-//  CHECK(x.N,"");
-}
-
-void KOMO::init(const Graph& specs){
-//  specs = _specs;
-
-  Graph &glob = specs.get<Graph>("KOMO");
-  stepsPerPhase=glob.get<double>("T");
-  double duration=glob.get<double>("duration");
-  maxPhase=glob.get<double>("phases", 1.);
-  k_order=glob.get<double>("k_order", 2);
-
-  if(glob["model"]){
-    FileToken model = glob.get<FileToken>("model");
-    world.read(model);
-  }else{
-    world.init(specs);
-  }
-
-  if(glob["meldFixedJoints"]){
-    world.optimizeTree();
-  }
-
-  if(glob["makeConvexHulls"])
-    makeConvexHulls(world.frames);
-
-  if(glob["computeOptimalSSBoxes"]){
-    NIY;
-    //for(Shape *s: world.shapes) s->mesh.computeOptimalSSBox(s->mesh.V);
-    world.gl().watch();
-  }
-
-  if(glob["activateAllContacts"])
-    for(Frame *a : world.frames) if(a->shape) a->shape->cont=true;
-
-  world.swift().initActivations(world);
-  FILE("z.komo.model") <<world;
-
-//  if(MP) delete MP;
-//  MP = new KOMO(world);
-  if(stepsPerPhase>=0) setTiming(maxPhase, stepsPerPhase, duration);
-//  MP->k_order=k_order;
-
-  for(Node *n:specs) parseTask(n, stepsPerPhase);
-}
-
-void KOMO::setFact(const char* fact){
-  Graph specs;
-  specs.readNode(STRING(fact));
-  parseTask(specs.last());
-}
-
 void KOMO::setModel(const KinematicWorld& K,
                     bool _useSwift,
                     bool meldFixedJoints, bool makeConvexHulls, bool computeOptimalSSBoxes, bool activateAllContacts){
@@ -222,24 +167,6 @@ Task* KOMO::addTask(const char* name, TaskMap *m, const ObjectiveType& termType)
   t->name=name;
   tasks.append(t);
   return t;
-}
-
-bool KOMO::parseTask(const Node *n, int stepsPerPhase){
-  if(stepsPerPhase==-1) stepsPerPhase=T;
-  //-- task?
-  Task *task = Task::newTask(n, world, stepsPerPhase, T);
-  if(task){
-    tasks.append(task);
-    return true;
-  }
-  //-- switch?
-  KinematicSwitch *sw = KinematicSwitch::newSwitch(n, world, stepsPerPhase, T);
-  if(sw){
-    switches.append(sw);
-    return true;
-  }
-//  LOG(-1) <<"task spec '" <<*n <<"' could not be parsed";
-  return false;
 }
 
 Task *KOMO::setTask(double startTime, double endTime, TaskMap *map, ObjectiveType type, const arr& target, double prec, uint order, int deltaStep){
@@ -1095,7 +1022,7 @@ void KOMO::reportProblem(std::ostream& os){
   for(Task* t:tasks) os <<"    " <<*t <<endl;
   for(KinematicSwitch* sw:switches){
     os <<"    ";
-    if(sw->timeOfApplication+k_order > configurations.N){
+    if(sw->timeOfApplication+k_order >= configurations.N){
       LOG(-1) <<"switch time " <<sw->timeOfApplication <<" is beyond time horizon " <<T;
       sw->write(os, NULL);
     }else{
@@ -1105,8 +1032,12 @@ void KOMO::reportProblem(std::ostream& os){
   }
   for(Flag* fl:flags){
     os <<"    ";
-    CHECK_LE(fl->stepOfApplication+k_order, configurations.N, "flag time is beyond time horizon");
-    fl->write(os, configurations(fl->stepOfApplication+k_order));
+    if(fl->stepOfApplication+k_order >= configurations.N){
+      LOG(-1) <<"flag time " <<fl->stepOfApplication <<" is beyond time horizon " <<T;
+      fl->write(os, NULL);
+    }else{
+      fl->write(os, configurations(fl->stepOfApplication+k_order));
+    }
     os <<endl;
   }
 }

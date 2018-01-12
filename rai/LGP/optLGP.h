@@ -1,15 +1,13 @@
 #include "manipulationTree.h"
 
-typedef ManipulationTree_Node MNode;
-typedef ManipulationTree_NodeL MNodeL;
 struct OrsPathViewer;
 
+void initFolStateFromKin(FOL_World& L, const mlr::KinematicWorld& K);
 
 struct OptLGP{
   int verbose;
   uint numSteps;
   ofstream fil;
-
 
   MNode *root, *displayFocus;
 
@@ -34,7 +32,6 @@ struct OptLGP{
   FOL_World& fol(){ return root->fol; }
   const mlr::KinematicWorld& kin(){ return root->startKinematics; }
 
-
   //-- for methods called in the run loop
 private:
   MNode* getBest(MNodeL& fringe, uint level);
@@ -44,11 +41,13 @@ private:
   void optBestOnLevel(int level, MNodeL& fringe, MNodeL* addIfTerminal, MNodeL* addChildren);
   void optFirstOnLevel(int level, MNodeL& fringe, MNodeL* addIfTerminal);
   void clearFromInfeasibles(MNodeL& fringe);
+
 public:
   void run(uint steps=10000);
   void init();
   void step();
   void buildTree(uint depth);
+  void getSymbolicSolutions(uint depth);
 
   // output
   uint numFoundSolutions();

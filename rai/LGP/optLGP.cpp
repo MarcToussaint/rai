@@ -3,6 +3,22 @@
 #include <Kin/kinViewer.h>
 #include <KOMO/komo.h>
 
+void initFolStateFromKin(FOL_World& L, const mlr::KinematicWorld& K){
+  for(mlr::Frame *a:K.frames) if(a->ats["logical"]){
+    const Graph& G = a->ats["logical"]->graph();
+    for(Node *n:G) L.addFact({n->keys.last(), a->name});
+  }
+  for(mlr::Frame *a:K.frames) if(a->shape && a->ats["logical"]){
+    mlr::Frame *p = a->getUpwardLink();
+    if(!p) continue;
+    FrameL F;
+    p->getRigidSubFrames(F);
+    for(mlr::Frame *b:F) if(b!=a && b->shape && b->ats["logical"]){
+      L.addFact({"partOf", a->name, b->name});
+    }
+  }
+}
+
 OptLGP::OptLGP(mlr::KinematicWorld &kin, FOL_World &fol)
   : verbose(3), numSteps(0), fil("z.optLGP.dat"){
   verbose = mlr::getParameter<int>("LGP/vebose", 3);
@@ -219,7 +235,7 @@ MNode *OptLGP::expandBest(int stopOnDepth){ //expand
     if(ch->isTerminal){
       terminals.append(ch);
       MNodeL path = ch->getTreePath();
-      for(MNode *n:path) if(!n->count(1)) fringe_pose2.append(n); //pose2 is a FIFO
+      for(MNode *n:path) if(!n->count(1)) fringe_pose2.setAppend(n); //pose2 is a FIFO
     }else{
       fringe_expand.append(ch);
     }
@@ -328,19 +344,36 @@ void OptLGP::step(){
 void OptLGP::buildTree(uint depth){
   init();
 
+  if(verbose>0){
+    cout <<"BULDING TREE to depth " <<depth <<endl;
+  }
+
   mlr::timerRead(true);
   for(uint k=0;;k++){
     MNode *b = expandBest(depth);
     if(!b) return;
+  }
 
-    if(verbose>0){
-      mlr::String out=report();
-      fil <<out <<endl;
-      if(verbose>1) cout <<out <<endl;
-      //            if(verbose>2) updateDisplay();
+  if(verbose>0){
+    mlr::String out=report();
+    fil <<out <<endl;
+    if(verbose>1) cout <<out <<endl;
+    if(verbose>2) updateDisplay();
+  }
+}
+
+void OptLGP::getSymbolicSolutions(uint depth){
+  buildTree(depth);
+  uint i=0;
+  for(MNode *a:terminals){
+    cout <<"solution " <<i <<": ";
+    MNodeL path = a->getTreePath();
+    for(MNode *b : path){
+      if(b->decision) cout <<*b->decision <<' ';
+      else cout <<"ROOT ";
     }
-    //        if(!(k%1000)) cout <<" #= " <<k <<" d= " <<b->step <<' ' <<mlr::timerRead(true) <<endl;
-    //        mlr::wait();
+    cout <<endl;
+    i++;
   }
 }
 

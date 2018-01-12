@@ -613,36 +613,15 @@ void mlr::Joint::write(std::ostream& os) const {
 //
 
 mlr::Shape::Shape(Frame &f, const Shape *copyShape)
-  : frame(f), store(_GeomStore())/*, type(ST_none)*/ {
-  //  size = {1.,1.,1.,.1};
-  //  mesh.C = consts<double>(.8, 3); //color[0]=color[1]=color[2]=.8; color[3]=1.;
+  : frame(f) {
 
-  CHECK(!frame.shape, "this frame already has a geom attached");
+  CHECK(!frame.shape, "this frame already has a shape attached");
   frame.shape = this;
   if(copyShape){
     const Shape& s = *copyShape;
-    CHECK(&store==&s.store,"copying shapes that refer to different geom stores is not possible");
     mesh_radius=s.mesh_radius;
     cont=s.cont;
-    geomID = s.geomID;
-
-#if 0
-    type=s.type;
-    size=s.size;
-    if(!referenceMeshOnCopy){
-      mesh=s.mesh;
-      sscCore=s.sscCore;
-    }else{
-      mesh.V.referTo(s.mesh.V);
-      mesh.T.referTo(s.mesh.T);
-      mesh.C.referTo(s.mesh.C);
-      mesh.Vn.referTo(s.mesh.Vn);
-      sscCore.V.referTo(s.sscCore.V);
-      sscCore.T.referTo(s.sscCore.T);
-      sscCore.C.referTo(s.sscCore.C);
-      sscCore.Vn.referTo(s.sscCore.Vn);
-    }
-#endif
+    geom = s.geom;
   }
 }
 
@@ -650,9 +629,15 @@ mlr::Shape::~Shape() {
   frame.shape = NULL;
 }
 
+mlr::Geom &mlr::Shape::getGeom(){
+  if(!geom) geom = new Geom(_GeomStore());
+  return *geom;
+}
+
+
 void mlr::Shape::read(const Graph& ats) {
 
-  geom().read(ats);
+  getGeom().read(ats);
 
   if(ats["contact"])           { cont=true; }
 
@@ -672,8 +657,12 @@ void mlr::Shape::read(const Graph& ats) {
 }
 
 void mlr::Shape::write(std::ostream& os) const {
-  os <<" shape=" <<geom().type;
-  os <<" size=[" <<geom().size <<"]";
+  if(geom){
+    os <<" shape=" <<geom->type;
+    os <<" size=[" <<geom->size <<"]";
+  }else{
+    os <<" shape=NONE";
+  }
 
   Node *n;
   if((n=frame.ats["color"])) os <<*n <<' ';
@@ -706,7 +695,7 @@ void mlr::Shape::glDraw(OpenGL& gl) {
     glDrawSphere(.1*scale);
   }
   if(frame.K.orsDrawShapes) {
-    geom().glDraw(gl);
+    geom->glDraw(gl);
   }
   if(frame.K.orsDrawZlines) {
     glColor(0, .7, 0);

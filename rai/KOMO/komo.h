@@ -180,12 +180,12 @@ struct KOMO{
 
   //-- (not much in use..) specs gives as logic expressions in a Graph (or config file)
   KOMO(const mlr::KinematicWorld& K) : KOMO() { setModel(K); } //for compatibility only
-  KOMO(const Graph& specs);
-  void init(const Graph& specs);
-  void setFact(const char* fact);
-  Task* addTask(const char* name, TaskMap *map, const ObjectiveType& termType); ///< manually add a task
+//  KOMO(const Graph& specs);
+//  void init(const Graph& specs);
+//  void setFact(const char* fact);
+//  bool parseTask(const Node *n, int stepsPerPhase=-1);           ///< read a single task from a node-spec
   void clearTasks();
-  bool parseTask(const Node *n, int stepsPerPhase=-1);           ///< read a single task from a node-spec
+  Task* addTask(const char* name, TaskMap *map, const ObjectiveType& termType); ///< manually add a task
   void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
   arr getInitialization();      ///< this reads out the initial state trajectory after 'setupConfigurations'
   void set_x(const arr& x);            ///< set the state trajectory of all configurations

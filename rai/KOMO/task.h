@@ -24,7 +24,5 @@ struct Task {
       <<"  prec=";
     writeConsecutiveConstant(os,prec);
   }
-
-  static Task* newTask(const Node* specs, const mlr::KinematicWorld& world, int stepsPerPhase, uint T); ///< create a new Task from specs
 };
 stdOutPipe(Task)

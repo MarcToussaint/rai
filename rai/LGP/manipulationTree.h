@@ -19,10 +19,10 @@
 #include <Logic/fol_mcts_world.h>
 #include <Logic/fol.h>
 
-struct ManipulationTree_Node;
+struct MNode;
 struct PlainMC;
 struct MCStatistics;
-typedef mlr::Array<ManipulationTree_Node*> ManipulationTree_NodeL;
+typedef mlr::Array<MNode*> MNodeL;
 
 extern uint COUNT_kin, COUNT_evals;
 extern uintA COUNT_opt;
@@ -31,9 +31,9 @@ enum LEVEL{ l_symbolic=0, l_pose=1, l_seq=2, l_path=3 };
 
 //===========================================================================
 
-struct ManipulationTree_Node{
-  ManipulationTree_Node *parent;
-  mlr::Array<ManipulationTree_Node*> children;
+struct MNode{
+  MNode *parent;
+  mlr::Array<MNode*> children;
   uint step;            ///< decision depth/step of this node
   double time;          ///< real time
 
@@ -75,12 +75,12 @@ struct ManipulationTree_Node{
   mlr::String note;
 
   /// root node init
-  ManipulationTree_Node(mlr::KinematicWorld& kin, FOL_World& fol, uint levels);
+  MNode(mlr::KinematicWorld& kin, FOL_World& fol, uint levels);
 
   /// child node creation
-  ManipulationTree_Node(ManipulationTree_Node *parent, FOL_World::Handle& a);
+  MNode(MNode *parent, FOL_World::Handle& a);
 
-  ~ManipulationTree_Node();
+  ~MNode();
 
   //- computations on the node
   void expand(int verbose=0);           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
@@ -90,17 +90,17 @@ struct ManipulationTree_Node{
   void addMCRollouts(uint num,int stepAbort);
 
   //-- helpers
-  ManipulationTree_NodeL getTreePath() const; ///< return the decision path in terms of a list of nodes (just walking to the root)
-  ManipulationTree_Node* getRoot(); ///< return the decision path in terms of a list of nodes (just walking to the root)
-  ManipulationTree_Node* getChildByAction(Node  *folDecision); ///<
-  void getAll(ManipulationTree_NodeL& L);
-  ManipulationTree_NodeL getAll(){ ManipulationTree_NodeL L; getAll(L); return L; }
+  MNodeL getTreePath() const; ///< return the decision path in terms of a list of nodes (just walking to the root)
+  MNode* getRoot(); ///< return the decision path in terms of a list of nodes (just walking to the root)
+  MNode* getChildByAction(Node  *folDecision); ///<
+  void getAll(MNodeL& L);
+  MNodeL getAll(){ MNodeL L; getAll(L); return L; }
   void checkConsistency();
 private:
   void setInfeasible(); ///< set this and all children infeasible
   void labelInfeasible(); ///< sets this infeasible AND propagates this label up-down to others
-  ManipulationTree_Node *treePolicy_random(); ///< returns leave -- by descending children randomly
-  ManipulationTree_Node *treePolicy_softMax(double temperature);
+  MNode *treePolicy_random(); ///< returns leave -- by descending children randomly
+  MNode *treePolicy_softMax(double temperature);
   bool recomputeAllFolStates();
   void recomputeAllMCStats(bool excludeLeafs=true);
 public:
@@ -110,6 +110,6 @@ public:
   Graph getGraph(){ Graph G; getGraph(G, NULL); G.checkConsistency(); return G; }
 };
 
-inline ostream& operator<<(ostream& os, const ManipulationTree_Node& n){ n.write(os); return os; }
+inline ostream& operator<<(ostream& os, const MNode& n){ n.write(os); return os; }
 
 //===========================================================================

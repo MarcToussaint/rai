@@ -651,14 +651,12 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
       case '\'': { //mlr::FileToken
         str.read(is, "", "\'", true);
         try{
-//          f->getIs();
           node = newNode<mlr::FileToken>(keys, parents, mlr::FileToken(str, false));
           node->get<mlr::FileToken>().getIs();  //creates the ifstream and might throw an error
         } catch(...){
           delete node; node=NULL;
           PARSERR("file " <<str <<" does not exist -> converting to string!", pinfo);
           node = newNode<mlr::String>(keys, parents, str);
-//          delete f; f=NULL;
         }
       } break;
       case '\"': { //mlr::String
@@ -699,23 +697,6 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
         mlr::parse(is, "}");
         node = subgraph;
       } break;
-//      case '(': { // referring Graph
-//        Graph *refs = new Graph;
-//        refs->isReferringToNodesOf = this;
-//        for(uint j=0;; j++) {
-//          str.read(is, " , ", " , )", false);
-//          if(!str.N) break;
-//          Node *e = this->getNode(str);
-//          if(e) { //sucessfully found
-//            refs->NodeL::append(e);
-//          } else { //this element is not known!!
-//            HALT("line:" <<mlr::lineCount <<" reading node '" <<keys <<"': unknown "
-//                 <<j <<"th linked element '" <<str <<"'"); //DON'T DO THIS YET
-//          }
-//        }
-//        mlr::parse(is, ")");
-//        node = newNode<Graph*>(keys, parents, refs, true);
-//      } break;
       default: { //error
         is.putback(c);
         PARSERR("unknown value indicator '" <<c <<"'", pinfo);

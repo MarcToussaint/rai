@@ -39,8 +39,8 @@ uint TM_FlagConstraints::dim_phi(const WorldL& Ktuple, int t){
   uint d=0;
   for(mlr::Frame *a : Ktuple.last()->frames){
     if(a->flags & (1<<FL_zeroVel)) d += 7;
-    if(a->flags & (1<<FL_zeroAcc) && !(a->flags & (1<<FL_impulseExchange))) d += 7;
-    if(a->flags & (1<<FL_gravityAcc) && !(a->flags & (1<<FL_impulseExchange))) d += 7;
+    if(order>=2 && a->flags & (1<<FL_zeroAcc) && !(a->flags & (1<<FL_impulseExchange))) d += 7;
+    if(order>=2 && a->flags & (1<<FL_gravityAcc) && !(a->flags & (1<<FL_impulseExchange))) d += 7;
     if(a->flags & (1<<FL_zeroQVel)) if(JointDidNotSwitch(a, Ktuple)) d += a->joint->dim;
   }
   return d;
@@ -73,7 +73,7 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
       d += 7;
     }
 
-    if(a->flags & (1<<FL_zeroAcc) && !(a->flags & (1<<FL_impulseExchange))){
+    if(order>=2 && a->flags & (1<<FL_zeroAcc) && !(a->flags & (1<<FL_impulseExchange))){
       CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
       TM_Default pos(TMT_pos, a->ID);
       pos.order=2;
@@ -88,7 +88,7 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
       d += 7;
     }
 
-    if(a->flags & (1<<FL_gravityAcc) && !(a->flags & (1<<FL_impulseExchange))){
+    if(order>=2 && a->flags & (1<<FL_gravityAcc) && !(a->flags & (1<<FL_impulseExchange))){
       CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
       TM_Default pos(TMT_pos, a->ID);
       pos.order=2;
@@ -132,9 +132,9 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
 uint TM_FlagCosts::dim_phi(const WorldL& Ktuple, int t){
   uint d=0;
   for(mlr::Frame *a : Ktuple.last()->frames){
-    if(a->flags & (1<<FL_xPosAccCosts)) d+=3;
+    if(order>=2 && a->flags & (1<<FL_xPosAccCosts)) d+=3;
     if(a->flags & (1<<FL_xPosVelCosts)) d+=3;
-    if(a->flags & (1<<FL_qCtrlCostAcc)) if(JointDidNotSwitch(a, Ktuple)) d += a->joint->dim;
+    if(order>=2 && a->flags & (1<<FL_qCtrlCostAcc)) if(JointDidNotSwitch(a, Ktuple)) d += a->joint->dim;
   }
   return d;
 }
@@ -153,7 +153,7 @@ void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
   uint d=0;
   for(mlr::Frame *a : K.frames) if(a->flags){
 
-    if(a->flags & (1<<FL_xPosAccCosts)){
+    if(order>=2 && a->flags & (1<<FL_xPosAccCosts)){
       CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
       TM_Default pos(TMT_pos, a->ID);
       pos.order=2;
@@ -171,7 +171,7 @@ void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
       d += 3;
     }
 
-    if(a->flags & (1<<FL_qCtrlCostAcc)) if(JointDidNotSwitch(a, Ktuple)){
+    if(order>=2 && a->flags & (1<<FL_qCtrlCostAcc)) if(JointDidNotSwitch(a, Ktuple)){
       uint jdim = a->joint->dim;
 
       TM_qItself q({a->ID}, false);

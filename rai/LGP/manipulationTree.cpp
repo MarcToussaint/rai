@@ -25,7 +25,7 @@ uint COUNT_kin=0;
 uint COUNT_evals=0;
 uintA COUNT_opt=consts<uint>(0, 4);
 
-ManipulationTree_Node::ManipulationTree_Node(mlr::KinematicWorld& kin, FOL_World& _fol, uint levels)
+MNode::MNode(mlr::KinematicWorld& kin, FOL_World& _fol, uint levels)
   : parent(NULL), step(0),
     fol(_fol), folState(NULL), folDecision(NULL), folAddToState(NULL),
     startKinematics(kin), effKinematics(),
@@ -44,7 +44,7 @@ ManipulationTree_Node::ManipulationTree_Node(mlr::KinematicWorld& kin, FOL_World
   bound=0.;
 }
 
-ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS_Environment::Handle& a)
+MNode::MNode(MNode* parent, MCTS_Environment::Handle& a)
   : parent(parent), fol(parent->fol),
     folState(NULL), folDecision(NULL), folAddToState(NULL),
     startKinematics(parent->startKinematics), effKinematics(),
@@ -75,12 +75,12 @@ ManipulationTree_Node::ManipulationTree_Node(ManipulationTree_Node* parent, MCTS
   //  h(l_symbolic) = 0.; //heuristic
 }
 
-ManipulationTree_Node::~ManipulationTree_Node(){
-  for(ManipulationTree_Node *ch:children) delete ch;
+MNode::~MNode(){
+  for(MNode *ch:children) delete ch;
   for(KOMO* k:komoProblem) if(k) delete k;
 }
 
-void ManipulationTree_Node::expand(int verbose){
+void MNode::expand(int verbose){
   if(isExpanded) return; //{ LOG(-1) <<"MNode '" <<*this <<"' is already expanded"; return; }
   CHECK(!children.N,"");
   if(isTerminal) return;
@@ -91,13 +91,13 @@ void ManipulationTree_Node::expand(int verbose){
   fol.verbose=tmp;
   for(FOL_World::Handle& a:actions){
     //    cout <<"  EXPAND DECISION: " <<*a <<endl;
-    new ManipulationTree_Node(this, a);
+    new MNode(this, a);
   }
   if(!children.N) isTerminal=true;
   isExpanded=true;
 }
 
-arr ManipulationTree_Node::generateRootMCRollouts(uint num, int stepAbort, const mlr::Array<MCTS_Environment::Handle>& prefixDecisions){
+arr MNode::generateRootMCRollouts(uint num, int stepAbort, const mlr::Array<MCTS_Environment::Handle>& prefixDecisions){
   CHECK(!parent, "generating rollouts needs to be done by the root only");
 
   fol.reset_state();
@@ -119,9 +119,9 @@ arr ManipulationTree_Node::generateRootMCRollouts(uint num, int stepAbort, const
   return R;
 }
 
-void ManipulationTree_Node::addMCRollouts(uint num, int stepAbort){
+void MNode::addMCRollouts(uint num, int stepAbort){
   //-- collect decision path
-  ManipulationTree_NodeL treepath = getTreePath();
+  MNodeL treepath = getTreePath();
   mlr::Array<MCTS_Environment::Handle> prefixDecisions(treepath.N-1);
   for(uint i=1;i<treepath.N;i++)
     prefixDecisions(i-1) = treepath(i)->decision;
@@ -140,7 +140,7 @@ void ManipulationTree_Node::addMCRollouts(uint num, int stepAbort){
   }
 #endif
 
-  for(ManipulationTree_Node* n:treepath){
+  for(MNode* n:treepath){
     if(!n->mcStats) n->mcStats = new MCStatistics;
     for(auto& r:R){
       n->mcStats->add(r);
@@ -154,7 +154,7 @@ void ManipulationTree_Node::addMCRollouts(uint num, int stepAbort){
   //  cout <<"******** BEST ACTION " <<*a <<endl;
 }
 
-void ManipulationTree_Node::optLevel(uint level, bool collisions){
+void MNode::optLevel(uint level, bool collisions){
   komoProblem(level) = new KOMO();
   KOMO& komo(*komoProblem(level));
 
@@ -194,7 +194,7 @@ void ManipulationTree_Node::optLevel(uint level, bool collisions){
     komo.setFixSwitchedObjects(-1., -1., 1e2);
     komo.setSquaredQuaternionNorms();
 
-    for(ManipulationTree_Node *node:getTreePath()){
+    for(MNode *node:getTreePath()){
       komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
     }
   } break;
@@ -210,7 +210,7 @@ void ManipulationTree_Node::optLevel(uint level, bool collisions){
     komo.setSquaredQuaternionNorms();
     if(collisions) komo.setCollisions(false);
 
-    for(ManipulationTree_Node *node:getTreePath()){
+    for(MNode *node:getTreePath()){
       komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
     }
   } break;
@@ -220,7 +220,7 @@ void ManipulationTree_Node::optLevel(uint level, bool collisions){
   DEBUG( FILE("z.fol") <<fol; );
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); );
   komo.reset();
-  komo.reportProblem();
+//  komo.reportProblem();
 
   try{
     //      komo.verbose=3;
@@ -284,7 +284,7 @@ void ManipulationTree_Node::optLevel(uint level, bool collisions){
 #endif
 }
 
-//void ManipulationTree_Node::createEffKinematics(){
+//void MNode::createEffKinematics(){
 //  KOMO komo;
 
 //  CHECK(!effKinematics.q.N, "has been created before");
@@ -315,7 +315,7 @@ void ManipulationTree_Node::optLevel(uint level, bool collisions){
 //}
 
 #ifdef OLD
-void ManipulationTree_Node::solvePoseProblem(){
+void MNode::solvePoseProblem(){
   uint level=1;
 
   //reset the effective kinematics:
@@ -327,7 +327,7 @@ void ManipulationTree_Node::solvePoseProblem(){
   else effKinematics = parent->effKinematics;
 
   //-- collect 'path nodes'
-  ManipulationTree_NodeL treepath = getTreePath();
+  MNodeL treepath = getTreePath();
 
   poseProblem = new KOMO();
   KOMO& komo(*poseProblem);
@@ -394,13 +394,13 @@ void ManipulationTree_Node::solvePoseProblem(){
       effKinematics.getJointState();
 }
 
-void ManipulationTree_Node::solveSeqProblem(int verbose){
+void MNode::solveSeqProblem(int verbose){
   uint level=2;
 
   if(!step){ feasible(level)=true; return; } //there is no sequence to compute
 
   //-- collect 'path nodes'
-  ManipulationTree_NodeL treepath = getTreePath();
+  MNodeL treepath = getTreePath();
 
   seqProblem = new KOMO();
   KOMO& komo(*seqProblem);
@@ -412,7 +412,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   komo.setFixEffectiveJoints(-1., -1., 1e3);
   komo.setFixSwitchedObjects(-1., -1., 1e3);
 
-  for(ManipulationTree_Node *node:treepath){
+  for(MNode *node:treepath){
     komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
   }
 
@@ -456,13 +456,13 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
     labelInfeasible();
 }
 
-void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
+void MNode::solvePathProblem(uint microSteps, int verbose){
   uint level=3;
 
   if(!step){ feasible(level)=true; return; } //there is no path to compute
 
   //-- collect 'path nodes'
-  ManipulationTree_NodeL treepath = getTreePath();
+  MNodeL treepath = getTreePath();
 
   pathProblem = new KOMO();
   KOMO& komo(*pathProblem);
@@ -474,7 +474,7 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   komo.setFixEffectiveJoints(-1., -1., 1e3);
   komo.setFixSwitchedObjects(-1., -1., 1e3);
 
-  for(ManipulationTree_Node *node:treepath){
+  for(MNode *node:treepath){
     komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
   }
 
@@ -519,18 +519,18 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
 }
 #endif
 
-void ManipulationTree_Node::setInfeasible(){
+void MNode::setInfeasible(){
   isInfeasible = true;
-  for(ManipulationTree_Node *n:children) n->setInfeasible();
+  for(MNode *n:children) n->setInfeasible();
 }
 
-void ManipulationTree_Node::labelInfeasible(){
+void MNode::labelInfeasible(){
   setInfeasible();
 
   //-- remove children
-  //  ManipulationTree_NodeL tree;
+  //  MNodeL tree;
   //  getAllChildren(tree);
-  //  for(ManipulationTree_Node *n:tree) if(n!=this) delete n; //TODO: memory leak!
+  //  for(MNode *n:tree) if(n!=this) delete n; //TODO: memory leak!
   DEL_INFEASIBLE( children.clear(); )
 
       //-- create a literal that is equal to the decision literal (tuple) plus an 'INFEASIBLE' prepended
@@ -539,7 +539,7 @@ void ManipulationTree_Node::labelInfeasible(){
   //  cout <<"\n *** LABELLING INFEASIBLE: "; listWrite(symbols); cout <<endl;
 
   //-- find the right parent-of-generalization
-  ManipulationTree_Node* branchNode = this;
+  MNode* branchNode = this;
   while(branchNode->parent){
     bool stop=false;
     for(Node *fact:branchNode->folState->list()){
@@ -561,15 +561,15 @@ void ManipulationTree_Node::labelInfeasible(){
   }
   branchNode->folAddToState->newNode<bool>({}, symbols, true);
 
-  //  ManipulationTree_Node *root=getRoot();
+  //  MNode *root=getRoot();
   branchNode->recomputeAllFolStates();
   //  node->recomputeAllMCStats(false);
   //TODO: resort all queues
 }
 
-ManipulationTree_NodeL ManipulationTree_Node::getTreePath() const{
-  ManipulationTree_NodeL path;
-  ManipulationTree_Node *node=(ManipulationTree_Node*)this;
+MNodeL MNode::getTreePath() const{
+  MNodeL path;
+  MNode *node=(MNode*)this;
   for(;node;){
     path.prepend(node);
     node = node->parent;
@@ -577,26 +577,26 @@ ManipulationTree_NodeL ManipulationTree_Node::getTreePath() const{
   return path;
 }
 
-ManipulationTree_Node* ManipulationTree_Node::getRoot(){
-  ManipulationTree_Node* n=this;
+MNode* MNode::getRoot(){
+  MNode* n=this;
   while(n->parent) n=n->parent;
   return n;
 }
 
-ManipulationTree_Node *ManipulationTree_Node::getChildByAction(Node *folDecision){
-  for(ManipulationTree_Node *ch:children){
+MNode *MNode::getChildByAction(Node *folDecision){
+  for(MNode *ch:children){
     if(tuplesAreEqual(ch->folDecision->parents, folDecision->parents)) return ch;
   }
   LOG(-1) <<"a child with action '" <<*folDecision <<"' does not exist";
   return NULL;
 }
 
-void ManipulationTree_Node::getAll(ManipulationTree_NodeL& L){
+void MNode::getAll(MNodeL& L){
   L.append(this);
-  for(ManipulationTree_Node *ch:children) ch->getAll(L);
+  for(MNode *ch:children) ch->getAll(L);
 }
 
-ManipulationTree_Node *ManipulationTree_Node::treePolicy_random(){
+MNode *MNode::treePolicy_random(){
   if(isInfeasible) return NULL;
   if(isTerminal) return NULL;
   if(children.N) return children.rndElem()->treePolicy_random();
@@ -604,7 +604,7 @@ ManipulationTree_Node *ManipulationTree_Node::treePolicy_random(){
 }
 
 
-bool ManipulationTree_Node::recomputeAllFolStates(){
+bool MNode::recomputeAllFolStates(){
   if(!parent){ //this is root
     folState->copy(*fol.start_state);
     if(folAddToState) applyEffectLiterals(*folState, *folAddToState, {}, NULL);
@@ -641,13 +641,13 @@ bool ManipulationTree_Node::recomputeAllFolStates(){
       return true;
 }
 
-void ManipulationTree_Node::recomputeAllMCStats(bool excludeLeafs){
+void MNode::recomputeAllMCStats(bool excludeLeafs){
   if(!mcStats) return;
   if(!isTerminal){
     if(children.N || !excludeLeafs || isInfeasible)
       mcStats->clear();
   }
-  for(ManipulationTree_Node* ch:children){
+  for(MNode* ch:children){
     ch->recomputeAllMCStats(excludeLeafs);
     for(double x:ch->mcStats->X) mcStats->add(x);
   }
@@ -657,7 +657,7 @@ void ManipulationTree_Node::recomputeAllMCStats(bool excludeLeafs){
     mcCost = 100.;
 }
 
-void ManipulationTree_Node::checkConsistency(){
+void MNode::checkConsistency(){
   //-- check that the state->parent points to the parent's state
   if(parent){
     CHECK_EQ(parent->folState->isNodeOfGraph, folState->isNodeOfGraph->parents.scalar(), "");
@@ -681,7 +681,7 @@ void ManipulationTree_Node::checkConsistency(){
   for(auto* ch:children) ch->checkConsistency();
 }
 
-void ManipulationTree_Node::write(ostream& os, bool recursive, bool path) const{
+void MNode::write(ostream& os, bool recursive, bool path) const{
   os <<"------- NODE -------\ns=" <<step <<" t=" <<time;
   if(decision) os <<" a=" <<*decision <<endl;
   else os <<" a=<ROOT>"<<endl;
@@ -689,8 +689,8 @@ void ManipulationTree_Node::write(ostream& os, bool recursive, bool path) const{
   os <<"\t state= " <<*folState->isNodeOfGraph <<endl;
   if(path){
     os <<"\t decision path:";
-    ManipulationTree_NodeL _path = getTreePath();
-    for(ManipulationTree_Node *nn: _path)
+    MNodeL _path = getTreePath();
+    for(MNode *nn: _path)
       if(nn->decision) os <<*nn->decision <<' '; else os <<" <ROOT> ";
     os <<endl;
   }
@@ -698,10 +698,10 @@ void ManipulationTree_Node::write(ostream& os, bool recursive, bool path) const{
   os <<"\t poseCost=" <<cost(l_pose) <<endl;
   os <<"\t seqCost=" <<cost(l_seq) <<endl;
   os <<"\t pathCost=" <<cost(l_path) <<endl;
-  if(recursive) for(ManipulationTree_Node *n:children) n->write(os);
+  if(recursive) for(MNode *n:children) n->write(os);
 }
 
-void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
+void MNode::getGraph(Graph& G, Node* n) {
   if(!n){
     n = G.newNode<bool>({"a:<ROOT>"}, NodeL(), true);
   }else{
@@ -732,9 +732,9 @@ void ManipulationTree_Node::getGraph(Graph& G, Node* n) {
   //  if(inFringe2) G.getRenderingInfo(n).dotstyle <<" peripheries=3";
 
   //  n->keys.append(STRING("reward:" <<effPoseReward));
-  for(ManipulationTree_Node *ch:children) ch->getGraph(G, n);
+  for(MNode *ch:children) ch->getGraph(G, n);
 }
 
 RUN_ON_INIT_BEGIN(manipulationTree)
-ManipulationTree_NodeL::memMove = true;
+MNodeL::memMove = true;
 RUN_ON_INIT_END(manipulationTree)

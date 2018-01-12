@@ -17,7 +17,7 @@
 #include <Kin/kin.h>
 #include <Kin/frame.h>
 
-/// defines only a map (task space), not yet the costs in this space
+/// defines only a map (task space), not yet the costs or constraints in this space
 struct TaskMap {
   uint order;       ///< 0=position, 1=vel, etc
   bool flipTargetSignOnNegScalarProduct; ///< for order==1 (vel mode), when taking temporal difference, flip sign when scalar product it negative [specific to quats -> move to special TM for quats only]
@@ -26,7 +26,7 @@ struct TaskMap {
   virtual uint dim_phi(const mlr::KinematicWorld& K) = 0; ///< the dimensionality of $y$
   virtual uint dim_phi(const WorldL& Ktuple, int t){ return dim_phi(*Ktuple.last()); } ///< if not overloaded, returns dim_phi for last configuration
 
-  TaskMap():order(0), flipTargetSignOnNegScalarProduct(false) {}
+  TaskMap() : order(0), flipTargetSignOnNegScalarProduct(false) {}
   virtual ~TaskMap() {}
   virtual mlr::String shortTag(const mlr::KinematicWorld& K){ NIY; }
 
@@ -39,11 +39,10 @@ struct TaskMap {
       phi(y, J, K, -1);
     };
   }
-
-  //-- creation
-  static TaskMap *newTaskMap(const Graph& specs, const mlr::KinematicWorld& K); ///< creates a task map based on specs
-  static TaskMap *newTaskMap(const Node* specs, const mlr::KinematicWorld& K); ///< creates a task map based on specs
 };
+
+
+//these are frequently used by implementations of task maps
 
 inline uintA getKtupleDim(const WorldL& Ktuple){
   uintA dim(Ktuple.N);
