@@ -695,7 +695,9 @@ void mlr::Shape::glDraw(OpenGL& gl) {
     glDrawSphere(.1*scale);
   }
   if(frame.K.orsDrawShapes) {
-    geom->glDraw(gl);
+    if(geom->type!=ST_marker || frame.K.orsDrawMarkers){
+      geom->glDraw(gl);
+    }
   }
   if(frame.K.orsDrawZlines) {
     glColor(0, .7, 0);

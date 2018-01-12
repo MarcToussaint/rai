@@ -365,11 +365,15 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
 //  setTask(time, time, new TM_Default(TMT_posDiff, world, endeffRef, NoVector, object, NoVector), OT_eq, NoArr, 1e3);
 #endif
 
-  if(stepsPerPhase>2){ //velocities down and up
+  if(stepsPerPhase>2 && timeToLift>0.){ //velocities down and up
     setTask(time-timeToLift, time-2.*timeToLift/3, new TM_Default(TMT_pos, world, endeffRef), OT_sumOfSqr, {0.,0.,-.1}, 1e0, 1); //move down
     setTask(time-timeToLift/3,  time+timeToLift/3, new TM_Default(TMT_pos, world, endeffRef), OT_sumOfSqr, {0.,0.,0.}, 1e1, 1); //move down
     setTask(time+2.*timeToLift/3, time+timeToLift, new TM_Default(TMT_pos, world, endeffRef), OT_sumOfSqr, {0.,0.,.1}, 1e0, 1); // move up
   }
+
+  setFlag(time, new Flag(FL_clear, world[object]->ID, 0, true));
+  setFlag(time, new Flag(FL_zeroQVel, world[object]->ID, 0, true));
+  setFlag(time, new Flag(FL_kinematic, world[object]->getUpwardLink()->ID, 0, true));
 }
 
 /// slide on table while grasping rigidly (kinematic loop)
@@ -483,6 +487,9 @@ void KOMO::setPlaceFixed(double time, const char* endeff, const char* object, co
 
 /// switch attachemend (-> ball eDOF)
 void KOMO::setHandover(double time, const char* oldHolder, const char* object, const char* newHolder, int verbose){
+#if 1
+  setGrasp(time, newHolder, object, verbose, -1., -1.);
+#else
   if(verbose>0) cout <<"KOMO_setHandover t=" <<time <<" oldHolder=" <<oldHolder <<" obj=" <<object <<" newHolder=" <<newHolder <<endl;
 
   //hand center at object center (could be replaced by touch)
@@ -500,6 +507,7 @@ void KOMO::setHandover(double time, const char* oldHolder, const char* object, c
   if(stepsPerPhase>2){ //velocities: no motion
     setTask(time-.15, time+.15, new TM_Default(TMT_pos, world, object), OT_sumOfSqr, {0.,0.,0.}, 1e1, 1); // no motion
   }
+#endif
 }
 
 void KOMO::setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose){
@@ -533,7 +541,7 @@ void KOMO::setPush(double startTime, double endTime, const char* stick, const ch
   }
 }
 
-void KOMO::setSlide(double time, const char* endeff, const char* object, const char* placeRef, int verbose){
+void KOMO::setGraspSlide(double time, const char* endeff, const char* object, const char* placeRef, int verbose){
 
   double startTime = time;
   double endTime = time+5.;
@@ -704,16 +712,17 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
     if(!n->parents.N) continue;
     StringL symbols;
     for(Node *p:n->parents) symbols.append(&p->keys.last());
-    if(n->keys.N && n->keys.last().startsWith("komo")){
-      double time=n->get<double>(); //komo tag needs to be double valued!
-      if(n->keys.last()=="komoGrasp")         setGrasp(phase+time, *symbols(0), *symbols(1), verbose);
-      else if(n->keys.last()=="komoPlace"){
-        if(symbols.N==2) setPlace(phase+time, NULL, *symbols(0), *symbols(1), verbose);
-        else  setPlace(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
-      }else if(n->keys.last()=="komoHandover") setHandover(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
-      else if(n->keys.last()=="komoPush")     setPush(phase+time, phase+time+1., *symbols(0), *symbols(1), *symbols(2), verbose); //TODO: the +1. assumes pushes always have duration 1
-      else if(n->keys.last()=="komoSlide")    setSlide(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
-      else if(n->keys.last()=="komoSlideAlong") setSlideAlong(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
+    double time=1.; //n->get<double>(); //komo tag needs to be double valued!
+    if(n->keys.N==1 && n->keys.scalar() == "komo"){
+      if(*symbols(0)=="grasp")                      setGrasp(phase+time, *symbols(1), *symbols(2), verbose);
+      else if(*symbols(0)=="push")                  setPush(phase+time, phase+time+1., *symbols(1), *symbols(2), *symbols(3), verbose); //TODO: the +1. assumes pushes always have duration 1
+      else if(*symbols(0)=="place" && symbols.N==3) setPlace(phase+time, NULL, *symbols(1), *symbols(2), verbose);
+      else if(*symbols(0)=="place" && symbols.N==4) setPlace(phase+time, *symbols(1), *symbols(2), *symbols(3), verbose);
+      else if(*symbols(0)=="graspSlide")            setGraspSlide(phase+time, *symbols(1), *symbols(2), *symbols(3), verbose);
+      else if(*symbols(0)=="handover")              setHandover(phase+time, *symbols(1), *symbols(2), *symbols(3), verbose);
+      else HALT("UNKNOWN komo symbol: '" <<*symbols(0) <<"'");
+    }else if(n->keys.N && n->keys.last().startsWith("komo")){
+      if(n->keys.last()=="komoSlideAlong") setSlideAlong(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
       else if(n->keys.last()=="komoDrop"){
         if(symbols.N==2) setDrop(phase+time, *symbols(0), NULL, *symbols(1), verbose);
         else setDrop(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
@@ -734,18 +743,14 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
           const char* placeRef = *symbols(2);
           Transformation rel = 0;
           rel.pos.set(0,0, .5*(shapeSize(world, object) + shapeSize(world, placeRef)));
-          setKinematicSwitch(phase+time, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, placeRef, object, world, 0, rel));
 
+          setKinematicSwitch(phase+time, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, placeRef, object, world, 0, rel));
           setFlag(phase+time, new Flag(FL_clear, world[object]->ID, 0, true));
           setFlag(phase+time, new Flag(FL_zeroAcc, world[object]->ID, 0, true));
 
-          setKinematicSwitch(phase+time, false, new KinematicSwitch(SW_actJoint, JT_transXYPhi, placeRef, bat, world, 0, rel));
-
-          setFlag(phase+time, new Flag(FL_clear, world[bat]->ID, 0, true), +1);
-          setFlag(phase+time, new Flag(FL_xPosVelCosts, world[bat]->ID, 0, true), +1);
-
-//          setFlag(phase+time, new Flag(FL_clear, world[bat]->ID, 0, true), +3);
-//          setFlag(phase+time, new Flag(FL_zeroQAcc, world[bat]->ID, 0, true), +1);
+//          setKinematicSwitch(phase+time, false, new KinematicSwitch(SW_actJoint, JT_transXYPhi, placeRef, bat, world, 0, rel));
+//          setFlag(phase+time, new Flag(FL_clear, world[bat]->ID, 0, true), +1);
+//          setFlag(phase+time, new Flag(FL_xPosVelCosts, world[bat]->ID, 0, true), +1);
         }else NIY;
       }
       else if(n->keys.last()=="komoAttach"){

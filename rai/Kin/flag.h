@@ -14,6 +14,7 @@ enum FrameFlagType {
   FL_xPosAccCosts,
   FL_clear,
   FL_xPosVelCosts,
+  FL_kinematic,
 };
 
 namespace mlr{

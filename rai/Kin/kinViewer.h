@@ -65,6 +65,7 @@ struct OrsPathViewer : Thread {
   uint t;
   int tprefix;
   bool writeToFiles;
+  mlr::String text;
 
   void setConfigurations(const WorldL& cs);
   void clear();

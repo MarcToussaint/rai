@@ -91,6 +91,7 @@ struct MNode{
 
   //-- helpers
   MNodeL getTreePath() const; ///< return the decision path in terms of a list of nodes (just walking to the root)
+  mlr::String getTreePathString(char sep=' ') const;
   MNode* getRoot(); ///< return the decision path in terms of a list of nodes (just walking to the root)
   MNode* getChildByAction(Node  *folDecision); ///<
   void getAll(MNodeL& L);

@@ -240,7 +240,7 @@ void MNode::optLevel(uint level, bool collisions){
   DEBUG( FILE("z.problem.cost") <<result; )
       double cost_here = result.get<double>({"total","sqrCosts"});
   double constraints_here = result.get<double>({"total","constraints"});
-  bool feas = (constraints_here<.5);
+  bool feas = (constraints_here<1.);
 
   //-- post process komo problem for level==1
   if(level==1){
@@ -575,6 +575,16 @@ MNodeL MNode::getTreePath() const{
     node = node->parent;
   }
   return path;
+}
+
+mlr::String MNode::getTreePathString(char sep) const{
+  MNodeL path = getTreePath();
+  mlr::String str;
+  for(MNode *b : path){
+    if(b->decision) str <<*b->decision <<sep;
+    else str <<"ROOT" <<sep;
+  }
+  return str;
 }
 
 MNode* MNode::getRoot(){

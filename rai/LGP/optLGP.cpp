@@ -40,8 +40,8 @@ void OptLGP::initDisplay(){
     views(2) = make_shared<OrsPathViewer>("sequence", 1., -0);
     views(3) = make_shared<OrsPathViewer>("path", .1, -1);
     if(mlr::getParameter<bool>("LGP/displayTree", 1)){
-      int r=system("evince z.pdf &");
-      if(r) LOG(-1) <<"could not startup evince";
+      int r=system("okular z.pdf &");
+      if(r) LOG(-1) <<"could not startup okular";
     }
     for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
   }
@@ -53,10 +53,12 @@ void OptLGP::renderToVideo(uint level, const char* filePrefix){
 }
 
 void OptLGP::updateDisplay(){
+  mlr::String decisions = displayFocus->getTreePathString('\n');
   for(uint i=1;i<views.N;i++){
-    if(displayFocus->komoProblem(i) && displayFocus->komoProblem(i)->configurations.N)
+    if(displayFocus->komoProblem(i) && displayFocus->komoProblem(i)->configurations.N){
       views(i)->setConfigurations(displayFocus->komoProblem(i)->configurations);
-    else views(i)->clear();
+      views(i)->text = decisions;
+    }else views(i)->clear();
   }
   //  if(node->komoProblem(2) && node->komoProblem(2)->configurations.N)
   //    seqView.setConfigurations(node->komoProblem(2)->configurations);
@@ -229,7 +231,7 @@ MNode *OptLGP::expandBest(int stopOnDepth){ //expand
   MNode *n =  fringe_expand.popFirst();
 
   CHECK(n,"");
-  if(stopOnDepth>0 && n->step>(uint)stopOnDepth) return NULL;
+  if(stopOnDepth>0 && n->step>=(uint)stopOnDepth) return NULL;
   n->expand();
   for(MNode* ch:n->children){
     if(ch->isTerminal){
@@ -319,9 +321,12 @@ mlr::String OptLGP::report(bool detailed){
 void OptLGP::step(){
   expandBest();
 
+  uint numSol = fringe_done.N;
+
   if(rnd.uni()<.5) optBestOnLevel(l_pose, fringe_pose, &fringe_seq, &fringe_pose);
   optFirstOnLevel(l_pose, fringe_pose2, &fringe_seq);
   optBestOnLevel(l_seq, fringe_seq, &fringe_path, NULL);
+  if(verbose>0 && fringe_path.N) cout <<"EVALUATING PATH " <<fringe_path.last()->getTreePathString() <<endl;
   optBestOnLevel(l_path, fringe_path, &fringe_done, NULL);
 
   //-- update queues (if something got infeasible)
@@ -335,6 +340,7 @@ void OptLGP::step(){
   if(verbose>0){
     mlr::String out=report();
     fil <<out <<endl;
+    if(fringe_done.N>numSol) cout <<"NEW SOLUTION FOUND! " <<fringe_done.last()->getTreePathString() <<endl;
     if(verbose>1) cout <<out <<endl;
     if(verbose>2 && !(numSteps%10)) updateDisplay();
   }
@@ -351,7 +357,7 @@ void OptLGP::buildTree(uint depth){
   mlr::timerRead(true);
   for(uint k=0;;k++){
     MNode *b = expandBest(depth);
-    if(!b) return;
+    if(!b) break;
   }
 
   if(verbose>0){
@@ -366,13 +372,7 @@ void OptLGP::getSymbolicSolutions(uint depth){
   buildTree(depth);
   uint i=0;
   for(MNode *a:terminals){
-    cout <<"solution " <<i <<": ";
-    MNodeL path = a->getTreePath();
-    for(MNode *b : path){
-      if(b->decision) cout <<*b->decision <<' ';
-      else cout <<"ROOT ";
-    }
-    cout <<endl;
+    cout <<"solution " <<i <<": " <<a->getTreePathString() <<endl;
     i++;
   }
 }

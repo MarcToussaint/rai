@@ -132,7 +132,7 @@ struct KOMO{
   void setPlaceFixed(double time, const char* endeffRef, const char* object, const char* placeRef, const mlr::Transformation& relPose, int verbose=0);
   void setHandover(double time, const char* endeffRef, const char* object, const char* prevHolder, int verbose=0);
   void setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose=0);
-  void setSlide(double time, const char* stick, const char* object, const char* placeRef, int verbose=0);
+  void setGraspSlide(double time, const char* stick, const char* object, const char* placeRef, int verbose=0);
   void setSlideAlong(double time, const char *strick,  const char* object, const char* wall, int verbose=0);
   void setDrop(double time, const char* object, const char* from, const char* to, int verbose=0);
   void setDropEdgeFixed(double time, const char* object, const char* to, const mlr::Transformation& relFrom, const mlr::Transformation& relTo, int verbose=0);

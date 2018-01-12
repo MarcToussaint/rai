@@ -126,6 +126,7 @@ void OrsPathViewer::setConfigurations(const WorldL& cs){
 
 void OrsPathViewer::clear(){
   listDelete(configurations.set()());
+  text.clear();
 }
 
 OrsPathViewer::OrsPathViewer(const char* varname, double beatIntervalSec, int tprefix)
@@ -156,8 +157,9 @@ void OrsPathViewer::step(){
   copy.checkConsistency();
   copy.gl().dataLock.unlock();
   if(T){
+    copy.orsDrawMarkers=false;
     copy.gl().captureImg=writeToFiles;
-    copy.gl().update(STRING(" (time " <<tprefix+int(tt) <<'/' <<tprefix+int(T) <<')').p, false, false, true);
+    copy.gl().update(STRING(" (time " <<tprefix+int(tt) <<'/' <<tprefix+int(T) <<')' <<text).p, false, false, true);
     if(writeToFiles) write_ppm(copy.gl().captureImage,STRING("vid/z."<<std::setw(3)<<std::setfill('0')<<tprefix+int(tt)<<".ppm"));
   }
   t++;
