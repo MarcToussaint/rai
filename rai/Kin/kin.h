@@ -84,7 +84,7 @@ struct KinematicWorld : GLDrawer{
   KinematicWorld(const char* filename);
   virtual ~KinematicWorld();
   void operator=(const mlr::KinematicWorld& K){ copy(K); }
-  void copy(const mlr::KinematicWorld& K, bool referenceMeshesAndSwiftOnCopy=false);
+  void copy(const mlr::KinematicWorld& K, bool referenceSwiftOnCopy=false);
   
   /// @name initializations
   void init(const char* filename);
@@ -151,6 +151,7 @@ struct KinematicWorld : GLDrawer{
   void kinematicsRelVec (arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b) const;
   void kinematicsRelRot (arr& y, arr& J, Frame *a, Frame *b) const;
 
+  void kinematicsPenetrations(arr& y, arr& J=NoArr, bool penetrationsOnly=true, double activeMargin=0.) const; ///< true: if proxy(i).distance>0. => y(i)=0; else y(i)=-proxy(i).distance
   void kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
   void kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
   void kinematicsProxyCost(arr& y, arr& J, double margin=.02, bool useCenterDist=true) const;

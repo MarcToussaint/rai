@@ -1243,7 +1243,7 @@ void __new(mlr::KinematicWorld& K, mlr::Proxy *p){
 void mlr::KinematicWorld::filterProxiesToContacts(double margin){
   for(Proxy& p:proxies){
     if(!p.coll) p.calc_coll(*this);
-    if(p.coll->distance>0. && p.coll->distance-(p.coll->rad1+p.coll->rad2)>margin) continue;
+    if(p.coll->distance-(p.coll->rad1+p.coll->rad2)>margin) continue;
     Frame *a = frames(p.a);
     Frame *b = frames(p.b);
     Contact *candidate=NULL;
@@ -1269,7 +1269,7 @@ void mlr::KinematicWorld::filterProxiesToContacts(double margin){
   //phase 2: cleanup old and distant contacts
   mlr::Array<Contact*> old;
   for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f){
-    if(c->get_pDistance()>margin+.05 || c->getDistance()>margin) old.append(c);
+    if(c->getDistance()>margin) old.append(c);
   }
   for(Contact *c:old) delete c;
 }
@@ -1785,6 +1785,29 @@ void mlr::KinematicWorld::contactsToForces(double hook, double damp) {
       if(a!=-1) addForce(force, frames(a), p.posA);
       if(b!=-1) addForce(-force, frames(b), p.posB);
     }
+}
+
+void mlr::KinematicWorld::kinematicsPenetrations(arr& y, arr& J, bool penetrationsOnly, double activeMargin) const {
+  y.resize(proxies.N).setZero();
+  if(&J) J.resize(y.N, getJointStateDimension()).setZero();
+  uint i=0;
+  for(const Proxy& p:proxies){
+    if(!p.coll) ((Proxy*)&p)->calc_coll(*this);
+
+    arr Jp1, Jp2;
+    if(&J){
+      jacobianPos(Jp1, frames(p.a), p.coll->p1);
+      jacobianPos(Jp2, frames(p.b), p.coll->p2);
+    }
+
+    arr y_dist, J_dist;
+    p.coll->kinDistance(y_dist, (&J?J_dist:NoArr), Jp1, Jp2);
+
+    if(!penetrationsOnly || y_dist.scalar()<activeMargin){
+      y(i) = -y_dist.scalar();
+      if(&J) J[i] = -J_dist;
+    }
+  }
 }
 
 void mlr::KinematicWorld::kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin, bool useCenterDist, bool addValues) const {
@@ -2320,7 +2343,7 @@ void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
   glColor(.5, .5, .5);
 
   //proxies
-//  if(orsDrawProxies) for(const Proxy& p: proxies) ((Proxy*)&p)->glDraw(gl);
+  if(orsDrawProxies) for(const Proxy& p: proxies) ((Proxy*)&p)->glDraw(gl);
 
   //contacts
   if(orsDrawProxies) for(const Frame *fr: frames) for(mlr::Contact *c:fr->contacts) if(&c->a==fr){
