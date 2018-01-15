@@ -25,10 +25,9 @@ void TEST(GJK_Jacobians) {
   J1.type = J2.type = mlr::JT_quatBall;
   s1.type() = s2.type() = mlr::ST_ssCvx; //ST_mesh;
   s1.size(3) = s2.size(3) = .2;
-  s1.sscCore().setRandom(); s1.mesh().C = {.5,.8,.5,.4};
-  s2.sscCore().setRandom(); s2.mesh().C = {.5,.5,.8,.4};
-  s1.frame.name="s1";
-  s2.frame.name="s2";
+  s1.sscCore().setRandom();     s2.sscCore().setRandom();
+  s1.mesh().C = {.5,.8,.5,.4};  s2.mesh().C = {.5,.5,.8,.4};
+  s1.frame.name="s1";           s2.frame.name="s2";
 
   K.calc_activeSets();
   K.calc_q_from_Q();
@@ -44,29 +43,46 @@ void TEST(GJK_Jacobians) {
   TM_PairCollision dist(K, "s1", "s2", true);
   TM_PairCollision distVec(K, "s1", "s2", false);
 
-  for(uint k=0;k<100;k++){
+  for(uint k=0;k<1000;k++){
+    //randomize shapes
+    s1.mesh().clear();             s2.mesh().clear();
+    s1.sscCore().setRandom();      s2.sscCore().setRandom();
+    s1.mesh().C = {.5,.8,.5,.4};   s2.mesh().C = {.5,.5,.8,.4};
+    s1.size(3) = rnd.uni(.01, .3); s2.size(3) = rnd.uni(.01, .3);
+    if(rnd.uni()<.2){
+      s1.sscCore().setBox();
+      s1.sscCore().scale(.001);
+      //s1.sscCore().setDot();
+    }
+
+    //randomize poses
     rndGauss(q, 1.);
     K.setJointState(q);
 
     PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(3), s2.size(3));
 
+    bool succ = true;
+
     arr y,y2;
     dist.phi(y, NoArr, K);
-    checkJacobian(dist.vf(K), q, 1e-4);
+    succ &= checkJacobian(dist.vf(K), q, 1e-4);
 
     distVec.phi(y2, NoArr, K);
-    checkJacobian(dist.vf(K), q, 1e-4);
+    succ &= checkJacobian(distVec.vf(K), q, 1e-4);
 
-//    cout <<"distance: " <<y <<" vec=" <<y2 <<" error=" <<length(y2)-fabs(y(0)) <<endl;
-    CHECK_ZERO(length(y2)-fabs(y(0)), 1e-3, "");
+    //    cout <<"distance: " <<y <<" vec=" <<y2 <<" error=" <<length(y2)-fabs(y(0)) <<endl;
 
     gl.add(collInfo);
     gl.add(K);
     gl.update();
-//    gl.watch();
+    if(!succ) gl.watch();
 
     gl.remove(collInfo);
     gl.remove(K);
+
+    if(succ){
+      CHECK_ZERO(length(y2)-fabs(y(0)), 1e-3, "");
+    }
   }
 }
 
@@ -114,8 +130,7 @@ void TEST(GJK_Jacobians2) {
 
   arr q = K.getJointState();
 //  K.orsDrawProxies=false;
-//  K.
-  (true);
+//  K.(true);
   double y_last=0.;
   for(uint t=0;t<1000;t++){
     K.setJointState(q);
@@ -128,7 +143,7 @@ void TEST(GJK_Jacobians2) {
 
     arr y,J;
     K.filterProxiesToContacts(.25);
-    K.kinematicsContactCost(y, (&J?J:NoArr), .2);
+    K.kinematicsContactCost(y, J, .2);
 //    K.kinematicsProxyCost(y, J, .2);
 
     arr y2, J2;
@@ -222,8 +237,8 @@ int MAIN(int argc, char** argv){
   rnd.clockSeed();
 
   testGJK_Jacobians();
-  testGJK_Jacobians2();
-  testGJK_Jacobians3();
+//  testGJK_Jacobians2();
+//  testGJK_Jacobians3();
 
   return 0;
 }

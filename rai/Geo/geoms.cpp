@@ -89,14 +89,16 @@ void mlr::Geom::createMeshes(){
       break;
   case mlr::ST_mesh:
   case mlr::ST_pointCloud:
-      CHECK(mesh.V.N, "mesh needs to be loaded to draw mesh object");
+      CHECK(mesh.V.N, "mesh needs to be loaded");
       sscCore = mesh;
       sscCore.makeConvexHull();
       break;
   case mlr::ST_ssCvx:
       CHECK(size(3)>1e-10,"");
-      CHECK(mesh.V.N, "mesh needs to be loaded to draw mesh object");
-      sscCore=mesh;
+      if(!sscCore.V.N){
+        CHECK(mesh.V.N, "mesh or sscCore needs to be loaded");
+        sscCore=mesh;
+      }
       mesh.setSSCvx(sscCore, size(3));
       break;
   case mlr::ST_ssBox:
