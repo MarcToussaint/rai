@@ -1291,7 +1291,7 @@ void mlr::KinematicWorld::filterProxiesToContacts(double margin){
   //phase 2: cleanup old and distant contacts
   mlr::Array<Contact*> old;
   for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f){
-    if(c->get_pDistance()>margin+.05 || c->getDistance()>margin) old.append(c);
+    if(/*c->get_pDistance()>margin+.05 ||*/ c->getDistance()>margin) old.append(c);
   }
   for(Contact *c:old) delete c;
 }
