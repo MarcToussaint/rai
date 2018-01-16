@@ -87,6 +87,8 @@ void TM_qItself::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
   uint k=order;
   if(k==0) return TaskMap::phi(y, J, G, tau, t);
 
+  tau = G(-1)->frames(0)->time - G(-2)->frames(0)->time;
+
   double tau2=tau*tau, tau3=tau2*tau;
   arrA q_bar(k+1), J_bar(k+1);
   //-- read out the task variable from the k+1 configurations

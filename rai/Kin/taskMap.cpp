@@ -36,6 +36,9 @@ void TaskMap::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
     return;
   }
   arrA y_bar, J_bar;
+
+  tau = Ktuple(-1)->frames(0)->time - Ktuple(-2)->frames(0)->time;
+
   double tau2=tau*tau, tau3=tau2*tau;
   y_bar.resize(k+1);
   J_bar.resize(k+1);

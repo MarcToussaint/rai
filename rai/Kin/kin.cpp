@@ -564,6 +564,10 @@ void mlr::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
   calc_fwdPropagateFrames();
 }
 
+void mlr::KinematicWorld::setTimes(double t){
+  for(Frame *a:frames) a->time = t;
+}
+
 
 
 //===========================================================================

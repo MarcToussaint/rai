@@ -64,5 +64,5 @@ public:
 
   void player(StringA cmds={});
 
-  void optFixedSequence(const mlr::String& seq, bool fullPathOnly=false, bool collisions=false);
+  void optFixedSequence(const mlr::String& seq, int specificLevel=-1, bool collisions=false);
 };

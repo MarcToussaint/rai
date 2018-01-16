@@ -47,7 +47,8 @@ struct Frame {
   Frame *parent=NULL;        ///< parent frame
   FrameL outLinks;           ///< lists of in and out joints
   Transformation Q=0;        ///< relative transform to parent
-  Transformation X=0;        ///< body's absolute pose
+  Transformation X=0;        ///< frame's absolute pose
+  double time=0.;            ///< frame's absolute time (could be thought as part of the transformation X in space-time)
   Graph ats;                 ///< list of any-type attributes
   bool active=true;          ///< if false, this frame is skipped in computations (e.g. in fwd propagation)
   int flags=0;               ///< various flags that are used by task maps to impose costs/constraints in KOMO

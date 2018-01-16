@@ -138,6 +138,14 @@ void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhas
   k_order = _k_order;
 }
 
+void KOMO::setPairedTimes(){
+  CHECK(k_order==1, "NIY");
+  for(uint s=0;s<k_order+T-1;s+=2){
+    configurations(s)  ->setTimes(tau*(int(s)-int(k_order)));
+    configurations(s+1)->setTimes(tau*(.98+int(s+1)-int(k_order)));
+  }
+}
+
 void KOMO::activateCollisions(const char* s1, const char* s2){
   Frame *sh1 = world.getFrameByName(s1);
   Frame *sh2 = world.getFrameByName(s2);
@@ -1077,6 +1085,10 @@ void KOMO::reportProblem(std::ostream& os){
   writeConsecutiveConstant(os, dims);
   os <<endl;
 
+  arr times(configurations.N);
+  for(uint i=0;i<configurations.N;i++) times(i)=configurations(i)->frames.first()->time;
+  os <<"    times:" <<times <<endl;
+
   os <<"  usingSwift:" <<useSwift <<endl;
   for(Task* t:tasks) os <<"    " <<*t <<endl;
   for(KinematicSwitch* sw:switches){
@@ -1191,11 +1203,13 @@ void KOMO::setupConfigurations(){
   computeMeshNormals(world.frames, true);
 
   configurations.append(new KinematicWorld())->copy(world, true);
+  configurations.last()->setTimes(-tau*k_order);
   configurations.last()->calc_q();
   configurations.last()->calc_q_from_Q();
   configurations.last()->checkConsistency();
   for(uint s=1;s<k_order+T;s++){
     configurations.append(new KinematicWorld())->copy(*configurations(s-1), true);
+    configurations(s)->setTimes(tau*(int(s)-int(k_order)));
     configurations(s)->checkConsistency();
     CHECK(configurations(s)==configurations.last(), "");
     //apply potential graph switches

@@ -183,6 +183,9 @@ void MNode::optLevel(uint level, bool collisions){
     komo.setSquaredQuaternionNorms();
 
     komo.setAbstractTask(0., *folState);
+
+    komo.reset();
+    komo.setPairedTimes();
   } break;
   case 2:{
     komo.setModel(startKinematics, false);
@@ -197,6 +200,9 @@ void MNode::optLevel(uint level, bool collisions){
     for(MNode *node:getTreePath()){
       komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
     }
+
+    komo.reset();
+    komo.setPairedTimes();
   } break;
   case 3:{
     komo.setModel(startKinematics, collisions);
@@ -213,14 +219,15 @@ void MNode::optLevel(uint level, bool collisions){
     for(MNode *node:getTreePath()){
       komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
     }
+
+    komo.reset();
   } break;
   }
 
   //-- optimize
   DEBUG( FILE("z.fol") <<fol; );
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); );
-  komo.reset();
-//  komo.reportProblem();
+  komo.reportProblem();
 
   try{
     //      komo.verbose=3;

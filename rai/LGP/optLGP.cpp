@@ -36,8 +36,8 @@ OptLGP::~OptLGP(){
 void OptLGP::initDisplay(){
   if(!views.N){
     views.resize(4);
-    views(1) = make_shared<OrsPathViewer>("pose", 1., -1);
-    views(2) = make_shared<OrsPathViewer>("sequence", 1., -0);
+    views(1) = make_shared<OrsPathViewer>("pose", .5, -0);
+    views(2) = make_shared<OrsPathViewer>("sequence", .5, -0);
     views(3) = make_shared<OrsPathViewer>("path", .1, -1);
     if(mlr::getParameter<bool>("LGP/displayTree", 1)){
       int r=system("evince z.pdf &");
@@ -155,7 +155,7 @@ void OptLGP::player(StringA cmds){
   }
 }
 
-void OptLGP::optFixedSequence(const mlr::String& seq, bool fullPathOnly, bool collisions){
+void OptLGP::optFixedSequence(const mlr::String& seq, int specificLevel, bool collisions){
   Graph& tmp = root->fol.KB.newSubgraph({"TMP"},{})->value;
   mlr::String tmpseq(seq);
   tmp.read(tmpseq);
@@ -167,7 +167,7 @@ void OptLGP::optFixedSequence(const mlr::String& seq, bool fullPathOnly, bool co
   MNode *node = root;
 
   for(Node *actionLiteral:tmp){
-    if(!fullPathOnly) node->optLevel(1); //optimize poses along the path
+    if(specificLevel==-1 || specificLevel==1) node->optLevel(1); //optimize poses along the path
     node->expand();
     MNode *next = node->getChildByAction(actionLiteral);
     if(!next) LOG(-2) <<"action '" <<*actionLiteral <<"' is not a child of '" <<*node <<"'";
@@ -176,9 +176,9 @@ void OptLGP::optFixedSequence(const mlr::String& seq, bool fullPathOnly, bool co
     node = next;
   }
 
-  if(!fullPathOnly) node->optLevel(1);
-  if(!fullPathOnly) node->optLevel(2);
-  node->optLevel(3, collisions);
+  if(specificLevel==-1 || specificLevel==1) node->optLevel(1);
+  if(specificLevel==-1 || specificLevel==2) node->optLevel(2);
+  if(specificLevel==-1 || specificLevel==3) node->optLevel(3, collisions);
 
   displayFocus = node;
   updateDisplay();

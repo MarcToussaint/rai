@@ -60,6 +60,7 @@ struct KOMO{
                 bool meldFixedJoints=false, bool makeConvexHulls=false, bool computeOptimalSSBoxes=false, bool activateAllContacts=false);
   void useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese=true);
   void setTiming(double _phases=1., uint _stepsPerPhase=10, double durationPerPhase=5., uint _k_order=2);
+  void setPairedTimes();
   void activateCollisions(const char* s1, const char* s2);
   void deactivateCollisions(const char* s1, const char* s2);
 
