@@ -15,9 +15,9 @@ void Task::setCostSpecs(int fromStep, int toStep, const arr& _target, double _pr
 
 void Task::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T, const arr& _target, double _prec, int deltaStep){
   if(stepsPerPhase<0) stepsPerPhase=T;
-  if(STEP(toTime)>T-1){
-      LOG(-1) <<"beyond the time!: endTime=" <<toTime <<" phases=" <<double(T)/stepsPerPhase;
-  }
+//  if(STEP(toTime)>T-1){
+//    LOG(-1) <<"beyond the time!: endTime=" <<toTime <<" phases=" <<double(T)/stepsPerPhase;
+//  }
   int tFrom = (fromTime<0.?0:STEP(fromTime));
   int tTo = (toTime<0.?T-1:STEP(toTime));
   if(tTo<0) tTo=0;

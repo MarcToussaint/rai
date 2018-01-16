@@ -8,6 +8,7 @@ struct OptLGP{
   int verbose;
   uint numSteps;
   ofstream fil;
+  bool displayTree=true;
 
   MNode *root, *displayFocus;
 

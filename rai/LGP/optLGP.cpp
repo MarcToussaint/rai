@@ -17,6 +17,21 @@ void initFolStateFromKin(FOL_World& L, const mlr::KinematicWorld& K){
       L.addFact({"partOf", a->name, b->name});
     }
   }
+  for(mlr::Frame *a:K.frames) if(a->shape && a->ats["logical"]){
+    mlr::Frame *p = a;
+    while(p && !p->joint) p=p->parent;
+    if(!p) continue;
+    p = p->parent;
+    FrameL F;
+    while(p){
+      F.append(p);
+      if(p->joint) break;
+      p=p->parent;
+    }
+    for(mlr::Frame *b:F) if(b!=a && b->shape && b->ats["logical"]){
+      L.addFact({"on", a->name, b->name});
+    }
+  }
 }
 
 OptLGP::OptLGP(mlr::KinematicWorld &kin, FOL_World &fol)
@@ -36,12 +51,16 @@ OptLGP::~OptLGP(){
 void OptLGP::initDisplay(){
   if(!views.N){
     views.resize(4);
-    views(1) = make_shared<OrsPathViewer>("pose", .5, -0);
-    views(2) = make_shared<OrsPathViewer>("sequence", .5, -0);
-    views(3) = make_shared<OrsPathViewer>("path", .1, -1);
+    views(1) = make_shared<OrsPathViewer>("pose", .2, -0);
+    views(2) = make_shared<OrsPathViewer>("sequence", .2, -0);
+    views(3) = make_shared<OrsPathViewer>("path", .05, -1);
     if(mlr::getParameter<bool>("LGP/displayTree", 1)){
       int r=system("evince z.pdf &");
-      if(r) LOG(-1) <<"could not startup okular";
+      mlr::wait(1.);
+      if(r) LOG(-1) <<"could not startup evince";
+      displayTree = true;
+    }else{
+      displayTree = false;
     }
     for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
   }
@@ -67,23 +86,25 @@ void OptLGP::updateDisplay(){
   //    pathView.setConfigurations(node->komoProblem(3)->configurations);
   //  else pathView.clear();
 
-  //generate the tree pdf
-  MNodeL all = root->getAll();
-  for(auto& n:all) n->note.clear();
+  if(displayTree){
+    //generate the tree pdf
+    MNodeL all = root->getAll();
+    for(auto& n:all) n->note.clear();
 
-  for(auto& n:all) if(n->isInfeasible) n->note <<"INFEASIBLE ";
-  for(auto& n:fringe_expand)      n->note <<"EXPAND ";
-  for(auto& n:terminals) n->note <<"TERMINAL ";
-  for(auto& n:fringe_pose)  n->note <<"POSE ";
-  for(auto& n:fringe_pose2) n->note <<"POSE2 ";
-  for(auto& n:fringe_seq)  n->note <<"SEQ ";
-  for(auto& n:fringe_path)  n->note <<"PATH ";
-  for(auto& n:fringe_done) n->note <<"DONE";
+    for(auto& n:all) if(n->isInfeasible) n->note <<"INFEASIBLE ";
+    for(auto& n:fringe_expand)      n->note <<"EXPAND ";
+    for(auto& n:terminals) n->note <<"TERMINAL ";
+    for(auto& n:fringe_pose)  n->note <<"POSE ";
+    for(auto& n:fringe_pose2) n->note <<"POSE2 ";
+    for(auto& n:fringe_seq)  n->note <<"SEQ ";
+    for(auto& n:fringe_path)  n->note <<"PATH ";
+    for(auto& n:fringe_done) n->note <<"DONE";
 
-  Graph dot=root->getGraph();
-  dot.writeDot(FILE("z.dot"));
-  int r = system("dot -Tpdf z.dot > z.pdf");
-  if(r) LOG(-1) <<"could not startup dot";
+    Graph dot=root->getGraph(true);
+    dot.writeDot(FILE("z.dot"));
+    int r = system("dot -Tpdf z.dot > z.pdf");
+    if(r) LOG(-1) <<"could not startup dot";
+  }
 }
 
 void OptLGP::printChoices(){
@@ -342,7 +363,7 @@ void OptLGP::step(){
     fil <<out <<endl;
     if(fringe_done.N>numSol) cout <<"NEW SOLUTION FOUND! " <<fringe_done.last()->getTreePathString() <<endl;
     if(verbose>1) cout <<out <<endl;
-    if(verbose>2 && !(numSteps%10)) updateDisplay();
+    if(verbose>2 && !(numSteps%1)) updateDisplay();
   }
   numSteps++;
 }

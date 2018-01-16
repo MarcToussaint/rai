@@ -107,8 +107,8 @@ private:
 public:
 
   void write(ostream& os=cout, bool recursive=false, bool path=true) const;
-  void getGraph(Graph& G, Node *n=NULL);
-  Graph getGraph(){ Graph G; getGraph(G, NULL); G.checkConsistency(); return G; }
+  void getGraph(Graph& G, Node *n=NULL, bool brief=false);
+  Graph getGraph(bool brief=false){ Graph G; getGraph(G, NULL, brief); G.checkConsistency(); return G; }
 };
 
 inline ostream& operator<<(ostream& os, const MNode& n){ n.write(os); return os; }

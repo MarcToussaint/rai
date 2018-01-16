@@ -227,7 +227,7 @@ void MNode::optLevel(uint level, bool collisions){
   //-- optimize
   DEBUG( FILE("z.fol") <<fol; );
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); );
-  komo.reportProblem();
+//  komo.reportProblem();
 
   try{
     //      komo.verbose=3;
@@ -718,21 +718,24 @@ void MNode::write(ostream& os, bool recursive, bool path) const{
   if(recursive) for(MNode *n:children) n->write(os);
 }
 
-void MNode::getGraph(Graph& G, Node* n) {
+void MNode::getGraph(Graph& G, Node* n, bool brief) {
   if(!n){
     n = G.newNode<bool>({"a:<ROOT>"}, NodeL(), true);
   }else{
     n = G.newNode<bool>({STRING("a:"<<*decision)}, {n}, true);
   }
-  n->keys.append(STRING("s:" <<step <<" t:" <<time <<" bound:" <<bound <<" feas:" <<!isInfeasible <<" term:" <<isTerminal <<' ' <<folState->isNodeOfGraph->keys.scalar()));
-  for(uint l=0;l<L;l++)
-    n->keys.append(STRING("L" <<l <<" #:" <<count(l) <<" c:" <<cost(l) <<"|" <<constraints(l) <<" f:" <<feasible(l) <<" terminal:" <<isTerminal));
 
-  if(mcStats && mcStats->n) n->keys.append(STRING("MC best:" <<mcStats->X.first() <<" n:" <<mcStats->n));
+  if(!brief){
+    n->keys.append(STRING("s:" <<step <<" t:" <<time <<" bound:" <<bound <<" feas:" <<!isInfeasible <<" term:" <<isTerminal <<' ' <<folState->isNodeOfGraph->keys.scalar()));
+    for(uint l=0;l<L;l++)
+      n->keys.append(STRING("L" <<l <<" #:" <<count(l) <<" c:" <<cost(l) <<"|" <<constraints(l) <<" f:" <<feasible(l) <<" terminal:" <<isTerminal));
+
+//  if(mcStats && mcStats->n) n->keys.append(STRING("MC best:" <<mcStats->X.first() <<" n:" <<mcStats->n));
   //  n->keys.append(STRING("sym  g:" <<cost(l_symbolic) <<" h:" <<h(l_symbolic) <<" f:" <<f() <<" terminal:" <<isTerminal));
-  n->keys.append(STRING("MC   #" <<mcCount <<" f:" <<mcCost));
-  if(folAddToState) n->keys.append(STRING("symAdd:" <<*folAddToState));
-  if(note.N) n->keys.append(note);
+//  n->keys.append(STRING("MC   #" <<mcCount <<" f:" <<mcCost));
+    if(folAddToState) n->keys.append(STRING("symAdd:" <<*folAddToState));
+    if(note.N) n->keys.append(note);
+  }
 
   G.getRenderingInfo(n).dotstyle="shape=box";
   if(isInfeasible){
@@ -749,7 +752,7 @@ void MNode::getGraph(Graph& G, Node* n) {
   //  if(inFringe2) G.getRenderingInfo(n).dotstyle <<" peripheries=3";
 
   //  n->keys.append(STRING("reward:" <<effPoseReward));
-  for(MNode *ch:children) ch->getGraph(G, n);
+  for(MNode *ch:children) ch->getGraph(G, n, brief);
 }
 
 RUN_ON_INIT_BEGIN(manipulationTree)
