@@ -159,7 +159,7 @@ void OrsPathViewer::step(){
   if(T){
     copy.orsDrawMarkers=false;
     copy.gl().captureImg=writeToFiles;
-    copy.gl().update(STRING(" (time " <<tprefix+int(tt) <<'/' <<tprefix+int(T) <<')' <<text).p, false, false, true);
+    copy.gl().update(STRING("(time " <<tprefix+int(tt) <<'/' <<tprefix+int(T) <<")\n" <<text).p, false, false, true);
     if(writeToFiles) write_ppm(copy.gl().captureImage,STRING("vid/z."<<std::setw(3)<<std::setfill('0')<<tprefix+int(tt)<<".ppm"));
   }
   t++;

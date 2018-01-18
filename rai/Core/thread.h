@@ -147,6 +147,28 @@ struct CycleTimer {
 
 //===========================================================================
 /**
+ * MiniThread might replace Thread some time
+ */
+struct MiniThread : Signaler{
+  mlr::String name;
+  pthread_t thread = 0;             ///< the underlying pthread; NULL iff not opened
+  pid_t tid = 0;                    ///< system thread id
+
+  /// @name c'tor/d'tor
+  MiniThread(const char* _name);
+  virtual ~MiniThread();
+
+  /// @name to be called from `outside' (e.g. the main) to start/step/close the thread
+  void threadClose(double timeoutForce=-1.);       ///< close the thread (stops looping and waits for idle mode before joining the thread)
+  void threadCancel();                             ///< a hard kill (pthread_cancel) of the thread
+
+  virtual void main(){ LOG(-1) <<"you're calling the 'pseudo-pure virtual' main(), which should be overloaded (are you in a destructor?)"; }
+
+  void pthreadMain(); //this is the thread main - should be private!
+};
+
+//===========================================================================
+/**
  * A Thread does some calculation and shares the result via a VariableData.
  *
  * Inherit from the class Thread to create your own process.
@@ -322,9 +344,11 @@ struct Var{
   int last_read_revision;     ///< last revision that has been accessed (read or write)
   struct Node* registryNode;
 
+  Var() : Var(NULL, NULL, false){}
+
   Var(const char* name) : Var(NULL, name, false){}
 
-  /// searches for globally registrated variable 'name', checks type equivalence, and becomes an access for '_thred'
+  /// searches for globally registrated variable 'name', checks type equivalence, and becomes an access for '_thread'
   Var(Thread* _thread, const char* name, bool threadListens=false)
     : name(name), thread(_thread), last_read_revision(0), registryNode(NULL){
     VariableBase::Ptr *existing = registry()->find<VariableBase::Ptr>({"VariableData", name});
@@ -374,6 +398,7 @@ struct Var{
 
   ~Var(){ registry()->delNode(registryNode); }
   T& operator()(){ CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return data->value; }
+  T& operator*(){  CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return data->value; }
   T* operator->(){ CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return &(data->value); }
   RToken<T> get(){ return RToken<T>(*data, &data->value, thread, &last_read_revision); } ///< read access to the variable's data
   WToken<T> set(){ return WToken<T>(*data, &data->value, thread/*, &last_read_revision*/); } ///< write access to the variable's data

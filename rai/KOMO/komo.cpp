@@ -547,7 +547,7 @@ void KOMO::setPush(double startTime, double endTime, const char* stick, const ch
 void KOMO::setGraspSlide(double time, const char* endeff, const char* object, const char* placeRef, int verbose){
 
   double startTime = time;
-  double endTime = time+1.;
+  double endTime = time+5.;
 
   if(verbose>0) cout <<"KOMO_setSlide t=" <<startTime <<" endeff=" <<endeff <<" obj=" <<object <<endl;
 
@@ -572,7 +572,7 @@ void KOMO::setGraspSlide(double time, const char* endeff, const char* object, co
   //connect object to table
   Transformation rel = 0;
   rel.pos.set(0,0, .5*(shapeSize(world, object) + shapeSize(world, placeRef)));
-  setKinematicSwitch(endTime, true, "transXYPhiZero", placeRef, object, rel );
+//  setKinematicSwitch(endTime, true, "transXYPhiZero", placeRef, object, rel );
 
   //-- slide constraints!
   setTask(startTime, endTime,
@@ -727,6 +727,12 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
       //elementary
       else if(*symbols(0)=="flagClear")             setFlag(phase+time, new Flag(FL_clear, world[*symbols(1)]->ID, 0, true));
       else if(*symbols(0)=="touch")                 setTouch(phase+time, phase+time, *symbols(1), *symbols(2));
+      else if(*symbols(0)=="lift"){
+        double timeToLift=.15;
+        setTask(phase+time-timeToLift,      phase+time-2.*timeToLift/3, new TM_Default(TMT_pos, world, *symbols(1)), OT_sumOfSqr, {0.,0.,-.1}, 1e0, 1); //move down
+        setTask(phase+time-timeToLift/3,    phase+time+timeToLift/3,    new TM_Default(TMT_pos, world, *symbols(1)), OT_sumOfSqr, {0.,0.,0.}, 1e1, 1);  //rest
+        setTask(phase+time+2.*timeToLift/3, phase+time+timeToLift,      new TM_Default(TMT_pos, world, *symbols(1)), OT_sumOfSqr, {0.,0.,.1}, 1e0, 1);  //move up
+      }
       else if(*symbols(0)=="impulse"){
         if(k_order>=2){
           setTask(phase+time, phase+time, new TM_ImpulsExchange(world, *symbols(1), *symbols(2)), OT_sumOfSqr, {}, 1e3, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
@@ -735,7 +741,7 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
         }
       }
       else if(*symbols(0)=="inside")                setTask(phase+time, phase+time, new TM_InsideBox(world, *symbols(1), NoVector, *symbols(2)), OT_ineq, NoArr, 1e2);
-      else if(*symbols(0)=="above")                 setTask(phase+time, phase+time, new TM_AboveBox(world, *symbols(1), *symbols(2)), OT_ineq, NoArr, 1e2);
+      else if(*symbols(0)=="above")                 setTask(phase+time, phase+time+1., new TM_AboveBox(world, *symbols(1), *symbols(2)), OT_ineq, NoArr, 1e2);
       else if(*symbols(0)=="notAbove"){
         double margin = .05;
         double negMargin = margin + .5*shapeSize(world, *symbols(1), 0); //how much outside the bounding box?
@@ -756,6 +762,14 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
         rel.pos.set(0,0, .5*(shapeSize(world, *symbols(1)) + shapeSize(world, *symbols(2))));
         setKinematicSwitch(phase+time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, *symbols(1), *symbols(2), world, 0, rel));
         setFlag(phase+time, new Flag(FL_zeroQVel, world[*symbols(2)]->ID, 0, true));
+      }
+      else if(*symbols(0)=="fricSlide"){
+        Transformation rel = 0;
+        rel.pos.set(0,0, .5*(shapeSize(world, *symbols(1)) + shapeSize(world, *symbols(2))));
+        setKinematicSwitch(phase+time, false, new KinematicSwitch(SW_actJoint, JT_transXYPhi, *symbols(2), *symbols(1), world, 0, rel));
+        setFlag(phase+time, new Flag(FL_clear, world[*symbols(1)]->ID, 0, true), +1);
+        setFlag(phase+time, new Flag(FL_impulseExchange, world[*symbols(1)]->ID), 0);
+        setFlag(phase+time, new Flag(FL_xPosVelCosts, world[*symbols(1)]->ID, 0, true), +1);
       }
       else if(*symbols(0)=="dynFree")               {
 //        setKinematicSwitch(phase+time, true, new KinematicSwitch(SW_effJoint, JT_trans3, *symbols(1), *symbols(2), world));

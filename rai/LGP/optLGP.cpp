@@ -2,6 +2,51 @@
 
 #include <Kin/kinViewer.h>
 #include <KOMO/komo.h>
+#include <Gui/opengl.h>
+#ifdef MLR_GL
+#  include <GL/gl.h>
+#  include <GL/glu.h>
+#endif
+#include <iomanip>
+
+uint displaySize=350;
+
+struct DisplayThread : MiniThread{
+  OptLGP* lgp;
+  OpenGL gl;
+  uint t=0;
+  bool saveVideo=false;
+  DisplayThread(OptLGP* lgp) : MiniThread("OptLGP_Display"), lgp(lgp), gl("OptLGP", 5*displaySize, 3*displaySize) {}
+  ~DisplayThread(){ threadClose(); }
+  void resetSteppings(){
+    lgp->solutions.writeAccess();
+    for(uint i=0;i<lgp->solutions().N;i++){
+      lgp->solutions()(i)->displayStep=0;
+    }
+    lgp->solutions.deAccess();
+  }
+
+  void main(){
+//    Metronome tic(.1);
+    for(;;){
+      if(getStatus()<0) break;
+//      tic.waitForTic();
+      mlr::wait(.1);
+      lgp->solutions.writeAccess();
+      for(uint i=0;i<lgp->solutions().N;i++){
+        lgp->solutions()(i)->displayStep++;
+        if(gl.views.N>i)
+          gl.views(i).text.clear() <<i <<':' <<lgp->solutions()(i)->displayStep <<": "
+                                  <<lgp->solutions()(i)->node->cost <<"|  " <<lgp->solutions()(i)->node->constraints.last() <<'\n'
+                                 <<lgp->solutions()(i)->decisions;
+      }
+      lgp->solutions.deAccess();
+      if(saveVideo) gl.captureImg=true;
+      gl.update(NULL, false, false, false);
+      if(saveVideo) write_ppm(gl.captureImage, STRING("vid/z." <<std::setw(3)<<std::setfill('0')<<t++<<".ppm"));
+    }
+  }
+};
 
 void initFolStateFromKin(FOL_World& L, const mlr::KinematicWorld& K){
   for(mlr::Frame *a:K.frames) if(a->ats["logical"]){
@@ -44,6 +89,7 @@ OptLGP::OptLGP(mlr::KinematicWorld &kin, FOL_World &fol)
 
 OptLGP::~OptLGP(){
   views.clear();
+  if(dth) delete dth;
   delete root;
   root=NULL;
 }
@@ -64,6 +110,7 @@ void OptLGP::initDisplay(){
     }
     for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
   }
+  if(!dth) dth = new DisplayThread(this);
 }
 
 void OptLGP::renderToVideo(uint level, const char* filePrefix){
@@ -72,11 +119,13 @@ void OptLGP::renderToVideo(uint level, const char* filePrefix){
 }
 
 void OptLGP::updateDisplay(){
+  if(fringe_solved.N) displayFocus = fringe_solved.last();
+
   mlr::String decisions = displayFocus->getTreePathString('\n');
   for(uint i=1;i<views.N;i++){
     if(displayFocus->komoProblem(i) && displayFocus->komoProblem(i)->configurations.N){
       views(i)->setConfigurations(displayFocus->komoProblem(i)->configurations);
-      views(i)->text = decisions;
+      views(i)->text.clear() <<displayFocus->cost <<"|  " <<displayFocus->constraints.last() <<'\n' <<decisions;
     }else views(i)->clear();
   }
   //  if(node->komoProblem(2) && node->komoProblem(2)->configurations.N)
@@ -85,6 +134,33 @@ void OptLGP::updateDisplay(){
   //  if(node->komoProblem(3) && node->komoProblem(3)->configurations.N)
   //    pathView.setConfigurations(node->komoProblem(3)->configurations);
   //  else pathView.clear();
+
+  solutions.writeAccess();
+  for(uint i=0;i<solutions().N;i++){
+    if(dth->gl.views.N<=i){
+      dth->gl.addSubView(i, glStandardScene, NULL);
+      dth->gl.addSubView(i, *solutions()(i));
+//    dth->gl.views(i).drawers.last() = solutions()(i);
+//    dth->gl.addSubView(i, glStandardScene, NULL);
+//    dth->gl.addSubView(i, *solutions()(i));
+      dth->gl.views(i).camera.setDefault();
+      dth->gl.views(i).camera.focus(.9, 0., 1.3);
+    }
+    dth->gl.views(i).drawers.last() = solutions()(i);
+    dth->gl.views(i).text.clear() <<solutions()(i)->node->cost <<'\n' <<solutions()(i)->decisions;
+  }
+  dth->gl.setSubViewTiles(5,3);
+  solutions.deAccess();
+//  gl->update();
+
+//  solutions.writeAccess();
+//  if(solutions().N){
+//    cout <<"SOLUTIONS: " <<solutions().N <<endl;
+//    for(uint i=0;i<solutions().N;i++){
+//      solutions()(i)->write(cout);
+//    }
+//  }
+//  solutions.deAccess();
 
   if(displayTree){
     //generate the tree pdf
@@ -98,7 +174,7 @@ void OptLGP::updateDisplay(){
     for(auto& n:fringe_pose2) n->note <<"POSE2 ";
     for(auto& n:fringe_seq)  n->note <<"SEQ ";
     for(auto& n:fringe_path)  n->note <<"PATH ";
-    for(auto& n:fringe_done) n->note <<"DONE";
+    for(auto& n:fringe_solved) n->note <<"DONE";
 
     Graph dot=root->getGraph(true);
     dot.writeDot(FILE("z.dot"));
@@ -203,6 +279,9 @@ void OptLGP::optFixedSequence(const mlr::String& seq, int specificLevel, bool co
 
   displayFocus = node;
   updateDisplay();
+}
+
+void OptLGP::glDraw(OpenGL &gl){
 }
 
 bool OptLGP::execChoice(mlr::String cmd){
@@ -312,13 +391,13 @@ void OptLGP::clearFromInfeasibles(MNodeL &fringe){
 }
 
 uint OptLGP::numFoundSolutions(){
-  return fringe_done.N;
+  return fringe_solved.N;
 }
 
 mlr::String OptLGP::report(bool detailed){
   MNode *bpose = getBest(terminals, 1);
   MNode *bseq  = getBest(terminals, 2);
-  MNode *bpath = getBest(fringe_done, 3);
+  MNode *bpath = getBest(fringe_solved, 3);
 
   mlr::String out;
   out <<"TIME= " <<mlr::cpuTime() <<" KIN= " <<COUNT_kin <<" EVALS= " <<COUNT_evals
@@ -326,29 +405,46 @@ mlr::String OptLGP::report(bool detailed){
     <<" bestPose= " <<(bpose?bpose->cost(1):100.)
    <<" bestSeq = " <<(bseq ?bseq ->cost(2):100.)
   <<" pathPath= " <<(bpath?bpath->cost(3):100.)
-  <<" #solutions= " <<fringe_done.N;
+  <<" #solutions= " <<fringe_solved.N;
 
-  if(bseq) displayFocus=bseq;
-  if(bpath) displayFocus=bpath;
+//  if(bseq) displayFocus=bseq;
+//  if(bpath) displayFocus=bpath;
 
   if(detailed){
     out <<"\n*** found solutions:" <<endl;
-    for(MNode *n:fringe_done) n->write(out, false, true);
+    for(MNode *n:fringe_solved) n->write(out, false, true);
   }
 
   return out;
 }
 
+bool sortComp(const MNode* a, const MNode* b){
+  if(!a->isInfeasible && b->isInfeasible) return true;
+  if(a->isInfeasible && !b->isInfeasible) return false;
+  return a->cost.last() < b->cost.last();
+}
+
+typedef OptLGP_SolutionData* OptLGP_SolutionDataPtr;
+bool sortComp2(const OptLGP_SolutionDataPtr& a, const OptLGP_SolutionDataPtr& b){
+  return sortComp(a->node, b->node);
+}
+
 void OptLGP::step(){
   expandBest();
 
-  uint numSol = fringe_done.N;
+  uint numSol = fringe_solved.N;
 
   if(rnd.uni()<.5) optBestOnLevel(l_pose, fringe_pose, &fringe_seq, &fringe_pose);
   optFirstOnLevel(l_pose, fringe_pose2, &fringe_seq);
   optBestOnLevel(l_seq, fringe_seq, &fringe_path, NULL);
   if(verbose>0 && fringe_path.N) cout <<"EVALUATING PATH " <<fringe_path.last()->getTreePathString() <<endl;
-  optBestOnLevel(l_path, fringe_path, &fringe_done, NULL);
+  optBestOnLevel(l_path, fringe_path, &fringe_solved, NULL);
+
+  if(fringe_solved.N>numSol){
+    if(verbose>0) cout <<"NEW SOLUTION FOUND! " <<fringe_solved.last()->getTreePathString() <<endl;
+    solutions.set()->append(new OptLGP_SolutionData(fringe_solved.last()));
+    solutions.set()->sort(sortComp2);
+  }
 
   //-- update queues (if something got infeasible)
   clearFromInfeasibles(fringe_expand);
@@ -361,7 +457,6 @@ void OptLGP::step(){
   if(verbose>0){
     mlr::String out=report();
     fil <<out <<endl;
-    if(fringe_done.N>numSol) cout <<"NEW SOLUTION FOUND! " <<fringe_done.last()->getTreePathString() <<endl;
     if(verbose>1) cout <<out <<endl;
     if(verbose>2 && !(numSteps%1)) updateDisplay();
   }
@@ -413,13 +508,69 @@ void OptLGP::run(uint steps){
   for(uint k=0;k<steps;k++){
     step();
 
-    if(fringe_done.N>10) break;
+    if(fringe_solved.N>15) break;
   }
 
   if(verbose>0) report(true);
 
   //this generates the movie!
-  if(verbose>2) renderToVideo();
+  if(verbose>2){
+//    renderToVideo();
+    system("rm -f vid/z.*.ppm");
+    dth->resetSteppings();
+    dth->saveVideo = true;
+    mlr::wait(20.);
+  }
 
   if(verbose>2) views.clear();
+}
+
+OptLGP_SolutionData::OptLGP_SolutionData(MNode *n) : node(n){
+  decisions = n->getTreePathString('\n');
+
+  //--init geoms
+  const mlr::KinematicWorld& K = node->startKinematics;
+  uintA frameIDs;
+  for(uint f=0;f<K.frames.N;f++){
+    const mlr::Frame *a = K.frames(f);
+    if(a->shape && a->shape->geom && a->shape->type()!=mlr::ST_marker){
+      frameIDs.append(a->ID);
+    }
+  }
+  geomIDs.resizeAs(frameIDs);
+  for(uint i=0;i<geomIDs.N;i++) geomIDs(i) = K.frames(frameIDs(i))->shape->geom->ID;
+
+  uint L = node->komoProblem.N;
+  paths.resize(L);
+  for(uint l=0;l<L;l++){
+    KOMO *komo = node->komoProblem(l);
+    if(komo && komo->configurations.N){
+      paths(l).resize(komo->configurations.N, frameIDs.N);
+      for(uint s=0;s<komo->configurations.N;s++) for(uint i=0; i<frameIDs.N; i++){
+        paths(l)(s, i) = komo->configurations(s)->frames(frameIDs(i))->X;
+      }
+    }
+  }
+}
+
+void OptLGP_SolutionData::write(std::ostream &os) const{
+  os <<"decisions=" <<decisions
+    <<"\t depth=" <<node->step
+   <<"\t costs=" <<node->cost
+  <<endl;
+}
+
+void OptLGP_SolutionData::glDraw(OpenGL &gl){
+  uint l=3;
+  mlr::Array<mlr::Geom*>& geoms = _GeomStore()->geoms;
+
+  for(uint i=0; i<geomIDs.N; i++){
+    if(displayStep >= paths(l).d0) displayStep = 0;
+    mlr::Transformation &X = paths(l)(displayStep, i);
+    double GLmatrix[16];
+    X.getAffineMatrixGL(GLmatrix);
+    glLoadMatrixd(GLmatrix);
+
+    geoms(geomIDs(i))->glDraw(gl);
+  }
 }

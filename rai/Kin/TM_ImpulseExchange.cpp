@@ -59,8 +59,9 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
   if(&J) Jcc.setMatrixBlock(Jc, 0, qdim(0));
 
 #if 1
-  arr R  = a2;
-  arr JR = J2;
+  double z=.5;
+  arr R  = a2-z*a1;
+  arr JR = J2-z*J1;
   if(sumOfSqr(c)>1e-16){
 
     // R is || to c

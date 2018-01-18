@@ -1,14 +1,33 @@
 #include "manipulationTree.h"
+//#include <Geo/geoms.h>
+#include <Core/thread.h>
 
 struct OrsPathViewer;
+typedef mlr::Array<mlr::Transformation> TransformationA;
 
 void initFolStateFromKin(FOL_World& L, const mlr::KinematicWorld& K);
 
-struct OptLGP{
+struct OptLGP_SolutionData : GLDrawer{
+  MNode *node; ///< contains costs, constraints, and solutions for each level
+  mlr::String decisions;
+
+  uintA geomIDs; ///< for display
+  mlr::Array<TransformationA> paths; ///< for display
+  uint displayStep=0;
+
+  OptLGP_SolutionData(MNode *n);
+
+  void write(ostream &os) const;
+  void glDraw(struct OpenGL&gl);
+};
+
+
+struct OptLGP : GLDrawer{
   int verbose;
   uint numSteps;
   ofstream fil;
   bool displayTree=true;
+  struct DisplayThread *dth=NULL;
 
   MNode *root, *displayFocus;
 
@@ -24,7 +43,9 @@ struct OptLGP{
   MNodeL fringe_pose2; //list of nodes towards a terminal -> scheduled for pose testing
   MNodeL fringe_seq;   //list of terminal nodes that have been pose tested
   MNodeL fringe_path;  //list of terminal nodes that have been seq tested
-  MNodeL fringe_done;  //list of terminal nodes that have been path tested
+  MNodeL fringe_solved;  //list of terminal nodes that have been path tested
+
+  Var<mlr::Array<OptLGP_SolutionData*>> solutions;
 
   //high-level
   OptLGP(mlr::KinematicWorld& kin, FOL_World& fol);
@@ -37,7 +58,7 @@ struct OptLGP{
 private:
   MNode* getBest(MNodeL& fringe, uint level);
   MNode* popBest(MNodeL& fringe, uint level);
-  MNode* getBest(){ return getBest(fringe_done, 3); }
+  MNode* getBest(){ return getBest(fringe_solved, 3); }
   MNode *expandBest(int stopOnLevel=-1);
   void optBestOnLevel(int level, MNodeL& fringe, MNodeL* addIfTerminal, MNodeL* addChildren);
   void optFirstOnLevel(int level, MNodeL& fringe, MNodeL* addIfTerminal);
@@ -66,4 +87,6 @@ public:
   void player(StringA cmds={});
 
   void optFixedSequence(const mlr::String& seq, int specificLevel=-1, bool collisions=false);
+
+  void glDraw(struct OpenGL&gl);
 };

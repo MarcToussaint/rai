@@ -3,6 +3,7 @@ NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
 LAPACK = 1
+GL = 1
 #OPTIM=fast_debug
 
 DEPEND = Logic KOMO MCTS

@@ -227,7 +227,7 @@ void MNode::optLevel(uint level, bool collisions){
   //-- optimize
   DEBUG( FILE("z.fol") <<fol; );
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); );
-//  komo.reportProblem();
+  komo.reportProblem();
 
   try{
     //      komo.verbose=3;
@@ -589,7 +589,7 @@ mlr::String MNode::getTreePathString(char sep) const{
   mlr::String str;
   for(MNode *b : path){
     if(b->decision) str <<*b->decision <<sep;
-    else str <<"ROOT" <<sep;
+//    else str <<"ROOT" <<sep;
   }
   return str;
 }
