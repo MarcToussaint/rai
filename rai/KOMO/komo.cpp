@@ -516,14 +516,19 @@ void KOMO::setHandover(double time, const char* oldHolder, const char* object, c
 void KOMO::setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose){
   if(verbose>0) cout <<"KOMO_setPush t=" <<startTime <<" stick=" <<stick <<" object=" <<object <<" table=" <<table <<endl;
 
+#if 1
   //stick normal alignes with slider direction
   setTask(startTime, endTime, new TM_Default(TMT_vecAlign, world, stick, -Vector_y, "slider1b", Vector_x), OT_sumOfSqr, {1.}, 1e2);
   //stick horizontal is orthogonal to world vertical
-  setTask(startTime, endTime, new TM_Default(TMT_vecAlign, world, stick, Vector_x, NULL, Vector_z), OT_sumOfSqr, {0.}, 1e2);
+//  setTask(startTime, endTime, new TM_Default(TMT_vecAlign, world, stick, Vector_x, NULL, Vector_z), OT_sumOfSqr, {0.}, 1e2);
+  setTouch(startTime, endTime, stick, table);
 
-  double dist = .5*shapeSize(world, object, 0)+.01;
+  double dist = .05; //.5*shapeSize(world, object, 0)+.01;
   setTask(startTime, endTime, new TM_InsideBox(world, "slider1b", {dist, .0, .0}, stick), OT_ineq);
 //  setTask(startTime, endTime, new TM_Default(TMT_posDiff, world, stick, NoVector, "slider1b", {dist, .0, .0}), OT_sumOfSqr, {}, 1e2);
+#else
+  setTouch(startTime, endTime, stick, object);
+#endif
 
   setKS_slider(startTime, true, object, "slider1", table);
 

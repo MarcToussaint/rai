@@ -8,6 +8,8 @@ src_paths =  $(shell find rai -mindepth 1 -maxdepth 1 -type d -not -name 'retire
 
 test_paths = $(shell find test -maxdepth 3 -name 'Makefile' -printf "%h ")
 
+bin_paths = $(shell find bin -maxdepth 2 -name 'Makefile' -printf "%h ")
+
 ################################################################################
 
 initUbuntuPackages: force
@@ -15,6 +17,8 @@ initUbuntuPackages: force
 	@find rai -mindepth 1 -maxdepth 1 -type d -exec make installUbuntuPackages -C {} \;
 
 tests: $(test_paths:%=makePath/%)
+
+bin: $(bin_paths:%=makePath/%)
 
 src: $(src_paths:%=makeDepend/%)
 
