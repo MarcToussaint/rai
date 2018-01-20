@@ -86,11 +86,16 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
     //first find lowest frame below to
     {
       mlr::Transformation Q = 0;
+#if 1
+      mlr::Frame *link = to->getUpwardLink(Q);
+      if(link && link!=to) to = link;
+#else
       while(to->parent){
         if(to->joint) break; //don't jump over joints
         Q = to->Q * Q;
         to = to->parent;
       }
+#endif
       if(!Q.isZero())
         jA.appendTransformation(-Q);
     }

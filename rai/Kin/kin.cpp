@@ -2197,7 +2197,7 @@ void mlr::KinematicWorld::optimizeTree(bool preserveNamed){
 //  if(!preserveNamed) pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
   reconnectLinksToClosestJoints();
   pruneUselessFrames(preserveNamed);
-  calc_q_from_Q();
+  reset_q();
   checkConsistency();
 }
 
