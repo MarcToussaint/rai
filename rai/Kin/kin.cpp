@@ -609,7 +609,7 @@ void mlr::KinematicWorld::jacobianPos(arr& J, Frame *a, const mlr::Vector& pos_w
       if(j_idx>=N) CHECK(j->type==JT_rigid, "");
       if(j_idx<N){
         if(j->type==JT_hingeX || j->type==JT_hingeY || j->type==JT_hingeZ) {
-          mlr::Vector tmp = j->axis ^ (pos_world-j->X().pos);
+          mlr::Vector tmp = j->axis ^ (pos_world-j->X()*j->Q().pos);
           J(0, j_idx) += tmp.x;
           J(1, j_idx) += tmp.y;
           J(2, j_idx) += tmp.z;
@@ -1534,12 +1534,27 @@ void mlr::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
     b->read(b->ats);
   }
 
+  NodeL fs = G.getNodes("frame");
+  for(Node *n: fs) {
+    CHECK_EQ(n->keys(0),"frame","");
+    CHECK(n->isGraph(), "frame must have value Graph");
+    CHECK_LE(n->parents.N, 1,"frames must have no or one parent: specs=" <<*n <<' ' <<n->index);
+
+    Frame *b = NULL;
+    if(!n->parents.N) b = new Frame(*this);
+    if(n->parents.N==1) b = new Frame( getFrameByName(n->parents(0)->keys.last()) );
+    if(n->keys.N>1) b->name=n->keys.last();
+    b->ats.copy(n->graph(), false, true);
+    if(n->keys.N>2) b->ats.newNode<bool>({n->keys.last(-1)});
+    b->read(b->ats);
+  }
+
   NodeL ss = G.getNodes("shape");
   for(Node *n: ss) {
     CHECK_EQ(n->keys(0),"shape","");
     CHECK(n->parents.N<=1,"shapes must have no or one parent");
     CHECK(n->isGraph(),"shape must have value Graph");
-    
+
     Frame* f = new Frame(*this);
     if(n->keys.N>1) f->name=n->keys.last();
     f->ats.copy(n->graph(), false, true);
@@ -1548,18 +1563,18 @@ void mlr::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
 
     if(n->parents.N==1){
       Frame *b = listFindByName(frames, n->parents(0)->keys.last());
-      CHECK(b, "");
+      CHECK(b, "could not find frame '" <<n->parents(0)->keys.last() <<"'");
       f->linkFrom(b);
       if(f->ats["rel"]) n->graph().get(f->Q, "rel");
     }
   }
-  
+
   NodeL js = G.getNodes("joint");
   for(Node *n: js) {
     CHECK_EQ(n->keys(0),"joint","joints must be declared as joint: specs=" <<*n <<' ' <<n->index);
     CHECK_EQ(n->parents.N,2,"joints must have two parents: specs=" <<*n <<' ' <<n->index);
     CHECK(n->isGraph(),"joints must have value Graph: specs=" <<*n <<' ' <<n->index);
-    
+
     Frame *from=listFindByName(frames, n->parents(0)->keys.last());
     Frame *to=listFindByName(frames, n->parents(1)->keys.last());
     CHECK(from,"JOINT: from '" <<n->parents(0)->keys.last() <<"' does not exist ["<<*n <<"]");
@@ -1574,21 +1589,6 @@ void mlr::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
 
     Joint *j=new Joint(*f);
     j->read(f->ats);
-  }
-
-  NodeL fs = G.getNodes("frame");
-  for(Node *n: fs) {
-    CHECK_EQ(n->keys(0),"frame","");
-    CHECK(n->isGraph(), "frame must have value Graph");
-    CHECK_LE(n->parents.N, 1,"frames must have no or one parent: specs=" <<*n <<' ' <<n->index);
-
-    Frame *b = NULL;
-    if(!n->parents.N) b = new Frame(*this);
-    if(n->parents.N==1) b = new Frame( getFrameByName(n->parents(0)->keys.last()) );
-    if(n->keys.N>1) b->name=n->keys.last();
-    b->ats.copy(n->graph(), false, true);
-    if(n->keys.N>2) b->ats.newNode<bool>({n->keys.last(-1)});
-    b->read(b->ats);
   }
 
   //if the joint is coupled to another:
@@ -2156,18 +2156,30 @@ void mlr::KinematicWorld::pruneRigidJoints(int verbose){
 }
 
 void mlr::KinematicWorld::reconnectLinksToClosestJoints(){
-  for(Frame *f:frames) if(f->parent && !f->joint){
-    Frame *from = f->parent;
+  for(Frame *f:frames) if(f->parent){
+#if 0
+    Frame *link = f->parent;
     mlr::Transformation Q=0;
-    while(from->parent && !from->joint){ //walk down links until this is a joint
-      Q = from->Q * Q;                 //accumulate transforms
-      from = from->parent;
+    while(link->parent && !link->joint){ //walk down links until this is a joint
+      Q = link->Q * Q;                 //accumulate transforms
+      link = link->parent;
     }
-    if(from != f->parent){ //if we walked -> we need rewiring
+#else
+    mlr::Transformation Q;
+    Frame *link = f->getUpwardLink(Q);
+#endif
+    if(f->joint && !Q.rot.isZero) continue; //only when rot is zero you can subsume the Q transformation into the Q of the joint
+    if(link != f->parent){ //if we walked -> we need rewiring
       f->parent->outLinks.removeValue(f);
-      from->outLinks.append(f);
-      f->parent = from;
+      link->outLinks.append(f);
+      f->parent = link;
       f->Q = Q * f->Q;  //preprend accumulated transform to f->link
+
+      if(!link->shape && f->shape && f->Q.isZero()){ //f has a shape, link not -> move shape to link
+        LOG(-1) <<"Shape '" <<f->name <<"' could be reassociated to link '" <<link->name <<"' (child of '" <<(link->parent?link->parent->name:STRING("NONE")) <<"')";
+//        link->shape = f->shape;
+//        f->shape = NULL;
+      }
     }
   }
 }
@@ -2182,9 +2194,10 @@ void mlr::KinematicWorld::pruneUselessFrames(bool preserveNamed){
 }
 
 void mlr::KinematicWorld::optimizeTree(bool preserveNamed){
-  if(!preserveNamed) pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
+//  if(!preserveNamed) pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
   reconnectLinksToClosestJoints();
   pruneUselessFrames(preserveNamed);
+  calc_q_from_Q();
   checkConsistency();
 }
 

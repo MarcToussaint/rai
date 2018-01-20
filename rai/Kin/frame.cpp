@@ -57,8 +57,8 @@ mlr::Inertia &mlr::Frame::getInertia(){
 mlr::Frame *mlr::Frame::getUpwardLink(mlr::Transformation &Qtotal){
   if(&Qtotal) Qtotal.setZero();
   Frame *p=parent;
-  while(p && !p->parent && !p->joint){
-    if(&Qtotal) Qtotal=p->Q*Qtotal;
+  while(p && p->parent && !p->joint){
+    if(&Qtotal) Qtotal = p->Q*Qtotal;
     p=p->parent;
   }
   return p;
@@ -192,6 +192,7 @@ mlr::Joint::~Joint() {
 
 void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
   mlr::Transformation &Q = frame.Q;
+//  if(type!=JT_rigid) Q.setZero();
   if(mimic){
     Q = mimic->frame.Q;
   }else{

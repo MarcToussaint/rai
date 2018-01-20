@@ -463,10 +463,16 @@ namespace mlr {
     operator enum_T() const{ return x; }
     void read(std::istream& is){
       mlr::String str(is);
+      bool good=false;
       for(int i=0; names[i]; i++){
         const char* n = names[i];
         if(!n) LOG(-2) <<"enum_T " <<typeid(enum_T).name() <<' ' <<str <<" out of range";
-        if(str==n){ x=(enum_T)(i); break; }
+        if(str==n){ x=(enum_T)(i); good=true; break; }
+      }
+      if(!good){
+        mlr::String all;
+        for(int i=0; names[i]; i++) all <<names[i] <<' ';
+        LOG(-2) <<"Enum::read could not find the keyword '" <<str <<"'. Possible Enum keywords: " <<all;
       }
       CHECK(!strcmp(names[x], str.p), "");
     }
