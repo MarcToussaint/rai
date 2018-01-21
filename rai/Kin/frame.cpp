@@ -56,8 +56,8 @@ mlr::Inertia &mlr::Frame::getInertia(){
 
 mlr::Frame *mlr::Frame::getUpwardLink(mlr::Transformation &Qtotal){
   if(&Qtotal) Qtotal.setZero();
-  Frame *p=parent;
-  while(p && p->parent && !p->joint){
+  Frame *p=this;
+  while(p->parent && !p->joint){
     if(&Qtotal) Qtotal = p->Q*Qtotal;
     p=p->parent;
   }
@@ -121,7 +121,7 @@ mlr::Frame* mlr::Frame::insertPreLink(const mlr::Transformation &A){
   parent=f;
   parent->outLinks.append(this);
 
-  f->Q = A;
+  if(&A) f->Q = A;
 
   return f;
 }

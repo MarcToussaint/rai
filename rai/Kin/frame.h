@@ -65,8 +65,8 @@ struct Frame {
 
   uint numInputs() const{ if(parent) return 1; return 0; } //TODO: remove: use KinConf specific topSort, not generic; remove generic top sort..
 
-  Frame* insertPreLink(const mlr::Transformation& A);
-  Frame* insertPostLink(const mlr::Transformation& B);
+  Frame* insertPreLink(const mlr::Transformation& A=0);
+  Frame* insertPostLink(const mlr::Transformation& B=0);
   void unLink();
   void linkFrom(Frame *_parent, bool adoptRelTransform=false);
 

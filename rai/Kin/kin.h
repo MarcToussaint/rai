@@ -109,7 +109,8 @@ struct KinematicWorld : GLDrawer{
   void reset_q();
   void calc_activeSets();
   void calc_q();
-  void reconfigureRoot(Frame *root);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
+  void reconfigureRootOfSubtree(Frame *root);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
+  void flipFrames(mlr::Frame *a, mlr::Frame *b);
   void pruneRigidJoints(int verbose=0);        ///< delete rigid joints -> they become just links
   void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
   void pruneUselessFrames(bool preserveNamed=true);  ///< delete frames that have no name, joint, and shape

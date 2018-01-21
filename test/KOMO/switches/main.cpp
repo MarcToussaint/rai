@@ -2,6 +2,7 @@
 #include <string>
 #include <map>
 #include <Core/graph.h>
+#include <Kin/switch.h>
 
 using namespace std;
 
@@ -9,7 +10,7 @@ using namespace std;
 
 void TEST(Grasp){
   mlr::KinematicWorld K("model.g");
-  K.optimizeTree(false);
+//  K.optimizeTree(false);
   K.checkConsistency();
   FILE("z.g") <<K;
 
@@ -21,7 +22,14 @@ void TEST(Grasp){
 //  komo.setPosition(1., -1., "endeff", "stick");
 //  komo.setTouch(1., -1., "endeff", "stick");
 
+#if 0
   komo.setGrasp(1., "endeff", "stick");
+#else
+  komo.setKinematicSwitch(1., true, new mlr::KinematicSwitch(mlr::SW_effJoint, mlr::JT_quatBall, "endeff", "stickTip", K));
+//  setTask(time, time, new TM_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e2);
+//  komo.setTouch(1., 1., "endeff", "stick");
+#endif
+
   komo.setTouch(2., -1., "stick", "redBall");
   komo.setTouch(-1.,-1., "stick", "table1", OT_ineq, {}, 1e2);
   komo.setTouch(-1.,-1., "stick", "arm1", OT_ineq, {}, 1e2);

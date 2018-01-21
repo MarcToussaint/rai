@@ -355,56 +355,32 @@ arr mlr::KinematicWorld::naturalQmetric(double power) const {
 
 /** @brief revert the topological orientation of a joint (edge),
    e.g., when choosing another body as root of a tree */
-//void mlr::KinematicWorld::revertJoint(mlr::Joint *j) {
-//  cout <<"reverting edge (" <<j->from()->name <<' ' <<j->frame.name <<")" <<endl;
-//  NIY;
-//#if 0
-//  //revert
-//  j->from->outLinks.removeValue(j);
-//  j->to->inLinks.removeValue(j);
-//  Frame *b=j->from; j->from=j->to; j->to=b;
-//  j->from->outLinks.append(j);
-//  j->to->inLinks.append(j);
-//  listReindex(j->from->outLinks);
-//  listReindex(j->from->inLinks);
-//  checkConsistency();
-
-//  mlr::Transformation f;
-//  f=j->A;
-//  j->A.setInverse(j->B);
-//  j->B.setInverse(f);
-//  f=j->Q;
-//  j->Q.setInverse(f);
-//#endif
-//}
+void mlr::KinematicWorld::flipFrames(mlr::Frame *a, mlr::Frame *b) {
+  CHECK_EQ(b->parent, a, "");
+  CHECK_EQ(a->parent, NULL, "");
+  CHECK_EQ(a->joint, NULL, "");
+  CHECK_EQ(b->joint, NULL, "");
+  a->Q = -b->Q;
+  b->Q.setZero();
+  b->unLink();
+  a->linkFrom(b);
+}
 
 /** @brief re-orient all joints (edges) such that n becomes
   the root of the configuration */
-void mlr::KinematicWorld::reconfigureRoot(Frame *root) {
-  mlr::Array<Frame*> list, list2;
-  Frame **m,**mstop;
-  list.append(root);
-  uintA level(frames.N);
-  level=0;
-  int i=0;
-  
-  while(list.N>0) {
-    i++;
-    list2.clear();
-    mstop=list.p+list.N;
-    for(m=list.p; m!=mstop; m++) {
-      level((*m)->ID)=i;
-      Joint *j;
-      if((j = (*m)->joint)){ //for_list(Joint,  e,  (*m)->inLinks) {
-        NIY; //if(!level(j->from()->ID)) revertJoint(j);
-      }
-      for(Frame *f: (*m)->outLinks) list2.append(f);
-    }
-    list=list2;
+void mlr::KinematicWorld::reconfigureRootOfSubtree(Frame *root) {
+  FrameL pathToOldRoot;
+  mlr::Frame *f = root;
+  while(f->parent){
+    pathToOldRoot.prepend(f);
+    f = f->parent;
   }
-  
-  NIY;
-//  graphTopsort(bodies, joints);
+
+  for(Frame *f : pathToOldRoot){
+    flipFrames(f->parent, f);
+  }
+
+  checkConsistency();
 }
 
 uint mlr::KinematicWorld::analyzeJointStateDimensions() const{
@@ -2156,6 +2132,7 @@ void mlr::KinematicWorld::pruneRigidJoints(int verbose){
 }
 
 void mlr::KinematicWorld::reconnectLinksToClosestJoints(){
+  reset_q();
   for(Frame *f:frames) if(f->parent){
 #if 0
     Frame *link = f->parent;
@@ -2197,7 +2174,6 @@ void mlr::KinematicWorld::optimizeTree(bool preserveNamed){
 //  if(!preserveNamed) pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
   reconnectLinksToClosestJoints();
   pruneUselessFrames(preserveNamed);
-  reset_q();
   checkConsistency();
 }
 

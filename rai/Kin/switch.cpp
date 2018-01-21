@@ -82,9 +82,10 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
     return;
   }
 
+  bool newVersion = true;
   if(symbol==SW_effJoint || symbol==SW_actJoint || symbol==SW_insertEffJoint || symbol==insertActuated){
     //first find lowest frame below to
-    {
+    if(!newVersion){
       mlr::Transformation Q = 0;
 #if 1
       mlr::Frame *link = to->getUpwardLink(Q);
@@ -102,14 +103,33 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
 
     Joint *j = NULL;
     if(symbol!=SW_insertEffJoint && symbol!=insertActuated){
-      if(to->parent) to->unLink();
+      if(newVersion){
+        mlr::Frame *link = to->getUpwardLink();
+        if(link->parent) link->unLink();
+        K.reconfigureRootOfSubtree(to);
+      }else{
+        if(to->parent) to->unLink();
+      }
       to->linkFrom(from);
       j = new Joint(*to);
     }else{
       CHECK(!from, "from should not be specified");
       CHECK(to->parent, "to needs to have a link already");
-      Frame *l = to->insertPreLink(mlr::Transformation(0));
-      j = new Joint(*l);
+      Frame *mid = to->insertPreLink(mlr::Transformation(0));
+      j = new Joint(*mid);
+    }
+    if(!jA.isZero()){
+      if(newVersion){
+        j->frame.insertPreLink(jA);
+      }else{ //in the old version: when not reconfiguring the grasped frame to root, you need to insert -Q AFTER the joint to transform back to the old link's root
+        Frame *mid = to->insertPreLink();
+        delete j;
+        j = new mlr::Joint(*mid);
+        to->Q = jA;
+      }
+    }
+    if(!jB.isZero()){
+      j->frame.insertPostLink(jB);
     }
     if(symbol==SW_actJoint || symbol==insertActuated){
       j->constrainToZeroVel=false;
@@ -119,12 +139,6 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
       j->frame.flags |= (1<<FL_zeroQVel);
     }
     j->type = jointType;
-    if(!jA.isZero()){
-      j->frame.insertPreLink(jA);
-    }
-    if(!jB.isZero()){
-      j->frame.insertPostLink(jB);
-    }
     K.calc_q();
     K.calc_fwdPropagateFrames();
     K.checkConsistency();
