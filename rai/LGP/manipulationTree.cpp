@@ -24,16 +24,9 @@
 uint COUNT_kin=0;
 uint COUNT_evals=0;
 uintA COUNT_opt=consts<uint>(0, 4);
+double COUNT_time=0.;
 
-MNode::MNode(mlr::KinematicWorld& kin, FOL_World& _fol, uint levels)
-  : parent(NULL), step(0),
-    fol(_fol), folState(NULL), folDecision(NULL), folAddToState(NULL),
-    startKinematics(kin), effKinematics(),
-    L(levels), bound(0.),
-    rootMC(NULL), mcStats(NULL), mcCount(0), mcCost(0.) {
-  //this is the root node!
-  fol.reset_state();
-  folState = fol.createStateCopy();
+void MNode::resetData(){
   cost = zeros(L);
   constraints = zeros(L);
   count = consts<uint>(0, L);
@@ -41,15 +34,27 @@ MNode::MNode(mlr::KinematicWorld& kin, FOL_World& _fol, uint levels)
   feasible = consts<byte>(true, L);
   komoProblem = consts<KOMO*>(NULL, L);
   opt.resize(L);
+  computeTime = zeros(L);
   bound=0.;
+}
+
+MNode::MNode(mlr::KinematicWorld& kin, FOL_World& _fol, uint levels)
+  : parent(NULL), step(0),
+    fol(_fol), folState(NULL), folDecision(NULL), folAddToState(NULL),
+    startKinematics(kin), effKinematics(),
+    L(levels), bound(0.){
+  //this is the root node!
+  fol.reset_state();
+  folState = fol.createStateCopy();
+
+  resetData();
 }
 
 MNode::MNode(MNode* parent, MCTS_Environment::Handle& a)
   : parent(parent), fol(parent->fol),
     folState(NULL), folDecision(NULL), folAddToState(NULL),
     startKinematics(parent->startKinematics), effKinematics(),
-    L(parent->L), bound(0.),
-    rootMC(NULL), mcStats(NULL), mcCount(0), mcCost(0.) {
+    L(parent->L), bound(0.) {
   step=parent->step+1;
   parent->children.append(this);
   fol.setState(parent->folState, parent->step);
@@ -59,20 +64,12 @@ MNode::MNode(MNode* parent, MCTS_Environment::Handle& a)
   isTerminal = fol.successEnd;
   if(fol.deadEnd) isInfeasible=true;
   folState = fol.createStateCopy();
-  folAddToState = NULL; //fresh creation -> notion to add
   folDecision = folState->getNode("decision");
   decision = a;
-  rootMC = parent->rootMC;
-  cost = zeros(L);
-  count = consts<uint>(0, L);
-  count(l_symbolic) = 1;
-  feasible = consts<byte>(true, L);
+
+  resetData();
   cost(l_symbolic) = parent->cost(l_symbolic) - 0.1*ret.reward; //cost-so-far
-  constraints = zeros(L);
-  komoProblem = consts<KOMO*>(NULL, L);
-  opt.resize(L);
   bound = parent->bound - 0.1*ret.reward;
-  //  h(l_symbolic) = 0.; //heuristic
 }
 
 MNode::~MNode(){
@@ -97,62 +94,6 @@ void MNode::expand(int verbose){
   isExpanded=true;
 }
 
-arr MNode::generateRootMCRollouts(uint num, int stepAbort, const mlr::Array<MCTS_Environment::Handle>& prefixDecisions){
-  CHECK(!parent, "generating rollouts needs to be done by the root only");
-
-  fol.reset_state();
-  //  cout <<"********\n *** MC from STATE=" <<*fol.state->isNodeOfGraph <<endl;
-  if(!rootMC){
-    rootMC = new PlainMC(fol);
-    rootMC->verbose = 0;
-  }
-
-  arr R;
-
-  for(uint k=0;k<num;k++){
-    rootMC->initRollout(prefixDecisions);
-    fol.setState(folState);
-    double r = rootMC->finishRollout(stepAbort);
-    R.append( r );
-  }
-
-  return R;
-}
-
-void MNode::addMCRollouts(uint num, int stepAbort){
-  //-- collect decision path
-  MNodeL treepath = getTreePath();
-  mlr::Array<MCTS_Environment::Handle> prefixDecisions(treepath.N-1);
-  for(uint i=1;i<treepath.N;i++)
-    prefixDecisions(i-1) = treepath(i)->decision;
-
-  //  cout <<"DECISION PATH = "; listWrite(prefixDecisions); cout <<endl;
-
-#if 0
-  arr R = generateRootMCRollouts(num, stepAbort, prefixDecisions);
-#else
-  arr R;
-  for(uint k=0;k<num;k++){
-    rootMC->initRollout(prefixDecisions);
-    fol.setState(folState);
-    double r = rootMC->finishRollout(stepAbort);
-    R.append( r );
-  }
-#endif
-
-  for(MNode* n:treepath){
-    if(!n->mcStats) n->mcStats = new MCStatistics;
-    for(auto& r:R){
-      n->mcStats->add(r);
-      n->mcCost = - n->mcStats->X.first();
-    }
-  }
-
-  mcCount += num;
-  //  mcStats->report();
-  //  auto a = rootMC->getBestAction();
-  //  cout <<"******** BEST ACTION " <<*a <<endl;
-}
 
 void MNode::optLevel(uint level, bool collisions){
   komoProblem(level) = new KOMO();
@@ -177,8 +118,8 @@ void MNode::optLevel(uint level, bool collisions){
     komo.setTiming(1., 2, 5., 1);
 
     komo.setHoming(-1., -1., 1e-2);
-    komo.setSquaredQVelocities(.5); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
-    //komo.setFixEffectiveJoints(-1., -1., 1e2);
+    komo.setSquaredQVelocities(.5, -1., 1.); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
+    //komo.setFixEffectiveJoints(-1., -1., 1e2); //IMPORTANT: assume ALL eff to be articulated; problem: no constraints (touch)
     komo.setFixSwitchedObjects(-1., -1., 1e2);
     komo.setSquaredQuaternionNorms();
 
@@ -187,6 +128,34 @@ void MNode::optLevel(uint level, bool collisions){
     komo.reset();
     komo.setPairedTimes();
   } break;
+//  case 1:{
+//    //pose: propagate eff kinematics
+//    if(!parent) effKinematics = startKinematics;
+//    else effKinematics = parent->effKinematics;
+
+//    if(!parent || !parent->parent){
+//      komo.setModel(startKinematics, false);
+//    }else{
+//      komo.setModel(parent->parent->effKinematics, false);
+//    }
+//    komo.setTiming(2.+.5, 2, 5., 1);
+
+//    komo.setHoming(-1., -1., 1e-2);
+//    komo.setSquaredQVelocities(1.1, -1., 1.); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
+//    komo.setFixEffectiveJoints(.5, -1., 1e2); //IMPORTANT: assume ALL eff to be articulated; problem: no constraints (touch)
+//    komo.setFixSwitchedObjects(.5, -1., 1e2);
+//    komo.setSquaredQuaternionNorms();
+
+//    if(!parent){
+//      komo.setAbstractTask(0., *folState);
+//    }else{
+//      komo.setAbstractTask(0., *parent->folState);
+//      komo.setAbstractTask(1., *folState);
+//    }
+
+//    komo.reset();
+//    komo.setPairedTimes();
+//  } break;
   case 2:{
     komo.setModel(startKinematics, false);
     komo.setTiming(time, 2, 5., 1);
@@ -227,7 +196,7 @@ void MNode::optLevel(uint level, bool collisions){
   //-- optimize
   DEBUG( FILE("z.fol") <<fol; );
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); );
-  komo.reportProblem();
+//  komo.reportProblem();
 
   try{
     //      komo.verbose=3;
@@ -238,14 +207,15 @@ void MNode::optLevel(uint level, bool collisions){
   COUNT_evals += komo.opt->newton.evals;
   COUNT_kin += mlr::KinematicWorld::setJointStateCount;
   COUNT_opt(level)++;
+  COUNT_time += komo.runTime;
   count(level)++;
 
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); );
-  //  komo.checkGradients();
+//  komo.checkGradients();
 
-  Graph result = komo.getReport((komo.verbose>0 && level==3));
-  DEBUG( FILE("z.problem.cost") <<result; )
-      double cost_here = result.get<double>({"total","sqrCosts"});
+  Graph result = komo.getReport((komo.verbose>0 && level>=2));
+  DEBUG( FILE("z.problem.cost") <<result; );
+  double cost_here = result.get<double>({"total","sqrCosts"});
   double constraints_here = result.get<double>({"total","constraints"});
   bool feas = (constraints_here<1.);
 
@@ -279,6 +249,7 @@ void MNode::optLevel(uint level, bool collisions){
     constraints(level) = constraints_here;
     feasible(level) = feas;
     opt(level) = komo.x;
+    computeTime(level) = komo.runTime;
   }
 
   if(!feasible(level))
@@ -658,22 +629,6 @@ bool MNode::recomputeAllFolStates(){
       return true;
 }
 
-void MNode::recomputeAllMCStats(bool excludeLeafs){
-  if(!mcStats) return;
-  if(!isTerminal){
-    if(children.N || !excludeLeafs || isInfeasible)
-      mcStats->clear();
-  }
-  for(MNode* ch:children){
-    ch->recomputeAllMCStats(excludeLeafs);
-    for(double x:ch->mcStats->X) mcStats->add(x);
-  }
-  if(mcStats->n)
-    mcCost = - mcStats->X.first();
-  else
-    mcCost = 100.;
-}
-
 void MNode::checkConsistency(){
   //-- check that the state->parent points to the parent's state
   if(parent){
@@ -728,11 +683,7 @@ void MNode::getGraph(Graph& G, Node* n, bool brief) {
   if(!brief){
     n->keys.append(STRING("s:" <<step <<" t:" <<time <<" bound:" <<bound <<" feas:" <<!isInfeasible <<" term:" <<isTerminal <<' ' <<folState->isNodeOfGraph->keys.scalar()));
     for(uint l=0;l<L;l++)
-      n->keys.append(STRING("L" <<l <<" #:" <<count(l) <<" c:" <<cost(l) <<"|" <<constraints(l) <<" f:" <<feasible(l) <<" terminal:" <<isTerminal));
-
-//  if(mcStats && mcStats->n) n->keys.append(STRING("MC best:" <<mcStats->X.first() <<" n:" <<mcStats->n));
-  //  n->keys.append(STRING("sym  g:" <<cost(l_symbolic) <<" h:" <<h(l_symbolic) <<" f:" <<f() <<" terminal:" <<isTerminal));
-//  n->keys.append(STRING("MC   #" <<mcCount <<" f:" <<mcCost));
+      n->keys.append(STRING("L" <<l <<" #:" <<count(l) <<" c:" <<cost(l) <<"|" <<constraints(l) <<" " <<(feasible(l)?'1':'0') <<" time:" <<computeTime(l)));
     if(folAddToState) n->keys.append(STRING("symAdd:" <<*folAddToState));
     if(note.N) n->keys.append(note);
   }

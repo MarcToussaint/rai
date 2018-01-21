@@ -97,9 +97,9 @@ OptLGP::~OptLGP(){
 void OptLGP::initDisplay(){
   if(!views.N){
     views.resize(4);
-    views(1) = make_shared<OrsPathViewer>("pose", .2, -0);
-    views(2) = make_shared<OrsPathViewer>("sequence", .2, -0);
-    views(3) = make_shared<OrsPathViewer>("path", .05, -1);
+    views(1) = make_shared<OrsPathViewer>("pose", .2, -1);
+    views(2) = make_shared<OrsPathViewer>("sequence", .2, -1);
+    views(3) = make_shared<OrsPathViewer>("path", .05, -2);
     if(mlr::getParameter<bool>("LGP/displayTree", 1)){
       int r=system("evince z.pdf &");
       mlr::wait(1.);
@@ -400,11 +400,11 @@ mlr::String OptLGP::report(bool detailed){
   MNode *bpath = getBest(fringe_solved, 3);
 
   mlr::String out;
-  out <<"TIME= " <<mlr::cpuTime() <<" KIN= " <<COUNT_kin <<" EVALS= " <<COUNT_evals
+  out <<"TIME= " <<mlr::cpuTime() <<" TIME=" <<COUNT_time <<" KIN= " <<COUNT_kin <<" EVALS= " <<COUNT_evals
      <<" POSE= " <<COUNT_opt(1) <<" SEQ= " <<COUNT_opt(2) <<" PATH= " <<COUNT_opt(3)
     <<" bestPose= " <<(bpose?bpose->cost(1):100.)
    <<" bestSeq = " <<(bseq ?bseq ->cost(2):100.)
-  <<" pathPath= " <<(bpath?bpath->cost(3):100.)
+  <<" bestPath= " <<(bpath?bpath->cost(3):100.)
   <<" #solutions= " <<fringe_solved.N;
 
 //  if(bseq) displayFocus=bseq;
@@ -512,6 +512,17 @@ void OptLGP::run(uint steps){
   }
 
   if(verbose>0) report(true);
+
+  //basic output
+  ofstream output(STRING("z."<<mlr::date()<<".lgpopt"));
+  output <<"cost= C0 C1 C2 C3 constr= R0 R1 R2 R3 fea= F0 F1 F2 F3 time= T0 T1 T2 T3 skeleton" <<endl;
+  MNodeL ALL = root->getAll();
+  for(MNode *n : ALL){
+    if(n->count(l_pose)){
+      output <<"cost= " <<n->cost <<" constr= " <<n->constraints <<" fea= " <<convert<int>(n->feasible) <<" time= " <<n->computeTime <<" \"" <<n->getTreePathString() <<"\"" <<endl;
+    }
+  }
+  output.close();
 
   //this generates the movie!
   if(verbose>2){

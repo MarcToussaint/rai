@@ -20,12 +20,11 @@
 #include <Logic/fol.h>
 
 struct MNode;
-struct PlainMC;
-struct MCStatistics;
 typedef mlr::Array<MNode*> MNodeL;
 
 extern uint COUNT_kin, COUNT_evals;
 extern uintA COUNT_opt;
+extern double COUNT_time;
 
 enum LEVEL{ l_symbolic=0, l_pose=1, l_seq=2, l_path=3 };
 
@@ -59,17 +58,11 @@ struct MNode{
   arr constraints;  ///< constraint violation (so-far) -- when significantly>0 indicates infeasibility
   boolA feasible;   ///< feasibility for each level
   uintA count;      ///< how often was this level evaluated
+  arr computeTime;  ///< computation times for each level
   double bound=0.;
 
-  // temporary stuff -- only for convenience to display and store
-  // MC stuff -- TODO
-  PlainMC *rootMC; //only the root node owns an MC rollout generator
-  MCStatistics *mcStats;
-  uint mcCount;
-  double mcCost;
-
   mlr::Array<struct KOMO*> komoProblem; //komo problems for all levels
-  arrA opt; //these are the optima computed
+  arrA opt; //these are the optima (trajectories) computed
 
   // display helpers
   mlr::String note;
@@ -85,9 +78,7 @@ struct MNode{
   //- computations on the node
   void expand(int verbose=0);           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
   void optLevel(uint level, bool collisions=false);
-  //MC stuff -- TODO
-  arr generateRootMCRollouts(uint num, int stepAbort, const mlr::Array<MCTS_Environment::Handle>& prefixDecisions);
-  void addMCRollouts(uint num,int stepAbort);
+  void resetData();
 
   //-- helpers
   MNodeL getTreePath() const; ///< return the decision path in terms of a list of nodes (just walking to the root)
@@ -103,7 +94,6 @@ private:
   MNode *treePolicy_random(); ///< returns leave -- by descending children randomly
   MNode *treePolicy_softMax(double temperature);
   bool recomputeAllFolStates();
-  void recomputeAllMCStats(bool excludeLeafs=true);
 public:
 
   void write(ostream& os=cout, bool recursive=false, bool path=true) const;

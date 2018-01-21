@@ -50,6 +50,7 @@ struct KOMO{
   arr dualSolution;             ///< the dual solution computed during constrained optimization
   struct OpenGL *gl;            ///< internal only: used in 'displayTrajectory'
   int verbose;                  ///< verbosity level
+  double runTime=0.;            ///< just measure run time
 
   KOMO();
   ~KOMO();

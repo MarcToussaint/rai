@@ -1,3 +1,77 @@
+void MNode::recomputeAllMCStats(bool excludeLeafs){
+  if(!mcStats) return;
+  if(!isTerminal){
+    if(children.N || !excludeLeafs || isInfeasible)
+      mcStats->clear();
+  }
+  for(MNode* ch:children){
+    ch->recomputeAllMCStats(excludeLeafs);
+    for(double x:ch->mcStats->X) mcStats->add(x);
+  }
+  if(mcStats->n)
+    mcCost = - mcStats->X.first();
+  else
+    mcCost = 100.;
+}
+
+arr MNode::generateRootMCRollouts(uint num, int stepAbort, const mlr::Array<MCTS_Environment::Handle>& prefixDecisions){
+  CHECK(!parent, "generating rollouts needs to be done by the root only");
+
+  fol.reset_state();
+  //  cout <<"********\n *** MC from STATE=" <<*fol.state->isNodeOfGraph <<endl;
+  if(!rootMC){
+    rootMC = new PlainMC(fol);
+    rootMC->verbose = 0;
+  }
+
+  arr R;
+
+  for(uint k=0;k<num;k++){
+    rootMC->initRollout(prefixDecisions);
+    fol.setState(folState);
+    double r = rootMC->finishRollout(stepAbort);
+    R.append( r );
+  }
+
+  return R;
+}
+
+void MNode::addMCRollouts(uint num, int stepAbort){
+  //-- collect decision path
+  MNodeL treepath = getTreePath();
+  mlr::Array<MCTS_Environment::Handle> prefixDecisions(treepath.N-1);
+  for(uint i=1;i<treepath.N;i++)
+    prefixDecisions(i-1) = treepath(i)->decision;
+
+  //  cout <<"DECISION PATH = "; listWrite(prefixDecisions); cout <<endl;
+
+#if 0
+  arr R = generateRootMCRollouts(num, stepAbort, prefixDecisions);
+#else
+  arr R;
+  for(uint k=0;k<num;k++){
+    rootMC->initRollout(prefixDecisions);
+    fol.setState(folState);
+    double r = rootMC->finishRollout(stepAbort);
+    R.append( r );
+  }
+#endif
+
+  for(MNode* n:treepath){
+    if(!n->mcStats) n->mcStats = new MCStatistics;
+    for(auto& r:R){
+      n->mcStats->add(r);
+      n->mcCost = - n->mcStats->X.first();
+    }
+  }
+
+  mcCount += num;
+  //  mcStats->report();
+  //  auto a = rootMC->getBestAction();
+  //  cout <<"******** BEST ACTION " <<*a <<endl;
+}
+
+
 void MNode::solvePoseProblem(){
   //reset the effective kinematics:
   CHECK(!parent || parent->hasEffKinematics,"parent needs to have computed the pose first!");

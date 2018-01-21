@@ -1053,8 +1053,9 @@ void KOMO::run(){
     opt = new OptConstrained(z, dual, P);
     opt->run();
   }
+  runTime = timerRead();
   if(verbose>0){
-    cout <<"** optimization time=" <<timerRead()
+    cout <<"** optimization time=" <<runTime
       <<" setJointStateCount=" <<KinematicWorld::setJointStateCount <<endl;
   }
   if(verbose>1) cout <<getReport(false) <<endl;
