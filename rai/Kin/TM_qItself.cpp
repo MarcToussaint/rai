@@ -165,7 +165,11 @@ void TM_qItself::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
 uint TM_qItself::dim_phi(const mlr::KinematicWorld& G) {
   if(selectedBodies.N){
     uint n=0;
-    for(uint b:selectedBodies) n+=G.frames.elem(b)->joint->qDim();
+    for(uint b:selectedBodies){
+      mlr::Joint *j = G.frames.elem(b)->joint;
+      CHECK(j, "selected frame " <<b <<" ('" <<G.frames.elem(b)->name <<"') is not a joint");
+      n += j->qDim();
+    }
     return n;
   }
   return G.getJointStateDimension();

@@ -92,7 +92,7 @@ struct KOMO{
   //
 
   //-- tasks (transitions) mid-level
-  void setHoming(double startTime=-1., double endTime=-1., double prec=1e-1);
+  void setHoming(double startTime=-1., double endTime=-1., double prec=1e-1, const char *keyword="robot");
   void setSquaredQAccelerations(double startTime=-1., double endTime=-1., double prec=1.);
   void setSquaredQVelocities(double startTime=-1., double endTime=-1., double prec=1.);
   void setFixEffectiveJoints(double startTime=-1., double endTime=-1., double prec=1e3);

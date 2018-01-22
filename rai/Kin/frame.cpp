@@ -82,14 +82,15 @@ void mlr::Frame::write(std::ostream& os) const {
   if(parent) os <<'(' <<parent->name <<')';
   os <<" \t{ ";
 
+  if(joint) joint->write(os);
+  if(shape) shape->write(os);
+  if(inertia) inertia->write(os);
+
   if(parent){
     if(!Q.isZero()) os <<" Q=<T " <<Q <<" > ";
   }else{
     if(!X.isZero()) os <<" X=<T " <<X <<" > ";
   }
-  if(joint) joint->write(os);
-  if(shape) shape->write(os);
-  if(inertia) inertia->write(os);
 
   if(flags){
     Enum<FrameFlagType> fl;
@@ -99,6 +100,11 @@ void mlr::Frame::write(std::ostream& os) const {
       if(!fl.name()) break;
       if(flags & (1<<fl.x)) os <<' ' <<fl.name();
     }
+  }
+
+  for(Node *n : ats){
+    StringA avoid = {"Q", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "limits", "ctrl_H"};
+    if(!avoid.contains(n->keys.last())) os <<' ' <<*n;
   }
 
   os <<" }\n";
@@ -665,10 +671,10 @@ void mlr::Shape::write(std::ostream& os) const {
   }
 
   Node *n;
-  if((n=frame.ats["color"])) os <<*n <<' ';
-  if((n=frame.ats["mesh"])) os <<*n <<' ';
-  if((n=frame.ats["meshscale"])) os <<*n <<' ';
-  if(cont) os <<"contact, ";
+  if((n=frame.ats["color"])) os <<' ' <<*n;
+  if((n=frame.ats["mesh"])) os <<' ' <<*n;
+  if((n=frame.ats["meshscale"])) os <<' ' <<*n;
+  if(cont) os <<" contact, ";
 }
 
 #ifdef MLR_GL

@@ -241,10 +241,11 @@ void KOMO::setKS_slider(double time, bool before, const char* obj, const char* s
   //    setKinematicSwitch(time, before, "transXActuated", slider, obj, rel );
 }
 
-void KOMO::setHoming(double startTime, double endTime, double prec){
+void KOMO::setHoming(double startTime, double endTime, double prec, const char* keyword){
   uintA bodies;
   Joint *j;
-  for(Frame *f:world.frames) if((j=f->joint) && !j->constrainToZeroVel && j->qDim()>0) bodies.append(f->ID);
+  for(Frame *f:world.frames) if((j=f->joint) && !j->constrainToZeroVel && j->qDim()>0 && (!keyword || f->ats[keyword])) bodies.append(f->ID);
+//  cout <<"HOMING: "; for(uint i:bodies) cout <<' ' <<world.frames(i)->name;  cout <<endl;
   setTask(startTime, endTime, new TM_qItself(bodies, true), OT_sumOfSqr, NoArr, prec); //world.q, prec);
 }
 

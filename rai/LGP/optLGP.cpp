@@ -80,8 +80,9 @@ void initFolStateFromKin(FOL_World& L, const mlr::KinematicWorld& K){
 }
 
 OptLGP::OptLGP(mlr::KinematicWorld &kin, FOL_World &fol)
-  : verbose(3), numSteps(0), fil("z.optLGP.dat"){
+  : verbose(3), numSteps(0){
   verbose = mlr::getParameter<int>("LGP/vebose", 3);
+  if(verbose>0) fil.open("z.optLGP.dat"); //STRING("z.optLGP." <<mlr::date() <<".dat"));
   root = new MNode(kin, fol, 4);
   displayFocus = root;
   //  threadOpenModules(true);
@@ -400,7 +401,7 @@ mlr::String OptLGP::report(bool detailed){
   MNode *bpath = getBest(fringe_solved, 3);
 
   mlr::String out;
-  out <<"TIME= " <<mlr::cpuTime() <<" TIME=" <<COUNT_time <<" KIN= " <<COUNT_kin <<" EVALS= " <<COUNT_evals
+  out <<"TIME= " <<mlr::cpuTime() <<" TIME= " <<COUNT_time <<" KIN= " <<COUNT_kin <<" EVALS= " <<COUNT_evals
      <<" POSE= " <<COUNT_opt(1) <<" SEQ= " <<COUNT_opt(2) <<" PATH= " <<COUNT_opt(3)
     <<" bestPose= " <<(bpose?bpose->cost(1):100.)
    <<" bestSeq = " <<(bseq ?bseq ->cost(2):100.)
