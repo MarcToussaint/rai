@@ -536,7 +536,7 @@ void KOMO::setPush(double startTime, double endTime, const char* stick, const ch
 
   setKS_slider(startTime, true, object, "slider1", table);
 
-  setTask(startTime, endTime, new TM_AboveBox(world, object, table), OT_ineq, NoArr, 1e2);
+  setTask(startTime, endTime-.1, new TM_AboveBox(world, object, table), OT_ineq, NoArr, 1e2);
 
 #if 1
   //connect object to placeRef
@@ -597,31 +597,38 @@ void KOMO::setGraspSlide(double time, const char* endeff, const char* object, co
 }
 
 void KOMO::setSlideAlong(double time, const char* stick, const char* object, const char* wall, int verbose){
-    if(verbose>0) cout <<"KOMO_setSlideAlong t=" <<time <<" obj=" <<object<<" wall=" <<wall <<endl;
+  if(verbose>0) cout <<"KOMO_setSlideAlong t=" <<time <<" obj=" <<object<<" wall=" <<wall <<endl;
 
-    //stick normal alignes with slider direction
-    setTask(time, time+1., new TM_Default(TMT_vecAlign, world, stick, -Vector_y, object, Vector_x), OT_sumOfSqr, {1.}, 1e0);
-    //stick horizontal is orthogonal to world vertical
-    setTask(time, time+1., new TM_Default(TMT_vecAlign, world, stick, Vector_x, NULL, Vector_z), OT_sumOfSqr, {0.}, 1e2);
+  double endTime = time+1.;
 
-    double dist = .5*shapeSize(world, object, 0)+.01;
-    setTask(time, time+1., new TM_InsideBox(world, object, {dist, .0, .0}, stick), OT_ineq);
+  //stick normal alignes with slider direction
+  setTask(time, time+1., new TM_Default(TMT_vecAlign, world, stick, -Vector_y, object, Vector_x), OT_sumOfSqr, {1.}, 1e0);
+  //stick horizontal is orthogonal to world vertical
+  setTask(time, time+1., new TM_Default(TMT_vecAlign, world, stick, Vector_x, NULL, Vector_z), OT_sumOfSqr, {0.}, 1e2);
 
-    setTouch(time, time+1., stick, wall);
+  double dist = .5*shapeSize(world, object, 0)+.01;
+  setTask(time, time+1., new TM_InsideBox(world, object, {dist, .0, .0}, stick), OT_ineq);
+
+  setTouch(time, time+1., stick, wall);
 
 
-//    //disconnect object from table
-//    setKinematicSwitch(time, true, "delete", NULL, object);
-//    //connect graspRef with object
-//    setKinematicSwitch(startTime, true, "ballZero", endeff, object);
+  //    //disconnect object from table
+  //    setKinematicSwitch(time, true, "delete", NULL, object);
+  //    //connect graspRef with object
+  //    setKinematicSwitch(startTime, true, "ballZero", endeff, object);
 
-    Transformation rel = 0;
-    rel.rot.setDeg(-90, {1, 0, 0});
-    rel.pos.set(0, -.5*(shapeSize(world, wall, 1) - shapeSize(world, object)), +.5*(shapeSize(world, wall, 2) + shapeSize(world, object, 1)));
-    setKinematicSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transX, wall, object, world, 0));
-    setKinematicSwitch(time, true, new KinematicSwitch(SW_insertEffJoint, JT_transZ, NULL, object, world, 0, rel));
-//    setKinematicSwitch(time, true, "insert_trans3", NULL, object);
-//    setTask(time, time, new TM_InsideBox(world, endeff, NoVector, object), OT_ineq, NoArr, 1e2);
+  Transformation rel = 0;
+  rel.rot.setDeg(-90, {1, 0, 0});
+  rel.pos.set(0, -.5*(shapeSize(world, wall, 1) - shapeSize(world, object)), +.5*(shapeSize(world, wall, 2) + shapeSize(world, object, 1)));
+  setKinematicSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transX, wall, object, world, 0));
+  setKinematicSwitch(time, true, new KinematicSwitch(SW_insertEffJoint, JT_transZ, NULL, object, world, 0, rel));
+  //    setKinematicSwitch(time, true, "insert_trans3", NULL, object);
+  //    setTask(time, time, new TM_InsideBox(world, endeff, NoVector, object), OT_ineq, NoArr, 1e2);
+
+  if(stepsPerPhase>2){ //velocities down and up
+    setTask(endTime+.0, endTime+.05, new TM_Default(TMT_pos, world, stick), OT_sumOfSqr, {0.,0., 0}, 1e1, 1); //hold still
+    setTask(endTime+.1, endTime+.3, new TM_Default(TMT_pos, world, stick), OT_sumOfSqr, {0.,0., .05}, 1e1, 1); // move up
+  }
 }
 
 
@@ -752,11 +759,11 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
         }
       }
       else if(*symbols(0)=="inside")                setTask(phase+time, phase+time, new TM_InsideBox(world, *symbols(1), NoVector, *symbols(2)), OT_ineq, NoArr, 1e2);
-      else if(*symbols(0)=="above")                 setTask(phase+time, phase+time+1., new TM_AboveBox(world, *symbols(1), *symbols(2)), OT_ineq, NoArr, 1e2);
+      else if(*symbols(0)=="above")                 setTask(phase+time, phase+time+.9, new TM_AboveBox(world, *symbols(1), *symbols(2)), OT_ineq, NoArr, 1e2);
       else if(*symbols(0)=="notAbove"){
         double margin = .05;
         double negMargin = margin + .5*shapeSize(world, *symbols(1), 0); //how much outside the bounding box?
-        setTask(phase+time+.0, phase+time+.5,
+        setTask(phase+time, phase+time+.9,
                 new TM_Max(new TM_AboveBox(world, *symbols(1),*symbols(2), -negMargin), true), //this is the max selection -- only one of the four numbers need to be outside the BB
                 OT_ineq, {}, 1e1); //NOTE: usually this is an inequality constraint <0; here we say this should be zero for a negative margin (->outside support)
       }

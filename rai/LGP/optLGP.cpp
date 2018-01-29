@@ -11,12 +11,19 @@
 
 uint displaySize=350;
 
+void _system(const char* cmd){
+  cout <<"SYSTEM CMD: " <<cmd <<endl;
+  int r = system(cmd);
+  mlr::wait(.1);
+  if(r) HALT("system return error " <<r);
+}
+
 struct DisplayThread : MiniThread{
   OptLGP* lgp;
   OpenGL gl;
   uint t=0;
   bool saveVideo=false;
-  DisplayThread(OptLGP* lgp) : MiniThread("OptLGP_Display"), lgp(lgp), gl("OptLGP", 5*displaySize, 3*displaySize) {}
+  DisplayThread(OptLGP* lgp) : MiniThread("OptLGP_Display"), lgp(lgp), gl("OptLGP", 4*displaySize, 3*displaySize) {}
   ~DisplayThread(){ threadClose(); }
   void resetSteppings(){
     lgp->solutions.writeAccess();
@@ -43,7 +50,7 @@ struct DisplayThread : MiniThread{
       lgp->solutions.deAccess();
       if(saveVideo) gl.captureImg=true;
       gl.update(NULL, false, false, false);
-      if(saveVideo) write_ppm(gl.captureImage, STRING("vid/z." <<std::setw(3)<<std::setfill('0')<<t++<<".ppm"));
+      if(saveVideo) write_ppm(gl.captureImage, STRING(OptLGPDataPath <<"vid/" <<std::setw(3)<<std::setfill('0')<<t++<<".ppm"));
     }
   }
 };
@@ -82,7 +89,9 @@ void initFolStateFromKin(FOL_World& L, const mlr::KinematicWorld& K){
 OptLGP::OptLGP(mlr::KinematicWorld &kin, FOL_World &fol)
   : verbose(3), numSteps(0){
   dataPath <<"z." <<mlr::date2() <<"/";
-  system(STRING("mkdir -p " <<dataPath));
+  dataPath = mlr::getParameter<mlr::String>("LGP_dataPath", dataPath);
+  _system(STRING("mkdir -p " <<dataPath));
+  _system(STRING("rm -Rf " <<dataPath <<"vid  &&  rm -f " <<dataPath <<"*"));
 
   OptLGPDataPath = dataPath;
   if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
@@ -109,9 +118,7 @@ void OptLGP::initDisplay(){
     views(2) = make_shared<OrsPathViewer>("sequence", .2, -1);
     views(3) = make_shared<OrsPathViewer>("path", .05, -2);
     if(mlr::getParameter<bool>("LGP/displayTree", 1)){
-      int r=system("evince z.pdf &");
-      mlr::wait(1.);
-      if(r) LOG(-1) <<"could not startup evince";
+      _system("evince z.pdf &");
       displayTree = true;
     }else{
       displayTree = false;
@@ -152,12 +159,12 @@ void OptLGP::updateDisplay(){
 //    dth->gl.addSubView(i, glStandardScene, NULL);
 //    dth->gl.addSubView(i, *solutions()(i));
       dth->gl.views(i).camera.setDefault();
-      dth->gl.views(i).camera.focus(.9, 0., 1.3);
+//      dth->gl.views(i).camera.focus(.9, 0., 1.3);
     }
     dth->gl.views(i).drawers.last() = solutions()(i);
     dth->gl.views(i).text.clear() <<solutions()(i)->node->cost <<'\n' <<solutions()(i)->decisions;
   }
-  dth->gl.setSubViewTiles(5,3);
+  dth->gl.setSubViewTiles(4,3);
   solutions.deAccess();
 //  gl->update();
 
@@ -186,8 +193,7 @@ void OptLGP::updateDisplay(){
 
     Graph dot=root->getGraph(true);
     dot.writeDot(FILE("z.dot"));
-    int r = system("dot -Tpdf z.dot > z.pdf");
-    if(r) LOG(-1) <<"could not startup dot";
+    _system("dot -Tpdf z.dot > z.pdf");
   }
 }
 
@@ -336,6 +342,7 @@ MNode *OptLGP::popBest(MNodeL &fringe, uint level){
 
 MNode *OptLGP::expandBest(int stopOnDepth){ //expand
   //    MNode *n =  popBest(fringe_expand, 0);
+  if(!fringe_expand.N) HALT("the tree is dead!");
   MNode *n =  fringe_expand.popFirst();
 
   CHECK(n,"");
@@ -513,10 +520,14 @@ void OptLGP::init(){
 void OptLGP::run(uint steps){
   init();
 
+  uint stopSol = mlr::getParameter<uint>("stopSol", 12);
+  double stopTime = mlr::getParameter<double>("stopTime", 400.);
+
   for(uint k=0;k<steps;k++){
     step();
 
-    if(fringe_solved.N>15) break;
+    if(fringe_solved.N>=stopSol) break;
+    if(COUNT_time>stopTime) break;
   }
 
   if(verbose>0) report(true);
@@ -536,8 +547,8 @@ void OptLGP::run(uint steps){
   //this generates the movie!
   if(verbose>2){
 //    renderToVideo();
-    system("mkdir -p vid");
-    system("rm -f vid/z.*.ppm");
+    _system(STRING("mkdir -p " <<OptLGPDataPath <<"vid"));
+    _system(STRING("rm -f " <<OptLGPDataPath <<"vid/*.ppm"));
     dth->resetSteppings();
     dth->saveVideo = true;
     mlr::wait(20.);

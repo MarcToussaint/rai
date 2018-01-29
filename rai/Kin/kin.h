@@ -108,6 +108,7 @@ struct KinematicWorld : GLDrawer{
   void clear();
   void reset_q();
   FrameL calc_topSort();
+  bool check_topSort();
   void calc_activeSets();
   void calc_q();
   void reconfigureRootOfSubtree(Frame *root);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted

@@ -233,8 +233,22 @@ FrameL mlr::KinematicWorld::calc_topSort(){
   return order;
 }
 
+bool mlr::KinematicWorld::check_topSort(){
+  if(fwdActiveSet.N != frames.N) return false;
+
+  //compute levels
+  intA level = consts<int>(0, frames.N);
+  for(Frame *f: fwdActiveSet) if(f->parent) level(f->ID) = level(f->parent->ID)+1;
+  //check levels are strictly increasing across links
+  for(Frame *f: fwdActiveSet) if(f->parent && level(f->parent->ID) >= level(f->ID)) return false;
+
+  return true;
+}
+
 void mlr::KinematicWorld::calc_activeSets(){
-  fwdActiveSet = calc_topSort(); //graphGetTopsortOrder<Frame>(frames);
+  if(!check_topSort()){
+    fwdActiveSet = calc_topSort(); //graphGetTopsortOrder<Frame>(frames);
+  }
   fwdActiveJoints.clear();
   for(Frame *f:fwdActiveSet)
       if(f->joint && f->joint->active)
