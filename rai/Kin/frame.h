@@ -47,8 +47,10 @@ struct Frame {
   Frame *parent=NULL;        ///< parent frame
   FrameL outLinks;           ///< lists of in and out joints
   Transformation Q=0;        ///< relative transform to parent
+public:
   Transformation X=0;        ///< frame's absolute pose
   double time=0.;            ///< frame's absolute time (could be thought as part of the transformation X in space-time)
+public:
   Graph ats;                 ///< list of any-type attributes
   bool active=true;          ///< if false, this frame is skipped in computations (e.g. in fwd propagation)
   int flags=0;               ///< various flags that are used by task maps to impose costs/constraints in KOMO
@@ -63,7 +65,7 @@ struct Frame {
   Frame(Frame *_parent);
   ~Frame();
 
-  uint numInputs() const{ if(parent) return 1; return 0; } //TODO: remove: use KinConf specific topSort, not generic; remove generic top sort..
+  void calc_X_from_parent();
 
   Frame* insertPreLink(const mlr::Transformation& A=0);
   Frame* insertPostLink(const mlr::Transformation& B=0);

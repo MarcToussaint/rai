@@ -28,6 +28,7 @@ struct OptLGP : GLDrawer{
   ofstream fil;
   bool displayTree=true;
   struct DisplayThread *dth=NULL;
+  mlr::String dataPath;
 
   MNode *root, *displayFocus;
 

@@ -69,6 +69,7 @@ KOMO::~KOMO(){
   listDelete(configurations);
   if(gl) delete gl;
   if(opt) delete opt;
+  if(fil) delete fil;
 }
 
 void KOMO::setModel(const KinematicWorld& K,
@@ -99,7 +100,7 @@ void KOMO::setModel(const KinematicWorld& K,
     world.swift().initActivations(world);
   }
 
-  FILE("z.komo.model") <<world;
+//  FILE("z.komo.model") <<world;
 }
 
 void KOMO::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese){
@@ -123,7 +124,7 @@ void KOMO::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese){
 //  world.meldFixedJoints();
 //  world.removeUselessBodies();
 
-  FILE("z.komo.model") <<world;
+//  FILE("z.komo.model") <<world;
 }
 
 void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhase, uint _k_order){
@@ -544,12 +545,12 @@ void KOMO::setPush(double startTime, double endTime, const char* stick, const ch
   setKinematicSwitch(endTime, true, "transXYPhiZero", table, object, rel );
 #endif
 
-//  if(stepsPerPhase>2){ //velocities down and up
-//    setTask(startTime-.3, startTime-.1, new TM_Default(TMT_pos, world, stick), OT_sumOfSqr, {0.,0., -.2}, 1e2, 1); //move down
-//    setTask(startTime-.05, startTime-.0, new TM_Default(TMT_pos, world, stick), OT_sumOfSqr, {0.,0., 0}, 1e2, 1); //hold still
-//    setTask(endTime+.0, endTime+.05, new TM_Default(TMT_pos, world, stick), OT_sumOfSqr, {0.,0., 0}, 1e2, 1); //hold still
-//    setTask(endTime+.1, endTime+.3, new TM_Default(TMT_pos, world, stick), OT_sumOfSqr, {0.,0., .2}, 1e2, 1); // move up
-//  }
+  if(stepsPerPhase>2){ //velocities down and up
+    setTask(startTime-.3, startTime-.1, new TM_Default(TMT_pos, world, stick), OT_sumOfSqr, {0.,0., -.1}, 1e1, 1); //move down
+    setTask(startTime-.05, startTime-.0, new TM_Default(TMT_pos, world, stick), OT_sumOfSqr, {0.,0., 0}, 1e1, 1); //hold still
+    setTask(endTime+.0, endTime+.05, new TM_Default(TMT_pos, world, stick), OT_sumOfSqr, {0.,0., 0}, 1e1, 1); //hold still
+    setTask(endTime+.1, endTime+.3, new TM_Default(TMT_pos, world, stick), OT_sumOfSqr, {0.,0., .1}, 1e1, 1); // move up
+  }
 }
 
 void KOMO::setGraspSlide(double time, const char* endeff, const char* object, const char* placeRef, int verbose){
@@ -605,6 +606,8 @@ void KOMO::setSlideAlong(double time, const char* stick, const char* object, con
 
     double dist = .5*shapeSize(world, object, 0)+.01;
     setTask(time, time+1., new TM_InsideBox(world, object, {dist, .0, .0}, stick), OT_ineq);
+
+    setTouch(time, time+1., stick, wall);
 
 
 //    //disconnect object from table
@@ -1046,12 +1049,14 @@ void KOMO::run(){
   if(!splineB.N){
     Convert C(komo_problem);
     opt = new OptConstrained(x, dual, C);
+    opt->fil = fil;
     opt->run();
   }else{
     arr a,b,c,d,e;
     Conv_KOMO_ConstrainedProblem P0(komo_problem);
     Conv_linearlyReparameterize_ConstrainedProblem P(P0, splineB);
     opt = new OptConstrained(z, dual, P);
+    opt->fil = fil;
     opt->run();
   }
   runTime = timerRead();
@@ -1310,8 +1315,8 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
   arr phi;
   ObjectiveTypeA tt;
   if(wasRun){
-      phi.referTo( featureValues.scalar() );
-      tt.referTo( featureTypes.scalar() );
+    phi.referTo( featureValues.scalar() );
+    tt.referTo( featureTypes.scalar() );
   }
 
   //-- collect all task costs and constraints
@@ -1324,32 +1329,32 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
     for(uint i=0; i<tasks.N; i++) {
       Task *task = tasks(i);
       if(task->prec.N>t && task->prec(t)){
-          uint d=0;
-          if(wasRun){
-              d=task->map->dim_phi(configurations({t,t+k_order}), t);
-              for(uint j=0;j<d;j++) CHECK(tt(M+j)==task->type,"");
-              if(d){
-                  if(task->type==OT_sumOfSqr){
-                      for(uint j=0;j<d;j++) err(t,i) += sqr(phi(M+j)); //sumOfSqr(phi.sub(M,M+d-1));
-                      taskC(i) += err(t,i);
-                  }
-                  if(task->type==OT_ineq){
-                      for(uint j=0;j<d;j++) err(t,i) += MAX(0., phi(M+j));
-                      taskG(i) += err(t,i);
-                  }
-                  if(task->type==OT_eq){
-                      for(uint j=0;j<d;j++) err(t,i) += fabs(phi(M+j));
-                      taskG(i) += err(t,i);
-                  }
-                  M += d;
-              }
+        uint d=0;
+        if(wasRun){
+          d=task->map->dim_phi(configurations({t,t+k_order}), t);
+          for(uint j=0;j<d;j++) CHECK(tt(M+j)==task->type,"");
+          if(d){
+            if(task->type==OT_sumOfSqr){
+              for(uint j=0;j<d;j++) err(t,i) += sqr(phi(M+j)); //sumOfSqr(phi.sub(M,M+d-1));
+              taskC(i) += err(t,i);
+            }
+            if(task->type==OT_ineq){
+              for(uint j=0;j<d;j++) err(t,i) += MAX(0., phi(M+j));
+              taskG(i) += err(t,i);
+            }
+            if(task->type==OT_eq){
+              for(uint j=0;j<d;j++) err(t,i) += fabs(phi(M+j));
+              taskG(i) += err(t,i);
+            }
+            M += d;
           }
-          if(reportFeatures==1){
-            featuresOs <<std::setw(4) <<t <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d
-                <<' ' <<std::setw(40) <<task->name
-               <<" k=" <<task->map->order <<" ot=" <<task->type <<" prec=" <<std::setw(4) <<task->prec(t);
-            if(task->target.N<5) featuresOs <<" y*=[" <<task->target <<']'; else featuresOs<<"y*=[..]";
-            featuresOs <<" y^2=" <<err(t,i) <<endl;
+        }
+        if(reportFeatures==1){
+          featuresOs <<std::setw(4) <<t <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d
+                    <<' ' <<std::setw(40) <<task->name
+                   <<" k=" <<task->map->order <<" ot=" <<task->type <<" prec=" <<std::setw(4) <<task->prec(t);
+          if(task->target.N<5) featuresOs <<" y*=[" <<task->target <<']'; else featuresOs<<"y*=[..]";
+          featuresOs <<" y^2=" <<err(t,i) <<endl;
         }
       }
     }
@@ -1373,34 +1378,36 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
   report.newNode<double>({"total","sqrCosts"}, {}, totalC);
   report.newNode<double>({"total","constraints"}, {}, totalG);
 
-  //-- write a nice gnuplot file
-  ofstream fil("z.costReport");
-  //first line: legend
-  for(auto c:tasks) fil <<c->name <<' ';
-  for(auto c:tasks) if(c->type==OT_ineq && dualSolution.N) fil <<c->name <<"_dual ";
-  fil <<endl;
-
-  //rest: just the matrix
-  if(!dualSolution.N){
-    err.write(fil,NULL,NULL,"  ");
-  }else{
-    dualSolution.reshape(T, dualSolution.N/(T));
-    catCol(err, dualSolution).write(fil,NULL,NULL,"  ");
-  }
-  fil.close();
-
-  ofstream fil2("z.costReport.plt");
-  fil2 <<"set key autotitle columnheader" <<endl;
-  fil2 <<"set title 'costReport ( plotting sqrt(costs) )'" <<endl;
-  fil2 <<"plot 'z.costReport' \\" <<endl;
-  for(uint i=1;i<=tasks.N;i++) fil2 <<(i>1?"  ,''":"     ") <<" u 0:"<<i<<" w l lw 3 lc " <<i <<" lt " <<1-((i/10)%2) <<" \\" <<endl;
-  if(dualSolution.N) for(uint i=0;i<tasks.N;i++) fil2 <<"  ,'' u 0:"<<1+tasks.N+i<<" w l \\" <<endl;
-  fil2 <<endl;
-  fil2.close();
-
   if(gnuplt){
-    cout <<"KOMO Report\n" <<report <<endl;
-    gnuplot("load 'z.costReport.plt'");
+    //-- write a nice gnuplot file
+    ofstream fil("z.costReport");
+    //first line: legend
+    for(auto c:tasks) fil <<c->name <<' ';
+    for(auto c:tasks) if(c->type==OT_ineq && dualSolution.N) fil <<c->name <<"_dual ";
+    fil <<endl;
+
+    //rest: just the matrix
+    if(!dualSolution.N){
+      err.write(fil,NULL,NULL,"  ");
+    }else{
+      dualSolution.reshape(T, dualSolution.N/(T));
+      catCol(err, dualSolution).write(fil,NULL,NULL,"  ");
+    }
+    fil.close();
+
+    ofstream fil2("z.costReport.plt");
+    fil2 <<"set key autotitle columnheader" <<endl;
+    fil2 <<"set title 'costReport ( plotting sqrt(costs) )'" <<endl;
+    fil2 <<"plot 'z.costReport' \\" <<endl;
+    for(uint i=1;i<=tasks.N;i++) fil2 <<(i>1?"  ,''":"     ") <<" u 0:"<<i<<" w l lw 3 lc " <<i <<" lt " <<1-((i/10)%2) <<" \\" <<endl;
+    if(dualSolution.N) for(uint i=0;i<tasks.N;i++) fil2 <<"  ,'' u 0:"<<1+tasks.N+i<<" w l \\" <<endl;
+    fil2 <<endl;
+    fil2.close();
+
+    if(gnuplt){
+      cout <<"KOMO Report\n" <<report <<endl;
+      gnuplot("load 'z.costReport.plt'");
+    }
   }
 
   return report;

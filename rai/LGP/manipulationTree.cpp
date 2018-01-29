@@ -23,8 +23,11 @@
 
 uint COUNT_kin=0;
 uint COUNT_evals=0;
+uint COUNT_node=0;
 uintA COUNT_opt=consts<uint>(0, 4);
 double COUNT_time=0.;
+mlr::String OptLGPDataPath;
+ofstream *filNodes=NULL;
 
 void MNode::resetData(){
   cost = zeros(L);
@@ -39,24 +42,26 @@ void MNode::resetData(){
 }
 
 MNode::MNode(mlr::KinematicWorld& kin, FOL_World& _fol, uint levels)
-  : parent(NULL), step(0),
-    fol(_fol), folState(NULL), folDecision(NULL), folAddToState(NULL),
-    startKinematics(kin), effKinematics(),
-    L(levels), bound(0.){
+  : parent(NULL), step(0), id(COUNT_node++),
+    fol(_fol),
+    startKinematics(kin),
+    L(levels){
   //this is the root node!
   fol.reset_state();
   folState = fol.createStateCopy();
 
   resetData();
+
+  if(filNodes) (*filNodes) <<id <<' ' <<step <<' ' <<time <<' ' <<getTreePathString() <<endl;
 }
 
 MNode::MNode(MNode* parent, MCTS_Environment::Handle& a)
-  : parent(parent), fol(parent->fol),
-    folState(NULL), folDecision(NULL), folAddToState(NULL),
-    startKinematics(parent->startKinematics), effKinematics(),
-    L(parent->L), bound(0.) {
-  step=parent->step+1;
+  : parent(parent), step(parent->step+1), id(COUNT_node++),
+    fol(parent->fol),
+    startKinematics(parent->startKinematics),
+    L(parent->L){
   parent->children.append(this);
+
   fol.setState(parent->folState, parent->step);
   CHECK(a,"giving a 'NULL' shared pointer??");
   ret = fol.transition(a);
@@ -70,6 +75,8 @@ MNode::MNode(MNode* parent, MCTS_Environment::Handle& a)
   resetData();
   cost(l_symbolic) = parent->cost(l_symbolic) - 0.1*ret.reward; //cost-so-far
   bound = parent->bound - 0.1*ret.reward;
+
+  if(filNodes) (*filNodes) <<id <<' ' <<step <<' ' <<time <<' ' <<getTreePathString() <<endl;
 }
 
 MNode::~MNode(){
@@ -99,6 +106,7 @@ void MNode::optLevel(uint level, bool collisions){
   komoProblem(level) = new KOMO();
   KOMO& komo(*komoProblem(level));
 
+  komo.fil = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<level));
   //cout <<"########## OPTIM lev " <<level <<endl;
 
   //-- prepare the komo problem

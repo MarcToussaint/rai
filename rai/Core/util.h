@@ -145,6 +145,8 @@ double totalTime();
 double toTime(const tm& t);
 char *date();
 char *date(double sec);
+char *date2(bool subsec=false);
+char *date2(double sec, bool subsec);
 void wait(double sec, bool msg_on_fail=true);
 bool wait(bool useX11=true);
 
@@ -271,6 +273,7 @@ public:
 stdPipes(String)
 }
 
+inline mlr::String operator+(const mlr::String& a, const char* b){ mlr::String s=a; s <<b; return s; }
 
 //===========================================================================
 //

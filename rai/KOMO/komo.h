@@ -51,6 +51,7 @@ struct KOMO{
   struct OpenGL *gl;            ///< internal only: used in 'displayTrajectory'
   int verbose;                  ///< verbosity level
   double runTime=0.;            ///< just measure run time
+  ofstream *fil=NULL;
 
   KOMO();
   ~KOMO();

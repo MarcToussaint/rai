@@ -211,8 +211,30 @@ void mlr::KinematicWorld::reset_q(){
   fwdActiveJoints.clear();
 }
 
+FrameL mlr::KinematicWorld::calc_topSort(){
+  FrameL fringe;
+  FrameL order;
+  boolA done = consts<byte>(false, frames.N);
+
+  for(Frame *a:frames) if(!a->parent) fringe.append(a);
+
+
+  while(fringe.N) {
+    Frame *a = fringe.popFirst();
+    order.append(a);
+    done(a->ID) = true;
+
+    for(Frame *ch : a->outLinks) fringe.append(ch);
+  }
+
+  for(uint i=0;i<done.N;i++) if(!done(i)) LOG(-1) <<"not done: " <<frames(i)->name <<endl;
+  CHECK_EQ(order.N, frames.N, "can't top sort");
+
+  return order;
+}
+
 void mlr::KinematicWorld::calc_activeSets(){
-  fwdActiveSet = graphGetTopsortOrder<Frame>(frames);
+  fwdActiveSet = calc_topSort(); //graphGetTopsortOrder<Frame>(frames);
   fwdActiveJoints.clear();
   for(Frame *f:fwdActiveSet)
       if(f->joint && f->joint->active)
@@ -244,6 +266,9 @@ void mlr::KinematicWorld::copy(const mlr::KinematicWorld& K, bool referenceSwift
     through trees and testing consistency of loops). */
 void mlr::KinematicWorld::calc_fwdPropagateFrames() {
   for(Frame *f:fwdActiveSet){
+#if 1
+    if(f->parent) f->calc_X_from_parent();
+#else
     if(f->parent){
       Transformation &from = f->parent->X;
       Transformation &to = f->X;
@@ -259,6 +284,7 @@ void mlr::KinematicWorld::calc_fwdPropagateFrames() {
         if(j->type==JT_phiTransXY)  j->axis = from.rot.getZ();
       }
     }
+#endif
   }
 }
 
@@ -357,9 +383,9 @@ arr mlr::KinematicWorld::naturalQmetric(double power) const {
    e.g., when choosing another body as root of a tree */
 void mlr::KinematicWorld::flipFrames(mlr::Frame *a, mlr::Frame *b) {
   CHECK_EQ(b->parent, a, "");
-  CHECK_EQ(a->parent, NULL, "");
-  CHECK_EQ(a->joint, NULL, "");
-  CHECK_EQ(b->joint, NULL, "");
+  CHECK(!a->parent, "");
+  CHECK(!a->joint, "");
+  CHECK(!b->joint, "");
   a->Q = -b->Q;
   b->Q.setZero();
   b->unLink();
@@ -2146,17 +2172,25 @@ void mlr::KinematicWorld::reconnectLinksToClosestJoints(){
     Frame *link = f->getUpwardLink(Q);
 #endif
     if(f->joint && !Q.rot.isZero) continue; //only when rot is zero you can subsume the Q transformation into the Q of the joint
-    if(link != f->parent){ //if we walked -> we need rewiring
-      f->parent->outLinks.removeValue(f);
-      link->outLinks.append(f);
-      f->parent = link;
-      f->Q = Q * f->Q;  //preprend accumulated transform to f->link
+    if(link!=f){ //there is a link's root
+      if(link!=f->parent){ //we can rewire to the link's root
+        f->parent->outLinks.removeValue(f);
+        link->outLinks.append(f);
+        f->parent = link;
+      }
 
       if(!link->shape && f->shape && f->Q.isZero()){ //f has a shape, link not -> move shape to link
         LOG(-1) <<"Shape '" <<f->name <<"' could be reassociated to link '" <<link->name <<"' (child of '" <<(link->parent?link->parent->name:STRING("NONE")) <<"')";
 //        link->shape = f->shape;
 //        f->shape = NULL;
       }
+
+      if(!link->inertia && f->inertia && f->Q.isZero()){ //f has a shape, link not -> move shape to link
+        LOG(-1) <<"Inertia '" <<f->name <<"' could be reassociated to link '" <<link->name <<"' (child of '" <<(link->parent?link->parent->name:STRING("NONE")) <<"')";
+//        link->shape = f->shape;
+//        f->shape = NULL;
+      }
+
     }
   }
 }

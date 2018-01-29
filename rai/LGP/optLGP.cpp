@@ -81,8 +81,14 @@ void initFolStateFromKin(FOL_World& L, const mlr::KinematicWorld& K){
 
 OptLGP::OptLGP(mlr::KinematicWorld &kin, FOL_World &fol)
   : verbose(3), numSteps(0){
+  dataPath <<"z." <<mlr::date2() <<"/";
+  system(STRING("mkdir -p " <<dataPath));
+
+  OptLGPDataPath = dataPath;
+  if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
+
   verbose = mlr::getParameter<int>("LGP/vebose", 3);
-  if(verbose>0) fil.open("z.optLGP.dat"); //STRING("z.optLGP." <<mlr::date() <<".dat"));
+  if(verbose>0) fil.open(dataPath + "optLGP.dat"); //STRING("z.optLGP." <<mlr::date() <<".dat"));
   root = new MNode(kin, fol, 4);
   displayFocus = root;
   //  threadOpenModules(true);
@@ -93,6 +99,7 @@ OptLGP::~OptLGP(){
   if(dth) delete dth;
   delete root;
   root=NULL;
+  if(filNodes){ delete filNodes; filNodes=NULL; }
 }
 
 void OptLGP::initDisplay(){
@@ -404,7 +411,7 @@ mlr::String OptLGP::report(bool detailed){
   out <<"TIME= " <<mlr::cpuTime() <<" TIME= " <<COUNT_time <<" KIN= " <<COUNT_kin <<" EVALS= " <<COUNT_evals
      <<" POSE= " <<COUNT_opt(1) <<" SEQ= " <<COUNT_opt(2) <<" PATH= " <<COUNT_opt(3)
     <<" bestPose= " <<(bpose?bpose->cost(1):100.)
-   <<" bestSeq = " <<(bseq ?bseq ->cost(2):100.)
+   <<" bestSeq= " <<(bseq ?bseq ->cost(2):100.)
   <<" bestPath= " <<(bpath?bpath->cost(3):100.)
   <<" #solutions= " <<fringe_solved.N;
 
@@ -515,12 +522,13 @@ void OptLGP::run(uint steps){
   if(verbose>0) report(true);
 
   //basic output
-  ofstream output(STRING("z."<<mlr::date()<<".lgpopt"));
-  output <<"cost= C0 C1 C2 C3 constr= R0 R1 R2 R3 fea= F0 F1 F2 F3 time= T0 T1 T2 T3 skeleton" <<endl;
+  ofstream output(dataPath+"lgpopt");
+  output <<"id step cost= C0 C1 C2 C3 constr= R0 R1 R2 R3 fea= F0 F1 F2 F3 time= T0 T1 T2 T3 skeleton" <<endl;
   MNodeL ALL = root->getAll();
   for(MNode *n : ALL){
     if(n->count(l_pose)){
-      output <<"cost= " <<n->cost <<" constr= " <<n->constraints <<" fea= " <<convert<int>(n->feasible) <<" time= " <<n->computeTime <<" \"" <<n->getTreePathString() <<"\"" <<endl;
+      output <<n->id <<' ' <<n->step
+            <<" cost= " <<n->cost <<" constr= " <<n->constraints <<" fea= " <<convert<int>(n->feasible) <<" time= " <<n->computeTime <<" \"" <<n->getTreePathString() <<"\"" <<endl;
     }
   }
   output.close();
@@ -528,6 +536,7 @@ void OptLGP::run(uint steps){
   //this generates the movie!
   if(verbose>2){
 //    renderToVideo();
+    system("mkdir -p vid");
     system("rm -f vid/z.*.ppm");
     dth->resetSteppings();
     dth->saveVideo = true;

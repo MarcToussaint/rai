@@ -79,9 +79,9 @@ struct OptConstrained{
   OptNewton newton;
   arr &dual;
   OptOptions opt;
-  uint its;
-  bool earlyPhase;
-  ofstream fil;
+  uint its=0;
+  bool earlyPhase=false;
+  ofstream *fil=NULL;
 
   OptConstrained(arr& x, arr &dual, ConstrainedProblem& P, OptOptions opt=NOOPT);
   ~OptConstrained();

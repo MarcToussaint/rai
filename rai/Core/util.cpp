@@ -496,6 +496,24 @@ char *date(double sec){
   return buf;
 }
 
+char *date2(bool subsec) {
+  return date2(clockTime(false), subsec);
+}
+
+char *date2(double sec, bool subsec){
+  time_t nowtime;
+  struct tm *nowtm;
+  static char tmbuf[64], buf[64];
+
+  nowtime = (long)(floor(sec));
+  sec -= (double)nowtime;
+  nowtm = localtime(&nowtime);
+  strftime(tmbuf, sizeof tmbuf, "%y%m%d-%H%M%S", nowtm);
+  if(!subsec) return tmbuf;
+  snprintf(buf, sizeof buf, "%s.%06ld", tmbuf, (long)(floor(1e6*sec)));
+  return buf;
+}
+
 /// wait double time
 void wait(double sec, bool msg_on_fail) {
 #if defined(MLR_Darwin)

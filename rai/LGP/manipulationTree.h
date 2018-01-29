@@ -22,9 +22,12 @@
 struct MNode;
 typedef mlr::Array<MNode*> MNodeL;
 
-extern uint COUNT_kin, COUNT_evals;
+extern uint COUNT_kin, COUNT_evals, COUNT_node;
 extern uintA COUNT_opt;
 extern double COUNT_time;
+extern mlr::String OptLGPDataPath;
+extern ofstream *filNodes;
+
 
 enum LEVEL{ l_symbolic=0, l_pose=1, l_seq=2, l_path=3 };
 
@@ -35,14 +38,15 @@ struct MNode{
   mlr::Array<MNode*> children;
   uint step;            ///< decision depth/step of this node
   double time;          ///< real time
+  uint id;
 
   //-- info on the symbolic state and action this node represents
   FOL_World& fol; ///< the symbolic KB (all Graphs below are subgraphs of this large KB)
   FOL_World::Handle decision; ///< the decision that led to this node
   FOL_World::TransitionReturn ret;
-  Graph *folState; ///< the symbolic state after the decision
-  Node  *folDecision; ///< the predicate in the folState that represents the decision
-  Graph *folAddToState; ///< facts that are added to the state /after/ the fol.transition, e.g., infeasibility predicates
+  Graph *folState=NULL; ///< the symbolic state after the decision
+  Node  *folDecision=NULL; ///< the predicate in the folState that represents the decision
+  Graph *folAddToState=NULL; ///< facts that are added to the state /after/ the fol.transition, e.g., infeasibility predicates
 
   //-- kinematics: the kinematic structure of the world after the decision path
   const mlr::KinematicWorld& startKinematics; ///< initial start state kinematics

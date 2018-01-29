@@ -46,6 +46,22 @@ mlr::Frame::~Frame() {
   listReindex(K.frames);
 }
 
+void mlr::Frame::calc_X_from_parent(){
+  CHECK(parent, "");
+  Transformation &from = parent->X;
+  X = from;
+  X.appendTransformation(Q);
+  CHECK_EQ(X.pos.x, X.pos.x, "NAN transformation:" <<from <<'*' <<Q);
+  if(joint){
+    Joint *j = joint;
+    if(j->type==JT_hingeX || j->type==JT_transX || j->type==JT_XBall)  j->axis = from.rot.getX();
+    if(j->type==JT_hingeY || j->type==JT_transY)  j->axis = from.rot.getY();
+    if(j->type==JT_hingeZ || j->type==JT_transZ)  j->axis = from.rot.getZ();
+    if(j->type==JT_transXYPhi)  j->axis = from.rot.getZ();
+    if(j->type==JT_phiTransXY)  j->axis = from.rot.getZ();
+  }
+}
+
 void mlr::Frame::getRigidSubFrames(FrameL &F){
   for(Frame *f:outLinks) if(!f->joint) { F.append(f); f->getRigidSubFrames(F); }
 }
@@ -103,7 +119,7 @@ void mlr::Frame::write(std::ostream& os) const {
   }
 
   for(Node *n : ats){
-    StringA avoid = {"Q", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "limits", "ctrl_H"};
+    StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H"};
     if(!avoid.contains(n->keys.last())) os <<' ' <<*n;
   }
 
