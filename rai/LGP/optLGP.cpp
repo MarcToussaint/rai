@@ -18,12 +18,23 @@ void _system(const char* cmd){
   if(r) HALT("system return error " <<r);
 }
 
+bool sortComp(const MNode* a, const MNode* b){
+  if(!a->isInfeasible && b->isInfeasible) return true;
+  if(a->isInfeasible && !b->isInfeasible) return false;
+  return a->cost.last() < b->cost.last();
+}
+
+typedef OptLGP_SolutionData* OptLGP_SolutionDataPtr;
+bool sortComp2(const OptLGP_SolutionDataPtr& a, const OptLGP_SolutionDataPtr& b){
+  return sortComp(a->node, b->node);
+}
+
 struct DisplayThread : MiniThread{
   OptLGP* lgp;
   OpenGL gl;
   uint t=0;
   bool saveVideo=false;
-  DisplayThread(OptLGP* lgp) : MiniThread("OptLGP_Display"), lgp(lgp), gl("OptLGP", 4*displaySize, 3*displaySize) {}
+  DisplayThread(OptLGP* lgp) : MiniThread("OptLGP_Display"), lgp(lgp), gl("OptLGP", 3*displaySize, 2*displaySize) {}
   ~DisplayThread(){ threadClose(); }
   void resetSteppings(){
     lgp->solutions.writeAccess();
@@ -151,7 +162,7 @@ void OptLGP::updateDisplay(){
   //  else pathView.clear();
 
   solutions.writeAccess();
-  for(uint i=0;i<solutions().N;i++){
+  for(uint i=0;i<solutions().N && i<6;i++){
     if(dth->gl.views.N<=i){
       dth->gl.addSubView(i, glStandardScene, NULL);
       dth->gl.addSubView(i, *solutions()(i));
@@ -164,7 +175,7 @@ void OptLGP::updateDisplay(){
     dth->gl.views(i).drawers.last() = solutions()(i);
     dth->gl.views(i).text.clear() <<solutions()(i)->node->cost <<'\n' <<solutions()(i)->decisions;
   }
-  dth->gl.setSubViewTiles(4,3);
+  dth->gl.setSubViewTiles(3,2);
   solutions.deAccess();
 //  gl->update();
 
@@ -292,7 +303,21 @@ void OptLGP::optFixedSequence(const mlr::String& seq, int specificLevel, bool co
   if(specificLevel==-1 || specificLevel==3) node->optLevel(3, collisions);
 
   displayFocus = node;
+
+  solutions.set()->append(new OptLGP_SolutionData(node));
+  solutions.set()->sort(sortComp2);
+
   updateDisplay();
+}
+
+void OptLGP::optMultiple(const StringA& seqs){
+  for(const mlr::String& seq:seqs) optFixedSequence(seq);
+
+  _system(STRING("mkdir -p " <<OptLGPDataPath <<"vid"));
+  _system(STRING("rm -f " <<OptLGPDataPath <<"vid/*.ppm"));
+  dth->resetSteppings();
+  dth->saveVideo = true;
+  mlr::wait(20.);
 }
 
 void OptLGP::writeNodeList(std::ostream &os){
@@ -442,17 +467,6 @@ mlr::String OptLGP::report(bool detailed){
   }
 
   return out;
-}
-
-bool sortComp(const MNode* a, const MNode* b){
-  if(!a->isInfeasible && b->isInfeasible) return true;
-  if(a->isInfeasible && !b->isInfeasible) return false;
-  return a->cost.last() < b->cost.last();
-}
-
-typedef OptLGP_SolutionData* OptLGP_SolutionDataPtr;
-bool sortComp2(const OptLGP_SolutionDataPtr& a, const OptLGP_SolutionDataPtr& b){
-  return sortComp(a->node, b->node);
 }
 
 void OptLGP::step(){

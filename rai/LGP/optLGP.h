@@ -88,6 +88,8 @@ public:
   void player(StringA cmds={});
 
   void optFixedSequence(const mlr::String& seq, int specificLevel=-1, bool collisions=false);
+  void optMultiple(const StringA& seqs);
+
 
   void writeNodeList(ostream& os=cout);
 
