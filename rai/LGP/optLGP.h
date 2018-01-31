@@ -89,5 +89,7 @@ public:
 
   void optFixedSequence(const mlr::String& seq, int specificLevel=-1, bool collisions=false);
 
+  void writeNodeList(ostream& os=cout);
+
   void glDraw(struct OpenGL&gl);
 };

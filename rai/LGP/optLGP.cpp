@@ -295,6 +295,17 @@ void OptLGP::optFixedSequence(const mlr::String& seq, int specificLevel, bool co
   updateDisplay();
 }
 
+void OptLGP::writeNodeList(std::ostream &os){
+  os <<"id step cost= C0 C1 C2 C3 constr= R0 R1 R2 R3 fea= F0 F1 F2 F3 time= T0 T1 T2 T3 skeleton" <<endl;
+  MNodeL ALL = root->getAll();
+  for(MNode *n : ALL){
+//    if(n->count(l_pose)){
+      os <<n->id <<' ' <<n->step
+            <<" cost= " <<n->cost <<" constr= " <<n->constraints <<" fea= " <<convert<int>(n->feasible) <<" time= " <<n->computeTime <<" \"" <<n->getTreePathString() <<"\"" <<endl;
+//    }
+  }
+}
+
 void OptLGP::glDraw(OpenGL &gl){
 }
 
@@ -534,14 +545,7 @@ void OptLGP::run(uint steps){
 
   //basic output
   ofstream output(dataPath+"lgpopt");
-  output <<"id step cost= C0 C1 C2 C3 constr= R0 R1 R2 R3 fea= F0 F1 F2 F3 time= T0 T1 T2 T3 skeleton" <<endl;
-  MNodeL ALL = root->getAll();
-  for(MNode *n : ALL){
-    if(n->count(l_pose)){
-      output <<n->id <<' ' <<n->step
-            <<" cost= " <<n->cost <<" constr= " <<n->constraints <<" fea= " <<convert<int>(n->feasible) <<" time= " <<n->computeTime <<" \"" <<n->getTreePathString() <<"\"" <<endl;
-    }
-  }
+  writeNodeList(output);
   output.close();
 
   //this generates the movie!
