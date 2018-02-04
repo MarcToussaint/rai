@@ -1122,8 +1122,9 @@ StringA mlr::KinematicWorld::getJointNames() const{
 }
 
 /** @brief creates uniques names by prefixing the node-index-number to each name */
-void mlr::KinematicWorld::prefixNames() {
-  for(Frame *a: frames) a->name=STRING(a->ID<< a->name);
+void mlr::KinematicWorld::prefixNames(bool clear) {
+  if(!clear) for(Frame *a: frames) a->name=STRING(a->ID<< a->name);
+  else       for(Frame *a: frames) a->name.clear() <<a->ID;
 }
 
 /// return a OpenGL extension
@@ -1425,6 +1426,19 @@ void mlr::KinematicWorld::writeURDF(std::ostream &os, const char* robotName) con
   }
 
   os <<"</robot>";
+}
+
+void mlr::KinematicWorld::writeMeshes(const char *pathPrefix) const{
+  for(mlr::Frame *f:frames){
+    if(f->shape &&
+       (f->shape->type()==mlr::ST_mesh || f->shape->type()==mlr::ST_ssCvx)){
+      mlr::String filename = pathPrefix;
+      filename <<f->name <<".tri";
+      f->ats.getNew<mlr::String>("mesh") = filename;
+      if(f->shape->type()==mlr::ST_mesh) f->shape->mesh().writeTriFile(filename);
+      if(f->shape->type()==mlr::ST_ssCvx) f->shape->sscCore().writeTriFile(filename);
+    }
+  }
 }
 
 #define DEBUG(x) //x
@@ -2176,7 +2190,7 @@ void mlr::KinematicWorld::reconnectLinksToClosestJoints(){
   for(Frame *f:frames) if(f->parent){
 #if 0
     Frame *link = f->parent;
-    mlr::Transformation Q=0;
+    mlr::Transformation Q=f->Q;
     while(link->parent && !link->joint){ //walk down links until this is a joint
       Q = link->Q * Q;                 //accumulate transforms
       link = link->parent;
@@ -2191,6 +2205,7 @@ void mlr::KinematicWorld::reconnectLinksToClosestJoints(){
         f->parent->outLinks.removeValue(f);
         link->outLinks.append(f);
         f->parent = link;
+        f->Q = Q;
       }
 
       if(!link->shape && f->shape && f->Q.isZero()){ //f has a shape, link not -> move shape to link

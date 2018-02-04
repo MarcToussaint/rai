@@ -102,7 +102,7 @@ struct KinematicWorld : GLDrawer{
   StringA getJointNames() const;
 
   bool checkUniqueNames() const;
-  void prefixNames();
+  void prefixNames(bool clear=false);
 
   /// @name changes of configuration
   void clear();
@@ -220,6 +220,7 @@ struct KinematicWorld : GLDrawer{
   /// @name I/O
   void write(std::ostream& os) const;
   void writeURDF(std::ostream& os, const char *robotName="myrobot") const;
+  void writeMeshes(const char* pathPrefix="meshes/") const;
   void read(std::istream& is);
   void glDraw(struct OpenGL&);
   void glDraw_sub(struct OpenGL&);
