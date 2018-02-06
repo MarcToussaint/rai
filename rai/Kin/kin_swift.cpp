@@ -391,10 +391,16 @@ void SwiftInterface::swiftQueryExactDistance() {
   }
 }
 
+uint SwiftInterface::countObjects(){
+  uint n=0;
+  for(int& i : INDEXshape2swift) if(i>=0) n++;
+  return n;
+}
+
 #else
 #include <Core/util.h>
-  void SwiftInterface::step(mlr::KinematicWorld &world, bool dumpReport=false){}
-  void SwiftInterface::pushToSwift() {}
+void SwiftInterface::step(mlr::KinematicWorld &world, bool dumpReport=false){}
+void SwiftInterface::pushToSwift() {}
   void SwiftInterface::pullFromSwift(const KinematicWorld &world, bool dumpReport) {}
 
   void SwiftInterface::reinitShape(const mlr::Shape *s) {}

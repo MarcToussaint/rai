@@ -831,7 +831,7 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
           setKinematicSwitch(phase+time, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", *symbols(1), world));
           setFlag(phase+time, new Flag(FL_gravityAcc, world[*symbols(1)]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
         }else if(symbols.N==3){
-          const char* bat = *symbols(0);
+          //const char* bat = *symbols(0);
           const char* object = *symbols(1);
           const char* placeRef = *symbols(2);
           Transformation rel = 0;

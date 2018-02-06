@@ -41,7 +41,7 @@ struct Spline {
   /// methods to construct a basis matrix mapping from the K points to a (fine) grid of resolution T
   void setBasis(uint T, uint K); ///< requires that degree and times has been set; computes basis, basis_trans
   void setBasisAndTimeGradient(uint T, uint K); ///< as above, but computes also gradient w.r.t. times
-  void setUniformNonperiodicBasis(uint T, uint K, uint degree); ///< sets the times uniformly, then computes basis
+  void setUniformNonperiodicBasis(uint T, uint nPoints, uint degree); ///< sets the times uniformly, then computes basis
   void setUniformNonperiodicBasis();
   void set(uint degree, const arr &points,const arr& times);
 

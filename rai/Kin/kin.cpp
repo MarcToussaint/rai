@@ -2237,6 +2237,7 @@ void mlr::KinematicWorld::optimizeTree(bool preserveNamed){
 //  if(!preserveNamed) pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
   reconnectLinksToClosestJoints();
   pruneUselessFrames(preserveNamed);
+  calc_activeSets();
   checkConsistency();
 }
 
@@ -2398,7 +2399,7 @@ void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
   glColor(.5, .5, .5);
 
   //proxies
-//  if(orsDrawProxies) for(const Proxy& p: proxies) ((Proxy*)&p)->glDraw(gl);
+  if(orsDrawProxies) for(const Proxy& p: proxies) ((Proxy*)&p)->glDraw(gl);
 
   //contacts
   if(orsDrawProxies) for(const Frame *fr: frames) for(mlr::Contact *c:fr->contacts) if(&c->a==fr){

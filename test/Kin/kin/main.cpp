@@ -115,7 +115,7 @@ void TEST(Graph){
 
 //  mlr::KinematicWorld G("arm7.g");
 //  mlr::KinematicWorld K("kinematicTests.g");
-  mlr::KinematicWorld K("../../../data/pr2_model/pr2_model.ors");
+  mlr::KinematicWorld K("../../../../rai-robotModels/pr2/pr2.g");
 //  mlr::KinematicWorld G("../../../projects/17-LGP-push/quatJacTest.g");
 //  G.watch(true);
 
@@ -198,7 +198,7 @@ void TEST(KinematicSpeed){
 #define NUM 100000
 #if 1
 //  mlr::KinematicWorld K("kinematicTests.g");
-  mlr::KinematicWorld K("../../../data/pr2_model/pr2_model.ors");
+  mlr::KinematicWorld K("../../../../rai-robotModels/pr2/pr2.g");
   K.optimizeTree();
   uint n=K.getJointStateDimension();
   arr x(n);

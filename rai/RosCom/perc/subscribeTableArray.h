@@ -3,7 +3,7 @@
 #include <object_recognition_msgs/TableArray.h>
 
 struct SubscribeTableArray{
-  ACCESSname(object_recognition_msgs::TableArray, tabletop_tableArray)
+  VARname(object_recognition_msgs::TableArray, tabletop_tableArray)
   Subscriber<object_recognition_msgs::TableArray> sub;
 
   SubscribeTableArray()

@@ -53,7 +53,7 @@ struct VideoEncoder : Thread {
   struct sVideoEncoder *s;
   bool is_rgb;
   double fps;
-  ACCESSlisten(byteA, img)
+  VARlisten(byteA, img)
   VideoEncoder() : Thread("VideoEncoder"), is_rgb(false), fps(30) {}
   virtual ~VideoEncoder() {}
 
@@ -70,7 +70,7 @@ struct VideoEncoderX264 : Thread {
    struct sVideoEncoderX264 *s;
    bool is_rgb;
    double fps;
-   ACCESSlisten(byteA, img)
+   VARlisten(byteA, img)
    VideoEncoderX264() : Thread("VideoEncoderX264"), is_rgb(false) {}
    virtual ~VideoEncoderX264() {}
 
@@ -285,18 +285,18 @@ struct Patcher : Thread {
 #define END_MODULE() };
 
 //BEGIN_MODULE(ImageViewer)      VAR(byteA, img)       END_MODULE()
-//BEGIN_MODULE(PointCloudViewer) ACCESSlisten(arr, kinect_points)         VAR(arr, kinect_pointColors)        END_MODULE()
+//BEGIN_MODULE(PointCloudViewer) VARlisten(arr, kinect_points)         VAR(arr, kinect_pointColors)        END_MODULE()
 //BEGIN_MODULE(OpencvCamera)     VAR(byteA, rgb)       std::map<int,double> properties; bool set(int prop, double value);  END_MODULE()
 //BEGIN_MODULE(CvtGray)          VAR(byteA, rgb)       VAR(byteA, gray)      END_MODULE()
-BEGIN_MODULE(CvtHsv)           ACCESSlisten(byteA, rgb)       VAR(byteA, hsv)       END_MODULE()
-BEGIN_MODULE(HsvFilter)        ACCESSlisten(byteA, hsv)       VAR(floatA, evi)      END_MODULE()
+BEGIN_MODULE(CvtHsv)           VARlisten(byteA, rgb)       VAR(byteA, hsv)       END_MODULE()
+BEGIN_MODULE(HsvFilter)        VARlisten(byteA, hsv)       VAR(floatA, evi)      END_MODULE()
 //BEGIN_MODULE(MotionFilter)     VAR(byteA, rgb)       VAR(byteA, motion)    END_MODULE()
 //BEGIN_MODULE(DifferenceFilter) VAR(byteA, i1)        VAR(byteA, i2)        VAR(byteA, diffImage) END_MODULE()
 //BEGIN_MODULE(CannyFilter)      VAR(byteA, grayImage) VAR(byteA, cannyImage)       END_MODULE()
-//BEGIN_MODULE(Patcher)          ACCESSlisten(byteA, rgbImage)  VAR(Patching, patchImage)    END_MODULE()
-BEGIN_MODULE(SURFer)           ACCESSlisten(byteA, grayImage) VAR(SURFfeatures, features)  END_MODULE()
-BEGIN_MODULE(HoughLineFilter)  ACCESSlisten(byteA, grayImage) VAR(HoughLines, houghLines)  END_MODULE()
-BEGIN_MODULE(ShapeFitter)      ACCESSlisten(floatA, eviL)     VAR(floatA, eviR)            VAR(PerceptionOutput, perc)      END_MODULE()
+//BEGIN_MODULE(Patcher)          VARlisten(byteA, rgbImage)  VAR(Patching, patchImage)    END_MODULE()
+BEGIN_MODULE(SURFer)           VARlisten(byteA, grayImage) VAR(SURFfeatures, features)  END_MODULE()
+BEGIN_MODULE(HoughLineFilter)  VARlisten(byteA, grayImage) VAR(HoughLines, houghLines)  END_MODULE()
+BEGIN_MODULE(ShapeFitter)      VARlisten(floatA, eviL)     VAR(floatA, eviR)            VAR(PerceptionOutput, perc)      END_MODULE()
 BEGIN_MODULE(AudioReader)    AudioPoller_PA *poller; VAR(byteA, pcms16ne2c) END_MODULE()
 BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; VAR(byteA, pcms16ne2c) END_MODULE()
 
