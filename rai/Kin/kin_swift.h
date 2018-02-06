@@ -50,5 +50,6 @@ struct SwiftInterface {
 
   void initActivations(const mlr::KinematicWorld& world, uint parentLevelsToDeactivate=1);
   void swiftQueryExactDistance();
+  uint countObjects();
 };
 /** @} */

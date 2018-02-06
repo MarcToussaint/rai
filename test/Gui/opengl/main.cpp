@@ -42,8 +42,8 @@ void TEST(MultipleViews) {
   gl.reportSelects=true;
   gl.text <<"multiple views";
   gl.add(draw1,0);
-  gl.addView(0,draw1,0);
-  gl.addView(1,draw1,0);
+  gl.addSubView(0,draw1,0);
+  gl.addSubView(1,draw1,0);
   gl.setViewPort(1,.1,.4,.1,.4);
   gl.setViewPort(0,.6,.9,.6,.9);
   gl.views(0).img=&img;

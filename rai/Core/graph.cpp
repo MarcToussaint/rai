@@ -402,18 +402,7 @@ NodeL Graph::getAllNodesRecursively() const{
 Node* Graph::edit(Node *ed){
   NodeL KVG = findNodesOfType(ed->type, ed->keys);
   //CHECK(KVG.N<=1, "can't edit into multiple nodes yet");
-  Node *n=NULL;
-  if(KVG.N) n=KVG.elem(0);
-  CHECK(n!=ed,"how is this possible?: You're trying to edit with '" <<*ed <<"' but this is the only node using these keys");
-  if(n){
-    CHECK(ed->type==n->type, "can't edit/merge nodes of different types!");
-    if(n->isGraph()){ //merge the KVGs
-      n->graph().edit(ed->graph());
-    }else{ //overwrite the value
-      n->copyValue(ed);
-    }
-    if(&ed->container==this){ delete ed; ed=NULL; }
-  }else{ //nothing to merge, append
+  if(!KVG.N){ //nothing to merge, append
     if(&ed->container!=this){
       if(!isIndexed) index();
       if(!ed->container.isIndexed) ed->container.index();
@@ -424,6 +413,19 @@ Node* Graph::edit(Node *ed){
     }
     return ed;
   }
+
+  uint edited=0;
+  for(Node *n : KVG) if(n!=ed){
+    CHECK(ed->type==n->type, "can't edit/merge nodes of different types!");
+    if(n->isGraph()){ //merge the KVGs
+      n->graph().edit(ed->graph());
+    }else{ //overwrite the value
+      n->copyValue(ed);
+    }
+    edited++;
+  }
+  if(!edited) MLR_MSG("no nodes edited!");
+  if(&ed->container==this){ delete ed; ed=NULL; }
   return NULL;
 }
 
@@ -649,14 +651,12 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
       case '\'': { //mlr::FileToken
         str.read(is, "", "\'", true);
         try{
-//          f->getIs();
           node = newNode<mlr::FileToken>(keys, parents, mlr::FileToken(str, false));
           node->get<mlr::FileToken>().getIs();  //creates the ifstream and might throw an error
         } catch(...){
           delete node; node=NULL;
           PARSERR("file " <<str <<" does not exist -> converting to string!", pinfo);
           node = newNode<mlr::String>(keys, parents, str);
-//          delete f; f=NULL;
         }
       } break;
       case '\"': { //mlr::String
@@ -697,23 +697,6 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
         mlr::parse(is, "}");
         node = subgraph;
       } break;
-//      case '(': { // referring Graph
-//        Graph *refs = new Graph;
-//        refs->isReferringToNodesOf = this;
-//        for(uint j=0;; j++) {
-//          str.read(is, " , ", " , )", false);
-//          if(!str.N) break;
-//          Node *e = this->getNode(str);
-//          if(e) { //sucessfully found
-//            refs->NodeL::append(e);
-//          } else { //this element is not known!!
-//            HALT("line:" <<mlr::lineCount <<" reading node '" <<keys <<"': unknown "
-//                 <<j <<"th linked element '" <<str <<"'"); //DON'T DO THIS YET
-//          }
-//        }
-//        mlr::parse(is, ")");
-//        node = newNode<Graph*>(keys, parents, refs, true);
-//      } break;
       default: { //error
         is.putback(c);
         PARSERR("unknown value indicator '" <<c <<"'", pinfo);

@@ -253,12 +253,13 @@ void PairCollision::kinVector(arr& y, arr& J,
       b = simplex2[1]-simplex2[0]; //edge
       b /= length(b);
       double ab=scalarProduct(a,b);
+      if(1.-ab*ab>1e-8){ //the edges are not colinear
+        Jv = crossProduct(Jx1, a);      //K.kinematicsVec(vec, Jv, &s1.frame, s1.frame.X.rot/e1);
+        J += (a-b*ab) * (1./(1.-ab*ab)) * (~(p1-p2)*(b*~b -eye(3,3))) * Jv;
 
-      Jv = crossProduct(Jx1, a);      //K.kinematicsVec(vec, Jv, &s1.frame, s1.frame.X.rot/e1);
-      J += (a-b*ab) * (1./(1.-ab*ab)) * (~(p1-p2)*(b*~b -eye(3,3))) * Jv;
-
-      Jv = crossProduct(Jx2, b);      //K.kinematicsVec(vec, Jv, &s2.frame, s2.frame.X.rot/e2);
-      J += (b-a*ab) * (1./(1.-ab*ab)) * (~(p1-p2)*(a*~a -eye(3,3))) * Jv;
+        Jv = crossProduct(Jx2, b);      //K.kinematicsVec(vec, Jv, &s2.frame, s2.frame.X.rot/e2);
+        J += (b-a*ab) * (1./(1.-ab*ab)) * (~(p1-p2)*(a*~a -eye(3,3))) * Jv;
+      }
     }
     if(simplexType(1, 2) || simplexType(2, 1)){
       arr vec, Jv, n;
@@ -269,16 +270,18 @@ void PairCollision::kinVector(arr& y, arr& J,
       if(simplex2.d0==2) Jv = crossProduct(Jx2, p1-p2);  //K.kinematicsVec(vec, Jv, &s2.frame, s2.frame.X.rot/(p1-p2));
       J += n*(~n*Jv);
     }
+    checkNan(J);
   }
 
   //-- account for radii
   if(rad1>0. || rad2>0.){
     double rad=rad1+rad2;
-    double eps = 1e-12;
+    double eps = 1e-6;
     double fac = (distance-rad)/(distance+eps);
     if(&J){
       arr d_fac = ((1.-fac)/(distance+eps)) *((~normal)*J);
       J = J*fac + y*d_fac;
+      checkNan(J);
     }
     y *= fac;
   }
@@ -290,23 +293,8 @@ void PairCollision::kinDistance(arr &y, arr &J,
                                 const arr &Jp1, const arr &Jp2){
   y = ARR(distance-rad1-rad2);
   if(&J){
-#if 0
-    arr y_vec;
-    kinVector(y_vec, J, Jp1, Jp2, Jx1, Jx2);
-    J = ~normal*J;
-    //    CHECK_ZERO(fabs(y(0))-length(y_vec), 1e-6, "");
-#else
     J = Jp1 - Jp2;
     J = ~normal*J;
-    //-- account for radii
-    if(rad1>0. || rad2>0.){
-      double rad=rad1+rad2;
-      double eps = 1e-12;
-      double fac = (distance-rad)/(distance+eps);
-      arr d_fac = ((1.-fac)/(distance+eps)) *J;
-      J = J*fac + distance*d_fac;
-    }
-#endif
   }
 }
 

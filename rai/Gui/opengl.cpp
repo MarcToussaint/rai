@@ -1191,7 +1191,7 @@ void OpenGL::addInit(void (*call)(void*), void* classP) {
 }
 
 /// add a draw routine to a view
-void OpenGL::addView(uint v, void (*call)(void*), void* classP) {
+void OpenGL::addSubView(uint v, void (*call)(void*), void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
   dataLock.writeLock();
   if(v>=views.N) views.resizeCopy(v+1);
@@ -1218,6 +1218,13 @@ void OpenGL::setViewPort(uint v, double l, double r, double b, double t) {
   dataLock.writeLock();
   if(v>=views.N) views.resizeCopy(v+1);
   views(v).le=l;  views(v).ri=r;  views(v).bo=b;  views(v).to=t;
+  dataLock.unlock();
+}
+
+void OpenGL::clearSubView(uint v){
+  if(v>=views.N) return;
+  dataLock.writeLock();
+  views(v).drawers.clear();
   dataLock.unlock();
 }
 
@@ -1387,8 +1394,10 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
       if(clearR+clearG+clearB>1.) glColor(0.0, 0.0, 0.0, 1.0); else glColor(1.0, 1.0, 1.0, 1.0);
       glMatrixMode(GL_MODELVIEW);
       glLoadIdentity();
-      //glOrtho(0., (vi->ri-vi->le)*w, (vi->to-vi->bo)*h, .0, -1., 1.);
-      glDrawText(vi->text, -.95, .85, 0.);
+      glOrtho(0., (vi->ri-vi->le)*w, (vi->to-vi->bo)*h, .0, -1., 1.);
+      glDrawText(vi->text, 10, 20, 0);
+//      glDrawText(vi->text, -.95, .85, 0.);
+      glLoadIdentity();
     }
   }
 

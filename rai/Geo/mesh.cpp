@@ -73,6 +73,11 @@ void mlr::Mesh::setBox() {
   //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
 }
 
+void mlr::Mesh::setDot(){
+  V.resize(1,3).setZero(); Vn.clear();
+  T.clear(); Tn.clear();
+}
+
 void mlr::Mesh::setTetrahedron() {
   double s2=MLR_SQRT2/3., s6=sqrt(6.)/3.;
   double verts[12] = { 0., 0., 1. , 2.*s2, 0., -1./3., -s2, s6, -1./3., -s2, -s6, -1./3. };

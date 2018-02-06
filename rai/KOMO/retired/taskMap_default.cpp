@@ -15,7 +15,7 @@
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
-#include "taskMap_default.h"
+#include "TM_default.h"
 
 TM_Default::TM_Default(TM_DefaultType _type,
                                int iShape, const mlr::Vector& _ivec,

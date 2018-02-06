@@ -40,7 +40,7 @@ void TEST(Sphere) {
 void TEST(Meshes) {
   OpenGL gl;
   mlr::Mesh mesh;
-  mesh.readStlFile(FILE("../../../data/pr2_model/head_v0/head_pan.stl"));
+  mesh.readStlFile(FILE("../../../../rai-robotModels/pr2/head_v0/head_pan.stl"));
   gl.add(drawInit,0);
   gl.add(mesh);
   gl.watch();

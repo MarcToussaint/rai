@@ -3,12 +3,18 @@
 #include <Kin/kin.h>
 
 enum FrameFlagType {
-  FT_zeroVel=0,
-  FT_zeroAcc,
-  FT_gravityAcc,
-  FT_zeroQVel,
-  FT_zeroQAcc,
-  FT_noQControlCosts
+  FL_zeroVel=0,
+  FL_zeroAcc,
+  FL_gravityAcc,
+  FL_zeroQVel,
+  FL_zeroQAcc,
+  FL_normalControlCosts,
+  FL_impulseExchange,
+  FL_qCtrlCostAcc,
+  FL_xPosAccCosts,
+  FL_clear,
+  FL_xPosVelCosts,
+  FL_kinematic,
 };
 
 namespace mlr{
@@ -26,13 +32,7 @@ struct Flag {
 
   void apply(KinematicWorld& K);
 
-  void write(std::ostream& os) const{
-    os <<"FLAG '" <<flag<<"'"
-      <<"  frame=" <<frameId
-      <<"  stepOfApplication=" <<stepOfApplication
-      <<"  persist=" <<persist
-      <<"  setTrue=" <<setTrue;
-  }
+  void write(std::ostream& os, KinematicWorld* K=NULL) const;
 };
 
 }

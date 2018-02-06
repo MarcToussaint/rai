@@ -28,7 +28,7 @@ int optNewton(arr& x, const ScalarFunction& f,  OptOptions o) {
 //===========================================================================
 
 OptNewton::OptNewton(arr& _x, const ScalarFunction& _f,  OptOptions _o):
-  x(_x), f(_f), o(_o), it(0), evals(0), numTinySteps(0){
+  x(_x), f(_f), o(_o){
   alpha = o.initStep;
   beta = o.damping;
   additionalRegularizer=NULL;
@@ -43,10 +43,9 @@ void OptNewton::reinit(const arr& _x){
   //startup verbose
   if(o.verbose>1) cout <<"*** optNewton: starting point f(x)=" <<fx <<" alpha=" <<alpha <<" beta=" <<beta <<endl;
   if(o.verbose>2) cout <<"\nx=" <<x <<endl;
-  if(o.verbose>0) fil.open("z.opt");
-  if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha;
-  if(o.verbose>2) fil <<' ' <<x;
-  if(o.verbose>0) fil <<endl;
+  if(fil) (*fil) <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha;
+  if(fil && o.verbose>2) (*fil) <<' ' <<x;
+  if(fil) (*fil) <<endl;
 }
 
 //===========================================================================
@@ -167,7 +166,7 @@ OptNewton::StopCriterion OptNewton::step(){
         beta*=o.dampingInc;
         alpha*=o.dampingInc*o.dampingInc;
         betaChanged=true;
-        if(o.verbose>1) cout <<", stop & betaInc" <<endl;
+        if(o.verbose>1) cout <<", stop & betaInc"<<endl;
       }else{
         if(o.verbose>1) cout <<"\n\t\t\t\t\t(line search)\t" <<flush;
       }
@@ -175,9 +174,9 @@ OptNewton::StopCriterion OptNewton::step(){
     }
   }
 
-  if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha;
-  if(o.verbose>2) fil <<' ' <<x;
-  if(o.verbose>0) fil <<endl;
+  if(fil) (*fil) <<"newton 0 " <<evals <<' ' <<fx; //<<eval_cost <<' '
+  if(fil && o.verbose>2) (*fil)  <<' ' <<alpha <<' ' <<x;
+  if(fil) (*fil) <<endl;
 
   //stopping criteria
 
@@ -197,7 +196,6 @@ OptNewton::StopCriterion OptNewton::step(){
 
 OptNewton::~OptNewton(){
   if(o.fmin_return) *o.fmin_return=fx;
-  if(o.verbose>0) fil.close();
 #ifndef MLR_MSVC
 //  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", NULL, true);
 #endif

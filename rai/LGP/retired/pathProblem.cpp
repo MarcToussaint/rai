@@ -190,7 +190,7 @@ PathProblem::PathProblem(const mlr::KinematicWorld& world_initial,
   for(uint i=0;i<actions.N;i++){
     //pick at time 2*i+1
     mlr::KinematicSwitch *op_pick = new mlr::KinematicSwitch();
-    op_pick->symbol = mlr::KinematicSwitch::addJointZero;
+    op_pick->symbol = mlr::SW_effJoint;
     op_pick->jointType = mlr::JT_rigid;
     op_pick->timeOfApplication = tPick(i)+1;
     op_pick->fromId = world.shapes(endeff_index)->index;
@@ -199,7 +199,7 @@ PathProblem::PathProblem(const mlr::KinematicWorld& world_initial,
 
     //place at time 2*i+2
     mlr::KinematicSwitch *op_place = new mlr::KinematicSwitch();
-    op_place->symbol = mlr::KinematicSwitch::deleteJoint;
+    op_place->symbol = mlr::deleteJoint;
     op_place->timeOfApplication = tPlace(i)+1;
     op_place->fromId = world.shapes(endeff_index)->index;
     op_place->toId = world.shapes(idObject(i))->index;

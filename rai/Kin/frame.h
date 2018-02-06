@@ -20,6 +20,7 @@ namespace mlr{
 struct Frame;
 struct Joint;
 struct Shape;
+struct Inertia;
 struct Contact;
 //enum ShapeType { ST_none=-1, ST_box=0, ST_sphere, ST_capsule, ST_mesh, ST_cylinder, ST_marker, ST_retired_SSBox, ST_pointCloud, ST_ssCvx, ST_ssBox };
 enum JointType { JT_none=-1, JT_hingeX=0, JT_hingeY=1, JT_hingeZ=2, JT_transX=3, JT_transY=4, JT_transZ=5, JT_transXY=6, JT_trans3=7, JT_transXYPhi=8, JT_universal=9, JT_rigid=10, JT_quatBall=11, JT_phiTransXY=12, JT_XBall, JT_free };
@@ -46,31 +47,35 @@ struct Frame {
   Frame *parent=NULL;        ///< parent frame
   FrameL outLinks;           ///< lists of in and out joints
   Transformation Q=0;        ///< relative transform to parent
-  Transformation X=0;        ///< body's absolute pose
+public:
+  Transformation X=0;        ///< frame's absolute pose
+  double time=0.;            ///< frame's absolute time (could be thought as part of the transformation X in space-time)
+public:
   Graph ats;                 ///< list of any-type attributes
   bool active=true;          ///< if false, this frame is skipped in computations (e.g. in fwd propagation)
   int flags=0;               ///< various flags that are used by task maps to impose costs/constraints in KOMO
 
   //attachments to the frame
-  struct Joint *joint=NULL;      ///< this frame is an articulated joint
-  struct Shape *shape=NULL;      ///< this frame has a (collision or visual) geometry
-  struct Inertia *inertia=NULL;  ///< this frame has inertia (is a mass)
-  Array<Contact*> contacts;
+  Joint *joint=NULL;      ///< this frame is an articulated joint
+  Shape *shape=NULL;      ///< this frame has a (collision or visual) geometry
+  Inertia *inertia=NULL;  ///< this frame has inertia (is a mass)
+  Array<Contact*> contacts; ///< this frame is in (near-) contact with other frames
 
   Frame(KinematicWorld& _K, const Frame *copyBody=NULL);
   Frame(Frame *_parent);
   ~Frame();
 
-  uint numInputs() const{ if(parent) return 1; return 0; } //TODO: remove: use KinConf specific topSort, not generic; remove generic top sort..
+  void calc_X_from_parent();
 
-  Frame* insertPreLink(const mlr::Transformation& A);
-  Frame* insertPostLink(const mlr::Transformation& B);
+  Frame* insertPreLink(const mlr::Transformation& A=0);
+  Frame* insertPostLink(const mlr::Transformation& B=0);
   void unLink();
   void linkFrom(Frame *_parent, bool adoptRelTransform=false);
 
-  void getRigidSubFrames(FrameL& F);
+  Inertia& getInertia();
 
-  Frame* getUpwardLink(mlr::Transformation& Qtotal=NoTransformation);
+  void getRigidSubFrames(FrameL& F); ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
+  Frame* getUpwardLink(mlr::Transformation& Qtotal=NoTransformation); ///< recurse upward until the next joint and return relative transform (this->Q is not included!b)
 
   void read(const Graph &ats);
   void write(std::ostream& os) const;
@@ -112,6 +117,7 @@ struct Joint{
   uint qDim(){ return dim; }
   void calc_Q_from_q(const arr& q, uint n);
   arr calc_q_from_Q(const Transformation &Q) const;
+  arr getScrewMatrix();
   uint getDimFromType() const;
   arr get_h() const;
 
@@ -124,13 +130,6 @@ struct Joint{
   void read(const Graph& G);
 };
 stdOutPipe(Joint)
-
-//===========================================================================
-
-struct FrameGeom{
-  struct GeomStore& store;
-  int geomID;
-};
 
 //===========================================================================
 
@@ -159,19 +158,14 @@ stdOutPipe(Inertia)
 /// a Frame with Shape is a collision or visual object
 struct Shape : GLDrawer{
   Frame& frame;
-  struct GeomStore& store;
-  int geomID = -1;
+  Geom *geom = NULL;
 
-  Geom& geom(){
-    if(geomID==-1) geomID = (new Geom(store))->ID;
-    return store.get(geomID);
-  }
-  const Geom& geom() const{ return store.get(geomID); }
-  Enum<ShapeType>& type() { return geom().type; }
-  arr& size() { return geom().size; }
-  double& size(uint i) { return geom().size.elem(i); }
-  Mesh& mesh() { return geom().mesh; }
-  Mesh& sscCore() { return geom().sscCore; }
+  Geom& getGeom(); ///< creates a geom if not yet initialized
+  Enum<ShapeType>& type() { return getGeom().type; }
+  arr& size() { return getGeom().size; }
+  double& size(uint i) { return getGeom().size.elem(i); }
+  Mesh& mesh() { return getGeom().mesh; }
+  Mesh& sscCore() { return getGeom().sscCore; }
 
 //  Enum<ShapeType> type;
 //  arr size;

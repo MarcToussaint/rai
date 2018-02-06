@@ -211,8 +211,44 @@ void mlr::KinematicWorld::reset_q(){
   fwdActiveJoints.clear();
 }
 
+FrameL mlr::KinematicWorld::calc_topSort(){
+  FrameL fringe;
+  FrameL order;
+  boolA done = consts<byte>(false, frames.N);
+
+  for(Frame *a:frames) if(!a->parent) fringe.append(a);
+
+
+  while(fringe.N) {
+    Frame *a = fringe.popFirst();
+    order.append(a);
+    done(a->ID) = true;
+
+    for(Frame *ch : a->outLinks) fringe.append(ch);
+  }
+
+  for(uint i=0;i<done.N;i++) if(!done(i)) LOG(-1) <<"not done: " <<frames(i)->name <<endl;
+  CHECK_EQ(order.N, frames.N, "can't top sort");
+
+  return order;
+}
+
+bool mlr::KinematicWorld::check_topSort(){
+  if(fwdActiveSet.N != frames.N) return false;
+
+  //compute levels
+  intA level = consts<int>(0, frames.N);
+  for(Frame *f: fwdActiveSet) if(f->parent) level(f->ID) = level(f->parent->ID)+1;
+  //check levels are strictly increasing across links
+  for(Frame *f: fwdActiveSet) if(f->parent && level(f->parent->ID) >= level(f->ID)) return false;
+
+  return true;
+}
+
 void mlr::KinematicWorld::calc_activeSets(){
-  fwdActiveSet = graphGetTopsortOrder<Frame>(frames);
+  if(!check_topSort()){
+    fwdActiveSet = calc_topSort(); //graphGetTopsortOrder<Frame>(frames);
+  }
   fwdActiveJoints.clear();
   for(Frame *f:fwdActiveSet)
       if(f->joint && f->joint->active)
@@ -244,6 +280,9 @@ void mlr::KinematicWorld::copy(const mlr::KinematicWorld& K, bool referenceSwift
     through trees and testing consistency of loops). */
 void mlr::KinematicWorld::calc_fwdPropagateFrames() {
   for(Frame *f:fwdActiveSet){
+#if 1
+    if(f->parent) f->calc_X_from_parent();
+#else
     if(f->parent){
       Transformation &from = f->parent->X;
       Transformation &to = f->X;
@@ -259,6 +298,7 @@ void mlr::KinematicWorld::calc_fwdPropagateFrames() {
         if(j->type==JT_phiTransXY)  j->axis = from.rot.getZ();
       }
     }
+#endif
   }
 }
 
@@ -355,56 +395,32 @@ arr mlr::KinematicWorld::naturalQmetric(double power) const {
 
 /** @brief revert the topological orientation of a joint (edge),
    e.g., when choosing another body as root of a tree */
-//void mlr::KinematicWorld::revertJoint(mlr::Joint *j) {
-//  cout <<"reverting edge (" <<j->from()->name <<' ' <<j->frame.name <<")" <<endl;
-//  NIY;
-//#if 0
-//  //revert
-//  j->from->outLinks.removeValue(j);
-//  j->to->inLinks.removeValue(j);
-//  Frame *b=j->from; j->from=j->to; j->to=b;
-//  j->from->outLinks.append(j);
-//  j->to->inLinks.append(j);
-//  listReindex(j->from->outLinks);
-//  listReindex(j->from->inLinks);
-//  checkConsistency();
-
-//  mlr::Transformation f;
-//  f=j->A;
-//  j->A.setInverse(j->B);
-//  j->B.setInverse(f);
-//  f=j->Q;
-//  j->Q.setInverse(f);
-//#endif
-//}
+void mlr::KinematicWorld::flipFrames(mlr::Frame *a, mlr::Frame *b) {
+  CHECK_EQ(b->parent, a, "");
+  CHECK(!a->parent, "");
+  CHECK(!a->joint, "");
+  CHECK(!b->joint, "");
+  a->Q = -b->Q;
+  b->Q.setZero();
+  b->unLink();
+  a->linkFrom(b);
+}
 
 /** @brief re-orient all joints (edges) such that n becomes
   the root of the configuration */
-void mlr::KinematicWorld::reconfigureRoot(Frame *root) {
-  mlr::Array<Frame*> list, list2;
-  Frame **m,**mstop;
-  list.append(root);
-  uintA level(frames.N);
-  level=0;
-  int i=0;
-  
-  while(list.N>0) {
-    i++;
-    list2.clear();
-    mstop=list.p+list.N;
-    for(m=list.p; m!=mstop; m++) {
-      level((*m)->ID)=i;
-      Joint *j;
-      if((j = (*m)->joint)){ //for_list(Joint,  e,  (*m)->inLinks) {
-        NIY; //if(!level(j->from()->ID)) revertJoint(j);
-      }
-      for(Frame *f: (*m)->outLinks) list2.append(f);
-    }
-    list=list2;
+void mlr::KinematicWorld::reconfigureRootOfSubtree(Frame *root) {
+  FrameL pathToOldRoot;
+  mlr::Frame *f = root;
+  while(f->parent){
+    pathToOldRoot.prepend(f);
+    f = f->parent;
   }
-  
-  NIY;
-//  graphTopsort(bodies, joints);
+
+  for(Frame *f : pathToOldRoot){
+    flipFrames(f->parent, f);
+  }
+
+  checkConsistency();
 }
 
 uint mlr::KinematicWorld::analyzeJointStateDimensions() const{
@@ -564,6 +580,10 @@ void mlr::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
   calc_fwdPropagateFrames();
 }
 
+void mlr::KinematicWorld::setTimes(double t){
+  for(Frame *a:frames) a->time = t;
+}
+
 
 
 //===========================================================================
@@ -585,13 +605,14 @@ void mlr::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const mlr::Vec
 
   //get position
   mlr::Vector pos_world = a->X.pos;
-  if(&rel) pos_world += a->X.rot*rel;
+  if(&rel && !rel.isZero) pos_world += a->X.rot*rel;
   if(&y) y = conv_vec2arr(pos_world); //return the output
   if(!&J) return; //do not return the Jacobian
 
   jacobianPos(J, a, pos_world);
 }
 
+#if 1
 void mlr::KinematicWorld::jacobianPos(arr& J, Frame *a, const mlr::Vector& pos_world) const {
   //get Jacobian
   uint N=getJointStateDimension();
@@ -604,7 +625,7 @@ void mlr::KinematicWorld::jacobianPos(arr& J, Frame *a, const mlr::Vector& pos_w
       if(j_idx>=N) CHECK(j->type==JT_rigid, "");
       if(j_idx<N){
         if(j->type==JT_hingeX || j->type==JT_hingeY || j->type==JT_hingeZ) {
-          mlr::Vector tmp = j->axis ^ (pos_world-j->X().pos);
+          mlr::Vector tmp = j->axis ^ (pos_world-j->X()*j->Q().pos);
           J(0, j_idx) += tmp.x;
           J(1, j_idx) += tmp.y;
           J(2, j_idx) += tmp.z;
@@ -663,6 +684,27 @@ void mlr::KinematicWorld::jacobianPos(arr& J, Frame *a, const mlr::Vector& pos_w
     a = a->parent;
   }
 }
+#else
+void mlr::KinematicWorld::jacobianPos(arr& J, Frame *a, const mlr::Vector& pos_world) const {
+  J.resize(3, getJointStateDimension()).setZero();
+  while(a) { //loop backward down the kinematic tree
+    if(!a->parent) break; //frame has no inlink -> done
+    Joint *j=a->joint;
+    if(j && j->active) {
+      uint j_idx=j->qIndex;
+      arr screw = j->getScrewMatrix();
+      for(uint d=0; d<j->dim; d++){
+        mlr::Vector axis = screw(0,d,{});
+        mlr::Vector tmp = axis ^ pos_world;
+        J(0, j_idx+d) += tmp.x + screw(1,d,0);
+        J(1, j_idx+d) += tmp.y + screw(1,d,1);
+        J(2, j_idx+d) += tmp.z + screw(1,d,2);
+      }
+    }
+    a = a->parent;
+  }
+}
+#endif
 
 /** @brief return the jacobian \f$J = \frac{\partial\phi_i(q)}{\partial q}\f$ of the position
   of the i-th body W.R.T. the 6 axes of an arbitrary shape-frame, NOT the robot's joints (3 x 6 tensor)
@@ -1080,8 +1122,9 @@ StringA mlr::KinematicWorld::getJointNames() const{
 }
 
 /** @brief creates uniques names by prefixing the node-index-number to each name */
-void mlr::KinematicWorld::prefixNames() {
-  for(Frame *a: frames) a->name=STRING(a->ID<< a->name);
+void mlr::KinematicWorld::prefixNames(bool clear) {
+  if(!clear) for(Frame *a: frames) a->name=STRING(a->ID<< a->name);
+  else       for(Frame *a: frames) a->name.clear() <<a->ID;
 }
 
 /// return a OpenGL extension
@@ -1269,7 +1312,7 @@ void mlr::KinematicWorld::filterProxiesToContacts(double margin){
   //phase 2: cleanup old and distant contacts
   mlr::Array<Contact*> old;
   for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f){
-    if(c->getDistance()>margin) old.append(c);
+    if(/*c->get_pDistance()>margin+.05 ||*/ c->getDistance()>margin) old.append(c);
   }
   for(Contact *c:old) delete c;
 }
@@ -1383,6 +1426,19 @@ void mlr::KinematicWorld::writeURDF(std::ostream &os, const char* robotName) con
   }
 
   os <<"</robot>";
+}
+
+void mlr::KinematicWorld::writeMeshes(const char *pathPrefix) const{
+  for(mlr::Frame *f:frames){
+    if(f->shape &&
+       (f->shape->type()==mlr::ST_mesh || f->shape->type()==mlr::ST_ssCvx)){
+      mlr::String filename = pathPrefix;
+      filename <<f->name <<".tri";
+      f->ats.getNew<mlr::String>("mesh") = filename;
+      if(f->shape->type()==mlr::ST_mesh) f->shape->mesh().writeTriFile(filename);
+      if(f->shape->type()==mlr::ST_ssCvx) f->shape->sscCore().writeTriFile(filename);
+    }
+  }
 }
 
 #define DEBUG(x) //x
@@ -1508,12 +1564,27 @@ void mlr::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
     b->read(b->ats);
   }
 
+  NodeL fs = G.getNodes("frame");
+  for(Node *n: fs) {
+    CHECK_EQ(n->keys(0),"frame","");
+    CHECK(n->isGraph(), "frame must have value Graph");
+    CHECK_LE(n->parents.N, 1,"frames must have no or one parent: specs=" <<*n <<' ' <<n->index);
+
+    Frame *b = NULL;
+    if(!n->parents.N) b = new Frame(*this);
+    if(n->parents.N==1) b = new Frame( getFrameByName(n->parents(0)->keys.last()) );
+    if(n->keys.N>1) b->name=n->keys.last();
+    b->ats.copy(n->graph(), false, true);
+    if(n->keys.N>2) b->ats.newNode<bool>({n->keys.last(-1)});
+    b->read(b->ats);
+  }
+
   NodeL ss = G.getNodes("shape");
   for(Node *n: ss) {
     CHECK_EQ(n->keys(0),"shape","");
     CHECK(n->parents.N<=1,"shapes must have no or one parent");
     CHECK(n->isGraph(),"shape must have value Graph");
-    
+
     Frame* f = new Frame(*this);
     if(n->keys.N>1) f->name=n->keys.last();
     f->ats.copy(n->graph(), false, true);
@@ -1522,18 +1593,18 @@ void mlr::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
 
     if(n->parents.N==1){
       Frame *b = listFindByName(frames, n->parents(0)->keys.last());
-      CHECK(b, "");
+      CHECK(b, "could not find frame '" <<n->parents(0)->keys.last() <<"'");
       f->linkFrom(b);
       if(f->ats["rel"]) n->graph().get(f->Q, "rel");
     }
   }
-  
+
   NodeL js = G.getNodes("joint");
   for(Node *n: js) {
     CHECK_EQ(n->keys(0),"joint","joints must be declared as joint: specs=" <<*n <<' ' <<n->index);
     CHECK_EQ(n->parents.N,2,"joints must have two parents: specs=" <<*n <<' ' <<n->index);
     CHECK(n->isGraph(),"joints must have value Graph: specs=" <<*n <<' ' <<n->index);
-    
+
     Frame *from=listFindByName(frames, n->parents(0)->keys.last());
     Frame *to=listFindByName(frames, n->parents(1)->keys.last());
     CHECK(from,"JOINT: from '" <<n->parents(0)->keys.last() <<"' does not exist ["<<*n <<"]");
@@ -1548,21 +1619,6 @@ void mlr::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
 
     Joint *j=new Joint(*f);
     j->read(f->ats);
-  }
-
-  NodeL fs = G.getNodes("frame");
-  for(Node *n: fs) {
-    CHECK_EQ(n->keys(0),"frame","");
-    CHECK(n->isGraph(), "frame must have value Graph");
-    CHECK_LE(n->parents.N, 1,"frames must have no or one parent: specs=" <<*n <<' ' <<n->index);
-
-    Frame *b = NULL;
-    if(!n->parents.N) b = new Frame(*this);
-    if(n->parents.N==1) b = new Frame( getFrameByName(n->parents(0)->keys.last()) );
-    if(n->keys.N>1) b->name=n->keys.last();
-    b->ats.copy(n->graph(), false, true);
-    if(n->keys.N>2) b->ats.newNode<bool>({n->keys.last(-1)});
-    b->read(b->ats);
   }
 
   //if the joint is coupled to another:
@@ -2107,7 +2163,7 @@ arr mlr::KinematicWorld::getHmetric() const{
   arr H = zeros(getJointStateDimension());
   for(Joint *j: fwdActiveJoints){
     double h=j->H;
-    CHECK(h>0.,"Hmetric should be larger than 0");
+//    CHECK(h>0.,"Hmetric should be larger than 0");
     if(j->type==JT_transXYPhi){
       H(j->qIndex+0)=h*10.;
       H(j->qIndex+1)=h*10.;
@@ -2153,18 +2209,40 @@ void mlr::KinematicWorld::pruneRigidJoints(int verbose){
 }
 
 void mlr::KinematicWorld::reconnectLinksToClosestJoints(){
-  for(Frame *f:frames) if(f->parent && !f->joint){
-    Frame *from = f->parent;
-    mlr::Transformation Q=0;
-    while(from->parent && !from->joint){ //walk down links until this is a joint
-      Q = from->Q * Q;                 //accumulate transforms
-      from = from->parent;
+  reset_q();
+  for(Frame *f:frames) if(f->parent){
+#if 0
+    Frame *link = f->parent;
+    mlr::Transformation Q=f->Q;
+    while(link->parent && !link->joint){ //walk down links until this is a joint
+      Q = link->Q * Q;                 //accumulate transforms
+      link = link->parent;
     }
-    if(from != f->parent){ //if we walked -> we need rewiring
-      f->parent->outLinks.removeValue(f);
-      from->outLinks.append(f);
-      f->parent = from;
-      f->Q = Q * f->Q;  //preprend accumulated transform to f->link
+#else
+    mlr::Transformation Q;
+    Frame *link = f->getUpwardLink(Q);
+#endif
+    if(f->joint && !Q.rot.isZero) continue; //only when rot is zero you can subsume the Q transformation into the Q of the joint
+    if(link!=f){ //there is a link's root
+      if(link!=f->parent){ //we can rewire to the link's root
+        f->parent->outLinks.removeValue(f);
+        link->outLinks.append(f);
+        f->parent = link;
+        f->Q = Q;
+      }
+
+      if(!link->shape && f->shape && f->Q.isZero()){ //f has a shape, link not -> move shape to link
+        LOG(-1) <<"Shape '" <<f->name <<"' could be reassociated to link '" <<link->name <<"' (child of '" <<(link->parent?link->parent->name:STRING("NONE")) <<"')";
+//        link->shape = f->shape;
+//        f->shape = NULL;
+      }
+
+      if(!link->inertia && f->inertia && f->Q.isZero()){ //f has a shape, link not -> move shape to link
+        LOG(-1) <<"Inertia '" <<f->name <<"' could be reassociated to link '" <<link->name <<"' (child of '" <<(link->parent?link->parent->name:STRING("NONE")) <<"')";
+//        link->shape = f->shape;
+//        f->shape = NULL;
+      }
+
     }
   }
 }
@@ -2179,9 +2257,10 @@ void mlr::KinematicWorld::pruneUselessFrames(bool preserveNamed){
 }
 
 void mlr::KinematicWorld::optimizeTree(bool preserveNamed){
-  if(!preserveNamed) pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
+//  if(!preserveNamed) pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
   reconnectLinksToClosestJoints();
   pruneUselessFrames(preserveNamed);
+  calc_activeSets();
   checkConsistency();
 }
 
@@ -2410,6 +2489,23 @@ void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
 #endif
 
 
+//===========================================================================
+
+void kinVelocity(arr &y, arr &J, uint frameId, const WorldL &Ktuple, double tau){
+  CHECK_GE(Ktuple.N, 1, "");
+  mlr::KinematicWorld &K0 = *Ktuple(-2);
+  mlr::KinematicWorld &K1 = *Ktuple(-1);
+  mlr::Frame *f0 = K0.frames(frameId);
+  mlr::Frame *f1 = K1.frames(frameId);
+
+  arr y0,J0;
+  K0.kinematicsPos(y0, J0, f0);
+  K1.kinematicsPos(y, J, f1);
+  y -= y0;
+  J -= J0;
+  y /= tau;
+  J /= tau;
+}
 
 //===========================================================================
 //
@@ -3143,3 +3239,4 @@ template mlr::Array<mlr::Shape*>::Array(uint);
 template mlr::Array<mlr::Joint*>::Array();
 #endif
 /** @} */
+

@@ -56,7 +56,7 @@ void TEST(Align){
 
 void TEST(PR2){
   //NOTE: this uses a 25-DOF whole-body-motion model of thbe PR2
-  mlr::KinematicWorld K("model.kvg");
+  mlr::KinematicWorld K("model.g");
   K.optimizeTree();
   makeConvexHulls(K.frames);
   K.calc_fwdPropagateFrames();

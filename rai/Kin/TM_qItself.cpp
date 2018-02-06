@@ -87,6 +87,8 @@ void TM_qItself::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
   uint k=order;
   if(k==0) return TaskMap::phi(y, J, G, tau, t);
 
+  tau = G(-1)->frames(0)->time - G(-2)->frames(0)->time;
+
   double tau2=tau*tau, tau3=tau2*tau;
   arrA q_bar(k+1), J_bar(k+1);
   //-- read out the task variable from the k+1 configurations
@@ -94,8 +96,8 @@ void TM_qItself::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
   //before reading out, check if, in selectedBodies mode, some of the selected ones where switched
   uintA selectedBodies_org = selectedBodies;
   if(selectedBodies.N){
-      mlr::Array<mlr::Frame*> sw = getSwitchedBodies(*G.elem(-2), *G.elem(-1));
-      for(mlr::Frame *a:sw) selectedBodies.removeValue(a->ID, false);
+      uintA sw = getSwitchedBodies(*G.elem(-2), *G.elem(-1));
+      for(uint id:sw) selectedBodies.removeValue(id, false);
   }
   for(uint i=0;i<=k;i++){
     phi(q_bar(i), J_bar(i), *G(offset+i), t-k+i);
@@ -163,7 +165,11 @@ void TM_qItself::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
 uint TM_qItself::dim_phi(const mlr::KinematicWorld& G) {
   if(selectedBodies.N){
     uint n=0;
-    for(uint b:selectedBodies) n+=G.frames.elem(b)->joint->qDim();
+    for(uint b:selectedBodies){
+      mlr::Joint *j = G.frames.elem(b)->joint;
+      CHECK(j, "selected frame " <<b <<" ('" <<G.frames.elem(b)->name <<"') is not a joint");
+      n += j->qDim();
+    }
     return n;
   }
   return G.getJointStateDimension();
@@ -322,28 +328,28 @@ mlr::Array<mlr::Joint*> getSwitchedJoints(const mlr::KinematicWorld& G0, const m
 
 //===========================================================================
 
-mlr::Array<mlr::Frame*> getSwitchedBodies(const mlr::KinematicWorld& G0, const mlr::KinematicWorld& G1, int verbose){
-  mlr::Array<mlr::Frame*> switchedBodies;
+uintA getSwitchedBodies(const mlr::KinematicWorld& G0, const mlr::KinematicWorld& G1, int verbose){
+  uintA switchedBodies;
 
   for(mlr::Frame *b1:G1.frames) {
-    if(b1->ID>=G0.frames.N) continue; //b1 does not exist in G0 -> not a switched body
-    mlr::Frame *b0 = G0.frames(b1->ID);
+    uint id = b1->ID;
+    if(id>=G0.frames.N) continue; //b1 does not exist in G0 -> not a switched body
+    mlr::Frame *b0 = G0.frames(id);
     mlr::Joint *j0 = b0->joint;
     mlr::Joint *j1 = b1->joint;
-    if(!j0 != !j1){ switchedBodies.append({b0,b1}); continue; }
+    if(!j0 != !j1){ switchedBodies.append(id); continue; }
     if(j0){
       if(j0->type!=j1->type || j0->constrainToZeroVel!=j1->constrainToZeroVel || j0->from()->ID!=j1->from()->ID){ //different joint type; or attached to different parent
-        switchedBodies.append({b0,b1});
+        switchedBodies.append(id);
       }
     }
   }
-  switchedBodies.reshape(switchedBodies.N/2, 2);
 
   if(verbose){
-    for(uint i=0;i<switchedBodies.d0;i++){
+    for(uint id : switchedBodies){
       cout <<"Switch: "
-          <<switchedBodies(i,0)->name /*<<'-' <<switchedBodies(i,0)->name*/
-         <<" -> " <<switchedBodies(i,1)->name /*<<'-' <<switchedJoints(i,1)->to->name*/ <<endl;
+          <<G0.frames(id)->name /*<<'-' <<switchedBodies(i,0)->name*/
+         <<" -> " <<G1.frames(id)->name /*<<'-' <<switchedJoints(i,1)->to->name*/ <<endl;
     }
   }
 

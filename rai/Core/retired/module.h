@@ -71,8 +71,8 @@ struct __##name##__Access:Var<type>{ \
 #endif
 
 #define VAR(type, name) Var<type> name = Var<type>(this, #name);
-#define ACCESSlisten(type, name) Var<type> name = Var<type>(this, #name, true);
-#define ACCESSname(type, name) Var<type> name = Var<type>(NULL, #name);
+#define VARlisten(type, name) Var<type> name = Var<type>(this, #name, true);
+#define VARname(type, name) Var<type> name = Var<type>(NULL, #name);
 
 //===========================================================================
 //

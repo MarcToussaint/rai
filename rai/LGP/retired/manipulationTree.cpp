@@ -1,4 +1,78 @@
-void ManipulationTree_Node::solvePoseProblem(){
+void MNode::recomputeAllMCStats(bool excludeLeafs){
+  if(!mcStats) return;
+  if(!isTerminal){
+    if(children.N || !excludeLeafs || isInfeasible)
+      mcStats->clear();
+  }
+  for(MNode* ch:children){
+    ch->recomputeAllMCStats(excludeLeafs);
+    for(double x:ch->mcStats->X) mcStats->add(x);
+  }
+  if(mcStats->n)
+    mcCost = - mcStats->X.first();
+  else
+    mcCost = 100.;
+}
+
+arr MNode::generateRootMCRollouts(uint num, int stepAbort, const mlr::Array<MCTS_Environment::Handle>& prefixDecisions){
+  CHECK(!parent, "generating rollouts needs to be done by the root only");
+
+  fol.reset_state();
+  //  cout <<"********\n *** MC from STATE=" <<*fol.state->isNodeOfGraph <<endl;
+  if(!rootMC){
+    rootMC = new PlainMC(fol);
+    rootMC->verbose = 0;
+  }
+
+  arr R;
+
+  for(uint k=0;k<num;k++){
+    rootMC->initRollout(prefixDecisions);
+    fol.setState(folState);
+    double r = rootMC->finishRollout(stepAbort);
+    R.append( r );
+  }
+
+  return R;
+}
+
+void MNode::addMCRollouts(uint num, int stepAbort){
+  //-- collect decision path
+  MNodeL treepath = getTreePath();
+  mlr::Array<MCTS_Environment::Handle> prefixDecisions(treepath.N-1);
+  for(uint i=1;i<treepath.N;i++)
+    prefixDecisions(i-1) = treepath(i)->decision;
+
+  //  cout <<"DECISION PATH = "; listWrite(prefixDecisions); cout <<endl;
+
+#if 0
+  arr R = generateRootMCRollouts(num, stepAbort, prefixDecisions);
+#else
+  arr R;
+  for(uint k=0;k<num;k++){
+    rootMC->initRollout(prefixDecisions);
+    fol.setState(folState);
+    double r = rootMC->finishRollout(stepAbort);
+    R.append( r );
+  }
+#endif
+
+  for(MNode* n:treepath){
+    if(!n->mcStats) n->mcStats = new MCStatistics;
+    for(auto& r:R){
+      n->mcStats->add(r);
+      n->mcCost = - n->mcStats->X.first();
+    }
+  }
+
+  mcCount += num;
+  //  mcStats->report();
+  //  auto a = rootMC->getBestAction();
+  //  cout <<"******** BEST ACTION " <<*a <<endl;
+}
+
+
+void MNode::solvePoseProblem(){
   //reset the effective kinematics:
   CHECK(!parent || parent->hasEffKinematics,"parent needs to have computed the pose first!");
   if(parent) effKinematics = parent->effKinematics;
@@ -68,7 +142,7 @@ void ManipulationTree_Node::solvePoseProblem(){
   hasEffKinematics = true;
 }
 
-void ManipulationTree_Node::solveSeqProblem(int verbose){
+void MNode::solveSeqProblem(int verbose){
   if(!s) return;
 
   //-- create new problem declaration (within the KB)
@@ -76,7 +150,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   seqProblemSpecs = &seqProblemNode->graph();
 
   //-- collect 'path nodes'
-  ManipulationTree_NodeL treepath = getTreePath();
+  MNodeL treepath = getTreePath();
 
 #if 0
   //-- add decisions to the seq pose problem description
@@ -85,7 +159,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   seqProblem->k_order=1;
   NodeL komoRules = fol.KB.getNodes("SeqProblemRule");
 //  listWrite(komoRules, cout, "\n"); cout <<endl;
-  for(ManipulationTree_Node *node:treepath) if(node->folDecision){ //(e.g. the root may not have a decision)
+  for(MNode *node:treepath) if(node->folDecision){ //(e.g. the root may not have a decision)
     CHECK(node->s > 0,""); //don't add anything for the root
     Graph tmp(*node->folState);
     Graph& changes = fol.KB.newSubgraph({}, {})->graph();
@@ -148,7 +222,7 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
   komo.setFixEffectiveJoints(-1., -1., 1e3);
   komo.setFixSwitchedObjects(-1., -1., 1e3);
 
-  for(ManipulationTree_Node *node:treepath){
+  for(MNode *node:treepath){
     komo.setAbstractTask(node->time, *node->folState);
   }
 
@@ -167,12 +241,12 @@ void ManipulationTree_Node::solveSeqProblem(int verbose){
 #endif
 }
 
-void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
+void MNode::solvePathProblem(uint microSteps, int verbose){
   Node *pathProblemNode = fol.KB.newSubgraph({"PathProblem"}, {folState->isNodeOfGraph});
   pathProblemSpecs = &pathProblemNode->graph();
 
   //-- collect 'path nodes'
-  ManipulationTree_NodeL treepath = getTreePath();
+  MNodeL treepath = getTreePath();
 
 #if 0
   //-- add decisions to the path problem description
@@ -181,7 +255,7 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   pathProblem->k_order=2;
   NodeL komoRules = fol.KB.getNodes("PathProblemRule");
 //  listWrite(komoRules, cout, "\n"); cout <<endl;
-  for(ManipulationTree_Node *node:treepath) if(node->folDecision){
+  for(MNode *node:treepath) if(node->folDecision){
     CHECK(node->s > 0,"");
     node->folDecision->newClone(*pathProblemSpecs);
     forwardChaining_FOL(*pathProblemSpecs, komoRules); //, NULL, NoGraph, 4);
@@ -219,7 +293,7 @@ void ManipulationTree_Node::solvePathProblem(uint microSteps, int verbose){
   komo.setSquaredQAccelerations();
   komo.setFixEffectiveJoints(-1., -1., 1e3);
 
-  for(ManipulationTree_Node *node:treepath) /*if(node->folDecision)*/{
+  for(MNode *node:treepath) /*if(node->folDecision)*/{
     komo.setAbstractTask(node->time, *node->folState);
   }
 

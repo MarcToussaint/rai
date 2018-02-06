@@ -7,7 +7,7 @@
 struct Kinect2PointCloud : Thread{
   //inputs
   VAR(byteA, kinect_rgb)
-  ACCESSlisten(uint16A, kinect_depth)
+  VARlisten(uint16A, kinect_depth)
   VAR(mlr::Transformation, kinect_frame)
   VAR(arr, pr2_odom)
   //outputs

@@ -266,15 +266,14 @@ const char* MethodName[]={ "NoMethod", "SquaredPenalty", "AugmentedLagrangian", 
 //==============================================================================
 
 OptConstrained::OptConstrained(arr& x, arr &dual, ConstrainedProblem& P, OptOptions opt)
-  : UCP(P, opt, dual), newton(x, UCP, opt), dual(dual), opt(opt), its(0), earlyPhase(false){
-
-  fil.open(STRING("z."<<MethodName[opt.constrainedMethod]));
+  : UCP(P, opt, dual), newton(x, UCP, opt), dual(dual), opt(opt){
 
   if(opt.verbose>0) cout <<"***** optConstrained: method=" <<MethodName[opt.constrainedMethod] <<endl;
 }
 
 bool OptConstrained::step(){
-  fil <<its <<' ' <<newton.evals <<' ' <<UCP.get_costs() <<' ' <<UCP.get_sumOfGviolations() <<' ' <<UCP.get_sumOfHviolations() <<endl;
+  if(fil) (*fil) <<"constr " <<its <<' ' <<newton.evals <<' ' <<UCP.get_costs() <<' ' <<UCP.get_sumOfGviolations() <<' ' <<UCP.get_sumOfHviolations() <<endl;
+  newton.fil = fil;
 
   if(opt.verbose>0){
     cout <<"** optConstr. it=" <<its

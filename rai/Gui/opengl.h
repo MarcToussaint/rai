@@ -187,10 +187,11 @@ struct OpenGL {
   void addHoverCall(GLHoverCall *c){ hoverCalls.append(c); }
   void addClickCall(GLClickCall *c){ clickCalls.append(c); }
   void addKeyCall(GLKeyCall *c){ keyCalls.append(c); }
-  void addView(uint view, void (*call)(void*), void* classP=0);
+  void addSubView(uint view, void (*call)(void*), void* classP=0);
   void addSubView(uint view, GLDrawer& c);
   void setSubViewTiles(uint cols, uint rows);
   void setViewPort(uint view, double l, double r, double b, double t);
+  void clearSubView(uint view);
   
   /// @name the core draw routines (actually only for internal use)
   void Draw(int w, int h, mlr::Camera *cam=NULL, bool callerHasAlreadyLocked=false);

@@ -50,6 +50,8 @@ struct KOMO{
   arr dualSolution;             ///< the dual solution computed during constrained optimization
   struct OpenGL *gl;            ///< internal only: used in 'displayTrajectory'
   int verbose;                  ///< verbosity level
+  double runTime=0.;            ///< just measure run time
+  ofstream *fil=NULL;
 
   KOMO();
   ~KOMO();
@@ -60,6 +62,7 @@ struct KOMO{
                 bool meldFixedJoints=false, bool makeConvexHulls=false, bool computeOptimalSSBoxes=false, bool activateAllContacts=false);
   void useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese=true);
   void setTiming(double _phases=1., uint _stepsPerPhase=10, double durationPerPhase=5., uint _k_order=2);
+  void setPairedTimes();
   void activateCollisions(const char* s1, const char* s2);
   void deactivateCollisions(const char* s1, const char* s2);
 
@@ -82,7 +85,7 @@ struct KOMO{
   struct Task* setTask(double startTime, double endTime, TaskMap* map, ObjectiveType type=OT_sumOfSqr, const arr& target=NoArr, double prec=1e2, uint order=0, int deltaStep=0);
   void setFlag(double time, mlr::Flag* fl, int deltaStep=0);
   void setKinematicSwitch(double time, bool before, mlr::KinematicSwitch* sw);
-  void setKinematicSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const mlr::Transformation& jFrom=NoTransformation, const mlr::Transformation& jTo=NoTransformation);
+  void setKinematicSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const mlr::Transformation& jFrom=NoTransformation);
 
   //===========================================================================
   //
@@ -90,7 +93,7 @@ struct KOMO{
   //
 
   //-- tasks (transitions) mid-level
-  void setHoming(double startTime=-1., double endTime=-1., double prec=1e-1);
+  void setHoming(double startTime=-1., double endTime=-1., double prec=1e-1, const char *keyword="robot");
   void setSquaredQAccelerations(double startTime=-1., double endTime=-1., double prec=1.);
   void setSquaredQVelocities(double startTime=-1., double endTime=-1., double prec=1.);
   void setFixEffectiveJoints(double startTime=-1., double endTime=-1., double prec=1e3);
@@ -103,7 +106,7 @@ struct KOMO{
   void setOrientation(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type=OT_sumOfSqr, const arr& target=NoArr, double prec=1e2);
   void setVelocity(double startTime, double endTime, const char* shape, const char* shapeRel=NULL, ObjectiveType type=OT_sumOfSqr, const arr& target=NoArr, double prec=1e2);
   void setAlign(double startTime, double endTime, const char* shape,  const arr& whichAxis=ARR(1.,0.,0.), const char* shapeRel=NULL, const arr& whichAxisRel=ARR(1.,0.,0.), ObjectiveType type=OT_sumOfSqr, const arr& target=ARR(1.), double prec=1e2);
-  void setTouch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type=OT_sumOfSqr, const arr& target=NoArr, double prec=1e2);
+  void setTouch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, const arr& target=NoArr, double prec=1e2);
   void setAlignedStacking(double time, const char* object, ObjectiveType type=OT_sumOfSqr, double prec=1e2);
   void setLastTaskToBeVelocity();
   void setCollisions(bool hardConstraint, double margin=.05, double prec=1.);
@@ -123,6 +126,7 @@ struct KOMO{
   //-- dynamic
   void setImpact(double time, const char* a, const char* b);
   void setOverTheEdge(double time, const char* object, const char* from, double margin=.0);
+  void setInertialMotion(double startTime, double endTime, const char *object, const char *base, double g=-9.81, double c=0.);
   void setFreeGravity(double time, const char* object, const char* base="base");
 
   //-- tasks (cost/constraint terms) high-level (rough, for LGP)
@@ -131,7 +135,7 @@ struct KOMO{
   void setPlaceFixed(double time, const char* endeffRef, const char* object, const char* placeRef, const mlr::Transformation& relPose, int verbose=0);
   void setHandover(double time, const char* endeffRef, const char* object, const char* prevHolder, int verbose=0);
   void setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose=0);
-  void setSlide(double time, const char* stick, const char* object, const char* placeRef, int verbose=0);
+  void setGraspSlide(double time, const char* stick, const char* object, const char* placeRef, int verbose=0);
   void setSlideAlong(double time, const char *strick,  const char* object, const char* wall, int verbose=0);
   void setDrop(double time, const char* object, const char* from, const char* to, int verbose=0);
   void setDropEdgeFixed(double time, const char* object, const char* to, const mlr::Transformation& relFrom, const mlr::Transformation& relTo, int verbose=0);
@@ -159,7 +163,7 @@ struct KOMO{
   void setSpline(uint splineT);   ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
   void reset(double initNoise=.01);      ///< reset the optimizer (initializes x to a default path)
   void run();                     ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
-  void getPhysicsReference();
+  void getPhysicsReference(uint subSteps=10, int display=0);
   void playInPhysics(uint subSteps=10, bool display=false);
   arr getPath(const StringA& joints);
   void reportProblem(ostream &os=std::cout);
@@ -179,12 +183,12 @@ struct KOMO{
 
   //-- (not much in use..) specs gives as logic expressions in a Graph (or config file)
   KOMO(const mlr::KinematicWorld& K) : KOMO() { setModel(K); } //for compatibility only
-  KOMO(const Graph& specs);
-  void init(const Graph& specs);
-  void setFact(const char* fact);
-  Task* addTask(const char* name, TaskMap *map, const ObjectiveType& termType); ///< manually add a task
+//  KOMO(const Graph& specs);
+//  void init(const Graph& specs);
+//  void setFact(const char* fact);
+//  bool parseTask(const Node *n, int stepsPerPhase=-1);           ///< read a single task from a node-spec
   void clearTasks();
-  bool parseTask(const Node *n, int stepsPerPhase=-1);           ///< read a single task from a node-spec
+  Task* addTask(const char* name, TaskMap *map, const ObjectiveType& termType); ///< manually add a task
   void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
   arr getInitialization();      ///< this reads out the initial state trajectory after 'setupConfigurations'
   void set_x(const arr& x);            ///< set the state trajectory of all configurations
@@ -219,3 +223,14 @@ inline arr finalPoseTo(mlr::KinematicWorld& world,
   return komo.x;
 }
 
+//===========================================================================
+
+inline arr getVelocities(const arr& q, double tau){
+  arr v;
+  v.resizeAs(q);
+  v.setZero();
+  for(uint t=1;t<q.d0-1;t++){
+    v[t] = (q[t+1]-q[t-1])/(2.*tau);
+  }
+  return v;
+}

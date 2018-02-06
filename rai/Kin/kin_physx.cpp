@@ -65,9 +65,9 @@ static PxSimulationFilterShader gDefaultFilterShader=PxDefaultSimulationFilterSh
  * @param physx the PhyxXInteface which handles the ors graph.
  */
 void bindOrsToPhysX(mlr::KinematicWorld& graph, OpenGL& gl, PhysXInterface& physx) {
-//  physx.create(graph);
+  //  physx.create(graph);
   
-  MLR_MSG("I don't understand this: why do you need a 2nd opengl window? (This is only for sanity check in the example.)")
+  MLR_MSG("I don't understand this: why do you need a 2nd opengl window? (This is only for sanity check in the example.)");
   gl.add(glStandardScene, NULL);
   gl.add(physx);
   gl.setClearColors(1., 1., 1., 1.);
@@ -116,7 +116,7 @@ PxConvexMesh* createConvexMesh(PxPhysics& physics, PxCooking& cooking, const PxV
   PxDefaultMemoryOutputStream buf;
   if(!cooking.cookConvexMesh(convexDesc, buf))
     return NULL;
-    
+
   PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
   return physics.createConvexMesh(input);
 }
@@ -135,7 +135,7 @@ PxTriangleMesh* createTriangleMesh32(PxPhysics& physics, PxCooking& cooking, con
   bool status = cooking.cookTriangleMesh(meshDesc, writeBuffer);
   if(!status)
     return NULL;
-    
+
   PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
   return physics.createTriangleMesh(readBuffer);
 }
@@ -220,7 +220,7 @@ PhysXInterface::PhysXInterface(mlr::KinematicWorld& _world): world(_world), s(NU
   s->actors.resize(world.frames.N); s->actors.setZero();
   s->actorTypes.resize(world.frames.N); s->actorTypes.setZero();
   for(mlr::Frame *a : world.getLinks()) s->addLink(a, mMaterial);
-//  for(mlr::Joint *j : world.fwdActiveJoints) s->addJoint(j); //DONT ADD JOINTS!!!!
+  //  for(mlr::Joint *j : world.fwdActiveJoints) s->addJoint(j); //DONT ADD JOINTS!!!!
 
   /// save data for the PVD
   if(mlr::getParameter<bool>("physx_debugger", false)) {
@@ -282,7 +282,7 @@ void sPhysXInterface::addJoint(mlr::Joint *jj) {
   while(joints.N <= jj->frame.ID)
     joints.append(NULL);
 
-//  cout <<"ADDING JOINT " <<jj->frame.parent->name <<'-' <<jj->frame.name <<endl;
+  //  cout <<"ADDING JOINT " <<jj->frame.parent->name <<'-' <<jj->frame.name <<endl;
 
   mlr::Transformation rel;
   mlr::Frame *from = jj->frame.getUpwardLink(rel);
@@ -295,98 +295,98 @@ void sPhysXInterface::addJoint(mlr::Joint *jj) {
   PxTransform A = conv_Transformation2PxTrans(rel);
   PxTransform B = Id_PxTrans();
   switch(jj->type) {
-    case mlr::JT_free: //do nothing
-      break;
-    case mlr::JT_hingeX:
-    case mlr::JT_hingeY:
-    case mlr::JT_hingeZ: {
-
-      PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(from->ID), A, actors(jj->frame.ID), B.getInverse());
-      CHECK(desc, "PhysX joint creation failed.");
-
-      if(jj->frame.ats.find<arr>("drive")) {
-        arr drive_values = jj->frame.ats.get<arr>("drive");
-        PxD6JointDrive drive(drive_values(0), drive_values(1), PX_MAX_F32, true);
-        desc->setDrive(PxD6Drive::eTWIST, drive);
-      }
-      
-      if(jj->frame.ats.find<arr>("limit")) {
-        desc->setMotion(PxD6Axis::eTWIST, PxD6Motion::eLIMITED);
-
-        arr limits = jj->frame.ats.get<arr>("limit");
-        PxJointAngularLimitPair limit(limits(0), limits(1), 0.1f);
-        limit.restitution = limits(2);
-          //limit.spring = limits(3);
-          //limit.damping= limits(4);
-        //}
-        desc->setTwistLimit(limit);
-      } else {
-        desc->setMotion(PxD6Axis::eTWIST, PxD6Motion::eFREE);
-      }
-
-      if(jj->frame.ats.find<arr>("drive")) {
-        arr drive_values = jj->frame.ats.get<arr>("drive");
-        PxD6JointDrive drive(drive_values(0), drive_values(1), PX_MAX_F32, false);
-        desc->setDrive(PxD6Drive::eTWIST, drive);
-        //desc->setDriveVelocity(PxVec3(0, 0, 0), PxVec3(5e-1, 0, 0));
-      }
-      joints(jj->frame.ID) = desc;
-    }
+  case mlr::JT_free: //do nothing
     break;
-    case mlr::JT_rigid: {
-      // PxFixedJoint* desc =
-      PxFixedJointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame.ID), B.getInverse());
-      // desc->setProjectionLinearTolerance(1e10);
-      // desc->setProjectionAngularTolerance(3.14);
-    }
-    break;
-    case mlr::JT_trans3: {
-      break; 
-    }
-    case mlr::JT_transXYPhi: {
-      PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame.ID), B.getInverse());
-      CHECK(desc, "PhysX joint creation failed.");
+  case mlr::JT_hingeX:
+  case mlr::JT_hingeY:
+  case mlr::JT_hingeZ: {
 
+    PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(from->ID), A, actors(jj->frame.ID), B.getInverse());
+    CHECK(desc, "PhysX joint creation failed.");
+
+    if(jj->frame.ats.find<arr>("drive")) {
+      arr drive_values = jj->frame.ats.get<arr>("drive");
+      PxD6JointDrive drive(drive_values(0), drive_values(1), PX_MAX_F32, true);
+      desc->setDrive(PxD6Drive::eTWIST, drive);
+    }
+
+    if(jj->frame.ats.find<arr>("limit")) {
+      desc->setMotion(PxD6Axis::eTWIST, PxD6Motion::eLIMITED);
+
+      arr limits = jj->frame.ats.get<arr>("limit");
+      PxJointAngularLimitPair limit(limits(0), limits(1), 0.1f);
+      limit.restitution = limits(2);
+      //limit.spring = limits(3);
+      //limit.damping= limits(4);
+      //}
+      desc->setTwistLimit(limit);
+    } else {
+      desc->setMotion(PxD6Axis::eTWIST, PxD6Motion::eFREE);
+    }
+
+    if(jj->frame.ats.find<arr>("drive")) {
+      arr drive_values = jj->frame.ats.get<arr>("drive");
+      PxD6JointDrive drive(drive_values(0), drive_values(1), PX_MAX_F32, false);
+      desc->setDrive(PxD6Drive::eTWIST, drive);
+      //desc->setDriveVelocity(PxVec3(0, 0, 0), PxVec3(5e-1, 0, 0));
+    }
+    joints(jj->frame.ID) = desc;
+  }
+    break;
+  case mlr::JT_rigid: {
+    // PxFixedJoint* desc =
+    PxFixedJointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame.ID), B.getInverse());
+    // desc->setProjectionLinearTolerance(1e10);
+    // desc->setProjectionAngularTolerance(3.14);
+  }
+    break;
+  case mlr::JT_trans3: {
+    break;
+  }
+  case mlr::JT_transXYPhi: {
+    PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame.ID), B.getInverse());
+    CHECK(desc, "PhysX joint creation failed.");
+
+    desc->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
+    desc->setMotion(PxD6Axis::eY, PxD6Motion::eFREE);
+    desc->setMotion(PxD6Axis::eSWING2, PxD6Motion::eFREE);
+
+    joints(jj->frame.ID) = desc;
+    break;
+  }
+  case mlr::JT_transX:
+  case mlr::JT_transY:
+  case mlr::JT_transZ:
+  {
+    PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame.ID), B.getInverse());
+    CHECK(desc, "PhysX joint creation failed.");
+
+    if(jj->frame.ats.find<arr>("drive")) {
+      arr drive_values = jj->frame.ats.get<arr>("drive");
+      PxD6JointDrive drive(drive_values(0), drive_values(1), PX_MAX_F32, true);
+      desc->setDrive(PxD6Drive::eX, drive);
+    }
+
+    if(jj->frame.ats.find<arr>("limit")) {
+      desc->setMotion(PxD6Axis::eX, PxD6Motion::eLIMITED);
+
+      arr limits = jj->frame.ats.get<arr>("limit");
+      PxJointLinearLimit limit(mPhysics->getTolerancesScale(), limits(0), 0.1f);
+      limit.restitution = limits(2);
+      //if(limits(3)>0) {
+      //limit.spring = limits(3);
+      //limit.damping= limits(4);
+      //}
+      desc->setLinearLimit(limit);
+    }
+    else {
       desc->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
-      desc->setMotion(PxD6Axis::eY, PxD6Motion::eFREE);
-      desc->setMotion(PxD6Axis::eSWING2, PxD6Motion::eFREE);
-
-      joints(jj->frame.ID) = desc;
-      break;
     }
-    case mlr::JT_transX:
-    case mlr::JT_transY:
-    case mlr::JT_transZ:
-    {
-      PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame.ID), B.getInverse());
-      CHECK(desc, "PhysX joint creation failed.");
-
-      if(jj->frame.ats.find<arr>("drive")) {
-        arr drive_values = jj->frame.ats.get<arr>("drive");
-        PxD6JointDrive drive(drive_values(0), drive_values(1), PX_MAX_F32, true);
-        desc->setDrive(PxD6Drive::eX, drive);
-      }
-      
-      if(jj->frame.ats.find<arr>("limit")) {
-        desc->setMotion(PxD6Axis::eX, PxD6Motion::eLIMITED);
-
-        arr limits = jj->frame.ats.get<arr>("limit");
-        PxJointLinearLimit limit(mPhysics->getTolerancesScale(), limits(0), 0.1f);
-        limit.restitution = limits(2);
-        //if(limits(3)>0) {
-          //limit.spring = limits(3);
-          //limit.damping= limits(4);
-        //}
-        desc->setLinearLimit(limit);
-      }
-      else {
-        desc->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
-      }
-      joints(jj->frame.ID) = desc;
-    }
+    joints(jj->frame.ID) = desc;
+  }
     break;
-    default:
-      NIY;
+  default:
+    NIY;
   }
 }
 void sPhysXInterface::lockJoint(PxD6Joint *joint, mlr::Joint *ors_joint) {
@@ -396,21 +396,21 @@ void sPhysXInterface::lockJoint(PxD6Joint *joint, mlr::Joint *ors_joint) {
 }
 void sPhysXInterface::unlockJoint(PxD6Joint *joint, mlr::Joint *ors_joint) {
   switch(ors_joint->type) {
-    case mlr::JT_hingeX:
-    case mlr::JT_hingeY:
-    case mlr::JT_hingeZ:
-      //joint->setMotion(PxD6Axis::eX, PxD6Motion::eLIMITED);
-      //joint->setLinearLimit(PxJointLimit(ors_joint->Q.rot.getRad(), ors_joint->Q.rot.getRad()));
-      joint->setMotion(PxD6Axis::eTWIST, PxD6Motion::eFREE);
-      break;
-    case mlr::JT_transX:
-    case mlr::JT_transY:
-    case mlr::JT_transZ:
-      //joint->setMotion(PxD6Axis::eTWIST, PxD6Motion::eLOCKED);
-      joint->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
-      break;
-    default:
-      break;
+  case mlr::JT_hingeX:
+  case mlr::JT_hingeY:
+  case mlr::JT_hingeZ:
+    //joint->setMotion(PxD6Axis::eX, PxD6Motion::eLIMITED);
+    //joint->setLinearLimit(PxJointLimit(ors_joint->Q.rot.getRad(), ors_joint->Q.rot.getRad()));
+    joint->setMotion(PxD6Axis::eTWIST, PxD6Motion::eFREE);
+    break;
+  case mlr::JT_transX:
+  case mlr::JT_transY:
+  case mlr::JT_transZ:
+    //joint->setMotion(PxD6Axis::eTWIST, PxD6Motion::eLOCKED);
+    joint->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
+    break;
+  default:
+    break;
   }
 }
 
@@ -443,7 +443,7 @@ void sPhysXInterface::addLink(mlr::Frame *b, physx::PxMaterial *mMaterial) {
   FrameL parts = {b};
   b->getRigidSubFrames(parts);
 
-  cout <<MLR_HERE <<"adding '" <<b->name <<"' as " <<type <<" with parts";
+  cout <<MLR_HERE <<"adding '" <<b->name <<"' as " <<mlr::Enum<mlr::BodyType>(type) <<" with parts";
   for(auto* p:parts) cout <<' ' <<p->name; cout <<endl;
 
   for(mlr::Frame *p: parts){
@@ -452,44 +452,44 @@ void sPhysXInterface::addLink(mlr::Frame *b, physx::PxMaterial *mMaterial) {
     if(s->frame.name.startsWith("coll_")) continue; //these are the 'pink' collision boundary shapes..
     PxGeometry* geometry;
     switch(s->type()) {
-      case mlr::ST_box: {
-        geometry = new PxBoxGeometry(.5*s->size(0), .5*s->size(1), .5*s->size(2));
-      }
+    case mlr::ST_box: {
+      geometry = new PxBoxGeometry(.5*s->size(0), .5*s->size(1), .5*s->size(2));
+    }
       break;
-      case mlr::ST_sphere: {
-        geometry = new PxSphereGeometry(s->size(3));
-      }
+    case mlr::ST_sphere: {
+      geometry = new PxSphereGeometry(s->size(3));
+    }
       break;
-      case mlr::ST_capsule: {
-        geometry = new PxCapsuleGeometry(s->size(3), .5*s->size(2));
-      }
+    case mlr::ST_capsule: {
+      geometry = new PxCapsuleGeometry(s->size(3), .5*s->size(2));
+    }
       break;
-      case mlr::ST_cylinder:
-      case mlr::ST_ssBox:
-      case mlr::ST_mesh: {
-        // Note: physx can't decompose meshes itself.
-        // Physx doesn't support triangle meshes in dynamic objects! See:
-        // file:///home/mtoussai/lib/PhysX/Documentation/PhysXGuide/Manual/Shapes.html
-        // We have to decompose the meshes "by hand" and feed them to PhysX.
+    case mlr::ST_cylinder:
+    case mlr::ST_ssBox:
+    case mlr::ST_ssCvx:
+    case mlr::ST_mesh: {
+      // Note: physx can't decompose meshes itself.
+      // Physx doesn't support triangle meshes in dynamic objects! See:
+      // file:///home/mtoussai/lib/PhysX/Documentation/PhysXGuide/Manual/Shapes.html
+      // We have to decompose the meshes "by hand" and feed them to PhysX.
 
-        // PhysX uses float for the vertices
-        floatA Vfloat;
+      // PhysX uses float for the vertices
+      floatA Vfloat;
 
-        Vfloat.clear();
-        copy(Vfloat, s->mesh().V); //convert vertices from double to float array..
-        PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
+      Vfloat.clear();
+      copy(Vfloat, s->mesh().V); //convert vertices from double to float array..
+      PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
             *mPhysics, *mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
             PxConvexFlag::eCOMPUTE_CONVEX | PxConvexFlag::eINFLATE_CONVEX);
-        geometry = new PxConvexMeshGeometry(triangleMesh);
-      }
-      break;
-      case mlr::ST_marker: {
-        geometry = NULL;
-      }
-      break;
-      default:
-        NIY;
+      geometry = new PxConvexMeshGeometry(triangleMesh);
+    } break;
+    case mlr::ST_marker: {
+      geometry = NULL;
+    } break;
+    default:
+      NIY;
     }
+
     if(geometry) {
       PxShape* shape = NULL;
       if(&s->frame==b){
@@ -507,9 +507,9 @@ void sPhysXInterface::addLink(mlr::Frame *b, physx::PxMaterial *mMaterial) {
     }else{
       PxRigidBodyExt::updateMassAndInertia(*actor, 1.f);
     }
-    actor->setAngularDamping(0.75);
-//    actor->setLinearVelocity(PxVec3(b->X.vel.x, b->X.vel.y, b->X.vel.z));
-//    actor->setAngularVelocity(PxVec3(b->X.angvel.x, b->X.angvel.y, b->X.angvel.z));
+//    actor->setAngularDamping(0.25);
+    //    actor->setLinearVelocity(PxVec3(b->X.vel.x, b->X.vel.y, b->X.vel.z));
+    //    actor->setAngularVelocity(PxVec3(b->X.angvel.x, b->X.angvel.y, b->X.angvel.z));
   }
   gScene->addActor(*actor);
   actor->userData = b;
@@ -584,9 +584,9 @@ void PhysXInterface::pushToPhysx(mlr::KinematicWorld *K, mlr::KinematicWorld *Kt
 }
 
 void PhysXInterface::ShutdownPhysX() {
-//  s->mMaterial
-//  s->plane
-//  s->planeShape
+  //  s->mMaterial
+  //  s->plane
+  //  s->planeShape
 
   for(PxRigidActor* a: s->actors) if(a){
     s->gScene->removeActor(*a);
@@ -607,7 +607,7 @@ void PhysXInterface::ShutdownPhysX() {
 
   mCooking->release();
   mPhysics->release();
-//  mFoundation->release();
+  //  mFoundation->release();
 }
 
 void DrawActor(PxRigidActor* actor, mlr::Frame *frame) {
@@ -630,39 +630,39 @@ void DrawActor(PxRigidActor* actor, mlr::Frame *frame) {
     glLoadMatrixd(f.getAffineMatrixGL(mat));
     //cout <<"drawing shape " <<body->name <<endl;
     switch(shape->getGeometryType()) {
-      case PxGeometryType::eBOX: {
-        PxBoxGeometry g;
-        shape->getBoxGeometry(g);
-        //glutSolidCube(g.halfExtents.x*2, g.halfExtents.y*2, g.halfExtents.z*2);
-        glDrawBox(g.halfExtents.x*2, g.halfExtents.y*2, g.halfExtents.z*2);
-      } break;
-      case PxGeometryType::eSPHERE: {
-        PxSphereGeometry g;
-        shape->getSphereGeometry(g);
-        glutSolidSphere(g.radius, 10, 10);
-      } break;
-      case PxGeometryType::eCAPSULE: {
-        PxCapsuleGeometry g;
-        shape->getCapsuleGeometry(g);
-        glDrawCappedCylinder(g.radius, g.halfHeight*2);
-      } break;
-      case PxGeometryType::eCONVEXMESH: {
+    case PxGeometryType::eBOX: {
+      PxBoxGeometry g;
+      shape->getBoxGeometry(g);
+      //glutSolidCube(g.halfExtents.x*2, g.halfExtents.y*2, g.halfExtents.z*2);
+      glDrawBox(g.halfExtents.x*2, g.halfExtents.y*2, g.halfExtents.z*2);
+    } break;
+    case PxGeometryType::eSPHERE: {
+      PxSphereGeometry g;
+      shape->getSphereGeometry(g);
+      glutSolidSphere(g.radius, 10, 10);
+    } break;
+    case PxGeometryType::eCAPSULE: {
+      PxCapsuleGeometry g;
+      shape->getCapsuleGeometry(g);
+      glDrawCappedCylinder(g.radius, g.halfHeight*2);
+    } break;
+    case PxGeometryType::eCONVEXMESH: {
 #if 1
-        PxConvexMeshGeometry g;
-        shape->getConvexMeshGeometry(g);
-        floatA Vfloat((float*)g.convexMesh->getVertices(), 3*g.convexMesh->getNbVertices()); //reference
-        mlr::Mesh mesh;
-        copy(mesh.V,Vfloat);
-        mesh.V.reshape(g.convexMesh->getNbVertices(),3);
-        mesh.makeConvexHull();
-        mesh.glDraw(NoOpenGL);
+      PxConvexMeshGeometry g;
+      shape->getConvexMeshGeometry(g);
+      floatA Vfloat((float*)g.convexMesh->getVertices(), 3*g.convexMesh->getNbVertices()); //reference
+      mlr::Mesh mesh;
+      copy(mesh.V,Vfloat);
+      mesh.V.reshape(g.convexMesh->getNbVertices(),3);
+      mesh.makeConvexHull();
+      mesh.glDraw(NoOpenGL);
 #else
-        s->mesh.glDraw();
+      s->mesh.glDraw();
 #endif
-      } break;
+    } break;
       
-      default:
-        MLR_MSG("can't draw this type");
+    default:
+      MLR_MSG("can't draw this type");
     }
   }
   delete [] shapes;
@@ -709,7 +709,7 @@ void PhysXInterface::addForce(mlr::Vector& force, mlr::Frame* b, mlr::Vector& po
 #include "kin_physx.h"
 PhysXInterface::PhysXInterface(mlr::KinematicWorld& _world) : world(_world), s(NULL) { NICO }
 PhysXInterface::~PhysXInterface() { NICO }
-  
+
 void PhysXInterface::step(double tau, bool withKinematicPush) { NICO }
 void PhysXInterface::pushToPhysx(mlr::KinematicWorld *K, mlr::KinematicWorld *Kt_1, mlr::KinematicWorld *Kt_2, double tau, bool onlyKinematic) { NICO }
 void PhysXInterface::pullFromPhysx(mlr::KinematicWorld *K, arr& vels) { NICO }

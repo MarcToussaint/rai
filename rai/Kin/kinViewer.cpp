@@ -126,6 +126,7 @@ void OrsPathViewer::setConfigurations(const WorldL& cs){
 
 void OrsPathViewer::clear(){
   listDelete(configurations.set()());
+  text.clear();
 }
 
 OrsPathViewer::OrsPathViewer(const char* varname, double beatIntervalSec, int tprefix)
@@ -148,7 +149,7 @@ void OrsPathViewer::step(){
   copy.gl().dataLock.writeLock();
   configurations.readAccess();
   uint T=configurations().N;
-  if(t>=T*1.1) t=-tprefix;
+  if(t>=T*1.1) t=0;
   uint tt=t;
   if(tt>=T) tt=T-1;
   if(T) copy.copy(*configurations()(tt), true);
@@ -156,9 +157,10 @@ void OrsPathViewer::step(){
   copy.checkConsistency();
   copy.gl().dataLock.unlock();
   if(T){
+    copy.orsDrawMarkers=false;
     copy.gl().captureImg=writeToFiles;
-    copy.gl().update(STRING(" (time " <<tprefix+int(tt) <<'/' <<tprefix+int(T) <<')').p, false, false, true);
-    if(writeToFiles) write_ppm(copy.gl().captureImage,STRING("vid/z.path."<<std::setw(3)<<std::setfill('0')<<tprefix+int(tt)<<".ppm"));
+    copy.gl().update(STRING("(time " <<tprefix+int(tt) <<'/' <<tprefix+int(T) <<")\n" <<text).p, false, false, true);
+    if(writeToFiles) write_ppm(copy.gl().captureImage,STRING("vid/z."<<std::setw(3)<<std::setfill('0')<<tprefix+int(tt)<<".ppm"));
   }
   t++;
 }
@@ -168,6 +170,7 @@ void OrsPathViewer::step(){
 void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix, int w, int h, mlr::Camera *camera){
   mlr::KinematicWorld copy;
   copy.orsDrawMarkers=false;
+  system(STRING("rm " <<filePrefix <<"*.ppm"));
   for(uint t=0;t<cs.N;t++){
     copy.copy(*cs(t), true);
 #if 0 //render on screen

@@ -4,7 +4,7 @@
 
 struct KinectDepthPacking : Thread {
   struct sKinectDepthPacking *s;
-  ACCESSlisten(uint16A, kinect_depth);
+  VARlisten(uint16A, kinect_depth);
   VAR(byteA, kinect_depthRgb);
   KinectDepthPacking() : Thread("KinectDepthPacking"){}
   void open();

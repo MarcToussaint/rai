@@ -93,6 +93,7 @@ struct KinematicWorld : GLDrawer{
 
   /// @name access
   Frame *operator[](const char* name){ return getFrameByName(name, true); }
+  Frame *operator()(int i){ return frames(i); }
   Frame *getFrameByName(const char* name, bool warnIfNotExist=true) const;
 //  Link  *getLinkByBodies(const Frame* from, const Frame* to) const;
   Joint *getJointByBodies(const Frame* from, const Frame* to) const;
@@ -101,14 +102,17 @@ struct KinematicWorld : GLDrawer{
   StringA getJointNames() const;
 
   bool checkUniqueNames() const;
-  void prefixNames();
+  void prefixNames(bool clear=false);
 
   /// @name changes of configuration
   void clear();
   void reset_q();
+  FrameL calc_topSort();
+  bool check_topSort();
   void calc_activeSets();
   void calc_q();
-  void reconfigureRoot(Frame *root);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
+  void reconfigureRootOfSubtree(Frame *root);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
+  void flipFrames(mlr::Frame *a, mlr::Frame *b);
   void pruneRigidJoints(int verbose=0);        ///< delete rigid joints -> they become just links
   void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
   void pruneUselessFrames(bool preserveNamed=true);  ///< delete frames that have no name, joint, and shape
@@ -139,6 +143,7 @@ struct KinematicWorld : GLDrawer{
   /// @name set state
   void setJointState(const arr& _q, const arr& _qdot=NoArr);
   void setJointState(const arr& _q, const StringA&);
+  void setTimes(double t);
 
   /// @name kinematics
   void kinematicsPos (arr& y, arr& J, Frame *a, const Vector& rel=NoVector) const; //TODO: make vector& not vector*
@@ -216,6 +221,7 @@ struct KinematicWorld : GLDrawer{
   /// @name I/O
   void write(std::ostream& os) const;
   void writeURDF(std::ostream& os, const char *robotName="myrobot") const;
+  void writeMeshes(const char* pathPrefix="meshes/") const;
   void read(std::istream& is);
   void glDraw(struct OpenGL&);
   void glDraw_sub(struct OpenGL&);
@@ -278,7 +284,8 @@ inline void displayTrajectory(const arr& x, int steps, mlr::KinematicWorld& G, c
 void editConfiguration(const char* orsfile, mlr::KinematicWorld& G);
 int animateConfiguration(mlr::KinematicWorld& G, struct Inotify *ino=NULL);
 
-
+void kinVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);
+void kinAngVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);
 
 
 #endif //MLR_ors_h

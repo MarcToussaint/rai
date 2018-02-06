@@ -29,10 +29,11 @@ struct OptNewton{
   double fx;
   arr gx, Hx;
   double alpha, beta;
-  uint it, evals, numTinySteps;
+  uint it=0, evals=0, numTinySteps=0;
   StopCriterion stopCriterion;
-  ofstream fil;
   arr bound_lo, bound_hi;
+  ofstream *fil=NULL;
+
 
   OptNewton(arr& x, const ScalarFunction& f, OptOptions o=NOOPT);
   ~OptNewton();

@@ -133,7 +133,7 @@ struct Graph : NodeL {
   NodeL findNodesOfType(const std::type_info& type, const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;
 
   //-- get nodes
-  Node* operator[](const char *key) const{ Node *n = findNode({key}); return n; }//CHECK(n, "key '" <<key <<"' not found"); return n; }
+  Node* operator[](const char *key) const{ return findNode({key}); }
   Node* getNode(const char *key) const{ return findNode({key}, true, false); }
   Node* getNode(const StringA &keys) const{ return findNode(keys, true, false); }
   Node* getEdge(Node *p1, Node *p2) const;
@@ -155,6 +155,8 @@ struct Graph : NodeL {
   template<class T> const T& get(const char *key, const T& defaultValue) const;
   template<class T> bool get(T& x, const char *key)     const { return get<T>(x, StringA({key})); }
   template<class T> bool get(T& x, const StringA &keys) const;
+  template<class T> T& getNew(const char *key);
+  template<class T> T& getNew(const StringA &keys);
 
   //-- get lists of all values of a certain type T (or derived from T)
   template<class T> mlr::Array<T*> getValuesOfType(const char* key=NULL);
@@ -433,6 +435,12 @@ template<class T> Nod::Nod(const char* key, const StringA& parents, const T& x)
 template<class T> T& Graph::get(const char *key) const {
   Node *n = findNodeOfType(typeid(T), {key});
   if(!n) HALT("no node of type '" <<typeid(T).name() <<"' with key '"<< key<< "' found");
+  return n->get<T>();
+}
+
+template<class T> T& Graph::getNew(const char *key) {
+  Node *n = findNodeOfType(typeid(T), {key});
+  if(!n) n = new Node_typed<T>(*this, {key}, {} );
   return n->get<T>();
 }
 

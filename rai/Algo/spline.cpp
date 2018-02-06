@@ -27,7 +27,7 @@ Spline::Spline(uint degree) : degree(degree){}
 
 Spline::Spline(uint T, const arr& X, uint degree) : points(X){
   CHECK(points.nd==2,"");
-  setUniformNonperiodicBasis(T, points.d0-1, degree);
+  setUniformNonperiodicBasis(T, points.d0, degree);
 }
 
 void Spline::plotBasis() {
@@ -84,7 +84,7 @@ arr Spline::getCoeffs(double t, uint K, uint derivative) const {
 }
 
 void Spline::setBasis(uint T, uint K) {
-  CHECK_EQ(times.N-1,K+1+degree, "wrong number of time knots");
+//  CHECK_EQ(times.N-1,K+1+degree, "wrong number of time knots");
   basis.resize(T+1, K+1);
   for(uint t=0; t<=T; t++) basis[t] = getCoeffs((double)t/T, K);
   transpose(basis_trans, basis);
@@ -133,7 +133,7 @@ void Spline::setBasisAndTimeGradient(uint T, uint K) {
 }
 
 void Spline::setUniformNonperiodicBasis() {
-  setUniformNonperiodicBasis(0, points.d0-1, degree);
+  setUniformNonperiodicBasis(0, points.d0, degree);
 }
 
 void Spline::set(uint _degree, const arr &x, const arr& t){
@@ -159,10 +159,10 @@ void Spline::set(uint _degree, const arr &x, const arr& t){
   }
 }
 
-void Spline::setUniformNonperiodicBasis(uint T, uint K, uint _degree) {
+void Spline::setUniformNonperiodicBasis(uint T, uint nPoints, uint _degree) {
   degree=_degree;
   uint i, m;
-  K=points.d0 - 2*(degree/2) - 1;
+  uint K=nPoints - 2*(degree/2) - 1;
   m=K+1+2*degree;
   times.resize(m+1);
   for(i=0; i<=m; i++) {
@@ -174,7 +174,7 @@ void Spline::setUniformNonperiodicBasis(uint T, uint K, uint _degree) {
       times(i) = double(double(i)-.5-degree)/double(K);
     }
   }
-  if(T) setBasis(T, K);
+  if(T) setBasis(T, nPoints-1);
 //  setBasisAndTimeGradient();
 }
 

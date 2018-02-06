@@ -2375,7 +2375,7 @@ template<class T> mlr::Array<T> max(const mlr::Array<T>& v, uint d) {
     for(i=0; i<x.d0; i++) M(i) = max(x[i]);
     return M;
   }
-  if(d==0) {  //sum over first index
+  if(d==0) {  //max over first index
     x.reshape(x.d0, x.N/x.d0);
     M = x[0]; //first row
     for(i=1; i<x.d0; i++) for(j=0; j<x.d1; j++)
@@ -2828,6 +2828,7 @@ template<class T> mlr::Array<T> elemWiseHinge(const mlr::Array<T> &x) {
 }
 
 template<class T> void writeConsecutiveConstant(std::ostream &os, const mlr::Array<T> &x){
+    if(!x.N) return;
     uint yi=0;
     T y=x.elem(yi);
     for(uint i=1;i<x.N-1;i++) if(x.elem(i)!=y){

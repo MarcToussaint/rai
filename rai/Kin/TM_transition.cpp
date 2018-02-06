@@ -60,6 +60,8 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t)
   uint qN=Ktuple(0)->q.N;
   for(uint i=0;i<Ktuple.N;i++) if(Ktuple(i)->q.N!=qN){ handleSwitches=true; break; }
 
+  tau = Ktuple(-1)->frames(0)->time - Ktuple(-2)->frames(0)->time;
+
   if(!handleSwitches){ //simple implementation
     //-- transition costs
     double h = H_rate*sqrt(tau), tau2=tau*tau;
@@ -91,7 +93,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t)
     //multiply with h...
     for(mlr::Joint *j:Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
       double hj = h*j->H;
-      if(j->frame.flags &  (1<<FT_noQControlCosts)) hj=0.;
+      if(j->frame.flags && !(j->frame.flags & (1<<FL_normalControlCosts))) hj=0.;
       y(j->qIndex+i) *= hj;
     }
 
@@ -116,7 +118,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t)
       J.reshape(y.N, Ktuple.N*n);
       for(mlr::Joint *j: Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
         double hj = h*j->H;
-        if(j->frame.flags & (1<<FT_noQControlCosts)) hj=0.;
+        if(j->frame.flags && !(j->frame.flags & (1<<FL_normalControlCosts))) hj=0.;
 #if 0
         J[j->qIndex+i] *= hj;
 #else //EQUIVALENT, but profiled - optimized for speed
@@ -147,8 +149,9 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t)
         if(order>=0) qi1 = joints.elem(-1)->qIndex+j;
         if(order>=1) qi2 = joints.elem(-2)->qIndex+j;
         if(order>=2 && accCoeff) qi3 = joints.elem(-3)->qIndex+j;
-        double hj = h * joints.last()->H;
-        if(joints.last()->frame.flags & (1<<FT_noQControlCosts)) hj=0.;
+        mlr::Joint *jl = joints.last();
+        double hj = h * jl->H;
+        if(jl->frame.flags && !(jl->frame.flags & (1<<FL_normalControlCosts))) hj=0.;
         //TODO: adding vels + accs before squareing does not make much sense!
         if(order>=0 && posCoeff) y(m) += posCoeff*hj       * (Ktuple.elem(-1)->q(qi1));
         if(order>=1 && velCoeff) y(m) += (velCoeff*hj/tau) * (Ktuple.elem(-1)->q(qi1) -    Ktuple.elem(-2)->q(qi2));

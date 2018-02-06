@@ -4,39 +4,42 @@
 #include <Kin/frame.h>
 
 void TEST(Swift) {
-  mlr::KinematicWorld G("swift_test.g");
+  mlr::KinematicWorld K("swift_test.g");
 
-  G.swift().setCutoff(2.);
-  G.stepSwift();
+  K.swift().setCutoff(2.);
+  K.stepSwift();
+  K.orsDrawProxies=true;
 
   uint t;
   for(t=0;t<50;t++){
-    G.frames(0)->X.addRelativeTranslation(0,0,-.01);
-    G.frames(0)->X.addRelativeRotationDeg(10,1,0,0);
-    G.calc_fwdPropagateFrames();
+    K.frames(0)->X.addRelativeTranslation(0,0,-.01);
+    K.frames(0)->X.addRelativeRotationDeg(10,1,0,0);
+    K.calc_fwdPropagateFrames();
 
-    G.stepSwift();
+    K.stepSwift();
 
-    G.reportProxies();
+    K.reportProxies();
 
-    G.watch(true);
+    K.watch(true);
     mlr::wait(.1);
   }
 }
 
 void TEST(CollisionTiming){
-  mlr::KinematicWorld G("../../../data/configurations/schunk.ors");
+  mlr::KinematicWorld K("../../../../rai-robotModels/pr2/pr2.g");
 
-  G.swift().setCutoff(1.);
+  K.swift().setCutoff(1.);
+
+  cout <<"# objects:" <<K.swift().countObjects() <<endl;
 
   arr q0,q;
-  G.getJointState(q0);
+  K.getJointState(q0);
   mlr::timerStart();
   uint t;
   for(t=0;t<1000;t++){
     if(!(t%1)){ q = q0;  rndGauss(q,.1,true); }
-    G.setJointState(q);
-    G.stepSwift();
+    K.setJointState(q);
+    K.stepSwift();
 //    G.reportProxies();
 //    G.watch(false);
 //    G.watch(true);
@@ -51,7 +54,7 @@ int MAIN(int argc, char** argv){
   mlr::initCmdLine(argc, argv);
 
   testSwift();
-  testCollisionTiming();
+//  testCollisionTiming();
 
   return 0;
 }

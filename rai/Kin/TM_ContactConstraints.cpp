@@ -16,10 +16,10 @@ void TM_ContactConstraints::phi(arr &y, arr &J, const mlr::KinematicWorld &K, in
     C++;
     delete map;
   }
-  if(!C){
-    y.append(-1.);
-    if(&J) J.append(zeros(K.q.N));
-  }
+//  if(!C){
+//    y.append(-1.);
+//    if(&J) J.append(zeros(K.q.N));
+//  }
   if(&J) J.reshape(y.N, K.q.N);
 }
 
