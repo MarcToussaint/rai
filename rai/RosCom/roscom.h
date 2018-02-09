@@ -314,6 +314,6 @@ struct RosCom{
   struct RosCom_Spinner* spinner;
   RosCom(const char* node_name="rai_module");
   ~RosCom();
-  template<class T> Subscriber<T> subscribe(Var<T>& v){ return Subscriber<T>(v); }
-  template<class T> Publisher<T> publish(Var<T>& v){ return Publisher<T>(v); }
+  template<class T> std::shared_ptr<Subscriber<T>> subscribe(Var<T>& v){ return std::make_shared<Subscriber<T>>(v); }
+  template<class T> std::shared_ptr<Publisher<T>> publish(Var<T>& v){ return std::make_shared<Publisher<T>>(v); }
 };

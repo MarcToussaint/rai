@@ -188,9 +188,10 @@ void PairCollision::glDraw(OpenGL &){
   glColor(0., 1., 0., 1.);
   glDrawDiamond(P1(0), P1(1), P1(2), .01, .01, .01);
   for(uint i=0;i<simplex1.d0;i++) simplex1[i] -= rad1*normal;
-  glDrawPolygon(simplex1);
-  for(uint i=0;i<simplex1.d0;i++) simplex1[i] += rad1*normal;
-//  arr v;
+//  glDrawPolygon(simplex1);
+//  for(uint i=0;i<simplex1.d0;i++) simplex1[i] += rad1*normal;
+
+  //  arr v;
 //    v = simplex1[i];
 //    if(rad1>0.) v -= rad1*normal;
 //    glDrawDiamond(v(0), v(1), v(2), .02, .02, .02);
@@ -199,8 +200,9 @@ void PairCollision::glDraw(OpenGL &){
   glColor(0., 0., 1., 1.);
   glDrawDiamond(P2(0), P2(1), P2(2), .01, .01, .01);
   for(uint i=0;i<simplex2.d0;i++) simplex2[i] += rad2*normal;
-  glDrawPolygon(simplex2);
-  for(uint i=0;i<simplex2.d0;i++) simplex2[i] -= rad2*normal;
+//  glDrawPolygon(simplex2);
+//  for(uint i=0;i<simplex2.d0;i++) simplex2[i] -= rad2*normal;
+
 //  for(uint i=0;i<simplex2.d0;i++){
 //    v = simplex2[i];
 //    if(rad2>0.) v += rad2*normal;

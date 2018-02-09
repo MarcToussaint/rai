@@ -31,7 +31,12 @@ struct Contact : GLDrawer {
 
   mlr::Vector get_pa() const{ return a.X * (a_rel + a_rad*a_norm); }
   mlr::Vector get_pb() const{ return b.X * (b_rel + b_rad*b_norm); }
+  mlr::Vector get_norm() const{ return .5 * (a.X.rot * a_norm + b.X.rot * b_norm); }
   double get_pDistance() const{ return (get_pa()-get_pb()).length(); } // get distance between the FIXED contacted points p_a and p_b
+  double get_tangentDistance() const{
+    arr n = get_norm().getArr();
+    return length((eye(3) - (n^n)) * (get_pa()-get_pb()).getArr());
+  }
 
   double getDistance() const; // get normal(!) distance (projected onto contact normal), by calling the TM_ContactNegDistance()
   TaskMap* getTM_Friction() const;
