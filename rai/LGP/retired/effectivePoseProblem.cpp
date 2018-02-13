@@ -16,7 +16,7 @@
 #include "effectivePoseProblem.h"
 #include <Gui/opengl.h>
 #include <Kin/taskMaps.h>
-#include <Optim/lagrangian.h>
+#include <Optim/constrained.h>
 
 //===========================================================================
 
@@ -296,7 +296,7 @@ double EffectivePoseProblem::optimize(arr& x){
   opt.run();
   //  checkJacobianCP(f, x, 1e-4);
   effKinematics.setJointState(x);
-  return opt.UCP.get_costs();
+  return opt.L.get_costs();
 }
 
 //===========================================================================

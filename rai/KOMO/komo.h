@@ -15,7 +15,7 @@
 #pragma once
 #include <Kin/kin.h>
 #include <Optim/optimization.h>
-#include <Optim/lagrangian.h>
+#include <Optim/constrained.h>
 #include <Optim/KOMO_Problem.h>
 #include "task.h"
 #include <Kin/flag.h>

@@ -1611,7 +1611,8 @@ void lapack_mldivide(arr& X, const arr& A, const arr& B) {
   dgesv_(&N, &NRHS, LU.p, &LDA, IPIV.p, X.p, &LDA, &INFO);
   CHECK(!INFO, "LAPACK gaussian elemination error info = " <<INFO);
 
-  X = ~X;
+  if(B.nd==1) X.reshape(X.N);
+  else X = ~X;
 }
 
 void lapack_choleskySymPosDef(arr& Achol, const arr& A) {

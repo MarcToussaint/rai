@@ -1490,6 +1490,7 @@ template mlr::String mlr::getParameter<mlr::String>(const char*, const mlr::Stri
 
 template bool mlr::checkParameter<uint>(const char*);
 template bool mlr::checkParameter<bool>(const char*);
+template bool mlr::checkParameter<mlr::String>(const char*);
 
 
 

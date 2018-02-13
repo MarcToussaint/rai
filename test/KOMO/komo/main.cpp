@@ -102,9 +102,9 @@ void TEST(FinalPosePR2){
 int main(int argc,char** argv){
   mlr::initCmdLine(argc,argv);
 
-  testEasy();
+//  testEasy();
   testAlign();
-  testPR2();
+//  testPR2();
 
   return 0;
 }

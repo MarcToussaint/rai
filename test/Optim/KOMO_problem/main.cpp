@@ -2,7 +2,7 @@
 #include <Optim/optimization.h>
 #include <Optim/benchmarks.h>
 #include <Optim/convert.h>
-#include <Optim/lagrangian.h>
+#include <Optim/constrained.h>
 
 // the kernel stuff is preliminary -- please igore everything related to kernels so far
 #if 0

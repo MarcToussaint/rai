@@ -1,7 +1,7 @@
 #include <Optim/optimization.h>
 #include <Optim/benchmarks.h>
 #include "problems.h"
-#include <Optim/lagrangian.h>
+#include <Optim/constrained.h>
 #include <Optim/convert.h>
 
 //lecture.cpp:

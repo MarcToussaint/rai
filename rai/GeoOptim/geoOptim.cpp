@@ -1,4 +1,4 @@
-#include <Optim/lagrangian.h>
+#include <Optim/constrained.h>
 
 #include "geoOptim.h"
 
@@ -93,8 +93,8 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
     checkHessianCP(F, x, 1e-4);
   }
 
-  f = opt.UCP.get_costs();
-  g = opt.UCP.get_sumOfGviolations();
+  f = opt.L.get_costs();
+  g = opt.L.get_sumOfGviolations();
 }
 
 void computeOptimalSSBox(mlr::Mesh& mesh, arr& x_ret, mlr::Transformation& t_ret, const arr& X, uint trials, int verbose){

@@ -3,7 +3,7 @@
 #include <Optim/benchmarks.h>
 
 #include <Optim/Graph_Problem.h>
-#include <Optim/lagrangian.h>
+#include <Optim/constrained.h>
 
 void testGraphProblem() {
   //see the implemention of ParticleAroundWalls::phi_t for an example on how to specify constrained k-order-Markov optimization problems

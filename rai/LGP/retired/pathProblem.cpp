@@ -16,7 +16,7 @@
 #include "pathProblem.h"
 #include <Kin/taskMaps.h>
 #include <Kin/kin_swift.h>
-#include <Optim/lagrangian.h>
+#include <Optim/constrained.h>
 #include <Kin/TM_proxy.h>
 
 //===========================================================================
@@ -230,7 +230,7 @@ double PathProblem::optimize(arr& x){
   cout <<MP.getReport();
 //  for(;;)
     displayTrajectory(x, 1, MP.world, MP.switches, "planned configs", .02);
-  return opt.UCP.get_costs();
+  return opt.L.get_costs();
 }
 
 //===========================================================================

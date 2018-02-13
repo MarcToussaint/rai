@@ -32,6 +32,7 @@ struct OptNewton{
   uint it=0, evals=0, numTinySteps=0;
   StopCriterion stopCriterion;
   arr bound_lo, bound_hi;
+  bool rootFinding=false;
   ofstream *fil=NULL;
 
 

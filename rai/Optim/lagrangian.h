@@ -15,9 +15,6 @@
 #pragma once
 
 #include "optimization.h"
-#include "newton.h"
-
-extern const char* MethodName[];
 
 //==============================================================================
 //
@@ -36,10 +33,10 @@ struct LagrangianProblem : ScalarFunction { //TODO: rename: UnconstrainedLagrang
   double nu;         ///< penalty parameter for equalities h
   arr lambda;        ///< lagrange multipliers for inequalities g and equalities h
 
-  //-- buffers to avoid recomputing gradients
+  //-- buffers to avoid re-evaluating points
   arr x;               ///< point where P was last evaluated
-  arr phi_x, J_x, H_x; ///< everything else at x
-  ObjectiveTypeA tt_x; ///< everything else at x
+  arr phi_x, J_x, H_x; ///< features at x
+  ObjectiveTypeA tt_x; ///< feature types at x
 
   LagrangianProblem(ConstrainedProblem &P, OptOptions opt=NOOPT, arr& lambdaInit=NoArr);
 
@@ -61,66 +58,4 @@ struct LagrangianProblem : ScalarFunction { //TODO: rename: UnconstrainedLagrang
   double hpenalty_d(double h);
   double hpenalty_dd(double h);
 };
-
-//==============================================================================
-//
-// PhaseOneProblem
-//
-// we define a constraint optimization problem that corresponds
-// to the phase one problem of another constraint problem
-//
-
-struct PhaseOneProblem : ConstrainedProblem{
-  ConstrainedProblem &f_orig;
-
-  PhaseOneProblem(ConstrainedProblem &f_orig):f_orig(f_orig) {}
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x, arr& lambda);
-};
-
-
-//==============================================================================
-//
-// Solvers
-//
-
-struct OptConstrained{
-  LagrangianProblem UCP;
-  OptNewton newton;
-  arr &dual;
-  OptOptions opt;
-  uint its=0;
-  bool earlyPhase=false;
-  ofstream *fil=NULL;
-
-  OptConstrained(arr& x, arr &dual, ConstrainedProblem& P, OptOptions opt=NOOPT);
-  ~OptConstrained();
-  bool step();
-  uint run();
-//  void reinit();
-};
-
-//TODO: remove:
-inline uint optConstrained(arr& x, arr &dual, ConstrainedProblem& P, OptOptions opt=NOOPT){
-  return OptConstrained(x, dual, P, opt).run();
-}
-
-//==============================================================================
-//
-// evaluating
-//
-
-inline void evaluateConstrainedProblem(const arr& x, ConstrainedProblem& P, std::ostream& os){
-  arr phi_x;
-  ObjectiveTypeA tt_x;
-  P.phi(phi_x, NoArr, NoArr, tt_x, x, NoArr);
-  double Ef=0., Eh=0., Eg=0.;
-  for(uint i=0;i<phi_x.N;i++){
-    if(tt_x(i)==OT_f) Ef += phi_x(i);
-    if(tt_x(i)==OT_sumOfSqr) Ef += mlr::sqr(phi_x(i));
-    if(tt_x(i)==OT_ineq && phi_x(i)>0.) Eg += phi_x(i);
-    if(tt_x(i)==OT_eq) Eh += fabs(phi_x(i));
-  }
-  os <<"f=" <<Ef <<" sum([g>0]g)="<<Eg <<" sum(|h|)=" <<Eh <<endl;
-}
-
 

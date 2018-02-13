@@ -53,7 +53,6 @@ void OptNewton::reinit(const arr& _x){
 OptNewton::StopCriterion OptNewton::step(){
   double fy;
   arr y, gy, Hy, Delta;
-  bool betaChanged=false;
 
   it++;
   if(o.verbose>1) cout <<"optNewton it=" <<std::setw(4) <<it << " \tbeta=" <<std::setw(8) <<beta <<flush;
@@ -72,7 +71,10 @@ OptNewton::StopCriterion OptNewton::step(){
   } else {
     bool inversionFailed=false;
     try {
-      Delta = lapack_Ainv_b_sym(R, -gx);
+      if(!rootFinding)
+        Delta = lapack_Ainv_b_sym(R, -gx);
+      else
+        lapack_mldivide(Delta, R, -gx);
     }catch(...){
       inversionFailed=true;
     }
@@ -85,7 +87,6 @@ OptNewton::StopCriterion OptNewton::step(){
         double sigmin = sig.min();
         if(sigmin>0.) THROW("Hessian inversion failed, but eigenvalues are positive???");
         beta = 2.*beta - sigmin;
-        betaChanged=true;
         return stopCriterion=stopNone;
       }else{ //use gradient
         if(o.verbose>0){
@@ -102,10 +103,10 @@ OptNewton::StopCriterion OptNewton::step(){
   if(o.maxStep>0. && maxDelta>o.maxStep){  Delta *= o.maxStep/maxDelta; maxDelta = o.maxStep; }
   double alphaLimit = o.maxStep/maxDelta;
 
-  //...due to bounds
+  //chop Delta to stay within bounds
   if(bound_lo.N && bound_hi.N){
     double a=1.;
-    for(uint i=0;i<x.N;i++){
+    for(uint i=0;i<x.N;i++) if(bound_hi(i)>bound_lo(i)){
       if(x(i)+a*Delta(i)>bound_hi(i)) a = (bound_hi(i)-x(i))/Delta(i);
       if(x(i)+a*Delta(i)<bound_lo(i)) a = (bound_lo(i)-x(i))/Delta(i);
     }
@@ -120,7 +121,7 @@ OptNewton::StopCriterion OptNewton::step(){
   }
 
   //-- line search along Delta
-  for(;!betaChanged;) {
+  for(bool endLineSearch=false; !endLineSearch;) {
     if(!o.allowOverstep) if(alpha>1.) alpha=1.;
     if(alphaLimit>0. && alpha>alphaLimit) alpha=alphaLimit;
     y = x + alpha*Delta;
@@ -129,6 +130,7 @@ OptNewton::StopCriterion OptNewton::step(){
     if(o.verbose>2) cout <<" \tprobing y=" <<y;
     if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<flush;
     bool wolfe = (fy <= fx + o.wolfe*alpha*scalarProduct(Delta,gx) );
+    if(rootFinding) wolfe=true;
     if(fy==fy && (wolfe || o.nonStrictSteps==-1 || o.nonStrictSteps>(int)it)) { //fy==fy is for NAN?
       //accept new point
       if(o.verbose>1) cout <<" - ACCEPT" <<endl;
@@ -141,7 +143,7 @@ OptNewton::StopCriterion OptNewton::step(){
         if(alpha>.9 && beta>o.damping){
           beta *= o.dampingDec;
           if(alpha>1.) alpha=1.;
-          betaChanged=true;
+          endLineSearch=true;
         }
         alpha *= o.stepInc;
       }else{
@@ -149,7 +151,7 @@ OptNewton::StopCriterion OptNewton::step(){
         if(alpha<.01 && o.dampingInc!=1.){
           beta*=o.dampingInc;
           alpha*=o.dampingInc*o.dampingInc;
-          betaChanged=true;
+          endLineSearch=true;
           if(o.verbose>1) cout <<"(line search stopped)" <<endl;
         }
         alpha *= o.stepDec;
@@ -165,7 +167,7 @@ OptNewton::StopCriterion OptNewton::step(){
       if(alpha<.01 && o.dampingInc!=1.){
         beta*=o.dampingInc;
         alpha*=o.dampingInc*o.dampingInc;
-        betaChanged=true;
+        endLineSearch=true;
         if(o.verbose>1) cout <<", stop & betaInc"<<endl;
       }else{
         if(o.verbose>1) cout <<"\n\t\t\t\t\t(line search)\t" <<flush;

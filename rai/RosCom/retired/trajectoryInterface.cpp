@@ -5,7 +5,7 @@
 #include <Gui/opengl.h>
 #include <RosCom/subscribeAlvarMarkers.h>
 #include <Optim/convert.h>
-#include <Optim/lagrangian.h>
+#include <Optim/constrained.h>
 
 #include "roscom.h"
 #include "spinner.h"
