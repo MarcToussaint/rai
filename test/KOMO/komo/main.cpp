@@ -57,10 +57,10 @@ void TEST(Align){
 void TEST(PR2){
   //NOTE: this uses a 25-DOF whole-body-motion model of thbe PR2
   mlr::KinematicWorld K("model.g");
+  K.pruneRigidJoints();
   K.optimizeTree();
   makeConvexHulls(K.frames);
-  K.calc_fwdPropagateFrames();
-  cout <<"configuration space dim=" <<K.q.N <<endl;
+  cout <<"configuration space dim=" <<K.getJointStateDimension() <<endl;
   double rand = mlr::getParameter<double>("KOMO/moveTo/randomizeInitialPose", .0);
   if(rand){
     rnd.seed(mlr::getParameter<uint>("rndSeed", 0));
@@ -88,9 +88,10 @@ void TEST(PR2){
 
 void TEST(FinalPosePR2){
   mlr::KinematicWorld K("model.g");
+  K.pruneRigidJoints();
   K.optimizeTree();
   makeConvexHulls(K.frames);
-  cout <<"configuration space dim=" <<K.q.N <<endl;
+  cout <<"configuration space dim=" <<K.getJointStateDimension() <<endl;
   arr x = finalPoseTo(K, *K.getFrameByName("endeff"), *K.getFrameByName("target"));
   K.setJointState(x.reshape(x.N));
   K.gl().watch();

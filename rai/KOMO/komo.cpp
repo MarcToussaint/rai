@@ -1166,7 +1166,7 @@ void KOMO::plotTrajectory(){
   for(auto s:jointNames) fil <<s <<' ';
   fil <<endl;
 
-  x.reshape(T, world.q.N);
+  x.reshape(T, world.getJointStateDimension());
   x.write(fil, NULL, NULL, "  ");
   fil.close();
 

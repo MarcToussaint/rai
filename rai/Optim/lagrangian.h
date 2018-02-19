@@ -32,8 +32,8 @@ struct LagrangianProblem : ScalarFunction { //TODO: rename: UnconstrainedLagrang
 
   //-- parameters of the unconstrained (Lagrangian) scalar function
   double muLB;       ///< log barrier weight
-  double mu;         ///< squared penalty weight for inequalities g
-  double nu;         ///< squared penalty weight for equalities h
+  double mu;         ///< penalty parameter for inequalities g
+  double nu;         ///< penalty parameter for equalities h
   arr lambda;        ///< lagrange multipliers for inequalities g and equalities h
 
   //-- buffers to avoid recomputing gradients
@@ -43,7 +43,7 @@ struct LagrangianProblem : ScalarFunction { //TODO: rename: UnconstrainedLagrang
 
   LagrangianProblem(ConstrainedProblem &P, OptOptions opt=NOOPT, arr& lambdaInit=NoArr);
 
-  double lagrangian(arr& dL, arr& HL, const arr& x); ///< the unconstrained scalar function F
+  double lagrangian(arr& dL, arr& HL, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
 
   double get_costs();            ///< info on the terms from last call
   double get_sumOfGviolations(); ///< info on the terms from last call
@@ -51,6 +51,15 @@ struct LagrangianProblem : ScalarFunction { //TODO: rename: UnconstrainedLagrang
   uint get_dimOfType(const ObjectiveType& tt); ///< info on the terms from last call
 
   void aulaUpdate(bool anyTimeVariant, double lambdaStepsize=1., double muInc=1., double *L_x=NULL, arr &dL_x=NoArr, arr &HL_x=NoArr);
+
+  //private: used gpenalty function
+  double gpenalty(double g);
+  double gpenalty_d(double g);
+  double gpenalty_dd(double g);
+
+  double hpenalty(double h);
+  double hpenalty_d(double h);
+  double hpenalty_dd(double h);
 };
 
 //==============================================================================
