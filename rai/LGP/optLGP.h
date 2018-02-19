@@ -55,7 +55,7 @@ struct OptLGP : GLDrawer{
   FOL_World& fol(){ return root->fol; }
   const mlr::KinematicWorld& kin(){ return root->startKinematics; }
 
-  //-- for methods called in the run loop
+  //-- methods called in the run loop
 private:
   MNode* getBest(MNodeL& fringe, uint level);
   MNode* popBest(MNodeL& fringe, uint level);
@@ -71,6 +71,8 @@ public:
   void step();
   void buildTree(uint depth);
   void getSymbolicSolutions(uint depth);
+  void optFixedSequence(const mlr::String& seq, int specificLevel=-1, bool collisions=false);
+  void optMultiple(const StringA& seqs);
 
   // output
   uint numFoundSolutions();
@@ -78,6 +80,8 @@ public:
   void initDisplay();
   void updateDisplay();
   void renderToVideo(uint level=3, const char* filePrefix="vid/z.");
+  void writeNodeList(ostream& os=cout);
+  void glDraw(struct OpenGL&gl);
 
   //-- kind of a gui:
   void printChoices();
@@ -86,12 +90,4 @@ public:
   bool execRandomChoice();
 
   void player(StringA cmds={});
-
-  void optFixedSequence(const mlr::String& seq, int specificLevel=-1, bool collisions=false);
-  void optMultiple(const StringA& seqs);
-
-
-  void writeNodeList(ostream& os=cout);
-
-  void glDraw(struct OpenGL&gl);
 };
