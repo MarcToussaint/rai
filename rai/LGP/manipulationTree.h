@@ -22,14 +22,18 @@
 struct MNode;
 typedef mlr::Array<MNode*> MNodeL;
 
+struct SkeletonEntry{ StringL symbols; uint k0,k1; double phase0, phase1; };
+typedef mlr::Array<SkeletonEntry> Skeleton;
+
+
 extern uint COUNT_kin, COUNT_evals, COUNT_node;
 extern uintA COUNT_opt;
 extern double COUNT_time;
 extern mlr::String OptLGPDataPath;
 extern ofstream *filNodes;
 
-
 enum LEVEL{ l_symbolic=0, l_pose=1, l_seq=2, l_path=3 };
+
 
 //===========================================================================
 
@@ -92,6 +96,8 @@ struct MNode{
   void getAll(MNodeL& L);
   MNodeL getAll(){ MNodeL L; getAll(L); return L; }
   void checkConsistency();
+
+  Skeleton getSkeleton(StringA predicateFilter={}) const;
 private:
   void setInfeasible(); ///< set this and all children infeasible
   void labelInfeasible(); ///< sets this infeasible AND propagates this label up-down to others

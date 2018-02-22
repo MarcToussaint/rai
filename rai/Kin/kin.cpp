@@ -2231,17 +2231,17 @@ void mlr::KinematicWorld::reconnectLinksToClosestJoints(){
         f->Q = Q;
       }
 
-      if(!link->shape && f->shape && f->Q.isZero()){ //f has a shape, link not -> move shape to link
-        LOG(-1) <<"Shape '" <<f->name <<"' could be reassociated to link '" <<link->name <<"' (child of '" <<(link->parent?link->parent->name:STRING("NONE")) <<"')";
-//        link->shape = f->shape;
-//        f->shape = NULL;
-      }
+//      if(!link->shape && f->shape && f->Q.isZero()){ //f has a shape, link not -> move shape to link
+//        LOG(-1) <<"Shape '" <<f->name <<"' could be reassociated to link '" <<link->name <<"' (child of '" <<(link->parent?link->parent->name:STRING("NONE")) <<"')";
+////        link->shape = f->shape;
+////        f->shape = NULL;
+//      }
 
-      if(!link->inertia && f->inertia && f->Q.isZero()){ //f has a shape, link not -> move shape to link
-        LOG(-1) <<"Inertia '" <<f->name <<"' could be reassociated to link '" <<link->name <<"' (child of '" <<(link->parent?link->parent->name:STRING("NONE")) <<"')";
-//        link->shape = f->shape;
-//        f->shape = NULL;
-      }
+//      if(!link->inertia && f->inertia && f->Q.isZero()){ //f has a shape, link not -> move shape to link
+//        LOG(-1) <<"Inertia '" <<f->name <<"' could be reassociated to link '" <<link->name <<"' (child of '" <<(link->parent?link->parent->name:STRING("NONE")) <<"')";
+////        link->shape = f->shape;
+////        f->shape = NULL;
+//      }
 
     }
   }

@@ -225,6 +225,7 @@ public: //driver dependent methods
   Display* xdisplay();
   Drawable xdraw();
 #endif
+  void forceGlutInit();
 
 protected:
   GLEvent lastEvent;

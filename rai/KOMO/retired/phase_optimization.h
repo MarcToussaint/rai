@@ -20,7 +20,7 @@
 #include <Algo/spline.h>
 #include <Optim/kOrderMarkov.h>
 
-struct PhaseOptimization:KOrderMarkovFunction {
+struct PhaseOptimization : KOrderMarkovFunction {
   //options of the problem
   uint k;   // [3]
   uint kX;  // transition type of trajectory [1=vel,2=acc,3=jerk]

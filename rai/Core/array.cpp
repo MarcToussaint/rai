@@ -924,6 +924,14 @@ void add_alpha_channel(byteA &img, byte alpha) {
   img.reshape(h, w, 4);
 }
 
+/// add an alpha channel to an image array
+void remove_alpha_channel(byteA &img) {
+  uint w=img.d1, h=img.d0;
+  img.reshape(h*w, 4);
+  img.delColumns(3, 1);
+  img.reshape(h, w, 3);
+}
+
 void flip_image(byteA &img) {
   if(!img.N) return;
   uint h=img.d0, n=img.N/img.d0;

@@ -189,6 +189,7 @@ template<class T> struct Array : std::vector<T> {
   Array<T> operator[](std::initializer_list<uint> list) const; //-> remove
   Array<T>& operator()(){ return *this; } //TODO: make this the scalar reference!
   T** getCarray(Array<T*>& Cpointers) const;
+  Array<T*> getCarray() const;
 
   
   /// @name access by copy
@@ -634,6 +635,7 @@ void write(const arrL& X, const char *filename, const char *ELEMSEP=" ", const c
 void write_ppm(const byteA &img, const char *file_name, bool swap_rows=true);
 void read_ppm(byteA &img, const char *file_name, bool swap_rows=true);
 void add_alpha_channel(byteA &img, byte alpha);
+void remove_alpha_channel(byteA &img);
 void make_grey(byteA &img);
 void make_RGB(byteA &img);
 void make_RGB2BGRA(byteA &img);
@@ -958,6 +960,7 @@ will simply be behave differently */
 template<class T> char listWrite(const mlr::Array<std::shared_ptr<T> >& L, std::ostream& os=std::cout, const char *ELEMSEP=" ", const char *delim=NULL);
 template<class T> char listWrite(const mlr::Array<T*>& L, std::ostream& os=std::cout, const char *ELEMSEP=" ", const char *delim=NULL);
 template<class T> void listWriteNames(const mlr::Array<T*>& L, std::ostream& os);
+template<class T> mlr::String listString(const mlr::Array<T*>& L);
 template<class T> void listRead(mlr::Array<T*>& L, std::istream& is, const char *delim=NULL);
 template<class T> void listCopy(mlr::Array<T*>& L, const mlr::Array<T*>& M);  //copy a list by calling the copy constructor for each element
 template<class T> void listClone(mlr::Array<T*>& L, const mlr::Array<T*>& M); //copy a list by calling the 'newClone' method of each element (works for virtual types)

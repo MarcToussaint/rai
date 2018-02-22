@@ -1282,8 +1282,6 @@ bool mlr::Mesh::readStlFile(std::istream& is) {
 
 uint& Tni(uint, uint) { static uint dummy; return dummy; } //normal index
 
-uint& Tti(uint, uint) { static uint dummy; return dummy; } //texture index
-
 
 mlr::String str;
 
@@ -1369,8 +1367,9 @@ void mlr::Mesh::readObjFile(std::istream& is) {
   Vn.resize(nN, 3);
   T.resize(nT, 3);
   Tn.resize(nT, 3);
+  if(nTex) Tt.resize(nT, 3);
   //if(nVN) N.resize(nVN, 3);
-  //if(nTex) Tex.tesize(nTex, 2);
+  if(nTex) tex.resize(nTex, 2);
   
   // rewind to beginning of file and read in the data this pass
   is.seekg(0);
@@ -1400,7 +1399,7 @@ void mlr::Mesh::readObjFile(std::istream& is) {
         switch(str.p[1]) {
           case '\0': is >>V(nV, 0) >>V(nV, 1) >> V(nV, 2);  nV++;  break;  //vertex
           case 'n':  is >>Vn(nN, 0) >>Vn(nN, 1) >>Vn(nN, 2);  nN++;  break;  //normal
-          case 't':  /*CHECK(sscanf(strn(is), "%f %f", &Tex(nTex, 0), &Tex(nTex, 1)), "fscan failed");  nTex++;*/  break;  //texcoord
+          case 't':  is >>tex(nTex, 0) >>tex(nTex, 1);   nTex++;  break;  //texcoord
         }
         strn(is);
         break;
@@ -1408,7 +1407,7 @@ void mlr::Mesh::readObjFile(std::istream& is) {
         v = n = t = 0;
         strn(is);
         if(strstr(str.p, "//")) {
-          // v//n
+          // v//vn
           sscanf(str.p, "%d//%d", &v, &n);
           
           T(nT, 0) = v < 0 ? v + nV : v;
@@ -1432,53 +1431,44 @@ void mlr::Mesh::readObjFile(std::istream& is) {
             nT++;
           }
         } else if(sscanf(str.p, "%d/%d/%d", &v, &t, &n) == 3) {
-          // v/t/n
+          // v/vt/vn
           T(nT, 0) = v < 0 ? v + nV : v;
-          Tti(nT, 0) = t < 0 ? t + nTex : t;
+          Tt(nT, 0) = t < 0 ? t + nTex : t;
           Tni(nT, 0) = n < 0 ? n + nN : n;
           CHECK(sscanf(strn(is), "%d/%d/%d", &v, &t, &n), "fscan failed");
           T(nT, 1) = v < 0 ? v + nV : v;
-          Tti(nT, 1) = t < 0 ? t + nTex : t;
+          Tt(nT, 1) = t < 0 ? t + nTex : t;
           Tni(nT, 1) = n < 0 ? n + nN : n;
           CHECK(sscanf(strn(is), "%d/%d/%d", &v, &t, &n), "fscan failed");
           T(nT, 2) = v < 0 ? v + nV : v;
-          Tti(nT, 2) = t < 0 ? t + nTex : t;
+          Tt(nT, 2) = t < 0 ? t + nTex : t;
           Tni(nT, 2) = n < 0 ? n + nN : n;
           //// group->triangles[group->numtriangles++] = numtriangles;
           nT++;
           while(sscanf(strn(is), "%d/%d/%d", &v, &t, &n) > 0) {
-            T(nT, 0) = T(nT-1, 0);
-            Tti(nT, 0) = Tti(nT-1, 0);
-            Tni(nT, 0) = Tni(nT-1, 0);
-            T(nT, 1) = T(nT-1, 2);
-            Tti(nT, 1) = Tti(nT-1, 2);
-            Tni(nT, 1) = Tni(nT-1, 2);
+            T(nT, 0) = T(nT-1, 0);  Tt(nT, 0) = Tt(nT-1, 0);  Tni(nT, 0) = Tni(nT-1, 0);
+            T(nT, 1) = T(nT-1, 2);  Tt(nT, 1) = Tt(nT-1, 2);  Tni(nT, 1) = Tni(nT-1, 2);
             T(nT, 2) = v < 0 ? v + nV : v;
-            Tti(nT, 2) = t < 0 ? t + nTex : t;
+            Tt(nT, 2) = t < 0 ? t + nTex : t;
             Tni(nT, 2) = n < 0 ? n + nN : n;
             //// group->triangles[group->numtriangles++] = numtriangles;
             nT++;
           }
         } else if(sscanf(str.p, "%d/%d", &v, &t) == 2) {
-          // v/t
-          
+          // v/vt
           T(nT, 0) = v < 0 ? v + nV : v;
-          Tti(nT, 0) = t < 0 ? t + nTex : t;
+          Tt(nT, 0) = t < 0 ? t + nTex : t;
           CHECK(sscanf(strn(is), "%d/%d", &v, &t), "fscan failed");
           T(nT, 1) = v < 0 ? v + nV : v;
-          Tti(nT, 1) = t < 0 ? t + nTex : t;
+          Tt(nT, 1) = t < 0 ? t + nTex : t;
           CHECK(sscanf(strn(is), "%d/%d", &v, &t), "fscan failed");
           T(nT, 2) = v < 0 ? v + nV : v;
-          Tti(nT, 2) = t < 0 ? t + nTex : t;
+          Tt(nT, 2) = t < 0 ? t + nTex : t;
           //// group->triangles[group->numtriangles++] = numtriangles;
           nT++;
           while(sscanf(strn(is), "%d/%d", &v, &t) > 0) {
-            T(nT, 0) = T(nT-1, 0);
-            Tti(nT, 0) = Tti(nT-1, 0);
-            T(nT, 1) = T(nT-1, 2);
-            Tti(nT, 1) = Tti(nT-1, 2);
-            T(nT, 2) = v < 0 ? v + nV : v;
-            Tti(nT, 2) = t < 0 ? t + nTex : t;
+            T(nT, 0) = T(nT-1, 0);  Tt(nT, 0) = Tt(nT-1, 0);  T(nT, 1) = T(nT-1, 2);
+            Tt(nT, 1) = Tt(nT-1, 2);  T(nT, 2) = v < 0 ? v + nV : v;  Tt(nT, 2) = t < 0 ? t + nTex : t;
             //// group->triangles[group->numtriangles++] = numtriangles;
             nT++;
           }
@@ -1507,7 +1497,10 @@ void mlr::Mesh::readObjFile(std::istream& is) {
   }
   
   //CONVENTION!: start counting vertex indices from 0!!
-  T -= T.min();
+  T -= 1u;
+  Tt -= 1u;
+  CHECK(T.max() < nV, "");
+  CHECK(Tt.max() < nTex, "");
 }
 
 //===========================================================================
@@ -1602,8 +1595,11 @@ void mlr::Mesh::glDraw(struct OpenGL&) {
   //-- draw a mesh
   if(V.d0!=Vn.d0 || T.d0!=Tn.d0) computeNormals();
 
-#if 1
+#if 0
   if(!C.N || C.nd==1 || C.d0==V.d0){ //we have colors for each vertex -> use index arrays
+
+    if(Vt.N) glBindTexture(GL_TEXTURE_2D, texture);
+
 
     //  glShadeModel(GL_FLAT);
     glShadeModel(GL_SMOOTH);
@@ -1611,10 +1607,13 @@ void mlr::Mesh::glDraw(struct OpenGL&) {
     glEnableClientState(GL_NORMAL_ARRAY);
     if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
     if(C.N==V.N) glDisable(GL_LIGHTING); //because lighting requires ambiance colors to be set..., not just color..
+    if(Vt.N) glEnableClientState(GL_TEXTURE_COORD_ARRAY); else glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
 
     glVertexPointer(3, GL_DOUBLE, 0, V.p);
     glNormalPointer(GL_DOUBLE, 0, Vn.p);
     if(C.N==V.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
+    if(Vt.N) glTexCoordPointer(2, GL_DOUBLE, 0, Vt.p );
 
     glDrawElements(GL_TRIANGLES, T.N, GL_UNSIGNED_INT, T.p);
 
@@ -1647,14 +1646,38 @@ void mlr::Mesh::glDraw(struct OpenGL&) {
 #elif 1 //simple with vertex normals
   uint i, v;
   glShadeModel(GL_SMOOTH);
+  if(Tt.N && texImg.N){
+    glEnable(GL_TEXTURE_2D);
+
+    if(texture<0){
+      GLuint texName;
+      glGenTextures(1, &texName);
+      texture = texName;
+      glBindTexture(GL_TEXTURE_2D, texture);
+
+      if(texImg.d2==4) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texImg.d1, texImg.d0, 0, GL_RGBA, GL_UNSIGNED_BYTE, texImg.p);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }else{
+      glBindTexture(GL_TEXTURE_2D, texture);
+    }
+    glColor3f(1.,1.,1.);
+    glDisable(GL_LIGHTING);
+  }
   glBegin(GL_TRIANGLES);
   for(i=0; i<T.d0; i++) {
-    if(C.d0==T.d0)  glColor(C(i, 0), C(i, 1), C(i, 2),1.);
-    v=T(i, 0);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  glVertex3dv(&V(v, 0));
-    v=T(i, 1);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  glVertex3dv(&V(v, 0));
-    v=T(i, 2);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  glVertex3dv(&V(v, 0));
+    if(C.d0==T.d0)  glColor(C(i, 0), C(i, 1), C(i, 2), 1.);
+    v=T(i, 0);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 0), 0));  glVertex3dv(&V(v, 0));
+    v=T(i, 1);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 1), 0));  glVertex3dv(&V(v, 0));
+    v=T(i, 2);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 2), 0));  glVertex3dv(&V(v, 0));
   }
   glEnd();
+  if(Tt.N){
+    glDisable(GL_TEXTURE_2D);
+    glEnable(GL_LIGHTING);
+  }
 #else //simple with triangle normals
 #if 0 //draw normals
   glColor(.5, 1., .0);

@@ -1191,6 +1191,16 @@ template<class T> T** mlr::Array<T>::getCarray(Array<T*>& Cpointers) const {
   return Cpointers.p;
 }
 
+/** @brief returns an ordinary 2-dimensional C-pointer to the Array content.
+  Requires the Array<T*> as buffer. */
+template<class T> mlr::Array<T*> mlr::Array<T>::getCarray() const {
+  CHECK_EQ(nd,2, "only 2D array gives C-array of type T**");
+  Array<T*> Cpointers(d0);
+  for(uint i=0; i<d0; i++) Cpointers(i)=p+i*d1;
+  return Cpointers;
+}
+
+
 #if 0
 /// returns an ordinary 3-dimensional C-pointer-array
 template<class T> T*** mlr::Array<T>::getPointers(Array<T**>& array3d, Array<T*>& array2d) const {
@@ -3740,6 +3750,12 @@ template<class T> char listWrite(const mlr::Array<T*>& L, std::ostream& os, cons
   for(uint i=0; i<L.N; i++) { if(i) os <<ELEMSEP;  if(L.elem(i)) os <<*L.elem(i); else os <<"<NULL>"; }
   if(delim) os <<delim[1] <<std::flush;
   return '#';
+}
+
+template<class T> mlr::String listString(const mlr::Array<T*>& L){
+  mlr::String str;
+  listWrite(L, str);
+  return str;
 }
 
 template<class T> void listWriteNames(const mlr::Array<T*>& L, std::ostream& os) {

@@ -40,6 +40,11 @@ struct Mesh : GLDrawer {
   uintA T;              ///< triangles (faces, empty -> point cloud)
   arr   Tn;             ///< triangle normals (optional)
 
+  uintA Tt;             ///< triangle texture indices
+  arr tex;              ///< texture coordinates
+  byteA texImg;         ///< texture image
+  int texture=-1;       ///< GL texture name created with glBindTexture
+
   uintAA graph;         ///< for every vertex, the set of neighboring vertices
 
   mlr::Transformation glX; ///< transform (only used for drawing! Otherwise use applyOnPoints)  (optional)

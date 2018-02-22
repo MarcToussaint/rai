@@ -42,7 +42,7 @@ void MNode::resetData(){
 }
 
 MNode::MNode(mlr::KinematicWorld& kin, FOL_World& _fol, uint levels)
-  : parent(NULL), step(0), id(COUNT_node++),
+  : parent(NULL), step(0), time(0.), id(COUNT_node++),
     fol(_fol),
     startKinematics(kin),
     L(levels){
@@ -191,8 +191,10 @@ void MNode::optLevel(uint level, bool collisions){
     komo.setFixEffectiveJoints(-1., -1., 1e2);
     komo.setFixSwitchedObjects(-1., -1., 1e2);
     komo.setSquaredQuaternionNorms();
-    if(collisions) komo.setCollisions(false);
 
+    //getSkeleton({"table", "grasp", "animate"});
+
+    if(collisions) komo.setCollisions(false);
     for(MNode *node:getTreePath()){
       komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
     }
@@ -572,6 +574,56 @@ mlr::String MNode::getTreePathString(char sep) const{
   }
   return str;
 }
+
+Skeleton MNode::getSkeleton(StringA predicateFilter) const{
+  MNodeL path = getTreePath();
+
+  mlr::Array<Graph*> states;
+  arr times;
+  for(MNode *node:getTreePath()){
+    times.append(node->time);
+    states.append(node->folState);
+  }
+
+  //setup a done marker array
+  uint maxLen=0;
+  for(Graph *s:states) if(s->N>maxLen) maxLen = s->N;
+  boolA done(states.N, maxLen);
+  done = false;
+
+  Skeleton skeleton;
+
+  for(uint k=0;k<states.N;k++){
+    Graph& G = *states(k);
+    for(uint i=0;i<G.N;i++){
+      if(!done(k,i)){
+        Node *n = G(i);
+        StringL symbols;
+        for(Node *p:n->parents) symbols.append(&p->keys.last());
+
+        //check predicate filter
+        if(!symbols.N
+           || (predicateFilter.N && !predicateFilter.contains(*symbols.first()))) continue;
+
+        //trace into the future
+        uint k_end=k+1;
+        for(;k_end<states.N;k_end++){
+          Node *persists = getEqualFactInList(n, *states(k_end), true);
+          if(!persists) break;
+          done(k_end, persists->index) = true;
+        }
+        k_end--;
+        skeleton.append({symbols, k, k_end, times(k), times(k_end)});
+      }
+    }
+  }
+
+  for(auto& s:skeleton)
+    cout <<"SKELETON " <<listString(s.symbols) <<" from " <<s.k0 <<':' <<s.phase0 <<" to " <<s.k1 <<':' <<s.phase1 <<endl;
+
+  return skeleton;
+}
+
 
 MNode* MNode::getRoot(){
   MNode* n=this;
