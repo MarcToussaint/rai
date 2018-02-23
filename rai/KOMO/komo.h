@@ -22,6 +22,17 @@
 
 //===========================================================================
 
+struct SkeletonEntry{
+  StringL symbols;
+  int k0,k1;
+  double phase0, phase1;
+  void write(ostream& os) const{ listWrite(symbols,os," ","()"); os <<" from " <<k0 <<':' <<phase0 <<" to " <<k1 <<':' <<phase1; }
+};
+stdOutPipe(SkeletonEntry)
+typedef mlr::Array<SkeletonEntry> Skeleton;
+
+//===========================================================================
+
 struct KOMO{
 
   //-- the problem definition
@@ -142,6 +153,7 @@ struct KOMO{
 
   //-- tasks - logic level (used within LGP)
   void setAbstractTask(double phase, const Graph& facts, int verbose=0);
+  void setSkeleton(const Skeleton& S);
 
   //DEPRECATED
   void setGraspStick(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=1e1, double timeToLift=.15);

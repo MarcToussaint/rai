@@ -149,7 +149,7 @@ MCTS_Environment::TransitionReturn FOL_World::transition(const Handle& action){
 
     if(w==1e10){
       if(verbose>2) cout <<"*** NOTHING TO WAIT FOR!" <<endl;
-      lastStepDuration = 10.;
+      lastStepDuration = 1.;
     }else{
       //-- subtract w from all times and collect all activities with minimal wait time
       NodeL terminatingActivities;

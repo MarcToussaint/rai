@@ -192,12 +192,15 @@ void MNode::optLevel(uint level, bool collisions){
     komo.setFixSwitchedObjects(-1., -1., 1e2);
     komo.setSquaredQuaternionNorms();
 
-    //getSkeleton({"table", "grasp", "animate"});
-
+#if 1
+    Skeleton S = getSkeleton({"touch", "stable"});
+    komo.setSkeleton(S);
+#else
     if(collisions) komo.setCollisions(false);
     for(MNode *node:getTreePath()){
       komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
     }
+#endif
 
     komo.reset();
   } break;
@@ -524,6 +527,7 @@ void MNode::labelInfeasible(){
       //-- create a literal that is equal to the decision literal (tuple) plus an 'INFEASIBLE' prepended
       NodeL symbols = folDecision->parents;
   symbols.prepend( fol.KB.getNode({"INFEASIBLE"}));
+  CHECK(symbols(0), "INFEASIBLE symbol not define in fol");
   //  cout <<"\n *** LABELLING INFEASIBLE: "; listWrite(symbols); cout <<endl;
 
   //-- find the right parent-of-generalization
@@ -613,13 +617,16 @@ Skeleton MNode::getSkeleton(StringA predicateFilter) const{
           done(k_end, persists->index) = true;
         }
         k_end--;
-        skeleton.append({symbols, k, k_end, times(k), times(k_end)});
+        if(k_end==states.N-1){
+          skeleton.append({symbols, (int)k, -1, times(k), -1.});
+        }else{
+          skeleton.append({symbols, (int)k, (int)k_end, times(k), times(k_end)});
+        }
       }
     }
   }
 
-  for(auto& s:skeleton)
-    cout <<"SKELETON " <<listString(s.symbols) <<" from " <<s.k0 <<':' <<s.phase0 <<" to " <<s.k1 <<':' <<s.phase1 <<endl;
+//  for(auto& s:skeleton) cout <<"SKELETON " <<s <<endl;
 
   return skeleton;
 }

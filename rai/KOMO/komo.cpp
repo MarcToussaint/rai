@@ -857,6 +857,22 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
   }
 }
 
+void KOMO::setSkeleton(const Skeleton &S){
+  for(const SkeletonEntry& s:S){
+    cout <<"SKELETON->KOMO " <<s <<endl;
+    if(!s.symbols.N) continue;
+    if(*s.symbols(0)=="touch"){ setTouch(s.phase0, s.phase1, *s.symbols(1), *s.symbols(2)); continue; }
+    if(*s.symbols(0)=="stable"){
+      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_effJoint, JT_quatBall, *s.symbols(1), *s.symbols(2), world));
+      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_insertEffJoint, JT_trans3, NULL, *s.symbols(2), world));
+      //        setKinematicSwitch(phase+time, true, new KinematicSwitch(SW_effJoint, JT_free, *s.symbols(1), *s.symbols(2), world));
+      //      setFlag(s.phase0, new Flag(FL_zeroQVel, world[*s.symbols(2)]->ID, 0, true));
+      continue;
+    }
+    cout <<"UNUSED!" <<endl;
+  }
+}
+
 void KOMO::setAlign(double startTime, double endTime, const char* shape, const arr& whichAxis, const char* shapeRel, const arr& whichAxisRel, ObjectiveType type, const arr& target, double prec){
 #if 0
   String map;
