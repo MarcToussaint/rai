@@ -11,6 +11,7 @@ GTK = 0
 FREEGLUT = 1
 GRAPHVIZ = 1
 GL2PS = 0
+LIBS += -lpng
 
 DEPEND = Core Geo
 
