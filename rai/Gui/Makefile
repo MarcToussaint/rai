@@ -3,7 +3,7 @@ NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 -include $(BASE)/build/config.mk
 
-DEPEND_UBUNTU = freeglut3-dev graphviz-dev #libx11-dev libxi-dev libxmu-dev
+DEPEND_UBUNTU = freeglut3-dev graphviz-dev libpng12-dev #libx11-dev libxi-dev libxmu-dev
 
 GL = 1
 GTK = 0
