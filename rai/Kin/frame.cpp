@@ -697,12 +697,11 @@ void mlr::Shape::write(std::ostream& os) const {
 void mlr::Shape::glDraw(OpenGL& gl) {
   //set name (for OpenGL selection)
   glPushName((frame.ID <<2) | 1);
-  if(frame.K.orsDrawColors && !frame.K.orsDrawIndexColors){
+  if(frame.K.orsDrawColors && !frame.K.orsDrawIndexColors && !gl.drawMode_idColor){
     if(mesh().C.N) glColor(mesh().C); //color[0], color[1], color[2], color[3]*world.orsDrawAlpha);
     else   glColor(.5, .5, .5);
   }
-  if(frame.K.orsDrawIndexColors) glColor3b((frame.ID>>16)&0xff, (frame.ID>>8)&0xff, frame.ID&0xff);
-
+  if(frame.K.orsDrawIndexColors) gl.drawId(frame.ID);
 
   double GLmatrix[16];
   frame.X.getAffineMatrixGL(GLmatrix);

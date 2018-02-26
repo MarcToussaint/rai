@@ -2479,6 +2479,7 @@ void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
 
   //shapes
   if(orsDrawBodies) for(Frame *f: frames) if(f->shape){
+    gl.drawId(f->ID);
     f->shape->glDraw(gl);
     i++;
     if(orsDrawLimit && i>=orsDrawLimit) break;

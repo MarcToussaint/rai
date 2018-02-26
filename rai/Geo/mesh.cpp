@@ -33,6 +33,8 @@ extern "C"{
 
 bool orsDrawWires=false;
 
+bool Geo_mesh_drawColors=true;
+
 //==============================================================================
 //
 // Mesh code
@@ -1552,13 +1554,15 @@ extern void glColor(float r, float g, float b, float alpha);
 
 /// GL routine to draw a mlr::Mesh
 void mlr::Mesh::glDraw(struct OpenGL&) {
-  if(C.nd==1){
-    CHECK(C.N==3 || C.N==4, "need a basic color");
-    GLboolean light=true;
-    glGetBooleanv(GL_LIGHTING, &light); //this doesn't work!!?? even when disabled, returns true; never changes 'light'
-    GLfloat col[4] = { (float)C(0), (float)C(1), (float)C(2), (C.N==3?1.f:(float)C(3)) };
-    glColor4fv(col);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, col);
+  if(Geo_mesh_drawColors){
+    if(C.nd==1){
+      CHECK(C.N==3 || C.N==4, "need a basic color");
+      GLboolean light=true;
+      glGetBooleanv(GL_LIGHTING, &light);
+      GLfloat col[4] = { (float)C(0), (float)C(1), (float)C(2), (C.N==3?1.f:(float)C(3)) };
+      glColor4fv(col);
+      if(light) glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, col);
+    }
   }
 
   if(!T.N){  //-- draw point cloud
@@ -1645,8 +1649,8 @@ void mlr::Mesh::glDraw(struct OpenGL&) {
   }
 #elif 1 //simple with vertex normals
   uint i, v;
-  glShadeModel(GL_SMOOTH);
-  if(Tt.N && texImg.N){
+  if(Tt.N && texImg.N && Geo_mesh_drawColors){
+    glShadeModel(GL_SMOOTH);
     glEnable(GL_TEXTURE_2D);
 
     if(texture<0){
@@ -1663,7 +1667,7 @@ void mlr::Mesh::glDraw(struct OpenGL&) {
     }else{
       glBindTexture(GL_TEXTURE_2D, texture);
     }
-    glColor3f(1.,1.,1.);
+    //    glColor3f(1.,1.,1.);
     glDisable(GL_LIGHTING);
   }
   glBegin(GL_TRIANGLES);
@@ -1674,7 +1678,7 @@ void mlr::Mesh::glDraw(struct OpenGL&) {
     v=T(i, 2);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 2), 0));  glVertex3dv(&V(v, 0));
   }
   glEnd();
-  if(Tt.N){
+  if(Tt.N && texImg.N &&  Geo_mesh_drawColors){
     glDisable(GL_TEXTURE_2D);
     glEnable(GL_LIGHTING);
   }

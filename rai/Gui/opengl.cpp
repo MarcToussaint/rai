@@ -299,6 +299,21 @@ void glColor(const arr& col){
   if(col.N==4) glColor(col.p[0], col.p[1], col.p[2], col.p[3]);
 }
 
+void id2color(byte rgb[3], uint id){
+  rgb[0] = ((id>> 6)&0x3f) | ((id&1)<<7) | ((id& 8)<<4);
+  rgb[1] = ((id>>12)&0x3f) | ((id&2)<<6) | ((id&16)<<3);
+  rgb[2] = ((id>>18)&0x3f) | ((id&4)<<5) | ((id&32)<<2);
+}
+
+void OpenGL::drawId(uint id){
+  if(drawMode_idColor){
+    byte rgb[3];
+    glDisable(GL_LIGHTING);
+    id2color(rgb, id);
+    glColor3ubv(rgb);
+  }
+}
+
 /* // shadows do not work with a light source;
    // thus, we need to leave this out. 4. Mar 06 (hh)
 void glShadowTransform()
