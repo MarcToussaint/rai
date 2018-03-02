@@ -169,6 +169,7 @@ struct OpenGL {
   uint rboDepth;
   Signaler isUpdating;
   Signaler watching;
+  bool drawMode_idColor=false;
 
   /// @name constructors & destructors
   OpenGL(const char* title="mlr::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
@@ -219,6 +220,8 @@ struct OpenGL {
   void displayGrey(const arr &x, bool wait, float backgroundZoom);
   void displayRedBlue(const arr &x, bool wait, float backgroundZoom);
   
+  void drawId(uint id);
+
 public: //driver dependent methods
   void openWindow();
   void closeWindow();
