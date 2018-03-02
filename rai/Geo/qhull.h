@@ -21,17 +21,19 @@ void plotQhullState(uint D);
 extern int QHULL_DEBUG_LEVEL;
 const char* qhullVersion();
 void qHullSave();
+void qhull_free();
 
 double distanceToConvexHull(const arr &X,        //points
                             const arr &y,        //query point
-                            arr *projectedPoint, //return query point projected on closest facet
-                            uintA *faceVertices, //return indices of vertices of closest facet
-                            bool freeqhull);     //free allocated qhull engine after request [true]
+                            arr& distances=NoArr,
+                            arr& projectedPoints=NoArr, //return query point projected on closest facet
+                            uintA *faceVertices=NULL, //return indices of vertices of closest facet
+                            bool freeqhull=true);     //free allocated qhull engine after request [true]
 
 double distanceToConvexHullGradient(arr& dDdX,       //gradient (or same dim as X)
                                     const arr &X,    //points
                                     const arr &y,    //query point
-                                    bool freeqhull); //free allocated qhull engine after request [true]
+                                    bool freeqhull=true); //free allocated qhull engine after request [true]
 
 double forceClosure(const arr& X,  //contact points (size Nx3)
                     const arr& Xn, //contact normals (size Nx3)
@@ -44,3 +46,7 @@ double forceClosure(const arr& X,  //contact points (size Nx3)
 arr getHull(const arr& V, uintA& T=NoUintA);
 
 void getDelaunayEdges(uintA& E, const arr& V);
+
+void pullPointsIntoHull(arr& P, const arr& X);
+
+arr convconv_intersect(const arr& A, const arr& B);

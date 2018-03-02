@@ -2,7 +2,7 @@ BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
-DEPEND_UBUNTU = libann.dev
+DEPEND_UBUNTU = libann-dev
 
 ANN = 1
 LAPACK = 1

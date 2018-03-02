@@ -25,6 +25,7 @@
 #ifdef MLR_QHULL
 
 #include "mesh.h"
+#include "qhull.h"
 
 extern "C" {
   #include <qhull/qhull_a.h>
@@ -89,7 +90,17 @@ void getQhullState(uint D, arr& points, arr& vertices, arr& lines) {
 
 //===========================================================================
 
-double distanceToConvexHull(const arr &X, const arr &y, arr *projectedPoint, uintA *faceVertices, bool freeqhull) {
+void qhull_free(){
+  qh_freeqhull(!qh_ALL);
+  int curlong, totlong;
+  qh_memfreeshort(&curlong, &totlong);
+  if(curlong || totlong)
+    MLR_MSG("qhull internal warning (main): did not free " <<totlong <<" bytes of long memory (" <<curlong <<" pieces)\n");
+}
+
+//===========================================================================
+
+double distanceToConvexHull(const arr &X, const arr &y, arr& distances, arr &projectedPoints, uintA *faceVertices, bool freeqhull) {
   auto lock = qhullMutex();
 
   int exitcode;
@@ -98,42 +109,53 @@ double distanceToConvexHull(const arr &X, const arr &y, arr *projectedPoint, uin
   exitcode = qh_new_qhull(X.d1, X.d0, X.p, false, cmd, NULL, stderr);
   if(exitcode) HALT("qh_new_qhull error - exitcode " <<exitcode);
   
-  uint i;
   facetT *bestfacet;
   double bestdist;
   boolT isoutside;
   int totpart;
-  
-  bestfacet = qh_findbest(y.p, qh facet_list,
-                          !qh_ALL, !qh_ISnewfacets, !qh_ALL,
-                          &bestdist, &isoutside, &totpart);
-                          
-  /*alternatives??
+
+  arr Y;
+  Y.referTo(y);
+  if(y.nd==1) Y.reshape(1,Y.N);
+  if(&distances) distances.clear();
+  if(&projectedPoints) projectedPoints.clear();
+
+  for(uint i=0;i<Y.d0;i++){
+    bestfacet = qh_findbest(Y[i].p, qh facet_list,
+                            !qh_ALL, !qh_ISnewfacets, !qh_ALL,
+                            &bestdist, &isoutside, &totpart);
+
+    /*alternatives??
   //qh_findbestfacet(origin0, qh_ALL, &bestdist, &isoutside);
   
   //bestfacet= qh_findbest (origin0, qh facet_list,
    //  qh_ALL, !qh_ISnewfacets, qh_ALL , // qh_NOupper
   //        &bestdist, &isoutside, &totpart);
   */
-  
-  CHECK(length(y)>1e-10 || fabs(bestdist-bestfacet->offset)<1e-10, "inconsistent!");
-  CHECK((isoutside && bestdist>-1e-10) || (!isoutside && bestdist<1e-10), "");
-  
-  if(projectedPoint) {
-    *projectedPoint=y;
-    double *normal=bestfacet->normal;
-    for(i=X.d1; i--;)(*projectedPoint)(i) -= bestdist * normal[i];
-  }
-  
-  if(faceVertices) {
-    faceVertices->clear();
-    vertexT *vertex, **vertexp;
-    FOREACHvertex_(bestfacet->vertices) {
-      i = (vertex->point - (qh first_point))/X.d1;
-      faceVertices->append(i);
+
+    CHECK(length(y)>1e-10 || fabs(bestdist-bestfacet->offset)<1e-10, "inconsistent!");
+    CHECK((isoutside && bestdist>-1e-10) || (!isoutside && bestdist<1e-10), "");
+
+    if(&distances){
+      distances.append(bestdist);
     }
-  }
-  
+
+    if(&projectedPoints) {
+      arr p = Y[i];
+      arr n(bestfacet->normal, p.N);
+      projectedPoints.append( p - bestdist*n );
+      if(y.nd==2) projectedPoints.reshape(i+1,X.d1);
+    }
+
+    if(faceVertices) {
+      faceVertices->clear();
+      vertexT *vertex, **vertexp;
+      FOREACHvertex_(bestfacet->vertices) {
+        i = (vertex->point - (qh first_point))/X.d1;
+        faceVertices->append(i);
+      }
+    }
+
 //  if(QHULL_DEBUG_LEVEL>1) {
 //    arr line;
 //    NIY;
@@ -152,14 +174,9 @@ double distanceToConvexHull(const arr &X, const arr &y, arr *projectedPoint, uin
 //    //cout <<"**best facet: " <<bestfacet->id <<endl;
 //    //FOREACHvertex_(facet->vertices) cout <<vertex->id <<' ';
 //  }
-  
-  if(freeqhull) {
-    qh_freeqhull(!qh_ALL);
-    int curlong, totlong;
-    qh_memfreeshort(&curlong, &totlong);
-    if(curlong || totlong)
-      MLR_MSG("qhull internal warning (main): did not free " <<totlong <<" bytes of long memory (" <<curlong <<" pieces)\n");
   }
+  
+  if(freeqhull) qhull_free();
   
   return bestdist;
 }
@@ -173,7 +190,7 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
   uintA vertices;
   double d;
   
-  d=distanceToConvexHull(X, y, &p, &vertices, freeqhull);
+  d=distanceToConvexHull(X, y, NoArr, p, &vertices, freeqhull);
   
   dDdX.resizeAs(X);
   dDdX.setZero();
@@ -298,7 +315,7 @@ double forceClosure(const arr& C, const arr& Cn, const mlr::Vector& center,
   origin.setZero();
   if(!dFdC) {
     //note: distance to hull is negative if inside the hull
-    d = -distanceToConvexHull(X, origin, 0, 0, true);
+    d = -distanceToConvexHull(X, origin, NoArr, NoArr, NULL, true);
   } else {
     arr dFdX;
     d = -distanceToConvexHullGradient(dFdX, X, origin, true);
@@ -362,6 +379,8 @@ arr getHull(const arr& V, uintA& T) {
     
   return Vnew;
 }
+
+//===========================================================================
 
 void getDelaunayEdges(uintA& E, const arr& V) {
   auto lock = qhullMutex();
@@ -475,3 +494,188 @@ void getDelaunayEdges(uintA& E, const arr& V) { NICO }
 /** @} */
 
 
+
+
+
+
+typedef struct { double x, y; } vec_t;
+typedef vec_t *vec;
+
+inline double dot(vec a, vec b){
+  return a->x * b->x + a->y * b->y;
+}
+
+inline double cross(vec a, vec b){
+  return a->x * b->y - a->y * b->x;
+}
+
+inline vec vsub(vec a, vec b, vec res){
+  res->x = a->x - b->x;
+  res->y = a->y - b->y;
+  return res;
+}
+
+/* tells if vec c lies on the left side of directed edge a->b
+ * 1 if left, -1 if right, 0 if colinear
+ */
+int left_of(vec a, vec b, vec c){
+  vec_t tmp1, tmp2;
+  double x;
+  vsub(b, a, &tmp1);
+  vsub(c, b, &tmp2);
+  x = cross(&tmp1, &tmp2);
+  return x < 0 ? -1 : x > 0;
+}
+
+int line_sect(vec x0, vec x1, vec y0, vec y1, vec res){
+  vec_t dx, dy, d;
+  vsub(x1, x0, &dx);
+  vsub(y1, y0, &dy);
+  vsub(x0, y0, &d);
+  /* x0 + a dx = y0 + b dy ->
+       x0 X dx = y0 X dx + b dy X dx ->
+       b = (x0 - y0) X dx / (dy X dx) */
+  double dyx = cross(&dy, &dx);
+  if (!dyx) return 0;
+  dyx = cross(&d, &dx) / dyx;
+  if (dyx <= 0 || dyx >= 1) return 0;
+
+  res->x = y0->x + dyx * dy.x;
+  res->y = y0->y + dyx * dy.y;
+  return 1;
+}
+
+/* === polygon stuff === */
+typedef struct { int len, alloc; vec v; } poly_t;
+typedef poly_t *poly;
+
+poly poly_new(){
+  return (poly)calloc(1, sizeof(poly_t));
+}
+
+void poly_free(poly p){
+  free(p->v);
+  free(p);
+}
+
+void poly_append(poly p, vec v){
+  if (p->len >= p->alloc) {
+    p->alloc *= 2;
+    if (!p->alloc) p->alloc = 4;
+    p->v = (vec)realloc(p->v, sizeof(vec_t) * p->alloc);
+  }
+  p->v[p->len++] = *v;
+}
+
+/* this works only if all of the following are true:
+ *   1. poly has no colinear edges;
+ *   2. poly has no duplicate vertices;
+ *   3. poly has at least three vertices;
+ *   4. poly is convex (implying 3).
+*/
+int poly_winding(poly p){
+  return left_of(p->v, p->v + 1, p->v + 2);
+}
+
+void poly_edge_clip(poly sub, vec x0, vec x1, int left, poly res){
+  int i, side0, side1;
+  vec_t tmp;
+  vec v0 = sub->v + sub->len - 1, v1;
+  res->len = 0;
+
+  side0 = left_of(x0, x1, v0);
+  if (side0 != -left) poly_append(res, v0);
+
+  for (i = 0; i < sub->len; i++) {
+    v1 = sub->v + i;
+    side1 = left_of(x0, x1, v1);
+    if (side0 + side1 == 0 && side0)
+      /* last point and current straddle the edge */
+      if (line_sect(x0, x1, v0, v1, &tmp))
+        poly_append(res, &tmp);
+    if (i == sub->len - 1) break;
+    if (side1 != -left) poly_append(res, v1);
+    v0 = v1;
+    side0 = side1;
+  }
+}
+
+poly poly_clip(poly sub, poly clip){
+  int i;
+  poly p1 = poly_new(), p2 = poly_new(), tmp;
+
+  int dir = poly_winding(clip);
+  poly_edge_clip(sub, clip->v + clip->len - 1, clip->v, dir, p2);
+  for (i = 0; i < clip->len - 1; i++) {
+    tmp = p2; p2 = p1; p1 = tmp;
+    if(p1->len == 0) {
+      p2->len = 0;
+      break;
+    }
+    poly_edge_clip(p1, clip->v + i, clip->v + i + 1, dir, p2);
+  }
+
+  poly_free(p1);
+  return p2;
+}
+
+void sort2Dpoints(arr& A){
+  arr m = mean(A);
+  arr d(A.d0);
+  for(uint i=0;i<A.d0;i++){
+    arr a = A[i]-m;
+    d(i) = atan2(a(1), a(0));
+  }
+  uintA perm;
+  perm.setStraightPerm(A.d0);
+  perm.sort([&d](const uint&i, const uint&j){ return d(i)<d(j); } );
+  A.permuteRows(perm);
+}
+
+#include <Plot/plot.h>
+
+arr convconv_intersect(const arr &A, const arr &B){
+  if(A.d0==1) return A;
+  if(B.d0==1) return B;
+  if(A.d0==2) return A;
+  if(B.d0==2) return B;
+
+  arr AA = getHull(A); //rndGauss(AA, 1e-4, true);
+  arr BB = getHull(B); //rndGauss(BB, 1e-4, true);
+  sort2Dpoints(AA);
+  sort2Dpoints(BB);
+
+  poly_t Pa = {(int)AA.d0, 0, (vec_t*)AA.p};
+  poly_t Pb = {(int)BB.d0, 0, (vec_t*)BB.p};
+
+  poly res;
+  if(AA.d0<BB.d0)
+    res = poly_clip(&Pa, &Pb);
+  else
+    res = poly_clip(&Pb, &Pa);
+
+  arr C;
+  C.setCarray((double*)res->v, 2*res->len);
+  C.reshape(C.N/2,2);
+
+//  plotClear();
+//  plotLine(C+.002, true); cout <<"#C=" <<C.d0 <<endl;
+//  plotLine(C-.002, true);
+//  plotLine(AA, true);
+//  plotLine(BB, true);
+//  plotOpengl();
+//  cout <<"\n====\n" <<AA <<"\n----\n" <<B <<"\n----\n" <<C<<"\n====\n" <<endl;
+//  mlr::wait();
+
+  poly_free(res);
+
+  return C;
+}
+
+void pullPointsIntoHull(arr &P, const arr &X){
+  arr pulled, D;
+  distanceToConvexHull(X, P, D, pulled);
+  CHECK_EQ(D.N, P.d0, "");
+  CHECK_EQ(D.N, pulled.d0, "");
+  for(uint i=0;i<D.N;i++) if(D(i)>0.) P[i]()=pulled[i];
+}

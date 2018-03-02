@@ -1,14 +1,34 @@
 #include "manipulationTree.h"
+//#include <Geo/geoms.h>
+#include <Core/thread.h>
 
-typedef ManipulationTree_Node MNode;
-typedef ManipulationTree_NodeL MNodeL;
 struct OrsPathViewer;
+typedef mlr::Array<mlr::Transformation> TransformationA;
+
+void initFolStateFromKin(FOL_World& L, const mlr::KinematicWorld& K);
+
+struct OptLGP_SolutionData : GLDrawer{
+  MNode *node; ///< contains costs, constraints, and solutions for each level
+  mlr::String decisions;
+
+  uintA geomIDs; ///< for display
+  mlr::Array<TransformationA> paths; ///< for display
+  uint displayStep=0;
+
+  OptLGP_SolutionData(MNode *n);
+
+  void write(ostream &os) const;
+  void glDraw(struct OpenGL&gl);
+};
 
 
-struct OptLGP{
+struct OptLGP : GLDrawer{
   int verbose;
   uint numSteps;
   ofstream fil;
+  bool displayTree=true;
+  struct DisplayThread *dth=NULL;
+  mlr::String dataPath;
 
   MNode *root, *displayFocus;
 
@@ -24,7 +44,9 @@ struct OptLGP{
   MNodeL fringe_pose2; //list of nodes towards a terminal -> scheduled for pose testing
   MNodeL fringe_seq;   //list of terminal nodes that have been pose tested
   MNodeL fringe_path;  //list of terminal nodes that have been seq tested
-  MNodeL fringe_done;  //list of terminal nodes that have been path tested
+  MNodeL fringe_solved;  //list of terminal nodes that have been path tested
+
+  Var<mlr::Array<OptLGP_SolutionData*>> solutions;
 
   //high-level
   OptLGP(mlr::KinematicWorld& kin, FOL_World& fol);
@@ -33,21 +55,24 @@ struct OptLGP{
   FOL_World& fol(){ return root->fol; }
   const mlr::KinematicWorld& kin(){ return root->startKinematics; }
 
-
-  //-- for methods called in the run loop
+  //-- methods called in the run loop
 private:
   MNode* getBest(MNodeL& fringe, uint level);
   MNode* popBest(MNodeL& fringe, uint level);
-  MNode* getBest(){ return getBest(fringe_done, 3); }
+  MNode* getBest(){ return getBest(fringe_solved, 3); }
   MNode *expandBest(int stopOnLevel=-1);
   void optBestOnLevel(int level, MNodeL& fringe, MNodeL* addIfTerminal, MNodeL* addChildren);
   void optFirstOnLevel(int level, MNodeL& fringe, MNodeL* addIfTerminal);
   void clearFromInfeasibles(MNodeL& fringe);
+
 public:
   void run(uint steps=10000);
   void init();
   void step();
   void buildTree(uint depth);
+  void getSymbolicSolutions(uint depth);
+  void optFixedSequence(const mlr::String& seq, int specificLevel=-1, bool collisions=false);
+  void optMultiple(const StringA& seqs);
 
   // output
   uint numFoundSolutions();
@@ -55,7 +80,9 @@ public:
   void reportEffectiveJoints();
   void initDisplay();
   void updateDisplay();
-  void renderToVideo(uint level=3, const char* filePrefix="z.vid/z.path.");
+  void renderToVideo(uint level=3, const char* filePrefix="vid/z.");
+  void writeNodeList(ostream& os=cout);
+  void glDraw(struct OpenGL&gl);
 
   //-- kind of a gui:
   void printChoices();
@@ -64,6 +91,4 @@ public:
   bool execRandomChoice();
 
   void player(StringA cmds={});
-
-  void optFixedSequence(const mlr::String& seq, bool fullPathOnly=false, bool collisions=false);
 };

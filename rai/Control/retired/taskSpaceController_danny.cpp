@@ -206,7 +206,7 @@ void TaskSpaceController::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, 
   if(this->constrainedTaskLaws.N > 0) {
     CHECK(this->constrainedTaskLaws.N == 1, "Multiple force laws not allowed at the moment");
     for(ConstrainedTaskLaw* law : this->constrainedTaskLaws) {
-      TaskMap_Default *m = dynamic_cast<TaskMap_Default*>(law->map);
+      TM_Default *m = dynamic_cast<TM_Default*>(law->map);
       mlr::Body* body = this->world->shapes(m->i)->body;
       mlr::Vector vec = this->world->shapes(m->i)->rel.pos;
       mlr::Shape* lFtSensor = this->world->getShapeByName("l_ft_sensor");

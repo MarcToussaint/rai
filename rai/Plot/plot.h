@@ -64,7 +64,7 @@ void plotPoint(double x, double y, double z);
 void plotPoint(const arr& x);
 void plotPoints(const arr& X);
 void plotClearPoints();
-void plotLine(const arr& X);
+void plotLine(const arr& X, bool closed=false);
 void plotPoints(const arr& X, const arr& Y);
 void writeGnuplotFiles();
 void plotCovariance(const arr& mean, const arr& cov);

@@ -37,9 +37,9 @@ struct PclCloudView:Primitive{
 };
 
 struct ArrCloudView:Primitive{
-  Access<arr>& pts;
-  Access<arr>& cols;
-  ArrCloudView(Access<arr>& _pts,  Access<arr>& _cols):pts(_pts), cols(_cols){}
+  Var<arr>& pts;
+  Var<arr>& cols;
+  ArrCloudView(Var<arr>& _pts,  Var<arr>& _cols):pts(_pts), cols(_cols){}
   void glDraw();
 };
 

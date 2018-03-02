@@ -46,7 +46,7 @@ extern ObjectiveTypeA& NoTermTypeA;
 struct ConstrainedProblem{
   //TODO: add getStructure -> dim_x, tt
   virtual ~ConstrainedProblem() = default;
-  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x) = 0;
+  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x, arr& lambda) = 0;
 };
 
 

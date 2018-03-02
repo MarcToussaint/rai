@@ -16,18 +16,18 @@
 
 #include "taskMap.h"
 
-#include "taskMap_qItself.h"
-#include "taskMap_GJK.h"
-#include "taskMap_PairCollision.h"
-#include "taskMap_transition.h"
-#include "taskMap_default.h"
-#include "taskMap_qLimits.h"
-#include "taskMap_pushConsistent.h"
-#include "taskMap_FixSwitchedObjects.h"
-#include "taskMap_AboveBox.h"
-#include "taskMap_AlignStacking.h"
-#include "taskMap_linTrans.h"
-#include "taskMap_proxy.h"
+#include "TM_qItself.h"
+#include "TM_GJK.h"
+#include "TM_PairCollision.h"
+#include "TM_transition.h"
+#include "TM_default.h"
+#include "TM_qLimits.h"
+#include "TM_pushConsistent.h"
+#include "TM_FixSwitchedObjects.h"
+#include "TM_AboveBox.h"
+#include "TM_AlignStacking.h"
+#include "TM_linTrans.h"
+#include "TM_proxy.h"
 #include "TM_Align.h"
 
 //===========================================================================
@@ -91,7 +91,7 @@ struct PointEqualityConstraint:TaskMap {
   PointEqualityConstraint(const mlr::KinematicWorld &G,
                           const char* iShapeName=NULL, const mlr::Vector& _ivec=NoVector,
                           const char* jShapeName=NULL, const mlr::Vector& _jvec=NoVector){
-    TaskMap_Default dummy(posTMT, G, iShapeName, _ivec, jShapeName, _jvec); //is deleted in a sec..
+    TM_Default dummy(TMT_pos, G, iShapeName, _ivec, jShapeName, _jvec); //is deleted in a sec..
     i=dummy.i;
     j=dummy.j;
     ivec=dummy.ivec;

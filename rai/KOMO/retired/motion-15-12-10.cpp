@@ -97,7 +97,7 @@ TaskMap *newTaskMap(const Node* specs, const mlr::KinematicWorld& world){
   const Graph& params = specs->graph();
 //  mlr::String type = specs.get<mlr::String>("type", "pos");
   if(type=="wheels"){
-    map = new TaskMap_qItself(world, "worldTranslationRotation");
+    map = new TM_qItself(world, "worldTranslationRotation");
   }else if(type=="collisionIneq"){
     map = new CollisionConstraint( (params?params->get<double>("margin", 0.1):0.1) );
   }else if(type=="collisionPairs"){
@@ -107,7 +107,7 @@ TaskMap *newTaskMap(const Node* specs, const mlr::KinematicWorld& world){
       CHECK(s,"No Shape '" <<specs->parents(i)->keys.last() <<"'");
       shapes.append(s->index);
     }
-    map = new ProxyConstraint(pairsPTMT, shapes, (params?params->get<double>("margin", 0.1):0.1));
+    map = new ProxyConstraint(TMT_pairsP, shapes, (params?params->get<double>("margin", 0.1):0.1));
   }else if(type=="collisionExceptPairs"){
     uintA shapes;
     for(uint i=2;i<specs->parents.N;i++){
@@ -115,17 +115,17 @@ TaskMap *newTaskMap(const Node* specs, const mlr::KinematicWorld& world){
       CHECK(s,"No Shape '" <<specs->parents(i)->keys.last() <<"'");
       shapes.append(s->index);
     }
-    map = new ProxyConstraint(allExceptPairsPTMT, shapes, (params?params->get<double>("margin", 0.1):0.1));
+    map = new ProxyConstraint(TMT_allExceptPairsP, shapes, (params?params->get<double>("margin", 0.1):0.1));
   }else if(type=="proxy"){
-    map = new TaskMap_Proxy(allPTMT, {0u}, (params?params->get<double>("margin", 0.1):0.1) );
+    map = new TM_Proxy(TMT_allP, {0u}, (params?params->get<double>("margin", 0.1):0.1) );
   }else if(type=="qItself"){
-    if(ref1) map = new TaskMap_qItself(world, ref1);
-    else if(params && params->getNode("Hmetric")) map = new TaskMap_qItself(params->getNode("Hmetric")->get<double>()*world.getHmetric()); //world.naturalQmetric()); //
-    else map = new TaskMap_qItself();
+    if(ref1) map = new TM_qItself(world, ref1);
+    else if(params && params->getNode("Hmetric")) map = new TM_qItself(params->getNode("Hmetric")->get<double>()*world.getHmetric()); //world.naturalQmetric()); //
+    else map = new TM_qItself();
   }else if(type=="GJK"){
-    map = new TaskMap_GJK(world, ref1, ref2, true);
+    map = new TM_GJK(world, ref1, ref2, true);
   }else{
-    map = new TaskMap_Default(specs, world);
+    map = new TM_Default(specs, world);
   }
   map->type=termType;
 
@@ -172,17 +172,17 @@ mlr::KinematicSwitch* newSwitch(const Node *specs, const mlr::KinematicWorld& wo
 
   //-- create switch
   mlr::KinematicSwitch *sw= new mlr::KinematicSwitch();
-  if(type=="addRigid"){ sw->symbol=mlr::KinematicSwitch::addJointZero; sw->jointType=mlr::JT_rigid; }
-//  else if(type=="addRigidRel"){ sw->symbol = mlr::KinematicSwitch::addJointAtTo; sw->jointType=mlr::JT_rigid; }
-  else if(type=="rigid"){ sw->symbol = mlr::KinematicSwitch::addJointAtTo; sw->jointType=mlr::JT_rigid; }
-  else if(type=="rigidZero"){ sw->symbol = mlr::KinematicSwitch::addJointZero; sw->jointType=mlr::JT_rigid; }
-  else if(type=="transXYPhi"){ sw->symbol = mlr::KinematicSwitch::addJointAtFrom; sw->jointType=mlr::JT_transXYPhi; }
-  else if(type=="free"){ sw->symbol = mlr::KinematicSwitch::addJointAtTo; sw->jointType=mlr::JT_free; }
-  else if(type=="delete"){ sw->symbol = mlr::KinematicSwitch::deleteJoint; }
+  if(type=="addRigid"){ sw->symbol=mlr::SW_effJoint; sw->jointType=mlr::JT_rigid; }
+//  else if(type=="addRigidRel"){ sw->symbol = mlr::addJointAtTo; sw->jointType=mlr::JT_rigid; }
+  else if(type=="rigid"){ sw->symbol = mlr::addJointAtTo; sw->jointType=mlr::JT_rigid; }
+  else if(type=="rigidZero"){ sw->symbol = mlr::SW_effJoint; sw->jointType=mlr::JT_rigid; }
+  else if(type=="transXYPhi"){ sw->symbol = mlr::addJointAtFrom; sw->jointType=mlr::JT_transXYPhi; }
+  else if(type=="free"){ sw->symbol = mlr::addJointAtTo; sw->jointType=mlr::JT_free; }
+  else if(type=="delete"){ sw->symbol = mlr::deleteJoint; }
   else HALT("unknown type: "<< type);
   sw->fromId = world.getShapeByName(ref1)->index;
   if(!ref2){
-    CHECK_EQ(sw->symbol, mlr::KinematicSwitch::deleteJoint, "");
+    CHECK_EQ(sw->symbol, mlr::deleteJoint, "");
     mlr::Body *b = world.shapes(sw->fromId)->body;
     if(b->inLinks.N==1){
 //      CHECK_EQ(b->outLinks.N, 0, "");
@@ -285,7 +285,7 @@ void KOMO::parseTasks(const Graph& specs, int Tinterval, uint Tzero){
 
   //-- add TransitionTask for InvKinematics
   if(!T){
-    TaskMap *map = new TaskMap_qItself();
+    TaskMap *map = new TM_qItself();
     map->order = 0;
     map->type=OT_sumOfSqr;
     Task *task = new Task(map);

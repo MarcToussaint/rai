@@ -34,7 +34,7 @@ Filter::~Filter(){
 }
 
 void Filter::open(){
-  Access<mlr::KinematicWorld> modelWorld(this, "modelWorld");
+  Var<mlr::KinematicWorld> modelWorld(this, "modelWorld");
   modelWorld.readAccess();
   for(mlr::Frame *b:modelWorld().frames){
     if(b->ats["percept"]){
@@ -193,11 +193,11 @@ void Filter::step(){
       mlr::Frame *b = modelWorld->frames(p->bodyId);
       CtrlTask *t;
 
-      t = new CtrlTask(STRING("syncPos_" <<b->name), new TaskMap_Default(posTMT, b->ID));
+      t = new CtrlTask(STRING("syncPos_" <<b->name), new TM_Default(TMT_pos, b->ID));
       t->ref = new MotionProfile_Const( p->transform.pos.getArr() );
       taskController.tasks.append(t);
 
-      t = new CtrlTask(STRING("syncQuat_" <<b->name), new TaskMap_Default(quatTMT, b->ID));
+      t = new CtrlTask(STRING("syncQuat_" <<b->name), new TM_Default(TMT_quat, b->ID));
       t->ref = new MotionProfile_Const( p->transform.rot.getArr4d(), true );
       taskController.tasks.append(t);
     }

@@ -406,6 +406,101 @@ mlr::String CycleTimer::report(){
 
 //===========================================================================
 //
+// MiniThread
+//
+
+void* MiniThread_staticMain(void *_self) {
+  MiniThread *th=(MiniThread*)_self;
+  th->pthreadMain();
+  return NULL;
+}
+
+MiniThread::MiniThread(const char* _name) : Signaler(tsIsClosed), name(_name) {
+
+  registryNode = registry()->newNode<MiniThread*>({"MiniThread", name}, {}, this);
+  if(name.N>14) name.resize(14, true);
+
+  statusLock();
+
+  int rc;
+  pthread_attr_t atts;
+  rc = pthread_attr_init(&atts); if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  rc = pthread_create(&thread, &atts, MiniThread_staticMain, this);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  if(name) pthread_setname_np(thread, name);
+
+  status=0;
+  statusUnlock();
+}
+
+MiniThread::~MiniThread() {
+  if(thread)
+      HALT("Call 'threadClose()' in the destructor of the DERIVED class! \
+           That's because the 'virtual table is destroyed' before calling the destructor ~Thread (google 'call virtual function\
+           in destructor') but now the destructor has to call 'threadClose' which triggers a Thread::close(), which is\
+           pure virtual while you're trying to call ~Thread.")
+  registry()->delNode(registryNode);
+}
+
+void MiniThread::threadClose(double timeoutForce) {
+  stopListening();
+  setStatus(tsToClose);
+  if(!thread){ setStatus(tsIsClosed); return; }
+  for(;;){
+    bool ended = waitForStatusEq(tsIsClosed, false, .2);
+    if(ended) break;
+    LOG(-1) <<"timeout to end Thread::main of '" <<name <<"'";
+//    if(timeoutForce>0.){
+//      ended = waitForStatusEq(tsEndOfMain, false, timeoutForce);
+//      if(!ended){
+//        threadCancel();
+//        return;
+//      }
+//    }
+  }
+  int rc;
+  rc = pthread_join(thread, NULL);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  thread=0;
+}
+
+void MiniThread::threadCancel() {
+  stopListening();
+  setStatus(tsToClose);
+  if(!thread){ setStatus(tsIsClosed); return; }
+  int rc;
+  rc = pthread_cancel(thread);         if(rc) HALT("pthread_cancel failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  rc = pthread_join(thread, NULL);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  thread=0;
+}
+
+
+void MiniThread::pthreadMain() {
+  tid = syscall(SYS_gettid);
+//  if(verbose>0) cout <<"*** Entering Thread '" <<name <<"'" <<endl;
+  //http://linux.die.net/man/3/setpriority
+  //if(Thread::threadPriority) setRRscheduling(Thread::threadPriority);
+  //if(Thread::threadPriority) setNice(Thread::threadPriority);
+
+  setStatus(1);
+
+  try{
+    main();
+  } catch(const std::exception& ex) {
+    setStatus(tsFAILURE);
+    cerr <<"*** main() of Thread'" <<name <<"'failed: " <<ex.what() <<" -- closing it again" <<endl;
+  } catch(const char* ex) {
+    setStatus(tsFAILURE);
+    cerr <<"*** main() of Thread'" <<name <<"'failed: " <<ex <<" -- closing it again" <<endl;
+  } catch(...) {
+    setStatus(tsFAILURE);
+    cerr <<"*** main() of Thread '" <<name <<"' failed! -- closing it again";
+  }
+
+  setStatus(tsIsClosed);
+}
+
+
+//=============================================
+//
 // Thread
 //
 
@@ -600,7 +695,7 @@ void Thread::main() {
       open(); //virtual open routine
     } catch(const std::exception& ex) {
       setStatus(tsFAILURE);
-      cerr << "*** open() of Thread'" << name << "'failed: " << ex.what() << " -- closing it again" << endl;
+      cerr <<"*** open() of Thread'" <<name <<"'failed: " <<ex.what() <<" -- closing it again" <<endl;
     } catch(...) {
       setStatus(tsFAILURE);
       cerr <<"*** open() of Thread '" <<name <<"' failed! -- closing it again";
@@ -818,9 +913,9 @@ TStream::Access::~Access() {
   char *head;
   tstream->lock.readLock();
   if(tstream->get_private(obj, &head, false))
-    tstream->out << head;
+    tstream->out <<head;
   tstream->lock.unlock();
-  tstream->out << stream.str();
+  tstream->out <<stream.str();
   tstream->mutex.unlock();
 }
 

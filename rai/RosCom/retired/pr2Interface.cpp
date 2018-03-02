@@ -35,7 +35,7 @@ void PR2Interface::step() {
   this->modelWorld->watch(false);
 
   if(this->controller->taskSpaceAccLaws.N < 1) {
-    TaskMap* qItselfTask = new TaskMap_qItself();
+    TaskMap* qItselfTask = new TM_qItself();
     LinTaskSpaceAccLaw* qItselfLaw = new LinTaskSpaceAccLaw(qItselfTask, this->modelWorld, "idle");
     qItselfLaw->setC(eye(qItselfLaw->getPhiDim())*10.0);
     qItselfLaw->setGains(eye(qItselfLaw->getPhiDim())*10.0, eye(qItselfLaw->getPhiDim())*1.0);
@@ -104,7 +104,7 @@ void PR2Interface::initialize(mlr::KinematicWorld* realWorld, mlr::KinematicWorl
     new RosCom_Spinner();
     new SubscriberConvNoHeader<marc_controller_pkg::JointState, CtrlMsg, &conv_JointState2CtrlMsg>("/marc_rt_controller/jointState", ctrl_obs);
     new PublisherConv<marc_controller_pkg::JointState, CtrlMsg, &conv_CtrlMsg2JointState>("/marc_rt_controller/jointReference", ctrl_ref);
-    new Subscriber<AlvarMarkers>("/ar_pose_marker", (Access<AlvarMarkers>&)ar_pose_markers);
+    new Subscriber<AlvarMarkers>("/ar_pose_marker", (Var<AlvarMarkers>&)ar_pose_markers);
     threadOpenModules(true);
 
     cout <<"** Waiting for ROS message on initial configuration.." <<endl;
@@ -263,7 +263,7 @@ void PR2Interface::sendCommand(const arr& u0, const arr& Kp, const arr& Kd, cons
 }
 
 void PR2Interface::goToPosition(arr pos, mlr::String shape, double executionTime, bool useMotionPlaner, mlr::String name) {
-  TaskMap* posMap = new TaskMap_Default(posTMT, *this->modelWorld, shape);
+  TaskMap* posMap = new TM_Default(TMT_pos, *this->modelWorld, shape);
   this->goToTask(posMap, pos, executionTime, useMotionPlaner, name);
 }
 
@@ -275,7 +275,7 @@ void PR2Interface::goToTasks(mlr::Array<LinTaskSpaceAccLaw*> laws, double execut
     MP.x0 = modelWorld->getJointState(); //TODO nix modelWorld, copiedWorld?
 
     Task *t;
-    t = MP.addTask("transitions", new TaskMap_Transition(MP.world));
+    t = MP.addTask("transitions", new TM_Transition(MP.world));
     t->map.order=2; //make this an acceleration task!
     t->setCostSpecs(0, MP.T, {0.}, 1e0);
 
@@ -303,7 +303,7 @@ void PR2Interface::goToTasks(mlr::Array<LinTaskSpaceAccLaw*> laws, double execut
 
     showTrajectory(traj, *this->modelWorld);
 
-    TaskMap* qTask = new TaskMap_qItself();
+    TaskMap* qTask = new TM_qItself();
     LinTaskSpaceAccLaw* qLaw = new LinTaskSpaceAccLaw(qTask, this->modelWorld, "qLaw");
     qLaw->setC(eye(this->modelWorld->getJointStateDimension())*1000.0);
     qLaw->setGains(eye(this->modelWorld->getJointStateDimension())*25.0, eye(this->modelWorld->getJointStateDimension())*5.0);
@@ -320,7 +320,7 @@ void PR2Interface::goToTasks(mlr::Array<LinTaskSpaceAccLaw*> laws, double execut
 }
 
 void PR2Interface::goToJointState(arr jointState, double executionTime, bool useMotionPlaner, mlr::String name) {
-  TaskMap* qTask = new TaskMap_qItself();
+  TaskMap* qTask = new TM_qItself();
   this->goToTask(qTask, jointState, executionTime, useMotionPlaner, name);
 }
 

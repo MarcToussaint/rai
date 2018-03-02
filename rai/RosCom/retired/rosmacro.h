@@ -21,7 +21,7 @@
 
 #define ROSSUB(topic_name, msg_type, var_name) \
   struct ROSSUB_##var_name : Thread { \
-    ACCESS(msg_type, var_name) \
+    VAR(msg_type, var_name) \
     ros::NodeHandle* _nh; \
     ros::Subscriber _sub; \
     ROSSUB_##var_name() : Thread(#var_name) {} \
@@ -43,7 +43,7 @@
 #else
 
 struct ROSSUB_##var_name : Thread { \
-  ACCESS(msg_type, var_name) \
+  VAR(msg_type, var_name) \
   ROSSUB_##var_name() : Thread(#var_name) {} \
   void open() { \
     LOG(-1) <<"fake subscriber: " <<#var_name <<" -- compiled without MLR_ROS flag"; \

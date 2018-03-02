@@ -36,7 +36,7 @@ struct sSimulator {
 };
 
 void Simulator::anchorKinematicChainIn(const char* bodyName){
-  s->G.reconfigureRoot(s->G.getFrameByName(bodyName));
+  s->G.reconfigureRootOfSubtree(s->G.getFrameByName(bodyName));
 //  s->G.calc_fwdPropagateFrames();
   
   NIY;

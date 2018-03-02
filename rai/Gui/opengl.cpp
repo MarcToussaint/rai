@@ -182,6 +182,7 @@ void OpenGL::closeWindow(){
     glutDestroyWindow(s->windowID);
     fg->delGL(s->windowID, this);
   }
+  s->windowID=-1;
 }
 
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {
@@ -405,6 +406,21 @@ void glDrawRect(float x, float y, float z, float r) {
   glDrawRect(x-r, y-r, z, x-r, y+r, z, x+r, y+r, z, x+r, y-r, z);
 }
 
+void glDrawPolygon(const arr &P){
+  CHECK_EQ(P.nd, 2, "");
+  CHECK_EQ(P.d1, 3, "");
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//  glBegin(GL_POLYGON);
+////  glColor(r, g, b);
+//  for(uint i=0;i<P.d0;i++) glVertex3dv(&P(i,0));
+//  glVertex3dv(P.p);
+//  glEnd();
+  glLineWidth(5);
+  glBegin(GL_LINE_LOOP);
+  for(uint i=0;i<P.d0;i++) glVertex3dv(&P(i,0));
+  glEnd();
+}
+
 void glDrawFloor(float x, float r, float g, float b) {
   x/=2.;
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -521,8 +537,10 @@ void glDrawDiamond(float x, float y, float z, float dx, float dy, float dz) {
   glPopMatrix();
 }
 
-void glDrawAxis() {
+void glDrawAxis(double scale) {
 //    glDisable(GL_CULL_FACE);
+  if(scale>=0) glPushMatrix();
+  if(scale>=0) glScalef(scale, scale, scale);
   GLUquadric *style=gluNewQuadric();
   glBegin(GL_LINES);
   glVertex3f(0, 0, 0);
@@ -532,6 +550,7 @@ void glDrawAxis() {
   glRotatef(90, 0, 1, 0);
   gluCylinder(style, .08, 0, .2, 20, 1);
   gluDeleteQuadric(style);
+  if(scale>=0) glPopMatrix();
 //    glEnable(GL_CULL_FACE);
 }
 
@@ -556,28 +575,44 @@ void glDrawDisk(float radius) {
   gluDeleteQuadric(style);
 }
 
-void glDrawProxy(const arr& p1, const arr& p2, double diskSize, int colorCode) {
-    glLoadIdentity();
-    if(!colorCode) glColor(.8,.2,.2);
-    else glColor(colorCode);
-    glBegin(GL_LINES);
-    glVertex3dv(p1.p);
-    glVertex3dv(p2.p);
-    glEnd();
-    glDisable(GL_CULL_FACE);
-    mlr::Transformation f;
-    f.pos=p1;
+void glDrawProxy(const arr& p1, const arr& p2, double diskSize, int colorCode, const arr& norm, double rad1, double rad2) {
+  glLoadIdentity();
+  if(!colorCode) glColor(.8,.2,.2);
+  else glColor(colorCode);
+  glBegin(GL_LINES);
+  glVertex3dv(p1.p);
+  glVertex3dv(p2.p);
+  glEnd();
+  glDisable(GL_CULL_FACE);
+  mlr::Transformation f;
+  f.pos=p1;
+  if(&norm){
+    f.rot.setDiff(mlr::Vector(0, 0, 1), mlr::Vector(norm));
+  }else{
     f.rot.setDiff(mlr::Vector(0, 0, 1), mlr::Vector(p1-p2));
-    double GLmatrix[16];
-    f.getAffineMatrixGL(GLmatrix);
-    glLoadMatrixd(GLmatrix);
-    glDrawDisk(diskSize);
+  }
+  double GLmatrix[16];
+  f.getAffineMatrixGL(GLmatrix);
+  glLoadMatrixd(GLmatrix);
+  glDrawDisk(diskSize);
 
-    f.pos=p2;
-    f.getAffineMatrixGL(GLmatrix);
-    glLoadMatrixd(GLmatrix);
-    glDrawDisk(diskSize);
-    glEnable(GL_CULL_FACE);
+  f.pos=p2;
+  f.getAffineMatrixGL(GLmatrix);
+  glLoadMatrixd(GLmatrix);
+  glDrawDisk(diskSize);
+  glEnable(GL_CULL_FACE);
+
+  glLoadIdentity();
+  if(&norm && rad1>0.){
+    arr p = p1 - rad1*norm;
+    glColor(0., 1., 0., 1.);
+    glDrawDiamond(p(0), p(1), p(2), .01, .01, .01);
+  }
+  if(&norm && rad1>0.){
+    arr p = p2 + rad2*norm;
+    glColor(0., 0., 1., 1.);
+    glDrawDiamond(p(0), p(1), p(2), .01, .01, .01);
+  }
 }
 
 void glDrawSphere(float radius) {
@@ -1156,7 +1191,7 @@ void OpenGL::addInit(void (*call)(void*), void* classP) {
 }
 
 /// add a draw routine to a view
-void OpenGL::addView(uint v, void (*call)(void*), void* classP) {
+void OpenGL::addSubView(uint v, void (*call)(void*), void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
   dataLock.writeLock();
   if(v>=views.N) views.resizeCopy(v+1);
@@ -1186,6 +1221,13 @@ void OpenGL::setViewPort(uint v, double l, double r, double b, double t) {
   dataLock.unlock();
 }
 
+void OpenGL::clearSubView(uint v){
+  if(v>=views.N) return;
+  dataLock.writeLock();
+  views(v).drawers.clear();
+  dataLock.unlock();
+}
+
 /// remove a draw routine
 //void OpenGL::remove(void (*call)(void*), const void* classP) {
 //  CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
@@ -1200,6 +1242,7 @@ void OpenGL::clear() {
   dataLock.writeLock();
 //  for(auto& x:drawers) if(CstyleDrawer* d = dynamic_cast<CstyleDrawer*>(x)) delete d;
   views.clear();
+//  for(auto* d:drawers) if(dynamic_cast<CstyleDrawer*>(d)) delete d;
   drawers.clear();
   initCalls.clear();
   hoverCalls.clear();
@@ -1351,8 +1394,10 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
       if(clearR+clearG+clearB>1.) glColor(0.0, 0.0, 0.0, 1.0); else glColor(1.0, 1.0, 1.0, 1.0);
       glMatrixMode(GL_MODELVIEW);
       glLoadIdentity();
-      //glOrtho(0., (vi->ri-vi->le)*w, (vi->to-vi->bo)*h, .0, -1., 1.);
-      glDrawText(vi->text, -.95, .85, 0.);
+      glOrtho(0., (vi->ri-vi->le)*w, (vi->to-vi->bo)*h, .0, -1., 1.);
+      glDrawText(vi->text, 10, 20, 0);
+//      glDrawText(vi->text, -.95, .85, 0.);
+      glLoadIdentity();
     }
   }
 
@@ -2108,6 +2153,3 @@ bool glUI::checkMouse(int _x, int _y) {
 #  include"opengl_Cygwin.moccpp"
 #endif
 #endif
-
-
-

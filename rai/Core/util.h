@@ -145,6 +145,8 @@ double totalTime();
 double toTime(const tm& t);
 char *date();
 char *date(double sec);
+char *date2(bool subsec=false);
+char *date2(double sec, bool subsec);
 void wait(double sec, bool msg_on_fail=true);
 bool wait(bool useX11=true);
 
@@ -271,6 +273,7 @@ public:
 stdPipes(String)
 }
 
+inline mlr::String operator+(const mlr::String& a, const char* b){ mlr::String s=a; s <<b; return s; }
 
 //===========================================================================
 //
@@ -332,7 +335,7 @@ extern String errString;
 }
 
 //----- error handling:
-#  define MLR_HERE "@" << __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<":" <<mlr::realTime() <<"s "
+#  define MLR_HERE __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<' ' //":" <<std::setprecision(5) <<mlr::realTime() <<"s "
 
 #ifndef HALT
 #  define MLR_MSG(msg){ LOG(-1) <<msg; }
@@ -463,10 +466,16 @@ namespace mlr {
     operator enum_T() const{ return x; }
     void read(std::istream& is){
       mlr::String str(is);
+      bool good=false;
       for(int i=0; names[i]; i++){
         const char* n = names[i];
         if(!n) LOG(-2) <<"enum_T " <<typeid(enum_T).name() <<' ' <<str <<" out of range";
-        if(str==n){ x=(enum_T)(i); break; }
+        if(str==n){ x=(enum_T)(i); good=true; break; }
+      }
+      if(!good){
+        mlr::String all;
+        for(int i=0; names[i]; i++) all <<names[i] <<' ';
+        LOG(-2) <<"Enum::read could not find the keyword '" <<str <<"'. Possible Enum keywords: " <<all;
       }
       CHECK(!strcmp(names[x], str.p), "");
     }

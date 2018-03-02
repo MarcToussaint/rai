@@ -11,9 +11,9 @@
 #include "spinner.h"
 
 struct sTrajectoryInterface{
-  Access<CtrlMsg> ctrl_ref;
-  Access<CtrlMsg> ctrl_obs;
-  Access<ar::AlvarMarkers> ar_pose_markers;
+  Var<CtrlMsg> ctrl_ref;
+  Var<CtrlMsg> ctrl_obs;
+  Var<ar::AlvarMarkers> ar_pose_markers;
   PublisherConv<marc_controller_pkg::JointState, CtrlMsg, &conv_CtrlMsg2JointState> pub;
   SubscriberConvNoHeader<marc_controller_pkg::JointState, CtrlMsg, &conv_JointState2CtrlMsg> sub;
   Subscriber<ar::AlvarMarkers> markerSub;
@@ -26,7 +26,7 @@ struct sTrajectoryInterface{
     ar_pose_markers(NULL, "ar_pose_markers"),
     pub("/marc_rt_controller/jointReference", ctrl_ref),
     sub("/marc_rt_controller/jointState", ctrl_obs),
-    markerSub("/ar_pose_marker", (Access<ar::AlvarMarkers>&)ar_pose_markers){
+    markerSub("/ar_pose_marker", (Var<ar::AlvarMarkers>&)ar_pose_markers){
   }
 };
 
@@ -219,12 +219,12 @@ void TrajectoryInterface::gotoPosition(arr x_robot, double T, bool recordData, b
   }
 
   Task *t;
-  t = MP.addTask("tra", new TaskMap_Transition(*world_robot), OT_sumOfSqr);
-  ((TaskMap_Transition*)&t->map)->H_rate_diag = world_robot->getHmetric();
+  t = MP.addTask("tra", new TM_Transition(*world_robot), OT_sumOfSqr);
+  ((TM_Transition*)&t->map)->H_rate_diag = world_robot->getHmetric();
   t->map->order=2;
   t->setCostSpecs(0, MP.T, ARR(0.), 1e0);
 
-  t =MP.addTask("posT", new TaskMap_qItself(), OT_eq);
+  t =MP.addTask("posT", new TM_qItself(), OT_eq);
   t->setCostSpecs(MP.T-2,MP.T, x_robot, 1e0);
 
   arr X_robot = MP.getInitialization();

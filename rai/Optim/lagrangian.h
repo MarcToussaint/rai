@@ -27,23 +27,23 @@ extern const char* MethodName[];
 // that can include lagrange terms, penalties, log barriers, and augmented lagrangian terms
 //
 
-struct LagrangianProblem : ScalarFunction{ //TODO: rename: UnconstrainedLagrangianProblem
+struct LagrangianProblem : ScalarFunction { //TODO: rename: UnconstrainedLagrangianProblem
   ConstrainedProblem& P;
 
   //-- parameters of the unconstrained (Lagrangian) scalar function
   double muLB;       ///< log barrier weight
-  double mu;         ///< squared penalty weight for inequalities g
-  double nu;         ///< squared penalty weight for equalities h
+  double mu;         ///< penalty parameter for inequalities g
+  double nu;         ///< penalty parameter for equalities h
   arr lambda;        ///< lagrange multipliers for inequalities g and equalities h
 
   //-- buffers to avoid recomputing gradients
-  arr x;          ///< point where P was last evaluated
+  arr x;               ///< point where P was last evaluated
   arr phi_x, J_x, H_x; ///< everything else at x
   ObjectiveTypeA tt_x; ///< everything else at x
 
   LagrangianProblem(ConstrainedProblem &P, OptOptions opt=NOOPT, arr& lambdaInit=NoArr);
 
-  double lagrangian(arr& dL, arr& HL, const arr& x); ///< the unconstrained scalar function F
+  double lagrangian(arr& dL, arr& HL, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
 
   double get_costs();            ///< info on the terms from last call
   double get_sumOfGviolations(); ///< info on the terms from last call
@@ -51,6 +51,15 @@ struct LagrangianProblem : ScalarFunction{ //TODO: rename: UnconstrainedLagrangi
   uint get_dimOfType(const ObjectiveType& tt); ///< info on the terms from last call
 
   void aulaUpdate(bool anyTimeVariant, double lambdaStepsize=1., double muInc=1., double *L_x=NULL, arr &dL_x=NoArr, arr &HL_x=NoArr);
+
+  //private: used gpenalty function
+  double gpenalty(double g);
+  double gpenalty_d(double g);
+  double gpenalty_dd(double g);
+
+  double hpenalty(double h);
+  double hpenalty_d(double h);
+  double hpenalty_dd(double h);
 };
 
 //==============================================================================
@@ -65,7 +74,7 @@ struct PhaseOneProblem : ConstrainedProblem{
   ConstrainedProblem &f_orig;
 
   PhaseOneProblem(ConstrainedProblem &f_orig):f_orig(f_orig) {}
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x, arr& lambda);
 };
 
 
@@ -79,9 +88,9 @@ struct OptConstrained{
   OptNewton newton;
   arr &dual;
   OptOptions opt;
-  uint its;
-  bool earlyPhase;
-  ofstream fil;
+  uint its=0;
+  bool earlyPhase=false;
+  ofstream *fil=NULL;
 
   OptConstrained(arr& x, arr &dual, ConstrainedProblem& P, OptOptions opt=NOOPT);
   ~OptConstrained();
@@ -103,7 +112,7 @@ inline uint optConstrained(arr& x, arr &dual, ConstrainedProblem& P, OptOptions 
 inline void evaluateConstrainedProblem(const arr& x, ConstrainedProblem& P, std::ostream& os){
   arr phi_x;
   ObjectiveTypeA tt_x;
-  P.phi(phi_x, NoArr, NoArr, tt_x, x);
+  P.phi(phi_x, NoArr, NoArr, tt_x, x, NoArr);
   double Ef=0., Eh=0., Eg=0.;
   for(uint i=0;i<phi_x.N;i++){
     if(tt_x(i)==OT_f) Ef += phi_x(i);

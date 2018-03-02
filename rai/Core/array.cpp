@@ -176,6 +176,13 @@ namespace mlr {
 extern bool useLapack;
 }
 
+void normalizeWithJac(arr& y, arr& J){
+  double l2 = sumOfSqr(y);
+  double l = sqrt(l2);
+  CHECK(l>1e-10, "can't normalize");
+  if(J.N) J = (J - (y^y)/l2*J)/l;
+  y = y/l;
+}
 
 
 //===========================================================================
@@ -189,7 +196,7 @@ uint own_SVD(
   arr& w,
   arr& V,
   const arr& A,
-  bool sort);
+  bool sort2Dpoints);
 
 /** @brief Singular Value Decomposition (from Numerical Recipes);
   computes \f$U, D, V\f$ with \f$A = U D V^T\f$ from \f$A\f$ such that

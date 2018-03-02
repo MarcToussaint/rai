@@ -22,11 +22,11 @@ bool KOMO_Problem::checkStructure(const arr& x){
   ObjectiveTypeA tt, featureTypes;
 //  uint T=get_T();
   uint k=get_k();
-  uintA variableDimensions, featureTimes;
+  uintA variableDimensions, featureTimes, phiTimes;
   getStructure(variableDimensions, featureTimes, featureTypes);
   uintA varDimIntegral = integral(variableDimensions);
 
-  phi(y, J, H, tt, x);
+  phi(y, J, H, phiTimes, tt, x, NoArr);
 
   CHECK_EQ(tt, featureTypes,"");
   CHECK_EQ(sum(variableDimensions), x.N, "variable dimensions don't match");
@@ -76,9 +76,9 @@ void KOMO_GraphProblem::getStructure(uintA& variableDimensions, uintAA& featureV
   }
 }
 
-void KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x){
+void KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x, arr& lambda){
   ObjectiveTypeA featureTypes; //TODO: redundant -> remove
-  KOMO.phi(phi, J, H, featureTypes, x);
+  KOMO.phi(phi, J, H, NoUintA, featureTypes, x, lambda);
 }
 
 
@@ -87,8 +87,8 @@ Conv_KOMO_ConstrainedProblem::Conv_KOMO_ConstrainedProblem(KOMO_Problem& P) : KO
   varDimIntegral = integral(variableDimensions);
 }
 
-void Conv_KOMO_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x){
-  KOMO.phi(phi, (&J?J_KOMO:NoArrA), (&H?H_KOMO:NoArrA), tt, x);
+void Conv_KOMO_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& featureTypes, const arr& x, arr& lambda){
+  KOMO.phi(phi, (&J?J_KOMO:NoArrA), (&H?H_KOMO:NoArrA), featureTimes, featureTypes, x, lambda);
 
   //-- construct a row-shifed J from the array of featureJs
   if(&J){
@@ -114,7 +114,7 @@ void Conv_KOMO_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA&
 
   if(&H){
     bool hasFterm = false;
-    if(&tt) hasFterm = (tt.findValue(OT_f) != -1);
+    if(&featureTypes) hasFterm = (featureTypes.findValue(OT_f) != -1);
     if(hasFterm){
       CHECK(H_KOMO.N, "this problem has f-terms -- I need a Hessian!");
       NIY

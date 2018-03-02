@@ -14,6 +14,7 @@
 
 
 #include <map>
+#include <jsoncpp/json/json.h>
 
 #include "util.tpp"
 #include "array.tpp"
@@ -401,18 +402,7 @@ NodeL Graph::getAllNodesRecursively() const{
 Node* Graph::edit(Node *ed){
   NodeL KVG = findNodesOfType(ed->type, ed->keys);
   //CHECK(KVG.N<=1, "can't edit into multiple nodes yet");
-  Node *n=NULL;
-  if(KVG.N) n=KVG.elem(0);
-  CHECK(n!=ed,"how is this possible?: You're trying to edit with '" <<*ed <<"' but this is the only node using these keys");
-  if(n){
-    CHECK(ed->type==n->type, "can't edit/merge nodes of different types!");
-    if(n->isGraph()){ //merge the KVGs
-      n->graph().edit(ed->graph());
-    }else{ //overwrite the value
-      n->copyValue(ed);
-    }
-    if(&ed->container==this){ delete ed; ed=NULL; }
-  }else{ //nothing to merge, append
+  if(!KVG.N){ //nothing to merge, append
     if(&ed->container!=this){
       if(!isIndexed) index();
       if(!ed->container.isIndexed) ed->container.index();
@@ -423,6 +413,19 @@ Node* Graph::edit(Node *ed){
     }
     return ed;
   }
+
+  uint edited=0;
+  for(Node *n : KVG) if(n!=ed){
+    CHECK(ed->type==n->type, "can't edit/merge nodes of different types!");
+    if(n->isGraph()){ //merge the KVGs
+      n->graph().edit(ed->graph());
+    }else{ //overwrite the value
+      n->copyValue(ed);
+    }
+    edited++;
+  }
+  if(!edited) MLR_MSG("no nodes edited!");
+  if(&ed->container==this){ delete ed; ed=NULL; }
   return NULL;
 }
 
@@ -648,14 +651,12 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
       case '\'': { //mlr::FileToken
         str.read(is, "", "\'", true);
         try{
-//          f->getIs();
           node = newNode<mlr::FileToken>(keys, parents, mlr::FileToken(str, false));
           node->get<mlr::FileToken>().getIs();  //creates the ifstream and might throw an error
         } catch(...){
           delete node; node=NULL;
           PARSERR("file " <<str <<" does not exist -> converting to string!", pinfo);
           node = newNode<mlr::String>(keys, parents, str);
-//          delete f; f=NULL;
         }
       } break;
       case '\"': { //mlr::String
@@ -696,23 +697,6 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
         mlr::parse(is, "}");
         node = subgraph;
       } break;
-//      case '(': { // referring Graph
-//        Graph *refs = new Graph;
-//        refs->isReferringToNodesOf = this;
-//        for(uint j=0;; j++) {
-//          str.read(is, " , ", " , )", false);
-//          if(!str.N) break;
-//          Node *e = this->getNode(str);
-//          if(e) { //sucessfully found
-//            refs->NodeL::append(e);
-//          } else { //this element is not known!!
-//            HALT("line:" <<mlr::lineCount <<" reading node '" <<keys <<"': unknown "
-//                 <<j <<"th linked element '" <<str <<"'"); //DON'T DO THIS YET
-//          }
-//        }
-//        mlr::parse(is, ")");
-//        node = newNode<Graph*>(keys, parents, refs, true);
-//      } break;
       default: { //error
         is.putback(c);
         PARSERR("unknown value indicator '" <<c <<"'", pinfo);
@@ -747,6 +731,82 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
   if(c==',' || c==';') {} else is.putback(c);
 
   return node;
+}
+
+void addJasonValues(Graph& G, const char* key, Json::Value& value);
+
+void Json2Graph(Graph& G, Json::Value& value){
+  CHECK_EQ(value.type(), Json::objectValue, "needs an object type");
+  for(auto& n:value.getMemberNames()){
+    addJasonValues(G, n.c_str(), value[n]);
+  }
+}
+
+void addJasonValues(Graph& G, const char* key, Json::Value& value){
+  if(value.type()==Json::arrayValue){
+    CHECK(value.size()>0, "");
+    if(value[0].isConvertibleTo(Json::realValue)){ //.type()==Json::realValue //convert int to double
+      arr x(value.size());
+      for(uint i=0;i<x.d0;i++) x(i) = value[i].asDouble();
+      new Node_typed<arr>(G, {key}, {}, x);
+    }else if(value[0].type()==Json::intValue){
+      intA x(value.size());
+      for(uint i=0;i<x.N;i++) x(i) = value[i].asInt();
+      new Node_typed<intA>(G, {key}, {}, x);
+    }else if(value[0].type()==Json::stringValue){
+      StringA x(value.size());
+      for(uint i=0;i<x.N;i++) x(i) = value[i].asString().c_str();
+      new Node_typed<StringA>(G, {key}, {}, x);
+    }else if(value[0].type()==Json::arrayValue){
+      if(value[0][0].isConvertibleTo(Json::realValue)){ //.type()==Json::realValue //convert int to double
+        arr x(value.size(), value[0].size());
+        for(uint i=0;i<x.d0;i++) for(uint j=0;j<x.d1;j++) x(i,j) = value[i][j].asDouble();
+        new Node_typed<arr>(G, {key}, {}, x);
+      }else if(value[0][0].type()==Json::intValue){
+        intA x(value.size(), value[0].size());
+        for(uint i=0;i<x.d0;i++) for(uint j=0;j<x.d1;j++) x(i,j) = value[i][j].asInt();
+        new Node_typed<intA>(G, {key}, {}, x);
+      }else if(value[0][0].type()==Json::arrayValue){
+        if(value[0][0][0].isConvertibleTo(Json::realValue)){ //.type()==Json::realValue //convert int to double
+          arr x(value.size(), value[0].size(), value[0][0].size());
+          for(uint i=0;i<x.d0;i++) for(uint j=0;j<x.d1;j++) for(uint k=0;k<x.d2;k++)
+            x(i,j,k) = value[i][j][k].asDouble();
+          new Node_typed<arr>(G, {key}, {}, x);
+        }else if(value[0][0][0].type()==Json::intValue){
+          intA x(value.size(), value[0].size(), value[0][0].size());
+          for(uint i=0;i<x.d0;i++) for(uint j=0;j<x.d1;j++) for(uint k=0;k<x.d2;k++)
+            x(i,j,k) = value[i][j][k].asInt();
+          new Node_typed<intA>(G, {key}, {}, x);
+        }else{
+          cout <<value[0][0][0].type();
+          NIY;
+        }
+      }else{
+        cout <<value[0][0].type();
+        NIY;
+      }
+    }else{
+      cout <<value[0].type();
+      NIY
+    }
+  }else{
+    switch(value.type()){
+    case Json::nullValue: NIY; break;
+    case Json::intValue: //new Node_typed<int>(G, {key}, {}, value.asInt()); break; //convert int to double
+    case Json::uintValue: //new Node_typed<uint>(G, {key}, {}, value.asUInt()); break; //convert int to double
+    case Json::realValue: new Node_typed<double>(G, {key}, {}, value.asDouble()); break;
+    case Json::stringValue: new Node_typed<mlr::String>(G, {key}, {}, value.asString().c_str()); break;
+    case Json::booleanValue: new Node_typed<bool>(G, {key}, {}, value.asBool()); break;
+    case Json::arrayValue: HALT("covered above"); break;
+    case Json::objectValue:  Json2Graph(G.newSubgraph({key}, {})->graph(), value);  break;
+    }
+  }
+}
+
+void Graph::readJson(std::istream &is){
+  Json::Value root;   // 'root' will contain the root value after parsing.
+  is >>root;
+  Json2Graph(*this, root);
 }
 
 #undef PARSERR

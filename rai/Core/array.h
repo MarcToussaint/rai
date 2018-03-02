@@ -90,7 +90,7 @@ template<class T> struct Array : std::vector<T> {
   SpecialArray *special; ///< arbitrary auxiliary data, depends on special
 
   typedef std::vector<T> vec_type;
-  typedef bool (*ElemCompare)(const T& a, const T& b);
+  typedef std::function<bool(const T& a, const T& b)> ElemCompare;
 
   /// @name constructors
   Array();
@@ -98,7 +98,8 @@ template<class T> struct Array : std::vector<T> {
   explicit Array(uint D0);
   explicit Array(uint D0, uint D1);
   explicit Array(uint D0, uint D1, uint D2);
-  explicit Array(const T* p, uint size, bool byReference=true);    //reference!
+  explicit Array(const T* p, uint size, bool byReference=true);      //reference!
+  explicit Array(const std::vector<T>& a, bool byReference=false);   //reference?
   Array(std::initializer_list<T> values);
   Array(uint D0, std::initializer_list<T> values);
   Array(uint D0, uint D1, std::initializer_list<T> values);
@@ -109,6 +110,7 @@ template<class T> struct Array : std::vector<T> {
   Array<T>& operator=(std::initializer_list<T> values);
   Array<T>& operator=(const T& v);
   Array<T>& operator=(const Array<T>& a);
+  Array<T>& operator=(const std::vector<T>& values);
 
   /// @name iterators
   ArrayIterationEnumerated<T> enumerated(){ return ArrayIterationEnumerated<T>(*this); }
@@ -171,17 +173,18 @@ template<class T> struct Array : std::vector<T> {
   
   /// @name access by reference (direct memory access)
   T& elem(int i) const;
+//  T& elem(const Array<int> &I) const;
   T& elem(const Array<uint> &I) const;
   T& scalar() const;
   T& first() const;
   T& last(int i=-1) const;
   T& rndElem() const;
-  T& operator()(uint i) const;
-  T& operator()(uint i, uint j) const;
-  T& operator()(uint i, uint j, uint k) const;
+  T& operator()(int i) const;
+  T& operator()(int i, int j) const;
+  T& operator()(int i, int j, int k) const;
   Array<T> operator()(std::pair<int, int> I) const;
   Array<T> operator()(int i, std::pair<int, int> J) const;
-  Array<T> operator()(uint i, uint j, std::initializer_list<int> K) const;
+  Array<T> operator()(int i, int j, std::initializer_list<int> K) const;
   Array<T> operator[](int i) const;     // calls referToDim(*this, i)
   Array<T> operator[](std::initializer_list<uint> list) const; //-> remove
   Array<T>& operator()(){ return *this; } //TODO: make this the scalar reference!
@@ -250,13 +253,13 @@ template<class T> struct Array : std::vector<T> {
   void removeLast();
   
   /// @name sorting and permuting this array
-  void sort(ElemCompare comp=lowerEqual);
-  bool isSorted(ElemCompare comp=lowerEqual) const;
-  uint rankInSorted(const T& x, ElemCompare comp=lowerEqual, bool rankAfterIfEqual=false) const;
-  int findValueInSorted(const T& x, ElemCompare comp=lowerEqual) const;
-  uint insertInSorted(const T& x, ElemCompare comp=lowerEqual, bool insertAfterIfEqual=false);
-  uint setAppendInSorted(const T& x, ElemCompare comp=lowerEqual);
-  void removeValueInSorted(const T& x, ElemCompare comp=lowerEqual);
+  void sort(ElemCompare comp=lowerEqual<T>);
+  bool isSorted(ElemCompare comp=lowerEqual<T>) const;
+  uint rankInSorted(const T& x, ElemCompare comp=lowerEqual<T>, bool rankAfterIfEqual=false) const;
+  int findValueInSorted(const T& x, ElemCompare comp=lowerEqual<T>) const;
+  uint insertInSorted(const T& x, ElemCompare comp=lowerEqual<T>, bool insertAfterIfEqual=false);
+  uint setAppendInSorted(const T& x, ElemCompare comp=lowerEqual<T>);
+  void removeValueInSorted(const T& x, ElemCompare comp=lowerEqual<T>);
   void reverse();
   void reverseRows();
   void permute(uint i, uint j);
@@ -576,6 +579,8 @@ inline uintA randperm(uint n) {  uintA z;  z.setRandomPerm(n);  return z; }
 inline arr linspace(double base, double limit, uint n) {  arr z;  z.setGrid(1, base, limit, n);  return z;  }
 arr logspace(double base, double limit, uint n);
 
+void normalizeWithJac(arr& y, arr& J);
+
 
 //===========================================================================
 /// @}
@@ -595,7 +600,7 @@ namespace mlr {
 extern bool useLapack;
 }
 
-uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort=true);
+uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort2Dpoints=true);
 void svd(arr& U, arr& V, const arr& A);
 void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc = 0);
 
@@ -734,6 +739,7 @@ template<class T> mlr::Array<T> elemWiseMin(const mlr::Array<T>& v, const mlr::A
 template<class T> mlr::Array<T> elemWiseMax(const mlr::Array<T>& v, const mlr::Array<T>& w);
 template<class T> mlr::Array<T> elemWisemax(const mlr::Array<T>& x,const T& y);
 template<class T> mlr::Array<T> elemWisemax(const T& x,const mlr::Array<T>& y);
+template<class T> mlr::Array<T> elemWiseHinge(const mlr::Array<T>& x);
 
 template<class T> void writeConsecutiveConstant(std::ostream& os, const mlr::Array<T>& x);
 

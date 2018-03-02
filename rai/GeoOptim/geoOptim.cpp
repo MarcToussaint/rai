@@ -6,7 +6,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
   struct fitSSBoxProblem : ConstrainedProblem{
     const arr& X;
     fitSSBoxProblem(const arr& X):X(X){}
-    void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x){
+    void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda){
       phi.resize(5+X.d0);
       if(&tt){ tt.resize(5+X.d0); tt=OT_ineq; }
       if(&J) {  J.resize(5+X.d0,11); J.setZero(); }

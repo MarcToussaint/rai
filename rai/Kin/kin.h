@@ -33,6 +33,7 @@ struct Joint;
 struct Shape;
 struct Frame;
 struct Proxy;
+struct Contact;
 struct KinematicWorld;
 struct KinematicSwitch;
 
@@ -83,14 +84,16 @@ struct KinematicWorld : GLDrawer{
   KinematicWorld(const char* filename);
   virtual ~KinematicWorld();
   void operator=(const mlr::KinematicWorld& K){ copy(K); }
-  void copy(const mlr::KinematicWorld& K, bool referenceMeshesAndSwiftOnCopy=false);
+  void copy(const mlr::KinematicWorld& K, bool referenceSwiftOnCopy=false);
   
   /// @name initializations
   void init(const char* filename);
-  void init(const Graph& G);
+  void init(const Graph& G, bool addInsteadOfClear=false);
+  void addModel(const char* filename);
 
   /// @name access
   Frame *operator[](const char* name){ return getFrameByName(name, true); }
+  Frame *operator()(int i){ return frames(i); }
   Frame *getFrameByName(const char* name, bool warnIfNotExist=true) const;
 //  Link  *getLinkByBodies(const Frame* from, const Frame* to) const;
   Joint *getJointByBodies(const Frame* from, const Frame* to) const;
@@ -99,14 +102,17 @@ struct KinematicWorld : GLDrawer{
   StringA getJointNames() const;
 
   bool checkUniqueNames() const;
-  void prefixNames();
+  void prefixNames(bool clear=false);
 
   /// @name changes of configuration
   void clear();
   void reset_q();
+  FrameL calc_topSort();
+  bool check_topSort();
   void calc_activeSets();
   void calc_q();
-  void reconfigureRoot(Frame *root);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
+  void reconfigureRootOfSubtree(Frame *root);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
+  void flipFrames(mlr::Frame *a, mlr::Frame *b);
   void pruneRigidJoints(int verbose=0);        ///< delete rigid joints -> they become just links
   void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
   void pruneUselessFrames(bool preserveNamed=true);  ///< delete frames that have no name, joint, and shape
@@ -137,6 +143,7 @@ struct KinematicWorld : GLDrawer{
   /// @name set state
   void setJointState(const arr& _q, const arr& _qdot=NoArr);
   void setJointState(const arr& _q, const StringA&);
+  void setTimes(double t);
 
   /// @name kinematics
   void kinematicsPos (arr& y, arr& J, Frame *a, const Vector& rel=NoVector) const; //TODO: make vector& not vector*
@@ -149,9 +156,12 @@ struct KinematicWorld : GLDrawer{
   void kinematicsRelVec (arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b) const;
   void kinematicsRelRot (arr& y, arr& J, Frame *a, Frame *b) const;
 
+  void kinematicsPenetrations(arr& y, arr& J=NoArr, bool penetrationsOnly=true, double activeMargin=0.) const; ///< true: if proxy(i).distance>0. => y(i)=0; else y(i)=-proxy(i).distance
   void kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
   void kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
   void kinematicsProxyCost(arr& y, arr& J, double margin=.02, bool useCenterDist=true) const;
+  void kinematicsContactCost(arr& y, arr& J, const Contact *p, double margin=.02, bool addValues=false) const;
+  void kinematicsContactCost(arr& y, arr& J, double margin=.02) const;
   void kinematicsProxyConstraint(arr& g, arr& J, const Proxy& p, double margin=.02) const;
   void kinematicsContactConstraints(arr& y, arr &J) const; //TODO: deprecated?
   void kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const mlr::Vector& rel, Frame *s) const;
@@ -204,14 +214,19 @@ struct KinematicWorld : GLDrawer{
   void stepOde(double tau);
   void stepDynamics(const arr& u_control, double tau, double dynamicNoise = 0.0, bool gravity = true);
 
+  /// @name contacts
+  void filterProxiesToContacts(double margin=.01); ///< proxies are returns from a collision engine; contacts stable constraints
+  double totalContactPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
+
   /// @name I/O
   void write(std::ostream& os) const;
   void writeURDF(std::ostream& os, const char *robotName="myrobot") const;
+  void writeMeshes(const char* pathPrefix="meshes/") const;
   void read(std::istream& is);
   void glDraw(struct OpenGL&);
   void glDraw_sub(struct OpenGL&);
   Graph getGraph() const;
-  mlr::Array<struct Link*> getLinks();
+  Array<Frame*> getLinks();
   void displayDot();
 
   //some info
@@ -270,7 +285,8 @@ inline void displayTrajectory(const arr& x, int steps, mlr::KinematicWorld& G, c
 void editConfiguration(const char* orsfile, mlr::KinematicWorld& G);
 int animateConfiguration(mlr::KinematicWorld& G, struct Inotify *ino=NULL);
 
-
+void kinVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);
+void kinAngVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);
 
 
 #endif //MLR_ors_h

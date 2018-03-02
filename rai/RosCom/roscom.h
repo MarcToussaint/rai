@@ -9,6 +9,7 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <std_msgs/ColorRGBA.h>
 #include <std_msgs/Float32MultiArray.h>
+#include <std_msgs/Float64MultiArray.h>
 #include <geometry_msgs/WrenchStamped.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -29,11 +30,16 @@
 #  include <PCL/conv.h>
 #endif
 
+/*
+ * TODO:
+ * a single RosCom class; constructor checks rosInit and spawns singleton spinner
+ * has publish/subscribe(var&) method, stores all pub/subs and cleans them on destruction
+ */
+
 //===========================================================================
 //
 // utils
 //
-
 
 
 void rosCheckInit(const char* node_name="pr2_module");
@@ -66,6 +72,7 @@ CtrlMsg             conv_JointState2CtrlMsg(const marc_controller_pkg::JointStat
 arr                 conv_JointState2arr(const sensor_msgs::JointState& msg);
 mlr::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::MarkerArray& markers);
 std_msgs::Float32MultiArray conv_floatA2Float32Array(const floatA&);
+std_msgs::Float64MultiArray conv_arr2Float64Array(const arr&);
 
 //-- MLR -> ROS
 geometry_msgs::Pose conv_transformation2pose(const mlr::Transformation&);
@@ -73,6 +80,7 @@ geometry_msgs::Transform conv_transformation2transform(const mlr::Transformation
 std::vector<geometry_msgs::Point> conv_arr2points(const arr& pts);
 marc_controller_pkg::JointState   conv_CtrlMsg2JointState(const CtrlMsg& ctrl);
 floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray&);
+arr conv_Float32Array2arr(const std_msgs::Float32MultiArray &msg);
 visualization_msgs::Marker conv_Shape2Marker(const mlr::Shape& sh);
 visualization_msgs::MarkerArray conv_Kin2Markers(const mlr::KinematicWorld& K);
 
@@ -84,61 +92,107 @@ bool ros_getTransform(const std::string& from, const std::string& to, tf::Transf
 
 struct SubscriberType { virtual ~SubscriberType() {} }; ///< if types derive from RootType, more tricks are possible
 
+
 //===========================================================================
 //
-// subscribing a message directly into an Access
+// subscribing a message directly into an Var
 //
 
 template<class msg_type>
 struct Subscriber : SubscriberType {
-  Access<msg_type>& access;
-  ros::NodeHandle *nh;
+  Var<msg_type>& var;
+  ros::NodeHandle *nh=NULL;
   ros::Subscriber sub;
-  Subscriber(const char* topic_name, Access<msg_type>& _access)
-    : access(_access), nh(NULL) {
-    if(mlr::getParameter<bool>("useRos", false)){
+  uint revision=0;
+  Subscriber(Var<msg_type>& _var)
+    : var(_var) {
+    if(mlr::getParameter<bool>("useRos", true)){
+      mlr::String topic_name = STRING("rai/" <<var.name);
+      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {var.registryNode}, this);
+      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<"> into var '" <<var.name <<'\'';
       nh = new ros::NodeHandle;
-      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
-      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<"> into access '" <<access.name <<'\'';
-      sub  = nh->subscribe( topic_name, 100, &Subscriber::callback, this);
+      sub  = nh->subscribe( topic_name.p, 100, &Subscriber::callback, this);
     }
   }
   ~Subscriber(){
     if(nh) delete nh;
   }
-  void callback(const typename msg_type::ConstPtr& msg) { access.set() = *msg; }
+  void callback(const typename msg_type::ConstPtr& msg) { var.set() = *msg;  revision++; }
 };
 
 
 //===========================================================================
 //
-// subscribing a message into an MLR-type-Access via a conv_* function
+// subscribing a message into an MLR-type-var via a conv_* function
+//
+
+template<class msg_type>
+struct Publisher : Thread {
+  Var<msg_type> var;
+  ros::NodeHandle *nh;
+  ros::Publisher pub;
+  mlr::String topic_name;
+
+  Publisher(const Var<msg_type>& _var)
+      : Thread(STRING("Publisher_"<<_var.name), -1.),
+        var(this, _var, true),
+        nh(NULL){
+    if(mlr::getParameter<bool>("useRos", true)){
+      mlr::String topic_name = STRING("rai/" <<var.name);
+      LOG(0) <<"publishing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<">";
+      nh = new ros::NodeHandle;
+      pub = nh->advertise<msg_type>(topic_name.p, 1);
+      mlr::wait(.1); //I hate this -- no idea why the publisher isn't ready right away..
+//      threadOpen();
+    }
+  }
+  ~Publisher(){
+    threadClose();
+    pub.shutdown();
+    if(nh) delete nh;
+  }
+  void open(){}
+  void close(){}
+  void step(){
+    if(nh){
+      pub.publish(var.get()());
+      LOG(0) <<"publishing to topic '" <<topic_name <<"' revision " <<var.getRevision() <<" of variable '" <<var.name <<'\'';
+    }
+  }
+};
+
+
+//===========================================================================
+//
+// subscribing a message into an MLR-type-var via a conv_* function
 //
 
 template<class msg_type, class var_type, var_type conv(const msg_type&)>
 struct SubscriberConv : SubscriberType {
-  Access<var_type> access;
-  Access<mlr::Transformation> *frame;
+  Var<var_type> var;
+  Var<mlr::Transformation> *frame;
   ros::NodeHandle *nh;
   ros::Subscriber sub;
   tf::TransformListener *listener;
-  SubscriberConv(const char* topic_name, Access<var_type>& _access, Access<mlr::Transformation> *_frame=NULL)
-    : access(NULL, _access), frame(_frame), nh(NULL), listener(NULL) {
-    if(mlr::getParameter<bool>("useRos")){
+  SubscriberConv(Var<var_type>& _var, const char* topic_name=NULL, Var<mlr::Transformation> *_frame=NULL)
+    : var(NULL, _var), frame(_frame), nh(NULL), listener(NULL) {
+    if(mlr::getParameter<bool>("useRos", true)){
+      if(!topic_name) topic_name = var.name;
       nh = new ros::NodeHandle;
       if(frame) listener = new tf::TransformListener;
-      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
-      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into access '" <<access.name <<'\'';
+      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {var.registryNode}, this);
+      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into var '" <<var.name <<'\'';
       sub = nh->subscribe(topic_name, 1, &SubscriberConv::callback, this);
     }
   }
-  SubscriberConv(const char* topic_name, const char* var_name, Access<mlr::Transformation> *_frame=NULL)
-    : access(NULL, var_name), frame(_frame), nh(NULL), listener(NULL) {
-    if(mlr::getParameter<bool>("useRos")){
+  SubscriberConv(const char* topic_name, const char* var_name, Var<mlr::Transformation> *_frame=NULL)
+    : var(NULL, var_name), frame(_frame), nh(NULL), listener(NULL) {
+    if(mlr::getParameter<bool>("useRos", true)){
+      if(!topic_name) topic_name = var_name;
       nh = new ros::NodeHandle;
       if(frame) listener = new tf::TransformListener;
-      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
-      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into access '" <<access.name <<'\'';
+      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {var.registryNode}, this);
+      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into var '" <<var.name <<'\'';
       sub = nh->subscribe(topic_name, 1, &SubscriberConv::callback, this);
     }
   }
@@ -148,7 +202,7 @@ struct SubscriberConv : SubscriberType {
   }
   void callback(const typename msg_type::ConstPtr& msg) {
     double time=conv_time2double(msg->header.stamp);
-    access.set( time ) = conv(*msg);
+    var.set( time ) = conv(*msg);
     if(frame && listener){
       frame->set( time ) = ros_getTransform("/base_link", msg->header, *listener);
     }
@@ -158,29 +212,31 @@ struct SubscriberConv : SubscriberType {
 
 //===========================================================================
 //
-// subscribing a message into an MLR-type-Access via a conv_* function
+// subscribing a message into an MLR-type-var via a conv_* function
 //
 
 template<class msg_type, class var_type, var_type conv(const msg_type&)>
-struct SubscriberConvNoHeader : SubscriberType{
-  Access<var_type> access;
+struct SubscriberConvNoHeader : SubscriberType {
+  Var<var_type> var;
   ros::NodeHandle *nh;
   ros::Subscriber sub;
-  SubscriberConvNoHeader(const char* topic_name, Access<var_type>& _access)
-    : access(NULL, _access), nh(NULL) {
-    if(mlr::getParameter<bool>("useRos")){
+  SubscriberConvNoHeader(Var<var_type>& _var, const char* topic_name=NULL)
+    : var(NULL, _var), nh(NULL) {
+    if(mlr::getParameter<bool>("useRos", true)){
+      if(!topic_name) topic_name = var.name;
       nh = new ros::NodeHandle;
-      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
-      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into access '" <<access.name <<'\'';
+      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {var.registryNode}, this);
+      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into var '" <<var.name <<'\'';
       sub = nh->subscribe( topic_name, 1, &SubscriberConvNoHeader::callback, this);
     }
   }
-  SubscriberConvNoHeader(const char* topic_name, const char* var_name)
-    : access(NULL, var_name), nh(NULL) {
-    if(mlr::getParameter<bool>("useRos")){
+  SubscriberConvNoHeader(const char* var_name, const char* topic_name=NULL)
+    : var(NULL, var_name), nh(NULL) {
+    if(mlr::getParameter<bool>("useRos", true)){
+      if(!topic_name) topic_name = var_name;
       nh = new ros::NodeHandle;
-      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
-      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into access '" <<access.name <<'\'';
+      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {var.registryNode}, this);
+      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into var '" <<var.name <<'\'';
       sub = nh->subscribe( topic_name, 1, &SubscriberConvNoHeader::callback, this);
     }
   }
@@ -189,41 +245,43 @@ struct SubscriberConvNoHeader : SubscriberType{
     if(nh) delete nh;
   }
   void callback(const typename msg_type::ConstPtr& msg) {
-    access.set() = conv(*msg);
+    var.set() = conv(*msg);
   }
 };
 
 
 //===========================================================================
 //
-// subscribing a message into an MLR-type-Access via a conv_* function
+// subscribing a message into an MLR-type-var via a conv_* function
 //
 
 template<class msg_type, class var_type, msg_type conv(const var_type&)>
 struct PublisherConv : Thread {
-  Access<var_type> access;
+  Var<var_type> var;
   ros::NodeHandle *nh;
   ros::Publisher pub;
   mlr::String topic_name;
 
-  PublisherConv(const char* _topic_name, const Access<var_type>& _access, double beatIntervalSec=-1.)
-      : Thread(STRING("Publisher_"<<_access.name <<"->" <<_topic_name), beatIntervalSec),
-        access(this, _access, beatIntervalSec<0.),
+  PublisherConv(const Var<var_type>& _var, const char* _topic_name=NULL, double beatIntervalSec=-1.)
+      : Thread(STRING("Publisher_"<<_var.name <<"->" <<_topic_name), beatIntervalSec),
+        var(this, _var, beatIntervalSec<0.),
         nh(NULL),
         topic_name(_topic_name){
-    if(mlr::getParameter<bool>("useRos")){
-      LOG(0) <<"publishing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> from access '" <<access.name <<'\'';
+    if(mlr::getParameter<bool>("useRos", true)){
+      if(!_topic_name) topic_name = var.name;
+      LOG(0) <<"publishing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> from var '" <<var.name <<'\'';
       nh = new ros::NodeHandle;
       threadOpen();
     }
   }
-  PublisherConv(const char* _topic_name, const char* var_name, double beatIntervalSec=-1.)
+  PublisherConv(const char* var_name, const char* _topic_name=NULL, double beatIntervalSec=-1.)
       : Thread(STRING("Publisher_"<<var_name <<"->" <<_topic_name), beatIntervalSec),
-        access(this, var_name, beatIntervalSec<0.),
+        var(this, var_name, beatIntervalSec<0.),
         nh(NULL),
         topic_name(_topic_name){
-    if(mlr::getParameter<bool>("useRos")){
-      LOG(0) <<"publishing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> from access '" <<access.name <<'\'';
+    if(mlr::getParameter<bool>("useRos", true)){
+      if(!_topic_name) topic_name = var_name;
+      LOG(0) <<"publishing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> from var '" <<var.name <<'\'';
       nh = new ros::NodeHandle;
       threadOpen();
     }
@@ -234,69 +292,28 @@ struct PublisherConv : Thread {
     if(nh) delete nh;
   }
   void open(){
-    if(nh) pub = nh->advertise<msg_type>(topic_name.p, 1);
+    if(nh){
+      pub = nh->advertise<msg_type>(topic_name.p, 1);
+      mlr::wait(.1); //I hate this -- no idea why the publisher isn't ready right away..
+    }
   }
   void step(){
-    if(nh) pub.publish(conv(access.get()));
+    if(nh){
+      pub.publish(conv(var.get()));
+      LOG(0) <<"publishing to topic '" <<topic_name <<"' revision " <<var.getRevision() <<" of variable '" <<var.name <<'\'';
+      mlr::wait(1.);
+    }
   }
   void close(){
   }
 };
 
-
-//===========================================================================
-//
-// variable declarations
-//
-
-
-//-- a basic message type for communication with the soft hand controller
-struct SoftHandMsg{
-  mlr::String soft_hand_cmd;
-  SoftHandMsg(){}
-  SoftHandMsg(const mlr::String soft_hand_cmd)
-    :soft_hand_cmd(soft_hand_cmd){}
-};
-//inline void operator<<(ostream& os, const CtrlMsg& m){ os<<"BLA"; }
-//inline void operator>>(istream& os, CtrlMsg& m){  }
-
-
-//===========================================================================
-//
-// modules
-//
-//===========================================================================
-/// This module only calls ros:spinOnce() in step() and loops full speed -- to sync the process with the ros server
-
-
-
-// Helper function so sync ors with the real PR2
-/**
- * This starts the initial sync of the world with ctrl_obs from the robot.
- *
- * This is verbose (helps debugging) and retries to connect to the robot multiple times.
- *
- * If useRos==false then nothing happens.
- */
-void initialSyncJointStateWithROS(mlr::KinematicWorld& world, Access<CtrlMsg>& ctrl_obs, bool useRos);
-
-/**
- * Sync the world with ctrl_obs from the robot.
- *
- * If useRos==false then nothing happens.
- */
-void syncJointStateWitROS(mlr::KinematicWorld& world, Access<CtrlMsg>& ctrl_obs, bool useRos);
-
 //===========================================================================
 
-struct PerceptionObjects2Ors : Thread {
-  Access<visualization_msgs::MarkerArray> perceptionObjects;
-  Access<mlr::KinematicWorld> modelWorld;
-  PerceptionObjects2Ors()
-    : Thread("PerceptionObjects2Ors"),
-    perceptionObjects(this, "perceptionObjects", true),
-    modelWorld(this, "modelWorld"){}
-  void open(){}
-  void step();
-  void close(){}
+struct RosCom{
+  struct RosCom_Spinner* spinner;
+  RosCom(const char* node_name="rai_module");
+  ~RosCom();
+  template<class T> std::shared_ptr<Subscriber<T>> subscribe(Var<T>& v){ return std::make_shared<Subscriber<T>>(v); }
+  template<class T> std::shared_ptr<Publisher<T>> publish(Var<T>& v){ return std::make_shared<Publisher<T>>(v); }
 };

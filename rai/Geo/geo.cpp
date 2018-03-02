@@ -38,6 +38,8 @@ mlr::Transformation& NoTransformation = *((mlr::Transformation*)NULL);
 
 namespace mlr {
 
+double quatScalarProduct(const mlr::Quaternion& a, const mlr::Quaternion& b);
+
 double& Vector::operator()(uint i) {
   CHECK(i<3,"out of range");
   isZero=false;
@@ -599,7 +601,7 @@ void Quaternion::setRandom() {
 /// sets this to a smooth interpolation between two rotations
 void Quaternion::setInterpolate(double t, const Quaternion& a, const Quaternion b) {
   double sign=1.;
-  if(scalarProduct(a, b)<0.) sign=-1.;
+  if(quatScalarProduct(a, b)<0) sign=-1.;
   w=a.w+t*(sign*b.w-a.w);
   x=a.x+t*(sign*b.x-a.x);
   y=a.y+t*(sign*b.y-a.y);
@@ -610,7 +612,7 @@ void Quaternion::setInterpolate(double t, const Quaternion& a, const Quaternion 
 
 /// euclidean addition (with weights) modulated by scalar product -- leaves you with UNNORMALIZED quaternion
 void Quaternion::add(const Quaternion b, double w_b, double w_this){
-  if(scalarProduct(*this, b)<0.) w_b *= -1.;
+  if(quatScalarProduct(*this, b)<0.) w_b *= -1.;
   if(w_this!=-1.){
     w *= w_this;
     x *= w_this;
@@ -722,10 +724,16 @@ void Quaternion::setVec(Vector w) {
 
 /// rotation that will rotate 'from' to 'to' on direct path
 void Quaternion::setDiff(const Vector& from, const Vector& to) {
-  double phi=acos(from*to/(from.length()*to.length()));
+  Vector a = from/from.length();
+  Vector b = to/to.length();
+  double scalarProduct = a*b;
+  double phi=acos(scalarProduct);
   if(!phi){ setZero(); return; }
-  Vector axis(from^to);
-  if(axis.isZero) axis=Vector(0, 0, 1)^to;
+  Vector axis(a^b);
+  if(axis.length()<1e-10){ //a and b are co-linear -> rotate around any! axis orthogonal to a or b
+    axis = Vector_x^b; //try x
+    if(axis.length()<1e-10) axis = Vector_y^b; //try y
+  }
   setRad(phi, axis);
 }
 
@@ -738,7 +746,7 @@ double Quaternion::sqrDiffZero() const { return (w>0.?mlr::sqr(w-1.):mlr::sqr(w+
 double Quaternion::sqrDiff(const Quaternion& _q2) const{
   arr q1(&w, 4, true);
   arr q2(&_q2.w, 4, true);
-  if(scalarProduct(q1,q2)>=0) return sqrDistance(q1, q2);
+  if(quatScalarProduct(q1,q2)>=0) return sqrDistance(q1, q2);
   return sqrDistance(-q1,q2);
 }
 
@@ -941,10 +949,6 @@ Quaternion operator-(const Quaternion& b) {
   return Quaternion(b).invert();
 }
 
-double scalarProduct(const Quaternion& b, const Quaternion& c){
-  return b.w*c.w + b.x*c.x + b.y*c.y + b.z*c.z;
-}
-
 /// compound of two rotations (A=B*C)
 Quaternion operator*(const Quaternion& b, const Quaternion& c) {
   if(c.isZero) return b;
@@ -976,6 +980,17 @@ Quaternion operator/(const Quaternion& b, const Quaternion& c) {
   a.y = b.w*c.y - b.y*c.w + b.z*c.x - b.x*c.z;
   a.z = b.w*c.z - b.z*c.w + b.x*c.y - b.y*c.x;
   a.isZero=(a.w==1. || a.w==-1.);
+  return a;
+}
+
+/// Euclidean(!) difference between two quaternions
+Quaternion operator-(const Quaternion& b, const Quaternion& c) {
+  Quaternion a;
+  a.w = b.w-c.w;
+  a.x = b.x-c.w;
+  a.y = b.y-c.w;
+  a.z = b.z-c.w;
+  a.isZero = false;
   return a;
 }
 
@@ -1080,12 +1095,14 @@ void Transformation::setRandom() {
 }
 
 /// move the turtle by the vector (x, z, y) WITH RESPECT TO the current orientation/scale
-void Transformation::addRelativeTranslation(double x, double y, double z) {
+Transformation& Transformation::addRelativeTranslation(double x, double y, double z) {
   addRelativeTranslation(Vector(x, y, z));
+  return *this;
 }
 
-void Transformation::addRelativeTranslation(const Vector& x_rel){
+Transformation& Transformation::addRelativeTranslation(const Vector& x_rel){
   pos += rot*x_rel;
+  return *this;
 }
 
 
@@ -1656,13 +1673,19 @@ void Camera::setKinect(){
 
 void Camera::setDefault(){
   setHeightAngle(12.);
-  setPosition(10., -15., 8.);
+  setPosition(8., -12., 6.);
 //  setPosition(10., -4., 10.);
-  focus(0, 0, 1.);
+//  focus(0, 0, 1.);
+  focus(.9, 0., 1.3);
   upright();
 }
 
 //==============================================================================
+
+/// use as similarity measure (distance = 1 - |scalarprod|)
+double quatScalarProduct(const Quaternion& a, const Quaternion& b) {
+  return a.w*b.w+a.x*b.x+a.y*b.y+a.z*b.z;
+}
 
 std::istream& operator>>(std::istream& is, Vector& x)    { x.read(is); return is; }
 std::istream& operator>>(std::istream& is, Matrix& x)    { x.read(is); return is; }
@@ -1672,6 +1695,10 @@ std::ostream& operator<<(std::ostream& os, const Vector& x)    { x.write(os); re
 std::ostream& operator<<(std::ostream& os, const Matrix& x)    { x.write(os); return os; }
 std::ostream& operator<<(std::ostream& os, const Quaternion& x) { x.write(os); return os; }
 std::ostream& operator<<(std::ostream& os, const Transformation& x)     { x.write(os); return os; }
+
+double sqrDistance(const Vector &a, const Vector &b){
+  return (a-b).lengthSqr();
+}
 
 } //namespace mlr
 

@@ -17,7 +17,7 @@
 #include <Kin/taskMaps.h>
 #include <Kin/kin_swift.h>
 #include <Optim/lagrangian.h>
-#include <Kin/taskMap_proxy.h>
+#include <Kin/TM_proxy.h>
 
 //===========================================================================
 
@@ -55,7 +55,7 @@ PathProblem::PathProblem(const mlr::KinematicWorld& world_initial,
   //-- transitions
   {
     Task *t;
-    t = MP.addTask("transitions", new TaskMap_Transition(world), OT_sumOfSqr);
+    t = MP.addTask("transitions", new TM_Transition(world), OT_sumOfSqr);
     if(microSteps>3) t->map->order=2;
     else t->map->order=1;
     t->setCostSpecs(0, MP.T, {0.}, 1e-1);
@@ -64,7 +64,7 @@ PathProblem::PathProblem(const mlr::KinematicWorld& world_initial,
   //-- pose damping
   {
     Task *t;
-    t = MP.addTask("pose", new TaskMap_qItself(), OT_sumOfSqr);
+    t = MP.addTask("pose", new TM_qItself(), OT_sumOfSqr);
     t->map->order=0;
     t->setCostSpecs(0, MP.T, {0.}, 1e-5);
   }
@@ -72,9 +72,9 @@ PathProblem::PathProblem(const mlr::KinematicWorld& world_initial,
   //-- tasks
   {
     Task *t;
-    TaskMap_Default *m;
+    TM_Default *m;
     //pick & place position
-    t = MP.addTask("pap_pos", m=new TaskMap_Default(posDiffTMT), OT_sumOfSqr);
+    t = MP.addTask("pap_pos", m=new TM_Default(TMT_posDiff), OT_sumOfSqr);
     m->referenceIds.resize(MP.T+1,2) = -1;
     t->prec.resize(MP.T+1).setZero();
     t->target.resize(MP.T+1,3).setZero();
@@ -92,7 +92,7 @@ PathProblem::PathProblem(const mlr::KinematicWorld& world_initial,
     }
 
     //pick & place quaternion
-    t = MP.addTask("psp_quat", m=new TaskMap_Default(quatDiffTMT), OT_sumOfSqr);
+    t = MP.addTask("psp_quat", m=new TM_Default(TMT_quatDiff), OT_sumOfSqr);
     m->referenceIds.resize(MP.T+1,2) = -1;
     t->prec.resize(MP.T+1).setZero();
     t->target.resize(MP.T+1,4).setZero();
@@ -111,7 +111,7 @@ PathProblem::PathProblem(const mlr::KinematicWorld& world_initial,
 
     // zero position velocity
     if(microSteps>3){
-      t = MP.addTask("psp_zeroPosVel", m=new TaskMap_Default(posTMT, endeff_index), OT_sumOfSqr);
+      t = MP.addTask("psp_zeroPosVel", m=new TM_Default(TMT_pos, endeff_index), OT_sumOfSqr);
       t->map->order=1;
       t->prec.resize(MP.T+1).setZero();
       for(uint i=0;i<actions.N;i++){
@@ -120,7 +120,7 @@ PathProblem::PathProblem(const mlr::KinematicWorld& world_initial,
       }
 
       // zero quaternion velocity
-      t = MP.addTask("pap_zeroQuatVel", new TaskMap_Default(quatTMT, endeff_index), OT_sumOfSqr);
+      t = MP.addTask("pap_zeroQuatVel", new TM_Default(TMT_quat, endeff_index), OT_sumOfSqr);
       t->map->order=1;
       t->prec.resize(MP.T+1).setZero();
       for(uint i=0;i<actions.N;i++){
@@ -135,7 +135,7 @@ PathProblem::PathProblem(const mlr::KinematicWorld& world_initial,
 //    M.setZero();
 //    for(uint i=0;i<j_grasp->qDim();i++) M(i,j_grasp->qIndex+i)=1.;
 //    cout <<M <<endl;
-    t = MP.addTask("graspJoint", new TaskMap_qItself(QIP_byJointNames, {"graspJoint"}, world), OT_sumOfSqr);
+    t = MP.addTask("graspJoint", new TM_qItself(QIP_byJointNames, {"graspJoint"}, world), OT_sumOfSqr);
     t->map->order=1;
     t->prec.resize(MP.T+1).setZero();
     for(uint i=0;i<actions.N;i++){
@@ -144,7 +144,7 @@ PathProblem::PathProblem(const mlr::KinematicWorld& world_initial,
 
     // up/down velocities after/before pick/place
     if(microSteps>3){
-      t = MP.addTask("pap_upDownPosVel", new TaskMap_Default(posTMT, endeff_index), OT_sumOfSqr);
+      t = MP.addTask("pap_upDownPosVel", new TM_Default(TMT_pos, endeff_index), OT_sumOfSqr);
       t->map->order=1;
       t->prec.resize(MP.T+1).setZero();
       t->target.resize(MP.T+1,3).setZero();
@@ -161,11 +161,11 @@ PathProblem::PathProblem(const mlr::KinematicWorld& world_initial,
   //-- collisions
   {
     Task *t;
-    TaskMap_ProxyConstraint *m;
+    TM_ProxyConstraint *m;
 
     //of the object itself
     if(microSteps>3){
-      t = MP.addTask("object_collisions", m=new TaskMap_ProxyConstraint(allVsListedPTMT, uintA(), margin, true), OT_ineq);
+      t = MP.addTask("object_collisions", m=new TM_ProxyConstraint(TMT_allVsListedP, uintA(), margin, true), OT_ineq);
       m->proxyCosts.shapes.resize(MP.T+1,1) = -1;
       t->prec.resize(MP.T+1).setZero();
       for(uint i=0;i<actions.N;i++){
@@ -177,7 +177,7 @@ PathProblem::PathProblem(const mlr::KinematicWorld& world_initial,
     }
 
     //of the hand
-    t = MP.addTask("hand_collisions", m=new TaskMap_ProxyConstraint(allVsListedPTMT, uintA(), margin, true), OT_ineq);
+    t = MP.addTask("hand_collisions", m=new TM_ProxyConstraint(TMT_allVsListedP, uintA(), margin, true), OT_ineq);
     m->proxyCosts.shapes.resize(MP.T+1,1) = -1;
     t->prec.resize(MP.T+1).setZero();
     for(uint time=0;time<=MP.T; time++){
@@ -190,7 +190,7 @@ PathProblem::PathProblem(const mlr::KinematicWorld& world_initial,
   for(uint i=0;i<actions.N;i++){
     //pick at time 2*i+1
     mlr::KinematicSwitch *op_pick = new mlr::KinematicSwitch();
-    op_pick->symbol = mlr::KinematicSwitch::addJointZero;
+    op_pick->symbol = mlr::SW_effJoint;
     op_pick->jointType = mlr::JT_rigid;
     op_pick->timeOfApplication = tPick(i)+1;
     op_pick->fromId = world.shapes(endeff_index)->index;
@@ -199,7 +199,7 @@ PathProblem::PathProblem(const mlr::KinematicWorld& world_initial,
 
     //place at time 2*i+2
     mlr::KinematicSwitch *op_place = new mlr::KinematicSwitch();
-    op_place->symbol = mlr::KinematicSwitch::deleteJoint;
+    op_place->symbol = mlr::deleteJoint;
     op_place->timeOfApplication = tPlace(i)+1;
     op_place->fromId = world.shapes(endeff_index)->index;
     op_place->toId = world.shapes(idObject(i))->index;
@@ -211,7 +211,7 @@ PathProblem::PathProblem(const mlr::KinematicWorld& world_initial,
       t = MP.addTask("collisionConstraints", new CollisionConstraint(margin));
       t->setCostSpecs(0, MP.T, {0.}, 1.);
     }else{ //cost term
-      t = MP.addTask("collision", new TaskMap_Proxy(allPTMT, {0}, margin));
+      t = MP.addTask("collision", new TM_Proxy(TMT_allP, {0}, margin));
       t->setCostSpecs(0, MP.T, {0.}, colPrec);
     }
 */

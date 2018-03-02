@@ -28,7 +28,7 @@ struct Conv_linearlyReparameterize_ConstrainedProblem : ConstrainedProblem{
   ConstrainedProblem& P;
   arr B;
   Conv_linearlyReparameterize_ConstrainedProblem(ConstrainedProblem& P, const arr& B):P(P), B(B){}
-  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& z);
+  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& z, arr& lambda);
 };
 
 /// A struct that allows to convert one function type into another, even when given as argument

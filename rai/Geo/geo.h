@@ -213,8 +213,8 @@ struct Transformation {
   bool isZero() const;
   double diffZero() const;
   
-  void addRelativeTranslation(const Vector& t);
-  void addRelativeTranslation(double x, double y, double z);
+  Transformation& addRelativeTranslation(const Vector& t);
+  Transformation& addRelativeTranslation(double x, double y, double z);
   void addRelativeRotation(const Quaternion&);
   void addRelativeRotationDeg(double degree, double x, double y, double z);
   void addRelativeRotationRad(double rad, double x, double y, double z);
@@ -347,7 +347,7 @@ Quaternion operator*(const Quaternion& b, const Quaternion& c);
 Quaternion operator/(const Quaternion& b, const Quaternion& c);
 bool       operator==(const Quaternion&, const Quaternion&);
 bool       operator!=(const Quaternion&, const Quaternion&);
-double scalarProduct(const Quaternion& b, const Quaternion& c);
+Quaternion operator-(const Quaternion&, const Quaternion&);
 
 // TRANSFORMATION
 Transformation operator-(const Transformation&);
@@ -380,6 +380,10 @@ std::ostream& operator<<(std::ostream&, const Transformation&);
 /// optionally also return the 'Jacobians' w.r.t. q1 and q2, but in terms
 /// of a 'cross-product-matrix'
 void quatDiff(arr& y, arr& J1, arr& J2, const Quaternion& q1, const Quaternion& q2);
+
+double quatScalarProduct(const mlr::Quaternion& a, const mlr::Quaternion& b);
+
+double sqrDistance(const mlr::Vector& a, const mlr::Vector& b);
 
 
 } //END of namespace

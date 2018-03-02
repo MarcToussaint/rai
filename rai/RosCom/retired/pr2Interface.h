@@ -10,9 +10,9 @@
 #include <RosCom/subscribeAlvarMarkers.h>
 
 struct PR2Interface : Thread {
-  ACCESS(CtrlMsg, ctrl_ref)
-  ACCESS(CtrlMsg, ctrl_obs)
-  ACCESS(AlvarMarkers, ar_pose_markers)
+  VAR(CtrlMsg, ctrl_ref)
+  VAR(CtrlMsg, ctrl_obs)
+  VAR(AlvarMarkers, ar_pose_markers)
 
   mlr::KinematicWorld* realWorld;
   mlr::KinematicWorld* modelWorld;

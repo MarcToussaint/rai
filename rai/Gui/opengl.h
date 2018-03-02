@@ -82,16 +82,17 @@ void glDrawRect(float x1, float y1, float z1, float x2, float y2, float z2,
 void glDrawRect(float x1, float y1, float z1, float x2, float y2, float z2,
                 float x3, float y3, float z3, float x4, float y4, float z4);
 void glDrawRect(float x, float y, float z, float rad);
+void glDrawPolygon(const arr& P);
 void glDrawFloor(float x, float r, float g, float b);
 void glDrawBox(float x, float y, float z, bool linesOnly=false);
 void glDrawDiamond(float dx, float dy, float dz);
 void glDrawDiamond(float x, float y, float z, float dx, float dy, float dz);
 void glDrawSphere(float radius);
 void glDrawDisk(float radius);
-void glDrawProxy(const arr& p1, const arr& p2, double diskSize=.02, int colorCode=0);
+void glDrawProxy(const arr& p1, const arr& p2, double diskSize=.02, int colorCode=0, const arr &norm=NoArr, double rad1=0., double rad2=0.);
 void glDrawCylinder(float radius, float length, bool closed=true);
 void glDrawCappedCylinder(float radius, float length);
-void glDrawAxis();
+void glDrawAxis(double scale=-1.);
 void glDrawAxes(double scale);
 void glDrawGridBox(float x);
 void glDrawGridBox(float x1, float y1, float z1, float x2, float y2, float z2);
@@ -186,10 +187,11 @@ struct OpenGL {
   void addHoverCall(GLHoverCall *c){ hoverCalls.append(c); }
   void addClickCall(GLClickCall *c){ clickCalls.append(c); }
   void addKeyCall(GLKeyCall *c){ keyCalls.append(c); }
-  void addView(uint view, void (*call)(void*), void* classP=0);
+  void addSubView(uint view, void (*call)(void*), void* classP=0);
   void addSubView(uint view, GLDrawer& c);
   void setSubViewTiles(uint cols, uint rows);
   void setViewPort(uint view, double l, double r, double b, double t);
+  void clearSubView(uint view);
   
   /// @name the core draw routines (actually only for internal use)
   void Draw(int w, int h, mlr::Camera *cam=NULL, bool callerHasAlreadyLocked=false);

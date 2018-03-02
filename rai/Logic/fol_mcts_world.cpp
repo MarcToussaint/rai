@@ -85,11 +85,14 @@ void FOL_World::init(istream& is){
     cout <<"*** worldRules = "; listWrite(worldRules, cout); cout <<endl;
     cout <<"*** decisionRules = "; listWrite(decisionRules, cout, "\n"); cout <<endl;
   }
-  mlr::open(fil, "z.FOL_World");
+
+  if(verbFil){
+    mlr::open(fil, "z.FOL_World");
+  }
 
   start_T_step=0;
   start_T_real=0.;
-  reset_state();
+//  reset_state();
 }
 
 FOL_World::~FOL_World(){

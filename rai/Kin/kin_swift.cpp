@@ -295,12 +295,13 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
   int a, b;
   for(k=0, i=0; i<np; i++) {
     mlr::Proxy &proxy = world.proxies.elem(i);
-    a=INDEXswift2shape(oids[i <<1]);
-    b=INDEXswift2shape(oids[(i <<1)+1]);
+    a=INDEXswift2shape(oids[k <<1]);
+    b=INDEXswift2shape(oids[(k <<1)+1]);
     //CHECK(ids(a)==a && ids(b)==b, "shape index does not coincide with swift index");
     
     //non-penetrating pair of objects
     if(num_contacts[i]>0) { //only add one proxy!for(j=0; j<num_contacts[i]; j++, k++) {
+      CHECK(num_contacts[i]==1,"");
       proxy.a=a;
       proxy.b=b;
       proxy.d = dists[k];
@@ -308,7 +309,7 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
         proxy.posA = world.frames(a)->X.pos;
         proxy.posB = world.frames(b)->X.pos;
         proxy.normal = proxy.posA - proxy.posB; //normal always points from b to a
-        proxy.normal.normalize();
+        if(!proxy.normal.isZero) proxy.normal.normalize();
       }else{
         proxy.normal.set(&normals[3*k+0]);
         proxy.normal.normalize();
@@ -324,7 +325,7 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       proxy.posA = world.frames(a)->X.pos;
       proxy.posB = world.frames(b)->X.pos;
       proxy.normal = proxy.posA - proxy.posB; //normal always points from b to a
-      proxy.normal.normalize();
+      if(!proxy.normal.isZero) proxy.normal.normalize();
     }else if(num_contacts[i]==0){
       MLR_MSG("what is this?");
     }
@@ -390,10 +391,16 @@ void SwiftInterface::swiftQueryExactDistance() {
   }
 }
 
+uint SwiftInterface::countObjects(){
+  uint n=0;
+  for(int& i : INDEXshape2swift) if(i>=0) n++;
+  return n;
+}
+
 #else
 #include <Core/util.h>
-  void SwiftInterface::step(mlr::KinematicWorld &world, bool dumpReport=false){}
-  void SwiftInterface::pushToSwift() {}
+void SwiftInterface::step(mlr::KinematicWorld &world, bool dumpReport=false){}
+void SwiftInterface::pushToSwift() {}
   void SwiftInterface::pullFromSwift(const KinematicWorld &world, bool dumpReport) {}
 
   void SwiftInterface::reinitShape(const mlr::Shape *s) {}

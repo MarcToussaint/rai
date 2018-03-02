@@ -178,7 +178,7 @@ cleanDepends: force
 	@find $(BASE) -type f -name 'Makefile.dep' -delete -print
 
 installUbuntuPackages: force
-	sudo apt-get install $(DEPEND_UBUNTU)
+	sudo apt-get $(APTGETYES) install $(DEPEND_UBUNTU)
 
 depend: generate_Makefile.dep
 
@@ -358,8 +358,8 @@ initUbuntuPackages/%: $(BASE)/rai/%
 makePythonPath/%: %
 	make --directory=$< pywrapper
 
-#$(BASE)/build/config.mk: $(BASE)/../config.mk
-#	cp $< $@
+$(BASE)/build/config.mk: $(BASE)/../config.mk
+	cp $< $@
 
 #$(BASE)/build/config.mk: $(BASE)/build/config.mk.default
 #	cp $< $@

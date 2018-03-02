@@ -29,7 +29,7 @@ struct GraphProblem {
   /// Only for features of type 'OT_f' also a Hessian is returned
   /// Jacobians and Hessians are dense! But only w.r.t. the variables the feature depends on!!
   /// (It is the job of the optimizer to translate this to sparse global Jacobians/Hessians)
-  virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x) = 0;
+  virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x, arr& lambda) = 0;
 
 //  bool checkStructure(const arr& x);                 ///< check if Jacobians and Hessians have right dimensions (=clique size)
 //  bool checkJacobian(const arr& x, double tolerance); ///< finite differences check of the returned Jacobian at x
@@ -37,7 +37,7 @@ struct GraphProblem {
 };
 
 /// Reduction to an unstructured constrained problem
-struct Conv_Graph_ConstrainedProblem:ConstrainedProblem{
+struct Conv_Graph_ConstrainedProblem : ConstrainedProblem {
   GraphProblem& G;
   uintA variableDimensions, varDimIntegral;
   uintAA featureVariables;
@@ -45,6 +45,6 @@ struct Conv_Graph_ConstrainedProblem:ConstrainedProblem{
   arrA J_G, H_G;
 
   Conv_Graph_ConstrainedProblem(GraphProblem& _G);
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda);
 };
 
