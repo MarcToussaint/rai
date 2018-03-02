@@ -44,7 +44,7 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda){
   }
   dualityMeasure /= n_ineq;
 
-  mu = -.9*dualityMeasure;
+  mu = -.5*dualityMeasure;
 
   //-- equation system
   if(&r){
