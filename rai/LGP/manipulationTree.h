@@ -18,12 +18,13 @@
 #include <Kin/kin.h>
 #include <Logic/fol_mcts_world.h>
 #include <Logic/fol.h>
+#include <KOMO/komo.h>
 
 struct MNode;
 typedef mlr::Array<MNode*> MNodeL;
 
-struct SkeletonEntry{ StringL symbols; uint k0,k1; double phase0, phase1; };
-typedef mlr::Array<SkeletonEntry> Skeleton;
+//struct SkeletonEntry{ StringL symbols; uint k0,k1; double phase0, phase1; };
+//typedef mlr::Array<SkeletonEntry> Skeleton;
 
 
 extern uint COUNT_kin, COUNT_evals, COUNT_node;
@@ -69,7 +70,7 @@ struct MNode{
   arr computeTime;  ///< computation times for each level
   double bound=0.;
 
-  mlr::Array<struct KOMO*> komoProblem; //komo problems for all levels
+  mlr::Array<KOMO*> komoProblem; //komo problems for all levels
   arrA opt; //these are the optima (trajectories) computed
 
   // display helpers
