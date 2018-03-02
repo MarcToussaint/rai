@@ -23,6 +23,7 @@ struct PrimalDualProblem : ScalarFunction {
 //
 
 struct OptPrimalDual{
+  arr& x;
   PrimalDualProblem PD;
   OptNewton newton;
   OptOptions opt;

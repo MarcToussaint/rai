@@ -193,7 +193,7 @@ void MNode::optLevel(uint level, bool collisions){
     komo.setSquaredQuaternionNorms();
 
 #if 1
-    Skeleton S = getSkeleton({"touch", "stable"});
+    Skeleton S = getSkeleton({"touch", "stable", "dynamic", "impulse"});
     komo.setSkeleton(S);
 #else
     if(collisions) komo.setCollisions(false);

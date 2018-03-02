@@ -98,11 +98,6 @@ OptNewton::StopCriterion OptNewton::step(){
     }
   }
 
-  //restrict stepsize
-  double maxDelta = absMax(Delta);
-  if(o.maxStep>0. && maxDelta>o.maxStep){  Delta *= o.maxStep/maxDelta; maxDelta = o.maxStep; }
-  double alphaLimit = o.maxStep/maxDelta;
-
   //chop Delta to stay within bounds
   if(bound_lo.N && bound_hi.N){
     double a=1.;
@@ -110,8 +105,17 @@ OptNewton::StopCriterion OptNewton::step(){
       if(x(i)+a*Delta(i)>bound_hi(i)) a = (bound_hi(i)-x(i))/Delta(i);
       if(x(i)+a*Delta(i)<bound_lo(i)) a = (bound_lo(i)-x(i))/Delta(i);
     }
-    Delta *= a;
+    if(a<1.){
+      if(o.verbose>1) cout <<" \tboundClip=" <<std::setw(11) <<a <<flush;
+      Delta *= a;
+    }
   }
+
+  //restrict stepsize
+  double maxDelta = absMax(Delta);
+  if(o.maxStep>0. && maxDelta>o.maxStep){  Delta *= o.maxStep/maxDelta; maxDelta = o.maxStep; }
+  double alphaLimit = o.maxStep/maxDelta;
+
   if(o.verbose>1) cout <<" \t|Delta|=" <<std::setw(11) <<maxDelta <<flush;
 
   //lazy stopping criterion: stop without any update
@@ -134,7 +138,7 @@ OptNewton::StopCriterion OptNewton::step(){
     if(fy==fy && (wolfe || o.nonStrictSteps==-1 || o.nonStrictSteps>(int)it)) { //fy==fy is for NAN?
       //accept new point
       if(o.verbose>1) cout <<" - ACCEPT" <<endl;
-      if(fx-fy<o.stopFTolerance) numTinySteps++; else numTinySteps=0;
+      if(!rootFinding && fx-fy<o.stopFTolerance) numTinySteps++; else numTinySteps=0;
       x = y;
       fx = fy;
       gx = gy;

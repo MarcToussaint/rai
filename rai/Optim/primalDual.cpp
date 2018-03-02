@@ -1,14 +1,14 @@
 #include "primalDual.h"
 
 PrimalDualProblem::PrimalDualProblem(const arr &x, ConstrainedProblem &P, OptOptions opt, arr &lambdaInit)
-  : L(P, opt, lambdaInit), mu(1e-2){
+  : L(P, opt, lambdaInit), mu(opt.muLBInit){
 
   L.lagrangian(NoArr, NoArr, x);
 
   uint n_ineq=0;
   for(uint i=0;i<L.phi_x.N;i++) if(L.tt_x.p[i]==OT_ineq) n_ineq++;
   x_lambda = x;
-  x_lambda.append( zeros(n_ineq) );
+  x_lambda.append( ones(n_ineq) );
 
 
   ScalarFunction::operator=( [this](arr& dL, arr& HL, const arr& x) -> double {
@@ -31,6 +31,20 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda){
   arr dL, HL;
   double l = L.lagrangian(dL, HL, x);
   if(!L.lambda.N) L.lambda = zeros(L.phi_x.N);
+
+  bool primalFeasible=true;
+  double dualityMeasure=0.;
+  uint n_ineq=0;
+  for(uint i=0;i<L.phi_x.N;i++){
+    if(L.tt_x.p[i]==OT_ineq    ){
+      if(L.phi_x.p[i] > 0.){ primalFeasible=false; break; }
+      n_ineq++;
+      dualityMeasure += L.lambda.p[i] * L.phi_x.p[i];
+    }
+  }
+  dualityMeasure /= n_ineq;
+
+  mu = -.9*dualityMeasure;
 
   //-- equation system
   if(&r){
@@ -79,17 +93,18 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda){
     }
   }
 
+  if(!primalFeasible) return NAN;
   return sumOfSqr(r);
 }
 
 //==============================================================================
 
 OptPrimalDual::OptPrimalDual(arr& x, arr &dual, ConstrainedProblem& P, OptOptions opt)
-  : PD(x, P, opt, dual), newton(PD.x_lambda, PD, opt), opt(opt){
+  : x(x), PD(x, P, opt, dual), newton(PD.x_lambda, PD, opt), opt(opt){
 
   newton.rootFinding = true;
   newton.bound_lo.resize(newton.x.N).setZero();
-  newton.bound_hi.resize(newton.x.N).setZero();
+  newton.bound_hi.resize(newton.x.N) = -1.;
   for(uint i=x.N; i<newton.x.N; i++) newton.bound_hi(i) = 1e10;
 
   if(opt.verbose>0) cout <<"***** OptPrimalDual" <<endl;
@@ -101,11 +116,12 @@ uint OptPrimalDual::run(){
 
   newton.run();
 
-  arr x = newton.x({0,PD.L.x.N-1});
+  x = newton.x({0,x.N-1});
 
   if(opt.verbose>0){
-    cout <<"** optConstr. it=" <<its
+    cout <<"** optPrimalDual it=" <<its
          <<' ' <<newton.evals
+         <<" mu=" <<PD.mu
          <<" f(x)=" <<PD.L.get_costs()
          <<" \tg_compl=" <<PD.L.get_sumOfGviolations()
          <<" \th_compl=" <<PD.L.get_sumOfHviolations();

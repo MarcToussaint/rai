@@ -859,14 +859,32 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
 
 void KOMO::setSkeleton(const Skeleton &S){
   for(const SkeletonEntry& s:S){
+    const StringL& symbols = s.symbols;
     cout <<"SKELETON->KOMO " <<s <<endl;
     if(!s.symbols.N) continue;
     if(*s.symbols(0)=="touch"){ setTouch(s.phase0, s.phase1, *s.symbols(1), *s.symbols(2)); continue; }
     if(*s.symbols(0)=="stable"){
-      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_effJoint, JT_quatBall, *s.symbols(1), *s.symbols(2), world));
-      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_insertEffJoint, JT_trans3, NULL, *s.symbols(2), world));
-      //        setKinematicSwitch(phase+time, true, new KinematicSwitch(SW_effJoint, JT_free, *s.symbols(1), *s.symbols(2), world));
-      //      setFlag(s.phase0, new Flag(FL_zeroQVel, world[*s.symbols(2)]->ID, 0, true));
+//      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_effJoint, JT_quatBall, *s.symbols(1), *s.symbols(2), world));
+//      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_insertEffJoint, JT_trans3, NULL, *s.symbols(2), world));
+      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_effJoint, JT_free, *s.symbols(1), *s.symbols(2), world));
+      setFlag(s.phase0, new Flag(FL_clear, world[*symbols(2)]->ID, 0, true));
+      setFlag(s.phase0, new Flag(FL_zeroQVel, world[*s.symbols(2)]->ID, 0, true));
+      continue;
+    }
+    if(*s.symbols(0)=="dynamic"){
+      Transformation rel = 0;
+      rel.pos.set(0,0, .5*(shapeSize(world, *symbols(1)) + shapeSize(world, *symbols(2))));
+      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, *s.symbols(1), *s.symbols(2), world, 0, rel));
+      setFlag(s.phase0, new Flag(FL_clear, world[*symbols(2)]->ID, 0, true), +1);
+      setFlag(s.phase0, new Flag(FL_zeroAcc, world[*symbols(2)]->ID, 0, true), +1);
+      continue;
+    }
+    if(*s.symbols(0)=="impulse"){
+      if(k_order>=2){
+        setTask(s.phase0, s.phase0, new TM_ImpulsExchange(world, *symbols(1), *symbols(2)), OT_eq, {}, 1e2, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
+        setFlag(s.phase0, new Flag(FL_impulseExchange, world[*symbols(1)]->ID), +1);
+        setFlag(s.phase0, new Flag(FL_impulseExchange, world[*symbols(2)]->ID), +1);
+      }
       continue;
     }
     cout <<"UNUSED!" <<endl;
