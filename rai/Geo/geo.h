@@ -128,6 +128,7 @@ struct Quaternion {
   void setMatrix(double* m);
   void setDiff(const Vector& from, const Vector& to);
   void setInterpolate(double t, const Quaternion& a, const Quaternion b);
+  void add(const Quaternion b, double w_b=1., double w_this=1.);
   Quaternion& invert();
   void flipSign();
   void normalize();
@@ -346,6 +347,7 @@ Quaternion operator*(const Quaternion& b, const Quaternion& c);
 Quaternion operator/(const Quaternion& b, const Quaternion& c);
 bool       operator==(const Quaternion&, const Quaternion&);
 bool       operator!=(const Quaternion&, const Quaternion&);
+double scalarProduct(const Quaternion& b, const Quaternion& c);
 
 // TRANSFORMATION
 Transformation operator-(const Transformation&);

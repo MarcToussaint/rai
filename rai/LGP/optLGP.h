@@ -10,7 +10,6 @@ struct OptLGP{
   uint numSteps;
   ofstream fil;
 
-
   MNode *root, *displayFocus;
 
   mlr::Array<std::shared_ptr<OrsPathViewer>> views; //displays for the 3 different levels
@@ -53,6 +52,7 @@ public:
   // output
   uint numFoundSolutions();
   mlr::String report(bool detailed=false);
+  void reportEffectiveJoints();
   void initDisplay();
   void updateDisplay();
   void renderToVideo(uint level=3, const char* filePrefix="z.vid/z.path.");

@@ -1300,14 +1300,16 @@ Graph mlr::KinematicWorld::getGraph() const {
     Node *n = G.elem(f->ID);
     if(f->parent){
       n->addParent(G.elem(f->parent->ID));
-      if(f->joint){
-        n->keys.append(STRING("joint " <<f->joint->type));
-      }else{
-        n->keys.append(STRING("link " <<f->Q));
-      }
+      n->keys.append(STRING("Q= " <<f->Q));
+    }
+    if(f->joint){
+      n->keys.append(STRING("joint " <<f->joint->type));
     }
     if(f->shape){
       n->keys.append(STRING("shape " <<f->shape->type()));
+    }
+    if(f->inertia){
+      n->keys.append(STRING("inertia m=" <<f->inertia->mass));
     }
   }
 #else
@@ -1364,6 +1366,11 @@ mlr::Array<mlr::Link *> mlr::KinematicWorld::getLinks(){
     a->getRigidSubFrames(l->frames);
   }
   return links;
+}
+
+void mlr::KinematicWorld::displayDot(){
+  Graph G = getGraph();
+  G.displayDot();
 }
 
 void mlr::KinematicWorld::report(std::ostream &os) const {
@@ -1444,7 +1451,11 @@ void mlr::KinematicWorld::init(const Graph& G) {
     CHECK(to,"JOINT: to '" <<n->parents(1)->keys.last() <<"' does not exist ["<<*n <<"]");
 
     Frame *f=new Frame(*this);
-    if(n->keys.N>1) f->name=n->keys.last();
+    if(n->keys.N>1){
+      f->name=n->keys.last();
+    }else{
+      f->name <<'|' <<to->name; //the joint frame is actually the link frame of all child frames
+    }
     f->ats.copy(n->graph(), false, true);
 
     f->linkFrom(from);

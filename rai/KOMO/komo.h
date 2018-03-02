@@ -150,17 +150,20 @@ struct KOMO{
 
   //===========================================================================
   //
-  // optimizing and verbosity
+  // optimizing, getting results, and verbosity
   //
 
   //-- optimization macros
   void setSpline(uint splineT);   ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
   void reset(double initNoise=.01);      ///< reset the optimizer (initializes x to a default path)
   void run();                     ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
+
   arr getPath(const StringA& joints);
+
   void reportProblem(ostream &os=std::cout);
   Graph getReport(bool gnuplt=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot task costs; output detailed cost features per time slice)
   void reportProxies(ostream& os=std::cout); ///< report the proxies (collisions) for each time slice
+  mlr::Array<mlr::Transformation> reportEffectiveJoints(ostream& os=std::cout);
   void checkGradients();          ///< checks all gradients numerically
   void plotTrajectory();
   bool displayTrajectory(double delay=0.01, bool watch=false); ///< display the

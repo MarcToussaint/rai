@@ -269,7 +269,7 @@ void KOMO::setKS_placeOn(double time, bool before, const char* obj, const char* 
 
 void KOMO::setKS_slider(double time, bool before, const char* obj, const char* slider, const char* table){
   //disconnect object from grasp ref
-  setKinematicSwitch(time, before, "delete", NULL, obj);
+//  setKinematicSwitch(time, before, "delete", NULL, obj);
 
   //the two slider objects
   mlr::String slidera = STRING(slider <<'a');
@@ -367,10 +367,11 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
 
 
   //disconnect object from table
-  setKinematicSwitch(time, true, "delete", NULL, object);
+//  setKinematicSwitch(time, true, "delete", NULL, object);
   //connect graspRef with object
 #if 1
-  setKinematicSwitch(time, true, "ballZero", endeffRef, object);
+//  setKinematicSwitch(time, true, "ballZero", endeffRef, object);
+  setKinematicSwitch(time, true, new mlr::KinematicSwitch(mlr::KinematicSwitch::addJointZero, mlr::JT_hingeY, endeffRef, object, world, 0));
 //  setKinematicSwitch(time, true, "insert_transX", NULL, object);
   setKinematicSwitch(time, true, "insert_trans3", NULL, object);
   setTask(time, time, new TaskMap_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e2);
@@ -470,7 +471,7 @@ void KOMO::setPlace(double time, const char* endeff, const char* object, const c
   setTask(time, time, new TaskMap_AboveBox(world, object, placeRef), OT_ineq, NoArr, 1e2);
 
   //disconnect object from grasp ref
-  setKinematicSwitch(time, true, "delete", NULL, object);
+//  setKinematicSwitch(time, true, "delete", NULL, object);
 
   //connect object to placeRef
   mlr::Transformation rel = 0;
@@ -542,7 +543,7 @@ void KOMO::setPush(double startTime, double endTime, const char* stick, const ch
     setTask(startTime-.3, startTime-.1, new TaskMap_Default(posTMT, world, stick), OT_sumOfSqr, {0.,0., -.2}, 1e2, 1); //move down
     setTask(startTime-.05, startTime-.0, new TaskMap_Default(posTMT, world, stick), OT_sumOfSqr, {0.,0., 0}, 1e2, 1); //hold still
     setTask(endTime+.0, endTime+.05, new TaskMap_Default(posTMT, world, stick), OT_sumOfSqr, {0.,0., 0}, 1e2, 1); //hold still
-    setTask(endTime+.1, endTime+.3, new TaskMap_Default(posTMT, world, stick), OT_sumOfSqr, {0.,0., .2}, 1e2, 1); // move up
+//    setTask(endTime+.1, endTime+.3, new TaskMap_Default(posTMT, world, stick), OT_sumOfSqr, {0.,0., .2}, 1e2, 1); // move up
   }
 }
 
@@ -569,7 +570,7 @@ void KOMO::setSlide(double time, const char* endeff, const char* object, const c
   setTask(endTime, endTime, new TaskMap_AboveBox(world, object, placeRef), OT_ineq, NoArr, 1e2);
 
   //disconnect object from grasp ref
-  setKinematicSwitch(endTime, true, "delete", endeff, object);
+//  setKinematicSwitch(endTime, true, "delete", endeff, object);
 
   //connect object to table
   mlr::Transformation rel = 0;
@@ -1095,12 +1096,98 @@ void KOMO::set_x(const arr& x){
 }
 
 void KOMO::reportProxies(std::ostream& os){
-    int t=0;
-    for(auto &K:configurations){
-        os <<" **** KOMO PROXY REPORT t=" <<t-k_order <<endl;
-        K->reportProxies(os);
-        t++;
+  int t=0;
+  for(auto &K:configurations){
+    os <<" **** KOMO PROXY REPORT t=" <<t-k_order <<endl;
+    K->reportProxies(os);
+    t++;
+  }
+}
+
+struct EffJointInfo{
+  mlr::Joint *j;
+  mlr::Transformation Q=0;
+  uint t, t_start=0, t_end=0;
+  double accum=0.;
+  EffJointInfo(mlr::Joint *j, uint t): j(j), t(t){}
+  void write(ostream& os) const{
+    os <<"EffInfo " <<j->frame.parent->name <<"->" <<j->frame.name <<" \t" <<j->type <<" \tt=" <<t_start <<':' <<t_end <<" \tQ=" <<Q;
+  }
+};
+stdOutPipe(EffJointInfo)
+bool operator==(const EffJointInfo&, const EffJointInfo&){ return false; }
+
+mlr::Array<mlr::Transformation> KOMO::reportEffectiveJoints(std::ostream& os){
+  os <<"**** KOMO EFFECTIVE JOINTS" <<endl;
+  Graph G;
+  std::map<mlr::Joint*,Node*> map;
+  for(uint s=k_order+1; s<T+k_order;s++){
+    JointL matches = getMatchingJoints({configurations(s-1), configurations(s)}, true);
+    for(uint i=0;i<matches.d0;i++){
+      JointL match = matches[i];
+      auto *n = new Node_typed<EffJointInfo>(G, {match(1)->frame.name}, {}, EffJointInfo(match(1), s-k_order));
+      map[match(1)] = n;
+      if(map.find(match(0))==map.end()) map[match(0)] = new Node_typed<EffJointInfo>(G, {match(0)->frame.name}, {}, EffJointInfo(match(0), s-k_order-1));
+      Node *other=map[match(0)];
+      n->addParent(other);
     }
+  }
+
+//  for(uint t=0;t<T+k_order;t++){
+//    mlr::KinematicWorld *K = configurations(t);
+//    for(mlr::Frame *f:K->frames){
+//      if(f->joint && f->joint->constrainToZeroVel)
+//        os <<" t=" <<t-k_order <<'\t' <<f->name <<" \t" <<f->joint->type <<" \tq=" <<f->joint->getQ() <<" \tQ=" <<f->Q <<endl;
+//    }
+//  }
+
+//  G.displayDot();
+
+  for(Node *n:G){
+    if(!n->parents.N){ //a root node -> accumulate all info
+      EffJointInfo& info = n->get<EffJointInfo>();
+      info.t_start = info.t_end = info.t;
+      info.Q = info.j->frame.Q;
+      info.accum += 1.;
+      Node *c=n;
+      for(;;){
+        if(!c->parentOf.N) break;
+        c = c->parentOf.scalar();
+        EffJointInfo& cinfo = c->get<EffJointInfo>();
+        if(info.t_end<cinfo.t) info.t_end=cinfo.t;
+        info.Q.rot.add(cinfo.j->frame.Q.rot);
+        info.Q.pos += cinfo.j->frame.Q.pos;
+        info.accum += 1.;
+//        cout <<" t=" <<cinfo.t <<'\t' <<c->keys <<" \t" <<cinfo.j->type <<" \tq=" <<cinfo.j->getQ() <<" \tQ=" <<cinfo.j->frame.Q <<endl;
+      }
+      info.Q.pos /= info.accum;
+      info.Q.rot.normalize();
+      cout <<info <<endl;
+    }
+  }
+
+  //-- align this with the switches and return the transforms
+  uint s=0;
+  mlr::Array<mlr::Transformation> Qs(switches.N);
+  for(Node *n:G){
+    if(!n->parents.N){
+      EffJointInfo& info = n->get<EffJointInfo>();
+      mlr::KinematicSwitch *sw = switches(s);
+
+      CHECK_EQ(info.t_start, sw->timeOfApplication, "");
+      CHECK_EQ(info.j->type, sw->jointType, "");
+//      CHECK_EQ(info.j->frame.parent->ID, sw->fromId, "");
+//      CHECK_EQ(info.j->frame.ID, sw->toId, "");
+
+      Qs(s) = info.Q;
+
+      s++;
+    }
+  }
+
+  cout <<Qs <<endl;
+
+  return Qs;
 }
 
 
@@ -1286,11 +1373,10 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, Obje
   if(&tt) komo.featureTypes = ARRAY<ObjectiveTypeA>(tt);
 }
 
-
 arr KOMO::getPath(const StringA &joints){
-    arr X(T,joints.N);
-    for(uint t=0;t<T;t++){
-        X[t] = configurations(t+k_order)->getJointState(joints);
-    }
-    return X;
+  arr X(T,joints.N);
+  for(uint t=0;t<T;t++){
+    X[t] = configurations(t+k_order)->getJointState(joints);
+  }
+  return X;
 }

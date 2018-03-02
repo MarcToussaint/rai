@@ -38,8 +38,6 @@ mlr::Transformation& NoTransformation = *((mlr::Transformation*)NULL);
 
 namespace mlr {
 
-double scalarProduct(const mlr::Quaternion& a, const mlr::Quaternion& b);
-
 double& Vector::operator()(uint i) {
   CHECK(i<3,"out of range");
   isZero=false;
@@ -601,12 +599,28 @@ void Quaternion::setRandom() {
 /// sets this to a smooth interpolation between two rotations
 void Quaternion::setInterpolate(double t, const Quaternion& a, const Quaternion b) {
   double sign=1.;
-  if(scalarProduct(a, b)<0) sign=-1.;
+  if(scalarProduct(a, b)<0.) sign=-1.;
   w=a.w+t*(sign*b.w-a.w);
   x=a.x+t*(sign*b.x-a.x);
   y=a.y+t*(sign*b.y-a.y);
   z=a.z+t*(sign*b.z-a.z);
   normalize();
+  isZero=false;
+}
+
+/// euclidean addition (with weights) modulated by scalar product -- leaves you with UNNORMALIZED quaternion
+void Quaternion::add(const Quaternion b, double w_b, double w_this){
+  if(scalarProduct(*this, b)<0.) w_b *= -1.;
+  if(w_this!=-1.){
+    w *= w_this;
+    x *= w_this;
+    y *= w_this;
+    z *= w_this;
+  }
+  w += w_b*b.w;
+  x += w_b*b.x;
+  y += w_b*b.y;
+  z += w_b*b.z;
   isZero=false;
 }
 
@@ -925,6 +939,10 @@ void Quaternion::read(std::istream& is) { is >>PARSE("(") >>w >>x >>y  >>z >>PAR
 /// inverse rotation
 Quaternion operator-(const Quaternion& b) {
   return Quaternion(b).invert();
+}
+
+double scalarProduct(const Quaternion& b, const Quaternion& c){
+  return b.w*c.w + b.x*c.x + b.y*c.y + b.z*c.z;
 }
 
 /// compound of two rotations (A=B*C)
@@ -1645,11 +1663,6 @@ void Camera::setDefault(){
 }
 
 //==============================================================================
-
-/// use as similarity measure (distance = 1 - |scalarprod|)
-double scalarProduct(const Quaternion& a, const Quaternion& b) {
-  return a.w*b.w+a.x*b.x+a.y*b.y+a.z*b.z;
-}
 
 std::istream& operator>>(std::istream& is, Vector& x)    { x.read(is); return is; }
 std::istream& operator>>(std::istream& is, Matrix& x)    { x.read(is); return is; }

@@ -89,13 +89,14 @@ struct ManipulationTree_Node{
   arr generateRootMCRollouts(uint num, int stepAbort, const mlr::Array<MCTS_Environment::Handle>& prefixDecisions);
   void addMCRollouts(uint num,int stepAbort);
 
-  //-- helpers
+  //-- helpers to get other nodes
   ManipulationTree_NodeL getTreePath() const; ///< return the decision path in terms of a list of nodes (just walking to the root)
   ManipulationTree_Node* getRoot(); ///< return the decision path in terms of a list of nodes (just walking to the root)
   ManipulationTree_Node* getChildByAction(Node  *folDecision); ///<
   void getAll(ManipulationTree_NodeL& L);
   ManipulationTree_NodeL getAll(){ ManipulationTree_NodeL L; getAll(L); return L; }
   void checkConsistency();
+
 private:
   void setInfeasible(); ///< set this and all children infeasible
   void labelInfeasible(); ///< sets this infeasible AND propagates this label up-down to others
@@ -103,8 +104,8 @@ private:
   ManipulationTree_Node *treePolicy_softMax(double temperature);
   bool recomputeAllFolStates();
   void recomputeAllMCStats(bool excludeLeafs=true);
-public:
 
+public:
   void write(ostream& os=cout, bool recursive=false, bool path=true) const;
   void getGraph(Graph& G, Node *n=NULL);
   Graph getGraph(){ Graph G; getGraph(G, NULL); G.checkConsistency(); return G; }
