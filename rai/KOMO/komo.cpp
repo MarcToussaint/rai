@@ -871,12 +871,17 @@ void KOMO::setSkeleton(const Skeleton &S){
       setFlag(s.phase0, new Flag(FL_zeroQVel, world[*s.symbols(2)]->ID, 0, true));
       continue;
     }
-    if(*s.symbols(0)=="dynamic"){
+    if(*s.symbols(0)=="dynOn"){
       Transformation rel = 0;
       rel.pos.set(0,0, .5*(shapeSize(world, *symbols(1)) + shapeSize(world, *symbols(2))));
       setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, *s.symbols(1), *s.symbols(2), world, 0, rel));
       setFlag(s.phase0, new Flag(FL_clear, world[*symbols(2)]->ID, 0, true), +1);
       setFlag(s.phase0, new Flag(FL_zeroAcc, world[*symbols(2)]->ID, 0, true), +1);
+      continue;
+    }
+    if(*s.symbols(0)=="dynFree"){
+      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", *s.symbols(1), world));
+      setFlag(s.phase0, new Flag(FL_gravityAcc, world[*s.symbols(1)]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
       continue;
     }
     if(*s.symbols(0)=="impulse"){

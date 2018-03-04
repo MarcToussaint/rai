@@ -32,6 +32,7 @@ extern uintA COUNT_opt;
 extern double COUNT_time;
 extern mlr::String OptLGPDataPath;
 extern ofstream *filNodes;
+extern bool LGP_useHoming;
 
 enum LEVEL{ l_symbolic=0, l_pose=1, l_seq=2, l_path=3 };
 
