@@ -45,7 +45,7 @@ struct Frame {
   uint ID;                   ///< unique identifier
   String name;               ///< name
   Frame *parent=NULL;        ///< parent frame
-  FrameL outLinks;           ///< lists of in and out joints
+  FrameL outLinks;           ///< list of children [TODO: rename]
   Transformation Q=0;        ///< relative transform to parent
 public:
   Transformation X=0;        ///< frame's absolute pose
@@ -56,10 +56,10 @@ public:
   int flags=0;               ///< various flags that are used by task maps to impose costs/constraints in KOMO
 
   //attachments to the frame
-  Joint *joint=NULL;      ///< this frame is an articulated joint
-  Shape *shape=NULL;      ///< this frame has a (collision or visual) geometry
-  Inertia *inertia=NULL;  ///< this frame has inertia (is a mass)
-  Array<Contact*> contacts; ///< this frame is in (near-) contact with other frames
+  Joint *joint=NULL;         ///< this frame is an articulated joint
+  Shape *shape=NULL;         ///< this frame has a (collision or visual) geometry
+  Inertia *inertia=NULL;     ///< this frame has inertia (is a mass)
+  Array<Contact*> contacts;  ///< this frame is in (near-) contact with other frames
 
   Frame(KinematicWorld& _K, const Frame *copyBody=NULL);
   Frame(Frame *_parent);
