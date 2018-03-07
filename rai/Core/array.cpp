@@ -882,6 +882,7 @@ void write_ppm(const byteA &img, const char *file_name, bool swap_rows) {
   switch(img.d2) {
     case 0:  os <<"P5 " <<img.d1 <<' ' <<img.d0 <<" 255\n";  break; //PGM
     case 3:  os <<"P6 " <<img.d1 <<' ' <<img.d0 <<" 255\n";  break; //PPM
+    default: NIY;
   }
   if(!swap_rows) {
     os.write((char*)img.p, img.N);
