@@ -28,7 +28,7 @@ def writeShape(link):
     elem = link.find("geometry/mesh")
     if elem is not None:
         print 'type=ST_mesh mesh=\'%s\'' % elem.attrib['filename'],
-        if elem.attrib['scale'] is not None:
+        if elem.find("scale") is not None:
             print 'meshscale=[%s]' % elem.attrib['scale'],
 
     elem = link.find("material/color")
@@ -63,15 +63,13 @@ for link in links:
     print '}\n', # end of body
 
     # visual shape
-    visual = link.find("visual")
-    if visual is not None:
+    for visual in link.findall("visual"):
         print 'shape visual %s_1 (%s) {\n  ' % (name, name),
         writeShape(visual)
         print '}\n', # end of shape
 
     # collision shape
-    collision = link.find("collision")
-    if collision is not None:
+    for collision in link.findall("collision"):
         print 'shape collision %s_0 (%s) {\n  ' % (name, name),
         print ' color=[.8 .2 .2 .5],',
         writeShape(collision)

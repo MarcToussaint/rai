@@ -1500,9 +1500,11 @@ void mlr::Mesh::readObjFile(std::istream& is) {
   
   //CONVENTION!: start counting vertex indices from 0!!
   T -= 1u;
-  Tt -= 1u;
   CHECK(T.max() < nV, "");
-  CHECK(Tt.max() < nTex, "");
+  if(nTex){
+    Tt -= 1u;
+    CHECK(Tt.max() < nTex, "");
+  }
 }
 
 //===========================================================================

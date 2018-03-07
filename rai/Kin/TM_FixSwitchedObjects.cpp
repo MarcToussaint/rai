@@ -47,7 +47,7 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau, int 
 
     if(b0->name.startsWith("slider")) continue; //warning: this introduces zeros in y and J -- but should be ok
 
-    if(b1->flags && !(b1->flags & (1<<FL_zeroQVel))) continue;
+    if(b1->flags && (b1->flags & (1<<FL_impulseExchange))) continue;
 
 //    if(order==2){
 //      mlr::Frame *b2 = G.elem(-1)->frames(id);

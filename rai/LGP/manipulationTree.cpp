@@ -186,16 +186,18 @@ void MNode::optLevel(uint level, bool collisions){
   case 3:{
     komo.setModel(startKinematics, collisions);
     uint stepsPerPhase = mlr::getParameter<uint>("LGP/stepsPerPhase", 10);
-    komo.setTiming(time+.5, stepsPerPhase, 5., 2);
+    uint pathOrder = mlr::getParameter<uint>("LGP/pathOrder", 2);
+    komo.setTiming(time+.5, stepsPerPhase, 5., pathOrder);
 
     if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
-    komo.setSquaredQAccelerations();
+    if(pathOrder==1) komo.setSquaredQVelocities();
+    else komo.setSquaredQAccelerations();
     komo.setFixEffectiveJoints(-1., -1., 1e2);
     komo.setFixSwitchedObjects(-1., -1., 1e2);
     komo.setSquaredQuaternionNorms();
 
 #if 1
-    Skeleton S = getSkeleton({"touch", "stable", "dynOn", "impulse", "dynFree"});
+    Skeleton S = getSkeleton({"touch", "stable", "dynOn", "impulse", "dynFree", "actFree"});
     komo.setSkeleton(S);
 #else
     if(collisions) komo.setCollisions(false);
@@ -211,7 +213,7 @@ void MNode::optLevel(uint level, bool collisions){
   //-- optimize
   DEBUG( FILE("z.fol") <<fol; );
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); );
-//  komo.reportProblem();
+  komo.reportProblem();
 
   try{
     //      komo.verbose=3;

@@ -884,6 +884,13 @@ void KOMO::setSkeleton(const Skeleton &S){
       setFlag(s.phase0, new Flag(FL_gravityAcc, world[*s.symbols(1)]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
       continue;
     }
+    if(*s.symbols(0)=="actFree"){
+      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", *s.symbols(1), world));
+      setFlag(s.phase0, new Flag(FL_clear, world[*s.symbols(1)]->ID, 0, true), +0);
+      setFlag(s.phase0, new Flag(FL_qCtrlCostVel, world[*s.symbols(1)]->ID, 0, true), +0);
+//      setFlag(s.phase0, new Flag(FL_qCtrlCostAcc, world[*s.symbols(1)]->ID, 0, true), +0);
+      continue;
+    }
     if(*s.symbols(0)=="impulse"){
       if(k_order>=2){
         setTask(s.phase0, s.phase0, new TM_ImpulsExchange(world, *symbols(1), *symbols(2)), OT_eq, {}, 1e2, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
