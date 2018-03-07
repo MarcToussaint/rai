@@ -139,6 +139,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
       j->frame.flags |= (1<<FL_zeroQVel);
     }
     j->type = jointType;
+    j->frame.Q = j->frame.X / j->frame.parent->X; //that's important for the initialization of x during the very first komo.setupConfigurations !!
     K.calc_q();
     K.calc_fwdPropagateFrames();
     K.checkConsistency();

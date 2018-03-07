@@ -43,7 +43,7 @@ void TM_Proxy::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
       break;
     case TMT_listedVsListedP:
       for(const mlr::Proxy& p: G.proxies){
-        if(shapes.contains(p.a) && shapes.contains(p.b)) {
+        if(shapes.contains(p.a->ID) && shapes.contains(p.b->ID)) {
           G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
 //          p.colorCode = 2;
         }
@@ -52,7 +52,7 @@ void TM_Proxy::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
     case TMT_allVsListedP: {
       if(t && shapes.nd==2) shapes_t.referToDim(shapes,t);
       for(const mlr::Proxy& p: G.proxies){
-        if(shapes_t.contains(p.a) || shapes_t.contains(p.b)) {
+        if(shapes_t.contains(p.a->ID) || shapes_t.contains(p.b->ID)) {
           G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
 //          p.colorCode = 2;
         }
@@ -60,7 +60,7 @@ void TM_Proxy::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
     } break;
     case TMT_allExceptListedP:
       for(const mlr::Proxy& p: G.proxies){
-        if(!(shapes.contains(p.a) && shapes.contains(p.b))) {
+        if(!(shapes.contains(p.a->ID) && shapes.contains(p.b->ID))) {
           G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
 //          p.colorCode = 3;
         }
@@ -68,8 +68,8 @@ void TM_Proxy::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
       break;
     case TMT_bipartiteP:
       for(const mlr::Proxy& p: G.proxies){
-        if((shapes.contains(p.a) && shapes2.contains(p.b)) ||
-            (shapes.contains(p.b) && shapes2.contains(p.a))) {
+        if((shapes.contains(p.a->ID) && shapes2.contains(p.b->ID)) ||
+            (shapes.contains(p.b->ID) && shapes2.contains(p.a->ID))) {
           G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
 //          p.colorCode = 4;
         }
@@ -81,7 +81,7 @@ void TM_Proxy::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
       uint j;
       for(const mlr::Proxy& p: G.proxies){
         for(j=0; j<shapes.d0; j++) {
-          if((shapes(j,0)==(uint)p.a && shapes(j,1)==(uint)p.b) || (shapes(j,0)==(uint)p.b && shapes(j,1)==(uint)p.a))
+          if((shapes(j,0)==p.a->ID && shapes(j,1)==p.b->ID) || (shapes(j,0)==p.b->ID && shapes(j,1)==p.a->ID))
             break;
         }
         if(j<shapes.d0) { //if a pair was found
@@ -97,7 +97,7 @@ void TM_Proxy::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
       uint j;
       for(const mlr::Proxy& p: G.proxies){
         for(j=0; j<shapes.d0; j++) {
-          if((shapes(j,0)==(uint)p.a && shapes(j,1)==(uint)p.b) || (shapes(j,0)==(uint)p.b && shapes(j,1)==(uint)p.a))
+          if((shapes(j,0)==p.a->ID && shapes(j,1)==p.b->ID) || (shapes(j,0)==p.b->ID && shapes(j,1)==p.a->ID))
             break;
         }
         if(j==shapes.d0) { //if a pair was not found
@@ -114,7 +114,7 @@ void TM_Proxy::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
       uint j;
       for(const mlr::Proxy& p: G.proxies){
         for(j=0; j<shapes.d0; j++) {
-          if((shapes(j,0)==(uint)p.a && shapes(j,1)==(uint)p.b) || (shapes(j,0)==(uint)p.b && shapes(j,1)==(uint)p.a))
+          if((shapes(j,0)==p.a->ID && shapes(j,1)==p.b->ID) || (shapes(j,0)==p.b->ID && shapes(j,1)==p.a->ID))
             break;
         }
         if(j<shapes.d0) {
