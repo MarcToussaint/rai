@@ -17,8 +17,8 @@
 #include "frame.h"
 #include <Geo/pairCollision.h>
 
-TM_PairCollision::TM_PairCollision(int _i, int _j, bool negative, bool neglectRadii)
-  : i(_i), j(_j), negScalar(negative), neglectRadii(neglectRadii){
+TM_PairCollision::TM_PairCollision(int _i, int _j, bool _negScalar, bool _neglectRadii)
+  : i(_i), j(_j), negScalar(_negScalar), neglectRadii(_neglectRadii){
 }
 
 TM_PairCollision::TM_PairCollision(const mlr::KinematicWorld& K, const char* s1, const char* s2, bool negative, bool neglectRadii)
@@ -33,6 +33,12 @@ void TM_PairCollision::phi(arr& y, arr& J, const mlr::KinematicWorld& K, int t){
   mlr::Shape *s1 = i<0?NULL: K.frames(i)->shape;
   mlr::Shape *s2 = j<0?NULL: K.frames(j)->shape;
   CHECK(s1 && s2,"");
+#if 1
+  double r1=s1->size(3);
+  double r2=s2->size(3);
+  mlr::Mesh *m1 = &s1->sscCore();  if(!m1->V.N){ m1 = &s1->mesh(); r1=0.; }
+  mlr::Mesh *m2 = &s2->sscCore();  if(!m2->V.N){ m2 = &s2->mesh(); r2=0.; }
+#else
   CHECK(s1->type()==mlr::ST_mesh || s1->type()==mlr::ST_ssCvx || s1->type()==mlr::ST_ssBox,"");
   CHECK(s2->type()==mlr::ST_mesh || s2->type()==mlr::ST_ssCvx || s2->type()==mlr::ST_ssBox,"");
   const mlr::Mesh *m1, *m2;
@@ -40,11 +46,11 @@ void TM_PairCollision::phi(arr& y, arr& J, const mlr::KinematicWorld& K, int t){
   if(s2->type()==mlr::ST_mesh) m2=&s2->mesh(); else m2=&s2->sscCore();
   CHECK(m1->V.N,"");
   CHECK(m2->V.N,"");
+#endif
 
-  PairCollision coll(*m1, *m2, s1->frame.X, s2->frame.X, s1->size(3), s2->size(3));
+  PairCollision coll(*m1, *m2, s1->frame.X, s2->frame.X, r1, r2);
 
   if(neglectRadii) coll.rad1=coll.rad2=0.;
-
 
   if(!negScalar){
     arr Jp1, Jp2, Jx1, Jx2;

@@ -1334,7 +1334,7 @@ void KOMO::set_x(const arr& x){
       else         configurations(s)->setJointState(x[t]);
       if(useSwift){
         configurations(s)->stepSwift();
-        configurations(s)->filterProxiesToContacts(.01);
+        configurations(s)->proxiesToContacts(.01);
       }
       x_count += x_dim;
     }
@@ -1493,8 +1493,8 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
         //      CHECK(task->prec.N<=MP.T,"");
         uint m = task->map->dim_phi(komo.configurations({t,t+komo.k_order}), t); //dimensionality of this task
 
-        if(&featureTimes) featureTimes.append(consts<uint>(t, m));
-        if(&featureTypes) featureTypes.append(consts<ObjectiveType>(task->type, m));
+        if(&featureTimes) featureTimes.append(t, m); //consts<uint>(t, m));
+        if(&featureTypes) featureTypes.append(task->type, m); //consts<ObjectiveType>(task->type, m));
 
         //store indexing phi <-> tasks
         phiIndex(t, i) = M;
@@ -1506,6 +1506,8 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
   dimPhi = M;
   CHECK_EQ(M, sum(phiDim), "");
 }
+
+bool WARN_FIRST_TIME=true;
 
 void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x, arr& lambda){
   //==================
@@ -1535,7 +1537,8 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
   komo.set_x(x);
 
   CHECK(dimPhi,"getStructure must be called first");
-//  getStructure(NoUintA, featureTimes, tt);
+  getStructure(NoUintA, featureTimes, tt);
+if(WARN_FIRST_TIME){ LOG(-1)<<"calling inefficient getStructure"; WARN_FIRST_TIME=false; }
   phi.resize(dimPhi);
   if(&tt) tt.resize(dimPhi);
   if(&J) J.resize(dimPhi);

@@ -1317,6 +1317,30 @@ void mlr::KinematicWorld::filterProxiesToContacts(double margin){
   for(Contact *c:old) delete c;
 }
 
+void mlr::KinematicWorld::proxiesToContacts(double margin){
+  for(Proxy& p:proxies){
+    if(!p.coll) p.calc_coll(*this);
+    if(p.coll->distance-(p.coll->rad1+p.coll->rad2)>margin) continue;
+    Frame *a = frames(p.a);
+    Frame *b = frames(p.b);
+    Contact *candidate=NULL;
+    for(Contact *c:a->contacts){
+      if((&c->a==a && &c->b==b) || (&c->a==b && &c->b==a)){
+        candidate = c;
+        break;
+      }
+    }
+    if(candidate) __merge(candidate, &p);
+    else __new(*this, &p);
+  }
+  //phase 2: cleanup old and distant contacts
+  mlr::Array<Contact*> old;
+  for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f){
+    if(c->getDistance()>2.*margin) old.append(c);
+  }
+  for(Contact *c:old) delete c;
+}
+
 double mlr::KinematicWorld::totalContactPenetration(){
   double D=0.;
   for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f){
@@ -1911,12 +1935,10 @@ void mlr::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
 #if 1
   if(!p.coll) ((Proxy*)&p)->calc_coll(*this);
 
-  arr Jp1, Jp2/*, Jx1, Jx2*/;
+  arr Jp1, Jp2;
   if(&J){
     jacobianPos(Jp1, a, p.coll->p1);
     jacobianPos(Jp2, b, p.coll->p2);
-//    axesMatrix(Jx1, a);
-//    axesMatrix(Jx2, b);
   }
 
   arr y_dist, J_dist;
@@ -1926,10 +1948,15 @@ void mlr::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   if(&J) J.resize(1, getJointStateDimension());
   if(!addValues){ y.setZero();  if(&J) J.setZero(); }
 
+#if 0
   if(y_dist.scalar()>margin) return;
-
   y += ARR(1.-y_dist.scalar()/margin);
   if(&J)  J -= (1./margin)*J_dist;
+#else
+  if(y_dist.scalar()>0.) return;
+  y += ARR(-y_dist.scalar()/margin);
+  if(&J)  J -= (1./margin)*J_dist;
+#endif
 
 #else
   CHECK(a->shape->mesh_radius>0.,"");
