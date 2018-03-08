@@ -70,6 +70,7 @@ public:
   ~OpenGLProcess(){
 //    uint i=0;  for(OpenGL* gl:glwins){ if(gl) delGL(i, gl); i++; }
 //    th.threadClose();
+    if(numWins) mlr::wait(.1);
     CHECK(!numWins, "there are still OpenGL windows open");
     glutExit(); //also glut as already shut down during deinit
   }

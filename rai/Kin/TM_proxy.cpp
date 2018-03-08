@@ -25,7 +25,7 @@ TM_Proxy::TM_Proxy(PTMtype _type,
   margin=_margin;
   useCenterDist=_useCenterDist;
   useDistNotCost=_useDistNotCost;
-  cout <<"creating TM_Proxy with shape list" <<shapes <<endl;
+//  cout <<"creating TM_Proxy with shape list" <<shapes <<endl;
 }
 
 void TM_Proxy::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){

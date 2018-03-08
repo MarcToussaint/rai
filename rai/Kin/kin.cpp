@@ -262,10 +262,14 @@ void mlr::KinematicWorld::calc_q(){
 
 void mlr::KinematicWorld::copy(const mlr::KinematicWorld& K, bool referenceSwiftOnCopy) {
   clear();
-  proxies = K.proxies;
+  orsDrawProxies = K.orsDrawProxies;
+  //copy frames; first each Frame/Link/Joint directly, where all links go to the origin K (!!!); then relink to itself
   for(Frame *f:K.frames) new Frame(*this, f);
   for(Frame *f:K.frames) if(f->parent) frames(f->ID)->linkFrom(frames(f->parent->ID));
-//  for(Frame *f:K.frames) if(f->joint) new Joint(frames(f->ID), f->joint);
+  //copy proxies; first they point to origin frames; afterwards, let them point to own frames
+  proxies = K.proxies;
+  for(Proxy& p:proxies){ p.a = frames(p.a->ID); p.b = frames(p.b->ID); }
+  //copy swift reference
   if(referenceSwiftOnCopy){
     s->swift = K.s->swift;
     s->swiftIsReference=true;

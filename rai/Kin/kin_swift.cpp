@@ -93,31 +93,8 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
     }
     if(add) {
       if(!s->mesh().V.d0){
-        HALT("the mesh must have been created earlier");
-//        switch(s->type()) {
-//          case mlr::ST_box:
-//            s->mesh().setBox();
-//            s->mesh().scale(s->size(0), s->size(1), s->size(2));
-//            break;
-//          case mlr::ST_sphere:
-//            s->mesh().setSphere();
-//            s->mesh().scale(s->size(3), s->size(3), s->size(3));
-//            break;
-//          case mlr::ST_cylinder:
-//            CHECK(s->size(3)>1e-10,"");
-//            s->mesh().setCylinder(s->size(3), s->size(2));
-//            break;
-//          case mlr::ST_capsule:
-//            CHECK(s->size(3)>1e-10,"");
-//            s->mesh().setCappedCylinder(s->size(3), s->size(2));
-//            break;
-//          case mlr::ST_retired_SSBox:
-//            s->mesh().setSSBox(s->size(0), s->size(1), s->size(2), s->size(3));
-//            break;
-//          default:
-//            break;
-//        }
-//        s->mesh_radius = s->mesh().getRadius();
+        s->getGeom().createMeshes();
+        CHECK(s->mesh().V.d0, "the mesh must have been created earlier -- has size zero!");
       }
       mlr::Mesh *mesh = &s->mesh();
 //      if(s->sscCore().V.d0) mesh = &s->sscCore();

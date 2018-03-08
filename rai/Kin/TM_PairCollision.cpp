@@ -73,6 +73,6 @@ void TM_PairCollision::phi(arr& y, arr& J, const mlr::KinematicWorld& K, int t){
 }
 
 mlr::String TM_PairCollision::shortTag(const mlr::KinematicWorld &G){
-  return STRING("TM_PairCollision"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
+  return STRING("TM_PairCollision_"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }
 
