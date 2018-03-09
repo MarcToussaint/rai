@@ -606,12 +606,12 @@ Skeleton MNode::getSkeleton(StringA predicateFilter) const{
     for(uint i=0;i<G.N;i++){
       if(!done(k,i)){
         Node *n = G(i);
-        StringL symbols;
-        for(Node *p:n->parents) symbols.append(&p->keys.last());
+        StringA symbols;
+        for(Node *p:n->parents) symbols.append(p->keys.last());
 
         //check predicate filter
         if(!symbols.N
-           || (predicateFilter.N && !predicateFilter.contains(*symbols.first()))) continue;
+           || (predicateFilter.N && !predicateFilter.contains(symbols.first()))) continue;
 
         //trace into the future
         uint k_end=k+1;
@@ -622,9 +622,9 @@ Skeleton MNode::getSkeleton(StringA predicateFilter) const{
         }
         k_end--;
         if(k_end==states.N-1){
-          skeleton.append({symbols, (int)k, -1, times(k), -1.});
+          skeleton.append(SkeletonEntry({symbols, times(k), -1.}));
         }else{
-          skeleton.append({symbols, (int)k, (int)k_end, times(k), times(k_end)});
+          skeleton.append(SkeletonEntry({symbols, times(k), times(k_end)}));
         }
       }
     }
