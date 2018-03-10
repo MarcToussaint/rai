@@ -66,6 +66,8 @@ KOMO::KOMO() : T(0), tau(0.), k_order(2), useSwift(true), opt(NULL), gl(NULL), v
 
 KOMO::~KOMO(){
   listDelete(tasks);
+  listDelete(flags);
+  listDelete(switches);
   listDelete(configurations);
   if(gl) delete gl;
   if(opt) delete opt;
@@ -1546,8 +1548,8 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
   komo.set_x(x);
 
   CHECK(dimPhi,"getStructure must be called first");
-  getStructure(NoUintA, featureTimes, tt);
-if(WARN_FIRST_TIME){ LOG(-1)<<"calling inefficient getStructure"; WARN_FIRST_TIME=false; }
+//  getStructure(NoUintA, featureTimes, tt);
+//  if(WARN_FIRST_TIME){ LOG(-1)<<"calling inefficient getStructure"; WARN_FIRST_TIME=false; }
   phi.resize(dimPhi);
   if(&tt) tt.resize(dimPhi);
   if(&J) J.resize(dimPhi);

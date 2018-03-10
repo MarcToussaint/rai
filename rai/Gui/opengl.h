@@ -140,6 +140,7 @@ struct OpenGL {
   mlr::Array<GLHoverCall*> hoverCalls; ///< list of hover callbacks
   mlr::Array<GLClickCall*> clickCalls; ///< list of click callbacks
   mlr::Array<GLKeyCall*> keyCalls;     ///< list of click callbacks
+  mlr::Array<struct CstyleDrawer*> toBeDeletedOnCleanup;
 
   mlr::String title;     ///< the window title
   uint width, height;

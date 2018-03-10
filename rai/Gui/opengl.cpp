@@ -1190,7 +1190,7 @@ void OpenGL::init() {
 struct CstyleDrawer : GLDrawer{
   void *classP;
   void (*call)(void*);
-  CstyleDrawer(void (*call)(void*), void* classP): classP(classP), call(call){}
+  CstyleDrawer(void (*call)(void*), void* classP) : classP(classP), call(call){}
   void glDraw(OpenGL&){ call(classP); }
 };
 
@@ -1205,7 +1205,8 @@ struct CstyleInitCall : OpenGL::GLInitCall{
 void OpenGL::add(void (*call)(void*), void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
   dataLock.writeLock();
-  drawers.append(new CstyleDrawer(call, classP));
+  toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
+  drawers.append(toBeDeletedOnCleanup.last());
   dataLock.unlock();
 }
 
@@ -1222,7 +1223,8 @@ void OpenGL::addSubView(uint v, void (*call)(void*), void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
   dataLock.writeLock();
   if(v>=views.N) views.resizeCopy(v+1);
-  views(v).drawers.append(new CstyleDrawer(call, classP));
+  toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
+  views(v).drawers.append(toBeDeletedOnCleanup.last());
   dataLock.unlock();
 }
 
@@ -1267,9 +1269,8 @@ void OpenGL::clearSubView(uint v){
 /// clear the list of all draw and callback routines
 void OpenGL::clear() {
   dataLock.writeLock();
-//  for(auto& x:drawers) if(CstyleDrawer* d = dynamic_cast<CstyleDrawer*>(x)) delete d;
   views.clear();
-//  for(auto* d:drawers) if(dynamic_cast<CstyleDrawer*>(d)) delete d;
+  listDelete(toBeDeletedOnCleanup);
   drawers.clear();
   initCalls.clear();
   hoverCalls.clear();
