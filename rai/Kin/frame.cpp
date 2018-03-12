@@ -693,8 +693,8 @@ void mlr::Shape::write(std::ostream& os) const {
   if(cont) os <<" contact, ";
 }
 
-#ifdef MLR_GL
 void mlr::Shape::glDraw(OpenGL& gl) {
+#ifdef MLR_GL
   //set name (for OpenGL selection)
   glPushName((frame.ID <<2) | 1);
   if(frame.K.orsDrawColors && !frame.K.orsDrawIndexColors && !gl.drawMode_idColor){
@@ -734,10 +734,8 @@ void mlr::Shape::glDraw(OpenGL& gl) {
   }
 
   glPopName();
-}
-
 #endif
-
+}
 
 mlr::Inertia::Inertia(Frame &f, Inertia *copyInertia) : frame(f), type(BT_kinematic) {
   CHECK(!frame.inertia, "this frame already has inertia");

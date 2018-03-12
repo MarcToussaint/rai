@@ -60,8 +60,8 @@ void mlr::TM_ContactNegDistance::phi(arr &y, arr &J, const mlr::KinematicWorld &
   }
 }
 
-#ifdef MLR_GL
 void mlr::Contact::glDraw(OpenGL& gl){
+#ifdef MLR_GL
   mlr::Vector pa = a.X * a_rel;
   mlr::Vector pb = b.X * b_rel;
   mlr::Vector n = .5*((b.X.rot * b_norm) - (a.X.rot * a_norm));
@@ -77,8 +77,8 @@ void mlr::Contact::glDraw(OpenGL& gl){
 //    f.getAffineMatrixGL(GLmatrix);
 //    glLoadMatrixd(GLmatrix);
 //    glDrawText(STRING(a <<'-' <<b <<':' <<d), 0.,0.,0.);
-}
 #endif
+}
 
 void mlr::Contact::write(std::ostream &os) const{
   os <<a.name <<'-' <<b.name <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() <<" pDist=" <<get_pDistance() <<" y=" <<y <<" l=" <<lagrangeParameter;

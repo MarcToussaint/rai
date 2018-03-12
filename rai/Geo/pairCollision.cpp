@@ -181,6 +181,7 @@ double PairCollision::GJK_sqrDistance(){
 }
 
 void PairCollision::glDraw(OpenGL &){
+#ifdef MLR_GL
   arr P1=p1, P2=p2;
   if(rad1>0.) P1 -= rad1*normal;
   if(rad2>0.) P2 += rad2*normal;
@@ -228,6 +229,7 @@ void PairCollision::glDraw(OpenGL &){
       glDrawAxis(.02);
     }
   }
+#endif
 }
 
 void PairCollision::kinVector(arr& y, arr& J,

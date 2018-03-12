@@ -2428,8 +2428,8 @@ void mlr::KinematicWorld::glDraw(OpenGL& gl) {
 }
 
 /// GL routine to draw a mlr::KinematicWorld
-#ifdef MLR_GL
 void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
+#ifdef MLR_GL
   uint i=0;
   mlr::Transformation f;
   double GLmatrix[16];
@@ -2503,8 +2503,8 @@ void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
   }
 
   glPopMatrix();
-}
 #endif
+}
 
 
 //===========================================================================
@@ -2791,10 +2791,12 @@ void mlr::glDrawGraph(void *classP) {
 }
 
 void mlr::glDrawProxies(void *P){
+#ifdef MLR_GL
   ProxyL& proxies = *((ProxyL*)P);
   glPushMatrix();
   for(mlr::Proxy* p:proxies) p->glDraw(NoOpenGL);
   glPopMatrix();
+#endif
 }
 
 

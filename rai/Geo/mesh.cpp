@@ -1736,6 +1736,7 @@ void glTransform(const mlr::Transformation&) { NICO }
 extern OpenGL& NoOpenGL;
 
 void glDrawMeshes(void *P){
+#ifdef MLR_GL
   MeshA& meshes = *((MeshA*)P);
   double GLmatrix[16];
   for(mlr::Mesh& mesh:meshes){
@@ -1745,6 +1746,7 @@ void glDrawMeshes(void *P){
     mesh.glDraw(NoOpenGL);
     glPopMatrix();
   }
+#endif
 }
 
 //==============================================================================

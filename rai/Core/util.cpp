@@ -27,8 +27,10 @@
 #  include <sys/inotify.h>
 #  include <sys/stat.h>
 #  include <poll.h>
+#if defined MLR_X11
 #  include <X11/Xlib.h>
 #  include <X11/Xutil.h>
+#endif
 #endif
 #ifdef __CYGWIN__
 #include "cygwin_compat.h"
@@ -570,6 +572,7 @@ bool wait(bool useX11) {
   }
 }
 
+#ifdef MLR_X11
 int x11_getKey(){
   mlr::String txt="PRESS KEY";
   int key=0;
@@ -613,7 +616,13 @@ int x11_getKey(){
   XCloseDisplay(disp);
   return key;
 }
-
+#else
+int x11_getKey(){
+  LOG(-1) <<"fake implementation (no X11)";
+  return 13;
+}
+#endif
+  
 /// the integral shared memory size -- not implemented for Windows!
 long mem() {
 #ifndef MLR_TIMEB
