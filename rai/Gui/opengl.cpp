@@ -1624,10 +1624,12 @@ int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool wai
   captureImg |= _captureImg;
   captureDep |= _captureDep;
   if(txt) text.clear() <<txt;
+#ifdef MLR_GL
   isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
   postRedrawEvent(false);
   if(captureImg || captureDep || waitForCompletedDraw){ isUpdating.waitForStatusEq(0); }//{ mlr::wait(.01); processEvents(); mlr::wait(.01); }
+#endif
   return pressedkey;
 }
 

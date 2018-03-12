@@ -29,7 +29,7 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda){
   L.mu = L.nu = L.muLB = 0.;
 
   arr dL, HL;
-  double l = L.lagrangian(dL, HL, x);
+  L.lagrangian(dL, HL, x);
   if(!L.lambda.N) L.lambda = zeros(L.phi_x.N);
 
   bool primalFeasible=true;
