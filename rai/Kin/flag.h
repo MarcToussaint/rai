@@ -11,6 +11,7 @@ enum FrameFlagType {
   FL_normalControlCosts,
   FL_impulseExchange,
   FL_qCtrlCostAcc,
+  FL_qCtrlCostVel,
   FL_xPosAccCosts,
   FL_clear,
   FL_xPosVelCosts,

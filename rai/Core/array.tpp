@@ -485,9 +485,9 @@ template<class T> T& mlr::Array<T>::append(const T& x) {
 
 /// append an element to the array -- the array becomes 1D!
 template<class T> void mlr::Array<T>::append(const T& x, uint multiple) {
-  mlr::Array<T> tail(multiple);
-  tail = x;
-  append(tail);
+  uint i=N;
+  resizeCopy(N+multiple);
+  for(;i<N;i++) p[i]=x;
 }
 
 /// append another array to the array (by copying it) -- the array might become 1D!
@@ -2841,7 +2841,7 @@ template<class T> void writeConsecutiveConstant(std::ostream &os, const mlr::Arr
     if(!x.N) return;
     uint yi=0;
     T y=x.elem(yi);
-    for(uint i=1;i<x.N-1;i++) if(x.elem(i)!=y){
+    for(uint i=1;i<x.N;i++) if(x.elem(i)!=y){
         os <<'(' <<yi <<".." <<i-1 <<')' <<y <<' ';
         yi=i;
         y = x.elem(yi);

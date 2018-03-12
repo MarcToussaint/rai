@@ -15,11 +15,14 @@
 
 #include <Core/array.tpp>
 #include <Geo/geo.h>
-#include <GL/glew.h>
+#ifdef MLR_GL
+#  include <GL/glew.h>
+#endif
 #include "opengl.h"
 
-#include <png.h>
-
+#ifdef MLR_PNG
+#  include <png.h>
+#endif
 
 OpenGL& NoOpenGL = *((OpenGL*)(NULL));
 
@@ -70,6 +73,7 @@ public:
   ~OpenGLProcess(){
 //    uint i=0;  for(OpenGL* gl:glwins){ if(gl) delGL(i, gl); i++; }
 //    th.threadClose();
+    if(numWins) mlr::wait(.1);
     CHECK(!numWins, "there are still OpenGL windows open");
     glutExit(); //also glut as already shut down during deinit
   }
@@ -208,6 +212,44 @@ void OpenGL::resize(int w,int h) {
   }
 }
 
+#else
+
+void OpenGL::openWindow(){}
+void OpenGL::closeWindow(){}
+void OpenGL::postRedrawEvent(bool fromWithinCallback) {}
+void OpenGL::resize(int w,int h) {}
+
+struct sOpenGL{
+  sOpenGL(OpenGL *gl): gl(gl), windowID(-1) {}
+  sOpenGL(OpenGL *gl, void *container){ NIY }
+  ~sOpenGL(){ gl->closeWindow(); }
+
+  void beginGlContext(){}
+  void endGlContext(){}
+
+  //-- private OpenGL data
+  OpenGL *gl;
+  mlr::Vector downVec,downPos,downFoc;
+  mlr::Quaternion downRot;
+
+  //-- engine specific data
+  int windowID;                        ///< id of this window in the global glwins list
+
+  //-- callbacks
+  // static void _Void() { }
+  // static void _Draw() { auto fg=singleFreeglut();  OpenGL *gl=fg->getGL(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
+  // static void _Key(unsigned char key, int x, int y) {        singleFreeglut()->getGL(glutGetWindow())->Key(key,x,y); }
+  // static void _Mouse(int button, int updown, int x, int y) { singleFreeglut()->getGL(glutGetWindow())->Mouse(button,updown,x,y); }
+  // static void _Motion(int x, int y) {                        singleFreeglut()->getGL(glutGetWindow())->Motion(x,y); }
+  // static void _PassiveMotion(int x, int y) {                 singleFreeglut()->getGL(glutGetWindow())->Motion(x,y); }
+  // static void _Reshape(int w,int h) {                        singleFreeglut()->getGL(glutGetWindow())->Reshape(w,h); }
+  // static void _MouseWheel(int wheel, int dir, int x, int y){ singleFreeglut()->getGL(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
+
+  void accessWindow() {  //same as above, but also sets gl cocntext (glXMakeCurrent)
+  }
+  void deaccessWindow() {
+  }
+};
 #endif
 
 //===========================================================================
@@ -1109,6 +1151,15 @@ void glSelectWin(uint win) {
 void glColor(int col) { NICO }
 void glColor(float, float, float, float) { NICO }
 void glDrawDiamond(float, float, float, float, float, float) { NICO }
+void glDrawSphere(float radius) { NICO }
+void glDrawFloor(float, float, float, float){ NICO }
+void glDrawCappedCylinder(float, float){ NICO }
+void glStandardLight(void*){ NICO }
+void glDrawAxes(double){ NICO }
+void glDrawDiamond(float, float, float){ NICO }
+void glDrawBox(float, float, float, bool){ NICO }
+void glDrawCylinder(float, float, bool){ NICO }
+
 // void glStandardLight(void*) { NICO }   // TOBIAS: das hier wird doch schon ueber opengl_void.cxx definiert
 void glStandardScene(void*) { NICO }
 uint glImageTexture(const byteA &img) { NICO }
@@ -1189,7 +1240,7 @@ void OpenGL::init() {
 struct CstyleDrawer : GLDrawer{
   void *classP;
   void (*call)(void*);
-  CstyleDrawer(void (*call)(void*), void* classP): classP(classP), call(call){}
+  CstyleDrawer(void (*call)(void*), void* classP) : classP(classP), call(call){}
   void glDraw(OpenGL&){ call(classP); }
 };
 
@@ -1204,7 +1255,8 @@ struct CstyleInitCall : OpenGL::GLInitCall{
 void OpenGL::add(void (*call)(void*), void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
   dataLock.writeLock();
-  drawers.append(new CstyleDrawer(call, classP));
+  toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
+  drawers.append(toBeDeletedOnCleanup.last());
   dataLock.unlock();
 }
 
@@ -1221,7 +1273,8 @@ void OpenGL::addSubView(uint v, void (*call)(void*), void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
   dataLock.writeLock();
   if(v>=views.N) views.resizeCopy(v+1);
-  views(v).drawers.append(new CstyleDrawer(call, classP));
+  toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
+  views(v).drawers.append(toBeDeletedOnCleanup.last());
   dataLock.unlock();
 }
 
@@ -1266,9 +1319,8 @@ void OpenGL::clearSubView(uint v){
 /// clear the list of all draw and callback routines
 void OpenGL::clear() {
   dataLock.writeLock();
-//  for(auto& x:drawers) if(CstyleDrawer* d = dynamic_cast<CstyleDrawer*>(x)) delete d;
   views.clear();
-//  for(auto* d:drawers) if(dynamic_cast<CstyleDrawer*>(d)) delete d;
+  listDelete(toBeDeletedOnCleanup);
   drawers.clear();
   initCalls.clear();
   hoverCalls.clear();
@@ -1572,10 +1624,12 @@ int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool wai
   captureImg |= _captureImg;
   captureDep |= _captureDep;
   if(txt) text.clear() <<txt;
+#ifdef MLR_GL
   isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
   postRedrawEvent(false);
   if(captureImg || captureDep || waitForCompletedDraw){ isUpdating.waitForStatusEq(0); }//{ mlr::wait(.01); processEvents(); mlr::wait(.01); }
+#endif
   return pressedkey;
 }
 
@@ -1788,7 +1842,7 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   if(mouse_button==5 && !downPressed) cam->X.pos -= s->downRot*Vector_z * (.1 * (s->downPos-s->downFoc).length());
 
   if(mouse_button==3) {  //selection
-#if 1
+#ifdef MLR_GL
     captureDepth.resize(h, w);
     glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
     double d = captureDepth(mouseposy, mouseposx);
@@ -2182,6 +2236,7 @@ bool glUI::checkMouse(int _x, int _y) {
 #endif
 
 void read_png(byteA &img, const char *file_name, bool swap_rows) {
+#ifdef MLR_PNG
   FILE *fp = fopen(file_name, "rb");
 
   png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -2242,4 +2297,7 @@ void read_png(byteA &img, const char *file_name, bool swap_rows) {
   fclose(fp);
 
   if(swap_rows) flip_image(img);
+#else
+  LOG(-2) <<"libpng not linked";
+#endif
 }

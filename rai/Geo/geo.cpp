@@ -22,8 +22,9 @@
 REGISTER_TYPE(T, mlr::Transformation);
 #endif
 
-
-#include <GL/glu.h>
+#ifdef MLR_GL
+#  include <GL/glu.h>
+#endif
 
 const mlr::Vector Vector_x(1, 0, 0);
 const mlr::Vector Vector_y(0, 1, 0);
@@ -1608,6 +1609,7 @@ void Camera::setCameraProjectionMatrix(const arr& P) {
 /** sets OpenGL's GL_PROJECTION matrix accordingly -- should be
     called in an opengl draw routine */
 void Camera::glSetProjectionMatrix() {
+#ifdef MLR_GL
 //  if(fixedProjectionMatrix.N) {
 //    glLoadMatrixd(fixedProjectionMatrix.p);
 //  } else {
@@ -1629,6 +1631,7 @@ void Camera::glSetProjectionMatrix() {
     gluPerspective(heightAngle, whRatio, zNear, zFar);
   double m[16];
   glMultMatrixd(X.getInverseAffineMatrixGL(m));
+#endif
 }
 
 /// convert from gluPerspective's non-linear [0, 1] depth to the true [zNear, zFar] depth

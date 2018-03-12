@@ -66,6 +66,8 @@ KOMO::KOMO() : T(0), tau(0.), k_order(2), useSwift(true), opt(NULL), gl(NULL), v
 
 KOMO::~KOMO(){
   listDelete(tasks);
+  listDelete(flags);
+  listDelete(switches);
   listDelete(configurations);
   if(gl) delete gl;
   if(opt) delete opt;
@@ -859,35 +861,56 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
 
 void KOMO::setSkeleton(const Skeleton &S){
   for(const SkeletonEntry& s:S){
-    const StringL& symbols = s.symbols;
     cout <<"SKELETON->KOMO " <<s <<endl;
     if(!s.symbols.N) continue;
-    if(*s.symbols(0)=="touch"){ setTouch(s.phase0, s.phase1, *s.symbols(1), *s.symbols(2)); continue; }
-    if(*s.symbols(0)=="stable"){
-//      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_effJoint, JT_quatBall, *s.symbols(1), *s.symbols(2), world));
-//      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_insertEffJoint, JT_trans3, NULL, *s.symbols(2), world));
-      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_effJoint, JT_free, *s.symbols(1), *s.symbols(2), world));
-      setFlag(s.phase0, new Flag(FL_clear, world[*symbols(2)]->ID, 0, true));
-      setFlag(s.phase0, new Flag(FL_zeroQVel, world[*s.symbols(2)]->ID, 0, true));
+    if(s.symbols(0)=="touch"){
+      setTouch(s.phase0, s.phase1, s.symbols(1), s.symbols(2));
       continue;
     }
-    if(*s.symbols(0)=="dynamic"){
+    if(s.symbols(0)=="magicTouch"){
+      setTouch(s.phase0, s.phase1, s.symbols(1), s.symbols(2));
+      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", s.symbols(2), world));
+      setFlag(s.phase0, new Flag(FL_clear, world[s.symbols(1)]->ID, 0, true), +0);
+      setFlag(s.phase0, new Flag(FL_qCtrlCostAcc, world[s.symbols(1)]->ID, 0, true), +0);
+      continue;
+    }
+    if(s.symbols(0)=="stable"){
+//      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_effJoint, JT_quatBall, s.symbols(1), s.symbols(2), world));
+//      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_insertEffJoint, JT_trans3, NULL, s.symbols(2), world));
+      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_effJoint, JT_free, s.symbols(1), s.symbols(2), world));
+      setFlag(s.phase0, new Flag(FL_clear, world[s.symbols(2)]->ID, 0, true));
+      setFlag(s.phase0, new Flag(FL_zeroQVel, world[s.symbols(2)]->ID, 0, true));
+      continue;
+    }
+    if(s.symbols(0)=="dynOn"){
       Transformation rel = 0;
-      rel.pos.set(0,0, .5*(shapeSize(world, *symbols(1)) + shapeSize(world, *symbols(2))));
-      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, *s.symbols(1), *s.symbols(2), world, 0, rel));
-      setFlag(s.phase0, new Flag(FL_clear, world[*symbols(2)]->ID, 0, true), +1);
-      setFlag(s.phase0, new Flag(FL_zeroAcc, world[*symbols(2)]->ID, 0, true), +1);
+      rel.pos.set(0,0, .5*(shapeSize(world, s.symbols(1)) + shapeSize(world, s.symbols(2))));
+      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, s.symbols(1), s.symbols(2), world, 0, rel));
+      setFlag(s.phase0, new Flag(FL_clear, world[s.symbols(2)]->ID, 0, true), +1);
+      setFlag(s.phase0, new Flag(FL_zeroAcc, world[s.symbols(2)]->ID, 0, true), +1);
       continue;
     }
-    if(*s.symbols(0)=="impulse"){
+    if(s.symbols(0)=="dynFree"){
+      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", s.symbols(1), world));
+      setFlag(s.phase0, new Flag(FL_gravityAcc, world[s.symbols(1)]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
+      continue;
+    }
+    if(s.symbols(0)=="actFree"){
+      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", s.symbols(1), world));
+      setFlag(s.phase0, new Flag(FL_clear, world[s.symbols(1)]->ID, 0, true), +0);
+      setFlag(s.phase0, new Flag(FL_qCtrlCostVel, world[s.symbols(1)]->ID, 0, true), +0);
+//      setFlag(s.phase0, new Flag(FL_qCtrlCostAcc, world[s.symbols(1)]->ID, 0, true), +0);
+      continue;
+    }
+    if(s.symbols(0)=="impulse"){
       if(k_order>=2){
-        setTask(s.phase0, s.phase0, new TM_ImpulsExchange(world, *symbols(1), *symbols(2)), OT_eq, {}, 1e2, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
-        setFlag(s.phase0, new Flag(FL_impulseExchange, world[*symbols(1)]->ID), +1);
-        setFlag(s.phase0, new Flag(FL_impulseExchange, world[*symbols(2)]->ID), +1);
+        setTask(s.phase0, s.phase0, new TM_ImpulsExchange(world, s.symbols(1), s.symbols(2)), OT_eq, {}, 1e2, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
+        setFlag(s.phase0, new Flag(FL_impulseExchange, world[s.symbols(1)]->ID), +1);
+        setFlag(s.phase0, new Flag(FL_impulseExchange, world[s.symbols(2)]->ID), +1);
       }
       continue;
     }
-    cout <<"UNUSED!" <<endl;
+    LOG(-2) <<"UNKNOWN PREDICATE!: " <<s;
   }
 }
 
@@ -1156,6 +1179,7 @@ void KOMO::reportProblem(std::ostream& os){
 
   arr times(configurations.N);
   for(uint i=0;i<configurations.N;i++) times(i)=configurations(i)->frames.first()->time;
+  if(times.N>10) times.resizeCopy(10);
   os <<"    times:" <<times <<endl;
 
   os <<"  usingSwift:" <<useSwift <<endl;
@@ -1322,7 +1346,7 @@ void KOMO::set_x(const arr& x){
       else         configurations(s)->setJointState(x[t]);
       if(useSwift){
         configurations(s)->stepSwift();
-        configurations(s)->filterProxiesToContacts(.01);
+//        configurations(s)->proxiesToContacts(.01);
       }
       x_count += x_dim;
     }
@@ -1338,7 +1362,6 @@ void KOMO::reportProxies(std::ostream& os){
     t++;
   }
 }
-
 
 Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs) {
   if(featureValues.N>1){ //old optimizer -> remove some time..
@@ -1481,8 +1504,8 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
         //      CHECK(task->prec.N<=MP.T,"");
         uint m = task->map->dim_phi(komo.configurations({t,t+komo.k_order}), t); //dimensionality of this task
 
-        if(&featureTimes) featureTimes.append(consts<uint>(t, m));
-        if(&featureTypes) featureTypes.append(consts<ObjectiveType>(task->type, m));
+        if(&featureTimes) featureTimes.append(t, m); //consts<uint>(t, m));
+        if(&featureTypes) featureTypes.append(task->type, m); //consts<ObjectiveType>(task->type, m));
 
         //store indexing phi <-> tasks
         phiIndex(t, i) = M;
@@ -1494,6 +1517,8 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
   dimPhi = M;
   CHECK_EQ(M, sum(phiDim), "");
 }
+
+bool WARN_FIRST_TIME=true;
 
 void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x, arr& lambda){
   //==================
@@ -1524,6 +1549,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
 
   CHECK(dimPhi,"getStructure must be called first");
 //  getStructure(NoUintA, featureTimes, tt);
+//  if(WARN_FIRST_TIME){ LOG(-1)<<"calling inefficient getStructure"; WARN_FIRST_TIME=false; }
   phi.resize(dimPhi);
   if(&tt) tt.resize(dimPhi);
   if(&J) J.resize(dimPhi);

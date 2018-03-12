@@ -28,7 +28,7 @@ class SWIFT_Scene;
 /// contains all information necessary to communicate with swift
 struct SwiftInterface {
   SWIFT_Scene *scene;
-  intA INDEXswift2shape, INDEXshape2swift;
+  intA INDEXswift2frame, INDEXshape2swift;
   double cutoff;
 
   SwiftInterface(const mlr::KinematicWorld& world, double _cutoff=.2);

@@ -19,7 +19,7 @@ enum PTMtype {
 //===========================================================================
 
 /// Proxy task variable
-struct TM_Proxy:TaskMap {
+struct TM_Proxy : TaskMap {
   /// @name data fields
   PTMtype type;
   uintA shapes,shapes2;
@@ -28,26 +28,26 @@ struct TM_Proxy:TaskMap {
   bool useDistNotCost;
 
   TM_Proxy(PTMtype _type,
-               uintA _shapes,
-               double _margin=.02,
-               bool _useCenterDist=false,
-               bool _useDistNotCost=false);
+           uintA _shapes,
+           double _margin=.02,
+           bool _useCenterDist=false,
+           bool _useDistNotCost=false);
   virtual ~TM_Proxy() {}
 
   virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1);
   virtual uint dim_phi(const mlr::KinematicWorld& G);
-  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("Proxy:"<<shapes); }
+  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("ProxyCost"); }
 };
 
 //===========================================================================
 
-struct TM_ProxyConstraint:TaskMap {
+struct TM_ProxyConstraint : TaskMap {
   TM_Proxy proxyCosts;
   TM_ProxyConstraint(PTMtype _type,
-                  uintA _shapes,
-                  double _margin=.02,
-                  bool _useCenterDist=false,
-                  bool _useDistNotCost=false);
+                     uintA _shapes,
+                     double _margin=.02,
+                     bool _useCenterDist=false,
+                     bool _useDistNotCost=false);
   virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1);
   virtual uint dim_phi(const mlr::KinematicWorld& G){ return 1; }
   virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return "ProxyConstraint"; }

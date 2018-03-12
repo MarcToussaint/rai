@@ -26,6 +26,8 @@ def qdump__mlr__String(d, value):
             d.putSubItem("N", value["N"])
             d.putSubItem("p", value["p"])
 
+def qdump__mlr__Enum(d, value):
+    d.putItem(value["x"])
 
 def qdump__LIST(d, value):
     p = value["p"]

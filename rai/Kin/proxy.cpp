@@ -18,8 +18,10 @@ mlr::Proxy::~Proxy() {
 
 
 void mlr::Proxy::calc_coll(const KinematicWorld& K){
-  mlr::Shape *s1 = K.frames(a)->shape;
-  mlr::Shape *s2 = K.frames(b)->shape;
+  CHECK_EQ(&a->K, &K, "");
+  CHECK_EQ(&b->K, &K, "");
+  mlr::Shape *s1 = a->shape;
+  mlr::Shape *s2 = b->shape;
   CHECK(s1 && s2, "");
 
   double r1=s1->size(3);
@@ -36,8 +38,8 @@ void mlr::Proxy::calc_coll(const KinematicWorld& K){
 
 typedef mlr::Array<mlr::Proxy*> ProxyL;
 
-#ifdef MLR_GL
 void mlr::Proxy::glDraw(OpenGL& gl){
+#ifdef MLR_GL
   if(coll){
     glLoadIdentity();
     coll->glDraw(gl);
@@ -65,13 +67,15 @@ void mlr::Proxy::glDraw(OpenGL& gl){
     glLoadMatrixd(GLmatrix);
     glDrawDisk(.02);
 
-//    f.pos=.5*(posA+posB);
-//    f.getAffineMatrixGL(GLmatrix);
-//    glLoadMatrixd(GLmatrix);
-//    glDrawText(STRING(a <<'-' <<b <<':' <<d), 0.,0.,0.);
+#if 0 //write text
+    f.pos=.5*(posA+posB);
+    f.getAffineMatrixGL(GLmatrix);
+    glLoadMatrixd(GLmatrix);
+    glDrawText(STRING(a->name <<'-' <<b->name <<':' <<d), 0.,0.,0.);
+#endif
 
     glEnable(GL_CULL_FACE);
   }
-}
 #endif
+}
 

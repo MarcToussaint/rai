@@ -15,6 +15,18 @@ ifeq ($(OPENMP),1)
 CXXFLAGS += -fopenmp -DOPENMP
 endif
 
+ifeq ($(X11),1)
+DEPEND_UBUNTU += libx11-dev
+CXXFLAGS += -DMLR_X11
+LIBS += -lX11
+endif
+
+ifeq ($(PNG),1)
+DEPEND_UBUNTU += libpng12-dev
+CXXFLAGS += -DMLR_PNG
+LIBS += -lpng
+endif
+
 ifeq ($(CUDA),1)
 CXXFLAGS += -DMLR_CUDA
 NXX = nvcc #$(MLR_LIBPATH)/cuda/bin/
@@ -320,7 +332,7 @@ endif
 
 ifeq ($(PTHREAD),1)
 CXXFLAGS  += -DMLR_PTHREAD
-LIBS += -lpthread -lX11
+LIBS += -lpthread
 endif
 
 ifeq ($(PHYSX),1)

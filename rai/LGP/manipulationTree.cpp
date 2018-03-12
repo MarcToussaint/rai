@@ -29,6 +29,8 @@ double COUNT_time=0.;
 mlr::String OptLGPDataPath;
 ofstream *filNodes=NULL;
 
+bool LGP_useHoming = true;
+
 void MNode::resetData(){
   cost = zeros(L);
   constraints = zeros(L);
@@ -125,7 +127,7 @@ void MNode::optLevel(uint level, bool collisions){
     komo.setModel(effKinematics, false);
     komo.setTiming(1., 2, 5., 1);
 
-    komo.setHoming(-1., -1., 1e-2);
+    if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
     komo.setSquaredQVelocities(.5, -1., 1.); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
     //komo.setFixEffectiveJoints(-1., -1., 1e2); //IMPORTANT: assume ALL eff to be articulated; problem: no constraints (touch)
     komo.setFixSwitchedObjects(-1., -1., 1e2);
@@ -148,7 +150,7 @@ void MNode::optLevel(uint level, bool collisions){
 //    }
 //    komo.setTiming(2.+.5, 2, 5., 1);
 
-//    komo.setHoming(-1., -1., 1e-2);
+//    if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
 //    komo.setSquaredQVelocities(1.1, -1., 1.); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
 //    komo.setFixEffectiveJoints(.5, -1., 1e2); //IMPORTANT: assume ALL eff to be articulated; problem: no constraints (touch)
 //    komo.setFixSwitchedObjects(.5, -1., 1e2);
@@ -168,7 +170,7 @@ void MNode::optLevel(uint level, bool collisions){
     komo.setModel(startKinematics, false);
     komo.setTiming(time, 2, 5., 1);
 
-    komo.setHoming(-1., -1., 1e-2);
+    if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
     komo.setSquaredQVelocities();
     komo.setFixEffectiveJoints(-1., -1., 1e2);
     komo.setFixSwitchedObjects(-1., -1., 1e2);
@@ -184,16 +186,18 @@ void MNode::optLevel(uint level, bool collisions){
   case 3:{
     komo.setModel(startKinematics, collisions);
     uint stepsPerPhase = mlr::getParameter<uint>("LGP/stepsPerPhase", 10);
-    komo.setTiming(time+.5, stepsPerPhase, 5., 2);
+    uint pathOrder = mlr::getParameter<uint>("LGP/pathOrder", 2);
+    komo.setTiming(time+.5, stepsPerPhase, 5., pathOrder);
 
-    komo.setHoming(-1., -1., 1e-2);
-    komo.setSquaredQAccelerations();
+    if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
+    if(pathOrder==1) komo.setSquaredQVelocities();
+    else komo.setSquaredQAccelerations();
     komo.setFixEffectiveJoints(-1., -1., 1e2);
     komo.setFixSwitchedObjects(-1., -1., 1e2);
     komo.setSquaredQuaternionNorms();
 
 #if 1
-    Skeleton S = getSkeleton({"touch", "stable", "dynamic", "impulse"});
+    Skeleton S = getSkeleton({"touch", "stable", "dynOn", "impulse", "dynFree", "actFree"});
     komo.setSkeleton(S);
 #else
     if(collisions) komo.setCollisions(false);
@@ -209,7 +213,7 @@ void MNode::optLevel(uint level, bool collisions){
   //-- optimize
   DEBUG( FILE("z.fol") <<fol; );
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); );
-//  komo.reportProblem();
+  komo.reportProblem();
 
   try{
     //      komo.verbose=3;
@@ -325,7 +329,7 @@ void MNode::solvePoseProblem(){
   komo.setModel(effKinematics);
   komo.setTiming(1., 2, 5., 1, false);
 
-  komo.setHoming(-1., -1., 1e-1); //gradient bug??
+  if(LGP_useHoming) komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
   //  komo.setFixEffectiveJoints(-1., -1., 1e3);
   komo.setFixSwitchedObjects(-1., -1., 1e3);
@@ -398,7 +402,7 @@ void MNode::solveSeqProblem(int verbose){
   komo.setModel(startKinematics);
   komo.setTiming(time, 2, 5., 1, false);
 
-  komo.setHoming(-1., -1., 1e-1); //gradient bug??
+  if(LGP_useHoming) komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
   komo.setFixEffectiveJoints(-1., -1., 1e3);
   komo.setFixSwitchedObjects(-1., -1., 1e3);
@@ -460,7 +464,7 @@ void MNode::solvePathProblem(uint microSteps, int verbose){
   komo.setModel(startKinematics);
   komo.setTiming(time, microSteps, 5., 2, false);
 
-  komo.setHoming(-1., -1., 1e-2); //gradient bug??
+  if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2); //gradient bug??
   komo.setSquaredQAccelerations();
   komo.setFixEffectiveJoints(-1., -1., 1e3);
   komo.setFixSwitchedObjects(-1., -1., 1e3);
@@ -602,12 +606,12 @@ Skeleton MNode::getSkeleton(StringA predicateFilter) const{
     for(uint i=0;i<G.N;i++){
       if(!done(k,i)){
         Node *n = G(i);
-        StringL symbols;
-        for(Node *p:n->parents) symbols.append(&p->keys.last());
+        StringA symbols;
+        for(Node *p:n->parents) symbols.append(p->keys.last());
 
         //check predicate filter
         if(!symbols.N
-           || (predicateFilter.N && !predicateFilter.contains(*symbols.first()))) continue;
+           || (predicateFilter.N && !predicateFilter.contains(symbols.first()))) continue;
 
         //trace into the future
         uint k_end=k+1;
@@ -618,9 +622,9 @@ Skeleton MNode::getSkeleton(StringA predicateFilter) const{
         }
         k_end--;
         if(k_end==states.N-1){
-          skeleton.append({symbols, (int)k, -1, times(k), -1.});
+          skeleton.append(SkeletonEntry({symbols, times(k), -1.}));
         }else{
-          skeleton.append({symbols, (int)k, (int)k_end, times(k), times(k_end)});
+          skeleton.append(SkeletonEntry({symbols, times(k), times(k_end)}));
         }
       }
     }

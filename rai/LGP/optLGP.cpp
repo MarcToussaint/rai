@@ -611,6 +611,7 @@ void OptLGP_SolutionData::write(std::ostream &os) const{
 }
 
 void OptLGP_SolutionData::glDraw(OpenGL &gl){
+#ifdef MLR_GL
   uint l=3;
   mlr::Array<mlr::Geom*>& geoms = _GeomStore()->geoms;
 
@@ -623,4 +624,5 @@ void OptLGP_SolutionData::glDraw(OpenGL &gl){
 
     geoms(geomIDs(i))->glDraw(gl);
   }
+#endif
 }

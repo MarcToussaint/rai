@@ -42,7 +42,7 @@ void PairCollisionConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, 
   if(&J) J.resize(1,G.q.N).setZero();
   if(j>=0){ //against a concrete j
     for(const mlr::Proxy& p: G.proxies){
-      if((p.a==i && p.b==j) || (p.a==j && p.b==i)){
+      if(((int)p.a->ID==i && (int)p.b->ID==j) || ((int)p.a->ID==j && (int)p.b->ID==i)){
         G.kinematicsProxyConstraint(y, J, p, margin);
         break;
       }
@@ -51,7 +51,7 @@ void PairCollisionConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, 
     NIY; //this doesn't work, don't know why
     //first collect all relevant proxies
     mlr::Array<const mlr::Proxy*> P;
-    for(const mlr::Proxy& p: G.proxies) if((p.a==i) || (p.b==i)) P.append(&p);
+    for(const mlr::Proxy& p: G.proxies) if(((int)p.a->ID==i) || ((int)p.b->ID==i)) P.append(&p);
     //Compute the softmax
     double alpha = 10.;
     double yHat=0.,yNorm=0.;
@@ -141,7 +141,7 @@ void ContactEqualityConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G
   y.resize(1) = 0.;
   if(&J) J.resize(1,G.q.N).setZero();
   for(const mlr::Proxy& p: G.proxies){
-    if((p.a==i && p.b==j) || (p.a==j && p.b==i)){
+    if(((int)p.a->ID==i && (int)p.b->ID==j) || ((int)p.a->ID==j && (int)p.b->ID==i)){
       G.kinematicsProxyConstraint(y, J, p, margin);
       break;
     }

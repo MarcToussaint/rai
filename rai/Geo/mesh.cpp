@@ -1500,9 +1500,11 @@ void mlr::Mesh::readObjFile(std::istream& is) {
   
   //CONVENTION!: start counting vertex indices from 0!!
   T -= 1u;
-  Tt -= 1u;
   CHECK(T.max() < nV, "");
-  CHECK(Tt.max() < nTex, "");
+  if(nTex){
+    Tt -= 1u;
+    CHECK(Tt.max() < nTex, "");
+  }
 }
 
 //===========================================================================
@@ -1734,6 +1736,7 @@ void glTransform(const mlr::Transformation&) { NICO }
 extern OpenGL& NoOpenGL;
 
 void glDrawMeshes(void *P){
+#ifdef MLR_GL
   MeshA& meshes = *((MeshA*)P);
   double GLmatrix[16];
   for(mlr::Mesh& mesh:meshes){
@@ -1743,6 +1746,7 @@ void glDrawMeshes(void *P){
     mesh.glDraw(NoOpenGL);
     glPopMatrix();
   }
+#endif
 }
 
 //==============================================================================

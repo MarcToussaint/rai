@@ -25,10 +25,6 @@
 #include <Core/thread.h>
 #include <Geo/geo.h>
 
-#ifndef MLR_QTGL
-#  include <X11/Xlib.h>
-#endif
-
 #ifdef MLR_FLTK
 #  include <FL/glut.H>
 #endif
@@ -140,6 +136,7 @@ struct OpenGL {
   mlr::Array<GLHoverCall*> hoverCalls; ///< list of hover callbacks
   mlr::Array<GLClickCall*> clickCalls; ///< list of click callbacks
   mlr::Array<GLKeyCall*> keyCalls;     ///< list of click callbacks
+  mlr::Array<struct CstyleDrawer*> toBeDeletedOnCleanup;
 
   mlr::String title;     ///< the window title
   uint width, height;
@@ -227,8 +224,8 @@ public: //driver dependent methods
   void closeWindow();
   void postRedrawEvent(bool fromWithinCallback);
 #if !defined MLR_MSVC && !defined MLR_QTGL
-  Display* xdisplay();
-  Drawable xdraw();
+  //  Display* xdisplay();
+  //  Drawable xdraw();
 #endif
   void forceGlutInit();
 

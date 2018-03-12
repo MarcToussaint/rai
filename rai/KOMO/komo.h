@@ -23,10 +23,12 @@
 //===========================================================================
 
 struct SkeletonEntry{
-  StringL symbols;
-  int k0,k1;
-  double phase0, phase1;
-  void write(ostream& os) const{ listWrite(symbols,os," ","()"); os <<" from " <<k0 <<':' <<phase0 <<" to " <<k1 <<':' <<phase1; }
+  StringA symbols;
+  double phase0=-1.;
+  double phase1=-1.;
+  SkeletonEntry(){}
+  SkeletonEntry(StringA symbols,double phase0,double phase1):symbols(symbols), phase0(phase0), phase1(phase1){}
+  void write(ostream& os) const{ symbols.write(os," ",NULL,"()"); os <<" from " <<phase0 <<" to " <<phase1; }
 };
 stdOutPipe(SkeletonEntry)
 typedef mlr::Array<SkeletonEntry> Skeleton;

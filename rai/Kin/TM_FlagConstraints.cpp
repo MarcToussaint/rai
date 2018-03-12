@@ -21,15 +21,18 @@
 
 //===========================================================================
 
-bool JointDidNotSwitch(const mlr::Frame *a1, const WorldL& Ktuple){
+bool JointDidNotSwitch(const mlr::Frame *a1, const WorldL& Ktuple, int order){
   CHECK_EQ(&a1->K, Ktuple.last(), "");
-  if(a1->ID >= Ktuple(-2)->frames.N) return false;
-  mlr::Frame *a0 = Ktuple(-2)->frames(a1->ID);
-  mlr::Joint *j0 = a0->joint, *j1=a1->joint;
-  if(!j0 || !j1
-     || j0->type!=j1->type
-     || j0->constrainToZeroVel!=j1->constrainToZeroVel
-     || j0->from()->ID!=j1->from()->ID) return false;
+  if(order<1) return true;
+  for(int i=0;i<order;i++){
+    if(a1->ID >= Ktuple(-2-i)->frames.N) return false;
+    mlr::Frame *a0 = Ktuple(-2-i)->frames(a1->ID);
+    mlr::Joint *j0 = a0->joint, *j1 = a1->joint;
+    if(!j0 || !j1
+       || j0->type!=j1->type
+       || j0->constrainToZeroVel!=j1->constrainToZeroVel
+       || j0->from()->ID!=j1->from()->ID) return false;
+  }
   return true;
 }
 
@@ -41,7 +44,7 @@ uint TM_FlagConstraints::dim_phi(const WorldL& Ktuple, int t){
     if(a->flags & (1<<FL_zeroVel)) d += 7;
     if(order>=2 && a->flags & (1<<FL_zeroAcc) && !(a->flags & (1<<FL_impulseExchange))) d += 7;
     if(order>=2 && a->flags & (1<<FL_gravityAcc) && !(a->flags & (1<<FL_impulseExchange))) d += 7;
-    if(a->flags & (1<<FL_zeroQVel)) if(JointDidNotSwitch(a, Ktuple)) d += a->joint->dim;
+    if(a->flags & (1<<FL_zeroQVel)) if(JointDidNotSwitch(a, Ktuple, 1)) d += a->joint->dim;
   }
   return d;
 }
@@ -112,7 +115,7 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
       d += 7;
     }
 
-    if(a->flags & (1<<FL_zeroQVel)) if(JointDidNotSwitch(a, Ktuple)){
+    if(a->flags & (1<<FL_zeroQVel)) if(JointDidNotSwitch(a, Ktuple, 1)){
       uint jdim = a->joint->dim;
 
       TM_qItself q({a->ID}, false);
@@ -134,7 +137,8 @@ uint TM_FlagCosts::dim_phi(const WorldL& Ktuple, int t){
   for(mlr::Frame *a : Ktuple.last()->frames){
     if(order>=2 && a->flags & (1<<FL_xPosAccCosts)) d+=3;
     if(a->flags & (1<<FL_xPosVelCosts)) d+=3;
-    if(order>=2 && a->flags & (1<<FL_qCtrlCostAcc)) if(JointDidNotSwitch(a, Ktuple)) d += a->joint->dim;
+    if(order>=2 && a->flags & (1<<FL_qCtrlCostAcc)) if(JointDidNotSwitch(a, Ktuple, 2)) d += a->joint->dim;
+    if(order>=1 && a->flags & (1<<FL_qCtrlCostVel)) if(JointDidNotSwitch(a, Ktuple, 1)) d += a->joint->dim;
   }
   return d;
 }
@@ -171,11 +175,21 @@ void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
       d += 3;
     }
 
-    if(order>=2 && a->flags & (1<<FL_qCtrlCostAcc)) if(JointDidNotSwitch(a, Ktuple)){
+    if(order>=2 && a->flags & (1<<FL_qCtrlCostAcc)) if(JointDidNotSwitch(a, Ktuple, 2)){
       uint jdim = a->joint->dim;
 
       TM_qItself q({a->ID}, false);
       q.order=2;
+      q.TaskMap::phi(y({d,d+jdim-1})(), (&J?J({d,d+jdim-1})():NoArr), Ktuple, tau, t);
+
+      d += jdim;
+    }
+
+    if(order>=1 && a->flags & (1<<FL_qCtrlCostVel)) if(JointDidNotSwitch(a, Ktuple, 1)){
+      uint jdim = a->joint->dim;
+
+      TM_qItself q({a->ID}, false);
+      q.order=1;
       q.TaskMap::phi(y({d,d+jdim-1})(), (&J?J({d,d+jdim-1})():NoArr), Ktuple, tau, t);
 
       d += jdim;
