@@ -139,7 +139,12 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
       j->frame.flags |= (1<<FL_zeroQVel);
     }
     j->type = jointType;
-    j->frame.Q = j->frame.X / j->frame.parent->X; //that's important for the initialization of x during the very first komo.setupConfigurations !!
+    {
+      j->frame.Q = j->frame.X / j->frame.parent->X; //that's important for the initialization of x during the very first komo.setupConfigurations !!
+      arr q = j->calc_q_from_Q(j->frame.Q);
+      j->frame.Q.setZero();
+      j->calc_Q_from_q(q, 0);
+    }
     K.calc_q();
     K.calc_fwdPropagateFrames();
     K.checkConsistency();
@@ -147,7 +152,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
   }
 
   if(symbol==addSliderMechanism){
-//    HALT("I think it is better if there is fixed slider mechanisms in the world, that may jump; no dynamic creation of bodies");
+//    HALT("I think it is better if there is fixed  slider mechanisms in the world, that may jump; no dynamic creation of bodies");
     Frame *slider1 = new Frame(K); //{ type=ST_box size=[.2 .1 .05 0] color=[0 0 0] }
     Frame *slider2 = new Frame(K); //{ type=ST_box size=[.2 .1 .05 0] color=[1 0 0] }
     Shape *s1 = new Shape(*slider1); s1->type()=ST_box; s1->size()={.2,.1,.05}; s1->mesh().C={0.,0,0};
