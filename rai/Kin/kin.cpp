@@ -2430,7 +2430,6 @@ void mlr::KinematicWorld::glDraw(OpenGL& gl) {
 /// GL routine to draw a mlr::KinematicWorld
 void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
 #ifdef MLR_GL
-  uint i=0;
   mlr::Transformation f;
   double GLmatrix[16];
 
@@ -2495,14 +2494,14 @@ void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
   //shapes
   if(orsDrawBodies){
   //first non-transparent
-    for(Frame *f: frames) if(f->shape && !f->name.startsWith("coll")){
-	gl.drawId(f->ID);
-	f->shape->glDraw(gl);
-      }
-    for(Frame *f: frames) if(f->shape && f->name.startsWith("coll")){
-	gl.drawId(f->ID);
-	f->shape->glDraw(gl);
-      }
+    for(Frame *f: frames) if(f->shape && f->shape->alpha()<1.){
+      gl.drawId(f->ID);
+      f->shape->glDraw(gl);
+    }
+    for(Frame *f: frames) if(f->shape && f->shape->alpha()==1.){
+      gl.drawId(f->ID);
+      f->shape->glDraw(gl);
+    }
   }
 
   glPopMatrix();

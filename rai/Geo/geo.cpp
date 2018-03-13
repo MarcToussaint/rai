@@ -1546,6 +1546,8 @@ void Camera::setHeightAbs(float h) { heightAngle=0.; heightAbs=h; }
 void Camera::setZRange(float znear, float zfar) { zNear=znear; zFar=zfar; }
 /// set the width/height ratio of your viewport to see a non-distorted picture
 void Camera::setWHRatio(float ratio) { whRatio=ratio; }
+/// set the width/height ratio of your viewport to see a non-distorted picture
+void Camera::setFocalLength(float f) { heightAbs=heightAngle = 0;  focalLength = f; }
 /// the frame's position
 void Camera::setPosition(float x, float y, float z) { X.pos.set(x, y, z); }
 /// rotate the frame to focus the absolute coordinate origin (0, 0, 0)

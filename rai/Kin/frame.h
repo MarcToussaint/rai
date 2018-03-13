@@ -166,6 +166,7 @@ struct Shape : GLDrawer{
   double& size(uint i) { return getGeom().size.elem(i); }
   Mesh& mesh() { return getGeom().mesh; }
   Mesh& sscCore() { return getGeom().sscCore; }
+  double alpha(){ arr& C=getGeom().mesh.C; if(C.N==4) return C(3); return 1.; }
 
 //  Enum<ShapeType> type;
 //  arr size;

@@ -64,6 +64,8 @@ struct Transformation;
 
 void glStandardLight(void*);
 void glStandardScene(void*);
+void glStandardOriginAxes(void*);
+
 void glColor(float r, float g, float b, float a=1.f);
 void glColor(int col);
 void glColor(const arr& col);

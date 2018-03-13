@@ -304,6 +304,10 @@ void glStandardScene(void*) {
   glPopAttrib();
 }
 
+void glStandardOriginAxes(void*) {
+  glDrawAxes(.1);
+}
+
 void glColor(int col) {
   static const GLfloat colorsTab[6][4] = {
     {0.2, 0.2, 1.0, 1.0}, // blue

@@ -289,6 +289,7 @@ struct Camera {
   void setHeightAbs(float h);
   void setZRange(float znear, float zfar);
   void setWHRatio(float ratio);
+  void setFocalLength(float f);
   void setPosition(float x, float y, float z);
   void setOffset(float x, float y, float z);
   void setCameraProjectionMatrix(const arr& P); //P is in standard convention -> computes fixedProjectionMatrix in OpenGL convention from this
