@@ -257,6 +257,7 @@ void mlr::KinematicWorld::calc_activeSets(){
 
 void mlr::KinematicWorld::calc_q(){
   calc_activeSets();
+  analyzeJointStateDimensions();
   calc_q_from_Q();
 }
 

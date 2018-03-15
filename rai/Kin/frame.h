@@ -66,6 +66,7 @@ public:
   ~Frame();
 
   void calc_X_from_parent();
+  void calc_Q_from_parent(bool enforceWithinJoint = true);
 
   Frame* insertPreLink(const mlr::Transformation& A=0);
   Frame* insertPostLink(const mlr::Transformation& B=0);

@@ -48,6 +48,8 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
   if(toId!=UINT_MAX) to=K.frames(toId);
 
   if(symbol==deleteJoint){
+    CHECK_EQ(jointType, JT_none, "");
+
 #if 1
     //first search for the joint below frame
     Frame *f = to;
@@ -204,8 +206,23 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
     return;
   }
 
+  if(symbol==SW_fixCurrent){
+    CHECK_EQ(jointType, JT_none, "");
+
+    if(to->parent) to->unLink();
+    to->linkFrom(from, true);
+
+    K.calc_q();
+    K.calc_fwdPropagateFrames();
+    K.checkConsistency();
+    return;
+  }
+
   if(symbol==makeDynamic){
+    CHECK_EQ(jointType, JT_none, "");
+    CHECK_EQ(to, NULL, "");
     CHECK(from->inertia, "can only make frames with intertia dynamic");
+
     from->inertia->type=mlr::BT_dynamic;
     if(from->joint){
       from->joint->constrainToZeroVel=false;
@@ -215,7 +232,10 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
   }
 
   if(symbol==makeKinematic){
+    CHECK_EQ(jointType, JT_none, "");
+    CHECK_EQ(to, NULL, "");
     CHECK(from->inertia, "can only make frames with intertia kinematic");
+
     from->inertia->type=mlr::BT_kinematic;
 //    if(from->joint){
 //      from->joint->constrainToZeroVel=false;

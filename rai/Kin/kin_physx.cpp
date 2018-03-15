@@ -528,11 +528,16 @@ void PhysXInterface::pullFromPhysx(mlr::KinematicWorld *K, arr& vels) {
     if(s->actors.N <= f->ID) continue;
     PxRigidActor* a = s->actors(f->ID);
     if(!a) continue;
-    PxTrans2OrsTrans(f->X, a->getGlobalPose());
-    if(&vels && a->getType() == PxActorType::eRIGID_DYNAMIC) {
-      PxRigidBody *px_body = (PxRigidBody*) a;
-      vels(f->ID, 0, {}) = conv_PxVec3_arr(px_body->getLinearVelocity());
-      vels(f->ID, 1, {}) = conv_PxVec3_arr(px_body->getAngularVelocity());
+
+    bool isDynamic = (f->inertia && f->inertia->type==mlr::BT_dynamic);
+    if(isDynamic){
+      PxTrans2OrsTrans(f->X, a->getGlobalPose());
+      if(&vels && a->getType() == PxActorType::eRIGID_DYNAMIC) {
+        PxRigidBody *px_body = (PxRigidBody*) a;
+        vels(f->ID, 0, {}) = conv_PxVec3_arr(px_body->getLinearVelocity());
+        vels(f->ID, 1, {}) = conv_PxVec3_arr(px_body->getAngularVelocity());
+      }
+      if(f->joint) f->calc_Q_from_parent(true);
     }
 #if 0
     if(a->getType() == PxActorType::eRIGID_DYNAMIC) {
@@ -549,8 +554,8 @@ void PhysXInterface::pullFromPhysx(mlr::KinematicWorld *K, arr& vels) {
     }
 #endif
   }
-  K->calc_Q_from_BodyFrames();
-  K->calc_q_from_Q();
+//  K->calc_Q_from_BodyFrames();
+//  K->calc_q_from_Q();
 }
 
 void PhysXInterface::pushToPhysx(mlr::KinematicWorld *K, mlr::KinematicWorld *Kt_1, mlr::KinematicWorld *Kt_2, double tau, bool onlyKinematic) {

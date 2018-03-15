@@ -112,6 +112,14 @@ bool timerUseRealTime=false;
 QApplication *myApp=NULL;
 #endif
 
+/// running a system command and checking return value
+void system(const char *cmd){
+  cout <<"SYSTEM CMD: " <<cmd <<endl;
+  int r = ::system(cmd);
+  mlr::wait(.1);
+  if(r) HALT("system return error " <<r);
+}
+
 /// open an output-file with name '\c name'
 void open(std::ofstream& fs, const char *name, const char *errmsg) {
   fs.clear();
@@ -718,7 +726,7 @@ bool getInteractivity(){
 // logging
 
 namespace mlr {
-  void handleSIGUSR2(int){
+void handleSIGUSR2(int){
     int i=5;
     i*=i;    //set a break point here, if you want to catch errors directly
   }

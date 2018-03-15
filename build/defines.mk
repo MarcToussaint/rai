@@ -54,6 +54,7 @@ LIBS += -lgtest -lpthread
 endif
 
 ifeq ($(FREEGLUT),1)
+DEPEND_UBUNTU += freeglut3-dev
 CXXFLAGS  += -DMLR_FREEGLUT
 MSVC_CPATH := $(MSVC_CPATH);$(LIBPATH)/freeglut/include
 MSVC_LPATH := $(MSVC_LPATH);$(LIBPATH)/freeglut/DebugStatic
@@ -102,6 +103,7 @@ LIBS     += `pkg-config --libs  gtk+-3.0`
 endif
 
 ifeq ($(GRAPHVIZ),1)
+DEPEND_UBUNTU += graphviz-dev
 CXXFLAGS += -DMLR_GRAPHVIZ
 LIBS += -lcgraph -lgvc
 endif
