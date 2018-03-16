@@ -13,18 +13,18 @@ bin_paths = $(shell find bin -maxdepth 2 -name 'Makefile' -printf "%h ")
 ################################################################################
 
 initUbuntuPackages: force
-	@echo "##### calling make installUbuntuPackages in each lib"
-	@find rai -mindepth 1 -maxdepth 1 -type d -exec make installUbuntuPackages -C {} \;
+	@echo "##### calling make installUbuntu in each lib"
+	@find rai -mindepth 1 -maxdepth 1 -type d -exec make installUbuntu -C {} \;
 
-tests: $(test_paths:%=makePath/%)
+tests: $(test_paths:%=inPath_make/%)
 
-bin: $(bin_paths:%=makePath/%)
+bin: $(bin_paths:%=inPath_make/%)
 
-src: $(src_paths:%=makeDepend/%)
+src: $(src_paths:%=inPath_makeLib/%)
 
 depend: $(src_paths:%=dependPath/%)
 
-clean: $(src_paths:%=cleanPath/%) cleanLocks
+clean: $(src_paths:%=inPath_clean/%) cleanLocks
 
 cleanStart: force
 	@read -p " *** WARNING: This will rm ALL local files/changes (e.g. project/temporary/data files) - abort if you don't want to continue" yn
@@ -34,7 +34,7 @@ cleanStart: force
 
 ################################################################################
 
-# test: setConfigFlag $(exa_paths:%=cleanPath/%) cleanLocks $(exa_paths:%=makePath/%)
+# test: setConfigFlag $(exa_paths:%=inPath_clean/%) cleanLocks $(exa_paths:%=inPath_make/%)
 
 # setConfigFlag: force
 # 	echo "MLR_TESTS = 1" > build/z.mk

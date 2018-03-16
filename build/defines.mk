@@ -15,6 +15,12 @@ ifeq ($(OPENMP),1)
 CXXFLAGS += -fopenmp -DOPENMP
 endif
 
+ifeq ($(PYBIND),1)
+CXXFLAGS += -DRAI_PYBIND `python3-config --cflags`
+LIBS += `python3-config --ldflags`
+CPATH   := $(CPATH):$(BASE)/../pybind11/include
+endif
+
 ifeq ($(CUDA),1)
 CXXFLAGS += -DMLR_CUDA
 NXX = nvcc #$(MLR_LIBPATH)/cuda/bin/
