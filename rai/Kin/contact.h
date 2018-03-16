@@ -9,11 +9,11 @@ namespace mlr{
 ///Description of a Contact
 struct Contact : GLDrawer {
   Frame &a, &b;
-  mlr::Vector a_rel, b_rel;    // contact point RELATIVE to the frames
-  mlr::Vector a_norm, b_norm;  // normals RELATIVE to the frames, pointing AWAY from the object
+  arr a_pts, b_pts;          // points on the core mesh that define the contact simplices
+//  mlr::Vector a_rel, b_rel;    // contact point RELATIVE to the frames
   double a_rad, b_rad;         // the radii for sphere-swept objects: the contact points are on the cvx CORE, not the surface!
-  uint a_type, b_type;
-  mlr::Vector a_line, b_line;  // when of line type, these are the line/axis directions RELATIVE to the frame
+//  uint a_type, b_type;
+//  mlr::Vector a_line, b_line;  // when of line type, these are the line/axis directions RELATIVE to the frame
 
   double y=0.;                 // place to store the constraint value (typically: neg distance) when the taskmap is called
   double lagrangeParameter=0.; // place to store the respective lagrange parameter after an optimization
@@ -29,14 +29,14 @@ struct Contact : GLDrawer {
     b.contacts.removeValue(this);
   }
 
-  mlr::Vector get_pa() const{ return a.X * (a_rel + a_rad*a_norm); }
-  mlr::Vector get_pb() const{ return b.X * (b_rel + b_rad*b_norm); }
-  mlr::Vector get_norm() const{ return .5 * (a.X.rot * a_norm + b.X.rot * b_norm); }
-  double get_pDistance() const{ return (get_pa()-get_pb()).length(); } // get distance between the FIXED contacted points p_a and p_b
-  double get_tangentDistance() const{
-    arr n = get_norm().getArr();
-    return length((eye(3) - (n^n)) * (get_pa()-get_pb()).getArr());
-  }
+//  mlr::Vector get_pa() const{ return a.X * (a_rel + a_rad*a_norm); }
+//  mlr::Vector get_pb() const{ return b.X * (b_rel + b_rad*b_norm); }
+//  mlr::Vector get_norm() const{ return .5 * (a.X.rot * a_norm + b.X.rot * b_norm); }
+//  double get_pDistance() const{ return (get_pa()-get_pb()).length(); } // get distance between the FIXED contacted points p_a and p_b
+//  double get_tangentDistance() const{
+//    arr n = get_norm().getArr();
+//    return length((eye(3) - (n^n)) * (get_pa()-get_pb()).getArr());
+//  }
 
   double getDistance() const; // get normal(!) distance (projected onto contact normal), by calling the TM_ContactNegDistance()
   TaskMap* getTM_Friction() const;

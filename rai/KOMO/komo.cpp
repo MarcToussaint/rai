@@ -1546,7 +1546,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
   komo.set_x(x);
 
   CHECK(dimPhi,"getStructure must be called first");
-  getStructure(NoUintA, featureTimes, tt);
+  //getStructure(NoUintA, featureTimes, tt);
 if(WARN_FIRST_TIME){ LOG(-1)<<"calling inefficient getStructure"; WARN_FIRST_TIME=false; }
   phi.resize(dimPhi);
   if(&tt) tt.resize(dimPhi);
