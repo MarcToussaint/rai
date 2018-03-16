@@ -11,7 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
 #include "rrt_planner.h"
 
 #include <Kin/kin.h>

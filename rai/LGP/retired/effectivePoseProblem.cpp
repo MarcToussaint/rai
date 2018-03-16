@@ -11,8 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
 #include "effectivePoseProblem.h"
 #include <Gui/opengl.h>
 #include <Kin/taskMaps.h>

@@ -12,8 +12,6 @@
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
 
-
-
 #ifndef Core_module_h
 #define Core_module_h
 

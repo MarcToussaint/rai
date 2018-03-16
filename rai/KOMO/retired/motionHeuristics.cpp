@@ -11,7 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
 #include "motionHeuristics.h"
 #include "taskMaps.h"
 #include <Optim/optimization.h>

@@ -11,8 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
 #include "pathProblem.h"
 #include <Kin/taskMaps.h>
 #include <Kin/kin_swift.h>

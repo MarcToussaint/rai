@@ -11,8 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
 #ifndef MLR_opengl_qt_h
 #define MLR_opengl_qt_h
 

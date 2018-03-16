@@ -11,8 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
 #include "phase_optimization.h"
 
 PhaseOptimization::PhaseOptimization(arr &X, uint _kX, double _w){

@@ -11,8 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
 /// @file
 /// @ingroup group_Core
 /// @addtogroup group_Core

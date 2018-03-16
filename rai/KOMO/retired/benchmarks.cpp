@@ -11,8 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
 #include "benchmarks.h"
 #include "komo.h"
 //#include <Optim/kOrderMarkov.h>

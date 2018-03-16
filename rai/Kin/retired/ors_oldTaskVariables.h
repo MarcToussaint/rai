@@ -11,7 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
 #ifndef _HEADER_GUARD_ORS_OLDTASKVARIABLES_H_
 #define _HEADER_GUARD_ORS_OLDTASKVARIABLES_H_
 

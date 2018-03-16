@@ -11,8 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
 #ifndef PHASE_OPTIMIZATION_H
 #define PHASE_OPTIMIZATION_H
 

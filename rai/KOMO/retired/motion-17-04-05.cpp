@@ -11,7 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
 #include "motion.h"
 #include "taskMaps.h"
 #include <Gui/opengl.h>

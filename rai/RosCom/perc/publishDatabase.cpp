@@ -15,7 +15,6 @@
     You should have received a COPYING file of the GNU General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
-
 #ifdef MLR_ROS
 #include "publishDatabase.h"
 #include <geometry_msgs/PoseArray.h>
