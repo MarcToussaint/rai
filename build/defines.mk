@@ -21,6 +21,18 @@ LIBS += `python3-config --ldflags`
 CPATH   := $(CPATH):$(BASE)/../pybind11/include
 endif
 
+ifeq ($(X11),1)
+DEPEND_UBUNTU += libx11-dev
+CXXFLAGS += -DMLR_X11
+LIBS += -lX11
+endif
+
+ifeq ($(PNG),1)
+DEPEND_UBUNTU += libpng12-dev
+CXXFLAGS += -DMLR_PNG
+LIBS += -lpng
+endif
+
 ifeq ($(CUDA),1)
 CXXFLAGS += -DMLR_CUDA
 NXX = nvcc #$(MLR_LIBPATH)/cuda/bin/
@@ -48,6 +60,7 @@ LIBS += -lgtest -lpthread
 endif
 
 ifeq ($(FREEGLUT),1)
+DEPEND_UBUNTU += freeglut3-dev
 CXXFLAGS  += -DMLR_FREEGLUT
 MSVC_CPATH := $(MSVC_CPATH);$(LIBPATH)/freeglut/include
 MSVC_LPATH := $(MSVC_LPATH);$(LIBPATH)/freeglut/DebugStatic
@@ -96,6 +109,7 @@ LIBS     += `pkg-config --libs  gtk+-3.0`
 endif
 
 ifeq ($(GRAPHVIZ),1)
+DEPEND_UBUNTU += graphviz-dev
 CXXFLAGS += -DMLR_GRAPHVIZ
 LIBS += -lcgraph -lgvc
 endif
@@ -326,7 +340,7 @@ endif
 
 ifeq ($(PTHREAD),1)
 CXXFLAGS  += -DMLR_PTHREAD
-LIBS += -lpthread -lX11
+LIBS += -lpthread
 endif
 
 ifeq ($(PHYSX),1)

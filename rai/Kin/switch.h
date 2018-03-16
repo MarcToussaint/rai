@@ -31,6 +31,8 @@ enum SwitchType {
   SW_insertEffJoint,
   insertActuated,
   makeDynamic,
+  makeKinematic,
+  SW_fixCurrent
 };
 
 struct KinematicSwitch{

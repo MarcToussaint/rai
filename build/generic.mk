@@ -176,6 +176,9 @@ cleanDepends: force
 installUbuntu: force
 	sudo apt-get $(APTGETYES) install $(DEPEND_UBUNTU)
 
+printUbuntuPackages: force
+	@echo $(DEPEND_UBUNTU)
+
 depend: generate_Makefile.dep
 
 info: force
@@ -350,6 +353,10 @@ inPath_clean/%: $(BASE)/rai/%
 inPath_installUbuntu/%: $(BASE)/rai/%
 	@echo "                                                ***** init " $*
 	@-$(MAKE) -C $< installUbuntu --no-print-directory
+
+inPath_printUbuntuPackages/%: $(BASE)/rai/%
+	@echo "#" $*
+	@-$(MAKE) -C $< printUbuntuPackages --no-print-directory
 
 inPath_makePython/%: %
 	make --directory=$< pywrapper

@@ -66,6 +66,7 @@ public:
   ~Frame();
 
   void calc_X_from_parent();
+  void calc_Q_from_parent(bool enforceWithinJoint = true);
 
   Frame* insertPreLink(const mlr::Transformation& A=0);
   Frame* insertPostLink(const mlr::Transformation& B=0);
@@ -166,6 +167,7 @@ struct Shape : GLDrawer{
   double& size(uint i) { return getGeom().size.elem(i); }
   Mesh& mesh() { return getGeom().mesh; }
   Mesh& sscCore() { return getGeom().sscCore; }
+  double alpha(){ arr& C=getGeom().mesh.C; if(C.N==4) return C(3); return 1.; }
 
 //  Enum<ShapeType> type;
 //  arr size;

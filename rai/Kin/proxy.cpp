@@ -38,8 +38,8 @@ void mlr::Proxy::calc_coll(const KinematicWorld& K){
 
 typedef mlr::Array<mlr::Proxy*> ProxyL;
 
-#ifdef MLR_GL
 void mlr::Proxy::glDraw(OpenGL& gl){
+#ifdef MLR_GL
   if(coll){
     glLoadIdentity();
     coll->glDraw(gl);
@@ -76,6 +76,6 @@ void mlr::Proxy::glDraw(OpenGL& gl){
 
     glEnable(GL_CULL_FACE);
   }
-}
 #endif
+}
 

@@ -62,6 +62,15 @@ void mlr::Frame::calc_X_from_parent(){
   }
 }
 
+void mlr::Frame::calc_Q_from_parent(bool enforceWithinJoint){
+  CHECK(parent,"");
+  Q.setDifference(parent->X, X);
+  if(joint && enforceWithinJoint){
+    arr q = joint->calc_q_from_Q(Q);
+    joint->calc_Q_from_q(q, 0);
+  }
+}
+
 void mlr::Frame::getRigidSubFrames(FrameL &F){
   for(Frame *f:outLinks) if(!f->joint) { F.append(f); f->getRigidSubFrames(F); }
 }
@@ -693,8 +702,8 @@ void mlr::Shape::write(std::ostream& os) const {
   if(cont) os <<" contact, ";
 }
 
-#ifdef MLR_GL
 void mlr::Shape::glDraw(OpenGL& gl) {
+#ifdef MLR_GL
   //set name (for OpenGL selection)
   glPushName((frame.ID <<2) | 1);
   if(frame.K.orsDrawColors && !frame.K.orsDrawIndexColors && !gl.drawMode_idColor){
@@ -734,10 +743,8 @@ void mlr::Shape::glDraw(OpenGL& gl) {
   }
 
   glPopName();
-}
-
 #endif
-
+}
 
 mlr::Inertia::Inertia(Frame &f, Inertia *copyInertia) : frame(f), type(BT_kinematic) {
   CHECK(!frame.inertia, "this frame already has inertia");

@@ -257,6 +257,7 @@ void mlr::KinematicWorld::calc_activeSets(){
 
 void mlr::KinematicWorld::calc_q(){
   calc_activeSets();
+  analyzeJointStateDimensions();
   calc_q_from_Q();
 }
 
@@ -2428,9 +2429,8 @@ void mlr::KinematicWorld::glDraw(OpenGL& gl) {
 }
 
 /// GL routine to draw a mlr::KinematicWorld
-#ifdef MLR_GL
 void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
-  uint i=0;
+#ifdef MLR_GL
   mlr::Transformation f;
   double GLmatrix[16];
 
@@ -2490,21 +2490,24 @@ void mlr::KinematicWorld::glDraw_sub(OpenGL& gl) {
 //    //glDrawSphere(.1*s);
 
     glPopName();
-    i++;
-    if(orsDrawLimit && i>=orsDrawLimit) break;
   }
 
   //shapes
-  if(orsDrawBodies) for(Frame *f: frames) if(f->shape){
-    gl.drawId(f->ID);
-    f->shape->glDraw(gl);
-    i++;
-    if(orsDrawLimit && i>=orsDrawLimit) break;
+  if(orsDrawBodies){
+  //first non-transparent
+    for(Frame *f: frames) if(f->shape && f->shape->alpha()<1.){
+      gl.drawId(f->ID);
+      f->shape->glDraw(gl);
+    }
+    for(Frame *f: frames) if(f->shape && f->shape->alpha()==1.){
+      gl.drawId(f->ID);
+      f->shape->glDraw(gl);
+    }
   }
 
   glPopMatrix();
-}
 #endif
+}
 
 
 //===========================================================================
@@ -2791,10 +2794,12 @@ void mlr::glDrawGraph(void *classP) {
 }
 
 void mlr::glDrawProxies(void *P){
+#ifdef MLR_GL
   ProxyL& proxies = *((ProxyL*)P);
   glPushMatrix();
   for(mlr::Proxy* p:proxies) p->glDraw(NoOpenGL);
   glPopMatrix();
+#endif
 }
 
 

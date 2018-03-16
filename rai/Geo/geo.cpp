@@ -22,8 +22,9 @@
 REGISTER_TYPE(T, mlr::Transformation);
 #endif
 
-
-#include <GL/glu.h>
+#ifdef MLR_GL
+#  include <GL/glu.h>
+#endif
 
 const mlr::Vector Vector_x(1, 0, 0);
 const mlr::Vector Vector_y(0, 1, 0);
@@ -1545,6 +1546,8 @@ void Camera::setHeightAbs(float h) { heightAngle=0.; heightAbs=h; }
 void Camera::setZRange(float znear, float zfar) { zNear=znear; zFar=zfar; }
 /// set the width/height ratio of your viewport to see a non-distorted picture
 void Camera::setWHRatio(float ratio) { whRatio=ratio; }
+/// set the width/height ratio of your viewport to see a non-distorted picture
+void Camera::setFocalLength(float f) { heightAbs=heightAngle = 0;  focalLength = f; }
 /// the frame's position
 void Camera::setPosition(float x, float y, float z) { X.pos.set(x, y, z); }
 /// rotate the frame to focus the absolute coordinate origin (0, 0, 0)
@@ -1608,6 +1611,7 @@ void Camera::setCameraProjectionMatrix(const arr& P) {
 /** sets OpenGL's GL_PROJECTION matrix accordingly -- should be
     called in an opengl draw routine */
 void Camera::glSetProjectionMatrix() {
+#ifdef MLR_GL
 //  if(fixedProjectionMatrix.N) {
 //    glLoadMatrixd(fixedProjectionMatrix.p);
 //  } else {
@@ -1629,6 +1633,7 @@ void Camera::glSetProjectionMatrix() {
     gluPerspective(heightAngle, whRatio, zNear, zFar);
   double m[16];
   glMultMatrixd(X.getInverseAffineMatrixGL(m));
+#endif
 }
 
 /// convert from gluPerspective's non-linear [0, 1] depth to the true [zNear, zFar] depth

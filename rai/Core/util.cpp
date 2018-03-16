@@ -27,8 +27,10 @@
 #  include <sys/inotify.h>
 #  include <sys/stat.h>
 #  include <poll.h>
+#if defined MLR_X11
 #  include <X11/Xlib.h>
 #  include <X11/Xutil.h>
+#endif
 #endif
 #ifdef __CYGWIN__
 #include "cygwin_compat.h"
@@ -109,6 +111,14 @@ bool timerUseRealTime=false;
 #ifdef MLR_QT
 QApplication *myApp=NULL;
 #endif
+
+/// running a system command and checking return value
+void system(const char *cmd){
+  cout <<"SYSTEM CMD: " <<cmd <<endl;
+  int r = ::system(cmd);
+  mlr::wait(.1);
+  if(r) HALT("system return error " <<r);
+}
 
 /// open an output-file with name '\c name'
 void open(std::ofstream& fs, const char *name, const char *errmsg) {
@@ -570,6 +580,7 @@ bool wait(bool useX11) {
   }
 }
 
+#ifdef MLR_X11
 int x11_getKey(){
   mlr::String txt="PRESS KEY";
   int key=0;
@@ -613,7 +624,13 @@ int x11_getKey(){
   XCloseDisplay(disp);
   return key;
 }
-
+#else
+int x11_getKey(){
+  LOG(-1) <<"fake implementation (no X11)";
+  return 13;
+}
+#endif
+  
 /// the integral shared memory size -- not implemented for Windows!
 long mem() {
 #ifndef MLR_TIMEB
@@ -709,7 +726,7 @@ bool getInteractivity(){
 // logging
 
 namespace mlr {
-  void handleSIGUSR2(int){
+void handleSIGUSR2(int){
     int i=5;
     i*=i;    //set a break point here, if you want to catch errors directly
   }

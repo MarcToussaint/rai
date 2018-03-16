@@ -8,11 +8,11 @@ void force(mlr::KinematicWorld* world, arr& fR) {
   //world->contactsToForces(100.0);
 
   for(const mlr::Proxy& p : world->proxies) {
-    if(world->frames(p.a)->name == "endeffR" && world->frames(p.b)->name == "b") {
+    if(p.a->name == "endeffR" && p.b->name == "b") {
       if(p.d <= 0.0) {
         mlr::Vector trans = p.posB - p.posA;
         mlr::Vector force = 100.0*trans;
-        mlr::Vector torque = (p.posA - world->frames(p.a)->X.pos) ^ force;
+        mlr::Vector torque = (p.posA - p.a->X.pos) ^ force;
         fR(0) = force(0);
         fR(1) = force(1);
         fR(2) = force(2);
@@ -28,7 +28,7 @@ void force(mlr::KinematicWorld* world, arr& fR) {
 void forceSimulateContactOnly(mlr::KinematicWorld* world, arr& fR) {
   world->stepSwift();
   for(const mlr::Proxy& p : world->proxies) {
-    if(world->frames(p.a)->name == "endeffR" && world->frames(p.b)->name == "b") {
+    if(p.a->name == "endeffR" && p.b->name == "b") {
       if(p.d <= 0.02) {
         fR(2) = -4.0;
       }

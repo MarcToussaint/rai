@@ -80,6 +80,8 @@ extern uint lineCount;
 extern int verboseLevel;
 extern int interactivity;
 
+void system(const char* cmd);
+
 //----- files
 void open(std::ofstream& fs, const char *name, const char *errmsg="");
 void open(std::ifstream& fs, const char *name, const char *errmsg="");
