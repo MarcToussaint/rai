@@ -1138,7 +1138,7 @@ OpenGL& mlr::KinematicWorld::gl(const char* window_title){
 
 /// return a Swift extension
 SwiftInterface& mlr::KinematicWorld::swift(){
-  if(!s->swift) s->swift = new SwiftInterface(*this);
+  if(!s->swift) s->swift = new SwiftInterface(*this, 2.);
   return *s->swift;
 }
 
@@ -1271,7 +1271,7 @@ void __merge(mlr::Contact *c, mlr::Proxy *p){
   c->b_rel = c->b.X / mlr::Vector(p->coll->p2);
   c->a_norm = c->a.X.rot / mlr::Vector(-p->coll->normal);
   c->b_norm = c->b.X.rot / mlr::Vector( p->coll->normal);
-  c->a_type=c->b_type=1;
+  c->a_type = c->b_type=1;
   c->a_rad = c->a.shape->size(3);
   c->b_rad = c->b.shape->size(3);
 }
@@ -1281,6 +1281,7 @@ void __new(mlr::KinematicWorld& K, mlr::Proxy *p){
   __merge(c, p);
 }
 
+#if 0
 void mlr::KinematicWorld::filterProxiesToContacts(double margin){
   for(Proxy& p:proxies){
     if(!p.coll) p.calc_coll(*this);
@@ -1312,11 +1313,13 @@ void mlr::KinematicWorld::filterProxiesToContacts(double margin){
   }
   for(Contact *c:old) delete c;
 }
+#endif
 
 void mlr::KinematicWorld::proxiesToContacts(double margin){
+  for(Frame *f:frames) while(f->contacts.N) delete f->contacts.last();
+
   for(Proxy& p:proxies){
     if(!p.coll) p.calc_coll(*this);
-    if(p.coll->distance-(p.coll->rad1+p.coll->rad2)>margin) continue;
     Contact *candidate=NULL;
     for(Contact *c:p.a->contacts){
       if((&c->a==p.a && &c->b==p.b) || (&c->a==p.b && &c->b==p.a)){
@@ -1325,12 +1328,19 @@ void mlr::KinematicWorld::proxiesToContacts(double margin){
       }
     }
     if(candidate) __merge(candidate, &p);
-    else __new(*this, &p);
+    else{
+      if(p.coll->distance-(p.coll->rad1+p.coll->rad2)<margin){
+        mlr::Contact *c = new mlr::Contact(*p.a, *p.b);
+        __merge(c, &p);
+      }
+    }
   }
   //phase 2: cleanup old and distant contacts
   mlr::Array<Contact*> old;
   for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f){
-    if(c->getDistance()>2.*margin) old.append(c);
+    if(c->getDistance()>2.*margin){
+      old.append(c);
+    }
   }
   for(Contact *c:old) delete c;
 }

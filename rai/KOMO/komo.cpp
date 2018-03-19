@@ -1201,9 +1201,37 @@ void KOMO::reportProblem(std::ostream& os){
 
 void KOMO::checkGradients(){
   CHECK(T,"");
-  if(!splineB.N)
+  if(!splineB.N){
+#if 0
     checkJacobianCP(Convert(komo_problem), x, 1e-4);
-  else{
+#else
+    double tolerance=1e-4;
+    Conv_KOMO_ConstrainedProblem CP(komo_problem);
+    VectorFunction F = [&CP](arr& phi, arr& J, const arr& x){
+      return CP.phi(phi, J, NoArr, NoTermTypeA, x, NoArr);
+    };
+//    checkJacobian(F, x, tolerance);
+    arr J;
+    arr JJ=finiteDifferenceJacobian(F, x, J);
+    bool succ=true;
+    double mmd=0.;
+    for(uint i=0;i<J.d0;i++){
+      uint j;
+      double md=maxDiff(J[i], JJ[i], &j);
+      if(md>mmd) mmd=md;
+      if(md>tolerance) {
+        LOG(-1) <<"FAILURE in line " <<i <<" t=" <<CP.featureTimes(i) <<' ' <<komo_problem.featureNames(i) <<" -- max diff=" <<md <<" |"<<J(i,j)<<'-'<<JJ(i,j)<<"| (stored in files z.J_*)";
+        J[i] >>FILE("z.J_analytical");
+        JJ[i] >>FILE("z.J_empirical");
+        //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
+        //HALT("");
+//        return false;
+        succ=false;
+      }
+    }
+    if(succ) cout <<"jacobianCheck -- SUCCESS (max diff error=" <<mmd <<")" <<endl;
+#endif
+  }else{
     Conv_KOMO_ConstrainedProblem P0(komo_problem);
     Conv_linearlyReparameterize_ConstrainedProblem P1(P0, splineB);
     checkJacobianCP(P1, z, 1e-4);
@@ -1241,7 +1269,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPref
     gl->camera.setDefault();
   }
 
-  for(uint t=0; t<T; t++) {
+  for(int t=-(int)k_order; t<(int)T; t++) {
     if(saveVideoPrefix) gl->captureImg=true;
     gl->clear();
     gl->add(glStandardScene, 0);
@@ -1339,7 +1367,7 @@ void KOMO::set_x(const arr& x){
       else         configurations(s)->setJointState(x[t]);
       if(useSwift){
         configurations(s)->stepSwift();
-//        configurations(s)->proxiesToContacts(.01);
+        configurations(s)->proxiesToContacts(1.1);
       }
       x_count += x_dim;
     }
@@ -1487,6 +1515,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
 
   if(&featureTimes) featureTimes.clear();
   if(&featureTypes) featureTypes.clear();
+  featureNames.clear();
   uint M=0;
   phiIndex.resize(komo.T, komo.tasks.N); phiIndex.setZero();
   phiDim.resize(komo.T, komo.tasks.N);   phiDim.setZero();
@@ -1499,6 +1528,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
 
         if(&featureTimes) featureTimes.append(t, m); //consts<uint>(t, m));
         if(&featureTypes) featureTypes.append(task->type, m); //consts<ObjectiveType>(task->type, m));
+        for(uint j=0;j<m;j++)  featureNames.append(STRING(task->name <<'_'<<j));
 
         //store indexing phi <-> tasks
         phiIndex(t, i) = M;

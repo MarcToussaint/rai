@@ -22,6 +22,7 @@ TaskMap *mlr::Contact::getTM_ContactNegDistance() const{
 }
 
 void mlr::TM_ContactNegDistance::phi(arr &y, arr &J, const mlr::KinematicWorld &K, int t){
+#if 0
   if(C.a_pts.nd==1 && C.b_pts.nd==1){
     arr ap,bp, normal, Jap,Jbp;
     K.kinematicsPos(ap, Jap, &C.a, C.a_pts);
@@ -63,6 +64,7 @@ void mlr::TM_ContactNegDistance::phi(arr &y, arr &J, const mlr::KinematicWorld &
       J = ~normal*J;
     }
   }
+#endif
   if(C.a_type==2 && C.b_type!=2){
     HALT("not checked");
     arr ap,an,bp, Jap, Jan, Jbp;
@@ -131,5 +133,5 @@ void mlr::Contact::glDraw(OpenGL& gl){
 }
 
 void mlr::Contact::write(std::ostream &os) const{
-  os <<a.name <<'-' <<b.name <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() <<" pDist=" <<get_pDistance() <<" y=" <<y <<" l=" <<lagrangeParameter;
+  os <<a.name <<'-' <<b.name <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() /*<<" pDist=" <<get_pDistance()*/ <<" y=" <<y <<" l=" <<lagrangeParameter;
 }

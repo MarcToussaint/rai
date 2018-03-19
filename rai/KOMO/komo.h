@@ -191,10 +191,6 @@ struct KOMO{
 
   //-- (not much in use..) specs gives as logic expressions in a Graph (or config file)
   KOMO(const mlr::KinematicWorld& K) : KOMO() { setModel(K); } //for compatibility only
-//  KOMO(const Graph& specs);
-//  void init(const Graph& specs);
-//  void setFact(const char* fact);
-//  bool parseTask(const Node *n, int stepsPerPhase=-1);           ///< read a single task from a node-spec
   void clearTasks();
   Task* addTask(const char* name, TaskMap *map, const ObjectiveType& termType); ///< manually add a task
   void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
@@ -207,6 +203,7 @@ struct KOMO{
     uint dimPhi;
     arr prevLambda;
     uintA phiIndex, phiDim;
+    StringA featureNames;
 
     Conv_MotionProblem_KOMO_Problem(KOMO& _komo) : komo(_komo){}
 

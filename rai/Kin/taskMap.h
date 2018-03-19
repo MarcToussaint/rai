@@ -49,3 +49,10 @@ inline int initIdArg(const mlr::KinematicWorld &K, const char* frameName){
   if(a) return a->ID;
   return -1;
 }
+
+inline void expandJacobian(arr& J,const WorldL& Ktuple,int i=-1){
+  uintA qdim = getKtupleDim(Ktuple);
+  arr tmp = zeros(J.d0, qdim.last());
+  tmp.setMatrixBlock(J, 0, i?qdim.elem(i-1):0);
+  J = tmp;
+}

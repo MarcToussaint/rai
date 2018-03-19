@@ -1136,6 +1136,27 @@ arr finiteDifferenceGradient(const ScalarFunction& f, const arr& x, arr& Janalyt
   return J;
 }
 
+/// numeric (finite difference) computation of the gradient
+arr finiteDifferenceJacobian(const VectorFunction& f, const arr& _x, arr& Janalytic){
+  arr x=_x;
+  arr y, dx, dy, J;
+  f(y, Janalytic, x);
+  if(isRowShifted(Janalytic)) Janalytic = unpack(Janalytic);
+
+  J.resize(y.N, x.N);
+  double eps=CHECK_EPS;
+  uint i, k;
+  for(i=0; i<x.N; i++) {
+    dx=x;
+    dx.elem(i) += eps;
+    f(dy, NoArr, dx);
+    dy = (dy-y)/eps;
+    for(k=0; k<y.N; k++) J(k, i)=dy.elem(k);
+  }
+  J.reshapeAs(Janalytic);
+  return J;
+}
+
 /// numeric (finite difference) check of the gradient of f at x
 bool checkGradient(const ScalarFunction& f,
                    const arr& x, double tolerance, bool verbose) {
@@ -1209,6 +1230,10 @@ bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance, bool 
 
 bool checkJacobian(const VectorFunction& f,
                    const arr& x, double tolerance, bool verbose) {
+#if 1
+  arr J;
+  arr JJ = finiteDifferenceJacobian(f, x, J);
+#else
   arr x_copy=x;
   arr y, J, dx, dy, JJ;
   f(y, J, x_copy);
@@ -1225,6 +1250,8 @@ bool checkJacobian(const VectorFunction& f,
     for(k=0; k<y.N; k++) JJ(k, i)=dy.elem(k);
   }
   JJ.reshapeAs(J);
+#endif
+  uint i;
   double md=maxDiff(J, JJ, &i);
   if(md>tolerance) {
     MLR_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");

@@ -19,10 +19,10 @@ void TEST(GJK_Jacobians) {
   mlr::Frame base(K), b1(K), B1(K), b2(K), B2(K);
   mlr::Joint j1(base, b1), J1(b1, B1), j2(B1, b2), J2(b2, B2);
   mlr::Shape s1(B1), s2(B2);
-  j1.type = j2.type = mlr::JT_trans3;
+  j1.type = j2.type = mlr::JT_rigid; //trans3;
   j1.frame.insertPreLink(mlr::Transformation(0))->Q.addRelativeTranslation(1,1,1);
   j2.frame.insertPreLink(mlr::Transformation(0))->Q.addRelativeTranslation(-1,-1,1);
-  J1.type = J2.type = mlr::JT_quatBall;
+  J1.type = J2.type = mlr::JT_free; //quatBall;
   s1.type() = s2.type() = mlr::ST_ssCvx; //ST_mesh;
   s1.size(3) = s2.size(3) = .2;
   s1.sscCore().setRandom();     s2.sscCore().setRandom();
@@ -59,18 +59,21 @@ void TEST(GJK_Jacobians) {
     rndGauss(q, 1.);
     K.setJointState(q);
 
-    PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(3), s2.size(3));
-
     bool succ = true;
 
     arr y,y2;
     dist.phi(y, NoArr, K);
-    succ &= checkJacobian(dist.vf(K), q, 1e-4);
+    cout <<k <<" dist ";
+    succ &= checkJacobian(dist.vf(K), q, 1e-5);
 
     distVec.phi(y2, NoArr, K);
-    succ &= checkJacobian(distVec.vf(K), q, 1e-4);
+    cout <<k <<" vec  ";
+    succ &= checkJacobian(distVec.vf(K), q, 1e-5);
+
+    PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(3), s2.size(3));
 
     //    cout <<"distance: " <<y <<" vec=" <<y2 <<" error=" <<length(y2)-fabs(y(0)) <<endl;
+    if(!succ) cout <<collInfo;
 
     gl.add(collInfo);
     gl.add(K);
@@ -120,9 +123,9 @@ void TEST(GJK_Jacobians2) {
   VectorFunction f = [&K](arr& y, arr& J, const arr& x) -> void {
     K.setJointState(x);
     K.stepSwift();
-//    K.kinematicsProxyCost(y, (&J?J:NoArr), .2);
-    K.filterProxiesToContacts(.25);
-    K.kinematicsContactCost(y, (&J?J:NoArr), .2);
+    K.kinematicsProxyCost(y, (&J?J:NoArr), .2);
+//    K.filterProxiesToContacts(.25);
+//    K.kinematicsContactCost(y, (&J?J:NoArr), .2);
   };
 
 //  checkJacobian(f, K.getJointState(), 1e-4);
@@ -142,9 +145,9 @@ void TEST(GJK_Jacobians2) {
 //    K.reportProxies();
 
     arr y,J;
-    K.filterProxiesToContacts(.25);
-    K.kinematicsContactCost(y, J, .2);
-//    K.kinematicsProxyCost(y, J, .2);
+//    K.filterProxiesToContacts(.25);
+//    K.kinematicsContactCost(y, J, .2);
+    K.kinematicsProxyCost(y, J, .2);
 
     arr y2, J2;
     qn.phi(y2, J2, K);

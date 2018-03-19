@@ -17,10 +17,11 @@ namespace mlr{
 ///Description of a Contact
 struct Contact : GLDrawer {
   Frame &a, &b;
-  arr a_pts, b_pts;          // points on the core mesh that define the contact simplices
-//  mlr::Vector a_rel, b_rel;    // contact point RELATIVE to the frames
+//  arr a_pts, b_pts;          // points on the core mesh that define the contact simplices
+  mlr::Vector a_rel, b_rel;    // contact point RELATIVE to the frames
+  mlr::Vector a_norm, b_norm;    // contact point RELATIVE to the frames
   double a_rad, b_rad;         // the radii for sphere-swept objects: the contact points are on the cvx CORE, not the surface!
-//  uint a_type, b_type;
+  uint a_type, b_type;
 //  mlr::Vector a_line, b_line;  // when of line type, these are the line/axis directions RELATIVE to the frame
 
   double y=0.;                 // place to store the constraint value (typically: neg distance) when the taskmap is called

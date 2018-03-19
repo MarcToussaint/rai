@@ -640,6 +640,7 @@ void flip_image(floatA &img);
 void scanArrFile(const char* name);
 
 arr finiteDifferenceGradient(const ScalarFunction& f, const arr& x, arr& Janalytic=NoArr);
+arr finiteDifferenceJacobian(const VectorFunction& f, const arr& _x, arr& Janalytic=NoArr);
 bool checkGradient(const ScalarFunction& f, const arr& x, double tolerance, bool verbose=false);
 bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance, bool verbose=false);
 bool checkJacobian(const VectorFunction& f, const arr& x, double tolerance, bool verbose=false);

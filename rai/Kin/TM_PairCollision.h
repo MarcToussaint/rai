@@ -10,7 +10,7 @@
 
 #include "taskMaps.h"
 
-struct TM_PairCollision : TaskMap{
+struct TM_PairCollision : TaskMap {
   int i, j;               ///< which shapes does it refer to?
   bool negScalar=false;
   bool neglectRadii=false;

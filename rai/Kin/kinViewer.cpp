@@ -163,7 +163,7 @@ void OrsPathViewer::step(){
 void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix, int w, int h, mlr::Camera *camera){
   mlr::KinematicWorld copy;
   copy.orsDrawMarkers=false;
-  system(STRING("rm " <<filePrefix <<"*.ppm"));
+  mlr::system(STRING("rm " <<filePrefix <<"*.ppm"));
   for(uint t=0;t<cs.N;t++){
     copy.copy(*cs(t), true);
 #if 0 //render on screen
