@@ -111,6 +111,7 @@ struct KinematicWorld : GLDrawer{
   void pruneUselessFrames(bool preserveNamed=true);  ///< delete frames that have no name, joint, and shape
   void optimizeTree(bool preserveNamed=true);        ///< call the three above methods in this order
   void fwdIndexIDs();
+  void useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese, bool deleteInsteadOfLock);
   bool checkConsistency();
 
   uint analyzeJointStateDimensions() const; ///< sort of private: count the joint dimensionalities and assign j->q_index
