@@ -2368,7 +2368,7 @@ template<class T> mlr::Array<T> sum(const mlr::Array<T>& v, uint d) {
 
 /// \f$\max_i x_i\f$
 template<class T> mlr::Array<T> max(const mlr::Array<T>& v, uint d) {
-  CHECK(v.nd>d, "array doesn't have this dimension");
+  CHECK(d<v.nd, "array doesn't have this dimension");
   mlr::Array<T> x;
   x.referTo(v);
   mlr::Array<T> M;

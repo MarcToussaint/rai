@@ -183,7 +183,6 @@ struct Graph : NodeL {
 
   //private:
   friend struct Node;
-  friend struct sGraphView;
   uint index(bool subKVG=false, uint start=0);
 };
 stdPipes(Graph)

@@ -99,18 +99,7 @@ void KOMO::setModel(const KinematicWorld& K,
 }
 
 void KOMO::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese){
-  Joint *j;
-  for(Frame *f:world.frames) if((j=f->joint)){
-    bool lock;
-    if(OnlyTheseOrNotThese){ //only these
-      lock=true;
-      for(const String& s:groupNames) if(f->ats.getNode(s)){ lock=false; break; }
-    }else{
-      lock=false;
-      for(const String& s:groupNames) if(f->ats.getNode(s)){ lock=true; break; }
-    }
-    if(lock) j->makeRigid();
-  }
+  world.useJointGroups(groupNames, OnlyTheseOrNotThese, false);
 
   world.reset_q();
   world.optimizeTree();

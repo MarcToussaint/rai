@@ -2287,6 +2287,25 @@ void mlr::KinematicWorld::fwdIndexIDs(){
   for(Frame *f: frames) f->ID = i++;
 }
 
+void mlr::KinematicWorld::useJointGroups(const StringA &groupNames, bool OnlyTheseOrNotThese, bool deleteInsteadOfLock){
+  Joint *j;
+  for(Frame *f:frames) if((j=f->joint)){
+    bool lock;
+    if(OnlyTheseOrNotThese){ //only these
+      lock=true;
+      for(const String& s:groupNames) if(f->ats.getNode(s)){ lock=false; break; }
+    }else{
+      lock=false;
+      for(const String& s:groupNames) if(f->ats.getNode(s)){ lock=true; break; }
+    }
+    if(lock){
+      if(deleteInsteadOfLock) delete j;
+      else j->makeRigid();
+    }
+  }
+}
+
+
 bool mlr::KinematicWorld::checkConsistency(){
   //check qdim
   if(q.nd){
