@@ -2299,8 +2299,8 @@ void rai::KinematicWorld::useJointGroups(const StringA &groupNames, bool OnlyThe
       for(const String& s:groupNames) if(f->ats[s]){ lock=true; break; }
     }
     if(lock){
-      if(deleteInsteadOfLock) delete j;
-      else j->makeRigid();
+      if(deleteInsteadOfLock) delete f->joint;
+      else f->joint->makeRigid();
     }
   }
 }

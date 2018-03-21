@@ -180,7 +180,7 @@ cleanDepends: force
 	@find $(BASE) -type f -name 'Makefile.dep' -delete -print
 
 installUbuntu: force
-	sudo apt-get $(APTGETYES) install $(DEPEND_UBUNTU)
+	sudo apt-get -q $(APTGETYES) install $(DEPEND_UBUNTU)
 
 printUbuntuPackages: force
 	@echo $(DEPEND_UBUNTU)
