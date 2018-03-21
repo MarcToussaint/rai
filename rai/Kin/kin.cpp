@@ -2293,10 +2293,10 @@ void mlr::KinematicWorld::useJointGroups(const StringA &groupNames, bool OnlyThe
     bool lock;
     if(OnlyTheseOrNotThese){ //only these
       lock=true;
-      for(const String& s:groupNames) if(f->ats.getNode(s)){ lock=false; break; }
+      for(const String& s:groupNames) if(f->ats[s]){ lock=false; break; }
     }else{
       lock=false;
-      for(const String& s:groupNames) if(f->ats.getNode(s)){ lock=true; break; }
+      for(const String& s:groupNames) if(f->ats[s]){ lock=true; break; }
     }
     if(lock){
       if(deleteInsteadOfLock) delete j;

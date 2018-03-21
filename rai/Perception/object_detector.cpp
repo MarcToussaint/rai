@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-﻿#ifdef MLR_PCL
+#ifdef MLR_PCL
 
 #include "object_detector.h"
 #include "pclPlaneExtraction.h"

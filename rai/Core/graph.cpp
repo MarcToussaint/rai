@@ -256,7 +256,7 @@ void Graph::clear() {
 Graph& Graph::newNode(const Nod& ni){
   Node *clone = ni.n->newClone(*this); //this appends sequentially clones of all nodes to 'this'
   for(const mlr::String& s:ni.parents){
-    Node *p = getNode(s);
+    Node *p = findNode({s}, true, false);
     CHECK(p,"parent " <<p <<" of " <<*clone <<" does not exist!");
     clone->addParent(p);
   }

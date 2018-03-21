@@ -58,12 +58,15 @@ struct Node {
   template<class T> std::shared_ptr<T> getPtr() const;  ///< query whether node type is equal to (or derived from) shared_ptr<T>, return the shared_ptr if so
   template<class T> T& get(){ T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
   template<class T> const T& get() const{ const T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
-  template<class T> bool getFromString(T& x) const;
-  Graph& graph() { return get<Graph>(); }
-  const Graph& graph() const { return get<Graph>(); }
+  template<class T> bool getFromString(T& x) const; ///< return value = false means parsing object of type T from the string failed
   bool isBoolAndTrue() const{ if(type!=typeid(bool)) return false; return *((bool*)value_ptr) == true; }
   bool isBoolAndFalse() const{ if(type!=typeid(bool)) return false; return *((bool*)value_ptr) == false; }
   bool isGraph() const;//{ return type==typeid(Graph); }
+
+  //-- get sub-value assuming this is a graph
+  Graph& graph() { return get<Graph>(); }
+  const Graph& graph() const { return get<Graph>(); }
+  template<class T> T& get(const char* key);
 
   bool matches(const char *key); ///< return true, if 'key' is in keys
   bool matches(const StringA &query_keys); ///< return true, if all query_keys are in keys
@@ -112,9 +115,9 @@ struct Graph : NodeL {
   template<class T> Node_typed<T>* newNode(const StringA& keys, const NodeL& parents); ///<exactly equivalent to calling a Node_typed constructor
   template<class T> Node_typed<T>* newNode(const T& x); ///<exactly equivalent to calling a Node_typed constructor
   Node_typed<int>* newNode(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
-  Graph& newNode(const Nod& ni); ///< (internal) append a node initializer
   Node_typed<Graph>* newSubgraph(const StringA& keys, const NodeL& parents, const Graph& x=NoGraph);
   void appendDict(const std::map<std::string, std::string>& dict);
+  Graph& newNode(const Nod& ni); ///< (internal) append a node initializer
 
   //-- deleting nodes
   void delNode(Node *n) { delete n; }
@@ -126,9 +129,9 @@ struct Graph : NodeL {
   NodeL findNodesOfType(const std::type_info& type, const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;
 
   //-- get nodes
-  Node* operator[](const char *key) const{ return findNode({key}); }
-  Node* getNode(const char *key) const{ return findNode({key}, true, false); }
-  Node* getNode(const StringA &keys) const{ return findNode(keys, true, false); }
+  Node* operator[](const char *key) const{ return findNode({key}); }  ///< returns NULL if not found
+  Node* getNode(const char *key) const{ return findNode({key}); }
+  Node* getNode(const StringA &keys) const{ return findNode(keys); }
   Node* getEdge(Node *p1, Node *p2) const;
   Node* getEdge(const NodeL& parents) const;
 
@@ -411,6 +414,12 @@ template<class T> bool Node::getFromString(T& x) const{
   str >>x;
   if(str.stream().good()) return true;
   return false;
+}
+
+template<class T> T& Node::get(const char* key){
+  Graph *x=getValue<Graph>();
+  CHECK(x, "this node is not of type '" <<typeid(Graph).name() <<"' but type '" <<type.name() <<"'");
+  return x->get<T>(key);
 }
 
 template<class T> Nod::Nod(const char* key, const T& x){

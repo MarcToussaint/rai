@@ -831,7 +831,7 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
         }else NIY;
       }
       else if(n->keys.last()=="komoAttach"){
-        Node *attachableSymbol = facts.getNode("attachable");
+        Node *attachableSymbol = facts["attachable"];
         CHECK(attachableSymbol!=NULL,"");
         Node *attachableFact = facts.getEdge({attachableSymbol, n->parents(1), n->parents(2)});
         Transformation rel = attachableFact->get<Transformation>();
