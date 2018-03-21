@@ -9,9 +9,9 @@
 #include "TM_BeliefTransition.h"
 #include "frame.h"
 
-uint TM_BeliefTransition::dim_phi(const mlr::KinematicWorld& G){
+uint TM_BeliefTransition::dim_phi(const rai::KinematicWorld& G){
   uint n=0;
-  for(mlr::Joint *j : G.fwdActiveJoints) if(j->uncertainty){
+  for(rai::Joint *j : G.fwdActiveJoints) if(j->uncertainty){
     n += j->dim;
   }
   return n;
@@ -56,8 +56,8 @@ void TM_BeliefTransition::phi(arr &y, arr &J, const WorldL &G, double tau, int t
     J_xi *= 2.;
   }
 
-  for(mlr::Joint *j1 : G.elem(-1)->fwdActiveJoints) if(j1->uncertainty){
-    mlr::Joint *j0 = G.elem(-2)->frames(j1->frame.ID)->joint;
+  for(rai::Joint *j1 : G.elem(-1)->fwdActiveJoints) if(j1->uncertainty){
+    rai::Joint *j0 = G.elem(-2)->frames(j1->frame.ID)->joint;
     CHECK(j0, "");
     CHECK(j0->uncertainty, "");
     CHECK_EQ(j0->dim, j1->dim, "");

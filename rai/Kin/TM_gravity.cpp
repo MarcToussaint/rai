@@ -22,17 +22,17 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
   if(order==0) HALT("that doesn't make sense");
 
   if(order==1){
-    mlr::KinematicWorld& K = *Ktuple(-1);
+    rai::KinematicWorld& K = *Ktuple(-1);
 
     arr p0, J0, p1, J1, pc, Jc;
     //check equal # of frames in each world
-    for(mlr::Frame *a:K.frames){
-   //      if(a->inertia && a->inertia->type==mlr::BT_dynamic){
+    for(rai::Frame *a:K.frames){
+   //      if(a->inertia && a->inertia->type==rai::BT_dynamic){
          if(a->flags & (1<<FL_gravityAcc)){
 //    uint nf = K.frames.N;
 //    for(uint i=0;i<nf;i++){
-//      mlr::Frame *a = K.frames(i);
-//      if(a->inertia && a->inertia->type==mlr::BT_dynamic){
+//      rai::Frame *a = K.frames(i);
+//      if(a->inertia && a->inertia->type==rai::BT_dynamic){
         TM_Default pos(TMT_pos, a->ID);
         pos.order=1;
         pos.TaskMap::phi(p0, (&J?J0:NoArr), Ktuple, tau, t);
@@ -41,7 +41,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
         arr Jv_ref = zeros(3, K.q.N);
 #if 0
         if(false && a->contacts.N){
-          for(mlr::Contact *c:a->contacts){
+          for(rai::Contact *c:a->contacts){
             if(&c->a == a){
               K.kinematicsVec(pc, (&J?Jc:NoArr), a, c->a_rel);
             }else{
@@ -96,12 +96,12 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
   }
 
   if(order==2){
-    mlr::KinematicWorld& K = *Ktuple(-1);
+    rai::KinematicWorld& K = *Ktuple(-1);
 
     arr acc, Jacc;
     arr acc_ref = {0.,0.,-9.81};
     arr Jacc_ref = zeros(3, K.q.N);
-    for(mlr::Frame *a:K.frames){
+    for(rai::Frame *a:K.frames){
       if(a->flags & (1<<FL_gravityAcc)){
         TM_Default pos(TMT_posDiff, a->ID);
         pos.order=2;
@@ -120,7 +120,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
 
         if(a->contacts.N){
           CHECK_EQ(a->contacts.N, 1, "");
-          for(mlr::Contact *con:a->contacts){
+          for(rai::Contact *con:a->contacts){
 
             arr d, Jd;
             TM_PairCollision dist(con->a.ID, con->b.ID, true, false);
@@ -184,9 +184,9 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
 }
 
 uint TM_Gravity::dim_phi(const WorldL &Ktuple, int t){
-  mlr::KinematicWorld& K = *Ktuple(-1);
+  rai::KinematicWorld& K = *Ktuple(-1);
   uint d = 0;
-  for(mlr::Frame *a: K.frames) if(a->flags & (1<<FL_gravityAcc)){
+  for(rai::Frame *a: K.frames) if(a->flags & (1<<FL_gravityAcc)){
     d+=4;
   }
   return d;

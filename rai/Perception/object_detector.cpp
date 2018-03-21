@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifdef MLR_PCL
+#ifdef RAI_PCL
 
 #include "object_detector.h"
 #include "pclPlaneExtraction.h"
@@ -87,7 +87,7 @@ bool planeFindingWithNormals(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointClo
 
 }
 
-bool IsABox(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::Normal>::Ptr normal, std::vector<pcl::ModelCoefficients::Ptr> &outCoefficients, mlr::Quaternion &orientation, arr& center, arr& length)
+bool IsABox(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::Normal>::Ptr normal, std::vector<pcl::ModelCoefficients::Ptr> &outCoefficients, rai::Quaternion &orientation, arr& center, arr& length)
 {
 
     //std::vector<pcl::ModelCoefficients::Ptr> outCoefficients;

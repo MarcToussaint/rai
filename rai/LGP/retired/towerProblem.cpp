@@ -25,19 +25,19 @@ void TowerProblem::setRandom(){
   double x=-1.6, y=-1.;
   for(uint i=0;i<n;i++){
     //add an object to the geometry
-    mlr::Body *b = new mlr::Body(world);
-    mlr::Shape *s = new mlr::Shape(world, *b);
+    rai::Body *b = new rai::Body(world);
+    rai::Shape *s = new rai::Shape(world, *b);
     s->cont=true;
     b->X.addRelativeTranslation(x,y,.62);
     //randomize type and size
     if(rnd.uni()<.6){
-      s->type = mlr::ST_cylinder;
+      s->type = rai::ST_cylinder;
       s->size(0)=s->size(1)=0.;
       s->size(2)=.2;
       s->size(3)=.05;
       s->name <<"cyl_" <<i;
     }else{
-      s->type = mlr::ST_box;
+      s->type = rai::ST_box;
       s->size(0)=.1 + .3*rnd.uni();
       s->size(1)=.1 + .6*rnd.uni();
       s->size(2)=.02;
@@ -52,7 +52,7 @@ void TowerProblem::setRandom(){
 
     //add symbols
     Node *o = symbols.newNode<bool>({"Object", s->name}, {}, true);
-    if(s->type==mlr::ST_cylinder){
+    if(s->type==rai::ST_cylinder){
       state.newNode<bool>({}, {CYLIN ,o}, true);
     }else{
       state.newNode<bool>({}, {BOARD, o}, true);
@@ -76,7 +76,7 @@ void TowerProblem::setRandom(){
   world.calc_fwdPropagateShapeFrames();
 }
 
-double TowerProblem::reward(const mlr::KinematicWorld& world, const Graph& symbols){
+double TowerProblem::reward(const rai::KinematicWorld& world, const Graph& symbols){
   //-- find max depth
   double depth=0.;
   Node *depthSymbol=symbols["depth"];
@@ -115,19 +115,19 @@ void TowerProblem_new::setRandom(){
   double x=-1.6, y=-1.;
   for(uint i=0;i<n;i++){
     //add an object to the geometry
-    mlr::Body *b = new mlr::Body(world_root);
-    mlr::Shape *s = new mlr::Shape(world_root, *b);
+    rai::Body *b = new rai::Body(world_root);
+    rai::Shape *s = new rai::Shape(world_root, *b);
     s->cont=true;
     b->X.addRelativeTranslation(x,y,.62);
     //randomize type and size
     if(rnd.uni()<.6){
-      s->type = mlr::ST_ssBox;
+      s->type = rai::ST_ssBox;
       s->size(0)=s->size(1)=0.;
       s->size(2)=.2;
       s->size(3)=.05;
       s->name <<"cyl_" <<i;
     }else{
-      s->type = mlr::ST_ssBox;
+      s->type = rai::ST_ssBox;
       s->size(0)=.1 + .3*rnd.uni();
       s->size(1)=.1 + .6*rnd.uni();
       s->size(2)=.02;

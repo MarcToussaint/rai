@@ -10,7 +10,7 @@
 
 #include <Kin/frame.h>
 
-namespace mlr{
+namespace rai{
 
 struct Uncertainty{
   Joint *joint;
@@ -21,4 +21,4 @@ struct Uncertainty{
   void read(const Graph &ats);
 };
 
-}//namespace mlr
+}//namespace rai

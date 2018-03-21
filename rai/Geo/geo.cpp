@@ -10,29 +10,29 @@
 #include <Core/array.h>
 #include "geo.h"
 
-#ifndef MLR_NO_REGISTRY
+#ifndef RAI_NO_REGISTRY
 #include <Core/graph.h>
-REGISTER_TYPE(T, mlr::Transformation);
+REGISTER_TYPE(T, rai::Transformation);
 #endif
 
-#ifdef MLR_GL
+#ifdef RAI_GL
 #  include <GL/glu.h>
 #endif
 
-const mlr::Vector Vector_x(1, 0, 0);
-const mlr::Vector Vector_y(0, 1, 0);
-const mlr::Vector Vector_z(0, 0, 1);
-const mlr::Transformation Transformation_Id(mlr::Transformation().setZero());
-const mlr::Quaternion Quaternion_Id(1, 0, 0, 0);
-const mlr::Quaternion Quaternion_x(MLR_SQRT2/2., MLR_SQRT2/2., 0, 0);
-const mlr::Quaternion Quaternion_y(MLR_SQRT2/2., 0, MLR_SQRT2/2., 0);
-const mlr::Quaternion Quaternion_z(MLR_SQRT2/2., 0, 0, MLR_SQRT2/2.);
-mlr::Vector& NoVector = *((mlr::Vector*)NULL);
-mlr::Transformation& NoTransformation = *((mlr::Transformation*)NULL);
+const rai::Vector Vector_x(1, 0, 0);
+const rai::Vector Vector_y(0, 1, 0);
+const rai::Vector Vector_z(0, 0, 1);
+const rai::Transformation Transformation_Id(rai::Transformation().setZero());
+const rai::Quaternion Quaternion_Id(1, 0, 0, 0);
+const rai::Quaternion Quaternion_x(RAI_SQRT2/2., RAI_SQRT2/2., 0, 0);
+const rai::Quaternion Quaternion_y(RAI_SQRT2/2., 0, RAI_SQRT2/2., 0);
+const rai::Quaternion Quaternion_z(RAI_SQRT2/2., 0, 0, RAI_SQRT2/2.);
+rai::Vector& NoVector = *((rai::Vector*)NULL);
+rai::Transformation& NoTransformation = *((rai::Transformation*)NULL);
 
-namespace mlr {
+namespace rai {
 
-double quatScalarProduct(const mlr::Quaternion& a, const mlr::Quaternion& b);
+double quatScalarProduct(const rai::Quaternion& a, const rai::Quaternion& b);
 
 double& Vector::operator()(uint i) {
   CHECK(i<3,"out of range");
@@ -57,7 +57,7 @@ void Vector::setRandom(double range) { x=rnd.uni(-range, range); y=rnd.uni(-rang
 /// this=this/length(this)
 void Vector::normalize() {
   if(isZero){
-    MLR_MSG("can't normalize length of null vector");
+    RAI_MSG("can't normalize length of null vector");
     return;
   }
   (*this)/=length();
@@ -65,13 +65,13 @@ void Vector::normalize() {
 
 /// this=this*l/length(this)
 void Vector::setLength(double l) {
-  if(isZero) MLR_MSG("can't change length of null vector");
+  if(isZero) RAI_MSG("can't change length of null vector");
   (*this)*=l/length();
 }
 
 /// this=component of this normal to \c b, (unnormalized!)
 void Vector::makeNormal(const Vector& b) {
-  if(b.isZero) MLR_MSG("can't makeNormal with null vector");
+  if(b.isZero) RAI_MSG("can't makeNormal with null vector");
   double l=b.length(), s=x*b.x+y*b.y+z*b.z;
   s/=l*l;
   x-=s*b.x; y-=s*b.y; z-=s*b.z;
@@ -79,7 +79,7 @@ void Vector::makeNormal(const Vector& b) {
 
 /// this=component of this colinear to \c b, (unnormalized!)
 void Vector::makeColinear(const Vector& b) {
-  if(b.isZero) MLR_MSG("can't makeColinear with null vector");
+  if(b.isZero) RAI_MSG("can't makeColinear with null vector");
   // *this = ((*this)*b)/b.length()) * (*this);
   double l=b.length(), s=x*b.x+y*b.y+z*b.z;
   s/=l*l;
@@ -124,17 +124,17 @@ double Vector::radius() const { return ::sqrt(x*x+y*y); }
 /// the angle in the x/y-plane in [-pi, pi]
 double Vector::phi() const {
   double ph;
-  if(x==0. || ::fabs(x)<1e-10) ph=MLR_PI/2.; else ph=::atan(y/x);
-  if(x<0.) { if(y<0.) ph-=MLR_PI; else ph+=MLR_PI; }
+  if(x==0. || ::fabs(x)<1e-10) ph=RAI_PI/2.; else ph=::atan(y/x);
+  if(x<0.) { if(y<0.) ph-=RAI_PI; else ph+=RAI_PI; }
   return ph;
 }
 
 /// the angle from the x/y-plane
-double Vector::theta() const { return ::atan(z/radius())+MLR_PI/2.; }
+double Vector::theta() const { return ::atan(z/radius())+RAI_PI/2.; }
 
 Vector Vector::getNormalVectorNormalToThis() const {
   if(isZero){
-    MLR_MSG("every vector is normal to a zero vector");
+    RAI_MSG("every vector is normal to a zero vector");
   }
   arr s = ARR(fabs(x), fabs(y), fabs(z));
   uint c = s.maxIndex();
@@ -178,12 +178,12 @@ arr Vector::generateOrthonormalSystemMatrix() const {
 
 //{ I/O
 void Vector::write(std::ostream& os) const {
-  if(!mlr::IOraw) os <<'(' <<x <<' ' <<y <<' ' <<z <<')';
+  if(!rai::IOraw) os <<'(' <<x <<' ' <<y <<' ' <<z <<')';
   else os <<' ' <<x <<' ' <<y <<' ' <<z;
 }
 
 void Vector::read(std::istream& is) {
-  if(!mlr::IOraw) is >>PARSE("(") >>x >>y >>z >>PARSE(")");
+  if(!rai::IOraw) is >>PARSE("(") >>x >>y >>z >>PARSE(")");
   else is >>x >>y >>z;
 }
 //}
@@ -583,8 +583,8 @@ void Quaternion::setRandom() {
   s=rnd.uni();
   s1=sqrt(1-s);
   s2=sqrt(s);
-  t1=MLR_2PI*rnd.uni();
-  t2=MLR_2PI*rnd.uni();
+  t1=RAI_2PI*rnd.uni();
+  t2=RAI_2PI*rnd.uni();
   w=cos(t2)*s2;
   x=sin(t1)*s1;
   y=cos(t1)*s1;
@@ -605,9 +605,9 @@ void Quaternion::setInterpolate(double t, const Quaternion& a, const Quaternion 
 }
 
 /// assigns the rotation to \c a DEGREES around the vector (x, y, z)
-void Quaternion::setDeg(double degree, double _x, double _y, double _z) { setRad(degree*MLR_PI/180., _x, _y, _z); }
+void Quaternion::setDeg(double degree, double _x, double _y, double _z) { setRad(degree*RAI_PI/180., _x, _y, _z); }
 
-void Quaternion::setDeg(double degree, const Vector& vec) { setRad(degree*MLR_PI/180., vec.x, vec.y, vec.z); }
+void Quaternion::setDeg(double degree, const Vector& vec) { setRad(degree*RAI_PI/180., vec.x, vec.y, vec.z); }
 
 /// assigns the rotation to \c a RADIANTS (2*PI-units) around the vector (x, y, z)
 void Quaternion::setRad(double angle, double _x, double _y, double _z) {
@@ -718,7 +718,7 @@ void Quaternion::setDiff(const Vector& from, const Vector& to) {
 /// L1-norm to zero (i.e., identical rotation)
 double Quaternion::diffZero() const { return (w>0.?fabs(w-1.):fabs(w+1.))+fabs(x)+fabs(y)+fabs(z); }
 
-double Quaternion::sqrDiffZero() const { return (w>0.?mlr::sqr(w-1.):mlr::sqr(w+1.))+mlr::sqr(x)+mlr::sqr(y)+mlr::sqr(z); }
+double Quaternion::sqrDiffZero() const { return (w>0.?rai::sqr(w-1.):rai::sqr(w+1.))+rai::sqr(x)+rai::sqr(y)+rai::sqr(z); }
 
 /// return the squared-error between two quads, modulo flipping
 double Quaternion::sqrDiff(const Quaternion& _q2) const{
@@ -737,7 +737,7 @@ double Quaternion::getRad() const {
 /// gets rotation angle (in degree [0, 360])
 double Quaternion::getDeg() const {
   if(w>=1. || w<=-1. || (x==0. && y==0. && z==0.)) return 0;
-  return 360./MLR_PI*acos(w);
+  return 360./RAI_PI*acos(w);
 }
 
 /// gets rotation angle (in degree [0, 360]) and vector
@@ -745,7 +745,7 @@ void Quaternion::getDeg(double& degree, Vector& vec) const {
   if(w>=1. || w<=-1. || (x==0. && y==0. && z==0.)) { degree=0.; vec.set(0., 0., 1.); return; }
   degree=acos(w);
   double s=sin(degree);
-  degree*=360./MLR_PI;
+  degree*=360./RAI_PI;
   vec.x=x/s; vec.y=y/s; vec.z=z/s;
 }
 
@@ -756,7 +756,7 @@ void Quaternion::getRad(double& angle, Vector& vec) const {
   double s=1./sin(angle);
   angle*=2;
   vec.x=s*x; vec.y=s*y; vec.z=s*z;
-  CHECK(angle>=0. && angle<=MLR_2PI, "");
+  CHECK(angle>=0. && angle<=RAI_2PI, "");
 }
 
 /// gets the axis rotation vector with length equal to the rotation angle in rad
@@ -879,7 +879,7 @@ double* Quaternion::getMatrixGL(double* m) const {
 /// this is a 3-by-4 matrix $J$, giving the angular velocity vector $w = J \dot q$  induced by a $\dot q$
 arr Quaternion::getJacobian() const{
   arr J(3,4);
-  mlr::Quaternion e;
+  rai::Quaternion e;
   for(uint i=0;i<4;i++){
     if(i==0) e.set(1.,0.,0.,0.);
     if(i==1) e.set(0.,1.,0.,0.);
@@ -916,7 +916,7 @@ arr Quaternion::getMatrixJacobian() const{
 
 void Quaternion::writeNice(std::ostream& os) const { os <<"Quaternion: " <<getDeg() <<" around " <<getVec() <<"\n"; }
 void Quaternion::write(std::ostream& os) const {
-  if(!mlr::IOraw) os <<'(' <<w <<' ' <<x <<' ' <<y <<' ' <<z <<')';
+  if(!rai::IOraw) os <<'(' <<w <<' ' <<x <<' ' <<y <<' ' <<z <<')';
   else os <<' ' <<w <<' ' <<x <<' ' <<y <<' ' <<z;
 }
 void Quaternion::read(std::istream& is) { is >>PARSE("(") >>w >>x >>y  >>z >>PARSE(")"); normalize();}
@@ -1056,7 +1056,7 @@ Vector operator/(const Transformation& X, const Vector& c) {
 //==============================================================================
 
 /// initialize by reading from the string
-Transformation& Transformation::setText(const char* txt) { read(mlr::String(txt).stream()); return *this; }
+Transformation& Transformation::setText(const char* txt) { read(rai::String(txt).stream()); return *this; }
 
 /// resets the position to origin, rotation to identity, velocities to zero, scale to unit
 Transformation& Transformation::setZero() {
@@ -1260,7 +1260,7 @@ void Transformation::read(std::istream& is) {
   setZero();
   char c;
   double x[4];
-  mlr::skip(is, " \n\r\t<|");
+  rai::skip(is, " \n\r\t<|");
   for(;;) {
     is >>c;
     if(is.fail()) return;  //EOF I guess
@@ -1281,7 +1281,7 @@ void Transformation::read(std::istream& is) {
         case 'T': break; //old convention
         case '|':
         case '>': is.putback(c); return; //those symbols finish the reading without error
-        default: MLR_MSG("unknown Transformation read tag: " <<c <<"abort reading this frame"); is.putback(c); return;
+        default: RAI_MSG("unknown Transformation read tag: " <<c <<"abort reading this frame"); is.putback(c); return;
       }
     if(is.fail()) HALT("error reading '" <<c <<"' parameters in frame");
   }
@@ -1291,7 +1291,7 @@ void Transformation::read(std::istream& is) {
 //==============================================================================
 
 /// initialize by reading from the string
-DynamicTransformation& DynamicTransformation::setText(const char* txt) { read(mlr::String(txt)()); return *this; }
+DynamicTransformation& DynamicTransformation::setText(const char* txt) { read(rai::String(txt)()); return *this; }
 
 /// resets the position to origin, rotation to identity, velocities to zero, scale to unit
 DynamicTransformation& DynamicTransformation::setZero() {
@@ -1335,7 +1335,7 @@ void DynamicTransformation::addRelativeVelocity(double x, double y, double z) {
 /// add an angular velocity to the turtle inertial frame
 void DynamicTransformation::addRelativeAngVelocityDeg(double degree, double x, double y, double z) {
   Vector W(x, y, z); W.normalize();
-  W*=degree*MLR_PI/180.;
+  W*=degree*RAI_PI/180.;
   angvel+=rot*W;
   zeroVels = false;
 }
@@ -1473,7 +1473,7 @@ void DynamicTransformation::read(std::istream& is) {
   setZero();
   char c;
   double x[4];
-  mlr::skip(is, " \n\r\t<|");
+  rai::skip(is, " \n\r\t<|");
   for(;;) {
     is >>c;
     if(is.fail()) return;  //EOF I guess
@@ -1495,7 +1495,7 @@ void DynamicTransformation::read(std::istream& is) {
           //case 's': is>>PARSE("(")>>x[0]>>PARSE(")");                   scale(x[0]); break;
         case '|':
         case '>': is.putback(c); return; //those symbols finish the reading without error
-        default: MLR_MSG("unknown DynamicTransformation read tag: " <<c <<"abort reading this frame"); is.putback(c); return;
+        default: RAI_MSG("unknown DynamicTransformation read tag: " <<c <<"abort reading this frame"); is.putback(c); return;
       }
     if(is.fail()) HALT("error reading '" <<c <<"' parameters in frame");
   }
@@ -1604,7 +1604,7 @@ void Camera::setCameraProjectionMatrix(const arr& P) {
 /** sets OpenGL's GL_PROJECTION matrix accordingly -- should be
     called in an opengl draw routine */
 void Camera::glSetProjectionMatrix() {
-#ifdef MLR_GL
+#ifdef RAI_GL
 //  if(fixedProjectionMatrix.N) {
 //    glLoadMatrixd(fixedProjectionMatrix.p);
 //  } else {
@@ -1683,7 +1683,7 @@ double sqrDistance(const Vector &a, const Vector &b){
   return (a-b).lengthSqr();
 }
 
-} //namespace mlr
+} //namespace rai
 
 
 //===========================================================================
@@ -1694,7 +1694,7 @@ double sqrDistance(const Vector &a, const Vector &b){
 /** distance to surface, distance gradient, and hessian for this shape
  *
  * Details in inf cylinder section of
- * mlr/stanio/concepts/note-analytic-impl-shapes-hessian
+ * rai/stanio/concepts/note-analytic-impl-shapes-hessian
  */
 
 
@@ -1704,8 +1704,8 @@ double sqrDistance(const Vector &a, const Vector &b){
 // explicit instantiations
 //
 
-template mlr::Array<mlr::Vector>::Array();
-template mlr::Array<mlr::Vector>::~Array();
+template rai::Array<rai::Vector>::Array();
+template rai::Array<rai::Vector>::~Array();
 
-template mlr::Array<mlr::Transformation*>::Array();
-template mlr::Array<mlr::Transformation*>::~Array();
+template rai::Array<rai::Transformation*>::Array();
+template rai::Array<rai::Transformation*>::~Array();

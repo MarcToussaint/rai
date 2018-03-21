@@ -6,15 +6,15 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef MLR_opencv_h
-#define MLR_opencv_h
+#ifndef RAI_opencv_h
+#define RAI_opencv_h
 
 //OpenCV (C++) wrappers
 
 #include <Core/array.h>
 #include <Core/util.h>
 
-#ifdef MLR_OPENCV
+#ifdef RAI_OPENCV
 
 #undef COUNT
 //#include <opencv/highgui.h>
@@ -59,6 +59,6 @@ inline char cvShow(const byteA& img, const char *window="opencv", bool wait=fals
 inline char cvShow(const floatA& img, const char *window="opencv", bool wait=false) { NICO };
 void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSdv, uint range) { NICO };
 
-#endif //MLR_OPENCV
+#endif //RAI_OPENCV
 
 #endif

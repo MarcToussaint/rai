@@ -8,7 +8,7 @@
 
 #include "geoms.h"
 
-namespace mlr{
+namespace rai{
 
 struct CollisionQuery{
   GeomStore& store;
@@ -27,19 +27,19 @@ struct FCL_Interface{
 
   void setCutoff(double _cutoff){ cutoff=_cutoff; }
 
-  void step(mlr::KinematicWorld& world, bool dumpReport=false);
-  void pushToSwift(const mlr::KinematicWorld& world);
-  void pullFromSwift(mlr::KinematicWorld& world, bool dumpReport);
+  void step(rai::KinematicWorld& world, bool dumpReport=false);
+  void pushToSwift(const rai::KinematicWorld& world);
+  void pullFromSwift(rai::KinematicWorld& world, bool dumpReport);
 
-  void reinitShape(const mlr::Frame *s);
+  void reinitShape(const rai::Frame *s);
 //  void close();
-  void activate(mlr::Frame *s);
-  void deactivate(mlr::Frame *s);
-  void activate(mlr::Frame *s1, mlr::Frame *s2);
-  void deactivate(mlr::Frame *s1, mlr::Frame *s2);
-  void deactivate(const mlr::Array<mlr::Frame*>& bodies);
+  void activate(rai::Frame *s);
+  void deactivate(rai::Frame *s);
+  void activate(rai::Frame *s1, rai::Frame *s2);
+  void deactivate(rai::Frame *s1, rai::Frame *s2);
+  void deactivate(const rai::Array<rai::Frame*>& bodies);
 
-  void initActivations(const mlr::KinematicWorld& world, uint parentLevelsToDeactivate=1);
+  void initActivations(const rai::KinematicWorld& world, uint parentLevelsToDeactivate=1);
   void swiftQueryExactDistance();
 };
 

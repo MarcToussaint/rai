@@ -14,19 +14,19 @@ TM_AlignStacking::TM_AlignStacking(int iShape)
 }
 
 
-TM_AlignStacking::TM_AlignStacking(const mlr::KinematicWorld& G, const char* iShapeName)
+TM_AlignStacking::TM_AlignStacking(const rai::KinematicWorld& G, const char* iShapeName)
   :i(-1){
-  mlr::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
+  rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
   if(a) i=a->ID;
 }
 
-void TM_AlignStacking::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
-  mlr::Frame *b=G.frames(i);
+void TM_AlignStacking::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t){
+  rai::Frame *b=G.frames(i);
 
-  mlr::Joint *j=b->joint;
+  rai::Joint *j=b->joint;
   CHECK(j,"has no support??");
 
-  mlr::Frame *b_support = j->from();
+  rai::Frame *b_support = j->from();
 
 #if 0//if there were multiple supporters
   uint n=G.getJointStateDimension();
@@ -73,6 +73,6 @@ void TM_AlignStacking::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
 #endif
 }
 
-mlr::String TM_AlignStacking::shortTag(const mlr::KinematicWorld &G){
+rai::String TM_AlignStacking::shortTag(const rai::KinematicWorld &G){
   return STRING("AlignStacking:"<<(i<0?"WORLD":G.frames(i)->name));
 }

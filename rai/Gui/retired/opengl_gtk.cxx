@@ -51,8 +51,8 @@ struct sOpenGL{
 
   //-- private OpenGL data
   OpenGL *gl;
-  mlr::Vector downVec,downPos,downFoc;
-  mlr::Quaternion downRot;
+  rai::Vector downVec,downPos,downFoc;
+  rai::Quaternion downRot;
 
   //-- engine specific data
   GtkWidget *container;
@@ -196,11 +196,11 @@ void sOpenGL::createGlArea(){
   }
 
   gtkUnlock();
-//  MLR_MSG("creating sOpenGL OpenGL="<<gl <<" sOpenGL=" <<this <<" glArea="<<glArea);
+//  RAI_MSG("creating sOpenGL OpenGL="<<gl <<" sOpenGL=" <<this <<" glArea="<<glArea);
 }
 
 sOpenGL::~sOpenGL(){
-//  MLR_MSG("destructing sOpenGL sOpenGL=" <<this <<" glArea="<<glArea);
+//  RAI_MSG("destructing sOpenGL sOpenGL=" <<this <<" glArea="<<glArea);
 #if 0
   if(gl->fbo || gl->render_buf){ //need to destroy offscreen rendering buffers
     glDeleteFramebuffers(1,&gl->fbo);

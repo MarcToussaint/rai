@@ -9,7 +9,7 @@
 #include "algos.h"
 
 
-namespace mlr{
+namespace rai{
 
 void rk4(arr& x1, const arr& x0,
          const VectorFunction& f,

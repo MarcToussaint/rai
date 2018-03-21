@@ -6,8 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef MLR_util_t_cpp
-#define MLR_util_t_cpp
+#ifndef RAI_util_t_cpp
+#define RAI_util_t_cpp
 
 #include "util.h"
 #include <map>
@@ -15,7 +15,7 @@
 #include <sstream>
 #include <string.h>
 #include <iomanip>
-#ifndef MLR_MSVC
+#ifndef RAI_MSVC
 #  include <unistd.h>
 #endif
 
@@ -23,7 +23,7 @@
 bool getParameterFromGraph(const std::type_info& type, void* data, const char* key);
 
 
-namespace mlr {
+namespace rai {
 /** @brief Search for a command line option \c -tag and, if found, pipe the
  next command line option into \c value by the
  \c operator>>(istream&, type&). Returns false on failure. */

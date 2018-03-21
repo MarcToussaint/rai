@@ -27,7 +27,7 @@
 struct Task {
   TaskMap *map;
   const ObjectiveType type;  ///< element of {sumOfSqr, inequality, equality}
-  mlr::String name;
+  rai::String name;
   arr target, prec;     ///< optional linear, time-dependent, rescaling (with semantics of target & precision)
 
   Task(TaskMap *m, const ObjectiveType& type) : map(m), type(type){}
@@ -47,7 +47,7 @@ struct Task {
     <<" prec=" <<prec;
   }
 
-  static Task* newTask(const Node* specs, const mlr::KinematicWorld& world, int stepsPerPhase, uint T); ///< create a new Task from specs
+  static Task* newTask(const Node* specs, const rai::KinematicWorld& world, int stepsPerPhase, uint T); ///< create a new Task from specs
 };
 stdOutPipe(Task)
 
@@ -59,12 +59,12 @@ stdOutPipe(Task)
 //
 
 struct KOMO {
-  mlr::KinematicWorld& world;  ///< the original world, which also defines the 'start conditions'
+  rai::KinematicWorld& world;  ///< the original world, which also defines the 'start conditions'
   WorldL configurations;       ///< copies for each time slice; including kinematic switches; only these are optimized
   bool useSwift;
   
-  mlr::Array<Task*> tasks; ///< task cost descriptions
-  mlr::Array<mlr::KinematicSwitch*> switches;  ///< kinematic switches along the motion
+  rai::Array<Task*> tasks; ///< task cost descriptions
+  rai::Array<rai::KinematicSwitch*> switches;  ///< kinematic switches along the motion
 
   //-- trajectory length and tau
   uint T;       ///< number of time steps
@@ -73,12 +73,12 @@ struct KOMO {
   
   //-- for reporting only: buffers of all feature values computed on last set_x
   arrA featureValues;                  ///< storage of all features in all time slices
-  mlr::Array<ObjectiveTypeA> featureTypes;  ///< storage of all feature-types in all time slices
+  rai::Array<ObjectiveTypeA> featureTypes;  ///< storage of all feature-types in all time slices
   arr dualSolution;                    ///< the dual solution computed during constrained optimization
 
   struct OpenGL *gl; //internal only: used in 'displayTrajectory'
 
-  KOMO(mlr::KinematicWorld& originalWorld, bool useSwift=true);
+  KOMO(rai::KinematicWorld& originalWorld, bool useSwift=true);
   ~KOMO();
   
   KOMO& operator=(const KOMO& other);
@@ -144,7 +144,7 @@ struct KOMO {
 // basic helpers (TODO: move to a different place)
 //
 
-arr getH_rate_diag(const mlr::KinematicWorld& world);
+arr getH_rate_diag(const rai::KinematicWorld& world);
 void sineProfile(arr& q, const arr& q0, const arr& qT,uint T);
 arr reverseTrajectory(const arr& q);
 void getVel(arr& v, const arr& q, double tau);

@@ -14,16 +14,16 @@
 #include <KOMO/komo.h>
 
 struct MNode;
-typedef mlr::Array<MNode*> MNodeL;
+typedef rai::Array<MNode*> MNodeL;
 
 //struct SkeletonEntry{ StringL symbols; uint k0,k1; double phase0, phase1; };
-//typedef mlr::Array<SkeletonEntry> Skeleton;
+//typedef rai::Array<SkeletonEntry> Skeleton;
 
 
 extern uint COUNT_kin, COUNT_evals, COUNT_node;
 extern uintA COUNT_opt;
 extern double COUNT_time;
-extern mlr::String OptLGPDataPath;
+extern rai::String OptLGPDataPath;
 extern ofstream *filNodes;
 extern bool LGP_useHoming;
 
@@ -34,7 +34,7 @@ enum LEVEL{ l_symbolic=0, l_pose=1, l_seq=2, l_path=3 };
 
 struct MNode{
   MNode *parent;
-  mlr::Array<MNode*> children;
+  rai::Array<MNode*> children;
   uint step;            ///< decision depth/step of this node
   double time;          ///< real time
   uint id;
@@ -48,8 +48,8 @@ struct MNode{
   Graph *folAddToState=NULL; ///< facts that are added to the state /after/ the fol.transition, e.g., infeasibility predicates
 
   //-- kinematics: the kinematic structure of the world after the decision path
-  const mlr::KinematicWorld& startKinematics; ///< initial start state kinematics
-  mlr::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
+  const rai::KinematicWorld& startKinematics; ///< initial start state kinematics
+  rai::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
 
   bool isExpanded=false;
   bool isInfeasible=false;
@@ -64,14 +64,14 @@ struct MNode{
   arr computeTime;  ///< computation times for each level
   double bound=0.;
 
-  mlr::Array<KOMO*> komoProblem; //komo problems for all levels
+  rai::Array<KOMO*> komoProblem; //komo problems for all levels
   arrA opt; //these are the optima (trajectories) computed
 
   // display helpers
-  mlr::String note;
+  rai::String note;
 
   /// root node init
-  MNode(mlr::KinematicWorld& kin, FOL_World& fol, uint levels);
+  MNode(rai::KinematicWorld& kin, FOL_World& fol, uint levels);
 
   /// child node creation
   MNode(MNode *parent, FOL_World::Handle& a);
@@ -85,7 +85,7 @@ struct MNode{
 
   //-- helpers
   MNodeL getTreePath() const; ///< return the decision path in terms of a list of nodes (just walking to the root)
-  mlr::String getTreePathString(char sep=' ') const;
+  rai::String getTreePathString(char sep=' ') const;
   MNode* getRoot(); ///< return the decision path in terms of a list of nodes (just walking to the root)
   MNode* getChildByAction(Node  *folDecision); ///<
   void getAll(MNodeL& L);

@@ -11,8 +11,8 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-#ifndef MLR_MotionPlanner_h
-#define MLR_MotionPlanner_h
+#ifndef RAI_MotionPlanner_h
+#define RAI_MotionPlanner_h
 
 #include "motion.h"
 

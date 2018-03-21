@@ -16,7 +16,7 @@
  */
 
 
-#ifdef MLR_QHULL
+#ifdef RAI_QHULL
 
 #include "mesh.h"
 #include "qhull.h"
@@ -89,7 +89,7 @@ void qhull_free(){
   int curlong, totlong;
   qh_memfreeshort(&curlong, &totlong);
   if(curlong || totlong)
-    MLR_MSG("qhull internal warning (main): did not free " <<totlong <<" bytes of long memory (" <<curlong <<" pieces)\n");
+    RAI_MSG("qhull internal warning (main): did not free " <<totlong <<" bytes of long memory (" <<curlong <<" pieces)\n");
 }
 
 //===========================================================================
@@ -208,7 +208,7 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
     CHECK_EQ(l,vertices.N-2, "");
     W[l]() = v-w;
     W[l+1]() = p-y; //not important (is already orthogonal to the full facet)
-    mlr::Array<double*> tmp;
+    rai::Array<double*> tmp;
     qh_gram_schmidt(X.d1, W.getCarray(tmp)); //orthogonalize local basis vectors
     subn = W[l]; //this entry should now be orthogonal to the sub-facet
     
@@ -236,13 +236,13 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
 
 //===========================================================================
 
-double forceClosure(const arr& C, const arr& Cn, const mlr::Vector& center,
+double forceClosure(const arr& C, const arr& Cn, const rai::Vector& center,
                     double mu, double torqueWeights, arr *dFdC) { //, arr *dFdCn
   CHECK_EQ(C.d0,Cn.d0, "different number of points and normals");
   CHECK_EQ(C.d1,3, "");
   
   uint i, j, S=7;
-  mlr::Vector c, n;
+  rai::Vector c, n;
   
   arr X;
   if(torqueWeights>0.)  X.resize(C.d0*S, 6);  //store 6d points for convex wrench hull
@@ -263,15 +263,15 @@ double forceClosure(const arr& C, const arr& Cn, const mlr::Vector& center,
     n.set(&Cn(i, 0));                   //contact normal
     c -= center;
     
-    mlr::Quaternion r;
+    rai::Quaternion r;
     r.setDiff(Vector_z, n);//rotate cone's z-axis into contact normal n
     
     for(j=0; j<S; j++) {   //each sample, equidistant on a circle
-      double angle = j*MLR_2PI/S;
-      mlr::Vector f(cos(angle)*mu, sin(angle)*mu, 1.);  //force point sampled from cone
+      double angle = j*RAI_2PI/S;
+      rai::Vector f(cos(angle)*mu, sin(angle)*mu, 1.);  //force point sampled from cone
       
       f = r*f;                         //rotate
-      mlr::Vector c_f = c^f;
+      rai::Vector c_f = c^f;
       
       //what about different scales in force vs torque??!!
       if(torqueWeights>=0.) { //forceClosure
@@ -354,7 +354,7 @@ arr getHull(const arr& V, uintA& T) {
     FORALLfacets {
       i=0;
       FOREACHvertex_(facet->vertices) {
-        if(i<3) T(f, i)=vertex->id; else MLR_MSG("face " <<f <<" has " <<i <<" vertices" <<endl);
+        if(i<3) T(f, i)=vertex->id; else RAI_MSG("face " <<f <<" has " <<i <<" vertices" <<endl);
         i++;
       }
       if(facet->toporient) {
@@ -369,7 +369,7 @@ arr getHull(const arr& V, uintA& T) {
   int curlong, totlong;
   qh_memfreeshort(&curlong, &totlong);
   if(curlong || totlong)
-    MLR_MSG("qhull internal warning (main): did not free " <<totlong <<" bytes of long memory (" <<curlong <<" pieces)\n");
+    RAI_MSG("qhull internal warning (main): did not free " <<totlong <<" bytes of long memory (" <<curlong <<" pieces)\n");
     
   return Vnew;
 }
@@ -407,7 +407,7 @@ void getDelaunayEdges(uintA& E, const arr& V) {
   int curlong, totlong;
   qh_memfreeshort(&curlong, &totlong);
   if(curlong || totlong)
-    MLR_MSG("qhull internal warning (main): did not free " <<totlong <<" bytes of long memory (" <<curlong <<" pieces)\n");
+    RAI_MSG("qhull internal warning (main): did not free " <<totlong <<" bytes of long memory (" <<curlong <<" pieces)\n");
 }
 
 
@@ -467,19 +467,19 @@ void delaunay(Graph<N, E>& g, uint dim=2) {
   qh_memfreeshort(&curlong, &totlong);   //free short memory and memory allocator
   
   if(curlong || totlong)
-    MLR_MSG("qhull did not free " <<totlong <<" bytes of long memory (" <<curlong <<" pieces)");
+    RAI_MSG("qhull did not free " <<totlong <<" bytes of long memory (" <<curlong <<" pieces)");
 }
 
 #endif
 
-#else ///MLR_QHULL
+#else ///RAI_QHULL
 #include <Core/util.h>
 #include <Core/array.h>
 #include "geo.h"
 int QHULL_DEBUG_LEVEL=0;
 const char* qhullVersion() { return "NONE"; }
 void getTriangulatedHull(uintA& T, arr& V) { NICO }
-double forceClosure(const arr& C, const arr& Cn, const mlr::Vector& center,
+double forceClosure(const arr& C, const arr& Cn, const rai::Vector& center,
                     double mu, double torqueWeights, arr *dFdC) { NICO }
 double distanceToConvexHull(const arr &X, const arr &y, arr *projectedPoint, uintA *faceVertices, bool freeqhull) { NICO }
 double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool freeqhull) { NICO }
@@ -659,7 +659,7 @@ arr convconv_intersect(const arr &A, const arr &B){
 //  plotLine(BB, true);
 //  plotOpengl();
 //  cout <<"\n====\n" <<AA <<"\n----\n" <<B <<"\n----\n" <<C<<"\n====\n" <<endl;
-//  mlr::wait();
+//  rai::wait();
 
   poly_free(res);
 

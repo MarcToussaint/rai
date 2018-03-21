@@ -3,7 +3,7 @@
 
 struct SubscribeLaserScan{
   Var<arr> laserScan;
-  Var<mlr::Transformation> laserScan_frame;
+  Var<rai::Transformation> laserScan_frame;
   SubscriberConv<sensor_msgs::LaserScan, byteA, &conv_laserScan2arr> subLaser;
 
   SubscribeLaserScan()

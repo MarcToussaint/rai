@@ -18,8 +18,8 @@
 #include "TM_default.h"
 
 TM_Default::TM_Default(TM_DefaultType _type,
-                               int iShape, const mlr::Vector& _ivec,
-                               int jShape, const mlr::Vector& _jvec,
+                               int iShape, const rai::Vector& _ivec,
+                               int jShape, const rai::Vector& _jvec,
                                const arr& _params):type(_type), i(iShape), j(jShape){
 
   if(&_ivec) ivec=_ivec; else ivec.setZero();
@@ -27,12 +27,12 @@ TM_Default::TM_Default(TM_DefaultType _type,
   if(&_params) params=_params;
 }
 
-TM_Default::TM_Default(TM_DefaultType _type, const mlr::KinematicWorld &G,
-                               const char* iShapeName, const mlr::Vector& _ivec,
-                               const char* jShapeName, const mlr::Vector& _jvec,
+TM_Default::TM_Default(TM_DefaultType _type, const rai::KinematicWorld &G,
+                               const char* iShapeName, const rai::Vector& _ivec,
+                               const char* jShapeName, const rai::Vector& _jvec,
                                const arr& _params):type(_type), i(-1), j(-1){
-  mlr::Shape *a = iShapeName ? G.getShapeByName(iShapeName):NULL;
-  mlr::Shape *b = jShapeName ? G.getShapeByName(jShapeName):NULL;
+  rai::Shape *a = iShapeName ? G.getShapeByName(iShapeName):NULL;
+  rai::Shape *b = jShapeName ? G.getShapeByName(jShapeName):NULL;
   if(a) i=a->index;
   if(b) j=b->index;
   if(&_ivec) ivec=_ivec; else ivec.setZero();
@@ -41,23 +41,23 @@ TM_Default::TM_Default(TM_DefaultType _type, const mlr::KinematicWorld &G,
 }
 
 
-void TM_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G) {
-  mlr::Body *body_i = i<0?NULL: G.shapes(i)->body;
-  mlr::Body *body_j = j<0?NULL: G.shapes(j)->body;
+void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+  rai::Body *body_i = i<0?NULL: G.shapes(i)->body;
+  rai::Body *body_j = j<0?NULL: G.shapes(j)->body;
 
   //get state
   switch(type) {
     case TMT_pos:{
-      mlr::Vector vec_i = i<0?ivec: G.shapes(i)->rel*ivec;
-      mlr::Vector vec_j = j<0?jvec: G.shapes(j)->rel*jvec;
+      rai::Vector vec_i = i<0?ivec: G.shapes(i)->rel*ivec;
+      rai::Vector vec_j = j<0?jvec: G.shapes(j)->rel*jvec;
       if(body_j==NULL) {
         G.kinematicsPos(y, J, body_i, &vec_i);
         y -= conv_vec2arr(vec_j);
         break;
       }
-      mlr::Vector pi = body_i->X * vec_i;
-      mlr::Vector pj = body_j->X * vec_j;
-      mlr::Vector c = body_j->X.rot / (pi-pj);
+      rai::Vector pi = body_i->X * vec_i;
+      rai::Vector pj = body_j->X * vec_j;
+      rai::Vector c = body_j->X.rot / (pi-pj);
       y = conv_vec2arr(c);
       if(&J) {
         arr Ji, Jj, JRj;
@@ -66,24 +66,24 @@ void TM_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G) {
         G.axesMatrix(JRj, body_j);
         J.resize(3, Jj.d1);
         for(uint k=0; k<Jj.d1; k++) {
-          mlr::Vector vi(Ji(0, k), Ji(1, k), Ji(2, k));
-          mlr::Vector vj(Jj(0, k), Jj(1, k), Jj(2, k));
-          mlr::Vector r (JRj(0, k), JRj(1, k), JRj(2, k));
-          mlr::Vector jk =  body_j->X.rot / (vi - vj);
+          rai::Vector vi(Ji(0, k), Ji(1, k), Ji(2, k));
+          rai::Vector vj(Jj(0, k), Jj(1, k), Jj(2, k));
+          rai::Vector r (JRj(0, k), JRj(1, k), JRj(2, k));
+          rai::Vector jk =  body_j->X.rot / (vi - vj);
           jk -= body_j->X.rot / (r ^(pi - pj));
           J(0, k)=jk.x; J(1, k)=jk.y; J(2, k)=jk.z;
         }
       }
     } break;
     case TMT_vec:{
-      mlr::Vector vec_i = i<0?ivec: G.shapes(i)->rel.rot*ivec;
-//      mlr::Vector vec_j = j<0?jvec: G.shapes(j)->rel.rot*jvec;
+      rai::Vector vec_i = i<0?ivec: G.shapes(i)->rel.rot*ivec;
+//      rai::Vector vec_j = j<0?jvec: G.shapes(j)->rel.rot*jvec;
       if(body_j==NULL) {
         G.kinematicsVec(y, J, body_i, &vec_i);
         break;
       }
       //relative
-      MLR_MSG("warning - don't have a correct Jacobian for this TMT_ype yet");
+      RAI_MSG("warning - don't have a correct Jacobian for this TMT_ype yet");
 //      fi = G.bodies(body_i)->X; fi.appendTransformation(irel);
 //      fj = G.bodies(body_j)->X; fj.appendTransformation(jrel);
 //      f.setDifference(fi, fj);
@@ -94,8 +94,8 @@ void TM_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G) {
     case TMT_vecAlign: {
       CHECK(fabs(ivec.length()-1.)<1e-10,"vector references must be normalized");
       CHECK(fabs(jvec.length()-1.)<1e-10,"vector references must be normalized");
-      mlr::Vector vec_i = i<0?ivec: G.shapes(i)->rel.rot*ivec;
-      mlr::Vector vec_j = j<0?jvec: G.shapes(j)->rel.rot*jvec;
+      rai::Vector vec_i = i<0?ivec: G.shapes(i)->rel.rot*ivec;
+      rai::Vector vec_j = j<0?jvec: G.shapes(j)->rel.rot*jvec;
       arr zi,Ji,zj,Jj;
       G.kinematicsVec(zi, Ji, body_i, &vec_i);
       if(body_j==NULL) {
@@ -157,7 +157,7 @@ void TM_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G) {
     case TMT_colCon:    G.kinematicsContactConstraints(y, J);  break;
     case TMT_skin: {
       arr Ji, zi;
-      mlr::Vector vi;
+      rai::Vector vi;
       y.resize(params.N);
       y.setZero();
       if(&J) {
@@ -177,7 +177,7 @@ void TM_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G) {
   }
 }
 
-uint TM_Default::dim_phi(const mlr::KinematicWorld& G) {
+uint TM_Default::dim_phi(const rai::KinematicWorld& G) {
   //get state
   switch(type) {
     case TMT_pos: return 3;

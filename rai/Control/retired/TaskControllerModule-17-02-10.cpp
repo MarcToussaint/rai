@@ -8,7 +8,7 @@ void lowPassUpdate(arr& lowPass, const arr& signal, double rate=.1){
   lowPass = (1.-rate)*lowPass + rate*signal;
 }
 
-#ifdef MLR_ROS
+#ifdef RAI_ROS
 struct sTaskControlThread{
    VARname(sensor_msgs::JointState, jointState)
 };
@@ -16,7 +16,7 @@ struct sTaskControlThread{
 struct sTaskControlThread{};
 #endif
 
-TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWorld& world)
+TaskControlThread::TaskControlThread(const char* _robot, const rai::KinematicWorld& world)
   : Thread("TaskControlThread", .01)
   , s(NULL)
   , taskController(NULL)
@@ -31,11 +31,11 @@ TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWor
 {
 
   s = new sTaskControlThread();
-  useRos = mlr::getParameter<bool>("useRos",false);
-  oldfashioned = mlr::getParameter<bool>("oldfashinedTaskControl", true);
-  useDynSim = !oldfashioned && !useRos; //mlr::getParameter<bool>("useDynSim", true);
+  useRos = rai::getParameter<bool>("useRos",false);
+  oldfashioned = rai::getParameter<bool>("oldfashinedTaskControl", true);
+  useDynSim = !oldfashioned && !useRos; //rai::getParameter<bool>("useDynSim", true);
 
-  robot = mlr::getParameter<mlr::String>("robot");
+  robot = rai::getParameter<rai::String>("robot");
 
   //-- deciding on the kinematic model. Priority:
   // 1) an explicit model is given as argument
@@ -52,9 +52,9 @@ TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWor
       realWorld = modelWorld.get();
     }else{
       if(robot=="pr2") {
-        realWorld.init(mlr::mlrPath("data/pr2_model/pr2_model.ors").p);
+        realWorld.init(rai::raiPath("data/pr2_model/pr2_model.ors").p);
       } else if(robot=="baxter") {
-        realWorld.init(mlr::mlrPath("data/baxter_model/baxter.ors").p);
+        realWorld.init(rai::raiPath("data/baxter_model/baxter.ors").p);
       } else {
         HALT("robot not known!")
       }
@@ -100,12 +100,12 @@ void TaskControlThread::open(){
 
   taskController->qNullCostRef.y_ref = q0;
   taskController->qNullCostRef.setGains(0., 1.);
-  taskController->qNullCostRef.prec = mlr::getParameter<double>("Hrate", .1)*modelWorld.get()->getHmetric();
+  taskController->qNullCostRef.prec = rai::getParameter<double>("Hrate", .1)*modelWorld.get()->getHmetric();
 
 #if 1
   modelWorld.writeAccess();
   modelWorld().gl().add(changeColor);
-  modelWorld().gl().add(mlr::glDrawGraph, &realWorld);
+  modelWorld().gl().add(rai::glDrawGraph, &realWorld);
   modelWorld().gl().add(changeColor2);
   modelWorld.deAccess();
 #endif
@@ -123,7 +123,7 @@ void TaskControlThread::step(){
   static uint t=0;
   t++;
 
-  mlr::Joint *trans= realWorld.getJointByName("worldTranslationRotation", false);
+  rai::Joint *trans= realWorld.getJointByName("worldTranslationRotation", false);
 
   //-- read real state
   if(useRos || !oldfashioned){
@@ -153,7 +153,7 @@ void TaskControlThread::step(){
       qLastReading = q_real;
     }
     if(robot=="baxter" && useRos){
-#ifdef MLR_ROS
+#ifdef RAI_ROS
       s->jointState.waitForRevisionGreaterThan(20);
       q_real = realWorld.q;
       succ = baxter_update_qReal(q_real, s->jointState.get(), realWorld);

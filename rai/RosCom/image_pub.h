@@ -19,11 +19,11 @@
 #include <string>
 #include <Perception/pixel_format.h>
 
-namespace mlr {
+namespace rai {
 template<class T> struct Array;
 }
 
-namespace mlr {
+namespace rai {
 	struct sImagePublisher;
 
 	class ImagePublisher {
@@ -37,7 +37,7 @@ namespace mlr {
 		/** Publishes an image with the given capture timestamp. After this method returns, the content of "image" is
 		 * no longer needed, even though publishing may occur in the background.
 		 */
-		void publish(const mlr::Array<unsigned char>& image, double timestamp);
+		void publish(const rai::Array<unsigned char>& image, double timestamp);
 	};
 
 	void init_image_publishers(int argc, char* argv[], const char* name, bool install_sigint_handler);

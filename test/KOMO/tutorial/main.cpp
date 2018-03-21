@@ -7,7 +7,7 @@
 //===========================================================================
 
 void tutorialBasics(){
-  mlr::KinematicWorld G("model.g");
+  rai::KinematicWorld G("model.g");
 
   KOMO komo;
   /* there are essentially three things that KOMO needs to be specified:
@@ -77,7 +77,7 @@ void tutorialInverseKinematics(){
    * All tasks should refer to phase-time 1. Internally, the system still created a banded-diagonal
    * Hessian representation, which is some overhead. It then calles exactly the same constrained optimizers */
 
-  mlr::KinematicWorld G("model.g");
+  rai::KinematicWorld G("model.g");
 
   KOMO komo;
   komo.setModel(G, false);
@@ -105,7 +105,7 @@ void tutorialInverseKinematics(){
 //===========================================================================
 
 int main(int argc,char** argv){
-  mlr::initCmdLine(argc,argv);
+  rai::initCmdLine(argc,argv);
 
   tutorialBasics();
 

@@ -1,7 +1,7 @@
 #include "roscom.h"
 #include "util.h"
 
-#ifdef MLR_ROS
+#ifdef RAI_ROS
 #include <ros/ros.h>
 #include <ros_msg/JointState.h>
 #include <sensor_msgs/Image.h>
@@ -16,18 +16,18 @@ void PerceptionObjects2Ors::step(){
   modelWorld.readAccess();
 
   for(visualization_msgs::Marker& marker : perceptionObjects().markers){
-    mlr::String name;
+    rai::String name;
     name <<"obj" <<marker.id;
-    mlr::Shape *s = modelWorld->getFrameByName(name)->shape;
+    rai::Shape *s = modelWorld->getFrameByName(name)->shape;
     if(!s){
-      mlr::Frame *f = new mlr::Frame(modelWorld());
-      s = new mlr::Shape(*f);
+      rai::Frame *f = new rai::Frame(modelWorld());
+      s = new rai::Shape(*f);
       if(marker.type==marker.CYLINDER){
-        s->type() = mlr::ST_cylinder;
+        s->type() = rai::ST_cylinder;
         s->size(3) = .5*(marker.scale.x+marker.scale.y);
         s->size(2) = marker.scale.z;
       }else if(marker.type==marker.POINTS){
-        s->type() = mlr::ST_mesh;
+        s->type() = rai::ST_mesh;
         s->mesh().V = conv_points2arr(marker.points);
         s->mesh().C = conv_colors2arr(marker.colors);
       }else NIY;
@@ -113,7 +113,7 @@ void PerceptionObjects2Ors::step(){
 
 //===========================================================================
 // Helper function so sync ors with the real PR2
-void initialSyncJointStateWithROS(mlr::KinematicWorld& world,
+void initialSyncJointStateWithROS(rai::KinematicWorld& world,
     Var<CtrlMsg>& ctrl_obs, bool useRos) {
 
   if (not useRos) { return; }
@@ -138,7 +138,7 @@ void initialSyncJointStateWithROS(mlr::KinematicWorld& world,
   HALT("sync'ing real PR2 with simulated failed");
 }
 
-void syncJointStateWitROS(mlr::KinematicWorld& world,
+void syncJointStateWitROS(rai::KinematicWorld& world,
     Var<CtrlMsg>& ctrl_obs, bool useRos) {
 
   if (not useRos) { return; }
@@ -230,7 +230,7 @@ void RosCom_ControllerSync::close(){
 
 //===========================================================================
 // Helper function so sync ors with the real PR2
-void initialSyncJointStateWithROS(mlr::KinematicWorld& world,
+void initialSyncJointStateWithROS(rai::KinematicWorld& world,
     Var<CtrlMsg>& ctrl_obs, bool useRos) {
 
   if (not useRos) { return; }
@@ -255,7 +255,7 @@ void initialSyncJointStateWithROS(mlr::KinematicWorld& world,
   HALT("sync'ing real PR2 with simulated failed");
 }
 
-void syncJointStateWitROS(mlr::KinematicWorld& world,
+void syncJointStateWitROS(rai::KinematicWorld& world,
     Var<CtrlMsg>& ctrl_obs, bool useRos) {
 
   if (not useRos) { return; }
@@ -435,7 +435,7 @@ void RosCom_SoftHandSync::close(){
 
 
 //===========================================================================
-#else // MLR_ROS no defined
+#else // RAI_ROS no defined
 
 void RosCom_Spinner::open(){ NICO }
 void RosCom_Spinner::step(){ NICO }

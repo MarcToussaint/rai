@@ -63,7 +63,7 @@ SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefin
 CXXFLAGS += -fPIC
 CFLAGS += -fPIC
 
-ifndef MLR_NO_CXX11
+ifndef RAI_NO_CXX11
 CXXFLAGS += -std=c++0x
 endif
 
@@ -81,14 +81,14 @@ ifeq ($(OPTIM),penibel)
 CXXFLAGS := -g -Wall -Wextra $(CXXFLAGS)
 endif
 ifeq ($(OPTIM),fast)
-CXXFLAGS := -O3 -Wall -DMLR_NOCHECK $(CXXFLAGS)
+CXXFLAGS := -O3 -Wall -DRAI_NOCHECK $(CXXFLAGS)
 endif
 ifeq ($(OPTIM),prof)
-CXXFLAGS := -O3 -pg -Wall -DMLR_NOCHECK -fno-inline $(CXXFLAGS)
+CXXFLAGS := -O3 -pg -Wall -DRAI_NOCHECK -fno-inline $(CXXFLAGS)
 LDFLAGS += -pg
 endif
 ifeq ($(OPTIM),callgrind)
-CXXFLAGS := -O3 -g -Wall -DMLR_NOCHECK $(CXXFLAGS) #-fno-inline
+CXXFLAGS := -O3 -g -Wall -DRAI_NOCHECK $(CXXFLAGS) #-fno-inline
 endif
 
 
@@ -129,7 +129,7 @@ SWIG_FLAGS=-c++ -python $(SWIG_INCLUDE)
 
 BUILDS := $(DEPEND:%=inPath_makeLib/%) $(BUILDS)
 LIBS := $(DEPEND:%=-l%) $(LIBS)
-CXXFLAGS := $(DEPEND:%=-DMLR_%) $(CXXFLAGS)
+CXXFLAGS := $(DEPEND:%=-DRAI_%) $(CXXFLAGS)
 
 
 ################################################################################
@@ -341,7 +341,7 @@ inPath_make/%: % $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< x.exe
 
 inPath_makeTest/%: % $(PREOBJS)
-	+@-$(BASE)/build/make-path.sh $< x.exe MLR_TESTS=1
+	+@-$(BASE)/build/make-path.sh $< x.exe RAI_TESTS=1
 
 inPath_run/%: % $(PREOBJS)
 	+@-$(BASE)/build/run-path.sh $< x.exe

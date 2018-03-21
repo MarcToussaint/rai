@@ -97,7 +97,7 @@ struct FOL_World : MCTS_Environment{
   FOL_World(istream& fil);
   virtual ~FOL_World();
   void init(istream& fil);
-  void init(const char* filename){ init(mlr::FileToken(filename)); }
+  void init(const char* filename){ init(rai::FileToken(filename)); }
 
   virtual TransitionReturn transition(const Handle& action); //returns (observation, reward)
   virtual const std::vector<Handle> get_actions();
@@ -112,7 +112,7 @@ struct FOL_World : MCTS_Environment{
   virtual bool get_info(InfoTag tag) const;
   virtual double get_info_value(InfoTag tag) const;
   void write_state(ostream&);
-  void set_state(mlr::String&);
+  void set_state(rai::String&);
 
   //-- helpers
   Node *addSymbol(const char* name);
@@ -121,7 +121,7 @@ struct FOL_World : MCTS_Environment{
   void addObject(const char* name);
   template<class T> void addValuedFact(const StringA& symbols, const T& x){
     NodeL parents;
-    for(const mlr::String& s:symbols) parents.append(KB[s]);
+    for(const rai::String& s:symbols) parents.append(KB[s]);
     start_state->newNode<T>({}, parents, x);
   }
   void addTerminalRule(const StringAA& literals);

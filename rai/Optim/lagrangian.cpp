@@ -60,7 +60,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x){
   double L=0.; //L value
   for(uint i=0;i<phi_x.N;i++){
     if(            tt_x.p[i]==OT_f                      ) L += phi_x.p[i];                // direct cost term
-    if(            tt_x.p[i]==OT_sumOfSqr               ) L += mlr::sqr(phi_x.p[i]);      // sumOfSqr term
+    if(            tt_x.p[i]==OT_sumOfSqr               ) L += rai::sqr(phi_x.p[i]);      // sumOfSqr term
     if(muLB     && tt_x.p[i]==OT_ineq                   ){ if(phi_x.p[i]>0.) return NAN;  L -= muLB * ::log(-phi_x.p[i]); } //log barrier, check feasibility
     if(mu       && tt_x.p[i]==OT_ineq && I_lambda_x.p[i]) L += gpenalty(phi_x.p[i]);      //g-penalty
     if(lambda.N && tt_x.p[i]==OT_ineq && lambda.p[i]>0. ) L += lambda.p[i] * phi_x.p[i];  //g-lagrange terms
@@ -89,7 +89,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x){
     for(uint i=0;i<phi_x.N;i++){
       if(            tt_x.p[i]==OT_f){ if(fterm!=-1) HALT("There must only be 1 f-term (in the current implementation)");  fterm=i; }
       if(            tt_x.p[i]==OT_sumOfSqr               ) coeff.p[i] += 2.;      // sumOfSqr terms
-      if(muLB     && tt_x.p[i]==OT_ineq                   ) coeff.p[i] += (muLB/mlr::sqr(phi_x.p[i]));  //log barrier, check feasibility
+      if(muLB     && tt_x.p[i]==OT_ineq                   ) coeff.p[i] += (muLB/rai::sqr(phi_x.p[i]));  //log barrier, check feasibility
       if(mu       && tt_x.p[i]==OT_ineq && I_lambda_x.p[i]) coeff.p[i] += gpenalty_dd(phi_x.p[i]);   //g-penalty
       if(nu       && tt_x.p[i]==OT_eq                     ) coeff.p[i] += hpenalty_dd(phi_x.p[i]);   //h-penalty
     }
@@ -116,7 +116,7 @@ double LagrangianProblem::get_costs(){
   double S=0.;
   for(uint i=0;i<phi_x.N;i++){
     if(tt_x(i)==OT_f) S += phi_x(i);
-    if(tt_x(i)==OT_sumOfSqr) S += mlr::sqr(phi_x(i));
+    if(tt_x(i)==OT_sumOfSqr) S += rai::sqr(phi_x(i));
   }
   return S;
 }

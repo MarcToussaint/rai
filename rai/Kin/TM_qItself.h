@@ -20,14 +20,14 @@ struct TM_qItself:TaskMap {
   bool relative_q0; ///< if true, absolute values are given relative to Joint::q0
 
   TM_qItself(bool relative_q0=false);
-  TM_qItself(TM_qItself_PickMode pickMode, const StringA& picks, const mlr::KinematicWorld& G, bool relative_q0=false);
+  TM_qItself(TM_qItself_PickMode pickMode, const StringA& picks, const rai::KinematicWorld& G, bool relative_q0=false);
   TM_qItself(uintA _selectedBodies, bool relative_q0=false);
 
-  virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1);
   virtual void phi(arr& y, arr& J, const WorldL& G, double tau, int t);
-  virtual uint dim_phi(const mlr::KinematicWorld& G);
+  virtual uint dim_phi(const rai::KinematicWorld& G);
   virtual uint dim_phi(const WorldL& G, int t);
-  virtual mlr::String shortTag(const mlr::KinematicWorld& G);
+  virtual rai::String shortTag(const rai::KinematicWorld& G);
 private:
   uintA dimPhi;
 };
@@ -37,9 +37,9 @@ private:
 struct TM_qZeroVels:TaskMap {
   TM_qZeroVels(){ }
 
-  virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1){NIY}
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1){NIY}
   virtual void phi(arr& y, arr& J, const WorldL& G, double tau, int t);
-  virtual uint dim_phi(const mlr::KinematicWorld& G){NIY}
+  virtual uint dim_phi(const rai::KinematicWorld& G){NIY}
   virtual uint dim_phi(const WorldL& G, int t);
 private:
   uintA dimPhi;
@@ -47,7 +47,7 @@ private:
 
 //===========================================================================
 
-mlr::Array<mlr::Joint*> getMatchingJoints(const WorldL& G, bool zeroVelJointsOnly);
-mlr::Array<mlr::Joint*> getSwitchedJoints(const mlr::KinematicWorld& G0, const mlr::KinematicWorld& G1, int verbose=0);
-uintA getSwitchedBodies(const mlr::KinematicWorld& G0, const mlr::KinematicWorld& G1, int verbose=0);
+rai::Array<rai::Joint*> getMatchingJoints(const WorldL& G, bool zeroVelJointsOnly);
+rai::Array<rai::Joint*> getSwitchedJoints(const rai::KinematicWorld& G0, const rai::KinematicWorld& G1, int verbose=0);
+uintA getSwitchedBodies(const rai::KinematicWorld& G0, const rai::KinematicWorld& G1, int verbose=0);
 

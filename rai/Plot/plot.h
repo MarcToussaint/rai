@@ -6,21 +6,21 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef MLR_plot_h
-#define MLR_plot_h
+#ifndef RAI_plot_h
+#define RAI_plot_h
 #include <Core/util.h>
 
 //===========================================================================
 
 struct OpenGL;
 struct Gaussian;
-namespace mlr {  template<class T> struct Array;  }
+namespace rai {  template<class T> struct Array;  }
 
 typedef unsigned int uint;
-typedef mlr::Array<double> arr;
-typedef mlr::Array<uint> uintA;
-typedef mlr::Array<Gaussian> GaussianA;
-typedef mlr::Array<Gaussian*> GaussianL;
+typedef rai::Array<double> arr;
+typedef rai::Array<uint> uintA;
+typedef rai::Array<Gaussian> GaussianA;
+typedef rai::Array<Gaussian*> GaussianL;
 
 //===========================================================================
 

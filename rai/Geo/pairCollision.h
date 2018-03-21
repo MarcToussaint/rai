@@ -12,10 +12,10 @@
 
 struct PairCollision : GLDrawer{
   //INPUTS
-  const mlr::Mesh& mesh1;
-  const mlr::Mesh& mesh2;
-  mlr::Transformation& t1;
-  mlr::Transformation& t2;
+  const rai::Mesh& mesh1;
+  const rai::Mesh& mesh2;
+  rai::Transformation& t1;
+  rai::Transformation& t2;
   double rad1, rad2; ///< only kinVector and glDraw account for this; the basic collision geometry (OUTPUTS below) is computed neglecting radii!!
 
   //OUTPUTS
@@ -29,8 +29,8 @@ struct PairCollision : GLDrawer{
 
   arr poly, polyNorm;
 
-  PairCollision(const mlr::Mesh& mesh1, const mlr::Mesh& mesh2,
-                mlr::Transformation& t1, mlr::Transformation& t2,
+  PairCollision(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
+                rai::Transformation& t1, rai::Transformation& t2,
                 double rad1=0., double rad2=0.);
 
   void write(std::ostream& os) const;
@@ -52,7 +52,7 @@ struct PairCollision : GLDrawer{
   void computeSupportPolygon();
 
 private:
-  double libccd_MPR(const mlr::Mesh& m1,const mlr::Mesh& m2); //calls ccdMPRPenetration of libccd
+  double libccd_MPR(const rai::Mesh& m1,const rai::Mesh& m2); //calls ccdMPRPenetration of libccd
   double GJK_sqrDistance(); //gjk_distance of libGJK
   bool simplexType(uint i, uint j){ return simplex1.d0==i && simplex2.d0==j; } //helper
 };

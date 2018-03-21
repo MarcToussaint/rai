@@ -11,8 +11,8 @@
 /// @addtogroup group_Core
 /// @{
 
-#ifndef MLR_ann_h
-#define MLR_ann_h
+#ifndef RAI_ann_h
+#define RAI_ann_h
 
 #include <Core/array.h>
 

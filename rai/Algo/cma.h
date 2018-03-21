@@ -12,8 +12,8 @@
 /// @addtogroup group_Core
 /// @{
 
-#ifndef MLR_cma_h
-#define MLR_cma_h
+#ifndef RAI_cma_h
+#define RAI_cma_h
 
 #include <Core/array.h>
 

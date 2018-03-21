@@ -6,8 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef MLR_simulator_h
-#define MLR_simulator_h
+#ifndef RAI_simulator_h
+#define RAI_simulator_h
 
 #include <Kin/kin.h>
 #include <Core/array.h>
@@ -57,7 +57,7 @@ struct Simulator {
   void stepPhysx(const arr& qdot, double tau);
 
   //-- internal
-  mlr::KinematicWorld& getOrsGraph();
+  rai::KinematicWorld& getOrsGraph();
 };
 
 struct VisionSimulator {
@@ -82,7 +82,7 @@ struct CarSimulator{
   double dynamicsNoise, observationNoise;
   arr landmarks;
   arr particlesToDraw;
-  mlr::Array<Gaussian> gaussiansToDraw;
+  rai::Array<Gaussian> gaussiansToDraw;
   OpenGL *gl;
   
   CarSimulator();

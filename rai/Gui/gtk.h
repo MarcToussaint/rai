@@ -6,8 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef MLR_gtk_h
-#define MLR_gtk_h
+#ifndef RAI_gtk_h
+#define RAI_gtk_h
 
 #include <Core/array.h>
 

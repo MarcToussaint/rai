@@ -9,10 +9,10 @@
 #include "array.h"
 #include "util.h"
 
-#ifdef MLR_LAPACK
+#ifdef RAI_LAPACK
 extern "C" {
 #include "cblas.h"
-#ifdef MLR_MSVC
+#ifdef RAI_MSVC
 #  include <lapack/blaswrap.h>
 #endif
 #include "f2c.h"
@@ -37,14 +37,14 @@ extern "C" {
 #undef MAX
 #undef MIN
 #endif
-#endif //MLR_LAPACK
+#endif //RAI_LAPACK
 
 
-namespace mlr {
+namespace rai {
 //===========================================================================
 
 bool useLapack=true;
-#ifdef MLR_LAPACK
+#ifdef RAI_LAPACK
 const bool lapackSupported=true;
 #else
 const bool lapackSupported=false;
@@ -70,7 +70,7 @@ Use the documentation at
   http://www.netlib.org/lapack/individualroutines.html
 to find the right function! Also use the man tools with Debian package lapack-doc installed.
 
-I've put the clapack.h directly into the mlr directory - one only has to link to the Fortran lib
+I've put the clapack.h directly into the rai directory - one only has to link to the Fortran lib
 */
 
 
@@ -164,8 +164,8 @@ arr oneover(const arr& A){
   return B;
 }
 
-namespace mlr {
-/// use this to turn on Lapack routines [default true if MLR_LAPACK is defined]
+namespace rai {
+/// use this to turn on Lapack routines [default true if RAI_LAPACK is defined]
 extern bool useLapack;
 }
 
@@ -183,7 +183,7 @@ void normalizeWithJac(arr& y, arr& J){
 /// @name SVD etc
 //
 
-/// called from svd if MLR_LAPACK is not defined
+/// called from svd if RAI_LAPACK is not defined
 uint own_SVD(
   arr& U,
   arr& w,
@@ -194,12 +194,12 @@ uint own_SVD(
 /** @brief Singular Value Decomposition (from Numerical Recipes);
   computes \f$U, D, V\f$ with \f$A = U D V^T\f$ from \f$A\f$ such that
   \f$U\f$ and \f$V\f$ are orthogonal and \f$D\f$ diagonal (the
-  returned array d is 1-dimensional) -- uses LAPACK if MLR_LAPACK is
+  returned array d is 1-dimensional) -- uses LAPACK if RAI_LAPACK is
   defined */
 uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort) {
   uint r;
-#ifdef MLR_LAPACK
-  if(mlr::useLapack) {
+#ifdef RAI_LAPACK
+  if(rai::useLapack) {
     r=lapack_SVD(U, d, V, A);
     V=~V;
   } else {
@@ -209,9 +209,9 @@ uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort) {
   r=own_SVD(U, d, V, A, sort);
 #endif
   
-#ifdef MLR_CHECK_SVD
-  bool uselapack=mlr::useLapack;
-  mlr::useLapack=false;
+#ifdef RAI_CHECK_SVD
+  bool uselapack=rai::useLapack;
+  rai::useLapack=false;
   double err;
   arr dD, I;
   setDiagonal(dD, d);
@@ -220,19 +220,19 @@ uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort) {
   arr Atmp;
   Atmp = U * dD * ~V;
   //cout <<"\nA=" <<A <<"\nAtmp=" <<Atmp <<"U=" <<U <<"W=" <<dD <<"~V=" <<~V <<endl;
-  std::cout <<"SVD is correct:  " <<(err=maxDiff(Atmp, A)) <<' ' <<endl;    CHECK(err<MLR_CHECK_SVD, "");
+  std::cout <<"SVD is correct:  " <<(err=maxDiff(Atmp, A)) <<' ' <<endl;    CHECK(err<RAI_CHECK_SVD, "");
   if(A.d0<=A.d1) {
     I.setId(U.d0);
-    std::cout <<"U is orthogonal: " <<(err=maxDiff(U * ~U, I)) <<' ' <<endl;  CHECK(err<MLR_CHECK_SVD, "");
+    std::cout <<"U is orthogonal: " <<(err=maxDiff(U * ~U, I)) <<' ' <<endl;  CHECK(err<RAI_CHECK_SVD, "");
     I.setId(V.d1);
-    std::cout <<"V is orthogonal: " <<(err=maxDiff(~V * V, I)) <<endl;        CHECK(err<MLR_CHECK_SVD, "");
+    std::cout <<"V is orthogonal: " <<(err=maxDiff(~V * V, I)) <<endl;        CHECK(err<RAI_CHECK_SVD, "");
   } else {
     I.setId(U.d1);
-    std::cout <<"U is orthogonal: " <<(err=maxDiff(~U * U, I)) <<' ' <<endl;  CHECK(err<MLR_CHECK_SVD, "");
+    std::cout <<"U is orthogonal: " <<(err=maxDiff(~U * U, I)) <<' ' <<endl;  CHECK(err<RAI_CHECK_SVD, "");
     I.setId(V.d0);
     std::cout <<"V is orthogonal: " <<(err=sqrDistance(V * ~V, I)) <<endl;        CHECK(err<1e-5, "");
   }
-  mlr::useLapack=uselapack;
+  rai::useLapack=uselapack;
 #endif
   
   return r;
@@ -282,23 +282,23 @@ void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc) {
 }
 
 void check_inverse(const arr& Ainv, const arr& A) {
-#ifdef MLR_CHECK_INVERSE
+#ifdef RAI_CHECK_INVERSE
   arr D, _D; D.setId(A.d0);
   uint me;
   _D=A*Ainv;
   double err=maxDiff(_D, D, &me);
   cout <<"inverse is correct: " <<err <<endl;
   if(A.d0<10) {
-    CHECK(err<MLR_CHECK_INVERSE , "inverting failed, error=" <<err <<" " <<_D.elem(me) <<"!=" <<D.elem(me) <<"\nA=" <<A <<"\nAinv=" <<Ainv <<"\nA*Ainv=" <<_D);
+    CHECK(err<RAI_CHECK_INVERSE , "inverting failed, error=" <<err <<" " <<_D.elem(me) <<"!=" <<D.elem(me) <<"\nA=" <<A <<"\nAinv=" <<Ainv <<"\nA*Ainv=" <<_D);
   } else {
-    CHECK(err<MLR_CHECK_INVERSE , "inverting failed, error=" <<err <<" " <<_D.elem(me) <<"!=" <<D.elem(me));
+    CHECK(err<RAI_CHECK_INVERSE , "inverting failed, error=" <<err <<" " <<_D.elem(me) <<"!=" <<D.elem(me));
   }
 #endif
 }
 
 uint inverse(arr& Ainv, const arr& A) {
   uint r=inverse_SVD(Ainv, A);
-  //mlr::inverse_LU(inverse, A); return A.d0;
+  //rai::inverse_LU(inverse, A); return A.d0;
   return r;
 }
 
@@ -343,14 +343,14 @@ uint inverse_SVD(arr& Ainv, const arr& A) {
     }
 #endif
   
-#ifdef MLR_CHECK_INVERSE
+#ifdef RAI_CHECK_INVERSE
   check_inverse(Ainv, A);
 #endif
   return r;
 }
 
 void mldivide(arr& X, const arr& A, const arr& b) {
-#ifdef MLR_LAPACK
+#ifdef RAI_LAPACK
   lapack_mldivide(X, A, b);
 #else
   NIY;
@@ -379,7 +379,7 @@ void inverse_LU(arr& Xinv, const arr& X) {
   delete[] idx;
   delete[] d;
   
-#ifdef MLR_CHECK_INVERSE
+#ifdef RAI_CHECK_INVERSE
   check_inverse(Xinv, X);
 #endif
 #endif
@@ -387,12 +387,12 @@ void inverse_LU(arr& Xinv, const arr& X) {
 
 void inverse_SymPosDef(arr& Ainv, const arr& A) {
   CHECK_EQ(A.d0,A.d1, "");
-#ifdef MLR_LAPACK
+#ifdef RAI_LAPACK
   lapack_inverseSymPosDef(Ainv, A);
 #else
   inverse_SVD(Ainv, A);
 #endif
-#ifdef MLR_CHECK_INVERSE
+#ifdef RAI_CHECK_INVERSE
   check_inverse(Ainv, A);
 #endif
 }
@@ -454,9 +454,9 @@ void rotationFromAtoB(arr& R, const arr& a, const arr& v) {
   }
 }
 
-inline double MLR_SIGN_SVD(double a, double b) { return b>0 ? ::fabs(a) : -::fabs(a); }
-#define MLR_max_SVD(a, b) ( (a)>(b) ? (a) : (b) )
-#define MLR_SVD_MINVALUE .0 //1e-10
+inline double RAI_SIGN_SVD(double a, double b) { return b>0 ? ::fabs(a) : -::fabs(a); }
+#define RAI_max_SVD(a, b) ( (a)>(b) ? (a) : (b) )
+#define RAI_SVD_MINVALUE .0 //1e-10
 
 uint own_SVD(
   arr& U,
@@ -464,13 +464,13 @@ uint own_SVD(
   arr& V,
   const arr& A,
   bool sort) {
-  //mlr::Array<double*> Apointers, Upointers, Vpointers;
+  //rai::Array<double*> Apointers, Upointers, Vpointers;
   unsigned m = A.d0; /* rows */
   unsigned n = A.d1; /* cols */
   U.resize(m, n);
   V.resize(n, n);
   w.resize(n);
-  mlr::Array<double*> Ap, Up, Vp;
+  rai::Array<double*> Ap, Up, Vp;
   double **a = A.getCarray(Ap); //Pointers(Apointers); /* input matrix */
   double **u = U.getCarray(Up); //Pointers(Upointers); /* left vectors */
   double **v = V.getCarray(Vp); //Pointers(Vpointers); /* right vectors */
@@ -502,7 +502,7 @@ uint own_SVD(
         }
         
         f = u[i][i];
-        g = -MLR_SIGN_SVD(sqrt(s), f);
+        g = -RAI_SIGN_SVD(sqrt(s), f);
         h = f * g - s;
         u[i][i] = f - g;
         
@@ -531,7 +531,7 @@ uint own_SVD(
         }
         
         f = u[i][l];
-        g = -MLR_SIGN_SVD(sqrt(s), f);
+        g = -RAI_SIGN_SVD(sqrt(s), f);
         h = f * g - s;
         u[i][l] = f - g;
         
@@ -548,7 +548,7 @@ uint own_SVD(
       }
     }
     
-    anorm = MLR_max_SVD(anorm, fabs(w(i)) + fabs(rv1(i)));
+    anorm = RAI_max_SVD(anorm, fabs(w(i)) + fabs(rv1(i)));
   }
   
   /* accumulation of right-hand transformations */
@@ -668,7 +668,7 @@ uint own_SVD(
       h = rv1(k);
       f = ((y - z) * (y + z) + (g - h) * (g + h)) / (2.0 * h * y);
       g = hypot(f, 1.0);
-      f = ((x - z) * (x + z) + h * ((y / (f + MLR_SIGN_SVD(g, f))) - h)) / x;
+      f = ((x - z) * (x + z) + h * ((y / (f + RAI_SIGN_SVD(g, f))) - h)) / x;
       
       /* next qr transformation */
       c = s = 1.0;
@@ -753,7 +753,7 @@ uint own_SVD(
   
   //rank analysis
   
-  for(r=0; r<n && w(r)>MLR_SVD_MINVALUE; r++) {};
+  for(r=0; r<n && w(r)>RAI_SVD_MINVALUE; r++) {};
   
   t = r < n ? fabs(w(n-1)) : 0.0;
   r = 0;
@@ -782,7 +782,7 @@ double determinantSubroutine(double **A, uint n) {
 
 double determinant(const arr& A) {
   CHECK(A.nd==2 && A.d0==A.d1, "determinants require a squared 2D matrix");
-  mlr::Array<double*> tmp;
+  rai::Array<double*> tmp;
   return determinantSubroutine(A.getCarray(tmp), A.d0);
 }
 
@@ -824,7 +824,7 @@ uint sampleMultinomial(const arr& p) {
 
 /// calls gnuplot to display the (n, 2) or (n, 3) array (n=number of points of line or surface)
 void gnuplot(const arr& X, bool pauseMouse, bool persist, const char* PDFfile) {
-  mlr::arrayBrackets="  ";
+  rai::arrayBrackets="  ";
   if(X.nd==2 && X.d1!=2) {  //assume array -> splot
     FILE("z.pltX") <<X;
     gnuplot("splot 'z.pltX' matrix with pm3d, 'z.pltX' matrix with lines", pauseMouse, persist, PDFfile);
@@ -853,7 +853,7 @@ arr bootstrap(const arr& x){
 
 void write(const arrL& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
   std::ofstream fil;
-  mlr::open(fil, filename);
+  rai::open(fil, filename);
   catCol(X).write(fil, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
   fil.close();
 }
@@ -867,7 +867,7 @@ void write(const arrL& X, const char *filename, const char *ELEMSEP, const char 
   byte arrays, where the 3rd dimension determines whether it's a grey
   (0), grey-alpha (2), RGB (3), or RGBA (4) image */
 void write_ppm(const byteA &img, const char *file_name, bool swap_rows) {
-  if(!img.N) MLR_MSG("empty image");
+  if(!img.N) RAI_MSG("empty image");
   CHECK(img.nd==2 || (img.nd==3 && img.d2==3), "only rgb or gray images to ppm");
   ofstream os;
   os.open(file_name, std::ios::out | std::ios::binary);
@@ -895,7 +895,7 @@ void read_ppm(byteA &img, const char *file_name, bool swap_rows) {
   if(!is.good()) HALT("could not open file `" <<file_name <<"' for input");
   if(is.get()!='P') HALT("NO PPM FILE:" <<file_name);
   is >>mode;
-  if(mlr::peerNextChar(is)=='#') mlr::skipRestOfLine(is);
+  if(rai::peerNextChar(is)=='#') rai::skipRestOfLine(is);
   is >>width >>height >>max;
   is.get(); //MUST be a white character if everything went ok
   switch(mode) {
@@ -1019,7 +1019,7 @@ uintA getIndexTuple(uint i, const uintA &d) {
 }
 
 void lognormScale(arr& P, double& logP, bool force) {
-#ifdef MLR_NoLognormScale
+#ifdef RAI_NoLognormScale
   return;
 #endif
   double Z=0.;
@@ -1032,7 +1032,7 @@ void lognormScale(arr& P, double& logP, bool force) {
   } else {
     logP+=::log(Z);
     P=1.;
-    MLR_MSG("ill-conditioned table factor for norm scaling");
+    RAI_MSG("ill-conditioned table factor for norm scaling");
   }
 }
 
@@ -1045,7 +1045,7 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     uint i, j, *k, *kstop;
     y.resize(A.d0); y.setZero();
     double *Ap=A.p;
-    uintA& A_elems = dynamic_cast<mlr::SparseMatrix*>(A.special)->elems;
+    uintA& A_elems = dynamic_cast<rai::SparseMatrix*>(A.special)->elems;
     for(k=A_elems.p, kstop=A_elems.p+A_elems.N; k!=kstop; Ap++) {
       i=*k; k++;
       j=*k; k++;
@@ -1054,20 +1054,20 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     return;
   }
   if(isSparseMatrix(A) && isSparseVector(x)) {
-    mlr::SparseVector *sx = dynamic_cast<mlr::SparseVector*>(x.special);
+    rai::SparseVector *sx = dynamic_cast<rai::SparseVector*>(x.special);
     CHECK(x.nd==1 && A.nd==2 && sx->N==A.d1, "not a proper matrix-vector multiplication");
     uint i, j, n, *k, *kstop, *l, *lstop;
     y.clear(); y.nd=1; y.d0=A.d0;
-    y.special = new mlr::SparseMatrix(y, A.d0); //aux=y_sparse=new uintA [2];
-    uintA& y_elems= dynamic_cast<mlr::SparseMatrix*>(y.special)->elems;
-    uintA& y_col= dynamic_cast<mlr::SparseMatrix*>(y.special)->cols(0);
+    y.special = new rai::SparseMatrix(y, A.d0); //aux=y_sparse=new uintA [2];
+    uintA& y_elems= dynamic_cast<rai::SparseMatrix*>(y.special)->elems;
+    uintA& y_col= dynamic_cast<rai::SparseMatrix*>(y.special)->cols(0);
     y_col.resize(y.d0); y_col=(uint)-1;
     double *xp=x.p;
     uintA& x_elems = sx->elems;
     uint *slot;
     for(k=x_elems.p, kstop=x_elems.p+x_elems.N; k!=kstop; xp++) {
       j=*k; k++;
-      uintA& A_col = dynamic_cast<mlr::SparseMatrix*>(A.special)->cols(j);
+      uintA& A_col = dynamic_cast<rai::SparseMatrix*>(A.special)->cols(j);
       for(l=A_col.p, lstop=A_col.p+A_col.N; l!=lstop;) {
         i =*l; l++;
         n =*l; l++;
@@ -1088,7 +1088,7 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     uint i, j, *k, *kstop, d1=A.d1;
     y.resize(A.d0); y.setZero();
     double *xp=x.p;
-    uintA& elems = dynamic_cast<mlr::SparseMatrix*>(x.special)->elems;
+    uintA& elems = dynamic_cast<rai::SparseMatrix*>(x.special)->elems;
     for(k=elems.p, kstop=elems.p+elems.N; k!=kstop; xp++) {
       j=*k; k++;
       for(i=0; i<A.d0; i++) {
@@ -1184,7 +1184,7 @@ bool checkGradient(const ScalarFunction& f,
 //   J >>FILE("z.J");
 //   JJ >>FILE("z.JJ");
   if(md>tolerance) {
-    MLR_MSG("checkGradient -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
+    RAI_MSG("checkGradient -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
     J >>FILE("z.J_analytical");
     JJ >>FILE("z.J_empirical");
     //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
@@ -1216,7 +1216,7 @@ bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance, bool 
   //   J >>FILE("z.J");
   //   JJ >>FILE("z.JJ");
   if(md>tolerance) {
-    MLR_MSG("checkHessian -- FAILURE -- max diff=" <<md <<" |"<<H.elem(i)<<'-'<<Jg.elem(i)<<"| (stored in files z.J_*)");
+    RAI_MSG("checkHessian -- FAILURE -- max diff=" <<md <<" |"<<H.elem(i)<<'-'<<Jg.elem(i)<<"| (stored in files z.J_*)");
     H >>FILE("z.J_analytical");
     Jg >>FILE("z.J_empirical");
     //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
@@ -1254,7 +1254,7 @@ bool checkJacobian(const VectorFunction& f,
   uint i;
   double md=maxDiff(J, JJ, &i);
   if(md>tolerance) {
-    MLR_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
+    RAI_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
     J >>FILE("z.J_analytical");
     JJ >>FILE("z.J_empirical");
     if(verbose){
@@ -1268,11 +1268,11 @@ bool checkJacobian(const VectorFunction& f,
   return true;
 }
 
-#define EXP ::exp //mlr::approxExp
+#define EXP ::exp //rai::approxExp
 
 double NNinv(const arr& a, const arr& b, const arr& Cinv){
   double d=sqrDistance(Cinv, a, b);
-  double norm = ::sqrt(lapack_determinantSymPosDef((1./MLR_2PI)*Cinv));
+  double norm = ::sqrt(lapack_determinantSymPosDef((1./RAI_2PI)*Cinv));
   return norm*EXP(-.5*d);
 }
 double logNNinv(const arr& a, const arr& b, const arr& Cinv){
@@ -1280,14 +1280,14 @@ double logNNinv(const arr& a, const arr& b, const arr& Cinv){
   return 1;
   /*
   arr d=a-b;
-  double norm = ::sqrt(fabs(mlr::determinant_LU((1./MLR_2PI)*Cinv)));
+  double norm = ::sqrt(fabs(rai::determinant_LU((1./RAI_2PI)*Cinv)));
   return ::log(norm) + (-.5*scalarProduct(Cinv, d, d));
   */
 }
 double logNNprec(const arr& a, const arr& b, double prec){
   uint n=a.N;
   arr d=a-b;
-  double norm = pow(prec/MLR_2PI, .5*n);
+  double norm = pow(prec/RAI_2PI, .5*n);
   return ::log(norm) + (-.5*prec*scalarProduct(d, d));
 }
 double logNN(const arr& a, const arr& b, const arr& C){
@@ -1311,7 +1311,7 @@ double NNNN(const arr& a, const arr& b, const arr& C){
   return NNNNinv(a, b, Cinv);
 }
 double NNzeroinv(const arr& x, const arr& Cinv){
-  double norm = ::sqrt(lapack_determinantSymPosDef((1./MLR_2PI)*Cinv));
+  double norm = ::sqrt(lapack_determinantSymPosDef((1./RAI_2PI)*Cinv));
   return norm*EXP(-.5*scalarProduct(Cinv, x, x));
 }
 /// gradient of a Gaussian
@@ -1327,17 +1327,17 @@ double dNNNNinv(const arr& x, const arr& a, const arr& Ainv, arr& grad){
   return y;
 }
 double NNsdv(const arr& a, const arr& b, double sdv){
-  double norm = 1./(::sqrt(MLR_2PI)*sdv);
+  double norm = 1./(::sqrt(RAI_2PI)*sdv);
   return norm*EXP(-.5*sqrDistance(a, b)/(sdv*sdv));
 }
 double NNzerosdv(const arr& x, double sdv){
-  double norm = 1./(::sqrt(MLR_2PI)*sdv);
+  double norm = 1./(::sqrt(RAI_2PI)*sdv);
   return norm*EXP(-.5*sumOfSqr(x)/(sdv*sdv));
 }
 
-mlr::String singleString(const StringA& strs){
-  mlr::String s;
-  for(const mlr::String& str:strs){
+rai::String singleString(const StringA& strs){
+  rai::String s;
+  for(const rai::String& str:strs){
     if(s.N) s<<"_";
     s<<str;
   }
@@ -1370,11 +1370,11 @@ mlr::String singleString(const StringA& strs){
     -----------------------------------------------------------------  */
 // file:///usr/share/doc/liblapack-doc/lug/index.html
 
-#ifdef MLR_LAPACK
+#ifdef RAI_LAPACK
 #ifdef NO_BLAS
-void blas_MM(arr& X, const arr& A, const arr& B) {       mlr::useLapack=false; innerProduct(X, A, B); mlr::useLapack=true; };
-void blas_MsymMsym(arr& X, const arr& A, const arr& B) { mlr::useLapack=false; innerProduct(X, A, B); mlr::useLapack=true; };
-void blas_Mv(arr& y, const arr& A, const arr& x) {       mlr::useLapack=false; innerProduct(y, A, x); mlr::useLapack=true; };
+void blas_MM(arr& X, const arr& A, const arr& B) {       rai::useLapack=false; innerProduct(X, A, B); rai::useLapack=true; };
+void blas_MsymMsym(arr& X, const arr& A, const arr& B) { rai::useLapack=false; innerProduct(X, A, B); rai::useLapack=true; };
+void blas_Mv(arr& y, const arr& A, const arr& x) {       rai::useLapack=false; innerProduct(y, A, x); rai::useLapack=true; };
 #else
 void blas_MM(arr& X, const arr& A, const arr& B) {
   CHECK_EQ(A.d1,B.d0, "matrix multiplication: wrong dimensions");
@@ -1386,9 +1386,9 @@ void blas_MM(arr& X, const arr& A, const arr& B) {
               B.p, B.d1,
               0., X.p, X.d1);
 #if 0//test
-  mlr::useLapack=false;
+  rai::useLapack=false;
   std::cout  <<"blas_MM error = " <<maxDiff(A*B, X, 0) <<std::endl;
-  mlr::useLapack=true;
+  rai::useLapack=true;
 #endif
 }
 
@@ -1402,9 +1402,9 @@ void blas_A_At(arr& X, const arr& A) {
               0., X.p, X.d1);
   for(uint i=0; i<n; i++) for(uint j=0; j<i; j++) X.p[i*n+j] = X.p[j*n+i]; //fill in the lower triangle
 #if 0//test
-  mlr::useLapack=false;
+  rai::useLapack=false;
   std::cout  <<"blas_MM error = " <<maxDiff(A*~A, X, 0) <<std::endl;
-  mlr::useLapack=true;
+  rai::useLapack=true;
 #endif
 }
 
@@ -1418,9 +1418,9 @@ void blas_At_A(arr& X, const arr& A) {
               0., X.p, X.d1);
   for(uint i=0; i<n; i++) for(uint j=0; j<i; j++) X.p[i*n+j] = X.p[j*n+i]; //fill in the lower triangle
 #if 0//test
-  mlr::useLapack=false;
+  rai::useLapack=false;
   std::cout  <<"blas_MM error = " <<maxDiff(~A*A, X, 0) <<std::endl;
-  mlr::useLapack=true;
+  rai::useLapack=true;
 #endif
 }
 
@@ -1435,9 +1435,9 @@ void blas_Mv(arr& y, const arr& A, const arr& x) {
               x.p, 1,
               0., y.p, 1);
 #if 0 //test
-  mlr::useLapack=false;
+  rai::useLapack=false;
   std::cout  <<"blas_Mv error = " <<maxDiff(A*x, y, 0) <<std::endl;
-  mlr::useLapack=true;
+  rai::useLapack=true;
 #endif
 }
 
@@ -1460,12 +1460,12 @@ void blas_MsymMsym(arr& X, const arr& A, const arr& B) {
 #endif
 }
 
-#endif //MLR_NOBLAS
+#endif //RAI_NOBLAS
 
 arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
   arr x;
   if(b.nd==2){ //b is a matrix (unusual) repeat for each col:
-    MLR_MSG("TODO: directly call lapack with the matrix!")
+    RAI_MSG("TODO: directly call lapack with the matrix!")
     arr bT = ~b;
     x.resizeAs(bT);
     for(uint i=0;i<bT.d0;i++) x[i]() = lapack_Ainv_b_sym(A, bT[i]);
@@ -1493,7 +1493,7 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
   if(INFO) {
 #if 1
     uint k=(N>3?3:N); //number of required eigenvalues
-    mlr::Array<integer> IWORK(5*N), IFAIL(N);
+    rai::Array<integer> IWORK(5*N), IFAIL(N);
     arr WORK(10*(3*N)), Acopy=A;
     integer M, IL=1, IU=k, LDQ=0, LDZ=1, LWORK=WORK.N;
     double VL=0., VU=0., ABSTOL=1e-8;
@@ -1511,9 +1511,9 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
     arr sig, eig;
     lapack_EigenDecomp(A, sig, eig);
 #endif
-    mlr::errString <<"lapack_Ainv_b_sym error info = " <<INFO
+    rai::errString <<"lapack_Ainv_b_sym error info = " <<INFO
                   <<". Typically this is because A is not pos-def.\nsmallest "<<k<<" eigenvalues=" <<sig;
-    throw(mlr::errString.p);
+    throw(rai::errString.p);
 //    THROW("lapack_Ainv_b_sym error info = " <<INFO
 //         <<". Typically this is because A is not pos-def.\nsmallest "<<k<<" eigenvalues=" <<sig);
   }
@@ -1580,7 +1580,7 @@ void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs) {
 arr lapack_kSmallestEigenValues_sym(const arr& A, uint k){
   if(k>A.d0) k=A.d0; //  CHECK(k<=A.d0,"");
   integer N=A.d0, KD=A.d1-1, LDAB=A.d1, INFO;
-  mlr::Array<integer> IWORK(5*N), IFAIL(N);
+  rai::Array<integer> IWORK(5*N), IFAIL(N);
   arr WORK(10*(3*N)), Acopy=A;
   integer M, IL=1, IU=k, LDQ=0, LDZ=1, LWORK=WORK.N;
   double VL=0., VU=0., ABSTOL=1e-8;
@@ -1634,7 +1634,7 @@ void lapack_mldivide(arr& X, const arr& A, const arr& B) {
   X = ~B;
   arr LU = ~A;
   integer N = A.d0, NRHS = (B.nd==1?1:B.d1), LDA = A.d1, INFO;
-  mlr::Array<integer> IPIV(N);
+  rai::Array<integer> IPIV(N);
 
   dgesv_(&N, &NRHS, LU.p, &LDA, IPIV.p, X.p, &LDA, &INFO);
   CHECK(!INFO, "LAPACK gaussian elemination error info = " <<INFO);
@@ -1727,13 +1727,13 @@ dtrtri = invert triangular
 dlauum = multiply L'*L
 */
 
-#else //if defined MLR_LAPACK
-#if !defined MLR_MSVC && defined MLR_NOCHECK
-#  warning "MLR_LAPACK undefined - using inefficient implementations"
+#else //if defined RAI_LAPACK
+#if !defined RAI_MSVC && defined RAI_NOCHECK
+#  warning "RAI_LAPACK undefined - using inefficient implementations"
 #endif
-void blas_MM(arr& X, const arr& A, const arr& B) { mlr::useLapack=false; innerProduct(X, A, B); };
-void blas_MsymMsym(arr& X, const arr& A, const arr& B) { mlr::useLapack=false; innerProduct(X, A, B); };
-void blas_Mv(arr& y, const arr& A, const arr& x) {       mlr::useLapack=false; innerProduct(y, A, x); mlr::useLapack=true; };
+void blas_MM(arr& X, const arr& A, const arr& B) { rai::useLapack=false; innerProduct(X, A, B); };
+void blas_MsymMsym(arr& X, const arr& A, const arr& B) { rai::useLapack=false; innerProduct(X, A, B); };
+void blas_Mv(arr& y, const arr& A, const arr& x) {       rai::useLapack=false; innerProduct(y, A, x); rai::useLapack=true; };
 void blas_A_At(arr& X, const arr& A) { NICO }
 void blas_At_A(arr& X, const arr& A) { NICO }
 void lapack_cholesky(arr& C, const arr& A) { NICO }
@@ -2096,7 +2096,7 @@ arr comp_A_x(const arr& A, const arr& x) {
 // conv with Eigen
 //
 
-#ifdef MT_EIGEN
+#ifdef RAI_EIGEN
 
 arr conv_eigen2arr(const Eigen::MatrixXd& in) {
   arr out(in.rows(), in.cols());
@@ -2250,43 +2250,43 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
 //#undef T
 //#undef NOFLOAT
 
-template mlr::Array<mlr::String>::Array();
-template mlr::Array<mlr::String>::~Array();
+template rai::Array<rai::String>::Array();
+template rai::Array<rai::String>::~Array();
 
-template mlr::Array<mlr::String*>::Array();
-template mlr::Array<mlr::String*>::~Array();
+template rai::Array<rai::String*>::Array();
+template rai::Array<rai::String*>::~Array();
 
 template arrL::Array();
 template arrL::Array(uint);
 template arrL::~Array();
 
-template mlr::Array<char const*>::Array();
-template mlr::Array<char const*>::Array(uint);
-template mlr::Array<char const*>::~Array();
+template rai::Array<char const*>::Array();
+template rai::Array<char const*>::Array(uint);
+template rai::Array<char const*>::~Array();
 
-template mlr::Array<uintA>::Array();
-template mlr::Array<uintA>::Array(uint);
-template mlr::Array<uintA>::~Array();
+template rai::Array<uintA>::Array();
+template rai::Array<uintA>::Array(uint);
+template rai::Array<uintA>::~Array();
 
-template mlr::Array<arr>::Array();
-template mlr::Array<arr>::Array(uint);
-template mlr::Array<arr>::~Array();
+template rai::Array<arr>::Array();
+template rai::Array<arr>::Array(uint);
+template rai::Array<arr>::~Array();
 
 #include "util.tpp"
 
-template mlr::Array<double> mlr::getParameter<arr>(char const*);
-template mlr::Array<double> mlr::getParameter<arr>(char const*, const arr&);
-template mlr::Array<float> mlr::getParameter<floatA>(char const*);
-template mlr::Array<uint> mlr::getParameter<uintA>(char const*);
-template bool mlr::checkParameter<arr>(char const*);
-template void mlr::getParameter(uintA&, const char*, const uintA&);
+template rai::Array<double> rai::getParameter<arr>(char const*);
+template rai::Array<double> rai::getParameter<arr>(char const*, const arr&);
+template rai::Array<float> rai::getParameter<floatA>(char const*);
+template rai::Array<uint> rai::getParameter<uintA>(char const*);
+template bool rai::checkParameter<arr>(char const*);
+template void rai::getParameter(uintA&, const char*, const uintA&);
 
 void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 
-//namespace mlr{
-//template<> template<> Array<mlr::String>::Array(std::initializer_list<const char*> list) {
+//namespace rai{
+//template<> template<> Array<rai::String>::Array(std::initializer_list<const char*> list) {
 //  init();
-//  for(const char* t : list) append(mlr::String(t));
+//  for(const char* t : list) append(rai::String(t));
 //}
 //}
 

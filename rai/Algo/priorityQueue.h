@@ -29,19 +29,19 @@ template<class T> bool operator<=(const PriorityQueueEntry<T>& a, const Priority
   return a.p <= b.p;
 }
 
-template<class T> struct PriorityQueue : mlr::Array<PriorityQueueEntry<T> > {
+template<class T> struct PriorityQueue : rai::Array<PriorityQueueEntry<T> > {
   PriorityQueue(){
-    mlr::Array<PriorityQueueEntry<T> >::memMove = true;
+    rai::Array<PriorityQueueEntry<T> >::memMove = true;
   }
 
   void add(double p, const T& x, bool fromBackIfEqual=false){ //'fromBack=true' makes it a FIFO (breadth first search); otherwise LIFO (depth first search)
     PriorityQueueEntry<T> e = {p, x};
-    mlr::Array<PriorityQueueEntry<T> >::insertInSorted(e, PriorityQueueEntry<T>::cmp, fromBackIfEqual);
+    rai::Array<PriorityQueueEntry<T> >::insertInSorted(e, PriorityQueueEntry<T>::cmp, fromBackIfEqual);
   }
 
   T pop(){
-    T x=mlr::Array<PriorityQueueEntry<T> >::first().x;
-    mlr::Array<PriorityQueueEntry<T> >::remove(0);
+    T x=rai::Array<PriorityQueueEntry<T> >::first().x;
+    rai::Array<PriorityQueueEntry<T> >::remove(0);
     return x;
   }
 

@@ -23,10 +23,10 @@ extern "C"{
 namespace {
     const char* DEFAULT_CONTAINER = "avi";
 }
-using namespace mlr;
+using namespace rai;
 
 struct sVideoEncoder_libav_simple{
-    mlr::String filename;
+    rai::String filename;
     double fps;
     bool isOpen;
 

@@ -9,7 +9,7 @@
 #ifndef _POINTCLOUD_H__
 #define _POINTCLOUD_H__
 
-#ifdef MLR_PCL
+#ifdef RAI_PCL
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -22,10 +22,10 @@
 SET_LOG(pointcloud, INFO)
 
 typedef pcl::PointXYZRGBA PointT;
-typedef mlr::Array<pcl::PointCloud<PointT>::Ptr> PointCloudL;
+typedef rai::Array<pcl::PointCloud<PointT>::Ptr> PointCloudL;
 typedef pcl::PointCloud<PointT>::Ptr FittingJob;
 typedef pcl::ModelCoefficients::Ptr FittingResult;
-typedef mlr::Array<FittingResult> FittingResultL;
+typedef rai::Array<FittingResult> FittingResultL;
 const int RADIUS = 2;
 const int HEIGHT = 3;
 
@@ -36,13 +36,13 @@ struct ObjectBelief {
   }
   //pose
   // TODO: make pointers
-  mlr::Vector position;
-  mlr::Quaternion rotation;
+  rai::Vector position;
+  rai::Quaternion rotation;
 
   arr poseCov;
 
   // primitive shapes
-  mlr::ShapeType shapeType;
+  rai::ShapeType shapeType;
   arr shapeParams;
 
   // TODO: make pointer, such that the using app does not need to implicitly
@@ -54,7 +54,7 @@ struct ObjectBelief {
   uintA triangles;
 };
 
-typedef mlr::Array<ObjectBelief*> ObjectBeliefSet;
+typedef rai::Array<ObjectBelief*> ObjectBeliefSet;
 typedef pcl::PointCloud<PointT>::Ptr PointCloudVar;
 typedef PointCloudL PointCloudSet;
 typedef FittingResultL ObjectSet;
@@ -103,9 +103,9 @@ struct ObjectTransformator : public Module {
   void close() {}
 
   VAR(ObjectBeliefSet, kinect_objects)
-  VAR(mlr::KinematicWorld, geoState)
-  mlr::KinematicWorld geo;
+  VAR(rai::KinematicWorld, geoState)
+  rai::KinematicWorld geo;
 };
 
-#endif // MLR_PCL
+#endif // RAI_PCL
 #endif // _POINTCLOUD_H__

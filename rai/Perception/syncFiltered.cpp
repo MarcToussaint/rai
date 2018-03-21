@@ -36,7 +36,7 @@ void SyncFiltered::step(){
 
   // delete non-existing bodies
   outputWorld.writeAccess();
-  for(mlr::Frame *b:outputWorld().frames){
+  for(rai::Frame *b:outputWorld().frames){
     if(b->name.startsWith("perc_")){
       uint id;
       b->name.resetIstream();

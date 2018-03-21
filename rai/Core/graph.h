@@ -11,8 +11,8 @@
 /// @addtogroup group_Core
 /// @{
 
-#ifndef MLR_graph_h
-#define MLR_graph_h
+#ifndef RAI_graph_h
+#define RAI_graph_h
 
 #include "array.h"
 #include <map>
@@ -26,8 +26,8 @@ struct Graph;
 struct ParseInfo;
 struct RenderingInfo;
 struct GraphEditCallback;
-typedef mlr::Array<Node*> NodeL;
-typedef mlr::Array<GraphEditCallback*> GraphEditCallbackL;
+typedef rai::Array<Node*> NodeL;
+typedef rai::Array<GraphEditCallback*> GraphEditCallbackL;
 extern NodeL& NoNodeL; //this is a reference to NULL! (for optional arguments)
 extern Graph& NoGraph; //this is a reference to NULL! (for optional arguments)
 
@@ -99,7 +99,7 @@ struct Graph : NodeL {
   explicit Graph(const char* filename);                  ///< read from a file
   explicit Graph(istream& is);                           ///< read from a stream
   Graph(const std::map<std::string, std::string>& dict); ///< useful to represent Python dicts
-  Graph(std::initializer_list<struct Nod> list);         ///< initialize, e.g.: {"x", "b", {"a", 3.}, {"b", {"x"}, 5.}, {"c", mlr::String("BLA")} };
+  Graph(std::initializer_list<struct Nod> list);         ///< initialize, e.g.: {"x", "b", {"a", 3.}, {"b", {"x"}, 5.}, {"c", rai::String("BLA")} };
   Graph(const Graph& G);                                 ///< copy constructor
   ~Graph();
 
@@ -155,7 +155,7 @@ struct Graph : NodeL {
   template<class T> T& getNew(const StringA &keys);
 
   //-- get lists of all values of a certain type T (or derived from T)
-  template<class T> mlr::Array<T*> getValuesOfType(const char* key=NULL);
+  template<class T> rai::Array<T*> getValuesOfType(const char* key=NULL);
   
   //-- editing nodes
   Node *edit(Node *ed); ///< ed describes how another node should be edited; ed is removed after editing is done
@@ -175,7 +175,7 @@ struct Graph : NodeL {
   RenderingInfo& getRenderingInfo(Node *n);
 
   void read(std::istream& is, bool parseInfo=false);
-  Node* readNode(std::istream& is, bool verbose=false, bool parseInfo=false, mlr::String prefixedKey=mlr::String()); //used only internally..
+  Node* readNode(std::istream& is, bool verbose=false, bool parseInfo=false, rai::String prefixedKey=rai::String()); //used only internally..
   void readJson(std::istream& is);
   void write(std::ostream& os=std::cout, const char *ELEMSEP="\n", const char *delim=NULL) const;
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0, int focusIndex=-1);
@@ -209,7 +209,7 @@ struct GraphEditCallback {
 /// To associate additional objects with each node, this simple array stores such
 /// objects, resizes automatically and is accessible by node pointer
 template<class T>
-struct ArrayG : mlr::Array<T*>, GraphEditCallback {
+struct ArrayG : rai::Array<T*>, GraphEditCallback {
   //why a list: the cb_new/delete call insert/remove, which requires memMove
   Graph& G;
   ArrayG(Graph& _G):G(_G){
@@ -236,7 +236,7 @@ struct ArrayG : mlr::Array<T*>, GraphEditCallback {
 //===========================================================================
 
 #define GRAPH(str) \
-  Graph(mlr::String(str).stream())
+  Graph(rai::String(str).stream())
 
 #ifndef _NUMARGS
 #  define _NUMARGS2(X,X64,X63,X62,X61,X60,X59,X58,X57,X56,X55,X54,X53,X52,X51,X50,X49,X48,X47,X46,X45,X44,X43,X42,X41,X40,X39,X38,X37,X36,X35,X34,X33,X32,X31,X30,X29,X28,X27,X26,X25,X24,X23,X22,X21,X20,X19,X18,X17,X16,X15,X14,X13,X12,X11,X10,X9,X8,X7,X6,X5,X4,X3,X2,X1,N,...) N
@@ -281,7 +281,7 @@ NodeL neighbors(Node*);
 
 /// annotations to a node for rendering; esp dot
 struct RenderingInfo{
-  mlr::String dotstyle;
+  rai::String dotstyle;
   bool skip;
   RenderingInfo() : skip(false){}
   void write(ostream& os) const{ os <<dotstyle; }
@@ -303,7 +303,7 @@ struct Type_typed_readable:Type_typed<T> {
   virtual Node* readIntoNewNode(Graph& container, std::istream& is) const { Node_typed<T> *n = container.newNode<T>(T(0)); is >>n->value; return n; }
 };
 
-typedef mlr::Array<std::shared_ptr<Type> > TypeInfoL;
+typedef rai::Array<std::shared_ptr<Type> > TypeInfoL;
 
 //===========================================================================
 //===========================================================================
@@ -409,8 +409,8 @@ template<class T> std::shared_ptr<T> Node::getPtr() const {
 }
 
 template<class T> bool Node::getFromString(T& x) const{
-  if(!isOfType<mlr::String>()) return false;
-  mlr::String str = get<mlr::String>();
+  if(!isOfType<rai::String>()) return false;
+  rai::String str = get<rai::String>();
   str >>x;
   if(str.stream().good()) return true;
   return false;
@@ -460,7 +460,7 @@ template<class T> const T& Graph::get(const char *key, const T& defaultValue) co
 template<class T> bool Graph::get(T& x, const StringA &keys) const {
   Node *n = findNodeOfType(typeid(T), keys);
   if(!n){
-    n = findNodeOfType(typeid(mlr::String), keys);
+    n = findNodeOfType(typeid(rai::String), keys);
     if(!n) return false;
     return n->getFromString<T>(x);
   }
@@ -468,11 +468,11 @@ template<class T> bool Graph::get(T& x, const StringA &keys) const {
   return true;
 }
 
-template<class T> mlr::Array<T*> Graph::getValuesOfType(const char* key) {
+template<class T> rai::Array<T*> Graph::getValuesOfType(const char* key) {
   NodeL nodes;
   if(!key) nodes = findNodesOfType(typeid(T));
   else nodes = findNodesOfType(typeid(T), {key});
-  mlr::Array<T*> ret;
+  rai::Array<T*> ret;
   for(Node *n: nodes) ret.append(n->getValue<T>());
   return ret;
 }
@@ -494,7 +494,7 @@ template<class T> Node_typed<T> *Graph::newNode(const T& x){
 // macro for declaring types (in *.cpp files)
 #define REGISTER_TYPE(Key, T) \
   RUN_ON_INIT_BEGIN(Decl_Type##_##Key) \
-  registry()->newNode<std::shared_ptr<Type> >({mlr::String("Decl_Type"), mlr::String(#Key)}, NodeL(), std::make_shared<Type_typed_readable<T> >()); \
+  registry()->newNode<std::shared_ptr<Type> >({rai::String("Decl_Type"), rai::String(#Key)}, NodeL(), std::make_shared<Type_typed_readable<T> >()); \
   RUN_ON_INIT_END(Decl_Type##_##Key)
 
 #endif

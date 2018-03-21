@@ -24,26 +24,26 @@ struct RelationalMachine{
   Graph KB;     ///< knowledge base
   Graph *state; ///< the state within the KB (is a subgraph item of KB)
   Graph *tmp;   ///< a tmp subgraph of the KB (private)
-  mlr::LogObject _log;
+  rai::LogObject _log;
 
   RelationalMachine();
   RelationalMachine(const char* filename);
   void init(const char* filename);
 
-  bool queryCondition(mlr::String query) const; ///< return indicates coverage of the condition
-  bool applyEffect(mlr::String effect, bool fwdChain=false);   ///< return indicates change of state
+  bool queryCondition(rai::String query) const; ///< return indicates coverage of the condition
+  bool applyEffect(rai::String effect, bool fwdChain=false);   ///< return indicates change of state
   bool applyEffect(Node* literal, bool fwdChain=false);
   NodeL fwdChainRules();                 ///< progresses the state by applying all rules until convergence
 
-  Node* declareNewSymbol(mlr::String symbolStr);
-  mlr::String getKB();
-  mlr::String getState() const;
-  mlr::String getRules() const;
+  Node* declareNewSymbol(rai::String symbolStr);
+  rai::String getKB();
+  rai::String getState() const;
+  rai::String getRules() const;
   StringA getSymbols() const;
 };
 
 inline RelationalMachine& operator<<(RelationalMachine& RM, const char* effect){
-  RM.applyEffect(mlr::String(effect));
+  RM.applyEffect(rai::String(effect));
   return RM;
 }
 

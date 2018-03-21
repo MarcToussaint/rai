@@ -20,17 +20,17 @@ arr pr2_zero_pose(){
   return q;
 }
 
-arr pr2_reasonable_W(const mlr::KinematicWorld& world){
+arr pr2_reasonable_W(const rai::KinematicWorld& world){
 #if 0
   arr W = world.naturalQmetric(5.);
-  mlr::Joint *j = world.getJointByName("torso_lift_joint");
+  rai::Joint *j = world.getJointByName("torso_lift_joint");
   if(j){
-    CHECK_EQ(j->type , mlr::JT_transX, "");
+    CHECK_EQ(j->type , rai::JT_transX, "");
     W(j->qIndex) *= 10;
   }
   j = world.getJointByName("worldTranslationRotation");
   if(j){
-    CHECK_EQ(j->type , mlr::JT_transXYPhi, "");
+    CHECK_EQ(j->type , rai::JT_transXYPhi, "");
     W(j->qIndex+0) *= 3;
     W(j->qIndex+1) *= 3;
 //    W(j->qIndex+2) *= 10;
@@ -41,15 +41,15 @@ arr pr2_reasonable_W(const mlr::KinematicWorld& world){
 #endif
 }
 
-uintA _get_shape_indices(mlr::Body* b) {
+uintA _get_shape_indices(rai::Body* b) {
   uintA idx;
-  for(mlr::Shape *s : b->shapes) {
+  for(rai::Shape *s : b->shapes) {
     idx.append(s->index); 
   }
   return idx;
 }
 
-mlr::Array<const char*> pr2_left_get_bodynames() {
+rai::Array<const char*> pr2_left_get_bodynames() {
   return { 
     "base_footprint",
     "torso_lift_link",
@@ -67,7 +67,7 @@ mlr::Array<const char*> pr2_left_get_bodynames() {
   };
 }
 
-mlr::Array<const char*> pr2_full_get_bodynames() {
+rai::Array<const char*> pr2_full_get_bodynames() {
   return { 
     "base_footprint",
     "fl_caster_rotation_link",
@@ -112,7 +112,7 @@ mlr::Array<const char*> pr2_full_get_bodynames() {
     
 }
 
-mlr::Array<const char*> pr2_get_joints() {
+rai::Array<const char*> pr2_get_joints() {
   return {    
     "worldTranslationRotation",
       "torso_lift_joint",
@@ -145,8 +145,8 @@ mlr::Array<const char*> pr2_get_joints() {
       "l_gripper_joint"};
 }
 
-uintA pr2_get_shapes(const mlr::KinematicWorld &G) {
-  mlr::Array<const char*> bodynames = pr2_left_get_bodynames();
+uintA pr2_get_shapes(const rai::KinematicWorld &G) {
+  rai::Array<const char*> bodynames = pr2_left_get_bodynames();
   uintA shape_idx;
   for (const char* bodyname: bodynames) {
     shape_idx.append(_get_shape_indices(G.getBodyByName(bodyname)));

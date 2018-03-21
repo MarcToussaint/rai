@@ -10,7 +10,7 @@
 
 //===========================================================================
 
-void TM_qLimits::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
+void TM_qLimits::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t) {
 //  if(!limits.N)
       limits=G.getLimits(); //G might change joint ordering (kinematic switches), need to query limits every time
   G.kinematicsLimitsCost(y, J, limits);
@@ -18,7 +18,7 @@ void TM_qLimits::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
 
 //===========================================================================
 
-void LimitsConstraint::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
+void LimitsConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t){
 //  if(!limits.N)
       limits = G.getLimits();
   G.kinematicsLimitsCost(y, J, limits, margin);

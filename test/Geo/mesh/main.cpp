@@ -16,7 +16,7 @@ void drawInit(void*){
 
 void TEST(Sphere) {
   OpenGL gl;
-  mlr::Mesh mesh;
+  rai::Mesh mesh;
 
   //MeshSetTetrahedron(mesh);
   //MeshSetOctahedron(mesh);
@@ -39,7 +39,7 @@ void TEST(Sphere) {
 
 void TEST(Meshes) {
   OpenGL gl;
-  mlr::Mesh mesh;
+  rai::Mesh mesh;
   mesh.readStlFile(FILE("../../../../rai-robotModels/pr2/head_v0/head_pan.stl"));
   gl.add(drawInit,0);
   gl.add(mesh);
@@ -59,7 +59,7 @@ void TEST(Meshes) {
 //===========================================================================
 
 void TEST(Meshes2) {
-  mlr::Mesh mesh1,mesh2;
+  rai::Mesh mesh1,mesh2;
   OpenGL gl;
   gl.add(drawInit,0);
   gl.add(mesh1);
@@ -77,7 +77,7 @@ void TEST(Meshes2) {
 //===========================================================================
 
 void TEST(Meshes3) {
-  mlr::Mesh mesh;
+  rai::Mesh mesh;
   OpenGL gl;
   gl.add(drawInit,0);
   gl.add(mesh);
@@ -95,9 +95,9 @@ void TEST(Meshes3) {
 
 //===========================================================================
 
-mlr::Mesh m1, m2;
-mlr::Transformation t1, t2;
-mlr::Vector p1, p2;
+rai::Mesh m1, m2;
+rai::Transformation t1, t2;
+rai::Vector p1, p2;
 
 void drawGJK(void*){
   glDisable(GL_DEPTH_TEST);
@@ -148,13 +148,13 @@ void TEST(GJK) {
 //===========================================================================
 
 void TEST(Volume){
-  mlr::Mesh m;
+  rai::Mesh m;
   for(uint k=1;k<10;k++){
     cout <<"sphere fineness " <<k <<endl;
     m.setSphere(k);
     double A=m.getArea(), V=m.getVolume();
-    cout <<"area  = " <<A<<" error=" <<4.*MLR_PI-A <<endl;
-    cout <<"volume= " <<V<<" error=" <<4./3.*MLR_PI-V <<endl;
+    cout <<"area  = " <<A<<" error=" <<4.*RAI_PI-A <<endl;
+    cout <<"volume= " <<V<<" error=" <<4./3.*RAI_PI-V <<endl;
     cout  <<endl;
   }
   //cout <<"\ncircum=" <<m.getCircum() <<endl;
@@ -163,14 +163,14 @@ void TEST(Volume){
 //===========================================================================
 
 void TEST(DistanceFunctions) {
-  mlr::Transformation t;
+  rai::Transformation t;
   t.setRandom();
-  mlr::Mesh m;
+  rai::Mesh m;
   OpenGL gl;
   gl.add(glStandardScene,NULL);
   gl.add(m);
 
-  mlr::Array<ScalarFunction*> fcts = {
+  rai::Array<ScalarFunction*> fcts = {
     new DistanceFunction_Sphere(t, 1.),
     new DistanceFunction_Box(t, 1., 2., 3., 1.),
     new DistanceFunction_Cylinder(t, 1., 2.)
@@ -253,12 +253,12 @@ ScalarFunction cylinder = [](arr&,arr&, const arr& X){
   };
 
 void TEST(SimpleImplicitSurfaces) {
-  mlr::Mesh m;
+  rai::Mesh m;
   OpenGL gl;
   gl.add(glStandardScene,NULL);
   gl.add(m);
 
-  mlr::Array<ScalarFunction*> fcts = {&blobby, &sphere, &torus, &cylinder};
+  rai::Array<ScalarFunction*> fcts = {&blobby, &sphere, &torus, &cylinder};
 
   for(ScalarFunction* f: fcts){
     m.setImplicitSurface(*f,-10.,10.,100);
@@ -269,7 +269,7 @@ void TEST(SimpleImplicitSurfaces) {
 //===========================================================================
 
 int MAIN(int argc, char** argv){
-  mlr::initCmdLine(argc, argv);
+  rai::initCmdLine(argc, argv);
 
   testSphere();
   testMeshes();

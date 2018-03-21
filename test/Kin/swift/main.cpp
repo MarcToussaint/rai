@@ -4,7 +4,7 @@
 #include <Kin/frame.h>
 
 void TEST(Swift) {
-  mlr::KinematicWorld K("swift_test.g");
+  rai::KinematicWorld K("swift_test.g");
 
   K.swift().setCutoff(2.);
   K.stepSwift();
@@ -21,12 +21,12 @@ void TEST(Swift) {
     K.reportProxies();
 
     K.watch(true);
-    mlr::wait(.1);
+    rai::wait(.1);
   }
 }
 
 void TEST(CollisionTiming){
-  mlr::KinematicWorld K("../../../../rai-robotModels/pr2/pr2.g");
+  rai::KinematicWorld K("../../../../rai-robotModels/pr2/pr2.g");
 
   K.swift().setCutoff(1.);
 
@@ -34,7 +34,7 @@ void TEST(CollisionTiming){
 
   arr q0,q;
   K.getJointState(q0);
-  mlr::timerStart();
+  rai::timerStart();
   uint t;
   for(t=0;t<1000;t++){
     if(!(t%1)){ q = q0;  rndGauss(q,.1,true); }
@@ -44,14 +44,14 @@ void TEST(CollisionTiming){
 //    G.watch(false);
 //    G.watch(true);
   }
-  double time = mlr::timerRead();
+  double time = rai::timerRead();
   cout <<t <<" collision queries: sec=" <<time <<endl;
   CHECK(time>0.01 && time<1.,"strange time for collision checking!");
 }
 
 
 int MAIN(int argc, char** argv){
-  mlr::initCmdLine(argc, argv);
+  rai::initCmdLine(argc, argv);
 
   testSwift();
 //  testCollisionTiming();

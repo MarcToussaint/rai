@@ -10,8 +10,8 @@
 
 #include <Core/thread.h>
 
-namespace mlr { struct Mesh; }
-typedef mlr::Array<mlr::Mesh> MeshA;
+namespace rai { struct Mesh; }
+typedef rai::Array<rai::Mesh> MeshA;
 
 struct ImageViewer : Thread {
   struct sImageViewer *s;

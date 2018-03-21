@@ -15,7 +15,7 @@
 //
 
 
-namespace mlr{
+namespace rai{
 
 Spline::Spline(uint degree) : degree(degree){}
 
@@ -252,4 +252,4 @@ void Path::transform_CurrentBecomes_AllFollow(const arr& current, double t){
   for(uint i=0;i<points.d0;i++) points[i]() += delta;
 }
 
-} //namespace mlr
+} //namespace rai

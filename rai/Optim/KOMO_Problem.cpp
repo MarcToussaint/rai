@@ -45,7 +45,7 @@ void KOMO_Problem::report(const arr& phi){
   cout <<"KOMO Problem report:  k=" <<k <<"  Features:" <<endl;
   for(uint i=0;i<featureTimes.N;i++){
     cout <<i <<" t=" <<featureTimes(i) <<" vardim=" <<variableDimensions(featureTimes(i)) <<" type=" <<featureTypes(i);
-    if(&phi) cout <<" phi=" <<phi(i) <<" phi^2=" <<mlr::sqr(phi(i));
+    if(&phi) cout <<" phi=" <<phi(i) <<" phi^2=" <<rai::sqr(phi(i));
     cout <<endl;
   }
 }

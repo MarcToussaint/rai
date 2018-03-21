@@ -22,7 +22,7 @@
 struct OrsSceneGui {
   struct sOrsSceneGui *s;
   
-  OrsSceneGui(mlr::KinematicWorld& ors, OpenGL *gl=NULL);
+  OrsSceneGui(rai::KinematicWorld& ors, OpenGL *gl=NULL);
   
   void edit();
   

@@ -11,12 +11,12 @@
 #include "frame.h"
 #include "contact.h"
 
-void TM_ContactConstraints::phi(arr &y, arr &J, const mlr::KinematicWorld &K, int t){
+void TM_ContactConstraints::phi(arr &y, arr &J, const rai::KinematicWorld &K, int t){
   uint C=0;
   arr yc, Jc;
   y.clear();
   if(&J) J.clear();
-  for(mlr::Frame *f:K.frames) if(f->contacts.N) for(mlr::Contact *c:f->contacts) if(&c->a==f){
+  for(rai::Frame *f:K.frames) if(f->contacts.N) for(rai::Contact *c:f->contacts) if(&c->a==f){
 //    TaskMap *map = c->getTM_ContactNegDistance();
     TaskMap *map = new TM_PairCollision(c->a.ID, c->b.ID, true);
     map->phi(yc, (&J?Jc:NoArr), K, t);
@@ -33,9 +33,9 @@ void TM_ContactConstraints::phi(arr &y, arr &J, const mlr::KinematicWorld &K, in
   if(&J) J.reshape(y.N, K.q.N);
 }
 
-uint TM_ContactConstraints::dim_phi(const mlr::KinematicWorld &K){
+uint TM_ContactConstraints::dim_phi(const rai::KinematicWorld &K){
   uint C=0;
-  for(mlr::Frame *f:K.frames) if(f->contacts.N) for(mlr::Contact *c:f->contacts) if(&c->a==f){
+  for(rai::Frame *f:K.frames) if(f->contacts.N) for(rai::Contact *c:f->contacts) if(&c->a==f){
     C++;
   }
 //  if(!C){

@@ -1,7 +1,7 @@
-#ifdef MLR_EXPRESSIONS
+#ifdef RAI_EXPRESSIONS
 void assign(arr& x) {
   CHECK(x.ex, "self-assignment only if it is an expression");
-  mlr::Ex *e=x.ex;
+  rai::Ex *e=x.ex;
   x.init();
   x.ex=e;
   assign(x, x);
@@ -11,8 +11,8 @@ void assign(arr& x) {
 
 void assign(arr& x, const arr& a) {
   if(!a.ex) { x=a; return; }
-  mlr::Ex &e=*a.ex;
-  if(e.op==mlr::UNI) {
+  rai::Ex &e=*a.ex;
+  if(e.op==rai::UNI) {
     arr *A=(arr*)e.A;
     if(A->ex) assign(*A);
     if(!e.trans && e.mul==1 && e.add==0) { x=*A; return; }
@@ -27,23 +27,23 @@ void assign(arr& x, const arr& a) {
     //bool at, bt;
     //double ac, bc, ap, bp;
     switch(e.op) {
-      case mlr::PROD:
+      case rai::PROD:
         if(!A->ex && !B->ex) { innerProduct(x, *A, *B); return; }
         HALT("prod");
         break;
-      case mlr::MUL:
+      case rai::MUL:
         if(!A->ex && !B->ex) { mult(x, *A, *B); return; }
         HALT("mult");
         break;
-      case mlr::Div:
+      case rai::Div:
         if(!A->ex && !B->ex) { div(x, *A, *B); return; }
         HALT("mult");
         break;
-      case mlr::OUT:
+      case rai::OUT:
         if(!A->ex && !B->ex) { outerProduct(x, *A, *B); return; }
         HALT("out");
         break;
-      case mlr::PLUS:
+      case rai::PLUS:
         if(!A->ex && !B->ex) { plus(x, *A, *B); return; }
         //if(A->ex){ ap=A->ex->add; ac=A->ex->mul; at=A->ex->trans; A=(arr*)A->ex->A; }else{ ap=0; ac=1; at=false; }
         //if(B->ex){ bp=B->ex->add; bc=B->ex->mul; bt=B->ex->trans; B=(arr*)B->ex->A; }else{ bp=0; bc=1; bt=false; }
@@ -51,7 +51,7 @@ void assign(arr& x, const arr& a) {
         //if(!at && !bt && !B){ scalarPlus(x, *A, bc); return; }
         HALT("plus");
         break;
-      case mlr::MINUS:
+      case rai::MINUS:
         if(!A->ex && !B->ex) { minus(x, *A, *B); return; }
         //if(A->ex){ ap=A->ex->add; ac=A->ex->mul; at=A->ex->trans; A=(arr*)A->ex->A; }else{ ap=0; ac=1; at=false; }
         //if(B->ex){ bp=B->ex->add; bc=B->ex->mul; bt=B->ex->trans; B=(arr*)B->ex->A; }else{ bp=0; bc=1; bt=false; }
@@ -59,7 +59,7 @@ void assign(arr& x, const arr& a) {
         //if(!at && !bt && !B){ scalarPlus(x, *A, bc); return; }
         HALT("minus");
         break;
-      case mlr::UNI:
+      case rai::UNI:
         HALT("shouldn't be here!");
         break;
     }

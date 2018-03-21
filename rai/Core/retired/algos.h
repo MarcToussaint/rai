@@ -20,13 +20,13 @@
 /// @addtogroup group_Core
 /// @{
 
-#ifndef MLR_algos_h
-#define MLR_algos_h
+#ifndef RAI_algos_h
+#define RAI_algos_h
 
 #include "array.h"
 #include "util.h"
 
-namespace mlr {
+namespace rai {
 
 void normalizeData(arr& X);
 
@@ -240,7 +240,7 @@ public:
 /** An implementation of Partial Least Squares following the SIMPLS algorithm (de Jong).
     This PLS implementation finds an optimal linear regression (from n to m dimensions)
     by first calculating input projections `with higest correlation to the output'. This
-    implementation uses the Singular Value Decomposition routine mlr::svd and
+    implementation uses the Singular Value Decomposition routine rai::svd and
     the LinearStatistics. \ingroup regression */
 class PartialLeastSquares {
 public:
@@ -250,7 +250,7 @@ public:
   
   arr resErr; //the residual errors
   
-  mlr::Parameter<uint> maxProj;
+  rai::Parameter<uint> maxProj;
   
   PartialLeastSquares():maxProj("PLSmaxProjections", 0) { }
   

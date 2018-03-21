@@ -24,7 +24,7 @@ struct PhaseOptimization : KOrderMarkovFunction {
   uint kX;  // transition type of trajectory [1=vel,2=acc,3=jerk]
   double w; // weight of transition costs of phase
   uint T;
-  mlr::Spline* p;
+  rai::Spline* p;
 
   PhaseOptimization(arr &X, uint _kX, double _w=1.);
 

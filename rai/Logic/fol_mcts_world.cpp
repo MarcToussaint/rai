@@ -80,7 +80,7 @@ void FOL_World::init(istream& is){
   }
 
   if(verbFil){
-    mlr::open(fil, "z.FOL_World");
+    rai::open(fil, "z.FOL_World");
   }
 
   start_T_step=0;
@@ -220,7 +220,7 @@ MCTS_Environment::TransitionReturn FOL_World::transition(const Handle& action){
 const std::vector<FOL_World::Handle> FOL_World::get_actions(){
   CHECK(state, "you need to set the state first! (e.g., reset_state)");
   if(verbose>2) cout <<"****************** FOL_World: Computing possible decisions" <<flush;
-  mlr::Array<Handle> decisions; //tuples of rule and substitution
+  rai::Array<Handle> decisions; //tuples of rule and substitution
   if(hasWait){
     decisions.append(Handle(new Decision(true, NULL, {}, decisions.N))); //the wait decision (true as first argument, no rule, no substitution)
   }
@@ -355,7 +355,7 @@ void FOL_World::write_state(ostream& os){
   state->write(os," ","{}");
 }
 
-void FOL_World::set_state(mlr::String& s){
+void FOL_World::set_state(rai::String& s){
   state->clear();
   s >>"{";
   state->read(s);
@@ -397,7 +397,7 @@ Node* FOL_World::addSymbol(const char* name){
 
 void FOL_World::addFact(const StringA& symbols){
   NodeL parents;
-  for(const mlr::String& s:symbols){
+  for(const rai::String& s:symbols){
       Node *sym = KB[s];
       if(!sym) sym=addSymbol(s);
       parents.append(sym);
@@ -425,7 +425,7 @@ void FOL_World::addTerminalRule(const StringAA& literals){
 
   for(const StringA& lit:literals){
       NodeL parents;
-      for(const mlr::String& s:lit) parents.append(KB[s]);
+      for(const rai::String& s:lit) parents.append(KB[s]);
       preconditions.newNode<bool>({}, parents, true);
   }
 

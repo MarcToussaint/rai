@@ -24,9 +24,9 @@ Filter::~Filter(){
 }
 
 void Filter::open(){
-  Var<mlr::KinematicWorld> modelWorld(this, "modelWorld");
+  Var<rai::KinematicWorld> modelWorld(this, "modelWorld");
   modelWorld.readAccess();
-  for(mlr::Frame *b:modelWorld().frames){
+  for(rai::Frame *b:modelWorld().frames){
     if(b->ats["percept"]){
       //first check if it already is in the percept list
       bool done=false;
@@ -34,9 +34,9 @@ void Filter::open(){
       if(!done){
         LOG(0) <<"ADDING this body " <<b->name <<" to the percept database, which ats:" <<endl;
         LOG(0) <<*b <<"--" <<b->ats <<endl;
-        mlr::Shape *s=b->shape;
+        rai::Shape *s=b->shape;
         switch(s->type()){
-          case mlr::ST_box:{
+          case rai::ST_box:{
             Percept *p = new PercBox(b->X, s->size(), s->mesh().C);
             p->id = nextId++;
             p->bodyId = b->ID;
@@ -180,7 +180,7 @@ void Filter::step(){
   // create task costs on the modelWorld for each percept
   for(Percept *p:percepts_filtered()){
     if(p->bodyId>=0){
-      mlr::Frame *b = modelWorld->frames(p->bodyId);
+      rai::Frame *b = modelWorld->frames(p->bodyId);
       CtrlTask *t;
 
       t = new CtrlTask(STRING("syncPos_" <<b->name), new TM_Default(TMT_pos, b->ID));

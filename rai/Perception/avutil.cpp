@@ -14,7 +14,7 @@
 
 Mutex libav_open_mutex;
 
-namespace mlr {
+namespace rai {
 void register_libav() {
     Lock avlock(libav_open_mutex);
     av_register_all();

@@ -21,14 +21,14 @@
 //  //static arr conswit;
 //  //bool hasContact=false;
 //  bool addContactsToDynamics=false;
-//  mlr::KinematicWorld *G;
+//  rai::KinematicWorld *G;
 //}
 
 
 //---------- test standard dynamic control
 void TEST(Dynamics){
-//  mlr::KinematicWorld G("arm7.g");
-  mlr::KinematicWorld G("mypr2.g");
+//  rai::KinematicWorld G("arm7.g");
+  rai::KinematicWorld G("mypr2.g");
 //  G.meldFixedJoints();
 //  G.makeLinkTree();
   cout <<G <<endl;
@@ -57,7 +57,7 @@ void TEST(Dynamics){
   ofstream z("z.dyn");
   G.clearForces();
   G.watch();
-//  for(mlr::Body *b:G.bodies){ b->mass=1.; b->inertia.setZero(); }
+//  for(rai::Body *b:G.bodies){ b->mass=1.; b->inertia.setZero(); }
 
   for(t=0;t<T;t++){
     if(t>=500){ //hold steady
@@ -79,7 +79,7 @@ void TEST(Dynamics){
     }else{
       //cout <<q <<qd <<qdd <<' ' <<G.getEnergy() <<endl;
       arr x=cat(q,qd).reshape(2,q.N);
-      mlr::rk4_2ndOrder(x, x, diffEqn, dt);
+      rai::rk4_2ndOrder(x, x, diffEqn, dt);
       q=x[0]; qd=x[1];
       if(t>300){
         friction=true;
@@ -96,7 +96,7 @@ void TEST(Dynamics){
 // =============================================================================
 
 int MAIN(int argc,char **argv){
-  mlr::initCmdLine(argc, argv);
+  rai::initCmdLine(argc, argv);
 
   testDynamics();
 

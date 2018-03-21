@@ -18,7 +18,7 @@
 struct Filter : Thread{
   Var<PerceptL> percepts_input;
   Var<PerceptL> percepts_filtered;
-  Var<mlr::KinematicWorld> modelWorld;
+  Var<rai::KinematicWorld> modelWorld;
 
   Filter();
   ~Filter();

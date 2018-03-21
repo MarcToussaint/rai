@@ -6,12 +6,12 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef MLR_color_h
-#define MLR_color_h
+#ifndef RAI_color_h
+#define RAI_color_h
 
 #include <Core/util.h>
 
-namespace mlr {
+namespace rai {
 /// simple float[3] color class
 class Color {
 public:
@@ -155,6 +155,6 @@ public:
   void read(std::istream& is) { is >>PARSE("(") >>r >>PARSE(":") >>g >>PARSE(":") >>b >>PARSE(")"); }
 };
 }
-stdPipes(mlr::Color);
+stdPipes(rai::Color);
 
 #endif

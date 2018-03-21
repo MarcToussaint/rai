@@ -14,10 +14,10 @@ struct TM_AlignStacking : TaskMap {
   int i;               ///< which shapes does it refer to?
   TM_AlignStacking(int iShape=-1);
 
-  TM_AlignStacking(const mlr::KinematicWorld& G,
+  TM_AlignStacking(const rai::KinematicWorld& G,
                         const char* iShapeName=NULL);
 
-  virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1);
-  virtual uint dim_phi(const mlr::KinematicWorld& G){ return 2; }
-  virtual mlr::String shortTag(const mlr::KinematicWorld& G);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1);
+  virtual uint dim_phi(const rai::KinematicWorld& G){ return 2; }
+  virtual rai::String shortTag(const rai::KinematicWorld& G);
 };

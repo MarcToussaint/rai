@@ -34,10 +34,10 @@ struct Teleop2Tasks{
   CtrlTask *effPosR, *gripperR, *effOrientationR;
   CtrlTask *effPosL, *gripperL, *effOrientationL;
   CtrlTask *base, *fc;
-  Teleop2Tasks(TaskControlMethods& _MP, const mlr::KinematicWorld& K);
-  mlr::Array<CtrlTask*> getTasks();
+  Teleop2Tasks(TaskControlMethods& _MP, const rai::KinematicWorld& K);
+  rai::Array<CtrlTask*> getTasks();
   void updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effPos, CtrlTask *effPos);
   void deactivateTasks();
-  void updateTasks( floatA cal_pose_rh, floatA cal_pose_lh, float calibrated_gripper_lh, float calibrated_gripper_rh, arr drive, int button, const mlr::KinematicWorld& K);
+  void updateTasks( floatA cal_pose_rh, floatA cal_pose_lh, float calibrated_gripper_lh, float calibrated_gripper_rh, arr drive, int button, const rai::KinematicWorld& K);
 };
 

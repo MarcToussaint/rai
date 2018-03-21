@@ -9,7 +9,7 @@ using namespace std;
 //===========================================================================
 
 void TEST(Grasp){
-  mlr::KinematicWorld K("model.g");
+  rai::KinematicWorld K("model.g");
 //  K.optimizeTree(false);
   K.checkConsistency();
   FILE("z.g") <<K;
@@ -25,7 +25,7 @@ void TEST(Grasp){
 #if 0
   komo.setGrasp(1., "endeff", "stick");
 #else
-  komo.setKinematicSwitch(1., true, new mlr::KinematicSwitch(mlr::SW_effJoint, mlr::JT_quatBall, "endeff", "stickTip", K));
+  komo.setKinematicSwitch(1., true, new rai::KinematicSwitch(rai::SW_effJoint, rai::JT_quatBall, "endeff", "stickTip", K));
 //  setTask(time, time, new TM_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e2);
 //  komo.setTouch(1., 1., "endeff", "stick");
 #endif
@@ -49,7 +49,7 @@ void TEST(Grasp){
 //===========================================================================
 
 int main(int argc,char** argv){
-  mlr::initCmdLine(argc,argv);
+  rai::initCmdLine(argc,argv);
 
   testGrasp();
 

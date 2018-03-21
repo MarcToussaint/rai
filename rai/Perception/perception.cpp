@@ -13,7 +13,7 @@
 #include <Core/util.tpp>
 #include <Gui/opengl.h>
 
-void lib_Perception(){ MLR_MSG("loading"); }
+void lib_Perception(){ RAI_MSG("loading"); }
 
 //REGISTER_MODULE (PointCloudViewer)
 //REGISTER_MODULE (VideoEncoder)
@@ -29,7 +29,7 @@ void lib_Perception(){ MLR_MSG("loading"); }
 //
 
 struct sVideoEncoder{
-  mlr::String filename;
+  rai::String filename;
   VideoEncoder_libav_simple video;
   ofstream timeTagFile;
   byteA buffer;
@@ -40,7 +40,7 @@ struct sVideoEncoder{
 };
 
 void VideoEncoder::open(){
-  s = new sVideoEncoder(STRING("z." <<img.data->name <<'.' <<mlr::getNowString() <<".avi"), fps, is_rgb);
+  s = new sVideoEncoder(STRING("z." <<img.data->name <<'.' <<rai::getNowString() <<".avi"), fps, is_rgb);
 }
 
 void VideoEncoder::close(){
@@ -59,7 +59,7 @@ void VideoEncoder::step(){
   s->video.addFrame(s->buffer);
 
   //save time tag
-  mlr::String tag;
+  rai::String tag;
   tag.resize(30, false);
   sprintf(tag.p, "%6i %13.6f", rev, time);
   s->timeTagFile <<tag <<endl;
@@ -72,7 +72,7 @@ void VideoEncoder::step(){
 //
 
 struct sVideoEncoderX264{
-  mlr::String filename;
+  rai::String filename;
   VideoEncoder_x264_simple video;
   ofstream timeTagFile;
   byteA buffer;
@@ -83,7 +83,7 @@ struct sVideoEncoderX264{
 };
 
 void VideoEncoderX264::open(){
-    s = new sVideoEncoderX264(STRING("z." <<img.data->name <<'.' <<mlr::getNowString() <<".264"), fps, is_rgb);
+    s = new sVideoEncoderX264(STRING("z." <<img.data->name <<'.' <<rai::getNowString() <<".264"), fps, is_rgb);
 }
 
 void VideoEncoderX264::close(){
@@ -104,7 +104,7 @@ void VideoEncoderX264::step(){
     s->video.addFrame(s->buffer);
 
     //save time tag
-    mlr::String tag;
+    rai::String tag;
     tag.resize(30, false);
     sprintf(tag.p, "%6i %13.6f", s->revision, time);
     s->timeTagFile <<tag <<endl;
@@ -142,7 +142,7 @@ void AudioReader::step() {
 
 void AudioWriter::open() {
 #ifdef HAVE_LIBAV
-    writer = new AudioWriter_libav(STRING("z.audio" <<'.' <<mlr::getNowString() <<".wav"));
+    writer = new AudioWriter_libav(STRING("z.audio" <<'.' <<rai::getNowString() <<".wav"));
 #else
     writer = NULL;
 #endif
@@ -160,7 +160,7 @@ void AudioWriter::step() {
     writer->writeSamples_R48000_2C_S16_NE(pcms16ne2c.get());
 }
 
-#ifdef MLR_OPENCV
+#ifdef RAI_OPENCV
 
 #include "opencv.h"
 #include "colorseg.h"
@@ -301,8 +301,8 @@ struct sHsvFilter{
 
 void HsvFilter::open(){
   s = new sHsvFilter;
-  s->hsvMean      = mlr::getParameter<floatA>("hsvMean");
-  s->hsvDeviation = mlr::getParameter<floatA>("hsvDeviation");
+  s->hsvMean      = rai::getParameter<floatA>("hsvMean");
+  s->hsvDeviation = rai::getParameter<floatA>("hsvDeviation");
 }
 
 void HsvFilter::close(){
@@ -310,8 +310,8 @@ void HsvFilter::close(){
 }
 
 void HsvFilter::step(){
-  s->hsvMean      = mlr::getParameter<floatA>("hsvMean");
-  s->hsvDeviation = mlr::getParameter<floatA>("hsvDeviation");
+  s->hsvMean      = rai::getParameter<floatA>("hsvMean");
+  s->hsvDeviation = rai::getParameter<floatA>("hsvDeviation");
 
   byteA hsvA;
   hsvA = hsv.get();
@@ -573,9 +573,9 @@ byteA evidence2RGB(const floatA& evidence){
   return tmp;
 }
 
-#endif //MLR_OPENCV
+#endif //RAI_OPENCV
 
-#ifdef MLR_PCL
+#ifdef RAI_PCL
 // Pointcloud stuff
 //
 ModuleL newPointcloudProcesses() {

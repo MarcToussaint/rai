@@ -16,9 +16,9 @@ struct TM_qLimits:TaskMap {
   arr limits;
 
   TM_qLimits(const arr& _limits=NoArr){ if(&_limits) limits=_limits; } ///< if no limits are provided, they are taken from G's joints' attributes on the first call of phi
-  virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1);
-  virtual uint dim_phi(const mlr::KinematicWorld& G){ return 1; }
-  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("TM_qLimits"); }
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1);
+  virtual uint dim_phi(const rai::KinematicWorld& G){ return 1; }
+  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("TM_qLimits"); }
 };
 
 //===========================================================================
@@ -27,8 +27,8 @@ struct LimitsConstraint:TaskMap {
   double margin;
   arr limits;
   LimitsConstraint(double _margin=.05):margin(_margin){}
-  virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=1);
-  virtual uint dim_phi(const mlr::KinematicWorld& G){ return 1; }
-  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("LimitsConstraint"); }
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=1);
+  virtual uint dim_phi(const rai::KinematicWorld& G){ return 1; }
+  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("LimitsConstraint"); }
 };
 

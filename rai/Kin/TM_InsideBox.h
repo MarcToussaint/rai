@@ -12,14 +12,14 @@
 
 struct TM_InsideBox : TaskMap {
   int i, j;               ///< which shapes does it refer to?
-  mlr::Vector ivec;       ///< additional position or vector
+  rai::Vector ivec;       ///< additional position or vector
   double margin;
 
   TM_InsideBox(int iShape=-1, int jShape=-1);
-  TM_InsideBox(const mlr::KinematicWorld& G,
-                   const char* iShapeName=NULL, const mlr::Vector& ivec=NoVector, const char* jShapeName=NULL, double _margin=.03);
+  TM_InsideBox(const rai::KinematicWorld& G,
+                   const char* iShapeName=NULL, const rai::Vector& ivec=NoVector, const char* jShapeName=NULL, double _margin=.03);
 
-  virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1);
-  virtual uint dim_phi(const mlr::KinematicWorld& G);
-  virtual mlr::String shortTag(const mlr::KinematicWorld& G);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1);
+  virtual uint dim_phi(const rai::KinematicWorld& G);
+  virtual rai::String shortTag(const rai::KinematicWorld& G);
 };

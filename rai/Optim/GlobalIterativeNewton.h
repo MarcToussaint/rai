@@ -19,7 +19,7 @@ struct GlobalIterativeNewton{
   arr bounds_lo, bounds_hi;
 
   struct LocalMinimum{ arr x; double fx; uint hits; };
-  mlr::Array<LocalMinimum> localMinima;
+  rai::Array<LocalMinimum> localMinima;
   LocalMinimum *best;
 
   GlobalIterativeNewton(const ScalarFunction& f, const arr& bounds_lo, const arr& bounds_hi, OptOptions o=NOOPT);

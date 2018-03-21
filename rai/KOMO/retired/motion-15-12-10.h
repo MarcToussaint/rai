@@ -35,11 +35,11 @@
 struct TaskMap {
   ObjectiveType type; // element of {cost_feature, inequality, equality} MAYBE: move this to Task?
   uint order;       ///< 0=position, 1=vel, etc
-  virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1) = 0; ///< this needs to be overloaded
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1) = 0; ///< this needs to be overloaded
   virtual void phi(arr& y, arr& J, const WorldL& G, double tau, int t=-1); ///< if not overloaded this computes the generic pos/vel/acc depending on order
-  virtual uint dim_phi(const mlr::KinematicWorld& G) = 0; //the dimensionality of $y$
+  virtual uint dim_phi(const rai::KinematicWorld& G) = 0; //the dimensionality of $y$
 
-  VectorFunction vf(mlr::KinematicWorld& G){
+  VectorFunction vf(rai::KinematicWorld& G){
     return [this, &G](arr& y, arr& J, const arr& x) -> void {
       G.setJointState(x);
       phi(y, J, G, -1);
@@ -59,11 +59,11 @@ struct TaskMap {
 
 struct Task {
   TaskMap& map;
-  mlr::String name;
+  rai::String name;
   bool active;
   arr target, prec;  ///< optional linear, potentially time-dependent, rescaling (with semantics of target & precision)
 
-  uint dim_phi(const mlr::KinematicWorld& G, uint t){
+  uint dim_phi(const rai::KinematicWorld& G, uint t){
     if(!active || prec.N<=t || !prec(t)) return 0; return map.dim_phi(G); }
 
   Task(TaskMap* m):map(*m), active(true){} //TODO: require type here!!
@@ -74,7 +74,7 @@ struct Task {
 };
 
 
-Task* newTask(const Node* specs, const mlr::KinematicWorld& world, uint Tinterval, uint Tzero=0);
+Task* newTask(const Node* specs, const rai::KinematicWorld& world, uint Tinterval, uint Tzero=0);
 
 //===========================================================================
 //
@@ -84,17 +84,17 @@ Task* newTask(const Node* specs, const mlr::KinematicWorld& world, uint Tinterva
 /// This class allows you to DESCRIBE a motion planning problem, nothing more
 struct KOMO {
   //engines to compute things
-  mlr::KinematicWorld& world;  ///< the original world
+  rai::KinematicWorld& world;  ///< the original world
   WorldL configurations;       ///< copies for each time slice; including kinematic switches
   bool useSwift;
   
   //******* the following three sections are parameters that define the problem
 
   //-- task cost descriptions
-  mlr::Array<Task*> tasks;
+  rai::Array<Task*> tasks;
 
   //-- kinematic switches along the motion
-  mlr::Array<mlr::KinematicSwitch*> switches;
+  rai::Array<rai::KinematicSwitch*> switches;
 
   //-- trajectory length and tau
   uint T; ///< number of time steps
@@ -113,9 +113,9 @@ struct KOMO {
   //-- return values of an optimizer
   arrA phiMatrix;
   arr dualMatrix;
-  mlr::Array<ObjectiveTypeA> ttMatrix;
+  rai::Array<ObjectiveTypeA> ttMatrix;
 
-  KOMO(mlr::KinematicWorld& _world, bool useSwift=true);
+  KOMO(rai::KinematicWorld& _world, bool useSwift=true);
   
   KOMO& operator=(const KOMO& other);
 
@@ -134,10 +134,10 @@ struct KOMO {
 
   //-- cost infos
   bool getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const WorldL& G, double tau); ///< the general task vector and its Jacobian
-  uint dim_phi(const mlr::KinematicWorld& G, uint t);
-  uint dim_g(const mlr::KinematicWorld& G, uint t);
-  uint dim_h(const mlr::KinematicWorld& G, uint t);
-  StringA getPhiNames(const mlr::KinematicWorld& G, uint t);
+  uint dim_phi(const rai::KinematicWorld& G, uint t);
+  uint dim_g(const rai::KinematicWorld& G, uint t);
+  uint dim_h(const rai::KinematicWorld& G, uint t);
+  StringA getPhiNames(const rai::KinematicWorld& G, uint t);
   void reportFeatures(bool brief=false);
   void costReport(bool gnuplt=true); ///< also computes the costMatrix
   Graph getReport();

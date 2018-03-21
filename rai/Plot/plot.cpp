@@ -8,7 +8,7 @@
 
 #include "plot.h"
 #include <Core/array.tpp>
-#ifdef MLR_GL
+#ifdef RAI_GL
 #include <Geo/geo.h>
 #include <Geo/mesh.h>
 #  include <Gui/opengl.h>
@@ -23,14 +23,14 @@
 PlotModule plotModule;
 
 struct sPlotModule {
-  mlr::Array<arr> array;
-  mlr::Array<arr> images;
-  mlr::Array<arr> points;
-  mlr::Array<arr> lines;
-  mlr::Array<mlr::String> legend;
-#ifdef MLR_geo_h
-  mlr::Array<mlr::Vector> planes;
-  mlr::Mesh mesh;
+  rai::Array<arr> array;
+  rai::Array<arr> images;
+  rai::Array<arr> points;
+  rai::Array<arr> lines;
+  rai::Array<rai::String> legend;
+#ifdef RAI_geo_h
+  rai::Array<rai::Vector> planes;
+  rai::Mesh mesh;
 #endif
 };
 
@@ -48,7 +48,7 @@ PlotModule::PlotModule() {
 }
 
 PlotModule::~PlotModule() {
-#ifdef MLR_GL
+#ifdef RAI_GL
   if(gl){ delete gl; gl=NULL; }
 #endif
   delete s;
@@ -69,7 +69,7 @@ void glDrawPlot(void *module) { plotDrawOpenGL(((PlotModule*)module)->s); }
 // C interface implementations
 //
 
-#ifdef MLR_GL
+#ifdef RAI_GL
 void plotInitGL(double xl=-1., double xh=1., double yl=-1., double yh=1., double zl=-1., double zh=1., const char* name=0, uint width=600, uint height=600, int posx=0, int posy=0) {
   if(!plotModule.gl) {
     plotModule.gl=new OpenGL(name, width, height, posx, posy);
@@ -93,15 +93,15 @@ void plotCloseGL(){
 #endif
 
 void plot(bool wait, const char* txt) {
-  if(!mlr::getInteractivity()){
+  if(!rai::getInteractivity()){
     wait=false;
   }
   switch(plotModule.mode) {
     case gnupl:
       plotDrawGnuplot(plotModule.s, wait);
-//      if(wait) mlr::wait();
+//      if(wait) rai::wait();
       break;
-#ifdef MLR_GL
+#ifdef RAI_GL
     case opengl:
       if(txt) plotModule.gl->text = txt;
       //plotInitGL();
@@ -110,7 +110,7 @@ void plot(bool wait, const char* txt) {
       break;
 #else
     case opengl:
-      HALT("can't plot on OpenGL without MLR_GL flag");
+      HALT("can't plot on OpenGL without RAI_GL flag");
       break;
 #endif
     case xfig:
@@ -120,7 +120,7 @@ void plot(bool wait, const char* txt) {
 }
 
 void plotClose() {
-#ifdef MLR_GL
+#ifdef RAI_GL
   if(plotModule.mode==opengl) plotCloseGL();
 #endif
 }
@@ -129,14 +129,14 @@ void plotClear() {
   plotModule.s->array.clear();
   plotModule.s->points.clear();
   plotModule.s->lines.clear();
-#ifdef MLR_GL
+#ifdef RAI_GL
   plotModule.s->planes.clear();
 #endif
 }
 
 void plotGnuplot() { plotModule.mode=gnupl; }
 
-#ifdef MLR_GL
+#ifdef RAI_GL
 void plotOpengl() { plotModule.mode=opengl; plotInitGL(); }
 
 void plotOpengl(bool perspective, double xl, double xh, double yl, double yh, double zl, double zh) {
@@ -145,7 +145,7 @@ void plotOpengl(bool perspective, double xl, double xh, double yl, double yh, do
   if(!plotModule.gl) plotInitGL(xl, xh, yl, yh, zl, zh);
 }
 #else
-void plotOpengl() { MLR_MSG("dummy routine - compile with MLR_FREEGLUT to use this!"); }
+void plotOpengl() { RAI_MSG("dummy routine - compile with RAI_FREEGLUT to use this!"); }
 void plotOpengl(bool perspective, double xl, double xh, double yl, double yh, double zl, double zh) { NICO }
 #endif
 
@@ -222,7 +222,7 @@ void plotFunctionPrecision(const arr& x, const arr& f, const arr& h, const arr& 
 
 void plotSurface(const arr& X) {
   plotModule.s->array.append(X);
-#ifdef MLR_GL
+#ifdef RAI_GL
   plotModule.s->mesh.clear();
   plotModule.s->mesh.V.resize(X.N, 3);
   plotModule.s->mesh.C.resize(X.N, 3);
@@ -285,7 +285,7 @@ void plotCovariance(const arr& mean, const arr& cov) {
     uint i;
     for(i=0; i<d.d0; i++) { //standard Gaussian
       d(i, 0)=5. * ((i+.5)/d.d0 - .5);
-      d(i, 1)=1./::sqrt(MLR_2PI)*::exp(-.5*d(i, 0)*d(i, 0));
+      d(i, 1)=1./::sqrt(RAI_2PI)*::exp(-.5*d(i, 0)*d(i, 0));
     }
     for(i=0; i<d.d0; i++) { //standard Gaussian
       d(i, 0) = ::sqrt(cov(0, 0)) * d(i, 0) + mean(0);
@@ -299,7 +299,7 @@ void plotCovariance(const arr& mean, const arr& cov) {
     uint i;
     if(cov.d0>2) { Cov=cov.sub(0, 1, 0, 1); } else { Cov.referTo(cov); }
     for(i=0; i<d.d0; i++) { //standard circle
-      phi=MLR_2PI*((double)i)/(d.d0-1);
+      phi=RAI_2PI*((double)i)/(d.d0-1);
       d(i, 0)=cos(phi); d(i, 1)=sin(phi);
     }
     svd(U, w, V, Cov);
@@ -314,15 +314,15 @@ void plotCovariance(const arr& mean, const arr& cov) {
     double phi;
     uint i;
     for(i=0; i<101; i++) { //standard sphere
-      phi=MLR_2PI*((double)i)/(101-1);
+      phi=RAI_2PI*((double)i)/(101-1);
       d(i, 0)=cos(phi); d(i, 1)=sin(phi); d(i, 2)=0.;
     }
     for(i=0; i<101; i++) {
-      phi=MLR_2PI*((double)i)/(101-1);
+      phi=RAI_2PI*((double)i)/(101-1);
       d(101+i, 0)=cos(phi); d(101+i, 1)=0.; d(101+i, 2)=sin(phi);
     }
     for(i=0; i<101; i++) {
-      phi=MLR_2PI*((double)i)/(101-1);
+      phi=RAI_2PI*((double)i)/(101-1);
       d(202+i, 0)=0.; d(202+i, 1)=cos(phi); d(202+i, 2)=sin(phi);
     }
     CHECK_EQ(cov.d0,3, "");
@@ -341,7 +341,7 @@ void plotCovariance(const arr& mean, const arr& cov) {
     //x-y
     Cov=cov.sub(0, 1, 0, 1);
     for(i=0; i<d.d0; i++) { //standard circle
-      phi=MLR_2PI*((double)i)/(d.d0-1);
+      phi=RAI_2PI*((double)i)/(d.d0-1);
       d(i, 0)=cos(phi); d(i, 1)=sin(phi);
     }
     svd(U, w, V, Cov);
@@ -352,7 +352,7 @@ void plotCovariance(const arr& mean, const arr& cov) {
     //y-z
     Cov=cov.sub(1, 2, 1, 2);
     for(i=0; i<d.d0; i++) { //standard circle
-      phi=MLR_2PI*((double)i)/(d.d0-1);
+      phi=RAI_2PI*((double)i)/(d.d0-1);
       d(i, 0)=cos(phi); d(i, 1)=sin(phi);
     }
     svd(U, w, V, Cov);
@@ -363,7 +363,7 @@ void plotCovariance(const arr& mean, const arr& cov) {
     //x-z
     Cov(0, 0)=cov(0, 0); Cov(1, 0)=cov(2, 0); Cov(0, 1)=cov(0, 2); Cov(1, 1)=cov(2, 2);
     for(i=0; i<d.d0; i++) { //standard circle
-      phi=MLR_2PI*((double)i)/(d.d0-1);
+      phi=RAI_2PI*((double)i)/(d.d0-1);
       d(i, 0)=cos(phi); d(i, 1)=sin(phi);
     }
     svd(U, w, V, Cov);
@@ -405,7 +405,7 @@ void plotMatrixFlow(uintA& M, double len) {
   plotPoints(X);
 }
 
-#ifdef MLR_gauss_h
+#ifdef RAI_gauss_h
 void plotGaussians(const GaussianA& G) {
   for(uint k=0; k<G.N; k++) { G(k).makeC(); plotCovariance(G(k).c, G(k).C); }
 }
@@ -420,11 +420,11 @@ void plotGaussians(const GaussianL& G) {
 //
 
 void plotDrawOpenGL(void *_data) {
-#ifdef MLR_GL
+#ifdef RAI_GL
   sPlotModule& data=(*((sPlotModule*)_data));
   uint a, i, j;
   
-  mlr::Color c;
+  rai::Color c;
   
   double x=0., y=0., z=0.;
   
@@ -628,9 +628,9 @@ void plotDrawGnuplot(void *_data, bool pauseMouse) {
   uint i;
   
   //openfiles
-  mlr::String gnuplotcmd;
+  rai::String gnuplotcmd;
   std::ofstream gnuplotdata;
-  mlr::open(gnuplotdata, "z.plotdata");
+  rai::open(gnuplotdata, "z.plotdata");
   uint block=0;
   
   // include custom definition file if exists
@@ -643,8 +643,8 @@ void plotDrawGnuplot(void *_data, bool pauseMouse) {
   if(data.lines.N+data.points.N) gnuplotcmd <<"\nplot \\\n";
   
   //pipe data
-  bool ior=mlr::IOraw;
-  mlr::IOraw=true;
+  bool ior=rai::IOraw;
+  rai::IOraw=true;
   //lines
   for(i=0; i<data.lines.N; i++) {
     data.lines(i).write(gnuplotdata," ","\n","  ",false,false);
@@ -667,7 +667,7 @@ void plotDrawGnuplot(void *_data, bool pauseMouse) {
     data.points(i).write(gnuplotdata," ","\n","  ",false,false);
     gnuplotdata <<'\n' <<std::endl;
     if(block) gnuplotcmd <<", \\\n";
-    mlr::String a=" with p pt 3";
+    rai::String a=" with p pt 3";
     if(i<data.legend.N) a<< " title '" <<data.legend(i) <<"' ";
     PLOTEVERY(block, a);
     block++;
@@ -688,7 +688,7 @@ void plotDrawGnuplot(void *_data, bool pauseMouse) {
     PLOTEVERY(block, " with l notitle");
     block++;
   }
-  mlr::IOraw=ior;
+  rai::IOraw=ior;
   gnuplotcmd <<endl;
   
   //close files

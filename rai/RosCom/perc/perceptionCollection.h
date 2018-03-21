@@ -22,9 +22,9 @@ struct Collector : Thread{
   Var<std::vector<geometry_msgs::TransformStamped>> opti_bodies;
   Var<object_recognition_msgs::TableArray> tabletop_tableArray;
 
-  VAR(mlr::Transformation, tabletop_srcFrame)
-  VAR(mlr::Transformation, alvar_srcFrame)
-  VAR(mlr::Transformation, optitrack_srcFrame)
+  VAR(rai::Transformation, tabletop_srcFrame)
+  VAR(rai::Transformation, alvar_srcFrame)
+  VAR(rai::Transformation, optitrack_srcFrame)
 
   VAR(PerceptL, percepts_input)
 
@@ -35,7 +35,7 @@ struct Collector : Thread{
   virtual void close(){}
 
 private:
-  bool useRos = mlr::getParameter<bool>("useRos", false);
+  bool useRos = rai::getParameter<bool>("useRos", false);
   int tabletop_clusters_revision = 0;
   int ar_pose_markers_revision = 0;
   int tabletop_tableArray_revision = 0;

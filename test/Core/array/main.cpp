@@ -8,14 +8,14 @@ bool DoubleComp(const double& a,const double& b){ return a<b; }
 
 void TEST(CheatSheet) {
   using namespace std;
-  // CHEAT SHEET for mlr::Array
+  // CHEAT SHEET for rai::Array
   
   cout << "##### CREATING MATRICES" << endl;
-  // Create mlr::Array<double> with the 'arr' macro
+  // Create rai::Array<double> with the 'arr' macro
   arr A;
-  // or mlr::Array<int> with 'intA'
+  // or rai::Array<int> with 'intA'
   intA B; 
-  // or mlr::Array<uint> with 'intA'
+  // or rai::Array<uint> with 'intA'
   uintA C; 
 
   // Use matlab-like function to create matrices
@@ -79,8 +79,8 @@ void TEST(CheatSheet) {
 
 void TEST(Basics){
   cout <<"\n*** basic manipulations\n";
-  arr a;     //'arr' is a macro for mlr::Array<double>
-  intA ints; //a macro for mlr::Array<int>
+  arr a;     //'arr' is a macro for rai::Array<double>
+  intA ints; //a macro for rai::Array<int>
 
   a.resize(7,5);
   double *ap=a.p, *astop=ap+a.N;
@@ -141,7 +141,7 @@ void TEST(Basics){
   cout <<"\nrows manipulated:\n" <<a <<endl;
 
   //setting arrays ``by hand''
-  a = ARR(0, 1, 2, 3, 4); //ARR(...) is equivalent to mlr::Array<double>({ ... })
+  a = ARR(0, 1, 2, 3, 4); //ARR(...) is equivalent to rai::Array<double>({ ... })
   cout <<"\nset by hand:\n" <<a <<endl;
   ints = { 0, -1, -2, -3, -4 };
   cout <<"\nset by hand:\n" <<ints <<endl;
@@ -320,8 +320,8 @@ void TEST(Exception){
 
 void TEST(MemoryBound){
   cout <<"\n*** memory bound\n";
-  mlr::globalMemoryBound=1ull<<20;
-  mlr::globalMemoryStrict=true;
+  rai::globalMemoryBound=1ull<<20;
+  rai::globalMemoryStrict=true;
   arr A;
   try{
     A.resize(1000,1000,1000);
@@ -329,8 +329,8 @@ void TEST(MemoryBound){
     cout <<"caught memory restriction exception..." <<endl;
   }
   A.resize(1000);
-  cout <<"total memory allocated = " <<mlr::globalMemoryTotal <<endl;
-  mlr::globalMemoryBound=1ull<<30;
+  cout <<"total memory allocated = " <<rai::globalMemoryTotal <<endl;
+  rai::globalMemoryBound=1ull<<30;
 }
 
 //===========================================================================
@@ -342,26 +342,26 @@ void TEST(BinaryIO){
   ofstream fout("z.ascii"),bout("z.bin",ios::binary);
   ifstream fin("z.ascii") ,bin("z.bin",ios::binary);
 
-  mlr::timerStart();
+  rai::timerStart();
   a.write(fout," ","\n","[]",true,false);
-  cout <<"ascii write time: " <<mlr::timerRead() <<"sec" <<endl;
+  cout <<"ascii write time: " <<rai::timerRead() <<"sec" <<endl;
   fout.close();
 
-  mlr::timerStart();
+  rai::timerStart();
   b.read(fin);
-  cout <<"ascii read time: " <<mlr::timerRead() <<"sec" <<endl;
+  cout <<"ascii read time: " <<rai::timerRead() <<"sec" <<endl;
   fin.close();
 
   CHECK_ZERO(maxDiff(a,b), 1e-4, "ascii write-read error");
 
-  mlr::timerStart();
+  rai::timerStart();
   a.write(bout,NULL,NULL,NULL,true,true);
-  cout <<"binary write time: " <<mlr::timerRead() <<"sec" <<endl;
+  cout <<"binary write time: " <<rai::timerRead() <<"sec" <<endl;
   bout.close();
 
-  mlr::timerStart();
+  rai::timerStart();
   b.read(bin);
-  cout <<"binary read time: " <<mlr::timerRead() <<"sec" <<endl;
+  cout <<"binary read time: " <<rai::timerRead() <<"sec" <<endl;
   bin.close();
 
   CHECK_EQ(a,b,"binary IO failed!");
@@ -417,10 +417,10 @@ void TEST(Sorted){
 
   for(uint k=0;k<100;k++){
     uint y=rnd(99);
-    if(!x.N || y>x.last()) x.insertInSorted(y, mlr::greater<uint>);
+    if(!x.N || y>x.last()) x.insertInSorted(y, rai::greater<uint>);
     if(x.N>33) x.popLast();
     cout <<x <<endl;
-    CHECK(x.isSorted(mlr::greaterEqual<uint>),"");
+    CHECK(x.isSorted(rai::greaterEqual<uint>),"");
   }
 }
 
@@ -432,17 +432,17 @@ void TEST(Gnuplot){
   arr X(30,30);
   for(i=0;i<X.d0;i++) for(j=0;j<X.d1;j++) X(i,j)=sin(.2*i)*sin(.1*j);
   gnuplot(X);
-  mlr::wait(.5);
+  rai::wait(.5);
 
   X.resize(100);
   for(i=0;i<X.d0;i++) X(i)=sin(.3*i);
   gnuplot(X);
-  mlr::wait(.5);
+  rai::wait(.5);
 
   X.resize(100,2);
-  for(i=0;i<X.d0;i++){ X(i,0)=MLR_PI*(2./(X.d0-1)*i-1.); X(i,1)=sin(X(i,0)); }
+  for(i=0;i<X.d0;i++){ X(i,0)=RAI_PI*(2./(X.d0-1)*i-1.); X(i,1)=sin(X(i,0)); }
   gnuplot(X);
-  mlr::wait(.5);
+  rai::wait(.5);
 }
 
 //===========================================================================
@@ -474,22 +474,22 @@ void TEST(MM){
 
   cout <<"speed test: " <<M <<'x' <<N <<'x' <<O <<" matrix multiplication..." <<std::endl;
 
-  mlr::useLapack=false; 
-  mlr::timerStart();
+  rai::useLapack=false; 
+  rai::timerStart();
   innerProduct(D,A,B);
-  double t_native=mlr::timerRead();
+  double t_native=rai::timerRead();
   cout <<"native time = " <<t_native <<std::endl;
 
-  if(!mlr::lapackSupported){
+  if(!rai::lapackSupported){
     cout <<"LAPACK not installed - only native algorithms" <<std::endl;
     return;
   }
 
-  mlr::useLapack=true;
-  mlr::timerStart();
+  rai::useLapack=true;
+  rai::timerStart();
   blas_MM(C,A,B);
-  double t_blas=mlr::timerRead();
-  cout <<"blas time = " <<mlr::timerRead() <<std::endl;
+  double t_blas=rai::timerRead();
+  cout <<"blas time = " <<rai::timerRead() <<std::endl;
 
   CHECK_ZERO(maxDiff(C,D), 1e-10, "blas MM is not equivalent to native matrix multiplication");
   CHECK(t_blas < t_native,"blas MM is slower than native");
@@ -507,24 +507,24 @@ void TEST(SVD){
   
   cout <<"speed test: " <<m <<'x' <<n <<" (rank=" <<r <<") SVD decomposition..." <<std::endl;
 
-  mlr::useLapack=false;
-  mlr::timerStart();
+  rai::useLapack=false;
+  rai::timerStart();
   svdr=svd(U,d,V,A);
-  double t_native = mlr::timerRead();
+  double t_native = rai::timerRead();
   cout <<"native SVD time = " <<t_native <<flush;
   D.setDiag(d);
   cout <<" error = " <<maxDiff(A, U*D*~V) <<" rank = " <<svdr <<"("<<r<<")"<<std::endl;
   CHECK_ZERO(maxDiff(A, U*D*~V), 1e-10, "native SVD failed");
 
-  if(!mlr::lapackSupported){
+  if(!rai::lapackSupported){
     cout <<"LAPACK not installed - only native algorithms" <<std::endl;
     return;
   }
 
-  mlr::useLapack=true;
-  mlr::timerStart();
+  rai::useLapack=true;
+  rai::timerStart();
   svdr=svd(U,d,V,A);
-  double t_lapack = mlr::timerRead();
+  double t_lapack = rai::timerRead();
   cout <<"lapack SVD time = " <<t_lapack <<flush;
   D.setDiag(d);
   cout <<" error = " <<maxDiff(A, U*D*~V) <<" rank = " <<svdr <<"("<<r<<")" <<std::endl;
@@ -568,35 +568,35 @@ void TEST(Inverse){
   
   cout <<"speed test: " <<m <<'x' <<n <<" inversion..." <<std::endl;
 
-  mlr::useLapack=false;
-  mlr::timerStart();
+  rai::useLapack=false;
+  rai::timerStart();
   svdr=inverse_SVD(invA,A);
-  double t_native = mlr::timerRead();
+  double t_native = rai::timerRead();
   cout <<"native SVD inverse time = " <<t_native <<flush;
   cout <<" error = " <<maxDiff(A*invA,I) <<" rank = " <<svdr <<std::endl;
   CHECK_ZERO(maxDiff(A*invA,I), 1e-10, "native matrix inverse failed");
 
-  /*mlr::timerStart();
-  mlr::inverse_LU(invA,A);
-  cout <<"native LU  inverse time = " <<mlr::timerRead(); cout.flush();
+  /*rai::timerStart();
+  rai::inverse_LU(invA,A);
+  cout <<"native LU  inverse time = " <<rai::timerRead(); cout.flush();
   cout <<" error = " <<maxDiff(invA*A,I) <<std::endl;*/
   
-  if(!mlr::lapackSupported){
+  if(!rai::lapackSupported){
     cout <<"LAPACK not installed - only native algorithms" <<std::endl;
     return;
   }
 
-  mlr::useLapack=true;
-  mlr::timerStart();
+  rai::useLapack=true;
+  rai::timerStart();
   svdr=inverse_SVD(invA,A);
-  double t_lapack = mlr::timerRead();
+  double t_lapack = rai::timerRead();
   cout <<"lapack SVD inverse time = " <<t_lapack <<flush;
   cout <<" error = " <<maxDiff(A*invA, I) <<" rank = " <<svdr <<std::endl;
   CHECK_ZERO(maxDiff(A*invA, I), 1e-10, "lapack matrix inverse failed");
 
-  /*mlr::timerStart();
-    mlr::inverse_LU(invA,A);
-    cout <<"lapack LU  inverse time = " <<mlr::timerRead(); cout.flush();
+  /*rai::timerStart();
+    rai::inverse_LU(invA,A);
+    cout <<"lapack LU  inverse time = " <<rai::timerRead(); cout.flush();
     cout <<" error = " <<length(invA*A - I) <<std::endl;*/
   
   cout <<"\n*** symmetric matrix inverse\n";
@@ -607,9 +607,9 @@ void TEST(Inverse){
   
   cout <<"speed test: " <<m <<'x' <<m <<" symmetric inversion..." <<std::endl;
 
-  mlr::timerStart();
+  rai::timerStart();
   lapack_inverseSymPosDef(invA,A);
-  double t_symPosDef = mlr::timerRead();
+  double t_symPosDef = rai::timerRead();
   cout <<"lapack SymDefPos inverse time = " <<t_symPosDef <<flush;
   cout <<" error = " <<maxDiff(A*invA, I) <<std::endl;
   CHECK_ZERO(maxDiff(A*invA, I), 1e-6, "lapack SymDefPos inverse failed");
@@ -622,7 +622,7 @@ void TEST(Inverse){
 
 void TEST(GaussElimintation) {
   cout << "\n*** Gaussian elimination with partial pivoting \n";
-  if (mlr::lapackSupported) {
+  if (rai::lapackSupported) {
     arr A = arr(3,3, {7., 2., 4., 2., 6., 5., 5., 3., 7.});
     cout <<"A=\n" <<A << endl;
 
@@ -856,7 +856,7 @@ void TEST(EigenValues){
 //===========================================================================
 
 int MAIN(int argc, char **argv){
-  mlr::initCmdLine(argc, argv);
+  rai::initCmdLine(argc, argv);
 
   testBasics();
   testIterations();
@@ -885,8 +885,8 @@ int MAIN(int argc, char **argv){
   testTensor();
   testGaussElimintation();
   
-  cout <<"\n ** total memory still allocated = " <<mlr::globalMemoryTotal <<endl;
-  CHECK_ZERO(mlr::globalMemoryTotal, 0, "memory not released");
+  cout <<"\n ** total memory still allocated = " <<rai::globalMemoryTotal <<endl;
+  CHECK_ZERO(rai::globalMemoryTotal, 0, "memory not released");
   
   return 0;
 }

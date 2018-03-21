@@ -405,9 +405,9 @@ bool substitutedRulePreconditionHolds(Graph& KB, Node* rule, const NodeL& subst,
    if(!vars.N) return NodeL(1u,0u);
 
    //-- collect domains for each variable by checking (marginally) for potentially matching facts
-   mlr::Array<NodeL> domainOf(vars.N);
-   mlr::Array<unsigned char> domainIsConstrained(vars.N);
-   mlr::Array<NodeL> domainsForThisRel(vars.N);
+   rai::Array<NodeL> domainOf(vars.N);
+   rai::Array<unsigned char> domainIsConstrained(vars.N);
+   rai::Array<NodeL> domainsForThisRel(vars.N);
    if(vars.N) domainIsConstrained = false;
 
    for(Node *rel:relations) if(nFreeVars(rel->index)>0){ //first go through all (non-negated) relations...

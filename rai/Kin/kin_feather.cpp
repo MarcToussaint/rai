@@ -75,7 +75,7 @@ void Xtrans(arr& X, double* r);
   with mass m, centre of mass at c, and (3x3) rotational inertia
   about CoM of I.
 */
-void RBmci(arr& rbi, double m, double *c, const mlr::Matrix& I);
+void RBmci(arr& rbi, double m, double *c, const rai::Matrix& I);
 
 /** @brief MM6 cross-product tensor from M6 vector.  crossM(v)
   calculates the MM6 cross-product tensor of motion vector v such
@@ -100,18 +100,18 @@ arr crossF(const arr& v);
 //#define Qstate
 
 #if 0
-mlr::Body *robotbody(uint i, const Featherstone::Robot& robot) { return robot.C->nodes(i); }
+rai::Body *robotbody(uint i, const Featherstone::Robot& robot) { return robot.C->nodes(i); }
 
 uint Featherstone::Robot::N() const { return C->nodes.N; }
 
 int Featherstone::Robot::parent(uint i) const {
-  mlr::Joint *e=C->nodes(i)->joint();
+  rai::Joint *e=C->nodes(i)->joint();
   if(e) return e->from->index;
   return -1;
 }
 
 byte Featherstone::Robot::dof(uint i) const {
-  mlr::Body *n=C->nodes(i);
+  rai::Body *n=C->nodes(i);
   if(n->fixed) return 0;
   if(n->hasJoint()) {
     switch(n->joint()->type) {
@@ -129,8 +129,8 @@ byte Featherstone::Robot::dof(uint i) const {
 const arr Featherstone::Robot::S(uint i) const {
   byte d_i=dof(i);
   arr S;
-  mlr::Quaternion r;
-  mlr::Matrix R;
+  rai::Quaternion r;
+  rai::Matrix R;
   arr Ss, rr;
   switch(d_i) {
     case 0: S.resize(6, (uint)0); S.setZero(); break;
@@ -168,12 +168,12 @@ const arr Featherstone::Robot::S(uint i) const {
 /* returns the transformation from the parent link to the i-th link */
 const arr Featherstone::Robot::Xlink(uint i) const {
   //slide 15
-  mlr::Transformation f;
-  mlr::Joint *e1=C->nodes(i)->firstIn;
+  rai::Transformation f;
+  rai::Joint *e1=C->nodes(i)->firstIn;
   if(!e1) {
     f.setZero();
   } else {
-    mlr::Joint *e0=e1->from->firstIn;
+    rai::Joint *e0=e1->from->firstIn;
     if(e0) {
       f = e0->B;
       f.addRelativeFrame(e1->A);
@@ -192,9 +192,9 @@ const arr Featherstone::Robot::Xlink(uint i) const {
 
 const arr Featherstone::Robot::Ilink(uint i) const {
   //taken from slide 27
-  mlr::Joint *e=C->nodes(i)->firstIn;
+  rai::Joint *e=C->nodes(i)->firstIn;
   double m=C->nodes(i)->mass;
-  mlr::Vector com;
+  rai::Vector com;
   if(e) com = e->B.p; else com = C->nodes(i)->X.p;
   //arr Ic(3, 3);  Ic.setDiag(.1*m);
   arr I;
@@ -203,15 +203,15 @@ const arr Featherstone::Robot::Ilink(uint i) const {
 }
 
 const arr Featherstone::Robot::force(uint i) const {
-  mlr::Body *n=C->nodes(i);
+  rai::Body *n=C->nodes(i);
   CHECK(n, "is not a body with input joint");
-  mlr::Joint *e=n->firstIn;
+  rai::Joint *e=n->firstIn;
   //CHECK(e, "is not a body with input joint");
-  mlr::Transformation g;
+  rai::Transformation g;
   g=n->X;
   if(e) g.subRelativeFrame(e->B);
-  mlr::Vector fo = g.r/n->force;
-  mlr::Vector to;
+  rai::Vector fo = g.r/n->force;
+  rai::Vector to;
   if(e) to = g.r/(n->torque + (g.r*e->B.p)^n->force);
   else  to = g.r/(n->torque);
   arr f(6);
@@ -230,7 +230,7 @@ void Featherstone::skew(arr& X, const double *v) {
 
 arr Featherstone::skew(const double *v) { arr X; skew(X, v); return X; }
 
-void FrameToMatrix(arr &X, const mlr::Transformation& f) {
+void FrameToMatrix(arr &X, const rai::Transformation& f) {
   arr z(3, 3);  z.setZero();
   arr r(3, 3);  Featherstone::skew(r, &f.pos.x);
   arr R(3, 3);  f.rot.getMatrix(R.p);
@@ -239,22 +239,22 @@ void FrameToMatrix(arr &X, const mlr::Transformation& f) {
   //cout <<"\nz=" <<z <<"\nr=" <<r <<"\nR=" <<R <<"\nX=" <<X <<endl;
 }
 
-uint F_Link::dof() { if(type>=mlr::JT_hingeX && type<=mlr::JT_transZ) return 1; else return 0; }
+uint F_Link::dof() { if(type>=rai::JT_hingeX && type<=rai::JT_transZ) return 1; else return 0; }
 
 void F_Link::setFeatherstones() {
   switch(type) {
   case -1:     CHECK_EQ(parent,-1, ""); _h.clear();  break;
-    case mlr::JT_rigid:
-    case mlr::JT_transXYPhi:
+    case rai::JT_rigid:
+    case rai::JT_transXYPhi:
       qIndex=-1;
       _h=zeros(6);
       break;
-    case mlr::JT_hingeX: _h.resize(6).setZero(); _h(0)=1.; break;
-    case mlr::JT_hingeY: _h.resize(6).setZero(); _h(1)=1.; break;
-    case mlr::JT_hingeZ: _h.resize(6).setZero(); _h(2)=1.; break;
-    case mlr::JT_transX: _h.resize(6).setZero(); _h(3)=1.; break;
-    case mlr::JT_transY: _h.resize(6).setZero(); _h(4)=1.; break;
-    case mlr::JT_transZ: _h.resize(6).setZero(); _h(5)=1.; break;
+    case rai::JT_hingeX: _h.resize(6).setZero(); _h(0)=1.; break;
+    case rai::JT_hingeY: _h.resize(6).setZero(); _h(1)=1.; break;
+    case rai::JT_hingeZ: _h.resize(6).setZero(); _h(2)=1.; break;
+    case rai::JT_transX: _h.resize(6).setZero(); _h(3)=1.; break;
+    case rai::JT_transY: _h.resize(6).setZero(); _h(4)=1.; break;
+    case rai::JT_transZ: _h.resize(6).setZero(); _h(5)=1.; break;
     default: NIY;
   }
   Featherstone::RBmci(_I, mass, com.p(), inertia);
@@ -265,11 +265,11 @@ void F_Link::setFeatherstones() {
 void F_Link::updateFeatherstones() {
   FrameToMatrix(_Q, Q);
 
-//  mlr::Transformation XQ;
+//  rai::Transformation XQ;
 //  XQ=X;
 //  XQ.appendTransformation(Q);
-  mlr::Vector fo = X.rot/force;
-  mlr::Vector to = X.rot/(torque + ((X.rot*com)^force));
+  rai::Vector fo = X.rot/force;
+  rai::Vector to = X.rot/(torque + ((X.rot*com)^force));
   _f.resize(6);
   _f(0)=to.x;  _f(1)=to.y;  _f(2)=to.z;
   _f(3)=fo.x;  _f(4)=fo.y;  _f(5)=fo.z;
@@ -283,19 +283,19 @@ void FeatherstoneInterface::update(){
 
       for(F_Link& link:tree){ link.parent=-1; link.qIndex=-1; link.com.setZero(); } //TODO: remove
 
-      for(mlr::Frame* f : K.frames) {
+      for(rai::Frame* f : K.frames) {
           F_Link& link=tree(f->ID);
           link.ID = f->ID;
           link.X = f->X;
           if(f->parent) { //is not a root
               link.parent = f->parent->ID;
               link.Q = f->Q;
-              mlr::Joint *j;
+              rai::Joint *j;
               if((j=f->joint)){
                   link.type   = j->type;
                   link.qIndex = j->qIndex;
               }else{
-                  link.type   = mlr::JT_rigid;
+                  link.type   = rai::JT_rigid;
               }
           }
           if(f->inertia){
@@ -307,7 +307,7 @@ void FeatherstoneInterface::update(){
           }
       }
   }else{ //just update an existing structure
-      for(mlr::Frame *f: K.frames) {
+      for(rai::Frame *f: K.frames) {
         F_Link& link=tree(f->ID);
         link.X = f->X;
         if(f->parent) link.Q = f->Q;
@@ -430,7 +430,7 @@ void Featherstone::Xtrans(arr& X, double* r) {
 /*
 ----------- RBmci.m ----------------------------------------------------------
 */
-void Featherstone::RBmci(arr& rbi, double m, double *c, const mlr::Matrix& I) {
+void Featherstone::RBmci(arr& rbi, double m, double *c, const rai::Matrix& I) {
   /*
   % RBmci  Calculate RBI from mass, CoM and rotational inertia.
   % RBmci(m, c, I) calculate MF6 rigid-body inertia tensor for a body with
@@ -511,7 +511,7 @@ void Featherstone::invdyn_old(arr& tau, const Robot& robot, const arr& qd, const
   }
 
   uint i, N=robot.N(), d_i, n;
-  mlr::Array<arr> S(N), qd_i(N), qdd_i(N), tau_i(N);
+  rai::Array<arr> S(N), qd_i(N), qdd_i(N), tau_i(N);
   arr Xup(N, 6, 6), v(N, 6), f(N, 6), a(N, 6);
   arr Q;
 
@@ -549,7 +549,7 @@ void Featherstone::invdyn_old(arr& tau, const Robot& robot, const arr& qd, const
 
 #if 0
     if(i) {
-      mlr::Transformation f, r, g;
+      rai::Transformation f, r, g;
       f=robot.C->nodes(i)->X;
       f.subRelativeFrame(robot.C->nodes(i)->joint()->B);
       arr vi(6);  vi.setVectorBlock(arr((f.r/f.w).v, 3), 0);  vi.setVectorBlock(arr((f.r/f.v).v, 3), 3);
@@ -605,7 +605,7 @@ void Featherstone::fwdDynamics_old(arr& qdd,
 
   int par;
   uint i, N=robot.N(), d_i, n;
-  mlr::Array<arr> h(N), qd_i(N), qdd_i(N), tau_i(N), I_h(N), h_I_h(N), inv_h_I_h(N), tau__h_fA(N);
+  rai::Array<arr> h(N), qd_i(N), qdd_i(N), tau_i(N), I_h(N), h_I_h(N), inv_h_I_h(N), tau__h_fA(N);
   arr Xup(N, 6, 6), v(N, 6), dh_dq(N, 6), f(N, 6), IA(N, 6, 6), fA(N, 6), a(N, 6);
   arr vJ, Ia, fa;
   arr Q;
@@ -687,7 +687,7 @@ void FeatherstoneInterface::fwdDynamics_aba_nD(arr& qdd,
                              const arr& tau) {
   int par;
   uint i, N=tree.N, d_i, n;
-  mlr::Array<arr> h(N), qd_i(N), qdd_i(N), tau_i(N), I_h(N), h_I_h(N), u(N);
+  rai::Array<arr> h(N), qd_i(N), qdd_i(N), tau_i(N), I_h(N), h_I_h(N), u(N);
   arr Xup(N, 6, 6), v(N, 6), dh_dq(N, 6), IA(N, 6, 6), fA(N, 6), a(N, 6);
   qdd.resizeAs(tau);
 
@@ -837,7 +837,7 @@ void FeatherstoneInterface::invDynamics(arr& tau,
                       const arr& qdd) {
   int par;
   uint i, N=tree.N, d_i, n;
-  mlr::Array<arr> h(N), qd_i(N), qdd_i(N), tau_i(N);
+  rai::Array<arr> h(N), qd_i(N), qdd_i(N), tau_i(N);
   arr Xup(N, 6, 6), v(N, 6), fJ(N, 6), a(N, 6);
   tau.resizeAs(qdd);
 
@@ -1000,9 +1000,9 @@ void FeatherstoneInterface::fwdDynamics_MF(arr& qdd,
   qdd = Minv * (u - F);
 }
 
-// #else ///MLR_FEATHERSTONE
-// void GraphToTree(F_LinkTree& tree, const mlr::KinematicWorld& C) { NIY; }
-// void updateGraphToTree(F_LinkTree& tree, const mlr::KinematicWorld& C) { NIY; }
+// #else ///RAI_FEATHERSTONE
+// void GraphToTree(F_LinkTree& tree, const rai::KinematicWorld& C) { NIY; }
+// void updateGraphToTree(F_LinkTree& tree, const rai::KinematicWorld& C) { NIY; }
 // void Featherstone::equationOfMotion(arr& H, arr& C,
 //                                     const F_LinkTree& tree,
 //                                     const arr& qd) { NIY; }

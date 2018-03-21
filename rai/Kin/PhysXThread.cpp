@@ -11,8 +11,8 @@
 #include <Kin/kinViewer.h>
 
 struct PhysXThread : Thread{
-  VAR(mlr::KinematicWorld, modelWorld)
-  VAR(mlr::KinematicWorld, physxWorld)
+  VAR(rai::KinematicWorld, modelWorld)
+  VAR(rai::KinematicWorld, physxWorld)
   VAR(arr, ctrl_q_ref)
   PhysXInterface *px;
   OrsViewer *view;
@@ -31,8 +31,8 @@ struct PhysXThread : Thread{
     physxWorld.writeAccess();
     physxWorld() = modelWorld.get();
     for(uint i=physxWorld().joints.N;i--;){
-      mlr::Joint *j = physxWorld().joints.elem(i);
-      if(j->type==mlr::JT_rigid){
+      rai::Joint *j = physxWorld().joints.elem(i);
+      if(j->type==rai::JT_rigid){
         LOG(0) <<"removing fixed joint '" <<j->type <<':' <<j->from->name <<'-' <<j->to->name <<"' (assuming it is not articulated)";
         delete j;
       }

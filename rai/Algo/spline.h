@@ -11,7 +11,7 @@
 
 #include <Core/array.h>
 
-namespace mlr {
+namespace rai {
 
 /// a spline
 struct Spline {
@@ -53,11 +53,11 @@ struct Spline {
   void plotBasis();
 };
 
-} //namespace mlr
+} //namespace rai
 
 //==============================================================================
 
-namespace mlr {
+namespace rai {
 
 /// a wrapper around a spline with methods specific to online path adaptation
 struct Path : Spline {
@@ -74,6 +74,6 @@ struct Path : Spline {
   void transform_CurrentBecomes_AllFollow(const arr& current, double t);
 };
 
-} //namespace mlr
+} //namespace rai
 
 #endif

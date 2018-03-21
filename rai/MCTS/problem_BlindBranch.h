@@ -31,7 +31,7 @@ struct BlindBranch:MCTS_Environment{
   int state; //the state = sum of so-far actions
   int T; //current time (part of the state, actually!)
   int H; //horizon (parameter of the world)
-  mlr::Array<Handle> actions; //will contain handles on the -1 and +1 action
+  rai::Array<Handle> actions; //will contain handles on the -1 and +1 action
 
 
   BlindBranch(uint H);

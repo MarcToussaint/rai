@@ -13,14 +13,14 @@ arr beta_true;
 
 double NormalSdv(const double& a, const double& b, double sdv) {
   double d=(a-b)/sdv;
-  double norm = 1./(::sqrt(MLR_2PI)*sdv);
+  double norm = 1./(::sqrt(RAI_2PI)*sdv);
   return norm*::exp(-.5*d*d);
 }
 
 //===========================================================================
 
 arr ridgeRegression(const arr& X, const arr& y, double lambda, arr& bayesSigma, const arr &weighted, arr &zScores) {
-  if(lambda<0.) lambda = mlr::getParameter<double>("lambda",1e-10);
+  if(lambda<0.) lambda = rai::getParameter<double>("lambda",1e-10);
 
   CHECK((y.nd==1 || y.nd==2) && X.nd==2 && y.d0==X.d0, "wrong dimensions");
   arr Xt = ~X;
@@ -57,7 +57,7 @@ arr evaluateBayesianRidgeRegressionSigma(const arr& X, const arr& bayesSigma){
 //===========================================================================
 
 RidgeRegression::RidgeRegression(const arr& X, const arr& y, double lambda, const arr& weighted, int verbose){
-  if(lambda<0.) lambda = mlr::getParameter<double>("lambda",1e-10);
+  if(lambda<0.) lambda = rai::getParameter<double>("lambda",1e-10);
   CHECK((y.nd==1 || y.nd==2) && X.nd==2 && y.d0==X.d0, "wrong dimensions");
 
   arr Xt = ~X;
@@ -107,12 +107,12 @@ arr RidgeRegression::evaluate(const arr& X, arr& bayesSigma2){
 
 double DefaultKernelFunction::k(const arr& x1, const arr& x2, arr& gx1, arr& Hx1){
   if(!type){
-    type = (KernelType) mlr::getParameter<uint>("ML/KernelType",1);
+    type = (KernelType) rai::getParameter<uint>("ML/KernelType",1);
     switch(type){
       case readFromCfg: HALT("???");  break;
       case Gauss:
-        hyperParam1 = ARR( mlr::sqr(mlr::getParameter<double>("ML/KernelWidth")) );
-        hyperParam2 = ARR( mlr::sqr(mlr::getParameter<double>("ML/PriorSdv")) );
+        hyperParam1 = ARR( rai::sqr(rai::getParameter<double>("ML/KernelWidth")) );
+        hyperParam2 = ARR( rai::sqr(rai::getParameter<double>("ML/PriorSdv")) );
         break;
     }
   }
@@ -128,7 +128,7 @@ DefaultKernelFunction defaultKernelFunction;
 
 KernelRidgeRegression::KernelRidgeRegression(const arr& X, const arr& y, KernelFunction& kernel, double lambda, double mu)
   :X(X),mu(mu),kernel(kernel){
-  if(lambda<0.) lambda = mlr::getParameter<double>("lambda",1e-10);
+  if(lambda<0.) lambda = rai::getParameter<double>("lambda",1e-10);
   uint n=X.d0;
 
   //-- compute kernel matrix
@@ -206,7 +206,7 @@ ScalarFunction KernelRidgeRegression::getF(double plusSigma){
 
 KernelLogisticRegression::KernelLogisticRegression(const arr& X, const arr& y, KernelFunction& _kernel, double _lambda, double _mu)
   :X(X),lambda(_lambda),mu(_mu),kernel(_kernel){
-  if(lambda<0.) lambda = mlr::getParameter<double>("lambda",1e-10);
+  if(lambda<0.) lambda = rai::getParameter<double>("lambda",1e-10);
   uint n=X.d0;
 
   //-- compute kernel matrix
@@ -228,7 +228,7 @@ KernelLogisticRegression::KernelLogisticRegression(const arr& X, const arr& y, K
 
     //compute logLikelihood
     logLike=0.;
-    for(uint i=0; i<n; i++) logLike += mlr::indicate(y(i)==1.)*f(i) - log(Z(i));
+    for(uint i=0; i<n; i++) logLike += rai::indicate(y(i)==1.)*f(i) - log(Z(i));
     LOG(1) <<"log-likelihood = " <<logLike;
 
     kernelMatrix_lambda = kernelMatrix;
@@ -274,7 +274,7 @@ arr KernelLogisticRegression::evaluate(const arr& Z, arr& p_bayes, arr &p_hi, ar
     }
     s /= 2.*lambda; //TODO: why?? why not for KRR?
     for(uint i=0; i<s.N; i++) clip(s.elem(i), -100., 100.);  //constrain the discriminative values to avoid NANs...
-    if(&p_bayes){ p_bayes = exp(f/sqrt(1.+s*MLR_PI/8.)); p_bayes /= 1.+p_bayes; }
+    if(&p_bayes){ p_bayes = exp(f/sqrt(1.+s*RAI_PI/8.)); p_bayes /= 1.+p_bayes; }
     s = sqrt(s);
     if(&p_hi){ p_hi = exp(f+s); p_hi /= 1.+p_hi; }
     if(&p_lo){ p_lo = exp(f-s); p_lo /= 1.+p_lo; }
@@ -285,7 +285,7 @@ arr KernelLogisticRegression::evaluate(const arr& Z, arr& p_bayes, arr &p_hi, ar
 //===========================================================================
 
 arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bayesSigma2) {
-  if(lambda<0.) lambda = mlr::getParameter<double>("lambda",1e-10);
+  if(lambda<0.) lambda = rai::getParameter<double>("lambda",1e-10);
 
   CHECK_EQ(y.nd,1, "");
   uint n=y.N, d=X.d1;
@@ -310,7 +310,7 @@ arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bay
 
     //compute logLikelihood
     logLike=0.;
-    for(uint i=0; i<n; i++) logLike += mlr::indicate(y(i)==1.)*f(i) - log(Z(i));
+    for(uint i=0; i<n; i++) logLike += rai::indicate(y(i)==1.)*f(i) - log(Z(i));
     LOG(1) <<"log-likelihood = " <<logLike;
 
     //optionally reject the update
@@ -329,7 +329,7 @@ arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bay
     beta_update = lapack_Ainv_b_sym(Xt*(w%X) + 2.*I, Xt*(y-p) - 2.*I*beta);   //beta update equation
     beta += alpha*beta_update;
     
-//    MLR_MSG("logReg iter= " <<k <<" negLogLike= " <<-logLike/n <<" beta_update= " <<absMax(beta_update) <<" alpha= " <<alpha);
+//    RAI_MSG("logReg iter= " <<k <<" negLogLike= " <<-logLike/n <<" beta_update= " <<absMax(beta_update) <<" alpha= " <<alpha);
     
     if(alpha*absMax(beta_update)<1e-5) break;
   }
@@ -340,7 +340,7 @@ arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bay
 }
 
 arr logisticRegressionMultiClass(const arr& X, const arr& y, double lambda) {
-  if(lambda<0.) lambda = mlr::getParameter<double>("lambda",1e-10);
+  if(lambda<0.) lambda = rai::getParameter<double>("lambda",1e-10);
 
 
   CHECK(y.nd==2 && y.d0==X.d0, "");
@@ -392,8 +392,8 @@ arr logisticRegressionMultiClass(const arr& X, const arr& y, double lambda) {
     XtWX.resize(beta.N, beta.N);
     XtWX.setZero();
     for(uint c1=0; c1<M; c1++) for(uint c2=0; c2<M; c2++) {
-        for(uint i=0; i<n; i++) w(i) = p(i, c1)*(mlr::indicate(c1==c2)-p(i, c2));
-        XtWX.setMatrixBlock(Xt*diagProduct(w, X) + 2.*mlr::indicate(c1==c2)*I, c1*d, c2*d);
+        for(uint i=0; i<n; i++) w(i) = p(i, c1)*(rai::indicate(c1==c2)-p(i, c2));
+        XtWX.setMatrixBlock(Xt*diagProduct(w, X) + 2.*rai::indicate(c1==c2)*I, c1*d, c2*d);
       }
     //compute the beta update
     arr tmp = ~(Xt*(y-p) - 2.*I*beta); //the gradient as M-times-d matrix
@@ -557,8 +557,8 @@ void piecewiseLinearFeatures(arr& Z, const arr& X) {
 
 
 void rbfFeatures(arr& Z, const arr& X, const arr& Xtrain) {
-  uint rbfBias = mlr::getParameter<uint>("rbfBias", 1);
-  double rbfWidth = mlr::sqr(mlr::getParameter<double>("rbfWidth", .2));
+  uint rbfBias = rai::getParameter<uint>("rbfBias", 1);
+  double rbfWidth = rai::sqr(rai::getParameter<double>("rbfWidth", .2));
   Z.resize(X.d0, Xtrain.d0+rbfBias);
   for(uint i=0; i<Z.d0; i++) {
     if(rbfBias) Z(i, 0) = 1.; //bias feature also for rbfs?
@@ -569,7 +569,7 @@ void rbfFeatures(arr& Z, const arr& X, const arr& Xtrain) {
 }
 
 arr makeFeatures(const arr& X, FeatureType featureType, const arr& rbfCenters) {
-  if(featureType==readFromCfgFileFT) featureType = (FeatureType)mlr::getParameter<uint>("modelFeatureType", 1);
+  if(featureType==readFromCfgFileFT) featureType = (FeatureType)rai::getParameter<uint>("modelFeatureType", 1);
   arr Z;
   switch(featureType) {
     case constFT:     Z = consts<double>(1., X.d0, 1);  break;
@@ -585,20 +585,20 @@ arr makeFeatures(const arr& X, FeatureType featureType, const arr& rbfCenters) {
 }
 
 void artificialData(arr& X, arr& y, ArtificialDataType dataType) {
-  uint n = mlr::getParameter<uint>("n", 100);
-  uint d = mlr::getParameter<uint>("d", 1);
-  double sigma = mlr::getParameter<double>("sigma", 1.); // observation noise
+  uint n = rai::getParameter<uint>("n", 100);
+  uint d = rai::getParameter<uint>("d", 1);
+  double sigma = rai::getParameter<double>("sigma", 1.); // observation noise
   
-  if(dataType==readFromCfgFileDT) dataType = (ArtificialDataType)mlr::getParameter<uint>("dataType", 1);
+  if(dataType==readFromCfgFileDT) dataType = (ArtificialDataType)rai::getParameter<uint>("dataType", 1);
   switch(dataType) {
     case linearRedundantData:
     case linearData: {
       X = randn(n, d);
-      arr Z = makeFeatures(X, (FeatureType)mlr::getParameter<uint>("dataFeatureType", 1));
+      arr Z = makeFeatures(X, (FeatureType)rai::getParameter<uint>("dataFeatureType", 1));
       arr beta;
       beta = randn(Z.d1, 1).reshape(Z.d1);
       if(dataType==linearRedundantData){
-	double pr = mlr::getParameter<double>("d_p_redundant", .5);
+	double pr = rai::getParameter<double>("d_p_redundant", .5);
 	for(uint j=1;j<beta.N;j++) if(rnd.uni()<pr) beta(j)=0.;
       }
       y = Z*beta;
@@ -614,14 +614,14 @@ void artificialData(arr& X, arr& y, ArtificialDataType dataType) {
       break;
     }
     case linearOutlier: {
-      double rate = mlr::getParameter<double>("outlierRate", .1);
+      double rate = rai::getParameter<double>("outlierRate", .1);
       X = randn(n, d);
-      arr Z = makeFeatures(X, (FeatureType)mlr::getParameter<uint>("dataFeatureType", 1));
+      arr Z = makeFeatures(X, (FeatureType)rai::getParameter<uint>("dataFeatureType", 1));
       arr beta;
       beta = randn(Z.d1, 1).reshape(Z.d1);
       y = Z*beta;
       for(uint i=0; i<y.N; i++)  if(rnd.uni()<rate) {
-          y(i) += mlr::getParameter<double>("outlierSigma", 10.)*rnd.gauss();
+          y(i) += rai::getParameter<double>("outlierSigma", 10.)*rnd.gauss();
         } else {
           y(i) += sigma*rnd.gauss();
         }
@@ -634,8 +634,8 @@ void artificialData(arr& X, arr& y, ArtificialDataType dataType) {
 }
 
 void artificialData_Hasties2Class(arr& X, arr& y) {
-  uint n = mlr::getParameter<uint>("n", 100);
-  uint d = mlr::getParameter<uint>("d", 2);
+  uint n = rai::getParameter<uint>("n", 100);
+  uint d = rai::getParameter<uint>("d", 2);
 
   arr means0(10, d), means1(10, d), x(d), bias0(d), bias1(d);
 
@@ -659,9 +659,9 @@ void artificialData_Hasties2Class(arr& X, arr& y) {
 }
 
 void artificialData_HastiesMultiClass(arr& X, arr& y) {
-  uint n = mlr::getParameter<uint>("n", 100);
-  uint d = mlr::getParameter<uint>("d", 2);
-  uint M = mlr::getParameter<uint>("M", 3);
+  uint n = rai::getParameter<uint>("n", 100);
+  uint d = rai::getParameter<uint>("d", 2);
+  uint M = rai::getParameter<uint>("M", 3);
 
   arr means(M, 10, d), x(d);
   
@@ -680,9 +680,9 @@ void artificialData_HastiesMultiClass(arr& X, arr& y) {
 }
 
 void artificialData_GaussianMixture(arr& X, arr& y) {
-  uint n = mlr::getParameter<uint>("n", 100);
-  uint M = mlr::getParameter<uint>("M", 3);
-  double sig = mlr::getParameter<double>("sigma", .2);
+  uint n = rai::getParameter<uint>("n", 100);
+  uint M = rai::getParameter<uint>("M", 3);
+  double sig = rai::getParameter<double>("sigma", .2);
   
   arr means(M, 2), V(M, 2, 2), x(2);
   
@@ -705,11 +705,11 @@ void artificialData_GaussianMixture(arr& X, arr& y) {
 
 void load_data(arr& X, const char* filename, bool whiten) {
   ifstream is;
-  mlr::open(is, filename);
-  mlr::Array<mlr::String> strs;
-  if(!mlr::contains("0123456789.-+", mlr::peerNextChar(is))) {
+  rai::open(is, filename);
+  rai::Array<rai::String> strs;
+  if(!rai::contains("0123456789.-+", rai::peerNextChar(is))) {
     //read line of strings
-    mlr::String str;
+    rai::String str;
     for(;;) {
       str.read(is, " \"\t\r", " \"\t\r\n", false);
       if(!str.N) break;

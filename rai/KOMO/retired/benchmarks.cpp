@@ -17,15 +17,15 @@
 #include <Optim/convert.h>
 
 void setTasks(KOMO& MP,
-              mlr::Shape &endeff,
-              mlr::Shape& target,
+              rai::Shape &endeff,
+              rai::Shape& target,
               byte whichAxesToAlign,
               uint iterate,
               int timeSteps,
               double duration);
 
 struct sPR2EndPoseProblem{
-  mlr::KinematicWorld world;
+  rai::KinematicWorld world;
   KOMO MP;
   Convert *CP;
   sPR2EndPoseProblem()
@@ -35,7 +35,7 @@ struct sPR2EndPoseProblem{
 PR2EndPoseProblem::PR2EndPoseProblem()
   : s(*(new sPR2EndPoseProblem())){
 
-  for(mlr::Shape *sh:s.world.shapes) sh->cont=true;
+  for(rai::Shape *sh:s.world.shapes) sh->cont=true;
 
   setTasks(s.MP, *s.world.getShapeByName("endeff"), *s.world.getShapeByName("target"), 0, 1, 0, 5.);
 

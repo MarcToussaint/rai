@@ -45,10 +45,10 @@ void PercViewer::open(){
 
   modelWorld.writeAccess();
   modelCopy.resize(modelWorld().frames.N);
-  for(mlr::Frame *f: modelWorld().frames){
-    mlr::Shape *s = f->shape;
+  for(rai::Frame *f: modelWorld().frames){
+    rai::Shape *s = f->shape;
     if(s){
-      mlr::Mesh& m=modelCopy(f->ID);
+      rai::Mesh& m=modelCopy(f->ID);
       m = s->mesh();
       if(!m.C.N) m.C = {.6, .6, .6, .3};
       if(m.C.N==3) m.C.append(.3);
@@ -71,10 +71,10 @@ void PercViewer::step(){
   gl->dataLock.unlock();
   percepts.deAccess();
 
-  mlr::Array<mlr::Transformation> X;
+  rai::Array<rai::Transformation> X;
   modelWorld.readAccess();
   X.resize(modelWorld().frames.N);
-  for(mlr::Frame *f:modelWorld().frames) X(f->ID) = f->X;
+  for(rai::Frame *f:modelWorld().frames) X(f->ID) = f->X;
   modelWorld.deAccess();
 
   gl->dataLock.writeLock();

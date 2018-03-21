@@ -12,15 +12,15 @@ void read(const char* filename){
   G.writeHtml(FILE("z.html"), FILE(filename));
   G.writeDot(FILE("z.dot").getOs());
 
-  mlr::system("firefox z.html &");
-  mlr::system("dot -Tpdf z.dot > z.pdf");
-  mlr::system("evince z.pdf &");
+  rai::system("firefox z.html &");
+  rai::system("dot -Tpdf z.dot > z.pdf");
+  rai::system("evince z.pdf &");
 }
 
 //===========================================================================
 
 int MAIN(int argc, char** argv){
-  mlr::initCmdLine(argc, argv);
+  rai::initCmdLine(argc, argv);
 
   if(argc<2){
     cout <<"need g file as argument" <<endl;

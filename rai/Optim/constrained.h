@@ -52,7 +52,7 @@ inline void evaluateConstrainedProblem(const arr& x, ConstrainedProblem& P, std:
   double Ef=0., Eh=0., Eg=0.;
   for(uint i=0;i<phi_x.N;i++){
     if(tt_x(i)==OT_f) Ef += phi_x(i);
-    if(tt_x(i)==OT_sumOfSqr) Ef += mlr::sqr(phi_x(i));
+    if(tt_x(i)==OT_sumOfSqr) Ef += rai::sqr(phi_x(i));
     if(tt_x(i)==OT_ineq && phi_x(i)>0.) Eg += phi_x(i);
     if(tt_x(i)==OT_eq) Eh += fabs(phi_x(i));
   }
