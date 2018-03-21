@@ -15,10 +15,10 @@
    }
 */
 
-//void mlr::KinematicWorld::addObject(mlr::Body *b) {
+//void rai::KinematicWorld::addObject(rai::Body *b) {
 //  bodies.append(b);
 //  int ibody = bodies.N - 1;
-//  uint i; mlr::Shape *s;
+//  uint i; rai::Shape *s;
 //  for_list(Type,  s,  b->shapes) {
 //    s->ibody = ibody;
 //    s->index = shapes.N;
@@ -26,7 +26,7 @@
 //  }
 //}
 
-mlr::KinematicWorld* mlr::KinematicWorld::newClone() const {
+rai::KinematicWorld* rai::KinematicWorld::newClone() const {
   Graph *G=new Graph();
   G->q_dim=q_dim;
   listCopy(G->proxies, proxies);
@@ -36,8 +36,8 @@ mlr::KinematicWorld* mlr::KinematicWorld::newClone() const {
   // post-process coupled joints
   for(Joint *j: G->joints)
     if(j->mimic){
-    mlr::String jointName;
-    bool good = j->ats.find<mlr::String>(jointName, "mimic");
+    rai::String jointName;
+    bool good = j->ats.find<rai::String>(jointName, "mimic");
     CHECK(good, "something is wrong");
     j->mimic = listFindByName(G->joints, jointName);
     if(!j->mimic) HALT("The joint '" <<*j <<"' is declared coupled to '" <<jointName <<"' -- but that doesn't exist!");
@@ -54,7 +54,7 @@ mlr::KinematicWorld* mlr::KinematicWorld::newClone() const {
 }
 
 
-//void mlr::KinematicWorld::copyShapesAndJoints(const Graph& G) {
+//void rai::KinematicWorld::copyShapesAndJoints(const Graph& G) {
 //  uint i;  Shape *s;  Body *b;  Joint *j;
 //  for_list(Type,  s,  shapes)(*s) = *G.shapes(i);
 //  for_list(Type,  j,  joints)(*j) = *G.joints(i);
@@ -69,20 +69,20 @@ mlr::KinematicWorld* mlr::KinematicWorld::newClone() const {
 
 
 ///// find body index with specific name
-//uint mlr::KinematicWorld::getBodyIndexByName(const char* name) const {
+//uint rai::KinematicWorld::getBodyIndexByName(const char* name) const {
 //  Body *b=getBodyByName(name);
 //  return b?b->index:0;
 //}
 
 ///// find shape index with specific name
-//uint mlr::KinematicWorld::getShapeIndexByName(const char* name) const {
+//uint rai::KinematicWorld::getShapeIndexByName(const char* name) const {
 //  Shape *s=getShapeByName(name);
 //  return s?s->index:0;
 //}
 
 /** @brief if two bodies touch, the are not yet connected, and one of them has
   the `glue' attribute, add a new edge of FIXED type between them */
-//void mlr::KinematicWorld::glueTouchingBodies() {
+//void rai::KinematicWorld::glueTouchingBodies() {
 //  uint i, A, B;
 //  Body *a, *b;//, c;
 //  bool ag, bg;
@@ -102,7 +102,7 @@ mlr::KinematicWorld* mlr::KinematicWorld::newClone() const {
 //}
 
 #if 0 //obsolete:
-void mlr::KinematicWorld::getContactMeasure(arr &x, double margin, bool linear) const {
+void rai::KinematicWorld::getContactMeasure(arr &x, double margin, bool linear) const {
   x.resize(1);
   x=0.;
   uint i;
@@ -133,8 +133,8 @@ void mlr::KinematicWorld::getContactMeasure(arr &x, double margin, bool linear) 
 }
 
 /// gradient (=scalar Jacobian) of this contact cost
-double mlr::KinematicWorld::getContactGradient(arr &grad, double margin, bool linear) const {
-  mlr::Vector normal;
+double rai::KinematicWorld::getContactGradient(arr &grad, double margin, bool linear) const {
+  rai::Vector normal;
   uint i;
   Shape *a, *b;
   double d, discount;
@@ -142,7 +142,7 @@ double mlr::KinematicWorld::getContactGradient(arr &grad, double margin, bool li
   arr J, dnormal;
   grad.resize(1, getJointStateDimension(false));
   grad.setZero();
-  mlr::Vector arel, brel;
+  rai::Vector arel, brel;
   for(i=0; i<proxies.N; i++) if(proxies(i)->d<margin) {
       a=shapes(proxies(i)->a); b=shapes(proxies(i)->b);
       d=1.-proxies(i)->d/margin;
@@ -183,8 +183,8 @@ double mlr::KinematicWorld::getContactGradient(arr &grad, double margin, bool li
 #endif
 
 #if 0 //alternative implementation : cost=1 -> contact, other discounting...
-double mlr::KinematicWorld::getContactGradient(arr &grad, double margin) {
-  mlr::Vector normal;
+double rai::KinematicWorld::getContactGradient(arr &grad, double margin) {
+  rai::Vector normal;
   uint i;
   Shape *a, *b;
   double d, discount;
@@ -192,7 +192,7 @@ double mlr::KinematicWorld::getContactGradient(arr &grad, double margin) {
   arr J, dnormal;
   grad.resize(1, jd);
   grad.setZero();
-  mlr::Transformation arel, brel;
+  rai::Transformation arel, brel;
   for(i=0; i<proxies.N; i++) if(!proxies(i)->age && proxies(i)->d<margin) {
       a=shapes(proxies(i)->a); b=shapes(proxies(i)->b);
       discount = 1.;
@@ -229,16 +229,16 @@ double mlr::KinematicWorld::getContactGradient(arr &grad, double margin) {
 #endif
 
 /// [prelim] some kind of gyroscope
-void mlr::KinematicWorld::getGyroscope(mlr::Vector& up) const {
+void rai::KinematicWorld::getGyroscope(rai::Vector& up) const {
   up.set(0, 0, 1);
   up=bodies(0)->X.rot*up;
 }
 
 /** @brief returns a k-dim vector containing the penetration depths of all bodies */
-void mlr::KinematicWorld::getPenetrationState(arr &vec) const {
+void rai::KinematicWorld::getPenetrationState(arr &vec) const {
   vec.resize(bodies.N);
   vec.setZero();
-  mlr::Vector d;
+  rai::Vector d;
   uint i;
   for(i=0; i<proxies.N; i++) if(proxies(i)->d<0.) {
       d=proxies(i)->posB - proxies(i)->posA;
@@ -249,10 +249,10 @@ void mlr::KinematicWorld::getPenetrationState(arr &vec) const {
 }
 
 /** @brief a vector describing the incoming forces (penetrations) on one object */
-void mlr::KinematicWorld::getGripState(arr& grip, uint j) const {
-  mlr::Vector d, p;
-  mlr::Vector sumOfD; sumOfD.setZero();
-  mlr::Vector torque; torque.setZero();
+void rai::KinematicWorld::getGripState(arr& grip, uint j) const {
+  rai::Vector d, p;
+  rai::Vector sumOfD; sumOfD.setZero();
+  rai::Vector torque; torque.setZero();
   double sumOfAbsD = 0.;
   double varOfD = 0.;
 
@@ -293,7 +293,7 @@ void mlr::KinematicWorld::getGripState(arr& grip, uint j) const {
 
 #if 0 //OBSOLETE
 /// returns the number of touch-sensors
-uint mlr::KinematicWorld::getTouchDimension() {
+uint rai::KinematicWorld::getTouchDimension() {
   Body *n;
   uint i=0, j;
 
@@ -304,7 +304,7 @@ uint mlr::KinematicWorld::getTouchDimension() {
 }
 
 /// returns the touch vector (penetrations) of all touch-sensors
-void mlr::KinematicWorld::getTouchState(arr& touch) {
+void rai::KinematicWorld::getTouchState(arr& touch) {
   if(!td) td=getTouchDimension();
   arr pen;
   getPenetrationState(pen);
@@ -321,15 +321,15 @@ void mlr::KinematicWorld::getTouchState(arr& touch) {
 #endif
 
 /** @brief get the center of mass, total velocity, and total angular momemtum */
-void mlr::KinematicWorld::getTotals(mlr::Vector& c, mlr::Vector& v, mlr::Vector& l, mlr::Quaternion& ori) const {
+void rai::KinematicWorld::getTotals(rai::Vector& c, rai::Vector& v, rai::Vector& l, rai::Quaternion& ori) const {
   Body *n;
   uint j;
   double m, M;
 
   //dMass mass;
-  mlr::Matrix ID;
-  //mlr::Matrix TP;
-  mlr::Vector r, o;
+  rai::Matrix ID;
+  //rai::Matrix TP;
+  rai::Vector r, o;
 
   ID.setId();
   c.setZero();
@@ -358,7 +358,7 @@ void mlr::KinematicWorld::getTotals(mlr::Vector& c, mlr::Vector& v, mlr::Vector&
 }
 
 /** @brief dump a list body pairs for which the upper conditions hold */
-void mlr::KinematicWorld::reportGlue(std::ostream *os) {
+void rai::KinematicWorld::reportGlue(std::ostream *os) {
   uint i, A, B;
   Body *a, *b;
   bool ag, bg;

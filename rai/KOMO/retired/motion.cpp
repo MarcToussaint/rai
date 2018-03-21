@@ -101,7 +101,7 @@ void KOMO::costReport(bool gnuplt) {
 }
 
 void KOMO::temporallyAlignKinematicSwitchesInConfiguration(uint t){
-  for(mlr::KinematicSwitch *sw:switches) if(sw->timeOfApplication<=t){
+  for(rai::KinematicSwitch *sw:switches) if(sw->timeOfApplication<=t){
     sw->temporallyAlign(*configurations(t+k_order-1), *configurations(t+k_order), sw->timeOfApplication==t);
   }
 }

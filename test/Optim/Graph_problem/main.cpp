@@ -3,7 +3,7 @@
 #include <Optim/benchmarks.h>
 
 #include <Optim/Graph_Problem.h>
-#include <Optim/lagrangian.h>
+#include <Optim/constrained.h>
 
 void testGraphProblem() {
   //see the implemention of ParticleAroundWalls::phi_t for an example on how to specify constrained k-order-Markov optimization problems
@@ -46,13 +46,13 @@ void testGraphProblem() {
   optConstrained(x, NoArr, C2 ); //fast, using KOMO structure
 
   write(LIST<arr>(x),"z.output");
-  mlr::String plt = "plot 'z.output' us 1";
+  rai::String plt = "plot 'z.output' us 1";
   for(uint i=1;i<d(0);i++) plt <<", '' us " <<i+1;
   gnuplot(plt, true, true);
 }
 
 int MAIN(int argc,char** argv){
-  mlr::initCmdLine(argc,argv);
+  rai::initCmdLine(argc,argv);
 
   testGraphProblem();
 

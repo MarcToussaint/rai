@@ -11,15 +11,13 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
 /// @file
 /// @ingroup group_ors
 /// @addtogroup group_ors
 /// @{
 
-#ifndef MLR_tutorial_h
-#define MLR_tutorial_h
+#ifndef RAI_tutorial_h
+#define RAI_tutorial_h
 
 #include <Core/array.h>
 
@@ -97,7 +95,7 @@ public:
   
   OpenGL *gl;
 //private:
-  mlr::KinematicWorld *C;
+  rai::KinematicWorld *C;
   OdeModule *ode; // HIER PARAMETER verstellen
   SwiftInterface *swift;
   TaskVariableList TVs;

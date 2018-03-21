@@ -17,7 +17,7 @@
     -----------------------------------------------------------------  */
 #include "adaptiveMotionExecution.h"
 
-AdaptiveMotionExecution::AdaptiveMotionExecution(mlr::KinematicWorld &_world, arr& _trajRef, double _dt, double _TRef, arr &_x0, arr &_q0, MObject &_goalMO, \
+AdaptiveMotionExecution::AdaptiveMotionExecution(rai::KinematicWorld &_world, arr& _trajRef, double _dt, double _TRef, arr &_x0, arr &_q0, MObject &_goalMO, \
          bool _useOrientation):
   world(&_world),
   dt(_dt),
@@ -41,8 +41,8 @@ AdaptiveMotionExecution::AdaptiveMotionExecution(mlr::KinematicWorld &_world, ar
 
   lastGoal = goalRef+(x0-_trajRef[0]);
 
-  trajWrap = new mlr::Path(_trajRef);
-  trajRef = new mlr::Path(_trajRef);
+  trajWrap = new rai::Path(_trajRef);
+  trajRef = new rai::Path(_trajRef);
 }
 
 void AdaptiveMotionExecution::getNextState(arr& _state, arr& _dstate) {

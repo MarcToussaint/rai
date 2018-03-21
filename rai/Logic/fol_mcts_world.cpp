@@ -1,17 +1,10 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #include "fol_mcts_world.h"
 #include "fol.h"
@@ -87,7 +80,7 @@ void FOL_World::init(istream& is){
   }
 
   if(verbFil){
-    mlr::open(fil, "z.FOL_World");
+    rai::open(fil, "z.FOL_World");
   }
 
   start_T_step=0;
@@ -149,7 +142,7 @@ MCTS_Environment::TransitionReturn FOL_World::transition(const Handle& action){
 
     if(w==1e10){
       if(verbose>2) cout <<"*** NOTHING TO WAIT FOR!" <<endl;
-      lastStepDuration = 10.;
+      lastStepDuration = 1.;
     }else{
       //-- subtract w from all times and collect all activities with minimal wait time
       NodeL terminatingActivities;
@@ -225,8 +218,9 @@ MCTS_Environment::TransitionReturn FOL_World::transition(const Handle& action){
 }
 
 const std::vector<FOL_World::Handle> FOL_World::get_actions(){
+  CHECK(state, "you need to set the state first! (e.g., reset_state)");
   if(verbose>2) cout <<"****************** FOL_World: Computing possible decisions" <<flush;
-  mlr::Array<Handle> decisions; //tuples of rule and substitution
+  rai::Array<Handle> decisions; //tuples of rule and substitution
   if(hasWait){
     decisions.append(Handle(new Decision(true, NULL, {}, decisions.N))); //the wait decision (true as first argument, no rule, no substitution)
   }
@@ -361,7 +355,7 @@ void FOL_World::write_state(ostream& os){
   state->write(os," ","{}");
 }
 
-void FOL_World::set_state(mlr::String& s){
+void FOL_World::set_state(rai::String& s){
   state->clear();
   s >>"{";
   state->read(s);
@@ -403,7 +397,7 @@ Node* FOL_World::addSymbol(const char* name){
 
 void FOL_World::addFact(const StringA& symbols){
   NodeL parents;
-  for(const mlr::String& s:symbols){
+  for(const rai::String& s:symbols){
       Node *sym = KB[s];
       if(!sym) sym=addSymbol(s);
       parents.append(sym);
@@ -431,7 +425,7 @@ void FOL_World::addTerminalRule(const StringAA& literals){
 
   for(const StringA& lit:literals){
       NodeL parents;
-      for(const mlr::String& s:lit) parents.append(KB[s]);
+      for(const rai::String& s:lit) parents.append(KB[s]);
       preconditions.newNode<bool>({}, parents, true);
   }
 

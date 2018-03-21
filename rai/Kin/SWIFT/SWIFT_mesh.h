@@ -131,7 +131,6 @@ class SWIFT_Tri_Vertex {
     bool Verify_Topology( int pos ) const;
 #endif
 
-    void Draw() const { coords.Send_VCoords_To_OpenGL(); }
   private:
     // Geometry info
     SWIFT_Triple coords;
@@ -285,7 +284,6 @@ class SWIFT_Tri_Edge {
     bool Verify_Geometry( int pos1, int pos2 ) const;
 #endif
 
-    void Draw() const { orig->Draw(); next->Origin()->Draw(); }
   private:
     // Geometry info
     SWIFT_Triple u;   // The direction vector of the edge
@@ -455,13 +453,6 @@ class SWIFT_Tri_Face {
     bool Verify_Geometry( int pos ) const;
 #endif
 
-    void Draw() const
-    {
-        normal.Send_NCoords_To_OpenGL();
-        e1.Origin()->Coords().Send_VCoords_To_OpenGL();
-        e2.Origin()->Coords().Send_VCoords_To_OpenGL();
-        e3.Origin()->Coords().Send_VCoords_To_OpenGL();
-    }
   private:
     // Geometry info
     SWIFT_Triple normal;    // face plane normal

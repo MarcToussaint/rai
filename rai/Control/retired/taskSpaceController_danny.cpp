@@ -3,7 +3,7 @@
 #include <Algo/spline.h>
 
 
-LinTaskSpaceAccLaw::LinTaskSpaceAccLaw(TaskMap* map, mlr::KinematicWorld* world, mlr::String name) : map(map), world(world), name(name) {
+LinTaskSpaceAccLaw::LinTaskSpaceAccLaw(TaskMap* map, rai::KinematicWorld* world, rai::String name) : map(map), world(world), name(name) {
   this->setRef(); //TODO: is this the best way?
   uint dim = this->getPhiDim();
   this->setC(zeros(dim,dim));
@@ -39,7 +39,7 @@ void LinTaskSpaceAccLaw::setC(arr C) {
   this->C = C;
 }
 
-void LinTaskSpaceAccLaw::setSpline(mlr::Spline *yS, mlr::Spline *yDotS, mlr::Spline *yDDotS) {
+void LinTaskSpaceAccLaw::setSpline(rai::Spline *yS, rai::Spline *yDotS, rai::Spline *yDDotS) {
   this->trajectorySpline = yS;
   this->trajectoryDotSpline = yDotS;
   this->trajectoryDDotSpline = yDDotS;
@@ -207,9 +207,9 @@ void TaskSpaceController::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, 
     CHECK(this->constrainedTaskLaws.N == 1, "Multiple force laws not allowed at the moment");
     for(ConstrainedTaskLaw* law : this->constrainedTaskLaws) {
       TM_Default *m = dynamic_cast<TM_Default*>(law->map);
-      mlr::Body* body = this->world->shapes(m->i)->body;
-      mlr::Vector vec = this->world->shapes(m->i)->rel.pos;
-      mlr::Shape* lFtSensor = this->world->getShapeByName("l_ft_sensor");
+      rai::Body* body = this->world->shapes(m->i)->body;
+      rai::Vector vec = this->world->shapes(m->i)->rel.pos;
+      rai::Shape* lFtSensor = this->world->getShapeByName("l_ft_sensor");
       arr y, J, J_ft;
       law->getPhi(y, J);
       this->world->kinematicsPos_wrtFrame(NoArr, J_ft, body, vec, lFtSensor);
@@ -337,9 +337,9 @@ void TaskSpaceController::generateTaskSpaceSplines() {
     CHECK(law->trajectory.d0 >= 3, "The trajectory must consists of at least 3 states for the spline to work");
     CHECK(law->trajectoryDot.d0 >= 3, "The trajectoryDot must consists of at least 3 states for the spline to work");
     CHECK(law->trajectoryDDot.d0 >= 3, "The trajectoryDDot must consists of at least 3 states for the spline to work");
-    //law->setSpline(new mlr::Spline(law->trajectory.d0, law->trajectory), new mlr::Spline(law->trajectory.d0, law->trajectoryDot));
-    //law->setSpline(new mlr::Spline(law->trajectory.d0, law->trajectory));
-    law->setSpline(new mlr::Spline(law->trajectory.d0, law->trajectory), new mlr::Spline(law->trajectoryDot.d0, law->trajectoryDot), new mlr::Spline(law->trajectoryDDot.d0, law->trajectoryDDot));
+    //law->setSpline(new rai::Spline(law->trajectory.d0, law->trajectory), new rai::Spline(law->trajectory.d0, law->trajectoryDot));
+    //law->setSpline(new rai::Spline(law->trajectory.d0, law->trajectory));
+    law->setSpline(new rai::Spline(law->trajectory.d0, law->trajectory), new rai::Spline(law->trajectoryDot.d0, law->trajectoryDot), new rai::Spline(law->trajectoryDDot.d0, law->trajectoryDDot));
   }
 }
 

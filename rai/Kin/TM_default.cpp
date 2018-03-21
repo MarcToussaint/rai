@@ -1,15 +1,9 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
 #include "TM_default.h"
@@ -29,31 +23,31 @@ const char* TM_DefaultType2String[] = {
 };
 
 TM_Default::TM_Default(TM_DefaultType _type,
-                               int iShape, const mlr::Vector& _ivec,
-                               int jShape, const mlr::Vector& _jvec)
+                               int iShape, const rai::Vector& _ivec,
+                               int jShape, const rai::Vector& _jvec)
   :type(_type), i(iShape), j(jShape){
   if(&_ivec) ivec=_ivec; else ivec.setZero();
   if(&_jvec) jvec=_jvec; else jvec.setZero();
 }
 
-TM_Default::TM_Default(TM_DefaultType _type, const mlr::KinematicWorld &K,
-                               const char* iShapeName, const mlr::Vector& _ivec,
-                               const char* jShapeName, const mlr::Vector& _jvec)
+TM_Default::TM_Default(TM_DefaultType _type, const rai::KinematicWorld &K,
+                               const char* iShapeName, const rai::Vector& _ivec,
+                               const char* jShapeName, const rai::Vector& _jvec)
   :type(_type), i(-1), j(-1){
-  mlr::Frame *a = iShapeName ? K.getFrameByName(iShapeName):NULL;
-  mlr::Frame *b = jShapeName ? K.getFrameByName(jShapeName):NULL;
+  rai::Frame *a = iShapeName ? K.getFrameByName(iShapeName):NULL;
+  rai::Frame *b = jShapeName ? K.getFrameByName(jShapeName):NULL;
   if(a) i=a->ID;
   if(b) j=b->ID;
   if(&_ivec) ivec=_ivec; else ivec.setZero();
   if(&_jvec) jvec=_jvec; else jvec.setZero();
 }
 
-TM_Default::TM_Default(const Graph& specs, const mlr::KinematicWorld& G)
+TM_Default::TM_Default(const Graph& specs, const rai::KinematicWorld& G)
   :type(TMT_no), i(-1), j(-1){
   Node *it=specs["type"];
   if(!it) it=specs["map"];
   if(!it) HALT("no type given");
-  mlr::String Type=it->get<mlr::String>();
+  rai::String Type=it->get<rai::String>();
   if(Type=="pos") type=TMT_pos;
   else if(Type=="vec") type=TMT_vec;
   else if(Type=="quat") type=TMT_quat;
@@ -63,17 +57,17 @@ TM_Default::TM_Default(const Graph& specs, const mlr::KinematicWorld& G)
   else if(Type=="vecAlign") type=TMT_vecAlign;
   else if(Type=="gazeAt") type=TMT_gazeAt;
   else HALT("unknown type " <<Type);
-  if((it=specs["sym2"]) || (it=specs["ref1"])){ auto name=it->get<mlr::String>(); auto *s=G.getFrameByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); i=s->ID; }
-  if((it=specs["sym3"]) || (it=specs["ref2"])){ auto name=it->get<mlr::String>(); auto *s=G.getFrameByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); j=s->ID; }
-  if((it=specs["vec1"])) ivec = mlr::Vector(it->get<arr>());  else ivec.setZero();
-  if((it=specs["vec2"])) jvec = mlr::Vector(it->get<arr>());  else jvec.setZero();
+  if((it=specs["sym2"]) || (it=specs["ref1"])){ auto name=it->get<rai::String>(); auto *s=G.getFrameByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); i=s->ID; }
+  if((it=specs["sym3"]) || (it=specs["ref2"])){ auto name=it->get<rai::String>(); auto *s=G.getFrameByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); j=s->ID; }
+  if((it=specs["vec1"])) ivec = rai::Vector(it->get<arr>());  else ivec.setZero();
+  if((it=specs["vec2"])) jvec = rai::Vector(it->get<arr>());  else jvec.setZero();
 }
 
-TM_Default::TM_Default(const Node *specs, const mlr::KinematicWorld& G)
+TM_Default::TM_Default(const Node *specs, const rai::KinematicWorld& G)
   :type(TMT_no), i(-1), j(-1){
   CHECK(specs->parents.N>1,"");
-//  mlr::String& tt=specs->parents(0)->keys.last();
-  mlr::String& Type=specs->parents(1)->keys.last();
+//  rai::String& tt=specs->parents(0)->keys.last();
+  rai::String& Type=specs->parents(1)->keys.last();
   const char *ref1=NULL, *ref2=NULL;
   if(specs->parents.N>2) ref1=specs->parents(2)->keys.last().p;
   if(specs->parents.N>3) ref2=specs->parents(3)->keys.last().p;
@@ -86,37 +80,37 @@ TM_Default::TM_Default(const Node *specs, const mlr::KinematicWorld& G)
   else if(Type=="vecAlign") type=TMT_vecAlign;
   else if(Type=="gazeAt") type=TMT_gazeAt;
   else HALT("unknown type " <<Type);
-  if(ref1){ mlr::Frame *s=G.getFrameByName(ref1); CHECK(s,"shape name '" <<ref1 <<"' does not exist"); i=s->ID; }
-  if(ref2){ mlr::Frame *s=G.getFrameByName(ref2); CHECK(s,"shape name '" <<ref2 <<"' does not exist"); j=s->ID; }
+  if(ref1){ rai::Frame *s=G.getFrameByName(ref1); CHECK(s,"shape name '" <<ref1 <<"' does not exist"); i=s->ID; }
+  if(ref2){ rai::Frame *s=G.getFrameByName(ref2); CHECK(s,"shape name '" <<ref2 <<"' does not exist"); j=s->ID; }
   if(specs->isGraph()){
     const Graph& params = specs->graph();
     Node *it;
-    if((it=params.getNode("vec1"))) ivec = mlr::Vector(it->get<arr>());  else ivec.setZero();
-    if((it=params.getNode("vec2"))) jvec = mlr::Vector(it->get<arr>());  else jvec.setZero();
+    if((it=params.getNode("vec1"))) ivec = rai::Vector(it->get<arr>());  else ivec.setZero();
+    if((it=params.getNode("vec2"))) jvec = rai::Vector(it->get<arr>());  else jvec.setZero();
   }
 }
 
 
-void TM_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
+void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t) {
   if(t>=0 && referenceIds.N){
     if(referenceIds.nd==1){  i=referenceIds(t); j=-1; }
     if(referenceIds.nd==2){  i=referenceIds(t,0); j=referenceIds(t,1); }
   }
 
-  mlr::Frame *body_i = i<0?NULL: G.frames(i);
-  mlr::Frame *body_j = j<0?NULL: G.frames(j);
+  rai::Frame *body_i = i<0?NULL: G.frames(i);
+  rai::Frame *body_j = j<0?NULL: G.frames(j);
 
   if(type==TMT_pos){
-    mlr::Vector vec_i = ivec;
-    mlr::Vector vec_j = jvec;
+    rai::Vector vec_i = ivec;
+    rai::Vector vec_j = jvec;
     CHECK(body_i,"");
     if(body_j==NULL) { //simple, no j reference
       G.kinematicsPos(y, J, body_i, vec_i);
       y -= conv_vec2arr(vec_j);
       return;
     }//else...
-    mlr::Vector pi = body_i->X * vec_i;
-    mlr::Vector pj = body_j->X * vec_j;
+    rai::Vector pi = body_i->X * vec_i;
+    rai::Vector pj = body_j->X * vec_j;
     y = conv_vec2arr(body_j->X.rot / (pi-pj));
     if(&J) {
       arr Ji, Jj, JRj;
@@ -125,10 +119,10 @@ void TM_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
       G.axesMatrix(JRj, body_j);
       J.resize(3, Jj.d1);
       for(uint k=0; k<Jj.d1; k++) {
-        mlr::Vector vi(Ji(0, k), Ji(1, k), Ji(2, k));
-        mlr::Vector vj(Jj(0, k), Jj(1, k), Jj(2, k));
-        mlr::Vector r (JRj(0, k), JRj(1, k), JRj(2, k));
-        mlr::Vector jk =  body_j->X.rot / (vi-vj);
+        rai::Vector vi(Ji(0, k), Ji(1, k), Ji(2, k));
+        rai::Vector vj(Jj(0, k), Jj(1, k), Jj(2, k));
+        rai::Vector r (JRj(0, k), JRj(1, k), JRj(2, k));
+        rai::Vector jk =  body_j->X.rot / (vi-vj);
         jk -= body_j->X.rot / (r ^ (pi-pj));
         J(0, k)=jk.x;
         J(1, k)=jk.y;
@@ -139,8 +133,8 @@ void TM_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
   }
 
   if(type==TMT_posDiff){
-    mlr::Vector vec_i = ivec;
-    mlr::Vector vec_j = jvec;
+    rai::Vector vec_i = ivec;
+    rai::Vector vec_j = jvec;
     G.kinematicsPos(y, J, body_i, vec_i);
     if(!body_j){ //relative to world
       y -= conv_vec2arr(vec_j);
@@ -154,15 +148,15 @@ void TM_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
   }
 
   if(type==TMT_vec){
-    mlr::Vector vec_i = ivec;
-//    mlr::Vector vec_j = j<0?jvec: G.shapes(j)->rel.rot*jvec;
-    if(vec_i.isZero) MLR_MSG("attached vector is zero -- can't control that");
+    rai::Vector vec_i = ivec;
+//    rai::Vector vec_j = j<0?jvec: G.shapes(j)->rel.rot*jvec;
+    if(vec_i.isZero) RAI_MSG("attached vector is zero -- can't control that");
     if(body_j==NULL) { //simple, no j reference
       G.kinematicsVec(y, J, body_i, vec_i);
       return;
     }//else...
     //relative
-    MLR_MSG("warning - don't have a correct Jacobian for this TMT_ype yet");
+    RAI_MSG("warning - don't have a correct Jacobian for this TMT_ype yet");
     //      fi = G.bodies(body_i)->X; fi.appendTransformation(irel);
     //      fj = G.bodies(body_j)->X; fj.appendTransformation(jrel);
     //      f.setDifference(fi, fj);
@@ -173,15 +167,15 @@ void TM_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
   }
 
   if(type==TMT_vecDiff){
-    mlr::Vector vec_i = ivec;
-    mlr::Vector vec_j = jvec;
+    rai::Vector vec_i = ivec;
+    rai::Vector vec_j = jvec;
     G.kinematicsVec(y, J, body_i, vec_i);
     if(!body_j){ //relative to world
-      if(vec_i.isZero) MLR_MSG("attached vector is zero -- can't control that");
+      if(vec_i.isZero) RAI_MSG("attached vector is zero -- can't control that");
       y -= conv_vec2arr(vec_j);
     }else{
-      if(vec_i.isZero) MLR_MSG("attached vector1 is zero -- can't control that");
-      if(vec_j.isZero) MLR_MSG("attached vector2 is zero -- can't control that");
+      if(vec_i.isZero) RAI_MSG("attached vector1 is zero -- can't control that");
+      if(vec_j.isZero) RAI_MSG("attached vector2 is zero -- can't control that");
       arr y2, J2;
       G.kinematicsVec(y2, J2, body_j, vec_j);
       y -= y2;
@@ -193,8 +187,8 @@ void TM_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
   if(type==TMT_vecAlign) {
     CHECK(fabs(ivec.length()-1.)<1e-4,"vector references must be normalized");
     CHECK(fabs(jvec.length()-1.)<1e-4,"vector references must be normalized");
-    mlr::Vector vec_i = ivec;
-    mlr::Vector vec_j = jvec;
+    rai::Vector vec_i = ivec;
+    rai::Vector vec_j = jvec;
     arr zi,Ji,zj,Jj;
     G.kinematicsVec(zi, Ji, body_i, vec_i);
     if(body_j==NULL) {
@@ -234,10 +228,10 @@ void TM_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
     // jvec := relative position on the target shape; where in the target shape should we look.
     //         If j is not set, the target shape is WORLD and jvec is a vector in world coordinates
 
-    mlr::Vector vec_i = ivec;
-    mlr::Vector vec_xi = Vector_x;
-    mlr::Vector vec_yi = Vector_y;
-    mlr::Vector vec_j = jvec;
+    rai::Vector vec_i = ivec;
+    rai::Vector vec_xi = Vector_x;
+    rai::Vector vec_yi = Vector_y;
+    rai::Vector vec_j = jvec;
     arr pi,Jpi, xi,Jxi, yi,Jyi, pj,Jpj;
     G.kinematicsPos(pi, Jpi, body_i, vec_i);
     G.kinematicsVec(xi, Jxi, body_i, vec_xi);
@@ -301,7 +295,7 @@ void TM_Default::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t) {
   HALT("no such TVT");
 }
 
-uint TM_Default::dim_phi(const mlr::KinematicWorld& G) {
+uint TM_Default::dim_phi(const rai::KinematicWorld& G) {
   switch(type) {
     case TMT_pos: return 3;
     case TMT_vec: return 3;
@@ -316,8 +310,8 @@ uint TM_Default::dim_phi(const mlr::KinematicWorld& G) {
   }
 }
 
-mlr::String TM_Default::shortTag(const mlr::KinematicWorld& G){
-  mlr::String s="Default";
+rai::String TM_Default::shortTag(const rai::KinematicWorld& G){
+  rai::String s="Default";
   s <<':' <<TM_DefaultType2String[type];
   s <<':' <<(i<0?"WORLD":G.frames(i)->name);
   s <<'/' <<(j<0?"WORLD":G.frames(j)->name);

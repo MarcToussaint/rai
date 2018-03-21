@@ -1,17 +1,10 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #include "manipulationTree.h"
 #include <MCTS/solver_PlainMC.h>
@@ -26,8 +19,10 @@ uint COUNT_evals=0;
 uint COUNT_node=0;
 uintA COUNT_opt=consts<uint>(0, 4);
 double COUNT_time=0.;
-mlr::String OptLGPDataPath;
+rai::String OptLGPDataPath;
 ofstream *filNodes=NULL;
+
+bool LGP_useHoming = true;
 
 void MNode::resetData(){
   cost = zeros(L);
@@ -41,8 +36,8 @@ void MNode::resetData(){
   bound=0.;
 }
 
-MNode::MNode(mlr::KinematicWorld& kin, FOL_World& _fol, uint levels)
-  : parent(NULL), step(0), id(COUNT_node++),
+MNode::MNode(rai::KinematicWorld& kin, FOL_World& _fol, uint levels)
+  : parent(NULL), step(0), time(0.), id(COUNT_node++),
     fol(_fol),
     startKinematics(kin),
     L(levels){
@@ -125,7 +120,7 @@ void MNode::optLevel(uint level, bool collisions){
     komo.setModel(effKinematics, false);
     komo.setTiming(1., 2, 5., 1);
 
-    komo.setHoming(-1., -1., 1e-2);
+    if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
     komo.setSquaredQVelocities(.5, -1., 1.); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
     //komo.setFixEffectiveJoints(-1., -1., 1e2); //IMPORTANT: assume ALL eff to be articulated; problem: no constraints (touch)
     komo.setFixSwitchedObjects(-1., -1., 1e2);
@@ -148,7 +143,7 @@ void MNode::optLevel(uint level, bool collisions){
 //    }
 //    komo.setTiming(2.+.5, 2, 5., 1);
 
-//    komo.setHoming(-1., -1., 1e-2);
+//    if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
 //    komo.setSquaredQVelocities(1.1, -1., 1.); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
 //    komo.setFixEffectiveJoints(.5, -1., 1e2); //IMPORTANT: assume ALL eff to be articulated; problem: no constraints (touch)
 //    komo.setFixSwitchedObjects(.5, -1., 1e2);
@@ -169,7 +164,7 @@ void MNode::optLevel(uint level, bool collisions){
     if(time>1e-2) komo.setTiming(time, 2, 5., 1);
     else  komo.setTiming(1., 2, 5., 1);
 
-    komo.setHoming(-1., -1., 1e-2);
+    if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
     komo.setSquaredQVelocities();
     komo.setFixEffectiveJoints(-1., -1., 1e2);
     komo.setFixSwitchedObjects(-1., -1., 1e2);
@@ -184,19 +179,26 @@ void MNode::optLevel(uint level, bool collisions){
   } break;
   case 3:{
     komo.setModel(startKinematics, collisions);
-    uint stepsPerPhase = mlr::getParameter<uint>("LGP/stepsPerPhase", 10);
-    komo.setTiming(time+.5, stepsPerPhase, 5., 2);
+    uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
+    uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
+    komo.setTiming(time+.5, stepsPerPhase, 5., pathOrder);
 
-    komo.setHoming(-1., -1., 1e-2);
-    komo.setSquaredQAccelerations();
+    if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
+    if(pathOrder==1) komo.setSquaredQVelocities();
+    else komo.setSquaredQAccelerations();
     komo.setFixEffectiveJoints(-1., -1., 1e2);
     komo.setFixSwitchedObjects(-1., -1., 1e2);
     komo.setSquaredQuaternionNorms();
-    if(collisions) komo.setCollisions(false);
 
+#if 1
+    Skeleton S = getSkeleton({"touch", "stable", "dynOn", "impulse", "dynFree", "actFree"});
+    komo.setSkeleton(S);
+#else
+    if(collisions) komo.setCollisions(false);
     for(MNode *node:getTreePath()){
       komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
     }
+#endif
 
     komo.reset();
   } break;
@@ -205,7 +207,7 @@ void MNode::optLevel(uint level, bool collisions){
   //-- optimize
   DEBUG( FILE("z.fol") <<fol; );
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); );
-//  komo.reportProblem();
+  komo.reportProblem();
 
   try{
     //      komo.verbose=3;
@@ -214,7 +216,7 @@ void MNode::optLevel(uint level, bool collisions){
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   COUNT_evals += komo.opt->newton.evals;
-  COUNT_kin += mlr::KinematicWorld::setJointStateCount;
+  COUNT_kin += rai::KinematicWorld::setJointStateCount;
   COUNT_opt(level)++;
   COUNT_time += komo.runTime;
   count(level)++;
@@ -235,7 +237,7 @@ void MNode::optLevel(uint level, bool collisions){
 
     effKinematics = *komo.configurations.last();
 
-    for(mlr::KinematicSwitch *sw: komo.switches){
+    for(rai::KinematicSwitch *sw: komo.switches){
       //    CHECK_EQ(sw->timeOfApplication, 1, "need to do this before the optimization..");
       if(sw->timeOfApplication>=2) sw->apply(effKinematics);
     }
@@ -292,7 +294,7 @@ void MNode::optLevel(uint level, bool collisions){
 //  effKinematics = *komo.configurations.last();
 
 //  for(uint t=0;t<komo.T;t++){
-//      for(mlr::KinematicSwitch *sw: komo.switches){
+//      for(rai::KinematicSwitch *sw: komo.switches){
 //          if(sw->timeOfApplication==t) sw->apply(effKinematics);
 //      }
 //  }
@@ -307,7 +309,7 @@ void MNode::solvePoseProblem(){
 
   //reset the effective kinematics:
   if(parent && !parent->effKinematics.q.N){
-    MLR_MSG("parent needs to have computed the pose first!");
+    RAI_MSG("parent needs to have computed the pose first!");
     return;
   }
   if(!parent) effKinematics = startKinematics;
@@ -321,13 +323,13 @@ void MNode::solvePoseProblem(){
   komo.setModel(effKinematics);
   komo.setTiming(1., 2, 5., 1, false);
 
-  komo.setHoming(-1., -1., 1e-1); //gradient bug??
+  if(LGP_useHoming) komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
   //  komo.setFixEffectiveJoints(-1., -1., 1e3);
   komo.setFixSwitchedObjects(-1., -1., 1e3);
 
   komo.setAbstractTask(0., *folState);
-  //  for(mlr::KinematicSwitch *sw: poseProblem->switches){
+  //  for(rai::KinematicSwitch *sw: poseProblem->switches){
   //    sw->timeOfApplication=2;
   //  }
 
@@ -340,7 +342,7 @@ void MNode::solvePoseProblem(){
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   COUNT_evals += komo.opt->newton.evals;
-  COUNT_kin += mlr::KinematicWorld::setJointStateCount;
+  COUNT_kin += rai::KinematicWorld::setJointStateCount;
   COUNT_opt(level)++;
   count(level)++;
 
@@ -372,7 +374,7 @@ void MNode::solvePoseProblem(){
 
   effKinematics = *komo.configurations.last();
 
-  for(mlr::KinematicSwitch *sw: komo.switches){
+  for(rai::KinematicSwitch *sw: komo.switches){
     //    CHECK_EQ(sw->timeOfApplication, 1, "need to do this before the optimization..");
     if(sw->timeOfApplication>=2) sw->apply(effKinematics);
   }
@@ -394,7 +396,7 @@ void MNode::solveSeqProblem(int verbose){
   komo.setModel(startKinematics);
   komo.setTiming(time, 2, 5., 1, false);
 
-  komo.setHoming(-1., -1., 1e-1); //gradient bug??
+  if(LGP_useHoming) komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
   komo.setFixEffectiveJoints(-1., -1., 1e3);
   komo.setFixSwitchedObjects(-1., -1., 1e3);
@@ -412,7 +414,7 @@ void MNode::solveSeqProblem(int verbose){
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   COUNT_evals += komo.opt->newton.evals;
-  COUNT_kin += mlr::KinematicWorld::setJointStateCount;
+  COUNT_kin += rai::KinematicWorld::setJointStateCount;
   COUNT_opt(level)++;
   count(level)++;
 
@@ -456,7 +458,7 @@ void MNode::solvePathProblem(uint microSteps, int verbose){
   komo.setModel(startKinematics);
   komo.setTiming(time, microSteps, 5., 2, false);
 
-  komo.setHoming(-1., -1., 1e-2); //gradient bug??
+  if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2); //gradient bug??
   komo.setSquaredQAccelerations();
   komo.setFixEffectiveJoints(-1., -1., 1e3);
   komo.setFixSwitchedObjects(-1., -1., 1e3);
@@ -474,7 +476,7 @@ void MNode::solvePathProblem(uint microSteps, int verbose){
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   COUNT_evals += komo.opt->newton.evals;
-  COUNT_kin += mlr::KinematicWorld::setJointStateCount;
+  COUNT_kin += rai::KinematicWorld::setJointStateCount;
   COUNT_opt(level)++;
   count(level)++;
 
@@ -523,6 +525,7 @@ void MNode::labelInfeasible(){
       //-- create a literal that is equal to the decision literal (tuple) plus an 'INFEASIBLE' prepended
       NodeL symbols = folDecision->parents;
   symbols.prepend( fol.KB.getNode({"INFEASIBLE"}));
+  CHECK(symbols(0), "INFEASIBLE symbol not define in fol");
   //  cout <<"\n *** LABELLING INFEASIBLE: "; listWrite(symbols); cout <<endl;
 
   //-- find the right parent-of-generalization
@@ -564,15 +567,68 @@ MNodeL MNode::getTreePath() const{
   return path;
 }
 
-mlr::String MNode::getTreePathString(char sep) const{
+rai::String MNode::getTreePathString(char sep) const{
   MNodeL path = getTreePath();
-  mlr::String str;
+  rai::String str;
   for(MNode *b : path){
     if(b->decision) str <<*b->decision <<sep;
 //    else str <<"ROOT" <<sep;
   }
   return str;
 }
+
+Skeleton MNode::getSkeleton(StringA predicateFilter) const{
+  MNodeL path = getTreePath();
+
+  rai::Array<Graph*> states;
+  arr times;
+  for(MNode *node:getTreePath()){
+    times.append(node->time);
+    states.append(node->folState);
+  }
+
+  //setup a done marker array
+  uint maxLen=0;
+  for(Graph *s:states) if(s->N>maxLen) maxLen = s->N;
+  boolA done(states.N, maxLen);
+  done = false;
+
+  Skeleton skeleton;
+
+  for(uint k=0;k<states.N;k++){
+    Graph& G = *states(k);
+    for(uint i=0;i<G.N;i++){
+      if(!done(k,i)){
+        Node *n = G(i);
+        StringA symbols;
+        for(Node *p:n->parents) symbols.append(p->keys.last());
+
+        //check predicate filter
+        if(!symbols.N
+           || (predicateFilter.N && !predicateFilter.contains(symbols.first()))) continue;
+
+        //trace into the future
+        uint k_end=k+1;
+        for(;k_end<states.N;k_end++){
+          Node *persists = getEqualFactInList(n, *states(k_end), true);
+          if(!persists) break;
+          done(k_end, persists->index) = true;
+        }
+        k_end--;
+        if(k_end==states.N-1){
+          skeleton.append(SkeletonEntry({symbols, times(k), -1.}));
+        }else{
+          skeleton.append(SkeletonEntry({symbols, times(k), times(k_end)}));
+        }
+      }
+    }
+  }
+
+//  for(auto& s:skeleton) cout <<"SKELETON " <<s <<endl;
+
+  return skeleton;
+}
+
 
 MNode* MNode::getRoot(){
   MNode* n=this;

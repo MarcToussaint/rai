@@ -1,5 +1,5 @@
 ifneq ($(SYS),Linux)
-CXXFLAGS+= -DMLR_$(SYS)
+CXXFLAGS+= -DRAI_$(SYS)
 endif
 
 ifeq ($(SYS),Linux)
@@ -8,8 +8,8 @@ CXX	= g++
 CC	= gcc
 endif
 LINK	= $(CXX)
-CPATH	:= $(BASE)/include:$(BASE)/src:$(MLR_LIBPATH)/include:$(CPATH)
-LPATHS	+= $(BASE)/lib $(MLR_LIBPATH)/lib
+CPATH	:= $(BASE)/include:$(BASE)/src:$(RAI_LIBPATH)/include:$(CPATH)
+LPATHS	+= $(BASE)/lib $(RAI_LIBPATH)/lib
 LIBS += -lrt
 #MEXFLAGS  = -cxx #CC='$(CXX)' CXX='$(CXX)' LD='$(CXX)'
 SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefined

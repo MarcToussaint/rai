@@ -11,8 +11,8 @@
 struct TrajectoryInterface {
   struct sTrajectoryInterface *S;
   arr q,qdot;
-  mlr::KinematicWorld *world_robot;
-  mlr::KinematicWorld *world_plan;
+  rai::KinematicWorld *world_robot;
+  rai::KinematicWorld *world_plan;
   bool useRos, fixBase,fixTorso, useMarker;
 
   CtrlMsg refs;
@@ -22,7 +22,7 @@ struct TrajectoryInterface {
   arr logXdes,logXref,logXplan,logX,logFL,logFR,logT,logU;
   arrA logM;
 
-  TrajectoryInterface(mlr::KinematicWorld &world_plan_, mlr::KinematicWorld& world_robot_);
+  TrajectoryInterface(rai::KinematicWorld &world_plan_, rai::KinematicWorld& world_robot_);
   ~TrajectoryInterface(){ threadCloseModules(); }
 
   /// execute trajectory X in T seconds
@@ -30,7 +30,7 @@ struct TrajectoryInterface {
   void executeTrajectoryPlan(arr &X_plan, double T, bool recordData = false, bool displayTraj=false, bool reverseMotion=false);
 
   /// go to robot configuration x
-  void gotoPosition(mlr::String filename, double T=5., bool recordData = false, bool displayTraj=false);
+  void gotoPosition(rai::String filename, double T=5., bool recordData = false, bool displayTraj=false);
   void gotoPosition(arr x_robot, double T=5., bool recordData = false, bool displayTraj=false);
   void gotoPositionPlan(arr x_plan, double T=5., bool recordData = false, bool displayTraj=false);
 
@@ -44,7 +44,7 @@ struct TrajectoryInterface {
   void pauseMotion(bool sendZeroGains = false);
 
   /// save last trajectory to file
-  void logging(mlr::String folder, mlr::String name, uint id=0);
+  void logging(rai::String folder, rai::String name, uint id=0);
 
   /// get robot state
   void getState(arr& q_robot);
@@ -54,5 +54,5 @@ struct TrajectoryInterface {
   void syncMarker();
 
   /// save robot state
-  void saveState(mlr::String filename);
+  void saveState(rai::String filename);
 };

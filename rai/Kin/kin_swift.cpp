@@ -1,15 +1,9 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
 /**
@@ -27,9 +21,9 @@
 #include "frame.h"
 #include <Algo/ann.h>
 
-#ifdef MLR_extern_SWIFT
+#ifdef RAI_extern_SWIFT
 
-#ifdef MLR_SINGLE
+#ifdef RAI_SINGLE
 #  define SWIFT_USE_FLOAT
 #endif
 
@@ -38,7 +32,7 @@
 #undef max
 
 ANN *global_ANN=NULL;
-mlr::Shape *global_ANN_shape;
+rai::Shape *global_ANN_shape;
 
 SwiftInterface::~SwiftInterface() {
   if(scene) delete scene;
@@ -47,7 +41,7 @@ SwiftInterface::~SwiftInterface() {
   //cout <<" -- SwiftInterface closed" <<endl;
 }
 
-SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
+SwiftInterface::SwiftInterface(const rai::KinematicWorld& world, double _cutoff)
   : scene(NULL), cutoff(_cutoff) {
   bool r, add;
   
@@ -55,28 +49,28 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
 
   scene = new SWIFT_Scene(false, false);
 
-  INDEXswift2shape.resize(world.frames.N);  INDEXswift2shape=-1;
+  INDEXswift2frame.resize(world.frames.N);  INDEXswift2frame=-1;
   INDEXshape2swift.resize(world.frames.N);  INDEXshape2swift=-1;
   
   //cout <<" -- SwiftInterface init";
-  mlr::Shape *s;
-  for(mlr::Frame *f: world.frames) if((s=f->shape) && s->cont){
+  rai::Shape *s;
+  for(rai::Frame *f: world.frames) if((s=f->shape) && s->cont){
     //cout <<'.' <<flush;
     add=true;
     switch(s->type()) {
-      case mlr::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
-      case mlr::ST_mesh: {
+      case rai::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
+      case rai::ST_mesh: {
         //check if there is a specific swiftfile!
-        mlr::FileToken *file = s->frame.ats.find<mlr::FileToken>("swiftfile");
+        rai::FileToken *file = s->frame.ats.find<rai::FileToken>("swiftfile");
         if(false && file) {
           r=scene->Add_General_Object(file->name, INDEXshape2swift(f->ID), false);
           CHECK(INDEXshape2swift(f->ID)>=0, "no object generated from swiftfile");
-          INDEXswift2shape(INDEXshape2swift(f->ID)) = f->ID;
+          INDEXswift2frame(INDEXshape2swift(f->ID)) = f->ID;
           add=false;
           if(!r) HALT("--failed!");
         }
       } break;
-      case mlr::ST_pointCloud: {
+      case rai::ST_pointCloud: {
         //for now, assume there is only ONE pointCloudObject!
         CHECK(s->mesh().V.N, "");
         global_ANN=new ANN;
@@ -85,7 +79,7 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
         global_ANN->calculate();
         add=false;
       } break;
-      case mlr::ST_marker:
+      case rai::ST_marker:
         add=false; // ignore (no collisions)
         break;
       default:
@@ -93,33 +87,10 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
     }
     if(add) {
       if(!s->mesh().V.d0){
-        HALT("the mesh must have been created earlier");
-//        switch(s->type()) {
-//          case mlr::ST_box:
-//            s->mesh().setBox();
-//            s->mesh().scale(s->size(0), s->size(1), s->size(2));
-//            break;
-//          case mlr::ST_sphere:
-//            s->mesh().setSphere();
-//            s->mesh().scale(s->size(3), s->size(3), s->size(3));
-//            break;
-//          case mlr::ST_cylinder:
-//            CHECK(s->size(3)>1e-10,"");
-//            s->mesh().setCylinder(s->size(3), s->size(2));
-//            break;
-//          case mlr::ST_capsule:
-//            CHECK(s->size(3)>1e-10,"");
-//            s->mesh().setCappedCylinder(s->size(3), s->size(2));
-//            break;
-//          case mlr::ST_retired_SSBox:
-//            s->mesh().setSSBox(s->size(0), s->size(1), s->size(2), s->size(3));
-//            break;
-//          default:
-//            break;
-//        }
-//        s->mesh_radius = s->mesh().getRadius();
+        s->getGeom().createMeshes();
+        CHECK(s->mesh().V.d0, "the mesh must have been created earlier -- has size zero!");
       }
-      mlr::Mesh *mesh = &s->mesh();
+      rai::Mesh *mesh = &s->mesh();
 //      if(s->sscCore().V.d0) mesh = &s->sscCore();
 
       CHECK(mesh->V.d0,"no mesh to add to SWIFT, something was wrongly initialized");
@@ -130,7 +101,7 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
           DEFAULT_BOX_SETTING, DEFAULT_BOX_ENLARGE_REL, 2.);
       if(!r) HALT("--failed!");
       
-      INDEXswift2shape(INDEXshape2swift(f->ID)) = f->ID;
+      INDEXswift2frame(INDEXshape2swift(f->ID)) = f->ID;
     }
   }
   
@@ -140,13 +111,13 @@ SwiftInterface::SwiftInterface(const mlr::KinematicWorld& world, double _cutoff)
   //cout <<"...done" <<endl;
 }
 
-void SwiftInterface::reinitShape(const mlr::Frame *f) {
+void SwiftInterface::reinitShape(const rai::Frame *f) {
   HALT("why?");
   int sw = INDEXshape2swift(f->ID);
   scene->Delete_Object(sw);
-  INDEXswift2shape(sw) = -1;
+  INDEXswift2frame(sw) = -1;
   
-  mlr::Shape *s = f->shape;
+  rai::Shape *s = f->shape;
   CHECK(s,"");
   bool r=scene->Add_Convex_Object(s->mesh().V.p, (int*)s->mesh().T.p,
                                   s->mesh().V.d0, s->mesh().T.d0, sw, false,
@@ -155,12 +126,12 @@ void SwiftInterface::reinitShape(const mlr::Frame *f) {
   if(!r) HALT("--failed!");
   
   INDEXshape2swift(f->ID) = sw;
-  INDEXswift2shape(sw) = f->ID;
+  INDEXswift2frame(sw) = f->ID;
   
   if(s->cont) scene->Activate(sw);
 }
 
-void SwiftInterface::initActivations(const mlr::KinematicWorld& world, uint parentLevelsToDeactivate) {
+void SwiftInterface::initActivations(const rai::KinematicWorld& world, uint parentLevelsToDeactivate) {
   /* deactivate some collision pairs:
     -- no `cont' -> no collisions with this object at all
     -- no collisions between shapes of same body
@@ -171,7 +142,7 @@ void SwiftInterface::initActivations(const mlr::KinematicWorld& world, uint pare
   //cout <<"collision active shapes: ";
   //for_list(Type,  s,  world.shapes) if(s->cont) cout <<s->name <<' ';
   
-  for(mlr::Frame *f: world.frames) if(f->shape){
+  for(rai::Frame *f: world.frames) if(f->shape){
     if(!f->shape->cont) {
       if(INDEXshape2swift(f->ID)!=-1) scene->Deactivate(INDEXshape2swift(f->ID));
     } else {
@@ -180,27 +151,27 @@ void SwiftInterface::initActivations(const mlr::KinematicWorld& world, uint pare
     }
   }
   //shapes within a body
-//  for(mlr::Frame *b: world.frames) deactivate(b->shapes);
+//  for(rai::Frame *b: world.frames) deactivate(b->shapes);
   //deactivate along edges...
-  for(mlr::Frame *f: world.frames) if(f->parent){
+  for(rai::Frame *f: world.frames) if(f->parent){
     //cout <<"deactivating edge pair"; listWriteNames({e->from, e->to}, cout); cout <<endl;
     deactivate({ f->parent, f });
   }
   //deactivate along trees...
-  for(mlr::Frame *b: world.frames) {
+  for(rai::Frame *b: world.frames) {
     FrameL group, children;
     group.append(b);
     //all rigid links as well
     for(uint i=0;i<group.N;i++){
-      for(mlr::Frame *b2: group(i)->outLinks) if(!b2->joint) group.setAppend(b2);
+      for(rai::Frame *b2: group(i)->outLinks) if(!b2->joint) group.setAppend(b2);
     }
     for(uint l=0; l<parentLevelsToDeactivate; l++){
       children.clear();
-      for(mlr::Frame *b2: group) for(mlr::Frame *b2to: b2->outLinks) children.setAppend(b2to);
+      for(rai::Frame *b2: group) for(rai::Frame *b2to: b2->outLinks) children.setAppend(b2to);
       group.setAppend(children);
       //all rigid links as well
       for(uint i=0;i<group.N;i++){
-        for(mlr::Frame *b2: group(i)->outLinks) if(!b2->joint) group.setAppend(b2);
+        for(rai::Frame *b2: group(i)->outLinks) if(!b2->joint) group.setAppend(b2);
       }
     }
     deactivate(group);
@@ -209,40 +180,40 @@ void SwiftInterface::initActivations(const mlr::KinematicWorld& world, uint pare
 
 void SwiftInterface::deactivate(const FrameL& shapes) {
   //cout <<"deactivating shape group "; listWriteNames(shapes, cout); cout <<endl;
-  for(mlr::Frame *s1: shapes){
-    for(mlr::Frame *s2: shapes) {
+  for(rai::Frame *s1: shapes){
+    for(rai::Frame *s2: shapes) {
       if(s1->ID > s2->ID) deactivate(s1, s2);
     }
   }
 }
 
-void SwiftInterface::deactivate(mlr::Frame *s1, mlr::Frame *s2) {
+void SwiftInterface::deactivate(rai::Frame *s1, rai::Frame *s2) {
   if(INDEXshape2swift(s1->ID)==-1 || INDEXshape2swift(s2->ID)==-1) return;
   //cout <<"deactivating shape pair " <<s1->name <<'-' <<s2->name <<endl;
   scene->Deactivate(INDEXshape2swift(s1->ID), INDEXshape2swift(s2->ID));
 }
 
-void SwiftInterface::activate(mlr::Frame *s1, mlr::Frame *s2) {
+void SwiftInterface::activate(rai::Frame *s1, rai::Frame *s2) {
   if(INDEXshape2swift(s1->ID)==-1 || INDEXshape2swift(s2->ID)==-1) return;
   //cout <<"deactivating shape pair " <<s1->name <<'-' <<s2->name <<endl;
   scene->Activate(INDEXshape2swift(s1->ID), INDEXshape2swift(s2->ID));
 }
 
-void SwiftInterface::activate(mlr::Frame *s) {
+void SwiftInterface::activate(rai::Frame *s) {
   if(INDEXshape2swift(s->ID)==-1) return;
   scene->Activate(INDEXshape2swift(s->ID));
 }
 
-void SwiftInterface::deactivate(mlr::Frame *s) {
+void SwiftInterface::deactivate(rai::Frame *s) {
   if(INDEXshape2swift(s->ID)==-1) return;
   scene->Deactivate(INDEXshape2swift(s->ID));
 }
 
-void SwiftInterface::pushToSwift(const mlr::KinematicWorld& world) {
+void SwiftInterface::pushToSwift(const rai::KinematicWorld& world) {
   //CHECK_EQ(INDEXshape2swift.N,world.shapes.N,"the number of shapes has changed");
   CHECK(INDEXshape2swift.N <= world.frames.N, "the number of shapes has changed");
-  mlr::Matrix rot;
-  for(mlr::Frame *f: world.frames) {
+  rai::Matrix rot;
+  for(rai::Frame *f: world.frames) {
     if(f->shape){
       if(f->ID<INDEXshape2swift.N && INDEXshape2swift(f->ID)!=-1) {
         rot = f->X.rot.getMatrix();
@@ -254,7 +225,7 @@ void SwiftInterface::pushToSwift(const mlr::KinematicWorld& world) {
   }
 }
 
-void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) {
+void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) {
   int i, j, k, np;
   int *oids, *num_contacts;
   SWIFT_Real *dists, *nearest_pts, *normals;
@@ -275,59 +246,56 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
   if(dumpReport) {
     cout <<"contacts: np=" <<np <<endl;
     for(k=0, i=0; i<np; i++) {
-      cout <<"* Shape '" <<world.frames(oids[i <<1])->name <<"' vs. Shape '" <<world.frames(oids[(i <<1)+1])->name <<"'" <<endl;
+      cout <<"* Shape '" <<world.frames(INDEXswift2frame(oids[i <<1]))->name <<"' vs. Shape '" <<world.frames(INDEXswift2frame(oids[(i <<1)+1]))->name <<"'" <<endl;
+      cout <<"    distance= " <<dists[i] <<endl;
       cout <<"  #contacts = " <<num_contacts[i] <<endl;
       for(j=0; j<num_contacts[i]; j++, k++) {
         cout <<"  - contact " <<j <<endl;
-        cout <<"    distance= " <<dists[k] <<endl;
         cout <<"    points  = " <<nearest_pts[6*k+0] <<' ' <<nearest_pts[6*k+1] <<' ' <<nearest_pts[6*k+2] <<' ' <<nearest_pts[6*k+3] <<' ' <<nearest_pts[6*k+4] <<' ' <<nearest_pts[6*k+5] <<endl;
         cout <<"    normals = " <<normals[3*k+0] <<' ' <<normals[3*k+1] <<' ' <<normals[3*k+2] <<endl;
       }
+      if(num_contacts[i]==-1) k++;
     }
   }
   
   
-  for(mlr::Proxy& p:world.proxies) p.del_coll();
+  for(rai::Proxy& p:world.proxies) p.del_coll();
   world.proxies.resize(np);
   
   //add contacts to list
 
-  int a, b;
   for(k=0, i=0; i<np; i++) {
-    mlr::Proxy &proxy = world.proxies.elem(i);
-    a=INDEXswift2shape(oids[k <<1]);
-    b=INDEXswift2shape(oids[(k <<1)+1]);
+    rai::Proxy &proxy = world.proxies.elem(i);
     //CHECK(ids(a)==a && ids(b)==b, "shape index does not coincide with swift index");
-    
+    proxy.a = world.frames(INDEXswift2frame(oids[i <<1]));
+    proxy.b = world.frames(INDEXswift2frame(oids[(i <<1)+1]));
+    proxy.d = dists[i];
+
     //non-penetrating pair of objects
     if(num_contacts[i]>0) { //only add one proxy!for(j=0; j<num_contacts[i]; j++, k++) {
       CHECK(num_contacts[i]==1,"");
-      proxy.a=a;
-      proxy.b=b;
-      proxy.d = dists[k];
       if(proxy.d < 1e-10){
-        proxy.posA = world.frames(a)->X.pos;
-        proxy.posB = world.frames(b)->X.pos;
+        proxy.posA = proxy.a->X.pos;
+        proxy.posB = proxy.b->X.pos;
         proxy.normal = proxy.posA - proxy.posB; //normal always points from b to a
         if(!proxy.normal.isZero) proxy.normal.normalize();
       }else{
         proxy.normal.set(&normals[3*k+0]);
         proxy.normal.normalize();
         //swift returns nearest points in the local frame -> transform them
-        proxy.posA.set(&nearest_pts[6*k+0]);  proxy.posA = world.frames(a)->X * proxy.posA;
-        proxy.posB.set(&nearest_pts[6*k+3]);  proxy.posB = world.frames(b)->X * proxy.posB;
+        proxy.posA.set(&nearest_pts[6*k+0]);  proxy.posA = proxy.a->X * proxy.posA;
+        proxy.posB.set(&nearest_pts[6*k+3]);  proxy.posB = proxy.b->X * proxy.posB;
       }
       k += num_contacts[i];
     }else if(num_contacts[i]==-1) { //penetrating pair of objects
-      proxy.a=a;
-      proxy.b=b;
       proxy.d = -.0;
-      proxy.posA = world.frames(a)->X.pos;
-      proxy.posB = world.frames(b)->X.pos;
+      proxy.posA = proxy.a->X.pos;
+      proxy.posB = proxy.b->X.pos;
       proxy.normal = proxy.posA - proxy.posB; //normal always points from b to a
       if(!proxy.normal.isZero) proxy.normal.normalize();
+      k++;
     }else if(num_contacts[i]==0){
-      MLR_MSG("what is this?");
+      RAI_MSG("what is this?");
     }
 
   }
@@ -339,12 +307,12 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
     arr R(3, 3), t(3);
     arr v, dists, _dists;
     intA idx, _idx;
-    mlr::Shape *s;
-    for(mlr::Frame *f: world.frames) if((s=f->shape)){
+    rai::Shape *s;
+    for(rai::Frame *f: world.frames) if((s=f->shape)){
       if(!s->cont || s==global_ANN_shape) continue;
       
       //relative rotation and translation of shapes
-      mlr::Transformation rel;
+      rai::Transformation rel;
       rel.setDifference(global_ANN_shape->frame.X, s->frame.X);
       rel.rot.getMatrix(R.p);
       t = conv_vec2arr(rel.pos);
@@ -360,9 +328,9 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
       }
       if(_dists(0)>cutoff) continue;
       
-      mlr::Proxy *proxy = new mlr::Proxy();
-      proxy->a=global_ANN_shape->frame.ID;
-      proxy->b=s->frame.ID;
+      rai::Proxy *proxy = new rai::Proxy();
+      proxy->a = &global_ANN_shape->frame;
+      proxy->b = &s->frame;
       proxy->d = _dists(0);
       proxy->posA.set(&global_ANN_shape->mesh().V(_idx(0), 0));  proxy->posA = global_ANN_shape->frame.X * proxy->posA;
       proxy->posB.set(&s->mesh().V(_i, 0));                      proxy->posB = s->frame.X * proxy->posB;
@@ -372,7 +340,7 @@ void SwiftInterface::pullFromSwift(mlr::KinematicWorld& world, bool dumpReport) 
   }
 }
 
-void SwiftInterface::step(mlr::KinematicWorld& world, bool dumpReport) {
+void SwiftInterface::step(rai::KinematicWorld& world, bool dumpReport) {
   pushToSwift(world);
   pullFromSwift(world, dumpReport);
 }
@@ -399,15 +367,15 @@ uint SwiftInterface::countObjects(){
 
 #else
 #include <Core/util.h>
-void SwiftInterface::step(mlr::KinematicWorld &world, bool dumpReport=false){}
+void SwiftInterface::step(rai::KinematicWorld &world, bool dumpReport=false){}
 void SwiftInterface::pushToSwift() {}
   void SwiftInterface::pullFromSwift(const KinematicWorld &world, bool dumpReport) {}
 
-  void SwiftInterface::reinitShape(const mlr::Shape *s) {}
+  void SwiftInterface::reinitShape(const rai::Shape *s) {}
 //  void close();
-  void SwiftInterface::deactivate(mlr::Shape *s1, mlr::Shape *s2) {}
-  void SwiftInterface::deactivate(const mlr::Array<mlr::Shape*>& shapes) {}
-  void SwiftInterface::deactivate(const mlr::Array<mlr::Frame*>& frames) {}
+  void SwiftInterface::deactivate(rai::Shape *s1, rai::Shape *s2) {}
+  void SwiftInterface::deactivate(const rai::Array<rai::Shape*>& shapes) {}
+  void SwiftInterface::deactivate(const rai::Array<rai::Frame*>& frames) {}
   void SwiftInterface::initActivations(const KinematicWorld &world, uint parentLevelsToDeactivate=3) {}
   void SwiftInterface::swiftQueryExactDistance() {}
 #endif

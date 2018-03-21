@@ -1,15 +1,9 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
 #include "benchmarks.h"
@@ -19,7 +13,7 @@
 
 double _RosenbrockFunction(arr& g, arr& H, const arr& x) {
   double f=0.;
-  for(uint i=1; i<x.N; i++) f += mlr::sqr(x(i)-mlr::sqr(x(i-1))) + .01*mlr::sqr(1-10.*x(i-1));
+  for(uint i=1; i<x.N; i++) f += rai::sqr(x(i)-rai::sqr(x(i-1))) + .01*rai::sqr(1-10.*x(i-1));
   f = ::log(1.+f);
   if(&g) NIY;
   if(&H) NIY;
@@ -92,11 +86,11 @@ struct _ChoiceFunction : ScalarFunction {
   double fs(arr& g, arr& H, const arr& x) {
     //initialize on first call
     if(which==none){
-      which = (Which) mlr::getParameter<int>("fctChoice");
+      which = (Which) rai::getParameter<int>("fctChoice");
     }
     if(condition.N!=x.N){
       condition.resize(x.N);
-      double cond = mlr::getParameter<double>("condition");
+      double cond = rai::getParameter<double>("condition");
       if(x.N>1){
         for(uint i=0; i<x.N; i++) condition(i) = pow(cond,0.5*i/(x.N-1));
       }else{

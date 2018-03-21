@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #ifndef PR2DYNAMICSIMULATION_H
 #define PR2DYNAMICSIMULATION_H
 
@@ -9,10 +17,10 @@
 struct RTControllerSimulation : Thread {
   Var<CtrlMsg> ctrl_ref;
   Var<CtrlMsg> ctrl_obs;
-  //Var<mlr::KinematicWorld> modelWorld;
+  //Var<rai::KinematicWorld> modelWorld;
 
-  mlr::KinematicWorld* world;
-  mlr::Joint *j_baseTranslationRotation;
+  rai::KinematicWorld* world;
+  rai::Joint *j_baseTranslationRotation;
   double tau;
   bool gravity;
 
@@ -24,7 +32,7 @@ struct RTControllerSimulation : Thread {
   arr Kp_base, Kd_base, limits;
   arr I_term;
 
-  RTControllerSimulation(mlr::KinematicWorld realWorld, double tau=0.01, bool gravity=false, double _systematicErrorSdv=0.);
+  RTControllerSimulation(rai::KinematicWorld realWorld, double tau=0.01, bool gravity=false, double _systematicErrorSdv=0.);
   virtual ~RTControllerSimulation() {}
 
   void open();

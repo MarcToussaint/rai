@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include <Core/array.h>
 #include <Core/util.h>
 #include <Geo/geo.h>
@@ -60,7 +68,7 @@ void readNode(Graph *i, uintA &hsitoi, uintA &itohsi, int ind) {
 
 void G4ID::load(const char *meta) {
   String name_agent, name_limb, name_digit, name_object, name_part;
-  mlr::Array<Graph*> kvg_agents, kvg_limbs, kvg_digits, kvg_objects, kvg_parts;
+  rai::Array<Graph*> kvg_agents, kvg_limbs, kvg_digits, kvg_objects, kvg_parts;
   uint i = 0;
 
   bool structured;
@@ -217,7 +225,7 @@ void G4Rec::load(const char *recdir, bool interpolate) {
   g4id.load(STRING(recdir << "meta.kvg"));
 
   ifstream datafin, tstampfin;
-  mlr::open(datafin, STRING(recdir << "poses.dat"));
+  rai::open(datafin, STRING(recdir << "poses.dat"));
   tstampfin.open(STRING(recdir << "poses.dat.times"));
   arr dataframe;
 
@@ -231,7 +239,7 @@ void G4Rec::load(const char *recdir, bool interpolate) {
   double currtstamp;
   arr data, tstamp;
   boolA missing;
-  mlr::Array<intA> missingno(nsensors), missingf(nsensors);
+  rai::Array<intA> missingno(nsensors), missingf(nsensors);
   for(nframes = 0;; nframes++) {
     datafin >> dataframe;
     if(tstampfin.good()) {
@@ -281,9 +289,9 @@ void G4Rec::load(const char *recdir, bool interpolate) {
         else if(t+no < nframes) { // interpolate between t-1 and t+missingno(i)
           arr s0 = data[t-1][i];
           arr sF = data[t+no][i];
-          mlr::Quaternion q0(s0(3), s0(4), s0(5), s0(6));
-          mlr::Quaternion qF(sF(3), sF(4), sF(5), sF(6));
-          mlr::Quaternion qt;
+          rai::Quaternion q0(s0(3), s0(4), s0(5), s0(6));
+          rai::Quaternion qF(sF(3), sF(4), sF(5), sF(6));
+          rai::Quaternion qt;
 
           arr diff = sF - s0;
           for(uint tt = 0; tt < no; tt++) {
@@ -487,8 +495,8 @@ void G4Rec::computeDPos(const char *sensor) {
   posX = query("pos", sensor);
   posY = query("pos");
   quatX = query("quat", sensor);
-  mlr::Vector pX, pY, p, A;
-  mlr::Quaternion qX;
+  rai::Vector pX, pY, p, A;
+  rai::Quaternion qX;
   for(uint is = 0; is < nsensors; is++) {
     for(uint f = 0; f < nframes; f++) {
       pX.set(posX[f].p);
@@ -514,7 +522,7 @@ void G4Rec::computeDQuat(const char *sensor) {
   arr quatX, quatY;
   quatX = query("quat", sensor);
   quatY = query("quat");
-  mlr::Quaternion qX, qY, quat, A;
+  rai::Quaternion qX, qY, quat, A;
   for(uint j = 0; j < nsensors; j++) {
     for(uint f = 0; f < nframes; f++) {
       qX.set(quatX[f].p);

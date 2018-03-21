@@ -12,7 +12,7 @@ void draw1(void*){
 
 
 int main(int argc, char** argv){
-  mlr::initCmdLine(argc, argv);
+  rai::initCmdLine(argc, argv);
 
   if(false){
     int argc=1;

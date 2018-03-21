@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include <Kin/kin.h>
@@ -11,16 +19,17 @@ enum FrameFlagType {
   FL_normalControlCosts,
   FL_impulseExchange,
   FL_qCtrlCostAcc,
+  FL_qCtrlCostVel,
   FL_xPosAccCosts,
   FL_clear,
   FL_xPosVelCosts,
   FL_kinematic,
 };
 
-namespace mlr{
+namespace rai{
 
 struct Flag {
-  mlr::Enum<FrameFlagType> flag;
+  rai::Enum<FrameFlagType> flag;
   uint frameId;
   uint stepOfApplication;
   bool persist=false;
@@ -36,4 +45,4 @@ struct Flag {
 };
 
 }
-stdOutPipe(mlr::Flag)
+stdOutPipe(rai::Flag)

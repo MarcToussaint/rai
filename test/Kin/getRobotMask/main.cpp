@@ -3,7 +3,7 @@
 #include <Kin/frame.h>
 
 void TEST(GetRobotMask){
-  mlr::KinematicWorld robot("../../../../rai-robotModels/pr2/pr2.g");
+  rai::KinematicWorld robot("../../../../rai-robotModels/pr2/pr2.g");
   robot.gl().camera.setKinect();
   robot.gl().camera.X = robot.getFrameByName("endeffEyes")->X * robot.gl().camera.X;
   robot.gl().watch(); //if commented, glut/gtk is never initiated
@@ -16,7 +16,7 @@ void TEST(GetRobotMask){
 // ============================================================================
 
 int main(int argc, char** argv) {
-  mlr::initCmdLine(argc, argv);
+  rai::initCmdLine(argc, argv);
 
   testGetRobotMask();
 

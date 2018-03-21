@@ -11,13 +11,11 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
 #include "phase_optimization.h"
 
 PhaseOptimization::PhaseOptimization(arr &X, uint _kX, double _w){
   T = X.d0;
-  p = new mlr::Spline(T,X,1);
+  p = new rai::Spline(T,X,1);
   kX = _kX;
   k = 3;
   w = sqrt(_w);

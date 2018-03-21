@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "videoEncoder.h"
 #include "colorspace.h"
 #include <Core/util.h>
@@ -15,10 +23,10 @@ extern "C"{
 namespace {
     const char* DEFAULT_CONTAINER = "avi";
 }
-using namespace mlr;
+using namespace rai;
 
 struct sVideoEncoder_libav_simple{
-    mlr::String filename;
+    rai::String filename;
     double fps;
     bool isOpen;
 

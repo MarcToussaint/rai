@@ -16,7 +16,7 @@ struct MyThread: Thread{
   void close(){}
   void step(){
     x.set(this)++;
-    COUT <<mlr::realTime() <<"sec Thread " <<n <<" is counting:" <<x.get() <<endl;
+    COUT <<rai::realTime() <<"sec Thread " <<n <<" is counting:" <<x.get() <<endl;
   }
 };
 
@@ -28,7 +28,7 @@ void TEST(Thread){
   t1.threadLoop();
   t2.listenTo(x); //whenever t1 modifies x, t2 is stepped
   
-  mlr::wait(3.);
+  rai::wait(3.);
 
   t1.threadClose();
   t2.threadClose();
@@ -93,7 +93,7 @@ void TEST(Way1){
 #else //threaded
   m->threadOpen();
   m->threadStep();
-  mlr::wait(.001); //give it a tiny tiny bit of time to at least step once (it could happen that the condition variable has not waken up to detect the step BEFORE threadClose chanes the state again)
+  rai::wait(.001); //give it a tiny tiny bit of time to at least step once (it could happen that the condition variable has not waken up to detect the step BEFORE threadClose chanes the state again)
   m->threadClose();
 #endif
 
@@ -170,7 +170,7 @@ void TEST(ModuleSorter1){
   uint N=20;
 
   cout <<registry() <<endl <<"----------------------------" <<endl;
-  mlr::Array<PairSorter*> ps;
+  rai::Array<PairSorter*> ps;
   for(uint i=0;i<N-1;i++)
     ps.append( new PairSorter(STRING("int"<<i), STRING("int"<<i+1)) );
   cout <<registry() <<endl <<"----------------------------" <<endl;
@@ -185,7 +185,7 @@ void TEST(ModuleSorter1){
     if(moduleShutdown()->getStatus()) break;
     for(uint i=0;i<N;i++) cout <<vars(i)->get() <<' ';  cout <<endl;
     stepModules();
-    mlr::wait(.1);
+    rai::wait(.1);
   }
 
   threadCloseModules();
@@ -199,7 +199,7 @@ void TEST(ModuleSorter1){
 void TEST(ModuleSorter2){
   uint N=20;
 
-  mlr::Array<PairSorter*> ps;
+  rai::Array<PairSorter*> ps;
 
   for(uint i=0;i<N-1;i++)
     ps.append( new PairSorter(STRING("int"<<i), STRING("int"<<i+1)) );
@@ -214,7 +214,7 @@ void TEST(ModuleSorter2){
   for(uint k=0;k<20;k++){
     for(uint i=0;i<N-1;i++) cout <<ps(i)->a.get() <<' ';  cout <<endl;
     stepModules();
-    mlr::wait(.1);
+    rai::wait(.1);
   }
 
   closeModules();
@@ -255,7 +255,7 @@ struct MyLogThread: Thread{
   void open(){}
   void close(){}
   void step(){
-    LOG(0) <<mlr::realTime() <<"sec Thread " <<n;
+    LOG(0) <<rai::realTime() <<"sec Thread " <<n;
   }
 };
 
@@ -266,7 +266,7 @@ void TEST(Logging){
   t2.threadLoop();
 
   LOG(0) <<"starting to wait";
-  mlr::wait(3.);
+  rai::wait(3.);
 
   LOG(0) <<"done with wait";
 
@@ -277,7 +277,7 @@ void TEST(Logging){
 //===========================================================================
 
 int MAIN(int argc,char** argv){
-  mlr::initCmdLine(argc, argv);
+  rai::initCmdLine(argc, argv);
 
   testThread();
   testWay0();

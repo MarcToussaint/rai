@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include <Algo/dataNeighbored.h>
@@ -5,7 +13,7 @@
 #include <Gui/opengl.h>
 
 struct ModelEnsemble :GLDrawer{
-  mlr::Array<MinEigModel*> models;
+  rai::Array<MinEigModel*> models;
 
   arr vert;
 

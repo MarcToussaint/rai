@@ -1,7 +1,7 @@
 #include <Optim/optimization.h>
 #include <Optim/benchmarks.h>
 #include "problems.h"
-#include <Optim/lagrangian.h>
+#include <Optim/constrained.h>
 #include <Optim/convert.h>
 
 //lecture.cpp:
@@ -64,7 +64,7 @@ void TEST(CoveringSphere){
 //==============================================================================
 
 int main(int argc,char** argv){
-  mlr::initCmdLine(argc,argv);
+  rai::initCmdLine(argc,argv);
 
   ChoiceConstraintFunction F;
 //  RandomLPFunction F;

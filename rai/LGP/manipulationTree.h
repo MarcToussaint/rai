@@ -1,41 +1,40 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #pragma once
 
 #include <Kin/kin.h>
 #include <Logic/fol_mcts_world.h>
 #include <Logic/fol.h>
+#include <KOMO/komo.h>
 
 struct MNode;
-typedef mlr::Array<MNode*> MNodeL;
+typedef rai::Array<MNode*> MNodeL;
+
+//struct SkeletonEntry{ StringL symbols; uint k0,k1; double phase0, phase1; };
+//typedef rai::Array<SkeletonEntry> Skeleton;
+
 
 extern uint COUNT_kin, COUNT_evals, COUNT_node;
 extern uintA COUNT_opt;
 extern double COUNT_time;
-extern mlr::String OptLGPDataPath;
+extern rai::String OptLGPDataPath;
 extern ofstream *filNodes;
-
+extern bool LGP_useHoming;
 
 enum LEVEL{ l_symbolic=0, l_pose=1, l_seq=2, l_path=3 };
+
 
 //===========================================================================
 
 struct MNode{
   MNode *parent;
-  mlr::Array<MNode*> children;
+  rai::Array<MNode*> children;
   uint step;            ///< decision depth/step of this node
   double time;          ///< real time
   uint id;
@@ -49,8 +48,8 @@ struct MNode{
   Graph *folAddToState=NULL; ///< facts that are added to the state /after/ the fol.transition, e.g., infeasibility predicates
 
   //-- kinematics: the kinematic structure of the world after the decision path
-  const mlr::KinematicWorld& startKinematics; ///< initial start state kinematics
-  mlr::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
+  const rai::KinematicWorld& startKinematics; ///< initial start state kinematics
+  rai::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
 
   bool isExpanded=false;
   bool isInfeasible=false;
@@ -65,14 +64,14 @@ struct MNode{
   arr computeTime;  ///< computation times for each level
   double bound=0.;
 
-  mlr::Array<struct KOMO*> komoProblem; //komo problems for all levels
+  rai::Array<KOMO*> komoProblem; //komo problems for all levels
   arrA opt; //these are the optima (trajectories) computed
 
   // display helpers
-  mlr::String note;
+  rai::String note;
 
   /// root node init
-  MNode(mlr::KinematicWorld& kin, FOL_World& fol, uint levels);
+  MNode(rai::KinematicWorld& kin, FOL_World& fol, uint levels);
 
   /// child node creation
   MNode(MNode *parent, FOL_World::Handle& a);
@@ -86,13 +85,14 @@ struct MNode{
 
   //-- helpers to get other nodes
   MNodeL getTreePath() const; ///< return the decision path in terms of a list of nodes (just walking to the root)
-  mlr::String getTreePathString(char sep=' ') const;
+  rai::String getTreePathString(char sep=' ') const;
   MNode* getRoot(); ///< return the decision path in terms of a list of nodes (just walking to the root)
   MNode* getChildByAction(Node  *folDecision); ///<
   void getAll(MNodeL& L);
   MNodeL getAll(){ MNodeL L; getAll(L); return L; }
   void checkConsistency();
 
+  Skeleton getSkeleton(StringA predicateFilter={}) const;
 private:
   void setInfeasible(); ///< set this and all children infeasible
   void labelInfeasible(); ///< sets this infeasible AND propagates this label up-down to others

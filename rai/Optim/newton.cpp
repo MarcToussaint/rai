@@ -1,15 +1,9 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
 #include <iomanip>
@@ -53,7 +47,6 @@ void OptNewton::reinit(const arr& _x){
 OptNewton::StopCriterion OptNewton::step(){
   double fy;
   arr y, gy, Hy, Delta;
-  bool betaChanged=false;
 
   it++;
   if(o.verbose>1) cout <<"optNewton it=" <<std::setw(4) <<it << " \tbeta=" <<std::setw(8) <<beta <<flush;
@@ -72,7 +65,10 @@ OptNewton::StopCriterion OptNewton::step(){
   } else {
     bool inversionFailed=false;
     try {
-      Delta = lapack_Ainv_b_sym(R, -gx);
+      if(!rootFinding)
+        Delta = lapack_Ainv_b_sym(R, -gx);
+      else
+        lapack_mldivide(Delta, R, -gx);
     }catch(...){
       inversionFailed=true;
     }
@@ -85,7 +81,6 @@ OptNewton::StopCriterion OptNewton::step(){
         double sigmin = sig.min();
         if(sigmin>0.) THROW("Hessian inversion failed, but eigenvalues are positive???");
         beta = 2.*beta - sigmin;
-        betaChanged=true;
         return stopCriterion=stopNone;
       }else{ //use gradient
         if(o.verbose>0){
@@ -97,20 +92,24 @@ OptNewton::StopCriterion OptNewton::step(){
     }
   }
 
+  //chop Delta to stay within bounds
+  if(bound_lo.N && bound_hi.N){
+    double a=1.;
+    for(uint i=0;i<x.N;i++) if(bound_hi(i)>bound_lo(i)){
+      if(x(i)+a*Delta(i)>bound_hi(i)) a = (bound_hi(i)-x(i))/Delta(i);
+      if(x(i)+a*Delta(i)<bound_lo(i)) a = (bound_lo(i)-x(i))/Delta(i);
+    }
+    if(a<1.){
+      if(o.verbose>1) cout <<" \tboundClip=" <<std::setw(11) <<a <<flush;
+      Delta *= a;
+    }
+  }
+
   //restrict stepsize
   double maxDelta = absMax(Delta);
   if(o.maxStep>0. && maxDelta>o.maxStep){  Delta *= o.maxStep/maxDelta; maxDelta = o.maxStep; }
   double alphaLimit = o.maxStep/maxDelta;
 
-  //...due to bounds
-  if(bound_lo.N && bound_hi.N){
-    double a=1.;
-    for(uint i=0;i<x.N;i++){
-      if(x(i)+a*Delta(i)>bound_hi(i)) a = (bound_hi(i)-x(i))/Delta(i);
-      if(x(i)+a*Delta(i)<bound_lo(i)) a = (bound_lo(i)-x(i))/Delta(i);
-    }
-    Delta *= a;
-  }
   if(o.verbose>1) cout <<" \t|Delta|=" <<std::setw(11) <<maxDelta <<flush;
 
   //lazy stopping criterion: stop without any update
@@ -120,7 +119,7 @@ OptNewton::StopCriterion OptNewton::step(){
   }
 
   //-- line search along Delta
-  for(;!betaChanged;) {
+  for(bool endLineSearch=false; !endLineSearch;) {
     if(!o.allowOverstep) if(alpha>1.) alpha=1.;
     if(alphaLimit>0. && alpha>alphaLimit) alpha=alphaLimit;
     y = x + alpha*Delta;
@@ -129,10 +128,11 @@ OptNewton::StopCriterion OptNewton::step(){
     if(o.verbose>2) cout <<" \tprobing y=" <<y;
     if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<flush;
     bool wolfe = (fy <= fx + o.wolfe*alpha*scalarProduct(Delta,gx) );
+    if(rootFinding) wolfe=true;
     if(fy==fy && (wolfe || o.nonStrictSteps==-1 || o.nonStrictSteps>(int)it)) { //fy==fy is for NAN?
       //accept new point
       if(o.verbose>1) cout <<" - ACCEPT" <<endl;
-      if(fx-fy<o.stopFTolerance) numTinySteps++; else numTinySteps=0;
+      if(!rootFinding && fx-fy<o.stopFTolerance) numTinySteps++; else numTinySteps=0;
       x = y;
       fx = fy;
       gx = gy;
@@ -141,7 +141,7 @@ OptNewton::StopCriterion OptNewton::step(){
         if(alpha>.9 && beta>o.damping){
           beta *= o.dampingDec;
           if(alpha>1.) alpha=1.;
-          betaChanged=true;
+          endLineSearch=true;
         }
         alpha *= o.stepInc;
       }else{
@@ -149,7 +149,7 @@ OptNewton::StopCriterion OptNewton::step(){
         if(alpha<.01 && o.dampingInc!=1.){
           beta*=o.dampingInc;
           alpha*=o.dampingInc*o.dampingInc;
-          betaChanged=true;
+          endLineSearch=true;
           if(o.verbose>1) cout <<"(line search stopped)" <<endl;
         }
         alpha *= o.stepDec;
@@ -165,7 +165,7 @@ OptNewton::StopCriterion OptNewton::step(){
       if(alpha<.01 && o.dampingInc!=1.){
         beta*=o.dampingInc;
         alpha*=o.dampingInc*o.dampingInc;
-        betaChanged=true;
+        endLineSearch=true;
         if(o.verbose>1) cout <<", stop & betaInc"<<endl;
       }else{
         if(o.verbose>1) cout <<"\n\t\t\t\t\t(line search)\t" <<flush;
@@ -196,7 +196,7 @@ OptNewton::StopCriterion OptNewton::step(){
 
 OptNewton::~OptNewton(){
   if(o.fmin_return) *o.fmin_return=fx;
-#ifndef MLR_MSVC
+#ifndef RAI_MSVC
 //  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", NULL, true);
 #endif
   if(o.verbose>1) cout <<"--- optNewtonStop: f(x)=" <<fx <<endl;

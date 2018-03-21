@@ -1,8 +1,8 @@
 //===========================================================================
 
 void setTasks(KOMO& MP,
-              mlr::Shape &endeff,
-              mlr::Shape& target,
+              rai::Shape &endeff,
+              rai::Shape& target,
               byte whichAxesToAlign,
               uint iterate,
               int timeSteps,
@@ -10,9 +10,9 @@ void setTasks(KOMO& MP,
 
 //===========================================================================
 
-arr moveTo(mlr::KinematicWorld& world,
-           mlr::Shape &endeff,
-           mlr::Shape& target,
+arr moveTo(rai::KinematicWorld& world,
+           rai::Shape &endeff,
+           rai::Shape& target,
            byte whichAxesToAlign,
            uint iterate,
            int timeSteps,
@@ -31,10 +31,10 @@ arr moveTo(mlr::KinematicWorld& world,
 //  checkJacobianCP(Conv_KOMO_ConstrainedProblem(MP.komo_problem), x, 1e-4);
 
   //-- optimize
-  double colPrec = mlr::getParameter<double>("KOMO/moveTo/collisionPrecision", -1e0);
-  mlr::KinematicWorld::setJointStateCount=0;
+  double colPrec = rai::getParameter<double>("KOMO/moveTo/collisionPrecision", -1e0);
+  rai::KinematicWorld::setJointStateCount=0;
   for(uint k=0;k<iterate;k++){
-    mlr::timerStart();
+    rai::timerStart();
     if(colPrec<0){
 //      optConstrained(x, NoArr, Convert(MP), OPT(verbose=2)); //parameters are set in cfg!!
       optConstrained(x, NoArr, Convert(MP.komo_problem)); //parameters are set in cfg!!
@@ -42,8 +42,8 @@ arr moveTo(mlr::KinematicWorld& world,
     }else{
       optNewton(x, Convert(MP.komo_problem));
     }
-    cout <<"** optimization time=" <<mlr::timerRead()
-        <<" setJointStateCount=" <<mlr::KinematicWorld::setJointStateCount <<endl;
+    cout <<"** optimization time=" <<rai::timerRead()
+        <<" setJointStateCount=" <<rai::KinematicWorld::setJointStateCount <<endl;
     //    checkJacobian(Convert(MF), x, 1e-5);
     //MP.costReport();
   }

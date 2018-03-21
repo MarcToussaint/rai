@@ -12,8 +12,6 @@
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
 
-
-
 #ifndef Core_module_h
 #define Core_module_h
 
@@ -24,8 +22,8 @@
 struct Access;
 typedef Thread Module;
 //struct Module;
-typedef mlr::Array<Access*> AccessL;
-typedef mlr::Array<Module*> ModuleL;
+typedef rai::Array<Access*> AccessL;
+typedef rai::Array<Module*> ModuleL;
 
 //===========================================================================
 //
@@ -83,7 +81,7 @@ struct __##name##__Access:Var<type>{ \
 
 #define REGISTER_MODULE(name) \
   RUN_ON_INIT_BEGIN(Decl_Module##_##name) \
-  registry()->newNode<std::shared_ptr<Type> >({mlr::String("Decl_Module"), mlr::String(#name)}, NodeL(), std::make_shared<Type_typed<name, void> >()); \
+  registry()->newNode<std::shared_ptr<Type> >({rai::String("Decl_Module"), rai::String(#name)}, NodeL(), std::make_shared<Type_typed<name, void> >()); \
   RUN_ON_INIT_END(Decl_Module##_##name)
 
 
@@ -113,7 +111,7 @@ inline void operator>>(istream&, Module&){ NIY }
 inline void operator<<(ostream& os, const Module& m){ os <<"Module '" <<m.name <<'\''; }
 
 inline void operator>>(istream&, Access&){ NIY }
-inline void operator<<(ostream& os, const Access& a){ os <<"Access '" <<a.name <<"' from '" <<(a.thread?a.thread->name:mlr::String("NIL")) <<"' to '" << (a.var ? a.data->name : String("??")) <<'\''; }
+inline void operator<<(ostream& os, const Access& a){ os <<"Access '" <<a.name <<"' from '" <<(a.thread?a.thread->name:rai::String("NIL")) <<"' to '" << (a.var ? a.data->name : String("??")) <<'\''; }
 
 
 //===========================================================================
@@ -130,14 +128,14 @@ struct Recorder : Thread {
   Recorder(const char* var_name) : Thread(STRING("Recorder_"<<var_name)), access(this, var_name, true){}
 
   void open(){
-    mlr::open(fil, STRING("z." <<access.name <<'.' <<mlr::getNowString() <<".dat"));
+    rai::open(fil, STRING("z." <<access.name <<'.' <<rai::getNowString() <<".dat"));
   }
   void step(){
     uint rev = access.readAccess();
     buffer = access();
     double time = access.data->revisionTime();
     access.deAccess();
-    mlr::String tag;
+    rai::String tag;
     tag.resize(30, false);
     sprintf(tag.p, "%6i %13.6f", rev, time);
     fil <<tag <<' ' <<buffer <<endl;

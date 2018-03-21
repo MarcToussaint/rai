@@ -1,20 +1,13 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-
-#ifndef MLR_kin_h
-#define MLR_kin_h
+#ifndef RAI_kin_h
+#define RAI_kin_h
 
 #include <Core/array.h>
 #include <Geo/geo.h>
@@ -27,7 +20,7 @@ struct FeatherstoneInterface;
 
 //===========================================================================
 
-namespace mlr{
+namespace rai{
 
 struct Joint;
 struct Shape;
@@ -37,23 +30,23 @@ struct Contact;
 struct KinematicWorld;
 struct KinematicSwitch;
 
-} // namespace mlr
+} // namespace rai
 
 //===========================================================================
 
-extern mlr::KinematicWorld& NoWorld;
+extern rai::KinematicWorld& NoWorld;
 
-typedef mlr::Array<mlr::Joint*> JointL;
-//typedef mlr::Array<mlr::Shape*> ShapeL;
-typedef mlr::Array<mlr::Frame*> FrameL;
-typedef mlr::Array<mlr::Proxy*> ProxyL;
-typedef mlr::Array<mlr::Proxy> ProxyA;
-typedef mlr::Array<mlr::KinematicSwitch*> KinematicSwitchL;
-typedef mlr::Array<mlr::KinematicWorld*> WorldL;
+typedef rai::Array<rai::Joint*> JointL;
+//typedef rai::Array<rai::Shape*> ShapeL;
+typedef rai::Array<rai::Frame*> FrameL;
+typedef rai::Array<rai::Proxy*> ProxyL;
+typedef rai::Array<rai::Proxy> ProxyA;
+typedef rai::Array<rai::KinematicSwitch*> KinematicSwitchL;
+typedef rai::Array<rai::KinematicWorld*> WorldL;
 
 //===========================================================================
 
-namespace mlr{
+namespace rai{
 
 /// data structure to store a whole physical situation (lists of bodies, joints, shapes, proxies)
 struct KinematicWorld : GLDrawer{
@@ -80,11 +73,11 @@ struct KinematicWorld : GLDrawer{
   
   /// @name constructors
   KinematicWorld();
-  KinematicWorld(const mlr::KinematicWorld& other);
+  KinematicWorld(const rai::KinematicWorld& other);
   KinematicWorld(const char* filename);
   virtual ~KinematicWorld();
-  void operator=(const mlr::KinematicWorld& K){ copy(K); }
-  void copy(const mlr::KinematicWorld& K, bool referenceSwiftOnCopy=false);
+  void operator=(const rai::KinematicWorld& K){ copy(K); }
+  void copy(const rai::KinematicWorld& K, bool referenceSwiftOnCopy=false);
   
   /// @name initializations
   void init(const char* filename);
@@ -112,12 +105,13 @@ struct KinematicWorld : GLDrawer{
   void calc_activeSets();
   void calc_q();
   void reconfigureRootOfSubtree(Frame *root);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
-  void flipFrames(mlr::Frame *a, mlr::Frame *b);
+  void flipFrames(rai::Frame *a, rai::Frame *b);
   void pruneRigidJoints(int verbose=0);        ///< delete rigid joints -> they become just links
   void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
   void pruneUselessFrames(bool preserveNamed=true);  ///< delete frames that have no name, joint, and shape
   void optimizeTree(bool preserveNamed=true);        ///< call the three above methods in this order
   void fwdIndexIDs();
+  void useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese, bool deleteInsteadOfLock);
   bool checkConsistency();
 
   uint analyzeJointStateDimensions() const; ///< sort of private: count the joint dimensionalities and assign j->q_index
@@ -150,7 +144,7 @@ struct KinematicWorld : GLDrawer{
   void kinematicsVec (arr& y, arr& J, Frame *a, const Vector& vec=NoVector) const;
   void kinematicsQuat(arr& y, arr& J, Frame *a) const;
   void hessianPos(arr& H, Frame *a, Vector *rel=0) const;
-  void jacobianPos(arr& J, Frame *a, const mlr::Vector& pos_world) const; //usually called internally with kinematicsPos
+  void jacobianPos(arr& J, Frame *a, const rai::Vector& pos_world) const; //usually called internally with kinematicsPos
   void axesMatrix(arr& J, Frame *a) const; //usually called internally with kinematicsVec or Quat
   void kinematicsRelPos (arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b, const Vector& vec2) const;
   void kinematicsRelVec (arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b) const;
@@ -164,7 +158,7 @@ struct KinematicWorld : GLDrawer{
   void kinematicsContactCost(arr& y, arr& J, double margin=.02) const;
   void kinematicsProxyConstraint(arr& g, arr& J, const Proxy& p, double margin=.02) const;
   void kinematicsContactConstraints(arr& y, arr &J) const; //TODO: deprecated?
-  void kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const mlr::Vector& rel, Frame *s) const;
+  void kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const rai::Vector& rel, Frame *s) const;
   void getLimitsMeasure(arr &x, const arr& limits, double margin=.1) const;
   void kinematicsLimitsCost(arr& y, arr& J, const arr& limits, double margin=.1) const;
 
@@ -172,7 +166,7 @@ struct KinematicWorld : GLDrawer{
   void setAgent(uint){ NIY }
 
   /// @name High level (inverse) kinematics
-  void inverseKinematicsPos(Frame& body, const arr& ytarget, const mlr::Vector& rel_offset=NoVector, int max_iter=3);
+  void inverseKinematicsPos(Frame& body, const arr& ytarget, const rai::Vector& rel_offset=NoVector, int max_iter=3);
 
   /// @name dynamics
   void fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bool gravity=true);
@@ -192,8 +186,8 @@ struct KinematicWorld : GLDrawer{
 
   /// @name forces and gravity
   void clearForces();
-  void addForce(mlr::Vector force, Frame *n);
-  void addForce(mlr::Vector force, Frame *n, mlr::Vector pos);
+  void addForce(rai::Vector force, Frame *n);
+  void addForce(rai::Vector force, Frame *n, rai::Vector pos);
   void contactsToForces(double hook=.01, double damp=.0003);
   void gravityToForces(double g=-9.81);
   void frictionToForces(double coeff);
@@ -216,6 +210,7 @@ struct KinematicWorld : GLDrawer{
 
   /// @name contacts
   void filterProxiesToContacts(double margin=.01); ///< proxies are returns from a collision engine; contacts stable constraints
+  void proxiesToContacts(double margin=.01); ///< proxies are returns from a collision engine; contacts stable constraints
   double totalContactPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
 
   /// @name I/O
@@ -237,10 +232,10 @@ struct KinematicWorld : GLDrawer{
   friend struct KinematicSwitch;
 };
 
-} //namespace mlr
+} //namespace rai
 
 
-stdPipes(mlr::KinematicWorld)
+stdPipes(rai::KinematicWorld)
 
 
 //===========================================================================
@@ -248,11 +243,11 @@ stdPipes(mlr::KinematicWorld)
 // OpenGL static draw functions
 //
 
-namespace mlr {
+namespace rai {
 void glDrawGraph(void*);
 }
 
-uintA stringListToShapeIndices(const mlr::Array<const char*>& names, const FrameL& shapes);
+uintA stringListToShapeIndices(const rai::Array<const char*>& names, const FrameL& shapes);
 uintA shapesToShapeIndices(const FrameL &shapes);
 
 //===========================================================================
@@ -264,29 +259,29 @@ void lib_ors();
 void makeConvexHulls(FrameL& frames, bool onlyContactShapes=true);
 void computeOptimalSSBoxes(FrameL& frames);
 void computeMeshNormals(FrameL& frames, bool force=false);
-double forceClosureFromProxies(mlr::KinematicWorld& C, uint bodyIndex,
+double forceClosureFromProxies(rai::KinematicWorld& C, uint bodyIndex,
                                double distanceThreshold=0.01,
                                double mu=.5,     //friction coefficient
                                double discountTorques=1.);  //friction coefficient
 
-void transferQbetweenTwoWorlds(arr& qto, const arr& qfrom, const mlr::KinematicWorld& to, const mlr::KinematicWorld& from);
-void transferQDotbetweenTwoWorlds(arr& qDotTo, const arr& qDotFrom, const mlr::KinematicWorld& to, const mlr::KinematicWorld& from);
-void transferKpBetweenTwoWorlds(arr& KpTo, const arr& KpFrom, const mlr::KinematicWorld& to, const mlr::KinematicWorld& from);
-void transferKdBetweenTwoWorlds(arr& KdTo, const arr& KdFrom, const mlr::KinematicWorld& to, const mlr::KinematicWorld& from);
-void transferU0BetweenTwoWorlds(arr& u0To, const arr& u0From, const mlr::KinematicWorld& to, const mlr::KinematicWorld& from);
-void transferKI_ft_BetweenTwoWorlds(arr& KI_ft_To, const arr& KI_ft_From, const mlr::KinematicWorld& to, const mlr::KinematicWorld& from);
+void transferQbetweenTwoWorlds(arr& qto, const arr& qfrom, const rai::KinematicWorld& to, const rai::KinematicWorld& from);
+void transferQDotbetweenTwoWorlds(arr& qDotTo, const arr& qDotFrom, const rai::KinematicWorld& to, const rai::KinematicWorld& from);
+void transferKpBetweenTwoWorlds(arr& KpTo, const arr& KpFrom, const rai::KinematicWorld& to, const rai::KinematicWorld& from);
+void transferKdBetweenTwoWorlds(arr& KdTo, const arr& KdFrom, const rai::KinematicWorld& to, const rai::KinematicWorld& from);
+void transferU0BetweenTwoWorlds(arr& u0To, const arr& u0From, const rai::KinematicWorld& to, const rai::KinematicWorld& from);
+void transferKI_ft_BetweenTwoWorlds(arr& KI_ft_To, const arr& KI_ft_From, const rai::KinematicWorld& to, const rai::KinematicWorld& from);
 
 
-void displayState(const arr& x, mlr::KinematicWorld& G, const char *tag);
-void displayTrajectory(const arr& x, int steps, mlr::KinematicWorld& G, const KinematicSwitchL& switches, const char *tag, double delay=0., uint dim_z=0, bool copyG=false);
-inline void displayTrajectory(const arr& x, int steps, mlr::KinematicWorld& G, const char *tag, double delay=0., uint dim_z=0, bool copyG=false){
+void displayState(const arr& x, rai::KinematicWorld& G, const char *tag);
+void displayTrajectory(const arr& x, int steps, rai::KinematicWorld& G, const KinematicSwitchL& switches, const char *tag, double delay=0., uint dim_z=0, bool copyG=false);
+inline void displayTrajectory(const arr& x, int steps, rai::KinematicWorld& G, const char *tag, double delay=0., uint dim_z=0, bool copyG=false){
   displayTrajectory(x, steps, G, {}, tag, delay, dim_z, copyG);
 }
-void editConfiguration(const char* orsfile, mlr::KinematicWorld& G);
-int animateConfiguration(mlr::KinematicWorld& G, struct Inotify *ino=NULL);
+void editConfiguration(const char* orsfile, rai::KinematicWorld& G);
+int animateConfiguration(rai::KinematicWorld& G, struct Inotify *ino=NULL);
 
 void kinVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);
 void kinAngVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);
 
 
-#endif //MLR_ors_h
+#endif //RAI_ors_h

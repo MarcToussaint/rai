@@ -1,11 +1,19 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 template <class T>
-mlr::Array<T> G4ID::query(const mlr::Array<T> &data, const String &sensor) {
+rai::Array<T> G4ID::query(const rai::Array<T> &data, const String &sensor) {
   return data[hsi(sensor)];
 }
 
 template <class T>
-mlr::Array<T> G4ID::query(const mlr::Array<T>  &data, const StringA &sensors) {
-  mlr::Array<T> x;
+rai::Array<T> G4ID::query(const rai::Array<T>  &data, const StringA &sensors) {
+  rai::Array<T> x;
   for(const String &sensor: sensors) {
     x.append(data[hsi(sensor)]);
   }

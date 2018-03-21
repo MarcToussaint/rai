@@ -13,7 +13,7 @@ void TEST(String){
   CHECK_EQ(t1,t2,"");
 
   //-- parsing from a string
-  mlr::String tmp;
+  rai::String tmp;
   double a,b;
   s="a=1.2, b=3.4, blabla";
   cout <<s <<'|' <<endl;
@@ -42,13 +42,13 @@ void TEST(String){
 }
 
 void TEST(Parameter){
-  String p1 = mlr::getParameter<String>("par", String("default1"));
+  String p1 = rai::getParameter<String>("par", String("default1"));
   CHECK_EQ(p1,"default1","");
 
-  String p2 = mlr::getParameter<String>("h", String("def2"));
+  String p2 = rai::getParameter<String>("h", String("def2"));
   CHECK_EQ(p2,"def2","");
 
-  double d = mlr::getParameter<double>("number");
+  double d = rai::getParameter<double>("number");
 
   cout <<p1 <<endl <<p2 <<endl <<d <<endl;
 
@@ -57,28 +57,28 @@ void TEST(Parameter){
 
 void TEST(Timer){
   for(uint t=0;t<10;t++)
-    cout <<"now=" <<mlr::date() <<" clockTime=" <<std::setprecision(14) <<mlr::clockTime() <<endl;
+    cout <<"now=" <<rai::date() <<" clockTime=" <<std::setprecision(14) <<rai::clockTime() <<endl;
 
-  mlr::timerStart();
+  rai::timerStart();
   for(uint i=0;i<4;i++){
     cout <<"i=" <<i <<flush;
     for(uint j=0;j<100000;j++){ j+=10; j-=10; } //do something stupid
-    mlr::wait(.5);
-    cout <<" cpu timer reads " <<mlr::timerRead(false) <<"sec" <<endl;
-    if(i==1){ mlr::timerPause(); cout <<"timer paused" <<endl; }
-    if(i==2){ mlr::timerResume(); cout <<"timer resumed" <<endl; }
+    rai::wait(.5);
+    cout <<" cpu timer reads " <<rai::timerRead(false) <<"sec" <<endl;
+    if(i==1){ rai::timerPause(); cout <<"timer paused" <<endl; }
+    if(i==2){ rai::timerResume(); cout <<"timer resumed" <<endl; }
   }
-  double cpuTime=mlr::timerRead();
-  double realTime=mlr::realTime();
+  double cpuTime=rai::timerRead();
+  double realTime=rai::realTime();
   CHECK_ZERO(realTime-2., .5, "wait failed");
   CHECK(cpuTime>=0. && cpuTime<1.,"no cpu time measured");
 }
 
 void TEST(Logging){
-  mlr::LogObject _log("Test");
+  rai::LogObject _log("Test");
   LOG(-1) <<"HALLO";
 //  LOG(-3) <<"bye";
-//  mlr::log() <<"bla" <<endl;
+//  rai::log() <<"bla" <<endl;
 }
 
 void TEST(Exception){
@@ -90,20 +90,20 @@ void TEST(Exception){
 }
 
 void TEST(Paths){
-  std::cout <<mlr::mlrPath("here") <<endl;
+  std::cout <<rai::raiPath("here") <<endl;
 }
 
 void TEST(Inotify){
   Inotify I(".");
   for(uint i=0;i<3;i++){
-    mlr::wait(1.);
+    rai::wait(1.);
     I.poll(false, true);
     cout <<i <<"sec" <<endl;
   }
 }
 
 int MAIN(int argc,char** argv){
-  mlr::initCmdLine(argc,argv);
+  rai::initCmdLine(argc,argv);
 
   uint double_size=sizeof(double);
   uint long_int_size=sizeof(long);

@@ -1,18 +1,26 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "RTControllerSimulation.h"
 #include <Kin/taskMaps.h>
 #include <Kin/proxy.h>
 #include <Kin/frame.h>
 
-void force(mlr::KinematicWorld* world, arr& fR) {
+void force(rai::KinematicWorld* world, arr& fR) {
   world->stepSwift();
   //world->contactsToForces(100.0);
 
-  for(const mlr::Proxy& p : world->proxies) {
-    if(world->frames(p.a)->name == "endeffR" && world->frames(p.b)->name == "b") {
+  for(const rai::Proxy& p : world->proxies) {
+    if(p.a->name == "endeffR" && p.b->name == "b") {
       if(p.d <= 0.0) {
-        mlr::Vector trans = p.posB - p.posA;
-        mlr::Vector force = 100.0*trans;
-        mlr::Vector torque = (p.posA - world->frames(p.a)->X.pos) ^ force;
+        rai::Vector trans = p.posB - p.posA;
+        rai::Vector force = 100.0*trans;
+        rai::Vector torque = (p.posA - p.a->X.pos) ^ force;
         fR(0) = force(0);
         fR(1) = force(1);
         fR(2) = force(2);
@@ -25,10 +33,10 @@ void force(mlr::KinematicWorld* world, arr& fR) {
   }
 }
 
-void forceSimulateContactOnly(mlr::KinematicWorld* world, arr& fR) {
+void forceSimulateContactOnly(rai::KinematicWorld* world, arr& fR) {
   world->stepSwift();
-  for(const mlr::Proxy& p : world->proxies) {
-    if(world->frames(p.a)->name == "endeffR" && world->frames(p.b)->name == "b") {
+  for(const rai::Proxy& p : world->proxies) {
+    if(p.a->name == "endeffR" && p.b->name == "b") {
       if(p.d <= 0.02) {
         fR(2) = -4.0;
       }
@@ -67,7 +75,7 @@ void RTControlStep(
     const CtrlMsg& cmd,
     const arr& Kp_base, const arr& Kd_base,
     const arr& limits,
-    mlr::Joint* j_baseTranslationRotation
+    rai::Joint* j_baseTranslationRotation
     ){
 
   //-- PD terms
@@ -137,7 +145,7 @@ void RTControlStep(
 
 }
 
-RTControllerSimulation::RTControllerSimulation(mlr::KinematicWorld realWorld, double tau, bool gravity, double _systematicErrorSdv)
+RTControllerSimulation::RTControllerSimulation(rai::KinematicWorld realWorld, double tau, bool gravity, double _systematicErrorSdv)
   : Thread("DynmSim", -1.)
   , ctrl_ref(this, "ctrl_ref", true)
   , ctrl_obs(this, "ctrl_obs")
@@ -146,8 +154,8 @@ RTControllerSimulation::RTControllerSimulation(mlr::KinematicWorld realWorld, do
   , gravity(gravity)
   , stepCount(0)
   , systematicErrorSdv(_systematicErrorSdv) {
-  //world = new mlr::KinematicWorld(realWorld);
-  world = new mlr::KinematicWorld(mlr::mlrPath("data/pr2_model/pr2_model.ors"));
+  //world = new rai::KinematicWorld(realWorld);
+  world = new rai::KinematicWorld(rai::raiPath("data/pr2_model/pr2_model.ors"));
 
   //Object o(*world);
   //o.generateObject("b", 0.16, 0.16, 0.1, 0.55, -0.1, 0.55); //0.5 for x
@@ -159,10 +167,10 @@ RTControllerSimulation::RTControllerSimulation(mlr::KinematicWorld realWorld, do
 }
 
 void RTControllerSimulation::open() {
-  //world = new mlr::KinematicWorld;
+  //world = new rai::KinematicWorld;
   //world->copy(modelWorld.get()());
-  //world = new mlr::KinematicWorld(modelWorld.get());
-  //world = new mlr::KinematicWorld(mlr::mlrPath("data/pr2_model/pr2_model.ors"));
+  //world = new rai::KinematicWorld(modelWorld.get());
+  //world = new rai::KinematicWorld(rai::raiPath("data/pr2_model/pr2_model.ors"));
 
 
 
@@ -178,8 +186,8 @@ void RTControllerSimulation::open() {
   Kp_base.resize(world->q.N).setZero();
   Kd_base.resize(world->q.N).setZero();
   limits.resize(world->q.N,5).setZero();
-  mlr::Joint *j;
-  for(mlr::Frame* f: world->frames) if((j=f->joint) && j->qDim()>0){
+  rai::Joint *j;
+  for(rai::Frame* f: world->frames) if((j=f->joint) && j->qDim()>0){
     arr *info;
     info = f->ats.find<arr>("gains");  if(info){
       for(uint i=0;i<j->qDim();i++){ Kp_base(j->qIndex+i)=info->elem(0); Kd_base(j->qIndex+i)=info->elem(1); }
@@ -251,6 +259,6 @@ void RTControllerSimulation::step() {
   this->ctrl_obs().fR = fR;
   this->ctrl_obs.deAccess();
 
-  mlr::wait(tau); //TODO: why does this change something??? FISHY!
+  rai::wait(tau); //TODO: why does this change something??? FISHY!
 }
 

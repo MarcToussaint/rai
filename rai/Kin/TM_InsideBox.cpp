@@ -1,17 +1,10 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #include "TM_InsideBox.h"
 #include "frame.h"
@@ -20,20 +13,20 @@ TM_InsideBox::TM_InsideBox(int iShape, int jShape)
   : i(iShape), j(jShape), margin(.01){
 }
 
-TM_InsideBox::TM_InsideBox(const mlr::KinematicWorld& G, const char* iShapeName, const mlr::Vector &_ivec, const char* jShapeName, double _margin)
+TM_InsideBox::TM_InsideBox(const rai::KinematicWorld& G, const char* iShapeName, const rai::Vector &_ivec, const char* jShapeName, double _margin)
   :i(-1), j(-1), margin(_margin){
-  mlr::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
-  mlr::Frame *b = jShapeName ? G.getFrameByName(jShapeName):NULL;
+  rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
+  rai::Frame *b = jShapeName ? G.getFrameByName(jShapeName):NULL;
   if(a) i=a->ID;
   if(b) j=b->ID;
   if(&_ivec) ivec=_ivec; else ivec.setZero();
 }
 
-void TM_InsideBox::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
-  mlr::Shape *pnt=G.frames(i)->shape;
-  mlr::Shape *box=G.frames(j)->shape;
+void TM_InsideBox::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t){
+  rai::Shape *pnt=G.frames(i)->shape;
+  rai::Shape *box=G.frames(j)->shape;
   CHECK(pnt && box,"I need shapes!");
-  CHECK(box->type()==mlr::ST_ssBox || box->type()==mlr::ST_box,"the 2nd shape needs to be a box"); //s1 should be the board
+  CHECK(box->type()==rai::ST_ssBox || box->type()==rai::ST_box,"the 2nd shape needs to be a box"); //s1 should be the board
   arr pos,posJ;
   G.kinematicsRelPos(pos, posJ, &pnt->frame, ivec, &box->frame, NoVector);
   arr range = box->size();
@@ -59,8 +52,8 @@ void TM_InsideBox::phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t){
   }
 }
 
-uint TM_InsideBox::dim_phi(const mlr::KinematicWorld &G){ return 6; }
+uint TM_InsideBox::dim_phi(const rai::KinematicWorld &G){ return 6; }
 
-mlr::String TM_InsideBox::shortTag(const mlr::KinematicWorld &G){
+rai::String TM_InsideBox::shortTag(const rai::KinematicWorld &G){
     return STRING("InsideBox:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }

@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "viewer.h"
 #include <Gui/opengl.h>
 #include <Geo/mesh.h>
@@ -69,7 +77,7 @@ void ImageViewer::step(){
 struct sPointCloudViewer{
   OpenGL gl;
   sPointCloudViewer(const char* tit) : gl(tit,640,480){}
-  mlr::Mesh pc;
+  rai::Mesh pc;
 };
 
 void glDrawAxes(void*){

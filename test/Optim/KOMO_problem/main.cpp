@@ -2,7 +2,7 @@
 #include <Optim/optimization.h>
 #include <Optim/benchmarks.h>
 #include <Optim/convert.h>
-#include <Optim/lagrangian.h>
+#include <Optim/constrained.h>
 
 // the kernel stuff is preliminary -- please igore everything related to kernels so far
 #if 0
@@ -55,7 +55,7 @@ void TEST(KOrderMarkov) {
   optConstrained(x, NoArr, Convert(P) );
 
   write(LIST<arr>(x),"z.output");
-  mlr::String plt = "plot 'z.output' us 1";
+  rai::String plt = "plot 'z.output' us 1";
   for(uint i=1;i<n;i++) plt <<", '' us " <<i+1;
   gnuplot(plt, true, true);
 }
@@ -92,13 +92,13 @@ void TEST(KOrderMarkov2) {
   optConstrained(x, NoArr, Convert(P) );
 
   write(LIST<arr>(x),"z.output");
-  mlr::String plt = "plot 'z.output' us 1";
+  rai::String plt = "plot 'z.output' us 1";
   for(uint i=1;i<d(0);i++) plt <<", '' us " <<i+1;
   gnuplot(plt, true, true);
 }
 
 int MAIN(int argc,char** argv){
-  mlr::initCmdLine(argc,argv);
+  rai::initCmdLine(argc,argv);
 
   //  testKOrderMarkov();
   testKOrderMarkov2();

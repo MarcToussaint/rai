@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include <Core/util.h>
@@ -16,7 +24,7 @@
  *
  */
 
-namespace mlr{
+namespace rai{
 struct Frame;
 struct Joint;
 struct Shape;
@@ -27,15 +35,15 @@ enum JointType { JT_none=-1, JT_hingeX=0, JT_hingeY=1, JT_hingeZ=2, JT_transX=3,
 enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static };
 }
 
-typedef mlr::Array<mlr::Frame*> FrameL;
-typedef mlr::Array<mlr::Joint*> JointL;
-typedef mlr::Array<mlr::Shape*> ShapeL;
+typedef rai::Array<rai::Frame*> FrameL;
+typedef rai::Array<rai::Joint*> JointL;
+typedef rai::Array<rai::Shape*> ShapeL;
 
-extern mlr::Frame& NoFrame;
-//extern mlr::Shape& NoShape;
-//extern mlr::Joint& NoJoint;
+extern rai::Frame& NoFrame;
+//extern rai::Shape& NoShape;
+//extern rai::Joint& NoJoint;
 
-namespace mlr{
+namespace rai{
 
 //===========================================================================
 
@@ -45,7 +53,7 @@ struct Frame {
   uint ID;                   ///< unique identifier
   String name;               ///< name
   Frame *parent=NULL;        ///< parent frame
-  FrameL outLinks;           ///< lists of in and out joints
+  FrameL outLinks;           ///< list of children [TODO: rename]
   Transformation Q=0;        ///< relative transform to parent
 public:
   Transformation X=0;        ///< frame's absolute pose
@@ -56,26 +64,27 @@ public:
   int flags=0;               ///< various flags that are used by task maps to impose costs/constraints in KOMO
 
   //attachments to the frame
-  Joint *joint=NULL;      ///< this frame is an articulated joint
-  Shape *shape=NULL;      ///< this frame has a (collision or visual) geometry
-  Inertia *inertia=NULL;  ///< this frame has inertia (is a mass)
-  Array<Contact*> contacts; ///< this frame is in (near-) contact with other frames
+  Joint *joint=NULL;         ///< this frame is an articulated joint
+  Shape *shape=NULL;         ///< this frame has a (collision or visual) geometry
+  Inertia *inertia=NULL;     ///< this frame has inertia (is a mass)
+  Array<Contact*> contacts;  ///< this frame is in (near-) contact with other frames
 
   Frame(KinematicWorld& _K, const Frame *copyBody=NULL);
   Frame(Frame *_parent);
   ~Frame();
 
   void calc_X_from_parent();
+  void calc_Q_from_parent(bool enforceWithinJoint = true);
 
-  Frame* insertPreLink(const mlr::Transformation& A=0);
-  Frame* insertPostLink(const mlr::Transformation& B=0);
+  Frame* insertPreLink(const rai::Transformation& A=0);
+  Frame* insertPostLink(const rai::Transformation& B=0);
   void unLink();
   void linkFrom(Frame *_parent, bool adoptRelTransform=false);
 
   Inertia& getInertia();
 
   void getRigidSubFrames(FrameL& F); ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
-  Frame* getUpwardLink(mlr::Transformation& Qtotal=NoTransformation); ///< recurse upward until the next joint and return relative transform (this->Q is not included!b)
+  Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation); ///< recurse upward until the next joint and return relative transform (this->Q is not included!b)
 
   void read(const Graph &ats);
   void write(std::ostream& os) const;
@@ -142,7 +151,7 @@ struct Inertia{
   Vector com=0;             ///< its center of mass
   Vector force=0, torque=0; ///< current forces applying on the body
 
-  Inertia(Frame& f, mlr::Inertia *copyInertia=NULL);
+  Inertia(Frame& f, rai::Inertia *copyInertia=NULL);
   ~Inertia();
 
   void defaultInertiaByShape();
@@ -166,6 +175,7 @@ struct Shape : GLDrawer{
   double& size(uint i) { return getGeom().size.elem(i); }
   Mesh& mesh() { return getGeom().mesh; }
   Mesh& sscCore() { return getGeom().sscCore; }
+  double alpha(){ arr& C=getGeom().mesh.C; if(C.N==4) return C(3); return 1.; }
 
 //  Enum<ShapeType> type;
 //  arr size;
@@ -182,5 +192,5 @@ struct Shape : GLDrawer{
 
 //===========================================================================
 
-}// namespace mlr
+}// namespace rai
 

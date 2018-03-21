@@ -1,17 +1,10 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #include "util.h"
 #include <math.h>
@@ -19,7 +12,7 @@
 #include <signal.h>
 #include <stdexcept>
 #include <stdarg.h>
-#if defined MLR_Linux || defined MLR_Cygwin || defined MLR_Darwin
+#if defined RAI_Linux || defined RAI_Cygwin || defined RAI_Darwin
 #  include <limits.h>
 #  include <sys/time.h>
 #  include <sys/times.h>
@@ -27,33 +20,35 @@
 #  include <sys/inotify.h>
 #  include <sys/stat.h>
 #  include <poll.h>
+#if defined RAI_X11
 #  include <X11/Xlib.h>
 #  include <X11/Xutil.h>
+#endif
 #endif
 #ifdef __CYGWIN__
 #include "cygwin_compat.h"
 #endif
-#if defined MLR_MSVC
+#if defined RAI_MSVC
 #  include <time.h>
 #  include <sys/timeb.h>
 #  include <windows.h>
 #  undef min
 #  undef max
-#  define MLR_TIMEB
-#  ifdef MLR_QT
+#  define RAI_TIMEB
+#  ifdef RAI_QT
 #    undef  NOUNICODE
 #    define NOUNICODE
 #  endif
 #  pragma warning(disable: 4305 4244 4250 4355 4786 4996)
 #endif
-#if defined MLR_MinGW
+#if defined RAI_MinGW
 #  include <unistd.h>
 #  include <sys/time.h>
 #  include <sys/timeb.h>
-#  define MLR_TIMEB
+#  define RAI_TIMEB
 #endif
 
-#ifdef MLR_QT
+#ifdef RAI_QT
 #  undef scroll
 #  undef Unsorted
 #  include <Qt/qmetatype.h>
@@ -62,13 +57,13 @@
 #  include <QThread>
 #endif
 
-#ifndef MLR_ConfigFileName
-#  define MLR_ConfigFileName "MT.cfg"
-#  define MLR_LogFileName "MT.log"
+#ifndef RAI_ConfigFileName
+#  define RAI_ConfigFileName "rai.cfg"
+#  define RAI_LogFileName "rai.log"
 #endif
 
 #include <errno.h>
-#ifndef MLR_MSVC
+#ifndef RAI_MSVC
 #  include <unistd.h>
 #  include <sys/syscall.h>
 #endif
@@ -79,20 +74,20 @@
 // Bag container
 //
 
-const char *mlr::String::readSkipSymbols = " \t";
-const char *mlr::String::readStopSymbols = "\n\r";
-int   mlr::String::readEatStopSymbol     = 1;
-mlr::String mlr::errString;
+const char *rai::String::readSkipSymbols = " \t";
+const char *rai::String::readStopSymbols = "\n\r";
+int   rai::String::readEatStopSymbol     = 1;
+rai::String rai::errString;
 Mutex coutMutex;
-mlr::LogObject _log("global", 2, 3);
+rai::LogObject _log("global", 2, 3);
 
 
 //===========================================================================
 //
-// utilities in mlr namespace
+// utilities in rai namespace
 //
 
-namespace mlr {
+namespace rai {
 int argc;
 char** argv;
 bool IOraw=false;
@@ -106,16 +101,24 @@ double timerStartTime=0.;
 double timerPauseTime=-1.;
 bool timerUseRealTime=false;
 
-#ifdef MLR_QT
+#ifdef RAI_QT
 QApplication *myApp=NULL;
 #endif
+
+/// running a system command and checking return value
+void system(const char *cmd){
+  cout <<"SYSTEM CMD: " <<cmd <<endl;
+  int r = ::system(cmd);
+  rai::wait(.1);
+  if(r) HALT("system return error " <<r);
+}
 
 /// open an output-file with name '\c name'
 void open(std::ofstream& fs, const char *name, const char *errmsg) {
   fs.clear();
   fs.open(name);
   LOG(3) <<"opening output file `" <<name <<"'" <<std::endl;
-  if(!fs.good()) MLR_MSG("could not open file `" <<name <<"' for output" <<errmsg);
+  if(!fs.good()) RAI_MSG("could not open file `" <<name <<"' for output" <<errmsg);
 }
 
 /// open an input-file with name '\c name'
@@ -150,8 +153,8 @@ char skip(std::istream& is, const char *skipSymbols, const char *stopSymbols, bo
 /// skips a newline character (same as skip(is, "\n");)
 void skipRestOfLine(std::istream& is) {
   char c;
-  do { c=is.get(); } while(c!='\n');
-  is.putback(c);
+  do { c=is.get(); } while(c!='\n' && is.good());
+  if(c=='\n') is.putback(c);
 }
 
 /// skips the next character
@@ -194,15 +197,15 @@ bool skipUntil(std::istream& is, const char *tag) {
 
 /// a global operator to scan (parse) strings from a stream
 bool parse(std::istream& is, const char *str, bool silent) {
-  if(!is.good()) { if(!silent) MLR_MSG("bad stream tag when scanning for `" <<str <<"'"); return false; }  //is.clear(); }
+  if(!is.good()) { if(!silent) RAI_MSG("bad stream tag when scanning for `" <<str <<"'"); return false; }  //is.clear(); }
   uint i, n=strlen(str);
   char buf[n+1]; buf[n]=0;
-  mlr::skip(is, " \n\r\t");
+  rai::skip(is, " \n\r\t");
   is.read(buf, n);
   if(!is.good() || strcmp(str, buf)) {
     for(i=n; i--;) is.putback(buf[i]);
     is.setstate(std::ios::failbit);
-    if(!silent)  MLR_MSG("(LINE=" <<mlr::lineCount <<") parsing of constant string `" <<str
+    if(!silent)  RAI_MSG("(LINE=" <<rai::lineCount <<") parsing of constant string `" <<str
                           <<"' failed! (read instead: `" <<buf <<"')");
     return false;
   }
@@ -252,11 +255,11 @@ double linsig(double x) { if(x<0.) return 0.; if(x>1.) return 1.; return x; }
 
 /// the angle of the vector (x, y) in [-pi, pi]
 double phi(double x, double y) {
-  if(x==0. || ::fabs(x)<1e-10) { if(y>0.) return MLR_PI/2.; else return -MLR_PI/2.; }
+  if(x==0. || ::fabs(x)<1e-10) { if(y>0.) return RAI_PI/2.; else return -RAI_PI/2.; }
   double p=::atan(y/x);
-  if(x<0.) { if(y<0.) p-=MLR_PI; else p+=MLR_PI; }
-  if(p>MLR_PI)  p-=2.*MLR_PI;
-  if(p<-MLR_PI) p+=2.*MLR_PI;
+  if(x<0.) { if(y<0.) p-=RAI_PI; else p+=RAI_PI; }
+  if(p>RAI_PI)  p-=2.*RAI_PI;
+  if(p<-RAI_PI) p+=2.*RAI_PI;
   return p;
 }
 
@@ -335,17 +338,17 @@ double cosc(double x) {
   return ::cos(x)/x;
 }
 
-#define EXP ::exp //mlr::approxExp
+#define EXP ::exp //rai::approxExp
 
 double NNsdv(const double& a, const double& b, double sdv){
   double d=(a-b)/sdv;
-  double norm = 1./(::sqrt(MLR_2PI)*sdv);
+  double norm = 1./(::sqrt(RAI_2PI)*sdv);
   return norm*EXP(-.5*d*d);
 }
 
 double NNsdv(double x, double sdv){
   x/=sdv;
-  double norm = 1./(::sqrt(MLR_2PI)*sdv);
+  double norm = 1./(::sqrt(RAI_2PI)*sdv);
   return norm*EXP(-.5*x*x);
 }
 
@@ -403,15 +406,15 @@ double eqConstraintCost(double h, double margin, double power){
 
 double d_eqConstraintCost(double h, double margin, double power){
   double y=h/margin;
-  if(power==1.) return mlr::sign(y)/margin;
+  if(power==1.) return rai::sign(y)/margin;
   if(power==2.) return 2.*y/margin;
-  return power*pow(y,power-1.)*mlr::sign(y)/margin;
+  return power*pow(y,power-1.)*rai::sign(y)/margin;
 }
 
 /** @brief double time on the clock
   (probably in micro second resolution) -- Windows checked! */
 double clockTime(bool today) {
-#ifndef MLR_TIMEB
+#ifndef RAI_TIMEB
   timespec ts;
   clock_gettime(CLOCK_REALTIME, &ts);
   if(today) ts.tv_sec = ts.tv_sec%86400; //modulo TODAY
@@ -445,7 +448,7 @@ double realTime() {
 /** @brief user CPU time of this process in floating-point seconds (pure
   processor time) -- Windows checked! */
 double cpuTime() {
-#ifndef MLR_TIMEB
+#ifndef RAI_TIMEB
   tms t; times(&t);
   return ((double)t.tms_utime)/sysconf(_SC_CLK_TCK);
 #else
@@ -457,7 +460,7 @@ double cpuTime() {
   time spend for file input/output, x-server stuff, etc.)
   -- not implemented for Windows! */
 double sysTime() {
-#ifndef MLR_TIMEB
+#ifndef RAI_TIMEB
   tms t; times(&t);
   return ((double)(t.tms_stime))/sysconf(_SC_CLK_TCK);
 #else
@@ -469,7 +472,7 @@ double sysTime() {
 /** @brief total CPU time of this process in floating-point seconds (same
   as cpuTime + sysTime) -- not implemented for Windows! */
 double totalTime() {
-#ifndef MLR_TIMEB
+#ifndef RAI_TIMEB
   tms t; times(&t);
   return ((double)(t.tms_utime+t.tms_stime))/sysconf(_SC_CLK_TCK);
 #else
@@ -516,21 +519,21 @@ char *date2(double sec, bool subsec){
 
 /// wait double time
 void wait(double sec, bool msg_on_fail) {
-#if defined(MLR_Darwin)
+#if defined(RAI_Darwin)
   sleep((int)sec);
-#elif !defined(MLR_MSVC)
+#elif !defined(RAI_MSVC)
   timespec ts;
   ts.tv_sec = (long)(floor(sec));
   sec -= (double)ts.tv_sec;
   ts.tv_nsec = (long)(floor(1e9d*sec));
   int rc = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
   if(rc && msg_on_fail){
-    MLR_MSG("clock_nanosleep() failed " <<rc <<" '" <<strerror(rc) <<"' trying select instead");
+    RAI_MSG("clock_nanosleep() failed " <<rc <<" '" <<strerror(rc) <<"' trying select instead");
     timeval tv;
     tv.tv_sec = ts.tv_sec;
     tv.tv_usec = ts.tv_nsec/1000l;
     rc = select(1, NULL, NULL, NULL, &tv);
-    if(rc==-1) MLR_MSG("select() failed " <<rc <<" '" <<strerror(errno) <<"'");
+    if(rc==-1) RAI_MSG("select() failed " <<rc <<" '" <<strerror(errno) <<"'");
   }
 #else
   Sleep((int)(1000.*sec));
@@ -538,7 +541,7 @@ void wait(double sec, bool msg_on_fail) {
 #endif
 
 #if 0
-#ifndef MLR_TIMEB
+#ifndef RAI_TIMEB
   /* r=0 time is up
      r!=0 data in NULL stream available (nonsense)
      */
@@ -550,8 +553,8 @@ void wait(double sec, bool msg_on_fail) {
 
 /// wait for an ENTER at the console
 bool wait(bool useX11) {
-  if(!mlr::getInteractivity()){
-    mlr::wait(.1);
+  if(!rai::getInteractivity()){
+    rai::wait(.1);
     return true;
   }
   if(!useX11){
@@ -570,8 +573,9 @@ bool wait(bool useX11) {
   }
 }
 
+#ifdef RAI_X11
 int x11_getKey(){
-  mlr::String txt="PRESS KEY";
+  rai::String txt="PRESS KEY";
   int key=0;
 
   Display *disp = XOpenDisplay(NULL);
@@ -613,14 +617,20 @@ int x11_getKey(){
   XCloseDisplay(disp);
   return key;
 }
-
+#else
+int x11_getKey(){
+  LOG(-1) <<"fake implementation (no X11)";
+  return 13;
+}
+#endif
+  
 /// the integral shared memory size -- not implemented for Windows!
 long mem() {
-#ifndef MLR_TIMEB
+#ifndef RAI_TIMEB
   static rusage r; getrusage(RUSAGE_SELF, &r);
   return r.ru_idrss;
 #else
-  HALT("mlr::mem() is not implemented for Windows!");
+  HALT("rai::mem() is not implemented for Windows!");
   return 0;
 #endif
 }
@@ -662,7 +672,7 @@ void timerResume() {
 /// memorize the command line arguments and open a log file
 void initCmdLine(int _argc, char *_argv[]) {
   argc=_argc; argv=_argv;
-  mlr::String msg;
+  rai::String msg;
   msg <<"** cmd line arguments: '"; for(int i=0; i<argc; i++) msg <<argv[i] <<' ';
   msg <<"\b'";
   LOG(1) <<msg;
@@ -686,8 +696,8 @@ char *getCmdLineArgument(const char *tag) {
   return NULL;
 }
 
-String mlrPath(const char* rel){
-  String path(MLR_CORE_PATH);
+String raiPath(const char* rel){
+  String path(RAI_CORE_PATH);
   path <<"/../../" <<rel;
   return path;
 }
@@ -702,22 +712,22 @@ bool getInteractivity(){
   return interactivity==1;
 }
 
-}//namespace mlr
+}//namespace rai
 
 //===========================================================================
 //
 // logging
 
-namespace mlr {
-  void handleSIGUSR2(int){
+namespace rai {
+void handleSIGUSR2(int){
     int i=5;
     i*=i;    //set a break point here, if you want to catch errors directly
   }
 
 struct LogServer {
   LogServer() {
-    signal(SIGUSR2, mlr::handleSIGUSR2);
-    timerStartTime=mlr::cpuTime();
+    signal(SIGUSR2, rai::handleSIGUSR2);
+    timerStartTime=rai::cpuTime();
     startTime = clockTime(false);
   }
 
@@ -725,55 +735,55 @@ struct LogServer {
   }
 };
 
-Singleton<mlr::LogServer> logServer;
+Singleton<rai::LogServer> logServer;
 }
 
-mlr::LogObject::LogObject(const char* key, int defaultLogCoutLevel, int defaultLogFileLevel)
+rai::LogObject::LogObject(const char* key, int defaultLogCoutLevel, int defaultLogFileLevel)
   : key(key), logCoutLevel(defaultLogCoutLevel), logFileLevel(defaultLogFileLevel){
   if(!strcmp(key,"global")){
     fil.open("z.log.global");
     fil <<"** compiled at:     " <<__DATE__ <<" " <<__TIME__ <<'\n';
-    fil <<"** execution start: " <<mlr::date(mlr::startTime) <<std::endl;
+    fil <<"** execution start: " <<rai::date(rai::startTime) <<std::endl;
   }else{
-    logCoutLevel = mlr::getParameter<int>(STRING("logCoutLevel_"<<key), logCoutLevel);
-    logFileLevel = mlr::getParameter<int>(STRING("logFileLevel_"<<key), logFileLevel);
+    logCoutLevel = rai::getParameter<int>(STRING("logCoutLevel_"<<key), logCoutLevel);
+    logFileLevel = rai::getParameter<int>(STRING("logFileLevel_"<<key), logFileLevel);
   }
 }
 
-mlr::LogObject::~LogObject(){
+rai::LogObject::~LogObject(){
   if(!strcmp(key,"global")){
-    fil <<"** execution stop: " <<mlr::date()
-       <<"\n** real time: " <<mlr::realTime()
-      <<"sec\n** CPU time: " <<mlr::cpuTime()
-     <<"sec\n** system (includes I/O) time: " <<mlr::sysTime() <<"sec" <<std::endl;
+    fil <<"** execution stop: " <<rai::date()
+       <<"\n** real time: " <<rai::realTime()
+      <<"sec\n** CPU time: " <<rai::cpuTime()
+     <<"sec\n** system (includes I/O) time: " <<rai::sysTime() <<"sec" <<std::endl;
   }
   fil.close();
 }
 
-mlr::LogToken mlr::LogObject::getToken(int log_level, const char* code_file, const char* code_func, uint code_line) {
-  return mlr::LogToken(*this, log_level, code_file, code_func, code_line);
+rai::LogToken rai::LogObject::getToken(int log_level, const char* code_file, const char* code_func, uint code_line) {
+  return rai::LogToken(*this, log_level, code_file, code_func, code_line);
 }
 
-mlr::LogToken::~LogToken(){
-  auto mut = mlr::logServer(); //keep the mutex
+rai::LogToken::~LogToken(){
+  auto mut = rai::logServer(); //keep the mutex
   if(log.logFileLevel>=log_level){
-    if(!log.fil.is_open()) mlr::open(log.fil, STRING("z.log."<<log.key));
+    if(!log.fil.is_open()) rai::open(log.fil, STRING("z.log."<<log.key));
     log.fil <<code_func <<':' <<code_file <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
   }
   if(log.logCoutLevel>=log_level){
     if(log_level>=0) std::cout <<code_func <<':' <<code_file <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
     if(log_level<0){
-      mlr::errString.clear() <<code_func <<':' <<code_file <<':' <<code_line <<'(' <<log_level <<") " <<msg;
-// #ifdef MLR_ROS
-//       ROS_INFO("MLR-MSG: %s",mlr::errString.p);
+      rai::errString.clear() <<code_func <<':' <<code_file <<':' <<code_line <<'(' <<log_level <<") " <<msg;
+// #ifdef RAI_ROS
+//       ROS_INFO("RAI-MSG: %s",rai::errString.p);
 // #endif
-      if(log_level==-1){ mlr::errString <<" -- WARNING";    cout <<mlr::errString <<endl; }
-      if(log_level==-2){ mlr::errString <<" -- ERROR  ";    cerr <<mlr::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
-      if(log_level==-3){ mlr::errString <<" -- HARD EXIT!"; cerr <<mlr::errString <<endl; /*mlr::logServer().mutex.unlock();*/ exit(1); }
+      if(log_level==-1){ rai::errString <<" -- WARNING";    cout <<rai::errString <<endl; }
+      if(log_level==-2){ rai::errString <<" -- ERROR  ";    cerr <<rai::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
+      if(log_level==-3){ rai::errString <<" -- HARD EXIT!"; cerr <<rai::errString <<endl; /*rai::logServer().mutex.unlock();*/ exit(1); }
       if(log_level<=-2) raise(SIGUSR2);
     }
   }
-//  mlr::logServer().mutex.unlock();
+//  rai::logServer().mutex.unlock();
 }
 
 void setLogLevels(int fileLogLevel, int consoleLogLevel){
@@ -786,18 +796,18 @@ void setLogLevels(int fileLogLevel, int consoleLogLevel){
 //
 // parameters
 
-namespace mlr{
+namespace rai{
 
 }
 
 /// a global operator to scan (parse) strings from a stream
 std::istream& operator>>(std::istream& is, const PARSE& x) {
-  mlr::parse(is, x.str); return is;
+  rai::parse(is, x.str); return is;
 }
 
 /// the same global operator for non-const string
 std::istream& operator>>(std::istream& is, char *str) {
-  mlr::parse(is, (const char*)str); return is;
+  rai::parse(is, (const char*)str); return is;
 }
 
 
@@ -806,30 +816,30 @@ std::istream& operator>>(std::istream& is, char *str) {
 // String class
 //
 
-int mlr::String::StringBuf::overflow(int C) {
+int rai::String::StringBuf::overflow(int C) {
   string->append(C);
   return C;
 }
 
-int mlr::String::StringBuf::sync() {
+int rai::String::StringBuf::sync() {
   if(string->flushCallback) string->flushCallback(*string);
   return 0;
 }
 
-void mlr::String::StringBuf::setIpos(char *p) { setg(string->p, p, string->p+string->N); }
+void rai::String::StringBuf::setIpos(char *p) { setg(string->p, p, string->p+string->N); }
 
-char *mlr::String::StringBuf::getIpos() { return gptr(); }
+char *rai::String::StringBuf::getIpos() { return gptr(); }
 
 //-- direct memory operations
-void mlr::String::append(char x) { resize(N+1, true); operator()(N-1)=x; }
+void rai::String::append(char x) { resize(N+1, true); operator()(N-1)=x; }
 
-mlr::String& mlr::String::setRandom(){
+rai::String& rai::String::setRandom(){
   resize(rnd(2,6), false);
   for(uint i=0;i<N;i++) operator()(i)=rnd('a','z');
   return *this;
 }
 
-void mlr::String::resize(uint n, bool copy) {
+void rai::String::resize(uint n, bool copy) {
   if(N==n && M>N) return;
   char *pold=p;
   uint Mold=M;
@@ -841,7 +851,7 @@ void mlr::String::resize(uint n, bool copy) {
   }
   if(M!=Mold) { //do we actually have to allocate?
     p=new char [M];
-    if(!p) HALT("mlr::Mem failed memory allocation of " <<M <<"bytes");
+    if(!p) HALT("rai::Mem failed memory allocation of " <<M <<"bytes");
     if(copy) memmove(p, pold, N<n?N:n);
     if(Mold) delete[] pold;
   }
@@ -850,45 +860,45 @@ void mlr::String::resize(uint n, bool copy) {
   resetIstream();
 }
 
-void mlr::String::init() { p=0; N=0; M=0; buffer.string=this; flushCallback=NULL; }
+void rai::String::init() { p=0; N=0; M=0; buffer.string=this; flushCallback=NULL; }
 
 /// standard constructor
-mlr::String::String() : std::iostream(&buffer) { init(); clearStream(); }
+rai::String::String() : std::iostream(&buffer) { init(); clearStream(); }
 
 /// copy constructor
-mlr::String::String(const String& s) : std::iostream(&buffer) { init(); this->operator=(s); }
+rai::String::String(const String& s) : std::iostream(&buffer) { init(); this->operator=(s); }
 
 /// copy constructor for an ordinary C-string (needs to be 0-terminated)
-mlr::String::String(const char *s) : std::iostream(&buffer) { init(); this->operator=(s); }
+rai::String::String(const char *s) : std::iostream(&buffer) { init(); this->operator=(s); }
 
-mlr::String::String(const std::string& s) : std::iostream(&buffer) { init(); this->operator=(s.c_str()); }
+rai::String::String(const std::string& s) : std::iostream(&buffer) { init(); this->operator=(s.c_str()); }
 
-mlr::String::String(std::istream& is) : std::iostream(&buffer) { init(); read(is, "", "", 0); }
+rai::String::String(std::istream& is) : std::iostream(&buffer) { init(); read(is, "", "", 0); }
 
-mlr::String::~String() { if(M) delete[] p; }
-
-/// returns a reference to this
-std::iostream& mlr::String::stream() { return (std::iostream&)(*this); }
+rai::String::~String() { if(M) delete[] p; }
 
 /// returns a reference to this
-mlr::String& mlr::String::operator()() { return *this; }
+std::iostream& rai::String::stream() { return (std::iostream&)(*this); }
+
+/// returns a reference to this
+rai::String& rai::String::operator()() { return *this; }
 
 /** @brief returns the true memory buffer (C-string) of this class (which is
 always kept 0-terminated) */
-mlr::String::operator char*() { return p; }
+rai::String::operator char*() { return p; }
 
 /// as above but const
-mlr::String::operator const char*() const { return p; }
+rai::String::operator const char*() const { return p; }
 
 /// returns the i-th char
-char& mlr::String::operator()(int i) const {
+char& rai::String::operator()(int i) const {
     if(i<0) i+=N;
     CHECK((uint)i<=N, "String range error (" <<i <<"<=" <<N <<")");
     return p[i];
 }
 
 /// return the substring from `start` to (exclusive) `end`.
-mlr::String mlr::String::getSubString(uint start, uint end) const {
+rai::String rai::String::getSubString(uint start, uint end) const {
   CHECK(start < end, "getSubString: start should be smaller than end");
   clip(end, uint(0), N);
   String tmp;
@@ -902,7 +912,7 @@ mlr::String mlr::String::getSubString(uint start, uint end) const {
  * @brief Return the last `n` chars of the string.
  * @param n number of chars to return
  */
-mlr::String mlr::String::getLastN(uint n) const {
+rai::String rai::String::getLastN(uint n) const {
   clip(n, uint(0), N);
   return getSubString(N-n, N);
 }
@@ -911,20 +921,20 @@ mlr::String mlr::String::getLastN(uint n) const {
  * @brief Return the first `n` chars of the string.
  * @param n number of chars to return.
  */
-mlr::String mlr::String::getFirstN(uint n) const {
+rai::String rai::String::getFirstN(uint n) const {
   clip(n, uint(0), N);
   return getSubString(0, n);
 }
 
 /// copy operator
-mlr::String& mlr::String::operator=(const String& s) {
+rai::String& rai::String::operator=(const String& s) {
   resize(s.N, false);
   memmove(p, s.p, N);
   return *this;
 }
 
 /// copies from the C-string
-void mlr::String::operator=(const char *s) {
+void rai::String::operator=(const char *s) {
   if(!s){  clear();  return;  }
   uint ls = strlen(s);
   if(!ls){  clear();  return;  }
@@ -937,9 +947,9 @@ void mlr::String::operator=(const char *s) {
   }
 }
 
-void mlr::String::set(const char *s, uint n) { resize(n, false); memmove(p, s, n); }
+void rai::String::set(const char *s, uint n) { resize(n, false); memmove(p, s, n); }
 
-mlr::String& mlr::String::printf(const char *format, ...){
+rai::String& rai::String::printf(const char *format, ...){
   resize(100, false);
   va_list valist;
   va_start(valist, format);
@@ -950,61 +960,61 @@ mlr::String& mlr::String::printf(const char *format, ...){
 }
 
 /// shorthand for the !strcmp command
-bool mlr::String::operator==(const char *s) const { return p && !strcmp(p, s); }
+bool rai::String::operator==(const char *s) const { return p && !strcmp(p, s); }
 /// shorthand for the !strcmp command
-bool mlr::String::operator==(const String& s) const { return p && s.p && !strcmp(p, s.p); }
-bool mlr::String::operator!=(const char *s) const { return !operator==(s); }
-bool mlr::String::operator!=(const String& s) const { return !(operator==(s)); }
-bool mlr::String::operator<(const String& s) const { return p && s.p && strcmp(p, s.p)<0; }
+bool rai::String::operator==(const String& s) const { return p && s.p && !strcmp(p, s.p); }
+bool rai::String::operator!=(const char *s) const { return !operator==(s); }
+bool rai::String::operator!=(const String& s) const { return !(operator==(s)); }
+bool rai::String::operator<(const String& s) const { return p && s.p && strcmp(p, s.p)<0; }
 
-bool mlr::String::contains(const String& substring) const {
+bool rai::String::contains(const String& substring) const {
   char* p = strstr(this->p, substring.p);
   return p != NULL;
 }
 
 /// Return true iff the string starts with `substring`.
-bool mlr::String::startsWith(const String& substring) const {
+bool rai::String::startsWith(const String& substring) const {
   return N>=substring.N && this->getFirstN(substring.N) == substring;
 }
 
 /// Return true iff the string starts with `substring`.
-bool mlr::String::startsWith(const char* substring) const {
-  return this->startsWith(mlr::String(substring));
+bool rai::String::startsWith(const char* substring) const {
+  return this->startsWith(rai::String(substring));
 }
 
 /// Return true iff the string ends with `substring`.
-bool mlr::String::endsWith(const String& substring) const {
+bool rai::String::endsWith(const String& substring) const {
   return this->getLastN(substring.N) == substring;
 }
 /// Return true iff the string ends with `substring`.
-bool mlr::String::endsWith(const char* substring) const {
-  return this->endsWith(mlr::String(substring));
+bool rai::String::endsWith(const char* substring) const {
+  return this->endsWith(rai::String(substring));
 }
 
 /// deletes all memory and resets all stream flags
-mlr::String& mlr::String::clear() { resize(0, false); return *this; }
+rai::String& rai::String::clear() { resize(0, false); return *this; }
 
 /// call IOstream::clear();
-mlr::String& mlr::String::clearStream() { std::iostream::clear(); return *this; }
+rai::String& rai::String::clearStream() { std::iostream::clear(); return *this; }
 
 /** @brief when using this String as an istream (to read other variables
   from it), this method resets the reading-pointer to the beginning
   of the string and also clears all flags of the stream */
-mlr::String& mlr::String::resetIstream() { buffer.setIpos(p); clearStream(); return *this; }
+rai::String& rai::String::resetIstream() { buffer.setIpos(p); clearStream(); return *this; }
 
 /// writes the string into some ostream
-void mlr::String::write(std::ostream& os) const { if(N) os <<p; }
+void rai::String::write(std::ostream& os) const { if(N) os <<p; }
 
 /** @brief reads the string from some istream: first skip until one of the stopSymbols
 is encountered (default: newline symbols) */
-uint mlr::String::read(std::istream& is, const char* skipSymbols, const char *stopSymbols, int eatStopSymbol) {
+uint rai::String::read(std::istream& is, const char* skipSymbols, const char *stopSymbols, int eatStopSymbol) {
   if(!skipSymbols) skipSymbols=readSkipSymbols;
   if(!stopSymbols) stopSymbols=readStopSymbols;
   if(eatStopSymbol==-1) eatStopSymbol=readEatStopSymbol;
-  mlr::skip(is, skipSymbols);
+  rai::skip(is, skipSymbols);
   clear();
   char c=is.get();
-  while(c!=-1 && is.good() && !mlr::contains(stopSymbols, c)) {
+  while(c!=-1 && is.good() && !rai::contains(stopSymbols, c)) {
     append(c);
     c=is.get();
   }
@@ -1019,11 +1029,11 @@ uint mlr::String::read(std::istream& is, const char* skipSymbols, const char *st
 
 /** @brief fills the string with the date and time in the format
  * yy-mm-dd--hh-mm-mm */
-mlr::String mlr::getNowString() {
+rai::String rai::getNowString() {
   time_t t = time(0);
   struct tm *now = localtime(&t);
 
-  mlr::String str;
+  rai::String str;
   str.resize(19, false); //-- just enough
   sprintf(str.p, "%02d-%02d-%02d-%02d:%02d:%02d",
     now->tm_year-100,
@@ -1041,13 +1051,13 @@ mlr::String mlr::getNowString() {
 // FileToken
 //
 
-mlr::FileToken::FileToken(const char* filename, bool change_dir){
+rai::FileToken::FileToken(const char* filename, bool change_dir){
   name=filename;
   if(change_dir) changeDir();
 //  if(!exists()) HALT("file '" <<filename <<"' does not exist");
 }
 
-mlr::FileToken::FileToken(const FileToken& ft){
+rai::FileToken::FileToken(const FileToken& ft){
   name=ft.name;
   if(ft.path.N){
     NIY;
@@ -1058,12 +1068,12 @@ mlr::FileToken::FileToken(const FileToken& ft){
   os = ft.os;
 }
 
-mlr::FileToken::~FileToken(){
+rai::FileToken::~FileToken(){
   unchangeDir();
 }
 
 /// change to the directory of the given filename
-void mlr::FileToken::decomposeFilename() {
+void rai::FileToken::decomposeFilename() {
   path = name;
   int i=path.N;
   for(; i--;) if(path(i)=='/' || path(i)=='\\') break;
@@ -1075,7 +1085,7 @@ void mlr::FileToken::decomposeFilename() {
   }
 }
 
-void mlr::FileToken::changeDir(){
+void rai::FileToken::changeDir(){
   if(path.N){
     HALT("you've changed already?");
   }else{
@@ -1090,31 +1100,31 @@ void mlr::FileToken::changeDir(){
   }
 }
 
-void mlr::FileToken::unchangeDir(){
+void rai::FileToken::unchangeDir(){
   if(cwd.N){
     LOG(3) <<"leaving path `" <<path<<"' back to '" <<cwd <<"'" <<std::endl;
     if(chdir(cwd)) HALT("couldn't change back to directory " <<cwd);
   }
 }
 
-bool mlr::FileToken::exists() {
+bool rai::FileToken::exists() {
   struct stat sb;
   int r=stat(name, &sb);
   return r==0;
 }
 
-std::ofstream& mlr::FileToken::getOs(){
+std::ofstream& rai::FileToken::getOs(){
   CHECK(!is,"don't use a FileToken both as input and output");
   if(!os){
     os = std::make_shared<std::ofstream>();
     os->open(name);
     LOG(3) <<"opening output file `" <<name <<"'" <<std::endl;
-    if(!os->good()) MLR_MSG("could not open file `" <<name <<"' for output");
+    if(!os->good()) RAI_MSG("could not open file `" <<name <<"' for output");
   }
   return *os;
 }
 
-std::ifstream& mlr::FileToken::getIs(bool change_dir){
+std::ifstream& rai::FileToken::getIs(bool change_dir){
   if(change_dir) changeDir();
   CHECK(!os,"don't use a FileToken both as input and output");
   if(!is){
@@ -1132,9 +1142,9 @@ std::ifstream& mlr::FileToken::getIs(bool change_dir){
 // random number generator
 //
 
-mlr::Rnd rnd;
+rai::Rnd rnd;
 
-uint32_t mlr::Rnd::seed(uint32_t n) {
+uint32_t rai::Rnd::seed(uint32_t n) {
   uint32_t s, c;
   if(n>12345) { s=n; c=n%113; } else { s=12345; c=n; }
   while(c--) s*=65539;
@@ -1144,13 +1154,13 @@ uint32_t mlr::Rnd::seed(uint32_t n) {
   return n;
 }
 
-uint32_t mlr::Rnd::seed() {
-  return seed(mlr::getParameter<uint32_t>("seed", 0));
+uint32_t rai::Rnd::seed() {
+  return seed(rai::getParameter<uint32_t>("seed", 0));
 }
 
-uint32_t mlr::Rnd::clockSeed() {
+uint32_t rai::Rnd::clockSeed() {
   uint32_t s;
-#ifndef MLR_TIMEB
+#ifndef RAI_TIMEB
   timeval t; gettimeofday(&t, 0); s=1000000L*t.tv_sec+t.tv_usec;
 #else
   _timeb t; _ftime(&t); s=1000L*t.time+t.millitm;
@@ -1159,7 +1169,7 @@ uint32_t mlr::Rnd::clockSeed() {
   return seed(s);
 }
 
-double mlr::Rnd::gauss() {
+double rai::Rnd::gauss() {
   double w, v, rsq, fac;
   do {
     v   = 2 * uni() - 1;
@@ -1170,7 +1180,7 @@ double mlr::Rnd::gauss() {
   return v*fac;
 }
 
-uint32_t mlr::Rnd::poisson(double mean) {
+uint32_t rai::Rnd::poisson(double mean) {
   if(mean>100) {
     uint32_t i=(uint32_t)::floor(mean+::sqrt(mean)*gauss()+.5);
     return (i>0)?(uint32_t)i:0;
@@ -1188,7 +1198,7 @@ uint32_t mlr::Rnd::poisson(double mean) {
   return count;
 }
 
-void  mlr::Rnd::seed250(int32_t seed) {
+void  rai::Rnd::seed250(int32_t seed) {
   int32_t      i;
   int32_t     j, k;
   
@@ -1222,7 +1232,7 @@ void  mlr::Rnd::seed250(int32_t seed) {
 Inotify::Inotify(const char* filename): fd(0), wd(0){
   fd = inotify_init();
   if(fd<0) HALT("Couldn't initialize inotify");
-  fil = new mlr::FileToken(filename, false);
+  fil = new rai::FileToken(filename, false);
   fil->decomposeFilename();
   wd = inotify_add_watch( fd, fil->path,
 			  IN_MODIFY | IN_CREATE | IN_DELETE );
@@ -1289,7 +1299,7 @@ bool Inotify::poll(bool block, bool verbose){
 
 #define MUTEX_DUMP(x) //x
 
-#ifndef MLR_MSVC
+#ifndef RAI_MSVC
 Mutex::Mutex() {
   pthread_mutexattr_t atts;
   int rc;
@@ -1330,7 +1340,7 @@ void Mutex::unlock() {
   if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
-#else//MLR_MSVC
+#else//RAI_MSVC
 Mutex::Mutex() {}
 Mutex::~Mutex() {}
 void Mutex::lock() {}
@@ -1354,7 +1364,7 @@ struct GnuplotServer{
   }
 
   void send(const char *cmd, bool persist){
-#ifndef MLR_MSVC
+#ifndef RAI_MSVC
     if(!gp) {
       if(!persist) gp=popen("env gnuplot -noraise -geometry 600x600-0-0 2> /dev/null", "w");
       else         gp=popen("env gnuplot -noraise -persist -geometry 600x600-0-0 2> /dev/null", "w");
@@ -1372,12 +1382,12 @@ struct GnuplotServer{
 Singleton<GnuplotServer> gnuplotServer;
 
 void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDFfile) {
-  if(!mlr::getInteractivity()){
+  if(!rai::getInteractivity()){
     pauseMouse=false;
     persist=false;
   }
   
-  mlr::String cmd;
+  rai::String cmd;
   cmd <<"set style data lines\n";
   
   // run standard files
@@ -1398,8 +1408,8 @@ void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDF
   if(pauseMouse) cmd <<"\n pause mouse" <<std::endl;
   gnuplotServer()->send(cmd.p, persist);
 
-  if(!mlr::getInteractivity()){
-    mlr::wait(.05);
+  if(!rai::getInteractivity()){
+    rai::wait(.05);
   }
 }
 
@@ -1409,7 +1419,7 @@ void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDF
 // Cumulative probability for the Standard Normal Distribution
 //
 
-namespace mlr {
+namespace rai {
 double erf(double x) {
   double t, z, retval;
   z = fabs(x);
@@ -1430,13 +1440,13 @@ double erf(double x) {
 
 /// the integral of N(0, 1) from -infty to x
 double gaussInt(double x) {
-  return .5*(1.+erf(x/MLR_SQRT2));
+  return .5*(1.+erf(x/RAI_SQRT2));
 }
 
 /// expectation \f$\int_x^\infty {\cal N}(x) x dx\f$ when integrated from -infty to x
 double gaussIntExpectation(double x) {
-  double norm=gaussInt(x) / (::sqrt(MLR_2PI));
-  return - norm*mlr::approxExp(-.5*x*x);
+  double norm=gaussInt(x) / (::sqrt(RAI_2PI));
+  return - norm*rai::approxExp(-.5*x*x);
 }
 }
 
@@ -1465,31 +1475,32 @@ const char* NAME(const std::type_info& type){
 //
 
 #include "util.tpp"
-template void mlr::getParameter(int&, const char*);
-template void mlr::getParameter(int&, const char*, const int&);
-template void mlr::getParameter(uint&, const char*);
-template void mlr::getParameter(uint&, const char*, const uint&);
-template void mlr::getParameter(bool&, const char*, const bool&);
-template void mlr::getParameter(double&, const char*);
-template void mlr::getParameter(double&, const char*, const double&);
-template void mlr::getParameter(mlr::String&, const char*, const mlr::String&);
-template void mlr::getParameter(mlr::String&, const char*);
+template void rai::getParameter(int&, const char*);
+template void rai::getParameter(int&, const char*, const int&);
+template void rai::getParameter(uint&, const char*);
+template void rai::getParameter(uint&, const char*, const uint&);
+template void rai::getParameter(bool&, const char*, const bool&);
+template void rai::getParameter(double&, const char*);
+template void rai::getParameter(double&, const char*, const double&);
+template void rai::getParameter(rai::String&, const char*, const rai::String&);
+template void rai::getParameter(rai::String&, const char*);
 
-template int mlr::getParameter<int>(const char*);
-template int mlr::getParameter<int>(const char*, const int&);
-template uint mlr::getParameter(const char*);
-template uint mlr::getParameter<uint>(const char*, const uint&);
-template float mlr::getParameter<float>(const char*);
-template double mlr::getParameter<double>(const char*);
-template double mlr::getParameter<double>(const char*, const double&);
-template bool mlr::getParameter<bool>(const char*);
-template bool mlr::getParameter<bool>(const char*, const bool&);
-template long mlr::getParameter<long>(const char*);
-template mlr::String mlr::getParameter<mlr::String>(const char*);
-template mlr::String mlr::getParameter<mlr::String>(const char*, const mlr::String&);
+template int rai::getParameter<int>(const char*);
+template int rai::getParameter<int>(const char*, const int&);
+template uint rai::getParameter(const char*);
+template uint rai::getParameter<uint>(const char*, const uint&);
+template float rai::getParameter<float>(const char*);
+template double rai::getParameter<double>(const char*);
+template double rai::getParameter<double>(const char*, const double&);
+template bool rai::getParameter<bool>(const char*);
+template bool rai::getParameter<bool>(const char*, const bool&);
+template long rai::getParameter<long>(const char*);
+template rai::String rai::getParameter<rai::String>(const char*);
+template rai::String rai::getParameter<rai::String>(const char*, const rai::String&);
 
-template bool mlr::checkParameter<uint>(const char*);
-template bool mlr::checkParameter<bool>(const char*);
+template bool rai::checkParameter<uint>(const char*);
+template bool rai::checkParameter<bool>(const char*);
+template bool rai::checkParameter<rai::String>(const char*);
 
 
 

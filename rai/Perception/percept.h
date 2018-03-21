@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include <Core/array.h>
@@ -5,23 +13,23 @@
 #include <Geo/mesh.h>
 
 struct Percept;
-typedef mlr::Array<Percept*> PerceptL;
+typedef rai::Array<Percept*> PerceptL;
 
 struct Percept : GLDrawer{
   enum Type { PT_cluster, PT_plane, PT_box, PT_mesh, PT_alvar, PT_optitrackmarker, PT_optitrackbody, PT_end };
 
   uint id = 0;
   int bodyId = -1;
-  mlr::Enum<Type> type;
+  rai::Enum<Type> type;
   double precision = 1.; //mt: what is relevance? mt: replace -> timeSincePerceived
-  mlr::Transformation transform; //mt: really two different transforms??? don't like that
-  mlr::Transformation frame;
+  rai::Transformation transform; //mt: really two different transforms??? don't like that
+  rai::Transformation frame;
   std::string frame_id;
   Percept(Type type);
-  Percept(Type type, const mlr::Transformation& t);
+  Percept(Type type, const rai::Transformation& t);
   virtual ~Percept(){}
 
-  virtual void syncWith(mlr::KinematicWorld& K) = 0;
+  virtual void syncWith(rai::KinematicWorld& K) = 0;
   virtual double idMatchingCost(const Percept& other);
   virtual double fuse(Percept* other);
   virtual void write(ostream& os) const;
@@ -45,18 +53,18 @@ struct PercCluster : Percept {
 
   PercCluster(arr mean, arr points, std::string frame_id);
 
-  virtual void syncWith(mlr::KinematicWorld& K);
+  virtual void syncWith(rai::KinematicWorld& K);
   virtual double idMatchingCost(const Percept& other);
   virtual void write(ostream& os) const;
   virtual Percept* newClone() const{ return new PercCluster(*this); }
 };
 
 struct PercMesh : Percept {
-  mlr::Mesh mesh;
+  rai::Mesh mesh;
 
-  PercMesh(const mlr::Mesh& mesh) : Percept(PT_mesh), mesh(mesh) {}
+  PercMesh(const rai::Mesh& mesh) : Percept(PT_mesh), mesh(mesh) {}
 
-  virtual void syncWith(mlr::KinematicWorld& K){ }
+  virtual void syncWith(rai::KinematicWorld& K){ }
 //  virtual double idMatchingCost(const Percept& other){ return 0.; }
   virtual double fuse(Percept* other);
   virtual void write(ostream& os) const{ os <<"#V=" <<mesh.V.N; }
@@ -65,11 +73,11 @@ struct PercMesh : Percept {
 };
 
 struct PercPlane : Percept {
-  mlr::Mesh hull;
+  rai::Mesh hull;
 
-  PercPlane(const mlr::Transformation& t, const mlr::Mesh& hull);
+  PercPlane(const rai::Transformation& t, const rai::Mesh& hull);
 
-  virtual void syncWith(mlr::KinematicWorld& K);
+  virtual void syncWith(rai::KinematicWorld& K);
   virtual double idMatchingCost(const Percept& other);
   virtual double fuse(Percept* other);
   virtual void write(ostream& os) const;
@@ -81,9 +89,9 @@ struct PercBox : Percept {
   arr size;
   arr color;
 
-  PercBox(const mlr::Transformation& t, const arr& size, const arr& color);
+  PercBox(const rai::Transformation& t, const arr& size, const arr& color);
 
-  virtual void syncWith(mlr::KinematicWorld& K);
+  virtual void syncWith(rai::KinematicWorld& K);
 //  virtual double idMatchingCost(const Percept& other) { return 0.; }
   virtual double fuse(Percept* other);
   virtual void write(ostream& os) const { Percept::write(os); os <<"size=" <<size; }
@@ -96,7 +104,7 @@ struct PercAlvar : Percept {
 
   PercAlvar(uint alvarId, std::string _frame_id);
 
-  virtual void syncWith(mlr::KinematicWorld& K);
+  virtual void syncWith(rai::KinematicWorld& K);
   virtual double idMatchingCost(const Percept& other);
   virtual void write(ostream& os) const;
   virtual Percept* newClone() const{ return new PercAlvar(*this); }
@@ -120,10 +128,10 @@ struct OptitrackMarker : Percept {
     this->frame = obj.frame;
   }
 
-  virtual void syncWith(mlr::KinematicWorld &K);
+  virtual void syncWith(rai::KinematicWorld &K);
 //  virtual double idMatchingCost(const Percept& other){
 //    if(other.type!=PT_optitrackmarker) return -1.;
-//    mlr::Vector dist = (this->frame * this->transform.pos) - (dynamic_cast<const OptitrackMarker*>(&other)->frame * dynamic_cast<const OptitrackMarker*>(&other)->transform.pos);
+//    rai::Vector dist = (this->frame * this->transform.pos) - (dynamic_cast<const OptitrackMarker*>(&other)->frame * dynamic_cast<const OptitrackMarker*>(&other)->transform.pos);
 //    return dist.length();
 //  }
   virtual Percept* newClone() const{ return new OptitrackMarker(*this); }
@@ -144,10 +152,10 @@ struct OptitrackBody : Percept {
     this->frame = obj.frame;
   }
 
-  virtual void syncWith(mlr::KinematicWorld& K);
+  virtual void syncWith(rai::KinematicWorld& K);
 //  virtual double idMatchingCost(const Percept& other){
 //    if(other.type!=PT_optitrackbody) return -1.;
-//    mlr::Vector dist = (this->frame * this->transform.pos) - (dynamic_cast<const OptitrackBody*>(&other)->frame * dynamic_cast<const OptitrackBody*>(&other)->transform.pos);
+//    rai::Vector dist = (this->frame * this->transform.pos) - (dynamic_cast<const OptitrackBody*>(&other)->frame * dynamic_cast<const OptitrackBody*>(&other)->transform.pos);
 //    return dist.length();
 //  }
   virtual Percept* newClone() const{ return new OptitrackBody(*this); }

@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "gravityCompensation.h"
 #include <Algo/MLcourse.h>
 #include <Kin/taskMaps.h>
@@ -33,11 +41,11 @@ void GravityCompensation::learnGCModel() {
   GravityCompensation::CV cv;
 
   arr q;
-  q << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_LW/q"));
+  q << FILE(rai::raiPath("examples/pr2/calibrateControl/logData/gcKugel_LW/q"));
   arr u;
-  u << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_LW/u"));
+  u << FILE(rai::raiPath("examples/pr2/calibrateControl/logData/gcKugel_LW/u"));
   arr qSign;
-  qSign << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_LW/qSign"));
+  qSign << FILE(rai::raiPath("examples/pr2/calibrateControl/logData/gcKugel_LW/qSign"));
 
   arr lambdas = ARR(1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4,1e5);
   lambdas.append(lambdas*5.0);
@@ -50,7 +58,7 @@ void GravityCompensation::learnGCModel() {
   joints.append(rightJoints);
   joints.append(headJoints);
 
-  for(mlr::String joint : joints) {
+  for(rai::String joint : joints) {
     uint index = world.getFrameByName(joint)->joint->qIndex;
     double c;
     betasGC[joint] = cv.calculateBetaWithCV(featuresGC(q, qSign, joint), u.sub(0,-1,index,index), lambdas, false, c);
@@ -61,7 +69,7 @@ void GravityCompensation::learnGCModel() {
 arr GravityCompensation::compensate(const arr& q, const arr& qSign, const StringA& joints) {
   arr u = zeros(world.getJointStateDimension());
 
-  for(mlr::String joint : joints) {
+  for(rai::String joint : joints) {
     uint index = world.getFrameByName(joint)->joint->qIndex;
     u(index) = (featuresGC(q, qSign, joint)*betasGC.find(joint)->second).first();
   }
@@ -73,11 +81,11 @@ void GravityCompensation::learnFTModel() {
   GravityCompensation::CV cv;
 
   arr q;
-  q << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/q"));
+  q << FILE(rai::raiPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/q"));
   arr fL;
-  fL << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/fL"));
+  fL << FILE(rai::raiPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/fL"));
   arr fR;
-  fR << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/fR"));
+  fR << FILE(rai::raiPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/fR"));
 
   arr PhiL = featuresFT(q, "endeffL");
   arr PhiR = featuresFT(q, "endeffR");
@@ -108,7 +116,7 @@ arr GravityCompensation::compensateFTR(const arr& q) {
   return featuresFT(q, "endeffR")*betaFTR;
 }
 
-GravityCompensation::GravityCompensation(const mlr::KinematicWorld& world) : world(world) {
+GravityCompensation::GravityCompensation(const rai::KinematicWorld& world) : world(world) {
   TLeftArm = zeros(leftJoints.N, world.getJointStateDimension());
   for(uint i = 0; i < leftJoints.N; i++) {
     TLeftArm(i, world.getFrameByName(leftJoints(i))->joint->qIndex) = 1;
@@ -123,7 +131,7 @@ GravityCompensation::GravityCompensation(const mlr::KinematicWorld& world) : wor
   }
 }
 
-arr GravityCompensation::featuresGC(arr q, arr qSign, const mlr::String& joint) {
+arr GravityCompensation::featuresGC(arr q, arr qSign, const rai::String& joint) {
   arr Phi;
 
   if(q.nd < 2) {
@@ -254,20 +262,20 @@ arr GravityCompensation::featuresGC(arr q, arr qSign, const mlr::String& joint) 
   if(stictionFeature) Phi = catCol(Phi, sign(qSign.sub(0,-1,index,index)));
 
   //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_pos, world, "endeffL"), q));
-  //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"endeffL",mlr::Vector(0.,0.,1.)), q));
-  //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"endeffL",mlr::Vector(1.,0.,0.)), q));
+  //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"endeffL",rai::Vector(0.,0.,1.)), q));
+  //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"endeffL",rai::Vector(1.,0.,0.)), q));
 
   return Phi;
 
 }
 
-arr GravityCompensation::featuresFT(arr q, mlr::String endeff) {
+arr GravityCompensation::featuresFT(arr q, rai::String endeff) {
   if(q.nd < 2) q = ~q;
 
   arr Phi = ones(q.d0,1);
-  Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world, endeff, mlr::Vector(1.0,0.0,0.0)), q)); //TODO distinguish between axes!!
-  Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world, endeff, mlr::Vector(0.0,1.0,0.0)), q));
-  Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world, endeff, mlr::Vector(0.0,0.0,1.0)), q));
+  Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world, endeff, rai::Vector(1.0,0.0,0.0)), q)); //TODO distinguish between axes!!
+  Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world, endeff, rai::Vector(0.0,1.0,0.0)), q));
+  Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world, endeff, rai::Vector(0.0,0.0,1.0)), q));
   return Phi;
 }
 
@@ -290,7 +298,7 @@ arr GravityCompensation::generateTaskMapFeature(TM_Default map, arr Q) {
 
 void GravityCompensation::testForLimits() {
   arr q;
-  q << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/q"));
+  q << FILE(rai::raiPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/q"));
   //bool limitViolation = false;
   uint j = 0;
   for(uint i = 0; i < q.d0; i++) {
@@ -309,11 +317,11 @@ void GravityCompensation::testForLimits() {
 
 void GravityCompensation::removeLimits() {
   arr q;
-  q << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/q"));
+  q << FILE(rai::raiPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/q"));
   arr u;
-  u << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/u"));
+  u << FILE(rai::raiPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/u"));
   arr qSign;
-  qSign << FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/qSign"));
+  qSign << FILE(rai::raiPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/qSign"));
 
   arr qNew, uNew, qSignNew;
 
@@ -328,9 +336,9 @@ void GravityCompensation::removeLimits() {
       uNew.append(~u[i]);
     }
   }
-  FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_LW/q")) << qNew;
-  FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_LW/qSign")) << qSignNew;
-  FILE(mlr::mlrPath("examples/pr2/calibrateControl/logData/gcKugel_LW/u")) << uNew;
+  FILE(rai::raiPath("examples/pr2/calibrateControl/logData/gcKugel_LW/q")) << qNew;
+  FILE(rai::raiPath("examples/pr2/calibrateControl/logData/gcKugel_LW/qSign")) << qSignNew;
+  FILE(rai::raiPath("examples/pr2/calibrateControl/logData/gcKugel_LW/u")) << uNew;
 }
 
 
@@ -358,7 +366,7 @@ void GravityCompensation::generatePredictionsOnDataSet(const arr& Q, const arr& 
   if(!modelLearned) {
     learnModels(false);
   }
-  for(mlr::String s : joints) {
+  for(rai::String s : joints) {
     uint index = world.getJointByName(s)->qIndex;
     arr UPred;
     for(uint i = 0; i < Q.d0; i++) {
@@ -432,10 +440,10 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
 
     //Different Body Parts TODO: add more, if one like
     //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_pos, world, "endeffL"), Q));
-    //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"endeffL",mlr::Vector(1.,0.,0.)), Q));
+    //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"endeffL",rai::Vector(1.,0.,0.)), Q));
 
     //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_pos, world, "l_forearm_link_0"), Q));
-    //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"l_forearm_link_0",mlr::Vector(1.,0.,0.)), Q));
+    //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"l_forearm_link_0",rai::Vector(1.,0.,0.)), Q));
 
 
 
@@ -498,10 +506,10 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
 
 
     //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_pos, world, "endeffR"), Q));
-    //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"endeffR",mlr::Vector(1.,0.,0.)), Q));
+    //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"endeffR",rai::Vector(1.,0.,0.)), Q));
 
     //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_pos, world, "r_forearm_link_0"), Q));
-    //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"r_forearm_link_0",mlr::Vector(1.,0.,0.)), Q));
+    //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"r_forearm_link_0",rai::Vector(1.,0.,0.)), Q));
 
     return Phi;
 
@@ -549,7 +557,7 @@ struct CV : public CrossValidation {
     return sqrt(sumOfSqr(y_pred-y)/y.N); //returns RMSE on test data
   }
 
-  void calculateBetaWithCV(arr& optimalBeta, const StringA& joints, const arr& Phi, const arr& lambdas, const arr& Q, const arr& U, mlr::KinematicWorld& world, bool verbose, arr& m) {
+  void calculateBetaWithCV(arr& optimalBeta, const StringA& joints, const arr& Phi, const arr& lambdas, const arr& Q, const arr& U, rai::KinematicWorld& world, bool verbose, arr& m) {
     m = zeros(joints.N);
     //double su = 0.0;
 
@@ -594,9 +602,9 @@ struct CV : public CrossValidation {
 void GravityCompensation::learnModels(bool verbose) {
   //TODO: very ugly, make parameter file!!!!!!!!
   arr Q;
-  Q << FILE(mlr::mlrPath("examples/pr2/calibrateControl/Q.dat"));
+  Q << FILE(rai::raiPath("examples/pr2/calibrateControl/Q.dat"));
   arr U;
-  U << FILE(mlr::mlrPath("examples/pr2/calibrateControl/U.dat"));
+  U << FILE(rai::raiPath("examples/pr2/calibrateControl/U.dat"));
 
   arr PhiLeft = features(Q, leftArm);
   arr PhiRight = features(Q, rightArm);
@@ -638,9 +646,9 @@ void GravityCompensation::saveBetas() {
 }
 
 void GravityCompensation::loadBetas() {
-  betaLeftArm << FILE(mlr::mlrPath("examples/pr2/calibrateControl/betaLeftArm.dat"));
-  betaRightArm << FILE(mlr::mlrPath("examples/pr2/calibrateControl/betaRightArm.dat"));
-  betaHead << FILE(mlr::mlrPath("examples/pr2/calibrateControl/betaHead.dat"));
+  betaLeftArm << FILE(rai::raiPath("examples/pr2/calibrateControl/betaLeftArm.dat"));
+  betaRightArm << FILE(rai::raiPath("examples/pr2/calibrateControl/betaRightArm.dat"));
+  betaHead << FILE(rai::raiPath("examples/pr2/calibrateControl/betaHead.dat"));
   modelLearned = true;
 }
 
@@ -675,7 +683,7 @@ arr GravityCompensation::compensate(arr q, StringA joints) {
   uTemp += features(q, head)*betaHead*THead;
 
   arr u = zeros(world.getJointStateDimension());
-  for(mlr::String joint : joints) {
+  for(rai::String joint : joints) {
     uint index = world.getJointByName(joint)->qIndex;
     u(index) = uTemp(index);
   }
@@ -683,7 +691,7 @@ arr GravityCompensation::compensate(arr q, StringA joints) {
   return u;
 }
 
-GravityCompensation::GravityCompensation(const mlr::KinematicWorld& world) : world(world) {
+GravityCompensation::GravityCompensation(const rai::KinematicWorld& world) : world(world) {
   TLeftArm = zeros(leftJoints.N, world.getJointStateDimension());
   for(uint i = 0; i < leftJoints.N; i++) {
     TLeftArm(i, world.getJointByName(leftJoints(i))->qIndex) = 1;
@@ -700,7 +708,7 @@ GravityCompensation::GravityCompensation(const mlr::KinematicWorld& world) : wor
 
 void GravityCompensation::testForLimits() {
   arr Q;
-  Q << FILE(mlr::mlrPath("examples/pr2/calibrateControl/Q.dat"));
+  Q << FILE(rai::raiPath("examples/pr2/calibrateControl/Q.dat"));
   bool limitViolation = false;
   for(uint i = 0; i < Q.d0; i++) {
     world.setJointState(Q[i]);

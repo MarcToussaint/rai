@@ -17,6 +17,7 @@ BASE_REAL = $(shell realpath $(BASE))
 ################################################################################
 -include $(BASE)/build/config.mk
 
+
 ################################################################################
 #
 # standard objects to be compiled, output file
@@ -30,6 +31,11 @@ OUTPUT = x.exe
 endif
 ifndef SRCS
 SRCS = $(OBJS:%.o=%.cpp)
+endif
+
+## if we weren't called from make-path.sh add cleanLocks
+ifndef SUB_MAKE
+PREOBJS := cleanLocks $(PREOBJS)
 endif
 
 
@@ -57,7 +63,7 @@ SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefin
 CXXFLAGS += -fPIC
 CFLAGS += -fPIC
 
-ifndef MLR_NO_CXX11
+ifndef RAI_NO_CXX11
 CXXFLAGS += -std=c++0x
 endif
 
@@ -75,14 +81,14 @@ ifeq ($(OPTIM),penibel)
 CXXFLAGS := -g -Wall -Wextra $(CXXFLAGS)
 endif
 ifeq ($(OPTIM),fast)
-CXXFLAGS := -O3 -Wall -DMLR_NOCHECK $(CXXFLAGS)
+CXXFLAGS := -O3 -Wall -DRAI_NOCHECK $(CXXFLAGS)
 endif
 ifeq ($(OPTIM),prof)
-CXXFLAGS := -O3 -pg -Wall -DMLR_NOCHECK -fno-inline $(CXXFLAGS)
+CXXFLAGS := -O3 -pg -Wall -DRAI_NOCHECK -fno-inline $(CXXFLAGS)
 LDFLAGS += -pg
 endif
 ifeq ($(OPTIM),callgrind)
-CXXFLAGS := -O3 -g -Wall -DMLR_NOCHECK $(CXXFLAGS) #-fno-inline
+CXXFLAGS := -O3 -g -Wall -DRAI_NOCHECK $(CXXFLAGS) #-fno-inline
 endif
 
 
@@ -100,22 +106,18 @@ include $(BASE)/build/defines.mk
 #
 ################################################################################
 
-ifndef MLR_PATH
-MLR_PATH=$(HOME)/git/mlr
-endif
-
 MODULE_NAME=$(shell echo $(notdir $(CURDIR)) | tr A-Z a-z)
 
 SWC_FLAGS=-std=c++0x -g
-SWC_INCLUDES=-I$(MLR_PATH)/share/src -I/usr/include/python2.7 
-SWC_LIB_PATH=-L$(MLR_PATH)/share/lib -Xlinker -rpath $(MLR_PATH)/share/lib
+SWC_INCLUDES=-I$(BASE)/src -I/usr/include/python2.7 
+SWC_LIB_PATH=-L$(BASE)/lib -Xlinker -rpath $(BASE)/lib
 SWC_CXXFLAGS=-c $(SWC_FLAGS) -fPIC $(SWC_INCLUDES) -DSWIG_TYPE_TABLE=mlr
 SWC_LDFLAGS=$(SWC_FLAGS) -shared $(SWC_LIB_PATH) $(SWC_INCLUDES) $(DEPEND:%=-l%) -l$(notdir $(CURDIR))
 
 ifndef SWIG
 SWIG=swig2.0
 endif
-SWIG_INCLUDE=-I$(MLR_PATH)/share/src -I$(MLR_PATH)/share/include/numpy
+SWIG_INCLUDE=-I$(BASE)/src -I$(BASE)/include/numpy
 SWIG_FLAGS=-c++ -python $(SWIG_INCLUDE)
 
 
@@ -125,9 +127,9 @@ SWIG_FLAGS=-c++ -python $(SWIG_INCLUDE)
 #
 ################################################################################
 
-BUILDS := $(DEPEND:%=makeDepend/%) $(BUILDS)
+BUILDS := $(DEPEND:%=inPath_makeLib/%) $(BUILDS)
 LIBS := $(DEPEND:%=-l%) $(LIBS)
-CXXFLAGS := $(DEPEND:%=-DMLR_%) $(CXXFLAGS)
+CXXFLAGS := $(DEPEND:%=-DRAI_%) $(CXXFLAGS)
 
 
 ################################################################################
@@ -177,8 +179,11 @@ cleanLibs: force
 cleanDepends: force
 	@find $(BASE) -type f -name 'Makefile.dep' -delete -print
 
-installUbuntuPackages: force
-	sudo apt-get $(APTGETYES) install $(DEPEND_UBUNTU)
+installUbuntu: force
+	sudo apt-get -q $(APTGETYES) install $(DEPEND_UBUNTU)
+
+printUbuntuPackages: force
+	@echo $(DEPEND_UBUNTU)
 
 depend: generate_Makefile.dep
 
@@ -323,39 +328,43 @@ includeAll.cxx: force
 #
 ################################################################################
 
-makeDepend/extern_%: %
+inPath_makeLib/extern_%: % $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< libextern_$*.a
 
-makeDepend/Hardware_%: $(BASE)/rai/Hardware/%
+inPath_makeLib/Hardware_%: $(BASE)/rai/Hardware/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< libHardware_$*.so
 
-makeDepend/%: $(BASE)/rai/%
+inPath_makeLib/%: $(BASE)/rai/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< lib$*.so
 
-makePath/%: %
+inPath_make/%: % $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< x.exe
 
-makeTest/%: %
-	+@-$(BASE)/build/make-path.sh $< x.exe MLR_TESTS=1
+inPath_makeTest/%: % $(PREOBJS)
+	+@-$(BASE)/build/make-path.sh $< x.exe RAI_TESTS=1
 
-runPath/%: %
+inPath_run/%: % $(PREOBJS)
 	+@-$(BASE)/build/run-path.sh $< x.exe
 
-cleanPath/%: %
+inPath_clean/%: %
 	@echo "                                                ***** clean " $*
 	@-rm -f $*/Makefile.dep
 	@-$(MAKE) -C $* -f Makefile clean --no-print-directory
 
-cleanPath/%: $(BASE)/rai/%
+inPath_clean/%: $(BASE)/rai/%
 	@echo "                                                ***** clean " $<
 	@-rm -f $</Makefile.dep
 	@-$(MAKE) -C $< -f Makefile clean --no-print-directory
 
-initUbuntuPackages/%: $(BASE)/rai/%
+inPath_installUbuntu/%: $(BASE)/rai/%
 	@echo "                                                ***** init " $*
-	@-$(MAKE) -C $< installUbuntuPackages --no-print-directory
+	@-$(MAKE) -C $< installUbuntu --no-print-directory
 
-makePythonPath/%: %
+inPath_printUbuntuPackages/%: $(BASE)/rai/%
+	@echo "#" $*
+	@-$(MAKE) -C $< printUbuntuPackages --no-print-directory
+
+inPath_makePython/%: %
 	make --directory=$< pywrapper
 
 $(BASE)/build/config.mk: $(BASE)/../config.mk

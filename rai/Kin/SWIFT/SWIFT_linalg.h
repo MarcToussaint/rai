@@ -57,8 +57,6 @@
 #ifdef WIN32
 #include <windows.h>
 #endif
-#include <GL/gl.h>  // We have calls to OpenGL directly from here for
-                    // efficiency purposes
 
 #include "SWIFT_config.h"
 #include "SWIFT_common.h"
@@ -131,9 +129,6 @@ class SWIFT_Triple {
     inline void Max( SWIFT_Triple& mx );
     inline void Min_Max( SWIFT_Triple& mn, SWIFT_Triple& mx );
 
-    // OpenGL efficiency functions
-    inline void Send_VCoords_To_OpenGL( ) const;
-    inline void Send_NCoords_To_OpenGL( ) const;
     // Operations on this object
     inline void Normalize( );
     inline void Zero( );
@@ -611,19 +606,6 @@ inline void SWIFT_Triple::Max( SWIFT_Triple& mx )
 inline void SWIFT_Triple::Min_Max( SWIFT_Triple& mn, SWIFT_Triple& mx )
 { Min( mn ); Max( mx ); }
 
-inline void SWIFT_Triple::Send_VCoords_To_OpenGL( ) const
-#ifdef SWIFT_USE_FLOAT
-{ glVertex3f( val[0], val[1], val[2] ); }
-#else
-{ glVertex3d( val[0], val[1], val[2] ); }
-#endif
-
-inline void SWIFT_Triple::Send_NCoords_To_OpenGL( ) const
-#ifdef SWIFT_USE_FLOAT
-{ glNormal3f( val[0], val[1], val[2] ); }
-#else
-{ glNormal3d( val[0], val[1], val[2] ); }
-#endif
 inline void SWIFT_Triple::Normalize( )
 { *this /= this->Length(); }
 

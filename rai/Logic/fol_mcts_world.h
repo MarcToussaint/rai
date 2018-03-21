@@ -1,17 +1,10 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #pragma once
 
@@ -104,7 +97,7 @@ struct FOL_World : MCTS_Environment{
   FOL_World(istream& fil);
   virtual ~FOL_World();
   void init(istream& fil);
-  void init(const char* filename){ init(mlr::FileToken(filename)); }
+  void init(const char* filename){ init(rai::FileToken(filename)); }
 
   virtual TransitionReturn transition(const Handle& action); //returns (observation, reward)
   virtual const std::vector<Handle> get_actions();
@@ -119,7 +112,7 @@ struct FOL_World : MCTS_Environment{
   virtual bool get_info(InfoTag tag) const;
   virtual double get_info_value(InfoTag tag) const;
   void write_state(ostream&);
-  void set_state(mlr::String&);
+  void set_state(rai::String&);
 
   //-- helpers
   Node *addSymbol(const char* name);
@@ -128,7 +121,7 @@ struct FOL_World : MCTS_Environment{
   void addObject(const char* name);
   template<class T> void addValuedFact(const StringA& symbols, const T& x){
     NodeL parents;
-    for(const mlr::String& s:symbols) parents.append(KB[s]);
+    for(const rai::String& s:symbols) parents.append(KB[s]);
     start_state->newNode<T>({}, parents, x);
   }
   void addTerminalRule(const StringAA& literals);

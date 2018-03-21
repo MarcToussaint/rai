@@ -8,7 +8,7 @@
 #include <Core/util.h>
 
 PR2Interface::PR2Interface() : Thread("PR2_Interface") {
-  this->useROS = mlr::getParameter<bool>("useRos", false);
+  this->useROS = rai::getParameter<bool>("useRos", false);
 }
 
 void PR2Interface::step() {
@@ -56,7 +56,7 @@ void PR2Interface::step() {
   //cout << actMsg.fL(2) << endl;
 
   if(this->logState) {
-    this->logT.append(mlr::timerRead());
+    this->logT.append(rai::timerRead());
     this->logQObs.append(~qRealWorld);
     this->logQDotObs.append(~qDotRealWorld);
     this->logFLObs.append(~actMsg.fL);
@@ -84,7 +84,7 @@ void PR2Interface::step() {
   }
 }
 
-void PR2Interface::initialize(mlr::KinematicWorld* realWorld, mlr::KinematicWorld* realWorldSimulation, mlr::KinematicWorld* modelWorld, TaskSpaceController* controller) {
+void PR2Interface::initialize(rai::KinematicWorld* realWorld, rai::KinematicWorld* realWorldSimulation, rai::KinematicWorld* modelWorld, TaskSpaceController* controller) {
 
   cout << "TODO: nochmal eine World mehr" << endl;
 
@@ -128,7 +128,7 @@ void PR2Interface::initialize(mlr::KinematicWorld* realWorld, mlr::KinematicWorl
 
     /*arr Kp_base = zeros(this->realWorld->getJointStateDimension());
     arr Kd_base = zeros(this->realWorld->getJointStateDimension());
-    for_list(mlr::Joint, j, this->realWorld->joints) if(j->qDim()>0){
+    for_list(rai::Joint, j, this->realWorld->joints) if(j->qDim()>0){
       arr *info;
       info = j->ats.getValue<arr>("gains");
       if(info){
@@ -180,7 +180,7 @@ void PR2Interface::initialize(mlr::KinematicWorld* realWorld, mlr::KinematicWorl
     this->ctrl_ref.set() = ctrlMsg;
 
 
-    this->dynamicSimulation->initializeSimulation(new mlr::KinematicWorld(*this->realWorld));
+    this->dynamicSimulation->initializeSimulation(new rai::KinematicWorld(*this->realWorld));
     this->dynamicSimulation->startSimulation();
   }
   this->realWorld->watch(false);
@@ -189,7 +189,7 @@ void PR2Interface::initialize(mlr::KinematicWorld* realWorld, mlr::KinematicWorl
   cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;
 }
 
-void PR2Interface::initialize(mlr::KinematicWorld* realWorld, mlr::KinematicWorld* modelWorld, TaskSpaceController* controller) {
+void PR2Interface::initialize(rai::KinematicWorld* realWorld, rai::KinematicWorld* modelWorld, TaskSpaceController* controller) {
   this->initialize(realWorld, realWorld, modelWorld, controller);
 }
 
@@ -198,8 +198,8 @@ void PR2Interface::startInterface() {
   this->realWorld->watch(false, "");
 
   this->threadLoop();
-  mlr::timerStart(true);
-  mlr::wait(1.0);
+  rai::timerStart(true);
+  rai::wait(1.0);
   cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;
   cout << "%        start PR2 interface             %" << endl;
   cout << "%           and LOOOOOOP!                %" << endl;
@@ -262,14 +262,14 @@ void PR2Interface::sendCommand(const arr& u0, const arr& Kp, const arr& Kd, cons
   }
 }
 
-void PR2Interface::goToPosition(arr pos, mlr::String shape, double executionTime, bool useMotionPlaner, mlr::String name) {
+void PR2Interface::goToPosition(arr pos, rai::String shape, double executionTime, bool useMotionPlaner, rai::String name) {
   TaskMap* posMap = new TM_Default(TMT_pos, *this->modelWorld, shape);
   this->goToTask(posMap, pos, executionTime, useMotionPlaner, name);
 }
 
-void PR2Interface::goToTasks(mlr::Array<LinTaskSpaceAccLaw*> laws, double executionTime, bool useMotionPlanner) {
+void PR2Interface::goToTasks(rai::Array<LinTaskSpaceAccLaw*> laws, double executionTime, bool useMotionPlanner) {
   if(useMotionPlanner) {
-    mlr::KinematicWorld copiedWorld(*this->modelWorld);
+    rai::KinematicWorld copiedWorld(*this->modelWorld);
     KOMO MP(copiedWorld);
 
     MP.x0 = modelWorld->getJointState(); //TODO nix modelWorld, copiedWorld?
@@ -313,29 +313,29 @@ void PR2Interface::goToTasks(mlr::Array<LinTaskSpaceAccLaw*> laws, double execut
     controller->addLinTaskSpaceAccLaw(qLaw);
     controller->generateTaskSpaceSplines();
     this->executeTrajectory(executionTime);
-    mlr::wait(0.5);
+    rai::wait(0.5);
   } else {
     NIY;
   }
 }
 
-void PR2Interface::goToJointState(arr jointState, double executionTime, bool useMotionPlaner, mlr::String name) {
+void PR2Interface::goToJointState(arr jointState, double executionTime, bool useMotionPlaner, rai::String name) {
   TaskMap* qTask = new TM_qItself();
   this->goToTask(qTask, jointState, executionTime, useMotionPlaner, name);
 }
 
-void PR2Interface::goToTask(TaskMap* map, arr ref, double executionTime, bool useMotionPlaner, mlr::String name) {
+void PR2Interface::goToTask(TaskMap* map, arr ref, double executionTime, bool useMotionPlaner, rai::String name) {
   LinTaskSpaceAccLaw* law = new LinTaskSpaceAccLaw(map, this->modelWorld, name);
   law->setRef(ref);
-  mlr::Array<LinTaskSpaceAccLaw*> laws;
+  rai::Array<LinTaskSpaceAccLaw*> laws;
   laws.append(law);
   this->goToTasks(laws, executionTime, useMotionPlaner);
 }
 
 void PR2Interface::executeTrajectory(double executionTime) {
   cout << "start executing trajectory" << endl;
-  //mlr::timerStart(true);
-  double startTime = mlr::timerRead();
+  //rai::timerStart(true);
+  double startTime = rai::timerRead();
   double time = 0.0;
   uint n = 0;
 
@@ -354,7 +354,7 @@ void PR2Interface::executeTrajectory(double executionTime) {
       law->setTargetEvalSpline(s);
     }
     n++;
-    time = mlr::timerRead() - startTime;
+    time = rai::timerRead() - startTime;
   }
 }
 
@@ -370,7 +370,7 @@ void PR2Interface::moveRGripper(arr rGripperRef) {
   this->rGripperRef = rGripperRef;
 }
 
-void PR2Interface::logStateSave(mlr::String name, mlr::String folder) {
+void PR2Interface::logStateSave(rai::String name, rai::String folder) {
   cout << "start saving log " << name << endl;
   system(STRING("mkdir -p " << folder << "/" << name)); //linux specific :-)
 
@@ -420,10 +420,10 @@ REGISTER_MODULE(PR2Interface)
 
 
 
-void showTrajectory(const arr& traj, mlr::KinematicWorld& _world, bool copyWorld, double delay, mlr::String text) {
-  mlr::KinematicWorld* world;
+void showTrajectory(const arr& traj, rai::KinematicWorld& _world, bool copyWorld, double delay, rai::String text) {
+  rai::KinematicWorld* world;
   if(copyWorld) {
-    world = new mlr::KinematicWorld(_world);
+    world = new rai::KinematicWorld(_world);
   } else {
     world = &_world;
   }
@@ -432,7 +432,7 @@ void showTrajectory(const arr& traj, mlr::KinematicWorld& _world, bool copyWorld
   for(uint i = 0; i < traj.d0; i++) {
     world->setJointState(traj[i]);
     world->watch(false);
-    mlr::wait(delay);
+    rai::wait(delay);
   }
   world->watch(true, "Finished. ");
   if(copyWorld) {

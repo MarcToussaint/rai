@@ -4,13 +4,14 @@ OUTPUT = lib$(NAME).so
 
 #OPTIM = fast_debug
 
-DEPEND_UBUNTU = g++ libx11-dev liblapack-dev libf2c2-dev gnuplot libjsoncpp-dev
+DEPEND_UBUNTU = g++ liblapack-dev libf2c2-dev gnuplot libjsoncpp-dev
 
+X11 = 1
 LAPACK = 1
 PTHREAD = 1
 ROS = 1
 JSON = 1
-CXXFLAGS += -DMLR_CORE_PATH=\"`pwd`\"
+CXXFLAGS += -DRAI_CORE_PATH=\"`pwd`\"
 
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )
 OBJS = $(SRCS:%.cpp=%.o)

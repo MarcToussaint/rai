@@ -3,9 +3,9 @@
 // Parameter class - I use it frequently to read parameters from file or cmd line
 //
 
-namespace mlr {
+namespace rai {
 /** @brief A parameter that initializes itself from the command line
-  (use \c mlr::init), parameter file, or a default value (priority in
+  (use \c rai::init), parameter file, or a default value (priority in
   this order).  Initialization is done on the fly the _first_ time
   its value is queried (i.e., referenced by the cast operators).*/
 template<class type>
@@ -81,7 +81,7 @@ template<class T> void Parameter<T>::initialize() {
 
 
 /** @brief a standard method to save an object into a file. The same as
-  std::ofstream file; mlr::open(file, filename); file <<x;
+  std::ofstream file; rai::open(file, filename); file <<x;
   file.close(); */
 template<class T> void save(const T& x, const char *filename) {
   std::ofstream file;
@@ -91,11 +91,11 @@ template<class T> void save(const T& x, const char *filename) {
 }
 
 /** @brief a standard method to load object from a file. The same as
-std::ifstream file; mlr::open(file, filename); file >>x;
+std::ifstream file; rai::open(file, filename); file >>x;
 file.close(); */
 template<class T> void load(T& x, const char *filename, bool change_directory) {
-#ifdef MLR_MSVC
-  if(change_directory) MLR_MSG("can't handle change_directory with MSVC");
+#ifdef RAI_MSVC
+  if(change_directory) RAI_MSG("can't handle change_directory with MSVC");
   change_directory = false;
 #endif
   if(!change_directory) {

@@ -1,25 +1,18 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 /// @file
 /// @ingroup group_Core
 /// @addtogroup group_Core
 /// @{
 
-#ifndef MLR_util_h
-#define MLR_util_h
+#ifndef RAI_util_h
+#define RAI_util_h
 
 #include <iostream>
 #include <fstream>
@@ -29,18 +22,18 @@
 #include <memory>
 
 //----- if no system flag, I assume Linux
-#if !defined MLR_MSVC && !defined MLR_Cygwin && !defined MLR_Linux && !defined MLR_MinGW && !defined MLR_Darwin
-#  define MLR_Linux
+#if !defined RAI_MSVC && !defined RAI_Cygwin && !defined RAI_Linux && !defined RAI_MinGW && !defined RAI_Darwin
+#  define RAI_Linux
 #endif
 
 
 //----- basic defs:
-#define MLR_PI 3.14159265358979323846
-#define MLR_LN2 0.69314718055994528622676398299518041312694549560546875
-#define MLR_2PI 6.283195307179587
-#define MLR_LnSqrt2Pi -0.9189385332046727417803296
-#define MLR_SQRT2 1.414213562373095049
-#define MLR_SQRTPI 1.772453850905516027
+#define RAI_PI 3.14159265358979323846
+#define RAI_LN2 0.69314718055994528622676398299518041312694549560546875
+#define RAI_2PI 6.283195307179587
+#define RAI_LnSqrt2Pi -0.9189385332046727417803296
+#define RAI_SQRT2 1.414213562373095049
+#define RAI_SQRTPI 1.772453850905516027
 typedef unsigned char byte;            ///< byte
 typedef unsigned int uint;             ///< unsigned integer
 typedef const char* charp;
@@ -72,13 +65,15 @@ typedef const char* charp;
 // standard little methods in my namespace (this needs cleanup)
 //
 
-namespace mlr {
+namespace rai {
 extern int argc;
 extern char** argv;
 extern bool IOraw;  ///< stream modifier for some classes (Mem in particular)
 extern uint lineCount;
 extern int verboseLevel;
 extern int interactivity;
+
+void system(const char* cmd);
 
 //----- files
 void open(std::ofstream& fs, const char *name, const char *errmsg="");
@@ -190,15 +185,15 @@ std::istream& operator>>(std::istream& is, const PARSE&);
 // String class
 //
 
-#define STRING(x) (((mlr::String&)(mlr::String().stream() <<x)))
-#define STRINGF(format,...) (mlr::String().printf(format, __VA_ARGS__))
-#define STREAM(x) (((mlr::String&)(mlr::String().stream() <<x)).stream())
+#define STRING(x) (((rai::String&)(rai::String().stream() <<x)))
+#define STRINGF(format,...) (rai::String().printf(format, __VA_ARGS__))
+#define STREAM(x) (((rai::String&)(rai::String().stream() <<x)).stream())
 
-namespace mlr {
+namespace rai {
 /** @brief String implements the functionalities of an ostream and an
 istream, but also can be send to an ostream or read from an
 istream. It is based on a simple streambuf derived from the
-mlr::Mem class */
+rai::Mem class */
 struct String:public std::iostream {
 private:
   struct StringBuf:std::streambuf {
@@ -273,14 +268,14 @@ public:
 stdPipes(String)
 }
 
-inline mlr::String operator+(const mlr::String& a, const char* b){ mlr::String s=a; s <<b; return s; }
+inline rai::String operator+(const rai::String& a, const char* b){ rai::String s=a; s <<b; return s; }
 
 //===========================================================================
 //
 // string-filling routines
 
-namespace mlr {
-  mlr::String getNowString();
+namespace rai {
+  rai::String getNowString();
 }
 
 
@@ -288,7 +283,7 @@ namespace mlr {
 //
 // logging
 
-namespace mlr {
+namespace rai {
   /// An object that represents a log file and/or cout logging, together with log levels read from a cfg file
   struct LogObject{
     std::ofstream fil;
@@ -302,7 +297,7 @@ namespace mlr {
 
   /// A Token to such a Log object which, on destruction, writes into the Log
   struct LogToken{
-    mlr::String msg;
+    rai::String msg;
     LogObject& log;
     int log_level;
     const char *code_file, *code_func;
@@ -314,7 +309,7 @@ namespace mlr {
   };
 }
 
-extern mlr::LogObject _log;
+extern rai::LogObject _log;
 
 #define LOG(log_level) _log.getNonConst().getToken(log_level, __FILE__, __func__, __LINE__).os()
 
@@ -330,16 +325,16 @@ void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 // macros for halting/MSGs etc
 //
 
-namespace mlr {
+namespace rai {
 extern String errString;
 }
 
 //----- error handling:
-#  define MLR_HERE __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<' ' //":" <<std::setprecision(5) <<mlr::realTime() <<"s "
+#  define RAI_HERE __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<' ' //":" <<std::setprecision(5) <<rai::realTime() <<"s "
 
 #ifndef HALT
-#  define MLR_MSG(msg){ LOG(-1) <<msg; }
-#  define THROW(msg){ LOG(-1) <<msg; throw(mlr::errString.p); }
+#  define RAI_MSG(msg){ LOG(-1) <<msg; }
+#  define THROW(msg){ LOG(-1) <<msg; throw(rai::errString.p); }
 #  define HALT(msg){ LOG(-2) <<msg; exit(1); }
 #  define NIY  { LOG(-2) <<"not implemented yet"; exit(1); }
 #  define NICO { LOG(-2) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(1); }
@@ -350,22 +345,22 @@ extern String errString;
 
 
 //----- check macros:
-#ifndef MLR_NOCHECK
+#ifndef RAI_NOCHECK
 
 #define CHECK(cond, msg) \
-  if(!(cond)){ LOG(-2) <<"CHECK failed: '" <<#cond <<"' " <<msg;  throw mlr::errString.p; }\
+  if(!(cond)){ LOG(-2) <<"CHECK failed: '" <<#cond <<"' " <<msg;  throw rai::errString.p; }\
 
 #define CHECK_ZERO(expr, tolerance, msg) \
-  if(fabs((double)(expr))>tolerance){ LOG(-2) <<"CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg; throw mlr::errString.p; } \
+  if(fabs((double)(expr))>tolerance){ LOG(-2) <<"CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg; throw rai::errString.p; } \
 
 #define CHECK_EQ(A, B, msg) \
-  if(!(A==B)){ LOG(-2) <<"CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw mlr::errString.p; } \
+  if(!(A==B)){ LOG(-2) <<"CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw rai::errString.p; } \
 
 #define CHECK_GE(A, B, msg) \
-  if(!(A>=B)){ LOG(-2) <<"CHECK_GE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw mlr::errString.p; } \
+  if(!(A>=B)){ LOG(-2) <<"CHECK_GE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw rai::errString.p; } \
 
 #define CHECK_LE(A, B, msg) \
-  if(!(A<=B)){ LOG(-2) <<"CHECK_LE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw mlr::errString.p; } \
+  if(!(A<=B)){ LOG(-2) <<"CHECK_LE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw rai::errString.p; } \
 
 #else
 #define CHECK(cond, msg)
@@ -386,7 +381,7 @@ extern String errString;
 #  define TEST(name) test##name(){} GTEST_TEST(examples, name)
 #  define MAIN \
      main(int argc, char** argv){               \
-       mlr::initCmdLine(argc,argv);             \
+       rai::initCmdLine(argc,argv);             \
        testing::InitGoogleTest(&argc, argv);	\
        return RUN_ALL_TESTS();			\
      }                                          \
@@ -395,7 +390,7 @@ extern String errString;
 
 
 //----- verbose:
-#define VERBOSE(l, x) if(l<=mlr::getVerboseLevel()) x;
+#define VERBOSE(l, x) if(l<=rai::getVerboseLevel()) x;
 
 
 //----- other macros:
@@ -407,10 +402,10 @@ extern String errString;
 // FileToken
 //
 
-namespace mlr {
+namespace rai {
 
 
-  String mlrPath(const char* rel=NULL);
+  String raiPath(const char* rel=NULL);
 
   /** @brief A ostream/istream wrapper that allows easier initialization of objects, like:
 arr X = FILE("inname");
@@ -418,7 +413,7 @@ X >>FILE("outfile");
  etc
 */
 struct FileToken{
-  mlr::String path, name, cwd;
+  rai::String path, name, cwd;
   std::shared_ptr<std::ofstream> os;
   std::shared_ptr<std::ifstream> is;
 
@@ -443,9 +438,9 @@ inline std::ostream& operator<<(std::ostream& os, const FileToken& fil){ return 
 template<class T> FileToken& operator<<(T& x, FileToken& fil){ fil.getIs() >>x; return fil; }
 template<class T> void operator>>(const T& x, FileToken& fil){ fil.getOs() <<x; }
 }
-#define FILE(filename) (mlr::FileToken(filename)()) //it needs to return a REFERENCE to a local scope object
+#define FILE(filename) (rai::FileToken(filename)()) //it needs to return a REFERENCE to a local scope object
 
-inline bool operator==(const mlr::FileToken&, const mlr::FileToken&){ return false; }
+inline bool operator==(const rai::FileToken&, const rai::FileToken&){ return false; }
 
 
 //===========================================================================
@@ -453,7 +448,7 @@ inline bool operator==(const mlr::FileToken&, const mlr::FileToken&){ return fal
 // give names to Enum (for pipe << >> )
 //
 
-namespace mlr {
+namespace rai {
   template<class enum_T>
   struct Enum{
     enum_T x;
@@ -465,7 +460,7 @@ namespace mlr {
     bool operator!=(const enum_T& y) const{ return x!=y; }
     operator enum_T() const{ return x; }
     void read(std::istream& is){
-      mlr::String str(is);
+      rai::String str(is);
       bool good=false;
       for(int i=0; names[i]; i++){
         const char* n = names[i];
@@ -473,7 +468,7 @@ namespace mlr {
         if(str==n){ x=(enum_T)(i); good=true; break; }
       }
       if(!good){
-        mlr::String all;
+        rai::String all;
         for(int i=0; names[i]; i++) all <<names[i] <<' ';
         LOG(-2) <<"Enum::read could not find the keyword '" <<str <<"'. Possible Enum keywords: " <<all;
       }
@@ -495,9 +490,9 @@ namespace mlr {
 // random number generator
 //
 
-namespace mlr {
+namespace rai {
 /** @brief A random number generator. An global instantiation \c
-  mlr::rnd of a \c Rnd object is created. Use this one object to get
+  rai::rnd of a \c Rnd object is created. Use this one object to get
   random numbers.*/
 class Rnd {
 private:
@@ -557,7 +552,7 @@ private:
 
 }
 /// The global Rnd object
-extern mlr::Rnd rnd;
+extern rai::Rnd rnd;
 
 
 //===========================================================================
@@ -569,7 +564,7 @@ struct Inotify{
   int fd, wd;
   char *buffer;
   uint buffer_size;
-  mlr::FileToken *fil;
+  rai::FileToken *fil;
   Inotify(const char *filename);
   ~Inotify();
   bool poll(bool block=false, bool verbose=false);
@@ -585,7 +580,7 @@ struct Inotify{
 //
 
 struct Mutex {
-#ifndef MLR_MSVC
+#ifndef RAI_MSVC
   pthread_mutex_t mutex;
 #endif
   int state; ///< 0=unlocked, otherwise=syscall(SYS_gettid)
@@ -740,7 +735,7 @@ using std::ostream;
 using std::istream;
 using std::ofstream;
 using std::ifstream;
-using mlr::String;
+using rai::String;
 
 #endif
 

@@ -1,17 +1,10 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #include "TM_AboveBox.h"
 #include "frame.h"
@@ -20,23 +13,23 @@ TM_AboveBox::TM_AboveBox(int iShape, int jShape, double _margin)
   : i(iShape), j(jShape), margin(_margin){
 }
 
-TM_AboveBox::TM_AboveBox(const mlr::KinematicWorld& K, const char* iShapeName, const char* jShapeName, double _margin)
+TM_AboveBox::TM_AboveBox(const rai::KinematicWorld& K, const char* iShapeName, const char* jShapeName, double _margin)
   :i(-1), j(-1), margin(_margin){
-  mlr::Frame *a = iShapeName ? K.getFrameByName(iShapeName):NULL;
-  mlr::Frame *b = jShapeName ? K.getFrameByName(jShapeName):NULL;
+  rai::Frame *a = iShapeName ? K.getFrameByName(iShapeName):NULL;
+  rai::Frame *b = jShapeName ? K.getFrameByName(jShapeName):NULL;
   if(a) i=a->ID;
   if(b) j=b->ID;
 }
 
-void TM_AboveBox::phi(arr& y, arr& J, const mlr::KinematicWorld& K, int t){
-  mlr::Shape *pnt=K.frames(i)->shape;
-  mlr::Shape *box=K.frames(j)->shape;
+void TM_AboveBox::phi(arr& y, arr& J, const rai::KinematicWorld& K, int t){
+  rai::Shape *pnt=K.frames(i)->shape;
+  rai::Shape *box=K.frames(j)->shape;
   CHECK(pnt && box,"I need shapes!");
-//  if(box->type!=mlr::ST_ssBox){ //switch roles
-//    mlr::Shape *z=pnt;
+//  if(box->type!=rai::ST_ssBox){ //switch roles
+//    rai::Shape *z=pnt;
 //    pnt=box; box=z;
 //  }
-  CHECK(box->type()==mlr::ST_ssBox,"the 2nd shape needs to be a box"); //s1 should be the board
+  CHECK(box->type()==rai::ST_ssBox,"the 2nd shape needs to be a box"); //s1 should be the board
   arr pos,posJ;
   K.kinematicsRelPos(pos, posJ, &pnt->frame, NoVector, &box->frame, NoVector);
 #if 0
@@ -74,6 +67,6 @@ void TM_AboveBox::phi(arr& y, arr& J, const mlr::KinematicWorld& K, int t){
   }
 }
 
-mlr::String TM_AboveBox::shortTag(const mlr::KinematicWorld &G){
+rai::String TM_AboveBox::shortTag(const rai::KinematicWorld &G){
   return STRING("AboveBox:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }

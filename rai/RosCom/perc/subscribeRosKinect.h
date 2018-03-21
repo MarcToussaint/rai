@@ -4,7 +4,7 @@
 struct SubscribeRosKinect{
   Var<byteA> kinect_rgb;
   Var<uint16A> kinect_depth;
-  Var<mlr::Transformation> kinect_frame;
+  Var<rai::Transformation> kinect_frame;
 //  Var<visualization_msgs::MarkerArray> tableTopObjects;
   SubscriberConv<sensor_msgs::Image, byteA, &conv_image2byteA> subRgb;
   SubscriberConv<sensor_msgs::Image, uint16A, &conv_image2uint16A> subDepth;

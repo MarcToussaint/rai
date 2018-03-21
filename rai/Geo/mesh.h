@@ -1,26 +1,19 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-
-#ifndef MLR_mesh_h
-#define MLR_mesh_h
+#ifndef RAI_mesh_h
+#define RAI_mesh_h
 
 #include <Core/array.h>
 #include "geo.h"
 
-namespace mlr { struct Mesh; }
-typedef mlr::Array<mlr::Mesh> MeshA;
+namespace rai { struct Mesh; }
+typedef rai::Array<rai::Mesh> MeshA;
 void glDrawMeshes(void*);
 
 /// @file
@@ -28,7 +21,7 @@ void glDrawMeshes(void*);
 /// @addtogroup group_geo
 /// @{
 
-namespace mlr {
+namespace rai {
 
 //===========================================================================
 /// a mesh (arrays of vertices, triangles, colors & normals)
@@ -40,9 +33,14 @@ struct Mesh : GLDrawer {
   uintA T;              ///< triangles (faces, empty -> point cloud)
   arr   Tn;             ///< triangle normals (optional)
 
+  uintA Tt;             ///< triangle texture indices
+  arr tex;              ///< texture coordinates
+  byteA texImg;         ///< texture image
+  int texture=-1;       ///< GL texture name created with glBindTexture
+
   uintAA graph;         ///< for every vertex, the set of neighboring vertices
 
-  mlr::Transformation glX; ///< transform (only used for drawing! Otherwise use applyOnPoints)  (optional)
+  rai::Transformation glX; ///< transform (only used for drawing! Otherwise use applyOnPoints)  (optional)
 
   long parsing_pos_start;
   long parsing_pos_end;
@@ -61,7 +59,7 @@ struct Mesh : GLDrawer {
   void setCylinder(double r, double l, uint fineness=3);
   void setCappedCylinder(double r, double l, uint fineness=3);
   void setSSBox(double x_width, double y_width, double z_height, double r, uint fineness=3);
-  void setSSCvx(const mlr::Mesh& m, double r, uint fineness=3);
+  void setSSCvx(const rai::Mesh& m, double r, uint fineness=3);
   void setImplicitSurface(ScalarFunction f, double lo=-10., double hi=+10., uint res=100);
   void setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res);
   void setRandom(uint vertices=10);
@@ -76,7 +74,7 @@ struct Mesh : GLDrawer {
   void transform(const Transformation& t);
   Vector center();
   void box();
-  void addMesh(const mlr::Mesh& mesh2);
+  void addMesh(const rai::Mesh& mesh2);
   void makeConvexHull();
   void makeTriangleFan();
   void makeLineStrip();
@@ -91,7 +89,7 @@ struct Mesh : GLDrawer {
   void fuseNearVertices(double tol=1e-5);
   void clean();
   void flipFaces();
-  mlr::Vector getCenter() const;
+  rai::Vector getCenter() const;
   arr getMean() const;
   void getBox(double& dx, double& dy, double& dz) const;
   double getRadius() const;
@@ -121,7 +119,7 @@ struct Mesh : GLDrawer {
   void glDraw(struct OpenGL&);
 };
 } //END of namespace
-stdOutPipe(mlr::Mesh)
+stdOutPipe(rai::Mesh)
 
 //===========================================================================
 
@@ -155,20 +153,20 @@ void inertiaCylinder(double *Inertia, double& mass, double density, double heigh
 //
 
 struct DistanceFunction_Sphere:ScalarFunction{
-  mlr::Transformation t; double r;
-  DistanceFunction_Sphere(const mlr::Transformation& _t, double _r);
+  rai::Transformation t; double r;
+  DistanceFunction_Sphere(const rai::Transformation& _t, double _r);
   double f(arr& g, arr& H, const arr& x);
 };
 
 struct DistanceFunction_Box:ScalarFunction{
-  mlr::Transformation t; double dx, dy, dz, r;
-  DistanceFunction_Box(const mlr::Transformation& _t, double _dx, double _dy, double _dz, double _r=0.);
+  rai::Transformation t; double dx, dy, dz, r;
+  DistanceFunction_Box(const rai::Transformation& _t, double _dx, double _dy, double _dz, double _r=0.);
   double f(arr& g, arr& H, const arr& x);
 };
 
 struct DistanceFunction_Cylinder:ScalarFunction{
-  mlr::Transformation t; double r, dz;
-  DistanceFunction_Cylinder(const mlr::Transformation& _t, double _r, double _dz);
+  rai::Transformation t; double r, dz;
+  DistanceFunction_Cylinder(const rai::Transformation& _t, double _r, double _dz);
   double f(arr& g, arr& H, const arr& x);
 };
 
@@ -182,10 +180,10 @@ extern ScalarFunction DistanceFunction_SSBox;
 
 enum GJK_point_type { GJK_none=0, GJK_vertex, GJK_edge, GJK_face };
 extern GJK_point_type& NoPointType;
-double GJK_sqrDistance(const mlr::Mesh& mesh1, const mlr::Mesh& mesh2,
-                    const mlr::Transformation& t1, const mlr::Transformation& t2,
-                    mlr::Vector& p1, mlr::Vector& p2,
-                    mlr::Vector& e1, mlr::Vector& e2,
+double GJK_sqrDistance(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
+                    const rai::Transformation& t1, const rai::Transformation& t2,
+                    rai::Vector& p1, rai::Vector& p2,
+                    rai::Vector& e1, rai::Vector& e2,
                     GJK_point_type& pt1, GJK_point_type& pt2);
 
 

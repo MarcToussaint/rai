@@ -7,16 +7,17 @@
 //===========================================================================
 
 void TEST(Easy){
-  mlr::KinematicWorld K("arm.g");
+  rai::KinematicWorld K("arm.g");
   cout <<"configuration space dim=" <<K.q.N <<endl;
   KOMO komo;
-  komo.setModel(K);
+  komo.setModel(K, true);
   komo.setPathOpt(1., 100, 5.);
 
   komo.setPosition(1., 1., "endeff", "target", OT_sumOfSqr);
   komo.setSlowAround(1., .02);
-  komo.setCollisions(false);
-//  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq);
+  komo.setCollisions(false, .1, 1e-1);
+  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq);
+  komo.reportProblem();
 
   komo.reset();
 //  komo.setSpline(5);
@@ -32,7 +33,7 @@ void TEST(Easy){
 //===========================================================================
 
 void TEST(Align){
-  mlr::KinematicWorld K("arm.g");
+  rai::KinematicWorld K("arm.g");
   cout <<"configuration space dim=" <<K.q.N <<endl;
   KOMO komo;
   komo.setModel(K);
@@ -41,8 +42,8 @@ void TEST(Align){
   komo.setPosition(1., 1., "endeff", "target");
   komo.setOrientation(1., 1., "endeff", "target", OT_eq);
   komo.setSlowAround(1., .02);
-  komo.setCollisions(true);
-//  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq);
+//  komo.setCollisions(false);
+  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq, NoArr, 1e1);
 
   komo.reset();
   komo.run();
@@ -56,14 +57,14 @@ void TEST(Align){
 
 void TEST(PR2){
   //NOTE: this uses a 25-DOF whole-body-motion model of thbe PR2
-  mlr::KinematicWorld K("model.g");
+  rai::KinematicWorld K("model.g");
   K.pruneRigidJoints();
   K.optimizeTree();
   makeConvexHulls(K.frames);
   cout <<"configuration space dim=" <<K.getJointStateDimension() <<endl;
-  double rand = mlr::getParameter<double>("KOMO/moveTo/randomizeInitialPose", .0);
+  double rand = rai::getParameter<double>("KOMO/moveTo/randomizeInitialPose", .0);
   if(rand){
-    rnd.seed(mlr::getParameter<uint>("rndSeed", 0));
+    rnd.seed(rai::getParameter<uint>("rndSeed", 0));
     rndGauss(K.q,rand,true);
     K.setJointState(K.q);
   }
@@ -73,8 +74,9 @@ void TEST(PR2){
   komo.setPathOpt(1., 100, 10.);
   komo.setPosition(1., 1., "endeff", "target");
   komo.setSlowAround(1., .02);
-  komo.setCollisions(false);
+//  komo.setCollisions(false);
 //  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq);
+  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq, NoArr, 1e2);
 
   komo.reset();
 //  komo.setSpline(10);
@@ -87,7 +89,7 @@ void TEST(PR2){
 //===========================================================================
 
 void TEST(FinalPosePR2){
-  mlr::KinematicWorld K("model.g");
+  rai::KinematicWorld K("model.g");
   K.pruneRigidJoints();
   K.optimizeTree();
   makeConvexHulls(K.frames);
@@ -100,11 +102,11 @@ void TEST(FinalPosePR2){
 //===========================================================================
 
 int main(int argc,char** argv){
-  mlr::initCmdLine(argc,argv);
+  rai::initCmdLine(argc,argv);
 
-  testEasy();
+//  testEasy();
   testAlign();
-  testPR2();
+//  testPR2();
 
   return 0;
 }

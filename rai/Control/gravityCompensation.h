@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #ifndef GRAVITYCOMPENSATION_H
 #define GRAVITYCOMPENSATION_H
 
@@ -10,7 +18,7 @@ struct GravityCompensation {
 
   struct CV;
 
-  mlr::KinematicWorld world;
+  rai::KinematicWorld world;
 
   arr TLeftArm, TRightArm, THead;
   StringA leftJoints = {"l_shoulder_pan_joint","l_shoulder_lift_joint","l_upper_arm_roll_joint","l_elbow_flex_joint",
@@ -21,7 +29,7 @@ struct GravityCompensation {
 
   StringA headJoints = {"head_tilt_joint"};
 
-  std::map<mlr::String, arr> betasGC;
+  std::map<rai::String, arr> betasGC;
   arr beta_l_shoulder_pan_joint, beta_l_shoulder_lift_joint, beta_l_upper_arm_roll_joint, beta_l_elbow_flex_joint, beta_l_forearm_roll_joint, beta_l_wrist_flex_joint;
   arr betaFTL, betaFTR;
 
@@ -33,11 +41,11 @@ struct GravityCompensation {
   arr compensateFTL(const arr& q);
   arr compensateFTR(const arr& q);
 
-  GravityCompensation(const mlr::KinematicWorld& world);
+  GravityCompensation(const rai::KinematicWorld& world);
 
-  arr featuresGC(arr q, arr qSign, const mlr::String& joint);
+  arr featuresGC(arr q, arr qSign, const rai::String& joint);
 
-  arr featuresFT(arr q, mlr::String endeff);
+  arr featuresFT(arr q, rai::String endeff);
   arr generateTaskMapFeature(TM_Default map, arr Q);
 
   void testForLimits();
@@ -71,7 +79,7 @@ struct GravityCompensation {
   arr compensate(arr q, bool compensateLeftArm, bool compensateRightArm, bool compensateHead);
   arr compensate(arr q, StringA joints);
 
-  GravityCompensation(const mlr::KinematicWorld& world);
+  GravityCompensation(const rai::KinematicWorld& world);
 
   //for debugging
   void testForLimits();

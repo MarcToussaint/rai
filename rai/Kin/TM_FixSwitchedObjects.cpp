@@ -1,17 +1,10 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #include "TM_FixSwitchedObjects.h"
 #include "TM_qItself.h"
@@ -40,17 +33,17 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau, int 
   }
   for(uint i=0;i<switchedBodies.N;i++){
     uint id = switchedBodies(i);
-    mlr::Frame *b0 = G.elem(-2)->frames(id);    CHECK(&b0->K==G.elem(-2),"");
-    mlr::Frame *b1 = G.elem(-1)->frames(id);    CHECK(&b1->K==G.elem(-1),"");
+    rai::Frame *b0 = G.elem(-2)->frames(id);    CHECK(&b0->K==G.elem(-2),"");
+    rai::Frame *b1 = G.elem(-1)->frames(id);    CHECK(&b1->K==G.elem(-1),"");
     CHECK_EQ(b0->ID, b1->ID, "");
     CHECK_EQ(b0->name, b1->name, "");
 
     if(b0->name.startsWith("slider")) continue; //warning: this introduces zeros in y and J -- but should be ok
 
-    if(b1->flags && !(b1->flags & (1<<FL_zeroQVel))) continue;
+    if(b1->flags && (b1->flags & (1<<FL_impulseExchange))) continue;
 
 //    if(order==2){
-//      mlr::Frame *b2 = G.elem(-1)->frames(id);
+//      rai::Frame *b2 = G.elem(-1)->frames(id);
 //      if(b2->flags & (1<<FL_impulseExchange)) continue;
 //    }
 
@@ -124,11 +117,11 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau, int 
         if(true){
 //          const char* filename="z.last";
           const char* shape="obj1";
-          mlr::KinematicWorld K(*G.elem(-1));
+          rai::KinematicWorld K(*G.elem(-1));
           FILE("z.last2") <<K;
-//          mlr::KinematicWorld K(filename);
+//          rai::KinematicWorld K(filename);
 //          K.setJointState(G.elem(-1)->q);
-          mlr::Shape *sh=K.getShapeByName(shape);
+          rai::Shape *sh=K.getShapeByName(shape);
           TM_Default pos(TMT_posDiff, sh->index);
           arr y,J;
           pos.phi(y, J, K);
@@ -144,7 +137,7 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau, int 
           checkJacobian(f, K.q, 1e-4);
 
 //          exit(0);
-//          mlr::wait();
+//          rai::wait();
         }
 
     }

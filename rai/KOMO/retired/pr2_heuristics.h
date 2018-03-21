@@ -11,14 +11,13 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
 #pragma once
 
 #include <Core/array.h>
 
-namespace mlr {
+namespace rai {
   struct KinematicWorld;
 };
 
-arr pr2_reasonable_W(const mlr::KinematicWorld& world);
-uintA pr2_get_shapes(const mlr::KinematicWorld& world);
+arr pr2_reasonable_W(const rai::KinematicWorld& world);
+uintA pr2_get_shapes(const rai::KinematicWorld& world);

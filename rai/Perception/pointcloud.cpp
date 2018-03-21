@@ -1,4 +1,12 @@
-#ifdef MLR_PCL
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
+#ifdef RAI_PCL
 #include "pointcloud.h"
 #include "perception.h"
 
@@ -67,13 +75,13 @@ struct sObjectFitter{
     seg.setOptimizeCoefficients (true);
     seg.setModelType (pcl::SACMODEL_CYLINDER);
     seg.setMethodType (pcl::SAC_RANSAC);
-    double ndw = mlr::getParameter<double>("CylNormalDistanceWeight", 0.07);
+    double ndw = rai::getParameter<double>("CylNormalDistanceWeight", 0.07);
     seg.setNormalDistanceWeight (ndw);
     seg.setMaxIterations (100);
-    double dt = mlr::getParameter<double>("CylDistanceThreshold", 0.01);
+    double dt = rai::getParameter<double>("CylDistanceThreshold", 0.01);
     seg.setDistanceThreshold (dt);
-    double minRadius = mlr::getParameter<double>("MinSphereRadius", 0.01);
-    double maxRadius = mlr::getParameter<double>("MaxSphereRadius", 0.1);
+    double minRadius = rai::getParameter<double>("MinSphereRadius", 0.01);
+    double maxRadius = rai::getParameter<double>("MaxSphereRadius", 0.1);
     seg.setRadiusLimits (minRadius, maxRadius);
     seg.setInputCloud (cloud);
     seg.setInputNormals (normals);
@@ -82,7 +90,7 @@ struct sObjectFitter{
     pcl::ModelCoefficients::Ptr coefficients_cylinder (new pcl::ModelCoefficients);
     seg.segment (*inliers_cylinder, *coefficients_cylinder);
 
-    uint minCloudSize = mlr::getParameter<int>("minCloudSize", 500);
+    uint minCloudSize = rai::getParameter<int>("minCloudSize", 500);
     if (inliers_cylinder->indices.size() < minCloudSize) {
       object.reset();   
       return 0;
@@ -101,10 +109,10 @@ struct sObjectFitter{
     seg.setOptimizeCoefficients (true);
     seg.setModelType (pcl::SACMODEL_SPHERE);
     seg.setMethodType (pcl::SAC_RANSAC);
-    double ndw = mlr::getParameter<double>("SphereNormalDistanceWeight", 10);
+    double ndw = rai::getParameter<double>("SphereNormalDistanceWeight", 10);
     seg.setNormalDistanceWeight (ndw);
     seg.setMaxIterations (100);
-    double dt = mlr::getParameter<double>("SphereDistanceThreshold", .0005);
+    double dt = rai::getParameter<double>("SphereDistanceThreshold", .0005);
     seg.setDistanceThreshold (dt);
     seg.setRadiusLimits (0.01, 0.1);
     seg.setInputCloud (cloud);
@@ -113,7 +121,7 @@ struct sObjectFitter{
     pcl::PointIndices::Ptr inliers_sphere(new pcl::PointIndices);
     pcl::ModelCoefficients::Ptr coefficients_sphere(new pcl::ModelCoefficients);
     seg.segment (*inliers_sphere, *coefficients_sphere);
-    uint minCloudSize = mlr::getParameter<int>("minCloudSize", 500);
+    uint minCloudSize = rai::getParameter<int>("minCloudSize", 500);
     if (inliers_sphere->indices.size() < minCloudSize) {
       object.reset();   
       return 0;
@@ -190,7 +198,7 @@ struct sObjectFitter{
     }
     //if rest points are enough create new job
 
-    uint minCloudSize = mlr::getParameter<int>("minCloudSize", 500);
+    uint minCloudSize = rai::getParameter<int>("minCloudSize", 500);
     if (cloud->size() - inliers->indices.size() > minCloudSize) {
       anotherJob = createNewJob(cloud, inliers);
       return true;
@@ -248,7 +256,7 @@ void ObjectClusterer::step() {
   std::vector<pcl::PointIndices> cluster_indices;
   pcl::EuclideanClusterExtraction<PointT> ec;
   ec.setClusterTolerance(0.01);
-  int minCloudSize = mlr::getParameter<int>("minCloudSize", 500);
+  int minCloudSize = rai::getParameter<int>("minCloudSize", 500);
   ec.setMinClusterSize(minCloudSize);
   ec.setMaxClusterSize(25000);
   ec.setSearchMethod(tree);
@@ -265,7 +273,7 @@ void ObjectClusterer::step() {
     cloud_cluster->height = 1;
     cloud_cluster->is_dense = true;
     pcl::PointCloud<PointT>::Ptr cluster_transformed(new pcl::PointCloud<PointT>);
-    Eigen::Matrix4f transform(mlr::getParameter<floatA>("kinect_trans_mat").p);
+    Eigen::Matrix4f transform(rai::getParameter<floatA>("kinect_trans_mat").p);
     transform.transposeInPlace();
     pcl::transformPointCloud(*cloud_cluster, *cluster_transformed, transform);
 
@@ -284,7 +292,7 @@ ObjectFitter::ObjectFitter() : Thread("ObectFitter"), s(new sObjectFitter(this))
 void ObjectFitter::open() {}
 
 void ObjectFitter::step() {
-  mlr::Array<FittingResult> results;
+  rai::Array<FittingResult> results;
 
   PointCloudL plist = objectClusters.get();
   PointCloudL next;
@@ -343,7 +351,7 @@ struct sObjectFilter {
       measurement_.append(-measurement.sub(0,0,3,5));
       measurement_.append(measurement(0,6));
       measurement_.resize(1,7);
-      double epsilon = mlr::getParameter<double>("objectDistance");
+      double epsilon = rai::getParameter<double>("objectDistance");
       for (uint j = 0; j<pos.d0; ++j) {
         if(filterShape(pos, nums, measurement, j, epsilon)) { found = true; break;}
         else if (filterShape(pos, nums, measurement_, j, epsilon)) {found = true; break; }
@@ -368,7 +376,7 @@ struct sObjectFilter {
       arr measurement;
       measurement.resize(1,4);
       std::copy(objects(i)->values.begin(), objects(i)->values.end(), measurement.p);
-      double epsilon = mlr::getParameter<double>("objectDistance");
+      double epsilon = rai::getParameter<double>("objectDistance");
       for (uint j = 0; j<pos.d0; ++j) {
         if(filterShape(pos, nums, measurement, j, epsilon)) { found = true; break; }
       }
@@ -427,7 +435,7 @@ void ObjectFilter::step() {
     cyl->rotation.setDiff(ARR(0,0,1), ARR(cyl_pos(i,3), cyl_pos(i,4), cyl_pos(i,5)));
     cyl->shapeParams(RADIUS) = cyl_pos(i,6);//.025;
     cyl->shapeParams(HEIGHT) = length(ARR(cyl_pos(i,3), cyl_pos(i,4), cyl_pos(i,5)));
-    cyl->shapeType = mlr::ST_cylinder;
+    cyl->shapeType = rai::ST_cylinder;
     //cyl->pcl_object = pcl_cyls(i);
     out_objects->append(cyl);
   }
@@ -435,7 +443,7 @@ void ObjectFilter::step() {
     ObjectBelief *sph = new ObjectBelief;
     sph->position = ARR(sph_pos(i,0), sph_pos(i,1), sph_pos(i,2));
     sph->shapeParams(RADIUS) = sph_pos(i,3);
-    sph->shapeType = mlr::ST_sphere;
+    sph->shapeType = rai::ST_sphere;
     //sph->pcl_object = pcl_sph(i);
     out_objects->append(sph);
   }
@@ -451,19 +459,19 @@ ObjectTransformator::ObjectTransformator(const char* name) : Thread(name) {
 void ObjectTransformator::open() {
 }
 
-void createOrsObject(mlr::KinematicWorld& world, mlr::Body& body, const ObjectBelief *object, const arr& transformation) {
-  mlr::Transformation t;
+void createOrsObject(rai::KinematicWorld& world, rai::Body& body, const ObjectBelief *object, const arr& transformation) {
+  rai::Transformation t;
   t.pos = object->position;
   t.rot = object->rotation;
 
-  mlr::Transformation sensor_to_ors;
+  rai::Transformation sensor_to_ors;
   sensor_to_ors.setAffineMatrix(transformation.p);
 
   t.appendTransformation(sensor_to_ors);
 
   arr size = ARR(0., 0., object->shapeParams(HEIGHT), object->shapeParams(RADIUS));
  
-  mlr::Shape* s = new mlr::Shape(world, body);
+  rai::Shape* s = new rai::Shape(world, body);
   for (uint i = 0; i < 4; ++i) s->size[i] = size(i);
   for (uint i = 0; i < 3; ++i) s->color[i] = .3;
   s->type = object->shapeType;
@@ -472,12 +480,12 @@ void createOrsObject(mlr::KinematicWorld& world, mlr::Body& body, const ObjectBe
   body.X = t; 
 }
 
-void moveObject(intA& used, const ShapeL& objects, const mlr::Vector& pos, const mlr::Quaternion& rot) {
+void moveObject(intA& used, const ShapeL& objects, const rai::Vector& pos, const rai::Quaternion& rot) {
   double max = std::numeric_limits<double>::max();
   int max_index = -1;
   for(uint i=0; i<objects.N; ++i) {
     if(used.contains(i)) continue;
-    mlr::Vector diff_ = objects(i)->X.pos - pos;
+    rai::Vector diff_ = objects(i)->X.pos - pos;
     double diff = length(ARR(diff_.x, diff_.y, diff_.z));
     if(diff < max) {
       max = diff;
@@ -498,12 +506,12 @@ void ObjectTransformator::step() {
   ShapeL cylinders;
   ShapeL spheres;
   for (int i=geo.shapes.N-1;i>=0;i--) {
-    if (strncmp(geo.shapes(i)->name, "thing", 5) == 0 && geo.shapes(i)->type == mlr::ST_cylinder) {
-      mlr::Shape *s = geo.shapes(i);
+    if (strncmp(geo.shapes(i)->name, "thing", 5) == 0 && geo.shapes(i)->type == rai::ST_cylinder) {
+      rai::Shape *s = geo.shapes(i);
       cylinders.append(s);
     }
-    else if (strncmp(geo.shapes(i)->name, "thing", 5) == 0 && geo.shapes(i)->type == mlr::ST_sphere) {
-      mlr::Shape *s = geo.shapes(i);
+    else if (strncmp(geo.shapes(i)->name, "thing", 5) == 0 && geo.shapes(i)->type == rai::ST_sphere) {
+      rai::Shape *s = geo.shapes(i);
       spheres.append(s);
     }
   }
@@ -514,11 +522,11 @@ void ObjectTransformator::step() {
   intA used;
   used.clear();
   for(uint i=0;i<kinect_objects->N && i<spheres.N + cylinders.N;i++){
-    if (kinect_objects->elem(i)->shapeType == mlr::ST_cylinder && c < cylinders.N) {
+    if (kinect_objects->elem(i)->shapeType == rai::ST_cylinder && c < cylinders.N) {
       moveObject(used, cylinders, kinect_objects->elem(i)->position, kinect_objects->elem(i)->rotation);
       ++c;
     }
-    else if (kinect_objects->elem(i)->shapeType == mlr::ST_sphere && s < spheres.N) {
+    else if (kinect_objects->elem(i)->shapeType == rai::ST_sphere && s < spheres.N) {
       spheres(s)->X.pos = kinect_objects->elem(i)->position;
       spheres(s)->X.rot = kinect_objects->elem(i)->rotation;
       spheres(s)->rel.setDifference(spheres(s)->body->X, spheres(s)->X);
@@ -534,4 +542,4 @@ void ObjectTransformator::step() {
   DEBUG(pointcloud, "done.");
 }
 
-#endif // MLR_PCL
+#endif // RAI_PCL

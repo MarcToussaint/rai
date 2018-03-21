@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include <string.h>
 #include "colorspace.h"
 
@@ -84,11 +92,11 @@ void uyv444packed_yuv444planar(const uint8_t* const in_pixels, uint8_t* yc,
 	}
 }
 
-void yuv_packed2planar(mlr::PixelFormat in_format,
+void yuv_packed2planar(rai::PixelFormat in_format,
 		const uint8_t* const in_pixels, uint8_t* yc, uint8_t* uc, uint8_t *vc,
 		const unsigned int num_pixel) {
 	switch (in_format) {
-	case mlr::PIXEL_FORMAT_UYV444:
+	case rai::PIXEL_FORMAT_UYV444:
 		uyv444packed_yuv444planar(in_pixels, yc, uc, vc, num_pixel);
 		break;
 	default:

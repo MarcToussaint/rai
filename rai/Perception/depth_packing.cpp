@@ -1,8 +1,16 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "depth_packing.h"
 
 //REGISTER_MODULE(KinectDepthPacking)
 
-namespace mlr {
+namespace rai {
   void pack_kindepth2rgb(const uint16A& depth, byteA& buffer) {
     buffer.resize(depth.N, 3);
 
@@ -34,7 +42,7 @@ void KinectDepthPacking::step(){
   kinect_depthRgb.writeAccess();
 
 
-  mlr::pack_kindepth2rgb(kinect_depth(), kinect_depthRgb());
+  rai::pack_kindepth2rgb(kinect_depth(), kinect_depthRgb());
 
   kinect_depthRgb().reshape(kinect_depth().d0, kinect_depth().d1, 3);
   kinect_depthRgb.data->write_time = kinect_depth.data->write_time;

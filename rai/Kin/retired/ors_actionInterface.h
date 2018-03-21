@@ -11,15 +11,13 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
 /// @file
 /// @ingroup group_ors
 /// @addtogroup group_ors
 /// @{
 
-#ifndef MLR_ors_actionInterface_h
-#define MLR_ors_actionInterface_h
+#ifndef RAI_ors_actionInterface_h
+#define RAI_ors_actionInterface_h
 
 #include <Core/array.h>
 
@@ -40,7 +38,7 @@
 
 
 typedef unsigned int uint;
-namespace mlr {
+namespace rai {
 struct KinematicWorld;
 }
 struct OdeInterface;
@@ -117,7 +115,7 @@ public:
   
   OpenGL *gl;
 //private:
-  mlr::KinematicWorld *C;
+  rai::KinematicWorld *C;
   OdeInterface *ode; // HIER PARAMETER verstellen
   SwiftInterface *swift;
   TaskVariableList TVs;

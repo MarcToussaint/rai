@@ -11,10 +11,8 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
-#ifndef MLR_opengl_qt_h
-#define MLR_opengl_qt_h
+#ifndef RAI_opengl_qt_h
+#define RAI_opengl_qt_h
 
 #include "opengl.h"
 #include <Geo/geo.h>
@@ -30,16 +28,16 @@
 // #  include <Qt/qobject.h>
 // #  include <Qt/qevent.h>
 #include <QtOpenGL/QtOpenGL>
-#if defined MLR_Cygwin //|| defined MLR_Linux
+#if defined RAI_Cygwin //|| defined RAI_Linux
 #    define GLformat QGL::DirectRendering | QGL::DepthBuffer | QGL::Rgba
 #    define GLosformat QGL::DirectRendering | QGL::DepthBuffer | QGL::Rgba
 #  else
 #    define GLformat QGL::DirectRendering | QGL::DepthBuffer | QGL::Rgba
 #    define GLosformat QGL::DirectRendering | QGL::DepthBuffer | QGL::Rgba
 #endif
-#define MLR_GLUT
+#define RAI_GLUT
 
-#ifdef MLR_MSVC
+#ifdef RAI_MSVC
 #  include<windows.h>
 #  undef min //I hate it that windows defines these macros!
 #  undef max
@@ -49,8 +47,8 @@ struct sOpenGL: QGLWidget {
   Q_OBJECT
 public:
   OpenGL *gl;
-  mlr::Vector downVec,downPos,downFoc;
-  mlr::Quaternion downRot;
+  rai::Vector downVec,downPos,downFoc;
+  rai::Quaternion downRot;
   bool quitLoopOnTimer;
   
   sOpenGL(OpenGL *_gl,const char* title,int w,int h,int posx,int posy);

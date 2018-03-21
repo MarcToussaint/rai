@@ -1,8 +1,16 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "shapeFitter.h"
 #include <Optim/optimization.h>
-//#include <MT/vision.h>
+//#include <RAI/vision.h>
 #include <Kin/kin.h>
-//#include <MT/calibration.h>
+//#include <RAI/calibration.h>
 
 #if 0
 
@@ -12,12 +20,12 @@ struct ShapeFitter: Process {
 
   uintA objectType;
   arr Pl, Pr;
-  mlr::Array<RigidObjectRepresentation> objs;
+  rai::Array<RigidObjectRepresentation> objs;
 
   ShapeFitter(FloatImage& _eviL, FloatImage& _eviR, PerceptionOutput &_perc): Process("ShapeFitter"), eviL(&_eviL), eviR(&_eviR), percOut(&_perc){}
   void open(){
     ifstream fil;
-    mlr::open(fil, "../../data/configurations/calib_P");
+    rai::open(fil, "../../data/configurations/calib_P");
     Pl.readTagged(fil, "PL");
     Pr.readTagged(fil, "PR");
     fil.close();
@@ -50,8 +58,8 @@ void generateShapePoints(arr& points, arr& weights, arr *grad, uint type, uint N
     weights.resize(N); weights=1.;
     if(grad){ grad->resize(N, 2, 3);  grad->setZero(); }
     for(uint i=0; i<N; i++){
-      points(i, 0) = params(0) + cos(MLR_2PI/N*i)*params(2);  if(grad){(*grad)(i, 0, 0) = 1.; (*grad)(i, 0, 2) = cos(MLR_2PI/N*i); }
-      points(i, 1) = params(1) + sin(MLR_2PI/N*i)*params(2);  if(grad){(*grad)(i, 1, 1) = 1.; (*grad)(i, 1, 2) = sin(MLR_2PI/N*i); }
+      points(i, 0) = params(0) + cos(RAI_2PI/N*i)*params(2);  if(grad){(*grad)(i, 0, 0) = 1.; (*grad)(i, 0, 2) = cos(RAI_2PI/N*i); }
+      points(i, 1) = params(1) + sin(RAI_2PI/N*i)*params(2);  if(grad){(*grad)(i, 1, 1) = 1.; (*grad)(i, 1, 2) = sin(RAI_2PI/N*i); }
     }
     return;
   }
@@ -74,14 +82,14 @@ void generateShapePoints(arr& points, arr& weights, arr *grad, uint type, uint N
     }
     //top curve
     for(uint i=0; i<N; i++){
-      points(2*N+i, 0) = params(0) + cos(MLR_PI*(i+1)/(N+1))*.5*params(2);              if(grad){(*grad)(2*N+i, 0, 0) = 1.; (*grad)(2*N+i, 0, 2) = cos(MLR_PI*(i+1)/(N+1))*.5; }
-      points(2*N+i, 1) = params(1) + .5*params(3) + sin(MLR_PI*(i+1)/(N+1))*params(4);  if(grad){(*grad)(2*N+i, 1, 1) = 1.; (*grad)(2*N+i, 1, 3) = +.5; (*grad)(2*N+i, 1, 4) = +sin(MLR_PI*(i+1)/(N+1)); }
-      weights(2*N+i) = params(2); //MLR_PI * sqrt(*params(2)/8. + params(4)*params(4)/2.);
+      points(2*N+i, 0) = params(0) + cos(RAI_PI*(i+1)/(N+1))*.5*params(2);              if(grad){(*grad)(2*N+i, 0, 0) = 1.; (*grad)(2*N+i, 0, 2) = cos(RAI_PI*(i+1)/(N+1))*.5; }
+      points(2*N+i, 1) = params(1) + .5*params(3) + sin(RAI_PI*(i+1)/(N+1))*params(4);  if(grad){(*grad)(2*N+i, 1, 1) = 1.; (*grad)(2*N+i, 1, 3) = +.5; (*grad)(2*N+i, 1, 4) = +sin(RAI_PI*(i+1)/(N+1)); }
+      weights(2*N+i) = params(2); //RAI_PI * sqrt(*params(2)/8. + params(4)*params(4)/2.);
     }
     //bottom curve
     for(uint i=0; i<N; i++){
-      points(3*N+i, 0) = params(0) + cos(MLR_PI*(i+1)/(N+1))*.5*params(2);              if(grad){(*grad)(3*N+i, 0, 0) = 1.; (*grad)(3*N+i, 0, 2) = cos(MLR_PI*(i+1)/(N+1))*.5; }
-      points(3*N+i, 1) = params(1) - .5*params(3) - sin(MLR_PI*(i+1)/(N+1))*params(4);  if(grad){(*grad)(3*N+i, 1, 1) = 1.; (*grad)(3*N+i, 1, 3) = -.5; (*grad)(3*N+i, 1, 4) = -sin(MLR_PI*(i+1)/(N+1)); }
+      points(3*N+i, 0) = params(0) + cos(RAI_PI*(i+1)/(N+1))*.5*params(2);              if(grad){(*grad)(3*N+i, 0, 0) = 1.; (*grad)(3*N+i, 0, 2) = cos(RAI_PI*(i+1)/(N+1))*.5; }
+      points(3*N+i, 1) = params(1) - .5*params(3) - sin(RAI_PI*(i+1)/(N+1))*params(4);  if(grad){(*grad)(3*N+i, 1, 1) = 1.; (*grad)(3*N+i, 1, 3) = -.5; (*grad)(3*N+i, 1, 4) = -sin(RAI_PI*(i+1)/(N+1)); }
       weights(3*N+i) = params(2);
     }
     return;
@@ -105,14 +113,14 @@ void generateShapePoints(arr& points, arr& weights, arr *grad, uint type, uint N
      }
      //top curve
       for(uint i=0; i<N; i++){
-        points(2*N+i, 0) = params(0) + cos(MLR_PI*(i+1)/(N+1))*.5*params(2);              if(grad){(*grad)(2*N+i, 0, 0) = 1.; (*grad)(2*N+i, 0, 2) = cos(MLR_PI*(i+1)/(N+1))*.5; }
-        points(2*N+i, 1) = params(1) + .5*params(3) - sin(MLR_PI*(i+1)/(N+1))*params(4);  if(grad){(*grad)(2*N+i, 1, 1) = 1.; (*grad)(2*N+i, 1, 3) = +.5; (*grad)(2*N+i, 1, 4) = -sin(MLR_PI*(i+1)/(N+1)); }
-        weights(2*N+i) = params(2); //MLR_PI * sqrt(params(2)*params(2)/8. + params(4)*params(4)/2.);
+        points(2*N+i, 0) = params(0) + cos(RAI_PI*(i+1)/(N+1))*.5*params(2);              if(grad){(*grad)(2*N+i, 0, 0) = 1.; (*grad)(2*N+i, 0, 2) = cos(RAI_PI*(i+1)/(N+1))*.5; }
+        points(2*N+i, 1) = params(1) + .5*params(3) - sin(RAI_PI*(i+1)/(N+1))*params(4);  if(grad){(*grad)(2*N+i, 1, 1) = 1.; (*grad)(2*N+i, 1, 3) = +.5; (*grad)(2*N+i, 1, 4) = -sin(RAI_PI*(i+1)/(N+1)); }
+        weights(2*N+i) = params(2); //RAI_PI * sqrt(params(2)*params(2)/8. + params(4)*params(4)/2.);
       }
       //bottom curve
       for(uint i=0; i<N; i++){
-        points(3*N+i, 0) = params(0) + cos(MLR_PI*(i+1)/(N+1))*.5*params(2);              if(grad){(*grad)(3*N+i, 0, 0) = 1.; (*grad)(3*N+i, 0, 2) = cos(MLR_PI*(i+1)/(N+1))*.5; }
-        points(3*N+i, 1) = params(1) - .5*params(3) - sin(MLR_PI*(i+1)/(N+1))*params(4);  if(grad){(*grad)(3*N+i, 1, 1) = 1.; (*grad)(3*N+i, 1, 3) = -.5; (*grad)(3*N+i, 1, 4) = -sin(MLR_PI*(i+1)/(N+1)); }
+        points(3*N+i, 0) = params(0) + cos(RAI_PI*(i+1)/(N+1))*.5*params(2);              if(grad){(*grad)(3*N+i, 0, 0) = 1.; (*grad)(3*N+i, 0, 2) = cos(RAI_PI*(i+1)/(N+1))*.5; }
+        points(3*N+i, 1) = params(1) - .5*params(3) - sin(RAI_PI*(i+1)/(N+1))*params(4);  if(grad){(*grad)(3*N+i, 1, 1) = 1.; (*grad)(3*N+i, 1, 3) = -.5; (*grad)(3*N+i, 1, 4) = -sin(RAI_PI*(i+1)/(N+1)); }
         weights(3*N+i) = params(2);
       }
      return;
@@ -126,24 +134,24 @@ void generateShapePoints(arr& points, arr& weights, arr *grad, uint type, uint N
     //if(params(4)<0.){ params(4) *= -1.; params(5) *= -1.; }
     //vertical bars
     for(uint i=0; i<N; i++){
-      points(i, 0) = params(0) - .5*params(2) - .5*mlr::sign(params(4))*params(4);                      if(grad){(*grad)(i, 0, 0)=1.; (*grad)(i, 0, 2)=-.5; (*grad)(i, 0, 4)=-.5*mlr::sign(params(4)); }
-      points(i, 1) = params(1) - .5*params(3) - .5*mlr::sign(params(4))*params(5) + params(3)*i/(N-1);  if(grad){(*grad)(i, 1, 1)=1.; (*grad)(i, 1, 3)=-.5+double(i)/(N-1); (*grad)(i, 1, 5)=-.5*mlr::sign(params(4));  }
+      points(i, 0) = params(0) - .5*params(2) - .5*rai::sign(params(4))*params(4);                      if(grad){(*grad)(i, 0, 0)=1.; (*grad)(i, 0, 2)=-.5; (*grad)(i, 0, 4)=-.5*rai::sign(params(4)); }
+      points(i, 1) = params(1) - .5*params(3) - .5*rai::sign(params(4))*params(5) + params(3)*i/(N-1);  if(grad){(*grad)(i, 1, 1)=1.; (*grad)(i, 1, 3)=-.5+double(i)/(N-1); (*grad)(i, 1, 5)=-.5*rai::sign(params(4));  }
       weights(i) = params(3);
     }
     for(uint i=0; i<N; i++){
-      points(N+i, 0) = params(0) + .5*params(2) + .5*mlr::sign(params(4))*params(4);                      if(grad){(*grad)(N+i, 0, 0)=1.; (*grad)(N+i, 0, 2)=+.5; (*grad)(N+i, 0, 4)=+.5*mlr::sign(params(4)); }
-      points(N+i, 1) = params(1) - .5*params(3) + .5*mlr::sign(params(4))*params(5) + params(3)*i/(N-1);  if(grad){(*grad)(N+i, 1, 1)=1.; (*grad)(N+i, 1, 3)=-.5+double(i)/(N-1); (*grad)(N+i, 1, 5)=+.5*mlr::sign(params(4)); }
+      points(N+i, 0) = params(0) + .5*params(2) + .5*rai::sign(params(4))*params(4);                      if(grad){(*grad)(N+i, 0, 0)=1.; (*grad)(N+i, 0, 2)=+.5; (*grad)(N+i, 0, 4)=+.5*rai::sign(params(4)); }
+      points(N+i, 1) = params(1) - .5*params(3) + .5*rai::sign(params(4))*params(5) + params(3)*i/(N-1);  if(grad){(*grad)(N+i, 1, 1)=1.; (*grad)(N+i, 1, 3)=-.5+double(i)/(N-1); (*grad)(N+i, 1, 5)=+.5*rai::sign(params(4)); }
       weights(N+i) = params(3);
     }
     //horizontal bars
     for(uint i=0; i<N; i++){
-      points(2*N+i, 0) = params(0) - .5*params(2) - .5*mlr::sign(params(5))*params(4) + params(2)*i/(N-1);   if(grad){(*grad)(2*N+i, 0, 0)=1.; (*grad)(2*N+i, 0, 2)=-.5+double(i)/(N-1); (*grad)(2*N+i, 0, 4)=-.5*mlr::sign(params(5));  }
-      points(2*N+i, 1) = params(1) - .5*params(3) - .5*mlr::sign(params(5))*params(5);                       if(grad){(*grad)(2*N+i, 1, 1)=1.; (*grad)(2*N+i, 1, 3)=-.5; (*grad)(2*N+i, 1, 5)=-.5*mlr::sign(params(5)); }
+      points(2*N+i, 0) = params(0) - .5*params(2) - .5*rai::sign(params(5))*params(4) + params(2)*i/(N-1);   if(grad){(*grad)(2*N+i, 0, 0)=1.; (*grad)(2*N+i, 0, 2)=-.5+double(i)/(N-1); (*grad)(2*N+i, 0, 4)=-.5*rai::sign(params(5));  }
+      points(2*N+i, 1) = params(1) - .5*params(3) - .5*rai::sign(params(5))*params(5);                       if(grad){(*grad)(2*N+i, 1, 1)=1.; (*grad)(2*N+i, 1, 3)=-.5; (*grad)(2*N+i, 1, 5)=-.5*rai::sign(params(5)); }
       weights(2*N+i) = params(3);
     }
     for(uint i=0; i<N; i++){
-      points(3*N+i, 0) = params(0) - .5*params(2) + .5*mlr::sign(params(5))*params(4) + params(2)*i/(N-1);   if(grad){(*grad)(3*N+i, 0, 0)=1.; (*grad)(3*N+i, 0, 2)=-.5+double(i)/(N-1); (*grad)(3*N+i, 0, 4)=+.5*mlr::sign(params(5));  }
-      points(3*N+i, 1) = params(1) + .5*params(3) + .5*mlr::sign(params(5))*params(5);                       if(grad){(*grad)(3*N+i, 1, 1)=1.; (*grad)(3*N+i, 1, 3)=+.5; (*grad)(3*N+i, 1, 5)=+.5*mlr::sign(params(5)); }
+      points(3*N+i, 0) = params(0) - .5*params(2) + .5*rai::sign(params(5))*params(4) + params(2)*i/(N-1);   if(grad){(*grad)(3*N+i, 0, 0)=1.; (*grad)(3*N+i, 0, 2)=-.5+double(i)/(N-1); (*grad)(3*N+i, 0, 4)=+.5*rai::sign(params(5));  }
+      points(3*N+i, 1) = params(1) + .5*params(3) + .5*rai::sign(params(5))*params(5);                       if(grad){(*grad)(3*N+i, 1, 1)=1.; (*grad)(3*N+i, 1, 3)=+.5; (*grad)(3*N+i, 1, 5)=+.5*rai::sign(params(5)); }
       weights(3*N+i) = params(3);
     }
     return;
@@ -211,7 +219,7 @@ void generateShapePoints(arr& points, arr& weights, arr *grad, uint type, uint N
         double a=double(i)/(N-1);
         points(k*N+i, 0) = (1.-a)*params(2*k+0) + a*params(2*kp+0);  if(grad){(*grad)(k*N+i, 0, 2*k+0)=1.-a; (*grad)(k*N+i, 0, 2*kp+0)=a; }
         points(k*N+i, 1) = (1.-a)*params(2*k+1) + a*params(2*kp+1);  if(grad){(*grad)(k*N+i, 1, 2*k+1)=1.-a; (*grad)(k*N+i, 1, 2*kp+1)=a; }
-        weights(k*N+i)  = sqrt(mlr::sqr(params(2*k+0)-params(2*kp+0))+mlr::sqr(params(2*k+1)-params(2*kp+1)));
+        weights(k*N+i)  = sqrt(rai::sqr(params(2*k+0)-params(2*kp+0))+rai::sqr(params(2*k+1)-params(2*kp+1)));
       }
     }
     return;
@@ -279,7 +287,7 @@ pmPreprocessImage( floatA &img, int iterations=5)
   return true;
 }
 
-#ifdef MLR_OPENCV
+#ifdef RAI_OPENCV
 bool getShapeParamsFromEvidence(arr& params, arr& points,
 				const uint& type, const floatA& theta,
 				byteA *disp=NULL, bool reuseParams=false){
@@ -513,12 +521,12 @@ bool getShapeParamsFromEvidence(arr& params, arr& points,
     if(type==0) problem.radius = params(0);
     else problem.radius = 0;
     
-    mlr::timerStart();
+    rai::timerStart();
     double cost;
     Rprop rprop;
     rprop.init();//Andreas: was 3.,5.
     rprop.loop(params, problem, &cost, 1.e-1, 1., 100, 0); //Andreas: was 1.e-1
-    // cout <<"*** cost=" <<cost <<" params=" <<params <<" time=" <<mlr::timerRead() <<endl;
+    // cout <<"*** cost=" <<cost <<" params=" <<params <<" time=" <<rai::timerRead() <<endl;
     
     problem.fs(NoArr, NoArr, params);
     byteA img; copy(img, 10.f*problem.distImage);
@@ -551,7 +559,7 @@ bool getShapeParamsFromEvidence(arr& params, arr& points,
 // cost step routine
 //
 
-#ifdef MLR_OPENCV
+#ifdef RAI_OPENCV
 void ShapeFitter::step(){
   CvMatDonor cvMatDonor;
   
@@ -691,40 +699,40 @@ void ShapeFitter::step(){
 #endif
 
 
-void realizeObjectsInOrs(mlr::KinematicWorld& ors, const mlr::Array<RigidObjectRepresentation>& objects){
+void realizeObjectsInOrs(rai::KinematicWorld& ors, const rai::Array<RigidObjectRepresentation>& objects){
   RigidObjectRepresentation *obj;  uint i;
-  mlr::Body *o = ors.getBodyByName("o1");
+  rai::Body *o = ors.getBodyByName("o1");
   uint indFirst = o->index;//hack to get consecutive bodies
   for(i=0; i<objects.N; i++){
     obj=&objects(i);
     if(!obj->found) continue;
-    mlr::Body *o = ors.bodies(i+indFirst);
-    mlr::Shape *s = o->shapes(0);
-    mlr::ShapeType type=mlr::ST_none;//SSD: getting rid of a warning. ok?
-    if(obj->shapeType == 0) type=mlr::ST_sphere;
-    if(obj->shapeType == 1) type=mlr::ST_cylinder;
+    rai::Body *o = ors.bodies(i+indFirst);
+    rai::Shape *s = o->shapes(0);
+    rai::ShapeType type=rai::ST_none;//SSD: getting rid of a warning. ok?
+    if(obj->shapeType == 0) type=rai::ST_sphere;
+    if(obj->shapeType == 1) type=rai::ST_cylinder;
     if(obj->shapeType == 2){//box
-      type = mlr::ST_box;
-      //  mlr::Vector diag(obj->diagDiff(0), obj->diagDiff(1), obj->diagDiff(2)*0);//z is the smallest entry, but still not 0
+      type = rai::ST_box;
+      //  rai::Vector diag(obj->diagDiff(0), obj->diagDiff(1), obj->diagDiff(2)*0);//z is the smallest entry, but still not 0
       //double phi=acos(diag(0)/diag.length());//arccos btw 100 and diag
-      // mlr::Quaternion q;
-      //q.setDiff(mlr::Vector(1, 0, 0), diag);
-      //q.setRad(phi, mlr::Vector(0, 0, 1));
+      // rai::Quaternion q;
+      //q.setDiff(rai::Vector(1, 0, 0), diag);
+      //q.setRad(phi, rai::Vector(0, 0, 1));
       // s->rel.r = q;
     }
     if(type!=s->type){
       s->type=type;
       s->mesh.clear();
     }
-    // s->rel.p = -o->X.p + mlr::Vector(obj->center3d(0), obj->center3d(1), obj->center3d(2));
-    o->X.pos =  mlr::Vector(obj->center3d(0), obj->center3d(1), obj->center3d(2));
+    // s->rel.p = -o->X.p + rai::Vector(obj->center3d(0), obj->center3d(1), obj->center3d(2));
+    o->X.pos =  rai::Vector(obj->center3d(0), obj->center3d(1), obj->center3d(2));
     memmove(s->size, obj->orsShapeParams.p, 4*sizeof(double));
     //cout <<" object " <<o->name <<" pos " <<o->X.p <<" " <<obj->center3d <<endl;
   }
 }
 
-/*void copyShapeInfos(mlr::KinematicWorld& A, const mlr::KinematicWorld& B){
-  uint i; mlr::Shape *s, *sa;
+/*void copyShapeInfos(rai::KinematicWorld& A, const rai::KinematicWorld& B){
+  uint i; rai::Shape *s, *sa;
   for_list(Type,  s,  B.shapes){
     sa = A.shapes(i);
     if(sa->type!=s->type){
@@ -736,9 +744,9 @@ void realizeObjectsInOrs(mlr::KinematicWorld& ors, const mlr::Array<RigidObjectR
   }
 }*/
 
-void copyBodyInfos(mlr::KinematicWorld& A, const mlr::KinematicWorld& B){
-  uint i; mlr::Body *b, *ba;
-  mlr::Shape *s, *sa;
+void copyBodyInfos(rai::KinematicWorld& A, const rai::KinematicWorld& B){
+  uint i; rai::Body *b, *ba;
+  rai::Shape *s, *sa;
   for_list(Type,  b,  B.bodies) if(b->shapes.N){
     s = b->shapes(0);
     ba = A.bodies(i);
@@ -752,7 +760,7 @@ void copyBodyInfos(mlr::KinematicWorld& A, const mlr::KinematicWorld& B){
   }
 }
 
-#ifndef MLR_OPENCV
+#ifndef RAI_OPENCV
 void ShapeFitter::step(){ NICO }
 #endif
 

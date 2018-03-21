@@ -1,18 +1,70 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "contact.h"
 #include <Gui/opengl.h>
+#include <Geo/pairCollision.h>
 
-double mlr::Contact::getDistance() const{
+double rai::Contact::getDistance() const{
   TM_ContactNegDistance map(*this);
   arr y;
   map.phi(y, NoArr, a.K);
   return -y.scalar();
 }
 
-TaskMap *mlr::Contact::getTM_ContactNegDistance() const{
+TaskMap *rai::Contact::getTM_ContactNegDistance() const{
   return new TM_ContactNegDistance(*this);
 }
 
-void mlr::TM_ContactNegDistance::phi(arr &y, arr &J, const mlr::KinematicWorld &K, int t){
+void rai::TM_ContactNegDistance::phi(arr &y, arr &J, const rai::KinematicWorld &K, int t){
+#if 0
+  if(C.a_pts.nd==1 && C.b_pts.nd==1){
+    arr ap,bp, normal, Jap,Jbp;
+    K.kinematicsPos(ap, Jap, &C.a, C.a_pts);
+    K.kinematicsPos(bp, Jbp, &C.b, C.b_pts);
+
+    double distance = euclideanDistance(ap, bp);
+
+    normal = p1-p2;
+    double l = length(normal);
+    if(l<1e-20){ y.resize(1).setZero(); if(&J) J.resize(1,Jap.N).setZero(); return; }
+    normal /= l;
+
+    y.resize(1).scalar() = -distance+C.a_rad+C.b_rad;
+    if(&J){
+      J = Jp2 - Jp1;
+      J = ~normal*J;
+    }
+  }
+  if(C.a_pts.nd==1 && C.b_pts.nd==3){
+    arr ap, bp, normal, bps(3,3), Jap,Jn;
+
+    K.kinematicsPos(ap, Jap, &C.a, C.a_pts);
+    K.kinematicsPos(bps[0], NoArr, &C.b, C.b_pts[0]);
+    K.kinematicsPos(bps[1], NoArr, &C.b, C.b_pts[1]);
+    K.kinematicsPos(bps[2], NoArr, &C.b, C.b_pts[2]);
+    coll_1on3(bp, normal, ap, bps);
+    K.kinematicsVec(normal, Jn, C.b, C.b_norm);
+
+    double distance = euclideanDistance(ap, bp);
+
+    arr normal = p1-p2;
+    double l = length(normal);
+    if(l<1e-20){ y.resize(1).setZero(); if(&J) J.resize(1,Jap.N).setZero(); return; }
+    normal /= l;
+
+    y.resize(1).scalar() = -distance+C.a_rad+C.b_rad;
+    if(&J){
+      J = Jp2 - Jp1;
+      J = ~normal*J;
+    }
+  }
+#endif
   if(C.a_type==2 && C.b_type!=2){
     HALT("not checked");
     arr ap,an,bp, Jap, Jan, Jbp;
@@ -60,11 +112,11 @@ void mlr::TM_ContactNegDistance::phi(arr &y, arr &J, const mlr::KinematicWorld &
   }
 }
 
-#ifdef MLR_GL
-void mlr::Contact::glDraw(OpenGL& gl){
-  mlr::Vector pa = a.X * a_rel;
-  mlr::Vector pb = b.X * b_rel;
-  mlr::Vector n = .5*((b.X.rot * b_norm) - (a.X.rot * a_norm));
+void rai::Contact::glDraw(OpenGL& gl){
+#ifdef RAI_GL
+  rai::Vector pa = a.X * a_rel;
+  rai::Vector pb = b.X * b_rel;
+  rai::Vector n = .5*((b.X.rot * b_norm) - (a.X.rot * a_norm));
 
   glLoadIdentity();
   glColor(1., 0., 0., 1.);
@@ -77,9 +129,9 @@ void mlr::Contact::glDraw(OpenGL& gl){
 //    f.getAffineMatrixGL(GLmatrix);
 //    glLoadMatrixd(GLmatrix);
 //    glDrawText(STRING(a <<'-' <<b <<':' <<d), 0.,0.,0.);
-}
 #endif
+}
 
-void mlr::Contact::write(std::ostream &os) const{
-  os <<a.name <<'-' <<b.name <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() <<" pDist=" <<get_pDistance() <<" y=" <<y <<" l=" <<lagrangeParameter;
+void rai::Contact::write(std::ostream &os) const{
+  os <<a.name <<'-' <<b.name <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() /*<<" pDist=" <<get_pDistance()*/ <<" y=" <<y <<" l=" <<lagrangeParameter;
 }

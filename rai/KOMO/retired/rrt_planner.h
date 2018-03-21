@@ -11,7 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
 #ifndef _HEADER_GUARD_RRT_PLANNER_H_
 #define _HEADER_GUARD_RRT_PLANNER_H_
 
@@ -20,7 +19,7 @@
 struct KOMO;
 struct OpenGL;
 
-namespace mlr { 
+namespace rai { 
   struct KinematicWorld;
   struct RRTPlanner {
     private:
@@ -31,7 +30,7 @@ namespace mlr {
 
       arr joint_max, joint_min; ///< in which range are the joints allowed (boundaries for the sample space)
 
-      RRTPlanner(mlr::KinematicWorld* G, KOMO &problem, double stepsize, bool verbose = false);
+      RRTPlanner(rai::KinematicWorld* G, KOMO &problem, double stepsize, bool verbose = false);
 
       arr getTrajectoryTo(const arr& target, int max_iter=0); ///< returns the trajectory created by the RRT
   };

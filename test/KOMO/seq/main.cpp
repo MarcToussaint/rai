@@ -36,7 +36,7 @@ void TEST(KomoSequence){
 //===========================================================================
 
 int main(int argc,char** argv){
-  mlr::initCmdLine(argc,argv);
+  rai::initCmdLine(argc,argv);
 
   testKomoSequence();
 

@@ -1,20 +1,11 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "taskControl.h"
 #include <Kin/kin_swift.h>
 #include <KOMO/komo.h>
@@ -40,7 +31,7 @@ CT_Status MotionProfile_Sine::update(arr& yRef, arr& ydotRef, double tau, const 
   if(t>T) t=T;
   if(y_init.N!=y.N) y_init=y; //initialization
   if(y_target.N!=y.N) y_target = zeros(y.N);
-  yRef = y_init + (.5*(1.-cos(MLR_PI*t/T))) * (y_target - y_init);
+  yRef = y_init + (.5*(1.-cos(RAI_PI*t/T))) * (y_target - y_init);
   ydotRef = zeros(y.N);
   y_err = yRef - y;
   if(t>=T-1e-6/* && length(y_err)<1e-3*/) return CT_done;
@@ -62,7 +53,7 @@ MotionProfile_PD::MotionProfile_PD(const arr& _y_target, double decayTime, doubl
   y_target = _y_target;
   //    CHECK(decayTime>0. && dampingRatio>0., "this does not define proper gains!");
   //    double lambda = -decayTime*dampingRatio/log(.1);
-  //    kp = mlr::sqr(1./lambda);
+  //    kp = rai::sqr(1./lambda);
   //    kd = 2.*dampingRatio/lambda;
   setGainsAsNatural(decayTime, dampingRatio);
 }
@@ -93,7 +84,7 @@ void MotionProfile_PD::setGains(double _kp, double _kd) {
 void MotionProfile_PD::setGainsAsNatural(double decayTime, double dampingRatio) {
   CHECK(decayTime>0. && dampingRatio>0., "this does not define proper gains!");
   double lambda = -decayTime*dampingRatio/log(.1);
-  setGains(mlr::sqr(1./lambda), 2.*dampingRatio/lambda);
+  setGains(rai::sqr(1./lambda), 2.*dampingRatio/lambda);
 }
 
 CT_Status MotionProfile_PD::update(arr& yRef, arr& vRef, double tau, const arr& y, const arr& ydot){
@@ -107,8 +98,8 @@ CT_Status MotionProfile_PD::update(arr& yRef, arr& vRef, double tau, const arr& 
     y_target = -y_target;
   }
   if(makeTargetModulo2PI) for(uint i=0;i<y_ref.N;i++){
-    while(y_target(i) < y_ref(i)-MLR_PI) y_target(i)+=MLR_2PI;
-    while(y_target(i) > y_ref(i)+MLR_PI) y_target(i)-=MLR_2PI;
+    while(y_target(i) < y_ref(i)-RAI_PI) y_target(i)+=RAI_2PI;
+    while(y_target(i) > y_ref(i)+RAI_PI) y_target(i)-=RAI_2PI;
   }
 
   arr a = getDesiredAcceleration();
@@ -217,7 +208,7 @@ CtrlTask::~CtrlTask(){
   if(ref) delete ref; ref=NULL;
 }
 
-CT_Status CtrlTask::update(double tau, const mlr::KinematicWorld& world){
+CT_Status CtrlTask::update(double tau, const rai::KinematicWorld& world){
   map->phi(y, J_y, world);
   if(world.qdot.N) v = J_y*world.qdot; else v.resize(y.N).setZero();
   CT_Status s=status;
@@ -258,19 +249,19 @@ void CtrlTask::setTarget(const arr& y_target){
 
 arr CtrlTask::getPrec(){
   uint n=y_ref.N;
-  if(prec.N==1) return diag(mlr::sqr(prec.scalar()), n);
+  if(prec.N==1) return diag(rai::sqr(prec.scalar()), n);
   if(prec.nd==1) return diag(prec%prec);
   return comp_At_A(prec);
 }
 
-void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const mlr::KinematicWorld& world){
+void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::KinematicWorld& world){
   //-- get necessary Jacobians
   TM_Default *m = dynamic_cast<TM_Default*>(map);
   CHECK(m,"this only works for the default position task map");
   CHECK(m->type==TMT_pos,"this only works for the default positioni task map");
   CHECK(m->i>=0,"this only works for the default position task map");
-  mlr::Frame *body = world.frames(m->i);
-  mlr::Frame* l_ft_sensor = world.getFrameByName("l_ft_sensor");
+  rai::Frame *body = world.frames(m->i);
+  rai::Frame* l_ft_sensor = world.getFrameByName("l_ft_sensor");
   arr J_ft, J;
   world.kinematicsPos         (NoArr, J,   body, m->ivec);
   world.kinematicsPos_wrtFrame(NoArr, J_ft,body, m->ivec, l_ft_sensor);
@@ -298,14 +289,14 @@ void CtrlTask::reportState(ostream& os){
 
 //===========================================================================
 
-TaskControlMethods::TaskControlMethods(const mlr::KinematicWorld& world)
+TaskControlMethods::TaskControlMethods(const rai::KinematicWorld& world)
   : Hmetric(world.getHmetric()), qNullCostRef("qNullPD", new TM_qItself()) {
   qNullCostRef.PD().setGains(0.,1.);
-  qNullCostRef.prec = ::sqrt(mlr::getParameter<double>("Hrate", .1)*Hmetric);
+  qNullCostRef.prec = ::sqrt(rai::getParameter<double>("Hrate", .1)*Hmetric);
   qNullCostRef.PD().setTarget( world.q );
 }
 
-void TaskControlMethods::updateCtrlTasks(double tau, const mlr::KinematicWorld& world){
+void TaskControlMethods::updateCtrlTasks(double tau, const rai::KinematicWorld& world){
   qNullCostRef.update(tau, world);
   for(CtrlTask* t: tasks) t->update(tau, world);
 }
@@ -322,8 +313,8 @@ CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, doub
 //CtrlTask* TaskControlMethods::addPDTask(const char* name,
 //                                         double decayTime, double dampingRatio,
 //                                         TM_DefaultType type,
-//                                         const char* iShapeName, const mlr::Vector& ivec,
-//                                         const char* jShapeName, const mlr::Vector& jvec){
+//                                         const char* iShapeName, const rai::Vector& ivec,
+//                                         const char* jShapeName, const rai::Vector& jvec){
 //  return tasks.append(new CtrlTask(name, new TM_Default(type, world, iShapeName, ivec, jShapeName, jvec),
 //                                   decayTime, dampingRatio, 1., 1.));
 //}
@@ -338,7 +329,7 @@ CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, doub
 //  return t;
 //}
 
-void TaskControlMethods::lockJointGroup(const char* groupname, mlr::KinematicWorld& world, bool lockThem){
+void TaskControlMethods::lockJointGroup(const char* groupname, rai::KinematicWorld& world, bool lockThem){
   if(!groupname){
     if(lockThem){
       lockJoints = consts<byte>(true, world.q.N);
@@ -347,9 +338,9 @@ void TaskControlMethods::lockJointGroup(const char* groupname, mlr::KinematicWor
     return;
   }
   if(!lockJoints.N) lockJoints = consts<byte>(false, world.q.N);
-  mlr::Joint *j;
-  for(mlr::Frame *f : world.frames) if((j=f->joint)){
-    if(f->ats.getNode(groupname)){
+  rai::Joint *j;
+  for(rai::Frame *f : world.frames) if((j=f->joint)){
+    if(f->ats[groupname]){
       for(uint i=0;i<j->qDim();i++){
         lockJoints(j->qIndex+i) = lockThem;
         if(lockThem && world.qdot.N) world.qdot(j->qIndex+i) = 0.;
@@ -688,7 +679,7 @@ arr TaskControlMethods::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, c
   return u0 + Kp*q + Kd*qdot;
 }
 
-void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, mlr::KinematicWorld& world){
+void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, rai::KinematicWorld& world){
   arr M, F;
   world.equationOfMotion(M, F, false);
 
@@ -703,13 +694,13 @@ void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, mlr::KinematicWorld& world
   }
 }
 
-void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const mlr::KinematicWorld& world) {
+void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::KinematicWorld& world) {
   uint nForceTasks=0;
   for(CtrlTask* task : this->tasks) if(task->active && task->f_ref.N){
     nForceTasks++;
     TM_Default* map = dynamic_cast<TM_Default*>(task->map);
-    mlr::Frame* body = world.frames(map->i);
-    mlr::Frame* lFtSensor = world.getFrameByName("r_ft_sensor");
+    rai::Frame* body = world.frames(map->i);
+    rai::Frame* lFtSensor = world.getFrameByName("r_ft_sensor");
     arr y, J, J_ft;
     task->map->phi(y, J, world);
     world.kinematicsPos_wrtFrame(NoArr, J_ft, body, map->ivec, lFtSensor);
@@ -730,5 +721,5 @@ void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, d
 }
 
 RUN_ON_INIT_BEGIN(CtrlTask)
-mlr::Array<CtrlTask*>::memMove=true;
+rai::Array<CtrlTask*>::memMove=true;
 RUN_ON_INIT_END(CtrlTask)

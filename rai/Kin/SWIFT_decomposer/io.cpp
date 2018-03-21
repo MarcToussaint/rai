@@ -18,6 +18,8 @@ using std::setprecision;
 #include <Kin/SWIFT/SWIFT_mesh.h>
 #include <Kin/SWIFT/SWIFT_fileio.h>
 
+typedef long int intptr_t;
+
 extern bool machine_is_big_endian;
 bool hierarchy = false;
 

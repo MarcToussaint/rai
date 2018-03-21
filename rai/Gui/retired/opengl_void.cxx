@@ -18,10 +18,10 @@
 
 
 //void glDrawFloor(float, float, float, float){ NICO }
-//void glGrabImage(mlr::Array<unsigned char>&){ NICO }
+//void glGrabImage(rai::Array<unsigned char>&){ NICO }
 //void glStandardLight(void*){ NICO }
 //void glDrawAxes(double){ NICO }
-//void glDrawPointCloud(mlr::Array<double>&, mlr::Array<double>&) { NICO }
+//void glDrawPointCloud(rai::Array<double>&, rai::Array<double>&) { NICO }
 //void glDrawSphere(float) { NICO }
 //void glDrawCappedCylinder(float, float) { NICO }
 //void glDrawText(char const*, float, float, float){ NICO }
@@ -30,7 +30,7 @@
 //void glDrawBox(float, float, float){ NICO }
 //void glDrawCylinder(float, float, bool){ NICO }
 
-//void OpenGL::watchImage(mlr::Array<unsigned char> const&, bool, float){}
+//void OpenGL::watchImage(rai::Array<unsigned char> const&, bool, float){}
 
 struct GlutInitializer{
   Mutex lock;
@@ -49,20 +49,20 @@ Singleton<GlutInitializer> SingleGlut;
 
 struct sOpenGL {
   sOpenGL(OpenGL *gl){
-    MLR_MSG("creating dummy OpenGL object");
+    RAI_MSG("creating dummy OpenGL object");
     gl->width=1;
     gl->height=1;
     SingleGlut();
   }
   sOpenGL(OpenGL *gl, void *container){
-    MLR_MSG("creating dummy OpenGL object");
+    RAI_MSG("creating dummy OpenGL object");
     gl->width=1;
     gl->height=1;
   }
   void beginGlContext(){}
   void endGlContext(){}
-  mlr::Vector downVec, downPos, downFoc;
-  mlr::Quaternion downRot;
+  rai::Vector downVec, downPos, downFoc;
+  rai::Quaternion downRot;
 };
 
 void OpenGL::postRedrawEvent(bool){}

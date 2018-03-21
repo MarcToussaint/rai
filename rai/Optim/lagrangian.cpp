@@ -1,19 +1,12 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
 #include "lagrangian.h"
-#include "newton.h"
 
 //==============================================================================
 //
@@ -67,7 +60,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x){
   double L=0.; //L value
   for(uint i=0;i<phi_x.N;i++){
     if(            tt_x.p[i]==OT_f                      ) L += phi_x.p[i];                // direct cost term
-    if(            tt_x.p[i]==OT_sumOfSqr               ) L += mlr::sqr(phi_x.p[i]);      // sumOfSqr term
+    if(            tt_x.p[i]==OT_sumOfSqr               ) L += rai::sqr(phi_x.p[i]);      // sumOfSqr term
     if(muLB     && tt_x.p[i]==OT_ineq                   ){ if(phi_x.p[i]>0.) return NAN;  L -= muLB * ::log(-phi_x.p[i]); } //log barrier, check feasibility
     if(mu       && tt_x.p[i]==OT_ineq && I_lambda_x.p[i]) L += gpenalty(phi_x.p[i]);      //g-penalty
     if(lambda.N && tt_x.p[i]==OT_ineq && lambda.p[i]>0. ) L += lambda.p[i] * phi_x.p[i];  //g-lagrange terms
@@ -96,7 +89,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x){
     for(uint i=0;i<phi_x.N;i++){
       if(            tt_x.p[i]==OT_f){ if(fterm!=-1) HALT("There must only be 1 f-term (in the current implementation)");  fterm=i; }
       if(            tt_x.p[i]==OT_sumOfSqr               ) coeff.p[i] += 2.;      // sumOfSqr terms
-      if(muLB     && tt_x.p[i]==OT_ineq                   ) coeff.p[i] += (muLB/mlr::sqr(phi_x.p[i]));  //log barrier, check feasibility
+      if(muLB     && tt_x.p[i]==OT_ineq                   ) coeff.p[i] += (muLB/rai::sqr(phi_x.p[i]));  //log barrier, check feasibility
       if(mu       && tt_x.p[i]==OT_ineq && I_lambda_x.p[i]) coeff.p[i] += gpenalty_dd(phi_x.p[i]);   //g-penalty
       if(nu       && tt_x.p[i]==OT_eq                     ) coeff.p[i] += hpenalty_dd(phi_x.p[i]);   //h-penalty
     }
@@ -123,7 +116,7 @@ double LagrangianProblem::get_costs(){
   double S=0.;
   for(uint i=0;i<phi_x.N;i++){
     if(tt_x(i)==OT_f) S += phi_x(i);
-    if(tt_x(i)==OT_sumOfSqr) S += mlr::sqr(phi_x(i));
+    if(tt_x(i)==OT_sumOfSqr) S += rai::sqr(phi_x(i));
   }
   return S;
 }
@@ -157,10 +150,12 @@ void LagrangianProblem::aulaUpdate(bool anyTimeVariant, double lambdaStepsize, d
   if(!lambda.N) lambda=zeros(phi_x.N);
 
   //-- lambda update
-  for(uint i=0;i<lambda.N;i++){
-    if(tt_x(i)==OT_eq  )  lambda(i) += (lambdaStepsize * 2.*nu)*phi_x(i);
-    if(tt_x(i)==OT_ineq)  lambda(i) += lambdaStepsize * gpenalty_d(phi_x(i));
-    if(tt_x(i)==OT_ineq && lambda(i)<0.) lambda(i)=0.;  //bound clipping
+  if(lambdaStepsize>0.){
+    for(uint i=0;i<lambda.N;i++){
+      if(tt_x(i)==OT_eq  )  lambda(i) += lambdaStepsize * hpenalty_d(phi_x(i));
+      if(tt_x(i)==OT_ineq)  lambda(i) += lambdaStepsize * gpenalty_d(phi_x(i));
+      if(tt_x(i)==OT_ineq && lambda(i)<0.) lambda(i)=0.;  //bound clipping
+    }
   }
 
   if(anyTimeVariant){
@@ -239,170 +234,13 @@ double LagrangianProblem::gpenalty_d(double g){ g*=mu; if(g>0.) return mu*(2.*g 
 double LagrangianProblem::gpenalty_dd(double g){ g*=mu; if(g>0.) return mu*mu*(2. + 6.*g);  return 2.*mu*mu; }
 #endif
 
-#if 1
+#if 0
 double LagrangianProblem::hpenalty(double h){ return nu*h*h;  }
 double LagrangianProblem::hpenalty_d(double h){ return 2.*nu*h;  }
 double LagrangianProblem::hpenalty_dd(double h){ return 2.*nu;  }
 #else
-double LagrangianProblem::hpenalty(double h){ h*=nu; return h*h;  }
-double LagrangianProblem::hpenalty_d(double h){ h*=nu; return 2.*nu*h;  }
-double LagrangianProblem::hpenalty_dd(double h){ h*=nu; return 2.*nu*nu;  }
-//double LagrangianProblem::hpenalty(double h){ h*=nu;  return (h*h + h*h*h);  }
-//double LagrangianProblem::hpenalty_d(double h){ h*=nu; return nu*(2.*h + 3.*h*h);  }
-//double LagrangianProblem::hpenalty_dd(double h){ h*=nu; return nu*nu*(2. + 6.*h);  }
+double LagrangianProblem::hpenalty(double h){ h*=nu;  return (h*h + fabs(h)*h*h);  }
+double LagrangianProblem::hpenalty_d(double h){ h*=nu; return nu*(2.*h + 3.*fabs(h)*h);  }
+double LagrangianProblem::hpenalty_dd(double h){ h*=nu; return nu*nu*(2. + 6.*fabs(h));  }
 #endif
-
-//==============================================================================
-//
-// PhaseOneProblem
-//
-
-
-void PhaseOneProblem::phi(arr& meta_phi, arr& meta_J, arr& meta_H, ObjectiveTypeA& tt, const arr& x, arr& lambda){
-  NIY;
-  arr g, Jg;
-//  f_orig(NoArr, NoArr, g, (&meta_Jg?Jg:NoArr), x.sub(0,-2)); //the underlying problem only receives a x.N-1 dimensional x
-
-  // meta_g.resize(g.N+1);
-  // meta_g(0) = x.last();                                       //cost
-  // for(uint i=0;i<g.N;i++) meta_g(i) = g(i)-x.last();  //slack constraints
-  // meta_g.last() = -x.last();                                  //last constraint
-
-  // if(&meta_Jg){
-  //   meta_Jg.resize(meta_g.N, x.N);  meta_Jg.setZero();
-  //   meta_Jg(0,x.N-1) = 1.; //cost
-  //   for(uint i=0;i<g.N;i++) for(uint j=0;j<x.N-1;j++) meta_Jg(i,j) = Jg(i,j);
-  //   for(uint i=0;i<g.N;i++) meta_Jg(i,x.N-1) = -1.;
-  //   meta_Jg(g.N, x.N-1) = -1.;
-  // }
-}
-
-
-//==============================================================================
-//
-// Solvers
-//
-
-const char* MethodName[]={ "NoMethod", "SquaredPenalty", "AugmentedLagrangian", "LogBarrier", "AnyTimeAugmentedLagrangian", "SquaredPenaltyFixed"};
-
-
-//==============================================================================
-
-OptConstrained::OptConstrained(arr& x, arr &dual, ConstrainedProblem& P, OptOptions opt)
-  : UCP(P, opt, dual), newton(x, UCP, opt), dual(dual), opt(opt){
-
-  if(opt.verbose>0) cout <<"***** optConstrained: method=" <<MethodName[opt.constrainedMethod] <<endl;
-}
-
-bool OptConstrained::step(){
-  if(fil) (*fil) <<"constr " <<its <<' ' <<newton.evals <<' ' <<UCP.get_costs() <<' ' <<UCP.get_sumOfGviolations() <<' ' <<UCP.get_sumOfHviolations() <<endl;
-  newton.fil = fil;
-
-  if(opt.verbose>0){
-    cout <<"** optConstr. it=" <<its
-         <<(earlyPhase?'e':'l')
-         <<" mu=" <<UCP.mu <<" nu=" <<UCP.nu <<" muLB=" <<UCP.muLB;
-    if(newton.x.N<5) cout <<" \tlambda=" <<UCP.lambda;
-    cout <<endl;
-  }
-
-  arr x_old = newton.x;
-
-  //check for no constraints
-  bool newtonOnce=false;
-  if(UCP.get_dimOfType(OT_ineq)==0 && UCP.get_dimOfType(OT_eq)==0){
-    if(opt.verbose>0) cout <<"** optConstr. NO CONSTRAINTS -> run Newton once and stop" <<endl;
-    newtonOnce=true;
-  }
-
-  //run newton on the Lagrangian problem
-  if(newtonOnce || opt.constrainedMethod==squaredPenaltyFixed){
-    newton.run();
-  }else{
-    double stopTol = newton.o.stopTolerance;
-    newton.o.stopTolerance *= (earlyPhase?10.:2.);
-    if(opt.constrainedMethod==anyTimeAula)  newton.run(20);
-    else                                    newton.run();
-    newton.o.stopTolerance = stopTol;
-  }
-
-  if(opt.verbose>0){
-    cout <<"** optConstr. it=" <<its
-         <<(earlyPhase?'e':'l')
-         <<' ' <<newton.evals
-         <<" f(x)=" <<UCP.get_costs()
-         <<" \tg_compl=" <<UCP.get_sumOfGviolations()
-         <<" \th_compl=" <<UCP.get_sumOfHviolations()
-         <<" \t|x-x'|=" <<absMax(x_old-newton.x);
-    if(newton.x.N<5) cout <<" \tx=" <<newton.x;
-    cout <<endl;
-  }
-
-  //check for squaredPenaltyFixed method
-  if(opt.constrainedMethod==squaredPenaltyFixed){
-    if(opt.verbose>0) cout <<"** optConstr. squaredPenaltyFixed stops after one outer iteration" <<endl;
-    return true;
-  }
-
-  //check for newtonOnce
-  if(newtonOnce){
-    return true;
-  }
-
-  //check for squaredPenaltyFixed method
-  if(opt.constrainedMethod==squaredPenaltyFixed){
-    if(opt.verbose>0) cout <<"** optConstr. squaredPenaltyFixed stops after one outer iteration" <<endl;
-    return true;
-  }
-
-  //stopping criteron
-  if(its>=2 && absMax(x_old-newton.x) < (earlyPhase?5.:1.)*opt.stopTolerance){
-    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion Delta<" <<opt.stopTolerance <<endl;
-    if(earlyPhase) earlyPhase=false;
-    else{
-      if(opt.stopGTolerance<0.
-         || UCP.get_sumOfGviolations() + UCP.get_sumOfHviolations() < opt.stopGTolerance)
-        return true;
-     }
-  }
-  if(newton.evals>=opt.stopEvals){
-    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX EVALS" <<endl;
-    return true;
-  }
-  if(newton.it>=opt.stopIters){
-    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX ITERS" <<endl;
-    return true;
-  }
-  if(its>=opt.stopOuters){
-    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX OUTERS" <<endl;
-    return true;
-  }
-
-
-  //upate Lagrange parameters
-  switch(opt.constrainedMethod){
-    case squaredPenalty: UCP.mu *= 10.;  break;
-    case augmentedLag:   UCP.aulaUpdate(false, 1., opt.aulaMuInc, &newton.fx, newton.gx, newton.Hx);  break;
-    case anyTimeAula:    UCP.aulaUpdate(true,  1., opt.aulaMuInc, &newton.fx, newton.gx, newton.Hx);  break;
-    case logBarrier:     UCP.muLB /= 2.;  break;
-    case squaredPenaltyFixed: HALT("you should not be here"); break;
-    case noMethod: HALT("need to set method before");  break;
-  }
-
-  if(&dual) dual=UCP.lambda;
-
-  its++;
-
-  return false;
-}
-
-uint OptConstrained::run(){
-//  earlyPhase=true;
-  while(!step());
-  return newton.evals;
-}
-
-OptConstrained::~OptConstrained(){
-}
-
 

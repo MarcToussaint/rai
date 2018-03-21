@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "proxy.h"
 
 #include <Gui/opengl.h>
@@ -9,23 +17,25 @@
 // Proxy
 //
 
-mlr::Proxy::Proxy() {
+rai::Proxy::Proxy() {
 }
 
-mlr::Proxy::~Proxy() {
+rai::Proxy::~Proxy() {
   del_coll();
 }
 
 
-void mlr::Proxy::calc_coll(const KinematicWorld& K){
-  mlr::Shape *s1 = K.frames(a)->shape;
-  mlr::Shape *s2 = K.frames(b)->shape;
+void rai::Proxy::calc_coll(const KinematicWorld& K){
+  CHECK_EQ(&a->K, &K, "");
+  CHECK_EQ(&b->K, &K, "");
+  rai::Shape *s1 = a->shape;
+  rai::Shape *s2 = b->shape;
   CHECK(s1 && s2, "");
 
   double r1=s1->size(3);
   double r2=s2->size(3);
-  mlr::Mesh *m1 = &s1->sscCore();  if(!m1->V.N){ m1 = &s1->mesh(); r1=0.; }
-  mlr::Mesh *m2 = &s2->sscCore();  if(!m2->V.N){ m2 = &s2->mesh(); r2=0.; }
+  rai::Mesh *m1 = &s1->sscCore();  if(!m1->V.N){ m1 = &s1->mesh(); r1=0.; }
+  rai::Mesh *m2 = &s2->sscCore();  if(!m2->V.N){ m2 = &s2->mesh(); r2=0.; }
   coll = new PairCollision(*m1, *m2, s1->frame.X, s2->frame.X, r1, r2);
 
   d = coll->distance;
@@ -34,10 +44,10 @@ void mlr::Proxy::calc_coll(const KinematicWorld& K){
   normal = coll->normal;
 }
 
-typedef mlr::Array<mlr::Proxy*> ProxyL;
+typedef rai::Array<rai::Proxy*> ProxyL;
 
-#ifdef MLR_GL
-void mlr::Proxy::glDraw(OpenGL& gl){
+void rai::Proxy::glDraw(OpenGL& gl){
+#ifdef RAI_GL
   if(coll){
     glLoadIdentity();
     coll->glDraw(gl);
@@ -52,9 +62,9 @@ void mlr::Proxy::glDraw(OpenGL& gl){
     glVertex3dv(posB.p());
     glEnd();
     glDisable(GL_CULL_FACE);
-    mlr::Transformation f;
+    rai::Transformation f;
     f.pos=posA;
-    f.rot.setDiff(mlr::Vector(0, 0, 1), posA-posB);
+    f.rot.setDiff(rai::Vector(0, 0, 1), posA-posB);
     double GLmatrix[16];
     f.getAffineMatrixGL(GLmatrix);
     glLoadMatrixd(GLmatrix);
@@ -65,13 +75,15 @@ void mlr::Proxy::glDraw(OpenGL& gl){
     glLoadMatrixd(GLmatrix);
     glDrawDisk(.02);
 
-//    f.pos=.5*(posA+posB);
-//    f.getAffineMatrixGL(GLmatrix);
-//    glLoadMatrixd(GLmatrix);
-//    glDrawText(STRING(a <<'-' <<b <<':' <<d), 0.,0.,0.);
+#if 0 //write text
+    f.pos=.5*(posA+posB);
+    f.getAffineMatrixGL(GLmatrix);
+    glLoadMatrixd(GLmatrix);
+    glDrawText(STRING(a->name <<'-' <<b->name <<':' <<d), 0.,0.,0.);
+#endif
 
     glEnable(GL_CULL_FACE);
   }
-}
 #endif
+}
 

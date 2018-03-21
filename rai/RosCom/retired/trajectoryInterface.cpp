@@ -1,11 +1,11 @@
-#ifdef MLR_ROS
+#ifdef RAI_ROS
 #include "trajectoryInterface.h"
 #include <Algo/spline.h>
 
 #include <Gui/opengl.h>
 #include <RosCom/subscribeAlvarMarkers.h>
 #include <Optim/convert.h>
-#include <Optim/lagrangian.h>
+#include <Optim/constrained.h>
 
 #include "roscom.h"
 #include "spinner.h"
@@ -30,7 +30,7 @@ struct sTrajectoryInterface{
   }
 };
 
-TrajectoryInterface::TrajectoryInterface(mlr::KinematicWorld &world_plan_,mlr::KinematicWorld &world_robot_)
+TrajectoryInterface::TrajectoryInterface(rai::KinematicWorld &world_plan_,rai::KinematicWorld &world_robot_)
   : S(NULL){
   rosCheckInit("trajectoryInterface");
 
@@ -45,10 +45,10 @@ TrajectoryInterface::TrajectoryInterface(mlr::KinematicWorld &world_plan_,mlr::K
   world_plan->watch(false); world_robot->watch(false);
   world_plan->gl().resize(600,600); world_robot->gl().resize(600,600);
 
-  useRos = mlr::getParameter<bool>("useRos",false);
-  useMarker = mlr::getParameter<bool>("useMarker",false);
-  fixBase = mlr::getParameter<bool>("fixBase",true);
-  fixTorso = mlr::getParameter<bool>("fixTorso",true);
+  useRos = rai::getParameter<bool>("useRos",false);
+  useMarker = rai::getParameter<bool>("useMarker",false);
+  fixBase = rai::getParameter<bool>("fixBase",true);
+  fixTorso = rai::getParameter<bool>("fixTorso",true);
 
   if (useRos) {
     //-- wait for first q observation!
@@ -76,9 +76,9 @@ TrajectoryInterface::TrajectoryInterface(mlr::KinematicWorld &world_plan_,mlr::K
     refs.KiFTL.clear();
     refs.J_ft_invL.clear();
     refs.u_bias = zeros(q.N);
-    refs.Kp = ARR(mlr::getParameter<double>("controller/Kp",1.5));
-    refs.Kd = ARR(mlr::getParameter<double>("controller/Kd",2.5));
-    refs.Ki = ARR(mlr::getParameter<double>("controller/Ki",0.));
+    refs.Kp = ARR(rai::getParameter<double>("controller/Kp",1.5));
+    refs.Kd = ARR(rai::getParameter<double>("controller/Kd",2.5));
+    refs.Ki = ARR(rai::getParameter<double>("controller/Ki",0.));
     refs.fL_gamma = 1.;
     refs.velLimitRatio = .1;
     refs.effLimitRatio = 1.;
@@ -106,14 +106,14 @@ void TrajectoryInterface::executeTrajectory(arr &X_robot, double T, bool recordD
   cout <<"Execute trajectory with dt= " << dt << " and T= "<<T << endl;
   arr Xdot;
   getVel(Xdot,Xref,dt);
-  mlr::Spline XS(Xref.d0,Xref);
-  mlr::Spline XdotS(Xdot.d0,Xdot);
+  rai::Spline XS(Xref.d0,Xref);
+  rai::Spline XdotS(Xdot.d0,Xdot);
 
   /// clear logging variables
   if (recordData) {logT.clear(); logXdes.clear(); logX.clear(); logFL.clear(); logU.clear(); logM.clear(); logM.resize(22); logXref = Xref;}
 
-  mlr::Joint *trans = world_robot->getJointByName("worldTranslationRotation");
-  mlr::Joint *torso = world_robot->getJointByName("torso_lift_joint");
+  rai::Joint *trans = world_robot->getJointByName("worldTranslationRotation");
+  rai::Joint *torso = world_robot->getJointByName("torso_lift_joint");
 
   arr q0;
   if (useRos) {
@@ -122,7 +122,7 @@ void TrajectoryInterface::executeTrajectory(arr &X_robot, double T, bool recordD
     q0 = world_robot->getJointState();
   }
 
-  mlr::timerStart(true);
+  rai::timerStart(true);
   double t = 0.;
   double dtLog = 0.05;
   double tPrev = -dtLog;
@@ -149,7 +149,7 @@ void TrajectoryInterface::executeTrajectory(arr &X_robot, double T, bool recordD
     /// set controller parameter
     if (useRos) {
       S->ctrl_ref.set() = refs;
-      t = t + mlr::timerRead(true);
+      t = t + rai::timerRead(true);
     } else {
       t = t + 0.1;
     }
@@ -170,7 +170,7 @@ void TrajectoryInterface::executeTrajectory(arr &X_robot, double T, bool recordD
 
         if (useMarker) {
           for (uint i=0;i<21;i++) {
-            mlr::Body *body = world_plan->getBodyByName(STRING("marker"<<i),false);
+            rai::Body *body = world_plan->getBodyByName(STRING("marker"<<i),false);
             if (body) {
               logM(i).append(~cat(conv_vec2arr(body->X.pos),conv_quat2arr(body->X.rot)));
             }
@@ -191,7 +191,7 @@ void TrajectoryInterface::getState(arr &q_robot) {
   world_robot->getJointState(q_robot);
 }
 
-void TrajectoryInterface::gotoPosition(mlr::String filename, double T, bool recordData, bool displayTraj) {
+void TrajectoryInterface::gotoPosition(rai::String filename, double T, bool recordData, bool displayTraj) {
   arr q;
   q << FILE(filename);
   CHECK_EQ(q.N,world_robot->getJointStateDimension(),STRING("gotoPosition: wrong joint state dimension"));
@@ -238,7 +238,7 @@ void TrajectoryInterface::gotoPosition(arr x_robot, double T, bool recordData, b
 
 
 void TrajectoryInterface::recordDemonstration(arr &X_robot,double T,double dt,double T_start) {
-  mlr::wait(T_start);
+  rai::wait(T_start);
 
   /// send zero gains
   CtrlMsg refs_zero;
@@ -265,7 +265,7 @@ void TrajectoryInterface::recordDemonstration(arr &X_robot,double T,double dt,do
 
   S->ctrl_ref.set() = refs_zero;
 
-  mlr::wait(3.);
+  rai::wait(3.);
   cout << "//////////////////////////////////////////////////////////////////" << endl;
   cout << "START RECORDING" << endl;
   cout << "//////////////////////////////////////////////////////////////////" << endl;
@@ -273,12 +273,12 @@ void TrajectoryInterface::recordDemonstration(arr &X_robot,double T,double dt,do
   /// record demonstrations
   double t = 0.;
   X_robot.clear();
-  mlr::timerStart(true);
+  rai::timerStart(true);
   while(t<T) {
     arr q = S->ctrl_obs.get()->q;
     X_robot.append(~q);
-    mlr::wait(dt);
-    t = t + mlr::timerRead(true);
+    rai::wait(dt);
+    t = t + rai::timerRead(true);
   }
   cout << "//////////////////////////////////////////////////////////////////" << endl;
   cout << "STOP RECORDING" << endl;
@@ -310,7 +310,7 @@ void TrajectoryInterface::syncState() {
   world_plan->setJointState(q_plan);
 
   /// sync torso
-  if (world_plan->getJointByName("torso_lift_joint")->type==mlr::JT_rigid) {
+  if (world_plan->getJointByName("torso_lift_joint")->type==rai::JT_rigid) {
     world_plan->getJointByName("torso_lift_joint")->A = world_robot->getJointByName("torso_lift_joint")->A;
     world_plan->getJointByName("torso_lift_joint")->Q.pos = world_robot->getJointByName("torso_lift_joint")->Q.pos;
 
@@ -333,7 +333,7 @@ void TrajectoryInterface::moveRightGripper(double d) {
   gotoPosition(q_pr2,3.);
 }
 
-void TrajectoryInterface::saveState(mlr::String filename) {
+void TrajectoryInterface::saveState(rai::String filename) {
   arr q_robot;
   getState(q_robot);
   write(LIST<arr>(q_robot),filename);
@@ -372,12 +372,12 @@ void TrajectoryInterface::pauseMotion(bool sendZeroGains) {
 
 
 
-void TrajectoryInterface::logging(mlr::String folder, mlr::String name, uint id) {
-  mlr::String filename;
+void TrajectoryInterface::logging(rai::String folder, rai::String name, uint id) {
+  rai::String filename;
   if (id==0) {
-    filename = mlr::String(STRING(folder<<"/"<<name<<"_"));
+    filename = rai::String(STRING(folder<<"/"<<name<<"_"));
   }else {
-    filename = mlr::String(STRING(folder<<"/"<<id<<"_"<<name<<"_"));
+    filename = rai::String(STRING(folder<<"/"<<id<<"_"<<name<<"_"));
     write(LIST<arr>(ARR(id)),STRING(folder<<name<<"_id.dat"));
   }
 

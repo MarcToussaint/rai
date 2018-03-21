@@ -1,4 +1,12 @@
-#ifdef MLR_PCL
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
+#ifdef RAI_PCL
 
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/point_cloud.h>
@@ -25,7 +33,7 @@ bool sphereDetector(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl::N
 bool cylinderDetector(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl::Normal>::Ptr inCloudNormal, pcl::ModelCoefficients::Ptr outCoefficients, pcl::PointIndices::Ptr outInliersPlane, double min_radius, double max_radius);
 //bool cylinderDetector(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl::Normal>::Ptr inCloudNormal, pcl::ModelCoefficients::Ptr outCoefficients, pcl::PointIndices::Ptr outInliersPlane, double min_radius, double max_radius);
 
-bool IsABox(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::Normal>::Ptr normal, std::vector<pcl::ModelCoefficients::Ptr> &outCoefficients, mlr::Quaternion &orientation, arr&center, arr&length);
+bool IsABox(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::Normal>::Ptr normal, std::vector<pcl::ModelCoefficients::Ptr> &outCoefficients, rai::Quaternion &orientation, arr&center, arr&length);
 
 bool planeFindingWithNormals(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::Normal>::Ptr inCloudNormal);
 

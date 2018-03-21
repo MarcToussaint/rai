@@ -1,20 +1,13 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-
-#ifndef MLR_kin_feather_h
-#define MLR_kin_feather_h
+#ifndef RAI_kin_feather_h
+#define RAI_kin_feather_h
 
 #include <Geo/geo.h>
 #include <Kin/kin.h>
@@ -24,10 +17,10 @@ struct F_Link {
   int type=-1;
   int qIndex=-1;
   int parent=-1;
-  mlr::Transformation X=0, Q=0;
-  mlr::Vector com=0, force=0, torque=0;
+  rai::Transformation X=0, Q=0;
+  rai::Vector com=0, force=0, torque=0;
   double mass=0.;
-  mlr::Matrix inertia=0;
+  rai::Matrix inertia=0;
   uint dof();
 
   arr _h, _Q, _I, _f; //featherstone types
@@ -44,14 +37,14 @@ struct F_Link {
 };
 stdOutPipe(F_Link)
 
-typedef mlr::Array<F_Link> F_LinkTree;
+typedef rai::Array<F_Link> F_LinkTree;
 
 struct FeatherstoneInterface{
-  mlr::KinematicWorld& K;
+  rai::KinematicWorld& K;
 
-  mlr::Array<F_Link> tree;
+  rai::Array<F_Link> tree;
 
-  FeatherstoneInterface(mlr::KinematicWorld& K):K(K){}
+  FeatherstoneInterface(rai::KinematicWorld& K):K(K){}
 
   void update();
 

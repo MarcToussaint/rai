@@ -30,7 +30,7 @@
 
 struct AdaptiveMotionExecution{
 
-    AdaptiveMotionExecution(mlr::KinematicWorld &_world, arr& _trajRef, double _dt, double _TRef, arr &_x0, arr &_q0, MObject &_goalMO, \
+    AdaptiveMotionExecution(rai::KinematicWorld &_world, arr& _trajRef, double _dt, double _TRef, arr &_x0, arr &_q0, MObject &_goalMO, \
         bool _useOrientation);
     void printState();
     void plotState();
@@ -41,7 +41,7 @@ struct AdaptiveMotionExecution{
     void moveGoal(arr &_pos);
 
     void computeIK(arr &q, arr &qd);
-    mlr::KinematicWorld *world;
+    rai::KinematicWorld *world;
 
     double dt;
     double TRef;
@@ -69,10 +69,10 @@ struct AdaptiveMotionExecution{
     arr colCosts;
 
     // Wrapped Trajectory
-    mlr::Path *trajWrap;
+    rai::Path *trajWrap;
 
     // Reference Trajectory
-    mlr::Path *trajRef;
+    rai::Path *trajRef;
     arr dtrajRef;
     arr goalRef;
     arr sRef;

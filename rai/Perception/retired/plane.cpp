@@ -29,7 +29,7 @@ ScalarFunction CostFct_PlanePoints::f_transform(){
 
 
 void glDrawPlanes(const PlaneA& planes){
-  mlr::Mesh tmp;
+  rai::Mesh tmp;
   for(const Plane& p:planes){
     glColor(p.label);
     tmp.V.referTo(p.borderPoints);
@@ -37,9 +37,9 @@ void glDrawPlanes(const PlaneA& planes){
     glLineWidth(5);
     tmp.glDraw(NoOpenGL);
     glPushMatrix();
-    mlr::Transformation t;
+    rai::Transformation t;
     t.pos.set(p.mean.p);
-    t.rot.setDiff(Vector_x, mlr::Vector(p.normal));
+    t.rot.setDiff(Vector_x, rai::Vector(p.normal));
     double GLmatrix[16];
     t.getAffineMatrixGL(GLmatrix);
     glLoadMatrixd(GLmatrix);

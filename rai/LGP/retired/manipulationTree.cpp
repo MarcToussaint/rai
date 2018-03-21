@@ -14,7 +14,7 @@ void MNode::recomputeAllMCStats(bool excludeLeafs){
     mcCost = 100.;
 }
 
-arr MNode::generateRootMCRollouts(uint num, int stepAbort, const mlr::Array<MCTS_Environment::Handle>& prefixDecisions){
+arr MNode::generateRootMCRollouts(uint num, int stepAbort, const rai::Array<MCTS_Environment::Handle>& prefixDecisions){
   CHECK(!parent, "generating rollouts needs to be done by the root only");
 
   fol.reset_state();
@@ -39,7 +39,7 @@ arr MNode::generateRootMCRollouts(uint num, int stepAbort, const mlr::Array<MCTS
 void MNode::addMCRollouts(uint num, int stepAbort){
   //-- collect decision path
   MNodeL treepath = getTreePath();
-  mlr::Array<MCTS_Environment::Handle> prefixDecisions(treepath.N-1);
+  rai::Array<MCTS_Environment::Handle> prefixDecisions(treepath.N-1);
   for(uint i=1;i<treepath.N;i++)
     prefixDecisions(i-1) = treepath(i)->decision;
 
@@ -93,7 +93,7 @@ void MNode::solvePoseProblem(){
     //    Problem->reportFeatures();
   }
 
-  for(mlr::KinematicSwitch *sw: poseProblem->switches)
+  for(rai::KinematicSwitch *sw: poseProblem->switches)
     if(sw->timeOfApplication==0) sw->apply(effKinematics);
 
   arr newPose=poseProblem->getInitialization();
@@ -134,7 +134,7 @@ void MNode::solvePoseProblem(){
 
   effKinematics.setJointState(pose);
 
-  for(mlr::KinematicSwitch *sw: poseProblem->MP->switches)
+  for(rai::KinematicSwitch *sw: poseProblem->MP->switches)
     if(sw->timeOfApplication==1) sw->apply(effKinematics);
   effKinematics.topSort();
   effKinematics.checkConsistency();
