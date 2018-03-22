@@ -17,7 +17,7 @@ struct TM_PairCollision : TaskMap {
 
   TM_PairCollision(int _i, int _j, bool _negScalar, bool _neglectRadii=false);
   TM_PairCollision(const rai::KinematicWorld& K, const char* s1, const char* s2, bool negScalar=false, bool neglectRadii=false);
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& K, int t=-1);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& K);
   virtual uint dim_phi(const rai::KinematicWorld& G){ if(negScalar) return 1;  return 3; }
   virtual rai::String shortTag(const rai::KinematicWorld& G);
 };

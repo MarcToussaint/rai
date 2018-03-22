@@ -28,7 +28,7 @@ TM_Transition::TM_Transition(const rai::KinematicWorld& G, bool effectiveJointsO
   H_rate_diag = H_rate*H_diag;
 }
 
-uint TM_Transition::dim_phi(const WorldL& G, int t){
+uint TM_Transition::dim_phi(const WorldL& G){
   bool handleSwitches=effectiveJointsOnly;
   uint qN=G(0)->q.N;
   for(uint i=0;i<G.N;i++) if(G.elem(i)->q.N!=qN){ handleSwitches=true; break; }
@@ -48,12 +48,12 @@ uint TM_Transition::dim_phi(const WorldL& G, int t){
   return uint(-1);
 }
 
-void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
+void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple){
   bool handleSwitches=effectiveJointsOnly;
   uint qN=Ktuple(0)->q.N;
   for(uint i=0;i<Ktuple.N;i++) if(Ktuple(i)->q.N!=qN){ handleSwitches=true; break; }
 
-  tau = Ktuple(-1)->frames(0)->time - Ktuple(-2)->frames(0)->time;
+  double tau = Ktuple(-1)->frames(0)->time - Ktuple(-2)->frames(0)->time;
 
   if(!handleSwitches){ //simple implementation
     //-- transition costs

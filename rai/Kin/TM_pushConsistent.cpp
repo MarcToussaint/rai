@@ -31,11 +31,11 @@ TM_PushConsistent::TM_PushConsistent(const rai::KinematicWorld &G,
 //}
 
 
-void TM_PushConsistent::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
-  CHECK(G.N>=order+1,"I need at least " <<order+1 <<" configurations to evaluate");
+void TM_PushConsistent::phi(arr& y, arr& J, const WorldL& Ktuple){
+  CHECK(Ktuple.N>=order+1,"I need at least " <<order+1 <<" configurations to evaluate");
 
-  const rai::KinematicWorld& G2 = *G.elem(-1);
-  const rai::KinematicWorld& G1 = *G.elem(-2);
+  const rai::KinematicWorld& G2 = *Ktuple.elem(-1);
+  const rai::KinematicWorld& G1 = *Ktuple.elem(-2);
 
   rai::Frame *body_i1 = G1.frames(i);
   rai::Frame *body_i2 = G2.frames(i);
@@ -48,11 +48,13 @@ void TM_PushConsistent::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
 
 #if 1
 //  tau = 1.; //1e-5;
+  double tau = Ktuple(-1)->frames(0)->time - Ktuple(-2)->frames(0)->time;
+
   y = crossProduct((yi2-yi1)/tau, yi2-yj2);
 //  cout <<"PC " <<t <<' ' <<(yi2-yi1)/tau <<' ' <<yi2-yj2 <<' ' <<y <<endl;
   if(&J){
     uint qidx=0;
-    for(uint i=0;i<G.N;i++) qidx+=G(i)->q.N;
+    for(uint i=0;i<Ktuple.N;i++) qidx+=Ktuple(i)->q.N;
     J.resize(y.N, qidx).setZero();
 
     arr J1 = skew(yi2-yj2)*Ji1/tau;

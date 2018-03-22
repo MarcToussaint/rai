@@ -42,8 +42,8 @@ void TEST(Align){
   komo.setPosition(1., 1., "endeff", "target");
   komo.setOrientation(1., 1., "endeff", "target", OT_eq);
   komo.setSlowAround(1., .02);
-//  komo.setCollisions(false);
-  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq, NoArr, 1e1);
+  komo.setCollisions(false);
+//  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq, NoArr, 1e1);
 
   komo.reset();
   komo.run();
@@ -74,9 +74,9 @@ void TEST(PR2){
   komo.setPathOpt(1., 100, 10.);
   komo.setPosition(1., 1., "endeff", "target");
   komo.setSlowAround(1., .02);
-//  komo.setCollisions(false);
+  komo.setCollisions(false);
 //  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq);
-  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq, NoArr, 1e2);
+//  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq, NoArr, 1e2);
 
   komo.reset();
 //  komo.setSpline(10);

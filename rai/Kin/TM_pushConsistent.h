@@ -17,8 +17,8 @@ struct TM_PushConsistent : TaskMap {
   TM_PushConsistent(const rai::KinematicWorld& G,
                          const char* iShapeName=NULL, const char* jShapeName=NULL);
 
-  virtual void phi(arr& y, arr& J, const WorldL& G, double tau, int t=-1);
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1){  HALT("you shouldn't be here!");  }
+  virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G){  HALT("you shouldn't be here!");  }
   virtual uint dim_phi(const rai::KinematicWorld& G){ return 3; }
   virtual rai::String shortTag(const rai::KinematicWorld& G);
 };

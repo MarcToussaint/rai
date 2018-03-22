@@ -23,13 +23,13 @@ struct TM_qItself:TaskMap {
   TM_qItself(TM_qItself_PickMode pickMode, const StringA& picks, const rai::KinematicWorld& G, bool relative_q0=false);
   TM_qItself(uintA _selectedBodies, bool relative_q0=false);
 
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1);
-  virtual void phi(arr& y, arr& J, const WorldL& G, double tau, int t);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
+  virtual void phi(arr& y, arr& J, const WorldL& G);
   virtual uint dim_phi(const rai::KinematicWorld& G);
-  virtual uint dim_phi(const WorldL& G, int t);
+  virtual uint dim_phi(const WorldL& Ktuple);
   virtual rai::String shortTag(const rai::KinematicWorld& G);
 private:
-  uintA dimPhi;
+  std::map<rai::KinematicWorld*, uint> dimPhi;
 };
 
 //===========================================================================
@@ -37,12 +37,12 @@ private:
 struct TM_qZeroVels:TaskMap {
   TM_qZeroVels(){ }
 
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1){NIY}
-  virtual void phi(arr& y, arr& J, const WorldL& G, double tau, int t);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G){NIY}
+  virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
   virtual uint dim_phi(const rai::KinematicWorld& G){NIY}
-  virtual uint dim_phi(const WorldL& G, int t);
+  virtual uint dim_phi(const WorldL& Ktuple);
 private:
-  uintA dimPhi;
+  std::map<rai::KinematicWorld*, uint> dimPhi;
 };
 
 //===========================================================================

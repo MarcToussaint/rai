@@ -19,7 +19,7 @@ struct TM_GJK:TaskMap{
   TM_GJK(const rai::Frame *s1, const rai::Frame *s2, bool exact, bool negScalar=false);
   TM_GJK(const rai::KinematicWorld& W, const char* s1, const char* s2, bool exact, bool negScalar=false);
   TM_GJK(const rai::KinematicWorld& W, const Graph& specs, bool exact);
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& W, int t=-1);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& W);
   virtual uint dim_phi(const rai::KinematicWorld& G){ if(negScalar) return 1;  return 3; }
   virtual rai::String shortTag(const rai::KinematicWorld& G);
 };

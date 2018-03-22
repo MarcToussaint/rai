@@ -18,7 +18,7 @@ struct TM_AboveBox : TaskMap {
   TM_AboveBox(const rai::KinematicWorld& G,
                    const char* iShapeName=NULL, const char* jShapeName=NULL, double _margin=.01);
 
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G){ return 4; }
   virtual rai::String shortTag(const rai::KinematicWorld& G);
 };

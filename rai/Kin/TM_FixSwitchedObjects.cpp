@@ -12,13 +12,13 @@
 #include "frame.h"
 #include "flag.h"
 
-uint TM_FixSwichedObjects::dim_phi(const WorldL& G, int t){
+uint TM_FixSwichedObjects::dim_phi(const WorldL& G){
   uintA switchedBodies = getSwitchedBodies(*G.elem(-2), *G.elem(-1));
 //  if(order==2) switchedBodies.setAppend( getSwitchedBodies(*G.elem(-3), *G.elem(-2)) );
   return switchedBodies.N*7;
 }
 
-void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
+void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G){
   //TODO: so far this only fixes switched objects to zero pose vel
   //better: constrain to zero relative velocity with BOTH, pre-attached and post-attached
 
@@ -50,36 +50,36 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau, int 
     if(order==1){ //absolute velocities
       TM_Default pos(TMT_pos, id);
       pos.order=1;
-      pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G, tau, t);
+      pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G);
 
       TM_Default quat(TMT_quat, id); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
       // flip the quaternion sign if necessary
       quat.flipTargetSignOnNegScalarProduct = true;
       quat.order=1;
-      quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G, tau, t);
+      quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G);
     }else if(order==2){ //absolute accelerations
       TM_Default pos(TMT_pos, id);
       pos.order=2;
-      pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G, tau, t);
+      pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G);
 
       TM_Default quat(TMT_quat, id); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
       // flip the quaternion sign if necessary
       quat.flipTargetSignOnNegScalarProduct = true;
       quat.order=2;
-      quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G, tau, t);
+      quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G);
     }else NIY;
 
     //    if(sumOfSqr(y)>1e-3) cout <<"body " <<b0->name <<" causes switch costs " <<sumOfSqr(y) <<" at t=" <<t <<" y=" <<y <<endl;
 #if 0 //OBSOLETE: relative velocities
     TM_Default pos(TMT_posDiff, b0->shape->index, NoVector, b1->shape->index);
     pos.order=1;
-    pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G, tau, t);
+    pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G);
 
     TM_Default quat(TMT_quatDiff, j0->to->shape->index/*, NoVector, j0->from->shape->index*/);
     // flipp the quaternion sign if necessary
     quat.flipTargetSignOnNegScalarProduct = true;
     quat.order=1;
-    quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G, tau, t);
+    quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G);
 #endif
   }
 }
@@ -106,7 +106,7 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau, int 
 //        G.elem(-1)->calc_fwdPropagateFrames();
 
         arr yt,Jt;
-        pos.phi(yt, Jt, *G.last(), t);
+        pos.phi(yt, Jt, *G.last());
 
         G.elem(-1)->checkConsistency();
         G.elem(-2)->checkConsistency();

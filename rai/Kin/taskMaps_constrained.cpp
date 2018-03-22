@@ -12,7 +12,7 @@
 
 //===========================================================================
 
-void CollisionConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t){
+void CollisionConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G){
   G.kinematicsProxyCost(y, J, margin, true);
   y -= .5;
 }
@@ -26,12 +26,7 @@ PairCollisionConstraint::PairCollisionConstraint(const rai::KinematicWorld &G, c
     margin(_margin) {
 }
 
-void PairCollisionConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t){
-  if(t>=0 && referenceIds.N){
-    if(referenceIds.nd==1){  i=referenceIds(t); j=-1; }
-    if(referenceIds.nd==2){  i=referenceIds(t,0); j=referenceIds(t,1); }
-  }
-
+void PairCollisionConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G){
   y.resize(1) = -1.; //default value if not overwritten below
   if(&J) J.resize(1,G.q.N).setZero();
   if(j>=0){ //against a concrete j
@@ -78,7 +73,7 @@ void PairCollisionConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G, 
 PlaneConstraint::PlaneConstraint(const rai::KinematicWorld &G, const char *iShapeName, const arr &_planeParams)
   : i(G.getFrameByName(iShapeName)->ID), planeParams(_planeParams){}
 
-void PlaneConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t){
+void PlaneConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G){
   rai::Frame *body_i = G.frames(i);
   rai::Vector vec_i = 0;
 
@@ -95,7 +90,7 @@ void PlaneConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t){
 
 //===========================================================================
 
-void ConstraintStickiness::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t){
+void ConstraintStickiness::phi(arr& y, arr& J, const rai::KinematicWorld& G){
   map.phi(y, J, G);
   for(uint j=0;j<y.N;j++) y(j) = -y(j);
   if(&J) for(uint j=0;j<J.d0;j++) J[j]() *= -1.;
@@ -103,7 +98,7 @@ void ConstraintStickiness::phi(arr& y, arr& J, const rai::KinematicWorld& G, int
 
 //===========================================================================
 
-void PointEqualityConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t){
+void PointEqualityConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G){
   rai::Vector vec_i = ivec;
   rai::Vector vec_j = jvec;
   rai::Frame *body_i = i<0?NULL: G.frames(i);
@@ -131,7 +126,7 @@ ContactEqualityConstraint::ContactEqualityConstraint(const rai::KinematicWorld &
     margin(_margin) {
 }
 
-void ContactEqualityConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t){
+void ContactEqualityConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G){
   y.resize(1) = 0.;
   if(&J) J.resize(1,G.q.N).setZero();
   for(const rai::Proxy& p: G.proxies){
@@ -158,7 +153,7 @@ VelAlignConstraint::VelAlignConstraint(const rai::KinematicWorld& G,
   target = _target;
 }
 
-void VelAlignConstraint::phi(arr& y, arr& J, const WorldL& G, double tau, int t) {
+void VelAlignConstraint::phi(arr& y, arr& J, const WorldL& G) {
   uint k=order;
 
   // compute body j orientation
@@ -215,7 +210,7 @@ void VelAlignConstraint::phi(arr& y, arr& J, const WorldL& G, double tau, int t)
 
 //===========================================================================
 
-void qItselfConstraint::phi(arr& q, arr& J, const rai::KinematicWorld& G, int t) {
+void qItselfConstraint::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
   G.getJointState(q);
   if(M.N){
     if(M.nd==1){

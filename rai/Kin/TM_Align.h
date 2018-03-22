@@ -15,7 +15,7 @@ struct TM_Align : TaskMap {
 
   TM_Align(const rai::KinematicWorld& G, const char* iName=NULL, const char* jName=NULL);
 
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G){ return 3; }
   virtual rai::String shortTag(const rai::KinematicWorld& G);
 };

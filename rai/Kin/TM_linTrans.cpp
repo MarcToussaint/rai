@@ -8,8 +8,8 @@
 
 #include "TM_linTrans.h"
 
-void TM_LinTrans::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t){
-  map->phi(y, J, G, t);
+void TM_LinTrans::phi(arr& y, arr& J, const rai::KinematicWorld& G){
+  map->phi(y, J, G);
   if(A.N){
     y = A*y;
     if(&J) J = A*J;

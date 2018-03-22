@@ -21,7 +21,7 @@ TaskMap *rai::Contact::getTM_ContactNegDistance() const{
   return new TM_ContactNegDistance(*this);
 }
 
-void rai::TM_ContactNegDistance::phi(arr &y, arr &J, const rai::KinematicWorld &K, int t){
+void rai::TM_ContactNegDistance::phi(arr &y, arr &J, const rai::KinematicWorld &K){
 #if 0
   if(C.a_pts.nd==1 && C.b_pts.nd==1){
     arr ap,bp, normal, Jap,Jbp;

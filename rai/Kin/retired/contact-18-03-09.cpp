@@ -12,7 +12,7 @@ TaskMap *rai::Contact::getTM_ContactNegDistance() const{
   return new TM_ContactNegDistance(*this);
 }
 
-void rai::TM_ContactNegDistance::phi(arr &y, arr &J, const rai::KinematicWorld &K, int t){
+void rai::TM_ContactNegDistance::phi(arr &y, arr &J, const rai::KinematicWorld &K){
   if(C.a_type==2 && C.b_type!=2){
     HALT("not checked");
     arr ap,an,bp, Jap, Jan, Jbp;

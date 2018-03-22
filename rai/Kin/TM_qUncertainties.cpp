@@ -11,7 +11,7 @@
 
 TM_qUncertainties::TM_qUncertainties() {}
 
-void TM_qUncertainties::phi(arr& q, arr& J, const rai::KinematicWorld& G, int t) {
+void TM_qUncertainties::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
   uint n=dim_phi(G);
 
   q.resize(n);

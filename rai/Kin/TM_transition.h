@@ -21,9 +21,9 @@ struct TM_Transition:TaskMap {
 
   TM_Transition(const rai::KinematicWorld& G, bool effectiveJointsOnly=false);
 
-  virtual void phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t=-1);
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1){ HALT("can only be of higher order"); }
+  virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G){ HALT("can only be of higher order"); }
   virtual uint dim_phi(const rai::KinematicWorld& G){ return G.getJointStateDimension(); }
-  virtual uint dim_phi(const WorldL& G, int t);
+  virtual uint dim_phi(const WorldL& G);
   virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("Transition:"<<(effectiveJointsOnly?"eDOF":"") <<":pos" <<posCoeff <<":vel" <<velCoeff<<":acc"<<accCoeff); }
 };

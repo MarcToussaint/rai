@@ -14,12 +14,12 @@
 
 //===========================================================================
 
-void TaskMap::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
+void TaskMap::phi(arr& y, arr& J, const WorldL& Ktuple){
   CHECK(Ktuple.N>=order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
   if(k==0){// basic case: order=0
     arr J_bar;
-    phi(y, (&J?J_bar:NoArr), *Ktuple.last(), t);
+    phi(y, (&J?J_bar:NoArr), *Ktuple.last());
     if(&J){
       uint qidx=0;
       for(uint i=0;i<Ktuple.N;i++) qidx+=Ktuple(i)->q.N;
@@ -30,15 +30,14 @@ void TaskMap::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
   }
   arrA y_bar, J_bar;
 
-  tau = Ktuple(-1)->frames(0)->time - Ktuple(-2)->frames(0)->time;
-
+  double tau = Ktuple(-1)->frames(0)->time - Ktuple(-2)->frames(0)->time;
   double tau2=tau*tau, tau3=tau2*tau;
   y_bar.resize(k+1);
   J_bar.resize(k+1);
   //-- read out the task variable from the k+1 configurations
   uint offset = Ktuple.N-1-k; //G.N might contain more configurations than the order of THIS particular task -> the front ones are not used
   for(uint i=0;i<=k;i++)
-    phi(y_bar(i), (&J?J_bar(i):NoArr), *Ktuple(offset+i), t-k+i);
+    phi(y_bar(i), (&J?J_bar(i):NoArr), *Ktuple(offset+i));
 
   // check for quaternion
   if(k==1 && flipTargetSignOnNegScalarProduct){

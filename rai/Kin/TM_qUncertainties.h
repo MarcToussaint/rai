@@ -14,7 +14,7 @@
 struct TM_qUncertainties:TaskMap {
   TM_qUncertainties();
 
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G);
   virtual rai::String shortTag(const rai::KinematicWorld& G);
 };

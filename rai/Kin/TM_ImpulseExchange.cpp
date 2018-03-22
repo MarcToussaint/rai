@@ -11,7 +11,7 @@
 #include "TM_PairCollision.h"
 #include "flag.h"
 
-void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
+void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple){
   CHECK(Ktuple.N>=3, "");
   CHECK(order>=2,"");
 
@@ -20,14 +20,14 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
   //acceleration (=impulse change) of object 1
   TM_Default pos1(TMT_pos, i);
   pos1.order=2;
-  pos1.TaskMap::phi(a1, (&J?J1:NoArr), Ktuple, tau, t);
+  pos1.TaskMap::phi(a1, (&J?J1:NoArr), Ktuple);
 
 //  {
 //    rai::KinematicWorld &K = *Ktuple.last();
 //    rai::Frame *a = K(i)->getUpwardLink();
 //    if(a->flags && a->flags & (1<<FL_kinematic)){
 //      pos1.order=1;
-//      pos1.TaskMap::phi(a1, (&J?J1:NoArr), Ktuple, tau, t);
+//      pos1.TaskMap::phi(a1, (&J?J1:NoArr), Ktuple);
 //      a1 *= -1.;
 //      if(&J) J1 *= -1.;
 //    }
@@ -36,7 +36,7 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
   //acceleration (=impulse change) of object 2
   TM_Default pos2(TMT_pos, j);
   pos2.order=2;
-  pos2.TaskMap::phi(a2, (&J?J2:NoArr), Ktuple, tau, t);
+  pos2.TaskMap::phi(a2, (&J?J2:NoArr), Ktuple);
 
   //projection matrix onto 'table' to which object 2 will be attached
   arr P;
@@ -61,7 +61,7 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
 
   arr c,Jc;
   TM_PairCollision coll(i, j, false, true);
-  coll.phi(c, (&J?Jc:NoArr), *Ktuple(-2), t);
+  coll.phi(c, (&J?Jc:NoArr), *Ktuple(-2));
   uintA qdim = getKtupleDim(Ktuple);
   arr Jcc = zeros(3, qdim.last());
   if(&J) Jcc.setMatrixBlock(Jc, 0, qdim(0));
@@ -120,7 +120,7 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
   if(&J) CHECK_EQ(J.d0, y.N, "");
 }
 
-void TM_ImpulsExchange_weak::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
+void TM_ImpulsExchange_weak::phi(arr &y, arr &J, const WorldL &Ktuple){
   CHECK(Ktuple.N>=3, "");
   CHECK(order>=2,"");
 
@@ -128,15 +128,15 @@ void TM_ImpulsExchange_weak::phi(arr &y, arr &J, const WorldL &Ktuple, double ta
 
   TM_Default pos1(TMT_pos, i);
   pos1.order=2;
-  pos1.TaskMap::phi(a1, (&J?J1:NoArr), Ktuple, tau, t);
+  pos1.TaskMap::phi(a1, (&J?J1:NoArr), Ktuple);
 
   TM_Default pos2(TMT_pos, j);
   pos2.order=2;
-  pos2.TaskMap::phi(a2, (&J?J2:NoArr), Ktuple, tau, t);
+  pos2.TaskMap::phi(a2, (&J?J2:NoArr), Ktuple);
 
   arr c,Jc;
   TM_PairCollision coll(i, j, false, true);
-  coll.phi(c, (&J?Jc:NoArr), *Ktuple(-2), t);
+  coll.phi(c, (&J?Jc:NoArr), *Ktuple(-2));
   uintA qdim = getKtupleDim(Ktuple);
   arr Jcc = zeros(3, qdim.last());
   if(&J) Jcc.setMatrixBlock(Jc, 0, qdim(0));

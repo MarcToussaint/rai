@@ -35,45 +35,47 @@ double Forsyth(arr& J, const arr& x, double a){
   return f;
 };
 
-void TM_BeliefTransition::phi(arr &y, arr &J, const WorldL &G, double tau, int t){
+void TM_BeliefTransition::phi(arr &y, arr &J, const WorldL &Ktuple){
   uint i=0;
-  y.resize(dim_phi(*G.last())).setZero();
-  if(&J) J.resize(y.N, G.N, G.elem(-1)->q.N).setZero();
+  y.resize(dim_phi(*Ktuple.last())).setZero();
+  if(&J) J.resize(y.N, Ktuple.N, Ktuple.elem(-1)->q.N).setZero();
+
+  double tau = Ktuple(-1)->frames(0)->time - Ktuple(-2)->frames(0)->time;
 
   //parameters of the belief transition
   double xi = 0.;
   double b0 = .01;
-  arr J_xi = zeros(G.N, G.elem(-1)->q.N);
+  arr J_xi = zeros(Ktuple.N, Ktuple.elem(-1)->q.N);
   if(viewError){
     arr y_view, J_view;
-    viewError->phi(y_view, J_view, G, tau, t);
+    viewError->phi(y_view, J_view, Ktuple);
     y_view *= 2.;
     J_view *= 2.;
     xi = 1. - Forsyth(J_xi, y_view, 1.);
     J_xi = - J_xi * J_view;
-    J_xi.reshape(G.N, G.elem(-1)->q.N);
+    J_xi.reshape(Ktuple.N, Ktuple.elem(-1)->q.N);
     xi *= 2.;
     J_xi *= 2.;
   }
 
-  for(rai::Joint *j1 : G.elem(-1)->fwdActiveJoints) if(j1->uncertainty){
-    rai::Joint *j0 = G.elem(-2)->frames(j1->frame.ID)->joint;
+  for(rai::Joint *j1 : Ktuple.elem(-1)->fwdActiveJoints) if(j1->uncertainty){
+    rai::Joint *j0 = Ktuple.elem(-2)->frames(j1->frame.ID)->joint;
     CHECK(j0, "");
     CHECK(j0->uncertainty, "");
     CHECK_EQ(j0->dim, j1->dim, "");
     for(uint d=j0->dim;d<2*j0->dim;d++){
-      y(i) = G.elem(-1)->q(j1->qIndex+d) - (1.-tau*xi)*G.elem(-2)->q(j0->qIndex+d) - tau*b0;
+      y(i) = Ktuple.elem(-1)->q(j1->qIndex+d) - (1.-tau*xi)*Ktuple.elem(-2)->q(j0->qIndex+d) - tau*b0;
 //      if(y(i)<0.) y(i)=0.; //hack: the finite integration may lead to negative values
       if(&J){
-        J(i, G.N-1, j1->qIndex+d) = 1.;
-        J(i, G.N-2, j0->qIndex+d) = -(1.-tau*xi);
+        J(i, Ktuple.N-1, j1->qIndex+d) = 1.;
+        J(i, Ktuple.N-2, j0->qIndex+d) = -(1.-tau*xi);
 
-        J[i] += (tau*G.elem(-2)->q(j0->qIndex+d)) * J_xi;
+        J[i] += (tau*Ktuple.elem(-2)->q(j0->qIndex+d)) * J_xi;
       }
       i++;
     }
   }
 
-  if(&J) J.reshape(y.N, G.N*G.elem(-1)->q.N);
+  if(&J) J.reshape(y.N, Ktuple.N*Ktuple.elem(-1)->q.N);
   CHECK_EQ(i, y.N, "");
 }

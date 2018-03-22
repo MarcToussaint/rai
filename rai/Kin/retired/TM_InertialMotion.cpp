@@ -2,7 +2,7 @@
 #include "flag.h"
 #include "TM_default.h"
 
-void TM_InertialMotion::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
+void TM_InertialMotion::phi(arr &y, arr &J, const WorldL &Ktuple){
   rai::KinematicWorld& K = *Ktuple(-1);
 
   arr acc, Jacc;
@@ -17,7 +17,7 @@ void TM_InertialMotion::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
 
   TM_Default pos(TMT_pos, i);
   pos.order=2;
-  pos.TaskMap::phi(acc, (&J?Jacc:NoArr), Ktuple, tau, t);
+  pos.TaskMap::phi(acc, (&J?Jacc:NoArr), Ktuple);
 
   y = acc - acc_ref;
   if(&J){
@@ -32,7 +32,7 @@ void TM_InertialMotion::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
   }
 }
 
-uint TM_InertialMotion::dim_phi(const WorldL &Ktuple, int t){
+uint TM_InertialMotion::dim_phi(const WorldL &Ktuple){
   return 3;
 }
 
