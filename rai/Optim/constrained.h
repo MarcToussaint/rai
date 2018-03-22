@@ -1,15 +1,9 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
 #pragma once
@@ -58,7 +52,7 @@ inline void evaluateConstrainedProblem(const arr& x, ConstrainedProblem& P, std:
   double Ef=0., Eh=0., Eg=0.;
   for(uint i=0;i<phi_x.N;i++){
     if(tt_x(i)==OT_f) Ef += phi_x(i);
-    if(tt_x(i)==OT_sumOfSqr) Ef += mlr::sqr(phi_x(i));
+    if(tt_x(i)==OT_sumOfSqr) Ef += rai::sqr(phi_x(i));
     if(tt_x(i)==OT_ineq && phi_x(i)>0.) Eg += phi_x(i);
     if(tt_x(i)==OT_eq) Eh += fabs(phi_x(i));
   }

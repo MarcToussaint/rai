@@ -78,7 +78,7 @@ void CtrlTask::setGains(double pgain, double dgain) {
 void CtrlTask::setGainsAsNatural(double decayTime, double dampingRatio) {
   CHECK(decayTime>0. && dampingRatio>0., "this does not define proper gains!");
   double lambda = -decayTime*dampingRatio/log(.1);
-  setGains(mlr::sqr(1./lambda), 2.*dampingRatio/lambda);
+  setGains(rai::sqr(1./lambda), 2.*dampingRatio/lambda);
 }
 
 void CtrlTask::setC(const arr& C) {
@@ -103,8 +103,8 @@ arr CtrlTask::get_y_ref(){
   if(flipTargetSignOnNegScalarProduct && scalarProduct(y, y_ref) < 0)
     y_ref = -y_ref;
   if(makeTargetModulo2PI) for(uint i=0;i<y.N;i++){
-    while(y_ref(i) < y(i)-MLR_PI) y_ref(i)+=MLR_2PI;
-    while(y_ref(i) > y(i)+MLR_PI) y_ref(i)-=MLR_2PI;
+    while(y_ref(i) < y(i)-RAI_PI) y_ref(i)+=RAI_2PI;
+    while(y_ref(i) > y(i)+RAI_PI) y_ref(i)-=RAI_2PI;
   }
   return y_ref;
 }
@@ -173,15 +173,15 @@ void CtrlTask::getDesiredLinAccLaw(arr& Kp_y, arr& Kd_y, arr& a0_y){
   }
 }
 
-void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const mlr::KinematicWorld& world){
+void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::KinematicWorld& world){
   //-- get necessary Jacobians
   TM_Default *m = dynamic_cast<TM_Default*>(&map);
   CHECK(m,"this only works for the default position task map");
   CHECK(m->type==TMT_pos,"this only works for the default positioni task map");
   CHECK(m->i>=0,"this only works for the default position task map");
-  mlr::Body *body = world.shapes(m->i)->body;
-  mlr::Vector vec = world.shapes(m->i)->rel*m->ivec;
-  mlr::Shape* l_ft_sensor = world.getShapeByName("l_ft_sensor");
+  rai::Body *body = world.shapes(m->i)->body;
+  rai::Vector vec = world.shapes(m->i)->rel*m->ivec;
+  rai::Shape* l_ft_sensor = world.getShapeByName("l_ft_sensor");
   arr J_ft, J;
   world.kinematicsPos         (NoArr, J,   body, vec);
   world.kinematicsPos_wrtFrame(NoArr, J_ft,body, vec, l_ft_sensor);
@@ -251,12 +251,12 @@ void ConstraintForceTask::updateConstraintControl(const arr& _g, const double& l
 
 //===========================================================================
 
-TaskControlMethods::TaskControlMethods(mlr::KinematicWorld& _world, bool _useSwift)
+TaskControlMethods::TaskControlMethods(rai::KinematicWorld& _world, bool _useSwift)
   : world(_world), qNullCostRef(NULL, NULL), useSwift(_useSwift) {
   computeMeshNormals(world.shapes);
   if(useSwift) {
     makeConvexHulls(world.shapes);
-    world.swift().setCutoff(2.*mlr::getParameter<double>("swiftCutoff", 0.11));
+    world.swift().setCutoff(2.*rai::getParameter<double>("swiftCutoff", 0.11));
   }
   qNullCostRef.name="qitselfPD";
   qNullCostRef.setGains(0.,100.);
@@ -271,8 +271,8 @@ CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, doub
 CtrlTask* TaskControlMethods::addPDTask(const char* name,
                                          double decayTime, double dampingRatio,
                                          TM_DefaultType type,
-                                         const char* iShapeName, const mlr::Vector& ivec,
-                                         const char* jShapeName, const mlr::Vector& jvec){
+                                         const char* iShapeName, const rai::Vector& ivec,
+                                         const char* jShapeName, const rai::Vector& jvec){
   return tasks.append(new CtrlTask(name, new TM_Default(type, world, iShapeName, ivec, jShapeName, jvec),
                                    decayTime, dampingRatio, 1., 1.));
 }
@@ -296,7 +296,7 @@ void TaskControlMethods::lockJointGroup(const char* groupname, bool lockThem){
     return;
   }
   if(!lockJoints.N) lockJoints = consts<bool>(false, world.q.N);
-  for(mlr::Joint *j:world.joints){
+  for(rai::Joint *j:world.joints){
     if(j->ats.getNode(groupname)){
       for(uint i=0;i<j->qDim();i++){
         lockJoints(j->qIndex+i) = lockThem;
@@ -499,9 +499,9 @@ void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, d
   for(CtrlTask* law : this->tasks) if(law->active && law->f_ref.N){
     nForceTasks++;
     TM_Default& map = dynamic_cast<TM_Default&>(law->map);
-    mlr::Body* body = world.shapes(map.i)->body;
-    mlr::Vector vec = world.shapes(map.i)->rel.pos;
-    mlr::Shape* lFtSensor = world.getShapeByName("r_ft_sensor");
+    rai::Body* body = world.shapes(map.i)->body;
+    rai::Vector vec = world.shapes(map.i)->rel.pos;
+    rai::Shape* lFtSensor = world.getShapeByName("r_ft_sensor");
     arr y, J, J_ft;
     law->map.phi(y, J, world);
     world.kinematicsPos_wrtFrame(NoArr, J_ft, body, vec, lFtSensor);
@@ -522,5 +522,5 @@ void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, d
 }
 
 RUN_ON_INIT_BEGIN(CtrlTask)
-mlr::Array<CtrlTask*>::memMove=true;
+rai::Array<CtrlTask*>::memMove=true;
 RUN_ON_INIT_END(CtrlTask)

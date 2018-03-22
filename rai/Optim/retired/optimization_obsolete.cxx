@@ -49,7 +49,7 @@ struct VectorChainFunction;
 //  return f;
 //}
 
-//double evaluateCSP(const mlr::Array<SqrPotential>& fi, const mlr::Array<PairSqrPotential>& fij, const arr& x) {
+//double evaluateCSP(const rai::Array<SqrPotential>& fi, const rai::Array<PairSqrPotential>& fij, const arr& x) {
 //  double f=0.;
 //  uint T=fi.N-1;
 //  for(uint t=0; t<=T; t++) {
@@ -59,7 +59,7 @@ struct VectorChainFunction;
 //  return f;
 //}
 
-//void recomputeChainSquarePotentials(mlr::Array<SqrPotential>& fi, mlr::Array<PairSqrPotential>& fij, QuadraticChainFunction& f, const arr& x, uint& evals) {
+//void recomputeChainSquarePotentials(rai::Array<SqrPotential>& fi, rai::Array<PairSqrPotential>& fij, QuadraticChainFunction& f, const arr& x, uint& evals) {
 //  uint T=fi.N-1;
 //  for(uint t=0; t<=T; t++) {
 //    f.fq_i(fi(t) , t, x[t]);  evals++;
@@ -67,7 +67,7 @@ struct VectorChainFunction;
 //  }
 //}
 
-//void sanityCheckUptodatePotentials(const mlr::Array<SqrPotential>& R, QuadraticChainFunction& f, const arr& x) {
+//void sanityCheckUptodatePotentials(const rai::Array<SqrPotential>& R, QuadraticChainFunction& f, const arr& x) {
 //  if(!sanityCheck) return;
 //  SqrPotential R_tmp;
 //  for(uint t=0; t<R.N; t++) {
@@ -218,9 +218,9 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
 //  arr y(x);
 //  double damping=o.damping;
 
-//  mlr::Array<SqrPotential> V(T+1);
-//  mlr::Array<SqrPotential> fi(T+1), fi_at_y(T+1);
-//  mlr::Array<PairSqrPotential> fij(T), fij_at_y(T);
+//  rai::Array<SqrPotential> V(T+1);
+//  rai::Array<SqrPotential> fi(T+1), fi_at_y(T+1);
+//  rai::Array<PairSqrPotential> fij(T), fij_at_y(T);
 //  arr Bbarinv(T,n,n);
 //  arr bbar(T,n);
 //  arr Id = eye(n,n);
@@ -366,10 +366,10 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
 //  double damping=o.damping;
 //  uint rejects=0;
 
-//  mlr::Array<SqrPotential> V(T+1); //bwd messages
-//  mlr::Array<SqrPotential> S(T+1); //fwd messages
-//  mlr::Array<SqrPotential> Rx(T+1),Ry(T+1); //node potentials at x[t] (=hat x_t)
-//  mlr::Array<PairSqrPotential> fij(T);
+//  rai::Array<SqrPotential> V(T+1); //bwd messages
+//  rai::Array<SqrPotential> S(T+1); //fwd messages
+//  rai::Array<SqrPotential> Rx(T+1),Ry(T+1); //node potentials at x[t] (=hat x_t)
+//  rai::Array<PairSqrPotential> fij(T);
 //  for(uint t=0; t<=T; t++) { init(S(t),n);  init(V(t),n); }
 
 //  //helpers
@@ -890,7 +890,7 @@ void SlalomProblem::fv_ij(arr& y, arr& Ji, arr& Jj, uint i, uint j, const arr& x
 
 #include "optimization_obsolete.h"
 
-#ifdef MLR_GSL
+#ifdef RAI_GSL
 #include <gsl/gsl_cdf.h>
 bool DecideSign::step(double x){
   N++;
@@ -921,7 +921,7 @@ void OnlineRprop::init(OptimizationProblem *_m, double initialRate, uint _N, con
     for(uint i=0; i<w.N; i++) signer(i).init();
     l=0.;
     e=0.;
-    mlr::open(log, "log.sgd");
+    rai::open(log, "log.sgd");
   }
   
   void OnlineRprop::step(){
@@ -943,12 +943,12 @@ void OnlineRprop::init(OptimizationProblem *_m, double initialRate, uint _N, con
       }
     }
     log <<t
-    <<" time= " <<mlr::timerRead()
+    <<" time= " <<rai::timerRead()
     <<" loss= " <<l/(t%BATCH+1)
     <<" err= "  <<e/(t%BATCH+1)
     <<endl;
     cout <<t
-         <<" time= " <<mlr::timerRead()
+         <<" time= " <<rai::timerRead()
          <<" loss= " <<l/(t%BATCH+1)
          <<" err= "  <<e/(t%BATCH+1)
          <<endl;

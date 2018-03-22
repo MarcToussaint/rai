@@ -20,7 +20,7 @@
 #include <Hardware/gamepad/gamepad.h>
 #include <Kin/frame.h>
 
-Teleop2Tasks::Teleop2Tasks(TaskControlMethods& _MP, const mlr::KinematicWorld& K):fmc(_MP){
+Teleop2Tasks::Teleop2Tasks(TaskControlMethods& _MP, const rai::KinematicWorld& K):fmc(_MP){
   effPosR = fmc.addPDTask("MoveEffTo_endeffR", .2, 1.8,new TM_Default(TMT_pos, K,"endeffR",NoVector,"base_footprint"));
   effPosR->PD().y_target = {0.8, -.5, 1.};
 
@@ -54,7 +54,7 @@ Teleop2Tasks::Teleop2Tasks(TaskControlMethods& _MP, const mlr::KinematicWorld& K
   base->active =false;
 }
 
-mlr::Array<CtrlTask*> Teleop2Tasks::getTasks(){
+rai::Array<CtrlTask*> Teleop2Tasks::getTasks(){
   return { effPosR, gripperR, effOrientationR, effPosL, gripperL, effOrientationL, base }; //, fc
 }
 
@@ -103,7 +103,7 @@ void Teleop2Tasks::updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effpo
 }
 
 
-void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float calibrated_gripper_lh, float calibrated_gripper_rh, arr drive, int button, const mlr::KinematicWorld& K){
+void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float calibrated_gripper_lh, float calibrated_gripper_rh, arr drive, int button, const rai::KinematicWorld& K){
 
   effPosR->active = true;
   effPosL->active = false;
@@ -149,10 +149,10 @@ void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float cal
     initialised = true;
   }
 
-  mlr::Quaternion orsquats = K.getFrameByName("endeffBase") -> X.rot;
-//  mlr::Joint *trans = K.getJointByName("worldTranslationRotation");
+  rai::Quaternion orsquats = K.getFrameByName("endeffBase") -> X.rot;
+//  rai::Joint *trans = K.getJointByName("worldTranslationRotation");
 //  orsquats.setRad( q(trans->qIndex+2),{0.,0.,1.} );
-  mlr::Quaternion orsquatsacc;
+  rai::Quaternion orsquatsacc;
 
   //update the movement of the right Hand
   updateMovement(cal_pose_rh, old_pos_rh, old_effpos_r, effPosR);
@@ -192,7 +192,7 @@ void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float cal
   //base movement
   arr drive_des;
   double y_c,x_c,phi_c;
-  mlr::Joint *trans = K.getFrameByName("worldTranslationRotation")->joint;
+  rai::Joint *trans = K.getFrameByName("worldTranslationRotation")->joint;
   x_c = base->PD().y_target(trans->qIndex+0);
   y_c = base->PD().y_target(trans->qIndex+1);
   phi_c = base->PD().y_target(trans->qIndex+2);

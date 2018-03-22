@@ -1,26 +1,19 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #include <Core/array.tpp>
 #include <Geo/geo.h>
-#ifdef MLR_GL
+#ifdef RAI_GL
 #  include <GL/glew.h>
 #endif
 #include "opengl.h"
 
-#ifdef MLR_PNG
+#ifdef RAI_PNG
 #  include <png.h>
 #endif
 
@@ -32,7 +25,7 @@ Singleton<SingleGLAccess> singleGLAccess;
 
 //===========================================================================
 
-#ifdef MLR_FREEGLUT
+#ifdef RAI_FREEGLUT
 
 #include <GL/freeglut.h>
 #include <GL/glx.h>
@@ -59,7 +52,7 @@ struct GLSpinner : Thread {
 class OpenGLProcess {
 private:
   uint numWins;
-  mlr::Array<OpenGL*> glwins;
+  rai::Array<OpenGL*> glwins;
   GLSpinner th;
 
 public:
@@ -73,7 +66,7 @@ public:
   ~OpenGLProcess(){
 //    uint i=0;  for(OpenGL* gl:glwins){ if(gl) delGL(i, gl); i++; }
 //    th.threadClose();
-    if(numWins) mlr::wait(.1);
+    if(numWins) rai::wait(.1);
     CHECK(!numWins, "there are still OpenGL windows open");
     glutExit(); //also glut as already shut down during deinit
   }
@@ -127,8 +120,8 @@ struct sOpenGL {
 
   //-- private OpenGL data
   OpenGL *gl;
-  mlr::Vector downVec,downPos,downFoc;
-  mlr::Quaternion downRot;
+  rai::Vector downVec,downPos,downFoc;
+  rai::Quaternion downRot;
 
   //-- engine specific data
   int windowID;                        ///< id of this window in the global glwins list
@@ -148,7 +141,7 @@ struct sOpenGL {
     glutSetWindow(windowID);
   }
   void deaccessWindow() {
-#ifndef MLR_MSVC
+#ifndef RAI_MSVC
     glXMakeCurrent(fgDisplay.Display, None, NULL);
 #endif
   }
@@ -229,8 +222,8 @@ struct sOpenGL{
 
   //-- private OpenGL data
   OpenGL *gl;
-  mlr::Vector downVec,downPos,downFoc;
-  mlr::Quaternion downRot;
+  rai::Vector downVec,downPos,downFoc;
+  rai::Quaternion downRot;
 
   //-- engine specific data
   int windowID;                        ///< id of this window in the global glwins list
@@ -257,8 +250,8 @@ struct sOpenGL{
 // force instantiations
 //
 
-template mlr::Array<glUI::Button>::Array();
-template mlr::Array<glUI::Button>::~Array();
+template rai::Array<glUI::Button>::Array();
+template rai::Array<glUI::Button>::~Array();
 
 
 
@@ -276,7 +269,7 @@ uint OpenGL::selectionBuffer[1000];
 // utility implementations
 //
 
-#ifdef MLR_GL
+#ifdef RAI_GL
 void glStandardLight(void*) {
   glEnable(GL_LIGHTING);
   static GLfloat ambient[]   = { .5, .5, .5, 1.0 };
@@ -389,13 +382,13 @@ void glShadowTransform()
 }
 */
 
-void glTransform(const mlr::Transformation& t){
+void glTransform(const rai::Transformation& t){
   double GLmatrix[16];
   t.getAffineMatrixGL(GLmatrix);
   glLoadMatrixd(GLmatrix);
 }
 
-void glRotate(const mlr::Quaternion& rot){
+void glRotate(const rai::Quaternion& rot){
   double GLmatrix[16];
   rot.getMatrixGL(GLmatrix);
   glMultMatrixd(GLmatrix);
@@ -663,12 +656,12 @@ void glDrawProxy(const arr& p1, const arr& p2, double diskSize, int colorCode, c
   glVertex3dv(p2.p);
   glEnd();
   glDisable(GL_CULL_FACE);
-  mlr::Transformation f;
+  rai::Transformation f;
   f.pos=p1;
   if(&norm){
-    f.rot.setDiff(mlr::Vector(0, 0, 1), mlr::Vector(norm));
+    f.rot.setDiff(rai::Vector(0, 0, 1), rai::Vector(norm));
   }else{
-    f.rot.setDiff(mlr::Vector(0, 0, 1), mlr::Vector(p1-p2));
+    f.rot.setDiff(rai::Vector(0, 0, 1), rai::Vector(p1-p2));
   }
   double GLmatrix[16];
   f.getAffineMatrixGL(GLmatrix);
@@ -847,11 +840,11 @@ void glMakeTorus(int num) {
   scalFac=1/(outerRadius*2);
 
   for(i=0; i<rings; i++) {
-    theta1 = (float)i * 2.0 * MLR_PI / rings;
-    theta2 = (float)(i + 1) * 2.0 * MLR_PI / rings;
+    theta1 = (float)i * 2.0 * RAI_PI / rings;
+    theta2 = (float)(i + 1) * 2.0 * RAI_PI / rings;
     for(j=0; j<sides; j++) {
-      phi1 = (float)j * 2.0 * MLR_PI / sides;
-      phi2 = (float)(j + 1) * 2.0 * MLR_PI / sides;
+      phi1 = (float)j * 2.0 * RAI_PI / sides;
+      phi2 = (float)(j + 1) * 2.0 * RAI_PI / sides;
 
       v0[0] = cos(theta1) * (outerRadius + innerRadius * cos(phi1));
       v0[1] =-sin(theta1) * (outerRadius + innerRadius * cos(phi1));
@@ -975,7 +968,7 @@ void glDrawTexQuad(const byteA& texImg,
 
 }
 
-#ifdef MLR_GLUT
+#ifdef RAI_GLUT
 /** @brief return the RGBA-image of scenery drawn just before; the image
   buffer has to have either 2 dimensions [width, height] for a
   gray-scale luminance image or 3 dimensions [width, height, 4] for an
@@ -1013,10 +1006,10 @@ void glGrabImage(byteA& image) {
       glReadPixels(0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, image.p);
     break;
     case 4:
-#if defined MLR_SunOS
+#if defined RAI_SunOS
       glReadPixels(0, 0, w, h, GL_ABGR_EXT, GL_UNSIGNED_BYTE, image.p);
 #else
-#if defined MLR_Cygwin
+#if defined RAI_Cygwin
       glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, image.p);
 #else
       //glReadPixels(0, 0, w, h, GL_BGRA_EXT, GL_UNSIGNED_BYTE, image.p);
@@ -1156,14 +1149,14 @@ bool glUI::clickCallback(OpenGL& gl) {
   return true;
 }
 
-#ifdef MLR_FREEGLUT
+#ifdef RAI_FREEGLUT
 void glSelectWin(uint win) {
   if(!staticgl[win]) staticgl[win]=new OpenGL;
   glutSetWindow(staticgl[win]->s->windowID);
 }
 #endif
 
-#else /// MLR_GL
+#else /// RAI_GL
 void glColor(int col) { NICO }
 void glColor(float, float, float, float) { NICO }
 void glDrawDiamond(float, float, float, float, float, float) { NICO }
@@ -1195,7 +1188,7 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 // standalone draw routines for large data structures
 //
 
-#ifdef MLR_GL
+#ifdef RAI_GL
 #endif
 
 //===========================================================================
@@ -1205,7 +1198,7 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 
 OpenGL::OpenGL(const char* _title, int w, int h, int posx, int posy)
   : s(NULL), title(_title), width(w), height(h), reportEvents(false), topSelection(NULL), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0){
-  //MLR_MSG("creating OpenGL=" <<this);
+  //RAI_MSG("creating OpenGL=" <<this);
   Reshape(w,h);
   s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
   init();
@@ -1346,8 +1339,8 @@ void OpenGL::clear() {
   text.clear();
 }
 
-void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
-#ifdef MLR_GL
+void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
+#ifdef RAI_GL
 
   if(!callerHasAlreadyLocked){
     singleGLAccess.mutex.lock();
@@ -1412,7 +1405,7 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
   //cout <<"OpenGL's P=" <<P <<endl;
 
   /*
-  double zn=camera.zNear, zf=camera.zFar, f=1./tan(MLR_PI/180.*camera.heightAngle/2.);
+  double zn=camera.zNear, zf=camera.zFar, f=1./tan(RAI_PI/180.*camera.heightAngle/2.);
   arr Frust(4, 4); Frust.setZero();
   Frust(0, 0) = Frust(1, 1) = f;
   Frust(2, 2) = (zf+zn)/(zn-zf);
@@ -1514,7 +1507,7 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
   //check matrix stack
   GLint s;
   glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &s);
-  if(s!=1) MLR_MSG("OpenGL name stack has not depth 1 (pushs>pops) in DRAW mode:" <<s);
+  if(s!=1) RAI_MSG("OpenGL name stack has not depth 1 (pushs>pops) in DRAW mode:" <<s);
   //CHECK(s<=1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
 
   if(!callerHasAlreadyLocked){
@@ -1525,14 +1518,14 @@ void OpenGL::Draw(int w, int h, mlr::Camera *cam, bool callerHasAlreadyLocked) {
 }
 
 void OpenGL::Select(bool callerHasAlreadyLocked) {
-  if(reportEvents){ LOG(0) <<MLR_HERE <<" Select entry"; }
+  if(reportEvents){ LOG(0) <<RAI_HERE <<" Select entry"; }
 
   if(!callerHasAlreadyLocked){
     singleGLAccess.mutex.lock();
     dataLock.readLock();
   }
 
-#ifdef MLR_GL
+#ifdef RAI_GL
   uint i, j, k;
 
   s->beginGlContext();
@@ -1567,7 +1560,7 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
       drawers(i)->glDraw(*this);
       GLint s;
       glGetIntegerv(GL_NAME_STACK_DEPTH, &s);
-      if(s!=0) MLR_MSG("OpenGL name stack has not depth 1 (pushs>pops) in SELECT mode:" <<s);
+      if(s!=0) RAI_MSG("OpenGL name stack has not depth 1 (pushs>pops) in SELECT mode:" <<s);
     }
   } else {
     GLView *vi=&views(mouseView);
@@ -1614,14 +1607,14 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
     dataLock.unlock();
     singleGLAccess.mutex.unlock();
   }
-  if(reportEvents){ LOG(0) <<MLR_HERE <<" Select done"; }
+  if(reportEvents){ LOG(0) <<RAI_HERE <<" Select done"; }
 }
 
 /** @brief watch in interactive mode and wait for an exiting event
   (key pressed or right mouse) */
 int OpenGL::watch(const char *txt) {
   update(STRING(txt<<" - press ENTER to continue"));
-  if(mlr::getInteractivity()){
+  if(rai::getInteractivity()){
     watching.setStatus(1);
     watching.waitForStatusEq(0);
 //    while(watching.getStatus()!=0){
@@ -1629,7 +1622,7 @@ int OpenGL::watch(const char *txt) {
 //      sleepForEvents();
 //    }
   }else{
-    mlr::wait(.1);
+    rai::wait(.1);
   }
   return pressedkey;
 }
@@ -1640,11 +1633,11 @@ int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool wai
   captureImg |= _captureImg;
   captureDep |= _captureDep;
   if(txt) text.clear() <<txt;
-#ifdef MLR_GL
+#ifdef RAI_GL
   isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
   postRedrawEvent(false);
-  if(captureImg || captureDep || waitForCompletedDraw){ isUpdating.waitForStatusEq(0); }//{ mlr::wait(.01); processEvents(); mlr::wait(.01); }
+  if(captureImg || captureDep || waitForCompletedDraw){ isUpdating.waitForStatusEq(0); }//{ rai::wait(.01); processEvents(); rai::wait(.01); }
 #endif
   return pressedkey;
 }
@@ -1653,11 +1646,11 @@ int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool wai
 int OpenGL::timedupdate(double sec) {
   static double lasttime=-1;
   double now;
-  now=mlr::realTime();
-  if(lasttime>0. && now-lasttime<sec) mlr::wait(lasttime+sec-now);
+  now=rai::realTime();
+  if(lasttime>0. && now-lasttime<sec) rai::wait(lasttime+sec-now);
   lasttime=now;
   return update();
-#if 0//def MLR_QTGL
+#if 0//def RAI_QTGL
   int i;
   quitLoopOnTimer=true;
   i=startTimer(msec);
@@ -1676,7 +1669,7 @@ void OpenGL::setClearColors(float r, float g, float b, float a) {
   camera view (e.g. as a result of selection) computes the world 3D
   coordinates */
 void OpenGL::unproject(double &x, double &y, double &z, bool resetCamera, int subView) {
-#ifdef MLR_GL
+#ifdef RAI_GL
   double _x, _y, _z;
   GLdouble modelMatrix[16], projMatrix[16];
   GLint viewPort[4];
@@ -1722,7 +1715,7 @@ void OpenGL::reportSelection() {
   }
 }
 
-#ifdef MLR_GL2PS
+#ifdef RAI_GL2PS
 /** @brief generates a ps from the current OpenGL display, using gl2ps */
 void OpenGL::saveEPS(const char *filename) {
   FILE *fp = fopen(filename, "wb");
@@ -1744,13 +1737,13 @@ void OpenGL::saveEPS(const char *filename) {
 }
 #else
 void OpenGL::saveEPS(const char*) {
-  MLR_MSG("WARNING: OpenGL::saveEPS was called without MLR_GL2PS configured!");
+  RAI_MSG("WARNING: OpenGL::saveEPS was called without RAI_GL2PS configured!");
 }
 #endif
 
-#ifndef MLR_QTGL
+#ifndef RAI_QTGL
 /** @brief report on the OpenGL capabilities (the QGLFormat) */
-void OpenGL::about(std::ostream& os) { MLR_MSG("NICO"); }
+void OpenGL::about(std::ostream& os) { RAI_MSG("NICO"); }
 #endif
 
 
@@ -1760,12 +1753,12 @@ void OpenGL::about(std::ostream& os) { MLR_MSG("NICO"); }
 //
 
 #if 1
-#  define CALLBACK_DEBUG(x) if(reportEvents) { cout <<MLR_HERE <<s <<':'; x; }
+#  define CALLBACK_DEBUG(x) if(reportEvents) { cout <<RAI_HERE <<s <<':'; x; }
 #else
 #  define CALLBACK_DEBUG(x)
 #endif
 
-void getSphereVector(mlr::Vector& vec, int _x, int _y, int le, int ri, int bo, int to) {
+void getSphereVector(rai::Vector& vec, int _x, int _y, int le, int ri, int bo, int to) {
   int w=ri-le, h=to-bo;
   int minwh = w<h?w:h;
   double x, y;
@@ -1799,7 +1792,7 @@ void OpenGL::Key(unsigned char key, int _x, int _y) {
   bool cont=true;
   for(uint i=0; i<keyCalls.N; i++) cont=cont && keyCalls(i)->keyCallback(*this);
 
-  if(key==13 || key==27 || key=='q' || mlr::contains(exitkeys, key)) watching.setStatus(0);
+  if(key==13 || key==27 || key=='q' || rai::contains(exitkeys, key)) watching.setStatus(0);
   dataLock.unlock();
 }
 
@@ -1814,8 +1807,8 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   lastEvent.set(mouse_button, -1, _x, _y, 0., 0.);
 
   GLView *v;
-  mlr::Camera *cam=&camera;
-  mlr::Vector vec;
+  rai::Camera *cam=&camera;
+  rai::Vector vec;
   for(mouseView=views.N; mouseView--;) {
     v=&views(mouseView);
     if(_x<v->ri*w && _x>v->le*w && _y<v->to*h && _y>v->bo*h) {
@@ -1858,7 +1851,7 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   if(mouse_button==5 && !downPressed) cam->X.pos -= s->downRot*Vector_z * (.1 * (s->downPos-s->downFoc).length());
 
   if(mouse_button==3) {  //selection
-#ifdef MLR_GL
+#ifdef RAI_GL
     captureDepth.resize(h, w);
     glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
     double d = captureDepth(mouseposy, mouseposx);
@@ -1902,14 +1895,14 @@ void OpenGL::MouseWheel(int wheel, int direction, int x, int y) {
 
 
 void OpenGL::Motion(int _x, int _y) {
-#ifdef MLR_GL
+#ifdef RAI_GL
   dataLock.writeLock();
   int w=width, h=height;
   _y = h-_y;
   CALLBACK_DEBUG(printf("Window %d Mouse Motion Callback:  %d %d\n", 0, _x, _y));
   mouseposx=_x; mouseposy=_y;
-  mlr::Camera *cam;
-  mlr::Vector vec;
+  rai::Camera *cam;
+  rai::Vector vec;
   if(mouseView==-1) {
     cam=&camera;
     getSphereVector(vec, _x, _y, 0, w, 0, h);
@@ -1928,7 +1921,7 @@ void OpenGL::Motion(int _x, int _y) {
     return;
   }
   if(mouse_button==1) {  //rotation // && !(modifiers&GLUT_ACTIVE_SHIFT) && !(modifiers&GLUT_ACTIVE_CTRL)){
-    mlr::Quaternion rot;
+    rai::Quaternion rot;
     if(s->downVec.z<.1) {
       rot.setDiff(vec, s->downVec);  //consider imagined sphere rotation of mouse-move
     } else {
@@ -1948,7 +1941,7 @@ void OpenGL::Motion(int _x, int _y) {
     if(immediateExitLoop) watching.setStatus(0);
   }
   if(mouse_button==3) {  //translation || (mouse_button==1 && (modifiers&GLUT_ACTIVE_SHIFT) && !(modifiers&GLUT_ACTIVE_CTRL))){
-    /*    mlr::Vector trans = s->downVec - vec;
+    /*    rai::Vector trans = s->downVec - vec;
         trans.z=0.;
         trans = s->downRot*trans;
         cam->X.pos = s->downPos + trans;
@@ -1973,7 +1966,7 @@ void OpenGL::Motion(int _x, int _y) {
 //
 
 struct XBackgroundContext{
-#ifdef MLR_GL
+#ifdef RAI_GL
   typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
   typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 
@@ -2048,7 +2041,7 @@ struct XBackgroundContext{
 Singleton<XBackgroundContext> xBackgroundContext;
 
 void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
-#ifdef MLR_GL
+#ifdef RAI_GL
   if(w<0) w=width;
   if(h<0) h=height;
 
@@ -2192,7 +2185,7 @@ void glUI::addButton(uint x, uint y, const char *name, const char *img1, const c
 }
 
 void glUI::glDraw() {
-#ifdef MLR_GL
+#ifdef RAI_GL
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
   GLint viewPort[4];
@@ -2239,20 +2232,20 @@ bool glUI::checkMouse(int _x, int _y) {
   return true;
 }
 
-#ifdef MLR_QTGL
-#if   defined MLR_MSVC
+#ifdef RAI_QTGL
+#if   defined RAI_MSVC
 #  include"opengl_MSVC.moccpp"
-#elif defined MLR_SunOS
+#elif defined RAI_SunOS
 #  include"opengl_SunOS.moccpp"
-#elif defined MLR_Linux
+#elif defined RAI_Linux
 #  include"opengl_qt_moc.cxx"
-#elif defined MLR_Cygwin
+#elif defined RAI_Cygwin
 #  include"opengl_Cygwin.moccpp"
 #endif
 #endif
 
 void read_png(byteA &img, const char *file_name, bool swap_rows) {
-#ifdef MLR_PNG
+#ifdef RAI_PNG
   FILE *fp = fopen(file_name, "rb");
 
   png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -2300,7 +2293,7 @@ void read_png(byteA &img, const char *file_name, bool swap_rows) {
   png_read_update_info(png, info);
 
   img.resize(height, png_get_rowbytes(png,info));
-  mlr::Array<byte*> cpointers = img.getCarray();
+  rai::Array<byte*> cpointers = img.getCarray();
   //    row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * height);
   //    for(int y = 0; y < height; y++) {
   //      row_pointers[y] = (png_byte*)malloc(png_get_rowbytes(png,info));

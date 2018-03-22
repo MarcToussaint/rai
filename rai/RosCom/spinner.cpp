@@ -1,11 +1,19 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "spinner.h"
 
-#ifdef MLR_ROS
+#ifdef RAI_ROS
 
 #include "roscom.h"
 
 RosCom_Spinner::RosCom_Spinner(const char* nodeName) : Thread("RosCom_Spinner", .001){
-  useRos = mlr::getParameter<bool>("useRos", true);
+  useRos = rai::getParameter<bool>("useRos", true);
   if(useRos) rosCheckInit(nodeName);
   threadLoop();
 }

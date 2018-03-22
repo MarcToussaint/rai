@@ -12,9 +12,9 @@
 struct LinTaskSpaceAccLaw {
   TaskMap* map;
 
-  mlr::KinematicWorld* world;
+  rai::KinematicWorld* world;
 
-  mlr::String name;
+  rai::String name;
 
 
   arr yRef;
@@ -29,15 +29,15 @@ struct LinTaskSpaceAccLaw {
   arr trajectoryDot;
   arr trajectoryDDot;
 
-  mlr::Spline* trajectorySpline;
-  mlr::Spline* trajectoryDotSpline;
-  mlr::Spline* trajectoryDDotSpline;
+  rai::Spline* trajectorySpline;
+  rai::Spline* trajectoryDotSpline;
+  rai::Spline* trajectoryDDotSpline;
 
   bool trajectoryActive = false;
   bool trajectoryDotActive = false;
   bool trajectoryDDotActive = false;
 
-  LinTaskSpaceAccLaw(TaskMap* map, mlr::KinematicWorld* world, mlr::String name = "nonameLaw");
+  LinTaskSpaceAccLaw(TaskMap* map, rai::KinematicWorld* world, rai::String name = "nonameLaw");
 
   void setRef(const arr& yRef = NoArr, const arr& yDotRef = NoArr, const arr& yDDotRef = NoArr);
 
@@ -46,7 +46,7 @@ struct LinTaskSpaceAccLaw {
   void setC(arr C);
 
   void setTrajectory(uint trajLength, const arr& traj = NoArr, const arr& trajDot = NoArr, const arr& trajDDot = NoArr);
-  void setSpline(mlr::Spline* yS = NULL, mlr::Spline* yDotS = NULL, mlr::Spline* yDDotS = NULL);
+  void setSpline(rai::Spline* yS = NULL, rai::Spline* yDotS = NULL, rai::Spline* yDDotS = NULL);
 
   void setTargetEvalSpline(double s);
 
@@ -79,7 +79,7 @@ struct ConstrainedTaskLaw : LinTaskSpaceAccLaw {
   arr force;
   arr alpha;
   double gamma = 0.0;
-  ConstrainedTaskLaw(TaskMap* map, mlr::KinematicWorld* world, mlr::String name = "") : LinTaskSpaceAccLaw(map, world, name) {}
+  ConstrainedTaskLaw(TaskMap* map, rai::KinematicWorld* world, rai::String name = "") : LinTaskSpaceAccLaw(map, world, name) {}
   void setForce(arr force);
   arr getForce();
   void setAlpha(arr alpha);
@@ -90,14 +90,14 @@ struct ConstrainedTaskLaw : LinTaskSpaceAccLaw {
 };
 
 struct TaskSpaceController {
-  mlr::Array<LinTaskSpaceAccLaw*> taskSpaceAccLaws;
-  mlr::KinematicWorld* world;
+  rai::Array<LinTaskSpaceAccLaw*> taskSpaceAccLaws;
+  rai::KinematicWorld* world;
 
   bool gravity = false;
 
-  mlr::Array<ConstrainedTaskLaw*> constrainedTaskLaws;
+  rai::Array<ConstrainedTaskLaw*> constrainedTaskLaws;
 
-  TaskSpaceController(mlr::KinematicWorld* world) : world(world) {}
+  TaskSpaceController(rai::KinematicWorld* world) : world(world) {}
   ~TaskSpaceController() {}
 
   void addLinTaskSpaceAccLaw(LinTaskSpaceAccLaw* law);

@@ -1,17 +1,10 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #include "optimization.h"
 
@@ -19,7 +12,7 @@ uint eval_cost=0;
 Singleton<OptOptions> globalOptOptions;
 ObjectiveTypeA& NoTermTypeA = *((ObjectiveTypeA*)NULL);
 
-template<> const char* mlr::Enum<ObjectiveType>::names []={
+template<> const char* rai::Enum<ObjectiveType>::names []={
   "OT_none", "OT_f", "OT_sumOfSqr", "OT_ineq", "OT_eq", NULL
 };
 
@@ -43,7 +36,7 @@ bool checkHessianCP(ConstrainedProblem &P, const arr& x, double tolerance){
   P.phi(phi, NoArr, NoArr, tt, x, NoArr); //TODO: only call getStructure
   for(i=0;i<tt.N;i++) if(tt(i)==OT_f) break;
   if(i==tt.N){
-    MLR_MSG("no f-term in this KOM problem");
+    RAI_MSG("no f-term in this KOM problem");
     return true;
   }
   ScalarFunction F = [&P,&phi,&J,i](arr& g, arr& H, const arr& x) -> double{
@@ -60,31 +53,31 @@ bool checkHessianCP(ConstrainedProblem &P, const arr& x, double tolerance){
 //
 
 OptOptions::OptOptions() {
-  verbose    = mlr::getParameter<uint>  ("opt/verbose", 1);
+  verbose    = rai::getParameter<uint>  ("opt/verbose", 1);
   fmin_return=NULL;
-  stopTolerance= mlr::getParameter<double>("opt/stopTolerance", 1e-2);
-  stopFTolerance= mlr::getParameter<double>("opt/stopFTolerance", 1e-1);
-  stopGTolerance= mlr::getParameter<double>("opt/stopGTolerance", -1.);
-  stopEvals = mlr::getParameter<uint>  ("opt/stopEvals", 1000);
-  stopIters = mlr::getParameter<uint>  ("opt/stopIters", 1000);
-  stopOuters = mlr::getParameter<uint>  ("opt/stopOuters", 1000);
-  stopLineSteps = mlr::getParameter<uint>  ("opt/stopLineSteps", 10);
-  stopTinySteps = mlr::getParameter<uint>  ("opt/stopTinySteps", 10);
-  initStep  = mlr::getParameter<double>("opt/initStep", 1.);
-  minStep   = mlr::getParameter<double>("opt/minStep", -1.);
-  maxStep   = mlr::getParameter<double>("opt/maxStep", .2);
-  damping   = mlr::getParameter<double>("opt/damping", .1);
-  stepInc   = mlr::getParameter<double>("opt/stepInc", 2.);
-  stepDec   = mlr::getParameter<double>("opt/stepDec", .1);
-  dampingInc= mlr::getParameter<double>("opt/dampingInc", 2.);
-  dampingDec= mlr::getParameter<double>("opt/dampingDec", .5);
-  wolfe     = mlr::getParameter<double>("opt/wolfe", .01);
-  nonStrictSteps= mlr::getParameter<uint>  ("opt/nonStrictSteps", 0);
-  allowOverstep= mlr::getParameter<bool>  ("opt/allowOverstep", false);
-  constrainedMethod = (ConstrainedMethodType)mlr::getParameter<int>("opt/constrainedMethod", augmentedLag);
-  muInit = mlr::getParameter<double>("opt/muInit", 1.);
-  muLBInit = mlr::getParameter<double>("opt/muLBInit", 1.);
-  aulaMuInc = mlr::getParameter<double>("opt/aulaMuInc", 2.);
+  stopTolerance= rai::getParameter<double>("opt/stopTolerance", 1e-2);
+  stopFTolerance= rai::getParameter<double>("opt/stopFTolerance", 1e-1);
+  stopGTolerance= rai::getParameter<double>("opt/stopGTolerance", -1.);
+  stopEvals = rai::getParameter<uint>  ("opt/stopEvals", 1000);
+  stopIters = rai::getParameter<uint>  ("opt/stopIters", 1000);
+  stopOuters = rai::getParameter<uint>  ("opt/stopOuters", 1000);
+  stopLineSteps = rai::getParameter<uint>  ("opt/stopLineSteps", 10);
+  stopTinySteps = rai::getParameter<uint>  ("opt/stopTinySteps", 10);
+  initStep  = rai::getParameter<double>("opt/initStep", 1.);
+  minStep   = rai::getParameter<double>("opt/minStep", -1.);
+  maxStep   = rai::getParameter<double>("opt/maxStep", .2);
+  damping   = rai::getParameter<double>("opt/damping", .1);
+  stepInc   = rai::getParameter<double>("opt/stepInc", 2.);
+  stepDec   = rai::getParameter<double>("opt/stepDec", .1);
+  dampingInc= rai::getParameter<double>("opt/dampingInc", 2.);
+  dampingDec= rai::getParameter<double>("opt/dampingDec", .5);
+  wolfe     = rai::getParameter<double>("opt/wolfe", .01);
+  nonStrictSteps= rai::getParameter<uint>  ("opt/nonStrictSteps", 0);
+  allowOverstep= rai::getParameter<bool>  ("opt/allowOverstep", false);
+  constrainedMethod = (ConstrainedMethodType)rai::getParameter<int>("opt/constrainedMethod", augmentedLag);
+  muInit = rai::getParameter<double>("opt/muInit", 1.);
+  muLBInit = rai::getParameter<double>("opt/muLBInit", 1.);
+  aulaMuInc = rai::getParameter<double>("opt/aulaMuInc", 2.);
 }
 
 void OptOptions::write(std::ostream& os) const{

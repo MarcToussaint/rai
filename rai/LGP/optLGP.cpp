@@ -1,9 +1,17 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "optLGP.h"
 
 #include <Kin/kinViewer.h>
 #include <KOMO/komo.h>
 #include <Gui/opengl.h>
-#ifdef MLR_GL
+#ifdef RAI_GL
 #  include <GL/gl.h>
 #  include <GL/glu.h>
 #endif
@@ -14,7 +22,7 @@ uint displaySize=350;
 void _system(const char* cmd){
   cout <<"SYSTEM CMD: " <<cmd <<endl;
   int r = system(cmd);
-  mlr::wait(.1);
+  rai::wait(.1);
   if(r) HALT("system return error " <<r);
 }
 
@@ -49,7 +57,7 @@ struct DisplayThread : MiniThread{
     for(;;){
       if(getStatus()<0) break;
 //      tic.waitForTic();
-      mlr::wait(.1);
+      rai::wait(.1);
       lgp->solutions.writeAccess();
       for(uint i=0;i<lgp->solutions().N;i++){
         lgp->solutions()(i)->displayStep++;
@@ -66,22 +74,22 @@ struct DisplayThread : MiniThread{
   }
 };
 
-void initFolStateFromKin(FOL_World& L, const mlr::KinematicWorld& K){
-  for(mlr::Frame *a:K.frames) if(a->ats["logical"]){
+void initFolStateFromKin(FOL_World& L, const rai::KinematicWorld& K){
+  for(rai::Frame *a:K.frames) if(a->ats["logical"]){
     const Graph& G = a->ats["logical"]->graph();
     for(Node *n:G) L.addFact({n->keys.last(), a->name});
   }
-  for(mlr::Frame *a:K.frames) if(a->shape && a->ats["logical"]){
-    mlr::Frame *p = a->getUpwardLink();
+  for(rai::Frame *a:K.frames) if(a->shape && a->ats["logical"]){
+    rai::Frame *p = a->getUpwardLink();
     if(!p) continue;
     FrameL F;
     p->getRigidSubFrames(F);
-    for(mlr::Frame *b:F) if(b!=a && b->shape && b->ats["logical"]){
+    for(rai::Frame *b:F) if(b!=a && b->shape && b->ats["logical"]){
       L.addFact({"partOf", a->name, b->name});
     }
   }
-  for(mlr::Frame *a:K.frames) if(a->shape && a->ats["logical"]){
-    mlr::Frame *p = a;
+  for(rai::Frame *a:K.frames) if(a->shape && a->ats["logical"]){
+    rai::Frame *p = a;
     while(p && !p->joint) p=p->parent;
     if(!p) continue;
     p = p->parent;
@@ -91,24 +99,24 @@ void initFolStateFromKin(FOL_World& L, const mlr::KinematicWorld& K){
       if(p->joint) break;
       p=p->parent;
     }
-    for(mlr::Frame *b:F) if(b!=a && b->shape && b->ats["logical"]){
+    for(rai::Frame *b:F) if(b!=a && b->shape && b->ats["logical"]){
       L.addFact({"on", a->name, b->name});
     }
   }
 }
 
-OptLGP::OptLGP(mlr::KinematicWorld &kin, FOL_World &fol)
+OptLGP::OptLGP(rai::KinematicWorld &kin, FOL_World &fol)
   : verbose(3), numSteps(0){
-  dataPath <<"z." <<mlr::date2() <<"/";
-  dataPath = mlr::getParameter<mlr::String>("LGP_dataPath", dataPath);
+  dataPath <<"z." <<rai::date2() <<"/";
+  dataPath = rai::getParameter<rai::String>("LGP_dataPath", dataPath);
   _system(STRING("mkdir -p " <<dataPath));
   _system(STRING("rm -Rf " <<dataPath <<"vid  &&  rm -f " <<dataPath <<"*"));
 
   OptLGPDataPath = dataPath;
   if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
 
-  verbose = mlr::getParameter<int>("LGP/vebose", 3);
-  if(verbose>0) fil.open(dataPath + "optLGP.dat"); //STRING("z.optLGP." <<mlr::date() <<".dat"));
+  verbose = rai::getParameter<int>("LGP/vebose", 3);
+  if(verbose>0) fil.open(dataPath + "optLGP.dat"); //STRING("z.optLGP." <<rai::date() <<".dat"));
   root = new MNode(kin, fol, 4);
   displayFocus = root;
   //  threadOpenModules(true);
@@ -128,7 +136,7 @@ void OptLGP::initDisplay(){
     views(1) = make_shared<OrsPathViewer>("pose", .2, -1);
     views(2) = make_shared<OrsPathViewer>("sequence", .2, -1);
     views(3) = make_shared<OrsPathViewer>("path", .05, -2);
-    if(mlr::getParameter<bool>("LGP/displayTree", 1)){
+    if(rai::getParameter<bool>("LGP/displayTree", 1)){
       _system("evince z.pdf &");
       displayTree = true;
     }else{
@@ -147,7 +155,7 @@ void OptLGP::renderToVideo(uint level, const char* filePrefix){
 void OptLGP::updateDisplay(){
   if(fringe_solved.N) displayFocus = fringe_solved.last();
 
-  mlr::String decisions = displayFocus->getTreePathString('\n');
+  rai::String decisions = displayFocus->getTreePathString('\n');
   for(uint i=1;i<views.N;i++){
     if(displayFocus->komoProblem(i) && displayFocus->komoProblem(i)->configurations.N){
       views(i)->setConfigurations(displayFocus->komoProblem(i)->configurations);
@@ -227,8 +235,8 @@ void OptLGP::printChoices(){
   }
 }
 
-mlr::String OptLGP::queryForChoice(){
-  mlr::String cmd;
+rai::String OptLGP::queryForChoice(){
+  rai::String cmd;
   std::string tmp;
   getline(std::cin, tmp);
   cmd=tmp.c_str();
@@ -236,7 +244,7 @@ mlr::String OptLGP::queryForChoice(){
 }
 
 bool OptLGP::execRandomChoice(){
-  mlr::String cmd;
+  rai::String cmd;
   if(rnd.uni()<.5){
     switch(rnd.num(5)){
     case 0: cmd="u"; break;
@@ -252,8 +260,8 @@ bool OptLGP::execRandomChoice(){
 }
 
 void OptLGP::player(StringA cmds){
-  bool interactive = mlr::getParameter<bool>("interact", false);
-  bool random = mlr::getParameter<bool>("random", false);
+  bool interactive = rai::getParameter<bool>("interact", false);
+  bool random = rai::getParameter<bool>("random", false);
 
   root->expand(5);
 
@@ -270,16 +278,16 @@ void OptLGP::player(StringA cmds){
         if(s>=cmds.N) break;
         if(!execChoice(cmds(s))) break;
       }else{
-        mlr::String cmd = queryForChoice();
+        rai::String cmd = queryForChoice();
         if(!execChoice(cmd)) break;
       }
     }
   }
 }
 
-void OptLGP::optFixedSequence(const mlr::String& seq, int specificLevel, bool collisions){
+void OptLGP::optFixedSequence(const rai::String& seq, int specificLevel, bool collisions){
   Graph& tmp = root->fol.KB.newSubgraph({"TMP"},{})->value;
-  mlr::String tmpseq(seq);
+  rai::String tmpseq(seq);
   tmp.read(tmpseq);
 
   cout <<"TMP:" <<*tmp.isNodeOfGraph <<endl;
@@ -311,13 +319,13 @@ void OptLGP::optFixedSequence(const mlr::String& seq, int specificLevel, bool co
 }
 
 void OptLGP::optMultiple(const StringA& seqs){
-  for(const mlr::String& seq:seqs) optFixedSequence(seq);
+  for(const rai::String& seq:seqs) optFixedSequence(seq);
 
   _system(STRING("mkdir -p " <<OptLGPDataPath <<"vid"));
   _system(STRING("rm -f " <<OptLGPDataPath <<"vid/*.ppm"));
   dth->resetSteppings();
   dth->saveVideo = true;
-  mlr::wait(20.);
+  rai::wait(20.);
 }
 
 void OptLGP::writeNodeList(std::ostream &os){
@@ -334,7 +342,7 @@ void OptLGP::writeNodeList(std::ostream &os){
 void OptLGP::glDraw(OpenGL &gl){
 }
 
-bool OptLGP::execChoice(mlr::String cmd){
+bool OptLGP::execChoice(rai::String cmd){
   cout <<"COMMAND: '" <<cmd <<"'" <<endl;
 
   if(cmd=="q") return false;
@@ -445,13 +453,13 @@ uint OptLGP::numFoundSolutions(){
   return fringe_solved.N;
 }
 
-mlr::String OptLGP::report(bool detailed){
+rai::String OptLGP::report(bool detailed){
   MNode *bpose = getBest(terminals, 1);
   MNode *bseq  = getBest(terminals, 2);
   MNode *bpath = getBest(fringe_solved, 3);
 
-  mlr::String out;
-  out <<"TIME= " <<mlr::cpuTime() <<" TIME= " <<COUNT_time <<" KIN= " <<COUNT_kin <<" EVALS= " <<COUNT_evals
+  rai::String out;
+  out <<"TIME= " <<rai::cpuTime() <<" TIME= " <<COUNT_time <<" KIN= " <<COUNT_kin <<" EVALS= " <<COUNT_evals
      <<" POSE= " <<COUNT_opt(1) <<" SEQ= " <<COUNT_opt(2) <<" PATH= " <<COUNT_opt(3)
     <<" bestPose= " <<(bpose?bpose->cost(1):100.)
    <<" bestSeq= " <<(bseq ?bseq ->cost(2):100.)
@@ -495,7 +503,7 @@ void OptLGP::step(){
   clearFromInfeasibles(terminals);
 
   if(verbose>0){
-    mlr::String out=report();
+    rai::String out=report();
     fil <<out <<endl;
     if(verbose>1) cout <<out <<endl;
     if(verbose>2 && !(numSteps%1)) updateDisplay();
@@ -510,14 +518,14 @@ void OptLGP::buildTree(uint depth){
     cout <<"BULDING TREE to depth " <<depth <<endl;
   }
 
-  mlr::timerRead(true);
+  rai::timerRead(true);
   for(uint k=0;;k++){
     MNode *b = expandBest(depth);
     if(!b) break;
   }
 
   if(verbose>0){
-    mlr::String out=report();
+    rai::String out=report();
     fil <<out <<endl;
     if(verbose>1) cout <<out <<endl;
     if(verbose>2) updateDisplay();
@@ -545,8 +553,8 @@ void OptLGP::init(){
 void OptLGP::run(uint steps){
   init();
 
-  uint stopSol = mlr::getParameter<uint>("stopSol", 12);
-  double stopTime = mlr::getParameter<double>("stopTime", 400.);
+  uint stopSol = rai::getParameter<uint>("stopSol", 12);
+  double stopTime = rai::getParameter<double>("stopTime", 400.);
 
   for(uint k=0;k<steps;k++){
     step();
@@ -569,7 +577,7 @@ void OptLGP::run(uint steps){
     _system(STRING("rm -f " <<OptLGPDataPath <<"vid/*.ppm"));
     dth->resetSteppings();
     dth->saveVideo = true;
-    mlr::wait(20.);
+    rai::wait(20.);
   }
 
   if(verbose>2) views.clear();
@@ -579,11 +587,11 @@ OptLGP_SolutionData::OptLGP_SolutionData(MNode *n) : node(n){
   decisions = n->getTreePathString('\n');
 
   //--init geoms
-  const mlr::KinematicWorld& K = node->startKinematics;
+  const rai::KinematicWorld& K = node->startKinematics;
   uintA frameIDs;
   for(uint f=0;f<K.frames.N;f++){
-    const mlr::Frame *a = K.frames(f);
-    if(a->shape && a->shape->geom && a->shape->type()!=mlr::ST_marker){
+    const rai::Frame *a = K.frames(f);
+    if(a->shape && a->shape->geom && a->shape->type()!=rai::ST_marker){
       frameIDs.append(a->ID);
     }
   }
@@ -611,13 +619,13 @@ void OptLGP_SolutionData::write(std::ostream &os) const{
 }
 
 void OptLGP_SolutionData::glDraw(OpenGL &gl){
-#ifdef MLR_GL
+#ifdef RAI_GL
   uint l=3;
-  mlr::Array<mlr::Geom*>& geoms = _GeomStore()->geoms;
+  rai::Array<rai::Geom*>& geoms = _GeomStore()->geoms;
 
   for(uint i=0; i<geomIDs.N; i++){
     if(displayStep >= paths(l).d0) displayStep = 0;
-    mlr::Transformation &X = paths(l)(displayStep, i);
+    rai::Transformation &X = paths(l)(displayStep, i);
     double GLmatrix[16];
     X.getAffineMatrixGL(GLmatrix);
     glLoadMatrixd(GLmatrix);

@@ -1,19 +1,13 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef MLR_util_t_cpp
-#define MLR_util_t_cpp
+#ifndef RAI_util_t_cpp
+#define RAI_util_t_cpp
 
 #include "util.h"
 #include <map>
@@ -21,7 +15,7 @@
 #include <sstream>
 #include <string.h>
 #include <iomanip>
-#ifndef MLR_MSVC
+#ifndef RAI_MSVC
 #  include <unistd.h>
 #endif
 
@@ -29,7 +23,7 @@
 bool getParameterFromGraph(const std::type_info& type, void* data, const char* key);
 
 
-namespace mlr {
+namespace rai {
 /** @brief Search for a command line option \c -tag and, if found, pipe the
  next command line option into \c value by the
  \c operator>>(istream&, type&). Returns false on failure. */

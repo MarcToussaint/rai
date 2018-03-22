@@ -98,7 +98,7 @@ main(int argc, char **argv)
 #endif
   for(uint i=0;i<100;i++){
     glutMainLoopEvent();
-    mlr::wait(.01);
+    rai::wait(.01);
   }
 //  glutDestroyWindow(1);
 //  glXMakeCurrent(fgDisplay.Display, None, NULL);

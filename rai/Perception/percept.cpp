@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "percept.h"
 #include <Gui/opengl.h>
 #include <Kin/frame.h>
@@ -5,7 +13,7 @@
 double alpha = .2;
 
 
-template<> const char* mlr::Enum<Percept::Type>::names []=
+template<> const char* rai::Enum<Percept::Type>::names []=
   { "PT_cluster", "PT_plane", "PT_box", "PT_mesh", "PT_alvar", "PT_optitrackmarker", "PT_optitrackbody", NULL };
 
 
@@ -13,12 +21,12 @@ Percept::Percept(Type type)
   : type(type), transform(0), frame(0){
 }
 
-Percept::Percept(Type type, const mlr::Transformation& t)
+Percept::Percept(Type type, const rai::Transformation& t)
   : type(type), transform(t), frame(0){
 }
 
 double Percept::idMatchingCost(const Percept& other){
-  mlr::Vector diff = (this->transform.pos - other.transform.pos);
+  rai::Vector diff = (this->transform.pos - other.transform.pos);
   return diff.length();
 }
 
@@ -58,8 +66,8 @@ PercCluster::PercCluster(arr mean, arr points, std::string _frame_id)
 
 double PercCluster::idMatchingCost(const Percept& other){
   if(other.type!=PT_cluster) return -1.;
-  mlr::Vector diff = (this->frame * mlr::Vector(this->mean)) -
-                     (dynamic_cast<const PercCluster*>(&other)->frame * mlr::Vector(dynamic_cast<const PercCluster*>(&other)->mean));
+  rai::Vector diff = (this->frame * rai::Vector(this->mean)) -
+                     (dynamic_cast<const PercCluster*>(&other)->frame * rai::Vector(dynamic_cast<const PercCluster*>(&other)->mean));
   return diff.length();
 }
 
@@ -80,15 +88,15 @@ double PercMesh::fuse(Percept* other){
 
 //============================================================================
 
-PercPlane::PercPlane(const mlr::Transformation& t, const mlr::Mesh& hull)
+PercPlane::PercPlane(const rai::Transformation& t, const rai::Mesh& hull)
   : Percept(Type::PT_plane, t), hull(hull) {}
 
 double PercPlane::idMatchingCost(const Percept& other){
   if(other.type!=PT_plane) return -1.;
   const PercPlane* otherPlane = dynamic_cast<const PercPlane*>(&other);
-  if(!otherPlane){ MLR_MSG("WHY?????"); return -1.; }
+  if(!otherPlane){ RAI_MSG("WHY?????"); return -1.; }
   CHECK(otherPlane,"");
-  mlr::Vector diff = (this->transform.pos - otherPlane->transform.pos);
+  rai::Vector diff = (this->transform.pos - otherPlane->transform.pos);
   return diff.length();
 }
 
@@ -105,19 +113,19 @@ void PercPlane::write(ostream& os) const{
 //  os <<"plane_" <<id <<":"; // center=" <<center <<" normal=" <<normal;
 }
 
-void PercPlane::syncWith(mlr::KinematicWorld &K){
-  mlr::String plane_name = STRING("perc_" << id);
+void PercPlane::syncWith(rai::KinematicWorld &K){
+  rai::String plane_name = STRING("perc_" << id);
 
-  mlr::Frame *body = K.getFrameByName(plane_name, false);
+  rai::Frame *body = K.getFrameByName(plane_name, false);
   if (not body) {
     //cout << plane_name << " does not exist yet; adding it..." << endl;
-    body = new mlr::Frame(K);
+    body = new rai::Frame(K);
     body->name = plane_name;
-    mlr::Shape *shape = new mlr::Shape(*body);
-    shape->type() = mlr::ST_pointCloud;
-//    shape = new mlr::Shape(K, *body);
+    rai::Shape *shape = new rai::Shape(*body);
+    shape->type() = rai::ST_pointCloud;
+//    shape = new rai::Shape(K, *body);
 //    shape->name = plane_name;
-//    shape->type = mlr::ST_marker;
+//    shape->type = rai::ST_marker;
 //    shape->size(0) = shape->size(1) = shape->size(2) = shape->size(3) = .2;
 //    stored_planes.append(id);
   }
@@ -133,7 +141,7 @@ void PercPlane::glDraw(OpenGL& gl){
 //    glColor(hull.C(0), hull.C(1), hull.C(2), 1.f);
 //  }
 
-//  mlr::Transformation t;
+//  rai::Transformation t;
 //  t.pos.set(center);
 //  t.rot.setDiff(Vector_x, normal);
 //  glPushMatrix();
@@ -151,26 +159,26 @@ void PercPlane::glDraw(OpenGL& gl){
 //PercBox::PercBox(const PercBox& box)
 //  : Percept(box), size(box.size) {}
 
-PercBox::PercBox(const mlr::Transformation& t, const arr& size, const arr& color)
+PercBox::PercBox(const rai::Transformation& t, const arr& size, const arr& color)
   : Percept(Type::PT_box, t), size(size), color(color){
 }
 
 double PercBox::fuse(Percept* other){
   //check flip by 180
-  mlr::Quaternion qdiff;
+  rai::Quaternion qdiff;
   qdiff = (-transform.rot) * other->transform.rot;
   double score_0 = qdiff.sqrDiffZero();
-  qdiff.addZ(+MLR_PI);  double score_1 = qdiff.sqrDiffZero(); //flip by 180
-  if(score_1<score_0) other->transform.rot.addZ(-MLR_PI);
+  qdiff.addZ(+RAI_PI);  double score_1 = qdiff.sqrDiffZero(); //flip by 180
+  if(score_1<score_0) other->transform.rot.addZ(-RAI_PI);
 
   if(size(0)>.8*size(1) && size(0)<1.2*size(1)){ //almost quadratic shape -> check flip by 90
     qdiff = (-transform.rot) * other->transform.rot;
     double score_0 = qdiff.sqrDiffZero();
-    qdiff.addZ(-0.5*MLR_PI);  double score_1 = qdiff.sqrDiffZero();
-    qdiff.addZ(    +MLR_PI);  double score_2 = qdiff.sqrDiffZero();
+    qdiff.addZ(-0.5*RAI_PI);  double score_1 = qdiff.sqrDiffZero();
+    qdiff.addZ(    +RAI_PI);  double score_2 = qdiff.sqrDiffZero();
     ////  LOG(0) <<"base=" <<transform.rot <<" in=" <<other->transform.rot;
-    if(score_1<score_0 && score_1<score_2) other->transform.rot.addZ(-0.5*MLR_PI);
-    if(score_2<score_0 && score_2<score_1) other->transform.rot.addZ(+0.5*MLR_PI);
+    if(score_1<score_0 && score_1<score_2) other->transform.rot.addZ(-0.5*RAI_PI);
+    if(score_2<score_0 && score_2<score_1) other->transform.rot.addZ(+0.5*RAI_PI);
   }
 
   Percept::fuse(other);
@@ -183,16 +191,16 @@ double PercBox::fuse(Percept* other){
   return 0.;
 }
 
-void PercBox::syncWith(mlr::KinematicWorld &K){
-  mlr::String box_name = STRING("perc_" << id);
+void PercBox::syncWith(rai::KinematicWorld &K){
+  rai::String box_name = STRING("perc_" << id);
 
-  mlr::Frame *body = K.getFrameByName(box_name, false);
+  rai::Frame *body = K.getFrameByName(box_name, false);
   if (not body) {
     //cout << plane_name << " does not exist yet; adding it..." << endl;
-    body = new mlr::Frame(K);
+    body = new rai::Frame(K);
     body->name = box_name;
-    mlr::Shape *shape = new mlr::Shape(*body);
-    shape->type() = mlr::ST_box;
+    rai::Shape *shape = new rai::Shape(*body);
+    shape->type() = rai::ST_box;
   }
   body->X = transform;
   body->shape->size() = size;
@@ -225,7 +233,7 @@ PercAlvar::PercAlvar(uint alvarId, std::string _frame_id)
 
 double PercAlvar::idMatchingCost(const Percept& other){
   if(other.type!=PT_alvar) return -1.;
-  mlr::Vector dist = (this->frame * this->transform.pos) - (dynamic_cast<const PercAlvar*>(&other)->frame * dynamic_cast<const PercAlvar*>(&other)->transform.pos);
+  rai::Vector dist = (this->frame * this->transform.pos) - (dynamic_cast<const PercAlvar*>(&other)->frame * dynamic_cast<const PercAlvar*>(&other)->transform.pos);
   return dist.length();
 }
 
@@ -236,18 +244,18 @@ void PercAlvar::write(ostream& os) const{
 
 //============================================================================
 
-void PercCluster::syncWith(mlr::KinematicWorld& K){
-  mlr::String cluster_name = STRING("perc_" << id);
+void PercCluster::syncWith(rai::KinematicWorld& K){
+  rai::String cluster_name = STRING("perc_" << id);
 
-  mlr::Frame *body = K.getFrameByName(cluster_name, false);
+  rai::Frame *body = K.getFrameByName(cluster_name, false);
   if (not body) {
     //cout << cluster_name << " does not exist yet; adding it..." << endl;
-    body = new mlr::Frame(K);
+    body = new rai::Frame(K);
     body->name = cluster_name;
-    mlr::Shape *shape = new mlr::Shape(*body);
-    shape->type() = mlr::ST_pointCloud;
-    shape = new mlr::Shape(*body);
-    shape->type() = mlr::ST_marker;
+    rai::Shape *shape = new rai::Shape(*body);
+    shape->type() = rai::ST_pointCloud;
+    shape = new rai::Shape(*body);
+    shape->type() = rai::ST_marker;
     shape->size() = consts<double>(.2,3);
 //    stored_clusters.append(id);
   }
@@ -260,16 +268,16 @@ void PercCluster::syncWith(mlr::KinematicWorld& K){
 
 //============================================================================
 
-void PercAlvar::syncWith(mlr::KinematicWorld& K){
-  mlr::String alvar_name = STRING("perc_" << id);
+void PercAlvar::syncWith(rai::KinematicWorld& K){
+  rai::String alvar_name = STRING("perc_" << id);
 
-  mlr::Frame *body = K.getFrameByName(alvar_name, false);
+  rai::Frame *body = K.getFrameByName(alvar_name, false);
   if (not body) {
 //    cout << alvar_name << " does not exist yet; adding it..." << endl;
-    body = new mlr::Frame(K);
+    body = new rai::Frame(K);
     body->name = alvar_name;
-    mlr::Shape *shape = new mlr::Shape(*body);
-    shape->type() = mlr::ST_marker;
+    rai::Shape *shape = new rai::Shape(*body);
+    shape->type() = rai::ST_marker;
     shape->size() = consts<double>(.2,3);
 //    stored_alvars.append(id);
   }
@@ -277,16 +285,16 @@ void PercAlvar::syncWith(mlr::KinematicWorld& K){
   body->X = frame * transform;
 }
 
-void OptitrackBody::syncWith(mlr::KinematicWorld &K){
-  mlr::String optitrackbody_name = STRING("perc_" << id);
+void OptitrackBody::syncWith(rai::KinematicWorld &K){
+  rai::String optitrackbody_name = STRING("perc_" << id);
 
-  mlr::Frame *body = K.getFrameByName(optitrackbody_name, false);
+  rai::Frame *body = K.getFrameByName(optitrackbody_name, false);
   if (not body) {
     cout << optitrackbody_name << " does not exist yet; adding it..." << endl;
-    body = new mlr::Frame(K);
+    body = new rai::Frame(K);
     body->name = optitrackbody_name;
-    mlr::Shape *shape = new mlr::Shape(*body);
-    shape->type() = mlr::ST_marker;
+    rai::Shape *shape = new rai::Shape(*body);
+    shape->type() = rai::ST_marker;
     shape->size() = consts<double>(.1,3);
 //    stored_optitrackbodies.append(id);
   }
@@ -294,16 +302,16 @@ void OptitrackBody::syncWith(mlr::KinematicWorld &K){
   body->X = frame * transform;
 }
 
-void OptitrackMarker::syncWith(mlr::KinematicWorld &K){
-  mlr::String optitrackmarker_name = STRING("perc_" << id);
+void OptitrackMarker::syncWith(rai::KinematicWorld &K){
+  rai::String optitrackmarker_name = STRING("perc_" << id);
 
-  mlr::Frame *body = K.getFrameByName(optitrackmarker_name, false);
+  rai::Frame *body = K.getFrameByName(optitrackmarker_name, false);
   if (not body) {
     cout << optitrackmarker_name << " does not exist yet; adding it..." << endl;
-    body = new mlr::Frame(K);
+    body = new rai::Frame(K);
     body->name = optitrackmarker_name;
-    mlr::Shape *shape = new mlr::Shape(*body);
-    shape->type() = mlr::ST_sphere;
+    rai::Shape *shape = new rai::Shape(*body);
+    shape->type() = rai::ST_sphere;
     shape->size() = consts<double>(.03, 3);
 //    stored_optitrackmarkers.append(id);
   }

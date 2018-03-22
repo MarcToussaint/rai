@@ -1,19 +1,13 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef MLR_gaussianProcess_h
-#define MLR_gaussianProcess_h
+#ifndef RAI_gaussianProcess_h
+#define RAI_gaussianProcess_h
 
 #include <Core/array.h>
 #include <Core/util.h>
@@ -173,7 +167,7 @@ inline void dGaussKernel(arr& grad, void *P, const arr& a, const arr& b){
   if(&a==&b){ grad.resizeAs(a); grad.setZero(); return; }
   double gauss=GaussKernel(P, a, b), gamma=1./K.widthVar;
   grad = gamma * (b-a) * gauss; // SD: Note the (b - a) swap cancles the leading minus
-  //MLR_MSG("gamma=" <<gamma <<"; b-a" <<b -a <<"; gauss=" <<gauss<<"; grad=" <<grad);
+  //RAI_MSG("gamma=" <<gamma <<"; b-a" <<b -a <<"; gauss=" <<gauss<<"; grad=" <<grad);
 }
 
 /** @brief covariance between derivative at point a and function value at
@@ -274,7 +268,7 @@ inline void randomFunction(GaussianProcess& gp, arr& Xbase, bool illustrate, boo
 }
 
 
-#ifdef  MLR_IMPLEMENTATION
+#ifdef  RAI_IMPLEMENTATION
 #  include "gaussianProcess.cpp"
 #endif
 

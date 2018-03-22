@@ -591,6 +591,6 @@ double conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction &f, arr
 //===========================================================================
 
 RUN_ON_INIT_BEGIN()
-  mlr::Array<ObjectiveType>::memMove=true;
+  rai::Array<ObjectiveType>::memMove=true;
 RUN_ON_INIT_END()
 

@@ -3,7 +3,7 @@
 #include <Kin/kin.h>
 #include <Core/thread.h>
 
-#ifdef MLR_ROS
+#ifdef RAI_ROS
 #  include "roscom.h"
 #  include <ar_track_alvar_msgs/AlvarMarkers.h>
 namespace ar = ar_track_alvar_msgs;
@@ -19,7 +19,7 @@ namespace ar = ar_track_alvar_msgs;
 
 
 //===========================================================================
-// using mlr::KinematicWorld;  // this is necessary to make the macro work.
+// using rai::KinematicWorld;  // this is necessary to make the macro work.
 
 // /// Simple syncing of the ors world "modelWorld" with ar_pose_marker
 // BEGIN_ROSMODULE("/ar_pose_marker", AlvarMarkers, markers)
@@ -33,17 +33,17 @@ namespace ar = ar_track_alvar_msgs;
 /**
  * Set the transformation of the body to the transformation of the alvar maker.
  */
-void setBody(mlr::Frame& body, const ar::AlvarMarker& marker);
+void setBody(rai::Frame& body, const ar::AlvarMarker& marker);
 
 /**
  * Sync all markers from the msg with the ors world.
  *
  * Note: this never deletes old markers.
  */
-void syncMarkers(mlr::KinematicWorld& world, const ar::AlvarMarkers& markers);
+void syncMarkers(rai::KinematicWorld& world, const ar::AlvarMarkers& markers);
 
 struct AlvarSyncer : Thread {
-  Var<mlr::KinematicWorld> modelWorld;
+  Var<rai::KinematicWorld> modelWorld;
   Var<ar::AlvarMarkers> ar_pose_markers;
   AlvarSyncer()
    : Thread("AlvarSyncer"),

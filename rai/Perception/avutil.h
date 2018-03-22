@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #ifndef AVUTIL_H
 #define AVUTIL_H
 
@@ -10,7 +18,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
-namespace mlr {
+namespace rai {
 /// call this before using any libav methods
 void register_libav();
 

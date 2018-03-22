@@ -1,7 +1,14 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
 
 #include "pairCollision.h"
 
-#ifdef MLR_extern_GJK
+#ifdef RAI_extern_GJK
 extern "C"{
 #  include "GJK/gjk.h"
 }
@@ -12,7 +19,7 @@ extern "C"{
 #include <ccd/quat.h>
 #include <Geo/qhull.h>
 
-PairCollision::PairCollision(const mlr::Mesh &mesh1, const mlr::Mesh &mesh2, mlr::Transformation &t1, mlr::Transformation &t2, double rad1, double rad2)
+PairCollision::PairCollision(const rai::Mesh &mesh1, const rai::Mesh &mesh2, rai::Transformation &t1, rai::Transformation &t2, double rad1, double rad2)
   : mesh1(mesh1), mesh2(mesh2), t1(t1), t2(t2), rad1(rad1), rad2(rad2) {
 
   double d2 = GJK_sqrDistance();
@@ -21,16 +28,16 @@ PairCollision::PairCollision(const mlr::Mesh &mesh1, const mlr::Mesh &mesh2, mlr
     distance = sqrt(d2);
   }else{
     //THIS IS COSTLY? DO WITHIN THE SUPPORT FUNCTION!
-    mlr::Mesh M1(mesh1); t1.applyOnPointArray(M1.V);
-    mlr::Mesh M2(mesh2); t2.applyOnPointArray(M2.V);
+    rai::Mesh M1(mesh1); t1.applyOnPointArray(M1.V);
+    rai::Mesh M2(mesh2); t2.applyOnPointArray(M2.V);
     distance = - libccd_MPR(M1, M2);
   }
 
   //ensure that the normal always points 'against obj1' (along p1-p2 relative to NON-penetration)
-  if(mlr::sign(distance) * scalarProduct(normal, p1-p2) < 0.)
+  if(rai::sign(distance) * scalarProduct(normal, p1-p2) < 0.)
     normal *= -1.;
 
-  CHECK(mlr::sign(distance) * scalarProduct(normal, p1-p2)  > -1e-10, "");
+  CHECK(rai::sign(distance) * scalarProduct(normal, p1-p2)  > -1e-10, "");
 
   CHECK_ZERO(scalarProduct(normal, p1-p2) - distance, 1e-5, "");
 
@@ -51,19 +58,19 @@ void PairCollision::write(std::ostream &os) const{
 
 
 void support_mesh(const void *_obj, const ccd_vec3_t *_dir, ccd_vec3_t *v){
-  mlr::Mesh *m = (mlr::Mesh*)_obj;
+  rai::Mesh *m = (rai::Mesh*)_obj;
   arr dir(_dir->v, 3, true);
   uint vertex = m->support(dir);
   memmove(v->v, &m->V(vertex, 0), 3*m->V.sizeT);
 }
 
 void center_mesh(const void *obj, ccd_vec3_t *center){
-  mlr::Mesh *m = (mlr::Mesh*)obj;
-  mlr::Vector c = m->getCenter();
+  rai::Mesh *m = (rai::Mesh*)obj;
+  rai::Vector c = m->getCenter();
   memmove(center->v, &c.x, 3*sizeof(double));
 }
 
-double PairCollision::libccd_MPR(const mlr::Mesh& m1,const mlr::Mesh& m2){
+double PairCollision::libccd_MPR(const rai::Mesh& m1,const rai::Mesh& m2){
   ccd_t ccd;
   CCD_INIT(&ccd); // initialize ccd_t struct
 
@@ -142,13 +149,13 @@ double PairCollision::libccd_MPR(const mlr::Mesh& m1,const mlr::Mesh& m2){
 double PairCollision::GJK_sqrDistance(){
   // convert meshes to 'Object_structures'
   Object_structure m1,m2;
-  mlr::Array<double*> Vhelp1, Vhelp2;
+  rai::Array<double*> Vhelp1, Vhelp2;
   m1.numpoints = mesh1.V.d0;  m1.vertices = mesh1.V.getCarray(Vhelp1);  m1.rings=NULL; //TODO: rings would make it faster
   m2.numpoints = mesh2.V.d0;  m2.vertices = mesh2.V.getCarray(Vhelp2);  m2.rings=NULL;
 
   // convert transformations to affine matrices
   arr T1,T2;
-  mlr::Array<double*> Thelp1, Thelp2;
+  rai::Array<double*> Thelp1, Thelp2;
   if(&t1){  T1=t1.getAffineMatrix();  T1.getCarray(Thelp1);  }
   if(&t2){  T2=t2.getAffineMatrix();  T2.getCarray(Thelp2);  }
 
@@ -181,7 +188,7 @@ double PairCollision::GJK_sqrDistance(){
 }
 
 void PairCollision::glDraw(OpenGL &){
-#ifdef MLR_GL
+#ifdef RAI_GL
   arr P1=p1, P2=p2;
   if(rad1>0.) P1 -= rad1*normal;
   if(rad2>0.) P2 += rad2*normal;
@@ -221,7 +228,7 @@ void PairCollision::glDraw(OpenGL &){
     glDrawPolygon(poly);
     uint n=poly.d0;
     for(uint i=0;i<n;i++){
-      mlr::Transformation T;
+      rai::Transformation T;
       T.pos = .5 *(poly[(i+1)%n] + poly[i]);
       T.rot.setDiff(Vector_x, polyNorm[i]);
 //      cout <<polyNorm[i] <<' ' <<T.rot <<' ' <<T.rot.getDeg() <<endl;
@@ -337,8 +344,8 @@ void PairCollision::kinDistance2(arr &y, arr& J,
 
 
 void PairCollision::nearSupportAnalysis(double eps){
-  mlr::Mesh M1(mesh1); t1.applyOnPointArray(M1.V);
-  mlr::Mesh M2(mesh2); t2.applyOnPointArray(M2.V);
+  rai::Mesh M1(mesh1); t1.applyOnPointArray(M1.V);
+  rai::Mesh M2(mesh2); t2.applyOnPointArray(M2.V);
 
   uintA pts1, pts2;
   M1.supportMargin(pts1, -normal, eps);
@@ -367,7 +374,7 @@ void PairCollision::nearSupportAnalysis(double eps){
 
 #if 1
   //first get projection
-  mlr::Quaternion R;
+  rai::Quaternion R;
   R.setDiff(normal, Vector_z);
   arr P = R.getArr();
   P.delRows(2);

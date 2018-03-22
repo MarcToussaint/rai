@@ -11,8 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
 #include "pathProblem.h"
 #include <Kin/taskMaps.h>
 #include <Kin/kin_swift.h>
@@ -21,17 +19,17 @@
 
 //===========================================================================
 
-PathProblem::PathProblem(const mlr::KinematicWorld& world_initial,
-                         const mlr::KinematicWorld& world_final,
+PathProblem::PathProblem(const rai::KinematicWorld& world_initial,
+                         const rai::KinematicWorld& world_final,
                          const Graph& symbolicState,
                          uint microSteps,
                          int verbose)
   : world(world_initial), symbolicState(symbolicState), microSteps(microSteps), verbose(verbose), MP(world){
   //  ConstrainedProblem::operator=( conv_KOrderMarkovFunction2ConstrainedProblem(MP.komo_problem) );
 
-  double posPrec = mlr::getParameter<double>("LGP/precision", 1e3);
-//  double colPrec = mlr::getParameter<double>("LGP/collisionPrecision", -1e0);
-  double margin = mlr::getParameter<double>("LGP/collisionMargin", .05);
+  double posPrec = rai::getParameter<double>("LGP/precision", 1e3);
+//  double colPrec = rai::getParameter<double>("LGP/collisionPrecision", -1e0);
+  double margin = rai::getParameter<double>("LGP/collisionMargin", .05);
 
   //get the actions!
   Node *actionSequence=symbolicState["actionSequence"];
@@ -130,7 +128,7 @@ PathProblem::PathProblem(const mlr::KinematicWorld& world_initial,
     }
 
     // zero grasp joint motion during holding
-//    mlr::Joint *j_grasp = world.getJointByName("graspJoint");
+//    rai::Joint *j_grasp = world.getJointByName("graspJoint");
 //    arr M(j_grasp->qDim(),world.getJointStateDimension());
 //    M.setZero();
 //    for(uint i=0;i<j_grasp->qDim();i++) M(i,j_grasp->qIndex+i)=1.;
@@ -189,17 +187,17 @@ PathProblem::PathProblem(const mlr::KinematicWorld& world_initial,
   //-- graph switches
   for(uint i=0;i<actions.N;i++){
     //pick at time 2*i+1
-    mlr::KinematicSwitch *op_pick = new mlr::KinematicSwitch();
-    op_pick->symbol = mlr::SW_effJoint;
-    op_pick->jointType = mlr::JT_rigid;
+    rai::KinematicSwitch *op_pick = new rai::KinematicSwitch();
+    op_pick->symbol = rai::SW_effJoint;
+    op_pick->jointType = rai::JT_rigid;
     op_pick->timeOfApplication = tPick(i)+1;
     op_pick->fromId = world.shapes(endeff_index)->index;
     op_pick->toId = world.shapes(idObject(i))->index;
     MP.switches.append(op_pick);
 
     //place at time 2*i+2
-    mlr::KinematicSwitch *op_place = new mlr::KinematicSwitch();
-    op_place->symbol = mlr::deleteJoint;
+    rai::KinematicSwitch *op_place = new rai::KinematicSwitch();
+    op_place->symbol = rai::deleteJoint;
     op_place->timeOfApplication = tPlace(i)+1;
     op_place->fromId = world.shapes(endeff_index)->index;
     op_place->toId = world.shapes(idObject(i))->index;

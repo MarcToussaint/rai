@@ -4,7 +4,7 @@
 
 const char *USAGE=
 "\n\
-Usage:  ors_edit <ors-filename>\n\
+Usage:  kinEdit <g-filename>\n\
 \n\
 Iterate between editing the file (with an external editor) and\n\
 viewing the model in the OpenGL window (after pressing ENTER).\n\
@@ -14,15 +14,15 @@ Use the number keys 1 2 3 4 5 to toggle display options.\n\
 
 
 int MAIN(int argc,char **argv){
-  mlr::initCmdLine(argc, argv);
+  rai::initCmdLine(argc, argv);
 
     cout <<USAGE <<endl;
 
-    mlr::String file=mlr::getParameter<mlr::String>("file",STRING("test.ors"));
-    if(mlr::argc==2 && mlr::argv[1][0]!='-') file=mlr::argv[1];
+    rai::String file=rai::getParameter<rai::String>("file",STRING("test.ors"));
+    if(rai::argc==2 && rai::argv[1][0]!='-') file=rai::argv[1];
     cout <<"opening file `" <<file <<"'" <<endl;
 
-    mlr::KinematicWorld K(file);
+    rai::KinematicWorld K(file);
 
     K.checkConsistency();
     K >>FILE("z.g");
@@ -39,7 +39,7 @@ int MAIN(int argc,char **argv){
 
     K.writeURDF(FILE("z.urdf"));
 
-    if(mlr::checkParameter<bool>("cleanOnly")) return 0;
+    if(rai::checkParameter<bool>("cleanOnly")) return 0;
 
     editConfiguration(file, K);
 

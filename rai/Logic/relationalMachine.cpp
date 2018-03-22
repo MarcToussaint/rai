@@ -1,17 +1,10 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #include "relationalMachine.h"
 
@@ -25,7 +18,7 @@ RelationalMachine::RelationalMachine(const char* filename)
 }
 
 void RelationalMachine::init(const char* filename){
-  mlr::FileToken fil(filename);
+  rai::FileToken fil(filename);
   if(fil.exists()){
     fil >>KB;
     KB.checkConsistency();
@@ -36,7 +29,7 @@ void RelationalMachine::init(const char* filename){
   tmp   = &KB["TMP"]->graph();
 }
 
-bool RelationalMachine::queryCondition(mlr::String query) const{
+bool RelationalMachine::queryCondition(rai::String query) const{
   tmp->clear();
   bool q=false;
   try{
@@ -51,7 +44,7 @@ bool RelationalMachine::queryCondition(mlr::String query) const{
   return q;
 }
 
-bool RelationalMachine::applyEffect(mlr::String effect, bool fwdChain){
+bool RelationalMachine::applyEffect(rai::String effect, bool fwdChain){
   tmp->clear();
   bool e=false;
   try{
@@ -84,26 +77,26 @@ NodeL RelationalMachine::fwdChainRules(){
   return *tmp;
 }
 
-Node* RelationalMachine::declareNewSymbol(mlr::String symbolStr){
+Node* RelationalMachine::declareNewSymbol(rai::String symbolStr){
   Node *it = KB.readNode(symbolStr);
   return it;
 }
 
-mlr::String RelationalMachine::getKB() {
-  mlr::String str;
+rai::String RelationalMachine::getKB() {
+  rai::String str;
   KB.write(str, "\n  ");
   return str;
 }
 
-mlr::String RelationalMachine::getState() const{
-  mlr::String str;
+rai::String RelationalMachine::getState() const{
+  rai::String str;
   state->write(str, "\n  ");
   return str;
 }
 
-mlr::String RelationalMachine::getRules() const{
+rai::String RelationalMachine::getRules() const{
   NodeL rules = KB.getNodes("Rule");
-  mlr::String str;
+  rai::String str;
   listWrite(rules, str, "\n  ", "[]");
   return str;
 }

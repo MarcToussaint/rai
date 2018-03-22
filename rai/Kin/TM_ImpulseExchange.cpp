@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "TM_ImpulseExchange.h"
 #include "TM_default.h"
 #include "TM_PairCollision.h"
@@ -15,8 +23,8 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
   pos1.TaskMap::phi(a1, (&J?J1:NoArr), Ktuple, tau, t);
 
 //  {
-//    mlr::KinematicWorld &K = *Ktuple.last();
-//    mlr::Frame *a = K(i)->getUpwardLink();
+//    rai::KinematicWorld &K = *Ktuple.last();
+//    rai::Frame *a = K(i)->getUpwardLink();
 //    if(a->flags && a->flags & (1<<FL_kinematic)){
 //      pos1.order=1;
 //      pos1.TaskMap::phi(a1, (&J?J1:NoArr), Ktuple, tau, t);
@@ -33,9 +41,9 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, in
   //projection matrix onto 'table' to which object 2 will be attached
   arr P;
   {
-    mlr::KinematicWorld &K = *Ktuple.last();
-    mlr::Frame *b = K(j)->getUpwardLink();
-    if(b->joint && b->joint->type==mlr::JT_transXYPhi){
+    rai::KinematicWorld &K = *Ktuple.last();
+    rai::Frame *b = K(j)->getUpwardLink();
+    if(b->joint && b->joint->type==rai::JT_transXYPhi){
       arr R = b->joint->X().rot.getArr();
       arr j1=R[0], j2=R[1];
       P = (j1^j1) + (j2^j2);

@@ -9,7 +9,7 @@
 /// 'publishes' to both, ROS topics and modelWorld
 struct PublishDatabase : Thread{
   Var<PerceptL> percepts_filtered;
-  VAR(mlr::KinematicWorld, modelWorld)
+  VAR(rai::KinematicWorld, modelWorld)
 
   PublishDatabase();
 
@@ -27,6 +27,6 @@ struct PublishDatabase : Thread{
 
 private:
   //TODO: these should be virtual methods of Percept
-  mlr::Array<uint> stored_clusters, stored_alvars, stored_planes, stored_optitrackmarkers, stored_optitrackbodies;
+  rai::Array<uint> stored_clusters, stored_alvars, stored_planes, stored_optitrackmarkers, stored_optitrackbodies;
   int revision = -1;
 };

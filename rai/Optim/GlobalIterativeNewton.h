@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include "optimization.h"
@@ -11,7 +19,7 @@ struct GlobalIterativeNewton{
   arr bounds_lo, bounds_hi;
 
   struct LocalMinimum{ arr x; double fx; uint hits; };
-  mlr::Array<LocalMinimum> localMinima;
+  rai::Array<LocalMinimum> localMinima;
   LocalMinimum *best;
 
   GlobalIterativeNewton(const ScalarFunction& f, const arr& bounds_lo, const arr& bounds_hi, OptOptions o=NOOPT);

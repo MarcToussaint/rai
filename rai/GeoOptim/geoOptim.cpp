@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include <Optim/constrained.h>
 
 #include "geoOptim.h"
@@ -62,7 +70,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
 
   //initialization
   x.resize(11);
-  mlr::Quaternion rot;
+  rai::Quaternion rot;
   rot.setRandom();
   arr tX = X * rot.getArr(); //rotate points (with rot^{-1})
   arr ma = max(tX,0), mi = min(tX,0);  //get coordinate-wise min and max
@@ -97,7 +105,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose){
   g = opt.L.get_sumOfGviolations();
 }
 
-void computeOptimalSSBox(mlr::Mesh& mesh, arr& x_ret, mlr::Transformation& t_ret, const arr& X, uint trials, int verbose){
+void computeOptimalSSBox(rai::Mesh& mesh, arr& x_ret, rai::Transformation& t_ret, const arr& X, uint trials, int verbose){
   if(!X.N){ mesh.clear(); return; }
 
   arr x,x_best;
@@ -124,7 +132,7 @@ void computeOptimalSSBox(mlr::Mesh& mesh, arr& x_ret, mlr::Transformation& t_ret
     cout <<"\nf = " <<f_best <<"\ng-violations = " <<g_best <<endl;
   }
 
-  mlr::Transformation t;
+  rai::Transformation t;
   t.setZero();
   t.pos.set( x({4,6}) );
   t.rot.set( x({7,-1}) );

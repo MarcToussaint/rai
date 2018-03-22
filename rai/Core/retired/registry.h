@@ -11,15 +11,13 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
 /// @file
 /// @ingroup group_Core
 /// @addtogroup group_Core
 /// @{
 
-#ifndef MLR_registry_h
-#define MLR_registry_h
+#ifndef RAI_registry_h
+#define RAI_registry_h
 
 #include "array.h"
 #include "graph.h"

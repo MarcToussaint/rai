@@ -3,16 +3,16 @@
 #include "TM_default.h"
 
 void TM_InertialMotion::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
-  mlr::KinematicWorld& K = *Ktuple(-1);
+  rai::KinematicWorld& K = *Ktuple(-1);
 
   arr acc, Jacc;
   arr acc_ref = {0.,0.,g};
   arr Jacc_ref = zeros(3, K.q.N);
   {
-    mlr::Frame *a = K.frames(i);
-    if(a->flags & (1<<FL_gravityAcc)) MLR_MSG("frame '" <<a->name <<"' has InertialMotion AND Gravity objectivies");
+    rai::Frame *a = K.frames(i);
+    if(a->flags & (1<<FL_gravityAcc)) RAI_MSG("frame '" <<a->name <<"' has InertialMotion AND Gravity objectivies");
     if(a->joint && a->joint->H && !(a->flags && !(a->flags & (1<<FL_normalControlCosts))))
-      MLR_MSG("frame '" <<a->name <<"' has InertialMotion AND control cost objectivies");
+      RAI_MSG("frame '" <<a->name <<"' has InertialMotion AND control cost objectivies");
   }
 
   TM_Default pos(TMT_pos, i);

@@ -15,13 +15,13 @@
 //
 
 void TEST(LoadSave){
-  mlr::KinematicWorld G;
+  rai::KinematicWorld G;
   FILE("arm7.g") >>G;
   cout <<G <<endl;
 
   for(uint i=0;i<0;i++){
     G.watch(true);
-//    mlr::wait(.1)
+//    rai::wait(.1)
   }
 }
 
@@ -32,9 +32,9 @@ void TEST(LoadSave){
 //
 
 void testJacobianInFile(const char* filename, const char* shape){
-  mlr::KinematicWorld K(filename);
+  rai::KinematicWorld K(filename);
 
-  mlr::Frame *a=K.getFrameByName(shape);
+  rai::Frame *a=K.getFrameByName(shape);
 
   VectorFunction f = ( [&a, &K](arr& y, arr& J, const arr& x) -> void
   {
@@ -45,7 +45,7 @@ void testJacobianInFile(const char* filename, const char* shape){
 
   checkJacobian(f, K.q, 1e-4);
 
-//  mlr::wait();
+//  rai::wait();
 }
 
 //===========================================================================
@@ -57,11 +57,11 @@ void TEST(Kinematics){
 
   struct MyFct : VectorFunction{
     enum Mode {Pos, Vec, Quat, RelPos, RelVec, RelRot} mode;
-    mlr::KinematicWorld& K;
-    mlr::Frame *b, *b2;
-    mlr::Vector &vec, &vec2;
-    MyFct(Mode _mode, mlr::KinematicWorld &_K,
-          mlr::Frame *_b, mlr::Vector &_vec, mlr::Frame *_b2, mlr::Vector &_vec2)
+    rai::KinematicWorld& K;
+    rai::Frame *b, *b2;
+    rai::Vector &vec, &vec2;
+    MyFct(Mode _mode, rai::KinematicWorld &_K,
+          rai::Frame *_b, rai::Vector &_vec, rai::Frame *_b2, rai::Vector &_vec2)
       : mode(_mode), K(_K), b(_b), b2(_b2), vec(_vec), vec2(_vec2){
       VectorFunction::operator= ( [this](arr& y, arr& J, const arr& x) -> void{
         K.setJointState(x);
@@ -79,16 +79,16 @@ void TEST(Kinematics){
     VectorFunction& operator()(){ return *this; }
   };
 
-//  mlr::KinematicWorld G("arm7.g");
-  mlr::KinematicWorld G("kinematicTests.g");
-//  mlr::KinematicWorld G("../../../data/pr2_model/pr2_model.ors");
-//  mlr::KinematicWorld G("../../../projects/17-LGP-push/quatJacTest.g");
+//  rai::KinematicWorld G("arm7.g");
+  rai::KinematicWorld G("kinematicTests.g");
+//  rai::KinematicWorld G("../../../data/pr2_model/pr2_model.ors");
+//  rai::KinematicWorld G("../../../projects/17-LGP-push/quatJacTest.g");
 //  G.watch(true);
 
   for(uint k=0;k<10;k++){
-    mlr::Frame *b = G.frames.rndElem();
-    mlr::Frame *b2 = G.frames.rndElem();
-    mlr::Vector vec=0, vec2=0;
+    rai::Frame *b = G.frames.rndElem();
+    rai::Frame *b2 = G.frames.rndElem();
+    rai::Vector vec=0, vec2=0;
     vec.setRandom();
     vec2.setRandom();
     arr x(G.getJointStateDimension());
@@ -113,24 +113,24 @@ void TEST(Kinematics){
 void TEST(Graph){
 
 
-//  mlr::KinematicWorld G("arm7.g");
-//  mlr::KinematicWorld K("kinematicTests.g");
-  mlr::KinematicWorld K("../../../../rai-robotModels/pr2/pr2.g");
-//  mlr::KinematicWorld G("../../../projects/17-LGP-push/quatJacTest.g");
+//  rai::KinematicWorld G("arm7.g");
+//  rai::KinematicWorld K("kinematicTests.g");
+  rai::KinematicWorld K("../../../../rai-robotModels/pr2/pr2.g");
+//  rai::KinematicWorld G("../../../projects/17-LGP-push/quatJacTest.g");
 //  G.watch(true);
 
   K.prefixNames();
   {
     Graph G = K.getGraph();
     G.displayDot();
-    mlr::wait(.5);
+    rai::wait(.5);
   }
 
   K.optimizeTree();
   {
     Graph G = K.getGraph();
     G.displayDot();
-    mlr::wait(.5);
+    rai::wait(.5);
   }
 
 }
@@ -142,15 +142,15 @@ void TEST(Graph){
 //
 
 void TEST(QuaternionKinematics){
-  mlr::KinematicWorld G("kinematicTestQuat.g");
+  rai::KinematicWorld G("kinematicTestQuat.g");
   G.orsDrawJoints=false;
 
   for(uint k=0;k<3;k++){
-    mlr::Quaternion target;
+    rai::Quaternion target;
     target.setRandom();
     G.getFrameByName("ref")->Q.rot = target;
     G.getFrameByName("marker")->Q.rot = target;
-    mlr::Frame *endeff = G.getFrameByName("endeff");
+    rai::Frame *endeff = G.getFrameByName("endeff");
     arr x;
     G.getJointState(x);
     for(uint t=0;t<100;t++){
@@ -171,9 +171,9 @@ void TEST(QuaternionKinematics){
 //
 
 void TEST(Copy){
-  mlr::KinematicWorld G1("kinematicTests.g");
-  //mlr::KinematicWorld G1("../../../data/pr2_model/pr2_model.ors");
-  mlr::KinematicWorld G2(G1);
+  rai::KinematicWorld G1("kinematicTests.g");
+  //rai::KinematicWorld G1("../../../data/pr2_model/pr2_model.ors");
+  rai::KinematicWorld G2(G1);
 
   G1.checkConsistency();
   G2.checkConsistency();
@@ -197,39 +197,39 @@ void TEST(Copy){
 void TEST(KinematicSpeed){
 #define NUM 100000
 #if 1
-//  mlr::KinematicWorld K("kinematicTests.g");
-  mlr::KinematicWorld K("../../../../rai-robotModels/pr2/pr2.g");
+//  rai::KinematicWorld K("kinematicTests.g");
+  rai::KinematicWorld K("../../../../rai-robotModels/pr2/pr2.g");
   K.optimizeTree();
   uint n=K.getJointStateDimension();
   arr x(n);
-  mlr::timerStart();
+  rai::timerStart();
   for(uint k=0;k<NUM;k++){
     rndUniform(x,-.5,.5,false);
     K.setJointState(x);
 //    G.watch();
-//    mlr::wait(.1);
+//    rai::wait(.1);
   }
-  cout <<"kinematics timing: "<< mlr::timerRead() <<"sec" <<endl;
+  cout <<"kinematics timing: "<< rai::timerRead() <<"sec" <<endl;
 #endif
 
 #if 0
-  mlr::Transformation t,s; t.setRandom(); s.setRandom();
-  mlr::timerStart();
+  rai::Transformation t,s; t.setRandom(); s.setRandom();
+  rai::timerStart();
   for(uint k=0;k<NUM;k++){
     t.appendTransformation(s);
   }
-  cout <<"transformation appending: "<< mlr::timerRead() <<"sec" <<endl;
+  cout <<"transformation appending: "<< rai::timerRead() <<"sec" <<endl;
 
-  mlr::Matrix A,B,Y; A.setRandom(); B.setRandom();
-  mlr::Vector a,b,y; a.setRandom(); b.setRandom();
-  mlr::timerStart();
+  rai::Matrix A,B,Y; A.setRandom(); B.setRandom();
+  rai::Vector a,b,y; a.setRandom(); b.setRandom();
+  rai::timerStart();
   for(uint k=0;k<NUM;k++){
     Y=A*B;
     y=a+A*b;
     a=y;
     A=Y;
   }
-  cout <<"matrix timing: "<< mlr::timerRead() <<"sec" <<endl;
+  cout <<"matrix timing: "<< rai::timerRead() <<"sec" <<endl;
 #endif
 }
 
@@ -240,7 +240,7 @@ void TEST(KinematicSpeed){
 
 
 void TEST(Contacts){
-  mlr::KinematicWorld G("arm7.g");
+  rai::KinematicWorld G("arm7.g");
   
   arr x,con,grad;
   uint t;
@@ -274,7 +274,7 @@ void TEST(Contacts){
 //===========================================================================
 
 void TEST(Limits){
-  mlr::KinematicWorld G("arm7.g");
+  rai::KinematicWorld G("arm7.g");
 
   arr limits = G.getLimits();
   VectorFunction F = [&G, &limits](arr& y, arr& J, const arr& x){
@@ -312,11 +312,11 @@ void generateSequence(arr &X, uint T, uint n){
   rndUniform(P,-1.,1.,false); P[0]=0.; P[P.d0-1]=0.;
   
   //convert into a smooth spline (1/0.03 points per via point):
-  X = mlr::Spline(T,P).eval();
+  X = rai::Spline(T,P).eval();
 }
 
 void TEST(PlayStateSequence){
-  mlr::KinematicWorld G("arm7.g");
+  rai::KinematicWorld G("arm7.g");
   uint n=G.getJointStateDimension();
   arr X;
   generateSequence(X, 200, n);
@@ -332,9 +332,9 @@ void TEST(PlayStateSequence){
 // ODE test
 //
 
-#ifdef MLR_ODE
+#ifdef RAI_ODE
 void TEST(PlayTorqueSequenceInOde){
-  mlr::KinematicWorld G("arm7.g");
+  rai::KinematicWorld G("arm7.g");
   G.ode();
   uint n=G.getJointStateDimension();
   arr F,Xt,Vt;
@@ -353,7 +353,7 @@ void TEST(PlayTorqueSequenceInOde){
 }
 
 void TEST(MeshShapesInOde){
-  mlr::KinematicWorld G("testOdeMesh.g");
+  rai::KinematicWorld G("testOdeMesh.g");
   for(uint t=0;t<1000;t++){
     //G.clearJointErrors(); exportStateToOde(C,); //try doing this without clearing joint errors...!
     G.ode().step(0.03);
@@ -370,12 +370,12 @@ void TEST(MeshShapesInOde){
 //
 
 void TEST(FollowRedundantSequence){  
-  mlr::KinematicWorld G("arm7.g");
+  rai::KinematicWorld G("arm7.g");
 
   uint t,T,n=G.getJointStateDimension();
   arr x(n),y,J,invJ;
   x=.8;     //initialize with intermediate joint positions (non-singular positions)
-  mlr::Vector rel = G.getFrameByName("endeff")->Q.pos; //this frame describes the relative position of the endeffector wrt. 7th body
+  rai::Vector rel = G.getFrameByName("endeff")->Q.pos; //this frame describes the relative position of the endeffector wrt. 7th body
 
   //-- generate a random endeffector trajectory
   arr Z, Zt; //desired and true endeffector trajectories
@@ -383,7 +383,7 @@ void TEST(FollowRedundantSequence){
   Z *= .8;
   T=Z.d0;
   G.setJointState(x);
-  mlr::Frame *endeff = G.getFrameByName("arm7");
+  rai::Frame *endeff = G.getFrameByName("arm7");
   G.kinematicsPos(y, NoArr, endeff, rel);
   for(t=0;t<T;t++) Z[t]() += y; //adjust coordinates to be inside the arm range
   plotLine(Z);
@@ -415,13 +415,13 @@ void TEST(FollowRedundantSequence){
 //  //static arr conswit;
 //  //bool hasContact=false;
 //  bool addContactsToDynamics=false;
-//  mlr::KinematicWorld *G;
+//  rai::KinematicWorld *G;
 //}
 
 
 //---------- test standard dynamic control
 void TEST(Dynamics){
-  mlr::KinematicWorld G("arm7.g");
+  rai::KinematicWorld G("arm7.g");
   G.optimizeTree();
   G.fwdIndexIDs();
   cout <<G <<endl;
@@ -451,7 +451,7 @@ void TEST(Dynamics){
   ofstream z("z.dyn");
   G.clearForces();
   G.watch();
-//  for(mlr::Body *b:G.bodies){ b->mass=1.; b->inertia.setZero(); }
+//  for(rai::Body *b:G.bodies){ b->mass=1.; b->inertia.setZero(); }
 
   for(t=0;t<T;t++){
     if(t>=500){ //hold steady
@@ -473,7 +473,7 @@ void TEST(Dynamics){
     }else{
       //cout <<q <<qd <<qdd <<' ' <<G.getEnergy() <<endl;
       arr x=cat(q, qd).reshape(2, q.N);
-      mlr::rk4_2ndOrder(x, x, diffEqn, dt);
+      rai::rk4_2ndOrder(x, x, diffEqn, dt);
       q=x[0]; qd=x[1];
       if(t>300){
         friction=true;
@@ -541,7 +541,7 @@ void TEST(ContactDynamics){
       dt=.01;
       addContactsToDynamics=false;
     }
-    cross=mlr::rk4dd_switch(q,qd,s,q,qd,s,ddf_joints,switchfunction,dt,1e-4);
+    cross=rai::rk4dd_switch(q,qd,s,q,qd,s,ddf_joints,switchfunction,dt,1e-4);
     //G.reportProxies();
     cout <<"*** s = " <<s <<endl;
     G.gl().text.clear() <<"t=" <<t <<"  using RK4_switch,  energy=" <<G.getEnergy();
@@ -557,8 +557,8 @@ void TEST(ContactDynamics){
 
 #if 0
 static void drawTrimesh(void* _mesh){
-#if MLR_GL
-  mlr::Mesh *mesh=(mlr::Mesh*)_mesh;
+#if RAI_GL
+  rai::Mesh *mesh=(rai::Mesh*)_mesh;
   glPushMatrix();
   mesh->glDraw();
   glPopMatrix();
@@ -566,16 +566,16 @@ static void drawTrimesh(void* _mesh){
 }
 
 void TEST(BlenderImport){
-  mlr::timerStart();
-  mlr::Mesh mesh;
-  mlr::KinematicWorld bl;
+  rai::timerStart();
+  rai::Mesh mesh;
+  rai::KinematicWorld bl;
   readBlender("blender-export",mesh,bl);
-  cout <<"loading time =" <<mlr::timerRead() <<"sec" <<endl;
+  cout <<"loading time =" <<rai::timerRead() <<"sec" <<endl;
   OpenGL gl;
   G.gl().add(glStandardScene, NULL);
   G.gl().add(drawTrimesh,&mesh);
   G.gl().watch("mesh only");
-  G.gl().add(mlr::glDrawGraph,&bl);
+  G.gl().add(rai::glDrawGraph,&bl);
   G.gl().text="testing blender import";
   animateConfiguration(bl,gl);
 }
@@ -585,10 +585,10 @@ void TEST(BlenderImport){
 void TEST(InverseKinematics) {
   // we're testing some big steps / target positions, some of which are not
   // reachable to check if the IK handle it
-  mlr::KinematicWorld world("drawer.g");
+  rai::KinematicWorld world("drawer.g");
 
-  mlr::Frame* drawer = world.getFrameByName("cabinet_drawer");
-  mlr::Frame* marker = world.getFrameByName("marker");
+  rai::Frame* drawer = world.getFrameByName("cabinet_drawer");
+  rai::Frame* marker = world.getFrameByName("marker");
   arr destination = conv_vec2arr(marker->X.pos);
 
   cout << "destination: " << destination << endl;
@@ -620,7 +620,7 @@ void TEST(InverseKinematics) {
 // =============================================================================
 
 int MAIN(int argc,char **argv){
-  mlr::initCmdLine(argc, argv);
+  rai::initCmdLine(argc, argv);
 
   testLoadSave();
   testCopy();
@@ -634,7 +634,7 @@ int MAIN(int argc,char **argv){
   testDynamics();
   testContacts();
   testLimits();
-#ifdef MLR_ODE
+#ifdef RAI_ODE
 //  testMeshShapesInOde();
   testPlayTorqueSequenceInOde();
 #endif

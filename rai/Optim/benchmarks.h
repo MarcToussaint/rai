@@ -1,25 +1,18 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 /// @file
 /// @ingroup group_Optim
 /// @addtogroup group_Optim
 /// @{
 
-#ifndef MLR_optimization_benchmarks_h
-#define MLR_optimization_benchmarks_h
+#ifndef RAI_optimization_benchmarks_h
+#define RAI_optimization_benchmarks_h
 
 #include "optimization.h"
 #include "KOMO_Problem.h"
@@ -76,8 +69,8 @@ struct ChoiceConstraintFunction : ConstrainedProblem {
   uint n;
   arr randomG;
   ChoiceConstraintFunction() {
-    which = (WhichConstraint) mlr::getParameter<int>("constraintChoice");
-    n = mlr::getParameter<uint>("dim", 2);
+    which = (WhichConstraint) rai::getParameter<int>("constraintChoice");
+    n = rai::getParameter<uint>("dim", 2);
   }
   void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda){
     CHECK_EQ(x.N,n,"");
@@ -161,8 +154,8 @@ struct SinusesFunction:VectorFunction {
   double a;
   double condition;
   SinusesFunction() {
-    a = mlr::getParameter<double>("SinusesFunction_a");
-    condition = mlr::getParameter<double>("condition");
+    a = rai::getParameter<double>("SinusesFunction_a");
+    condition = rai::getParameter<double>("condition");
  NIY 
   }
   virtual void fv(arr& phi, arr& J, const arr& x) {
@@ -218,9 +211,9 @@ struct ParticleAroundWalls2 : KOMO_Problem {
   arr x;
 
   ParticleAroundWalls2():
-    T(mlr::getParameter<uint>("opt/ParticleAroundWalls/T",1000)),
-    k(mlr::getParameter<uint>("opt/ParticleAroundWalls/k",2)),
-    n(mlr::getParameter<uint>("opt/ParticleAroundWalls/n",3)),
+    T(rai::getParameter<uint>("opt/ParticleAroundWalls/T",1000)),
+    k(rai::getParameter<uint>("opt/ParticleAroundWalls/k",2)),
+    n(rai::getParameter<uint>("opt/ParticleAroundWalls/n",3)),
     useKernel(false){}
 
   //implementations of the kOrderMarkov virtuals

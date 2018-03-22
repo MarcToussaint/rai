@@ -11,8 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
 #pragma once
 
 #include <Optim/optimization.h>
@@ -21,15 +19,15 @@
 //===========================================================================
 
 struct PathProblem{
-  mlr::KinematicWorld world;
+  rai::KinematicWorld world;
   const Graph& symbolicState;
   uint microSteps;
   int verbose;
 
   KOMO MP;
 
-  PathProblem(const mlr::KinematicWorld& world_initial,
-              const mlr::KinematicWorld& world_final,
+  PathProblem(const rai::KinematicWorld& world_initial,
+              const rai::KinematicWorld& world_final,
               const Graph& symbolicState,
               uint microSteps,
               int verbose);

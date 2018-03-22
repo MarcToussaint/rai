@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 /*
  * pixel_format.hpp
  *
@@ -10,7 +18,7 @@
 
 /* for the yuv formats, also see http://www.ptgrey.com/support/kb/index.asp?a=4&q=313 */
 
-namespace mlr {
+namespace rai {
 enum PixelFormat {
 	PIXEL_FORMAT_RAW8,		// raw sensor-values, format depends on camera type
 	PIXEL_FORMAT_RGB8,		// packed r-g-b, 8 bit each

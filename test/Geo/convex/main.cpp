@@ -117,7 +117,7 @@ void TEST(ConvexHull) {
 //
 
 namespace FCtest{
-  mlr::Vector center;
+  rai::Vector center;
   arr Xn;
   double f(arr *grad,const arr& X,void*){
     return forceClosure(X,Xn,center,.5,10.,grad);
@@ -138,7 +138,7 @@ void TEST(ForceClosure) {
   arr dFdX;
 
   double d;
-  mlr::Vector center;
+  rai::Vector center;
   center.set(c.p);
 
   //gradient descent on force closure
@@ -178,12 +178,12 @@ void drawInit(void*){
 
 /*
 void TEST(FCinOrs){
-  mlr::KinematicWorld C;
+  rai::KinematicWorld C;
   C <<FILE("../../data/configurations/forceClosureTest.ors");
 
   OpenGL gl;
   gl.add(drawInit,0);
-  gl.add(mlr::glDrawGraph,&C);
+  gl.add(rai::glDrawGraph,&C);
   gl.watch();
 
   SwiftInterface swift;
@@ -236,7 +236,7 @@ void testConvConvIntersect(){
     plotLine(C2, true);
     plotOpengl();
 
-    mlr::wait();
+    rai::wait();
   }
 
   //rnd case
@@ -262,7 +262,7 @@ void testConvConvIntersect(){
     plotLine(C2, true);
     plotOpengl();
 
-    mlr::wait();
+    rai::wait();
   }
 
   plotClose();
@@ -273,7 +273,7 @@ void testConvConvIntersect(){
 // void TEST(Speed){
 //   uint N=20,D=2;
 //   arr X(N,D);
-//   mlr::timerReset();
+//   rai::timerReset();
 //   for(uint i=0;i<100;i++){
 //     rndUniform(X,-1.,1.,false);
 //     distanceToConvexHull(X,origin,&p,&V,true);
@@ -281,7 +281,7 @@ void testConvConvIntersect(){
 // }
 
 int MAIN(int argc, char *argv[]){
-  mlr::initCmdLine(argc, argv);
+  rai::initCmdLine(argc, argv);
   cout <<"QHull version = " <<qhullVersion() <<endl;
 
   //testConvexHull();

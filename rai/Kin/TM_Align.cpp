@@ -1,20 +1,28 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "TM_Align.h"
 #include "frame.h"
 
-TM_Align::TM_Align(const mlr::KinematicWorld& K, const char* iName, const char* jName)
+TM_Align::TM_Align(const rai::KinematicWorld& K, const char* iName, const char* jName)
   : i(-1), j(-1){
-  mlr::Frame *a = iName ? K.getFrameByName(iName):NULL;
-  mlr::Frame *b = jName ? K.getFrameByName(jName):NULL;
+  rai::Frame *a = iName ? K.getFrameByName(iName):NULL;
+  rai::Frame *b = jName ? K.getFrameByName(jName):NULL;
   if(a) i=a->ID;
   if(b) j=b->ID;
 }
 
-void TM_Align::phi(arr& y, arr& J, const mlr::KinematicWorld& K, int t){
+void TM_Align::phi(arr& y, arr& J, const rai::KinematicWorld& K, int t){
   y.resize(3);
   if(&J) J.resize(3, K.q.N);
 
-  mlr::Frame* body_i = K.frames(i);
-  mlr::Frame* body_j = K.frames(j);
+  rai::Frame* body_i = K.frames(i);
+  rai::Frame* body_j = K.frames(j);
 
   arr zi,Ji,zj,Jj;
 
@@ -34,6 +42,6 @@ void TM_Align::phi(arr& y, arr& J, const mlr::KinematicWorld& K, int t){
   if(&J) J[2] = ~zj * Ji + ~zi * Jj;
 }
 
-mlr::String TM_Align::shortTag(const mlr::KinematicWorld &G){
+rai::String TM_Align::shortTag(const rai::KinematicWorld &G){
   return STRING("TM_Align:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }

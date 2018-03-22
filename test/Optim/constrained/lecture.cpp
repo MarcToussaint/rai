@@ -62,9 +62,9 @@ void testConstraint(ConstrainedProblem& p, uint dim_x, arr& x_start=NoArr, uint 
 
     if(x.N==2){
       displayFunction(UCP);
-      mlr::wait();
+      rai::wait();
       gnuplot("load 'plt'", false, true);
-      mlr::wait();
+      rai::wait();
     }
 
     //optRprop(x, F, OPT(verbose=2, stopTolerance=1e-3, initStep=1e-1));

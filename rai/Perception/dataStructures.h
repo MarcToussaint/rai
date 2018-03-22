@@ -1,6 +1,14 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
-#ifdef MLR_PCL
+#ifdef RAI_PCL
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -16,7 +24,7 @@ typedef pcl::PointXYZRGB PointT;
 void glDrawPrimitives(void* classP);
 
 struct Primitive{
-  mlr::Transformation X;
+  rai::Transformation X;
   virtual void glDraw() = 0;
   Primitive(){ X.setZero(); }
   virtual ~Primitive(){}
@@ -44,8 +52,8 @@ struct ArrCloudView:Primitive{
 };
 
 struct DisplayPrimitives : GLDrawer{
-  mlr::Array<Primitive*> P;
-  mlr::KinematicWorld G;
+  rai::Array<Primitive*> P;
+  rai::KinematicWorld G;
   arr pc[2];
 
   void glDraw(struct OpenGL&);

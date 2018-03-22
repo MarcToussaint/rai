@@ -63,9 +63,9 @@ void drawEnv(void*){
   glDrawFloor(4.,1,1,1);
 }
 
-void oneStep(const arr &q,mlr::KinematicWorld *C,OdeModule *ode,SwiftInterface *swift){
+void oneStep(const arr &q,rai::KinematicWorld *C,OdeModule *ode,SwiftInterface *swift){
   C->setJointState(q);
-#ifdef MLR_ODE
+#ifdef RAI_ODE
   if(ode){
     ode->exportStateToOde(*C);
     ode->step(.01);
@@ -77,14 +77,14 @@ void oneStep(const arr &q,mlr::KinematicWorld *C,OdeModule *ode,SwiftInterface *
   if(swift){
     swift->computeProxies(*C);
   }else{
-#ifdef MLR_ODE
+#ifdef RAI_ODE
     if(ode) ode->importProxiesFromOde(*C);
 #endif
   }
 		
 }
 
-void controlledStep(arr &q,arr &W,mlr::KinematicWorld *C,OdeModule *ode,SwiftInterface *swift,TaskVariableList& TVs){
+void controlledStep(arr &q,arr &W,rai::KinematicWorld *C,OdeModule *ode,SwiftInterface *swift,TaskVariableList& TVs){
   static arr dq;
   updateState(TVs);
   updateChanges(TVs); //computeXchangeWithAttractor(globalSpace);
@@ -109,7 +109,7 @@ ActionInterface::~ActionInterface(){
 void ActionInterface::shutdownAll(){
   if(C) delete C;          C=0;
   if(gl) delete gl;        gl=0;
-#ifdef MLR_ODE
+#ifdef RAI_ODE
   if(ode) delete ode;      ode=0;
 #endif
   if(swift) delete swift;  swift=0;
@@ -118,12 +118,12 @@ void ActionInterface::shutdownAll(){
 void ActionInterface::loadConfiguration(const char* ors_filename){
   
   char *path,*name,cwd[200];
-  mlr::decomposeFilename(path,name,ors_filename);
+  rai::decomposeFilename(path,name,ors_filename);
   getcwd(cwd,200);
   chdir(path);
 
   if(C) delete C;
-  C = new mlr::KinematicWorld();
+  C = new rai::KinematicWorld();
   *C <<FILE(name);
   //C->reconfigureRoot(C->getName("rfoot"));
 
@@ -153,7 +153,7 @@ void ActionInterface::loadConfiguration(const char* ors_filename){
   for (i=1;;i++) {
     ss.str("");
     ss << "o" << i;
-    mlr::Body *n = C->getBodyByName(ss.str().c_str());
+    rai::Body *n = C->getBodyByName(ss.str().c_str());
     if (n==0)
       break;
     noObjects++;
@@ -162,7 +162,7 @@ void ActionInterface::loadConfiguration(const char* ors_filename){
   if(gl) return;
   gl=new OpenGL;
   gl->add(drawEnv,0);
-  gl->add(mlr::glDrawGraph,C);
+  gl->add(rai::glDrawGraph,C);
   //gl->setClearColors(1.,1.,1.,1.);
   gl->camera.setPosition(7.,-0.,2.);
   gl->camera.focus(0,0,.8);
@@ -179,13 +179,13 @@ void ActionInterface::watch(){
 
 void ActionInterface::startOde(double ode_coll_bounce, double ode_coll_erp, double ode_coll_cfm, double ode_friction) {
   CHECK(C,"load a configuration first");
-#ifdef MLR_ODE
+#ifdef RAI_ODE
   if(ode) delete ode;
   ode = new OdeModule;
 #endif
 
   // SIMULATOR PARAMETER
-#ifdef MLR_ODE
+#ifdef RAI_ODE
   ode->coll_bounce = ode_coll_bounce; // huepfen der bloecke, falls sie zb runterfallen
   ode->coll_ERP = ode_coll_erp;   //usually .2!! stiffness (time-scale of contact reaction) umso groesser, desto mehr Fehlerkorrektur; muss zwischen 0.1 und 0.5 sein (ungefaehr)
   ode->coll_CFM = ode_coll_cfm;  //softness // umso groesser, desto breiter, desto weicher, desto weniger Fehlerkorrektur; zwischen 10e-10 und 10e5
@@ -254,7 +254,7 @@ void ActionInterface::relaxPosition(){
 //   TaskVariable x("endeffector",*C,posTVT,man_id,0,0,0,arr());
 //   x.setGainsAsAttractor(20,.2);
 //   x.y_prec=1000.;
-//   mlr::KinematicWorld::node obj=C->getName(obj_id);
+//   rai::KinematicWorld::node obj=C->getName(obj_id);
 //   
 //   uint t;
 //   arr q,dq;
@@ -297,7 +297,7 @@ void ActionInterface::moveTo(const char *man_id,const arr& target){
 }
 
 void ActionInterface::grab(const char *man_id,const char *obj_id){
-  mlr::Body *obj=C->getBodyByName(obj_id);
+  rai::Body *obj=C->getBodyByName(obj_id);
 	
   TaskVariable x("endeffector",*C,posTVT,man_id,0,0,0,arr());
   x.setGainsAsAttractor(20,.2);
@@ -310,7 +310,7 @@ void ActionInterface::grab(const char *man_id,const char *obj_id){
 //   if(!swift) c.active=false;
   
   // (1) drop object if one is in hand
-  mlr::Joint *e;
+  rai::Joint *e;
   uint i;
   for_list(Type, e, C->bodies(x.i)->outLinks){
     NIY;
@@ -376,16 +376,16 @@ void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id){
   //
   int obj_index=C->getBodyByName(obj_id1)->index;
   delete[] obj_id1;
-  mlr::Quaternion rot;
+  rai::Quaternion rot;
   rot = C->bodies(obj_index)->X.rot;
-  mlr::Vector upvec; double maxz=-2;
+  rai::Vector upvec; double maxz=-2;
   if((rot*Vector_x)(2)>maxz){ upvec=Vector_x; maxz=(rot*upvec)(2); }
   if((rot*Vector_y)(2)>maxz){ upvec=Vector_y; maxz=(rot*upvec)(2); }
   if((rot*Vector_z)(2)>maxz){ upvec=Vector_z; maxz=(rot*upvec)(2); }
   if((rot*(-Vector_x))(2)>maxz){ upvec=-Vector_x; maxz=(rot*upvec)(2); }
   if((rot*(-Vector_y))(2)>maxz){ upvec=-Vector_y; maxz=(rot*upvec)(2); }
   if((rot*(-Vector_z))(2)>maxz){ upvec=-Vector_z; maxz=(rot*upvec)(2); }
-  mlr::Transformation f;
+  rai::Transformation f;
   f.rot.setDiff(Vector_z, upvec);
   z.set("obj-z-align",*C,zalignTVT,obj_index,f,-1,Transformation_Id,arr());
   //
@@ -508,7 +508,7 @@ void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id){
   }
   if(t==Tabort){ indicateFailure(); return; }
   
-  mlr::Joint *e;
+  rai::Joint *e;
   e=C->bodies(x.i)->inLinks(0);
   if (obj_is_inhand){
     NIY;
@@ -533,8 +533,8 @@ bool ActionInterface::partOfBody(uint id){
 
 uint ActionInterface::getCatched(uint man_id){
 #if 0
-  //   mlr::KinematicWorld::node n = C->bodies(man_id);
-  mlr::Proxy *p;
+  //   rai::KinematicWorld::node n = C->bodies(man_id);
+  rai::Proxy *p;
   // 	cout << "davor";
   uint obj=C->getBodyByName(convertObjectID2name(man_id))->index;
   //   cout << "danach";
@@ -558,7 +558,7 @@ uint ActionInterface::getCatched(uint man_id){
 }
   return UINT_MAX;
 #else
-  mlr::Joint *e;
+  rai::Joint *e;
   e=C->bodies(man_id)->outLinks(0);
   if(!e) return UINT_MAX;
   return e->to->index;
@@ -570,7 +570,7 @@ uint ActionInterface::getCatched() {
 }
 
 void ActionInterface::writeAllContacts(uint id) {
-  mlr::Proxy *p;
+  rai::Proxy *p;
   // 	cout << "davor";
   uint obj=C->getBodyByName(convertObjectID2name(id))->index;
   //   cout << "danach";
@@ -598,7 +598,7 @@ void ActionInterface::writeAllContacts(uint id) {
 
 void ActionInterface::getObjectsAbove(uintA& list,const char *obj_id){
   list.clear();
-  mlr::Proxy *p;
+  rai::Proxy *p;
   uint obj=C->getBodyByName(obj_id)->index;
 //   writeAllContacts(convertObjectName2ID(obj_id));
   uint i;
@@ -632,7 +632,7 @@ void ActionInterface::getObjectsAbove(uintA& list,const uint obj_id) {
 
 // void ActionInterface::getObjectsBelow(uintA& list,const char *obj_id){
 //   list.clear();
-//   mlr::Proxy *p;
+//   rai::Proxy *p;
 //   uint obj=C->getBodyByName(obj_id)->index;
 //   uint i;
 //   for(i=0;i<C->proxies.N;i++) if(!C->proxies(i).age && C->proxies(i).d<0.){
@@ -666,14 +666,14 @@ void ActionInterface::getManipulableObjects(uintA& objects) {
   for (i=1;i<=noObjects;i++) {
     ss.str("");
     ss << "o" << i;
-    mlr::Body *n = C->getBodyByName(ss.str().c_str());
+    rai::Body *n = C->getBodyByName(ss.str().c_str());
     obj=n->index;
     objects.append(obj);
   }
 }
 
 uint ActionInterface::getTableID() {
-  mlr::Body *n = C->getBodyByName("table");
+  rai::Body *n = C->getBodyByName("table");
   return n->index;
 }
 
@@ -686,9 +686,9 @@ bool ActionInterface::inContact(uint a,uint b){
 bool ActionInterface::isUpright(uint id){
   double TOLERANCE = 0.05; // in radians
   
-  mlr::Quaternion rot;
+  rai::Quaternion rot;
   rot = C->bodies(id)->X.rot;
-  mlr::Vector upvec; double maxz=-2;
+  rai::Vector upvec; double maxz=-2;
   if((rot*Vector_x)(2)>maxz){ upvec=Vector_x; maxz=(rot*upvec)(2); }
   if((rot*Vector_y)(2)>maxz){ upvec=Vector_y; maxz=(rot*upvec)(2); }
   if((rot*Vector_z)(2)>maxz){ upvec=Vector_z; maxz=(rot*upvec)(2); }
@@ -763,7 +763,7 @@ void ActionInterface::printObjectInfo() {
 
 void ActionInterface::indicateFailure(){
   // drop object
-  mlr::Joint *e;
+  rai::Joint *e;
   uint i;
   for_list(Type, e, C->getBodyByName("fing1c")->outLinks){
     NIY;
@@ -776,7 +776,7 @@ void ActionInterface::indicateFailure(){
 // if z-value of objects is beneath THRESHOLD
 bool ActionInterface::onBottom(uint id) {
   double THRESHOLD = 0.15;
-  mlr::Body *obj=C->bodies(id);
+  rai::Body *obj=C->bodies(id);
   if (obj->X.pos.z < THRESHOLD)
     return true;
   else

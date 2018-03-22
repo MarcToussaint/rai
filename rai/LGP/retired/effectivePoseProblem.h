@@ -11,8 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
 #pragma once
 
 #include <Optim/optimization.h>
@@ -21,13 +19,13 @@
 //===========================================================================
 
 struct EffectivePoseProblem:ConstrainedProblem{
-  mlr::KinematicWorld& effKinematics;
+  rai::KinematicWorld& effKinematics;
   const Graph& KB;
   const Graph& symbolicState_before;
   const Graph& symbolicState_after;
   arr x0;
   int verbose;
-  EffectivePoseProblem(mlr::KinematicWorld& effKinematics_before,
+  EffectivePoseProblem(rai::KinematicWorld& effKinematics_before,
                        const Graph& KB, const Graph& symbolicState_before, const Graph& symbolicState_after,
                        int verbose);
   void phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, const arr& x);

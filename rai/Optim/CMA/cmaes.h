@@ -11,7 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
 #ifndef NH_cmaes_h //MT
 #define NH_cmaes_h //MT
 /* --------------------------------------------------------- */

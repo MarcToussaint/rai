@@ -11,8 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
 //#include <RosCom/actionMachine.h>
 //#include "manipSim.h"
 #include <Kin/kin.h>
@@ -20,7 +18,7 @@
 
 
 void runMonteCarlo(Graph& G){
-//  mlr::rnd.seed(3);
+//  rai::rnd.seed(3);
   uint verbose=0;
 
   G.checkConsistency();
@@ -41,7 +39,7 @@ void runMonteCarlo(Graph& G){
 
     {
       //-- get all possible decisions
-      mlr::Array<std::pair<Node*, NodeL> > decisions; //tuples of rule and substitution
+      rai::Array<std::pair<Node*, NodeL> > decisions; //tuples of rule and substitution
       for(Node* rule:rules){
         //      cout <<"*** RULE: " <<*rule <<endl;
         //      cout <<  "Substitutions:" <<endl;

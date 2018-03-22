@@ -1,17 +1,10 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #pragma once
 
@@ -66,11 +59,11 @@ struct MCTS_Environment {
   /// Return whether action is feasible in current state
   virtual bool is_feasible_action(const Handle& action){ return true; }
 
-  /// Get the current state
+  /// Get the current state (the handle must point to a persistent thing/copy)
   virtual const Handle get_stateCopy() = 0;
 
   /// Get the current state
-  virtual void set_state(const Handle& state){ std::cerr <<"not implemented for world of type " <<typeid(this).name() <<std::endl; exit(-1); }
+  virtual void set_state(const Handle& stateCopy){ std::cerr <<"not implemented for world of type " <<typeid(this).name() <<std::endl; exit(-1); }
 
   /// Return whether the current state is a terminal state
   virtual bool is_terminal_state() const = 0;

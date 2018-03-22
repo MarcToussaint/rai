@@ -1,25 +1,18 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #include "solver_PlainMC.h"
 
 void MCStatistics::add(double R, uint topSize){
   n++;
-  if(X.N<topSize) X.insertInSorted(R, mlr::greaterEqual<double>);
+  if(X.N<topSize) X.insertInSorted(R, rai::greaterEqual<double>);
   else if(R>X.last()){
-    X.insertInSorted(R, mlr::greaterEqual<double>);
+    X.insertInSorted(R, rai::greaterEqual<double>);
     X.popLast();
   }
 }
@@ -28,7 +21,7 @@ PlainMC::PlainMC(MCTS_Environment& world)
   : world(world), gamma(.9), verbose(2), topSize(10){
   reset();
   gamma = world.get_info_value(MCTS_Environment::getGamma);
-  mlr::FileToken fil("PlainMC.blackList");
+  rai::FileToken fil("PlainMC.blackList");
   if(fil.exists()){
     blackList.read(fil.getIs());
   }
@@ -41,7 +34,7 @@ void PlainMC::reset(){
   D.resize(A.N);
 }
 
-double PlainMC::initRollout(const mlr::Array<MCTS_Environment::Handle>& prefixDecisions){
+double PlainMC::initRollout(const rai::Array<MCTS_Environment::Handle>& prefixDecisions){
   world.reset_state();
 
   //reset rollout 'return' variables
@@ -70,7 +63,7 @@ double PlainMC::finishRollout(int stepAbort){
 
   //-- continue with random rollout
   while(!world.is_terminal_state() && (stepAbort<0 || rolloutStep++<(uint)stepAbort)){
-    mlr::Array<MCTS_Environment::Handle> actions;
+    rai::Array<MCTS_Environment::Handle> actions;
     actions = conv_stdvec2arr(world.get_actions()); //WARNING: conv... returns a reference!!
     if(verbose>2){ cout <<"Possible decisions: "; listWrite(actions); cout <<endl; }
     if(!actions.N){
@@ -91,7 +84,7 @@ double PlainMC::finishRollout(int stepAbort){
   return rolloutR;
 }
 
-double PlainMC::generateRollout(int stepAbort, const mlr::Array<MCTS_Environment::Handle>& prefixDecisions){
+double PlainMC::generateRollout(int stepAbort, const rai::Array<MCTS_Environment::Handle>& prefixDecisions){
 #if 1
   initRollout(prefixDecisions);
   return finishRollout(stepAbort);
@@ -118,7 +111,7 @@ double PlainMC::generateRollout(int stepAbort, const mlr::Array<MCTS_Environment
 
   //-- continue with random rollout
   while(!world.is_terminal_state() && (stepAbort<0 || rolloutStep++<(uint)stepAbort)){
-    mlr::Array<MCTS_Environment::Handle> actions;
+    rai::Array<MCTS_Environment::Handle> actions;
     actions = conv_stdvec2arr(world.get_actions()); //WARNING: conv... returns a reference!!
     if(verbose>2){ cout <<"Possible decisions: "; listWrite(actions); cout <<endl; }
     if(!actions.N){
@@ -148,9 +141,9 @@ double PlainMC::addRollout(int stepAbort){
   generateRollout(stepAbort, {A(a)});
 
   if(blackList.N){
-    mlr::String decisionsString;
+    rai::String decisionsString;
     for(const auto& a:rolloutDecisions) decisionsString <<*a <<' ';
-    for(const mlr::String& black:blackList){
+    for(const rai::String& black:blackList){
       if(decisionsString.startsWith(black)){
         if(verbose>0) cout <<"****************** MC: rollout was on BLACKLIST: " <<*black <<endl;
         return 0.;

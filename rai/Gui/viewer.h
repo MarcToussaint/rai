@@ -1,9 +1,17 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include <Core/thread.h>
 
-namespace mlr { struct Mesh; }
-typedef mlr::Array<mlr::Mesh> MeshA;
+namespace rai { struct Mesh; }
+typedef rai::Array<rai::Mesh> MeshA;
 
 struct ImageViewer : Thread {
   struct sImageViewer *s;

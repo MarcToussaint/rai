@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "avutil.h"
 #include <iostream>
 #include <Core/util.h>
@@ -6,7 +14,7 @@
 
 Mutex libav_open_mutex;
 
-namespace mlr {
+namespace rai {
 void register_libav() {
     Lock avlock(libav_open_mutex);
     av_register_all();

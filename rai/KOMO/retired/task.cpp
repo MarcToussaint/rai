@@ -1,11 +1,11 @@
 //===========================================================================
 
-Task* Task::newTask(const Node* specs, const mlr::KinematicWorld& world, int stepsPerPhase, uint T){
+Task* Task::newTask(const Node* specs, const rai::KinematicWorld& world, int stepsPerPhase, uint T){
   if(specs->parents.N<2) return NULL; //these are not task specs
 
   //-- check the term type first
   ObjectiveType termType;
-  mlr::String& tt=specs->parents(0)->keys.last();
+  rai::String& tt=specs->parents(0)->keys.last();
   if(tt=="MinSumOfSqr") termType=OT_sumOfSqr;
   else if(tt=="LowerEqualZero") termType=OT_ineq;
   else if(tt=="EqualZero") termType=OT_eq;

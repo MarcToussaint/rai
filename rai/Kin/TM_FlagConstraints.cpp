@@ -1,17 +1,10 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #include "TM_FlagConstraints.h"
 #include "TM_qItself.h"
@@ -21,13 +14,13 @@
 
 //===========================================================================
 
-bool JointDidNotSwitch(const mlr::Frame *a1, const WorldL& Ktuple, int order){
+bool JointDidNotSwitch(const rai::Frame *a1, const WorldL& Ktuple, int order){
   CHECK_EQ(&a1->K, Ktuple.last(), "");
   if(order<1) return true;
   for(int i=0;i<order;i++){
     if(a1->ID >= Ktuple(-2-i)->frames.N) return false;
-    mlr::Frame *a0 = Ktuple(-2-i)->frames(a1->ID);
-    mlr::Joint *j0 = a0->joint, *j1 = a1->joint;
+    rai::Frame *a0 = Ktuple(-2-i)->frames(a1->ID);
+    rai::Joint *j0 = a0->joint, *j1 = a1->joint;
     if(!j0 || !j1
        || j0->type!=j1->type
        || j0->constrainToZeroVel!=j1->constrainToZeroVel
@@ -40,7 +33,7 @@ bool JointDidNotSwitch(const mlr::Frame *a1, const WorldL& Ktuple, int order){
 
 uint TM_FlagConstraints::dim_phi(const WorldL& Ktuple, int t){
   uint d=0;
-  for(mlr::Frame *a : Ktuple.last()->frames){
+  for(rai::Frame *a : Ktuple.last()->frames){
     if(a->flags & (1<<FL_zeroVel)) d += 7;
     if(order>=2 && a->flags & (1<<FL_zeroAcc) && !(a->flags & (1<<FL_impulseExchange))) d += 7;
     if(order>=2 && a->flags & (1<<FL_gravityAcc) && !(a->flags & (1<<FL_impulseExchange))) d += 7;
@@ -52,7 +45,7 @@ uint TM_FlagConstraints::dim_phi(const WorldL& Ktuple, int t){
 void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
   CHECK_GE(order, 1, "FlagConstraints needs k-order 1");
 
-  mlr::KinematicWorld& K = *Ktuple.last();
+  rai::KinematicWorld& K = *Ktuple.last();
 
   y.resize(dim_phi(Ktuple, t)).setZero();
   if(&J){
@@ -61,7 +54,7 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
   }
 
   uint d=0;
-  for(mlr::Frame *a : K.frames) if(a->flags){
+  for(rai::Frame *a : K.frames) if(a->flags){
     if(a->flags & (1<<FL_zeroVel)){
       TM_Default pos(TMT_pos, a->ID);
       pos.order=1;
@@ -134,7 +127,7 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
 
 uint TM_FlagCosts::dim_phi(const WorldL& Ktuple, int t){
   uint d=0;
-  for(mlr::Frame *a : Ktuple.last()->frames){
+  for(rai::Frame *a : Ktuple.last()->frames){
     if(order>=2 && a->flags & (1<<FL_xPosAccCosts)) d+=3;
     if(a->flags & (1<<FL_xPosVelCosts)) d+=3;
     if(order>=2 && a->flags & (1<<FL_qCtrlCostAcc)) if(JointDidNotSwitch(a, Ktuple, 2)) d += a->joint->dim;
@@ -146,7 +139,7 @@ uint TM_FlagCosts::dim_phi(const WorldL& Ktuple, int t){
 void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
   CHECK_GE(order, 1, "FlagConstraints needs k-order 1");
 
-  mlr::KinematicWorld& K = *Ktuple.last();
+  rai::KinematicWorld& K = *Ktuple.last();
 
   y.resize(dim_phi(Ktuple, t)).setZero();
   if(&J){
@@ -155,7 +148,7 @@ void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
   }
 
   uint d=0;
-  for(mlr::Frame *a : K.frames) if(a->flags){
+  for(rai::Frame *a : K.frames) if(a->flags){
 
     if(order>=2 && a->flags & (1<<FL_xPosAccCosts)){
       CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");

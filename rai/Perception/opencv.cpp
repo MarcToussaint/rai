@@ -1,4 +1,12 @@
-#ifdef MLR_OPENCV
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
+#ifdef RAI_OPENCV
 
 #include "opencv.h"
 
@@ -74,5 +82,5 @@ void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSd
   diff = smoothed;
 }
 
-#endif // MLR_OPENCV
+#endif // RAI_OPENCV
 

@@ -33,12 +33,12 @@ void TEST(ThreadedOpenGL) {
   Proc gl1("gl1"),gl2("gl2"),gl3("gl3");
   gl1.threadLoop();
   gl2.threadLoop();
-  mlr::wait(2.);
+  rai::wait(2.);
   gl1.threadClose();
   gl2.threadClose();
 
   Proc *gli;
-  mlr::Array<mlr::String> names;
+  rai::Array<rai::String> names;
   ThreadL procs;
   for (int i=0; i<20; ++i){
     names.append(STRING("many_"<<i));
@@ -46,12 +46,12 @@ void TEST(ThreadedOpenGL) {
     gli->threadLoop();
     procs.append(gli);
   }
-  mlr::wait(5.);
+  rai::wait(5.);
   for(Thread* th : procs) th->threadClose();
 }
 
 int MAIN(int argc, char **argv){
-  mlr::initCmdLine(argc,argv);
+  rai::initCmdLine(argc,argv);
 
   testThreadedOpenGL();
 

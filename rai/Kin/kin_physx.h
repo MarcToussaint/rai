@@ -1,23 +1,16 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 /// @file
 /// @ingroup group_ors
 
-#ifndef MLR_ors_physx_h
-#define MLR_ors_physx_h
+#ifndef RAI_ors_physx_h
+#define RAI_ors_physx_h
 #include "kin.h"
 
 namespace physx {
@@ -25,21 +18,21 @@ namespace physx {
 }
 
 /**
- * @defgroup ors_interface_physx Interface to PhysX
- * @ingroup ors_interfaces
+ * @defgroup rai_interface_physx Interface to PhysX
+ * @ingroup rai_interfaces
  * @{
  */
 struct PhysXInterface : GLDrawer{
-  mlr::KinematicWorld& world;
+  rai::KinematicWorld& world;
   struct sPhysXInterface *s;
   
-  PhysXInterface(mlr::KinematicWorld& _world);
+  PhysXInterface(rai::KinematicWorld& _world);
   ~PhysXInterface();
   
   void step(double tau=.03, bool withKinematicPush=true);
   
-  void pushToPhysx(mlr::KinematicWorld *K=NULL, mlr::KinematicWorld *Kt_1=NULL, mlr::KinematicWorld *Kt_2=NULL, double tau=-1., bool onlyKinematic=true);
-  void pullFromPhysx(mlr::KinematicWorld *K=NULL, arr &vels=NoArr);
+  void pushToPhysx(rai::KinematicWorld *K=NULL, rai::KinematicWorld *Kt_1=NULL, rai::KinematicWorld *Kt_2=NULL, double tau=-1., bool onlyKinematic=true);
+  void pullFromPhysx(rai::KinematicWorld *K=NULL, arr &vels=NoArr);
 
   void setArticulatedBodiesKinematic();
   void ShutdownPhysX();
@@ -47,11 +40,11 @@ struct PhysXInterface : GLDrawer{
   void glDraw(OpenGL&);
   void watch(bool pause=false, const char* txt=NULL);
 
-  void addForce(mlr::Vector& force, mlr::Frame* b);
-  void addForce(mlr::Vector& force, mlr::Frame* b, mlr::Vector& pos);
+  void addForce(rai::Vector& force, rai::Frame* b);
+  void addForce(rai::Vector& force, rai::Frame* b, rai::Vector& pos);
 };
 
-void bindOrsToPhysX(mlr::KinematicWorld& graph, OpenGL& gl, PhysXInterface& physx);
+void bindOrsToPhysX(rai::KinematicWorld& graph, OpenGL& gl, PhysXInterface& physx);
 
 #endif
 /// @}

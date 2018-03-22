@@ -11,8 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
 /// @file
 /// @ingroup group_ors
 /// @addtogroup group_ors
@@ -24,7 +22,7 @@
 struct OrsSceneGui {
   struct sOrsSceneGui *s;
   
-  OrsSceneGui(mlr::KinematicWorld& ors, OpenGL *gl=NULL);
+  OrsSceneGui(rai::KinematicWorld& ors, OpenGL *gl=NULL);
   
   void edit();
   

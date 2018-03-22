@@ -1,15 +1,9 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
 #include <Core/util.tpp>
@@ -18,7 +12,7 @@
 #include "gtk.h"
 #include <sys/syscall.h>
 
-#ifdef MLR_GTK
+#ifdef RAI_GTK
 
 #include <gtk/gtk.h>
 #include <gtk/gtkgl.h>
@@ -106,7 +100,7 @@ int gtkPopupMenuChoice(StringL& choices) {
   //create menu
   GtkWidget *menu = gtk_menu_new();
   gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, 0, gtk_get_current_event_time());
-  for_list(mlr::String,  s,  choices) {
+  for_list(rai::String,  s,  choices) {
     GtkWidget *item = gtk_menu_item_new_with_label(s->p);
     gtk_container_add(GTK_CONTAINER(menu), item);
     gtk_signal_connect_object(GTK_OBJECT(item), "activate",
@@ -132,6 +126,6 @@ GtkWidget *gtkTopWindow(const char* name) {
   return win;
 }
 
-#else //MLR_GTK
+#else //RAI_GTK
 #endif
 

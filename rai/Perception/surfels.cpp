@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "surfels.h"
 #include <Geo/geo.h>
 #include <Perception/kinect2pointCloud.h>
@@ -27,7 +35,7 @@ void Surfels::glDraw(bool renderIndex){
   glDisable(GL_CULL_FACE);
   float h=.5*sqrt(3);
   double tmp[12];
-  mlr::Transformation T;
+  rai::Transformation T;
   glNewList(1, GL_COMPILE);
   glBegin(GL_TRIANGLE_FAN);
     glVertex3f(0.,0.,0.);
@@ -51,7 +59,7 @@ void Surfels::glDraw(bool renderIndex){
       glColor3f(float((j>>16)&0xff)/256.f, float((j>>8)&0xff)/256.f, float(j&0xff)/256.f);
     }
     T.pos.set(pos(i,0), pos(i,1), pos(i,2));
-    T.rot.setDiff(Vector_z, mlr::Vector(norm[i]));
+    T.rot.setDiff(Vector_z, rai::Vector(norm[i]));
     glLoadMatrixd(T.getAffineMatrixGL(tmp));
     glScaled(rad(i),rad(i),rad(i));
     glCallList(1);

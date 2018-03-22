@@ -1,29 +1,22 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 /// @file
 /// @ingroup group_Core
 /// @addtogroup group_Core
 /// @{
 
-#ifndef MLR_geo_h
-#define MLR_geo_h
+#ifndef RAI_geo_h
+#define RAI_geo_h
 
 #include <Core/array.h>
 
-namespace mlr {
+namespace rai {
 
 //===========================================================================
 /// a 3D vector (double[3])
@@ -245,7 +238,7 @@ struct DynamicTransformation : Transformation{
   DynamicTransformation() {}
   DynamicTransformation(int zero){ CHECK_EQ(zero,0,"this is only for initialization with zero"); setZero(); }
   DynamicTransformation(const DynamicTransformation &t) : Transformation(t), vel(t.vel), angvel(t.angvel), zeroVels(t.zeroVels) {}
-  DynamicTransformation(const char* init) { read(mlr::String(init).stream()); }
+  DynamicTransformation(const char* init) { read(rai::String(init).stream()); }
 
   DynamicTransformation& setZero();
   DynamicTransformation& setText(const char* txt);
@@ -381,9 +374,9 @@ std::ostream& operator<<(std::ostream&, const Transformation&);
 /// of a 'cross-product-matrix'
 void quatDiff(arr& y, arr& J1, arr& J2, const Quaternion& q1, const Quaternion& q2);
 
-double quatScalarProduct(const mlr::Quaternion& a, const mlr::Quaternion& b);
+double quatScalarProduct(const rai::Quaternion& a, const rai::Quaternion& b);
 
-double sqrDistance(const mlr::Vector& a, const mlr::Vector& b);
+double sqrDistance(const rai::Vector& a, const rai::Vector& b);
 
 
 } //END of namespace
@@ -393,9 +386,9 @@ double sqrDistance(const mlr::Vector& a, const mlr::Vector& b);
 // conversions to arr
 //
 
-inline arr conv_vec2arr(const mlr::Vector& v) {      return arr(&v.x, 3, false); }
-inline arr conv_quat2arr(const mlr::Quaternion& q) { return arr(&q.w, 4, false); }
-inline arr conv_mat2arr(const mlr::Matrix& m) {      return arr(&m.m00, 9, false); }
+inline arr conv_vec2arr(const rai::Vector& v) {      return arr(&v.x, 3, false); }
+inline arr conv_quat2arr(const rai::Quaternion& q) { return arr(&q.w, 4, false); }
+inline arr conv_mat2arr(const rai::Matrix& m) {      return arr(&m.m00, 9, false); }
 
 
 //===========================================================================
@@ -403,16 +396,16 @@ inline arr conv_mat2arr(const mlr::Matrix& m) {      return arr(&m.m00, 9, false
 // constants
 //
 
-extern const mlr::Vector Vector_x;
-extern const mlr::Vector Vector_y;
-extern const mlr::Vector Vector_z;
-extern const mlr::Transformation Transformation_Id;
-extern const mlr::Quaternion Quaternion_Id;
-extern const mlr::Quaternion Quaternion_x;
-extern const mlr::Quaternion Quaternion_y;
-extern const mlr::Quaternion Quaternion_z;
-extern mlr::Vector& NoVector;
-extern mlr::Transformation& NoTransformation;
+extern const rai::Vector Vector_x;
+extern const rai::Vector Vector_y;
+extern const rai::Vector Vector_z;
+extern const rai::Transformation Transformation_Id;
+extern const rai::Quaternion Quaternion_Id;
+extern const rai::Quaternion Quaternion_x;
+extern const rai::Quaternion Quaternion_y;
+extern const rai::Quaternion Quaternion_z;
+extern rai::Vector& NoVector;
+extern rai::Transformation& NoTransformation;
 
 
 //===========================================================================

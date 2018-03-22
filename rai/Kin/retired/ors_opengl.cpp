@@ -11,8 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
 /**
  * @file
  * @ingroup group_ors
@@ -35,7 +33,7 @@ bool orsDrawBodyNames=false;
 double orsDrawAlpha=0.50;
 uint orsDrawLimit=0;
 
-#ifdef MLR_GL
+#ifdef RAI_GL
 #  include <GL/gl.h>
 #  include <GL/glu.h>
 
@@ -46,7 +44,7 @@ extern void glDrawText(const char* txt, float x, float y, float z);
 
 //void glColor(float *rgb);//{ glColor(rgb[0], rgb[1], rgb[2], 1.); }
 
-#ifndef MLR_ORS_ONLY_BASICS
+#ifndef RAI_ORS_ONLY_BASICS
 
 /**
  * @brief Bind ors to OpenGL.
@@ -55,12 +53,12 @@ extern void glDrawText(const char* txt, float x, float y, float z);
  * @param graph the ors graph.
  * @param gl OpenGL which shows the ors graph.
  */
-void bindOrsToOpenGL(mlr::KinematicWorld& graph, OpenGL& gl) {
+void bindOrsToOpenGL(rai::KinematicWorld& graph, OpenGL& gl) {
   gl.add(glStandardScene, 0);
-  gl.add(mlr::glDrawGraph, &graph);
+  gl.add(rai::glDrawGraph, &graph);
 //  gl.setClearColors(1., 1., 1., 1.);
 
-  mlr::Body* glCamera = graph.getBodyByName("glCamera");
+  rai::Body* glCamera = graph.getBodyByName("glCamera");
   if(glCamera) {
     gl.camera.X = glCamera->X;
     gl.resize(500,500);
@@ -73,14 +71,14 @@ void bindOrsToOpenGL(mlr::KinematicWorld& graph, OpenGL& gl) {
 }
 #endif
 
-#ifndef MLR_ORS_ONLY_BASICS
+#ifndef RAI_ORS_ONLY_BASICS
 
-/// static GL routine to draw a mlr::KinematicWorld
-void mlr::glDrawGraph(void *classP) {
-  ((mlr::KinematicWorld*)classP)->glDraw(NoOpenGL);
+/// static GL routine to draw a rai::KinematicWorld
+void rai::glDrawGraph(void *classP) {
+  ((rai::KinematicWorld*)classP)->glDraw(NoOpenGL);
 }
 
-void mlr::Shape::glDraw(OpenGL& gl) {
+void rai::Shape::glDraw(OpenGL& gl) {
   //set name (for OpenGL selection)
   glPushName((index <<2) | 1);
   if(orsDrawColors && !orsDrawIndexColors) glColor(color[0], color[1], color[2], orsDrawAlpha);
@@ -101,28 +99,28 @@ void mlr::Shape::glDraw(OpenGL& gl) {
   }
   if(orsDrawShapes) {
     switch(type) {
-      case mlr::ST_none: LOG(-1) <<"Shape '" <<name <<"' has no joint type";  break;
-      case mlr::ST_box:
+      case rai::ST_none: LOG(-1) <<"Shape '" <<name <<"' has no joint type";  break;
+      case rai::ST_box:
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else if(orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
         else glDrawBox(size(0), size(1), size(2));
         break;
-      case mlr::ST_sphere:
+      case rai::ST_sphere:
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else if(orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
         else glDrawSphere(size(3));
         break;
-      case mlr::ST_cylinder:
+      case rai::ST_cylinder:
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else if(orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
         else glDrawCylinder(size(3), size(2));
         break;
-      case mlr::ST_capsule:
+      case rai::ST_capsule:
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else if(orsDrawMeshes && mesh.V.N) mesh.glDraw(gl);
         else glDrawCappedCylinder(size(3), size(2));
         break;
-      case mlr::ST_retired_SSBox:
+      case rai::ST_retired_SSBox:
         HALT("deprecated??");
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else if(orsDrawMeshes){
@@ -130,23 +128,23 @@ void mlr::Shape::glDraw(OpenGL& gl) {
           mesh.glDraw(gl);
         }else NIY;
         break;
-      case mlr::ST_marker:
+      case rai::ST_marker:
         if(orsDrawMarkers){
           glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.); glDrawAxes(size(0));
         }
         break;
-      case mlr::ST_mesh:
+      case rai::ST_mesh:
         CHECK(mesh.V.N, "mesh needs to be loaded to draw mesh object");
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
         break;
-      case mlr::ST_ssCvx:
+      case rai::ST_ssCvx:
         CHECK(sscCore.V.N, "sscCore needs to be loaded to draw mesh object");
         if(!mesh.V.N) mesh.setSSCvx(sscCore, size(3));
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
         break;
-      case mlr::ST_ssBox:
+      case rai::ST_ssBox:
         if(!mesh.V.N || !sscCore.V.N){
           sscCore.setBox();
           sscCore.scale(size(0), size(1), size(2));
@@ -155,7 +153,7 @@ void mlr::Shape::glDraw(OpenGL& gl) {
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
         break;
-      case mlr::ST_pointCloud:
+      case rai::ST_pointCloud:
         CHECK(mesh.V.N, "mesh needs to be loaded to draw point cloud object");
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
@@ -180,10 +178,10 @@ void mlr::Shape::glDraw(OpenGL& gl) {
   glPopName();
 }
 
-/// GL routine to draw a mlr::KinematicWorld
-void mlr::KinematicWorld::glDraw(OpenGL& gl) {
+/// GL routine to draw a rai::KinematicWorld
+void rai::KinematicWorld::glDraw(OpenGL& gl) {
   uint i=0;
-  mlr::Transformation f;
+  rai::Transformation f;
   double GLmatrix[16];
 
   glPushMatrix();
@@ -253,9 +251,9 @@ void mlr::KinematicWorld::glDraw(OpenGL& gl) {
     glVertex3dv(proxy->posA.p());
     glVertex3dv(proxy->posB.p());
     glEnd();
-    mlr::Transformation f;
+    rai::Transformation f;
     f.pos=proxy->posA;
-    f.rot.setDiff(mlr::Vector(0, 0, 1), proxy->posA-proxy->posB);
+    f.rot.setDiff(rai::Vector(0, 0, 1), proxy->posA-proxy->posB);
     f.getAffineMatrixGL(GLmatrix);
     glLoadMatrixd(GLmatrix);
     glDisable(GL_CULL_FACE);
@@ -271,21 +269,21 @@ void mlr::KinematicWorld::glDraw(OpenGL& gl) {
   glPopMatrix();
 }
 
-void displayState(const arr& x, mlr::KinematicWorld& G, const char *tag){
+void displayState(const arr& x, rai::KinematicWorld& G, const char *tag){
   G.setJointState(x);
   G.gl().watch(tag);
 }
 
-void displayTrajectory(const arr& _x, int steps, mlr::KinematicWorld& G, const KinematicSwitchL& switches, const char *tag, double delay, uint dim_z, bool copyG) {
+void displayTrajectory(const arr& _x, int steps, rai::KinematicWorld& G, const KinematicSwitchL& switches, const char *tag, double delay, uint dim_z, bool copyG) {
   if(!steps) return;
-  for(mlr::Shape *s : G.shapes) if(s->mesh.V.d0!=s->mesh.Vn.d0 || s->mesh.T.d0!=s->mesh.Tn.d0) {
+  for(rai::Shape *s : G.shapes) if(s->mesh.V.d0!=s->mesh.Vn.d0 || s->mesh.T.d0!=s->mesh.Tn.d0) {
     s->mesh.computeNormals();
   }
-  mlr::KinematicWorld *Gcopy;
+  rai::KinematicWorld *Gcopy;
   if(switches.N) copyG=true;
   if(!copyG) Gcopy=&G;
   else{
-    Gcopy = new mlr::KinematicWorld;
+    Gcopy = new rai::KinematicWorld;
     Gcopy->copy(G,true);
   }
   arr x,z;
@@ -302,7 +300,7 @@ void displayTrajectory(const arr& _x, int steps, mlr::KinematicWorld& G, const K
   for(uint k=0; k<=(uint)num; k++) {
     uint t = (T?(k*T/num):0);
     if(switches.N){
-      for(mlr::KinematicSwitch *sw: switches)
+      for(rai::KinematicSwitch *sw: switches)
         if(sw->timeOfApplication==t)
           sw->apply(*Gcopy);
     }
@@ -313,7 +311,7 @@ void displayTrajectory(const arr& _x, int steps, mlr::KinematicWorld& G, const K
       Gcopy->gl().watch(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
     }else{
       Gcopy->gl().update(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
-      if(delay) mlr::wait(delay);
+      if(delay) rai::wait(delay);
     }
   }
   if(steps==1)
@@ -456,7 +454,7 @@ void _glDrawOdeWorld(dWorldID world)
 }
 */
 
-void animateConfiguration(mlr::KinematicWorld& C, Inotify *ino) {
+void animateConfiguration(rai::KinematicWorld& C, Inotify *ino) {
   arr x, x0;
   uint t, i;
   C.getJointState(x0);
@@ -477,11 +475,11 @@ void animateConfiguration(mlr::KinematicWorld& C, Inotify *ino) {
       if (lim(i,0)==lim(i,1))
         break;
 
-      x(i) = center + (delta*(0.5*cos(MLR_2PI*t/steps + offset)));
+      x(i) = center + (delta*(0.5*cos(RAI_2PI*t/steps + offset)));
       // Joint limits
       C.setJointState(x);
       C.gl().update(STRING("DOF = " <<i), false, false, true);
-      mlr::wait(0.01);
+      rai::wait(0.01);
     }
   }
   C.setJointState(x0);
@@ -489,13 +487,13 @@ void animateConfiguration(mlr::KinematicWorld& C, Inotify *ino) {
 }
 
 
-mlr::Body *movingBody=NULL;
-mlr::Vector selpos;
+rai::Body *movingBody=NULL;
+rai::Vector selpos;
 double seld, selx, sely, selz;
 
 struct EditConfigurationClickCall:OpenGL::GLClickCall {
-  mlr::KinematicWorld *ors;
-  EditConfigurationClickCall(mlr::KinematicWorld& _ors) { ors=&_ors; }
+  rai::KinematicWorld *ors;
+  EditConfigurationClickCall(rai::KinematicWorld& _ors) { ors=&_ors; }
   bool clickCallback(OpenGL& gl) {
     OpenGL::GLSelect *top=gl.topSelection;
     if(!top) return false;
@@ -503,13 +501,13 @@ struct EditConfigurationClickCall:OpenGL::GLClickCall {
     cout <<"CLICK call: id = 0x" <<std::hex <<gl.topSelection->name <<" : ";
     gl.text.clear();
     if((i&3)==1) {
-      mlr::Shape *s=ors->shapes(i>>2);
+      rai::Shape *s=ors->shapes(i>>2);
       gl.text <<"shape selection: shape=" <<s->name <<" body=" <<s->body->name <<" X=" <<s->X <<endl;
 //      listWrite(s->ats, gl.text, "\n");
       cout <<gl.text;
     }
     if((i&3)==2) {
-      mlr::Joint *j=ors->joints(i>>2);
+      rai::Joint *j=ors->joints(i>>2);
       gl.text
           <<"edge selection: " <<j->from->name <<' ' <<j->to->name
          <<"\nA=" <<j->A <<"\nQ=" <<j->Q <<"\nB=" <<j->B <<endl;
@@ -522,19 +520,19 @@ struct EditConfigurationClickCall:OpenGL::GLClickCall {
 };
 
 struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
-  mlr::KinematicWorld *ors;
-  EditConfigurationHoverCall(mlr::KinematicWorld& _ors);// { ors=&_ors; }
+  rai::KinematicWorld *ors;
+  EditConfigurationHoverCall(rai::KinematicWorld& _ors);// { ors=&_ors; }
   bool hoverCallback(OpenGL& gl) {
 //    if(!movingBody) return false;
     if(!movingBody) {
-      mlr::Joint *j=NULL;
-      mlr::Shape *s=NULL;
-      mlr::timerStart(true);
+      rai::Joint *j=NULL;
+      rai::Shape *s=NULL;
+      rai::timerStart(true);
       gl.Select(true);
       OpenGL::GLSelect *top=gl.topSelection;
       if(!top) return false;
       uint i=top->name;
-      cout <<mlr::timerRead() <<"HOVER call: id = 0x" <<std::hex <<gl.topSelection->name <<endl;
+      cout <<rai::timerRead() <<"HOVER call: id = 0x" <<std::hex <<gl.topSelection->name <<endl;
       if((i&3)==1) s=ors->shapes(i>>2);
       if((i&3)==2) j=ors->joints(i>>2);
       gl.text.clear();
@@ -561,19 +559,19 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
   }
 };
 
-EditConfigurationHoverCall::EditConfigurationHoverCall(mlr::KinematicWorld& _ors) {
+EditConfigurationHoverCall::EditConfigurationHoverCall(rai::KinematicWorld& _ors) {
   ors=&_ors;
 }
 
 struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
-  mlr::KinematicWorld &ors;
+  rai::KinematicWorld &ors;
   bool &exit;
-  EditConfigurationKeyCall(mlr::KinematicWorld& _ors, bool& _exit): ors(_ors), exit(_exit){}
+  EditConfigurationKeyCall(rai::KinematicWorld& _ors, bool& _exit): ors(_ors), exit(_exit){}
   bool keyCallback(OpenGL& gl) {
     if(gl.pressedkey==' '){ //grab a body
       if(movingBody) { movingBody=NULL; return true; }
-      mlr::Joint *j=NULL;
-      mlr::Shape *s=NULL;
+      rai::Joint *j=NULL;
+      rai::Shape *s=NULL;
       gl.Select();
       OpenGL::GLSelect *top=gl.topSelection;
       if(!top) { cout <<"No object below mouse!" <<endl;  return false; }
@@ -603,21 +601,21 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
       case '5':  gl.reportSelects^=1;  break;
       case '6':  gl.reportEvents^=1;  break;
       case '7':  ors.writePlyFile("z.ply");  break;
-      case 'j':  gl.camera.X.pos += gl.camera.X.rot*mlr::Vector(0, 0, .1);  break;
-      case 'k':  gl.camera.X.pos -= gl.camera.X.rot*mlr::Vector(0, 0, .1);  break;
-      case 'i':  gl.camera.X.pos += gl.camera.X.rot*mlr::Vector(0, .1, 0);  break;
-      case ',':  gl.camera.X.pos -= gl.camera.X.rot*mlr::Vector(0, .1, 0);  break;
-      case 'l':  gl.camera.X.pos += gl.camera.X.rot*mlr::Vector(.1, .0, 0);  break;
-      case 'h':  gl.camera.X.pos -= gl.camera.X.rot*mlr::Vector(.1, 0, 0);  break;
+      case 'j':  gl.camera.X.pos += gl.camera.X.rot*rai::Vector(0, 0, .1);  break;
+      case 'k':  gl.camera.X.pos -= gl.camera.X.rot*rai::Vector(0, 0, .1);  break;
+      case 'i':  gl.camera.X.pos += gl.camera.X.rot*rai::Vector(0, .1, 0);  break;
+      case ',':  gl.camera.X.pos -= gl.camera.X.rot*rai::Vector(0, .1, 0);  break;
+      case 'l':  gl.camera.X.pos += gl.camera.X.rot*rai::Vector(.1, .0, 0);  break;
+      case 'h':  gl.camera.X.pos -= gl.camera.X.rot*rai::Vector(.1, 0, 0);  break;
       case 'a':  gl.camera.focus(
           (gl.camera.X.rot*(gl.camera.foc - gl.camera.X.pos)
-           ^ gl.camera.X.rot*mlr::Vector(1, 0, 0)) * .001
+           ^ gl.camera.X.rot*rai::Vector(1, 0, 0)) * .001
           + gl.camera.foc);
         break;
       case 's':  gl.camera.X.pos +=
           (
             gl.camera.X.rot*(gl.camera.foc - gl.camera.X.pos)
-            ^(gl.camera.X.rot * mlr::Vector(1., 0, 0))
+            ^(gl.camera.X.rot * rai::Vector(1., 0, 0))
           ) * .01;
         break;
       case 'q' :
@@ -630,7 +628,7 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
   }
 };
 
-void editConfiguration(const char* filename, mlr::KinematicWorld& C) {
+void editConfiguration(const char* filename, rai::KinematicWorld& C) {
 //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
   bool exit=false;
 //  C.gl().addHoverCall(new EditConfigurationHoverCall(C));
@@ -639,15 +637,15 @@ void editConfiguration(const char* filename, mlr::KinematicWorld& C) {
   Inotify ino(filename);
   for(;!exit;) {
     cout <<"reloading `" <<filename <<"' ... " <<std::endl;
-    mlr::KinematicWorld W;
+    rai::KinematicWorld W;
     try {
-      mlr::lineCount=1;
+      rai::lineCount=1;
       W <<FILE(filename);
       C.gl().lock.writeLock();
       C = W;
       C.gl().lock.unlock();
     } catch(const char* msg) {
-      cout <<"line " <<mlr::lineCount <<": " <<msg <<" -- please check the file and press ENTER" <<endl;
+      cout <<"line " <<rai::lineCount <<": " <<msg <<" -- please check the file and press ENTER" <<endl;
       C.gl().watch();
       continue;
     }
@@ -661,15 +659,15 @@ void editConfiguration(const char* filename, mlr::KinematicWorld& C) {
 #else
     C.gl().watch();
 #endif
-if(!mlr::getInteractivity()){
+if(!rai::getInteractivity()){
     exit=true;
 }
   }
 }
 
 
-#if 0 //MLR_ODE
-void testSim(const char* filename, mlr::KinematicWorld *C, Ode *ode) {
+#if 0 //RAI_ODE
+void testSim(const char* filename, rai::KinematicWorld *C, Ode *ode) {
   C.gl().watch();
   uint t, T=200;
   arr x, v;
@@ -690,16 +688,16 @@ void testSim(const char* filename, mlr::KinematicWorld *C, Ode *ode) {
 #endif
 #endif
 
-#else ///MLR_GL
-#ifndef MLR_ORS_ONLY_BASICS
-void bindOrsToOpenGL(mlr::KinematicWorld&, OpenGL&) { NICO };
-void mlr::KinematicWorld::glDraw(OpenGL&) { NICO }
-void mlr::glDrawGraph(void *classP) { NICO }
-void editConfiguration(const char* orsfile, mlr::KinematicWorld& C) { NICO }
-void animateConfiguration(mlr::KinematicWorld& C, Inotify*) { NICO }
-void glTransform(const mlr::Transformation&) { NICO }
-void displayTrajectory(const arr&, int, mlr::KinematicWorld&, const char*, double) { NICO }
-void displayState(const arr&, mlr::KinematicWorld&, const char*) { NICO }
+#else ///RAI_GL
+#ifndef RAI_ORS_ONLY_BASICS
+void bindOrsToOpenGL(rai::KinematicWorld&, OpenGL&) { NICO };
+void rai::KinematicWorld::glDraw(OpenGL&) { NICO }
+void rai::glDrawGraph(void *classP) { NICO }
+void editConfiguration(const char* orsfile, rai::KinematicWorld& C) { NICO }
+void animateConfiguration(rai::KinematicWorld& C, Inotify*) { NICO }
+void glTransform(const rai::Transformation&) { NICO }
+void displayTrajectory(const arr&, int, rai::KinematicWorld&, const char*, double) { NICO }
+void displayState(const arr&, rai::KinematicWorld&, const char*) { NICO }
 #endif
 #endif
 /** @} */

@@ -39,7 +39,7 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
     if(o.verbose>1) cout <<"optNewton it=" <<std::setw(3) <<it << " \tlambd=" <<std::setprecision(3) <<lambda <<flush;
 
     //compute Delta
-    //MLR_MSG("\nx=" <<x <<"\ngx=" <<gx <<"\nHx=" <<Hx);
+    //RAI_MSG("\nx=" <<x <<"\ngx=" <<gx <<"\nHx=" <<Hx);
     arr R=Hx;
     if(lambda) { //Levenberg Marquardt damping
       if(R.special==arr::RowShiftedST) for(uint i=0; i<R.d0; i++) R(i,0) += lambda; //(R(i,0) is the diagonal in the packed matrix!!)
@@ -104,7 +104,7 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
   }
   if(o.fmin_return) *o.fmin_return=fx;
   if(o.verbose>0) fil.close();
-#ifndef MLR_MSVC
+#ifndef RAI_MSVC
   if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", NULL, true);
 #endif
   if(o.verbose>1) cout <<"--- optNewtonStop: f(x)=" <<fx <<endl;

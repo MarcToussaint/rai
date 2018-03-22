@@ -1,21 +1,14 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #include "gaussianProcess.h"
 
-#define MLR_GP_DEBUG 0
+#define RAI_GP_DEBUG 0
 
 /** prior of 0 */
 double const_0(const arr &x, const void *p){return 0.;}
@@ -118,7 +111,7 @@ void GaussianProcess::appendObservation(const arr& x, double y){
   Y.append(y);
   X.reshape(N+1, x.N);
   Y.reshape(N+1);
-#if MLR_GP_DEBUG
+#if RAI_GP_DEBUG
   arr iG=Ginv;
   recompute();
   double err=maxDiff(iG, Ginv);
@@ -178,7 +171,7 @@ void GaussianProcess::evaluate(const arr& x, double& y, double& sig, bool calcSi
 double GaussianProcess::log_likelihood() {
   arr gram;
   inverse_SymPosDef(gram, Ginv);
-  return (-.5*~Y*GinvY - .5*log(length(gram)) - (X.N+dX.N)/2 * log(2*MLR_PI))(0); // actually a degenerated array of size 1x1
+  return (-.5*~Y*GinvY - .5*log(length(gram)) - (X.N+dX.N)/2 * log(2*RAI_PI))(0); // actually a degenerated array of size 1x1
 }
 
 /** vector of covariances between test point and N+dN observation points */

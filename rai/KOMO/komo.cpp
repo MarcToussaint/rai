@@ -1,17 +1,10 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #include "komo.h"
 #include <Algo/spline.h>
@@ -36,7 +29,7 @@
 #include <Optim/convert.h>
 #include <Kin/kin_physx.h>
 
-using namespace mlr;
+using namespace rai;
 
 //===========================================================================
 
@@ -106,18 +99,7 @@ void KOMO::setModel(const KinematicWorld& K,
 }
 
 void KOMO::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese){
-  Joint *j;
-  for(Frame *f:world.frames) if((j=f->joint)){
-    bool lock;
-    if(OnlyTheseOrNotThese){ //only these
-      lock=true;
-      for(const String& s:groupNames) if(f->ats.getNode(s)){ lock=false; break; }
-    }else{
-      lock=false;
-      for(const String& s:groupNames) if(f->ats.getNode(s)){ lock=true; break; }
-    }
-    if(lock) j->makeRigid();
-  }
+  world.useJointGroups(groupNames, OnlyTheseOrNotThese, false);
 
   world.reset_q();
   world.optimizeTree();
@@ -849,7 +831,7 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
         }else NIY;
       }
       else if(n->keys.last()=="komoAttach"){
-        Node *attachableSymbol = facts.getNode("attachable");
+        Node *attachableSymbol = facts["attachable"];
         CHECK(attachableSymbol!=NULL,"");
         Node *attachableFact = facts.getEdge({attachableSymbol, n->parents(1), n->parents(2)});
         Transformation rel = attachableFact->get<Transformation>();
@@ -1208,9 +1190,37 @@ void KOMO::reportProblem(std::ostream& os){
 
 void KOMO::checkGradients(){
   CHECK(T,"");
-  if(!splineB.N)
+  if(!splineB.N){
+#if 0
     checkJacobianCP(Convert(komo_problem), x, 1e-4);
-  else{
+#else
+    double tolerance=1e-4;
+    Conv_KOMO_ConstrainedProblem CP(komo_problem);
+    VectorFunction F = [&CP](arr& phi, arr& J, const arr& x){
+      return CP.phi(phi, J, NoArr, NoTermTypeA, x, NoArr);
+    };
+//    checkJacobian(F, x, tolerance);
+    arr J;
+    arr JJ=finiteDifferenceJacobian(F, x, J);
+    bool succ=true;
+    double mmd=0.;
+    for(uint i=0;i<J.d0;i++){
+      uint j;
+      double md=maxDiff(J[i], JJ[i], &j);
+      if(md>mmd) mmd=md;
+      if(md>tolerance) {
+        LOG(-1) <<"FAILURE in line " <<i <<" t=" <<CP.featureTimes(i) <<' ' <<komo_problem.featureNames(i) <<" -- max diff=" <<md <<" |"<<J(i,j)<<'-'<<JJ(i,j)<<"| (stored in files z.J_*)";
+        J[i] >>FILE("z.J_analytical");
+        JJ[i] >>FILE("z.J_empirical");
+        //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
+        //HALT("");
+//        return false;
+        succ=false;
+      }
+    }
+    if(succ) cout <<"jacobianCheck -- SUCCESS (max diff error=" <<mmd <<")" <<endl;
+#endif
+  }else{
     Conv_KOMO_ConstrainedProblem P0(komo_problem);
     Conv_linearlyReparameterize_ConstrainedProblem P1(P0, splineB);
     checkJacobianCP(P1, z, 1e-4);
@@ -1248,7 +1258,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPref
     gl->camera.setDefault();
   }
 
-  for(uint t=0; t<T; t++) {
+  for(int t=-(int)k_order; t<(int)T; t++) {
     if(saveVideoPrefix) gl->captureImg=true;
     gl->clear();
     gl->add(glStandardScene, 0);
@@ -1258,7 +1268,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPref
       gl->watch(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
     }else{
       gl->update(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
-      if(delay) mlr::wait(delay);
+      if(delay) rai::wait(delay);
     }
     if(saveVideoPrefix) write_ppm(gl->captureImage, STRING(saveVideoPrefix<<std::setw(3)<<std::setfill('0')<<t<<".ppm"));
   }
@@ -1346,7 +1356,7 @@ void KOMO::set_x(const arr& x){
       else         configurations(s)->setJointState(x[t]);
       if(useSwift){
         configurations(s)->stepSwift();
-//        configurations(s)->proxiesToContacts(.01);
+//        configurations(s)->proxiesToContacts(1.1);
       }
       x_count += x_dim;
     }
@@ -1494,6 +1504,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
 
   if(&featureTimes) featureTimes.clear();
   if(&featureTypes) featureTypes.clear();
+  featureNames.clear();
   uint M=0;
   phiIndex.resize(komo.T, komo.tasks.N); phiIndex.setZero();
   phiDim.resize(komo.T, komo.tasks.N);   phiDim.setZero();
@@ -1506,6 +1517,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
 
         if(&featureTimes) featureTimes.append(t, m); //consts<uint>(t, m));
         if(&featureTypes) featureTypes.append(task->type, m); //consts<ObjectiveType>(task->type, m));
+        for(uint j=0;j<m;j++)  featureNames.append(STRING(task->name <<'_'<<j));
 
         //store indexing phi <-> tasks
         phiIndex(t, i) = M;
@@ -1572,7 +1584,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
         if(&J) CHECK_EQ(Jy.nd, 2, "");
         if(&J) CHECK_EQ(Jy.d1, Ktuple_dim, "");
         if(!y.N) continue;
-        if(absMax(y)>1e10) MLR_MSG("WARNING y=" <<y);
+        if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
 
         //linear transform (target shift)
         if(task->target.N==1) y -= task->target.elem(0);

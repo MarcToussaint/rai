@@ -1,17 +1,10 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #include "solver_marc.h"
 
@@ -39,7 +32,7 @@ void MCTS::addRollout(int stepAbort){
 //    cout <<endl;
 //    for(auto &ch:n->children) cout <<*ch->decision <<endl;
     for(uint i=0;i<n->children.N;i++){
-      mlr::String d1,d2;
+      rai::String d1,d2;
       d1 <<*n->children(i)->decision;
       d2 <<*A[i];
       CHECK_EQ(d1, d2, "");

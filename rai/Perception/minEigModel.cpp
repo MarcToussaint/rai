@@ -1,17 +1,10 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #include <Gui/opengl.h>
 #include <GL/gl.h>
@@ -100,7 +93,7 @@ void MinEigModel::reweightWithError(uintA& pts){
     Xi = data.X[i];
     Xi -= mean;
 #if 1
-    double coeff = -.1 * mlr::sqr(scalarProduct(Xi, eig.x_lo)/margin);
+    double coeff = -.1 * rai::sqr(scalarProduct(Xi, eig.x_lo)/margin);
     weights(i) = ::exp(coeff);
 #else
     weights(i) = fabs(scalarProduct(Xi, eig.x_lo))<margin ? 1. : 0.;
@@ -166,7 +159,7 @@ double MinEigModel::coveredData(bool novelDataOnly){
 
 void MinEigModel::calcDensity(){
   computeConvexHull2();
-//  density = stat_n * mlr::sqr(mean(2)) / convexHull.getArea();
+//  density = stat_n * rai::sqr(mean(2)) / convexHull.getArea();
   if(!convexHull.V.N){ density=0.; return; }
   double circum = convexHull.getCircum();
   density = coveredData() / circum*circum;
@@ -175,8 +168,8 @@ void MinEigModel::calcDensity(){
 void MinEigModel::glDraw(OpenGL& gl){
   if(eig.x_lo.N!=3) return;
   if(!convexHull.V.N){
-    mlr::Quaternion rot;
-    rot.setDiff(Vector_z, mlr::Vector(eig.x_lo));
+    rai::Quaternion rot;
+    rot.setDiff(Vector_z, rai::Vector(eig.x_lo));
     glPushMatrix();
     glTranslatef(mean(0), mean(1), mean(2));
     glRotate(rot);

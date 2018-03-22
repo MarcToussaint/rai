@@ -11,7 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
 #include "motionHeuristics.h"
 #include "taskMaps.h"
 #include <Optim/optimization.h>
@@ -33,7 +32,7 @@ void threeStepGraspHeuristic(arr& x, KOMO& MP, uint shapeId, uint verbose) {
   uint side=0;
   
   //-- optimize ignoring hand -- testing different options for aligning with the object
-  if (MP.world.shapes(shapeId)->type==mlr::ST_box) {
+  if (MP.world.shapes(shapeId)->type==rai::ST_box) {
     arr cost_side(3), x_side(3, MP.world.q.N);
     for (side=0; side<3; side++) {
       setGraspGoals_PR2(MP, T, shapeId, side, 0);
@@ -75,13 +74,13 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
   MP.setState(MP.x0, MP.v0);;
   
   //load parameters only once!
-  double positionPrec = mlr::getParameter<double>("graspPlanPositionPrec");
-  double oppositionPrec = mlr::getParameter<double>("graspPlanOppositionPrec");
-  double alignmentPrec = mlr::getParameter<double>("graspPlanAlignmentPrec");
-  double fingerDistPrec = mlr::getParameter<double>("graspPlanFingerDistPrec");
-  double colPrec = mlr::getParameter<double>("graspPlanColPrec");
-  double limPrec = mlr::getParameter<double>("graspPlanLimPrec");
-  double zeroQPrec = mlr::getParameter<double>("graspPlanZeroQPrec");
+  double positionPrec = rai::getParameter<double>("graspPlanPositionPrec");
+  double oppositionPrec = rai::getParameter<double>("graspPlanOppositionPrec");
+  double alignmentPrec = rai::getParameter<double>("graspPlanAlignmentPrec");
+  double fingerDistPrec = rai::getParameter<double>("graspPlanFingerDistPrec");
+  double colPrec = rai::getParameter<double>("graspPlanColPrec");
+  double limPrec = rai::getParameter<double>("graspPlanLimPrec");
+  double zeroQPrec = rai::getParameter<double>("graspPlanZeroQPrec");
   
   //set the time horizon
   CHECK_EQ(T,MP.T, "");
@@ -90,13 +89,13 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
   MP.activateAllTaskCosts(false);
   
   //activate collision testing with target shape
-  mlr::Shape *target_shape = MP.world.shapes(shapeId);
+  rai::Shape *target_shape = MP.world.shapes(shapeId);
   target_shape->cont=true;
   MP.world.swift().initActivations(MP.world);
   
   //
   arr target,initial;
-  mlr::Vector ivec,jvec;
+  rai::Vector ivec,jvec;
 
   //general target
   target = conv_vec2arr(target_shape->X.pos);
@@ -113,10 +112,10 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
   ivec.set(0, 1, 0);
   jvec.set(0, 0, 1);
   switch (target_shape->type) {
-    case mlr::ST_cylinder:
+    case rai::ST_cylinder:
       target = ARR(0.);  //y-axis of m9 is orthogonal to world z-axis (tricky :-) )
       break;
-    case mlr::ST_box: {
+    case rai::ST_box: {
       //jrel=target_shape->X;
       if (side==1) jvec.set(0, 1, 0);
       if (side==2) jvec.set(1, 0, 0);
@@ -178,7 +177,7 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
   MP.setInterpolatingCosts(c, KOMO::final_restConst, target, oppositionPrec);
 
   
-  //MLR_MSG("TODO: fingers should be in relaxed position, or aligned with surface (otherwise they remain ``hooked'' as in previous posture)");
+  //RAI_MSG("TODO: fingers should be in relaxed position, or aligned with surface (otherwise they remain ``hooked'' as in previous posture)");
   
   //-- limits
   arr limits;
@@ -199,12 +198,12 @@ void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
   MP.setState(MP.x0, MP.v0);;
 
   //load parameters only once!
-  double positionPrec = mlr::getParameter<double>("graspPlanPositionPrec");
-  double alignmentPrec = mlr::getParameter<double>("graspPlanAlignmentPrec");
-  double fingerDistPrec = mlr::getParameter<double>("graspPlanFingerDistPrec");
-  double colPrec = mlr::getParameter<double>("graspPlanColPrec");
-  double limPrec = mlr::getParameter<double>("graspPlanLimPrec");
-  double zeroQPrec = mlr::getParameter<double>("graspPlanZeroQPrec");
+  double positionPrec = rai::getParameter<double>("graspPlanPositionPrec");
+  double alignmentPrec = rai::getParameter<double>("graspPlanAlignmentPrec");
+  double fingerDistPrec = rai::getParameter<double>("graspPlanFingerDistPrec");
+  double colPrec = rai::getParameter<double>("graspPlanColPrec");
+  double limPrec = rai::getParameter<double>("graspPlanLimPrec");
+  double zeroQPrec = rai::getParameter<double>("graspPlanZeroQPrec");
 
   //set the time horizon
   CHECK_EQ(T,MP.T, "");
@@ -213,13 +212,13 @@ void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
   MP.tasks.clear();
 
   //activate collision testing with target shape
-  mlr::Shape *target_shape = MP.world.shapes(shapeId);
+  rai::Shape *target_shape = MP.world.shapes(shapeId);
   target_shape->cont=true;
   MP.world.swift().initActivations(MP.world);
 
   //
   arr target,initial;
-  mlr::Vector ivec,jvec;
+  rai::Vector ivec,jvec;
 
   //general target
   target = conv_vec2arr(target_shape->X.pos);
@@ -235,13 +234,13 @@ void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
   ivec.set(0,1,0); //we want to align the y-axis of the hand with something
   jvec.set(0,0,1);
   switch (target_shape->type) {
-    case mlr::ST_cylinder:
+    case rai::ST_cylinder:
       target = ARR(0.);  //y-axis of m9 is orthogonal to world z-axis (tricky :-) )
       break;
-    case mlr::ST_mesh:
+    case rai::ST_mesh:
       target = ARR(0.);  //works for simple cylinder-like objects
       break;
-    case mlr::ST_box: {
+    case rai::ST_box: {
       //jrel=target_shape->X;
       //  side =1; //! Hack for PR2
       if (side==1) jvec.set(0,1,0);
@@ -266,7 +265,7 @@ void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
   shapes.append(shapeId); shapes.append(shapeId);
   shapes.reshape(2,2); shapes = ~shapes;
   c = MP.addTask("graspContacts", new TM_Proxy(TMT_vectorP, shapes, .1, false));
-  for(mlr::Shape *s: MP.world.shapes) cout <<' ' <<s->name;
+  for(rai::Shape *s: MP.world.shapes) cout <<' ' <<s->name;
   double grip=.98; //specifies the desired proxy value
   target = ARR(grip,grip);
   MP.setInterpolatingCosts(c, KOMO::early_restConst,
@@ -300,7 +299,7 @@ void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
 
   return;
 
-  //MLR_MSG("TODO: fingers should be in relaxed position, or aligned with surface (otherwise they remain ``hooked'' as in previous posture)");
+  //RAI_MSG("TODO: fingers should be in relaxed position, or aligned with surface (otherwise they remain ``hooked'' as in previous posture)");
 
   //-- limits
   arr limits;
@@ -318,21 +317,21 @@ void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
 }
 #endif
 
-void reattachShape(mlr::KinematicWorld& ors, SwiftInterface *swift, const char* objShape, const char* toBody);
+void reattachShape(rai::KinematicWorld& ors, SwiftInterface *swift, const char* objShape, const char* toBody);
 
 #if 0
 void setPlaceGoals(KOMO& MP, uint T, uint shapeId, int belowToShapeId, const arr& locationTo){
   CHECK(belowToShapeId == -1 || &locationTo == NULL, "Only one thing at a time");
   MP.setState(MP.x0, MP.v0);;
   
-  double midPrec          = mlr::getParameter<double>("placeMidPrec");
-  double alignmentPrec    = mlr::getParameter<double>("placeAlignmentPrec");
-  double limPrec          = mlr::getParameter<double>("placePlanLimPrec");
-  double colPrec          = mlr::getParameter<double>("placePlanColPrec");
-  double zeroQPrec        = mlr::getParameter<double>("placePlanZeroQPrec");
-  double positionPrec     = mlr::getParameter<double>("placePositionPrec");
-  double upDownVelocity   = mlr::getParameter<double>("placeUpDownVelocity");
-  double upDownVelocityPrec = mlr::getParameter<double>("placeUpDownVelocityPrec");
+  double midPrec          = rai::getParameter<double>("placeMidPrec");
+  double alignmentPrec    = rai::getParameter<double>("placeAlignmentPrec");
+  double limPrec          = rai::getParameter<double>("placePlanLimPrec");
+  double colPrec          = rai::getParameter<double>("placePlanColPrec");
+  double zeroQPrec        = rai::getParameter<double>("placePlanZeroQPrec");
+  double positionPrec     = rai::getParameter<double>("placePositionPrec");
+  double upDownVelocity   = rai::getParameter<double>("placeUpDownVelocity");
+  double upDownVelocityPrec = rai::getParameter<double>("placeUpDownVelocityPrec");
 
   
   //set the time horizon
@@ -342,8 +341,8 @@ void setPlaceGoals(KOMO& MP, uint T, uint shapeId, int belowToShapeId, const arr
   MP.activateAllTaskCosts(false);
   
   //activate collision testing with target shape
-  mlr::Shape *obj  = MP.world.shapes(shapeId);
-  mlr::Shape *onto = NULL;
+  rai::Shape *obj  = MP.world.shapes(shapeId);
+  rai::Shape *onto = NULL;
   if(belowToShapeId != -1)
      onto = MP.world.shapes(belowToShapeId);
   if (obj->body!=MP.world.getBodyByName("m9")){
@@ -440,10 +439,10 @@ void setHomingGoals(KOMO& M, uint T){
   
   //general target
   double midPrec, endPrec, limPrec, colPrec;
-  mlr::getParameter(midPrec, "homingPlanMidPrec");
-  mlr::getParameter(endPrec, "homingPlanEndPrec");
-  mlr::getParameter(limPrec, "homingPlanLimPrec");
-  mlr::getParameter(colPrec, "homingPlanColPrec");
+  rai::getParameter(midPrec, "homingPlanMidPrec");
+  rai::getParameter(endPrec, "homingPlanEndPrec");
+  rai::getParameter(limPrec, "homingPlanLimPrec");
+  rai::getParameter(colPrec, "homingPlanColPrec");
 
   
   //-- limits

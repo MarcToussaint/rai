@@ -1,17 +1,10 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #pragma once
 
@@ -20,7 +13,7 @@
 struct DataNeighbored{
   arr X; ///< data (features for each point)
   boolA valid; ///< whether the data point is ok (not corrupted)
-  mlr::Array<uintA> N; ///< neighborhood
+  rai::Array<uintA> N; ///< neighborhood
   uintA idx2pixel; ///< after removing points, this maps from X-index to original data index
   arr isModelledWeights;
   arr costs;  ///< the 'cost' per data point, i.e., weigthing in the cost function

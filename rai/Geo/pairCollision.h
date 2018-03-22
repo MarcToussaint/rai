@@ -1,13 +1,21 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include "mesh.h"
 
 struct PairCollision : GLDrawer{
   //INPUTS
-  const mlr::Mesh& mesh1;
-  const mlr::Mesh& mesh2;
-  mlr::Transformation& t1;
-  mlr::Transformation& t2;
+  const rai::Mesh& mesh1;
+  const rai::Mesh& mesh2;
+  rai::Transformation& t1;
+  rai::Transformation& t2;
   double rad1, rad2; ///< only kinVector and glDraw account for this; the basic collision geometry (OUTPUTS below) is computed neglecting radii!!
 
   //OUTPUTS
@@ -21,8 +29,8 @@ struct PairCollision : GLDrawer{
 
   arr poly, polyNorm;
 
-  PairCollision(const mlr::Mesh& mesh1, const mlr::Mesh& mesh2,
-                mlr::Transformation& t1, mlr::Transformation& t2,
+  PairCollision(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
+                rai::Transformation& t1, rai::Transformation& t2,
                 double rad1=0., double rad2=0.);
 
   void write(std::ostream& os) const;
@@ -36,7 +44,7 @@ struct PairCollision : GLDrawer{
 
   void kinDistance(arr& y, arr& J,
                    const arr& Jp1, const arr& Jp2);
-  void kinDistance2(arr &y, arr& J,
+  void kinDistance2(arr& y, arr& J,
                     const arr& JSimplex1, const arr& JSimplex2);
 
   void nearSupportAnalysis(double eps=1e-6); ///< analyses not only closest obj support (the simplex) but all points within a margin
@@ -44,15 +52,15 @@ struct PairCollision : GLDrawer{
   void computeSupportPolygon();
 
 private:
-  double libccd_MPR(const mlr::Mesh& m1,const mlr::Mesh& m2); //calls ccdMPRPenetration of libccd
+  double libccd_MPR(const rai::Mesh& m1,const rai::Mesh& m2); //calls ccdMPRPenetration of libccd
   double GJK_sqrDistance(); //gjk_distance of libGJK
   bool simplexType(uint i, uint j){ return simplex1.d0==i && simplex2.d0==j; } //helper
 };
 
 //return normals and closes points for 1-on-3 simplices or 2-on-2 simplices
 double coll_1on3(arr& pInTri, arr& normal, const arr& pts1, const arr& pts2);
-double coll_2on2(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2);
-double coll_2on3(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2);
-double coll_3on3(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2);
+double coll_2on2(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2);
+double coll_2on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2);
+double coll_3on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2);
 
 stdOutPipe(PairCollision)

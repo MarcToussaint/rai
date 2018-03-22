@@ -1,17 +1,10 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #pragma once
 
@@ -27,14 +20,14 @@ struct TM_qItself:TaskMap {
   bool relative_q0; ///< if true, absolute values are given relative to Joint::q0
 
   TM_qItself(bool relative_q0=false);
-  TM_qItself(TM_qItself_PickMode pickMode, const StringA& picks, const mlr::KinematicWorld& G, bool relative_q0=false);
+  TM_qItself(TM_qItself_PickMode pickMode, const StringA& picks, const rai::KinematicWorld& G, bool relative_q0=false);
   TM_qItself(uintA _selectedBodies, bool relative_q0=false);
 
-  virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1);
   virtual void phi(arr& y, arr& J, const WorldL& G, double tau, int t);
-  virtual uint dim_phi(const mlr::KinematicWorld& G);
+  virtual uint dim_phi(const rai::KinematicWorld& G);
   virtual uint dim_phi(const WorldL& G, int t);
-  virtual mlr::String shortTag(const mlr::KinematicWorld& G);
+  virtual rai::String shortTag(const rai::KinematicWorld& G);
 private:
   uintA dimPhi;
 };
@@ -44,9 +37,9 @@ private:
 struct TM_qZeroVels:TaskMap {
   TM_qZeroVels(){ }
 
-  virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1){NIY}
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1){NIY}
   virtual void phi(arr& y, arr& J, const WorldL& G, double tau, int t);
-  virtual uint dim_phi(const mlr::KinematicWorld& G){NIY}
+  virtual uint dim_phi(const rai::KinematicWorld& G){NIY}
   virtual uint dim_phi(const WorldL& G, int t);
 private:
   uintA dimPhi;
@@ -54,7 +47,7 @@ private:
 
 //===========================================================================
 
-mlr::Array<mlr::Joint*> getMatchingJoints(const WorldL& G, bool zeroVelJointsOnly);
-mlr::Array<mlr::Joint*> getSwitchedJoints(const mlr::KinematicWorld& G0, const mlr::KinematicWorld& G1, int verbose=0);
-uintA getSwitchedBodies(const mlr::KinematicWorld& G0, const mlr::KinematicWorld& G1, int verbose=0);
+rai::Array<rai::Joint*> getMatchingJoints(const WorldL& G, bool zeroVelJointsOnly);
+rai::Array<rai::Joint*> getSwitchedJoints(const rai::KinematicWorld& G0, const rai::KinematicWorld& G1, int verbose=0);
+uintA getSwitchedBodies(const rai::KinematicWorld& G0, const rai::KinematicWorld& G1, int verbose=0);
 

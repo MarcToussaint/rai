@@ -11,8 +11,6 @@
     License along with this program. If not, see
     <http://www.gnu.org/licenses/>
     --------------------------------------------------------------  */
-
-
 #pragma once
 
 #include <Kin/kin.h>
@@ -20,7 +18,7 @@
 //===========================================================================
 
 struct TowerProblem{
-  mlr::KinematicWorld world;
+  rai::KinematicWorld world;
   Graph symbols;
   uint nObjects;
 
@@ -30,5 +28,5 @@ struct TowerProblem{
     nObjects = world.bodies.N - nObjects;
   }
   void setRandom();
-  double reward(const mlr::KinematicWorld& world, const Graph& symbols);
+  double reward(const rai::KinematicWorld& world, const Graph& symbols);
 };

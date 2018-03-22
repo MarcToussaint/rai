@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include <Core/array.h>
@@ -36,7 +44,7 @@ struct Surfels{
   OpenGL gl;
   Mutex mx;
   arrf pos, norm, col, rad;
-  mlr::Array<SurfelStatistics> D;
+  rai::Array<SurfelStatistics> D;
   uint32A surfelIdx, rndPerm;
   byteA mask,idxImage;
 

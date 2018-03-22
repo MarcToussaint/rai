@@ -1,15 +1,9 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
 #include "thread.h"
@@ -18,7 +12,7 @@
 #include <signal.h>
 #include <iomanip>
 
-#ifndef MLR_MSVC
+#ifndef RAI_MSVC
 #ifndef __CYGWIN__
 #  include <sys/syscall.h>
 #else
@@ -29,7 +23,7 @@
 #include <errno.h>
 
 
-#ifndef MLR_MSVC
+#ifndef RAI_MSVC
 
 //===========================================================================
 //
@@ -281,7 +275,7 @@ int VariableBase::readAccess(Thread *th) {
 int VariableBase::writeAccess(Thread *th) {
 //  engine().acc->queryWriteAccess(this, p);
   rwlock.writeLock();
-  write_time = mlr::clockTime();
+  write_time = rai::clockTime();
 //  engine().acc->logWriteAccess(this, p);
   return getStatus()+1;
 }
@@ -343,7 +337,7 @@ void Metronome::waitForTic() {
   }
   //wait for target time
   int rc = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ticTime, NULL);
-  if(rc && errno) MLR_MSG("clock_nanosleep() failed " <<rc <<" errno=" <<errno <<' ' <<strerror(errno));
+  if(rc && errno) RAI_MSG("clock_nanosleep() failed " <<rc <<" errno=" <<errno <<' ' <<strerror(errno));
 
   tics++;
 }
@@ -396,8 +390,8 @@ void CycleTimer::cycleDone() {
   steps++;
 }
 
-mlr::String CycleTimer::report(){
-  mlr::String s;
+rai::String CycleTimer::report(){
+  rai::String s;
   s.printf("busy=[%5.1f %5.1f] cycle=[%5.1f %5.1f] load=%4.1f%% steps=%i", busyDtMean, busyDtMax, cyclDtMean, cyclDtMax, 100.*busyDtMean/cyclDtMean, steps);
   return s;
 //  fflush(stdout);
@@ -510,7 +504,7 @@ void* Thread_staticMain(void *_self) {
   return NULL;
 }
 
-#ifdef MLR_QThread
+#ifdef RAI_QThread
 class sThread:QThread {
   Q_OBJECT
 public:
@@ -548,7 +542,7 @@ Thread::~Thread() {
 void Thread::threadOpen(bool wait, int priority) {
   statusLock();
   if(thread){ statusUnlock(); return; } //this is already open -- or has just beend opened (parallel call to threadOpen)
-#ifndef MLR_QThread
+#ifndef RAI_QThread
   int rc;
   pthread_attr_t atts;
   rc = pthread_attr_init(&atts); if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
@@ -596,7 +590,7 @@ void Thread::threadClose(double timeoutForce) {
 //      }
 //    }
   }
-#ifndef MLR_QThread
+#ifndef RAI_QThread
   int rc;
   rc = pthread_join(thread, NULL);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   thread=0;
@@ -611,7 +605,7 @@ void Thread::threadCancel() {
   stopListening();
   setStatus(tsToClose);
   if(!thread) return;
-#ifndef MLR_QThread
+#ifndef RAI_QThread
   int rc;
   rc = pthread_cancel(thread);         if(rc) HALT("pthread_cancel failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   rc = pthread_join(thread, NULL);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
@@ -936,4 +930,4 @@ ThreadL::memMove=true;
 SignalerL::memMove=true;
 RUN_ON_INIT_END(thread)
 
-#endif //MLR_MSVC
+#endif //RAI_MSVC

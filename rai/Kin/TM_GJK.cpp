@@ -1,35 +1,28 @@
 /*  ------------------------------------------------------------------
-    Copyright 2016 Marc Toussaint
+    Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at
-    your option) any later version. This program is distributed without
-    any warranty. See the GNU General Public License for more details.
-    You should have received a COPYING file of the full GNU General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
 
 #include "TM_GJK.h"
 #include "frame.h"
 
-#define MLR_CCD
-#ifdef MLR_CCD
+#define RAI_CCD
+#ifdef RAI_CCD
 
 #include <Geo/ccd/ccd.h>
 #include <Geo/ccd/quat.h> // for work with quaternions
 
 void support_mesh(const void *_obj, const ccd_vec3_t *_dir, ccd_vec3_t *v){
-  mlr::Mesh *m = (mlr::Mesh*)_obj;
+  rai::Mesh *m = (rai::Mesh*)_obj;
   arr dir(_dir->v, 3, true);
   uint vertex = m->support(dir);
   memmove(v->v, &m->V(vertex, 0), 3*m->V.sizeT);
 }
 
-double GJK_libccd_penetration(arr& dir, arr& pos, const mlr::Mesh& m1, const mlr::Mesh& m2){
+double GJK_libccd_penetration(arr& dir, arr& pos, const rai::Mesh& m1, const rai::Mesh& m2){
   ccd_t ccd;
   CCD_INIT(&ccd); // initialize ccd_t struct
 
@@ -56,40 +49,40 @@ double GJK_libccd_penetration(arr& dir, arr& pos, const mlr::Mesh& m1, const mlr
 
 #endif
 
-TM_GJK::TM_GJK(const mlr::Frame* s1, const mlr::Frame *s2, bool exact, bool negative) : exact(exact), negScalar(negative){
+TM_GJK::TM_GJK(const rai::Frame* s1, const rai::Frame *s2, bool exact, bool negative) : exact(exact), negScalar(negative){
   CHECK(s1 && s2,"");
   CHECK(s1->shape && s2->shape, "");
   i = s1->ID;
   j = s2->ID;
 }
 
-TM_GJK::TM_GJK(const mlr::KinematicWorld& W, const char* s1, const char* s2, bool exact, bool negative) : exact(exact), negScalar(negative){
+TM_GJK::TM_GJK(const rai::KinematicWorld& W, const char* s1, const char* s2, bool exact, bool negative) : exact(exact), negScalar(negative){
   CHECK(s1 && s2,"");
-  mlr::Frame *s;
+  rai::Frame *s;
   s=W.getFrameByName(s1); CHECK(s,"shape name '" <<s1 <<"' does not exist"); i=s->ID;
   s=W.getFrameByName(s2); CHECK(s,"shape name '" <<s2 <<"' does not exist"); j=s->ID;
 }
 
-TM_GJK::TM_GJK(const mlr::KinematicWorld& W, const Graph& specs, bool exact) : exact(exact){
+TM_GJK::TM_GJK(const rai::KinematicWorld& W, const Graph& specs, bool exact) : exact(exact){
   Node *it;
-  if((it=specs["sym2"])){ auto name=it->get<mlr::String>(); auto *s=W.getFrameByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); i=s->ID; }
-  if((it=specs["sym3"])){ auto name=it->get<mlr::String>(); auto *s=W.getFrameByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); j=s->ID; }
-//  if((it=specs["vec1"])) vec1 = mlr::Vector(it->get<arr>());  else vec1.setZero();
-//  if((it=specs["vec2"])) vec2 = mlr::Vector(it->get<arr>());  else vec2.setZero();
+  if((it=specs["sym2"])){ auto name=it->get<rai::String>(); auto *s=W.getFrameByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); i=s->ID; }
+  if((it=specs["sym3"])){ auto name=it->get<rai::String>(); auto *s=W.getFrameByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); j=s->ID; }
+//  if((it=specs["vec1"])) vec1 = rai::Vector(it->get<arr>());  else vec1.setZero();
+//  if((it=specs["vec2"])) vec2 = rai::Vector(it->get<arr>());  else vec2.setZero();
 }
 
-void TM_GJK::phi(arr& v, arr& J, const mlr::KinematicWorld& W, int t){
-  mlr::Shape *s1 = i<0?NULL: W.frames(i)->shape;
-  mlr::Shape *s2 = j<0?NULL: W.frames(j)->shape;
+void TM_GJK::phi(arr& v, arr& J, const rai::KinematicWorld& W, int t){
+  rai::Shape *s1 = i<0?NULL: W.frames(i)->shape;
+  rai::Shape *s2 = j<0?NULL: W.frames(j)->shape;
   CHECK(s1 && s2,"");
-  CHECK(s1->type()==mlr::ST_mesh || s1->type()==mlr::ST_ssCvx || s1->type()==mlr::ST_ssBox,"");
-  CHECK(s2->type()==mlr::ST_mesh || s2->type()==mlr::ST_ssCvx || s2->type()==mlr::ST_ssBox,"");
-  const mlr::Mesh *m1, *m2;
-  if(s1->type()==mlr::ST_mesh) m1=&s1->mesh(); else m1=&s1->sscCore();
-  if(s2->type()==mlr::ST_mesh) m2=&s2->mesh(); else m2=&s2->sscCore();
+  CHECK(s1->type()==rai::ST_mesh || s1->type()==rai::ST_ssCvx || s1->type()==rai::ST_ssBox,"");
+  CHECK(s2->type()==rai::ST_mesh || s2->type()==rai::ST_ssCvx || s2->type()==rai::ST_ssBox,"");
+  const rai::Mesh *m1, *m2;
+  if(s1->type()==rai::ST_mesh) m1=&s1->mesh(); else m1=&s1->sscCore();
+  if(s2->type()==rai::ST_mesh) m2=&s2->mesh(); else m2=&s2->sscCore();
   CHECK(m1->V.N,"");
   CHECK(m1->V.N,"");
-  mlr::Vector p1, p2, e1, e2;
+  rai::Vector p1, p2, e1, e2;
   GJK_point_type pt1, pt2;
 
   double d2 = GJK_sqrDistance(*m1, *m2, s1->frame.X, s2->frame.X, p1, p2, e1, e2, pt1, pt2);
@@ -101,13 +94,13 @@ void TM_GJK::phi(arr& v, arr& J, const mlr::KinematicWorld& W, int t){
     penetrating = true;
     arr dir, pos;
     //THIS IS PRETTY SLOW... (make the support function depend on transform?)
-    mlr::Mesh M1(*m1); s1->frame.X.applyOnPointArray(M1.V);
-    mlr::Mesh M2(*m2); s2->frame.X.applyOnPointArray(M2.V);
+    rai::Mesh M1(*m1); s1->frame.X.applyOnPointArray(M1.V);
+    rai::Mesh M2(*m2); s2->frame.X.applyOnPointArray(M2.V);
     double penetration = GJK_libccd_penetration(dir, pos, M1, M2);
 //    cout <<"penetration=" <<penetration <<endl;
-    mlr::Vector cen = pos; //.5*(p1+p2);
-    p1 = cen + .5*penetration*mlr::Vector(dir);
-    p2 = cen - .5*penetration*mlr::Vector(dir);
+    rai::Vector cen = pos; //.5*(p1+p2);
+    p1 = cen + .5*penetration*rai::Vector(dir);
+    p2 = cen - .5*penetration*rai::Vector(dir);
     pt1=GJK_vertex; pt2=GJK_face;
   }
 
@@ -153,8 +146,8 @@ void TM_GJK::phi(arr& v, arr& J, const mlr::KinematicWorld& W, int t){
 
   //reduce by radii
   double rad=0.;
-  if(s1->type()==mlr::ST_ssCvx) rad += s1->size(3);
-  if(s2->type()==mlr::ST_ssCvx) rad += s2->size(3);
+  if(s1->type()==rai::ST_ssCvx) rad += s1->size(3);
+  if(s2->type()==rai::ST_ssCvx) rad += s2->size(3);
   double l2=sumOfSqr(v), l=sqrt(l2);
   double fac = (l-rad)/l;
   if(&J){
@@ -175,7 +168,7 @@ void TM_GJK::phi(arr& v, arr& J, const mlr::KinematicWorld& W, int t){
 //  CHECK_ZERO(l2-d2, 1e-6,"");
 }
 
-mlr::String TM_GJK::shortTag(const mlr::KinematicWorld &G){
+rai::String TM_GJK::shortTag(const rai::KinematicWorld &G){
   return STRING("TM_GJK"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }
 

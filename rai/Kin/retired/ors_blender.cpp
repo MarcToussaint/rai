@@ -16,8 +16,6 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>
     -----------------------------------------------------------------  */
 
-
-
 /**
  * @file
  * @ingroup group_ors
@@ -38,18 +36,18 @@ struct VertGroup {
   uintA verts;
 };
 
-//template class mlr::Array<VertGroup>;
-//template class mlr::Array<String>;
+//template class rai::Array<VertGroup>;
+//template class rai::Array<String>;
 
-void readBlender(const char* filename, mlr::Mesh& mesh, mlr::KinematicWorld& bl) {
+void readBlender(const char* filename, rai::Mesh& mesh, rai::KinematicWorld& bl) {
   ifstream is(filename, std::ios::binary);
   CHECK(is.good(), "couldn't open file " <<filename);
   
   arr vertices, normals, frames, tailsHeads;
   uintA faces;
-  mlr::Array<VertGroup> G;
+  rai::Array<VertGroup> G;
   uintA graph;
-  mlr::Array<mlr::String> names;
+  rai::Array<rai::String> names;
   
   String tag, name;
   char c;
@@ -97,10 +95,10 @@ void readBlender(const char* filename, mlr::Mesh& mesh, mlr::KinematicWorld& bl)
     HALT("unknown tag `" <<tag <<"'");
   }
   
-  mlr::Vector *w;
-  mlr::Quaternion r; r.setDeg(0, 1, 0, 0); //don't rotate the mesh
+  rai::Vector *w;
+  rai::Quaternion r; r.setDeg(0, 1, 0, 0); //don't rotate the mesh
   for(i=0; i<vertices.d0; i++) {
-    w = (mlr::Vector*)&vertices(i, 0);
+    w = (rai::Vector*)&vertices(i, 0);
     *w = r*(*w);
   }
   
@@ -121,18 +119,18 @@ void readBlender(const char* filename, mlr::Mesh& mesh, mlr::KinematicWorld& bl)
   mesh.computeNormals();
   
   double v[4], l;
-  mlr::Body *n, *p;
-  mlr::Shape *s;
+  rai::Body *n, *p;
+  rai::Shape *s;
   String parent;
-  mlr::Joint *e;
-  mlr::Vector h, t;
-  mlr::Transformation f;
-  mlr::Quaternion ROT; ROT.setDeg(90, 1, 0, 0); //rotate the armature
+  rai::Joint *e;
+  rai::Vector h, t;
+  rai::Transformation f;
+  rai::Quaternion ROT; ROT.setDeg(90, 1, 0, 0); //rotate the armature
   
   for(i=0; i<frames.d0; i++) {
-    n=new mlr::Body(bl);
-    s=new mlr::Shape(bl, *n); //always create a shape for a body...
-    //mlr::skip(is);
+    n=new rai::Body(bl);
+    s=new rai::Shape(bl, *n); //always create a shape for a body...
+    //rai::skip(is);
     n->name=names(i);
     f.pos.set(&frames(i, 3, 0)); f.pos=ROT*f.pos;
     f.rot.setMatrix(frames[i].sub(0, 2, 0, 2).p);
@@ -149,7 +147,7 @@ void readBlender(const char* filename, mlr::Mesh& mesh, mlr::KinematicWorld& bl)
 #endif
     n->X.rot = f.rot;
     
-    s->type=mlr::ST_box;
+    s->type=rai::ST_box;
     l=(t-h).length();
     v[0]=v[1]=v[3]=l/20.; v[2]=l;
     memmove(s->size, v, 4*sizeof(double));
@@ -158,8 +156,8 @@ void readBlender(const char* filename, mlr::Mesh& mesh, mlr::KinematicWorld& bl)
     p=bl.bodies(graph(i, 0));
     n=bl.bodies(graph(i, 1));
     //e=new_edge(p, n, bl.bodies, bl.joints);
-    e=new mlr::Joint(bl, p, n);
-    e->type = mlr::JT_hingeX;
+    e=new rai::Joint(bl, p, n);
+    e->type = rai::JT_hingeX;
     f.pos.set(&frames(graph(i, 1), 3, 0));  f.pos=ROT*f.pos;
     f.rot.setMatrix(frames[graph(i, 1)].sub(0, 2, 0, 2).p);
     f.rot.invert();
@@ -184,7 +182,7 @@ void readBlender(const char* filename, mlr::Mesh& mesh, mlr::KinematicWorld& bl)
   bl.orderAsIndexed();
   bl.indexAllAsOrdered();
   */
-  MLR_MSG("warning - structure is not sorted!");
+  RAI_MSG("warning - structure is not sorted!");
   
   String::readEatStopSymbol = false;
 }
