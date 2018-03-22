@@ -74,6 +74,7 @@ struct Mesh : GLDrawer {
 
   /// @name transform and modify
   void subDivide();
+  void subDivide(uint tri);
   void scale(double f);
   void scale(double sx, double sy, double sz);
   void translate(double dx, double dy, double dz);
@@ -81,7 +82,7 @@ struct Mesh : GLDrawer {
   void transform(const Transformation& t);
   Vector center();
   void box();
-  void addMesh(const mlr::Mesh& mesh2);
+  void addMesh(const mlr::Mesh& mesh2, const mlr::Transformation& X=0);
   void makeConvexHull();
   void makeTriangleFan();
   void makeLineStrip();
@@ -101,7 +102,9 @@ struct Mesh : GLDrawer {
   void getBox(double& dx, double& dy, double& dz) const;
   double getRadius() const;
   double getArea() const;
+  double getArea(uint tri) const;
   double getCircum() const;
+  double getCircum(uint tri) const;
   double getVolume() const;
 
   /// Comparing two Meshes - static function
