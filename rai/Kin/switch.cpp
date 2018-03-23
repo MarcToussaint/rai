@@ -228,7 +228,7 @@ void rai::KinematicSwitch::apply(KinematicWorld& K){
 
   if(symbol==makeDynamic){
     CHECK_EQ(jointType, JT_none, "");
-    CHECK_EQ(to, NULL, "");
+    CHECK_EQ(to, 0, "");
     CHECK(from->inertia, "can only make frames with intertia dynamic");
 
     from->inertia->type=rai::BT_dynamic;
@@ -241,7 +241,7 @@ void rai::KinematicSwitch::apply(KinematicWorld& K){
 
   if(symbol==makeKinematic){
     CHECK_EQ(jointType, JT_none, "");
-    CHECK_EQ(to, NULL, "");
+    CHECK_EQ(to, 0, "");
     CHECK(from->inertia, "can only make frames with intertia kinematic");
 
     from->inertia->type=rai::BT_kinematic;

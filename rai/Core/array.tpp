@@ -696,11 +696,12 @@ template<class T> void rai::Array<T>::delColumns(int i, uint k) {
 }
 
 /// inserts k columns at the i-th column [must be 2D]
-template<class T> void rai::Array<T>::insColumns(uint i, uint k) {
+template<class T> void rai::Array<T>::insColumns(int i, uint k) {
   CHECK(memMove, "only with memMove");
-  CHECK(k>0, "");
   CHECK_EQ(nd,2, "only for matricies");
-  CHECK(i<=d1, "range check error");
+  if(!k) return;
+  if(i<0) i+=d1;
+  CHECK(i<=(int)d1, "range check error");
   uint n=d1;
   resizeCopy(d0, n+k);
   for(uint j=d0; j--;) {
