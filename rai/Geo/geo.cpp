@@ -1066,6 +1066,10 @@ Transformation& Transformation::setZero() {
   return *this;
 }
 
+void Transformation::set(double *p) { pos.set(p); rot.set(p+3); }
+
+void Transformation::set(const arr &t) { CHECK_EQ(t.N,7, "");  set(t.p); }
+
 /// randomize the frame
 void Transformation::setRandom() {
   rot.setRandom();
