@@ -11,8 +11,8 @@
 /// @addtogroup group_array
 /// @{
 
-#ifndef MLR_array_h
-#define MLR_array_h
+#ifndef RAI_array_h
+#define RAI_array_h
 
 #include <iostream>
 #include <stdint.h>
@@ -33,7 +33,7 @@ typedef unsigned int uint;
 struct SpecialArray;
 
 //-- global memory information and options TODO: hide -> array.cpp
-namespace mlr {
+namespace rai {
 extern bool useLapack;
 extern const bool lapackSupported;
 extern uint64_t globalMemoryTotal, globalMemoryBound;
@@ -53,7 +53,7 @@ template<class T> bool greaterEqual(const T& a, const T& b){ return a>=b; }
 // Array class
 //
 
-namespace mlr {
+namespace rai {
 
 /// @addtogroup group_array
 /// @{
@@ -98,7 +98,7 @@ template<class T> struct Array : std::vector<T> {
   Array(uint D0, std::initializer_list<T> values);
   Array(uint D0, uint D1, std::initializer_list<T> values);
   Array(uint D0, uint D1, uint D2, std::initializer_list<T> values);
-  Array(mlr::FileToken&); //read from a file
+  Array(rai::FileToken&); //read from a file
   ~Array();
   
   Array<T>& operator=(std::initializer_list<T> values);
@@ -187,7 +187,7 @@ template<class T> struct Array : std::vector<T> {
 
   
   /// @name access by copy
-  mlr::Array<T> copy() const;
+  rai::Array<T> copy() const;
   Array<T> sub(int i, int I) const;
   Array<T> sub(int i, int I, int j, int J) const;
   Array<T> sub(int i, int I, int j, int J, int k, int K) const;
@@ -214,7 +214,7 @@ template<class T> struct Array : std::vector<T> {
   void maxIndex(uint& i, uint& j) const; //-> remove, or return uintA
   void maxIndex(uint& i, uint& j, uint& k) const; //-> remove
   int findValue(const T& x) const;
-  void findValues(mlr::Array<uint>& indices, const T& x) const;
+  void findValues(rai::Array<uint>& indices, const T& x) const;
   bool contains(const T& x) const { return findValue(x)!=-1; }
   bool containsDoubles() const;
   uint getMemsize() const; // -> remove
@@ -384,7 +384,7 @@ BinaryOperator(- , -=);
 
 #ifndef SWIG
 #define UnaryFunction( func )           \
-  template<class T> mlr::Array<T> func (const mlr::Array<T>& y)
+  template<class T> rai::Array<T> func (const rai::Array<T>& y)
 UnaryFunction(acos);
 UnaryFunction(asin);
 UnaryFunction(atan);
@@ -410,9 +410,9 @@ UnaryFunction(sign);
 #undef UnaryFunction
 
 #define BinaryFunction( func )            \
-  template<class T> mlr::Array<T> func(const mlr::Array<T>& y, const mlr::Array<T>& z); \
-  template<class T> mlr::Array<T> func(const mlr::Array<T>& y, T z); \
-  template<class T> mlr::Array<T> func(T y, const mlr::Array<T>& z)
+  template<class T> rai::Array<T> func(const rai::Array<T>& y, const rai::Array<T>& z); \
+  template<class T> rai::Array<T> func(const rai::Array<T>& y, T z); \
+  template<class T> rai::Array<T> func(T y, const rai::Array<T>& z)
 BinaryFunction(atan2);
 BinaryFunction(pow);
 BinaryFunction(fmod);
@@ -425,26 +425,26 @@ BinaryFunction(fmod);
 /// @name standard types
 /// @{
 
-typedef mlr::Array<double> arr;
-typedef mlr::Array<float>  arrf;
-typedef mlr::Array<double> doubleA;
-typedef mlr::Array<float>  floatA;
-typedef mlr::Array<uint>   uintA;
-typedef mlr::Array<int>    intA;
-typedef mlr::Array<char>   charA;
-typedef mlr::Array<byte>   byteA;
-typedef mlr::Array<byte>   boolA;
-typedef mlr::Array<uint16_t>   uint16A;
-typedef mlr::Array<uint32_t>   uint32A;
-typedef mlr::Array<const char*>  CstrList;
-typedef mlr::Array<arr*>   arrL;
-typedef mlr::Array<arr>    arrA;
-typedef mlr::Array<uintA>    uintAA;
+typedef rai::Array<double> arr;
+typedef rai::Array<float>  arrf;
+typedef rai::Array<double> doubleA;
+typedef rai::Array<float>  floatA;
+typedef rai::Array<uint>   uintA;
+typedef rai::Array<int>    intA;
+typedef rai::Array<char>   charA;
+typedef rai::Array<byte>   byteA;
+typedef rai::Array<byte>   boolA;
+typedef rai::Array<uint16_t>   uint16A;
+typedef rai::Array<uint32_t>   uint32A;
+typedef rai::Array<const char*>  CstrList;
+typedef rai::Array<arr*>   arrL;
+typedef rai::Array<arr>    arrA;
+typedef rai::Array<uintA>    uintAA;
 
-namespace mlr { struct String; }
-typedef mlr::Array<mlr::String> StringA;
-typedef mlr::Array<StringA> StringAA;
-typedef mlr::Array<mlr::String*> StringL;
+namespace rai { struct String; }
+typedef rai::Array<rai::String> StringA;
+typedef rai::Array<StringA> StringAA;
+typedef rai::Array<rai::String*> StringL;
 
 //===========================================================================
 /// @}
@@ -485,26 +485,26 @@ struct KernelFunction {
 
 //===========================================================================
 
-template<class T> mlr::Array<T> ARRAY() {                                    mlr::Array<T> z(0); return z; }
-template<class T> mlr::Array<T> ARRAY(const T& i) {                                    mlr::Array<T> z(1); z(0)=i; return z; }
-template<class T> mlr::Array<T> ARRAY(const T& i, const T& j) {                               mlr::Array<T> z(2); z(0)=i; z(1)=j; return z; }
-template<class T> mlr::Array<T> ARRAY(const T& i, const T& j, const T& k) {                          mlr::Array<T> z(3); z(0)=i; z(1)=j; z(2)=k; return z; }
-template<class T> mlr::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l) {                     mlr::Array<T> z(4); z(0)=i; z(1)=j; z(2)=k; z(3)=l; return z; }
-template<class T> mlr::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m) {                mlr::Array<T> z(5); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; return z; }
-template<class T> mlr::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n) {           mlr::Array<T> z(6); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; return z; }
-template<class T> mlr::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o) {      mlr::Array<T> z(7); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; return z; }
-template<class T> mlr::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p) { mlr::Array<T> z(8); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; z(7)=p; return z; }
-template<class T> mlr::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p, const T& q) { mlr::Array<T> z(9); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; z(7)=p; z(8)=q; return z; }
+template<class T> rai::Array<T> ARRAY() {                                    rai::Array<T> z(0); return z; }
+template<class T> rai::Array<T> ARRAY(const T& i) {                                    rai::Array<T> z(1); z(0)=i; return z; }
+template<class T> rai::Array<T> ARRAY(const T& i, const T& j) {                               rai::Array<T> z(2); z(0)=i; z(1)=j; return z; }
+template<class T> rai::Array<T> ARRAY(const T& i, const T& j, const T& k) {                          rai::Array<T> z(3); z(0)=i; z(1)=j; z(2)=k; return z; }
+template<class T> rai::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l) {                     rai::Array<T> z(4); z(0)=i; z(1)=j; z(2)=k; z(3)=l; return z; }
+template<class T> rai::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m) {                rai::Array<T> z(5); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; return z; }
+template<class T> rai::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n) {           rai::Array<T> z(6); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; return z; }
+template<class T> rai::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o) {      rai::Array<T> z(7); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; return z; }
+template<class T> rai::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p) { rai::Array<T> z(8); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; z(7)=p; return z; }
+template<class T> rai::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p, const T& q) { rai::Array<T> z(9); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; z(7)=p; z(8)=q; return z; }
 
-template<class T> mlr::Array<T*> LIST() {                                    mlr::Array<T*> z(0); return z; }
-template<class T> mlr::Array<T*> LIST(const T& i) {                                    mlr::Array<T*> z(1); z(0)=(T*)&i; return z; }
-template<class T> mlr::Array<T*> LIST(const T& i, const T& j) {                               mlr::Array<T*> z(2); z(0)=(T*)&i; z(1)=(T*)&j; return z; }
-template<class T> mlr::Array<T*> LIST(const T& i, const T& j, const T& k) {                          mlr::Array<T*> z(3); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; return z; }
-template<class T> mlr::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l) {                     mlr::Array<T*> z(4); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; return z; }
-template<class T> mlr::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m) {                mlr::Array<T*> z(5); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; return z; }
-template<class T> mlr::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n) {           mlr::Array<T*> z(6); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; return z; }
-template<class T> mlr::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o) {      mlr::Array<T*> z(7); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; z(6)=(T*)&o; return z; }
-template<class T> mlr::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p) { mlr::Array<T*> z(8); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; z(6)=(T*)&o; z(7)=(T*)&p; return z; }
+template<class T> rai::Array<T*> LIST() {                                    rai::Array<T*> z(0); return z; }
+template<class T> rai::Array<T*> LIST(const T& i) {                                    rai::Array<T*> z(1); z(0)=(T*)&i; return z; }
+template<class T> rai::Array<T*> LIST(const T& i, const T& j) {                               rai::Array<T*> z(2); z(0)=(T*)&i; z(1)=(T*)&j; return z; }
+template<class T> rai::Array<T*> LIST(const T& i, const T& j, const T& k) {                          rai::Array<T*> z(3); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; return z; }
+template<class T> rai::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l) {                     rai::Array<T*> z(4); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; return z; }
+template<class T> rai::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m) {                rai::Array<T*> z(5); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; return z; }
+template<class T> rai::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n) {           rai::Array<T*> z(6); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; return z; }
+template<class T> rai::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o) {      rai::Array<T*> z(7); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; z(6)=(T*)&o; return z; }
+template<class T> rai::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p) { rai::Array<T*> z(8); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; z(6)=(T*)&o; z(7)=(T*)&p; return z; }
 
 
 //===========================================================================
@@ -536,13 +536,13 @@ inline arr zeros(uint d0, uint d1) { return zeros(TUP(d0, d1)); }
 inline arr zeros(uint d0, uint d1, uint d2) { return zeros(TUP(d0, d1, d2)); }
 
 /// return array of c's
-template<class T> mlr::Array<T> consts(const T& c, const uintA& d)  {  mlr::Array<T> z;  z.resize(d);  z.setUni(c);  return z; }
+template<class T> rai::Array<T> consts(const T& c, const uintA& d)  {  rai::Array<T> z;  z.resize(d);  z.setUni(c);  return z; }
 /// return VECTOR of c's
-template<class T> mlr::Array<T> consts(const T& c, uint n) { return consts(c, TUP(n)); }
+template<class T> rai::Array<T> consts(const T& c, uint n) { return consts(c, TUP(n)); }
 /// return matrix of c's
-template<class T> mlr::Array<T> consts(const T& c, uint d0, uint d1) { return consts(c, TUP(d0, d1)); }
+template<class T> rai::Array<T> consts(const T& c, uint d0, uint d1) { return consts(c, TUP(d0, d1)); }
 /// return tensor of c's
-template<class T> mlr::Array<T> consts(const T& c, uint d0, uint d1, uint d2) { return consts(c, TUP(d0, d1, d2)); }
+template<class T> rai::Array<T> consts(const T& c, uint d0, uint d1, uint d2) { return consts(c, TUP(d0, d1, d2)); }
 
 /// return array with random numbers in [0, 1]
 arr rand(const uintA& d);
@@ -590,8 +590,8 @@ uint sampleMultinomial(const arr& p);
 arr bootstrap(const arr& x);
 void addDiag(arr& A, double d);
 
-namespace mlr {
-/// use this to turn on Lapack routines [default true if MLR_LAPACK is defined]
+namespace rai {
+/// use this to turn on Lapack routines [default true if RAI_LAPACK is defined]
 extern bool useLapack;
 }
 
@@ -662,7 +662,7 @@ double dNNNNinv(const arr& x, const arr& a, const arr& Ainv, arr& grad);
 double NNsdv(const arr& a, const arr& b, double sdv);
 double NNzerosdv(const arr& x, double sdv);
 
-mlr::String singleString(const StringA& strs);
+rai::String singleString(const StringA& strs);
 
 //===========================================================================
 /// @}
@@ -673,72 +673,72 @@ mlr::String singleString(const StringA& strs);
 // -- past-tense names do not modify the array, but return variants
 // -- more methods should return an array instead of have a returned parameter...
 
-template<class T> mlr::Array<T> vectorShaped(const mlr::Array<T>& x) {  mlr::Array<T> y;  y.referTo(x);  y.reshape(y.N);  return y;  }
-template<class T> void transpose(mlr::Array<T>& x, const mlr::Array<T>& y);
-template<class T> void negative(mlr::Array<T>& x, const mlr::Array<T>& y);
-template<class T> mlr::Array<T> getDiag(const mlr::Array<T>& y);
-template<class T> mlr::Array<T> diag(const mlr::Array<T>& x) {  mlr::Array<T> y;  y.setDiag(x);  return y;  }
-template<class T> mlr::Array<T> skew(const mlr::Array<T>& x);
-template<class T> void inverse2d(mlr::Array<T>& Ainv, const mlr::Array<T>& A);
-template<class T> mlr::Array<T> replicate(const mlr::Array<T>& A, uint d0);
-template<class T> mlr::Array<T> integral(const mlr::Array<T>& x);
+template<class T> rai::Array<T> vectorShaped(const rai::Array<T>& x) {  rai::Array<T> y;  y.referTo(x);  y.reshape(y.N);  return y;  }
+template<class T> void transpose(rai::Array<T>& x, const rai::Array<T>& y);
+template<class T> void negative(rai::Array<T>& x, const rai::Array<T>& y);
+template<class T> rai::Array<T> getDiag(const rai::Array<T>& y);
+template<class T> rai::Array<T> diag(const rai::Array<T>& x) {  rai::Array<T> y;  y.setDiag(x);  return y;  }
+template<class T> rai::Array<T> skew(const rai::Array<T>& x);
+template<class T> void inverse2d(rai::Array<T>& Ainv, const rai::Array<T>& A);
+template<class T> rai::Array<T> replicate(const rai::Array<T>& A, uint d0);
+template<class T> rai::Array<T> integral(const rai::Array<T>& x);
 
-template<class T> uintA size(const mlr::Array<T>& x) { return x.dim(); } //TODO: remove
-template<class T> void checkNan(const mlr::Array<T>& x);
-template<class T> void sort(mlr::Array<T>& x);
+template<class T> uintA size(const rai::Array<T>& x) { return x.dim(); } //TODO: remove
+template<class T> void checkNan(const rai::Array<T>& x);
+template<class T> void sort(rai::Array<T>& x);
 
-template<class T> T entropy(const mlr::Array<T>& v);
-template<class T> T normalizeDist(mlr::Array<T>& v);
-template<class T> void makeConditional(mlr::Array<T>& P);
-template<class T> void checkNormalization(mlr::Array<T>& v, double tol);
-template<class T> void checkNormalization(mlr::Array<T>& v) { checkNormalization(v, 1e-10); }
-template<class T> void eliminate(mlr::Array<T>& x, const mlr::Array<T>& y, uint d);
-template<class T> void eliminate(mlr::Array<T>& x, const mlr::Array<T>& y, uint d, uint e);
-template<class T> void eliminatePartial(mlr::Array<T>& x, const mlr::Array<T>& y, uint d);
+template<class T> T entropy(const rai::Array<T>& v);
+template<class T> T normalizeDist(rai::Array<T>& v);
+template<class T> void makeConditional(rai::Array<T>& P);
+template<class T> void checkNormalization(rai::Array<T>& v, double tol);
+template<class T> void checkNormalization(rai::Array<T>& v) { checkNormalization(v, 1e-10); }
+template<class T> void eliminate(rai::Array<T>& x, const rai::Array<T>& y, uint d);
+template<class T> void eliminate(rai::Array<T>& x, const rai::Array<T>& y, uint d, uint e);
+template<class T> void eliminatePartial(rai::Array<T>& x, const rai::Array<T>& y, uint d);
 
 #ifndef SWIG
-template<class T> T sqrDistance(const mlr::Array<T>& v, const mlr::Array<T>& w);
-template<class T> T maxDiff(const mlr::Array<T>& v, const mlr::Array<T>& w, uint *maxi=0);
-template<class T> T maxRelDiff(const mlr::Array<T>& v, const mlr::Array<T>& w, T tol);
-//template<class T> T sqrDistance(const mlr::Array<T>& v, const mlr::Array<T>& w, const mlr::Array<bool>& mask);
-template<class T> T sqrDistance(const mlr::Array<T>& g, const mlr::Array<T>& v, const mlr::Array<T>& w);
-template<class T> T euclideanDistance(const mlr::Array<T>& v, const mlr::Array<T>& w);
-template<class T> T metricDistance(const mlr::Array<T>& g, const mlr::Array<T>& v, const mlr::Array<T>& w);
+template<class T> T sqrDistance(const rai::Array<T>& v, const rai::Array<T>& w);
+template<class T> T maxDiff(const rai::Array<T>& v, const rai::Array<T>& w, uint *maxi=0);
+template<class T> T maxRelDiff(const rai::Array<T>& v, const rai::Array<T>& w, T tol);
+//template<class T> T sqrDistance(const rai::Array<T>& v, const rai::Array<T>& w, const rai::Array<bool>& mask);
+template<class T> T sqrDistance(const rai::Array<T>& g, const rai::Array<T>& v, const rai::Array<T>& w);
+template<class T> T euclideanDistance(const rai::Array<T>& v, const rai::Array<T>& w);
+template<class T> T metricDistance(const rai::Array<T>& g, const rai::Array<T>& v, const rai::Array<T>& w);
 
-template<class T> T sum(const mlr::Array<T>& v);
-template<class T> T scalar(const mlr::Array<T>& v);
-template<class T> mlr::Array<T> sum(const mlr::Array<T>& v, uint d);
-template<class T> T sumOfAbs(const mlr::Array<T>& v);
-template<class T> T sumOfSqr(const mlr::Array<T>& v);
-template<class T> T length(const mlr::Array<T>& v);
-template<class T> T product(const mlr::Array<T>& v);
-template<class T> T max(const mlr::Array<T>& v);
-template<class T> mlr::Array<T> max(const mlr::Array<T>& v, uint d);
+template<class T> T sum(const rai::Array<T>& v);
+template<class T> T scalar(const rai::Array<T>& v);
+template<class T> rai::Array<T> sum(const rai::Array<T>& v, uint d);
+template<class T> T sumOfAbs(const rai::Array<T>& v);
+template<class T> T sumOfSqr(const rai::Array<T>& v);
+template<class T> T length(const rai::Array<T>& v);
+template<class T> T product(const rai::Array<T>& v);
+template<class T> T max(const rai::Array<T>& v);
+template<class T> rai::Array<T> max(const rai::Array<T>& v, uint d);
 
-template<class T> T trace(const mlr::Array<T>& v);
-template<class T> T var(const mlr::Array<T>& v);
-template<class T> mlr::Array<T> mean(const mlr::Array<T>& v);
-template<class T> mlr::Array<T> stdDev(const mlr::Array<T>& v);
-template<class T> T minDiag(const mlr::Array<T>& v);
-template<class T> T absMax(const mlr::Array<T>& x);
-template<class T> T absMin(const mlr::Array<T>& x);
-template<class T> void clip(const mlr::Array<T>& x, T lo, T hi);
+template<class T> T trace(const rai::Array<T>& v);
+template<class T> T var(const rai::Array<T>& v);
+template<class T> rai::Array<T> mean(const rai::Array<T>& v);
+template<class T> rai::Array<T> stdDev(const rai::Array<T>& v);
+template<class T> T minDiag(const rai::Array<T>& v);
+template<class T> T absMax(const rai::Array<T>& x);
+template<class T> T absMin(const rai::Array<T>& x);
+template<class T> void clip(const rai::Array<T>& x, T lo, T hi);
 
-template<class T> void innerProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>& z);
-template<class T> void outerProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>& z);
-template<class T> void indexWiseProduct(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>& z);
-template<class T> mlr::Array<T> crossProduct(const mlr::Array<T>& y, const mlr::Array<T>& z); //only for 3 x 3 or (3,n) x 3
-template<class T> T scalarProduct(const mlr::Array<T>& v, const mlr::Array<T>& w);
-template<class T> T scalarProduct(const mlr::Array<T>& g, const mlr::Array<T>& v, const mlr::Array<T>& w);
-template<class T> mlr::Array<T> diagProduct(const mlr::Array<T>& v, const mlr::Array<T>& w);
+template<class T> void innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z);
+template<class T> void outerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z);
+template<class T> void indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z);
+template<class T> rai::Array<T> crossProduct(const rai::Array<T>& y, const rai::Array<T>& z); //only for 3 x 3 or (3,n) x 3
+template<class T> T scalarProduct(const rai::Array<T>& v, const rai::Array<T>& w);
+template<class T> T scalarProduct(const rai::Array<T>& g, const rai::Array<T>& v, const rai::Array<T>& w);
+template<class T> rai::Array<T> diagProduct(const rai::Array<T>& v, const rai::Array<T>& w);
 
-template<class T> mlr::Array<T> elemWiseMin(const mlr::Array<T>& v, const mlr::Array<T>& w);
-template<class T> mlr::Array<T> elemWiseMax(const mlr::Array<T>& v, const mlr::Array<T>& w);
-template<class T> mlr::Array<T> elemWisemax(const mlr::Array<T>& x,const T& y);
-template<class T> mlr::Array<T> elemWisemax(const T& x,const mlr::Array<T>& y);
-template<class T> mlr::Array<T> elemWiseHinge(const mlr::Array<T>& x);
+template<class T> rai::Array<T> elemWiseMin(const rai::Array<T>& v, const rai::Array<T>& w);
+template<class T> rai::Array<T> elemWiseMax(const rai::Array<T>& v, const rai::Array<T>& w);
+template<class T> rai::Array<T> elemWisemax(const rai::Array<T>& x,const T& y);
+template<class T> rai::Array<T> elemWisemax(const T& x,const rai::Array<T>& y);
+template<class T> rai::Array<T> elemWiseHinge(const rai::Array<T>& x);
 
-template<class T> void writeConsecutiveConstant(std::ostream& os, const mlr::Array<T>& x);
+template<class T> void writeConsecutiveConstant(std::ostream& os, const rai::Array<T>& x);
 
 
 //===========================================================================
@@ -746,16 +746,16 @@ template<class T> void writeConsecutiveConstant(std::ostream& os, const mlr::Arr
 /// @name concatenating arrays together
 /// @{
 
-template<class T> mlr::Array<T> cat(const mlr::Array<T>& y, const mlr::Array<T>& z) { mlr::Array<T> x(y); x.append(z); return x; }
-template<class T> mlr::Array<T> cat(const mlr::Array<T>& y, const mlr::Array<T>& z, const mlr::Array<T>& w) { mlr::Array<T> x; x.append(y); x.append(z); x.append(w); return x; }
-template<class T> mlr::Array<T> cat(const mlr::Array<T>& a, const mlr::Array<T>& b, const mlr::Array<T>& c, const mlr::Array<T>& d) { mlr::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); return x; }
-template<class T> mlr::Array<T> cat(const mlr::Array<T>& a, const mlr::Array<T>& b, const mlr::Array<T>& c, const mlr::Array<T>& d, const mlr::Array<T>& e) { mlr::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); x.append(e); return x; }
-template<class T> mlr::Array<T> catCol(const mlr::Array<mlr::Array<T>*>& X);
-template<class T> mlr::Array<T> catCol(const mlr::Array<mlr::Array<T> >& X);
-template<class T> mlr::Array<T> catCol(const mlr::Array<T>& a, const mlr::Array<T>& b){ return catCol(LIST<mlr::Array<T> >(a,b)); }
-template<class T> mlr::Array<T> catCol(const mlr::Array<T>& a, const mlr::Array<T>& b, const mlr::Array<T>& c){ return catCol(LIST<mlr::Array<T> >(a,b,c)); }
-template<class T> mlr::Array<T> catCol(const mlr::Array<T>& a, const mlr::Array<T>& b, const mlr::Array<T>& c, const mlr::Array<T>& d){ return catCol(LIST<mlr::Array<T> >(a,b,c,d)); }
-template<class T> mlr::Array<T> catCol(const mlr::Array<T>& a, const mlr::Array<T>& b, const mlr::Array<T>& c, const mlr::Array<T>& d, const mlr::Array<T>& e){ return catCol(LIST<mlr::Array<T> >(a,b,c,d,e)); }
+template<class T> rai::Array<T> cat(const rai::Array<T>& y, const rai::Array<T>& z) { rai::Array<T> x(y); x.append(z); return x; }
+template<class T> rai::Array<T> cat(const rai::Array<T>& y, const rai::Array<T>& z, const rai::Array<T>& w) { rai::Array<T> x; x.append(y); x.append(z); x.append(w); return x; }
+template<class T> rai::Array<T> cat(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d) { rai::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); return x; }
+template<class T> rai::Array<T> cat(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d, const rai::Array<T>& e) { rai::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); x.append(e); return x; }
+template<class T> rai::Array<T> catCol(const rai::Array<rai::Array<T>*>& X);
+template<class T> rai::Array<T> catCol(const rai::Array<rai::Array<T> >& X);
+template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b){ return catCol(LIST<rai::Array<T> >(a,b)); }
+template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c){ return catCol(LIST<rai::Array<T> >(a,b,c)); }
+template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d){ return catCol(LIST<rai::Array<T> >(a,b,c,d)); }
+template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d, const rai::Array<T>& e){ return catCol(LIST<rai::Array<T> >(a,b,c,d,e)); }
 
 
 //===========================================================================
@@ -763,24 +763,24 @@ template<class T> mlr::Array<T> catCol(const mlr::Array<T>& a, const mlr::Array<
 /// @name arrays interpreted as a set
 /// @{
 
-template<class T> void setUnion(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>& z);
-template<class T> void setSection(mlr::Array<T>& x, const mlr::Array<T>& y, const mlr::Array<T>& z);
-template<class T> mlr::Array<T> setUnion(const mlr::Array<T>& y, const mlr::Array<T>& z) { mlr::Array<T> x; setUnion(x, y, z); return x; }
-template<class T> mlr::Array<T> setSection(const mlr::Array<T>& y, const mlr::Array<T>& z) { mlr::Array<T> x; setSection(x, y, z); return x; }
-template<class T> mlr::Array<T> setSectionSorted(const mlr::Array<T>& x, const mlr::Array<T>& y,
+template<class T> void setUnion(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z);
+template<class T> void setSection(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z);
+template<class T> rai::Array<T> setUnion(const rai::Array<T>& y, const rai::Array<T>& z) { rai::Array<T> x; setUnion(x, y, z); return x; }
+template<class T> rai::Array<T> setSection(const rai::Array<T>& y, const rai::Array<T>& z) { rai::Array<T> x; setSection(x, y, z); return x; }
+template<class T> rai::Array<T> setSectionSorted(const rai::Array<T>& x, const rai::Array<T>& y,
                                                 bool (*comp)(const T& a, const T& b) );
-template<class T> void setMinus(mlr::Array<T>& x, const mlr::Array<T>& y);
-template<class T> void setMinusSorted(mlr::Array<T>& x, const mlr::Array<T>& y,
+template<class T> void setMinus(rai::Array<T>& x, const rai::Array<T>& y);
+template<class T> void setMinusSorted(rai::Array<T>& x, const rai::Array<T>& y,
                                       bool (*comp)(const T& a, const T& b) );
-template<class T> uint numberSharedElements(const mlr::Array<T>& x, const mlr::Array<T>& y);
-template<class T> void rndInteger(mlr::Array<T>& a, int low=0, int high=1, bool add=false);
-template<class T> void rndUniform(mlr::Array<T>& a, double low=0., double high=1., bool add=false);
-template<class T> void rndNegLogUniform(mlr::Array<T>& a, double low=0., double high=1., bool add=false);
-template<class T> void rndGauss(mlr::Array<T>& a, double stdDev=1., bool add=false);
-//template<class T> void rndGauss(mlr::Array<T>& a, bool add=false);
-//template<class T> mlr::Array<T>& rndGauss(double stdDev, uint dim);
-template<class T> uint softMax(const mlr::Array<T>& a, arr& soft, double beta);
-template<class T> mlr::Array<T> sqr(const mlr::Array<T>& y) { mlr::Array<T> x; x.resizeAs(y); for(uint i=0; i<x.N; i++) x.elem(i)=y.elem(i)*y.elem(i); return x; }
+template<class T> uint numberSharedElements(const rai::Array<T>& x, const rai::Array<T>& y);
+template<class T> void rndInteger(rai::Array<T>& a, int low=0, int high=1, bool add=false);
+template<class T> void rndUniform(rai::Array<T>& a, double low=0., double high=1., bool add=false);
+template<class T> void rndNegLogUniform(rai::Array<T>& a, double low=0., double high=1., bool add=false);
+template<class T> void rndGauss(rai::Array<T>& a, double stdDev=1., bool add=false);
+//template<class T> void rndGauss(rai::Array<T>& a, bool add=false);
+//template<class T> rai::Array<T>& rndGauss(double stdDev, uint dim);
+template<class T> uint softMax(const rai::Array<T>& a, arr& soft, double beta);
+template<class T> rai::Array<T> sqr(const rai::Array<T>& y) { rai::Array<T> x; x.resizeAs(y); for(uint i=0; i<x.N; i++) x.elem(i)=y.elem(i)*y.elem(i); return x; }
 
 
 //===========================================================================
@@ -788,22 +788,22 @@ template<class T> mlr::Array<T> sqr(const mlr::Array<T>& y) { mlr::Array<T> x; x
 /// @name tensor functions
 /// @{
 
-template<class T> void tensorCondNormalize(mlr::Array<T> &X, int left);
-template<class T> void tensorCondMax(mlr::Array<T> &X, uint left);
-template<class T> void tensorCondSoftMax(mlr::Array<T> &X, uint left, double beta);
-template<class T> void tensorCond11Rule(mlr::Array<T>& X, uint left, double rate);
-template<class T> void tensorCheckCondNormalization(const mlr::Array<T> &X, uint left, double tol=1e-10);
-template<class T> void tensorCheckCondNormalization_with_logP(const mlr::Array<T> &X, uint left, double logP, double tol=1e-10);
+template<class T> void tensorCondNormalize(rai::Array<T> &X, int left);
+template<class T> void tensorCondMax(rai::Array<T> &X, uint left);
+template<class T> void tensorCondSoftMax(rai::Array<T> &X, uint left, double beta);
+template<class T> void tensorCond11Rule(rai::Array<T>& X, uint left, double rate);
+template<class T> void tensorCheckCondNormalization(const rai::Array<T> &X, uint left, double tol=1e-10);
+template<class T> void tensorCheckCondNormalization_with_logP(const rai::Array<T> &X, uint left, double logP, double tol=1e-10);
 
-template<class T> void tensorEquation(mlr::Array<T> &X, const mlr::Array<T> &A, const uintA &pickA, const mlr::Array<T> &B, const uintA &pickB, uint sum=0);
-template<class T> void tensorPermutation(mlr::Array<T> &Y, const mlr::Array<T> &X, const uintA &Yid);
-template<class T> void tensorMarginal(mlr::Array<T> &Y, const mlr::Array<T> &X, const uintA &Yid);
-template<class T> void tensorMaxMarginal(mlr::Array<T> &Y, const mlr::Array<T> &X, const uintA &Yid);
-template<class T> void tensorMarginal_old(mlr::Array<T> &y, const mlr::Array<T> &x, const uintA &xd, const uintA &ids);
-template<class T> void tensorMultiply(mlr::Array<T> &X, const mlr::Array<T> &Y, const uintA &Yid);
-template<class T> void tensorAdd(mlr::Array<T> &X, const mlr::Array<T> &Y, const uintA &Yid);
-template<class T> void tensorMultiply_old(mlr::Array<T> &x, const mlr::Array<T> &y, const uintA &d, const uintA &ids);
-template<class T> void tensorDivide(mlr::Array<T> &X, const mlr::Array<T> &Y, const uintA &Yid);
+template<class T> void tensorEquation(rai::Array<T> &X, const rai::Array<T> &A, const uintA &pickA, const rai::Array<T> &B, const uintA &pickB, uint sum=0);
+template<class T> void tensorPermutation(rai::Array<T> &Y, const rai::Array<T> &X, const uintA &Yid);
+template<class T> void tensorMarginal(rai::Array<T> &Y, const rai::Array<T> &X, const uintA &Yid);
+template<class T> void tensorMaxMarginal(rai::Array<T> &Y, const rai::Array<T> &X, const uintA &Yid);
+template<class T> void tensorMarginal_old(rai::Array<T> &y, const rai::Array<T> &x, const uintA &xd, const uintA &ids);
+template<class T> void tensorMultiply(rai::Array<T> &X, const rai::Array<T> &Y, const uintA &Yid);
+template<class T> void tensorAdd(rai::Array<T> &X, const rai::Array<T> &Y, const uintA &Yid);
+template<class T> void tensorMultiply_old(rai::Array<T> &x, const rai::Array<T> &y, const uintA &d, const uintA &ids);
+template<class T> void tensorDivide(rai::Array<T> &X, const rai::Array<T> &Y, const uintA &Yid);
 
 
 //===========================================================================
@@ -812,26 +812,26 @@ template<class T> void tensorDivide(mlr::Array<T> &X, const mlr::Array<T> &Y, co
 /// @{
 
 #ifndef SWIG
-template<class T, class S> void resizeAs(mlr::Array<T>& x, const mlr::Array<S>& a) {
+template<class T, class S> void resizeAs(rai::Array<T>& x, const rai::Array<S>& a) {
   x.nd=a.nd; x.d0=a.d0; x.d1=a.d1; x.d2=a.d2;
   x.resetD();
   if(x.nd>3) { x.d=new uint[x.nd];  memmove(x.d, a.d, x.nd*sizeof(uint)); }
   x.resizeMEM(a.N, false);
 }
-template<class T, class S> void resizeCopyAs(mlr::Array<T>& x, const mlr::Array<S>& a);
-template<class T, class S> void reshapeAs(mlr::Array<T>& x, const mlr::Array<S>& a);
-template<class T, class S> void copy(mlr::Array<T>& x, const mlr::Array<S>& a) {
+template<class T, class S> void resizeCopyAs(rai::Array<T>& x, const rai::Array<S>& a);
+template<class T, class S> void reshapeAs(rai::Array<T>& x, const rai::Array<S>& a);
+template<class T, class S> void copy(rai::Array<T>& x, const rai::Array<S>& a) {
   resizeAs(x, a);
   for(uint i=0; i<x.N; i++) x.elem(i)=(T)a.elem(i);
 }
-template<class T, class S> mlr::Array<T> convert(const mlr::Array<S>& a) {
-  mlr::Array<T> x;
+template<class T, class S> rai::Array<T> convert(const rai::Array<S>& a) {
+  rai::Array<T> x;
   copy<T,S>(x,a);
   return x;
 }
 /// check whether this and \c a have same dimensions
 template<class T, class S>
-bool samedim(const mlr::Array<T>& a, const mlr::Array<S>& b) {
+bool samedim(const rai::Array<T>& a, const rai::Array<S>& b) {
   return (b.nd==a.nd && b.d0==a.d0 && b.d1==a.d1 && b.d2==a.d2);
 }
 #endif //SWIG
@@ -884,10 +884,10 @@ struct SpecialArray{
   virtual ~SpecialArray(){}
 };
 
-template<class T> bool isNotSpecial(const mlr::Array<T>& X){ return !X.special || X.special->type==SpecialArray::ST_none; }
-template<class T> bool isRowShifted(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::RowShiftedST; }
-template<class T> bool isSparseMatrix(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseMatrixST; }
-template<class T> bool isSparseVector(const mlr::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseVectorST; }
+template<class T> bool isNotSpecial(const rai::Array<T>& X){ return !X.special || X.special->type==SpecialArray::ST_none; }
+template<class T> bool isRowShifted(const rai::Array<T>& X){ return X.special && X.special->type==SpecialArray::RowShiftedST; }
+template<class T> bool isSparseMatrix(const rai::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseMatrixST; }
+template<class T> bool isSparseVector(const rai::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseVectorST; }
 
 struct RowShifted : SpecialArray {
   arr& Z;           ///< references the array itself
@@ -916,23 +916,23 @@ inline RowShifted* castRowShifted(arr& X) {
   return dynamic_cast<RowShifted*>(X.special); //((RowShifted*)X.aux);
 }
 
-namespace mlr {
+namespace rai {
 
 struct SparseVector: SpecialArray{
   uint N; ///< original size
   uintA elems; ///< for every non-zero (in memory order), the index
-  template<class T> SparseVector(mlr::Array<T>& X);
+  template<class T> SparseVector(rai::Array<T>& X);
 };
 
 struct SparseMatrix : SpecialArray{
   uintA elems; ///< for every non-zero (in memory order), the (row,col) index tuple [or only (row) for vectors]
   uintAA cols; ///< for every column, for every non-zero the (row,memory) index tuple [also for a vector column]
   uintAA rows; ///< for every row   , for every non-zero the (column,memory) index tuple [not for vectors]
-  template<class T> SparseMatrix(mlr::Array<T>& X);
-  template<class T> SparseMatrix(mlr::Array<T>& X, uint d0);
+  template<class T> SparseMatrix(rai::Array<T>& X);
+  template<class T> SparseMatrix(rai::Array<T>& X, uint d0);
 };
 
-}//namespace mlr
+}//namespace rai
 
 //struct RowSparseMatrix : SpecialArray {
 //  RowSparseMatrix()
@@ -952,28 +952,28 @@ arr makeRowSparse(const arr& X);
 /*  TODO: realize list simpler: let the Array class have a 'listMode' flag. When this flag is true, the read, write, resize, find etc routines
 will simply be behave differently */
 
-template<class T> char listWrite(const mlr::Array<std::shared_ptr<T> >& L, std::ostream& os=std::cout, const char *ELEMSEP=" ", const char *delim=NULL);
-template<class T> char listWrite(const mlr::Array<T*>& L, std::ostream& os=std::cout, const char *ELEMSEP=" ", const char *delim=NULL);
-template<class T> void listWriteNames(const mlr::Array<T*>& L, std::ostream& os);
-template<class T> mlr::String listString(const mlr::Array<T*>& L);
-template<class T> void listRead(mlr::Array<T*>& L, std::istream& is, const char *delim=NULL);
-template<class T> void listCopy(mlr::Array<T*>& L, const mlr::Array<T*>& M);  //copy a list by calling the copy constructor for each element
-template<class T> void listClone(mlr::Array<T*>& L, const mlr::Array<T*>& M); //copy a list by calling the 'newClone' method of each element (works for virtual types)
-template<class T> void listDelete(mlr::Array<T*>& L);
-template<class T> void listReindex(mlr::Array<T*>& L);
-template<class T> T* listFindValue(const mlr::Array<T*>& L, const T& x);
-template<class T> T* listFindByName(const mlr::Array<T*>& L, const char* name); //each element needs a 'name' (usually mlr::String)
-template<class T> T* listFindByType(const mlr::Array<T*>& L, const char* type); //each element needs a 'type' (usually mlr::String)
-template<class T, class LowerOperator> void listSort(mlr::Array<T*>& L, LowerOperator lowerop);
+template<class T> char listWrite(const rai::Array<std::shared_ptr<T> >& L, std::ostream& os=std::cout, const char *ELEMSEP=" ", const char *delim=NULL);
+template<class T> char listWrite(const rai::Array<T*>& L, std::ostream& os=std::cout, const char *ELEMSEP=" ", const char *delim=NULL);
+template<class T> void listWriteNames(const rai::Array<T*>& L, std::ostream& os);
+template<class T> rai::String listString(const rai::Array<T*>& L);
+template<class T> void listRead(rai::Array<T*>& L, std::istream& is, const char *delim=NULL);
+template<class T> void listCopy(rai::Array<T*>& L, const rai::Array<T*>& M);  //copy a list by calling the copy constructor for each element
+template<class T> void listClone(rai::Array<T*>& L, const rai::Array<T*>& M); //copy a list by calling the 'newClone' method of each element (works for virtual types)
+template<class T> void listDelete(rai::Array<T*>& L);
+template<class T> void listReindex(rai::Array<T*>& L);
+template<class T> T* listFindValue(const rai::Array<T*>& L, const T& x);
+template<class T> T* listFindByName(const rai::Array<T*>& L, const char* name); //each element needs a 'name' (usually rai::String)
+template<class T> T* listFindByType(const rai::Array<T*>& L, const char* type); //each element needs a 'type' (usually rai::String)
+template<class T, class LowerOperator> void listSort(rai::Array<T*>& L, LowerOperator lowerop);
 
 //TODO obsolete?
-template<class T> mlr::Array<T*> getList(const mlr::Array<T>& A) {
-  mlr::Array<T*> L;
+template<class T> rai::Array<T*> getList(const rai::Array<T>& A) {
+  rai::Array<T*> L;
   resizeAs(L, A);
   for(uint i=0; i<A.N; i++) L.elem(i) = &A.elem(i);
   return L;
 }
-template<class T> T* new_elem(mlr::Array<T*>& L) { T *e=new T; e->index=L.N; L.append(e); return e; }
+template<class T> T* new_elem(rai::Array<T*>& L) { T *e=new T; e->index=L.N; L.append(e); return e; }
 
 
 //===========================================================================
@@ -986,19 +986,19 @@ void graphRandomFixedDegree(uintA& E, uint N, uint degree);
 void graphRandomTree(uintA& E, uint N, uint roots=1);
 
 template<class vert, class edge> edge* graphGetEdge(vert *from, vert *to);
-template<class vert, class edge> void graphMakeLists(mlr::Array<vert*>& V, mlr::Array<edge*>& E);
-template<class vert, class edge> void graphRandomUndirected(mlr::Array<vert*>& V, mlr::Array<edge*>& E, uint N, double connectivity);
-template<class vert, class edge> void graphRandomFixedDegree(mlr::Array<vert*>& V, mlr::Array<edge*>& E, uint N, uint degree);
-template<class vert, class edge> void graphRandomLinear(mlr::Array<vert*>& V, mlr::Array<edge*>& E, uint N);
-template<class vert, class edge> void graphConnectUndirected(mlr::Array<vert*>& V, mlr::Array<edge*>& E);
-template<class vert, class edge> void graphLayered(mlr::Array<vert*>& V, mlr::Array<edge*>& E, const uintA& layers, bool interConnections);
-template<class vert, class edge> edge *newEdge(vert *a, vert *b, mlr::Array<edge*>& E);
-template<class edge> edge *newEdge(uint a , uint b, mlr::Array<edge*>& E);
-template<class vert, class edge> edge *del_edge(edge *e, mlr::Array<vert*>& V, mlr::Array<edge*>& E, bool remakeLists);
-template<class vert, class edge> void graphWriteDirected(std::ostream& os, const mlr::Array<vert*>& V, const mlr::Array<edge*>& E);
-template<class vert, class edge> void graphWriteUndirected(std::ostream& os, const mlr::Array<vert*>& V, const mlr::Array<edge*>& E);
-template<class vert, class edge> bool graphTopsort(mlr::Array<vert*>& V, mlr::Array<edge*>& E);
-template<class vert, class edge> void graphDelete(mlr::Array<vert*>& V, mlr::Array<edge*>& E);
+template<class vert, class edge> void graphMakeLists(rai::Array<vert*>& V, rai::Array<edge*>& E);
+template<class vert, class edge> void graphRandomUndirected(rai::Array<vert*>& V, rai::Array<edge*>& E, uint N, double connectivity);
+template<class vert, class edge> void graphRandomFixedDegree(rai::Array<vert*>& V, rai::Array<edge*>& E, uint N, uint degree);
+template<class vert, class edge> void graphRandomLinear(rai::Array<vert*>& V, rai::Array<edge*>& E, uint N);
+template<class vert, class edge> void graphConnectUndirected(rai::Array<vert*>& V, rai::Array<edge*>& E);
+template<class vert, class edge> void graphLayered(rai::Array<vert*>& V, rai::Array<edge*>& E, const uintA& layers, bool interConnections);
+template<class vert, class edge> edge *newEdge(vert *a, vert *b, rai::Array<edge*>& E);
+template<class edge> edge *newEdge(uint a , uint b, rai::Array<edge*>& E);
+template<class vert, class edge> edge *del_edge(edge *e, rai::Array<vert*>& V, rai::Array<edge*>& E, bool remakeLists);
+template<class vert, class edge> void graphWriteDirected(std::ostream& os, const rai::Array<vert*>& V, const rai::Array<edge*>& E);
+template<class vert, class edge> void graphWriteUndirected(std::ostream& os, const rai::Array<vert*>& V, const rai::Array<edge*>& E);
+template<class vert, class edge> bool graphTopsort(rai::Array<vert*>& V, rai::Array<edge*>& E);
+template<class vert, class edge> void graphDelete(rai::Array<vert*>& V, rai::Array<edge*>& E);
 
 /// @}
 
@@ -1010,11 +1010,11 @@ template<class vert, class edge> void graphDelete(mlr::Array<vert*>& V, mlr::Arr
 
 #include <vector>
 
-template<class T> mlr::Array<T> conv_stdvec2arr(const std::vector<T>& v){
-  return mlr::Array<T>(&v.front(), v.size());
+template<class T> rai::Array<T> conv_stdvec2arr(const std::vector<T>& v){
+  return rai::Array<T>(&v.front(), v.size());
 }
 
-template<class T> std::vector<T> conv_arr2stdvec(const mlr::Array<T>& x){
+template<class T> std::vector<T> conv_arr2stdvec(const rai::Array<T>& x){
   return std::vector<T>(x.begin(), x.end());
 }
 
@@ -1023,7 +1023,7 @@ template<class T> std::vector<T> conv_arr2stdvec(const mlr::Array<T>& x){
 // conv with Eigen
 //
 
-#ifdef MT_EIGEN
+#ifdef RAI_EIGEN
 
 #include <Eigen/Dense>
 
@@ -1038,7 +1038,7 @@ Eigen::MatrixXd conv_arr2eigen(const arr& in);
 
 void linkArray();
 
-//#if defined MLR_IMPLEMENT_TEMPLATES | defined MLR_IMPLEMENTATION
+//#if defined RAI_IMPLEMENT_TEMPLATES | defined RAI_IMPLEMENTATION
 #  include "array.tpp"
 //#endif
 

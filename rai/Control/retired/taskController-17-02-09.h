@@ -29,7 +29,7 @@
 
 
 struct CtrlTask;
-typedef mlr::Array<CtrlTask*> CtrlTaskL;
+typedef rai::Array<CtrlTask*> CtrlTaskL;
 
 
 //===========================================================================
@@ -38,7 +38,7 @@ typedef mlr::Array<CtrlTask*> CtrlTaskL;
  */
 struct CtrlTask{ //TODO: rename/refactor to become LinearAccelerationLaw (LAW) in task spaces
   TaskMap& map;
-  mlr::String name;
+  rai::String name;
   bool active;
   arr prec; ///< compliance matrix $C$
 
@@ -80,7 +80,7 @@ struct CtrlTask{ //TODO: rename/refactor to become LinearAccelerationLaw (LAW) i
 
   arr getDesiredAcceleration();
   void getDesiredLinAccLaw(arr& Kp_y, arr& Kd_y, arr& a0);
-  void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& KfL, arr& J_ft, const mlr::KinematicWorld& world);
+  void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& KfL, arr& J_ft, const rai::KinematicWorld& world);
 
   double error();
   bool isConverged(double tolerance=1e-2);
@@ -91,7 +91,7 @@ struct CtrlTask{ //TODO: rename/refactor to become LinearAccelerationLaw (LAW) i
 
 struct ConstraintForceTask{
   TaskMap& map;
-  mlr::String name;
+  rai::String name;
   bool active;
 
   double desiredForce;
@@ -108,22 +108,22 @@ struct ConstraintForceTask{
  * TaskControlMethods contains all individual motions/CtrlTasks.
  */
 struct TaskControlMethods {
-  mlr::KinematicWorld& world;
-  mlr::Array<CtrlTask*> tasks;
-  mlr::Array<ConstraintForceTask*> forceTasks;
+  rai::KinematicWorld& world;
+  rai::Array<CtrlTask*> tasks;
+  rai::Array<ConstraintForceTask*> forceTasks;
   CtrlTask qNullCostRef;
   boolA lockJoints;
   bool useSwift;
 
-  TaskControlMethods(mlr::KinematicWorld& _world, bool _useSwift=true);
+  TaskControlMethods(rai::KinematicWorld& _world, bool _useSwift=true);
 
   /// @{ @name adding tasks
   CtrlTask* addPDTask(const char* name, double decayTime, double dampingRatio, TaskMap *map);
   CtrlTask* addPDTask(const char* name,
                     double decayTime, double dampingRatio,
                     TM_DefaultType type,
-                    const char* iShapeName=NULL, const mlr::Vector& ivec=NoVector,
-                    const char* jShapeName=NULL, const mlr::Vector& jvec=NoVector);
+                    const char* iShapeName=NULL, const rai::Vector& ivec=NoVector,
+                    const char* jShapeName=NULL, const rai::Vector& jvec=NoVector);
   ConstraintForceTask* addConstraintForceTask(const char* name, TaskMap *map);
   /// @}
 

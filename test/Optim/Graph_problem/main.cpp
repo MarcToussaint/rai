@@ -46,13 +46,13 @@ void testGraphProblem() {
   optConstrained(x, NoArr, C2 ); //fast, using KOMO structure
 
   write(LIST<arr>(x),"z.output");
-  mlr::String plt = "plot 'z.output' us 1";
+  rai::String plt = "plot 'z.output' us 1";
   for(uint i=1;i<d(0);i++) plt <<", '' us " <<i+1;
   gnuplot(plt, true, true);
 }
 
 int MAIN(int argc,char** argv){
-  mlr::initCmdLine(argc,argv);
+  rai::initCmdLine(argc,argv);
 
   testGraphProblem();
 

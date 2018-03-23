@@ -17,8 +17,8 @@
 struct TM_FixSwichedObjects:TaskMap {
   TM_FixSwichedObjects(){}
   virtual void phi(arr& y, arr& J, const WorldL& G, double tau, int t=-1);
-  virtual void phi(arr& y, arr& J, const mlr::KinematicWorld& G, int t=-1){ HALT("can only be of order 1"); }
-  virtual uint dim_phi(const mlr::KinematicWorld& G){ HALT("can only be of order 1"); }
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1){ HALT("can only be of order 1"); }
+  virtual uint dim_phi(const rai::KinematicWorld& G){ HALT("can only be of order 1"); }
   virtual uint dim_phi(const WorldL& G, int t);
-  virtual mlr::String shortTag(const mlr::KinematicWorld& G){ return STRING("FixSwichedObjects"); }
+  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("FixSwichedObjects"); }
 };

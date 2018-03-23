@@ -13,7 +13,7 @@
 #include "contact.h"
 #include "flag.h"
 
-#ifdef MLR_GL
+#ifdef RAI_GL
 #include <Gui/opengl.h>
 #endif
 
@@ -22,7 +22,7 @@
 // Frame
 //
 
-mlr::Frame::Frame(KinematicWorld& _K, const Frame* copyFrame)
+rai::Frame::Frame(KinematicWorld& _K, const Frame* copyFrame)
   : K(_K){
 
   ID=K.frames.N;
@@ -37,13 +37,13 @@ mlr::Frame::Frame(KinematicWorld& _K, const Frame* copyFrame)
   }
 }
 
-mlr::Frame::Frame(Frame *_parent)
+rai::Frame::Frame(Frame *_parent)
   : Frame(_parent->K){
   CHECK(_parent, "");
   linkFrom(_parent);
 }
 
-mlr::Frame::~Frame() {
+rai::Frame::~Frame() {
   if(joint) delete joint;
   if(shape) delete shape;
   if(inertia) delete inertia;
@@ -54,7 +54,7 @@ mlr::Frame::~Frame() {
   listReindex(K.frames);
 }
 
-void mlr::Frame::calc_X_from_parent(){
+void rai::Frame::calc_X_from_parent(){
   CHECK(parent, "");
   Transformation &from = parent->X;
   X = from;
@@ -70,7 +70,7 @@ void mlr::Frame::calc_X_from_parent(){
   }
 }
 
-void mlr::Frame::calc_Q_from_parent(bool enforceWithinJoint){
+void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint){
   CHECK(parent,"");
   Q.setDifference(parent->X, X);
   if(joint && enforceWithinJoint){
@@ -79,15 +79,15 @@ void mlr::Frame::calc_Q_from_parent(bool enforceWithinJoint){
   }
 }
 
-void mlr::Frame::getRigidSubFrames(FrameL &F){
+void rai::Frame::getRigidSubFrames(FrameL &F){
   for(Frame *f:outLinks) if(!f->joint) { F.append(f); f->getRigidSubFrames(F); }
 }
 
-mlr::Inertia &mlr::Frame::getInertia(){
+rai::Inertia &rai::Frame::getInertia(){
   if(!inertia) inertia = new Inertia(*this); return *inertia;
 }
 
-mlr::Frame *mlr::Frame::getUpwardLink(mlr::Transformation &Qtotal){
+rai::Frame *rai::Frame::getUpwardLink(rai::Transformation &Qtotal){
   if(&Qtotal) Qtotal.setZero();
   Frame *p=this;
   while(p->parent && !p->joint){
@@ -97,7 +97,7 @@ mlr::Frame *mlr::Frame::getUpwardLink(mlr::Transformation &Qtotal){
   return p;
 }
 
-void mlr::Frame::read(const Graph& ats) {
+void rai::Frame::read(const Graph& ats) {
   //interpret some of the attributes
   ats.get(X, "X");
   ats.get(X, "pose");
@@ -110,7 +110,7 @@ void mlr::Frame::read(const Graph& ats) {
   if(ats["mass"]){ inertia = new Inertia(*this); inertia->read(ats); }
 }
 
-void mlr::Frame::write(std::ostream& os) const {
+void rai::Frame::write(std::ostream& os) const {
   os <<"frame " <<name;
   if(parent) os <<'(' <<parent->name <<')';
   os <<" \t{ ";
@@ -148,7 +148,7 @@ void mlr::Frame::write(std::ostream& os) const {
   //      if(a->keys(0)!="X" && a->keys(0)!="pose") os <<*a <<' ';
 }
 
-mlr::Frame* mlr::Frame::insertPreLink(const mlr::Transformation &A){
+rai::Frame* rai::Frame::insertPreLink(const rai::Transformation &A){
   //new frame between: parent -> f -> this
   Frame *f = new Frame(K);
   if(name) f->name <<'>' <<name;
@@ -165,7 +165,7 @@ mlr::Frame* mlr::Frame::insertPreLink(const mlr::Transformation &A){
   return f;
 }
 
-mlr::Frame* mlr::Frame::insertPostLink(const mlr::Transformation &B){
+rai::Frame* rai::Frame::insertPostLink(const rai::Transformation &B){
   //new frame between: parent -> this -> f
   Frame *f = new Frame(K);
   if(name) f->name <<'<' <<name;
@@ -180,7 +180,7 @@ mlr::Frame* mlr::Frame::insertPostLink(const mlr::Transformation &B){
   return f;
 }
 
-void mlr::Frame::unLink(){
+void rai::Frame::unLink(){
   CHECK(parent,"");
   parent->outLinks.removeValue(this);
   parent=NULL;
@@ -188,7 +188,7 @@ void mlr::Frame::unLink(){
   if(joint){ delete joint; joint=NULL; }
 }
 
-void mlr::Frame::linkFrom(mlr::Frame *_parent, bool adoptRelTransform){
+void rai::Frame::linkFrom(rai::Frame *_parent, bool adoptRelTransform){
   CHECK(_parent,"you need to set a parent to link from");
   CHECK(!parent,"this frame is already linked to a parent");
   if(parent==_parent) return;
@@ -197,7 +197,7 @@ void mlr::Frame::linkFrom(mlr::Frame *_parent, bool adoptRelTransform){
   if(adoptRelTransform) Q = X/parent->X;
 }
 
-mlr::Joint::Joint(Frame &f, Joint *copyJoint)
+rai::Joint::Joint(Frame &f, Joint *copyJoint)
   : frame(f), qIndex(UINT_MAX), q0(0.){
   CHECK(!frame.joint, "the Link already has a Joint");
   frame.joint = this;
@@ -218,19 +218,19 @@ mlr::Joint::Joint(Frame &f, Joint *copyJoint)
   }
 }
 
-mlr::Joint::Joint(Frame &from, Frame &f, Joint *copyJoint)
+rai::Joint::Joint(Frame &from, Frame &f, Joint *copyJoint)
   : Joint(f, copyJoint){
   frame.linkFrom(&from);
 }
 
-mlr::Joint::~Joint() {
+rai::Joint::~Joint() {
   frame.K.reset_q();
   frame.joint = NULL;
   //if(frame.parent) frame.unLink();
 }
 
-void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
-  mlr::Transformation &Q = frame.Q;
+void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
+  rai::Transformation &Q = frame.Q;
 //  if(type!=JT_rigid) Q.setZero();
   if(mimic){
     Q = mimic->frame.Q;
@@ -249,7 +249,7 @@ void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
     } break;
 
     case JT_universal:{
-      mlr::Quaternion rot1, rot2;
+      rai::Quaternion rot1, rot2;
       rot1.setRadX(q.elem(_qIndex));
       rot2.setRadY(q.elem(_qIndex+1));
       Q.rot = rot1*rot2;
@@ -331,7 +331,7 @@ void mlr::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
   //    link->link = A * Q * B; //total rel transformation
 }
 
-arr mlr::Joint::calc_q_from_Q(const mlr::Transformation &Q) const{
+arr rai::Joint::calc_q_from_Q(const rai::Transformation &Q) const{
   arr q;
   switch(type) {
   case JT_hingeX:
@@ -339,9 +339,9 @@ arr mlr::Joint::calc_q_from_Q(const mlr::Transformation &Q) const{
   case JT_hingeZ: {
     q.resize(1);
     //angle
-    mlr::Vector rotv;
+    rai::Vector rotv;
     Q.rot.getRad(q(0), rotv);
-    if(q(0)>MLR_PI) q(0)-=MLR_2PI;
+    if(q(0)>RAI_PI) q(0)-=RAI_2PI;
     if(type==JT_hingeX && rotv*Vector_x<0.) q(0)=-q(0);
     if(type==JT_hingeY && rotv*Vector_y<0.) q(0)=-q(0);
     if(type==JT_hingeZ && rotv*Vector_z<0.) q(0)=-q(0);
@@ -354,8 +354,8 @@ arr mlr::Joint::calc_q_from_Q(const mlr::Transformation &Q) const{
       q(0) = 2.0 * atan(Q.rot.x/Q.rot.w);
       q(1) = 2.0 * atan(Q.rot.y/Q.rot.w);
     } else {
-      q(0) = MLR_PI;
-      q(1) = MLR_PI;
+      q(0) = RAI_PI;
+      q(1) = RAI_PI;
     }
   } break;
 
@@ -388,18 +388,18 @@ arr mlr::Joint::calc_q_from_Q(const mlr::Transformation &Q) const{
     q.resize(3);
     q(0)=Q.pos.x;
     q(1)=Q.pos.y;
-    mlr::Vector rotv;
+    rai::Vector rotv;
     Q.rot.getRad(q(2), rotv);
-    if(q(2)>MLR_PI) q(2)-=MLR_2PI;
+    if(q(2)>RAI_PI) q(2)-=RAI_2PI;
     if(rotv*Vector_z<0.) q(2)=-q(2);
   } break;
   case JT_phiTransXY: {
     q.resize(3);
-    mlr::Vector rotv;
+    rai::Vector rotv;
     Q.rot.getRad(q(0), rotv);
-    if(q(0)>MLR_PI) q(0)-=MLR_2PI;
+    if(q(0)>RAI_PI) q(0)-=RAI_2PI;
     if(rotv*Vector_z<0.) q(0)=-q(0);
-    mlr::Vector relpos = Q.rot/Q.pos;
+    rai::Vector relpos = Q.rot/Q.pos;
     q(1)=relpos.x;
     q(2)=relpos.y;
   } break;
@@ -434,10 +434,10 @@ arr mlr::Joint::calc_q_from_Q(const mlr::Transformation &Q) const{
   return q;
 }
 
-arr mlr::Joint::getScrewMatrix(){
+arr rai::Joint::getScrewMatrix(){
   arr S(2, dim, 3);
   S.setZero();
-  mlr::Vector axis;
+  rai::Vector axis;
 
   if(type==JT_hingeX) {
     axis = X().rot.getX();
@@ -506,7 +506,7 @@ arr mlr::Joint::getScrewMatrix(){
   return S;
 }
 
-uint mlr::Joint::getDimFromType() const {
+uint rai::Joint::getDimFromType() const {
   if(mimic) return 0;
   if(type>=JT_hingeX && type<=JT_transZ) return 1;
   if(type==JT_transXY) return 2;
@@ -522,36 +522,36 @@ uint mlr::Joint::getDimFromType() const {
   return 0;
 }
 
-arr mlr::Joint::get_h() const{
+arr rai::Joint::get_h() const{
   arr h(6);
   h.setZero();
   switch(type) {
-  case mlr::JT_rigid:
-  case mlr::JT_transXYPhi: break;
-  case mlr::JT_hingeX: h.resize(6).setZero(); h(0)=1.; break;
-  case mlr::JT_hingeY: h.resize(6).setZero(); h(1)=1.; break;
-  case mlr::JT_hingeZ: h.resize(6).setZero(); h(2)=1.; break;
-  case mlr::JT_transX: h.resize(6).setZero(); h(3)=1.; break;
-  case mlr::JT_transY: h.resize(6).setZero(); h(4)=1.; break;
-  case mlr::JT_transZ: h.resize(6).setZero(); h(5)=1.; break;
+  case rai::JT_rigid:
+  case rai::JT_transXYPhi: break;
+  case rai::JT_hingeX: h.resize(6).setZero(); h(0)=1.; break;
+  case rai::JT_hingeY: h.resize(6).setZero(); h(1)=1.; break;
+  case rai::JT_hingeZ: h.resize(6).setZero(); h(2)=1.; break;
+  case rai::JT_transX: h.resize(6).setZero(); h(3)=1.; break;
+  case rai::JT_transY: h.resize(6).setZero(); h(4)=1.; break;
+  case rai::JT_transZ: h.resize(6).setZero(); h(5)=1.; break;
   default: NIY;
   }
   return h;
 }
 
-double& mlr::Joint::getQ(){
+double& rai::Joint::getQ(){
   return frame.K.q.elem(qIndex);
 }
 
-void mlr::Joint::makeRigid(){
+void rai::Joint::makeRigid(){
   type=JT_rigid; frame.K.reset_q();
 }
 
-void mlr::Joint::read(const Graph &G){
+void rai::Joint::read(const Graph &G){
   double d=0.;
-  mlr::String str;
+  rai::String str;
 
-  mlr::Transformation A=0, B=0;
+  rai::Transformation A=0, B=0;
 
   G.get(A, "A");
   G.get(A, "from");
@@ -633,7 +633,7 @@ void mlr::Joint::read(const Graph &G){
   }
 }
 
-void mlr::Joint::write(std::ostream& os) const {
+void rai::Joint::write(std::ostream& os) const {
   os <<" joint=" <<type;
   if(H) os <<" ctrl_H="<<H;
   if(limits.N) os <<" limits=[" <<limits <<"]";
@@ -651,7 +651,7 @@ void mlr::Joint::write(std::ostream& os) const {
 // Shape
 //
 
-mlr::Shape::Shape(Frame &f, const Shape *copyShape)
+rai::Shape::Shape(Frame &f, const Shape *copyShape)
   : frame(f) {
 
   CHECK(!frame.shape, "this frame already has a shape attached");
@@ -664,24 +664,24 @@ mlr::Shape::Shape(Frame &f, const Shape *copyShape)
   }
 }
 
-mlr::Shape::~Shape() {
+rai::Shape::~Shape() {
   frame.shape = NULL;
 }
 
-mlr::Geom &mlr::Shape::getGeom(){
+rai::Geom &rai::Shape::getGeom(){
   if(!geom) geom = new Geom(_GeomStore());
   return *geom;
 }
 
 
-void mlr::Shape::read(const Graph& ats) {
+void rai::Shape::read(const Graph& ats) {
 
   getGeom().read(ats);
 
   if(ats["contact"])           { cont=true; }
 
   //center the mesh:
-  if(type()==mlr::ST_mesh && mesh().V.N){
+  if(type()==rai::ST_mesh && mesh().V.N){
     if(ats["rel_includes_mesh_center"]){
       mesh().center();
     }
@@ -695,7 +695,7 @@ void mlr::Shape::read(const Graph& ats) {
   if(mesh().V.N) mesh_radius = mesh().getRadius();
 }
 
-void mlr::Shape::write(std::ostream& os) const {
+void rai::Shape::write(std::ostream& os) const {
   if(geom){
     os <<" shape=" <<geom->type;
     os <<" size=[" <<geom->size <<"]";
@@ -710,8 +710,8 @@ void mlr::Shape::write(std::ostream& os) const {
   if(cont) os <<" contact, ";
 }
 
-void mlr::Shape::glDraw(OpenGL& gl) {
-#ifdef MLR_GL
+void rai::Shape::glDraw(OpenGL& gl) {
+#ifdef RAI_GL
   //set name (for OpenGL selection)
   glPushName((frame.ID <<2) | 1);
   if(frame.K.orsDrawColors && !frame.K.orsDrawIndexColors && !gl.drawMode_idColor){
@@ -754,7 +754,7 @@ void mlr::Shape::glDraw(OpenGL& gl) {
 #endif
 }
 
-mlr::Inertia::Inertia(Frame &f, Inertia *copyInertia) : frame(f), type(BT_kinematic) {
+rai::Inertia::Inertia(Frame &f, Inertia *copyInertia) : frame(f), type(BT_kinematic) {
   CHECK(!frame.inertia, "this frame already has inertia");
   frame.inertia = this;
   if(copyInertia){
@@ -767,11 +767,11 @@ mlr::Inertia::Inertia(Frame &f, Inertia *copyInertia) : frame(f), type(BT_kinema
   }
 }
 
-mlr::Inertia::~Inertia(){
+rai::Inertia::~Inertia(){
   frame.inertia = NULL;
 }
 
-void mlr::Inertia::defaultInertiaByShape(){
+void rai::Inertia::defaultInertiaByShape(){
   CHECK(frame.shape, "");
 
   //add inertia to the body
@@ -786,20 +786,20 @@ void mlr::Inertia::defaultInertiaByShape(){
   }
 }
 
-arr mlr::Inertia::getFrameRelativeWrench(){
+arr rai::Inertia::getFrameRelativeWrench(){
   arr f(6);
-  mlr::Vector fo = frame.X.rot/force;
-  mlr::Vector to = frame.X.rot/(torque + ((frame.X.rot*com)^force));
+  rai::Vector fo = frame.X.rot/force;
+  rai::Vector to = frame.X.rot/(torque + ((frame.X.rot*com)^force));
   f(0)=to.x;  f(1)=to.y;  f(2)=to.z;
   f(3)=fo.x;  f(4)=fo.y;  f(5)=fo.z;
   return f;
 }
 
-void mlr::Inertia::write(std::ostream &os) const{
+void rai::Inertia::write(std::ostream &os) const{
   os <<" mass=" <<mass;
 }
 
-void mlr::Inertia::read(const Graph& G){
+void rai::Inertia::read(const Graph& G){
   double d;
   if(G.get(d, "mass")) {
     mass=d;

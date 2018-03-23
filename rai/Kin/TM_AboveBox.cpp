@@ -13,23 +13,23 @@ TM_AboveBox::TM_AboveBox(int iShape, int jShape, double _margin)
   : i(iShape), j(jShape), margin(_margin){
 }
 
-TM_AboveBox::TM_AboveBox(const mlr::KinematicWorld& K, const char* iShapeName, const char* jShapeName, double _margin)
+TM_AboveBox::TM_AboveBox(const rai::KinematicWorld& K, const char* iShapeName, const char* jShapeName, double _margin)
   :i(-1), j(-1), margin(_margin){
-  mlr::Frame *a = iShapeName ? K.getFrameByName(iShapeName):NULL;
-  mlr::Frame *b = jShapeName ? K.getFrameByName(jShapeName):NULL;
+  rai::Frame *a = iShapeName ? K.getFrameByName(iShapeName):NULL;
+  rai::Frame *b = jShapeName ? K.getFrameByName(jShapeName):NULL;
   if(a) i=a->ID;
   if(b) j=b->ID;
 }
 
-void TM_AboveBox::phi(arr& y, arr& J, const mlr::KinematicWorld& K, int t){
-  mlr::Shape *pnt=K.frames(i)->shape;
-  mlr::Shape *box=K.frames(j)->shape;
+void TM_AboveBox::phi(arr& y, arr& J, const rai::KinematicWorld& K, int t){
+  rai::Shape *pnt=K.frames(i)->shape;
+  rai::Shape *box=K.frames(j)->shape;
   CHECK(pnt && box,"I need shapes!");
-//  if(box->type!=mlr::ST_ssBox){ //switch roles
-//    mlr::Shape *z=pnt;
+//  if(box->type!=rai::ST_ssBox){ //switch roles
+//    rai::Shape *z=pnt;
 //    pnt=box; box=z;
 //  }
-  CHECK(box->type()==mlr::ST_ssBox,"the 2nd shape needs to be a box"); //s1 should be the board
+  CHECK(box->type()==rai::ST_ssBox,"the 2nd shape needs to be a box"); //s1 should be the board
   arr pos,posJ;
   K.kinematicsRelPos(pos, posJ, &pnt->frame, NoVector, &box->frame, NoVector);
 #if 0
@@ -67,6 +67,6 @@ void TM_AboveBox::phi(arr& y, arr& J, const mlr::KinematicWorld& K, int t){
   }
 }
 
-mlr::String TM_AboveBox::shortTag(const mlr::KinematicWorld &G){
+rai::String TM_AboveBox::shortTag(const rai::KinematicWorld &G){
   return STRING("AboveBox:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }

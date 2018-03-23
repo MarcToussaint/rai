@@ -5,25 +5,34 @@
 #include <Kin/TM_default.h>
 #include <Kin/TM_PairCollision.h>
 
+void shapeFunction(double &x, double &dx){
+  if(x>1. || x<-1.){ x=1.; dx=0.; return; }
+  double x2=x*x;
+  dx = 1.5*(1.-x2);
+  x = 0.5*(3.*x-x2*x);
+}
+
+
 void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
 
   y.clear();
   if(&J) J.clear();
 
-  mlr::KinematicWorld& K = *Ktuple(-1);
 
   if(order==0) HALT("that doesn't make sense");
 
   if(order==1){
+    rai::KinematicWorld& K = *Ktuple(-1);
+
     arr p0, J0, p1, J1, pc, Jc;
     //check equal # of frames in each world
-    for(mlr::Frame *a:K.frames){
-   //      if(a->inertia && a->inertia->type==mlr::BT_dynamic){
+    for(rai::Frame *a:K.frames){
+   //      if(a->inertia && a->inertia->type==rai::BT_dynamic){
          if(a->flags & (1<<FL_gravityAcc)){
 //    uint nf = K.frames.N;
 //    for(uint i=0;i<nf;i++){
-//      mlr::Frame *a = K.frames(i);
-//      if(a->inertia && a->inertia->type==mlr::BT_dynamic){
+//      rai::Frame *a = K.frames(i);
+//      if(a->inertia && a->inertia->type==rai::BT_dynamic){
         TM_Default pos(TMT_pos, a->ID);
         pos.order=1;
         pos.TaskMap::phi(p0, (&J?J0:NoArr), Ktuple, tau, t);
@@ -32,7 +41,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
         arr Jv_ref = zeros(3, K.q.N);
 #if 0
         if(false && a->contacts.N){
-          for(mlr::Contact *c:a->contacts){
+          for(rai::Contact *c:a->contacts){
             if(&c->a == a){
               K.kinematicsVec(pc, (&J?Jc:NoArr), a, c->a_rel);
             }else{
@@ -87,10 +96,12 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
   }
 
   if(order==2){
+    rai::KinematicWorld& K = *Ktuple(-1);
+
     arr acc, Jacc;
     arr acc_ref = {0.,0.,-9.81};
     arr Jacc_ref = zeros(3, K.q.N);
-    for(mlr::Frame *a:K.frames){
+    for(rai::Frame *a:K.frames){
       if(a->flags & (1<<FL_gravityAcc)){
         TM_Default pos(TMT_posDiff, a->ID);
         pos.order=2;
@@ -109,28 +120,38 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
 
         if(a->contacts.N){
           CHECK_EQ(a->contacts.N, 1, "");
-          for(mlr::Contact *con:a->contacts){
+          for(rai::Contact *con:a->contacts){
 
             arr d, Jd;
             TM_PairCollision dist(con->a.ID, con->b.ID, true, false);
             dist.phi(d, (&J?Jd:NoArr), K);
-            if(&J) expandJacobian(Jd, Ktuple);
-            d*=1.;
-            if(&J) Jd *= 1.;
+            if(&J) expandJacobian(Jd, Ktuple, -1);
+            d *= 1e0;
+            if(&J) Jd *= 1e0;
+//            d.scalar() = tanh(d.scalar());
+//            if(&J) Jd *= (1.-d.scalar()*d.scalar());
+//            double dd;
+//            shapeFunction(d.scalar(), dd);
+//            if(&J) Jd *= dd;
 
             arr c, Jc;
             TM_PairCollision coll(con->a.ID, con->b.ID, false, true);
             coll.phi(c, (&J?Jc:NoArr), K);
             normalizeWithJac(c, Jc);
-            if(&J) expandJacobian(Jc, Ktuple);
+            if(&J) expandJacobian(Jc, Ktuple, -1);
 
 //            cout <<"time " <<t <<" frame " <<a->name <<" norm=" <<c <<" dist=" <<d <<endl;
 #if 0
             if(&J) J -= ( c*~c*J + c*~y*Jc + scalarProduct(c,y)*Jc );
             y -= c*scalarProduct(c,y);
-#else
+#elif 1
             if(&J) J -= (1.-d.scalar())*( c*~c*J + c*~y*Jc + scalarProduct(c,y)*Jc ) - c*scalarProduct(c,y)*Jd;
-            y -= c*(1.-d.scalar())*scalarProduct(c,y);
+            y -= (1.-d.scalar())*c*scalarProduct(c,y);
+#else
+            double dfactor=exp(-0.5*d.scalar()*d.scalar()/.01);
+            double ddfactor = dfactor * (-d.scalar()/.01);
+            if(&J) J -= dfactor*( c*~c*J + c*~y*Jc + scalarProduct(c,y)*Jc ) + ddfactor*c*scalarProduct(c,y)*Jd;
+            y -= dfactor*c*scalarProduct(c,y);
 #endif
 
 #if 0
@@ -163,9 +184,9 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple, double tau, int t){
 }
 
 uint TM_Gravity::dim_phi(const WorldL &Ktuple, int t){
-  mlr::KinematicWorld& K = *Ktuple(-1);
+  rai::KinematicWorld& K = *Ktuple(-1);
   uint d = 0;
-  for(mlr::Frame *a: K.frames) if(a->flags & (1<<FL_gravityAcc)){
+  for(rai::Frame *a: K.frames) if(a->flags & (1<<FL_gravityAcc)){
     d+=4;
   }
   return d;

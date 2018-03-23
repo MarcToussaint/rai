@@ -5,7 +5,7 @@ template <typename B, typename D> struct Host {
   operator B*() const;
   operator D*();
 };
-template <typename B, typename D> struct MLR_is_base_of {
+template <typename B, typename D> struct RAI_is_base_of {
   template <typename T>
   static yes check(D*, T);
   static no check(B*, int);
@@ -15,8 +15,8 @@ template <typename B, typename D> struct MLR_is_base_of {
 
 struct RootType { virtual ~RootType() {} }; ///< if types derive from RootType, more tricks are possible
 
-template <class T> mlr::Array<T*> Graph::getDerivedValues() {
-  mlr::Array<T*> ret;
+template <class T> rai::Array<T*> Graph::getDerivedValues() {
+  rai::Array<T*> ret;
   for(Node *n: (*this)) {
     if(n->is_derived_from_RootType()) {
       T *val= dynamic_cast<T*>(((Node_typed<RootType>*)n)->value);
@@ -38,6 +38,6 @@ template <class T> NodeL Graph::getDerivedNodes() {
 }
 
 virtual bool is_derived_from_RootType() const {
-  return MLR_is_base_of<RootType, T>::value;
+  return RAI_is_base_of<RootType, T>::value;
 }
 

@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifdef MLR_OPENCV
+#ifdef RAI_OPENCV
 
 #include "opencv.h"
 
@@ -82,5 +82,5 @@ void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSd
   diff = smoothed;
 }
 
-#endif // MLR_OPENCV
+#endif // RAI_OPENCV
 

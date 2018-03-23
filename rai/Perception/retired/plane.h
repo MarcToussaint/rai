@@ -11,8 +11,8 @@ struct Plane{
   int label;
 };
 
-typedef mlr::Array<Plane*> PlaneL;
-typedef mlr::Array<Plane> PlaneA;
+typedef rai::Array<Plane*> PlaneL;
+typedef rai::Array<Plane> PlaneA;
 
 struct CostFct_PlanePoints{
   const arr& n;
@@ -20,7 +20,7 @@ struct CostFct_PlanePoints{
   const arr& X;
   const arr& transform;
   arr y;
-  mlr::Quaternion r;
+  rai::Quaternion r;
 
   CostFct_PlanePoints(const arr& n, const arr& m, const arr& X, const arr& transform);
 

@@ -16,7 +16,7 @@ void lowPassUpdate(arr& lowPass, const arr& signal, double rate=.1){
   lowPass = (1.-rate)*lowPass + rate*signal;
 }
 
-#ifdef MLR_ROS
+#ifdef RAI_ROS
 struct sTaskControlThread{
    Var<sensor_msgs::JointState> jointState = Var<sensor_msgs::JointState>(NULL, "jointState");
 };
@@ -24,7 +24,7 @@ struct sTaskControlThread{
 struct sTaskControlThread{};
 #endif
 
-TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWorld& world)
+TaskControlThread::TaskControlThread(const char* _robot, const rai::KinematicWorld& world)
   : Thread("TaskControlThread", .01)
   , s(NULL)
   , taskController(NULL)
@@ -40,24 +40,24 @@ TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWor
 
   s = new sTaskControlThread();
 
-  useSwift = mlr::getParameter<bool>("useSwift",true);
-  useRos = mlr::getParameter<bool>("useRos",false);
-  if(useRos && mlr::checkParameter<bool>("taskControllerNoUseRos"))
+  useSwift = rai::getParameter<bool>("useSwift",true);
+  useRos = rai::getParameter<bool>("useRos",false);
+  if(useRos && rai::checkParameter<bool>("taskControllerNoUseRos"))
       useRos = false;
-  useDynSim = !useRos; //mlr::getParameter<bool>("useDynSim", true);
-  syncMode = mlr::getParameter<bool>("controller_syncMode", false);
-  kp_factor = mlr::getParameter<double>("controller_kp_factor", 1.);
-  kd_factor = mlr::getParameter<double>("controller_kd_factor", 1.);
-  ki_factor = mlr::getParameter<double>("controller_ki_factor", .2);
+  useDynSim = !useRos; //rai::getParameter<bool>("useDynSim", true);
+  syncMode = rai::getParameter<bool>("controller_syncMode", false);
+  kp_factor = rai::getParameter<double>("controller_kp_factor", 1.);
+  kd_factor = rai::getParameter<double>("controller_kd_factor", 1.);
+  ki_factor = rai::getParameter<double>("controller_ki_factor", .2);
 
 
-  double hyper = mlr::getParameter<double>("hyperSpeed", -1.);
+  double hyper = rai::getParameter<double>("hyperSpeed", -1.);
   if(!useRos && hyper>0.){
     this->metronome.reset(.01/hyper);
   }
 
 
-  robot = mlr::getParameter<mlr::String>("robot");
+  robot = rai::getParameter<rai::String>("robot");
 
   //-- deciding on the kinematic model. Priority:
   // 1) an explicit model is given as argument
@@ -74,9 +74,9 @@ TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWor
       realWorld = modelWorld.get();
     }else{
       if(robot=="pr2") {
-        realWorld.init(mlr::mlrPath("data/pr2_model/pr2_model.ors").p);
+        realWorld.init(rai::raiPath("data/pr2_model/pr2_model.ors").p);
       } else if(robot=="baxter") {
-        realWorld.init(mlr::mlrPath("data/baxter_model/baxter.ors").p);
+        realWorld.init(rai::raiPath("data/baxter_model/baxter.ors").p);
       } else {
         HALT("robot not known!")
       }
@@ -92,8 +92,8 @@ TaskControlThread::TaskControlThread(const char* _robot, const mlr::KinematicWor
 
   Kp_base = zeros(realWorld.q.N);
   Kd_base = zeros(realWorld.q.N);
-  mlr::Joint *j;
-  for(mlr::Frame* f:realWorld.frames) if((j=f->joint) && j->qDim()>0){
+  rai::Joint *j;
+  for(rai::Frame* f:realWorld.frames) if((j=f->joint) && j->qDim()>0){
     arr *gains = f->ats.find<arr>("gains");
     if(gains){
       for(uint i=0;i<j->qDim();i++){
@@ -133,8 +133,8 @@ void TaskControlThread::open(){
 
 
 void TaskControlThread::step(){
-  mlr::Frame *transF = realWorld.getFrameByName("worldTranslationRotation", false);
-  mlr::Joint *trans = (transF?transF->joint:NULL);
+  rai::Frame *transF = realWorld.getFrameByName("worldTranslationRotation", false);
+  rai::Joint *trans = (transF?transF->joint:NULL);
 
   //-- read real state
   if(useRos){
@@ -153,7 +153,7 @@ void TaskControlThread::step(){
     }
 
     if(robot=="baxter"){
-#ifdef MLR_ROS
+#ifdef RAI_ROS
       s->jointState.waitForRevisionGreaterThan(20);
       q_real = realWorld.q;
       succ = baxter_update_qReal(q_real, s->jointState.get(), realWorld);

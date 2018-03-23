@@ -20,13 +20,13 @@
 #include <Hardware/gamepad/gamepad.h>
 #include <Kin/frame.h>
 
-Gamepad2Tasks::Gamepad2Tasks(TaskControlMethods& _TC, const mlr::KinematicWorld& K, const arr& _q0)
+Gamepad2Tasks::Gamepad2Tasks(TaskControlMethods& _TC, const rai::KinematicWorld& K, const arr& _q0)
   : TC(_TC), q0(_q0),
     endeffR(NULL), endeffL(NULL), base(NULL), torso(NULL), head(NULL), headAxes(NULL), limits(NULL), coll(NULL), gripperL(NULL), gripperR(NULL){
 
-  robot = mlr::getParameter<mlr::String>("robot", "pr2");
+  robot = rai::getParameter<rai::String>("robot", "pr2");
 
-  if(true || mlr::getParameter<bool>("oldfashinedTaskControl", true)){
+  if(true || rai::getParameter<bool>("oldfashinedTaskControl", true)){
     homing = new CtrlTask("qHoming", new TM_qItself(), .5, 1., .2, 10.);
     homing->PD().setTarget(q0);
     endeffR = new CtrlTask("endeffR", new TM_Default(TMT_pos, K, "endeffR", NoVector, "base_footprint"), .5, .8, 1., 1.);
@@ -77,17 +77,17 @@ Gamepad2Tasks::Gamepad2Tasks(TaskControlMethods& _TC, const mlr::KinematicWorld&
   }
 }
 
-mlr::Array<CtrlTask*> Gamepad2Tasks::getTasks(){
+rai::Array<CtrlTask*> Gamepad2Tasks::getTasks(){
   if (robot=="pr2") { return { homing, endeffR, endeffL, base, torso, head, headAxes, limits, coll, gripperL, gripperR }; }
   else if (robot=="baxter") { return { homing, endeffR, endeffL, head, headAxes, limits, coll, gripperL, gripperR }; }
   else { NIY; }
 }
 
 double gamepadSignalMap(double x){
-  return mlr::sign(x)*(exp(mlr::sqr(x))-1.);
+  return rai::sign(x)*(exp(rai::sqr(x))-1.);
 }
 
-bool Gamepad2Tasks::updateTasks(arr& gamepadState, const mlr::KinematicWorld& K){
+bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::KinematicWorld& K){
   if(stopButtons(gamepadState)) return true;
 
   for(CtrlTask* pdt:TC.tasks) pdt->active=false;
@@ -104,7 +104,7 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState, const mlr::KinematicWorld& K)
 
   if(gamepadState.N<6) return false;
 
-  double gamepadRate=mlr::getParameter<double>("gamepadRate",.2);
+  double gamepadRate=rai::getParameter<double>("gamepadRate",.2);
   for(uint i=1;i<gamepadState.N;i++) if(fabs(gamepadState(i))<0.05) gamepadState(i)=0.;
   double gamepadLeftRight   = -gamepadRate*gamepadSignalMap(gamepadState(4));
   double gamepadForwardBack = -gamepadRate*gamepadSignalMap(gamepadState(3));
@@ -139,7 +139,7 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState, const mlr::KinematicWorld& K)
       if(!pdt->y.N || !pdt->v.N){
         pdt->map->phi(pdt->y, NoArr, K);
       }
-      mlr::Vector vel(gamepadLeftRight, gamepadForwardBack, gamepadUpDown);
+      rai::Vector vel(gamepadLeftRight, gamepadForwardBack, gamepadUpDown);
       if(sel==down){
         vel.set ( .5*gamepadLeftRight, .5*gamepadRotate, 2.*gamepadForwardBack );
         vel = K.getFrameByName("endeffBase") -> X.rot * vel;
@@ -165,7 +165,7 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState, const mlr::KinematicWorld& K)
     case 1: { //homing
       cout <<"homing" <<endl;
       homing->PD().setTarget(q0);
-      mlr::Joint *j = K.getFrameByName("worldTranslationRotation")->joint;
+      rai::Joint *j = K.getFrameByName("worldTranslationRotation")->joint;
       if(j){
         arr b;
         base->map->phi(b, NoArr, K);

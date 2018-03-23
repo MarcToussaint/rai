@@ -1,7 +1,7 @@
 #include <Plot/plot.h>
 #include <Gui/opengl.h>
 #include <Geo/mesh.h>
-#ifdef MLR_QT
+#ifdef RAI_QT
 #  include <QtGui/QApplication>
 #endif
 
@@ -90,8 +90,8 @@ static void draw2(void*){
 
 void TEST(Mesh) {
   uint i,j,N=10;
-  mlr::Vector v;
-  mlr::Mesh mesh;
+  rai::Vector v;
+  rai::Mesh mesh;
 
   //add points to the mesh
   mesh.V.resize(N*N,3);
@@ -127,7 +127,7 @@ void TEST(Mesh) {
 /************ third test ************/
 
 void TEST(Obj) {
-  mlr::Mesh mesh,mesh2;
+  rai::Mesh mesh,mesh2;
 
   //mesh.readObjFile(FILE("../../external/3dmodel/obj/gipshand2-273k.obj"));
   mesh.readObjFile(FILE("base-male-nude.obj"));
@@ -282,7 +282,7 @@ void read_png(byteA &img, const char *file_name, bool swap_rows) {
   png_read_update_info(png, info);
 
   img.resize(height, png_get_rowbytes(png,info));
-  mlr::Array<byte*> cpointers = img.getCarray();
+  rai::Array<byte*> cpointers = img.getCarray();
   //    row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * height);
   //    for(int y = 0; y < height; y++) {
   //      row_pointers[y] = (png_byte*)malloc(png_get_rowbytes(png,info));
@@ -313,7 +313,7 @@ void TEST(Texture) {
 
 void TEST(Texture2) {
   OpenGL gl;
-  mlr::Mesh m;
+  rai::Mesh m;
   m.readFile("owl.obj");
   read_png(m.texImg, "owl.png", true);
   gl.add(glStandardScene);
@@ -382,7 +382,7 @@ void TEST(Image) {
 //extern void qtCheckInitialized();
 
 int MAIN(int argc,char **argv){
-  mlr::initCmdLine(argc,argv);
+  rai::initCmdLine(argc,argv);
 
 //  glutInit(&argc,argv);
   testTexture2();

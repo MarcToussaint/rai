@@ -27,7 +27,7 @@ void TEST(Read){
   cout <<*G["k"] <<endl;
   cout <<G["k"]->graph() <<endl;
 //  cout <<G["val"]->graph()(0)->get<double>() <<endl;
-  cout <<G["k"]->graph()["z"]->get<mlr::String>() <<endl;
+  cout <<G["k"]->graph()["z"]->get<rai::String>() <<endl;
   cout <<"DONE" <<endl;
 
   G.writeHtml(FILE("z.html"), FILE("example.g"));
@@ -36,7 +36,7 @@ void TEST(Read){
 //===========================================================================
 
 void TEST(Init){
-  Graph G = {"x", "b", {"a", 3.}, {"b", {"x"}, 5.}, {"c", mlr::String("BLA")} };
+  Graph G = {"x", "b", {"a", 3.}, {"b", {"x"}, 5.}, {"c", rai::String("BLA")} };
   cout <<G <<endl;
   G.checkConsistency();
 
@@ -81,10 +81,10 @@ NodeL rndParents(const Graph& G){
 void rndModify(Graph& G){
   switch(rnd(4)){
     case 0://add bool item
-      G.newNode<bool>({mlr::String().setRandom(), mlr::String().setRandom()}, rndParents(G), true);
+      G.newNode<bool>({rai::String().setRandom(), rai::String().setRandom()}, rndParents(G), true);
       break;
     case 1://add Subgraph item
-      G.newSubgraph({mlr::String().setRandom(), mlr::String().setRandom()}, rndParents(G));
+      G.newSubgraph({rai::String().setRandom(), rai::String().setRandom()}, rndParents(G));
       break;
     case 2://delete item
       if(G.N) delete G.rndElem();
@@ -161,7 +161,7 @@ void TEST(Manual){
 //===========================================================================
 
 int MAIN(int argc, char** argv){
-  mlr::initCmdLine(argc, argv);
+  rai::initCmdLine(argc, argv);
 
   cout <<"GLOBAL LATENT REGISTRY:\n" <<registry() <<endl;
 

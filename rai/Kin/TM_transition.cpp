@@ -11,17 +11,17 @@
 #include "frame.h"
 #include "flag.h"
 
-TM_Transition::TM_Transition(const mlr::KinematicWorld& G, bool effectiveJointsOnly)
+TM_Transition::TM_Transition(const rai::KinematicWorld& G, bool effectiveJointsOnly)
   : effectiveJointsOnly(effectiveJointsOnly){
-  posCoeff = mlr::getParameter<double>("Motion/TaskMapTransition/posCoeff",.0);
-  velCoeff = mlr::getParameter<double>("Motion/TaskMapTransition/velCoeff",.0);
-  accCoeff = mlr::getParameter<double>("Motion/TaskMapTransition/accCoeff",1.);
+  posCoeff = rai::getParameter<double>("Motion/TaskMapTransition/posCoeff",.0);
+  velCoeff = rai::getParameter<double>("Motion/TaskMapTransition/velCoeff",.0);
+  accCoeff = rai::getParameter<double>("Motion/TaskMapTransition/accCoeff",1.);
 
   //transition cost metric
-  H_rate = mlr::getParameter<double>("Hrate", 1.);
+  H_rate = rai::getParameter<double>("Hrate", 1.);
   arr H_diag;
-  if(mlr::checkParameter<arr>("Hdiag")) {
-    H_diag = mlr::getParameter<arr>("Hdiag");
+  if(rai::checkParameter<arr>("Hdiag")) {
+    H_diag = rai::getParameter<arr>("Hdiag");
   } else {
     H_diag = G.getHmetric(); //G.naturalQmetric();
   }
@@ -37,7 +37,7 @@ uint TM_Transition::dim_phi(const WorldL& G, int t){
     return G.last()->getJointStateDimension();
   }else{
 //    for(uint i=0;i<G.N;i++) cout <<i <<' ' <<G(i)->joints.N <<' ' <<G(i)->q.N <<' ' <<G(i)->getJointStateDimension() <<endl;
-    mlr::Array<mlr::Joint*> matchingJoints = getMatchingJoints(G.sub(-1-order,-1), effectiveJointsOnly);
+    rai::Array<rai::Joint*> matchingJoints = getMatchingJoints(G.sub(-1-order,-1), effectiveJointsOnly);
     uint ydim=0;
     for(uint i=0;i<matchingJoints.d0;i++){
 //      cout <<i <<' ' <<matchingJoints(i,0)->qIndex <<' ' <<matchingJoints(i,0)->qDim() <<' ' <<matchingJoints(i,0)->name <<endl;
@@ -84,7 +84,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t)
     if(order>=3) NIY; //  y = (x_bar[3]-3.*x_bar[2]+3.*x_bar[1]-x_bar[0])/tau3; //penalize jerk
 
     //multiply with h...
-    for(mlr::Joint *j:Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
+    for(rai::Joint *j:Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
       double hj = h*j->H;
       if(j->frame.flags && !(j->frame.flags & (1<<FL_normalControlCosts))) hj=0.;
       y(j->qIndex+i) *= hj;
@@ -109,7 +109,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t)
         //      if(order>=3){ J(i,3,i) = 1.;  J(i,2,i) = -3.;  J(i,1,i) = +3.;  J(i,0,i) = -1.; }
       }
       J.reshape(y.N, Ktuple.N*n);
-      for(mlr::Joint *j: Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
+      for(rai::Joint *j: Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
         double hj = h*j->H;
         if(j->frame.flags && !(j->frame.flags & (1<<FL_normalControlCosts))) hj=0.;
 #if 0
@@ -121,7 +121,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t)
       }
     }
   }else{ //with switches
-    mlr::Array<mlr::Joint*> matchingJoints = getMatchingJoints(Ktuple.sub(-1-order,-1), effectiveJointsOnly);
+    rai::Array<rai::Joint*> matchingJoints = getMatchingJoints(Ktuple.sub(-1-order,-1), effectiveJointsOnly);
     double h = H_rate*sqrt(tau), tau2=tau*tau;
 
     uint ydim=0;
@@ -136,13 +136,13 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t)
 
     uint m=0;
     for(uint i=0;i<matchingJoints.d0;i++){
-      mlr::Array<mlr::Joint*> joints = matchingJoints[i];
+      rai::Array<rai::Joint*> joints = matchingJoints[i];
       uint jdim = joints(0)->qDim(), qi1=0, qi2=0, qi3=0;
       for(uint j=0;j<jdim;j++){
         if(order>=0) qi1 = joints.elem(-1)->qIndex+j;
         if(order>=1) qi2 = joints.elem(-2)->qIndex+j;
         if(order>=2 && accCoeff) qi3 = joints.elem(-3)->qIndex+j;
-        mlr::Joint *jl = joints.last();
+        rai::Joint *jl = joints.last();
         double hj = h * jl->H;
         if(jl->frame.flags && !(jl->frame.flags & (1<<FL_normalControlCosts))) hj=0.;
         //TODO: adding vels + accs before squareing does not make much sense!

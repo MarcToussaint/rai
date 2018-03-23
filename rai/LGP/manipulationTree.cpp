@@ -19,7 +19,7 @@ uint COUNT_evals=0;
 uint COUNT_node=0;
 uintA COUNT_opt=consts<uint>(0, 4);
 double COUNT_time=0.;
-mlr::String OptLGPDataPath;
+rai::String OptLGPDataPath;
 ofstream *filNodes=NULL;
 
 bool LGP_useHoming = true;
@@ -36,7 +36,7 @@ void MNode::resetData(){
   bound=0.;
 }
 
-MNode::MNode(mlr::KinematicWorld& kin, FOL_World& _fol, uint levels)
+MNode::MNode(rai::KinematicWorld& kin, FOL_World& _fol, uint levels)
   : parent(NULL), step(0), time(0.), id(COUNT_node++),
     fol(_fol),
     startKinematics(kin),
@@ -178,8 +178,8 @@ void MNode::optLevel(uint level, bool collisions){
   } break;
   case 3:{
     komo.setModel(startKinematics, collisions);
-    uint stepsPerPhase = mlr::getParameter<uint>("LGP/stepsPerPhase", 10);
-    uint pathOrder = mlr::getParameter<uint>("LGP/pathOrder", 2);
+    uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
+    uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
     komo.setTiming(time+.5, stepsPerPhase, 5., pathOrder);
 
     if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
@@ -215,7 +215,7 @@ void MNode::optLevel(uint level, bool collisions){
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   COUNT_evals += komo.opt->newton.evals;
-  COUNT_kin += mlr::KinematicWorld::setJointStateCount;
+  COUNT_kin += rai::KinematicWorld::setJointStateCount;
   COUNT_opt(level)++;
   COUNT_time += komo.runTime;
   count(level)++;
@@ -236,7 +236,7 @@ void MNode::optLevel(uint level, bool collisions){
 
     effKinematics = *komo.configurations.last();
 
-    for(mlr::KinematicSwitch *sw: komo.switches){
+    for(rai::KinematicSwitch *sw: komo.switches){
       //    CHECK_EQ(sw->timeOfApplication, 1, "need to do this before the optimization..");
       if(sw->timeOfApplication>=2) sw->apply(effKinematics);
     }
@@ -293,7 +293,7 @@ void MNode::optLevel(uint level, bool collisions){
 //  effKinematics = *komo.configurations.last();
 
 //  for(uint t=0;t<komo.T;t++){
-//      for(mlr::KinematicSwitch *sw: komo.switches){
+//      for(rai::KinematicSwitch *sw: komo.switches){
 //          if(sw->timeOfApplication==t) sw->apply(effKinematics);
 //      }
 //  }
@@ -308,7 +308,7 @@ void MNode::solvePoseProblem(){
 
   //reset the effective kinematics:
   if(parent && !parent->effKinematics.q.N){
-    MLR_MSG("parent needs to have computed the pose first!");
+    RAI_MSG("parent needs to have computed the pose first!");
     return;
   }
   if(!parent) effKinematics = startKinematics;
@@ -328,7 +328,7 @@ void MNode::solvePoseProblem(){
   komo.setFixSwitchedObjects(-1., -1., 1e3);
 
   komo.setAbstractTask(0., *folState);
-  //  for(mlr::KinematicSwitch *sw: poseProblem->switches){
+  //  for(rai::KinematicSwitch *sw: poseProblem->switches){
   //    sw->timeOfApplication=2;
   //  }
 
@@ -341,7 +341,7 @@ void MNode::solvePoseProblem(){
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   COUNT_evals += komo.opt->newton.evals;
-  COUNT_kin += mlr::KinematicWorld::setJointStateCount;
+  COUNT_kin += rai::KinematicWorld::setJointStateCount;
   COUNT_opt(level)++;
   count(level)++;
 
@@ -373,7 +373,7 @@ void MNode::solvePoseProblem(){
 
   effKinematics = *komo.configurations.last();
 
-  for(mlr::KinematicSwitch *sw: komo.switches){
+  for(rai::KinematicSwitch *sw: komo.switches){
     //    CHECK_EQ(sw->timeOfApplication, 1, "need to do this before the optimization..");
     if(sw->timeOfApplication>=2) sw->apply(effKinematics);
   }
@@ -413,7 +413,7 @@ void MNode::solveSeqProblem(int verbose){
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   COUNT_evals += komo.opt->newton.evals;
-  COUNT_kin += mlr::KinematicWorld::setJointStateCount;
+  COUNT_kin += rai::KinematicWorld::setJointStateCount;
   COUNT_opt(level)++;
   count(level)++;
 
@@ -475,7 +475,7 @@ void MNode::solvePathProblem(uint microSteps, int verbose){
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   COUNT_evals += komo.opt->newton.evals;
-  COUNT_kin += mlr::KinematicWorld::setJointStateCount;
+  COUNT_kin += rai::KinematicWorld::setJointStateCount;
   COUNT_opt(level)++;
   count(level)++;
 
@@ -566,9 +566,9 @@ MNodeL MNode::getTreePath() const{
   return path;
 }
 
-mlr::String MNode::getTreePathString(char sep) const{
+rai::String MNode::getTreePathString(char sep) const{
   MNodeL path = getTreePath();
-  mlr::String str;
+  rai::String str;
   for(MNode *b : path){
     if(b->decision) str <<*b->decision <<sep;
 //    else str <<"ROOT" <<sep;
@@ -579,7 +579,7 @@ mlr::String MNode::getTreePathString(char sep) const{
 Skeleton MNode::getSkeleton(StringA predicateFilter) const{
   MNodeL path = getTreePath();
 
-  mlr::Array<Graph*> states;
+  rai::Array<Graph*> states;
   arr times;
   for(MNode *node:getTreePath()){
     times.append(node->time);

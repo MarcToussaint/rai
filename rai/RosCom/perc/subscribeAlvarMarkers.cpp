@@ -1,4 +1,4 @@
-#ifdef MLR_ROS
+#ifdef RAI_ROS
 #include "subscribeAlvarMarkers.h"
 #include <Kin/frame.h>
 
@@ -14,38 +14,38 @@ namespace ar = ar_track_alvar_msgs;
 // }
 
 // ============================================================================
-void setBody(mlr::Frame& body, const ar::AlvarMarker& marker) {
+void setBody(rai::Frame& body, const ar::AlvarMarker& marker) {
   body.X = conv_pose2transformation(marker.pose.pose);
 }
 
 
-void syncMarkers(mlr::KinematicWorld& world, const ar::AlvarMarkers& markers) {
+void syncMarkers(rai::KinematicWorld& world, const ar::AlvarMarkers& markers) {
   bool createdNewMarkers = false;
 
   // transform: torso_lift_link is the reference frame_id
-  mlr::Frame *torso = world.getFrameByName("torso_lift_link", false);
+  rai::Frame *torso = world.getFrameByName("torso_lift_link", false);
   if(!torso) return; //TODO: make this more general!
-  mlr::Transformation refFrame = torso->X;
+  rai::Transformation refFrame = torso->X;
 
   for (const ar::AlvarMarker& marker : markers.markers) {
-    mlr::String marker_name = STRING("marker" << marker.id);
+    rai::String marker_name = STRING("marker" << marker.id);
 
-    mlr::Frame *body = world.getFrameByName(marker_name,false);
+    rai::Frame *body = world.getFrameByName(marker_name,false);
     if (not body) {
       createdNewMarkers = true;
       cout << marker_name << " does not exist yet; adding it..." << endl;
-      body = new mlr::Frame(world);
+      body = new rai::Frame(world);
       body->name = marker_name;
-      mlr::Shape *shape = new mlr::Shape(*body);
-      shape->type() = mlr::ST_marker;
+      rai::Shape *shape = new rai::Shape(*body);
+      shape->type() = rai::ST_marker;
       shape->size(0) = .3; shape->size(1) = .0; shape->size(2) = .0; shape->size(3) = .0;
     }
-    mlr::Vector Y_old;
-    mlr::Vector Z_old;
+    rai::Vector Y_old;
+    rai::Vector Z_old;
     Z_old = world.getFrameByName(marker_name)->X.rot.getZ();
     Y_old = world.getFrameByName(marker_name)->X.rot.getY();
     setBody(*body, marker);
-    mlr::Transformation T;
+    rai::Transformation T;
 
     T.setZero();
     T.addRelativeRotationDeg(90.,0.,1.,0.);
@@ -76,6 +76,6 @@ void syncMarkers(mlr::KinematicWorld& world, const ar::AlvarMarkers& markers) {
   }
 }
 #else
-//void setBody(mlr::Body& body, const AlvarMarker& marker) {}
-//void syncMarkers(mlr::KinematicWorld& world, AlvarMarkers& markers) {}
+//void setBody(rai::Body& body, const AlvarMarker& marker) {}
+//void syncMarkers(rai::KinematicWorld& world, AlvarMarkers& markers) {}
 #endif

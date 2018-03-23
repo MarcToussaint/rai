@@ -37,7 +37,7 @@ cleanStart: force
 # test: setConfigFlag $(exa_paths:%=inPath_clean/%) cleanLocks $(exa_paths:%=inPath_make/%)
 
 # setConfigFlag: force
-# 	echo "MLR_TESTS = 1" > build/z.mk
+# 	echo "RAI_TESTS = 1" > build/z.mk
 
 runTests: tests
 	@rm -f z.test-report
@@ -47,7 +47,7 @@ runTests: tests
 ################################################################################
 
 doc:
-	cd doc; doxygen MLR.doxy;
+	cd doc; doxygen rai.doxy;
 #	$(MAKE) -w -C doc guide doxy
 
 reformatSources:

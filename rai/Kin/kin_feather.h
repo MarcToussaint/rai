@@ -6,8 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef MLR_kin_feather_h
-#define MLR_kin_feather_h
+#ifndef RAI_kin_feather_h
+#define RAI_kin_feather_h
 
 #include <Geo/geo.h>
 #include <Kin/kin.h>
@@ -17,10 +17,10 @@ struct F_Link {
   int type=-1;
   int qIndex=-1;
   int parent=-1;
-  mlr::Transformation X=0, Q=0;
-  mlr::Vector com=0, force=0, torque=0;
+  rai::Transformation X=0, Q=0;
+  rai::Vector com=0, force=0, torque=0;
   double mass=0.;
-  mlr::Matrix inertia=0;
+  rai::Matrix inertia=0;
   uint dof();
 
   arr _h, _Q, _I, _f; //featherstone types
@@ -37,14 +37,14 @@ struct F_Link {
 };
 stdOutPipe(F_Link)
 
-typedef mlr::Array<F_Link> F_LinkTree;
+typedef rai::Array<F_Link> F_LinkTree;
 
 struct FeatherstoneInterface{
-  mlr::KinematicWorld& K;
+  rai::KinematicWorld& K;
 
-  mlr::Array<F_Link> tree;
+  rai::Array<F_Link> tree;
 
-  FeatherstoneInterface(mlr::KinematicWorld& K):K(K){}
+  FeatherstoneInterface(rai::KinematicWorld& K):K(K){}
 
   void update();
 

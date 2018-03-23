@@ -6,13 +6,13 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifdef MLR_ROS
+#ifdef RAI_ROS
 
 #include "roscom.h"
 #include <Kin/frame.h>
 #include "spinner.h"
 
-#ifdef MLR_PCL
+#ifdef RAI_PCL
 #  include <pcl/point_cloud.h>
 #  include <pcl_conversions/pcl_conversions.h>
 #endif
@@ -35,11 +35,11 @@ void rosCheckInit(const char* node_name){
   static Mutex mutex;
   static bool inited = false;
 
-  if(mlr::getParameter<bool>("useRos", true)){
+  if(rai::getParameter<bool>("useRos", true)){
     mutex.lock();
     if(!inited) {
-      mlr::String nodeName = mlr::getParameter<mlr::String>("rosNodeName", STRING(node_name));
-      ros::init(mlr::argc, mlr::argv, nodeName.p, ros::init_options::NoSigintHandler);
+      rai::String nodeName = rai::getParameter<rai::String>("rosNodeName", STRING(node_name));
+      ros::init(rai::argc, rai::argv, nodeName.p, ros::init_options::NoSigintHandler);
       inited = true;
     }
     mutex.unlock();
@@ -50,25 +50,25 @@ RosInit::RosInit(const char* node_name){
   rosCheckInit(node_name);
 }
 
-std_msgs::String conv_string2string(const mlr::String& str){
+std_msgs::String conv_string2string(const rai::String& str){
   std_msgs::String msg;
   if(str.N) msg.data = str.p;
   return msg;
 }
 
-mlr::String conv_string2string(const std_msgs::String& msg){
-  return mlr::String(msg.data);
+rai::String conv_string2string(const std_msgs::String& msg){
+  return rai::String(msg.data);
 }
 
 std_msgs::String conv_stringA2string(const StringA& strs){
   std_msgs::String msg;
-  for(const mlr::String& str:strs)
+  for(const rai::String& str:strs)
     if(str.N){ msg.data += ", ";  msg.data += str.p; }
   return msg;
 }
 
-mlr::Transformation conv_transform2transformation(const tf::Transform &trans){
-  mlr::Transformation X;
+rai::Transformation conv_transform2transformation(const tf::Transform &trans){
+  rai::Transformation X;
   X.setZero();
   tf::Quaternion q = trans.getRotation();
   tf::Vector3 t = trans.getOrigin();
@@ -78,16 +78,16 @@ mlr::Transformation conv_transform2transformation(const tf::Transform &trans){
 }
 
 
-mlr::Transformation conv_transform2transformation(const geometry_msgs::Transform &trans){
-  mlr::Transformation X;
+rai::Transformation conv_transform2transformation(const geometry_msgs::Transform &trans){
+  rai::Transformation X;
   X.setZero();
   X.rot.set(trans.rotation.w, trans.rotation.x, trans.rotation.y, trans.rotation.z);
   X.pos.set(trans.translation.x, trans.translation.y, trans.translation.z);
   return X;
 }
 
-mlr::Transformation conv_pose2transformation(const geometry_msgs::Pose &pose){
-  mlr::Transformation X;
+rai::Transformation conv_pose2transformation(const geometry_msgs::Pose &pose){
+  rai::Transformation X;
   X.setZero();
   auto& q = pose.orientation;
   auto& t = pose.position;
@@ -96,7 +96,7 @@ mlr::Transformation conv_pose2transformation(const geometry_msgs::Pose &pose){
   return X;
 }
 
-geometry_msgs::Pose conv_transformation2pose(const mlr::Transformation& transform){
+geometry_msgs::Pose conv_transformation2pose(const rai::Transformation& transform){
   geometry_msgs::Pose pose;
   pose.position.x = transform.pos.x;
   pose.position.y = transform.pos.y;
@@ -108,7 +108,7 @@ geometry_msgs::Pose conv_transformation2pose(const mlr::Transformation& transfor
   return pose;
 }
 
-geometry_msgs::Transform conv_transformation2transform(const mlr::Transformation& transformation){
+geometry_msgs::Transform conv_transformation2transform(const rai::Transformation& transformation){
   geometry_msgs::Transform transform;
   transform.translation.x = transformation.pos.x;
   transform.translation.y  = transformation.pos.y;
@@ -120,12 +120,12 @@ geometry_msgs::Transform conv_transformation2transform(const mlr::Transformation
   return transform;
 }
 
-mlr::Vector conv_point2vector(const geometry_msgs::Point& p){
-  return mlr::Vector(p.x, p.y, p.z);
+rai::Vector conv_point2vector(const geometry_msgs::Point& p){
+  return rai::Vector(p.x, p.y, p.z);
 }
 
-mlr::Quaternion conv_quaternion2quaternion(const geometry_msgs::Quaternion& q){
-  return mlr::Quaternion(q.w, q.x, q.y, q.z);
+rai::Quaternion conv_quaternion2quaternion(const geometry_msgs::Quaternion& q){
+  return rai::Quaternion(q.w, q.x, q.y, q.z);
 }
 
 void conv_pose2transXYPhi(arr& q, uint qIndex, const geometry_msgs::PoseWithCovarianceStamped& pose){
@@ -135,13 +135,13 @@ void conv_pose2transXYPhi(arr& q, uint qIndex, const geometry_msgs::PoseWithCova
 arr conv_pose2transXYPhi(const geometry_msgs::PoseWithCovarianceStamped& pose){
   auto& _quat=pose.pose.pose.orientation;
   auto& _pos=pose.pose.pose.position;
-  mlr::Quaternion quat(_quat.w, _quat.x, _quat.y, _quat.z);
-  mlr::Vector pos(_pos.x, _pos.y, _pos.z);
+  rai::Quaternion quat(_quat.w, _quat.x, _quat.y, _quat.z);
+  rai::Vector pos(_pos.x, _pos.y, _pos.z);
 
   double angle;
-  mlr::Vector rotvec;
+  rai::Vector rotvec;
   quat.getRad(angle, rotvec);
-  return ARR(pos(0), pos(1), mlr::sign(rotvec(2)) * angle);
+  return ARR(pos(0), pos(1), rai::sign(rotvec(2)) * angle);
 }
 
 timespec conv_time2timespec(const ros::Time& time){
@@ -152,8 +152,8 @@ double conv_time2double(const ros::Time& time){
   return (double)(time.sec) + 1e-9d*(double)(time.nsec);
 }
 
-mlr::Transformation ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener){
-  mlr::Transformation X;
+rai::Transformation ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener){
+  rai::Transformation X;
   X.setZero();
   try{
     tf::StampedTransform transform;
@@ -167,7 +167,7 @@ mlr::Transformation ros_getTransform(const std::string& from, const std::string&
   return X;
 }
 
-bool ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener, mlr::Transformation& result){
+bool ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener, rai::Transformation& result){
   result.setZero();
   try{
     tf::StampedTransform transform;
@@ -183,8 +183,8 @@ bool ros_getTransform(const std::string& from, const std::string& to, tf::Transf
 }
 
 
-mlr::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener, tf::Transform* returnRosTransform){
-  mlr::Transformation X;
+rai::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener, tf::Transform* returnRosTransform){
+  rai::Transformation X;
   X.setZero();
   try{
     tf::StampedTransform transform;
@@ -263,7 +263,7 @@ floatA conv_laserScan2arr(const sensor_msgs::LaserScan& msg){
   return data;
 }
 
-#ifdef MLR_PCL
+#ifdef RAI_PCL
 Pcl conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg){
   pcl::PCLPointCloud2 pcl_pc2;
   pcl_conversions::toPCL(msg, pcl_pc2);
@@ -310,21 +310,21 @@ marc_controller_pkg::JointState conv_CtrlMsg2JointState(const CtrlMsg& ctrl){
   return jointState;
 }
 
-mlr::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::MarkerArray& markers){
-  mlr::KinematicWorld world;
+rai::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::MarkerArray& markers){
+  rai::KinematicWorld world;
   tf::TransformListener listener;
   for(const visualization_msgs::Marker& marker:markers.markers){
-    mlr::String name;
+    rai::String name;
     name <<"obj" <<marker.id;
-    mlr::Shape *s = world.getFrameByName(name)->shape;
+    rai::Shape *s = world.getFrameByName(name)->shape;
     if(!s){
-      mlr::Frame *f = new mlr::Frame(world);
+      rai::Frame *f = new rai::Frame(world);
       f->name=name;
-      s = new mlr::Shape(*f);
+      s = new rai::Shape(*f);
       if(marker.type==marker.CYLINDER){
-        s->type() = mlr::ST_cylinder;
+        s->type() = rai::ST_cylinder;
       }else if(marker.type==marker.POINTS){
-        s->type() = mlr::ST_mesh;
+        s->type() = rai::ST_mesh;
         s->mesh().V = conv_points2arr(marker.points);
         s->mesh().C = conv_colors2arr(marker.colors);
       }else NIY;
@@ -372,7 +372,7 @@ arr conv_Float32Array2arr(const std_msgs::Float32MultiArray &msg){
 
 //===========================================================================
 
-visualization_msgs::Marker conv_Shape2Marker(const mlr::Shape& sh){
+visualization_msgs::Marker conv_Shape2Marker(const rai::Shape& sh){
   visualization_msgs::Marker new_marker;
   new_marker.header.stamp = ros::Time::now();
   new_marker.header.frame_id = "map";
@@ -388,13 +388,13 @@ visualization_msgs::Marker conv_Shape2Marker(const mlr::Shape& sh){
 
 #if 0
   switch(sh.type){
-    case mlr::ST_box:{
+    case rai::ST_box:{
       new_marker.type = visualization_msgs::Marker::CUBE;
       new_marker.scale.x = .001 * sh.size(0);
       new_marker.scale.y = .001 * sh.size(1);
       new_marker.scale.z = .001 * sh.size(2);
     } break;
-    case mlr::ST_mesh:{
+    case rai::ST_mesh:{
       new_marker.type = visualization_msgs::Marker::POINTS;
       new_marker.points = conv_arr2points(sh.mesh.V);
       new_marker.scale.x = .001;
@@ -415,9 +415,9 @@ visualization_msgs::Marker conv_Shape2Marker(const mlr::Shape& sh){
   return new_marker;
 }
 
-visualization_msgs::MarkerArray conv_Kin2Markers(const mlr::KinematicWorld& K){
+visualization_msgs::MarkerArray conv_Kin2Markers(const rai::KinematicWorld& K){
   visualization_msgs::MarkerArray M;
-  for(mlr::Frame *f : K.frames) M.markers.push_back( conv_Shape2Marker(*f->shape) );
+  for(rai::Frame *f : K.frames) M.markers.push_back( conv_Shape2Marker(*f->shape) );
 //  M.header.frame_id = "1";
   return M;
 }

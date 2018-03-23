@@ -5,9 +5,9 @@ struct ParticleAroundWalls : KOrderMarkovFunction {
   arr x;
 
   ParticleAroundWalls():
-    T(mlr::getParameter<uint>("opt/ParticleAroundWalls/T",1000)),
-    k(mlr::getParameter<uint>("opt/ParticleAroundWalls/k",2)),
-    n(mlr::getParameter<uint>("opt/ParticleAroundWalls/n",3)),
+    T(rai::getParameter<uint>("opt/ParticleAroundWalls/T",1000)),
+    k(rai::getParameter<uint>("opt/ParticleAroundWalls/k",2)),
+    n(rai::getParameter<uint>("opt/ParticleAroundWalls/n",3)),
     useKernel(false){}
 
   //implementations of the kOrderMarkov virtuals
@@ -22,6 +22,6 @@ struct ParticleAroundWalls : KOrderMarkovFunction {
   bool hasKernel(){ return useKernel; }
   double kernel(uint t0, uint t1){
     //if(t0==t1) return 1e3;
-    return 1e0*::exp(-.001*mlr::sqr((double)t0-t1));
+    return 1e0*::exp(-.001*rai::sqr((double)t0-t1));
   }
 };

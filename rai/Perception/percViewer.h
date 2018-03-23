@@ -13,7 +13,7 @@
 
 struct PercViewer : Thread {
   Var<PerceptL> percepts;
-  Var<mlr::KinematicWorld> modelWorld;
+  Var<rai::KinematicWorld> modelWorld;
   PerceptL copy;
   MeshA modelCopy;
   struct OpenGL *gl;

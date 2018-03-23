@@ -59,11 +59,11 @@ struct MCTS_Environment {
   /// Return whether action is feasible in current state
   virtual bool is_feasible_action(const Handle& action){ return true; }
 
-  /// Get the current state
+  /// Get the current state (the handle must point to a persistent thing/copy)
   virtual const Handle get_stateCopy() = 0;
 
   /// Get the current state
-  virtual void set_state(const Handle& state){ std::cerr <<"not implemented for world of type " <<typeid(this).name() <<std::endl; exit(-1); }
+  virtual void set_state(const Handle& stateCopy){ std::cerr <<"not implemented for world of type " <<typeid(this).name() <<std::endl; exit(-1); }
 
   /// Return whether the current state is a terminal state
   virtual bool is_terminal_state() const = 0;

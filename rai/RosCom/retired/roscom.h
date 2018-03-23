@@ -6,9 +6,9 @@
 
 //-- a basic message type for communication with the soft hand controller
 struct SoftHandMsg{
-  mlr::String soft_hand_cmd;
+  rai::String soft_hand_cmd;
   SoftHandMsg(){}
-  SoftHandMsg(const mlr::String soft_hand_cmd)
+  SoftHandMsg(const rai::String soft_hand_cmd)
     :soft_hand_cmd(soft_hand_cmd){}
 };
 //inline void operator<<(ostream& os, const CtrlMsg& m){ os<<"BLA"; }
@@ -32,20 +32,20 @@ struct SoftHandMsg{
  *
  * If useRos==false then nothing happens.
  */
-void initialSyncJointStateWithROS(mlr::KinematicWorld& world, Var<CtrlMsg>& ctrl_obs, bool useRos);
+void initialSyncJointStateWithROS(rai::KinematicWorld& world, Var<CtrlMsg>& ctrl_obs, bool useRos);
 
 /**
  * Sync the world with ctrl_obs from the robot.
  *
  * If useRos==false then nothing happens.
  */
-void syncJointStateWitROS(mlr::KinematicWorld& world, Var<CtrlMsg>& ctrl_obs, bool useRos);
+void syncJointStateWitROS(rai::KinematicWorld& world, Var<CtrlMsg>& ctrl_obs, bool useRos);
 
 //===========================================================================
 
 struct PerceptionObjects2Ors : Thread {
   Var<visualization_msgs::MarkerArray> perceptionObjects;
-  Var<mlr::KinematicWorld> modelWorld;
+  Var<rai::KinematicWorld> modelWorld;
   PerceptionObjects2Ors()
     : Thread("PerceptionObjects2Ors"),
     perceptionObjects(this, "perceptionObjects", true),

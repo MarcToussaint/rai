@@ -44,7 +44,7 @@ stdOutPipe(ParseInfo)
 inline Node *reg_findType(const char* key) {
   NodeL types = registry()->getNodesOfType<std::shared_ptr<Type> >();
   for(Node *ti: types) {
-    if(mlr::String(ti->get<std::shared_ptr<Type> >()->typeId().name())==key) return ti;
+    if(rai::String(ti->get<std::shared_ptr<Type> >()->typeId().name())==key) return ti;
     if(ti->matches(key)) return ti;
   }
   return NULL;
@@ -118,12 +118,12 @@ void Node::swapParent(uint i, Node *p){
 }
 
 bool Node::matches(const char *key){
-  for(const mlr::String& k:keys) if(k==key) return true;
+  for(const rai::String& k:keys) if(k==key) return true;
   return false;
 }
 
 bool Node::matches(const StringA &query_keys) {
-  for(const mlr::String& k:query_keys) {
+  for(const rai::String& k:query_keys) {
     if(!matches(k)) return false;
   }
   return true;
@@ -159,10 +159,10 @@ void Node::write(std::ostream& os) const {
     os <<"=(";
     for(Node *it: (*getValue<NodeL>())) os <<' ' <<it->keys.last();
     os <<" )";
-  } else if(isOfType<mlr::String>()) {
-    os <<"=\"" <<*getValue<mlr::String>() <<'"';
-  } else if(isOfType<mlr::FileToken>()) {
-    os <<"='" <<getValue<mlr::FileToken>()->name <<'\'';
+  } else if(isOfType<rai::String>()) {
+    os <<"=\"" <<*getValue<rai::String>() <<'"';
+  } else if(isOfType<rai::FileToken>()) {
+    os <<"='" <<getValue<rai::FileToken>()->name <<'\'';
   } else if(isOfType<arr>()) {
     os <<'='; getValue<arr>()->write(os, NULL, NULL, "[]");
   } else if(isOfType<double>()) {
@@ -191,7 +191,7 @@ Nod::Nod(const char* key){
 }
 
 Nod::Nod(const char* key, const char* stringValue){
-  n = G.newNode<mlr::String>(STRING(stringValue));
+  n = G.newNode<rai::String>(STRING(stringValue));
   n->keys.append(STRING(key));
 }
 
@@ -206,7 +206,7 @@ Graph::Graph() : isNodeOfGraph(NULL), pi(NULL), ri(NULL) {
 }
 
 Graph::Graph(const char* filename): Graph() {
-  read(mlr::FileToken(filename).getIs());
+  read(rai::FileToken(filename).getIs());
 }
 
 Graph::Graph(istream& is) : Graph() {
@@ -255,8 +255,8 @@ void Graph::clear() {
 
 Graph& Graph::newNode(const Nod& ni){
   Node *clone = ni.n->newClone(*this); //this appends sequentially clones of all nodes to 'this'
-  for(const mlr::String& s:ni.parents){
-    Node *p = getNode(s);
+  for(const rai::String& s:ni.parents){
+    Node *p = findNode({s}, true, false);
     CHECK(p,"parent " <<p <<" of " <<*clone <<" does not exist!");
     clone->addParent(p);
   }
@@ -279,8 +279,8 @@ Node_typed<int>* Graph::newNode(const uintA& parentIdxs) {
 
 void Graph::appendDict(const std::map<std::string, std::string>& dict){
   for(const std::pair<std::string,std::string>& p:dict){
-    Node *n = readNode(STRING('='<<p.second), false, false, mlr::String(p.first));
-    if(!n) MLR_MSG("failed to read dict entry <" <<p.first <<',' <<p.second <<'>');
+    Node *n = readNode(STRING('='<<p.second), false, false, rai::String(p.first));
+    if(!n) RAI_MSG("failed to read dict entry <" <<p.first <<',' <<p.second <<'>');
   }
 }
 
@@ -417,7 +417,7 @@ Node* Graph::edit(Node *ed){
     }
     edited++;
   }
-  if(!edited) MLR_MSG("no nodes edited!");
+  if(!edited) RAI_MSG("no nodes edited!");
   if(&ed->container==this){ delete ed; ed=NULL; }
   return NULL;
 }
@@ -505,16 +505,16 @@ void Graph::read(std::istream& is, bool parseInfo) {
   if(parseInfo) getParseInfo(NULL).beg=is.tellg();
   for(;;) {
     DEBUG(checkConsistency();)
-    char c=mlr::peerNextChar(is, " \n\r\t,");
+    char c=rai::peerNextChar(is, " \n\r\t,");
     if(!is.good() || c=='}') { is.clear(); break; }
     Node *n = readNode(is, false, parseInfo);
     if(!n) break;
     if(n->keys.N==1 && n->keys.last()=="Include"){
-      read(n->get<mlr::FileToken>().getIs(true));
+      read(n->get<rai::FileToken>().getIs(true));
       delete n; n=NULL;
     }else
     if(n->keys.N==1 && n->keys.last()=="ChDir"){
-      n->get<mlr::FileToken>().changeDir();
+      n->get<rai::FileToken>().changeDir();
     }else
     if(n->keys.N>0 && n->keys.first()=="Delete"){
       n->keys.remove(0);
@@ -540,7 +540,7 @@ void Graph::read(std::istream& is, bool parseInfo) {
   for(uint i=N;i--;){
     Node *n=elem(i);
     if(n->keys.N==1 && n->keys(0)=="ChDir"){
-      n->get<mlr::FileToken>().unchangeDir();
+      n->get<rai::FileToken>().unchangeDir();
       delete n; n=NULL;
     }
   }
@@ -558,25 +558,25 @@ void writeFromStream(std::ostream& os, std::istream& is, istream::pos_type beg, 
 }
 
 #define PARSERR(x, pinfo) { \
-  cerr <<"[[error in parsing Graph file (line=" <<mlr::lineCount <<"): " <<x <<":\n  \""; \
+  cerr <<"[[error in parsing Graph file (line=" <<rai::lineCount <<"): " <<x <<":\n  \""; \
   writeFromStream(cerr, is, pinfo.beg, is.tellg()); \
   cerr <<"<<<\"  ]]" <<endl; \
   is.clear(); }
 
 //  if(node) cerr <<"  (node='" <<*node <<"')" <<endl;
 
-Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::String prefixedKey) {
-  mlr::String str;
+Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::String prefixedKey) {
+  rai::String str;
 
   ParseInfo pinfo;
   pinfo.beg=is.tellg();
 
-  if(verbose) { cout <<"\nNODE (line="<<mlr::lineCount <<")"; }
+  if(verbose) { cout <<"\nNODE (line="<<rai::lineCount <<")"; }
 
   //-- read keys
   StringA keys;
   if(!prefixedKey.N){
-    mlr::skip(is," \t\n\r");
+    rai::skip(is," \t\n\r");
     pinfo.keys_beg=is.tellg();
     for(;;) {
       if(!str.read(is, " \t", " \t\n\r,;([{}=!", false)) break;
@@ -592,7 +592,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
 
   //-- read parents
   NodeL parents;
-  char c=mlr::getNextChar(is," \t"); //don't skip new lines
+  char c=rai::getNextChar(is," \t"); //don't skip new lines
   if(c=='(') {
     pinfo.parents_beg=is.tellg();
     for(uint j=0;; j++) {
@@ -610,12 +610,12 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
           pinfo.parents_end=is.tellg();
         }else{
           PARSERR("unknown " <<j <<". parent '" <<str <<"'", pinfo);
-          mlr::skip(is, NULL, ")", false);
+          rai::skip(is, NULL, ")", false);
         }
       }
     }
-    mlr::parse(is, ")");
-    c=mlr::getNextChar(is," \t");
+    rai::parse(is, ")");
+    c=rai::getNextChar(is," \t");
   }
   DEBUG(checkConsistency();)
 
@@ -625,14 +625,14 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
   Node *node=NULL;
   pinfo.value_beg=(long int)is.tellg()-1;
   if(c=='=' || c=='{' || c=='[' || c=='<' || c=='!') {
-    if(c=='=') c=mlr::getNextChar(is," \t");
-    if((c>='a' && c<='z') || (c>='A' && c<='Z')) { //mlr::String or boolean
+    if(c=='=') c=rai::getNextChar(is," \t");
+    if((c>='a' && c<='z') || (c>='A' && c<='Z')) { //rai::String or boolean
       is.putback(c);
       str.read(is, "", " \n\r\t,;}", false);
       if(str=="true") node = newNode<bool>(keys, parents, true);
       else if(str=="false") node = newNode<bool>(keys, parents, false);
-      else node = newNode<mlr::String>(keys, parents, str);
-    } else if(mlr::contains("-.0123456789", c)) {  //single double
+      else node = newNode<rai::String>(keys, parents, str);
+    } else if(rai::contains("-.0123456789", c)) {  //single double
       is.putback(c);
       double d;
       try { is >>d; } catch(...) PARSERR("can't parse the double number", pinfo);
@@ -641,20 +641,20 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
       case '!': { //boolean false
         node = newNode<bool>(keys, parents, false);
       } break;
-      case '\'': { //mlr::FileToken
+      case '\'': { //rai::FileToken
         str.read(is, "", "\'", true);
         try{
-          node = newNode<mlr::FileToken>(keys, parents, mlr::FileToken(str, false));
-          node->get<mlr::FileToken>().getIs();  //creates the ifstream and might throw an error
+          node = newNode<rai::FileToken>(keys, parents, rai::FileToken(str, false));
+          node->get<rai::FileToken>().getIs();  //creates the ifstream and might throw an error
         } catch(...){
           delete node; node=NULL;
           PARSERR("file " <<str <<" does not exist -> converting to string!", pinfo);
-          node = newNode<mlr::String>(keys, parents, str);
+          node = newNode<rai::String>(keys, parents, str);
         }
       } break;
-      case '\"': { //mlr::String
+      case '\"': { //rai::String
         str.read(is, "", "\"", true);
-        node = newNode<mlr::String>(keys, parents, str);
+        node = newNode<rai::String>(keys, parents, str);
       } break;
       case '[': { //arr
         is.putback(c);
@@ -665,29 +665,29 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
       case '<': { //any type parser
 #if 0
         str.read(is, "", ">", true);
-        node = newNode<mlr::String>(keys, parents, str);
+        node = newNode<rai::String>(keys, parents, str);
 #else
         str.read(is, " \t", " \t\n\r()`-=~!@#$%^&*()+[]{};'\\:|,./<>?", false);
         //      str.read(is, " \t", " \t\n\r()`1234567890-=~!@#$%^&*()_+[]{};'\\:|,./<>?", false);
 //        node = readTypeIntoNode(*this, str, is);
         if(!node) {
           is.clear();
-          mlr::String substr;
+          rai::String substr;
           substr.read(is,"",">",false);
 //          PARSERR("could not parse value of type '" <<str <<"' -- no such type has been registered; converting this to string: '"<<substr<<"'", pinfo);
           str = STRING('<' <<str <<' ' <<substr <<'>');
-          node = newNode<mlr::String>(keys, parents, str);
+          node = newNode<rai::String>(keys, parents, str);
         } else {
           node->keys = keys;
           node->parents = parents;
         }
-        mlr::parse(is, ">");
+        rai::parse(is, ">");
 #endif
       } break;
       case '{': { // sub graph
         Node_typed<Graph> *subgraph = this->newSubgraph(keys, parents);
         subgraph->value.read(is);
-        mlr::parse(is, "}");
+        rai::parse(is, "}");
         node = subgraph;
       } break;
       default: { //error
@@ -720,7 +720,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, mlr::Strin
   }
 
   //eat the next , or ;
-  c=mlr::getNextChar(is," \n\r\t");
+  c=rai::getNextChar(is," \n\r\t");
   if(c==',' || c==';') {} else is.putback(c);
 
   return node;
@@ -788,7 +788,7 @@ void addJasonValues(Graph& G, const char* key, Json::Value& value){
     case Json::intValue: //new Node_typed<int>(G, {key}, {}, value.asInt()); break; //convert int to double
     case Json::uintValue: //new Node_typed<uint>(G, {key}, {}, value.asUInt()); break; //convert int to double
     case Json::realValue: new Node_typed<double>(G, {key}, {}, value.asDouble()); break;
-    case Json::stringValue: new Node_typed<mlr::String>(G, {key}, {}, value.asString().c_str()); break;
+    case Json::stringValue: new Node_typed<rai::String>(G, {key}, {}, value.asString().c_str()); break;
     case Json::booleanValue: new Node_typed<bool>(G, {key}, {}, value.asBool()); break;
     case Json::arrayValue: HALT("covered above"); break;
     case Json::objectValue:  Json2Graph(G.newSubgraph({key}, {})->graph(), value);  break;
@@ -866,11 +866,11 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
   }
   for(Node *n: list()) {
     if(hasRenderingInfo(n) && getRenderingInfo(n).skip) continue;
-    mlr::String label;
+    rai::String label;
     if(n->keys.N){
       label <<"label=\"";
       bool newline=false;
-      for(mlr::String& k:n->keys){
+      for(rai::String& k:n->keys){
         if(newline) label <<"\\n";
         label <<k;
         newline=true;
@@ -882,7 +882,7 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
       label <<")\"";
     }
 
-    mlr::String shape;
+    rai::String shape;
     if(n->keys.contains("box")) shape <<", shape=box"; else shape <<", shape=ellipse";
     if(focusIndex==(int)n->index) shape <<", color=red";
     if(hasRenderingInfo(n)) shape <<' ' <<getRenderingInfo(n).dotstyle;
@@ -927,7 +927,7 @@ void Graph::sortByDotOrder() {
   for_list(Node, it, list()) {
     if(it->isGraph()) {
       double *order = it->graph().find<double>("dot_order");
-      if(!order) { MLR_MSG("doesn't have dot_order attribute"); return; }
+      if(!order) { RAI_MSG("doesn't have dot_order attribute"); return; }
       perm(it_COUNT) = (uint)*order;
     }
   }
@@ -1079,24 +1079,24 @@ struct RegistryInitializer{
   Mutex lock;
   RegistryInitializer(){
     int n;
-    for(n=1; n<mlr::argc; n++){
-      if(mlr::argv[n][0]=='-'){
-        mlr::String key(mlr::argv[n]+1);
-        if(n+1<mlr::argc && mlr::argv[n+1][0]!='-'){
-          mlr::String value;
-          value <<'=' <<mlr::argv[n+1];
+    for(n=1; n<rai::argc; n++){
+      if(rai::argv[n][0]=='-'){
+        rai::String key(rai::argv[n]+1);
+        if(n+1<rai::argc && rai::argv[n+1][0]!='-'){
+          rai::String value;
+          value <<'=' <<rai::argv[n+1];
           registry()->readNode(value, false, false, key);
           n++;
         }else{
           registry()->newNode<bool>({key}, {}, true);
         }
       }else{
-        MLR_MSG("non-parsed cmd line argument:" <<mlr::argv[n]);
+        RAI_MSG("non-parsed cmd line argument:" <<rai::argv[n]);
       }
     }
 
-    mlr::String cfgFileName="MT.cfg";
-    if(registry()()["cfg"]) cfgFileName = registry()->get<mlr::String>("cfg");
+    rai::String cfgFileName="rai.cfg";
+    if(registry()()["cfg"]) cfgFileName = registry()->get<rai::String>("cfg");
     LOG(3) <<"opening config file '" <<cfgFileName <<"'";
     ifstream fil;
     fil.open(cfgFileName);
@@ -1126,9 +1126,9 @@ bool getParameterFromGraph(const std::type_info& type, void* data, const char* k
       if(type==typeid(uint)){ *((uint*)data) = (uint)n->get<double>(); return true; }
       if(type==typeid(bool)){ *((bool*)data) = (bool)n->get<double>(); return true; }
     }
-    if(n && n->isOfType<mlr::String>()){
+    if(n && n->isOfType<rai::String>()){
       NIY;
-//      n->get<mlr::String>() >>x;
+//      n->get<rai::String>() >>x;
     }
   }
   return false;

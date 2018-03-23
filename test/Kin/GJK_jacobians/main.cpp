@@ -15,15 +15,15 @@ extern bool orsDrawWires;
 //===========================================================================
 
 void TEST(GJK_Jacobians) {
-  mlr::KinematicWorld K;
-  mlr::Frame base(K), b1(K), B1(K), b2(K), B2(K);
-  mlr::Joint j1(base, b1), J1(b1, B1), j2(B1, b2), J2(b2, B2);
-  mlr::Shape s1(B1), s2(B2);
-  j1.type = j2.type = mlr::JT_rigid; //trans3;
-  j1.frame.insertPreLink(mlr::Transformation(0))->Q.addRelativeTranslation(1,1,1);
-  j2.frame.insertPreLink(mlr::Transformation(0))->Q.addRelativeTranslation(-1,-1,1);
-  J1.type = J2.type = mlr::JT_free; //quatBall;
-  s1.type() = s2.type() = mlr::ST_ssCvx; //ST_mesh;
+  rai::KinematicWorld K;
+  rai::Frame base(K), b1(K), B1(K), b2(K), B2(K);
+  rai::Joint j1(base, b1), J1(b1, B1), j2(B1, b2), J2(b2, B2);
+  rai::Shape s1(B1), s2(B2);
+  j1.type = j2.type = rai::JT_rigid; //trans3;
+  j1.frame.insertPreLink(rai::Transformation(0))->Q.addRelativeTranslation(1,1,1);
+  j2.frame.insertPreLink(rai::Transformation(0))->Q.addRelativeTranslation(-1,-1,1);
+  J1.type = J2.type = rai::JT_free; //quatBall;
+  s1.type() = s2.type() = rai::ST_ssCvx; //ST_mesh;
   s1.size(3) = s2.size(3) = .2;
   s1.sscCore().setRandom();     s2.sscCore().setRandom();
   s1.mesh().C = {.5,.8,.5,.4};  s2.mesh().C = {.5,.5,.8,.4};
@@ -92,20 +92,20 @@ void TEST(GJK_Jacobians) {
 //===========================================================================
 
 void TEST(GJK_Jacobians2) {
-  mlr::KinematicWorld K;
-  mlr::Frame base(K);
+  rai::KinematicWorld K;
+  rai::Frame base(K);
   for(uint i=0;i<20;i++){
-    mlr::Frame *a = new mlr::Frame(K);
+    rai::Frame *a = new rai::Frame(K);
     a->name <<"obj_" <<i;
 
-    mlr::Joint *j = new mlr::Joint(base, *a);
-    j->type = mlr::JT_free;
+    rai::Joint *j = new rai::Joint(base, *a);
+    j->type = rai::JT_free;
     j->frame.Q.setRandom();
     j->frame.Q.pos.z += 1.;
 
-    mlr::Shape *s = new mlr::Shape(*a);
+    rai::Shape *s = new rai::Shape(*a);
     s->cont=true;
-    s->type() = mlr::ST_ssCvx; //ST_mesh;
+    s->type() = rai::ST_ssCvx; //ST_mesh;
     s->size(3) = .02 + .1*rnd.uni();
     s->sscCore().setRandom();
     s->mesh().C = {.5,.5,.8,.6};
@@ -168,12 +168,12 @@ void TEST(GJK_Jacobians2) {
 //===========================================================================
 
 void TEST(GJK_Jacobians3) {
-  mlr::KinematicWorld K;
-  mlr::Frame base(K), B1(K), B2(K);
-  mlr::Joint J1(base, B1), J2(base, B2);
-  mlr::Shape s1(B1), s2(B2);
-  J1.type = mlr::JT_free;
-  J2.type = mlr::JT_rigid;
+  rai::KinematicWorld K;
+  rai::Frame base(K), B1(K), B2(K);
+  rai::Joint J1(base, B1), J2(base, B2);
+  rai::Shape s1(B1), s2(B2);
+  J1.type = rai::JT_free;
+  J2.type = rai::JT_rigid;
 //  B1.Q.setRandom();
   B1.Q.pos = {0.,0., 1.05};
   B2.Q.pos = {0.,0., 1.21};
@@ -183,7 +183,7 @@ void TEST(GJK_Jacobians3) {
   s1.cont=s2.cont = true;
   B1.name = "1"; B2.name="2";
 
-  s1.type() = s2.type() = mlr::ST_ssBox;
+  s1.type() = s2.type() = rai::ST_ssBox;
   s1.size() = {.2, .2, .2, .01 };
   s2.size() = {.2, .2, .2, .01 };
   s1.getGeom().createMeshes();
@@ -235,7 +235,7 @@ void TEST(GJK_Jacobians3) {
 //===========================================================================
 
 int MAIN(int argc, char** argv){
-  mlr::initCmdLine(argc, argv);
+  rai::initCmdLine(argc, argv);
 
   rnd.clockSeed();
 

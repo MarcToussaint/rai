@@ -11,20 +11,20 @@
 #include <Control/ctrlMsg.h>
 #include <Kin/kin.h>
 
-#ifdef MLR_ROS
+#ifdef RAI_ROS
 #include <sensor_msgs/JointState.h>
-bool baxter_get_q_qdot_u(arr& q, arr& q_dot, arr& u, const sensor_msgs::JointState& msg, const mlr::KinematicWorld& baxterModel);
+bool baxter_get_q_qdot_u(arr& q, arr& q_dot, arr& u, const sensor_msgs::JointState& msg, const rai::KinematicWorld& baxterModel);
 //TODO: redundant -> remove
-bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const mlr::KinematicWorld& baxterModel);
-arr baxter_getEfforts(const sensor_msgs::JointState& msg, const mlr::KinematicWorld& baxterModel);
+bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const rai::KinematicWorld& baxterModel);
+arr baxter_getEfforts(const sensor_msgs::JointState& msg, const rai::KinematicWorld& baxterModel);
 #endif
 
 struct SendPositionCommandsToBaxter : Thread {
   Var<CtrlMsg> ctrl_ref;
   struct sSendPositionCommandsToBaxter *s;
-  mlr::KinematicWorld baxterModel;
+  rai::KinematicWorld baxterModel;
 
-  SendPositionCommandsToBaxter(const mlr::KinematicWorld& baxterWorld);
+  SendPositionCommandsToBaxter(const rai::KinematicWorld& baxterWorld);
   ~SendPositionCommandsToBaxter(){}
 
   void open();

@@ -13,7 +13,7 @@
 #include <Gui/opengl.h>
 
 struct ModelEnsemble :GLDrawer{
-  mlr::Array<MinEigModel*> models;
+  rai::Array<MinEigModel*> models;
 
   arr vert;
 

@@ -13,7 +13,7 @@
 
 //===========================================================================
 
-template<> const char* mlr::Enum<mlr::SwitchType>::names []={
+template<> const char* rai::Enum<rai::SwitchType>::names []={
   "deleteJoint",
   "SW_effJoint",
   "addJointAtFrom",
@@ -31,11 +31,11 @@ template<> const char* mlr::Enum<mlr::SwitchType>::names []={
 // Kinematic Switch
 //
 
-mlr::KinematicSwitch::KinematicSwitch()
+rai::KinematicSwitch::KinematicSwitch()
   : symbol(none), jointType(JT_none), timeOfApplication(UINT_MAX), fromId(UINT_MAX), toId(UINT_MAX), jA(0), jB(0){
 }
 
-mlr::KinematicSwitch::KinematicSwitch(SwitchType op, JointType type, const char* ref1, const char* ref2, const mlr::KinematicWorld& K, uint _timeOfApplication, const mlr::Transformation& jFrom, const mlr::Transformation& jTo)
+rai::KinematicSwitch::KinematicSwitch(SwitchType op, JointType type, const char* ref1, const char* ref2, const rai::KinematicWorld& K, uint _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo)
   : symbol(op), jointType(type), timeOfApplication(_timeOfApplication), fromId(UINT_MAX), toId(UINT_MAX), jA(0), jB(0){
   if(ref1) fromId = K.getFrameByName(ref1)->ID;
   if(ref2) toId = K.getFrameByName(ref2)->ID;
@@ -45,12 +45,12 @@ mlr::KinematicSwitch::KinematicSwitch(SwitchType op, JointType type, const char*
 
 #define STEP(t) (floor(t*double(stepsPerPhase) + .500001))-1
 
-void mlr::KinematicSwitch::setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T){
+void rai::KinematicSwitch::setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T){
   if(stepsPerPhase<0) stepsPerPhase=T;
   timeOfApplication = STEP(time)+(before?0:1);
 }
 
-void mlr::KinematicSwitch::apply(KinematicWorld& K){
+void rai::KinematicSwitch::apply(KinematicWorld& K){
   Frame *from=NULL, *to=NULL;
   if(fromId!=UINT_MAX) from=K.frames(fromId);
   if(toId!=UINT_MAX) to=K.frames(toId);
@@ -96,9 +96,9 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
   if(symbol==SW_effJoint || symbol==SW_actJoint || symbol==SW_insertEffJoint || symbol==insertActuated){
     //first find lowest frame below to
     if(!newVersion){
-      mlr::Transformation Q = 0;
+      rai::Transformation Q = 0;
 #if 1
-      mlr::Frame *link = to->getUpwardLink(Q);
+      rai::Frame *link = to->getUpwardLink(Q);
       if(link && link!=to) to = link;
 #else
       while(to->parent){
@@ -114,7 +114,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
     Joint *j = NULL;
     if(symbol!=SW_insertEffJoint && symbol!=insertActuated){
       if(newVersion){
-        mlr::Frame *link = to->getUpwardLink();
+        rai::Frame *link = to->getUpwardLink();
         if(link->parent) link->unLink();
         K.reconfigureRootOfSubtree(to);
       }else{
@@ -125,7 +125,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
     }else{
       CHECK(!from, "from should not be specified");
       CHECK(to->parent, "to needs to have a link already");
-      Frame *mid = to->insertPreLink(mlr::Transformation(0));
+      Frame *mid = to->insertPreLink(rai::Transformation(0));
       j = new Joint(*mid);
     }
     if(!jA.isZero()){
@@ -134,7 +134,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
       }else{ //in the old version: when not reconfiguring the grasped frame to root, you need to insert -Q AFTER the joint to transform back to the old link's root
         Frame *mid = to->insertPreLink();
         delete j;
-        j = new mlr::Joint(*mid);
+        j = new rai::Joint(*mid);
         to->Q = jA;
       }
     }
@@ -231,7 +231,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
     CHECK_EQ(to, NULL, "");
     CHECK(from->inertia, "can only make frames with intertia dynamic");
 
-    from->inertia->type=mlr::BT_dynamic;
+    from->inertia->type=rai::BT_dynamic;
     if(from->joint){
       from->joint->constrainToZeroVel=false;
       from->joint->H = 1e-1;
@@ -244,7 +244,7 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
     CHECK_EQ(to, NULL, "");
     CHECK(from->inertia, "can only make frames with intertia kinematic");
 
-    from->inertia->type=mlr::BT_kinematic;
+    from->inertia->type=rai::BT_kinematic;
 //    if(from->joint){
 //      from->joint->constrainToZeroVel=false;
 //      from->joint->H = 1e-1;
@@ -255,8 +255,8 @@ void mlr::KinematicSwitch::apply(KinematicWorld& K){
   HALT("shouldn't be here!");
 }
 
-mlr::String mlr::KinematicSwitch::shortTag(const mlr::KinematicWorld* G) const{
-  mlr::String str;
+rai::String rai::KinematicSwitch::shortTag(const rai::KinematicWorld* G) const{
+  rai::String str;
   str <<"  timeOfApplication=" <<timeOfApplication;
   str <<"  symbol=" <<symbol;
   str <<"  jointType=" <<jointType;
@@ -265,7 +265,7 @@ mlr::String mlr::KinematicSwitch::shortTag(const mlr::KinematicWorld* G) const{
   return str;
 }
 
-void mlr::KinematicSwitch::write(std::ostream& os, mlr::KinematicWorld* K) const{
+void rai::KinematicSwitch::write(std::ostream& os, rai::KinematicWorld* K) const{
   os <<"SWITCH  timeOfApplication=" <<timeOfApplication;
   os <<"  symbol=" <<symbol;
   os <<"  jointType=" <<jointType;
@@ -277,18 +277,18 @@ void mlr::KinematicSwitch::write(std::ostream& os, mlr::KinematicWorld* K) const
 
 //===========================================================================
 
-mlr::KinematicSwitch* mlr::KinematicSwitch::newSwitch(const Node *specs, const mlr::KinematicWorld& world, int stepsPerPhase, uint T){
+rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const Node *specs, const rai::KinematicWorld& world, int stepsPerPhase, uint T){
   if(specs->parents.N<2) return NULL;
 
   //-- get tags
-  mlr::String& tt=specs->parents(0)->keys.last();
-  mlr::String& type=specs->parents(1)->keys.last();
+  rai::String& tt=specs->parents(0)->keys.last();
+  rai::String& type=specs->parents(1)->keys.last();
   const char *ref1=NULL, *ref2=NULL;
   if(specs->parents.N>2) ref1=specs->parents(2)->keys.last().p;
   if(specs->parents.N>3) ref2=specs->parents(3)->keys.last().p;
 
   if(tt!="MakeJoint") return NULL;
-  mlr::KinematicSwitch* sw = newSwitch(type, ref1, ref2, world, stepsPerPhase + 1);
+  rai::KinematicSwitch* sw = newSwitch(type, ref1, ref2, world, stepsPerPhase + 1);
 
   if(specs->isGraph()){
     const Graph& params = specs->graph();
@@ -300,40 +300,40 @@ mlr::KinematicSwitch* mlr::KinematicSwitch::newSwitch(const Node *specs, const m
   return sw;
 }
 
-mlr::KinematicSwitch* mlr::KinematicSwitch::newSwitch(const mlr::String& type, const char* ref1, const char* ref2, const mlr::KinematicWorld& world, uint _timeOfApplication, const mlr::Transformation& jFrom, const mlr::Transformation& jTo){
+rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const rai::String& type, const char* ref1, const char* ref2, const rai::KinematicWorld& world, uint _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo){
   //-- create switch
-  mlr::KinematicSwitch *sw= new mlr::KinematicSwitch();
-  if(type=="addRigid"){ sw->symbol=mlr::SW_effJoint; sw->jointType=mlr::JT_rigid; }
-//  else if(type=="addRigidRel"){ sw->symbol = mlr::KinematicSwitch::addJointAtTo; sw->jointType=mlr::JT_rigid; }
-  else if(type=="rigidAtTo"){ sw->symbol = mlr::addJointAtTo; sw->jointType=mlr::JT_rigid; }
-  else if(type=="rigidAtFrom"){ sw->symbol = mlr::addJointAtFrom; sw->jointType=mlr::JT_rigid; }
-  else if(type=="rigidZero"){ sw->symbol = mlr::SW_effJoint; sw->jointType=mlr::JT_rigid; }
-  else if(type=="transXActuated"){ sw->symbol = mlr::SW_actJoint; sw->jointType=mlr::JT_transX; }
-  else if(type=="transXYPhiAtFrom"){ sw->symbol = mlr::addJointAtFrom; sw->jointType=mlr::JT_transXYPhi; }
-  else if(type=="transXYPhiZero"){ sw->symbol = mlr::SW_effJoint; sw->jointType=mlr::JT_transXYPhi; }
-  else if(type=="transXYPhiActuated"){ sw->symbol = mlr::SW_actJoint; sw->jointType=mlr::JT_transXYPhi; }
-  else if(type=="freeAtTo"){ sw->symbol = mlr::addJointAtTo; sw->jointType=mlr::JT_free; }
-  else if(type=="freeZero"){ sw->symbol = mlr::SW_effJoint; sw->jointType=mlr::JT_free; }
-  else if(type=="freeActuated"){ sw->symbol = mlr::SW_actJoint; sw->jointType=mlr::JT_free; }
-  else if(type=="ballZero"){ sw->symbol = mlr::SW_effJoint; sw->jointType=mlr::JT_quatBall; }
-  else if(type=="hingeZZero"){ sw->symbol = mlr::SW_effJoint; sw->jointType=mlr::JT_hingeZ; }
-  else if(type=="sliderMechanism"){ sw->symbol = mlr::addSliderMechanism; }
-  else if(type=="delete"){ sw->symbol = mlr::deleteJoint; }
-  else if(type=="JT_XBall"){ sw->symbol = mlr::SW_effJoint; sw->jointType=mlr::JT_XBall; }
-  else if(type=="JT_transZ"){ sw->symbol = mlr::SW_effJoint; sw->jointType=mlr::JT_transZ; }
-  else if(type=="JT_transX"){ sw->symbol = mlr::SW_effJoint; sw->jointType=mlr::JT_transX; }
-  else if(type=="JT_trans3"){ sw->symbol = mlr::SW_effJoint; sw->jointType=mlr::JT_trans3; }
-  else if(type=="insert_transX"){ sw->symbol = mlr::SW_insertEffJoint; sw->jointType=mlr::JT_transX; }
-  else if(type=="insert_trans3"){ sw->symbol = mlr::SW_insertEffJoint; sw->jointType=mlr::JT_trans3; }
-  else if(type=="createSlider"){ sw->symbol = mlr::addSliderMechanism; }
-  else if(type=="makeDynamic"){ sw->symbol = mlr::makeDynamic; }
-  else if(type=="makeKinematic"){ sw->symbol = mlr::makeKinematic; }
+  rai::KinematicSwitch *sw= new rai::KinematicSwitch();
+  if(type=="addRigid"){ sw->symbol=rai::SW_effJoint; sw->jointType=rai::JT_rigid; }
+//  else if(type=="addRigidRel"){ sw->symbol = rai::KinematicSwitch::addJointAtTo; sw->jointType=rai::JT_rigid; }
+  else if(type=="rigidAtTo"){ sw->symbol = rai::addJointAtTo; sw->jointType=rai::JT_rigid; }
+  else if(type=="rigidAtFrom"){ sw->symbol = rai::addJointAtFrom; sw->jointType=rai::JT_rigid; }
+  else if(type=="rigidZero"){ sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_rigid; }
+  else if(type=="transXActuated"){ sw->symbol = rai::SW_actJoint; sw->jointType=rai::JT_transX; }
+  else if(type=="transXYPhiAtFrom"){ sw->symbol = rai::addJointAtFrom; sw->jointType=rai::JT_transXYPhi; }
+  else if(type=="transXYPhiZero"){ sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_transXYPhi; }
+  else if(type=="transXYPhiActuated"){ sw->symbol = rai::SW_actJoint; sw->jointType=rai::JT_transXYPhi; }
+  else if(type=="freeAtTo"){ sw->symbol = rai::addJointAtTo; sw->jointType=rai::JT_free; }
+  else if(type=="freeZero"){ sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_free; }
+  else if(type=="freeActuated"){ sw->symbol = rai::SW_actJoint; sw->jointType=rai::JT_free; }
+  else if(type=="ballZero"){ sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_quatBall; }
+  else if(type=="hingeZZero"){ sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_hingeZ; }
+  else if(type=="sliderMechanism"){ sw->symbol = rai::addSliderMechanism; }
+  else if(type=="delete"){ sw->symbol = rai::deleteJoint; }
+  else if(type=="JT_XBall"){ sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_XBall; }
+  else if(type=="JT_transZ"){ sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_transZ; }
+  else if(type=="JT_transX"){ sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_transX; }
+  else if(type=="JT_trans3"){ sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_trans3; }
+  else if(type=="insert_transX"){ sw->symbol = rai::SW_insertEffJoint; sw->jointType=rai::JT_transX; }
+  else if(type=="insert_trans3"){ sw->symbol = rai::SW_insertEffJoint; sw->jointType=rai::JT_trans3; }
+  else if(type=="createSlider"){ sw->symbol = rai::addSliderMechanism; }
+  else if(type=="makeDynamic"){ sw->symbol = rai::makeDynamic; }
+  else if(type=="makeKinematic"){ sw->symbol = rai::makeKinematic; }
   else HALT("unknown type: "<< type);
   if(ref1) sw->fromId = world.getFrameByName(ref1)->ID;
   if(ref2) sw->toId = world.getFrameByName(ref2)->ID;
 //  if(!ref2){
-//    CHECK_EQ(sw->symbol, mlr::deleteJoint, "");
-//    mlr::Body *b = fromShape->body;
+//    CHECK_EQ(sw->symbol, rai::deleteJoint, "");
+//    rai::Body *b = fromShape->body;
 //    if(b->hasJoint()==1){
 ////      CHECK_EQ(b->outLinks.N, 0, "");
 //      sw->toId = sw->fromId;
@@ -342,7 +342,7 @@ mlr::KinematicSwitch* mlr::KinematicSwitch::newSwitch(const mlr::String& type, c
 //      CHECK_EQ(b->hasJoint(), 0, "");
 //      sw->toId = b->outLinks(0)->from->shapes.first()->index;
 //    }else if(b->hasJoint()==0 && b->outLinks.N==0){
-//      MLR_MSG("No link to delete for shape '" <<ref1 <<"'");
+//      RAI_MSG("No link to delete for shape '" <<ref1 <<"'");
 //      delete sw;
 //      return NULL;
 //    }else HALT("that's ambiguous");

@@ -6,8 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef MLR_linearRegression_h
-#define MLR_linearRegression_h
+#ifndef RAI_linearRegression_h
+#define RAI_linearRegression_h
 
 #include <Core/array.h>
 

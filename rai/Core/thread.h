@@ -6,8 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef MLR_thread_h
-#define MLR_thread_h
+#ifndef RAI_thread_h
+#define RAI_thread_h
 
 #include "util.h"
 #include "array.h"
@@ -22,14 +22,14 @@ enum ThreadState { tsIsClosed=-6, tsToOpen=-2, tsLOOPING=-3, tsBEATING=-4, tsIDL
 struct Signaler;
 struct VariableBase;
 struct Thread;
-typedef mlr::Array<Signaler*> SignalerL;
-typedef mlr::Array<Thread*> ThreadL;
+typedef rai::Array<Signaler*> SignalerL;
+typedef rai::Array<Thread*> ThreadL;
 
 //void stop(const ThreadL& P);
 //void wait(const ThreadL& P);
 //void close(const ThreadL& P);
 
-#ifndef MLR_MSVC
+#ifndef RAI_MSVC
 
 //===========================================================================
 
@@ -44,7 +44,7 @@ template<class F> struct Callback{
 template<class F> bool operator==(const Callback<F>& a, const Callback<F>& b){ return a.id==b.id; }
 
 template<class F>
-struct CallbackL : mlr::Array<Callback<F>*>{
+struct CallbackL : rai::Array<Callback<F>*>{
   void delRemove(const void* id){
     Callback<F>* c = listFindValue(*this, Callback<F>(id));
     CHECK(c,"");
@@ -136,7 +136,7 @@ struct CycleTimer {
   void reset();
   void cycleStart();
   void cycleDone();
-  mlr::String report();
+  rai::String report();
 };
 
 //===========================================================================
@@ -144,7 +144,7 @@ struct CycleTimer {
  * MiniThread might replace Thread some time
  */
 struct MiniThread : Signaler{
-  mlr::String name;
+  rai::String name;
   pthread_t thread = 0;             ///< the underlying pthread; NULL iff not opened
   pid_t tid = 0;                    ///< system thread id
 
@@ -172,7 +172,7 @@ struct MiniThread : Signaler{
  * the Signaler indicates the state of the thread: positive=do steps, otherwise it is a ThreadState
  */
 struct Thread : Signaler{
-  mlr::String name;
+  rai::String name;
   pthread_t thread;             ///< the underlying pthread; NULL iff not opened
   pid_t tid;                    ///< system thread id
   Mutex stepMutex;              ///< This is set whenever the 'main' is in step (or open, or close) --- use this in all service methods callable from outside!!
@@ -233,7 +233,7 @@ struct VariableBase : Signaler{
   RWLock rwlock;              ///< rwLock (handled via read/writeAccess)
   const std::type_info& type; ///< type of the variable
   const void *value_ptr;      ///< pointer to variable data
-  mlr::String name;           ///< name
+  rai::String name;           ///< name
   double write_time;          ///< clock time of last write access
   double data_time;           ///< time stamp of the original data source
 
@@ -250,7 +250,7 @@ struct VariableBase : Signaler{
   typedef std::shared_ptr<VariableBase> Ptr;
 };
 
-typedef mlr::Array<VariableBase::Ptr*> VariableBaseL;
+typedef rai::Array<VariableBase::Ptr*> VariableBaseL;
 
 //===========================================================================
 
@@ -333,7 +333,7 @@ template<class T> void operator<<(ostream& os, const VariableData<T>& v){ os <<"
 template<class T>
 struct Var{
   shared_ptr<VariableData<T>> data;
-  mlr::String name; ///< name; by default the RevLock's name; redefine to a variable's name to autoconnect
+  rai::String name; ///< name; by default the RevLock's name; redefine to a variable's name to autoconnect
   Thread *thread;  ///< which thread is this a member of
   int last_read_revision;     ///< last revision that has been accessed (read or write)
   struct Node* registryNode;
@@ -439,8 +439,8 @@ template<class T> VariableData<T>& getVariable(const char* name){
     return *var;
 }
 VariableBaseL getVariables();
-template<class T> mlr::Array<VariableData<T>*> getVariablesOfType(){
-    mlr::Array<VariableData<T>*> ret;
+template<class T> rai::Array<VariableData<T>*> getVariablesOfType(){
+    rai::Array<VariableData<T>*> ret;
     VariableBaseL vars = getVariables();
     for(VariableBase::Ptr* v : vars){
         shared_ptr<VariableData<T>> var = std::dynamic_pointer_cast<VariableData<T>>(*v);
@@ -535,7 +535,7 @@ std::stringstream& TStream::Register::operator<<(const T &t) {
   return stream;
 }
 
-#else //MLR_MSVC
+#else //RAI_MSVC
 
 struct Signaler {
   int value;
@@ -552,6 +552,6 @@ struct Signaler {
   int  getStatus(bool userHasLocked=false) const { return value; }
 };
 
-#endif //MLR_MSVC
+#endif //RAI_MSVC
 
 #endif

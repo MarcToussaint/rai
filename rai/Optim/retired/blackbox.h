@@ -9,7 +9,7 @@ struct LocalModelBasedOptim{
 
   arr x_init;
   ScalarFunction f;
-  mlr::Array<Datum*> D; ///< data collected so far
+  rai::Array<Datum*> D; ///< data collected so far
   Datum* best;
   double alpha;
   OptOptions o;

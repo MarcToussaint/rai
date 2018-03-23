@@ -10,18 +10,18 @@
 #include <Gui/opengl.h>
 #include <Geo/pairCollision.h>
 
-double mlr::Contact::getDistance() const{
+double rai::Contact::getDistance() const{
   TM_ContactNegDistance map(*this);
   arr y;
   map.phi(y, NoArr, a.K);
   return -y.scalar();
 }
 
-TaskMap *mlr::Contact::getTM_ContactNegDistance() const{
+TaskMap *rai::Contact::getTM_ContactNegDistance() const{
   return new TM_ContactNegDistance(*this);
 }
 
-void mlr::TM_ContactNegDistance::phi(arr &y, arr &J, const mlr::KinematicWorld &K, int t){
+void rai::TM_ContactNegDistance::phi(arr &y, arr &J, const rai::KinematicWorld &K, int t){
 #if 0
   if(C.a_pts.nd==1 && C.b_pts.nd==1){
     arr ap,bp, normal, Jap,Jbp;
@@ -112,11 +112,11 @@ void mlr::TM_ContactNegDistance::phi(arr &y, arr &J, const mlr::KinematicWorld &
   }
 }
 
-void mlr::Contact::glDraw(OpenGL& gl){
-#ifdef MLR_GL
-  mlr::Vector pa = a.X * a_rel;
-  mlr::Vector pb = b.X * b_rel;
-  mlr::Vector n = .5*((b.X.rot * b_norm) - (a.X.rot * a_norm));
+void rai::Contact::glDraw(OpenGL& gl){
+#ifdef RAI_GL
+  rai::Vector pa = a.X * a_rel;
+  rai::Vector pb = b.X * b_rel;
+  rai::Vector n = .5*((b.X.rot * b_norm) - (a.X.rot * a_norm));
 
   glLoadIdentity();
   glColor(1., 0., 0., 1.);
@@ -132,6 +132,6 @@ void mlr::Contact::glDraw(OpenGL& gl){
 #endif
 }
 
-void mlr::Contact::write(std::ostream &os) const{
+void rai::Contact::write(std::ostream &os) const{
   os <<a.name <<'-' <<b.name <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() /*<<" pDist=" <<get_pDistance()*/ <<" y=" <<y <<" l=" <<lagrangeParameter;
 }

@@ -7,13 +7,13 @@
     --------------------------------------------------------------  */
 
 template <class T>
-mlr::Array<T> G4ID::query(const mlr::Array<T> &data, const String &sensor) {
+rai::Array<T> G4ID::query(const rai::Array<T> &data, const String &sensor) {
   return data[hsi(sensor)];
 }
 
 template <class T>
-mlr::Array<T> G4ID::query(const mlr::Array<T>  &data, const StringA &sensors) {
-  mlr::Array<T> x;
+rai::Array<T> G4ID::query(const rai::Array<T>  &data, const StringA &sensors) {
+  rai::Array<T> x;
   for(const String &sensor: sensors) {
     x.append(data[hsi(sensor)]);
   }

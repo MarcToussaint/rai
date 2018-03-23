@@ -8,7 +8,7 @@
 
 #include "uncertainty.h"
 
-mlr::Uncertainty::Uncertainty(mlr::Joint *j, mlr::Uncertainty *copyUncertainty) : joint(j), sigma(.1){
+rai::Uncertainty::Uncertainty(rai::Joint *j, rai::Uncertainty *copyUncertainty) : joint(j), sigma(.1){
   CHECK(!j->uncertainty, "the Joint already has an Uncertainty");
   j->uncertainty = this;
 
@@ -17,7 +17,7 @@ mlr::Uncertainty::Uncertainty(mlr::Joint *j, mlr::Uncertainty *copyUncertainty) 
   }
 }
 
-void mlr::Uncertainty::read(const Graph &ats){
+void rai::Uncertainty::read(const Graph &ats){
   ats.get(sigma, "sigma");
   CHECK_EQ(sigma.N, joint->qDim(), "");
 }

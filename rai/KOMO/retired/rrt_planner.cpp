@@ -20,7 +20,7 @@
 #include <Gui/opengl.h>
 #include <Plot/plot.h>
 
-namespace mlr {
+namespace rai {
   struct sRRTPlanner {
     RRTPlanner *p;
     RRT rrt;
@@ -38,7 +38,7 @@ namespace mlr {
   };
 }
 
-bool mlr::sRRTPlanner::isFeasible(const arr& q) {
+bool rai::sRRTPlanner::isFeasible(const arr& q) {
   arr phi;
   ObjectiveTypeA tt;
   p->problem.configurations(0)->setJointState(q, NoArr);
@@ -48,7 +48,7 @@ bool mlr::sRRTPlanner::isFeasible(const arr& q) {
   return true;
 }
 
-bool mlr::sRRTPlanner::growTowards(RRT& growing, RRT& passive) {
+bool rai::sRRTPlanner::growTowards(RRT& growing, RRT& passive) {
   arr q;
   if(rnd.uni()<.5) {
     q = p->joint_min + rand(p->problem.world.getJointStateDimension(), 1) % ( p->joint_max - p->joint_min );
@@ -98,10 +98,10 @@ arr buildTrajectory(RRT& rrt, uint node, bool forward) {
   return q;
 }
     
-mlr::RRTPlanner::RRTPlanner(mlr::KinematicWorld *G, KOMO &problem, double stepsize, bool verbose) : 
+rai::RRTPlanner::RRTPlanner(rai::KinematicWorld *G, KOMO &problem, double stepsize, bool verbose) : 
    G(G), problem(problem) {
     arr q; G->getJointState(q);
-    s = new mlr::sRRTPlanner(this, RRT(q, stepsize), verbose);
+    s = new rai::sRRTPlanner(this, RRT(q, stepsize), verbose);
     joint_min = zeros(G->getJointStateDimension());
     joint_max = ones(G->getJointStateDimension());
   }
@@ -115,7 +115,7 @@ void drawRRT(RRT rrt) {
   }
 }
 
-arr mlr::RRTPlanner::getTrajectoryTo(const arr& target, int max_iter) {
+arr rai::RRTPlanner::getTrajectoryTo(const arr& target, int max_iter) {
   arr q;
 
   if (!s->isFeasible(target))

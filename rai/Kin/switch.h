@@ -6,12 +6,12 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef MLR_switch_h
-#define MLR_switch_h
+#ifndef RAI_switch_h
+#define RAI_switch_h
 
 #include "frame.h"
 
-namespace mlr{
+namespace rai{
 
 enum SwitchType {
   none=-1,
@@ -33,24 +33,24 @@ struct KinematicSwitch{
   Enum<JointType> jointType;
   uint timeOfApplication;
   uint fromId, toId;
-  mlr::Transformation jA,jB;
+  rai::Transformation jA,jB;
   KinematicSwitch();
   KinematicSwitch(SwitchType op, JointType type,
                   const char* ref1, const char* ref2,
-                  const mlr::KinematicWorld& K, uint _timeOfApplication=0,
-                  const mlr::Transformation& jFrom=NoTransformation, const mlr::Transformation& jTo=NoTransformation);
+                  const rai::KinematicWorld& K, uint _timeOfApplication=0,
+                  const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
   void setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T);
   void apply(KinematicWorld& K);
   void temporallyAlign(const KinematicWorld& Gprevious, KinematicWorld& G, bool copyFromBodies);
-  mlr::String shortTag(const KinematicWorld* G) const;
-  void write(std::ostream& os, mlr::KinematicWorld *K=NULL) const;
-  static KinematicSwitch* newSwitch(const Node *specs, const mlr::KinematicWorld& world, int stepsPerPhase, uint T);
-  static KinematicSwitch* newSwitch(const mlr::String& type, const char* ref1, const char* ref2, const mlr::KinematicWorld& world, uint _timeOfApplication, const mlr::Transformation& jFrom=NoTransformation, const mlr::Transformation& jTo=NoTransformation);
+  rai::String shortTag(const KinematicWorld* G) const;
+  void write(std::ostream& os, rai::KinematicWorld *K=NULL) const;
+  static KinematicSwitch* newSwitch(const Node *specs, const rai::KinematicWorld& world, int stepsPerPhase, uint T);
+  static KinematicSwitch* newSwitch(const rai::String& type, const char* ref1, const char* ref2, const rai::KinematicWorld& world, uint _timeOfApplication, const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
   static const char* name(SwitchType s);
 };
 
-} // namespace mlr
+} // namespace rai
 
-stdOutPipe(mlr::KinematicSwitch)
+stdOutPipe(rai::KinematicSwitch)
 
 #endif

@@ -1,6 +1,6 @@
-#ifdef MLR_ROS
+#ifdef RAI_ROS
 
-#ifdef MLR_PCL
+#ifdef RAI_PCL
 
 #include "subscribeRosKinect2PCL.h"
 #include "roscom.h"
@@ -24,7 +24,7 @@ SubscribeRosKinect2PCL::SubscribeRosKinect2PCL(const char* cloud_name, const cha
   : cloud(NULL, cloud_name),
     kinect_frame(NULL, "kinect_frame"){
   s = new sSubscribeRosKinect2PCL;
-  if(mlr::getParameter<bool>("useRos")){
+  if(rai::getParameter<bool>("useRos")){
     s->nh = new ros::NodeHandle;
     s->listener = new tf::TransformListener;
     //      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
@@ -42,7 +42,7 @@ SubscribeRosKinect2PCL::~SubscribeRosKinect2PCL(){
 void SubscribeRosKinect2PCL::callback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
   double time=conv_time2double(msg->header.stamp);
   tf::Transform trans;
-  mlr::Transformation t = ros_getTransform("/base_link", msg->header, *s->listener, &trans);
+  rai::Transformation t = ros_getTransform("/base_link", msg->header, *s->listener, &trans);
 
   pcl_conversions::toPCL(*msg, s->pcl_pc2);
   pcl::fromPCLPointCloud2(s->pcl_pc2, s->pcl);

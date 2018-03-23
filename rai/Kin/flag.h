@@ -26,10 +26,10 @@ enum FrameFlagType {
   FL_kinematic,
 };
 
-namespace mlr{
+namespace rai{
 
 struct Flag {
-  mlr::Enum<FrameFlagType> flag;
+  rai::Enum<FrameFlagType> flag;
   uint frameId;
   uint stepOfApplication;
   bool persist=false;
@@ -45,4 +45,4 @@ struct Flag {
 };
 
 }
-stdOutPipe(mlr::Flag)
+stdOutPipe(rai::Flag)

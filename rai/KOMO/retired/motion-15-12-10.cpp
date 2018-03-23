@@ -74,12 +74,12 @@ void Task::setCostSpecs(uint fromTime,
 
 //===========================================================================
 
-TaskMap *newTaskMap(const Node* specs, const mlr::KinematicWorld& world){
+TaskMap *newTaskMap(const Node* specs, const rai::KinematicWorld& world){
   if(specs->parents.N<2) return NULL;
 
   //-- get tags
-  mlr::String& tt=specs->parents(0)->keys.last();
-  mlr::String& type=specs->parents(1)->keys.last();
+  rai::String& tt=specs->parents(0)->keys.last();
+  rai::String& type=specs->parents(1)->keys.last();
   const char *ref1=NULL, *ref2=NULL;
   if(specs->parents.N>2) ref1=specs->parents(2)->keys.last().p;
   if(specs->parents.N>3) ref2=specs->parents(3)->keys.last().p;
@@ -94,7 +94,7 @@ TaskMap *newTaskMap(const Node* specs, const mlr::KinematicWorld& world){
   //-- create a task map
   TaskMap *map;
   const Graph& params = specs->graph();
-//  mlr::String type = specs.get<mlr::String>("type", "pos");
+//  rai::String type = specs.get<rai::String>("type", "pos");
   if(type=="wheels"){
     map = new TM_qItself(world, "worldTranslationRotation");
   }else if(type=="collisionIneq"){
@@ -102,7 +102,7 @@ TaskMap *newTaskMap(const Node* specs, const mlr::KinematicWorld& world){
   }else if(type=="collisionPairs"){
     uintA shapes;
     for(uint i=2;i<specs->parents.N;i++){
-      mlr::Shape *s = world.getShapeByName(specs->parents(i)->keys.last());
+      rai::Shape *s = world.getShapeByName(specs->parents(i)->keys.last());
       CHECK(s,"No Shape '" <<specs->parents(i)->keys.last() <<"'");
       shapes.append(s->index);
     }
@@ -110,7 +110,7 @@ TaskMap *newTaskMap(const Node* specs, const mlr::KinematicWorld& world){
   }else if(type=="collisionExceptPairs"){
     uintA shapes;
     for(uint i=2;i<specs->parents.N;i++){
-      mlr::Shape *s = world.getShapeByName(specs->parents(i)->keys.last());
+      rai::Shape *s = world.getShapeByName(specs->parents(i)->keys.last());
       CHECK(s,"No Shape '" <<specs->parents(i)->keys.last() <<"'");
       shapes.append(s->index);
     }
@@ -138,7 +138,7 @@ TaskMap *newTaskMap(const Node* specs, const mlr::KinematicWorld& world){
 
 //===========================================================================
 
-Task* newTask(const Node* specs, const mlr::KinematicWorld& world, uint Tinterval, uint Tzero){
+Task* newTask(const Node* specs, const rai::KinematicWorld& world, uint Tinterval, uint Tzero){
   //-- try to crate a map
   TaskMap *map = newTaskMap(specs, world);
   if(!map) return NULL;
@@ -157,12 +157,12 @@ Task* newTask(const Node* specs, const mlr::KinematicWorld& world, uint Tinterva
 
 //===========================================================================
 
-mlr::KinematicSwitch* newSwitch(const Node *specs, const mlr::KinematicWorld& world, uint Tinterval, uint Tzero=0){
+rai::KinematicSwitch* newSwitch(const Node *specs, const rai::KinematicWorld& world, uint Tinterval, uint Tzero=0){
   if(specs->parents.N<2) return NULL;
 
   //-- get tags
-  mlr::String& tt=specs->parents(0)->keys.last();
-  mlr::String& type=specs->parents(1)->keys.last();
+  rai::String& tt=specs->parents(0)->keys.last();
+  rai::String& type=specs->parents(1)->keys.last();
   const char *ref1=NULL, *ref2=NULL;
   if(specs->parents.N>2) ref1=specs->parents(2)->keys.last().p;
   if(specs->parents.N>3) ref2=specs->parents(3)->keys.last().p;
@@ -170,19 +170,19 @@ mlr::KinematicSwitch* newSwitch(const Node *specs, const mlr::KinematicWorld& wo
   if(tt!="MakeJoint") return NULL;
 
   //-- create switch
-  mlr::KinematicSwitch *sw= new mlr::KinematicSwitch();
-  if(type=="addRigid"){ sw->symbol=mlr::SW_effJoint; sw->jointType=mlr::JT_rigid; }
-//  else if(type=="addRigidRel"){ sw->symbol = mlr::addJointAtTo; sw->jointType=mlr::JT_rigid; }
-  else if(type=="rigid"){ sw->symbol = mlr::addJointAtTo; sw->jointType=mlr::JT_rigid; }
-  else if(type=="rigidZero"){ sw->symbol = mlr::SW_effJoint; sw->jointType=mlr::JT_rigid; }
-  else if(type=="transXYPhi"){ sw->symbol = mlr::addJointAtFrom; sw->jointType=mlr::JT_transXYPhi; }
-  else if(type=="free"){ sw->symbol = mlr::addJointAtTo; sw->jointType=mlr::JT_free; }
-  else if(type=="delete"){ sw->symbol = mlr::deleteJoint; }
+  rai::KinematicSwitch *sw= new rai::KinematicSwitch();
+  if(type=="addRigid"){ sw->symbol=rai::SW_effJoint; sw->jointType=rai::JT_rigid; }
+//  else if(type=="addRigidRel"){ sw->symbol = rai::addJointAtTo; sw->jointType=rai::JT_rigid; }
+  else if(type=="rigid"){ sw->symbol = rai::addJointAtTo; sw->jointType=rai::JT_rigid; }
+  else if(type=="rigidZero"){ sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_rigid; }
+  else if(type=="transXYPhi"){ sw->symbol = rai::addJointAtFrom; sw->jointType=rai::JT_transXYPhi; }
+  else if(type=="free"){ sw->symbol = rai::addJointAtTo; sw->jointType=rai::JT_free; }
+  else if(type=="delete"){ sw->symbol = rai::deleteJoint; }
   else HALT("unknown type: "<< type);
   sw->fromId = world.getShapeByName(ref1)->index;
   if(!ref2){
-    CHECK_EQ(sw->symbol, mlr::deleteJoint, "");
-    mlr::Body *b = world.shapes(sw->fromId)->body;
+    CHECK_EQ(sw->symbol, rai::deleteJoint, "");
+    rai::Body *b = world.shapes(sw->fromId)->body;
     if(b->inLinks.N==1){
 //      CHECK_EQ(b->outLinks.N, 0, "");
       sw->toId = sw->fromId;
@@ -191,7 +191,7 @@ mlr::KinematicSwitch* newSwitch(const Node *specs, const mlr::KinematicWorld& wo
       CHECK_EQ(b->inLinks.N, 0, "");
       sw->toId = b->outLinks(0)->from->shapes.first()->index;
     }else if(b->inLinks.N==0 && b->outLinks.N==0){
-      MLR_MSG("No link to delete for shape '" <<ref1 <<"'");
+      RAI_MSG("No link to delete for shape '" <<ref1 <<"'");
       delete sw;
       return NULL;
     }else HALT("that's ambiguous");
@@ -208,20 +208,20 @@ mlr::KinematicSwitch* newSwitch(const Node *specs, const mlr::KinematicWorld& wo
 
 //===========================================================================
 
-KOMO::KOMO(mlr::KinematicWorld& _world, bool useSwift)
+KOMO::KOMO(rai::KinematicWorld& _world, bool useSwift)
     : world(_world) , useSwift(useSwift), T(0), tau(0.), k_order(2)
 {
   if(useSwift) {
     makeConvexHulls(world.shapes);
-    world.swift().setCutoff(2.*mlr::getParameter<double>("swiftCutoff", 0.11));
+    world.swift().setCutoff(2.*rai::getParameter<double>("swiftCutoff", 0.11));
   }
   world.getJointState(x0, v0);
   if(!v0.N){ v0.resizeAs(x0).setZero(); world.setJointState(x0, v0); }
-  setTiming(mlr::getParameter<uint>("timeSteps", 50), mlr::getParameter<double>("duration", 5.));
+  setTiming(rai::getParameter<uint>("timeSteps", 50), rai::getParameter<double>("duration", 5.));
 }
 
 KOMO& KOMO::operator=(const KOMO& other) {
-  world = const_cast<mlr::KinematicWorld&>(other.world);
+  world = const_cast<rai::KinematicWorld&>(other.world);
   useSwift = other.useSwift;
   tasks = other.tasks;
   T = other.T;
@@ -244,12 +244,12 @@ void KOMO::setTiming(uint timeSteps, double duration){
 arr KOMO::getH_rate_diag() {
   //transition cost metric
   arr W_diag;
-  if(mlr::checkParameter<arr>("Wdiag")) {
-    W_diag = mlr::getParameter<arr>("Wdiag");
+  if(rai::checkParameter<arr>("Wdiag")) {
+    W_diag = rai::getParameter<arr>("Wdiag");
   } else {
     W_diag = world.naturalQmetric();
   }
-  return mlr::getParameter<double>("Hrate", 1.)*W_diag;
+  return rai::getParameter<double>("Hrate", 1.)*W_diag;
 }
 
 Task* KOMO::addTask(const char* name, TaskMap *m){
@@ -271,7 +271,7 @@ bool KOMO::parseTask(const Node *n, int Tinterval, uint Tzero){
     return true;
   }
   //-- switch?
-  mlr::KinematicSwitch *sw = newSwitch(n, world, Tinterval, Tzero);
+  rai::KinematicSwitch *sw = newSwitch(n, world, Tinterval, Tzero);
   if(sw){
     switches.append(sw);
     return true;
@@ -353,7 +353,7 @@ void KOMO::setState(const arr& q, const arr& v) {
 }
 
 
-uint KOMO::dim_phi(const mlr::KinematicWorld &G, uint t) {
+uint KOMO::dim_phi(const rai::KinematicWorld &G, uint t) {
   uint m=0;
   for(Task *c: tasks) {
     if(c->active && c->prec.N>t && c->prec(t)) m += c->dim_phi(G, t); //counts also constraints
@@ -361,7 +361,7 @@ uint KOMO::dim_phi(const mlr::KinematicWorld &G, uint t) {
   return m;
 }
 
-uint KOMO::dim_g(const mlr::KinematicWorld &G, uint t) {
+uint KOMO::dim_g(const rai::KinematicWorld &G, uint t) {
   uint m=0;
   for(Task *c: tasks) {
     if(c->map.type==OT_ineq && c->active && c->prec.N>t && c->prec(t))  m += c->map.dim_phi(G);
@@ -369,7 +369,7 @@ uint KOMO::dim_g(const mlr::KinematicWorld &G, uint t) {
   return m;
 }
 
-uint KOMO::dim_h(const mlr::KinematicWorld &G, uint t) {
+uint KOMO::dim_h(const rai::KinematicWorld &G, uint t) {
   uint m=0;
   for(Task *c: tasks) {
     if(c->map.type==OT_eq && c->active && c->prec.N>t && c->prec(t))  m += c->map.dim_phi(G);
@@ -382,12 +382,12 @@ void KOMO::setConfigurationStates(){
   //Therefore configurations(0) is for time=-k and configurations(k+t) is for time=t
   if(configurations.N!=k_order+T+1){
     listDelete(configurations);
-    configurations.append(new mlr::KinematicWorld())->copy(world, true);
+    configurations.append(new rai::KinematicWorld())->copy(world, true);
     for(uint t=1;t<=k_order+T;t++){
-      configurations.append(new mlr::KinematicWorld())->copy(*configurations(t-1), true);
+      configurations.append(new rai::KinematicWorld())->copy(*configurations(t-1), true);
       CHECK(configurations(t)==configurations.last(), "");
       //apply potential graph switches
-      for(mlr::KinematicSwitch *sw:switches){
+      for(rai::KinematicSwitch *sw:switches){
         if(sw->timeOfApplication==t-k_order){
           sw->apply(*configurations(t));
 //          if(MP.useSwift) configurations(t)->swift().initActivations(*configurations(t));
@@ -398,7 +398,7 @@ void KOMO::setConfigurationStates(){
 }
 
 void KOMO::temporallyAlignKinematicSwitchesInConfiguration(uint t){
-  for(mlr::KinematicSwitch *sw:switches) if(sw->timeOfApplication<=t){
+  for(rai::KinematicSwitch *sw:switches) if(sw->timeOfApplication<=t){
     sw->temporallyAlign(*configurations(t+k_order-1), *configurations(t+k_order));
   }
 }
@@ -419,7 +419,7 @@ void KOMO::displayTrajectory(int steps, const char* tag, double delay){
       gl.watch(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
     }else{
       gl.update(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
-      if(delay) mlr::wait(delay);
+      if(delay) rai::wait(delay);
     }
   }
   if(steps==1)
@@ -434,7 +434,7 @@ bool KOMO::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const WorldL &G,
   bool ineqHold=true;
   for(Task *c: tasks) if(c->active && c->prec.N>t && c->prec(t)){
     c->map.phi(y, (&J?Jy:NoArr), G, tau, t);
-    if(absMax(y)>1e10) MLR_MSG("WARNING y=" <<y);
+    if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
     //linear transform (target shift)
     if(true){
       if(c->target.N==1) y -= c->target.elem(0);
@@ -463,7 +463,7 @@ bool KOMO::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const WorldL &G,
   return ineqHold;
 }
 
-StringA KOMO::getPhiNames(const mlr::KinematicWorld& G, uint t){
+StringA KOMO::getPhiNames(const rai::KinematicWorld& G, uint t){
   StringA names(dim_phi(G, t));
   uint m=0;
   for(Task *c: tasks) if(c->active && c->prec.N>t && c->prec(t)){
@@ -548,7 +548,7 @@ void KOMO::reportFeatures(bool brief) {
   }
 
   cout <<"  SWITCHES: " <<switches.N <<endl;
-  for(mlr::KinematicSwitch *sw:switches){
+  for(rai::KinematicSwitch *sw:switches){
     cout <<*sw <<endl;
   }
 
@@ -690,7 +690,7 @@ Graph KOMO::getReport() {
     Task *c = tasks(i);
     Graph *g = &newSupGraph(report, {c->name}, {})->value;
     g->newNode<double>({"order"}, {}, c->map.order);
-    g->newNode<mlr::String>({"type"}, {}, STRING(ObjectiveTypeString[c->map.type]));
+    g->newNode<rai::String>({"type"}, {}, STRING(ObjectiveTypeString[c->map.type]));
     g->newNode<double>({"sqrCosts"}, {}, taskC(i));
     g->newNode<double>({"constraints"}, {}, taskG(i));
     totalC += taskC(i);
@@ -765,7 +765,7 @@ void MotionProblemFunction::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, 
   //-- manage configurations and set x_bar states
   if(configurations.N!=k+1 || (MP.switches.N && t==0)){
     listDelete(configurations);
-    for(uint i=0;i<=k;i++) configurations.append(new mlr::KinematicWorld())->copy(MP.world, true);
+    for(uint i=0;i<=k;i++) configurations.append(new rai::KinematicWorld())->copy(MP.world, true);
   }
 #if 0
   //find matches
@@ -786,7 +786,7 @@ void MotionProblemFunction::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, 
   }
 #endif
   //apply potential graph switches
-  for(mlr::KinematicSwitch *sw:MP.switches){
+  for(rai::KinematicSwitch *sw:MP.switches){
     for(uint i=0;i<=k;i++){
       if(t+i>=k && sw->timeOfApplication==t-k+i){
         sw->apply(*configurations(i));
@@ -857,7 +857,7 @@ void MotionProblem_EndPoseFunction::fv(arr& phi, arr& J, const arr& x){
   }
 
   if(absMax(phi)>1e10){
-    MLR_MSG("\nx=" <<x <<"\nphi=" <<phi <<"\nJ=" <<J);
+    RAI_MSG("\nx=" <<x <<"\nphi=" <<phi <<"\nJ=" <<J);
     MP.setState(x, NoArr);
     MP.getPhi(_phi, J_x, NoTermTypeA, MP.T, LIST(MP.world), MP.tau);
   }
@@ -882,7 +882,7 @@ MotionProblem_EndPoseFunction::MotionProblem_EndPoseFunction(KOMO& _MP)
 
 void sineProfile(arr& q, const arr& q0, const arr& qT,uint T){
   q.resize(T+1,q0.N);
-  for(uint t=0; t<=T; t++) q[t] = q0 + .5 * (1.-cos(MLR_PI*t/T)) * (qT-q0);
+  for(uint t=0; t<=T; t++) q[t] = q0 + .5 * (1.-cos(RAI_PI*t/T)) * (qT-q0);
 }
 
 arr reverseTrajectory(const arr& q){
@@ -909,5 +909,5 @@ void getAcc(arr& a, const arr& q, double tau){
 }
 
 RUN_ON_INIT_BEGIN(motion)
-mlr::Array<mlr::KinematicWorld*>::memMove=true;
+rai::Array<rai::KinematicWorld*>::memMove=true;
 RUN_ON_INIT_END(motion)

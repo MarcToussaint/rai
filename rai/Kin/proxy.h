@@ -6,19 +6,19 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef MLR_proxy_h
-#define MLR_proxy_h
+#ifndef RAI_proxy_h
+#define RAI_proxy_h
 
 #include <Geo/geo.h>
 #include <Geo/pairCollision.h>
-namespace mlr{
+namespace rai{
   struct KinematicWorld;
   struct Frame;
 }
 
 //===========================================================================
 
-namespace mlr {
+namespace rai {
 
 /// a data structure to store proximity information (when two shapes become close) --
 /// as return value from external collision libs
@@ -42,6 +42,6 @@ struct Proxy : GLDrawer {
 
 void glDrawProxies(void*);
 
-} //namespace mlr
+} //namespace rai
 
 #endif

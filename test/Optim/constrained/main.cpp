@@ -64,7 +64,7 @@ void TEST(CoveringSphere){
 //==============================================================================
 
 int main(int argc,char** argv){
-  mlr::initCmdLine(argc,argv);
+  rai::initCmdLine(argc,argv);
 
   ChoiceConstraintFunction F;
 //  RandomLPFunction F;

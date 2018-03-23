@@ -26,21 +26,21 @@ struct TaskControlThread : Thread {
 
   VAR(CtrlMsg, ctrl_ref) //< the message send to the RTController
   VAR(CtrlMsg, ctrl_obs) //< the message received from the RTController
-  VAR(mlr::Array<CtrlTask*>, ctrlTasks)
-  VAR(mlr::KinematicWorld, modelWorld)
+  VAR(rai::Array<CtrlTask*>, ctrlTasks)
+  VAR(rai::KinematicWorld, modelWorld)
   VAR(bool, fixBase)
   VAR(arr, pr2_odom)
   VAR(double, IK_cost)
 
 //private:
-  mlr::KinematicWorld realWorld;
+  rai::KinematicWorld realWorld;
   TaskControlMethods *taskController;
   arr q_real, qdot_real; //< real state
   arr q_model, qdot_model; //< model state
   arr q0; //< homing pose
   arr Kp_base, Kd_base; //< Kp, Kd parameters defined in the model file
   double kp_factor, kd_factor, ki_factor;
-  mlr::String robot;
+  rai::String robot;
   arr q_model_lowPass;
   bool useRos;
   bool useSwift;
@@ -58,7 +58,7 @@ struct TaskControlThread : Thread {
 
 
 public:
-  TaskControlThread(const char* robot="none", const mlr::KinematicWorld& world = NoWorld);
+  TaskControlThread(const char* robot="none", const rai::KinematicWorld& world = NoWorld);
   ~TaskControlThread();
 
   void open();

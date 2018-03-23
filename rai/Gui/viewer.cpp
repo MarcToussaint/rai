@@ -77,7 +77,7 @@ void ImageViewer::step(){
 struct sPointCloudViewer{
   OpenGL gl;
   sPointCloudViewer(const char* tit) : gl(tit,640,480){}
-  mlr::Mesh pc;
+  rai::Mesh pc;
 };
 
 void glDrawAxes(void*){

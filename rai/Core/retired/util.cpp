@@ -1,16 +1,16 @@
-template void mlr::Parameter<mlr::String>::initialize();
-template void mlr::Parameter<bool>::initialize();
-template void mlr::Parameter<double>::initialize();
-template void mlr::Parameter<int>::initialize();
-template void mlr::Parameter<uint>::initialize();
+template void rai::Parameter<rai::String>::initialize();
+template void rai::Parameter<bool>::initialize();
+template void rai::Parameter<double>::initialize();
+template void rai::Parameter<int>::initialize();
+template void rai::Parameter<uint>::initialize();
 
 /** @brief Open a (possibly new) config file with name '\c name'.<br> If
   \c name is not specified, it searches for a command line-option
-  '-cfg' and, if not found, it assumes \c name=MT.cfg */
+  '-cfg' and, if not found, it assumes \c name=rai.cfg */
 void openConfigFile(const char *name) {
   LOG(3) <<"opening config file ";
   if(!name) name=getCmdLineArgument("cfg");
-  if(!name) name=MLR_ConfigFileName;
+  if(!name) name=RAI_ConfigFileName;
   if(globalThings().cfgFileOpen) {
     globalThings().cfgFile.close(); LOG(3) <<"(old config file closed) ";
   }
@@ -19,7 +19,7 @@ void openConfigFile(const char *name) {
   globalThings().cfgFile.open(name);
   globalThings().cfgFileOpen=true;
   if(!globalThings().cfgFile.good()) {
-    //MLR_MSG("couldn't open config file " <<name);
+    //RAI_MSG("couldn't open config file " <<name);
     LOG(3) <<" - failed";
   }
   LOG(3) <<std::endl;
@@ -76,14 +76,14 @@ bool getFromMap(T& x, const char* tag) {
   return true;
 }
 
-template std::map<std::string,int> mlr::ParameterMap<int>::m;
-template std::map<std::string,double> mlr::ParameterMap<double>::m;
-template std::map<std::string,unsigned int> mlr::ParameterMap<unsigned int>::m;
-template std::map<std::string,float> mlr::ParameterMap<float>::m;
-template std::map<std::string,bool> mlr::ParameterMap<bool>::m;
-template std::map<std::string,long> mlr::ParameterMap<long>::m;
-template std::map<std::string,mlr::String> mlr::ParameterMap<mlr::String>::m;
-template std::map<std::string,std::string> mlr::ParameterMap<std::string>::m;
+template std::map<std::string,int> rai::ParameterMap<int>::m;
+template std::map<std::string,double> rai::ParameterMap<double>::m;
+template std::map<std::string,unsigned int> rai::ParameterMap<unsigned int>::m;
+template std::map<std::string,float> rai::ParameterMap<float>::m;
+template std::map<std::string,bool> rai::ParameterMap<bool>::m;
+template std::map<std::string,long> rai::ParameterMap<long>::m;
+template std::map<std::string,rai::String> rai::ParameterMap<rai::String>::m;
+template std::map<std::string,std::string> rai::ParameterMap<std::string>::m;
 
 
 

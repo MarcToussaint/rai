@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifdef MLR_PCL
+#ifdef RAI_PCL
 
 #include "pclPlaneExtraction.h"
 

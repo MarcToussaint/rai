@@ -9,14 +9,14 @@
 #include "ann.h"
 #include "algos.h"
 
-#ifdef MLR_ANN
+#ifdef RAI_ANN
 
 #include <ANN/ANN.h>
 
 struct sANN {
   ANNkd_tree *tree;
   //PartialLeastSquares pls;
-  mlr::Array<double*> cpointers;
+  rai::Array<double*> cpointers;
   uint treeSize;   //for how many entries in X have we build the tree?
   void clear() { if(tree) delete tree;   tree=NULL;  cpointers.clear();  treeSize=0; }
 };
@@ -131,7 +131,7 @@ void ANN::getkNN(arr& xx             , const arr& x, uint k, double eps, bool ve
   for(uint i=0; i<idx.N; i++) xx[i]=X[idx(i)];
 }
 
-#else //MLR_ANN
+#else //RAI_ANN
 
 ANN::ANN() { NICO }
 ANN::~ANN() { NICO }

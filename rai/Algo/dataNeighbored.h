@@ -13,7 +13,7 @@
 struct DataNeighbored{
   arr X; ///< data (features for each point)
   boolA valid; ///< whether the data point is ok (not corrupted)
-  mlr::Array<uintA> N; ///< neighborhood
+  rai::Array<uintA> N; ///< neighborhood
   uintA idx2pixel; ///< after removing points, this maps from X-index to original data index
   arr isModelledWeights;
   arr costs;  ///< the 'cost' per data point, i.e., weigthing in the cost function

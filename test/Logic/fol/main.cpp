@@ -140,7 +140,7 @@ void testMonteCarlo(){
       bool forceWait=false, decideWait=false;
       if(rnd.uni()<.8){ //normal rule decision
         //-- get all possible decisions
-        mlr::Array<std::pair<Node*, NodeL> > decisions; //tuples of rule and substitution
+        rai::Array<std::pair<Node*, NodeL> > decisions; //tuples of rule and substitution
         for(Node* rule:rules){
           NodeL subs = getRuleSubstitutions2(state, rule, verbose-2 );
 //          NodeL subs = getRuleSubstitutions2(state, rule, verbose-2 );
@@ -227,7 +227,7 @@ void testMonteCarlo(){
 
 
 int main(int argc, char** argv){
-  mlr::initCmdLine(argc, argv);
+  rai::initCmdLine(argc, argv);
 
   testFolFunction();
   return 0;

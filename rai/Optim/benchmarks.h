@@ -11,8 +11,8 @@
 /// @addtogroup group_Optim
 /// @{
 
-#ifndef MLR_optimization_benchmarks_h
-#define MLR_optimization_benchmarks_h
+#ifndef RAI_optimization_benchmarks_h
+#define RAI_optimization_benchmarks_h
 
 #include "optimization.h"
 #include "KOMO_Problem.h"
@@ -69,8 +69,8 @@ struct ChoiceConstraintFunction : ConstrainedProblem {
   uint n;
   arr randomG;
   ChoiceConstraintFunction() {
-    which = (WhichConstraint) mlr::getParameter<int>("constraintChoice");
-    n = mlr::getParameter<uint>("dim", 2);
+    which = (WhichConstraint) rai::getParameter<int>("constraintChoice");
+    n = rai::getParameter<uint>("dim", 2);
   }
   void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda){
     CHECK_EQ(x.N,n,"");
@@ -154,8 +154,8 @@ struct SinusesFunction:VectorFunction {
   double a;
   double condition;
   SinusesFunction() {
-    a = mlr::getParameter<double>("SinusesFunction_a");
-    condition = mlr::getParameter<double>("condition");
+    a = rai::getParameter<double>("SinusesFunction_a");
+    condition = rai::getParameter<double>("condition");
  NIY 
   }
   virtual void fv(arr& phi, arr& J, const arr& x) {
@@ -211,9 +211,9 @@ struct ParticleAroundWalls2 : KOMO_Problem {
   arr x;
 
   ParticleAroundWalls2():
-    T(mlr::getParameter<uint>("opt/ParticleAroundWalls/T",1000)),
-    k(mlr::getParameter<uint>("opt/ParticleAroundWalls/k",2)),
-    n(mlr::getParameter<uint>("opt/ParticleAroundWalls/n",3)),
+    T(rai::getParameter<uint>("opt/ParticleAroundWalls/T",1000)),
+    k(rai::getParameter<uint>("opt/ParticleAroundWalls/k",2)),
+    n(rai::getParameter<uint>("opt/ParticleAroundWalls/n",3)),
     useKernel(false){}
 
   //implementations of the kOrderMarkov virtuals

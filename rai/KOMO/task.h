@@ -13,8 +13,8 @@
 
 struct Task {
   TaskMap *map;
-  const mlr::Enum<ObjectiveType> type;  ///< element of {sumOfSqr, inequality, equality}
-  mlr::String name;
+  const rai::Enum<ObjectiveType> type;  ///< element of {sumOfSqr, inequality, equality}
+  rai::String name;
   arr target, prec;     ///< optional linear, time-dependent, rescaling (with semantics of target & precision)
 
   Task(TaskMap *m, const ObjectiveType& type) : map(m), type(type){}

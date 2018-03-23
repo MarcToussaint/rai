@@ -17,7 +17,7 @@ extern "C" {
 }
 
 struct sVideoEncoder_x264_simple{
-  mlr::String filename;
+  rai::String filename;
   double fps;
   bool isOpen;
 
@@ -28,12 +28,12 @@ struct sVideoEncoder_x264_simple{
   x264_t* encoder;
   x264_nal_t* nals;
   bool first;
-  mlr::PixelFormat in_format;
+  rai::PixelFormat in_format;
 
   int frame_count;
   double encoding_time, video_time, scale_time;
 
-  sVideoEncoder_x264_simple(const char* filename, double fps, uint qp, mlr::PixelFormat in_format) :
+  sVideoEncoder_x264_simple(const char* filename, double fps, uint qp, rai::PixelFormat in_format) :
       filename(filename), fps(fps), isOpen(false), i(0), out_size(0), x(0), y(0), outbuf_size(0), qp(qp), pts(0),
       f(NULL), encoder(NULL), nals(NULL), first(false), in_format(in_format),
       frame_count(0), encoding_time(0.0), video_time(0.0), scale_time(0.0)
@@ -53,10 +53,10 @@ struct sVideoEncoder_x264_simple{
 //==============================================================================
 
 VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char* filename, double fps, uint qp, bool is_rgb) :
-    s(new sVideoEncoder_x264_simple(filename, fps, qp, is_rgb ? mlr::PIXEL_FORMAT_RGB8 : mlr::PIXEL_FORMAT_BGR8))
+    s(new sVideoEncoder_x264_simple(filename, fps, qp, is_rgb ? rai::PIXEL_FORMAT_RGB8 : rai::PIXEL_FORMAT_BGR8))
 {
 }
-VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char* filename, double fps, uint qp, mlr::PixelFormat in_format) :
+VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char* filename, double fps, uint qp, rai::PixelFormat in_format) :
     s(new sVideoEncoder_x264_simple(filename, fps, qp, in_format))
 {
 }
@@ -66,7 +66,7 @@ void VideoEncoder_x264_simple::addFrame(const byteA& image){
   if(!s->isOpen) s->open(image.d1, image.d0);
   s->addFrame(image);
 }
-const mlr::String& VideoEncoder_x264_simple::name() const {
+const rai::String& VideoEncoder_x264_simple::name() const {
 	return s->filename;
 }
 
@@ -135,16 +135,16 @@ void sVideoEncoder_x264_simple::addFrame(const byteA& image){
   const unsigned int num_pixel = image.d0 * image.d1;
 
   switch(in_format) {
-  case mlr::PIXEL_FORMAT_BGR8:
+  case rai::PIXEL_FORMAT_BGR8:
 	  bgr2yuv(image.p, pic_in.img.plane[0], pic_in.img.plane[1], pic_in.img.plane[2], num_pixel);
 	  break;
-  case mlr::PIXEL_FORMAT_RGB8:
+  case rai::PIXEL_FORMAT_RGB8:
 	  rgb2yuv(image.p, pic_in.img.plane[0], pic_in.img.plane[1], pic_in.img.plane[2], num_pixel);
 	  break;
-  case mlr::PIXEL_FORMAT_UYV444:
+  case rai::PIXEL_FORMAT_UYV444:
 	  yuv_packed2planar(in_format, image.p, pic_in.img.plane[0], pic_in.img.plane[1], pic_in.img.plane[2], num_pixel);
 	  break;
-  case mlr::PIXEL_FORMAT_RAW8:
+  case rai::PIXEL_FORMAT_RAW8:
 	  raw_fill(image.p, pic_in.img.plane[0], pic_in.img.plane[1], pic_in.img.plane[2], num_pixel);
 	  break;
   default:
@@ -201,7 +201,7 @@ struct sVideoEncoder_x264_simple{
 VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char*, double, uint, bool){
   NICO
 }
-VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char*, double, uint, mlr::PixelFormat){
+VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char*, double, uint, rai::PixelFormat){
   NICO
 }
 void VideoEncoder_x264_simple::addFrame(const byteA&){}

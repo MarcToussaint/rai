@@ -13,7 +13,7 @@
 struct TM_ContactConstraints : TaskMap {
   TM_ContactConstraints() {}
 
-  void phi(arr& y, arr& J, const mlr::KinematicWorld& K, int t=-1);
-  virtual uint dim_phi(const mlr::KinematicWorld& K);
-  virtual mlr::String shortTag(const mlr::KinematicWorld& K){ return "ContactConstraints"; }
+  void phi(arr& y, arr& J, const rai::KinematicWorld& K, int t=-1);
+  virtual uint dim_phi(const rai::KinematicWorld& K);
+  virtual rai::String shortTag(const rai::KinematicWorld& K){ return "ContactConstraints"; }
 };

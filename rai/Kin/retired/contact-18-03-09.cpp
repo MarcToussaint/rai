@@ -1,18 +1,18 @@
 #include "contact.h"
 #include <Gui/opengl.h>
 
-double mlr::Contact::getDistance() const{
+double rai::Contact::getDistance() const{
   TM_ContactNegDistance map(*this);
   arr y;
   map.phi(y, NoArr, a.K);
   return -y.scalar();
 }
 
-TaskMap *mlr::Contact::getTM_ContactNegDistance() const{
+TaskMap *rai::Contact::getTM_ContactNegDistance() const{
   return new TM_ContactNegDistance(*this);
 }
 
-void mlr::TM_ContactNegDistance::phi(arr &y, arr &J, const mlr::KinematicWorld &K, int t){
+void rai::TM_ContactNegDistance::phi(arr &y, arr &J, const rai::KinematicWorld &K, int t){
   if(C.a_type==2 && C.b_type!=2){
     HALT("not checked");
     arr ap,an,bp, Jap, Jan, Jbp;
@@ -60,11 +60,11 @@ void mlr::TM_ContactNegDistance::phi(arr &y, arr &J, const mlr::KinematicWorld &
   }
 }
 
-#ifdef MLR_GL
-void mlr::Contact::glDraw(OpenGL& gl){
-  mlr::Vector pa = a.X * a_rel;
-  mlr::Vector pb = b.X * b_rel;
-  mlr::Vector n = .5*((b.X.rot * b_norm) - (a.X.rot * a_norm));
+#ifdef RAI_GL
+void rai::Contact::glDraw(OpenGL& gl){
+  rai::Vector pa = a.X * a_rel;
+  rai::Vector pb = b.X * b_rel;
+  rai::Vector n = .5*((b.X.rot * b_norm) - (a.X.rot * a_norm));
 
   glLoadIdentity();
   glColor(1., 0., 0., 1.);
@@ -80,6 +80,6 @@ void mlr::Contact::glDraw(OpenGL& gl){
 }
 #endif
 
-void mlr::Contact::write(std::ostream &os) const{
+void rai::Contact::write(std::ostream &os) const{
   os <<a.name <<'-' <<b.name <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() <<" pDist=" <<get_pDistance() <<" y=" <<y <<" l=" <<lagrangeParameter;
 }

@@ -6,10 +6,10 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef MLR_perception_h
-#define MLR_perception_h
+#ifndef RAI_perception_h
+#define RAI_perception_h
 
-#ifdef MLR_OPENCV
+#ifdef RAI_OPENCV
 #  undef COUNT
 #  include <opencv2/opencv.hpp>
 #  undef MIN
@@ -110,7 +110,7 @@ struct RigidObjectRepresentation {
   RigidObjectRepresentation(){ found=0; }
 };
 
-typedef mlr::Array<RigidObjectRepresentation*> RigidObjectRepresentationL;
+typedef rai::Array<RigidObjectRepresentation*> RigidObjectRepresentationL;
 
 
 //===========================================================================
@@ -126,7 +126,7 @@ struct ColorChoice{
 //===========================================================================
 
 struct HoughLines {
-#ifdef MLR_OPENCV
+#ifdef RAI_OPENCV
   std::vector<cv::Vec4i> lines;
 #endif
   byteA display;
@@ -149,7 +149,7 @@ inline void operator<<(ostream& os,const Patching& hl){}
 //===========================================================================
 
 struct SURFfeatures {
-#ifdef MLR_OPENCV
+#ifdef RAI_OPENCV
   std::vector<cv::KeyPoint> keypoints;
   std::vector<float> descriptors;
 #endif
@@ -162,7 +162,7 @@ inline void operator<<(ostream& os,const SURFfeatures& hl){}
 
 /** The RigidObjectRepresentation List output of perception */
 struct PerceptionOutput {
-  mlr::Array<RigidObjectRepresentation> objects;
+  rai::Array<RigidObjectRepresentation> objects;
   byteA display;
 };
 niyPipes(PerceptionOutput);
@@ -264,7 +264,7 @@ struct Patcher : Thread {
 //  Var<arr> kinect_pointColors;
 //  Var<PlaneA> planes_now;
 
-//  mlr::Mesh kinect;
+//  rai::Mesh kinect;
 //  PlaneA planes_now_copy;
 //  OpenGL gl;
 
@@ -329,7 +329,7 @@ BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; VAR(byteA, pcms16ne2c) E
 
 
 
-#endif //MLR_perception_h
+#endif //RAI_perception_h
 
 
 

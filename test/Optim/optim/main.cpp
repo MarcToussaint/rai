@@ -40,7 +40,7 @@ void TEST(LambdaFunction){
 //===========================================================================
 
 int MAIN(int argc,char** argv){
-  mlr::initCmdLine(argc,argv);
+  rai::initCmdLine(argc,argv);
 
   testSqrProblem();
   testLambdaFunction();

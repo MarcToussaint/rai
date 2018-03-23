@@ -18,7 +18,7 @@
 
 //===========================================================================
 
-EffectivePoseProblem::EffectivePoseProblem(mlr::KinematicWorld& effKinematics_before,
+EffectivePoseProblem::EffectivePoseProblem(rai::KinematicWorld& effKinematics_before,
                                            const Graph& KB, const Graph& symbolicState_before, const Graph& symbolicState_after,
                                            int verbose)
   : effKinematics(effKinematics_before),
@@ -41,30 +41,30 @@ EffectivePoseProblem::EffectivePoseProblem(mlr::KinematicWorld& effKinematics_be
 //  Node *glueSymbol  = KB["glued"];
 //  for(Node *s:glueSymbol->parentOf) if(&s->container==&symbolicState_before){
 //    //-- create a joint between the object and the target
-//    mlr::Shape *ref1 = effKinematics.getShapeByName(s->parents(1)->keys.last());
-//    mlr::Shape *ref2 = effKinematics.getShapeByName(s->parents(2)->keys.last());
+//    rai::Shape *ref1 = effKinematics.getShapeByName(s->parents(1)->keys.last());
+//    rai::Shape *ref2 = effKinematics.getShapeByName(s->parents(2)->keys.last());
 
   Node *glueSymbol  = KB["glued"];
   for(Node *s:glueSymbol->parentOf) if(&s->container==&symbolicState_before){
     //-- create a joint between the object and the target
-    mlr::Shape *ref1 = effKinematics.getShapeByName(s->parents(1)->keys.last());
-    mlr::Shape *ref2 = effKinematics.getShapeByName(s->parents(2)->keys.last());
+    rai::Shape *ref1 = effKinematics.getShapeByName(s->parents(1)->keys.last());
+    rai::Shape *ref2 = effKinematics.getShapeByName(s->parents(2)->keys.last());
 
     //TODO: this may generate multiple joints! CHECK IF IT EXISTS ALREADY
-    mlr::Joint *j = new mlr::Joint(effKinematics, ref1->body, ref2->body);
-    j->type = mlr::JT_free;
+    rai::Joint *j = new rai::Joint(effKinematics, ref1->body, ref2->body);
+    j->type = rai::JT_free;
     j->Q.setDifference(ref1->body->X, ref2->body->X);
   }
 
   Node *supportSymbol  = KB["Gsupport"];
   for(Node *s:supportSymbol->parentOf) if(&s->container==&symbolicState_after){
     //-- create a joint between the object and the target
-    mlr::Shape *ref2 = effKinematics.getShapeByName(s->parents(1)->keys.last());
-    mlr::Shape *ref1 = effKinematics.getShapeByName(s->parents(2)->keys.last());
+    rai::Shape *ref2 = effKinematics.getShapeByName(s->parents(1)->keys.last());
+    rai::Shape *ref1 = effKinematics.getShapeByName(s->parents(2)->keys.last());
 
     if(!ref2->body->inLinks.N){ //object does not yet have a support -> add one; otherwise NOT!
-      mlr::Joint *j = new mlr::Joint(effKinematics, ref1->body, ref2->body);
-      j->type = mlr::JT_transXYPhi;
+      rai::Joint *j = new rai::Joint(effKinematics, ref1->body, ref2->body);
+      j->type = rai::JT_transXYPhi;
       j->A.addRelativeTranslation(0, 0, .5*ref1->size(2));
       j->B.addRelativeTranslation(0, 0, .5*ref2->size(2));
       j->Q.addRelativeTranslation(rnd.uni(-.1,.1), rnd.uni(-.1,.1), 0.);
@@ -100,8 +100,8 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
   //LATER: This is not yet transferred to the new LGP!
   Node *touch=symbolicState_after["touch"];
   for(Node *constraint:touch->parentOf) if(&constraint->container==&symbolicState_after){
-    mlr::Shape *s1=effKinematics.getShapeByName(constraint->parents(1)->keys(0));
-    mlr::Shape *s2=effKinematics.getShapeByName(constraint->parents(2)->keys(0));
+    rai::Shape *s1=effKinematics.getShapeByName(constraint->parents(1)->keys(0));
+    rai::Shape *s2=effKinematics.getShapeByName(constraint->parents(2)->keys(0));
 
     TM_GJK gjk(s1, s2, true);
 
@@ -115,10 +115,10 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
   //LATER: This is is now done by the TM_AboveBox (as used in place)
   Node *support=symbolicState_after["Gsupport"];
   for(Node *constraint:support->parentOf) if(&constraint->container==&symbolicState_after){
-    mlr::Body *b1=effKinematics.getBodyByName(constraint->parents(1)->keys.last());
-    mlr::Body *b2=effKinematics.getBodyByName(constraint->parents(2)->keys.last());
-    if(b2->shapes(0)->type==mlr::ST_cylinder){
-      mlr::Body *z=b1;
+    rai::Body *b1=effKinematics.getBodyByName(constraint->parents(1)->keys.last());
+    rai::Body *b2=effKinematics.getBodyByName(constraint->parents(2)->keys.last());
+    if(b2->shapes(0)->type==rai::ST_cylinder){
+      rai::Body *z=b1;
       b1=b2; b2=z;
     }//b2 should be the board
     arr y,J;
@@ -167,7 +167,7 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
       //-- compute center
       uint n=effKinematics.getJointStateDimension();
       arr cen(3),cenJ(3,n);  cen.setZero(); cenJ.setZero();
-      mlr::Body *b;
+      rai::Body *b;
       arr y,J;
       for(Node *s:supporters){
         b=effKinematics.getBodyByName(s->keys.last());
@@ -204,9 +204,9 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
     //TODO: ALIGN transfer!
     if(supporters.N==1){ // just one-on-one: align
       arr y1,J1,y2,J2;
-      mlr::Body *b1=effKinematics.getBodyByName(obj->keys.last());
-      mlr::Body *b2=effKinematics.getBodyByName(supporters(0)->keys.last());
-      if(b1->shapes(0)->type==mlr::ST_box){
+      rai::Body *b1=effKinematics.getBodyByName(obj->keys.last());
+      rai::Body *b2=effKinematics.getBodyByName(supporters(0)->keys.last());
+      if(b1->shapes(0)->type==rai::ST_box){
         if(verbose>1){ cout <<"Adding cost term Object" <<*obj <<" below "; listWrite(supporters, cout); cout <<endl; }
         effKinematics.kinematicsPos(y1, J1, b1);
         effKinematics.kinematicsPos(y2, J2, b2);
@@ -231,7 +231,7 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
       //-- compute center
       uint n=effKinematics.getJointStateDimension();
       arr cen(3),cenJ(3,n);  cen.setZero(); cenJ.setZero();
-      mlr::Body *b;
+      rai::Body *b;
       arr y,J;
       for(Node *s:supporters){
         b=effKinematics.getBodyByName(s->keys.last());
@@ -267,9 +267,9 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
     prec=1e-0;
     if(supporters.N==1){ // just one-on-one: align
       arr y1,J1,y2,J2;
-      mlr::Body *b1=effKinematics.getBodyByName(obj->keys.last());
-      mlr::Body *b2=effKinematics.getBodyByName(supporters(0)->keys.last());
-      if(b1->shapes(0)->type==mlr::ST_box){
+      rai::Body *b1=effKinematics.getBodyByName(obj->keys.last());
+      rai::Body *b2=effKinematics.getBodyByName(supporters(0)->keys.last());
+      if(b1->shapes(0)->type==rai::ST_box){
         if(verbose>1){ cout <<"Adding cost term Object" <<*obj <<" below "; listWrite(supporters, cout); cout <<endl; }
         effKinematics.kinematicsPos(y1, J1, b1);
         effKinematics.kinematicsPos(y2, J2, b2);

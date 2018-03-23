@@ -18,7 +18,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
-namespace mlr {
+namespace rai {
 /// call this before using any libav methods
 void register_libav();
 

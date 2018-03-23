@@ -29,7 +29,7 @@
 #include <Optim/convert.h>
 #include <Kin/kin_physx.h>
 
-using namespace mlr;
+using namespace rai;
 
 //===========================================================================
 
@@ -831,7 +831,7 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
         }else NIY;
       }
       else if(n->keys.last()=="komoAttach"){
-        Node *attachableSymbol = facts.getNode("attachable");
+        Node *attachableSymbol = facts["attachable"];
         CHECK(attachableSymbol!=NULL,"");
         Node *attachableFact = facts.getEdge({attachableSymbol, n->parents(1), n->parents(2)});
         Transformation rel = attachableFact->get<Transformation>();
@@ -1268,7 +1268,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPref
       gl->watch(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
     }else{
       gl->update(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
-      if(delay) mlr::wait(delay);
+      if(delay) rai::wait(delay);
     }
     if(saveVideoPrefix) write_ppm(gl->captureImage, STRING(saveVideoPrefix<<std::setw(3)<<std::setfill('0')<<t<<".ppm"));
   }
@@ -1584,7 +1584,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
         if(&J) CHECK_EQ(Jy.nd, 2, "");
         if(&J) CHECK_EQ(Jy.d1, Ktuple_dim, "");
         if(!y.N) continue;
-        if(absMax(y)>1e10) MLR_MSG("WARNING y=" <<y);
+        if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
 
         //linear transform (target shift)
         if(task->target.N==1) y -= task->target.elem(0);
@@ -1661,6 +1661,24 @@ arr KOMO::getPath(const StringA &joints){
   arr X(T,joints.N);
   for(uint t=0;t<T;t++){
     X[t] = configurations(t+k_order)->getJointState(joints);
+  }
+  return X;
+}
+
+arr KOMO::getPath_frames(const uintA &frames){
+  arr X(frames.N, T, 7);
+  for(uint t=0;t<T;t++){
+    for(uint i=0; i<frames.N;i++){
+      X(i, t, {}) = configurations(t+k_order)->frames(frames(i))->X.getArr7d();
+    }
+  }
+  return X;
+}
+
+arr KOMO::getPath_times(){
+  arr X(T);
+  for(uint t=0;t<T;t++){
+    X(t) = configurations(t+k_order)->frames.first()->time;
   }
   return X;
 }

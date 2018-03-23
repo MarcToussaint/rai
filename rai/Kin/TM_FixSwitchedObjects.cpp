@@ -33,8 +33,8 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau, int 
   }
   for(uint i=0;i<switchedBodies.N;i++){
     uint id = switchedBodies(i);
-    mlr::Frame *b0 = G.elem(-2)->frames(id);    CHECK(&b0->K==G.elem(-2),"");
-    mlr::Frame *b1 = G.elem(-1)->frames(id);    CHECK(&b1->K==G.elem(-1),"");
+    rai::Frame *b0 = G.elem(-2)->frames(id);    CHECK(&b0->K==G.elem(-2),"");
+    rai::Frame *b1 = G.elem(-1)->frames(id);    CHECK(&b1->K==G.elem(-1),"");
     CHECK_EQ(b0->ID, b1->ID, "");
     CHECK_EQ(b0->name, b1->name, "");
 
@@ -43,7 +43,7 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau, int 
     if(b1->flags && (b1->flags & (1<<FL_impulseExchange))) continue;
 
 //    if(order==2){
-//      mlr::Frame *b2 = G.elem(-1)->frames(id);
+//      rai::Frame *b2 = G.elem(-1)->frames(id);
 //      if(b2->flags & (1<<FL_impulseExchange)) continue;
 //    }
 
@@ -117,11 +117,11 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau, int 
         if(true){
 //          const char* filename="z.last";
           const char* shape="obj1";
-          mlr::KinematicWorld K(*G.elem(-1));
+          rai::KinematicWorld K(*G.elem(-1));
           FILE("z.last2") <<K;
-//          mlr::KinematicWorld K(filename);
+//          rai::KinematicWorld K(filename);
 //          K.setJointState(G.elem(-1)->q);
-          mlr::Shape *sh=K.getShapeByName(shape);
+          rai::Shape *sh=K.getShapeByName(shape);
           TM_Default pos(TMT_posDiff, sh->index);
           arr y,J;
           pos.phi(y, J, K);
@@ -137,7 +137,7 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G, double tau, int 
           checkJacobian(f, K.q, 1e-4);
 
 //          exit(0);
-//          mlr::wait();
+//          rai::wait();
         }
 
     }

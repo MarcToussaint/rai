@@ -1,4 +1,4 @@
-#ifdef MLR_ROS
+#ifdef RAI_ROS
 #include <RosCom/roscom.h>
 #include "perceptionCollection.h"
 
@@ -34,7 +34,7 @@ void Collector::step()
         if (!has_tabletop_transform)
         {
           tf::TransformListener listener;
-          mlr::Transformation tf;
+          rai::Transformation tf;
           if (ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener, tf))
           {
             tabletop_srcFrame.set() = tf;
@@ -49,10 +49,10 @@ void Collector::step()
           tf::TransformListener listener;
           tf::StampedTransform baseTransform;
           try{
-            mlr::Transformation tf = ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener);
+            rai::Transformation tf = ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener);
 
             //MT: really add the meter here? This seems hidden magic numbers in the code. And only for Baxter..?
-            mlr::Transformation inv;
+            rai::Transformation inv;
             inv.setInverse(tf);
             inv.addRelativeTranslation(0,0,-1);
             inv.setInverse(inv);
@@ -87,7 +87,7 @@ void Collector::step()
         if (!has_tabletop_transform)
         {
           tf::TransformListener listener;
-          mlr::Transformation tf;
+          rai::Transformation tf;
           if (ros_getTransform("/base_footprint", msg.header.frame_id, listener, tf))
           {
             tabletop_srcFrame.set() = tf;
@@ -113,7 +113,7 @@ void Collector::step()
         if (!has_alvar_transform)
         {
           tf::TransformListener listener;
-          mlr::Transformation tf;
+          rai::Transformation tf;
           if (ros_getTransform("/base_footprint", msg.markers[0].header.frame_id, listener, tf))
           {
             alvar_srcFrame.set() = tf;
@@ -130,7 +130,7 @@ void Collector::step()
             listener.waitForTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), ros::Duration(1.0));
             listener.lookupTransform("/base", msg.markers[0].header.frame_id, ros::Time(0), baseTransform);
             tf = conv_transform2transformation(baseTransform);
-            mlr::Transformation inv;
+            rai::Transformation inv;
             inv.setInverse(tf);
             inv.addRelativeTranslation(0,0,-1);
             inv.setInverse(inv);
@@ -169,7 +169,7 @@ void Collector::step()
                 listener.waitForTransform("/world", msg.header.frame_id, ros::Time(0), ros::Duration(1.0));
                 listener.lookupTransform("/world", msg.header.frame_id, ros::Time(0), baseTransform);
                 tf = conv_transform2transformation(baseTransform);
-                mlr::Transformation inv;
+                rai::Transformation inv;
                 inv.setInverse(tf);
                 inv.addRelativeTranslation(0,0,-1);
                 inv.setInverse(inv);
@@ -208,7 +208,7 @@ void Collector::step()
                 listener.waitForTransform("/world", msg.header.frame_id, ros::Time(0), ros::Duration(1.0));
                 listener.lookupTransform("/world", msg.header.frame_id, ros::Time(0), baseTransform);
                 tf = conv_transform2transformation(baseTransform);
-                mlr::Transformation inv;
+                rai::Transformation inv;
                 inv.setInverse(tf);
                 inv.addRelativeTranslation(0,0,-1);
                 inv.setInverse(inv);
@@ -232,7 +232,7 @@ void Collector::step()
   }
   else // If 'simulate', make a fake cluster and alvar
   {
-    mlr::Mesh box;
+    rai::Mesh box;
     box.setBox();
     box.subDivide();
     box.subDivide();
@@ -245,14 +245,14 @@ void Collector::step()
                                                  "/base_footprint");  // frame
     fake_cluster->frame.setZero();
     fake_cluster->frame.addRelativeTranslation(0.6, 0., 1.05);
-    mlr::Quaternion rot;
+    rai::Quaternion rot;
 
 //    int tick = percepts_input.readAccess();
 //    percepts_input.deAccess();
 //    cout << "tick: " << tick << endl;
-//    rot.setDeg(0.01 * tick, mlr::Vector(0.1, 0.25, 1));
+//    rot.setDeg(0.01 * tick, rai::Vector(0.1, 0.25, 1));
 
-    rot.setDeg(30, mlr::Vector(0.1, 0.25, 1));
+    rot.setDeg(30, rai::Vector(0.1, 0.25, 1));
     fake_cluster->frame.addRelativeRotation(rot);
     percepts.append( fake_cluster );
 
@@ -263,13 +263,13 @@ void Collector::step()
     rndUniform(pos, -0.005, 0.005, true);
     fake_alvar->frame.addRelativeTranslation(pos(0), pos(1), pos(2));
 
-    arr alv_rot = { MLR_PI/2, 0, -MLR_PI/2};
+    arr alv_rot = { RAI_PI/2, 0, -RAI_PI/2};
     rndUniform(alv_rot, -0.01, 0.01, true);
     rot.setRpy(alv_rot(0), alv_rot(1), alv_rot(2));
     fake_alvar->frame.addRelativeRotation(rot);
     fake_alvar->alvarId = 10;
     percepts.append( fake_alvar );
-    mlr::wait(0.01);
+    rai::wait(0.01);
   }
 
   if (percepts.N > 0){
@@ -286,8 +286,8 @@ PercCluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker)
 }
 
 PercPlane conv_ROSTable2Plane(const object_recognition_msgs::Table& table){
-  mlr::Transformation t = conv_pose2transformation(table.pose);
-  mlr::Mesh hull;
+  rai::Transformation t = conv_pose2transformation(table.pose);
+  rai::Mesh hull;
   hull.V = conv_points2arr(table.convex_hull);
   hull.makeLineStrip();
   PercPlane toReturn = PercPlane(t, hull);

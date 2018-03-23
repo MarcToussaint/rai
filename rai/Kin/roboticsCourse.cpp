@@ -18,7 +18,7 @@ void drawEnv(void*){ glStandardLight(NULL); glDrawFloor(10., .9, .9, .9); }
 void drawBase(void*){ glDrawAxes(1.); }
 
 struct sSimulator {
-  mlr::KinematicWorld G;
+  rai::KinematicWorld G;
   double margin;
   double dynamicNoise;
   bool gravity;
@@ -40,7 +40,7 @@ void Simulator::anchorKinematicChainIn(const char* bodyName){
 //    s->G.swift().setCutoff(.5);
 //  }
   
-//#ifdef MLR_ODE
+//#ifdef RAI_ODE
 //  if(s->ode.isOpen){
 //    s->ode.clear();
 //    s->ode.createOde(s->G);
@@ -52,7 +52,7 @@ void Simulator::anchorKinematicChainIn(const char* bodyName){
 Simulator::Simulator(const char* orsFile){
   s = new sSimulator;
   
-  //ORS
+  //RAI
   s->G.init(orsFile);
   /*  if(s->G.getBodyByName("rfoot")){
     s->G.reconfigureRoot(s->G.getBodyByName("rfoot"));
@@ -107,7 +107,7 @@ void Simulator::setJointAnglesAndVels(const arr& q, const arr& qdot, bool update
 
 void Simulator::kinematicsPos(arr& y, const char* shapeName, const arr* rel){
   if(rel){
-    mlr::Vector v;  v.set(rel->p);
+    rai::Vector v;  v.set(rel->p);
     s->G.kinematicsPos(y, NoArr, s->G.getFrameByName(shapeName), v);
   }else{
     s->G.kinematicsPos(y, NoArr, s->G.getFrameByName(shapeName));
@@ -116,7 +116,7 @@ void Simulator::kinematicsPos(arr& y, const char* shapeName, const arr* rel){
 
 void Simulator::kinematicsVec(arr& y, const char* shapeName, const arr* vec){
   if(vec){
-    mlr::Vector v;  v.set(vec->p);
+    rai::Vector v;  v.set(vec->p);
     s->G.kinematicsVec(y, NoArr, s->G.getFrameByName(shapeName), v);
   }else{
     s->G.kinematicsVec(y, NoArr, s->G.getFrameByName(shapeName));
@@ -125,7 +125,7 @@ void Simulator::kinematicsVec(arr& y, const char* shapeName, const arr* vec){
 
 void Simulator::jacobianPos(arr& J, const char* shapeName, const arr* rel){
   if(rel){
-    mlr::Vector v;  v.set(rel->p);
+    rai::Vector v;  v.set(rel->p);
     s->G.kinematicsPos(NoArr, J, s->G.getFrameByName(shapeName), v);
   }else{
     s->G.kinematicsPos(NoArr, J, s->G.getFrameByName(shapeName));
@@ -134,7 +134,7 @@ void Simulator::jacobianPos(arr& J, const char* shapeName, const arr* rel){
 
 void Simulator::jacobianVec(arr& J, const char* shapeName, const arr* vec){
   if(vec){
-    mlr::Vector v;  v.set(vec->p);
+    rai::Vector v;  v.set(vec->p);
     s->G.kinematicsVec(NoArr, J, s->G.getFrameByName(shapeName), v);
   }else{
     s->G.kinematicsVec(NoArr, J, s->G.getFrameByName(shapeName));
@@ -191,7 +191,7 @@ void Simulator::stepDynamics(const arr& Bu, double tau){
 }
 
 void Simulator::stepOde(const arr& qdot, double tau){
-#ifdef MLR_ODE
+#ifdef RAI_ODE
   s->G.ode().setMotorVel(qdot, 100.);
   s->G.ode().step(tau);
   s->G.ode().importStateFromOde();
@@ -202,7 +202,7 @@ void Simulator::stepPhysx(const arr& qdot, double tau){
   s->G.physx().step(tau);
 }
 
-mlr::KinematicWorld& Simulator::getOrsGraph(){
+rai::KinematicWorld& Simulator::getOrsGraph(){
   return s->G;
 }
 
@@ -384,7 +384,7 @@ void CarSimulator::getObservationJacobianAtState(arr& dy_dx, const arr& X){
 void glDrawCarSimulator(void *classP){
 #ifdef FREEGLUT
   CarSimulator *s=(CarSimulator*)classP;
-  mlr::Transformation f;
+  rai::Transformation f;
   f.setZero();
   f.addRelativeTranslation(s->x,s->y,.3);
   f.addRelativeRotationRad(s->theta, 0., 0., 1.);
@@ -420,4 +420,4 @@ void glDrawCarSimulator(void *classP){
 }
 
 #include <Core/array.tpp>
-template mlr::Array<CarSimulator::Gaussian>& mlr::Array<CarSimulator::Gaussian>::resize(uint);
+template rai::Array<CarSimulator::Gaussian>& rai::Array<CarSimulator::Gaussian>::resize(uint);

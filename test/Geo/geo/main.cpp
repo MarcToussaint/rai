@@ -12,7 +12,7 @@
 
 void TEST(Basics){
   for(uint k=0;k<10;k++){
-    mlr::Quaternion A,B,C;
+    rai::Quaternion A,B,C;
     A.setRandom();
     B.setRandom();
     C.setRandom();
@@ -23,7 +23,7 @@ void TEST(Basics){
   }
 
   for(uint k=0;k<10;k++){
-    mlr::Transformation A,B,C;
+    rai::Transformation A,B,C;
     A.setRandom();
     B.setRandom();
     C.setDifference(A,B);
@@ -37,11 +37,11 @@ void TEST(Basics){
 
 void TEST(QuaternionJacobian){
   for(uint k=0;k<1;k++){
-    mlr::Vector z;
+    rai::Vector z;
     z.setRandom();
     VectorFunction f = [&z](arr& y, arr& J, const arr& x){
 //      double l = length(x);
-      mlr::Quaternion q(x);
+      rai::Quaternion q(x);
       y = conv_vec2arr(q*z);
       if(&J){ J = ~(q.getMatrixJacobian() * conv_vec2arr(z)); }
     };
@@ -55,7 +55,7 @@ void TEST(QuaternionJacobian){
 //===========================================================================
 
 int MAIN(int argc,char **argv){
-  mlr::initCmdLine(argc, argv);
+  rai::initCmdLine(argc, argv);
 
   testBasics();
   testQuaternionJacobian();
