@@ -29,6 +29,8 @@ bool orsDrawWires=false;
 
 bool Geo_mesh_drawColors=true;
 
+extern void glColorId(uint id);
+
 //==============================================================================
 //
 // Mesh code
@@ -259,6 +261,21 @@ void rai::Mesh::subDivide() {
   T = newT;
 }
 
+void rai::Mesh::subDivide(uint i) {
+  uint v=V.d0, t=T.d0;
+  V.resizeCopy(v+3, 3);
+  T.resizeCopy(t+3, 3);
+  uint a, b, c;
+  a=T(i, 0); b=T(i, 1); c=T(i, 2);
+  V[v+0]() = (double).5*(V[a] + V[b]);
+  V[v+1]() = (double).5*(V[b] + V[c]);
+  V[v+2]() = (double).5*(V[c] + V[a]);
+  T(i, 0)=a;   T(i, 1)=v+0; T(i, 2)=v+2; //the old ith tri becomes one of the 4 new ones
+  T(t, 0)=v+0; T(t, 1)=b;   T(t, 2)=v+1; t++;
+  T(t, 0)=v+0; T(t, 1)=v+1; T(t, 2)=v+2; t++;
+  T(t, 0)=v+2; T(t, 1)=v+1; T(t, 2)=c;   t++;
+}
+
 void rai::Mesh::scale(double f) {  V *= f; }
 
 void rai::Mesh::scale(double sx, double sy, double sz) {
@@ -306,11 +323,14 @@ void rai::Mesh::box() {
   scale(1./m);
 }
 
-void rai::Mesh::addMesh(const Mesh& mesh2) {
+void rai::Mesh::addMesh(const Mesh& mesh2, const rai::Transformation& X) {
   uint n=V.d0, t=T.d0;
   V.append(mesh2.V);
   T.append(mesh2.T);
   for(; t<T.d0; t++) {  T(t, 0)+=n;  T(t, 1)+=n;  T(t, 2)+=n;  }
+  if(!X.isZero()){
+    X.applyOnPointArray(V({n,-1})());
+  }
 }
 
 void rai::Mesh::makeConvexHull() {
@@ -899,14 +919,17 @@ double triArea(const arr& a, const arr& b, const arr& c){
 double rai::Mesh::getArea() const{
   CHECK(T.d1==3,"");
   double A=0.;
-  rai::Vector a,b,c;
-  for(uint i=0;i<T.d0;i++){
-    a.set(V.p+3*T.p[3*i+0]);
-    b.set(V.p+3*T.p[3*i+1]);
-    c.set(V.p+3*T.p[3*i+2]);
-    A += ((b-a)^(c-a)).length();
-  }
+  for(uint i=0;i<T.d0;i++) A += getArea(i);
   return .5*A;
+}
+
+double rai::Mesh::getArea(uint i) const{
+  CHECK(T.d1==3,"");
+  rai::Vector a,b,c;
+  a.set(V.p+3*T.p[3*i+0]);
+  b.set(V.p+3*T.p[3*i+1]);
+  c.set(V.p+3*T.p[3*i+2]);
+  return ((b-a)^(c-a)).length();
 }
 
 double rai::Mesh::getVolume() const{
@@ -950,6 +973,16 @@ double rai::Mesh::getCircum() const{
   CHECK(T.d1==2,"");
   double A=0.;
   for(uint i=0;i<T.d0;i++) A += length(V[T(i,0)] - V[T(i,1)]);
+  return A;
+}
+
+double rai::Mesh::getCircum(uint i) const{
+  if(!T.N) return 0.;
+  CHECK(T.d1==3,"");
+  double A=0.;
+  A += length(V[T(i,0)] - V[T(i,1)]);
+  A += length(V[T(i,1)] - V[T(i,2)]);
+  A += length(V[T(i,2)] - V[T(i,0)]);
   return A;
 }
 
@@ -1549,7 +1582,7 @@ uintA getSubMeshPositions(const char* filename) {
 extern void glColor(float r, float g, float b, float alpha);
 
 /// GL routine to draw a rai::Mesh
-void rai::Mesh::glDraw(struct OpenGL&) {
+void rai::Mesh::glDraw(struct OpenGL& gl) {
   if(Geo_mesh_drawColors){
     if(C.nd==1){
       CHECK(C.N==3 || C.N==4, "need a basic color");
@@ -1668,7 +1701,10 @@ void rai::Mesh::glDraw(struct OpenGL&) {
   }
   glBegin(GL_TRIANGLES);
   for(i=0; i<T.d0; i++) {
-    if(C.d0==T.d0)  glColor(C(i, 0), C(i, 1), C(i, 2), 1.);
+    if(C.d0==T.d0){
+      if(C.d1==3) glColor(C(i, 0), C(i, 1), C(i, 2), 1.);
+      if(C.d1==1) glColorId(C(i,0));
+    }
     v=T(i, 0);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 0), 0));  glVertex3dv(&V(v, 0));
     v=T(i, 1);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 1), 0));  glVertex3dv(&V(v, 0));
     v=T(i, 2);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 2), 0));  glVertex3dv(&V(v, 0));

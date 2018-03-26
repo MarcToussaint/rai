@@ -344,12 +344,24 @@ void id2color(byte rgb[3], uint id){
   rgb[2] = ((id>>18)&0x3f) | ((id&4)<<5) | ((id&32)<<1);
 }
 
+uint color2id(byte rgb[3]){
+  uint id = 0;
+  id |= (rgb[0]&0x80)>>7 | (rgb[1]&0x80)>>6 | (rgb[2]&0x80)>>5;
+  id |= (rgb[0]&0x40)>>3 | (rgb[1]&0x40)>>2 | (rgb[2]&0x40)>>1;
+  id |= (rgb[0]&0x3f)<<6 | (rgb[1]&0x3f)<<12 | (rgb[2]&0x3f)<<18;
+  return id;
+}
+
+void glColorId(uint id){
+  byte rgb[3];
+  glDisable(GL_LIGHTING);
+  id2color(rgb, id);
+  glColor3ubv(rgb);
+}
+
 void OpenGL::drawId(uint id){
   if(drawMode_idColor){
-    byte rgb[3];
-    glDisable(GL_LIGHTING);
-    id2color(rgb, id);
-    glColor3ubv(rgb);
+    glColorId(id);
   }
 }
 

@@ -1750,3 +1750,21 @@ arr KOMO::getPath(const StringA &joints){
   }
   return X;
 }
+
+arr KOMO::getPath_frames(const uintA &frames){
+  arr X(frames.N, T, 7);
+  for(uint t=0;t<T;t++){
+    for(uint i=0; i<frames.N;i++){
+      X(i, t, {}) = configurations(t+k_order)->frames(frames(i))->X.getArr7d();
+    }
+  }
+  return X;
+}
+
+arr KOMO::getPath_times(){
+  arr X(T);
+  for(uint t=0;t<T;t++){
+    X(t) = configurations(t+k_order)->frames.first()->time;
+  }
+  return X;
+}
