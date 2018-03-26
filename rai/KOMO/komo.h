@@ -57,7 +57,7 @@ struct KOMO{
   arr dualSolution;             ///< the dual solution computed during constrained optimization
   struct OpenGL *gl=NULL;       ///< internal only: used in 'displayTrajectory'
   int verbose;                  ///< verbosity level
-  bool animateOptimization=false; ///< display the current path for each evaluation during optimization
+  int animateOptimization=0;    ///< display the current path for each evaluation during optimization
   double runTime=0.;            ///< just measure run time
   ofstream *fil=NULL;
 
@@ -183,6 +183,7 @@ struct KOMO{
   rai::Array<rai::Transformation> reportEffectiveJoints(ostream& os=std::cout);
   void checkGradients();          ///< checks all gradients numerically
   void plotTrajectory();
+  void plotPhaseTrajectory();
   bool displayTrajectory(double delay=0.01, bool watch=true, const char* saveVideoPrefix=NULL); ///< display the trajectory; use "vid/z." as vid prefix
   bool displayPath(bool watch=true); ///< display the trajectory; use "vid/z." as vid prefix
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
@@ -216,7 +217,6 @@ struct KOMO{
     virtual void getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes);
     virtual void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x, arr& lambda);
   } komo_problem;
-
 };
 
 //===========================================================================

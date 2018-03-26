@@ -74,16 +74,6 @@ rai::Shape& NoShape = *((rai::Shape*)NULL);
 rai::Joint& NoJoint = *((rai::Joint*)NULL);
 rai::KinematicWorld& NoWorld = *((rai::KinematicWorld*)NULL);
 
-template<> const char* rai::Enum<rai::JointType>::names []={
-  "JT_hingeX", "JT_hingeY", "JT_hingeZ", "JT_transX", "JT_transY", "JT_transZ", "JT_transXY", "JT_trans3", "JT_transXYPhi", "JT_universal", "JT_rigid", "JT_quatBall", "JT_phiTransXY", "JT_XBall", "JT_free", NULL
-};
-
-template<> const char* rai::Enum<rai::BodyType>::names []={
-  "BT_dynamic", "BT_kinematic", "BT_static", NULL
-};
-
-
-
 uintA stringListToShapeIndices(const rai::Array<const char*>& names, const rai::KinematicWorld& K) {
   uintA I(names.N);
   for(uint i=0; i<names.N; i++) {
@@ -277,6 +267,7 @@ void rai::KinematicWorld::copy(const rai::KinematicWorld& K, bool referenceSwift
     on the edges, this calculates the absolute frames of all other nodes (propagating forward
     through trees and testing consistency of loops). */
 void rai::KinematicWorld::calc_fwdPropagateFrames() {
+  if(fwdActiveSet.N!=frames.N) calc_activeSets();
   for(Frame *f:fwdActiveSet){
 #if 1
     if(f->parent) f->calc_X_from_parent();
@@ -301,6 +292,7 @@ void rai::KinematicWorld::calc_fwdPropagateFrames() {
 }
 
 arr rai::KinematicWorld::calc_fwdPropagateVelocities(){
+  if(fwdActiveSet.N!=frames.N) calc_activeSets();
   arr vel(frames.N, 2, 3);  //for every frame we have a linVel and angVel, each 3D
   vel.setZero();
   rai::Transformation f;
@@ -682,6 +674,7 @@ void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_w
     a = a->parent;
   }
 }
+
 #else
 void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_world) const {
   J.resize(3, getJointStateDimension()).setZero();
@@ -703,6 +696,27 @@ void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_w
   }
 }
 #endif
+
+void rai::KinematicWorld::jacobianTime(arr& J, rai::Frame *a) const {
+  //get Jacobian
+  uint N=getJointStateDimension();
+  J.resize(1, N).setZero();
+
+  while(a) { //loop backward down the kinematic tree
+    Joint *j=a->joint;
+    if(j && j->active) {
+      uint j_idx=j->qIndex;
+      if(j_idx>=N) CHECK(j->type==JT_rigid, "");
+      if(j_idx<N){
+        if(j->type==JT_time) {
+          J(0, j_idx) += 1e-1;
+        }
+      }
+    }
+    if(!a->parent) break; //frame has no inlink -> done
+    a = a->parent;
+  }
+}
 
 /** @brief return the jacobian \f$J = \frac{\partial\phi_i(q)}{\partial q}\f$ of the position
   of the i-th body W.R.T. the 6 axes of an arbitrary shape-frame, NOT the robot's joints (3 x 6 tensor)
@@ -1569,6 +1583,7 @@ void rai::KinematicWorld::displayDot(){
 }
 
 void rai::KinematicWorld::report(std::ostream &os) const {
+  CHECK_EQ(fwdActiveSet.N, frames.N, "you need to calc_activeSets before");
   uint nShapes=0, nUc=0;
   for(Frame *f:fwdActiveSet) if(f->shape) nShapes++;
   for(Joint *j:fwdActiveJoints) if(j->uncertainty) nUc++;
@@ -1822,6 +1837,7 @@ void rai::KinematicWorld::gravityToForces(double g) {
 
 /** similar to invDynamics using NewtonEuler; but only computing the backward pass */
 void rai::KinematicWorld::NewtonEuler_backward(){
+  CHECK_EQ(fwdActiveSet.N, frames.N, "you need to calc_activeSets before");
   uint N=fwdActiveSet.N;
   rai::Array<arr> h(N);
   arr Q(N, 6, 6);
@@ -2292,7 +2308,7 @@ void rai::KinematicWorld::optimizeTree(bool preserveNamed){
 }
 
 void rai::KinematicWorld::fwdIndexIDs(){
-  CHECK_EQ(fwdActiveSet.N ,frames.N, "");
+  CHECK_EQ(fwdActiveSet.N ,frames.N, "you need to calc_activeSets before");
   frames = fwdActiveSet;
   uint i=0;
   for(Frame *f: frames) f->ID = i++;
@@ -2354,11 +2370,13 @@ bool rai::KinematicWorld::checkConsistency(){
 
   Joint *j;
   for(Frame *f: frames) if((j=f->joint)){
-    CHECK(j->from(), "");
-    CHECK(j->from()->outLinks.findValue(&j->frame)>=0,"");
+    if(j->type.x!=JT_time){
+      CHECK(j->from(), "");
+      CHECK(j->from()->outLinks.findValue(&j->frame)>=0,"");
+    }
     CHECK_EQ(j->frame.joint, j,"");
     CHECK_GE(j->type.x, 0, "");
-    CHECK(j->type.x<=JT_free, "");
+    CHECK(j->type.x<=JT_time, "");
 
     if(j->mimic){
       CHECK(j->dim==0, "");
@@ -2383,6 +2401,14 @@ bool rai::KinematicWorld::checkConsistency(){
   for(Joint *j: fwdActiveJoints){ CHECK(j->active, ""); jointIsInActiveSet.elem(j->frame.ID)=true; }
   if(q.nd){
       for(Frame *f: frames) if(f->joint && f->joint->active) CHECK(jointIsInActiveSet(f->ID), "");
+  }
+
+  //check isZero for all transformations
+  for(Frame *a: frames){
+    a->X.pos.checkZero();
+    a->X.rot.checkZero();
+    a->Q.pos.checkZero();
+    a->Q.rot.checkZero();
   }
 
   for(const Proxy& p : proxies){

@@ -119,9 +119,9 @@ void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhas
   maxPhase = _phases;
   stepsPerPhase = _stepsPerPhase;
   if(stepsPerPhase>=0){
-    T = stepsPerPhase*maxPhase;
+    T = ceil(stepsPerPhase*maxPhase)+1;
     CHECK(T, "using T=0 to indicate inverse kinematics is deprecated.");
-    tau = durationPerPhase*maxPhase/T;
+    tau = durationPerPhase/double(stepsPerPhase);
   }
 //    setTiming(stepsPerPhase*maxPhase, durationPerPhase*maxPhase);
   k_order = _k_order;
@@ -1255,6 +1255,28 @@ void KOMO::plotTrajectory(){
   gnuplot("load 'z.trajectories.plt'");
 }
 
+void KOMO::plotPhaseTrajectory(){
+  ofstream fil("z.phase");
+  //first line: legend
+  fil <<"phase" <<endl;
+
+  arr X = getPath_times();
+
+  X.reshape(T, 1);
+  X.write(fil, NULL, NULL, "  ");
+  fil.close();
+
+  ofstream fil2("z.phase.plt");
+  fil2 <<"set key autotitle columnheader" <<endl;
+  fil2 <<"set title 'phase'" <<endl;
+  fil2 <<"set term qt 2" <<endl;
+  fil2 <<"plot 'z.phase' u 0:1 w l lw 3 lc 1 lt 1" <<endl;
+  fil2 <<endl;
+  fil2.close();
+
+  gnuplot("load 'z.phase.plt'");
+}
+
 struct DrawPaths : GLDrawer{
   arr& X;
   DrawPaths(arr& X): X(X){}
@@ -1406,7 +1428,7 @@ void KOMO::set_x(const arr& x){
   uint x_count=0;
   for(uint t=0;t<T;t++){
     uint s = t+k_order;
-    uint x_dim = dim_x(t); //configurations(s)->getJointStateDimension();
+    uint x_dim = dim_x(t);
     if(x_dim){
       if(x.nd==1)  configurations(s)->setJointState(x({x_count, x_count+x_dim-1}));
       else         configurations(s)->setJointState(x[t]);
@@ -1416,6 +1438,7 @@ void KOMO::set_x(const arr& x){
       }
       x_count += x_dim;
     }
+//    configurations(s)->checkConsistency();
   }
   CHECK_EQ(x_count, x.N, "");
 }
@@ -1518,6 +1541,7 @@ rai::Array<rai::Transformation> KOMO::reportEffectiveJoints(std::ostream& os){
 
 Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs) {
   if(featureValues.N>1){ //old optimizer -> remove some time..
+    HALT("outdated");
     arr tmp;
     for(auto& p:featureValues) tmp.append(p);
     featureValues = ARRAY<arr>(tmp);
@@ -1702,8 +1726,11 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
   //-- set the trajectory
   komo.set_x(x);
 
-  if(komo.animateOptimization)
-    komo.displayPath(false);
+  if(komo.animateOptimization>0){
+    komo.displayPath(komo.animateOptimization>1);
+//    komo.plotPhaseTrajectory();
+//    rai::wait();
+  }
 
   CHECK(dimPhi,"getStructure must be called first");
 //  getStructure(NoUintA, featureTimes, tt);

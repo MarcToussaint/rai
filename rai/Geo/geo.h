@@ -44,6 +44,7 @@ struct Vector {
   void makeColinear(const Vector&);
   
   double diffZero() const;
+  void checkZero() const;
   bool isNormalized() const;
   double isColinear(const Vector&) const;
   double length() const;
@@ -135,6 +136,7 @@ struct Quaternion {
 
   double diffZero() const;
   double sqrDiffZero() const;
+  void checkZero() const;
   double sqrDiff(const Quaternion& q2) const;
   double normalization() const;
   bool isNormalized() const;

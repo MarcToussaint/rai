@@ -91,6 +91,12 @@ void Vector::makeColinear(const Vector& b) {
 /// L1-norm to zero
 double Vector::diffZero() const { return fabs(x)+fabs(y)+fabs(z); }
 
+/// check whether isZero is true
+void Vector::checkZero() const {
+  bool iszero = (x==0. && y==0. && z==0.);
+  CHECK_EQ(iszero, isZero, "you must have set this by hand!");
+}
+
 /// is it normalized?
 bool Vector::isNormalized() const { return fabs(lengthSqr()-1.)<1e-6; }
 
@@ -735,6 +741,12 @@ void Quaternion::setDiff(const Vector& from, const Vector& to) {
 double Quaternion::diffZero() const { return (w>0.?fabs(w-1.):fabs(w+1.))+fabs(x)+fabs(y)+fabs(z); }
 
 double Quaternion::sqrDiffZero() const { return (w>0.?rai::sqr(w-1.):rai::sqr(w+1.))+rai::sqr(x)+rai::sqr(y)+rai::sqr(z); }
+
+/// check whether isZero is true
+void Quaternion::checkZero() const {
+  bool iszero = ((w==1. || w==-1.) && x==0. && y==0. && z==0.);
+  CHECK_EQ(iszero, isZero, "you must have set this by hand!");
+}
 
 /// return the squared-error between two quads, modulo flipping
 double Quaternion::sqrDiff(const Quaternion& _q2) const{

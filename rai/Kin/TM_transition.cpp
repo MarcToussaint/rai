@@ -58,7 +58,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple){
   if(!handleSwitches){ //simple implementation
     //-- transition costs
     double h = H_rate*sqrt(tau), tau2=tau*tau;
-//    arr h = sqrt(H_rate_diag)*sqrt(tau);
+    h = H_rate;
     y.resize(Ktuple.last()->q.N).setZero();
     if(order==1) velCoeff = 1.;
     if(order>=0 && posCoeff) y +=  posCoeff      *(Ktuple.elem(-1)->q); //penalize position
@@ -91,6 +91,10 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple){
     }
 
     if(&J) {
+      arr Jtau1;  Ktuple(-1)->jacobianTime(Jtau1, Ktuple(-1)->frames(0));  expandJacobian(Jtau1, Ktuple, -1);
+      arr Jtau2;  Ktuple(-2)->jacobianTime(Jtau2, Ktuple(-2)->frames(0));  expandJacobian(Jtau2, Ktuple, -2);
+      arr Jtau = Jtau1 - Jtau2;
+
       uint n = Ktuple.last()->q.N;
       J.resize(y.N, Ktuple.N, n).setZero();
       for(uint i=0;i<n;i++){
@@ -109,6 +113,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple){
         //      if(order>=3){ J(i,3,i) = 1.;  J(i,2,i) = -3.;  J(i,1,i) = +3.;  J(i,0,i) = -1.; }
       }
       J.reshape(y.N, Ktuple.N*n);
+
       for(rai::Joint *j: Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
         double hj = h*j->H;
         if(j->frame.flags && !(j->frame.flags & (1<<FL_normalControlCosts))) hj=0.;
@@ -119,6 +124,9 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple){
         for(uint k=0;k<J.d1;k++) J.elem(l+k) *= hj;
 #endif
       }
+
+      J += (-2./tau)*y*Jtau;
+
     }
   }else{ //with switches
     rai::Array<rai::Joint*> matchingJoints = getMatchingJoints(Ktuple.sub(-1-order,-1), effectiveJointsOnly);
