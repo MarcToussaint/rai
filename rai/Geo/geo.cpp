@@ -1074,10 +1074,6 @@ Vector operator/(const Transformation& X, const Vector& c) {
 /// initialize by reading from the string
 Transformation& Transformation::setText(const char* txt) { read(rai::String(txt).stream()); return *this; }
 
-void Transformation::set(double *p) { pos.set(p); rot.set(p+3); }
-
-void Transformation::set(const arr &t) { CHECK_EQ(t.N,7, "");  set(t.p); }
-
 /// resets the position to origin, rotation to identity, velocities to zero, scale to unit
 Transformation& Transformation::setZero() {
   memset(this, 0, sizeof(Transformation));

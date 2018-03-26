@@ -8,7 +8,7 @@ LAPACK = 1
 OPENCV = 1
 PCL = 0
 X264 = 0
-DEPEND = Core Geo Gui extern_libcolorseg Kin Algo Control
+DEPEND = Core Geo Gui Kin Algo Control
 
 
 #CXXFLAGS += -D__STDC_CONSTANT_MACROS -DHAVE_LIBAV

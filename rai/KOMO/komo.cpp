@@ -1492,7 +1492,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
       if(task->prec.N>t && task->prec(t)){
         uint d=0;
         if(wasRun){
-          d=task->map->dim_phi(configurations({t,t+k_order}), t);
+          d=task->map->dim_phi(configurations({t,t+k_order}));
           for(uint j=0;j<d;j++) CHECK(tt(M+j)==task->type,"");
           if(d){
             if(task->type==OT_sumOfSqr){
@@ -1600,7 +1600,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
       Task *task = komo.tasks.elem(i);
       if(task->prec.N>t && task->prec(t)){
         //      CHECK(task->prec.N<=MP.T,"");
-        uint m = task->map->dim_phi(komo.configurations({t,t+komo.k_order}), t); //dimensionality of this task
+        uint m = task->map->dim_phi(komo.configurations({t,t+komo.k_order})); //dimensionality of this task
 
         if(&featureTimes) featureTimes.append(t, m); //consts<uint>(t, m));
         if(&featureTypes) featureTypes.append(task->type, m); //consts<ObjectiveType>(task->type, m));
@@ -1666,7 +1666,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
       Task *task = komo.tasks.elem(i);
       if(task->prec.N>t && task->prec(t)){
         //query the task map and check dimensionalities of returns
-        task->map->phi(y, (&J?Jy:NoArr), Ktuple, komo.tau, t);
+        task->map->phi(y, (&J?Jy:NoArr), Ktuple);
         if(&J) CHECK_EQ(y.N, Jy.d0, "");
         if(&J) CHECK_EQ(Jy.nd, 2, "");
         if(&J) CHECK_EQ(Jy.d1, Ktuple_dim, "");

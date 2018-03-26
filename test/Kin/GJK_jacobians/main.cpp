@@ -204,7 +204,7 @@ void TEST(GJK_Jacobians3) {
   arr q = K.getJointState();
 
   double y_last=0.;
-  for(uint t=0;t<1000;t++){
+  for(uint t=0;t<100;t++){
     K.setJointState(q);
     K.stepSwift();
 //    K.reportProxies(cout, -1., false);

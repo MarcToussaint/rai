@@ -79,7 +79,7 @@ public:
   void step();
   void buildTree(uint depth);
   void getSymbolicSolutions(uint depth);
-  void optFixedSequence(const mlr::String& seq, int specificLevel=-1, bool collisions=false);
+  void optFixedSequence(const rai::String& seq, int specificLevel=-1, bool collisions=false);
   void optMultiple(const StringA& seqs);
 
   // output
@@ -99,12 +99,4 @@ public:
   bool execRandomChoice();
 
   void player(StringA cmds={});
-
-  void optFixedSequence(const rai::String& seq, int specificLevel=-1, bool collisions=false);
-  void optMultiple(const StringA& seqs);
-
-
-  void writeNodeList(ostream& os=cout);
-
-  void glDraw(struct OpenGL&gl);
 };
