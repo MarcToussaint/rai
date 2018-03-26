@@ -55,8 +55,9 @@ struct KOMO{
   arrA featureValues;           ///< storage of all features in all time slices
   rai::Array<ObjectiveTypeA> featureTypes;  ///< storage of all feature-types in all time slices
   arr dualSolution;             ///< the dual solution computed during constrained optimization
-  struct OpenGL *gl;            ///< internal only: used in 'displayTrajectory'
+  struct OpenGL *gl=NULL;       ///< internal only: used in 'displayTrajectory'
   int verbose;                  ///< verbosity level
+  bool animateOptimization=false; ///< display the current path for each evaluation during optimization
   double runTime=0.;            ///< just measure run time
   ofstream *fil=NULL;
 
@@ -183,6 +184,7 @@ struct KOMO{
   void checkGradients();          ///< checks all gradients numerically
   void plotTrajectory();
   bool displayTrajectory(double delay=0.01, bool watch=true, const char* saveVideoPrefix=NULL); ///< display the trajectory; use "vid/z." as vid prefix
+  bool displayPath(bool watch=true); ///< display the trajectory; use "vid/z." as vid prefix
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
   PhysXInterface& physx(){ return world.physx(); }
 

@@ -29,6 +29,10 @@
 #include <Optim/convert.h>
 #include <Kin/kin_physx.h>
 
+#ifdef RAI_GL
+#  include <GL/gl.h>
+#endif
+
 using namespace rai;
 
 //===========================================================================
@@ -1251,6 +1255,24 @@ void KOMO::plotTrajectory(){
   gnuplot("load 'z.trajectories.plt'");
 }
 
+struct DrawPaths : GLDrawer{
+  arr& X;
+  DrawPaths(arr& X): X(X){}
+  void glDraw(OpenGL& gl){
+    glColor(0.,0.,0.);
+    for(uint i=0;i<X.d0;i++){
+      glBegin(GL_LINES);
+      for(uint t=0;t<X.d1;t++){
+        rai::Transformation pose;
+        pose.set(&X(i,t,0));
+//          glTransform(pose);
+        glVertex3d(pose.pos.x, pose.pos.y, pose.pos.z);
+      }
+      glEnd();
+    }
+  }
+};
+
 bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPrefix){
   const char* tag = "KOMO planned trajectory";
   if(!gl){
@@ -1258,11 +1280,18 @@ bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPref
     gl->camera.setDefault();
   }
 
+  uintA allFrames;
+  allFrames.setStraightPerm(configurations.last()->frames.N);
+  arr X = getPath_frames(allFrames);
+  DrawPaths drawX(X);
+
+
   for(int t=-(int)k_order; t<(int)T; t++) {
     if(saveVideoPrefix) gl->captureImg=true;
     gl->clear();
     gl->add(glStandardScene, 0);
     gl->addDrawer(configurations(t+k_order));
+    gl->add(drawX);
     if(delay<0.){
       if(delay<-10.) FILE("z.graph") <<*configurations(t+k_order);
       gl->watch(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
@@ -1276,6 +1305,33 @@ bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPref
     int key = gl->watch(STRING(tag <<" (time " <<std::setw(3) <<T-1 <<'/' <<T <<')').p);
     return !(key==27 || key=='q');
   }
+  gl->clear();
+  return false;
+}
+
+bool KOMO::displayPath(bool watch){
+  uintA allFrames;
+  allFrames.setStraightPerm(configurations.last()->frames.N);
+  arr X = getPath_frames(allFrames);
+  CHECK_EQ(X.nd, 3, "");
+  CHECK_EQ(X.d2, 7, "");
+
+  DrawPaths drawX(X);
+
+  if(!gl){
+    gl = new OpenGL ("KOMO display");
+    gl->camera.setDefault();
+  }
+  gl->clear();
+  gl->add(glStandardScene, 0);
+  gl->addDrawer(configurations.last());
+  gl->add(drawX);
+  if(watch){
+    int key = gl->watch();
+    return !(key==27 || key=='q');
+  }
+  gl->update(NULL, false, false, true);
+  gl->clear();
   return false;
 }
 
@@ -1356,7 +1412,7 @@ void KOMO::set_x(const arr& x){
       else         configurations(s)->setJointState(x[t]);
       if(useSwift){
         configurations(s)->stepSwift();
-//        configurations(s)->proxiesToContacts(1.1);
+        configurations(s)->proxiesToContacts(1.1);
       }
       x_count += x_dim;
     }
@@ -1645,6 +1701,9 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
 
   //-- set the trajectory
   komo.set_x(x);
+
+  if(komo.animateOptimization)
+    komo.displayPath(false);
 
   CHECK(dimPhi,"getStructure must be called first");
 //  getStructure(NoUintA, featureTimes, tt);
