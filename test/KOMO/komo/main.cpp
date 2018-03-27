@@ -15,8 +15,8 @@ void TEST(Easy){
 
   komo.setPosition(1., 1., "endeff", "target", OT_sumOfSqr);
   komo.setSlowAround(1., .02);
-  komo.setCollisions(false, .1, 1e-1);
-  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq);
+  komo.setCollisions(false);
+//  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq);
   komo.reportProblem();
 
   komo.reset();

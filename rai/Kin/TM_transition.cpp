@@ -57,9 +57,19 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple){
 
   if(!handleSwitches){ //simple implementation
     //-- transition costs
-    double h = H_rate*sqrt(tau), tau2=tau*tau;
-    h = H_rate;
     y.resize(Ktuple.last()->q.N).setZero();
+
+    //individual weights
+    double hbase = H_rate*sqrt(tau), tau2=tau*tau;
+//    hbase = H_rate;
+    arr h = zeros(y.N);
+    for(rai::Joint *j:Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
+      h(j->qIndex+i) = hbase*j->H;
+      if(j->frame.flags && !(j->frame.flags & (1<<FL_normalControlCosts))){
+        h(j->qIndex+i)=0.;
+      }
+    }
+
     if(order==1) velCoeff = 1.;
     if(order>=0 && posCoeff) y +=  posCoeff      *(Ktuple.elem(-1)->q); //penalize position
 #if 0
@@ -84,11 +94,15 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple){
     if(order>=3) NIY; //  y = (x_bar[3]-3.*x_bar[2]+3.*x_bar[1]-x_bar[0])/tau3; //penalize jerk
 
     //multiply with h...
+#if 1
+    y *= h;
+#else
     for(rai::Joint *j:Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
       double hj = h*j->H;
       if(j->frame.flags && !(j->frame.flags & (1<<FL_normalControlCosts))) hj=0.;
       y(j->qIndex+i) *= hj;
     }
+#endif
 
     if(&J) {
       arr Jtau1;  Ktuple(-1)->jacobianTime(Jtau1, Ktuple(-1)->frames(0));  expandJacobian(Jtau1, Ktuple, -1);
@@ -114,18 +128,23 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple){
       }
       J.reshape(y.N, Ktuple.N*n);
 
+#if 1
+      J = h%J;
+      J += (-1.5/tau)*y*Jtau;
+#else
       for(rai::Joint *j: Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
         double hj = h*j->H;
         if(j->frame.flags && !(j->frame.flags & (1<<FL_normalControlCosts))) hj=0.;
-#if 0
-        J[j->qIndex+i] *= hj;
+#if 1
+        uint k=j->qIndex+i;
+        J[k] *= hj;
+//        J[k] += y(k) * (0.5*hj/tau) * Jtau;
 #else //EQUIVALENT, but profiled - optimized for speed
         uint l = (j->qIndex+i)*J.d1;
         for(uint k=0;k<J.d1;k++) J.elem(l+k) *= hj;
 #endif
       }
-
-      J += (-2./tau)*y*Jtau;
+#endif
 
     }
   }else{ //with switches

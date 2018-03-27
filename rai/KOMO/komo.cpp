@@ -1434,7 +1434,7 @@ void KOMO::set_x(const arr& x){
       else         configurations(s)->setJointState(x[t]);
       if(useSwift){
         configurations(s)->stepSwift();
-        configurations(s)->proxiesToContacts(1.1);
+        //configurations(s)->proxiesToContacts(1.1);
       }
       x_count += x_dim;
     }
