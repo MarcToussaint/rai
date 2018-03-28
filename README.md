@@ -27,10 +27,10 @@ cd rai
 make -j1 printUbuntu  # to just print Ubuntu package dependencies per component
 make -j1 initUbuntuPackages  # calls sudo apt-get install; you can always interrupt
 
-cp build/config.mk.default build/config.mk # edit to modify dependencies
-make runTests                # compile and run the essential tests
-make bin                     # compile rai/bin/kinEdit and similar
-make                         # to compile all components (rarely necessary)
+cp build/config.mk.default build/config.mk    # edit this to modify dependencies or debug mode
+make runTests      # compile and run the essential tests
+make bin           # compile rai/bin/kinEdit and similar
+make               # to compile all components (rarely necessary)
 ```
 
 If interested in the kinematics part, check `rai/Kin/kin.h` and `test/Kin/*` to get started.
