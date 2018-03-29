@@ -309,31 +309,33 @@ void random_colorMap(floatA& pch_col, uint np){
 #else
 
 #include <Core/util.h>
-void pch2img(byteA &img, const uintA &pch, floatA &pch_colormap){NIY};
-void random_colorMap(floatA& pch_colormap, uint np){NIY};
-uint incremental_patch_ids(uintA& pch){NIY};
-void get_patch_colors(floatA& pch_col, byteA& img, uintA& pch, uint np){NIY};
-void get_patch_centroids(doubleA& pch_cen, byteA& img, uintA& pch, uint np){NIY};
+void pch2img(byteA &img, const uintA &pch, floatA &pch_colormap){NICO}
+void random_colorMap(floatA& pch_colormap, uint np){NICO}
+uint incremental_patch_ids(uintA& pch){NICO}
+void get_patch_colors(floatA& pch_col, byteA& img, uintA& pch, uint np){NICO}
+void get_patch_centroids(doubleA& pch_cen, byteA& img, uintA& pch, uint np){NICO}
 
 uint get_single_color_segmentation(uintA& segmentation,
 				   const byteA& image, 
 				   float sigma,
 				   float k,
 				   int min
-				   ){NIY};
+                   ){NICO}
 
 uint get_single_color_segmentation_rgb(uintA& segmentation,
 				       byteA& rgb,         
 				       const byteA& image, 
 				       float sigma,
 				       float k,
-				       int min){NIY};
+                       int min){NICO}
 
-void get_patch_centers(arr& centers, const uintA& patches){NIY};
+void get_patch_centers(arr& centers, const uintA& patches){NICO}
 
-void patch_color_statistics(arr& stats, const uintA& patches, const byteA& image){NIY};
+void get_patch_centroids(arr& pch_cen, uintA& pch, uint np){NICO}
 
-void colorize_patches(byteA& coloration, const uintA& patches, const arr& stats){NIY};
+void patch_color_statistics(arr& stats, const uintA& patches, const byteA& image){NICO}
+
+void colorize_patches(byteA& coloration, const uintA& patches, const arr& stats){NICO}
 
 typedef rai::Array<uintA> MultiSegmentations;
 void get_multiple_color_segmentations(MultiSegmentations& segmentations,

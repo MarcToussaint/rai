@@ -1651,8 +1651,8 @@ void Camera::glSetProjectionMatrix() {
       P(3,2) = 2. * zFar * zNear / (zNear-zFar);
       glLoadMatrixd(P.p);
     }else{
-      glOrtho(-whRatio*heightAbs/2, whRatio*heightAbs/2,
-              -heightAbs/2, heightAbs/2, zNear, zFar);
+      glOrtho(-whRatio*heightAbs/2., whRatio*heightAbs/2.,
+              -heightAbs/2., heightAbs/2., zNear, zFar);
     }
   } else
     gluPerspective(heightAngle, whRatio, zNear, zFar);

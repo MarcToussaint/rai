@@ -196,8 +196,10 @@ void OpenGL::postRedrawEvent(bool fromWithinCallback) {
 }
 
 void OpenGL::resize(int w,int h) {
-  openWindow();
-  {
+//  openWindow();
+  if(s->windowID==-1){
+    Reshape(w, h);
+  }else{
     auto fg=singleFreeglut();
     s->accessWindow();
     glutReshapeWindow(w,h);
@@ -2044,6 +2046,8 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
 #ifdef RAI_GL
   if(w<0) w=width;
   if(h<0) h=height;
+
+  singleFreeglut(); //ensure that glut is initialized (if the drawer called glut)
 
   auto mut=singleGLAccess();
   dataLock.readLock();
