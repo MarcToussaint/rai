@@ -21,7 +21,7 @@ TM_AboveBox::TM_AboveBox(const rai::KinematicWorld& K, const char* iShapeName, c
   if(b) j=b->ID;
 }
 
-void TM_AboveBox::phi(arr& y, arr& J, const rai::KinematicWorld& K, int t){
+void TM_AboveBox::phi(arr& y, arr& J, const rai::KinematicWorld& K){
   rai::Shape *pnt=K.frames(i)->shape;
   rai::Shape *box=K.frames(j)->shape;
   CHECK(pnt && box,"I need shapes!");

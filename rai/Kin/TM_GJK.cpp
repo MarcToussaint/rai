@@ -71,7 +71,7 @@ TM_GJK::TM_GJK(const rai::KinematicWorld& W, const Graph& specs, bool exact) : e
 //  if((it=specs["vec2"])) vec2 = rai::Vector(it->get<arr>());  else vec2.setZero();
 }
 
-void TM_GJK::phi(arr& v, arr& J, const rai::KinematicWorld& W, int t){
+void TM_GJK::phi(arr& v, arr& J, const rai::KinematicWorld& W){
   rai::Shape *s1 = i<0?NULL: W.frames(i)->shape;
   rai::Shape *s2 = j<0?NULL: W.frames(j)->shape;
   CHECK(s1 && s2,"");

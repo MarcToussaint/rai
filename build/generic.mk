@@ -167,7 +167,7 @@ clean: force
 	@find $(BASE)/rai \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
 
 cleanLocks: force
-	@find $(PWD) $(BASE) -type d -name 'Make.lock' -delete -print
+	@find $(BASE) -type d -name 'Make.lock' -delete -print
 
 cleanAll: force
 	@find $(PWD) $(BASE) -type d -name 'Make.lock' -delete -print

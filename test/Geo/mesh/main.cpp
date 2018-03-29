@@ -38,6 +38,7 @@ void TEST(Sphere) {
 //===========================================================================
 
 void TEST(Meshes) {
+  if(!rai::FileToken("../../../../rai-robotModels/pr2/head_v0/head_pan.stl", false).exists()) return;
   OpenGL gl;
   rai::Mesh mesh;
   mesh.readStlFile(FILE("../../../../rai-robotModels/pr2/head_v0/head_pan.stl"));
@@ -59,6 +60,7 @@ void TEST(Meshes) {
 //===========================================================================
 
 void TEST(Meshes2) {
+  if(!rai::FileToken("../../../../rai-robotModels/pr2/head_v0/head_pan.stl", false).exists()) return;
   rai::Mesh mesh1,mesh2;
   OpenGL gl;
   gl.add(drawInit,0);
@@ -77,6 +79,7 @@ void TEST(Meshes2) {
 //===========================================================================
 
 void TEST(Meshes3) {
+  if(!rai::FileToken("../../../../rai-robotModels/pr2/head_v0/head_pan.stl", false).exists()) return;
   rai::Mesh mesh;
   OpenGL gl;
   gl.add(drawInit,0);

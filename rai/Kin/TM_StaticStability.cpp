@@ -26,7 +26,7 @@ FrameL getShapesAbove(rai::Frame *a){
   return aboves;
 }
 
-void TM_StaticStability::phi(arr& y, arr& J, const rai::KinematicWorld& K, int t){
+void TM_StaticStability::phi(arr& y, arr& J, const rai::KinematicWorld& K){
   //get shapes above
   rai::Frame *a = K.frames(i);
   FrameL aboves = getShapesAbove(a);

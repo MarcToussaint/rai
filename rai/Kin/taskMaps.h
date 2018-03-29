@@ -29,7 +29,7 @@
 struct CollisionConstraint:TaskMap {
   double margin;
   CollisionConstraint(double _margin=.1):margin(_margin){}
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G){ return 1; }
   virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("CollisionConstraint"); }
 };
@@ -41,13 +41,13 @@ struct CollisionConstraint:TaskMap {
 struct PairCollisionConstraint:TaskMap {
   int i,j;       ///< which shapes does it refer to?
   double margin;
-  intA referenceIds; ///< the shapes it refers to DEPENDENT on time
+
   PairCollisionConstraint(double _margin)
     : i(-1), j(-1), margin(_margin){
   }
   PairCollisionConstraint(const rai::KinematicWorld& G, const char* iShapeName, const char* jShapeName, double _margin=.02);
 
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G){ return 1; }
 };
 
@@ -59,7 +59,7 @@ struct PlaneConstraint:TaskMap {
 
   PlaneConstraint(const rai::KinematicWorld& G, const char* iShapeName, const arr& _planeParams);
 
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=1);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G){ return 1; }
 };
 
@@ -72,7 +72,7 @@ struct ConstraintStickiness:TaskMap {
     : map(_map) {
   }
 
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G){ return 1; }
 };
 
@@ -92,7 +92,7 @@ struct PointEqualityConstraint:TaskMap {
     jvec=dummy.jvec;
   }
 
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G){ return 3; }
 };
 
@@ -103,7 +103,7 @@ struct ContactEqualityConstraint:TaskMap {
   int j;       ///< which shapes does it refer to?
   double margin;
   ContactEqualityConstraint(const rai::KinematicWorld& G, const char* iShapeName, const char* jShapeName,double _margin);
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=1);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G){
     return 1;
   }
@@ -123,7 +123,7 @@ struct VelAlignConstraint:TaskMap {
                      const char* jShapeName=NULL, const rai::Vector& _jvec=NoVector, double _target = 0.);
 
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=1) { } ;
-  virtual void phi(arr& y, arr& J, const WorldL& G, double tau, int t=-1);
+  virtual void phi(arr& y, arr& J, const WorldL& G);
   virtual uint dim_phi(const rai::KinematicWorld& G){ return 1; }
 };
 
@@ -135,7 +135,7 @@ struct qItselfConstraint:TaskMap {
   qItselfConstraint(uint singleQ, uint qN){ M=zeros(1,qN); M(0,singleQ)=1.; }
   qItselfConstraint(const arr& _M=NoArr){ if(&_M) M=_M; }
 
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=1);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G){
     if(M.nd==2) return M.d0;
     return G.getJointStateDimension();

@@ -17,7 +17,7 @@ TM_Align::TM_Align(const rai::KinematicWorld& K, const char* iName, const char* 
   if(b) j=b->ID;
 }
 
-void TM_Align::phi(arr& y, arr& J, const rai::KinematicWorld& K, int t){
+void TM_Align::phi(arr& y, arr& J, const rai::KinematicWorld& K){
   y.resize(3);
   if(&J) J.resize(3, K.q.N);
 

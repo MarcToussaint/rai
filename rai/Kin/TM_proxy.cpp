@@ -22,10 +22,7 @@ TM_Proxy::TM_Proxy(PTMtype _type,
 //  cout <<"creating TM_Proxy with shape list" <<shapes <<endl;
 }
 
-void TM_Proxy::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t){
-  uintA shapes_t;
-  shapes_t.referTo(shapes);
-
+void TM_Proxy::phi(arr& y, arr& J, const rai::KinematicWorld& G){
   y.resize(1).setZero();
   if(&J) J.resize(1, G.getJointStateDimension()).setZero();
 
@@ -44,9 +41,8 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t){
       }
       break;
     case TMT_allVsListedP: {
-      if(t && shapes.nd==2) shapes_t.referToDim(shapes,t);
       for(const rai::Proxy& p: G.proxies){
-        if(shapes_t.contains(p.a->ID) || shapes_t.contains(p.b->ID)) {
+        if(shapes.contains(p.a->ID) || shapes.contains(p.b->ID)) {
           G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
 //          p.colorCode = 2;
         }
@@ -149,8 +145,8 @@ TM_ProxyConstraint::TM_ProxyConstraint(PTMtype _type,
   : proxyCosts(_type, _shapes, _margin, _useCenterDist, _useDistNotCost){
 }
 
-void TM_ProxyConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t){
-  proxyCosts.phi(y, J, G, t);
+void TM_ProxyConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G){
+  proxyCosts.phi(y, J, G);
   y -= .5;
 }
 

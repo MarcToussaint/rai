@@ -161,7 +161,8 @@ void MNode::optLevel(uint level, bool collisions){
 //  } break;
   case 2:{
     komo.setModel(startKinematics, false);
-    komo.setTiming(time, 2, 5., 1);
+    if(time>1e-2) komo.setTiming(time, 2, 5., 1);
+    else  komo.setTiming(1., 2, 5., 1);
 
     if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
     komo.setSquaredQVelocities();

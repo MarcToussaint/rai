@@ -1,3 +1,10 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
 
 void KOMO::setGrasp(double time, const char* endeffRef, const char* object){
 //#    (EqualZero GJK Hand Obj){ time=[1 1] scale=100 } #touch is not necessary

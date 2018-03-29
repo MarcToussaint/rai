@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 /* dm 15.06.2006--these had to be changed with the switch to ODE 0.6
    void Body::copyFrameToOde(){
    CHECK(X.r.isNormalized(), "quaternion is not normalized!");

@@ -42,7 +42,7 @@ struct TM_Proxy : TaskMap {
            bool _useDistNotCost=false);
   virtual ~TM_Proxy() {}
 
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G);
   virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("ProxyCost"); }
 };
@@ -56,7 +56,7 @@ struct TM_ProxyConstraint : TaskMap {
                      double _margin=.02,
                      bool _useCenterDist=false,
                      bool _useDistNotCost=false);
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G){ return 1; }
   virtual rai::String shortTag(const rai::KinematicWorld& G){ return "ProxyConstraint"; }
 };

@@ -44,6 +44,7 @@ struct Vector {
   void makeColinear(const Vector&);
   
   double diffZero() const;
+  void checkZero() const;
   bool isNormalized() const;
   double isColinear(const Vector&) const;
   double length() const;
@@ -121,6 +122,7 @@ struct Quaternion {
   void setMatrix(double* m);
   void setDiff(const Vector& from, const Vector& to);
   void setInterpolate(double t, const Quaternion& a, const Quaternion b);
+  void add(const Quaternion b, double w_b=1., double w_this=1.);
   Quaternion& invert();
   void flipSign();
   void normalize();
@@ -134,6 +136,7 @@ struct Quaternion {
 
   double diffZero() const;
   double sqrDiffZero() const;
+  void checkZero() const;
   double sqrDiff(const Quaternion& q2) const;
   double normalization() const;
   bool isNormalized() const;
@@ -197,6 +200,8 @@ struct Transformation {
 
   Transformation& setZero();
   Transformation& setText(const char* txt);
+  void set(double* p);
+  void set(const arr& t);
   void setRandom();
   void setInverse(const Transformation& f);
   void setDifference(const Transformation& from, const Transformation& to);

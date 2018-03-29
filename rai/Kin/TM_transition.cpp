@@ -28,7 +28,7 @@ TM_Transition::TM_Transition(const rai::KinematicWorld& G, bool effectiveJointsO
   H_rate_diag = H_rate*H_diag;
 }
 
-uint TM_Transition::dim_phi(const WorldL& G, int t){
+uint TM_Transition::dim_phi(const WorldL& G){
   bool handleSwitches=effectiveJointsOnly;
   uint qN=G(0)->q.N;
   for(uint i=0;i<G.N;i++) if(G.elem(i)->q.N!=qN){ handleSwitches=true; break; }
@@ -48,18 +48,28 @@ uint TM_Transition::dim_phi(const WorldL& G, int t){
   return uint(-1);
 }
 
-void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
+void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple){
   bool handleSwitches=effectiveJointsOnly;
   uint qN=Ktuple(0)->q.N;
   for(uint i=0;i<Ktuple.N;i++) if(Ktuple(i)->q.N!=qN){ handleSwitches=true; break; }
 
-  tau = Ktuple(-1)->frames(0)->time - Ktuple(-2)->frames(0)->time;
+  double tau = Ktuple(-1)->frames(0)->time - Ktuple(-2)->frames(0)->time;
 
   if(!handleSwitches){ //simple implementation
     //-- transition costs
-    double h = H_rate*sqrt(tau), tau2=tau*tau;
-//    arr h = sqrt(H_rate_diag)*sqrt(tau);
     y.resize(Ktuple.last()->q.N).setZero();
+
+    //individual weights
+    double hbase = H_rate*sqrt(tau), tau2=tau*tau;
+//    hbase = H_rate;
+    arr h = zeros(y.N);
+    for(rai::Joint *j:Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
+      h(j->qIndex+i) = hbase*j->H;
+      if(j->frame.flags && !(j->frame.flags & (1<<FL_normalControlCosts))){
+        h(j->qIndex+i)=0.;
+      }
+    }
+
     if(order==1) velCoeff = 1.;
     if(order>=0 && posCoeff) y +=  posCoeff      *(Ktuple.elem(-1)->q); //penalize position
 #if 0
@@ -84,13 +94,21 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t)
     if(order>=3) NIY; //  y = (x_bar[3]-3.*x_bar[2]+3.*x_bar[1]-x_bar[0])/tau3; //penalize jerk
 
     //multiply with h...
+#if 1
+    y *= h;
+#else
     for(rai::Joint *j:Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
       double hj = h*j->H;
       if(j->frame.flags && !(j->frame.flags & (1<<FL_normalControlCosts))) hj=0.;
       y(j->qIndex+i) *= hj;
     }
+#endif
 
     if(&J) {
+      arr Jtau1;  Ktuple(-1)->jacobianTime(Jtau1, Ktuple(-1)->frames(0));  expandJacobian(Jtau1, Ktuple, -1);
+      arr Jtau2;  Ktuple(-2)->jacobianTime(Jtau2, Ktuple(-2)->frames(0));  expandJacobian(Jtau2, Ktuple, -2);
+      arr Jtau = Jtau1 - Jtau2;
+
       uint n = Ktuple.last()->q.N;
       J.resize(y.N, Ktuple.N, n).setZero();
       for(uint i=0;i<n;i++){
@@ -109,16 +127,25 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t)
         //      if(order>=3){ J(i,3,i) = 1.;  J(i,2,i) = -3.;  J(i,1,i) = +3.;  J(i,0,i) = -1.; }
       }
       J.reshape(y.N, Ktuple.N*n);
+
+#if 1
+      J = h%J;
+      J += (-1.5/tau)*y*Jtau;
+#else
       for(rai::Joint *j: Ktuple.last()->fwdActiveJoints) for(uint i=0;i<j->qDim();i++){
         double hj = h*j->H;
         if(j->frame.flags && !(j->frame.flags & (1<<FL_normalControlCosts))) hj=0.;
-#if 0
-        J[j->qIndex+i] *= hj;
+#if 1
+        uint k=j->qIndex+i;
+        J[k] *= hj;
+//        J[k] += y(k) * (0.5*hj/tau) * Jtau;
 #else //EQUIVALENT, but profiled - optimized for speed
         uint l = (j->qIndex+i)*J.d1;
         for(uint k=0;k<J.d1;k++) J.elem(l+k) *= hj;
 #endif
       }
+#endif
+
     }
   }else{ //with switches
     rai::Array<rai::Joint*> matchingJoints = getMatchingJoints(Ktuple.sub(-1-order,-1), effectiveJointsOnly);

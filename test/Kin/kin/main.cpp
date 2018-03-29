@@ -111,8 +111,8 @@ void TEST(Kinematics){
 //
 
 void TEST(Graph){
-
-
+  if(!rai::FileToken("../../../../rai-robotModels/pr2/pr2.g", false).exists()) return;
+  
 //  rai::KinematicWorld G("arm7.g");
 //  rai::KinematicWorld K("kinematicTests.g");
   rai::KinematicWorld K("../../../../rai-robotModels/pr2/pr2.g");
@@ -198,6 +198,7 @@ void TEST(KinematicSpeed){
 #define NUM 100000
 #if 1
 //  rai::KinematicWorld K("kinematicTests.g");
+  if(!rai::FileToken("../../../../rai-robotModels/pr2/pr2.g", false).exists()) return;
   rai::KinematicWorld K("../../../../rai-robotModels/pr2/pr2.g");
   K.optimizeTree();
   uint n=K.getJointStateDimension();

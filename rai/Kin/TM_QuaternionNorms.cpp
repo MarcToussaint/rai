@@ -10,7 +10,7 @@
 #include "TM_qItself.h"
 #include "frame.h"
 
-void TM_QuaternionNorms::phi(arr &y, arr &J, const rai::KinematicWorld &G, int t){
+void TM_QuaternionNorms::phi(arr &y, arr &J, const rai::KinematicWorld &G){
     uint n=dim_phi(G);
     y.resize(n);
     if(&J) J.resize(n, G.q.N).setZero();

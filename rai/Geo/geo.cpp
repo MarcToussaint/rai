@@ -91,6 +91,12 @@ void Vector::makeColinear(const Vector& b) {
 /// L1-norm to zero
 double Vector::diffZero() const { return fabs(x)+fabs(y)+fabs(z); }
 
+/// check whether isZero is true
+void Vector::checkZero() const {
+  bool iszero = (x==0. && y==0. && z==0.);
+  CHECK_EQ(iszero, isZero, "you must have set this by hand!");
+}
+
 /// is it normalized?
 bool Vector::isNormalized() const { return fabs(lengthSqr()-1.)<1e-6; }
 
@@ -604,6 +610,22 @@ void Quaternion::setInterpolate(double t, const Quaternion& a, const Quaternion 
   isZero=false;
 }
 
+/// euclidean addition (with weights) modulated by scalar product -- leaves you with UNNORMALIZED quaternion
+void Quaternion::add(const Quaternion b, double w_b, double w_this){
+  if(quatScalarProduct(*this, b)<0.) w_b *= -1.;
+  if(w_this!=-1.){
+    w *= w_this;
+    x *= w_this;
+    y *= w_this;
+    z *= w_this;
+  }
+  w += w_b*b.w;
+  x += w_b*b.x;
+  y += w_b*b.y;
+  z += w_b*b.z;
+  isZero=false;
+}
+
 /// assigns the rotation to \c a DEGREES around the vector (x, y, z)
 void Quaternion::setDeg(double degree, double _x, double _y, double _z) { setRad(degree*RAI_PI/180., _x, _y, _z); }
 
@@ -719,6 +741,12 @@ void Quaternion::setDiff(const Vector& from, const Vector& to) {
 double Quaternion::diffZero() const { return (w>0.?fabs(w-1.):fabs(w+1.))+fabs(x)+fabs(y)+fabs(z); }
 
 double Quaternion::sqrDiffZero() const { return (w>0.?rai::sqr(w-1.):rai::sqr(w+1.))+rai::sqr(x)+rai::sqr(y)+rai::sqr(z); }
+
+/// check whether isZero is true
+void Quaternion::checkZero() const {
+  bool iszero = ((w==1. || w==-1.) && x==0. && y==0. && z==0.);
+  CHECK_EQ(iszero, isZero, "you must have set this by hand!");
+}
 
 /// return the squared-error between two quads, modulo flipping
 double Quaternion::sqrDiff(const Quaternion& _q2) const{
@@ -1065,6 +1093,10 @@ Transformation& Transformation::setZero() {
   pos.isZero = rot.isZero = true;
   return *this;
 }
+
+void Transformation::set(double *p) { pos.set(p); rot.set(p+3); }
+
+void Transformation::set(const arr &t) { CHECK_EQ(t.N,7, "");  set(t.p); }
 
 /// randomize the frame
 void Transformation::setRandom() {

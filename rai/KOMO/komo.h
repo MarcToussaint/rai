@@ -55,8 +55,9 @@ struct KOMO{
   arrA featureValues;           ///< storage of all features in all time slices
   rai::Array<ObjectiveTypeA> featureTypes;  ///< storage of all feature-types in all time slices
   arr dualSolution;             ///< the dual solution computed during constrained optimization
-  struct OpenGL *gl;            ///< internal only: used in 'displayTrajectory'
+  struct OpenGL *gl=NULL;       ///< internal only: used in 'displayTrajectory'
   int verbose;                  ///< verbosity level
+  int animateOptimization=0;    ///< display the current path for each evaluation during optimization
   double runTime=0.;            ///< just measure run time
   ofstream *fil=NULL;
 
@@ -164,7 +165,7 @@ struct KOMO{
 
   //===========================================================================
   //
-  // optimizing and verbosity
+  // optimizing, getting results, and verbosity
   //
 
   //-- optimization macros
@@ -174,12 +175,17 @@ struct KOMO{
   void getPhysicsReference(uint subSteps=10, int display=0);
   void playInPhysics(uint subSteps=10, bool display=false);
   arr getPath(const StringA& joints);
+  arr getPath_frames(const uintA &frames);
+  arr getPath_times();
   void reportProblem(ostream &os=std::cout);
   Graph getReport(bool gnuplt=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot task costs; output detailed cost features per time slice)
   void reportProxies(ostream& os=std::cout); ///< report the proxies (collisions) for each time slice
+  rai::Array<rai::Transformation> reportEffectiveJoints(ostream& os=std::cout);
   void checkGradients();          ///< checks all gradients numerically
   void plotTrajectory();
+  void plotPhaseTrajectory();
   bool displayTrajectory(double delay=0.01, bool watch=true, const char* saveVideoPrefix=NULL); ///< display the trajectory; use "vid/z." as vid prefix
+  bool displayPath(bool watch=true); ///< display the trajectory; use "vid/z." as vid prefix
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
   PhysXInterface& physx(){ return world.physx(); }
 
@@ -211,7 +217,6 @@ struct KOMO{
     virtual void getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes);
     virtual void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x, arr& lambda);
   } komo_problem;
-
 };
 
 //===========================================================================

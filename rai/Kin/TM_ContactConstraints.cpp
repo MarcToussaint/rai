@@ -11,7 +11,7 @@
 #include "frame.h"
 #include "contact.h"
 
-void TM_ContactConstraints::phi(arr &y, arr &J, const rai::KinematicWorld &K, int t){
+void TM_ContactConstraints::phi(arr &y, arr &J, const rai::KinematicWorld &K){
   uint C=0;
   arr yc, Jc;
   y.clear();
@@ -19,7 +19,7 @@ void TM_ContactConstraints::phi(arr &y, arr &J, const rai::KinematicWorld &K, in
   for(rai::Frame *f:K.frames) if(f->contacts.N) for(rai::Contact *c:f->contacts) if(&c->a==f){
 //    TaskMap *map = c->getTM_ContactNegDistance();
     TaskMap *map = new TM_PairCollision(c->a.ID, c->b.ID, true);
-    map->phi(yc, (&J?Jc:NoArr), K, t);
+    map->phi(yc, (&J?Jc:NoArr), K);
     c->y = yc.scalar();
     y.append( c->y );
     if(&J) J.append( Jc );

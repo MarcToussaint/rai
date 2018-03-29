@@ -22,7 +22,7 @@ TM_InsideBox::TM_InsideBox(const rai::KinematicWorld& G, const char* iShapeName,
   if(&_ivec) ivec=_ivec; else ivec.setZero();
 }
 
-void TM_InsideBox::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t){
+void TM_InsideBox::phi(arr& y, arr& J, const rai::KinematicWorld& G){
   rai::Shape *pnt=G.frames(i)->shape;
   rai::Shape *box=G.frames(j)->shape;
   CHECK(pnt && box,"I need shapes!");

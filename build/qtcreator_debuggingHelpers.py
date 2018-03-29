@@ -11,7 +11,7 @@ from dumper import *
 
 import math
 
-def qdump__mlr__String(d, value):
+def qdump__rai__String(d, value):
     p = value["p"]
     N = int(value["N"])
     s = "'"
@@ -26,7 +26,7 @@ def qdump__mlr__String(d, value):
             d.putSubItem("N", value["N"])
             d.putSubItem("p", value["p"])
 
-def qdump__mlr__Enum(d, value):
+def qdump__rai__Enum(d, value):
     d.putItem(value["x"])
 
 def qdump__LIST(d, value):
@@ -48,7 +48,7 @@ def qdump__LIST(d, value):
 #            d.putSubItem("p", p)
 
 
-def qdump__mlr__Array(d, value):
+def qdump__rai__Array(d, value):
     p = value["p"]
     N = int(value["N"])
     nd = int(value["nd"])
@@ -165,7 +165,7 @@ def qdump__JointL(d, value):
 def qdump__ProxyL(d, value):
     qdump__LIST(d,value)
 
-#def qdump__mlr__Vector(d, value):
+#def qdump__rai__Vector(d, value):
 #    x=value["x"]
 #    y=value["y"]
 #    z=value["z"]
@@ -180,7 +180,7 @@ def qdump__ProxyL(d, value):
 #                d.putType("float")
 #                d.putNumChild(0)
 
-#def qdump__mlr__Quaternion(d, value):
+#def qdump__rai__Quaternion(d, value):
 #    w=value["w"]
 #    x=value["x"]
 #    y=value["y"]
@@ -196,7 +196,7 @@ def qdump__ProxyL(d, value):
 #                d.putType("float")
 #                d.putNumChild(0)
 
-def qdump__mlr__Frame(d, value):
+def qdump__rai__Frame(d, value):
     ID = int(value["ID"])
     name = value["name"]
     s = "(%i) " % ID

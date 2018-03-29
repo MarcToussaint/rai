@@ -19,7 +19,7 @@ struct TM_InsideBox : TaskMap {
   TM_InsideBox(const rai::KinematicWorld& G,
                    const char* iShapeName=NULL, const rai::Vector& ivec=NoVector, const char* jShapeName=NULL, double _margin=.03);
 
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1);
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G);
   virtual rai::String shortTag(const rai::KinematicWorld& G);
 };

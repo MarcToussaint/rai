@@ -43,7 +43,7 @@ void TEST(GJK_Jacobians) {
   TM_PairCollision dist(K, "s1", "s2", true);
   TM_PairCollision distVec(K, "s1", "s2", false);
 
-  for(uint k=0;k<1000;k++){
+  for(uint k=0;k<100;k++){
     //randomize shapes
     s1.mesh().clear();             s2.mesh().clear();
     s1.sscCore().setRandom();      s2.sscCore().setRandom();
@@ -204,7 +204,7 @@ void TEST(GJK_Jacobians3) {
   arr q = K.getJointState();
 
   double y_last=0.;
-  for(uint t=0;t<1000;t++){
+  for(uint t=0;t<100;t++){
     K.setJointState(q);
     K.stepSwift();
 //    K.reportProxies(cout, -1., false);

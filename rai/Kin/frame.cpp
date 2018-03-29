@@ -18,6 +18,17 @@
 #endif
 
 //===========================================================================
+
+template<> const char* rai::Enum<rai::JointType>::names []={
+  "JT_hingeX", "JT_hingeY", "JT_hingeZ", "JT_transX", "JT_transY", "JT_transZ", "JT_transXY", "JT_trans3", "JT_transXYPhi", "JT_universal", "JT_rigid", "JT_quatBall", "JT_phiTransXY", "JT_XBall", "JT_free", "JT_time", NULL
+};
+
+template<> const char* rai::Enum<rai::BodyType>::names []={
+  "BT_dynamic", "BT_kinematic", "BT_static", NULL
+};
+
+
+//===========================================================================
 //
 // Frame
 //
@@ -56,6 +67,7 @@ rai::Frame::~Frame() {
 
 void rai::Frame::calc_X_from_parent(){
   CHECK(parent, "");
+  time = parent->time;
   Transformation &from = parent->X;
   X = from;
   X.appendTransformation(Q);
@@ -322,6 +334,10 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex){
 
     case JT_rigid:
       break;
+
+    case JT_time:
+      frame.time = 1e-1 * q.elem(_qIndex);
+      break;
     default: NIY;
     }
   }
@@ -429,6 +445,10 @@ arr rai::Joint::calc_q_from_Q(const rai::Transformation &Q) const{
     q(3)=Q.rot.y;
     q(4)=Q.rot.z;
     break;
+  case JT_time:
+    q.resize(1);
+    q(0) = 1e1 * frame.time;
+    break;
   default: NIY;
   }
   return q;
@@ -518,6 +538,7 @@ uint rai::Joint::getDimFromType() const {
   if(type==JT_free) return 7;
   if(type==JT_rigid || type==JT_none) return 0;
   if(type==JT_XBall) return 5;
+  if(type==JT_time) return 1;
   HALT("shouldn't be here");
   return 0;
 }

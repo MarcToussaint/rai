@@ -8,8 +8,8 @@
 
 #include "TM_Max.h"
 
-void TM_Max::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t){
-  map->phi(y, J, G, t);
+void TM_Max::phi(arr& y, arr& J, const rai::KinematicWorld& G){
+  map->phi(y, J, G);
   uint i=argmax(y);
   y = ARR( y(i) );
   if(&J) J=~J[i];

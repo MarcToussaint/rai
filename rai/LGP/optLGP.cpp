@@ -477,6 +477,13 @@ rai::String OptLGP::report(bool detailed){
   return out;
 }
 
+void OptLGP::reportEffectiveJoints(){
+//  MNode *best = getBest();
+  if(!displayFocus->komoProblem.last()) return;
+  displayFocus->komoProblem.last()->reportProblem();
+  displayFocus->komoProblem.last()->reportEffectiveJoints();
+}
+
 void OptLGP::step(){
   expandBest();
 
@@ -622,6 +629,8 @@ void OptLGP_SolutionData::glDraw(OpenGL &gl){
 #ifdef RAI_GL
   uint l=3;
   rai::Array<rai::Geom*>& geoms = _GeomStore()->geoms;
+
+  if(!paths(l).N) return;
 
   for(uint i=0; i<geomIDs.N; i++){
     if(displayStep >= paths(l).d0) displayStep = 0;

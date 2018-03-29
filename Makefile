@@ -2,6 +2,8 @@ BASE = .
 
 target: src
 
+DEPEND = $(shell find rai -mindepth 1 -maxdepth 1 -printf "%f ")
+
 ################################################################################
 
 src_paths =  $(shell find rai -mindepth 1 -maxdepth 1 -type d -not -name 'retired' -printf "%f ")
@@ -15,6 +17,8 @@ bin_paths = $(shell find bin -maxdepth 2 -name 'Makefile' -printf "%h ")
 initUbuntuPackages: force
 	@echo "##### calling make installUbuntu in each lib"
 	@find rai -mindepth 1 -maxdepth 1 -type d -exec make installUbuntu -C {} \;
+
+printUbuntu: $(DEPEND:%=inPath_printUbuntuPackages/%) printUbuntuPackages
 
 tests: $(test_paths:%=inPath_make/%)
 

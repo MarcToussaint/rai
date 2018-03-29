@@ -31,7 +31,7 @@ bool JointDidNotSwitch(const rai::Frame *a1, const WorldL& Ktuple, int order){
 
 //===========================================================================
 
-uint TM_FlagConstraints::dim_phi(const WorldL& Ktuple, int t){
+uint TM_FlagConstraints::dim_phi(const WorldL& Ktuple){
   uint d=0;
   for(rai::Frame *a : Ktuple.last()->frames){
     if(a->flags & (1<<FL_zeroVel)) d += 7;
@@ -42,12 +42,12 @@ uint TM_FlagConstraints::dim_phi(const WorldL& Ktuple, int t){
   return d;
 }
 
-void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
+void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple){
   CHECK_GE(order, 1, "FlagConstraints needs k-order 1");
 
   rai::KinematicWorld& K = *Ktuple.last();
 
-  y.resize(dim_phi(Ktuple, t)).setZero();
+  y.resize(dim_phi(Ktuple)).setZero();
   if(&J){
     uintA xbarDim=getKtupleDim(Ktuple);
     J.resize(y.N, xbarDim.last()).setZero();
@@ -58,13 +58,13 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
     if(a->flags & (1<<FL_zeroVel)){
       TM_Default pos(TMT_pos, a->ID);
       pos.order=1;
-      pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple, tau, t);
+      pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple);
 
       TM_Default quat(TMT_quat, a->ID); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
       // flip the quaternion sign if necessary
       quat.flipTargetSignOnNegScalarProduct = true;
       quat.order=1;
-      quat.TaskMap::phi(y({d+3,d+6})(), (&J?J({d+3,d+6})():NoArr), Ktuple, tau, t);
+      quat.TaskMap::phi(y({d+3,d+6})(), (&J?J({d+3,d+6})():NoArr), Ktuple);
 
       d += 7;
     }
@@ -73,13 +73,13 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
       CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
       TM_Default pos(TMT_pos, a->ID);
       pos.order=2;
-      pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple, tau, t);
+      pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple);
 
       TM_Default quat(TMT_quat, a->ID); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
       // flip the quaternion sign if necessary
       quat.flipTargetSignOnNegScalarProduct = true;
       quat.order=2;
-      quat.TaskMap::phi(y({d+3,d+6})(), (&J?J({d+3,d+6})():NoArr), Ktuple, tau, t);
+      quat.TaskMap::phi(y({d+3,d+6})(), (&J?J({d+3,d+6})():NoArr), Ktuple);
 
       d += 7;
     }
@@ -88,19 +88,19 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
       CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
       TM_Default pos(TMT_pos, a->ID);
       pos.order=2;
-      pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple, tau, t);
+      pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple);
       y(d+2) += g;
 
       TM_Default quat(TMT_quat, a->ID); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
       // flip the quaternion sign if necessary
       quat.flipTargetSignOnNegScalarProduct = true;
       quat.order=1;
-      quat.TaskMap::phi(y({d+3,d+6})(), (&J?J({d+3,d+6})():NoArr), Ktuple, tau, t);
+      quat.TaskMap::phi(y({d+3,d+6})(), (&J?J({d+3,d+6})():NoArr), Ktuple);
       if(false){ //rotational friction
         double eps = 1e-2;
         arr w,Jw;
         quat.order=1;
-        quat.TaskMap::phi(w, (&J?Jw:NoArr), Ktuple, tau, t);
+        quat.TaskMap::phi(w, (&J?Jw:NoArr), Ktuple);
         y({d+3,d+6}) += eps*w;
         if(&J) J({d+3,d+6}) += eps*Jw;
       }
@@ -113,7 +113,7 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
 
       TM_qItself q({a->ID}, false);
       q.order=1;
-      q.TaskMap::phi(y({d,d+jdim-1})(), (&J?J({d,d+jdim-1})():NoArr), Ktuple, tau, t);
+      q.TaskMap::phi(y({d,d+jdim-1})(), (&J?J({d,d+jdim-1})():NoArr), Ktuple);
 
       d += jdim;
     }
@@ -125,7 +125,7 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, i
 
 //===========================================================================
 
-uint TM_FlagCosts::dim_phi(const WorldL& Ktuple, int t){
+uint TM_FlagCosts::dim_phi(const WorldL& Ktuple){
   uint d=0;
   for(rai::Frame *a : Ktuple.last()->frames){
     if(order>=2 && a->flags & (1<<FL_xPosAccCosts)) d+=3;
@@ -136,12 +136,12 @@ uint TM_FlagCosts::dim_phi(const WorldL& Ktuple, int t){
   return d;
 }
 
-void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
+void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple){
   CHECK_GE(order, 1, "FlagConstraints needs k-order 1");
 
   rai::KinematicWorld& K = *Ktuple.last();
 
-  y.resize(dim_phi(Ktuple, t)).setZero();
+  y.resize(dim_phi(Ktuple)).setZero();
   if(&J){
     uintA xbarDim=getKtupleDim(Ktuple);
     J.resize(y.N, xbarDim.last()).setZero();
@@ -154,7 +154,7 @@ void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
       CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
       TM_Default pos(TMT_pos, a->ID);
       pos.order=2;
-      pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple, tau, t);
+      pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple);
 
       d += 3;
     }
@@ -163,7 +163,7 @@ void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
       CHECK_GE(order, 1, "FT_velCost needs k-order 2");
       TM_Default pos(TMT_pos, a->ID);
       pos.order=1;
-      pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple, tau, t);
+      pos.TaskMap::phi(y({d,d+2})(), (&J?J({d,d+2})():NoArr), Ktuple);
 
       d += 3;
     }
@@ -173,7 +173,7 @@ void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
 
       TM_qItself q({a->ID}, false);
       q.order=2;
-      q.TaskMap::phi(y({d,d+jdim-1})(), (&J?J({d,d+jdim-1})():NoArr), Ktuple, tau, t);
+      q.TaskMap::phi(y({d,d+jdim-1})(), (&J?J({d,d+jdim-1})():NoArr), Ktuple);
 
       d += jdim;
     }
@@ -183,7 +183,7 @@ void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple, double tau, int t){
 
       TM_qItself q({a->ID}, false);
       q.order=1;
-      q.TaskMap::phi(y({d,d+jdim-1})(), (&J?J({d,d+jdim-1})():NoArr), Ktuple, tau, t);
+      q.TaskMap::phi(y({d,d+jdim-1})(), (&J?J({d,d+jdim-1})():NoArr), Ktuple);
 
       d += jdim;
     }

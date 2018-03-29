@@ -83,7 +83,7 @@ struct MNode{
   void optLevel(uint level, bool collisions=false);
   void resetData();
 
-  //-- helpers
+  //-- helpers to get other nodes
   MNodeL getTreePath() const; ///< return the decision path in terms of a list of nodes (just walking to the root)
   rai::String getTreePathString(char sep=' ') const;
   MNode* getRoot(); ///< return the decision path in terms of a list of nodes (just walking to the root)
@@ -99,8 +99,8 @@ private:
   MNode *treePolicy_random(); ///< returns leave -- by descending children randomly
   MNode *treePolicy_softMax(double temperature);
   bool recomputeAllFolStates();
-public:
 
+public:
   void write(ostream& os=cout, bool recursive=false, bool path=true) const;
   void getGraph(Graph& G, Node *n=NULL, bool brief=false);
   Graph getGraph(bool brief=false){ Graph G; getGraph(G, NULL, brief); G.checkConsistency(); return G; }

@@ -29,6 +29,10 @@
 #include <Optim/convert.h>
 #include <Kin/kin_physx.h>
 
+#ifdef RAI_GL
+#  include <GL/gl.h>
+#endif
+
 using namespace rai;
 
 //===========================================================================
@@ -115,9 +119,9 @@ void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhas
   maxPhase = _phases;
   stepsPerPhase = _stepsPerPhase;
   if(stepsPerPhase>=0){
-    T = stepsPerPhase*maxPhase;
+    T = ceil(stepsPerPhase*maxPhase)+1;
     CHECK(T, "using T=0 to indicate inverse kinematics is deprecated.");
-    tau = durationPerPhase*maxPhase/T;
+    tau = durationPerPhase/double(stepsPerPhase);
   }
 //    setTiming(stepsPerPhase*maxPhase, durationPerPhase*maxPhase);
   k_order = _k_order;
@@ -1251,6 +1255,46 @@ void KOMO::plotTrajectory(){
   gnuplot("load 'z.trajectories.plt'");
 }
 
+void KOMO::plotPhaseTrajectory(){
+  ofstream fil("z.phase");
+  //first line: legend
+  fil <<"phase" <<endl;
+
+  arr X = getPath_times();
+
+  X.reshape(T, 1);
+  X.write(fil, NULL, NULL, "  ");
+  fil.close();
+
+  ofstream fil2("z.phase.plt");
+  fil2 <<"set key autotitle columnheader" <<endl;
+  fil2 <<"set title 'phase'" <<endl;
+  fil2 <<"set term qt 2" <<endl;
+  fil2 <<"plot 'z.phase' u 0:1 w l lw 3 lc 1 lt 1" <<endl;
+  fil2 <<endl;
+  fil2.close();
+
+  gnuplot("load 'z.phase.plt'");
+}
+
+struct DrawPaths : GLDrawer{
+  arr& X;
+  DrawPaths(arr& X): X(X){}
+  void glDraw(OpenGL& gl){
+    glColor(0.,0.,0.);
+    for(uint i=0;i<X.d0;i++){
+      glBegin(GL_LINES);
+      for(uint t=0;t<X.d1;t++){
+        rai::Transformation pose;
+        pose.set(&X(i,t,0));
+//          glTransform(pose);
+        glVertex3d(pose.pos.x, pose.pos.y, pose.pos.z);
+      }
+      glEnd();
+    }
+  }
+};
+
 bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPrefix){
   const char* tag = "KOMO planned trajectory";
   if(!gl){
@@ -1258,11 +1302,18 @@ bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPref
     gl->camera.setDefault();
   }
 
+  uintA allFrames;
+  allFrames.setStraightPerm(configurations.last()->frames.N);
+  arr X = getPath_frames(allFrames);
+  DrawPaths drawX(X);
+
+
   for(int t=-(int)k_order; t<(int)T; t++) {
     if(saveVideoPrefix) gl->captureImg=true;
     gl->clear();
     gl->add(glStandardScene, 0);
     gl->addDrawer(configurations(t+k_order));
+    gl->add(drawX);
     if(delay<0.){
       if(delay<-10.) FILE("z.graph") <<*configurations(t+k_order);
       gl->watch(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
@@ -1276,6 +1327,33 @@ bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPref
     int key = gl->watch(STRING(tag <<" (time " <<std::setw(3) <<T-1 <<'/' <<T <<')').p);
     return !(key==27 || key=='q');
   }
+  gl->clear();
+  return false;
+}
+
+bool KOMO::displayPath(bool watch){
+  uintA allFrames;
+  allFrames.setStraightPerm(configurations.last()->frames.N);
+  arr X = getPath_frames(allFrames);
+  CHECK_EQ(X.nd, 3, "");
+  CHECK_EQ(X.d2, 7, "");
+
+  DrawPaths drawX(X);
+
+  if(!gl){
+    gl = new OpenGL ("KOMO display");
+    gl->camera.setDefault();
+  }
+  gl->clear();
+  gl->add(glStandardScene, 0);
+  gl->addDrawer(configurations.last());
+  gl->add(drawX);
+  if(watch){
+    int key = gl->watch();
+    return !(key==27 || key=='q');
+  }
+  gl->update(NULL, false, false, true);
+  gl->clear();
   return false;
 }
 
@@ -1350,16 +1428,17 @@ void KOMO::set_x(const arr& x){
   uint x_count=0;
   for(uint t=0;t<T;t++){
     uint s = t+k_order;
-    uint x_dim = dim_x(t); //configurations(s)->getJointStateDimension();
+    uint x_dim = dim_x(t);
     if(x_dim){
       if(x.nd==1)  configurations(s)->setJointState(x({x_count, x_count+x_dim-1}));
       else         configurations(s)->setJointState(x[t]);
       if(useSwift){
         configurations(s)->stepSwift();
-//        configurations(s)->proxiesToContacts(1.1);
+        //configurations(s)->proxiesToContacts(1.1);
       }
       x_count += x_dim;
     }
+//    configurations(s)->checkConsistency();
   }
   CHECK_EQ(x_count, x.N, "");
 }
@@ -1373,8 +1452,96 @@ void KOMO::reportProxies(std::ostream& os){
   }
 }
 
+struct EffJointInfo{
+  rai::Joint *j;
+  rai::Transformation Q=0;
+  uint t, t_start=0, t_end=0;
+  double accum=0.;
+  EffJointInfo(rai::Joint *j, uint t): j(j), t(t){}
+  void write(ostream& os) const{
+    os <<"EffInfo " <<j->frame.parent->name <<"->" <<j->frame.name <<" \t" <<j->type <<" \tt=" <<t_start <<':' <<t_end <<" \tQ=" <<Q;
+  }
+};
+stdOutPipe(EffJointInfo)
+bool operator==(const EffJointInfo&, const EffJointInfo&){ return false; }
+
+rai::Array<rai::Transformation> KOMO::reportEffectiveJoints(std::ostream& os){
+  os <<"**** KOMO EFFECTIVE JOINTS" <<endl;
+  Graph G;
+  std::map<rai::Joint*,Node*> map;
+  for(uint s=k_order+1; s<T+k_order;s++){
+    JointL matches = getMatchingJoints({configurations(s-1), configurations(s)}, true);
+    for(uint i=0;i<matches.d0;i++){
+      JointL match = matches[i];
+      auto *n = new Node_typed<EffJointInfo>(G, {match(1)->frame.name}, {}, EffJointInfo(match(1), s-k_order));
+      map[match(1)] = n;
+      if(map.find(match(0))==map.end()) map[match(0)] = new Node_typed<EffJointInfo>(G, {match(0)->frame.name}, {}, EffJointInfo(match(0), s-k_order-1));
+      Node *other=map[match(0)];
+      n->addParent(other);
+    }
+  }
+
+//  for(uint t=0;t<T+k_order;t++){
+//    rai::KinematicWorld *K = configurations(t);
+//    for(rai::Frame *f:K->frames){
+//      if(f->joint && f->joint->constrainToZeroVel)
+//        os <<" t=" <<t-k_order <<'\t' <<f->name <<" \t" <<f->joint->type <<" \tq=" <<f->joint->getQ() <<" \tQ=" <<f->Q <<endl;
+//    }
+//  }
+
+//  G.displayDot();
+
+  for(Node *n:G){
+    if(!n->parents.N){ //a root node -> accumulate all info
+      EffJointInfo& info = n->get<EffJointInfo>();
+      info.t_start = info.t_end = info.t;
+      info.Q = info.j->frame.Q;
+      info.accum += 1.;
+      Node *c=n;
+      for(;;){
+        if(!c->parentOf.N) break;
+        c = c->parentOf.scalar();
+        EffJointInfo& cinfo = c->get<EffJointInfo>();
+        if(info.t_end<cinfo.t) info.t_end=cinfo.t;
+        info.Q.rot.add(cinfo.j->frame.Q.rot);
+        info.Q.pos += cinfo.j->frame.Q.pos;
+        info.accum += 1.;
+//        cout <<" t=" <<cinfo.t <<'\t' <<c->keys <<" \t" <<cinfo.j->type <<" \tq=" <<cinfo.j->getQ() <<" \tQ=" <<cinfo.j->frame.Q <<endl;
+      }
+      info.Q.pos /= info.accum;
+      info.Q.rot.normalize();
+      cout <<info <<endl;
+    }
+  }
+
+  //-- align this with the switches and return the transforms
+  uint s=0;
+  rai::Array<rai::Transformation> Qs(switches.N);
+  for(Node *n:G){
+    if(!n->parents.N){
+      EffJointInfo& info = n->get<EffJointInfo>();
+      rai::KinematicSwitch *sw = switches(s);
+
+      CHECK_EQ(info.t_start, sw->timeOfApplication, "");
+      CHECK_EQ(info.j->type, sw->jointType, "");
+//      CHECK_EQ(info.j->frame.parent->ID, sw->fromId, "");
+//      CHECK_EQ(info.j->frame.ID, sw->toId, "");
+
+      Qs(s) = info.Q;
+
+      s++;
+    }
+  }
+
+  cout <<Qs <<endl;
+
+  return Qs;
+}
+
+
 Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs) {
   if(featureValues.N>1){ //old optimizer -> remove some time..
+    HALT("outdated");
     arr tmp;
     for(auto& p:featureValues) tmp.append(p);
     featureValues = ARRAY<arr>(tmp);
@@ -1405,7 +1572,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
       if(task->prec.N>t && task->prec(t)){
         uint d=0;
         if(wasRun){
-          d=task->map->dim_phi(configurations({t,t+k_order}), t);
+          d=task->map->dim_phi(configurations({t,t+k_order}));
           for(uint j=0;j<d;j++) CHECK(tt(M+j)==task->type,"");
           if(d){
             if(task->type==OT_sumOfSqr){
@@ -1513,7 +1680,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
       Task *task = komo.tasks.elem(i);
       if(task->prec.N>t && task->prec(t)){
         //      CHECK(task->prec.N<=MP.T,"");
-        uint m = task->map->dim_phi(komo.configurations({t,t+komo.k_order}), t); //dimensionality of this task
+        uint m = task->map->dim_phi(komo.configurations({t,t+komo.k_order})); //dimensionality of this task
 
         if(&featureTimes) featureTimes.append(t, m); //consts<uint>(t, m));
         if(&featureTypes) featureTypes.append(task->type, m); //consts<ObjectiveType>(task->type, m));
@@ -1559,6 +1726,12 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
   //-- set the trajectory
   komo.set_x(x);
 
+  if(komo.animateOptimization>0){
+    komo.displayPath(komo.animateOptimization>1);
+//    komo.plotPhaseTrajectory();
+//    rai::wait();
+  }
+
   CHECK(dimPhi,"getStructure must be called first");
 //  getStructure(NoUintA, featureTimes, tt);
 //  if(WARN_FIRST_TIME){ LOG(-1)<<"calling inefficient getStructure"; WARN_FIRST_TIME=false; }
@@ -1579,7 +1752,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
       Task *task = komo.tasks.elem(i);
       if(task->prec.N>t && task->prec(t)){
         //query the task map and check dimensionalities of returns
-        task->map->phi(y, (&J?Jy:NoArr), Ktuple, komo.tau, t);
+        task->map->phi(y, (&J?Jy:NoArr), Ktuple);
         if(&J) CHECK_EQ(y.N, Jy.d0, "");
         if(&J) CHECK_EQ(Jy.nd, 2, "");
         if(&J) CHECK_EQ(Jy.d1, Ktuple_dim, "");
@@ -1656,11 +1829,28 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
 
 }
 
-
 arr KOMO::getPath(const StringA &joints){
   arr X(T,joints.N);
   for(uint t=0;t<T;t++){
     X[t] = configurations(t+k_order)->getJointState(joints);
+  }
+  return X;
+}
+
+arr KOMO::getPath_frames(const uintA &frames){
+  arr X(frames.N, T, 7);
+  for(uint t=0;t<T;t++){
+    for(uint i=0; i<frames.N;i++){
+      X(i, t, {}) = configurations(t+k_order)->frames(frames(i))->X.getArr7d();
+    }
+  }
+  return X;
+}
+
+arr KOMO::getPath_times(){
+  arr X(T);
+  for(uint t=0;t<T;t++){
+    X(t) = configurations(t+k_order)->frames.first()->time;
   }
   return X;
 }

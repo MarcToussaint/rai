@@ -46,7 +46,7 @@ TM_qItself::TM_qItself(uintA _selectedBodies, bool relative_q0)
   : selectedBodies(_selectedBodies), moduloTwoPi(true), relative_q0(relative_q0){
 }
 
-void TM_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G, int t) {
+void TM_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
   if(!selectedBodies.N){
     G.getJointState(q);
     if(relative_q0){
@@ -75,13 +75,12 @@ void TM_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G, int t) {
   }
 }
 
-void TM_qItself::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
+void TM_qItself::phi(arr& y, arr& J, const WorldL& G){
   CHECK(G.N>=order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
-  if(k==0) return TaskMap::phi(y, J, G, tau, t);
+  if(k==0) return TaskMap::phi(y, J, G);
 
-  tau = G(-1)->frames(0)->time - G(-2)->frames(0)->time;
-
+  double tau = G(-1)->frames(0)->time - G(-2)->frames(0)->time;
   double tau2=tau*tau, tau3=tau2*tau;
   arrA q_bar(k+1), J_bar(k+1);
   //-- read out the task variable from the k+1 configurations
@@ -93,7 +92,7 @@ void TM_qItself::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
       for(uint id:sw) selectedBodies.removeValue(id, false);
   }
   for(uint i=0;i<=k;i++){
-    phi(q_bar(i), J_bar(i), *G(offset+i), t-k+i);
+    phi(q_bar(i), J_bar(i), *G(offset+i));
   }
   selectedBodies = selectedBodies_org;
 
@@ -169,19 +168,31 @@ uint TM_qItself::dim_phi(const rai::KinematicWorld& G) {
   return G.getJointStateDimension();
 }
 
-uint TM_qItself::dim_phi(const WorldL& G, int t){
-  if(t<0) return dim_phi(*G.last());
-
-  while(dimPhi.N<=(uint)t) dimPhi.append(UINT_MAX);
-
-  //empirically test the dimension:
-  if(dimPhi(t)==UINT_MAX){
-    arr y;
-    phi(y, NoArr, G, 0.01, t);
-    dimPhi(t) = y.N;
+uint TM_qItself::dim_phi(const WorldL& Ktuple){
+  if(order==0) return dim_phi(*Ktuple.last());
+  else{
+    if(dimPhi.find(Ktuple.last()) == dimPhi.end()){
+      arr y;
+      phi(y, NoArr, Ktuple);
+      dimPhi[Ktuple.last()] = y.N;
+      return y.N;
+    }else{
+        return dimPhi[Ktuple.last()];
+    }
   }
+  return 0;
+//  if(t<0) return dim_phi(*Ktuple.last());
 
-  return dimPhi(t);
+//  while(dimPhi.N<=(uint)t) dimPhi.append(UINT_MAX);
+
+//  //empirically test the dimension:
+//  if(dimPhi(t)==UINT_MAX){
+//    arr y;
+//    phi(y, NoArr, Ktuple);
+//    dimPhi(t) = y.N;
+//  }
+
+//  return dimPhi(t);
 }
 
 rai::String TM_qItself::shortTag(const rai::KinematicWorld& G){
@@ -200,26 +211,27 @@ rai::String TM_qItself::shortTag(const rai::KinematicWorld& G){
 
 //===========================================================================
 
-void TM_qZeroVels::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
+void TM_qZeroVels::phi(arr& y, arr& J, const WorldL& Ktuple){
   CHECK(order==1,"NIY");
-  CHECK(G.N>=order+1,"I need at least " <<order+1 <<" configurations to evaluate");
+  CHECK(Ktuple.N>=order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
 
+  double tau = Ktuple(-1)->frames(0)->time - Ktuple(-2)->frames(0)->time;
   double tau2=tau*tau, tau3=tau2*tau;
   arrA q_bar(k+1), J_bar(k+1);
   //-- read out the task variable from the k+1 configurations
-  uint offset = G.N-1-k; //G.N might contain more configurations than the order of THIS particular task -> the front ones are not used
+  uint offset = Ktuple.N-1-k; //G.N might contain more configurations than the order of THIS particular task -> the front ones are not used
 
   rai::Joint *j;
-  for(rai::Frame *f:G.last()->frames) if((j=f->joint) && j->constrainToZeroVel){
-    rai::Joint *jmatch = G.last(-2)->getJointByBodyIndices(j->from()->ID, j->frame.ID);
+  for(rai::Frame *f:Ktuple.last()->frames) if((j=f->joint) && j->constrainToZeroVel){
+    rai::Joint *jmatch = Ktuple.last(-2)->getJointByBodyIndices(j->from()->ID, j->frame.ID);
     if(jmatch && j->type!=jmatch->type) jmatch=NULL;
     if(jmatch){
       for(uint i=0;i<j->qDim();i++){
-        q_bar(0).append(G.last(-2)->q(jmatch->qIndex+i));
-        q_bar(1).append(G.last(-1)->q(j     ->qIndex+i));
-        J_bar(0).append(eyeVec(G.last(-2)->q.N, jmatch->qIndex+i));
-        J_bar(1).append(eyeVec(G.last(-1)->q.N, j     ->qIndex+i));
+        q_bar(0).append(Ktuple.last(-2)->q(jmatch->qIndex+i));
+        q_bar(1).append(Ktuple.last(-1)->q(j     ->qIndex+i));
+        J_bar(0).append(eyeVec(Ktuple.last(-2)->q.N, jmatch->qIndex+i));
+        J_bar(1).append(eyeVec(Ktuple.last(-1)->q.N, j     ->qIndex+i));
       }
     }
   }
@@ -231,29 +243,29 @@ void TM_qZeroVels::phi(arr& y, arr& J, const WorldL& G, double tau, int t){
   if(k==2)  y = (q_bar(2)-2.*q_bar(1)+q_bar(0))/tau2; //penalize acceleration
   if(k==3)  y = (q_bar(3)-3.*q_bar(2)+3.*q_bar(1)-q_bar(0))/tau3; //penalize jerk
   if(&J) {
-    uintA qidx(G.N);
+    uintA qidx(Ktuple.N);
     qidx(0)=0;
-    for(uint i=1;i<G.N;i++) qidx(i) = qidx(i-1)+G(i-1)->q.N;
-    J = zeros(y.N, qidx.last()+G.last()->q.N);
+    for(uint i=1;i<Ktuple.N;i++) qidx(i) = qidx(i-1)+Ktuple(i-1)->q.N;
+    J = zeros(y.N, qidx.last()+Ktuple.last()->q.N);
     if(k==1){ J.setMatrixBlock(J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(   -J_bar(0), 0, qidx(offset+0));  J/=tau; }
     if(k==2){ J.setMatrixBlock(J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(-2.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(J_bar(0)   , 0, qidx(offset+0));  J/=tau2; }
     if(k==3){ J.setMatrixBlock(J_bar(3), 0, qidx(offset+3));  J.setMatrixBlock(-3.*J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(3.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau3; }
   }
 }
 
-uint TM_qZeroVels::dim_phi(const WorldL& G, int t){
-  CHECK(t>=0,"");
-
-  while(dimPhi.N<=(uint)t) dimPhi.append(UINT_MAX);
-
-  //empirically test the dimension:
-  if(dimPhi(t)==UINT_MAX){
-    arr y;
-    phi(y, NoArr, G, 0.01, t);
-    dimPhi(t) = y.N;
-  }
-
-  return dimPhi(t);
+uint TM_qZeroVels::dim_phi(const WorldL& Ktuple){
+    if(order==0) return dim_phi(*Ktuple.last());
+    else{
+      if(dimPhi.find(Ktuple.last()) == dimPhi.end()){
+        arr y;
+        phi(y, NoArr, Ktuple);
+        dimPhi[Ktuple.last()] = y.N;
+        return y.N;
+      }else{
+          return dimPhi[Ktuple.last()];
+      }
+    }
+    return 0;
 }
 
 //===========================================================================

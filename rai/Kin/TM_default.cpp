@@ -91,12 +91,7 @@ TM_Default::TM_Default(const Node *specs, const rai::KinematicWorld& G)
 }
 
 
-void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t) {
-  if(t>=0 && referenceIds.N){
-    if(referenceIds.nd==1){  i=referenceIds(t); j=-1; }
-    if(referenceIds.nd==2){  i=referenceIds(t,0); j=referenceIds(t,1); }
-  }
-
+void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   rai::Frame *body_i = i<0?NULL: G.frames(i);
   rai::Frame *body_j = j<0?NULL: G.frames(j);
 

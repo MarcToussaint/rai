@@ -20,7 +20,7 @@ TM_AlignStacking::TM_AlignStacking(const rai::KinematicWorld& G, const char* iSh
   if(a) i=a->ID;
 }
 
-void TM_AlignStacking::phi(arr& y, arr& J, const rai::KinematicWorld& G, int t){
+void TM_AlignStacking::phi(arr& y, arr& J, const rai::KinematicWorld& G){
   rai::Frame *b=G.frames(i);
 
   rai::Joint *j=b->joint;

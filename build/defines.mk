@@ -18,7 +18,7 @@ endif
 ifeq ($(PYBIND),1)
 CXXFLAGS += -DRAI_PYBIND `python3-config --cflags`
 LIBS += `python3-config --ldflags`
-CPATH   := $(CPATH):$(BASE)/../pybind11/include
+CPATH   := $(CPATH):$(BASE)/../pybind11/include::$(BASE)/../../pybind11/include
 endif
 
 ifeq ($(X11),1)
@@ -89,6 +89,7 @@ QT := 1
 endif
 
 ifeq ($(GL),1)
+DEPEND_UBUNTU += libglew-dev
 CXXFLAGS  += -DRAI_GL
 LIBS += -lGLEW -lglut -lGLU -lGL -lX11
 endif
