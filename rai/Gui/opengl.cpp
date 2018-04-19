@@ -643,6 +643,70 @@ void glDrawAxes(double scale) {
 }
 
 
+void glDrawCamera(const rai::Camera &cam){
+  glTransform(cam.X);
+
+  glDrawAxes(.1);
+
+  double dxFar,dyFar,zFar;
+  double dxNear,dyNear,zNear;
+  zNear = cam.zNear;
+  zFar = cam.zFar;
+  if(zFar-zNear > 10.) zFar = zNear + .1;
+  if(cam.focalLength){
+    dyNear = zNear * .5/cam.focalLength;
+    dyFar = zFar * .5/cam.focalLength;
+    dxNear = cam.whRatio * dyNear;
+    dxFar = cam.whRatio * dyFar;
+  }
+  if(cam.heightAngle){
+//    zFar = zNear + .1*(zFar-zNear);
+    dyNear = zNear * ::sin(.5*cam.heightAngle/180.*RAI_PI);
+    dyFar = zFar * ::sin(.5*cam.heightAngle/180.*RAI_PI);
+    dxNear = cam.whRatio * dyNear;
+    dxFar = cam.whRatio * dyFar;
+  }
+  if(cam.heightAbs){
+    dyFar = dyNear = cam.heightAbs/2.;
+    dxFar = dxNear = cam.whRatio * dyNear;
+  }
+  glColor(.5,.5,.5);
+  glBegin(GL_LINE_STRIP);
+  glVertex3f(-dxNear, -dyNear, -zNear);
+  glVertex3f(-dxNear, dyNear, -zNear);
+  glVertex3f(dxNear, dyNear, -zNear);
+  glVertex3f(dxNear, -dyNear, -zNear);
+  glVertex3f(-dxNear, -dyNear, -zNear);
+  glEnd();
+  glBegin(GL_LINE_STRIP);
+  glVertex3f(-dxFar, -dyFar, -zFar);
+  glVertex3f(-dxFar, dyFar, -zFar);
+  glVertex3f(dxFar, dyFar, -zFar);
+  glVertex3f(dxFar, -dyFar, -zFar);
+  glVertex3f(-dxFar, -dyFar, -zFar);
+  glEnd();
+  glBegin(GL_LINES);
+  glVertex3f(0,0,0);
+  glVertex3f(-dxNear, -dyNear, -zNear);
+  glVertex3f(0,0,0);
+  glVertex3f(-dxNear, dyNear, -zNear);
+  glVertex3f(0,0,0);
+  glVertex3f(dxNear, -dyNear, -zNear);
+  glVertex3f(0,0,0);
+  glVertex3f(dxNear, dyNear, -zNear);
+  glEnd();
+  glBegin(GL_LINES);
+  glVertex3f(-dxNear, -dyNear, -zNear);
+  glVertex3f(-dxFar,  -dyFar,  -zFar);
+  glVertex3f(-dxNear, dyNear, -zNear);
+  glVertex3f(-dxFar,  dyFar,  -zFar);
+  glVertex3f(dxNear, -dyNear, -zNear);
+  glVertex3f(dxFar,  -dyFar,  -zFar);
+  glVertex3f(dxNear, dyNear, -zNear);
+  glVertex3f(dxFar,  dyFar,  -zFar);
+  glEnd();
+}
+
 void glDrawDisk(float radius) {
   GLUquadric *style=gluNewQuadric();
   gluDisk(style, 0, radius, 10, 1);

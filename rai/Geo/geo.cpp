@@ -12,7 +12,7 @@
 
 #ifndef RAI_NO_REGISTRY
 #include <Core/graph.h>
-REGISTER_TYPE(T, rai::Transformation);
+REGISTER_TYPE(T, rai::Transformation)
 #endif
 
 #ifdef RAI_GL
@@ -752,8 +752,8 @@ void Quaternion::checkZero() const {
 double Quaternion::sqrDiff(const Quaternion& _q2) const{
   arr q1(&w, 4, true);
   arr q2(&_q2.w, 4, true);
-  if(quatScalarProduct(q1,q2)>=0) return sqrDistance(q1, q2);
-  return sqrDistance(-q1,q2);
+  if(scalarProduct(q1,q2)>=0) return sumOfSqr(q1-q2);
+  return sumOfSqr(q1+q2);
 }
 
 /// gets rotation angle (in rad [0, 2pi])
@@ -1556,23 +1556,23 @@ void Camera::setZero() {
   X.setZero();
   foc.setZero();
   heightAngle=90.;
-  heightAbs=10.;
-  focalLength=1.;
+  heightAbs=0.;
+  focalLength=0.;
   whRatio=1.;
   zNear=.1;
   zFar=1000.;
 }
 
 /// the height angle (in degrees) of the camera perspective; set it 0 for orthogonal projection
-void Camera::setHeightAngle(float a) { heightAngle=a; heightAbs=0.;}
+void Camera::setHeightAngle(float a) { focalLength=heightAbs=0.; heightAngle=a; }
 /// the absolute height of the camera perspective (automatically also sets heightAngle=0)
-void Camera::setHeightAbs(float h) { heightAngle=0.; heightAbs=h; }
+void Camera::setHeightAbs(float h) { focalLength=heightAngle=0.; heightAbs=h; }
 /// the z-range (depth range) visible for the camera
 void Camera::setZRange(float znear, float zfar) { zNear=znear; zFar=zfar; }
 /// set the width/height ratio of your viewport to see a non-distorted picture
 void Camera::setWHRatio(float ratio) { whRatio=ratio; }
 /// set the width/height ratio of your viewport to see a non-distorted picture
-void Camera::setFocalLength(float f) { heightAbs=heightAngle = 0;  focalLength = f; }
+void Camera::setFocalLength(float f) { heightAbs=heightAngle=0;  focalLength = f; }
 /// the frame's position
 void Camera::setPosition(float x, float y, float z) { X.pos.set(x, y, z); }
 /// rotate the frame to focus the absolute coordinate origin (0, 0, 0)
@@ -1640,22 +1640,29 @@ void Camera::glSetProjectionMatrix() {
 //  if(fixedProjectionMatrix.N) {
 //    glLoadMatrixd(fixedProjectionMatrix.p);
 //  } else {
-  if(heightAngle==0) {
-    if(heightAbs==0) {
-      arr P(4,4);
-      P.setZero();
-      P(0,0) = 2.*focalLength/whRatio;
-      P(1,1) = 2.*focalLength;
-      P(2,2) = (zFar + zNear)/(zNear-zFar);
-      P(2,3) = -1.;
-      P(3,2) = 2. * zFar * zNear / (zNear-zFar);
-      glLoadMatrixd(P.p);
-    }else{
-      glOrtho(-whRatio*heightAbs/2., whRatio*heightAbs/2.,
-              -heightAbs/2., heightAbs/2., zNear, zFar);
-    }
-  } else
+  if(focalLength > 0.) { //focal lengh mode
+    CHECK(!heightAngle, "");
+    CHECK(!heightAbs, "");
+    arr P(4,4);
+    P.setZero();
+    P(0,0) = 2.*focalLength/whRatio;
+    P(1,1) = 2.*focalLength;
+    P(2,2) = (zFar + zNear)/(zNear-zFar);
+    P(2,3) = -1.;
+    P(3,2) = 2. * zFar * zNear / (zNear-zFar);
+    glLoadMatrixd(P.p);
+  }
+  if(heightAbs > 0.) { //ortho mode
+    CHECK(!heightAngle, "");
+    CHECK(!focalLength, "");
+    glOrtho(-whRatio*heightAbs/2., whRatio*heightAbs/2.,
+            -heightAbs/2., heightAbs/2., zNear, zFar);
+  }
+  if(heightAngle > 0.) { //normal perspective mode
+    CHECK(!focalLength, "");
+    CHECK(!heightAbs, "");
     gluPerspective(heightAngle, whRatio, zNear, zFar);
+  }
   double m[16];
   glMultMatrixd(X.getInverseAffineMatrixGL(m));
 #endif
@@ -1663,11 +1670,13 @@ void Camera::glSetProjectionMatrix() {
 
 /// convert from gluPerspective's non-linear [0, 1] depth to the true [zNear, zFar] depth
 double Camera::glConvertToTrueDepth(double d) {
+  CHECK(!heightAbs, "I think this is wrong for ortho view");
   return zNear + (zFar-zNear)*d/(zFar/zNear*(1.-d)+1.);
 }
 
 /// convert from gluPerspective's non-linear [0, 1] depth to the linear [0, 1] depth
 double Camera::glConvertToLinearDepth(double d) {
+  CHECK(!heightAbs, "I think this is wrong for ortho view");
   return d/(zFar/zNear*(1.-d)+1.);
 }
 
@@ -1677,8 +1686,7 @@ void Camera::setKinect(){
   focus(0., 0., 5.);
   setZRange(.1, 50.);
 #if 1
-  heightAbs=heightAngle = 0;
-  focalLength = 580./480.;
+  setFocalLength(580./480.);
 #else
   heightAngle=45;
 #endif
