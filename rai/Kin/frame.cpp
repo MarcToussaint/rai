@@ -638,7 +638,7 @@ void rai::Joint::read(const Graph &G){
   arr ctrl_limits;
   G.get(limits, "limits");
   if(limits.N && type!=JT_rigid && !mimic){
-    CHECK(limits.N==2*qDim() || limits.N==2*qDim()+3, "parsed limits have wrong dimension: either lo-hi or lo-hi-vel-eff-acc");
+    CHECK(limits.N>=2*qDim()/* || limits.N==2*qDim()+3*/, "parsed limits have wrong dimension: either lo-hi or lo-hi-vel-eff-acc");
   }
   G.get(ctrl_limits, "ctrl_limits");
   if(ctrl_limits.N && type!=JT_rigid){

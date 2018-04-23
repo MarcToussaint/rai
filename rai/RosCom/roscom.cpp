@@ -275,7 +275,7 @@ Pcl conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg){
 }
 #endif
 
-CtrlMsg conv_JointState2CtrlMsg(const marc_controller_pkg::JointState& msg){
+CtrlMsg conv_JointState2CtrlMsg(const rai_msgs::JointState& msg){
   return CtrlMsg(conv_stdvec2arr(msg.q), conv_stdvec2arr(msg.qdot), conv_stdvec2arr(msg.fL), conv_stdvec2arr(msg.fR),conv_stdvec2arr(msg.u_bias), conv_stdvec2arr(msg.fL_err), conv_stdvec2arr(msg.fR_err));
 
 }
@@ -284,8 +284,8 @@ arr conv_JointState2arr(const sensor_msgs::JointState& msg){
   return conv_stdvec2arr(msg.position);
 }
 
-marc_controller_pkg::JointState conv_CtrlMsg2JointState(const CtrlMsg& ctrl){
-  marc_controller_pkg::JointState jointState;
+rai_msgs::JointState conv_CtrlMsg2JointState(const CtrlMsg& ctrl){
+  rai_msgs::JointState jointState;
   if(!ctrl.q.N) return jointState;
   jointState.q = conv_arr2stdvec(ctrl.q);
   jointState.qdot= conv_arr2stdvec(ctrl.qdot);
