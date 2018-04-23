@@ -9,14 +9,14 @@
 #include "serviceRAP.h"
 
 #ifdef RAI_ROS
-#include <msgs/StringString.h>
+#include <rai_msgs/StringString.h>
 
 #include <ros/ros.h>
 struct sServiceRAP{
   Var<RelationalMachine> RM;
   ros::NodeHandle nh;
   ros::ServiceServer service;
-  bool cb_service(rai_srv::StringString::Request& _request, rai_srv::StringString::Response& response);
+  bool cb_service(rai_msgs::StringString::Request& _request, rai_msgs::StringString::Response& response);
 
   sServiceRAP() : RM(NULL, "RM"){}
 };
@@ -33,7 +33,7 @@ ServiceRAP::~ServiceRAP(){
   if(s) delete s;
  }
 
-bool sServiceRAP::cb_service(rai_srv::StringString::Request& _request, rai_srv::StringString::Response& response){
+bool sServiceRAP::cb_service(rai_msgs::StringString::Request& _request, rai_msgs::StringString::Response& response){
   rai::String request = _request.str.c_str();
   if(request=="getState"){
     rai::String str = RM.get()->getState();

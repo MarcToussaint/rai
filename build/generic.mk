@@ -337,6 +337,9 @@ inPath_makeLib/Hardware_%: $(BASE)/rai/Hardware/% $(PREOBJS)
 inPath_makeLib/%: $(BASE)/rai/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< lib$*.so
 
+inPath_makeLib/%: $(BASE)/../src/% $(PREOBJS)
+	+@-$(BASE)/build/make-path.sh $< lib$*.so
+
 inPath_make/%: % $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< x.exe
 

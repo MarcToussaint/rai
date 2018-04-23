@@ -33,7 +33,7 @@
 #include <Geo/geo.h>
 #include <Kin/kin.h>
 #include <Control/ctrlMsg.h>
-#include "msgs/JointState.h"
+#include "rai_msgs/JointState.h"
 #ifdef RAI_PCL
 #  include <PCL/conv.h>
 #endif
@@ -76,7 +76,7 @@ Pcl                 conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg);
 #endif
 arr                 conv_points2arr(const std::vector<geometry_msgs::Point>& pts);
 arr                 conv_colors2arr(const std::vector<std_msgs::ColorRGBA>& pts);
-CtrlMsg             conv_JointState2CtrlMsg(const marc_controller_pkg::JointState& msg);
+CtrlMsg             conv_JointState2CtrlMsg(const rai_msgs::JointState& msg);
 arr                 conv_JointState2arr(const sensor_msgs::JointState& msg);
 rai::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::MarkerArray& markers);
 std_msgs::Float32MultiArray conv_floatA2Float32Array(const floatA&);
@@ -86,7 +86,7 @@ std_msgs::Float64MultiArray conv_arr2Float64Array(const arr&);
 geometry_msgs::Pose conv_transformation2pose(const rai::Transformation&);
 geometry_msgs::Transform conv_transformation2transform(const rai::Transformation&);
 std::vector<geometry_msgs::Point> conv_arr2points(const arr& pts);
-marc_controller_pkg::JointState   conv_CtrlMsg2JointState(const CtrlMsg& ctrl);
+rai_msgs::JointState   conv_CtrlMsg2JointState(const CtrlMsg& ctrl);
 floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray&);
 arr conv_Float32Array2arr(const std_msgs::Float32MultiArray &msg);
 visualization_msgs::Marker conv_Shape2Marker(const rai::Shape& sh);
