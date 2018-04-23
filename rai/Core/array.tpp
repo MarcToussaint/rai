@@ -696,11 +696,12 @@ template<class T> void rai::Array<T>::delColumns(int i, uint k) {
 }
 
 /// inserts k columns at the i-th column [must be 2D]
-template<class T> void rai::Array<T>::insColumns(uint i, uint k) {
+template<class T> void rai::Array<T>::insColumns(int i, uint k) {
   CHECK(memMove, "only with memMove");
-  CHECK(k>0, "");
   CHECK_EQ(nd,2, "only for matricies");
-  CHECK(i<=d1, "range check error");
+  if(!k) return;
+  if(i<0) i+=d1;
+  CHECK(i<=(int)d1, "range check error");
   uint n=d1;
   resizeCopy(d0, n+k);
   for(uint j=d0; j--;) {
@@ -859,7 +860,7 @@ template<class T> rai::Array<T> rai::Array<T>::operator()(int i, std::pair<int, 
 /// range reference access
 template<class T> rai::Array<T> rai::Array<T>::operator()(int i, int j, std::initializer_list<int> K) const {
   rai::Array<T> z;
-  if(K.size()==2){ NIY; }
+  if(K.size()==2) z.referToRange(*this, i, j, K.begin()[0], K.begin()[1]);
   else if(K.size()==0) z.referToDim(*this, i, j);
   else if(K.size()==1) z.referToDim(*this, i, j, K.begin()[0]);
   else HALT("range list needs 0,1, or 2 entries exactly");
@@ -1500,6 +1501,30 @@ template<class T> void rai::Array<T>::referToRange(const Array<T>& a, int i, int
   if(a.nd==3) {
     nd=2;  d0=J+1-j; d1=a.d2; d2=0;  N=d0*d1;
     p = &a(i,j,0);
+  }
+  vec_type::_M_impl._M_start = p;
+  vec_type::_M_impl._M_finish = p+N;
+  vec_type::_M_impl._M_end_of_storage = p+N;
+}
+
+/// make this array a subarray reference to \c a
+template<class T> void rai::Array<T>::referToRange(const Array<T>& a, int i, int j, int k, int K) {
+  CHECK(a.nd>2, "does not make sense");
+  CHECK(a.nd<=3, "not implemented yet");
+  freeMEM();
+  resetD();
+  reference=true; memMove=a.memMove;
+  if(i<0) i+=a.d0;
+  if(j<0) j+=a.d1;
+  if(k<0) k+=a.d2;
+  if(K<0) K+=a.d2;
+  if(k>K) return;
+  CHECK((uint)i<a.d0, "SubRange range error (" <<i <<"<" <<a.d0 <<")");
+  CHECK((uint)j<a.d1, "SubRange range error (" <<j <<"<" <<a.d1 <<")");
+  CHECK((uint)k<a.d2 && (uint)K<a.d2, "SubRange range error (" <<k <<"<" <<a.d2 <<", " <<K <<"<" <<a.d2 <<")");
+  if(a.nd==3) {
+    nd=1;  d0=K+1-k; d1=0; d2=0;  N=d0;
+    p = &a(i,j,k);
   }
   vec_type::_M_impl._M_start = p;
   vec_type::_M_impl._M_finish = p+N;

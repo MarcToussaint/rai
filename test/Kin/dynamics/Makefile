@@ -1,6 +1,6 @@
 BASE = ../../..
 
-ODE = 1
+ODE = 0
 
 DEPEND = Geo Kin Core Algo Gui Optim
 

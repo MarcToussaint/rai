@@ -43,7 +43,7 @@ void TEST(GJK_Jacobians) {
   TM_PairCollision dist(K, "s1", "s2", true);
   TM_PairCollision distVec(K, "s1", "s2", false);
 
-  for(uint k=0;k<1000;k++){
+  for(uint k=0;k<100;k++){
     //randomize shapes
     s1.mesh().clear();             s2.mesh().clear();
     s1.sscCore().setRandom();      s2.sscCore().setRandom();

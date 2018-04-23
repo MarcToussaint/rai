@@ -158,6 +158,7 @@ template<class T> struct Array : std::vector<T> {
   void referTo(const Array<T>& a);
   void referToRange(const Array<T>& a, int i, int I); // -> referTo(a,{i,I})
   void referToRange(const Array<T>& a, int i, int j, int J); // -> referTo(a,{i,I})
+  void referToRange(const Array<T>& a, int i, int j, int k, int K); // -> referTo(a,{i,I})
   void referToDim(const Array<T>& a, int i); // -> referTo
   void referToDim(const Array<T>& a, uint i, uint j);
   void referToDim(const Array<T>& a, uint i, uint j, uint k);
@@ -239,7 +240,7 @@ template<class T> struct Array : std::vector<T> {
   void delRows(uint i, uint k=1);
   void delColumns(int i, uint k=1);
   void insRows(int i, uint k=1);
-  void insColumns(uint i, uint k=1);
+  void insColumns(int i, uint k=1);
   void resizeDim(uint k, uint dk);
   void setAppend(const T& x); //? same as if(findValue(x)==-1) append(x)
   void setAppend(const Array<T>& x);

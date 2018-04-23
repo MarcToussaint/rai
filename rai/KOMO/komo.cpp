@@ -966,7 +966,12 @@ void KOMO::setConfigFromFile(){
 }
 
 void KOMO::setIKOpt(){
-  setTiming(1, 1);
+  maxPhase = 1.;
+  stepsPerPhase = 1;
+  T = 1;
+  tau = 1.;
+  k_order = 1;
+//  setTiming(1, 1);
   setFixEffectiveJoints();
   setFixSwitchedObjects();
   setSquaredQVelocities();
