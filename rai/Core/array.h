@@ -456,6 +456,7 @@ extern arrA& NoArrA; //this is a pointer to NULL!!!! I use it for optional argum
 extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
 extern byteA& NoByteA; //this is a pointer to NULL!!!! I use it for optional arguments
 extern uintAA& NoUintAA; //this is a pointer to NULL!!!! I use it for optional arguments
+extern uint16A& NoUint16A; //this is a pointer to NULL!!!! I use it for optional arguments
 
 //===========================================================================
 /// @}

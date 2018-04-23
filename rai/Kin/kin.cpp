@@ -2553,12 +2553,12 @@ void rai::KinematicWorld::glDraw_sub(OpenGL& gl) {
 
   //shapes
   if(orsDrawBodies){
-  //first non-transparent
-    for(Frame *f: frames) if(f->shape && f->shape->alpha()<1.){
+    //first non-transparent
+    for(Frame *f: frames) if(f->shape && f->shape->alpha()==1.){
       gl.drawId(f->ID);
       f->shape->glDraw(gl);
     }
-    for(Frame *f: frames) if(f->shape && f->shape->alpha()==1.){
+    for(Frame *f: frames) if(f->shape && f->shape->alpha()<1.){
       gl.drawId(f->ID);
       f->shape->glDraw(gl);
     }

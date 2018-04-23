@@ -154,7 +154,7 @@ void SwiftInterface::initActivations(const rai::KinematicWorld& world, uint pare
 //  for(rai::Frame *b: world.frames) deactivate(b->shapes);
   //deactivate along edges...
   for(rai::Frame *f: world.frames) if(f->parent){
-    //cout <<"deactivating edge pair"; listWriteNames({e->from, e->to}, cout); cout <<endl;
+//    cout <<"deactivating edge pair " <<f->parent->name <<"--" <<f->name <<endl;
     deactivate({ f->parent, f });
   }
   //deactivate along trees...

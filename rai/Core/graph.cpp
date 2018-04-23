@@ -156,17 +156,17 @@ void Node::write(std::ostream& os) const {
     graph().write(os, " ");
     os <<" }";
   } else if(isOfType<NodeL>()) {
-    os <<"=(";
+    os <<":(";
     for(Node *it: (*getValue<NodeL>())) os <<' ' <<it->keys.last();
     os <<" )";
   } else if(isOfType<rai::String>()) {
-    os <<"=\"" <<*getValue<rai::String>() <<'"';
+    os <<":\"" <<*getValue<rai::String>() <<'"';
   } else if(isOfType<rai::FileToken>()) {
-    os <<"='" <<getValue<rai::FileToken>()->name <<'\'';
+    os <<":'" <<getValue<rai::FileToken>()->name <<'\'';
   } else if(isOfType<arr>()) {
-    os <<'='; getValue<arr>()->write(os, NULL, NULL, "[]");
+    os <<':'; getValue<arr>()->write(os, NULL, NULL, "[]");
   } else if(isOfType<double>()) {
-    os <<'=' <<*getValue<double>();
+    os <<':' <<*getValue<double>();
   } else if(isOfType<bool>()) {
     if(*getValue<bool>()) os<<','; else os <<'!';
   } else if(isOfType<Type*>()) {
@@ -279,7 +279,7 @@ Node_typed<int>* Graph::newNode(const uintA& parentIdxs) {
 
 void Graph::appendDict(const std::map<std::string, std::string>& dict){
   for(const std::pair<std::string,std::string>& p:dict){
-    Node *n = readNode(STRING('='<<p.second), false, false, rai::String(p.first));
+    Node *n = readNode(STRING(':'<<p.second), false, false, rai::String(p.first));
     if(!n) RAI_MSG("failed to read dict entry <" <<p.first <<',' <<p.second <<'>');
   }
 }
@@ -508,6 +508,9 @@ void Graph::read(std::istream& is, bool parseInfo) {
     char c=rai::peerNextChar(is, " \n\r\t,");
     if(!is.good() || c=='}') { is.clear(); break; }
     Node *n = readNode(is, false, parseInfo);
+    if(n->keys.N==1 && n->keys.first()=="Quit"){
+      delete n; n=NULL;
+    }
     if(!n) break;
     if(n->keys.N==1 && n->keys.last()=="Include"){
       read(n->get<rai::FileToken>().getIs(true));
@@ -579,7 +582,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
     rai::skip(is," \t\n\r");
     pinfo.keys_beg=is.tellg();
     for(;;) {
-      if(!str.read(is, " \t", " \t\n\r,;([{}=!", false)) break;
+      if(!str.read(is, " \t", " \t\n\r,;([{}=:!", false)) break;
       keys.append(str);
       pinfo.keys_end=is.tellg();
     }
@@ -624,8 +627,8 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
   //-- read value
   Node *node=NULL;
   pinfo.value_beg=(long int)is.tellg()-1;
-  if(c=='=' || c=='{' || c=='[' || c=='<' || c=='!') {
-    if(c=='=') c=rai::getNextChar(is," \t");
+  if(c=='=' || c==':' || c=='{' || c=='[' || c=='<' || c=='!') {
+    if(c=='=' || c==':') c=rai::getNextChar(is," \t");
     if((c>='a' && c<='z') || (c>='A' && c<='Z')) { //rai::String or boolean
       is.putback(c);
       str.read(is, "", " \n\r\t,;}", false);
@@ -696,7 +699,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
         return NULL;
       }
     }
-  } else { //no '=' or '{' -> boolean
+  } else { //no ':' or '{' -> boolean
     is.putback(c);
     node = newNode<bool>(keys, parents, true);
   }
@@ -1084,7 +1087,7 @@ struct RegistryInitializer{
         rai::String key(rai::argv[n]+1);
         if(n+1<rai::argc && rai::argv[n+1][0]!='-'){
           rai::String value;
-          value <<'=' <<rai::argv[n+1];
+          value <<':' <<rai::argv[n+1];
           registry()->readNode(value, false, false, key);
           n++;
         }else{

@@ -1095,7 +1095,7 @@ void rai::FileToken::changeDir(){
       if(!getcwd(cwd.p, 200)) HALT("couldn't get current dir");
       cwd.resize(strlen(cwd.p), true);
       LOG(3) <<"entering path `" <<path<<"' from '" <<cwd <<"'" <<std::endl;
-      if(chdir(path)) HALT("couldn't change to directory " <<path <<" (current dir: " <<cwd <<")");
+      if(chdir(path)) HALT("couldn't change to directory '" <<path <<"' (current dir: '" <<cwd <<"')");
     }
   }
 }
@@ -1103,7 +1103,7 @@ void rai::FileToken::changeDir(){
 void rai::FileToken::unchangeDir(){
   if(cwd.N){
     LOG(3) <<"leaving path `" <<path<<"' back to '" <<cwd <<"'" <<std::endl;
-    if(chdir(cwd)) HALT("couldn't change back to directory " <<cwd);
+    if(chdir(cwd)) HALT("couldn't change back to directory '" <<cwd <<"'");
   }
 }
 
