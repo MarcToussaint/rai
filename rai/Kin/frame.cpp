@@ -148,7 +148,7 @@ void rai::Frame::write(std::ostream& os) const {
   }
 
   for(Node *n : ats){
-    StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H"};
+    StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A"};
     if(!avoid.contains(n->keys.last())) os <<' ' <<*n;
   }
 
@@ -638,7 +638,7 @@ void rai::Joint::read(const Graph &G){
   arr ctrl_limits;
   G.get(limits, "limits");
   if(limits.N && type!=JT_rigid && !mimic){
-    CHECK(limits.N==2*qDim() || limits.N==2*qDim()+3, "parsed limits have wrong dimension: either lo-hi or lo-hi-vel-eff-acc");
+    CHECK(limits.N>=2*qDim()/* || limits.N==2*qDim()+3*/, "parsed limits have wrong dimension: either lo-hi or lo-hi-vel-eff-acc");
   }
   G.get(ctrl_limits, "ctrl_limits");
   if(ctrl_limits.N && type!=JT_rigid){

@@ -573,13 +573,13 @@ void Quaternion::append(const Quaternion& q){
 }
 
 /// set the quad
-void Quaternion::set(double* p) { w=p[0]; x=p[1]; y=p[2]; z=p[3]; isZero=(w==1. || w==-1.); }
+void Quaternion::set(double* p) { w=p[0]; x=p[1]; y=p[2]; z=p[3]; isZero=((w==1. || w==-1.) && x==0. && y==0. && z==0.); }
 
 /// set the quad
 void Quaternion::set(const arr& q) { CHECK_EQ(q.N,4, "");  set(q.p); }
 
 /// set the quad
-void Quaternion::set(double _w, double _x, double _y, double _z) { w=_w; x=_x; y=_y; z=_z; isZero=(w==1. || w==-1.); }
+void Quaternion::set(double _w, double _x, double _y, double _z) { w=_w; x=_x; y=_y; z=_z; isZero=((w==1. || w==-1.) && x==0. && y==0. && z==0.); }
 
 /// reset the rotation to identity
 void Quaternion::setZero() { memset(this, 0, sizeof(Quaternion));  w=1.; isZero=true; }

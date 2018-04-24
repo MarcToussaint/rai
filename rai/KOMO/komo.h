@@ -123,6 +123,7 @@ struct KOMO{
   void setSlowAround(double time, double delta, double prec=1e2, bool hardConstrained=false);
 
   //-- kinematic switches mid-level
+  void setKS_stable(double time, const char *from, const char *to);
   void setKS_placeOn(double time, bool before, const char* obj, const char* table, bool actuated=false);
   void setKS_slider(double time, bool before, const char* obj, const char* slider, const char* table);
 

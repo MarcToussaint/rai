@@ -192,6 +192,15 @@ void KOMO::setKinematicSwitch(double time, bool before, const char* type, const 
   setKinematicSwitch(time, before, sw);
 }
 
+void KOMO::setKS_stable(double time, const char* from, const char* to){
+  //      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_effJoint, JT_quatBall, s.symbols(1), s.symbols(2), world));
+  //      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_insertEffJoint, JT_trans3, NULL, s.symbols(2), world));
+  setKinematicSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, from, to, world));
+  setFlag(time, new Flag(FL_clear, world[to]->ID, 0, true));
+  setFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
+
+}
+
 void KOMO::setKS_placeOn(double time, bool before, const char* obj, const char* table, bool actuated){
   //disconnect object from grasp ref
 //  setKinematicSwitch(time, before, "delete", NULL, obj);
@@ -692,6 +701,7 @@ void KOMO::setSlowAround(double time, double delta, double prec, bool hardConstr
   setSlow(time-delta, time+delta, prec, hardConstrained);
 }
 
+
 void KOMO::setFine_grasp(double time, const char* endeff, const char* object, double above, double gripSize, const char* gripper, const char* gripper2){
   double t1=-.25; //time when gripper is positined above
   double t2=-.1;  //time when gripper is lowered
@@ -849,23 +859,14 @@ void KOMO::setSkeleton(const Skeleton &S){
   for(const SkeletonEntry& s:S){
     cout <<"SKELETON->KOMO " <<s <<endl;
     if(!s.symbols.N) continue;
-    if(s.symbols(0)=="touch"){
-      setTouch(s.phase0, s.phase1, s.symbols(1), s.symbols(2));
-      continue;
-    }
+    if(s.symbols(0)=="touch"){   setTouch(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
+    if(s.symbols(0)=="stable"){  setKS_stable(s.phase0, s.symbols(1), s.symbols(2)); continue;  }
+
     if(s.symbols(0)=="magicTouch"){
       setTouch(s.phase0, s.phase1, s.symbols(1), s.symbols(2));
       setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", s.symbols(2), world));
       setFlag(s.phase0, new Flag(FL_clear, world[s.symbols(1)]->ID, 0, true), +0);
       setFlag(s.phase0, new Flag(FL_qCtrlCostAcc, world[s.symbols(1)]->ID, 0, true), +0);
-      continue;
-    }
-    if(s.symbols(0)=="stable"){
-//      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_effJoint, JT_quatBall, s.symbols(1), s.symbols(2), world));
-//      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_insertEffJoint, JT_trans3, NULL, s.symbols(2), world));
-      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_effJoint, JT_free, s.symbols(1), s.symbols(2), world));
-      setFlag(s.phase0, new Flag(FL_clear, world[s.symbols(2)]->ID, 0, true));
-      setFlag(s.phase0, new Flag(FL_zeroQVel, world[s.symbols(2)]->ID, 0, true));
       continue;
     }
     if(s.symbols(0)=="dynOn"){
@@ -896,7 +897,20 @@ void KOMO::setSkeleton(const Skeleton &S){
       }
       continue;
     }
-    LOG(-2) <<"UNKNOWN PREDICATE!: " <<s;
+
+    if(s.symbols(0)=="grasp"){
+      setSlow(s.phase0-.1, s.phase0+.1, 1e2, false);
+      setTouch(s.phase0, s.phase1, s.symbols(1), s.symbols(2));
+      setKS_stable(s.phase0, s.symbols(1), s.symbols(2));
+      continue;
+    }
+
+    if(s.symbols(0)=="push")                  setPush(s.phase0, s.phase1, s.symbols(1), s.symbols(2), s.symbols(3), verbose); //TODO: the +1. assumes pushes always have duration 1
+    else if(s.symbols(0)=="place" && s.symbols.N==3) setPlace(s.phase0, NULL, s.symbols(1), s.symbols(2), verbose);
+    else if(s.symbols(0)=="place" && s.symbols.N==4) setPlace(s.phase0, s.symbols(1), s.symbols(2), s.symbols(3), verbose);
+    else if(s.symbols(0)=="graspSlide")            setGraspSlide(s.phase0, s.symbols(1), s.symbols(2), s.symbols(3), verbose);
+    else if(s.symbols(0)=="handover")              setHandover(s.phase0, s.symbols(1), s.symbols(2), s.symbols(3), verbose);
+    else LOG(-2) <<"UNKNOWN PREDICATE!: " <<s;
   }
 }
 
@@ -1446,6 +1460,12 @@ void KOMO::set_x(const arr& x){
 //    configurations(s)->checkConsistency();
   }
   CHECK_EQ(x_count, x.N, "");
+
+  if(animateOptimization>0){
+    displayPath(animateOptimization>1);
+//    komo.plotPhaseTrajectory();
+//    rai::wait();
+  }
 }
 
 void KOMO::reportProxies(std::ostream& os){
@@ -1651,7 +1671,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
     fil2.close();
 
     if(gnuplt){
-      cout <<"KOMO Report\n" <<report <<endl;
+//      cout <<"KOMO Report\n" <<report <<endl;
       gnuplot("load 'z.costReport.plt'");
     }
   }
@@ -1730,12 +1750,6 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
 
   //-- set the trajectory
   komo.set_x(x);
-
-  if(komo.animateOptimization>0){
-    komo.displayPath(komo.animateOptimization>1);
-//    komo.plotPhaseTrajectory();
-//    rai::wait();
-  }
 
   CHECK(dimPhi,"getStructure must be called first");
 //  getStructure(NoUintA, featureTimes, tt);

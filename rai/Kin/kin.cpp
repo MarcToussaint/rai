@@ -3063,6 +3063,8 @@ int animateConfiguration(rai::KinematicWorld& K, Inotify *ino) {
   K.checkConsistency();
   StringA jointNames = K.getJointNames();
 
+//  uint saveCount=0;
+
   for(uint i=x0.N; i--;) {
     x=x0;
     double upper_lim = lim(i,1);
@@ -3081,6 +3083,8 @@ int animateConfiguration(rai::KinematicWorld& K, Inotify *ino) {
       checkNan(x);
       K.setJointState(x);
       int key = K.gl().update(STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lim[i] <<"]"), false, false, true);
+//      write_ppm(K.gl().captureImage, STRING("vid/" <<std::setw(3)<<std::setfill('0')<<saveCount++<<".ppm"));
+
       K.gl().pressedkey=0;
       if(key==13 || key==32 || key==27 || key=='q') return key;
 //      rai::wait(0.01);

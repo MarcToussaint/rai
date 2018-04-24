@@ -31,6 +31,8 @@ bool Geo_mesh_drawColors=true;
 
 extern void glColorId(uint id);
 
+extern rai::Mesh mesh_readAssimp(const char* filename);
+
 //==============================================================================
 //
 // Mesh code
@@ -324,10 +326,13 @@ void rai::Mesh::box() {
 }
 
 void rai::Mesh::addMesh(const Mesh& mesh2, const rai::Transformation& X) {
-  uint n=V.d0, t=T.d0;
+  uint n=V.d0, t=T.d0, tt=Tt.d0;
   V.append(mesh2.V);
+  tex.append(mesh2.tex);
   T.append(mesh2.T);
   for(; t<T.d0; t++) {  T(t, 0)+=n;  T(t, 1)+=n;  T(t, 2)+=n;  }
+  Tt.append(mesh2.Tt);
+  for(; tt<Tt.d0; tt++) {  Tt(tt, 0)+=n;  Tt(tt, 1)+=n;  Tt(tt, 2)+=n;  }
   if(!X.isZero()){
     X.applyOnPointArray(V({n,-1})());
   }
@@ -991,7 +996,9 @@ void rai::Mesh::write(std::ostream& os) const {
 }
 
 void rai::Mesh::readFile(const char* filename) {
-  read(FILE(filename).getIs(), filename+(strlen(filename)-3), filename);
+  const char* fileExtension = filename+(strlen(filename)-3);
+  if(!strcmp(fileExtension, "dae") || !strcmp(fileExtension, "DAE")) { *this = mesh_readAssimp(filename); }
+  else read(FILE(filename).getIs(), fileExtension, filename);
 }
 
 void rai::Mesh::read(std::istream& is, const char* fileExtension, const char* filename) {
@@ -1001,6 +1008,7 @@ void rai::Mesh::read(std::istream& is, const char* fileExtension, const char* fi
   if(!strcmp(fileExtension, "ply")) { readPLY(filename); loaded=true; }
   if(!strcmp(fileExtension, "tri")) { readTriFile(is); loaded=true; }
   if(!strcmp(fileExtension, "stl") || !strcmp(fileExtension, "STL")) { loaded = readStlFile(is); }
+  if(!strcmp(fileExtension, "dae") || !strcmp(fileExtension, "DAE")) { *this = mesh_readAssimp(filename); }
   if(!loaded) HALT("can't read fileExtension '" <<fileExtension <<"' file '" <<filename <<"'");
 }
 
@@ -1689,6 +1697,8 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
       glBindTexture(GL_TEXTURE_2D, texture);
 
       if(texImg.d2==4) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texImg.d1, texImg.d0, 0, GL_RGBA, GL_UNSIGNED_BYTE, texImg.p);
+      else if(texImg.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texImg.d1, texImg.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, texImg.p);
+      else NIY;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

@@ -2,6 +2,8 @@
 #include <Gui/opengl.h>
 #include <Core/graph.h>
 
+void mesh_readAssimp(char const*){}
+
 const char *USAGE=
 "\n\
 Usage:  kinEdit <g-filename>\n\
@@ -30,6 +32,7 @@ int MAIN(int argc,char **argv){
     K.optimizeTree(false);
     K.calc_q();
     K.checkConsistency();
+    if(K.fwdActiveSet.N == K.frames.N) K.frames=K.fwdActiveSet; //adopt sorting of forward..
     K >>FILE("z.g");
 //    makeConvexHulls(G.frames);
 //    computeOptimalSSBoxes(G.shapes);

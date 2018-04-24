@@ -25,9 +25,11 @@ void TEST(Grasp){
 #if 0
   komo.setGrasp(1., "endeff", "stick");
 #else
-  komo.setKinematicSwitch(1., true, new rai::KinematicSwitch(rai::SW_effJoint, rai::JT_quatBall, "endeff", "stickTip", K));
+//  komo.setKinematicSwitch(1., true, new rai::KinematicSwitch(rai::SW_effJoint, rai::JT_quatBall, "endeff", "stickTip", K));
 //  setTask(time, time, new TM_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e2);
-//  komo.setTouch(1., 1., "endeff", "stick");
+  komo.setTouch(1., 1., "endeff", "stickTip");
+  komo.setKS_stable(1., "endeff", "stickTip");
+  komo.setSlow(1.-.1, 1.+.1, 1e0);
 #endif
 
   komo.setTouch(2., -1., "stick", "redBall");
