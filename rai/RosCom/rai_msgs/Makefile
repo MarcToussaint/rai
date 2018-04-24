@@ -9,10 +9,9 @@ SRCS = $(shell find msg -maxdepth 1 -name '*.msg' )
 #SRCS := $(SR) $(shell find srv -maxdepth 1 -name '*.srv' )
 OBJS = $(SRCS:msg/%.msg=%.h) StringString.h
 
-default: $(OBJS)
+target: $(OBJS)
 
-clean: ;
-	rm -f *.h src/$(NAME)/msg/*.py
+CLEAN = *.h src/$(NAME)/msg/*.py
 
 %.h: msg/%.msg ;
 	python2 $(ROSDIR)/lib/gencpp/gen_cpp.py \
@@ -41,5 +40,5 @@ clean: ;
          -I "std_msgs:$(ROSDIR)/share/std_msgs/msg" \
          -I "geometry_msgs:$(ROSDIR)/share/geometry_msgs/msg"
 
-#include $(BASE)/build/generic.mk
+include $(BASE)/build/generic.mk
 
