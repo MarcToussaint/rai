@@ -145,6 +145,7 @@ void KOMO::deactivateCollisions(const char* s1, const char* s2){
   Frame *sh1 = world.getFrameByName(s1);
   Frame *sh2 = world.getFrameByName(s2);
   if(sh1 && sh2) world.swift().deactivate(sh1, sh2);
+  else LOG(-1) <<"not found:" <<s1 <<' ' <<s2;
 }
 
 //===========================================================================
@@ -743,12 +744,7 @@ void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose){
       //elementary
       else if(*symbols(0)=="flagClear")             setFlag(phase+time, new Flag(FL_clear, world[*symbols(1)]->ID, 0, true));
       else if(*symbols(0)=="touch")                 setTouch(phase+time, phase+time, *symbols(1), *symbols(2));
-      else if(*symbols(0)=="lift"){
-        double timeToLift=.15;
-        setTask(phase+time-timeToLift,      phase+time-2.*timeToLift/3, new TM_Default(TMT_pos, world, *symbols(1)), OT_sumOfSqr, {0.,0.,-.1}, 1e0, 1); //move down
-        setTask(phase+time-timeToLift/3,    phase+time+timeToLift/3,    new TM_Default(TMT_pos, world, *symbols(1)), OT_sumOfSqr, {0.,0.,0.}, 1e1, 1);  //rest
-        setTask(phase+time+2.*timeToLift/3, phase+time+timeToLift,      new TM_Default(TMT_pos, world, *symbols(1)), OT_sumOfSqr, {0.,0.,.1}, 1e0, 1);  //move up
-      }
+      else if(*symbols(0)=="lift")                  setLiftDownUp(phase+time, *symbols(1));
       else if(*symbols(0)=="impulse"){
         if(k_order>=2){
           setTask(phase+time, phase+time, new TM_ImpulsExchange(world, *symbols(1), *symbols(2)), OT_sumOfSqr, {}, 1e3, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
@@ -899,9 +895,10 @@ void KOMO::setSkeleton(const Skeleton &S){
     }
 
     if(s.symbols(0)=="grasp"){
-      setSlow(s.phase0-.1, s.phase0+.1, 1e2, false);
+      setSlow(s.phase0-.05, s.phase0+.05, 1e1, false);
       setTouch(s.phase0, s.phase1, s.symbols(1), s.symbols(2));
       setKS_stable(s.phase0, s.symbols(1), s.symbols(2));
+//      setLiftDownUp(s.phase0, s.symbols(1));
       continue;
     }
 
@@ -953,6 +950,15 @@ void KOMO::setLimits(bool hardConstraint, double margin, double prec){
 //    setTask(0., -1., new TM_Proxy(TMT_allP, {0u}, margin), OT_sumOfSqr, NoArr, prec);
   }
 }
+
+void KOMO::setLiftDownUp(double time, const char *endeff, double timeToLift){
+  if(stepsPerPhase>2 && timeToLift>0.){ //velocities down and up
+    setTask(time-timeToLift, time-2.*timeToLift/3, new TM_Default(TMT_pos, world, endeff), OT_sumOfSqr, {0.,0.,-.1}, 1e0, 1); //move down
+    setTask(time-timeToLift/3,  time+timeToLift/3, new TM_Default(TMT_pos, world, endeff), OT_sumOfSqr, {0.,0.,0.}, 1e1, 1); //move down
+    setTask(time+2.*timeToLift/3, time+timeToLift, new TM_Default(TMT_pos, world, endeff), OT_sumOfSqr, {0.,0.,.1}, 1e0, 1); // move up
+  }
+}
+
 
 //===========================================================================
 //

@@ -119,6 +119,7 @@ struct KOMO{
   void setLastTaskToBeVelocity();
   void setCollisions(bool hardConstraint, double margin=.05, double prec=1.);
   void setLimits(bool hardConstraint, double margin=.05, double prec=1.);
+  void setLiftDownUp(double time, const char *endeff, double timeToLift=.15);
   void setSlow(double startTime, double endTime, double prec=1e2, bool hardConstrained=false);
   void setSlowAround(double time, double delta, double prec=1e2, bool hardConstrained=false);
 
