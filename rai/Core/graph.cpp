@@ -660,10 +660,26 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
         node = newNode<rai::String>(keys, parents, str);
       } break;
       case '[': { //arr
-        is.putback(c);
-        arr reals;
-        is >>reals;
-        node = newNode<arr>(keys, parents, reals);
+        char c2=rai::getNextChar(is," \t");
+        if(c2=='"'){ //StringA
+          is.putback(c2);
+          is.putback(c);
+          StringA strings;
+          rai::String::readSkipSymbols=",\"";
+          rai::String::readStopSymbols="\"";
+          rai::String::readEatStopSymbol=1;
+          is >>strings;
+          rai::String::readSkipSymbols = " \t";
+          rai::String::readStopSymbols = "\n\r";
+          rai::String::readEatStopSymbol = 1;
+          node = newNode<StringA>(keys, parents, strings);
+        }else{
+          is.putback(c2);
+          is.putback(c);
+          arr reals;
+          is >>reals;
+          node = newNode<arr>(keys, parents, reals);
+        }
       } break;
       case '<': { //any type parser
 #if 0
