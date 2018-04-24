@@ -95,7 +95,6 @@ double Vector::diffZero() const { return fabs(x)+fabs(y)+fabs(z); }
 void Vector::checkZero() const {
   bool iszero = (x==0. && y==0. && z==0.);
   if(isZero) CHECK(iszero, "you must have set this by hand!");
-//  CHECK_EQ(iszero, isZero, "you must have set this by hand!");
 }
 
 /// is it normalized?
