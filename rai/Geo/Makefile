@@ -4,10 +4,9 @@ OUTPUT = lib$(NAME).so
 
 #OPTIM = fast_debug
 
-DEPEND_UBUNTU = libqhull-dev
-
 QHULL = 1
 GL = 1
+ASSIMP = 1
 
 DEPEND = Core extern_GJK extern_Lewiner extern_ply extern_ccd
 

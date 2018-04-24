@@ -33,6 +33,12 @@ CXXFLAGS += -DRAI_PNG
 LIBS += -lpng
 endif
 
+ifeq ($(ASSIMP),1)
+DEPEND_UBUNTU += libassimp-dev
+CXXFLAGS += -DRAI_ASSIMP
+LIBS += -lassimp
+endif
+
 ifeq ($(CUDA),1)
 CXXFLAGS += -DRAI_CUDA
 NXX = nvcc #$(RAI_LIBPATH)/cuda/bin/
@@ -145,6 +151,7 @@ LIBS += -lann
 endif
 
 ifeq ($(QHULL),1)
+DEPEND_UBUNTU += libqhull-dev
 CXXFLAGS  += -DRAI_QHULL
 LIBS      += -lqhull
 endif
