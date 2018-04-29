@@ -682,7 +682,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
         }
       } break;
       case '<': { //any type parser
-#if 0
+#if 1
         str.read(is, "", ">", true);
         node = newNode<rai::String>(keys, parents, str);
 #else

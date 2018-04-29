@@ -1007,6 +1007,7 @@ void rai::Mesh::read(std::istream& is, const char* fileExtension, const char* fi
   if(!strcmp(fileExtension, "off")) { readOffFile(is); loaded=true; }
   if(!strcmp(fileExtension, "ply")) { readPLY(filename); loaded=true; }
   if(!strcmp(fileExtension, "tri")) { readTriFile(is); loaded=true; }
+  if(!strcmp(fileExtension, "arr")) { readArr(is); loaded=true; }
   if(!strcmp(fileExtension, "stl") || !strcmp(fileExtension, "STL")) { loaded = readStlFile(is); }
   if(!strcmp(fileExtension, "dae") || !strcmp(fileExtension, "DAE")) { *this = mesh_readAssimp(filename); }
   if(!loaded) HALT("can't read fileExtension '" <<fileExtension <<"' file '" <<filename <<"'");
@@ -1175,7 +1176,7 @@ void rai::Mesh::readPLY(const char *fn) {
   };
   
   FILE    *fp  = fopen(fn, "r");
-  if(!fp) return;
+  CHECK(fp, "coult not open file " <<fn)
   PlyFile *ply = read_ply(fp);
   
   //-- get the number of faces and vertices
@@ -1236,10 +1237,28 @@ void rai::Mesh::readPLY(const char *fn) {
   close_ply(ply); //calls fclose
   free_ply(ply);
 }
+
 #else
 void rai::Mesh::writePLY(const char *fn, bool bin) { NICO }
 void rai::Mesh::readPLY(const char *fn) { NICO }
 #endif
+
+void rai::Mesh::writeArr(std::ostream& os){
+  V.writeTagged(os, "V", true);
+  T.writeTagged(os, "T", true);
+  C.writeTagged(os, "C", true);
+  tex.writeTagged(os, "tex", true);
+  texImg.writeTagged(os, "texImg", true);
+}
+
+void rai::Mesh::readArr(std::istream& is){
+  V.readTagged(is, "V");
+  T.readTagged(is, "T");
+  C.readTagged(is, "C");
+  tex.readTagged(is, "tex");
+  texImg.readTagged(is, "texImg");
+}
+
 
 bool rai::Mesh::readStlFile(std::istream& is) {
   //first check if binary
@@ -1636,11 +1655,30 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
   //-- draw a mesh
   if(V.d0!=Vn.d0 || T.d0!=Tn.d0) computeNormals();
 
-#if 0
+  //-- if not yet done, GenTexture
+  if(texImg.N && texture<0){
+    GLuint texName;
+    glGenTextures(1, &texName);
+    texture = texName;
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    if(texImg.d2==4) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texImg.d1, texImg.d0, 0, GL_RGBA, GL_UNSIGNED_BYTE, texImg.p);
+    else if(texImg.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texImg.d1, texImg.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, texImg.p);
+    else NIY;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  }else{
+    glBindTexture(GL_TEXTURE_2D, texture);
+  }
+
+
+#if 1
   if(!C.N || C.nd==1 || C.d0==V.d0){ //we have colors for each vertex -> use index arrays
 
-    if(Vt.N) glBindTexture(GL_TEXTURE_2D, texture);
-
+    if(tex.N) CHECK_EQ(tex.d0, V.d0, "this needs tex coords for each vertex; if you have it face wise, render the slow way..")
+    if(tex.N) glEnable(GL_TEXTURE_2D);
 
     //  glShadeModel(GL_FLAT);
     glShadeModel(GL_SMOOTH);
@@ -1648,17 +1686,20 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
     glEnableClientState(GL_NORMAL_ARRAY);
     if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
     if(C.N==V.N) glDisable(GL_LIGHTING); //because lighting requires ambiance colors to be set..., not just color..
-    if(Vt.N) glEnableClientState(GL_TEXTURE_COORD_ARRAY); else glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    if(tex.N) glEnableClientState(GL_TEXTURE_COORD_ARRAY); else glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
 
     glVertexPointer(3, GL_DOUBLE, 0, V.p);
     glNormalPointer(GL_DOUBLE, 0, Vn.p);
     if(C.N==V.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
-    if(Vt.N) glTexCoordPointer(2, GL_DOUBLE, 0, Vt.p );
+    if(tex.N) glTexCoordPointer(2, GL_DOUBLE, 0, tex.p );
 
     glDrawElements(GL_TRIANGLES, T.N, GL_UNSIGNED_INT, T.p);
 
     if(C.N) glEnable(GL_LIGHTING);
+
+    if(tex.N) glDisable(GL_TEXTURE_2D);
+
 
   }else{ //we have colors for each tri -> render tris directly and with tri-normals
 
@@ -1686,28 +1727,10 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
   }
 #elif 1 //simple with vertex normals
   uint i, v;
-  if(Tt.N && texImg.N && Geo_mesh_drawColors){
-    glShadeModel(GL_SMOOTH);
+  if(Tt.N && Geo_mesh_drawColors){
+//    glShadeModel(GL_SMOOTH);
     glEnable(GL_TEXTURE_2D);
-
-    if(texture<0){
-      GLuint texName;
-      glGenTextures(1, &texName);
-      texture = texName;
-      glBindTexture(GL_TEXTURE_2D, texture);
-
-      if(texImg.d2==4) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texImg.d1, texImg.d0, 0, GL_RGBA, GL_UNSIGNED_BYTE, texImg.p);
-      else if(texImg.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texImg.d1, texImg.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, texImg.p);
-      else NIY;
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }else{
-      glBindTexture(GL_TEXTURE_2D, texture);
-    }
-    //    glColor3f(1.,1.,1.);
-    glDisable(GL_LIGHTING);
+//    glDisable(GL_LIGHTING);
   }
   glBegin(GL_TRIANGLES);
   for(i=0; i<T.d0; i++) {

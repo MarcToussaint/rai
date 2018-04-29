@@ -926,6 +926,17 @@ void remove_alpha_channel(byteA &img) {
   img.reshape(h, w, 3);
 }
 
+void image_halfResolution(byteA &img){
+  byteA org = img;
+  img.resize(org.d0/2, org.d1/2, org.d2);
+  for(uint i=0;i<img.d0;i++) for(uint j=0;j<img.d1;j++) for(uint k=0;k<img.d2;k++){
+    float v = (float)org(2*i, 2*j, k) + (float)org(2*i, 2*j+1, k)
+            + (float)org(2*i+1, 2*j, k) +(float)org(2*i+1, 2*j+1, k);
+    v /= 4;
+    img(i,j,k) = (byte)v;
+  }
+}
+
 void flip_image(byteA &img) {
   if(!img.N) return;
   uint h=img.d0, n=img.N/img.d0;
@@ -2289,8 +2300,5 @@ void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 //  for(const char* t : list) append(rai::String(t));
 //}
 //}
-
-
-
 
 

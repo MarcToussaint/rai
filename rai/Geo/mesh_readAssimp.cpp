@@ -7,6 +7,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+bool loadTextures = true;
+
 struct AssimpLoader {
   std::vector<rai::Mesh> meshes;
   std::string directory;
@@ -60,12 +62,12 @@ struct AssimpLoader {
     rai::Mesh M;
     M.V.resize(mesh->mNumVertices, 3);
     M.Vn.resize(mesh->mNumVertices, 3);
-    if(mesh->mTextureCoords[0]) M.tex.resize(mesh->mNumVertices, 2);
+    if(loadTextures && mesh->mTextureCoords[0]) M.tex.resize(mesh->mNumVertices, 2);
 
     for(unsigned int i = 0; i < mesh->mNumVertices; i++) {
       M.V[i] = ARR( mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z );
       M.Vn[i] = ARR(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z );
-      if(mesh->mTextureCoords[0]) M.tex[i] = ARR(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
+      if(loadTextures && mesh->mTextureCoords[0]) M.tex[i] = ARR(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
     }
 
     M.T.resize(mesh->mNumFaces, 3);
@@ -78,7 +80,7 @@ struct AssimpLoader {
     }
 //cout <<"mean of loaded mesh=" <<M.getCenter() <<endl;
 
-    if(mesh->mTextureCoords[0]) M.Tt = M.T;
+    if(loadTextures && mesh->mTextureCoords[0]) M.Tt = M.T;
 
     aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
@@ -94,7 +96,7 @@ struct AssimpLoader {
 
     uint nTex = material->GetTextureCount(aiTextureType_DIFFUSE);
 //    cout <<"material: #textures=" <<nTex <<endl;
-    if(nTex){
+    if(loadTextures && nTex){
       CHECK_EQ(nTex, 1, "");
       aiString str;
       material->GetTexture(aiTextureType_DIFFUSE, 0, &str);

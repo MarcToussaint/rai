@@ -119,6 +119,9 @@ struct Mesh : GLDrawer {
   void writeOffFile(const char* filename);
   void writePLY(const char *fn, bool bin);
   void readPLY(const char *fn);
+  void writeArr(std::ostream&);
+  void readArr(std::istream&);
+
   void glDraw(struct OpenGL&);
 };
 } //END of namespace

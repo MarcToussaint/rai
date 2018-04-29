@@ -638,6 +638,7 @@ void make_RGB2BGRA(byteA &img);
 void swap_RGB_BGR(byteA &img);
 void flip_image(byteA &img);
 void flip_image(floatA &img);
+void image_halfResolution(byteA& img);
 
 void scanArrFile(const char* name);
 

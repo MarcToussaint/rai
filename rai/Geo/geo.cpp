@@ -1296,12 +1296,11 @@ void Transformation::read(std::istream& is) {
   for(;;) {
     is >>c;
     if(is.fail()) return;  //EOF I guess
-    //if(c==';') break;
-    //if(c==',') is >>c;
     if((c>='0' && c<='9') || c=='.' || c=='-') {  //read a 7-vector (pos+quat) for the transformation
       is.putback(c);
       is>>x[0]>>x[1]>>x[2];       addRelativeTranslation(x[0], x[1], x[2]);
       is>>x[0]>>x[1]>>x[2]>>x[3]; addRelativeRotationQuat(x[0], x[1], x[2], x[3]);
+      break;
     } else switch(c) {
           //case '<': break; //do nothing -- assume this is an opening tag
         case 't': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");       addRelativeTranslation(x[0], x[1], x[2]); break;

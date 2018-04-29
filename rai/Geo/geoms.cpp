@@ -50,6 +50,8 @@ void rai::Geom::read(const Graph &ats){
   if(ats.get(d, "meshscale"))  { mesh.scale(d); }
   if(ats.get(x, "meshscale"))  { mesh.scale(x(0), x(1), x(2)); }
 
+  if(mesh.V.N && type==ST_none) type=ST_mesh;
+
   createMeshes();
 
   //colored box?
@@ -99,8 +101,9 @@ void rai::Geom::createMeshes(){
   case rai::ST_mesh:
   case rai::ST_pointCloud:
     CHECK(mesh.V.N, "mesh needs to be loaded");
-    sscCore = mesh;
-    sscCore.makeConvexHull();
+    size(3) = 0.;
+//    sscCore = mesh;
+//    sscCore.makeConvexHull();
     break;
   case rai::ST_ssCvx:
     CHECK(size(3)>1e-10,"");

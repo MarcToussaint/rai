@@ -170,6 +170,7 @@ struct Shape : GLDrawer{
   Geom *geom = NULL;
 
   Geom& getGeom(); ///< creates a geom if not yet initialized
+  void setGeomMimic( const Frame* f );
   Enum<ShapeType>& type() { return getGeom().type; }
   arr& size() { return getGeom().size; }
   double& size(uint i) { return getGeom().size.elem(i); }
@@ -180,7 +181,7 @@ struct Shape : GLDrawer{
 //  Enum<ShapeType> type;
 //  arr size;
 //  Mesh mesh, sscCore;
-  double mesh_radius=0.;
+//  double mesh_radius=0.;
   bool cont=false;           ///< are contacts registered (or filtered in the callback)
 
   Shape(Frame& f, const Shape *copyShape=NULL); //new Shape, being added to graph and body's shape lists

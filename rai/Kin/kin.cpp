@@ -483,7 +483,7 @@ arr rai::KinematicWorld::getLimits() const {
       }
     }
   }
-//  cout <<"limits=" <<limits <<endl;
+//  cout <<"limits:" <<limits <<endl;
   return limits;
 }
 
@@ -1475,10 +1475,10 @@ void rai::KinematicWorld::writeMeshes(const char *pathPrefix) const{
     if(f->shape &&
        (f->shape->type()==rai::ST_mesh || f->shape->type()==rai::ST_ssCvx)){
       rai::String filename = pathPrefix;
-      filename <<f->name <<".tri";
+      filename <<f->name <<".arr";
       f->ats.getNew<rai::String>("mesh") = filename;
-      if(f->shape->type()==rai::ST_mesh) f->shape->mesh().writeTriFile(filename);
-      if(f->shape->type()==rai::ST_ssCvx) f->shape->sscCore().writeTriFile(filename);
+      if(f->shape->type()==rai::ST_mesh) f->shape->mesh().writeArr(FILE(filename));
+      if(f->shape->type()==rai::ST_ssCvx) f->shape->sscCore().writeArr(FILE(filename));
     }
   }
 }
@@ -1490,7 +1490,7 @@ void rai::KinematicWorld::read(std::istream& is) {
   Graph G(is);
   G.checkConsistency();
 //  cout <<"***KVG:\n" <<G <<endl;
-  FILE("z.G") <<G;
+//  FILE("z.G") <<G;
   init(G);
 }
 
@@ -1610,22 +1610,22 @@ void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
     Frame *b=new Frame(*this);
     if(n->keys.N>1) b->name=n->keys.last();
     b->ats.copy(n->graph(), false, true);
-    if(n->keys.N>2) b->ats.newNode<bool>({n->keys.last(-1)});
+    if(n->keys.N>2) b->ats.newNode<bool>({n->keys.last()});
     b->read(b->ats);
   }
 
-  NodeL fs = G.getNodes("frame");
-  for(Node *n: fs) {
-    CHECK_EQ(n->keys(0),"frame","");
+  for(Node *n: G) {
+    if(n->keys(0)=="body" || n->keys(0)=="shape" || n->keys(0)=="joint") continue;
+//    CHECK_EQ(n->keys(0),"frame","");
     CHECK(n->isGraph(), "frame must have value Graph");
     CHECK_LE(n->parents.N, 1,"frames must have no or one parent: specs=" <<*n <<' ' <<n->index);
 
     Frame *b = NULL;
     if(!n->parents.N) b = new Frame(*this);
     if(n->parents.N==1) b = new Frame( getFrameByName(n->parents(0)->keys.last()) );
-    if(n->keys.N>1) b->name=n->keys.last();
+    if(n->keys.N && n->keys.last()!="frame") b->name=n->keys.last();
     b->ats.copy(n->graph(), false, true);
-    if(n->keys.N>2) b->ats.newNode<bool>({n->keys.last(-1)});
+//    if(n->keys.N>2) b->ats.newNode<bool>({n->keys.last()});
     b->read(b->ats);
   }
 

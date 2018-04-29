@@ -118,7 +118,7 @@ void rai::Frame::read(const Graph& ats) {
   if(ats["type"]) ats["type"]->keys.last() = "shape"; //compatibility with old convention: 'body { type... }' generates shape
 
   if(ats["joint"]){ joint = new Joint(*this); joint->read(ats); }
-  if(ats["shape"]){ shape = new Shape(*this); shape->read(ats); }
+  if(ats["shape"] || ats["mesh"]){ shape = new Shape(*this); shape->read(ats); }
   if(ats["mass"]){ inertia = new Inertia(*this); inertia->read(ats); }
 }
 
@@ -132,14 +132,14 @@ void rai::Frame::write(std::ostream& os) const {
   if(inertia) inertia->write(os);
 
   if(parent){
-    if(!Q.isZero()) os <<" Q=<T " <<Q <<" > ";
+    if(!Q.isZero()) os <<" Q:<" <<Q <<'>';
   }else{
-    if(!X.isZero()) os <<" X=<T " <<X <<" > ";
+    if(!X.isZero()) os <<" X:<" <<X <<'>';
   }
 
   if(flags){
     Enum<FrameFlagType> fl;
-    os <<" FLAGS=";
+    os <<" FLAGS:";
     for(int i=0;;i++){
       fl.x = FrameFlagType(i);
       if(!fl.name()) break;
@@ -153,8 +153,8 @@ void rai::Frame::write(std::ostream& os) const {
   }
 
   os <<" }\n";
-  //  if(mass) os <<"mass=" <<mass <<' ';
-  //  if(type!=BT_dynamic) os <<"dyntype=" <<(int)type <<' ';
+  //  if(mass) os <<"mass:" <<mass <<' ';
+  //  if(type!=BT_dynamic) os <<"dyntype:" <<(int)type <<' ';
   //  uint i; Node *a;
   //  for(Type *  a:  ats)
   //      if(a->keys(0)!="X" && a->keys(0)!="pose") os <<*a <<' ';
@@ -655,11 +655,11 @@ void rai::Joint::read(const Graph &G){
 }
 
 void rai::Joint::write(std::ostream& os) const {
-  os <<" joint=" <<type;
-  if(H) os <<" ctrl_H="<<H;
+  os <<" joint:" <<type;
+  if(H) os <<" ctrl_H:"<<H;
   if(limits.N) os <<" limits=[" <<limits <<"]";
   if(mimic){
-    os <<" mimic=" <<mimic->frame.name;
+    os <<" mimic:" <<mimic->frame.name;
   }
 
   Node *n;
@@ -679,7 +679,7 @@ rai::Shape::Shape(Frame &f, const Shape *copyShape)
   frame.shape = this;
   if(copyShape){
     const Shape& s = *copyShape;
-    mesh_radius=s.mesh_radius;
+//    mesh_radius=s.mesh_radius;
     cont=s.cont;
     geom = s.geom;
   }
@@ -692,6 +692,12 @@ rai::Shape::~Shape() {
 rai::Geom &rai::Shape::getGeom(){
   if(!geom) geom = new Geom(_GeomStore());
   return *geom;
+}
+
+void rai::Shape::setGeomMimic(const rai::Frame *f){
+  CHECK(!geom, "");
+  CHECK(f->shape->geom, "");
+  geom = f->shape->geom;
 }
 
 
@@ -713,15 +719,17 @@ void rai::Shape::read(const Graph& ats) {
   }
 
   //compute the bounding radius
-  if(mesh().V.N) mesh_radius = mesh().getRadius();
+//  if(mesh().V.N) mesh_radius = mesh().getRadius();
 }
 
 void rai::Shape::write(std::ostream& os) const {
   if(geom){
-    os <<" shape=" <<geom->type;
-    os <<" size=[" <<geom->size <<"]";
+    os <<" shape:" <<geom->type;
+    if(geom->type!=ST_mesh)
+      os <<" size:[" <<geom->size <<"]";
   }else{
-    os <<" shape=NONE";
+    HALT("you shouldn't be here");
+    os <<" shape:NONE";
   }
 
   Node *n;
@@ -817,7 +825,7 @@ arr rai::Inertia::getFrameRelativeWrench(){
 }
 
 void rai::Inertia::write(std::ostream &os) const{
-  os <<" mass=" <<mass;
+  os <<" mass:" <<mass;
 }
 
 void rai::Inertia::read(const Graph& G){
