@@ -558,6 +558,7 @@ void rai::KinematicWorld::setJointState(const arr& _q, const arr& _qdot) {
 
 void rai::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
   setJointStateCount++; //global counter
+  getJointState();
 
   CHECK_EQ(_q.N, joints.N, "");
   for(uint i=0;i<_q.N;i++){

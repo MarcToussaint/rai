@@ -14,12 +14,14 @@
 
 RosCom_Spinner::RosCom_Spinner(const char* nodeName) : Thread("RosCom_Spinner", .001){
   useRos = rai::getParameter<bool>("useRos", true);
-  if(useRos) rosCheckInit(nodeName);
-  threadLoop();
+  if(useRos){
+    rosCheckInit(nodeName);
+    threadLoop();
+  }
 }
 
 RosCom_Spinner::~RosCom_Spinner(){
-  threadClose();
+  if(useRos) threadClose();
 }
 
 

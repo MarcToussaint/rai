@@ -179,6 +179,7 @@ struct KOMO{
   arr getPath(const StringA& joints);
   arr getPath_frames(const uintA &frames);
   arr getPath_times();
+  arr getPathPose(const StringA& joints, double phase);
   void reportProblem(ostream &os=std::cout);
   Graph getReport(bool gnuplt=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot task costs; output detailed cost features per time slice)
   void reportProxies(ostream& os=std::cout); ///< report the proxies (collisions) for each time slice

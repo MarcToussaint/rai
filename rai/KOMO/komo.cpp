@@ -1328,7 +1328,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPref
   }
 
   uintA allFrames;
-  allFrames.setStraightPerm(configurations.last()->frames.N);
+  allFrames.setStraightPerm(configurations.first()->frames.N);
   arr X = getPath_frames(allFrames);
   DrawPaths drawX(X);
 
@@ -1878,4 +1878,9 @@ arr KOMO::getPath_times(){
     X(t) = configurations(t+k_order)->frames.first()->time;
   }
   return X;
+}
+
+arr KOMO::getPathPose(const StringA &joints, double phase){
+  uint s = k_order + (uint)(phase*double(stepsPerPhase));
+  return configurations(s)->getJointState(joints);
 }
