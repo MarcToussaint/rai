@@ -190,8 +190,10 @@ void MNode::optLevel(uint level, bool collisions){
     komo.setFixSwitchedObjects(-1., -1., 1e2);
     komo.setSquaredQuaternionNorms();
 
-#if 1
-    Skeleton S = getSkeleton({"touch", "stable", "dynOn", "impulse", "dynFree", "actFree"});
+#if 0
+    Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
+                              "stable", "stableOn", "dynamic", "dynamicOn",
+                              "push" });
     komo.setSkeleton(S);
 #else
     if(collisions) komo.setCollisions(false);
@@ -208,6 +210,7 @@ void MNode::optLevel(uint level, bool collisions){
   DEBUG( FILE("z.fol") <<fol; );
   DEBUG( komo.getReport(false, 1, FILE("z.problem")); );
   komo.reportProblem();
+//  komo.animateOptimization = 1;
 
   try{
     //      komo.verbose=3;

@@ -100,7 +100,7 @@ struct KOMO{
   // mid-level ways to define tasks: typically adding one specific task
   //
 
-  //-- tasks (transitions) mid-level
+  //-- tasks mid-level
   void setHoming(double startTime=-1., double endTime=-1., double prec=1e-1, const char *keyword="robot");
   void setSquaredQAccelerations(double startTime=-1., double endTime=-1., double prec=1.);
   void setSquaredQVelocities(double startTime=-1., double endTime=-1., double prec=1.);
@@ -108,13 +108,12 @@ struct KOMO{
   void setFixSwitchedObjects(double startTime=-1., double endTime=-1., double prec=1e3);
   void setSquaredQuaternionNorms(double startTime=-1., double endTime=-1., double prec=1e1);
 
-  //-- tasks (tasks) mid-level
+  //-- tasks mid-level
   void setHoldStill(double startTime, double endTime, const char* shape, double prec=1e2);
   void setPosition(double startTime, double endTime, const char* shape, const char* shapeRel=NULL, ObjectiveType type=OT_sumOfSqr, const arr& target=NoArr, double prec=1e2);
   void setOrientation(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type=OT_sumOfSqr, const arr& target=NoArr, double prec=1e2);
   void setVelocity(double startTime, double endTime, const char* shape, const char* shapeRel=NULL, ObjectiveType type=OT_sumOfSqr, const arr& target=NoArr, double prec=1e2);
   void setAlign(double startTime, double endTime, const char* shape,  const arr& whichAxis=ARR(1.,0.,0.), const char* shapeRel=NULL, const arr& whichAxisRel=ARR(1.,0.,0.), ObjectiveType type=OT_sumOfSqr, const arr& target=ARR(1.), double prec=1e2);
-  void setTouch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, const arr& target=NoArr, double prec=1e2);
   void setAlignedStacking(double time, const char* object, ObjectiveType type=OT_sumOfSqr, double prec=1e2);
   void setLastTaskToBeVelocity();
   void setCollisions(bool hardConstraint, double margin=.05, double prec=1.);
@@ -123,9 +122,18 @@ struct KOMO{
   void setSlow(double startTime, double endTime, double prec=1e2, bool hardConstrained=false);
   void setSlowAround(double time, double delta, double prec=1e2, bool hardConstrained=false);
 
-  //-- kinematic switches mid-level
-  void setKS_stable(double time, const char *from, const char *to);
-  void setKS_placeOn(double time, bool before, const char* obj, const char* table, bool actuated=false);
+  //-- core task symbols of skeletons
+  void core_setTouch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, const arr& target=NoArr, double prec=1e2);
+  void core_setAbove(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e2);
+  void core_setInside(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e2);
+  void core_setImpulse(double time, const char* shape1, const char* shape2);
+
+  //-- core kinematic switch symbols of skeletons
+  void core_setKSstable(double time, const char *from, const char *to);
+  void core_setKSstableOn(double time, const char* from, const char* to);
+  void core_setKSdynamic(double time, const char *from, const char *to);
+  void core_setKSdynamicOn(double time, const char *from, const char* to);
+
   void setKS_slider(double time, bool before, const char* obj, const char* slider, const char* table);
 
   //===========================================================================
@@ -156,7 +164,6 @@ struct KOMO{
 
   //DEPRECATED
   void setGraspStick(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=1e1, double timeToLift=.15);
-  void setGraspSlide(double startTime, double endTime, const char* endeffRef, const char* object, const char* placeRef, int verbose=0, double weightFromTop=1e1);
   void setAttach(double time, const char* endeff, const char* object1, const char* object2, rai::Transformation& rel, int verbose=0);
   void setFine_grasp(double time, const char* endeff, const char* object, double above, double gripSize=.05, const char* gripper=NULL, const char* gripper2=NULL);
   void setTowersAlign();
