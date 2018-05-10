@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -23,10 +23,10 @@ public:
   type value, Default;
   const char *tag;
   bool initialized, hasDefault;
-
+  
 public:
   /// @name constructors
-
+  
   /// Determines the tag to search for in parameter file/command line
   explicit Parameter(const char *_tag) {
     typeName=typeid(type).name();
@@ -34,7 +34,7 @@ public:
     tag=_tag;
     hasDefault=false;
   };
-
+  
   /** @brief specifies also a default value -- parameter does not have to but
     can be specified in the parameter file/command line */
   Parameter(const char *_tag, const type& _default) {
@@ -44,32 +44,32 @@ public:
     hasDefault=true;
     Default=_default;
   };
-
+  
   ~Parameter() {}
-
+  
   /// @name value access
-
+  
   /// standard type conversion: returns a const of the parameter value
   operator type() { if(!initialized) initialize(); return value; }
-
+  
   /// ()-operator: returns an lvalue of the parameter value
   type& operator()() { if(!initialized) initialize(); return value; }
-
+  
   /// @name manipulation
-
+  
   /// assigs a value to the parameter -- no further initialization needed
   type& operator=(const type v) { initialized=true; value=v; return value; }
-
+  
   /// set the tag (replacing the one from the constructor)
   void setTag(char *_tag) { tag=_tag; }
-
+  
   /** @brief enforces that the parameter is reinitialized from the parameter
     file/command line, the next time it is referenced -- even if it
     has been initialized before */
   void reInitialize() { initialized=false; }
-
+  
   /// @name explicit grabbing
-
+  
 private:
   void initialize();
 };

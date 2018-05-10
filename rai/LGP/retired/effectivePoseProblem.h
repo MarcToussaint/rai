@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -13,7 +13,7 @@
 
 //===========================================================================
 
-struct EffectivePoseProblem:ConstrainedProblem{
+struct EffectivePoseProblem:ConstrainedProblem {
   rai::KinematicWorld& effKinematics;
   const Graph& KB;
   const Graph& symbolicState_before;
@@ -24,7 +24,7 @@ struct EffectivePoseProblem:ConstrainedProblem{
                        const Graph& KB, const Graph& symbolicState_before, const Graph& symbolicState_after,
                        int verbose);
   void phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, const arr& x);
-
+  
   double optimize(arr& x);
 };
 

@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -21,27 +21,25 @@
 #include <ros/builtin_message_traits.h>
 #include <ros/message_operations.h>
 
-namespace rai_msgs
-{
+namespace rai_msgs {
 template <class ContainerAllocator>
-struct StringA_
-{
+struct StringA_ {
   typedef StringA_<ContainerAllocator> Type;
-
+  
   StringA_()
     : data()  {
-    }
+  }
   StringA_(const ContainerAllocator& _alloc)
     : data(_alloc)  {
-  (void)_alloc;
-    }
-
-   typedef std::vector<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other > , typename ContainerAllocator::template rebind<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other > >::other >  _data_type;
+    (void)_alloc;
+  }
+  
+  typedef std::vector<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other > , typename ContainerAllocator::template rebind<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other > >::other >  _data_type;
   _data_type data;
-
+  
   typedef boost::shared_ptr< ::rai_msgs::StringA_<ContainerAllocator> > Ptr;
   typedef boost::shared_ptr< ::rai_msgs::StringA_<ContainerAllocator> const> ConstPtr;
-
+  
 }; // struct StringA_
 
 typedef ::rai_msgs::StringA_<std::allocator<void> > StringA;
@@ -52,18 +50,15 @@ typedef boost::shared_ptr< ::rai_msgs::StringA const> StringAConstPtr;
 // constants requiring out of line definition
 
 template<typename ContainerAllocator>
-std::ostream& operator<<(std::ostream& s, const ::rai_msgs::StringA_<ContainerAllocator> & v)
-{
-ros::message_operations::Printer< ::rai_msgs::StringA_<ContainerAllocator> >::stream(s, "", v);
-return s;
+std::ostream& operator<<(std::ostream& s, const ::rai_msgs::StringA_<ContainerAllocator> & v) {
+  ros::message_operations::Printer< ::rai_msgs::StringA_<ContainerAllocator> >::stream(s, "", v);
+  return s;
 }
 
 } // namespace rai_msgs
 
-namespace ros
-{
-namespace message_traits
-{
+namespace ros {
+namespace message_traits {
 
 // BOOLTRAITS {'IsFixedSize': False, 'IsMessage': True, 'HasHeader': False}
 // {'geometry_msgs': ['/opt/ros/kinetic/share/geometry_msgs/msg'], 'std_msgs': ['/opt/ros/kinetic/share/std_msgs/msg'], 'rai_msgs': ['/home/mtoussai/git/LGP-execution/rai/rai/RosCom/rai_msgs/msg']}
@@ -73,103 +68,88 @@ namespace message_traits
 template <class ContainerAllocator>
 struct IsFixedSize< ::rai_msgs::StringA_<ContainerAllocator> >
   : FalseType
-  { };
+{ };
 
 template <class ContainerAllocator>
 struct IsFixedSize< ::rai_msgs::StringA_<ContainerAllocator> const>
-  : FalseType
-  { };
+    : FalseType
+{ };
 
 template <class ContainerAllocator>
 struct IsMessage< ::rai_msgs::StringA_<ContainerAllocator> >
   : TrueType
-  { };
+{ };
 
 template <class ContainerAllocator>
 struct IsMessage< ::rai_msgs::StringA_<ContainerAllocator> const>
-  : TrueType
-  { };
+    : TrueType
+{ };
 
 template <class ContainerAllocator>
 struct HasHeader< ::rai_msgs::StringA_<ContainerAllocator> >
   : FalseType
-  { };
+{ };
 
 template <class ContainerAllocator>
 struct HasHeader< ::rai_msgs::StringA_<ContainerAllocator> const>
-  : FalseType
-  { };
+    : FalseType
+{ };
 
 template<class ContainerAllocator>
-struct MD5Sum< ::rai_msgs::StringA_<ContainerAllocator> >
-{
-  static const char* value()
-  {
+struct MD5Sum< ::rai_msgs::StringA_<ContainerAllocator> > {
+  static const char* value() {
     return "cce5a364f3a3be12c9722c6dcad2fa94";
   }
-
+  
   static const char* value(const ::rai_msgs::StringA_<ContainerAllocator>&) { return value(); }
   static const uint64_t static_value1 = 0xcce5a364f3a3be12ULL;
   static const uint64_t static_value2 = 0xc9722c6dcad2fa94ULL;
 };
 
 template<class ContainerAllocator>
-struct DataType< ::rai_msgs::StringA_<ContainerAllocator> >
-{
-  static const char* value()
-  {
+struct DataType< ::rai_msgs::StringA_<ContainerAllocator> > {
+  static const char* value() {
     return "rai_msgs/StringA";
   }
-
+  
   static const char* value(const ::rai_msgs::StringA_<ContainerAllocator>&) { return value(); }
 };
 
 template<class ContainerAllocator>
-struct Definition< ::rai_msgs::StringA_<ContainerAllocator> >
-{
-  static const char* value()
-  {
+struct Definition< ::rai_msgs::StringA_<ContainerAllocator> > {
+  static const char* value() {
     return "string[] data\n\
 ";
   }
-
+  
   static const char* value(const ::rai_msgs::StringA_<ContainerAllocator>&) { return value(); }
 };
 
 } // namespace message_traits
 } // namespace ros
 
-namespace ros
-{
-namespace serialization
-{
+namespace ros {
+namespace serialization {
 
-  template<class ContainerAllocator> struct Serializer< ::rai_msgs::StringA_<ContainerAllocator> >
-  {
-    template<typename Stream, typename T> inline static void allInOne(Stream& stream, T m)
-    {
-      stream.next(m.data);
-    }
-
-    ROS_DECLARE_ALLINONE_SERIALIZER
-  }; // struct StringA_
+template<class ContainerAllocator> struct Serializer< ::rai_msgs::StringA_<ContainerAllocator> > {
+  template<typename Stream, typename T> inline static void allInOne(Stream& stream, T m) {
+    stream.next(m.data);
+  }
+  
+  ROS_DECLARE_ALLINONE_SERIALIZER
+}; // struct StringA_
 
 } // namespace serialization
 } // namespace ros
 
-namespace ros
-{
-namespace message_operations
-{
+namespace ros {
+namespace message_operations {
 
 template<class ContainerAllocator>
-struct Printer< ::rai_msgs::StringA_<ContainerAllocator> >
-{
-  template<typename Stream> static void stream(Stream& s, const std::string& indent, const ::rai_msgs::StringA_<ContainerAllocator>& v)
-  {
+struct Printer< ::rai_msgs::StringA_<ContainerAllocator> > {
+  template<typename Stream> static void stream(Stream& s, const std::string& indent, const ::rai_msgs::StringA_<ContainerAllocator>& v) {
     s << indent << "data[]" << std::endl;
-    for (size_t i = 0; i < v.data.size(); ++i)
-    {
+    for(size_t i = 0; i < v.data.size(); ++i) {
       s << indent << "  data[" << i << "]: ";
       Printer<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other > >::stream(s, indent + "  ", v.data[i]);
     }

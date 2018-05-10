@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -23,14 +23,14 @@ struct SendPositionCommandsToBaxter : Thread {
   Var<CtrlMsg> ctrl_ref;
   struct sSendPositionCommandsToBaxter *s;
   rai::KinematicWorld baxterModel;
-
+  
   SendPositionCommandsToBaxter(const rai::KinematicWorld& baxterWorld);
-  ~SendPositionCommandsToBaxter(){}
-
+  ~SendPositionCommandsToBaxter() {}
+  
   void open();
   void step();
   void close();
-
+  
   bool enablePositionControlL = true;
   bool enablePositionControlR = true;
   bool totalTorqueModeL = false;

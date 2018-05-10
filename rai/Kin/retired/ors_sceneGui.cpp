@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -153,9 +153,9 @@ bool sOrsSceneGui::keyCallback(OpenGL&) {
 }
 
 struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
- rai::KinematicWorld *ors;
- EditConfigurationHoverCall(rai::KinematicWorld& _ors);
- bool hoverCallback(OpenGL& gl);
+  rai::KinematicWorld *ors;
+  EditConfigurationHoverCall(rai::KinematicWorld& _ors);
+  bool hoverCallback(OpenGL& gl);
 };
 
 OrsSceneGui::OrsSceneGui(rai::KinematicWorld& ors, OpenGL* gl) {
@@ -172,7 +172,7 @@ OrsSceneGui::OrsSceneGui(rai::KinematicWorld& ors, OpenGL* gl) {
   gl->addHoverCall(new EditConfigurationHoverCall(ors));
 //  gl->addKeyCall(s);
 //  gl->addClickCall(s);
-  
+
 }
 
 void OrsSceneGui::edit() {

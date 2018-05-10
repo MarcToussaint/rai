@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -35,7 +35,7 @@
     void open() { \
       this->_nh = new ros::NodeHandle; \
       this->_sub  = this->_nh->subscribe( \
-        topic_name, 1, &ROSSUB_##var_name::callback, this); \
+                                          topic_name, 1, &ROSSUB_##var_name::callback, this); \
     } \
     void step() {} \
     void close() { \

@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -40,13 +40,13 @@ static uint GLProcessCount = 0;
 struct GLSpinner : Thread {
   GLSpinner() : Thread("GLSpinner", .01) {}
   ~GLSpinner() { threadClose(); } //when this is destroyed in deinit, looping had to be stopped (otherwise pthread error)
-  void open(){}
-  void step(){
+  void open() {}
+  void step() {
     OpenGLMutex().lock();
     glutMainLoopEvent();
     OpenGLMutex().unlock();
   }
-  void close(){}
+  void close() {}
 };
 
 class OpenGLProcess {
@@ -54,47 +54,47 @@ private:
   uint numWins;
   rai::Array<OpenGL*> glwins;
   GLSpinner th;
-
+  
 public:
   OpenGLProcess() : numWins(0) {
     CHECK(GLProcessCount==0,"");
     GLProcessCount++;
     int argc=1;
-    char *argv[1]={(char*)"x"};
+    char *argv[1]= {(char*)"x"};
     glutInit(&argc, argv);
   }
-  ~OpenGLProcess(){
+  ~OpenGLProcess() {
 //    uint i=0;  for(OpenGL* gl:glwins){ if(gl) delGL(i, gl); i++; }
 //    th.threadClose();
     if(numWins) rai::wait(.1);
     CHECK(!numWins, "there are still OpenGL windows open");
     glutExit(); //also glut as already shut down during deinit
   }
-
-  void addGL(uint i, OpenGL* gl){
+  
+  void addGL(uint i, OpenGL* gl) {
     if(glwins.N<=i) glwins.resizeCopy(i+1);
     glwins(i) = gl;
     if(!numWins) th.threadLoop(); //start looping
     numWins++;
   }
-  void delGL(uint i, OpenGL* gl){
+  void delGL(uint i, OpenGL* gl) {
     CHECK_EQ(glwins(i), gl, "");
     glwins(i)=NULL;
     numWins--;
-    if(!numWins){
-        OpenGLMutex().unlock();
-        th.threadClose(); //Stop(true); //stop looping (maybe wait here; or even threadClose())
-        OpenGLMutex().lock();
+    if(!numWins) {
+      OpenGLMutex().unlock();
+      th.threadClose(); //Stop(true); //stop looping (maybe wait here; or even threadClose())
+      OpenGLMutex().lock();
     }
   }
-  OpenGL* getGL(uint i){
+  OpenGL* getGL(uint i) {
     return glwins(i);
   }
 };
 
 Singleton<OpenGLProcess> singleFreeglut;
 
-Mutex& OpenGLMutex(){ return singleFreeglut.mutex; }
+Mutex& OpenGLMutex() { return singleFreeglut.mutex; }
 
 struct SFG_Display_dummy {
   _XDisplay *Display;
@@ -109,20 +109,20 @@ extern SFG_Display_dummy fgDisplay;
 
 struct sOpenGL {
   sOpenGL(OpenGL *gl): gl(gl), windowID(-1) {}
-  sOpenGL(OpenGL *gl, void *container){ NIY }
-  ~sOpenGL(){ gl->closeWindow(); }
-
-  void beginGlContext(){}
-  void endGlContext(){}
-
+  sOpenGL(OpenGL *gl, void *container) { NIY }
+  ~sOpenGL() { gl->closeWindow(); }
+  
+  void beginGlContext() {}
+  void endGlContext() {}
+  
   //-- private OpenGL data
   OpenGL *gl;
   rai::Vector downVec,downPos,downFoc;
   rai::Quaternion downRot;
-
+  
   //-- engine specific data
   int windowID;                        ///< id of this window in the global glwins list
-
+  
   //-- callbacks
   static void _Void() { }
   static void _Draw() { auto fg=singleFreeglut();  OpenGL *gl=fg->getGL(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
@@ -131,8 +131,8 @@ struct sOpenGL {
   static void _Motion(int x, int y) {                        singleFreeglut()->getGL(glutGetWindow())->Motion(x,y); }
   static void _PassiveMotion(int x, int y) {                 singleFreeglut()->getGL(glutGetWindow())->Motion(x,y); }
   static void _Reshape(int w,int h) {                        singleFreeglut()->getGL(glutGetWindow())->Reshape(w,h); }
-  static void _MouseWheel(int wheel, int dir, int x, int y){ singleFreeglut()->getGL(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
-
+  static void _MouseWheel(int wheel, int dir, int x, int y) { singleFreeglut()->getGL(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
+  
   void accessWindow() {  //same as above, but also sets gl cocntext (glXMakeCurrent)
     CHECK(windowID>=0,"window is not created");
     glutSetWindow(windowID);
@@ -149,21 +149,21 @@ struct sOpenGL {
 // OpenGL implementations
 //
 
-void OpenGL::forceGlutInit(){
+void OpenGL::forceGlutInit() {
   singleFreeglut();
 }
 
-void OpenGL::openWindow(){
-  if(s->windowID==-1){
+void OpenGL::openWindow() {
+  if(s->windowID==-1) {
     {
       auto fg = singleFreeglut();
       glutInitWindowSize(width, height);
       //  glutInitWindowPosition(posx,posy);
       glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
-
+      
       s->windowID = glutCreateWindow(title);
       fg->addGL(s->windowID, this);
-
+      
       glutDisplayFunc(s->_Draw);
       glutKeyboardFunc(s->_Key);
       glutMouseFunc(s->_Mouse) ;
@@ -175,8 +175,8 @@ void OpenGL::openWindow(){
   }
 }
 
-void OpenGL::closeWindow(){
-  if(s->windowID!=-1){
+void OpenGL::closeWindow() {
+  if(s->windowID!=-1) {
     auto fg=singleFreeglut();
     glutDestroyWindow(s->windowID);
     fg->delGL(s->windowID, this);
@@ -193,9 +193,9 @@ void OpenGL::postRedrawEvent(bool fromWithinCallback) {
 
 void OpenGL::resize(int w,int h) {
 //  openWindow();
-  if(s->windowID==-1){
+  if(s->windowID==-1) {
     Reshape(w, h);
-  }else{
+  } else {
     auto fg=singleFreeglut();
     s->accessWindow();
     glutReshapeWindow(w,h);
@@ -205,27 +205,27 @@ void OpenGL::resize(int w,int h) {
 
 #else
 
-void OpenGL::openWindow(){}
-void OpenGL::closeWindow(){}
+void OpenGL::openWindow() {}
+void OpenGL::closeWindow() {}
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {}
 void OpenGL::resize(int w,int h) {}
 
-struct sOpenGL{
+struct sOpenGL {
   sOpenGL(OpenGL *gl): gl(gl), windowID(-1) {}
-  sOpenGL(OpenGL *gl, void *container){ NIY }
-  ~sOpenGL(){ gl->closeWindow(); }
-
-  void beginGlContext(){}
-  void endGlContext(){}
-
+  sOpenGL(OpenGL *gl, void *container) { NIY }
+  ~sOpenGL() { gl->closeWindow(); }
+  
+  void beginGlContext() {}
+  void endGlContext() {}
+  
   //-- private OpenGL data
   OpenGL *gl;
   rai::Vector downVec,downPos,downFoc;
   rai::Quaternion downRot;
-
+  
   //-- engine specific data
   int windowID;                        ///< id of this window in the global glwins list
-
+  
   //-- callbacks
   // static void _Void() { }
   // static void _Draw() { auto fg=singleFreeglut();  OpenGL *gl=fg->getGL(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
@@ -235,7 +235,7 @@ struct sOpenGL{
   // static void _PassiveMotion(int x, int y) {                 singleFreeglut()->getGL(glutGetWindow())->Motion(x,y); }
   // static void _Reshape(int w,int h) {                        singleFreeglut()->getGL(glutGetWindow())->Reshape(w,h); }
   // static void _MouseWheel(int wheel, int dir, int x, int y){ singleFreeglut()->getGL(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
-
+  
   void accessWindow() {  //same as above, but also sets gl cocntext (glXMakeCurrent)
   }
   void deaccessWindow() {
@@ -305,7 +305,7 @@ void glColor(int col) {
     {1.0, 1.0, 1.0, 1.0}, // white
     {0.2, 1.0, 0.2, 1.0}
   }; // green
-
+  
   col = col%6; //if(col<0) col=0; if(col>5) col=5;
   glColor(colorsTab[col][0], colorsTab[col][1], colorsTab[col][2], colorsTab[col][3]);
 }
@@ -328,18 +328,18 @@ void glColor(float r, float g, float b, float alpha) {
 
 void glColor(float *rgb) { glColor(rgb[0], rgb[1], rgb[2], 1.); }
 
-void glColor(const arr& col){
+void glColor(const arr& col) {
   if(col.N==3) glColor(col.p[0], col.p[1], col.p[2], 1.);
   if(col.N==4) glColor(col.p[0], col.p[1], col.p[2], col.p[3]);
 }
 
-void id2color(byte rgb[3], uint id){
+void id2color(byte rgb[3], uint id) {
   rgb[0] = ((id>> 6)&0x3f) | ((id&1)<<7) | ((id& 8)<<3);
   rgb[1] = ((id>>12)&0x3f) | ((id&2)<<6) | ((id&16)<<2);
   rgb[2] = ((id>>18)&0x3f) | ((id&4)<<5) | ((id&32)<<1);
 }
 
-uint color2id(byte rgb[3]){
+uint color2id(byte rgb[3]) {
   uint id = 0;
   id |= (rgb[0]&0x80)>>7 | (rgb[1]&0x80)>>6 | (rgb[2]&0x80)>>5;
   id |= (rgb[0]&0x40)>>3 | (rgb[1]&0x40)>>2 | (rgb[2]&0x40)>>1;
@@ -347,15 +347,15 @@ uint color2id(byte rgb[3]){
   return id;
 }
 
-void glColorId(uint id){
+void glColorId(uint id) {
   byte rgb[3];
   glDisable(GL_LIGHTING);
   id2color(rgb, id);
   glColor3ubv(rgb);
 }
 
-void OpenGL::drawId(uint id){
-  if(drawMode_idColor){
+void OpenGL::drawId(uint id) {
+  if(drawMode_idColor) {
     glColorId(id);
   }
 }
@@ -377,13 +377,13 @@ void glShadowTransform()
 }
 */
 
-void glTransform(const rai::Transformation& t){
+void glTransform(const rai::Transformation& t) {
   double GLmatrix[16];
   t.getAffineMatrixGL(GLmatrix);
   glLoadMatrixd(GLmatrix);
 }
 
-void glRotate(const rai::Quaternion& rot){
+void glRotate(const rai::Quaternion& rot) {
   double GLmatrix[16];
   rot.getMatrixGL(GLmatrix);
   glMultMatrixd(GLmatrix);
@@ -432,7 +432,7 @@ void glDrawText(const char* txt, float x, float y, float z, bool largeFont) {
         if(font==GLUT_BITMAP_HELVETICA_12) font=GLUT_BITMAP_HELVETICA_18;
         else font=GLUT_BITMAP_HELVETICA_12;
         break;
-      default:{
+      default: {
         glutBitmapCharacter(font, *txt);
       }
     }
@@ -472,7 +472,7 @@ void glDrawRect(float x, float y, float z, float r) {
   glDrawRect(x-r, y-r, z, x-r, y+r, z, x+r, y+r, z, x+r, y-r, z);
 }
 
-void glDrawPolygon(const arr &P){
+void glDrawPolygon(const arr &P) {
   CHECK_EQ(P.nd, 2, "");
   CHECK_EQ(P.d1, 3, "");
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -483,7 +483,7 @@ void glDrawPolygon(const arr &P){
 //  glEnd();
   glLineWidth(5);
   glBegin(GL_LINE_LOOP);
-  for(uint i=0;i<P.d0;i++) glVertex3dv(&P(i,0));
+  for(uint i=0; i<P.d0; i++) glVertex3dv(&P(i,0));
   glEnd();
 }
 
@@ -511,7 +511,7 @@ void glDrawFloor(float x, float r, float g, float b) {
     glVertex3f(x, i*x/5., 0.001);
     glEnd();
   }
-
+  
   glColor(.25, .25, .25);
   glBegin(GL_LINE_STRIP);
   glVertex3f(-x, -x, 0.002);
@@ -547,15 +547,15 @@ void glDrawBox(float x, float y, float z, bool linesOnly) {
   };
   GLfloat v[8][3];
   GLint i;
-
+  
   v[0][0] = v[1][0] = v[2][0] = v[3][0] = -x / 2;
   v[4][0] = v[5][0] = v[6][0] = v[7][0] =  x / 2;
   v[0][1] = v[1][1] = v[4][1] = v[5][1] =  -y / 2;
   v[2][1] = v[3][1] = v[6][1] = v[7][1] =  y / 2;
   v[0][2] = v[3][2] = v[4][2] = v[7][2] =  -z / 2;
   v[1][2] = v[2][2] = v[5][2] = v[6][2] =  z / 2;
-
-  if(!linesOnly){
+  
+  if(!linesOnly) {
     glBegin(GL_QUADS);
     for(i = 5; i >= 0; i--) {
       glNormal3fv(n[i]);
@@ -565,9 +565,9 @@ void glDrawBox(float x, float y, float z, bool linesOnly) {
       glVertex3fv(v[faces[i][3]]);
     }
     glEnd();
-  }else{
+  } else {
     glBegin(GL_LINES);
-    for(uint i=0;i<12;i++) {
+    for(uint i=0; i<12; i++) {
       glVertex3fv(v[edges[i][0]]);
       glVertex3fv(v[edges[i][1]]);
     }
@@ -634,30 +634,30 @@ void glDrawAxes(double scale) {
   }
 }
 
-void glDrawCamera(const rai::Camera &cam){
+void glDrawCamera(const rai::Camera &cam) {
   glTransform(cam.X);
-
+  
   glDrawAxes(.1);
-
+  
   double dxFar,dyFar,zFar;
   double dxNear,dyNear,zNear;
   zNear = cam.zNear;
   zFar = cam.zFar;
   if(zFar-zNear > 10.) zFar = zNear + .1;
-  if(cam.focalLength){
+  if(cam.focalLength) {
     dyNear = zNear * .5/cam.focalLength;
     dyFar = zFar * .5/cam.focalLength;
     dxNear = cam.whRatio * dyNear;
     dxFar = cam.whRatio * dyFar;
   }
-  if(cam.heightAngle){
+  if(cam.heightAngle) {
 //    zFar = zNear + .1*(zFar-zNear);
     dyNear = zNear * ::sin(.5*cam.heightAngle/180.*RAI_PI);
     dyFar = zFar * ::sin(.5*cam.heightAngle/180.*RAI_PI);
     dxNear = cam.whRatio * dyNear;
     dxFar = cam.whRatio * dyFar;
   }
-  if(cam.heightAbs){
+  if(cam.heightAbs) {
     dyFar = dyNear = cam.heightAbs/2.;
     dxFar = dxNear = cam.whRatio * dyNear;
   }
@@ -715,29 +715,29 @@ void glDrawProxy(const arr& p1, const arr& p2, double diskSize, int colorCode, c
   glDisable(GL_CULL_FACE);
   rai::Transformation f;
   f.pos=p1;
-  if(&norm){
+  if(&norm) {
     f.rot.setDiff(rai::Vector(0, 0, 1), rai::Vector(norm));
-  }else{
+  } else {
     f.rot.setDiff(rai::Vector(0, 0, 1), rai::Vector(p1-p2));
   }
   double GLmatrix[16];
   f.getAffineMatrixGL(GLmatrix);
   glLoadMatrixd(GLmatrix);
   glDrawDisk(diskSize);
-
+  
   f.pos=p2;
   f.getAffineMatrixGL(GLmatrix);
   glLoadMatrixd(GLmatrix);
   glDrawDisk(diskSize);
   glEnable(GL_CULL_FACE);
-
+  
   glLoadIdentity();
-  if(&norm && rad1>0.){
+  if(&norm && rad1>0.) {
     arr p = p1 - rad1*norm;
     glColor(0., 1., 0., 1.);
     glDrawDiamond(p(0), p(1), p(2), .01, .01, .01);
   }
-  if(&norm && rad1>0.){
+  if(&norm && rad1>0.) {
     arr p = p2 + rad2*norm;
     glColor(0., 0., 1., 1.);
     glDrawDiamond(p(0), p(1), p(2), .01, .01, .01);
@@ -771,14 +771,14 @@ void glDrawCappedCylinder(float radius, float length) {
   GLUquadric *style1=gluNewQuadric();
   GLUquadric *style2=gluNewQuadric();
   GLUquadric *style3=gluNewQuadric();
-
+  
   glTranslatef(0, 0, -length/2);
   gluCylinder(style1, radius, radius, length, 20, 1);
   glTranslatef(0, 0, length);
   gluSphere(style2, radius, 10, 10);
   glTranslatef(0, 0, -length);
   gluSphere(style3, radius, 10, 10);
-
+  
   gluDeleteQuadric(style1);
   gluDeleteQuadric(style2);
   gluDeleteQuadric(style3);
@@ -818,7 +818,7 @@ void glDrawGridBox(float x1, float y1, float z1, float x2, float y2, float z2) {
   glVertex3f(x1, y2, z1+0.001);
   glVertex3f(x1, y1, z1+0.001);
   glEnd();
-
+  
   glBegin(GL_LINES);
   glVertex3f(x2, y2, z1 +0.001);
   glVertex3f(x2, y2, z2 +0.001);
@@ -832,7 +832,7 @@ void glDrawKhepera() {
   glColor3f(.3, .3, .3);
   gluCylinder(style, 1.5, 1.5, 2, 20, 1);
   glPopMatrix();
-
+  
   glColor3f(1, 0, 0);
   glBegin(GL_LINES);
   glVertex3f(0, 2, 0);
@@ -882,7 +882,7 @@ void glMakeStdSimplex(int num) {
 
 void glMakeTorus(int num) {
   glNewList(num, GL_COMPILE);
-
+  
   GLint i, j, rings, sides;
   float theta1, phi1, theta2, phi2;
   float v0[03], v1[3], v2[3], v3[3];
@@ -891,69 +891,69 @@ void glMakeTorus(int num) {
   float innerRadius=0.4;
   float outerRadius=0.8;
   float scalFac;
-
+  
   rings = 8;
   sides = 10;
   scalFac=1/(outerRadius*2);
-
+  
   for(i=0; i<rings; i++) {
     theta1 = (float)i * 2.0 * RAI_PI / rings;
     theta2 = (float)(i + 1) * 2.0 * RAI_PI / rings;
     for(j=0; j<sides; j++) {
       phi1 = (float)j * 2.0 * RAI_PI / sides;
       phi2 = (float)(j + 1) * 2.0 * RAI_PI / sides;
-
+      
       v0[0] = cos(theta1) * (outerRadius + innerRadius * cos(phi1));
       v0[1] =-sin(theta1) * (outerRadius + innerRadius * cos(phi1));
       v0[2] = innerRadius * sin(phi1);
-
+      
       v1[0] = cos(theta2) * (outerRadius + innerRadius * cos(phi1));
       v1[1] =-sin(theta2) * (outerRadius + innerRadius * cos(phi1));
       v1[2] = innerRadius * sin(phi1);
-
+      
       v2[0] = cos(theta2) * (outerRadius + innerRadius * cos(phi2));
       v2[1] =-sin(theta2) * (outerRadius + innerRadius * cos(phi2));
       v2[2] = innerRadius * sin(phi2);
-
+      
       v3[0] = cos(theta1) * (outerRadius + innerRadius * cos(phi2));
       v3[1] =-sin(theta1) * (outerRadius + innerRadius * cos(phi2));
       v3[2] = innerRadius * sin(phi2);
-
+      
       n0[0] = cos(theta1) * (cos(phi1));
       n0[1] =-sin(theta1) * (cos(phi1));
       n0[2] = sin(phi1);
-
+      
       n1[0] = cos(theta2) * (cos(phi1));
       n1[1] =-sin(theta2) * (cos(phi1));
       n1[2] = sin(phi1);
-
+      
       n2[0] = cos(theta2) * (cos(phi2));
       n2[1] =-sin(theta2) * (cos(phi2));
       n2[2] = sin(phi2);
-
+      
       n3[0] = cos(theta1) * (cos(phi2));
       n3[1] =-sin(theta1) * (cos(phi2));
       n3[2] = sin(phi2);
-
+      
       t0[0] = v0[0]*scalFac + 0.5;
       t0[1] = v0[1]*scalFac + 0.5;
       t0[2] = v0[2]*scalFac + 0.5;
-
+      
       t1[0] = v1[0]*scalFac + 0.5;
       t1[1] = v1[1]*scalFac + 0.5;
       t1[2] = v1[2]*scalFac + 0.5;
-
+      
       t2[0] = v2[0]*scalFac + 0.5;
       t2[1] = v2[1]*scalFac + 0.5;
       t2[2] = v2[2]*scalFac + 0.5;
-
+      
       t3[0] = v3[0]*scalFac + 0.5;
       t3[1] = v3[1]*scalFac + 0.5;
       t3[2] = v3[2]*scalFac + 0.5;
-
+      
       if((i+j)%2) glColor3f(0., 1., 0.);
       else glColor3f(0., 0., 1.);
-
+      
       glBegin(GL_POLYGON);
       glNormal3fv(n3); glTexCoord3fv(t3); glVertex3fv(v3);
       glNormal3fv(n2); glTexCoord3fv(t2); glVertex3fv(v2);
@@ -967,12 +967,12 @@ void glMakeTorus(int num) {
 
 uint glImageTexture(const byteA &img) {
   GLuint texName;
-
+  
   glEnable(GL_TEXTURE_2D);
-
+  
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glGenTextures(1, &texName);
-
+  
 //  glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texName);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -996,7 +996,7 @@ uint glImageTexture(const byteA &img) {
     default:
       HALT("no image fomat");
   }
-
+  
   return texName;
 }
 
@@ -1012,7 +1012,7 @@ void glDrawTexQuad(const byteA& texImg,
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL); //GL_MODULATE);
   if(texImg.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texImg.d1, texImg.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, texImg.p);
   if(texImg.d2==4) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texImg.d1, texImg.d0, 0, GL_RGBA, GL_UNSIGNED_BYTE, texImg.p);
-
+  
 //  glBindTexture(GL_TEXTURE_2D, texture);
   glBegin(GL_QUADS);
   glTexCoord2f(0.0,  mulY); glVertex3f(x1, y1, z1);
@@ -1022,7 +1022,7 @@ void glDrawTexQuad(const byteA& texImg,
   glEnd();
   glDisable(GL_TEXTURE_2D);
   glEnable(GL_CULL_FACE);
-
+  
 }
 
 #ifdef RAI_GLUT
@@ -1061,7 +1061,7 @@ void glGrabImage(byteA& image) {
 //      break;
     case 3:
       glReadPixels(0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, image.p);
-    break;
+      break;
     case 4:
 #if defined RAI_SunOS
       glReadPixels(0, 0, w, h, GL_ABGR_EXT, GL_UNSIGNED_BYTE, image.p);
@@ -1112,7 +1112,7 @@ void glRasterImage(float x, float y, byteA &img, float zoom) {
     img.insColumns(img.d1, add*P);
     if(P>1) img.reshape(img.d0, img.d1/P, P);
   }
-
+  
   switch(img.d2) {
     case 0:
     case 1:  glDrawPixels(img.d1, img.d0, GL_LUMINANCE, GL_UNSIGNED_BYTE, img.p);        break;
@@ -1218,13 +1218,13 @@ void glColor(int col) { NICO }
 void glColor(float, float, float, float) { NICO }
 void glDrawDiamond(float, float, float, float, float, float) { NICO }
 void glDrawSphere(float radius) { NICO }
-void glDrawFloor(float, float, float, float){ NICO }
-void glDrawCappedCylinder(float, float){ NICO }
-void glStandardLight(void*){ NICO }
-void glDrawAxes(double){ NICO }
-void glDrawDiamond(float, float, float){ NICO }
-void glDrawBox(float, float, float, bool){ NICO }
-void glDrawCylinder(float, float, bool){ NICO }
+void glDrawFloor(float, float, float, float) { NICO }
+void glDrawCappedCylinder(float, float) { NICO }
+void glStandardLight(void*) { NICO }
+void glDrawAxes(double) { NICO }
+void glDrawDiamond(float, float, float) { NICO }
+void glDrawBox(float, float, float, bool) { NICO }
+void glDrawCylinder(float, float, bool) { NICO }
 
 // void glStandardLight(void*) { NICO }   // TOBIAS: das hier wird doch schon ueber opengl_void.cxx definiert
 void glStandardScene(void*) { NICO }
@@ -1254,7 +1254,7 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 //
 
 OpenGL::OpenGL(const char* _title, int w, int h, int posx, int posy)
-  : s(NULL), title(_title), width(w), height(h), reportEvents(false), topSelection(NULL), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0){
+  : s(NULL), title(_title), width(w), height(h), reportEvents(false), topSelection(NULL), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0) {
   //RAI_MSG("creating OpenGL=" <<this);
   Reshape(w,h);
   s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
@@ -1262,7 +1262,7 @@ OpenGL::OpenGL(const char* _title, int w, int h, int posx, int posy)
 }
 
 OpenGL::OpenGL(void *container)
-  : s(NULL), width(0), height(0), reportEvents(false), topSelection(NULL), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0){
+  : s(NULL), width(0), height(0), reportEvents(false), topSelection(NULL), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0) {
   s=new sOpenGL(this,container); //this might call some callbacks (Reshape/Draw) already!
   init();
 }
@@ -1286,7 +1286,7 @@ void OpenGL::init() {
   camera.focus(0, 0, 0);
   camera.setZRange(.1, 1000.);
   camera.setHeightAngle(12.);
-
+  
   drawFocus=false;
   clearR=clearG=clearB=1.; clearA=0.;
   drawers.memMove=true;
@@ -1294,27 +1294,27 @@ void OpenGL::init() {
   mouse_button=0;
   mouseIsDown=false;
   mouseView=-1;
-
+  
   reportEvents=false;
   reportSelects=false;
   immediateExitLoop=false;
   exitkeys="";
-
+  
   backgroundZoom=1;
 };
 
-struct CstyleDrawer : GLDrawer{
+struct CstyleDrawer : GLDrawer {
   void *classP;
   void (*call)(void*);
-  CstyleDrawer(void (*call)(void*), void* classP) : classP(classP), call(call){}
-  void glDraw(OpenGL&){ call(classP); }
+  CstyleDrawer(void (*call)(void*), void* classP) : classP(classP), call(call) {}
+  void glDraw(OpenGL&) { call(classP); }
 };
 
-struct CstyleInitCall : OpenGL::GLInitCall{
+struct CstyleInitCall : OpenGL::GLInitCall {
   void *classP;
   void (*call)(void*);
-  CstyleInitCall(void (*call)(void*), void* classP): classP(classP), call(call){}
-  bool glInit(OpenGL&){ call(classP); return true; }
+  CstyleInitCall(void (*call)(void*), void* classP): classP(classP), call(call) {}
+  bool glInit(OpenGL&) { call(classP); return true; }
 };
 
 /// add a draw routine
@@ -1344,15 +1344,15 @@ void OpenGL::addSubView(uint v, void (*call)(void*), void* classP) {
   dataLock.unlock();
 }
 
-void OpenGL::addSubView(uint v, GLDrawer &c){
+void OpenGL::addSubView(uint v, GLDrawer &c) {
   dataLock.writeLock();
   if(v>=views.N) views.resizeCopy(v+1);
   views(v).drawers.append(&c);
   dataLock.unlock();
 }
 
-void OpenGL::setSubViewTiles(uint cols, uint rows){
-  for(uint i=0;i<views.N;i++){
+void OpenGL::setSubViewTiles(uint cols, uint rows) {
+  for(uint i=0; i<views.N; i++) {
     double x=i%cols;
     double y=rows - 1 - i/cols;
     setViewPort(i, x/cols, (x+1)/cols, y/rows, (y+1)/rows);
@@ -1366,7 +1366,7 @@ void OpenGL::setViewPort(uint v, double l, double r, double b, double t) {
   dataLock.unlock();
 }
 
-void OpenGL::clearSubView(uint v){
+void OpenGL::clearSubView(uint v) {
   if(v>=views.N) return;
   dataLock.writeLock();
   views(v).drawers.clear();
@@ -1399,17 +1399,17 @@ void OpenGL::clear() {
 void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
 #ifdef RAI_GL
 
-  if(!callerHasAlreadyLocked){
+  if(!callerHasAlreadyLocked) {
     singleGLAccess.mutex.lock();
     dataLock.readLock(); //now accessing user data
   }
-
+  
   //clear bufferer
   GLint viewport[4] = {0, 0, w, h};
   glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
   glClearColor(clearR, clearG, clearB, clearA);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+  
   //raster an image as background
   if(background.N) {
     glMatrixMode(GL_PROJECTION);
@@ -1420,17 +1420,17 @@ void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
     glDisable(GL_DEPTH_TEST);
     glRasterImage(0, 0, background, backgroundZoom); //.5*w/background.d1);
   }
-
+  
   //OpenGL initialization
   glEnable(GL_DEPTH_TEST);  glDepthFunc(GL_LESS);
   glEnable(GL_BLEND);  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_CULL_FACE);  glFrontFace(GL_CCW);
   glShadeModel(GL_FLAT);  //glShadeModel(GL_SMOOTH);
-
+  
   //select mode?
   GLint mode;
   glGetIntegerv(GL_RENDER_MODE, &mode);
-
+  
   //projection
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -1438,7 +1438,7 @@ void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
   if(!cam) camera.glSetProjectionMatrix();
   else     cam->glSetProjectionMatrix();
   //glLineWidth(2);
-
+  
   //**extract the camera projection matrix
 #if 0
   //this is the calibration matrix corresponding to OpenGL's ``viewport''
@@ -1460,7 +1460,7 @@ void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
   //the full camera projection matrix:
   P = Kview*P;
   //cout <<"OpenGL's P=" <<P <<endl;
-
+  
   /*
   double zn=camera.zNear, zf=camera.zFar, f=1./tan(RAI_PI/180.*camera.heightAngle/2.);
   arr Frust(4, 4); Frust.setZero();
@@ -1474,7 +1474,7 @@ void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
   cout <<"K=" <<Kview*Frust <<endl;
   */
 #endif
-
+  
   //draw focus?
   if(drawFocus && mode!=GL_SELECT) {
     glColor(1., .7, .3);
@@ -1486,10 +1486,10 @@ void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
     double size = .005 * (camera.X.pos-camera.foc).length();
     glDrawDiamond(topSelection->x, topSelection->y, topSelection->z, size, size, size);
   }*/
-
+  
   //std color: black:
   glColor(.3, .3, .5);
-
+  
   //draw central view
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -1499,7 +1499,7 @@ void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
     drawers(i)->glDraw(*this);
     glLoadIdentity();
   }
-
+  
   //draw text
   if(text.N) {
     glMatrixMode(GL_PROJECTION);
@@ -1510,7 +1510,7 @@ void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
     glDrawText(text, 10, 20, 0);
     glLoadIdentity();
   }
-
+  
   //draw subviews
   for(uint v=0; v<views.N; v++) {
     GLView *vi=&views(v);
@@ -1545,29 +1545,29 @@ void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
       glLoadIdentity();
     }
   }
-
+  
   //cout <<"UNLOCK draw" <<endl;
-
-  if(captureImg){
+  
+  if(captureImg) {
     captureImage.resize(h, w, 3);
     glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
 //    flip_image(captureImage);
     captureImg=false;
   }
-  if(captureDep){
+  if(captureDep) {
     captureDepth.resize(h, w);
     glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
 //    flip_image(captureDepth);
     captureDep=false;
   }
-
+  
   //check matrix stack
   GLint s;
   glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &s);
   if(s!=1) RAI_MSG("OpenGL name stack has not depth 1 (pushs>pops) in DRAW mode:" <<s);
   //CHECK(s<=1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
-
-  if(!callerHasAlreadyLocked){
+  
+  if(!callerHasAlreadyLocked) {
     dataLock.unlock(); //now de-accessing user data
     singleGLAccess.mutex.unlock();
   }
@@ -1575,24 +1575,24 @@ void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
 }
 
 void OpenGL::Select(bool callerHasAlreadyLocked) {
-  if(reportEvents){ LOG(0) <<RAI_HERE <<" Select entry"; }
-
-  if(!callerHasAlreadyLocked){
+  if(reportEvents) { LOG(0) <<RAI_HERE <<" Select entry"; }
+  
+  if(!callerHasAlreadyLocked) {
     singleGLAccess.mutex.lock();
     dataLock.readLock();
   }
-
+  
 #ifdef RAI_GL
   uint i, j, k;
-
+  
   s->beginGlContext();
-
+  
   glSelectBuffer(1000, selectionBuffer);
   glRenderMode(GL_SELECT);
-
+  
 #if 1
   GLint w=width, h=height;
-
+  
   //projection
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -1606,7 +1606,7 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
     gluPickMatrix((GLdouble)mouseposx, (GLdouble)mouseposy, 2., 2., viewport);
     vi->camera.glSetProjectionMatrix();
   }
-
+  
   //draw objects
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -1623,62 +1623,62 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
     GLView *vi=&views(mouseView);
     for(i=0; i<vi->drawers.N; i++) { glLoadName(i); vi->drawers(i)->glDraw(*this); }
   }
-
+  
 #else
   Draw(width, height, NULL, true);
 #endif
   glLoadIdentity();
-
+  
   GLint n;
   n=glRenderMode(GL_RENDER);
   selection.resize(n);
-
+  
   GLuint *obj, maxD=(GLuint)(-1);
   topSelection=NULL;
   for(j=0, i=0; i<(uint)n; i++) {
     obj=selectionBuffer+j;
     j+=3+obj[0];
-
+    
     //get name as superposition of all names
     selection(i).name = 0;
     for(k=0; k<obj[0]; k++) selection(i).name |= obj[3+k];
-
+    
     //get dim and dmax
     selection(i).dmin=(double)obj[1]/maxD;  //camera.glConvertToTrueDepth(selection(i).dmin);
     selection(i).dmax=(double)obj[2]/maxD;  //camera.glConvertToTrueDepth(selection(i).dmax);
-
+    
     //get top-most selection
     if(!topSelection || selection(i).dmin < topSelection->dmin) topSelection = &selection(i);
   }
-
+  
   if(topSelection) {
     topSelection->x=0; topSelection->y=0; topSelection->z=topSelection->dmin;
     unproject(topSelection->x, topSelection->y, topSelection->z);
   }
-
+  
   if(reportSelects) reportSelection();
-
+  
   s->endGlContext();
 #endif
-  if(!callerHasAlreadyLocked){
+  if(!callerHasAlreadyLocked) {
     dataLock.unlock();
     singleGLAccess.mutex.unlock();
   }
-  if(reportEvents){ LOG(0) <<RAI_HERE <<" Select done"; }
+  if(reportEvents) { LOG(0) <<RAI_HERE <<" Select done"; }
 }
 
 /** @brief watch in interactive mode and wait for an exiting event
   (key pressed or right mouse) */
 int OpenGL::watch(const char *txt) {
   update(STRING(txt<<" - press ENTER to continue"));
-  if(rai::getInteractivity()){
+  if(rai::getInteractivity()) {
     watching.setStatus(1);
     watching.waitForStatusEq(0);
 //    while(watching.getStatus()!=0){
 //      processEvents();
 //      sleepForEvents();
 //    }
-  }else{
+  } else {
     rai::wait(.1);
   }
   return pressedkey;
@@ -1694,7 +1694,7 @@ int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool wai
   isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
   postRedrawEvent(false);
-  if(captureImg || captureDep || waitForCompletedDraw){ isUpdating.waitForStatusEq(0); }//{ rai::wait(.01); processEvents(); rai::wait(.01); }
+  if(captureImg || captureDep || waitForCompletedDraw) { isUpdating.waitForStatusEq(0); } //{ rai::wait(.01); processEvents(); rai::wait(.01); }
 #endif
   return pressedkey;
 }
@@ -1739,7 +1739,7 @@ void OpenGL::unproject(double &x, double &y, double &z, bool resetCamera, int su
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
   }
-  if(subView!=-1){
+  if(subView!=-1) {
     GLView *vi=&views(subView);
     glViewport(vi->le*width, vi->bo*height, (vi->ri-vi->le)*width+1, (vi->to-vi->bo)*height+1);
     glMatrixMode(GL_PROJECTION);
@@ -1747,7 +1747,7 @@ void OpenGL::unproject(double &x, double &y, double &z, bool resetCamera, int su
     vi->camera.glSetProjectionMatrix();
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    }
+  }
   glGetDoublev(GL_MODELVIEW_MATRIX, modelMatrix);
   glGetDoublev(GL_PROJECTION_MATRIX, projMatrix);
   glGetIntegerv(GL_VIEWPORT, viewPort);
@@ -1844,10 +1844,10 @@ void OpenGL::Key(unsigned char key, int _x, int _y) {
   CALLBACK_DEBUG(printf("Window %d Keyboard Callback:  %d (`%c') %d %d\n", 0, key, (char)key, _x, _y));
   mouseposx=_x; mouseposy=_y;
   pressedkey=key;
-
+  
   bool cont=true;
   for(uint i=0; i<keyCalls.N; i++) cont=cont && keyCalls(i)->keyCallback(*this);
-
+  
   if(key==13 || key==27 || key=='q' || rai::contains(exitkeys, key)) watching.setStatus(0);
   dataLock.unlock();
 }
@@ -1861,7 +1861,7 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   if(downPressed) mouse_button=-1-mouse_button;
   mouseposx=_x; mouseposy=_y;
   lastEvent.set(mouse_button, -1, _x, _y, 0., 0.);
-
+  
   GLView *v;
   rai::Camera *cam=&camera;
   rai::Vector vec;
@@ -1875,14 +1875,14 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   }
   if(mouseView==-1) getSphereVector(vec, _x, _y, 0, w, 0, h);
   CALLBACK_DEBUG(cout <<"associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
-
+  
   if(!downPressed) {  //down press
-    if(mouseIsDown){ dataLock.unlock(); return; } //the button is already down (another button was pressed...)
+    if(mouseIsDown) { dataLock.unlock(); return; } //the button is already down (another button was pressed...)
     //CHECK(!mouseIsDown, "I thought the mouse is up...");
     mouseIsDown=true;
     drawFocus=true;
   } else {
-    if(!mouseIsDown){ dataLock.unlock(); return; } //the button is already up (another button was pressed...)
+    if(!mouseIsDown) { dataLock.unlock(); return; } //the button is already up (another button was pressed...)
     //CHECK(mouseIsDown, "mouse-up event although the mouse is not down???");
     mouseIsDown=false;
     drawFocus=false;
@@ -1892,28 +1892,28 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   s->downRot=cam->X.rot;
   s->downPos=cam->X.pos;
   s->downFoc=cam->foc;
-
+  
   //check object clicked on
   if(!downPressed) {
-    if(reportSelects){
+    if(reportSelects) {
       auto sgl = singleGLAccess();
       Select(true);
 //      singleGLAccess()->unlock();
     }
   }
-
+  
   //mouse scroll wheel:
   if(mouse_button==4 && !downPressed) cam->X.pos += s->downRot*Vector_z * (.1 * (s->downPos-s->downFoc).length());
   if(mouse_button==5 && !downPressed) cam->X.pos -= s->downRot*Vector_z * (.1 * (s->downPos-s->downFoc).length());
-
+  
   if(mouse_button==3) {  //selection
 #ifdef RAI_GL
     captureDepth.resize(h, w);
     glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
     double d = captureDepth(mouseposy, mouseposx);
-    if(d<.01 || d>.9999){
+    if(d<.01 || d>.9999) {
       cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
-    }else{
+    } else {
       double x=mouseposx, y=mouseposy;
       unproject(x, y, d, true, mouseView);
       cam->focus(x, y, d);
@@ -1923,19 +1923,19 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
       auto sgl = singleGLAccess();
       Select(true);
     }
-    if(topSelection){
+    if(topSelection) {
       cam->focus(topSelection->x, topSelection->y, topSelection->z);
     }
 #endif
   }
-
+  
   //step through all callbacks
   bool cont=true;
   if(!downPressed) {
     for(uint i=0; i<clickCalls.N; i++) cont=cont && clickCalls(i)->clickCallback(*this);
   }
   if(!cont) { postRedrawEvent(true); dataLock.unlock(); return; }
-
+  
   postRedrawEvent(true);
   dataLock.unlock();
 }
@@ -2019,11 +2019,11 @@ void OpenGL::Motion(int _x, int _y) {
 // offscreen/background rendering
 //
 
-struct XBackgroundContext{
+struct XBackgroundContext {
 #ifdef RAI_GL
-  typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
-  typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
-
+  typedef Bool(*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
+  typedef GLXContext(*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+  
   glXCreateContextAttribsARBProc glXCreateContextAttribsARB;
   glXMakeContextCurrentARBProc glXMakeContextCurrentARB;
   Display* dpy;
@@ -2031,59 +2031,59 @@ struct XBackgroundContext{
   GLXFBConfig* fbc;
   GLXContext ctx;
   GLXPbuffer pbuf;
-
+  
   XBackgroundContext()
-    : glXCreateContextAttribsARB(0), glXMakeContextCurrentARB(0){
+    : glXCreateContextAttribsARB(0), glXMakeContextCurrentARB(0) {
     static int visual_attribs[] = { None };
     int context_attribs[] = { GLX_CONTEXT_MAJOR_VERSION_ARB, 3, GLX_CONTEXT_MINOR_VERSION_ARB, 0, None };
-
+    
     dpy = NULL; //XOpenDisplay(0);
     fbcount = 0;
     fbc = NULL;
-
+    
     /* open display */
     if(!(dpy = XOpenDisplay(0))) HALT("Failed to open display");
-
+    
     /* get framebuffer configs, any is usable (might want to add proper attribs) */
     if(!(fbc = glXChooseFBConfig(dpy, DefaultScreen(dpy), visual_attribs, &fbcount)))
       HALT("Failed to get FBConfig");
-
+      
     /* get the required extensions */
-    glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB");
-    glXMakeContextCurrentARB = (glXMakeContextCurrentARBProc)glXGetProcAddressARB( (const GLubyte *) "glXMakeContextCurrent");
-    if ( !(glXCreateContextAttribsARB && glXMakeContextCurrentARB) ){
+    glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)glXGetProcAddressARB((const GLubyte *) "glXCreateContextAttribsARB");
+    glXMakeContextCurrentARB = (glXMakeContextCurrentARBProc)glXGetProcAddressARB((const GLubyte *) "glXMakeContextCurrent");
+    if(!(glXCreateContextAttribsARB && glXMakeContextCurrentARB)) {
       XFree(fbc);
       HALT("missing support for GLX_ARB_create_context");
     }
-
+    
     /* create a context using glXCreateContextAttribsARB */
-    if ( !( ctx = glXCreateContextAttribsARB(dpy, fbc[0], 0, True, context_attribs)) ){
+    if(!(ctx = glXCreateContextAttribsARB(dpy, fbc[0], 0, True, context_attribs))) {
       XFree(fbc);
       HALT("Failed to create opengl context");
     }
-
+    
     /* create temporary pbuffer */
     int pbuffer_attribs[] = { GLX_PBUFFER_WIDTH, 800, GLX_PBUFFER_HEIGHT, 600, None };
     pbuf = glXCreatePbuffer(dpy, fbc[0], pbuffer_attribs);
-
+    
     XFree(fbc);
     XSync(dpy, False);
-
+    
     makeCurrent();
   }
-
-  ~XBackgroundContext(){
+  
+  ~XBackgroundContext() {
     XFree(ctx);
     XFree(dpy);
   }
-
-  void makeCurrent(){
+  
+  void makeCurrent() {
     /* try to make it the current context */
-    if ( !glXMakeContextCurrent(dpy, pbuf, pbuf, ctx) ){
+    if(!glXMakeContextCurrent(dpy, pbuf, pbuf, ctx)) {
       /* some drivers do not support context without default framebuffer, so fallback on
              * using the default window.
              */
-      if ( !glXMakeContextCurrent(dpy, DefaultRootWindow(dpy), DefaultRootWindow(dpy), ctx) ){
+      if(!glXMakeContextCurrent(dpy, DefaultRootWindow(dpy), DefaultRootWindow(dpy), ctx)) {
         fprintf(stderr, "failed to make current");
         exit(1);
       }
@@ -2094,25 +2094,25 @@ struct XBackgroundContext{
 
 Singleton<XBackgroundContext> xBackgroundContext;
 
-void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
+void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h) {
 #ifdef RAI_GL
   if(w<0) w=width;
   if(h<0) h=height;
-
+  
   singleFreeglut(); //ensure that glut is initialized (if the drawer called glut)
-
+  
   auto mut=singleGLAccess();
   dataLock.readLock();
   xBackgroundContext()->makeCurrent();
-
+  
   CHECK_EQ(w%4,0,"should be devidable by 4!!");
-
+  
   isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
-
+  
   s->beginGlContext();
-
-  if(!rboColor || !rboDepth){ //need to initialize
+  
+  if(!rboColor || !rboDepth) { //need to initialize
     glewInit();
     glGenRenderbuffers(1, &rboColor);  // Create a new renderbuffer unique name.
     glBindRenderbuffer(GL_RENDERBUFFER, rboColor);  // Set it as the current.
@@ -2130,18 +2130,18 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
     //GL_FRAMEBUFFER        read write
     //GL_READ_FRAMEBUFFER   read
     //GL_FRAMEBUFFER        write
-
+    
     // Adds color renderbuffer to currently bound framebuffer.
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rboColor);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,  GL_RENDERBUFFER, rboDepth);
-
+    
     glReadBuffer(GL_COLOR_ATTACHMENT0);
     //glReadBuffer(GL_BACK);
-
+    
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (status != GL_FRAMEBUFFER_COMPLETE) {
+    if(status != GL_FRAMEBUFFER_COMPLETE) {
       cout << "framebuffer error:" << endl;
-      switch (status) {
+      switch(status) {
         case GL_FRAMEBUFFER_UNDEFINED: {
           cout << "GL_FRAMEBUFFER_UNDEFINED" << endl;
           break;
@@ -2182,33 +2182,33 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h){
       exit(EXIT_FAILURE);
     }
   }
-
+  
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
-
+  
   //-- draw!
   Draw(w, h, NULL, true);
   glFlush();
-
+  
   //-- read
-  if(_captureImg){
+  if(_captureImg) {
     captureImage.resize(h, w, 3);
     //  glReadBuffer(GL_BACK);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
     glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
 //    flip_image(captureImage);
   }
-  if(_captureDep){
+  if(_captureDep) {
     captureDepth.resize(h, w);
     glReadBuffer(GL_DEPTH_ATTACHMENT);
     glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
 //    flip_image(captureDepth);
   }
-
+  
   // Return to onscreen rendering:
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
+  
   isUpdating.setStatus(0);
-
+  
   dataLock.unlock();
 //  singleGLAccess()->unlock();
 #endif
@@ -2249,7 +2249,7 @@ void glUI::glDraw() {
   glOrtho(0., viewPort[2], viewPort[3], .0, -1., 1.);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-
+  
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   Button *b;
@@ -2303,64 +2303,64 @@ bool glUI::checkMouse(int _x, int _y) {
 void read_png(byteA &img, const char *file_name, bool swap_rows) {
 #ifdef RAI_PNG
   FILE *fp = fopen(file_name, "rb");
-
+  
   png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
   CHECK(png, "");
-
+  
   png_infop info = png_create_info_struct(png);
   CHECK(info, "");
-
+  
   if(setjmp(png_jmpbuf(png))) abort();
-
+  
   png_init_io(png, fp);
   png_read_info(png, info);
-
+  
   uint width      = png_get_image_width(png, info);
   uint height     = png_get_image_height(png, info);
   png_byte color_type = png_get_color_type(png, info);
   png_byte bit_depth  = png_get_bit_depth(png, info);
-
+  
   // Read any color_type into 8bit depth, RGBA format.
   // See http://www.libpng.org/pub/png/libpng-manual.txt
-
+  
   if(bit_depth == 16)
     png_set_strip_16(png);
-
+    
   if(color_type == PNG_COLOR_TYPE_PALETTE)
     png_set_palette_to_rgb(png);
-
+    
   // PNG_COLOR_TYPE_GRAY_ALPHA is always 8 or 16bit depth.
   if(color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
     png_set_expand_gray_1_2_4_to_8(png);
-
+    
   if(png_get_valid(png, info, PNG_INFO_tRNS))
     png_set_tRNS_to_alpha(png);
-
+    
   // These color_type don't have an alpha channel then fill it with 0xff.
   if(color_type == PNG_COLOR_TYPE_RGB ||
-     color_type == PNG_COLOR_TYPE_GRAY ||
-     color_type == PNG_COLOR_TYPE_PALETTE)
+      color_type == PNG_COLOR_TYPE_GRAY ||
+      color_type == PNG_COLOR_TYPE_PALETTE)
     png_set_filler(png, 0xFF, PNG_FILLER_AFTER);
-
+    
   if(color_type == PNG_COLOR_TYPE_GRAY ||
-     color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
+      color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
     png_set_gray_to_rgb(png);
-
+    
   png_read_update_info(png, info);
-
+  
   img.resize(height, png_get_rowbytes(png,info));
   rai::Array<byte*> cpointers = img.getCarray();
   //    row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * height);
   //    for(int y = 0; y < height; y++) {
   //      row_pointers[y] = (png_byte*)malloc(png_get_rowbytes(png,info));
   //    }
-
+  
   png_read_image(png, cpointers.p);
-
+  
   img.resize(height, width, img.N/(height*width));
-
+  
   fclose(fp);
-
+  
   if(swap_rows) flip_image(img);
 #else
   LOG(-2) <<"libpng not linked";

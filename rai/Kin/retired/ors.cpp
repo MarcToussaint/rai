@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -43,14 +43,14 @@ rai::KinematicWorld* rai::KinematicWorld::newClone() const {
   listCopy(G->joints, joints);
   // post-process coupled joints
   for(Joint *j: G->joints)
-    if(j->mimic){
-    rai::String jointName;
-    bool good = j->ats.find<rai::String>(jointName, "mimic");
-    CHECK(good, "something is wrong");
-    j->mimic = listFindByName(G->joints, jointName);
-    if(!j->mimic) HALT("The joint '" <<*j <<"' is declared coupled to '" <<jointName <<"' -- but that doesn't exist!");
-    j->type = j->mimic->type;
-  }
+    if(j->mimic) {
+      rai::String jointName;
+      bool good = j->ats.find<rai::String>(jointName, "mimic");
+      CHECK(good, "something is wrong");
+      j->mimic = listFindByName(G->joints, jointName);
+      if(!j->mimic) HALT("The joint '" <<*j <<"' is declared coupled to '" <<jointName <<"' -- but that doesn't exist!");
+      j->type = j->mimic->type;
+    }
   graphMakeLists(G->bodies, G->joints);
   uint i;  Shape *s;  Body *b;
   for_list(Type,  s,  G->shapes) {
@@ -169,10 +169,10 @@ double rai::KinematicWorld::getContactGradient(arr &grad, double margin, bool li
       }
       if(!linear) cost += discount*d*d;
       else        cost += discount*d;
-
+      
       arel.setZero();  arel=a->X.rot/(proxies(i)->posA-a->X.pos);
       brel.setZero();  brel=b->X.rot/(proxies(i)->posB-b->X.pos);
-
+      
       CHECK(proxies(i)->normal.isNormalized(), "proxy normal is not normalized");
       dnormal.referTo(proxies(i)->normal.p(), 3); dnormal.reshape(1, 3);
       if(!linear) {
@@ -183,7 +183,7 @@ double rai::KinematicWorld::getContactGradient(arr &grad, double margin, bool li
         jacobianPos(J, b->body->index, &brel); grad += discount/margin*(dnormal*J);
       }
     }
-
+    
   return cost;
 }
 #endif
@@ -220,16 +220,16 @@ double rai::KinematicWorld::getContactGradient(arr &grad, double margin) {
       d=1.-proxies(i)->d/marg;
       if(d<0.) continue;
       cost += d*d;
-
+      
       arel.setZero();  arel.p=a->X.r/(proxies(i)->posA-a->X.p);
       brel.setZero();  brel.p=b->X.r/(proxies(i)->posB-b->X.p);
-
+      
       CHECK(proxies(i)->normal.isNormalized(), "proxy normal is not normalized");
       dnormal.referTo(proxies(i)->normal.v, 3); dnormal.reshape(1, 3);
       jacobianPos(J, a->body->index, &arel); grad -= (2.*d/marg)*(dnormal*J);
       jacobianPos(J, b->body->index, &brel); grad += (2.*d/marg)*(dnormal*J);
     }
-
+    
   return cost;
 }
 #endif
@@ -248,7 +248,7 @@ void rai::KinematicWorld::getPenetrationState(arr &vec) const {
   uint i;
   for(i=0; i<proxies.N; i++) if(proxies(i)->d<0.) {
       d=proxies(i)->posB - proxies(i)->posA;
-
+      
       if(proxies(i)->a!=-1) vec(proxies(i)->a) += d.length();
       if(proxies(i)->b!=-1) vec(proxies(i)->b) += d.length();
     }
@@ -261,14 +261,14 @@ void rai::KinematicWorld::getGripState(arr& grip, uint j) const {
   rai::Vector torque; torque.setZero();
   double sumOfAbsD = 0.;
   double varOfD = 0.;
-
+  
   p.setZero();
   uint i, n=0;
   for(i=0; i<proxies.N; i++) if(proxies(i)->d<0.) {
       if(proxies(i)->a!=(int)j && proxies(i)->b!=(int)j) continue;
-
+      
       n++;
-
+      
       if(proxies(i)->a==(int)j) {
         d=proxies(i)->posB - proxies(i)->posA;
         p=proxies(i)->posA;
@@ -277,15 +277,15 @@ void rai::KinematicWorld::getGripState(arr& grip, uint j) const {
         d=proxies(i)->posA - proxies(i)->posB;
         p=proxies(i)->posB;
       }
-
+      
       sumOfAbsD += d.length();
       sumOfD    += d;
       varOfD    += d.lengthSqr();
       torque    += (p - bodies(j)->X.pos) ^ d;
-
+      
     }
   if(n) { varOfD = (varOfD - sumOfD*sumOfD) / n; }
-
+  
   grip.resize(8);
   grip(0)=sumOfAbsD;
   grip(1)=varOfD;
@@ -302,7 +302,7 @@ void rai::KinematicWorld::getGripState(arr& grip, uint j) const {
 uint rai::KinematicWorld::getTouchDimension() {
   Body *n;
   uint i=0, j;
-
+  
   // count touchsensors
   for_list(Type,  n,  bodies) if(ats.find<double>(n->ats, "touchsensor", 0)) i++;
   td=i;
@@ -331,12 +331,12 @@ void rai::KinematicWorld::getTotals(rai::Vector& c, rai::Vector& v, rai::Vector&
   Body *n;
   uint j;
   double m, M;
-
+  
   //dMass mass;
   rai::Matrix ID;
   //rai::Matrix TP;
   rai::Vector r, o;
-
+  
   ID.setId();
   c.setZero();
   v.setZero();
@@ -348,11 +348,11 @@ void rai::KinematicWorld::getTotals(rai::Vector& c, rai::Vector& v, rai::Vector&
     l+=n->inertia*n->X.angvel;
     //TP.setTensorProduct(n->X.p, n->X.p);
     //Iall+=m*((n->X.p*n->X.p)*ID + TP);
-
+    
     m=n->mass;
     l+=m*(n->X.pos ^ n->X.vel);
     o+=m*n->X.rot.getVec(r);
-
+    
     M+=m;
     c+=m*n->X.pos;
     v+=m*n->X.vel;

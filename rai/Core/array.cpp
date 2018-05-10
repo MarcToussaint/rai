@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -77,7 +77,7 @@ I've put the clapack.h directly into the rai directory - one only has to link to
 /// @name matrix operations
 //
 
-arr grid(const arr& lo, const arr& hi, const uintA& steps){
+arr grid(const arr& lo, const arr& hi, const uintA& steps) {
   CHECK(lo.N==hi.N && lo.N==steps.N,"");
   arr X;
   uint i, j, k;
@@ -87,7 +87,7 @@ arr grid(const arr& lo, const arr& hi, const uintA& steps){
     return X;
   }
   if(lo.N==2) {
-     X.resize(steps(0)+1, steps(1)+1, 2);
+    X.resize(steps(0)+1, steps(1)+1, 2);
     for(i=0; i<X.d0; i++) for(j=0; j<X.d1; j++) {
         X.operator()(i, j, 0)=lo(0)+(i?(hi(0)-lo(0))*i/steps(0):0.);
         X.operator()(i, j, 1)=lo(1)+(j?(hi(1)-lo(1))*j/steps(1):0.);
@@ -106,7 +106,7 @@ arr grid(const arr& lo, const arr& hi, const uintA& steps){
     return X;
   }
   HALT("not implemented yet");
-
+  
 }
 
 arr repmat(const arr& A, uint m, uint n) {
@@ -130,12 +130,12 @@ arr diag(double d, uint n) {
   return z;
 }
 
-void addDiag(arr& A, double d){
+void addDiag(arr& A, double d) {
   if(isRowShifted(A)) {
     RowShifted *Aaux = (RowShifted*) A.special;
     if(!Aaux->symmetric) HALT("this is not a symmetric matrix");
     for(uint i=0; i<A.d0; i++) A(i,0) += d;
-  }else{
+  } else {
     for(uint i=0; i<A.d0; i++) A(i,i) += d;
   }
 }
@@ -155,7 +155,7 @@ void transpose(arr& A) {
   for(i=1; i<n; i++) for(j=0; j<i; j++) { z=A(j, i); A(j, i)=A(i, j); A(i, j)=z; }
 }
 
-arr oneover(const arr& A){
+arr oneover(const arr& A) {
   arr B = A;
   for(double& b:B) b=1./b;
   return B;
@@ -166,7 +166,7 @@ namespace rai {
 extern bool useLapack;
 }
 
-void normalizeWithJac(arr& y, arr& J){
+void normalizeWithJac(arr& y, arr& J) {
   double l2 = sumOfSqr(y);
   double l = sqrt(l2);
   CHECK(l>1e-10, "can't normalize");
@@ -248,16 +248,16 @@ void svd(arr& U, arr& V, const arr& A) {
 void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc) {
   CHECK(X.nd == 2 && X.d0 > 0 && X.d1 > 0, "Invalid data matrix X.");
   CHECK(npc <= X.d1, "More principal components than data matrix X can offer.");
-
+  
   if(npc == 0)
     npc = X.d1;
-
+    
   // centering around the mean
   arr m = sum(X, 0) / (double)X.d0;
   arr D = X;
   for(uint i = 0; i < D.d0; i++)
     D[i]() -= m;
-  
+    
   arr U;
   svd(U, v, W, D, true);
   v = v % v;
@@ -269,10 +269,10 @@ void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc) {
   cout << "vv: " << v << endl;
   cout << "WW: " << W << endl;
   */
-
+  
   W = W.cols(0, npc);
   Y = D * W;
-
+  
   v *= 1./sum(v);
   v.sub(0, npc-1);
 }
@@ -396,13 +396,13 @@ void inverse_SymPosDef(arr& Ainv, const arr& A) {
 arr pseudoInverse(const arr& A, const arr& Winv, double eps) {
   arr AAt;
   arr At = ~A;
-  if(&Winv){
+  if(&Winv) {
     if(Winv.nd==1) AAt = A*(Winv%At); else AAt = A*Winv*At;
-  }else AAt = A*At;
-  if(eps) for(uint i=0;i<AAt.d0;i++) AAt(i,i) += eps;
+  } else AAt = A*At;
+  if(eps) for(uint i=0; i<AAt.d0; i++) AAt(i,i) += eps;
   arr AAt_inv = inverse_SymPosDef(AAt);
   arr Ainv = At * AAt_inv;
-  if(&Winv){ if(Winv.nd==1) Ainv = Winv%Ainv; else Ainv = Winv*Ainv; }
+  if(&Winv) { if(Winv.nd==1) Ainv = Winv%Ainv; else Ainv = Winv*Ainv; }
   return Ainv;
 }
 
@@ -841,9 +841,9 @@ void gnuplot(const arr& X, bool pauseMouse, bool persist, const char* PDFfile) {
   }
 }
 
-arr bootstrap(const arr& x){
+arr bootstrap(const arr& x) {
   arr y(x.N);
-  for(uint i=0;i<y.N;i++) y(i) = x(rnd(y.N));
+  for(uint i=0; i<y.N; i++) y(i) = x(rnd(y.N));
   return y;
 }
 
@@ -922,15 +922,15 @@ void remove_alpha_channel(byteA &img) {
   img.reshape(h, w, 3);
 }
 
-void image_halfResolution(byteA &img){
+void image_halfResolution(byteA &img) {
   byteA org = img;
   img.resize(org.d0/2, org.d1/2, org.d2);
-  for(uint i=0;i<img.d0;i++) for(uint j=0;j<img.d1;j++) for(uint k=0;k<img.d2;k++){
-    float v = (float)org(2*i, 2*j, k) + (float)org(2*i, 2*j+1, k)
-            + (float)org(2*i+1, 2*j, k) +(float)org(2*i+1, 2*j+1, k);
-    v /= 4;
-    img(i,j,k) = (byte)v;
-  }
+  for(uint i=0; i<img.d0; i++) for(uint j=0; j<img.d1; j++) for(uint k=0; k<img.d2; k++) {
+        float v = (float)org(2*i, 2*j, k) + (float)org(2*i, 2*j+1, k)
+                  + (float)org(2*i+1, 2*j, k) +(float)org(2*i+1, 2*j+1, k);
+        v /= 4;
+        img(i,j,k) = (byte)v;
+      }
 }
 
 void flip_image(byteA &img) {
@@ -1007,7 +1007,7 @@ void swap_RGB_BGR(byteA &img) {
   CHECK(img.nd==3 && img.d2==3, "make_RGB2RGBA requires color image as input");
   byte *b=img.p, *bstop=img.p+img.N;
   byte z;
-  for(;b<bstop; b+=3) {
+  for(; b<bstop; b+=3) {
     z=b[0]; b[0]=b[2]; b[2]=z;
   }
 }
@@ -1124,11 +1124,11 @@ void scanArrFile(const char* name) {
 #endif
 
 /// numeric (finite difference) computation of the gradient
-arr finiteDifferenceGradient(const ScalarFunction& f, const arr& x, arr& Janalytic){
+arr finiteDifferenceGradient(const ScalarFunction& f, const arr& x, arr& Janalytic) {
   arr dx, J;
   double y, dy;
   y=f(Janalytic, NoArr, x);
-
+  
   J.resize(x.N);
   double eps=CHECK_EPS;
   uint i;
@@ -1143,12 +1143,12 @@ arr finiteDifferenceGradient(const ScalarFunction& f, const arr& x, arr& Janalyt
 }
 
 /// numeric (finite difference) computation of the gradient
-arr finiteDifferenceJacobian(const VectorFunction& f, const arr& _x, arr& Janalytic){
+arr finiteDifferenceJacobian(const VectorFunction& f, const arr& _x, arr& Janalytic) {
   arr x=_x;
   arr y, dx, dy, J;
   f(y, Janalytic, x);
   if(isRowShifted(Janalytic)) Janalytic = unpack(Janalytic);
-
+  
   J.resize(y.N, x.N);
   double eps=CHECK_EPS;
   uint i, k;
@@ -1173,7 +1173,7 @@ bool checkGradient(const ScalarFunction& f,
   arr J, dx, JJ;
   double y, dy;
   y=f(J, NoArr, x);
-
+  
   JJ.resize(x.N);
   double eps=CHECK_EPS;
   for(uint i=0; i<x.N; i++) {
@@ -1206,7 +1206,7 @@ bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance, bool 
   arr g, H, dx, dy, Jg;
   f(g, H, x);
   if(isRowShifted(H)) H = unpack(H);
-
+  
   Jg.resize(g.N, x.N);
   double eps=CHECK_EPS;
   uint i, k;
@@ -1244,7 +1244,7 @@ bool checkJacobian(const VectorFunction& f,
   arr y, J, dx, dy, JJ;
   f(y, J, x_copy);
   if(isRowShifted(J)) J = unpack(J);
-
+  
   JJ.resize(y.N, x.N);
   double eps=CHECK_EPS;
   uint i, k;
@@ -1263,9 +1263,9 @@ bool checkJacobian(const VectorFunction& f,
     RAI_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
     J >>FILE("z.J_analytical");
     JJ >>FILE("z.J_empirical");
-    if(verbose){
+    if(verbose) {
       cout <<"J_analytical = " <<J
-         <<"\nJ_empirical  = " <<JJ <<endl;
+           <<"\nJ_empirical  = " <<JJ <<endl;
     }
     return false;
   } else {
@@ -1276,12 +1276,12 @@ bool checkJacobian(const VectorFunction& f,
 
 #define EXP ::exp //rai::approxExp
 
-double NNinv(const arr& a, const arr& b, const arr& Cinv){
+double NNinv(const arr& a, const arr& b, const arr& Cinv) {
   double d=sqrDistance(Cinv, a, b);
   double norm = ::sqrt(lapack_determinantSymPosDef((1./RAI_2PI)*Cinv));
   return norm*EXP(-.5*d);
 }
-double logNNinv(const arr& a, const arr& b, const arr& Cinv){
+double logNNinv(const arr& a, const arr& b, const arr& Cinv) {
   NIY;
   return 1;
   /*
@@ -1290,60 +1290,60 @@ double logNNinv(const arr& a, const arr& b, const arr& Cinv){
   return ::log(norm) + (-.5*scalarProduct(Cinv, d, d));
   */
 }
-double logNNprec(const arr& a, const arr& b, double prec){
+double logNNprec(const arr& a, const arr& b, double prec) {
   uint n=a.N;
   arr d=a-b;
   double norm = pow(prec/RAI_2PI, .5*n);
   return ::log(norm) + (-.5*prec*scalarProduct(d, d));
 }
-double logNN(const arr& a, const arr& b, const arr& C){
+double logNN(const arr& a, const arr& b, const arr& C) {
   arr Cinv;
   inverse_SymPosDef(Cinv, C);
   return logNNinv(a, b, Cinv);
 }
-double NN(const arr& a, const arr& b, const arr& C){
+double NN(const arr& a, const arr& b, const arr& C) {
   arr Cinv;
   inverse_SymPosDef(Cinv, C);
   return NNinv(a, b, Cinv);
 }
 /// non-normalized!! Gaussian function (f(0)=1)
-double NNNNinv(const arr& a, const arr& b, const arr& Cinv){
+double NNNNinv(const arr& a, const arr& b, const arr& Cinv) {
   double d=sqrDistance(Cinv, a, b);
   return EXP(-.5*d);
 }
-double NNNN(const arr& a, const arr& b, const arr& C){
+double NNNN(const arr& a, const arr& b, const arr& C) {
   arr Cinv;
   inverse_SymPosDef(Cinv, C);
   return NNNNinv(a, b, Cinv);
 }
-double NNzeroinv(const arr& x, const arr& Cinv){
+double NNzeroinv(const arr& x, const arr& Cinv) {
   double norm = ::sqrt(lapack_determinantSymPosDef((1./RAI_2PI)*Cinv));
   return norm*EXP(-.5*scalarProduct(Cinv, x, x));
 }
 /// gradient of a Gaussian
-double dNNinv(const arr& x, const arr& a, const arr& Ainv, arr& grad){
+double dNNinv(const arr& x, const arr& a, const arr& Ainv, arr& grad) {
   double y=NNinv(x, a, Ainv);
   grad = y * Ainv * (a-x);
   return y;
 }
 /// gradient of a non-normalized Gaussian
-double dNNNNinv(const arr& x, const arr& a, const arr& Ainv, arr& grad){
+double dNNNNinv(const arr& x, const arr& a, const arr& Ainv, arr& grad) {
   double y=NNNNinv(x, a, Ainv);
   grad = y * Ainv * (a-x);
   return y;
 }
-double NNsdv(const arr& a, const arr& b, double sdv){
+double NNsdv(const arr& a, const arr& b, double sdv) {
   double norm = 1./(::sqrt(RAI_2PI)*sdv);
   return norm*EXP(-.5*sqrDistance(a, b)/(sdv*sdv));
 }
-double NNzerosdv(const arr& x, double sdv){
+double NNzerosdv(const arr& x, double sdv) {
   double norm = 1./(::sqrt(RAI_2PI)*sdv);
   return norm*EXP(-.5*sumOfSqr(x)/(sdv*sdv));
 }
 
-rai::String singleString(const StringA& strs){
+rai::String singleString(const StringA& strs) {
   rai::String s;
-  for(const rai::String& str:strs){
+  for(const rai::String& str:strs) {
     if(s.N) s<<"_";
     s<<str;
   }
@@ -1468,11 +1468,11 @@ void blas_MsymMsym(arr& X, const arr& A, const arr& B) {
 
 arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
   arr x;
-  if(b.nd==2){ //b is a matrix (unusual) repeat for each col:
+  if(b.nd==2) { //b is a matrix (unusual) repeat for each col:
     RAI_MSG("TODO: directly call lapack with the matrix!")
     arr bT = ~b;
     x.resizeAs(bT);
-    for(uint i=0;i<bT.d0;i++) x[i]() = lapack_Ainv_b_sym(A, bT[i]);
+    for(uint i=0; i<bT.d0; i++) x[i]() = lapack_Ainv_b_sym(A, bT[i]);
     x=~x;
     return x;
   }
@@ -1484,14 +1484,14 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
   x=b;
   arr Acol=A;
   integer N=A.d0, KD=A.d1-1, NRHS=1, LDAB=A.d1, INFO;
-  try{
+  try {
     if(!isRowShifted(A)) {
       dposv_((char*)"L", &N, &NRHS, Acol.p, &N, x.p, &N, &INFO);
     } else {
       //assumes symmetric and upper banded
       dpbsv_((char*)"L", &N, &KD, &NRHS, Acol.p, &LDAB, x.p, &N, &INFO);
     }
-  }catch(...){
+  } catch(...) {
     HALT("here");
   }
   if(INFO) {
@@ -1507,7 +1507,7 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
 //      dsyev_ ((char*)"N", (char*)"L", &N, A.p, &N, sig.p, WORK.p, &LWORK, &INFO);
 //      lapack_EigenDecomp(A, sig, NoArr);
       dsyevx_((char*)"N", (char*)"I", (char*)"L", &N, Acopy.p, &LDAB, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)NULL, &LDZ, WORK.p, &LWORK, IWORK.p, IFAIL.p, &INFO);
-    }else{
+    } else {
       dsbevx_((char*)"N", (char*)"I", (char*)"L", &N, &KD, Acopy.p, &LDAB, (double*)NULL, &LDQ, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)NULL, &LDZ, WORK.p, IWORK.p, IFAIL.p, &INFO);
     }
     sig.resizeCopy(k);
@@ -1516,7 +1516,7 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
     lapack_EigenDecomp(A, sig, eig);
 #endif
     rai::errString <<"lapack_Ainv_b_sym error info = " <<INFO
-                  <<". Typically this is because A is not pos-def.\nsmallest "<<k<<" eigenvalues=" <<sig;
+                   <<". Typically this is because A is not pos-def.\nsmallest "<<k<<" eigenvalues=" <<sig;
     throw(rai::errString.p);
 //    THROW("lapack_Ainv_b_sym error info = " <<INFO
 //         <<". Typically this is because A is not pos-def.\nsmallest "<<k<<" eigenvalues=" <<sig);
@@ -1572,16 +1572,16 @@ void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs) {
   Evals.resize(N);
   work.resize(10*(3*N));
   integer info, wn=work.N;
-  if(&Evecs){
+  if(&Evecs) {
     dsyev_((char*)"V", (char*)"L", &N, symmAcopy.p, &N, Evals.p, work.p, &wn, &info);
     Evecs = symmAcopy;
-  }else{
+  } else {
     dsyev_((char*)"N", (char*)"L", &N, symmAcopy.p, &N, Evals.p, work.p, &wn, &info);
   }
   CHECK(!info, "lapack_EigenDecomp error info = " <<info);
 }
 
-arr lapack_kSmallestEigenValues_sym(const arr& A, uint k){
+arr lapack_kSmallestEigenValues_sym(const arr& A, uint k) {
   if(k>A.d0) k=A.d0; //  CHECK(k<=A.d0,"");
   integer N=A.d0, KD=A.d1-1, LDAB=A.d1, INFO;
   rai::Array<integer> IWORK(5*N), IFAIL(N);
@@ -1591,7 +1591,7 @@ arr lapack_kSmallestEigenValues_sym(const arr& A, uint k){
   arr sig(N);
   if(!isRowShifted(A)) {
     dsyevx_((char*)"N", (char*)"I", (char*)"L", &N, Acopy.p, &LDAB, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)NULL, &LDZ, WORK.p, &LWORK, IWORK.p, IFAIL.p, &INFO);
-  }else{
+  } else {
     dsbevx_((char*)"N", (char*)"I", (char*)"L", &N, &KD, Acopy.p, &LDAB, (double*)NULL, &LDQ, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)NULL, &LDZ, WORK.p, IWORK.p, IFAIL.p, &INFO);
   }
   sig.resizeCopy(k);
@@ -1634,15 +1634,15 @@ void lapack_mldivide(arr& X, const arr& A, const arr& B) {
   CHECK_EQ(A.d0, A.d1, "A in Ax=b must be square matrix.");
   CHECK(B.nd==1 || B.nd==2, "b in Ax=b must be a vector or matrix.");
   CHECK_EQ(A.d0, B.d0, "b and A must have the same amount of rows in Ax=b.");
-
+  
   X = ~B;
   arr LU = ~A;
   integer N = A.d0, NRHS = (B.nd==1?1:B.d1), LDA = A.d1, INFO;
   rai::Array<integer> IPIV(N);
-
+  
   dgesv_(&N, &NRHS, LU.p, &LDA, IPIV.p, X.p, &LDA, &INFO);
   CHECK(!INFO, "LAPACK gaussian elemination error info = " <<INFO);
-
+  
   if(B.nd==1) X.reshape(X.N);
   else X = ~X;
 }
@@ -1652,17 +1652,17 @@ void lapack_choleskySymPosDef(arr& Achol, const arr& A) {
     RowShifted *Aaux = (RowShifted*) A.special;
     if(!Aaux->symmetric) HALT("this is not a symmetric matrix");
     for(uint i=0; i<A.d0; i++) if(Aaux->rowShift(i)!=i) HALT("this is not shifted as an upper triangle");
-
+    
     Achol=A;
     integer N=A.d0, KD=A.d1-1, LDAB=A.d1, INFO;
-
+    
     dpbtrf_((char*)"L", &N, &KD, Achol.p, &LDAB, &INFO);
     CHECK(!INFO, "LAPACK Cholesky decomp error info = " <<INFO);
-
-  }else{
+    
+  } else {
     NIY;
   }
-
+  
 }
 
 void lapack_inverseSymPosDef(arr& Ainv, const arr& A) {
@@ -1747,7 +1747,7 @@ void lapack_RQ(arr& R, arr &Q, const arr& A) { NICO; }
 void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs) { NICO; }
 bool lapack_isPositiveSemiDefinite(const arr& symmA) { NICO; }
 void lapack_inverseSymPosDef(arr& Ainv, const arr& A) { NICO; }
-arr lapack_kSmallestEigenValues_sym(const arr& A, uint k){ NICO; }
+arr lapack_kSmallestEigenValues_sym(const arr& A, uint k) { NICO; }
 arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
   arr invA;
   inverse(invA, A);
@@ -1775,8 +1775,7 @@ RowShifted::RowShifted(arr& X, RowShifted &aux):
   rowShift(aux.rowShift),
   rowLen(aux.rowLen),
   colPatches(aux.colPatches),
-  symmetric(aux.symmetric)
-{
+  symmetric(aux.symmetric) {
   type = SpecialArray::RowShiftedST;
   Z.special=this;
 }
@@ -1809,7 +1808,7 @@ double RowShifted::elem(uint i, uint j) {
   return Z(i, j-rs);
 }
 
-void RowShifted::reshift(){
+void RowShifted::reshift() {
   rowLen.resize(Z.d0);
   for(uint i=0; i<Z.d0; i++) {
 #if 1
@@ -1818,17 +1817,17 @@ void RowShifted::reshift(){
     double *Zlead = Zp;
     double *Ztrail = Zp + Z.d1-1;
     while(Ztrail>=Zlead && *Ztrail==0.) Ztrail--;
-    while(Zlead<=Ztrail && *Zlead==0. ) Zlead++;
-    if(Ztrail<Zlead){ //all zeros
+    while(Zlead<=Ztrail && *Zlead==0.) Zlead++;
+    if(Ztrail<Zlead) { //all zeros
       rowLen.p[i]=0.;
-    }else{
+    } else {
       uint rs = Zlead-Zp;
       uint len = 1+Ztrail-Zlead;
       rowShift.p[i] += rs;
       rowLen.p[i] = len;
-      if(Zlead!=Zp){
+      if(Zlead!=Zp) {
         memmove(Zp, Zlead, len*Z.sizeT);
-        memset (Zp+len, 0, (Z.d1-len)*Z.sizeT);
+        memset(Zp+len, 0, (Z.d1-len)*Z.sizeT);
       }
     }
 #else
@@ -1836,11 +1835,11 @@ void RowShifted::reshift(){
     uint j=0;
     while(j<Z.d1 && Z(i,j)==0.) j++;
     //shift or so..
-    if(j==Z.d1){ //all zeros...
-    }else if(j){ //some zeros
+    if(j==Z.d1) { //all zeros...
+    } else if(j) { //some zeros
       rowShift(i) += j;
       memmove(&Z(i,0), &Z(i,j), (Z.d1-j)*Z.sizeT);
-      memset (&Z(i,Z.d1-j), 0, j*Z.sizeT);
+      memset(&Z(i,Z.d1-j), 0, j*Z.sizeT);
     }
     //find number of trailing zeros
     j=Z.d1;
@@ -1937,7 +1936,7 @@ arr RowShifted::At_A() {
       uint real_j=j+rs;
       if(real_j>=real_d1) break;
       double Zij=Zi[j];
-      if(Zij!=0.){
+      if(Zij!=0.) {
         double* Rp=R.p + real_j*R.d1;
         double* Jp=Zi+j;
         double* Jpstop=Zi+rlen; //Z.d1;
@@ -1956,12 +1955,12 @@ arr RowShifted::A_At() {
     for(uint j=Z.d0-1; j>=i+pack_d1; j--) {
       uint rs_j=rowShift.p[j];
       uint a,b;
-      if(rs_i<rs_j){ a=rs_j; b=rs_i+Z.d1; }else{ a=rs_i; b=rs_j+Z.d1; }
+      if(rs_i<rs_j) { a=rs_j; b=rs_i+Z.d1; } else { a=rs_i; b=rs_j+Z.d1; }
       if(real_d1<b) b=real_d1;
       if(a<b) if(pack_d1<j-i+1) pack_d1=j-i+1;
     }
   }
-
+  
   arr R;
   RowShifted *Raux = makeRowShifted(R, Z.d0, pack_d1, Z.d0);
   R.setZero();
@@ -1975,11 +1974,11 @@ arr RowShifted::A_At() {
       uint rs_j=rowShift.p[j];
       double* Zj=&Z(j,0);
       double* Rij=&R(i,j-i);
-
+      
       uint a,b;
-      if(rs_i<rs_j){ a=rs_j; b=rs_i+Z.d1; }else{ a=rs_i; b=rs_j+Z.d1; }
+      if(rs_i<rs_j) { a=rs_j; b=rs_i+Z.d1; } else { a=rs_i; b=rs_j+Z.d1; }
       if(real_d1<b) b=real_d1;
-      for(uint k=a;k<b;k++) *Rij += Zi[k-rs_i]*Zj[k-rs_j];
+      for(uint k=a; k<b; k++) *Rij += Zi[k-rs_i]*Zj[k-rs_j];
     }
   }
   return R;
@@ -2001,17 +2000,17 @@ arr RowShifted::At_x(const arr& x) {
     double *Zp = Z.p + i*Z.d1;
     double *yp = y.p + rs;
     double *ypstop = yp + rowLen.p[i]; //+ Z.d1;
-    for(;yp!=ypstop;){ *yp += xi * *Zp;  Zp++;  yp++; }
+    for(; yp!=ypstop;) { *yp += xi * *Zp;  Zp++;  yp++; }
 #endif
   }
   return y;
 }
 
 arr RowShifted::A_x(const arr& x) {
-  if(x.nd==2){
+  if(x.nd==2) {
     arr Y(x.d1, Z.d0);
     arr X = ~x;
-    for(uint j=0;j<x.d1;j++) Y[j]() = A_x(X[j]);
+    for(uint j=0; j<x.d1; j++) Y[j]() = A_x(X[j]);
     return ~Y;
   }
   CHECK_EQ(x.N,real_d1,"");
@@ -2028,18 +2027,18 @@ arr RowShifted::A_x(const arr& x) {
   return y;
 }
 
-arr RowShifted::At(){
+arr RowShifted::At() {
   uint width = 0;
   if(!colPatches.N) computeColPatches(false);
-  for(uint i=0;i<colPatches.d0;i++){ uint a=colPatches(i,1)-colPatches(i,0); if(a>width) width=a; }
-
+  for(uint i=0; i<colPatches.d0; i++) { uint a=colPatches(i,1)-colPatches(i,0); if(a>width) width=a; }
+  
   arr At;
   RowShifted* At_ = makeRowShifted(At, real_d1, width, Z.d0);
-  for(uint i=0;i<real_d1;i++){
+  for(uint i=0; i<real_d1; i++) {
     uint rs = colPatches(i,0);
     At_->rowShift(i) = rs;
     uint rlen = colPatches(i,1)-rs;
-    for(uint j=0;j<rlen;j++) At_->Z(i,j) = elem(rs+j,i);
+    for(uint j=0; j<rlen; j++) At_->Z(i,j) = elem(rs+j,i);
   }
   return At;
 }
@@ -2103,18 +2102,17 @@ arr conv_eigen2arr(const Eigen::MatrixXd& in) {
   for(uint i = 0; i<in.rows(); i++)
     for(uint j = 0; j<in.cols(); j++)
       out(i, j) = in(i, j);
-  return out; 
+  return out;
 }
 
 Eigen::MatrixXd conv_arr2eigen(const arr& in) {
   if(in.nd == 1) {
-    Eigen::MatrixXd out(in.d0, 1);  
+    Eigen::MatrixXd out(in.d0, 1);
     for(uint i = 0; i<in.d0; i++)
-        out(i, 0) = in(i);
+      out(i, 0) = in(i);
     return out;
-  }
-  else if(in.nd == 2) {
-    Eigen::MatrixXd out(in.d0, in.d1);  
+  } else if(in.nd == 2) {
+    Eigen::MatrixXd out(in.d0, in.d1);
     for(uint i = 0; i<in.d0; i++)
       for(uint j = 0; j<in.d1; j++)
         out(i, j) = in(i, j);
@@ -2282,11 +2280,12 @@ template bool rai::checkParameter<arr>(char const*);
 template void rai::getParameter(uintA&, const char*, const uintA&);
 
 void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
-
+                         
 //namespace rai{
 //template<> template<> Array<rai::String>::Array(std::initializer_list<const char*> list) {
 //  init();
 //  for(const char* t : list) append(rai::String(t));
 //}
 //}
-
+                         
+                         

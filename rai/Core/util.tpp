@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -38,7 +38,7 @@ bool getFromCmdLine(T& x, const char *tag) {
 template<class T>
 bool getParameterBase(T& x, const char *tag, bool hasDefault, const T* Default) {
 #if 1
-  if(getParameterFromGraph(typeid(T), &x, tag)){
+  if(getParameterFromGraph(typeid(T), &x, tag)) {
     LOG(3) <<std::setw(20) <<tag <<" = " <<std::setw(5) <<x <<" [" <<typeid(x).name() <<"] (graph!)";
     return true;
   }
@@ -58,7 +58,7 @@ bool getParameterBase(T& x, const char *tag, bool hasDefault, const T* Default) 
     return true;
   }
 #endif
-
+  
   if(hasDefault) {
     if(Default) {
       x=*Default;

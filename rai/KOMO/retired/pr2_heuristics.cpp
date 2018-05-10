@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -9,22 +9,22 @@
 #include "pr2_heuristics.h"
 #include <Kin/kin.h>
 
-arr pr2_zero_pose(){
+arr pr2_zero_pose() {
   arr q = { 0.1, 0.999998, 0.500003, 0.999998, 1.5, -2, 0, 0.500003, 0, 0 };
   //{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0, 0, 0, -1, 0.5, -1, -1.5, -2, 0, -0.5, 0, 0, 1, 0.5, 1, 1.5, -2, 0, 0.5, 0, 0 };
   return q;
 }
 
-arr pr2_reasonable_W(const rai::KinematicWorld& world){
+arr pr2_reasonable_W(const rai::KinematicWorld& world) {
 #if 0
   arr W = world.naturalQmetric(5.);
   rai::Joint *j = world.getJointByName("torso_lift_joint");
-  if(j){
+  if(j) {
     CHECK_EQ(j->type , rai::JT_transX, "");
     W(j->qIndex) *= 10;
   }
   j = world.getJointByName("worldTranslationRotation");
-  if(j){
+  if(j) {
     CHECK_EQ(j->type , rai::JT_transXYPhi, "");
     W(j->qIndex+0) *= 3;
     W(j->qIndex+1) *= 3;
@@ -39,13 +39,13 @@ arr pr2_reasonable_W(const rai::KinematicWorld& world){
 uintA _get_shape_indices(rai::Body* b) {
   uintA idx;
   for(rai::Shape *s : b->shapes) {
-    idx.append(s->index); 
+    idx.append(s->index);
   }
   return idx;
 }
 
 rai::Array<const char*> pr2_left_get_bodynames() {
-  return { 
+  return {
     "base_footprint",
     "torso_lift_link",
     "l_shoulder_pan_link",
@@ -63,7 +63,7 @@ rai::Array<const char*> pr2_left_get_bodynames() {
 }
 
 rai::Array<const char*> pr2_full_get_bodynames() {
-  return { 
+  return {
     "base_footprint",
     "fl_caster_rotation_link",
     "fl_caster_l_wheel_link",
@@ -104,46 +104,46 @@ rai::Array<const char*> pr2_full_get_bodynames() {
     "l_gripper_l_finger_tip_link",
     "l_gripper_r_finger_tip_link"
   };
-    
+  
 }
 
 rai::Array<const char*> pr2_get_joints() {
-  return {    
+  return {
     "worldTranslationRotation",
-      "torso_lift_joint",
-      "head_pan_joint",
-      "laser_tilt_mount_joint",
-      "r_shoulder_pan_joint",
-      "l_shoulder_pan_joint",
-      "head_tilt_joint",
-      "r_shoulder_lift_joint",
-      "l_shoulder_lift_joint",
-      "r_upper_arm_roll_joint",
-      "l_upper_arm_roll_joint",
-      "r_elbow_flex_joint",
-      "l_elbow_flex_joint",
-      "r_forearm_roll_joint",
-      "l_forearm_roll_joint",
-      "r_wrist_flex_joint",
-      "l_wrist_flex_joint",
-      "r_wrist_roll_joint",
-      "l_wrist_roll_joint",
-      "r_gripper_l_finger_joint",
-      "r_gripper_r_finger_joint",
-      "l_gripper_l_finger_joint",
-      "l_gripper_r_finger_joint",
-      "r_gripper_l_finger_tip_joint",
-      "r_gripper_r_finger_tip_joint",
-      "l_gripper_l_finger_tip_joint",
-      "l_gripper_r_finger_tip_joint",
-      "r_gripper_joint",
-      "l_gripper_joint"};
+    "torso_lift_joint",
+    "head_pan_joint",
+    "laser_tilt_mount_joint",
+    "r_shoulder_pan_joint",
+    "l_shoulder_pan_joint",
+    "head_tilt_joint",
+    "r_shoulder_lift_joint",
+    "l_shoulder_lift_joint",
+    "r_upper_arm_roll_joint",
+    "l_upper_arm_roll_joint",
+    "r_elbow_flex_joint",
+    "l_elbow_flex_joint",
+    "r_forearm_roll_joint",
+    "l_forearm_roll_joint",
+    "r_wrist_flex_joint",
+    "l_wrist_flex_joint",
+    "r_wrist_roll_joint",
+    "l_wrist_roll_joint",
+    "r_gripper_l_finger_joint",
+    "r_gripper_r_finger_joint",
+    "l_gripper_l_finger_joint",
+    "l_gripper_r_finger_joint",
+    "r_gripper_l_finger_tip_joint",
+    "r_gripper_r_finger_tip_joint",
+    "l_gripper_l_finger_tip_joint",
+    "l_gripper_r_finger_tip_joint",
+    "r_gripper_joint",
+    "l_gripper_joint"};
 }
 
 uintA pr2_get_shapes(const rai::KinematicWorld &G) {
   rai::Array<const char*> bodynames = pr2_left_get_bodynames();
   uintA shape_idx;
-  for (const char* bodyname: bodynames) {
+  for(const char* bodyname: bodynames) {
     shape_idx.append(_get_shape_indices(G.getBodyByName(bodyname)));
   }
   return shape_idx;

@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -13,35 +13,35 @@
 #include <Geo/mesh.h>
 #include <Algo/dataNeighbored.h>
 
-struct MinEigModel : GLDrawer{
+struct MinEigModel : GLDrawer {
   DataNeighbored& data;
   arr weights;
   double margin;
-
+  
   //statistics
   arr bias_xx;
   double stat_n;
   arr stat_x, stat_xx;
-
+  
   //eigen value/vector
   arr mean;
   ExtremeEigenValues eig;
-
+  
   //used points
   uintA pts;      ///< set of points that this model models (has non-zero weights)
   uintA fringe;   ///< the fringe of model points (subset of pts)
   boolA included; ///< binary indicator encoding of pts (is equivalent to pts)
-
+  
   //cvx hull
   rai::Mesh convexHull;
   double density;
-
+  
   //label
   int label;
-
+  
   MinEigModel(DataNeighbored& data, double margin) : data(data), weights(zeros(data.n())), margin(margin), label(0) {}
-  virtual ~MinEigModel(){}
-
+  virtual ~MinEigModel() {}
+  
   void setPoints(const uintA& points); ///< set the model points (weights initialized to one)
   void setWeightsToOne();    ///< set all weights in pts to 1
   void setWeightsToZero();   ///< set all weights (ans stats) to zero
@@ -56,7 +56,7 @@ struct MinEigModel : GLDrawer{
   void colorPixelsWithWeights(arr& cols);
   void glDraw(OpenGL&);
   void report(ostream& os=std::cout, bool mini=false);
-
+  
 private:
   void addStatistics(const uintA& points, bool minus=false);
 };

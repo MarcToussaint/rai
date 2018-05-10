@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -325,7 +325,7 @@ void DefaultTaskVariable::updateState(const rai::KinematicWorld& ors, double tau
   uint k,l;
   rai::Body *bi = ors.bodies(i);
   rai::Body *bj = ors.bodies(j);
-
+  
   v_old=v;
   y_old=y;
   
@@ -536,7 +536,7 @@ void DefaultTaskVariable::write(ostream &os, const rai::KinematicWorld& ors) con
   rai::Body *bi = ors.bodies(i);
   switch(type) {
     case posTVT:     os <<"  (pos " <<bi->name <<")"; break;
-      //case relPosTVT:  os <<"  (relPos " <<bi->name <<'-' <<bj->name <<")"; break;
+    //case relPosTVT:  os <<"  (relPos " <<bi->name <<'-' <<bj->name <<")"; break;
     case zoriTVT:    os <<"  (zori " <<bi->name <<")"; break;
     case rotTVT:     os <<"  (rot " <<bi->name <<")"; break;
     case qLinearTVT: os <<"  (qLinear " <<sum(params) <<")"; break;
@@ -585,7 +585,7 @@ void addAContact(double& y, arr& J, const rai::Proxy *p, const rai::KinematicWor
   arel.setZero();  arel=a->X.rot/(p->posA-a->X.pos);
   brel.setZero();  brel=b->X.rot/(p->posB-b->X.pos);
   
-  if(&J){
+  if(&J) {
     CHECK(p->normal.isNormalized(), "proxy normal is not normalized");
     dnormal.referTo(&p->normal.x, 3); dnormal.reshape(1, 3);
     if(!linear) {
@@ -609,62 +609,62 @@ void ProxyTaskVariable::updateState(const rai::KinematicWorld& ors, double tau) 
   switch(type) {
     case allCTVT:
       for(rai::Proxy *p: ors.proxies)  if(p->d<margin) {
-        ors.kinematicsProxyCost(y, J, p, margin, linear, true);
-        p->colorCode = 1;
-      }
+          ors.kinematicsProxyCost(y, J, p, margin, linear, true);
+          p->colorCode = 1;
+        }
       break;
     case allListedCTVT:
       for(rai::Proxy *p: ors.proxies)  if(p->d<margin) {
-        if(shapes.contains(p->a) && shapes.contains(p->b)) {
-          ors.kinematicsProxyCost(y, J, p, margin, linear, true);
-          p->colorCode = 2;
+          if(shapes.contains(p->a) && shapes.contains(p->b)) {
+            ors.kinematicsProxyCost(y, J, p, margin, linear, true);
+            p->colorCode = 2;
+          }
         }
-      }
     case allExceptListedCTVT:
       for(rai::Proxy *p: ors.proxies)  if(p->d<margin) {
-        if(!shapes.contains(p->a) && !shapes.contains(p->b)) {
-          ors.kinematicsProxyCost(y, J, p, margin, linear, true);
-          p->colorCode = 3;
+          if(!shapes.contains(p->a) && !shapes.contains(p->b)) {
+            ors.kinematicsProxyCost(y, J, p, margin, linear, true);
+            p->colorCode = 3;
+          }
         }
-      }
       break;
     case bipartiteCTVT:
       for(rai::Proxy *p: ors.proxies)  if(p->d<margin) {
-        if((shapes.contains(p->a) && shapes2.contains(p->b)) ||
-            (shapes.contains(p->b) && shapes2.contains(p->a))) {
-          ors.kinematicsProxyCost(y, J, p, margin, linear, true);
-          p->colorCode = 4;
+          if((shapes.contains(p->a) && shapes2.contains(p->b)) ||
+              (shapes.contains(p->b) && shapes2.contains(p->a))) {
+            ors.kinematicsProxyCost(y, J, p, margin, linear, true);
+            p->colorCode = 4;
+          }
         }
-      }
     case pairsCTVT: {
       shapes.reshape(shapes.N/2,2);
       // only explicit paris in 2D array shapes
       uint j;
       for(rai::Proxy *p: ors.proxies)  if(p->d<margin) {
-        for(j=0; j<shapes.d0; j++) {
-          if((shapes(j,0)==(uint)p->a && shapes(j,1)==(uint)p->b) || (shapes(j,0)==(uint)p->b && shapes(j,1)==(uint)p->a))
-            break;
+          for(j=0; j<shapes.d0; j++) {
+            if((shapes(j,0)==(uint)p->a && shapes(j,1)==(uint)p->b) || (shapes(j,0)==(uint)p->b && shapes(j,1)==(uint)p->a))
+              break;
+          }
+          if(j<shapes.d0) { //if a pair was found
+            ors.kinematicsProxyCost(y, J, p, margin, linear, true);
+            p->colorCode = 5;
+          }
         }
-        if(j<shapes.d0) { //if a pair was found
-          ors.kinematicsProxyCost(y, J, p, margin, linear, true);
-          p->colorCode = 5;
-        }
-      }
     } break;
     case allExceptPairsCTVT: {
       shapes.reshape(shapes.N/2,2);
       // only explicit paris in 2D array shapes
       uint j;
       for(rai::Proxy *p: ors.proxies)  if(p->d<margin) {
-        for(j=0; j<shapes.d0; j++) {
-          if((shapes(j,0)==(uint)p->a && shapes(j,1)==(uint)p->b) || (shapes(j,0)==(uint)p->b && shapes(j,1)==(uint)p->a))
-            break;
+          for(j=0; j<shapes.d0; j++) {
+            if((shapes(j,0)==(uint)p->a && shapes(j,1)==(uint)p->b) || (shapes(j,0)==(uint)p->b && shapes(j,1)==(uint)p->a))
+              break;
+          }
+          if(j==shapes.d0) { //if a pair was not found
+            ors.kinematicsProxyCost(y, J, p, margin, linear, true);
+            p->colorCode = 5;
+          }
         }
-        if(j==shapes.d0) { //if a pair was not found
-          ors.kinematicsProxyCost(y, J, p, margin, linear, true);
-          p->colorCode = 5;
-        }
-      }
     } break;
     case vectorCTVT: {
       //outputs a vector of collision meassures, with entry for each explicit pair
@@ -673,15 +673,15 @@ void ProxyTaskVariable::updateState(const rai::KinematicWorld& ors, double tau) 
       J.resize(shapes.d0,J.d1).setZero();
       uint j;
       for(rai::Proxy *p: ors.proxies)  if(p->d<margin) {
-        for(j=0; j<shapes.d0; j++) {
-          if((shapes(j,0)==(uint)p->a && shapes(j,1)==(uint)p->b) || (shapes(j,0)==(uint)p->b && shapes(j,1)==(uint)p->a))
-            break;
+          for(j=0; j<shapes.d0; j++) {
+            if((shapes(j,0)==(uint)p->a && shapes(j,1)==(uint)p->b) || (shapes(j,0)==(uint)p->b && shapes(j,1)==(uint)p->a))
+              break;
+          }
+          if(j<shapes.d0) {
+            ors.kinematicsProxyCost(y[j](), J[j](), p, margin, linear, true);
+            p->colorCode = 5;
+          }
         }
-        if(j<shapes.d0) {
-          ors.kinematicsProxyCost(y[j](), J[j](), p, margin, linear, true);
-          p->colorCode = 5;
-        }
-      }
       y.reshape(shapes.d0);
     } break;
     default: NIY;

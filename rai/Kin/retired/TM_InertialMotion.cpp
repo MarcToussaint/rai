@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -10,9 +10,9 @@
 #include "flag.h"
 #include "TM_default.h"
 
-void TM_InertialMotion::phi(arr &y, arr &J, const WorldL &Ktuple){
+void TM_InertialMotion::phi(arr &y, arr &J, const WorldL &Ktuple) {
   rai::KinematicWorld& K = *Ktuple(-1);
-
+  
   arr acc, Jacc;
   arr acc_ref = {0.,0.,g};
   arr Jacc_ref = zeros(3, K.q.N);
@@ -22,25 +22,25 @@ void TM_InertialMotion::phi(arr &y, arr &J, const WorldL &Ktuple){
     if(a->joint && a->joint->H && !(a->flags && !(a->flags & (1<<FL_normalControlCosts))))
       RAI_MSG("frame '" <<a->name <<"' has InertialMotion AND control cost objectivies");
   }
-
+  
   TM_Default pos(TMT_pos, i);
   pos.order=2;
   pos.TaskMap::phi(acc, (&J?Jacc:NoArr), Ktuple);
-
+  
   y = acc - acc_ref;
-  if(&J){
+  if(&J) {
     J = zeros(3, Jacc.d1);
     J.setMatrixBlock(-Jacc_ref, 0, Jacc.d1-Jacc_ref.d1);
     J += Jacc;
   }
-
-  if(K.frames(i)->flags & (1<<FL_impulseExchange)){
+  
+  if(K.frames(i)->flags & (1<<FL_impulseExchange)) {
     y.setZero();
     if(&J) J.setZero();
   }
 }
 
-uint TM_InertialMotion::dim_phi(const WorldL &Ktuple){
+uint TM_InertialMotion::dim_phi(const WorldL &Ktuple) {
   return 3;
 }
 

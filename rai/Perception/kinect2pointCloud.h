@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -12,7 +12,7 @@
 #include <Gui/opengl.h>
 #include <Geo/geo.h>
 
-struct Kinect2PointCloud : Thread{
+struct Kinect2PointCloud : Thread {
   //inputs
   VAR(byteA, kinect_rgb)
   VARlisten(uint16A, kinect_depth)
@@ -20,20 +20,20 @@ struct Kinect2PointCloud : Thread{
   VAR(arr, pr2_odom)
   //outputs
   VAR(arr, kinect_points)
-
+  
   arr pts,cols;
   uint16A depth;
   byteA rgb; //helpers
   rai::Transformation frame;
   int depthShift_dx,depthShift_dy;
   arr frameShift;
-
+  
   Kinect2PointCloud();
   virtual ~Kinect2PointCloud();
-
-  void open(){}
+  
+  void open() {}
   void step();
-  void close(){}
+  void close() {}
 };
 
 /// convert raw depth data to a pointcloud (no color)

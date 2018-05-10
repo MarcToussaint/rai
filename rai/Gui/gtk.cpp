@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -24,24 +24,24 @@ struct GtkThread:Thread {
     int argc=1;
     char **argv = new char*[1];
     argv[0] = (char*)"x.exe";
-
+    
     XInitThreads();
 //      g_thread_init(NULL);
     gdk_threads_init();
     gdk_threads_enter();
     gtk_init(&argc, &argv);
     gtk_gl_init(&argc, &argv);
-
+    
     threadLoop();
   }
-  ~GtkThread(){
+  ~GtkThread() {
     gtk_main_quit();
     threadClose();
     gdk_threads_leave();
 //    g_main_context_unref(g_main_context_default ());
     cout <<"STOPPING GTK" <<endl;
   }
-
+  
   virtual void open() {}
   virtual void step() { gtk_main(); }
   virtual void close() {  }
@@ -86,9 +86,9 @@ void gtkCheckInitialized() {
 #endif
 }
 
-void gtkProcessEvents(){
+void gtkProcessEvents() {
   gtkLock();
-  while (gtk_events_pending())  gtk_main_iteration();
+  while(gtk_events_pending())  gtk_main_iteration();
   gtkUnlock();
 }
 

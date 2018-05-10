@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -16,11 +16,11 @@
 // proper (monotone) plain gradient descent with line search
 //
 
-struct OptGrad{
+struct OptGrad {
   arr& x;
   ScalarFunction f;
   OptOptions o;
-
+  
   enum StopCriterion { stopNone=0, stopCrit1, stopCrit2, stopCritLineSteps, stopCritEvals, stopStepFailed };
   double fx;
   arr gx;
@@ -28,7 +28,7 @@ struct OptGrad{
   uint it, evals, numTinySteps;
   StopCriterion stopCriterion;
   ofstream fil;
-
+  
   OptGrad(arr& x, const ScalarFunction& f, OptOptions o=NOOPT);
   ~OptGrad();
   StopCriterion step();
@@ -36,7 +36,7 @@ struct OptGrad{
   void reinit(const arr& _x=NoArr);
 };
 
-inline int optGrad(arr& x, const ScalarFunction& f, OptOptions opt=NOOPT){
+inline int optGrad(arr& x, const ScalarFunction& f, OptOptions opt=NOOPT) {
   return OptGrad(x, f, opt).run();
 }
 
@@ -55,7 +55,7 @@ struct Rprop {
   uint loop(arr& x, const ScalarFunction& f, double *fmin_return=NULL, double stoppingTolerance=1e-2, double initialStepSize=1., uint maxIterations=1000, uint verbose=0);
 };
 
-inline uint optRprop(arr& x, const ScalarFunction& f, OptOptions opt=NOOPT){
+inline uint optRprop(arr& x, const ScalarFunction& f, OptOptions opt=NOOPT) {
   return Rprop().loop(x, f, opt.fmin_return, opt.stopTolerance, opt.initStep, opt.stopEvals, opt.verbose);
 }
 

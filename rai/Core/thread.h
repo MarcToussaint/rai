@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -32,19 +32,19 @@ typedef rai::Array<Thread*> ThreadL;
 
 //===========================================================================
 
-template<class F> struct Callback{
+template<class F> struct Callback {
   const void* id; //needed to delete callbacks from callback lists!
   std::function<F> callback;
   Callback() : id(NULL) {}
   Callback(const void* _id) : id(_id) {}
   Callback(const void* _id, const std::function<F>& c) : id(_id), callback(c) {}
-  std::function<F>& call(){ CHECK(callback,"is not initialized!!"); return callback; }
+  std::function<F>& call() { CHECK(callback,"is not initialized!!"); return callback; }
 };
-template<class F> bool operator==(const Callback<F>& a, const Callback<F>& b){ return a.id==b.id; }
+template<class F> bool operator==(const Callback<F>& a, const Callback<F>& b) { return a.id==b.id; }
 
 template<class F>
-struct CallbackL : rai::Array<Callback<F>*>{
-  void delRemove(const void* id){
+struct CallbackL : rai::Array<Callback<F>*> {
+  void delRemove(const void* id) {
     Callback<F>* c = listFindValue(*this, Callback<F>(id));
     CHECK(c,"");
     this->removeValue(c);
@@ -79,20 +79,20 @@ struct Signaler {
   SignalerL messengers;  ///< set(!) of condition variables that send signals (via the listen mechanism) - is cleared by the user only
   CallbackL<void(Signaler*,int)> callbacks;
   struct Node* registryNode;      ///< every threading object registers itself globally
-
+  
   Signaler(int initialStatus=0);
   virtual ~Signaler(); //virtual, to enforce polymorphism
-
+  
   void setStatus(int i, Signaler* messenger=NULL); ///< sets state and broadcasts
   int  incrementStatus(Signaler* messenger=NULL);  ///< increase value by 1
   void broadcast(Signaler* messenger=NULL);        ///< wake up listeners and call callbacks with current status
   void listenTo(Signaler& c);
   void stopListenTo(Signaler& c);
   void stopListening();
-
+  
   void statusLock();   //the user can manually lock/unlock, if he needs locked state access for longer -> use userHasLocked=true below!
   void statusUnlock();
-
+  
   int  getStatus(bool userHasLocked=false) const;
   void waitForSignal(bool userHasLocked=false);
   bool waitForSignal(double seconds, bool userHasLocked=false);
@@ -113,9 +113,9 @@ struct Metronome {
   double ticInterval;
   timespec ticTime;
   uint tics;
-
+  
   Metronome(double ticIntervalSec); ///< set tic tac time in seconds
-
+  
   void reset(double ticIntervalSec);
   void waitForTic();              ///< waits until the next tic
   double getTimeSinceTic();       ///< time since last tic
@@ -142,21 +142,21 @@ struct CycleTimer {
 /**
  * MiniThread might replace Thread some time
  */
-struct MiniThread : Signaler{
+struct MiniThread : Signaler {
   rai::String name;
   pthread_t thread = 0;             ///< the underlying pthread; NULL iff not opened
   pid_t tid = 0;                    ///< system thread id
-
+  
   /// @name c'tor/d'tor
   MiniThread(const char* _name);
   virtual ~MiniThread();
-
+  
   /// @name to be called from `outside' (e.g. the main) to start/step/close the thread
   void threadClose(double timeoutForce=-1.);       ///< close the thread (stops looping and waits for idle mode before joining the thread)
   void threadCancel();                             ///< a hard kill (pthread_cancel) of the thread
-
-  virtual void main(){ LOG(-1) <<"you're calling the 'pseudo-pure virtual' main(), which should be overloaded (are you in a destructor?)"; }
-
+  
+  virtual void main() { LOG(-1) <<"you're calling the 'pseudo-pure virtual' main(), which should be overloaded (are you in a destructor?)"; }
+  
   void pthreadMain(); //this is the thread main - should be private!
 };
 
@@ -170,7 +170,7 @@ struct MiniThread : Signaler{
  *
  * the Signaler indicates the state of the thread: positive=do steps, otherwise it is a ThreadState
  */
-struct Thread : Signaler{
+struct Thread : Signaler {
   rai::String name;
   pthread_t thread;             ///< the underlying pthread; NULL iff not opened
   pid_t tid;                    ///< system thread id
@@ -179,7 +179,7 @@ struct Thread : Signaler{
   Metronome metronome;          ///< used for beat-looping
   CycleTimer timer;             ///< measure how the time spend per cycle, within step, idle
   int verbose;
-
+  
   /// @name c'tor/d'tor
   /** DON'T open drivers/devices/files or so here in the constructor,
    * but in open(). Sometimes a module might be created only to see
@@ -190,7 +190,7 @@ struct Thread : Signaler{
    */
   Thread(const char* _name, double beatIntervalSec=-1.);
   virtual ~Thread();
-
+  
   /// @name to be called from `outside' (e.g. the main) to start/step/close the thread
   void threadOpen(bool wait=false, int priority=0);      ///< start the thread (in idle mode) (should be positive for changes)
   void threadClose(double timeoutForce=-1.);                   ///< close the thread (stops looping and waits for idle mode before joining the thread)
@@ -198,27 +198,27 @@ struct Thread : Signaler{
   void threadLoop(bool waitForOpened=false);  ///< loop, either with fixed beat or at full speed
   void threadStop(bool wait=false);     ///< stop looping
   void threadCancel();                  ///< a hard kill (pthread_cancel) of the thread
-
+  
   void waitForOpened();                 ///< caller waits until opening is done (working -> idle mode)
   void waitForIdle();                   ///< caller waits until step is done (working -> idle mode)
   bool isIdle();                        ///< check if in idle mode
   bool isClosed();                      ///< check if closed
-
+  
   /** use this to open drivers/devices/files and initialize
    *  parameters; this is called within the thread */
   virtual void open() = 0;
-
+  
   /** The most important method of all of this: step does the actual
    *  computation of the thread. Access
    *  the variables by calling the x.get(), x.set() or
    *  x.[read|write|de]Access(), where VAR(TYPE, x) was
    *  declared. */
-  virtual void step(){ LOG(-1) <<"you're calling the 'pseudo-pure virtual' step(), which should be overloaded (are you in a destructor?)"; }
-
+  virtual void step() { LOG(-1) <<"you're calling the 'pseudo-pure virtual' step(), which should be overloaded (are you in a destructor?)"; }
+  
   /** use this to close drivers/devices/files; this is called within
    *  the thread */
   virtual void close() = 0;
-
+  
   void main(); //this is the thread main - should be private!
 };
 
@@ -228,24 +228,24 @@ struct Thread : Signaler{
 //
 
 /// This RW lock counts revisions and broadcasts accesses to listeners; who is accessing can be logged; it has a unique name
-struct VariableBase : Signaler{
+struct VariableBase : Signaler {
   RWLock rwlock;              ///< rwLock (handled via read/writeAccess)
   const std::type_info& type; ///< type of the variable
   const void *value_ptr;      ///< pointer to variable data
   rai::String name;           ///< name
   double write_time;          ///< clock time of last write access
   double data_time;           ///< time stamp of the original data source
-
-  VariableBase(const std::type_info& _type, void *_value_ptr) : type(_type), value_ptr(_value_ptr){}
+  
+  VariableBase(const std::type_info& _type, void *_value_ptr) : type(_type), value_ptr(_value_ptr) {}
   /// @name c'tor/d'tor
   virtual ~VariableBase();
-
+  
   /// @name access control
   /// to be called by a thread before access, returns the revision
   int readAccess(Thread* th=NULL);  //might set the caller to sleep
   int writeAccess(Thread* th=NULL); //might set the caller to sleep
   int deAccess(Thread* th=NULL);
-
+  
   typedef std::shared_ptr<VariableBase> Ptr;
 };
 
@@ -254,48 +254,48 @@ typedef rai::Array<VariableBase::Ptr*> VariableBaseL;
 //===========================================================================
 
 template<class T>
-struct RToken{
+struct RToken {
   VariableBase& revLock;
   T *x;
   Thread *th;
   int *last_access_revision;
   RToken(VariableBase& _revLock, T *var, Thread* th=NULL, int* last_access_revision=NULL, bool isAlreadyLocked=false)
-    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){
-      if(!isAlreadyLocked) revLock.readAccess(th);
-    }
-  ~RToken(){
+    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision) {
+    if(!isAlreadyLocked) revLock.readAccess(th);
+  }
+  ~RToken() {
     int r = revLock.deAccess(th);
     if(last_access_revision) *last_access_revision=r;
   }
-  const T* operator->(){ return x; }
-  operator const T&(){ return *x; }
-  const T& operator()(){ return *x; }
+  const T* operator->() { return x; }
+  operator const T&() { return *x; }
+  const T& operator()() { return *x; }
 };
 
 //===========================================================================
 
 template<class T>
-struct WToken{
+struct WToken {
   VariableBase& revLock;
   T *x;
   Thread *th;
   int *last_access_revision;
   WToken(VariableBase& _revLock, T *var, Thread* th=NULL, int* last_access_revision=NULL)
-    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){
+    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision) {
     revLock.writeAccess(th);
   }
   WToken(const double& dataTime, VariableBase& _revLock, T *var, Thread* th=NULL, int* last_access_revision=NULL)
-    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision){
+    : revLock(_revLock), x(var), th(th), last_access_revision(last_access_revision) {
     revLock.writeAccess(th); revLock.data_time=dataTime;
   }
-  ~WToken(){
+  ~WToken() {
     int r = revLock.deAccess(th);
     if(last_access_revision) *last_access_revision=r;
   }
-  void operator=(const T& y){ *x=y; }
-  T* operator->(){ return x; }
-  operator T&(){ return *x; }
-  T& operator()(){ return *x; }
+  void operator=(const T& y) { *x=y; }
+  T* operator->() { return x; }
+  operator T&() { return *x; }
+  T& operator()() { return *x; }
 };
 
 //===========================================================================
@@ -304,19 +304,19 @@ struct WToken{
 template<class T>
 struct VariableData : VariableBase {
   T value;
-
+  
   VariableData() : VariableBase(typeid(T), &value), value() {} // default constructor for value always initializes, also primitive types 'bool' or 'int'
-  VariableData(const VariableData&) : VariableBase(typeid(T), &value){ HALT("not allowed"); }
-  ~VariableData(){ CHECK(!rwlock.isLocked(), "can't destroy a variable when it is currently accessed!"); }
-  void operator=(const VariableData&){ HALT("not allowed"); }
-  RToken<T> get(Thread *th=NULL){ return RToken<T>(*this, &value, th); } ///< read access to the variable's data
-  WToken<T> set(Thread *th=NULL){ return WToken<T>(*this, &value, th); } ///< write access to the variable's data
-  WToken<T> set(const double& dataTime, Thread *th=NULL){ return WToken<T>(dataTime, *this, &value, th); } ///< write access to the variable's data
-  T& lockedGet(){ CHECK(rwlock.isLocked(),"direct variable access without locking it before");  return value; }
+  VariableData(const VariableData&) : VariableBase(typeid(T), &value) { HALT("not allowed"); }
+  ~VariableData() { CHECK(!rwlock.isLocked(), "can't destroy a variable when it is currently accessed!"); }
+  void operator=(const VariableData&) { HALT("not allowed"); }
+  RToken<T> get(Thread *th=NULL) { return RToken<T>(*this, &value, th); } ///< read access to the variable's data
+  WToken<T> set(Thread *th=NULL) { return WToken<T>(*this, &value, th); } ///< write access to the variable's data
+  WToken<T> set(const double& dataTime, Thread *th=NULL) { return WToken<T>(dataTime, *this, &value, th); } ///< write access to the variable's data
+  T& lockedGet() { CHECK(rwlock.isLocked(),"direct variable access without locking it before");  return value; }
 };
 
-template<class T> bool operator==(const VariableData<T>&,const VariableData<T>&){ return false; }
-template<class T> void operator<<(ostream& os, const VariableData<T>& v){ os <<"VariableData '" <<v.name <<'\''; }
+template<class T> bool operator==(const VariableData<T>&,const VariableData<T>&) { return false; }
+template<class T> void operator<<(ostream& os, const VariableData<T>& v) { os <<"VariableData '" <<v.name <<'\''; }
 
 //===========================================================================
 //
@@ -330,25 +330,25 @@ template<class T> void operator<<(ostream& os, const VariableData<T>& v){ os <<"
     and set()) which allow convenient and typed read/write access to
     the variable's content */
 template<class T>
-struct Var{
+struct Var {
   shared_ptr<VariableData<T>> data;
   rai::String name; ///< name; by default the RevLock's name; redefine to a variable's name to autoconnect
   Thread *thread;  ///< which thread is this a member of
   int last_read_revision;     ///< last revision that has been accessed (read or write)
   struct Node* registryNode;
-
-  Var() : Var(NULL, NULL, false){}
-
-  Var(const char* name) : Var(NULL, name, false){}
-
+  
+  Var() : Var(NULL, NULL, false) {}
+  
+  Var(const char* name) : Var(NULL, name, false) {}
+  
   /// searches for globally registrated variable 'name', checks type equivalence, and becomes an access for '_thread'
   Var(Thread* _thread, const char* name, bool threadListens=false)
-    : name(name), thread(_thread), last_read_revision(0), registryNode(NULL){
+    : name(name), thread(_thread), last_read_revision(0), registryNode(NULL) {
     VariableBase::Ptr *existing = registry()->find<VariableBase::Ptr>({"VariableData", name});
-    if(existing){
+    if(existing) {
       data = std::dynamic_pointer_cast<VariableData<T>>(*existing);
       if(!data) HALT("a previous variable '" <<(*existing)->name <<"' with type '" <<NAME((*existing)->type) <<"' != '" <<NAME(typeid(T)) <<" already existed");
-    }else{ //this is the ONLY place where a variable should be created
+    } else { //this is the ONLY place where a variable should be created
 //      data = shared_ptr<VariableData<T>>(new VariableData<T>);
       data = make_shared<VariableData<T>>();
       data->name = name;
@@ -356,68 +356,68 @@ struct Var{
       data->registryNode = vnode;
 //      data = &vnode->value;
     }
-    if(thread){
+    if(thread) {
       registryNode = registry()->newNode<Var<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
       if(threadListens) thread->listenTo(*data);
-    }else{
+    } else {
       registryNode = registry()->newNode<Var<T>* >({"Access", name}, {data->registryNode}, this);
     }
   }
-
+  
   /// A "copy" of acc: An access to the same variable as acc refers to, but now for '_thred'
   Var(Thread* _thread, const Var<T>& acc, bool threadListens=false)
-    : data(NULL), name(acc.name), thread(_thread), last_read_revision(0), registryNode(NULL){
+    : data(NULL), name(acc.name), thread(_thread), last_read_revision(0), registryNode(NULL) {
     data = acc.data;
-    if(thread){
+    if(thread) {
       registryNode = registry()->newNode<Var<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
       if(threadListens) thread->listenTo(*data);
-    }else{
+    } else {
       registryNode = registry()->newNode<Var<T>* >({"Access", name}, {data->registryNode}, this);
     }
   }
-
+  
   /// A "copy" of acc: An access to the same variable as acc refers to, but now for '_thred'
   Var(Thread* _thread, VariableBase& var, bool threadListens=false)
-    : data(NULL), name(var.name), thread(_thread), last_read_revision(0), registryNode(NULL){
-      CHECK(var.type == typeid(T), "types don't match!");
+    : data(NULL), name(var.name), thread(_thread), last_read_revision(0), registryNode(NULL) {
+    CHECK(var.type == typeid(T), "types don't match!");
     data = shared_ptr<VariableData<T>>(dynamic_cast<VariableData<T>*>(&var));
-    if(thread){
+    if(thread) {
       registryNode = registry()->newNode<Var<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
       if(threadListens) thread->listenTo(*data);
-    }else{
+    } else {
       registryNode = registry()->newNode<Var<T>* >({"Access", name}, {data->registryNode}, this);
     }
   }
-
-  ~Var(){ registry()->delNode(registryNode); }
-  T& operator()(){ CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return data->value; }
-  T& operator*(){  CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return data->value; }
-  T* operator->(){ CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return &(data->value); }
-  RToken<T> get(){ return RToken<T>(*data, &data->value, thread, &last_read_revision); } ///< read access to the variable's data
-  WToken<T> set(){ return WToken<T>(*data, &data->value, thread/*, &last_read_revision*/); } ///< write access to the variable's data
-  WToken<T> set(const double& dataTime){ return WToken<T>(dataTime, *data, &data->value, thread/*, &last_read_revision*/); } ///< write access to the variable's data
-
-  bool hasNewRevision(){ return data->getStatus()>last_read_revision; }
-  int readAccess(){  return last_read_revision = data->readAccess((Thread*)thread); }
-  int writeAccess(){ return data->writeAccess((Thread*)thread); }
-  int deAccess(){    return data->deAccess((Thread*)thread); }
-  int getRevision(){ return data->getStatus(); }
-  void waitForNextRevision(){ data->waitForStatusGreaterThan(last_read_revision); }
-  void waitForRevisionGreaterThan(int rev){ data->waitForStatusGreaterThan(rev); }
-  void waitForValueEq(const T& x){
-    data->waitForEvent( [this, &x]()->bool {
+  
+  ~Var() { registry()->delNode(registryNode); }
+  T& operator()() { CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return data->value; }
+  T& operator*() {  CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return data->value; }
+  T* operator->() { CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return &(data->value); }
+  RToken<T> get() { return RToken<T>(*data, &data->value, thread, &last_read_revision); } ///< read access to the variable's data
+  WToken<T> set() { return WToken<T>(*data, &data->value, thread/*, &last_read_revision*/); } ///< write access to the variable's data
+  WToken<T> set(const double& dataTime) { return WToken<T>(dataTime, *data, &data->value, thread/*, &last_read_revision*/); } ///< write access to the variable's data
+  
+  bool hasNewRevision() { return data->getStatus()>last_read_revision; }
+  int readAccess() {  return last_read_revision = data->readAccess((Thread*)thread); }
+  int writeAccess() { return data->writeAccess((Thread*)thread); }
+  int deAccess() {    return data->deAccess((Thread*)thread); }
+  int getRevision() { return data->getStatus(); }
+  void waitForNextRevision() { data->waitForStatusGreaterThan(last_read_revision); }
+  void waitForRevisionGreaterThan(int rev) { data->waitForStatusGreaterThan(rev); }
+  void waitForValueEq(const T& x) {
+    data->waitForEvent([this, &x]()->bool {
       return this->data->value==x;
-    } );
+    });
   }
-  void stopListening(){ thread->stopListenTo(data); }
-
-  void write(ostream& os){
-      readAccess();
-      os <<"VAR " <<name <<" [" <<data->getStatus() <<"] " <<data->value <<endl;
-      deAccess();
+  void stopListening() { thread->stopListenTo(data); }
+  
+  void write(ostream& os) {
+    readAccess();
+    os <<"VAR " <<name <<" [" <<data->getStatus() <<"] " <<data->value <<endl;
+    deAccess();
   }
 };
-template<class T> std::ostream& operator<<(std::ostream& os, Var<T>& x){ x.write(os); return os; }
+template<class T> std::ostream& operator<<(std::ostream& os, Var<T>& x) { x.write(os); return os; }
 
 #define VAR(type, name) Var<type> name = Var<type>(this, #name);
 #define VARlisten(type, name) Var<type> name = Var<type>(this, #name, true);
@@ -429,26 +429,26 @@ template<class T> std::ostream& operator<<(std::ostream& os, Var<T>& x){ x.write
 
 extern Singleton<Signaler> moduleShutdown;
 VariableBase::Ptr getVariable(const char* name);
-template<class T> VariableData<T>& getVariable(const char* name){
-    VariableBase::Ptr v = getVariable(name);
-    if(!v) HALT("can't find variable of name '" <<name <<"'");
-    shared_ptr<VariableData<T>> var = std::dynamic_pointer_cast<VariableData<T>>(v);
-    if(!var) HALT("can't convert variable of type '" <<NAME(v->type) <<"' to '" <<NAME(typeid(T)) <<"'");
-    return *var;
+template<class T> VariableData<T>& getVariable(const char* name) {
+  VariableBase::Ptr v = getVariable(name);
+  if(!v) HALT("can't find variable of name '" <<name <<"'");
+  shared_ptr<VariableData<T>> var = std::dynamic_pointer_cast<VariableData<T>>(v);
+  if(!var) HALT("can't convert variable of type '" <<NAME(v->type) <<"' to '" <<NAME(typeid(T)) <<"'");
+  return *var;
 }
 VariableBaseL getVariables();
-template<class T> rai::Array<VariableData<T>*> getVariablesOfType(){
-    rai::Array<VariableData<T>*> ret;
-    VariableBaseL vars = getVariables();
-    for(VariableBase::Ptr* v : vars){
-        shared_ptr<VariableData<T>> var = std::dynamic_pointer_cast<VariableData<T>>(*v);
-        if(var) ret.append(var.get());
-    }
-    return ret;
+template<class T> rai::Array<VariableData<T>*> getVariablesOfType() {
+  rai::Array<VariableData<T>*> ret;
+  VariableBaseL vars = getVariables();
+  for(VariableBase::Ptr* v : vars) {
+    shared_ptr<VariableData<T>> var = std::dynamic_pointer_cast<VariableData<T>>(*v);
+    if(var) ret.append(var.get());
+  }
+  return ret;
 }
 
 //template <class T> T& getVariable(const char* name){  return registry()->get<T&>({"VariableData",name});  }
-template <class T> T* getThread(const char* name){  return dynamic_cast<T*>(registry()->get<Thread*>({"Thread",name}));  }
+template <class T> T* getThread(const char* name) {  return dynamic_cast<T*>(registry()->get<Thread*>({"Thread",name}));  }
 void openModules();
 void stepModules();
 void closeModules();
@@ -466,58 +466,58 @@ void threadReportCycleTimes();
 
 // TODO: share a mutex between different ostreams
 class TStream {
-  private:
-    std::ostream &out;
-    Mutex mutex;
-    RWLock lock;
-    std::map<const void*, const char*> map;
-
-  public:
-    class Access;
-    class Register;
-
-    TStream(std::ostream &o);
-
-    Access operator()(const void *obj = NULL);
-    Register reg(const void *obj = NULL);
-    void unreg(const void *obj);
-    void unreg_all();
-    bool get(const void *obj, char **head);
-
-  private:
-    void reg_private(const void *obj, char *head, bool l);
-    void unreg_private(const void *obj, bool l);
-    bool get_private(const void *obj, char **head, bool l);
+private:
+  std::ostream &out;
+  Mutex mutex;
+  RWLock lock;
+  std::map<const void*, const char*> map;
+  
+public:
+  class Access;
+  class Register;
+  
+  TStream(std::ostream &o);
+  
+  Access operator()(const void *obj = NULL);
+  Register reg(const void *obj = NULL);
+  void unreg(const void *obj);
+  void unreg_all();
+  bool get(const void *obj, char **head);
+  
+private:
+  void reg_private(const void *obj, char *head, bool l);
+  void unreg_private(const void *obj, bool l);
+  bool get_private(const void *obj, char **head, bool l);
 };
 
 class TStream::Access: public std::ostream {
-  private:
-    TStream *tstream;
-    std::stringstream stream;
-    const void *obj;
-
-  public:
-    Access(TStream *ts, const void *o);
-    Access(const Access &a);
-    ~Access();
-
-    template<class T>
-    std::stringstream& operator<<(const T &t);
+private:
+  TStream *tstream;
+  std::stringstream stream;
+  const void *obj;
+  
+public:
+  Access(TStream *ts, const void *o);
+  Access(const Access &a);
+  ~Access();
+  
+  template<class T>
+  std::stringstream& operator<<(const T &t);
 };
 
 class TStream::Register: public std::ostream {
-  private:
-    TStream *tstream;
-    std::stringstream stream;
-    const void *obj;
-
-  public:
-    Register(TStream *ts, const void *o);
-    Register(const Register &r);
-    ~Register();
-
-    template<class T>
-    std::stringstream& operator<<(const T &t);
+private:
+  TStream *tstream;
+  std::stringstream stream;
+  const void *obj;
+  
+public:
+  Register(TStream *ts, const void *o);
+  Register(const Register &r);
+  ~Register();
+  
+  template<class T>
+  std::stringstream& operator<<(const T &t);
 };
 
 template<class T>
@@ -538,14 +538,14 @@ struct Signaler {
   int value;
   Signaler(int initialState=0) {}
   ~Signaler() {}
-
+  
   void setStatus(int i, bool signalOnlyFirstInQueue=false) { value=i; }
   int  incrementStatus(bool signalOnlyFirstInQueue=false) { value++; }
   void broadcast(bool signalOnlyFirstInQueue=false) {}
-
+  
   void lock() {}
   void unlock() {}
-
+  
   int  getStatus(bool userHasLocked=false) const { return value; }
 };
 

@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -23,37 +23,35 @@
 
 #include <rai_msgs/arr.h>
 
-namespace rai_msgs
-{
+namespace rai_msgs {
 template <class ContainerAllocator>
-struct MotionCompliance_
-{
+struct MotionCompliance_ {
   typedef MotionCompliance_<ContainerAllocator> Type;
-
+  
   MotionCompliance_()
     : K()
     , lambda(0.0)
     , xi(0.0)  {
-    }
+  }
   MotionCompliance_(const ContainerAllocator& _alloc)
     : K(_alloc)
     , lambda(0.0)
     , xi(0.0)  {
-  (void)_alloc;
-    }
-
-   typedef  ::rai_msgs::arr_<ContainerAllocator>  _K_type;
+    (void)_alloc;
+  }
+  
+  typedef  ::rai_msgs::arr_<ContainerAllocator>  _K_type;
   _K_type K;
-
-   typedef double _lambda_type;
+  
+  typedef double _lambda_type;
   _lambda_type lambda;
-
-   typedef double _xi_type;
+  
+  typedef double _xi_type;
   _xi_type xi;
-
+  
   typedef boost::shared_ptr< ::rai_msgs::MotionCompliance_<ContainerAllocator> > Ptr;
   typedef boost::shared_ptr< ::rai_msgs::MotionCompliance_<ContainerAllocator> const> ConstPtr;
-
+  
 }; // struct MotionCompliance_
 
 typedef ::rai_msgs::MotionCompliance_<std::allocator<void> > MotionCompliance;
@@ -64,18 +62,15 @@ typedef boost::shared_ptr< ::rai_msgs::MotionCompliance const> MotionComplianceC
 // constants requiring out of line definition
 
 template<typename ContainerAllocator>
-std::ostream& operator<<(std::ostream& s, const ::rai_msgs::MotionCompliance_<ContainerAllocator> & v)
-{
-ros::message_operations::Printer< ::rai_msgs::MotionCompliance_<ContainerAllocator> >::stream(s, "", v);
-return s;
+std::ostream& operator<<(std::ostream& s, const ::rai_msgs::MotionCompliance_<ContainerAllocator> & v) {
+  ros::message_operations::Printer< ::rai_msgs::MotionCompliance_<ContainerAllocator> >::stream(s, "", v);
+  return s;
 }
 
 } // namespace rai_msgs
 
-namespace ros
-{
-namespace message_traits
-{
+namespace ros {
+namespace message_traits {
 
 // BOOLTRAITS {'IsFixedSize': False, 'IsMessage': True, 'HasHeader': False}
 // {'geometry_msgs': ['/opt/ros/kinetic/share/geometry_msgs/msg'], 'std_msgs': ['/opt/ros/kinetic/share/std_msgs/msg'], 'rai_msgs': ['/home/mtoussai/git/mlr/share/rai/rai/RosCom/rai_msgs/msg']}
@@ -85,62 +80,56 @@ namespace message_traits
 template <class ContainerAllocator>
 struct IsFixedSize< ::rai_msgs::MotionCompliance_<ContainerAllocator> >
   : FalseType
-  { };
+{ };
 
 template <class ContainerAllocator>
 struct IsFixedSize< ::rai_msgs::MotionCompliance_<ContainerAllocator> const>
-  : FalseType
-  { };
+    : FalseType
+{ };
 
 template <class ContainerAllocator>
 struct IsMessage< ::rai_msgs::MotionCompliance_<ContainerAllocator> >
   : TrueType
-  { };
+{ };
 
 template <class ContainerAllocator>
 struct IsMessage< ::rai_msgs::MotionCompliance_<ContainerAllocator> const>
-  : TrueType
-  { };
+    : TrueType
+{ };
 
 template <class ContainerAllocator>
 struct HasHeader< ::rai_msgs::MotionCompliance_<ContainerAllocator> >
   : FalseType
-  { };
+{ };
 
 template <class ContainerAllocator>
 struct HasHeader< ::rai_msgs::MotionCompliance_<ContainerAllocator> const>
-  : FalseType
-  { };
+    : FalseType
+{ };
 
 template<class ContainerAllocator>
-struct MD5Sum< ::rai_msgs::MotionCompliance_<ContainerAllocator> >
-{
-  static const char* value()
-  {
+struct MD5Sum< ::rai_msgs::MotionCompliance_<ContainerAllocator> > {
+  static const char* value() {
     return "2124a4487f19e298feb6880df22639e8";
   }
-
+  
   static const char* value(const ::rai_msgs::MotionCompliance_<ContainerAllocator>&) { return value(); }
   static const uint64_t static_value1 = 0x2124a4487f19e298ULL;
   static const uint64_t static_value2 = 0xfeb6880df22639e8ULL;
 };
 
 template<class ContainerAllocator>
-struct DataType< ::rai_msgs::MotionCompliance_<ContainerAllocator> >
-{
-  static const char* value()
-  {
+struct DataType< ::rai_msgs::MotionCompliance_<ContainerAllocator> > {
+  static const char* value() {
     return "rai_msgs/MotionCompliance";
   }
-
+  
   static const char* value(const ::rai_msgs::MotionCompliance_<ContainerAllocator>&) { return value(); }
 };
 
 template<class ContainerAllocator>
-struct Definition< ::rai_msgs::MotionCompliance_<ContainerAllocator> >
-{
-  static const char* value()
-  {
+struct Definition< ::rai_msgs::MotionCompliance_<ContainerAllocator> > {
+  static const char* value() {
     return "arr K\n\
 float64 lambda\n\
 float64 xi\n\
@@ -151,43 +140,35 @@ uint32[] dim\n\
 float64[] data\n\
 ";
   }
-
+  
   static const char* value(const ::rai_msgs::MotionCompliance_<ContainerAllocator>&) { return value(); }
 };
 
 } // namespace message_traits
 } // namespace ros
 
-namespace ros
-{
-namespace serialization
-{
+namespace ros {
+namespace serialization {
 
-  template<class ContainerAllocator> struct Serializer< ::rai_msgs::MotionCompliance_<ContainerAllocator> >
-  {
-    template<typename Stream, typename T> inline static void allInOne(Stream& stream, T m)
-    {
-      stream.next(m.K);
-      stream.next(m.lambda);
-      stream.next(m.xi);
-    }
-
-    ROS_DECLARE_ALLINONE_SERIALIZER
-  }; // struct MotionCompliance_
+template<class ContainerAllocator> struct Serializer< ::rai_msgs::MotionCompliance_<ContainerAllocator> > {
+  template<typename Stream, typename T> inline static void allInOne(Stream& stream, T m) {
+    stream.next(m.K);
+    stream.next(m.lambda);
+    stream.next(m.xi);
+  }
+  
+  ROS_DECLARE_ALLINONE_SERIALIZER
+}; // struct MotionCompliance_
 
 } // namespace serialization
 } // namespace ros
 
-namespace ros
-{
-namespace message_operations
-{
+namespace ros {
+namespace message_operations {
 
 template<class ContainerAllocator>
-struct Printer< ::rai_msgs::MotionCompliance_<ContainerAllocator> >
-{
-  template<typename Stream> static void stream(Stream& s, const std::string& indent, const ::rai_msgs::MotionCompliance_<ContainerAllocator>& v)
-  {
+struct Printer< ::rai_msgs::MotionCompliance_<ContainerAllocator> > {
+  template<typename Stream> static void stream(Stream& s, const std::string& indent, const ::rai_msgs::MotionCompliance_<ContainerAllocator>& v) {
     s << indent << "K: ";
     s << std::endl;
     Printer< ::rai_msgs::arr_<ContainerAllocator> >::stream(s, indent + "  ", v.K);

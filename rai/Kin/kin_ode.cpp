@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -66,7 +66,7 @@ OdeInterface::OdeInterface(rai::KinematicWorld &_C):C(_C) {
   
   if(!ODEinitialized) {  dInitODE();  ODEinitialized=true; }
   clear();
-
+  
   dBodyID b;
   dMass odeMass;
   dGeomID geom, trans;
@@ -80,27 +80,27 @@ OdeInterface::OdeInterface(rai::KinematicWorld &_C):C(_C) {
   rai::Vector a;
   //double *mass, *shape, *type, *fixed, *cont, typeD=ST_capsule;
   //, *inertiaTensor, *realMass, *centerOfMass;
-
+  
   clear();
-
+  
   bodies.resize(C.bodies.N); bodies=0;
   geoms .resize(C.shapes.N); geoms =0;
   joints.resize(C.joints.N); joints=0;
   motors.resize(C.joints.N); motors=0;
-
+  
   for_list(rai::Body,  n,  C.bodies) {
     b=dBodyCreate(world);
-
+    
     bodies(n->index)=b;
     b->userdata=n;
-
+    
     //n->copyFrameToOde();
     CHECK(n->X.rot.isNormalized(), "quaternion is not normalized!");
     CP3(b->posr.pos, n->X.pos.p());                // dxBody changed in ode-0.6 ! 14. Jun 06 (hh)
     CP4(b->q, n->X.rot.p()); dQtoR(b->q, b->posr.R);
     CP3(b->lvel, n->X.vel.p());
     CP3(b->avel, n->X.angvel.p());
-
+    
     // need to fix: "mass" is not a mass but a density (in dMassSetBox)
     for_list(rai::Shape,  s,  n->shapes) {
       if(!(s->rel.rot.isZero) || !(s->rel.pos.isZero)) { //we need a relative transformation
@@ -110,7 +110,7 @@ OdeInterface::OdeInterface(rai::KinematicWorld &_C):C(_C) {
         trans = NULL;
         myspace = space; //the object is added normally to the main space
       }
-
+      
       switch(s->type) {
         default:
           for(int i=0; i<3; ++i) {
@@ -146,10 +146,10 @@ OdeInterface::OdeInterface(rai::KinematicWorld &_C):C(_C) {
           //n->ats.get("I", inertiaTensor, 9);
           //n->ats.get("w", realMass, 1);
           //n->ats.get("X", centerOfMass, 3);
-
+          
           // transform the mesh to ODE trimesh format;
           //i=0; j=0;
-
+          
 #if 0 //correct mass/density stuff
           trimeshPhysics triPhys;
           triPhys.reset(s->mesh.T.N);
@@ -167,33 +167,33 @@ OdeInterface::OdeInterface(rai::KinematicWorld &_C):C(_C) {
           } else { // not all parametrs specified in dcg file....need to calculate them
             triPhys.calculateODEparams(&s->mesh, s->mass); // note: 2nd parameter is the density
           }
-
+          
           dMassSetParameters(&odeMass, triPhys._mass,
                              triPhys.r[0], triPhys.r[1], triPhys.r[2],
                              triPhys.J[0][0], triPhys.J[1][1], triPhys.J[2][2],
                              triPhys.J[0][1], triPhys.J[0][2], triPhys.J[1][2]);
-
+          
           dBodySetMass(b, &odeMass);
 #else //don't care about mass...
           n->mass = .001;
           dMassSetBox(&odeMass, n->mass, s->size(0), s->size(1), s->size(2));
           dBodySetMass(b, &odeMass);
 #endif
-
+          
           dTriMeshDataID TriData;
           TriData = dGeomTriMeshDataCreate();
           dGeomTriMeshDataBuildDouble(TriData,
                                       s->mesh.V.p, 3*sizeof(double), s->mesh.V.d0,
                                       s->mesh.T.p, s->mesh.T.d0, 3*sizeof(uint));
           dGeomTriMeshDataPreprocess(TriData);
-
+          
           geom = dCreateTriMesh(myspace, TriData, 0, 0, 0);
-
+          
           dGeomTriMeshClearTCCache(geom);
 #endif
         } break; //end of mesh
       }
-
+      
       geoms(s->index) = geom;
       if(trans) {
         //geoms(s->index) = trans;
@@ -205,7 +205,7 @@ OdeInterface::OdeInterface(rai::KinematicWorld &_C):C(_C) {
         dGeomSetBody(geom, b); //attaches the geom to the body
       }
     }//loop through shapes
-
+    
     if(n->type==rai::BT_static) {
       jointF=(dxJointFixed*)dJointCreateFixed(world, 0);
       dJointAttach(jointF, b, 0);
@@ -228,7 +228,7 @@ OdeInterface::OdeInterface(rai::KinematicWorld &_C):C(_C) {
           /*if(e->p[1]!=e->p[0]){
             dJointSetHingeParam(jointH, dParamLoStop, e->p[0]);
             dJointSetHingeParam(jointH, dParamHiStop, e->p[1]);
-
+          
             //dJointSetHingeParam(jointH, dParamCFM, CFM);
             }*/
           dJointAttach(jointH, bodies(e->from->index), bodies(e->to->index));
@@ -263,7 +263,7 @@ OdeInterface::OdeInterface(rai::KinematicWorld &_C):C(_C) {
     }
   }
 #endif
-
+  
   exportStateToOde();
 }
 
@@ -566,7 +566,7 @@ void OdeInterface::exportStateToOde() {
   }
 }
 
-void OdeInterface::pushPoseForShape(rai::Shape *s){
+void OdeInterface::pushPoseForShape(rai::Shape *s) {
   dGeomID geom = geoms(s->index);
   dGeomSetQuaternion(geom,*((dQuaternion*)s->rel.rot.p()));
   dGeomSetPosition(geom,s->rel.pos.x,s->rel.pos.y,s->rel.pos.z);

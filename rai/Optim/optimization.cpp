@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -12,7 +12,7 @@ uint eval_cost=0;
 Singleton<OptOptions> globalOptOptions;
 ObjectiveTypeA& NoTermTypeA = *((ObjectiveTypeA*)NULL);
 
-template<> const char* rai::Enum<ObjectiveType>::names []={
+template<> const char* rai::Enum<ObjectiveType>::names []= {
   "OT_none", "OT_f", "OT_sumOfSqr", "OT_ineq", "OT_eq", NULL
 };
 
@@ -21,20 +21,20 @@ template<> const char* rai::Enum<ObjectiveType>::names []={
 // checks and converters
 //
 
-bool checkJacobianCP(ConstrainedProblem &P, const arr& x, double tolerance){
-  VectorFunction F = [&P](arr& phi, arr& J, const arr& x){
+bool checkJacobianCP(ConstrainedProblem &P, const arr& x, double tolerance) {
+  VectorFunction F = [&P](arr& phi, arr& J, const arr& x) {
     return P.phi(phi, J, NoArr, NoTermTypeA, x, NoArr);
   };
   return checkJacobian(F, x, tolerance);
 }
 
-bool checkHessianCP(ConstrainedProblem &P, const arr& x, double tolerance){
+bool checkHessianCP(ConstrainedProblem &P, const arr& x, double tolerance) {
   uint i;
   arr phi, J;
   ObjectiveTypeA tt;
   P.phi(phi, NoArr, NoArr, tt, x, NoArr); //TODO: only call getStructure
-  for(i=0;i<tt.N;i++) if(tt(i)==OT_f) break;
-  if(i==tt.N){
+  for(i=0; i<tt.N; i++) if(tt(i)==OT_f) break;
+  if(i==tt.N) {
     RAI_MSG("no f-term in this KOM problem");
     return true;
   }
@@ -52,16 +52,16 @@ bool checkHessianCP(ConstrainedProblem &P, const arr& x, double tolerance){
 //
 
 OptOptions::OptOptions() {
-  verbose    = rai::getParameter<uint>  ("opt/verbose", 1);
+  verbose    = rai::getParameter<uint> ("opt/verbose", 1);
   fmin_return=NULL;
   stopTolerance= rai::getParameter<double>("opt/stopTolerance", 1e-2);
   stopFTolerance= rai::getParameter<double>("opt/stopFTolerance", 1e-1);
   stopGTolerance= rai::getParameter<double>("opt/stopGTolerance", -1.);
-  stopEvals = rai::getParameter<uint>  ("opt/stopEvals", 1000);
-  stopIters = rai::getParameter<uint>  ("opt/stopIters", 1000);
-  stopOuters = rai::getParameter<uint>  ("opt/stopOuters", 1000);
-  stopLineSteps = rai::getParameter<uint>  ("opt/stopLineSteps", 10);
-  stopTinySteps = rai::getParameter<uint>  ("opt/stopTinySteps", 10);
+  stopEvals = rai::getParameter<uint> ("opt/stopEvals", 1000);
+  stopIters = rai::getParameter<uint> ("opt/stopIters", 1000);
+  stopOuters = rai::getParameter<uint> ("opt/stopOuters", 1000);
+  stopLineSteps = rai::getParameter<uint> ("opt/stopLineSteps", 10);
+  stopTinySteps = rai::getParameter<uint> ("opt/stopTinySteps", 10);
   initStep  = rai::getParameter<double>("opt/initStep", 1.);
   minStep   = rai::getParameter<double>("opt/minStep", -1.);
   maxStep   = rai::getParameter<double>("opt/maxStep", .2);
@@ -71,15 +71,15 @@ OptOptions::OptOptions() {
   dampingInc= rai::getParameter<double>("opt/dampingInc", 2.);
   dampingDec= rai::getParameter<double>("opt/dampingDec", .5);
   wolfe     = rai::getParameter<double>("opt/wolfe", .01);
-  nonStrictSteps= rai::getParameter<uint>  ("opt/nonStrictSteps", 0);
-  allowOverstep= rai::getParameter<bool>  ("opt/allowOverstep", false);
+  nonStrictSteps= rai::getParameter<uint> ("opt/nonStrictSteps", 0);
+  allowOverstep= rai::getParameter<bool> ("opt/allowOverstep", false);
   constrainedMethod = (ConstrainedMethodType)rai::getParameter<int>("opt/constrainedMethod", augmentedLag);
   muInit = rai::getParameter<double>("opt/muInit", 1.);
   muLBInit = rai::getParameter<double>("opt/muLBInit", 1.);
   aulaMuInc = rai::getParameter<double>("opt/aulaMuInc", 2.);
 }
 
-void OptOptions::write(std::ostream& os) const{
+void OptOptions::write(std::ostream& os) const {
 #define WRT(x) os <<#x <<" = " <<x <<endl;
   WRT(verbose);
 //  double *fmin_return);
@@ -106,11 +106,11 @@ void OptOptions::write(std::ostream& os) const{
 // helpers
 //
 
-void displayFunction(const ScalarFunction &f, bool wait, double lo, double hi){
+void displayFunction(const ScalarFunction &f, bool wait, double lo, double hi) {
   arr X, Y;
   X.setGrid(2,lo,hi,100);
   Y.resize(X.d0);
-  for(uint i=0;i<X.d0;i++){
+  for(uint i=0; i<X.d0; i++) {
     double fx=f(NoArr, NoArr, X[i]);
     Y(i) = ((fx==fx && fx<10.)? fx : 10.);
   }

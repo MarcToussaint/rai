@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -153,22 +153,22 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
       }
     }
   };
-
+  
   uint evals = 0;
-
+  
   MyVectorFunction f_loc;
   f_loc.f = &f;
   f_loc.evals = &evals;
-
+  
   ofstream fil;
   double fx=evaluateVCF(f, x);
   if(o.verbose>0) fil.open("z.nodewise");
   if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<endl;
   if(o.verbose>1) cout <<"optNodewise initial cost " <<fx <<endl;
-
+  
   OptOptions op;
   op.stopTolerance=o.stopTolerance, op.stopEvals=10, op.maxStep=o.maxStep, op.verbose=0;
-
+  
   uint k;
   for(k=0; k<o.stopIters; k++) {
     arr x_old=x;
@@ -193,7 +193,7 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
   if(o.fmin_return) *o.fmin_return=fx;
   if(o.verbose>0) fil.close();
   if(o.verbose>1) gnuplot("plot 'z.nodewise' us 1:3 w l",NULL,true);
-
+  
   return evals;
 }
 
@@ -458,19 +458,19 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
 //  return evals;
 //}
 
-struct sConvert{
+struct sConvert {
   struct VectorChainFunction_ScalarFunction:ScalarFunction { //actual converter objects
     VectorChainFunction *f;
     VectorChainFunction_ScalarFunction(VectorChainFunction& _f):f(&_f) {}
     virtual double fs(arr& grad, arr& H, const arr& x);
   };
-
+  
   struct VectorChainFunction_VectorFunction:VectorFunction { //actual converter objects
     VectorChainFunction *f;
     VectorChainFunction_VectorFunction(VectorChainFunction& _f):f(&_f) {}
     virtual void   fv(arr& y, arr& J, const arr& x);
   };
-
+  
   //  struct VectorChainFunction_QuadraticChainFunction:QuadraticChainFunction {
   //    VectorChainFunction *f;
   //    VectorChainFunction_QuadraticChainFunction(VectorChainFunction& _f):f(&_f) {}
@@ -488,7 +488,7 @@ struct sConvert{
   //     uint get_m(uint t);
   //     void phi_t(arr& phi, arr& J, uint t, const arr& x_bar, const arr& z=NoArr, const arr& J_z=NoArr);
   //   };
-
+  
   //   struct ControlledSystem_2OrderMarkovFunction:KOrderMarkovFunction {
   //     ControlledSystem *sys;
   //     ControlledSystem_2OrderMarkovFunction(ControlledSystem& _sys):sys(&_sys){}
@@ -520,7 +520,7 @@ double sConvert::VectorChainFunction_ScalarFunction::fs(arr& grad, arr& H, const
   uint T=f->get_T();
   arr z;  z.referTo(x);
   z.reshape(T+1,z.N/(T+1)); //x as chain representation (splitted in nodes assuming each has same dimensionality!)
-
+  
   double cost=0.;
   arr y,J,Ji,Jj;
   if(&grad) {
@@ -550,14 +550,14 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
   uint T=f->get_T();
   arr z;  z.referTo(x);
   z.reshape(T+1,z.N/(T+1)); //x as chain representation (splitted in nodes assuming each has same dimensionality!)
-
+  
   //probing dimensionality (ugly..)
   arr tmp;
   f->fv_i(tmp, NoArr, 0, z[0]);
   uint di=tmp.N; //dimensionality at nodes
   if(T>0) f->fv_ij(tmp, NoArr, NoArr, 0, 1, z[0], z[1]);
   uint dij=tmp.N; //dimensionality at pairs
-
+  
   //resizing things:
   arr yi(T+1,di);  //the part of y which will collect all node potentials
   arr yij(T  ,dij); //the part of y which will collect all pair potentials
@@ -565,7 +565,7 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
   arr Jij; Jij.resize(TUP(T  , dij, z.d0, z.d1)); //first indices as yi, last: gradient w.r.t. x
   Ji.setZero();
   Jij.setZero();
-
+  
   arr y_loc,J_loc,Ji_loc,Jj_loc;
   uint t,i,j;
   //first collect all node potentials
@@ -861,7 +861,7 @@ void SlalomProblem::fv_i(arr& y, arr& J, uint i, const arr& x_i) {
 void SlalomProblem::fv_ij(arr& y, arr& Ji, arr& Jj, uint i, uint j, const arr& x_i, const arr& x_j) {
   y.resize(1);
   double tau=.01;
-  arr A={1., tau, 0., 1.};  A.reshape(2,2);
+  arr A= {1., tau, 0., 1.};  A.reshape(2,2);
   arr M=w*diag({2./(tau*tau), 1./tau});  //penalize variance in position & in velocity (control)
   y=M*(x_j - A*x_i);
   if(&Ji) { Ji = -M*A; }
@@ -874,7 +874,7 @@ void SlalomProblem::fv_ij(arr& y, arr& Ji, arr& Jj, uint i, uint j, const arr& x
 
 #ifdef RAI_GSL
 #include <gsl/gsl_cdf.h>
-bool DecideSign::step(double x){
+bool DecideSign::step(double x) {
   N++;
   sumX+=x;
   sumXX+=x*x;
@@ -888,55 +888,55 @@ bool DecideSign::step(double x){
   return false;
 }
 #else
-bool DecideSign::step(double x){ NIY; }
+bool DecideSign::step(double x) { NIY; }
 #endif
 
-void OnlineRprop::init(OptimizationProblem *_m, double initialRate, uint _N, const arr& w0){
-    rprop.init(initialRate);
-    t=0;
-    m=_m;
-    N=_N;
-    perm.setRandomPerm(N);
-    w=w0;
-    signer.resize(w.N);
-    for(uint i=0; i<w.N; i++) signer(i).init();
+void OnlineRprop::init(OptimizationProblem *_m, double initialRate, uint _N, const arr& w0) {
+  rprop.init(initialRate);
+  t=0;
+  m=_m;
+  N=_N;
+  perm.setRandomPerm(N);
+  w=w0;
+  signer.resize(w.N);
+  for(uint i=0; i<w.N; i++) signer(i).init();
+  l=0.;
+  e=0.;
+  rai::open(log, "log.sgd");
+}
+
+void OnlineRprop::step() {
+  arr grad;
+  double err;
+  l += m->loss(w, perm(t%N), &grad, &err);
+  e += err;
+  for(uint i=0; i<w.N; i++) {
+    if(signer(i).step(grad(i))) { //signer is certain
+      grad(i) = signer(i).sign(); //hard assign the gradient to +1 or -1
+      rprop.step(w, grad, &i);      //make an rprop step only in this dimension
+      signer(i).init();
+      //cout <<"making step in " <<i <<endl;
+    } else if(signer(i).N>1000) {
+      grad(i) = 0.;
+      rprop.step(w, grad, &i);      //make an rprop step only in this dimension
+      signer(i).init();
+      //cout <<"assuming 0 grad in " <<i <<endl;
+    }
+  }
+  log <<t
+      <<" time= " <<rai::timerRead()
+      <<" loss= " <<l/(t%BATCH+1)
+      <<" err= "  <<e/(t%BATCH+1)
+      <<endl;
+  cout <<t
+       <<" time= " <<rai::timerRead()
+       <<" loss= " <<l/(t%BATCH+1)
+       <<" err= "  <<e/(t%BATCH+1)
+       <<endl;
+  t++;
+  if(!(t%N)) perm.setRandomPerm(N);
+  if(!(t%BATCH)) {
     l=0.;
     e=0.;
-    rai::open(log, "log.sgd");
   }
-  
-  void OnlineRprop::step(){
-    arr grad;
-    double err;
-    l += m->loss(w, perm(t%N), &grad, &err);
-    e += err;
-    for(uint i=0; i<w.N; i++){
-      if(signer(i).step(grad(i))){  //signer is certain
-        grad(i) = signer(i).sign(); //hard assign the gradient to +1 or -1
-        rprop.step(w, grad, &i);      //make an rprop step only in this dimension
-        signer(i).init();
-        //cout <<"making step in " <<i <<endl;
-      } else if(signer(i).N>1000){
-        grad(i) = 0.;
-        rprop.step(w, grad, &i);      //make an rprop step only in this dimension
-        signer(i).init();
-        //cout <<"assuming 0 grad in " <<i <<endl;
-      }
-    }
-    log <<t
-    <<" time= " <<rai::timerRead()
-    <<" loss= " <<l/(t%BATCH+1)
-    <<" err= "  <<e/(t%BATCH+1)
-    <<endl;
-    cout <<t
-         <<" time= " <<rai::timerRead()
-         <<" loss= " <<l/(t%BATCH+1)
-         <<" err= "  <<e/(t%BATCH+1)
-         <<endl;
-    t++;
-    if(!(t%N)) perm.setRandomPerm(N);
-    if(!(t%BATCH)){
-      l=0.;
-      e=0.;
-    }
-  }
+}

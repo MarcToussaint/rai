@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -181,10 +181,10 @@ public:
 class Kalman {
   arr
   A, a, //linear forward transition
-     Q, //covariance of forward transition x(t) = A*x(t-1) + \NN(0, Q)
-     C, //linear observation matrix
-     R; //covariance of observation: y = C*x + \NN(0, R)
-     
+  Q, //covariance of forward transition x(t) = A*x(t-1) + \NN(0, Q)
+  C, //linear observation matrix
+  R; //covariance of observation: y = C*x + \NN(0, R)
+  
   void setTransitions(uint d, double varT, double varO);
   void filter(arr& Y, arr& X, arr& V, arr *Rt=0);
   void smooth(arr& Y, arr& X, arr& V, arr *Vxx=0, arr *Rt=0);

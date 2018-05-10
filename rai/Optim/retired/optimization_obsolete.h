@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -44,7 +44,7 @@ struct VectorChainCost:VectorChainFunction {
   arr A,a;
   arr Wi,Wj,w;
   bool nonlinear;
-
+  
   VectorChainCost(uint _T,uint _n);
   uint get_T() { return T; }
   void fv_i(arr& y, arr* J, uint i, const arr& x_i);
@@ -56,7 +56,7 @@ struct VectorChainCost:VectorChainFunction {
 struct SlalomProblem:VectorChainFunction {
   uint T,K,n;
   double margin,w,power;
-
+  
   SlalomProblem(uint _T, uint _K, double _margin, double _w, double _power);
   uint get_T() { return T; }
   void fv_i(arr& y, arr& J, uint i, const arr& x_i);

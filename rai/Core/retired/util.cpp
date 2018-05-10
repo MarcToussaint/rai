@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -51,12 +51,12 @@ bool getFromCfgFile(T& x, const char *tag) {
     if(buf[n]==' ' || buf[n]=='\t' || buf[n]==':' || buf[n]=='=') { buf[n]=0; if(!strcmp(tag, buf)) break; buf[n]=':'; }
   };
   delete[] buf;
-
+  
   if(!globalThings().cfgFile.good()) { globalThings().cfgFileMutex.unlock(); return false; }
-
+  
   skip(globalThings().cfgFile, " :=\n\r\t");
   globalThings().cfgFile >>x;
-
+  
   if(globalThings().cfgFile.fail()) HALT("error when reading parameter " <<tag);
   globalThings().cfgFileMutex.unlock();
   return true;

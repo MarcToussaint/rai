@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -12,7 +12,7 @@
 #include <Geo/qhull.h>
 #include "minEigModel.h"
 
-void MinEigModel::setPoints(const uintA& points){
+void MinEigModel::setPoints(const uintA& points) {
   pts = points;
   fringe = pts;
   included.resize(data.n());
@@ -23,32 +23,32 @@ void MinEigModel::setPoints(const uintA& points){
   setWeightsToOne();
 }
 
-void MinEigModel::setWeightsToOne(){
+void MinEigModel::setWeightsToOne() {
   setWeightsToZero();
   for(uint i:pts) weights(i)=1.;
   addStatistics(pts);
 }
 
-void MinEigModel::setWeightsToZero(){
+void MinEigModel::setWeightsToZero() {
   weights.setZero();
   stat_n = 0;
   stat_x = zeros(data.d());
   stat_xx = zeros(data.d(), data.d());
 }
 
-void MinEigModel::addStatistics(const uintA& points, bool minus){
+void MinEigModel::addStatistics(const uintA& points, bool minus) {
   arr wXi, wXiXi;
-  for(uint i:points){
+  for(uint i:points) {
     double w=weights(i);
     if(!w) continue;
     const arr& Xi=data.X[i];
     wXi=Xi;  wXi*=w;
     outerProduct(wXiXi, wXi, Xi);
-    if(!minus){
+    if(!minus) {
       stat_n += w;
       stat_x += wXi;
       stat_xx += wXiXi;
-    }else{
+    } else {
       stat_n -= w;
       stat_x -= wXi;
       stat_xx -= wXiXi;
@@ -56,7 +56,7 @@ void MinEigModel::addStatistics(const uintA& points, bool minus){
   }
 }
 
-void MinEigModel::calc(bool update){
+void MinEigModel::calc(bool update) {
 #if 0
   resetStatistics();
   addStatistics(pts);
@@ -64,30 +64,30 @@ void MinEigModel::calc(bool update){
   mean = stat_x/stat_n;
   eig.A = stat_xx/stat_n - (mean^mean);
   if(bias_xx.N) eig.A += bias_xx;
-  if(!update){
-    try{
+  if(!update) {
+    try {
       eig.computeExact();
-    }catch(...){}
-  }else{
+    } catch(...) {}
+  } else {
     eig.stepPowerMethod(3);
   }
 }
 
-void MinEigModel::expand(uint steps){
-  for(uint s=0;s<steps;s++){
+void MinEigModel::expand(uint steps) {
+  for(uint s=0; s<steps; s++) {
     data.expandFringe(fringe, pts, included);
     reweightWithError(fringe);
   }
 }
 
-void MinEigModel::reweightWithError(uintA& pts){
-  if(&pts==&this->pts){
+void MinEigModel::reweightWithError(uintA& pts) {
+  if(&pts==&this->pts) {
     setWeightsToZero();
-  }else{
+  } else {
     addStatistics(pts, true); //subtract the current points
   }
   arr Xi;
-  for(uint j=pts.N;j--;){
+  for(uint j=pts.N; j--;) {
     uint i=pts(j);
     Xi = data.X[i];
     Xi -= mean;
@@ -97,7 +97,7 @@ void MinEigModel::reweightWithError(uintA& pts){
 #else
     weights(i) = fabs(scalarProduct(Xi, eig.x_lo))<margin ? 1. : 0.;
 #endif
-    if(weights(i)<.1){
+    if(weights(i)<.1) {
       pts.remove(j);
       included(j)=false;
       weights(i)=0.;
@@ -106,19 +106,19 @@ void MinEigModel::reweightWithError(uintA& pts){
   addStatistics(pts);
 }
 
-arr MinEigModel::getInliers(){
+arr MinEigModel::getInliers() {
   arr X;
   for(uint i:pts) if(weights(i)>.5) X.append(data.X[i]);
   X.reshape(X.N/3,3);
   return X;
 }
 
-void MinEigModel::computeConvexHull(){
+void MinEigModel::computeConvexHull() {
   convexHull.V = getInliers();
   convexHull.makeConvexHull();
 }
 
-void MinEigModel::computeConvexHull2(){
+void MinEigModel::computeConvexHull2() {
   convexHull.V.clear();
   convexHull.T.clear();
   if(!eig.x_lo.N) return;
@@ -128,26 +128,26 @@ void MinEigModel::computeConvexHull2(){
   b0 /= length(b0);
   b1 = crossProduct(eig.x_lo, b0);
   b1 /= length(b1);
-
+  
   arr Xi, hull;
-  for(uint i:pts) if(weights(i)>.5){
-    Xi = data.X[i];
-    Xi -= mean;
-    hull.append( scalarProduct(b0,Xi) );
-    hull.append( scalarProduct(b1,Xi) );
-  }
+  for(uint i:pts) if(weights(i)>.5) {
+      Xi = data.X[i];
+      Xi -= mean;
+      hull.append(scalarProduct(b0,Xi));
+      hull.append(scalarProduct(b1,Xi));
+    }
   if(hull.N<5) return;
   hull.reshape(hull.N/2,2);
-  try{
+  try {
     hull = getHull(hull, convexHull.T);
-  }catch(...){ return; }
+  } catch(...) { return; }
   convexHull.V.resize(hull.d0,3);
-  for(uint i=0;i<hull.d0;i++){
+  for(uint i=0; i<hull.d0; i++) {
     convexHull.V[i] = mean + b0*hull(i,0) + b1*hull(i,1);
   }
 }
 
-double MinEigModel::coveredData(bool novelDataOnly){
+double MinEigModel::coveredData(bool novelDataOnly) {
   double coveredData=0.;
   if(!novelDataOnly)
     for(uint i:pts) coveredData += weights(i)*data.costs(i);
@@ -156,17 +156,17 @@ double MinEigModel::coveredData(bool novelDataOnly){
   return coveredData;
 }
 
-void MinEigModel::calcDensity(){
+void MinEigModel::calcDensity() {
   computeConvexHull2();
 //  density = stat_n * rai::sqr(mean(2)) / convexHull.getArea();
-  if(!convexHull.V.N){ density=0.; return; }
+  if(!convexHull.V.N) { density=0.; return; }
   double circum = convexHull.getCircum();
   density = coveredData() / circum*circum;
 }
 
-void MinEigModel::glDraw(OpenGL& gl){
+void MinEigModel::glDraw(OpenGL& gl) {
   if(eig.x_lo.N!=3) return;
-  if(!convexHull.V.N){
+  if(!convexHull.V.N) {
     rai::Quaternion rot;
     rot.setDiff(Vector_z, rai::Vector(eig.x_lo));
     glPushMatrix();
@@ -178,15 +178,15 @@ void MinEigModel::glDraw(OpenGL& gl){
     glVertex3d(0., 0., .1);
     glEnd();
     glPopMatrix();
-  }else{
+  } else {
     convexHull.glDraw(gl);
   }
 }
 
-void MinEigModel::report(ostream& os, bool mini){
-  if(mini){
+void MinEigModel::report(ostream& os, bool mini) {
+  if(mini) {
     os <<"#p " <<pts.N <<" dy " <<density <<" lm " <<::sqrt(eig.lambda_lo) <<" lM " <<::sqrt(eig.lambda_hi) <<"  " <<label <<endl;
-  }else{
+  } else {
     os <<"model-report" <<endl;
     os <<"  #pts=" <<pts.N <<" #fringe=" <<fringe.N <<endl;
     os <<"  STATS: n=" <<stat_n <<" <x>=" <<stat_x/stat_n /*<<" <xx>=" <<stat_xx/stat_n*/ <<endl;
@@ -195,8 +195,8 @@ void MinEigModel::report(ostream& os, bool mini){
   }
 }
 
-void MinEigModel::colorPixelsWithWeights(arr& cols){
-  for(uint i:pts){
+void MinEigModel::colorPixelsWithWeights(arr& cols) {
+  for(uint i:pts) {
     cols(data.idx2pixel(i), 0) = weights(i);
     cols(data.idx2pixel(i), 2) = data.isModelledWeights(i);
   }

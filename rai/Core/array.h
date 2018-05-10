@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -42,10 +42,10 @@ extern const char* arrayElemsep;
 extern const char* arrayLinesep;
 extern const char* arrayBrackets;
 struct FileToken;
-template<class T> bool lower(const T& a, const T& b){ return a<b; }
-template<class T> bool lowerEqual(const T& a, const T& b){ return a<=b; }
-template<class T> bool greater(const T& a, const T& b){ return a>b; }
-template<class T> bool greaterEqual(const T& a, const T& b){ return a>=b; }
+template<class T> bool lower(const T& a, const T& b) { return a<b; }
+template<class T> bool lowerEqual(const T& a, const T& b) { return a<=b; }
+template<class T> bool greater(const T& a, const T& b) { return a>b; }
+template<class T> bool greaterEqual(const T& a, const T& b) { return a>=b; }
 } //namespace
 
 //===========================================================================
@@ -79,13 +79,13 @@ template<class T> struct Array : std::vector<T> {
   
   static int  sizeT;   ///< constant for each type T: stores the sizeof(T)
   static char memMove; ///< constant for each type T: decides whether memmove can be used instead of individual copies
-
+  
   //-- special: arrays can be sparse/packed/etc and augmented with aux data to support this
   SpecialArray *special; ///< arbitrary auxiliary data, depends on special
-
+  
   typedef std::vector<T> vec_type;
   typedef std::function<bool(const T& a, const T& b)> ElemCompare;
-
+  
   /// @name constructors
   Array();
   Array(const Array<T>& a);                 //copy constructor
@@ -105,9 +105,9 @@ template<class T> struct Array : std::vector<T> {
   Array<T>& operator=(const T& v);
   Array<T>& operator=(const Array<T>& a);
   Array<T>& operator=(const std::vector<T>& values);
-
+  
   /// @name iterators
-  ArrayIterationEnumerated<T> enumerated(){ return ArrayIterationEnumerated<T>(*this); }
+  ArrayIterationEnumerated<T> enumerated() { return ArrayIterationEnumerated<T>(*this); }
 //  typedef T* iterator;
 //  typedef const T* const_iterator;
 //  iterator begin() { return p; }
@@ -136,7 +136,7 @@ template<class T> struct Array : std::vector<T> {
   Array<T>& resizeCopyAs(const Array<T>& a);
   Array<T>& reshapeFlat();
   Array<T>& dereference();
-
+  
   /// @name initializing/assigning entries
   void clear();
   void setZero(byte zero=0);
@@ -182,10 +182,10 @@ template<class T> struct Array : std::vector<T> {
   Array<T> operator()(int i, int j, std::initializer_list<int> K) const;
   Array<T> operator[](int i) const;     // calls referToDim(*this, i)
   Array<T> operator[](std::initializer_list<uint> list) const; //-> remove
-  Array<T>& operator()(){ return *this; } //TODO: make this the scalar reference!
+  Array<T>& operator()() { return *this; } //TODO: make this the scalar reference!
   T** getCarray(Array<T*>& Cpointers) const;
   Array<T*> getCarray() const;
-
+  
   
   /// @name access by copy
   rai::Array<T> copy() const;
@@ -197,11 +197,11 @@ template<class T> struct Array : std::vector<T> {
   Array<T> rows(uint start_row, uint end_row) const;
   Array<T> col(uint col_index) const;
   Array<T> cols(uint start_col, uint end_col) const;
-
+  
   /// @name dimensionality access
   uint dim(uint k) const;
   Array<uint> dim() const;
-
+  
   void getMatrixBlock(Array<T>& B, uint lo0, uint lo1) const; // -> return array
   void getVectorBlock(Array<T>& B, uint lo) const;
   void copyInto(T *buffer) const;
@@ -227,8 +227,8 @@ template<class T> struct Array : std::vector<T> {
   void append(const T& x, uint multiple);
   void append(const Array<T>& x);
   void append(const T *p, uint n);
-  void prepend(const T& x){ insert(0,x); }
-  void prepend(const Array<T>& x){ insert(0,x); }
+  void prepend(const T& x) { insert(0,x); }
+  void prepend(const Array<T>& x) { insert(0,x); }
   void replicate(uint copies);
   void insert(uint i, const T& x);
   void insert(uint i, const Array<T>& x);
@@ -263,7 +263,7 @@ template<class T> struct Array : std::vector<T> {
   void permuteInv(const Array<uint>& permutation);
   void permuteRows(const Array<uint>& permutation);
   void permuteRowsInv(const Array<uint>& permutation);
-
+  
   void permuteRandomly();
   void shift(int offset, bool wrapAround=true);
   
@@ -288,7 +288,7 @@ template<class T> struct Array : std::vector<T> {
   
   /// @name kind of private
   void resizeMEM(uint n, bool copy, int Mforce=-1);
-  void anticipateMEM(uint Mforce){ resizeMEM(N, true, Mforce); if(!nd) nd=1; }
+  void anticipateMEM(uint Mforce) { resizeMEM(N, true, Mforce); if(!nd) nd=1; }
   void freeMEM();
   void resetD();
 //  void init();
@@ -299,24 +299,24 @@ template<class T> struct Array : std::vector<T> {
 /// @name alternative iterators
 /// @{
 
-template<class T> struct ArrayItEnumerated{
-    T* p;
-    uint i;
-    T& operator()(){ return *p; } //access to value by user
-    void operator++(){ p++; i++; }
-    ArrayItEnumerated<T>& operator*(){ return *this; } //in for(auto& it:array.enumerated())  it is assigned to *iterator
+template<class T> struct ArrayItEnumerated {
+  T* p;
+  uint i;
+  T& operator()() { return *p; } //access to value by user
+  void operator++() { p++; i++; }
+  ArrayItEnumerated<T>& operator*() { return *this; } //in for(auto& it:array.enumerated())  it is assigned to *iterator
 };
 
-template<class T> struct ArrayIterationEnumerated{
-    Array<T>& x;
-    ArrayIterationEnumerated(Array<T>& x):x(x){}
-    ArrayItEnumerated<T> begin() { return {x.p, 0}; }
-    ArrayItEnumerated<T> end() { return {x.p+x.N, x.N}; }
-    //  const_iterator begin() const { return p; }
-    //  const_iterator end() const { return p+N; }
+template<class T> struct ArrayIterationEnumerated {
+  Array<T>& x;
+  ArrayIterationEnumerated(Array<T>& x):x(x) {}
+  ArrayItEnumerated<T> begin() { return {x.p, 0}; }
+  ArrayItEnumerated<T> end() { return {x.p+x.N, x.N}; }
+  //  const_iterator begin() const { return p; }
+  //  const_iterator end() const { return p+N; }
 };
 
-template<class T> bool operator!=(const ArrayItEnumerated<T>& i, const ArrayItEnumerated<T>& j){ return i.p!=j.p; }
+template<class T> bool operator!=(const ArrayItEnumerated<T>& i, const ArrayItEnumerated<T>& j) { return i.p!=j.p; }
 
 //===========================================================================
 /// @}
@@ -481,7 +481,7 @@ typedef std::function<void(arr& y, arr& J, const arr& x)> VectorFunction;
 /// a kernel function
 struct KernelFunction {
   virtual double k(const arr& x1, const arr& x2, arr& g1=NoArr, arr& Hx1=NoArr) = 0;
-  virtual ~KernelFunction(){}
+  virtual ~KernelFunction() {}
 };
 
 //===========================================================================
@@ -607,7 +607,7 @@ arr  inverse(const arr& A);
 uint inverse_SVD(arr& inverse, const arr& A);
 void inverse_LU(arr& Xinv, const arr& X);
 void inverse_SymPosDef(arr& Ainv, const arr& A);
-inline arr inverse_SymPosDef(const arr& A){ arr Ainv; inverse_SymPosDef(Ainv, A); return Ainv; }
+inline arr inverse_SymPosDef(const arr& A) { arr Ainv; inverse_SymPosDef(Ainv, A); return Ainv; }
 arr pseudoInverse(const arr& A, const arr& Winv=NoArr, double robustnessEps=1e-10);
 void gaussFromData(arr& a, arr& A, const arr& X);
 void rotationFromAtoB(arr& R, const arr& a, const arr& v);
@@ -748,10 +748,10 @@ template<class T> rai::Array<T> cat(const rai::Array<T>& a, const rai::Array<T>&
 template<class T> rai::Array<T> cat(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d, const rai::Array<T>& e) { rai::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); x.append(e); return x; }
 template<class T> rai::Array<T> catCol(const rai::Array<rai::Array<T>*>& X);
 template<class T> rai::Array<T> catCol(const rai::Array<rai::Array<T> >& X);
-template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b){ return catCol(LIST<rai::Array<T> >(a,b)); }
-template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c){ return catCol(LIST<rai::Array<T> >(a,b,c)); }
-template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d){ return catCol(LIST<rai::Array<T> >(a,b,c,d)); }
-template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d, const rai::Array<T>& e){ return catCol(LIST<rai::Array<T> >(a,b,c,d,e)); }
+template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b) { return catCol(LIST<rai::Array<T> >(a,b)); }
+template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c) { return catCol(LIST<rai::Array<T> >(a,b,c)); }
+template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d) { return catCol(LIST<rai::Array<T> >(a,b,c,d)); }
+template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d, const rai::Array<T>& e) { return catCol(LIST<rai::Array<T> >(a,b,c,d,e)); }
 
 //===========================================================================
 /// @}
@@ -763,10 +763,10 @@ template<class T> void setSection(rai::Array<T>& x, const rai::Array<T>& y, cons
 template<class T> rai::Array<T> setUnion(const rai::Array<T>& y, const rai::Array<T>& z) { rai::Array<T> x; setUnion(x, y, z); return x; }
 template<class T> rai::Array<T> setSection(const rai::Array<T>& y, const rai::Array<T>& z) { rai::Array<T> x; setSection(x, y, z); return x; }
 template<class T> rai::Array<T> setSectionSorted(const rai::Array<T>& x, const rai::Array<T>& y,
-                                                bool (*comp)(const T& a, const T& b) );
+    bool (*comp)(const T& a, const T& b));
 template<class T> void setMinus(rai::Array<T>& x, const rai::Array<T>& y);
 template<class T> void setMinusSorted(rai::Array<T>& x, const rai::Array<T>& y,
-                                      bool (*comp)(const T& a, const T& b) );
+                                      bool (*comp)(const T& a, const T& b));
 template<class T> uint numberSharedElements(const rai::Array<T>& x, const rai::Array<T>& y);
 template<class T> void rndInteger(rai::Array<T>& a, int low=0, int high=1, bool add=false);
 template<class T> void rndUniform(rai::Array<T>& a, double low=0., double high=1., bool add=false);
@@ -851,7 +851,7 @@ bool lapack_isPositiveSemiDefinite(const arr& symmA);
 void lapack_inverseSymPosDef(arr& Ainv, const arr& A);
 void lapack_choleskySymPosDef(arr& Achol, const arr& A);
 double lapack_determinantSymPosDef(const arr& A);
-inline arr lapack_inverseSymPosDef(const arr& A){ arr Ainv; lapack_inverseSymPosDef(Ainv, A); return Ainv; }
+inline arr lapack_inverseSymPosDef(const arr& A) { arr Ainv; lapack_inverseSymPosDef(Ainv, A); return Ainv; }
 arr lapack_Ainv_b_sym(const arr& A, const arr& b);
 void lapack_min_Ax_b(arr& x,const arr& A, const arr& b);
 arr lapack_Ainv_b_symPosDef_givenCholesky(const arr& U, const arr&b);
@@ -869,16 +869,16 @@ arr comp_At_x(const arr& A, const arr& x);
 arr comp_At(const arr& A);
 arr comp_A_x(const arr& A, const arr& x);
 
-struct SpecialArray{
+struct SpecialArray {
   enum Type { ST_none, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };
   Type type;
-  virtual ~SpecialArray(){}
+  virtual ~SpecialArray() {}
 };
 
-template<class T> bool isNotSpecial(const rai::Array<T>& X){ return !X.special || X.special->type==SpecialArray::ST_none; }
-template<class T> bool isRowShifted(const rai::Array<T>& X){ return X.special && X.special->type==SpecialArray::RowShiftedST; }
-template<class T> bool isSparseMatrix(const rai::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseMatrixST; }
-template<class T> bool isSparseVector(const rai::Array<T>& X){ return X.special && X.special->type==SpecialArray::sparseVectorST; }
+template<class T> bool isNotSpecial(const rai::Array<T>& X) { return !X.special || X.special->type==SpecialArray::ST_none; }
+template<class T> bool isRowShifted(const rai::Array<T>& X) { return X.special && X.special->type==SpecialArray::RowShiftedST; }
+template<class T> bool isSparseMatrix(const rai::Array<T>& X) { return X.special && X.special->type==SpecialArray::sparseMatrixST; }
+template<class T> bool isSparseVector(const rai::Array<T>& X) { return X.special && X.special->type==SpecialArray::sparseVectorST; }
 
 struct RowShifted : SpecialArray {
   arr& Z;           ///< references the array itself
@@ -909,13 +909,13 @@ inline RowShifted* castRowShifted(arr& X) {
 
 namespace rai {
 
-struct SparseVector: SpecialArray{
+struct SparseVector: SpecialArray {
   uint N; ///< original size
   uintA elems; ///< for every non-zero (in memory order), the index
   template<class T> SparseVector(rai::Array<T>& X);
 };
 
-struct SparseMatrix : SpecialArray{
+struct SparseMatrix : SpecialArray {
   uintA elems; ///< for every non-zero (in memory order), the (row,col) index tuple [or only (row) for vectors]
   uintAA cols; ///< for every column, for every non-zero the (row,memory) index tuple [also for a vector column]
   uintAA rows; ///< for every row   , for every non-zero the (column,memory) index tuple [not for vectors]
@@ -998,11 +998,11 @@ template<class vert, class edge> void graphDelete(rai::Array<vert*>& V, rai::Arr
 
 #include <vector>
 
-template<class T> rai::Array<T> conv_stdvec2arr(const std::vector<T>& v){
+template<class T> rai::Array<T> conv_stdvec2arr(const std::vector<T>& v) {
   return rai::Array<T>(&v.front(), v.size());
 }
 
-template<class T> std::vector<T> conv_arr2stdvec(const rai::Array<T>& x){
+template<class T> std::vector<T> conv_arr2stdvec(const rai::Array<T>& x) {
   return std::vector<T>(x.begin(), x.end());
 }
 

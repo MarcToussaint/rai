@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -45,15 +45,15 @@ struct GenericDisplayViewer : Thread {
   GenericDisplayViewer(const char* var_name)
     : Thread("GenericDisplayViewer", -1.)
     , gl(NULL)
-    , var(this, var_name, true){}
-  virtual void open(){ gl = new OpenGL(STRING("GenericDisplayViewer '"<<var.data->name()<<'\'')); }
-  virtual void step(){
+    , var(this, var_name, true) {}
+  virtual void open() { gl = new OpenGL(STRING("GenericDisplayViewer '"<<var.data->name()<<'\'')); }
+  virtual void step() {
     gl->background = var.get()->display;
     if(gl->height!= gl->background.d0 || gl->width!= gl->background.d1)
       gl->resize(gl->background.d1, gl->background.d0);
     gl->update();
   }
-  virtual void close(){ delete gl; }
+  virtual void close() { delete gl; }
 };
 
 struct VideoEncoder : Thread {
@@ -63,7 +63,7 @@ struct VideoEncoder : Thread {
   VARlisten(byteA, img)
   VideoEncoder() : Thread("VideoEncoder"), is_rgb(false), fps(30) {}
   virtual ~VideoEncoder() {}
-
+  
   virtual void open();
   virtual void step();
   virtual void close();
@@ -74,20 +74,20 @@ struct VideoEncoder : Thread {
 };
 
 struct VideoEncoderX264 : Thread {
-   struct sVideoEncoderX264 *s;
-   bool is_rgb;
-   double fps;
-   VARlisten(byteA, img)
-   VideoEncoderX264() : Thread("VideoEncoderX264"), is_rgb(false) {}
-   virtual ~VideoEncoderX264() {}
-
-   virtual void open();
-   virtual void step();
-   virtual void close();
-   /// set input packing (default is bgr)
-   void set_rgb(bool is_rgb) { this->is_rgb = is_rgb; }
-   /// set frames per second -- only effective before open
-   void set_fps(double fps) { this->fps = fps; }
+  struct sVideoEncoderX264 *s;
+  bool is_rgb;
+  double fps;
+  VARlisten(byteA, img)
+  VideoEncoderX264() : Thread("VideoEncoderX264"), is_rgb(false) {}
+  virtual ~VideoEncoderX264() {}
+  
+  virtual void open();
+  virtual void step();
+  virtual void close();
+  /// set input packing (default is bgr)
+  void set_rgb(bool is_rgb) { this->is_rgb = is_rgb; }
+  /// set frames per second -- only effective before open
+  void set_fps(double fps) { this->fps = fps; }
 };
 //===========================================================================
 //
@@ -105,8 +105,8 @@ struct RigidObjectRepresentation {
   arr shapePoints3d;
   arr center3d, orsShapeParams;
   arr diagDiff;
-
-  RigidObjectRepresentation(){ found=0; }
+  
+  RigidObjectRepresentation() { found=0; }
 };
 
 typedef rai::Array<RigidObjectRepresentation*> RigidObjectRepresentationL;
@@ -116,7 +116,7 @@ typedef rai::Array<RigidObjectRepresentation*> RigidObjectRepresentationL;
 // Variables
 //
 
-struct ColorChoice{
+struct ColorChoice {
   byteA rgb;
   byteA hsv;
 };
@@ -129,8 +129,8 @@ struct HoughLines {
 #endif
   byteA display;
 };
-inline void operator>>(istream& is,HoughLines& hl){}
-inline void operator<<(ostream& os,const HoughLines& hl){}
+inline void operator>>(istream& is,HoughLines& hl) {}
+inline void operator<<(ostream& os,const HoughLines& hl) {}
 
 //===========================================================================
 
@@ -141,8 +141,8 @@ struct Patching {
   floatA pch_rgb;  //patch mean colors
   byteA display;
 };
-inline void operator>>(istream& is,Patching& hl){}
-inline void operator<<(ostream& os,const Patching& hl){}
+inline void operator>>(istream& is,Patching& hl) {}
+inline void operator<<(ostream& os,const Patching& hl) {}
 
 //===========================================================================
 
@@ -153,8 +153,8 @@ struct SURFfeatures {
 #endif
   byteA display;
 };
-inline void operator>>(istream& is,SURFfeatures& hl){}
-inline void operator<<(ostream& os,const SURFfeatures& hl){}
+inline void operator>>(istream& is,SURFfeatures& hl) {}
+inline void operator<<(ostream& os,const SURFfeatures& hl) {}
 
 //===========================================================================
 
@@ -188,7 +188,7 @@ struct OpencvCamera : Thread {
   struct sOpencvCamera *s;
   Var<byteA> rgb;
   std::map<int,double> properties; bool set(int prop, double status);
-  OpencvCamera(const char* rgb_name="rgb") : Thread(STRING("OpencvCamera_"<<rgb_name), 0.), rgb(this, rgb_name){}
+  OpencvCamera(const char* rgb_name="rgb") : Thread(STRING("OpencvCamera_"<<rgb_name), 0.), rgb(this, rgb_name) {}
   void open();
   void step();
   void close();
@@ -200,7 +200,7 @@ struct CvtGray : Thread {
   Var<byteA> gray;
   std::map<int,double> properties; bool set(int prop, double status);
   CvtGray(const char* rgb_name="rgb", const char* gray_name="gray")
-    : Thread(STRING("CvtGray_"<<rgb_name), -1), rgb(this, rgb_name, true), gray(this, gray_name){}
+    : Thread(STRING("CvtGray_"<<rgb_name), -1), rgb(this, rgb_name, true), gray(this, gray_name) {}
   void open();
   void step();
   void close();
@@ -211,7 +211,7 @@ struct MotionFilter : Thread {
   Var<byteA> rgb;
   Var<byteA> motion;
   MotionFilter(const char* rgb_name="rgb", const char* motion_name="motion")
-    : Thread(STRING("MotionFilter_"<<rgb_name), -1), rgb(this, rgb_name, true), motion(this, motion_name){}
+    : Thread(STRING("MotionFilter_"<<rgb_name), -1), rgb(this, rgb_name, true), motion(this, motion_name) {}
   void open();
   void step();
   void close();
@@ -223,7 +223,7 @@ struct DifferenceFilter : Thread {
   Var<byteA> i2;
   Var<byteA> diffImage;
   DifferenceFilter(const char* i1_name="i1", const char* i2_name="i2", const char* diffImage_name="diffImage")
-    : Thread(STRING("DifferenceFilter_"<<i1_name), -1), i1(this, i1_name, true), i2(this, i2_name), diffImage(this, diffImage_name){}
+    : Thread(STRING("DifferenceFilter_"<<i1_name), -1), i1(this, i1_name, true), i2(this, i2_name), diffImage(this, diffImage_name) {}
   void open();
   void step();
   void close();
@@ -236,7 +236,7 @@ struct CannyFilter : Thread {
   CannyFilter(const char* grayImage_name="grayImage", const char* cannyImage_name="cannyImage")
     : Thread(STRING("CannyFilter_"<<grayImage_name<<"_" <<cannyImage_name), -1),
       grayImage(this, grayImage_name, true),
-      cannyImage(this, cannyImage_name){}
+      cannyImage(this, cannyImage_name) {}
   void open();
   void step();
   void close();
@@ -249,7 +249,7 @@ struct Patcher : Thread {
   Patcher(const char* rgbImage_name="rgbImage", const char* patchImage_name="patchImage")
     : Thread(STRING("Patcher"<<rgbImage_name<<"_" <<patchImage_name), -1),
       rgbImage(this, rgbImage_name, true),
-      patchImage(this, patchImage_name){}
+      patchImage(this, patchImage_name) {}
   void open();
   void step();
   void close();

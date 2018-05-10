@@ -1,14 +1,14 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
 #include "algos.h"
 
-namespace rai{
+namespace rai {
 
 void rk4(arr& x1, const arr& x0,
          const VectorFunction& f,
@@ -23,16 +23,16 @@ void rk4(arr& x1, const arr& x0,
   x1 += (dt/6.)*(k1 + 2.*k2 + 2.*k3 + k4);
 }
 
-void rk4_2ndOrder(arr& x, const arr& x0, const VectorFunction& f, double dt){
+void rk4_2ndOrder(arr& x, const arr& x0, const VectorFunction& f, double dt) {
   CHECK(x0.nd==2 && x0.d0==2,"need a 2-times-n array   rk4_2ndOrder input");
-  struct F2:VectorFunction{
+  struct F2:VectorFunction {
     const VectorFunction& f;
-    F2(const VectorFunction& _f):f(_f){
-      VectorFunction::operator= ( [this](arr& y, arr& J, const arr& x) -> void {
+    F2(const VectorFunction& _f):f(_f) {
+      VectorFunction::operator= ([this](arr& y, arr& J, const arr& x) -> void {
         fv(y, J, x);
-      } );
+      });
     }
-    void fv(arr& y, arr& J, const arr& x){
+    void fv(arr& y, arr& J, const arr& x) {
       CHECK(x.nd==2 && x.d0==2,"");
       y.resizeAs(x);
       y[0]=x[1];
@@ -44,9 +44,9 @@ void rk4_2ndOrder(arr& x, const arr& x0, const VectorFunction& f, double dt){
 
 #if 0
 bool rk4_switch(arr& x1, arr& s1, const arr& x0, const arr& s0,
-                    void (*df)(arr& xd, const arr& x),
-                    void (*sf)(arr& s, const arr& x),
-                    double& dt, double tol) {
+                void (*df)(arr& xd, const arr& x),
+                void (*sf)(arr& s, const arr& x),
+                double& dt, double tol) {
   uint i, sn;
   arr sa=s0, sb, sm, xa=x0, xb, xm; //states at times a, m, t
   rk4(xb, x0, df, dt);
@@ -104,10 +104,10 @@ bool rk4_switch(arr& x1, arr& s1, const arr& x0, const arr& s0,
 }
 
 bool rk4dd_switch(arr& x1, arr& v1, arr& s1, const arr& x0, const arr& v0, const arr& s0,
-                      void (*ddf)(arr& xdd, const arr& x, const arr& v),
-                      void (*sf)(arr& s, const arr& x, const arr& v),
-                      double& dt, double tol) {
-                      
+                  void (*ddf)(arr& xdd, const arr& x, const arr& v),
+                  void (*sf)(arr& s, const arr& x, const arr& v),
+                  double& dt, double tol) {
+                  
   global_ddf = ddf;
   global_sf  = sf;
   

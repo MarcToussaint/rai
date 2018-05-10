@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -17,104 +17,86 @@
 #include <rai_msgs/StringStringRequest.h>
 #include <rai_msgs/StringStringResponse.h>
 
-namespace rai_msgs
-{
+namespace rai_msgs {
 
-struct StringString
-{
+struct StringString {
 
-typedef StringStringRequest Request;
-typedef StringStringResponse Response;
-Request request;
-Response response;
-
-typedef Request RequestType;
-typedef Response ResponseType;
-
+  typedef StringStringRequest Request;
+  typedef StringStringResponse Response;
+  Request request;
+  Response response;
+  
+  typedef Request RequestType;
+  typedef Response ResponseType;
+  
 }; // struct StringString
 } // namespace rai_msgs
 
-namespace ros
-{
-namespace service_traits
-{
+namespace ros {
+namespace service_traits {
 
 template<>
 struct MD5Sum< ::rai_msgs::StringString > {
-  static const char* value()
-  {
+  static const char* value() {
     return "671f8e4998eaec79f1c47e339dfd527b";
   }
-
+  
   static const char* value(const ::rai_msgs::StringString&) { return value(); }
 };
 
 template<>
 struct DataType< ::rai_msgs::StringString > {
-  static const char* value()
-  {
+  static const char* value() {
     return "rai_msgs/StringString";
   }
-
+  
   static const char* value(const ::rai_msgs::StringString&) { return value(); }
 };
 
-// service_traits::MD5Sum< ::rai_msgs::StringStringRequest> should match 
-// service_traits::MD5Sum< ::rai_msgs::StringString > 
+// service_traits::MD5Sum< ::rai_msgs::StringStringRequest> should match
+// service_traits::MD5Sum< ::rai_msgs::StringString >
 template<>
-struct MD5Sum< ::rai_msgs::StringStringRequest>
-{
-  static const char* value()
-  {
+struct MD5Sum< ::rai_msgs::StringStringRequest> {
+  static const char* value() {
     return MD5Sum< ::rai_msgs::StringString >::value();
   }
-  static const char* value(const ::rai_msgs::StringStringRequest&)
-  {
+  static const char* value(const ::rai_msgs::StringStringRequest&) {
     return value();
   }
 };
 
-// service_traits::DataType< ::rai_msgs::StringStringRequest> should match 
-// service_traits::DataType< ::rai_msgs::StringString > 
+// service_traits::DataType< ::rai_msgs::StringStringRequest> should match
+// service_traits::DataType< ::rai_msgs::StringString >
 template<>
-struct DataType< ::rai_msgs::StringStringRequest>
-{
-  static const char* value()
-  {
+struct DataType< ::rai_msgs::StringStringRequest> {
+  static const char* value() {
     return DataType< ::rai_msgs::StringString >::value();
   }
-  static const char* value(const ::rai_msgs::StringStringRequest&)
-  {
+  static const char* value(const ::rai_msgs::StringStringRequest&) {
     return value();
   }
 };
 
-// service_traits::MD5Sum< ::rai_msgs::StringStringResponse> should match 
-// service_traits::MD5Sum< ::rai_msgs::StringString > 
+// service_traits::MD5Sum< ::rai_msgs::StringStringResponse> should match
+// service_traits::MD5Sum< ::rai_msgs::StringString >
 template<>
-struct MD5Sum< ::rai_msgs::StringStringResponse>
-{
-  static const char* value()
-  {
+struct MD5Sum< ::rai_msgs::StringStringResponse> {
+  static const char* value() {
     return MD5Sum< ::rai_msgs::StringString >::value();
   }
-  static const char* value(const ::rai_msgs::StringStringResponse&)
-  {
+  static const char* value(const ::rai_msgs::StringStringResponse&) {
     return value();
   }
 };
 
-// service_traits::DataType< ::rai_msgs::StringStringResponse> should match 
-// service_traits::DataType< ::rai_msgs::StringString > 
+// service_traits::DataType< ::rai_msgs::StringStringResponse> should match
+// service_traits::DataType< ::rai_msgs::StringString >
 template<>
-struct DataType< ::rai_msgs::StringStringResponse>
-{
-  static const char* value()
-  {
+struct DataType< ::rai_msgs::StringStringResponse> {
+  static const char* value() {
     return DataType< ::rai_msgs::StringString >::value();
   }
-  static const char* value(const ::rai_msgs::StringStringResponse&)
-  {
+  static const char* value(const ::rai_msgs::StringStringResponse&) {
     return value();
   }
 };

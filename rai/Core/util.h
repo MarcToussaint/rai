@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -262,14 +262,14 @@ public:
 stdPipes(String)
 }
 
-inline rai::String operator+(const rai::String& a, const char* b){ rai::String s=a; s <<b; return s; }
+inline rai::String operator+(const rai::String& a, const char* b) { rai::String s=a; s <<b; return s; }
 
 //===========================================================================
 //
 // string-filling routines
 
 namespace rai {
-  rai::String getNowString();
+rai::String getNowString();
 }
 
 //===========================================================================
@@ -277,29 +277,29 @@ namespace rai {
 // logging
 
 namespace rai {
-  /// An object that represents a log file and/or cout logging, together with log levels read from a cfg file
-  struct LogObject{
-    std::ofstream fil;
-    const char* key;
-    int logCoutLevel, logFileLevel;
-    LogObject(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0);
-    ~LogObject();
-    LogObject& getNonConst() const{ return *((LogObject*)this); } //ugly... but Logs are often members of classes, and they are accessed in const methods of these classes...
-    struct LogToken getToken(int log_level, const char *code_file, const char *code_func, uint code_line);
-  };
+/// An object that represents a log file and/or cout logging, together with log levels read from a cfg file
+struct LogObject {
+  std::ofstream fil;
+  const char* key;
+  int logCoutLevel, logFileLevel;
+  LogObject(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0);
+  ~LogObject();
+  LogObject& getNonConst() const { return *((LogObject*)this); } //ugly... but Logs are often members of classes, and they are accessed in const methods of these classes...
+  struct LogToken getToken(int log_level, const char *code_file, const char *code_func, uint code_line);
+};
 
-  /// A Token to such a Log object which, on destruction, writes into the Log
-  struct LogToken{
-    rai::String msg;
-    LogObject& log;
-    int log_level;
-    const char *code_file, *code_func;
-    uint code_line;
-    LogToken(LogObject& log, int log_level, const char *code_file, const char *code_func, uint code_line)
-      : log(log), log_level(log_level), code_file(code_file), code_func(code_func), code_line(code_line){}
-    ~LogToken(); //that's where the magic happens!
-    std::ostream& os(){ return msg; }
-  };
+/// A Token to such a Log object which, on destruction, writes into the Log
+struct LogToken {
+  rai::String msg;
+  LogObject& log;
+  int log_level;
+  const char *code_file, *code_func;
+  uint code_line;
+  LogToken(LogObject& log, int log_level, const char *code_file, const char *code_func, uint code_line)
+    : log(log), log_level(log_level), code_file(code_file), code_func(code_func), code_line(code_line) {}
+  ~LogToken(); //that's where the magic happens!
+  std::ostream& os() { return msg; }
+};
 }
 
 extern rai::LogObject _log;
@@ -368,12 +368,12 @@ extern String errString;
 #  include <gtest/gtest.h>
 #  define TEST(name) test##name(){} GTEST_TEST(examples, name)
 #  define MAIN \
-     main(int argc, char** argv){               \
-       rai::initCmdLine(argc,argv);             \
-       testing::InitGoogleTest(&argc, argv);	\
-       return RUN_ALL_TESTS();			\
-     }                                          \
-     inline int obsolete_main //this starts a method declaration
+  main(int argc, char** argv){               \
+    rai::initCmdLine(argc,argv);             \
+    testing::InitGoogleTest(&argc, argv);  \
+    return RUN_ALL_TESTS();      \
+  }                                          \
+  inline int obsolete_main //this starts a method declaration
 #endif
 
 //----- verbose:
@@ -389,42 +389,42 @@ extern String errString;
 
 namespace rai {
 
-  String raiPath(const char* rel=NULL);
+String raiPath(const char* rel=NULL);
 
-  /** @brief A ostream/istream wrapper that allows easier initialization of objects, like:
+/** @brief A ostream/istream wrapper that allows easier initialization of objects, like:
 arr X = FILE("inname");
 X >>FILE("outfile");
- etc
+etc
 */
-struct FileToken{
+struct FileToken {
   rai::String path, name, cwd;
   std::shared_ptr<std::ofstream> os;
   std::shared_ptr<std::ifstream> is;
-
-  FileToken(){}
+  
+  FileToken() {}
   FileToken(const char* _filename, bool change_dir=true);
   FileToken(const FileToken& ft);
   ~FileToken();
-  FileToken& operator()(){ return *this; }
-
+  FileToken& operator()() { return *this; }
+  
   void decomposeFilename();
   void changeDir();
   void unchangeDir();
   bool exists();
   std::ofstream& getOs();
   std::ifstream& getIs(bool change_dir=false);
-  operator std::istream&(){ return getIs(); }
-  operator std::ostream&(){ return getOs(); }
+  operator std::istream&() { return getIs(); }
+  operator std::ostream&() { return getOs(); }
 };
-template<class T> FileToken& operator>>(FileToken& fil, T& x){ fil.getIs() >>x;  return fil; }
-template<class T> std::ostream& operator<<(FileToken& fil, const T& x){ fil.getOs() <<x;  return fil.getOs(); }
-inline std::ostream& operator<<(std::ostream& os, const FileToken& fil){ return os <<fil.name; }
-template<class T> FileToken& operator<<(T& x, FileToken& fil){ fil.getIs() >>x; return fil; }
-template<class T> void operator>>(const T& x, FileToken& fil){ fil.getOs() <<x; }
+template<class T> FileToken& operator>>(FileToken& fil, T& x) { fil.getIs() >>x;  return fil; }
+template<class T> std::ostream& operator<<(FileToken& fil, const T& x) { fil.getOs() <<x;  return fil.getOs(); }
+inline std::ostream& operator<<(std::ostream& os, const FileToken& fil) { return os <<fil.name; }
+template<class T> FileToken& operator<<(T& x, FileToken& fil) { fil.getIs() >>x; return fil; }
+template<class T> void operator>>(const T& x, FileToken& fil) { fil.getOs() <<x; }
 }
 #define FILE(filename) (rai::FileToken(filename)()) //it needs to return a REFERENCE to a local scope object
 
-inline bool operator==(const rai::FileToken&, const rai::FileToken&){ return false; }
+inline bool operator==(const rai::FileToken&, const rai::FileToken&) { return false; }
 
 //===========================================================================
 //
@@ -432,39 +432,39 @@ inline bool operator==(const rai::FileToken&, const rai::FileToken&){ return fal
 //
 
 namespace rai {
-  template<class enum_T>
-  struct Enum{
-    enum_T x;
-    static const char* names [];
-    Enum():x((enum_T)-1){}
-    explicit Enum(const enum_T& y):x(y){}
-    const enum_T& operator=(const enum_T& y){ x=y; return x; }
-    bool operator==(const enum_T& y) const{ return x==y; }
-    bool operator!=(const enum_T& y) const{ return x!=y; }
-    operator enum_T() const{ return x; }
-    void read(std::istream& is){
-      rai::String str(is);
-      bool good=false;
-      for(int i=0; names[i]; i++){
-        const char* n = names[i];
-        if(!n) LOG(-2) <<"enum_T " <<typeid(enum_T).name() <<' ' <<str <<" out of range";
-        if(str==n){ x=(enum_T)(i); good=true; break; }
-      }
-      if(!good){
-        rai::String all;
-        for(int i=0; names[i]; i++) all <<names[i] <<' ';
-        LOG(-2) <<"Enum::read could not find the keyword '" <<str <<"'. Possible Enum keywords: " <<all;
-      }
-      CHECK(!strcmp(names[x], str.p), "");
+template<class enum_T>
+struct Enum {
+  enum_T x;
+  static const char* names [];
+  Enum():x((enum_T)-1) {}
+  explicit Enum(const enum_T& y):x(y) {}
+  const enum_T& operator=(const enum_T& y) { x=y; return x; }
+  bool operator==(const enum_T& y) const { return x==y; }
+  bool operator!=(const enum_T& y) const { return x!=y; }
+  operator enum_T() const { return x; }
+  void read(std::istream& is) {
+    rai::String str(is);
+    bool good=false;
+    for(int i=0; names[i]; i++) {
+      const char* n = names[i];
+      if(!n) LOG(-2) <<"enum_T " <<typeid(enum_T).name() <<' ' <<str <<" out of range";
+      if(str==n) { x=(enum_T)(i); good=true; break; }
     }
-    const char* name() const{
-        if(x<0) return "init";
-        else return names[x];
+    if(!good) {
+      rai::String all;
+      for(int i=0; names[i]; i++) all <<names[i] <<' ';
+      LOG(-2) <<"Enum::read could not find the keyword '" <<str <<"'. Possible Enum keywords: " <<all;
     }
-    void write(std::ostream& os) const{ os <<name(); }
-  };
-  template<class T> std::istream& operator>>(std::istream& is, Enum<T>& x){ x.read(is); return is; }
-  template<class T> std::ostream& operator<<(std::ostream& os, const Enum<T>& x){ x.write(os); return os; }
+    CHECK(!strcmp(names[x], str.p), "");
+  }
+  const char* name() const {
+    if(x<0) return "init";
+    else return names[x];
+  }
+  void write(std::ostream& os) const { os <<name(); }
+};
+template<class T> std::istream& operator>>(std::istream& is, Enum<T>& x) { x.read(is); return is; }
+template<class T> std::ostream& operator<<(std::ostream& os, const Enum<T>& x) { x.write(os); return os; }
 }
 
 //===========================================================================
@@ -541,7 +541,7 @@ extern rai::Rnd rnd;
 /// a little inotify wrapper
 //
 
-struct Inotify{
+struct Inotify {
   int fd, wd;
   char *buffer;
   uint buffer_size;
@@ -549,7 +549,7 @@ struct Inotify{
   Inotify(const char *filename);
   ~Inotify();
   bool poll(bool block=false, bool verbose=false);
-
+  
 //  void waitAndReport(){ pollForModification(false, true); }
 //  void waitForModification(bool verbose=false){ while(!pollForModification(true, verbose)); }
 };
@@ -569,13 +569,13 @@ struct Mutex {
   ~Mutex();
   void lock();
   void unlock();
-
-  struct Token{
+  
+  struct Token {
     Mutex &m;
-    Token(Mutex& m):m(m){ m.lock(); }
-    ~Token(){ m.unlock(); }
+    Token(Mutex& m):m(m) { m.lock(); }
+    ~Token() { m.unlock(); }
   };
-  struct Token operator()(){ return Token(*this); }
+  struct Token operator()() { return Token(*this); }
 };
 
 //===========================================================================
@@ -587,7 +587,7 @@ template<class T>
 struct Singleton {
   static Mutex mutex;
   static T *singleton;
-
+  
   T *getSingleton() const {
     if(!singleton) {
       mutex.lock();
@@ -596,8 +596,8 @@ struct Singleton {
     }
     return singleton;
   }
-
-  ~Singleton(){
+  
+  ~Singleton() {
     if(singleton) {
 //      static Mutex m; //pthread might already be deinitialized...
 //      m.lock();
@@ -607,17 +607,17 @@ struct Singleton {
 //      m.unlock();
     }
   }
-
-  struct Token{
+  
+  struct Token {
     const Singleton<T>& base;
-    Token(Singleton<T>& _base) : base(_base){ base.getSingleton(); base.mutex.lock(); }
-    ~Token(){ base.mutex.unlock(); }
-    T* operator->(){ return base.getSingleton(); }
-    operator T&(){ return *base.getSingleton(); }
-    T& operator()(){ return *base.getSingleton(); }
+    Token(Singleton<T>& _base) : base(_base) { base.getSingleton(); base.mutex.lock(); }
+    ~Token() { base.mutex.unlock(); }
+    T* operator->() { return base.getSingleton(); }
+    operator T&() { return *base.getSingleton(); }
+    T& operator()() { return *base.getSingleton(); }
   };
-
-  Token operator()(){ return Token(*this); }
+  
+  Token operator()() { return Token(*this); }
 };
 
 template<class T> T *Singleton<T>::singleton=NULL;
@@ -628,7 +628,7 @@ template<class T> Mutex Singleton<T>::mutex;
 // just a hook to make things gl drawable
 //
 
-struct GLDrawer    { virtual void glDraw(struct OpenGL&) = 0; virtual ~GLDrawer(){} };
+struct GLDrawer    { virtual void glDraw(struct OpenGL&) = 0; virtual ~GLDrawer() {} };
 
 //===========================================================================
 //
@@ -636,10 +636,10 @@ struct GLDrawer    { virtual void glDraw(struct OpenGL&) = 0; virtual ~GLDrawer(
 //
 
 extern Mutex coutMutex;
-struct CoutToken{
-  CoutToken(){ coutMutex.lock(); }
-  ~CoutToken(){ coutMutex.unlock(); }
-  std::ostream& getOs(){ return std::cout; }
+struct CoutToken {
+  CoutToken() { coutMutex.lock(); }
+  ~CoutToken() { coutMutex.unlock(); }
+  std::ostream& getOs() { return std::cout; }
 };
 #define COUT (CoutToken().getOs())
 
@@ -649,7 +649,7 @@ struct CoutToken{
 //
 
 struct Type {
-  virtual ~Type(){}
+  virtual ~Type() {}
   virtual const std::type_info& typeId() const {NIY}
   virtual struct Node* readIntoNewNode(struct Graph& container, std::istream&) const {NIY}
   virtual void* newInstance() const {NIY}
@@ -664,8 +664,8 @@ struct Type_typed : Type {
   virtual void* newInstance() const { return new T(); }
 };
 
-inline bool operator!=(Type& t1, Type& t2){ return t1.typeId() != t2.typeId(); }
-inline bool operator==(Type& t1, Type& t2){ return t1.typeId() == t2.typeId(); }
+inline bool operator!=(Type& t1, Type& t2) { return t1.typeId() != t2.typeId(); }
+inline bool operator==(Type& t1, Type& t2) { return t1.typeId() == t2.typeId(); }
 
 //===========================================================================
 //

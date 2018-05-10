@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -21,26 +21,24 @@
 #include <ros/builtin_message_traits.h>
 #include <ros/message_operations.h>
 
-namespace rai_srv
-{
+namespace rai_srv {
 template <class ContainerAllocator>
-struct StringStringRequest_
-{
+struct StringStringRequest_ {
   typedef StringStringRequest_<ContainerAllocator> Type;
-
+  
   StringStringRequest_()
     : str()  {
-    }
+  }
   StringStringRequest_(const ContainerAllocator& _alloc)
     : str(_alloc)  {
-    }
-
-   typedef std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other >  _str_type;
+  }
+  
+  typedef std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other >  _str_type;
   _str_type str;
-
+  
   typedef boost::shared_ptr< ::rai_srv::StringStringRequest_<ContainerAllocator> > Ptr;
   typedef boost::shared_ptr< ::rai_srv::StringStringRequest_<ContainerAllocator> const> ConstPtr;
-
+  
 }; // struct StringStringRequest_
 
 typedef ::rai_srv::StringStringRequest_<std::allocator<void> > StringStringRequest;
@@ -51,18 +49,15 @@ typedef boost::shared_ptr< ::rai_srv::StringStringRequest const> StringStringReq
 // constants requiring out of line definition
 
 template<typename ContainerAllocator>
-std::ostream& operator<<(std::ostream& s, const ::rai_srv::StringStringRequest_<ContainerAllocator> & v)
-{
-ros::message_operations::Printer< ::rai_srv::StringStringRequest_<ContainerAllocator> >::stream(s, "", v);
-return s;
+std::ostream& operator<<(std::ostream& s, const ::rai_srv::StringStringRequest_<ContainerAllocator> & v) {
+  ros::message_operations::Printer< ::rai_srv::StringStringRequest_<ContainerAllocator> >::stream(s, "", v);
+  return s;
 }
 
 } // namespace rai_srv
 
-namespace ros
-{
-namespace message_traits
-{
+namespace ros {
+namespace message_traits {
 
 // BOOLTRAITS {'IsFixedSize': False, 'IsMessage': True, 'HasHeader': False}
 // {'geometry_msgs': ['/opt/ros/indigo/share/geometry_msgs/msg'], 'std_msgs': ['/opt/ros/indigo/share/std_msgs/msg']}
@@ -72,100 +67,86 @@ namespace message_traits
 template <class ContainerAllocator>
 struct IsFixedSize< ::rai_srv::StringStringRequest_<ContainerAllocator> >
   : FalseType
-  { };
+{ };
 
 template <class ContainerAllocator>
 struct IsFixedSize< ::rai_srv::StringStringRequest_<ContainerAllocator> const>
-  : FalseType
-  { };
+    : FalseType
+{ };
 
 template <class ContainerAllocator>
 struct IsMessage< ::rai_srv::StringStringRequest_<ContainerAllocator> >
   : TrueType
-  { };
+{ };
 
 template <class ContainerAllocator>
 struct IsMessage< ::rai_srv::StringStringRequest_<ContainerAllocator> const>
-  : TrueType
-  { };
+    : TrueType
+{ };
 
 template <class ContainerAllocator>
 struct HasHeader< ::rai_srv::StringStringRequest_<ContainerAllocator> >
   : FalseType
-  { };
+{ };
 
 template <class ContainerAllocator>
 struct HasHeader< ::rai_srv::StringStringRequest_<ContainerAllocator> const>
-  : FalseType
-  { };
+    : FalseType
+{ };
 
 template<class ContainerAllocator>
-struct MD5Sum< ::rai_srv::StringStringRequest_<ContainerAllocator> >
-{
-  static const char* value()
-  {
+struct MD5Sum< ::rai_srv::StringStringRequest_<ContainerAllocator> > {
+  static const char* value() {
     return "994972b6e03928b2476860ce6c4c8e17";
   }
-
+  
   static const char* value(const ::rai_srv::StringStringRequest_<ContainerAllocator>&) { return value(); }
   static const uint64_t static_value1 = 0x994972b6e03928b2ULL;
   static const uint64_t static_value2 = 0x476860ce6c4c8e17ULL;
 };
 
 template<class ContainerAllocator>
-struct DataType< ::rai_srv::StringStringRequest_<ContainerAllocator> >
-{
-  static const char* value()
-  {
+struct DataType< ::rai_srv::StringStringRequest_<ContainerAllocator> > {
+  static const char* value() {
     return "rai_srv/StringStringRequest";
   }
-
+  
   static const char* value(const ::rai_srv::StringStringRequest_<ContainerAllocator>&) { return value(); }
 };
 
 template<class ContainerAllocator>
-struct Definition< ::rai_srv::StringStringRequest_<ContainerAllocator> >
-{
-  static const char* value()
-  {
+struct Definition< ::rai_srv::StringStringRequest_<ContainerAllocator> > {
+  static const char* value() {
     return "string str\n\
 ";
   }
-
+  
   static const char* value(const ::rai_srv::StringStringRequest_<ContainerAllocator>&) { return value(); }
 };
 
 } // namespace message_traits
 } // namespace ros
 
-namespace ros
-{
-namespace serialization
-{
+namespace ros {
+namespace serialization {
 
-  template<class ContainerAllocator> struct Serializer< ::rai_srv::StringStringRequest_<ContainerAllocator> >
-  {
-    template<typename Stream, typename T> inline static void allInOne(Stream& stream, T m)
-    {
-      stream.next(m.str);
-    }
-
-    ROS_DECLARE_ALLINONE_SERIALIZER;
-  }; // struct StringStringRequest_
+template<class ContainerAllocator> struct Serializer< ::rai_srv::StringStringRequest_<ContainerAllocator> > {
+  template<typename Stream, typename T> inline static void allInOne(Stream& stream, T m) {
+    stream.next(m.str);
+  }
+  
+  ROS_DECLARE_ALLINONE_SERIALIZER;
+}; // struct StringStringRequest_
 
 } // namespace serialization
 } // namespace ros
 
-namespace ros
-{
-namespace message_operations
-{
+namespace ros {
+namespace message_operations {
 
 template<class ContainerAllocator>
-struct Printer< ::rai_srv::StringStringRequest_<ContainerAllocator> >
-{
-  template<typename Stream> static void stream(Stream& s, const std::string& indent, const ::rai_srv::StringStringRequest_<ContainerAllocator>& v)
-  {
+struct Printer< ::rai_srv::StringStringRequest_<ContainerAllocator> > {
+  template<typename Stream> static void stream(Stream& s, const std::string& indent, const ::rai_srv::StringStringRequest_<ContainerAllocator>& v) {
     s << indent << "str: ";
     Printer<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other > >::stream(s, indent + "  ", v.str);
   }

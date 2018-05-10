@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -41,7 +41,7 @@ void GaussianProcessOptimized::appendObsRecompute(const arr& x, const double& y)
     }
     arr l = lapack_Ainv_b_triangular(L, kappa);
     double lDiag = sqrt(k-sumOfSqr(l));
-
+    
     arr temp;
     temp.resize(L.d0+1, L.d1+1);
     temp.setMatrixBlock(L, 0, 0);
@@ -59,7 +59,7 @@ void GaussianProcessOptimized::appendObsRecompute(const arr& x, const double& y)
   }
 }
 
-void GaussianProcessOptimized::recompute(){
+void GaussianProcessOptimized::recompute() {
   if(X.d0) {
     arr G;
     G.resize(X.d0, X.d0);
@@ -129,7 +129,7 @@ arr GaussianProcessOptimized::gradientVariance(const arr& x) {
   for(uint i = 0; i < X.d0; i++) {
     kappa(i) = kernel->k(x, X[i]);
   }*/
-
+  
   arr dKappa;
   dKappa = kernel->dKappa(x, X);
   /*
@@ -139,7 +139,7 @@ arr GaussianProcessOptimized::gradientVariance(const arr& x) {
   }*/
   //this can be optimized to n^2 complexity, if kappa*L^-1 is solved first (need different lapack/blas routine). Lapack offers no such routine, but blas does (not directly, needs two calls).
   //return kernel->dk_dx(x,x) - 2.0*(~kappa*lapack_Ainv_b_symPosDef_givenCholesky(L, dKappa)).reshapeFlat();
-
+  
   //this is the optimized, n^2 version, was quite easy :-)
   return kernel->dk_dx(x,x) - 2.0*(~lapack_Ainv_b_symPosDef_givenCholesky(L, kappa)*dKappa).reshapeFlat();
 }

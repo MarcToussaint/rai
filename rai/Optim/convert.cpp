@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -21,16 +21,16 @@ Convert::Convert(void (*fv)(arr&, arr*, const arr&, void*),void *data) : cstyle_
 #endif
 
 Convert::~Convert() {
-  if(cpm){ delete cpm; cpm=NULL; }
+  if(cpm) { delete cpm; cpm=NULL; }
 }
 
 //void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
-double conv_VectorFunction_ScalarFunction(VectorFunction f, arr& g, arr& H, const arr& x){
+double conv_VectorFunction_ScalarFunction(VectorFunction f, arr& g, arr& H, const arr& x) {
   arr y,J;
   f(y, (&g?J:NoArr), x);
   //  if(J.special==arr::RowShiftedST) J = unpack(J);
-  if(&g){ g = comp_At_x(J, y); g *= 2.; }
-  if(&H){ H = comp_At_A(J); H *= 2.; }
+  if(&g) { g = comp_At_x(J, y); g *= 2.; }
+  if(&H) { H = comp_At_A(J); H *= 2.; }
   return sumOfSqr(y);
 }
 
@@ -78,14 +78,14 @@ Convert::operator VectorFunction() {
 // actual convertion routines
 //
 
-ScalarFunction conv_cstylefs2ScalarFunction(double(*fs)(arr*, const arr&, void*),void *data){
+ScalarFunction conv_cstylefs2ScalarFunction(double(*fs)(arr*, const arr&, void*),void *data) {
   return [&fs,data](arr& g, arr& H, const arr& x) -> double {
     if(&H) NIY;
     return fs(&g, x, data);
   };
 }
 
-VectorFunction conv_cstylefv2VectorFunction(void (*fv)(arr&, arr*, const arr&, void*),void *data){
+VectorFunction conv_cstylefv2VectorFunction(void (*fv)(arr&, arr*, const arr&, void*),void *data) {
   return [&fv,data](arr& y, arr& J, const arr& x) -> void {
     fv(y, &J, x, data);
   };
@@ -96,13 +96,13 @@ ScalarFunction conv_VectorFunction2ScalarFunction(const VectorFunction& f) {
     arr y,J;
     f(y, (&g?J:NoArr), x);
     //  if(J.special==arr::RowShiftedST) J = unpack(J);
-    if(&g){ g = comp_At_x(J, y); g *= 2.; }
-    if(&H){ H = comp_At_A(J); H *= 2.; }
+    if(&g) { g = comp_At_x(J, y); g *= 2.; }
+    if(&H) { H = comp_At_A(J); H *= 2.; }
     return sumOfSqr(y);
   };
 }
 
-void Conv_linearlyReparameterize_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& z, arr& lambda){
+void Conv_linearlyReparameterize_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& z, arr& lambda) {
   arr x = B*z;
   P.phi(phi, J, H, tt, x, NoArr);
   if(&J) J = comp_A_x(J,B);

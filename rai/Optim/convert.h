@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -18,10 +18,10 @@ ScalarFunction     conv_VectorFunction2ScalarFunction(const VectorFunction& f);
 
 /// this takes a constrained problem over $x$ and re-represents it over $z$ where $x=Bz$
 
-struct Conv_linearlyReparameterize_ConstrainedProblem : ConstrainedProblem{
+struct Conv_linearlyReparameterize_ConstrainedProblem : ConstrainedProblem {
   ConstrainedProblem& P;
   arr B;
-  Conv_linearlyReparameterize_ConstrainedProblem(ConstrainedProblem& P, const arr& B):P(P), B(B){}
+  Conv_linearlyReparameterize_ConstrainedProblem(ConstrainedProblem& P, const arr& B):P(P), B(B) {}
   virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& z, arr& lambda);
 };
 
@@ -33,7 +33,7 @@ struct Convert {
   ScalarFunction sf;
   VectorFunction vf;
   ConstrainedProblem *cpm;
-
+  
   Convert(const ScalarFunction&);
   Convert(const VectorFunction&);
   Convert(struct KOMO_Problem&);

@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -104,7 +104,7 @@ QApplication *myApp=NULL;
 #endif
 
 /// running a system command and checking return value
-void system(const char *cmd){
+void system(const char *cmd) {
   cout <<"SYSTEM CMD: " <<cmd <<endl;
   int r = ::system(cmd);
   rai::wait(.1);
@@ -204,7 +204,7 @@ bool parse(std::istream& is, const char *str, bool silent) {
     for(i=n; i--;) is.putback(buf[i]);
     is.setstate(std::ios::failbit);
     if(!silent)  RAI_MSG("(LINE=" <<rai::lineCount <<") parsing of constant string `" <<str
-                          <<"' failed! (read instead: `" <<buf <<"')");
+                           <<"' failed! (read instead: `" <<buf <<"')");
     return false;
   }
   return true;
@@ -227,7 +227,7 @@ double MIN(double a, double b) { return a<b?a:b; }
 double MAX(double a, double b) { return a>b?a:b; }
 uint MAX(uint a, uint b) { return a>b?a:b; }
 
-double indicate(bool expr){ if(expr) return 1.; return 0.; }
+double indicate(bool expr) { if(expr) return 1.; return 0.; }
 
 /** @brief the distance between x and y w.r.t.\ a circular topology
     (e.g. modMetric(1, 8, 10)=3) */
@@ -337,13 +337,13 @@ double cosc(double x) {
 
 #define EXP ::exp //rai::approxExp
 
-double NNsdv(const double& a, const double& b, double sdv){
+double NNsdv(const double& a, const double& b, double sdv) {
   double d=(a-b)/sdv;
   double norm = 1./(::sqrt(RAI_2PI)*sdv);
   return norm*EXP(-.5*d*d);
 }
 
-double NNsdv(double x, double sdv){
+double NNsdv(double x, double sdv) {
   x/=sdv;
   double norm = 1./(::sqrt(RAI_2PI)*sdv);
   return norm*EXP(-.5*x*x);
@@ -355,8 +355,8 @@ eps = 0.1
 g(x) = heavy(x-eps)*(x-eps/2) + (1-heavy(x-eps))*x**2/(2*eps)
 plot [-.5:.5] g(abs(x))
 */
-double POW(double x, double power){ if(power==1.) return x; if(power==2.) return x*x; return pow(x,power); }
-double smoothRamp(double x, double eps, double power){
+double POW(double x, double power) { if(power==1.) return x; if(power==2.) return x*x; return pow(x,power); }
+double smoothRamp(double x, double eps, double power) {
   if(x<0.) return 0.;
   if(power!=1.) return pow(smoothRamp(x,eps,1.),power);
   if(!eps) return x;
@@ -364,7 +364,7 @@ double smoothRamp(double x, double eps, double power){
   return x*x/(2*eps);
 }
 
-double d_smoothRamp(double x, double eps, double power){
+double d_smoothRamp(double x, double eps, double power) {
   if(x<0.) return 0.;
   if(power!=1.) return power*pow(smoothRamp(x,eps,1.),power-1.)*d_smoothRamp(x,eps,1.);
   if(!eps || x>eps) return 1.;
@@ -378,7 +378,7 @@ margin = 1.5
 f(x) = heavy(x)*x**power
 plot f(x/margin+1), 1
 */
-double ineqConstraintCost(double g, double margin, double power){
+double ineqConstraintCost(double g, double margin, double power) {
   double y=g+margin;
   if(y<0.) return 0.;
   if(power==1.) return y;
@@ -386,7 +386,7 @@ double ineqConstraintCost(double g, double margin, double power){
   return pow(y,power);
 }
 
-double d_ineqConstraintCost(double g, double margin, double power){
+double d_ineqConstraintCost(double g, double margin, double power) {
   double y=g+margin;
   if(y<0.) return 0.;
   if(power==1.) return 1.;
@@ -394,14 +394,14 @@ double d_ineqConstraintCost(double g, double margin, double power){
   return power*pow(y,power-1.);
 }
 
-double eqConstraintCost(double h, double margin, double power){
+double eqConstraintCost(double h, double margin, double power) {
   double y=h/margin;
   if(power==1.) return fabs(y);
   if(power==2.) return y*y;
   return pow(fabs(y),power);
 }
 
-double d_eqConstraintCost(double h, double margin, double power){
+double d_eqConstraintCost(double h, double margin, double power) {
   double y=h/margin;
   if(power==1.) return rai::sign(y)/margin;
   if(power==2.) return 2.*y/margin;
@@ -426,14 +426,14 @@ double clockTime(bool today) {
 #endif
 }
 
-timespec clockTime2(){
+timespec clockTime2() {
   timespec ts;
   clock_gettime(CLOCK_REALTIME, &ts);
   return ts;
 }
 
 double toTime(const tm& t) {
-    return (double)(mktime(const_cast<tm*>(&t)) % 86400);
+  return (double)(mktime(const_cast<tm*>(&t)) % 86400);
 }
 
 /** @brief double time since start of the process in floating-point seconds
@@ -483,11 +483,11 @@ char *date() {
   return date(clockTime(false));
 }
 
-char *date(double sec){
+char *date(double sec) {
   time_t nowtime;
   struct tm *nowtm;
   static char tmbuf[64], buf[64];
-
+  
   nowtime = (long)(floor(sec));
   sec -= (double)nowtime;
   nowtm = localtime(&nowtime);
@@ -500,11 +500,11 @@ char *date2(bool subsec) {
   return date2(clockTime(false), subsec);
 }
 
-char *date2(double sec, bool subsec){
+char *date2(double sec, bool subsec) {
   time_t nowtime;
   struct tm *nowtm;
   static char tmbuf[64], buf[64];
-
+  
   nowtime = (long)(floor(sec));
   sec -= (double)nowtime;
   nowtm = localtime(&nowtime);
@@ -524,7 +524,7 @@ void wait(double sec, bool msg_on_fail) {
   sec -= (double)ts.tv_sec;
   ts.tv_nsec = (long)(floor(1e9d*sec));
   int rc = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
-  if(rc && msg_on_fail){
+  if(rc && msg_on_fail) {
     RAI_MSG("clock_nanosleep() failed " <<rc <<" '" <<strerror(rc) <<"' trying select instead");
     timeval tv;
     tv.tv_sec = ts.tv_sec;
@@ -536,7 +536,7 @@ void wait(double sec, bool msg_on_fail) {
   Sleep((int)(1000.*sec));
   //MsgWaitForMultipleObjects( 0, NULL, FALSE, (int)(1000.*sec), QS_ALLEVENTS);
 #endif
-
+  
 #if 0
 #ifndef RAI_TIMEB
   /* r=0 time is up
@@ -550,11 +550,11 @@ void wait(double sec, bool msg_on_fail) {
 
 /// wait for an ENTER at the console
 bool wait(bool useX11) {
-  if(!rai::getInteractivity()){
+  if(!rai::getInteractivity()) {
     rai::wait(.1);
     return true;
   }
-  if(!useX11){
+  if(!useX11) {
     char c[10];
     std::cout <<" -- hit a key to continue..." <<std::flush;
     //cbreak(); getch();
@@ -563,7 +563,7 @@ bool wait(bool useX11) {
     if(c[0]==' ') return true;
     else return false;
     return true;
-  }else{
+  } else {
     char c = x11_getKey();
     if(c==' ') return true;
     return false;
@@ -571,30 +571,30 @@ bool wait(bool useX11) {
 }
 
 #ifdef RAI_X11
-int x11_getKey(){
+int x11_getKey() {
   rai::String txt="PRESS KEY";
   int key=0;
-
+  
   Display *disp = XOpenDisplay(NULL);
   CHECK(disp, "Cannot open display");
-
+  
   Window win = XCreateSimpleWindow(disp, DefaultRootWindow(disp),
                                    10, 10, 80, 50, //24
                                    2, 0x000000, 0x20a0f0);
-  XSelectInput (disp, win, KeyPressMask | ExposureMask | ButtonPressMask );
+  XSelectInput(disp, win, KeyPressMask | ExposureMask | ButtonPressMask);
   XMapWindow(disp, win);
-
+  
   GC gc = XCreateGC(disp, win, 0, NULL);
   XSetFont(disp, gc,  XLoadFont(disp,"fixed")); //-adobe-courier-bold-r-*-*-*-220-*-*-*-*-*-*"));
   XSetForeground(disp, gc, 0x000000);
-
+  
   bool quit=false;
-  for(;!quit;){
+  for(; !quit;) {
     XEvent ev;
     XNextEvent(disp, &ev);
-    switch(ev.type){
+    switch(ev.type) {
       case Expose:
-        if (ev.xexpose.count == 0) {
+        if(ev.xexpose.count == 0) {
           XDrawString(disp, win, gc, 12, 30, txt.p, txt.N);
           XFlush(disp);
         }
@@ -610,17 +610,17 @@ int x11_getKey(){
         break;
     }
   }
-
+  
   XCloseDisplay(disp);
   return key;
 }
 #else
-int x11_getKey(){
+int x11_getKey() {
   LOG(-1) <<"fake implementation (no X11)";
   return 13;
 }
 #endif
-  
+
 /// the integral shared memory size -- not implemented for Windows!
 long mem() {
 #ifndef RAI_TIMEB
@@ -693,7 +693,7 @@ char *getCmdLineArgument(const char *tag) {
   return NULL;
 }
 
-String raiPath(const char* rel){
+String raiPath(const char* rel) {
   String path(RAI_CORE_PATH);
   path <<"/../../" <<rel;
   return path;
@@ -704,7 +704,7 @@ uint getVerboseLevel() {
   return verboseLevel;
 }
 
-bool getInteractivity(){
+bool getInteractivity() {
   if(interactivity==-1) interactivity=(checkParameter<bool>("noInteractivity")?0:1);
   return interactivity==1;
 }
@@ -716,10 +716,10 @@ bool getInteractivity(){
 // logging
 
 namespace rai {
-void handleSIGUSR2(int){
-    int i=5;
-    i*=i;    //set a break point here, if you want to catch errors directly
-  }
+void handleSIGUSR2(int) {
+  int i=5;
+  i*=i;    //set a break point here, if you want to catch errors directly
+}
 
 struct LogServer {
   LogServer() {
@@ -727,7 +727,7 @@ struct LogServer {
     timerStartTime=rai::cpuTime();
     startTime = clockTime(false);
   }
-
+  
   ~LogServer() {
   }
 };
@@ -736,23 +736,23 @@ Singleton<rai::LogServer> logServer;
 }
 
 rai::LogObject::LogObject(const char* key, int defaultLogCoutLevel, int defaultLogFileLevel)
-  : key(key), logCoutLevel(defaultLogCoutLevel), logFileLevel(defaultLogFileLevel){
-  if(!strcmp(key,"global")){
+  : key(key), logCoutLevel(defaultLogCoutLevel), logFileLevel(defaultLogFileLevel) {
+  if(!strcmp(key,"global")) {
     fil.open("z.log.global");
     fil <<"** compiled at:     " <<__DATE__ <<" " <<__TIME__ <<'\n';
     fil <<"** execution start: " <<rai::date(rai::startTime) <<std::endl;
-  }else{
+  } else {
     logCoutLevel = rai::getParameter<int>(STRING("logCoutLevel_"<<key), logCoutLevel);
     logFileLevel = rai::getParameter<int>(STRING("logFileLevel_"<<key), logFileLevel);
   }
 }
 
-rai::LogObject::~LogObject(){
-  if(!strcmp(key,"global")){
+rai::LogObject::~LogObject() {
+  if(!strcmp(key,"global")) {
     fil <<"** execution stop: " <<rai::date()
-       <<"\n** real time: " <<rai::realTime()
-      <<"sec\n** CPU time: " <<rai::cpuTime()
-     <<"sec\n** system (includes I/O) time: " <<rai::sysTime() <<"sec" <<std::endl;
+        <<"\n** real time: " <<rai::realTime()
+        <<"sec\n** CPU time: " <<rai::cpuTime()
+        <<"sec\n** system (includes I/O) time: " <<rai::sysTime() <<"sec" <<std::endl;
   }
   fil.close();
 }
@@ -761,29 +761,29 @@ rai::LogToken rai::LogObject::getToken(int log_level, const char* code_file, con
   return rai::LogToken(*this, log_level, code_file, code_func, code_line);
 }
 
-rai::LogToken::~LogToken(){
+rai::LogToken::~LogToken() {
   auto mut = rai::logServer(); //keep the mutex
-  if(log.logFileLevel>=log_level){
+  if(log.logFileLevel>=log_level) {
     if(!log.fil.is_open()) rai::open(log.fil, STRING("z.log."<<log.key));
     log.fil <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
   }
-  if(log.logCoutLevel>=log_level){
+  if(log.logCoutLevel>=log_level) {
     if(log_level>=0) std::cout <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
-    if(log_level<0){
+    if(log_level<0) {
       rai::errString.clear() <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg;
 // #ifdef RAI_ROS
 //       ROS_INFO("RAI-MSG: %s",rai::errString.p);
 // #endif
-      if(log_level==-1){ rai::errString <<" -- WARNING";    cout <<rai::errString <<endl; }
-      if(log_level==-2){ rai::errString <<" -- ERROR  ";    cerr <<rai::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
-      if(log_level==-3){ rai::errString <<" -- HARD EXIT!"; cerr <<rai::errString <<endl; /*rai::logServer().mutex.unlock();*/ exit(1); }
+      if(log_level==-1) { rai::errString <<" -- WARNING";    cout <<rai::errString <<endl; }
+      if(log_level==-2) { rai::errString <<" -- ERROR  ";    cerr <<rai::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
+      if(log_level==-3) { rai::errString <<" -- HARD EXIT!"; cerr <<rai::errString <<endl; /*rai::logServer().mutex.unlock();*/ exit(1); }
       if(log_level<=-2) raise(SIGUSR2);
     }
   }
 //  rai::logServer().mutex.unlock();
 }
 
-void setLogLevels(int fileLogLevel, int consoleLogLevel){
+void setLogLevels(int fileLogLevel, int consoleLogLevel) {
   _log.logCoutLevel=consoleLogLevel;
   _log.logFileLevel=fileLogLevel;
 }
@@ -792,7 +792,7 @@ void setLogLevels(int fileLogLevel, int consoleLogLevel){
 //
 // parameters
 
-namespace rai{
+namespace rai {
 
 }
 
@@ -828,9 +828,9 @@ char *rai::String::StringBuf::getIpos() { return gptr(); }
 //-- direct memory operations
 void rai::String::append(char x) { resize(N+1, true); operator()(N-1)=x; }
 
-rai::String& rai::String::setRandom(){
+rai::String& rai::String::setRandom() {
   resize(rnd(2,6), false);
-  for(uint i=0;i<N;i++) operator()(i)=rnd('a','z');
+  for(uint i=0; i<N; i++) operator()(i)=rnd('a','z');
   return *this;
 }
 
@@ -887,9 +887,9 @@ rai::String::operator const char*() const { return p; }
 
 /// returns the i-th char
 char& rai::String::operator()(int i) const {
-    if(i<0) i+=N;
-    CHECK((uint)i<=N, "String range error (" <<i <<"<=" <<N <<")");
-    return p[i];
+  if(i<0) i+=N;
+  CHECK((uint)i<=N, "String range error (" <<i <<"<=" <<N <<")");
+  return p[i];
 }
 
 /// return the substring from `start` to (exclusive) `end`.
@@ -897,7 +897,7 @@ rai::String rai::String::getSubString(uint start, uint end) const {
   CHECK(start < end, "getSubString: start should be smaller than end");
   clip(end, uint(0), N);
   String tmp;
-  for (uint i = start; i < end; i++) {
+  for(uint i = start; i < end; i++) {
     tmp.append((*this)(i));
   }
   return tmp;
@@ -930,13 +930,13 @@ rai::String& rai::String::operator=(const String& s) {
 
 /// copies from the C-string
 void rai::String::operator=(const char *s) {
-  if(!s){  clear();  return;  }
+  if(!s) {  clear();  return;  }
   uint ls = strlen(s);
-  if(!ls){  clear();  return;  }
-  if(s>=p && s<=p+N){ //s points to a substring within this string!
+  if(!ls) {  clear();  return;  }
+  if(s>=p && s<=p+N) { //s points to a substring within this string!
     memmove(p, s, ls);
     resize(ls, true);
-  }else{
+  } else {
     resize(ls, false);
     memmove(p, s, ls);
   }
@@ -944,7 +944,7 @@ void rai::String::operator=(const char *s) {
 
 void rai::String::set(const char *s, uint n) { resize(n, false); memmove(p, s, n); }
 
-rai::String& rai::String::printf(const char *format, ...){
+rai::String& rai::String::printf(const char *format, ...) {
   resize(100, false);
   va_list valist;
   va_start(valist, format);
@@ -1027,16 +1027,16 @@ uint rai::String::read(std::istream& is, const char* skipSymbols, const char *st
 rai::String rai::getNowString() {
   time_t t = time(0);
   struct tm *now = localtime(&t);
-
+  
   rai::String str;
   str.resize(19, false); //-- just enough
   sprintf(str.p, "%02d-%02d-%02d-%02d:%02d:%02d",
-    now->tm_year-100,
-    now->tm_mon+1,
-    now->tm_mday,
-    now->tm_hour,
-    now->tm_min,
-    now->tm_sec);
+          now->tm_year-100,
+          now->tm_mon+1,
+          now->tm_mday,
+          now->tm_hour,
+          now->tm_min,
+          now->tm_sec);
   return str;
 }
 
@@ -1045,15 +1045,15 @@ rai::String rai::getNowString() {
 // FileToken
 //
 
-rai::FileToken::FileToken(const char* filename, bool change_dir){
+rai::FileToken::FileToken(const char* filename, bool change_dir) {
   name=filename;
   if(change_dir) changeDir();
 //  if(!exists()) HALT("file '" <<filename <<"' does not exist");
 }
 
-rai::FileToken::FileToken(const FileToken& ft){
+rai::FileToken::FileToken(const FileToken& ft) {
   name=ft.name;
-  if(ft.path.N){
+  if(ft.path.N) {
     NIY;
     path=ft.path;
     cwd=ft.cwd;
@@ -1062,7 +1062,7 @@ rai::FileToken::FileToken(const FileToken& ft){
   os = ft.os;
 }
 
-rai::FileToken::~FileToken(){
+rai::FileToken::~FileToken() {
   unchangeDir();
 }
 
@@ -1079,12 +1079,12 @@ void rai::FileToken::decomposeFilename() {
   }
 }
 
-void rai::FileToken::changeDir(){
-  if(path.N){
+void rai::FileToken::changeDir() {
+  if(path.N) {
     HALT("you've changed already?");
-  }else{
+  } else {
     decomposeFilename();
-    if(path.N && path!="."){
+    if(path.N && path!=".") {
       cwd.resize(200, false);
       if(!getcwd(cwd.p, 200)) HALT("couldn't get current dir");
       cwd.resize(strlen(cwd.p), true);
@@ -1094,8 +1094,8 @@ void rai::FileToken::changeDir(){
   }
 }
 
-void rai::FileToken::unchangeDir(){
-  if(cwd.N){
+void rai::FileToken::unchangeDir() {
+  if(cwd.N) {
     LOG(3) <<"leaving path `" <<path<<"' back to '" <<cwd <<"'" <<std::endl;
     if(chdir(cwd)) HALT("couldn't change back to directory '" <<cwd <<"'");
   }
@@ -1107,9 +1107,9 @@ bool rai::FileToken::exists() {
   return r==0;
 }
 
-std::ofstream& rai::FileToken::getOs(){
+std::ofstream& rai::FileToken::getOs() {
   CHECK(!is,"don't use a FileToken both as input and output");
-  if(!os){
+  if(!os) {
     os = std::make_shared<std::ofstream>();
     os->open(name);
     LOG(3) <<"opening output file `" <<name <<"'" <<std::endl;
@@ -1118,10 +1118,10 @@ std::ofstream& rai::FileToken::getOs(){
   return *os;
 }
 
-std::ifstream& rai::FileToken::getIs(bool change_dir){
+std::ifstream& rai::FileToken::getIs(bool change_dir) {
   if(change_dir) changeDir();
   CHECK(!os,"don't use a FileToken both as input and output");
-  if(!is){
+  if(!is) {
     is = std::make_shared<std::ifstream>();
     is->open(name);
     LOG(3) <<"opening input file `" <<name <<"'" <<std::endl;
@@ -1221,64 +1221,64 @@ void  rai::Rnd::seed250(int32_t seed) {
 // Inotify
 //
 
-Inotify::Inotify(const char* filename): fd(0), wd(0){
+Inotify::Inotify(const char* filename): fd(0), wd(0) {
   fd = inotify_init();
   if(fd<0) HALT("Couldn't initialize inotify");
   fil = new rai::FileToken(filename, false);
   fil->decomposeFilename();
-  wd = inotify_add_watch( fd, fil->path,
-			  IN_MODIFY | IN_CREATE | IN_DELETE );
+  wd = inotify_add_watch(fd, fil->path,
+                         IN_MODIFY | IN_CREATE | IN_DELETE);
   if(wd == -1) HALT("Couldn't add watch to " <<filename);
-  buffer_size = 10*(sizeof(struct inotify_event)+64); 
+  buffer_size = 10*(sizeof(struct inotify_event)+64);
   buffer = new char[buffer_size];
 }
 
-Inotify::~Inotify(){
-  inotify_rm_watch( fd, wd );
-  close( fd );
+Inotify::~Inotify() {
+  inotify_rm_watch(fd, wd);
+  close(fd);
   delete buffer;
   delete fil;
 }
 
-bool Inotify::poll(bool block, bool verbose){
-  if(!block){
+bool Inotify::poll(bool block, bool verbose) {
+  if(!block) {
     struct pollfd fd_poll = {fd, POLLIN, 0};
     int r = ::poll(&fd_poll, 1, 0);
     CHECK(r>=0,"poll failed");
     if(!r) return false;
   }
-
-  int length = read( fd, buffer, buffer_size );
+  
+  int length = read(fd, buffer, buffer_size);
   CHECK(length>=0, "read failed");
-
+  
   //-- process event list
-  for(int i=0;i<length;){
-    struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];
-    if(verbose){
+  for(int i=0; i<length;) {
+    struct inotify_event *event = (struct inotify_event *) &buffer[ i ];
+    if(verbose) {
       if(event->len) {
         if(event->mask & IN_CREATE)
           cout << "The "
                <<(event->mask&IN_ISDIR?"directory ":"file ")
-              <<event->name <<" was created." <<endl;
-        if ( event->mask & IN_DELETE )
+               <<event->name <<" was created." <<endl;
+        if(event->mask & IN_DELETE)
           cout << "The "
                <<(event->mask&IN_ISDIR?"directory ":"file ")
-              <<event->name <<" was deleted." <<endl;
-        if ( event->mask & IN_MODIFY )
+               <<event->name <<" was deleted." <<endl;
+        if(event->mask & IN_MODIFY)
           cout << "The "
                <<(event->mask&IN_ISDIR?"directory ":"file ")
-              <<event->name <<" was modified." <<endl;
-      }else{
+               <<event->name <<" was modified." <<endl;
+      } else {
         cout <<"event of zero length" <<endl;
       }
     }
     if(event->len
-            && (event->mask & (IN_MODIFY|IN_CREATE|IN_DELETE))
-            && !strncmp(event->name, fil->name.p, fil->name.N)
-            ) return true; //report modification on specific file
+        && (event->mask & (IN_MODIFY|IN_CREATE|IN_DELETE))
+        && !strncmp(event->name, fil->name.p, fil->name.N)
+      ) return true; //report modification on specific file
     i += sizeof(struct inotify_event) + event->len;
   }
-
+  
   return false;
 }
 
@@ -1302,7 +1302,7 @@ Mutex::Mutex() {
 }
 
 Mutex::~Mutex() {
-  if(state==-1){ //forced destroy
+  if(state==-1) { //forced destroy
     int rc = pthread_mutex_destroy(&mutex);
     LOG(-1) <<"pthread forced destroy returned " <<rc <<" '" <<strerror(rc) <<"'";
     return;
@@ -1313,7 +1313,7 @@ Mutex::~Mutex() {
 
 void Mutex::lock() {
   int rc = pthread_mutex_lock(&mutex);
-  if(rc){
+  if(rc) {
     //don't use HALT here, because log uses mutexing as well -> can lead to recursive HALT...
     cerr <<STRING("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
     exit(1);
@@ -1342,18 +1342,18 @@ void Mutex::unlock() {}
 // gnuplot calls
 //
 
-struct GnuplotServer{
+struct GnuplotServer {
   FILE *gp;
-  GnuplotServer():gp(NULL){}
-  ~GnuplotServer(){
-    if(gp){
+  GnuplotServer():gp(NULL) {}
+  ~GnuplotServer() {
+    if(gp) {
       cout <<"Closing Gnuplot" <<endl;
 //      send("set terminal wxt nopersist close\nexit", false);
 //      fclose(gp);
     }
   }
-
-  void send(const char *cmd, bool persist){
+  
+  void send(const char *cmd, bool persist) {
 #ifndef RAI_MSVC
     if(!gp) {
       if(!persist) gp=popen("env gnuplot -noraise -geometry 600x600-0-0 2> /dev/null", "w");
@@ -1363,16 +1363,16 @@ struct GnuplotServer{
     FILE("z.plotcmd") <<cmd; //for debugging..
     fputs(cmd, gp);
     fflush(gp);
-  #else
+#else
     NIY;
-  #endif
+#endif
   }
 };
 
 Singleton<GnuplotServer> gnuplotServer;
 
 void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDFfile) {
-  if(!rai::getInteractivity()){
+  if(!rai::getInteractivity()) {
     pauseMouse=false;
     persist=false;
   }
@@ -1397,8 +1397,8 @@ void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDF
   
   if(pauseMouse) cmd <<"\n pause mouse" <<std::endl;
   gnuplotServer()->send(cmd.p, persist);
-
-  if(!rai::getInteractivity()){
+  
+  if(!rai::getInteractivity()) {
     rai::wait(.05);
   }
 }
@@ -1446,13 +1446,13 @@ double gaussIntExpectation(double x) {
  * @brief Return the current working dir as std::string.
  */
 std::string getcwd_string() {
-   char buff[PATH_MAX];
-   char *succ=getcwd( buff, PATH_MAX );
-   CHECK(succ,"could not call getcwd: errno=" <<errno <<' ' <<strerror(errno));
-   return std::string(buff);
+  char buff[PATH_MAX];
+  char *succ=getcwd(buff, PATH_MAX);
+  CHECK(succ,"could not call getcwd: errno=" <<errno <<' ' <<strerror(errno));
+  return std::string(buff);
 }
 
-const char* NAME(const std::type_info& type){
+const char* NAME(const std::type_info& type) {
   const char* name = type.name();
   while(*name>='0' && *name<='9') name++;
   return name;

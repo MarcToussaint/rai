@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -36,7 +36,7 @@ extern ObjectiveTypeA& NoTermTypeA;
  *  feature; and if there exists this feature the returned Hessian $H$ needs to be its hessian.
  *  For the sumOfSqr features no Hessian is returned: we assume the Gauss-Newton approximation.
  */
-struct ConstrainedProblem{
+struct ConstrainedProblem {
   //TODO: add getStructure -> dim_x, tt
   virtual ~ConstrainedProblem() = default;
   virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x, arr& lambda) = 0;
@@ -49,10 +49,10 @@ struct ConstrainedProblem{
 
 typedef std::function<void(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x)> ConstrainedProblemLambda;
 
-struct Conv_Lambda_ConstrainedProblem : ConstrainedProblem{
+struct Conv_Lambda_ConstrainedProblem : ConstrainedProblem {
   ConstrainedProblemLambda f;
-  Conv_Lambda_ConstrainedProblem(const ConstrainedProblemLambda& f): f(f){}
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x){ f(phi, J, H, tt, x); }
+  Conv_Lambda_ConstrainedProblem(const ConstrainedProblemLambda& f): f(f) {}
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) { f(phi, J, H, tt, x); }
 };
 
 //===========================================================================

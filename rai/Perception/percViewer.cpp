@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -13,17 +13,17 @@
 PercViewer::PercViewer(const char* percepts_name)
   : Thread(STRING("PercViewer_"<<percepts_name), -1.),
     percepts(this, percepts_name, true),
-    modelWorld(this, "modelWorld"){
+    modelWorld(this, "modelWorld") {
   threadOpen();
 }
 
-PercViewer::~PercViewer(){
+PercViewer::~PercViewer() {
   threadClose();
 }
 
-void glDrawPercepts(void *P){
+void glDrawPercepts(void *P) {
   PerceptL& percepts = *((PerceptL*)P);
-  for(Percept *p:percepts){
+  for(Percept *p:percepts) {
     glPushMatrix();
     glTransform(p->transform);
     glColor3f(0,0,0);
@@ -33,7 +33,7 @@ void glDrawPercepts(void *P){
   }
 }
 
-void PercViewer::open(){
+void PercViewer::open() {
   gl = new OpenGL(STRING("PercViewer: "<<percepts.name));
   gl->add(glStandardScene);
   gl->add(glDrawMeshes, &modelCopy);
@@ -42,12 +42,12 @@ void PercViewer::open(){
   gl->camera.setPosition(2., -3., 3.);
   gl->camera.focus(.5, 0, .6);
   gl->camera.upright();
-
+  
   modelWorld.writeAccess();
   modelCopy.resize(modelWorld().frames.N);
-  for(rai::Frame *f: modelWorld().frames){
+  for(rai::Frame *f: modelWorld().frames) {
     rai::Shape *s = f->shape;
-    if(s){
+    if(s) {
       rai::Mesh& m=modelCopy(f->ID);
       m = s->mesh();
       if(!m.C.N) m.C = {.6, .6, .6, .3};
@@ -59,28 +59,28 @@ void PercViewer::open(){
   modelWorld.deAccess();
 }
 
-void PercViewer::close(){
+void PercViewer::close() {
   delete gl;
 }
 
-void PercViewer::step(){
+void PercViewer::step() {
   percepts.readAccess();
-  if(!percepts().N){ percepts.deAccess(); return; }
+  if(!percepts().N) { percepts.deAccess(); return; }
   gl->dataLock.writeLock();
   listClone(copy, percepts.get()());
   gl->dataLock.unlock();
   percepts.deAccess();
-
+  
   rai::Array<rai::Transformation> X;
   modelWorld.readAccess();
   X.resize(modelWorld().frames.N);
   for(rai::Frame *f:modelWorld().frames) X(f->ID) = f->X;
   modelWorld.deAccess();
-
+  
   gl->dataLock.writeLock();
-  if(X.N==modelCopy.N) for(uint i=0;i<X.N;i++) modelCopy(i).glX = X(i);
+  if(X.N==modelCopy.N) for(uint i=0; i<X.N; i++) modelCopy(i).glX = X(i);
   gl->dataLock.unlock();
-
+  
   gl->update(NULL, false, false, true);
 }
 

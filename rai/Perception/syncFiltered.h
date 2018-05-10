@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -12,15 +12,15 @@
 #include <Perception/percept.h>
 
 /// syncs percepts with modelWorld
-struct SyncFiltered : Thread{
+struct SyncFiltered : Thread {
   Var<PerceptL> percepts_filtered;
   Var<rai::KinematicWorld> outputWorld;
   VAR(rai::KinematicWorld, modelWorld)
-
+  
   SyncFiltered(const char* outputWorld_name);
   ~SyncFiltered();
-
+  
   virtual void open();
   virtual void step();
-  virtual void close(){}
+  virtual void close() {}
 };

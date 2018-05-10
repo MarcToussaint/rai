@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -21,13 +21,11 @@
 #include <ros/builtin_message_traits.h>
 #include <ros/message_operations.h>
 
-namespace rai_msgs
-{
+namespace rai_msgs {
 template <class ContainerAllocator>
-struct MotionFeedback_
-{
+struct MotionFeedback_ {
   typedef MotionFeedback_<ContainerAllocator> Type;
-
+  
   MotionFeedback_()
     : stamp()
     , timeToGo(0.0)
@@ -35,7 +33,7 @@ struct MotionFeedback_
     , trackingError(0.0)
     , jointsInLimit()
     , collisionPairs()  {
-    }
+  }
   MotionFeedback_(const ContainerAllocator& _alloc)
     : stamp()
     , timeToGo(0.0)
@@ -43,30 +41,30 @@ struct MotionFeedback_
     , trackingError(0.0)
     , jointsInLimit(_alloc)
     , collisionPairs(_alloc)  {
-  (void)_alloc;
-    }
-
-   typedef ros::Time _stamp_type;
+    (void)_alloc;
+  }
+  
+  typedef ros::Time _stamp_type;
   _stamp_type stamp;
-
-   typedef double _timeToGo_type;
+  
+  typedef double _timeToGo_type;
   _timeToGo_type timeToGo;
-
-   typedef double _phaseVel_type;
+  
+  typedef double _phaseVel_type;
   _phaseVel_type phaseVel;
-
-   typedef double _trackingError_type;
+  
+  typedef double _trackingError_type;
   _trackingError_type trackingError;
-
-   typedef std::vector<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other > , typename ContainerAllocator::template rebind<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other > >::other >  _jointsInLimit_type;
+  
+  typedef std::vector<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other > , typename ContainerAllocator::template rebind<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other > >::other >  _jointsInLimit_type;
   _jointsInLimit_type jointsInLimit;
-
-   typedef std::vector<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other > , typename ContainerAllocator::template rebind<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other > >::other >  _collisionPairs_type;
+  
+  typedef std::vector<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other > , typename ContainerAllocator::template rebind<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other > >::other >  _collisionPairs_type;
   _collisionPairs_type collisionPairs;
-
+  
   typedef boost::shared_ptr< ::rai_msgs::MotionFeedback_<ContainerAllocator> > Ptr;
   typedef boost::shared_ptr< ::rai_msgs::MotionFeedback_<ContainerAllocator> const> ConstPtr;
-
+  
 }; // struct MotionFeedback_
 
 typedef ::rai_msgs::MotionFeedback_<std::allocator<void> > MotionFeedback;
@@ -77,18 +75,15 @@ typedef boost::shared_ptr< ::rai_msgs::MotionFeedback const> MotionFeedbackConst
 // constants requiring out of line definition
 
 template<typename ContainerAllocator>
-std::ostream& operator<<(std::ostream& s, const ::rai_msgs::MotionFeedback_<ContainerAllocator> & v)
-{
-ros::message_operations::Printer< ::rai_msgs::MotionFeedback_<ContainerAllocator> >::stream(s, "", v);
-return s;
+std::ostream& operator<<(std::ostream& s, const ::rai_msgs::MotionFeedback_<ContainerAllocator> & v) {
+  ros::message_operations::Printer< ::rai_msgs::MotionFeedback_<ContainerAllocator> >::stream(s, "", v);
+  return s;
 }
 
 } // namespace rai_msgs
 
-namespace ros
-{
-namespace message_traits
-{
+namespace ros {
+namespace message_traits {
 
 // BOOLTRAITS {'IsFixedSize': False, 'IsMessage': True, 'HasHeader': False}
 // {'geometry_msgs': ['/opt/ros/kinetic/share/geometry_msgs/msg'], 'std_msgs': ['/opt/ros/kinetic/share/std_msgs/msg'], 'rai_msgs': ['/home/mtoussai/git/LGP-execution/rai/rai/RosCom/rai_msgs/msg']}
@@ -98,62 +93,56 @@ namespace message_traits
 template <class ContainerAllocator>
 struct IsFixedSize< ::rai_msgs::MotionFeedback_<ContainerAllocator> >
   : FalseType
-  { };
+{ };
 
 template <class ContainerAllocator>
 struct IsFixedSize< ::rai_msgs::MotionFeedback_<ContainerAllocator> const>
-  : FalseType
-  { };
+    : FalseType
+{ };
 
 template <class ContainerAllocator>
 struct IsMessage< ::rai_msgs::MotionFeedback_<ContainerAllocator> >
   : TrueType
-  { };
+{ };
 
 template <class ContainerAllocator>
 struct IsMessage< ::rai_msgs::MotionFeedback_<ContainerAllocator> const>
-  : TrueType
-  { };
+    : TrueType
+{ };
 
 template <class ContainerAllocator>
 struct HasHeader< ::rai_msgs::MotionFeedback_<ContainerAllocator> >
   : FalseType
-  { };
+{ };
 
 template <class ContainerAllocator>
 struct HasHeader< ::rai_msgs::MotionFeedback_<ContainerAllocator> const>
-  : FalseType
-  { };
+    : FalseType
+{ };
 
 template<class ContainerAllocator>
-struct MD5Sum< ::rai_msgs::MotionFeedback_<ContainerAllocator> >
-{
-  static const char* value()
-  {
+struct MD5Sum< ::rai_msgs::MotionFeedback_<ContainerAllocator> > {
+  static const char* value() {
     return "4061c02864a47cfda7434e541eaaa498";
   }
-
+  
   static const char* value(const ::rai_msgs::MotionFeedback_<ContainerAllocator>&) { return value(); }
   static const uint64_t static_value1 = 0x4061c02864a47cfdULL;
   static const uint64_t static_value2 = 0xa7434e541eaaa498ULL;
 };
 
 template<class ContainerAllocator>
-struct DataType< ::rai_msgs::MotionFeedback_<ContainerAllocator> >
-{
-  static const char* value()
-  {
+struct DataType< ::rai_msgs::MotionFeedback_<ContainerAllocator> > {
+  static const char* value() {
     return "rai_msgs/MotionFeedback";
   }
-
+  
   static const char* value(const ::rai_msgs::MotionFeedback_<ContainerAllocator>&) { return value(); }
 };
 
 template<class ContainerAllocator>
-struct Definition< ::rai_msgs::MotionFeedback_<ContainerAllocator> >
-{
-  static const char* value()
-  {
+struct Definition< ::rai_msgs::MotionFeedback_<ContainerAllocator> > {
+  static const char* value() {
     return "time stamp\n\
 float64 timeToGo\n\
 float64 phaseVel\n\
@@ -162,46 +151,38 @@ string[] jointsInLimit\n\
 string[] collisionPairs\n\
 ";
   }
-
+  
   static const char* value(const ::rai_msgs::MotionFeedback_<ContainerAllocator>&) { return value(); }
 };
 
 } // namespace message_traits
 } // namespace ros
 
-namespace ros
-{
-namespace serialization
-{
+namespace ros {
+namespace serialization {
 
-  template<class ContainerAllocator> struct Serializer< ::rai_msgs::MotionFeedback_<ContainerAllocator> >
-  {
-    template<typename Stream, typename T> inline static void allInOne(Stream& stream, T m)
-    {
-      stream.next(m.stamp);
-      stream.next(m.timeToGo);
-      stream.next(m.phaseVel);
-      stream.next(m.trackingError);
-      stream.next(m.jointsInLimit);
-      stream.next(m.collisionPairs);
-    }
-
-    ROS_DECLARE_ALLINONE_SERIALIZER
-  }; // struct MotionFeedback_
+template<class ContainerAllocator> struct Serializer< ::rai_msgs::MotionFeedback_<ContainerAllocator> > {
+  template<typename Stream, typename T> inline static void allInOne(Stream& stream, T m) {
+    stream.next(m.stamp);
+    stream.next(m.timeToGo);
+    stream.next(m.phaseVel);
+    stream.next(m.trackingError);
+    stream.next(m.jointsInLimit);
+    stream.next(m.collisionPairs);
+  }
+  
+  ROS_DECLARE_ALLINONE_SERIALIZER
+}; // struct MotionFeedback_
 
 } // namespace serialization
 } // namespace ros
 
-namespace ros
-{
-namespace message_operations
-{
+namespace ros {
+namespace message_operations {
 
 template<class ContainerAllocator>
-struct Printer< ::rai_msgs::MotionFeedback_<ContainerAllocator> >
-{
-  template<typename Stream> static void stream(Stream& s, const std::string& indent, const ::rai_msgs::MotionFeedback_<ContainerAllocator>& v)
-  {
+struct Printer< ::rai_msgs::MotionFeedback_<ContainerAllocator> > {
+  template<typename Stream> static void stream(Stream& s, const std::string& indent, const ::rai_msgs::MotionFeedback_<ContainerAllocator>& v) {
     s << indent << "stamp: ";
     Printer<ros::Time>::stream(s, indent + "  ", v.stamp);
     s << indent << "timeToGo: ";
@@ -211,14 +192,12 @@ struct Printer< ::rai_msgs::MotionFeedback_<ContainerAllocator> >
     s << indent << "trackingError: ";
     Printer<double>::stream(s, indent + "  ", v.trackingError);
     s << indent << "jointsInLimit[]" << std::endl;
-    for (size_t i = 0; i < v.jointsInLimit.size(); ++i)
-    {
+    for(size_t i = 0; i < v.jointsInLimit.size(); ++i) {
       s << indent << "  jointsInLimit[" << i << "]: ";
       Printer<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other > >::stream(s, indent + "  ", v.jointsInLimit[i]);
     }
     s << indent << "collisionPairs[]" << std::endl;
-    for (size_t i = 0; i < v.collisionPairs.size(); ++i)
-    {
+    for(size_t i = 0; i < v.collisionPairs.size(); ++i) {
       s << indent << "  collisionPairs[" << i << "]: ";
       Printer<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other > >::stream(s, indent + "  ", v.collisionPairs[i]);
     }

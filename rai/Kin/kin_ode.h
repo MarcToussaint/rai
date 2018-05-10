@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -47,19 +47,19 @@ struct OdeInterface {
   double ERP, CFM; //integration parameters
   double coll_ERP, coll_CFM, coll_bounce, friction; //collision parameter
   bool noGravity, noContactJoints;
-
+  
   rai::Array<dxBody*> bodies;
   rai::Array<dxGeom*> geoms;
   rai::Array<dxJoint*> joints;
   rai::Array<dxJoint*> motors;
   rai::Array<dContactGeom*> conts;
-
+  
   OdeInterface(rai::KinematicWorld &_C);
   ~OdeInterface();
-
+  
   /** @brief reinstantiates a new ODE world (and space) clear of all previous objects */
   void clear();
-
+  
   /**
    * This function is called from the `dSpaceCollide' routine (in the
    * `step' routine) when two objects get too close.
@@ -70,18 +70,18 @@ struct OdeInterface {
    * `dJoinGroupEmpty' routine (in the `step' routine).
    */
   static void staticCallback(void *classP, dxGeom *g1, dxGeom *g2);
-
+  
   /// sets gravity to zero (or back to -9.81)
   void setForceFree(bool free);
-
+  
   /** @brief main method: process one time step by calling SpaceCollide and WorldQuickStep */
   void step(double dtime=.01);
-
+  
   void printInfo(std::ostream& os, dxBody *b);
   void reportContacts();
   void contactForces();
   void penetration(rai::Vector &p);
-
+  
   void exportStateToOde();
   void importStateFromOde();
   void exportForcesToOde();

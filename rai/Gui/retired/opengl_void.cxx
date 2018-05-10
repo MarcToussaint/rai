@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -21,43 +21,43 @@
 
 //void OpenGL::watchImage(rai::Array<unsigned char> const&, bool, float){}
 
-struct GlutInitializer{
+struct GlutInitializer {
   Mutex lock;
-  GlutInitializer(){
+  GlutInitializer() {
     lock.lock();
     int argc=1;
-    char *argv[1]={(char*)"x"};
+    char *argv[1]= {(char*)"x"};
 //    glutInit(&argc, argv);
     lock.unlock();
   }
-  ~GlutInitializer(){
+  ~GlutInitializer() {
   }
 };
 
 Singleton<GlutInitializer> SingleGlut;
 
 struct sOpenGL {
-  sOpenGL(OpenGL *gl){
+  sOpenGL(OpenGL *gl) {
     RAI_MSG("creating dummy OpenGL object");
     gl->width=1;
     gl->height=1;
     SingleGlut();
   }
-  sOpenGL(OpenGL *gl, void *container){
+  sOpenGL(OpenGL *gl, void *container) {
     RAI_MSG("creating dummy OpenGL object");
     gl->width=1;
     gl->height=1;
   }
-  void beginGlContext(){}
-  void endGlContext(){}
+  void beginGlContext() {}
+  void endGlContext() {}
   rai::Vector downVec, downPos, downFoc;
   rai::Quaternion downRot;
 };
 
-void OpenGL::postRedrawEvent(bool){}
-void OpenGL::processEvents(){}
+void OpenGL::postRedrawEvent(bool) {}
+void OpenGL::processEvents() {}
 //void OpenGL::enterEventLoop(){}
 //void OpenGL::exitEventLoop(){}
-void OpenGL::resize(int w,int h){}
+void OpenGL::resize(int w,int h) {}
 
-void initGlEngine(){}
+void initGlEngine() {}

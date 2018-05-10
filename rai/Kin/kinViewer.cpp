@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -19,24 +19,24 @@ OrsViewer_old::OrsViewer_old(const char* varname, double beatIntervalSec, bool c
     modelWorld(this, varname, (beatIntervalSec<0.)),
     modelCameraView(this, "modelCameraView"),
     modelDepthView(this, "modelDepthView"),
-    computeCameraView(computeCameraView){
+    computeCameraView(computeCameraView) {
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
 
-OrsViewer_old::~OrsViewer_old(){ threadClose(); }
+OrsViewer_old::~OrsViewer_old() { threadClose(); }
 
-void OrsViewer_old::open(){
+void OrsViewer_old::open() {
   copy.gl(STRING("OrsViewer_old: "<<modelWorld.name));
 }
 
-void OrsViewer_old::step(){
+void OrsViewer_old::step() {
   copy.gl().dataLock.writeLock();
   copy = modelWorld.get();
   copy.gl().dataLock.unlock();
   copy.gl().update(NULL, false, false, true);
-  if(computeCameraView){
+  if(computeCameraView) {
     rai::Frame *kinectShape = copy.getFrameByName("endeffKinect");
-    if(kinectShape){ //otherwise 'copy' is not up-to-date yet
+    if(kinectShape) { //otherwise 'copy' is not up-to-date yet
       copy.gl().dataLock.writeLock();
       rai::Camera cam = copy.gl().camera;
       copy.gl().camera.setKinect();
@@ -57,15 +57,15 @@ void OrsViewer_old::step(){
 
 OrsViewer::OrsViewer(const char* world_name, double beatIntervalSec)
   : Thread(STRING("OrsViewer_"<<world_name), beatIntervalSec),
-    world(this, world_name, (beatIntervalSec<0.)){
+    world(this, world_name, (beatIntervalSec<0.)) {
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
 
-OrsViewer::~OrsViewer(){
+OrsViewer::~OrsViewer() {
   threadClose();
 }
 
-void OrsViewer::open(){
+void OrsViewer::open() {
   gl = new OpenGL(STRING("OrsViewer: "<<world.name));
   gl->add(glStandardScene);
   gl->add(glDrawMeshes, &meshesCopy);
@@ -73,20 +73,20 @@ void OrsViewer::open(){
   gl->camera.setDefault();
 }
 
-void OrsViewer::close(){
+void OrsViewer::close() {
   proxiesCopy.clear();
   delete gl;
 }
 
-void OrsViewer::step(){
+void OrsViewer::step() {
   //-- get transforms, or all shapes if their number changed, and proxies
   rai::Array<rai::Transformation> X;
   world.readAccess();
-  if(world->frames.N!=meshesCopy.N){ //need to copy meshes
+  if(world->frames.N!=meshesCopy.N) { //need to copy meshes
     uint n=world->frames.N;
     gl->dataLock.writeLock();
     meshesCopy.resize(n);
-    for(uint i=0;i<n;i++){
+    for(uint i=0; i<n; i++) {
       if(world->frames.elem(i)->shape) meshesCopy.elem(i) = world->frames.elem(i)->shape->mesh();
       else meshesCopy.elem(i).clear();
     }
@@ -98,26 +98,26 @@ void OrsViewer::step(){
   proxiesCopy = world->proxies;
   gl->dataLock.unlock();
   world.deAccess();
-
+  
   //-- set transforms to mesh display
   gl->dataLock.writeLock();
   CHECK_EQ(X.N, meshesCopy.N, "");
-  for(uint i=0;i<X.N;i++) meshesCopy(i).glX = X(i);
+  for(uint i=0; i<X.N; i++) meshesCopy(i).glX = X(i);
   gl->dataLock.unlock();
-
+  
   gl->update(NULL, false, false, true);
 }
 
 //===========================================================================
 
-void OrsPathViewer::setConfigurations(const WorldL& cs){
+void OrsPathViewer::setConfigurations(const WorldL& cs) {
   configurations.writeAccess();
   listResize(configurations(), cs.N);
-  for(uint i=0;i<cs.N;i++) configurations()(i)->copy(*cs(i), true);
+  for(uint i=0; i<cs.N; i++) configurations()(i)->copy(*cs(i), true);
   configurations.deAccess();
 }
 
-void OrsPathViewer::clear(){
+void OrsPathViewer::clear() {
   listDelete(configurations.set()());
   text.clear();
 }
@@ -125,20 +125,20 @@ void OrsPathViewer::clear(){
 OrsPathViewer::OrsPathViewer(const char* varname, double beatIntervalSec, int tprefix)
   : Thread(STRING("OrsPathViewer_"<<varname), beatIntervalSec),
     configurations(this, varname, (beatIntervalSec<0.)),
-    t(0), tprefix(tprefix), writeToFiles(false){
+    t(0), tprefix(tprefix), writeToFiles(false) {
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
 
-OrsPathViewer::~OrsPathViewer(){
+OrsPathViewer::~OrsPathViewer() {
   threadClose();
   clear();
 }
 
-void OrsPathViewer::open(){
+void OrsPathViewer::open() {
   copy.gl(STRING("OrsPathViewer: "<<configurations.name));
 }
 
-void OrsPathViewer::step(){
+void OrsPathViewer::step() {
   copy.gl().dataLock.writeLock();
   configurations.readAccess();
   uint T=configurations().N;
@@ -149,7 +149,7 @@ void OrsPathViewer::step(){
   configurations.deAccess();
   copy.checkConsistency();
   copy.gl().dataLock.unlock();
-  if(T){
+  if(T) {
     copy.orsDrawMarkers=false;
     copy.gl().captureImg=writeToFiles;
     copy.gl().update(STRING("(time " <<tprefix+int(tt) <<'/' <<tprefix+int(T) <<")\n" <<text).p, false, false, true);
@@ -160,22 +160,22 @@ void OrsPathViewer::step(){
 
 //===========================================================================
 
-void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix, int w, int h, rai::Camera *camera){
+void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix, int w, int h, rai::Camera *camera) {
   rai::KinematicWorld copy;
   copy.orsDrawMarkers=false;
   rai::system(STRING("rm " <<filePrefix <<"*.ppm"));
-  for(uint t=0;t<cs.N;t++){
+  for(uint t=0; t<cs.N; t++) {
     copy.copy(*cs(t), true);
 #if 0 //render on screen
     copy.gl().resize(w,h);
     copy.gl().captureImg=true;
     copy.gl().update(STRING(" (time " <<tprefix+int(t) <<'/' <<tprefix+int(cs.N) <<')').p, false, false, true);
 #else
-    if(camera){
-        copy.gl().camera = *camera;
-    }else{
-        copy.gl().camera.setDefault();
-        copy.gl().camera.focus(.5, 0., .7);
+    if(camera) {
+      copy.gl().camera = *camera;
+    } else {
+      copy.gl().camera.setDefault();
+      copy.gl().camera.focus(.5, 0., .7);
     }
     copy.gl().text.clear() <<"time " <<tprefix+int(t) <<'/' <<tprefix+int(cs.N);
     copy.gl().renderInBack(true, false, w, h);
@@ -189,10 +189,10 @@ void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix,
 OrsPoseViewer::OrsPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec)
   : Thread(STRING("OrsPoseViewer_"<<poseVarNames), beatIntervalSec),
     modelWorld(this, modelVarName, false),
-    gl(STRING("OrsPoseViewer: " <<poseVarNames)){
-  for(const String& varname: poseVarNames){
-    poses.append( new Var<arr>(this, varname, (beatIntervalSec<0.)) ); //listen only when beatInterval=1.
-    copies.append( new rai::KinematicWorld() );
+    gl(STRING("OrsPoseViewer: " <<poseVarNames)) {
+  for(const String& varname: poseVarNames) {
+    poses.append(new Var<arr>(this, varname, (beatIntervalSec<0.)));   //listen only when beatInterval=1.
+    copies.append(new rai::KinematicWorld());
   }
   copy = modelWorld.get();
   computeMeshNormals(copy.frames);
@@ -200,13 +200,13 @@ OrsPoseViewer::OrsPoseViewer(const char* modelVarName, const StringA& poseVarNam
   if(beatIntervalSec>=0.) threadLoop();
 }
 
-OrsPoseViewer::~OrsPoseViewer(){
+OrsPoseViewer::~OrsPoseViewer() {
   threadClose();
   listDelete(copies);
   listDelete(poses);
 }
 
-void OrsPoseViewer::recopyKinematics(const rai::KinematicWorld& world){
+void OrsPoseViewer::recopyKinematics(const rai::KinematicWorld& world) {
   stepMutex.lock();
   if(&world) copy=world;
   else copy = modelWorld.get();
@@ -218,18 +218,18 @@ void OrsPoseViewer::recopyKinematics(const rai::KinematicWorld& world){
 void OrsPoseViewer::open() {
   gl.add(glStandardScene, 0);
   gl.camera.setDefault();
-
-  for(uint i=0;i<copies.N;i++) gl.add(*copies(i));
+  
+  for(uint i=0; i<copies.N; i++) gl.add(*copies(i));
   //  gl.camera.focus(0.6, -0.1, 0.65);
   //  gl.width = 1280;
   //  gl.height = 960;
 }
 
-void OrsPoseViewer::step(){
+void OrsPoseViewer::step() {
   copies.first()->proxies = modelWorld.get()->proxies;
 //  cout <<copy.proxies.N <<endl;
   gl.dataLock.writeLock();
-  for(uint i=0;i<copies.N;i++){
+  for(uint i=0; i<copies.N; i++) {
     arr q=poses(i)->get();
     if(q.N==copies(i)->getJointStateDimension())
       copies(i)->setJointState(q);
@@ -238,7 +238,7 @@ void OrsPoseViewer::step(){
   gl.update(NULL, false, false, true);
 }
 
-void OrsPoseViewer::close(){
+void OrsPoseViewer::close() {
   gl.clear();
 }
 
@@ -250,30 +250,30 @@ ComputeCameraView::ComputeCameraView(double beatIntervalSec, const char* modelWo
     cameraView(this, "kinect_rgb"), //"cameraView"),
     cameraDepth(this, "kinect_depth"), //"cameraDepth"),
     cameraFrame(this, "kinect_frame"), //"cameraFrame"),
-    getDepth(true){
+    getDepth(true) {
   if(beatIntervalSec<0.) threadOpen();
   else threadLoop();
 }
 
-ComputeCameraView::~ComputeCameraView(){
+ComputeCameraView::~ComputeCameraView() {
   threadClose();
 }
 
-void ComputeCameraView::open(){
+void ComputeCameraView::open() {
   gl.add(glStandardLight);
   gl.addDrawer(&copy);
 }
 
-void ComputeCameraView::close(){
+void ComputeCameraView::close() {
   gl.clear();
 }
 
-void ComputeCameraView::step(){
+void ComputeCameraView::step() {
   copy = modelWorld.get();
   copy.orsDrawJoints = copy.orsDrawMarkers = copy.orsDrawProxies = false;
-
+  
   rai::Frame *kinectShape = copy.getFrameByName("endeffKinect");
-  if(kinectShape){ //otherwise 'copy' is not up-to-date yet
+  if(kinectShape) { //otherwise 'copy' is not up-to-date yet
     gl.dataLock.writeLock();
     gl.camera.setKinect();
     gl.camera.X = kinectShape->X * gl.camera.X;
@@ -282,12 +282,12 @@ void ComputeCameraView::step(){
     flip_image(gl.captureImage);
     flip_image(gl.captureDepth);
     cameraView.set() = gl.captureImage;
-    if(getDepth){
+    if(getDepth) {
       floatA& D = gl.captureDepth;
       uint16A depth_image(D.d0, D.d1);
-      for(uint i=0;i<D.N;i++){
+      for(uint i=0; i<D.N; i++) {
         depth_image.elem(i)
-            = (uint16_t) (gl.camera.glConvertToTrueDepth(D.elem(i)) * 1000.); // conv. from [m] -> [mm]
+          = (uint16_t)(gl.camera.glConvertToTrueDepth(D.elem(i)) * 1000.);  // conv. from [m] -> [mm]
       }
       cameraDepth.set() = depth_image;
     }

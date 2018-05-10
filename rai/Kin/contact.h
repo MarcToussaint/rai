@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -12,7 +12,7 @@
 #include "frame.h"
 #include "taskMap.h"
 
-namespace rai{
+namespace rai {
 
 ///Description of a Contact
 struct Contact : GLDrawer {
@@ -26,18 +26,18 @@ struct Contact : GLDrawer {
 
   double y=0.;                 // place to store the constraint value (typically: neg distance) when the taskmap is called
   double lagrangeParameter=0.; // place to store the respective lagrange parameter after an optimization
-
+  
   Contact(Frame &a, Frame &b)
-      : a(a), b(b) {
+    : a(a), b(b) {
     CHECK(&a != &b,"");
     a.contacts.append(this);
     b.contacts.append(this);
   }
-  ~Contact(){
+  ~Contact() {
     a.contacts.removeValue(this);
     b.contacts.removeValue(this);
   }
-
+  
 //  rai::Vector get_pa() const{ return a.X * (a_rel + a_rad*a_norm); }
 //  rai::Vector get_pb() const{ return b.X * (b_rel + b_rad*b_norm); }
 //  rai::Vector get_norm() const{ return .5 * (a.X.rot * a_norm + b.X.rot * b_norm); }
@@ -57,12 +57,12 @@ stdOutPipe(Contact)
 
 struct TM_ContactNegDistance : TaskMap {
   const Contact& C;
-
-  TM_ContactNegDistance(const Contact& contact) : C(contact){}
-
+  
+  TM_ContactNegDistance(const Contact& contact) : C(contact) {}
+  
   void phi(arr& y, arr& J, const rai::KinematicWorld& K);
-  virtual uint dim_phi(const rai::KinematicWorld& K){ return 1; }
-  virtual rai::String shortTag(const rai::KinematicWorld& K){ return STRING("ContactNegDistance-"<<C.a.name<<'-'<<C.b.name); }
+  virtual uint dim_phi(const rai::KinematicWorld& K) { return 1; }
+  virtual rai::String shortTag(const rai::KinematicWorld& K) { return STRING("ContactNegDistance-"<<C.a.name<<'-'<<C.b.name); }
 };
 
 } //rai

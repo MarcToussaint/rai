@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -32,16 +32,16 @@ struct Mesh : GLDrawer {
   
   uintA T;              ///< triangles (faces, empty -> point cloud)
   arr   Tn;             ///< triangle normals (optional)
-
+  
   uintA Tt;             ///< triangle texture indices
   arr tex;              ///< texture coordinates
   byteA texImg;         ///< texture image
   int texture=-1;       ///< GL texture name created with glBindTexture
-
+  
   uintAA graph;         ///< for every vertex, the set of neighboring vertices
-
+  
   rai::Transformation glX; ///< transform (only used for drawing! Otherwise use applyOnPoints)  (optional)
-
+  
   long parsing_pos_start;
   long parsing_pos_end;
   
@@ -64,7 +64,7 @@ struct Mesh : GLDrawer {
   void setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res);
   void setRandom(uint vertices=10);
   void setGrid(uint X, uint Y);
-
+  
   /// @name transform and modify
   void subDivide();
   void subDivide(uint tri);
@@ -79,11 +79,11 @@ struct Mesh : GLDrawer {
   void makeConvexHull();
   void makeTriangleFan();
   void makeLineStrip();
-
+  
   /// @name support function
   uint support(const arr &dir);
   void supportMargin(uintA& verts, const arr& dir, double margin, int initialization=-1);
-
+  
   /// @name internal computations & cleanup
   void computeNormals();
   void deleteUnusedVertices();
@@ -99,10 +99,10 @@ struct Mesh : GLDrawer {
   double getCircum() const;
   double getCircum(uint tri) const;
   double getVolume() const;
-
+  
   /// Comparing two Meshes - static function
   static double meshMetric(const Mesh &trueMesh, const Mesh &estimatedMesh); // Haussdorf metric
-
+  
   //[preliminary]]
   void skin(uint i);
   
@@ -121,7 +121,7 @@ struct Mesh : GLDrawer {
   void readPLY(const char *fn);
   void writeArr(std::ostream&);
   void readArr(std::istream&);
-
+  
   void glDraw(struct OpenGL&);
 };
 } //END of namespace
@@ -153,19 +153,19 @@ void inertiaCylinder(double *Inertia, double& mass, double density, double heigh
 // analytic distance functions
 //
 
-struct DistanceFunction_Sphere:ScalarFunction{
+struct DistanceFunction_Sphere:ScalarFunction {
   rai::Transformation t; double r;
   DistanceFunction_Sphere(const rai::Transformation& _t, double _r);
   double f(arr& g, arr& H, const arr& x);
 };
 
-struct DistanceFunction_Box:ScalarFunction{
+struct DistanceFunction_Box:ScalarFunction {
   rai::Transformation t; double dx, dy, dz, r;
   DistanceFunction_Box(const rai::Transformation& _t, double _dx, double _dy, double _dz, double _r=0.);
   double f(arr& g, arr& H, const arr& x);
 };
 
-struct DistanceFunction_Cylinder:ScalarFunction{
+struct DistanceFunction_Cylinder:ScalarFunction {
   rai::Transformation t; double r, dz;
   DistanceFunction_Cylinder(const rai::Transformation& _t, double _r, double _dz);
   double f(arr& g, arr& H, const arr& x);
@@ -181,9 +181,9 @@ extern ScalarFunction DistanceFunction_SSBox;
 enum GJK_point_type { GJK_none=0, GJK_vertex, GJK_edge, GJK_face };
 extern GJK_point_type& NoPointType;
 double GJK_sqrDistance(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
-                    const rai::Transformation& t1, const rai::Transformation& t2,
-                    rai::Vector& p1, rai::Vector& p2,
-                    rai::Vector& e1, rai::Vector& e2,
-                    GJK_point_type& pt1, GJK_point_type& pt2);
+                       const rai::Transformation& t1, const rai::Transformation& t2,
+                       rai::Vector& p1, rai::Vector& p2,
+                       rai::Vector& e1, rai::Vector& e2,
+                       GJK_point_type& pt1, GJK_point_type& pt2);
 
 #endif

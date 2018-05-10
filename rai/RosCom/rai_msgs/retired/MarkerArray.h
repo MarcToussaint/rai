@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -24,31 +24,29 @@
 #include <std_msgs/Header.h>
 #include <visualization_msgs/Marker.h>
 
-namespace obj_id_pkg
-{
+namespace obj_id_pkg {
 template <class ContainerAllocator>
-struct MarkerArray_
-{
+struct MarkerArray_ {
   typedef MarkerArray_<ContainerAllocator> Type;
-
+  
   MarkerArray_()
     : header()
     , markers()  {
-    }
+  }
   MarkerArray_(const ContainerAllocator& _alloc)
     : header(_alloc)
     , markers(_alloc)  {
-    }
-
-   typedef  ::std_msgs::Header_<ContainerAllocator>  _header_type;
+  }
+  
+  typedef  ::std_msgs::Header_<ContainerAllocator>  _header_type;
   _header_type header;
-
-   typedef std::vector< ::visualization_msgs::Marker_<ContainerAllocator> , typename ContainerAllocator::template rebind< ::visualization_msgs::Marker_<ContainerAllocator> >::other >  _markers_type;
+  
+  typedef std::vector< ::visualization_msgs::Marker_<ContainerAllocator> , typename ContainerAllocator::template rebind< ::visualization_msgs::Marker_<ContainerAllocator> >::other >  _markers_type;
   _markers_type markers;
-
+  
   typedef boost::shared_ptr< ::obj_id_pkg::MarkerArray_<ContainerAllocator> > Ptr;
   typedef boost::shared_ptr< ::obj_id_pkg::MarkerArray_<ContainerAllocator> const> ConstPtr;
-
+  
 }; // struct MarkerArray_
 
 typedef ::obj_id_pkg::MarkerArray_<std::allocator<void> > MarkerArray;
@@ -59,18 +57,15 @@ typedef boost::shared_ptr< ::obj_id_pkg::MarkerArray const> MarkerArrayConstPtr;
 // constants requiring out of line definition
 
 template<typename ContainerAllocator>
-std::ostream& operator<<(std::ostream& s, const ::obj_id_pkg::MarkerArray_<ContainerAllocator> & v)
-{
-ros::message_operations::Printer< ::obj_id_pkg::MarkerArray_<ContainerAllocator> >::stream(s, "", v);
-return s;
+std::ostream& operator<<(std::ostream& s, const ::obj_id_pkg::MarkerArray_<ContainerAllocator> & v) {
+  ros::message_operations::Printer< ::obj_id_pkg::MarkerArray_<ContainerAllocator> >::stream(s, "", v);
+  return s;
 }
 
 } // namespace obj_id_pkg
 
-namespace ros
-{
-namespace message_traits
-{
+namespace ros {
+namespace message_traits {
 
 // BOOLTRAITS {'IsFixedSize': False, 'IsMessage': True, 'HasHeader': True}
 // {'geometry_msgs': ['/opt/ros/indigo/share/geometry_msgs/msg'], 'std_msgs': ['/opt/ros/indigo/share/std_msgs/msg'], 'visualization_msgs': ['/opt/ros/indigo/share/visualization_msgs/msg']}
@@ -80,62 +75,56 @@ namespace message_traits
 template <class ContainerAllocator>
 struct IsFixedSize< ::obj_id_pkg::MarkerArray_<ContainerAllocator> >
   : FalseType
-  { };
+{ };
 
 template <class ContainerAllocator>
 struct IsFixedSize< ::obj_id_pkg::MarkerArray_<ContainerAllocator> const>
-  : FalseType
-  { };
+    : FalseType
+{ };
 
 template <class ContainerAllocator>
 struct IsMessage< ::obj_id_pkg::MarkerArray_<ContainerAllocator> >
   : TrueType
-  { };
+{ };
 
 template <class ContainerAllocator>
 struct IsMessage< ::obj_id_pkg::MarkerArray_<ContainerAllocator> const>
-  : TrueType
-  { };
+    : TrueType
+{ };
 
 template <class ContainerAllocator>
 struct HasHeader< ::obj_id_pkg::MarkerArray_<ContainerAllocator> >
   : TrueType
-  { };
+{ };
 
 template <class ContainerAllocator>
 struct HasHeader< ::obj_id_pkg::MarkerArray_<ContainerAllocator> const>
-  : TrueType
-  { };
+    : TrueType
+{ };
 
 template<class ContainerAllocator>
-struct MD5Sum< ::obj_id_pkg::MarkerArray_<ContainerAllocator> >
-{
-  static const char* value()
-  {
+struct MD5Sum< ::obj_id_pkg::MarkerArray_<ContainerAllocator> > {
+  static const char* value() {
     return "ab57d47edff452531445e00c02fa365f";
   }
-
+  
   static const char* value(const ::obj_id_pkg::MarkerArray_<ContainerAllocator>&) { return value(); }
   static const uint64_t static_value1 = 0xab57d47edff45253ULL;
   static const uint64_t static_value2 = 0x1445e00c02fa365fULL;
 };
 
 template<class ContainerAllocator>
-struct DataType< ::obj_id_pkg::MarkerArray_<ContainerAllocator> >
-{
-  static const char* value()
-  {
+struct DataType< ::obj_id_pkg::MarkerArray_<ContainerAllocator> > {
+  static const char* value() {
     return "obj_id_pkg/MarkerArray";
   }
-
+  
   static const char* value(const ::obj_id_pkg::MarkerArray_<ContainerAllocator>&) { return value(); }
 };
 
 template<class ContainerAllocator>
-struct Definition< ::obj_id_pkg::MarkerArray_<ContainerAllocator> >
-{
-  static const char* value()
-  {
+struct Definition< ::obj_id_pkg::MarkerArray_<ContainerAllocator> > {
+  static const char* value() {
     return "Header header\n\
 visualization_msgs/Marker[] markers\n\
 \n\
@@ -241,48 +230,39 @@ float32 b\n\
 float32 a\n\
 ";
   }
-
+  
   static const char* value(const ::obj_id_pkg::MarkerArray_<ContainerAllocator>&) { return value(); }
 };
 
 } // namespace message_traits
 } // namespace ros
 
-namespace ros
-{
-namespace serialization
-{
+namespace ros {
+namespace serialization {
 
-  template<class ContainerAllocator> struct Serializer< ::obj_id_pkg::MarkerArray_<ContainerAllocator> >
-  {
-    template<typename Stream, typename T> inline static void allInOne(Stream& stream, T m)
-    {
-      stream.next(m.header);
-      stream.next(m.markers);
-    }
-
-    ROS_DECLARE_ALLINONE_SERIALIZER;
-  }; // struct MarkerArray_
+template<class ContainerAllocator> struct Serializer< ::obj_id_pkg::MarkerArray_<ContainerAllocator> > {
+  template<typename Stream, typename T> inline static void allInOne(Stream& stream, T m) {
+    stream.next(m.header);
+    stream.next(m.markers);
+  }
+  
+  ROS_DECLARE_ALLINONE_SERIALIZER;
+}; // struct MarkerArray_
 
 } // namespace serialization
 } // namespace ros
 
-namespace ros
-{
-namespace message_operations
-{
+namespace ros {
+namespace message_operations {
 
 template<class ContainerAllocator>
-struct Printer< ::obj_id_pkg::MarkerArray_<ContainerAllocator> >
-{
-  template<typename Stream> static void stream(Stream& s, const std::string& indent, const ::obj_id_pkg::MarkerArray_<ContainerAllocator>& v)
-  {
+struct Printer< ::obj_id_pkg::MarkerArray_<ContainerAllocator> > {
+  template<typename Stream> static void stream(Stream& s, const std::string& indent, const ::obj_id_pkg::MarkerArray_<ContainerAllocator>& v) {
     s << indent << "header: ";
     s << std::endl;
     Printer< ::std_msgs::Header_<ContainerAllocator> >::stream(s, indent + "  ", v.header);
     s << indent << "markers[]" << std::endl;
-    for (size_t i = 0; i < v.markers.size(); ++i)
-    {
+    for(size_t i = 0; i < v.markers.size(); ++i) {
       s << indent << "  markers[" << i << "]: ";
       s << std::endl;
       s << indent;

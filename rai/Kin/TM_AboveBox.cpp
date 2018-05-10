@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -10,18 +10,18 @@
 #include "frame.h"
 
 TM_AboveBox::TM_AboveBox(int iShape, int jShape, double _margin)
-  : i(iShape), j(jShape), margin(_margin){
+  : i(iShape), j(jShape), margin(_margin) {
 }
 
 TM_AboveBox::TM_AboveBox(const rai::KinematicWorld& K, const char* iShapeName, const char* jShapeName, double _margin)
-  :i(-1), j(-1), margin(_margin){
+  :i(-1), j(-1), margin(_margin) {
   rai::Frame *a = iShapeName ? K.getFrameByName(iShapeName):NULL;
   rai::Frame *b = jShapeName ? K.getFrameByName(jShapeName):NULL;
   if(a) i=a->ID;
   if(b) j=b->ID;
 }
 
-void TM_AboveBox::phi(arr& y, arr& J, const rai::KinematicWorld& K){
+void TM_AboveBox::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
   rai::Shape *pnt=K.frames(i)->shape;
   rai::Shape *box=K.frames(j)->shape;
   CHECK(pnt && box,"I need shapes!");
@@ -58,7 +58,7 @@ void TM_AboveBox::phi(arr& y, arr& J, const rai::KinematicWorld& K){
   y(1) = -pos(0) - range(0);
   y(2) =  pos(1) - range(1);
   y(3) = -pos(1) - range(1);
-  if(&J){
+  if(&J) {
     J.resize(4, posJ.d1);
     J[0] =  posJ[0];
     J[1] = -posJ[0];
@@ -67,6 +67,6 @@ void TM_AboveBox::phi(arr& y, arr& J, const rai::KinematicWorld& K){
   }
 }
 
-rai::String TM_AboveBox::shortTag(const rai::KinematicWorld &G){
+rai::String TM_AboveBox::shortTag(const rai::KinematicWorld &G) {
   return STRING("AboveBox:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }

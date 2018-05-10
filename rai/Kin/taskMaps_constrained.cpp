@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -12,7 +12,7 @@
 
 //===========================================================================
 
-void CollisionConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G){
+void CollisionConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   G.kinematicsProxyCost(y, J, margin, true);
   y -= .5;
 }
@@ -25,17 +25,17 @@ PairCollisionConstraint::PairCollisionConstraint(const rai::KinematicWorld &G, c
     margin(_margin) {
 }
 
-void PairCollisionConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G){
+void PairCollisionConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   y.resize(1) = -1.; //default value if not overwritten below
   if(&J) J.resize(1,G.q.N).setZero();
-  if(j>=0){ //against a concrete j
-    for(const rai::Proxy& p: G.proxies){
-      if(((int)p.a->ID==i && (int)p.b->ID==j) || ((int)p.a->ID==j && (int)p.b->ID==i)){
+  if(j>=0) { //against a concrete j
+    for(const rai::Proxy& p: G.proxies) {
+      if(((int)p.a->ID==i && (int)p.b->ID==j) || ((int)p.a->ID==j && (int)p.b->ID==i)) {
         G.kinematicsProxyConstraint(y, J, p, margin);
         break;
       }
     }
-  }else if(j==-1){ //against all objects
+  } else if(j==-1) { //against all objects
     NIY; //this doesn't work, don't know why
     //first collect all relevant proxies
     rai::Array<const rai::Proxy*> P;
@@ -43,7 +43,7 @@ void PairCollisionConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G){
     //Compute the softmax
     double alpha = 10.;
     double yHat=0.,yNorm=0.;
-    for(const rai::Proxy* p: P){
+    for(const rai::Proxy* p: P) {
       G.kinematicsProxyConstraint(y, NoArr, *p, margin);
       double yi=y.scalar();
       double expyi=::exp(alpha*yi);
@@ -52,10 +52,10 @@ void PairCollisionConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G){
     }
     yHat /= yNorm;
     //compute derivative
-    if(&J){
+    if(&J) {
       J.resize(1,G.getJointStateDimension()).setZero();
       arr Ji;
-      for(const rai::Proxy* p: P){
+      for(const rai::Proxy* p: P) {
         G.kinematicsProxyConstraint(y, Ji, *p, margin);
         double yi=y.scalar();
         double expyi=::exp(alpha*yi);
@@ -70,18 +70,18 @@ void PairCollisionConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G){
 //===========================================================================
 
 PlaneConstraint::PlaneConstraint(const rai::KinematicWorld &G, const char *iShapeName, const arr &_planeParams)
-  : i(G.getFrameByName(iShapeName)->ID), planeParams(_planeParams){}
+  : i(G.getFrameByName(iShapeName)->ID), planeParams(_planeParams) {}
 
-void PlaneConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G){
+void PlaneConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   rai::Frame *body_i = G.frames(i);
   rai::Vector vec_i = 0;
-
+  
   arr y_eff, J_eff;
   G.kinematicsPos(y_eff, (&J?J_eff:NoArr), body_i, vec_i);
-
+  
   y_eff.append(1.); //homogeneous coordinates
   if(&J) J_eff.append(zeros(1,J_eff.d1));
-
+  
   y.resize(1);
   y(0) = scalarProduct(y_eff, planeParams);
   if(&J) J = ~planeParams * J_eff;
@@ -89,15 +89,15 @@ void PlaneConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G){
 
 //===========================================================================
 
-void ConstraintStickiness::phi(arr& y, arr& J, const rai::KinematicWorld& G){
+void ConstraintStickiness::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   map.phi(y, J, G);
-  for(uint j=0;j<y.N;j++) y(j) = -y(j);
-  if(&J) for(uint j=0;j<J.d0;j++) J[j]() *= -1.;
+  for(uint j=0; j<y.N; j++) y(j) = -y(j);
+  if(&J) for(uint j=0; j<J.d0; j++) J[j]() *= -1.;
 }
 
 //===========================================================================
 
-void PointEqualityConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G){
+void PointEqualityConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   rai::Vector vec_i = ivec;
   rai::Vector vec_j = jvec;
   rai::Frame *body_i = i<0?NULL: G.frames(i);
@@ -108,10 +108,10 @@ void PointEqualityConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G){
   if(&J) {
     arr Ji, Jj;
     G.kinematicsPos(NoArr, Ji, body_i, vec_i);
-    if(body_j){
+    if(body_j) {
       G.kinematicsPos(NoArr, Jj, body_j, vec_j);
       J = Ji - Jj;
-    }else{
+    } else {
       J = Ji;
     }
   }
@@ -125,11 +125,11 @@ ContactEqualityConstraint::ContactEqualityConstraint(const rai::KinematicWorld &
     margin(_margin) {
 }
 
-void ContactEqualityConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G){
+void ContactEqualityConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   y.resize(1) = 0.;
   if(&J) J.resize(1,G.q.N).setZero();
-  for(const rai::Proxy& p: G.proxies){
-    if(((int)p.a->ID==i && (int)p.b->ID==j) || ((int)p.a->ID==j && (int)p.b->ID==i)){
+  for(const rai::Proxy& p: G.proxies) {
+    if(((int)p.a->ID==i && (int)p.b->ID==j) || ((int)p.a->ID==j && (int)p.b->ID==i)) {
       G.kinematicsProxyConstraint(y, J, p, margin);
       break;
     }
@@ -139,8 +139,8 @@ void ContactEqualityConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G
 //===========================================================================
 
 VelAlignConstraint::VelAlignConstraint(const rai::KinematicWorld& G,
-                   const char* iShapeName, const rai::Vector& _ivec,
-                   const char* jShapeName, const rai::Vector& _jvec, double _target) {
+                                       const char* iShapeName, const rai::Vector& _ivec,
+                                       const char* jShapeName, const rai::Vector& _jvec, double _target) {
   rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
   rai::Frame *b = jShapeName ? G.getFrameByName(jShapeName):NULL;
   if(a) i=a->ID;
@@ -153,32 +153,32 @@ VelAlignConstraint::VelAlignConstraint(const rai::KinematicWorld& G,
 
 void VelAlignConstraint::phi(arr& y, arr& J, const WorldL& G) {
   uint k=order;
-
+  
   // compute body j orientation
   arr y_j,J_j,J_bar_j;
   G(G.N-1)->kinematicsVec(y_j, (&J?J_bar_j:NoArr), G(G.N-1)->frames(j), jvec);
-
-  if(&J){
+  
+  if(&J) {
     J_j = zeros(G.N, y_j.N, J_bar_j.d1);
     J_j[G.N-1]() = J_bar_j;
     arr tmp(J_j);
     tensorPermutation(J_j, tmp, TUP(1u,0u,2u));
     J_j.reshape(y_j.N, G.N*J_bar_j.d1);
   }
-
+  
   // compute body i velocity
   arrA y_bar, J_bar;
   y_bar.resize(k+1);
   J_bar.resize(k+1);
-
-  for(uint c=0;c<=k;c++) {
+  
+  for(uint c=0; c<=k; c++) {
     G(G.N-1-c)->kinematicsPos(y_bar(c), (&J?J_bar(c):NoArr), G(G.N-1-c)->frames(i), ivec);
   }
-
+  
   arr dy_i, dJ_i;
   dy_i = (y_bar(0)-y_bar(1));
-
-  if (&J) {
+  
+  if(&J) {
     dJ_i = zeros(G.N, dy_i.N, J_bar(0).d1);
     dJ_i[G.N-1-1]() = -J_bar(1);
     dJ_i[G.N-1-0]() = J_bar(0);
@@ -186,37 +186,37 @@ void VelAlignConstraint::phi(arr& y, arr& J, const WorldL& G) {
     tensorPermutation(dJ_i, tmp, TUP(1u,0u,2u));
     dJ_i.reshape(dy_i.N, G.N*J_bar(0).d1);
   }
-
+  
   // normalize dy_i
-  if (length(dy_i) != 0) {
-    if (&J) {
+  if(length(dy_i) != 0) {
+    if(&J) {
       double tmp = (~dy_i*dy_i).scalar();
-      dJ_i = ( eye(dJ_i.d0) - (dy_i*~dy_i)/(tmp) )*dJ_i/(length(dy_i));
+      dJ_i = (eye(dJ_i.d0) - (dy_i*~dy_i)/(tmp))*dJ_i/(length(dy_i));
     }
     dy_i = dy_i/(length(dy_i));
   }
-
+  
   innerProduct(y,~dy_i,y_j);
-
-  if (&J) {
+  
+  if(&J) {
     J = ~dy_i*J_j + ~y_j*dJ_i;
     J = -J;
   }
   y = -y+target;
-
+  
 }
 
 //===========================================================================
 
 void qItselfConstraint::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
   G.getJointState(q);
-  if(M.N){
-    if(M.nd==1){
+  if(M.N) {
+    if(M.nd==1) {
       q=M%q; if(&J) J.setDiag(M);
-    }else{
+    } else {
       q=M*q; if(&J) J=M;
     }
-  }else{
+  } else {
     if(&J) J.setId(q.N);
   }
 }

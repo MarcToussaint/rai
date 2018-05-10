@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -25,36 +25,36 @@ typedef rai::Array<CtrlTask*> CtrlTaskL;
 /**
  * A CtrlTask defines a motion in operational space.
  */
-struct CtrlTask{ //TODO: rename/refactor to become LinearAccelerationLaw (LAW) in task spaces
+struct CtrlTask { //TODO: rename/refactor to become LinearAccelerationLaw (LAW) in task spaces
   TaskMap& map;
   rai::String name;
   bool active;
   arr prec; ///< compliance matrix $C$
-
+  
   /// @{ @name Parameters that define the linear acceleration control law
   arr y_ref; ///< position reference
   arr v_ref; ///< velocity reference
   arr Kp; ///< proportional gain
   arr Kd; ///< derivative gain
   /// @}
-
+  
   /// @{ @name Parameters that define velocity, acceleration and force limits
   double maxVel, maxAcc;
   arr f_ref;
   double f_alpha, f_gamma;
-
+  
   /// Option for metric (difference) in task space: flip sign if scalar product is negative (for quaternion targets)
   bool flipTargetSignOnNegScalarProduct;
   bool makeTargetModulo2PI;
-
+  
   /// @{ @name The actual state when LAST getDesiredAcceleration was called
   arr y, v;
   /// @}
-
+  
   CtrlTask(const char* name, TaskMap* map);
   CtrlTask(const char* name, TaskMap* map, double decayTime, double dampingRatio, double maxVel, double maxAcc);
   CtrlTask(const char* name, TaskMap* map, const Graph& params);
-
+  
   void set(const Graph& params);
   void setTarget(const arr& yref, const arr& vref=NoArr);
   void setTargetToCurrent();
@@ -62,15 +62,15 @@ struct CtrlTask{ //TODO: rename/refactor to become LinearAccelerationLaw (LAW) i
   void setGains(double Kp, double Kd);
   void setGainsAsNatural(double decayTime, double dampingRatio); ///< the decayTime is the to decay to 10% of the initial offset/error
   void setC(const arr& C);
-
+  
   arr get_y_ref();
   arr get_ydot_ref();
   arr getPrec();
-
+  
   arr getDesiredAcceleration();
   void getDesiredLinAccLaw(arr& Kp_y, arr& Kd_y, arr& a0);
   void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& KfL, arr& J_ft, const rai::KinematicWorld& world);
-
+  
   double error();
   bool isConverged(double tolerance=1e-2);
   void reportState(ostream& os);
@@ -78,16 +78,16 @@ struct CtrlTask{ //TODO: rename/refactor to become LinearAccelerationLaw (LAW) i
 
 //===========================================================================
 
-struct ConstraintForceTask{
+struct ConstraintForceTask {
   TaskMap& map;
   rai::String name;
   bool active;
-
+  
   double desiredForce;
   CtrlTask desiredApproach;
-
-  ConstraintForceTask(TaskMap* m):map(*m), active(true), desiredForce(0.), desiredApproach("desiredApproach", m){}
-
+  
+  ConstraintForceTask(TaskMap* m):map(*m), active(true), desiredForce(0.), desiredApproach("desiredApproach", m) {}
+  
   void updateConstraintControl(const arr& g, const double& lambda_desired);
 };
 
@@ -103,21 +103,21 @@ struct TaskControlMethods {
   CtrlTask qNullCostRef;
   boolA lockJoints;
   bool useSwift;
-
+  
   TaskControlMethods(rai::KinematicWorld& _world, bool _useSwift=true);
-
+  
   /// @{ @name adding tasks
   CtrlTask* addPDTask(const char* name, double decayTime, double dampingRatio, TaskMap *map);
   CtrlTask* addPDTask(const char* name,
-                    double decayTime, double dampingRatio,
-                    TM_DefaultType type,
-                    const char* iShapeName=NULL, const rai::Vector& ivec=NoVector,
-                    const char* jShapeName=NULL, const rai::Vector& jvec=NoVector);
+                      double decayTime, double dampingRatio,
+                      TM_DefaultType type,
+                      const char* iShapeName=NULL, const rai::Vector& ivec=NoVector,
+                      const char* jShapeName=NULL, const rai::Vector& jvec=NoVector);
   ConstraintForceTask* addConstraintForceTask(const char* name, TaskMap *map);
   /// @}
-
+  
   void lockJointGroup(const char *groupname, bool lockThem=true);
-
+  
   void getTaskCoeffs(arr& yddot_des, arr& J); ///< the general (`big') task vector and its Jacobian
   arr getDesiredConstraintForces(); ///< J^T lambda^*
   arr operationalSpaceControl();
@@ -126,9 +126,9 @@ struct TaskControlMethods {
   void calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma); ///< returns the force controller coefficients
   void updateConstraintControllers();
   void reportCurrentState();
-
+  
   void fwdSimulateControlLaw(arr &Kp, arr &Kd, arr &u0);
-
+  
   void setState(const arr& q, const arr& qdot);
 };
 

@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -30,18 +30,18 @@ struct TM_Default:TaskMap {
   TM_DefaultType type;
   int i, j;               ///< which shapes does it refer to?
   rai::Vector ivec, jvec; ///< additional position or vector
-
+  
   TM_Default(TM_DefaultType type,
-                 int iShape=-1, const rai::Vector& ivec=NoVector,
-                 int jShape=-1, const rai::Vector& jvec=NoVector);
-
+             int iShape=-1, const rai::Vector& ivec=NoVector,
+             int jShape=-1, const rai::Vector& jvec=NoVector);
+             
   TM_Default(TM_DefaultType type, const rai::KinematicWorld& K,
-                 const char* iShapeName=NULL, const rai::Vector& ivec=NoVector,
-                 const char* jShapeName=NULL, const rai::Vector& jvec=NoVector);
-
+             const char* iShapeName=NULL, const rai::Vector& ivec=NoVector,
+             const char* jShapeName=NULL, const rai::Vector& jvec=NoVector);
+             
   TM_Default(const Graph &parameters, const rai::KinematicWorld& G);
   TM_Default(const Node *parameters, const rai::KinematicWorld& G);
-
+  
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G);
   virtual rai::String shortTag(const rai::KinematicWorld& G);

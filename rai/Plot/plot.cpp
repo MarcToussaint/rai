@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -49,7 +49,7 @@ PlotModule::PlotModule() {
 
 PlotModule::~PlotModule() {
 #ifdef RAI_GL
-  if(gl){ delete gl; gl=NULL; }
+  if(gl) { delete gl; gl=NULL; }
 #endif
   delete s;
 }
@@ -86,13 +86,13 @@ void plotInitGL(double xl=-1., double xh=1., double yl=-1., double yh=1., double
   plotModule.gl->update();
 }
 
-void plotCloseGL(){
-  if(plotModule.gl){ delete plotModule.gl; plotModule.gl=NULL; }
+void plotCloseGL() {
+  if(plotModule.gl) { delete plotModule.gl; plotModule.gl=NULL; }
 }
 #endif
 
 void plot(bool wait, const char* txt) {
-  if(!rai::getInteractivity()){
+  if(!rai::getInteractivity()) {
     wait=false;
   }
   switch(plotModule.mode) {
@@ -250,7 +250,7 @@ void plotClearPoints() {
 
 void plotLine(const arr& X, bool closed) {
   arr& app = plotModule.s->lines.append(X);
-  if(closed && app.d0){
+  if(closed && app.d0) {
     arr x;
     x = app[0];
     app.append(x);
@@ -659,7 +659,7 @@ void plotDrawGnuplot(void *_data, bool pauseMouse) {
     }
     block++;
   }
-
+  
   //points
   for(i=0; i<data.points.N; i++) {
     data.points(i).write(gnuplotdata," ","\n","  ",false,false);
@@ -676,7 +676,7 @@ void plotDrawGnuplot(void *_data, bool pauseMouse) {
   //surfaces
   for(i=0; i<data.array.N; i++) {
     uint j, k, X=data.array(i).d1, Y=data.array(i).d0;
-    for(j=0; j<Y; j++){
+    for(j=0; j<Y; j++) {
       for(k=0; k<X; k++) {
         gnuplotdata <<2.*(double)k/(X-1.)-1. <<' ' <<-2.*(double)j/(Y-1.)+1. <<' ' <<data.array(i)(j, k) <<std::endl;
       }

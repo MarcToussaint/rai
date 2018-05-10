@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -26,7 +26,7 @@ enum FrameFlagType {
   FL_kinematic,
 };
 
-namespace rai{
+namespace rai {
 
 struct Flag {
   rai::Enum<FrameFlagType> flag;
@@ -34,13 +34,13 @@ struct Flag {
   uint stepOfApplication;
   bool persist=false;
   bool setTrue=true;
-
+  
   Flag(FrameFlagType flag, uint frameId, uint stepOfApplication=0, bool persist=false, bool setTrue=true)
-    : flag(flag), frameId(frameId), stepOfApplication(stepOfApplication), persist(persist), setTrue(setTrue){}
-  ~Flag(){}
-
+    : flag(flag), frameId(frameId), stepOfApplication(stepOfApplication), persist(persist), setTrue(setTrue) {}
+  ~Flag() {}
+  
   void apply(KinematicWorld& K);
-
+  
   void write(std::ostream& os, KinematicWorld* K=NULL) const;
 };
 

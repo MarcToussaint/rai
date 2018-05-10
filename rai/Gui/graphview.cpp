@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -41,8 +41,8 @@ struct sGraphView {
   rai::Array<Agnode_t *> gvNodes;
   GVC_t *gv_context;
   GVJ_t *gvJob() { return gvjobs_first(gv_context); }
-
-  sGraphView():gvGraph(NULL){}
+  
+  sGraphView():gvGraph(NULL) {}
   void init();
   void updateGraphvizGraph(bool isSubGraph=false);
   void writeFile(const char* filename);
@@ -83,18 +83,18 @@ void GraphView::update() {
 
 void GraphView::watch() {
   update();
-  if(rai::getInteractivity()){
+  if(rai::getInteractivity()) {
     gtk_main();
   }
 }
 
-void GraphView::writeFile(const char* filename){
+void GraphView::writeFile(const char* filename) {
   s->writeFile(filename);
 }
 
 #define STR(s) (char*)s
 
-rai::String label(Node *it){
+rai::String label(Node *it) {
   rai::String label;
 #if 1
   if(it->keys.N) {
@@ -112,27 +112,27 @@ rai::String label(Node *it){
 
 void sGraphView::updateGraphvizGraph(bool isSubGraph) {
   if(gvGraph) agclose(gvGraph);
-
-  if(!isSubGraph){
+  
+  if(!isSubGraph) {
     gvGraph = agopen(STR("new_graph"), Agdirected, NULL);
     agattr(gvGraph, AGRAPH,STR("rankdir"), STR("LR"));
     agattr(gvGraph, AGRAPH,STR("ranksep"), STR("0.05"));
-
+    
     agattr(gvGraph, AGNODE, STR("label"), STR(""));
     agattr(gvGraph, AGNODE, STR("shape"), STR(""));
     agattr(gvGraph, AGNODE, STR("fontsize"), STR("11"));
     agattr(gvGraph, AGNODE, STR("width"), STR(".3"));
     agattr(gvGraph, AGNODE, STR("height"), STR(".3"));
-
+    
     agattr(gvGraph, AGEDGE, STR("label"), STR(""));
 //    agattr(gvGraph, AGEDGE, STR("arrowhead"), STR("none"));
     agattr(gvGraph, AGEDGE, STR("arrowsize"), STR(".5"));
     agattr(gvGraph, AGEDGE, STR("fontsize"), STR("6"));
-
+    
     uint nNodes = G->index(true);
     gvNodes.resize(nNodes);
   }
-
+  
   //first add `nodes' for all items
   for(Node *e: *G) {
     gvNodes(e->index) = agnode(gvGraph, STRING(e->index), true);
@@ -155,10 +155,10 @@ void sGraphView::updateGraphvizGraph(bool isSubGraph) {
     if(e->parents.N) {
       uint linkId=0;
       for(Node *n: e->parents) {
-        if(n->index<e->index){
+        if(n->index<e->index) {
 //          ge=agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), STRING(label(n) <<"--" <<label(e)), true);
           agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), NULL, true);
-        }else{
+        } else {
 //          ge=agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), STRING(label(n) <<"--" <<label(e)), true);
           agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), NULL, true);
         }
@@ -168,13 +168,13 @@ void sGraphView::updateGraphvizGraph(bool isSubGraph) {
       }
     }
   }
-
-  if(!isSubGraph){
+  
+  if(!isSubGraph) {
     G->index(false);
   }
 }
 
-void sGraphView::writeFile(const char* filename){
+void sGraphView::writeFile(const char* filename) {
   gtkLock();
   GVC_t *gvc = gvContext();
   updateGraphvizGraph();
@@ -219,7 +219,7 @@ void sGraphView::init() {
 bool sGraphView::on_drawingarea_expose_event(GtkWidget *widget, GdkEventExpose  *event, gpointer user_data) {
   sGraphView *gv = (sGraphView*)g_object_get_data(G_OBJECT(widget),"GraphvizGtk");
   INFO(on_drawingarea_expose_event);
-
+  
   GVJ_t *job = gv->gvJob();
   cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(widget));
   
@@ -227,12 +227,12 @@ bool sGraphView::on_drawingarea_expose_event(GtkWidget *widget, GdkEventExpose  
   job->external_context = TRUE;
   job->width = widget->allocation.width; //gtk_widget_get_allocated_width(widget);
   job->height = widget->allocation.height; //gtk_widget_get_allocated_height(widget);
-  if(job->has_been_rendered){
-    if(job->callbacks) (job->callbacks->refresh)(job);
-  }else{
-    if(job->callbacks) (job->callbacks->refresh)(job);
+  if(job->has_been_rendered) {
+    if(job->callbacks)(job->callbacks->refresh)(job);
+  } else {
+    if(job->callbacks)(job->callbacks->refresh)(job);
   }
-    
+  
   cairo_destroy(cr);
   
   if(job->current_obj) {
@@ -268,7 +268,7 @@ bool sGraphView::on_drawingarea_motion_notify_event(GtkWidget       *widget,    
   if(!job) return false;
   job->pointer.x = event->x;
   job->pointer.y = event->y;
-  if(job->callbacks) (job->callbacks->motion)(job, job->pointer);
+  if(job->callbacks)(job->callbacks->motion)(job, job->pointer);
   
   gtk_widget_queue_draw(widget);
   
@@ -293,10 +293,10 @@ bool sGraphView::on_drawingarea_configure_event(GtkWidget       *widget,        
   /*      plugin/xlib/gvdevice_xlib.c */
   /*      lib/gvc/gvevent.c */
   
-
+  
   GVJ_t *job = gv->gvJob();
   if(!job) return false;
-
+  
   double zoom_to_fit;
 //  if(!job->has_been_rendered) {
 //    zoom_to_fit = 1.0;
@@ -304,8 +304,8 @@ bool sGraphView::on_drawingarea_configure_event(GtkWidget       *widget,        
 //    if(zoom_to_fit < 1.0)  /* don't make bigger */
 //      job->zoom *= zoom_to_fit;
 //  } else if(job->fit_mode) {
-    zoom_to_fit = rai::MIN((double) event->width / (double) job->width, (double) event->height / (double) job->height);
-    job->zoom *= zoom_to_fit;
+  zoom_to_fit = rai::MIN((double) event->width / (double) job->width, (double) event->height / (double) job->height);
+  job->zoom *= zoom_to_fit;
 //  }
   if(event->width > (int)job->width || event->height > (int)job->height)
     job->has_grown = TRUE;
@@ -322,7 +322,7 @@ bool sGraphView::on_drawingarea_button_press_event(GtkWidget       *widget,     
   
   GVJ_t *job = gv->gvJob();
   if(!job) return false;
-
+  
   pointf pointer;
   pointer.x = event->x;
   pointer.y = event->y;
@@ -339,7 +339,7 @@ bool sGraphView::on_drawingarea_button_release_event(GtkWidget *widget, GdkEvent
   
   GVJ_t *job = gv->gvJob();
   if(!job) return false;
-
+  
   pointf pointer;
   pointer.x = event->x;
   pointer.y = event->y;
@@ -353,10 +353,10 @@ bool sGraphView::on_drawingarea_button_release_event(GtkWidget *widget, GdkEvent
 bool sGraphView::on_drawingarea_scroll_event(GtkWidget       *widget,            GdkEventScroll        *event,            gpointer         user_data) {
   sGraphView *gv = (sGraphView*)g_object_get_data(G_OBJECT(widget),"GraphvizGtk");
   INFO(on_drawingarea_scroll_event);
-
+  
   GVJ_t *job = gv->gvJob();
   if(!job) return false;
-
+  
   pointf pointer;
   pointer.x = event->x;
   pointer.y = event->y;

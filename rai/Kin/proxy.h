@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -11,9 +11,9 @@
 
 #include <Geo/geo.h>
 #include <Geo/pairCollision.h>
-namespace rai{
-  struct KinematicWorld;
-  struct Frame;
+namespace rai {
+struct KinematicWorld;
+struct Frame;
 }
 
 //===========================================================================
@@ -31,12 +31,12 @@ struct Proxy : GLDrawer {
   double d;           ///< distance (positive) or penetration (negative) between A and B
   uint colorCode = 0;
   PairCollision *coll=NULL;
-
+  
   Proxy();
   ~Proxy();
-
+  
   void calc_coll(const KinematicWorld &K);
-  void del_coll(){ if(coll) delete coll; coll=NULL; }
+  void del_coll() { if(coll) delete coll; coll=NULL; }
   void glDraw(OpenGL&);
 };
 

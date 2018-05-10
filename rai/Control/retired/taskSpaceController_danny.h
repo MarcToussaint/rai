@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -18,65 +18,65 @@
 
 struct LinTaskSpaceAccLaw {
   TaskMap* map;
-
+  
   rai::KinematicWorld* world;
-
+  
   rai::String name;
-
+  
   arr yRef;
   arr yDotRef;
   arr yDDotRef;
-
+  
   arr Kp;
   arr Kd;
   arr C;
-
+  
   arr trajectory;
   arr trajectoryDot;
   arr trajectoryDDot;
-
+  
   rai::Spline* trajectorySpline;
   rai::Spline* trajectoryDotSpline;
   rai::Spline* trajectoryDDotSpline;
-
+  
   bool trajectoryActive = false;
   bool trajectoryDotActive = false;
   bool trajectoryDDotActive = false;
-
+  
   LinTaskSpaceAccLaw(TaskMap* map, rai::KinematicWorld* world, rai::String name = "nonameLaw");
-
+  
   void setRef(const arr& yRef = NoArr, const arr& yDotRef = NoArr, const arr& yDDotRef = NoArr);
-
+  
   void setGains(arr Kp, arr Kd);
-
+  
   void setC(arr C);
-
+  
   void setTrajectory(uint trajLength, const arr& traj = NoArr, const arr& trajDot = NoArr, const arr& trajDDot = NoArr);
   void setSpline(rai::Spline* yS = NULL, rai::Spline* yDotS = NULL, rai::Spline* yDDotS = NULL);
-
+  
   void setTargetEvalSpline(double s);
-
+  
   void setTrajectoryActive(bool active); // TODO
-
+  
   arr getPhi();
   void getPhi(arr& y, arr& J);
   uint getPhiDim();
-
+  
   arr getC();
   arr getKp();
   arr getKd();
-
+  
   void getRef(arr& yRef, arr& yDotRef, arr& yDDotRef);
   arr getRef();
   arr getDotRef();
   arr getDDotRef();
-
+  
   bool getTrajectoryActive(); //TODO
   bool getTrajectoryDotActive(); //TODO
   bool getTrajectoryDDotActive(); //TODO
-
+  
   double getCosts();
-
+  
 };
 
 struct ConstrainedTaskLaw : LinTaskSpaceAccLaw {
@@ -91,27 +91,27 @@ struct ConstrainedTaskLaw : LinTaskSpaceAccLaw {
   arr getAlpha();
   void setGamma(double gamma);
   double getGamma();
-
+  
 };
 
 struct TaskSpaceController {
   rai::Array<LinTaskSpaceAccLaw*> taskSpaceAccLaws;
   rai::KinematicWorld* world;
-
+  
   bool gravity = false;
-
+  
   rai::Array<ConstrainedTaskLaw*> constrainedTaskLaws;
-
+  
   TaskSpaceController(rai::KinematicWorld* world) : world(world) {}
   ~TaskSpaceController() {}
-
+  
   void addLinTaskSpaceAccLaw(LinTaskSpaceAccLaw* law);
   void addConstrainedTaskLaw(ConstrainedTaskLaw* law);
   void calcOptimalControlProjected(arr& Kp, arr& Kd, arr& u0);
   void calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma);
   void generateTaskSpaceTrajectoryFromJointSpace(const arr& jointSpaceTrajectory, const arr& jointSpaceTrajectoryDot = NoArr, const arr& jointSpaceDDotTrajectory = NoArr);
   void generateTaskSpaceSplines();
-
+  
   void setGravity(bool gravity);
 };
 
