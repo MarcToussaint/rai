@@ -67,7 +67,6 @@ EffectivePoseProblem::EffectivePoseProblem(rai::KinematicWorld& effKinematics_be
     }
   }
 
-
   effKinematics.topSort();
   effKinematics.checkConsistency();
   effKinematics.getJointState(x0);

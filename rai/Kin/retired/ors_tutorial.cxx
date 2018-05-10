@@ -1,20 +1,10 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2012 Marc Toussaint
-    email: mtoussai@cs.tu-berlin.de
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
 
 /**
  * @file
@@ -25,7 +15,6 @@
  * @{
  */
 
-
 #include <Gui/opengl.h>
 #include <Plot/plot.h>
 #include "kin.h"
@@ -33,7 +22,6 @@
 #include "kin_actionInterface.h"
 #include <sstream>
 #include <limits.h>
-
 
 // huepfen der bloecke, falls sie zb runterfallen
 #define ODE_COLL_BOUNCE 0.0
@@ -48,7 +36,6 @@
 
 #define DROP_TARGET_NOISE 0.11
 #define SEC_ACTION_ABORT 500
-
 
 inline const char* getObjectString (uint ID) {
   std::stringstream ss;
@@ -358,8 +345,6 @@ void ActionInterface::grab(const char* obj) {
   grab("fing1c", obj);
 }
 
-
-
 void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id){
   arr I(q0.N,q0.N); I.setId();
   bool obj_is_inhand = strlen(obj_id55) > 0;
@@ -524,8 +509,6 @@ void ActionInterface::dropObjectAbove(uint rel_id) {
   dropObjectAbove(getCatched(), rel_id);
 }
 
-
-
 bool ActionInterface::partOfBody(uint id){
   NIY;
   return false;
@@ -595,7 +578,6 @@ void ActionInterface::writeAllContacts(uint id) {
       cout << endl;
 }
 
-
 void ActionInterface::getObjectsAbove(uintA& list,const char *obj_id){
   list.clear();
   rai::Proxy *p;
@@ -628,7 +610,6 @@ void ActionInterface::getObjectsAbove(uintA& list,const char *obj_id){
 void ActionInterface::getObjectsAbove(uintA& list,const uint obj_id) {
   getObjectsAbove(list, convertObjectID2name(obj_id));
 }
-
 
 // void ActionInterface::getObjectsBelow(uintA& list,const char *obj_id){
 //   list.clear();
@@ -677,7 +658,6 @@ uint ActionInterface::getTableID() {
   return n->index;
 }
 
-
 bool ActionInterface::inContact(uint a,uint b){
   if(C->getContact(a,b)) return true;
   return false;
@@ -709,7 +689,6 @@ uint ActionInterface::convertObjectName2ID(const char* name) {
   return C->getBodyByName(name)->index;
 }
 
-
 const char* ActionInterface::convertObjectID2name(uint ID) {
   if (C->bodies.N > ID)
     return C->bodies(ID)->name;
@@ -735,7 +714,6 @@ double* ActionInterface::getColor(uint id) {
 double* ActionInterface::getPosition(uint id) {
   return C->bodies(id)->X.pos.p;
 }
-
 
 // void ActionInterface::printAboveBelowInfos() {
 //   uintA objects;

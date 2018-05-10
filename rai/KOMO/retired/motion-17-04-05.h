@@ -46,8 +46,6 @@ struct Task {
 };
 stdOutPipe(Task)
 
-
-
 //===========================================================================
 //
 /// This class allows you to DESCRIBE a motion planning problem, nothing more
@@ -95,7 +93,6 @@ struct KOMO {
   void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES
   arr getInitialization();      ///< this reads out the initial state trajectory after 'setupConfigurations'
 
-
   //-- methods accessed by the optimizers
   void set_x(const arr& x);            ///< set the state trajectory of all configurations
   uint dim_x(uint t) { return configurations(t+k_order)->getJointStateDimension(); }
@@ -132,7 +129,6 @@ struct KOMO {
     virtual void phi(arr& phi, arrA& J, arrA& H, ObjectiveTypeA& tt, const arr& x);
   } komo_problem;
 };
-
 
 //===========================================================================
 //

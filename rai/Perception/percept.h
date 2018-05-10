@@ -110,8 +110,6 @@ struct PercAlvar : Percept {
   virtual Percept* newClone() const{ return new PercAlvar(*this); }
 };
 
-
-
 struct OptitrackMarker : Percept {
   OptitrackMarker(std::string _frame_id)
     : Percept(PT_optitrackmarker){
@@ -160,6 +158,4 @@ struct OptitrackBody : Percept {
 //  }
   virtual Percept* newClone() const{ return new OptitrackBody(*this); }
 };
-
-
 

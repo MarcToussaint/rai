@@ -38,7 +38,6 @@ struct PerceptionOutput;
 class AudioPoller_PA;
 class AudioWriter_libav;
 
-
 template<class T>
 struct GenericDisplayViewer : Thread {
   OpenGL *gl;
@@ -112,7 +111,6 @@ struct RigidObjectRepresentation {
 
 typedef rai::Array<RigidObjectRepresentation*> RigidObjectRepresentationL;
 
-
 //===========================================================================
 //
 // Variables
@@ -167,7 +165,6 @@ struct PerceptionOutput {
 };
 niyPipes(PerceptionOutput);
 
-
 //-- Module declarations
 #if 0
 BEGIN_MODULE(ImageViewer)      VAR(byteA, img)       END_MODULE()
@@ -186,7 +183,6 @@ BEGIN_MODULE(ShapeFitter)      VAR(floatA, eviL)     VAR(floatA, eviR)          
 BEGIN_MODULE(AudioReader)    AudioPoller_PA *poller; VAR(byteA, pcms16ne2c) END_MODULE()
 BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; VAR(byteA, pcms16ne2c) END_MODULE()
 #else
-
 
 struct OpencvCamera : Thread {
   struct sOpencvCamera *s;
@@ -310,8 +306,6 @@ BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; VAR(byteA, pcms16ne2c) E
 
 #endif
 
-
-
 //===========================================================================
 //
 // PRELIMINARY
@@ -321,19 +315,12 @@ BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; VAR(byteA, pcms16ne2c) E
 //  VAR(ColorChoice, colorChoice);
 //END_MODULE()
 
-
 //TODO Johannes ProcessL newPointcloudProcesses();
 //TODO Johannes VariableL newPointcloudVariables();
 
 //TODO: where should this go? maybe ors?
 
-
-
 #endif //RAI_perception_h
-
-
-
-
 
 /*
 
@@ -361,12 +348,9 @@ object-projections
 
 Patch
 
-
 ** point cloud level
 
 point cloud
-
-
 
 ** features level
 
@@ -376,7 +360,6 @@ HoughLines
 
 Canny
 
-
 ** primitives level
 
 (RANSAC type methods)
@@ -385,12 +368,10 @@ spheres
 
 planes
 
-
 ** rigid body level
 
 list of moving (or non-moving) rigid body hypothesis
 (workspace for a tracker -- where does he get the likelihood function from?)
-
 
 ** shape level
 

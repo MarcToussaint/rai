@@ -47,7 +47,6 @@ ScalarFunction cost = [](arr &g, arr &H, const arr &x) -> double{
   return C;
 };
 
-
 void TEST(BSpline){
   uint K=6,T=100; //6 spline point, discrete path with T=100
 
@@ -93,7 +92,6 @@ void TEST(BSpline){
     return c;
   };
 
-
   arr grad_path, grad_X;
   for(uint i=0;i<100;i++){
     checkGradient(cost, path, 1e-5);
@@ -124,7 +122,6 @@ void TEST(BSpline){
 
   plotClose();
 }
-
 
 void TEST(Path){
   arr X(11,1);
@@ -169,7 +166,6 @@ int MAIN(int argc,char** argv){
 
   testBSpline();
 //  testPath();
-
 
   return 0;
 }

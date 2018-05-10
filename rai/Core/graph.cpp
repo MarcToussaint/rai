@@ -34,7 +34,6 @@ struct ParseInfo{
 };
 stdOutPipe(ParseInfo)
 
-
 //===========================================================================
 //
 // retrieving types
@@ -49,7 +48,6 @@ inline Node *reg_findType(const char* key) {
   }
   return NULL;
 }
-
 
 //===========================================================================
 //
@@ -194,8 +192,6 @@ Nod::Nod(const char* key, const char* stringValue){
   n = G.newNode<rai::String>(STRING(stringValue));
   n->keys.append(STRING(key));
 }
-
-
 
 //===========================================================================
 //
@@ -905,7 +901,6 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
     if(n->keys.contains("box")) shape <<", shape=box"; else shape <<", shape=ellipse";
     if(focusIndex==(int)n->index) shape <<", color=red";
     if(hasRenderingInfo(n)) shape <<' ' <<getRenderingInfo(n).dotstyle;
-
 
     if(defaultEdges && n->parents.N==2){ //an edge
       os <<n->parents(0)->index <<" -> " <<n->parents(1)->index <<" [ " <<label <<"];" <<endl;

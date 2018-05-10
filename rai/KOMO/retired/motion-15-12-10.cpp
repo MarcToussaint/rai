@@ -343,7 +343,6 @@ void KOMO::setState(const arr& q, const arr& v) {
   if(useSwift) world.stepSwift();
 }
 
-
 uint KOMO::dim_phi(const rai::KinematicWorld &G, uint t) {
   uint m=0;
   for(Task *c: tasks) {
@@ -867,7 +866,6 @@ MotionProblem_EndPoseFunction::MotionProblem_EndPoseFunction(KOMO& _MP)
 //    this->Phi(phi, J, H, tt, x);
 //  } );
 }
-
 
 //===========================================================================
 

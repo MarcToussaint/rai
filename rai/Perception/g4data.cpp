@@ -757,7 +757,6 @@ void G4RawSeq::write(std::ostream &os) const {
   os << " * ann: " << (ann.N? "yes": "no") << endl;
 }
 
-
 // =============================================================================
 // G4FeatSeq
 //

@@ -21,7 +21,6 @@ template<> const char* rai::Enum<ObjectiveType>::names []={
 // checks and converters
 //
 
-
 bool checkJacobianCP(ConstrainedProblem &P, const arr& x, double tolerance){
   VectorFunction F = [&P](arr& phi, arr& J, const arr& x){
     return P.phi(phi, J, NoArr, NoTermTypeA, x, NoArr);
@@ -121,8 +120,6 @@ void displayFunction(const ScalarFunction &f, bool wait, double lo, double hi){
   gnuplot("reset; splot [-1:1][-1:1] 'z.fct' matrix us ($1/50-1):($2/50-1):3 w l", wait, true);
 }
 
-
-
 /// minimizes \f$f(x)\f$ using its gradient only
 uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions o) {
   uint evals=0;
@@ -165,8 +162,6 @@ uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions o) {
   if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l",NULL,true);
   return evals;
 }
-
-
 
 RUN_ON_INIT_BEGIN(optimization)
 ObjectiveTypeA::memMove=true;

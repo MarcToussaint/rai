@@ -48,7 +48,6 @@ void Simulator::anchorKinematicChainIn(const char* bodyName){
 //#endif
 }
 
-
 Simulator::Simulator(const char* orsFile){
   s = new sSimulator;
   
@@ -73,7 +72,6 @@ Simulator::~Simulator(){
   delete s;
 }
 
-
 void Simulator::watch(bool pause, const char* txt){
   if(pause) s->G.gl().watch(txt);
   else s->G.gl().update(txt);
@@ -87,7 +85,6 @@ void Simulator::getJointAnglesAndVels(arr& q, arr& qdot){
   q = s->G.q;
   qdot = s->G.qdot;
 }
-
 
 uint Simulator::getJointDimension(){
   return s->G.getJointStateDimension();
@@ -172,7 +169,6 @@ double Simulator::getEnergy(){
   return s->G.getEnergy();
 }
 
-
   
 void Simulator::setDynamicSimulationNoise(double noise){
   s->dynamicNoise = noise;
@@ -211,8 +207,6 @@ struct sVisionSimulator {
   arr P;
   sVisionSimulator(){ }
 };
-
-
 
 VisionSimulator::VisionSimulator(){
   s = new sVisionSimulator;

@@ -60,7 +60,6 @@ void Xroty(arr& X, double h);
 */
 void Xrotz(arr& X, double h);
 
-
 /** @brief MM6 coordinate transform from 3D translation vector.
   Xtrans(r) calculates the MM6 coordinate transform matrix (for
   motion vectors) induced by a shift of origin specified by the 3D
@@ -68,7 +67,6 @@ void Xrotz(arr& X, double h);
   location of the origin relative to the old.
 */
 void Xtrans(arr& X, double* r);
-
 
 /** @brief Calculate RBI from mass, CoM and rotational inertia.
   RBmci(m, c, I) calculate MF6 rigid-body inertia tensor for a body
@@ -325,7 +323,6 @@ void FeatherstoneInterface::update(){
   for(F_Link& link:tree) link.setFeatherstones();
 }
 
-
 /*
 ----------- Xrotx.m ----------------------------------------------------------
 */
@@ -402,7 +399,6 @@ void Featherstone::Xrotz(arr& X, double h) {
      0  0  0 -s  c  0 ;
      0  0  0  0  0  1 ]; */
 }
-
 
 /*
 ----------- Xtrans.m ---------------------------------------------------------
@@ -562,7 +558,6 @@ void Featherstone::invdyn_old(arr& tau, const Robot& robot, const arr& qd, const
 #endif
   }
 
-
   for(i=N; i--;) {
     if(robot.dof(i)) {
       tau_i(i) = ~S(i) * f[i];
@@ -572,7 +567,6 @@ void Featherstone::invdyn_old(arr& tau, const Robot& robot, const arr& qd, const
     }
   }
 }
-
 
 //===========================================================================
 
@@ -882,7 +876,6 @@ void FeatherstoneInterface::invDynamics(arr& tau,
     if(par != -1)     fJ[par]() += ~Xup[i] * fJ[i];
   }
 }
-
 
 //===========================================================================
 

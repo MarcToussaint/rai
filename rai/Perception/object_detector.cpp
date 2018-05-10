@@ -42,8 +42,6 @@ bool sphereDetector(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::No
 
 }
 
-
-
 bool cylinderDetector(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::Normal>::Ptr inCloudNormal, pcl::ModelCoefficients::Ptr outCoefficients, pcl::PointIndices::Ptr outInliersPlane,double min_radius, double max_radius)
 {
   pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg;
@@ -95,10 +93,7 @@ bool IsABox(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::Normal>::P
     pcl::PointCloud<PointT>::Ptr outCloud (new pcl::PointCloud<PointT>);
     uint numPlanes = 6;
 
-
-
     extractPlanes(inCloud, outCloud, outCoefficients,  outInliers, numPlanes);
-
 
     bool isBox = true;
     arr Matrix(3,3);

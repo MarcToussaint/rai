@@ -35,7 +35,6 @@ ScalarFunction CostFct_PlanePoints::f_transform(){
   };
 }
 
-
 void glDrawPlanes(const PlaneA& planes){
   rai::Mesh tmp;
   for(const Plane& p:planes){

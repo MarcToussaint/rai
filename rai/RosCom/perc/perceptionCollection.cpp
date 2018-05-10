@@ -277,7 +277,6 @@ void Collector::step()
   }
 }
 
-
 PercCluster conv_ROSMarker2Cluster(const visualization_msgs::Marker& marker)
 {
   arr points = conv_points2arr(marker.points);

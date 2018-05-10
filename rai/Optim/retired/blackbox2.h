@@ -37,7 +37,6 @@ Require bound constraints!
 Twiddle
  */
 
-
 struct BayesOpt{
   ScalarFunction f;
   KernelFunction *kernel;
@@ -53,7 +52,6 @@ struct BayesOpt{
 private:
   void query(const arr& x);
 };
-
 
 //===========================================================================
 

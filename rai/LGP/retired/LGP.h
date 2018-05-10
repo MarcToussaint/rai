@@ -68,7 +68,6 @@ struct SticksProblem:LogicGeometricProgram{
   ConstrainedProblem& getEffPoseProblem(const rai::KinematicWorld& world, const Graph& symbols){ NIY }
 };
 
-
 //===========================================================================
 
 void runMonteCarlo(Graph& symbols);

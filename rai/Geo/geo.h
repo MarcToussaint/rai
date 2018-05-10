@@ -177,7 +177,6 @@ struct Quaternion {
     return {roll, pitch, yaw};
   }
 
-
   arr getJacobian() const;
   arr getMatrixJacobian() const;
 
@@ -304,7 +303,6 @@ struct Camera {
   void setDefault();
 };
 
-
 //===========================================================================
 //
 // operators
@@ -383,7 +381,6 @@ double quatScalarProduct(const rai::Quaternion& a, const rai::Quaternion& b);
 
 double sqrDistance(const rai::Vector& a, const rai::Vector& b);
 
-
 } //END of namespace
 
 //===========================================================================
@@ -394,7 +391,6 @@ double sqrDistance(const rai::Vector& a, const rai::Vector& b);
 inline arr conv_vec2arr(const rai::Vector& v) {      return arr(&v.x, 3, false); }
 inline arr conv_quat2arr(const rai::Quaternion& q) { return arr(&q.w, 4, false); }
 inline arr conv_mat2arr(const rai::Matrix& m) {      return arr(&m.m00, 9, false); }
-
 
 //===========================================================================
 //
@@ -412,12 +408,10 @@ extern const rai::Quaternion Quaternion_z;
 extern rai::Vector& NoVector;
 extern rai::Transformation& NoTransformation;
 
-
 //===========================================================================
 //
 // low level drivers
 //
-
 
 #endif
 

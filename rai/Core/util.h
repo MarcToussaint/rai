@@ -26,7 +26,6 @@
 #  define RAI_Linux
 #endif
 
-
 //----- basic defs:
 #define RAI_PI 3.14159265358979323846
 #define RAI_LN2 0.69314718055994528622676398299518041312694549560546875
@@ -52,13 +51,9 @@ typedef const char* charp;
   inline std::istream& operator>>(std::istream& is, type& x){ NIY; return is; }\
   inline std::ostream& operator<<(std::ostream& os, const type& x){ NIY; return os; }
 
-
-
-
 //----- macros for piping doubles EXACTLY (without rounding errors) in hex coding:
 #define OUTHEX(y) "0x" <<std::hex <<*((unsigned long*)&y) <<std::dec
 #define INHEX(y)  std::hex >>*((unsigned long*)&y) >>std::dec
-
 
 //===========================================================================
 //
@@ -179,7 +174,6 @@ bool getInteractivity();
 struct PARSE { const char *str; PARSE(const char* _str):str(_str) {} };
 std::istream& operator>>(std::istream& is, const PARSE&);
 
-
 //===========================================================================
 //
 // String class
@@ -278,7 +272,6 @@ namespace rai {
   rai::String getNowString();
 }
 
-
 //===========================================================================
 //
 // logging
@@ -319,7 +312,6 @@ void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 //console. setLogLevel allows to adjust cout verbosity (0 by default),
 //and what is written into the log file (1 by default)
 
-
 //===========================================================================
 //
 // macros for halting/MSGs etc
@@ -340,9 +332,6 @@ extern String errString;
 #  define NICO { LOG(-2) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(1); }
 #  define OPS  { LOG(-2) <<"obsolete"; exit(1); }
 #endif
-
-
-
 
 //----- check macros:
 #ifndef RAI_NOCHECK
@@ -370,7 +359,6 @@ extern String errString;
 #define CHECK_LE(A, B, msg)
 #endif
 
-
 //----- TESTING
 #ifndef EXAMPLES_AS_TESTS
 #  define TEST(name) test##name()
@@ -388,14 +376,11 @@ extern String errString;
      inline int obsolete_main //this starts a method declaration
 #endif
 
-
 //----- verbose:
 #define VERBOSE(l, x) if(l<=rai::getVerboseLevel()) x;
 
-
 //----- other macros:
 #define MEM_COPY_OPERATOR(x) memmove(this, &x, sizeof(this));
-
 
 //===========================================================================
 //
@@ -403,7 +388,6 @@ extern String errString;
 //
 
 namespace rai {
-
 
   String raiPath(const char* rel=NULL);
 
@@ -441,7 +425,6 @@ template<class T> void operator>>(const T& x, FileToken& fil){ fil.getOs() <<x; 
 #define FILE(filename) (rai::FileToken(filename)()) //it needs to return a REFERENCE to a local scope object
 
 inline bool operator==(const rai::FileToken&, const rai::FileToken&){ return false; }
-
 
 //===========================================================================
 //
@@ -483,7 +466,6 @@ namespace rai {
   template<class T> std::istream& operator>>(std::istream& is, Enum<T>& x){ x.read(is); return is; }
   template<class T> std::ostream& operator<<(std::ostream& os, const Enum<T>& x){ x.write(os); return os; }
 }
-
 
 //===========================================================================
 //
@@ -554,7 +536,6 @@ private:
 /// The global Rnd object
 extern rai::Rnd rnd;
 
-
 //===========================================================================
 //
 /// a little inotify wrapper
@@ -572,7 +553,6 @@ struct Inotify{
 //  void waitAndReport(){ pollForModification(false, true); }
 //  void waitForModification(bool verbose=false){ while(!pollForModification(true, verbose)); }
 };
-
 
 //===========================================================================
 //
@@ -597,7 +577,6 @@ struct Mutex {
   };
   struct Token operator()(){ return Token(*this); }
 };
-
 
 //===========================================================================
 //
@@ -644,7 +623,6 @@ struct Singleton {
 template<class T> T *Singleton<T>::singleton=NULL;
 template<class T> Mutex Singleton<T>::mutex;
 
-
 //===========================================================================
 //
 // just a hook to make things gl drawable
@@ -664,7 +642,6 @@ struct CoutToken{
   std::ostream& getOs(){ return std::cout; }
 };
 #define COUT (CoutToken().getOs())
-
 
 //===========================================================================
 //
@@ -690,7 +667,6 @@ struct Type_typed : Type {
 inline bool operator!=(Type& t1, Type& t2){ return t1.typeId() != t2.typeId(); }
 inline bool operator==(Type& t1, Type& t2){ return t1.typeId() == t2.typeId(); }
 
-
 //===========================================================================
 //
 /// running code on init (in cpp files)
@@ -699,7 +675,6 @@ inline bool operator==(Type& t1, Type& t2){ return t1.typeId() == t2.typeId(); }
 #define RUN_ON_INIT_BEGIN(key) struct key##_RUN_ON_INIT{ key##_RUN_ON_INIT(){
 #define RUN_ON_INIT_END(key)   } } key##_RUN_ON_INIT_dummy;
 
-
 //===========================================================================
 //
 // gnuplot calls
@@ -707,7 +682,6 @@ inline bool operator==(Type& t1, Type& t2){ return t1.typeId() == t2.typeId(); }
 
 void gnuplot(const char *command, bool pauseMouse=false, bool persist=false, const char* PDFfile=NULL);
 void gnuplotClose();
-
 
 //===========================================================================
 //

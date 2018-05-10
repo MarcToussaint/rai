@@ -12,10 +12,8 @@
 
 double alpha = .2;
 
-
 template<> const char* rai::Enum<Percept::Type>::names []=
   { "PT_cluster", "PT_plane", "PT_box", "PT_mesh", "PT_alvar", "PT_optitrackmarker", "PT_optitrackbody", NULL };
-
 
 Percept::Percept(Type type)
   : type(type), transform(0), frame(0){
@@ -50,7 +48,6 @@ PercCluster::PercCluster(arr mean, arr points, std::string _frame_id)
     points(points) {
   frame_id = _frame_id;
 }
-
 
 //PercCluster::PercCluster(const PercCluster& obj)
 //  : Percept(obj){
@@ -318,5 +315,4 @@ void OptitrackMarker::syncWith(rai::KinematicWorld &K){
 
   body->X = frame * transform;
 }
-
 

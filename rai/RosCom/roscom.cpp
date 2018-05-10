@@ -77,7 +77,6 @@ rai::Transformation conv_transform2transformation(const tf::Transform &trans){
   return X;
 }
 
-
 rai::Transformation conv_transform2transformation(const geometry_msgs::Transform &trans){
   rai::Transformation X;
   X.setZero();
@@ -182,7 +181,6 @@ bool ros_getTransform(const std::string& from, const std::string& to, tf::Transf
   return true;
 }
 
-
 rai::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener, tf::Transform* returnRosTransform){
   rai::Transformation X;
   X.setZero();
@@ -221,7 +219,6 @@ arr conv_colors2arr(const std::vector<std_msgs::ColorRGBA>& pts){
   }
   return P;
 }
-
 
 std::vector<geometry_msgs::Point> conv_arr2points(const arr& pts){
   uint n=pts.d0;
@@ -455,8 +452,5 @@ visualization_msgs::MarkerArray conv_Kin2Markers(const rai::KinematicWorld& K){
   return M;
 }
 
-
 #endif
-
-
 

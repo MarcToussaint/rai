@@ -15,7 +15,6 @@
  * @{
  */
 
-
 #include "kin.h"
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>
@@ -78,7 +77,6 @@ void rai::Shape::glDraw(OpenGL& gl) {
   glPushName((index <<2) | 1);
   if(orsDrawColors && !orsDrawIndexColors) glColor(color[0], color[1], color[2], orsDrawAlpha);
   if(orsDrawIndexColors) glColor3b((index>>16)&0xff, (index>>8)&0xff, index&0xff);
-
 
   double GLmatrix[16];
   X.getAffineMatrixGL(GLmatrix);
@@ -481,7 +479,6 @@ void animateConfiguration(rai::KinematicWorld& C, Inotify *ino) {
   C.gl().update("", false, false, true);
 }
 
-
 rai::Body *movingBody=NULL;
 rai::Vector selpos;
 double seld, selx, sely, selz;
@@ -659,7 +656,6 @@ if(!rai::getInteractivity()){
 }
   }
 }
-
 
 #if 0 //RAI_ODE
 void testSim(const char* filename, rai::KinematicWorld *C, Ode *ode) {

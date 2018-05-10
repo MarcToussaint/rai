@@ -16,7 +16,6 @@
 
 #include <Core/array.h>
 
-
 // huepfen der bloecke, falls sie zb runterfallen
 #define ODE_COLL_BOUNCE 0.0
 //usually .2!! stiffness (time-scale of contact reaction) umso groesser, desto mehr Fehlerkorrektur; muss zwischen 0.1 und 0.5 sein (ungefaehr)
@@ -30,7 +29,6 @@
 
 #define DROP_TARGET_NOISE 0.11
 #define SEC_ACTION_ABORT 500
-
 
 typedef unsigned int uint;
 namespace rai {

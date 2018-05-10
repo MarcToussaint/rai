@@ -15,7 +15,6 @@
  * @{
  */
 
-
 #include "kin.h"
 //#include "array.cpp"
 

@@ -79,7 +79,6 @@ void MNode::addMCRollouts(uint num, int stepAbort){
   //  cout <<"******** BEST ACTION " <<*a <<endl;
 }
 
-
 void MNode::solvePoseProblem(){
   //reset the effective kinematics:
   CHECK(!parent || parent->hasEffKinematics,"parent needs to have computed the pose first!");
@@ -138,7 +137,6 @@ void MNode::solvePoseProblem(){
   }
 //  komo.displayTrajectory(-1.);
 #endif
-
 
   effKinematics.setJointState(pose);
 

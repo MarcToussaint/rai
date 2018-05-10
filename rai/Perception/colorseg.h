@@ -34,8 +34,6 @@ uint get_single_color_segmentation_rgb(uintA& segmentation,  // segmented image
 				       int min = 200         // min. no. of pixels per segment
 				       );
 
-
-
 void colorize_patches(byteA& coloration, const uintA& patches, const arr& stats);
 
 typedef rai::Array<uintA> MultiSegmentations;

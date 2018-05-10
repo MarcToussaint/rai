@@ -25,7 +25,6 @@
 #define ccd_container_of(ptr, type, member) \
     (type *)( (char *)ptr - ccd_offsetof(type, member))
 
-
 /**
  * Marks exported function.
  */
@@ -39,7 +38,6 @@
 # define _ccd_export
 #endif /* _WIN32 */
 
-
 /**
  * Marks inline function.
  */
@@ -48,7 +46,6 @@
 #else /* __GNUC__ */
 # define _ccd_inline static __inline
 #endif /* __GNUC__ */
-
 
 /**
  * __prefetch(x)  - prefetches the cacheline at "x" for read
@@ -61,7 +58,6 @@
 # define _ccd_prefetch(x) ((void)0)
 # define _ccd_prefetchw(x) ((void)0)
 #endif /* __GNUC__ */
-
 
 #ifdef __ICC
 // disable unused parameter warning

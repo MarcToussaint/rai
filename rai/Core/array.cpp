@@ -39,7 +39,6 @@ extern "C" {
 #endif
 #endif //RAI_LAPACK
 
-
 namespace rai {
 //===========================================================================
 
@@ -72,7 +71,6 @@ to find the right function! Also use the man tools with Debian package lapack-do
 
 I've put the clapack.h directly into the rai directory - one only has to link to the Fortran lib
 */
-
 
 //===========================================================================
 //
@@ -126,7 +124,6 @@ arr repmat(const arr& A, uint m, uint n) {
 arr rand(const uintA& d) {  arr z;  z.resize(d);  rndUniform(z, false); return z;  }
 arr randn(const uintA& d) {  arr z;  z.resize(d);  rndGauss(z, 1., false);  return z;  }
 
-
 arr diag(double d, uint n) {
   arr z;
   z.setDiag(d, n);
@@ -176,7 +173,6 @@ void normalizeWithJac(arr& y, arr& J){
   if(J.N) J = (J - (y^y)/l2*J)/l;
   y = y/l;
 }
-
 
 //===========================================================================
 //
@@ -1016,7 +1012,6 @@ void swap_RGB_BGR(byteA &img) {
   }
 }
 
-
 uintA getIndexTuple(uint i, const uintA &d) {
   CHECK(i<product(d), "out of range");
   uintA I(d.N);
@@ -1355,12 +1350,10 @@ rai::String singleString(const StringA& strs){
   return s;
 }
 
-
 //===========================================================================
 //
 // LAPACK
 //
-
 
 /*  ---------------------------------------------------------------------
     Copyright 2014 Marc Toussaint
@@ -1766,7 +1759,6 @@ arr lapack_Ainv_b_symPosDef_givenCholesky(const arr& U, const arr&b) { return in
 arr lapack_Ainv_b_triangular(const arr& L, const arr& b) { return inverse(L)*b; }
 #endif
 
-
 //===========================================================================
 //
 // RowShifted
@@ -2052,8 +2044,6 @@ arr RowShifted::At(){
   return At;
 }
 
-
-
 //===========================================================================
 //
 // generic special
@@ -2100,7 +2090,6 @@ arr comp_A_x(const arr& A, const arr& x) {
   if(isRowShifted(A)) return ((RowShifted*)A.special)->A_x(x);
   return NoArr;
 }
-
 
 //===========================================================================
 //
@@ -2300,5 +2289,4 @@ void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 //  for(const char* t : list) append(rai::String(t));
 //}
 //}
-
 

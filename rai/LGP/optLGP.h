@@ -29,7 +29,6 @@ struct OptLGP_SolutionData : GLDrawer{
   void glDraw(struct OpenGL&gl);
 };
 
-
 struct OptLGP : GLDrawer{
   int verbose;
   uint numSteps;

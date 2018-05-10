@@ -11,7 +11,6 @@
 #include <Kin/kin.h>
 #include <Logic/fol.h>
 
-
 void runMonteCarlo(Graph& G){
 //  rai::rnd.seed(3);
   uint verbose=0;

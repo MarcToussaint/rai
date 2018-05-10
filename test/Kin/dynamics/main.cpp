@@ -8,8 +8,6 @@
 #include <GL/gl.h>
 #include <Optim/optimization.h>
 
-
-
 //===========================================================================
 //
 // dynamics test
@@ -23,7 +21,6 @@
 //  bool addContactsToDynamics=false;
 //  rai::KinematicWorld *G;
 //}
-
 
 //---------- test standard dynamic control
 void TEST(Dynamics){

@@ -10,7 +10,6 @@
 
 #include <Algo/spline.h>
 
-
 LinTaskSpaceAccLaw::LinTaskSpaceAccLaw(TaskMap* map, rai::KinematicWorld* world, rai::String name) : map(map), world(world), name(name) {
   this->setRef(); //TODO: is this the best way?
   uint dim = this->getPhiDim();
@@ -52,7 +51,6 @@ void LinTaskSpaceAccLaw::setSpline(rai::Spline *yS, rai::Spline *yDotS, rai::Spl
   this->trajectoryDotSpline = yDotS;
   this->trajectoryDDotSpline = yDDotS;
 }
-
 
 void LinTaskSpaceAccLaw::setTargetEvalSpline(double s) {
   //TODO: here I tried to use velocities and accerlerations of the spline to feed it into the controller.
@@ -133,8 +131,6 @@ double LinTaskSpaceAccLaw::getCosts() {
   return ~yAct*this->C*yAct; //this is murks!!!!!!!!!!!!!! TODO
 }
 
-
-
 void ConstrainedTaskLaw::setForce(arr force) {
   this->force = force;
 }
@@ -158,8 +154,6 @@ void ConstrainedTaskLaw::setGamma(double gamma) {
 double ConstrainedTaskLaw::getGamma() {
   return this->gamma;
 }
-
-
 
 void TaskSpaceController::addLinTaskSpaceAccLaw(LinTaskSpaceAccLaw* law) {
   this->taskSpaceAccLaws.append(law);
@@ -209,7 +203,6 @@ void TaskSpaceController::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0)
   u0 = M*invA*u0 + F;
 }
 
-
 void TaskSpaceController::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma) {
   if(this->constrainedTaskLaws.N > 0) {
     CHECK(this->constrainedTaskLaws.N == 1, "Multiple force laws not allowed at the moment");
@@ -233,7 +226,6 @@ void TaskSpaceController::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, 
     gamma = 0.0;
   }
 }
-
 
 #if 0
 void TaskSpaceController::generateTaskSpaceTrajectoryFromJointSpace(arr jointSpaceTrajectory) {

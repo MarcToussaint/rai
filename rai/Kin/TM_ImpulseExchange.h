@@ -22,7 +22,6 @@ struct TM_ImpulsExchange : TaskMap {
   rai::String shortTag(const rai::KinematicWorld& K){ return STRING("ImpulseExchange"); }
 };
 
-
 struct TM_ImpulsExchange_weak : TaskMap {
   int i,j;
 

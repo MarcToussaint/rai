@@ -11,7 +11,6 @@
 // variable declarations
 //
 
-
 //-- a basic message type for communication with the soft hand controller
 struct SoftHandMsg{
   rai::String soft_hand_cmd;
@@ -22,15 +21,12 @@ struct SoftHandMsg{
 //inline void operator<<(ostream& os, const CtrlMsg& m){ os<<"BLA"; }
 //inline void operator>>(istream& os, CtrlMsg& m){  }
 
-
 //===========================================================================
 //
 // modules
 //
 //===========================================================================
 /// This module only calls ros:spinOnce() in step() and loops full speed -- to sync the process with the ros server
-
-
 
 // Helper function so sync ors with the real PR2
 /**

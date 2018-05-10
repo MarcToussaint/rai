@@ -12,7 +12,6 @@ struct SubscribeRosKinect2PCL{
   Var<Pcl> cloud;
   Var<rai::Transformation> kinect_frame;
 
-
   SubscribeRosKinect2PCL(const char* cloud_name="pclRawInput", const char* topic_name = "/kinect_head/depth_registered/points");
   ~SubscribeRosKinect2PCL();
 

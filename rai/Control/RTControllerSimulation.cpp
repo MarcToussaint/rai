@@ -172,8 +172,6 @@ void RTControllerSimulation::open() {
   //world = new rai::KinematicWorld(modelWorld.get());
   //world = new rai::KinematicWorld(rai::raiPath("data/pr2_model/pr2_model.ors"));
 
-
-
   makeConvexHulls(world->frames);
   arr q, qDot;
   world->getJointState(q,qDot);
@@ -234,7 +232,6 @@ void RTControllerSimulation::step() {
     RTControlStep(u, base_v, I_term, NoArr, NoArr, q, qDot, NoArr, NoArr, cmd, Kp_base, Kd_base, limits, j_baseTranslationRotation);
     if(systematicError.N) u += systematicError;
 #endif
-
 
     //force(world, fR);
     forceSimulateContactOnly(world, fR);

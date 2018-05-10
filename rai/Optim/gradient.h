@@ -40,7 +40,6 @@ inline int optGrad(arr& x, const ScalarFunction& f, OptOptions opt=NOOPT){
   return OptGrad(x, f, opt).run();
 }
 
-
 //===========================================================================
 //
 // Rprop
@@ -59,6 +58,4 @@ struct Rprop {
 inline uint optRprop(arr& x, const ScalarFunction& f, OptOptions opt=NOOPT){
   return Rprop().loop(x, f, opt.fmin_return, opt.stopTolerance, opt.initStep, opt.stopEvals, opt.verbose);
 }
-
-
 

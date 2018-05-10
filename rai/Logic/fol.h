@@ -22,7 +22,6 @@
 
  ['all variables in a substitution_scope' are all the declared symbols in that graph]
 
-
  */
 
 //### Level 0 routines
@@ -78,6 +77,5 @@ double evaluateFunction(Graph& func, Graph& state, int verbose=0);
 
 //struct FOL: Graph{
 //  Graph& state;
-
 
 //};

@@ -61,14 +61,12 @@ void Teleop2Tasks::deactivateTasks(){
 
 }
 
-
 void Teleop2Tasks::updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effpos, CtrlTask *effPos){
   arr pos, pos_div;
 
   //get positiondata
   copy(pos, cal_pose.sub(0,2));
   pos += ARR(0.6, 0., 1.);
-
 
   //calculate difference in position
   copy(pos_div,pos);
@@ -93,7 +91,6 @@ void Teleop2Tasks::updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effpo
   copy(old_pos, pos);
 }
 
-
 void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float calibrated_gripper_lh, float calibrated_gripper_rh, arr drive, int button, const rai::KinematicWorld& K){
 
   effPosR->active = true;
@@ -104,8 +101,6 @@ void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float cal
   gripperR->active = true;
   fc->active = true;
   base->active =false;
-
-
 
   //check if button has changed
   if(button != old_button){
@@ -159,8 +154,6 @@ void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float cal
     if(effOrientationR) effOrientationR->PD().setTarget(quat);
   }
 
-
-
   //update the movement of the left Hand
   updateMovement(cal_pose_lh, old_pos_lh, old_effpos_l, effPosL);
 
@@ -195,7 +188,6 @@ void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float cal
       y_c += drive_des(0)*sin(phi_c) + drive_des(1)*cos(phi_c);
       phi_c += drive_des(2);
   }
-
 
   base->PD().setTarget({x_c,y_c,phi_c});
   fmc.qNullCostRef.PD().y_target(trans->qIndex+0) = base->PD().y_target(trans->qIndex+0);

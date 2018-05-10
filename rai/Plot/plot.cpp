@@ -63,7 +63,6 @@ void glDrawPlot(void *module) { plotDrawOpenGL(((PlotModule*)module)->s); }
 // color class
 //
 
-
 //===========================================================================
 //
 // C interface implementations
@@ -614,7 +613,6 @@ void plotDrawOpenGL(void *_data) {
 #endif
 }
 
-
 //===========================================================================
 //
 // gnuplot draw routine
@@ -697,8 +695,6 @@ void plotDrawGnuplot(void *_data, bool pauseMouse) {
   //call gnuplot
   gnuplot(gnuplotcmd, pauseMouse, false, "z.pdf");
 }
-
-
 
 /*
 double lo[3], hi[3];

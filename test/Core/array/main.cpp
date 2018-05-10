@@ -407,7 +407,6 @@ void TEST(Permutation){
   for(uint i=0;i<p.N;i++) cout <<i <<":" <<p(i) <<"\n";
 }
 
-
 //===========================================================================
 
 void TEST(Sorted){
@@ -748,7 +747,6 @@ void sparseProduct(arr& y, arr& A, const arr& x);
 void TEST(SparseMatrix){
   cout <<"\n*** SparseMatrix\n";
 
-
   arr A(5,10), B(10);
   rndInteger(A,0,3);
   rndInteger(B,0,3);
@@ -759,7 +757,6 @@ void TEST(SparseMatrix){
 
   A.makeSparse();
   B.makeSparse();
-
 
   cout <<"A=\n" <<A <<"\nB=\n" <<B <<endl;
 //  cout <<"\nA*B=\n" <<A*B <<endl;
@@ -785,7 +782,6 @@ void TEST(SparseMatrix){
 
 void TEST(SparseVector){
   cout <<"\n*** SparseVector\n";
-
 
   arr a(10), b(10);
   rndInteger(a,0,3);

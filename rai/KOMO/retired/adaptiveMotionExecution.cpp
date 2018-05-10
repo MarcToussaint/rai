@@ -85,8 +85,6 @@ void AdaptiveMotionExecution::warpTrajectory()
   trajWrap->transform_CurrentBecomes_EndFixed(state,s.last());
 }
 
-
-
 void AdaptiveMotionExecution::plotState()
 {
   if (scene.M==0) {
@@ -124,7 +122,6 @@ void AdaptiveMotionExecution::plotState()
   write(LIST<arr>(sRef),STRING(scene<<"/sRef.output"));
   gnuplot("set term wxt 7 title 'phase profile'");
   gnuplot(STRING("plot '"<<scene<<"/s.output' us 1, '"<<scene<<"/sRef.output' us 1"));
-
 
   //compute velocity of trajectory
   arr dtraj;
@@ -172,24 +169,6 @@ void AdaptiveMotionExecution::printState()
   cout << "dsRef = " << dsRef << endl;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 //void AdaptiveMotionExecution::computeIK(arr &q, arr &qd)
 //{
   //    arr W, yPos, JPos, yVec, JVec, yPos_target,yVec_target, y_target, Phi, PhiJ, yCol,JCol,costs;
@@ -211,7 +190,6 @@ void AdaptiveMotionExecution::printState()
   //      y.append(yVec);
   //    }
   //    iterate(y);
-
 
   //    // next target
   //    y_target = traj[traj.d0-1];

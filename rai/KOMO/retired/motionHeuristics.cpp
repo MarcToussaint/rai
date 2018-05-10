@@ -126,7 +126,6 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
   c->map.phi(initial, NoArr, MP.world);
   if (initial(0)<0.) ((TM_Default*)&c->map)->ivec.set(0., -1., 0.); //flip vector to become positive
 
-
   if (phase==0) return;
   
 
@@ -164,7 +163,6 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
   MP.setInterpolatingCosts(c, KOMO::early_restConst,
                           target, oppositionPrec, ARR(0.,0.,0.), 0., 0.8);
   //M.setInterpolatingCosts(c, KOMO::constFinalMid, target, oppositionPrec);
-
 
   c = MP.addTask("oppose13",
                     new TM_Default(TMT_vecAlign, MP.world, "tipNormal1", NoVector, "tipNormal3", NoVector));
@@ -465,7 +463,6 @@ void setHomingGoals(KOMO& M, uint T){
 }
 #endif
 
-
 double keyframeOptimizer(arr& x, KOMO& MP, bool x_is_initialized, uint verbose) {
 
 //  MotionProblem_EndPoseFunction MF(MP);
@@ -479,7 +476,6 @@ double keyframeOptimizer(arr& x, KOMO& MP, bool x_is_initialized, uint verbose) 
 
   return cost;
 }
-
 
 void interpolate_trajectory(arr &q, const arr& q0, const arr& qT, uint T){
   q.resize(T+1,q0.N);

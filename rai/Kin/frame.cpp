@@ -27,7 +27,6 @@ template<> const char* rai::Enum<rai::BodyType>::names []={
   "BT_dynamic", "BT_kinematic", "BT_static", NULL
 };
 
-
 //===========================================================================
 //
 // Frame
@@ -699,7 +698,6 @@ void rai::Shape::setGeomMimic(const rai::Frame *f){
   CHECK(f->shape->geom, "");
   geom = f->shape->geom;
 }
-
 
 void rai::Shape::read(const Graph& ats) {
 

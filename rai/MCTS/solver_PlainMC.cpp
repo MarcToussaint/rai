@@ -157,7 +157,6 @@ double PlainMC::addRollout(int stepAbort){
   return rolloutR;
 }
 
-
 void PlainMC::addReturnToStatistics(double rolloutR, MCTS_Environment::Handle decision, int decisionIndex){
   if(decisionIndex>=0){
     CHECK_EQ(A(decisionIndex), decision, "")
@@ -196,5 +195,4 @@ uint PlainMC::getBestActionIdx(){
 MCTS_Environment::Handle PlainMC::getBestAction(){
   return A(getBestActionIdx());
 }
-
 

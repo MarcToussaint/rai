@@ -29,5 +29,4 @@ enum PixelFormat {
 };
 }
 
-
 #endif /* PIXEL_FORMAT_HPP_ */

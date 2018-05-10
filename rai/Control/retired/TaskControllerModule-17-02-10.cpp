@@ -10,7 +10,6 @@
 #include <Gui/opengl.h>
 #include <RosCom/baxter.h>
 
-
 void lowPassUpdate(arr& lowPass, const arr& signal, double rate=.1){
   if(lowPass.N!=signal.N){ lowPass=zeros(signal.N); return; }
   lowPass = (1.-rate)*lowPass + rate*signal;
@@ -50,7 +49,6 @@ TaskControlThread::TaskControlThread(const char* _robot, const rai::KinematicWor
   // 2) modelWorld has been set before
   // 3) the "robot" flag in cfg file
   // 4) the "robot" argument here
-
 
   if(&world) {
     realWorld = world;
@@ -125,7 +123,6 @@ void TaskControlThread::open(){
     dynSim->threadLoop();
   }
 }
-
 
 void TaskControlThread::step(){
   static uint t=0;
@@ -303,7 +300,6 @@ void TaskControlThread::step(){
     a = taskController->getDesiredLinAccLaw(Kp, Kd, k);
     checkNan(k);
 
-
     //-- translate to motor torques
     arr M, F;
     taskController->world.equationOfMotion(M, F, false);
@@ -344,7 +340,6 @@ void TaskControlThread::step(){
       LOG(0) <<"************** Tasks Report **********";
       taskController->reportCurrentState();
     }
-
 
     modelWorld.deAccess();
     ctrlTasks.deAccess();

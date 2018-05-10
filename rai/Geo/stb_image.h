@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 /* stb_image - v2.08 - public domain image loader - http://nothings.org/stb_image.h
                                      no warranty implied; use at your own risk
 
@@ -14,7 +22,6 @@
 
    You can #define STBI_ASSERT(x) before the #include to avoid using assert.h.
    And #define STBI_MALLOC, STBI_REALLOC, and STBI_FREE to avoid using malloc,realloc,free
-
 
    QUICK NOTES:
       Primarily of interest to game developers and other people who can
@@ -40,7 +47,6 @@
       - SIMD acceleration on x86/x64 (SSE2) and ARM (NEON)
 
    Full documentation under "DOCUMENTATION" below.
-
 
    Revision 2.00 release notes:
 
@@ -144,7 +150,6 @@
         removed in future versions of the library. It is only intended for
         near-term back-compatibility use.
 
-
    Latest revision history:
       2.08  (2015-09-13) fix to 2.07 cleanup, reading RGB PSD as RGBA
       2.07  (2015-09-13) partial animated GIF support
@@ -171,7 +176,6 @@
                          fix bug in interlaced PNG with user-specified channel count
 
    See end of file for full revision history.
-
 
  ============================    Contributors    =========================
 
@@ -394,7 +398,6 @@ distribute, and modify this file as you see fit.
 // and only if iPhone convert-to-rgb processing is on).
 //
 
-
 #ifndef STBI_NO_STDIO
 #include <stdio.h>
 #endif // STBI_NO_STDIO
@@ -476,7 +479,6 @@ STBIDEF int      stbi_is_hdr          (char const *filename);
 STBIDEF int      stbi_is_hdr_from_file(FILE *f);
 #endif // STBI_NO_STDIO
 
-
 // get a VERY brief reason for failure
 // NOT THREADSAFE
 STBIDEF const char *stbi_failure_reason  (void);
@@ -493,8 +495,6 @@ STBIDEF int      stbi_info            (char const *filename,     int *x, int *y,
 STBIDEF int      stbi_info_from_file  (FILE *f,                  int *x, int *y, int *comp);
 
 #endif
-
-
 
 // for image formats that explicitly notate that they have premultiplied alpha,
 // we just return the colors as stored in the file. set this flag to force
@@ -517,7 +517,6 @@ STBIDEF int   stbi_zlib_decode_buffer(char *obuffer, int olen, const char *ibuff
 
 STBIDEF char *stbi_zlib_decode_noheader_malloc(const char *buffer, int len, int *outlen);
 STBIDEF int   stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const char *ibuffer, int ilen);
-
 
 #ifdef __cplusplus
 }
@@ -567,7 +566,6 @@ STBIDEF int   stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const ch
 #define STBI_NO_ZLIB
 #endif
 
-
 #include <stdarg.h>
 #include <stddef.h> // ptrdiff_t on osx
 #include <stdlib.h>
@@ -586,7 +584,6 @@ STBIDEF int   stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const ch
 #define STBI_ASSERT(x) assert(x)
 #endif
 
-
 #ifndef _MSC_VER
    #ifdef __cplusplus
    #define stbi_inline inline
@@ -596,7 +593,6 @@ STBIDEF int   stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const ch
 #else
    #define stbi_inline __forceinline
 #endif
-
 
 #ifdef _MSC_VER
 typedef unsigned short stbi__uint16;
@@ -762,7 +758,6 @@ typedef struct
    stbi_uc *img_buffer, *img_buffer_end;
    stbi_uc *img_buffer_original, *img_buffer_original_end;
 } stbi__context;
-
 
 static void stbi__refill_buffer(stbi__context *s);
 
@@ -1039,7 +1034,6 @@ static FILE *stbi__fopen(char const *filename, char const *mode)
    return f;
 }
 
-
 STBIDEF stbi_uc *stbi_load(char const *filename, int *x, int *y, int *comp, int req_comp)
 {
    FILE *f = stbi__fopen(filename, "rb");
@@ -1197,7 +1191,6 @@ STBIDEF void   stbi_ldr_to_hdr_scale(float scale) { stbi__l2h_scale = scale; }
 STBIDEF void   stbi_hdr_to_ldr_gamma(float gamma) { stbi__h2l_gamma_i = 1/gamma; }
 STBIDEF void   stbi_hdr_to_ldr_scale(float scale) { stbi__h2l_scale_i = 1/scale; }
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 // Common code used by all image loaders
@@ -1321,7 +1314,6 @@ static stbi__uint32 stbi__get32le(stbi__context *s)
 #endif
 
 #define STBI__BYTECAST(x)  ((stbi_uc) ((x) & 255))  // truncate int to byte without warnings
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -3943,7 +3935,6 @@ typedef struct
    stbi_uc *idata, *expanded, *out;
 } stbi__png;
 
-
 enum {
    STBI__F_none=0,
    STBI__F_sub=1,
@@ -4556,7 +4547,6 @@ static int stbi__bmp_test(stbi__context *s)
    stbi__rewind(s);
    return r;
 }
-
 
 // returns 0..31 for the highest set bit
 static int stbi__high_bit(unsigned int z)
@@ -5911,7 +5901,6 @@ static float *stbi__hdr_load(stbi__context *s, int *x, int *y, int *comp, int re
    int len;
    unsigned char count, value;
    int i, j, k, c1,c2, z;
-
 
    // Check identifier
    if (strcmp(stbi__hdr_gettoken(s,buffer), "#?RADIANCE") != 0)

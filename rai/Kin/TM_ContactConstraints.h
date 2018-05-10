@@ -8,7 +8,6 @@
 
 #include "taskMap.h"
 
-
 /// this stacks all constacts to one feature vector OF VARIABLE SIZE! (the optimizer has to deal with variable size features; transfering lambdas across steps)
 struct TM_ContactConstraints : TaskMap {
   TM_ContactConstraints() {}

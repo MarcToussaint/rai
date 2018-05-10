@@ -94,7 +94,6 @@ double matdistance(intA& A, intA& B, bool sub);
 double matannealing(intA& fix, intA& fox, uintA& p, bool sub, double annealingRepetitions, double annealingCooling);
 }
 
-
 //===========================================================================
 //
 // MonSolver
@@ -109,7 +108,6 @@ public:
   void init(double& par, double wide=2.);
   void solve(double& par, const double& err);
 };
-
 
 //===========================================================================
 //
@@ -161,9 +159,6 @@ public:
 };
 stdOutPipe(LinearStatistics);
 
-
-
-
 //===========================================================================
 //
 // Tuple index
@@ -176,7 +171,6 @@ public:
   uint index(uintA i);
   void checkValid();
 };
-
 
 //===========================================================================
 //
@@ -197,7 +191,6 @@ class Kalman {
   void EMupdate(arr& Y, arr *Rt=0);
   void fb(arr& y, arr& f, arr& F, arr& g, arr& G, arr& p, arr& P, arr *Rt=0);
 };
-
 
 //===========================================================================
 //
@@ -221,7 +214,6 @@ public:
   void eval(double t, arr& x, arr* v=0);
   void eval(double t, arr& x, arr& v);
 };
-
 
 //===========================================================================
 //

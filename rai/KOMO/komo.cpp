@@ -56,7 +56,6 @@ Shape *getShape(const KinematicWorld& K, const char* name){
   return s;
 }
 
-
 KOMO::KOMO() : T(0), tau(0.), k_order(2), useSwift(true), opt(NULL), gl(NULL), verbose(1), komo_problem(*this){
   verbose = getParameter<int>("KOMO/verbose",1);
 }
@@ -351,7 +350,6 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
 //  Shape *endeffShape = world.getFrameByName(endeffRef)->body->shapes.first();
 //  setTask(time, time, new TM_GJK(endeffShape, world.getFrameByName(object), false), OT_eq, NoArr, 1e3);
 
-
   //disconnect object from table
 //  setKinematicSwitch(time, true, "delete", NULL, object);
   //connect graspRef with object
@@ -393,7 +391,6 @@ void KOMO::setGraspStick(double time, const char* endeffRef, const char* object,
 //              arr(2,3,{0,1,0,0,0,1}), {}),
 //          OT_eq, NoArr, 1e3);
   setTask(time, time, new TM_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e2);
-
 
   if(stepsPerPhase>2){ //velocities down and up
     setTask(time-timeToLift, time, new TM_Default(TMT_pos, world, endeffRef), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
@@ -573,7 +570,6 @@ void KOMO::setSlideAlong(double time, const char* stick, const char* object, con
 
   core_setTouch(time, time+1., stick, wall);
 
-
   //    //disconnect object from table
   //    setKinematicSwitch(time, true, "delete", NULL, object);
   //    //connect graspRef with object
@@ -593,7 +589,6 @@ void KOMO::setSlideAlong(double time, const char* stick, const char* object, con
   }
 }
 
-
 void KOMO::setDrop(double time, const char* object, const char* from, const char* to, int verbose){
 
   if(from){ //require the object outside the margin of its bounding box
@@ -612,7 +607,6 @@ void KOMO::setDrop(double time, const char* object, const char* from, const char
 //  setFlag(time, new Flag(FT_gravityAcc, world[object]->ID, 0, true),+1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
 //  setFlag(time, new Flag(FT_noQControlCosts, world[object]->ID, 0, true),+1);
 
-
 //  if(stepsPerPhase>2){ //velocities down and up
 //    setTask(time, time+.2, new TM_Default(TMT_pos, world, object), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); // move down
 //  }
@@ -629,7 +623,6 @@ void KOMO::setDropEdgeFixed(double time, const char* object, const char* to, con
   setKinematicSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_hingeX, to, object, world, 0, relFrom, relTo));
 //  setKinematicSwitch(time, true, new KinematicSwitch(insertActuated, JT_transZ, NULL, object, world, 0));
 //  setKinematicSwitch(time, true, new KinematicSwitch(SW_insertEffJoint, JT_trans3, NULL, object, world, 0));
-
 
 //  if(stepsPerPhase>2){ //velocities down and up
 //    setTask(time, time+.2, new TM_Default(TMT_pos, world, object), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); // move down
@@ -665,7 +658,6 @@ void KOMO::setSlow(double startTime, double endTime, double prec, bool hardConst
 void KOMO::setSlowAround(double time, double delta, double prec, bool hardConstrained){
   setSlow(time-delta, time+delta, prec, hardConstrained);
 }
-
 
 void KOMO::setFine_grasp(double time, const char* endeff, const char* object, double above, double gripSize, const char* gripper, const char* gripper2){
   double t1=-.25; //time when gripper is positined above
@@ -893,12 +885,10 @@ void KOMO::setLiftDownUp(double time, const char *endeff, double timeToLift){
   }
 }
 
-
 //===========================================================================
 //
 // config
 //
-
 
 void KOMO::setConfigFromFile(){
   KinematicWorld K(getParameter<String>("KOMO/modelfile"));
@@ -1008,7 +998,6 @@ void setTasks(KOMO& MP,
   t = MP.addTask("endeff_pos", new TM_Default(TMT_pos, endeff.ID, NoVector, target.ID, NoVector), OT_sumOfSqr);
   t->setCostSpecs(MP.T-1, MP.T-1, {0.}, posPrec);
 
-
   for(uint i=0;i<3;i++) if(whichAxesToAlign&(1<<i)){
     Vector axis;
     axis.setZero();
@@ -1025,7 +1014,6 @@ void KOMO::setMoveTo(KinematicWorld& world, Frame& endeff, Frame& target, byte w
 //  MP = new KOMO(world);
   setModel(world);
   this->world.checkConsistency();
-
 
   setTasks(*this, endeff, target, whichAxesToAlign, 1, -1, -1.);
   reset();
@@ -1266,7 +1254,6 @@ bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPref
   arr X = getPath_frames(allFrames);
   DrawPaths drawX(X);
 
-
   for(int t=-(int)k_order; t<(int)T; t++) {
     if(saveVideoPrefix) gl->captureImg=true;
     gl->clear();
@@ -1315,7 +1302,6 @@ bool KOMO::displayPath(bool watch){
   gl->clear();
   return false;
 }
-
 
 Camera& KOMO::displayCamera(){
   if(!gl){
@@ -1503,7 +1489,6 @@ rai::Array<rai::Transformation> KOMO::reportEffectiveJoints(std::ostream& os){
   return Qs;
 }
 
-
 Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs) {
   if(featureValues.N>1){ //old optimizer -> remove some time..
     HALT("outdated");
@@ -1566,7 +1551,6 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
     }
   }
   CHECK_EQ(M , phi.N, "");
-
 
   //-- generate a report graph
   Graph report;

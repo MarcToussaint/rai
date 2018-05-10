@@ -15,7 +15,6 @@
  * @{
  */
 
-
 #include "kin_swift.h"
 #include "proxy.h"
 #include "frame.h"

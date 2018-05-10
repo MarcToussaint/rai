@@ -15,12 +15,10 @@ void ExtremeEigenValues::computeExact(){
   lambda_hi = lambda.last();  if(lambda_hi>1e-10) x_hi = x[x.d0-1];
 }
 
-
 void ExtremeEigenValues::initPowerMethodRandom(){
   x_hi = 2.*rand(A.d0)-1.;  x_hi/=length(x_hi);
   x_lo = 2.*rand(A.d0)-1.;  x_lo/=length(x_lo);
 }
-
 
 void ExtremeEigenValues::stepPowerMethod(uint k){
   for(uint i=0;i<k;i++){

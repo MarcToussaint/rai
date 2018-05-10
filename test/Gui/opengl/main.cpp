@@ -10,8 +10,6 @@
 #include <Core/thread.h>
 using namespace std;
 
-
-
 /************ first test ************/
 
 void draw1(void*){
@@ -54,7 +52,6 @@ void TEST(MultipleViews) {
 
 /************ grab test ************/
 
-
 void TEST(Grab) {
   OpenGL gl("title",300,300);
   gl.add(draw1,0);
@@ -71,13 +68,11 @@ void TEST(Grab) {
   cout <<"orthogonal top view" <<endl;
   gl.watch();
 
-
   //grap the depth image from current view:
   gl.update(NULL, false, true);
   cout <<"max " <<(int)gl.captureDepth.max() <<" min " <<(int)gl.captureDepth.min() <<endl;
   gl.watchImage(gl.captureDepth,true,1);
 }
-
 
 /************ second test ************/
 
@@ -123,7 +118,6 @@ void TEST(Mesh) {
   gl.watch();
 }
 
-
 /************ third test ************/
 
 void TEST(Obj) {
@@ -148,8 +142,6 @@ void TEST(Obj) {
   gl.add(mesh2);
   gl.watch();
 }
-
-
 
 /************ fourth test ************/
 
@@ -191,7 +183,6 @@ void TEST(Menu){
   gl.watch();
 #endif
 }
-
 
 /************ 5th test ************/
 
@@ -403,6 +394,4 @@ int MAIN(int argc,char **argv){
   threadCloseModules();
   return 0;
 }
-
-
 

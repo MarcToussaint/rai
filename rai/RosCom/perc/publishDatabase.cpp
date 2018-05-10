@@ -29,7 +29,6 @@
   namespace ar = ar_track_alvar_msgs;
 #endif
 
-
 PublishDatabase::PublishDatabase()
   : Thread("PublishDatabase", -1),
     percepts_filtered(this, "percepts_filtered", true),
@@ -381,7 +380,6 @@ void PublishDatabase::step(){
       plane_marker_pub.publish(plane_markers);
 
   }
-
 
   // Sync the modelWorld
   modelWorld.writeAccess();

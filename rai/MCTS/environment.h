@@ -40,7 +40,6 @@ struct MCTS_Environment {
       double duration;
     };
 
-
   MCTS_Environment() = default;
   virtual ~MCTS_Environment(){}
 

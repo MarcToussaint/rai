@@ -294,7 +294,6 @@ template<class T> struct Array : std::vector<T> {
 //  void init();
 };
 
-
 //===========================================================================
 ///
 /// @name alternative iterators
@@ -508,7 +507,6 @@ template<class T> rai::Array<T*> LIST(const T& i, const T& j, const T& k, const 
 template<class T> rai::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o) {      rai::Array<T*> z(7); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; z(6)=(T*)&o; return z; }
 template<class T> rai::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p) { rai::Array<T*> z(8); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; z(6)=(T*)&o; z(7)=(T*)&p; return z; }
 
-
 //===========================================================================
 /// @}
 /// @name Octave/Matlab functions to generate special arrays
@@ -578,7 +576,6 @@ arr logspace(double base, double limit, uint n);
 
 void normalizeWithJac(arr& y, arr& J);
 
-
 //===========================================================================
 /// @}
 /// @name non-template functions //? needs most cleaning
@@ -621,12 +618,9 @@ double cofactor(const arr& A, uint i, uint j);
 uintA getIndexTuple(uint i, const uintA &d);  //? that also exists inside of array!
 void lognormScale(arr& P, double& logP, bool force=true);
 
-
-
 void gnuplot(const arr& X, bool pauseMouse=false, bool persist=false, const char* PDFfile=NULL);
 //these are obsolete, use catCol instead
 void write(const arrL& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
-
 
 void write_ppm(const byteA &img, const char *file_name, bool swap_rows=true);
 void read_ppm(byteA &img, const char *file_name, bool swap_rows=true);
@@ -743,7 +737,6 @@ template<class T> rai::Array<T> elemWiseHinge(const rai::Array<T>& x);
 
 template<class T> void writeConsecutiveConstant(std::ostream& os, const rai::Array<T>& x);
 
-
 //===========================================================================
 /// @}
 /// @name concatenating arrays together
@@ -759,7 +752,6 @@ template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<
 template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c){ return catCol(LIST<rai::Array<T> >(a,b,c)); }
 template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d){ return catCol(LIST<rai::Array<T> >(a,b,c,d)); }
 template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d, const rai::Array<T>& e){ return catCol(LIST<rai::Array<T> >(a,b,c,d,e)); }
-
 
 //===========================================================================
 /// @}
@@ -785,7 +777,6 @@ template<class T> void rndGauss(rai::Array<T>& a, double stdDev=1., bool add=fal
 template<class T> uint softMax(const rai::Array<T>& a, arr& soft, double beta);
 template<class T> rai::Array<T> sqr(const rai::Array<T>& y) { rai::Array<T> x; x.resizeAs(y); for(uint i=0; i<x.N; i++) x.elem(i)=y.elem(i)*y.elem(i); return x; }
 
-
 //===========================================================================
 /// @}
 /// @name tensor functions
@@ -807,7 +798,6 @@ template<class T> void tensorMultiply(rai::Array<T> &X, const rai::Array<T> &Y, 
 template<class T> void tensorAdd(rai::Array<T> &X, const rai::Array<T> &Y, const uintA &Yid);
 template<class T> void tensorMultiply_old(rai::Array<T> &x, const rai::Array<T> &y, const uintA &d, const uintA &ids);
 template<class T> void tensorDivide(rai::Array<T> &X, const rai::Array<T> &Y, const uintA &Yid);
-
 
 //===========================================================================
 /// @}
@@ -839,7 +829,6 @@ bool samedim(const rai::Array<T>& a, const rai::Array<S>& b) {
 }
 #endif //SWIG
 
-
 //===========================================================================
 /// @}
 /// @name low-level lapack interfaces
@@ -867,7 +856,6 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b);
 void lapack_min_Ax_b(arr& x,const arr& A, const arr& b);
 arr lapack_Ainv_b_symPosDef_givenCholesky(const arr& U, const arr&b);
 arr lapack_Ainv_b_triangular(const arr& L, const arr& b);
-
 
 //===========================================================================
 /// @}
@@ -946,7 +934,6 @@ arr packRowShifted(const arr& X);
 RowShifted *makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
 arr makeRowSparse(const arr& X);
 
-
 //===========================================================================
 /// @}
 /// @name lists -- TODO: make lists 'special'
@@ -978,7 +965,6 @@ template<class T> rai::Array<T*> getList(const rai::Array<T>& A) {
 }
 template<class T> T* new_elem(rai::Array<T*>& L) { T *e=new T; e->index=L.N; L.append(e); return e; }
 
-
 //===========================================================================
 /// @}
 /// @name graphs -- TODO: transfer to graph data structure
@@ -1004,7 +990,6 @@ template<class vert, class edge> bool graphTopsort(rai::Array<vert*>& V, rai::Ar
 template<class vert, class edge> void graphDelete(rai::Array<vert*>& V, rai::Array<edge*>& E);
 
 /// @}
-
 
 //===========================================================================
 //

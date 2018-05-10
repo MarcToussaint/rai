@@ -153,4 +153,3 @@ arr rai::RRTPlanner::getTrajectoryTo(const arr& target, int max_iter) {
   return q;
 }
 
-

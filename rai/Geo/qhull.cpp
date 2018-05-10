@@ -15,7 +15,6 @@
  * @{
  */
 
-
 #ifdef RAI_QHULL
 
 #include "mesh.h"
@@ -333,7 +332,6 @@ arr getHull(const arr& V, uintA& T) {
   exitcode = qh_new_qhull(V.d1, V.d0, V.p, false, cmd, NULL, stderr);
   if(exitcode) HALT("qh_new_qhull error - exitcode " <<exitcode);
 
-
   qh_triangulate();
 
   facetT *facet;
@@ -410,7 +408,6 @@ void getDelaunayEdges(uintA& E, const arr& V) {
     RAI_MSG("qhull internal warning (main): did not free " <<totlong <<" bytes of long memory (" <<curlong <<" pieces)\n");
 }
 
-
 //===========================================================================
 
 #ifdef OLD_CODE
@@ -486,11 +483,6 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
 void getDelaunayEdges(uintA& E, const arr& V) { NICO }
 #endif
 /** @} */
-
-
-
-
-
 
 typedef struct { double x, y; } vec_t;
 typedef vec_t *vec;

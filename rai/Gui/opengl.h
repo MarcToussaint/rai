@@ -105,7 +105,6 @@ void glRasterImage(float x, float y, byteA &img, float zoom=1.);
 
 void read_png(byteA &img, const char *file_name, bool swap_rows);
 
-
 //===========================================================================
 //
 // OpenGL class
@@ -245,7 +244,6 @@ protected:
   friend struct sOpenGL;
   friend bool glClickUI(void *p, OpenGL *gl);
 };
-
 
 //===========================================================================
 

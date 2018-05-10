@@ -31,9 +31,5 @@ namespace rai {
   };
 }
 
-
-
-
 #endif // _HEADER_GUARD_RRT_PLANNER_H_
-
 

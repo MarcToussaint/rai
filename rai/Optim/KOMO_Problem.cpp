@@ -50,7 +50,6 @@ void KOMO_Problem::report(const arr& phi){
   }
 }
 
-
 void KOMO_GraphProblem::getStructure(uintA& variableDimensions, uintAA& featureVariables, ObjectiveTypeA& featureTypes){
   uintA featureTimes;
   KOMO.getStructure(variableDimensions, featureTimes, featureTypes);
@@ -73,7 +72,6 @@ void KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x, arr& lambd
   ObjectiveTypeA featureTypes; //TODO: redundant -> remove
   KOMO.phi(phi, J, H, NoUintA, featureTypes, x, lambda);
 }
-
 
 Conv_KOMO_ConstrainedProblem::Conv_KOMO_ConstrainedProblem(KOMO_Problem& P) : KOMO(P){
   KOMO.getStructure(variableDimensions, featureTimes, featureTypes);

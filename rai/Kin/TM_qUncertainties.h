@@ -10,7 +10,6 @@
 
 #include "taskMap.h"
 
-
 struct TM_qUncertainties:TaskMap {
   TM_qUncertainties();
 

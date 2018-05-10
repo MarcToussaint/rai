@@ -18,7 +18,6 @@ PrimalDualProblem::PrimalDualProblem(const arr &x, ConstrainedProblem &P, OptOpt
   x_lambda = x;
   x_lambda.append( ones(n_ineq) );
 
-
   ScalarFunction::operator=( [this](arr& dL, arr& HL, const arr& x) -> double {
     return this->primalDual(dL, HL, x);
   } );
@@ -142,5 +141,4 @@ uint OptPrimalDual::run(){
 
 OptPrimalDual::~OptPrimalDual(){
 }
-
 

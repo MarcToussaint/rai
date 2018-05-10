@@ -21,7 +21,6 @@ struct KOMO_Problem {
   void report(const arr& phi=NoArr);
 };
 
-
 //-- converters
 struct Conv_KOMO_ConstrainedProblem : ConstrainedProblem{
   KOMO_Problem& KOMO;
@@ -34,7 +33,6 @@ struct Conv_KOMO_ConstrainedProblem : ConstrainedProblem{
 
   void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda);
 };
-
 
 struct KOMO_GraphProblem : GraphProblem{
   KOMO_Problem& KOMO;

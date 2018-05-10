@@ -16,14 +16,12 @@
 #include <Algo/spline.h>
 #include <Core/thread.h>
 
-
 struct LinTaskSpaceAccLaw {
   TaskMap* map;
 
   rai::KinematicWorld* world;
 
   rai::String name;
-
 
   arr yRef;
   arr yDotRef;
@@ -81,7 +79,6 @@ struct LinTaskSpaceAccLaw {
 
 };
 
-
 struct ConstrainedTaskLaw : LinTaskSpaceAccLaw {
 
   arr force;
@@ -117,8 +114,5 @@ struct TaskSpaceController {
 
   void setGravity(bool gravity);
 };
-
-
-
 
 #endif // TASKSPACECONTROLLER_H

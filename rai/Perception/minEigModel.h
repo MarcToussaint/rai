@@ -39,7 +39,6 @@ struct MinEigModel : GLDrawer{
   //label
   int label;
 
-
   MinEigModel(DataNeighbored& data, double margin) : data(data), weights(zeros(data.n())), margin(margin), label(0) {}
   virtual ~MinEigModel(){}
 

@@ -295,4 +295,3 @@ void ComputeCameraView::step(){
   }
 }
 
-

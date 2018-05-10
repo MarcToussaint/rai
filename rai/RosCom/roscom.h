@@ -52,7 +52,6 @@
 // utils
 //
 
-
 void rosCheckInit(const char* node_name="pr2_module");
 bool rosOk();
 struct RosInit{ RosInit(const char* node_name="rai_module"); };
@@ -105,9 +104,7 @@ rai::Transformation ros_getTransform(const std::string& from, const std::string&
 rai::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener, tf::Transform* returnRosTransform=NULL);
 bool ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener, rai::Transformation& result);
 
-
 struct SubscriberType { virtual ~SubscriberType() {} }; ///< if types derive from RootType, more tricks are possible
-
 
 //===========================================================================
 //
@@ -135,7 +132,6 @@ struct Subscriber : SubscriberType {
   }
   void callback(const typename msg_type::ConstPtr& msg) { var.set() = *msg;  revision++; }
 };
-
 
 //===========================================================================
 //
@@ -176,7 +172,6 @@ struct Publisher : Thread {
     }
   }
 };
-
 
 //===========================================================================
 //
@@ -225,7 +220,6 @@ struct SubscriberConv : SubscriberType {
   }
 };
 
-
 //===========================================================================
 //
 // subscribing a message into an RAI-type-var via a conv_* function
@@ -264,7 +258,6 @@ struct SubscriberConvNoHeader : SubscriberType {
     var.set() = conv(*msg);
   }
 };
-
 
 //===========================================================================
 //

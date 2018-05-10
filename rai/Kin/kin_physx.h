@@ -49,4 +49,3 @@ void bindOrsToPhysX(rai::KinematicWorld& graph, OpenGL& gl, PhysXInterface& phys
 #endif
 /// @}
 
-

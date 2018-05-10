@@ -38,8 +38,6 @@ struct CostFct_PlanePoints{
   ScalarFunction f_transform();
 };
 
-
-
 void glDrawPlanes(const PlaneA& planes);
 
 void glDrawPlanes(void *p);

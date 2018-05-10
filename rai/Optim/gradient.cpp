@@ -10,7 +10,6 @@
 
 #include "gradient.h"
 
-
 //===========================================================================
 
 OptGrad::OptGrad(arr& _x, const ScalarFunction& _f,  OptOptions _o):
@@ -92,7 +91,6 @@ OptGrad::StopCriterion OptGrad::step(){
   return stopCriterion=stopNone;
 }
 
-
 OptGrad::~OptGrad(){
   if(o.fmin_return) *o.fmin_return=fx;
   if(o.verbose>0) fil.close();
@@ -101,7 +99,6 @@ OptGrad::~OptGrad(){
 #endif
   if(o.verbose>1) cout <<"--- OptGradStop: f(x)=" <<fx <<endl;
 }
-
 
 OptGrad::StopCriterion OptGrad::run(uint maxIt){
   numTinySteps=0;
@@ -115,7 +112,6 @@ OptGrad::StopCriterion OptGrad::run(uint maxIt){
   if(o.fmin_return) *o.fmin_return= fx;
   return stopCriterion;
 }
-
 
 //===========================================================================
 //

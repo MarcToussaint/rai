@@ -96,14 +96,11 @@ Singleton<OpenGLProcess> singleFreeglut;
 
 Mutex& OpenGLMutex(){ return singleFreeglut.mutex; }
 
-
-
 struct SFG_Display_dummy {
   _XDisplay *Display;
 };
 
 extern SFG_Display_dummy fgDisplay;
-
 
 //===========================================================================
 //
@@ -146,7 +143,6 @@ struct sOpenGL {
 #endif
   }
 };
-
 
 //===========================================================================
 //
@@ -255,8 +251,6 @@ struct sOpenGL{
 template rai::Array<glUI::Button>::Array();
 template rai::Array<glUI::Button>::~Array();
 
-
-
 //===========================================================================
 //
 // static objects
@@ -264,7 +258,6 @@ template rai::Array<glUI::Button>::~Array();
 
 OpenGL *staticgl [10]; //ten pointers to be potentially used as display windows
 uint OpenGL::selectionBuffer[1000];
-
 
 //===========================================================================
 //
@@ -395,7 +388,6 @@ void glRotate(const rai::Quaternion& rot){
   rot.getMatrixGL(GLmatrix);
   glMultMatrixd(GLmatrix);
 }
-
 
 void glTransform(const double pos[3], const double R[12]) {
   GLfloat matrix[16];
@@ -641,7 +633,6 @@ void glDrawAxes(double scale) {
     glPopMatrix();
   }
 }
-
 
 void glDrawCamera(const rai::Camera &cam){
   glTransform(cam.X);
@@ -1812,7 +1803,6 @@ void OpenGL::saveEPS(const char*) {
 void OpenGL::about(std::ostream& os) { RAI_MSG("NICO"); }
 #endif
 
-
 //===========================================================================
 //
 // callbacks
@@ -1959,7 +1949,6 @@ void OpenGL::MouseWheel(int wheel, int direction, int x, int y) {
   dataLock.unlock();
 }
 
-
 void OpenGL::Motion(int _x, int _y) {
 #ifdef RAI_GL
   dataLock.writeLock();
@@ -2024,7 +2013,6 @@ void OpenGL::Motion(int _x, int _y) {
   NICO
 #endif
 }
-
 
 //===========================================================================
 //

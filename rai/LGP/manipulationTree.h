@@ -19,7 +19,6 @@ typedef rai::Array<MNode*> MNodeL;
 //struct SkeletonEntry{ StringL symbols; uint k0,k1; double phase0, phase1; };
 //typedef rai::Array<SkeletonEntry> Skeleton;
 
-
 extern uint COUNT_kin, COUNT_evals, COUNT_node;
 extern uintA COUNT_opt;
 extern double COUNT_time;
@@ -28,7 +27,6 @@ extern ofstream *filNodes;
 extern bool LGP_useHoming;
 
 enum LEVEL{ l_symbolic=0, l_pose=1, l_seq=2, l_path=3 };
-
 
 //===========================================================================
 

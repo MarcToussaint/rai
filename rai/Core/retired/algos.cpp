@@ -247,7 +247,6 @@ double rai::matannealing(intA& fix, intA& fox, uintA& p, bool sub, double anneal
   return bestdist;
 }
 
-
 //===========================================================================
 //
 // MonSolver
@@ -376,7 +375,6 @@ void LinearStatistics::learn(const arr& X, const arr& Y, double weight) {
   }
 }
 
-
 /// in case y is a scalar
 void LinearStatistics::learn(const arr& x, double y, double weight) {
   learn(x, arr(&y, 1), weight);
@@ -466,7 +464,6 @@ void LinearStatistics::predict(const arr& x, arr& y) {
   y = MeanY + A*(x-MeanX);
 }
 
-
 /// prototype for operator<<
 void LinearStatistics::write(std::ostream& os) const {
   os
@@ -481,8 +478,6 @@ void LinearStatistics::write(std::ostream& os) const {
       <<"\n</LinearStatistics>"
       <<std::endl;
 }
-
-
 
 //===========================================================================
 //
@@ -528,7 +523,6 @@ void TupleIndex::checkValid() {
   uint i;
   for(i=0; i<d0; i++) CHECK_EQ(i,index(operator[](i)), "wrong index association");
 }
-
 
 //===========================================================================
 //
@@ -939,7 +933,6 @@ void XSpline::eval(double t, arr& x, arr* v) {
   }
 }
 
-
 //===========================================================================
 //
 // Partial Least Squares (PLS, SIMPLS, de Jong)
@@ -1046,7 +1039,6 @@ uint PartialLeastSquares::inDim() { return S.meanX.N; }
 uint PartialLeastSquares::outDim() { return S.meanY.N; }
 
 void PartialLeastSquares::write(std::ostream& os) const { os <<S; }
-
 
 //===========================================================================
 //
@@ -1205,8 +1197,6 @@ int rai::minimize(double(*f)(arr*, const arr&, void*),
   
   return i;
 }
-
-
 
 //================================================================================
 //

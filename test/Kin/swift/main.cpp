@@ -49,7 +49,6 @@ void TEST(CollisionTiming){
   CHECK(time>0.01 && time<1.,"strange time for collision checking!");
 }
 
-
 int MAIN(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 

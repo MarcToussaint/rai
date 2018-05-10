@@ -578,7 +578,6 @@ double conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction &f, arr
 #endif
 }
 
-
 //===========================================================================
 
 RUN_ON_INIT_BEGIN()

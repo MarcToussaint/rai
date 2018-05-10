@@ -88,5 +88,4 @@ public:
 #endif
 };
 
-
 #endif

@@ -115,7 +115,6 @@ struct GaussianProcessGaussKernel : GaussianProcessKernel {
   }
 };
 
-
 struct GaussianProcessNegativeDistanceKernel : GaussianProcessKernel {
 
   double k(const arr &x, const arr &xPrime) {
@@ -138,7 +137,6 @@ struct GaussianProcessNegativeDistanceKernel : GaussianProcessKernel {
     return new GaussianProcessNegativeDistanceKernel(*this);
   }
 };
-
 
 struct GaussianProcessInverseMultiQuadricKernel : GaussianProcessKernel {
   double c;

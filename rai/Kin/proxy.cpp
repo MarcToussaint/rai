@@ -24,7 +24,6 @@ rai::Proxy::~Proxy() {
   del_coll();
 }
 
-
 void rai::Proxy::calc_coll(const KinematicWorld& K){
   CHECK_EQ(&a->K, &K, "");
   CHECK_EQ(&b->K, &K, "");

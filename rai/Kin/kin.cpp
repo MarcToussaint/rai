@@ -15,7 +15,6 @@
  * @{
  */
 
-
 #undef abs
 #include <algorithm>
 #include <sstream>
@@ -121,9 +120,7 @@ void computeMeshNormals(FrameL& frames, bool force){
   }
 }
 
-
 bool always_unlocked(void*) { return false; }
-
 
 //===========================================================================
 //
@@ -200,7 +197,6 @@ FrameL rai::KinematicWorld::calc_topSort(){
   boolA done = consts<byte>(false, frames.N);
 
   for(Frame *a:frames) if(!a->parent) fringe.append(a);
-
 
   while(fringe.N) {
     Frame *a = fringe.popFirst();
@@ -540,7 +536,6 @@ void rai::KinematicWorld::setActiveJointsByName(const StringA& names){
   checkConsistency();
 }
 
-
 /** @brief sets the joint state vectors separated in positions and
   velocities */
 void rai::KinematicWorld::setJointState(const arr& _q, const arr& _qdot) {
@@ -574,8 +569,6 @@ void rai::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
 void rai::KinematicWorld::setTimes(double t){
   for(Frame *a:frames) a->time = t;
 }
-
-
 
 //===========================================================================
 //
@@ -1706,7 +1699,6 @@ void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
     uc->read(n->graph());
   }
 
-
   //-- clean up the graph
   calc_q();
   checkConsistency();
@@ -2333,7 +2325,6 @@ void rai::KinematicWorld::useJointGroups(const StringA &groupNames, bool OnlyThe
   }
 }
 
-
 bool rai::KinematicWorld::checkConsistency(){
   //check qdim
   if(q.nd){
@@ -2569,7 +2560,6 @@ void rai::KinematicWorld::glDraw_sub(OpenGL& gl) {
 #endif
 }
 
-
 //===========================================================================
 
 void kinVelocity(arr &y, arr &J, uint frameId, const WorldL &Ktuple, double tau){
@@ -2758,7 +2748,6 @@ void transferKdBetweenTwoWorlds(arr& KdTo, const arr& KdFrom, const rai::Kinemat
   }
 }
 
-
 void transferU0BetweenTwoWorlds(arr& u0To, const arr& u0From, const rai::KinematicWorld& to, const rai::KinematicWorld& from){
   u0To = zeros(to.getJointStateDimension());
 
@@ -2777,7 +2766,6 @@ void transferU0BetweenTwoWorlds(arr& u0To, const arr& u0From, const rai::Kinemat
     u0To(match(i)) = u0From(i);
   }
 }
-
 
 void transferKI_ft_BetweenTwoWorlds(arr& KI_ft_To, const arr& KI_ft_From, const rai::KinematicWorld& to, const rai::KinematicWorld& from){
   uint numberOfColumns = KI_ft_From.d1;
@@ -2816,8 +2804,6 @@ void transferKI_ft_BetweenTwoWorlds(arr& KI_ft_To, const arr& KI_ft_From, const 
 // opengl
 //===========================================================================
 //===========================================================================
-
-
 
 #ifndef RAI_ORS_ONLY_BASICS
 
@@ -2861,8 +2847,6 @@ void rai::glDrawProxies(void *P){
   glPopMatrix();
 #endif
 }
-
-
 
 void displayState(const arr& x, rai::KinematicWorld& G, const char *tag){
   G.setJointState(x);
@@ -3095,7 +3079,6 @@ int animateConfiguration(rai::KinematicWorld& K, Inotify *ino) {
   return K.gl().update("", false, false, true);
 }
 
-
 rai::Frame *movingBody=NULL;
 rai::Vector selpos;
 double seld, selx, sely, selz;
@@ -3307,8 +3290,6 @@ void displayState(const arr&, rai::KinematicWorld&, const char*) { NICO }
 // featherstone
 //===========================================================================
 //===========================================================================
-
-
 
 //===========================================================================
 //===========================================================================

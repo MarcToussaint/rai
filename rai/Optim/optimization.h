@@ -15,7 +15,6 @@
 // types (mostly abstract classes or lambda expressions) to represent non-linear programs
 //
 
-
 /// A scalar function $y = f(x)$, if @df@ or @Hf@ are not NoArr, the gradient and/or Hessian is returned
 typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
 
@@ -43,7 +42,6 @@ struct ConstrainedProblem{
   virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x, arr& lambda) = 0;
 };
 
-
 //===========================================================================
 //
 // lambda expression interfaces
@@ -57,7 +55,6 @@ struct Conv_Lambda_ConstrainedProblem : ConstrainedProblem{
   void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x){ f(phi, J, H, tt, x); }
 };
 
-
 //===========================================================================
 //
 // checks, evaluation
@@ -67,7 +64,6 @@ bool checkJacobianCP(ConstrainedProblem& P, const arr& x, double tolerance);
 bool checkHessianCP(ConstrainedProblem& P, const arr& x, double tolerance);
 bool checkDirectionalGradient(const ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction &f, const arr& x, const arr& delta, double tolerance);
-
 
 //===========================================================================
 //
@@ -115,7 +111,6 @@ extern Singleton<OptOptions> globalOptOptions;
 #include "convert.h"
 //uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions opt);
 
-
 //===========================================================================
 //
 // helpers
@@ -123,10 +118,8 @@ extern Singleton<OptOptions> globalOptOptions;
 
 void displayFunction(const ScalarFunction &f, bool wait=false, double lo=-1.2, double hi=1.2);
 
-
 // function evaluation counter (used only for performance meassurements, global for simplicity)
 extern uint eval_cost;
-
 
 //===========================================================================
 //

@@ -19,9 +19,7 @@
 #  include <unistd.h>
 #endif
 
-
 bool getParameterFromGraph(const std::type_info& type, void* data, const char* key);
-
 
 namespace rai {
 /** @brief Search for a command line option \c -tag and, if found, pipe the
@@ -36,8 +34,6 @@ bool getFromCmdLine(T& x, const char *tag) {
   if(s.fail()) HALT("error when reading parameter from command line: " <<tag);
   return true;
 }
-
-
 
 template<class T>
 bool getParameterBase(T& x, const char *tag, bool hasDefault, const T* Default) {

@@ -17,7 +17,6 @@
   -- transition costs: vel^2 *tau, acc^2 * tau, u^2 * tau
   */
 
-
 //===========================================================================
 //
 // defines only a map (task space), not yet the costs in this space
@@ -41,7 +40,6 @@ struct TaskMap {
   virtual ~TaskMap() {};
 };
 
-
 //===========================================================================
 //
 /// A k-order cost_feature, inequality or equality constraint,
@@ -63,7 +61,6 @@ struct Task {
                     const arr& _target=ARR(0.),
                     double _prec=1.);
 };
-
 
 Task* newTask(const Node* specs, const rai::KinematicWorld& world, uint Tinterval, uint Tzero=0);
 
@@ -157,7 +154,6 @@ struct KOMO {
 //  }
 };
 
-
 //===========================================================================
 //
 // transforming a motion problem description into an optimization problem
@@ -185,7 +181,6 @@ struct MotionProblemFunction:KOrderMarkovFunction {
   virtual arr get_postfix();
 };
 
-
 //===========================================================================
 //
 // transforming a motion problem description into an end-pose optimization problem only
@@ -201,7 +196,6 @@ struct MotionProblem_EndPoseFunction{
   virtual void fv(arr& phi, arr& J, const arr& x);
 };
 
-
 //===========================================================================
 //
 // basic helpers
@@ -211,6 +205,5 @@ void sineProfile(arr& q, const arr& q0, const arr& qT,uint T);
 arr reverseTrajectory(const arr& q);
 void getVel(arr& v, const arr& q, double tau);
 void getAcc(arr& a, const arr& q, double tau);
-
 
 #endif

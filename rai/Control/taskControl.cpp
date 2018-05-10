@@ -273,7 +273,6 @@ void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_f
   K_I = f_alpha*~J;
 }
 
-
 void CtrlTask::reportState(ostream& os){
   os <<"  CtrlTask " <<name;
   if(!active) cout <<" INACTIVE";
@@ -631,7 +630,6 @@ arr TaskControlMethods::getDesiredLinAccLaw(arr &Kp, arr &Kd, arr &k, const arr&
 
   return k - Kp*q - Kd*qdot;
 }
-
 
 arr TaskControlMethods::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, const arr& q, const arr& qdot, const arr& M, const arr& F) {
   uint n=F.N;

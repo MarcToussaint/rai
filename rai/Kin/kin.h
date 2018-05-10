@@ -235,9 +235,7 @@ struct KinematicWorld : GLDrawer{
 
 } //namespace rai
 
-
 stdPipes(rai::KinematicWorld)
-
 
 //===========================================================================
 //
@@ -272,7 +270,6 @@ void transferKdBetweenTwoWorlds(arr& KdTo, const arr& KdFrom, const rai::Kinemat
 void transferU0BetweenTwoWorlds(arr& u0To, const arr& u0From, const rai::KinematicWorld& to, const rai::KinematicWorld& from);
 void transferKI_ft_BetweenTwoWorlds(arr& KI_ft_To, const arr& KI_ft_From, const rai::KinematicWorld& to, const rai::KinematicWorld& from);
 
-
 void displayState(const arr& x, rai::KinematicWorld& G, const char *tag);
 void displayTrajectory(const arr& x, int steps, rai::KinematicWorld& G, const KinematicSwitchL& switches, const char *tag, double delay=0., uint dim_z=0, bool copyG=false);
 inline void displayTrajectory(const arr& x, int steps, rai::KinematicWorld& G, const char *tag, double delay=0., uint dim_z=0, bool copyG=false){
@@ -283,6 +280,5 @@ int animateConfiguration(rai::KinematicWorld& G, struct Inotify *ino=NULL);
 
 void kinVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);
 void kinAngVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);
-
 
 #endif //RAI_ors_h

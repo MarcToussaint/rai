@@ -30,7 +30,6 @@ arr moveTo(rai::KinematicWorld& world,
 
   setTasks(MP, endeff, target, whichAxesToAlign, iterate, timeSteps, duration);
 
-
   //-- create the Optimization problem (of type kOrderMarkov)
   arr x = MP.getInitialization();
   rndGauss(x,.01,true); //don't initialize at a singular config
@@ -60,7 +59,6 @@ arr moveTo(rai::KinematicWorld& world,
 }
 
 //===========================================================================
-
 
 //===========================================================================
 

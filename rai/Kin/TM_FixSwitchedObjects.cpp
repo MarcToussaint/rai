@@ -84,10 +84,6 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G){
   }
 }
 
-
-
-
-
 #if 0
 
 (mt:) These are remains for debugging: testing the Jacobians (I used this to find the top sort error...)
@@ -126,7 +122,6 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G){
           arr y,J;
           pos.phi(y, J, K);
           cout <<"\n*** B ***\n" <<J*sqrt(1000.) <<endl;
-
 
           VectorFunction f = ( [&pos, &K](arr& y, arr& J, const arr& x) -> void
           {

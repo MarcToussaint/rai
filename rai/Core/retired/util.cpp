@@ -33,7 +33,6 @@ void openConfigFile(const char *name) {
   LOG(3) <<std::endl;
 }
 
-
 /** @brief Search the first occurence of a sequence '\c tag:'
 in the config file (opened automatically) and, if found, pipes
 it in \c value. Returns false if parameter is not found. */
@@ -92,6 +91,4 @@ template std::map<std::string,bool> rai::ParameterMap<bool>::m;
 template std::map<std::string,long> rai::ParameterMap<long>::m;
 template std::map<std::string,rai::String> rai::ParameterMap<rai::String>::m;
 template std::map<std::string,std::string> rai::ParameterMap<std::string>::m;
-
-
 

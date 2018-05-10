@@ -8,7 +8,6 @@
 
 #include "algos.h"
 
-
 namespace rai{
 
 void rk4(arr& x1, const arr& x0,
@@ -127,6 +126,5 @@ bool rk4dd_switch(arr& x1, arr& v1, arr& s1, const arr& x0, const arr& v0, const
   return change;
 }
 #endif
-
 
 } //end namespace

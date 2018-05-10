@@ -47,5 +47,4 @@ namespace rai {
 	void ros_shutdown();
 }
 
-
 #endif /* IMAGE_PUB_H_ */

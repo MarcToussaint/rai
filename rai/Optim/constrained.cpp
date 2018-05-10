@@ -13,7 +13,6 @@
 // PhaseOneProblem
 //
 
-
 void PhaseOneProblem::phi(arr& meta_phi, arr& meta_J, arr& meta_H, ObjectiveTypeA& tt, const arr& x, arr& lambda){
   NIY;
   arr g, Jg;
@@ -33,14 +32,12 @@ void PhaseOneProblem::phi(arr& meta_phi, arr& meta_J, arr& meta_H, ObjectiveType
   // }
 }
 
-
 //==============================================================================
 //
 // Solvers
 //
 
 const char* MethodName[]={ "NoMethod", "SquaredPenalty", "AugmentedLagrangian", "LogBarrier", "AnyTimeAugmentedLagrangian", "SquaredPenaltyFixed"};
-
 
 //==============================================================================
 
@@ -134,7 +131,6 @@ bool OptConstrained::step(){
     return true;
   }
 
-
   //upate Lagrange parameters
   switch(opt.constrainedMethod){
 //  case squaredPenalty: UCP.mu *= opt.aulaMuInc;  break;
@@ -161,5 +157,4 @@ uint OptConstrained::run(){
 
 OptConstrained::~OptConstrained(){
 }
-
 

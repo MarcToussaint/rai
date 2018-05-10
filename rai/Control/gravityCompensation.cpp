@@ -290,12 +290,6 @@ arr GravityCompensation::generateTaskMapFeature(TM_Default map, arr Q) {
   return phiTemp;
 }
 
-
-
-
-
-
-
 void GravityCompensation::testForLimits() {
   arr q;
   q << FILE(rai::raiPath("examples/pr2/calibrateControl/logData/gcKugel_05_09_16/q"));
@@ -340,14 +334,6 @@ void GravityCompensation::removeLimits() {
   FILE(rai::raiPath("examples/pr2/calibrateControl/logData/gcKugel_LW/qSign")) << qSignNew;
   FILE(rai::raiPath("examples/pr2/calibrateControl/logData/gcKugel_LW/u")) << uNew;
 }
-
-
-
-
-
-
-
-
 
 #if 0
 
@@ -408,8 +394,6 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
 
     Phi = catCol(Phi,Phi_tmp);
 
-
-
     //Phi = makeFeatures(X,quadraticFT);
 
     // add sin/cos features
@@ -436,16 +420,12 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
       }
       Phi = catCol(Phi,Phi_tmp);*/
 
-
-
     //Different Body Parts TODO: add more, if one like
     //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_pos, world, "endeffL"), Q));
     //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"endeffL",rai::Vector(1.,0.,0.)), Q));
 
     //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_pos, world, "l_forearm_link_0"), Q));
     //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"l_forearm_link_0",rai::Vector(1.,0.,0.)), Q));
-
-
 
     /*
     // add dynamics features
@@ -486,7 +466,6 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
     }
 */
 
-
     // add dynamics features
     arr Phi_tmp;
     arr phi_t;
@@ -502,8 +481,6 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
     }
 
     Phi = catCol(Phi,Phi_tmp);
-
-
 
     //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_pos, world, "endeffR"), Q));
     //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"endeffR",rai::Vector(1.,0.,0.)), Q));
@@ -737,6 +714,4 @@ arr GravityCompensation::makeQMatrix(arr Q, uint jointIndex) {
 }
 
 #endif
-
-
 

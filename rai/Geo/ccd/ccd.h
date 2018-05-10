@@ -39,7 +39,6 @@ typedef void (*ccd_support_fn)(const void *obj, const ccd_vec3_t *dir,
 typedef void (*ccd_first_dir_fn)(const void *obj1, const void *obj2,
                                  ccd_vec3_t *dir);
 
-
 /**
  * Returns (via center argument) geometric center (some point near center)
  * of given object.
@@ -88,7 +87,6 @@ _ccd_export void ccdFirstDirDefault(const void *o1, const void *o2,
         (ccd)->mpr_tolerance = CCD_REAL(0.0001); \
         (ccd)->dist_tolerance = CCD_REAL(1E-6); \
     } while(0)
-
 
 /**
  * Returns true if two given objects interest.

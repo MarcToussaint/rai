@@ -15,7 +15,6 @@
  * @{
  */
 
-
 #if 1 //def RAI_FEATHERSTONE
 
 #include "kin.h"
@@ -70,7 +69,6 @@ void Xroty(arr& X, double h);
 */
 void Xrotz(arr& X, double h);
 
-
 /** @brief MM6 coordinate transform from 3D translation vector.
   Xtrans(r) calculates the MM6 coordinate transform matrix (for
   motion vectors) induced by a shift of origin specified by the 3D
@@ -78,7 +76,6 @@ void Xrotz(arr& X, double h);
   location of the origin relative to the old.
 */
 void Xtrans(arr& X, double* r);
-
 
 /** @brief Calculate RBI from mass, CoM and rotational inertia.
   RBmci(m, c, I) calculate MF6 rigid-body inertia tensor for a body
@@ -364,7 +361,6 @@ void updateGraphToTree(rai::Array<rai::Link>& tree, const rai::KinematicWorld& C
   for(i=0; i<tree.N; i++) tree(i).updateFeatherstones();
 }
 
-
 /*
 ----------- Xrotx.m ----------------------------------------------------------
 */
@@ -441,7 +437,6 @@ void Featherstone::Xrotz(arr& X, double h) {
      0  0  0 -s  c  0 ;
      0  0  0  0  0  1 ]; */
 }
-
 
 /*
 ----------- Xtrans.m ---------------------------------------------------------
@@ -617,7 +612,6 @@ void Featherstone::invdyn_old(arr& tau, const Robot& robot, const arr& qd, const
     }
   }
 }
-
 
 /*
 ------------------------------------------------------------------------------
@@ -918,7 +912,6 @@ void rai::invDynamics(arr& tau,
     if(par != -1)     fJ[par]() += ~Xup[i] * fJ[i];
   }
 }
-
 
 //===========================================================================
 

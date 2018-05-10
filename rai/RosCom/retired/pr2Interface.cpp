@@ -166,7 +166,6 @@ void PR2Interface::initialize(rai::KinematicWorld* realWorld, rai::KinematicWorl
     this->dynamicSimulation = new DynamicSimulation();
     threadOpenModules(true);
 
-
     CtrlMsg initMsg;
     initMsg.fL = zeros(1);
     initMsg.KiFT.clear();
@@ -186,7 +185,6 @@ void PR2Interface::initialize(rai::KinematicWorld* realWorld, rai::KinematicWorl
     this->ctrlMsg = initMsg;
 
     this->ctrl_ref.set() = ctrlMsg;
-
 
     this->dynamicSimulation->initializeSimulation(new rai::KinematicWorld(*this->realWorld));
     this->dynamicSimulation->startSimulation();
@@ -425,8 +423,6 @@ void PR2Interface::clearLog() {
 }
 
 REGISTER_MODULE(PR2Interface)
-
-
 
 void showTrajectory(const arr& traj, rai::KinematicWorld& _world, bool copyWorld, double delay, rai::String text) {
   rai::KinematicWorld* world;

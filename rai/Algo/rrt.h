@@ -30,6 +30,5 @@ public:
   arr getRandomNode();
 };
 
-
 #endif // _HEADER_GUARD_RRT_H_
 

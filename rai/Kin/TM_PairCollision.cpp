@@ -21,7 +21,6 @@ TM_PairCollision::TM_PairCollision(const rai::KinematicWorld& K, const char* s1,
   CHECK(j>=0,"shape name '" <<s2 <<"' does not exist");
 }
 
-
 void TM_PairCollision::phi(arr& y, arr& J, const rai::KinematicWorld& K){
   rai::Shape *s1 = i<0?NULL: K.frames(i)->shape;
   rai::Shape *s2 = j<0?NULL: K.frames(j)->shape;

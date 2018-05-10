@@ -32,7 +32,6 @@
 //#include <vtkLineSource.h>
 //#include <vtkTubeFilter.h>
 
-
 ObjectClusterer::ObjectClusterer() : Thread("ObjectClusterer") {
 //  biros->getVariable(data_3d, "KinectData3D", this, true);
 //  biros().getVariable(point_clouds, "ObjectClusters", this, true);

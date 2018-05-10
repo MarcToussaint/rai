@@ -87,7 +87,6 @@ void LU_decomposition(arr& L, arr& U, const arr& X){
 }
 }
 
-
 void ludcmp(double **a, int n, int *indx, double *d){
   int i, imax=0, j, k;
   double big, dum, sum, temp;
@@ -137,7 +136,6 @@ void ludcmp(double **a, int n, int *indx, double *d){
   }
   free_vector(vv, 1, n);
 }
-
 
 void lubksb(double **a, int n, int *indx, double b[]){
   int i, ii=0, ip, j;

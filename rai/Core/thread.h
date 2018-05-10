@@ -17,7 +17,6 @@
 using std::shared_ptr;
 using std::make_shared;
 
-
 enum ThreadState { tsIsClosed=-6, tsToOpen=-2, tsLOOPING=-3, tsBEATING=-4, tsIDLE=0, tsToStep=1, tsToClose=-1,  tsFAILURE=-5,  }; //positive states indicate steps-to-go
 struct Signaler;
 struct VariableBase;
@@ -424,7 +423,6 @@ template<class T> std::ostream& operator<<(std::ostream& os, Var<T>& x){ x.write
 #define VARlisten(type, name) Var<type> name = Var<type>(this, #name, true);
 //#define Varname(type, name) Var<type> name = Var<type>(NULL, #name);
 
-
 //===========================================================================
 //
 // high-level methods to control threads
@@ -458,7 +456,6 @@ void threadOpenModules(bool waitForOpened, bool setSignalHandler=true);
 void threadCloseModules();
 void threadCancelModules();
 void threadReportCycleTimes();
-
 
 // ================================================
 //

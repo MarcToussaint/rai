@@ -90,7 +90,6 @@ TM_Default::TM_Default(const Node *specs, const rai::KinematicWorld& G)
   }
 }
 
-
 void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   rai::Frame *body_i = i<0?NULL: G.frames(i);
   rai::Frame *body_j = j<0?NULL: G.frames(j);
@@ -312,7 +311,6 @@ rai::String TM_Default::shortTag(const rai::KinematicWorld& G){
   s <<'/' <<(j<0?"WORLD":G.frames(j)->name);
   return s;
 }
-
 
 //===========================================================================
 

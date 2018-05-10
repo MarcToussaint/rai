@@ -101,7 +101,6 @@ MCTS_Environment::TransitionReturn FOL_World::transition(const Handle& action){
 
   CHECK(!hasWait || Wait_keyword,"if the FOL uses wait, the WAIT keyword needs to be declared");
 
-
   if(verbose>2) cout <<"****************** FOL_World: step " <<T_step <<endl;
   if(verbose>2){ cout <<"*** pre-state = "; state->write(cout, " "); cout <<endl; }
 

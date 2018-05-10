@@ -43,7 +43,6 @@ void BlindBranch::set_state(const MCTS_Environment::Handle& _state){
 
 bool BlindBranch::is_terminal_state() const{ return T>=H; }
 
-
 bool BlindBranch::get_info(InfoTag tag) const{
   switch(tag){
     case hasTerminal: return true;

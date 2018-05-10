@@ -38,7 +38,6 @@ void   cblas_zdotu_sub(const int N, const void *X, const int incX,
 void   cblas_zdotc_sub(const int N, const void *X, const int incX,
                        const void *Y, const int incY, void *dotc);
 
-
 /*
  * Functions having prefixes S D SC DZ
  */
@@ -53,7 +52,6 @@ float  cblas_scasum(const int N, const void *X, const int incX);
 
 double cblas_dznrm2(const int N, const void *X, const int incX);
 double cblas_dzasum(const int N, const void *X, const int incX);
-
 
 /*
  * Functions having standard 4 prefixes (S D C Z)
@@ -100,7 +98,6 @@ void cblas_zcopy(const int N, const void *X, const int incX,
 void cblas_zaxpy(const int N, const void *alpha, const void *X,
                  const int incX, void *Y, const int incY);
 
-
 /*
  * Routines with S and D prefix only
  */
@@ -117,7 +114,6 @@ void cblas_drot(const int N, double *X, const int incX,
                 double *Y, const int incY, const double c, const double s);
 void cblas_drotm(const int N, double *X, const int incX,
                 double *Y, const int incY, const double *P);
-
 
 /*
  * Routines with S D C Z CS and ZD prefixes
@@ -270,7 +266,6 @@ void cblas_ztpsv(const enum CBLAS_ORDER Order, const enum CBLAS_UPLO Uplo,
                  const enum CBLAS_TRANSPOSE TransA, const enum CBLAS_DIAG Diag,
                  const int N, const void *Ap, void *X, const int incX);
 
-
 /*
  * Routines with S and D prefixes only
  */
@@ -331,7 +326,6 @@ void cblas_dsyr2(const enum CBLAS_ORDER Order, const enum CBLAS_UPLO Uplo,
 void cblas_dspr2(const enum CBLAS_ORDER Order, const enum CBLAS_UPLO Uplo,
                 const int N, const double alpha, const double *X,
                 const int incX, const double *Y, const int incY, double *A);
-
 
 /*
  * Routines with C and Z prefixes only
@@ -527,7 +521,6 @@ void cblas_ztrsm(const enum CBLAS_ORDER Order, const enum CBLAS_SIDE Side,
                  const void *alpha, const void *A, const int lda,
                  void *B, const int ldb);
 
-
 /*
  * Routines with prefixes C and Z only
  */
@@ -561,6 +554,5 @@ void cblas_zher2k(const enum CBLAS_ORDER Order, const enum CBLAS_UPLO Uplo,
                   void *C, const int ldc);
 
 int cblas_errprn(int ierr, int info, char *form, ...);
-
 
 #endif

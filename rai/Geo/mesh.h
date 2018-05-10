@@ -135,8 +135,6 @@ stdOutPipe(rai::Mesh)
 
 uintA getSubMeshPositions(const char* filename);
 
-
-
 //===========================================================================
 //
 // C-style functions
@@ -146,12 +144,9 @@ void inertiaSphere(double *Inertia, double& mass, double density, double radius)
 void inertiaBox(double *Inertia, double& mass, double density, double dx, double dy, double dz);
 void inertiaCylinder(double *Inertia, double& mass, double density, double height, double radius);
 
-
 /// @} end of group_geo
 
-
 /** @} */
-
 
 //===========================================================================
 //
@@ -178,7 +173,6 @@ struct DistanceFunction_Cylinder:ScalarFunction{
 
 extern ScalarFunction DistanceFunction_SSBox;
 
-
 //===========================================================================
 //
 // GJK interface
@@ -191,6 +185,5 @@ double GJK_sqrDistance(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
                     rai::Vector& p1, rai::Vector& p2,
                     rai::Vector& e1, rai::Vector& e2,
                     GJK_point_type& pt1, GJK_point_type& pt2);
-
 
 #endif

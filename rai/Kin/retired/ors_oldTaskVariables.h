@@ -36,7 +36,6 @@ enum TVtype {
 
 enum TargetType { noneTT, directTT, positionGainsTT, pdGainOnRealTT, pdGainOnReferenceTT, trajectoryTT };
 
-
 //===========================================================================
 /** basic task variable */
 struct TaskVariable {
@@ -228,5 +227,4 @@ void shiftTargets(TaskVariableList& CS, int i);
 void bayesianControl(TaskVariableList& CS, arr& dq, const arr& W);
 
 #endif // _HEADER_GUARD_ORS_OLDTASKVARIABLES_H_
-
 

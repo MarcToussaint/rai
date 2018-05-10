@@ -24,7 +24,6 @@ struct PrimalDualProblem : ScalarFunction {
   double primalDual(arr& r, arr& R, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
 };
 
-
 //==============================================================================
 //
 // Solvers

@@ -14,7 +14,6 @@
  * @{
  **/
 
-
 #include "kin.h"
 #include "kin_oldTaskVariables.h"
 #include "kin_swift.h"
@@ -39,7 +38,6 @@
 
 #define DROP_TARGET_NOISE 0.11
 #define SEC_ACTION_ABORT 500
-
 
 inline const char* getObjectString(uint ID) {
   std::stringstream ss;
@@ -341,8 +339,6 @@ void ActionInterface::grab(const char* obj) {
   grab("fing1c", obj);
 }
 
-
-
 void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id) {
   arr I(q0.N, q0.N); I.setId();
   bool obj_is_inhand = strlen(obj_id55) > 0;
@@ -497,8 +493,6 @@ void ActionInterface::dropObjectAbove(uint rel_id) {
   dropObjectAbove(getCatched(), rel_id);
 }
 
-
-
 bool ActionInterface::partOfBody(uint id) {
   NIY;
   return false;
@@ -567,7 +561,6 @@ void ActionInterface::writeAllContacts(uint id) {
   cout <<endl;
 }
 
-
 void ActionInterface::getObjectsAbove(uintA& list, const char *obj_id) {
   list.clear();
   rai::Proxy *p;
@@ -599,7 +592,6 @@ void ActionInterface::getObjectsAbove(uintA& list, const char *obj_id) {
 void ActionInterface::getObjectsAbove(uintA& list, const uint obj_id) {
   getObjectsAbove(list, convertObjectID2name(obj_id));
 }
-
 
 // void ActionInterface::getObjectsBelow(uintA& list, const char *obj_id){
 //   list.clear();
@@ -648,7 +640,6 @@ uint ActionInterface::getTableID() {
   return n->index;
 }
 
-
 bool ActionInterface::inContact(uint a, uint b) {
   if(C->getContact(a, b)) return true;
   return false;
@@ -680,7 +671,6 @@ uint ActionInterface::convertObjectName2ID(const char* name) {
   return C->getBodyByName(name)->index;
 }
 
-
 const char* ActionInterface::convertObjectID2name(uint ID) {
   if(C->bodies.N > ID)
     return C->bodies(ID)->name;
@@ -706,7 +696,6 @@ double* ActionInterface::getColor(uint id) {
 double* ActionInterface::getPosition(uint id) {
   return C->bodies(id)->X.pos.p();
 }
-
 
 // void ActionInterface::printAboveBelowInfos(){
 //   uintA objects;

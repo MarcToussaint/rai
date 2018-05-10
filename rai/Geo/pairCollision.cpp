@@ -56,7 +56,6 @@ void PairCollision::write(std::ostream &os) const{
   if(eig1.N || eig2.N) os <<"  EIG #: " <<eig1.d0<<'-' <<eig2.d0 <<endl;
 }
 
-
 void support_mesh(const void *_obj, const ccd_vec3_t *_dir, ccd_vec3_t *v){
   rai::Mesh *m = (rai::Mesh*)_obj;
   arr dir(_dir->v, 3, true);
@@ -341,7 +340,6 @@ void PairCollision::kinDistance2(arr &y, arr& J,
     }
   }
 }
-
 
 void PairCollision::nearSupportAnalysis(double eps){
   rai::Mesh M1(mesh1); t1.applyOnPointArray(M1.V);

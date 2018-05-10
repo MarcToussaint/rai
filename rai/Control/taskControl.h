@@ -19,7 +19,6 @@
  * them.
  */
 
-
 struct CtrlTask;
 typedef rai::Array<CtrlTask*> CtrlTaskL;
 enum CT_Status { CT_init=-1, CT_running, CT_conv, CT_done, CT_stalled };

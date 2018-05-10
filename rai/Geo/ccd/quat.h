@@ -64,12 +64,10 @@ _ccd_inline void ccdQuatMul2(ccd_quat_t *q,
 _ccd_inline int ccdQuatInvert(ccd_quat_t *q);
 _ccd_inline int ccdQuatInvert2(ccd_quat_t *dest, const ccd_quat_t *src);
 
-
 /**
  * Rotate vector v by quaternion q.
  */
 _ccd_inline void ccdQuatRotVec(ccd_vec3_t *v, const ccd_quat_t *q);
-
 
 /**** INLINES ****/
 _ccd_inline ccd_real_t ccdQuatLen2(const ccd_quat_t *q)
@@ -101,7 +99,6 @@ _ccd_inline void ccdQuatCopy(ccd_quat_t *dest, const ccd_quat_t *src)
 {
     *dest = *src;
 }
-
 
 _ccd_inline int ccdQuatNormalize(ccd_quat_t *q)
 {
@@ -139,7 +136,6 @@ _ccd_inline void ccdQuatSetAngleAxis(ccd_quat_t *q,
         ccdQuatNormalize(q);
     }
 }
-
 
 _ccd_inline void ccdQuatScale(ccd_quat_t *q, ccd_real_t k)
 {

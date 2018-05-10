@@ -15,7 +15,6 @@
  * @{
  */
 
-
 #include "kin.h"
 #include "kin_oldTaskVariables.h"
 
@@ -554,7 +553,6 @@ void DefaultTaskVariable::write(ostream &os, const rai::KinematicWorld& ors) con
   }
 }
 
-
 ProxyTaskVariable::ProxyTaskVariable(const char* _name,
                                      rai::KinematicWorld& ors,
                                      CTVtype _type,
@@ -703,7 +701,6 @@ void ProxyTaskVariable::updateState(const rai::KinematicWorld& ors, double tau) 
   }
 }
 
-
 //===========================================================================
 //
 // TaskVariableList functions
@@ -802,7 +799,6 @@ void bayesianControl(TaskVariableList& CS, arr& dq, const arr& W) {
   dq = Ainv * a;
 }
 
-
 //===========================================================================
 //
 // task variable table
@@ -860,7 +856,6 @@ double TaskVariableTable::totalCost() {
 }
 
 #endif
-
 
 /*void getJointXchange(TaskVariableList& CS, arr& y_change){
   uint i;
@@ -1055,7 +1050,6 @@ void bayesianPlanner_obsolete(rai::KinematicWorld *ors, TaskVariableList& CS, Sw
         }
       }
     }
-
 
     //evaluate trajectory
     //cout <<"variances over time = ";

@@ -55,5 +55,4 @@ struct FeatherstoneInterface{
   void invDynamics(arr& tau, const arr& qd, const arr& qdd);
 };
 
-
 #endif

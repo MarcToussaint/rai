@@ -84,7 +84,6 @@ struct ObjectFitter : public Module {
   VAR(ObjectSet, objects)
 };
 
-
 struct ObjectFilter : public Module {
   struct sObjectFilter *s;
   ObjectFilter(const char *name) ;

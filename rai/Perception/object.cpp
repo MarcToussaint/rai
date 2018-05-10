@@ -11,7 +11,6 @@
 #include "object.h"
 #include "object_detector.h"
 
-
 void voxelFilter(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<PointT>::Ptr outCloud, double leafSize)
 {
     pcl::VoxelGrid<PointT> vg;
@@ -40,7 +39,6 @@ void clusterObject(pcl::PointCloud<PointT>::Ptr cloud_filtered, int numCluster, 
       ec.setInputCloud (cloud_filtered);
       ec.extract (cluster_indices);
 
-
       int j = 0;
         for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
         {
@@ -57,7 +55,6 @@ void clusterObject(pcl::PointCloud<PointT>::Ptr cloud_filtered, int numCluster, 
           if(j == numCluster) break;
         }
 
-
 }
 
 void extractPrimitives(std::vector<pcl::PointCloud<PointT>::Ptr> list_extracted_cloud, std::vector<std::pair<pcl::ModelCoefficients::Ptr,int>>& list_primitives)
@@ -72,7 +69,6 @@ void extractPrimitives(std::vector<pcl::PointCloud<PointT>::Ptr> list_extracted_
         pcl::PointIndices::Ptr inliers_sphere (new pcl::PointIndices);
         bool exist = sphereDetector(list_extracted_cloud[num],normal_extracted,coefficients_sphere,inliers_sphere,0.05,0.12);
         if (exist) list_primitives.push_back(std::pair<pcl::ModelCoefficients::Ptr,int>(coefficients_sphere,0));
-
 
         // detect cylinder
         pcl::ModelCoefficients::Ptr coefficients_cylinder (new pcl::ModelCoefficients);

@@ -25,7 +25,6 @@ void TEST(LoadSave){
   }
 }
 
-
 //===========================================================================
 //
 // Jacobian test
@@ -135,7 +134,6 @@ void TEST(Graph){
 
 }
 
-
 //===========================================================================
 //
 // Jacobian test
@@ -238,7 +236,6 @@ void TEST(KinematicSpeed){
 //
 // SWIFT and contacts test
 //
-
 
 void TEST(Contacts){
   rai::KinematicWorld G("arm7.g");
@@ -364,7 +361,6 @@ void TEST(MeshShapesInOde){
 }
 #endif
 
-
 //===========================================================================
 //
 // standard IK test
@@ -404,7 +400,6 @@ void TEST(FollowRedundantSequence){
   }
 }
 
-
 //===========================================================================
 //
 // dynamics test
@@ -418,7 +413,6 @@ void TEST(FollowRedundantSequence){
 //  bool addContactsToDynamics=false;
 //  rai::KinematicWorld *G;
 //}
-
 
 //---------- test standard dynamic control
 void TEST(Dynamics){

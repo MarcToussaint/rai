@@ -69,7 +69,6 @@ struct AStar_Node{
 };
 stdOutPipe(AStar_Node)
 
-
 //===========================================================================
 
 struct AStar{

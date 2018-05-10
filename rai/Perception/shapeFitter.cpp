@@ -35,16 +35,12 @@ struct ShapeFitter: Process {
   void close() {}
 };
 
-
-
 //===========================================================================
 //
 // fwd declared helper routines
 //
 
 void generateShapePoints(arr& points, arr& weights, arr *grad, uint type, uint N, const arr& params);
-
-
 
 //===========================================================================
 //
@@ -298,7 +294,6 @@ bool getShapeParamsFromEvidence(arr& params, arr& points,
     //write_ppm(*disp, "earlyvision.ppm");
   }
 
-
   //----------------------------------------------------------
   //start experimental stuff from AO
 
@@ -357,8 +352,6 @@ bool getShapeParamsFromEvidence(arr& params, arr& points,
                    CV_RETR_EXTERNAL,
                    CV_CHAIN_APPROX_SIMPLE,
                    cvPoint(-1, -1));
-
-
 
     CvRect bRect = cvBoundingRect(contour, 1); //CvContour*, bool update
 
@@ -571,13 +564,11 @@ void ShapeFitter::step(){
   if(!hsvL.N) return;
   if(!hsvR.N) return;
 
-
   RigidObjectRepresentation *obj;
   bool suc;
   byteA disp = evi2rgb(hsvL[0]);
 
   objs.resize(hsvL.d0);
-
 
   //\todo iterate over all colors and over all objects inside those colors
   for(uint h=0; h<hsvL.d0; h++){
@@ -697,7 +688,6 @@ void ShapeFitter::step(){
   percOut->deAccess(this);
 }
 #endif
-
 
 void realizeObjectsInOrs(rai::KinematicWorld& ors, const rai::Array<RigidObjectRepresentation>& objects){
   RigidObjectRepresentation *obj;  uint i;

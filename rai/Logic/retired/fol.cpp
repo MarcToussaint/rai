@@ -14,7 +14,6 @@ NodeL getRuleSubstitutions(Graph& facts, Node *rule, NodeL& domain, int verbose)
   return getSubstitutions(facts, getFirstNonSymbolOfScope(Rule)->graph(), domain, verbose);
 }
 
-
 NodeL getSubstitutions(Graph& facts, NodeL& literals, NodeL& domain, int verbose){
   CHECK(literals.N,"");
   Graph& varScope = literals(0)->container.isNodeOfGraph->container; //this is usually a rule (scope = subGraph in which we'll use the indexing)
@@ -126,7 +125,6 @@ NodeL getSubstitutions(Graph& facts, NodeL& literals, NodeL& domain, int verbose
   }
   return substitutions;
 }
-
 
 //TODO: it*->literal*
 bool matchingFactsAreEqual(Graph& facts, Node *it1, Node *it2, const NodeL& subst, Graph* subst_scope){

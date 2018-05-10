@@ -20,7 +20,6 @@ void VideoEncoderModule::open(){
   video = new VideoEncoder_libav_simple(STRING("z.video." << nowStr << ".avi"), fps);
 }
 
-
 void VideoEncoderModule::close(){
   timeTagFile.close();
   delete video;

@@ -68,7 +68,6 @@
 #  include <sys/syscall.h>
 #endif
 
-
 //===========================================================================
 //
 // Bag container
@@ -80,7 +79,6 @@ int   rai::String::readEatStopSymbol     = 1;
 rai::String rai::errString;
 Mutex coutMutex;
 rai::LogObject _log("global", 2, 3);
-
 
 //===========================================================================
 //
@@ -211,7 +209,6 @@ bool parse(std::istream& is, const char *str, bool silent) {
   }
   return true;
 }
-
 
 /// returns the i-th of str
 byte bit(byte *str, uint i) { return (str[i>>3] >>(7-(i&7))) & 1; }
@@ -791,7 +788,6 @@ void setLogLevels(int fileLogLevel, int consoleLogLevel){
   _log.logFileLevel=fileLogLevel;
 }
 
-
 //===========================================================================
 //
 // parameters
@@ -809,7 +805,6 @@ std::istream& operator>>(std::istream& is, const PARSE& x) {
 std::istream& operator>>(std::istream& is, char *str) {
   rai::parse(is, (const char*)str); return is;
 }
-
 
 //===========================================================================
 //
@@ -1045,7 +1040,6 @@ rai::String rai::getNowString() {
   return str;
 }
 
-
 //===========================================================================
 //
 // FileToken
@@ -1136,7 +1130,6 @@ std::ifstream& rai::FileToken::getIs(bool change_dir){
   return *is;
 }
 
-
 //===========================================================================
 //
 // random number generator
@@ -1223,7 +1216,6 @@ void  rai::Rnd::seed250(int32_t seed) {
   for(i=0; i<4711; ++i) rnd250();
 }
 
-
 //===========================================================================
 //
 // Inotify
@@ -1289,8 +1281,6 @@ bool Inotify::poll(bool block, bool verbose){
 
   return false;
 }
-
-
 
 //===========================================================================
 //
@@ -1413,7 +1403,6 @@ void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDF
   }
 }
 
-
 //===========================================================================
 //
 // Cumulative probability for the Standard Normal Distribution
@@ -1501,6 +1490,4 @@ template rai::String rai::getParameter<rai::String>(const char*, const rai::Stri
 template bool rai::checkParameter<uint>(const char*);
 template bool rai::checkParameter<bool>(const char*);
 template bool rai::checkParameter<rai::String>(const char*);
-
-
 

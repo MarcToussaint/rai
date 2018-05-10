@@ -84,8 +84,6 @@ struct GravityCompensation {
   //for debugging
   void testForLimits();
 
-
-
   //========= Helper functions, just convenience and good practices
   arr makeQMatrix(arr Q, uint jointIndex);
   arr generateTaskMapFeature(TM_Default map, arr Q);

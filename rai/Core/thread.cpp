@@ -22,7 +22,6 @@
 #endif
 #include <errno.h>
 
-
 #ifndef RAI_MSVC
 
 //===========================================================================
@@ -64,8 +63,6 @@ void RWLock::unlock() {
 bool RWLock::isLocked() {
   return rwCount!=0;
 }
-
-
 
 //===========================================================================
 //
@@ -247,7 +244,6 @@ void Signaler::waitForStatusSmallerThan(int i, bool userHasLocked) {
   if(!userHasLocked) statusMutex.unlock();
 }
 
-
 //===========================================================================
 //
 // VariableBase
@@ -310,7 +306,6 @@ int VariableBase::deAccess(Thread *th) {
 //  return rev;
 //}
 
-
 //===========================================================================
 //
 // Metronome
@@ -347,7 +342,6 @@ double Metronome::getTimeSinceTic() {
   clock_gettime(CLOCK_MONOTONIC, &now);
   return double(now.tv_sec-ticTime.tv_sec) + 1e-9*(now.tv_nsec-ticTime.tv_nsec);
 }
-
 
 //===========================================================================
 //
@@ -396,7 +390,6 @@ rai::String CycleTimer::report(){
   return s;
 //  fflush(stdout);
 }
-
 
 //===========================================================================
 //
@@ -466,7 +459,6 @@ void MiniThread::threadCancel() {
   thread=0;
 }
 
-
 void MiniThread::pthreadMain() {
   tid = syscall(SYS_gettid);
 //  if(verbose>0) cout <<"*** Entering Thread '" <<name <<"'" <<endl;
@@ -491,7 +483,6 @@ void MiniThread::pthreadMain() {
 
   setStatus(tsIsClosed);
 }
-
 
 //=============================================
 //
@@ -705,7 +696,6 @@ void Thread::main() {
   //if not =tsOPENING anymore -> the state was set on looping or beating already
   statusUnlock();
 
-
   timer.reset();
   bool waitForTic=false;
   for(;;){
@@ -742,7 +732,6 @@ void Thread::main() {
 
   setStatus(tsIsClosed);
 }
-
 
 //===========================================================================
 //
@@ -827,7 +816,6 @@ void threadReportCycleTimes(){
     cout <<std::setw(30) <<thread->name <<" : " <<thread->timer.report() <<endl;
   }
 }
-
 
 //===========================================================================
 //

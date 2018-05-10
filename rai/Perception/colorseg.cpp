@@ -123,7 +123,6 @@ uint get_single_color_segmentation_rgb(uintA& segmentation,  // segmented image
   return (uint) num_segments;
 }
 
-
 void get_patch_centroids(arr& pch_cen, uintA& pch, uint np){
   uint x, y, Y=pch.d0, X=pch.d1;
   pch_cen.resize(np, 2);  pch_cen.setZero();
@@ -136,7 +135,6 @@ void get_patch_centroids(arr& pch_cen, uintA& pch, uint np){
   for(uint i=0; i<np; i++)
     if(pch_size(i)) pch_cen[i]()/=(double)pch_size(i);
 }
-
 
 // Determine per patch color statistics: mean RGB + standard deviation
 //
@@ -300,7 +298,6 @@ void pch2img(byteA &img, const uintA &pch, floatA &pch_col){
   }
 }
 
-
 void random_colorMap(floatA& pch_col, uint np){
   pch_col.resize(np, 3);
   rndUniform(pch_col, 0, 255);
@@ -344,6 +341,5 @@ void get_multiple_color_segmentations(MultiSegmentations& segmentations,
 				      const arr& k,
 				      const intA& min
 				      ){NIY}
-
 
 #endif

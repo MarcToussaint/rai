@@ -13,7 +13,6 @@
 #include <climits>
 #include <iomanip>
 
-
 //===========================================================================
 //#define T T //(T+1)
 //#define t<T (t<T) //(t<=T)
@@ -42,7 +41,6 @@ void Task::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint 
 
   setCostSpecs(tFrom, tTo, _target, _prec);
 }
-
 
 //===========================================================================
 
@@ -81,7 +79,6 @@ Task* Task::newTask(const Node* specs, const rai::KinematicWorld& world, int ste
   }
   return task;
 }
-
 
 //===========================================================================
 
@@ -428,7 +425,6 @@ void KOMO::reportProxies(std::ostream& os){
     }
 }
 
-
 Graph KOMO::getReport(bool gnuplt, int reportFeatures) {
   if(featureValues.N>1){ //old optimizer -> remove some time..
     arr tmp;
@@ -481,7 +477,6 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures) {
     }
   }
   CHECK_EQ(M , phi.N, "");
-
 
   //-- generate a report graph
   Graph report;
@@ -574,7 +569,6 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, Obje
   //-- set the trajectory
   MP.set_x(x);
 
-
   CHECK(dimPhi,"getStructure must be called first");
   phi.resize(dimPhi);
   if(&tt) tt.resize(dimPhi);
@@ -613,8 +607,6 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, Obje
   if(&tt) MP.featureTypes = ARRAY<ObjectiveTypeA>(tt);
 }
 
-
-
 //===========================================================================
 
 arr getH_rate_diag(const rai::KinematicWorld& world) {
@@ -627,7 +619,6 @@ arr getH_rate_diag(const rai::KinematicWorld& world) {
   }
   return rai::getParameter<double>("Hrate", 1.)*W_diag;
 }
-
 
 void sineProfile(arr& q, const arr& q0, const arr& qT,uint T){
   q.resize(T+1,q0.N);

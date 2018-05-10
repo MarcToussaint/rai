@@ -49,7 +49,6 @@ struct sVideoEncoder_x264_simple{
   void close();
 };
 
-
 //==============================================================================
 
 VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char* filename, double fps, uint qp, bool is_rgb) :
@@ -69,7 +68,6 @@ void VideoEncoder_x264_simple::addFrame(const byteA& image){
 const rai::String& VideoEncoder_x264_simple::name() const {
 	return s->filename;
 }
-
 
 void VideoEncoder_x264_simple::close(){
 	std::clog << "Closing VideoEncoder264" << endl;

@@ -15,8 +15,6 @@ struct CollisionQuery{
   uintA geoms;
   arr& poses;
 
-
-
 };
 
 struct FCL_Interface{

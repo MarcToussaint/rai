@@ -1115,7 +1115,6 @@ Transformation& Transformation::addRelativeTranslation(const Vector& x_rel){
   return *this;
 }
 
-
 /// rotate the turtle orientation
 void Transformation::addRelativeRotation(const Quaternion& q) {
   rot = rot*q;
@@ -1385,7 +1384,6 @@ void DynamicTransformation::addRelativeAngVelocityRad(double wx, double wy, doub
   angvel+=rot*W;
   zeroVels = false;
 }
-
 
 /** @brief transform the turtle into the frame f,
     which is interpreted RELATIVE to the current frame
@@ -1724,7 +1722,6 @@ double sqrDistance(const Vector &a, const Vector &b){
 
 } //namespace rai
 
-
 //===========================================================================
 //
 // low level drivers
@@ -1735,8 +1732,6 @@ double sqrDistance(const Vector &a, const Vector &b){
  * Details in inf cylinder section of
  * rai/stanio/concepts/note-analytic-impl-shapes-hessian
  */
-
-
 
 //===========================================================================
 //

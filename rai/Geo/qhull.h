@@ -35,7 +35,6 @@ double forceClosure(const arr& X,  //contact points (size Nx3)
                     double discountTorques=1.,   //friction coefficient
                     arr *dFdX=NULL);    //optional: also compute gradient
 
-
 arr getHull(const arr& V, uintA& T=NoUintA);
 
 void getDelaunayEdges(uintA& E, const arr& V);

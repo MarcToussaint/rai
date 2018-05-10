@@ -21,7 +21,6 @@ struct G4FeatSeq;
 typedef rai::Array<G4RawSeq*> G4RawSeqL;
 typedef rai::Array<G4FeatSeq*> G4FeatSeqL;
 
-
 // =============================================================================
 // G4ID
 //
@@ -178,7 +177,6 @@ struct G4RawSeq {
   void write(std::ostream &os = std::cout) const;
 };
 stdOutPipe(G4RawSeq);
-
 
 // =============================================================================
 // G4FeatSeq

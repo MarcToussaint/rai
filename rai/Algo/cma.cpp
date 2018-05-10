@@ -9,17 +9,10 @@
 #include "cma.h"
 #include "algos.h"
 
-
-
-
 CMA::CMA() {
-
-
-
-
 }
-CMA::~CMA() {
 
+CMA::~CMA() {
 }
 
 void CMA::run(){
@@ -32,7 +25,5 @@ void CMA::run(){
     pc.setZero();
     ps.setZero();
     C = eye(dim);
-
-
 }
 

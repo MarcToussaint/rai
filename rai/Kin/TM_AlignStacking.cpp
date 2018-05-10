@@ -13,7 +13,6 @@ TM_AlignStacking::TM_AlignStacking(int iShape)
   : i(iShape){
 }
 
-
 TM_AlignStacking::TM_AlignStacking(const rai::KinematicWorld& G, const char* iShapeName)
   :i(-1){
   rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;

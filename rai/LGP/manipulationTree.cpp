@@ -96,7 +96,6 @@ void MNode::expand(int verbose){
   isExpanded=true;
 }
 
-
 void MNode::optLevel(uint level, bool collisions){
   komoProblem(level) = new KOMO();
   KOMO& komo(*komoProblem(level));
@@ -292,7 +291,6 @@ void MNode::optLevel(uint level, bool collisions){
 
 //  komo.setModel(effKinematics);
 //  komo.setAbstractTask(0., *folState);
-
 
 //  effKinematics = *komo.configurations.last();
 
@@ -632,7 +630,6 @@ Skeleton MNode::getSkeleton(StringA predicateFilter) const{
   return skeleton;
 }
 
-
 MNode* MNode::getRoot(){
   MNode* n=this;
   while(n->parent) n=n->parent;
@@ -658,7 +655,6 @@ MNode *MNode::treePolicy_random(){
   if(children.N) return children.rndElem()->treePolicy_random();
   return this;
 }
-
 
 bool MNode::recomputeAllFolStates(){
   if(!parent){ //this is root

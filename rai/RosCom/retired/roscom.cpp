@@ -46,7 +46,6 @@ void PerceptionObjects2Ors::step(){
   modelWorld.deAccess();
 }
 
-
 //===========================================================================
 // RosCom_Spinner
 //struct sRosCom_Spinner{
@@ -162,7 +161,6 @@ void syncJointStateWitROS(rai::KinematicWorld& world,
   }
   HALT("sync'ing real PR2 with simulated failed");
 }
-
 
 //===========================================================================
 // RosCom_Spinner
@@ -441,7 +439,6 @@ void RosCom_SoftHandSync::close(){
   delete s;
 }
 
-
 //===========================================================================
 #else // RAI_ROS no defined
 
@@ -463,5 +460,4 @@ void RosCom_ForceSensorSync::close(){ NICO }
 //REGISTER_MODULE(RosCom_KinectSync)
 //REGISTER_MODULE(RosCom_HeadCamsSync)
 //REGISTER_MODULE(RosCom_ArmCamsSync)
-
 

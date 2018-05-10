@@ -244,7 +244,6 @@ void TrajectoryInterface::gotoPosition(arr x_robot, double T, bool recordData, b
   executeTrajectory(X_robot, T, recordData, displayTraj);
 }
 
-
 void TrajectoryInterface::recordDemonstration(arr &X_robot,double T,double dt,double T_start) {
   rai::wait(T_start);
 
@@ -377,8 +376,6 @@ void TrajectoryInterface::pauseMotion(bool sendZeroGains) {
   refs.qdot=S->ctrl_obs.get()->qdot*0.;
   S->ctrl_ref.set() = refs;
 }
-
-
 
 void TrajectoryInterface::logging(rai::String folder, rai::String name, uint id) {
   rai::String filename;

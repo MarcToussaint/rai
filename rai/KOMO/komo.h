@@ -199,7 +199,6 @@ struct KOMO{
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
   PhysXInterface& physx(){ return world.physx(); }
 
-
   //===========================================================================
   //
   // internal (kind of private); old interface of 'KOMO'; kept for compatibility

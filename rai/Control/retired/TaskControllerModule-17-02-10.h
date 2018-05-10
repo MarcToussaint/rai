@@ -14,7 +14,6 @@
 #include <Control/RTControllerSimulation.h>
 #include <Control/gravityCompensation.h>
 
-
 /// The task controller generates the message send to the RT_Controller
 /// the problem is defined by the list of CtrlTasks
 struct TaskControlThread : Thread {
@@ -59,7 +58,6 @@ struct TaskControlThread : Thread {
   arr qLastReading;
 
   arr fRInitialOffset;
-
 
 public:
   TaskControlThread(const char* robot="none", const rai::KinematicWorld& world = NoWorld);

@@ -7234,7 +7234,6 @@ doublereal slamc3_(real *a, real *b);
 /* Subroutine */ int slamc5_(integer *beta, integer *p, integer *emin,
 		    logical *ieee, integer *emax, real *rmax);
 
-
 doublereal dlamch_(char *cmach);
 
 /* Subroutine */ int dlamc1_(integer *beta, integer *t, logical *rnd, logical
@@ -7257,6 +7256,5 @@ integer ilaenv_(integer *ispec, char *name__, char *opts, integer *n1,
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif /* __CLAPACK_H */

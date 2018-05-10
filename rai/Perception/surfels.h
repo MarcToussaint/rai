@@ -48,7 +48,6 @@ struct Surfels{
   uint32A surfelIdx, rndPerm;
   byteA mask,idxImage;
 
-
   Surfels():gl("Surfel Internel Renderer",640,480){}
   uint N(){ return pos.d0; }
   void setRandom(uint N);

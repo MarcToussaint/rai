@@ -56,7 +56,6 @@ void GaussianProcess::setGaussKernelGP(
   covDD_D=GaussKernelDD_D;
 }
 
-
 void GaussianProcess::recompute(const arr& _XX, const arr& _YY){
   X.referTo(_XX);
   Y.referTo(_YY);

@@ -15,8 +15,6 @@
  * @{
  */
 
-
-
 #include "kin_ode.h"
 
 #ifdef RAI_ODE
@@ -24,7 +22,6 @@
 #ifndef dDOUBLE
 #  define dDOUBLE
 #endif
-
 
 #  include <ode/ode.h>
 #  include <ode/internal/objects.h>
@@ -44,7 +41,6 @@
 #define CP3(x, y) memmove(x, y, 3*sizeof(double));
 
 static bool ODEinitialized=false;
-
 
 //===========================================================================
 //
@@ -460,7 +456,6 @@ void OdeInterface::penetration(rai::Vector &p) {
 #endif
 }
 
-
 void OdeInterface::contactForces() {
   uint i;
   dContactGeom *c;
@@ -518,8 +513,6 @@ void OdeInterface::contactForces() {
 #endif
   }
 }
-
-
 
 //===========================================================================
 //
@@ -780,7 +773,6 @@ void OdeInterface::pidJointVel(rai::Joint *e, double v0, double vGain) {
   dJointAddHingeTorque(joints(e->index), -f);
 }
 
-
 //===========================================================================
 //
 // higher level C
@@ -820,7 +812,6 @@ void OdeInterface::getGroundContact(boolA& cts) {
   dReal depth;        // penetration depth
   dGeomID g1, g2;      // the colliding geoms
   };*/
-
 
 void OdeInterface::importProxiesFromOde() {
   uint i;
@@ -974,7 +965,6 @@ void OdeInterface::slGetProxyGradient(arr &dx, const arr &x, rai::KinematicWorld
 #undef OUTq
 #undef CP4
 #undef CP3
-
 
 //===========================================================================
 //

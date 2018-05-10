@@ -76,7 +76,6 @@ void CtrlTask::setC(const arr& C) {
   prec = C;
 }
 
-
 void makeGainsMatrices(arr& Kp, arr& Kd, uint n){
   if(Kp.N==1) Kp = diag(Kp.scalar(), n);
   if(Kd.N==1) Kd = diag(Kd.scalar(), n);
@@ -420,7 +419,6 @@ arr TaskControlMethods::getDesiredLinAccLaw(arr &Kp, arr &Kd, arr &k) {
 
   return k - Kp*world.q - Kd*world.qdot;
 }
-
 
 arr TaskControlMethods::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, const arr& M, const arr& F) {
   uint n=F.N;

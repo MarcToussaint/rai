@@ -109,7 +109,6 @@ void Conv_linearlyReparameterize_ConstrainedProblem::phi(arr& phi, arr& J, arr& 
   if(&H && H.N) NIY;
 }
 
-
 //===========================================================================
 
 Convert::Convert(KOMO_Problem& p) : cstyle_fs(NULL), cstyle_fv(NULL), data(NULL), cpm(NULL) {
@@ -120,7 +119,6 @@ Convert::operator ConstrainedProblem&() {
   if(!cpm) HALT("");
   return *cpm;
 }
-
 
 //===========================================================================
 

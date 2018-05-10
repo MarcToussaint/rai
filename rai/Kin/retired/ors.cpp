@@ -61,7 +61,6 @@ rai::KinematicWorld* rai::KinematicWorld::newClone() const {
   return G;
 }
 
-
 //void rai::KinematicWorld::copyShapesAndJoints(const Graph& G) {
 //  uint i;  Shape *s;  Body *b;  Joint *j;
 //  for_list(Type,  s,  shapes)(*s) = *G.shapes(i);
@@ -74,7 +73,6 @@ rai::KinematicWorld* rai::KinematicWorld::newClone() const {
 //  }
 //  calcBodyFramesFromJoints();
 //}
-
 
 ///// find body index with specific name
 //uint rai::KinematicWorld::getBodyIndexByName(const char* name) const {

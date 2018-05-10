@@ -31,7 +31,6 @@ TM_Default::TM_Default(TM_DefaultType _type, const rai::KinematicWorld &G,
   if(&_params) params=_params;
 }
 
-
 void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   rai::Body *body_i = i<0?NULL: G.shapes(i)->body;
   rai::Body *body_j = j<0?NULL: G.shapes(j)->body;

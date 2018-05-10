@@ -30,7 +30,6 @@ TM_PushConsistent::TM_PushConsistent(const rai::KinematicWorld &G,
 //  if(&J2) J2 = -skew(x1);
 //}
 
-
 void TM_PushConsistent::phi(arr& y, arr& J, const WorldL& Ktuple){
   CHECK(Ktuple.N>=order+1,"I need at least " <<order+1 <<" configurations to evaluate");
 

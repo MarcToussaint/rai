@@ -19,7 +19,6 @@ void CollisionConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G){
 
 //===========================================================================
 
-
 PairCollisionConstraint::PairCollisionConstraint(const rai::KinematicWorld &G, const char *iShapeName, const char *jShapeName, double _margin)
   : i(G.getFrameByName(iShapeName)->ID),
     j(G.getFrameByName(jShapeName)->ID),
@@ -139,7 +138,6 @@ void ContactEqualityConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G
 
 //===========================================================================
 
-
 VelAlignConstraint::VelAlignConstraint(const rai::KinematicWorld& G,
                    const char* iShapeName, const rai::Vector& _ivec,
                    const char* jShapeName, const rai::Vector& _jvec, double _target) {
@@ -222,5 +220,4 @@ void qItselfConstraint::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
     if(&J) J.setId(q.N);
   }
 }
-
 

@@ -39,7 +39,6 @@ struct VectorGraphFunction {
   double f_total(const arr& X);
 };*/
 
-
 struct VectorChainCost:VectorChainFunction {
   uint T,n;
   arr A,a;
@@ -168,7 +167,6 @@ struct SGD {
   }
 };
 
-
 inline double ModelStaticL(const arr& w, void* p) {    return ((OptimizationProblem*)p)->totalLoss(w, NULL, NULL); }
 inline void   ModelStaticDL(arr& grad, const arr& w, void* p) {((OptimizationProblem*)p)->totalLoss(w, &grad, NULL); }
 //void   ModelStaticF (arr& out , const arr& w, void* p){ ((OptimizationProblem*)p)->f(out, w); }
@@ -181,7 +179,6 @@ inline void   ModelStaticDL(arr& grad, const arr& w, void* p) {((OptimizationPro
 // void checkGrad_fvec(OptimizationProblem& m, const arr& w, double tolerance){
 //   checkGradient(ModelStaticF, ModelStaticDF, &m, w, tolerance);
 // }
-
 
 //===========================================================================
 //

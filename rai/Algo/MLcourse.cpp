@@ -342,7 +342,6 @@ arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bay
 arr logisticRegressionMultiClass(const arr& X, const arr& y, double lambda) {
   if(lambda<0.) lambda = rai::getParameter<double>("lambda",1e-10);
 
-
   CHECK(y.nd==2 && y.d0==X.d0, "");
   uint n=y.d0, d=X.d1, M=y.d1;
   arr Xt;
@@ -367,7 +366,6 @@ arr logisticRegressionMultiClass(const arr& X, const arr& y, double lambda) {
     //compute logLikelihood
     logLike=0.;
     for(uint i=0; i<n; i++) logLike += scalarProduct(f[i],y[i]) - log(Z(i));
-
 
     logLike=0.;
     for(uint i=0; i<n; i++) {
@@ -555,7 +553,6 @@ void piecewiseLinearFeatures(arr& Z, const arr& X) {
   }
 }
 
-
 void rbfFeatures(arr& Z, const arr& X, const arr& Xtrain) {
   uint rbfBias = rai::getParameter<uint>("rbfBias", 1);
   double rbfWidth = rai::sqr(rai::getParameter<double>("rbfWidth", .2));
@@ -702,7 +699,6 @@ void artificialData_GaussianMixture(arr& X, arr& y) {
   }
 }
 
-
 void load_data(arr& X, const char* filename, bool whiten) {
   ifstream is;
   rai::open(is, filename);
@@ -739,5 +735,4 @@ void load_data(arr& X, const char* filename, bool whiten) {
       }
   }
 }
-
 

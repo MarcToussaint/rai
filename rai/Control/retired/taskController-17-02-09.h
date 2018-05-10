@@ -18,10 +18,8 @@
  * them.
  */
 
-
 struct CtrlTask;
 typedef rai::Array<CtrlTask*> CtrlTaskL;
-
 
 //===========================================================================
 /**

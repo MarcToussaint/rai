@@ -15,7 +15,6 @@
  * @{
  */
 
-
 #ifdef RAI_PHYSX
 
 #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
@@ -45,7 +44,6 @@ static PxCooking* mCooking = NULL;
 static PxDefaultErrorCallback gDefaultErrorCallback;
 static PxDefaultAllocator gDefaultAllocatorCallback;
 static PxSimulationFilterShader gDefaultFilterShader=PxDefaultSimulationFilterShader;
-
 
 // ============================================================================
 /**

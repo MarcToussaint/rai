@@ -21,8 +21,6 @@ void lib_Perception(){ RAI_MSG("loading"); }
 //REGISTER_MODULE (AudioReader)
 //REGISTER_MODULE (AudioWriter)
 
-
-
 //===========================================================================
 //
 // VideoEncoder
@@ -64,7 +62,6 @@ void VideoEncoder::step(){
   sprintf(tag.p, "%6i %13.6f", rev, time);
   s->timeTagFile <<tag <<endl;
 }
-
 
 //===========================================================================
 //
@@ -139,7 +136,6 @@ void AudioReader::step() {
     pcms16ne2c.deAccess();
 }
 
-
 void AudioWriter::open() {
 #ifdef HAVE_LIBAV
     writer = new AudioWriter_libav(STRING("z.audio" <<'.' <<rai::getNowString() <<".wav"));
@@ -187,8 +183,6 @@ void AudioWriter::step() {
 //REGISTER_MODULE (HoughLineFilter)
 //REGISTER_MODULE (ShapeFitter)
 
-
-
 //===========================================================================
 //
 // Camera
@@ -231,7 +225,6 @@ bool OpencvCamera::set(int propId, double value) {
     }
 }
 
-
 //===========================================================================
 //
 // CvtGray
@@ -253,7 +246,6 @@ void CvtGray::step(){
   gray.set() = _gray;
 }
 
-
 //===========================================================================
 //
 // CvtHsv
@@ -274,7 +266,6 @@ void CvtHsv::step() {
 
   hsv.set() = hsvA;
 }
-
 
 //===========================================================================
 //
@@ -332,8 +323,6 @@ void HsvFilter::step(){
   evi.set() = evidence;
 }
 
-
-
 //===========================================================================
 //
 // MotionFilter
@@ -378,7 +367,6 @@ void MotionFilter::step(){
   motion.set() = grayA;
 }
 
-
 //===========================================================================
 //
 // DifferenceFilter
@@ -412,7 +400,6 @@ void DifferenceFilter::step() {
   diffImage.set() = diff;
 }
 
-
 //===========================================================================
 //
 // CannyFilter
@@ -430,7 +417,6 @@ void CannyFilter::step() {
   cv::Canny(conv_Arr2CvRef(gray), ref, cannyThreshold, 4.f*cannyThreshold, 3);
   cannyImage.set() = canny;
 }
-
 
 //===========================================================================
 //
@@ -462,7 +448,6 @@ void Patcher::step() {
   patchImage().display=display;
   patchImage.deAccess();
 }
-
 
 //===========================================================================
 //
@@ -506,12 +491,10 @@ void SURFer::step() {
   features.deAccess();
 }
 
-
 //===========================================================================
 //
 // HoughLineFilter
 //
-
 
 void HoughLineFilter::open() {}
 void HoughLineFilter::close() {}
@@ -535,7 +518,6 @@ void HoughLineFilter::step() {
   houghLines.deAccess();
 }
 
-
 //===========================================================================
 //
 // ShapeFitter
@@ -553,12 +535,10 @@ void HoughLineFilter::step() {
 //  void close() {}
 //};
 
-
 //===========================================================================
 //
 // helpers
 //
-
 
 byteA evidence2RGB(const floatA& evidence){
   byteA tmp;
@@ -598,15 +578,8 @@ ModuleL newPointcloudProcesses() {
 //}
 #endif
 
-
-
-
 void openGlLock();
 void openGlUnlock();
-
-
-
-
 
 void draw1(void*){
   glStandardLight(NULL);
@@ -616,8 +589,6 @@ void draw1(void*){
   glDrawAxes(1.);
   glFrontFace(GL_CCW);
 }
-
-
 
 //void AllViewer::open() {
 //  gl.add(glStandardScene, 0);

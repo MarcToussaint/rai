@@ -44,7 +44,6 @@ void SearchCMA::init(uint D, int mu, int lambda, const arr &startPoint, const ar
   cmaes_init(&s->evo, NULL, D, startPoint.p, startDev.p, 1, lambda, mu, NULL);
 }
 
-
 void SearchCMA::init(uint D, int mu, int lambda, const arr &startPoint, double _startDev){
   CHECK_EQ(startPoint.N,D,"");
   arr startDev(D);
@@ -80,5 +79,4 @@ void SearchCMA::getMean(arr &mean) {
   mean.resize(s->evo.sp.N);
   mean.setCarray(s->evo.rgxmean,mean.N);
 }
-
 

@@ -22,7 +22,6 @@
 #undef MIN
 #undef MAX
 
-
 #define INFO(x) if(gv->p->verbose) printf("CALLBACK: %s\n",#x);
 
 extern "C" {
@@ -261,7 +260,6 @@ bool sGraphView::on_drawingarea_expose_event(GtkWidget *widget, GdkEventExpose  
   return FALSE;
 }
 
-
 bool sGraphView::on_drawingarea_motion_notify_event(GtkWidget       *widget,                   GdkEventMotion  *event,                   gpointer         user_data) {
   sGraphView *gv = (sGraphView*)g_object_get_data(G_OBJECT(widget),"GraphvizGtk");
   INFO(on_drawingarea_motion_notify_event);
@@ -284,7 +282,6 @@ bool sGraphView::on_container_delete_event(GtkWidget       *widget,       GdkEve
   gtk_main_quit();
   return FALSE;
 }
-
 
 bool sGraphView::on_drawingarea_configure_event(GtkWidget       *widget,               GdkEventConfigure *event,               gpointer         user_data) {
   sGraphView *gv = (sGraphView*)g_object_get_data(G_OBJECT(widget),"GraphvizGtk");
@@ -318,7 +315,6 @@ bool sGraphView::on_drawingarea_configure_event(GtkWidget       *widget,        
   
   return FALSE;
 }
-
 
 bool sGraphView::on_drawingarea_button_press_event(GtkWidget       *widget,                  GdkEventButton  *event,                  gpointer         user_data) {
   sGraphView *gv = (sGraphView*)g_object_get_data(G_OBJECT(widget),"GraphvizGtk");
@@ -396,7 +392,6 @@ GraphView::~GraphView() { NICO }
 void GraphView::watch() { NICO }
 void GraphView::update() { NICO }
 #endif
-
 
 //===========================================================================
 //

@@ -29,7 +29,6 @@ struct OptNewton{
   bool rootFinding=false;
   ofstream *fil=NULL;
 
-
   OptNewton(arr& x, const ScalarFunction& f, OptOptions o=NOOPT);
   ~OptNewton();
   StopCriterion step();

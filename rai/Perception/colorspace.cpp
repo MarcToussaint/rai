@@ -81,7 +81,6 @@ void raw_fill(const uint8_t* const in_pixels, uint8_t* yc, uint8_t* uc,
 	memset(vc, 128, num_pixel);
 }
 
-
 void uyv444packed_yuv444planar(const uint8_t* const in_pixels, uint8_t* yc,
 		uint8_t* uc, uint8_t *vc, const unsigned int num_pixel) {
 	for (unsigned int i = 0; i < num_pixel; ++i) {

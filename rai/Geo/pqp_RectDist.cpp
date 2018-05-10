@@ -49,7 +49,6 @@
 
   EMail:               geom@cs.unc.edu
 
-
 \**************************************************************************/
 
 #ifndef PQP_RECTDIST_H
@@ -198,7 +197,6 @@ InVoronoi(const PQP_REAL &a,
   return 0; 
 } 
 
-
 // RectDist
 //
 // Finds the distance between two rectangles A and B.  A is assumed
@@ -307,7 +305,6 @@ pqp_RectDist(PQP_REAL Rab[9], PQP_REAL Tab[3],
       DBG_PRINT("case 1"); return sqrt(VdotV(S,S));
     }    
   }
-
 
   // UA1, LB1
 

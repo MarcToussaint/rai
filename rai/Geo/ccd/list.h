@@ -30,8 +30,6 @@ struct _ccd_list_t {
 };
 typedef struct _ccd_list_t ccd_list_t;
 
-
-
 /**
  * Get the struct for this entry.
  * @ptr:	the &ccd_list_t pointer.
@@ -81,7 +79,6 @@ typedef struct _ccd_list_t ccd_list_t;
 	     &pos->member != (head); 					\
 	     pos = n, n = ccdListEntry(n->member.next, ntype, member))
 
-
 /**
  * Initialize list.
  */
@@ -104,8 +101,6 @@ _ccd_inline void ccdListAppend(ccd_list_t *l, ccd_list_t *item);
  * Removes item from list.
  */
 _ccd_inline void ccdListDel(ccd_list_t *item);
-
-
 
 ///
 /// INLINES:

@@ -406,7 +406,6 @@ void rai::Mesh::setSSCvx(const rai::Mesh& m, double r, uint fineness){
   }
 }
 
-
 /** @brief calculate the normals of all triangles (Tn) and the average
   normals of the vertices (N); average normals are averaged over
   all adjacent triangles that are in the triangle list or member of
@@ -1259,7 +1258,6 @@ void rai::Mesh::readArr(std::istream& is){
   texImg.readTagged(is, "texImg");
 }
 
-
 bool rai::Mesh::readStlFile(std::istream& is) {
   //first check if binary
   if(rai::parse(is, "solid", true)) { //is ascii
@@ -1337,7 +1335,6 @@ bool rai::Mesh::readStlFile(std::istream& is) {
   }*/
 
 uint& Tni(uint, uint) { static uint dummy; return dummy; } //normal index
-
 
 rai::String str;
 
@@ -1673,7 +1670,6 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
     glBindTexture(GL_TEXTURE_2D, texture);
   }
 
-
 #if 1
   if(!C.N || C.nd==1 || C.d0==V.d0){ //we have colors for each vertex -> use index arrays
 
@@ -1688,7 +1684,6 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
     if(C.N==V.N) glDisable(GL_LIGHTING); //because lighting requires ambiance colors to be set..., not just color..
     if(tex.N) glEnableClientState(GL_TEXTURE_COORD_ARRAY); else glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
-
     glVertexPointer(3, GL_DOUBLE, 0, V.p);
     glNormalPointer(GL_DOUBLE, 0, Vn.p);
     if(C.N==V.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
@@ -1699,7 +1694,6 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
     if(C.N) glEnable(GL_LIGHTING);
 
     if(tex.N) glDisable(GL_TEXTURE_2D);
-
 
   }else{ //we have colors for each tri -> render tris directly and with tri-normals
 
@@ -1841,7 +1835,6 @@ void inertiaCylinder(double *I, double& mass, double density, double height, dou
   I[8]=mass/2.*r2;
 }
 
-
 //===========================================================================
 //
 // GJK interface
@@ -1959,7 +1952,6 @@ double GJK_distance(rai::Mesh& mesh1, rai::Mesh& mesh2,
                     rai::Vector& p1, rai::Vector& p2){ NICO }
 #endif
 
-
 //===========================================================================
 //
 // Lewiner interface
@@ -1967,7 +1959,6 @@ double GJK_distance(rai::Mesh& mesh1, rai::Mesh& mesh2,
 
 #ifdef RAI_extern_Lewiner
 #  include "Lewiner/MarchingCubes.h"
-
 
 void rai::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint res) {
   MarchingCubes mc(res, res, res);
@@ -2005,7 +1996,6 @@ void rai::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint 
     T(i, 2)=mc.trig(i)->v3;
   }
 }
-
 
 void rai::Mesh::setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res) {
   MarchingCubes mc(res, res, res);
@@ -2232,11 +2222,6 @@ ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> doub
   }
   return d;
 };
-
-
-
-
-
 
 uint rai::Mesh::support(const arr &dir){
   if(!graph.N){ //build graph

@@ -11,7 +11,6 @@
 #include "environment.h"
 #include "../../include/MCTS_Environment/AbstractEnvironment.h"
 
-
 class InterfaceMarc: public AbstractEnvironment {
     //----typedefs/classes----//
 public:
@@ -78,9 +77,6 @@ public:
     virtual void reset_state() {
         env_marc->reset_state();
     }
-
-
-
 
     virtual bool has_terminal_state() const {
         return env_marc->get_info(MCTS_Environment::InfoTag::hasTerminal);

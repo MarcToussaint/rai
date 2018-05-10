@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "mesh_readAssimp.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -92,7 +100,6 @@ struct AssimpLoader {
             M.C = ARR(col[0], col[1], col[2], col[3]);
         }
     }
-
 
     uint nTex = material->GetTextureCount(aiTextureType_DIFFUSE);
 //    cout <<"material: #textures=" <<nTex <<endl;

@@ -33,7 +33,6 @@ struct BlindBranch:MCTS_Environment{
   int H; //horizon (parameter of the world)
   rai::Array<Handle> actions; //will contain handles on the -1 and +1 action
 
-
   BlindBranch(uint H);
   void reset_state();
   TransitionReturn transition(const Handle& action);

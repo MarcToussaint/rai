@@ -256,7 +256,6 @@ void removeInfeasibleSymbolsFromDomain(Graph& facts, NodeL& domain, Node* litera
   }
 }
 
-
 /// directly create a new fact
 Node *createNewFact(Graph& facts, const NodeL& symbols){
   return facts.newNode<bool>({}, symbols, true);
@@ -340,7 +339,6 @@ bool applyEffectLiterals(Graph& facts, NodeL& effects, const NodeL& subst, Graph
   }
   return hasEffects;
 }
-
 
 /// extracts the preconditions of the rule, then returns substitutions
 NodeL getRuleSubstitutions2(Graph& KB, Node *rule, int verbose){
@@ -532,7 +530,6 @@ bool substitutedRulePreconditionHolds(Graph& KB, Node* rule, const NodeL& subst,
    return substitutions;
  }
 
-
 bool forwardChaining_FOL(Graph& KB, Graph& state, Node* query, Graph& changes, int verbose, int *samplingObservation){
   NodeL rules = KB.getNodes("Rule");
 //  NodeL constants = KB.getNodes("Constant");
@@ -585,7 +582,6 @@ bool forwardChaining_FOL(Graph& state, NodeL& rules, Node* query, Graph& changes
   return false;
 }
 
-
 /// actually propositional logic:
 bool forwardChaining_propositional(Graph& KB, Node* q){
   DEBUG(KB.checkConsistency();)
@@ -623,7 +619,6 @@ bool forwardChaining_propositional(Graph& KB, Node* q){
   }
   return false;
 }
-
 
 double evaluateFunction(Graph& func, Graph& state, int verbose){
   double f=0.;

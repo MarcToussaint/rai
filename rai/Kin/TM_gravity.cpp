@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+    
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "TM_gravity.h"
 #include <Kin/flag.h>
 #include <Kin/frame.h>
@@ -13,7 +21,6 @@ void shapeFunction(double &x, double &dx){
   x = 0.5*(3.*x-x2*x);
 }
 
-
 TM_Gravity::TM_Gravity(){
   gravity = rai::getParameter<double>("TM_Gravity/gravity", 9.81);
 }
@@ -22,7 +29,6 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple){
 
   y.clear();
   if(&J) J.clear();
-
 
   if(order==0) HALT("that doesn't make sense");
 

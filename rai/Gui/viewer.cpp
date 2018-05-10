@@ -68,7 +68,6 @@ void ImageViewer::step(){
   s->gl.update(name, false, false, true);
 }
 
-
 //===========================================================================
 //
 // PointCloudViewer

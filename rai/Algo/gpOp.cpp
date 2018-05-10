@@ -59,7 +59,6 @@ void GaussianProcessOptimized::appendObsRecompute(const arr& x, const double& y)
   }
 }
 
-
 void GaussianProcessOptimized::recompute(){
   if(X.d0) {
     arr G;

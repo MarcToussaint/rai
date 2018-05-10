@@ -131,8 +131,6 @@ void DynamicMovementPrimitives::reset() {
   x_bk.clear();
 }
 
-
-
 void DynamicMovementPrimitives::plotDMP() {
   write(LIST<arr>(x_bk),"data/x_bk.dat");
   write(LIST<arr>(y_ref),"data/y_ref.dat");

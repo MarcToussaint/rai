@@ -34,8 +34,6 @@ struct CollisionConstraint:TaskMap {
   virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("CollisionConstraint"); }
 };
 
-
-
 //===========================================================================
 
 struct PairCollisionConstraint:TaskMap {

@@ -18,7 +18,6 @@ void setBody(rai::Frame& body, const ar::AlvarMarker& marker) {
   body.X = conv_pose2transformation(marker.pose.pose);
 }
 
-
 void syncMarkers(rai::KinematicWorld& world, const ar::AlvarMarkers& markers) {
   bool createdNewMarkers = false;
 

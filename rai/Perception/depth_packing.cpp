@@ -41,7 +41,6 @@ void KinectDepthPacking::step(){
   kinect_depth.readAccess();
   kinect_depthRgb.writeAccess();
 
-
   rai::pack_kindepth2rgb(kinect_depth(), kinect_depthRgb());
 
   kinect_depthRgb().reshape(kinect_depth().d0, kinect_depth().d1, 3);

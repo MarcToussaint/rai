@@ -39,7 +39,6 @@ void extractPlanes(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<PointT>
       pcl::PointCloud<PointT>::Ptr _plane (new  pcl::PointCloud<PointT>);
       planeDetector(cloud_be,coefficients_plane,inliers_plane);
 
-
       pcl::PointCloud<PointT>::Ptr temp_clound(cloud_be);
       pcl::ExtractIndices<PointT> extract;
       extract.setInputCloud (temp_clound);
@@ -47,10 +46,8 @@ void extractPlanes(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<PointT>
       extract.setNegative (false);
       extract.filter (*_plane);
 
-
       cout<< cloud_be->size() << endl;
       cout<< inliers_plane->indices.size() << endl;
-
 
       substractPlane(cloud_be,inliers_plane,outCloud);
 
@@ -58,7 +55,6 @@ void extractPlanes(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<PointT>
       outInliers.push_back(_plane);
 
       cloud_be = outCloud;
-
 
     }
 }

@@ -58,7 +58,6 @@ void Patching_View::glDraw() {
   gl->img = &copy;
 }
 
-
 //===========================================================================
 
 void SURFfeatures_View::glInit() {
@@ -71,7 +70,6 @@ void SURFfeatures_View::glDraw() {
   gl->img = &copy;
 }
 
-
 //===========================================================================
 
 void PerceptionOutput_View::glInit() {
@@ -83,7 +81,5 @@ void PerceptionOutput_View::glDraw() {
   ((PerceptionOutput*)object)->get_display(copy, NULL);
   gl->img = &copy;
 }
-
-
 
 #endif

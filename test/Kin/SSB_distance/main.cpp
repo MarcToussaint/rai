@@ -28,7 +28,6 @@ inline void clip(double& x, double r){
   if(x<0.) x=0.; else if(x>r) x=r;
 }
 
-
 double distance_SSPoints(rai::Frame& A, rai::Frame& B,rai::Vector& Pa, rai::Vector& Pb){
   CHECK(A.shape && A.shape->type()==rai::ST_retired_SSBox && B.shape && B.shape->type()==rai::ST_retired_SSBox,"");
   CHECK(!A.shape->size(0) && !B.shape->size(0) && !A.shape->size(1) && !B.shape->size(1) && !A.shape->size(2) && !B.shape->size(2), "can only handle SSpoints");
@@ -123,7 +122,6 @@ double distance_SSRects(rai::Frame& A, rai::Frame& B, rai::Vector& Pa, rai::Vect
   Pb += B.shape->size(3)*c/d;
   return d-A.shape->size(3)-B.shape->size(3);
 }
-
 
 /* NOTE: All functions above: Internally they assume the shape's not centered, but extended from (0,0,0) to the positive coordinates
  * That is different to the 'Shape' convention, where shapes are centered and extend (with half length) to negative and positive coordinates

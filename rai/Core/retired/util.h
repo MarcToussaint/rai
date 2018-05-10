@@ -55,7 +55,6 @@ public:
   /// ()-operator: returns an lvalue of the parameter value
   type& operator()() { if(!initialized) initialize(); return value; }
 
-
   /// @name manipulation
 
   /// assigs a value to the parameter -- no further initialization needed
@@ -69,9 +68,7 @@ public:
     has been initialized before */
   void reInitialize() { initialized=false; }
 
-
   /// @name explicit grabbing
-
 
 private:
   void initialize();
@@ -79,14 +76,12 @@ private:
 
 }
 
-
 template<class T> void Parameter<T>::initialize() {
   if(!initialized) {
     getParameterBase(value, tag, hasDefault, &Default);
     initialized = true;
   }
 }
-
 
 /** @brief a standard method to save an object into a file. The same as
   std::ofstream file; rai::open(file, filename); file <<x;

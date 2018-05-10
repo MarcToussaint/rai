@@ -2215,7 +2215,6 @@ double LAPACKE_zlantr( int matrix_order, char norm, char uplo, char diag,
                            lapack_int m, lapack_int n, const lapack_complex_double* a,
                            lapack_int lda );
 
-
 lapack_int LAPACKE_slarfb( int matrix_order, char side, char trans, char direct,
                            char storev, lapack_int m, lapack_int n,
                            lapack_int k, const float* v, lapack_int ldv,
@@ -9793,7 +9792,6 @@ lapack_int LAPACKE_zlapmr( int matrix_order, lapack_logical forwrd,
                            lapack_int m, lapack_int n, lapack_complex_double* x,
                            lapack_int ldx, lapack_int* k );
 
-
 float LAPACKE_slapy2( float x, float y );
 double LAPACKE_dlapy2( double x, double y );
 
@@ -9808,7 +9806,6 @@ lapack_int LAPACKE_slartgs( float x, float y, float sigma, float* cs,
                             float* sn );
 lapack_int LAPACKE_dlartgs( double x, double y, double sigma, double* cs,
                             double* sn );
-
 
 //LAPACK 3.3.0
 lapack_int LAPACKE_cbbcsd( int matrix_order, char jobu1, char jobu2,
@@ -10456,7 +10453,6 @@ lapack_int LAPACKE_ztprfb_work( int matrix_order, char side, char trans,
                                 lapack_complex_double* a, lapack_int lda,
                                 lapack_complex_double* b, lapack_int ldb,
                                 const double* mywork, lapack_int myldwork );
-
 
 #define LAPACK_sgetrf LAPACK_NAME(sgetrf,SGETRF)
 #define LAPACK_dgetrf LAPACK_NAME(dgetrf,DGETRF)

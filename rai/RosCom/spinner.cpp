@@ -24,7 +24,6 @@ RosCom_Spinner::~RosCom_Spinner(){
   if(useRos) threadClose();
 }
 
-
 void RosCom_Spinner::step(){
   if(useRos) ros::spinOnce();
 }

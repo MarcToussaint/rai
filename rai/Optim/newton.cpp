@@ -193,7 +193,6 @@ OptNewton::StopCriterion OptNewton::step(){
   return stopCriterion=stopNone;
 }
 
-
 OptNewton::~OptNewton(){
   if(o.fmin_return) *o.fmin_return=fx;
 #ifndef RAI_MSVC
@@ -201,7 +200,6 @@ OptNewton::~OptNewton(){
 #endif
   if(o.verbose>1) cout <<"--- optNewtonStop: f(x)=" <<fx <<endl;
 }
-
 
 OptNewton::StopCriterion OptNewton::run(uint maxIt){
   numTinySteps=0;

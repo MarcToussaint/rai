@@ -14,7 +14,6 @@
 // Spline
 //
 
-
 namespace rai{
 
 Spline::Spline(uint degree) : degree(degree){}
@@ -32,7 +31,6 @@ void Spline::plotBasis() {
   for(uint i=0; i<points.d0; i++) plotFunction(basis_trans[i], -1, 1);
   plot();
 }
-
 
 arr Spline::getCoeffs(double t, uint K, uint derivative) const {
   arr b(K+1), b_0(K+1), db(K+1), db_0(K+1), ddb(K+1), ddb_0(K+1);

@@ -1,20 +1,10 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2012 Marc Toussaint
-    email: mtoussai@cs.tu-berlin.de
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
 
 //===========================================================================
 //added Sep 2013
@@ -100,8 +90,6 @@ double evaluateVCF(VectorChainFunction& f, const arr& x) {
   //cout <<"node costs=" <<ncost <<" pair costs=" <<pcost <<endl;
   return ncost+pcost;
 }
-
-
 
 /*double ScalarGraphFunction::f_total(const arr& X){
   uint n=X.d0;
@@ -208,7 +196,6 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
 
   return evals;
 }
-
 
 /// preliminary
 //uint optDynamicProgramming(arr& x, QuadraticChainFunction& f, OptOptions o) {
@@ -471,7 +458,6 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
 //  return evals;
 //}
 
-
 struct sConvert{
   struct VectorChainFunction_ScalarFunction:ScalarFunction { //actual converter objects
     VectorChainFunction *f;
@@ -529,7 +515,6 @@ Convert::operator VectorChainFunction&() {
 //  if(!s->qcf) HALT("");
 //  return *s->qcf;
 //}
-
 
 double sConvert::VectorChainFunction_ScalarFunction::fs(arr& grad, arr& H, const arr& x) {
   uint T=f->get_T();
@@ -781,7 +766,6 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
 // }
 // #endif
 
-
 VectorChainCost::VectorChainCost(uint _T,uint _n) {
   T=_T; n=_n;
   A.resize(T+1,n,n);  a.resize(T+1,n);
@@ -839,7 +823,6 @@ SlalomProblem::SlalomProblem(uint _T, uint _K, double _margin, double _w, double
   power = _power;
 }
 
-
 double border(double *grad, double x, double power=8.) {
   if(x>0.) { if(grad) *grad=0.; return 0.; }
   double y = pow(x,power);
@@ -853,7 +836,6 @@ double tannenbaum(double *grad, double x, double power=8.) {
   y=floor(y) + pow(y-floor(y),power);
   return y;
 }
-
 
 void SlalomProblem::fv_i(arr& y, arr& J, uint i, const arr& x_i) {
   eval_cost++;
@@ -908,7 +890,6 @@ bool DecideSign::step(double x){
 #else
 bool DecideSign::step(double x){ NIY; }
 #endif
-
 
 void OnlineRprop::init(OptimizationProblem *_m, double initialRate, uint _N, const arr& w0){
     rprop.init(initialRate);

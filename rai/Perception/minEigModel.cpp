@@ -12,7 +12,6 @@
 #include <Geo/qhull.h>
 #include "minEigModel.h"
 
-
 void MinEigModel::setPoints(const uintA& points){
   pts = points;
   fringe = pts;

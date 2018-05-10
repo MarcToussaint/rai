@@ -73,7 +73,6 @@ struct VisionSimulator {
   void projectWorldPointsToImagePoints(arr& x, const arr& X, double noiseInPixel=1.);
 };
 
-
 struct CarSimulator{
   struct Gaussian{  arr A;  arr a;  };
 
@@ -103,7 +102,5 @@ struct CarSimulator{
 
 };
 
-
 #endif
-
 

@@ -136,7 +136,6 @@ uint TM_Proxy::dim_phi(const rai::KinematicWorld& G){
 
 //===========================================================================
 
-
 TM_ProxyConstraint::TM_ProxyConstraint(PTMtype _type,
                                  uintA _shapes,
                                  double _margin,

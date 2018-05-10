@@ -34,7 +34,6 @@ struct TaskMap {
   }
 };
 
-
 //these are frequently used by implementations of task maps
 
 inline uintA getKtupleDim(const WorldL& Ktuple){

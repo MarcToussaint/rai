@@ -50,12 +50,10 @@ TaskControlThread::TaskControlThread(const char* _robot, const rai::KinematicWor
   kd_factor = rai::getParameter<double>("controller_kd_factor", 1.);
   ki_factor = rai::getParameter<double>("controller_ki_factor", .2);
 
-
   double hyper = rai::getParameter<double>("hyperSpeed", -1.);
   if(!useRos && hyper>0.){
     this->metronome.reset(.01/hyper);
   }
-
 
   robot = rai::getParameter<rai::String>("robot");
 
@@ -64,7 +62,6 @@ TaskControlThread::TaskControlThread(const char* _robot, const rai::KinematicWor
   // 2) modelWorld has been set before
   // 3) the "robot" flag in cfg file
   // 4) the "robot" argument here
-
 
   if(&world) {
     realWorld = world;
@@ -130,7 +127,6 @@ void TaskControlThread::open(){
 //    dynSim = new RTControllerSimulation(realWorld, 0.01, false, 0.);
 //    dynSim->threadLoop();
 }
-
 
 void TaskControlThread::step(){
   rai::Frame *transF = realWorld.getFrameByName("worldTranslationRotation", false);

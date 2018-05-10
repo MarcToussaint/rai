@@ -267,7 +267,6 @@ inline void randomFunction(GaussianProcess& gp, arr& Xbase, bool illustrate, boo
   gp.obsVar=orgObsVar;
 }
 
-
 #ifdef  RAI_IMPLEMENTATION
 #  include "gaussianProcess.cpp"
 #endif

@@ -107,7 +107,6 @@ template<class T> rai::Array<T>::~Array() {
   freeMEM();
 }
 
-
 //***** resize
 
 /// frees all memory; this becomes an empty array
@@ -186,7 +185,6 @@ template<class T> rai::Array<T>& rai::Array<T>::resizeCopy(const Array<uint> &ne
 /// resize to multi-dimensional tensor
 template<class T> rai::Array<T>& rai::Array<T>::reshape(const Array<uint> &newD) { reshape(newD.N, newD.p); return *this; }
 
-
 template<class T> rai::Array<T>& rai::Array<T>::resizeAs(const rai::Array<T>& a) {
   CHECK(this!=&a, "never do this!!!");
   CHECK(!reference || N==a.N, "resize of a reference (e.g. subarray) is not allowed! (only a resize without changing memory size)");
@@ -241,9 +239,7 @@ template<class T> uint rai::Array<T>::dim(uint k) const {
   if(!d && k<3) return (&d0)[k]; else return d[k];
 }
 
-
 //***** sparse arrays
-
 
 /// return fraction of non-zeros in the array
 template<class T> double rai::Array<T>::sparsity() {
@@ -452,7 +448,6 @@ template<class T> void rai::Array<T>::resetD() {
   if(d && d!=&d0){ delete[] d; d=NULL; }
   d=&d0;
 }
-
 
 //***** append, insert & remove
 
@@ -867,7 +862,6 @@ template<class T> rai::Array<T> rai::Array<T>::operator()(int i, int j, std::ini
   return z;
 }
 
-
 /// get a subarray (e.g., row of a matrix); use in conjuction with operator()() to get a reference
 template<class T> rai::Array<T> rai::Array<T>::operator[](int i) const {
 //  return Array(*this, i);
@@ -923,7 +917,6 @@ template<class T> void rai::Array<T>::minmax(T& minVal, T& maxVal) const {
   }
 }
 
-
 /*
 /// also returns the index (argmin) \c ind
 template<class T> T minA(const rai::Array<T>& v, uint & ind, uint start, uint end){
@@ -959,7 +952,6 @@ template<class T> T maxA(const rai::Array<T>& v, uint & ind, uint start, uint en
   return t;
 }
 */
-
 
 /** @brief the index of the maxium; precondition: the comparision operator
   > exists for type T */
@@ -1013,7 +1005,6 @@ template<class T> bool rai::Array<T>::containsDoubles() const {
   }
   return false;
 }
-
 
 /// non-reference copy (to apply followup operators, like x.copy().reshape(3,5))
 template<class T> rai::Array<T> rai::Array<T>::copy() const { return rai::Array<T>(*this); }
@@ -1084,7 +1075,6 @@ template<class T> rai::Array<T> rai::Array<T>::sub(int i, int I, Array<uint> col
   return x;
 }
 
-
 /**
  * @brief Return a copy of row `row_index` of the Array.
  *
@@ -1147,7 +1137,6 @@ rai::Array<T> rai::Array<T>::cols(uint start_col, uint end_col) const {
   return sub(0, d0 - 1, start_col, end_col - 1);
 }
 
-
 //***** C-array interfacing
 
 #if 0
@@ -1195,7 +1184,6 @@ template<class T> rai::Array<T*> rai::Array<T>::getCarray() const {
   return Cpointers;
 }
 
-
 #if 0
 /// returns an ordinary 3-dimensional C-pointer-array
 template<class T> T*** rai::Array<T>::getPointers(Array<T**>& array3d, Array<T*>& array2d) const {
@@ -1208,7 +1196,6 @@ template<class T> T*** rai::Array<T>::getPointers(Array<T**>& array3d, Array<T*>
   return array3d.p;
 }
 #endif
-
 
 //***** assignments
 
@@ -1334,7 +1321,6 @@ template<class T> void rai::Array<T>::setBlockMatrix(const rai::Array<T>& A, con
   setMatrixBlock(A, 0, 0);
   setMatrixBlock(B, 0, A.d1);
 }
-
 
 /// constructs a vector x=[a, b]
 template<class T> void rai::Array<T>::setBlockVector(const rai::Array<T>& a, const rai::Array<T>& b) {
@@ -1653,15 +1639,12 @@ rai::Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
   HALT("not implemented yet");
 }
 
-
-
 //----- sorting etc
 /// sort this list
 template<class T> void rai::Array<T>::sort(ElemCompare comp) {
   T *pstop=p+N;
   std::sort(p, pstop, comp);
 }
-
 
 /// check whether list is sorted
 template<class T> bool rai::Array<T>::isSorted(ElemCompare comp) const {
@@ -1671,7 +1654,6 @@ template<class T> bool rai::Array<T>::isSorted(ElemCompare comp) const {
   }
   return true;
 }
-
 
 /// fast find method in a sorted array, returns index where x would fit into array
 template<class T> uint rai::Array<T>::rankInSorted(const T& x, ElemCompare comp, bool rankAfterIfEqual) const {
@@ -1716,7 +1698,6 @@ template<class T> uint rai::Array<T>::insertInSorted(const T& x, ElemCompare com
   return cand_pos;
 }
 
-
 template<class T> uint rai::Array<T>::setAppendInSorted(const T& x, ElemCompare comp) {
   CHECK(memMove, "");
   uint cand_pos = rankInSorted(x, comp);
@@ -1725,7 +1706,6 @@ template<class T> uint rai::Array<T>::setAppendInSorted(const T& x, ElemCompare 
   insert(cand_pos, x);
   return cand_pos;
 }
-
 
 /// fast remove method in a sorted array, the array remains sorted
 template<class T> void rai::Array<T>::removeValueInSorted(const T& x, ElemCompare comp) {
@@ -1793,7 +1773,6 @@ template<class T> void rai::Array<T>::shift(int offset, bool wrapAround) {
     if(wrapAround) memmove(p+(N-m), tmp.p, sizeT*m); else memset(p+(N-m), 0, sizeT*m);
   }
 }
-
 
 /** @brief prototype for operator<<, writes the array by separating elements with ELEMSEP, separating rows with LINESEP, using BRACKETS[0] and BRACKETS[1] to brace the data, optionally writs a dimensionality tag before the data (see below), and optinally in binary format */
 template<class T> void rai::Array<T>::write(std::ostream& os, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) const {
@@ -2012,8 +1991,6 @@ template<class T> const char* rai::Array<T>::prt() {
   tmp <<endl;
   return tmp.p;
 }
-
-
 
 /// x = y^T
 template<class T> void transpose(rai::Array<T>& x, const rai::Array<T>& y) {
@@ -2238,7 +2215,6 @@ template<class T> void eliminatePartial(rai::Array<T>& x, const rai::Array<T>& y
   }
 }
 
-
 //===========================================================================
 //
 /// @name distances
@@ -2294,7 +2270,6 @@ template<class T> T maxRelDiff(const rai::Array<T>& v, const rai::Array<T>& w, T
   return t;
   }*/
 
-
 /// \f$\sqrt{\sum_{ij} g_{ij} (v^i-w^i) (v^j-w^j)}\f$
 template<class T> T sqrDistance(const rai::Array<T>& g, const rai::Array<T>& v, const rai::Array<T>& w) {
   rai::Array<T> d(v);
@@ -2313,7 +2288,6 @@ template<class T>
 T metricDistance(const rai::Array<T>& g, const rai::Array<T>& v, const rai::Array<T>& w) {
   return (T)::sqrt((double)sqrDistance(g, v, w));
 }
-
 
 //===========================================================================
 //
@@ -2513,7 +2487,6 @@ template<class T> T absMax(const rai::Array<T>& x) {
 template<class T> void clip(const rai::Array<T>& x, T lo, T hi) {
   for(uint i=0; i<x.N; i++) ::clip(x.p[i], lo, hi);
 }
-
 
 //===========================================================================
 //
@@ -3172,7 +3145,6 @@ template<class T> void tensorPermutation(rai::Array<T> &Y, const rai::Array<T> &
   }
 }
 
-
 /** \f$Y_{i_2, i_0} = {\rm max}_{i_1} X_{i_0, i_1, i_2}\f$. Get the ``max-marginal'' Y
   from X, where Y will share the slots `Yid' with X (basis of max-product BP) */
 template<class T> void tensorMaxMarginal(rai::Array<T> &Y, const rai::Array<T> &X, const uintA &Yid) {
@@ -3323,8 +3295,6 @@ template<class T> void tensorMultiply_old(rai::Array<T> &x, const rai::Array<T> 
   }
 }
 
-
-
 //===========================================================================
 //
 /// @name set operations
@@ -3409,7 +3379,6 @@ template<class T> uint numberSharedElements(const rai::Array<T>& x, const rai::A
   return z.N;
 }
 
-
 //===========================================================================
 //
 /// @name randomizations
@@ -3441,7 +3410,6 @@ template<class T> void rndGauss(rai::Array<T>& x, double stdDev, bool add) {
   if(!add) for(uint i=0; i<x.N; i++) x.p[i] =(T)(stdDev*rnd.gauss());
   else     for(uint i=0; i<x.N; i++) x.p[i]+=(T)(stdDev*rnd.gauss());
 }
-
 
 /// a gaussian random vector with Id covariance matrix (sdv = sqrt(dimension))
 /*template<class T> void rndGauss(rai::Array<T>& a, bool add){
@@ -3478,12 +3446,10 @@ template<class T> uint softMax(const rai::Array<T>& a, arr& soft, double beta) {
   return sel;
 }
 
-
 //===========================================================================
 //
 /// @name certain initializations
 //
-
 
 namespace rai {
 /// transpose
@@ -3556,7 +3522,6 @@ UpdateOperator(/=)
 UpdateOperator(%=)
 #undef UpdateOperator
 
-
 #define BinaryOperator( op, updateOp)         \
   template<class T> Array<T> operator op(const Array<T>& y, const Array<T>& z){ Array<T> x(y); x updateOp z; return x; } \
   template<class T> Array<T> operator op(T y, const Array<T>& z){               Array<T> x; x.resizeAs(z); x=y; x updateOp z; return x; } \
@@ -3628,13 +3593,11 @@ template<class T> void negative(rai::Array<T>& x, const rai::Array<T>& y) {
   for(; xp!=xstop; xp++, yp++) *xp = - (*yp);
 }
 
-
 //---------- unary functions
 
 inline double sigm(double x) {  return 1./(1.+::exp(-x)); }
 
 inline double sign(double x) {  return (x > 0) - (x < 0); }
-
 
 #define UnaryFunction( func )         \
   template<class T>           \
@@ -3681,7 +3644,6 @@ UnaryFunction(sign);
 
 #undef UnaryFunction
 
-
 //---------- binary functions
 
 #define BinaryFunction( func )            \
@@ -3722,7 +3684,6 @@ BinaryFunction(fmod);
 // (doxygen can't handle them...)
 #endif //(doxygen exclusion)
 
-
 /*
 
 /// element-wise linear combination (plus with scalar factors for each array)
@@ -3732,8 +3693,6 @@ uint i, n=y.N;
 x.resizeAs(y);
 for(i=0;i<n;i++) x.p[i]=a*y.p[i]+b*z.p[i];
 }*/
-
-
 
 #if 0
 #define IMPLEMENT_Array(x) void implement_Array_##x(){ rai::Array<x> dummy; }
@@ -3857,7 +3816,6 @@ template<class T, class LowerOperator> void listSort(rai::Array<T*>& L, LowerOpe
   std::sort(L.p, L.pstop, lowerop);
   //for(uint i=0;i<L.N;i++) L(i)->index=i;
 }
-
 
 //===========================================================================
 //
@@ -4015,8 +3973,6 @@ template<class vert, class edge> void graphRandomFixedDegree(rai::Array<vert*>& 
   //graphWriteUndirected(cout, V, E);
 }
 
-
-
 template<class vert, class edge> void graphLayered(rai::Array<vert*>& V, rai::Array<edge*>& E, const uintA& layers, bool interConnections) {
   uint i, j, a=0, b=0;
   uint l, L=layers.N;
@@ -4083,7 +4039,6 @@ template<class vert, class edge> edge *del_edge(edge *e, rai::Array<vert*>& V, r
   if(remakeLists) graphMakeLists(V, E);
   return e;
 }
-
 
 template<class vert, class edge> void graphWriteDirected(std::ostream& os, const rai::Array<vert*>& V, const rai::Array<edge*>& E) {
   for_list(vert,  v,  V) {

@@ -64,7 +64,6 @@ void gtkUnlock() {
   gdk_threads_leave();
 }
 
-
 void gtkCheckInitialized() {
 #if 0
   static bool isInitialized=false;

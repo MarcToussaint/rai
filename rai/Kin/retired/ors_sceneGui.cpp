@@ -15,7 +15,6 @@
  * @{
  */
 
-
 #include "kin_ode.h"
 #include "kin_sceneGui.h"
 

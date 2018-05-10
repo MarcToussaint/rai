@@ -13,7 +13,6 @@
 #include <Core/array.h>
 #include <Kin/kin.h>
 
-
 struct DynamicMovementPrimitives {
   DynamicMovementPrimitives(arr &y_ref_, uint nBase_, double dt_, double lambda_=1e-7);
   ~DynamicMovementPrimitives();

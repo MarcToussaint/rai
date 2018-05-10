@@ -41,7 +41,6 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
   if(o.verbose>2) fil <<' ' <<x;
   if(o.verbose>0) fil <<endl;
 
-
   for(uint it=1;; it++) { //iterations and lambda adaptation loop
 
     if(o.verbose>1) cout <<"optNewton it=" <<std::setw(3) <<it << " \tlambd=" <<std::setprecision(3) <<lambda <<flush;

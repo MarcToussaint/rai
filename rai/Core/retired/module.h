@@ -40,8 +40,6 @@ typedef rai::Array<Module*> ModuleL;
 
 inline bool operator==(const Module&,const Module&){ return false; }
 
-
-
 //===========================================================================
 //
 /** Instead of declaring 'Var<TYPE> name;' as a module
@@ -58,7 +56,6 @@ struct __##name##__Access:Var<type>{ \
 #else
 
 #define VAR(type, name) Var<type> name = Var<type>(this, #name);
-
 
 #endif
 
@@ -77,8 +74,6 @@ struct __##name##__Access:Var<type>{ \
   RUN_ON_INIT_BEGIN(Decl_Module##_##name) \
   registry()->newNode<std::shared_ptr<Type> >({rai::String("Decl_Module"), rai::String(#name)}, NodeL(), std::make_shared<Type_typed<name, void> >()); \
   RUN_ON_INIT_END(Decl_Module##_##name)
-
-
 
 //===========================================================================
 //
@@ -106,7 +101,6 @@ inline void operator<<(ostream& os, const Module& m){ os <<"Module '" <<m.name <
 
 inline void operator>>(istream&, Access&){ NIY }
 inline void operator<<(ostream& os, const Access& a){ os <<"Access '" <<a.name <<"' from '" <<(a.thread?a.thread->name:rai::String("NIL")) <<"' to '" << (a.var ? a.data->name : String("??")) <<'\''; }
-
 
 //===========================================================================
 //
@@ -138,7 +132,6 @@ struct Recorder : Thread {
     fil.close();
   }
 };
-
 
 //===========================================================================
 //

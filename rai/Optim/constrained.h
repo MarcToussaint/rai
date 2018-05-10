@@ -39,7 +39,6 @@ inline uint optConstrained(arr& x, arr &dual, ConstrainedProblem& P, OptOptions 
   return OptConstrained(x, dual, P, opt).run();
 }
 
-
 //==============================================================================
 //
 // evaluating
@@ -58,7 +57,6 @@ inline void evaluateConstrainedProblem(const arr& x, ConstrainedProblem& P, std:
   }
   os <<"f=" <<Ef <<" sum([g>0]g)="<<Eg <<" sum(|h|)=" <<Eh <<endl;
 }
-
 
 //==============================================================================
 //
