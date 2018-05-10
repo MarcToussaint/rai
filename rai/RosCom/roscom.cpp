@@ -370,6 +370,39 @@ arr conv_Float32Array2arr(const std_msgs::Float32MultiArray &msg){
   return x;
 }
 
+rai_msgs::arr conv_arr2arr(const arr& x){
+  rai_msgs::arr y;
+  y.dim = x.dim();
+  y.data = x;
+  return y;
+}
+
+arr conv_arr2arr(const rai_msgs::arr &x){
+  arr y;
+  y = conv_stdvec2arr(x.data);
+  y.reshape(conv_stdvec2arr(x.dim));
+  return y;
+}
+
+StringA conv_StringA2StringA(const rai_msgs::StringA &x){
+  StringA y(x.data.size());
+  for(uint i=0;i<y.N;i++) y.elem(i) = x.data[i].c_str();
+  return y;
+}
+
+rai_msgs::StringA conv_StringA2StringA(const StringA &x){
+  rai_msgs::StringA y;
+  y.data.resize(x.N);
+  for(uint i=0;i<x.N;i++) y.data[i] = x.elem(i).p;
+  return y;
+}
+
+std_msgs::Float64 conv_double2Float64(const double &x){
+  std_msgs::Float64 y;
+  y.data = x;
+  return y;
+}
+
 //===========================================================================
 
 visualization_msgs::Marker conv_Shape2Marker(const rai::Shape& sh){
@@ -424,7 +457,6 @@ visualization_msgs::MarkerArray conv_Kin2Markers(const rai::KinematicWorld& K){
 
 
 #endif
-
 
 
 

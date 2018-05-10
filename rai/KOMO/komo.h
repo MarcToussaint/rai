@@ -183,6 +183,7 @@ struct KOMO{
   void run();                     ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
   void getPhysicsReference(uint subSteps=10, int display=0);
   void playInPhysics(uint subSteps=10, bool display=false);
+  rai::KinematicWorld& getConfiguration(double phase);
   arr getPath(const StringA& joints);
   arr getPath_frames(const uintA &frames);
   arr getPath_times();

@@ -25,6 +25,9 @@
 #include <std_msgs/String.h>
 #include <sensor_msgs/JointState.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <rai_msgs/MotionReference.h>
+#include <rai_msgs/StringA.h>
+#include <std_msgs/Float64.h>
 
 //===========================================================================
 
@@ -81,6 +84,11 @@ arr                 conv_JointState2arr(const sensor_msgs::JointState& msg);
 rai::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::MarkerArray& markers);
 std_msgs::Float32MultiArray conv_floatA2Float32Array(const floatA&);
 std_msgs::Float64MultiArray conv_arr2Float64Array(const arr&);
+arr conv_arr2arr(const rai_msgs::arr& x);
+rai_msgs::arr conv_arr2arr(const arr& x);
+StringA conv_StringA2StringA(const rai_msgs::StringA &x);
+rai_msgs::StringA conv_StringA2StringA(const StringA &x);
+std_msgs::Float64 conv_double2Float64(const double& x);
 
 //-- RAI -> ROS
 geometry_msgs::Pose conv_transformation2pose(const rai::Transformation&);
@@ -164,7 +172,7 @@ struct Publisher : Thread {
   void step(){
     if(nh){
       pub.publish(var.get()());
-      LOG(0) <<"publishing to topic '" <<topic_name <<"' revision " <<var.getRevision() <<" of variable '" <<var.name <<'\'';
+//      LOG(0) <<"publishing to topic '" <<topic_name <<"' revision " <<var.getRevision() <<" of variable '" <<var.name <<'\'';
     }
   }
 };

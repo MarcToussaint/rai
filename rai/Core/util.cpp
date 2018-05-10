@@ -768,12 +768,12 @@ rai::LogToken::~LogToken(){
   auto mut = rai::logServer(); //keep the mutex
   if(log.logFileLevel>=log_level){
     if(!log.fil.is_open()) rai::open(log.fil, STRING("z.log."<<log.key));
-    log.fil <<code_func <<':' <<code_file <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
+    log.fil <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
   }
   if(log.logCoutLevel>=log_level){
-    if(log_level>=0) std::cout <<code_func <<':' <<code_file <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
+    if(log_level>=0) std::cout <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
     if(log_level<0){
-      rai::errString.clear() <<code_func <<':' <<code_file <<':' <<code_line <<'(' <<log_level <<") " <<msg;
+      rai::errString.clear() <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg;
 // #ifdef RAI_ROS
 //       ROS_INFO("RAI-MSG: %s",rai::errString.p);
 // #endif

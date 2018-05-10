@@ -1109,7 +1109,7 @@ void KOMO::playInPhysics(uint subSteps, bool display){
     }
     px.pullFromPhysx(configurations(k_order+t), vels);
   }
-//  for(uint i=0;i<vels.d0;i++) if(i<world.frames.N) cout <<world.frames(i)->name <<" v=" <<vels[i] <<endl;
+  //  for(uint i=0;i<vels.d0;i++) if(i<world.frames.N) cout <<world.frames(i)->name <<" v=" <<vels[i] <<endl;
 }
 
 void KOMO::reportProblem(std::ostream& os){
@@ -1262,7 +1262,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPref
   }
 
   uintA allFrames;
-  allFrames.setStraightPerm(configurations.last()->frames.N);
+  allFrames.setStraightPerm(configurations.first()->frames.N);
   arr X = getPath_frames(allFrames);
   DrawPaths drawX(X);
 
@@ -1719,9 +1719,14 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
         if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
 
         //linear transform (target shift)
-        if(task->target.N==1) y -= task->target.elem(0);
-        else if(task->target.nd==1) y -= task->target;
-        else if(task->target.nd==2) y -= task->target[t];
+        arr target;
+        if(task->target.N==1) target = consts<double>(y.N, task->target.elem(0));
+        else if(task->target.nd==1) target = task->target;
+        else if(task->target.nd==2) target = task->target[t];
+        if(target.N){
+          if(task->map->flipTargetSignOnNegScalarProduct && scalarProduct(y, target)<-.0) target *= -1.;
+          y -= target;
+        }
         y *= sqrt(task->prec(t));
 
         //write into phi and J
@@ -1786,6 +1791,11 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
 #endif
   //==================
 
+}
+
+rai::KinematicWorld& KOMO::getConfiguration(double phase){
+  uint s = k_order + (uint)(phase*double(stepsPerPhase));
+  return *configurations(s);
 }
 
 arr KOMO::getPath(const StringA &joints){
