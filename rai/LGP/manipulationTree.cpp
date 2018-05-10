@@ -190,10 +190,10 @@ void MNode::optLevel(uint level, bool collisions){
     komo.setFixSwitchedObjects(-1., -1., 1e2);
     komo.setSquaredQuaternionNorms();
 
-#if 0
+#if 1
     Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
                               "stable", "stableOn", "dynamic", "dynamicOn",
-                              "push" });
+                              "push", "graspSlide" });
     komo.setSkeleton(S);
 #else
     if(collisions) komo.setCollisions(false);

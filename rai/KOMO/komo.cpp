@@ -820,7 +820,7 @@ void KOMO::setSkeleton(const Skeleton &S){
       continue;
     }
 
-    if(s.symbols(0)=="push")                  setPush(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2), s.symbols(3), verbose); //TODO: the +1. assumes pushes always have duration 1
+    if(s.symbols(0)=="push")                       setPush(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2), s.symbols(3), verbose); //TODO: the +1. assumes pushes always have duration 1
     else if(s.symbols(0)=="place" && s.symbols.N==3) setPlace(s.phase0, NULL, s.symbols(1), s.symbols(2), verbose);
     else if(s.symbols(0)=="place" && s.symbols.N==4) setPlace(s.phase0, s.symbols(1), s.symbols(2), s.symbols(3), verbose);
     else if(s.symbols(0)=="graspSlide")            setGraspSlide(s.phase0, s.symbols(1), s.symbols(2), s.symbols(3), verbose);
@@ -844,7 +844,6 @@ void KOMO::setAlign(double startTime, double endTime, const char* shape, const a
 }
 
 void KOMO::core_setTouch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type, const arr& target, double prec){
-//  setTask(startTime, endTime, new TM_GJK(world, shape1, shape2, true), type, target, prec);
   setTask(startTime, endTime, new TM_PairCollision(world, shape1, shape2, true, false), type, target, prec);
 }
 
@@ -856,11 +855,10 @@ void KOMO::core_setInside(double startTime, double endTime, const char* shape1, 
   setTask(startTime, endTime, new TM_InsideBox(world, shape1, NoVector, shape2), OT_ineq, NoArr, prec);
 }
 
-void KOMO::core_setImpulse(double time, const char* shape1, const char* shape2){
-//    setTask(time, time, new TM_ImpulsExchange(world, *symbols(1), *symbols(2)), OT_sumOfSqr, {}, 1e3, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
+void KOMO::core_setImpulse(double time, const char* shape1, const char* shape2, ObjectiveType type, double prec){
 //    setTask(time, time, new TM_ImpulsExchange(world, a, b), OT_sumOfSqr, {}, 1e3, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
   if(k_order>=2){
-    setTask(time, time, new TM_ImpulsExchange(world, shape1, shape2), OT_eq, {}, 1e2, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
+    setTask(time, time, new TM_ImpulsExchange(world, shape1, shape2), type, {}, prec, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
     setFlag(time, new Flag(FL_impulseExchange, world[shape1]->ID), +1);
     setFlag(time, new Flag(FL_impulseExchange, world[shape2]->ID), +1);
   }

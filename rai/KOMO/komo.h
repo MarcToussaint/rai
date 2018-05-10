@@ -126,7 +126,7 @@ struct KOMO{
   void core_setTouch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, const arr& target=NoArr, double prec=1e2);
   void core_setAbove(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e2);
   void core_setInside(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e2);
-  void core_setImpulse(double time, const char* shape1, const char* shape2);
+  void core_setImpulse(double time, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, double prec=1e2);
 
   //-- core kinematic switch symbols of skeletons
   void core_setKSstable(double time, const char *from, const char *to);
