@@ -996,6 +996,7 @@ void rai::Mesh::write(std::ostream& os) const {
 
 void rai::Mesh::readFile(const char* filename) {
   const char* fileExtension = filename+(strlen(filename)-3);
+//  if(!strcmp(fileExtension, "obj")) { *this = mesh_readAssimp(filename); } else
   if(!strcmp(fileExtension, "dae") || !strcmp(fileExtension, "DAE")) { *this = mesh_readAssimp(filename); }
   else read(FILE(filename).getIs(), fileExtension, filename);
 }
@@ -1670,12 +1671,13 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
   } else {
     glBindTexture(GL_TEXTURE_2D, texture);
   }
+
+  //-- draw the mesh
+  if( (!C.N || C.nd==1 || C.d0==V.d0) //we have colors for each vertex
+      && (!tex.N || !Tt.N) ){ //we have no tex or tex coords for each vertex -> use index arrays
   
-#if 1
-  if(!C.N || C.nd==1 || C.d0==V.d0) { //we have colors for each vertex -> use index arrays
-  
-    if(tex.N) CHECK_EQ(tex.d0, V.d0, "this needs tex coords for each vertex; if you have it face wise, render the slow way..")
-      if(tex.N) glEnable(GL_TEXTURE_2D);
+    if(tex.N) CHECK_EQ(tex.d0, V.d0, "this needs tex coords for each vertex; if you have it face wise, render the slow way..");
+    if(tex.N) glEnable(GL_TEXTURE_2D);
       
     //  glShadeModel(GL_FLAT);
     glShadeModel(GL_SMOOTH);
@@ -1696,68 +1698,65 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
     
     if(tex.N) glDisable(GL_TEXTURE_2D);
     
-  } else { //we have colors for each tri -> render tris directly and with tri-normals
-  
-    CHECK_EQ(C.d0, T.d0, "");
-    CHECK_EQ(Tn.d0, T.d0, "");
-    glShadeModel(GL_FLAT);
+//  } else if(C.d0==T.d0){ //we have colors for each tri -> render tris directly and with tri-normals
+
+//    CHECK_EQ(C.d0, T.d0, "");
+//    CHECK_EQ(Tn.d0, T.d0, "");
+//    glShadeModel(GL_FLAT);
+//    glBegin(GL_TRIANGLES);
+//    GLboolean light=true;
+//    glGetBooleanv(GL_LIGHTING, &light); //this doesn't work!!?? even when disabled, returns true; never changes 'light'
+//    for(uint t=0; t<T.d0; t++) {
+//      uint   *tri  = T.p  + 3*t; //&T(t, 0);
+//      double *col  = C.p  + 3*t; //&C(t, 0);
+//      double *norm = Tn.p + 3*t; //&Tn(t, 0);
+
+//      GLfloat ambient[4] = { (float)col[0], (float)col[1], (float)col[2], 1.f };
+//      if(!light) glColor4fv(ambient);
+//      else       glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, ambient);
+
+//      glNormal3dv(norm);
+//      glVertex3dv(V.p + 3*tri[0]); //&V(tri[0],0);
+//      glVertex3dv(V.p + 3*tri[1]);
+//      glVertex3dv(V.p + 3*tri[2]);
+//    }
+//    glEnd();
+  } else { //basic vertex-wise
+    uint i, v;
+
+    if(tex.N) CHECK_EQ(Tt.d0, T.d0, "this needs tex coords for each tri");
+    if(tex.N && Geo_mesh_drawColors) glEnable(GL_TEXTURE_2D);
+
     glBegin(GL_TRIANGLES);
-    GLboolean light=true;
-    glGetBooleanv(GL_LIGHTING, &light); //this doesn't work!!?? even when disabled, returns true; never changes 'light'
-    for(uint t=0; t<T.d0; t++) {
-      uint   *tri  = T.p  + 3*t; //&T(t, 0);
-      double *col  = C.p  + 3*t; //&C(t, 0);
-      double *norm = Tn.p + 3*t; //&Tn(t, 0);
-      
-      GLfloat ambient[4] = { (float)col[0], (float)col[1], (float)col[2], 1.f };
-      if(!light) glColor4fv(ambient);
-      else       glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, ambient);
-      
-      glNormal3dv(norm);
-      glVertex3dv(V.p + 3*tri[0]); //&V(tri[0],0);
-      glVertex3dv(V.p + 3*tri[1]);
-      glVertex3dv(V.p + 3*tri[2]);
+    for(i=0; i<T.d0; i++) {
+      if(C.d0==T.d0) {
+        if(C.d1==3) glColor(C(i, 0), C(i, 1), C(i, 2), 1.);
+        if(C.d1==1) glColorId(C(i,0));
+      }
+      v=T(i, 0);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 0), 0));  glVertex3dv(&V(v, 0));
+      v=T(i, 1);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 1), 0));  glVertex3dv(&V(v, 0));
+      v=T(i, 2);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 2), 0));  glVertex3dv(&V(v, 0));
     }
     glEnd();
-  }
-#elif 1 //simple with vertex normals
-  uint i, v;
-  if(Tt.N && Geo_mesh_drawColors) {
-//    glShadeModel(GL_SMOOTH);
-    glEnable(GL_TEXTURE_2D);
-//    glDisable(GL_LIGHTING);
-  }
-  glBegin(GL_TRIANGLES);
-  for(i=0; i<T.d0; i++) {
-    if(C.d0==T.d0) {
-      if(C.d1==3) glColor(C(i, 0), C(i, 1), C(i, 2), 1.);
-      if(C.d1==1) glColorId(C(i,0));
+    if(Tt.N && texImg.N &&  Geo_mesh_drawColors) {
+      glDisable(GL_TEXTURE_2D);
+      glEnable(GL_LIGHTING);
     }
-    v=T(i, 0);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 0), 0));  glVertex3dv(&V(v, 0));
-    v=T(i, 1);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 1), 0));  glVertex3dv(&V(v, 0));
-    v=T(i, 2);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 2), 0));  glVertex3dv(&V(v, 0));
-  }
-  glEnd();
-  if(Tt.N && texImg.N &&  Geo_mesh_drawColors) {
-    glDisable(GL_TEXTURE_2D);
-    glEnable(GL_LIGHTING);
-  }
-#else //simple with triangle normals
-#if 0 //draw normals
-  glColor(.5, 1., .0);
-  Vector a, b, c, x;
-  for(i=0; i<T.d0; i++) {
-    glBegin(GL_LINES);
-    a.set(&V(T(i, 0), 0)); b.set(&V(T(i, 1), 0)); c.set(&V(T(i, 2), 0));
-    x.setZero(); x+=a; x+=b; x+=c; x/=3;
-    glVertex3dv(x.v);
-    a.set(&Tn(i, 0));
-    x+=.05*a;
-    glVertex3dv(x.v);
-    glEnd();
-  }
+#if 0 //draw normals //simple with triangle normals
+    glColor(.5, 1., .0);
+    Vector a, b, c, x;
+    for(i=0; i<T.d0; i++) {
+      glBegin(GL_LINES);
+      a.set(&V(T(i, 0), 0)); b.set(&V(T(i, 1), 0)); c.set(&V(T(i, 2), 0));
+      x.setZero(); x+=a; x+=b; x+=c; x/=3;
+      glVertex3dv(x.v);
+      a.set(&Tn(i, 0));
+      x+=.05*a;
+      glVertex3dv(x.v);
+      glEnd();
+    }
 #endif
-#endif
+  }
   
   if(orsDrawWires) { //on top of mesh
 #if 0

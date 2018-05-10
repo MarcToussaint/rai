@@ -436,8 +436,8 @@ void sPhysXInterface::addLink(rai::Frame *b, physx::PxMaterial *mMaterial) {
   FrameL parts = {b};
   b->getRigidSubFrames(parts);
   
-  cout <<RAI_HERE <<"adding '" <<b->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with parts";
-  for(auto* p:parts) cout <<' ' <<p->name; cout <<endl;
+//  cout <<RAI_HERE <<"adding '" <<b->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with parts";
+//  for(auto* p:parts) cout <<' ' <<p->name; cout <<endl;
   
   for(rai::Frame *p: parts) {
     rai::Shape *s = p->shape;
