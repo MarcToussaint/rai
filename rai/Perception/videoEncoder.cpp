@@ -7,10 +7,11 @@
     --------------------------------------------------------------  */
 
 #include "videoEncoder.h"
-#include "colorspace.h"
-#include <Core/util.h>
 
 #ifdef HAVE_LIBAV
+
+#include "colorspace.h"
+#include <Core/util.h>
 
 extern "C" {
 #include <libavcodec/avcodec.h>
