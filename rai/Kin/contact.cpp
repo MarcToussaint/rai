@@ -10,6 +10,31 @@
 #include <Gui/opengl.h>
 #include <Geo/pairCollision.h>
 
+rai::Contact::Contact(rai::Frame &a, rai::Frame &b)
+  : a(a), b(b) {
+  CHECK(&a != &b,"");
+  CHECK_EQ(&a.K, &b.K, "contact between frames of different configuration!");
+  a.contacts.append(this);
+  b.contacts.append(this);
+  a.K.contacts.append(this);
+}
+
+rai::Contact::~Contact() {
+  a.contacts.removeValue(this);
+  b.contacts.removeValue(this);
+  a.K.contacts.removeValue(this);
+}
+
+void rai::Contact::setFromPairCollision(PairCollision &col){
+  a_rel = a.X / rai::Vector(col.p1);
+  b_rel = b.X / rai::Vector(col.p2);
+  a_norm = a.X.rot / rai::Vector(-col.normal);
+  b_norm = b.X.rot / rai::Vector(col.normal);
+  a_type = b_type=1;
+  a_rad = a.shape->size(3);
+  b_rad = b.shape->size(3);
+}
+
 double rai::Contact::getDistance() const {
   TM_ContactNegDistance map(*this);
   arr y;
@@ -119,7 +144,7 @@ void rai::Contact::glDraw(OpenGL& gl) {
   glColor(1., 0., 0., 1.);
   glLineWidth(3.f);
   glDrawProxy(pa.getArr(), pb.getArr(), .05, 0, n.getArr(), a_rad, b_rad);
-  glLineWidth(2.f);
+  glLineWidth(1.f);
   glLoadIdentity();
   
 //    f.pos=.5*(posA+posB);

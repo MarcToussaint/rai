@@ -791,8 +791,14 @@ void Quaternion::getRad(double& angle, Vector& vec) const {
 Vector Quaternion::getVec() const {
   Vector vec;
   if(w>=1. || w<=-1. || (x==0. && y==0. && z==0.)) { vec.setZero(); return vec; }
-  double phi=acos(w);
-  double s=2.*phi/sin(phi);
+  double phi,s;
+  if(w>=0.){
+    phi=acos(w);
+    s=2.*phi/sin(phi);
+  }else{ //flip quaternion sign to get rotation vector of length < PI
+    phi=acos(-w);
+    s=-2.*phi/sin(phi);
+  }
   vec.x=s*x; vec.y=s*y; vec.z=s*z;
   return vec;
 }
@@ -904,6 +910,29 @@ double* Quaternion::getMatrixGL(double* m) const {
   return m;
 }
 
+arr Quaternion::getEulerRPY() {
+  double roll, pitch, yaw;
+
+  // roll (x-axis rotation)
+  double sinr = +2.0 * (w * x + y * z);
+  double cosr = +1.0 - 2.0 * (x * x + y * y);
+  roll = atan2(sinr, cosr);
+
+  // pitch (y-axis rotation)
+  double sinp = +2.0 * (w * y - z * x);
+  if(fabs(sinp) >= 1)
+    pitch = copysign(M_PI / 2, sinp); // use 90 degrees if out of range
+  else
+    pitch = asin(sinp);
+
+  // yaw (z-axis rotation)
+  double siny = +2.0 * (w * z + x * y);
+  double cosy = +1.0 - 2.0 * (y * y + z * z);
+  yaw = atan2(siny, cosy);
+
+  return {roll, pitch, yaw};
+}
+
 /// this is a 3-by-4 matrix $J$, giving the angular velocity vector $w = J \dot q$  induced by a $\dot q$
 arr Quaternion::getJacobian() const {
   arr J(3,4);
@@ -995,11 +1024,12 @@ Quaternion operator/(const Quaternion& b, const Quaternion& c) {
 
 /// Euclidean(!) difference between two quaternions
 Quaternion operator-(const Quaternion& b, const Quaternion& c) {
+  HALT("don't use that..?");
   Quaternion a;
   a.w = b.w-c.w;
-  a.x = b.x-c.w;
-  a.y = b.y-c.w;
-  a.z = b.z-c.w;
+  a.x = b.x-c.x;
+  a.y = b.y-c.y;
+  a.z = b.z-c.z;
   a.isZero = false;
   return a;
 }
@@ -1083,6 +1113,103 @@ Vector operator/(const Transformation& X, const Vector& c) {
   a -= X.pos;
   a = X.rot / a;
   return a;
+}
+
+void quat_concat(arr& y, arr& Ja, arr& Jb, const arr& A, const arr& B){
+  rai::Quaternion a(A);
+  rai::Quaternion b(B);
+  y = (a * b).getArr4d();
+  if(&Ja){
+    Ja.resize(4,4);
+    Ja(0,0) =  b.w;
+    Ja(0,1) = -b.x; Ja(0,2) = -b.y; Ja(0,3) = -b.z;
+    Ja(1,0) =  b.x; Ja(2,0) =  b.y; Ja(3,0) =  b.z;
+    //skew
+    Ja(1,1) = b.w; Ja(1,2) = b.z; Ja(1,3) =-b.y;
+    Ja(2,1) =-b.z; Ja(2,2) = b.w; Ja(2,3) = b.x;
+    Ja(3,1) = b.y; Ja(3,2) =-b.x; Ja(3,3) = b.w;
+  }
+  if(&Jb){
+    Jb.resize(4,4);
+    Jb(0,0) =  a.w;
+    Jb(0,1) = -a.x; Jb(0,2) = -a.y; Jb(0,3) = -a.z;
+    Jb(1,0) =  a.x; Jb(2,0) =  a.y; Jb(3,0) =  a.z;
+    //skew
+    Jb(1,1) = a.w; Jb(1,2) =-a.z; Jb(1,3) = a.y;
+    Jb(2,1) = a.z; Jb(2,2) = a.w; Jb(2,3) =-a.x;
+    Jb(3,1) =-a.y; Jb(3,2) = a.x; Jb(3,3) = a.w;
+  }
+}
+
+void quat_normalize(arr& y, arr& J, const arr& a){
+  y = a;
+  double l2 = sumOfSqr(y);
+  double l = sqrt(l2);
+  y /= l;
+  if(&J){
+    J = eye(4);
+    J -= y^y;
+    J /= l;
+  }
+}
+
+void quat_getVec(arr& y, arr& J, const arr& A){
+  rai::Quaternion a(A);
+  y.resize(3);
+  double phi,sinphi,s;
+  double dphi, dsinphi, ds;
+  if(a.w>=1. || a.w<=-1. || (a.x==0. && a.y==0. && a.z==0.)) {
+    y.setZero();
+    if(&J){
+      J.resize(3,4).setZero();
+      J(0,1) = J(1,2) = J(2,3) = 2.;
+    }
+    return;
+  }
+
+  if(a.w>=0.){
+    phi=acos(a.w);
+    sinphi = sin(phi);
+    s=2.*phi/sinphi;
+    if(&J){
+      dphi = -1./sqrt(1.-a.w*a.w);
+      dsinphi = cos(phi) * dphi;
+      ds = 2.*( dphi/sinphi - phi/(sinphi*sinphi)*dsinphi );
+    }
+  }else{ //flip quaternion sign to get rotation vector of length < PI
+    phi=acos(-a.w);
+    sinphi = sin(phi);
+    s=-2.*phi/sinphi;
+    if(&J){
+      dphi = 1./sqrt(1.-a.w*a.w);
+      dsinphi = cos(phi) * dphi;
+      ds = -2.*( dphi/sinphi - phi/(sinphi*sinphi)*dsinphi );
+    }
+  }
+  if(fabs(phi)<1e-8){ s=2.; ds=0.; }
+  y(0) = s*a.x;
+  y(1) = s*a.y;
+  y(2) = s*a.z;
+  if(&J){
+    J.resize(3,4).setZero();
+    J(0,1) = J(1,2) = J(2,3) = s;
+    J(0,0) = a.x*ds;
+    J(1,0) = a.y*ds;
+    J(2,0) = a.z*ds;
+  }
+}
+
+void quat_diffVector(arr& y, arr& Ja, arr& Jb, const arr& a, const arr& b){
+  arr ab, Jca, Jcb;
+  arr ainv = a;
+  if(a(0)!=1.)  ainv(0) *= -1.;
+  quat_concat(ab, Jca, Jcb, ainv, b);
+  if(a(0)!=1.)  for(uint i=0;i<Jca.d0;i++) Jca(i,0) *= -1.;
+
+  arr Jvec;
+  quat_getVec(y, Jvec, ab);
+  Ja = Jvec * Jca;
+  Jb = Jvec * Jcb;
 }
 
 //==============================================================================

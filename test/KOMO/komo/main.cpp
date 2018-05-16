@@ -3,18 +3,31 @@
 #include <Gui/opengl.h>
 #include <KOMO/komo.h>
 #include <Kin/TM_ContactConstraints.h>
+#include <Kin/TM_time.h>
 
 //===========================================================================
 
 void TEST(Easy){
   rai::KinematicWorld K("arm.g");
   cout <<"configuration space dim=" <<K.q.N <<endl;
+
+  //-- add time DOFs
+  K.addTimeJoint();
+
   KOMO komo;
   komo.setModel(K, true);
   komo.setPathOpt(1., 100, 5.);
 
+  //-- set a time optim objective
+  arr defaultTimes(komo.T);
+  for(uint t=0;t<komo.T;t++) defaultTimes(t) = komo.tau*t;
+  defaultTimes.reshape(komo.T, 1);
+  komo.setTask(-1., -1., new TM_Time(), OT_sumOfSqr, {}, 1e2, 2); //smooth time evolution
+  komo.setTask(-1., -1., new TM_Time(), OT_sumOfSqr, defaultTimes, 1e-0, 0); //prior on timing
+//  komo.setTask(-1., -1., new TM_Time(), OT_ineq, {-.03}, 1e3, 1); //ensure time has at least phase-velocity .03
+
   komo.setPosition(1., 1., "endeff", "target", OT_sumOfSqr);
-  komo.setSlowAround(1., .02);
+  komo.setSlowAround(1., .05);
   komo.setCollisions(false);
 //  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq);
   komo.reportProblem();
@@ -22,9 +35,10 @@ void TEST(Easy){
   komo.reset();
 //  komo.setSpline(5);
   komo.run();
-//  komo.checkGradients();
+  komo.checkGradients();
+  cout <<"TIME OPTIM: " <<komo.getPath_times() <<endl;
   komo.plotTrajectory();
-  komo.getReport(true);
+  cout <<komo.getReport(true) <<endl;
 //  komo.reportProxies();
   for(uint i=0;i<2;i++) komo.displayTrajectory();
 //  while(komo.displayTrajectory());
@@ -104,8 +118,8 @@ void TEST(FinalPosePR2){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-//  testEasy();
-  testAlign();
+  testEasy();
+//  testAlign();
 //  testPR2();
 
   return 0;

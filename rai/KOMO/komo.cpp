@@ -24,6 +24,7 @@
 #include <Kin/TM_Max.h>
 #include <Kin/TM_ImpulseExchange.h>
 #include <Kin/TM_FlagConstraints.h>
+#include <Kin/TM_energy.h>
 #include <Kin/contact.h>
 #include <Optim/optimization.h>
 #include <Optim/convert.h>
@@ -649,8 +650,11 @@ void KOMO::setAttach(double time, const char* endeff, const char* object1, const
 
 void KOMO::setSlow(double startTime, double endTime, double prec, bool hardConstrained) {
   if(stepsPerPhase>2) { //otherwise: no velocities
-    if(!hardConstrained) setTask(startTime, endTime, new TM_qItself(), OT_sumOfSqr, NoArr, prec, 1);
-    else setTask(startTime, endTime, new TM_qItself(), OT_eq, NoArr, prec, 1);
+    uintA selectedBodies;
+    for(rai::Joint *j:world.fwdActiveJoints) if(j->type!=rai::JT_time) selectedBodies.append(j->frame.ID);
+    TaskMap *map = new TM_qItself(selectedBodies);
+    if(!hardConstrained) setTask(startTime, endTime, map, OT_sumOfSqr, NoArr, prec, 1);
+    else setTask(startTime, endTime, map, OT_eq, NoArr, prec, 1);
   }
   //#    _MinSumOfSqr_qItself_vel(MinSumOfSqr qItself){ order=1 time=[0.98 1] scale=1e1 } #slow down
 }
@@ -1261,7 +1265,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPref
       gl->update(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
       if(delay) rai::wait(delay);
     }
-    if(saveVideoPrefix) write_ppm(gl->captureImage, STRING(saveVideoPrefix<<std::setw(3)<<std::setfill('0')<<t<<".ppm"));
+    if(saveVideoPrefix) write_ppm(gl->captureImage, STRING(saveVideoPrefix<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
   }
   if(watch) {
     int key = gl->watch(STRING(tag <<" (time " <<std::setw(3) <<T-1 <<'/' <<T <<')').p);
@@ -1698,7 +1702,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
         
         //linear transform (target shift)
         arr target;
-        if(task->target.N==1) target = consts<double>(y.N, task->target.elem(0));
+        if(task->target.N==1) target = consts<double>(task->target.scalar(), y.N);
         else if(task->target.nd==1) target = task->target;
         else if(task->target.nd==2) target = task->target[t];
         if(target.N) {
@@ -1798,6 +1802,17 @@ arr KOMO::getPath_times() {
   arr X(T);
   for(uint t=0; t<T; t++) {
     X(t) = configurations(t+k_order)->frames.first()->time;
+  }
+  return X;
+}
+
+arr KOMO::getPath_energies() {
+  TM_Energy E;
+  E.order=1;
+  arr X(T), y;
+  for(uint t=0; t<T; t++) {
+    E.phi(y, NoArr, {configurations(t+k_order-1), configurations(t+k_order)});
+    X(t) = y.scalar();
   }
   return X;
 }

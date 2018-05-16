@@ -219,7 +219,7 @@ void PairCollision::glDraw(OpenGL &) {
   glColor(1., 0., 0., 1.);
   glLineWidth(5.f);
   glDrawProxy(P1, P2, .05);
-  glLineWidth(2.f);
+  glLineWidth(1.f);
   glLoadIdentity();
   
   if(poly.N) {

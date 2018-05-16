@@ -24,7 +24,7 @@ struct TM_qItself:TaskMap {
   TM_qItself(uintA _selectedBodies, bool relative_q0=false);
   
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
-  virtual void phi(arr& y, arr& J, const WorldL& G);
+  virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
   virtual uint dim_phi(const rai::KinematicWorld& G);
   virtual uint dim_phi(const WorldL& Ktuple);
   virtual rai::String shortTag(const rai::KinematicWorld& G);
@@ -47,7 +47,7 @@ private:
 
 //===========================================================================
 
-rai::Array<rai::Joint*> getMatchingJoints(const WorldL& G, bool zeroVelJointsOnly);
+rai::Array<rai::Joint*> getMatchingJoints(const WorldL& Ktuple, bool zeroVelJointsOnly);
 rai::Array<rai::Joint*> getSwitchedJoints(const rai::KinematicWorld& G0, const rai::KinematicWorld& G1, int verbose=0);
 uintA getSwitchedBodies(const rai::KinematicWorld& G0, const rai::KinematicWorld& G1, int verbose=0);
 

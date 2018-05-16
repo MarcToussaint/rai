@@ -49,11 +49,11 @@ inline int initIdArg(const rai::KinematicWorld &K, const char* frameName) {
   return -1;
 }
 
-inline void expandJacobian(arr& J,const WorldL& Ktuple,int i=-1) {
+inline void expandJacobian(arr& J, const WorldL& Ktuple, int i=-1) {
   uintA qdim = getKtupleDim(Ktuple);
   qdim.prepend(0);
   arr tmp = zeros(J.d0, qdim.last());
-  CHECK_EQ(J.d1, qdim.elem(i)-qdim.elem(i-1), "");
+//  CHECK_EQ(J.d1, qdim.elem(i)-qdim.elem(i-1), "");
   tmp.setMatrixBlock(J, 0, qdim.elem(i-1));
   J = tmp;
 }

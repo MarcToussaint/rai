@@ -424,6 +424,12 @@ uint rai::KinematicWorld::analyzeJointStateDimensions() const {
       j->qIndex = j->mimic->qIndex;
     }
   }
+  for(Contact *c: contacts) {
+    CHECK_EQ(c->dim, 3, "");
+//    c->dim = c->getDimFromType();
+    c->qIndex = qdim;
+    qdim += c->dim;
+  }
   return qdim;
 }
 
@@ -502,6 +508,12 @@ void rai::KinematicWorld::calc_q_from_Q() {
       n += j->dim;
     }
   }
+  for(Contact *c: contacts) {
+    CHECK_EQ(c->qIndex, n, "joint indexing is inconsistent");
+    arr contact_q = c->calc_q_from_F();
+    q.setVectorBlock(contact_q, c->qIndex);
+    n += c->dim;
+  }
   CHECK_EQ(n,N,"");
 }
 
@@ -517,6 +529,11 @@ void rai::KinematicWorld::calc_Q_from_q() {
         n += j->dim;
       }
     }
+  }
+  for(Contact *c: contacts) {
+    CHECK_EQ(c->qIndex, n, "joint indexing is inconsistent");
+    c->calc_F_from_q(q, c->qIndex);
+    n += c->dim;
   }
   CHECK_EQ(n, q.N, "");
 }
@@ -586,7 +603,7 @@ void rai::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const rai::Vec
     if(&J) J.resize(3, getJointStateDimension()).setZero();
     return;
   }
-  
+
   //get position
   rai::Vector pos_world = a->X.pos;
   if(&rel && !rel.isZero) pos_world += a->X.rot*rel;
@@ -598,6 +615,8 @@ void rai::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const rai::Vec
 
 #if 1
 void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_world) const {
+  CHECK_EQ(&a->K, this, "");
+
   //get Jacobian
   uint N=getJointStateDimension();
   J.resize(3, N).setZero();
@@ -688,6 +707,8 @@ void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_w
 #endif
 
 void rai::KinematicWorld::jacobianTime(arr& J, rai::Frame *a) const {
+  CHECK_EQ(&a->K, this, "");
+
   //get Jacobian
   uint N=getJointStateDimension();
   J.resize(1, N).setZero();
@@ -813,6 +834,7 @@ void rai::KinematicWorld::hessianPos(arr& H, Frame *a, rai::Vector *rel) const {
    the position of the ith body (w.r.t. all joints) -> 2D array */
 /// Jacobian of the i-th body's z-orientation vector
 void rai::KinematicWorld::kinematicsVec(arr& y, arr& J, Frame *a, const rai::Vector& vec) const {
+  CHECK_EQ(&a->K, this, "");
   //get the vectoreference frame
   rai::Vector vec_world;
   if(&vec) vec_world = a->X.rot*vec;
@@ -829,6 +851,7 @@ void rai::KinematicWorld::kinematicsVec(arr& y, arr& J, Frame *a, const rai::Vec
    the position of the ith body (w.r.t. all joints) -> 2D array */
 /// Jacobian of the i-th body's z-orientation vector
 void rai::KinematicWorld::kinematicsQuat(arr& y, arr& J, Frame *a) const { //TODO: allow for relative quat
+  CHECK_EQ(&a->K, this, "");
   rai::Quaternion rot_b = a->X.rot;
   if(&y) y = conv_quat2arr(rot_b); //return the vec
   if(&J) {
@@ -940,6 +963,14 @@ void rai::KinematicWorld::kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) c
     axesMatrix(A, a);
     J = 0.5 * (rot_b.w*A*s + crossProduct(A, y));
     J -= 0.5 * ss/s/s*(y*~y*A);
+  }
+}
+
+void rai::KinematicWorld::kinematicsForce(arr& y, arr& J, rai::Contact *c) const{
+  y = c->force;
+  if(&J){
+    J = zeros(3, q.N);
+    for(uint i=0;i<3;i++) J(i, c->qIndex+i) = 1.;
   }
 }
 
@@ -2310,7 +2341,13 @@ void rai::KinematicWorld::useJointGroups(const StringA &groupNames, bool OnlyThe
         if(deleteInsteadOfLock) delete f->joint;
         else f->joint->makeRigid();
       }
-    }
+  }
+}
+
+void rai::KinematicWorld::addTimeJoint(){
+  rai::Joint *jt = new rai::Joint(*frames.first());
+  jt->type = rai::JT_time;
+  jt->H = 0.;
 }
 
 bool rai::KinematicWorld::checkConsistency() {

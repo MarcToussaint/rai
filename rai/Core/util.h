@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <memory>
+#include <climits>
 
 //----- if no system flag, I assume Linux
 #if !defined RAI_MSVC && !defined RAI_Cygwin && !defined RAI_Linux && !defined RAI_MinGW && !defined RAI_Darwin

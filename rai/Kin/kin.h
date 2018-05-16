@@ -41,6 +41,7 @@ typedef rai::Array<rai::Joint*> JointL;
 typedef rai::Array<rai::Frame*> FrameL;
 typedef rai::Array<rai::Proxy*> ProxyL;
 typedef rai::Array<rai::Proxy> ProxyA;
+typedef rai::Array<rai::Contact*> ContactL;
 typedef rai::Array<rai::KinematicSwitch*> KinematicSwitchL;
 typedef rai::Array<rai::KinematicWorld*> WorldL;
 
@@ -59,6 +60,7 @@ struct KinematicWorld : GLDrawer {
   arr q, qdot; ///< the current joint configuration vector and velocities
   FrameL fwdActiveSet;
   JointL fwdActiveJoints;
+  ContactL contacts;
   
   ProxyA proxies; ///< list of current proximities between bodies
   
@@ -112,6 +114,7 @@ struct KinematicWorld : GLDrawer {
   void optimizeTree(bool preserveNamed=true);        ///< call the three above methods in this order
   void fwdIndexIDs();
   void useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese, bool deleteInsteadOfLock);
+  void addTimeJoint();
   bool checkConsistency();
   
   uint analyzeJointStateDimensions() const; ///< sort of private: count the joint dimensionalities and assign j->q_index
@@ -150,6 +153,8 @@ struct KinematicWorld : GLDrawer {
   void kinematicsRelPos(arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b, const Vector& vec2) const;
   void kinematicsRelVec(arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b) const;
   void kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) const;
+
+  void kinematicsForce(arr& y, arr& J, Contact *c) const;
   
   void kinematicsPenetrations(arr& y, arr& J=NoArr, bool penetrationsOnly=true, double activeMargin=0.) const; ///< true: if proxy(i).distance>0. => y(i)=0; else y(i)=-proxy(i).distance
   void kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;

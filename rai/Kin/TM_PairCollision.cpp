@@ -21,6 +21,10 @@ TM_PairCollision::TM_PairCollision(const rai::KinematicWorld& K, const char* s1,
   CHECK(j>=0,"shape name '" <<s2 <<"' does not exist");
 }
 
+TM_PairCollision::~TM_PairCollision(){
+  if(coll) delete coll;
+}
+
 void TM_PairCollision::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
   rai::Shape *s1 = i<0?NULL: K.frames(i)->shape;
   rai::Shape *s2 = j<0?NULL: K.frames(j)->shape;
@@ -40,24 +44,25 @@ void TM_PairCollision::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
   CHECK(m2->V.N,"");
 #endif
   
-  PairCollision coll(*m1, *m2, s1->frame.X, s2->frame.X, r1, r2);
+  if(coll) delete coll;
+  coll = new PairCollision(*m1, *m2, s1->frame.X, s2->frame.X, r1, r2);
   
-  if(neglectRadii) coll.rad1=coll.rad2=0.;
+  if(neglectRadii) coll->rad1=coll->rad2=0.;
   
   if(!negScalar) {
     arr Jp1, Jp2, Jx1, Jx2;
     if(&J) {
-      K.jacobianPos(Jp1, &s1->frame, coll.p1);
-      K.jacobianPos(Jp2, &s2->frame, coll.p2);
+      K.jacobianPos(Jp1, &s1->frame, coll->p1);
+      K.jacobianPos(Jp2, &s2->frame, coll->p2);
       K.axesMatrix(Jx1, &s1->frame);
       K.axesMatrix(Jx2, &s2->frame);
     }
-    coll.kinVector(y, J, Jp1, Jp2, Jx1, Jx2);
+    coll->kinVector(y, J, Jp1, Jp2, Jx1, Jx2);
   } else {
     arr Jp1, Jp2;
-    K.jacobianPos(Jp1, &s1->frame, coll.p1);
-    K.jacobianPos(Jp2, &s2->frame, coll.p2);
-    coll.kinDistance(y, J, Jp1, Jp2);
+    K.jacobianPos(Jp1, &s1->frame, coll->p1);
+    K.jacobianPos(Jp2, &s2->frame, coll->p2);
+    coll->kinDistance(y, J, Jp1, Jp2);
     y *= -1.;
     if(&J) J *= -1.;
     if(&J) checkNan(J);
