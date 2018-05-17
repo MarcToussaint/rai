@@ -835,7 +835,7 @@ void KOMO::setAlign(double startTime, double endTime, const char* shape, const a
 }
 
 void KOMO::core_setTouch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type, const arr& target, double prec) {
-  setTask(startTime, endTime, new TM_PairCollision(world, shape1, shape2, true, false), type, target, prec);
+  setTask(startTime, endTime, new TM_PairCollision(world, shape1, shape2, TM_PairCollision::_negScalar, false), type, target, prec);
 }
 
 void KOMO::core_setAbove(double startTime, double endTime, const char* shape1, const char* shape2, double prec) {

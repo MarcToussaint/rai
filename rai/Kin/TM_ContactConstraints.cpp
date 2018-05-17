@@ -18,7 +18,7 @@ void TM_ContactConstraints::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
 
     //-- needs to touch!!
     arr d, Jd;
-    TM_PairCollision dist(con->a.ID, con->b.ID, true, false);
+    TM_PairCollision dist(con->a.ID, con->b.ID, TM_PairCollision::_negScalar, false);
     dist.phi(d, (&J?Jd:NoArr), K);
     con->y = d.scalar();
     y.append(con->y);
@@ -28,10 +28,10 @@ void TM_ContactConstraints::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
 
     //-- non-aligned force
     arr c, Jc;
-    TM_PairCollision cvec(con->a.ID, con->b.ID, false, true);
+    TM_PairCollision cvec(con->a.ID, con->b.ID, TM_PairCollision::_normal, true);
     cvec.phi(c, (&J?Jc:NoArr), K);
     if(length(c)<1e-6) continue;
-    normalizeWithJac(c, Jc);
+//    normalizeWithJac(c, Jc);
 
     //just get force
     arr ferr, Jferr;

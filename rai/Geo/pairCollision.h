@@ -41,10 +41,12 @@ struct PairCollision : GLDrawer {
   void kinVector(arr& y, arr& J,
                  const arr& Jp1, const arr& Jp2,
                  const arr& Jx1, const arr& Jx2);
-                 
+  void kinNormal(arr& y, arr& J,
+                 const arr& Jp1, const arr& Jp2,
+                 const arr& Jx1, const arr& Jx2);
   void kinDistance(arr& y, arr& J,
                    const arr& Jp1, const arr& Jp2);
-  void kinDistance2(arr& y, arr& J,
+  void kinDistance2(arr& y, arr& J, //obsolete
                     const arr& JSimplex1, const arr& JSimplex2);
                     
   void nearSupportAnalysis(double eps=1e-6); ///< analyses not only closest obj support (the simplex) but all points within a margin

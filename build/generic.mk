@@ -160,10 +160,15 @@ export MSVC_LPATH
 default: $(OUTPUT)
 all: $(OUTPUT) #this is for qtcreator, which by default uses the 'all' target
 
-clean: force
+clean: cleanLocks cleanLocal generate_Makefile.dep
+#	rm -f $(OUTPUT) $(OBJS) $(PREOBJS) callgrind.out.* $(CLEAN)
+#	@rm -f $(MODULE_NAME)_wrap.* $(MODULE_NAME)py.so $(MODULE_NAME)py.py
+#	@find $(BASE) -type d -name 'Make.lock' -delete -print
+#	@find $(BASE)/rai \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
+
+cleanLocal: force
 	rm -f $(OUTPUT) $(OBJS) $(PREOBJS) callgrind.out.* $(CLEAN)
 	@rm -f $(MODULE_NAME)_wrap.* $(MODULE_NAME)py.so $(MODULE_NAME)py.py
-	@find $(BASE) -type d -name 'Make.lock' -delete -print
 	@find $(BASE)/rai \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
 
 cleanLocks: force
@@ -358,6 +363,10 @@ inPath_clean/%: $(BASE)/rai/%
 	@echo "                                                ***** clean " $<
 	@-rm -f $</Makefile.dep
 	@-$(MAKE) -C $< -f Makefile clean --no-print-directory
+
+inPath_depend/%: $(BASE)/rai/%
+	@echo "                                                ***** depend " $<
+	@-$(MAKE) -C $< -f Makefile depend --no-print-directory
 
 inPath_installUbuntu/%: $(BASE)/rai/%
 	@echo "                                                ***** init " $*

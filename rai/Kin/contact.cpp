@@ -41,6 +41,25 @@ rai::Contact::~Contact() {
 
 void rai::Contact::setZero(){ a_rel.setZero(); b_rel.setZero(); a_norm.setZero(); b_norm.setZero(); a_rad=b_rad=0.; a_type=b_type=1; force=zeros(3); }
 
+void rai::Contact::calc_F_from_q(const arr &q, uint n) {
+  force = q({n,n+2});
+  if(__coll){ delete __coll; __coll=0; }
+}
+
+PairCollision *rai::Contact::coll(){
+  if(!__coll){
+    rai::Shape *s1 = a.shape;
+    rai::Shape *s2 = b.shape;
+    CHECK(s1 && s2,"");
+    double r1=s1->size(3);
+    double r2=s2->size(3);
+    rai::Mesh *m1 = &s1->sscCore();  if(!m1->V.N) { m1 = &s1->mesh(); r1=0.; }
+    rai::Mesh *m2 = &s2->sscCore();  if(!m2->V.N) { m2 = &s2->mesh(); r2=0.; }
+    __coll = new PairCollision(*m1, *m2, s1->frame.X, s2->frame.X, r1, r2);
+  }
+  return __coll;
+}
+
 void rai::Contact::setFromPairCollision(PairCollision &col){
   a_rel = a.X / rai::Vector(col.p1);
   b_rel = b.X / rai::Vector(col.p2);

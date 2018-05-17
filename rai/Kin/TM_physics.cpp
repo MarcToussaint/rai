@@ -47,27 +47,19 @@ void TM_Physics::phi(arr &y, arr &J, const WorldL &Ktuple) {
 
       for(rai::Contact *c:a->contacts){
         arr f, Jf;
-#if 0
-        f = c->force;
-        if(&J){
-          Jf = zeros(Jacc.d0, Jacc.d1);
-          for(uint i=0;i<3;i++) Jf(i,qdim(0)+c->qIndex+i) = 1.;
-        }
-#else
         K.kinematicsForce(f, Jf, c);
         if(&J) expandJacobian(Jf, Ktuple, -2);
-#endif
 
-        arr cp, Jcp;
-        K.kinematicsVec(cp, Jcp, a, c->b_rel); //contact point VECTOR only
-        expandJacobian(Jcp, Ktuple, -2);
+//        arr cp, Jcp;
+//        K.kinematicsVec(cp, Jcp, a, c->b_rel); //contact point VECTOR only
+//        expandJacobian(Jcp, Ktuple, -2);
 
         acc -= 20. * c->force;
 //        wcc -= .1 * crossProduct((a->X.rot*c->b_rel).getArr(), c->force);
-        wcc -= 2. * crossProduct(cp, c->force);
+//        wcc -= 2. * crossProduct(cp, c->force);
         if(&J){
           Jacc -= 20. * Jf;
-          Jwcc -= 2. * (skew(cp) * Jf - skew(c->force) * Jcp);
+//          Jwcc -= 2. * (skew(cp) * Jf - skew(c->force) * Jcp);
         }
       }
         

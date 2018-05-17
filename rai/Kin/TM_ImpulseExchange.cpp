@@ -60,7 +60,7 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple) {
   }
   
   arr c,Jc;
-  TM_PairCollision coll(i, j, false, true);
+  TM_PairCollision coll(i, j, TM_PairCollision::_vector, true);
   coll.phi(c, (&J?Jc:NoArr), *Ktuple(-2));
   uintA qdim = getKtupleDim(Ktuple);
   arr Jcc = zeros(3, qdim.last());
@@ -135,7 +135,7 @@ void TM_ImpulsExchange_weak::phi(arr &y, arr &J, const WorldL &Ktuple) {
   pos2.TaskMap::phi(a2, (&J?J2:NoArr), Ktuple);
   
   arr c,Jc;
-  TM_PairCollision coll(i, j, false, true);
+  TM_PairCollision coll(i, j, TM_PairCollision::_vector, true);
   coll.phi(c, (&J?Jc:NoArr), *Ktuple(-2));
   uintA qdim = getKtupleDim(Ktuple);
   arr Jcc = zeros(3, qdim.last());

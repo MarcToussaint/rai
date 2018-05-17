@@ -20,6 +20,8 @@ namespace rai {
 struct Contact : GLDrawer {
   Frame &a, &b;
 
+  PairCollision *__coll=0;
+
   uint dim=3;
   uint qIndex=UINT_MAX;
 
@@ -33,15 +35,17 @@ struct Contact : GLDrawer {
   arr force;
 
   double y=0.;                 // place to store the constraint value (typically: neg distance) when the taskmap is called
-  double lagrangeParameter=0.; // place to store the respective lagrange parameter after an optimization
-  
+//  double lagrangeParameter=0.; // place to store the respective lagrange parameter after an optimization
+
   Contact(Frame &a, Frame &b, Contact *copyContact=NULL);
   ~Contact();
 
   void setZero();
   uint qDim() { return dim; }
-  void calc_F_from_q(const arr& q, uint n) { force = q({n,n+2}); }
+  void calc_F_from_q(const arr& q, uint n);
   arr calc_q_from_F() const { return force; }
+
+  PairCollision *coll();
 
   void setFromPairCollision(PairCollision& col);
 //  rai::Vector get_pa() const{ return a.X * (a_rel + a_rad*a_norm); }
