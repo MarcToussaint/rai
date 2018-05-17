@@ -30,7 +30,7 @@ void TaskMap::phi(arr& y, arr& J, const WorldL& Ktuple) {
   }
   arrA y_bar, J_bar;
   
-  double tau = Ktuple(-1)->frames(0)->time - Ktuple(-2)->frames(0)->time;
+  double tau = Ktuple(-1)->frames(0)->time; // - Ktuple(-2)->frames(0)->time;
   double tau2=tau*tau, tau3=tau2*tau;
   y_bar.resize(k+1);
   J_bar.resize(k+1);
@@ -63,9 +63,9 @@ void TaskMap::phi(arr& y, arr& J, const WorldL& Ktuple) {
     if(k==3) { J.setMatrixBlock(J_bar(3), 0, qidx(offset+3));  J.setMatrixBlock(-3.*J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(3.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau3; }
 
 #if 0
-    arr Jtau1;  Ktuple(-1)->jacobianTime(Jtau1, Ktuple(-1)->frames(0));  expandJacobian(Jtau1, Ktuple, -1);
-    arr Jtau2;  Ktuple(-2)->jacobianTime(Jtau2, Ktuple(-2)->frames(0));  expandJacobian(Jtau2, Ktuple, -2);
-    arr Jtau = Jtau1 - Jtau2;
+    arr Jtau;  Ktuple(-1)->jacobianTime(Jtau, Ktuple(-1)->frames(0));  expandJacobian(Jtau, Ktuple, -1);
+//    arr Jtau2;  Ktuple(-2)->jacobianTime(Jtau2, Ktuple(-2)->frames(0));  expandJacobian(Jtau2, Ktuple, -2);
+//    arr Jtau = Jtau1 - Jtau2;
     J += (-1.5/tau)*y*Jtau;
 #endif
   }

@@ -128,10 +128,11 @@ void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhas
 }
 
 void KOMO::setPairedTimes() {
+  NIY;
   CHECK(k_order==1, "NIY");
   for(uint s=0; s<k_order+T-1; s+=2) {
-    configurations(s)  ->setTimes(tau*(int(s)-int(k_order)));
-    configurations(s+1)->setTimes(tau*(.98+int(s+1)-int(k_order)));
+    configurations(s)  ->setTimes(0.02*tau); //(tau*(int(s)-int(k_order)));
+    configurations(s+1)->setTimes(1.98*tau); //(tau*(.98+int(s+1)-int(k_order)));
   }
 }
 
@@ -1328,13 +1329,13 @@ void KOMO::setupConfigurations() {
   computeMeshNormals(world.frames, true);
   
   configurations.append(new KinematicWorld())->copy(world, true);
-  configurations.last()->setTimes(-tau*k_order);
+  configurations.last()->setTimes(tau); //(-tau*k_order);
   configurations.last()->calc_q();
   configurations.last()->calc_q_from_Q();
   configurations.last()->checkConsistency();
   for(uint s=1; s<k_order+T; s++) {
     configurations.append(new KinematicWorld())->copy(*configurations(s-1), true);
-    configurations(s)->setTimes(tau*(int(s)-int(k_order)));
+    configurations(s)->setTimes(tau); //(tau*(int(s)-int(k_order)));
     configurations(s)->checkConsistency();
     CHECK(configurations(s)==configurations.last(), "");
     //apply potential graph switches

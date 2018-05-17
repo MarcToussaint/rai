@@ -47,7 +47,7 @@ void TM_PushConsistent::phi(arr& y, arr& J, const WorldL& Ktuple) {
   
 #if 1
 //  tau = 1.; //1e-5;
-  double tau = Ktuple(-1)->frames(0)->time - Ktuple(-2)->frames(0)->time;
+  double tau = Ktuple(-1)->frames(0)->time; // - Ktuple(-2)->frames(0)->time;
   
   y = crossProduct((yi2-yi1)/tau, yi2-yj2);
 //  cout <<"PC " <<t <<' ' <<(yi2-yi1)/tau <<' ' <<yi2-yj2 <<' ' <<y <<endl;

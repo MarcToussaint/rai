@@ -19,24 +19,19 @@ void TEST(Easy){
   komo.setPathOpt(1., 100, 5.);
 
   //-- set a time optim objective
-  arr defaultTimes(komo.T);
-  for(uint t=0;t<komo.T;t++) defaultTimes(t) = komo.tau*t;
-  defaultTimes.reshape(komo.T, 1);
-  komo.setTask(-1., -1., new TM_Time(), OT_sumOfSqr, {}, 1e2, 2); //smooth time evolution
-  komo.setTask(-1., -1., new TM_Time(), OT_sumOfSqr, defaultTimes, 1e-0, 0); //prior on timing
-//  komo.setTask(-1., -1., new TM_Time(), OT_ineq, {-.03}, 1e3, 1); //ensure time has at least phase-velocity .03
+  komo.setTask(-1., -1., new TM_Time(), OT_sumOfSqr, {}, 1e2, 1); //smooth time evolution
+  komo.setTask(-1., -1., new TM_Time(), OT_sumOfSqr, {komo.tau}, 1e1, 0); //prior on timing
 
   komo.setPosition(1., 1., "endeff", "target", OT_sumOfSqr);
   komo.setSlowAround(1., .05);
   komo.setCollisions(false);
-//  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq);
   komo.reportProblem();
 
   komo.reset();
 //  komo.setSpline(5);
   komo.run();
-  komo.checkGradients();
-  cout <<"TIME OPTIM: " <<komo.getPath_times() <<endl;
+//  komo.checkGradients();
+  cout <<"TIME OPTIM: total=" <<sum(komo.getPath_times()) <<komo.getPath_times() <<endl;
   komo.plotTrajectory();
   cout <<komo.getReport(true) <<endl;
 //  komo.reportProxies();
@@ -117,6 +112,8 @@ void TEST(FinalPosePR2){
 
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
+
+  rnd.clockSeed();
 
   testEasy();
 //  testAlign();
