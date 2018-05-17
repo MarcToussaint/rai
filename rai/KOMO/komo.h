@@ -197,7 +197,7 @@ struct KOMO {
   void checkGradients();          ///< checks all gradients numerically
   void plotTrajectory();
   void plotPhaseTrajectory();
-  bool displayTrajectory(double delay=0.01, bool watch=true, const char* saveVideoPrefix=NULL); ///< display the trajectory; use "vid/z." as vid prefix
+  bool displayTrajectory(double delay=1., bool watch=true, const char* saveVideoPrefix=NULL); ///< display the trajectory; use "vid/z." as vid prefix
   bool displayPath(bool watch=true); ///< display the trajectory; use "vid/z." as vid prefix
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
   PhysXInterface& physx() { return world.physx(); }

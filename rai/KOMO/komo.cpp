@@ -1256,16 +1256,17 @@ bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPref
   
   for(int t=-(int)k_order; t<(int)T; t++) {
     if(saveVideoPrefix) gl->captureImg=true;
+    rai::KinematicWorld& K = *configurations(t+k_order);
     gl->clear();
     gl->add(glStandardScene, 0);
-    gl->addDrawer(configurations(t+k_order));
+    gl->add(K);
     gl->add(drawX);
     if(delay<0.) {
-      if(delay<-10.) FILE("z.graph") <<*configurations(t+k_order);
+      if(delay<-10.) FILE("z.graph") <<K;
       gl->watch(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
     } else {
       gl->update(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
-      if(delay) rai::wait(delay);
+      if(delay) rai::wait(delay * K.frames.first()->time);
     }
     if(saveVideoPrefix) write_ppm(gl->captureImage, STRING(saveVideoPrefix<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
   }

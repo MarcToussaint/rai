@@ -62,11 +62,12 @@ void TaskMap::phi(arr& y, arr& J, const WorldL& Ktuple) {
     if(k==2) { J.setMatrixBlock(J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(-2.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(J_bar(0)   , 0, qidx(offset+0));  J/=tau2; }
     if(k==3) { J.setMatrixBlock(J_bar(3), 0, qidx(offset+3));  J.setMatrixBlock(-3.*J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(3.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau3; }
 
-#if 0
+#if 1
     arr Jtau;  Ktuple(-1)->jacobianTime(Jtau, Ktuple(-1)->frames(0));  expandJacobian(Jtau, Ktuple, -1);
 //    arr Jtau2;  Ktuple(-2)->jacobianTime(Jtau2, Ktuple(-2)->frames(0));  expandJacobian(Jtau2, Ktuple, -2);
 //    arr Jtau = Jtau1 - Jtau2;
-    J += (-1.5/tau)*y*Jtau;
+    if(k==1) J += (-1./tau)*y*Jtau;
+    if(k==2) J += (-2./tau)*y*Jtau;
 #endif
   }
 }

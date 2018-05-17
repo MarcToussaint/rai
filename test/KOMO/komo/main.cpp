@@ -4,6 +4,7 @@
 #include <KOMO/komo.h>
 #include <Kin/TM_ContactConstraints.h>
 #include <Kin/TM_time.h>
+#include <Kin/TM_default.h>
 
 //===========================================================================
 
@@ -24,17 +25,18 @@ void TEST(Easy){
 
   komo.setPosition(1., 1., "endeff", "target", OT_sumOfSqr);
   komo.setSlowAround(1., .05);
+//  komo.setTask(.3, .7, new TM_Default(TMT_posDiff, komo.world, "endeff", NoVector, "target"), OT_sumOfSqr, NoArr, 1e2, 2);
   komo.setCollisions(false);
   komo.reportProblem();
 
   komo.reset();
 //  komo.setSpline(5);
   komo.run();
-//  komo.checkGradients();
   cout <<"TIME OPTIM: total=" <<sum(komo.getPath_times()) <<komo.getPath_times() <<endl;
   komo.plotTrajectory();
   cout <<komo.getReport(true) <<endl;
 //  komo.reportProxies();
+  komo.checkGradients();
   for(uint i=0;i<2;i++) komo.displayTrajectory();
 //  while(komo.displayTrajectory());
 }
