@@ -249,6 +249,8 @@ void rai::KinematicWorld::copy(const rai::KinematicWorld& K, bool referenceSwift
   //copy proxies; first they point to origin frames; afterwards, let them point to own frames
   proxies = K.proxies;
   for(Proxy& p:proxies) { p.a = frames(p.a->ID); p.b = frames(p.b->ID); }
+  //copy contacts
+  for(Contact *c:K.contacts) new Contact(*frames(c->a.ID), *frames(c->b.ID), c);
   //copy swift reference
   if(referenceSwiftOnCopy) {
     s->swift = K.s->swift;
@@ -2370,6 +2372,11 @@ bool rai::KinematicWorld::checkConsistency() {
         else
           myqdim += 2*j->qDim();
       }
+    }
+    for(Contact *c: contacts) {
+      CHECK_EQ(c->dim, 3, "");
+      CHECK_EQ(c->qIndex, myqdim, "joint indexing is inconsistent");
+      myqdim += c->dim;
     }
     CHECK_EQ(myqdim, N, "qdim is wrong");
   }

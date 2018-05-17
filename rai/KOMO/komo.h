@@ -134,6 +134,7 @@ struct KOMO {
   void core_setKSdynamic(double time, const char *from, const char *to);
   void core_setKSdynamicOn(double time, const char *from, const char* to);
   
+  void setContact(double startTime, double endTime, const char *from, const char* to);
   void setKS_slider(double time, bool before, const char* obj, const char* slider, const char* table);
   
   //===========================================================================
@@ -191,6 +192,7 @@ struct KOMO {
   void reportProblem(ostream &os=std::cout);
   Graph getReport(bool gnuplt=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot task costs; output detailed cost features per time slice)
   void reportProxies(ostream& os=std::cout); ///< report the proxies (collisions) for each time slice
+  void reportContacts(ostream& os=std::cout); ///< report the contacts
   rai::Array<rai::Transformation> reportEffectiveJoints(ostream& os=std::cout);
   void checkGradients();          ///< checks all gradients numerically
   void plotTrajectory();

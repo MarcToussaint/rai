@@ -10,6 +10,14 @@
 #include "kin.h"
 #include <climits>
 #include "flag.h"
+#include "contact.h"
+
+//===========================================================================
+
+uint conv_time2step(double time, uint stepsPerPhase) {
+  return (floor(time*double(stepsPerPhase) + .500001)); //-1
+}
+//#define STEP(t) (floor(t*double(stepsPerPhase) + .500001))-1
 
 //===========================================================================
 
@@ -23,6 +31,10 @@ template<> const char* rai::Enum<rai::SwitchType>::names []= {
   "SW_insertEffJoint",
   "insertActuated",
   "makeDynamic",
+  "makeKinematic",
+  "SW_fixCurrent",
+  "SW_addContact",
+  "SW_delContact",
   NULL
 };
 
@@ -43,11 +55,9 @@ rai::KinematicSwitch::KinematicSwitch(SwitchType op, JointType type, const char*
   if(&jTo)   jB = jTo;
 }
 
-#define STEP(t) (floor(t*double(stepsPerPhase) + .500001))-1
-
 void rai::KinematicSwitch::setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T) {
   if(stepsPerPhase<0) stepsPerPhase=T;
-  timeOfApplication = STEP(time)+(before?0:1);
+  timeOfApplication = conv_time2step(time, stepsPerPhase)+(before?0:1);
 }
 
 void rai::KinematicSwitch::apply(KinematicWorld& K) {
@@ -252,7 +262,23 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
 //    }
     return;
   }
-  
+
+  if(symbol==SW_addContact) {
+    CHECK_EQ(jointType, JT_none, "");
+    auto c = new rai::Contact(*from, *to);
+    c->setZero();
+    return;
+  }
+
+  if(symbol==SW_delContact) {
+    CHECK_EQ(jointType, JT_none, "");
+    rai::Contact *c = NULL;
+    for(rai::Contact *cc:to->contacts) if(&cc->a==from || &cc->b==from){ c=cc; break; }
+    if(!c) HALT("not found");
+    delete c;
+    return;
+  }
+
   HALT("shouldn't be here!");
 }
 
@@ -354,4 +380,3 @@ rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const rai::String& type, c
   if(&jTo) sw->jB = jTo;
   return sw;
 }
-

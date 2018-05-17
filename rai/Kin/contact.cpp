@@ -10,20 +10,36 @@
 #include <Gui/opengl.h>
 #include <Geo/pairCollision.h>
 
-rai::Contact::Contact(rai::Frame &a, rai::Frame &b)
+rai::Contact::Contact(rai::Frame &a, rai::Frame &b, rai::Contact *copyContact)
   : a(a), b(b) {
   CHECK(&a != &b,"");
   CHECK_EQ(&a.K, &b.K, "contact between frames of different configuration!");
+  a.K.reset_q();
   a.contacts.append(this);
   b.contacts.append(this);
   a.K.contacts.append(this);
+  setZero();
+  if(copyContact){
+    a_rel = copyContact->a_rel;
+    b_rel = copyContact->b_rel;
+    a_norm = copyContact->a_norm;
+    b_norm = copyContact->b_norm;
+    a_rad = copyContact->a_rad;
+    b_rad = copyContact->b_rad;
+    a_type = copyContact->a_type;
+    b_type = copyContact->b_type;
+    force = copyContact->force;
+  }
 }
 
 rai::Contact::~Contact() {
+  a.K.reset_q();
   a.contacts.removeValue(this);
   b.contacts.removeValue(this);
   a.K.contacts.removeValue(this);
 }
+
+void rai::Contact::setZero(){ a_rel.setZero(); b_rel.setZero(); a_norm.setZero(); b_norm.setZero(); a_rad=b_rad=0.; a_type=b_type=1; force=zeros(3); }
 
 void rai::Contact::setFromPairCollision(PairCollision &col){
   a_rel = a.X / rai::Vector(col.p1);
@@ -155,5 +171,7 @@ void rai::Contact::glDraw(OpenGL& gl) {
 }
 
 void rai::Contact::write(std::ostream &os) const {
-  os <<a.name <<'-' <<b.name <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() /*<<" pDist=" <<get_pDistance()*/ <<" y=" <<y <<" l=" <<lagrangeParameter;
+  os <<a.name <<'-' <<b.name;
+  os <<" f=" <<force;
+//  <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() /*<<" pDist=" <<get_pDistance()*/ <<" y=" <<y <<" l=" <<lagrangeParameter;
 }

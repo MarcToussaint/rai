@@ -35,10 +35,10 @@ struct Contact : GLDrawer {
   double y=0.;                 // place to store the constraint value (typically: neg distance) when the taskmap is called
   double lagrangeParameter=0.; // place to store the respective lagrange parameter after an optimization
   
-  Contact(Frame &a, Frame &b);
+  Contact(Frame &a, Frame &b, Contact *copyContact=NULL);
   ~Contact();
 
-  void setZero(){ a_rel.setZero(); b_rel.setZero(); a_norm.setZero(); b_norm.setZero(); a_rad=b_rad=0.; a_type=b_type=1; force.setZero(); }
+  void setZero();
   uint qDim() { return dim; }
   void calc_F_from_q(const arr& q, uint n) { force = q({n,n+2}); }
   arr calc_q_from_F() const { return force; }

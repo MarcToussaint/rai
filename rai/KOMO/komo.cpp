@@ -153,8 +153,6 @@ void KOMO::deactivateCollisions(const char* s1, const char* s2) {
 // task specs
 //
 
-//#define STEP(t) (floor(t*double(stepsPerPhase) + .500001))-1
-
 void KOMO::clearTasks() {
   listDelete(tasks);
 }
@@ -174,10 +172,6 @@ Task *KOMO::setTask(double startTime, double endTime, TaskMap *map, ObjectiveTyp
   return task;
 }
 
-uint conv_time2step(double time, uint stepsPerPhase) {
-  return (floor(time*double(stepsPerPhase) + .500001))-1;
-}
-
 void KOMO::setFlag(double time, Flag *fl, int deltaStep) {
   fl->stepOfApplication = conv_time2step(time, stepsPerPhase) + deltaStep;
   flags.append(fl);
@@ -189,7 +183,7 @@ void KOMO::setKinematicSwitch(double time, bool before, KinematicSwitch *sw) {
 }
 
 void KOMO::setKinematicSwitch(double time, bool before, const char* type, const char* ref1, const char* ref2, const Transformation& jFrom) {
-  KinematicSwitch *sw = KinematicSwitch::newSwitch(type, ref1, ref2, world, 0/*STEP(time)+(before?0:1)*/, jFrom);
+  KinematicSwitch *sw = KinematicSwitch::newSwitch(type, ref1, ref2, world, 0/*con_time2step(time, stepsPerPhase)+(before?0:1)*/, jFrom);
   setKinematicSwitch(time, before, sw);
 }
 
@@ -221,6 +215,13 @@ void KOMO::core_setKSdynamicOn(double time, const char *from, const char* to) {
   setKinematicSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, from, to, world, 0, rel));
   setFlag(time, new Flag(FL_clear, world[to]->ID, 0, true), +1);
   setFlag(time, new Flag(FL_zeroAcc, world[to]->ID, 0, true), +1);
+}
+
+void KOMO::setContact(double startTime, double endTime, const char *from, const char* to) {
+  setKinematicSwitch(startTime, true,
+                     new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world) );
+  setKinematicSwitch(endTime, false,
+                     new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world) );
 }
 
 void KOMO::setKS_slider(double time, bool before, const char* obj, const char* slider, const char* table) {
@@ -1397,6 +1398,17 @@ void KOMO::reportProxies(std::ostream& os) {
   for(auto &K:configurations) {
     os <<" **** KOMO PROXY REPORT t=" <<t-k_order <<endl;
     K->reportProxies(os);
+    t++;
+  }
+}
+
+void KOMO::reportContacts(std::ostream& os) {
+  int t=0;
+  for(auto &K:configurations) {
+    if(K->contacts.N){
+      os <<" ** CONTACTS t=" <<t-k_order <<endl;
+      for(rai::Contact *con:K->contacts) cout <<"   " <<*con <<endl;
+    }
     t++;
   }
 }
