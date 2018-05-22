@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -14,16 +14,15 @@
 #include <Control/RTControllerSimulation.h>
 #include <Control/gravityCompensation.h>
 
-
 /// The task controller generates the message send to the RT_Controller
 /// the problem is defined by the list of CtrlTasks
 struct TaskControlThread : Thread {
   struct sTaskControlThread *s;
-
+  
   //protected access points
   VAR(arr, ctrl_q_real)
   VAR(arr, ctrl_q_ref)
-
+  
   VAR(CtrlMsg, ctrl_ref) //< the message send to the RTController
   VAR(CtrlMsg, ctrl_obs) //< the message received from the RTController
   VAR(rai::Array<CtrlTask*>, ctrlTasks)
@@ -31,7 +30,7 @@ struct TaskControlThread : Thread {
   VAR(bool, fixBase)
   VAR(arr, pr2_odom)
   VAR(double, IK_cost)
-
+  
 //private:
   rai::KinematicWorld realWorld;
   TaskControlMethods *taskController;
@@ -51,16 +50,15 @@ struct TaskControlThread : Thread {
   bool compensateGravity;
   bool compensateFTSensors;
   RTControllerSimulation* dynSim;
-
+  
   GravityCompensation* gc;
-
+  
   arr fRInitialOffset;
-
-
+  
 public:
   TaskControlThread(const char* robot="none", const rai::KinematicWorld& world = NoWorld);
   ~TaskControlThread();
-
+  
   void open();
   void step();
   void close();

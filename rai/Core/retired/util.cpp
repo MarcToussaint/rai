@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -33,7 +33,6 @@ void openConfigFile(const char *name) {
   LOG(3) <<std::endl;
 }
 
-
 /** @brief Search the first occurence of a sequence '\c tag:'
 in the config file (opened automatically) and, if found, pipes
 it in \c value. Returns false if parameter is not found. */
@@ -52,12 +51,12 @@ bool getFromCfgFile(T& x, const char *tag) {
     if(buf[n]==' ' || buf[n]=='\t' || buf[n]==':' || buf[n]=='=') { buf[n]=0; if(!strcmp(tag, buf)) break; buf[n]=':'; }
   };
   delete[] buf;
-
+  
   if(!globalThings().cfgFile.good()) { globalThings().cfgFileMutex.unlock(); return false; }
-
+  
   skip(globalThings().cfgFile, " :=\n\r\t");
   globalThings().cfgFile >>x;
-
+  
   if(globalThings().cfgFile.fail()) HALT("error when reading parameter " <<tag);
   globalThings().cfgFileMutex.unlock();
   return true;
@@ -92,6 +91,4 @@ template std::map<std::string,bool> rai::ParameterMap<bool>::m;
 template std::map<std::string,long> rai::ParameterMap<long>::m;
 template std::map<std::string,rai::String> rai::ParameterMap<rai::String>::m;
 template std::map<std::string,std::string> rai::ParameterMap<std::string>::m;
-
-
 

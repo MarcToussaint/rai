@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -20,7 +20,7 @@ struct FeatherstoneInterface;
 
 //===========================================================================
 
-namespace rai{
+namespace rai {
 
 struct Joint;
 struct Shape;
@@ -46,24 +46,24 @@ typedef rai::Array<rai::KinematicWorld*> WorldL;
 
 //===========================================================================
 
-namespace rai{
+namespace rai {
 
 /// data structure to store a whole physical situation (lists of bodies, joints, shapes, proxies)
-struct KinematicWorld : GLDrawer{
+struct KinematicWorld : GLDrawer {
   struct sKinematicWorld *s;
-
+  
   //-- fundamental structure
   FrameL frames;
-
+  
   //-- derived: computed with calc_q(); reset with reset_q()
   arr q, qdot; ///< the current joint configuration vector and velocities
   FrameL fwdActiveSet;
   JointL fwdActiveJoints;
-
+  
   ProxyA proxies; ///< list of current proximities between bodies
-
+  
   static uint setJointStateCount;
-
+  
   //global options
   bool orsDrawJoints=false, orsDrawShapes=true, orsDrawBodies=true, orsDrawProxies=true, orsDrawMarkers=true, orsDrawColors=true, orsDrawIndexColors=false;
   bool orsDrawMeshes=true, orsDrawCores=false, orsDrawZlines=false;
@@ -76,27 +76,27 @@ struct KinematicWorld : GLDrawer{
   KinematicWorld(const rai::KinematicWorld& other);
   KinematicWorld(const char* filename);
   virtual ~KinematicWorld();
-  void operator=(const rai::KinematicWorld& K){ copy(K); }
+  void operator=(const rai::KinematicWorld& K) { copy(K); }
   void copy(const rai::KinematicWorld& K, bool referenceSwiftOnCopy=false);
   
   /// @name initializations
   void init(const char* filename);
   void init(const Graph& G, bool addInsteadOfClear=false);
   void addModel(const char* filename);
-
+  
   /// @name access
-  Frame *operator[](const char* name){ return getFrameByName(name, true); }
-  Frame *operator()(int i){ return frames(i); }
+  Frame *operator[](const char* name) { return getFrameByName(name, true); }
+  Frame *operator()(int i) { return frames(i); }
   Frame *getFrameByName(const char* name, bool warnIfNotExist=true) const;
 //  Link  *getLinkByBodies(const Frame* from, const Frame* to) const;
   Joint *getJointByBodies(const Frame* from, const Frame* to) const;
   Joint *getJointByBodyNames(const char* from, const char* to) const;
   Joint *getJointByBodyIndices(uint ifrom, uint ito) const;
   StringA getJointNames() const;
-
+  
   bool checkUniqueNames() const;
   void prefixNames(bool clear=false);
-
+  
   /// @name changes of configuration
   void clear();
   void reset_q();
@@ -113,16 +113,16 @@ struct KinematicWorld : GLDrawer{
   void fwdIndexIDs();
   void useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese, bool deleteInsteadOfLock);
   bool checkConsistency();
-
+  
   uint analyzeJointStateDimensions() const; ///< sort of private: count the joint dimensionalities and assign j->q_index
-
+  
   /// @name computations on the graph
   void calc_Q_from_q(); ///< from the set (q,qdot) compute the joint's Q transformations
   void calc_q_from_Q();  ///< updates (q,qdot) based on the joint's Q transformations
   void calc_fwdPropagateFrames();    ///< elementary forward kinematics; also computes all Shape frames
   arr calc_fwdPropagateVelocities();    ///< elementary forward kinematics; also computes all Shape frames
   void calc_Q_from_BodyFrames();    ///< fill in the joint transformations assuming that body poses are known (makes sense when reading files)
-
+  
   /// @name get state
   uint getJointStateDimension() const;
   void getJointState(arr &_q, arr& _qdot=NoArr) const;
@@ -130,27 +130,27 @@ struct KinematicWorld : GLDrawer{
   arr getJointState(const StringA&) const;
   arr naturalQmetric(double power=.5) const;               ///< returns diagonal of a natural metric in q-space, depending on tree depth
   arr getLimits() const;
-
+  
   /// @name active set selection
   void setActiveJointsByName(const StringA&);
-
+  
   /// @name set state
   void setJointState(const arr& _q, const arr& _qdot=NoArr);
   void setJointState(const arr& _q, const StringA&);
   void setTimes(double t);
-
+  
   /// @name kinematics
-  void kinematicsPos (arr& y, arr& J, Frame *a, const Vector& rel=NoVector) const; //TODO: make vector& not vector*
-  void kinematicsVec (arr& y, arr& J, Frame *a, const Vector& vec=NoVector) const;
+  void kinematicsPos(arr& y, arr& J, Frame *a, const Vector& rel=NoVector) const;  //TODO: make vector& not vector*
+  void kinematicsVec(arr& y, arr& J, Frame *a, const Vector& vec=NoVector) const;
   void kinematicsQuat(arr& y, arr& J, Frame *a) const;
   void hessianPos(arr& H, Frame *a, Vector *rel=0) const;
   void jacobianPos(arr& J, Frame *a, const rai::Vector& pos_world) const; //usually called internally with kinematicsPos
   void jacobianTime(arr& J, Frame*a) const;
   void axesMatrix(arr& J, Frame *a) const; //usually called internally with kinematicsVec or Quat
-  void kinematicsRelPos (arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b, const Vector& vec2) const;
-  void kinematicsRelVec (arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b) const;
-  void kinematicsRelRot (arr& y, arr& J, Frame *a, Frame *b) const;
-
+  void kinematicsRelPos(arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b, const Vector& vec2) const;
+  void kinematicsRelVec(arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b) const;
+  void kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) const;
+  
   void kinematicsPenetrations(arr& y, arr& J=NoArr, bool penetrationsOnly=true, double activeMargin=0.) const; ///< true: if proxy(i).distance>0. => y(i)=0; else y(i)=-proxy(i).distance
   void kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
   void kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
@@ -162,29 +162,29 @@ struct KinematicWorld : GLDrawer{
   void kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const rai::Vector& rel, Frame *s) const;
   void getLimitsMeasure(arr &x, const arr& limits, double margin=.1) const;
   void kinematicsLimitsCost(arr& y, arr& J, const arr& limits, double margin=.1) const;
-
+  
   /// @name active set selection
-  void setAgent(uint){ NIY }
-
+  void setAgent(uint) { NIY }
+  
   /// @name High level (inverse) kinematics
   void inverseKinematicsPos(Frame& body, const arr& ytarget, const rai::Vector& rel_offset=NoVector, int max_iter=3);
-
+  
   /// @name dynamics
   void fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bool gravity=true);
   void inverseDynamics(arr& tau, const arr& qd, const arr& qdd, bool gravity=true);
   void equationOfMotion(arr& M, arr& F, bool gravity=true);
   void inertia(arr& M);
-
+  
   /// @name older 'kinematic maps'
   double getCenterOfMass(arr& com) const;
   void getComGradient(arr &grad) const;
-
+  
   double getEnergy();
   const Proxy *getContact(uint a, uint b) const;
-
+  
   /// @name get infos
   arr getHmetric() const;
-
+  
   /// @name forces and gravity
   void clearForces();
   void addForce(rai::Vector force, Frame *n);
@@ -208,12 +208,12 @@ struct KinematicWorld : GLDrawer{
   void stepPhysx(double tau);
   void stepOde(double tau);
   void stepDynamics(const arr& u_control, double tau, double dynamicNoise = 0.0, bool gravity = true);
-
+  
   /// @name contacts
   void filterProxiesToContacts(double margin=.01); ///< proxies are returns from a collision engine; contacts stable constraints
   void proxiesToContacts(double margin=.01); ///< proxies are returns from a collision engine; contacts stable constraints
   double totalContactPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
-
+  
   /// @name I/O
   void write(std::ostream& os) const;
   void writeURDF(std::ostream& os, const char *robotName="myrobot") const;
@@ -224,20 +224,18 @@ struct KinematicWorld : GLDrawer{
   Graph getGraph() const;
   Array<Frame*> getLinks();
   void displayDot();
-
+  
   //some info
   void report(std::ostream& os=std::cout) const;
   void reportProxies(std::ostream& os=std::cout, double belowMargin=-1., bool brief=true) const;
   void writePlyFile(const char* filename) const; //TODO: move outside
-
+  
   friend struct KinematicSwitch;
 };
 
 } //namespace rai
 
-
 stdPipes(rai::KinematicWorld)
-
 
 //===========================================================================
 //
@@ -272,10 +270,9 @@ void transferKdBetweenTwoWorlds(arr& KdTo, const arr& KdFrom, const rai::Kinemat
 void transferU0BetweenTwoWorlds(arr& u0To, const arr& u0From, const rai::KinematicWorld& to, const rai::KinematicWorld& from);
 void transferKI_ft_BetweenTwoWorlds(arr& KI_ft_To, const arr& KI_ft_From, const rai::KinematicWorld& to, const rai::KinematicWorld& from);
 
-
 void displayState(const arr& x, rai::KinematicWorld& G, const char *tag);
 void displayTrajectory(const arr& x, int steps, rai::KinematicWorld& G, const KinematicSwitchL& switches, const char *tag, double delay=0., uint dim_z=0, bool copyG=false);
-inline void displayTrajectory(const arr& x, int steps, rai::KinematicWorld& G, const char *tag, double delay=0., uint dim_z=0, bool copyG=false){
+inline void displayTrajectory(const arr& x, int steps, rai::KinematicWorld& G, const char *tag, double delay=0., uint dim_z=0, bool copyG=false) {
   displayTrajectory(x, steps, G, {}, tag, delay, dim_z, copyG);
 }
 void editConfiguration(const char* orsfile, rai::KinematicWorld& G);
@@ -283,6 +280,5 @@ int animateConfiguration(rai::KinematicWorld& G, struct Inotify *ino=NULL);
 
 void kinVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);
 void kinAngVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);
-
 
 #endif //RAI_ors_h

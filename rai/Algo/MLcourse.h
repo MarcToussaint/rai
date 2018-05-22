@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -22,29 +22,29 @@ arr evaluateBayesianRidgeRegressionSigma(const arr& X, const arr& bayesSigma);
 arr logisticRegression2Class(const arr& X, const arr& y, double lambda=-1., arr& bayesSigma=NoArr);
 arr logisticRegressionMultiClass(const arr& X, const arr& y, double lambda=-1.);
 
-struct RidgeRegression{
+struct RidgeRegression {
   arr beta; ///< (X^T X + lambda I)^-1 X^T y
   arr XtX_I; ///< (X^T X + lambda I)
   double sigmaSqr; ///< mean squared error on training data; estimate of noise
   arr betaSigmaMatrix; ///< variance (matrix) of estimated beta
-
+  
   RidgeRegression(const arr& X, const arr& y, double lambda=-1, const arr& weighted=NoArr, int verbose=1);
   arr evaluate(const arr& X, arr& bayesSigma2=NoArr);
-
+  
   arr getBetaSigmaMatrix();
   arr getBetaZscores();
   arr getMultiOutputSquaredErrors(const arr& X, const arr& y);
 };
 
-struct DefaultKernelFunction : KernelFunction{
-  enum KernelType{ readFromCfg=0, Gauss=1 } type;
+struct DefaultKernelFunction : KernelFunction {
+  enum KernelType { readFromCfg=0, Gauss=1 } type;
   arr hyperParam1,hyperParam2;
-  DefaultKernelFunction(KernelType _type=readFromCfg):type(_type){}
+  DefaultKernelFunction(KernelType _type=readFromCfg):type(_type) {}
   virtual double k(const arr& x1, const arr& x2, arr& gx1, arr& Hx1);
 };
 extern DefaultKernelFunction defaultKernelFunction;
 
-struct KernelRidgeRegression{
+struct KernelRidgeRegression {
   arr X; ///< stored data (to compute kappa for queries)
   arr kernelMatrix_lambda; ///< X X^T + lambda I
   arr invKernelMatrix_lambda; ///< (X X^T + lambda I)^-1
@@ -54,12 +54,12 @@ struct KernelRidgeRegression{
   KernelFunction& kernel;
   KernelRidgeRegression(const arr& X, const arr& y, KernelFunction& kernel=defaultKernelFunction, double lambda=-1, double mu=0.);
   arr evaluate(const arr& X, arr& bayesSigma2=NoArr); ///< returns f(x) and \s^2(x) for a set of points X
-
+  
   double evaluate(const arr& x, arr& df_x, arr& H, double plusSigma, bool onlySigma); ///< returns f(x) + coeff*\sigma(x) and its gradient and Hessian
   ScalarFunction getF(double plusSigma);
 };
 
-struct KernelLogisticRegression{
+struct KernelLogisticRegression {
   arr X; ///< stored data (to compute kappa for queries)
   arr kernelMatrix_lambda; ///< X X^T + 2 lambda W^-1
   arr invKernelMatrix_lambda;
@@ -72,7 +72,7 @@ struct KernelLogisticRegression{
   arr evaluateF(const arr& X, arr& bayesSigma2=NoArr);
 };
 
-struct KernelCRF{
+struct KernelCRF {
 };
 
 //===========================================================================
@@ -93,7 +93,6 @@ struct CrossValidation {
   void plot();
 };
 
-
 //===========================================================================
 //
 // constructing features from data
@@ -101,7 +100,6 @@ struct CrossValidation {
 
 enum FeatureType { readFromCfgFileFT=0, linearFT=1, quadraticFT, cubicFT, rbfFT=4, piecewiseConstantFT=5, piecewiseLinearFT=6, constFT=7 };
 arr makeFeatures(const arr& X, FeatureType featureType=readFromCfgFileFT, const arr& rbfCenters=NoArr);
-
 
 //===========================================================================
 //
@@ -117,7 +115,6 @@ void artificialData_Hasties2Class(arr& X, arr& y);
 void artificialData_HastiesMultiClass(arr& X, arr& y);
 void artificialData_GaussianMixture(arr& X, arr& y);
 void load_data(arr& X, const char* filename, bool whiten);
-
 
 //===========================================================================
 //

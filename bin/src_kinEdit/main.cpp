@@ -14,7 +14,6 @@ viewing the model in the OpenGL window (after pressing ENTER).\n\
 Use the number keys 1 2 3 4 5 to toggle display options.\n\
 ";
 
-
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 

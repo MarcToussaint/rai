@@ -1,6 +1,5 @@
 #include <Gui/opengl.h>
 
-
 void draw1(void*){
   glStandardLight(NULL);
   glColor(1,0,0);
@@ -9,7 +8,6 @@ void draw1(void*){
   glDrawAxes(1.);
   glFrontFace(GL_CCW);
 }
-
 
 int main(int argc, char** argv){
   rai::initCmdLine(argc, argv);

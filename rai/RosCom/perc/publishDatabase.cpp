@@ -1,20 +1,3 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2014 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
-    
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
 #ifdef RAI_ROS
 #include "publishDatabase.h"
 #include <geometry_msgs/PoseArray.h>
@@ -28,7 +11,6 @@
   #include <ar_track_alvar_msgs/AlvarMarkers.h>
   namespace ar = ar_track_alvar_msgs;
 #endif
-
 
 PublishDatabase::PublishDatabase()
   : Thread("PublishDatabase", -1),
@@ -381,7 +363,6 @@ void PublishDatabase::step(){
       plane_marker_pub.publish(plane_markers);
 
   }
-
 
   // Sync the modelWorld
   modelWorld.writeAccess();

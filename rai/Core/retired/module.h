@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -38,9 +38,7 @@ typedef rai::Array<Module*> ModuleL;
 //  virtual void close(){}
 //};
 
-inline bool operator==(const Module&,const Module&){ return false; }
-
-
+inline bool operator==(const Module&,const Module&) { return false; }
 
 //===========================================================================
 //
@@ -51,14 +49,13 @@ inline bool operator==(const Module&,const Module&){ return false; }
 #if 1
 
 #define ACCESSold(type, name)\
-struct __##name##__Access:Var<type>{ \
-  __##name##__Access():Var<type>(NULL, #name){} \
-} name;
+  struct __##name##__Access:Var<type>{ \
+    __##name##__Access():Var<type>(NULL, #name){} \
+  } name;
 
 #else
 
 #define VAR(type, name) Var<type> name = Var<type>(this, #name);
-
 
 #endif
 
@@ -77,8 +74,6 @@ struct __##name##__Access:Var<type>{ \
   RUN_ON_INIT_BEGIN(Decl_Module##_##name) \
   registry()->newNode<std::shared_ptr<Type> >({rai::String("Decl_Module"), rai::String(#name)}, NodeL(), std::make_shared<Type_typed<name, void> >()); \
   RUN_ON_INIT_END(Decl_Module##_##name)
-
-
 
 //===========================================================================
 //
@@ -101,12 +96,11 @@ struct __##name##__Access:Var<type>{ \
 // dummy pipe operators
 //
 
-inline void operator>>(istream&, Module&){ NIY }
-inline void operator<<(ostream& os, const Module& m){ os <<"Module '" <<m.name <<'\''; }
+inline void operator>>(istream&, Module&) { NIY }
+inline void operator<<(ostream& os, const Module& m) { os <<"Module '" <<m.name <<'\''; }
 
-inline void operator>>(istream&, Access&){ NIY }
-inline void operator<<(ostream& os, const Access& a){ os <<"Access '" <<a.name <<"' from '" <<(a.thread?a.thread->name:rai::String("NIL")) <<"' to '" << (a.var ? a.data->name : String("??")) <<'\''; }
-
+inline void operator>>(istream&, Access&) { NIY }
+inline void operator<<(ostream& os, const Access& a) { os <<"Access '" <<a.name <<"' from '" <<(a.thread?a.thread->name:rai::String("NIL")) <<"' to '" << (a.var ? a.data->name : String("??")) <<'\''; }
 
 //===========================================================================
 //
@@ -118,13 +112,13 @@ struct Recorder : Thread {
   Var<T> access;
   T buffer;
   ofstream fil;
-
-  Recorder(const char* var_name) : Thread(STRING("Recorder_"<<var_name)), access(this, var_name, true){}
-
-  void open(){
+  
+  Recorder(const char* var_name) : Thread(STRING("Recorder_"<<var_name)), access(this, var_name, true) {}
+  
+  void open() {
     rai::open(fil, STRING("z." <<access.name <<'.' <<rai::getNowString() <<".dat"));
   }
-  void step(){
+  void step() {
     uint rev = access.readAccess();
     buffer = access();
     double time = access.data->revisionTime();
@@ -134,11 +128,10 @@ struct Recorder : Thread {
     sprintf(tag.p, "%6i %13.6f", rev, time);
     fil <<tag <<' ' <<buffer <<endl;
   }
-  void close(){
+  void close() {
     fil.close();
   }
 };
-
 
 //===========================================================================
 //
@@ -154,9 +147,9 @@ struct FileReplay : Thread {
       access(this, var_name, false) {
     x <<FILE(file_name);
   }
-  void open(){}
-  void step(){ access.set() = x; }
-  void close(){}
+  void open() {}
+  void step() { access.set() = x; }
+  void close() {}
 };
 
 #endif

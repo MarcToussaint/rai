@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -94,7 +94,6 @@ double matdistance(intA& A, intA& B, bool sub);
 double matannealing(intA& fix, intA& fox, uintA& p, bool sub, double annealingRepetitions, double annealingCooling);
 }
 
-
 //===========================================================================
 //
 // MonSolver
@@ -109,7 +108,6 @@ public:
   void init(double& par, double wide=2.);
   void solve(double& par, const double& err);
 };
-
 
 //===========================================================================
 //
@@ -161,9 +159,6 @@ public:
 };
 stdOutPipe(LinearStatistics);
 
-
-
-
 //===========================================================================
 //
 // Tuple index
@@ -177,7 +172,6 @@ public:
   void checkValid();
 };
 
-
 //===========================================================================
 //
 // Kalman filter
@@ -187,17 +181,16 @@ public:
 class Kalman {
   arr
   A, a, //linear forward transition
-     Q, //covariance of forward transition x(t) = A*x(t-1) + \NN(0, Q)
-     C, //linear observation matrix
-     R; //covariance of observation: y = C*x + \NN(0, R)
-     
+  Q, //covariance of forward transition x(t) = A*x(t-1) + \NN(0, Q)
+  C, //linear observation matrix
+  R; //covariance of observation: y = C*x + \NN(0, R)
+  
   void setTransitions(uint d, double varT, double varO);
   void filter(arr& Y, arr& X, arr& V, arr *Rt=0);
   void smooth(arr& Y, arr& X, arr& V, arr *Vxx=0, arr *Rt=0);
   void EMupdate(arr& Y, arr *Rt=0);
   void fb(arr& y, arr& f, arr& F, arr& g, arr& G, arr& p, arr& P, arr *Rt=0);
 };
-
 
 //===========================================================================
 //
@@ -221,7 +214,6 @@ public:
   void eval(double t, arr& x, arr* v=0);
   void eval(double t, arr& x, arr& v);
 };
-
 
 //===========================================================================
 //

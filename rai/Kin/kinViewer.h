@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -27,7 +27,7 @@ struct OrsViewer_old : Thread {
   //-- internal (private)
   rai::KinematicWorld copy;
   bool computeCameraView;
-
+  
   OrsViewer_old(const char* varname="modelWorld", double beatIntervalSec=-1., bool computeCameraView=false);
   ~OrsViewer_old();
   void open();
@@ -59,15 +59,15 @@ struct OrsPathViewer : Thread {
   int tprefix;
   bool writeToFiles;
   rai::String text;
-
+  
   void setConfigurations(const WorldL& cs);
   void clear();
-
+  
   OrsPathViewer(const char* varname, double beatIntervalSec=.2, int tprefix=0);
   ~OrsPathViewer();
   void open();
   void step();
-  void close(){}
+  void close() {}
 };
 
 //===========================================================================
@@ -79,12 +79,12 @@ struct OrsPoseViewer : Thread {
   OpenGL gl;
   rai::KinematicWorld copy;
   WorldL copies;
-
+  
   OrsPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec=-1.);
   ~OrsPoseViewer();
-
+  
   void recopyKinematics(const rai::KinematicWorld& world=NoWorld);
-
+  
   void open();
   void step();
   void close();
@@ -97,12 +97,12 @@ struct ComputeCameraView : Thread {
   Var<byteA> cameraView;
   Var<uint16A> cameraDepth;
   Var<rai::Transformation> cameraFrame;
-
+  
   //-- internal (private)
   OpenGL gl;
   rai::KinematicWorld copy;
   bool getDepth;
-
+  
   ComputeCameraView(double beatIntervalSec=-1., const char* modelWorld_name="modelWorld");
   ~ComputeCameraView();
   void open();

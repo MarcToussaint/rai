@@ -130,7 +130,6 @@ void TEST(GJK_Jacobians2) {
 
 //  checkJacobian(f, K.getJointState(), 1e-4);
 
-
   arr q = K.getJointState();
 //  K.orsDrawProxies=false;
 //  K.(true);
@@ -208,7 +207,6 @@ void TEST(GJK_Jacobians3) {
     K.setJointState(q);
     K.stepSwift();
 //    K.reportProxies(cout, -1., false);
-
 
     PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(3), s2.size(3));
 

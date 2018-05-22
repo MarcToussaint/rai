@@ -41,7 +41,6 @@ void __ccdSupport(const void *obj1, const void *obj2,
                   const ccd_vec3_t *dir, const ccd_t *ccd,
                   ccd_support_t *supp);
 
-
 /**** INLINES ****/
 _ccd_inline void ccdSupportCopy(ccd_support_t *d, const ccd_support_t *s)
 {

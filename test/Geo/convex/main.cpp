@@ -52,7 +52,6 @@ void plotQhullState(uint D) {
 // 1. test: convex hull distance and its gradient
 //
 
-
 void TEST(ConvexHull) {
   uint N=20,D=2;
   arr X(N,D);

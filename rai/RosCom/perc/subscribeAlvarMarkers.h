@@ -12,11 +12,9 @@ namespace ar = ar_track_alvar_msgs;
   struct AlvarMarkers{ AlvarMarkers(){NICO} };
 #endif
 
-
 //===========================================================================
 /// Generic subscriber to the AR maker alvar
 //ROSSUB("/ar_pose_marker", AlvarMarkers, ar_pose_marker)
-
 
 //===========================================================================
 // using rai::KinematicWorld;  // this is necessary to make the macro work.
@@ -25,7 +23,6 @@ namespace ar = ar_track_alvar_msgs;
 // BEGIN_ROSMODULE("/ar_pose_marker", AlvarMarkers, markers)
 //   VAR(KinematicWorld, modelWorld)
 // END_ROSMODULE()
-
 
 //===========================================================================
 // Helper functions
@@ -68,5 +65,4 @@ struct SubscribeAlvar{
   }
 
 };
-
 

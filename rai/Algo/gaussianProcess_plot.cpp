@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -9,7 +9,7 @@
 #include "gaussianProcess.h"
 #include <Plot/plot.h>
 
-void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause){
+void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause) {
   arr X, Y, Z, S;
   uint dim;
   //there should be at least 1 observation to guess the dimensionality from
@@ -19,7 +19,7 @@ void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause){
   X.setGrid(dim, lo, hi, 100);
   gp.evaluate(X, Y, S);
   plotClear();
-  switch(dim){
+  switch(dim) {
     case 1:
       plotFunctionPrecision(X, Y, Y+S, Y-S);
       //plotFunction(X, Y);
@@ -42,14 +42,14 @@ void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause){
   plot(pause);
 }
 
-void plotKernel1D(GaussianProcess& gp, double lo, double hi, bool pause){
+void plotKernel1D(GaussianProcess& gp, double lo, double hi, bool pause) {
   arr X, K, KD1, KD2;
   X.setGrid(1, lo, hi, 600);
   K.resize(X.d0);
   KD1.resize(X.d0);
   KD2.resize(X.d0);
   arr null=ARR(0.);
-  for(uint i=0; i<X.d0; i++){
+  for(uint i=0; i<X.d0; i++) {
     K(i) = gp.cov(gp.kernelP, null, X[i]);
     KD1(i) = gp.covF_D(0, gp.kernelP, null, X[i]);
     KD2(i) = gp.covDD_F(0, 0, gp.kernelP, X[i], null);
@@ -61,15 +61,15 @@ void plotKernel1D(GaussianProcess& gp, double lo, double hi, bool pause){
   plot(pause);
 }
 
-void plotKernel2D(GaussianProcess& gp, double lo, double hi, bool pause){
+void plotKernel2D(GaussianProcess& gp, double lo, double hi, bool pause) {
   arr X, K, KD1, KD2;
   X.setGrid(2, lo, hi, 1000);
   K.resize(X.d0, X.d1);
   KD1.resize(X.d0, X.d1);
   KD2.resize(X.d0, X.d1);
   arr null=ARR(0.);
-  for(uint i=0; i<X.d0; i++){
-    for(uint j=0; j<X.d1; j++){
+  for(uint i=0; i<X.d0; i++) {
+    for(uint j=0; j<X.d1; j++) {
       K(i, j) = gp.cov(gp.kernelP, null, X[i]);
       KD1(i, j) = gp.covF_D(0, gp.kernelP, null, X[i]);
       KD2(i, j) = gp.covDD_F(0, 0, gp.kernelP, X[i], null);

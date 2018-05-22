@@ -224,7 +224,6 @@ void TEST(ModuleSorter2){
 
 //==============================================================================
 
-
 void PairSorter::step(){
   int xa = a.get();
   int xb = b.get();//->get_x(this);
@@ -246,7 +245,6 @@ void PairSorter::step(){
 //
 // logging with threads
 //
-
 
 // Normal Thread struct
 struct MyLogThread: Thread{

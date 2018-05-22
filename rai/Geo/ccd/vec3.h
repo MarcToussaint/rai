@@ -28,7 +28,6 @@
 extern "C" {
 #endif /* __cplusplus */
 
-
 #ifndef CCD_SINGLE
 # ifndef CCD_DOUBLE
 #  error You must define CCD_SINGLE or CCD_DOUBLE
@@ -89,7 +88,6 @@ struct _ccd_vec3_t {
 };
 typedef struct _ccd_vec3_t ccd_vec3_t;
 
-
 /**
  * Holds origin (0,0,0) - this variable is meant to be read-only!
  */
@@ -107,7 +105,6 @@ _ccd_inline int ccdSign(ccd_real_t val);
 _ccd_inline int ccdIsZero(ccd_real_t val);
 /** Returns true if a and b equal. **/
 _ccd_inline int ccdEq(ccd_real_t a, ccd_real_t b);
-
 
 #define CCD_VEC3_STATIC(x, y, z) \
     { { (x), (y), (z) } }
@@ -133,7 +130,6 @@ _ccd_inline ccd_real_t ccdVec3Len2(const ccd_vec3_t *v);
  * Returns distance between a and b.
  */
 _ccd_inline ccd_real_t ccdVec3Dist2(const ccd_vec3_t *a, const ccd_vec3_t *b);
-
 
 _ccd_inline void ccdVec3Set(ccd_vec3_t *v, ccd_real_t x, ccd_real_t y, ccd_real_t z);
 
@@ -167,7 +163,6 @@ _ccd_inline void ccdVec3Scale(ccd_vec3_t *d, ccd_real_t k);
  */
 _ccd_inline void ccdVec3Normalize(ccd_vec3_t *d);
 
-
 /**
  * Dot product of two vectors.
  */
@@ -177,7 +172,6 @@ _ccd_inline ccd_real_t ccdVec3Dot(const ccd_vec3_t *a, const ccd_vec3_t *b);
  * Cross product: d = a x b.
  */
 _ccd_inline void ccdVec3Cross(ccd_vec3_t *d, const ccd_vec3_t *a, const ccd_vec3_t *b);
-
 
 /**
  * Returns distance^2 of point P to segment ab.
@@ -199,7 +193,6 @@ _ccd_export ccd_real_t ccdVec3PointTriDist2(const ccd_vec3_t *P,
                                             const ccd_vec3_t *b,
                                             const ccd_vec3_t *c,
                                             ccd_vec3_t *witness);
-
 
 /**** INLINES ****/
 _ccd_inline int ccdSign(ccd_real_t val)
@@ -234,7 +227,6 @@ _ccd_inline int ccdEq(ccd_real_t _a, ccd_real_t _b)
         return ab < CCD_EPS * a;
     }
 }
-
 
 _ccd_inline ccd_real_t ccdVec3X(const ccd_vec3_t *v)
 {

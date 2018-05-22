@@ -34,7 +34,6 @@ void TEST(String){
   CHECK_EQ(tmp,"a=1.2", "");
   cout <<tmp <<'|' <<endl;
 
-
   for(uint i=0;i<100;i++){
     tmp.setRandom();
     tmp <<"3";

@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -21,7 +21,6 @@
  a substution lists values of all variables in a substitution_scope
 
  ['all variables in a substitution_scope' are all the declared symbols in that graph]
-
 
  */
 
@@ -62,7 +61,7 @@ bool substitutedRulePreconditionHolds(Graph& KB, Node *rule, const NodeL& subst,
 Node *createNewFact(Graph& facts, const NodeL& symbols);
 Node *createNewSubstitutedLiteral(Graph& facts, Node* literal, const NodeL& subst, Graph* subst_scope);
 bool applySubstitutedLiteral(Graph& facts, Node*  literal, const NodeL& subst, Graph* subst_scope, Graph& changes=NoGraph);
-bool applyEffectLiterals    (Graph& facts, NodeL& effects, const NodeL& subst, Graph* subst_scope, Graph& changes=NoGraph);
+bool applyEffectLiterals(Graph& facts, NodeL& effects, const NodeL& subst, Graph* subst_scope, Graph& changes=NoGraph);
 
 //------------ fwd chaining
 
@@ -78,6 +77,5 @@ double evaluateFunction(Graph& func, Graph& state, int verbose=0);
 
 //struct FOL: Graph{
 //  Graph& state;
-
 
 //};

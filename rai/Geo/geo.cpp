@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -56,7 +56,7 @@ void Vector::setRandom(double range) { x=rnd.uni(-range, range); y=rnd.uni(-rang
 
 /// this=this/length(this)
 void Vector::normalize() {
-  if(isZero){
+  if(isZero) {
     RAI_MSG("can't normalize length of null vector");
     return;
   }
@@ -139,7 +139,7 @@ double Vector::phi() const {
 double Vector::theta() const { return ::atan(z/radius())+RAI_PI/2.; }
 
 Vector Vector::getNormalVectorNormalToThis() const {
-  if(isZero){
+  if(isZero) {
     RAI_MSG("every vector is normal to a zero vector");
   }
   arr s = ARR(fabs(x), fabs(y), fabs(z));
@@ -486,7 +486,7 @@ void Quaternion::multiply(double f) {
   x*=f; y*=f; z*=f;
 }
 
-double Quaternion::normalization() const{
+double Quaternion::normalization() const {
   return sqrt(w*w + x*x + y*y + z*z);
 }
 
@@ -514,60 +514,60 @@ void Quaternion::alignWith(const Vector& v) {
   normalize();
 }
 
-void Quaternion::addX(double angle){
-  if(!angle){ return; }
+void Quaternion::addX(double angle) {
+  if(!angle) { return; }
   angle/=2.;
   double cw=cos(angle);
   double cx=sin(angle);
-
+  
   Quaternion a;
   a.w = w*cw - x*cx;
   a.x = w*cx + x*cw;
   a.y = y*cw + z*cx;
   a.z = z*cw - y*cx;
-
+  
   set(a.w, a.x, a.y, a.z);
 }
 
-void Quaternion::addY(double angle){
-  if(!angle){ return; }
+void Quaternion::addY(double angle) {
+  if(!angle) { return; }
   angle/=2.;
   double cw=cos(angle);
   double cy=sin(angle);
-
+  
   Quaternion a;
   a.w = w*cw - y*cy;
   a.x = x*cw - z*cy;
   a.y = w*cy + y*cw;
   a.z = z*cw + x*cy;
-
+  
   set(a.w, a.x, a.y, a.z);
 }
 
-void Quaternion::addZ(double radians){
-  if(!radians){ return; }
+void Quaternion::addZ(double radians) {
+  if(!radians) { return; }
   radians/=2.;
   double cw=cos(radians);
   double cz=sin(radians);
-
+  
   Quaternion a;
   a.w = w*cw - z*cz;
   a.x = x*cw + y*cz;
   a.y = y*cw - x*cz;
   a.z = w*cz + z*cw;
-
+  
   set(a.w, a.x, a.y, a.z);
 }
 
-void Quaternion::append(const Quaternion& q){
+void Quaternion::append(const Quaternion& q) {
   if(q.isZero) return;
   double aw = w*q.w;
   double ax = x*q.w;
   double ay = y*q.w;
   double az = z*q.w;
-  if(q.x){ aw -= x*q.x;  ax += w*q.x;  ay += z*q.x;  az -= y*q.x; }
-  if(q.y){ aw -= y*q.y;  ax -= z*q.y;  ay += w*q.y;  az += x*q.y; }
-  if(q.z){ aw -= z*q.z;  ax += y*q.z;  ay -= x*q.z;  az += w*q.z; }
+  if(q.x) { aw -= x*q.x;  ax += w*q.x;  ay += z*q.x;  az -= y*q.x; }
+  if(q.y) { aw -= y*q.y;  ax -= z*q.y;  ay += w*q.y;  az += x*q.y; }
+  if(q.z) { aw -= z*q.z;  ax += y*q.z;  ay -= x*q.z;  az += w*q.z; }
   w=aw; x=ax; y=ay; z=az; isZero=false;
 }
 
@@ -611,9 +611,9 @@ void Quaternion::setInterpolate(double t, const Quaternion& a, const Quaternion 
 }
 
 /// euclidean addition (with weights) modulated by scalar product -- leaves you with UNNORMALIZED quaternion
-void Quaternion::add(const Quaternion b, double w_b, double w_this){
+void Quaternion::add(const Quaternion b, double w_b, double w_this) {
   if(quatScalarProduct(*this, b)<0.) w_b *= -1.;
-  if(w_this!=-1.){
+  if(w_this!=-1.) {
     w *= w_this;
     x *= w_this;
     y *= w_this;
@@ -633,7 +633,7 @@ void Quaternion::setDeg(double degree, const Vector& vec) { setRad(degree*RAI_PI
 
 /// assigns the rotation to \c a RADIANTS (2*PI-units) around the vector (x, y, z)
 void Quaternion::setRad(double angle, double _x, double _y, double _z) {
-  if(!angle){ setZero(); return; }
+  if(!angle) { setZero(); return; }
   double l = _x*_x + _y*_y + _z*_z;
   if(l<1e-15) { setZero(); return; }
   angle/=2.;
@@ -652,7 +652,7 @@ void Quaternion::setRad(double angle, const Vector &axis) {
 
 /// assigns the rotation to \c a RADIANTS (2*PI-units) around the current axis
 void Quaternion::setRad(double angle) {
-  if(!angle){ setZero(); return; }
+  if(!angle) { setZero(); return; }
   double l = x*x + y*y + z*z;
   if(l<1e-15) { setZero(); return; }
   angle/=2.;
@@ -666,7 +666,7 @@ void Quaternion::setRad(double angle) {
 
 /// rotation around X-axis by given radiants
 void Quaternion::setRadX(double angle) {
-  if(!angle){ setZero(); return; }
+  if(!angle) { setZero(); return; }
   angle/=2.;
   w=cos(angle);
   x=sin(angle);
@@ -676,7 +676,7 @@ void Quaternion::setRadX(double angle) {
 
 /// rotation around Y-axis by given radiants
 void Quaternion::setRadY(double angle) {
-  if(!angle){ setZero(); return; }
+  if(!angle) { setZero(); return; }
   angle/=2.;
   w=cos(angle);
   y=sin(angle);
@@ -686,7 +686,7 @@ void Quaternion::setRadY(double angle) {
 
 /// rotation around Z-axis by given radiants
 void Quaternion::setRadZ(double angle) {
-  if(!angle){ setZero(); return; }
+  if(!angle) { setZero(); return; }
   angle/=2.;
   w=cos(angle);
   z=sin(angle);
@@ -728,9 +728,9 @@ void Quaternion::setDiff(const Vector& from, const Vector& to) {
   Vector b = to/to.length();
   double scalarProduct = a*b;
   double phi=acos(scalarProduct);
-  if(!phi){ setZero(); return; }
+  if(!phi) { setZero(); return; }
   Vector axis(a^b);
-  if(axis.length()<1e-10){ //a and b are co-linear -> rotate around any! axis orthogonal to a or b
+  if(axis.length()<1e-10) { //a and b are co-linear -> rotate around any! axis orthogonal to a or b
     axis = Vector_x^b; //try x
     if(axis.length()<1e-10) axis = Vector_y^b; //try y
   }
@@ -749,7 +749,7 @@ void Quaternion::checkZero() const {
 }
 
 /// return the squared-error between two quads, modulo flipping
-double Quaternion::sqrDiff(const Quaternion& _q2) const{
+double Quaternion::sqrDiff(const Quaternion& _q2) const {
   arr q1(&w, 4, true);
   arr q2(&_q2.w, 4, true);
   if(scalarProduct(q1,q2)>=0) return sumOfSqr(q1-q2);
@@ -905,10 +905,10 @@ double* Quaternion::getMatrixGL(double* m) const {
 }
 
 /// this is a 3-by-4 matrix $J$, giving the angular velocity vector $w = J \dot q$  induced by a $\dot q$
-arr Quaternion::getJacobian() const{
+arr Quaternion::getJacobian() const {
   arr J(3,4);
   rai::Quaternion e;
-  for(uint i=0;i<4;i++){
+  for(uint i=0; i<4; i++) {
     if(i==0) e.set(1.,0.,0.,0.);
     if(i==1) e.set(0.,1.,0.,0.);
     if(i==2) e.set(0.,0.,1.,0.);
@@ -922,21 +922,25 @@ arr Quaternion::getJacobian() const{
 }
 
 /// this is a 4x(3x3) matrix, such that ~(J*x) is the jacobian of (R*x), and ~qdelta*J is (del R/del q)(qdelta)
-arr Quaternion::getMatrixJacobian() const{
+arr Quaternion::getMatrixJacobian() const {
   arr J(4,9); //transpose!
   double r0=w, r1=x, r2=y, r3=z;
   J[0] = {      0,    -r3,     r2,
-               r3,      0,    -r1,
-              -r2,     r1,      0 };
+                r3,      0,    -r1,
+                -r2,     r1,      0
+         };
   J[1] = {      0,     r2,     r3,
-               r2, -2.*r1,    -r0,
-               r3,     r0, -2.*r1 };
+                r2, -2.*r1,    -r0,
+                r3,     r0, -2.*r1
+         };
   J[2] = { -2.*r2,     r1,    r0,
-               r1,      0,     r3,
-              -r0,     r3, -2.*r2 };
+           r1,      0,     r3,
+           -r0,     r3, -2.*r2
+         };
   J[3] = { -2.*r3,    -r0,     r1,
-               r0, -2.*r3,     r2,
-               r1,     r2,      0};
+           r0, -2.*r3,     r2,
+           r1,     r2,      0
+         };
   J *= 2.;
   J.reshape(4,3,3);
   return J;
@@ -970,9 +974,9 @@ Quaternion operator*(const Quaternion& b, const Quaternion& c) {
   a.x = b.x*c.w;
   a.y = b.y*c.w;
   a.z = b.z*c.w;
-  if(c.x){ a.w -= b.x*c.x;  a.x += b.w*c.x;  a.y += b.z*c.x;  a.z -= b.y*c.x; }
-  if(c.y){ a.w -= b.y*c.y;  a.x -= b.z*c.y;  a.y += b.w*c.y;  a.z += b.x*c.y; }
-  if(c.z){ a.w -= b.z*c.z;  a.x += b.y*c.z;  a.y -= b.x*c.z;  a.z += b.w*c.z; }
+  if(c.x) { a.w -= b.x*c.x;  a.x += b.w*c.x;  a.y += b.z*c.x;  a.z -= b.y*c.x; }
+  if(c.y) { a.w -= b.y*c.y;  a.x -= b.z*c.y;  a.y += b.w*c.y;  a.z += b.x*c.y; }
+  if(c.z) { a.w -= b.z*c.z;  a.x += b.y*c.z;  a.y -= b.x*c.z;  a.z += b.w*c.z; }
 #endif
   a.isZero=(a.w==1. || a.w==-1.);
   return a;
@@ -1000,8 +1004,8 @@ Quaternion operator-(const Quaternion& b, const Quaternion& c) {
   return a;
 }
 
-void mult(Vector& a, const Quaternion& b, const Vector& c,bool add){
-  if(c.isZero){
+void mult(Vector& a, const Quaternion& b, const Vector& c,bool add) {
+  if(c.isZero) {
     if(!add) a.setZero();
     return;
   }
@@ -1016,9 +1020,9 @@ void mult(Vector& a, const Quaternion& b, const Vector& c,bool add){
   double q02 = b.w*By;
   double q03 = b.w*Bz;
   if(!add) a.x=a.y=a.z=0.;
-  if(c.x){ a.x += (1.-q22-q33)*c.x; a.y += (q12+q03)*c.x; a.z += (q13-q02)*c.x; }
-  if(c.y){ a.x += (q12-q03)*c.y; a.y += (1.-q11-q33)*c.y; a.z += (q23+q01)*c.y; }
-  if(c.z){ a.x += (q13+q02)*c.z; a.y += (q23-q01)*c.z; a.z += (1.-q11-q22)*c.z; }
+  if(c.x) { a.x += (1.-q22-q33)*c.x; a.y += (q12+q03)*c.x; a.z += (q13-q02)*c.x; }
+  if(c.y) { a.x += (q12-q03)*c.y; a.y += (1.-q11-q33)*c.y; a.z += (q23+q01)*c.y; }
+  if(c.z) { a.x += (q13+q02)*c.z; a.y += (q23-q01)*c.z; a.z += (1.-q11-q22)*c.z; }
   a.isZero = false;
 }
 
@@ -1110,11 +1114,10 @@ Transformation& Transformation::addRelativeTranslation(double x, double y, doubl
   return *this;
 }
 
-Transformation& Transformation::addRelativeTranslation(const Vector& x_rel){
+Transformation& Transformation::addRelativeTranslation(const Vector& x_rel) {
   pos += rot*x_rel;
   return *this;
 }
-
 
 /// rotate the turtle orientation
 void Transformation::addRelativeRotation(const Quaternion& q) {
@@ -1145,11 +1148,11 @@ void Transformation::addRelativeRotationQuat(double w, double x, double y, doubl
     which is interpreted RELATIVE to the current frame
     (new = old * f) */
 void Transformation::appendTransformation(const Transformation& f) {
-  if(!f.pos.isZero){
+  if(!f.pos.isZero) {
     if(rot.isZero) pos += f.pos;
     else mult(pos, rot, f.pos, true);
   }
-  if(!f.rot.isZero){
+  if(!f.rot.isZero) {
     if(rot.isZero) rot = f.rot;
     else rot.append(f.rot);
   }
@@ -1196,7 +1199,7 @@ double* Transformation::getAffineMatrix(double *m) const {
   return m;
 }
 
-arr Transformation::getAffineMatrix() const{
+arr Transformation::getAffineMatrix() const {
   arr T(4,4);
   getAffineMatrix(T.p);
   return T;
@@ -1234,7 +1237,7 @@ double* Transformation::getInverseAffineMatrixGL(double *m) const {
   return m;
 }
 
-arr Transformation::getArr7d(){
+arr Transformation::getArr7d() {
   arr t(7);
   t.p[0]=pos.x;
   t.p[1]=pos.y;
@@ -1246,7 +1249,7 @@ arr Transformation::getArr7d(){
   return t;
 }
 
-arr Transformation::getWrenchTransform(){
+arr Transformation::getWrenchTransform() {
   arr z(3, 3);  z.setZero();
   arr r = skew(pos.getArr()); //(3, 3);  Featherstone::skew(r, &pos.x); skew pos
   arr R = rot.getArr(); //(3, 3);  rot.getMatrix(R.p);
@@ -1256,15 +1259,15 @@ arr Transformation::getWrenchTransform(){
   //cout <<"\nz=" <<z <<"\nr=" <<r <<"\nR=" <<R <<"\nX=" <<X <<endl;
 }
 
-void Transformation::applyOnPointArray(arr& pts) const{
-  if(!((pts.nd==2 && pts.d1==3) || (pts.nd==3 && pts.d2==3))){
+void Transformation::applyOnPointArray(arr& pts) const {
+  if(!((pts.nd==2 && pts.d1==3) || (pts.nd==3 && pts.d2==3))) {
     LOG(-1) <<"wrong pts dimensions for transformation:" <<pts.dim();
     return;
   }
   arr R = ~rot.getArr(); //transposed, only to make it applicable to an n-times-3 array
   arr t = conv_vec2arr(pos);
   pts = pts * R;
-  for(double *p=pts.p, *pstop=pts.p+pts.N; p<pstop; p+=3){
+  for(double *p=pts.p, *pstop=pts.p+pts.N; p<pstop; p+=3) {
     p[0] += pos.x;
     p[1] += pos.y;
     p[2] += pos.z;
@@ -1302,13 +1305,13 @@ void Transformation::read(std::istream& is) {
       is>>x[0]>>x[1]>>x[2]>>x[3]; addRelativeRotationQuat(x[0], x[1], x[2], x[3]);
       break;
     } else switch(c) {
-          //case '<': break; //do nothing -- assume this is an opening tag
+        //case '<': break; //do nothing -- assume this is an opening tag
         case 't': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");       addRelativeTranslation(x[0], x[1], x[2]); break;
         case 'q': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationQuat(x[0], x[1], x[2], x[3]); break;
         case 'r': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationRad(x[0], x[1], x[2], x[3]); break;
         case 'd': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationDeg(x[0], x[1], x[2], x[3]); break;
         case 'E': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")"); addRelativeRotation(Quaternion().setRpy(x[0], x[1], x[2])); break;
-          //case 's': is>>PARSE("(")>>x[0]>>PARSE(")");                   scale(x[0]); break;
+        //case 's': is>>PARSE("(")>>x[0]>>PARSE(")");                   scale(x[0]); break;
         case 'T': break; //old convention
         case '|':
         case '>': is.putback(c); return; //those symbols finish the reading without error
@@ -1349,7 +1352,7 @@ void DynamicTransformation::addRelativeTranslation(double x, double y, double z)
   addRelativeTranslation(Vector(x, y, z));
 }
 
-void DynamicTransformation::addRelativeTranslation(const Vector& x_rel){
+void DynamicTransformation::addRelativeTranslation(const Vector& x_rel) {
   Vector x = rot*x_rel;
   pos+=x;
   if(!zeroVels) vel+=angvel^x;
@@ -1386,14 +1389,13 @@ void DynamicTransformation::addRelativeAngVelocityRad(double wx, double wy, doub
   zeroVels = false;
 }
 
-
 /** @brief transform the turtle into the frame f,
     which is interpreted RELATIVE to the current frame
     (new = f * old) */
 void DynamicTransformation::appendTransformation(const DynamicTransformation& f) {
   if(zeroVels && f.zeroVels) {
-    if(!f.pos.isZero){ if(rot.isZero) pos += f.pos; else pos += rot*f.pos; }
-    if(!f.rot.isZero){ if(rot.isZero) rot = f.rot; else rot = rot*f.rot; }
+    if(!f.pos.isZero) { if(rot.isZero) pos += f.pos; else pos += rot*f.pos; }
+    if(!f.rot.isZero) { if(rot.isZero) rot = f.rot; else rot = rot*f.rot; }
   } else {
     //Vector P(r*(s*f.p)); //relative offset in global coords
     //Vector V(r*(s*f.v)); //relative vel in global coords
@@ -1515,7 +1517,7 @@ void DynamicTransformation::read(std::istream& is) {
       is>>x[0]>>x[1]>>x[2];       addRelativeTranslation(x[0], x[1], x[2]);
       is>>x[0]>>x[1]>>x[2]>>x[3]; addRelativeRotationQuat(x[0], x[1], x[2], x[3]);
     } else switch(c) {
-          //case '<': break; //do nothing -- assume this is an opening tag
+        //case '<': break; //do nothing -- assume this is an opening tag
         case 't': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");       addRelativeTranslation(x[0], x[1], x[2]); break;
         case 'q': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationQuat(x[0], x[1], x[2], x[3]); break;
         case 'r': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationRad(x[0], x[1], x[2], x[3]); break;
@@ -1523,7 +1525,7 @@ void DynamicTransformation::read(std::istream& is) {
         case 'E': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")"); addRelativeRotation(Quaternion().setRpy(x[0], x[1], x[2])); break;
         case 'v': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");       addRelativeVelocity(x[0], x[1], x[2]); break;
         case 'w': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");       addRelativeAngVelocityRad(x[0], x[1], x[2]); break;
-          //case 's': is>>PARSE("(")>>x[0]>>PARSE(")");                   scale(x[0]); break;
+        //case 's': is>>PARSE("(")>>x[0]>>PARSE(")");                   scale(x[0]); break;
         case '|':
         case '>': is.putback(c); return; //those symbols finish the reading without error
         default: RAI_MSG("unknown DynamicTransformation read tag: " <<c <<"abort reading this frame"); is.putback(c); return;
@@ -1544,7 +1546,7 @@ void DynamicTransformation::read(std::istream& is) {
       frame */
 Camera::Camera() {
   setZero();
-
+  
   setPosition(0., 0., 10.);
   focus(0, 0, 0);
   setZRange(.1, 1000.);
@@ -1679,7 +1681,7 @@ double Camera::glConvertToLinearDepth(double d) {
   return d/(zFar/zNear*(1.-d)+1.);
 }
 
-void Camera::setKinect(){
+void Camera::setKinect() {
   setZero();
   setPosition(0., 0., 0.);
   focus(0., 0., 5.);
@@ -1692,7 +1694,7 @@ void Camera::setKinect(){
   whRatio = 640./480.;
 }
 
-void Camera::setDefault(){
+void Camera::setDefault() {
   setHeightAngle(12.);
   setZRange(.1, 1000.);
   setPosition(8., -12., 6.);
@@ -1718,12 +1720,11 @@ std::ostream& operator<<(std::ostream& os, const Matrix& x)    { x.write(os); re
 std::ostream& operator<<(std::ostream& os, const Quaternion& x) { x.write(os); return os; }
 std::ostream& operator<<(std::ostream& os, const Transformation& x)     { x.write(os); return os; }
 
-double sqrDistance(const Vector &a, const Vector &b){
+double sqrDistance(const Vector &a, const Vector &b) {
   return (a-b).lengthSqr();
 }
 
 } //namespace rai
-
 
 //===========================================================================
 //
@@ -1735,8 +1736,6 @@ double sqrDistance(const Vector &a, const Vector &b){
  * Details in inf cylinder section of
  * rai/stanio/concepts/note-analytic-impl-shapes-hessian
  */
-
-
 
 //===========================================================================
 //

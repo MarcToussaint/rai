@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -37,7 +37,7 @@ struct Simulator {
   void setContactMargin(double margin);            //set the collision margin
   void reportProxies();                            //write info on collisions to console
   void anchorKinematicChainIn(const char* bodyName);
-
+  
   //-- DYNAMICS
   //set the joint angles and velocities AND compute the frames and
   //linear & angular velocities of all bodies via
@@ -46,7 +46,7 @@ struct Simulator {
   void getJointAnglesAndVels(arr& q, arr& qdot);
   void getDynamics(arr& M, arr& F); //get the mass matrix and force vector describing the system equation
   double getEnergy();
-
+  
   //-- step dynamic simulation
   void stepDynamics(const arr& Bu, double tau);
   void setDynamicSimulationNoise(double noise);
@@ -55,7 +55,7 @@ struct Simulator {
   //-- PHYSICS
   void stepOde(const arr& qdot, double tau);
   void stepPhysx(const arr& qdot, double tau);
-
+  
   //-- internal
   rai::KinematicWorld& getOrsGraph();
 };
@@ -73,10 +73,9 @@ struct VisionSimulator {
   void projectWorldPointsToImagePoints(arr& x, const arr& X, double noiseInPixel=1.);
 };
 
-
-struct CarSimulator{
-  struct Gaussian{  arr A;  arr a;  };
-
+struct CarSimulator {
+  struct Gaussian {  arr A;  arr a;  };
+  
   double x,y,theta; //this is the true state -- accessing it means cheating...
   double tau,L;
   double dynamicsNoise, observationNoise;
@@ -86,24 +85,22 @@ struct CarSimulator{
   OpenGL *gl;
   
   CarSimulator();
-  void step(const arr& u); 
+  void step(const arr& u);
   //get a (noisy) observation (meassuring landmarks) in the current state
   void getRealNoisyObservation(arr& Y);
-
+  
   //-- access for tracking, where the true landmarks are known (Kalman/particle filter)
   //compute the ideal mean observation if you were in state (x,y,theta): use this to compute Y for a particle and compare with meassured observation
   void getMeanObservationAtState(arr& Y, const arr& X);
   void getObservationJacobianAtState(arr& dy_dx, const arr& X);
-
+  
   //-- access for SLAM, where only estimated landmarks are accessible
   void getMeanObservationAtStateAndLandmarks(arr& Y, const arr& x, const arr& landmarks);
   void getObservationJacobianAtStateAndLandmarks(arr& dy_dx, arr& dy_dlandmarks, const arr& x, const arr& landmarks);
-
+  
   void getLinearObservationModelAtState(arr& C, arr& c, const arr& X);
-
+  
 };
 
-
 #endif
-
 

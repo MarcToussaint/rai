@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -11,17 +11,15 @@
 // variable declarations
 //
 
-
 //-- a basic message type for communication with the soft hand controller
-struct SoftHandMsg{
+struct SoftHandMsg {
   rai::String soft_hand_cmd;
-  SoftHandMsg(){}
+  SoftHandMsg() {}
   SoftHandMsg(const rai::String soft_hand_cmd)
-    :soft_hand_cmd(soft_hand_cmd){}
+    :soft_hand_cmd(soft_hand_cmd) {}
 };
 //inline void operator<<(ostream& os, const CtrlMsg& m){ os<<"BLA"; }
 //inline void operator>>(istream& os, CtrlMsg& m){  }
-
 
 //===========================================================================
 //
@@ -29,8 +27,6 @@ struct SoftHandMsg{
 //
 //===========================================================================
 /// This module only calls ros:spinOnce() in step() and loops full speed -- to sync the process with the ros server
-
-
 
 // Helper function so sync ors with the real PR2
 /**
@@ -56,10 +52,10 @@ struct PerceptionObjects2Ors : Thread {
   Var<rai::KinematicWorld> modelWorld;
   PerceptionObjects2Ors()
     : Thread("PerceptionObjects2Ors"),
-    perceptionObjects(this, "perceptionObjects", true),
-    modelWorld(this, "modelWorld"){}
-  void open(){}
+      perceptionObjects(this, "perceptionObjects", true),
+      modelWorld(this, "modelWorld") {}
+  void open() {}
   void step();
-  void close(){}
+  void close() {}
 };
 

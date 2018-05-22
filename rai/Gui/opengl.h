@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -105,7 +105,6 @@ void glRasterImage(float x, float y, byteA &img, float zoom=1.);
 
 void read_png(byteA &img, const char *file_name, bool swap_rows);
 
-
 //===========================================================================
 //
 // OpenGL class
@@ -135,7 +134,7 @@ struct OpenGL {
   rai::Array<GLClickCall*> clickCalls; ///< list of click callbacks
   rai::Array<GLKeyCall*> keyCalls;     ///< list of click callbacks
   rai::Array<struct CstyleDrawer*> toBeDeletedOnCleanup;
-
+  
   rai::String title;     ///< the window title
   uint width, height;
   rai::Camera camera;     ///< the camera used for projection
@@ -165,7 +164,7 @@ struct OpenGL {
   Signaler isUpdating;
   Signaler watching;
   bool drawMode_idColor=false;
-
+  
   /// @name constructors & destructors
   OpenGL(const char* title="rai::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
   //OpenGL(void *parent, const char* title="rai::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
@@ -178,13 +177,13 @@ struct OpenGL {
   void clear();
   void add(void (*call)(void*), void* classP=NULL);
   void addInit(void (*call)(void*), void* classP=NULL);
-  void add(GLDrawer& c){ dataLock.writeLock(); drawers.append(&c); dataLock.unlock(); }
-  void addDrawer(GLDrawer *c){ dataLock.writeLock(); drawers.append(c); dataLock.unlock(); }
-  void remove(GLDrawer& c){ dataLock.writeLock(); drawers.removeValue(&c); dataLock.unlock(); }
+  void add(GLDrawer& c) { dataLock.writeLock(); drawers.append(&c); dataLock.unlock(); }
+  void addDrawer(GLDrawer *c) { dataLock.writeLock(); drawers.append(c); dataLock.unlock(); }
+  void remove(GLDrawer& c) { dataLock.writeLock(); drawers.removeValue(&c); dataLock.unlock(); }
   //template<class T> void add(const T& x) { add(x.staticDraw, &x); } ///< add a class or struct with a staticDraw routine
-  void addHoverCall(GLHoverCall *c){ hoverCalls.append(c); }
-  void addClickCall(GLClickCall *c){ clickCalls.append(c); }
-  void addKeyCall(GLKeyCall *c){ keyCalls.append(c); }
+  void addHoverCall(GLHoverCall *c) { hoverCalls.append(c); }
+  void addClickCall(GLClickCall *c) { clickCalls.append(c); }
+  void addKeyCall(GLKeyCall *c) { keyCalls.append(c); }
   void addSubView(uint view, void (*call)(void*), void* classP=0);
   void addSubView(uint view, GLDrawer& c);
   void setSubViewTiles(uint cols, uint rows);
@@ -195,7 +194,7 @@ struct OpenGL {
   void Draw(int w, int h, rai::Camera *cam=NULL, bool callerHasAlreadyLocked=false);
   void Select(bool callerHasAlreadyLocked=false);
   void renderInBack(bool captureImg=true, bool captureDepth=false, int w=-1, int h=-1);
-
+  
   /// @name showing, updating, and watching
   int update(const char *text=NULL, bool captureImg=false, bool captureDepth=false, bool waitForCompletedDraw=true);
   int watch(const char *text=NULL);
@@ -216,7 +215,7 @@ struct OpenGL {
   void displayRedBlue(const arr &x, bool wait, float backgroundZoom);
   
   void drawId(uint id);
-
+  
 public: //driver dependent methods
   void openWindow();
   void closeWindow();
@@ -226,13 +225,13 @@ public: //driver dependent methods
   //  Drawable xdraw();
 #endif
   void forceGlutInit();
-
+  
 protected:
   GLEvent lastEvent;
   static uint selectionBuffer[1000];
   
   void init(); //initializes camera etc
-
+  
   //general callbacks (used by all implementations)
   void Key(unsigned char key, int x, int y);
   void Mouse(int button, int updown, int x, int y);
@@ -246,10 +245,9 @@ protected:
   friend bool glClickUI(void *p, OpenGL *gl);
 };
 
-
 //===========================================================================
 
-struct SingleGLAccess{
+struct SingleGLAccess {
 //  Mutex openglMutex;
 //  void lock(){ openglMutex.lock(); }
 //  void unlock(){ openglMutex.unlock(); }

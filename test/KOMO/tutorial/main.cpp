@@ -3,7 +3,6 @@
 #include <KOMO/komo.h>
 #include <Kin/taskMaps.h>
 
-
 //===========================================================================
 
 void tutorialBasics(){

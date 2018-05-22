@@ -31,7 +31,6 @@ struct _ccd_simplex_t {
 };
 typedef struct _ccd_simplex_t ccd_simplex_t;
 
-
 _ccd_inline void ccdSimplexInit(ccd_simplex_t *s);
 _ccd_inline int ccdSimplexSize(const ccd_simplex_t *s);
 _ccd_inline const ccd_support_t *ccdSimplexLast(const ccd_simplex_t *s);
@@ -42,7 +41,6 @@ _ccd_inline void ccdSimplexAdd(ccd_simplex_t *s, const ccd_support_t *v);
 _ccd_inline void ccdSimplexSet(ccd_simplex_t *s, size_t pos, const ccd_support_t *a);
 _ccd_inline void ccdSimplexSetSize(ccd_simplex_t *s, int size);
 _ccd_inline void ccdSimplexSwap(ccd_simplex_t *s, size_t pos1, size_t pos2);
-
 
 /**** INLINES ****/
 

@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -22,10 +22,10 @@ struct F_Link {
   double mass=0.;
   rai::Matrix inertia=0;
   uint dof();
-
+  
   arr _h, _Q, _I, _f; //featherstone types
-
-  F_Link(){}
+  
+  F_Link() {}
   void setFeatherstones();
   void updateFeatherstones();
   void write(ostream& os) const {
@@ -39,21 +39,20 @@ stdOutPipe(F_Link)
 
 typedef rai::Array<F_Link> F_LinkTree;
 
-struct FeatherstoneInterface{
+struct FeatherstoneInterface {
   rai::KinematicWorld& K;
-
+  
   rai::Array<F_Link> tree;
-
-  FeatherstoneInterface(rai::KinematicWorld& K):K(K){}
-
+  
+  FeatherstoneInterface(rai::KinematicWorld& K):K(K) {}
+  
   void update();
-
+  
   void equationOfMotion(arr& M, arr& F,  const arr& qd);
   void fwdDynamics_MF(arr& qdd, const arr& qd, const arr& u);
   void fwdDynamics_aba_nD(arr& qdd, const arr& qd, const arr& tau);
   void fwdDynamics_aba_1D(arr& qdd, const arr& qd, const arr& tau);
   void invDynamics(arr& tau, const arr& qd, const arr& qdd);
 };
-
 
 #endif

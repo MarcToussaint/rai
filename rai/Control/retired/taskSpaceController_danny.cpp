@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -9,7 +9,6 @@
 #include "taskSpaceController.h"
 
 #include <Algo/spline.h>
-
 
 LinTaskSpaceAccLaw::LinTaskSpaceAccLaw(TaskMap* map, rai::KinematicWorld* world, rai::String name) : map(map), world(world), name(name) {
   this->setRef(); //TODO: is this the best way?
@@ -52,7 +51,6 @@ void LinTaskSpaceAccLaw::setSpline(rai::Spline *yS, rai::Spline *yDotS, rai::Spl
   this->trajectoryDotSpline = yDotS;
   this->trajectoryDDotSpline = yDDotS;
 }
-
 
 void LinTaskSpaceAccLaw::setTargetEvalSpline(double s) {
   //TODO: here I tried to use velocities and accerlerations of the spline to feed it into the controller.
@@ -133,8 +131,6 @@ double LinTaskSpaceAccLaw::getCosts() {
   return ~yAct*this->C*yAct; //this is murks!!!!!!!!!!!!!! TODO
 }
 
-
-
 void ConstrainedTaskLaw::setForce(arr force) {
   this->force = force;
 }
@@ -159,8 +155,6 @@ double ConstrainedTaskLaw::getGamma() {
   return this->gamma;
 }
 
-
-
 void TaskSpaceController::addLinTaskSpaceAccLaw(LinTaskSpaceAccLaw* law) {
   this->taskSpaceAccLaws.append(law);
 }
@@ -173,22 +167,22 @@ void TaskSpaceController::addConstrainedTaskLaw(ConstrainedTaskLaw* law) {
 void TaskSpaceController::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0) {
   arr M, F;
   world->equationOfMotion(M, F, this->gravity);
-
+  
   arr q0, q, qDot;
   world->getJointState(q,qDot);
-
+  
   //arr H = /*diag(this->world->getHmetric());//*/0.1*eye(this->world->getJointStateDimension());
   //M = H;
   //F = zeros(this->world->getJointStateDimension());
-
+  
   arr H = inverse(M); //TODO: Other metrics (have significant influence)
-
+  
   arr A = ~M*H*M; //TODO: The M matrix is symmetric, isn't it? And also symmetric? Furthermore, if H = M^{-1}, this should be calculated more efficiently
   arr a = zeros(this->world->getJointStateDimension());//M*eye(this->world->getJointStateDimension())*5.0*(-qDot);// //TODO: other a possible
   u0 = ~M*H*(a-F);
   arr y, J;
   arr tempKp, tempKd;
-
+  
   q0 = q;
   Kp = zeros(this->world->getJointStateDimension(),this->world->getJointStateDimension());
   Kd = zeros(this->world->getJointStateDimension(),this->world->getJointStateDimension());
@@ -208,7 +202,6 @@ void TaskSpaceController::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0)
   Kd = M*invA*Kd;
   u0 = M*invA*u0 + F;
 }
-
 
 void TaskSpaceController::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma) {
   if(this->constrainedTaskLaws.N > 0) {
@@ -233,7 +226,6 @@ void TaskSpaceController::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, 
     gamma = 0.0;
   }
 }
-
 
 #if 0
 void TaskSpaceController::generateTaskSpaceTrajectoryFromJointSpace(arr jointSpaceTrajectory) {
@@ -271,7 +263,7 @@ void TaskSpaceController::generateTaskSpaceTrajectoryFromJointSpace(arr jointSpa
       }
       law->trajectory.append(y);
     }
-
+    
     if(law->getTrajectoryActive()) {
       this->world->setJointState(jointSpaceTrajectory[0]);
       law->getPhi(y0, NoArr);
@@ -282,7 +274,7 @@ void TaskSpaceController::generateTaskSpaceTrajectoryFromJointSpace(arr jointSpa
       yDot = law->getDotRef();
     }
     law->trajectoryDot.append(yDot);
-
+    
     for(uint i = 1; i < trajSteps-1; i++) {
       if(law->getTrajectoryActive()) {
         this->world->setJointState(jointSpaceTrajectory[i-1]);
@@ -295,13 +287,13 @@ void TaskSpaceController::generateTaskSpaceTrajectoryFromJointSpace(arr jointSpa
       }
       law->trajectoryDot.append(yDot);
     }
-
+    
     if(law->getTrajectoryActive()) {
       this->world->setJointState(jointSpaceTrajectory[jointSpaceTrajectory.d0-2]);
       law->getPhi(y0, NoArr);
       this->world->setJointState(jointSpaceTrajectory[jointSpaceTrajectory.d0-1]);
       law->getPhi(y1, NoArr);
-
+      
       yDot = (y1-y0)/0.1;
     } else {
       yDot = law->getDotRef();
@@ -319,7 +311,7 @@ void TaskSpaceController::generateTaskSpaceTrajectoryFromJointSpace(const arr& j
   uint trajSteps = jointSpaceTrajectory.d0;
   arr qOld, qDotOld, y, yDot, yDDot;
   this->world->getJointState(qOld, qDotOld);
-
+  
   for(uint i = 0; i < trajSteps; i++) {
     this->world->setJointState(jointSpaceTrajectory[i]);
     for(LinTaskSpaceAccLaw* law : this->taskSpaceAccLaws) {

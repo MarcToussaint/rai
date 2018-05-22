@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -18,7 +18,7 @@ extern const char* MethodName[];
 // Solvers
 //
 
-struct OptConstrained{
+struct OptConstrained {
   LagrangianProblem L;
   OptNewton newton;
   arr &dual;
@@ -26,7 +26,7 @@ struct OptConstrained{
   uint its=0;
   bool earlyPhase=false;
   ofstream *fil=NULL;
-
+  
   OptConstrained(arr& x, arr &dual, ConstrainedProblem& P, OptOptions opt=NOOPT);
   ~OptConstrained();
   bool step();
@@ -35,22 +35,21 @@ struct OptConstrained{
 };
 
 //TODO: remove:
-inline uint optConstrained(arr& x, arr &dual, ConstrainedProblem& P, OptOptions opt=NOOPT){
+inline uint optConstrained(arr& x, arr &dual, ConstrainedProblem& P, OptOptions opt=NOOPT) {
   return OptConstrained(x, dual, P, opt).run();
 }
-
 
 //==============================================================================
 //
 // evaluating
 //
 
-inline void evaluateConstrainedProblem(const arr& x, ConstrainedProblem& P, std::ostream& os){
+inline void evaluateConstrainedProblem(const arr& x, ConstrainedProblem& P, std::ostream& os) {
   arr phi_x;
   ObjectiveTypeA tt_x;
   P.phi(phi_x, NoArr, NoArr, tt_x, x, NoArr);
   double Ef=0., Eh=0., Eg=0.;
-  for(uint i=0;i<phi_x.N;i++){
+  for(uint i=0; i<phi_x.N; i++) {
     if(tt_x(i)==OT_f) Ef += phi_x(i);
     if(tt_x(i)==OT_sumOfSqr) Ef += rai::sqr(phi_x(i));
     if(tt_x(i)==OT_ineq && phi_x(i)>0.) Eg += phi_x(i);
@@ -58,7 +57,6 @@ inline void evaluateConstrainedProblem(const arr& x, ConstrainedProblem& P, std:
   }
   os <<"f=" <<Ef <<" sum([g>0]g)="<<Eg <<" sum(|h|)=" <<Eh <<endl;
 }
-
 
 //==============================================================================
 //
@@ -68,9 +66,9 @@ inline void evaluateConstrainedProblem(const arr& x, ConstrainedProblem& P, std:
 // to the phase one problem of another constraint problem
 //
 
-struct PhaseOneProblem : ConstrainedProblem{
+struct PhaseOneProblem : ConstrainedProblem {
   ConstrainedProblem &f_orig;
-
+  
   PhaseOneProblem(ConstrainedProblem &f_orig):f_orig(f_orig) {}
   void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x, arr& lambda);
 };

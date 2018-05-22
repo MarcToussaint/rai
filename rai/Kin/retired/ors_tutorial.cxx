@@ -1,20 +1,10 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2012 Marc Toussaint
-    email: mtoussai@cs.tu-berlin.de
-    
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
 
 /**
  * @file
@@ -25,7 +15,6 @@
  * @{
  */
 
-
 #include <Gui/opengl.h>
 #include <Plot/plot.h>
 #include "kin.h"
@@ -33,7 +22,6 @@
 #include "kin_actionInterface.h"
 #include <sstream>
 #include <limits.h>
-
 
 // huepfen der bloecke, falls sie zb runterfallen
 #define ODE_COLL_BOUNCE 0.0
@@ -49,8 +37,7 @@
 #define DROP_TARGET_NOISE 0.11
 #define SEC_ACTION_ABORT 500
 
-
-inline const char* getObjectString (uint ID) {
+inline const char* getObjectString(uint ID) {
   std::stringstream ss;
   ss << "o" << ID;
   return ss.str().c_str();
@@ -58,33 +45,33 @@ inline const char* getObjectString (uint ID) {
 
 arr q0,W;
 
-void drawEnv(void*){
+void drawEnv(void*) {
   glStandardLight(NULL);
   glDrawFloor(4.,1,1,1);
 }
 
-void oneStep(const arr &q,rai::KinematicWorld *C,OdeModule *ode,SwiftInterface *swift){
+void oneStep(const arr &q,rai::KinematicWorld *C,OdeModule *ode,SwiftInterface *swift) {
   C->setJointState(q);
 #ifdef RAI_ODE
-  if(ode){
+  if(ode) {
     ode->exportStateToOde(*C);
     ode->step(.01);
     ode->importStateFromOde(*C);
     //ode->importProxiesFromOde(*C);
-	//C->getJointState(q);
+    //C->getJointState(q);
   }
 #endif
-  if(swift){
+  if(swift) {
     swift->computeProxies(*C);
-  }else{
+  } else {
 #ifdef RAI_ODE
     if(ode) ode->importProxiesFromOde(*C);
 #endif
   }
-		
+  
 }
 
-void controlledStep(arr &q,arr &W,rai::KinematicWorld *C,OdeModule *ode,SwiftInterface *swift,TaskVariableList& TVs){
+void controlledStep(arr &q,arr &W,rai::KinematicWorld *C,OdeModule *ode,SwiftInterface *swift,TaskVariableList& TVs) {
   static arr dq;
   updateState(TVs);
   updateChanges(TVs); //computeXchangeWithAttractor(globalSpace);
@@ -93,7 +80,7 @@ void controlledStep(arr &q,arr &W,rai::KinematicWorld *C,OdeModule *ode,SwiftInt
   oneStep(q,C,ode,swift);
 }
 
-ActionInterface::ActionInterface(){
+ActionInterface::ActionInterface() {
   C=0;
   gl=0;
   ode=0;
@@ -102,11 +89,11 @@ ActionInterface::ActionInterface(){
   Tabort = SEC_ACTION_ABORT;
 }
 
-ActionInterface::~ActionInterface(){
+ActionInterface::~ActionInterface() {
   shutdownAll();
 }
 
-void ActionInterface::shutdownAll(){
+void ActionInterface::shutdownAll() {
   if(C) delete C;          C=0;
   if(gl) delete gl;        gl=0;
 #ifdef RAI_ODE
@@ -115,33 +102,33 @@ void ActionInterface::shutdownAll(){
   if(swift) delete swift;  swift=0;
 }
 
-void ActionInterface::loadConfiguration(const char* ors_filename){
-  
+void ActionInterface::loadConfiguration(const char* ors_filename) {
+
   char *path,*name,cwd[200];
   rai::decomposeFilename(path,name,ors_filename);
   getcwd(cwd,200);
   chdir(path);
-
+  
   if(C) delete C;
   C = new rai::KinematicWorld();
   *C <<FILE(name);
   //C->reconfigureRoot(C->getName("rfoot"));
-
+  
   chdir(cwd);
-
+  
   C->getJointState(q0);
   
   //compute generic q-metric depending on tree depth
   uint i;
   arr BM(C->bodies.N);
   BM=1.;
-  for(i=BM.N;i--;){
-    if(C->bodies(i)->outLinks.N){
+  for(i=BM.N; i--;) {
+    if(C->bodies(i)->outLinks.N) {
       BM(i) += BM(C->bodies(i)->outLinks(0)->to->index);
     }
   }
   arr Wdiag(q0.N);
-  for(i=0;i<q0.N;i++) Wdiag(i)=BM(C->joints(i)->to->index);
+  for(i=0; i<q0.N; i++) Wdiag(i)=BM(C->joints(i)->to->index);
   //cout <<Wdiag;
   //Wdiag <<"[20 20 20 10 10 10 10 1 1 1 1 10 10 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 20 20 10 10 10 10 10 10 ]";
   W.setDiag(Wdiag);
@@ -150,15 +137,15 @@ void ActionInterface::loadConfiguration(const char* ors_filename){
   noObjects = 0;
   // assuming that all objects start with "o"
   std::stringstream ss;
-  for (i=1;;i++) {
+  for(i=1;; i++) {
     ss.str("");
     ss << "o" << i;
     rai::Body *n = C->getBodyByName(ss.str().c_str());
-    if (n==0)
+    if(n==0)
       break;
     noObjects++;
   }
-
+  
   if(gl) return;
   gl=new OpenGL;
   gl->add(drawEnv,0);
@@ -172,7 +159,7 @@ void ActionInterface::loadConfiguration(const char* ors_filename){
   gl->update();
 }
 
-void ActionInterface::watch(){
+void ActionInterface::watch() {
   gl->text.clear() <<"watch" <<endl;
   gl->watch();
 }
@@ -183,7 +170,7 @@ void ActionInterface::startOde(double ode_coll_bounce, double ode_coll_erp, doub
   if(ode) delete ode;
   ode = new OdeModule;
 #endif
-
+  
   // SIMULATOR PARAMETER
 #ifdef RAI_ODE
   ode->coll_bounce = ode_coll_bounce; // huepfen der bloecke, falls sie zb runterfallen
@@ -194,10 +181,10 @@ void ActionInterface::startOde(double ode_coll_bounce, double ode_coll_erp, doub
 #endif
 }
 
-void ActionInterface::startSwift(){
+void ActionInterface::startSwift() {
   if(swift) delete swift;
   swift = new SwiftInterface;
-
+  
   swift->init(*C);
 }
 
@@ -208,21 +195,21 @@ void ActionInterface::startSwift(){
   createSwift(*C,*swift);
 }*/
 
-void ActionInterface::startIBDS(){
+void ActionInterface::startIBDS() {
   NIY;
 }
 
-void ActionInterface::simulate(uint t){
+void ActionInterface::simulate(uint t) {
   arr q;
   C->getJointState(q);
-  for(;t--;){
+  for(; t--;) {
     oneStep(q,C,ode,swift);
     gl->text.clear() <<"simulation -- time " <<t <<endl;
     gl->update();
   }
 }
 
-void ActionInterface::relaxPosition(){
+void ActionInterface::relaxPosition() {
   arr q,dq;
   C->getJointState(q);
   
@@ -239,15 +226,15 @@ void ActionInterface::relaxPosition(){
 //   c.y_prec=10000.;
 //   c.state_tol=.005;
 //   if(!swift) c.active=false;
-  
+
   uint t;
-  for(t=0;t<Tabort;t++){
+  for(t=0; t<Tabort; t++) {
     controlledStep(q,W,C,ode,swift,TVs);
     gl->text.clear() <<"relaxPosition --  time " <<t <<endl;
     gl->update();
     if(x.state==1) break;
   }
-  if(t==Tabort){ indicateFailure(); return; }
+  if(t==Tabort) { indicateFailure(); return; }
 }
 
 // void ActionInterface::catchObject(const char *man_id,const char *obj_id){
@@ -255,7 +242,7 @@ void ActionInterface::relaxPosition(){
 //   x.setGainsAsAttractor(20,.2);
 //   x.y_prec=1000.;
 //   rai::KinematicWorld::node obj=C->getName(obj_id);
-//   
+//
 //   uint t;
 //   arr q,dq;
 //   C->getJointState(q);
@@ -266,19 +253,19 @@ void ActionInterface::relaxPosition(){
 //     gl->update();
 //     if(x.state==1 || C->getContact(x.i,obj->index)) break;
 //   }
-//   
+//
 //   C->glueBodies(C->bodies(x.i),obj);
 // }
-// 
+//
 // void ActionInterface::catchObject(uint ID) {
 //   catchObject("fing1c", convertObjectID2name(ID));
 // }
-// 
+//
 // void ActionInterface::catchObject(const char* obj) {
 //   catchObject("fing1c", obj);
 // }
 
-void ActionInterface::moveTo(const char *man_id,const arr& target){
+void ActionInterface::moveTo(const char *man_id,const arr& target) {
   TaskVariable x("endeffector",*C,posTVT,man_id,0,0,0,arr());
   x.setGainsAsAttractor(20,.2);
   x.y_prec=1000.;
@@ -286,19 +273,19 @@ void ActionInterface::moveTo(const char *man_id,const arr& target){
   uint t;
   arr q,dq;
   C->getJointState(q);
-  for(t=0;t<Tabort;t++){
+  for(t=0; t<Tabort; t++) {
     x.y_target=target;
     controlledStep(q,W,C,ode,swift,TVs);
     gl->text.clear() <<"catchObject --  time " <<t <<endl;
     gl->update();
     if(x.state==1) break;
   }
-  if(t==Tabort){ indicateFailure(); return; }
+  if(t==Tabort) { indicateFailure(); return; }
 }
 
-void ActionInterface::grab(const char *man_id,const char *obj_id){
+void ActionInterface::grab(const char *man_id,const char *obj_id) {
   rai::Body *obj=C->getBodyByName(obj_id);
-	
+  
   TaskVariable x("endeffector",*C,posTVT,man_id,0,0,0,arr());
   x.setGainsAsAttractor(20,.2);
   x.y_prec=1000.;
@@ -308,11 +295,11 @@ void ActionInterface::grab(const char *man_id,const char *obj_id){
 //   c.y_prec=10000.;
 //   c.state_tol=.005;
 //   if(!swift) c.active=false;
-  
+
   // (1) drop object if one is in hand
   rai::Joint *e;
   uint i;
-  for_list(Type, e, C->bodies(x.i)->outLinks){
+  for_list(Type, e, C->bodies(x.i)->outLinks) {
     NIY;
     //C->del_edge(e);
   }
@@ -321,25 +308,25 @@ void ActionInterface::grab(const char *man_id,const char *obj_id){
   uint t;
   arr q,dq;
   C->getJointState(q);
-  for(t=0;t<Tabort;t++){
+  for(t=0; t<Tabort; t++) {
     x.y_target.setCarray(obj->X.pos.p,3);
     controlledStep(q,W,C,ode,swift,TVs);
     gl->text.clear() <<"catchObject --  time " <<t <<endl;
     gl->update();
     if(x.state==1 || C->getContact(x.i,obj->index)) break;
   }
-  if(t==Tabort){ indicateFailure(); return; }
-		
+  if(t==Tabort) { indicateFailure(); return; }
+  
   // (3) grasp if not table or world
-  if(obj->index!=getTableID()){
+  if(obj->index!=getTableID()) {
     C->glueBodies(C->bodies(x.i),obj);
-  }else{
+  } else {
     //indicateFailure()?
   }
-
+  
   // (4) move upwards (to avoid collisions)
   x.state_tol=.05;
-  for(t=0;t<Tabort;t++){
+  for(t=0; t<Tabort; t++) {
     x.y_target.setCarray(obj->X.pos.p,3);
     x.y_target(2) = 1.2;
     controlledStep(q,W,C,ode,swift,TVs);
@@ -347,7 +334,7 @@ void ActionInterface::grab(const char *man_id,const char *obj_id){
     gl->update();
     if(x.state==1) break;
   }
-  if(t==Tabort){ indicateFailure(); return; }
+  if(t==Tabort) { indicateFailure(); return; }
 }
 
 void ActionInterface::grab(uint ID) {
@@ -358,19 +345,16 @@ void ActionInterface::grab(const char* obj) {
   grab("fing1c", obj);
 }
 
-
-
-void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id){
+void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id) {
   arr I(q0.N,q0.N); I.setId();
   bool obj_is_inhand = strlen(obj_id55) > 0;
   char* obj_id1;
-  if (obj_is_inhand) {
+  if(obj_is_inhand) {
     obj_id1 = new char[strlen(obj_id55)];
     strcpy(obj_id1, obj_id55);
-  }
-  else
+  } else
     obj_id1 = "fing1c";
-  
+    
   TaskVariable x("obj",*C,posTVT,obj_id1,0,0,0,arr());
   TaskVariable z;
   //
@@ -379,12 +363,12 @@ void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id){
   rai::Quaternion rot;
   rot = C->bodies(obj_index)->X.rot;
   rai::Vector upvec; double maxz=-2;
-  if((rot*Vector_x)(2)>maxz){ upvec=Vector_x; maxz=(rot*upvec)(2); }
-  if((rot*Vector_y)(2)>maxz){ upvec=Vector_y; maxz=(rot*upvec)(2); }
-  if((rot*Vector_z)(2)>maxz){ upvec=Vector_z; maxz=(rot*upvec)(2); }
-  if((rot*(-Vector_x))(2)>maxz){ upvec=-Vector_x; maxz=(rot*upvec)(2); }
-  if((rot*(-Vector_y))(2)>maxz){ upvec=-Vector_y; maxz=(rot*upvec)(2); }
-  if((rot*(-Vector_z))(2)>maxz){ upvec=-Vector_z; maxz=(rot*upvec)(2); }
+  if((rot*Vector_x)(2)>maxz) { upvec=Vector_x; maxz=(rot*upvec)(2); }
+  if((rot*Vector_y)(2)>maxz) { upvec=Vector_y; maxz=(rot*upvec)(2); }
+  if((rot*Vector_z)(2)>maxz) { upvec=Vector_z; maxz=(rot*upvec)(2); }
+  if((rot*(-Vector_x))(2)>maxz) { upvec=-Vector_x; maxz=(rot*upvec)(2); }
+  if((rot*(-Vector_y))(2)>maxz) { upvec=-Vector_y; maxz=(rot*upvec)(2); }
+  if((rot*(-Vector_z))(2)>maxz) { upvec=-Vector_z; maxz=(rot*upvec)(2); }
   rai::Transformation f;
   f.rot.setDiff(Vector_z, upvec);
   z.set("obj-z-align",*C,zalignTVT,obj_index,f,-1,Transformation_Id,arr());
@@ -422,22 +406,21 @@ void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id){
   // object dependent noise [END]
   // hard noise [START]
   double std_dev_noise;
-  if (convertObjectName2ID(rel_id) == getTableID()) {
+  if(convertObjectName2ID(rel_id) == getTableID()) {
     std_dev_noise = DROP_TARGET_NOISE * 0.7;
     uint tries = 0;
-    while (true) {
+    while(true) {
       tries++;
-      if (tries>1000)
+      if(tries>1000)
         HALT("Can't find empty position on table")
-            x_noise = std_dev_noise * rnd.gauss();
+        x_noise = std_dev_noise * rnd.gauss();
       y_noise = std_dev_noise * rnd.gauss();
-      if (x_noise>0.5 || y_noise>0.5) // stay on table
+      if(x_noise>0.5 || y_noise>0.5)  // stay on table
         continue;
-      if (freePosition(C->getBodyByName(rel_id)->X.pos.x+x_noise, C->getBodyByName(rel_id)->X.pos.y+y_noise, 0.05))
+      if(freePosition(C->getBodyByName(rel_id)->X.pos.x+x_noise, C->getBodyByName(rel_id)->X.pos.y+y_noise, 0.05))
         break;
     }
-  }
-  else {
+  } else {
     std_dev_noise = DROP_TARGET_NOISE * 0.06;
     x_noise = std_dev_noise * rnd.gauss();
     y_noise = std_dev_noise * rnd.gauss();
@@ -448,7 +431,7 @@ void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id){
   updateState(TVs);
   x.y_target(2) += .3;
   x.state_tol=.05;
-  for(t=0;t<Tabort;t++){
+  for(t=0; t<Tabort; t++) {
     //x.y_target.setCarray(C->getBodyByName(rel_id)->X.p.v,3);
     //x.y_target(2) += .3;
     controlledStep(q,W,C,ode,swift,TVs);
@@ -456,7 +439,7 @@ void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id){
     gl->update();
     if(x.state==1) break;
   }
-  if(t==Tabort){ indicateFailure(); return; }
+  if(t==Tabort) { indicateFailure(); return; }
   
   //phase 2: above object
   x.state_tol=.05;
@@ -464,7 +447,7 @@ void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id){
   double HARD_LIMIT_DIST_Y = -0.8;
   
   double z_target;
-  for(t=0;t<Tabort;t++){
+  for(t=0; t<Tabort; t++) {
     x.y_target.setCarray(C->getBodyByName(rel_id)->X.pos.p,3);
     // BRING IN NOISE HERE
     x.y_target(0) += x_noise; // tl
@@ -472,7 +455,7 @@ void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id){
     // WHERE TO GO ABOVE
     z_target = highestPosition(x.y_target(0), x.y_target(1), 0.06, obj_index); // tl
     // hard limit on y-distance to robot
-    if (x.y_target(1) < HARD_LIMIT_DIST_Y)
+    if(x.y_target(1) < HARD_LIMIT_DIST_Y)
       x.y_target(1) = HARD_LIMIT_DIST_Y;
     x.y_target(2) = z_target + .2; // distance in m
     controlledStep(q,W,C,ode,swift,TVs);
@@ -480,15 +463,15 @@ void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id){
     gl->update();
     if(x.state==1) break;
   }
-  if(t==Tabort){ indicateFailure(); return; }
-
+  if(t==Tabort) { indicateFailure(); return; }
+  
   //turn off collision avoidance
   c.active=false;
-
+  
   //phase 3: down
   x.state_tol=.002;
   double* obj_shape = getShape(obj_index);
-  for(t=0;t<Tabort;t++){
+  for(t=0; t<Tabort; t++) {
     x.y_target.setCarray(C->getBodyByName(rel_id)->X.pos.p,3);
     // BRING IN NOISE HERE
     x.y_target(0) += x_noise; // tl
@@ -496,7 +479,7 @@ void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id){
     // WHERE TO GO ABOVE
     z_target = highestPosition(x.y_target(0), x.y_target(1), 0.06, obj_index); // tl
     // hard limit on y-distance to robot
-    if (x.y_target(1) < HARD_LIMIT_DIST_Y)
+    if(x.y_target(1) < HARD_LIMIT_DIST_Y)
       x.y_target(1) = HARD_LIMIT_DIST_Y;
     // IMPORTANT PARAM: set distance to target (relative height-distance in which "hand is opened" / object let loose)
     double Z_ADD_DIST = obj_shape[0]/2 + .05;
@@ -506,11 +489,11 @@ void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id){
     gl->update();
     if(x.state==1 && z.state==1) break;
   }
-  if(t==Tabort){ indicateFailure(); return; }
+  if(t==Tabort) { indicateFailure(); return; }
   
   rai::Joint *e;
   e=C->bodies(x.i)->inLinks(0);
-  if (obj_is_inhand){
+  if(obj_is_inhand) {
     NIY;
     //C->del_edge(e); //otherwise: no object in hand
   }
@@ -524,38 +507,36 @@ void ActionInterface::dropObjectAbove(uint rel_id) {
   dropObjectAbove(getCatched(), rel_id);
 }
 
-
-
-bool ActionInterface::partOfBody(uint id){
+bool ActionInterface::partOfBody(uint id) {
   NIY;
   return false;
 }
 
-uint ActionInterface::getCatched(uint man_id){
+uint ActionInterface::getCatched(uint man_id) {
 #if 0
   //   rai::KinematicWorld::node n = C->bodies(man_id);
   rai::Proxy *p;
-  // 	cout << "davor";
+  //  cout << "davor";
   uint obj=C->getBodyByName(convertObjectID2name(man_id))->index;
   //   cout << "danach";
   uint i;
   //   cout << obj << std::flush;
   //
-  for(i=0;i<C->proxies.N;i++)
-  if(!C->proxies(i).age && C->proxies(i).d<0.){
-  p=&C->proxies(i);
-      // 			cout << "DOES THIS EVER HAPPEN?" << endl;
-  if(p->a==(int)obj && p->b!=(int)obj) {
-	// TODO look only for objects "o"
-  return p->b;
-	// 				cout << "!!!!!!!!!" << C->bodies(p->b)->name << " and " << C->bodies(p->a)->name << std::flush << endl;
-}
-  if(p->b==(int)obj && p->a!=(int)obj) {
-	// look only for objects "o"
-  return p->a;
-	// 				cout << "!!!!!!!!!" << C->bodies(p->a)->name << " and " << C->bodies(p->b)->name << std::flush << endl;
-}
-}
+  for(i=0; i<C->proxies.N; i++)
+    if(!C->proxies(i).age && C->proxies(i).d<0.) {
+      p=&C->proxies(i);
+      //      cout << "DOES THIS EVER HAPPEN?" << endl;
+      if(p->a==(int)obj && p->b!=(int)obj) {
+        // TODO look only for objects "o"
+        return p->b;
+        //        cout << "!!!!!!!!!" << C->bodies(p->b)->name << " and " << C->bodies(p->a)->name << std::flush << endl;
+      }
+      if(p->b==(int)obj && p->a!=(int)obj) {
+        // look only for objects "o"
+        return p->a;
+        //        cout << "!!!!!!!!!" << C->bodies(p->a)->name << " and " << C->bodies(p->b)->name << std::flush << endl;
+      }
+    }
   return UINT_MAX;
 #else
   rai::Joint *e;
@@ -571,32 +552,31 @@ uint ActionInterface::getCatched() {
 
 void ActionInterface::writeAllContacts(uint id) {
   rai::Proxy *p;
-  // 	cout << "davor";
+  //  cout << "davor";
   uint obj=C->getBodyByName(convertObjectID2name(id))->index;
   //   cout << "danach";
   uint i;
   //   cout << obj << std::flush;
   cout << convertObjectID2name(id) << " is in contact with ";
-  for(i=0;i<C->proxies.N;i++)
+  for(i=0; i<C->proxies.N; i++)
     if(!C->proxies(i)->age)  // PROXIES SIND LEER!
-      if (C->proxies(i)->d<0.){
-    p=C->proxies(i);
-      // 			cout << "DOES THIS EVER HAPPEN?" << endl;
-    if(p->a==(int)obj && p->b!=(int)obj) {
-	// TODO look only for objects "o"
-      cout << C->bodies(p->b)->name << " ";
-	// 				cout << "!!!!!!!!!" << C->bodies(p->b)->name << " and " << C->bodies(p->a)->name << std::flush << endl;
-    }
-    if(p->b==(int)obj && p->a!=(int)obj) {
-	// look only for objects "o"
-      cout << C->bodies(p->a)->name << " ";
-    }
+      if(C->proxies(i)->d<0.) {
+        p=C->proxies(i);
+        //      cout << "DOES THIS EVER HAPPEN?" << endl;
+        if(p->a==(int)obj && p->b!=(int)obj) {
+          // TODO look only for objects "o"
+          cout << C->bodies(p->b)->name << " ";
+          //        cout << "!!!!!!!!!" << C->bodies(p->b)->name << " and " << C->bodies(p->a)->name << std::flush << endl;
+        }
+        if(p->b==(int)obj && p->a!=(int)obj) {
+          // look only for objects "o"
+          cout << C->bodies(p->a)->name << " ";
+        }
       }
-      cout << endl;
+  cout << endl;
 }
 
-
-void ActionInterface::getObjectsAbove(uintA& list,const char *obj_id){
+void ActionInterface::getObjectsAbove(uintA& list,const char *obj_id) {
   list.clear();
   rai::Proxy *p;
   uint obj=C->getBodyByName(obj_id)->index;
@@ -606,29 +586,27 @@ void ActionInterface::getObjectsAbove(uintA& list,const char *obj_id){
   double obj_rad = 0.5 * getShape(convertObjectName2ID(obj_id))[2];
   double other_rad;
   double dist;
-  for(i=0;i<C->proxies.N;i++) if(!C->proxies(i)->age && C->proxies(i)->d<0.){
-    p=C->proxies(i);
-    if (p->b == -1 || p->a == -1) // on bottom
-      continue;
-    if(p->a==(int)obj) {
-      other_rad = 0.5 * getShape(p->b)[2];
-      dist = TOL_COEFF * (obj_rad + other_rad);
-      if (C->bodies(p->b)->X.pos.z - C->bodies(obj)->X.pos.z > dist)
-        list.setAppend(p->b);
+  for(i=0; i<C->proxies.N; i++) if(!C->proxies(i)->age && C->proxies(i)->d<0.) {
+      p=C->proxies(i);
+      if(p->b == -1 || p->a == -1)  // on bottom
+        continue;
+      if(p->a==(int)obj) {
+        other_rad = 0.5 * getShape(p->b)[2];
+        dist = TOL_COEFF * (obj_rad + other_rad);
+        if(C->bodies(p->b)->X.pos.z - C->bodies(obj)->X.pos.z > dist)
+          list.setAppend(p->b);
+      } else if(p->b==(int)obj) {
+        other_rad = 0.5 * getShape(p->a)[2];
+        dist = TOL_COEFF * (obj_rad + other_rad);
+        if(C->bodies(p->a)->X.pos.z - C->bodies(obj)->X.pos.z > dist)
+          list.setAppend(p->a);
+      }
     }
-    else if(p->b==(int)obj) {
-      other_rad = 0.5 * getShape(p->a)[2];
-      dist = TOL_COEFF * (obj_rad + other_rad);
-      if (C->bodies(p->a)->X.pos.z - C->bodies(obj)->X.pos.z > dist)
-        list.setAppend(p->a);
-    }
-  }
 }
 
 void ActionInterface::getObjectsAbove(uintA& list,const uint obj_id) {
   getObjectsAbove(list, convertObjectID2name(obj_id));
 }
-
 
 // void ActionInterface::getObjectsBelow(uintA& list,const char *obj_id){
 //   list.clear();
@@ -647,7 +625,7 @@ void ActionInterface::getObjectsAbove(uintA& list,const uint obj_id) {
 //     }
 //   }
 // }
-// 
+//
 // void ActionInterface::getObjectsBelow(uintA& list,const uint obj_id) {
 //   getObjectsBelow(list, convertObjectID2name(obj_id));
 // }
@@ -663,7 +641,7 @@ void ActionInterface::getManipulableObjects(uintA& objects) {
   // assuming that all objects start with "o"
   std::stringstream ss;
   uint i, obj;
-  for (i=1;i<=noObjects;i++) {
+  for(i=1; i<=noObjects; i++) {
     ss.str("");
     ss << "o" << i;
     rai::Body *n = C->getBodyByName(ss.str().c_str());
@@ -677,29 +655,28 @@ uint ActionInterface::getTableID() {
   return n->index;
 }
 
-
-bool ActionInterface::inContact(uint a,uint b){
+bool ActionInterface::inContact(uint a,uint b) {
   if(C->getContact(a,b)) return true;
   return false;
 }
 
-bool ActionInterface::isUpright(uint id){
+bool ActionInterface::isUpright(uint id) {
   double TOLERANCE = 0.05; // in radians
   
   rai::Quaternion rot;
   rot = C->bodies(id)->X.rot;
   rai::Vector upvec; double maxz=-2;
-  if((rot*Vector_x)(2)>maxz){ upvec=Vector_x; maxz=(rot*upvec)(2); }
-  if((rot*Vector_y)(2)>maxz){ upvec=Vector_y; maxz=(rot*upvec)(2); }
-  if((rot*Vector_z)(2)>maxz){ upvec=Vector_z; maxz=(rot*upvec)(2); }
-  if((rot*(-Vector_x))(2)>maxz){ upvec=-Vector_x; maxz=(rot*upvec)(2); }
-  if((rot*(-Vector_y))(2)>maxz){ upvec=-Vector_y; maxz=(rot*upvec)(2); }
-  if((rot*(-Vector_z))(2)>maxz){ upvec=-Vector_z; maxz=(rot*upvec)(2); }
+  if((rot*Vector_x)(2)>maxz) { upvec=Vector_x; maxz=(rot*upvec)(2); }
+  if((rot*Vector_y)(2)>maxz) { upvec=Vector_y; maxz=(rot*upvec)(2); }
+  if((rot*Vector_z)(2)>maxz) { upvec=Vector_z; maxz=(rot*upvec)(2); }
+  if((rot*(-Vector_x))(2)>maxz) { upvec=-Vector_x; maxz=(rot*upvec)(2); }
+  if((rot*(-Vector_y))(2)>maxz) { upvec=-Vector_y; maxz=(rot*upvec)(2); }
+  if((rot*(-Vector_z))(2)>maxz) { upvec=-Vector_z; maxz=(rot*upvec)(2); }
   double angle;
   angle = acos(maxz);
   
 //   cout << id << " angle = " << angle << endl;
-  if (fabs(angle) < TOLERANCE)
+  if(fabs(angle) < TOLERANCE)
     return true;
   else
     return false;
@@ -709,9 +686,8 @@ uint ActionInterface::convertObjectName2ID(const char* name) {
   return C->getBodyByName(name)->index;
 }
 
-
 const char* ActionInterface::convertObjectID2name(uint ID) {
-  if (C->bodies.N > ID)
+  if(C->bodies.N > ID)
     return C->bodies(ID)->name;
   else
     return "";
@@ -719,8 +695,8 @@ const char* ActionInterface::convertObjectID2name(uint ID) {
 
 // object = Body in kin.h
 int ActionInterface::getType(uint id) {
-  // 	Body* corp = C->bodies(id);
-  // 	int q = corp->type;
+  //  Body* corp = C->bodies(id);
+  //  int q = corp->type;
   return C->bodies(id)->shapes(0)->type;
 }
 
@@ -735,7 +711,6 @@ double* ActionInterface::getColor(uint id) {
 double* ActionInterface::getPosition(uint id) {
   return C->bodies(id)->X.pos.p;
 }
-
 
 // void ActionInterface::printAboveBelowInfos() {
 //   uintA objects;
@@ -761,11 +736,11 @@ void ActionInterface::printObjectInfo() {
   }
 }
 
-void ActionInterface::indicateFailure(){
+void ActionInterface::indicateFailure() {
   // drop object
   rai::Joint *e;
   uint i;
-  for_list(Type, e, C->getBodyByName("fing1c")->outLinks){
+  for_list(Type, e, C->getBodyByName("fing1c")->outLinks) {
     NIY;
     //C->del_edge(e); //otherwise: no object in hand
   }
@@ -777,7 +752,7 @@ void ActionInterface::indicateFailure(){
 bool ActionInterface::onBottom(uint id) {
   double THRESHOLD = 0.15;
   rai::Body *obj=C->bodies(id);
-  if (obj->X.pos.z < THRESHOLD)
+  if(obj->X.pos.z < THRESHOLD)
     return true;
   else
     return false;
@@ -788,7 +763,7 @@ void ActionInterface::getObservableObjects(uintA& objs) {
   objs.setAppend(getTableID());
   uint i;
   FOR1D_DOWN(objs, i) {
-    if (onBottom(objs(i)))
+    if(onBottom(objs(i)))
       objs.remove(i);
   }
 }
@@ -801,9 +776,9 @@ bool ActionInterface::freePosition(double x, double y, double radius) {
   FOR1D(manipObjs, i) {
     double* pos = getPosition(manipObjs(i));
 //         cout<<manipObjs(i)<<" has pos "<<pos[0]<<"/"<<pos[1]<<endl;
-    if (fabs(pos[0] - x) < radius)
+    if(fabs(pos[0] - x) < radius)
       return false;
-    if (fabs(pos[1] - y) < radius)
+    if(fabs(pos[1] - y) < radius)
       return false;
   }
   return true;
@@ -812,7 +787,7 @@ double ActionInterface::highestPosition(double x, double y, double radius, uint 
   uint DEBUG = 0;
   uintA manipObjs;
   getManipulableObjects(manipObjs);
-  if (DEBUG>0) {
+  if(DEBUG>0) {
     cout << "highestPosition:"<<endl;
     cout<<"Asking for pos "<<x<<"/"<<y<<" within radius "<<radius<<endl;
   }
@@ -820,19 +795,19 @@ double ActionInterface::highestPosition(double x, double y, double radius, uint 
   double max_z;
   double* table_pos = getPosition(getTableID());
   max_z = table_pos[2];
-  if (DEBUG>0) {cout<<"table_z: "<<max_z<<endl;}
+  if(DEBUG>0) {cout<<"table_z: "<<max_z<<endl;}
   FOR1D(manipObjs, i) {
-    if (manipObjs(i) == id_ignored)
+    if(manipObjs(i) == id_ignored)
       continue;
     double* pos = getPosition(manipObjs(i));
 //         cout<<manipObjs(i)<<" has pos "<<pos[0]<<"/"<<pos[1]<<endl;
-    if (fabs(pos[0] - x) < radius  &&  fabs(pos[1] - y) < radius) {
-      if (DEBUG>0) cout<<"Object "<<manipObjs(i)<<" within radius at height "<<pos[2]<<endl;
-      if (pos[2] > max_z)
+    if(fabs(pos[0] - x) < radius  &&  fabs(pos[1] - y) < radius) {
+      if(DEBUG>0) cout<<"Object "<<manipObjs(i)<<" within radius at height "<<pos[2]<<endl;
+      if(pos[2] > max_z)
         max_z = pos[2];
     }
   }
-  if (DEBUG>0) cout<<"max_z = "<<max_z<<endl;
+  if(DEBUG>0) cout<<"max_z = "<<max_z<<endl;
   return max_z;
 }
 /** @} */

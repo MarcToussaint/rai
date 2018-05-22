@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -34,7 +34,6 @@ double forceClosure(const arr& X,  //contact points (size Nx3)
                     double mu=.5,     //friction coefficient
                     double discountTorques=1.,   //friction coefficient
                     arr *dFdX=NULL);    //optional: also compute gradient
-
 
 arr getHull(const arr& V, uintA& T=NoUintA);
 

@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -14,7 +14,6 @@
  * @ingroup group_ors
  * @{
  */
-
 
 #include "kin.h"
 #include <Geo/mesh.h>
@@ -78,12 +77,11 @@ void rai::Shape::glDraw(OpenGL& gl) {
   glPushName((index <<2) | 1);
   if(orsDrawColors && !orsDrawIndexColors) glColor(color[0], color[1], color[2], orsDrawAlpha);
   if(orsDrawIndexColors) glColor3b((index>>16)&0xff, (index>>8)&0xff, index&0xff);
-
-
+  
   double GLmatrix[16];
   X.getAffineMatrixGL(GLmatrix);
   glLoadMatrixd(GLmatrix);
-
+  
   if(!orsDrawShapes) {
     double scale=.33*(size(0)+size(1)+size(2) + 2.*size(3)); //some scale
     if(!scale) scale=1.;
@@ -118,13 +116,13 @@ void rai::Shape::glDraw(OpenGL& gl) {
       case rai::ST_retired_SSBox:
         HALT("deprecated??");
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
-        else if(orsDrawMeshes){
+        else if(orsDrawMeshes) {
           if(!mesh.V.N) mesh.setSSBox(size(0), size(1), size(2), size(3));
           mesh.glDraw(gl);
-        }else NIY;
+        } else NIY;
         break;
       case rai::ST_marker:
-        if(orsDrawMarkers){
+        if(orsDrawMarkers) {
           glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.); glDrawAxes(size(0));
         }
         break;
@@ -140,7 +138,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
         else mesh.glDraw(gl);
         break;
       case rai::ST_ssBox:
-        if(!mesh.V.N || !sscCore.V.N){
+        if(!mesh.V.N || !sscCore.V.N) {
           sscCore.setBox();
           sscCore.scale(size(0), size(1), size(2));
           mesh.setSSCvx(sscCore, size(3));
@@ -153,7 +151,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
         break;
-
+        
       default: HALT("can't draw that geom yet");
     }
   }
@@ -164,12 +162,12 @@ void rai::Shape::glDraw(OpenGL& gl) {
     glVertex3d(0., 0., -X.pos.z);
     glEnd();
   }
-
-  if(orsDrawBodyNames && body){
+  
+  if(orsDrawBodyNames && body) {
     glColor(1,1,1);
     glDrawText(body->name, 0, 0, 0);
   }
-
+  
   glPopName();
 }
 
@@ -178,93 +176,93 @@ void rai::KinematicWorld::glDraw(OpenGL& gl) {
   uint i=0;
   rai::Transformation f;
   double GLmatrix[16];
-
+  
   glPushMatrix();
-
+  
   //bodies
   if(orsDrawBodies) for(Shape *s: shapes) {
-    s->glDraw(gl);
-    i++;
-    if(orsDrawLimit && i>=orsDrawLimit) break;
-  }
-
+      s->glDraw(gl);
+      i++;
+      if(orsDrawLimit && i>=orsDrawLimit) break;
+    }
+    
   //joints
   if(orsDrawJoints) for(Joint *e: joints) {
-    //set name (for OpenGL selection)
-    glPushName((e->index <<2) | 2);
-
-    double s=e->A.pos.length()+e->B.pos.length(); //some scale
-    s*=.25;
-
-    //from body to joint
-    f=e->from->X;
-    f.getAffineMatrixGL(GLmatrix);
-    glLoadMatrixd(GLmatrix);
-    glColor(1, 1, 0);
-    //glDrawSphere(.1*s);
-    glBegin(GL_LINES);
-    glVertex3f(0, 0, 0);
-    glVertex3f(e->A.pos.x, e->A.pos.y, e->A.pos.z);
-    glEnd();
-
-    //joint frame A
-    f.appendTransformation(e->A);
-    f.getAffineMatrixGL(GLmatrix);
-    glLoadMatrixd(GLmatrix);
-    glDrawAxes(s);
-    glColor(1, 0, 0);
-    glRotatef(90, 0, 1, 0);  glDrawCylinder(.05*s, .3*s);  glRotatef(-90, 0, 1, 0);
-
-    //joint frame B
-    f.appendTransformation(e->Q);
-    f.getAffineMatrixGL(GLmatrix);
-    glLoadMatrixd(GLmatrix);
-    glDrawAxes(s);
-
-    //from joint to body
-    glColor(1, 0, 1);
-    glBegin(GL_LINES);
-    glVertex3f(0, 0, 0);
-    glVertex3f(e->B.pos.x, e->B.pos.y, e->B.pos.z);
-    glEnd();
-    glTranslatef(e->B.pos.x, e->B.pos.y, e->B.pos.z);
-    //glDrawSphere(.1*s);
-
-    glPopName();
-    i++;
-    if(orsDrawLimit && i>=orsDrawLimit) break;
-  }
-
+      //set name (for OpenGL selection)
+      glPushName((e->index <<2) | 2);
+      
+      double s=e->A.pos.length()+e->B.pos.length(); //some scale
+      s*=.25;
+      
+      //from body to joint
+      f=e->from->X;
+      f.getAffineMatrixGL(GLmatrix);
+      glLoadMatrixd(GLmatrix);
+      glColor(1, 1, 0);
+      //glDrawSphere(.1*s);
+      glBegin(GL_LINES);
+      glVertex3f(0, 0, 0);
+      glVertex3f(e->A.pos.x, e->A.pos.y, e->A.pos.z);
+      glEnd();
+      
+      //joint frame A
+      f.appendTransformation(e->A);
+      f.getAffineMatrixGL(GLmatrix);
+      glLoadMatrixd(GLmatrix);
+      glDrawAxes(s);
+      glColor(1, 0, 0);
+      glRotatef(90, 0, 1, 0);  glDrawCylinder(.05*s, .3*s);  glRotatef(-90, 0, 1, 0);
+      
+      //joint frame B
+      f.appendTransformation(e->Q);
+      f.getAffineMatrixGL(GLmatrix);
+      glLoadMatrixd(GLmatrix);
+      glDrawAxes(s);
+      
+      //from joint to body
+      glColor(1, 0, 1);
+      glBegin(GL_LINES);
+      glVertex3f(0, 0, 0);
+      glVertex3f(e->B.pos.x, e->B.pos.y, e->B.pos.z);
+      glEnd();
+      glTranslatef(e->B.pos.x, e->B.pos.y, e->B.pos.z);
+      //glDrawSphere(.1*s);
+      
+      glPopName();
+      i++;
+      if(orsDrawLimit && i>=orsDrawLimit) break;
+    }
+    
   //proxies
   if(orsDrawProxies) for(Proxy *proxy: proxies) {
-    glLoadIdentity();
-    if(!proxy->colorCode){
-      if(proxy->d>0.) glColor(.75,.75,.75);
-      else glColor(.75,.5,.5);
-    }else glColor(proxy->colorCode);
-    glBegin(GL_LINES);
-    glVertex3dv(proxy->posA.p());
-    glVertex3dv(proxy->posB.p());
-    glEnd();
-    rai::Transformation f;
-    f.pos=proxy->posA;
-    f.rot.setDiff(rai::Vector(0, 0, 1), proxy->posA-proxy->posB);
-    f.getAffineMatrixGL(GLmatrix);
-    glLoadMatrixd(GLmatrix);
-    glDisable(GL_CULL_FACE);
-    glDrawDisk(.02);
-    glEnable(GL_CULL_FACE);
-
-    f.pos=proxy->posB;
-    f.getAffineMatrixGL(GLmatrix);
-    glLoadMatrixd(GLmatrix);
-    glDrawDisk(.02);
-  }
-
+      glLoadIdentity();
+      if(!proxy->colorCode) {
+        if(proxy->d>0.) glColor(.75,.75,.75);
+        else glColor(.75,.5,.5);
+      } else glColor(proxy->colorCode);
+      glBegin(GL_LINES);
+      glVertex3dv(proxy->posA.p());
+      glVertex3dv(proxy->posB.p());
+      glEnd();
+      rai::Transformation f;
+      f.pos=proxy->posA;
+      f.rot.setDiff(rai::Vector(0, 0, 1), proxy->posA-proxy->posB);
+      f.getAffineMatrixGL(GLmatrix);
+      glLoadMatrixd(GLmatrix);
+      glDisable(GL_CULL_FACE);
+      glDrawDisk(.02);
+      glEnable(GL_CULL_FACE);
+      
+      f.pos=proxy->posB;
+      f.getAffineMatrixGL(GLmatrix);
+      glLoadMatrixd(GLmatrix);
+      glDrawDisk(.02);
+    }
+    
   glPopMatrix();
 }
 
-void displayState(const arr& x, rai::KinematicWorld& G, const char *tag){
+void displayState(const arr& x, rai::KinematicWorld& G, const char *tag) {
   G.setJointState(x);
   G.gl().watch(tag);
 }
@@ -272,20 +270,20 @@ void displayState(const arr& x, rai::KinematicWorld& G, const char *tag){
 void displayTrajectory(const arr& _x, int steps, rai::KinematicWorld& G, const KinematicSwitchL& switches, const char *tag, double delay, uint dim_z, bool copyG) {
   if(!steps) return;
   for(rai::Shape *s : G.shapes) if(s->mesh.V.d0!=s->mesh.Vn.d0 || s->mesh.T.d0!=s->mesh.Tn.d0) {
-    s->mesh.computeNormals();
-  }
+      s->mesh.computeNormals();
+    }
   rai::KinematicWorld *Gcopy;
   if(switches.N) copyG=true;
   if(!copyG) Gcopy=&G;
-  else{
+  else {
     Gcopy = new rai::KinematicWorld;
     Gcopy->copy(G,true);
   }
   arr x,z;
-  if(dim_z){
+  if(dim_z) {
     x.referToRange(_x,0,-dim_z-1);
     z.referToRange(_x,-dim_z,-1);
-  }else{
+  } else {
     x.referTo(_x);
   }
   uint n=Gcopy->getJointStateDimension()-dim_z;
@@ -294,17 +292,17 @@ void displayTrajectory(const arr& _x, int steps, rai::KinematicWorld& G, const K
   if(steps==1 || steps==-1) num=T; else num=steps;
   for(uint k=0; k<=(uint)num; k++) {
     uint t = (T?(k*T/num):0);
-    if(switches.N){
+    if(switches.N) {
       for(rai::KinematicSwitch *sw: switches)
         if(sw->timeOfApplication==t)
           sw->apply(*Gcopy);
     }
     if(dim_z) Gcopy->setJointState(cat(x[t], z));
     else Gcopy->setJointState(x[t]);
-    if(delay<0.){
+    if(delay<0.) {
       if(delay<-10.) FILE("z.graph") <<*Gcopy;
       Gcopy->gl().watch(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
-    }else{
+    } else {
       Gcopy->gl().update(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
       if(delay) rai::wait(delay);
     }
@@ -462,14 +460,14 @@ void animateConfiguration(rai::KinematicWorld& C, Inotify *ino) {
     const double lower_lim = lim(i,0);
     const double delta = upper_lim - lower_lim;
     const double center = lower_lim + delta / 2.;
-    const double offset = acos( 2. * (x0(i) - center) / delta );
-
+    const double offset = acos(2. * (x0(i) - center) / delta);
+    
     for(t=0; t<steps; t++) {
       if(C.gl().pressedkey==13 || C.gl().pressedkey==27) return;
       if(ino && ino->pollForModification()) return;
-      if (lim(i,0)==lim(i,1))
+      if(lim(i,0)==lim(i,1))
         break;
-
+        
       x(i) = center + (delta*(0.5*cos(RAI_2PI*t/steps + offset)));
       // Joint limits
       C.setJointState(x);
@@ -480,7 +478,6 @@ void animateConfiguration(rai::KinematicWorld& C, Inotify *ino) {
   C.setJointState(x0);
   C.gl().update("", false, false, true);
 }
-
 
 rai::Body *movingBody=NULL;
 rai::Vector selpos;
@@ -505,7 +502,7 @@ struct EditConfigurationClickCall:OpenGL::GLClickCall {
       rai::Joint *j=ors->joints(i>>2);
       gl.text
           <<"edge selection: " <<j->from->name <<' ' <<j->to->name
-         <<"\nA=" <<j->A <<"\nQ=" <<j->Q <<"\nB=" <<j->B <<endl;
+          <<"\nA=" <<j->A <<"\nQ=" <<j->Q <<"\nB=" <<j->B <<endl;
 //      listWrite(j->ats, gl.text, "\n");
       cout <<gl.text;
     }
@@ -538,7 +535,7 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
       if(j) {
         gl.text
             <<"edge selection: " <<j->from->name <<' ' <<j->to->name
-           <<"\nA=" <<j->A <<"\nQ=" <<j->Q <<"\nB=" <<j->B <<endl;
+            <<"\nA=" <<j->A <<"\nQ=" <<j->Q <<"\nB=" <<j->B <<endl;
         listWrite(j->ats, gl.text, "\n");
       }
     } else {
@@ -561,9 +558,9 @@ EditConfigurationHoverCall::EditConfigurationHoverCall(rai::KinematicWorld& _ors
 struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
   rai::KinematicWorld &ors;
   bool &exit;
-  EditConfigurationKeyCall(rai::KinematicWorld& _ors, bool& _exit): ors(_ors), exit(_exit){}
+  EditConfigurationKeyCall(rai::KinematicWorld& _ors, bool& _exit): ors(_ors), exit(_exit) {}
   bool keyCallback(OpenGL& gl) {
-    if(gl.pressedkey==' '){ //grab a body
+    if(gl.pressedkey==' ') { //grab a body
       if(movingBody) { movingBody=NULL; return true; }
       rai::Joint *j=NULL;
       rai::Shape *s=NULL;
@@ -588,36 +585,36 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
         cout <<"selected joint " <<j->index <<" connecting " <<j->from->name <<"--" <<j->to->name <<endl;
       }
       return true;
-    }else switch(gl.pressedkey) {
-      case '1':  orsDrawBodies^=1;  break;
-      case '2':  orsDrawShapes^=1;  break;
-      case '3':  orsDrawJoints^=1;  orsDrawMarkers^=1; break;
-      case '4':  orsDrawProxies^=1;  break;
-      case '5':  gl.reportSelects^=1;  break;
-      case '6':  gl.reportEvents^=1;  break;
-      case '7':  ors.writePlyFile("z.ply");  break;
-      case 'j':  gl.camera.X.pos += gl.camera.X.rot*rai::Vector(0, 0, .1);  break;
-      case 'k':  gl.camera.X.pos -= gl.camera.X.rot*rai::Vector(0, 0, .1);  break;
-      case 'i':  gl.camera.X.pos += gl.camera.X.rot*rai::Vector(0, .1, 0);  break;
-      case ',':  gl.camera.X.pos -= gl.camera.X.rot*rai::Vector(0, .1, 0);  break;
-      case 'l':  gl.camera.X.pos += gl.camera.X.rot*rai::Vector(.1, .0, 0);  break;
-      case 'h':  gl.camera.X.pos -= gl.camera.X.rot*rai::Vector(.1, 0, 0);  break;
-      case 'a':  gl.camera.focus(
-          (gl.camera.X.rot*(gl.camera.foc - gl.camera.X.pos)
-           ^ gl.camera.X.rot*rai::Vector(1, 0, 0)) * .001
-          + gl.camera.foc);
-        break;
-      case 's':  gl.camera.X.pos +=
-          (
-            gl.camera.X.rot*(gl.camera.foc - gl.camera.X.pos)
-            ^(gl.camera.X.rot * rai::Vector(1., 0, 0))
-          ) * .01;
-        break;
-      case 'q' :
-        cout <<"EXITING" <<endl;
-        exit=true;
-        break;
-    }
+    } else switch(gl.pressedkey) {
+        case '1':  orsDrawBodies^=1;  break;
+        case '2':  orsDrawShapes^=1;  break;
+        case '3':  orsDrawJoints^=1;  orsDrawMarkers^=1; break;
+        case '4':  orsDrawProxies^=1;  break;
+        case '5':  gl.reportSelects^=1;  break;
+        case '6':  gl.reportEvents^=1;  break;
+        case '7':  ors.writePlyFile("z.ply");  break;
+        case 'j':  gl.camera.X.pos += gl.camera.X.rot*rai::Vector(0, 0, .1);  break;
+        case 'k':  gl.camera.X.pos -= gl.camera.X.rot*rai::Vector(0, 0, .1);  break;
+        case 'i':  gl.camera.X.pos += gl.camera.X.rot*rai::Vector(0, .1, 0);  break;
+        case ',':  gl.camera.X.pos -= gl.camera.X.rot*rai::Vector(0, .1, 0);  break;
+        case 'l':  gl.camera.X.pos += gl.camera.X.rot*rai::Vector(.1, .0, 0);  break;
+        case 'h':  gl.camera.X.pos -= gl.camera.X.rot*rai::Vector(.1, 0, 0);  break;
+        case 'a':  gl.camera.focus(
+            (gl.camera.X.rot*(gl.camera.foc - gl.camera.X.pos)
+             ^ gl.camera.X.rot*rai::Vector(1, 0, 0)) * .001
+            + gl.camera.foc);
+          break;
+        case 's':  gl.camera.X.pos +=
+            (
+              gl.camera.X.rot*(gl.camera.foc - gl.camera.X.pos)
+              ^(gl.camera.X.rot * rai::Vector(1., 0, 0))
+            ) * .01;
+          break;
+        case 'q' :
+          cout <<"EXITING" <<endl;
+          exit=true;
+          break;
+      }
     gl.postRedrawEvent(true);
     return true;
   }
@@ -630,7 +627,7 @@ void editConfiguration(const char* filename, rai::KinematicWorld& C) {
   C.gl().addKeyCall(new EditConfigurationKeyCall(C,exit));
   C.gl().addClickCall(new EditConfigurationClickCall(C));
   Inotify ino(filename);
-  for(;!exit;) {
+  for(; !exit;) {
     cout <<"reloading `" <<filename <<"' ... " <<std::endl;
     rai::KinematicWorld W;
     try {
@@ -654,12 +651,11 @@ void editConfiguration(const char* filename, rai::KinematicWorld& C) {
 #else
     C.gl().watch();
 #endif
-if(!rai::getInteractivity()){
-    exit=true;
-}
+    if(!rai::getInteractivity()) {
+      exit=true;
+    }
   }
 }
-
 
 #if 0 //RAI_ODE
 void testSim(const char* filename, rai::KinematicWorld *C, Ode *ode) {
@@ -670,12 +666,12 @@ void testSim(const char* filename, rai::KinematicWorld *C, Ode *ode) {
   ors->getJointState(x, v);
   for(t=0; t<T; t++) {
     ode->step();
-
+    
     importStateFromOde(*C, *ode);
     ors->setJointState(x, v);
     ors->calcBodyFramesFromJoints();
     exportStateToOde(*C, *ode);
-
+    
     C.gl().text.clear() <<"time " <<t;
     C.gl().timedupdate(10);
   }

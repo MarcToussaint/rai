@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -14,12 +14,11 @@
 // Spline
 //
 
+namespace rai {
 
-namespace rai{
+Spline::Spline(uint degree) : degree(degree) {}
 
-Spline::Spline(uint degree) : degree(degree){}
-
-Spline::Spline(uint T, const arr& X, uint degree) : points(X){
+Spline::Spline(uint T, const arr& X, uint degree) : points(X) {
   CHECK(points.nd==2,"");
   setUniformNonperiodicBasis(T, points.d0, degree);
 }
@@ -33,7 +32,6 @@ void Spline::plotBasis() {
   plot();
 }
 
-
 arr Spline::getCoeffs(double t, uint K, uint derivative) const {
   arr b(K+1), b_0(K+1), db(K+1), db_0(K+1), ddb(K+1), ddb_0(K+1);
   for(uint p=0; p<=degree; p++) {
@@ -46,7 +44,7 @@ arr Spline::getCoeffs(double t, uint K, uint derivative) const {
         else if(k==K && t>=times(k)) b(k)=1.;
         else if(times(k)<=t && t<times(k+1)) b(k)=1.;
       } else {
-        if(k+p<times.N){
+        if(k+p<times.N) {
           double xnom = t - times(k);
           double xden = times(k+p) - times(k);
           double x = DIV(xnom, xden, true);
@@ -130,24 +128,24 @@ void Spline::setUniformNonperiodicBasis() {
   setUniformNonperiodicBasis(0, points.d0, degree);
 }
 
-void Spline::set(uint _degree, const arr &x, const arr& t){
+void Spline::set(uint _degree, const arr &x, const arr& t) {
   CHECK_EQ(x.d0, t.N, "");
   degree = _degree;
-
+  
   points = x;
   for(uint i=0; i<degree/2; i++) {
     points.prepend(x[0]);
     points.append(x[x.d0-1]);
   }
-
+  
   uint m=t.N+2*degree;
   times.resize(m+1);
   for(uint i=0; i<=m; i++) {
     if(i<=degree) times(i)=.0;
     else if(i>=m-degree) times(i)=t.last();
-    else if((degree%2)){
+    else if((degree%2)) {
       times(i) = t(i-degree);
-    }else{
+    } else {
       times(i) = .5*(t(i-degree-1)+t(i-degree));
     }
   }
@@ -162,9 +160,9 @@ void Spline::setUniformNonperiodicBasis(uint T, uint nPoints, uint _degree) {
   for(i=0; i<=m; i++) {
     if(i<=degree) times(i)=.0;
     else if(i>=m-degree) times(i)=1.;
-    else if((degree%2)){
+    else if((degree%2)) {
       times(i) = double(i-degree)/double(K);
-    }else{
+    } else {
       times(i) = double(double(i)-.5-degree)/double(K);
     }
   }
@@ -188,7 +186,7 @@ arr Spline::smooth(double lambda) const {
   arr ddbasis(T+1, K+1);
   for(uint t=0; t<=T; t++)
     ddbasis[t] = getCoeffs((double)t/K, K, 2);
-
+    
   arr A = ~ddbasis * ddbasis / (double)T;
   return basis*inverse(eye(K+1) + lambda*A)*points;
 }
@@ -221,35 +219,35 @@ void Spline::partial(arr& dCdx, arr& dCdt, const arr& dCdf, bool constrain) cons
 
 //==============================================================================
 
-arr Path::getPosition(double t) const{
+arr Path::getPosition(double t) const {
   return Spline::eval(t);
 }
 
-arr Path::getVelocity(double t) const{
+arr Path::getVelocity(double t) const {
   return Spline::eval(t, true);
 }
 
-void Path::transform_CurrentBecomes_EndFixed(const arr& current, double t){
+void Path::transform_CurrentBecomes_EndFixed(const arr& current, double t) {
   arr delta = current - eval(t);
-  for(uint i=0;i<points.d0;i++){
+  for(uint i=0; i<points.d0; i++) {
     double ti = double(i)/double(points.d0-1);
     double a = (1.-ti)/(1.-t);
     points[i]() += a*delta;
   }
 }
 
-void Path::transform_CurrentFixed_EndBecomes(const arr& end, double t){
+void Path::transform_CurrentFixed_EndBecomes(const arr& end, double t) {
   arr delta = end - eval(1.);
-  for(uint i=0;i<points.d0;i++){
+  for(uint i=0; i<points.d0; i++) {
     double ti = double(i)/double(points.d0-1);
     double a = (ti-t)/(1.-t);
     points[i]() += a*delta;
   }
 }
 
-void Path::transform_CurrentBecomes_AllFollow(const arr& current, double t){
+void Path::transform_CurrentBecomes_AllFollow(const arr& current, double t) {
   arr delta = current - eval(t);
-  for(uint i=0;i<points.d0;i++) points[i]() += delta;
+  for(uint i=0; i<points.d0; i++) points[i]() += delta;
 }
 
 } //namespace rai

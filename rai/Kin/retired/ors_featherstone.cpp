@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -14,7 +14,6 @@
  * @ingroup group_ors
  * @{
  */
-
 
 #if 1 //def RAI_FEATHERSTONE
 
@@ -70,7 +69,6 @@ void Xroty(arr& X, double h);
 */
 void Xrotz(arr& X, double h);
 
-
 /** @brief MM6 coordinate transform from 3D translation vector.
   Xtrans(r) calculates the MM6 coordinate transform matrix (for
   motion vectors) induced by a shift of origin specified by the 3D
@@ -78,7 +76,6 @@ void Xrotz(arr& X, double h);
   location of the origin relative to the old.
 */
 void Xtrans(arr& X, double* r);
-
 
 /** @brief Calculate RBI from mass, CoM and rotational inertia.
   RBmci(m, c, I) calculate MF6 rigid-body inertia tensor for a body
@@ -169,7 +166,7 @@ const arr Featherstone::Robot::S(uint i) const {
       //S(0, 3)=1.; S(1, 4)=1.; S(2, 5)=1.;
       S(3, 0)=1.; S(4, 1)=1.; S(5, 2)=1.;
       break; //S(1, 1)=S(2, 2)=1.; break;
-      //case 6: S.setId(6); break;
+    //case 6: S.setId(6); break;
     default: NIY;
   }
   return S;
@@ -288,8 +285,8 @@ void rai::Link::updateFeatherstones() {
 void GraphToTree(rai::Array<rai::Link>& tree, const rai::KinematicWorld& C) {
   tree.resize(C.bodies.N);
   
-  for(rai::Link& link:tree){ link.parent=-1; link.qIndex=-1; }
-
+  for(rai::Link& link:tree) { link.parent=-1; link.qIndex=-1; }
+  
   for(rai::Body* body:C.bodies) {
     rai::Link& link=tree(body->index);
     if(body->inLinks.N && body->inLinks(0)->qDim()) { //is not a root
@@ -301,7 +298,7 @@ void GraphToTree(rai::Array<rai::Link>& tree, const rai::KinematicWorld& C) {
       link.parent = j->from->index;
       
       link.com = j->B*body->com;
-
+      
       if(j->from->inLinks.N) link.A=j->from->inLinks(0)->B;
       else link.A=j->from->X;
       link.A.appendTransformation(j->A);
@@ -312,7 +309,7 @@ void GraphToTree(rai::Array<rai::Link>& tree, const rai::KinematicWorld& C) {
       link.Q=j->Q;
     } else {
 //      CHECK_EQ(body->inLinks.N,0, "dammit");
-      
+
       link.type=-1;
       link.qIndex=-1;
       link.parent=-1;
@@ -326,7 +323,7 @@ void GraphToTree(rai::Array<rai::Link>& tree, const rai::KinematicWorld& C) {
     link.force=body->force;
     link.torque=body->torque;
   }
-
+  
   for(rai::Link& link:tree) link.setFeatherstones();
 }
 
@@ -363,7 +360,6 @@ void updateGraphToTree(rai::Array<rai::Link>& tree, const rai::KinematicWorld& C
   }
   for(i=0; i<tree.N; i++) tree(i).updateFeatherstones();
 }
-
 
 /*
 ----------- Xrotx.m ----------------------------------------------------------
@@ -441,7 +437,6 @@ void Featherstone::Xrotz(arr& X, double h) {
      0  0  0 -s  c  0 ;
      0  0  0  0  0  1 ]; */
 }
-
 
 /*
 ----------- Xtrans.m ---------------------------------------------------------
@@ -617,7 +612,6 @@ void Featherstone::invdyn_old(arr& tau, const Robot& robot, const arr& qd, const
     }
   }
 }
-
 
 /*
 ------------------------------------------------------------------------------
@@ -919,7 +913,6 @@ void rai::invDynamics(arr& tau,
   }
 }
 
-
 //===========================================================================
 
 void rai::equationOfMotion(arr& H, arr& C,
@@ -963,7 +956,7 @@ void rai::equationOfMotion(arr& H, arr& C,
       h[i]() = tree(i)._h;
       if(iq!=-1) {//is not a fixed joint
         vJ = h[i] * qd(iq); //equation (2), vJ = relative vel across joint i
-      } else{
+      } else {
         vJ = zeros(6);
       }
       v[i]() = Xup[i] * v[par] + vJ;
@@ -1018,11 +1011,11 @@ void rai::equationOfMotion(arr& H, arr& C,
   //add friction for non-filled joints
   boolA filled(qd.N);
   filled=false;
-  for(i=0;i<N;i++){ iq = tree(i).qIndex; if(iq!=-1) filled(iq)=true; }
-  for(i=0;i<qd.N;i++) if(!filled(i)){
-    H(i,i) = 1.;
+  for(i=0; i<N; i++) { iq = tree(i).qIndex; if(iq!=-1) filled(iq)=true; }
+  for(i=0; i<qd.N; i++) if(!filled(i)) {
+      H(i,i) = 1.;
 //    C(i) = -100.*qd(i);
-  }
+    }
 }
 
 //===========================================================================
@@ -1036,7 +1029,7 @@ void rai::fwdDynamics_MF(arr& qdd,
   equationOfMotion(M, F, tree, qd);
   inverse(Minv, M);
 //  inverse_SymPosDef(Minv, M);
-  
+
   qdd = Minv * (u - F);
 }
 

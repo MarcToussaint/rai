@@ -1,20 +1,10 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2012 Marc Toussaint
-    email: mtoussai@cs.tu-berlin.de
-    
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
 
 //===========================================================================
 //added Sep 2013
@@ -101,8 +91,6 @@ double evaluateVCF(VectorChainFunction& f, const arr& x) {
   return ncost+pcost;
 }
 
-
-
 /*double ScalarGraphFunction::f_total(const arr& X){
   uint n=X.d0;
   uintA E=edges();
@@ -165,22 +153,22 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
       }
     }
   };
-
+  
   uint evals = 0;
-
+  
   MyVectorFunction f_loc;
   f_loc.f = &f;
   f_loc.evals = &evals;
-
+  
   ofstream fil;
   double fx=evaluateVCF(f, x);
   if(o.verbose>0) fil.open("z.nodewise");
   if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<endl;
   if(o.verbose>1) cout <<"optNodewise initial cost " <<fx <<endl;
-
+  
   OptOptions op;
   op.stopTolerance=o.stopTolerance, op.stopEvals=10, op.maxStep=o.maxStep, op.verbose=0;
-
+  
   uint k;
   for(k=0; k<o.stopIters; k++) {
     arr x_old=x;
@@ -205,10 +193,9 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
   if(o.fmin_return) *o.fmin_return=fx;
   if(o.verbose>0) fil.close();
   if(o.verbose>1) gnuplot("plot 'z.nodewise' us 1:3 w l",NULL,true);
-
+  
   return evals;
 }
-
 
 /// preliminary
 //uint optDynamicProgramming(arr& x, QuadraticChainFunction& f, OptOptions o) {
@@ -471,20 +458,19 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
 //  return evals;
 //}
 
-
-struct sConvert{
+struct sConvert {
   struct VectorChainFunction_ScalarFunction:ScalarFunction { //actual converter objects
     VectorChainFunction *f;
     VectorChainFunction_ScalarFunction(VectorChainFunction& _f):f(&_f) {}
     virtual double fs(arr& grad, arr& H, const arr& x);
   };
-
+  
   struct VectorChainFunction_VectorFunction:VectorFunction { //actual converter objects
     VectorChainFunction *f;
     VectorChainFunction_VectorFunction(VectorChainFunction& _f):f(&_f) {}
     virtual void   fv(arr& y, arr& J, const arr& x);
   };
-
+  
   //  struct VectorChainFunction_QuadraticChainFunction:QuadraticChainFunction {
   //    VectorChainFunction *f;
   //    VectorChainFunction_QuadraticChainFunction(VectorChainFunction& _f):f(&_f) {}
@@ -502,7 +488,7 @@ struct sConvert{
   //     uint get_m(uint t);
   //     void phi_t(arr& phi, arr& J, uint t, const arr& x_bar, const arr& z=NoArr, const arr& J_z=NoArr);
   //   };
-
+  
   //   struct ControlledSystem_2OrderMarkovFunction:KOrderMarkovFunction {
   //     ControlledSystem *sys;
   //     ControlledSystem_2OrderMarkovFunction(ControlledSystem& _sys):sys(&_sys){}
@@ -530,12 +516,11 @@ Convert::operator VectorChainFunction&() {
 //  return *s->qcf;
 //}
 
-
 double sConvert::VectorChainFunction_ScalarFunction::fs(arr& grad, arr& H, const arr& x) {
   uint T=f->get_T();
   arr z;  z.referTo(x);
   z.reshape(T+1,z.N/(T+1)); //x as chain representation (splitted in nodes assuming each has same dimensionality!)
-
+  
   double cost=0.;
   arr y,J,Ji,Jj;
   if(&grad) {
@@ -565,14 +550,14 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
   uint T=f->get_T();
   arr z;  z.referTo(x);
   z.reshape(T+1,z.N/(T+1)); //x as chain representation (splitted in nodes assuming each has same dimensionality!)
-
+  
   //probing dimensionality (ugly..)
   arr tmp;
   f->fv_i(tmp, NoArr, 0, z[0]);
   uint di=tmp.N; //dimensionality at nodes
   if(T>0) f->fv_ij(tmp, NoArr, NoArr, 0, 1, z[0], z[1]);
   uint dij=tmp.N; //dimensionality at pairs
-
+  
   //resizing things:
   arr yi(T+1,di);  //the part of y which will collect all node potentials
   arr yij(T  ,dij); //the part of y which will collect all pair potentials
@@ -580,7 +565,7 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
   arr Jij; Jij.resize(TUP(T  , dij, z.d0, z.d1)); //first indices as yi, last: gradient w.r.t. x
   Ji.setZero();
   Jij.setZero();
-
+  
   arr y_loc,J_loc,Ji_loc,Jj_loc;
   uint t,i,j;
   //first collect all node potentials
@@ -781,7 +766,6 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
 // }
 // #endif
 
-
 VectorChainCost::VectorChainCost(uint _T,uint _n) {
   T=_T; n=_n;
   A.resize(T+1,n,n);  a.resize(T+1,n);
@@ -839,7 +823,6 @@ SlalomProblem::SlalomProblem(uint _T, uint _K, double _margin, double _w, double
   power = _power;
 }
 
-
 double border(double *grad, double x, double power=8.) {
   if(x>0.) { if(grad) *grad=0.; return 0.; }
   double y = pow(x,power);
@@ -853,7 +836,6 @@ double tannenbaum(double *grad, double x, double power=8.) {
   y=floor(y) + pow(y-floor(y),power);
   return y;
 }
-
 
 void SlalomProblem::fv_i(arr& y, arr& J, uint i, const arr& x_i) {
   eval_cost++;
@@ -879,7 +861,7 @@ void SlalomProblem::fv_i(arr& y, arr& J, uint i, const arr& x_i) {
 void SlalomProblem::fv_ij(arr& y, arr& Ji, arr& Jj, uint i, uint j, const arr& x_i, const arr& x_j) {
   y.resize(1);
   double tau=.01;
-  arr A={1., tau, 0., 1.};  A.reshape(2,2);
+  arr A= {1., tau, 0., 1.};  A.reshape(2,2);
   arr M=w*diag({2./(tau*tau), 1./tau});  //penalize variance in position & in velocity (control)
   y=M*(x_j - A*x_i);
   if(&Ji) { Ji = -M*A; }
@@ -892,7 +874,7 @@ void SlalomProblem::fv_ij(arr& y, arr& Ji, arr& Jj, uint i, uint j, const arr& x
 
 #ifdef RAI_GSL
 #include <gsl/gsl_cdf.h>
-bool DecideSign::step(double x){
+bool DecideSign::step(double x) {
   N++;
   sumX+=x;
   sumXX+=x*x;
@@ -906,56 +888,55 @@ bool DecideSign::step(double x){
   return false;
 }
 #else
-bool DecideSign::step(double x){ NIY; }
+bool DecideSign::step(double x) { NIY; }
 #endif
 
+void OnlineRprop::init(OptimizationProblem *_m, double initialRate, uint _N, const arr& w0) {
+  rprop.init(initialRate);
+  t=0;
+  m=_m;
+  N=_N;
+  perm.setRandomPerm(N);
+  w=w0;
+  signer.resize(w.N);
+  for(uint i=0; i<w.N; i++) signer(i).init();
+  l=0.;
+  e=0.;
+  rai::open(log, "log.sgd");
+}
 
-void OnlineRprop::init(OptimizationProblem *_m, double initialRate, uint _N, const arr& w0){
-    rprop.init(initialRate);
-    t=0;
-    m=_m;
-    N=_N;
-    perm.setRandomPerm(N);
-    w=w0;
-    signer.resize(w.N);
-    for(uint i=0; i<w.N; i++) signer(i).init();
+void OnlineRprop::step() {
+  arr grad;
+  double err;
+  l += m->loss(w, perm(t%N), &grad, &err);
+  e += err;
+  for(uint i=0; i<w.N; i++) {
+    if(signer(i).step(grad(i))) { //signer is certain
+      grad(i) = signer(i).sign(); //hard assign the gradient to +1 or -1
+      rprop.step(w, grad, &i);      //make an rprop step only in this dimension
+      signer(i).init();
+      //cout <<"making step in " <<i <<endl;
+    } else if(signer(i).N>1000) {
+      grad(i) = 0.;
+      rprop.step(w, grad, &i);      //make an rprop step only in this dimension
+      signer(i).init();
+      //cout <<"assuming 0 grad in " <<i <<endl;
+    }
+  }
+  log <<t
+      <<" time= " <<rai::timerRead()
+      <<" loss= " <<l/(t%BATCH+1)
+      <<" err= "  <<e/(t%BATCH+1)
+      <<endl;
+  cout <<t
+       <<" time= " <<rai::timerRead()
+       <<" loss= " <<l/(t%BATCH+1)
+       <<" err= "  <<e/(t%BATCH+1)
+       <<endl;
+  t++;
+  if(!(t%N)) perm.setRandomPerm(N);
+  if(!(t%BATCH)) {
     l=0.;
     e=0.;
-    rai::open(log, "log.sgd");
   }
-  
-  void OnlineRprop::step(){
-    arr grad;
-    double err;
-    l += m->loss(w, perm(t%N), &grad, &err);
-    e += err;
-    for(uint i=0; i<w.N; i++){
-      if(signer(i).step(grad(i))){  //signer is certain
-        grad(i) = signer(i).sign(); //hard assign the gradient to +1 or -1
-        rprop.step(w, grad, &i);      //make an rprop step only in this dimension
-        signer(i).init();
-        //cout <<"making step in " <<i <<endl;
-      } else if(signer(i).N>1000){
-        grad(i) = 0.;
-        rprop.step(w, grad, &i);      //make an rprop step only in this dimension
-        signer(i).init();
-        //cout <<"assuming 0 grad in " <<i <<endl;
-      }
-    }
-    log <<t
-    <<" time= " <<rai::timerRead()
-    <<" loss= " <<l/(t%BATCH+1)
-    <<" err= "  <<e/(t%BATCH+1)
-    <<endl;
-    cout <<t
-         <<" time= " <<rai::timerRead()
-         <<" loss= " <<l/(t%BATCH+1)
-         <<" err= "  <<e/(t%BATCH+1)
-         <<endl;
-    t++;
-    if(!(t%N)) perm.setRandomPerm(N);
-    if(!(t%BATCH)){
-      l=0.;
-      e=0.;
-    }
-  }
+}

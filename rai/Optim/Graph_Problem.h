@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -16,14 +16,14 @@ struct GraphProblem {
   /// We have 'featureVariables.N' features, each depends on the tuple/clique 'featureVariables(j)' of variables.
   /// That is, 'featureVariables' is a list of tuples/cliques that defines the hyper graph
   virtual void getStructure(uintA& variableDimensions, uintAA& featureVariables, ObjectiveTypeA& featureTypes) = 0;
-
+  
   /// We require 'x.N == \sum_i variableDimensions(i)'; so x defines the value of all variables
   /// This returns the feature values, types and Jacobians at state x
   /// Only for features of type 'OT_f' also a Hessian is returned
   /// Jacobians and Hessians are dense! But only w.r.t. the variables the feature depends on!!
   /// (It is the job of the optimizer to translate this to sparse global Jacobians/Hessians)
   virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x, arr& lambda) = 0;
-
+  
 //  bool checkStructure(const arr& x);                 ///< check if Jacobians and Hessians have right dimensions (=clique size)
 //  bool checkJacobian(const arr& x, double tolerance); ///< finite differences check of the returned Jacobian at x
 //  bool checkHessian(const arr& x, double tolerance);  ///< finite differences check of the returned Hessian at x
@@ -36,7 +36,7 @@ struct Conv_Graph_ConstrainedProblem : ConstrainedProblem {
   uintAA featureVariables;
   ObjectiveTypeA featureTypes;
   arrA J_G, H_G;
-
+  
   Conv_Graph_ConstrainedProblem(GraphProblem& _G);
   void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda);
 };

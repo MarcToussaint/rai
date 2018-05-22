@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -16,7 +16,7 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
   arr gx, Hx, gy, Hy;
   arr Delta, y;
   uint evals=0;
-
+  
   //compute initial costs
   if(fx_user && gx_user && Hx_user) { //pre-condition!: assumes S is correctly evaluated at x!!
     if(sanityCheck) {
@@ -31,7 +31,7 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
     fx = f.fs(gx, Hx, x);  evals++;
     if(addRegularizer)  fx += scalarProduct(x,(*addRegularizer)*vectorShaped(x));
   }
-
+  
   //startup verbose
   if(o.verbose>1) cout <<"*** optNewton: starting point f(x)=" <<fx <<" alpha=" <<alpha <<" lambda=" <<lambda <<endl;
   if(o.verbose>2) cout <<"\nx=" <<x <<endl;
@@ -40,12 +40,11 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
   if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha;
   if(o.verbose>2) fil <<' ' <<x;
   if(o.verbose>0) fil <<endl;
-
-
+  
   for(uint it=1;; it++) { //iterations and lambda adaptation loop
-
+  
     if(o.verbose>1) cout <<"optNewton it=" <<std::setw(3) <<it << " \tlambd=" <<std::setprecision(3) <<lambda <<flush;
-
+    
     //compute Delta
     //RAI_MSG("\nx=" <<x <<"\ngx=" <<gx <<"\nHx=" <<Hx);
     arr R=Hx;
@@ -62,13 +61,13 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
     }
     if(o.maxStep>0. && absMax(Delta)>o.maxStep)  Delta *= o.maxStep/absMax(Delta);
     if(o.verbose>1) cout <<" \t|Delta|=" <<absMax(Delta) <<flush;
-
+    
     //lazy stopping criterion: stop without any update
-    if(lambda<2. && absMax(Delta)<1e-1*o.stopTolerance){
+    if(lambda<2. && absMax(Delta)<1e-1*o.stopTolerance) {
       if(o.verbose>1) cout <<" \t - NO UPDATE" <<endl;
       break;
     }
-
+    
     for(;;) { //stepsize adaptation loop -- doesn't iterate for useDamping option
       y = x + alpha*Delta;
       fy = f.fs(gy, Hy, y);  evals++;
@@ -97,11 +96,11 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
         if(o.dampingInc!=1.) break; //we need to recompute Delta
       }
     }
-
+    
     if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha;
     if(o.verbose>2) fil <<' ' <<x;
     if(o.verbose>0) fil <<endl;
-
+    
     //stopping criteria
 #define STOPIF(expr) if(expr){ if(o.verbose>1) cout <<"\t\t\t\t\t\t--- stopping criterion='" <<#expr <<"'" <<endl; break; }
     STOPIF(lambda<2. && absMax(Delta)<o.stopTolerance);

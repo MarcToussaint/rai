@@ -1,22 +1,10 @@
-/*  ---------------------------------------------------------------------
-    Copyright 2012 Marc Toussaint
-    email: mtoussai@cs.tu-berlin.de
-    
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a COPYING file of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>
-    -----------------------------------------------------------------  */
+/*  ------------------------------------------------------------------
+    Copyright (c) 2017 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
 
-
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
 
 // this requires T to be defined!!!
 
@@ -97,7 +85,6 @@ template T scalarProduct(const rai::Array<T>& g, const rai::Array<T>& v, const r
 
 template rai::Array<T> catCol(const rai::Array<rai::Array<T>* >& X);
 
-
 template void tensorEquation(rai::Array<T> &X, const rai::Array<T> &A, const uintA &pickA, const rai::Array<T> &B, const uintA &pickB, uint sum);
 template void tensorPermutation(rai::Array<T> &Y, const rai::Array<T> &X, const uintA &Yid);
 template void tensorMarginal(rai::Array<T> &Y, const rai::Array<T> &X, const rai::Array<uint> &Yid);
@@ -112,6 +99,5 @@ template void rndGauss(rai::Array<T>& a, double stdDev, bool add);
 //template void rndGauss(rai::Array<T>& a, bool add);
 //template rai::Array<T>& rndGauss(double stdDev, uint dim);
 template uint softMax(const rai::Array<T>& a, rai::Array<double>& soft, double beta);
-
 
 #undef T

@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -20,21 +20,21 @@
  * The standard usage is nothing but alternating 'applyEffect' (triggered from external processes) and 'fwdChainRules'/
  *
  */
-struct RelationalMachine{
+struct RelationalMachine {
   Graph KB;     ///< knowledge base
   Graph *state; ///< the state within the KB (is a subgraph item of KB)
   Graph *tmp;   ///< a tmp subgraph of the KB (private)
   rai::LogObject _log;
-
+  
   RelationalMachine();
   RelationalMachine(const char* filename);
   void init(const char* filename);
-
+  
   bool queryCondition(rai::String query) const; ///< return indicates coverage of the condition
   bool applyEffect(rai::String effect, bool fwdChain=false);   ///< return indicates change of state
   bool applyEffect(Node* literal, bool fwdChain=false);
   NodeL fwdChainRules();                 ///< progresses the state by applying all rules until convergence
-
+  
   Node* declareNewSymbol(rai::String symbolStr);
   rai::String getKB();
   rai::String getState() const;
@@ -42,12 +42,12 @@ struct RelationalMachine{
   StringA getSymbols() const;
 };
 
-inline RelationalMachine& operator<<(RelationalMachine& RM, const char* effect){
+inline RelationalMachine& operator<<(RelationalMachine& RM, const char* effect) {
   RM.applyEffect(rai::String(effect));
   return RM;
 }
 
-inline std::ostream& operator<<(std::ostream& os, RelationalMachine& RM){
+inline std::ostream& operator<<(std::ostream& os, RelationalMachine& RM) {
   os <<RM.getState();
   return os;
 }

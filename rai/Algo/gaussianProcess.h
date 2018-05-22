@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -27,7 +27,7 @@ struct GaussianProcess {
   double mu; ///< const bias of the GP
   double(*mu_func)(const arr &x, const void *param);  ///< prior of the GP (variable bias)
   void *priorP;
-
+  
   double obsVar;
   
   //-- new covariance function naming
@@ -38,12 +38,12 @@ struct GaussianProcess {
   // kernelD3 = covDD_D
   /* covariance between two function values */
   double(*cov)(void *P, const arr& a, const arr& b);
-  double covF_F(void *P, const arr& a, const arr& b){ return cov(P, a, b); }
+  double covF_F(void *P, const arr& a, const arr& b) { return cov(P, a, b); }
   /* gradient of covariance. other words \forall i covD_F(i, P, a, a) */
   void (*dcov)(arr& grad, void *P, const arr& a, const arr& b);
   /* covariance between derivative and function values */
   double(*covF_D)(uint e, void *P, const arr& a, const arr& b);
-  double   covD_F(uint e, void *P, const arr& a, const arr& b){return covF_D(e, P, b, a);}
+  double   covD_F(uint e, void *P, const arr& a, const arr& b) {return covF_D(e, P, b, a);}
   /* covariance between two derivatives */
   double(*covD_D)(uint e, uint l, void *P, const arr& a, const arr& b);
   /* covariance between 2nd derivative and function values */
@@ -55,7 +55,7 @@ struct GaussianProcess {
   
   GaussianProcess();
   
-  GaussianProcess(const GaussianProcess &f){
+  GaussianProcess(const GaussianProcess &f) {
     X=f.X; Y=f.Y; dX=f.dX; dY=f.dY; dI=f.dI;
     Ginv=f.Ginv; GinvY=f.GinvY; ig2=f.ig2;
     mu=f.mu; mu_func=f.mu_func; priorP=f.priorP;
@@ -63,10 +63,10 @@ struct GaussianProcess {
     covD_D=f.covD_D; covDD_F=f.covDD_F; covDD_D=f.covDD_D;
     kernelP=f.kernelP; obsVar=f.obsVar;
   }
-
-  void clear(){ X.clear(); Y.clear(); dX.clear(); dY.clear(); dI.clear(); Ginv.clear(); GinvY.clear(); ig2.clear(); }
   
-  void copyFrom(GaussianProcess &f){
+  void clear() { X.clear(); Y.clear(); dX.clear(); dY.clear(); dI.clear(); Ginv.clear(); GinvY.clear(); ig2.clear(); }
+  
+  void copyFrom(GaussianProcess &f) {
     X=f.X; Y=f.Y; dX=f.dX; dY=f.dY; dI=f.dI;
     Ginv=f.Ginv; GinvY=f.GinvY; ig2=f.ig2;
     mu=f.mu; mu_func=f.mu_func; priorP=f.priorP;
@@ -78,12 +78,12 @@ struct GaussianProcess {
   /** set an arbitrary covariance function,
       P is a pointer to parameters (a struct) that is passed
       everytime when the _cov is called */
-  void setKernel(double(*_cov)(void *P, const arr& x, const arr& y), void *_kernelP){
+  void setKernel(double(*_cov)(void *P, const arr& x, const arr& y), void *_kernelP) {
     kernelP=_kernelP;
     cov=_cov;
     dcov=NULL;
   }
-  void setKernel(double(*_cov)(void *P, const arr& x, const arr& y), void (*_dcov)(arr& grad, void *P, const arr& x, const arr& y), void *_kernelP){
+  void setKernel(double(*_cov)(void *P, const arr& x, const arr& y), void (*_dcov)(arr& grad, void *P, const arr& x, const arr& y), void *_kernelP) {
     kernelP=_kernelP;
     cov=_cov;
     dcov=_dcov;
@@ -102,7 +102,7 @@ struct GaussianProcess {
     double(*_covD_D)(uint, uint, void *, const arr&, const arr&),
     double(*_covDD_F)(uint, uint, void *, const arr&, const arr&),
     double(*_covDD_D)(uint, uint, uint, void *, const arr&, const arr&),
-    void *_kernelP){
+    void *_kernelP) {
     kernelP=_kernelP;
     cov=_cov;
     dcov=_dcov;
@@ -125,13 +125,13 @@ struct GaussianProcess {
   double log_likelihood();
   double max_var(); // the variance when no data present
   void gradient(arr& grad, const arr& x);           ///< evaluate the gradient dy/dx of the mean at some point
-  void hessianPos (arr& hess, const arr& x);           ///< evaluate the hessian dy/dx1dx2 of the mean at some point
+  void hessianPos(arr& hess, const arr& x);            ///< evaluate the hessian dy/dx1dx2 of the mean at some point
   void gradientV(arr& grad, const arr& x); ///< variance gradient
   void k_star(const arr& x, arr& k);
   void dk_star(const arr& x, arr& k);
   
-  void push(const arr& x, double y){ ig2=Ginv; appendObservation(x, y); recompute(); }
-  void pop(){ Ginv=ig2; X.resizeCopy(X.d0-1, X.d1); Y.resizeCopy(Y.N-1); }
+  void push(const arr& x, double y) { ig2=Ginv; appendObservation(x, y); recompute(); }
+  void pop() { Ginv=ig2; X.resizeCopy(X.d0-1, X.d1); Y.resizeCopy(Y.N-1); }
 };
 
 #define KRONEKER(a, b)   ( ((a)==(b)) ? 1 : 0 )
@@ -143,16 +143,16 @@ struct GaussianProcess {
 
 struct GaussKernelParams {
   double priorVar, widthVar, derivVar;
-  GaussKernelParams(){ priorVar=.01; widthVar=.04; derivVar=.01; }
-  GaussKernelParams(double _priorSDV, double _widthSDV, double _derivSDV){ priorVar=_priorSDV*_priorSDV; widthVar=_widthSDV*_widthSDV; derivVar=_derivSDV*_derivSDV;}
+  GaussKernelParams() { priorVar=.01; widthVar=.04; derivVar=.01; }
+  GaussKernelParams(double _priorSDV, double _widthSDV, double _derivSDV) { priorVar=_priorSDV*_priorSDV; widthVar=_widthSDV*_widthSDV; derivVar=_derivSDV*_derivSDV;}
 };
 
 /// you can also pass a double[3] as parameters
 /* covariance between functionvalues at \vec a and \vec b */
-inline double GaussKernel(void *P, const arr& a, const arr& b){
+inline double GaussKernel(void *P, const arr& a, const arr& b) {
   GaussKernelParams& K = *((GaussKernelParams*)P);
-  if((&a==&b) || operator==(a, b)) 
-    return K.priorVar; 
+  if((&a==&b) || operator==(a, b))
+    return K.priorVar;
   double d;
   if(a.N!=1) d=sqrDistance(a, b); else { d=b(0)-a(0); d=d*d; }
   return K.priorVar*::exp(-.5 * d/K.widthVar);
@@ -162,9 +162,9 @@ inline double GaussKernel(void *P, const arr& a, const arr& b){
   for i \in {vector dimensions}: \dfdx{k(a, b)}{x_i}  w.r.t.
   In other words: for all components invoke covD_F(i, P, a, b)
   you can also pass a double[3] as parameters */
-inline void dGaussKernel(arr& grad, void *P, const arr& a, const arr& b){
+inline void dGaussKernel(arr& grad, void *P, const arr& a, const arr& b) {
   GaussKernelParams& K = *((GaussKernelParams*)P);
-  if(&a==&b){ grad.resizeAs(a); grad.setZero(); return; }
+  if(&a==&b) { grad.resizeAs(a); grad.setZero(); return; }
   double gauss=GaussKernel(P, a, b), gamma=1./K.widthVar;
   grad = gamma * (b-a) * gauss; // SD: Note the (b - a) swap cancles the leading minus
   //RAI_MSG("gamma=" <<gamma <<"; b-a" <<b -a <<"; gauss=" <<gauss<<"; grad=" <<grad);
@@ -173,9 +173,9 @@ inline void dGaussKernel(arr& grad, void *P, const arr& a, const arr& b){
 /** @brief covariance between derivative at point a and function value at
  * point b
   you can also pass a double[3] as parameters */
-inline double GaussKernelF_D(uint e, void *P, const arr& a, const arr& b){
+inline double GaussKernelF_D(uint e, void *P, const arr& a, const arr& b) {
   GaussKernelParams& K = *((GaussKernelParams*)P);
-  if(&a==&b){ HALT("this shouldn't happen, I think"); }
+  if(&a==&b) { HALT("this shouldn't happen, I think"); }
   double gauss=GaussKernel(P, a, b), gamma=1./K.widthVar;
   double de=a(e)-b(e);
   return gamma * de * gauss;
@@ -183,7 +183,7 @@ inline double GaussKernelF_D(uint e, void *P, const arr& a, const arr& b){
 
 /** @brief covariance between derivatives at points \vec a and \vec b
   you can also pass a double[3] as parameters */
-inline double GaussKernelD_D(uint e, uint l, void *P, const arr& a, const arr& b){
+inline double GaussKernelD_D(uint e, uint l, void *P, const arr& a, const arr& b) {
   GaussKernelParams& K = *((GaussKernelParams*)P);
   if(&a==&b) return K.priorVar/K.widthVar + K.derivVar;
   double gauss=GaussKernel(P, a, b), gamma=1./K.widthVar;
@@ -193,14 +193,14 @@ inline double GaussKernelD_D(uint e, uint l, void *P, const arr& a, const arr& b
 
 /** @brief covariance between 2nd derivative at \vec a and fun value at \vec b
   you can also pass a double[3] as parameters */
-inline double GaussKernelDD_F(uint e, uint l, void *P, const arr& a, const arr& b){
+inline double GaussKernelDD_F(uint e, uint l, void *P, const arr& a, const arr& b) {
   return - GaussKernelD_D(e, l, P, a, b);
 }
 
 /** @brief covariance between second derivative at point \vec a and  1st
  * derivative at \vec b
   you can also pass a double[3] as parameters */
-inline double GaussKernelDD_D(uint e, uint l, uint s, void *P, const arr& a, const arr& b){
+inline double GaussKernelDD_D(uint e, uint l, uint s, void *P, const arr& a, const arr& b) {
   GaussKernelParams& K = *((GaussKernelParams*)P);
   if(&a==&b) return K.priorVar/K.widthVar + K.derivVar;
   double gauss=GaussKernel(P, a, b), gamma=1./K.widthVar;
@@ -213,7 +213,7 @@ inline double GaussKernelDD_D(uint e, uint l, uint s, void *P, const arr& a, con
          )*gauss;
 }
 
-inline double maximizeGP(GaussianProcess& gp, arr& x){
+inline double maximizeGP(GaussianProcess& gp, arr& x) {
   NIY;
   /*
      CHECK(gp.Y.N, "");
@@ -240,8 +240,8 @@ void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause=true);
 void plotKernel1D(GaussianProcess& gp, double lo, double hi, bool pause=true);
 void plotKernel2D(GaussianProcess& gp, double lo, double hi, bool pause=true);
 
-inline void randomFunction(GaussianProcess& gp, arr& Xbase, bool illustrate, bool fromPosterior=false){
-  double orgObsVar=gp.obsVar; 
+inline void randomFunction(GaussianProcess& gp, arr& Xbase, bool illustrate, bool fromPosterior=false) {
+  double orgObsVar=gp.obsVar;
   gp.obsVar=1e-6;
   
   arr x;
@@ -252,8 +252,8 @@ inline void randomFunction(GaussianProcess& gp, arr& Xbase, bool illustrate, boo
   
 //  Xbase.randomPermute();
   //gp.X.resize(0, 1); gp.Y.resize(0); //clear current data
-  for(i=0; i<Xbase.d0; i++){
-    if(illustrate && i>0 && !(i%10)){ //display
+  for(i=0; i<Xbase.d0; i++) {
+    if(illustrate && i>0 && !(i%10)) { //display
       plotBelief(gp, Xbase.min(), Xbase.max());
     }
     
@@ -266,7 +266,6 @@ inline void randomFunction(GaussianProcess& gp, arr& Xbase, bool illustrate, boo
   
   gp.obsVar=orgObsVar;
 }
-
 
 #ifdef  RAI_IMPLEMENTATION
 #  include "gaussianProcess.cpp"

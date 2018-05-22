@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -14,7 +14,6 @@
 //
 // types (mostly abstract classes or lambda expressions) to represent non-linear programs
 //
-
 
 /// A scalar function $y = f(x)$, if @df@ or @Hf@ are not NoArr, the gradient and/or Hessian is returned
 typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
@@ -37,12 +36,11 @@ extern ObjectiveTypeA& NoTermTypeA;
  *  feature; and if there exists this feature the returned Hessian $H$ needs to be its hessian.
  *  For the sumOfSqr features no Hessian is returned: we assume the Gauss-Newton approximation.
  */
-struct ConstrainedProblem{
+struct ConstrainedProblem {
   //TODO: add getStructure -> dim_x, tt
   virtual ~ConstrainedProblem() = default;
   virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x, arr& lambda) = 0;
 };
-
 
 //===========================================================================
 //
@@ -51,12 +49,11 @@ struct ConstrainedProblem{
 
 typedef std::function<void(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x)> ConstrainedProblemLambda;
 
-struct Conv_Lambda_ConstrainedProblem : ConstrainedProblem{
+struct Conv_Lambda_ConstrainedProblem : ConstrainedProblem {
   ConstrainedProblemLambda f;
-  Conv_Lambda_ConstrainedProblem(const ConstrainedProblemLambda& f): f(f){}
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x){ f(phi, J, H, tt, x); }
+  Conv_Lambda_ConstrainedProblem(const ConstrainedProblemLambda& f): f(f) {}
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) { f(phi, J, H, tt, x); }
 };
-
 
 //===========================================================================
 //
@@ -67,7 +64,6 @@ bool checkJacobianCP(ConstrainedProblem& P, const arr& x, double tolerance);
 bool checkHessianCP(ConstrainedProblem& P, const arr& x, double tolerance);
 bool checkDirectionalGradient(const ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction &f, const arr& x, const arr& delta, double tolerance);
-
 
 //===========================================================================
 //
@@ -115,7 +111,6 @@ extern Singleton<OptOptions> globalOptOptions;
 #include "convert.h"
 //uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions opt);
 
-
 //===========================================================================
 //
 // helpers
@@ -123,10 +118,8 @@ extern Singleton<OptOptions> globalOptOptions;
 
 void displayFunction(const ScalarFunction &f, bool wait=false, double lo=-1.2, double hi=1.2);
 
-
 // function evaluation counter (used only for performance meassurements, global for simplicity)
 extern uint eval_cost;
-
 
 //===========================================================================
 //

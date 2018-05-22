@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -17,25 +17,25 @@
 #  include <pcl_conversions/pcl_conversions.h>
 #endif
 
-RosCom::RosCom(const char* node_name){
+RosCom::RosCom(const char* node_name) {
   rosCheckInit(node_name);
   spinner = new RosCom_Spinner(node_name);
 }
 
-RosCom::~RosCom(){
+RosCom::~RosCom() {
   delete spinner;
 }
 
-bool rosOk(){
+bool rosOk() {
   return ros::ok();
 }
 
-void rosCheckInit(const char* node_name){
+void rosCheckInit(const char* node_name) {
 // TODO make static variables to singleton
   static Mutex mutex;
   static bool inited = false;
-
-  if(rai::getParameter<bool>("useRos", true)){
+  
+  if(rai::getParameter<bool>("useRos", true)) {
     mutex.lock();
     if(!inited) {
       rai::String nodeName = rai::getParameter<rai::String>("rosNodeName", STRING(node_name));
@@ -46,28 +46,28 @@ void rosCheckInit(const char* node_name){
   }
 }
 
-RosInit::RosInit(const char* node_name){
+RosInit::RosInit(const char* node_name) {
   rosCheckInit(node_name);
 }
 
-std_msgs::String conv_string2string(const rai::String& str){
+std_msgs::String conv_string2string(const rai::String& str) {
   std_msgs::String msg;
   if(str.N) msg.data = str.p;
   return msg;
 }
 
-rai::String conv_string2string(const std_msgs::String& msg){
+rai::String conv_string2string(const std_msgs::String& msg) {
   return rai::String(msg.data);
 }
 
-std_msgs::String conv_stringA2string(const StringA& strs){
+std_msgs::String conv_stringA2string(const StringA& strs) {
   std_msgs::String msg;
   for(const rai::String& str:strs)
-    if(str.N){ msg.data += ", ";  msg.data += str.p; }
+    if(str.N) { msg.data += ", ";  msg.data += str.p; }
   return msg;
 }
 
-rai::Transformation conv_transform2transformation(const tf::Transform &trans){
+rai::Transformation conv_transform2transformation(const tf::Transform &trans) {
   rai::Transformation X;
   X.setZero();
   tf::Quaternion q = trans.getRotation();
@@ -77,8 +77,7 @@ rai::Transformation conv_transform2transformation(const tf::Transform &trans){
   return X;
 }
 
-
-rai::Transformation conv_transform2transformation(const geometry_msgs::Transform &trans){
+rai::Transformation conv_transform2transformation(const geometry_msgs::Transform &trans) {
   rai::Transformation X;
   X.setZero();
   X.rot.set(trans.rotation.w, trans.rotation.x, trans.rotation.y, trans.rotation.z);
@@ -86,7 +85,7 @@ rai::Transformation conv_transform2transformation(const geometry_msgs::Transform
   return X;
 }
 
-rai::Transformation conv_pose2transformation(const geometry_msgs::Pose &pose){
+rai::Transformation conv_pose2transformation(const geometry_msgs::Pose &pose) {
   rai::Transformation X;
   X.setZero();
   auto& q = pose.orientation;
@@ -96,7 +95,7 @@ rai::Transformation conv_pose2transformation(const geometry_msgs::Pose &pose){
   return X;
 }
 
-geometry_msgs::Pose conv_transformation2pose(const rai::Transformation& transform){
+geometry_msgs::Pose conv_transformation2pose(const rai::Transformation& transform) {
   geometry_msgs::Pose pose;
   pose.position.x = transform.pos.x;
   pose.position.y = transform.pos.y;
@@ -108,7 +107,7 @@ geometry_msgs::Pose conv_transformation2pose(const rai::Transformation& transfor
   return pose;
 }
 
-geometry_msgs::Transform conv_transformation2transform(const rai::Transformation& transformation){
+geometry_msgs::Transform conv_transformation2transform(const rai::Transformation& transformation) {
   geometry_msgs::Transform transform;
   transform.translation.x = transformation.pos.x;
   transform.translation.y  = transformation.pos.y;
@@ -120,61 +119,59 @@ geometry_msgs::Transform conv_transformation2transform(const rai::Transformation
   return transform;
 }
 
-rai::Vector conv_point2vector(const geometry_msgs::Point& p){
+rai::Vector conv_point2vector(const geometry_msgs::Point& p) {
   return rai::Vector(p.x, p.y, p.z);
 }
 
-rai::Quaternion conv_quaternion2quaternion(const geometry_msgs::Quaternion& q){
+rai::Quaternion conv_quaternion2quaternion(const geometry_msgs::Quaternion& q) {
   return rai::Quaternion(q.w, q.x, q.y, q.z);
 }
 
-void conv_pose2transXYPhi(arr& q, uint qIndex, const geometry_msgs::PoseWithCovarianceStamped& pose){
+void conv_pose2transXYPhi(arr& q, uint qIndex, const geometry_msgs::PoseWithCovarianceStamped& pose) {
   q({qIndex, qIndex+3}) = conv_pose2transXYPhi(pose);
 }
 
-arr conv_pose2transXYPhi(const geometry_msgs::PoseWithCovarianceStamped& pose){
+arr conv_pose2transXYPhi(const geometry_msgs::PoseWithCovarianceStamped& pose) {
   auto& _quat=pose.pose.pose.orientation;
   auto& _pos=pose.pose.pose.position;
   rai::Quaternion quat(_quat.w, _quat.x, _quat.y, _quat.z);
   rai::Vector pos(_pos.x, _pos.y, _pos.z);
-
+  
   double angle;
   rai::Vector rotvec;
   quat.getRad(angle, rotvec);
   return ARR(pos(0), pos(1), rai::sign(rotvec(2)) * angle);
 }
 
-timespec conv_time2timespec(const ros::Time& time){
+timespec conv_time2timespec(const ros::Time& time) {
   return {time.sec, time.nsec};
 }
 
-double conv_time2double(const ros::Time& time){
+double conv_time2double(const ros::Time& time) {
   return (double)(time.sec) + 1e-9d*(double)(time.nsec);
 }
 
-rai::Transformation ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener){
+rai::Transformation ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener) {
   rai::Transformation X;
   X.setZero();
-  try{
+  try {
     tf::StampedTransform transform;
     listener.lookupTransform(from, to, ros::Time(0), transform);
     X = conv_transform2transformation(transform);
-  }
-  catch (tf::TransformException &ex) {
+  } catch(tf::TransformException &ex) {
     ROS_ERROR("%s",ex.what());
     ros::Duration(1.0).sleep();
   }
   return X;
 }
 
-bool ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener, rai::Transformation& result){
+bool ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener, rai::Transformation& result) {
   result.setZero();
-  try{
+  try {
     tf::StampedTransform transform;
     listener.lookupTransform(from, to, ros::Time(0), transform);
     result = conv_transform2transformation(transform);
-  }
-  catch (tf::TransformException &ex) {
+  } catch(tf::TransformException &ex) {
     ROS_ERROR("%s",ex.what());
     ros::Duration(1.0).sleep();
     return false;
@@ -182,28 +179,26 @@ bool ros_getTransform(const std::string& from, const std::string& to, tf::Transf
   return true;
 }
 
-
-rai::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener, tf::Transform* returnRosTransform){
+rai::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener, tf::Transform* returnRosTransform) {
   rai::Transformation X;
   X.setZero();
-  try{
+  try {
     tf::StampedTransform transform;
     listener.waitForTransform(from, to.frame_id, to.stamp, ros::Duration(0.05));
     listener.lookupTransform(from, to.frame_id, to.stamp, transform);
     X = conv_transform2transformation(transform);
     if(returnRosTransform) *returnRosTransform=transform;
-  }
-  catch (tf::TransformException &ex) {
+  } catch(tf::TransformException &ex) {
     ROS_ERROR("%s",ex.what());
     ros::Duration(1.0).sleep();
   }
   return X;
 }
 
-arr conv_points2arr(const std::vector<geometry_msgs::Point>& pts){
+arr conv_points2arr(const std::vector<geometry_msgs::Point>& pts) {
   uint n=pts.size();
   arr P(n,3);
-  for(uint i=0;i<n;i++){
+  for(uint i=0; i<n; i++) {
     P(i,0) = pts[i].x;
     P(i,1) = pts[i].y;
     P(i,2) = pts[i].z;
@@ -211,10 +206,10 @@ arr conv_points2arr(const std::vector<geometry_msgs::Point>& pts){
   return P;
 }
 
-arr conv_colors2arr(const std::vector<std_msgs::ColorRGBA>& pts){
+arr conv_colors2arr(const std::vector<std_msgs::ColorRGBA>& pts) {
   uint n=pts.size();
   arr P(n,3);
-  for(uint i=0;i<n;i++){
+  for(uint i=0; i<n; i++) {
     P(i,0) = pts[i].r;
     P(i,1) = pts[i].g;
     P(i,2) = pts[i].b;
@@ -222,11 +217,10 @@ arr conv_colors2arr(const std::vector<std_msgs::ColorRGBA>& pts){
   return P;
 }
 
-
-std::vector<geometry_msgs::Point> conv_arr2points(const arr& pts){
+std::vector<geometry_msgs::Point> conv_arr2points(const arr& pts) {
   uint n=pts.d0;
   std::vector<geometry_msgs::Point> P(n);
-  for(uint i=0;i<n;i++){
+  for(uint i=0; i<n; i++) {
     P[i].x = pts(i, 0);
     P[i].y = pts(i, 1);
     P[i].z = pts(i, 2);
@@ -234,37 +228,37 @@ std::vector<geometry_msgs::Point> conv_arr2points(const arr& pts){
   return P;
 }
 
-arr conv_wrench2arr(const geometry_msgs::WrenchStamped& msg){
+arr conv_wrench2arr(const geometry_msgs::WrenchStamped& msg) {
   auto& f=msg.wrench.force;
   auto& t=msg.wrench.torque;
   return ARR(f.x, f.y, f.z, t.x, t.y, t.z);
 }
 
-byteA conv_image2byteA(const sensor_msgs::Image& msg){
+byteA conv_image2byteA(const sensor_msgs::Image& msg) {
   uint channels = msg.data.size()/(msg.height*msg.width);
   byteA img;
-  if(channels==4){
+  if(channels==4) {
     img=conv_stdvec2arr<byte>(msg.data).reshape(msg.height, msg.width, 4);
-  }else{
+  } else {
     img=conv_stdvec2arr<byte>(msg.data).reshape(msg.height, msg.width, 3);
     swap_RGB_BGR(img);
   }
   return img;
 }
 
-uint16A conv_image2uint16A(const sensor_msgs::Image& msg){
+uint16A conv_image2uint16A(const sensor_msgs::Image& msg) {
   byteA data = conv_stdvec2arr<byte>(msg.data);
   uint16A ref((const uint16_t*)data.p, data.N/2);
   return ref.reshape(msg.height, msg.width);
 }
 
-floatA conv_laserScan2arr(const sensor_msgs::LaserScan& msg){
+floatA conv_laserScan2arr(const sensor_msgs::LaserScan& msg) {
   floatA data = conv_stdvec2arr<float>(msg.ranges);
   return data;
 }
 
 #ifdef RAI_PCL
-Pcl conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg){
+Pcl conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg) {
   pcl::PCLPointCloud2 pcl_pc2;
   pcl_conversions::toPCL(msg, pcl_pc2);
   LOG(0) <<"size=" <<pcl_pc2.data.size();
@@ -275,16 +269,16 @@ Pcl conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg){
 }
 #endif
 
-CtrlMsg conv_JointState2CtrlMsg(const rai_msgs::JointState& msg){
+CtrlMsg conv_JointState2CtrlMsg(const rai_msgs::JointState& msg) {
   return CtrlMsg(conv_stdvec2arr(msg.q), conv_stdvec2arr(msg.qdot), conv_stdvec2arr(msg.fL), conv_stdvec2arr(msg.fR),conv_stdvec2arr(msg.u_bias), conv_stdvec2arr(msg.fL_err), conv_stdvec2arr(msg.fR_err));
-
+  
 }
 
-arr conv_JointState2arr(const sensor_msgs::JointState& msg){
+arr conv_JointState2arr(const sensor_msgs::JointState& msg) {
   return conv_stdvec2arr(msg.position);
 }
 
-rai_msgs::JointState conv_CtrlMsg2JointState(const CtrlMsg& ctrl){
+rai_msgs::JointState conv_CtrlMsg2JointState(const CtrlMsg& ctrl) {
   rai_msgs::JointState jointState;
   if(!ctrl.q.N) return jointState;
   jointState.q = conv_arr2stdvec(ctrl.q);
@@ -310,24 +304,24 @@ rai_msgs::JointState conv_CtrlMsg2JointState(const CtrlMsg& ctrl){
   return jointState;
 }
 
-rai::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::MarkerArray& markers){
+rai::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::MarkerArray& markers) {
   rai::KinematicWorld world;
   tf::TransformListener listener;
-  for(const visualization_msgs::Marker& marker:markers.markers){
+  for(const visualization_msgs::Marker& marker:markers.markers) {
     rai::String name;
     name <<"obj" <<marker.id;
     rai::Shape *s = world.getFrameByName(name)->shape;
-    if(!s){
+    if(!s) {
       rai::Frame *f = new rai::Frame(world);
       f->name=name;
       s = new rai::Shape(*f);
-      if(marker.type==marker.CYLINDER){
+      if(marker.type==marker.CYLINDER) {
         s->type() = rai::ST_cylinder;
-      }else if(marker.type==marker.POINTS){
+      } else if(marker.type==marker.POINTS) {
         s->type() = rai::ST_mesh;
         s->mesh().V = conv_points2arr(marker.points);
         s->mesh().C = conv_colors2arr(marker.colors);
-      }else NIY;
+      } else NIY;
     }
     s->size(0) = marker.scale.x;
     s->size(1) = marker.scale.y;
@@ -338,23 +332,23 @@ rai::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::Ma
   return world;
 }
 
-std_msgs::Float32MultiArray conv_floatA2Float32Array(const floatA &x){
+std_msgs::Float32MultiArray conv_floatA2Float32Array(const floatA &x) {
   std_msgs::Float32MultiArray msg;
   msg.data = conv_arr2stdvec<float>(x);
   msg.layout.dim.resize(x.nd);
-  for(uint i=0;i<x.nd;i++) msg.layout.dim[i].size=x.dim(i);
+  for(uint i=0; i<x.nd; i++) msg.layout.dim[i].size=x.dim(i);
   return msg;
 }
 
-std_msgs::Float64MultiArray conv_arr2Float64Array(const arr &x){
+std_msgs::Float64MultiArray conv_arr2Float64Array(const arr &x) {
   std_msgs::Float64MultiArray msg;
   msg.data = conv_arr2stdvec<double>(x);
   msg.layout.dim.resize(x.nd);
-  for(uint i=0;i<x.nd;i++) msg.layout.dim[i].size=x.dim(i);
+  for(uint i=0; i<x.nd; i++) msg.layout.dim[i].size=x.dim(i);
   return msg;
 }
 
-floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray &msg){
+floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray &msg) {
   floatA x = conv_stdvec2arr<float>(msg.data);
   uint nd = msg.layout.dim.size();
   if(nd==2) x.reshape(msg.layout.dim[0].size, msg.layout.dim[1].size);
@@ -363,41 +357,41 @@ floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray &msg){
   return x;
 }
 
-arr conv_Float32Array2arr(const std_msgs::Float32MultiArray &msg){
+arr conv_Float32Array2arr(const std_msgs::Float32MultiArray &msg) {
   floatA f = conv_Float32Array2FloatA(msg);
   arr x;
   copy(x, f);
   return x;
 }
 
-rai_msgs::arr conv_arr2arr(const arr& x){
+rai_msgs::arr conv_arr2arr(const arr& x) {
   rai_msgs::arr y;
   y.dim = x.dim();
   y.data = x;
   return y;
 }
 
-arr conv_arr2arr(const rai_msgs::arr &x){
+arr conv_arr2arr(const rai_msgs::arr &x) {
   arr y;
   y = conv_stdvec2arr(x.data);
   y.reshape(conv_stdvec2arr(x.dim));
   return y;
 }
 
-StringA conv_StringA2StringA(const rai_msgs::StringA &x){
+StringA conv_StringA2StringA(const rai_msgs::StringA &x) {
   StringA y(x.data.size());
-  for(uint i=0;i<y.N;i++) y.elem(i) = x.data[i].c_str();
+  for(uint i=0; i<y.N; i++) y.elem(i) = x.data[i].c_str();
   return y;
 }
 
-rai_msgs::StringA conv_StringA2StringA(const StringA &x){
+rai_msgs::StringA conv_StringA2StringA(const StringA &x) {
   rai_msgs::StringA y;
   y.data.resize(x.N);
-  for(uint i=0;i<x.N;i++) y.data[i] = x.elem(i).p;
+  for(uint i=0; i<x.N; i++) y.data[i] = x.elem(i).p;
   return y;
 }
 
-std_msgs::Float64 conv_double2Float64(const double &x){
+std_msgs::Float64 conv_double2Float64(const double &x) {
   std_msgs::Float64 y;
   y.data = x;
   return y;
@@ -405,7 +399,7 @@ std_msgs::Float64 conv_double2Float64(const double &x){
 
 //===========================================================================
 
-visualization_msgs::Marker conv_Shape2Marker(const rai::Shape& sh){
+visualization_msgs::Marker conv_Shape2Marker(const rai::Shape& sh) {
   visualization_msgs::Marker new_marker;
   new_marker.header.stamp = ros::Time::now();
   new_marker.header.frame_id = "map";
@@ -418,16 +412,16 @@ visualization_msgs::Marker conv_Shape2Marker(const rai::Shape& sh){
   new_marker.color.g = 1.0f;
   new_marker.color.b = 0.0f;
   new_marker.color.a = 1.0f;
-
+  
 #if 0
-  switch(sh.type){
-    case rai::ST_box:{
+  switch(sh.type) {
+    case rai::ST_box: {
       new_marker.type = visualization_msgs::Marker::CUBE;
       new_marker.scale.x = .001 * sh.size(0);
       new_marker.scale.y = .001 * sh.size(1);
       new_marker.scale.z = .001 * sh.size(2);
     } break;
-    case rai::ST_mesh:{
+    case rai::ST_mesh: {
       new_marker.type = visualization_msgs::Marker::POINTS;
       new_marker.points = conv_arr2points(sh.mesh.V);
       new_marker.scale.x = .001;
@@ -442,21 +436,18 @@ visualization_msgs::Marker conv_Shape2Marker(const rai::Shape& sh){
   new_marker.scale.x = .1;
   new_marker.scale.y = .1;
   new_marker.scale.z = .1;
-
+  
 #endif
-
+  
   return new_marker;
 }
 
-visualization_msgs::MarkerArray conv_Kin2Markers(const rai::KinematicWorld& K){
+visualization_msgs::MarkerArray conv_Kin2Markers(const rai::KinematicWorld& K) {
   visualization_msgs::MarkerArray M;
-  for(rai::Frame *f : K.frames) M.markers.push_back( conv_Shape2Marker(*f->shape) );
+  for(rai::Frame *f : K.frames) M.markers.push_back(conv_Shape2Marker(*f->shape));
 //  M.header.frame_id = "1";
   return M;
 }
 
-
 #endif
-
-
 

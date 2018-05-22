@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -13,11 +13,11 @@
 
 Gamepad2Tasks::Gamepad2Tasks(TaskControlMethods& _TC, const rai::KinematicWorld& K, const arr& _q0)
   : TC(_TC), q0(_q0),
-    endeffR(NULL), endeffL(NULL), base(NULL), torso(NULL), head(NULL), headAxes(NULL), limits(NULL), coll(NULL), gripperL(NULL), gripperR(NULL){
-
+    endeffR(NULL), endeffL(NULL), base(NULL), torso(NULL), head(NULL), headAxes(NULL), limits(NULL), coll(NULL), gripperL(NULL), gripperR(NULL) {
+    
   robot = rai::getParameter<rai::String>("robot", "pr2");
-
-  if(true || rai::getParameter<bool>("oldfashinedTaskControl", true)){
+  
+  if(true || rai::getParameter<bool>("oldfashinedTaskControl", true)) {
     homing = new CtrlTask("qHoming", new TM_qItself(), .5, 1., .2, 10.);
     homing->PD().setTarget(q0);
     endeffR = new CtrlTask("endeffR", new TM_Default(TMT_pos, K, "endeffR", NoVector, "base_footprint"), .5, .8, 1., 1.);
@@ -39,7 +39,7 @@ Gamepad2Tasks::Gamepad2Tasks(TaskControlMethods& _TC, const rai::KinematicWorld&
       gripperL = new CtrlTask("gripperL", new TM_qItself(QIP_byJointNames, {"l_gripper_l_finger_joint"}, K), 2., .8, 1., 1.);
       gripperR = new CtrlTask("gripperR", new TM_qItself(QIP_byJointNames, {"r_gripper_l_finger_joint"}, K), 2., .8, 1., 1.);
     }
-  }else{
+  } else {
     homing = new CtrlTask("qHoming", new TM_qItself(), .5, 1., 0., 0.);
 //    homing->PD().setGains(10., 2.);
     homing->PD().setTarget(q0);
@@ -53,40 +53,39 @@ Gamepad2Tasks::Gamepad2Tasks(TaskControlMethods& _TC, const rai::KinematicWorld&
     coll = new CtrlTask("collisions", new TM_Proxy(TMT_allP, {0u}, .1), .2, .8, 1., 1.);
     gripperL = new CtrlTask("gripperL", new TM_qItself(QIP_byJointNames, {"l_gripper_joint"}, K), 2., .8, 1., 1.);
     gripperR = new CtrlTask("gripperR", new TM_qItself(QIP_byJointNames, {"r_gripper_joint"}, K), 2., .8, 1., 1.);
-
+    
     endeffR->PD().setGains(40.,2.);
     endeffL->PD().setGains(10.,1.); //endeffL->maxAcc=.5;
     headAxes->PD().setGains(10.,5.);
   }
-  for(CtrlTask* task:{ homing, endeffR, endeffL, head, headAxes, limits, coll, gripperL, gripperR })
+  for(CtrlTask* task: { homing, endeffR, endeffL, head, headAxes, limits, coll, gripperL, gripperR })
     task->active=false;
-
-  if (robot=="pr2")
-  {
+    
+  if(robot=="pr2") {
     base->active=false;
     torso->active=false;
   }
 }
 
-rai::Array<CtrlTask*> Gamepad2Tasks::getTasks(){
-  if (robot=="pr2") { return { homing, endeffR, endeffL, base, torso, head, headAxes, limits, coll, gripperL, gripperR }; }
-  else if (robot=="baxter") { return { homing, endeffR, endeffL, head, headAxes, limits, coll, gripperL, gripperR }; }
+rai::Array<CtrlTask*> Gamepad2Tasks::getTasks() {
+  if(robot=="pr2") { return { homing, endeffR, endeffL, base, torso, head, headAxes, limits, coll, gripperL, gripperR }; }
+  else if(robot=="baxter") { return { homing, endeffR, endeffL, head, headAxes, limits, coll, gripperL, gripperR }; }
   else { NIY; }
 }
 
-double gamepadSignalMap(double x){
+double gamepadSignalMap(double x) {
   return rai::sign(x)*(exp(rai::sqr(x))-1.);
 }
 
-bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::KinematicWorld& K){
+bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::KinematicWorld& K) {
   if(stopButtons(gamepadState)) return true;
-
+  
   for(CtrlTask* pdt:TC.tasks) pdt->active=false;
-
+  
   TC.qNullCostRef.PD().setGains(0., 10.); //nullspace qitself is not used for homing by default
   TC.qNullCostRef.active=true;
   TC.qNullCostRef.PD().setTarget(K.q);
-
+  
 //  homing->PD().setGains(0., 10.); //nullspace qitself is not used for homing by default
 //  homing->active=true;
 //  homing->PD().setTarget(MP.world.q);
@@ -94,29 +93,29 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::KinematicWorld& K)
 //  coll->active=true;
 
   if(gamepadState.N<6) return false;
-
+  
   double gamepadRate=rai::getParameter<double>("gamepadRate",.2);
-  for(uint i=1;i<gamepadState.N;i++) if(fabs(gamepadState(i))<0.05) gamepadState(i)=0.;
+  for(uint i=1; i<gamepadState.N; i++) if(fabs(gamepadState(i))<0.05) gamepadState(i)=0.;
   double gamepadLeftRight   = -gamepadRate*gamepadSignalMap(gamepadState(4));
   double gamepadForwardBack = -gamepadRate*gamepadSignalMap(gamepadState(3));
   double gamepadUpDown      = -gamepadRate*gamepadSignalMap(gamepadState(2));
   double gamepadRotate      = -gamepadRate*gamepadSignalMap(gamepadState(1));
-
+  
   uint mode = uint(gamepadState(0));
-
+  
   enum {none, up, down, downRot, left, right} sel=none;
-  if(fabs(gamepadState(5))>.5 || fabs(gamepadState(6))>.5){
-    if(fabs(gamepadState(5))>fabs(gamepadState(6))){
+  if(fabs(gamepadState(5))>.5 || fabs(gamepadState(6))>.5) {
+    if(fabs(gamepadState(5))>fabs(gamepadState(6))) {
       if(gamepadState(5)>0.) sel=right; else sel=left;
-    }else{
+    } else {
       if(gamepadState(6)>0.) sel=down; else sel=up;
     }
   }
-
-  switch (mode) {
+  
+  switch(mode) {
     case 0: { //(NIL) motion rate control
       CtrlTask *pdt=NULL;
-      switch(sel){
+      switch(sel) {
         case right:  pdt=endeffR;  cout <<"effR control" <<endl;  break;
         case left:   pdt=endeffL;  cout <<"effL control" <<endl;  break;
 //        case up:     pdt=torso;  cout <<"torso control" <<endl;  break;
@@ -127,18 +126,18 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::KinematicWorld& K)
       }
       if(!pdt) break;
       pdt->active=true;
-      if(!pdt->y.N || !pdt->v.N){
+      if(!pdt->y.N || !pdt->v.N) {
         pdt->map->phi(pdt->y, NoArr, K);
       }
       rai::Vector vel(gamepadLeftRight, gamepadForwardBack, gamepadUpDown);
-      if(sel==down){
-        vel.set ( .5*gamepadLeftRight, .5*gamepadRotate, 2.*gamepadForwardBack );
+      if(sel==down) {
+        vel.set(.5*gamepadLeftRight, .5*gamepadRotate, 2.*gamepadForwardBack);
         vel = K.getFrameByName("endeffBase") -> X.rot * vel;
       }
 //      vel = MP.world.getShapeByName("endeffBase")->X.rot*vel;
       arr ve;
       ve = conv_vec2arr(vel);
-      if(sel==up){
+      if(sel==up) {
         if(robot=="pr2") ve = ARR(ve(1), -ve(0));
         if(robot=="baxter") ve = ARR(ve(1));
       }
@@ -157,11 +156,11 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::KinematicWorld& K)
       cout <<"homing" <<endl;
       homing->PD().setTarget(q0);
       rai::Joint *j = K.getFrameByName("worldTranslationRotation")->joint;
-      if(j){
+      if(j) {
         arr b;
         base->map->phi(b, NoArr, K);
-        if(b.N && j && j->qDim()){
-          for(uint i=0;i<j->qDim();i++)
+        if(b.N && j && j->qDim()) {
+          for(uint i=0; i<j->qDim(); i++)
             homing->PD().y_target(j->qIndex+i) = b(i);
         }
       }
@@ -169,19 +168,19 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::KinematicWorld& K)
       break;
     }
     case 4:
-    case 8:{ //open/close hand
+    case 8: { //open/close hand
       cout <<"open/close hand" <<endl;
       CtrlTask *pdt=NULL;
-      switch(sel){
+      switch(sel) {
         case right:  pdt=gripperR;  break;
         case left:   pdt=gripperL;  break;
         default:     pdt=NULL;  break;
       }
       if(!pdt) break;
-      if(robot=="pr2"){
+      if(robot=="pr2") {
         if(mode==8) pdt->PD().y_target=ARR(.08); else pdt->PD().y_target=ARR(.01);
       }
-      if(robot=="baxter"){
+      if(robot=="baxter") {
         if(mode==8) pdt->PD().y_target=ARR(.1); else pdt->PD().y_target=ARR(0.);
       }
       pdt->active=true;

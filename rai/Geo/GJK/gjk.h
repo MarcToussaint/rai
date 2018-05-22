@@ -82,8 +82,6 @@ extern int gjk_num_g_test, gjk_num_simplices, gjk_num_backups,
 #define INCREMENT_BACKUP_COUNTER
 #endif /** not GATHER_STATISTICS */
 
-
-
 /** Object structure: holds basic information about each object */
 struct Object_structure {
   int numpoints;
@@ -141,7 +139,6 @@ typedef double **Transform;
 #define ExtractTranslation( t, v) { int i; overd(i) v[i] = t[i][DIM]; }
 #define ApplyTransform( t, obj, v, tgt) apply_trans( t, obj->vertices[v], tgt)
 #define ApplyInverseRotation( t, tgt, src) apply_rot_transpose( t, tgt, src)
-
 
 void apply_trans( Transform, REAL *, REAL *);
 void apply_rot_transpose( Transform, REAL *, REAL *);
@@ -212,7 +209,6 @@ struct simplex_point {
    number smaller than it into it, and still believing the result.
    */
 #define TINY	((REAL) 1.0e-20)  /** probably pessimistic! */
-
 
 /** MAX_RING_SIZE gives an upper bound on the size of the array of rings
  * of edges in terms of the number of vertices.  From the formula

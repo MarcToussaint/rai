@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -16,22 +16,22 @@ Mutex libav_open_mutex;
 
 namespace rai {
 void register_libav() {
-    Lock avlock(libav_open_mutex);
-    av_register_all();
-    avcodec_register_all();
+  Lock avlock(libav_open_mutex);
+  av_register_all();
+  avcodec_register_all();
 }
 
 AVOutputFormat* mt_guess_format(const char* filename, const char* DEF_FORMAT) {
- AVOutputFormat* fmt = av_guess_format(NULL, filename, NULL);
+  AVOutputFormat* fmt = av_guess_format(NULL, filename, NULL);
+  if(!fmt) {
+    std::cerr << "Could not determine container format from filename '" << filename << "', attempting " << DEF_FORMAT;
+    fmt = av_guess_format(DEF_FORMAT, NULL, NULL);
     if(!fmt) {
-        std::cerr << "Could not determine container format from filename '" << filename << "', attempting " << DEF_FORMAT;
-        fmt = av_guess_format(DEF_FORMAT, NULL, NULL);
-        if(!fmt) {
-            std:cerr << "Could not open container format for " << DEF_FORMAT << endl;
-            return NULL;
-        }
+std:cerr << "Could not open container format for " << DEF_FORMAT << endl;
+      return NULL;
     }
-    return fmt;
+  }
+  return fmt;
 }
 
 }

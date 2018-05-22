@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -12,15 +12,15 @@
 #ifdef __CYGWIN__
 
 // the syscall is only used for determining the thread id, which we only need
-// for debugging, fortunately, so we can hack around it 
+// for debugging, fortunately, so we can hack around it
 int syscall(int, ...) {
-	return 1;
+  return 1;
 }
 #define SYS_gettid 0
 
 // some differences on pthread
-int pthread_setname_np(pthread_t, const char*) { 
-  return 0; 
+int pthread_setname_np(pthread_t, const char*) {
+  return 0;
 }
 #define PTHREAD_MUTEX_RECURSIVE_NP PTHREAD_MUTEX_RECURSIVE
 

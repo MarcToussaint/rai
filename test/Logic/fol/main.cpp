@@ -31,7 +31,6 @@ void testFolLoadFile(){
 
   cout <<"state = " <<*s <<"\nrule=" <<*r <<endl;
 
-
   G.checkConsistency();
   Node *sub = G.newSubgraph({}, {});
   sub->graph().isNodeOfGraph = sub;
@@ -52,7 +51,6 @@ void testLoadAndDot(const char* filename="fol.g"){
   int r = system("dot -Tpdf z.dot > z.pdf; evince z.pdf &");
   if(r) LOG(-1) <<"could not startup dot or evince";
 }
-
 
 //===========================================================================
 
@@ -224,7 +222,6 @@ void testMonteCarlo(){
 }
 
 //===========================================================================
-
 
 int main(int argc, char** argv){
   rai::initCmdLine(argc, argv);

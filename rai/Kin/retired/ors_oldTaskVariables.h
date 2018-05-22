@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -35,7 +35,6 @@ enum TVtype {
 };
 
 enum TargetType { noneTT, directTT, positionGainsTT, pdGainOnRealTT, pdGainOnReferenceTT, trajectoryTT };
-
 
 //===========================================================================
 /** basic task variable */
@@ -228,5 +227,4 @@ void shiftTargets(TaskVariableList& CS, int i);
 void bayesianControl(TaskVariableList& CS, arr& dq, const arr& W);
 
 #endif // _HEADER_GUARD_ORS_OLDTASKVARIABLES_H_
-
 

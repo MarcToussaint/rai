@@ -5,7 +5,6 @@
 #include <Gui/opengl.h>
 #include <Geo/qhull.h>
 
-
 void drawInit(void*){
   glStandardLight(NULL);
   glDrawAxes(1.);

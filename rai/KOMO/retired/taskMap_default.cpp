@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -9,19 +9,19 @@
 #include "TM_default.h"
 
 TM_Default::TM_Default(TM_DefaultType _type,
-                               int iShape, const rai::Vector& _ivec,
-                               int jShape, const rai::Vector& _jvec,
-                               const arr& _params):type(_type), i(iShape), j(jShape){
-
+                       int iShape, const rai::Vector& _ivec,
+                       int jShape, const rai::Vector& _jvec,
+                       const arr& _params):type(_type), i(iShape), j(jShape) {
+                       
   if(&_ivec) ivec=_ivec; else ivec.setZero();
   if(&_jvec) jvec=_jvec; else jvec.setZero();
   if(&_params) params=_params;
 }
 
 TM_Default::TM_Default(TM_DefaultType _type, const rai::KinematicWorld &G,
-                               const char* iShapeName, const rai::Vector& _ivec,
-                               const char* jShapeName, const rai::Vector& _jvec,
-                               const arr& _params):type(_type), i(-1), j(-1){
+                       const char* iShapeName, const rai::Vector& _ivec,
+                       const char* jShapeName, const rai::Vector& _jvec,
+                       const arr& _params):type(_type), i(-1), j(-1) {
   rai::Shape *a = iShapeName ? G.getShapeByName(iShapeName):NULL;
   rai::Shape *b = jShapeName ? G.getShapeByName(jShapeName):NULL;
   if(a) i=a->index;
@@ -31,14 +31,13 @@ TM_Default::TM_Default(TM_DefaultType _type, const rai::KinematicWorld &G,
   if(&_params) params=_params;
 }
 
-
 void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   rai::Body *body_i = i<0?NULL: G.shapes(i)->body;
   rai::Body *body_j = j<0?NULL: G.shapes(j)->body;
-
+  
   //get state
   switch(type) {
-    case TMT_pos:{
+    case TMT_pos: {
       rai::Vector vec_i = i<0?ivec: G.shapes(i)->rel*ivec;
       rai::Vector vec_j = j<0?jvec: G.shapes(j)->rel*jvec;
       if(body_j==NULL) {
@@ -59,14 +58,14 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
         for(uint k=0; k<Jj.d1; k++) {
           rai::Vector vi(Ji(0, k), Ji(1, k), Ji(2, k));
           rai::Vector vj(Jj(0, k), Jj(1, k), Jj(2, k));
-          rai::Vector r (JRj(0, k), JRj(1, k), JRj(2, k));
+          rai::Vector r(JRj(0, k), JRj(1, k), JRj(2, k));
           rai::Vector jk =  body_j->X.rot / (vi - vj);
           jk -= body_j->X.rot / (r ^(pi - pj));
           J(0, k)=jk.x; J(1, k)=jk.y; J(2, k)=jk.z;
         }
       }
     } break;
-    case TMT_vec:{
+    case TMT_vec: {
       rai::Vector vec_i = i<0?ivec: G.shapes(i)->rel.rot*ivec;
 //      rai::Vector vec_j = j<0?jvec: G.shapes(j)->rel.rot*jvec;
       if(body_j==NULL) {
@@ -109,16 +108,16 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       }
       NIY;
       break;
-    case TMT_qItself:{
+    case TMT_qItself: {
       G.getJointState(y);
       if(&J) J.setId(y.N);
     } break;
-    case TMT_qLinear:{
+    case TMT_qLinear: {
       arr q;
       G.getJointState(q);
-      if(params.N==q.N){
+      if(params.N==q.N) {
         y=params%q; if(&J) J.setDiag(params);
-      }else{
+      } else {
         y=params*q; if(&J) J=params;
       }
     } break;

@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -88,8 +88,8 @@ void rai::randomSpline(arr& X, arr& dX, uint dim, uint points, uint intersteps, 
 }
 
 bool rai::checkGradient(void (*f)(arr&, arr*, const arr&, void*),
-                       void *data,
-                       const arr& x, double tolerance) {
+                        void *data,
+                        const arr& x, double tolerance) {
   arr y, J, dx, dy, JJ;
   f(y, &J, x, data);
   
@@ -119,8 +119,8 @@ bool rai::checkGradient(void (*f)(arr&, arr*, const arr&, void*),
 }
 
 bool rai::checkGradient(double(*f)(arr*, const arr&, void*),
-                       void *data,
-                       const arr& x, double tolerance) {
+                        void *data,
+                        const arr& x, double tolerance) {
   arr J, dx, JJ;
   double y, dy;
   y=f(&J, x, data);
@@ -246,7 +246,6 @@ double rai::matannealing(intA& fix, intA& fox, uintA& p, bool sub, double anneal
   p=pStore;
   return bestdist;
 }
-
 
 //===========================================================================
 //
@@ -376,7 +375,6 @@ void LinearStatistics::learn(const arr& X, const arr& Y, double weight) {
   }
 }
 
-
 /// in case y is a scalar
 void LinearStatistics::learn(const arr& x, double y, double weight) {
   learn(x, arr(&y, 1), weight);
@@ -466,7 +464,6 @@ void LinearStatistics::predict(const arr& x, arr& y) {
   y = MeanY + A*(x-MeanX);
 }
 
-
 /// prototype for operator<<
 void LinearStatistics::write(std::ostream& os) const {
   os
@@ -481,8 +478,6 @@ void LinearStatistics::write(std::ostream& os) const {
       <<"\n</LinearStatistics>"
       <<std::endl;
 }
-
-
 
 //===========================================================================
 //
@@ -528,7 +523,6 @@ void TupleIndex::checkValid() {
   uint i;
   for(i=0; i<d0; i++) CHECK_EQ(i,index(operator[](i)), "wrong index association");
 }
-
 
 //===========================================================================
 //
@@ -939,7 +933,6 @@ void XSpline::eval(double t, arr& x, arr* v) {
   }
 }
 
-
 //===========================================================================
 //
 // Partial Least Squares (PLS, SIMPLS, de Jong)
@@ -1047,7 +1040,6 @@ uint PartialLeastSquares::outDim() { return S.meanY.N; }
 
 void PartialLeastSquares::write(std::ostream& os) const { os <<S; }
 
-
 //===========================================================================
 //
 // the minimize routine
@@ -1140,14 +1132,14 @@ void frprmn(double p[], int n, double ftol, int *iter, int maxIterations, double
 
 //--- the minimize routine itself
 int rai::minimize(double(*f)(arr*, const arr&, void*),
-                 void *data,
-                 arr& x,
-                 double *fmin_return,
-                 int method,
-                 uint maxIterations,
-                 double stoppingTolerance,
-                 bool testGrad) {
-                 
+                  void *data,
+                  arr& x,
+                  double *fmin_return,
+                  int method,
+                  uint maxIterations,
+                  double stoppingTolerance,
+                  bool testGrad) {
+                  
   minimizeStatic::f=f;
   minimizeStatic::n=x.N;
   minimizeStatic::fc=0;
@@ -1205,8 +1197,6 @@ int rai::minimize(double(*f)(arr*, const arr&, void*),
   
   return i;
 }
-
-
 
 //================================================================================
 //

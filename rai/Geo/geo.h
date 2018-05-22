@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -23,9 +23,9 @@ namespace rai {
 struct Vector {
   double x, y, z;
   bool isZero;
-
+  
   Vector() {}
-  Vector(int zero){ CHECK_EQ(zero,0,"this is only for initialization with zero"); setZero(); }
+  Vector(int zero) { CHECK_EQ(zero,0,"this is only for initialization with zero"); setZero(); }
   Vector(double x, double y, double z) { set(x, y, z); }
   Vector(const Vector& v) { set(v.x, v.y, v.z); }
   Vector(const arr& x) { CHECK_EQ(x.N,3, "");  set(x.p); }
@@ -34,7 +34,7 @@ struct Vector {
   
   double& operator()(uint i);
   void set(double, double, double);
-  void set(const arr& x){ CHECK_EQ(x.N,3, "");  set(x.p); }
+  void set(const arr& x) { CHECK_EQ(x.N,3, "");  set(x.p); }
   void set(double*);
   void setZero();
   void setRandom(double range=1.);
@@ -53,8 +53,8 @@ struct Vector {
   double radius() const;
   double phi() const;
   double theta() const;
-  arr getArr() const{ return arr(&x, 3, false); }
-
+  arr getArr() const { return arr(&x, 3, false); }
+  
   Vector getNormalVectorNormalToThis() const;
   void generateOrthonormalSystem(Vector& u, Vector& v) const;
   arr generateOrthonormalSystemMatrix() const;
@@ -68,7 +68,7 @@ struct Matrix {
   double m00, m01, m02, m10, m11, m12, m20, m21, m22;
   
   Matrix() {}
-  Matrix(int zero){ CHECK_EQ(zero,0,"this is only for initialization with zero"); setZero(); }
+  Matrix(int zero) { CHECK_EQ(zero,0,"this is only for initialization with zero"); setZero(); }
   Matrix(const arr& m) { CHECK_EQ(m.N,9, "");  set(m.p); };
   Matrix(const Matrix& m) : m00(m.m00), m01(m.m01), m02(m.m02), m10(m.m10), m11(m.m11), m12(m.m12), m20(m.m20), m21(m.m21), m22(m.m22) {}
   double *p() { return &m00; }
@@ -95,15 +95,15 @@ struct Matrix {
 struct Quaternion {
   double w, x, y, z;
   bool isZero;
-
+  
   Quaternion() {}
-  Quaternion(int zero){ CHECK_EQ(zero,0,"this is only for initialization with zero"); setZero(); }
+  Quaternion(int zero) { CHECK_EQ(zero,0,"this is only for initialization with zero"); setZero(); }
   Quaternion(double w, double x, double y, double z) { set(w,x,y,z); }
   Quaternion(const arr& q) { CHECK_EQ(q.N,4, "");  set(q.p); }
   Quaternion(const Quaternion& q) { set(q.w, q.x, q.y, q.z); }
   double *p() { return &w; }
-
-  double& operator()(uint i){ CHECK(i<4,"out of range"); return (&w)[i]; }
+  
+  double& operator()(uint i) { CHECK(i<4,"out of range"); return (&w)[i]; }
   void set(double w, double x, double y, double z);
   void set(const arr& q);
   void set(double* p);
@@ -128,12 +128,12 @@ struct Quaternion {
   void normalize();
   void multiply(double f);
   void alignWith(const Vector& v);
-
+  
   void addX(double radians);
   void addY(double radians);
   void addZ(double radians);
   void append(const Quaternion& q);
-
+  
   double diffZero() const;
   double sqrDiffZero() const;
   void checkZero() const;
@@ -150,37 +150,36 @@ struct Quaternion {
   Vector getZ() const;
   Matrix getMatrix() const;
   arr    getArr() const;
-  arr    getArr4d() const{ return arr(&w, 4, false); }
+  arr    getArr4d() const { return arr(&w, 4, false); }
   double* getMatrix(double* m) const;
   double* getMatrixOde(double* m) const; //in Ode foramt: 3x4 memory storae
   double* getMatrixGL(double* m) const;  //in OpenGL format: transposed 4x4 memory storage
-  arr getEulerRPY(){
+  arr getEulerRPY() {
     double roll, pitch, yaw;
-
+    
     // roll (x-axis rotation)
     double sinr = +2.0 * (w * x + y * z);
     double cosr = +1.0 - 2.0 * (x * x + y * y);
     roll = atan2(sinr, cosr);
-
+    
     // pitch (y-axis rotation)
     double sinp = +2.0 * (w * y - z * x);
-    if (fabs(sinp) >= 1)
+    if(fabs(sinp) >= 1)
       pitch = copysign(M_PI / 2, sinp); // use 90 degrees if out of range
     else
       pitch = asin(sinp);
-
+      
     // yaw (z-axis rotation)
     double siny = +2.0 * (w * z + x * y);
     double cosy = +1.0 - 2.0 * (y * y + z * z);
     yaw = atan2(siny, cosy);
-
+    
     return {roll, pitch, yaw};
   }
-
-
+  
   arr getJacobian() const;
   arr getMatrixJacobian() const;
-
+  
   void writeNice(std::ostream& os) const;
   void write(std::ostream& os) const;
   void read(std::istream& is);
@@ -192,12 +191,12 @@ struct Transformation {
   Quaternion rot; ///< orientation
   
   Transformation() {}
-  Transformation(int zero){ CHECK_EQ(zero,0,"this is only for initialization with zero"); setZero(); }
+  Transformation(int zero) { CHECK_EQ(zero,0,"this is only for initialization with zero"); setZero(); }
   Transformation(const Vector _pos, const Quaternion _rot) : pos(_pos), rot(_rot) {}
   Transformation(const Transformation &t) : pos(t.pos), rot(t.rot) {}
   Transformation(const char* init) { setText(init); }
-  void operator=(const Transformation& f){ memcpy(this, &f, sizeof(Transformation)); }
-
+  void operator=(const Transformation& f) { memcpy(this, &f, sizeof(Transformation)); }
+  
   Transformation& setZero();
   Transformation& setText(const char* txt);
   void set(double* p);
@@ -229,42 +228,42 @@ struct Transformation {
   arr getWrenchTransform();
   
   void applyOnPointArray(arr& pts) const;
-
+  
   void write(std::ostream& os) const;
   void read(std::istream& is);
 };
 
 /// includes linear & angular velocities
-struct DynamicTransformation : Transformation{
+struct DynamicTransformation : Transformation {
   Vector vel;     ///< linear velocity
   Vector angvel;  ///< angular velocity
   bool zeroVels;    ///< velocities are identically zero
-
+  
   DynamicTransformation() {}
-  DynamicTransformation(int zero){ CHECK_EQ(zero,0,"this is only for initialization with zero"); setZero(); }
+  DynamicTransformation(int zero) { CHECK_EQ(zero,0,"this is only for initialization with zero"); setZero(); }
   DynamicTransformation(const DynamicTransformation &t) : Transformation(t), vel(t.vel), angvel(t.angvel), zeroVels(t.zeroVels) {}
   DynamicTransformation(const char* init) { read(rai::String(init).stream()); }
-
+  
   DynamicTransformation& setZero();
   DynamicTransformation& setText(const char* txt);
   void setRandom();
   void setInverse(const DynamicTransformation& f);
   void setDifference(const DynamicTransformation& from, const DynamicTransformation& to);
   void setAffineMatrix(const double *m);
-
+  
   bool isZero() const;
   double diffZero() const;
-
+  
   void addRelativeTranslation(double x, double y, double z);
   void addRelativeTranslation(const Vector& x_rel);
   void addRelativeVelocity(double x, double y, double z);
   void addRelativeAngVelocityDeg(double degree, double x, double y, double z);
   void addRelativeAngVelocityRad(double rad, double x, double y, double z);
   void addRelativeAngVelocityRad(double wx, double wy, double wz);
-
+  
   void appendTransformation(const DynamicTransformation& f);     // this = this * f
   void appendInvTransformation(const DynamicTransformation& f);     // this = this * f^{-1}
-
+  
   void write(std::ostream& os) const;
   void read(std::istream& is);
 };
@@ -273,15 +272,15 @@ struct DynamicTransformation : Transformation{
 struct Camera {
   Transformation X;
   Vector foc;
-
+  
   float heightAbs;
   float heightAngle;
   float focalLength;
   float whRatio;
   float zNear, zFar;
-
+  
   Camera();
-
+  
   void setZero();
   void setHeightAngle(float a);
   void setHeightAbs(float h);
@@ -303,7 +302,6 @@ struct Camera {
   void setKinect();
   void setDefault();
 };
-
 
 //===========================================================================
 //
@@ -383,7 +381,6 @@ double quatScalarProduct(const rai::Quaternion& a, const rai::Quaternion& b);
 
 double sqrDistance(const rai::Vector& a, const rai::Vector& b);
 
-
 } //END of namespace
 
 //===========================================================================
@@ -394,7 +391,6 @@ double sqrDistance(const rai::Vector& a, const rai::Vector& b);
 inline arr conv_vec2arr(const rai::Vector& v) {      return arr(&v.x, 3, false); }
 inline arr conv_quat2arr(const rai::Quaternion& q) { return arr(&q.w, 4, false); }
 inline arr conv_mat2arr(const rai::Matrix& m) {      return arr(&m.m00, 9, false); }
-
 
 //===========================================================================
 //
@@ -412,12 +408,10 @@ extern const rai::Quaternion Quaternion_z;
 extern rai::Vector& NoVector;
 extern rai::Transformation& NoTransformation;
 
-
 //===========================================================================
 //
 // low level drivers
 //
-
 
 #endif
 

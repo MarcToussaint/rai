@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -15,30 +15,30 @@
 // ImageViewer
 //
 
-struct sImageViewer{
+struct sImageViewer {
   OpenGL gl;
   sImageViewer(const char* tit) : gl(tit) {}
 };
 
 ImageViewer::ImageViewer(const char* img_name)
   : Thread(STRING("ImageViewer_"<<img_name), -1),
-    img(this, img_name, true){
+    img(this, img_name, true) {
   threadOpen();
 }
 
-ImageViewer::~ImageViewer(){
+ImageViewer::~ImageViewer() {
   threadClose();
 }
 
-void ImageViewer::open(){
+void ImageViewer::open() {
   s = new sImageViewer(STRING("ImageViewer: "<<img.data->name));
   s->gl.openWindow();
   s->gl.update();
 }
 
-void ImageViewer::close(){ delete s; }
+void ImageViewer::close() { delete s; }
 
-void ImageViewer::step(){
+void ImageViewer::step() {
   s->gl.dataLock.writeLock();
   s->gl.background = img.get();
   if(flipImage) flip_image(s->gl.background);
@@ -49,53 +49,52 @@ void ImageViewer::step(){
   byte *p, *pstop;
   p=&s->gl.background(ci-5, cj-5, 0);
   pstop=&s->gl.background(ci-5, cj+5, 0);
-  for(;p<=pstop;p++) *p = 0;
+  for(; p<=pstop; p++) *p = 0;
   p=&s->gl.background(ci+5, cj-5, 0);
   pstop=&s->gl.background(ci+5, cj+5, 0);
-  for(;p<=pstop;p++) *p = 0;
+  for(; p<=pstop; p++) *p = 0;
   p=&s->gl.background(ci-5, cj-5, 0);
   pstop=&s->gl.background(ci+5, cj-5, 0);
-  for(;p<=pstop;p+=skip) p[0]=p[1]=p[2]=0;
+  for(; p<=pstop; p+=skip) p[0]=p[1]=p[2]=0;
   p=&s->gl.background(ci-5, cj+5, 0);
   pstop=&s->gl.background(ci+5, cj+5, 0);
-  for(;p<=pstop;p+=skip) p[0]=p[1]=p[2]=0;
+  for(; p<=pstop; p+=skip) p[0]=p[1]=p[2]=0;
 #endif
   s->gl.dataLock.unlock();
   if(!s->gl.background.N) return;
   if(s->gl.height!= s->gl.background.d0 || s->gl.width!= s->gl.background.d1)
     s->gl.resize(s->gl.background.d1, s->gl.background.d0);
-
+    
   s->gl.update(name, false, false, true);
 }
-
 
 //===========================================================================
 //
 // PointCloudViewer
 //
 
-struct sPointCloudViewer{
+struct sPointCloudViewer {
   OpenGL gl;
-  sPointCloudViewer(const char* tit) : gl(tit,640,480){}
+  sPointCloudViewer(const char* tit) : gl(tit,640,480) {}
   rai::Mesh pc;
 };
 
-void glDrawAxes(void*){
+void glDrawAxes(void*) {
   glDrawAxes(1.);
 }
 
 PointCloudViewer::PointCloudViewer(const char* pts_name, const char* rgb_name)
   : Thread(STRING("PointCloudViewer_"<<pts_name <<'_' <<rgb_name), .1),
     pts(this, pts_name),
-    rgb(this, rgb_name){
+    rgb(this, rgb_name) {
   threadLoop();
 }
 
-PointCloudViewer::~PointCloudViewer(){
+PointCloudViewer::~PointCloudViewer() {
   threadClose();
 }
 
-void PointCloudViewer::open(){
+void PointCloudViewer::open() {
   s = new sPointCloudViewer(STRING("PointCloudViewer: "<<pts.name <<' ' <<rgb.name));
 #if 0
   s->gl.add(glDrawAxes);
@@ -109,16 +108,16 @@ void PointCloudViewer::open(){
 #endif
 }
 
-void PointCloudViewer::close(){
+void PointCloudViewer::close() {
   delete s;
 }
 
-void PointCloudViewer::step(){
+void PointCloudViewer::step() {
   s->gl.dataLock.writeLock();
   s->pc.V=pts.get();
   copy(s->pc.C, rgb.get()());
   uint n=s->pc.V.N/3;
-  if(n!=s->pc.C.N/3){
+  if(n!=s->pc.C.N/3) {
     s->gl.dataLock.unlock();
     return;
   }
@@ -126,7 +125,7 @@ void PointCloudViewer::step(){
   s->pc.V.reshape(n,3);
   s->pc.C.reshape(n,3);
   s->gl.dataLock.unlock();
-
+  
   s->gl.update(NULL, false, false, true);
 }
 
@@ -137,30 +136,30 @@ void PointCloudViewer::step(){
 
 MeshAViewer::MeshAViewer(const char* meshes_name)
   : Thread(STRING("MeshAViewer_"<<meshes_name), .1),
-    meshes(this, meshes_name){
+    meshes(this, meshes_name) {
   threadLoop();
 }
 
-MeshAViewer::~MeshAViewer(){
+MeshAViewer::~MeshAViewer() {
   threadClose();
 }
 
-void MeshAViewer::open(){
+void MeshAViewer::open() {
   gl = new OpenGL(STRING("MeshAViewer: "<<meshes.name));
   gl->add(glStandardScene);
   gl->add(glDrawMeshes, &copy);
   gl->camera.setDefault();
 }
 
-void MeshAViewer::close(){
+void MeshAViewer::close() {
   delete gl;
 }
 
-void MeshAViewer::step(){
+void MeshAViewer::step() {
   gl->dataLock.writeLock();
   copy = meshes.get();
   gl->dataLock.unlock();
-
+  
   gl->update(NULL, false, false, true);
 }
 

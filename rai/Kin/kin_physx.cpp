@@ -1,7 +1,7 @@
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
-    
+
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
@@ -14,7 +14,6 @@
  * @ingroup group_ors
  * @{
  */
-
 
 #ifdef RAI_PHYSX
 
@@ -45,7 +44,6 @@ static PxCooking* mCooking = NULL;
 static PxDefaultErrorCallback gDefaultErrorCallback;
 static PxDefaultAllocator gDefaultAllocatorCallback;
 static PxSimulationFilterShader gDefaultFilterShader=PxDefaultSimulationFilterShader;
-
 
 // ============================================================================
 /**
@@ -91,7 +89,7 @@ PxTransform Id_PxTrans() {
   return PxTransform(PxVec3(0.f, 0.f, 0.f), PxQuat(0.f, 0.f, 0.f, 1.f));
 }
 
-arr conv_PxVec3_arr(const PxVec3& v){
+arr conv_PxVec3_arr(const PxVec3& v) {
   return {v.x, v.y, v.z};
 }
 
@@ -109,7 +107,7 @@ PxConvexMesh* createConvexMesh(PxPhysics& physics, PxCooking& cooking, const PxV
   PxDefaultMemoryOutputStream buf;
   if(!cooking.cookConvexMesh(convexDesc, buf))
     return NULL;
-
+    
   PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
   return physics.createConvexMesh(input);
 }
@@ -128,7 +126,7 @@ PxTriangleMesh* createTriangleMesh32(PxPhysics& physics, PxCooking& cooking, con
   bool status = cooking.cookTriangleMesh(meshDesc, writeBuffer);
   if(!status)
     return NULL;
-
+    
   PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
   return physics.createTriangleMesh(readBuffer);
 }
@@ -141,12 +139,12 @@ struct sPhysXInterface {
   rai::Array<rai::BodyType> actorTypes;
   rai::Array<PxD6Joint*> joints;
   OpenGL *gl=NULL;
-
+  
   debugger::comm::PvdConnection* connection = NULL;
   
   void addLink(rai::Frame *b, physx::PxMaterial *material);
   void addJoint(rai::Joint *jj);
-
+  
   void lockJoint(PxD6Joint *joint, rai::Joint *rai_joint);
   void unlockJoint(PxD6Joint *joint, rai::Joint *rai_joint);
 };
@@ -155,7 +153,7 @@ struct sPhysXInterface {
 
 PhysXInterface::PhysXInterface(rai::KinematicWorld& _world): world(_world), s(NULL) {
   s = new sPhysXInterface;
-
+  
   if(!mFoundation) {
     mFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gDefaultAllocatorCallback, gDefaultErrorCallback);
     mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, PxTolerancesScale());
@@ -164,17 +162,17 @@ PhysXInterface::PhysXInterface(rai::KinematicWorld& _world): world(_world), s(NU
     mCooking = PxCreateCooking(PX_PHYSICS_VERSION, *mFoundation, cookParams);
     if(!mCooking) HALT("PxCreateCooking failed!");
     if(!mPhysics) HALT("Error creating PhysX3 device.");
-
+    
     if(!PxInitExtensions(*mPhysics))
       HALT("PxInitExtensions failed!");
   }
-
+  
   //PxExtensionVisualDebugger::connect(mPhysics->getPvdConnectionManager(),"localhost",5425, 10000, true);
-
+  
   //-- Create the scene
   PxSceneDesc sceneDesc(mPhysics->getTolerancesScale());
   sceneDesc.gravity = PxVec3(0.f, 0.f, -9.8f);
-
+  
   if(!sceneDesc.cpuDispatcher) {
     PxDefaultCpuDispatcher* mCpuDispatcher = PxDefaultCpuDispatcherCreate(1);
     if(!mCpuDispatcher) {
@@ -185,29 +183,29 @@ PhysXInterface::PhysXInterface(rai::KinematicWorld& _world): world(_world), s(NU
   if(!sceneDesc.filterShader) {
     sceneDesc.filterShader  = gDefaultFilterShader;
   }
-
+  
   s->gScene = mPhysics->createScene(sceneDesc);
   if(!s->gScene) {
     cerr << "createScene failed!" << endl;
   }
-
+  
   s->gScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0);
   s->gScene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
-
+  
   //-- Create objects
   PxMaterial* mMaterial = mPhysics->createMaterial(10.f, 10.f, 0.1f);
-
+  
   //Create ground plane
   //PxReal d = 0.0f;
   PxTransform pose = PxTransform(PxVec3(0.f, 0.f, 0.f), PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
-
+  
   PxRigidStatic* plane = mPhysics->createRigidStatic(pose);
   CHECK(plane, "create plane failed!");
-
+  
   PxShape* planeShape = plane->createShape(PxPlaneGeometry(), *mMaterial);
   CHECK(planeShape, "create shape failed!");
   s->gScene->addActor(*plane);
-
+  
   //-- create Kin equivalent in PhysX
   // loop through kin
   s->actors.resize(world.frames.N); s->actors.setZero();
@@ -215,12 +213,12 @@ PhysXInterface::PhysXInterface(rai::KinematicWorld& _world): world(_world), s(NU
   FrameL links = world.getLinks();
   for(rai::Frame *a : links) s->addLink(a, mMaterial);
   //  for(rai::Joint *j : world.fwdActiveJoints) s->addJoint(j); //DONT ADD JOINTS!!!!
-
+  
   /// save data for the PVD
   if(rai::getParameter<bool>("physx_debugger", false)) {
     const char* filename = "pvd_capture.pxd2";
     PxVisualDebuggerConnectionFlags connectionFlags = PxVisualDebuggerExt::getAllConnectionFlags();
-
+    
     s->connection = PxVisualDebuggerExt::createConnection(mPhysics->getPvdConnectionManager(), filename, connectionFlags);
     mPhysics->getVisualDebugger()->setVisualDebuggerFlags(PxVisualDebuggerFlag::eTRANSMIT_CONTACTS | PxVisualDebuggerFlag::eTRANSMIT_CONSTRAINTS);
   }
@@ -233,15 +231,15 @@ PhysXInterface::~PhysXInterface() {
 
 void PhysXInterface::step(double tau, bool withKinematicPush) {
   //-- push positions of all kinematic objects
-  if(withKinematicPush){
+  if(withKinematicPush) {
     for(rai::Frame *f: world.frames) if(f->inertia && f->inertia->type==rai::BT_kinematic) {
-      if(s->actors.N <= f->ID) continue;
-      PxRigidActor* a = s->actors(f->ID);
-      if(!a) continue; //f is not an actor
-      ((PxRigidDynamic*)a)->setKinematicTarget(conv_Transformation2PxTrans(f->X));
-    }
+        if(s->actors.N <= f->ID) continue;
+        PxRigidActor* a = s->actors(f->ID);
+        if(!a) continue; //f is not an actor
+        ((PxRigidDynamic*)a)->setKinematicTarget(conv_Transformation2PxTrans(f->X));
+      }
   }
-
+  
   //-- dynamic simulation
   s->gScene->simulate(tau);
   
@@ -253,18 +251,18 @@ void PhysXInterface::step(double tau, bool withKinematicPush) {
   pullFromPhysx();
 }
 
-void PhysXInterface::setArticulatedBodiesKinematic(){
+void PhysXInterface::setArticulatedBodiesKinematic() {
   HALT("NOT SURE IF THIS IS DESIRED");
-  for(rai::Joint* j:world.fwdActiveJoints) if(j->type!=rai::JT_free){
-    if(j->from()->inertia && j->from()->inertia->type==rai::BT_dynamic) j->from()->inertia->type=rai::BT_kinematic;
-    if(j->frame.inertia   && j->frame.inertia->type==rai::BT_dynamic) j->frame.inertia->type=rai::BT_kinematic;
-  }
-  for(rai::Frame *b: world.frames) if(s->actors(b->ID) && b->inertia){
-    if(b->inertia->type==rai::BT_kinematic)
-      ((PxRigidDynamic*)s->actors(b->ID))->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, true);
-    if(b->inertia->type==rai::BT_dynamic)
-      ((PxRigidDynamic*)s->actors(b->ID))->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, false);
-  }
+  for(rai::Joint* j:world.fwdActiveJoints) if(j->type!=rai::JT_free) {
+      if(j->from()->inertia && j->from()->inertia->type==rai::BT_dynamic) j->from()->inertia->type=rai::BT_kinematic;
+      if(j->frame.inertia   && j->frame.inertia->type==rai::BT_dynamic) j->frame.inertia->type=rai::BT_kinematic;
+    }
+  for(rai::Frame *b: world.frames) if(s->actors(b->ID) && b->inertia) {
+      if(b->inertia->type==rai::BT_kinematic)
+        ((PxRigidDynamic*)s->actors(b->ID))->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, true);
+      if(b->inertia->type==rai::BT_dynamic)
+        ((PxRigidDynamic*)s->actors(b->ID))->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, false);
+    }
 }
 
 /**
@@ -278,112 +276,110 @@ void sPhysXInterface::addJoint(rai::Joint *jj) {
   HALT("REALLY?");
   while(joints.N <= jj->frame.ID)
     joints.append(NULL);
-
+    
   //  cout <<"ADDING JOINT " <<jj->frame.parent->name <<'-' <<jj->frame.name <<endl;
-
+  
   rai::Transformation rel;
   rai::Frame *from = jj->frame.getUpwardLink(rel);
-
+  
   if(!jj->frame.inertia || !from || !from->inertia) return;
   CHECK(jj->frame.inertia, "this joint belongs to a frame '" <<jj->frame.name <<"' without inertia");
   CHECK(from, "this joint ('" <<jj->frame.name <<"') links from NULL");
   CHECK(from->inertia, "this joint ('" <<jj->frame.name <<"') links from a frame '" <<from->name <<"' without inertia");
-
+  
   PxTransform A = conv_Transformation2PxTrans(rel);
   PxTransform B = Id_PxTrans();
   switch(jj->type) {
-  case rai::JT_free: //do nothing
-    break;
-  case rai::JT_hingeX:
-  case rai::JT_hingeY:
-  case rai::JT_hingeZ: {
-
-    PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(from->ID), A, actors(jj->frame.ID), B.getInverse());
-    CHECK(desc, "PhysX joint creation failed.");
-
-    if(jj->frame.ats.find<arr>("drive")) {
-      arr drive_values = jj->frame.ats.get<arr>("drive");
-      PxD6JointDrive drive(drive_values(0), drive_values(1), PX_MAX_F32, true);
-      desc->setDrive(PxD6Drive::eTWIST, drive);
+    case rai::JT_free: //do nothing
+      break;
+    case rai::JT_hingeX:
+    case rai::JT_hingeY:
+    case rai::JT_hingeZ: {
+  
+      PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(from->ID), A, actors(jj->frame.ID), B.getInverse());
+      CHECK(desc, "PhysX joint creation failed.");
+      
+      if(jj->frame.ats.find<arr>("drive")) {
+        arr drive_values = jj->frame.ats.get<arr>("drive");
+        PxD6JointDrive drive(drive_values(0), drive_values(1), PX_MAX_F32, true);
+        desc->setDrive(PxD6Drive::eTWIST, drive);
+      }
+      
+      if(jj->frame.ats.find<arr>("limit")) {
+        desc->setMotion(PxD6Axis::eTWIST, PxD6Motion::eLIMITED);
+        
+        arr limits = jj->frame.ats.get<arr>("limit");
+        PxJointAngularLimitPair limit(limits(0), limits(1), 0.1f);
+        limit.restitution = limits(2);
+        //limit.spring = limits(3);
+        //limit.damping= limits(4);
+        //}
+        desc->setTwistLimit(limit);
+      } else {
+        desc->setMotion(PxD6Axis::eTWIST, PxD6Motion::eFREE);
+      }
+      
+      if(jj->frame.ats.find<arr>("drive")) {
+        arr drive_values = jj->frame.ats.get<arr>("drive");
+        PxD6JointDrive drive(drive_values(0), drive_values(1), PX_MAX_F32, false);
+        desc->setDrive(PxD6Drive::eTWIST, drive);
+        //desc->setDriveVelocity(PxVec3(0, 0, 0), PxVec3(5e-1, 0, 0));
+      }
+      joints(jj->frame.ID) = desc;
     }
-
-    if(jj->frame.ats.find<arr>("limit")) {
-      desc->setMotion(PxD6Axis::eTWIST, PxD6Motion::eLIMITED);
-
-      arr limits = jj->frame.ats.get<arr>("limit");
-      PxJointAngularLimitPair limit(limits(0), limits(1), 0.1f);
-      limit.restitution = limits(2);
-      //limit.spring = limits(3);
-      //limit.damping= limits(4);
-      //}
-      desc->setTwistLimit(limit);
-    } else {
-      desc->setMotion(PxD6Axis::eTWIST, PxD6Motion::eFREE);
-    }
-
-    if(jj->frame.ats.find<arr>("drive")) {
-      arr drive_values = jj->frame.ats.get<arr>("drive");
-      PxD6JointDrive drive(drive_values(0), drive_values(1), PX_MAX_F32, false);
-      desc->setDrive(PxD6Drive::eTWIST, drive);
-      //desc->setDriveVelocity(PxVec3(0, 0, 0), PxVec3(5e-1, 0, 0));
-    }
-    joints(jj->frame.ID) = desc;
-  }
     break;
-  case rai::JT_rigid: {
-    // PxFixedJoint* desc =
-    PxFixedJointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame.ID), B.getInverse());
-    // desc->setProjectionLinearTolerance(1e10);
-    // desc->setProjectionAngularTolerance(3.14);
-  }
-    break;
-  case rai::JT_trans3: {
-    break;
-  }
-  case rai::JT_transXYPhi: {
-    PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame.ID), B.getInverse());
-    CHECK(desc, "PhysX joint creation failed.");
-
-    desc->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
-    desc->setMotion(PxD6Axis::eY, PxD6Motion::eFREE);
-    desc->setMotion(PxD6Axis::eSWING2, PxD6Motion::eFREE);
-
-    joints(jj->frame.ID) = desc;
-    break;
-  }
-  case rai::JT_transX:
-  case rai::JT_transY:
-  case rai::JT_transZ:
-  {
-    PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame.ID), B.getInverse());
-    CHECK(desc, "PhysX joint creation failed.");
-
-    if(jj->frame.ats.find<arr>("drive")) {
-      arr drive_values = jj->frame.ats.get<arr>("drive");
-      PxD6JointDrive drive(drive_values(0), drive_values(1), PX_MAX_F32, true);
-      desc->setDrive(PxD6Drive::eX, drive);
+    case rai::JT_rigid: {
+      // PxFixedJoint* desc =
+      PxFixedJointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame.ID), B.getInverse());
+      // desc->setProjectionLinearTolerance(1e10);
+      // desc->setProjectionAngularTolerance(3.14);
     }
-
-    if(jj->frame.ats.find<arr>("limit")) {
-      desc->setMotion(PxD6Axis::eX, PxD6Motion::eLIMITED);
-
-      arr limits = jj->frame.ats.get<arr>("limit");
-      PxJointLinearLimit limit(mPhysics->getTolerancesScale(), limits(0), 0.1f);
-      limit.restitution = limits(2);
-      //if(limits(3)>0) {
-      //limit.spring = limits(3);
-      //limit.damping= limits(4);
-      //}
-      desc->setLinearLimit(limit);
+    break;
+    case rai::JT_trans3: {
+      break;
     }
-    else {
+    case rai::JT_transXYPhi: {
+      PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame.ID), B.getInverse());
+      CHECK(desc, "PhysX joint creation failed.");
+      
       desc->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
+      desc->setMotion(PxD6Axis::eY, PxD6Motion::eFREE);
+      desc->setMotion(PxD6Axis::eSWING2, PxD6Motion::eFREE);
+      
+      joints(jj->frame.ID) = desc;
+      break;
     }
-    joints(jj->frame.ID) = desc;
-  }
+    case rai::JT_transX:
+    case rai::JT_transY:
+    case rai::JT_transZ: {
+      PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame.ID), B.getInverse());
+      CHECK(desc, "PhysX joint creation failed.");
+      
+      if(jj->frame.ats.find<arr>("drive")) {
+        arr drive_values = jj->frame.ats.get<arr>("drive");
+        PxD6JointDrive drive(drive_values(0), drive_values(1), PX_MAX_F32, true);
+        desc->setDrive(PxD6Drive::eX, drive);
+      }
+      
+      if(jj->frame.ats.find<arr>("limit")) {
+        desc->setMotion(PxD6Axis::eX, PxD6Motion::eLIMITED);
+        
+        arr limits = jj->frame.ats.get<arr>("limit");
+        PxJointLinearLimit limit(mPhysics->getTolerancesScale(), limits(0), 0.1f);
+        limit.restitution = limits(2);
+        //if(limits(3)>0) {
+        //limit.spring = limits(3);
+        //limit.damping= limits(4);
+        //}
+        desc->setLinearLimit(limit);
+      } else {
+        desc->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
+      }
+      joints(jj->frame.ID) = desc;
+    }
     break;
-  default:
-    NIY;
+    default:
+      NIY;
   }
 }
 void sPhysXInterface::lockJoint(PxD6Joint *joint, rai::Joint *rai_joint) {
@@ -393,105 +389,105 @@ void sPhysXInterface::lockJoint(PxD6Joint *joint, rai::Joint *rai_joint) {
 }
 void sPhysXInterface::unlockJoint(PxD6Joint *joint, rai::Joint *rai_joint) {
   switch(rai_joint->type) {
-  case rai::JT_hingeX:
-  case rai::JT_hingeY:
-  case rai::JT_hingeZ:
-    //joint->setMotion(PxD6Axis::eX, PxD6Motion::eLIMITED);
-    //joint->setLinearLimit(PxJointLimit(rai_joint->Q.rot.getRad(), rai_joint->Q.rot.getRad()));
-    joint->setMotion(PxD6Axis::eTWIST, PxD6Motion::eFREE);
-    break;
-  case rai::JT_transX:
-  case rai::JT_transY:
-  case rai::JT_transZ:
-    //joint->setMotion(PxD6Axis::eTWIST, PxD6Motion::eLOCKED);
-    joint->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
-    break;
-  default:
-    break;
+    case rai::JT_hingeX:
+    case rai::JT_hingeY:
+    case rai::JT_hingeZ:
+      //joint->setMotion(PxD6Axis::eX, PxD6Motion::eLIMITED);
+      //joint->setLinearLimit(PxJointLimit(rai_joint->Q.rot.getRad(), rai_joint->Q.rot.getRad()));
+      joint->setMotion(PxD6Axis::eTWIST, PxD6Motion::eFREE);
+      break;
+    case rai::JT_transX:
+    case rai::JT_transY:
+    case rai::JT_transZ:
+      //joint->setMotion(PxD6Axis::eTWIST, PxD6Motion::eLOCKED);
+      joint->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
+      break;
+    default:
+      break;
   }
 }
 
 void sPhysXInterface::addLink(rai::Frame *b, physx::PxMaterial *mMaterial) {
   PxRigidDynamic* actor=NULL;
-
+  
   rai::BodyType type = rai::BT_static;
   if(b->joint) type = rai::BT_kinematic;
   if(b->inertia) type = b->inertia->type;
   actorTypes(b->ID) = type;
-
+  
   switch(type) {
-  case rai::BT_static:
-    actor = (PxRigidDynamic*) mPhysics->createRigidStatic(conv_Transformation2PxTrans(b->X));
-    break;
-  case rai::BT_dynamic:
-    actor = mPhysics->createRigidDynamic(conv_Transformation2PxTrans(b->X));
-    break;
-  case rai::BT_kinematic:
-    actor = mPhysics->createRigidDynamic(conv_Transformation2PxTrans(b->X));
-    actor->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, true);
-    break;
-  case rai::BT_none:
-    HALT("this shoudn't be none BT!?")
-        //      actor = mPhysics->createRigidDynamic(OrsTrans2PxTrans(b->X));
-        break;
+    case rai::BT_static:
+      actor = (PxRigidDynamic*) mPhysics->createRigidStatic(conv_Transformation2PxTrans(b->X));
+      break;
+    case rai::BT_dynamic:
+      actor = mPhysics->createRigidDynamic(conv_Transformation2PxTrans(b->X));
+      break;
+    case rai::BT_kinematic:
+      actor = mPhysics->createRigidDynamic(conv_Transformation2PxTrans(b->X));
+      actor->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, true);
+      break;
+    case rai::BT_none:
+      HALT("this shoudn't be none BT!?")
+      //      actor = mPhysics->createRigidDynamic(OrsTrans2PxTrans(b->X));
+      break;
   }
   CHECK(actor, "create actor failed!");
-
+  
   FrameL parts = {b};
   b->getRigidSubFrames(parts);
+  
+//  cout <<RAI_HERE <<"adding '" <<b->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with parts";
+//  for(auto* p:parts) cout <<' ' <<p->name; cout <<endl;
 
-  cout <<RAI_HERE <<"adding '" <<b->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with parts";
-  for(auto* p:parts) cout <<' ' <<p->name; cout <<endl;
-
-  for(rai::Frame *p: parts){
+  for(rai::Frame *p: parts) {
     rai::Shape *s = p->shape;
     if(!s) continue;
     if(s->frame.name.startsWith("coll_")) continue; //these are the 'pink' collision boundary shapes..
     PxGeometry* geometry;
     switch(s->type()) {
-    case rai::ST_box: {
-      geometry = new PxBoxGeometry(.5*s->size(0), .5*s->size(1), .5*s->size(2));
-    }
+      case rai::ST_box: {
+        geometry = new PxBoxGeometry(.5*s->size(0), .5*s->size(1), .5*s->size(2));
+      }
       break;
-    case rai::ST_sphere: {
-      geometry = new PxSphereGeometry(s->size(3));
-    }
+      case rai::ST_sphere: {
+        geometry = new PxSphereGeometry(s->size(3));
+      }
       break;
-    case rai::ST_capsule: {
-      geometry = new PxCapsuleGeometry(s->size(3), .5*s->size(2));
-    }
+      case rai::ST_capsule: {
+        geometry = new PxCapsuleGeometry(s->size(3), .5*s->size(2));
+      }
       break;
-    case rai::ST_cylinder:
-    case rai::ST_ssBox:
-    case rai::ST_ssCvx:
-    case rai::ST_mesh: {
-      // Note: physx can't decompose meshes itself.
-      // Physx doesn't support triangle meshes in dynamic objects! See:
-      // file:///home/mtoussai/lib/PhysX/Documentation/PhysXGuide/Manual/Shapes.html
-      // We have to decompose the meshes "by hand" and feed them to PhysX.
-
-      // PhysX uses float for the vertices
-      floatA Vfloat;
-
-      Vfloat.clear();
-      copy(Vfloat, s->mesh().V); //convert vertices from double to float array..
-      PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
-            *mPhysics, *mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
-            PxConvexFlag::eCOMPUTE_CONVEX | PxConvexFlag::eINFLATE_CONVEX);
-      geometry = new PxConvexMeshGeometry(triangleMesh);
-    } break;
-    case rai::ST_marker: {
-      geometry = NULL;
-    } break;
-    default:
-      NIY;
+      case rai::ST_cylinder:
+      case rai::ST_ssBox:
+      case rai::ST_ssCvx:
+      case rai::ST_mesh: {
+        // Note: physx can't decompose meshes itself.
+        // Physx doesn't support triangle meshes in dynamic objects! See:
+        // file:///home/mtoussai/lib/PhysX/Documentation/PhysXGuide/Manual/Shapes.html
+        // We have to decompose the meshes "by hand" and feed them to PhysX.
+        
+        // PhysX uses float for the vertices
+        floatA Vfloat;
+        
+        Vfloat.clear();
+        copy(Vfloat, s->mesh().V); //convert vertices from double to float array..
+        PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
+                                       *mPhysics, *mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
+                                       PxConvexFlag::eCOMPUTE_CONVEX | PxConvexFlag::eINFLATE_CONVEX);
+        geometry = new PxConvexMeshGeometry(triangleMesh);
+      } break;
+      case rai::ST_marker: {
+        geometry = NULL;
+      } break;
+      default:
+        NIY;
     }
-
+    
     if(geometry) {
       PxShape* shape = NULL;
-      if(&s->frame==b){
+      if(&s->frame==b) {
         shape = actor->createShape(*geometry, *mMaterial);
-      }else{
+      } else {
         shape = actor->createShape(*geometry, *mMaterial, conv_Transformation2PxTrans(s->frame.Q));
       }
       CHECK(shape, "create shape failed!");
@@ -501,7 +497,7 @@ void sPhysXInterface::addLink(rai::Frame *b, physx::PxMaterial *mMaterial) {
   if(type != rai::BT_static) {
     if(b->inertia && b->inertia->mass>0.) {
       PxRigidBodyExt::setMassAndUpdateInertia(*actor, b->inertia->mass);
-    }else{
+    } else {
       PxRigidBodyExt::updateMassAndInertia(*actor, 1.f);
     }
 //    actor->setAngularDamping(0.25);
@@ -510,20 +506,20 @@ void sPhysXInterface::addLink(rai::Frame *b, physx::PxMaterial *mMaterial) {
   }
   gScene->addActor(*actor);
   actor->userData = b;
-
+  
   actors(b->ID) = actor;
 }
 
 void PhysXInterface::pullFromPhysx(rai::KinematicWorld *K, arr& vels) {
   if(!K) K=&world;
   if(&vels) vels.resize(K->frames.N, 2, 3).setZero();
-  for(rai::Frame *f : K->frames){
+  for(rai::Frame *f : K->frames) {
     if(s->actors.N <= f->ID) continue;
     PxRigidActor* a = s->actors(f->ID);
     if(!a) continue;
-
+    
     bool isDynamic = (f->inertia && f->inertia->type==rai::BT_dynamic);
-    if(isDynamic){
+    if(isDynamic) {
       PxTrans2OrsTrans(f->X, a->getGlobalPose());
       if(&vels && a->getType() == PxActorType::eRIGID_DYNAMIC) {
         PxRigidBody *px_body = (PxRigidBody*) a;
@@ -553,31 +549,31 @@ void PhysXInterface::pullFromPhysx(rai::KinematicWorld *K, arr& vels) {
 
 void PhysXInterface::pushToPhysx(rai::KinematicWorld *K, rai::KinematicWorld *Kt_1, rai::KinematicWorld *Kt_2, double tau, bool onlyKinematic) {
   if(!K) K=&world;
-  for(rai::Frame *f : K->frames){
+  for(rai::Frame *f : K->frames) {
     if(s->actors.N <= f->ID) continue;
     PxRigidActor* a = s->actors(f->ID);
     if(!a) continue; //f is not an actor
-
-    if(f->inertia && f->inertia->type!= s->actorTypes(f->ID)){
+    
+    if(f->inertia && f->inertia->type!= s->actorTypes(f->ID)) {
       LOG(0) <<"SWITCHING INERTIA TYPE! " <<f->name;
       s->actorTypes(f->ID) = f->inertia->type;
-      if(f->inertia->type==rai::BT_kinematic) ((PxRigidDynamic*)a)->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, true);
-      if(f->inertia->type==rai::BT_dynamic){
+      if(f->inertia->type==rai::BT_kinematic)((PxRigidDynamic*)a)->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, true);
+      if(f->inertia->type==rai::BT_dynamic) {
         ((PxRigidDynamic*)a)->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, false);
-        if(Kt_1){
+        if(Kt_1) {
           rai::Vector v = (Kt_1->frames(f->ID)->X.pos - Kt_2->frames(f->ID)->X.pos)/tau;
           ((PxRigidDynamic*)a)->setLinearVelocity(PxVec3(v.x, v.y, v.z));
-
+          
           rai::Vector w = (f->X.rot.getJacobian() * (Kt_1->frames(f->ID)->X.rot.getArr4d() - Kt_2->frames(f->ID)->X.rot.getArr4d()))/tau;
           ((PxRigidDynamic*)a)->setAngularVelocity(PxVec3(w.x, w.y, w.z));
-
+          
           LOG(0) <<"  switch velocity=" <<v <<"  angular=" <<w <<"  position=" <<f->X.pos;
-        }else{
+        } else {
           LOG(-1) <<"I could not set velocities as K_{t-1} was not given";
         }
       }
     }
-
+    
     bool isKinematic = (f->joint && !f->inertia) || (f->inertia && f->inertia->type==rai::BT_kinematic);
     if(onlyKinematic && !isKinematic) continue;
     ((PxRigidDynamic*)a)->setKinematicTarget(conv_Transformation2PxTrans(f->X));
@@ -589,24 +585,24 @@ void PhysXInterface::ShutdownPhysX() {
   //  s->mMaterial
   //  s->plane
   //  s->planeShape
-
-  for(PxRigidActor* a: s->actors) if(a){
-    s->gScene->removeActor(*a);
-    a->release();
-  }
-  if(s->connection){
+  
+  for(PxRigidActor* a: s->actors) if(a) {
+      s->gScene->removeActor(*a);
+      a->release();
+    }
+  if(s->connection) {
     s->connection->release();
     s->connection=NULL;
   }
-  if(s->gScene){
+  if(s->gScene) {
     s->gScene->release();
     s->gScene = NULL;
   }
-  if(s->gl){
+  if(s->gl) {
     delete s->gl;
     s->gl=NULL;
   }
-
+  
   mCooking->release();
   mPhysics->release();
   //  mFoundation->release();
@@ -620,51 +616,51 @@ void DrawActor(PxRigidActor* actor, rai::Frame *frame) {
   actor->getShapes(shapes, nShapes);
   while(nShapes--) {
     PxShape *shape = shapes[nShapes];
-
+    
     // use the color of the first shape of the body for the entire body
     rai::Shape *s = frame->shape;
     if(!s) s = frame->outLinks.elem(0)->shape;
     if(s) glColor(s->mesh().C);
-
+    
     rai::Transformation f;
     double mat[16];
     PxTrans2OrsTrans(f, PxShapeExt::getGlobalPose(*shape, *actor));
     glLoadMatrixd(f.getAffineMatrixGL(mat));
     //cout <<"drawing shape " <<body->name <<endl;
     switch(shape->getGeometryType()) {
-    case PxGeometryType::eBOX: {
-      PxBoxGeometry g;
-      shape->getBoxGeometry(g);
-      //glutSolidCube(g.halfExtents.x*2, g.halfExtents.y*2, g.halfExtents.z*2);
-      glDrawBox(g.halfExtents.x*2, g.halfExtents.y*2, g.halfExtents.z*2);
-    } break;
-    case PxGeometryType::eSPHERE: {
-      PxSphereGeometry g;
-      shape->getSphereGeometry(g);
-      glutSolidSphere(g.radius, 10, 10);
-    } break;
-    case PxGeometryType::eCAPSULE: {
-      PxCapsuleGeometry g;
-      shape->getCapsuleGeometry(g);
-      glDrawCappedCylinder(g.radius, g.halfHeight*2);
-    } break;
-    case PxGeometryType::eCONVEXMESH: {
+      case PxGeometryType::eBOX: {
+        PxBoxGeometry g;
+        shape->getBoxGeometry(g);
+        //glutSolidCube(g.halfExtents.x*2, g.halfExtents.y*2, g.halfExtents.z*2);
+        glDrawBox(g.halfExtents.x*2, g.halfExtents.y*2, g.halfExtents.z*2);
+      } break;
+      case PxGeometryType::eSPHERE: {
+        PxSphereGeometry g;
+        shape->getSphereGeometry(g);
+        glutSolidSphere(g.radius, 10, 10);
+      } break;
+      case PxGeometryType::eCAPSULE: {
+        PxCapsuleGeometry g;
+        shape->getCapsuleGeometry(g);
+        glDrawCappedCylinder(g.radius, g.halfHeight*2);
+      } break;
+      case PxGeometryType::eCONVEXMESH: {
 #if 1
-      PxConvexMeshGeometry g;
-      shape->getConvexMeshGeometry(g);
-      floatA Vfloat((float*)g.convexMesh->getVertices(), 3*g.convexMesh->getNbVertices()); //reference
-      rai::Mesh mesh;
-      copy(mesh.V,Vfloat);
-      mesh.V.reshape(g.convexMesh->getNbVertices(),3);
-      mesh.makeConvexHull();
-      mesh.glDraw(NoOpenGL);
+        PxConvexMeshGeometry g;
+        shape->getConvexMeshGeometry(g);
+        floatA Vfloat((float*)g.convexMesh->getVertices(), 3*g.convexMesh->getNbVertices()); //reference
+        rai::Mesh mesh;
+        copy(mesh.V,Vfloat);
+        mesh.V.reshape(g.convexMesh->getNbVertices(),3);
+        mesh.makeConvexHull();
+        mesh.glDraw(NoOpenGL);
 #else
-      s->mesh.glDraw();
+        s->mesh.glDraw();
 #endif
-    } break;
+      } break;
       
-    default:
-      RAI_MSG("can't draw this type");
+      default:
+        RAI_MSG("can't draw this type");
     }
   }
   delete [] shapes;
@@ -672,14 +668,14 @@ void DrawActor(PxRigidActor* actor, rai::Frame *frame) {
 
 void PhysXInterface::glDraw(OpenGL&) {
   uint i=0;
-  for(PxRigidActor* a: s->actors){
+  for(PxRigidActor* a: s->actors) {
     if(a) DrawActor(a, world.frames(i));
     i++;
   }
 }
 
-void PhysXInterface::watch(bool pause, const char *txt){
-  if(!s->gl){
+void PhysXInterface::watch(bool pause, const char *txt) {
+  if(!s->gl) {
     s->gl = new OpenGL("PHYSX direct");
     s->gl->add(glStandardScene, NULL);
     s->gl->add(*this);
@@ -691,7 +687,7 @@ void PhysXInterface::watch(bool pause, const char *txt){
 
 void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b) {
   PxVec3 px_force = PxVec3(force.x, force.y, force.z);
-  PxRigidBody *actor = (PxRigidBody*) (s->actors(b->ID)); // dynamic_cast fails for missing RTTI in physx
+  PxRigidBody *actor = (PxRigidBody*)(s->actors(b->ID));  // dynamic_cast fails for missing RTTI in physx
   actor->addForce(px_force);
 }
 
@@ -717,7 +713,7 @@ void PhysXInterface::pushToPhysx(rai::KinematicWorld *K, rai::KinematicWorld *Kt
 void PhysXInterface::pullFromPhysx(rai::KinematicWorld *K, arr& vels) { NICO }
 void PhysXInterface::setArticulatedBodiesKinematic() { NICO }
 void PhysXInterface::ShutdownPhysX() { NICO }
-void PhysXInterface::watch(bool pause, const char *txt){ NICO }
+void PhysXInterface::watch(bool pause, const char *txt) { NICO }
 void PhysXInterface::glDraw(OpenGL&) { NICO }
 void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b) { NICO }
 void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b, rai::Vector& pos) { NICO }
