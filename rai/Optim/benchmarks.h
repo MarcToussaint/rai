@@ -131,7 +131,7 @@ struct SimpleConstraintFunction : ConstrainedProblem {
   }
   virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& _x) {
     CHECK(_x.N==2,"");
-    if(&tt) tt = { OT_sumOfSqr, OT_sumOfSqr, OT_ineq, OT_ineq };
+    if(&tt) tt = { OT_sos, OT_sos, OT_ineq, OT_ineq };
     phi.resize(4);
     if(&J) { J.resize(4, 2); J.setZero(); }
     if(&H) { H=zeros(4,4); }

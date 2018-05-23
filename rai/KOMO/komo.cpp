@@ -253,25 +253,25 @@ void KOMO::setHoming(double startTime, double endTime, double prec, const char* 
   Joint *j;
   for(Frame *f:world.frames) if((j=f->joint) && !j->constrainToZeroVel && j->qDim()>0 && (!keyword || f->ats[keyword])) bodies.append(f->ID);
 //  cout <<"HOMING: "; for(uint i:bodies) cout <<' ' <<world.frames(i)->name;  cout <<endl;
-  setTask(startTime, endTime, new TM_qItself(bodies, true), OT_sumOfSqr, NoArr, prec); //world.q, prec);
+  setTask(startTime, endTime, new TM_qItself(bodies, true), OT_sos, NoArr, prec); //world.q, prec);
 }
 
 void KOMO::setSquaredQAccelerations(double startTime, double endTime, double prec) {
   CHECK(k_order>=2,"");
-  setTask(startTime, endTime, new TM_Transition(world), OT_sumOfSqr, NoArr, prec, 2);
+  setTask(startTime, endTime, new TM_Transition(world), OT_sos, NoArr, prec, 2);
 }
 
 void KOMO::setSquaredQVelocities(double startTime, double endTime, double prec) {
   auto *map = new TM_Transition(world);
   map->velCoeff = 1.;
   map->accCoeff = 0.;
-  setTask(startTime, endTime, map, OT_sumOfSqr, NoArr, prec, 1);
+  setTask(startTime, endTime, map, OT_sos, NoArr, prec, 1);
 }
 
 void KOMO::setFixEffectiveJoints(double startTime, double endTime, double prec) {
 //  setTask(startTime, endTime, new TM_Transition(world, true), OT_eq, NoArr, prec, 1); //NOTE: order=1!!
   setTask(startTime, endTime, new TM_FlagConstraints(), OT_eq, NoArr, prec, k_order);
-  setTask(startTime, endTime, new TM_FlagCosts(), OT_sumOfSqr, NoArr, 1., k_order);
+  setTask(startTime, endTime, new TM_FlagCosts(), OT_sos, NoArr, 1., k_order);
 }
 
 void KOMO::setFixSwitchedObjects(double startTime, double endTime, double prec) {
@@ -279,12 +279,12 @@ void KOMO::setFixSwitchedObjects(double startTime, double endTime, double prec) 
 }
 
 void KOMO::setSquaredQuaternionNorms(double startTime, double endTime, double prec) {
-  setTask(startTime, endTime, new TM_QuaternionNorms(), OT_sumOfSqr, NoArr, prec);
+  setTask(startTime, endTime, new TM_QuaternionNorms(), OT_sos, NoArr, prec);
 }
 
 void KOMO::setHoldStill(double startTime, double endTime, const char* shape, double prec) {
   Frame *s = world.getFrameByName(shape);
-  setTask(startTime, endTime, new TM_qItself(TUP(s->ID)), OT_sumOfSqr, NoArr, prec, 1);
+  setTask(startTime, endTime, new TM_qItself(TUP(s->ID)), OT_sos, NoArr, prec, 1);
 }
 
 void KOMO::setPosition(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec) {
@@ -323,7 +323,7 @@ void KOMO::setInertialMotion(double startTime, double endTime, const char *objec
 //  setFlag(endTime, new Flag(FL_noQControlCosts, world[object]->ID, 0, true, false), +1);
   if(k_order>=2) {
     NIY;
-//    setTask(startTime, endTime, new TM_InertialMotion(world, object, g, c), OT_sumOfSqr, {}, 1e2, 2);
+//    setTask(startTime, endTime, new TM_InertialMotion(world, object, g, c), OT_sos, {}, 1e2, 2);
   }
 }
 
@@ -339,15 +339,15 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
   
   //-- position the hand & graspRef
   //hand upright
-  //  setTask(time, time, new TM_Default(TMT_vec, world, endeffRef, Vector_z), OT_sumOfSqr, {0.,0.,1.}, weightFromTop);
+  //  setTask(time, time, new TM_Default(TMT_vec, world, endeffRef, Vector_z), OT_sos, {0.,0.,1.}, weightFromTop);
   
   //hand center at object center (could be replaced by touch)
 //  setTask(time, time, new TM_Default(TMT_posDiff, world, endeffRef, NoVector, object, NoVector), OT_eq, NoArr, 1e3);
 
   //hand grip axis orthogonal to object length axis
-//  setTask(time, time, new TM_Default(TMT_vecAlign, world, endeffRef, Vector_x, object, Vector_x), OT_sumOfSqr, NoArr, 1e1);
+//  setTask(time, time, new TM_Default(TMT_vecAlign, world, endeffRef, Vector_x, object, Vector_x), OT_sos, NoArr, 1e1);
   //hand grip axis orthogonal to object length axis
-//  setTask(time, time, new TM_Default(TMT_vecAlign, world, endeffRef, Vector_y, object, Vector_x), OT_sumOfSqr, {-1.}, 1e1);
+//  setTask(time, time, new TM_Default(TMT_vecAlign, world, endeffRef, Vector_y, object, Vector_x), OT_sos, {-1.}, 1e1);
 
   //hand touches object
 //  Shape *endeffShape = world.getFrameByName(endeffRef)->body->shapes.first();
@@ -368,9 +368,9 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
 #endif
   
 //  if(stepsPerPhase>2 && timeToLift>0.){ //velocities down and up
-//    setTask(time-timeToLift, time-2.*timeToLift/3, new TM_Default(TMT_pos, world, endeffRef), OT_sumOfSqr, {0.,0.,-.1}, 1e0, 1); //move down
-//    setTask(time-timeToLift/3,  time+timeToLift/3, new TM_Default(TMT_pos, world, endeffRef), OT_sumOfSqr, {0.,0.,0.}, 1e1, 1); //move down
-//    setTask(time+2.*timeToLift/3, time+timeToLift, new TM_Default(TMT_pos, world, endeffRef), OT_sumOfSqr, {0.,0.,.1}, 1e0, 1); // move up
+//    setTask(time-timeToLift, time-2.*timeToLift/3, new TM_Default(TMT_pos, world, endeffRef), OT_sos, {0.,0.,-.1}, 1e0, 1); //move down
+//    setTask(time-timeToLift/3,  time+timeToLift/3, new TM_Default(TMT_pos, world, endeffRef), OT_sos, {0.,0.,0.}, 1e1, 1); //move down
+//    setTask(time+2.*timeToLift/3, time+timeToLift, new TM_Default(TMT_pos, world, endeffRef), OT_sos, {0.,0.,.1}, 1e0, 1); // move up
 //  }
 
 //  setFlag(time, new Flag(FL_clear, world[object]->ID, 0, true));
@@ -396,8 +396,8 @@ void KOMO::setGraspStick(double time, const char* endeffRef, const char* object,
   setTask(time, time, new TM_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e2);
   
   if(stepsPerPhase>2) { //velocities down and up
-    setTask(time-timeToLift, time, new TM_Default(TMT_pos, world, endeffRef), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
-    setTask(time, time+timeToLift, new TM_Default(TMT_pos, world, object), OT_sumOfSqr, {0.,0.,.1}, 1e1, 1); // move up
+    setTask(time-timeToLift, time, new TM_Default(TMT_pos, world, endeffRef), OT_sos, {0.,0.,-.1}, 1e1, 1); //move down
+    setTask(time, time+timeToLift, new TM_Default(TMT_pos, world, object), OT_sos, {0.,0.,.1}, 1e1, 1); // move up
   }
 }
 
@@ -407,16 +407,16 @@ void KOMO::setPlace(double time, const char* endeff, const char* object, const c
   
 //  if(stepsPerPhase>2){ //velocities down and up
 //    if(endeff){
-//      setTask(time-.15, time-.10, new TM_Default(TMT_pos, world, endeff), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
-//      setTask(time-.05, time+.05, new TM_Default(TMT_pos, world, endeff), OT_sumOfSqr, {0.,0.,0. }, 1e2, 1); //hold still
-//      setTask(time+.10, time+.15, new TM_Default(TMT_pos, world, endeff), OT_sumOfSqr, {0.,0.,+.1}, 1e1, 1); //move up
+//      setTask(time-.15, time-.10, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,-.1}, 1e1, 1); //move down
+//      setTask(time-.05, time+.05, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,0. }, 1e2, 1); //hold still
+//      setTask(time+.10, time+.15, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,+.1}, 1e1, 1); //move up
 //    }else{
-////      setTask(time-.15, time, new TM_Default(TMT_pos, world, object), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
+////      setTask(time-.15, time, new TM_Default(TMT_pos, world, object), OT_sos, {0.,0.,-.1}, 1e1, 1); //move down
 //    }
 //  }
 
   //place upright
-//  setTask(time-.02, time, new TM_Default(TMT_vec, world, object, Vector_z), OT_sumOfSqr, {0.,0.,1.}, 1e2);
+//  setTask(time-.02, time, new TM_Default(TMT_vec, world, object, Vector_z), OT_sos, {0.,0.,1.}, 1e2);
 
   //place inside box support
 //  setTask(time, time, new TM_StaticStability(world, placeRef, .01), OT_ineq);
@@ -441,9 +441,9 @@ void KOMO::setPlaceFixed(double time, const char* endeff, const char* object, co
   
   if(stepsPerPhase>2) { //velocities down and up
     if(endeff) {
-      setTask(time-.15, time-.10, new TM_Default(TMT_pos, world, endeff), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
-      setTask(time-.05, time+.05, new TM_Default(TMT_pos, world, endeff), OT_sumOfSqr, {0.,0.,0. }, 1e2, 1); //hold still
-      setTask(time+.10, time+.15, new TM_Default(TMT_pos, world, endeff), OT_sumOfSqr, {0.,0.,+.1}, 1e1, 1); //move up
+      setTask(time-.15, time-.10, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,-.1}, 1e1, 1); //move down
+      setTask(time-.05, time+.05, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,0. }, 1e2, 1); //hold still
+      setTask(time+.10, time+.15, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,+.1}, 1e1, 1); //move up
     }
   }
 }
@@ -468,7 +468,7 @@ void KOMO::setHandover(double time, const char* oldHolder, const char* object, c
 #endif
   
   if(stepsPerPhase>2) { //velocities: no motion
-    setTask(time-.15, time+.15, new TM_Default(TMT_pos, world, object), OT_sumOfSqr, {0.,0.,0.}, 1e1, 1); // no motion
+    setTask(time-.15, time+.15, new TM_Default(TMT_pos, world, object), OT_sos, {0.,0.,0.}, 1e1, 1); // no motion
   }
 #endif
 }
@@ -478,14 +478,14 @@ void KOMO::setPush(double startTime, double endTime, const char* stick, const ch
   
 #if 1
   //stick normal alignes with slider direction
-  setTask(startTime, endTime, new TM_Default(TMT_vecAlign, world, stick, -Vector_y, "slider1b", Vector_x), OT_sumOfSqr, {1.}, 1e2);
+  setTask(startTime, endTime, new TM_Default(TMT_vecAlign, world, stick, -Vector_y, "slider1b", Vector_x), OT_sos, {1.}, 1e2);
   //stick horizontal is orthogonal to world vertical
-//  setTask(startTime, endTime, new TM_Default(TMT_vecAlign, world, stick, Vector_x, NULL, Vector_z), OT_sumOfSqr, {0.}, 1e2);
+//  setTask(startTime, endTime, new TM_Default(TMT_vecAlign, world, stick, Vector_x, NULL, Vector_z), OT_sos, {0.}, 1e2);
   core_setTouch(startTime, endTime, stick, table);
   
   double dist = .05; //.5*shapeSize(world, object, 0)+.01;
   setTask(startTime, endTime, new TM_InsideBox(world, "slider1b", {dist, .0, .0}, stick), OT_ineq);
-//  setTask(startTime, endTime, new TM_Default(TMT_posDiff, world, stick, NoVector, "slider1b", {dist, .0, .0}), OT_sumOfSqr, {}, 1e2);
+//  setTask(startTime, endTime, new TM_Default(TMT_posDiff, world, stick, NoVector, "slider1b", {dist, .0, .0}), OT_sos, {}, 1e2);
 #else
   setTouch(startTime, endTime, stick, object);
 #endif
@@ -502,10 +502,10 @@ void KOMO::setPush(double startTime, double endTime, const char* stick, const ch
 #endif
   
   if(stepsPerPhase>2) { //velocities down and up
-    setTask(startTime-.3, startTime-.1, new TM_Default(TMT_pos, world, stick), OT_sumOfSqr, {0.,0., -.1}, 1e1, 1); //move down
-    setTask(startTime-.05, startTime-.0, new TM_Default(TMT_pos, world, stick), OT_sumOfSqr, {0.,0., 0}, 1e1, 1); //hold still
-    setTask(endTime+.0, endTime+.05, new TM_Default(TMT_pos, world, stick), OT_sumOfSqr, {0.,0., 0}, 1e1, 1); //hold still
-    setTask(endTime+.1, endTime+.3, new TM_Default(TMT_pos, world, stick), OT_sumOfSqr, {0.,0., .1}, 1e1, 1); // move up
+    setTask(startTime-.3, startTime-.1, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., -.1}, 1e1, 1); //move down
+    setTask(startTime-.05, startTime-.0, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., 0}, 1e1, 1); //hold still
+    setTask(endTime+.0, endTime+.05, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., 0}, 1e1, 1); //hold still
+    setTask(endTime+.1, endTime+.3, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., .1}, 1e1, 1); // move up
   }
 }
 
@@ -518,7 +518,7 @@ void KOMO::setGraspSlide(double time, const char* endeff, const char* object, co
   
   //-- grasp part
   //hand upright
-//  setTask(startTime, startTime, new TM_Default(TMT_vec, world, endeff, Vector_z), OT_sumOfSqr, {0.,0.,1.}, 1e-2);
+//  setTask(startTime, startTime, new TM_Default(TMT_vec, world, endeff, Vector_z), OT_sos, {0.,0.,1.}, 1e-2);
 
   //disconnect object from table
 //  setKinematicSwitch(startTime, true, "delete", placeRef, object);
@@ -547,14 +547,14 @@ void KOMO::setGraspSlide(double time, const char* endeff, const char* object, co
   double h = .5*(shapeSize(world, object) + shapeSize(world, placeRef));
   setTask(startTime, endTime,
           new TM_LinTrans(new TM_Default(TMT_posDiff, world, object, NoVector, placeRef), ~ARR(0,0,1), ARR(0)),
-          OT_sumOfSqr, ARR(h), 1e2);
+          OT_sos, ARR(h), 1e2);
   //keep object vertial
   setTask(startTime, endTime,
-          new TM_Default(TMT_vecDiff, world, object, Vector_z, placeRef, Vector_z), OT_sumOfSqr, {}, 1e2);
+          new TM_Default(TMT_vecDiff, world, object, Vector_z, placeRef, Vector_z), OT_sos, {}, 1e2);
           
 //  if(stepsPerPhase>2){ //velocities down and up
-//    setTask(startTime-.15, startTime, new TM_Default(TMT_pos, world, endeff), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); //move down
-//    setTask(endTime, endTime+.15, new TM_Default(TMT_pos, world, endeff), OT_sumOfSqr, {0.,0.,.1}, 1e1, 1); // move up
+//    setTask(startTime-.15, startTime, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,-.1}, 1e1, 1); //move down
+//    setTask(endTime, endTime+.15, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,.1}, 1e1, 1); // move up
 //  }
 }
 
@@ -564,9 +564,9 @@ void KOMO::setSlideAlong(double time, const char* stick, const char* object, con
   double endTime = time+1.;
   
   //stick normal alignes with slider direction
-  setTask(time, time+1., new TM_Default(TMT_vecAlign, world, stick, -Vector_y, object, Vector_x), OT_sumOfSqr, {1.}, 1e0);
+  setTask(time, time+1., new TM_Default(TMT_vecAlign, world, stick, -Vector_y, object, Vector_x), OT_sos, {1.}, 1e0);
   //stick horizontal is orthogonal to world vertical
-  setTask(time, time+1., new TM_Default(TMT_vecAlign, world, stick, Vector_x, NULL, Vector_z), OT_sumOfSqr, {0.}, 1e2);
+  setTask(time, time+1., new TM_Default(TMT_vecAlign, world, stick, Vector_x, NULL, Vector_z), OT_sos, {0.}, 1e2);
   
   double dist = .5*shapeSize(world, object, 0)+.01;
   setTask(time, time+1., new TM_InsideBox(world, object, {dist, .0, .0}, stick), OT_ineq);
@@ -587,8 +587,8 @@ void KOMO::setSlideAlong(double time, const char* stick, const char* object, con
   //    setTask(time, time, new TM_InsideBox(world, endeff, NoVector, object), OT_ineq, NoArr, 1e2);
   
   if(stepsPerPhase>2) { //velocities down and up
-    setTask(endTime+.0, endTime+.05, new TM_Default(TMT_pos, world, stick), OT_sumOfSqr, {0.,0., 0}, 1e1, 1); //hold still
-    setTask(endTime+.1, endTime+.3, new TM_Default(TMT_pos, world, stick), OT_sumOfSqr, {0.,0., .05}, 1e1, 1); // move up
+    setTask(endTime+.0, endTime+.05, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., 0}, 1e1, 1); //hold still
+    setTask(endTime+.1, endTime+.3, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., .05}, 1e1, 1); // move up
   }
 }
 
@@ -611,7 +611,7 @@ void KOMO::setDrop(double time, const char* object, const char* from, const char
 //  setFlag(time, new Flag(FT_noQControlCosts, world[object]->ID, 0, true),+1);
 
 //  if(stepsPerPhase>2){ //velocities down and up
-//    setTask(time, time+.2, new TM_Default(TMT_pos, world, object), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); // move down
+//    setTask(time, time+.2, new TM_Default(TMT_pos, world, object), OT_sos, {0.,0.,-.1}, 1e1, 1); // move down
 //  }
 }
 
@@ -628,7 +628,7 @@ void KOMO::setDropEdgeFixed(double time, const char* object, const char* to, con
 //  setKinematicSwitch(time, true, new KinematicSwitch(SW_insertEffJoint, JT_trans3, NULL, object, world, 0));
 
 //  if(stepsPerPhase>2){ //velocities down and up
-//    setTask(time, time+.2, new TM_Default(TMT_pos, world, object), OT_sumOfSqr, {0.,0.,-.1}, 1e1, 1); // move down
+//    setTask(time, time+.2, new TM_Default(TMT_pos, world, object), OT_sos, {0.,0.,-.1}, 1e1, 1); // move down
 //  }
 }
 
@@ -636,10 +636,10 @@ void KOMO::setAttach(double time, const char* endeff, const char* object1, const
   if(verbose>0) cout <<"KOMO_setAttach t=" <<time <<" endeff=" <<endeff <<" obj1=" <<object1 <<" obj2=" <<object2 <<endl;
   
   //hand center at object center (could be replaced by touch)
-//  setTask(time, time, new TM_Default(TMT_pos, world, object2, NoVector, object1, NoVector), OT_sumOfSqr, rel.pos.getArr(), 1e3);
-//  setTask(time, time, new TM_Default(TMT_quatDiff, world, object2, NoVector, object1, NoVector), OT_sumOfSqr, conv_quat2arr(rel.rot), 1e3);
+//  setTask(time, time, new TM_Default(TMT_pos, world, object2, NoVector, object1, NoVector), OT_sos, rel.pos.getArr(), 1e3);
+//  setTask(time, time, new TM_Default(TMT_quatDiff, world, object2, NoVector, object1, NoVector), OT_sos, conv_quat2arr(rel.rot), 1e3);
 
-//  setTask(time, time, new TM_Default(TMT_vecAlign, world, newHolder, Vector_y, object, Vector_x), OT_sumOfSqr, {-1.}, 1e1);
+//  setTask(time, time, new TM_Default(TMT_vecAlign, world, newHolder, Vector_y, object, Vector_x), OT_sos, {-1.}, 1e1);
 
   //disconnect object from grasp ref
 //  setKinematicSwitch(time, true, "delete", endeff, object2);
@@ -655,7 +655,7 @@ void KOMO::setSlow(double startTime, double endTime, double prec, bool hardConst
     uintA selectedBodies;
     for(rai::Joint *j:world.fwdActiveJoints) if(j->type!=rai::JT_time) selectedBodies.append(j->frame.ID);
     TaskMap *map = new TM_qItself(selectedBodies);
-    if(!hardConstrained) setTask(startTime, endTime, map, OT_sumOfSqr, NoArr, prec, 1);
+    if(!hardConstrained) setTask(startTime, endTime, map, OT_sos, NoArr, prec, 1);
     else setTask(startTime, endTime, map, OT_eq, NoArr, prec, 1);
   }
   //#    _MinSumOfSqr_qItself_vel(MinSumOfSqr qItself){ order=1 time=[0.98 1] scale=1e1 } #slow down
@@ -671,18 +671,18 @@ void KOMO::setFine_grasp(double time, const char* endeff, const char* object, do
   double t3=-.05; //time when gripper is closed
   
   //position above
-  setTask(time+t1, 1., new TM_Default(TMT_vec, world, endeff, Vector_z), OT_sumOfSqr, {0.,0.,1.}, 1e0);
-  setTask(time+t1, t1, new TM_Default(TMT_posDiff, world, endeff, NoVector, object, NoVector), OT_sumOfSqr, {0.,0.,above+.1}, 1e3);
-  setTask(time+t1, 1., new TM_Default(TMT_vecAlign, world, endeff, Vector_x, object, Vector_y), OT_sumOfSqr, NoArr, 1e1);
-  setTask(time+t1, 1., new TM_Default(TMT_vecAlign, world, endeff, Vector_x, object, Vector_z), OT_sumOfSqr, NoArr, 1e1);
+  setTask(time+t1, 1., new TM_Default(TMT_vec, world, endeff, Vector_z), OT_sos, {0.,0.,1.}, 1e0);
+  setTask(time+t1, t1, new TM_Default(TMT_posDiff, world, endeff, NoVector, object, NoVector), OT_sos, {0.,0.,above+.1}, 1e3);
+  setTask(time+t1, 1., new TM_Default(TMT_vecAlign, world, endeff, Vector_x, object, Vector_y), OT_sos, NoArr, 1e1);
+  setTask(time+t1, 1., new TM_Default(TMT_vecAlign, world, endeff, Vector_x, object, Vector_z), OT_sos, NoArr, 1e1);
   //open gripper
-  if(gripper)  setTask(time+t1, .85, new TM_qItself(QIP_byJointNames, {gripper}, world), OT_sumOfSqr, {gripSize + .05});
-  if(gripper2) setTask(time+t1, .85, new TM_qItself(QIP_byJointNames, {gripper2}, world), OT_sumOfSqr, {::asin((gripSize + .05)/(2.*.10))});
+  if(gripper)  setTask(time+t1, .85, new TM_qItself(QIP_byJointNames, {gripper}, world), OT_sos, {gripSize + .05});
+  if(gripper2) setTask(time+t1, .85, new TM_qItself(QIP_byJointNames, {gripper2}, world), OT_sos, {::asin((gripSize + .05)/(2.*.10))});
   //lower
-  setTask(time+t2, 1., new TM_Default(TMT_posDiff, world, endeff, NoVector, object, NoVector), OT_sumOfSqr, {0.,0.,above}, 1e3);
+  setTask(time+t2, 1., new TM_Default(TMT_posDiff, world, endeff, NoVector, object, NoVector), OT_sos, {0.,0.,above}, 1e3);
   //close gripper
-  if(gripper)  setTask(time+t3, 1., new TM_qItself(QIP_byJointNames, {gripper}, world), OT_sumOfSqr, {gripSize});
-  if(gripper2) setTask(time+t3, 1., new TM_qItself(QIP_byJointNames, {gripper2}, world), OT_sumOfSqr, {::asin((gripSize)/(2.*.10))});
+  if(gripper)  setTask(time+t3, 1., new TM_qItself(QIP_byJointNames, {gripper}, world), OT_sos, {gripSize});
+  if(gripper2) setTask(time+t3, 1., new TM_qItself(QIP_byJointNames, {gripper2}, world), OT_sos, {::asin((gripSize)/(2.*.10))});
   setSlowAround(time, .05, 1e3);
 }
 
@@ -848,7 +848,7 @@ void KOMO::core_setInside(double startTime, double endTime, const char* shape1, 
 }
 
 void KOMO::core_setImpulse(double time, const char* shape1, const char* shape2, ObjectiveType type, double prec) {
-//    setTask(time, time, new TM_ImpulsExchange(world, a, b), OT_sumOfSqr, {}, 1e3, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
+//    setTask(time, time, new TM_ImpulsExchange(world, a, b), OT_sos, {}, 1e3, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
   if(k_order>=2) {
     setTask(time, time, new TM_ImpulsExchange(world, shape1, shape2), type, {}, prec, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
     setFlag(time, new Flag(FL_impulseExchange, world[shape1]->ID), +1);
@@ -864,7 +864,7 @@ void KOMO::setCollisions(bool hardConstraint, double margin, double prec) {
   if(hardConstraint) { //interpreted as hard constraint (default)
     setTask(0., -1., new CollisionConstraint(margin), OT_ineq, NoArr, prec);
   } else { //cost term
-    setTask(0., -1., new TM_Proxy(TMT_allP, {0u}, margin, true), OT_sumOfSqr, NoArr, prec);
+    setTask(0., -1., new TM_Proxy(TMT_allP, {0u}, margin, true), OT_sos, NoArr, prec);
   }
 }
 
@@ -873,15 +873,15 @@ void KOMO::setLimits(bool hardConstraint, double margin, double prec) {
     setTask(0., -1., new LimitsConstraint(margin), OT_ineq, NoArr, prec);
   } else { //cost term
     NIY;
-//    setTask(0., -1., new TM_Proxy(TMT_allP, {0u}, margin), OT_sumOfSqr, NoArr, prec);
+//    setTask(0., -1., new TM_Proxy(TMT_allP, {0u}, margin), OT_sos, NoArr, prec);
   }
 }
 
 void KOMO::setLiftDownUp(double time, const char *endeff, double timeToLift) {
   if(stepsPerPhase>2 && timeToLift>0.) { //velocities down and up
-    setTask(time-timeToLift, time-2.*timeToLift/3, new TM_Default(TMT_pos, world, endeff), OT_sumOfSqr, {0.,0.,-.1}, 1e0, 1); //move down
-    setTask(time-timeToLift/3,  time+timeToLift/3, new TM_Default(TMT_pos, world, endeff), OT_sumOfSqr, {0.,0.,0.}, 1e1, 1); //move down
-    setTask(time+2.*timeToLift/3, time+timeToLift, new TM_Default(TMT_pos, world, endeff), OT_sumOfSqr, {0.,0.,.1}, 1e0, 1); // move up
+    setTask(time-timeToLift, time-2.*timeToLift/3, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,-.1}, 1e0, 1); //move down
+    setTask(time-timeToLift/3,  time+timeToLift/3, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,0.}, 1e1, 1); //move down
+    setTask(time+2.*timeToLift/3, time+timeToLift, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,.1}, 1e0, 1); // move up
   }
 }
 
@@ -973,7 +973,7 @@ void setTasks(KOMO& MP,
   
   Task *t;
   
-  t = MP.addTask("transitions", new TM_Transition(MP.world), OT_sumOfSqr);
+  t = MP.addTask("transitions", new TM_Transition(MP.world), OT_sos);
   if(timeSteps!=0) {
     t->map->order=2; //make this an acceleration task!
   } else {
@@ -982,7 +982,7 @@ void setTasks(KOMO& MP,
   t->setCostSpecs(0, MP.T-1, {0.}, 1e0);
   
   if(timeSteps!=0) {
-    t = MP.addTask("final_vel", new TM_qItself(), OT_sumOfSqr);
+    t = MP.addTask("final_vel", new TM_qItself(), OT_sos);
     t->map->order=1; //make this a velocity task!
     t->setCostSpecs(MP.T-4, MP.T-1, {0.}, zeroVelPrec);
   }
@@ -991,11 +991,11 @@ void setTasks(KOMO& MP,
     t = MP.addTask("collisionConstraints", new CollisionConstraint(margin), OT_ineq);
     t->setCostSpecs(0, MP.T-1, {0.}, 1.);
   } else { //cost term
-    t = MP.addTask("collision", new TM_Proxy(TMT_allP, {0u}, margin), OT_sumOfSqr);
+    t = MP.addTask("collision", new TM_Proxy(TMT_allP, {0u}, margin), OT_sos);
     t->setCostSpecs(0, MP.T-1, {0.}, colPrec);
   }
   
-  t = MP.addTask("endeff_pos", new TM_Default(TMT_pos, endeff.ID, NoVector, target.ID, NoVector), OT_sumOfSqr);
+  t = MP.addTask("endeff_pos", new TM_Default(TMT_pos, endeff.ID, NoVector, target.ID, NoVector), OT_sos);
   t->setCostSpecs(MP.T-1, MP.T-1, {0.}, posPrec);
   
   for(uint i=0; i<3; i++) if(whichAxesToAlign&(1<<i)) {
@@ -1004,7 +1004,7 @@ void setTasks(KOMO& MP,
       axis(i)=1.;
       t = MP.addTask(STRING("endeff_align_"<<i),
                      new TM_Default(TMT_vecAlign, endeff.ID, axis, target.ID, axis),
-                     OT_sumOfSqr);
+                     OT_sos);
       t->setCostSpecs(MP.T-1, MP.T-1, {1.}, alignPrec);
     }
 }
@@ -1537,7 +1537,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
           d=task->map->dim_phi(configurations({t,t+k_order}));
           for(uint j=0; j<d; j++) CHECK(tt(M+j)==task->type,"");
           if(d) {
-            if(task->type==OT_sumOfSqr) {
+            if(task->type==OT_sos) {
               for(uint j=0; j<d; j++) err(t,i) += sqr(phi(M+j)); //sumOfSqr(phi.sub(M,M+d-1));
               taskC(i) += err(t,i);
             }

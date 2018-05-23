@@ -227,7 +227,7 @@ void TrajectoryInterface::gotoPosition(arr x_robot, double T, bool recordData, b
   }
   
   Task *t;
-  t = MP.addTask("tra", new TM_Transition(*world_robot), OT_sumOfSqr);
+  t = MP.addTask("tra", new TM_Transition(*world_robot), OT_sos);
   ((TM_Transition*)&t->map)->H_rate_diag = world_robot->getHmetric();
   t->map->order=2;
   t->setCostSpecs(0, MP.T, ARR(0.), 1e0);

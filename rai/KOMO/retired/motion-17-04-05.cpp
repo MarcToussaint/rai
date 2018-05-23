@@ -50,7 +50,7 @@ Task* Task::newTask(const Node* specs, const rai::KinematicWorld& world, int ste
   //-- check the term type first
   ObjectiveType termType;
   rai::String& tt=specs->parents(0)->keys.last();
-  if(tt=="MinSumOfSqr") termType=OT_sumOfSqr;
+  if(tt=="MinSumOfSqr") termType=OT_sos;
   else if(tt=="LowerEqualZero") termType=OT_ineq;
   else if(tt=="EqualZero") termType=OT_eq;
   else return NULL;
@@ -151,7 +151,7 @@ void KOMO::parseTasks(const Graph& specs, int stepsPerPhase) {
   if(!T) {
     TaskMap *map = new TM_qItself();
     map->order = 0;
-    Task *task = new Task(map, OT_sumOfSqr);
+    Task *task = new Task(map, OT_sos);
     task->name="InvKinTransition";
     task->setCostSpecs(0, 0, world.q, 1./(tau*tau));
     tasks.append(task);
@@ -323,7 +323,7 @@ StringA KOMO::getPhiNames(uint t) {
   StringA names(dim_phi(t));
   uint m=0;
   for(Task *c: tasks) if(c->prec.N>t && c->prec(t)) {
-      if(c->type==OT_sumOfSqr) {
+      if(c->type==OT_sos) {
         uint d = c->map->dim_phi(configurations({t,t+k_order}), t); //counts also constraints
         for(uint i=0; i<d; i++) {
           names(m+i)=c->name;
@@ -451,7 +451,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures) {
         uint d=task->map->dim_phi(configurations({t,t+k_order}), t);
         for(uint j=0; j<d; j++) CHECK(tt(M+j)==task->type,"");
         if(d) {
-          if(task->type==OT_sumOfSqr) {
+          if(task->type==OT_sos) {
             for(uint j=0; j<d; j++) err(t,i) += rai::sqr(phi(M+j)); //sumOfSqr(phi.sub(M,M+d-1));
             taskC(i) += err(t,i);
           }

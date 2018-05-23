@@ -114,6 +114,7 @@ struct KinematicWorld : GLDrawer {
   void optimizeTree(bool preserveNamed=true);        ///< call the three above methods in this order
   void fwdIndexIDs();
   void useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese, bool deleteInsteadOfLock);
+  void makeObjectsFree(const StringA& objects);
   void addTimeJoint();
   bool checkConsistency();
   

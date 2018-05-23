@@ -29,7 +29,7 @@ void KOMO::costReport(bool gnuplt) {
       if(tt.N) for(uint i=0; i<d; i++) CHECK(tt(M+i)==c->type,"");
       
       if(d) {
-        if(c->type==OT_sumOfSqr) {
+        if(c->type==OT_sos) {
           taskC(i) += a = sumOfSqr(phi.sub(M,M+d-1));
           plotData(t,i) = a;
         }

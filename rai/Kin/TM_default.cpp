@@ -19,7 +19,10 @@ const char* TM_DefaultType2String[] = {
   "quatDiff",///< the difference of 2 quaternions (NOT the relative quaternion)
   "vecAlign",///< 1D vector alignment, can have 2nd reference, param (optional) determins alternative reference world vector
   "gazeAt",  ///< 2D orthogonality measure of object relative to camera plane
-  "pos1D"
+  "pose",
+  "poseDiff",
+  "pos1D",
+  NULL,
 };
 
 TM_Default::TM_Default(TM_DefaultType _type,
@@ -299,6 +302,8 @@ uint TM_Default::dim_phi(const rai::KinematicWorld& G) {
     case TMT_quatDiff: return 4;
     case TMT_vecAlign: return 1;
     case TMT_gazeAt: return 2;
+    case TMT_pose: return 7;
+    case TMT_poseDiff: return 7;
     case pos1TMT_D: return 1;
     default:  HALT("no such TMT_");
   }

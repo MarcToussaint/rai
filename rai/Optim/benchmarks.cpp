@@ -189,7 +189,7 @@ void ParticleAroundWalls2::getStructure(uintA& variableDimensions, uintA& featur
   if(&featureTypes) featureTypes.clear();
   for(uint t=0; t<T; t++) {
     if(&featureTimes) featureTimes.append(consts<uint>(t, n));
-    if(&featureTypes) featureTypes.append(consts(OT_sumOfSqr, n));
+    if(&featureTypes) featureTypes.append(consts(OT_sos, n));
     if(t==T/4 || t==T/2 || t==3*T/4 || t==T-1) {
       if(&featureTimes) featureTimes.append(consts<uint>(t, n));
       if(&featureTypes) featureTypes.append(consts(OT_ineq, n));
@@ -234,7 +234,7 @@ void ParticleAroundWalls2::phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, 
         if(&J) { J(m).resize(k+1,n).setZero(); J(m)(3,i) = 1.;  J(m)(2,i) = -3.;  J(m)(1,i) = +3.;  J(m)(0,i) = -1.; }
       }
       if(&J && t<k) J(m) = J(m).sub(k-t,-1,0,-1); //cut the prefix Jacobians
-      if(&tt) tt(m) = OT_sumOfSqr;
+      if(&tt) tt(m) = OT_sos;
       m++;
     }
     

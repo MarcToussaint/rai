@@ -24,7 +24,7 @@ typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
 typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
 
 /// symbols to declare of which type an objective feature is
-enum ObjectiveType { OT_none=0, OT_f, OT_sumOfSqr, OT_ineq, OT_eq };
+enum ObjectiveType { OT_none=0, OT_f, OT_sos, OT_ineq, OT_eq };
 typedef rai::Array<ObjectiveType> ObjectiveTypeA;
 extern ObjectiveTypeA& NoTermTypeA;
 

@@ -13,7 +13,7 @@ Singleton<OptOptions> globalOptOptions;
 ObjectiveTypeA& NoTermTypeA = *((ObjectiveTypeA*)NULL);
 
 template<> const char* rai::Enum<ObjectiveType>::names []= {
-  "OT_none", "OT_f", "OT_sumOfSqr", "OT_ineq", "OT_eq", NULL
+  "OT_none", "OT_f", "OT_sos", "OT_ineq", "OT_eq", NULL
 };
 
 //===========================================================================

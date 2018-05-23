@@ -21,8 +21,9 @@ enum TM_DefaultType {
   TMT_quatDiff,///< the difference of 2 quaternions (NOT the relative quaternion)
   TMT_vecAlign,///< 1D vector alignment, can have 2nd reference, param (optional) determins alternative reference world vector
   TMT_gazeAt,  ///< 2D orthogonality measure of object relative to camera plane
+  TMT_pose,
+  TMT_poseDiff,
   pos1TMT_D,
-  TMT_poseDiff
 };
 extern const char* TM_DefaultType2String[];
 

@@ -143,6 +143,7 @@ struct sKinematicWorld {
     if(ode) delete ode;
   }
 };
+
 }
 
 rai::KinematicWorld::KinematicWorld() : s(NULL) {
@@ -2345,6 +2346,17 @@ void rai::KinematicWorld::useJointGroups(const StringA &groupNames, bool OnlyThe
       }
   }
 }
+
+void rai::KinematicWorld::makeObjectsFree(const StringA &objects){
+    for(auto s:objects){
+        rai::Frame *a = getFrameByName(s, true);
+        CHECK(a, "");
+        if(!a->parent) a->linkFrom(frames.first());
+        if(!a->joint) new rai::Joint(*a);
+        a->joint->makeFree();
+    }
+}
+
 
 void rai::KinematicWorld::addTimeJoint(){
   rai::Joint *jt = new rai::Joint(*frames.first());

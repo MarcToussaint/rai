@@ -48,7 +48,7 @@ PathProblem::PathProblem(const rai::KinematicWorld& world_initial,
   //-- transitions
   {
     Task *t;
-    t = MP.addTask("transitions", new TM_Transition(world), OT_sumOfSqr);
+    t = MP.addTask("transitions", new TM_Transition(world), OT_sos);
     if(microSteps>3) t->map->order=2;
     else t->map->order=1;
     t->setCostSpecs(0, MP.T, {0.}, 1e-1);
@@ -57,7 +57,7 @@ PathProblem::PathProblem(const rai::KinematicWorld& world_initial,
   //-- pose damping
   {
     Task *t;
-    t = MP.addTask("pose", new TM_qItself(), OT_sumOfSqr);
+    t = MP.addTask("pose", new TM_qItself(), OT_sos);
     t->map->order=0;
     t->setCostSpecs(0, MP.T, {0.}, 1e-5);
   }
@@ -67,7 +67,7 @@ PathProblem::PathProblem(const rai::KinematicWorld& world_initial,
     Task *t;
     TM_Default *m;
     //pick & place position
-    t = MP.addTask("pap_pos", m=new TM_Default(TMT_posDiff), OT_sumOfSqr);
+    t = MP.addTask("pap_pos", m=new TM_Default(TMT_posDiff), OT_sos);
     m->referenceIds.resize(MP.T+1,2) = -1;
     t->prec.resize(MP.T+1).setZero();
     t->target.resize(MP.T+1,3).setZero();
@@ -85,7 +85,7 @@ PathProblem::PathProblem(const rai::KinematicWorld& world_initial,
     }
     
     //pick & place quaternion
-    t = MP.addTask("psp_quat", m=new TM_Default(TMT_quatDiff), OT_sumOfSqr);
+    t = MP.addTask("psp_quat", m=new TM_Default(TMT_quatDiff), OT_sos);
     m->referenceIds.resize(MP.T+1,2) = -1;
     t->prec.resize(MP.T+1).setZero();
     t->target.resize(MP.T+1,4).setZero();
@@ -104,7 +104,7 @@ PathProblem::PathProblem(const rai::KinematicWorld& world_initial,
     
     // zero position velocity
     if(microSteps>3) {
-      t = MP.addTask("psp_zeroPosVel", m=new TM_Default(TMT_pos, endeff_index), OT_sumOfSqr);
+      t = MP.addTask("psp_zeroPosVel", m=new TM_Default(TMT_pos, endeff_index), OT_sos);
       t->map->order=1;
       t->prec.resize(MP.T+1).setZero();
       for(uint i=0; i<actions.N; i++) {
@@ -113,7 +113,7 @@ PathProblem::PathProblem(const rai::KinematicWorld& world_initial,
       }
       
       // zero quaternion velocity
-      t = MP.addTask("pap_zeroQuatVel", new TM_Default(TMT_quat, endeff_index), OT_sumOfSqr);
+      t = MP.addTask("pap_zeroQuatVel", new TM_Default(TMT_quat, endeff_index), OT_sos);
       t->map->order=1;
       t->prec.resize(MP.T+1).setZero();
       for(uint i=0; i<actions.N; i++) {
@@ -128,7 +128,7 @@ PathProblem::PathProblem(const rai::KinematicWorld& world_initial,
 //    M.setZero();
 //    for(uint i=0;i<j_grasp->qDim();i++) M(i,j_grasp->qIndex+i)=1.;
 //    cout <<M <<endl;
-    t = MP.addTask("graspJoint", new TM_qItself(QIP_byJointNames, {"graspJoint"}, world), OT_sumOfSqr);
+    t = MP.addTask("graspJoint", new TM_qItself(QIP_byJointNames, {"graspJoint"}, world), OT_sos);
     t->map->order=1;
     t->prec.resize(MP.T+1).setZero();
     for(uint i=0; i<actions.N; i++) {
@@ -137,7 +137,7 @@ PathProblem::PathProblem(const rai::KinematicWorld& world_initial,
     
     // up/down velocities after/before pick/place
     if(microSteps>3) {
-      t = MP.addTask("pap_upDownPosVel", new TM_Default(TMT_pos, endeff_index), OT_sumOfSqr);
+      t = MP.addTask("pap_upDownPosVel", new TM_Default(TMT_pos, endeff_index), OT_sos);
       t->map->order=1;
       t->prec.resize(MP.T+1).setZero();
       t->target.resize(MP.T+1,3).setZero();
