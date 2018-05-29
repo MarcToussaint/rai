@@ -276,7 +276,19 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     }
     return;
   }
-  
+
+  if(type==TMT_pose) {
+      arr yq, Jq;
+      TM_Default tmp(*this);
+      tmp.type = TMT_pos;
+      tmp.phi(y, J, G);
+      tmp.type = TMT_quat;
+      tmp.phi(yq, (&J?Jq:NoArr), G);
+      y.append(yq);
+      if(&J) J.append(Jq);
+      return;
+  }
+
   if(type==TMT_poseDiff) {
     arr yq, Jq;
     TM_Default tmp(*this);
