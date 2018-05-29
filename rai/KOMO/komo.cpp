@@ -1242,7 +1242,7 @@ struct DrawPaths : GLDrawer {
   }
 };
 
-bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPrefix) {
+bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const char* saveVideoPrefix) {
   const char* tag = "KOMO planned trajectory";
   if(!gl) {
     gl = new OpenGL("KOMO display");
@@ -1260,7 +1260,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, const char* saveVideoPref
     gl->clear();
     gl->add(glStandardScene, 0);
     gl->add(K);
-    gl->add(drawX);
+    if(overlayPaths) gl->add(drawX);
     if(delay<0.) {
       if(delay<-10.) FILE("z.graph") <<K;
       gl->watch(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
