@@ -28,7 +28,8 @@ enum TM_DefaultType {
 extern const char* TM_DefaultType2String[];
 
 struct TM_Default:TaskMap {
-  TM_DefaultType type;
+  rai::Enum<TM_DefaultType> type;   ///< joint type
+
   int i, j;               ///< which shapes does it refer to?
   rai::Vector ivec, jvec; ///< additional position or vector
   
@@ -45,6 +46,8 @@ struct TM_Default:TaskMap {
   
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G);
-  virtual rai::String shortTag(const rai::KinematicWorld& G);
+  virtual rai::String shortTag(const rai::KinematicWorld& K);
+  virtual Graph getSpec(const rai::KinematicWorld& K);
+
 };
 

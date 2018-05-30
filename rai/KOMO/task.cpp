@@ -13,7 +13,7 @@
 //===========================================================================
 
 void Task::setCostSpecs(int fromStep, int toStep, const arr& _target, double _prec) {
-  if(&_target) target = _target; else target = {0.};
+  if(&_target) target = _target; else target.clear();
   if(fromStep<0) fromStep=0;
   CHECK(toStep>=fromStep,"");
   prec.resize(toStep+1).setZero();

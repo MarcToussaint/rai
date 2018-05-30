@@ -25,6 +25,22 @@ const char* TM_DefaultType2String[] = {
   NULL,
 };
 
+template<> const char* rai::Enum<TM_DefaultType>::names []= {
+    "no",      ///< non-initialization
+    "pos",     ///< 3D position of reference
+    "vec",     ///< 3D vec (orientation)
+    "quat",    ///< 4D quaterion
+    "posDiff", ///< the difference of two positions (NOT the relative position)
+    "vecDiff", ///< the difference of two vectors (NOT the relative position)
+    "quatDiff",///< the difference of 2 quaternions (NOT the relative quaternion)
+    "vecAlign",///< 1D vector alignment, can have 2nd reference, param (optional) determins alternative reference world vector
+    "gazeAt",  ///< 2D orthogonality measure of object relative to camera plane
+    "pose",
+    "poseDiff",
+    "pos1D",
+    NULL,
+};
+
 TM_Default::TM_Default(TM_DefaultType _type,
                        int iShape, const rai::Vector& _ivec,
                        int jShape, const rai::Vector& _jvec)
@@ -321,12 +337,22 @@ uint TM_Default::dim_phi(const rai::KinematicWorld& G) {
   }
 }
 
-rai::String TM_Default::shortTag(const rai::KinematicWorld& G) {
+rai::String TM_Default::shortTag(const rai::KinematicWorld& K) {
   rai::String s="Default";
   s <<':' <<TM_DefaultType2String[type];
-  s <<':' <<(i<0?"WORLD":G.frames(i)->name);
-  s <<'/' <<(j<0?"WORLD":G.frames(j)->name);
+  s <<':' <<(i<0?"WORLD":K.frames(i)->name);
+  s <<'/' <<(j<0?"WORLD":K.frames(j)->name);
   return s;
+}
+
+Graph TM_Default::getSpec(const rai::KinematicWorld& K){
+    Graph G;
+    G.newNode<rai::String>({"feature"}, {}, STRING(type));
+    if(i>=0) G.newNode<rai::String>({"o1"}, {}, K.frames(i)->name);
+    if(j>=0) G.newNode<rai::String>({"o2"}, {}, K.frames(j)->name);
+    if(!ivec.isZero) G.newNode<arr>({"v1"}, {}, ivec.getArr());
+    if(!jvec.isZero) G.newNode<arr>({"v2"}, {}, jvec.getArr());
+    return G;
 }
 
 //===========================================================================
