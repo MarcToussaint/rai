@@ -483,8 +483,8 @@ arr rai::KinematicWorld::getLimits() const {
         limits(i+k,0)=j->limits(0); //lo
         limits(i+k,1)=j->limits(1); //up
       } else {
-        limits(i+k,0)=-1.; //lo
-        limits(i+k,1)=+1.; //up
+        limits(i+k,0)=0.; //lo
+        limits(i+k,1)=0.; //up
       }
     }
   }
