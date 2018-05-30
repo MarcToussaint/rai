@@ -47,6 +47,7 @@ TM_Default::TM_Default(TM_DefaultType _type,
   :type(_type), i(iShape), j(jShape) {
   if(&_ivec) ivec=_ivec; else ivec.setZero();
   if(&_jvec) jvec=_jvec; else jvec.setZero();
+  if(type==TMT_quat) flipTargetSignOnNegScalarProduct=true;
 }
 
 TM_Default::TM_Default(TM_DefaultType _type, const rai::KinematicWorld &K,
@@ -59,6 +60,7 @@ TM_Default::TM_Default(TM_DefaultType _type, const rai::KinematicWorld &K,
   if(b) j=b->ID;
   if(&_ivec) ivec=_ivec; else ivec.setZero();
   if(&_jvec) jvec=_jvec; else jvec.setZero();
+  if(type==TMT_quat) flipTargetSignOnNegScalarProduct=true;
 }
 
 TM_Default::TM_Default(const Graph& specs, const rai::KinematicWorld& G)
@@ -80,6 +82,7 @@ TM_Default::TM_Default(const Graph& specs, const rai::KinematicWorld& G)
   if((it=specs["sym3"]) || (it=specs["ref2"])) { auto name=it->get<rai::String>(); auto *s=G.getFrameByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); j=s->ID; }
   if((it=specs["vec1"])) ivec = rai::Vector(it->get<arr>());  else ivec.setZero();
   if((it=specs["vec2"])) jvec = rai::Vector(it->get<arr>());  else jvec.setZero();
+  if(type==TMT_quat) flipTargetSignOnNegScalarProduct=true;
 }
 
 TM_Default::TM_Default(const Node *specs, const rai::KinematicWorld& G)
@@ -107,6 +110,7 @@ TM_Default::TM_Default(const Node *specs, const rai::KinematicWorld& G)
     if((it=params.getNode("vec1"))) ivec = rai::Vector(it->get<arr>());  else ivec.setZero();
     if((it=params.getNode("vec2"))) jvec = rai::Vector(it->get<arr>());  else jvec.setZero();
   }
+  if(type==TMT_quat) flipTargetSignOnNegScalarProduct=true;
 }
 
 void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
