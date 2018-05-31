@@ -1058,14 +1058,8 @@ Transformation operator*(const Transformation& X, const Transformation& c) {
 }
 
 Transformation operator/(const Transformation& X, const Transformation& c) {
-  //TODO: check whether this is sensible, where is it used??
-#if 0
-  Transformation f(X);
-  f.appendInvTransformation(c);
-#else
   Transformation f;
   f.setDifference(c,X);
-#endif
   return f;
 }
 

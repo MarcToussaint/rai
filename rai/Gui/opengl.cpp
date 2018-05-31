@@ -347,6 +347,12 @@ uint color2id(byte rgb[3]) {
   return id;
 }
 
+arr id2color(uint id){
+  byteA rgb(3);
+  id2color(rgb.p, id);
+  return ARR(rgb(0)/256., rgb(1)/256., rgb(2)/256.);
+}
+
 void glColorId(uint id) {
   byte rgb[3];
   glDisable(GL_LIGHTING);
@@ -2370,3 +2376,4 @@ void read_png(byteA &img, const char *file_name, bool swap_rows) {
   LOG(-2) <<"libpng not linked";
 #endif
 }
+

@@ -63,6 +63,7 @@ void glColor(float r, float g, float b, float a=1.f);
 void glColor(int col);
 void glColor(const arr& col);
 void id2color(byte rgb[3], uint id);
+arr id2color(uint id);
 uint color2id(byte rgb[3]);
 void glDrawText(const char* txt, float x=0., float y=0., float z=0., bool largeFont=false);
 //void glShadowTransform();
