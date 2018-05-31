@@ -55,7 +55,7 @@ UIC = uic
 YACC = bison -d
 
 LINK	= $(CXX)
-CPATHS	+= $(BASE)/rai $(BASE)/include
+CPATHS	+= $(BASE)/rai $(BASE)/../src
 LPATHS	+= $(BASE_REAL)/lib /usr/local/lib
 LIBS += -lrt
 SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefined
@@ -164,7 +164,7 @@ clean: force
 	rm -f $(OUTPUT) $(OBJS) $(PREOBJS) callgrind.out.* $(CLEAN)
 	@rm -f $(MODULE_NAME)_wrap.* $(MODULE_NAME)py.so $(MODULE_NAME)py.py
 	@find $(BASE) -type d -name 'Make.lock' -delete -print
-	@find $(BASE)/rai \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
+	@find $(BASE)/rai $(BASE)/../src \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
 
 cleanLocks: force
 	@find $(BASE) -type d -name 'Make.lock' -delete -print

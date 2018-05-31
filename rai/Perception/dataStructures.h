@@ -17,7 +17,7 @@
 #include <Kin/kin.h>
 #include <Core/thread.h>
 
-#include "methods.h"
+//#include "methods.h"
 
 typedef pcl::PointXYZRGB PointT;
 

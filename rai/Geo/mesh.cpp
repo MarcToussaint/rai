@@ -1623,7 +1623,7 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
   if(!T.N) { //-- draw point cloud
     if(!V.N) return;
     CHECK(V.nd==2 && V.d1==3, "wrong dimension");
-    glPointSize(3.);
+//    glPointSize(3.);
     glDisable(GL_LIGHTING);
     
     glEnableClientState(GL_VERTEX_ARRAY);

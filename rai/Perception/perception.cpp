@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "pointcloud.h"
+//#include "pointcloud.h"
 #include "perception.h"
 #include "audio.h"
 #include "videoEncoder.h"
@@ -558,15 +558,15 @@ byteA evidence2RGB(const floatA& evidence) {
 #ifdef RAI_PCL
 // Pointcloud stuff
 //
-ModuleL newPointcloudProcesses() {
-  ModuleL processes;
-  processes.append(new ObjectClusterer);
-  processes.append(new ObjectFitter);
+//ModuleL newPointcloudProcesses() {
+//  ModuleL processes;
+//  processes.append(new ObjectClusterer);
+//  processes.append(new ObjectFitter);
   
-  processes.append(new ObjectFilter("Object Filter"));
-  processes.append(new ObjectTransformator("Object Transformator"));
-  return processes;
-}
+//  processes.append(new ObjectFilter("Object Filter"));
+//  processes.append(new ObjectTransformator("Object Transformator"));
+//  return processes;
+//}
 
 //VariableL newPointcloudVariables() {
 //  VariableL variables;

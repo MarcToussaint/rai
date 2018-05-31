@@ -893,13 +893,15 @@ char& rai::String::operator()(int i) const {
 }
 
 /// return the substring from `start` to (exclusive) `end`.
-rai::String rai::String::getSubString(uint start, uint end) const {
-  CHECK(start < end, "getSubString: start should be smaller than end");
-  clip(end, uint(0), N);
+rai::String rai::String::getSubString(int start, int end) const {
+  if(start<0) start+=N;
+  if(end<0) end+=N;
+  CHECK_GE(start, 0, "start < 0");
+  CHECK_LE(end, (int)N, "end out of range");
+  CHECK(start <= end, "end before start");
   String tmp;
-  for(uint i = start; i < end; i++) {
-    tmp.append((*this)(i));
-  }
+  tmp.set(p+start, 1+end-start);
+//  for(int i = start; i < end; i++) tmp.append((*this)(i));
   return tmp;
 }
 

@@ -577,6 +577,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
     pinfo.keys_beg=is.tellg();
     for(;;) {
       if(!str.read(is, " \t", " \t\n\r,;([{}=:!", false)) break;
+      if(str(0)=='"' && str(-1)=='"') str = str.getSubString(1,-2);
       keys.append(str);
       pinfo.keys_end=is.tellg();
     }
