@@ -29,6 +29,7 @@ struct VideoEncoder_libav_simple {
 /// Has less metadata (in particular, fps and timing seems to be off), but
 /// is more CPU efficient than the above.
 
+#if 0
 struct sVideoEncoder_x264_simple;
 struct VideoEncoder_x264_simple {
   std::shared_ptr<sVideoEncoder_x264_simple> s;
@@ -40,6 +41,7 @@ struct VideoEncoder_x264_simple {
   void close();
   const rai::String& name() const;
 };
+#endif
 
 struct VideoEncoder_OpenCV {
   struct sVideoEncoder_OpenCV *s;

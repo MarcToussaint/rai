@@ -68,6 +68,7 @@ void VideoEncoder::step() {
 // VideoEncoder
 //
 
+#if 0
 struct sVideoEncoderX264 {
   rai::String filename;
   VideoEncoder_x264_simple video;
@@ -107,6 +108,7 @@ void VideoEncoderX264::step() {
   s->timeTagFile <<tag <<endl;
   s->revision = nextRevision;
 }
+#endif
 
 //===========================================================================
 //
