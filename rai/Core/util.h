@@ -230,7 +230,8 @@ public:
   
   /// @name setting
   String& operator=(const String& s);
-  void operator=(const char *s);
+  String& operator=(const std::string& s);
+  String& operator=(const char *s);
   void set(const char *s, uint n);
   String& printf(const char *format, ...);
   void resize(uint n, bool copy); //low-level resizing the string buffer - with additinal final 0

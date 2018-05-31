@@ -928,11 +928,15 @@ rai::String& rai::String::operator=(const String& s) {
   return *this;
 }
 
+rai::String& String::operator=(const std::string& s){
+  return this->operator=(s.c_str());
+}
+
 /// copies from the C-string
-void rai::String::operator=(const char *s) {
-  if(!s) {  clear();  return;  }
+rai::String& rai::String::operator=(const char *s) {
+  if(!s) {  clear();  return *this;  }
   uint ls = strlen(s);
-  if(!ls) {  clear();  return;  }
+  if(!ls) {  clear();  return *this;  }
   if(s>=p && s<=p+N) { //s points to a substring within this string!
     memmove(p, s, ls);
     resize(ls, true);
@@ -940,6 +944,7 @@ void rai::String::operator=(const char *s) {
     resize(ls, false);
     memmove(p, s, ls);
   }
+  return *this;
 }
 
 void rai::String::set(const char *s, uint n) { resize(n, false); memmove(p, s, n); }

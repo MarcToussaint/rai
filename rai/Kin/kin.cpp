@@ -347,11 +347,8 @@ arr rai::KinematicWorld::calc_fwdPropagateVelocities() {
     frame X for each edge (which includes joint transformation and errors) */
 void rai::KinematicWorld::calc_Q_from_BodyFrames() {
   for(Frame *f:frames) if(f->parent) {
-//    rai::Transformation A(j->from->X), B(j->to->X);
-//    A.appendTransformation(j->A);
-//    B.appendInvTransformation(j->B);
-      f->Q.setDifference(f->parent->X, f->X);
-    }
+    f->Q.setDifference(f->parent->X, f->X);
+  }
 }
 
 arr rai::KinematicWorld::naturalQmetric(double power) const {
@@ -470,6 +467,14 @@ arr rai::KinematicWorld::getJointState(const StringA& joints) const {
   return x;
 }
 
+arr rai::KinematicWorld::getFrameState() const{
+  arr X(frames.N, 7);
+  for(uint i=0; i<X.d0; i++) {
+    X[i] = frames(i)->X.getArr7d();
+  }
+  return X;
+}
+
 /** @brief returns the vector of joint limts */
 arr rai::KinematicWorld::getLimits() const {
   uint N=getJointStateDimension();
@@ -584,6 +589,15 @@ void rai::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
   calc_Q_from_q();
   
   calc_fwdPropagateFrames();
+}
+
+void rai::KinematicWorld::setFrameState(const arr& X, bool calc_q_from_X){
+  CHECK_EQ(X.d0, frames.N, "X.d0 does not equal #frames");
+  for(uint i=0;i<frames.N;i++) frames(i)->X.set(X[i]);
+  if(calc_q_from_X){
+    calc_Q_from_BodyFrames();
+    calc_q_from_Q();
+  }
 }
 
 void rai::KinematicWorld::setTimes(double t) {
@@ -1147,6 +1161,14 @@ StringA rai::KinematicWorld::getJointNames() const {
         names(j->qIndex+1) <<name <<":UC";
       }
     }
+  }
+  return names;
+}
+
+StringA rai::KinematicWorld::getFrameNames() const {
+  StringA names(frames.N);
+  for(uint i=0;i<frames.N;i++) {
+    names(i) = frames(i)->name;
   }
   return names;
 }
