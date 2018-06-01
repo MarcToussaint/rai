@@ -7,6 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "dataStructures.h"
+#include "pcl.h"
 
 #ifdef RAI_PCL
 
@@ -40,13 +41,13 @@ void Plane::glDraw() {
 }
 
 void PclCloudView::glDraw() {
-  conv_PclCloud_ArrCloud(pts,cols,cloud);
-  glDrawPointCloud(pts,cols);
+  NIY; //conv_PclCloud_ArrCloud(pts,cols,cloud);
+  NIY; //glDrawPointCloud(pts,cols);
 }
 
 void ArrCloudView::glDraw() {
   arr p=pts.get(), c=cols.get();
-  glDrawPointCloud(p,c);
+  NIY; //glDrawPointCloud(p,c);
 }
 
 #endif

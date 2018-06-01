@@ -1623,7 +1623,7 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
   if(!T.N) { //-- draw point cloud
     if(!V.N) return;
     CHECK(V.nd==2 && V.d1==3, "wrong dimension");
-    glPointSize(3.);
+//    glPointSize(3.);
     glDisable(GL_LIGHTING);
     
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -1671,14 +1671,14 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
   } else {
     glBindTexture(GL_TEXTURE_2D, texture);
   }
-
-  //-- draw the mesh
-  if( (!C.N || C.nd==1 || C.d0==V.d0) //we have colors for each vertex
-      && (!tex.N || !Tt.N) ){ //we have no tex or tex coords for each vertex -> use index arrays
   
+  //-- draw the mesh
+  if((!C.N || C.nd==1 || C.d0==V.d0)  //we have colors for each vertex
+      && (!tex.N || !Tt.N)) { //we have no tex or tex coords for each vertex -> use index arrays
+      
     if(tex.N) CHECK_EQ(tex.d0, V.d0, "this needs tex coords for each vertex; if you have it face wise, render the slow way..");
     if(tex.N) glEnable(GL_TEXTURE_2D);
-      
+    
     //  glShadeModel(GL_FLAT);
     glShadeModel(GL_SMOOTH);
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -1723,10 +1723,10 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
 //    glEnd();
   } else { //basic vertex-wise
     uint i, v;
-
+    
     if(tex.N) CHECK_EQ(Tt.d0, T.d0, "this needs tex coords for each tri");
     if(tex.N && Geo_mesh_drawColors) glEnable(GL_TEXTURE_2D);
-
+    
     glBegin(GL_TRIANGLES);
     for(i=0; i<T.d0; i++) {
       if(C.d0==T.d0) {
