@@ -41,7 +41,7 @@ void plan(){
   komo.setFlag(2., new rai::Flag(FL_gravityAcc, K["ball2"]->ID, 0, true));
 
   // final target for ball2
-  komo.setTask(3., 3., new TM_Default(TMT_posDiff, K, "ball2"), OT_sumOfSqr, {+2.,-0.,.3}, 1e1);
+  komo.setTask(3., 3., new TM_Default(TMT_posDiff, K, "ball2"), OT_sos, {+2.,-0.,.3}, 1e1);
 
   komo.reset();
   komo.reportProblem();
