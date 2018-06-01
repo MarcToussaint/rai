@@ -116,7 +116,20 @@ void rai::Frame::read(const Graph& ats) {
   
   if(ats["type"]) ats["type"]->keys.last() = "shape"; //compatibility with old convention: 'body { type... }' generates shape
   
-  if(ats["joint"]) { joint = new Joint(*this); joint->read(ats); }
+  if(ats["joint"]) {
+    if(ats["B"]){ //there is an extra transform from the joint into this frame -> create an own joint frame
+      Frame *f=new Frame(parent);
+      f->name <<'|' <<name; //the joint frame is actually the link frame of all child frames
+      f->ats.copy(ats, false, true);
+      this->unLink();
+      this->linkFrom(f);
+      new Joint(*f);
+      f->joint->read(ats);
+    }else{
+      new Joint(*this);
+      joint->read(ats);
+    }
+  }
   if(ats["shape"] || ats["mesh"]) { shape = new Shape(*this); shape->read(ats); }
   if(ats["mass"]) { inertia = new Inertia(*this); inertia->read(ats); }
 }

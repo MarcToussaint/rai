@@ -1,0 +1,64 @@
+#include <Kin/kin.h>
+#include <KOMO/komo.h>
+#include <Kin/taskMaps.h>
+#include <Core/graph.h>
+#include <Gui/opengl.h>
+#include <Kin/proxy.h>
+#include <Kin/frame.h>
+#include <Kin/kin_swift.h>
+#include <Kin/contact.h>
+#include <Kin/TM_ContactConstraints.h>
+#include <Kin/TM_FlagConstraints.h>
+#include <Kin/kin_physx.h>
+#include <Kin/switch.h>
+#include <Kin/kinViewer.h>
+
+void plan(){
+  rai::KinematicWorld K("model.g");
+
+  K["ball2"]->joint->type=rai::JT_rigid;
+  K.reset_q();
+
+  KOMO komo;
+  komo.setModel(K, false);
+  komo.setPathOpt(3., 20, 1.);
+
+  //permanent tasks: no collision, gravity
+  komo.setTask(-1., -1., new TM_PairCollision(K, "ball1", "ball2", TM_PairCollision::_negScalar, false), OT_ineq, {}, 1e2);
+
+  //-- action 1
+  komo.setImpact(1., "ball1", "ball2");
+  komo.setPlace(1., NULL, "ball1", "table1");
+  komo.setKinematicSwitch(1., true, new rai::KinematicSwitch(rai::SW_actJoint, rai::JT_transXY, "world", "ball2", K));
+  komo.setFlag(1., new rai::Flag(FL_zeroAcc, K["ball2"]->ID, 0, true));
+
+  // ball2 over the edge
+//  komo.setOverTheEdge(2., "ball2", "table1");
+
+  // gravity for ball2
+  komo.setKinematicSwitch(2., true, new rai::KinematicSwitch(rai::SW_actJoint, rai::JT_trans3, "world", "ball2", K));
+  komo.setFlag(2., new rai::Flag(FL_clear, K["ball2"]->ID, 0, true));
+  komo.setFlag(2., new rai::Flag(FL_gravityAcc, K["ball2"]->ID, 0, true));
+
+  // final target for ball2
+  komo.setTask(3., 3., new TM_Default(TMT_posDiff, K, "ball2"), OT_sumOfSqr, {+2.,-0.,.3}, 1e1);
+
+  komo.reset();
+  komo.reportProblem();
+  komo.verbose=2;
+  komo.run();
+  komo.getReport(true);
+  komo.checkGradients();
+
+  while(komo.displayTrajectory(-.01, true, "vid/z."));
+  //renderConfigurations(komo.configurations, filePrefix, -komo.k_order, 600, 600, &komo.gl->camera);
+}
+
+
+int MAIN(int argc,char **argv){
+  rai::initCmdLine(argc, argv);
+
+  plan();
+
+  return 0;
+}

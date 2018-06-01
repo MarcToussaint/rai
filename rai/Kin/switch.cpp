@@ -57,7 +57,7 @@ rai::KinematicSwitch::KinematicSwitch(SwitchType op, JointType type, const char*
 
 void rai::KinematicSwitch::setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T) {
   if(stepsPerPhase<0) stepsPerPhase=T;
-  timeOfApplication = conv_time2step(time, stepsPerPhase)+(before?0:1);
+  timeOfApplication = (time<0.?0:conv_time2step(time, stepsPerPhase))+(before?0:1);
 }
 
 void rai::KinematicSwitch::apply(KinematicWorld& K) {

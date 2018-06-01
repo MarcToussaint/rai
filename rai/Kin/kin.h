@@ -111,7 +111,7 @@ struct KinematicWorld : GLDrawer {
   void pruneRigidJoints(int verbose=0);        ///< delete rigid joints -> they become just links
   void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
   void pruneUselessFrames(bool preserveNamed=true);  ///< delete frames that have no name, joint, and shape
-  void optimizeTree(bool preserveNamed=true);        ///< call the three above methods in this order
+  void optimizeTree(bool preserveNamed=true, bool _pruneRigidJoints=false);        ///< call the three above methods in this order
   void fwdIndexIDs();
   void useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese, bool deleteInsteadOfLock);
   void addTimeJoint();
