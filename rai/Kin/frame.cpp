@@ -574,6 +574,10 @@ void rai::Joint::makeRigid() {
   type=JT_rigid; frame.K.reset_q();
 }
 
+void rai::Joint::makeFree(){
+  type=JT_free; frame.K.reset_q();
+}
+
 void rai::Joint::read(const Graph &G) {
   double d=0.;
   rai::String str;

@@ -24,4 +24,5 @@ struct TM_PairCollision : TaskMap {
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& K);
   virtual uint dim_phi(const rai::KinematicWorld& G) { if(type==_negScalar) return 1;  return 3; }
   virtual rai::String shortTag(const rai::KinematicWorld& G);
+  virtual Graph getSpec(const rai::KinematicWorld& K);
 };

@@ -115,7 +115,7 @@ struct Graph : NodeL {
   template<class T> Node_typed<T>* newNode(const StringA& keys, const NodeL& parents); ///<exactly equivalent to calling a Node_typed constructor
   template<class T> Node_typed<T>* newNode(const T& x); ///<exactly equivalent to calling a Node_typed constructor
   Node_typed<int>* newNode(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
-  Node_typed<Graph>* newSubgraph(const StringA& keys, const NodeL& parents, const Graph& x=NoGraph);
+  Node_typed<Graph>* newSubgraph(const StringA& keys, const NodeL& parents={}, const Graph& x=NoGraph);
   void appendDict(const std::map<std::string, std::string>& dict);
   Graph& newNode(const Nod& ni); ///< (internal) append a node initializer
   
@@ -178,7 +178,7 @@ struct Graph : NodeL {
   Node* readNode(std::istream& is, bool verbose=false, bool parseInfo=false, rai::String prefixedKey=rai::String()); //used only internally..
   void readJson(std::istream& is);
   void write(std::ostream& os=std::cout, const char *ELEMSEP="\n", const char *delim=NULL) const;
-  void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0, int focusIndex=-1);
+  void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0, int focusIndex=-1, bool subGraphsAsNodes=false);
   void writeHtml(std::ostream& os, std::istream& is);
   void writeParseInfo(std::ostream& os);
   

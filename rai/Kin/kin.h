@@ -95,7 +95,8 @@ struct KinematicWorld : GLDrawer {
   Joint *getJointByBodyNames(const char* from, const char* to) const;
   Joint *getJointByBodyIndices(uint ifrom, uint ito) const;
   StringA getJointNames() const;
-  
+  StringA getFrameNames() const;
+
   bool checkUniqueNames() const;
   void prefixNames(bool clear=false);
   
@@ -114,6 +115,7 @@ struct KinematicWorld : GLDrawer {
   void optimizeTree(bool preserveNamed=true, bool _pruneRigidJoints=false);        ///< call the three above methods in this order
   void fwdIndexIDs();
   void useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese, bool deleteInsteadOfLock);
+  void makeObjectsFree(const StringA& objects);
   void addTimeJoint();
   bool checkConsistency();
   
@@ -131,6 +133,7 @@ struct KinematicWorld : GLDrawer {
   void getJointState(arr &_q, arr& _qdot=NoArr) const;
   arr getJointState() const;
   arr getJointState(const StringA&) const;
+  arr getFrameState() const;
   arr naturalQmetric(double power=.5) const;               ///< returns diagonal of a natural metric in q-space, depending on tree depth
   arr getLimits() const;
   
@@ -140,6 +143,7 @@ struct KinematicWorld : GLDrawer {
   /// @name set state
   void setJointState(const arr& _q, const arr& _qdot=NoArr);
   void setJointState(const arr& _q, const StringA&);
+  void setFrameState(const arr& X, bool calc_q_from_X=true);
   void setTimes(double t);
   
   /// @name kinematics

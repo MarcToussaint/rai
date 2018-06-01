@@ -86,3 +86,6 @@ rai::String TM_PairCollision::shortTag(const rai::KinematicWorld &G) {
   return STRING("TM_PairCollision_"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }
 
+Graph TM_PairCollision::getSpec(const rai::KinematicWorld& K){
+    return Graph({ {"feature", "dist"}, {"o1", K.frames(i)->name}, {"o2", K.frames(j)->name}});
+}

@@ -30,5 +30,6 @@ struct LimitsConstraint:TaskMap {
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G) { return 1; }
   virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("LimitsConstraint"); }
+  virtual Graph getSpec(const rai::KinematicWorld& K){ return Graph({{"feature", "LimitsConstraint"}}); }
 };
 

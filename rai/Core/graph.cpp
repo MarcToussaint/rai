@@ -158,13 +158,20 @@ void Node::write(std::ostream& os) const {
     for(Node *it: (*getValue<NodeL>())) os <<' ' <<it->keys.last();
     os <<" )";
   } else if(isOfType<rai::String>()) {
-    os <<":\"" <<*getValue<rai::String>() <<'"';
+    const rai::String& str = *getValue<rai::String>();
+    char c=str(0);
+    if((c>='a'&& c<='z') || (c>='A'&& c<='Z') ) os <<":" <<str;
+    else os <<":\"" <<str <<'"';
   } else if(isOfType<rai::FileToken>()) {
     os <<":'" <<getValue<rai::FileToken>()->name <<'\'';
   } else if(isOfType<arr>()) {
     os <<':'; getValue<arr>()->write(os, NULL, NULL, "[]");
   } else if(isOfType<double>()) {
     os <<':' <<*getValue<double>();
+  } else if(isOfType<int>()) {
+    os <<':' <<*getValue<int>();
+  } else if(isOfType<uint>()) {
+    os <<':' <<*getValue<uint>();
   } else if(isOfType<bool>()) {
     if(*getValue<bool>()) os<<','; else os <<'!';
   } else if(isOfType<Type*>()) {
@@ -832,9 +839,9 @@ void Graph::writeParseInfo(std::ostream& os) {
 void Graph::displayDot(Node *highlight) {
   if(highlight) {
     CHECK(&highlight->container==this,"");
-    writeDot(FILE("z.dot"), false, false, 0, highlight->index);
+    writeDot(FILE("z.dot"), false, false, 0, highlight->index, true);
   } else {
-    writeDot(FILE("z.dot"), false, false, 0);
+    writeDot(FILE("z.dot"), false, false, 0, -1, true);
   }
   int r;
   r = system("dot -Tpdf z.dot > z.pdf");  if(r) LOG(-1) <<"could not startup dot";
@@ -865,7 +872,7 @@ void Graph::writeHtml(std::ostream& os, std::istream& is) {
 #undef GO
   }
 
-void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, int nodesOrEdges, int focusIndex) {
+void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, int nodesOrEdges, int focusIndex, bool subGraphsAsNodes) {
   if(!withoutHeader) {
     os <<"digraph G{" <<endl;
     os <<"graph [ rankdir=\"LR\", ranksep=0.05";
@@ -881,18 +888,16 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
     if(hasRenderingInfo(n) && getRenderingInfo(n).skip) continue;
     rai::String label;
     if(n->keys.N) {
-      label <<"label=\"";
       bool newline=false;
       for(rai::String& k:n->keys) {
         if(newline) label <<"\\n";
         label <<k;
         newline=true;
       }
-      label <<'"';
     } else if(n->parents.N) {
-      label <<"label=\"(" <<n->parents(0)->keys.last();
+      label <<"(" <<n->parents(0)->keys.last();
       for(uint i=1; i<n->parents.N; i++) label <<' ' <<n->parents(i)->keys.last();
-      label <<")\"";
+      label <<")";
     }
     
     rai::String shape;
@@ -901,17 +906,23 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
     if(hasRenderingInfo(n)) shape <<' ' <<getRenderingInfo(n).dotstyle;
     
     if(defaultEdges && n->parents.N==2) { //an edge
-      os <<n->parents(0)->index <<" -> " <<n->parents(1)->index <<" [ " <<label <<"];" <<endl;
+      os <<n->parents(0)->index <<" -> " <<n->parents(1)->index <<" [ label=\"" <<label <<"\" ];" <<endl;
     } else {
       if(n->isGraph()) {
-        os <<"subgraph cluster_" <<n->index <<" { " /*<<" rank=same"*/ <<endl;
-        os <<n->index <<" [ " <<label <<" shape=box ];" <<endl;
-        n->graph().writeDot(os, true, defaultEdges, +1);
-        os <<"}" <<endl;
-        n->graph().writeDot(os, true, defaultEdges, -1);
+          if(!subGraphsAsNodes){
+              os <<"subgraph cluster_" <<n->index <<" { " /*<<" rank=same"*/ <<endl;
+              os <<n->index <<" [ label=\"" <<label <<"\" shape=box ];" <<endl;
+              n->graph().writeDot(os, true, defaultEdges, +1);
+              os <<"}" <<endl;
+              n->graph().writeDot(os, true, defaultEdges, -1);
+          }else{
+              label <<'\n' <<n->graph();
+              for(uint i=0;i<label.N;i++) if(label(i)=='"') label(i)='\'';
+              os <<n->index <<" [ label=\"" <<label <<'"' <<shape <<" ];" <<endl;
+          }
       } else { //normal node
         if(nodesOrEdges>=0) {
-          os <<n->index <<" [ " <<label <<shape <<" ];" <<endl;
+          os <<n->index <<" [ label=\"" <<label <<'"' <<shape <<" ];" <<endl;
         }
       }
       if(nodesOrEdges<=0) {

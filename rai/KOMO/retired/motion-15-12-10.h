@@ -36,7 +36,7 @@ struct TaskMap {
     };
   }
   
-  TaskMap():type(OT_sumOfSqr),order(0) {}
+  TaskMap():type(OT_sos),order(0) {}
   virtual ~TaskMap() {};
 };
 

@@ -132,7 +132,8 @@ struct Joint {
   double& getQ();
   
   void makeRigid();
-  
+  void makeFree();
+
   void write(std::ostream& os) const;
   void read(const Graph& G);
 };

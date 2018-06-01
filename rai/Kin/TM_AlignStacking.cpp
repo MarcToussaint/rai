@@ -50,7 +50,7 @@ void TM_AlignStacking::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     arr normal = y/d;
     phi.append(prec*(1.-d));
     if(&phiJ) phiJ.append(prec*(~normal*(-J+cenJ)));
-    if(&tt) tt.append(OT_sumOfSqr, 1);
+    if(&tt) tt.append(OT_sos, 1);
   }
   
   //-- align center with object center
@@ -59,7 +59,7 @@ void TM_AlignStacking::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   effKinematics.kinematicsPos(y, J, b);
   phi.append(prec*(y-cen));
   if(&phiJ) phiJ.append(prec*(J-cenJ));
-  if(&tt) tt.append(OT_sumOfSqr, 3);
+  if(&tt) tt.append(OT_sos, 3);
 #else //just one supporter
   
   arr y1,J1,y2,J2;

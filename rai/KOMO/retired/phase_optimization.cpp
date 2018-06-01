@@ -51,7 +51,7 @@ void PhaseOptimization::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, cons
   //-- transition costs of phase: append to phi
   if(t<T) { phi.append((x_bar(2,0) - 2.*x_bar(1,0) + x_bar(0,0))*w); }
   
-  if(&tt) tt.append(OT_sumOfSqr, phi.N);
+  if(&tt) tt.append(OT_sos, phi.N);
   
   uint m=phi.N;
   CHECK_EQ(m,dim_phi(t),"");

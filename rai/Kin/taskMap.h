@@ -22,6 +22,7 @@ struct TaskMap {
   TaskMap() : order(0), flipTargetSignOnNegScalarProduct(false) {}
   virtual ~TaskMap() {}
   virtual rai::String shortTag(const rai::KinematicWorld& K) { NIY; }
+  virtual Graph getSpec(const rai::KinematicWorld& K){ return Graph({{"description", shortTag(K)}}); }
   
   //-- helpers
   arr phi(const rai::KinematicWorld& K) { arr y; phi(y,NoArr,K); return y; } ///< evaluate without computing Jacobian
