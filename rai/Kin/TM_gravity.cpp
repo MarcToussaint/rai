@@ -134,7 +134,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
           for(rai::Contact *con:a->contacts) {
           
             arr d, Jd;
-            TM_PairCollision dist(con->a.ID, con->b.ID, true, false);
+            TM_PairCollision dist(con->a.ID, con->b.ID, TM_PairCollision::_negScalar, false);
             dist.phi(d, (&J?Jd:NoArr), *Ktuple(-2));
             if(&J) expandJacobian(Jd, Ktuple, -2);
             d *= 1.;
@@ -154,7 +154,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
 //            if(&J) Jd *= dd;
 
             arr c, Jc;
-            TM_PairCollision coll(con->a.ID, con->b.ID, false, true);
+            TM_PairCollision coll(con->a.ID, con->b.ID, TM_PairCollision::_vector, true);
             coll.phi(c, (&J?Jc:NoArr), K);
             if(length(c)<1e-6) continue;
             normalizeWithJac(c, Jc);

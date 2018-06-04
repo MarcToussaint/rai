@@ -88,7 +88,7 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
   double prec=1e+0;
   phi.append(prec*(x-x0));
   if(&phiJ) phiJ.append(prec*eye(x.N));
-  if(&tt) tt.append(OT_sumOfSqr, x.N);
+  if(&tt) tt.append(OT_sos, x.N);
   
   //-- touch symbols -> constraints of being inside!
   //LATER: This is not yet transferred to the new LGP!
@@ -182,7 +182,7 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
         arr normal = y/d;
         phi.append(prec*(1.-d));
         if(&phiJ) phiJ.append(prec*(~normal*(-J+cenJ)));
-        if(&tt) tt.append(OT_sumOfSqr, 1);
+        if(&tt) tt.append(OT_sos, 1);
       }
       
       //-- align center with object center
@@ -191,7 +191,7 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
       effKinematics.kinematicsPos(y, J, b);
       phi.append(prec*(y-cen));
       if(&phiJ) phiJ.append(prec*(J-cenJ));
-      if(&tt) tt.append(OT_sumOfSqr, 3);
+      if(&tt) tt.append(OT_sos, 3);
     }
     
     prec=1e-0;
@@ -206,7 +206,7 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
         effKinematics.kinematicsPos(y2, J2, b2);
         phi.append(prec*(y1-y2));
         if(&phiJ) phiJ.append(prec*(J1-J2));
-        if(&tt) tt.append(OT_sumOfSqr, 3);
+        if(&tt) tt.append(OT_sos, 3);
       }
     }
   }
@@ -246,7 +246,7 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
         arr normal = y/d;
         phi.append(prec*(1.-d));
         if(&phiJ) phiJ.append(prec*(~normal*(-J+cenJ)));
-        if(&tt) tt.append(OT_sumOfSqr, 1);
+        if(&tt) tt.append(OT_sos, 1);
       }
       
       //-- align center with object center
@@ -255,7 +255,7 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
       effKinematics.kinematicsPos(y, J, b);
       phi.append(prec*(y-cen));
       if(&phiJ) phiJ.append(prec*(J-cenJ));
-      if(&tt) tt.append(OT_sumOfSqr, 3);
+      if(&tt) tt.append(OT_sos, 3);
     }
     
     prec=1e-0;
@@ -269,7 +269,7 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
         effKinematics.kinematicsPos(y2, J2, b2);
         phi.append(prec*(y1-y2));
         if(&phiJ) phiJ.append(prec*(J1-J2));
-        if(&tt) tt.append(OT_sumOfSqr, 3);
+        if(&tt) tt.append(OT_sos, 3);
       }
     }
   }

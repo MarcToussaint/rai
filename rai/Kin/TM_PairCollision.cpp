@@ -10,15 +10,19 @@
 #include "frame.h"
 #include <Geo/pairCollision.h>
 
-TM_PairCollision::TM_PairCollision(int _i, int _j, bool _negScalar, bool _neglectRadii)
-  : i(_i), j(_j), negScalar(_negScalar), neglectRadii(_neglectRadii) {
+TM_PairCollision::TM_PairCollision(int _i, int _j, Type _type, bool _neglectRadii)
+  : i(_i), j(_j), type(_type), neglectRadii(_neglectRadii) {
 }
 
-TM_PairCollision::TM_PairCollision(const rai::KinematicWorld& K, const char* s1, const char* s2, bool negative, bool neglectRadii)
+TM_PairCollision::TM_PairCollision(const rai::KinematicWorld& K, const char* s1, const char* s2, Type _type, bool neglectRadii)
   : i(initIdArg(K, s1)), j(initIdArg(K, s2)),
-    negScalar(negative), neglectRadii(neglectRadii) {
+    type(_type), neglectRadii(neglectRadii) {
   CHECK(i>=0,"shape name '" <<s1 <<"' does not exist");
   CHECK(j>=0,"shape name '" <<s2 <<"' does not exist");
+}
+
+TM_PairCollision::~TM_PairCollision(){
+  if(coll) delete coll;
 }
 
 void TM_PairCollision::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
@@ -40,27 +44,41 @@ void TM_PairCollision::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
   CHECK(m2->V.N,"");
 #endif
   
-  PairCollision coll(*m1, *m2, s1->frame.X, s2->frame.X, r1, r2);
+  if(coll) delete coll;
+  coll = new PairCollision(*m1, *m2, s1->frame.X, s2->frame.X, r1, r2);
   
-  if(neglectRadii) coll.rad1=coll.rad2=0.;
+  if(neglectRadii) coll->rad1=coll->rad2=0.;
   
-  if(!negScalar) {
-    arr Jp1, Jp2, Jx1, Jx2;
-    if(&J) {
-      K.jacobianPos(Jp1, &s1->frame, coll.p1);
-      K.jacobianPos(Jp2, &s2->frame, coll.p2);
-      K.axesMatrix(Jx1, &s1->frame);
-      K.axesMatrix(Jx2, &s2->frame);
-    }
-    coll.kinVector(y, J, Jp1, Jp2, Jx1, Jx2);
-  } else {
+  if(type==_negScalar) {
     arr Jp1, Jp2;
-    K.jacobianPos(Jp1, &s1->frame, coll.p1);
-    K.jacobianPos(Jp2, &s2->frame, coll.p2);
-    coll.kinDistance(y, J, Jp1, Jp2);
+    K.jacobianPos(Jp1, &s1->frame, coll->p1);
+    K.jacobianPos(Jp2, &s2->frame, coll->p2);
+    coll->kinDistance(y, J, Jp1, Jp2);
     y *= -1.;
     if(&J) J *= -1.;
     if(&J) checkNan(J);
+  }
+
+  if(type==_vector) {
+    arr Jp1, Jp2, Jx1, Jx2;
+    if(&J) {
+      K.jacobianPos(Jp1, &s1->frame, coll->p1);
+      K.jacobianPos(Jp2, &s2->frame, coll->p2);
+      K.axesMatrix(Jx1, &s1->frame);
+      K.axesMatrix(Jx2, &s2->frame);
+    }
+    coll->kinVector(y, J, Jp1, Jp2, Jx1, Jx2);
+  }
+
+  if(type==_normal) {
+    arr Jp1, Jp2, Jx1, Jx2;
+    if(&J) {
+      K.jacobianPos(Jp1, &s1->frame, coll->p1);
+      K.jacobianPos(Jp2, &s2->frame, coll->p2);
+      K.axesMatrix(Jx1, &s1->frame);
+      K.axesMatrix(Jx2, &s2->frame);
+    }
+    coll->kinNormal(y, J, Jp1, Jp2, Jx1, Jx2);
   }
 }
 
@@ -68,3 +86,6 @@ rai::String TM_PairCollision::shortTag(const rai::KinematicWorld &G) {
   return STRING("TM_PairCollision_"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }
 
+Graph TM_PairCollision::getSpec(const rai::KinematicWorld& K){
+    return Graph({ {"feature", "dist"}, {"o1", K.frames(i)->name}, {"o2", K.frames(j)->name}});
+}

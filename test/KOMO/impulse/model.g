@@ -1,0 +1,16 @@
+frame table1{ shape=9, X=<T t(.0 0 .7)>, size=[1. 1. .1 .02], color=[.3 .3 .3 .7] fixed, contact }
+
+frame world (table1){ Q = <t(0 0 .1)> }
+
+### ball
+
+frame ball1 (world){
+    shape=ST_ssBox, X=<T t(.1 0 .8)>, size=[.1 .1 .1 .05], color=[.9 .3 .3] fixed, contact
+    joint=JT_transXY,
+    Q=<T t(-.2 -.2 0)> }
+
+frame ball2 (world){
+    shape=ST_ssBox, X=<T t(.1 0 .8)>, size=[.1 .1 .1 .05], color=[.3 .3 .9] fixed, contact, mass=1
+    joint=JT_rigid,
+    Q=<T t(.2 .2 0)> }
+

@@ -26,8 +26,8 @@
 void TEST(Dynamics){
 //  rai::KinematicWorld G("arm7.g");
   rai::KinematicWorld G("mypr2.g");
-//  G.meldFixedJoints();
-//  G.makeLinkTree();
+  G.optimizeTree(false, true);
+  G.fwdIndexIDs();
   cout <<G <<endl;
 
   arr u;

@@ -12,11 +12,19 @@
 #include "frame.h"
 #include "taskMap.h"
 
+struct PairCollision;
+
 namespace rai {
 
 ///Description of a Contact
 struct Contact : GLDrawer {
   Frame &a, &b;
+
+  PairCollision *__coll=0;
+
+  uint dim=3;
+  uint qIndex=UINT_MAX;
+
 //  arr a_pts, b_pts;          // points on the core mesh that define the contact simplices
   rai::Vector a_rel, b_rel;    // contact point RELATIVE to the frames
   rai::Vector a_norm, b_norm;    // contact point RELATIVE to the frames
@@ -24,20 +32,22 @@ struct Contact : GLDrawer {
   uint a_type, b_type;
 //  rai::Vector a_line, b_line;  // when of line type, these are the line/axis directions RELATIVE to the frame
 
+  arr force;
+
   double y=0.;                 // place to store the constraint value (typically: neg distance) when the taskmap is called
-  double lagrangeParameter=0.; // place to store the respective lagrange parameter after an optimization
-  
-  Contact(Frame &a, Frame &b)
-    : a(a), b(b) {
-    CHECK(&a != &b,"");
-    a.contacts.append(this);
-    b.contacts.append(this);
-  }
-  ~Contact() {
-    a.contacts.removeValue(this);
-    b.contacts.removeValue(this);
-  }
-  
+//  double lagrangeParameter=0.; // place to store the respective lagrange parameter after an optimization
+
+  Contact(Frame &a, Frame &b, Contact *copyContact=NULL);
+  ~Contact();
+
+  void setZero();
+  uint qDim() { return dim; }
+  void calc_F_from_q(const arr& q, uint n);
+  arr calc_q_from_F() const { return force; }
+
+  PairCollision *coll();
+
+  void setFromPairCollision(PairCollision& col);
 //  rai::Vector get_pa() const{ return a.X * (a_rel + a_rad*a_norm); }
 //  rai::Vector get_pb() const{ return b.X * (b_rel + b_rad*b_norm); }
 //  rai::Vector get_norm() const{ return .5 * (a.X.rot * a_norm + b.X.rot * b_norm); }

@@ -68,5 +68,9 @@ void TM_AboveBox::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
 }
 
 rai::String TM_AboveBox::shortTag(const rai::KinematicWorld &G) {
-  return STRING("AboveBox:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
+    return STRING("AboveBox:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
+}
+
+Graph TM_AboveBox::getSpec(const rai::KinematicWorld& K){
+    return Graph({ {"feature", "above"}, {"o1", K.frames(i)->name}, {"o2", K.frames(j)->name}});
 }

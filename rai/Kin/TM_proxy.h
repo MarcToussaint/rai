@@ -45,6 +45,7 @@ struct TM_Proxy : TaskMap {
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G);
   virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("ProxyCost"); }
+  virtual Graph getSpec(const rai::KinematicWorld& K){ return Graph({{"feature", "ProxyCost"}}); }
 };
 
 //===========================================================================

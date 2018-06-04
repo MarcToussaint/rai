@@ -26,4 +26,5 @@ struct TM_Transition:TaskMap {
   virtual uint dim_phi(const rai::KinematicWorld& G) { return G.getJointStateDimension(); }
   virtual uint dim_phi(const WorldL& G);
   virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("Transition:"<<(effectiveJointsOnly?"eDOF":"") <<":pos" <<posCoeff <<":vel" <<velCoeff<<":acc"<<accCoeff); }
+  virtual Graph getSpec(const rai::KinematicWorld& K){ return Graph({{"feature", "Transition"}}); }
 };

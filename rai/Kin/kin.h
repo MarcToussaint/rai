@@ -41,6 +41,7 @@ typedef rai::Array<rai::Joint*> JointL;
 typedef rai::Array<rai::Frame*> FrameL;
 typedef rai::Array<rai::Proxy*> ProxyL;
 typedef rai::Array<rai::Proxy> ProxyA;
+typedef rai::Array<rai::Contact*> ContactL;
 typedef rai::Array<rai::KinematicSwitch*> KinematicSwitchL;
 typedef rai::Array<rai::KinematicWorld*> WorldL;
 
@@ -59,6 +60,7 @@ struct KinematicWorld : GLDrawer {
   arr q, qdot; ///< the current joint configuration vector and velocities
   FrameL fwdActiveSet;
   JointL fwdActiveJoints;
+  ContactL contacts;
   
   ProxyA proxies; ///< list of current proximities between bodies
   
@@ -93,7 +95,8 @@ struct KinematicWorld : GLDrawer {
   Joint *getJointByBodyNames(const char* from, const char* to) const;
   Joint *getJointByBodyIndices(uint ifrom, uint ito) const;
   StringA getJointNames() const;
-  
+  StringA getFrameNames() const;
+
   bool checkUniqueNames() const;
   void prefixNames(bool clear=false);
   
@@ -109,9 +112,11 @@ struct KinematicWorld : GLDrawer {
   void pruneRigidJoints(int verbose=0);        ///< delete rigid joints -> they become just links
   void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
   void pruneUselessFrames(bool preserveNamed=true);  ///< delete frames that have no name, joint, and shape
-  void optimizeTree(bool preserveNamed=true);        ///< call the three above methods in this order
+  void optimizeTree(bool preserveNamed=true, bool _pruneRigidJoints=false);        ///< call the three above methods in this order
   void fwdIndexIDs();
   void useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese, bool deleteInsteadOfLock);
+  void makeObjectsFree(const StringA& objects);
+  void addTimeJoint();
   bool checkConsistency();
   
   uint analyzeJointStateDimensions() const; ///< sort of private: count the joint dimensionalities and assign j->q_index
@@ -128,6 +133,7 @@ struct KinematicWorld : GLDrawer {
   void getJointState(arr &_q, arr& _qdot=NoArr) const;
   arr getJointState() const;
   arr getJointState(const StringA&) const;
+  arr getFrameState() const;
   arr naturalQmetric(double power=.5) const;               ///< returns diagonal of a natural metric in q-space, depending on tree depth
   arr getLimits() const;
   
@@ -137,6 +143,7 @@ struct KinematicWorld : GLDrawer {
   /// @name set state
   void setJointState(const arr& _q, const arr& _qdot=NoArr);
   void setJointState(const arr& _q, const StringA&);
+  void setFrameState(const arr& X, bool calc_q_from_X=true);
   void setTimes(double t);
   
   /// @name kinematics
@@ -150,6 +157,8 @@ struct KinematicWorld : GLDrawer {
   void kinematicsRelPos(arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b, const Vector& vec2) const;
   void kinematicsRelVec(arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b) const;
   void kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) const;
+
+  void kinematicsForce(arr& y, arr& J, Contact *c) const;
   
   void kinematicsPenetrations(arr& y, arr& J=NoArr, bool penetrationsOnly=true, double activeMargin=0.) const; ///< true: if proxy(i).distance>0. => y(i)=0; else y(i)=-proxy(i).distance
   void kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;

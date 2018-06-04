@@ -25,7 +25,9 @@ enum SwitchType {
   insertActuated,
   makeDynamic,
   makeKinematic,
-  SW_fixCurrent
+  SW_fixCurrent,
+  SW_addContact,
+  SW_delContact
 };
 
 struct KinematicSwitch {
@@ -54,3 +56,5 @@ struct KinematicSwitch {
 stdOutPipe(rai::KinematicSwitch)
 
 #endif
+
+uint conv_time2step(double time, uint stepsPerPhase);

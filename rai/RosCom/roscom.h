@@ -38,7 +38,7 @@
 #include <Control/ctrlMsg.h>
 #include "rai_msgs/JointState.h"
 #ifdef RAI_PCL
-#  include <PCL/conv.h>
+#  include <Perception/pcl.h>
 #endif
 
 /*
@@ -74,7 +74,7 @@ byteA               conv_image2byteA(const sensor_msgs::Image& msg);
 uint16A             conv_image2uint16A(const sensor_msgs::Image& msg);
 floatA              conv_laserScan2arr(const sensor_msgs::LaserScan& msg);
 #ifdef RAI_PCL
-Pcl                 conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg);
+PclC                 conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg);
 #endif
 arr                 conv_points2arr(const std::vector<geometry_msgs::Point>& pts);
 arr                 conv_colors2arr(const std::vector<std_msgs::ColorRGBA>& pts);

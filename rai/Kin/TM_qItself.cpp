@@ -75,24 +75,24 @@ void TM_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
   }
 }
 
-void TM_qItself::phi(arr& y, arr& J, const WorldL& G) {
-  CHECK(G.N>=order+1,"I need at least " <<order+1 <<" configurations to evaluate");
+void TM_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
+  CHECK(Ktuple.N>=order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
-  if(k==0) return TaskMap::phi(y, J, G);
+  if(k==0) return TaskMap::phi(y, J, Ktuple);
   
-  double tau = G(-1)->frames(0)->time - G(-2)->frames(0)->time;
+  double tau = Ktuple(-1)->frames(0)->time; // - Ktuple(-2)->frames(0)->time;
   double tau2=tau*tau, tau3=tau2*tau;
   arrA q_bar(k+1), J_bar(k+1);
   //-- read out the task variable from the k+1 configurations
-  uint offset = G.N-1-k; //G.N might contain more configurations than the order of THIS particular task -> the front ones are not used
+  uint offset = Ktuple.N-1-k; //G.N might contain more configurations than the order of THIS particular task -> the front ones are not used
   //before reading out, check if, in selectedBodies mode, some of the selected ones where switched
   uintA selectedBodies_org = selectedBodies;
   if(selectedBodies.N) {
-    uintA sw = getSwitchedBodies(*G.elem(-2), *G.elem(-1));
+    uintA sw = getSwitchedBodies(*Ktuple.elem(-2), *Ktuple.elem(-1));
     for(uint id:sw) selectedBodies.removeValue(id, false);
   }
   for(uint i=0; i<=k; i++) {
-    phi(q_bar(i), J_bar(i), *G(offset+i));
+    phi(q_bar(i), J_bar(i), *Ktuple(offset+i));
   }
   selectedBodies = selectedBodies_org;
   
@@ -101,17 +101,17 @@ void TM_qItself::phi(arr& y, arr& J, const WorldL& G) {
   for(uint i=0; i<=k; i++) if(q_bar(i).N!=qN) { handleSwitches=true; break; }
   if(handleSwitches) { //when bodies are selected, switches don't have to be handled
     CHECK(!selectedBodies.N,"doesn't work for this...")
-    uint nFrames = G(offset)->frames.N;
+    uint nFrames = Ktuple(offset)->frames.N;
     JointL jointMatchLists(k+1, nFrames); //for each joint of [0], find if the others have it
     jointMatchLists.setZero();
     boolA useIt(nFrames);
     useIt = true;
     for(uint i=0; i<nFrames; i++) {
-      rai::Frame *f = G(offset)->frames(i);
+      rai::Frame *f = Ktuple(offset)->frames(i);
       rai::Joint *j = f->joint;
       if(j) {
         for(uint s=0; s<=k; s++) {
-          rai::Joint *jmatch = G(offset+s)->getJointByBodyNames(j->from()->name, j->frame.name);
+          rai::Joint *jmatch = Ktuple(offset+s)->getJointByBodyNames(j->from()->name, j->frame.name);
           if(jmatch && j->type!=jmatch->type) jmatch=NULL;
           if(!jmatch) { useIt(i) = false; break; }
           jointMatchLists(s, i) = jmatch;
@@ -144,13 +144,18 @@ void TM_qItself::phi(arr& y, arr& J, const WorldL& G) {
   if(k==2)  y = (q_bar(2)-2.*q_bar(1)+q_bar(0))/tau2; //penalize acceleration
   if(k==3)  y = (q_bar(3)-3.*q_bar(2)+3.*q_bar(1)-q_bar(0))/tau3; //penalize jerk
   if(&J) {
-    uintA qidx(G.N);
+    uintA qidx(Ktuple.N);
     qidx(0)=0;
-    for(uint i=1; i<G.N; i++) qidx(i) = qidx(i-1)+G(i-1)->q.N;
-    J = zeros(y.N, qidx.last()+G.last()->q.N);
+    for(uint i=1; i<Ktuple.N; i++) qidx(i) = qidx(i-1)+Ktuple(i-1)->q.N;
+    J = zeros(y.N, qidx.last()+Ktuple.last()->q.N);
     if(k==1) { J.setMatrixBlock(J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau; }
     if(k==2) { J.setMatrixBlock(J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(-2.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(J_bar(0)   , 0, qidx(offset+0));  J/=tau2; }
     if(k==3) { J.setMatrixBlock(J_bar(3), 0, qidx(offset+3));  J.setMatrixBlock(-3.*J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(3.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau3; }
+
+    arr Jtau;  Ktuple(-1)->jacobianTime(Jtau, Ktuple(-1)->frames(0));  expandJacobian(Jtau, Ktuple, -1);
+//    arr Jtau2;  Ktuple(-2)->jacobianTime(Jtau2, Ktuple(-2)->frames(0));  expandJacobian(Jtau2, Ktuple, -2);
+//    arr Jtau = Jtau1 - Jtau2;
+    if(k==1) J += (-1./tau)*y*Jtau;
   }
 }
 
@@ -216,7 +221,7 @@ void TM_qZeroVels::phi(arr& y, arr& J, const WorldL& Ktuple) {
   CHECK(Ktuple.N>=order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
   
-  double tau = Ktuple(-1)->frames(0)->time - Ktuple(-2)->frames(0)->time;
+  double tau = Ktuple(-1)->frames(0)->time; // - Ktuple(-2)->frames(0)->time;
   double tau2=tau*tau, tau3=tau2*tau;
   arrA q_bar(k+1), J_bar(k+1);
   //-- read out the task variable from the k+1 configurations
@@ -270,20 +275,26 @@ uint TM_qZeroVels::dim_phi(const WorldL& Ktuple) {
 
 //===========================================================================
 
-rai::Array<rai::Joint*> getMatchingJoints(const WorldL& G, bool zeroVelJointsOnly) {
+rai::Array<rai::Joint*> getMatchingJoints(const WorldL& Ktuple, bool zeroVelJointsOnly) {
   rai::Array<rai::Joint*> matchingJoints;
-  rai::Array<rai::Joint*> matches(G.N);
+  rai::Array<rai::Joint*> matches(Ktuple.N);
   bool matchIsGood;
   
   rai::Joint *j;
-  for(rai::Frame *f:G.last()->frames) if((j=f->joint) && (!zeroVelJointsOnly || j->constrainToZeroVel)) {
+  for(rai::Frame *f:Ktuple.last()->frames) if((j=f->joint) && (!zeroVelJointsOnly || j->constrainToZeroVel)) {
       matches.setZero();
       matches.last() = j;
       matchIsGood=true;
       
-      for(uint k=0; k<G.N-1; k++) { //go through other configs
-        rai::Joint *jmatch = G(k)->getJointByBodyIndices(j->from()->ID, j->frame.ID);
+      for(uint k=0; k<Ktuple.N-1; k++) { //go through other configs
+        rai::Frame *fmatch = Ktuple(k)->frames(j->frame.ID);
+        if(!fmatch){ matchIsGood=false; break; }
+        rai::Joint *jmatch = fmatch->joint; //getJointByBodyIndices(j->from()->ID, j->frame.ID);
         if(!jmatch || j->type!=jmatch->type || j->constrainToZeroVel!=jmatch->constrainToZeroVel) {
+          matchIsGood=false;
+          break;
+        }
+        if(j->from() && j->from()->ID!=jmatch->from()->ID){
           matchIsGood=false;
           break;
         }
@@ -292,7 +303,7 @@ rai::Array<rai::Joint*> getMatchingJoints(const WorldL& G, bool zeroVelJointsOnl
       
       if(matchIsGood) matchingJoints.append(matches);
     }
-  matchingJoints.reshape(matchingJoints.N/G.N, G.N);
+  matchingJoints.reshape(matchingJoints.N/Ktuple.N, Ktuple.N);
   return matchingJoints;
 }
 
@@ -345,7 +356,9 @@ uintA getSwitchedBodies(const rai::KinematicWorld& G0, const rai::KinematicWorld
     rai::Joint *j1 = b1->joint;
     if(!j0 != !j1) { switchedBodies.append(id); continue; }
     if(j0) {
-      if(j0->type!=j1->type || j0->constrainToZeroVel!=j1->constrainToZeroVel || j0->from()->ID!=j1->from()->ID) { //different joint type; or attached to different parent
+      if(j0->type!=j1->type
+         || j0->constrainToZeroVel!=j1->constrainToZeroVel
+         || (j0->from() && j0->from()->ID!=j1->from()->ID)) { //different joint type; or attached to different parent
         switchedBodies.append(id);
       }
     }

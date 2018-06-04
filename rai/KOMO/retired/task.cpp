@@ -14,7 +14,7 @@ Task* Task::newTask(const Node* specs, const rai::KinematicWorld& world, int ste
   //-- check the term type first
   ObjectiveType termType;
   rai::String& tt=specs->parents(0)->keys.last();
-  if(tt=="MinSumOfSqr") termType=OT_sumOfSqr;
+  if(tt=="MinSumOfSqr") termType=OT_sos;
   else if(tt=="LowerEqualZero") termType=OT_ineq;
   else if(tt=="EqualZero") termType=OT_eq;
   else return NULL;

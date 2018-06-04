@@ -19,7 +19,26 @@ const char* TM_DefaultType2String[] = {
   "quatDiff",///< the difference of 2 quaternions (NOT the relative quaternion)
   "vecAlign",///< 1D vector alignment, can have 2nd reference, param (optional) determins alternative reference world vector
   "gazeAt",  ///< 2D orthogonality measure of object relative to camera plane
-  "pos1D"
+  "pose",
+  "poseDiff",
+  "pos1D",
+  NULL,
+};
+
+template<> const char* rai::Enum<TM_DefaultType>::names []= {
+    "no",      ///< non-initialization
+    "pos",     ///< 3D position of reference
+    "vec",     ///< 3D vec (orientation)
+    "quat",    ///< 4D quaterion
+    "posDiff", ///< the difference of two positions (NOT the relative position)
+    "vecDiff", ///< the difference of two vectors (NOT the relative position)
+    "quatDiff",///< the difference of 2 quaternions (NOT the relative quaternion)
+    "vecAlign",///< 1D vector alignment, can have 2nd reference, param (optional) determins alternative reference world vector
+    "gazeAt",  ///< 2D orthogonality measure of object relative to camera plane
+    "pose",
+    "poseDiff",
+    "pos1D",
+    NULL,
 };
 
 TM_Default::TM_Default(TM_DefaultType _type,
@@ -28,6 +47,7 @@ TM_Default::TM_Default(TM_DefaultType _type,
   :type(_type), i(iShape), j(jShape) {
   if(&_ivec) ivec=_ivec; else ivec.setZero();
   if(&_jvec) jvec=_jvec; else jvec.setZero();
+  if(type==TMT_quat) flipTargetSignOnNegScalarProduct=true;
 }
 
 TM_Default::TM_Default(TM_DefaultType _type, const rai::KinematicWorld &K,
@@ -40,6 +60,7 @@ TM_Default::TM_Default(TM_DefaultType _type, const rai::KinematicWorld &K,
   if(b) j=b->ID;
   if(&_ivec) ivec=_ivec; else ivec.setZero();
   if(&_jvec) jvec=_jvec; else jvec.setZero();
+  if(type==TMT_quat) flipTargetSignOnNegScalarProduct=true;
 }
 
 TM_Default::TM_Default(const Graph& specs, const rai::KinematicWorld& G)
@@ -61,6 +82,7 @@ TM_Default::TM_Default(const Graph& specs, const rai::KinematicWorld& G)
   if((it=specs["sym3"]) || (it=specs["ref2"])) { auto name=it->get<rai::String>(); auto *s=G.getFrameByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); j=s->ID; }
   if((it=specs["vec1"])) ivec = rai::Vector(it->get<arr>());  else ivec.setZero();
   if((it=specs["vec2"])) jvec = rai::Vector(it->get<arr>());  else jvec.setZero();
+  if(type==TMT_quat) flipTargetSignOnNegScalarProduct=true;
 }
 
 TM_Default::TM_Default(const Node *specs, const rai::KinematicWorld& G)
@@ -88,6 +110,7 @@ TM_Default::TM_Default(const Node *specs, const rai::KinematicWorld& G)
     if((it=params.getNode("vec1"))) ivec = rai::Vector(it->get<arr>());  else ivec.setZero();
     if((it=params.getNode("vec2"))) jvec = rai::Vector(it->get<arr>());  else jvec.setZero();
   }
+  if(type==TMT_quat) flipTargetSignOnNegScalarProduct=true;
 }
 
 void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
@@ -273,7 +296,19 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     }
     return;
   }
-  
+
+  if(type==TMT_pose) {
+      arr yq, Jq;
+      TM_Default tmp(*this);
+      tmp.type = TMT_pos;
+      tmp.phi(y, J, G);
+      tmp.type = TMT_quat;
+      tmp.phi(yq, (&J?Jq:NoArr), G);
+      y.append(yq);
+      if(&J) J.append(Jq);
+      return;
+  }
+
   if(type==TMT_poseDiff) {
     arr yq, Jq;
     TM_Default tmp(*this);
@@ -299,17 +334,29 @@ uint TM_Default::dim_phi(const rai::KinematicWorld& G) {
     case TMT_quatDiff: return 4;
     case TMT_vecAlign: return 1;
     case TMT_gazeAt: return 2;
+    case TMT_pose: return 7;
+    case TMT_poseDiff: return 7;
     case pos1TMT_D: return 1;
     default:  HALT("no such TMT_");
   }
 }
 
-rai::String TM_Default::shortTag(const rai::KinematicWorld& G) {
+rai::String TM_Default::shortTag(const rai::KinematicWorld& K) {
   rai::String s="Default";
   s <<':' <<TM_DefaultType2String[type];
-  s <<':' <<(i<0?"WORLD":G.frames(i)->name);
-  s <<'/' <<(j<0?"WORLD":G.frames(j)->name);
+  s <<':' <<(i<0?"WORLD":K.frames(i)->name);
+  s <<'/' <<(j<0?"WORLD":K.frames(j)->name);
   return s;
+}
+
+Graph TM_Default::getSpec(const rai::KinematicWorld& K){
+    Graph G;
+    G.newNode<rai::String>({"feature"}, {}, STRING(type));
+    if(i>=0) G.newNode<rai::String>({"o1"}, {}, K.frames(i)->name);
+    if(j>=0) G.newNode<rai::String>({"o2"}, {}, K.frames(j)->name);
+    if(!ivec.isZero) G.newNode<arr>({"v1"}, {}, ivec.getArr());
+    if(!jvec.isZero) G.newNode<arr>({"v2"}, {}, jvec.getArr());
+    return G;
 }
 
 //===========================================================================

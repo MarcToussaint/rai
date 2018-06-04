@@ -90,7 +90,7 @@ struct KOMO {
    * they allow the user to add a cost task, or a kinematic switch in the problem definition
    * Typically, the user does not call them directly, but uses the many methods below
    * Think of all of the below as examples for how to set arbirary tasks/switches yourself */
-  struct Task* setTask(double startTime, double endTime, TaskMap* map, ObjectiveType type=OT_sumOfSqr, const arr& target=NoArr, double prec=1e2, uint order=0, int deltaStep=0);
+  struct Task* setTask(double startTime, double endTime, TaskMap* map, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2, uint order=0, int deltaStep=0);
   void setFlag(double time, rai::Flag* fl, int deltaStep=0);
   void setKinematicSwitch(double time, bool before, rai::KinematicSwitch* sw);
   void setKinematicSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const rai::Transformation& jFrom=NoTransformation);
@@ -110,11 +110,11 @@ struct KOMO {
   
   //-- tasks mid-level
   void setHoldStill(double startTime, double endTime, const char* shape, double prec=1e2);
-  void setPosition(double startTime, double endTime, const char* shape, const char* shapeRel=NULL, ObjectiveType type=OT_sumOfSqr, const arr& target=NoArr, double prec=1e2);
-  void setOrientation(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type=OT_sumOfSqr, const arr& target=NoArr, double prec=1e2);
-  void setVelocity(double startTime, double endTime, const char* shape, const char* shapeRel=NULL, ObjectiveType type=OT_sumOfSqr, const arr& target=NoArr, double prec=1e2);
-  void setAlign(double startTime, double endTime, const char* shape,  const arr& whichAxis=ARR(1.,0.,0.), const char* shapeRel=NULL, const arr& whichAxisRel=ARR(1.,0.,0.), ObjectiveType type=OT_sumOfSqr, const arr& target=ARR(1.), double prec=1e2);
-  void setAlignedStacking(double time, const char* object, ObjectiveType type=OT_sumOfSqr, double prec=1e2);
+  void setPosition(double startTime, double endTime, const char* shape, const char* shapeRel=NULL, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2);
+  void setOrientation(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2);
+  void setVelocity(double startTime, double endTime, const char* shape, const char* shapeRel=NULL, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2);
+  void setAlign(double startTime, double endTime, const char* shape,  const arr& whichAxis=ARR(1.,0.,0.), const char* shapeRel=NULL, const arr& whichAxisRel=ARR(1.,0.,0.), ObjectiveType type=OT_sos, const arr& target=ARR(1.), double prec=1e2);
+  void setAlignedStacking(double time, const char* object, ObjectiveType type=OT_sos, double prec=1e2);
   void setLastTaskToBeVelocity();
   void setCollisions(bool hardConstraint, double margin=.05, double prec=1.);
   void setLimits(bool hardConstraint, double margin=.05, double prec=1.);
@@ -134,6 +134,7 @@ struct KOMO {
   void core_setKSdynamic(double time, const char *from, const char *to);
   void core_setKSdynamicOn(double time, const char *from, const char* to);
   
+  void setContact(double startTime, double endTime, const char *from, const char* to);
   void setKS_slider(double time, bool before, const char* obj, const char* slider, const char* table);
   
   //===========================================================================
@@ -187,14 +188,16 @@ struct KOMO {
   arr getPath(const StringA& joints);
   arr getPath_frames(const uintA &frames);
   arr getPath_times();
+  arr getPath_energies();
   void reportProblem(ostream &os=std::cout);
   Graph getReport(bool gnuplt=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot task costs; output detailed cost features per time slice)
   void reportProxies(ostream& os=std::cout); ///< report the proxies (collisions) for each time slice
+  void reportContacts(ostream& os=std::cout); ///< report the contacts
   rai::Array<rai::Transformation> reportEffectiveJoints(ostream& os=std::cout);
   void checkGradients();          ///< checks all gradients numerically
   void plotTrajectory();
   void plotPhaseTrajectory();
-  bool displayTrajectory(double delay=0.01, bool watch=true, const char* saveVideoPrefix=NULL); ///< display the trajectory; use "vid/z." as vid prefix
+  bool displayTrajectory(double delay=1., bool watch=true, bool overlayPaths=true, const char* saveVideoPrefix=NULL); ///< display the trajectory; use "vid/z." as vid prefix
   bool displayPath(bool watch=true); ///< display the trajectory; use "vid/z." as vid prefix
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
   PhysXInterface& physx() { return world.physx(); }

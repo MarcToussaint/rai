@@ -39,7 +39,7 @@ void ParticleAroundWalls::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t) {
   if(k==1)  phi = x_bar[1]-x_bar[0]; //penalize velocity
   if(k==2)  phi = x_bar[2]-2.*x_bar[1]+x_bar[0]; //penalize acceleration
   if(k==3)  phi = x_bar[3]-3.*x_bar[2]+3.*x_bar[1]-x_bar[0]; //penalize jerk
-  if(&tt) tt = consts(OT_sumOfSqr, n);
+  if(&tt) tt = consts(OT_sos, n);
   
   //-- wall constraints: append to phi
   //Note: here we append to phi ONLY in certain time slices ->

@@ -40,8 +40,9 @@ void TEST(GJK_Jacobians) {
 //  gl.add(draw);
 //  gl.add(K);
 
-  TM_PairCollision dist(K, "s1", "s2", true);
-  TM_PairCollision distVec(K, "s1", "s2", false);
+  TM_PairCollision dist(K, "s1", "s2", TM_PairCollision::_negScalar);
+  TM_PairCollision distVec(K, "s1", "s2", TM_PairCollision::_vector);
+  TM_PairCollision distNorm(K, "s1", "s2", TM_PairCollision::_normal);
 
   for(uint k=0;k<100;k++){
     //randomize shapes
@@ -61,7 +62,7 @@ void TEST(GJK_Jacobians) {
 
     bool succ = true;
 
-    arr y,y2;
+    arr y,y2,y3;
     dist.phi(y, NoArr, K);
     cout <<k <<" dist ";
     succ &= checkJacobian(dist.vf(K), q, 1e-5);
@@ -69,6 +70,10 @@ void TEST(GJK_Jacobians) {
     distVec.phi(y2, NoArr, K);
     cout <<k <<" vec  ";
     succ &= checkJacobian(distVec.vf(K), q, 1e-5);
+
+    distNorm.phi(y3, NoArr, K);
+    cout <<k <<" norm  ";
+    succ &= checkJacobian(distNorm.vf(K), q, 1e-5);
 
     PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(3), s2.size(3));
 
@@ -210,7 +215,7 @@ void TEST(GJK_Jacobians3) {
 
     PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(3), s2.size(3));
 
-    TM_PairCollision gjk(1, 2, true);
+    TM_PairCollision gjk(1, 2, TM_PairCollision::_negScalar);
     checkJacobian(gjk.vf(K), q, 1e-4);
 
     arr y,J;

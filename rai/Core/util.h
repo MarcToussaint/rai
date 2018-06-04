@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <memory>
+#include <climits>
 
 //----- if no system flag, I assume Linux
 #if !defined RAI_MSVC && !defined RAI_Cygwin && !defined RAI_Linux && !defined RAI_MinGW && !defined RAI_Darwin
@@ -223,13 +224,14 @@ public:
   char &operator()(int i) const;
   std::iostream& stream();            ///< explicitly returns this as an std::iostream&
   String& operator()();               ///< explicitly return this as a (non-const!) String&
-  String getSubString(uint start, uint end) const;
+  String getSubString(int start, int end) const;
   String getFirstN(uint n) const;
   String getLastN(uint n) const;
   
   /// @name setting
   String& operator=(const String& s);
-  void operator=(const char *s);
+  String& operator=(const std::string& s);
+  String& operator=(const char *s);
   void set(const char *s, uint n);
   String& printf(const char *format, ...);
   void resize(uint n, bool copy); //low-level resizing the string buffer - with additinal final 0

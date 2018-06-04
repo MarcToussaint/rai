@@ -21,4 +21,5 @@ struct TM_AboveBox : TaskMap {
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G) { return 4; }
   virtual rai::String shortTag(const rai::KinematicWorld& G);
+  virtual Graph getSpec(const rai::KinematicWorld& K);
 };

@@ -26,7 +26,7 @@ bin: $(bin_paths:%=inPath_make/%)
 
 src: $(src_paths:%=inPath_makeLib/%)
 
-depend: $(src_paths:%=dependPath/%)
+depend: $(src_paths:%=inPath_depend/%)
 
 clean: $(src_paths:%=inPath_clean/%) cleanLocks
 
@@ -34,7 +34,6 @@ cleanStart: force
 	@read -p " *** WARNING: This will rm ALL local files/changes (e.g. project/temporary/data files) - abort if you don't want to continue" yn
 	git clean -f -d -x
 	cp build/config.mk.default build/config.mk
-	bin/createMakefileLinks.sh
 
 ################################################################################
 

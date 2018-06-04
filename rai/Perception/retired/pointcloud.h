@@ -15,11 +15,11 @@
 #include <pcl/point_types.h>
 #include <pcl/ModelCoefficients.h>
 #include <Core/thread.h>
-#include <devTools/logging.h>
+//#include <devTools/logging.h>
 //#include <Hardware/kinect.h>
 #include <KOMO/komo.h>
 
-SET_LOG(pointcloud, INFO)
+//SET_LOG(pointcloud, INFO)
 
 typedef pcl::PointXYZRGBA PointT;
 typedef rai::Array<pcl::PointCloud<PointT>::Ptr> PointCloudL;

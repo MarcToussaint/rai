@@ -893,13 +893,15 @@ char& rai::String::operator()(int i) const {
 }
 
 /// return the substring from `start` to (exclusive) `end`.
-rai::String rai::String::getSubString(uint start, uint end) const {
-  CHECK(start < end, "getSubString: start should be smaller than end");
-  clip(end, uint(0), N);
+rai::String rai::String::getSubString(int start, int end) const {
+  if(start<0) start+=N;
+  if(end<0) end+=N;
+  CHECK_GE(start, 0, "start < 0");
+  CHECK_LE(end, (int)N, "end out of range");
+  CHECK(start <= end, "end before start");
   String tmp;
-  for(uint i = start; i < end; i++) {
-    tmp.append((*this)(i));
-  }
+  tmp.set(p+start, 1+end-start);
+//  for(int i = start; i < end; i++) tmp.append((*this)(i));
   return tmp;
 }
 
@@ -928,11 +930,15 @@ rai::String& rai::String::operator=(const String& s) {
   return *this;
 }
 
+rai::String& String::operator=(const std::string& s){
+  return this->operator=(s.c_str());
+}
+
 /// copies from the C-string
-void rai::String::operator=(const char *s) {
-  if(!s) {  clear();  return;  }
+rai::String& rai::String::operator=(const char *s) {
+  if(!s) {  clear();  return *this;  }
   uint ls = strlen(s);
-  if(!ls) {  clear();  return;  }
+  if(!ls) {  clear();  return *this;  }
   if(s>=p && s<=p+N) { //s points to a substring within this string!
     memmove(p, s, ls);
     resize(ls, true);
@@ -940,6 +946,7 @@ void rai::String::operator=(const char *s) {
     resize(ls, false);
     memmove(p, s, ls);
   }
+  return *this;
 }
 
 void rai::String::set(const char *s, uint n) { resize(n, false); memmove(p, s, n); }

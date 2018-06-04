@@ -53,7 +53,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple) {
   uint qN=Ktuple(0)->q.N;
   for(uint i=0; i<Ktuple.N; i++) if(Ktuple(i)->q.N!=qN) { handleSwitches=true; break; }
   
-  double tau = Ktuple(-1)->frames(0)->time - Ktuple(-2)->frames(0)->time;
+  double tau = Ktuple(-1)->frames(0)->time; // - Ktuple(-2)->frames(0)->time;
   
   if(!handleSwitches) { //simple implementation
     //-- transition costs
@@ -105,9 +105,9 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple) {
 #endif
     
     if(&J) {
-      arr Jtau1;  Ktuple(-1)->jacobianTime(Jtau1, Ktuple(-1)->frames(0));  expandJacobian(Jtau1, Ktuple, -1);
-      arr Jtau2;  Ktuple(-2)->jacobianTime(Jtau2, Ktuple(-2)->frames(0));  expandJacobian(Jtau2, Ktuple, -2);
-      arr Jtau = Jtau1 - Jtau2;
+      arr Jtau;  Ktuple(-1)->jacobianTime(Jtau, Ktuple(-1)->frames(0));  expandJacobian(Jtau, Ktuple, -1);
+//      arr Jtau2;  Ktuple(-2)->jacobianTime(Jtau2, Ktuple(-2)->frames(0));  expandJacobian(Jtau2, Ktuple, -2);
+//      arr Jtau = Jtau1 - Jtau2;
       
       uint n = Ktuple.last()->q.N;
       J.resize(y.N, Ktuple.N, n).setZero();

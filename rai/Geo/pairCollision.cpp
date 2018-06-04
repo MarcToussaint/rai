@@ -219,7 +219,7 @@ void PairCollision::glDraw(OpenGL &) {
   glColor(1., 0., 0., 1.);
   glLineWidth(5.f);
   glDrawProxy(P1, P2, .05);
-  glLineWidth(2.f);
+  glLineWidth(1.f);
   glLoadIdentity();
   
   if(poly.N) {
@@ -295,6 +295,57 @@ void PairCollision::kinVector(arr& y, arr& J,
   }
   
   //    if(&J) cout <<"PENE = " <<scalarProduct(y, normal) <<endl;
+}
+
+void PairCollision::kinNormal(arr& y, arr& J,
+                              const arr &Jp1, const arr &Jp2,
+                              const arr &Jx1, const arr &Jx2) {
+  y = normal;
+  if(&J) {
+    J.resize(3, Jp1.d1).setZero();
+    if(simplexType(1, 3) || simplexType(3, 1)) {
+      arr Jv;
+      if(simplex1.d0==1) Jv = crossProduct(Jx2, y); //K.kinematicsVec(vec, Jv, &s2.frame, s2.frame.X.rot/(p1-p2));
+      if(simplex2.d0==1) Jv = crossProduct(Jx1, y); //K.kinematicsVec(vec, Jv, &s1.frame, s1.frame.X.rot/(p1-p2));
+      J += Jv;
+    }
+    if(simplexType(2, 2)) {
+      arr Jv, a, b;
+      //get edges
+      a = simplex1[1]-simplex1[0]; //edge
+      a /= length(a);
+      b = simplex2[1]-simplex2[0]; //edge
+      b /= length(b);
+      double ab=scalarProduct(a,b);
+      if(1.-ab*ab>1e-8) { //the edges are not colinear
+        Jv = crossProduct(Jx1, a);      //K.kinematicsVec(vec, Jv, &s1.frame, s1.frame.X.rot/e1);
+        J += (a-b*ab) * (1./(1.-ab*ab)) * (~y*(b*~b -eye(3,3))) * Jv;
+
+        Jv = crossProduct(Jx2, b);      //K.kinematicsVec(vec, Jv, &s2.frame, s2.frame.X.rot/e2);
+        J += (b-a*ab) * (1./(1.-ab*ab)) * (~y*(a*~a -eye(3,3))) * Jv;
+      }
+//      kinVector(y, J, Jp1, Jp2, Jx1, Jx2);
+//      normalizeWithJac(y, J);
+    }
+    if(simplexType(1, 2) || simplexType(2, 1)) {
+      y = p1 - p2;
+      J = Jp1 - Jp2;
+      normalizeWithJac(y, J);
+      arr vec, Jv, n;
+      if(simplex1.d0==2) { n = simplex1[1]-simplex1[0];  n /= length(n); }
+      if(simplex2.d0==2) { n = simplex2[1]-simplex2[0];  n /= length(n); }
+      J = J - n*(~n*J);
+      if(simplex1.d0==2) Jv = crossProduct(Jx1, y);  //K.kinematicsVec(vec, Jv, &s1.frame, s1.frame.X.rot/(p1-p2));
+      if(simplex2.d0==2) Jv = crossProduct(Jx2, y);  //K.kinematicsVec(vec, Jv, &s2.frame, s2.frame.X.rot/(p1-p2));
+      J += n*(~n*Jv);
+    }
+    if(simplexType(1, 1)) {
+      y = p1 - p2;
+      J = Jp1 - Jp2;
+      normalizeWithJac(y, J);
+    }
+    checkNan(J);
+  }
 }
 
 void PairCollision::kinDistance(arr &y, arr &J,

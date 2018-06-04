@@ -10,9 +10,11 @@ using namespace std;
 
 void TEST(Grasp){
   rai::KinematicWorld K("model.g");
-//  K.optimizeTree(false);
+  K.optimizeTree(false);
   K.checkConsistency();
   FILE("z.g") <<K;
+
+  K.watch(true);
 
   KOMO komo;
   komo.setModel(K);

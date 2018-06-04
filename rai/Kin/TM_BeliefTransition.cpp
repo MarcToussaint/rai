@@ -40,7 +40,7 @@ void TM_BeliefTransition::phi(arr &y, arr &J, const WorldL &Ktuple) {
   y.resize(dim_phi(*Ktuple.last())).setZero();
   if(&J) J.resize(y.N, Ktuple.N, Ktuple.elem(-1)->q.N).setZero();
   
-  double tau = Ktuple(-1)->frames(0)->time - Ktuple(-2)->frames(0)->time;
+  double tau = Ktuple(-1)->frames(0)->time; // - Ktuple(-2)->frames(0)->time;
   
   //parameters of the belief transition
   double xi = 0.;

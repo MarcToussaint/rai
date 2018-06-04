@@ -77,7 +77,7 @@ TaskMap *newTaskMap(const Node* specs, const rai::KinematicWorld& world) {
   
   //-- check the term type
   ObjectiveType termType;
-  if(tt=="MinSumOfSqr") termType=OT_sumOfSqr;
+  if(tt=="MinSumOfSqr") termType=OT_sos;
   else if(tt=="LowerEqualZero") termType=OT_ineq;
   else if(tt=="EqualZero") termType=OT_eq;
   else return NULL;
@@ -276,7 +276,7 @@ void KOMO::parseTasks(const Graph& specs, int Tinterval, uint Tzero) {
   if(!T) {
     TaskMap *map = new TM_qItself();
     map->order = 0;
-    map->type=OT_sumOfSqr;
+    map->type=OT_sos;
     Task *task = new Task(map);
     task->name="InvKinTransition";
     task->setCostSpecs(0, 0, x0, 1./(tau*tau));
@@ -456,7 +456,7 @@ StringA KOMO::getPhiNames(const rai::KinematicWorld& G, uint t) {
   StringA names(dim_phi(G, t));
   uint m=0;
   for(Task *c: tasks) if(c->active && c->prec.N>t && c->prec(t)) {
-      if(c->map.type==OT_sumOfSqr) {
+      if(c->map.type==OT_sos) {
         uint d = c->dim_phi(G, t); //counts also constraints
         for(uint i=0; i<d; i++) {
           names(m+i)=c->name;
@@ -563,7 +563,7 @@ void KOMO::costReport(bool gnuplt) {
       uint d=c->dim_phi(world, t);
       if(ttMatrix.N) for(uint i=0; i<d; i++) CHECK(ttMatrix(t)(m+i)==c->map.type,"");
       if(d) {
-        if(c->map.type==OT_sumOfSqr) {
+        if(c->map.type==OT_sos) {
           taskC(i) += a = sumOfSqr(phiMatrix(t).sub(m,m+d-1));
           plotData(t,i) = a;
         }
@@ -657,7 +657,7 @@ Graph KOMO::getReport() {
       uint d=c->dim_phi(world, t);
       for(uint i=0; i<d; i++) CHECK(ttMatrix(t)(m+i)==c->map.type,"");
       if(d) {
-        if(c->map.type==OT_sumOfSqr) taskC(i) += sumOfSqr(phiMatrix(t).sub(m,m+d-1));
+        if(c->map.type==OT_sos) taskC(i) += sumOfSqr(phiMatrix(t).sub(m,m+d-1));
         if(c->map.type==OT_ineq) {
           for(uint j=0; j<d; j++) {
             double g=phiMatrix(t)(m+j);
@@ -706,10 +706,10 @@ void KOMO::inverseKinematics(arr& y, arr& J, arr& H, ObjectiveTypeA& tt, const a
 //  double h=1./sqrt(tau);
 //  y.append(h*(x-x0));
 //  if(&J) J.append(h*eye(x.N));
-//  if(&tt) tt.append(consts(OT_sumOfSqr, x.N));
+//  if(&tt) tt.append(consts(OT_sos, x.N));
 
 //  phiMatrix(0).append(h*(x-x0));
-//  ttMatrix(0).append(consts(OT_sumOfSqr, x.N));
+//  ttMatrix(0).append(consts(OT_sos, x.N));
 }
 
 //===========================================================================

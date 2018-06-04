@@ -143,6 +143,7 @@ struct sKinematicWorld {
     if(ode) delete ode;
   }
 };
+
 }
 
 rai::KinematicWorld::KinematicWorld() : s(NULL) {
@@ -249,6 +250,8 @@ void rai::KinematicWorld::copy(const rai::KinematicWorld& K, bool referenceSwift
   //copy proxies; first they point to origin frames; afterwards, let them point to own frames
   proxies = K.proxies;
   for(Proxy& p:proxies) { p.a = frames(p.a->ID); p.b = frames(p.b->ID); }
+  //copy contacts
+  for(Contact *c:K.contacts) new Contact(*frames(c->a.ID), *frames(c->b.ID), c);
   //copy swift reference
   if(referenceSwiftOnCopy) {
     s->swift = K.s->swift;
@@ -344,11 +347,8 @@ arr rai::KinematicWorld::calc_fwdPropagateVelocities() {
     frame X for each edge (which includes joint transformation and errors) */
 void rai::KinematicWorld::calc_Q_from_BodyFrames() {
   for(Frame *f:frames) if(f->parent) {
-//    rai::Transformation A(j->from->X), B(j->to->X);
-//    A.appendTransformation(j->A);
-//    B.appendInvTransformation(j->B);
-      f->Q.setDifference(f->parent->X, f->X);
-    }
+    f->Q.setDifference(f->parent->X, f->X);
+  }
 }
 
 arr rai::KinematicWorld::naturalQmetric(double power) const {
@@ -424,6 +424,12 @@ uint rai::KinematicWorld::analyzeJointStateDimensions() const {
       j->qIndex = j->mimic->qIndex;
     }
   }
+  for(Contact *c: contacts) {
+    CHECK_EQ(c->dim, 3, "");
+//    c->dim = c->getDimFromType();
+    c->qIndex = qdim;
+    qdim += c->dim;
+  }
   return qdim;
 }
 
@@ -461,6 +467,14 @@ arr rai::KinematicWorld::getJointState(const StringA& joints) const {
   return x;
 }
 
+arr rai::KinematicWorld::getFrameState() const{
+  arr X(frames.N, 7);
+  for(uint i=0; i<X.d0; i++) {
+    X[i] = frames(i)->X.getArr7d();
+  }
+  return X;
+}
+
 /** @brief returns the vector of joint limts */
 arr rai::KinematicWorld::getLimits() const {
   uint N=getJointStateDimension();
@@ -474,8 +488,8 @@ arr rai::KinematicWorld::getLimits() const {
         limits(i+k,0)=j->limits(0); //lo
         limits(i+k,1)=j->limits(1); //up
       } else {
-        limits(i+k,0)=-1.; //lo
-        limits(i+k,1)=+1.; //up
+        limits(i+k,0)=0.; //lo
+        limits(i+k,1)=0.; //up
       }
     }
   }
@@ -502,6 +516,12 @@ void rai::KinematicWorld::calc_q_from_Q() {
       n += j->dim;
     }
   }
+  for(Contact *c: contacts) {
+    CHECK_EQ(c->qIndex, n, "joint indexing is inconsistent");
+    arr contact_q = c->calc_q_from_F();
+    q.setVectorBlock(contact_q, c->qIndex);
+    n += c->dim;
+  }
   CHECK_EQ(n,N,"");
 }
 
@@ -517,6 +537,11 @@ void rai::KinematicWorld::calc_Q_from_q() {
         n += j->dim;
       }
     }
+  }
+  for(Contact *c: contacts) {
+    CHECK_EQ(c->qIndex, n, "joint indexing is inconsistent");
+    c->calc_F_from_q(q, c->qIndex);
+    n += c->dim;
   }
   CHECK_EQ(n, q.N, "");
 }
@@ -566,6 +591,15 @@ void rai::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
   calc_fwdPropagateFrames();
 }
 
+void rai::KinematicWorld::setFrameState(const arr& X, bool calc_q_from_X){
+  CHECK_EQ(X.d0, frames.N, "X.d0 does not equal #frames");
+  for(uint i=0;i<frames.N;i++) frames(i)->X.set(X[i]);
+  if(calc_q_from_X){
+    calc_Q_from_BodyFrames();
+    calc_q_from_Q();
+  }
+}
+
 void rai::KinematicWorld::setTimes(double t) {
   for(Frame *a:frames) a->time = t;
 }
@@ -586,7 +620,7 @@ void rai::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const rai::Vec
     if(&J) J.resize(3, getJointStateDimension()).setZero();
     return;
   }
-  
+
   //get position
   rai::Vector pos_world = a->X.pos;
   if(&rel && !rel.isZero) pos_world += a->X.rot*rel;
@@ -598,6 +632,8 @@ void rai::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const rai::Vec
 
 #if 1
 void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_world) const {
+  CHECK_EQ(&a->K, this, "");
+
   //get Jacobian
   uint N=getJointStateDimension();
   J.resize(3, N).setZero();
@@ -688,6 +724,8 @@ void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_w
 #endif
 
 void rai::KinematicWorld::jacobianTime(arr& J, rai::Frame *a) const {
+  CHECK_EQ(&a->K, this, "");
+
   //get Jacobian
   uint N=getJointStateDimension();
   J.resize(1, N).setZero();
@@ -813,6 +851,7 @@ void rai::KinematicWorld::hessianPos(arr& H, Frame *a, rai::Vector *rel) const {
    the position of the ith body (w.r.t. all joints) -> 2D array */
 /// Jacobian of the i-th body's z-orientation vector
 void rai::KinematicWorld::kinematicsVec(arr& y, arr& J, Frame *a, const rai::Vector& vec) const {
+  CHECK_EQ(&a->K, this, "");
   //get the vectoreference frame
   rai::Vector vec_world;
   if(&vec) vec_world = a->X.rot*vec;
@@ -829,6 +868,7 @@ void rai::KinematicWorld::kinematicsVec(arr& y, arr& J, Frame *a, const rai::Vec
    the position of the ith body (w.r.t. all joints) -> 2D array */
 /// Jacobian of the i-th body's z-orientation vector
 void rai::KinematicWorld::kinematicsQuat(arr& y, arr& J, Frame *a) const { //TODO: allow for relative quat
+  CHECK_EQ(&a->K, this, "");
   rai::Quaternion rot_b = a->X.rot;
   if(&y) y = conv_quat2arr(rot_b); //return the vec
   if(&J) {
@@ -940,6 +980,14 @@ void rai::KinematicWorld::kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) c
     axesMatrix(A, a);
     J = 0.5 * (rot_b.w*A*s + crossProduct(A, y));
     J -= 0.5 * ss/s/s*(y*~y*A);
+  }
+}
+
+void rai::KinematicWorld::kinematicsForce(arr& y, arr& J, rai::Contact *c) const{
+  y = c->force;
+  if(&J){
+    J = zeros(3, q.N);
+    for(uint i=0;i<3;i++) J(i, c->qIndex+i) = 1.;
   }
 }
 
@@ -1113,6 +1161,14 @@ StringA rai::KinematicWorld::getJointNames() const {
         names(j->qIndex+1) <<name <<":UC";
       }
     }
+  }
+  return names;
+}
+
+StringA rai::KinematicWorld::getFrameNames() const {
+  StringA names(frames.N);
+  for(uint i=0;i<frames.N;i++) {
+    names(i) = frames(i)->name;
   }
   return names;
 }
@@ -2280,8 +2336,8 @@ void rai::KinematicWorld::pruneUselessFrames(bool preserveNamed) {
   }
 }
 
-void rai::KinematicWorld::optimizeTree(bool preserveNamed) {
-//  if(!preserveNamed) pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
+void rai::KinematicWorld::optimizeTree(bool preserveNamed, bool _pruneRigidJoints) {
+  if(_pruneRigidJoints) pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
   reconnectLinksToClosestJoints();
   pruneUselessFrames(preserveNamed);
   calc_activeSets();
@@ -2310,7 +2366,24 @@ void rai::KinematicWorld::useJointGroups(const StringA &groupNames, bool OnlyThe
         if(deleteInsteadOfLock) delete f->joint;
         else f->joint->makeRigid();
       }
+  }
+}
+
+void rai::KinematicWorld::makeObjectsFree(const StringA &objects){
+    for(auto s:objects){
+        rai::Frame *a = getFrameByName(s, true);
+        CHECK(a, "");
+        if(!a->parent) a->linkFrom(frames.first());
+        if(!a->joint) new rai::Joint(*a);
+        a->joint->makeFree();
     }
+}
+
+
+void rai::KinematicWorld::addTimeJoint(){
+  rai::Joint *jt = new rai::Joint(*frames.first());
+  jt->type = rai::JT_time;
+  jt->H = 0.;
 }
 
 bool rai::KinematicWorld::checkConsistency() {
@@ -2333,6 +2406,11 @@ bool rai::KinematicWorld::checkConsistency() {
         else
           myqdim += 2*j->qDim();
       }
+    }
+    for(Contact *c: contacts) {
+      CHECK_EQ(c->dim, 3, "");
+      CHECK_EQ(c->qIndex, myqdim, "joint indexing is inconsistent");
+      myqdim += c->dim;
     }
     CHECK_EQ(myqdim, N, "qdim is wrong");
   }

@@ -347,6 +347,12 @@ uint color2id(byte rgb[3]) {
   return id;
 }
 
+arr id2color(uint id){
+  byteA rgb(3);
+  id2color(rgb.p, id);
+  return ARR(rgb(0)/256., rgb(1)/256., rgb(2)/256.);
+}
+
 void glColorId(uint id) {
   byte rgb[3];
   glDisable(GL_LIGHTING);
@@ -1352,7 +1358,7 @@ void OpenGL::addSubView(uint v, GLDrawer &c) {
 }
 
 void OpenGL::setSubViewTiles(uint cols, uint rows) {
-  for(uint i=0; i<views.N; i++) {
+  for(uint i=0; i<cols*rows; i++) {
     double x=i%cols;
     double y=rows - 1 - i/cols;
     setViewPort(i, x/cols, (x+1)/cols, y/rows, (y+1)/rows);
@@ -2302,6 +2308,10 @@ bool glUI::checkMouse(int _x, int _y) {
 
 void read_png(byteA &img, const char *file_name, bool swap_rows) {
 #ifdef RAI_PNG
+  if(access(file_name, F_OK ) == -1 ){
+    HALT("png file '" <<file_name <<"' does not exist");
+  }
+
   FILE *fp = fopen(file_name, "rb");
   
   png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -2366,3 +2376,4 @@ void read_png(byteA &img, const char *file_name, bool swap_rows) {
   LOG(-2) <<"libpng not linked";
 #endif
 }
+
