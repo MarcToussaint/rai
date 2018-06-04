@@ -55,7 +55,7 @@ UIC = uic
 YACC = bison -d
 
 LINK	= $(CXX)
-CPATHS	+= $(BASE)/rai $(BASE)/include
+CPATHS	+= $(BASE)/rai $(BASE2)/rai
 LPATHS	+= $(BASE_REAL)/lib /usr/local/lib
 LIBS += -lrt
 SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefined
@@ -337,7 +337,7 @@ inPath_makeLib/Hardware_%: $(BASE)/rai/Hardware/% $(PREOBJS)
 inPath_makeLib/%: $(BASE)/rai/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< lib$*.so
 
-inPath_makeLib/%: $(BASE)/../src/% $(PREOBJS)
+inPath_makeLib/%: $(BASE2)/rai/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< lib$*.so
 
 inPath_make/%: % $(PREOBJS)
