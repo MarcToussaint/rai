@@ -1820,8 +1820,10 @@ arr KOMO::getPath_frames(const uintA &frames) {
 
 arr KOMO::getPath_times() {
   arr X(T);
+  double time=0.;
   for(uint t=0; t<T; t++) {
-    X(t) = configurations(t+k_order)->frames.first()->time;
+      time += configurations(t+k_order)->frames.first()->time;
+    X(t) = time;
   }
   return X;
 }

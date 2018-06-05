@@ -120,7 +120,7 @@ struct Subscriber : SubscriberType {
   Subscriber(Var<msg_type>& _var)
     : var(_var) {
     if(rai::getParameter<bool>("useRos", true)) {
-      rai::String topic_name = STRING("rai/" <<var.name);
+      rai::String topic_name = var.name; //STRING("rai/" <<var.name);
       registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {var.registryNode}, this);
       LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<"> into var '" <<var.name <<'\'';
       nh = new ros::NodeHandle;
