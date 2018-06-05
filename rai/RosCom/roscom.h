@@ -87,7 +87,10 @@ arr conv_arr2arr(const rai_msgs::arr& x);
 rai_msgs::arr conv_arr2arr(const arr& x);
 StringA conv_StringA2StringA(const rai_msgs::StringA &x);
 rai_msgs::StringA conv_StringA2StringA(const StringA &x);
+std::vector<std::string> conv_StringA2stdStringVec(const StringA &x);
+StringA conv_stdStringVec2StringA(const std::vector<std::string> &x);
 std_msgs::Float64 conv_double2Float64(const double& x);
+
 
 //-- RAI -> ROS
 geometry_msgs::Pose conv_transformation2pose(const rai::Transformation&);
