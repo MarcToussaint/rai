@@ -2336,8 +2336,8 @@ void rai::KinematicWorld::pruneUselessFrames(bool preserveNamed) {
   }
 }
 
-void rai::KinematicWorld::optimizeTree(bool preserveNamed) {
-//  if(!preserveNamed) pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
+void rai::KinematicWorld::optimizeTree(bool preserveNamed, bool _pruneRigidJoints) {
+  if(_pruneRigidJoints) pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
   reconnectLinksToClosestJoints();
   pruneUselessFrames(preserveNamed);
   calc_activeSets();

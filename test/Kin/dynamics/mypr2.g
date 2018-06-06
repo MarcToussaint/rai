@@ -1,4 +1,4 @@
-Include = '../../../data/pr2_model/pr2_model.ors'
+Include = '../../../../rai-robotModels/pr2/pr2.g'
 
 #Edit worldTranslationRotation { type=JT_rigid }
 

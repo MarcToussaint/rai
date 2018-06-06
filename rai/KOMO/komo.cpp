@@ -221,8 +221,10 @@ void KOMO::core_setKSdynamicOn(double time, const char *from, const char* to) {
 void KOMO::setContact(double startTime, double endTime, const char *from, const char* to) {
   setKinematicSwitch(startTime, true,
                      new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world) );
-  setKinematicSwitch(endTime, false,
-                     new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world) );
+  if(endTime>0.){
+    setKinematicSwitch(endTime, false,
+                       new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world) );
+  }
 }
 
 void KOMO::setKS_slider(double time, bool before, const char* obj, const char* slider, const char* table) {
@@ -652,9 +654,13 @@ void KOMO::setAttach(double time, const char* endeff, const char* object1, const
 
 void KOMO::setSlow(double startTime, double endTime, double prec, bool hardConstrained) {
   if(stepsPerPhase>2) { //otherwise: no velocities
+#if 1
     uintA selectedBodies;
-    for(rai::Joint *j:world.fwdActiveJoints) if(j->type!=rai::JT_time) selectedBodies.append(j->frame.ID);
+    for(rai::Joint *j:world.fwdActiveJoints) if(j->type!=rai::JT_time && j->qDim()>0) selectedBodies.append(j->frame.ID);
     TaskMap *map = new TM_qItself(selectedBodies);
+#else
+    TaskMap *map = new TM_qItself;
+#endif
     if(!hardConstrained) setTask(startTime, endTime, map, OT_sos, NoArr, prec, 1);
     else setTask(startTime, endTime, map, OT_eq, NoArr, prec, 1);
   }

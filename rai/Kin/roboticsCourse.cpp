@@ -169,7 +169,6 @@ double Simulator::getEnergy() {
   return s->G.getEnergy();
 }
 
-
 void Simulator::setDynamicSimulationNoise(double noise) {
   s->dynamicNoise = noise;
 }

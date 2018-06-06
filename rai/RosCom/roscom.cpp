@@ -258,11 +258,11 @@ floatA conv_laserScan2arr(const sensor_msgs::LaserScan& msg) {
 }
 
 #ifdef RAI_PCL
-Pcl conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg) {
+PclC conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg) {
   pcl::PCLPointCloud2 pcl_pc2;
   pcl_conversions::toPCL(msg, pcl_pc2);
   LOG(0) <<"size=" <<pcl_pc2.data.size();
-  Pcl cloud;
+  PclC cloud;
   pcl::fromPCLPointCloud2(pcl_pc2, cloud);
   LOG(0) <<"size=" <<cloud.size();
   return cloud;

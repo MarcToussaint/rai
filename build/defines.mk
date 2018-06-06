@@ -280,12 +280,12 @@ CPATH := $(CPATH):/usr/include/pcl-1.7:
 endif
 
 ifeq ($(EIGEN),1)
-CXXFLAGS += -DMT_EIGEN
+CXXFLAGS += -DRAI_EIGEN
 CPATH := $(CPATH):/usr/include/eigen3
 endif
 
 ifeq ($(HYBRID_AUTOMATON),1)
-CXXFLAGS += -DMT_HYBRID_AUTOMATON
+CXXFLAGS += -DRAI_HYBRID_AUTOMATON
 LIBS += -lhybrid_automaton -ltinyxml
 CPATH := $(CPATH):/home/johannes/src/rswin/hybrid_automaton/include
 LPATH := $(LPATH):/home/johannes/src/rswin/hybrid_automaton/build

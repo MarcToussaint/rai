@@ -2438,7 +2438,7 @@ template<class T> T length(const rai::Array<T>& x) { return (T)::sqrt((double)su
 
 template<class T> T var(const rai::Array<T>& x) { T m=sum(x)/x.N; return sumOfSqr(x)/x.N-m*m; }
 
-template<class T> rai::Array<T> mean(const rai::Array<T>& X) { return sum(X, 0)/T(X.d0); }
+template<class T> rai::Array<T> mean(const rai::Array<T>& X) { CHECK_EQ(X.nd, 2, ""); return sum(X, 0)/T(X.d0); }
 
 template<class T> arr covar(const rai::Array<T>& X) { arr m=mean(X); return ((~X)*X)/T(X.d0)-m*~m; }
 
