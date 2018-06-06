@@ -1065,13 +1065,21 @@ template<class T> rai::Array<T> rai::Array<T>::sub(int i, int I, int j, int J, i
   over the columns explicitly referred to by cols. (col doesn't have
   to be ordered or could also contain some columns multiply) */
 template<class T> rai::Array<T> rai::Array<T>::sub(int i, int I, Array<uint> cols) const {
-  CHECK_EQ(nd,2, "2D range error ");
+  CHECK_EQ(nd, 2, "2D range error ");
   rai::Array<T> x;
   if(i<0) i+=d0;
   if(I<0) I+=d0;
   CHECK(i>=0 && I>=0 && i<=I, "lower limit higher than upper!");
   x.resize(I-i+1, cols.N);
   for(int ii=i; ii<=I; ii++) for(int l=0; l<(int)cols.N; l++) x(ii-i, l)=operator()(ii, cols(l));
+  return x;
+}
+
+template<class T> rai::Array<T> rai::Array<T>::sub(Array<uint> elems) const {
+  CHECK_EQ(nd, 1, "1D range error ");
+  rai::Array<T> x;
+  x.resize(elems.N);
+  for(int l=0; l<(int)elems.N; l++) x(l)=operator()(elems(l));
   return x;
 }
 

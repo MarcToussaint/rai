@@ -181,7 +181,7 @@ struct KOMO {
   //-- optimization macros
   void setSpline(uint splineT);   ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
   void reset(double initNoise=.01);      ///< reset the optimizer (initializes x to a default path)
-  void run();                     ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
+  void run(bool dense=false);            ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
   void getPhysicsReference(uint subSteps=10, int display=0);
   void playInPhysics(uint subSteps=10, bool display=false);
   rai::KinematicWorld& getConfiguration(double phase);
@@ -229,6 +229,17 @@ struct KOMO {
     virtual void getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes);
     virtual void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x, arr& lambda);
   } komo_problem;
+
+  struct Conv_MotionProblem_DenseProblem : ConstrainedProblem {
+    KOMO& komo;
+    uint dimPhi;
+
+    Conv_MotionProblem_DenseProblem(KOMO& _komo) : komo(_komo) {}
+
+    void getStructure(uintA& variableDimensions, intAA& featureTimes, ObjectiveTypeA& featureTypes);
+    virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda);
+
+  } dense_problem;
 };
 
 //===========================================================================
