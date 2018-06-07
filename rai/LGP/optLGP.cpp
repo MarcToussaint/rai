@@ -67,7 +67,7 @@ struct DisplayThread : MiniThread {
                                    <<lgp->solutions()(i)->decisions;
       }
       lgp->solutions.deAccess();
-      if(saveVideo) gl.captureImg=true;
+      if(saveVideo) gl.doCaptureImage=true;
       gl.update(NULL, false, false, false);
       if(saveVideo) write_ppm(gl.captureImage, STRING(OptLGPDataPath <<"vid/" <<std::setw(3)<<std::setfill('0')<<t++<<".ppm"));
     }

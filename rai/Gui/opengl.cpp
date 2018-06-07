@@ -1260,7 +1260,7 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 //
 
 OpenGL::OpenGL(const char* _title, int w, int h, int posx, int posy)
-  : s(NULL), title(_title), width(w), height(h), reportEvents(false), topSelection(NULL), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0) {
+  : s(NULL), title(_title), width(w), height(h), reportEvents(false), topSelection(NULL), doCaptureImage(false), doCaptureDepth(false), fboId(0), rboColor(0), rboDepth(0) {
   //RAI_MSG("creating OpenGL=" <<this);
   Reshape(w,h);
   s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
@@ -1268,7 +1268,7 @@ OpenGL::OpenGL(const char* _title, int w, int h, int posx, int posy)
 }
 
 OpenGL::OpenGL(void *container)
-  : s(NULL), width(0), height(0), reportEvents(false), topSelection(NULL), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0) {
+  : s(NULL), width(0), height(0), reportEvents(false), topSelection(NULL), doCaptureImage(false), doCaptureDepth(false), fboId(0), rboColor(0), rboDepth(0) {
   s=new sOpenGL(this,container); //this might call some callbacks (Reshape/Draw) already!
   init();
 }
@@ -1554,17 +1554,17 @@ void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
   
   //cout <<"UNLOCK draw" <<endl;
   
-  if(captureImg) {
+  if(doCaptureImage) {
     captureImage.resize(h, w, 3);
     glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
 //    flip_image(captureImage);
-    captureImg=false;
+    doCaptureImage=false;
   }
-  if(captureDep) {
+  if(doCaptureDepth) {
     captureDepth.resize(h, w);
     glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
 //    flip_image(captureDepth);
-    captureDep=false;
+    doCaptureDepth=false;
   }
   
   //check matrix stack
@@ -1691,16 +1691,16 @@ int OpenGL::watch(const char *txt) {
 }
 
 /// update the view (in Qt: also starts displaying the window)
-int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool waitForCompletedDraw) {
+int OpenGL::update(const char *txt, bool _doCaptureImage, bool _doCaptureDepth, bool waitForCompletedDraw) {
   openWindow();
-  captureImg |= _captureImg;
-  captureDep |= _captureDep;
+  doCaptureImage |= _doCaptureImage;
+  doCaptureDepth |= _doCaptureDepth;
   if(txt) text.clear() <<txt;
 #ifdef RAI_GL
   isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
   postRedrawEvent(false);
-  if(captureImg || captureDep || waitForCompletedDraw) { isUpdating.waitForStatusEq(0); } //{ rai::wait(.01); processEvents(); rai::wait(.01); }
+  if(doCaptureImage || doCaptureDepth || waitForCompletedDraw) { isUpdating.waitForStatusEq(0); } //{ rai::wait(.01); processEvents(); rai::wait(.01); }
 #endif
   return pressedkey;
 }
@@ -2100,7 +2100,7 @@ struct XBackgroundContext {
 
 Singleton<XBackgroundContext> xBackgroundContext;
 
-void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h) {
+void OpenGL::renderInBack(bool _doCaptureImage, bool _doCaptureDepth, int w, int h) {
 #ifdef RAI_GL
   if(w<0) w=width;
   if(h<0) h=height;
@@ -2196,14 +2196,14 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h) {
   glFlush();
   
   //-- read
-  if(_captureImg) {
+  if(_doCaptureImage) {
     captureImage.resize(h, w, 3);
     //  glReadBuffer(GL_BACK);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
     glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
 //    flip_image(captureImage);
   }
-  if(_captureDep) {
+  if(_doCaptureDepth) {
     captureDepth.resize(h, w);
     glReadBuffer(GL_DEPTH_ATTACHMENT);
     glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);

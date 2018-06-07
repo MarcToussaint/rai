@@ -1261,7 +1261,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const 
   DrawPaths drawX(X);
   
   for(int t=-(int)k_order; t<(int)T; t++) {
-    if(saveVideoPrefix) gl->captureImg=true;
+    if(saveVideoPrefix) gl->doCaptureImage=true;
     rai::KinematicWorld& K = *configurations(t+k_order);
     gl->clear();
     gl->add(glStandardScene, 0);
