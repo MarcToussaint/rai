@@ -1337,6 +1337,12 @@ double* Transformation::getInverseAffineMatrix(double *m) const {
   return m;
 }
 
+arr Transformation::getInverseAffineMatrix() const {
+  arr T(4,4);
+  getInverseAffineMatrix(T.p);
+  return T;
+}
+
 /// get the current position/orientation/scale in an OpenGL format matrix (of type double[16])
 double* Transformation::getAffineMatrixGL(double *m) const {
   Matrix M = rot.getMatrix();
@@ -1680,24 +1686,22 @@ Camera::Camera() {
 void Camera::setZero() {
   X.setZero();
   foc.setZero();
-  heightAngle=90.;
-  heightAbs=0.;
-  focalLength=0.;
+  setHeightAngle(90.);
   whRatio=1.;
   zNear=.1;
   zFar=1000.;
 }
 
 /// the height angle (in degrees) of the camera perspective; set it 0 for orthogonal projection
-void Camera::setHeightAngle(float a) { focalLength=heightAbs=0.; heightAngle=a; }
+void Camera::setHeightAngle(float a) { heightAbs=0.; focalLength=1./tan(a*RAI_PI/180.); }
 /// the absolute height of the camera perspective (automatically also sets heightAngle=0)
-void Camera::setHeightAbs(float h) { focalLength=heightAngle=0.; heightAbs=h; }
+void Camera::setHeightAbs(float h) { focalLength=0.; heightAbs=h; }
 /// the z-range (depth range) visible for the camera
 void Camera::setZRange(float znear, float zfar) { zNear=znear; zFar=zfar; }
 /// set the width/height ratio of your viewport to see a non-distorted picture
 void Camera::setWHRatio(float ratio) { whRatio=ratio; }
 /// set the width/height ratio of your viewport to see a non-distorted picture
-void Camera::setFocalLength(float f) { heightAbs=heightAngle=0;  focalLength = f; }
+void Camera::setFocalLength(float f) { heightAbs=0;  focalLength = f; }
 /// the frame's position
 void Camera::setPosition(float x, float y, float z) { X.pos.set(x, y, z); }
 /// rotate the frame to focus the absolute coordinate origin (0, 0, 0)
@@ -1766,7 +1770,6 @@ void Camera::glSetProjectionMatrix() {
 //    glLoadMatrixd(fixedProjectionMatrix.p);
 //  } else {
   if(focalLength > 0.) { //focal lengh mode
-    CHECK(!heightAngle, "");
     CHECK(!heightAbs, "");
     arr P(4,4);
     P.setZero();
@@ -1778,19 +1781,56 @@ void Camera::glSetProjectionMatrix() {
     glLoadMatrixd(P.p);
   }
   if(heightAbs > 0.) { //ortho mode
-    CHECK(!heightAngle, "");
     CHECK(!focalLength, "");
     glOrtho(-whRatio*heightAbs/2., whRatio*heightAbs/2.,
             -heightAbs/2., heightAbs/2., zNear, zFar);
   }
-  if(heightAngle > 0.) { //normal perspective mode
-    CHECK(!focalLength, "");
-    CHECK(!heightAbs, "");
-    gluPerspective(heightAngle, whRatio, zNear, zFar);
-  }
+//  if(heightAngle > 0.) { //normal perspective mode
+//    CHECK(!focalLength, "");
+//    CHECK(!heightAbs, "");
+//    gluPerspective(heightAngle, whRatio, zNear, zFar);
+//  }
   double m[16];
   glMultMatrixd(X.getInverseAffineMatrixGL(m));
 #endif
+}
+
+arr Camera::getProjectionMatrix(){
+  arr Tinv = X.getInverseAffineMatrix();
+
+  if(focalLength>0.) { //normal perspective mode
+    arr P(4,4);
+    P.setZero();
+    P(0,0) = 2.*focalLength/whRatio;
+    P(1,1) = 2.*focalLength;
+    P(2,2) = -1.; //depth is flipped to become positive for 'in front of camera'
+    P(3,3) = 1.;  //homogeneous 3D is kept
+    return P * Tinv;
+  }
+  if(heightAbs > 0.) { //ortho mode
+    NIY;
+  }
+  NIY;
+  return arr();
+}
+
+arr Camera::getInverseProjectionMatrix(){
+  arr T = X.getAffineMatrix();
+
+  if(focalLength>0.) { //normal perspective mode
+    arr Pinv(4,4);
+    Pinv.setZero();
+    Pinv(0,0) = 1./(2.*focalLength/whRatio);
+    Pinv(1,1) = 1./(2.*focalLength);
+    Pinv(2,2) = -1.; //flips 'positive depth' back to Right-Handed frame
+    Pinv(3,3) = 1.;  //homogeneous 3D is kept
+    return T * Pinv;
+  }
+  if(heightAbs > 0.) { //ortho mode
+    NIY;
+  }
+  NIY;
+  return arr();
 }
 
 /// convert from gluPerspective's non-linear [0, 1] depth to the true [zNear, zFar] depth

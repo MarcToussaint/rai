@@ -1316,6 +1316,12 @@ struct CstyleDrawer : GLDrawer {
   void glDraw(OpenGL&) { call(classP); }
 };
 
+struct LambdaDrawer : GLDrawer {
+  std::function<void(OpenGL&)> call;
+  LambdaDrawer(std::function<void(OpenGL&)> call) : call(call) {}
+  void glDraw(OpenGL& gl) { call(gl); }
+};
+
 struct CstyleInitCall : OpenGL::GLInitCall {
   void *classP;
   void (*call)(void*);
@@ -1337,6 +1343,14 @@ void OpenGL::addInit(void (*call)(void*), void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
   dataLock.writeLock();
   initCalls.append(new CstyleInitCall(call, classP));
+  dataLock.unlock();
+}
+
+void OpenGL::add(std::function<void (OpenGL&)> call){
+  CHECK(call, "OpenGL: NULL std::function to drawing routine");
+  dataLock.writeLock();
+//  toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
+  drawers.append(new LambdaDrawer(call));
   dataLock.unlock();
 }
 
@@ -1558,7 +1572,7 @@ void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
     captureImage.resize(h, w, 3);
     glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
 //    flip_image(captureImage);
-    doCaptureImage=false;
+//    doCaptureImage=false;
   }
   if(doCaptureDepth) {
     captureDepth.resize(h, w);
@@ -1758,6 +1772,39 @@ void OpenGL::unproject(double &x, double &y, double &z, bool resetCamera, int su
   glGetDoublev(GL_PROJECTION_MATRIX, projMatrix);
   glGetIntegerv(GL_VIEWPORT, viewPort);
   gluUnProject(x, y, z, modelMatrix, projMatrix, viewPort, &_x, &_y, &_z);
+  x=_x; y=_y; z=_z;
+#else
+  NICO
+    #endif
+}
+
+void OpenGL::project(double& x, double& y, double& z, bool resetCamera, int subView){
+#ifdef RAI_GL
+  double _x, _y, _z;
+  GLdouble modelMatrix[16], projMatrix[16];
+  GLint viewPort[4];
+  if(resetCamera) {
+    GLint viewport[4] = {0, 0, (GLint)width, (GLint)height};
+    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    camera.glSetProjectionMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+  }
+  if(subView!=-1) {
+    GLView *vi=&views(subView);
+    glViewport(vi->le*width, vi->bo*height, (vi->ri-vi->le)*width+1, (vi->to-vi->bo)*height+1);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    vi->camera.glSetProjectionMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+  }
+  glGetDoublev(GL_MODELVIEW_MATRIX, modelMatrix);
+  glGetDoublev(GL_PROJECTION_MATRIX, projMatrix);
+  glGetIntegerv(GL_VIEWPORT, viewPort);
+  gluProject(x, y, z, modelMatrix, projMatrix, viewPort, &_x, &_y, &_z);
   x=_x; y=_y; z=_z;
 #else
   NICO

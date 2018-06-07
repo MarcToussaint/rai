@@ -201,6 +201,7 @@ struct Transformation {
   double* getAffineMatrix(double *m) const;         // 4x4 matrix with 3x3=rotation and right-column=translation
   arr getAffineMatrix() const;                      // 4x4 matrix with 3x3=rotation and right-column=translation
   double* getInverseAffineMatrix(double *m) const;  // 4x4 matrix with 3x3=R^{-1}   and bottom-row=R^{-1}*translation
+  arr getInverseAffineMatrix() const;
   double* getAffineMatrixGL(double *m) const;       // in OpenGL format (transposed memory storage!!)
   double* getInverseAffineMatrixGL(double *m) const;// in OpenGL format (transposed memory storage!!)
   arr getArr7d();
@@ -276,6 +277,8 @@ struct Camera {
   void watchDirection(const Vector& d);
   void upright(const Vector& up=Vector(0,0,1));
   void glSetProjectionMatrix();
+  arr getProjectionMatrix();
+  arr getInverseProjectionMatrix();
   double glConvertToTrueDepth(double d);
   double glConvertToLinearDepth(double d);
   void setKinect();

@@ -17,6 +17,7 @@
 #include <Core/array.h>
 #include <Core/thread.h>
 #include <Geo/geo.h>
+#include <functional>
 
 #ifdef RAI_FLTK
 #  include <FL/glut.H>
@@ -178,6 +179,7 @@ struct OpenGL {
   void clear();
   void add(void (*call)(void*), void* classP=NULL);
   void addInit(void (*call)(void*), void* classP=NULL);
+  void add(std::function<void(OpenGL&)> drawer);
   void add(GLDrawer& c) { dataLock.writeLock(); drawers.append(&c); dataLock.unlock(); }
   void addDrawer(GLDrawer *c) { dataLock.writeLock(); drawers.append(c); dataLock.unlock(); }
   void remove(GLDrawer& c) { dataLock.writeLock(); drawers.removeValue(&c); dataLock.unlock(); }
@@ -203,7 +205,8 @@ struct OpenGL {
   void resize(int w, int h);
   void setClearColors(float r, float g, float b, float a);
   void unproject(double &x, double &y, double &z, bool resetCamera=false, int subView=-1);
-  
+  void project(double &x, double &y, double &z, bool resetCamera=false, int subView=-1);
+
   /// @name info & I/O
   void reportSelection();
   void saveEPS(const char *filename);
