@@ -87,7 +87,10 @@ arr conv_arr2arr(const rai_msgs::arr& x);
 rai_msgs::arr conv_arr2arr(const arr& x);
 StringA conv_StringA2StringA(const rai_msgs::StringA &x);
 rai_msgs::StringA conv_StringA2StringA(const StringA &x);
+std::vector<std::string> conv_StringA2stdStringVec(const StringA &x);
+StringA conv_stdStringVec2StringA(const std::vector<std::string> &x);
 std_msgs::Float64 conv_double2Float64(const double& x);
+
 
 //-- RAI -> ROS
 geometry_msgs::Pose conv_transformation2pose(const rai::Transformation&);
@@ -120,7 +123,7 @@ struct Subscriber : SubscriberType {
   Subscriber(Var<msg_type>& _var)
     : var(_var) {
     if(rai::getParameter<bool>("useRos", true)) {
-      rai::String topic_name = STRING("rai/" <<var.name);
+      rai::String topic_name = var.name; //STRING("rai/" <<var.name);
       registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {var.registryNode}, this);
       LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<"> into var '" <<var.name <<'\'';
       nh = new ros::NodeHandle;
