@@ -910,8 +910,7 @@ rai::String rai::String::getSubString(int start, int end) const {
  * @param n number of chars to return
  */
 rai::String rai::String::getLastN(uint n) const {
-  clip(n, uint(0), N);
-  return getSubString(N-n, N);
+  return getSubString(-n, -1);
 }
 
 /**
@@ -919,8 +918,7 @@ rai::String rai::String::getLastN(uint n) const {
  * @param n number of chars to return.
  */
 rai::String rai::String::getFirstN(uint n) const {
-  clip(n, uint(0), N);
-  return getSubString(0, n);
+  return getSubString(0, n-1);
 }
 
 /// copy operator
