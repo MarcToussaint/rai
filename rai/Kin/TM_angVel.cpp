@@ -27,7 +27,7 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
 
   CHECK(order==1,"");
 
-  double tau = Ktuple(-1)->frames(0)->time; //- Ktuple(-2)->frames(0)->time;
+//  double tau = Ktuple(-1)->frames(0)->time; //- Ktuple(-2)->frames(0)->time;
   rai::Frame *a0 = Ktuple(-2)->frames(i);
   rai::Frame *a1 = Ktuple(-1)->frames(i);
 

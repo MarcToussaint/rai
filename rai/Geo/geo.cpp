@@ -1679,7 +1679,7 @@ Camera::Camera() {
   
   setPosition(0., 0., 10.);
   focus(0, 0, 0);
-  setHeightAngle(12.);
+  setHeightAngle(24.);
 }
 
 void Camera::setZero() {
@@ -1692,7 +1692,7 @@ void Camera::setZero() {
 }
 
 /// the height angle (in degrees) of the camera perspective; set it 0 for orthogonal projection
-void Camera::setHeightAngle(float a) { heightAbs=0.; focalLength=1./tan(a*RAI_PI/180.); }
+void Camera::setHeightAngle(float a) { heightAbs=0.; focalLength=1./tan(0.5*a*RAI_PI/180.); }
 /// the absolute height of the camera perspective (automatically also sets heightAngle=0)
 void Camera::setHeightAbs(float h) { focalLength=0.; heightAbs=h; }
 /// the z-range (depth range) visible for the camera
@@ -1930,7 +1930,7 @@ void Camera::setKinect() {
 }
 
 void Camera::setDefault() {
-  setHeightAngle(12.);
+  setHeightAngle(24.);
   setZRange(.1, 50.);
   setPosition(8., -12., 6.);
 //  setPosition(10., -4., 10.);
