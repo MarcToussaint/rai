@@ -52,13 +52,14 @@ struct KOMO {
   arr z, splineB;              ///< when a spline representation is used: z are the nodes; splineB the B-spline matrix; x = splineB * z
   
   //-- verbosity only: buffers of all feature values computed on last set_x
-  arrA featureValues;           ///< storage of all features in all time slices
-  rai::Array<ObjectiveTypeA> featureTypes;  ///< storage of all feature-types in all time slices
-  arr dualSolution;             ///< the dual solution computed during constrained optimization
-  struct OpenGL *gl=NULL;       ///< internal only: used in 'displayTrajectory'
-  int verbose;                  ///< verbosity level
-  int animateOptimization=0;    ///< display the current path for each evaluation during optimization
-  double runTime=0.;            ///< just measure run time
+  arr featureValues;           ///< storage of all features in all time slices
+  ObjectiveTypeA featureTypes; ///< storage of all feature-types in all time slices
+  bool featureDense;
+  arr dualSolution;            ///< the dual solution computed during constrained optimization
+  struct OpenGL *gl=NULL;      ///< internal only: used in 'displayTrajectory'
+  int verbose;                 ///< verbosity level
+  int animateOptimization=0;   ///< display the current path for each evaluation during optimization
+  double runTime=0.;           ///< just measure run time
   ofstream *fil=NULL;
   
   KOMO();
@@ -194,7 +195,7 @@ struct KOMO {
   void reportProxies(ostream& os=std::cout); ///< report the proxies (collisions) for each time slice
   void reportContacts(ostream& os=std::cout); ///< report the contacts
   rai::Array<rai::Transformation> reportEffectiveJoints(ostream& os=std::cout);
-  void checkGradients();          ///< checks all gradients numerically
+  void checkGradients(bool dense=false);          ///< checks all gradients numerically
   void plotTrajectory();
   void plotPhaseTrajectory();
   bool displayTrajectory(double delay=1., bool watch=true, bool overlayPaths=true, const char* saveVideoPrefix=NULL); ///< display the trajectory; use "vid/z." as vid prefix

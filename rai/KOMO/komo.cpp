@@ -1150,16 +1150,20 @@ void KOMO::reportProblem(std::ostream& os) {
   }
 }
 
-void KOMO::checkGradients() {
+void KOMO::checkGradients(bool dense) {
   CHECK(T,"");
   if(!splineB.N) {
 #if 0
     checkJacobianCP(Convert(komo_problem), x, 1e-4);
 #else
     double tolerance=1e-4;
-    Conv_KOMO_ConstrainedProblem CP(komo_problem);
-    VectorFunction F = [&CP](arr& phi, arr& J, const arr& x) {
-      return CP.phi(phi, J, NoArr, NoTermTypeA, x, NoArr);
+
+    Conv_KOMO_ConstrainedProblem CP_komo(komo_problem);
+    ConstrainedProblem *CP=&CP_komo;
+    if(dense) CP = &dense_problem;
+
+    VectorFunction F = [CP](arr& phi, arr& J, const arr& x) {
+      return CP->phi(phi, J, NoArr, NoTermTypeA, x, NoArr);
     };
 //    checkJacobian(F, x, tolerance);
     arr J;
@@ -1171,7 +1175,11 @@ void KOMO::checkGradients() {
       double md=maxDiff(J[i], JJ[i], &j);
       if(md>mmd) mmd=md;
       if(md>tolerance) {
-        LOG(-1) <<"FAILURE in line " <<i <<" t=" <<CP.featureTimes(i) <<' ' <<komo_problem.featureNames(i) <<" -- max diff=" <<md <<" |"<<J(i,j)<<'-'<<JJ(i,j)<<"| (stored in files z.J_*)";
+        if(!dense){
+          LOG(-1) <<"FAILURE in line " <<i <<" t=" <<CP_komo.featureTimes(i) <<' ' <<komo_problem.featureNames(i) <<" -- max diff=" <<md <<" |"<<J(i,j)<<'-'<<JJ(i,j)<<"| (stored in files z.J_*)";
+        }else{
+          LOG(-1) <<"FAILURE in line " <<i <<" t=" <</*CP_komo.featureTimes(i) <<' ' <<komo_problem.featureNames(i) <<*/" -- max diff=" <<md <<" |"<<J(i,j)<<'-'<<JJ(i,j)<<"| (stored in files z.J_*)";
+        }
         J[i] >>FILE("z.J_analytical");
         JJ[i] >>FILE("z.J_empirical");
         //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
@@ -1513,25 +1521,12 @@ rai::Array<rai::Transformation> KOMO::reportEffectiveJoints(std::ostream& os) {
 }
 
 Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs) {
-  if(featureValues.N>1) { //old optimizer -> remove some time..
-    HALT("outdated");
-    arr tmp;
-    for(auto& p:featureValues) tmp.append(p);
-    featureValues = ARRAY<arr>(tmp);
-    
-    ObjectiveTypeA ttmp;
-    for(auto& p:featureTypes) ttmp.append(p);
-    featureTypes = ARRAY<ObjectiveTypeA>(ttmp);
-  }
-  
   bool wasRun = featureValues.N!=0;
   
   arr phi;
   ObjectiveTypeA tt;
-  if(wasRun) {
-    phi.referTo(featureValues.scalar());
-    tt.referTo(featureTypes.scalar());
-  }
+  phi.referTo(featureValues);
+  tt.referTo(featureTypes);
   
   //-- collect all task costs and constraints
   StringA name; name.resize(tasks.N);
@@ -1539,34 +1534,72 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
   arr taskC=zeros(tasks.N);
   arr taskG=zeros(tasks.N);
   uint M=0;
-  for(uint t=0; t<T; t++) {
+  if(!featureDense){
+    for(uint t=0; t<T; t++) {
+      for(uint i=0; i<tasks.N; i++) {
+        Task *task = tasks(i);
+        if(task->prec.N>t && task->prec(t)) {
+          uint d=0;
+          if(wasRun) {
+            d=task->map->dim_phi(configurations({t,t+k_order}));
+            for(uint j=0; j<d; j++) CHECK_EQ(tt(M+j), task->type,"");
+            if(d) {
+              if(task->type==OT_sos) {
+                for(uint j=0; j<d; j++) err(t,i) += sqr(phi(M+j)); //sumOfSqr(phi.sub(M,M+d-1));
+                taskC(i) += err(t,i);
+              }
+              if(task->type==OT_ineq) {
+                for(uint j=0; j<d; j++) err(t,i) += MAX(0., phi(M+j));
+                taskG(i) += err(t,i);
+              }
+              if(task->type==OT_eq) {
+                for(uint j=0; j<d; j++) err(t,i) += fabs(phi(M+j));
+                taskG(i) += err(t,i);
+              }
+              M += d;
+            }
+          }
+          if(reportFeatures==1) {
+            featuresOs <<std::setw(4) <<t <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d
+                      <<' ' <<std::setw(40) <<task->name
+                     <<" k=" <<task->map->order <<" ot=" <<task->type <<" prec=" <<std::setw(4) <<task->prec(t);
+            if(task->target.N<5) featuresOs <<" y*=[" <<task->target <<']'; else featuresOs<<"y*=[..]";
+            featuresOs <<" y^2=" <<err(t,i) <<endl;
+          }
+        }
+      }
+    }
+  }else{
     for(uint i=0; i<tasks.N; i++) {
-      Task *task = tasks(i);
-      if(task->prec.N>t && task->prec(t)) {
+      Task *task = tasks.elem(i);
+      CHECK_EQ(task->vars.d0, task->prec.N, "");
+      for(uint t=0;t<task->prec.N;t++){
+        WorldL Ktuple = configurations.sub(convert<uint,int>(task->vars[t]+(int)k_order));
         uint d=0;
+        uint time=task->vars(t,-1);
         if(wasRun) {
-          d=task->map->dim_phi(configurations({t,t+k_order}));
+          d=task->map->dim_phi(Ktuple);
           for(uint j=0; j<d; j++) CHECK_EQ(tt(M+j), task->type,"");
           if(d) {
             if(task->type==OT_sos) {
-              for(uint j=0; j<d; j++) err(t,i) += sqr(phi(M+j)); //sumOfSqr(phi.sub(M,M+d-1));
+              for(uint j=0; j<d; j++) err(time,i) += sqr(phi(M+j));
               taskC(i) += err(t,i);
             }
             if(task->type==OT_ineq) {
-              for(uint j=0; j<d; j++) err(t,i) += MAX(0., phi(M+j));
+              for(uint j=0; j<d; j++) err(time,i) += MAX(0., phi(M+j));
               taskG(i) += err(t,i);
             }
             if(task->type==OT_eq) {
-              for(uint j=0; j<d; j++) err(t,i) += fabs(phi(M+j));
+              for(uint j=0; j<d; j++) err(time,i) += fabs(phi(M+j));
               taskG(i) += err(t,i);
             }
             M += d;
           }
         }
         if(reportFeatures==1) {
-          featuresOs <<std::setw(4) <<t <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d
-                     <<' ' <<std::setw(40) <<task->name
-                     <<" k=" <<task->map->order <<" ot=" <<task->type <<" prec=" <<std::setw(4) <<task->prec(t);
+          featuresOs <<std::setw(4) <<time <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d
+                    <<' ' <<std::setw(40) <<task->name
+                   <<" k=" <<task->map->order <<" ot=" <<task->type <<" prec=" <<std::setw(4) <<task->prec(t);
           if(task->target.N<5) featuresOs <<" y*=[" <<task->target <<']'; else featuresOs<<"y*=[..]";
           featuresOs <<" y^2=" <<err(t,i) <<endl;
         }
@@ -1763,9 +1796,10 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
   
   CHECK_EQ(M, dimPhi, "");
 //  if(&lambda) CHECK_EQ(prevLambda, lambda, ""); //this ASSERT only holds is none of the tasks is variable dim!
-  komo.featureValues = ARRAY<arr>(phi);
-  if(&tt) komo.featureTypes = ARRAY<ObjectiveTypeA>(tt);
-  
+  komo.featureValues = phi;
+  if(&tt) komo.featureTypes = tt;
+  komo.featureDense=false;
+
   //==================
 #if 0
   uint C=0;
@@ -1857,19 +1891,20 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
             J.setMatrixBlock(Jy.sub(0,-1,kdim(j),kdim(j+1)-1), M, x_index(task->vars(t,j)));
           }
         }
-
-        if(&tt) for(uint i=0; i<y.N; i++) tt(M+i) = task->type;
-
-        //counter for features phi
-        M += y.N;
       }
+
+      if(&tt) for(uint i=0; i<y.N; i++) tt(M+i) = task->type;
+
+      //counter for features phi
+      M += y.N;
     }
   }
 
   CHECK_EQ(M, dimPhi, "");
 //  if(&lambda) CHECK_EQ(prevLambda, lambda, ""); //this ASSERT only holds is none of the tasks is variable dim!
-  komo.featureValues = ARRAY<arr>(phi);
-  if(&tt) komo.featureTypes = ARRAY<ObjectiveTypeA>(tt);
+  komo.featureValues = phi;
+  if(&tt) komo.featureTypes = tt;
+  komo.featureDense=true;
 }
 
 void KOMO::Conv_MotionProblem_DenseProblem::getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes) {

@@ -27,12 +27,13 @@ struct Task {
   void setCostSpecsDense(intA _vars, const arr& _target, double _prec);
   bool isActive(uint t) { return (prec.N>t && prec(t)); }
   void write(std::ostream& os) const {
-    os <<"TASK '" <<name <<"'"
-       <<"  type=" <<type
+    os <<"TASK '" <<name <<"'";
+    if(vars.d0==1) os <<" ("<<vars <<')';
+    os <<"  type=" <<type
        <<"  order=" <<map->order
        <<"  target=[" <<target <<']'
        <<"  prec=";
-    writeConsecutiveConstant(os,prec);
+    if(prec.N>4) writeConsecutiveConstant(os,prec); else os <<'[' <<prec <<']';
   }
 };
 stdOutPipe(Task)
