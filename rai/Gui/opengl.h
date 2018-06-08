@@ -17,6 +17,7 @@
 #include <Core/array.h>
 #include <Core/thread.h>
 #include <Geo/geo.h>
+#include <functional>
 
 #ifdef RAI_FLTK
 #  include <FL/glut.H>
@@ -152,7 +153,7 @@ struct OpenGL {
   GLSelect *topSelection;        ///< top selected object
   bool immediateExitLoop;
   bool drawFocus;
-  bool captureImg, captureDep;
+  bool doCaptureImage, doCaptureDepth;
   byteA background, captureImage;
   floatA captureDepth;
   double backgroundZoom;
@@ -178,6 +179,7 @@ struct OpenGL {
   void clear();
   void add(void (*call)(void*), void* classP=NULL);
   void addInit(void (*call)(void*), void* classP=NULL);
+  void add(std::function<void(OpenGL&)> drawer);
   void add(GLDrawer& c) { dataLock.writeLock(); drawers.append(&c); dataLock.unlock(); }
   void addDrawer(GLDrawer *c) { dataLock.writeLock(); drawers.append(c); dataLock.unlock(); }
   void remove(GLDrawer& c) { dataLock.writeLock(); drawers.removeValue(&c); dataLock.unlock(); }
@@ -194,16 +196,17 @@ struct OpenGL {
   /// @name the core draw routines (actually only for internal use)
   void Draw(int w, int h, rai::Camera *cam=NULL, bool callerHasAlreadyLocked=false);
   void Select(bool callerHasAlreadyLocked=false);
-  void renderInBack(bool captureImg=true, bool captureDepth=false, int w=-1, int h=-1);
+  void renderInBack(bool doCaptureImage=true, bool captureDepth=false, int w=-1, int h=-1);
   
   /// @name showing, updating, and watching
-  int update(const char *text=NULL, bool captureImg=false, bool captureDepth=false, bool waitForCompletedDraw=true);
+  int update(const char *text=NULL, bool doCaptureImage=false, bool captureDepth=false, bool waitForCompletedDraw=true);
   int watch(const char *text=NULL);
   int timedupdate(double sec);
   void resize(int w, int h);
   void setClearColors(float r, float g, float b, float a);
   void unproject(double &x, double &y, double &z, bool resetCamera=false, int subView=-1);
-  
+  void project(double &x, double &y, double &z, bool resetCamera=false, int subView=-1);
+
   /// @name info & I/O
   void reportSelection();
   void saveEPS(const char *filename);

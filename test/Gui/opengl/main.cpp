@@ -363,7 +363,7 @@ void TEST(Image) {
   OpenGL gl;
   byteA img;
   read_ppm(img,"box.ppm",false);
-  gl.captureImg=true;
+  gl.doCaptureImage=true;
   gl.watchImage(img,true,2);
 
   img=gl.captureImage;

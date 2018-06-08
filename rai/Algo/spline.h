@@ -23,6 +23,8 @@ struct Spline {
   /// for T>0 this is directly constructing basis functions over a (fine) grid of resolution T
   Spline(uint degree=2);
   Spline(uint T, const arr& X, uint degree=2);
+
+  void clear();
   
   /// for t \in [0,1] the coefficients are the weighting of the points: f(t) = coeffs(t)^T * points
   arr getCoeffs(double t, uint K, uint derivative=0) const;

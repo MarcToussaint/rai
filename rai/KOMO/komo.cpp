@@ -1266,7 +1266,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const 
   DrawPaths drawX(X);
   
   for(int t=-(int)k_order; t<(int)T; t++) {
-    if(saveVideoPrefix) gl->captureImg=true;
+    if(saveVideoPrefix) gl->doCaptureImage=true;
     rai::KinematicWorld& K = *configurations(t+k_order);
     gl->clear();
     gl->add(glStandardScene, 0);
@@ -1928,8 +1928,10 @@ arr KOMO::getPath_frames(const uintA &frames) {
 
 arr KOMO::getPath_times() {
   arr X(T);
+  double time=0.;
   for(uint t=0; t<T; t++) {
-    X(t) = configurations(t+k_order)->frames.first()->time;
+      time += configurations(t+k_order)->frames.first()->time;
+    X(t) = time;
   }
   return X;
 }

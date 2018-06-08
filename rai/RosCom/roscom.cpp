@@ -391,6 +391,19 @@ rai_msgs::StringA conv_StringA2StringA(const StringA &x) {
   return y;
 }
 
+std::vector<std::string> conv_StringA2stdStringVec(const StringA &x){
+  std::vector<std::string> y;
+  y.resize(x.N);
+  for(uint i=0; i<x.N; i++) y[i] = x.elem(i).p;
+  return y;
+}
+
+StringA conv_stdStringVec2StringA(const std::vector<std::string> &x){
+  StringA y(x.size());
+  for(uint i=0; i<y.N; i++) y.elem(i) = x[i].c_str();
+  return y;
+}
+
 std_msgs::Float64 conv_double2Float64(const double &x) {
   std_msgs::Float64 y;
   y.data = x;

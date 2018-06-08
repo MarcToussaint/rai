@@ -23,6 +23,14 @@ Spline::Spline(uint T, const arr& X, uint degree) : points(X) {
   setUniformNonperiodicBasis(T, points.d0, degree);
 }
 
+void Spline::clear(){
+  points.clear();
+  times.clear();
+  basis.clear();
+  basis_trans.clear();
+  basis_timeGradient.clear();
+}
+
 void Spline::plotBasis() {
   plotClear();
   arr b_sum(basis.d0);
