@@ -1748,8 +1748,8 @@ void OpenGL::setClearColors(float r, float g, float b, float a) {
 void OpenGL::unproject(double &x, double &y, double &z, bool resetCamera, int subView) {
 #ifdef RAI_GL
   double _x, _y, _z;
-  GLdouble modelMatrix[16], projMatrix[16];
-  GLint viewPort[4];
+  arr modelMatrix(4,4), projMatrix(4,4);
+  intA viewPort(4);
   if(resetCamera) {
     GLint viewport[4] = {0, 0, (GLint)width, (GLint)height};
     glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
@@ -1768,10 +1768,11 @@ void OpenGL::unproject(double &x, double &y, double &z, bool resetCamera, int su
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
   }
-  glGetDoublev(GL_MODELVIEW_MATRIX, modelMatrix);
-  glGetDoublev(GL_PROJECTION_MATRIX, projMatrix);
-  glGetIntegerv(GL_VIEWPORT, viewPort);
-  gluUnProject(x, y, z, modelMatrix, projMatrix, viewPort, &_x, &_y, &_z);
+  glGetDoublev(GL_MODELVIEW_MATRIX, modelMatrix.p);
+  glGetDoublev(GL_PROJECTION_MATRIX, projMatrix.p);
+  glGetIntegerv(GL_VIEWPORT, viewPort.p);
+//  cout <<"\nM=\n" <<modelMatrix <<"\nP=\n" <<projMatrix <<"\nV=\n" <<viewPort <<endl;
+  gluUnProject(x, y, z, modelMatrix.p, projMatrix.p, viewPort.p, &_x, &_y, &_z);
   x=_x; y=_y; z=_z;
 #else
   NICO

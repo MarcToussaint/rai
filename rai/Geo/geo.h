@@ -254,7 +254,6 @@ struct Camera {
   Vector foc;
   
   float heightAbs;
-  float heightAngle;
   float focalLength;
   float whRatio;
   float zNear, zFar;
@@ -269,20 +268,30 @@ struct Camera {
   void setFocalLength(float f);
   void setPosition(float x, float y, float z);
   void setOffset(float x, float y, float z);
-  void setCameraProjectionMatrix(const arr& P); //P is in standard convention -> computes fixedProjectionMatrix in OpenGL convention from this
+  void setKinect();
+  void setDefault();
+
   void focusOrigin();
   void focus(float x, float y, float z);
   void focus(const Vector& v);
   void focus();
   void watchDirection(const Vector& d);
   void upright(const Vector& up=Vector(0,0,1));
+
+  //-- projection matrix stuff
   void glSetProjectionMatrix();
+  arr getGLProjectionMatrix();
   arr getProjectionMatrix();
   arr getInverseProjectionMatrix();
   double glConvertToTrueDepth(double d);
   double glConvertToLinearDepth(double d);
-  void setKinect();
-  void setDefault();
+  void project2PixelsAndTrueDepth(arr& x, double width, double height);
+  void unproject(arr& x_in2DwithTrueDepth);
+  void unproject_fromPixelsAndTrueDepth(arr& x, double width, double height);
+  void unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height);
+
+  //retired
+  void setCameraProjectionMatrix(const arr& P); //P is in standard convention -> computes fixedProjectionMatrix in OpenGL convention from this
 };
 
 //===========================================================================

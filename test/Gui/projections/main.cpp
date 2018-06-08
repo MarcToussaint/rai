@@ -12,6 +12,7 @@ void dot(byteA& img, int I, int J){
 
 void testProjection(){
   OpenGL gl, gl2;
+  gl.camera.zNear = .1;
 
   rai::Mesh M;
   M.setBox();
@@ -27,19 +28,15 @@ void testProjection(){
     flip_image(img);
 
     arr X = M.V;
-    arr P = gl.camera.getProjectionMatrix();
-    arr Pinv = gl.camera.getInverseProjectionMatrix();
     cout <<"--" <<endl;
     for(uint i=0;i<X.d0;i++){
       //-- TEST 3D -> image projection
-      //with own projection
-      arr y = cat(X[i], {1.});
-      arr x = P * y;
-      double depth=x(2);
-      x /= depth;
-      int I=(x(1)+1.)*.5*(double)gl.height;
-      int J=(x(0)+1.)*.5*(double)gl.width;
-      dot(img, I, J); //drawing literally into the pixel image -> is shown in 2nd window
+      //with own
+      arr y = X[i].copy();
+      gl.camera.project2PixelsAndTrueDepth(y, gl.width, gl.height);
+      int I=y(1), J=y(0);
+      double depth=y(2);
+      dot(img, I, J);
 
       //with glut
       double px=X(i,0), py=X(i,1), pz=X(i,2);
@@ -55,25 +52,14 @@ void testProjection(){
       cout <<"depth-match-err=" <<gl.camera.glConvertToTrueDepth(pz) - depth <<" (due to GL's non-linear depth transform?)" <<endl;
 
       //-- TEST image -> 3D projection
-
       //with own
-      x(0) = 2.*(double(J)/double(gl.width)) - 1.;
-      x(1) = 2.*(double(I)/double(gl.width)) - 1.;
-      x(2) = 1.;
-      x *= depth;
-      x(3) = 1.;
-      x = Pinv * x;
-      x.resizeCopy(3);
-//      cout <<X[i] <<x <<endl;
-      cout <<"back-to-3D-err=" <<sqrDistance(X[i], x) <<" (due to pixel discretization)" <<endl;
+      gl.camera.unproject_fromPixelsAndTrueDepth(y, gl.width, gl.height);
+      cout <<"back-to-3D-err=" <<sqrDistance(X[i], y)<<endl;
 
       //with glut
-      px=J;
-      py=I;
-      pz=pz;
-      gl.unproject(px,py,pz, true);
-      cout <<"back-to-3D-err=" <<sqrDistance(X[i], {px, py, pz}) <<endl;
-
+      y(0)=px; y(1)=py; y(2)=pz;
+      gl.camera.unproject_fromPixelsAndGLDepth(y, gl.width, gl.height);
+      cout <<"back-to-3D-err=" <<sqrDistance(X[i], y) <<" (float precision only)" <<endl;
     }
   });
 
