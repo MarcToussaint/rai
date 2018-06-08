@@ -604,7 +604,7 @@ void rai::Joint::read(const Graph &G) {
   
   if(!B.isZero()) {
     //new frame between: from -> f -> to
-    CHECK(frame.outLinks.N==1,"");
+    CHECK_EQ(frame.outLinks.N, 1,"");
     Frame *follow = frame.outLinks.scalar();
     
     CHECK(follow->parent, "");

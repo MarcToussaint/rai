@@ -41,7 +41,7 @@ void PhaseOptimization::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, cons
   //assert some dimensions
   CHECK_EQ(x_bar.d0,k+1,"");
   CHECK_EQ(x_bar.d1,n,"");
-  CHECK(t<=T,"");
+  CHECK_LE(t, T,"");
   
   //-- transition costs of trajectory: append to phi
   if(kX==1)  phi = p->eval(x_bar(1,0)) - p->eval(x_bar(0,0)); //penalize velocity

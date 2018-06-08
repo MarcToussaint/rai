@@ -205,7 +205,7 @@ void TaskSpaceController::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0)
 
 void TaskSpaceController::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma) {
   if(this->constrainedTaskLaws.N > 0) {
-    CHECK(this->constrainedTaskLaws.N == 1, "Multiple force laws not allowed at the moment");
+    CHECK_EQ(this->constrainedTaskLaws.N ,  1, "Multiple force laws not allowed at the moment");
     for(ConstrainedTaskLaw* law : this->constrainedTaskLaws) {
       TM_Default *m = dynamic_cast<TM_Default*>(law->map);
       rai::Body* body = this->world->shapes(m->i)->body;
@@ -334,9 +334,9 @@ void TaskSpaceController::generateTaskSpaceTrajectoryFromJointSpace(const arr& j
 
 void TaskSpaceController::generateTaskSpaceSplines() {
   for(LinTaskSpaceAccLaw* law : this->taskSpaceAccLaws) {
-    CHECK(law->trajectory.d0 >= 3, "The trajectory must consists of at least 3 states for the spline to work");
-    CHECK(law->trajectoryDot.d0 >= 3, "The trajectoryDot must consists of at least 3 states for the spline to work");
-    CHECK(law->trajectoryDDot.d0 >= 3, "The trajectoryDDot must consists of at least 3 states for the spline to work");
+    CHECK_GE(law->trajectory.d0 ,  3, "The trajectory must consists of at least 3 states for the spline to work");
+    CHECK_GE(law->trajectoryDot.d0 ,  3, "The trajectoryDot must consists of at least 3 states for the spline to work");
+    CHECK_GE(law->trajectoryDDot.d0 ,  3, "The trajectoryDDot must consists of at least 3 states for the spline to work");
     //law->setSpline(new rai::Spline(law->trajectory.d0, law->trajectory), new rai::Spline(law->trajectory.d0, law->trajectoryDot));
     //law->setSpline(new rai::Spline(law->trajectory.d0, law->trajectory));
     law->setSpline(new rai::Spline(law->trajectory.d0, law->trajectory), new rai::Spline(law->trajectoryDot.d0, law->trajectoryDot), new rai::Spline(law->trajectoryDDot.d0, law->trajectoryDDot));

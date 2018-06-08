@@ -57,7 +57,7 @@ void TM_StaticStability::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
   
 #if 1
   CHECK(a->shape, "");
-  CHECK(a->shape->type()==rai::ST_ssBox, "the supporting shape needs to be a box");
+  CHECK_EQ(a->shape->type(), rai::ST_ssBox, "the supporting shape needs to be a box");
   arr range = { .5*a->shape->size(0)-margin, .5*a->shape->size(1)-margin };
   arr pos=y, posJ=J;
   

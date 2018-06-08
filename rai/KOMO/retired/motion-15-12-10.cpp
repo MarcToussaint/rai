@@ -16,7 +16,7 @@
 //===========================================================================
 
 void TaskMap::phi(arr& y, arr& J, const WorldL& G, double tau, int t) {
-  CHECK(G.N>=order+1,"I need at least " <<order+1 <<" configurations to evaluate");
+  CHECK_GE(G.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
   if(k==0) { // basic case: order=0
     arr J_bar;
@@ -58,7 +58,7 @@ void Task::setCostSpecs(uint fromTime,
                         const arr& _target,
                         double _prec) {
   if(&_target) target = _target; else target = {0.};
-  CHECK(toTime>=fromTime,"");
+  CHECK_GE(toTime, fromTime,"");
   prec.resize(toTime+1).setZero();
   for(uint t=fromTime; t<=toTime; t++) prec(t) = _prec;
 }
@@ -374,7 +374,7 @@ void KOMO::setConfigurationStates() {
     configurations.append(new rai::KinematicWorld())->copy(world, true);
     for(uint t=1; t<=k_order+T; t++) {
       configurations.append(new rai::KinematicWorld())->copy(*configurations(t-1), true);
-      CHECK(configurations(t)==configurations.last(), "");
+      CHECK_EQ(configurations(t), configurations.last(), "");
       //apply potential graph switches
       for(rai::KinematicSwitch *sw:switches) {
         if(sw->timeOfApplication==t-k_order) {
@@ -546,7 +546,7 @@ void KOMO::reportFeatures(bool brief) {
 void KOMO::costReport(bool gnuplt) {
   cout <<"*** KOMO -- CostReport" <<endl;
   if(phiMatrix.N!=T+1) {
-    CHECK(phiMatrix.N==0,"");
+    CHECK_EQ(phiMatrix.N, 0,"");
     phiMatrix.resize(T+1);
   }
   
@@ -561,7 +561,7 @@ void KOMO::costReport(bool gnuplt) {
     for(uint i=0; i<tasks.N; i++) {
       Task *c = tasks(i);
       uint d=c->dim_phi(world, t);
-      if(ttMatrix.N) for(uint i=0; i<d; i++) CHECK(ttMatrix(t)(m+i)==c->map.type,"");
+      if(ttMatrix.N) for(uint i=0; i<d; i++) CHECK_EQ(ttMatrix(t)(m+i), c->map.type,"");
       if(d) {
         if(c->map.type==OT_sos) {
           taskC(i) += a = sumOfSqr(phiMatrix(t).sub(m,m+d-1));
@@ -643,7 +643,7 @@ void KOMO::costReport(bool gnuplt) {
 
 Graph KOMO::getReport() {
   if(phiMatrix.N!=T+1) {
-    CHECK(phiMatrix.N==0,"");
+    CHECK_EQ(phiMatrix.N, 0,"");
     phiMatrix.resize(T+1);
   }
   
@@ -655,7 +655,7 @@ Graph KOMO::getReport() {
     for(uint i=0; i<tasks.N; i++) {
       Task *c = tasks(i);
       uint d=c->dim_phi(world, t);
-      for(uint i=0; i<d; i++) CHECK(ttMatrix(t)(m+i)==c->map.type,"");
+      for(uint i=0; i<d; i++) CHECK_EQ(ttMatrix(t)(m+i), c->map.type,"");
       if(d) {
         if(c->map.type==OT_sos) taskC(i) += sumOfSqr(phiMatrix(t).sub(m,m+d-1));
         if(c->map.type==OT_ineq) {
@@ -735,7 +735,7 @@ void MotionProblemFunction::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, 
   //assert some dimensions
   CHECK_EQ(x_bar.d0,k+1,"");
   CHECK_EQ(x_bar.d1,n,"");
-  CHECK(t<=T,"");
+  CHECK_LE(t, T,"");
   
 #define NEWCODE
 #ifdef NEWCODE

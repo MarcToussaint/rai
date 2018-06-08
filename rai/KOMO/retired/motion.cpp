@@ -26,7 +26,7 @@ void KOMO::costReport(bool gnuplt) {
       if(!c->isActive(t)) continue;
       uint d=c->map.dim_phi(configurations({t,t+k_order}), t);
       
-      if(tt.N) for(uint i=0; i<d; i++) CHECK(tt(M+i)==c->type,"");
+      if(tt.N) for(uint i=0; i<d; i++) CHECK_EQ(tt(M+i), c->type,"");
       
       if(d) {
         if(c->type==OT_sos) {

@@ -202,7 +202,7 @@ void testMonteCarlo(){
             Node *effect = rule->graph().last();
             NodeL vars = getSymbolsOfScope(rule->graph());
             NodeL subs(vars.N); subs.setZero();
-            CHECK(vars.N==act->parents.N-1,"");
+            CHECK_EQ(vars.N, act->parents.N-1,"");
             for(uint i=0;i<vars.N;i++) subs(i) = act->parents(i+1);
 
             if(verbose>2){ cout <<"*** applying" <<*effect <<" SUBS"; listWrite(subs, cout); cout <<endl; }

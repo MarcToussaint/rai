@@ -379,7 +379,7 @@ struct Var {
   /// A "copy" of acc: An access to the same variable as acc refers to, but now for '_thred'
   Var(Thread* _thread, VariableBase& var, bool threadListens=false)
     : data(NULL), name(var.name), thread(_thread), last_read_revision(0), registryNode(NULL) {
-    CHECK(var.type == typeid(T), "types don't match!");
+    CHECK_EQ(var.type ,  typeid(T), "types don't match!");
     data = shared_ptr<VariableData<T>>(dynamic_cast<VariableData<T>*>(&var));
     if(thread) {
       registryNode = registry()->newNode<Var<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);

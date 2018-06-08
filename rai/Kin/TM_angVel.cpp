@@ -10,7 +10,7 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
 
     y = y1 - y0;
     if(&J){
-      CHECK(Ktuple.N==3,"");
+      CHECK_EQ(Ktuple.N, 3,"");
       uint d0=Ktuple(-3)->q.N;
       uint d1=Ktuple(-2)->q.N;
       uint d2=Ktuple(-1)->q.N;
@@ -25,7 +25,7 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
     return;
   }
 
-  CHECK(order==1,"");
+  CHECK_EQ(order, 1,"");
 
 //  double tau = Ktuple(-1)->frames(0)->time; //- Ktuple(-2)->frames(0)->time;
   rai::Frame *a0 = Ktuple(-2)->frames(i);

@@ -888,7 +888,7 @@ rai::String::operator const char*() const { return p; }
 /// returns the i-th char
 char& rai::String::operator()(int i) const {
   if(i<0) i+=N;
-  CHECK((uint)i<=N, "String range error (" <<i <<"<=" <<N <<")");
+  CHECK_LE((uint)i, N, "String range error (" <<i <<"<=" <<N <<")");
   return p[i];
 }
 
@@ -898,7 +898,7 @@ rai::String rai::String::getSubString(int start, int end) const {
   if(end<0) end+=N;
   CHECK_GE(start, 0, "start < 0");
   CHECK_LE(end, (int)N, "end out of range");
-  CHECK(start <= end, "end before start");
+  CHECK_LE(start ,  end, "end before start");
   String tmp;
   tmp.set(p+start, 1+end-start);
 //  for(int i = start; i < end; i++) tmp.append((*this)(i));
@@ -1249,12 +1249,12 @@ bool Inotify::poll(bool block, bool verbose) {
   if(!block) {
     struct pollfd fd_poll = {fd, POLLIN, 0};
     int r = ::poll(&fd_poll, 1, 0);
-    CHECK(r>=0,"poll failed");
+    CHECK_GE(r, 0,"poll failed");
     if(!r) return false;
   }
   
   int length = read(fd, buffer, buffer_size);
-  CHECK(length>=0, "read failed");
+  CHECK_GE(length, 0, "read failed");
   
   //-- process event list
   for(int i=0; i<length;) {

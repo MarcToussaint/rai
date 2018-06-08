@@ -170,7 +170,7 @@ bool MotionProfile_PD::isConverged(double _tolerance) {
 //===========================================================================
 
 MotionProfile_Path::MotionProfile_Path(const arr& path, double executionTime) : executionTime(executionTime), phase(0.) {
-  CHECK(path.nd==2,"need a properly shaped path!");
+  CHECK_EQ(path.nd, 2,"need a properly shaped path!");
   spline.points = path;
   spline.setUniformNonperiodicBasis();
 }
@@ -258,8 +258,8 @@ void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_f
   //-- get necessary Jacobians
   TM_Default *m = dynamic_cast<TM_Default*>(map);
   CHECK(m,"this only works for the default position task map");
-  CHECK(m->type==TMT_pos,"this only works for the default positioni task map");
-  CHECK(m->i>=0,"this only works for the default position task map");
+  CHECK_EQ(m->type, TMT_pos,"this only works for the default positioni task map");
+  CHECK_GE(m->i, 0,"this only works for the default position task map");
   rai::Frame *body = world.frames(m->i);
   rai::Frame* l_ft_sensor = world.getFrameByName("l_ft_sensor");
   arr J_ft, J;
@@ -708,7 +708,7 @@ void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, d
       gamma = task->f_gamma;
     }
     
-  CHECK(nForceTasks<=1, "Multiple force laws not allowed at the moment");
+  CHECK_LE(nForceTasks, 1, "Multiple force laws not allowed at the moment");
   if(!nForceTasks) {
     K_ft = zeros(world.getJointStateDimension());
     fRef = ARR(0.0);

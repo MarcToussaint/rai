@@ -921,14 +921,14 @@ double triArea(const arr& a, const arr& b, const arr& c) {
 }
 
 double rai::Mesh::getArea() const {
-  CHECK(T.d1==3,"");
+  CHECK_EQ(T.d1, 3,"");
   double A=0.;
   for(uint i=0; i<T.d0; i++) A += getArea(i);
   return .5*A;
 }
 
 double rai::Mesh::getArea(uint i) const {
-  CHECK(T.d1==3,"");
+  CHECK_EQ(T.d1, 3,"");
   rai::Vector a,b,c;
   a.set(V.p+3*T.p[3*i+0]);
   b.set(V.p+3*T.p[3*i+1]);
@@ -937,7 +937,7 @@ double rai::Mesh::getArea(uint i) const {
 }
 
 double rai::Mesh::getVolume() const {
-  CHECK(T.d1==3,"");
+  CHECK_EQ(T.d1, 3,"");
   rai::Vector z = getMean();
   rai::Vector a,b,c;
   double vol=0.;
@@ -974,7 +974,7 @@ double rai::Mesh::meshMetric(const rai::Mesh& trueMesh, const rai::Mesh& estimat
 
 double rai::Mesh::getCircum() const {
   if(!T.N) return 0.;
-  CHECK(T.d1==2,"");
+  CHECK_EQ(T.d1, 2,"");
   double A=0.;
   for(uint i=0; i<T.d0; i++) A += length(V[T(i,0)] - V[T(i,1)]);
   return A;
@@ -982,7 +982,7 @@ double rai::Mesh::getCircum() const {
 
 double rai::Mesh::getCircum(uint i) const {
   if(!T.N) return 0.;
-  CHECK(T.d1==3,"");
+  CHECK_EQ(T.d1, 3,"");
   double A=0.;
   A += length(V[T(i,0)] - V[T(i,1)]);
   A += length(V[T(i,1)] - V[T(i,2)]);

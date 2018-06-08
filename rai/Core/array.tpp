@@ -333,7 +333,7 @@ template<class T> void rai::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
   //determine a new M (number of allocated items)
   if(Mforce>=0) { //forced size
     Mnew = Mforce;
-    CHECK(n<=Mnew,"Mforce is smaller than required!");
+    CHECK_LE(n, Mnew,"Mforce is smaller than required!");
   } else { //automatic
     if(!ARRAY_flexiMem) {
       Mnew=n;
@@ -571,16 +571,16 @@ template<class T> void rai::Array<T>::insert(uint i, const Array<T>& x) {
   uint xN=x.N;
   if(!xN) return;
   if(!nd || !N) {
-    CHECK(i==0,"");
+    CHECK_EQ(i, 0,"");
     *this = x;
   } else if(nd==1) {
-    CHECK(i<=N,"");
+    CHECK_LE(i, N,"");
     uint oldN=N;
     resizeCopy(N+xN);
     if(i<oldN) memmove(p+i+xN, p+i, sizeT*(oldN-i));
     memmove(p+i, x.p, sizeT*xN);
   } else if(nd==2) {
-    CHECK(i<=d0,"");
+    CHECK_LE(i, d0,"");
     uint oldN=d0;
     if(x.nd==1 && d1==x.d0) resizeCopy(d0+1, d1);
     else if(x.nd==2 && d1==x.d1) resizeCopy(d0+x.d0, d1);
@@ -657,7 +657,7 @@ template<class T> void rai::Array<T>::replace(uint i, uint n, const rai::Array<T
 template<class T> void rai::Array<T>::delRows(uint i, uint k) {
   CHECK(memMove, "only with memMove");
   CHECK_EQ(nd,2, "only for matricies");
-  CHECK(i+k<=d0, "range check error");
+  CHECK_LE(i+k, d0, "range check error");
   uint n=d1;
   if(i+k<d0) memmove(p+i*n, p+(i+k)*n, sizeT*(d0-i-k)*n);
   resizeCopy(d0-k, n);
@@ -681,7 +681,7 @@ template<class T> void rai::Array<T>::delColumns(int i, uint k) {
   CHECK_EQ(nd, 2, "only for matricies");
   if(!k) return;
   if(i<0) i+=d1;
-  CHECK(i+k<=d1, "range check error");
+  CHECK_LE(i+k, d1, "range check error");
   uint n=d1;
   for(uint j=0; j<d0; j++) {
     memmove(p+j*(n-k)  , p+j*n      , sizeT*i);
@@ -696,7 +696,7 @@ template<class T> void rai::Array<T>::insColumns(int i, uint k) {
   CHECK_EQ(nd,2, "only for matricies");
   if(!k) return;
   if(i<0) i+=d1;
-  CHECK(i<=(int)d1, "range check error");
+  CHECK_LE(i, (int)d1, "range check error");
   uint n=d1;
   resizeCopy(d0, n+k);
   for(uint j=d0; j--;) {
@@ -792,7 +792,7 @@ template<class T> T& rai::Array<T>::first() const {
 
 /// reference to the last element
 template<class T> T& rai::Array<T>::last(int i) const {
-  CHECK((int)N+i>=0, "can't take last ("<<i<<") from " <<N <<" elements");
+  CHECK_GE((int)N+i, 0, "can't take last ("<<i<<") from " <<N <<" elements");
   return p[N+i];
 }
 
@@ -922,8 +922,8 @@ template<class T> void rai::Array<T>::minmax(T& minVal, T& maxVal) const {
 template<class T> T minA(const rai::Array<T>& v, uint & ind, uint start, uint end){
   CHECK(v.N>0, "");
   CHECK(v.N>start, "");
-  CHECK(v.N>=end, "");
-  CHECK(end>=start, "");
+  CHECK_GE(v.N, end, "");
+  CHECK_GE(end, start, "");
   T t(v(start));
   ind=start;
   if(end==0) end=v.N;
@@ -938,8 +938,8 @@ template<class T> T minA(const rai::Array<T>& v, uint & ind, uint start, uint en
 template<class T> T maxA(const rai::Array<T>& v, uint & ind, uint start, uint end){
   CHECK(v.N>0, "");
   CHECK(v.N>start, "");
-  CHECK(v.N>=end, "");
-  CHECK(end>=start, "");
+  CHECK_GE(v.N, end, "");
+  CHECK_GE(end, start, "");
   T t(v(start));
   ind=start;
   if(end==0){
@@ -1150,7 +1150,7 @@ rai::Array<T> rai::Array<T>::cols(uint start_col, uint end_col) const {
 #if 0
 /// allocates, sets and returns the \c Array::pp pointer (of type \c T**)
 template<class T> T** rai::Array<T>::getCarray() const {
-  CHECK(nd>=2, "only 2D or higher-D arrays gives C-array of type T**");
+  CHECK_GE(nd, 2, "only 2D or higher-D arrays gives C-array of type T**");
   HALT("I think this is buggy");
   if(special==hasCarrayST) return (T**) special;
   T** pp;
@@ -1233,7 +1233,7 @@ template<class T> rai::Array<T>& rai::Array<T>::operator=(const rai::Array<T>& a
   else for(i=0; i<N; i++) p[i]=a.p[i];
   if(special) { delete special; special=NULL; }
   if(isRowShifted(a)) {
-    CHECK(typeid(T)==typeid(double),"");
+    CHECK(typeid(T) == typeid(double),"");
     special = new RowShifted(*((arr*)this),*((RowShifted*)a.special));
     return *this;
   }
@@ -1450,7 +1450,7 @@ template<class T> void rai::Array<T>::referTo(const rai::Array<T>& a) {
 
 /// make this array a subarray reference to \c a
 template<class T> void rai::Array<T>::referToRange(const rai::Array<T>& a, int i, int I) {
-  CHECK(a.nd<=3, "not implemented yet");
+  CHECK_LE(a.nd, 3, "not implemented yet");
   freeMEM();
   resetD();
   reference=true; memMove=a.memMove;
@@ -1478,7 +1478,7 @@ template<class T> void rai::Array<T>::referToRange(const rai::Array<T>& a, int i
 /// make this array a subarray reference to \c a
 template<class T> void rai::Array<T>::referToRange(const Array<T>& a, int i, int j, int J) {
   CHECK(a.nd>1, "does not make sense");
-  CHECK(a.nd<=3, "not implemented yet");
+  CHECK_LE(a.nd, 3, "not implemented yet");
   freeMEM();
   resetD();
   reference=true; memMove=a.memMove;
@@ -1504,7 +1504,7 @@ template<class T> void rai::Array<T>::referToRange(const Array<T>& a, int i, int
 /// make this array a subarray reference to \c a
 template<class T> void rai::Array<T>::referToRange(const Array<T>& a, int i, int j, int k, int K) {
   CHECK(a.nd>2, "does not make sense");
-  CHECK(a.nd<=3, "not implemented yet");
+  CHECK_LE(a.nd, 3, "not implemented yet");
   freeMEM();
   resetD();
   reference=true; memMove=a.memMove;
@@ -1729,28 +1729,28 @@ template<class T> void rai::Array<T>::permute(uint i, uint j) { T x=p[i]; p[i]=p
 
 /// permute the entries according to the given permutation
 template<class T> void rai::Array<T>::permute(const rai::Array<uint>& permutation) {
-  CHECK(permutation.N<=N, "array smaller than permutation (" <<N <<"<" <<permutation.N <<")");
+  CHECK_LE(permutation.N, N, "array smaller than permutation (" <<N <<"<" <<permutation.N <<")");
   rai::Array<T> b=(*this);
   for(uint i=0; i<N; i++) elem(i)=b.elem(permutation(i));
 }
 
 /// permute the rows (operator[]) according to the given permutation
 template<class T> void rai::Array<T>::permuteRows(const rai::Array<uint>& permutation) {
-  CHECK(permutation.N<=d0, "array smaller than permutation ("<<N<<"<"<<permutation.N<<")");
+  CHECK_LE(permutation.N, d0, "array smaller than permutation ("<<N<<"<"<<permutation.N<<")");
   rai::Array<T> b=(*this);
   for(uint i=0; i<d0; i++) operator[](i)()=b[permutation(i)];
 }
 
 /// apply the given 'permutation' on 'this'
 template<class T> void rai::Array<T>::permuteInv(const rai::Array<uint>& permutation) {
-  CHECK(permutation.N<=N, "array smaller than permutation (" <<N <<"<" <<permutation.N <<")");
+  CHECK_LE(permutation.N, N, "array smaller than permutation (" <<N <<"<" <<permutation.N <<")");
   rai::Array<T> b=(*this);
   for(uint i=0; i<N; i++) elem(permutation(i))=b.elem(i);
 }
 
 /// permute the rows (operator[]) according to the given permutation
 template<class T> void rai::Array<T>::permuteRowsInv(const rai::Array<uint>& permutation) {
-  CHECK(permutation.N<=d0, "array smaller than permutation ("<<N<<"<"<<permutation.N<<")");
+  CHECK_LE(permutation.N, d0, "array smaller than permutation ("<<N<<"<"<<permutation.N<<")");
   rai::Array<T> b=(*this);
   for(uint i=0; i<d0; i++) operator[](permutation(i))()=b[i];
 }
@@ -2003,7 +2003,7 @@ template<class T> const char* rai::Array<T>::prt() {
 /// x = y^T
 template<class T> void transpose(rai::Array<T>& x, const rai::Array<T>& y) {
   CHECK(&x!=&y,"can't transpose matrix into itself");
-  CHECK(y.nd<=3, "can only transpose up to 3D arrays");
+  CHECK_LE(y.nd, 3, "can only transpose up to 3D arrays");
   if(y.nd==3) {
     uint i, j, k, d0=y.d2, d1=y.d1, d2=y.d0;
     x.resize(d0, d1, d2);
@@ -3104,7 +3104,7 @@ inline void getMultiDimIncrement(const uintA& Xdim, const uintA &Yid, uint* Ydim
   from X, where Y will share the slots `Yid' with X */
 template<class T> void tensorMarginal(rai::Array<T> &Y, const rai::Array<T> &X, const uintA &Yid) {
   uint Xcount, Ycount;
-  CHECK(Yid.N<=X.nd, "can't take slots " <<Yid <<" from " <<X.nd <<"D tensor");
+  CHECK_LE(Yid.N, X.nd, "can't take slots " <<Yid <<" from " <<X.nd <<"D tensor");
   
   //handle scalar case
   if(!Yid.N) {  Y.resize(1);  Y.nd=0;  Y.scalar()=sum(X);  return;  }
@@ -3157,7 +3157,7 @@ template<class T> void tensorPermutation(rai::Array<T> &Y, const rai::Array<T> &
   from X, where Y will share the slots `Yid' with X (basis of max-product BP) */
 template<class T> void tensorMaxMarginal(rai::Array<T> &Y, const rai::Array<T> &X, const uintA &Yid) {
   uint Xcount, Ycount;
-  CHECK(Yid.N<=X.nd, "can't take slots " <<Yid <<" from " <<X.nd <<"D tensor");
+  CHECK_LE(Yid.N, X.nd, "can't take slots " <<Yid <<" from " <<X.nd <<"D tensor");
   
   //initialize looping
   uint I[maxRank];     memset(I, 0, sizeof(uint)*maxRank);  //index on X
@@ -3179,7 +3179,7 @@ template<class T> void tensorMaxMarginal(rai::Array<T> &Y, const rai::Array<T> &
 template<class T> void tensorAdd_old(rai::Array<T> &X, const rai::Array<T> &Y, const uintA &Yid) {
   uint Xcount, Ycount;
   CHECK_EQ(Yid.N,Y.nd, "need to specify " <<Y.nd <<" slots, not " <<Yid.N);
-  CHECK(Yid.N<=X.nd, "can't take slots " <<Yid <<" from " <<X.nd <<"D tensor");
+  CHECK_LE(Yid.N, X.nd, "can't take slots " <<Yid <<" from " <<X.nd <<"D tensor");
   
   //handle scalar case
   if(!Yid.N) { CHECK_EQ(Y.N,1, "");  X+=Y.scalar();  return; }  //Y is only a scalar
@@ -3224,7 +3224,7 @@ template<class T> void tensorMarginal_old(rai::Array<T> &y, const rai::Array<T> 
 template<class T> void tensorMultiply(rai::Array<T> &X, const rai::Array<T> &Y, const uintA &Yid) {
   uint Xcount, Ycount;
   CHECK_EQ(Yid.N,Y.nd, "need to specify " <<Y.nd <<" slots, not " <<Yid.N);
-  CHECK(Yid.N<=X.nd, "can't take slots " <<Yid <<" from " <<X.nd <<"D tensor");
+  CHECK_LE(Yid.N, X.nd, "can't take slots " <<Yid <<" from " <<X.nd <<"D tensor");
   
   //handle scalar case
   if(!Yid.N) { CHECK_EQ(Y.N,1, "");  X*=Y.scalar();  return; }  //Y is only a scalar
@@ -3247,7 +3247,7 @@ template<class T> void tensorMultiply(rai::Array<T> &X, const rai::Array<T> &Y, 
 template<class T> void tensorDivide(rai::Array<T> &X, const rai::Array<T> &Y, const uintA &Yid) {
   uint Xcount, Ycount;
   CHECK_EQ(Yid.N,Y.nd, "need to specify " <<Y.nd <<" slots, not " <<Yid.N);
-  CHECK(Yid.N<=X.nd, "can't take slots " <<Yid <<" from " <<X.nd <<"D tensor");
+  CHECK_LE(Yid.N, X.nd, "can't take slots " <<Yid <<" from " <<X.nd <<"D tensor");
   
   //handle scalar case
   if(!Yid.N) { CHECK_EQ(Y.N,1, "");  X/=Y.scalar();  return; }  //Y is only a scalar
@@ -3268,7 +3268,7 @@ template<class T> void tensorDivide(rai::Array<T> &X, const rai::Array<T> &Y, co
 template<class T> void tensorAdd(rai::Array<T> &X, const rai::Array<T> &Y, const uintA &Yid) {
   uint Xcount, Ycount;
   CHECK_EQ(Yid.N,Y.nd, "need to specify " <<Y.nd <<" slots, not " <<Yid.N);
-  CHECK(Yid.N<=X.nd, "can't take slots " <<Yid <<" from " <<X.nd <<"D tensor");
+  CHECK_LE(Yid.N, X.nd, "can't take slots " <<Yid <<" from " <<X.nd <<"D tensor");
   
   //handle scalar case
   if(!Yid.N) { CHECK_EQ(Y.N,1, "");  X+=Y.scalar();  return; }  //Y is only a scalar
@@ -3857,7 +3857,7 @@ template<class vert, class edge> void graphRandomLinear(rai::Array<vert*>& V, ra
 template<class vert, class edge> void graphRandomTree(rai::Array<vert*>& V, rai::Array<edge*>& E, uint N, uint roots) {
   uint i;
   for(i=0; i<N; i++) V.append(new vert);
-  CHECK(roots>=1, "");
+  CHECK_GE(roots, 1, "");
   for(i=roots; i<N; i++)  newEdge(rnd(i), i, E);
 }
 
@@ -3968,7 +3968,7 @@ template<class vert, class edge> void graphRandomFixedDegree(rai::Array<vert*>& 
       }
       ready = true;
       for(uint n=0; n<N; n++) {
-        CHECK(degrees(n)<=d, "");
+        CHECK_LE(degrees(n), d, "");
         if(degrees(n)!=d) {
           ready = false;
           break;

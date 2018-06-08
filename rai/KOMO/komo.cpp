@@ -129,7 +129,7 @@ void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhas
 
 void KOMO::setPairedTimes() {
   NIY;
-  CHECK(k_order==1, "NIY");
+  CHECK_EQ(k_order, 1, "NIY");
   for(uint s=0; s<k_order+T-1; s+=2) {
     configurations(s)  ->setTimes(0.02*tau); //(tau*(int(s)-int(k_order)));
     configurations(s+1)->setTimes(1.98*tau); //(tau*(.98+int(s+1)-int(k_order)));
@@ -259,7 +259,7 @@ void KOMO::setHoming(double startTime, double endTime, double prec, const char* 
 }
 
 void KOMO::setSquaredQAccelerations(double startTime, double endTime, double prec) {
-  CHECK(k_order>=2,"");
+  CHECK_GE(k_order, 2,"");
   setTask(startTime, endTime, new TM_Transition(world), OT_sos, NoArr, prec, 2);
 }
 
@@ -694,7 +694,7 @@ void KOMO::setFine_grasp(double time, const char* endeff, const char* object, do
 
 /// translate a list of facts (typically facts in a FOL state) to LGP tasks
 void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose) {
-//  CHECK(phase<=maxPhase,"");
+//  CHECK_LE(phase, maxPhase,"");
 //  listWrite(facts, cout,"\n");  cout <<endl;
   for(Node *n:facts) {
     if(!n->parents.N) continue;
@@ -1349,7 +1349,7 @@ void KOMO::setupConfigurations() {
     configurations.append(new KinematicWorld())->copy(*configurations(s-1), true);
     configurations(s)->setTimes(tau); //(tau*(int(s)-int(k_order)));
     configurations(s)->checkConsistency();
-    CHECK(configurations(s)==configurations.last(), "");
+    CHECK_EQ(configurations(s), configurations.last(), "");
     //apply potential graph switches
     for(KinematicSwitch *sw:switches) {
       if(sw->timeOfApplication+k_order==s) {
@@ -1546,7 +1546,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
         uint d=0;
         if(wasRun) {
           d=task->map->dim_phi(configurations({t,t+k_order}));
-          for(uint j=0; j<d; j++) CHECK(tt(M+j)==task->type,"");
+          for(uint j=0; j<d; j++) CHECK_EQ(tt(M+j), task->type,"");
           if(d) {
             if(task->type==OT_sos) {
               for(uint j=0; j<d; j++) err(t,i) += sqr(phi(M+j)); //sumOfSqr(phi.sub(M,M+d-1));
@@ -1651,7 +1651,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
     for(uint i=0; i<komo.tasks.N; i++) {
       Task *task = komo.tasks.elem(i);
       if(task->prec.N>t && task->prec(t)) {
-        //      CHECK(task->prec.N<=MP.T,"");
+        //      CHECK_LE(task->prec.N, MP.T,"");
         uint m = task->map->dim_phi(komo.configurations({t,t+komo.k_order})); //dimensionality of this task
         
         if(&featureTimes) featureTimes.append(t, m); //consts<uint>(t, m));

@@ -372,7 +372,7 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
     Q = ~Q;
   }
   
-  CHECK(Q.d1 == world.getJointStateDimension(), "Wrong Q dimension")
+  CHECK_EQ(Q.d1 ,  world.getJointStateDimension(), "Wrong Q dimension")
   
   if(robotPart == leftArm) {
     arr X = Q*~TLeftArm;
@@ -632,7 +632,7 @@ void GravityCompensation::loadBetas() {
 arr GravityCompensation::compensate(arr q, bool compensateLeftArm, bool compensateRightArm, bool compensateHead) {
 
   CHECK(modelLearned, "You have to learn the model first!")
-  CHECK(q.N == world.getJointStateDimension(), "wrong joint state dimension!")
+  CHECK_EQ(q.N ,  world.getJointStateDimension(), "wrong joint state dimension!")
   
   arr u = zeros(world.getJointStateDimension());
   if(compensateLeftArm) {
@@ -652,7 +652,7 @@ arr GravityCompensation::compensate(arr q, bool compensateLeftArm, bool compensa
 
 arr GravityCompensation::compensate(arr q, StringA joints) {
   CHECK(modelLearned, "You have to learn the model first!")
-  CHECK(q.N == world.getJointStateDimension(), "wrong joint state dimension!")
+  CHECK_EQ(q.N ,  world.getJointStateDimension(), "wrong joint state dimension!")
   
   arr uTemp = zeros(world.getJointStateDimension());
   uTemp += features(q, leftArm)*betaLeftArm*TLeftArm;

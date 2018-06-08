@@ -167,8 +167,8 @@ void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_f
   //-- get necessary Jacobians
   TM_Default *m = dynamic_cast<TM_Default*>(&map);
   CHECK(m,"this only works for the default position task map");
-  CHECK(m->type==TMT_pos,"this only works for the default positioni task map");
-  CHECK(m->i>=0,"this only works for the default position task map");
+  CHECK_EQ(m->type, TMT_pos,"this only works for the default positioni task map");
+  CHECK_GE(m->i, 0,"this only works for the default position task map");
   rai::Body *body = world.shapes(m->i)->body;
   rai::Vector vec = world.shapes(m->i)->rel*m->ivec;
   rai::Shape* l_ft_sensor = world.getShapeByName("l_ft_sensor");
@@ -214,7 +214,7 @@ void CtrlTask::reportState(ostream& os) {
 void ConstraintForceTask::updateConstraintControl(const arr& _g, const double& lambda_desired) {
   CHECK_EQ(_g.N,1, "can handle only 1D constraints so far");
   double g=_g(0);
-  CHECK(lambda_desired>=0., "lambda must be positive or zero");
+  CHECK_GE(lambda_desired, 0., "lambda must be positive or zero");
   
   if(g<0 && lambda_desired>0.) { //steer towards constraint
     desiredApproach.y_ref=ARR(.05); //set goal to overshoot!
@@ -500,7 +500,7 @@ void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, d
       gamma = law->f_gamma;
     }
     
-  CHECK(nForceTasks<=1, "Multiple force laws not allowed at the moment");
+  CHECK_LE(nForceTasks, 1, "Multiple force laws not allowed at the moment");
   if(!nForceTasks) {
     K_ft = zeros(world.getJointStateDimension());
     fRef = ARR(0.0);

@@ -19,7 +19,7 @@ namespace rai {
 Spline::Spline(uint degree) : degree(degree) {}
 
 Spline::Spline(uint T, const arr& X, uint degree) : points(X) {
-  CHECK(points.nd==2,"");
+  CHECK_EQ(points.nd, 2,"");
   setUniformNonperiodicBasis(T, points.d0, degree);
 }
 
@@ -188,7 +188,7 @@ arr Spline::eval(uint t) const { return (~basis[t]*points).reshape(points.d1); }
 arr Spline::eval() const { return basis*points; }
 
 arr Spline::smooth(double lambda) const {
-  CHECK(lambda >= 0, "Lambda must be non-negative");
+  CHECK_GE(lambda ,  0, "Lambda must be non-negative");
   uint T = basis.d0 - 1;
   uint K = basis.d1 - 1;
   arr ddbasis(T+1, K+1);
@@ -200,7 +200,7 @@ arr Spline::smooth(double lambda) const {
 }
 
 void Spline::partial(arr& grad_points, const arr& grad_path) const {
-  CHECK(grad_path.d1==points.d1, "");
+  CHECK_EQ(grad_path.d1, points.d1, "");
   grad_points = basis_trans * grad_path;
 }
 

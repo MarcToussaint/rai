@@ -486,7 +486,7 @@ void LinearStatistics::write(std::ostream& os) const {
 
 /// initializes to ``k out of n''
 void TupleIndex::init(uint k, uint n) {
-  CHECK(k<=n, "TupleIndex: can't choose " <<k <<" out of " <<n);
+  CHECK_LE(k, n, "TupleIndex: can't choose " <<k <<" out of " <<n);
   uint i, j;
   tri.resize(n+1, k+1); tri=0;
   for(i=0; i<=n; i++) for(j=0; j<=i && j<=k; j++) {

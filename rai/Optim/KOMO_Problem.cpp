@@ -91,7 +91,7 @@ void Conv_KOMO_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA&
     //loop over features
     for(uint i=0; i<phi.N; i++) {
       arr& Ji = J_KOMO(i);
-      CHECK(Ji.N<=J.d1,"");
+      CHECK_LE(Ji.N, J.d1,"");
       //        J({i, 0, J_KOMO(i}).N-1) = J_KOMO(i);
       memmove(&J(i,0), Ji.p, Ji.sizeT*Ji.N);
       uint t=featureTimes(i);
