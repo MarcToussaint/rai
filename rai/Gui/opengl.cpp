@@ -656,13 +656,13 @@ void glDrawCamera(const rai::Camera &cam) {
     dxNear = cam.whRatio * dyNear;
     dxFar = cam.whRatio * dyFar;
   }
-  if(cam.heightAngle) {
-//    zFar = zNear + .1*(zFar-zNear);
-    dyNear = zNear * ::sin(.5*cam.heightAngle/180.*RAI_PI);
-    dyFar = zFar * ::sin(.5*cam.heightAngle/180.*RAI_PI);
-    dxNear = cam.whRatio * dyNear;
-    dxFar = cam.whRatio * dyFar;
-  }
+//  if(cam.heightAngle) {
+////    zFar = zNear + .1*(zFar-zNear);
+//    dyNear = zNear * ::sin(.5*cam.heightAngle/180.*RAI_PI);
+//    dyFar = zFar * ::sin(.5*cam.heightAngle/180.*RAI_PI);
+//    dxNear = cam.whRatio * dyNear;
+//    dxFar = cam.whRatio * dyFar;
+//  }
   if(cam.heightAbs) {
     dyFar = dyNear = cam.heightAbs/2.;
     dxFar = dxNear = cam.whRatio * dyNear;
