@@ -27,7 +27,7 @@ void MCTS::addRollout(int stepAbort) {
 #if 1
     //DEBUG whether decision set is correct
     auto A = world.get_actions();
-    CHECK(n->children.N==A.size(),"");
+    CHECK_EQ(n->children.N, A.size(),"");
 //    for(auto &a:A) cout <<*a <<endl;
 //    cout <<endl;
 //    for(auto &ch:n->children) cout <<*ch->decision <<endl;

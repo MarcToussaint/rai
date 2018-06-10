@@ -15,9 +15,14 @@
 void Task::setCostSpecs(int fromStep, int toStep, const arr& _target, double _prec) {
   if(&_target) target = _target; else target.clear();
   if(fromStep<0) fromStep=0;
-  CHECK(toStep>=fromStep,"");
+  CHECK_GE(toStep, fromStep,"");
   prec.resize(toStep+1).setZero();
   for(uint t=fromStep; t<=(uint)toStep; t++) prec(t) = _prec;
+#if 1
+  vars.resize(prec.N, map->order+1);
+  for(uint t=0;t<vars.d0;t++)
+    for(int i=0;i<(int)map->order+1;i++) vars(t,i) = t+i-(int)map->order;
+#endif
 }
 
 void Task::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T, const arr& _target, double _prec, int deltaStep) {
@@ -34,5 +39,13 @@ void Task::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint 
   
   setCostSpecs(tFrom, tTo, _target, _prec);
 }
+
+void Task::setCostSpecsDense(intA _vars, const arr& _target, double _prec) {
+  if(&_target) target = _target; else target.clear();
+  prec = ARR(_prec);
+  vars = _vars;
+  vars.reshape(1, vars.N);
+}
+
 
 //===========================================================================

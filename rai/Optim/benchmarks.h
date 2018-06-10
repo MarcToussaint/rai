@@ -44,7 +44,7 @@ struct RandomLPFunction : ConstrainedProblem {
   
   virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
     if(!randomG.N) generateG(x.N);
-    CHECK(randomG.d1==x.N+1,"you changed dimensionality!");
+    CHECK_EQ(randomG.d1, x.N+1,"you changed dimensionality!");
     
     phi.clear();
     if(&tt) tt.clear();
@@ -130,7 +130,7 @@ struct SimpleConstraintFunction : ConstrainedProblem {
   SimpleConstraintFunction() {
   }
   virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& _x) {
-    CHECK(_x.N==2,"");
+    CHECK_EQ(_x.N, 2,"");
     if(&tt) tt = { OT_sos, OT_sos, OT_ineq, OT_ineq };
     phi.resize(4);
     if(&J) { J.resize(4, 2); J.setZero(); }

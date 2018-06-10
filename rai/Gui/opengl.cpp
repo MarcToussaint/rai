@@ -57,7 +57,7 @@ private:
   
 public:
   OpenGLProcess() : numWins(0) {
-    CHECK(GLProcessCount==0,"");
+    CHECK_EQ(GLProcessCount, 0,"");
     GLProcessCount++;
     int argc=1;
     char *argv[1]= {(char*)"x"};
@@ -134,7 +134,7 @@ struct sOpenGL {
   static void _MouseWheel(int wheel, int dir, int x, int y) { singleFreeglut()->getGL(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
   
   void accessWindow() {  //same as above, but also sets gl cocntext (glXMakeCurrent)
-    CHECK(windowID>=0,"window is not created");
+    CHECK_GE(windowID, 0,"window is not created");
     glutSetWindow(windowID);
   }
   void deaccessWindow() {
@@ -656,13 +656,6 @@ void glDrawCamera(const rai::Camera &cam) {
     dxNear = cam.whRatio * dyNear;
     dxFar = cam.whRatio * dyFar;
   }
-//  if(cam.heightAngle) {
-////    zFar = zNear + .1*(zFar-zNear);
-//    dyNear = zNear * ::sin(.5*cam.heightAngle/180.*RAI_PI);
-//    dyFar = zFar * ::sin(.5*cam.heightAngle/180.*RAI_PI);
-//    dxNear = cam.whRatio * dyNear;
-//    dxFar = cam.whRatio * dyFar;
-//  }
   if(cam.heightAbs) {
     dyFar = dyNear = cam.heightAbs/2.;
     dxFar = dxNear = cam.whRatio * dyNear;
@@ -1585,7 +1578,7 @@ void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
   GLint s;
   glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &s);
   if(s!=1) RAI_MSG("OpenGL name stack has not depth 1 (pushs>pops) in DRAW mode:" <<s);
-  //CHECK(s<=1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
+  //CHECK_LE(s, 1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
   
   if(!callerHasAlreadyLocked) {
     dataLock.unlock(); //now de-accessing user data

@@ -181,7 +181,7 @@ void TEST(Basics){
   cout <<"\n sorting: sorted double array:\n" <<a <<endl;
   a.insertInSorted(.01,DoubleComp);
   cout <<"\n sorted insert: .01 added:\n" <<a <<endl;
-  for(uint i=0;i<a.N-1;i++) CHECK(a(i)<=a(i+1),"not sorted!");
+  for(uint i=0;i<a.N-1;i++) CHECK_LE(a(i), a(i+1),"not sorted!");
 
   //commuting I/O-operators:
   a.resize(3,7,2);

@@ -24,7 +24,7 @@ void Task::setCostSpecs(int fromTime,
                         double _prec) {
   if(&_target) target = _target; else target = {0.};
   if(fromTime<0) fromTime=0;
-  CHECK(toTime>=fromTime,"");
+  CHECK_GE(toTime, fromTime,"");
   prec.resize(toTime+1).setZero();
   for(uint t=fromTime; t<=(uint)toTime; t++) prec(t) = _prec;
 }
@@ -162,7 +162,7 @@ void KOMO::parseTasks(const Graph& specs, int stepsPerPhase) {
 uint KOMO::dim_phi(uint t) {
   uint m=0;
   for(Task *c: tasks) {
-//        CHECK(c->prec.N<=T,"");
+//        CHECK_LE(c->prec.N, T,"");
     if(c->prec.N>t && c->prec(t))
       m += c->map->dim_phi(configurations({t,t+k_order}), t); //counts also constraints
   }
@@ -198,7 +198,7 @@ void KOMO::setupConfigurations() {
   configurations.append(new rai::KinematicWorld())->copy(world, true);
   for(uint s=1; s<k_order+T; s++) {
     configurations.append(new rai::KinematicWorld())->copy(*configurations(s-1), true);
-    CHECK(configurations(s)==configurations.last(), "");
+    CHECK_EQ(configurations(s), configurations.last(), "");
     //apply potential graph switches
     for(rai::KinematicSwitch *sw:switches) {
       if(sw->timeOfApplication+k_order==s) {
@@ -449,7 +449,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures) {
       Task *task = tasks(i);
       if(task->prec.N>t && task->prec(t)) {
         uint d=task->map->dim_phi(configurations({t,t+k_order}), t);
-        for(uint j=0; j<d; j++) CHECK(tt(M+j)==task->type,"");
+        for(uint j=0; j<d; j++) CHECK_EQ(tt(M+j), task->type,"");
         if(d) {
           if(task->type==OT_sos) {
             for(uint j=0; j<d; j++) err(t,i) += rai::sqr(phi(M+j)); //sumOfSqr(phi.sub(M,M+d-1));
@@ -555,7 +555,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
   featureTypes.clear();
   for(uint t=0; t<MP.T; t++) {
     for(Task *task: MP.tasks) if(task->prec.N>t && task->prec(t)) {
-//      CHECK(task->prec.N<=MP.T,"");
+//      CHECK_LE(task->prec.N, MP.T,"");
         uint m = task->map->dim_phi(MP.configurations({t,t+MP.k_order}), t); //dimensionality of this task
         featureTimes.append(consts<uint>(t, m));
         featureTypes.append(consts<ObjectiveType>(task->type, m));

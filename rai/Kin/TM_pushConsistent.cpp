@@ -31,7 +31,7 @@ TM_PushConsistent::TM_PushConsistent(const rai::KinematicWorld &G,
 //}
 
 void TM_PushConsistent::phi(arr& y, arr& J, const WorldL& Ktuple) {
-  CHECK(Ktuple.N>=order+1,"I need at least " <<order+1 <<" configurations to evaluate");
+  CHECK_GE(Ktuple.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   
   const rai::KinematicWorld& G2 = *Ktuple.elem(-1);
   const rai::KinematicWorld& G1 = *Ktuple.elem(-2);

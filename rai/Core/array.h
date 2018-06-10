@@ -193,6 +193,7 @@ template<class T> struct Array : std::vector<T> {
   Array<T> sub(int i, int I, int j, int J) const;
   Array<T> sub(int i, int I, int j, int J, int k, int K) const;
   Array<T> sub(int i, int I, Array<uint> cols) const;
+  Array<T> sub(Array<uint> elems) const;
   Array<T> row(uint row_index) const;
   Array<T> rows(uint start_row, uint end_row) const;
   Array<T> col(uint col_index) const;
@@ -439,7 +440,8 @@ typedef rai::Array<uint32_t>   uint32A;
 typedef rai::Array<const char*>  CstrList;
 typedef rai::Array<arr*>   arrL;
 typedef rai::Array<arr>    arrA;
-typedef rai::Array<uintA>    uintAA;
+typedef rai::Array<intA>   intAA;
+typedef rai::Array<uintA>  uintAA;
 
 namespace rai { struct String; }
 typedef rai::Array<rai::String> StringA;
@@ -455,6 +457,7 @@ extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional argumen
 extern arrA& NoArrA; //this is a pointer to NULL!!!! I use it for optional arguments
 extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
 extern byteA& NoByteA; //this is a pointer to NULL!!!! I use it for optional arguments
+extern intAA& NoIntAA; //this is a pointer to NULL!!!! I use it for optional arguments
 extern uintAA& NoUintAA; //this is a pointer to NULL!!!! I use it for optional arguments
 extern uint16A& NoUint16A; //this is a pointer to NULL!!!! I use it for optional arguments
 

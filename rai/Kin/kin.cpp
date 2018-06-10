@@ -642,7 +642,7 @@ void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_w
     Joint *j=a->joint;
     if(j && j->active) {
       uint j_idx=j->qIndex;
-      if(j_idx>=N) CHECK(j->type==JT_rigid, "");
+      if(j_idx>=N) CHECK_EQ(j->type, JT_rigid, "");
       if(j_idx<N) {
         if(j->type==JT_hingeX || j->type==JT_hingeY || j->type==JT_hingeZ) {
           rai::Vector tmp = j->axis ^ (pos_world-j->X()*j->Q().pos);
@@ -734,7 +734,7 @@ void rai::KinematicWorld::jacobianTime(arr& J, rai::Frame *a) const {
     Joint *j=a->joint;
     if(j && j->active) {
       uint j_idx=j->qIndex;
-      if(j_idx>=N) CHECK(j->type==JT_rigid, "");
+      if(j_idx>=N) CHECK_EQ(j->type, JT_rigid, "");
       if(j_idx<N) {
         if(j->type==JT_time) {
           J(0, j_idx) += 1e-1;
@@ -895,7 +895,7 @@ void rai::KinematicWorld::kinematicsQuat(arr& y, arr& J, Frame *a) const { //TOD
 //    Joint *j=a->joint;
 //    if(j && j->active) {
 //      uint j_idx=j->qIndex;
-//      if(j_idx>=N) CHECK(j->type==JT_rigid, "");
+//      if(j_idx>=N) CHECK_EQ(j->type, JT_rigid, "");
 //      if(j_idx<N){
 //        J(0, j_idx) += j->X().pos.x;
 //        J(1, j_idx) += j->X().pos.y;
@@ -916,7 +916,7 @@ void rai::KinematicWorld::axesMatrix(arr& J, Frame *a) const {
     Joint *j=a->joint;
     if(j && j->active) {
       uint j_idx=j->qIndex;
-      if(j_idx>=N) CHECK(j->type==JT_rigid, "");
+      if(j_idx>=N) CHECK_EQ(j->type, JT_rigid, "");
       if(j_idx<N) {
         if((j->type>=JT_hingeX && j->type<=JT_hingeZ) || j->type==JT_transXYPhi || j->type==JT_phiTransXY) {
           if(j->type==JT_transXYPhi) j_idx += 2; //refer to the phi only
@@ -1672,7 +1672,7 @@ void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
   NodeL ss = G.getNodes("shape");
   for(Node *n: ss) {
     CHECK_EQ(n->keys(0),"shape","");
-    CHECK(n->parents.N<=1,"shapes must have no or one parent");
+    CHECK_LE(n->parents.N, 1,"shapes must have no or one parent");
     CHECK(n->isGraph(),"shape must have value Graph");
     
     Frame* f = new Frame(*this);
@@ -1780,7 +1780,7 @@ end_header\n";
   for(Frame *f: frames) if((s=f->shape)) {
       m = &s->mesh();
       arr col = m->C;
-      CHECK(col.N==3,"");
+      CHECK_EQ(col.N, 3,"");
       t = s->frame.X;
       if(m->C.d0!=m->V.d0) {
         m->C.resizeAs(m->V);
@@ -2434,10 +2434,10 @@ bool rai::KinematicWorld::checkConsistency() {
       }
       CHECK_EQ(j->frame.joint, j,"");
       CHECK_GE(j->type.x, 0, "");
-      CHECK(j->type.x<=JT_time, "");
+      CHECK_LE(j->type.x, JT_time, "");
       
       if(j->mimic) {
-        CHECK(j->dim==0, "");
+        CHECK_EQ(j->dim, 0, "");
         CHECK(j->mimic>(void*)1, "mimic was not parsed correctly");
         CHECK(frames.contains(&j->mimic->frame), "mimic points to a frame outside this kinematic configuration");
       }
@@ -2489,7 +2489,7 @@ bool rai::KinematicWorld::checkConsistency() {
 //    //reassociate shapes with a
 //    if(b->shape){
 //      b->shape->frame=a;
-//      CHECK(a->shape==NULL,"");
+//      CHECK_EQ(a->shape, NULL,"");
 //      a->shape = b->shape;
 //    }
 //    b->shape = NULL;

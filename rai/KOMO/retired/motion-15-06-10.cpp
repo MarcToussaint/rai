@@ -13,7 +13,7 @@ void MotionProblemFunction::phi_t(arr& phi, arr& J, uint t, const arr& x_bar, co
   //assert some dimensions
   CHECK_EQ(x_bar.d0,k+1,"");
   CHECK_EQ(x_bar.d1,n,"");
-  CHECK(t<=T,"");
+  CHECK_LE(t, T,"");
   
   double tau=MP.tau;
   double tau2=tau*tau, tau3=tau2*tau;

@@ -61,6 +61,7 @@ arr& NoArr = *((arr*)NULL);
 arrA& NoArrA = *((arrA*)NULL);
 uintA& NoUintA = *((uintA*)NULL);
 byteA& NoByteA = *((byteA*)NULL);
+intAA& NoIntAA = *((intAA*)NULL);
 uintAA& NoUintAA = *((uintAA*)NULL);
 
 /* LAPACK notes
@@ -247,7 +248,7 @@ void svd(arr& U, arr& V, const arr& A) {
 
 void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc) {
   CHECK(X.nd == 2 && X.d0 > 0 && X.d1 > 0, "Invalid data matrix X.");
-  CHECK(npc <= X.d1, "More principal components than data matrix X can offer.");
+  CHECK_LE(npc ,  X.d1, "More principal components than data matrix X can offer.");
   
   if(npc == 0)
     npc = X.d1;
@@ -1565,7 +1566,7 @@ void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs) {
 }
 
 arr lapack_kSmallestEigenValues_sym(const arr& A, uint k) {
-  if(k>A.d0) k=A.d0; //  CHECK(k<=A.d0,"");
+  if(k>A.d0) k=A.d0; //  CHECK_LE(k, A.d0,"");
   integer N=A.d0, KD=A.d1-1, LDAB=A.d1, INFO;
   rai::Array<integer> IWORK(5*N), IFAIL(N);
   arr WORK(10*(3*N)), Acopy=A;
@@ -2120,7 +2121,7 @@ void graphRandomUndirected(uintA& E, uint n, double connectivity) {
 
 void graphRandomTree(uintA& E, uint N, uint roots) {
   uint i;
-  CHECK(roots>=1, "");
+  CHECK_GE(roots, 1, "");
   for(i=roots; i<N; i++) E.append(TUP(rnd(i), i));
   E.reshape(E.N/2,2);
 }
@@ -2183,7 +2184,7 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
       }
       ready = true;
       for(uint n=0; n<N; n++) {
-        CHECK(degrees(n)<=d, "");
+        CHECK_LE(degrees(n), d, "");
         if(degrees(n)!=d) {
           ready = false;
           break;

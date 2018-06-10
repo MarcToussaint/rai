@@ -33,7 +33,7 @@ void ParticleAroundWalls::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t) {
   //-- assert some dimensions
   CHECK_EQ(x_bar.d0,k+1,"");
   CHECK_EQ(x_bar.d1,n,"");
-  CHECK(t<=T,"");
+  CHECK_LE(t, T,"");
   
   //-- transition costs: append to phi
   if(k==1)  phi = x_bar[1]-x_bar[0]; //penalize velocity

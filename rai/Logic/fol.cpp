@@ -221,7 +221,7 @@ bool allFactsHaveEqualsInKB(Graph& KB, NodeL& literals, const NodeL& subst, cons
 /// ONLY for a literal with one free variable: remove all infeasible values from the domain
 /// this is meant to be used as basic 'constraint propagation' for order-1 constraints
 void removeInfeasibleSymbolsFromDomain(Graph& facts, NodeL& domain, Node* literal, Graph *varScope) {
-  CHECK(getNumOfVariables(literal, varScope)==1," remove Infeasible works only for literals with one open variable!");
+  CHECK_EQ(getNumOfVariables(literal, varScope), 1," remove Infeasible works only for literals with one open variable!");
   Node *var = getFirstVariable(literal, varScope);
 //  Node *predicate = literal->parents(0);
 
@@ -270,7 +270,7 @@ Node* createNewSubstitutedLiteral(Graph& facts, Node* literal, const NodeL& subs
     CHECK(&arg->container==subst_scope || &arg->container==&facts.isNodeOfGraph->container,"the literal argument should be a constant (KB scope) or variable (1st level local scope)");
     if(&arg->container==subst_scope) { //is a variable, and subst exists
       CHECK(subst(arg->index)!=NULL,"a variable (=argument in local scope) requires a substitution, no?");
-      //CHECK(arg->container.N==subst.N, "somehow the substitution does not fit the container of literal arguments");
+      //CHECK_EQ(arg->container.N, subst.N, "somehow the substitution does not fit the container of literal arguments");
 //      fact->parents(i) = subst(arg->index);
 //arg->numChildren--;//      arg->parentOf.removeValue(fact);
 //fact->parents(i)->numChildren++;//      fact->parents(i)->parentOf.append(fact);
