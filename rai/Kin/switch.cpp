@@ -33,8 +33,9 @@ template<> const char* rai::Enum<rai::SwitchType>::names []= {
   "makeDynamic",
   "makeKinematic",
   "SW_fixCurrent",
-  "SW_addContact",
   "SW_delContact",
+  "SW_addContact",
+  "SW_addSoftContact",
   NULL
 };
 
@@ -263,9 +264,10 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
     return;
   }
 
-  if(symbol==SW_addContact) {
+  if(symbol==SW_addContact || symbol==SW_addSoftContact) {
     CHECK_EQ(jointType, JT_none, "");
     auto c = new rai::Contact(*from, *to);
+    if(symbol==SW_addSoftContact) c->soft=true;
     c->setZero();
     return;
   }

@@ -26,8 +26,9 @@ enum SwitchType {
   makeDynamic,
   makeKinematic,
   SW_fixCurrent,
+  SW_delContact,
   SW_addContact,
-  SW_delContact
+  SW_addSoftContact,
 };
 
 struct KinematicSwitch {
