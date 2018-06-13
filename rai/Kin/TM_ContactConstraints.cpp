@@ -16,27 +16,46 @@ void TM_ContactConstraints::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
   if(&J) J.clear();
   for(rai::Frame *f:K.frames) if(f->contacts.N) for(rai::Contact *con:f->contacts) if(&con->a==f) {
 
-    //-- needs to touch!!
-    arr d, Jd;
-    TM_PairCollision dist(con->a.ID, con->b.ID, TM_PairCollision::_negScalar, false);
-    dist.phi(d, (&J?Jd:NoArr), K);
-    con->y = d.scalar();
-    y.append(con->y);
-    if(&J) J.append(Jd);
+    if(!con->soft){
+      //-- needs to touch!!
+      arr d, Jd;
+      TM_PairCollision dist(con->a.ID, con->b.ID, TM_PairCollision::_negScalar, false);
+      dist.phi(d, (&J?Jd:NoArr), K);
+      con->y = d.scalar();
+      con->setFromPairCollision(*dist.coll);
 
-    con->setFromPairCollision(*dist.coll);
+      y.append(con->y);
+      if(&J) J.append(Jd);
+    }else{
+      arr d, Jd;
+      TM_PairCollision dist(con->a.ID, con->b.ID, TM_PairCollision::_negScalar, false);
+      dist.phi(d, (&J?Jd:NoArr), K);
+      con->y = d.scalar();
+      con->setFromPairCollision(*dist.coll);
+
+      //soft! complementarity
+      double s = 1e-1;
+
+      //get force
+      arr ferr, Jferr;
+      K.kinematicsForce(ferr, Jferr, con);
+
+      y.append(s*d.scalar() * ferr);
+      if(&J) J.append( (s*d.scalar())*Jferr + (s*ferr) * Jd );
+
+//      y.append(ferr);
+//      if(&J) J.append(Jferr);
+    }
 
     //-- non-aligned force
+    //get collision normal
     arr c, Jc;
     TM_PairCollision cvec(con->a.ID, con->b.ID, TM_PairCollision::_normal, true);
     cvec.phi(c, (&J?Jc:NoArr), K);
     if(length(c)<1e-6) continue;
-//    normalizeWithJac(c, Jc);
-
-    //just get force
+    //get force
     arr ferr, Jferr;
     K.kinematicsForce(ferr, Jferr, con);
-
     //subtract c-aligned projection
     if(&J) Jferr -= (c*~c*Jferr + c*~ferr*Jc + scalarProduct(c,ferr)*Jc);
     ferr -= c*scalarProduct(c,ferr);
@@ -50,7 +69,8 @@ void TM_ContactConstraints::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
 uint TM_ContactConstraints::dim_phi(const rai::KinematicWorld &K) {
   uint C=0;
   for(rai::Frame *f:K.frames) if(f->contacts.N) for(rai::Contact *c:f->contacts) if(&c->a==f) {
-    C += 4;
+    if(!c->soft)  C += 4;
+    else C += 6;
   }
   return C;
 }

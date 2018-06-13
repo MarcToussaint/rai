@@ -14,7 +14,7 @@ joint (stem arm1) { A=<T t(0 0 1) d(90 1 0 0)> B=<T t(0 0 .2)>  Q=<T d(1 0 0 0)>
 joint (arm1 arm2) { A=<T t(0 0 0.2) d(45 0 0 1)> B=<T t(0 0 .2)>  Q=<T d(1 0 0 0)> }
 joint (arm2 arm3) { A=<T t(0 0 0.2) d(45 0 0 1)> B=<T t(0 0 .2)>  Q=<T d(1 0 0 0)> }
 joint (arm3 arm4) { A=<T t(0 0 0.2) d(45 0 0 1)> B=<T t(0 0 .2)>  Q=<T d(1 0 0 0)> }
-joint (arm4 arm5) { type=JT_quatBall A=<T t(0 0 0.2) d(45 0 0 1)> B=<T t(0 0 .2)>  Q=<T d(1 0 0 0)> }
+joint (arm4 arm5) { type=quatBall A=<T t(0 0 0.2) d(45 0 0 1)> B=<T t(0 0 .2)>  Q=<T d(1 0 0 0)> }
 joint (arm5 arm6) { A=<T t(0 0 0.2) d(45 0 0 1)> B=<T t(0 0 .2)>  Q=<T d(1 0 0 0)> }
 joint (arm6 arm7) { A=<T t(0 0 0.2) d(45 0 0 1)> B=<T t(0 0 .2)>  Q=<T d(1 0 0 0)> }
 

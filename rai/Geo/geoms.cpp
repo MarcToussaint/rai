@@ -14,7 +14,7 @@
 Singleton<rai::GeomStore> _GeomStore;
 
 template<> const char* rai::Enum<rai::ShapeType>::names []= {
-  "ST_box", "ST_sphere", "ST_capsule", "ST_mesh", "ST_cylinder", "ST_marker", "ST_SSBox", "ST_pointCloud", "ST_ssCvx", "ST_ssBox", NULL
+  "box", "sphere", "capsule", "mesh", "cylinder", "marker", "SSBox", "pointCloud", "ssCvx", "ssBox", NULL
 };
 
 rai::Geom::Geom(rai::GeomStore &_store) : store(_store), type(ST_none) {

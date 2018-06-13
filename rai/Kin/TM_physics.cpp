@@ -27,8 +27,8 @@ void TM_Physics::phi(arr &y, arr &J, const WorldL &Ktuple) {
 
   CHECK_EQ(order, 2, "");
   
-  rai::KinematicWorld& K = *Ktuple(-2);
-  uintA qdim = getKtupleDim(Ktuple);
+  rai::KinematicWorld& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
+//  uintA qdim = getKtupleDim(Ktuple);
     
   arr acc, Jacc, wcc, Jwcc;
   arr acc_ref = {0.,0.,-gravity};
