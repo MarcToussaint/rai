@@ -1679,7 +1679,7 @@ Camera::Camera() {
   
   setPosition(0., 0., 10.);
   focus(0, 0, 0);
-  setHeightAngle(24.);
+  setHeightAngle(45.);
 }
 
 void Camera::setZero() {

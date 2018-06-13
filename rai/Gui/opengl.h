@@ -181,6 +181,7 @@ struct OpenGL {
   void addInit(void (*call)(void*), void* classP=NULL);
   void add(std::function<void(OpenGL&)> drawer);
   void add(GLDrawer& c) { dataLock.writeLock(); drawers.append(&c); dataLock.unlock(); }
+  template<class T> void add(Var<T>& c) { add(c.set()); }
   void addDrawer(GLDrawer *c) { dataLock.writeLock(); drawers.append(c); dataLock.unlock(); }
   void remove(GLDrawer& c) { dataLock.writeLock(); drawers.removeValue(&c); dataLock.unlock(); }
   //template<class T> void add(const T& x) { add(x.staticDraw, &x); } ///< add a class or struct with a staticDraw routine
