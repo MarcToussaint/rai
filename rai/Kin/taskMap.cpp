@@ -15,7 +15,7 @@
 //===========================================================================
 
 void TaskMap::phi(arr& y, arr& J, const WorldL& Ktuple) {
-  CHECK(Ktuple.N>=order+1,"I need at least " <<order+1 <<" configurations to evaluate");
+  CHECK_GE(Ktuple.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
   if(k==0) { // basic case: order=0
     arr J_bar;

@@ -197,7 +197,7 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
     // subn: normal of the sub-facet opposit to v
     if(i) j=0; else j=1;
     w.referToDim(X, vertices(j)); //take w as origin of local frame
-    CHECK(vertices.N>=X.d1, ""); //won't work otherwise..
+    CHECK_GE(vertices.N, X.d1, ""); //won't work otherwise..
     W.resize(vertices.N, X.d1);      //compose matrix of basis vectors
     for(k=0, l=0; k<vertices.N; k++) if(k!=i && k!=j) {
         wk.referToDim(X, vertices(k));

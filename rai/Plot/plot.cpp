@@ -464,7 +464,7 @@ void plotDrawOpenGL(void *_data) {
   
   //draw arrays
   for(a=0; a<data.array.N; a++) {
-    CHECK(data.array(a).nd<=2, "can't display 3(or higher)-dim arrays");
+    CHECK_LE(data.array(a).nd, 2, "can't display 3(or higher)-dim arrays");
     if(data.array(a).nd==1 || (data.array(a).nd==2 && data.array(a).d1==1)) { //1D functions
       c.setIndex(a);
       glColor(c.r, c.g, c.b);

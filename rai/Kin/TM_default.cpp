@@ -237,7 +237,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   }
   
   if(type==TMT_gazeAt) {
-    CHECK(i>=0, "sym2 is not set!");
+    CHECK_GE(i, 0, "sym2 is not set!");
     
     // i    := index of shape to look with (i.e. the shape with the camera)
     // ivec := relative position of the camera center

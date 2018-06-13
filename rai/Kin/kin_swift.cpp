@@ -63,7 +63,7 @@ SwiftInterface::SwiftInterface(const rai::KinematicWorld& world, double _cutoff)
           rai::FileToken *file = s->frame.ats.find<rai::FileToken>("swiftfile");
           if(false && file) {
             r=scene->Add_General_Object(file->name, INDEXshape2swift(f->ID), false);
-            CHECK(INDEXshape2swift(f->ID)>=0, "no object generated from swiftfile");
+            CHECK_GE(INDEXshape2swift(f->ID), 0, "no object generated from swiftfile");
             INDEXswift2frame(INDEXshape2swift(f->ID)) = f->ID;
             add=false;
             if(!r) HALT("--failed!");
@@ -210,7 +210,7 @@ void SwiftInterface::deactivate(rai::Frame *s) {
 
 void SwiftInterface::pushToSwift(const rai::KinematicWorld& world) {
   //CHECK_EQ(INDEXshape2swift.N,world.shapes.N,"the number of shapes has changed");
-  CHECK(INDEXshape2swift.N <= world.frames.N, "the number of shapes has changed");
+  CHECK_LE(INDEXshape2swift.N ,  world.frames.N, "the number of shapes has changed");
   rai::Matrix rot;
   for(rai::Frame *f: world.frames) {
     if(f->shape) {
@@ -272,7 +272,7 @@ void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) 
     
     //non-penetrating pair of objects
     if(num_contacts[i]>0) { //only add one proxy!for(j=0; j<num_contacts[i]; j++, k++) {
-      CHECK(num_contacts[i]==1,"");
+      CHECK_EQ(num_contacts[i], 1,"");
       if(proxy.d < 1e-10) {
         proxy.posA = proxy.a->X.pos;
         proxy.posB = proxy.b->X.pos;

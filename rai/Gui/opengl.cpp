@@ -57,7 +57,7 @@ private:
   
 public:
   OpenGLProcess() : numWins(0) {
-    CHECK(GLProcessCount==0,"");
+    CHECK_EQ(GLProcessCount, 0,"");
     GLProcessCount++;
     int argc=1;
     char *argv[1]= {(char*)"x"};
@@ -134,7 +134,7 @@ struct sOpenGL {
   static void _MouseWheel(int wheel, int dir, int x, int y) { singleFreeglut()->getGL(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
   
   void accessWindow() {  //same as above, but also sets gl cocntext (glXMakeCurrent)
-    CHECK(windowID>=0,"window is not created");
+    CHECK_GE(windowID, 0,"window is not created");
     glutSetWindow(windowID);
   }
   void deaccessWindow() {
@@ -656,10 +656,10 @@ void glDrawCamera(const rai::Camera &cam) {
     dxNear = cam.whRatio * dyNear;
     dxFar = cam.whRatio * dyFar;
   }
-  if(cam.heightAngle) {
+  if(cam.focalLength) {
 //    zFar = zNear + .1*(zFar-zNear);
-    dyNear = zNear * ::sin(.5*cam.heightAngle/180.*RAI_PI);
-    dyFar = zFar * ::sin(.5*cam.heightAngle/180.*RAI_PI);
+    dyNear = zNear / cam.focalLength; //::sin(.5*cam.heightAngle/180.*RAI_PI);
+    dyFar = zFar / cam.focalLength; //::sin(.5*cam.heightAngle/180.*RAI_PI);
     dxNear = cam.whRatio * dyNear;
     dxFar = cam.whRatio * dyFar;
   }
@@ -1260,7 +1260,7 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 //
 
 OpenGL::OpenGL(const char* _title, int w, int h, int posx, int posy)
-  : s(NULL), title(_title), width(w), height(h), reportEvents(false), topSelection(NULL), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0) {
+  : s(NULL), title(_title), width(w), height(h), reportEvents(false), topSelection(NULL), doCaptureImage(false), doCaptureDepth(false), fboId(0), rboColor(0), rboDepth(0) {
   //RAI_MSG("creating OpenGL=" <<this);
   Reshape(w,h);
   s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
@@ -1268,7 +1268,7 @@ OpenGL::OpenGL(const char* _title, int w, int h, int posx, int posy)
 }
 
 OpenGL::OpenGL(void *container)
-  : s(NULL), width(0), height(0), reportEvents(false), topSelection(NULL), captureImg(false), captureDep(false), fboId(0), rboColor(0), rboDepth(0) {
+  : s(NULL), width(0), height(0), reportEvents(false), topSelection(NULL), doCaptureImage(false), doCaptureDepth(false), fboId(0), rboColor(0), rboDepth(0) {
   s=new sOpenGL(this,container); //this might call some callbacks (Reshape/Draw) already!
   init();
 }
@@ -1316,6 +1316,12 @@ struct CstyleDrawer : GLDrawer {
   void glDraw(OpenGL&) { call(classP); }
 };
 
+struct LambdaDrawer : GLDrawer {
+  std::function<void(OpenGL&)> call;
+  LambdaDrawer(std::function<void(OpenGL&)> call) : call(call) {}
+  void glDraw(OpenGL& gl) { call(gl); }
+};
+
 struct CstyleInitCall : OpenGL::GLInitCall {
   void *classP;
   void (*call)(void*);
@@ -1337,6 +1343,14 @@ void OpenGL::addInit(void (*call)(void*), void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
   dataLock.writeLock();
   initCalls.append(new CstyleInitCall(call, classP));
+  dataLock.unlock();
+}
+
+void OpenGL::add(std::function<void (OpenGL&)> call){
+  CHECK(call, "OpenGL: NULL std::function to drawing routine");
+  dataLock.writeLock();
+//  toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
+  drawers.append(new LambdaDrawer(call));
   dataLock.unlock();
 }
 
@@ -1554,24 +1568,24 @@ void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
   
   //cout <<"UNLOCK draw" <<endl;
   
-  if(captureImg) {
+  if(doCaptureImage) {
     captureImage.resize(h, w, 3);
     glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
 //    flip_image(captureImage);
-    captureImg=false;
+//    doCaptureImage=false;
   }
-  if(captureDep) {
+  if(doCaptureDepth) {
     captureDepth.resize(h, w);
     glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
 //    flip_image(captureDepth);
-    captureDep=false;
+    doCaptureDepth=false;
   }
   
   //check matrix stack
   GLint s;
   glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &s);
   if(s!=1) RAI_MSG("OpenGL name stack has not depth 1 (pushs>pops) in DRAW mode:" <<s);
-  //CHECK(s<=1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
+  //CHECK_LE(s, 1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
   
   if(!callerHasAlreadyLocked) {
     dataLock.unlock(); //now de-accessing user data
@@ -1691,16 +1705,16 @@ int OpenGL::watch(const char *txt) {
 }
 
 /// update the view (in Qt: also starts displaying the window)
-int OpenGL::update(const char *txt, bool _captureImg, bool _captureDep, bool waitForCompletedDraw) {
+int OpenGL::update(const char *txt, bool _doCaptureImage, bool _doCaptureDepth, bool waitForCompletedDraw) {
   openWindow();
-  captureImg |= _captureImg;
-  captureDep |= _captureDep;
+  doCaptureImage |= _doCaptureImage;
+  doCaptureDepth |= _doCaptureDepth;
   if(txt) text.clear() <<txt;
 #ifdef RAI_GL
   isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
   postRedrawEvent(false);
-  if(captureImg || captureDep || waitForCompletedDraw) { isUpdating.waitForStatusEq(0); } //{ rai::wait(.01); processEvents(); rai::wait(.01); }
+  if(doCaptureImage || doCaptureDepth || waitForCompletedDraw) { isUpdating.waitForStatusEq(0); } //{ rai::wait(.01); processEvents(); rai::wait(.01); }
 #endif
   return pressedkey;
 }
@@ -1734,6 +1748,40 @@ void OpenGL::setClearColors(float r, float g, float b, float a) {
 void OpenGL::unproject(double &x, double &y, double &z, bool resetCamera, int subView) {
 #ifdef RAI_GL
   double _x, _y, _z;
+  arr modelMatrix(4,4), projMatrix(4,4);
+  intA viewPort(4);
+  if(resetCamera) {
+    GLint viewport[4] = {0, 0, (GLint)width, (GLint)height};
+    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    camera.glSetProjectionMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+  }
+  if(subView!=-1) {
+    GLView *vi=&views(subView);
+    glViewport(vi->le*width, vi->bo*height, (vi->ri-vi->le)*width+1, (vi->to-vi->bo)*height+1);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    vi->camera.glSetProjectionMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+  }
+  glGetDoublev(GL_MODELVIEW_MATRIX, modelMatrix.p);
+  glGetDoublev(GL_PROJECTION_MATRIX, projMatrix.p);
+  glGetIntegerv(GL_VIEWPORT, viewPort.p);
+//  cout <<"\nM=\n" <<modelMatrix <<"\nP=\n" <<projMatrix <<"\nV=\n" <<viewPort <<endl;
+  gluUnProject(x, y, z, modelMatrix.p, projMatrix.p, viewPort.p, &_x, &_y, &_z);
+  x=_x; y=_y; z=_z;
+#else
+  NICO
+    #endif
+}
+
+void OpenGL::project(double& x, double& y, double& z, bool resetCamera, int subView){
+#ifdef RAI_GL
+  double _x, _y, _z;
   GLdouble modelMatrix[16], projMatrix[16];
   GLint viewPort[4];
   if(resetCamera) {
@@ -1757,7 +1805,7 @@ void OpenGL::unproject(double &x, double &y, double &z, bool resetCamera, int su
   glGetDoublev(GL_MODELVIEW_MATRIX, modelMatrix);
   glGetDoublev(GL_PROJECTION_MATRIX, projMatrix);
   glGetIntegerv(GL_VIEWPORT, viewPort);
-  gluUnProject(x, y, z, modelMatrix, projMatrix, viewPort, &_x, &_y, &_z);
+  gluProject(x, y, z, modelMatrix, projMatrix, viewPort, &_x, &_y, &_z);
   x=_x; y=_y; z=_z;
 #else
   NICO
@@ -2100,7 +2148,7 @@ struct XBackgroundContext {
 
 Singleton<XBackgroundContext> xBackgroundContext;
 
-void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h) {
+void OpenGL::renderInBack(bool _doCaptureImage, bool _doCaptureDepth, int w, int h) {
 #ifdef RAI_GL
   if(w<0) w=width;
   if(h<0) h=height;
@@ -2196,14 +2244,14 @@ void OpenGL::renderInBack(bool _captureImg, bool _captureDep, int w, int h) {
   glFlush();
   
   //-- read
-  if(_captureImg) {
+  if(_doCaptureImage) {
     captureImage.resize(h, w, 3);
     //  glReadBuffer(GL_BACK);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
     glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
 //    flip_image(captureImage);
   }
-  if(_captureDep) {
+  if(_doCaptureDepth) {
     captureDepth.resize(h, w);
     glReadBuffer(GL_DEPTH_ATTACHMENT);
     glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);

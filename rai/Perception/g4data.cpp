@@ -398,7 +398,7 @@ arr G4Rec::query(const char *type, const char *sensor) {
   CHECK(i != nullptr, STRING("BAM '" << type << "' does not exist."));
   
   int is = g4id.i(sensor);
-  CHECK(is >= 0, STRING("Sensor '" << sensor << "' does not exist."));
+  CHECK_GE(is ,  0, STRING("Sensor '" << sensor << "' does not exist."));
   
   if(0 == strcmp(type, "pose")) {
     arr xPos, xQuat;
@@ -425,7 +425,7 @@ arr G4Rec::query(const char *type, const char *sensor, uint f) {
   CHECK(i != nullptr, STRING("BAM '" << type << "' does not exist."));
   
   int is = g4id.i(sensor);
-  CHECK(is >= 0, STRING("Sensor '" << sensor << "' does not exist."));
+  CHECK_GE(is ,  0, STRING("Sensor '" << sensor << "' does not exist."));
   
   if(0 == strcmp(type, "pose")) {
     arr x;

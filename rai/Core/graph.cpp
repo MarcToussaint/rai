@@ -250,7 +250,7 @@ void Graph::clear() {
   for(Node *n:*this) if(n->isGraph()) n->graph().clear();
   while(N) {
     Node **n = NodeL::p+N-1; //last
-    if(!isDoubleLinked) while((*n)->numChildren) { n--; CHECK(n>=p,"can't find a node without children"); }
+    if(!isDoubleLinked) while((*n)->numChildren) { n--; CHECK_GE(n, p,"can't find a node without children"); }
     delete *n;
   }
   isIndexed=true;
@@ -397,7 +397,7 @@ NodeL Graph::getAllNodesRecursively() const {
 
 Node* Graph::edit(Node *ed) {
   NodeL KVG = findNodesOfType(ed->type, ed->keys);
-  //CHECK(KVG.N<=1, "can't edit into multiple nodes yet");
+  //CHECK_LE(KVG.N, 1, "can't edit into multiple nodes yet");
   if(!KVG.N) { //nothing to merge, append
     if(&ed->container!=this) {
       if(!isIndexed) index();
@@ -412,7 +412,7 @@ Node* Graph::edit(Node *ed) {
   
   uint edited=0;
   for(Node *n : KVG) if(n!=ed) {
-      CHECK(ed->type==n->type, "can't edit/merge nodes of different types!");
+      CHECK(ed->type == n->type, "can't edit/merge nodes of different types!");
       if(n->isGraph()) { //merge the KVGs
         n->graph().edit(ed->graph());
       } else { //overwrite the value
@@ -492,8 +492,8 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
           newg = &newg->isNodeOfGraph->container;
           oldg = &oldg->isNodeOfGraph->container;
         }
-        CHECK(newg->N==oldg->N,"different size!!\n" <<*newg <<"**\n" <<*oldg);
-        CHECK(p==oldg->elem(p->index),""); //we found the parent in oldg
+        CHECK_EQ(newg->N, oldg->N,"different size!!\n" <<*newg <<"**\n" <<*oldg);
+        CHECK_EQ(p, oldg->elem(p->index),""); //we found the parent in oldg
         newp = newg->elem(p->index);     //the true parent in the new graph
       }
       n->swapParent(i, newp);

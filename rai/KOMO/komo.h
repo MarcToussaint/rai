@@ -52,13 +52,14 @@ struct KOMO {
   arr z, splineB;              ///< when a spline representation is used: z are the nodes; splineB the B-spline matrix; x = splineB * z
   
   //-- verbosity only: buffers of all feature values computed on last set_x
-  arrA featureValues;           ///< storage of all features in all time slices
-  rai::Array<ObjectiveTypeA> featureTypes;  ///< storage of all feature-types in all time slices
-  arr dualSolution;             ///< the dual solution computed during constrained optimization
-  struct OpenGL *gl=NULL;       ///< internal only: used in 'displayTrajectory'
-  int verbose;                  ///< verbosity level
-  int animateOptimization=0;    ///< display the current path for each evaluation during optimization
-  double runTime=0.;            ///< just measure run time
+  arr featureValues;           ///< storage of all features in all time slices
+  ObjectiveTypeA featureTypes; ///< storage of all feature-types in all time slices
+  bool featureDense;
+  arr dualSolution;            ///< the dual solution computed during constrained optimization
+  struct OpenGL *gl=NULL;      ///< internal only: used in 'displayTrajectory'
+  int verbose;                 ///< verbosity level
+  int animateOptimization=0;   ///< display the current path for each evaluation during optimization
+  double runTime=0.;           ///< just measure run time
   ofstream *fil=NULL;
   
   KOMO();
@@ -181,7 +182,7 @@ struct KOMO {
   //-- optimization macros
   void setSpline(uint splineT);   ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
   void reset(double initNoise=.01);      ///< reset the optimizer (initializes x to a default path)
-  void run();                     ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
+  void run(bool dense=false);            ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
   void getPhysicsReference(uint subSteps=10, int display=0);
   void playInPhysics(uint subSteps=10, bool display=false);
   rai::KinematicWorld& getConfiguration(double phase);
@@ -194,7 +195,7 @@ struct KOMO {
   void reportProxies(ostream& os=std::cout); ///< report the proxies (collisions) for each time slice
   void reportContacts(ostream& os=std::cout); ///< report the contacts
   rai::Array<rai::Transformation> reportEffectiveJoints(ostream& os=std::cout);
-  void checkGradients();          ///< checks all gradients numerically
+  void checkGradients(bool dense=false);          ///< checks all gradients numerically
   void plotTrajectory();
   void plotPhaseTrajectory();
   bool displayTrajectory(double delay=1., bool watch=true, bool overlayPaths=true, const char* saveVideoPrefix=NULL); ///< display the trajectory; use "vid/z." as vid prefix
@@ -229,6 +230,17 @@ struct KOMO {
     virtual void getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes);
     virtual void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x, arr& lambda);
   } komo_problem;
+
+  struct Conv_MotionProblem_DenseProblem : ConstrainedProblem {
+    KOMO& komo;
+    uint dimPhi;
+
+    Conv_MotionProblem_DenseProblem(KOMO& _komo) : komo(_komo) {}
+
+    void getStructure(uintA& variableDimensions, intAA& featureTimes, ObjectiveTypeA& featureTypes);
+    virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda);
+
+  } dense_problem;
 };
 
 //===========================================================================

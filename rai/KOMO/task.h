@@ -16,6 +16,7 @@ struct Task {
   const rai::Enum<ObjectiveType> type;  ///< element of {sumOfSqr, inequality, equality}
   rai::String name;
   arr target, prec;     ///< optional linear, time-dependent, rescaling (with semantics of target & precision)
+  intA vars;
   
   Task(TaskMap *m, const ObjectiveType& type) : map(m), type(type) {}
   ~Task() { if(map) delete map; map=NULL; }
@@ -23,14 +24,16 @@ struct Task {
   void setCostSpecs(int fromStep, int toStep, const arr& _target= {}, double _prec=1.);
   void setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T,
                     const arr& _target, double _prec, int deltaStep=0);
+  void setCostSpecsDense(intA _vars, const arr& _target, double _prec);
   bool isActive(uint t) { return (prec.N>t && prec(t)); }
   void write(std::ostream& os) const {
-    os <<"TASK '" <<name <<"'"
-       <<"  type=" <<type
+    os <<"TASK '" <<name <<"'";
+    if(vars.d0==1) os <<" ("<<vars <<')';
+    os <<"  type=" <<type
        <<"  order=" <<map->order
        <<"  target=[" <<target <<']'
        <<"  prec=";
-    writeConsecutiveConstant(os,prec);
+    if(prec.N>4) writeConsecutiveConstant(os,prec); else os <<'[' <<prec <<']';
   }
 };
 stdOutPipe(Task)

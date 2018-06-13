@@ -184,7 +184,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple) {
         m++;
       }
     }
-    CHECK(m==ydim,"");
+    CHECK_EQ(m, ydim,"");
   }
 }
 

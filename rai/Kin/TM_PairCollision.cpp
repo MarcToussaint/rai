@@ -17,8 +17,8 @@ TM_PairCollision::TM_PairCollision(int _i, int _j, Type _type, bool _neglectRadi
 TM_PairCollision::TM_PairCollision(const rai::KinematicWorld& K, const char* s1, const char* s2, Type _type, bool neglectRadii)
   : i(initIdArg(K, s1)), j(initIdArg(K, s2)),
     type(_type), neglectRadii(neglectRadii) {
-  CHECK(i>=0,"shape name '" <<s1 <<"' does not exist");
-  CHECK(j>=0,"shape name '" <<s2 <<"' does not exist");
+  CHECK_GE(i, 0,"shape name '" <<s1 <<"' does not exist");
+  CHECK_GE(j, 0,"shape name '" <<s2 <<"' does not exist");
 }
 
 TM_PairCollision::~TM_PairCollision(){

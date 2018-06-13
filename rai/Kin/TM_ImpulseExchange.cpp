@@ -12,8 +12,8 @@
 #include "flag.h"
 
 void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple) {
-  CHECK(Ktuple.N>=3, "");
-  CHECK(order>=2,"");
+  CHECK_GE(Ktuple.N, 3, "");
+  CHECK_GE(order, 2,"");
   
   arr a1, J1, a2, J2, v1, Jv1, v2, Jv2;
   
@@ -121,8 +121,8 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple) {
 }
 
 void TM_ImpulsExchange_weak::phi(arr &y, arr &J, const WorldL &Ktuple) {
-  CHECK(Ktuple.N>=3, "");
-  CHECK(order>=2,"");
+  CHECK_GE(Ktuple.N, 3, "");
+  CHECK_GE(order, 2,"");
   
   arr a1, J1, a2, J2;
   
