@@ -396,6 +396,12 @@ inPath_installUbuntu/%: $(BASE)/rai/%
 	@echo "                                                ***** init " $*
 	@-$(MAKE) -C $< installUbuntu --no-print-directory
 
+ifdef BASE2
+inPath_installUbuntu/%: $(BASE2)/%
+	@echo "                                                ***** init " $*
+	@-$(MAKE) -C $< installUbuntu --no-print-directory
+endif
+
 inPath_printUbuntuPackages/%: $(BASE)/rai/%
 	@echo "#" $*
 	@-$(MAKE) -C $< printUbuntuPackages --no-print-directory
