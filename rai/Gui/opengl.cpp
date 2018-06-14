@@ -82,8 +82,10 @@ public:
     glwins(i)=NULL;
     numWins--;
     if(!numWins){ //stop looping
-      th.threadStop();
-      for(uint i=0;i<10;i++) glutMainLoopEvent();
+       OpenGLMutex().unlock();
+      th.threadClose(true);
+      OpenGLMutex().lock();
+      for(uint i=0;i<10;i++) glutMainLoopEvent(); //ensure that all windows are being closed
     }
   }
   OpenGL* getGL(uint i) {
