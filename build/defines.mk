@@ -266,6 +266,7 @@ LIBS += -lDynamicSimulation -lCollisionDetection -lMath -lLibBulletCollision -lL
 endif
 
 ifeq ($(PCL),1)
+DEPEND_UBUNTU += libpcl-dev
 EIGEN = 1
 #QHULL = 1
 CXXFLAGS  +=  -DRAI_PCL -DEIGEN_USE_NEW_STDVECTOR -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET

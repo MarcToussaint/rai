@@ -220,9 +220,10 @@ void KOMO::core_setKSdynamicOn(double time, const char *from, const char* to) {
   setFlag(time, new Flag(FL_zeroAcc, world[to]->ID, 0, true), +1);
 }
 
-void KOMO::setContact(double startTime, double endTime, const char *from, const char* to) {
+void KOMO::setContact(double startTime, double endTime, const char *from, const char* to, bool soft) {
   setKinematicSwitch(startTime, true,
-                     new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world) );
+                     new rai::KinematicSwitch((soft?rai::SW_addSoftContact:rai::SW_addContact),
+                                              rai::JT_none, from, to, world) );
   if(endTime>0.){
     setKinematicSwitch(endTime, false,
                        new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world) );
@@ -1769,12 +1770,12 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
           if(task->map->flipTargetSignOnNegScalarProduct && scalarProduct(y, target)<-.0) target *= -1.;
           y -= target;
         }
-        y *= sqrt(task->prec(t));
+        y *= task->prec(t);
         
         //write into phi and J
         phi.setVectorBlock(y, M);
         if(&J) {
-          Jy *= sqrt(task->prec(t));
+          Jy *= task->prec(t);
           if(t<komo.k_order) Jy.delColumns(0,(komo.k_order-t)*komo.configurations(0)->q.N); //delete the columns that correspond to the prefix!!
           for(uint i=0; i<y.N; i++) J(M+i) = Jy[i]; //copy it to J(M+i); which is the Jacobian of the M+i'th feature w.r.t. its variables
         }
@@ -1881,13 +1882,13 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
         if(task->map->flipTargetSignOnNegScalarProduct && scalarProduct(y, target)<-.0) target *= -1.;
         y -= target;
       }
-      y *= sqrt(task->prec(t));
+      y *= task->prec(t);
 
       //write into phi and J
       phi.setVectorBlock(y, M);
 
       if(&J) {
-        Jy *= sqrt(task->prec(t));
+        Jy *= task->prec(t);
         for(uint j=0;j<task->vars.d1;j++){
           if(task->vars(t,j)>=0){
             J.setMatrixBlock(Jy.sub(0,-1,kdim(j),kdim(j+1)-1), M, x_index(task->vars(t,j)));

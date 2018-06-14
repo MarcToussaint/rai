@@ -171,7 +171,7 @@ void OptLGP::updateDisplay() {
   
   solutions.writeAccess();
   for(uint i=0; i<solutions().N && i<6; i++) {
-    if(dth->gl.views.N<=i) {
+    if(dth->gl.views.N<=i || !dth->gl.views(i).drawers.N) {
       dth->gl.addSubView(i, glStandardScene, NULL);
       dth->gl.addSubView(i, *solutions()(i));
 //    dth->gl.views(i).drawers.last() = solutions()(i);

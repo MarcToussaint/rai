@@ -135,7 +135,7 @@ struct KOMO {
   void core_setKSdynamic(double time, const char *from, const char *to);
   void core_setKSdynamicOn(double time, const char *from, const char* to);
   
-  void setContact(double startTime, double endTime, const char *from, const char* to);
+  void setContact(double startTime, double endTime, const char *from, const char* to, bool soft=false);
   void setKS_slider(double time, bool before, const char* obj, const char* slider, const char* table);
   
   //===========================================================================
