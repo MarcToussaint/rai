@@ -16,6 +16,7 @@ struct TM_LinTrans : TaskMap {
   arr A,a;
   
   TM_LinTrans(TaskMap *map, const arr& A, const arr& a) : map(map), A(A), a(a) {}
+  ~TM_LinTrans(){ if(map) delete map; map=NULL; }
   
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G);

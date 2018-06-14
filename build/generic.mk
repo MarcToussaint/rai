@@ -373,7 +373,15 @@ inPath_clean/%: $(BASE)/../src/%
 	@-rm -f $</Makefile.dep
 	@-$(MAKE) -C $< -f Makefile clean --no-print-directory
 
+inPath_depend/%: %
+	@echo "                                                ***** depend " $<
+	@-$(MAKE) -C $< -f Makefile depend --no-print-directory
+
 inPath_depend/%: $(BASE)/rai/%
+	@echo "                                                ***** depend " $<
+	@-$(MAKE) -C $< -f Makefile depend --no-print-directory
+
+inPath_depend/%: $(BASE)/../src/%
 	@echo "                                                ***** depend " $<
 	@-$(MAKE) -C $< -f Makefile depend --no-print-directory
 
