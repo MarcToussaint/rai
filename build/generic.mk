@@ -202,6 +202,7 @@ info: force
 	@echo ----------------------------------------; echo
 	@echo "  PWD =" "$(PWD)"
 	@echo "  BASE =" "$(BASE)"
+	@echo "  BASE2 =" "$(BASE2)"
 	@echo "  BASE_REAL =" "$(BASE_REAL)"
 	@echo "  NAME =" "$(NAME)"
 	@echo "  LIBPATH =" "$(LIBPATH)"
@@ -346,8 +347,10 @@ inPath_makeLib/Hardware_%: $(BASE)/rai/Hardware/% $(PREOBJS)
 inPath_makeLib/%: $(BASE)/rai/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< lib$*.so
 
-inPath_makeLib/%: $(BASE2)/rai/% $(PREOBJS)
+ifdef BASE2
+inPath_makeLib/%: $(BASE2)/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< lib$*.so
+endif
 
 inPath_make/%: % $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< x.exe
@@ -368,10 +371,12 @@ inPath_clean/%: $(BASE)/rai/%
 	@-rm -f $</Makefile.dep
 	@-$(MAKE) -C $< -f Makefile clean --no-print-directory
 
-inPath_clean/%: $(BASE)/../src/%
+ifdef BASE2
+inPath_clean/%: $(BASE2)/%
 	@echo "                                                ***** clean " $<
 	@-rm -f $</Makefile.dep
 	@-$(MAKE) -C $< -f Makefile clean --no-print-directory
+endif
 
 inPath_depend/%: %
 	@echo "                                                ***** depend " $<
@@ -381,9 +386,11 @@ inPath_depend/%: $(BASE)/rai/%
 	@echo "                                                ***** depend " $<
 	@-$(MAKE) -C $< -f Makefile depend --no-print-directory
 
-inPath_depend/%: $(BASE)/../src/%
+ifdef BASE2
+inPath_depend/%: $(BASE2)/%
 	@echo "                                                ***** depend " $<
 	@-$(MAKE) -C $< -f Makefile depend --no-print-directory
+endif
 
 inPath_installUbuntu/%: $(BASE)/rai/%
 	@echo "                                                ***** init " $*
