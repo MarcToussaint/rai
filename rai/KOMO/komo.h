@@ -233,7 +233,7 @@ struct KOMO {
 
   struct Conv_MotionProblem_DenseProblem : ConstrainedProblem {
     KOMO& komo;
-    uint dimPhi;
+    uint dimPhi=0;
 
     Conv_MotionProblem_DenseProblem(KOMO& _komo) : komo(_komo) {}
 

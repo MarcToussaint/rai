@@ -137,12 +137,14 @@ void KOMO::setPairedTimes() {
 }
 
 void KOMO::activateCollisions(const char* s1, const char* s2) {
+  if(!useSwift) return;
   Frame *sh1 = world.getFrameByName(s1);
   Frame *sh2 = world.getFrameByName(s2);
   if(sh1 && sh2) world.swift().activate(sh1, sh2);
 }
 
 void KOMO::deactivateCollisions(const char* s1, const char* s2) {
+  if(!useSwift) return;
   Frame *sh1 = world.getFrameByName(s1);
   Frame *sh2 = world.getFrameByName(s2);
   if(sh1 && sh2) world.swift().deactivate(sh1, sh2);
