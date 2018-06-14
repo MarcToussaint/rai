@@ -20,11 +20,11 @@
 //===========================================================================
 
 template<> const char* rai::Enum<rai::JointType>::names []= {
-  "JT_hingeX", "JT_hingeY", "JT_hingeZ", "JT_transX", "JT_transY", "JT_transZ", "JT_transXY", "JT_trans3", "JT_transXYPhi", "JT_universal", "JT_rigid", "JT_quatBall", "JT_phiTransXY", "JT_XBall", "JT_free", "JT_time", NULL
+  "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "transXY", "trans3", "transXYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "time", NULL
 };
 
 template<> const char* rai::Enum<rai::BodyType>::names []= {
-  "BT_dynamic", "BT_kinematic", "BT_static", NULL
+  "dynamic", "kinematic", "static", NULL
 };
 
 //===========================================================================

@@ -279,16 +279,16 @@ struct Camera {
   void upright(const Vector& up=Vector(0,0,1));
 
   //-- projection matrix stuff
-  void glSetProjectionMatrix();
-  arr getGLProjectionMatrix();
-  arr getProjectionMatrix();
-  arr getInverseProjectionMatrix();
-  double glConvertToTrueDepth(double d);
-  double glConvertToLinearDepth(double d);
-  void project2PixelsAndTrueDepth(arr& x, double width, double height);
-  void unproject(arr& x_in2DwithTrueDepth);
-  void unproject_fromPixelsAndTrueDepth(arr& x, double width, double height);
-  void unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height);
+  void glSetProjectionMatrix() const;
+  arr getGLProjectionMatrix() const;
+  arr getProjectionMatrix() const;
+  arr getInverseProjectionMatrix() const;
+  double glConvertToTrueDepth(double d) const;
+  double glConvertToLinearDepth(double d) const;
+  void project2PixelsAndTrueDepth(arr& x, double width, double height) const;
+  void unproject(arr& x_in2DwithTrueDepth) const;
+  void unproject_fromPixelsAndTrueDepth(arr& x, double width, double height) const;
+  void unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height) const;
 
   //retired
   void setCameraProjectionMatrix(const arr& P); //P is in standard convention -> computes fixedProjectionMatrix in OpenGL convention from this

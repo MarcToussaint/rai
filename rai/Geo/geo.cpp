@@ -1763,7 +1763,7 @@ void Camera::setCameraProjectionMatrix(const arr& P) {
 
 /** sets OpenGL's GL_PROJECTION matrix accordingly -- should be
     called in an opengl draw routine */
-void Camera::glSetProjectionMatrix() {
+void Camera::glSetProjectionMatrix() const {
 #ifdef RAI_GL
 //  if(fixedProjectionMatrix.N) {
 //    glLoadMatrixd(fixedProjectionMatrix.p);
@@ -1799,7 +1799,7 @@ void Camera::glSetProjectionMatrix() {
 #endif
 }
 
-arr Camera::getProjectionMatrix(){
+arr Camera::getProjectionMatrix() const{
   arr Tinv = X.getInverseAffineMatrix();
 
   if(focalLength>0.) { //normal perspective mode
@@ -1819,7 +1819,7 @@ arr Camera::getProjectionMatrix(){
   return arr();
 }
 
-arr Camera::getGLProjectionMatrix(){
+arr Camera::getGLProjectionMatrix() const{
   arr Tinv = X.getInverseAffineMatrix();
 
   if(focalLength > 0.) { //focal lengh mode
@@ -1844,7 +1844,7 @@ arr Camera::getGLProjectionMatrix(){
   return arr();
 }
 
-arr Camera::getInverseProjectionMatrix(){
+arr Camera::getInverseProjectionMatrix() const{
   arr T = X.getAffineMatrix();
 
   if(focalLength>0.) { //normal perspective mode
@@ -1864,14 +1864,14 @@ arr Camera::getInverseProjectionMatrix(){
 }
 
 /// convert from gluPerspective's non-linear [0, 1] depth to the true [zNear, zFar] depth
-double Camera::glConvertToTrueDepth(double d) {
+double Camera::glConvertToTrueDepth(double d) const {
   CHECK(!heightAbs, "I think this is wrong for ortho view");
   return zNear + (zFar-zNear)*d/(zFar/zNear*(1.-d)+1.);
 //  return zNear + (zFar-zNear) * glConvertToLinearDepth(d);
 }
 
 /// convert from gluPerspective's non-linear [0, 1] depth to the linear [0, 1] depth
-double Camera::glConvertToLinearDepth(double d) {
+double Camera::glConvertToLinearDepth(double d) const {
   CHECK(!heightAbs, "I think this is wrong for ortho view");
   return d/(zFar/zNear*(1.-d)+1.);
 //  d = 2.0 * d - 1.0;
@@ -1879,7 +1879,7 @@ double Camera::glConvertToLinearDepth(double d) {
 //  return d;
 }
 
-void Camera::project2PixelsAndTrueDepth(arr& x, double width, double height){
+void Camera::project2PixelsAndTrueDepth(arr& x, double width, double height) const{
   CHECK_LE(fabs(width/height - whRatio), 1e-6, "given width and height don't match whRatio");
   if(x.N==3) x.append(1.);
   CHECK_EQ(x.N, 4, "");
@@ -1892,7 +1892,7 @@ void Camera::project2PixelsAndTrueDepth(arr& x, double width, double height){
   x(0) = (x(0)+1.)*.5*(double)width;
 }
 
-void Camera::unproject_fromPixelsAndTrueDepth(arr& x, double width, double height){
+void Camera::unproject_fromPixelsAndTrueDepth(arr& x, double width, double height) const{
   CHECK_LE(fabs(width/height - whRatio), 1e-6, "given width and height don't match whRatio");
   if(x.N==3) x.append(1.);
   CHECK_EQ(x.N, 4, "");
@@ -1907,7 +1907,7 @@ void Camera::unproject_fromPixelsAndTrueDepth(arr& x, double width, double heigh
   x.resizeCopy(3);
 }
 
-void Camera::unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height){
+void Camera::unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height) const{
   CHECK_LE(fabs(double(width)/height - whRatio), 1e-6, "given width and height don't match whRatio");
   arr I = eye(4);
   arr P = getGLProjectionMatrix();

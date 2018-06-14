@@ -657,13 +657,6 @@ void glDrawCamera(const rai::Camera &cam) {
     dxNear = cam.whRatio * dyNear;
     dxFar = cam.whRatio * dyFar;
   }
-  if(cam.focalLength) {
-//    zFar = zNear + .1*(zFar-zNear);
-    dyNear = zNear / cam.focalLength; //::sin(.5*cam.heightAngle/180.*RAI_PI);
-    dyFar = zFar / cam.focalLength; //::sin(.5*cam.heightAngle/180.*RAI_PI);
-    dxNear = cam.whRatio * dyNear;
-    dxFar = cam.whRatio * dyFar;
-  }
   if(cam.heightAbs) {
     dyFar = dyNear = cam.heightAbs/2.;
     dxFar = dxNear = cam.whRatio * dyNear;
