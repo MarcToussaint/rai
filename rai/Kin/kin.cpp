@@ -593,7 +593,10 @@ void rai::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
 
 void rai::KinematicWorld::setFrameState(const arr& X, bool calc_q_from_X){
   CHECK_EQ(X.d0, frames.N, "X.d0 does not equal #frames");
-  for(uint i=0;i<frames.N;i++) frames(i)->X.set(X[i]);
+  for(uint i=0;i<frames.N;i++){
+      frames(i)->X.set(X[i]);
+      frames(i)->X.rot.normalize();
+  }
   if(calc_q_from_X){
     calc_Q_from_BodyFrames();
     calc_q_from_Q();
