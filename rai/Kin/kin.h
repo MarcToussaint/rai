@@ -284,8 +284,8 @@ void displayTrajectory(const arr& x, int steps, rai::KinematicWorld& G, const Ki
 inline void displayTrajectory(const arr& x, int steps, rai::KinematicWorld& G, const char *tag, double delay=0., uint dim_z=0, bool copyG=false) {
   displayTrajectory(x, steps, G, {}, tag, delay, dim_z, copyG);
 }
-void editConfiguration(const char* orsfile, rai::KinematicWorld& G);
-int animateConfiguration(rai::KinematicWorld& G, struct Inotify *ino=NULL);
+void editConfiguration(const char* orsfile, rai::KinematicWorld& G, OpenGL& gl);
+int animateConfiguration(rai::KinematicWorld& G, OpenGL& gl, struct Inotify *ino=NULL);
 
 void kinVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);
 void kinAngVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);

@@ -1230,7 +1230,7 @@ void rai::KinematicWorld::watch(bool pause, const char* txt) {
 }
 
 void rai::KinematicWorld::glAnimate() {
-  animateConfiguration(*this, NULL);
+  animateConfiguration(*this, gl(), NULL);
 }
 
 void rai::KinematicWorld::glGetMasks(int w, int h, bool rgbIndices) {
@@ -3108,11 +3108,11 @@ void _glDrawOdeWorld(dWorldID world)
 }
 */
 
-int animateConfiguration(rai::KinematicWorld& K, Inotify *ino) {
+int animateConfiguration(rai::KinematicWorld& K, OpenGL& gl, Inotify *ino) {
   arr x, x0;
   K.getJointState(x0);
   arr lim = K.getLimits();
-  K.gl().pressedkey=0;
+  gl.pressedkey=0;
   const int steps = 50;
   K.checkConsistency();
   StringA jointNames = K.getJointNames();
@@ -3136,16 +3136,16 @@ int animateConfiguration(rai::KinematicWorld& K, Inotify *ino) {
       // Joint limits
       checkNan(x);
       K.setJointState(x);
-      int key = K.gl().update(STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lim[i] <<"]"), false, false, true);
-//      write_ppm(K.gl().captureImage, STRING("vid/" <<std::setw(3)<<std::setfill('0')<<saveCount++<<".ppm"));
+      int key = gl.update(STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lim[i] <<"]"), false, false, true);
+//      write_ppm(gl.captureImage, STRING("vid/" <<std::setw(3)<<std::setfill('0')<<saveCount++<<".ppm"));
 
-      K.gl().pressedkey=0;
+      gl.pressedkey=0;
       if(key==13 || key==32 || key==27 || key=='q') return key;
 //      rai::wait(0.01);
     }
   }
   K.setJointState(x0);
-  return K.gl().update("", false, false, true);
+  return gl.update("", false, false, true);
 }
 
 rai::Frame *movingBody=NULL;
@@ -3290,12 +3290,12 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
   }
 };
 
-void editConfiguration(const char* filename, rai::KinematicWorld& K) {
+void editConfiguration(const char* filename, rai::KinematicWorld& K, OpenGL &gl) {
 //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
   bool exit=false;
-//  K.gl().addHoverCall(new EditConfigurationHoverCall(K));
-  K.gl().addKeyCall(new EditConfigurationKeyCall(K,exit));
-  K.gl().addClickCall(new EditConfigurationClickCall(K));
+//  gl.addHoverCall(new EditConfigurationHoverCall(K));
+  gl.addKeyCall(new EditConfigurationKeyCall(K,exit));
+  gl.addClickCall(new EditConfigurationClickCall(K));
   Inotify ino(filename);
   for(; !exit;) {
     cout <<"reloading `" <<filename <<"' ... " <<std::endl;
@@ -3303,35 +3303,34 @@ void editConfiguration(const char* filename, rai::KinematicWorld& K) {
     try {
       rai::lineCount=1;
       W <<FILE(filename);
-      K.gl().dataLock.writeLock();
+      gl.dataLock.writeLock();
       K = W;
-      K.gl().dataLock.unlock();
+      gl.dataLock.unlock();
       K.report();
     } catch(const char* msg) {
       cout <<"line " <<rai::lineCount <<": " <<msg <<" -- please check the file and press ENTER" <<endl;
-      K.gl().watch();
+      gl.watch();
       continue;
     }
-    K.gl().update();
-    if(exit) break;
-    cout <<"animating.." <<endl;
-    //while(ino.pollForModification());
-    int key = animateConfiguration(K, &ino);
-    K.gl().pressedkey=0;
-    if(key=='q') break;
-    if(key==-1) continue;
     cout <<"watching..." <<endl;
-#if 1
+    int key = -1;
     for(;;) {
-      key = K.gl().update();
-      K.gl().pressedkey=0;
+      key = gl.update();
+      gl.pressedkey=0;
       if(key==13 || key==32 || key==27 || key=='q') break;
       if(ino.poll(false, true)) break;
       rai::wait(.02);
     }
-#else
-    K.gl().watch();
-#endif
+    if(exit) break;
+    gl.pressedkey=0;
+    if(key==32){
+        cout <<"animating.." <<endl;
+        //while(ino.pollForModification());
+        key = animateConfiguration(K, gl, &ino);
+    }
+    if(key==27 || key=='q') break;
+    if(key==-1) continue;
+
     if(!rai::getInteractivity()) {
       exit=true;
     }
@@ -3346,7 +3345,7 @@ void bindOrsToOpenGL(rai::KinematicWorld&, OpenGL&) { NICO };
 void rai::KinematicWorld::glDraw(OpenGL&) { NICO }
 void rai::glDrawGraph(void *classP) { NICO }
 void editConfiguration(const char* orsfile, rai::KinematicWorld& C) { NICO }
-void animateConfiguration(rai::KinematicWorld& C, Inotify*) { NICO }
+void animateConfiguration(rai::KinematicWorld& C, OpenGL&, Inotify*) { NICO }
 void glTransform(const rai::Transformation&) { NICO }
 void displayTrajectory(const arr&, int, rai::KinematicWorld&, const char*, double) { NICO }
 void displayState(const arr&, rai::KinematicWorld&, const char*) { NICO }
