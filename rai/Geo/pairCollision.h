@@ -12,14 +12,14 @@
 
 struct PairCollision : GLDrawer {
   //INPUTS
-  const rai::Mesh& mesh1;
-  const rai::Mesh& mesh2;
-  rai::Transformation& t1;
-  rai::Transformation& t2;
-  double rad1, rad2; ///< only kinVector and glDraw account for this; the basic collision geometry (OUTPUTS below) is computed neglecting radii!!
+  const rai::Mesh *mesh1=0;
+  const rai::Mesh *mesh2=0;
+  rai::Transformation *t1=0;
+  rai::Transformation *t2=0;
+  double rad1=0., rad2=0.; ///< only kinVector and glDraw account for this; the basic collision geometry (OUTPUTS below) is computed neglecting radii!!
   
   //OUTPUTS
-  double distance; ///< negative=penetration
+  double distance=0.; ///< negative=penetration
   arr p1, p2;      ///< closest points on the shapes
   arr normal;      ///< normal such that "<normal, p1-p2> = distance" is guaranteed (pointing from obj2 to obj1)
   arr simplex1;    ///< simplex on obj1 defining the collision geometry
@@ -29,15 +29,18 @@ struct PairCollision : GLDrawer {
   
   arr poly, polyNorm;
   
+  PairCollision(){}
   PairCollision(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
                 rai::Transformation& t1, rai::Transformation& t2,
                 double rad1=0., double rad2=0.);
+  ~PairCollision(){}
                 
   void write(std::ostream& os) const;
   
   void glDraw(struct OpenGL&);
   
   double getDistance() { return distance-rad1-rad2; }
+
   void kinVector(arr& y, arr& J,
                  const arr& Jp1, const arr& Jp2,
                  const arr& Jx1, const arr& Jx2);
