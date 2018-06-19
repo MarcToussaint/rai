@@ -153,7 +153,7 @@ struct Publisher : Thread {
       var(this, _var, true),
       nh(NULL) {
     if(rai::getParameter<bool>("useRos", true)) {
-      rai::String topic_name = STRING("rai/" <<var.name);
+      rai::String topic_name = var.name; //STRING("rai/" <<var.name);
       LOG(0) <<"publishing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<">";
       nh = new ros::NodeHandle;
       pub = nh->advertise<msg_type>(topic_name.p, 1);
