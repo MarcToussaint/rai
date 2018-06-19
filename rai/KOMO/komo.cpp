@@ -162,7 +162,7 @@ void KOMO::clearTasks() {
 
 Task* KOMO::addTask(const char* name, TaskMap *m, const ObjectiveType& termType) {
   Task *t = new Task(m, termType);
-  t->name=name;
+  t->name = name;
   tasks.append(t);
   return t;
 }
