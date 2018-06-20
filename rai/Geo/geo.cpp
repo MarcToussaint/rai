@@ -44,7 +44,7 @@ double& Vector::operator()(uint i) {
 void Vector::set(double _x, double _y, double _z) { x=_x; y=_y; z=_z; isZero=(x==0. && y==0. && z==0.); }
 
 /// set the vector
-void Vector::set(double* p) { x=p[0]; y=p[1]; z=p[2]; isZero=(x==0. && y==0. && z==0.); }
+void Vector::set(const double* p) { x=p[0]; y=p[1]; z=p[2]; isZero=(x==0. && y==0. && z==0.); }
 
 /// set the vector
 void Vector::setZero() { memset(this, 0, sizeof(Vector)); isZero=true; }
