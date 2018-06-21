@@ -410,7 +410,7 @@ template<class T> std::shared_ptr<T> Node::getPtr() const {
 template<class T> bool Node::getFromString(T& x) const {
   if(!isOfType<rai::String>()) return false;
   rai::String str = get<rai::String>();
-  str >>x;
+  str.resetIstream() >>x;
   if(str.stream().good()) return true;
   return false;
 }
