@@ -1391,17 +1391,17 @@ void Transformation::applyOnPointArray(arr& pts) const {
     LOG(-1) <<"wrong pts dimensions for transformation:" <<pts.dim();
     return;
   }
+  if(!rot.isZero){
+    arr R = ~rot.getArr(); //transposed, only to make it applicable to an n-times-3 array
+    arr t = conv_vec2arr(pos);
+    pts = pts * R;
+  }
   if(!pos.isZero){
     for(double *p=pts.p, *pstop=pts.p+pts.N; p<pstop; p+=3) {
       p[0] += pos.x;
       p[1] += pos.y;
       p[2] += pos.z;
     }
-  }
-  if(!rot.isZero){
-    arr R = ~rot.getArr(); //transposed, only to make it applicable to an n-times-3 array
-    arr t = conv_vec2arr(pos);
-    pts = pts * R;
   }
 }
 
