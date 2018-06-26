@@ -100,6 +100,7 @@ struct Graph : NodeL {
   explicit Graph(istream& is);                           ///< read from a stream
   Graph(const std::map<std::string, std::string>& dict); ///< useful to represent Python dicts
   Graph(std::initializer_list<struct Nod> list);         ///< initialize, e.g.: {"x", "b", {"a", 3.}, {"b", {"x"}, 5.}, {"c", rai::String("BLA")} };
+  Graph(std::initializer_list<const char*> list);
   Graph(const Graph& G);                                 ///< copy constructor
   ~Graph();
   
@@ -115,7 +116,7 @@ struct Graph : NodeL {
   template<class T> Node_typed<T>* newNode(const StringA& keys, const NodeL& parents); ///<exactly equivalent to calling a Node_typed constructor
   template<class T> Node_typed<T>* newNode(const T& x); ///<exactly equivalent to calling a Node_typed constructor
   Node_typed<int>* newNode(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
-  Node_typed<Graph>* newSubgraph(const StringA& keys, const NodeL& parents={}, const Graph& x=NoGraph);
+  Node_typed<Graph>* newSubgraph(const StringA& keys={}, const NodeL& parents={}, const Graph& x=NoGraph);
   void appendDict(const std::map<std::string, std::string>& dict);
   Graph& newNode(const Nod& ni); ///< (internal) append a node initializer
   
@@ -409,7 +410,7 @@ template<class T> std::shared_ptr<T> Node::getPtr() const {
 template<class T> bool Node::getFromString(T& x) const {
   if(!isOfType<rai::String>()) return false;
   rai::String str = get<rai::String>();
-  str >>x;
+  str.resetIstream() >>x;
   if(str.stream().good()) return true;
   return false;
 }

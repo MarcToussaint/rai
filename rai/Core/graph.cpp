@@ -224,6 +224,14 @@ Graph::Graph(std::initializer_list<Nod> list) : Graph() {
   for(const Nod& ni:list) newNode(ni);
 }
 
+Graph::Graph(std::initializer_list<const char*> list) : Graph(){
+  for(const char* s:list){
+    rai::String str(s);
+    Node *n=newSubgraph();
+    n->graph().read(str);
+  }
+}
+
 Graph::Graph(const Graph& G) : Graph() {
   *this = G;
 }
@@ -661,29 +669,39 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
         str.read(is, "", "\"", true);
         node = newNode<rai::String>(keys, parents, str);
       } break;
-      case '[': { //arr
-        char c2=rai::getNextChar(is," \t");
-        if(c2=='"') { //StringA
-          is.putback(c2);
-          is.putback(c);
-          StringA strings;
-          rai::String::readSkipSymbols=",\"";
-          rai::String::readStopSymbols="\"";
-          rai::String::readEatStopSymbol=1;
-          is >>strings;
-          rai::String::readSkipSymbols = " \t";
-          rai::String::readStopSymbols = "\n\r";
-          rai::String::readEatStopSymbol = 1;
-          node = newNode<StringA>(keys, parents, strings);
-        } else {
-          is.putback(c2);
-          is.putback(c);
-          arr reals;
-          is >>reals;
-          node = newNode<arr>(keys, parents, reals);
-        }
-      } break;
-      case '<': { //any type parser
+        case '[': { //arr or StringA
+          char c2=rai::getNextChar(is," \t");
+          if(c2=='"') { //StringA
+            is.putback(c2);
+            is.putback(c);
+            StringA strings;
+            rai::String::readSkipSymbols=",\"";
+            rai::String::readStopSymbols="\"";
+            rai::String::readEatStopSymbol = 1;
+            is >>strings;
+            rai::String::readSkipSymbols = " \t";
+            rai::String::readStopSymbols = "\n\r";
+            rai::String::readEatStopSymbol = 1;
+            node = newNode<StringA>(keys, parents, strings);
+          } else if((c2>='a' && c2<='z') || (c2>='A' && c2<='Z')){ //StringA}
+              is.putback(c2);
+              is.putback(c);
+              StringA strings;
+              rai::String::readStopSymbols=" \n\t]";
+              rai::String::readEatStopSymbol = 0;
+              is >>strings;
+              rai::String::readStopSymbols = "\n\r";
+              rai::String::readEatStopSymbol = 1;
+              node = newNode<StringA>(keys, parents, strings);
+          } else {
+            is.putback(c2);
+            is.putback(c);
+            arr reals;
+            is >>reals;
+            node = newNode<arr>(keys, parents, reals);
+          }
+        } break;
+        case '<': { //any type parser
 #if 1
         str.read(is, "", ">", true);
         node = newNode<rai::String>(keys, parents, str);

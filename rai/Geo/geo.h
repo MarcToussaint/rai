@@ -35,7 +35,8 @@ struct Vector {
   double& operator()(uint i);
   void set(double, double, double);
   void set(const arr& x) { CHECK_EQ(x.N,3, "");  set(x.p); }
-  void set(double*);
+  void set(const std::vector<double>& x) { CHECK_EQ(x.size(), 3, "");  set(x.data()); }
+  void set(const double*);
   void setZero();
   void setRandom(double range=1.);
   void normalize();

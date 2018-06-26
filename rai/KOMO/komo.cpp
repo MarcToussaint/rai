@@ -162,7 +162,7 @@ void KOMO::clearTasks() {
 
 Task* KOMO::addTask(const char* name, TaskMap *m, const ObjectiveType& termType) {
   Task *t = new Task(m, termType);
-  t->name=name;
+  t->name = name;
   tasks.append(t);
   return t;
 }
@@ -1041,6 +1041,10 @@ void KOMO::setSpline(uint splineT) {
 void KOMO::reset(double initNoise) {
   x = getInitialization();
   dual.clear();
+  featureValues.clear();
+  featureTypes.clear();
+  komo_problem.clear();
+  dense_problem.clear();
   rndGauss(x, initNoise, true); //don't initialize at a singular config
   if(splineB.N) {
     z = pseudoInverse(splineB) * x;
@@ -1842,7 +1846,7 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
   komo.set_x(x);
 
   if(!dimPhi) getStructure(NoUintA, NoIntAA, tt);
-  CHECK(dimPhi,"getStructure must be called first");
+//  CHECK(dimPhi,"getStructure must be called first");
 //  getStructure(NoUintA, featureTimes, tt);
 //  if(WARN_FIRST_TIME){ LOG(-1)<<"calling inefficient getStructure"; WARN_FIRST_TIME=false; }
   phi.resize(dimPhi);
