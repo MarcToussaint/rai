@@ -163,7 +163,7 @@ export MSVC_LPATH
 default: $(OUTPUT)
 all: $(OUTPUT) #this is for qtcreator, which by default uses the 'all' target
 
-clean: cleanLocks cleanLocal generate_Makefile.dep
+clean: cleanLocks cleanLocal
 #	rm -f $(OUTPUT) $(OBJS) $(PREOBJS) callgrind.out.* $(CLEAN)
 #	@rm -f $(MODULE_NAME)_wrap.* $(MODULE_NAME)py.so $(MODULE_NAME)py.py
 #	@find $(BASE) -type d -name 'Make.lock' -delete -print
