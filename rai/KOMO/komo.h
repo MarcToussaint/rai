@@ -117,7 +117,7 @@ struct KOMO {
   void setAlign(double startTime, double endTime, const char* shape,  const arr& whichAxis=ARR(1.,0.,0.), const char* shapeRel=NULL, const arr& whichAxisRel=ARR(1.,0.,0.), ObjectiveType type=OT_sos, const arr& target=ARR(1.), double prec=1e2);
   void setAlignedStacking(double time, const char* object, ObjectiveType type=OT_sos, double prec=1e2);
   void setLastTaskToBeVelocity();
-  void setCollisions(bool hardConstraint, double margin=.05, double prec=1.);
+  void setCollisions(bool hardConstraint, double margin=.0, double prec=1.);
   void setLimits(bool hardConstraint, double margin=.05, double prec=1.);
   void setLiftDownUp(double time, const char *endeff, double timeToLift=.15);
   void setSlow(double startTime, double endTime, double prec=1e2, bool hardConstrained=false);
