@@ -34,12 +34,13 @@ void TM_ContactConstraints::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
       con->setFromPairCollision(*dist.coll);
 
       //soft! complementarity
-      double s = 1e-1;
 
       //get force
       arr ferr, Jferr;
       K.kinematicsForce(ferr, Jferr, con);
 
+      double s = 1e-1;
+      if(d.scalar()>0.) s=0.;
       y.append(s*d.scalar() * ferr);
       if(&J) J.append( (s*d.scalar())*Jferr + (s*ferr) * Jd );
 
