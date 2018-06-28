@@ -11,14 +11,10 @@
 
 TM_Proxy::TM_Proxy(PTMtype _type,
                    uintA _shapes,
-                   double _margin,
-                   bool _useCenterDist,
-                   bool _useDistNotCost) {
+                   double _margin) {
   type=_type;
   shapes=_shapes;
   margin=_margin;
-  useCenterDist=_useCenterDist;
-  useDistNotCost=_useDistNotCost;
 //  cout <<"creating TM_Proxy with shape list" <<shapes <<endl;
 }
 
@@ -29,13 +25,13 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   switch(type) {
     case TMT_allP:
       for(const rai::Proxy& p: G.proxies) {
-        G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
+        G.kinematicsProxyCost(y, J, p, margin, true);
       }
       break;
     case TMT_listedVsListedP:
       for(const rai::Proxy& p: G.proxies) {
         if(shapes.contains(p.a->ID) && shapes.contains(p.b->ID)) {
-          G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
+          G.kinematicsProxyCost(y, J, p, margin, true);
 //          p.colorCode = 2;
         }
       }
@@ -43,7 +39,7 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     case TMT_allVsListedP: {
       for(const rai::Proxy& p: G.proxies) {
         if(shapes.contains(p.a->ID) || shapes.contains(p.b->ID)) {
-          G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
+          G.kinematicsProxyCost(y, J, p, margin, true);
 //          p.colorCode = 2;
         }
       }
@@ -51,7 +47,7 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     case TMT_allExceptListedP:
       for(const rai::Proxy& p: G.proxies) {
         if(!(shapes.contains(p.a->ID) && shapes.contains(p.b->ID))) {
-          G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
+          G.kinematicsProxyCost(y, J, p, margin, true);
 //          p.colorCode = 3;
         }
       }
@@ -60,7 +56,7 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       for(const rai::Proxy& p: G.proxies) {
         if((shapes.contains(p.a->ID) && shapes2.contains(p.b->ID)) ||
             (shapes.contains(p.b->ID) && shapes2.contains(p.a->ID))) {
-          G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
+          G.kinematicsProxyCost(y, J, p, margin, true);
 //          p.colorCode = 4;
         }
       }
@@ -75,8 +71,7 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
             break;
         }
         if(j<shapes.d0) { //if a pair was found
-          if(useDistNotCost) G.kinematicsProxyDist(y, J, p, margin, useCenterDist, true);
-          else G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
+          G.kinematicsProxyCost(y, J, p, margin, true);
 //          p.colorCode = 5;
         }
       }
@@ -91,7 +86,7 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
             break;
         }
         if(j==shapes.d0) { //if a pair was not found
-          G.kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
+          G.kinematicsProxyCost(y, J, p, margin, true);
 //          p.colorCode = 5;
         }
       }
@@ -108,7 +103,7 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
             break;
         }
         if(j<shapes.d0) {
-          G.kinematicsProxyCost(y[j](), (&J?J[j]():NoArr), p, margin, useCenterDist, true);
+          G.kinematicsProxyCost(y[j](), (&J?J[j]():NoArr), p, margin, true);
 //          p.colorCode = 5;
         }
       }
@@ -138,10 +133,8 @@ uint TM_Proxy::dim_phi(const rai::KinematicWorld& G) {
 
 TM_ProxyConstraint::TM_ProxyConstraint(PTMtype _type,
                                        uintA _shapes,
-                                       double _margin,
-                                       bool _useCenterDist,
-                                       bool _useDistNotCost)
-  : proxyCosts(_type, _shapes, _margin, _useCenterDist, _useDistNotCost) {
+                                       double _margin)
+  : proxyCosts(_type, _shapes, _margin) {
 }
 
 void TM_ProxyConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {

@@ -19,8 +19,8 @@ extern "C" {
 #include <ccd/quat.h>
 #include <Geo/qhull.h>
 
-PairCollision::PairCollision(const rai::Mesh &mesh1, const rai::Mesh &mesh2, rai::Transformation &t1, rai::Transformation &t2, double rad1, double rad2)
-  : mesh1(mesh1), mesh2(mesh2), t1(t1), t2(t2), rad1(rad1), rad2(rad2) {
+PairCollision::PairCollision(const rai::Mesh &_mesh1, const rai::Mesh &_mesh2, rai::Transformation &_t1, rai::Transformation &_t2, double rad1, double rad2)
+  : mesh1(&_mesh1), mesh2(&_mesh2), t1(&_t1), t2(&_t2), rad1(rad1), rad2(rad2) {
   
   double d2 = GJK_sqrDistance();
   
@@ -28,8 +28,8 @@ PairCollision::PairCollision(const rai::Mesh &mesh1, const rai::Mesh &mesh2, rai
     distance = sqrt(d2);
   } else {
     //THIS IS COSTLY? DO WITHIN THE SUPPORT FUNCTION!
-    rai::Mesh M1(mesh1); t1.applyOnPointArray(M1.V);
-    rai::Mesh M2(mesh2); t2.applyOnPointArray(M2.V);
+    rai::Mesh M1(*mesh1); t1->applyOnPointArray(M1.V);
+    rai::Mesh M2(*mesh2); t2->applyOnPointArray(M2.V);
     distance = - libccd_MPR(M1, M2);
   }
   
@@ -149,14 +149,14 @@ double PairCollision::GJK_sqrDistance() {
   // convert meshes to 'Object_structures'
   Object_structure m1,m2;
   rai::Array<double*> Vhelp1, Vhelp2;
-  m1.numpoints = mesh1.V.d0;  m1.vertices = mesh1.V.getCarray(Vhelp1);  m1.rings=NULL; //TODO: rings would make it faster
-  m2.numpoints = mesh2.V.d0;  m2.vertices = mesh2.V.getCarray(Vhelp2);  m2.rings=NULL;
+  m1.numpoints = mesh1->V.d0;  m1.vertices = mesh1->V.getCarray(Vhelp1);  m1.rings=NULL; //TODO: rings would make it faster
+  m2.numpoints = mesh2->V.d0;  m2.vertices = mesh2->V.getCarray(Vhelp2);  m2.rings=NULL;
   
   // convert transformations to affine matrices
   arr T1,T2;
   rai::Array<double*> Thelp1, Thelp2;
-  if(&t1) {  T1=t1.getAffineMatrix();  T1.getCarray(Thelp1);  }
-  if(&t2) {  T2=t2.getAffineMatrix();  T2.getCarray(Thelp2);  }
+  if(&t1) {  T1=t1->getAffineMatrix();  T1.getCarray(Thelp1);  }
+  if(&t2) {  T2=t2->getAffineMatrix();  T2.getCarray(Thelp2);  }
   
   // call GJK
   simplex_point simplex;
@@ -393,8 +393,8 @@ void PairCollision::kinDistance2(arr &y, arr& J,
 }
 
 void PairCollision::nearSupportAnalysis(double eps) {
-  rai::Mesh M1(mesh1); t1.applyOnPointArray(M1.V);
-  rai::Mesh M2(mesh2); t2.applyOnPointArray(M2.V);
+  rai::Mesh M1(*mesh1); t1->applyOnPointArray(M1.V);
+  rai::Mesh M2(*mesh2); t2->applyOnPointArray(M2.V);
   
   uintA pts1, pts2;
   M1.supportMargin(pts1, -normal, eps);

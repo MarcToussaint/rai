@@ -117,7 +117,7 @@ struct KOMO {
   void setAlign(double startTime, double endTime, const char* shape,  const arr& whichAxis=ARR(1.,0.,0.), const char* shapeRel=NULL, const arr& whichAxisRel=ARR(1.,0.,0.), ObjectiveType type=OT_sos, const arr& target=ARR(1.), double prec=1e2);
   void setAlignedStacking(double time, const char* object, ObjectiveType type=OT_sos, double prec=1e2);
   void setLastTaskToBeVelocity();
-  void setCollisions(bool hardConstraint, double margin=.05, double prec=1.);
+  void setCollisions(bool hardConstraint, double margin=.0, double prec=1.);
   void setLimits(bool hardConstraint, double margin=.05, double prec=1.);
   void setLiftDownUp(double time, const char *endeff, double timeToLift=.15);
   void setSlow(double startTime, double endTime, double prec=1e2, bool hardConstrained=false);
@@ -225,7 +225,8 @@ struct KOMO {
     StringA featureNames;
     
     Conv_MotionProblem_KOMO_Problem(KOMO& _komo) : komo(_komo) {}
-    
+    void clear(){ dimPhi=0; prevLambda.clear(); phiIndex.clear(); phiDim.clear(); featureNames.clear(); }
+
     virtual uint get_k() { return komo.k_order; }
     virtual void getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes);
     virtual void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x, arr& lambda);
@@ -236,10 +237,10 @@ struct KOMO {
     uint dimPhi=0;
 
     Conv_MotionProblem_DenseProblem(KOMO& _komo) : komo(_komo) {}
+    void clear(){ dimPhi=0; }
 
     void getStructure(uintA& variableDimensions, intAA& featureTimes, ObjectiveTypeA& featureTypes);
     virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda);
-
   } dense_problem;
 };
 

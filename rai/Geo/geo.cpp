@@ -44,7 +44,7 @@ double& Vector::operator()(uint i) {
 void Vector::set(double _x, double _y, double _z) { x=_x; y=_y; z=_z; isZero=(x==0. && y==0. && z==0.); }
 
 /// set the vector
-void Vector::set(double* p) { x=p[0]; y=p[1]; z=p[2]; isZero=(x==0. && y==0. && z==0.); }
+void Vector::set(const double* p) { x=p[0]; y=p[1]; z=p[2]; isZero=(x==0. && y==0. && z==0.); }
 
 /// set the vector
 void Vector::setZero() { memset(this, 0, sizeof(Vector)); isZero=true; }
@@ -496,10 +496,10 @@ bool Quaternion::isNormalized() const {
 }
 
 void Quaternion::normalize() {
+  if(isZero) return;
   double n=w*w + x*x + y*y + z*z;
   n=sqrt(n);
   w/=n; x/=n; y/=n; z/=n;
-  isZero=(w==1. || w==-1.);
 }
 
 /** @brief roughly, removes all ``components'' of the rotation that are not
@@ -1391,17 +1391,17 @@ void Transformation::applyOnPointArray(arr& pts) const {
     LOG(-1) <<"wrong pts dimensions for transformation:" <<pts.dim();
     return;
   }
+  if(!rot.isZero){
+    arr R = ~rot.getArr(); //transposed, only to make it applicable to an n-times-3 array
+    arr t = conv_vec2arr(pos);
+    pts = pts * R;
+  }
   if(!pos.isZero){
     for(double *p=pts.p, *pstop=pts.p+pts.N; p<pstop; p+=3) {
       p[0] += pos.x;
       p[1] += pos.y;
       p[2] += pos.z;
     }
-  }
-  if(!rot.isZero){
-    arr R = ~rot.getArr(); //transposed, only to make it applicable to an n-times-3 array
-    arr t = conv_vec2arr(pos);
-    pts = pts * R;
   }
 }
 

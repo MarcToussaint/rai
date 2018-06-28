@@ -162,7 +162,7 @@ void KOMO::clearTasks() {
 
 Task* KOMO::addTask(const char* name, TaskMap *m, const ObjectiveType& termType) {
   Task *t = new Task(m, termType);
-  t->name=name;
+  t->name = name;
   tasks.append(t);
   return t;
 }
@@ -871,9 +871,10 @@ void KOMO::setAlignedStacking(double time, const char* object, ObjectiveType typ
 
 void KOMO::setCollisions(bool hardConstraint, double margin, double prec) {
   if(hardConstraint) { //interpreted as hard constraint (default)
-    setTask(0., -1., new CollisionConstraint(margin), OT_ineq, NoArr, prec);
+//    setTask(0., -1., new CollisionConstraint(margin), OT_ineq, NoArr, prec);
+    setTask(0., -1., new TM_Proxy(TMT_allP, {0u}, margin), OT_eq, NoArr, prec);
   } else { //cost term
-    setTask(0., -1., new TM_Proxy(TMT_allP, {0u}, margin, true), OT_sos, NoArr, prec);
+    setTask(0., -1., new TM_Proxy(TMT_allP, {0u}, margin), OT_sos, NoArr, prec);
   }
 }
 
@@ -1041,6 +1042,10 @@ void KOMO::setSpline(uint splineT) {
 void KOMO::reset(double initNoise) {
   x = getInitialization();
   dual.clear();
+  featureValues.clear();
+  featureTypes.clear();
+  komo_problem.clear();
+  dense_problem.clear();
   rndGauss(x, initNoise, true); //don't initialize at a singular config
   if(splineB.N) {
     z = pseudoInverse(splineB) * x;
@@ -1842,7 +1847,7 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
   komo.set_x(x);
 
   if(!dimPhi) getStructure(NoUintA, NoIntAA, tt);
-  CHECK(dimPhi,"getStructure must be called first");
+//  CHECK(dimPhi,"getStructure must be called first");
 //  getStructure(NoUintA, featureTimes, tt);
 //  if(WARN_FIRST_TIME){ LOG(-1)<<"calling inefficient getStructure"; WARN_FIRST_TIME=false; }
   phi.resize(dimPhi);
