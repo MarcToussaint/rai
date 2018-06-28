@@ -162,10 +162,10 @@ struct KinematicWorld : GLDrawer {
   
   void kinematicsPenetrations(arr& y, arr& J=NoArr, bool penetrationsOnly=true, double activeMargin=0.) const; ///< true: if proxy(i).distance>0. => y(i)=0; else y(i)=-proxy(i).distance
   void kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
-  void kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
-  void kinematicsProxyCost(arr& y, arr& J, double margin=.02, bool useCenterDist=true) const;
-  void kinematicsContactCost(arr& y, arr& J, const Contact *p, double margin=.02, bool addValues=false) const;
-  void kinematicsContactCost(arr& y, arr& J, double margin=.02) const;
+  void kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin=.0, bool addValues=false) const;
+  void kinematicsProxyCost(arr& y, arr& J, double margin=.0) const;
+  void kinematicsContactCost(arr& y, arr& J, const Contact *p, double margin=.0, bool addValues=false) const;
+  void kinematicsContactCost(arr& y, arr& J, double margin=.0) const;
   void kinematicsProxyConstraint(arr& g, arr& J, const Proxy& p, double margin=.02) const;
   void kinematicsContactConstraints(arr& y, arr &J) const; //TODO: deprecated?
   void kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const rai::Vector& rel, Frame *s) const;

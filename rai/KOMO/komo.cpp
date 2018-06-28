@@ -871,9 +871,10 @@ void KOMO::setAlignedStacking(double time, const char* object, ObjectiveType typ
 
 void KOMO::setCollisions(bool hardConstraint, double margin, double prec) {
   if(hardConstraint) { //interpreted as hard constraint (default)
-    setTask(0., -1., new CollisionConstraint(margin), OT_ineq, NoArr, prec);
+//    setTask(0., -1., new CollisionConstraint(margin), OT_ineq, NoArr, prec);
+    setTask(0., -1., new TM_Proxy(TMT_allP, {0u}, margin), OT_eq, NoArr, prec);
   } else { //cost term
-    setTask(0., -1., new TM_Proxy(TMT_allP, {0u}, margin, true), OT_sos, NoArr, prec);
+    setTask(0., -1., new TM_Proxy(TMT_allP, {0u}, margin), OT_sos, NoArr, prec);
   }
 }
 

@@ -1989,7 +1989,7 @@ void rai::KinematicWorld::kinematicsProxyDist(arr& y, arr& J, const Proxy& p, do
   }
 }
 
-void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin, bool useCenterDist, bool addValues) const {
+void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin, bool addValues) const {
   CHECK(p.a->shape,"");
   CHECK(p.b->shape,"");
   
@@ -2009,15 +2009,10 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   if(&J) J.resize(1, getJointStateDimension());
   if(!addValues) { y.setZero();  if(&J) J.setZero(); }
   
-#if 0
   if(y_dist.scalar()>margin) return;
-  y += ARR(1.-y_dist.scalar()/margin);
-  if(&J)  J -= (1./margin)*J_dist;
-#else
-  if(y_dist.scalar()>0.) return;
-  y += ARR(-y_dist.scalar()/margin);
-  if(&J)  J -= (1./margin)*J_dist;
-#endif
+  double scale = 1./0.05; //5cm -> cost of 1; is a fixed heuristic, can be changed by TaskMap rescaling
+  y += scale*(margin-y_dist.scalar());
+  if(&J)  J -= scale*J_dist;
   
 #else
   CHECK(a->shape->mesh_radius>0.,"");
@@ -2081,11 +2076,11 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
 }
 
 /// measure (=scalar kinematics) for the contact cost summed over all bodies
-void rai::KinematicWorld::kinematicsProxyCost(arr &y, arr& J, double margin, bool useCenterDist) const {
+void rai::KinematicWorld::kinematicsProxyCost(arr &y, arr& J, double margin) const {
   y.resize(1).setZero();
   if(&J) J.resize(1, getJointStateDimension()).setZero();
   for(const Proxy& p:proxies) { /*if(p.d<margin)*/
-    kinematicsProxyCost(y, J, p, margin, useCenterDist, true);
+    kinematicsProxyCost(y, J, p, margin, true);
   }
 }
 
@@ -2101,9 +2096,9 @@ void rai::KinematicWorld::kinematicsContactCost(arr& y, arr& J, const Contact* c
   if(!addValues) { y.setZero();  if(&J) J.setZero(); }
   
   if(y_dist.scalar()>margin) return;
-  
-  y += ARR(1.-y_dist.scalar()/margin);
-  if(&J)  J -= (1./margin)*J_dist;
+  double scale = 1./0.05; //5cm -> cost of 1; is a fixed heuristic, can be changed by TaskMap rescaling
+  y += scale*(margin-y_dist.scalar());
+  if(&J)  J -= scale*J_dist;
 }
 
 void rai::KinematicWorld::kinematicsContactCost(arr &y, arr& J, double margin) const {
