@@ -143,7 +143,7 @@ struct KinematicWorld : GLDrawer {
   /// @name set state
   void setJointState(const arr& _q, const arr& _qdot=NoArr);
   void setJointState(const arr& _q, const StringA&);
-  void setFrameState(const arr& X, bool calc_q_from_X=true);
+  void setFrameState(const arr& X, const StringA& frameNames={}, bool calc_q_from_X=true);
   void setTimes(double t);
   
   /// @name kinematics
