@@ -14,8 +14,8 @@
 
 void Task::setCostSpecs(int fromStep, int toStep, const arr& _target, double _prec) {
   if(&_target) target = _target; else target.clear();
-  if(fromStep<0) fromStep=0;
-  CHECK_GE(toStep, fromStep,"");
+  CHECK_GE(fromStep, 0, "");
+  CHECK_GE(toStep, fromStep, "");
   prec.resize(toStep+1).setZero();
   for(uint t=fromStep; t<=(uint)toStep; t++) prec(t) = _prec;
 #if 1
