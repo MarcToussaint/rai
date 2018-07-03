@@ -287,6 +287,7 @@ rai::Array<rai::Joint*> getMatchingJoints(const WorldL& Ktuple, bool zeroVelJoin
       matchIsGood=true;
       
       for(uint k=0; k<Ktuple.N-1; k++) { //go through other configs
+        if(Ktuple(k)->frames.N<=j->frame.ID){ matchIsGood=false; break; }
         rai::Frame *fmatch = Ktuple(k)->frames(j->frame.ID);
         if(!fmatch){ matchIsGood=false; break; }
         rai::Joint *jmatch = fmatch->joint; //getJointByBodyIndices(j->from()->ID, j->frame.ID);

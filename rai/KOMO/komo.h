@@ -90,7 +90,7 @@ struct KOMO {
    * they allow the user to add a cost task, or a kinematic switch in the problem definition
    * Typically, the user does not call them directly, but uses the many methods below
    * Think of all of the below as examples for how to set arbirary tasks/switches yourself */
-  struct Task* setTask(double startTime, double endTime, TaskMap* map, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2, uint order=0, int deltaStep=0);
+  struct Task* setTask(double startTime, double endTime, TaskMap* map, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e1, uint order=0, int deltaStep=0);
   void setFlag(double time, rai::Flag* fl, int deltaStep=0);
   void setKinematicSwitch(double time, bool before, rai::KinematicSwitch* sw);
   void setKinematicSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const rai::Transformation& jFrom=NoTransformation);
@@ -105,24 +105,24 @@ struct KOMO {
   //-- tasks mid-level
   void setSquaredQAccelerations(double startTime=-1., double endTime=-1., double prec=1.);
   void setSquaredQVelocities(double startTime=-1., double endTime=-1., double prec=1.);
-  void setFixEffectiveJoints(double startTime=-1., double endTime=-1., double prec=1e3);
-  void setFixSwitchedObjects(double startTime=-1., double endTime=-1., double prec=1e3);
-  void setSquaredQuaternionNorms(double startTime=-1., double endTime=-1., double prec=1e1);
+  void setFixEffectiveJoints(double startTime=-1., double endTime=-1., double prec=3e1);
+  void setFixSwitchedObjects(double startTime=-1., double endTime=-1., double prec=3e1);
+  void setSquaredQuaternionNorms(double startTime=-1., double endTime=-1., double prec=3e0);
 
   void setHoming(double startTime=-1., double endTime=-1., double prec=1e-1, const char *keyword="robot");
-  void setHoldStill(double startTime, double endTime, const char* shape, double prec=1e2);
+  void setHoldStill(double startTime, double endTime, const char* shape, double prec=1e1);
 
   void setCollisions(bool hardConstraint, double margin=.0, double prec=1.);
   void setLimits(bool hardConstraint, double margin=.05, double prec=1.);
   void setLiftDownUp(double time, const char *endeff, double timeToLift=.15);
-  void setSlow(double startTime, double endTime, double prec=1e2, bool hardConstrained=false);
-  void setSlowAround(double time, double delta, double prec=1e2, bool hardConstrained=false);
+  void setSlow(double startTime, double endTime, double prec=1e1, bool hardConstrained=false);
+  void setSlowAround(double time, double delta, double prec=1e1, bool hardConstrained=false);
   
   //-- core task symbols of skeletons
-  void core_setTouch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, const arr& target=NoArr, double prec=1e2);
-  void core_setAbove(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e2);
-  void core_setInside(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e2);
-  void core_setImpulse(double time, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, double prec=1e2);
+  void core_setTouch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, const arr& target=NoArr, double prec=1e1);
+  void core_setAbove(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e1);
+  void core_setInside(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e1);
+  void core_setImpulse(double time, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, double prec=1e1);
   
   //-- core kinematic switch symbols of skeletons
   void core_setKSstable(double time, const char *from, const char *to);
@@ -134,7 +134,7 @@ struct KOMO {
   void setSkeleton(const Skeleton& S);
   
 //still there...
-  void setGrasp(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=1e1, double timeToLift=.15);
+  void setGrasp(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=3e0, double timeToLift=.15);
   void setPlace(double time, const char *endeff, const char* object, const char* placeRef, int verbose=0);
   void setGraspSlide(double time, const char* stick, const char* object, const char* placeRef, int verbose=0);
   void setHandover(double time, const char* endeffRef, const char* object, const char* prevHolder, int verbose=0);
@@ -142,7 +142,6 @@ struct KOMO {
   void setKS_slider(double time, bool before, const char* obj, const char* slider, const char* table);
 
 
-                 
   //===========================================================================
   //
   // optimizing, getting results, and verbosity

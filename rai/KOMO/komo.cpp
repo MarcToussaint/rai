@@ -186,8 +186,8 @@ void KOMO::setKinematicSwitch(double time, bool before, const char* type, const 
 }
 
 void KOMO::core_setKSstable(double time, const char* from, const char* to) {
-  //      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_effJoint, JT_quatBall, s.symbols(1), s.symbols(2), world));
-  //      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_insertEffJoint, JT_trans3, NULL, s.symbols(2), world));
+//  setKinematicSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_quatBall, from, to, world));
+//  setKinematicSwitch(time, true, new KinematicSwitch(SW_insertEffJoint, JT_trans3, NULL, to, world));
   setKinematicSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, from, to, world));
   setFlag(time, new Flag(FL_clear, world[to]->ID, 0, true));
   setFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
@@ -313,7 +313,7 @@ void KOMO_ext::setOverTheEdge(double time, const char *object, const char *from,
   double negMargin = margin + .5*shapeSize(world, object, 0); //how much outside the bounding box?
   setTask(time, time+.5,
           new TM_Max(new TM_AboveBox(world, object, from, -negMargin), true), //this is the max selection -- only one of the four numbers need to be outside the BB
-          OT_ineq, {}, 1e1); //NOTE: usually this is an inequality constraint <0; here we say this should be zero for a negative margin (->outside support)
+          OT_ineq, {}, 3e0); //NOTE: usually this is an inequality constraint <0; here we say this should be zero for a negative margin (->outside support)
 }
 
 void KOMO_ext::setInertialMotion(double startTime, double endTime, const char *object, const char *base, double g, double c) {
@@ -323,7 +323,7 @@ void KOMO_ext::setInertialMotion(double startTime, double endTime, const char *o
 //  setFlag(endTime, new Flag(FL_noQControlCosts, world[object]->ID, 0, true, false), +1);
   if(k_order>=2) {
     NIY;
-//    setTask(startTime, endTime, new TM_InertialMotion(world, object, g, c), OT_sos, {}, 1e2, 2);
+//    setTask(startTime, endTime, new TM_InertialMotion(world, object, g, c), OT_sos, {}, 1e1, 2);
   }
 }
 
@@ -342,16 +342,16 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
   //  setTask(time, time, new TM_Default(TMT_vec, world, endeffRef, Vector_z), OT_sos, {0.,0.,1.}, weightFromTop);
   
   //hand center at object center (could be replaced by touch)
-//  setTask(time, time, new TM_Default(TMT_posDiff, world, endeffRef, NoVector, object, NoVector), OT_eq, NoArr, 1e3);
+//  setTask(time, time, new TM_Default(TMT_posDiff, world, endeffRef, NoVector, object, NoVector), OT_eq, NoArr, 3e1);
 
   //hand grip axis orthogonal to object length axis
-//  setTask(time, time, new TM_Default(TMT_vecAlign, world, endeffRef, Vector_x, object, Vector_x), OT_sos, NoArr, 1e1);
+//  setTask(time, time, new TM_Default(TMT_vecAlign, world, endeffRef, Vector_x, object, Vector_x), OT_sos, NoArr, 3e0);
   //hand grip axis orthogonal to object length axis
-//  setTask(time, time, new TM_Default(TMT_vecAlign, world, endeffRef, Vector_y, object, Vector_x), OT_sos, {-1.}, 1e1);
+//  setTask(time, time, new TM_Default(TMT_vecAlign, world, endeffRef, Vector_y, object, Vector_x), OT_sos, {-1.}, 3e0);
 
   //hand touches object
 //  Shape *endeffShape = world.getFrameByName(endeffRef)->body->shapes.first();
-//  setTask(time, time, new TM_GJK(endeffShape, world.getFrameByName(object), false), OT_eq, NoArr, 1e3);
+//  setTask(time, time, new TM_GJK(endeffShape, world.getFrameByName(object), false), OT_eq, NoArr, 3e1);
 
   //disconnect object from table
 //  setKinematicSwitch(time, true, "delete", NULL, object);
@@ -359,17 +359,16 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
 #if 0
   setKinematicSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_quatBall, endeffRef, object, world));
   setKinematicSwitch(time, true, new KinematicSwitch(SW_insertEffJoint, JT_trans3, NULL, object, world));
-  setTask(time, time, new TM_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e2);
+  setTask(time, time, new TM_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e1);
 #else
   setKinematicSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, endeffRef, object, world));
-//  setKinematicSwitch(time, true, "freeZero", endeffRef, object);
-  setTask(time, time, new TM_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e2);
+  setTask(time, time, new TM_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e1);
 //  setTouch(time, time, endeffRef, object);
 #endif
   
 //  if(stepsPerPhase>2 && timeToLift>0.){ //velocities down and up
 //    setTask(time-timeToLift, time-2.*timeToLift/3, new TM_Default(TMT_pos, world, endeffRef), OT_sos, {0.,0.,-.1}, 1e0, 1); //move down
-//    setTask(time-timeToLift/3,  time+timeToLift/3, new TM_Default(TMT_pos, world, endeffRef), OT_sos, {0.,0.,0.}, 1e1, 1); //move down
+//    setTask(time-timeToLift/3,  time+timeToLift/3, new TM_Default(TMT_pos, world, endeffRef), OT_sos, {0.,0.,0.}, 3e0, 1); //move down
 //    setTask(time+2.*timeToLift/3, time+timeToLift, new TM_Default(TMT_pos, world, endeffRef), OT_sos, {0.,0.,.1}, 1e0, 1); // move up
 //  }
 
@@ -392,12 +391,12 @@ void KOMO_ext::setGraspStick(double time, const char* endeffRef, const char* obj
 //          new TM_LinTrans(
 //              new TM_Default(TMT_posDiff, world, endeffRef, NoVector, object, NoVector),
 //              arr(2,3,{0,1,0,0,0,1}), {}),
-//          OT_eq, NoArr, 1e3);
-  setTask(time, time, new TM_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e2);
+//          OT_eq, NoArr, 3e1);
+  setTask(time, time, new TM_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e1);
   
   if(stepsPerPhase>2) { //velocities down and up
-    setTask(time-timeToLift, time, new TM_Default(TMT_pos, world, endeffRef), OT_sos, {0.,0.,-.1}, 1e1, 1); //move down
-    setTask(time, time+timeToLift, new TM_Default(TMT_pos, world, object), OT_sos, {0.,0.,.1}, 1e1, 1); // move up
+    setTask(time-timeToLift, time, new TM_Default(TMT_pos, world, endeffRef), OT_sos, {0.,0.,-.1}, 3e0, 1); //move down
+    setTask(time, time+timeToLift, new TM_Default(TMT_pos, world, object), OT_sos, {0.,0.,.1}, 3e0, 1); // move up
   }
 }
 
@@ -407,20 +406,20 @@ void KOMO::setPlace(double time, const char* endeff, const char* object, const c
   
 //  if(stepsPerPhase>2){ //velocities down and up
 //    if(endeff){
-//      setTask(time-.15, time-.10, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,-.1}, 1e1, 1); //move down
-//      setTask(time-.05, time+.05, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,0. }, 1e2, 1); //hold still
-//      setTask(time+.10, time+.15, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,+.1}, 1e1, 1); //move up
+//      setTask(time-.15, time-.10, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,-.1}, 3e0, 1); //move down
+//      setTask(time-.05, time+.05, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,0. }, 1e1, 1); //hold still
+//      setTask(time+.10, time+.15, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,+.1}, 3e0, 1); //move up
 //    }else{
-////      setTask(time-.15, time, new TM_Default(TMT_pos, world, object), OT_sos, {0.,0.,-.1}, 1e1, 1); //move down
+////      setTask(time-.15, time, new TM_Default(TMT_pos, world, object), OT_sos, {0.,0.,-.1}, 3e0, 1); //move down
 //    }
 //  }
 
   //place upright
-//  setTask(time-.02, time, new TM_Default(TMT_vec, world, object, Vector_z), OT_sos, {0.,0.,1.}, 1e2);
+//  setTask(time-.02, time, new TM_Default(TMT_vec, world, object, Vector_z), OT_sos, {0.,0.,1.}, 1e1);
 
   //place inside box support
 //  setTask(time, time, new TM_StaticStability(world, placeRef, .01), OT_ineq);
-  setTask(time, time, new TM_AboveBox(world, object, placeRef), OT_ineq, NoArr, 1e2);
+  setTask(time, time, new TM_AboveBox(world, object, placeRef), OT_ineq, NoArr, 1e1);
   
   //connect object to placeRef
   Transformation rel = 0;
@@ -441,9 +440,9 @@ void KOMO_ext::setPlaceFixed(double time, const char* endeff, const char* object
   
   if(stepsPerPhase>2) { //velocities down and up
     if(endeff) {
-      setTask(time-.15, time-.10, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,-.1}, 1e1, 1); //move down
-      setTask(time-.05, time+.05, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,0. }, 1e2, 1); //hold still
-      setTask(time+.10, time+.15, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,+.1}, 1e1, 1); //move up
+      setTask(time-.15, time-.10, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,-.1}, 3e0, 1); //move down
+      setTask(time-.05, time+.05, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,0. }, 1e1, 1); //hold still
+      setTask(time+.10, time+.15, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,+.1}, 3e0, 1); //move up
     }
   }
 }
@@ -464,11 +463,11 @@ void KOMO::setHandover(double time, const char* oldHolder, const char* object, c
   setKinematicSwitch(time, true, "ballZero", newHolder, object); //why does this sometimes lead to worse motions?
 #else
   setKinematicSwitch(time, true, "freeZero", newHolder, object);
-  setTask(time, time, new TM_Default(TMT_posDiff, world, newHolder, NoVector, object, NoVector), OT_eq, NoArr, 1e3);
+  setTask(time, time, new TM_Default(TMT_posDiff, world, newHolder, NoVector, object, NoVector), OT_eq, NoArr, 3e1);
 #endif
   
   if(stepsPerPhase>2) { //velocities: no motion
-    setTask(time-.15, time+.15, new TM_Default(TMT_pos, world, object), OT_sos, {0.,0.,0.}, 1e1, 1); // no motion
+    setTask(time-.15, time+.15, new TM_Default(TMT_pos, world, object), OT_sos, {0.,0.,0.}, 3e0, 1); // no motion
   }
 #endif
 }
@@ -478,21 +477,21 @@ void KOMO::setPush(double startTime, double endTime, const char* stick, const ch
   
 #if 1
   //stick normal alignes with slider direction
-  setTask(startTime, endTime, new TM_Default(TMT_vecAlign, world, stick, -Vector_y, "slider1b", Vector_x), OT_sos, {1.}, 1e2);
+  setTask(startTime, endTime, new TM_Default(TMT_vecAlign, world, stick, -Vector_y, "slider1b", Vector_x), OT_sos, {1.}, 1e1);
   //stick horizontal is orthogonal to world vertical
-//  setTask(startTime, endTime, new TM_Default(TMT_vecAlign, world, stick, Vector_x, NULL, Vector_z), OT_sos, {0.}, 1e2);
+//  setTask(startTime, endTime, new TM_Default(TMT_vecAlign, world, stick, Vector_x, NULL, Vector_z), OT_sos, {0.}, 1e1);
   core_setTouch(startTime, endTime, stick, table);
   
   double dist = .05; //.5*shapeSize(world, object, 0)+.01;
   setTask(startTime, endTime, new TM_InsideBox(world, "slider1b", {dist, .0, .0}, stick), OT_ineq);
-//  setTask(startTime, endTime, new TM_Default(TMT_posDiff, world, stick, NoVector, "slider1b", {dist, .0, .0}), OT_sos, {}, 1e2);
+//  setTask(startTime, endTime, new TM_Default(TMT_posDiff, world, stick, NoVector, "slider1b", {dist, .0, .0}), OT_sos, {}, 1e1);
 #else
   setTouch(startTime, endTime, stick, object);
 #endif
 
   setKS_slider(startTime, true, object, "slider1", table);
   
-  setTask(startTime, endTime-.1, new TM_AboveBox(world, object, table), OT_ineq, NoArr, 1e2);
+  setTask(startTime, endTime-.1, new TM_AboveBox(world, object, table), OT_ineq, NoArr, 1e1);
   
 #if 1
   //connect object to placeRef
@@ -502,10 +501,10 @@ void KOMO::setPush(double startTime, double endTime, const char* stick, const ch
 #endif
   
   if(stepsPerPhase>2) { //velocities down and up
-    setTask(startTime-.3, startTime-.1, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., -.1}, 1e1, 1); //move down
-    setTask(startTime-.05, startTime-.0, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., 0}, 1e1, 1); //hold still
-    setTask(endTime+.0, endTime+.05, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., 0}, 1e1, 1); //hold still
-    setTask(endTime+.1, endTime+.3, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., .1}, 1e1, 1); // move up
+    setTask(startTime-.3, startTime-.1, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., -.1}, 3e0, 1); //move down
+    setTask(startTime-.05, startTime-.0, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., 0}, 3e0, 1); //hold still
+    setTask(endTime+.0, endTime+.05, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., 0}, 3e0, 1); //hold still
+    setTask(endTime+.1, endTime+.3, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., .1}, 3e0, 1); // move up
   }
 }
 
@@ -525,13 +524,13 @@ void KOMO::setGraspSlide(double time, const char* endeff, const char* object, co
   //connect graspRef with object
 //  setKinematicSwitch(startTime, true, "ballZero", endeff, object);
 //  setKinematicSwitch(time, true, "insert_trans3", NULL, object);
-//  setTask(time, time, new TM_InsideBox(world, endeff, NoVector, object), OT_ineq, NoArr, 1e2);
+//  setTask(time, time, new TM_InsideBox(world, endeff, NoVector, object), OT_ineq, NoArr, 1e1);
   core_setKSstable(startTime, endeff, object);
   core_setTouch(startTime, startTime, endeff, object);
   
   //-- place part
   //place inside box support
-//  setTask(endTime, endTime, new TM_AboveBox(world, object, placeRef), OT_ineq, NoArr, 1e2);
+//  setTask(endTime, endTime, new TM_AboveBox(world, object, placeRef), OT_ineq, NoArr, 1e1);
   core_setAbove(endTime, endTime, object, placeRef);
   
   //disconnect object from grasp ref
@@ -547,14 +546,14 @@ void KOMO::setGraspSlide(double time, const char* endeff, const char* object, co
   double h = .5*(shapeSize(world, object) + shapeSize(world, placeRef));
   setTask(startTime, endTime,
           new TM_LinTrans(new TM_Default(TMT_posDiff, world, object, NoVector, placeRef), ~ARR(0,0,1), ARR(0)),
-          OT_sos, ARR(h), 1e2);
+          OT_sos, ARR(h), 1e1);
   //keep object vertial
   setTask(startTime, endTime,
-          new TM_Default(TMT_vecDiff, world, object, Vector_z, placeRef, Vector_z), OT_sos, {}, 1e2);
+          new TM_Default(TMT_vecDiff, world, object, Vector_z, placeRef, Vector_z), OT_sos, {}, 1e1);
           
 //  if(stepsPerPhase>2){ //velocities down and up
-//    setTask(startTime-.15, startTime, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,-.1}, 1e1, 1); //move down
-//    setTask(endTime, endTime+.15, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,.1}, 1e1, 1); // move up
+//    setTask(startTime-.15, startTime, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,-.1}, 3e0, 1); //move down
+//    setTask(endTime, endTime+.15, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,.1}, 3e0, 1); // move up
 //  }
 }
 
@@ -566,7 +565,7 @@ void KOMO_ext::setSlideAlong(double time, const char* stick, const char* object,
   //stick normal alignes with slider direction
   setTask(time, time+1., new TM_Default(TMT_vecAlign, world, stick, -Vector_y, object, Vector_x), OT_sos, {1.}, 1e0);
   //stick horizontal is orthogonal to world vertical
-  setTask(time, time+1., new TM_Default(TMT_vecAlign, world, stick, Vector_x, NULL, Vector_z), OT_sos, {0.}, 1e2);
+  setTask(time, time+1., new TM_Default(TMT_vecAlign, world, stick, Vector_x, NULL, Vector_z), OT_sos, {0.}, 1e1);
   
   double dist = .5*shapeSize(world, object, 0)+.01;
   setTask(time, time+1., new TM_InsideBox(world, object, {dist, .0, .0}, stick), OT_ineq);
@@ -584,11 +583,11 @@ void KOMO_ext::setSlideAlong(double time, const char* stick, const char* object,
   setKinematicSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transX, wall, object, world, 0));
   setKinematicSwitch(time, true, new KinematicSwitch(SW_insertEffJoint, JT_transZ, NULL, object, world, 0, rel));
   //    setKinematicSwitch(time, true, "insert_trans3", NULL, object);
-  //    setTask(time, time, new TM_InsideBox(world, endeff, NoVector, object), OT_ineq, NoArr, 1e2);
+  //    setTask(time, time, new TM_InsideBox(world, endeff, NoVector, object), OT_ineq, NoArr, 1e1);
   
   if(stepsPerPhase>2) { //velocities down and up
-    setTask(endTime+.0, endTime+.05, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., 0}, 1e1, 1); //hold still
-    setTask(endTime+.1, endTime+.3, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., .05}, 1e1, 1); // move up
+    setTask(endTime+.0, endTime+.05, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., 0}, 3e0, 1); //hold still
+    setTask(endTime+.1, endTime+.3, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., .05}, 3e0, 1); // move up
   }
 }
 
@@ -611,7 +610,7 @@ void KOMO_ext::setDrop(double time, const char* object, const char* from, const 
 //  setFlag(time, new Flag(FT_noQControlCosts, world[object]->ID, 0, true),+1);
 
 //  if(stepsPerPhase>2){ //velocities down and up
-//    setTask(time, time+.2, new TM_Default(TMT_pos, world, object), OT_sos, {0.,0.,-.1}, 1e1, 1); // move down
+//    setTask(time, time+.2, new TM_Default(TMT_pos, world, object), OT_sos, {0.,0.,-.1}, 3e0, 1); // move down
 //  }
 }
 
@@ -628,7 +627,7 @@ void KOMO_ext::setDropEdgeFixed(double time, const char* object, const char* to,
 //  setKinematicSwitch(time, true, new KinematicSwitch(SW_insertEffJoint, JT_trans3, NULL, object, world, 0));
 
 //  if(stepsPerPhase>2){ //velocities down and up
-//    setTask(time, time+.2, new TM_Default(TMT_pos, world, object), OT_sos, {0.,0.,-.1}, 1e1, 1); // move down
+//    setTask(time, time+.2, new TM_Default(TMT_pos, world, object), OT_sos, {0.,0.,-.1}, 3e0, 1); // move down
 //  }
 }
 
@@ -636,10 +635,10 @@ void KOMO_ext::setAttach(double time, const char* endeff, const char* object1, c
   if(verbose>0) cout <<"KOMO_setAttach t=" <<time <<" endeff=" <<endeff <<" obj1=" <<object1 <<" obj2=" <<object2 <<endl;
   
   //hand center at object center (could be replaced by touch)
-//  setTask(time, time, new TM_Default(TMT_pos, world, object2, NoVector, object1, NoVector), OT_sos, rel.pos.getArr(), 1e3);
-//  setTask(time, time, new TM_Default(TMT_quatDiff, world, object2, NoVector, object1, NoVector), OT_sos, conv_quat2arr(rel.rot), 1e3);
+//  setTask(time, time, new TM_Default(TMT_pos, world, object2, NoVector, object1, NoVector), OT_sos, rel.pos.getArr(), 3e1);
+//  setTask(time, time, new TM_Default(TMT_quatDiff, world, object2, NoVector, object1, NoVector), OT_sos, conv_quat2arr(rel.rot), 3e1);
 
-//  setTask(time, time, new TM_Default(TMT_vecAlign, world, newHolder, Vector_y, object, Vector_x), OT_sos, {-1.}, 1e1);
+//  setTask(time, time, new TM_Default(TMT_vecAlign, world, newHolder, Vector_y, object, Vector_x), OT_sos, {-1.}, 3e0);
 
   //disconnect object from grasp ref
 //  setKinematicSwitch(time, true, "delete", endeff, object2);
@@ -662,7 +661,7 @@ void KOMO::setSlow(double startTime, double endTime, double prec, bool hardConst
     if(!hardConstrained) setTask(startTime, endTime, map, OT_sos, NoArr, prec, 1);
     else setTask(startTime, endTime, map, OT_eq, NoArr, prec, 1);
   }
-  //#    _MinSumOfSqr_qItself_vel(MinSumOfSqr qItself){ order=1 time=[0.98 1] scale=1e1 } #slow down
+  //#    _MinSumOfSqr_qItself_vel(MinSumOfSqr qItself){ order=1 time=[0.98 1] scale=3e0 } #slow down
 }
 
 void KOMO::setSlowAround(double time, double delta, double prec, bool hardConstrained) {
@@ -676,18 +675,18 @@ void KOMO_ext::setFine_grasp(double time, const char* endeff, const char* object
   
   //position above
   setTask(time+t1, 1., new TM_Default(TMT_vec, world, endeff, Vector_z), OT_sos, {0.,0.,1.}, 1e0);
-  setTask(time+t1, t1, new TM_Default(TMT_posDiff, world, endeff, NoVector, object, NoVector), OT_sos, {0.,0.,above+.1}, 1e3);
-  setTask(time+t1, 1., new TM_Default(TMT_vecAlign, world, endeff, Vector_x, object, Vector_y), OT_sos, NoArr, 1e1);
-  setTask(time+t1, 1., new TM_Default(TMT_vecAlign, world, endeff, Vector_x, object, Vector_z), OT_sos, NoArr, 1e1);
+  setTask(time+t1, t1, new TM_Default(TMT_posDiff, world, endeff, NoVector, object, NoVector), OT_sos, {0.,0.,above+.1}, 3e1);
+  setTask(time+t1, 1., new TM_Default(TMT_vecAlign, world, endeff, Vector_x, object, Vector_y), OT_sos, NoArr, 3e0);
+  setTask(time+t1, 1., new TM_Default(TMT_vecAlign, world, endeff, Vector_x, object, Vector_z), OT_sos, NoArr, 3e0);
   //open gripper
   if(gripper)  setTask(time+t1, .85, new TM_qItself(QIP_byJointNames, {gripper}, world), OT_sos, {gripSize + .05});
   if(gripper2) setTask(time+t1, .85, new TM_qItself(QIP_byJointNames, {gripper2}, world), OT_sos, {::asin((gripSize + .05)/(2.*.10))});
   //lower
-  setTask(time+t2, 1., new TM_Default(TMT_posDiff, world, endeff, NoVector, object, NoVector), OT_sos, {0.,0.,above}, 1e3);
+  setTask(time+t2, 1., new TM_Default(TMT_posDiff, world, endeff, NoVector, object, NoVector), OT_sos, {0.,0.,above}, 3e1);
   //close gripper
   if(gripper)  setTask(time+t3, 1., new TM_qItself(QIP_byJointNames, {gripper}, world), OT_sos, {gripSize});
   if(gripper2) setTask(time+t3, 1., new TM_qItself(QIP_byJointNames, {gripper2}, world), OT_sos, {::asin((gripSize)/(2.*.10))});
-  setSlowAround(time, .05, 1e3);
+  setSlowAround(time, .05, 3e1);
 }
 
 /// translate a list of facts (typically facts in a FOL state) to LGP tasks
@@ -724,7 +723,7 @@ void KOMO_ext::setAbstractTask(double phase, const Graph& facts, int verbose) {
         double negMargin = margin + .5*shapeSize(world, *symbols(1), 0); //how much outside the bounding box?
         setTask(phase+time, phase+time+.9,
                 new TM_Max(new TM_AboveBox(world, *symbols(1),*symbols(2), -negMargin), true), //this is the max selection -- only one of the four numbers need to be outside the BB
-                OT_ineq, {}, 1e1); //NOTE: usually this is an inequality constraint <0; here we say this should be zero for a negative margin (->outside support)
+                OT_ineq, {}, 3e0); //NOTE: usually this is an inequality constraint <0; here we say this should be zero for a negative margin (->outside support)
       } else if(*symbols(0)=="fricSlide") {
         Transformation rel = 0;
         rel.pos.set(0,0, .5*(shapeSize(world, *symbols(1)) + shapeSize(world, *symbols(2))));
@@ -792,7 +791,8 @@ void KOMO::setSkeleton(const Skeleton &S) {
     if(s.symbols(0)=="stableOn") {  core_setKSstableOn(s.phase0, s.symbols(1), s.symbols(2));  continue;  }
     if(s.symbols(0)=="dynamic") {  core_setKSdynamic(s.phase0, "base", s.symbols(1));  continue;  }
     if(s.symbols(0)=="dynamicOn") {  core_setKSdynamicOn(s.phase0, s.symbols(1), s.symbols(2));  continue;  }
-    
+    if(s.symbols(0)=="liftDownUp") {  /*setLiftDownUp(s.phase0, s.symbols(1));*/  continue;  }
+
     if(s.symbols(0)=="magicTouch") {
       core_setTouch(s.phase0, s.phase1, s.symbols(1), s.symbols(2));
       setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", s.symbols(2), world));
@@ -809,8 +809,9 @@ void KOMO::setSkeleton(const Skeleton &S) {
     }
     
     if(s.symbols(0)=="grasp") {
-      setSlow(s.phase0-.05, s.phase0+.05, 1e1, false);
+      setSlow(s.phase0-.05, s.phase0+.05, 3e0, false);
       core_setTouch(s.phase0, s.phase1, s.symbols(1), s.symbols(2));
+//      core_setInside(s.phase0, s.phase1, s.symbols(1), s.symbols(2));
       core_setKSstable(s.phase0, s.symbols(1), s.symbols(2));
 //      setLiftDownUp(s.phase0, s.symbols(1));
       continue;
@@ -852,7 +853,7 @@ void KOMO::core_setInside(double startTime, double endTime, const char* shape1, 
 }
 
 void KOMO::core_setImpulse(double time, const char* shape1, const char* shape2, ObjectiveType type, double prec) {
-//    setTask(time, time, new TM_ImpulsExchange(world, a, b), OT_sos, {}, 1e3, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
+//    setTask(time, time, new TM_ImpulsExchange(world, a, b), OT_sos, {}, 3e1, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
   if(k_order>=2) {
     setTask(time, time, new TM_ImpulsExchange(world, shape1, shape2), type, {}, prec, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
     setFlag(time, new Flag(FL_impulseExchange, world[shape1]->ID), +1);
@@ -885,7 +886,7 @@ void KOMO::setLimits(bool hardConstraint, double margin, double prec) {
 void KOMO::setLiftDownUp(double time, const char *endeff, double timeToLift) {
   if(stepsPerPhase>2 && timeToLift>0.) { //velocities down and up
     setTask(time-timeToLift, time-2.*timeToLift/3, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,-.1}, 1e0, 1); //move down
-    setTask(time-timeToLift/3,  time+timeToLift/3, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,0.}, 1e1, 1); //move down
+    setTask(time-timeToLift/3,  time+timeToLift/3, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,0.}, 3e0, 1); //move down
     setTask(time+2.*timeToLift/3, time+timeToLift, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,.1}, 1e0, 1); // move up
   }
 }
@@ -963,11 +964,11 @@ void setTasks(KOMO_ext& MP,
   HALT("deprecated");
 #else
   //-- parameters
-  double posPrec = getParameter<double>("KOMO/moveTo/precision", 1e3);
+  double posPrec = getParameter<double>("KOMO/moveTo/precision", 3e1);
   double colPrec = getParameter<double>("KOMO/moveTo/collisionPrecision", -1e0);
   double margin = getParameter<double>("KOMO/moveTo/collisionMargin", .1);
-  double zeroVelPrec = getParameter<double>("KOMO/moveTo/finalVelocityZeroPrecision", 1e1);
-  double alignPrec = getParameter<double>("KOMO/moveTo/alignPrecision", 1e3);
+  double zeroVelPrec = getParameter<double>("KOMO/moveTo/finalVelocityZeroPrecision", 3e0);
+  double alignPrec = getParameter<double>("KOMO/moveTo/alignPrecision", 3e1);
   
   //-- set up the KOMO
   target.shape->cont=false; //turn off contact penalization with the target

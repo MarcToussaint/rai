@@ -210,7 +210,7 @@ void MNode::optLevel(uint level, bool collisions) {
 #if 1
       Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
                                 "stable", "stableOn", "dynamic", "dynamicOn",
-                                "push", "graspSlide"
+                                "push", "graspSlide", "liftDownUp"
                                });
       komo.setSkeleton(S);
 #else
@@ -244,6 +244,7 @@ void MNode::optLevel(uint level, bool collisions) {
   count(level)++;
   
   DEBUG(komo.getReport(false, 1, FILE("z.problem")););
+//  cout <<komo.getReport(true) <<endl;
 //  komo.checkGradients();
 
   Graph result = komo.getReport((komo.verbose>0 && level>=2));
