@@ -13,6 +13,7 @@
 #include <Optim/KOMO_Problem.h>
 #include "task.h"
 #include <Kin/flag.h>
+#include <Kin/featureSymbols.h>
 
 //===========================================================================
 
@@ -96,11 +97,12 @@ struct KOMO {
   void setKinematicSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const rai::Transformation& jFrom=NoTransformation);
   void setContact(double startTime, double endTime, const char *from, const char* to, bool soft=false);
 
+  void addObjective(double startTime, double endTime, ObjectiveType type, const FeatureSymbol& feat, const StringA&, const arr& target=NoArr, double scale=1e1, int order=-1);
+
   //===========================================================================
   //
   // mid-level ways to define tasks: typically adding one specific task
   //
-
 
   //-- tasks mid-level
   void setSquaredQAccelerations(double startTime=-1., double endTime=-1., double prec=1.);
@@ -119,7 +121,7 @@ struct KOMO {
   void setSlowAround(double time, double delta, double prec=1e1, bool hardConstrained=false);
   
   //-- core task symbols of skeletons
-  void core_setTouch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, const arr& target=NoArr, double prec=1e1);
+  void core_setTouch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, const arr& target=NoArr, double prec=1e2);
   void core_setAbove(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e1);
   void core_setInside(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e1);
   void core_setImpulse(double time, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, double prec=1e1);
