@@ -69,7 +69,6 @@ struct KOMO {
   void setModel(const rai::KinematicWorld& K,
                 bool _useSwift=true,  //disabling swift: no collisions, much faster
                 bool meldFixedJoints=false, bool makeConvexHulls=false, bool computeOptimalSSBoxes=false, bool activateAllContacts=false);
-  void useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese=true);
   void setTiming(double _phases=1., uint _stepsPerPhase=10, double durationPerPhase=5., uint _k_order=2);
   void setPairedTimes();
   void activateCollisions(const char* s1, const char* s2);
@@ -95,28 +94,24 @@ struct KOMO {
   void setFlag(double time, rai::Flag* fl, int deltaStep=0);
   void setKinematicSwitch(double time, bool before, rai::KinematicSwitch* sw);
   void setKinematicSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const rai::Transformation& jFrom=NoTransformation);
-  
+  void setContact(double startTime, double endTime, const char *from, const char* to, bool soft=false);
+
   //===========================================================================
   //
   // mid-level ways to define tasks: typically adding one specific task
   //
-  
+
+
   //-- tasks mid-level
-  void setHoming(double startTime=-1., double endTime=-1., double prec=1e-1, const char *keyword="robot");
   void setSquaredQAccelerations(double startTime=-1., double endTime=-1., double prec=1.);
   void setSquaredQVelocities(double startTime=-1., double endTime=-1., double prec=1.);
   void setFixEffectiveJoints(double startTime=-1., double endTime=-1., double prec=1e3);
   void setFixSwitchedObjects(double startTime=-1., double endTime=-1., double prec=1e3);
   void setSquaredQuaternionNorms(double startTime=-1., double endTime=-1., double prec=1e1);
-  
-  //-- tasks mid-level
+
+  void setHoming(double startTime=-1., double endTime=-1., double prec=1e-1, const char *keyword="robot");
   void setHoldStill(double startTime, double endTime, const char* shape, double prec=1e2);
-  void setPosition(double startTime, double endTime, const char* shape, const char* shapeRel=NULL, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2);
-  void setOrientation(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2);
-  void setVelocity(double startTime, double endTime, const char* shape, const char* shapeRel=NULL, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2);
-  void setAlign(double startTime, double endTime, const char* shape,  const arr& whichAxis=ARR(1.,0.,0.), const char* shapeRel=NULL, const arr& whichAxisRel=ARR(1.,0.,0.), ObjectiveType type=OT_sos, const arr& target=ARR(1.), double prec=1e2);
-  void setAlignedStacking(double time, const char* object, ObjectiveType type=OT_sos, double prec=1e2);
-  void setLastTaskToBeVelocity();
+
   void setCollisions(bool hardConstraint, double margin=.0, double prec=1.);
   void setLimits(bool hardConstraint, double margin=.05, double prec=1.);
   void setLiftDownUp(double time, const char *endeff, double timeToLift=.15);
@@ -135,44 +130,18 @@ struct KOMO {
   void core_setKSdynamic(double time, const char *from, const char *to);
   void core_setKSdynamicOn(double time, const char *from, const char* to);
   
-  void setContact(double startTime, double endTime, const char *from, const char* to, bool soft=false);
-  void setKS_slider(double time, bool before, const char* obj, const char* slider, const char* table);
-  
-  //===========================================================================
-  //
-  // high-level 'script elements' to define tasks: typically adding multiple tasks to realize some kind of 'action'
-  //
-  
-  //-- dynamic
-  void setImpact(double time, const char* a, const char* b);
-  void setOverTheEdge(double time, const char* object, const char* from, double margin=.0);
-  void setInertialMotion(double startTime, double endTime, const char *object, const char *base, double g=-9.81, double c=0.);
-  void setFreeGravity(double time, const char* object, const char* base="base");
-  
-  //-- tasks (cost/constraint terms) high-level (rough, for LGP)
-  void setGrasp(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=1e1, double timeToLift=.15);
-  void setPlace(double time, const char *endeff, const char* object, const char* placeRef, int verbose=0);
-  void setPlaceFixed(double time, const char* endeffRef, const char* object, const char* placeRef, const rai::Transformation& relPose, int verbose=0);
-  void setHandover(double time, const char* endeffRef, const char* object, const char* prevHolder, int verbose=0);
-  void setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose=0);
-  void setGraspSlide(double time, const char* stick, const char* object, const char* placeRef, int verbose=0);
-  void setSlideAlong(double time, const char *strick,  const char* object, const char* wall, int verbose=0);
-  void setDrop(double time, const char* object, const char* from, const char* to, int verbose=0);
-  void setDropEdgeFixed(double time, const char* object, const char* to, const rai::Transformation& relFrom, const rai::Transformation& relTo, int verbose=0);
-  
   //-- tasks - logic level (used within LGP)
-  void setAbstractTask(double phase, const Graph& facts, int verbose=0);
   void setSkeleton(const Skeleton& S);
   
-  //DEPRECATED
-  void setGraspStick(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=1e1, double timeToLift=.15);
-  void setAttach(double time, const char* endeff, const char* object1, const char* object2, rai::Transformation& rel, int verbose=0);
-  void setFine_grasp(double time, const char* endeff, const char* object, double above, double gripSize=.05, const char* gripper=NULL, const char* gripper2=NULL);
-  void setTowersAlign();
-  void setMoveTo(rai::KinematicWorld& world, //in initial state
-                 rai::Frame& endeff,         //endeffector to be moved
-                 rai::Frame& target,         //target shape
-                 byte whichAxesToAlign=0);   //bit coded options to align axes
+//still there...
+  void setGrasp(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=1e1, double timeToLift=.15);
+  void setPlace(double time, const char *endeff, const char* object, const char* placeRef, int verbose=0);
+  void setGraspSlide(double time, const char* stick, const char* object, const char* placeRef, int verbose=0);
+  void setHandover(double time, const char* endeffRef, const char* object, const char* prevHolder, int verbose=0);
+  void setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose=0);
+  void setKS_slider(double time, bool before, const char* obj, const char* slider, const char* table);
+
+
                  
   //===========================================================================
   //
@@ -183,25 +152,27 @@ struct KOMO {
   void setSpline(uint splineT);   ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
   void reset(double initNoise=.01);      ///< reset the optimizer (initializes x to a default path)
   void run(bool dense=false);            ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
-  void getPhysicsReference(uint subSteps=10, int display=0);
-  void playInPhysics(uint subSteps=10, bool display=false);
+
   rai::KinematicWorld& getConfiguration(double phase);
+  arr getPath_decisionVariable();
   arr getPath(const StringA& joints);
   arr getPath_frames(const uintA &frames);
   arr getPath_times();
   arr getPath_energies();
+
   void reportProblem(ostream &os=std::cout);
   Graph getReport(bool gnuplt=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot task costs; output detailed cost features per time slice)
   void reportProxies(ostream& os=std::cout); ///< report the proxies (collisions) for each time slice
   void reportContacts(ostream& os=std::cout); ///< report the contacts
   rai::Array<rai::Transformation> reportEffectiveJoints(ostream& os=std::cout);
+
   void checkGradients(bool dense=false);          ///< checks all gradients numerically
+
   void plotTrajectory();
   void plotPhaseTrajectory();
   bool displayTrajectory(double delay=1., bool watch=true, bool overlayPaths=true, const char* saveVideoPrefix=NULL); ///< display the trajectory; use "vid/z." as vid prefix
   bool displayPath(bool watch=true); ///< display the trajectory; use "vid/z." as vid prefix
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
-  PhysXInterface& physx() { return world.physx(); }
   
   //===========================================================================
   //
@@ -209,14 +180,13 @@ struct KOMO {
   //
   
   //-- (not much in use..) specs gives as logic expressions in a Graph (or config file)
-  KOMO(const rai::KinematicWorld& K) : KOMO() { setModel(K); } //for compatibility only
   void clearTasks();
-  Task* addTask(const char* name, TaskMap *map, const ObjectiveType& termType); ///< manually add a task
+//  Task* addTask(const char* name, TaskMap *map, const ObjectiveType& termType); ///< manually add a task
   void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
-  arr getInitialization();      ///< this reads out the initial state trajectory after 'setupConfigurations'
+//  arr getInitialization();      ///< this reads out the initial state trajectory after 'setupConfigurations'
   void set_x(const arr& x);            ///< set the state trajectory of all configurations
   uint dim_x(uint t) { return configurations(t+k_order)->getJointStateDimension(); }
-  
+
   struct Conv_MotionProblem_KOMO_Problem : KOMO_Problem {
     KOMO& komo;
     uint dimPhi;
@@ -244,28 +214,3 @@ struct KOMO {
   } dense_problem;
 };
 
-//===========================================================================
-
-inline arr finalPoseTo(rai::KinematicWorld& world,
-                       rai::Frame& endeff,
-                       rai::Frame& target,
-                       byte whichAxesToAlign=0,
-                       uint iterate=1) {
-  KOMO komo(world);
-  komo.setTiming(1.,1);
-  komo.setMoveTo(world, endeff, target, whichAxesToAlign);
-  komo.run();
-  return komo.x;
-}
-
-//===========================================================================
-
-inline arr getVelocities(const arr& q, double tau) {
-  arr v;
-  v.resizeAs(q);
-  v.setZero();
-  for(uint t=1; t<q.d0-1; t++) {
-    v[t] = (q[t+1]-q[t-1])/(2.*tau);
-  }
-  return v;
-}

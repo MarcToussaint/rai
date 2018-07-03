@@ -90,7 +90,7 @@ struct MNode {
   MNodeL getAll() { MNodeL L; getAll(L); return L; }
   void checkConsistency();
   
-  Skeleton getSkeleton(StringA predicateFilter= {}) const;
+  Skeleton getSkeleton(StringA predicateFilter={}, bool finalStateOnly=false) const;
 private:
   void setInfeasible(); ///< set this and all children infeasible
   void labelInfeasible(); ///< sets this infeasible AND propagates this label up-down to others

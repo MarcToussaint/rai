@@ -24,7 +24,7 @@ void tutorialBasics(){
 //  komo.setFixEffectiveJoints(); //only relevant when there are kinematic switches
 //  komo.setFixSwitchedObjects(); //only relevant when there are kinematic switches
   komo.setSquaredQAccelerations();
-  komo.setSquaredQuaternionNorms(-1., -1., 1e3); //when the kinematics includes quaternion joints, keep them roughly regularized
+  komo.setSquaredQuaternionNorms(-1., -1., 1e1); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   //-- simple tasks, called low-level
 
@@ -37,7 +37,7 @@ void tutorialBasics(){
   //I don't recomment setting quaternion tasks! This is only for testing here. Instead, use alignment tasks as in test/KOMO/komo
 
   //slow down around phase-time 1. (not measured in seconds, but phase)
-  komo.setSlowAround(1., .1, 1e3);
+  komo.setSlow(1., -1., 1e1);
 
   //-- call the optimizer
   komo.reset();

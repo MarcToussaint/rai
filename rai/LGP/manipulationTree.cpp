@@ -125,10 +125,19 @@ void MNode::optLevel(uint level, bool collisions) {
       komo.setFixSwitchedObjects(-1., -1., 1e2);
       komo.setSquaredQuaternionNorms();
       
+#if 1
+      Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
+                                "stable", "stableOn", "dynamic", "dynamicOn",
+                                "push", "graspSlide"
+                               }, true);
+      komo.setSkeleton(S);
+#else
       komo.setAbstractTask(0., *folState);
+#endif
       
       komo.reset();
       komo.setPairedTimes();
+//      cout <<komo.getPath_times() <<endl;
     } break;
 //  case 1:{
 //    //pose: propagate eff kinematics
@@ -169,12 +178,21 @@ void MNode::optLevel(uint level, bool collisions) {
       komo.setFixSwitchedObjects(-1., -1., 1e2);
       komo.setSquaredQuaternionNorms();
       
+#if 1
+      Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
+                                "stable", "stableOn", "dynamic", "dynamicOn",
+                                "push", "graspSlide"
+                               });
+      komo.setSkeleton(S);
+#else
       for(MNode *node:getTreePath()) {
         komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
       }
+#endif
       
       komo.reset();
       komo.setPairedTimes();
+//      cout <<komo.getPath_times() <<endl;
     } break;
     case 3: {
       komo.setModel(startKinematics, collisions);
@@ -203,6 +221,7 @@ void MNode::optLevel(uint level, bool collisions) {
 #endif
       
       komo.reset();
+//      cout <<komo.getPath_times() <<endl;
     } break;
   }
   
@@ -579,14 +598,17 @@ rai::String MNode::getTreePathString(char sep) const {
   return str;
 }
 
-Skeleton MNode::getSkeleton(StringA predicateFilter) const {
-  MNodeL path = getTreePath();
-  
+Skeleton MNode::getSkeleton(StringA predicateFilter,  bool finalStateOnly) const {
   rai::Array<Graph*> states;
   arr times;
-  for(MNode *node:getTreePath()) {
-    times.append(node->time);
-    states.append(node->folState);
+  if(!finalStateOnly){
+    for(MNode *node:getTreePath()) {
+      times.append(node->time);
+      states.append(node->folState);
+    }
+  }else{
+    times.append(1.);
+    states.append(this->folState);
   }
   
   //setup a done marker array
@@ -599,9 +621,11 @@ Skeleton MNode::getSkeleton(StringA predicateFilter) const {
   
   for(uint k=0; k<states.N; k++) {
     Graph& G = *states(k);
+//    cout <<G <<endl;
     for(uint i=0; i<G.N; i++) {
       if(!done(k,i)) {
         Node *n = G(i);
+        if(n->keys.N && n->keys.first()=="decision") continue; //don't pickup decision literals
         StringA symbols;
         for(Node *p:n->parents) symbols.append(p->keys.last());
         
@@ -618,7 +642,7 @@ Skeleton MNode::getSkeleton(StringA predicateFilter) const {
         }
         k_end--;
         if(k_end==states.N-1) {
-          skeleton.append(SkeletonEntry({symbols, times(k), -1.}));
+          skeleton.append(SkeletonEntry({symbols, times(k), times.last()}));
         } else {
           skeleton.append(SkeletonEntry({symbols, times(k), times(k_end)}));
         }

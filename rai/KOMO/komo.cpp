@@ -7,6 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "komo.h"
+#include "komo-ext.h"
 #include <Algo/spline.h>
 #include <iomanip>
 #include <Kin/frame.h>
@@ -102,7 +103,7 @@ void KOMO::setModel(const KinematicWorld& K,
 //  FILE("z.komo.model") <<world;
 }
 
-void KOMO::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese) {
+void KOMO_ext::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese) {
   world.useJointGroups(groupNames, OnlyTheseOrNotThese, false);
   
   world.reset_q();
@@ -119,7 +120,7 @@ void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhas
   maxPhase = _phases;
   stepsPerPhase = _stepsPerPhase;
   if(stepsPerPhase>=0) {
-    T = ceil(stepsPerPhase*maxPhase)+1;
+    T = ceil(stepsPerPhase*maxPhase);
     CHECK(T, "using T=0 to indicate inverse kinematics is deprecated.");
     tau = durationPerPhase/double(stepsPerPhase);
   }
@@ -128,11 +129,10 @@ void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhas
 }
 
 void KOMO::setPairedTimes() {
-  NIY;
   CHECK_EQ(k_order, 1, "NIY");
-  for(uint s=0; s<k_order+T-1; s+=2) {
-    configurations(s)  ->setTimes(0.02*tau); //(tau*(int(s)-int(k_order)));
-    configurations(s+1)->setTimes(1.98*tau); //(tau*(.98+int(s+1)-int(k_order)));
+  for(uint s=1; s<T; s+=2) {
+    configurations(s)  ->setTimes(1.98*tau); //(tau*(.98+int(s+1)-int(k_order)));
+    configurations(s+1)->setTimes(0.02*tau); //(tau*(int(s)-int(k_order)));
   }
 }
 
@@ -160,17 +160,12 @@ void KOMO::clearTasks() {
   listDelete(tasks);
 }
 
-Task* KOMO::addTask(const char* name, TaskMap *m, const ObjectiveType& termType) {
-  Task *t = new Task(m, termType);
-  t->name = name;
-  tasks.append(t);
-  return t;
-}
-
 Task *KOMO::setTask(double startTime, double endTime, TaskMap *map, ObjectiveType type, const arr& target, double prec, uint order, int deltaStep) {
   CHECK_GE(k_order, order, "task requires larger k-order: " <<map->shortTag(world));
   map->order = order;
-  Task *task = addTask(map->shortTag(world), map, type);
+  Task *task = new Task(map, type);
+  task->name = map->shortTag(world);
+  tasks.append(task);
   task->setCostSpecs(startTime, endTime, stepsPerPhase, T, target, prec, deltaStep);
   return task;
 }
@@ -292,36 +287,36 @@ void KOMO::setHoldStill(double startTime, double endTime, const char* shape, dou
   setTask(startTime, endTime, new TM_qItself(TUP(s->ID)), OT_sos, NoArr, prec, 1);
 }
 
-void KOMO::setPosition(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec) {
+void KOMO_ext::setPosition(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec) {
   setTask(startTime, endTime, new TM_Default(TMT_pos, world, shape, NoVector, shapeRel, NoVector), type, target, prec);
 }
 
-void KOMO::setOrientation(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec) {
+void KOMO_ext::setOrientation(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec) {
 //  setTask(startTime, endTime, new TM_Align(world, shape, shapeRel), type, target, prec);
   setTask(startTime, endTime, new TM_Default(TMT_quatDiff, world, shape, NoVector, shapeRel, NoVector), type, target, prec);
 }
 
-void KOMO::setVelocity(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec) {
+void KOMO_ext::setVelocity(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec) {
   setTask(startTime, endTime, new TM_Default(TMT_pos, world, shape, NoVector, shapeRel, NoVector), type, target, prec, 1);
 }
 
-void KOMO::setLastTaskToBeVelocity() {
+void KOMO_ext::setLastTaskToBeVelocity() {
   tasks.last()->map->order = 1; //set to be velocity!
 }
 
-void KOMO::setImpact(double time, const char *a, const char *b) {
+void KOMO_ext::setImpact(double time, const char *a, const char *b) {
   core_setTouch(time, time, a, b);
   core_setImpulse(time, a, b);
 }
 
-void KOMO::setOverTheEdge(double time, const char *object, const char *from, double margin) {
+void KOMO_ext::setOverTheEdge(double time, const char *object, const char *from, double margin) {
   double negMargin = margin + .5*shapeSize(world, object, 0); //how much outside the bounding box?
   setTask(time, time+.5,
           new TM_Max(new TM_AboveBox(world, object, from, -negMargin), true), //this is the max selection -- only one of the four numbers need to be outside the BB
           OT_ineq, {}, 1e1); //NOTE: usually this is an inequality constraint <0; here we say this should be zero for a negative margin (->outside support)
 }
 
-void KOMO::setInertialMotion(double startTime, double endTime, const char *object, const char *base, double g, double c) {
+void KOMO_ext::setInertialMotion(double startTime, double endTime, const char *object, const char *base, double g, double c) {
   setKinematicSwitch(startTime, true, new KinematicSwitch(SW_actJoint, JT_trans3, base, object, world));
 //  setFlag(time, new Flag(FT_gravityAcc, world[object]->ID, 0, true),+1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
 //  setFlag(startTime, new Flag(FL_noQControlCosts, world[object]->ID, 0, true), +2);
@@ -332,7 +327,7 @@ void KOMO::setInertialMotion(double startTime, double endTime, const char *objec
   }
 }
 
-void KOMO::setFreeGravity(double time, const char *object, const char *base) {
+void KOMO_ext::setFreeGravity(double time, const char *object, const char *base) {
   setKinematicSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_trans3, base, object, world));
   setFlag(time, new Flag(FL_gravityAcc, world[object]->ID, 0, true),+1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
 }
@@ -384,7 +379,7 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object, int 
 }
 
 /// a standard pick up: lower-attached-lift; centered, from top
-void KOMO::setGraspStick(double time, const char* endeffRef, const char* object, int verbose, double weightFromTop, double timeToLift) {
+void KOMO_ext::setGraspStick(double time, const char* endeffRef, const char* object, int verbose, double weightFromTop, double timeToLift) {
   if(verbose>0) cout <<"KOMO_setGraspStick t=" <<time <<" endeff=" <<endeffRef <<" obj=" <<object <<endl;
   
   //disconnect object from table
@@ -438,7 +433,7 @@ void KOMO::setPlace(double time, const char* endeff, const char* object, const c
 }
 
 /// place with a specific relative pose -> no effective DOFs!
-void KOMO::setPlaceFixed(double time, const char* endeff, const char* object, const char* placeRef, const Transformation& relPose, int verbose) {
+void KOMO_ext::setPlaceFixed(double time, const char* endeff, const char* object, const char* placeRef, const Transformation& relPose, int verbose) {
   if(verbose>0) cout <<"KOMO_setPlace t=" <<time <<" endeff=" <<endeff <<" obj=" <<object <<" place=" <<placeRef <<endl;
   
   //connect object to table
@@ -563,7 +558,7 @@ void KOMO::setGraspSlide(double time, const char* endeff, const char* object, co
 //  }
 }
 
-void KOMO::setSlideAlong(double time, const char* stick, const char* object, const char* wall, int verbose) {
+void KOMO_ext::setSlideAlong(double time, const char* stick, const char* object, const char* wall, int verbose) {
   if(verbose>0) cout <<"KOMO_setSlideAlong t=" <<time <<" obj=" <<object<<" wall=" <<wall <<endl;
   
   double endTime = time+1.;
@@ -597,7 +592,7 @@ void KOMO::setSlideAlong(double time, const char* stick, const char* object, con
   }
 }
 
-void KOMO::setDrop(double time, const char* object, const char* from, const char* to, int verbose) {
+void KOMO_ext::setDrop(double time, const char* object, const char* from, const char* to, int verbose) {
 
   if(from) { //require the object outside the margin of its bounding box
     setOverTheEdge(time, object, from, .05);
@@ -620,7 +615,7 @@ void KOMO::setDrop(double time, const char* object, const char* from, const char
 //  }
 }
 
-void KOMO::setDropEdgeFixed(double time, const char* object, const char* to, const Transformation &relFrom, const Transformation &relTo, int verbose) {
+void KOMO_ext::setDropEdgeFixed(double time, const char* object, const char* to, const Transformation &relFrom, const Transformation &relTo, int verbose) {
 
   //disconnect object from anything
 //  setKinematicSwitch(time, true, "delete", NULL, object);
@@ -637,7 +632,7 @@ void KOMO::setDropEdgeFixed(double time, const char* object, const char* to, con
 //  }
 }
 
-void KOMO::setAttach(double time, const char* endeff, const char* object1, const char* object2, Transformation& rel, int verbose) {
+void KOMO_ext::setAttach(double time, const char* endeff, const char* object1, const char* object2, Transformation& rel, int verbose) {
   if(verbose>0) cout <<"KOMO_setAttach t=" <<time <<" endeff=" <<endeff <<" obj1=" <<object1 <<" obj2=" <<object2 <<endl;
   
   //hand center at object center (could be replaced by touch)
@@ -674,7 +669,7 @@ void KOMO::setSlowAround(double time, double delta, double prec, bool hardConstr
   setSlow(time-delta, time+delta, prec, hardConstrained);
 }
 
-void KOMO::setFine_grasp(double time, const char* endeff, const char* object, double above, double gripSize, const char* gripper, const char* gripper2) {
+void KOMO_ext::setFine_grasp(double time, const char* endeff, const char* object, double above, double gripSize, const char* gripper, const char* gripper2) {
   double t1=-.25; //time when gripper is positined above
   double t2=-.1;  //time when gripper is lowered
   double t3=-.05; //time when gripper is closed
@@ -696,7 +691,7 @@ void KOMO::setFine_grasp(double time, const char* endeff, const char* object, do
 }
 
 /// translate a list of facts (typically facts in a FOL state) to LGP tasks
-void KOMO::setAbstractTask(double phase, const Graph& facts, int verbose) {
+void KOMO_ext::setAbstractTask(double phase, const Graph& facts, int verbose) {
 //  CHECK_LE(phase, maxPhase,"");
 //  listWrite(facts, cout,"\n");  cout <<endl;
   for(Node *n:facts) {
@@ -830,7 +825,7 @@ void KOMO::setSkeleton(const Skeleton &S) {
   }
 }
 
-void KOMO::setAlign(double startTime, double endTime, const char* shape, const arr& whichAxis, const char* shapeRel, const arr& whichAxisRel, ObjectiveType type, const arr& target, double prec) {
+void KOMO_ext::setAlign(double startTime, double endTime, const char* shape, const arr& whichAxis, const char* shapeRel, const arr& whichAxisRel, ObjectiveType type, const arr& target, double prec) {
 #if 0
   String map;
   map <<"map=vecAlign ref1="<<shape;
@@ -865,7 +860,7 @@ void KOMO::core_setImpulse(double time, const char* shape1, const char* shape2, 
   }
 }
 
-void KOMO::setAlignedStacking(double time, const char* object, ObjectiveType type, double prec) {
+void KOMO_ext::setAlignedStacking(double time, const char* object, ObjectiveType type, double prec) {
   setTask(time, time, new TM_AlignStacking(world, object), type, NoArr, prec);
 }
 
@@ -956,7 +951,7 @@ void KOMO::setPathOpt(double _phases, uint stepsPerPhase, double timePerPhase) {
   setSquaredQuaternionNorms();
 }
 
-void setTasks(KOMO& MP,
+void setTasks(KOMO_ext& MP,
               Frame& endeff,
               Frame& target,
               byte whichAxesToAlign,
@@ -964,6 +959,9 @@ void setTasks(KOMO& MP,
               int timeSteps,
               double duration) {
               
+#if 1
+  HALT("deprecated");
+#else
   //-- parameters
   double posPrec = getParameter<double>("KOMO/moveTo/precision", 1e3);
   double colPrec = getParameter<double>("KOMO/moveTo/collisionPrecision", -1e0);
@@ -1017,9 +1015,10 @@ void setTasks(KOMO& MP,
                      OT_sos);
       t->setCostSpecs(MP.T-1, MP.T-1, {1.}, alignPrec);
     }
+#endif
 }
 
-void KOMO::setMoveTo(KinematicWorld& world, Frame& endeff, Frame& target, byte whichAxesToAlign) {
+void KOMO_ext::setMoveTo(KinematicWorld& world, Frame& endeff, Frame& target, byte whichAxesToAlign) {
 //  if(MP) delete MP;
 //  MP = new KOMO(world);
   setModel(world);
@@ -1040,7 +1039,8 @@ void KOMO::setSpline(uint splineT) {
 }
 
 void KOMO::reset(double initNoise) {
-  x = getInitialization();
+  if(!configurations.N) setupConfigurations();
+  x = getPath_decisionVariable();
   dual.clear();
   featureValues.clear();
   featureTypes.clear();
@@ -1083,7 +1083,7 @@ void KOMO::run(bool dense) {
   if(verbose>1) cout <<getReport(false) <<endl;
 }
 
-void KOMO::getPhysicsReference(uint subSteps, int display) {
+void KOMO_ext::getPhysicsReference(uint subSteps, int display) {
   x.resize(T, world.getJointStateDimension());
   PhysXInterface& px = world.physx();
   px.pushToPhysx();
@@ -1105,7 +1105,7 @@ void KOMO::getPhysicsReference(uint subSteps, int display) {
   }
 }
 
-void KOMO::playInPhysics(uint subSteps, bool display) {
+void KOMO_ext::playInPhysics(uint subSteps, bool display) {
   arr vels;
   PhysXInterface& px = world.physx();
   for(uint t=0; t<T; t++) {
@@ -1221,8 +1221,8 @@ void KOMO::plotTrajectory() {
   fil2 <<"set title 'trajectories'" <<endl;
   fil2 <<"set term qt 2" <<endl;
   fil2 <<"plot 'z.trajectories' \\" <<endl;
-  for(uint i=1; i<=jointNames.N; i++) fil2 <<(i>1?"  ,''":"     ") <<" u 0:"<<i<<" w l lw 3 lc " <<i <<" lt " <<1-((i/10)%2) <<" \\" <<endl;
-//    if(dualSolution.N) for(uint i=0;i<tasks.N;i++) fil <<"  ,'' u 0:"<<1+tasks.N+i<<" w l \\" <<endl;
+  for(uint i=1; i<=jointNames.N; i++) fil2 <<(i>1?"  ,''":"     ") <<" u (($0+1)*" <<tau <<"):"<<i<<" w l lw 3 lc " <<i <<" lt " <<1-((i/10)%2) <<" \\" <<endl;
+    if(dualSolution.N) for(uint i=0;i<tasks.N;i++) fil <<"  ,'' u (($0+1)*" <<tau <<"):"<<1+tasks.N+i<<" w l \\" <<endl;
   fil2 <<endl;
   fil2.close();
   
@@ -1244,7 +1244,7 @@ void KOMO::plotPhaseTrajectory() {
   fil2 <<"set key autotitle columnheader" <<endl;
   fil2 <<"set title 'phase'" <<endl;
   fil2 <<"set term qt 2" <<endl;
-  fil2 <<"plot 'z.phase' u 0:1 w l lw 3 lc 1 lt 1" <<endl;
+  fil2 <<"plot 'z.phase' u (($0+1)*" <<tau <<"):1 w l lw 3 lc 1 lt 1" <<endl;
   fil2 <<endl;
   fil2.close();
   
@@ -1653,8 +1653,8 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
     fil2 <<"set key autotitle columnheader" <<endl;
     fil2 <<"set title 'costReport ( plotting sqrt(costs) )'" <<endl;
     fil2 <<"plot 'z.costReport' \\" <<endl;
-    for(uint i=1; i<=tasks.N; i++) fil2 <<(i>1?"  ,''":"     ") <<" u 0:"<<i<<" w l lw 3 lc " <<i <<" lt " <<1-((i/10)%2) <<" \\" <<endl;
-    if(dualSolution.N) for(uint i=0; i<tasks.N; i++) fil2 <<"  ,'' u 0:"<<1+tasks.N+i<<" w l \\" <<endl;
+    for(uint i=1; i<=tasks.N; i++) fil2 <<(i>1?"  ,''":"     ") <<" u (($0+1)*" <<tau <<"):"<<i<<" w l lw 3 lc " <<i <<" lt " <<1-((i/10)%2) <<" \\" <<endl;
+    if(dualSolution.N) for(uint i=0; i<tasks.N; i++) fil2 <<"  ,'' u (($0+1)*" <<tau <<"):"<<1+tasks.N+i<<" w l \\" <<endl;
     fil2 <<endl;
     fil2.close();
     
@@ -1665,14 +1665,6 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
   }
   
   return report;
-}
-
-arr KOMO::getInitialization() {
-  if(!configurations.N) setupConfigurations();
-  CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
-  arr x;
-  for(uint t=0; t<T; t++) x.append(configurations(t+k_order)->getJointState());
-  return x;
 }
 
 void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes) {
@@ -1951,7 +1943,15 @@ rai::KinematicWorld& KOMO::getConfiguration(double phase) {
   return *configurations(s);
 }
 
+arr KOMO::getPath_decisionVariable() {
+  CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
+  arr x;
+  for(uint t=0; t<T; t++) x.append(configurations(t+k_order)->getJointState());
+  return x;
+}
+
 arr KOMO::getPath(const StringA &joints) {
+  CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
   arr X(T,joints.N);
   for(uint t=0; t<T; t++) {
     X[t] = configurations(t+k_order)->getJointState(joints);
@@ -1960,6 +1960,7 @@ arr KOMO::getPath(const StringA &joints) {
 }
 
 arr KOMO::getPath_frames(const uintA &frames) {
+  CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
   arr X(frames.N, T, 7);
   for(uint t=0; t<T; t++) {
     for(uint i=0; i<frames.N; i++) {
@@ -1970,16 +1971,18 @@ arr KOMO::getPath_frames(const uintA &frames) {
 }
 
 arr KOMO::getPath_times() {
+  CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
   arr X(T);
   double time=0.;
   for(uint t=0; t<T; t++) {
-      time += configurations(t+k_order)->frames.first()->time;
+    time += configurations(t+k_order)->frames.first()->time;
     X(t) = time;
   }
   return X;
 }
 
 arr KOMO::getPath_energies() {
+  CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
   TM_Energy E;
   E.order=1;
   arr X(T), y;
