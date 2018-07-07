@@ -2026,9 +2026,8 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   if(!addValues) { y.setZero();  if(&J) J.setZero(); }
   
   if(y_dist.scalar()>margin) return;
-  double scale = 1./0.05; //5cm -> cost of 1; is a fixed heuristic, can be changed by TaskMap rescaling
-  y += scale*(margin-y_dist.scalar());
-  if(&J)  J -= scale*J_dist;
+  y += margin-y_dist.scalar();
+  if(&J)  J -= J_dist;
   
 #else
   CHECK(a->shape->mesh_radius>0.,"");
@@ -2112,9 +2111,8 @@ void rai::KinematicWorld::kinematicsContactCost(arr& y, arr& J, const Contact* c
   if(!addValues) { y.setZero();  if(&J) J.setZero(); }
   
   if(y_dist.scalar()>margin) return;
-  double scale = 1./0.05; //5cm -> cost of 1; is a fixed heuristic, can be changed by TaskMap rescaling
-  y += scale*(margin-y_dist.scalar());
-  if(&J)  J -= scale*J_dist;
+  y += margin-y_dist.scalar();
+  if(&J)  J -= J_dist;
 }
 
 void rai::KinematicWorld::kinematicsContactCost(arr &y, arr& J, double margin) const {
@@ -2392,7 +2390,6 @@ void rai::KinematicWorld::makeObjectsFree(const StringA &objects){
         a->joint->makeFree();
     }
 }
-
 
 void rai::KinematicWorld::addTimeJoint(){
   rai::Joint *jt = new rai::Joint(*frames.first());

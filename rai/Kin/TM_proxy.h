@@ -35,7 +35,7 @@ struct TM_Proxy : TaskMap {
   
   TM_Proxy(PTMtype _type,
            uintA _shapes,
-           double _margin=.02);
+           double _margin=.0);
   virtual ~TM_Proxy() {}
   
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
