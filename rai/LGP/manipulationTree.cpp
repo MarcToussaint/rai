@@ -228,8 +228,8 @@ void MNode::optLevel(uint level, bool collisions) {
   //-- optimize
   DEBUG(FILE("z.fol") <<fol;);
   DEBUG(komo.getReport(false, 1, FILE("z.problem")););
-  komo.reportProblem();
-  komo.animateOptimization = 1;
+//  komo.reportProblem();
+//  komo.animateOptimization = 1;
 
   try {
     //      komo.verbose=3;

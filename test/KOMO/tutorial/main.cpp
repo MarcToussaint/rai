@@ -29,10 +29,10 @@ void tutorialBasics(){
   //-- simple tasks, called low-level
 
   //in phase-time [1,\infty] position-difference between "endeff" and "target" shall be zero (sumOfSqr objective)
-  komo.setTask(1., -1., new TM_Default(TMT_posDiff, komo.world, "endeff", NoVector, "target", NoVector));
+  komo.addObjective(1., -1., new TM_Default(TMT_posDiff, komo.world, "endeff", NoVector, "target", NoVector));
 
   //in phase-time [1,\infty] quaternion-difference between "endeff" and "target" shall be zero (sumOfSqr objective)
-  komo.setTask(1., -1., new TM_Default(TMT_quatDiff, komo.world, "endeff", NoVector,
+  komo.addObjective(1., -1., new TM_Default(TMT_quatDiff, komo.world, "endeff", NoVector,
                                             "target", NoVector));
   //I don't recomment setting quaternion tasks! This is only for testing here. Instead, use alignment tasks as in test/KOMO/komo
 
@@ -89,8 +89,8 @@ void tutorialInverseKinematics(){
   komo.setSquaredQuaternionNorms(-1., -1., 1e3); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   //-- simple tasks, called low-level
-  komo.setTask(1., -1., new TM_Default(TMT_posDiff, komo.world, "endeff", NoVector, "target", NoVector));
-  komo.setTask(1., -1., new TM_Default(TMT_quatDiff, komo.world, "endeff", NoVector,
+  komo.addObjective(1., -1., new TM_Default(TMT_posDiff, komo.world, "endeff", NoVector, "target", NoVector));
+  komo.addObjective(1., -1., new TM_Default(TMT_quatDiff, komo.world, "endeff", NoVector,
                                             "target", NoVector));
 
   //-- call the optimizer

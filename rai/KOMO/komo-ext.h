@@ -32,6 +32,11 @@ struct KOMO_ext : KOMO{
   void setDropEdgeFixed(double time, const char* object, const char* to, const rai::Transformation& relFrom, const rai::Transformation& relTo, int verbose=0);
   void setAttach(double time, const char* endeff, const char* object1, const char* object2, rai::Transformation& rel, int verbose=0);
 
+  void setGrasp(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=3e0, double timeToLift=.15);
+  void setPlace(double time, const char *endeff, const char* object, const char* placeRef, int verbose=0);
+  void setHandover(double time, const char* endeffRef, const char* object, const char* prevHolder, int verbose=0);
+
+
   //DEPRECATED
   void setGraspStick(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=1e1, double timeToLift=.15);
   void setFine_grasp(double time, const char* endeff, const char* object, double above, double gripSize=.05, const char* gripper=NULL, const char* gripper2=NULL);

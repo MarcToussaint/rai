@@ -91,13 +91,12 @@ struct KOMO {
    * they allow the user to add a cost task, or a kinematic switch in the problem definition
    * Typically, the user does not call them directly, but uses the many methods below
    * Think of all of the below as examples for how to set arbirary tasks/switches yourself */
-  struct Task* setTask(double startTime, double endTime, TaskMap* map, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e1, uint order=0, int deltaStep=0);
-  void setFlag(double time, rai::Flag* fl, int deltaStep=0);
-  void setKinematicSwitch(double time, bool before, rai::KinematicSwitch* sw);
-  void setKinematicSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const rai::Transformation& jFrom=NoTransformation);
-  void setContact(double startTime, double endTime, const char *from, const char* to, bool soft=false);
-
-  void addObjective(double startTime, double endTime, ObjectiveType type, const FeatureSymbol& feat, const StringA&, const arr& target=NoArr, double scale=1e1, int order=-1);
+  struct Task* addObjective(double startTime, double endTime, TaskMap* map, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e1, int order=-1, int deltaStep=0);
+  struct Task* addObjective(double startTime, double endTime, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, double scale=1e1, const arr& target=NoArr, int order=-1);
+  void addSwitch(double time, bool before, rai::KinematicSwitch* sw);
+  void addSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const rai::Transformation& jFrom=NoTransformation);
+  void addFlag(double time, rai::Flag* fl, int deltaStep=0);
+  void addContact(double startTime, double endTime, const char *from, const char* to, bool soft=false);
 
   //===========================================================================
   //
@@ -114,32 +113,29 @@ struct KOMO {
   void setHoming(double startTime=-1., double endTime=-1., double prec=1e-1, const char *keyword="robot");
   void setHoldStill(double startTime, double endTime, const char* shape, double prec=1e1);
 
-  void setCollisions(bool hardConstraint, double margin=.0, double prec=1.);
-  void setLimits(bool hardConstraint, double margin=.05, double prec=1.);
+  void add_collision(bool hardConstraint, double margin=.0, double prec=1.);
+  void add_jointLimits(bool hardConstraint, double margin=.05, double prec=1.);
   void setLiftDownUp(double time, const char *endeff, double timeToLift=.15);
   void setSlow(double startTime, double endTime, double prec=1e1, bool hardConstrained=false);
   void setSlowAround(double time, double delta, double prec=1e1, bool hardConstrained=false);
   
   //-- core task symbols of skeletons
-  void core_setTouch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, const arr& target=NoArr, double prec=1e2);
-  void core_setAbove(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e1);
-  void core_setInside(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e1);
-  void core_setImpulse(double time, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, double prec=1e1);
+  void add_touch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, const arr& target=NoArr, double prec=1e2);
+  void add_aboveBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e1);
+  void add_insideBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e1);
+  void add_impulse(double time, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, double prec=1e1);
   
   //-- core kinematic switch symbols of skeletons
-  void core_setKSstable(double time, const char *from, const char *to);
-  void core_setKSstableOn(double time, const char* from, const char* to);
-  void core_setKSdynamic(double time, const char *from, const char *to);
-  void core_setKSdynamicOn(double time, const char *from, const char* to);
+  void addSwitch_stable(double time, const char *from, const char *to);
+  void addSwitch_stableOn(double time, const char* from, const char* to);
+  void addSwitch_dynamic(double time, const char *from, const char *to);
+  void addSwitch_dynamicOn(double time, const char *from, const char* to);
   
   //-- tasks - logic level (used within LGP)
   void setSkeleton(const Skeleton& S);
   
-//still there...
-  void setGrasp(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=3e0, double timeToLift=.15);
-  void setPlace(double time, const char *endeff, const char* object, const char* placeRef, int verbose=0);
+  //dinos... can't get rid of them yet
   void setGraspSlide(double time, const char* stick, const char* object, const char* placeRef, int verbose=0);
-  void setHandover(double time, const char* endeffRef, const char* object, const char* prevHolder, int verbose=0);
   void setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose=0);
   void setKS_slider(double time, bool before, const char* obj, const char* slider, const char* table);
 
