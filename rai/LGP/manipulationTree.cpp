@@ -7,6 +7,8 @@
     --------------------------------------------------------------  */
 
 #include "manipulationTree.h"
+#include "bounds.h"
+
 #include <MCTS/solver_PlainMC.h>
 #include <KOMO/komo.h>
 #include <Kin/switch.h>
@@ -106,6 +108,14 @@ void MNode::optLevel(uint level, bool collisions) {
 
   komo.fil = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<level));
   
+#if 1
+  Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
+                            "stable", "stableOn", "dynamic", "dynamicOn",
+                            "push", "graspSlide", "liftDownUp"
+                           });
+  if(level==1 && parent) CHECK(parent->effKinematics.q.N, "I can't compute a pose when no pose was comp. for parent (I need the effKin)");
+  skeleton2Bound(komo, BoundType(level), S, startKinematics, (parent?parent->effKinematics:startKinematics));
+#else
   //-- prepare the komo problem
   switch(level) {
     case 1: {
@@ -227,11 +237,12 @@ void MNode::optLevel(uint level, bool collisions) {
 //      cout <<komo.getPath_times() <<endl;
     } break;
   }
-  
+#endif
+
   //-- optimize
   DEBUG(FILE("z.fol") <<fol;);
   DEBUG(komo.getReport(false, 1, FILE("z.problem")););
-//  komo.reportProblem();
+  komo.reportProblem();
 //  komo.animateOptimization = 1;
 
   try {

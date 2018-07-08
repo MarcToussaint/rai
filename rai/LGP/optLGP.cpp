@@ -133,8 +133,8 @@ OptLGP::~OptLGP() {
 void OptLGP::initDisplay() {
   if(!views.N) {
     views.resize(4);
-    views(1) = make_shared<KinPathViewer>("pose", .2, -1);
-    views(2) = make_shared<KinPathViewer>("sequence", .2, -1);
+    views(1) = make_shared<KinPathViewer>("pose", 1.2, -1);
+    views(2) = make_shared<KinPathViewer>("sequence", 1.2, -1);
     views(3) = make_shared<KinPathViewer>("path", .05, -2);
     if(rai::getParameter<bool>("LGP/displayTree", 1)) {
       _system("evince z.pdf &");

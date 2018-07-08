@@ -158,9 +158,12 @@ void KOMO::deactivateCollisions(const char* s1, const char* s2) {
 
 void KOMO::clearTasks() {
   listDelete(objectives);
+  listDelete(switches);
+  listDelete(flags);
 }
 
 Objective *KOMO::addObjective(double startTime, double endTime, Feature *map, ObjectiveType type, const arr& target, double prec, int order, int deltaStep) {
+  if(startTime<0. && endTime<0.) return NULL;
   if(order>=0) map->order = order;
   CHECK_GE(k_order, map->order, "task requires larger k-order: " <<map->shortTag(world));
   Objective *task = new Objective(map, type);
@@ -171,11 +174,13 @@ Objective *KOMO::addObjective(double startTime, double endTime, Feature *map, Ob
 }
 
 void KOMO::addFlag(double time, Flag *fl, int deltaStep) {
+  if(time<0.) time=0.;
   fl->stepOfApplication = conv_time2step(time, stepsPerPhase) + deltaStep;
   flags.append(fl);
 }
 
 void KOMO::addSwitch(double time, bool before, KinematicSwitch *sw) {
+  if(time<0.) time=0.;
   sw->setTimeOfApplication(time, before, stepsPerPhase, T);
   switches.append(sw);
 }
@@ -798,7 +803,11 @@ void KOMO::setSkeleton(const Skeleton &S) {
     if(s.symbols(0)=="inside") {   addObjective(s.phase0, s.phase1, OT_ineq, FS_insideBox, s.symbols({1,2}), 1e1);  continue;  }
     if(s.symbols(0)=="impulse") {  core_setImpulse(s.phase0, s.symbols(1), s.symbols(2));  continue;  }
 #endif
-    if(s.symbols(0)=="stable") {  addSwitch_stable(s.phase0, s.symbols(1), s.symbols(2));  continue;  }
+    if(s.symbols(0)=="stable") {
+      addSwitch_stable(s.phase0, s.symbols(1), s.symbols(2));
+//      add_stable(s.phase1, s.symbols(1), s.symbols(2));
+      continue;
+    }
     if(s.symbols(0)=="stableOn") {  addSwitch_stableOn(s.phase0, s.symbols(1), s.symbols(2));  continue;  }
     if(s.symbols(0)=="dynamic") {  addSwitch_dynamic(s.phase0, "base", s.symbols(1));  continue;  }
     if(s.symbols(0)=="dynamicOn") {  addSwitch_dynamicOn(s.phase0, s.symbols(1), s.symbols(2));  continue;  }
@@ -870,6 +879,10 @@ void KOMO::add_impulse(double time, const char* shape1, const char* shape2, Obje
     addFlag(time, new Flag(FL_impulseExchange, world[shape1]->ID), +1);
     addFlag(time, new Flag(FL_impulseExchange, world[shape2]->ID), +1);
   }
+}
+
+void KOMO::add_stable(double time, const char* shape1, const char* shape2, ObjectiveType type, double prec){
+  addObjective(time, time, new TM_Default(TMT_pose, world, shape1, NoVector, shape2), type, NoArr, prec, 1, 0 );
 }
 
 void KOMO_ext::setAlignedStacking(double time, const char* object, ObjectiveType type, double prec) {
@@ -1140,8 +1153,7 @@ void KOMO::reportProblem(std::ostream& os) {
   writeConsecutiveConstant(os, dims);
   os <<endl;
   
-  arr times(configurations.N);
-  for(uint i=0; i<configurations.N; i++) times(i)=configurations(i)->frames.first()->time;
+  arr times = getPath_times();
   if(times.N>10) times.resizeCopy(10);
   os <<"    times:" <<times <<endl;
   
@@ -1656,7 +1668,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
     fil <<endl;
     
     //rest: just the matrix
-    if(true && !dualSolution.N) {
+    if(true){ // && !dualSolution.N) {
       err.write(fil,NULL,NULL,"  ");
     } else {
       dualSolution.reshape(T, dualSolution.N/(T));

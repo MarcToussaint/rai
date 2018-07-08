@@ -175,11 +175,14 @@ void rai::Frame::write(std::ostream& os) const {
 rai::Frame* rai::Frame::insertPreLink(const rai::Transformation &A) {
   //new frame between: parent -> f -> this
   Frame *f = new Frame(K);
-  if(name) f->name <<'>' <<name;
+
   
   if(parent) {
     f->linkFrom(parent);
     parent->outLinks.removeValue(this);
+    f->name <<parent->name <<'>' <<name;
+  }else{
+    f->name <<"NIL>" <<name;
   }
   parent=f;
   parent->outLinks.append(this);

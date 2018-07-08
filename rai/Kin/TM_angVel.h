@@ -12,10 +12,10 @@ struct TM_AngVel : Feature {
   int i;               ///< which shapes does it refer to?
 
   TM_AngVel(int iShape=-1)
-    : i(iShape) {}
+    : i(iShape) { order=1; }
 
   TM_AngVel(const rai::KinematicWorld& K, const char* iShapeName=NULL)
-    : i(initIdArg(K,iShapeName)) {}
+    : i(initIdArg(K,iShapeName)) { order=1; }
 
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G){ NIY; }
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);

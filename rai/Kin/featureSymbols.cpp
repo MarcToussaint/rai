@@ -73,7 +73,7 @@ Feature* symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::K
 
   if(feat==FS_pose) {  return new TM_Default(TMT_pose, world, frames(0)); }
   if(feat==FS_poseDiff) {  return new TM_Default(TMT_poseDiff, world, frames(0), NoVector, frames(1), NoVector); }
-  if(feat==FS_poseRel) NIY;
+  if(feat==FS_poseRel)  {  return new TM_Default(TMT_pose, world, frames(0), NoVector, frames(1), NoVector); }
 
   if(feat==FS_scalarProductZ) {  return new TM_Default(TMT_vecAlign, world, frames(0), Vector_z, frames(1), Vector_z); }
 

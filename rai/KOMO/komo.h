@@ -104,13 +104,13 @@ struct KOMO {
   //
 
   //-- tasks mid-level
-  void setSquaredQAccelerations(double startTime=-1., double endTime=-1., double prec=1.);
-  void setSquaredQVelocities(double startTime=-1., double endTime=-1., double prec=1.);
-  void setFixEffectiveJoints(double startTime=-1., double endTime=-1., double prec=3e1);
-  void setFixSwitchedObjects(double startTime=-1., double endTime=-1., double prec=3e1);
-  void setSquaredQuaternionNorms(double startTime=-1., double endTime=-1., double prec=3e0);
+  void setSquaredQAccelerations(double startTime=0., double endTime=-1., double prec=1.);
+  void setSquaredQVelocities(double startTime=0., double endTime=-1., double prec=1.);
+  void setFixEffectiveJoints(double startTime=0., double endTime=-1., double prec=3e1);
+  void setFixSwitchedObjects(double startTime=0., double endTime=-1., double prec=3e1);
+  void setSquaredQuaternionNorms(double startTime=0., double endTime=-1., double prec=3e0);
 
-  void setHoming(double startTime=-1., double endTime=-1., double prec=1e-1, const char *keyword="robot");
+  void setHoming(double startTime=0., double endTime=-1., double prec=1e-1, const char *keyword="robot");
   void setHoldStill(double startTime, double endTime, const char* shape, double prec=1e1);
 
   void add_collision(bool hardConstraint, double margin=.0, double prec=1.);
@@ -124,6 +124,7 @@ struct KOMO {
   void add_aboveBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e1);
   void add_insideBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e1);
   void add_impulse(double time, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, double prec=1e1);
+  void add_stable(double time,  const char* shape1, const char* shape2, ObjectiveType type=OT_eq, double prec=1e1);
   
   //-- core kinematic switch symbols of skeletons
   void addSwitch_stable(double time, const char *from, const char *to);

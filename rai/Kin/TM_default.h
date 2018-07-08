@@ -25,7 +25,6 @@ enum TM_DefaultType {
   TMT_poseDiff,
   pos1TMT_D,
 };
-extern const char* TM_DefaultType2String[];
 
 struct TM_Default : Feature {
   rai::Enum<TM_DefaultType> type;   ///< joint type

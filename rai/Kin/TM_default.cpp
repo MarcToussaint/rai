@@ -9,7 +9,7 @@
 #include "TM_default.h"
 #include "frame.h"
 
-const char* TM_DefaultType2String[] = {
+template<> const char* rai::Enum<TM_DefaultType>::names []= {
   "no",      ///< non-initialization
   "pos",     ///< 3D position of reference
   "vec",     ///< 3D vec (orientation)
@@ -23,22 +23,6 @@ const char* TM_DefaultType2String[] = {
   "poseDiff",
   "pos1D",
   NULL,
-};
-
-template<> const char* rai::Enum<TM_DefaultType>::names []= {
-    "no",      ///< non-initialization
-    "pos",     ///< 3D position of reference
-    "vec",     ///< 3D vec (orientation)
-    "quat",    ///< 4D quaterion
-    "posDiff", ///< the difference of two positions (NOT the relative position)
-    "vecDiff", ///< the difference of two vectors (NOT the relative position)
-    "quatDiff",///< the difference of 2 quaternions (NOT the relative quaternion)
-    "vecAlign",///< 1D vector alignment, can have 2nd reference, param (optional) determins alternative reference world vector
-    "gazeAt",  ///< 2D orthogonality measure of object relative to camera plane
-    "pose",
-    "poseDiff",
-    "pos1D",
-    NULL,
 };
 
 TM_Default::TM_Default(TM_DefaultType _type,
@@ -88,7 +72,7 @@ TM_Default::TM_Default(const Graph& specs, const rai::KinematicWorld& G)
 TM_Default::TM_Default(const Node *specs, const rai::KinematicWorld& G)
   :type(TMT_no), i(-1), j(-1) {
   CHECK(specs->parents.N>1,"");
-//  rai::String& tt=specs->parents(0)->keys.last();
+  //  rai::String& tt=specs->parents(0)->keys.last();
   rai::String& Type=specs->parents(1)->keys.last();
   const char *ref1=NULL, *ref2=NULL;
   if(specs->parents.N>2) ref1=specs->parents(2)->keys.last().p;
@@ -166,7 +150,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   
   if(type==TMT_vec) {
     rai::Vector vec_i = ivec;
-//    rai::Vector vec_j = j<0?jvec: G.shapes(j)->rel.rot*jvec;
+    //    rai::Vector vec_j = j<0?jvec: G.shapes(j)->rel.rot*jvec;
     if(vec_i.isZero) RAI_MSG("attached vector is zero -- can't control that");
     if(body_j==NULL) { //simple, no j reference
       G.kinematicsVec(y, J, body_i, vec_i);
@@ -274,8 +258,23 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     if(body_j==NULL) { //simple, no j reference
       G.kinematicsQuat(y, J, body_i);
       return;
-    }//else...
-    NIY;
+    }{
+      arr a,b,Ja,Jb;
+      G.kinematicsQuat(b, Jb, body_i);
+      G.kinematicsQuat(a, Ja, body_j);
+
+      arr Jya, Jyb;
+      arr ainv = a;
+      if(a(0)!=1.) ainv(0) *= -1.;
+      quat_concat(y, Jya, Jyb, ainv, b);
+      if(a(0)!=1.) for(uint i=0;i<Jya.d0;i++) Jya(i,0) *= -1.;
+
+      if(&J){
+        J = Jya * Ja + Jyb * Jb;
+        checkNan(J);
+      }
+    }
+    return;
   }
   
   if(type==TMT_quatDiff) {
@@ -298,15 +297,15 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   }
 
   if(type==TMT_pose) {
-      arr yq, Jq;
-      TM_Default tmp(*this);
-      tmp.type = TMT_pos;
-      tmp.phi(y, J, G);
-      tmp.type = TMT_quat;
-      tmp.phi(yq, (&J?Jq:NoArr), G);
-      y.append(yq);
-      if(&J) J.append(Jq);
-      return;
+    arr yq, Jq;
+    TM_Default tmp(*this);
+    tmp.type = TMT_pos;
+    tmp.phi(y, J, G);
+    tmp.type = TMT_quat;
+    tmp.phi(yq, (&J?Jq:NoArr), G);
+    y.append(yq);
+    if(&J) J.append(Jq);
+    return;
   }
 
   if(type==TMT_poseDiff) {
@@ -343,20 +342,20 @@ uint TM_Default::dim_phi(const rai::KinematicWorld& G) {
 
 rai::String TM_Default::shortTag(const rai::KinematicWorld& K) {
   rai::String s="Default";
-  s <<':' <<TM_DefaultType2String[type];
+  s <<':' <<type;
   s <<':' <<(i<0?"WORLD":K.frames(i)->name);
   s <<'/' <<(j<0?"WORLD":K.frames(j)->name);
   return s;
 }
 
 Graph TM_Default::getSpec(const rai::KinematicWorld& K){
-    Graph G;
-    G.newNode<rai::String>({"feature"}, {}, STRING(type));
-    if(i>=0) G.newNode<rai::String>({"o1"}, {}, K.frames(i)->name);
-    if(j>=0) G.newNode<rai::String>({"o2"}, {}, K.frames(j)->name);
-    if(!ivec.isZero) G.newNode<arr>({"v1"}, {}, ivec.getArr());
-    if(!jvec.isZero) G.newNode<arr>({"v2"}, {}, jvec.getArr());
-    return G;
+  Graph G;
+  G.newNode<rai::String>({"feature"}, {}, STRING(type));
+  if(i>=0) G.newNode<rai::String>({"o1"}, {}, K.frames(i)->name);
+  if(j>=0) G.newNode<rai::String>({"o2"}, {}, K.frames(j)->name);
+  if(!ivec.isZero) G.newNode<arr>({"v1"}, {}, ivec.getArr());
+  if(!jvec.isZero) G.newNode<arr>({"v2"}, {}, jvec.getArr());
+  return G;
 }
 
 //===========================================================================
