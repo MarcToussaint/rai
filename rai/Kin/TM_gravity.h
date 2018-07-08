@@ -21,3 +21,16 @@ struct TM_Gravity : Feature {
   
   virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("Gravity"); }
 };
+
+struct TM_Gravity2 : Feature {
+  double gravity=9.81;
+  int i;               ///< which shapes does it refer to?
+
+  TM_Gravity2(int iShape=-1);
+  TM_Gravity2(const rai::KinematicWorld& K, const char* iShapeName=NULL) : TM_Gravity2(initIdArg(K,iShapeName)){}
+
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G){ NIY; }
+  virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
+  virtual uint dim_phi(const rai::KinematicWorld& G){ return 3; }
+  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("Gravity2_" <<G.frames(i)->name); }
+};

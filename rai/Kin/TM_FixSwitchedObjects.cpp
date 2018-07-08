@@ -43,7 +43,10 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& Ktuple) {
     
     if(b1->flags && (b1->flags & (1<<FL_impulseExchange))) continue;
 
-    rai::Frame *b0Parent = b0->getUpwardLink()->parent;
+    rai::Frame *b0Parent = b0->getUpwardLink();
+//    if(b0Parent->joint && b0Parent->joint->type!=rai::JT_rigid && !b0Parent->joint->constrainToZeroVel) continue;
+
+    b0Parent = b0Parent->parent;
     CHECK(b0Parent,"");
 
 //    if(order==2){

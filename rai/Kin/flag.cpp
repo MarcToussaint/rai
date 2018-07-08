@@ -25,6 +25,7 @@ template<> const char* rai::Enum<FrameFlagType>::names []= {
   "FL_clear",
   "FL_xPosVelCosts",
   "FL_kinematic",
+  "FL_something",
   NULL
 };
 

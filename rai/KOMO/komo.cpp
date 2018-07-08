@@ -26,6 +26,7 @@
 #include <Kin/TM_ImpulseExchange.h>
 #include <Kin/TM_FlagConstraints.h>
 #include <Kin/TM_energy.h>
+#include <Kin/TM_gravity.h>
 #include <Kin/contact.h>
 #include <Optim/optimization.h>
 #include <Optim/convert.h>
@@ -209,7 +210,8 @@ void KOMO::addSwitch_stableOn(double time, const char *from, const char* to) {
 void KOMO::addSwitch_dynamic(double time, const char* from, const char* to) {
   addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_trans3, from, to, world));
   addFlag(time, new Flag(FL_clear, world[to]->ID, 0, true), +1);
-  addFlag(time, new Flag(FL_gravityAcc, world[to]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
+  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
+//  addFlag(time, new Flag(FL_gravityAcc, world[to]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
 }
 
 void KOMO::addSwitch_dynamicOn(double time, const char *from, const char* to) {
@@ -284,7 +286,7 @@ void KOMO::setFixEffectiveJoints(double startTime, double endTime, double prec) 
 }
 
 void KOMO::setFixSwitchedObjects(double startTime, double endTime, double prec) {
-  addObjective(startTime, endTime, new TM_FixSwichedObjects(), OT_eq, NoArr, prec, k_order);
+  addObjective(startTime, endTime, new TM_FixSwichedObjects(), OT_eq, NoArr, prec, 1);
 }
 
 void KOMO::setSquaredQuaternionNorms(double startTime, double endTime, double prec) {
@@ -809,7 +811,12 @@ void KOMO::setSkeleton(const Skeleton &S) {
       continue;
     }
     if(s.symbols(0)=="stableOn") {  addSwitch_stableOn(s.phase0, s.symbols(1), s.symbols(2));  continue;  }
-    if(s.symbols(0)=="dynamic") {  addSwitch_dynamic(s.phase0, "base", s.symbols(1));  continue;  }
+    if(s.symbols(0)=="dynamic") {
+      addSwitch_dynamic(s.phase0, "base", s.symbols(1));
+      auto *o = addObjective(s.phase0, s.phase1, new TM_Gravity2(world, s.symbols(1)), OT_eq, NoArr, 3e1, k_order, +1);
+      o->prec(-1)=o->prec(-2)=0.;
+      continue;
+    }
     if(s.symbols(0)=="dynamicOn") {  addSwitch_dynamicOn(s.phase0, s.symbols(1), s.symbols(2));  continue;  }
     if(s.symbols(0)=="liftDownUp") {  setLiftDownUp(s.phase0, s.symbols(1));  continue;  }
 

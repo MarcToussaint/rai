@@ -15,7 +15,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const ra
       }
 
       komo.setModel(parentKinematics, false);
-      komo.setTiming(1., 2, 5., 1);
+      komo.setTiming(1., 1, 5., 1);
 
       komo.setHoming(0., -1., 1e-2);
       komo.setSquaredQVelocities(.5, -1., 1.); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
@@ -26,7 +26,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const ra
       komo.setSkeleton(finalS);
 
       komo.reset();
-      komo.setPairedTimes();
+//      komo.setPairedTimes();
 //      cout <<komo.getPath_times() <<endl;
     } break;
     case 2: {
