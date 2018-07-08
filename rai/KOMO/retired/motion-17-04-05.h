@@ -11,7 +11,7 @@
 #include <Kin/kin.h>
 #include <Optim/optimization.h>
 #include <Optim/KOMO_Problem.h>
-#include "taskMap.h"
+#include "feature.h"
 
 //===========================================================================
 //
@@ -19,14 +19,14 @@
 /// optionally rescaled using 'target' and 'prec'
 //
 
-struct Task {
-  TaskMap *map;
+struct Objective {
+  Feature *map;
   const ObjectiveType type;  ///< element of {sumOfSqr, inequality, equality}
   rai::String name;
   arr target, prec;     ///< optional linear, time-dependent, rescaling (with semantics of target & precision)
   
-  Task(TaskMap *m, const ObjectiveType& type) : map(m), type(type) {}
-  ~Task() { if(map) delete map; map=NULL; }
+  Objective(Feature *m, const ObjectiveType& type) : map(m), type(type) {}
+  ~Objective() { if(map) delete map; map=NULL; }
   
   void setCostSpecs(int fromTime, int toTime,
                     const arr& _target=ARR(0.),
@@ -42,7 +42,7 @@ struct Task {
        <<" prec=" <<prec;
   }
   
-  static Task* newTask(const Node* specs, const rai::KinematicWorld& world, int stepsPerPhase, uint T); ///< create a new Task from specs
+  static Objective* newTask(const Node* specs, const rai::KinematicWorld& world, int stepsPerPhase, uint T); ///< create a new Task from specs
 };
 stdOutPipe(Task)
 
@@ -56,7 +56,7 @@ struct KOMO {
   WorldL configurations;       ///< copies for each time slice; including kinematic switches; only these are optimized
   bool useSwift;
   
-  rai::Array<Task*> tasks; ///< task cost descriptions
+  rai::Array<Objective*> tasks; ///< task cost descriptions
   rai::Array<rai::KinematicSwitch*> switches;  ///< kinematic switches along the motion
   
   //-- trajectory length and tau
@@ -80,7 +80,7 @@ struct KOMO {
   void setTiming(uint steps, double duration);
   
   /// core method to add tasks
-  Task* addTask(const char* name, TaskMap *map, const ObjectiveType& termType); ///< manually add a task
+  Objective* addTask(const char* name, Feature *map, const ObjectiveType& termType); ///< manually add a task
   
   //-- setting costs in a task space via specs
   void parseTasks(const Graph& specs, int stepsPerPhase=-1);     ///< read all tasks from a graph

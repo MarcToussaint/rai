@@ -63,7 +63,7 @@ KOMO::KOMO() : T(0), tau(0.), k_order(2), useSwift(true), opt(NULL), gl(NULL), v
 }
 
 KOMO::~KOMO() {
-  listDelete(tasks);
+  listDelete(objectives);
   listDelete(flags);
   listDelete(switches);
   listDelete(configurations);
@@ -157,15 +157,15 @@ void KOMO::deactivateCollisions(const char* s1, const char* s2) {
 //
 
 void KOMO::clearTasks() {
-  listDelete(tasks);
+  listDelete(objectives);
 }
 
-Task *KOMO::addObjective(double startTime, double endTime, TaskMap *map, ObjectiveType type, const arr& target, double prec, int order, int deltaStep) {
+Objective *KOMO::addObjective(double startTime, double endTime, Feature *map, ObjectiveType type, const arr& target, double prec, int order, int deltaStep) {
   if(order>=0) map->order = order;
   CHECK_GE(k_order, map->order, "task requires larger k-order: " <<map->shortTag(world));
-  Task *task = new Task(map, type);
+  Objective *task = new Objective(map, type);
   task->name = map->shortTag(world);
-  tasks.append(task);
+  objectives.append(task);
   task->setCostSpecs(startTime, endTime, stepsPerPhase, T, target, prec, deltaStep);
   return task;
 }
@@ -225,7 +225,7 @@ void KOMO::addContact(double startTime, double endTime, const char *from, const 
   }
 }
 
-Task* KOMO::addObjective(double startTime, double endTime, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, double scale, const arr& target, int order){
+Objective* KOMO::addObjective(double startTime, double endTime, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, double scale, const arr& target, int order){
   return addObjective(startTime, endTime, symbols2feature(feat, frames, world), type, target, scale, order);
 }
 
@@ -305,7 +305,7 @@ void KOMO_ext::setVelocity(double startTime, double endTime, const char* shape, 
 }
 
 void KOMO_ext::setLastTaskToBeVelocity() {
-  tasks.last()->map->order = 1; //set to be velocity!
+  objectives.last()->map->order = 1; //set to be velocity!
 }
 
 void KOMO_ext::setImpact(double time, const char *a, const char *b) {
@@ -658,9 +658,9 @@ void KOMO::setSlow(double startTime, double endTime, double prec, bool hardConst
 #if 1
     uintA selectedBodies;
     for(rai::Joint *j:world.fwdActiveJoints) if(j->type!=rai::JT_time && j->qDim()>0) selectedBodies.append(j->frame.ID);
-    TaskMap *map = new TM_qItself(selectedBodies);
+    Feature *map = new TM_qItself(selectedBodies);
 #else
-    TaskMap *map = new TM_qItself;
+    Feature *map = new TM_qItself;
 #endif
     if(!hardConstrained) addObjective(startTime, endTime, map, OT_sos, NoArr, prec, 1);
     else addObjective(startTime, endTime, map, OT_eq, NoArr, prec, 1);
@@ -1146,7 +1146,7 @@ void KOMO::reportProblem(std::ostream& os) {
   os <<"    times:" <<times <<endl;
   
   os <<"  usingSwift:" <<useSwift <<endl;
-  for(Task* t:tasks) os <<"    " <<*t <<endl;
+  for(Objective* t:objectives) os <<"    " <<*t <<endl;
   for(KinematicSwitch* sw:switches) {
     os <<"    ";
     if(sw->timeOfApplication+k_order >= configurations.N) {
@@ -1233,7 +1233,7 @@ void KOMO::plotTrajectory() {
   fil2 <<"set term qt 2" <<endl;
   fil2 <<"plot 'z.trajectories' \\" <<endl;
   for(uint i=1; i<=jointNames.N; i++) fil2 <<(i>1?"  ,''":"     ") <<" u (($0+1)*" <<tau <<"):"<<i<<" w l lw 3 lc " <<i <<" lt " <<1-((i/10)%2) <<" \\" <<endl;
-    if(dualSolution.N) for(uint i=0;i<tasks.N;i++) fil <<"  ,'' u (($0+1)*" <<tau <<"):"<<1+tasks.N+i<<" w l \\" <<endl;
+//  if(dual.N) for(uint i=0;i<objectives.N;i++) fil <<"  ,'' u (($0+1)*" <<tau <<"):"<<1+objectives.N+i<<" w l \\" <<endl;
   fil2 <<endl;
   fil2.close();
   
@@ -1548,15 +1548,16 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
   tt.referTo(featureTypes);
   
   //-- collect all task costs and constraints
-  StringA name; name.resize(tasks.N);
-  arr err=zeros(T,tasks.N);
-  arr taskC=zeros(tasks.N);
-  arr taskG=zeros(tasks.N);
+  StringA name; name.resize(objectives.N);
+  arr err=zeros(T, objectives.N);
+  arr dualSolution; if(dual.N) dualSolution=zeros(T, objectives.N);
+  arr taskC=zeros(objectives.N);
+  arr taskG=zeros(objectives.N);
   uint M=0;
   if(!featureDense){
     for(uint t=0; t<T; t++) {
-      for(uint i=0; i<tasks.N; i++) {
-        Task *task = tasks(i);
+      for(uint i=0; i<objectives.N; i++) {
+        Objective *task = objectives(i);
         if(task->prec.N>t && task->prec(t)) {
           uint d=0;
           if(wasRun) {
@@ -1565,14 +1566,17 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
             if(d) {
               if(task->type==OT_sos) {
                 for(uint j=0; j<d; j++) err(t,i) += sqr(phi(M+j)); //sumOfSqr(phi.sub(M,M+d-1));
+                if(dual.N) dualSolution(t, i) = dual(M);
                 taskC(i) += err(t,i);
               }
               if(task->type==OT_ineq) {
                 for(uint j=0; j<d; j++) err(t,i) += MAX(0., phi(M+j));
+                if(dual.N) dualSolution(t, i) = dual(M);
                 taskG(i) += err(t,i);
               }
               if(task->type==OT_eq) {
                 for(uint j=0; j<d; j++) err(t,i) += fabs(phi(M+j));
+                if(dual.N) dualSolution(t, i) = dual(M);
                 taskG(i) += err(t,i);
               }
               M += d;
@@ -1589,8 +1593,8 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
       }
     }
   }else{
-    for(uint i=0; i<tasks.N; i++) {
-      Task *task = tasks.elem(i);
+    for(uint i=0; i<objectives.N; i++) {
+      Objective *task = objectives.elem(i);
       CHECK_EQ(task->vars.d0, task->prec.N, "");
       for(uint t=0;t<task->prec.N;t++){
         WorldL Ktuple = configurations.sub(convert<uint,int>(task->vars[t]+(int)k_order));
@@ -1630,8 +1634,8 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
   //-- generate a report graph
   Graph report;
   double totalC=0., totalG=0.;
-  for(uint i=0; i<tasks.N; i++) {
-    Task *c = tasks(i);
+  for(uint i=0; i<objectives.N; i++) {
+    Objective *c = objectives(i);
     Graph *g = &report.newSubgraph({c->name}, {})->value;
     g->newNode<double>({"order"}, {}, c->map->order);
     g->newNode<String>({"type"}, {}, STRING(c->type.name()));
@@ -1647,12 +1651,12 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
     //-- write a nice gnuplot file
     ofstream fil("z.costReport");
     //first line: legend
-    for(auto c:tasks) fil <<c->name <<' ';
-    for(auto c:tasks) if(c->type==OT_ineq && dualSolution.N) fil <<c->name <<"_dual ";
+    for(auto c:objectives) fil <<c->name <<' ';
+    for(auto c:objectives) if(c->type==OT_ineq && dualSolution.N) fil <<c->name <<"_dual ";
     fil <<endl;
     
     //rest: just the matrix
-    if(!dualSolution.N) {
+    if(true && !dualSolution.N) {
       err.write(fil,NULL,NULL,"  ");
     } else {
       dualSolution.reshape(T, dualSolution.N/(T));
@@ -1664,8 +1668,8 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
     fil2 <<"set key autotitle columnheader" <<endl;
     fil2 <<"set title 'costReport ( plotting sqrt(costs) )'" <<endl;
     fil2 <<"plot 'z.costReport' \\" <<endl;
-    for(uint i=1; i<=tasks.N; i++) fil2 <<(i>1?"  ,''":"     ") <<" u (($0+1)*" <<tau <<"):"<<i<<" w l lw 3 lc " <<i <<" lt " <<1-((i/10)%2) <<" \\" <<endl;
-    if(dualSolution.N) for(uint i=0; i<tasks.N; i++) fil2 <<"  ,'' u (($0+1)*" <<tau <<"):"<<1+tasks.N+i<<" w l \\" <<endl;
+    for(uint i=1; i<=objectives.N; i++) fil2 <<(i>1?"  ,''":"     ") <<" u (($0+1)*" <<tau <<"):"<<i<<" w l lw 3 lc " <<i <<" lt " <<1-((i/10)%2) <<" \\" <<endl;
+    if(dualSolution.N) for(uint i=0; i<objectives.N; i++) fil2 <<"  ,'' u (($0+1)*" <<tau <<"):"<<1+objectives.N+i<<" w l \\" <<endl;
     fil2 <<endl;
     fil2.close();
     
@@ -1689,11 +1693,11 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
   if(&featureTypes) featureTypes.clear();
   featureNames.clear();
   uint M=0;
-  phiIndex.resize(komo.T, komo.tasks.N); phiIndex.setZero();
-  phiDim.resize(komo.T, komo.tasks.N);   phiDim.setZero();
+  phiIndex.resize(komo.T, komo.objectives.N); phiIndex.setZero();
+  phiDim.resize(komo.T, komo.objectives.N);   phiDim.setZero();
   for(uint t=0; t<komo.T; t++) {
-    for(uint i=0; i<komo.tasks.N; i++) {
-      Task *task = komo.tasks.elem(i);
+    for(uint i=0; i<komo.objectives.N; i++) {
+      Objective *task = komo.objectives.elem(i);
       if(task->prec.N>t && task->prec(t)) {
         //      CHECK_LE(task->prec.N, MP.T,"");
         uint m = task->map->dim_phi(komo.configurations({t,t+komo.k_order})); //dimensionality of this task
@@ -1758,8 +1762,8 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
     uint Ktuple_dim=0;
     for(KinematicWorld *K:Ktuple) Ktuple_dim += K->q.N;
     
-    for(uint i=0; i<komo.tasks.N; i++) {
-      Task *task = komo.tasks.elem(i);
+    for(uint i=0; i<komo.objectives.N; i++) {
+      Objective *task = komo.objectives.elem(i);
       if(task->prec.N>t && task->prec(t)) {
         //query the task map and check dimensionalities of returns
         task->map->phi(y, (&J?Jy:NoArr), Ktuple);
@@ -1819,7 +1823,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
     WorldL Ktuple = komo.configurations({t, t+komo.k_order});
     KinematicWorld& K = *komo.configurations(t+komo.k_order);
     for(Frame *f:K.frames) for(Contact *c:f->contacts) if(&c->a==f) {
-          TaskMap *map = c->getTM_ContactNegDistance();
+          Feature *map = c->getTM_ContactNegDistance();
           map->phi(y, (&J?Jy:NoArr), Ktuple, komo.tau, t);
           c->y = y.scalar();
           phi.append(c->y);
@@ -1865,8 +1869,8 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
 
   arr y, Jy;
   uint M=0;
-  for(uint i=0; i<komo.tasks.N; i++) {
-    Task *task = komo.tasks.elem(i);
+  for(uint i=0; i<komo.objectives.N; i++) {
+    Objective *task = komo.objectives.elem(i);
     CHECK_EQ(task->vars.d0, task->prec.N, "");
     for(uint t=0;t<task->prec.N;t++){
       WorldL Ktuple = komo.configurations.sub(convert<uint,int>(task->vars[t]+(int)komo.k_order));
@@ -1928,8 +1932,8 @@ void KOMO::Conv_MotionProblem_DenseProblem::getStructure(uintA& variableDimensio
   if(&featureVariables) featureVariables.clear();
   if(&featureTypes) featureTypes.clear();
   uint M=0;
-  for(uint i=0; i<komo.tasks.N; i++) {
-    Task *task = komo.tasks.elem(i);
+  for(uint i=0; i<komo.objectives.N; i++) {
+    Objective *task = komo.objectives.elem(i);
     CHECK_EQ(task->vars.d0, task->prec.N, "");
     for(uint t=0;t<task->prec.N;t++){
       WorldL Ktuple = komo.configurations.sub(convert<uint,int>(task->vars[t]+(int)komo.k_order));

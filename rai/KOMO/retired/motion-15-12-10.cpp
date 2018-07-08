@@ -15,7 +15,7 @@
 
 //===========================================================================
 
-void TaskMap::phi(arr& y, arr& J, const WorldL& G, double tau, int t) {
+void Feature::phi(arr& y, arr& J, const WorldL& G, double tau, int t) {
   CHECK_GE(G.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
   if(k==0) { // basic case: order=0
@@ -65,7 +65,7 @@ void Task::setCostSpecs(uint fromTime,
 
 //===========================================================================
 
-TaskMap *newTaskMap(const Node* specs, const rai::KinematicWorld& world) {
+Feature *newTaskMap(const Node* specs, const rai::KinematicWorld& world) {
   if(specs->parents.N<2) return NULL;
   
   //-- get tags
@@ -83,7 +83,7 @@ TaskMap *newTaskMap(const Node* specs, const rai::KinematicWorld& world) {
   else return NULL;
   
   //-- create a task map
-  TaskMap *map;
+  Feature *map;
   const Graph& params = specs->graph();
 //  rai::String type = specs.get<rai::String>("type", "pos");
   if(type=="wheels") {
@@ -131,7 +131,7 @@ TaskMap *newTaskMap(const Node* specs, const rai::KinematicWorld& world) {
 
 Task* newTask(const Node* specs, const rai::KinematicWorld& world, uint Tinterval, uint Tzero) {
   //-- try to crate a map
-  TaskMap *map = newTaskMap(specs, world);
+  Feature *map = newTaskMap(specs, world);
   if(!map) return NULL;
   //-- create a task
   Task *task = new Task(map);
@@ -242,7 +242,7 @@ arr KOMO::getH_rate_diag() {
   return rai::getParameter<double>("Hrate", 1.)*W_diag;
 }
 
-Task* KOMO::addTask(const char* name, TaskMap *m) {
+Task* KOMO::addTask(const char* name, Feature *m) {
   Task *t = new Task(m);
   t->name=name;
   tasks.append(t);
@@ -274,7 +274,7 @@ void KOMO::parseTasks(const Graph& specs, int Tinterval, uint Tzero) {
   
   //-- add TransitionTask for InvKinematics
   if(!T) {
-    TaskMap *map = new TM_qItself();
+    Feature *map = new TM_qItself();
     map->order = 0;
     map->type=OT_sos;
     Task *task = new Task(map);

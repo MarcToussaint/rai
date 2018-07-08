@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "taskMap.h"
+#include "feature.h"
 
-struct TM_qUncertainties:TaskMap {
+struct TM_qUncertainties:Feature {
   TM_qUncertainties();
   
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);

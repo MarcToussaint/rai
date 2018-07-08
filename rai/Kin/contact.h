@@ -10,7 +10,7 @@
 
 #include <Core/util.h>
 #include "frame.h"
-#include "taskMap.h"
+#include "feature.h"
 
 struct PairCollision;
 
@@ -61,14 +61,14 @@ public:
 //  }
 
   double getDistance() const; // get normal(!) distance (projected onto contact normal), by calling the TM_ContactNegDistance()
-  TaskMap* getTM_Friction() const;
-  TaskMap* getTM_ContactNegDistance() const;
+  Feature* getTM_Friction() const;
+  Feature* getTM_ContactNegDistance() const;
   void glDraw(OpenGL&);
   void write(ostream& os) const;
 };
 stdOutPipe(Contact)
 
-struct TM_ContactNegDistance : TaskMap {
+struct TM_ContactNegDistance : Feature {
   const Contact& C;
   
   TM_ContactNegDistance(const Contact& contact) : C(contact) {}

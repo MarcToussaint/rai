@@ -6,9 +6,9 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "taskMap.h"
+#include "feature.h"
 
-struct TM_InertialMotion : TaskMap {
+struct TM_InertialMotion : Feature {
   int i;
   double g,c;
   

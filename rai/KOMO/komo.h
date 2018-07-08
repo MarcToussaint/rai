@@ -11,7 +11,7 @@
 #include <Optim/optimization.h>
 #include <Optim/constrained.h>
 #include <Optim/KOMO_Problem.h>
-#include "task.h"
+#include "objective.h"
 #include <Kin/flag.h>
 #include <Kin/featureSymbols.h>
 
@@ -38,7 +38,7 @@ struct KOMO {
   uint T;                      ///< total number of time steps
   double tau;                  ///< real time duration of single step (used when evaluating task space velocities/accelerations)
   uint k_order;                ///< the (Markov) order of the KOMO problem (default 2)
-  rai::Array<Task*> tasks;     ///< list of tasks
+  rai::Array<Objective*> objectives;     ///< list of tasks
   rai::Array<rai::Flag*> flags;     ///< list of flaggings that are applied to the frames/joints in the configurations and modify tasks
   rai::Array<rai::KinematicSwitch*> switches;  ///< list of kinematic switches along the motion
   
@@ -56,11 +56,11 @@ struct KOMO {
   arr featureValues;           ///< storage of all features in all time slices
   ObjectiveTypeA featureTypes; ///< storage of all feature-types in all time slices
   bool featureDense;
-  arr dualSolution;            ///< the dual solution computed during constrained optimization
+//  arr dualSolution;            ///< the dual solution computed during constrained optimization
   struct OpenGL *gl=NULL;      ///< internal only: used in 'displayTrajectory'
   int verbose;                 ///< verbosity level
   int animateOptimization=0;   ///< display the current path for each evaluation during optimization
-  double runTime=0.;           ///< just measure run time
+  double runTime=0.;           ///< measured run time
   ofstream *fil=NULL;
   
   KOMO();
@@ -91,8 +91,8 @@ struct KOMO {
    * they allow the user to add a cost task, or a kinematic switch in the problem definition
    * Typically, the user does not call them directly, but uses the many methods below
    * Think of all of the below as examples for how to set arbirary tasks/switches yourself */
-  struct Task* addObjective(double startTime, double endTime, TaskMap* map, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e1, int order=-1, int deltaStep=0);
-  struct Task* addObjective(double startTime, double endTime, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, double scale=1e1, const arr& target=NoArr, int order=-1);
+  struct Objective* addObjective(double startTime, double endTime, Feature* map, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e1, int order=-1, int deltaStep=0);
+  struct Objective* addObjective(double startTime, double endTime, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, double scale=1e1, const arr& target=NoArr, int order=-1);
   void addSwitch(double time, bool before, rai::KinematicSwitch* sw);
   void addSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const rai::Transformation& jFrom=NoTransformation);
   void addFlag(double time, rai::Flag* fl, int deltaStep=0);
@@ -178,7 +178,7 @@ struct KOMO {
   
   //-- (not much in use..) specs gives as logic expressions in a Graph (or config file)
   void clearTasks();
-//  Task* addTask(const char* name, TaskMap *map, const ObjectiveType& termType); ///< manually add a task
+//  Task* addTask(const char* name, Feature *map, const ObjectiveType& termType); ///< manually add a task
   void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
 //  arr getInitialization();      ///< this reads out the initial state trajectory after 'setupConfigurations'
   void set_x(const arr& x);            ///< set the state trajectory of all configurations

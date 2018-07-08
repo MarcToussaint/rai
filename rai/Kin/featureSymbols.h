@@ -1,4 +1,4 @@
-#include "taskMap.h"
+#include "feature.h"
 
 enum FeatureSymbol {
   FS_none=-1,
@@ -36,4 +36,4 @@ enum FeatureSymbol {
 };
 
 
-TaskMap *symbols2feature(FeatureSymbol feat, const StringA &symbols, const rai::KinematicWorld& world);
+Feature *symbols2feature(FeatureSymbol feat, const StringA &symbols, const rai::KinematicWorld& world);

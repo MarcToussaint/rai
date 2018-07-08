@@ -2010,7 +2010,7 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   if(!addValues) { y.setZero();  if(&J) J.setZero(); }
   
   if(y_dist.scalar()>margin) return;
-  double scale = 1./0.05; //5cm -> cost of 1; is a fixed heuristic, can be changed by TaskMap rescaling
+  double scale = 1./0.05; //5cm -> cost of 1; is a fixed heuristic, can be changed by Feature rescaling
   y += scale*(margin-y_dist.scalar());
   if(&J)  J -= scale*J_dist;
   
@@ -2085,7 +2085,7 @@ void rai::KinematicWorld::kinematicsProxyCost(arr &y, arr& J, double margin) con
 }
 
 void rai::KinematicWorld::kinematicsContactCost(arr& y, arr& J, const Contact* c, double margin, bool addValues) const {
-  TaskMap *map = c->getTM_ContactNegDistance();
+  Feature *map = c->getTM_ContactNegDistance();
   arr y_dist, J_dist;
   map->phi(y_dist, (&J?J_dist:NoArr), *this);
   y_dist *= -1.;
@@ -2096,7 +2096,7 @@ void rai::KinematicWorld::kinematicsContactCost(arr& y, arr& J, const Contact* c
   if(!addValues) { y.setZero();  if(&J) J.setZero(); }
   
   if(y_dist.scalar()>margin) return;
-  double scale = 1./0.05; //5cm -> cost of 1; is a fixed heuristic, can be changed by TaskMap rescaling
+  double scale = 1./0.05; //5cm -> cost of 1; is a fixed heuristic, can be changed by Feature rescaling
   y += scale*(margin-y_dist.scalar());
   if(&J)  J -= scale*J_dist;
 }

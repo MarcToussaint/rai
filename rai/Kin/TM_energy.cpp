@@ -51,10 +51,10 @@ void TM_Energy::phi(arr &y, arr &J, const WorldL &Ktuple) {
 
       TM_Default pos(TMT_posDiff, a->ID);
       pos.order=0;
-      pos.TaskMap::phi(p, (&J?Jp:NoArr), Ktuple);
+      pos.Feature::phi(p, (&J?Jp:NoArr), Ktuple);
 
       pos.order=1;
-      pos.TaskMap::phi(v, (&J?Jv:NoArr), Ktuple);
+      pos.Feature::phi(v, (&J?Jv:NoArr), Ktuple);
 
 
 //      TM_AngVel rot(a->ID);

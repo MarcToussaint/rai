@@ -46,7 +46,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
 //      if(a->inertia && a->inertia->type==rai::BT_dynamic){
         TM_Default pos(TMT_pos, a->ID);
         pos.order=1;
-        pos.TaskMap::phi(p0, (&J?J0:NoArr), Ktuple);
+        pos.Feature::phi(p0, (&J?J0:NoArr), Ktuple);
         
         arr v_ref = {0.,0.,-gravity};
         arr Jv_ref = zeros(3, K.q.N);
@@ -116,7 +116,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
       if(a->flags & (1<<FL_gravityAcc)) {
         TM_Default pos(TMT_posDiff, a->ID);
         pos.order=2;
-        pos.TaskMap::phi(acc, (&J?Jacc:NoArr), Ktuple);
+        pos.Feature::phi(acc, (&J?Jacc:NoArr), Ktuple);
         
         arr err = acc - acc_ref;
         arr Jerr = Jacc;

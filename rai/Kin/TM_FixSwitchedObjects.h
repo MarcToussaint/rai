@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include "taskMap.h"
+#include "feature.h"
 
 //===========================================================================
 
 /// defines a transition cost vector, which is q.N-dimensional and captures
 /// accelerations or velocities over consecutive time steps
-struct TM_FixSwichedObjects:TaskMap {
+struct TM_FixSwichedObjects:Feature {
   TM_FixSwichedObjects() {}
   virtual void phi(arr& y, arr& J, const WorldL& G);
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G) { HALT("can only be of order 1"); }

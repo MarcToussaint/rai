@@ -6,13 +6,13 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "task.h"
+#include "objective.h"
 #include <Kin/switch.h>
 #include <Core/graph.h>
 
 //===========================================================================
 
-void Task::setCostSpecs(int fromStep, int toStep, const arr& _target, double _prec) {
+void Objective::setCostSpecs(int fromStep, int toStep, const arr& _target, double _prec) {
   if(&_target) target = _target; else target.clear();
   if(fromStep<0) fromStep=0;
   CHECK_GE(toStep, fromStep,"");
@@ -25,7 +25,7 @@ void Task::setCostSpecs(int fromStep, int toStep, const arr& _target, double _pr
 #endif
 }
 
-void Task::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T, const arr& _target, double _prec, int deltaStep) {
+void Objective::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T, const arr& _target, double _prec, int deltaStep) {
   if(stepsPerPhase<0) stepsPerPhase=T;
 //  if(conv_time2step(toTime, stepsPerPhase)>T-1){
 //    LOG(-1) <<"beyond the time!: endTime=" <<toTime <<" phases=" <<double(T)/stepsPerPhase;
@@ -40,7 +40,7 @@ void Task::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint 
   setCostSpecs(tFrom, tTo, _target, _prec);
 }
 
-void Task::setCostSpecsDense(intA _vars, const arr& _target, double _prec) {
+void Objective::setCostSpecsDense(intA _vars, const arr& _target, double _prec) {
   if(&_target) target = _target; else target.clear();
   prec = ARR(_prec);
   vars = _vars;

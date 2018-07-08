@@ -7,9 +7,9 @@
     --------------------------------------------------------------  */
 
 #pragma once
-#include "taskMap.h"
+#include "feature.h"
 
-struct TM_PushConsistent : TaskMap {
+struct TM_PushConsistent : Feature {
   int i, j;               ///< which shapes does it refer to?
   
   TM_PushConsistent(int iShape=-1, int jShape=-1);

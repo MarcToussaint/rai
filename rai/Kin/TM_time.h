@@ -6,9 +6,9 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "taskMap.h"
+#include "feature.h"
 
-struct TM_Time : TaskMap {
+struct TM_Time : Feature {
   TM_Time() {}
   
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& K);

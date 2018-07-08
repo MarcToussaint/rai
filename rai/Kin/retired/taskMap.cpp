@@ -8,12 +8,12 @@
 
 //===========================================================================
 
-TaskMap *TaskMap::newTaskMap(const Graph& params, const rai::KinematicWorld& world) {
+Feature *Feature::newTaskMap(const Graph& params, const rai::KinematicWorld& world) {
   //-- get tags
   rai::String type = params.get<rai::String>("map", "default");
   
   //-- create a task map
-  TaskMap *map;
+  Feature *map;
   if(type=="wheels") {
     map = new TM_qItself(QIP_byJointNames, {"worldTranslationRotation"}, world);
   } else if(type=="collisionIneq") {
@@ -76,7 +76,7 @@ TaskMap *TaskMap::newTaskMap(const Graph& params, const rai::KinematicWorld& wor
 
 //===========================================================================
 
-TaskMap *TaskMap::newTaskMap(const Node* specs, const rai::KinematicWorld& world) {
+Feature *Feature::newTaskMap(const Node* specs, const rai::KinematicWorld& world) {
   if(specs->parents.N<2) return NULL; //these are not task specs
   
   //-- get tags
@@ -86,7 +86,7 @@ TaskMap *TaskMap::newTaskMap(const Node* specs, const rai::KinematicWorld& world
   if(specs->parents.N>3) ref2=specs->parents(3)->keys.last().p;
   
   //-- create a task map
-  TaskMap *map;
+  Feature *map;
   const Graph* params=NULL;
   if(specs->isGraph()) params = &specs->graph();
 //  rai::String type = specs.get<rai::String>("type", "pos");

@@ -11,7 +11,7 @@
 #include <Kin/frame.h>
 
 /// defines only a map (task space), not yet the costs or constraints in this space
-struct TaskMap {
+struct Feature {
   uint order;       ///< 0=position, 1=vel, etc
   bool flipTargetSignOnNegScalarProduct; ///< for order==1 (vel mode), when taking temporal difference, flip sign when scalar product it negative [specific to quats -> move to special TM for quats only]
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& K) = 0; ///< this needs to be overloaded
@@ -19,8 +19,8 @@ struct TaskMap {
   virtual uint dim_phi(const rai::KinematicWorld& K) = 0; ///< the dimensionality of $y$
   virtual uint dim_phi(const WorldL& Ktuple) { return dim_phi(*Ktuple.last()); } ///< if not overloaded, returns dim_phi for last configuration
   
-  TaskMap() : order(0), flipTargetSignOnNegScalarProduct(false) {}
-  virtual ~TaskMap() {}
+  Feature() : order(0), flipTargetSignOnNegScalarProduct(false) {}
+  virtual ~Feature() {}
   virtual rai::String shortTag(const rai::KinematicWorld& K) { NIY; }
   virtual Graph getSpec(const rai::KinematicWorld& K){ return Graph({{"description", shortTag(K)}}); }
   

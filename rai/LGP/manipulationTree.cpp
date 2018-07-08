@@ -99,9 +99,12 @@ void MNode::expand(int verbose) {
 void MNode::optLevel(uint level, bool collisions) {
   komoProblem(level) = new KOMO();
   KOMO& komo(*komoProblem(level));
-  
+
+  if(komo.verbose>0){
+    cout <<"########## OPTIM lev " <<level <<endl;
+  }
+
   komo.fil = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<level));
-  //cout <<"########## OPTIM lev " <<level <<endl;
   
   //-- prepare the komo problem
   switch(level) {

@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include "taskMap.h"
+#include "feature.h"
 
-struct TM_BeliefTransition : TaskMap {
-  TaskMap *viewError;
-  TM_BeliefTransition(TaskMap *viewError = NULL) : viewError(viewError) {}
+struct TM_BeliefTransition : Feature {
+  Feature *viewError;
+  TM_BeliefTransition(Feature *viewError = NULL) : viewError(viewError) {}
   ~TM_BeliefTransition() { if(viewError) delete viewError; }
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G) { HALT("can only be of higher order"); }

@@ -6,9 +6,9 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "taskMap.h"
+#include "feature.h"
 
-struct TM_Gravity : TaskMap {
+struct TM_Gravity : Feature {
   double gravity=9.81;
   
   TM_Gravity();

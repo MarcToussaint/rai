@@ -7,13 +7,13 @@
     --------------------------------------------------------------  */
 
 #pragma once
-#include "taskMap.h"
+#include "feature.h"
 
 //===========================================================================
 
 /// defines a transition cost vector, which is q.N-dimensional and captures
 /// accelerations or velocities over consecutive time steps
-struct TM_Transition:TaskMap {
+struct TM_Transition:Feature {
   double posCoeff, velCoeff, accCoeff;  ///< coefficients to blend between velocity and acceleration penalization
   arr H_rate_diag;            ///< cost rate (per TIME, not step), given as diagonal of the matrix H
   double H_rate;  ///< cost rate (per TIME, not step), given as scalar, will be multiplied by Joint->H (given in ors file)

@@ -78,7 +78,7 @@ void TM_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
 void TM_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
   CHECK_GE(Ktuple.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
-  if(k==0) return TaskMap::phi(y, J, Ktuple);
+  if(k==0) return Feature::phi(y, J, Ktuple);
   
   double tau = Ktuple(-1)->frames(0)->time; // - Ktuple(-2)->frames(0)->time;
   double tau2=tau*tau, tau3=tau2*tau;

@@ -56,7 +56,7 @@ Task* Task::newTask(const Node* specs, const rai::KinematicWorld& world, int ste
   else return NULL;
   
   //-- try to crate a map
-  TaskMap *map = TaskMap::newTaskMap(specs, world);
+  Feature *map = Feature::newTaskMap(specs, world);
   if(!map) return NULL;
   
   //-- create a task
@@ -119,7 +119,7 @@ void KOMO::setTiming(uint steps, double duration) {
   if(T) tau = duration/T; else tau=duration;
 }
 
-Task* KOMO::addTask(const char* name, TaskMap *m, const ObjectiveType& termType) {
+Task* KOMO::addTask(const char* name, Feature *m, const ObjectiveType& termType) {
   Task *t = new Task(m, termType);
   t->name=name;
   tasks.append(t);
@@ -149,7 +149,7 @@ void KOMO::parseTasks(const Graph& specs, int stepsPerPhase) {
   
   //-- add TransitionTask for InvKinematics
   if(!T) {
-    TaskMap *map = new TM_qItself();
+    Feature *map = new TM_qItself();
     map->order = 0;
     Task *task = new Task(map, OT_sos);
     task->name="InvKinTransition";

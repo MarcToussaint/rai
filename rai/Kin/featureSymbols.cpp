@@ -50,12 +50,12 @@ double shapeSize(const rai::KinematicWorld& K, const char* name, uint i=2) {
   return s->size(i);
 }
 
-TaskMap* symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::KinematicWorld& world){
+Feature* symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::KinematicWorld& world){
   if(feat==FS_distance) {  return new TM_PairCollision(world, frames(0), frames(1), TM_PairCollision::_negScalar, false); }
   if(feat==FS_aboveBox) {  return new TM_AboveBox(world, frames(1), frames(0), .05); }
   if(feat==FS_standingAbove) {
     double h = .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1)));
-    TaskMap *relPos = new TM_Default(TMT_posDiff, world, frames(0), rai::Vector(0.,0.,h), frames(1), NoVector);
+    Feature *relPos = new TM_Default(TMT_posDiff, world, frames(0), rai::Vector(0.,0.,h), frames(1), NoVector);
     return new TM_LinTrans(relPos, arr(1,3,{0.,0.,1.}), {});
   }
 

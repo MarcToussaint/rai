@@ -6,10 +6,10 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "taskMap.h"
+#include "feature.h"
 
 /// this stacks all constacts to one feature vector OF VARIABLE SIZE! (the optimizer has to deal with variable size features; transfering lambdas across steps)
-struct TM_ContactConstraints : TaskMap {
+struct TM_ContactConstraints : Feature {
   TM_ContactConstraints() {}
   
   void phi(arr& y, arr& J, const rai::KinematicWorld& K);

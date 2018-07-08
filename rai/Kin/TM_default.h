@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #pragma once
-#include "taskMap.h"
+#include "feature.h"
 
 //===========================================================================
 
@@ -27,7 +27,7 @@ enum TM_DefaultType {
 };
 extern const char* TM_DefaultType2String[];
 
-struct TM_Default:TaskMap {
+struct TM_Default : Feature {
   rai::Enum<TM_DefaultType> type;   ///< joint type
 
   int i, j;               ///< which shapes does it refer to?

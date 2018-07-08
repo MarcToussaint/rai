@@ -50,36 +50,36 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& G) {
     if(order==1) { //absolute velocities
       TM_Default pos(TMT_pos, id);
       pos.order=1;
-      pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G);
+      pos.Feature::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G);
       
       TM_Default quat(TMT_quat, id); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
       // flip the quaternion sign if necessary
       quat.flipTargetSignOnNegScalarProduct = true;
       quat.order=1;
-      quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G);
+      quat.Feature::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G);
     } else if(order==2) { //absolute accelerations
       TM_Default pos(TMT_pos, id);
       pos.order=2;
-      pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G);
+      pos.Feature::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G);
       
       TM_Default quat(TMT_quat, id); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
       // flip the quaternion sign if necessary
       quat.flipTargetSignOnNegScalarProduct = true;
       quat.order=2;
-      quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G);
+      quat.Feature::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G);
     } else NIY;
     
     //    if(sumOfSqr(y)>1e-3) cout <<"body " <<b0->name <<" causes switch costs " <<sumOfSqr(y) <<" at t=" <<t <<" y=" <<y <<endl;
 #if 0 //OBSOLETE: relative velocities
     TM_Default pos(TMT_posDiff, b0->shape->index, NoVector, b1->shape->index);
     pos.order=1;
-    pos.TaskMap::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G);
+    pos.Feature::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), G);
     
     TM_Default quat(TMT_quatDiff, j0->to->shape->index/*, NoVector, j0->from->shape->index*/);
     // flipp the quaternion sign if necessary
     quat.flipTargetSignOnNegScalarProduct = true;
     quat.order=1;
-    quat.TaskMap::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G);
+    quat.Feature::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), G);
 #endif
   }
 }

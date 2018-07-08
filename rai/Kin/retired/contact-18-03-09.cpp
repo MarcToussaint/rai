@@ -16,7 +16,7 @@ double rai::Contact::getDistance() const {
   return -y.scalar();
 }
 
-TaskMap *rai::Contact::getTM_ContactNegDistance() const {
+Feature *rai::Contact::getTM_ContactNegDistance() const {
   return new TM_ContactNegDistance(*this);
 }
 

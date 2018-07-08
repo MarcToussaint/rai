@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "taskMap.h"
+#include "feature.h"
 
-struct TM_AboveBox : TaskMap {
+struct TM_AboveBox : Feature {
   int i, j;               ///< which shapes does it refer to?
   double margin;
   

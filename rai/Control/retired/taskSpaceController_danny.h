@@ -17,7 +17,7 @@
 #include <Core/thread.h>
 
 struct LinTaskSpaceAccLaw {
-  TaskMap* map;
+  Feature* map;
   
   rai::KinematicWorld* world;
   
@@ -43,7 +43,7 @@ struct LinTaskSpaceAccLaw {
   bool trajectoryDotActive = false;
   bool trajectoryDDotActive = false;
   
-  LinTaskSpaceAccLaw(TaskMap* map, rai::KinematicWorld* world, rai::String name = "nonameLaw");
+  LinTaskSpaceAccLaw(Feature* map, rai::KinematicWorld* world, rai::String name = "nonameLaw");
   
   void setRef(const arr& yRef = NoArr, const arr& yDotRef = NoArr, const arr& yDDotRef = NoArr);
   
@@ -84,7 +84,7 @@ struct ConstrainedTaskLaw : LinTaskSpaceAccLaw {
   arr force;
   arr alpha;
   double gamma = 0.0;
-  ConstrainedTaskLaw(TaskMap* map, rai::KinematicWorld* world, rai::String name = "") : LinTaskSpaceAccLaw(map, world, name) {}
+  ConstrainedTaskLaw(Feature* map, rai::KinematicWorld* world, rai::String name = "") : LinTaskSpaceAccLaw(map, world, name) {}
   void setForce(arr force);
   arr getForce();
   void setAlpha(arr alpha);

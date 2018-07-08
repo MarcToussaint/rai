@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include "taskMap.h"
+#include "feature.h"
 
 //===========================================================================
 
-struct TM_FlagConstraints : TaskMap {
+struct TM_FlagConstraints : Feature {
   double g=1.; //gravity constant, usually 9.81
   TM_FlagConstraints() { g = rai::getParameter<double>("FlagConstraints/gravity", 1.); }
   virtual void phi(arr& y, arr& J, const WorldL& G);
@@ -24,7 +24,7 @@ struct TM_FlagConstraints : TaskMap {
 
 //===========================================================================
 
-struct TM_FlagCosts : TaskMap {
+struct TM_FlagCosts : Feature {
   TM_FlagCosts() {}
   virtual void phi(arr& y, arr& J, const WorldL& G);
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G) { HALT("can only be of order 1"); }

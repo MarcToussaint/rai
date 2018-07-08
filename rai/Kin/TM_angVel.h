@@ -6,9 +6,9 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "taskMap.h"
+#include "feature.h"
 
-struct TM_AngVel : TaskMap {
+struct TM_AngVel : Feature {
   int i;               ///< which shapes does it refer to?
 
   TM_AngVel(int iShape=-1)

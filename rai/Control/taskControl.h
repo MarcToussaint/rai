@@ -102,7 +102,7 @@ struct MotionProfile_Path: MotionProfile {
 /** In the given task space, a task can represent: 1) a pos/vel ctrl task
  *  and/or 2) a compliance and/or 3) a force limit control */
 struct CtrlTask {
-  TaskMap *map;      ///< this defines the task space
+  Feature *map;      ///< this defines the task space
   rai::String name;  ///< just for easier reporting
   bool active;       ///< also non-active tasks are updates (states evaluated), but don't enter the TaskControlMethods
   CT_Status status;
@@ -124,9 +124,9 @@ struct CtrlTask {
   arr f_ref;           ///< non-empty iff this is a force limit control task; defines the box limits (abs value in all dimensions)
   double f_alpha, f_gamma; ///< TODO
   
-  CtrlTask(const char* name, TaskMap* map);
-  CtrlTask(const char* name, TaskMap* map, double decayTime, double dampingRatio, double maxVel, double maxAcc);
-  CtrlTask(const char* name, TaskMap* map, const Graph& params);
+  CtrlTask(const char* name, Feature* map);
+  CtrlTask(const char* name, Feature* map, double decayTime, double dampingRatio, double maxVel, double maxAcc);
+  CtrlTask(const char* name, Feature* map, const Graph& params);
   ~CtrlTask();
   
   CT_Status update(double tau, const rai::KinematicWorld& world);
@@ -158,7 +158,7 @@ struct TaskControlMethods {
   
   TaskControlMethods(const rai::KinematicWorld& world);
   
-  CtrlTask* addPDTask(const char* name, double decayTime, double dampingRatio, TaskMap *map);
+  CtrlTask* addPDTask(const char* name, double decayTime, double dampingRatio, Feature *map);
   
   void updateCtrlTasks(double tau, const rai::KinematicWorld& world);
   void resetCtrlTasksState();

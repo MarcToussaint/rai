@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #pragma once
-#include "taskMap.h"
+#include "feature.h"
 
 //===========================================================================
 
@@ -27,7 +27,7 @@ enum PTMtype {
 //===========================================================================
 
 /// Proxy task variable -> TM_AccumulatedCollision
-struct TM_Proxy : TaskMap {
+struct TM_Proxy : Feature {
   /// @name data fields
   PTMtype type;
   uintA shapes,shapes2;
@@ -46,7 +46,7 @@ struct TM_Proxy : TaskMap {
 
 //===========================================================================
 
-struct TM_ProxyConstraint : TaskMap {
+struct TM_ProxyConstraint : Feature {
   TM_Proxy proxyCosts;
   TM_ProxyConstraint(PTMtype _type,
                      uintA _shapes,
