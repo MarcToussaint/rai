@@ -226,7 +226,7 @@ TM_Gravity2::TM_Gravity2(int iShape) : i(iShape) {
 }
 
 void TM_Gravity2::phi(arr& y, arr& J, const WorldL& Ktuple){
-  CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
+  CHECK_GE(order, 2, "needs k-order 2");
 
   rai::Frame *a = Ktuple(-1)->frames(i);
   if((a->flags & (1<<FL_impulseExchange))){
@@ -253,4 +253,32 @@ void TM_Gravity2::phi(arr& y, arr& J, const WorldL& Ktuple){
 //    if(&J) J({d+3,d+6}) += eps*Jw;
 //  }
 
+}
+
+TM_ZeroAcc::TM_ZeroAcc(int iShape) : i(iShape) {
+  order=2;
+}
+
+void TM_ZeroAcc::phi(arr& y, arr& J, const WorldL& Ktuple){
+  CHECK_GE(order, 2, "needs k-order 2");
+
+  rai::Frame *a = Ktuple(-1)->frames(i);
+  if((a->flags & (1<<FL_impulseExchange))){
+    y.resize(3).setZero();
+    if(&J) J.resize(3, getKtupleDim(Ktuple).last()).setZero();
+    return;
+  }
+  TM_Default pos(TMT_pos, i);
+  pos.order=2;
+  pos.Feature::phi(y, J, Ktuple);
+}
+
+void TM_ZeroQVel::phi(arr& y, arr& J, const WorldL& Ktuple){
+  TM_qItself q({(uint)i}, false);
+  q.order=1;
+  q.Feature::phi(y, J, Ktuple);
+}
+
+uint TM_ZeroQVel::dim_phi(const rai::KinematicWorld& G){
+  return G.frames(i)->joint->dim;
 }

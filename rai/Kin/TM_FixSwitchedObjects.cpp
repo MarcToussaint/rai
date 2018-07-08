@@ -44,7 +44,7 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& Ktuple) {
     if(b1->flags && (b1->flags & (1<<FL_impulseExchange))) continue;
 
     rai::Frame *b0Parent = b0->getUpwardLink();
-//    if(b0Parent->joint && b0Parent->joint->type!=rai::JT_rigid && !b0Parent->joint->constrainToZeroVel) continue;
+    if(b0Parent->joint && b0Parent->joint->type!=rai::JT_rigid && !b0Parent->joint->constrainToZeroVel) continue;
 
     b0Parent = b0Parent->parent;
     CHECK(b0Parent,"");
@@ -71,7 +71,7 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& Ktuple) {
       pose.Feature::phi(y({M*i,M*i+6})(), (&J?J({M*i,M*i+6})():NoArr), Ktuple);
 #endif
     } else if(order==2) { //absolute accelerations
-      HALT("I think order 1 is more correct, now with relative velocities");
+#if 0
       TM_Default pos(TMT_pos, id);
       pos.order=2;
       pos.Feature::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), Ktuple);
@@ -81,6 +81,11 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& Ktuple) {
       quat.flipTargetSignOnNegScalarProduct = true;
       quat.order=2;
       quat.Feature::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), Ktuple);
+#else
+      TM_Default pose(TMT_pose, id, NoVector, b0Parent->ID);
+      pose.order=2;
+      pose.Feature::phi(y({M*i,M*i+6})(), (&J?J({M*i,M*i+6})():NoArr), Ktuple);
+#endif
     } else NIY;
   }
 }

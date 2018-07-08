@@ -36,7 +36,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const ra
 
       komo.setHoming(0., -1., 1e-2);
       komo.setSquaredQVelocities();
-      komo.setFixEffectiveJoints(0., -1., 1e2);
+//      komo.setFixEffectiveJoints(0., -1., 1e2);
       komo.setFixSwitchedObjects(0., -1., 1e2);
       komo.setSquaredQuaternionNorms();
 
@@ -55,7 +55,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const ra
       komo.setHoming(0., -1., 1e-2);
       if(pathOrder==1) komo.setSquaredQVelocities();
       else komo.setSquaredQAccelerations();
-      komo.setFixEffectiveJoints(0., -1., 1e2);
+//      komo.setFixEffectiveJoints(0., -1., 1e2);
       komo.setFixSwitchedObjects(0., -1., 1e2);
       komo.setSquaredQuaternionNorms();
 

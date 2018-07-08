@@ -127,10 +127,10 @@ struct KOMO {
   void add_stable(double time,  const char* shape1, const char* shape2, ObjectiveType type=OT_eq, double prec=1e1);
   
   //-- core kinematic switch symbols of skeletons
-  void addSwitch_stable(double time, const char *from, const char *to);
-  void addSwitch_stableOn(double time, const char* from, const char* to);
-  void addSwitch_dynamic(double time, const char *from, const char *to);
-  void addSwitch_dynamicOn(double time, const char *from, const char* to);
+  void addSwitch_stable(double time, double endTime, const char *from, const char *to);
+  void addSwitch_stableOn(double time, double endTime, const char* from, const char* to);
+  void addSwitch_dynamic(double time, double endTime, const char *from, const char *to);
+  void addSwitch_dynamicOn(double time, double endTime, const char *from, const char* to);
   
   //-- tasks - logic level (used within LGP)
   void setSkeleton(const Skeleton& S);
@@ -138,7 +138,7 @@ struct KOMO {
   //dinos... can't get rid of them yet
   void setGraspSlide(double time, const char* stick, const char* object, const char* placeRef, int verbose=0);
   void setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose=0);
-  void setKS_slider(double time, bool before, const char* obj, const char* slider, const char* table);
+  void setKS_slider(double time, double endTime, bool before, const char* obj, const char* slider, const char* table);
 
 
   //===========================================================================

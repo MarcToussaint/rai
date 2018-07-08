@@ -158,6 +158,7 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
     } else {
       j->constrainToZeroVel=true;
       j->frame.flags |= (1<<FL_zeroQVel);
+      j->H = 0.;
     }
     j->type = jointType;
     if(false) { //this is so annoying!
