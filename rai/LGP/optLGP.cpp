@@ -162,21 +162,12 @@ void OptLGP::updateDisplay() {
       views(i)->text.clear() <<displayFocus->cost <<"|  " <<displayFocus->constraints.last() <<'\n' <<decisions;
     } else views(i)->clear();
   }
-  //  if(node->komoProblem(2) && node->komoProblem(2)->configurations.N)
-  //    seqView.setConfigurations(node->komoProblem(2)->configurations);
-  //  else seqView.clear();
-  //  if(node->komoProblem(3) && node->komoProblem(3)->configurations.N)
-  //    pathView.setConfigurations(node->komoProblem(3)->configurations);
-  //  else pathView.clear();
   
   solutions.writeAccess();
   for(uint i=0; i<solutions().N && i<6; i++) {
     if(dth->gl.views.N<=i || !dth->gl.views(i).drawers.N) {
       dth->gl.addSubView(i, glStandardScene, NULL);
       dth->gl.addSubView(i, *solutions()(i));
-//    dth->gl.views(i).drawers.last() = solutions()(i);
-//    dth->gl.addSubView(i, glStandardScene, NULL);
-//    dth->gl.addSubView(i, *solutions()(i));
       dth->gl.views(i).camera.setDefault();
 //      dth->gl.views(i).camera.focus(.9, 0., 1.3);
     }

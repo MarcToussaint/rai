@@ -316,3 +316,369 @@ void MNode::solvePathProblem(uint microSteps, int verbose) {
 //  komo.displayTrajectory(-1.);
 #endif
 }
+
+
+#if 1
+  Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
+                            "stable", "stableOn", "dynamic", "dynamicOn",
+                            "push", "graspSlide", "liftDownUp"
+                           });
+  if(level==1 && parent) CHECK(parent->effKinematics.q.N, "I can't compute a pose when no pose was comp. for parent (I need the effKin)");
+  skeleton2Bound(komo, BoundType(level), S, startKinematics, (parent?parent->effKinematics:startKinematics));
+#else
+  //-- prepare the komo problem
+  switch(level) {
+    case 1: {
+      //pose: propagate eff kinematics
+      if(!parent) effKinematics = startKinematics;
+      else {
+        if(!parent->effKinematics.q.N) {
+          LOG(-1) <<"I can't compute a pose when no pose was comp. for parent (I need the effKin)";
+          return;
+        }
+        effKinematics = parent->effKinematics;
+      }
+
+      komo.setModel(effKinematics, false);
+      komo.setTiming(1., 2, 5., 1);
+
+      if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
+      komo.setSquaredQVelocities(.5, -1., 1.); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
+      //komo.setFixEffectiveJoints(-1., -1., 1e2); //IMPORTANT: assume ALL eff to be articulated; problem: no constraints (touch)
+      komo.setFixSwitchedObjects(-1., -1., 1e2);
+      komo.setSquaredQuaternionNorms();
+
+#if 1
+      Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
+                                "stable", "stableOn", "dynamic", "dynamicOn",
+                                "push", "graspSlide"
+                               }, true);
+      komo.setSkeleton(S);
+#else
+      komo.setAbstractTask(0., *folState);
+#endif
+
+      komo.reset();
+      komo.setPairedTimes();
+//      cout <<komo.getPath_times() <<endl;
+    } break;
+//  case 1:{
+//    //pose: propagate eff kinematics
+//    if(!parent) effKinematics = startKinematics;
+//    else effKinematics = parent->effKinematics;
+
+//    if(!parent || !parent->parent){
+//      komo.setModel(startKinematics, false);
+//    }else{
+//      komo.setModel(parent->parent->effKinematics, false);
+//    }
+//    komo.setTiming(2.+.5, 2, 5., 1);
+
+//    if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
+//    komo.setSquaredQVelocities(1.1, -1., 1.); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
+//    komo.setFixEffectiveJoints(.5, -1., 1e2); //IMPORTANT: assume ALL eff to be articulated; problem: no constraints (touch)
+//    komo.setFixSwitchedObjects(.5, -1., 1e2);
+//    komo.setSquaredQuaternionNorms();
+
+//    if(!parent){
+//      komo.setAbstractTask(0., *folState);
+//    }else{
+//      komo.setAbstractTask(0., *parent->folState);
+//      komo.setAbstractTask(1., *folState);
+//    }
+
+//    komo.reset();
+//    komo.setPairedTimes();
+//  } break;
+    case 2: {
+      komo.setModel(startKinematics, false);
+      if(time>1e-2) komo.setTiming(time, 2, 5., 1);
+      else  komo.setTiming(1., 2, 5., 1);
+
+      if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
+      komo.setSquaredQVelocities();
+      komo.setFixEffectiveJoints(-1., -1., 1e2);
+      komo.setFixSwitchedObjects(-1., -1., 1e2);
+      komo.setSquaredQuaternionNorms();
+
+#if 1
+      Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
+                                "stable", "stableOn", "dynamic", "dynamicOn",
+                                "push", "graspSlide"
+                               });
+      komo.setSkeleton(S);
+#else
+      for(MNode *node:getTreePath()) {
+        komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
+      }
+#endif
+
+      komo.reset();
+      komo.setPairedTimes();
+//      cout <<komo.getPath_times() <<endl;
+    } break;
+    case 3: {
+      komo.setModel(startKinematics, collisions);
+      uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
+      uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
+      komo.setTiming(time+.5, stepsPerPhase, 5., pathOrder);
+
+      if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
+      if(pathOrder==1) komo.setSquaredQVelocities();
+      else komo.setSquaredQAccelerations();
+      komo.setFixEffectiveJoints(-1., -1., 1e2);
+      komo.setFixSwitchedObjects(-1., -1., 1e2);
+      komo.setSquaredQuaternionNorms();
+
+#if 1
+      Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
+                                "stable", "stableOn", "dynamic", "dynamicOn",
+                                "push", "graspSlide", "liftDownUp"
+                               });
+      komo.setSkeleton(S);
+#else
+      if(collisions) komo.setCollisions(false);
+      for(MNode *node:getTreePath()) {
+        komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
+      }
+#endif
+
+      komo.reset();
+//      cout <<komo.getPath_times() <<endl;
+    } break;
+  }
+#endif
+
+//void MNode::createEffKinematics(){
+//  KOMO komo;
+
+//  CHECK(!effKinematics.q.N, "has been created before");
+
+//  if(!parent) effKinematics = startKinematics;
+//  else{
+//      if(!parent->effKinematics.q.N){
+//          LOG(-1) <<"I can't compute a pose when no pose was comp. for parent (I need the effKin)";
+//          return;
+//      }
+//      effKinematics = parent->effKinematics;
+//  }
+
+//  komo.setModel(effKinematics);
+//  komo.setAbstractTask(0., *folState);
+
+//  effKinematics = *komo.configurations.last();
+
+//  for(uint t=0;t<komo.T;t++){
+//      for(rai::KinematicSwitch *sw: komo.switches){
+//          if(sw->timeOfApplication==t) sw->apply(effKinematics);
+//      }
+//  }
+//  effKinematics.topSort();
+//  DEBUG( effKinematics.checkConsistency(); )
+//          effKinematics.getJointState();
+//}
+
+#ifdef OLD
+void MNode::solvePoseProblem() {
+  uint level=1;
+
+  //reset the effective kinematics:
+  if(parent && !parent->effKinematics.q.N) {
+    RAI_MSG("parent needs to have computed the pose first!");
+    return;
+  }
+  if(!parent) effKinematics = startKinematics;
+  else effKinematics = parent->effKinematics;
+
+  //-- collect 'path nodes'
+  MNodeL treepath = getTreePath();
+
+  poseProblem = new KOMO();
+  KOMO& komo(*poseProblem);
+  komo.setModel(effKinematics);
+  komo.setTiming(1., 2, 5., 1, false);
+
+  if(LGP_useHoming) komo.setHoming(-1., -1., 1e-1); //gradient bug??
+  komo.setSquaredQVelocities();
+  //  komo.setFixEffectiveJoints(-1., -1., 1e3);
+  komo.setFixSwitchedObjects(-1., -1., 1e3);
+
+  komo.setAbstractTask(0., *folState);
+  //  for(rai::KinematicSwitch *sw: poseProblem->switches){
+  //    sw->timeOfApplication=2;
+  //  }
+
+  DEBUG(FILE("z.fol") <<fol;)
+  DEBUG(komo.getReport(false, 1, FILE("z.problem"));)
+  komo.reset();
+  try {
+    komo.run();
+  } catch(const char* msg) {
+    cout <<"KOMO FAILED: " <<msg <<endl;
+  }
+  COUNT_evals += komo.opt->newton.evals;
+  COUNT_kin += rai::KinematicWorld::setJointStateCount;
+  COUNT_opt(level)++;
+  count(level)++;
+
+  DEBUG(komo.getReport(false, 1, FILE("z.problem"));)
+
+  Graph result = komo.getReport();
+  DEBUG(FILE("z.problem.cost") <<result;)
+  double cost_here = result.get<double>({"total","sqrCosts"});
+  double constraints_here = result.get<double>({"total","constraints"});
+  bool feas = (constraints_here<.5);
+
+  cost_here -= 0.1*ret.reward; //account for the symbolic costs
+  if(parent) cost_here += parent->cost(level); //this is sequentially additive cost
+
+  //update the bound
+  if(feas) {
+    if(count(level)==1/*&& count({2,-1})==0 (also no higher levels)*/ || cost_here<bound) bound=cost_here;
+  }
+
+  if(count(level)==1 || cost_here<cost(level)) {
+    cost(level) = cost_here;
+    constraints(level) = constraints_here;
+    feasible(level) = feas;
+    pose = komo.x;
+  }
+
+  if(!feasible(level))
+    labelInfeasible();
+
+  effKinematics = *komo.configurations.last();
+
+  for(rai::KinematicSwitch *sw: komo.switches) {
+    //    CHECK_EQ(sw->timeOfApplication, 1, "need to do this before the optimization..");
+    if(sw->timeOfApplication>=2) sw->apply(effKinematics);
+  }
+  effKinematics.topSort();
+  DEBUG(effKinematics.checkConsistency();)
+  effKinematics.getJointState();
+}
+
+void MNode::solveSeqProblem(int verbose) {
+  uint level=2;
+
+  if(!step) { feasible(level)=true; return; } //there is no sequence to compute
+
+  //-- collect 'path nodes'
+  MNodeL treepath = getTreePath();
+
+  seqProblem = new KOMO();
+  KOMO& komo(*seqProblem);
+  komo.setModel(startKinematics);
+  komo.setTiming(time, 2, 5., 1, false);
+
+  if(LGP_useHoming) komo.setHoming(-1., -1., 1e-1); //gradient bug??
+  komo.setSquaredQVelocities();
+  komo.setFixEffectiveJoints(-1., -1., 1e3);
+  komo.setFixSwitchedObjects(-1., -1., 1e3);
+
+  for(MNode *node:treepath) {
+    komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
+  }
+
+  DEBUG(FILE("z.fol") <<fol;)
+  DEBUG(komo.getReport(false, 1, FILE("z.problem"));)
+  komo.reset();
+  try {
+    komo.run();
+  } catch(const char* msg) {
+    cout <<"KOMO FAILED: " <<msg <<endl;
+  }
+  COUNT_evals += komo.opt->newton.evals;
+  COUNT_kin += rai::KinematicWorld::setJointStateCount;
+  COUNT_opt(level)++;
+  count(level)++;
+
+  DEBUG(komo.getReport(false, 1, FILE("z.problem"));)
+  //  komo.checkGradients();
+
+  Graph result = komo.getReport();
+  DEBUG(FILE("z.problem.cost") <<result;)
+  double cost_here = result.get<double>({"total","sqrCosts"});
+  double constraints_here = result.get<double>({"total","constraints"});
+  bool feas = (constraints_here<.5);
+
+  cost_here += cost(l_symbolic); //account for the symbolic costs
+
+  //update the bound
+  if(feas) {
+    if(!count(level)/*actually !count({1,-1}) (also no higher levels)*/ || cost_here<bound) bound=cost_here;
+  }
+
+  if(!seq.N || cost_here<cost(level)) {
+    cost(level) = cost_here;
+    constraints(level) = constraints_here;
+    feasible(level) = (constraints_here<.5);
+    seq = komo.x;
+  }
+
+  if(!feasible(level))
+    labelInfeasible();
+}
+
+void MNode::solvePathProblem(uint microSteps, int verbose) {
+  uint level=3;
+
+  if(!step) { feasible(level)=true; return; } //there is no path to compute
+
+  //-- collect 'path nodes'
+  MNodeL treepath = getTreePath();
+
+  pathProblem = new KOMO();
+  KOMO& komo(*pathProblem);
+  komo.setModel(startKinematics);
+  komo.setTiming(time, microSteps, 5., 2, false);
+
+  if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2); //gradient bug??
+  komo.setSquaredQAccelerations();
+  komo.setFixEffectiveJoints(-1., -1., 1e3);
+  komo.setFixSwitchedObjects(-1., -1., 1e3);
+
+  for(MNode *node:treepath) {
+    komo.setAbstractTask((node->parent?node->parent->time:0.), *node->folState);
+  }
+
+  DEBUG(FILE("z.fol") <<fol;)
+  DEBUG(komo.getReport(false, 1, FILE("z.problem"));)
+  komo.reset();
+  try {
+    komo.run();
+  } catch(const char* msg) {
+    cout <<"KOMO FAILED: " <<msg <<endl;
+  }
+  COUNT_evals += komo.opt->newton.evals;
+  COUNT_kin += rai::KinematicWorld::setJointStateCount;
+  COUNT_opt(level)++;
+  count(level)++;
+
+  DEBUG(komo.getReport(false, 1, FILE("z.problem"));)
+  //  komo.checkGradients();
+
+  Graph result = komo.getReport();
+  DEBUG(FILE("z.problem.cost") <<result;)
+  double cost_here = result.get<double>({"total","sqrCosts"});
+  double constraints_here = result.get<double>({"total","constraints"});
+  bool feas = (constraints_here<.5);
+
+  cost_here += cost(l_symbolic); //account for the symbolic costs
+
+  //update the bound
+  if(feas) {
+    if(!count(level)/*actually !count({1,-1}) (also no higher levels)*/ || cost_here<bound) bound=cost_here;
+  }
+
+  if(!path.N || cost_here<cost(level)) {
+    cost(level) = cost_here;
+    constraints(level) = constraints_here;
+    feasible(level) = (constraints_here<.5);
+    path = komo.x;
+  }
+
+  if(!feasible(level))
+    labelInfeasible();
+}
+#endif
