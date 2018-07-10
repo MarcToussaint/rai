@@ -591,11 +591,27 @@ void rai::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
   calc_fwdPropagateFrames();
 }
 
-void rai::KinematicWorld::setFrameState(const arr& X, bool calc_q_from_X){
-  CHECK_EQ(X.d0, frames.N, "X.d0 does not equal #frames");
-  for(uint i=0;i<frames.N;i++){
+void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames, bool calc_q_from_X){
+  if(!frameNames.N){
+    CHECK_EQ(X.d0, frames.N, "X.d0 does not equal #frames");
+    for(uint i=0;i<frames.N;i++){
       frames(i)->X.set(X[i]);
       frames(i)->X.rot.normalize();
+    }
+  }else{
+    if(X.nd==1){
+      CHECK_EQ(1, frameNames.N, "X.d0 does not equal #frames");
+      rai::Frame *f = getFrameByName(frameNames(0));
+      f->X.set(X);
+      f->X.rot.normalize();
+    }else{
+      CHECK_EQ(X.d0, frameNames.N, "X.d0 does not equal #frames");
+      for(uint i=0;i<X.d0;i++){
+        rai::Frame *f = getFrameByName(frameNames(i));
+        f->X.set(X[i]);
+        f->X.rot.normalize();
+      }
+    }
   }
   if(calc_q_from_X){
     calc_Q_from_BodyFrames();
@@ -2010,9 +2026,8 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   if(!addValues) { y.setZero();  if(&J) J.setZero(); }
   
   if(y_dist.scalar()>margin) return;
-  double scale = 1./0.05; //5cm -> cost of 1; is a fixed heuristic, can be changed by Feature rescaling
-  y += scale*(margin-y_dist.scalar());
-  if(&J)  J -= scale*J_dist;
+  y += margin-y_dist.scalar();
+  if(&J)  J -= J_dist;
   
 #else
   CHECK(a->shape->mesh_radius>0.,"");
@@ -2096,9 +2111,8 @@ void rai::KinematicWorld::kinematicsContactCost(arr& y, arr& J, const Contact* c
   if(!addValues) { y.setZero();  if(&J) J.setZero(); }
   
   if(y_dist.scalar()>margin) return;
-  double scale = 1./0.05; //5cm -> cost of 1; is a fixed heuristic, can be changed by Feature rescaling
-  y += scale*(margin-y_dist.scalar());
-  if(&J)  J -= scale*J_dist;
+  y += margin-y_dist.scalar();
+  if(&J)  J -= J_dist;
 }
 
 void rai::KinematicWorld::kinematicsContactCost(arr &y, arr& J, double margin) const {
@@ -2376,7 +2390,6 @@ void rai::KinematicWorld::makeObjectsFree(const StringA &objects){
         a->joint->makeFree();
     }
 }
-
 
 void rai::KinematicWorld::addTimeJoint(){
   rai::Joint *jt = new rai::Joint(*frames.first());
