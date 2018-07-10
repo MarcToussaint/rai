@@ -32,6 +32,7 @@ void Objective::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, 
 //  }
   int tFrom = (fromTime<0.?0:conv_time2step(fromTime, stepsPerPhase));
   int tTo = (toTime<0.?T-1:conv_time2step(toTime, stepsPerPhase));
+  if(tFrom<0) tFrom=0;
   if(tTo<0) tTo=0;
   if(tFrom>tTo && tFrom-tTo<=(int)map->order) tFrom=tTo;
   
