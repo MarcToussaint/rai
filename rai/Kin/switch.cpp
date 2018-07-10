@@ -14,7 +14,7 @@
 
 //===========================================================================
 
-uint conv_time2step(double time, uint stepsPerPhase) {
+int conv_time2step(double time, uint stepsPerPhase) {
   return (floor(time*double(stepsPerPhase) + .500001))-1;
 }
 //#define STEP(t) (floor(t*double(stepsPerPhase) + .500001))-1
@@ -45,10 +45,10 @@ template<> const char* rai::Enum<rai::SwitchType>::names []= {
 //
 
 rai::KinematicSwitch::KinematicSwitch()
-  : symbol(none), jointType(JT_none), timeOfApplication(UINT_MAX), fromId(UINT_MAX), toId(UINT_MAX), jA(0), jB(0) {
+  : symbol(none), jointType(JT_none), timeOfApplication(-1), fromId(UINT_MAX), toId(UINT_MAX), jA(0), jB(0) {
 }
 
-rai::KinematicSwitch::KinematicSwitch(SwitchType op, JointType type, const char* ref1, const char* ref2, const rai::KinematicWorld& K, uint _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo)
+rai::KinematicSwitch::KinematicSwitch(SwitchType op, JointType type, const char* ref1, const char* ref2, const rai::KinematicWorld& K, int _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo)
   : symbol(op), jointType(type), timeOfApplication(_timeOfApplication), fromId(UINT_MAX), toId(UINT_MAX), jA(0), jB(0) {
   if(ref1) fromId = K.getFrameByName(ref1)->ID;
   if(ref2) toId = K.getFrameByName(ref2)->ID;
@@ -330,7 +330,7 @@ rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const Node *specs, const r
   return sw;
 }
 
-rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const rai::String& type, const char* ref1, const char* ref2, const rai::KinematicWorld& world, uint _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo) {
+rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const rai::String& type, const char* ref1, const char* ref2, const rai::KinematicWorld& world, int _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo) {
   //-- create switch
   rai::KinematicSwitch *sw= new rai::KinematicSwitch();
   if(type=="addRigid") { sw->symbol=rai::SW_effJoint; sw->jointType=rai::JT_rigid; }

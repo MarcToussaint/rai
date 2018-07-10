@@ -17,77 +17,62 @@
 void shapeFunction(double &x, double &dx);
 
 
-TM_Physics::TM_Physics() {
+TM_Physics::TM_Physics(int iShape) : i(iShape) {
+  order=2;
   gravity = rai::getParameter<double>("TM_Physics/gravity", 9.81);
 }
 
 void TM_Physics::phi(arr &y, arr &J, const WorldL &Ktuple) {
-  y.clear();
-  if(&J) J.clear();
 
   CHECK_EQ(order, 2, "");
   
   rai::KinematicWorld& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
-//  uintA qdim = getKtupleDim(Ktuple);
     
   arr acc, Jacc, wcc, Jwcc;
   arr acc_ref = {0.,0.,-gravity};
 
-  for(rai::Frame *a:K.frames) {
-    if(a->inertia && a->inertia->type==rai::BT_dynamic){
-      TM_Default pos(TMT_posDiff, a->ID);
-      pos.order=2;
-      pos.Feature::phi(acc, (&J?Jacc:NoArr), Ktuple);
 
-      TM_AngVel rot(a->ID);
-      rot.order=2;
-      rot.phi(wcc, (&J?Jwcc:NoArr), Ktuple);
+  TM_Default pos(TMT_posDiff, i);
+  pos.order=2;
+  pos.Feature::phi(acc, (&J?Jacc:NoArr), Ktuple);
 
-      acc -= acc_ref;
+  TM_AngVel rot(i);
+  rot.order=2;
+  rot.phi(wcc, (&J?Jwcc:NoArr), Ktuple);
 
-      for(rai::Contact *c:a->contacts){
-        double sign = +1.;
-        CHECK(&c->a==a || &c->b==a, "");
-        if(&c->b==a) sign=-1.;
+  acc -= acc_ref;
 
-        arr f, Jf;
-        K.kinematicsForce(f, Jf, c);
-        if(&J) expandJacobian(Jf, Ktuple, -2);
+  rai::Frame *a = K.frames(i);
+  for(rai::Contact *c:a->contacts){
+    double sign = +1.;
+    CHECK(&c->a==a || &c->b==a, "");
+    if(&c->b==a) sign=-1.;
+
+    arr f, Jf;
+    K.kinematicsForce(f, Jf, c);
+    if(&J) expandJacobian(Jf, Ktuple, -2);
 
 //        arr cp, Jcp;
 //        K.kinematicsVec(cp, Jcp, a, c->b_rel); //contact point VECTOR only
 //        expandJacobian(Jcp, Ktuple, -2);
 
-        acc += sign * 20. * c->force;
+    acc += sign * 20. * c->force;
 //        wcc -= .1 * crossProduct((a->X.rot*c->b_rel).getArr(), c->force);
 //        wcc -= 2. * crossProduct(cp, c->force);
-        if(&J){
-          Jacc += sign * 20. * Jf;
-//          Jwcc -= 2. * (skew(cp) * Jf - skew(c->force) * Jcp);
-        }
-      }
-        
-      y.append(acc);
-      y.append(wcc);
-
-      if(&J) {
-        J.append( Jacc );
-        J.append( Jwcc );
-      }
-
+    if(&J){
+      Jacc += sign * 20. * Jf;
+      //          Jwcc -= 2. * (skew(cp) * Jf - skew(c->force) * Jcp);
     }
   }
-  
-  uintA KD = getKtupleDim(Ktuple);
-  if(&J) J.reshape(y.N, KD.last());
+        
+  y.resize(6).setZero();
+  y.setVectorBlock(acc, 0);
+  y.setVectorBlock(wcc, 3);
+
+  if(&J) {
+    J.resize(6, Jacc.d1).setZero();
+    J.setMatrixBlock(Jacc, 0, 0);
+    J.setMatrixBlock(Jwcc, 3, 0);
+  }
 }
 
-uint TM_Physics::dim_phi(const WorldL &Ktuple) {
-  rai::KinematicWorld& K = *Ktuple(-1);
-  uint d = 0;
-  for(rai::Frame *a: K.frames)
-    if(a->inertia && a->inertia->type==rai::BT_dynamic){
-      d+=6;
-    }
-  return d;
-}
