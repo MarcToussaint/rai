@@ -65,11 +65,11 @@ OptOptions::OptOptions() {
   initStep  = rai::getParameter<double>("opt/initStep", 1.);
   minStep   = rai::getParameter<double>("opt/minStep", -1.);
   maxStep   = rai::getParameter<double>("opt/maxStep", .2);
-  damping   = rai::getParameter<double>("opt/damping", .1);
-  stepInc   = rai::getParameter<double>("opt/stepInc", 2.);
-  stepDec   = rai::getParameter<double>("opt/stepDec", .1);
-  dampingInc= rai::getParameter<double>("opt/dampingInc", 2.);
-  dampingDec= rai::getParameter<double>("opt/dampingDec", .5);
+  damping   = rai::getParameter<double>("opt/damping", 1.);
+  stepInc   = rai::getParameter<double>("opt/stepInc", 1.5);
+  stepDec   = rai::getParameter<double>("opt/stepDec", .5);
+  dampingInc= rai::getParameter<double>("opt/dampingInc", 1.);
+  dampingDec= rai::getParameter<double>("opt/dampingDec", 1.);
   wolfe     = rai::getParameter<double>("opt/wolfe", .01);
   nonStrictSteps= rai::getParameter<uint> ("opt/nonStrictSteps", 0);
   allowOverstep= rai::getParameter<bool> ("opt/allowOverstep", false);

@@ -6,9 +6,9 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "taskMap.h"
+#include "feature.h"
 
-struct TM_ImpulsExchange : TaskMap {
+struct TM_ImpulsExchange : Feature {
   int i,j;
   
   TM_ImpulsExchange(const rai::KinematicWorld &K, const char* i_name, const char* j_name)
@@ -22,7 +22,7 @@ struct TM_ImpulsExchange : TaskMap {
   rai::String shortTag(const rai::KinematicWorld& K) { return STRING("ImpulseExchange"); }
 };
 
-struct TM_ImpulsExchange_weak : TaskMap {
+struct TM_ImpulsExchange_weak : Feature {
   int i,j;
   
   TM_ImpulsExchange_weak(const rai::KinematicWorld &K, const char* i_name, const char* j_name)

@@ -13,18 +13,18 @@
 
 //===========================================================================
 
-CtrlTask::CtrlTask(const char* name, TaskMap* map)
+CtrlTask::CtrlTask(const char* name, Feature* map)
   : map(*map), name(name), active(true), prec(ARR(100.)), maxVel(0.), maxAcc(0.), f_alpha(0.), f_gamma(0.),
     flipTargetSignOnNegScalarProduct(false), makeTargetModulo2PI(false) {
 }
 
-CtrlTask::CtrlTask(const char* name, TaskMap* map, double decayTime, double dampingRatio, double maxVel, double maxAcc)
+CtrlTask::CtrlTask(const char* name, Feature* map, double decayTime, double dampingRatio, double maxVel, double maxAcc)
   : map(*map), name(name), active(true), prec(ARR(100.)), maxVel(maxVel), maxAcc(maxAcc), f_alpha(0.), f_gamma(0.),
     flipTargetSignOnNegScalarProduct(false), makeTargetModulo2PI(false) {
   setGainsAsNatural(decayTime, dampingRatio);
 }
 
-CtrlTask::CtrlTask(const char* name, TaskMap* map, const Graph& params)
+CtrlTask::CtrlTask(const char* name, Feature* map, const Graph& params)
   : map(*map), name(name), active(true), prec(ARR(100.)), maxVel(0.), maxAcc(0.), f_alpha(0.), f_gamma(0.),
     flipTargetSignOnNegScalarProduct(false), makeTargetModulo2PI(false) {
   if(!params["PD"]) setGainsAsNatural(3., .7);
@@ -254,7 +254,7 @@ TaskControlMethods::TaskControlMethods(rai::KinematicWorld& _world, bool _useSwi
   qNullCostRef.setTarget(world.q);
 }
 
-CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, double dampingRatio, TaskMap *map) {
+CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, double dampingRatio, Feature *map) {
   return tasks.append(new CtrlTask(name, map, decayTime, dampingRatio, 1., 1.));
 }
 
@@ -267,7 +267,7 @@ CtrlTask* TaskControlMethods::addPDTask(const char* name,
                                    decayTime, dampingRatio, 1., 1.));
 }
 
-ConstraintForceTask* TaskControlMethods::addConstraintForceTask(const char* name, TaskMap *map) {
+ConstraintForceTask* TaskControlMethods::addConstraintForceTask(const char* name, Feature *map) {
   ConstraintForceTask *t = new ConstraintForceTask(map);
   t->name=name;
   t->desiredApproach.name=STRING(name <<"_PD");

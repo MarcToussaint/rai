@@ -37,7 +37,7 @@ void TM_Physics::phi(arr &y, arr &J, const WorldL &Ktuple) {
     if(a->inertia && a->inertia->type==rai::BT_dynamic){
       TM_Default pos(TMT_posDiff, a->ID);
       pos.order=2;
-      pos.TaskMap::phi(acc, (&J?Jacc:NoArr), Ktuple);
+      pos.Feature::phi(acc, (&J?Jacc:NoArr), Ktuple);
 
       TM_AngVel rot(a->ID);
       rot.order=2;

@@ -7,11 +7,11 @@
     --------------------------------------------------------------  */
 
 #pragma once
-#include "taskMap.h"
+#include "feature.h"
 
 //===========================================================================
 
-struct TM_qLimits:TaskMap {
+struct TM_qLimits:Feature {
   //TODO (danny) allow margin specification
   arr limits;
   
@@ -23,7 +23,7 @@ struct TM_qLimits:TaskMap {
 
 //===========================================================================
 
-struct LimitsConstraint:TaskMap {
+struct LimitsConstraint:Feature {
   double margin;
   arr limits;
   LimitsConstraint(double _margin=.05):margin(_margin) {}

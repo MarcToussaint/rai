@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "taskMap.h"
+#include "feature.h"
 
-struct TM_InsideBox : TaskMap {
+struct TM_InsideBox : Feature {
   int i, j;               ///< which shapes does it refer to?
   rai::Vector ivec;       ///< additional position or vector
   double margin;

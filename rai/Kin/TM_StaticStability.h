@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "taskMap.h"
+#include "feature.h"
 
-struct TM_StaticStability : TaskMap {
+struct TM_StaticStability : Feature {
   int i;               ///< which shapes does it refer to?
   double margin;
   

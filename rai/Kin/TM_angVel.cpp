@@ -28,29 +28,24 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
   CHECK_EQ(order, 1,"");
 
 //  double tau = Ktuple(-1)->frames(0)->time; //- Ktuple(-2)->frames(0)->time;
-  rai::Frame *a0 = Ktuple(-2)->frames(i);
-  rai::Frame *a1 = Ktuple(-1)->frames(i);
+  rai::Frame *f0 = Ktuple(-2)->frames(i);
+  rai::Frame *f1 = Ktuple(-1)->frames(i);
 
   y.resize(3);
-  arr q0,q1,Jq0,Jq1;
-  Ktuple(-2)->kinematicsQuat(q0, Jq0, a0);
-  Ktuple(-1)->kinematicsQuat(q1, Jq1, a1);
+  arr a,b,Ja,Jb;
+  Ktuple(-2)->kinematicsQuat(a, Ja, f0);
+  Ktuple(-1)->kinematicsQuat(b, Jb, f1);
   arr J0, J1;
-  quat_diffVector(y, J0, J1, q0, q1);
-
-//  quat_concat(y, J0, J1, q0, q1);
-//  y = q1;
-
+  quat_diffVector(y, J0, J1, a, b);
 //  y /= tau;
   checkNan(y);
 
   if(&J){
     if(Ktuple.N==3){
-      J = catCol(zeros(y.N, Ktuple(-3)->q.N), J0 * Jq0, J1 * Jq1);
+      J = catCol(zeros(y.N, Ktuple(-3)->q.N), J0 * Ja, J1 * Jb);
     }else{
-      J = catCol(J0 * Jq0, J1 * Jq1);
+      J = catCol(J0 * Ja, J1 * Jb);
     }
-
 //    J /= tau;
 //    J = Jq1;
 //    expandJacobian(J, Ktuple, 2);

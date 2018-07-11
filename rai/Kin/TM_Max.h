@@ -7,15 +7,15 @@
     --------------------------------------------------------------  */
 
 #pragma once
-#include "taskMap.h"
+#include "feature.h"
 
 //===========================================================================
 
-struct TM_Max : TaskMap {
-  TaskMap *map;
+struct TM_Max : Feature {
+  Feature *map;
   bool neg;
   
-  TM_Max(TaskMap *map, bool neg=false) : map(map), neg(neg) {}
+  TM_Max(Feature *map, bool neg=false) : map(map), neg(neg) {}
   
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G) { return 1; }

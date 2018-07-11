@@ -143,9 +143,9 @@ OptLGP::~OptLGP() {
 void OptLGP::initDisplay() {
   if(!views.N) {
     views.resize(4);
-    views(1) = make_shared<OrsPathViewer>("pose", .2, -1);
-    views(2) = make_shared<OrsPathViewer>("sequence", .2, -1);
-    views(3) = make_shared<OrsPathViewer>("path", .05, -2);
+    views(1) = make_shared<KinPathViewer>("pose", 1.2, -1);
+    views(2) = make_shared<KinPathViewer>("sequence", 1.2, -1);
+    views(3) = make_shared<KinPathViewer>("path", .05, -2);
     if(rai::getParameter<bool>("LGP/displayTree", 1)) {
       _system("evince z.pdf &");
       displayTree = true;
@@ -172,21 +172,12 @@ void OptLGP::updateDisplay() {
       views(i)->text.clear() <<displayFocus->cost <<"|  " <<displayFocus->constraints.last() <<'\n' <<decisions;
     } else views(i)->clear();
   }
-  //  if(node->komoProblem(2) && node->komoProblem(2)->configurations.N)
-  //    seqView.setConfigurations(node->komoProblem(2)->configurations);
-  //  else seqView.clear();
-  //  if(node->komoProblem(3) && node->komoProblem(3)->configurations.N)
-  //    pathView.setConfigurations(node->komoProblem(3)->configurations);
-  //  else pathView.clear();
   
   solutions.writeAccess();
   for(uint i=0; i<solutions().N && i<6; i++) {
     if(dth->gl.views.N<=i || !dth->gl.views(i).drawers.N) {
       dth->gl.addSubView(i, glStandardScene, NULL);
       dth->gl.addSubView(i, *solutions()(i));
-//    dth->gl.views(i).drawers.last() = solutions()(i);
-//    dth->gl.addSubView(i, glStandardScene, NULL);
-//    dth->gl.addSubView(i, *solutions()(i));
       dth->gl.views(i).camera.setDefault();
 //      dth->gl.views(i).camera.focus(.9, 0., 1.3);
     }

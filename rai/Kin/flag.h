@@ -24,6 +24,7 @@ enum FrameFlagType {
   FL_clear,
   FL_xPosVelCosts,
   FL_kinematic,
+  FL_something
 };
 
 namespace rai {

@@ -10,7 +10,7 @@
 
 #include "taskMaps.h"
 
-struct TM_GJK:TaskMap {
+struct TM_GJK:Feature {
   int i, j;               ///< which shapes does it refer to?
 //  rai::Vector vec1, vec2; ///< additional position or vector
   bool exact;

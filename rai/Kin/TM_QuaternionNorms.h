@@ -7,13 +7,13 @@
     --------------------------------------------------------------  */
 
 #pragma once
-#include "taskMap.h"
+#include "feature.h"
 
 //===========================================================================
 
 /// defines a transition cost vector, which is q.N-dimensional and captures
 /// accelerations or velocities over consecutive time steps
-struct TM_QuaternionNorms : TaskMap {
+struct TM_QuaternionNorms : Feature {
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G);
   virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("QuaternionNorms"); }

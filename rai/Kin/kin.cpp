@@ -591,11 +591,27 @@ void rai::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
   calc_fwdPropagateFrames();
 }
 
-void rai::KinematicWorld::setFrameState(const arr& X, bool calc_q_from_X){
-  CHECK_EQ(X.d0, frames.N, "X.d0 does not equal #frames");
-  for(uint i=0;i<frames.N;i++){
+void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames, bool calc_q_from_X){
+  if(!frameNames.N){
+    CHECK_EQ(X.d0, frames.N, "X.d0 does not equal #frames");
+    for(uint i=0;i<frames.N;i++){
       frames(i)->X.set(X[i]);
       frames(i)->X.rot.normalize();
+    }
+  }else{
+    if(X.nd==1){
+      CHECK_EQ(1, frameNames.N, "X.d0 does not equal #frames");
+      rai::Frame *f = getFrameByName(frameNames(0));
+      f->X.set(X);
+      f->X.rot.normalize();
+    }else{
+      CHECK_EQ(X.d0, frameNames.N, "X.d0 does not equal #frames");
+      for(uint i=0;i<X.d0;i++){
+        rai::Frame *f = getFrameByName(frameNames(i));
+        f->X.set(X[i]);
+        f->X.rot.normalize();
+      }
+    }
   }
   if(calc_q_from_X){
     calc_Q_from_BodyFrames();
@@ -2084,7 +2100,7 @@ void rai::KinematicWorld::kinematicsProxyCost(arr &y, arr& J, double margin) con
 }
 
 void rai::KinematicWorld::kinematicsContactCost(arr& y, arr& J, const Contact* c, double margin, bool addValues) const {
-  TaskMap *map = c->getTM_ContactNegDistance();
+  Feature *map = c->getTM_ContactNegDistance();
   arr y_dist, J_dist;
   map->phi(y_dist, (&J?J_dist:NoArr), *this);
   y_dist *= -1.;

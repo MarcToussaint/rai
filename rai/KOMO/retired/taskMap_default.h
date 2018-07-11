@@ -28,7 +28,7 @@ enum TM_DefaultType {
   TMT_skin      ///< vector of skin pressures...
 };
 
-struct TM_Default:TaskMap {
+struct TM_Default:Feature {
   TM_DefaultType type;
   int i, j;               ///< which shapes does it refer to?
   rai::Vector ivec, jvec; ///< additional position or vector

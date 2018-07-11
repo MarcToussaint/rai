@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "taskMap.h"
+#include "feature.h"
 
-struct TM_AlignStacking : TaskMap {
+struct TM_AlignStacking : Feature {
   int i;               ///< which shapes does it refer to?
   TM_AlignStacking(int iShape=-1);
   

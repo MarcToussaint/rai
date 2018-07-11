@@ -43,7 +43,7 @@ void PR2Interface::step() {
   this->modelWorld->watch(false);
   
   if(this->controller->taskSpaceAccLaws.N < 1) {
-    TaskMap* qItselfTask = new TM_qItself();
+    Feature* qItselfTask = new TM_qItself();
     LinTaskSpaceAccLaw* qItselfLaw = new LinTaskSpaceAccLaw(qItselfTask, this->modelWorld, "idle");
     qItselfLaw->setC(eye(qItselfLaw->getPhiDim())*10.0);
     qItselfLaw->setGains(eye(qItselfLaw->getPhiDim())*10.0, eye(qItselfLaw->getPhiDim())*1.0);
@@ -269,7 +269,7 @@ void PR2Interface::sendCommand(const arr& u0, const arr& Kp, const arr& Kd, cons
 }
 
 void PR2Interface::goToPosition(arr pos, rai::String shape, double executionTime, bool useMotionPlaner, rai::String name) {
-  TaskMap* posMap = new TM_Default(TMT_pos, *this->modelWorld, shape);
+  Feature* posMap = new TM_Default(TMT_pos, *this->modelWorld, shape);
   this->goToTask(posMap, pos, executionTime, useMotionPlaner, name);
 }
 
@@ -309,7 +309,7 @@ void PR2Interface::goToTasks(rai::Array<LinTaskSpaceAccLaw*> laws, double execut
     
     showTrajectory(traj, *this->modelWorld);
     
-    TaskMap* qTask = new TM_qItself();
+    Feature* qTask = new TM_qItself();
     LinTaskSpaceAccLaw* qLaw = new LinTaskSpaceAccLaw(qTask, this->modelWorld, "qLaw");
     qLaw->setC(eye(this->modelWorld->getJointStateDimension())*1000.0);
     qLaw->setGains(eye(this->modelWorld->getJointStateDimension())*25.0, eye(this->modelWorld->getJointStateDimension())*5.0);
@@ -326,11 +326,11 @@ void PR2Interface::goToTasks(rai::Array<LinTaskSpaceAccLaw*> laws, double execut
 }
 
 void PR2Interface::goToJointState(arr jointState, double executionTime, bool useMotionPlaner, rai::String name) {
-  TaskMap* qTask = new TM_qItself();
+  Feature* qTask = new TM_qItself();
   this->goToTask(qTask, jointState, executionTime, useMotionPlaner, name);
 }
 
-void PR2Interface::goToTask(TaskMap* map, arr ref, double executionTime, bool useMotionPlaner, rai::String name) {
+void PR2Interface::goToTask(Feature* map, arr ref, double executionTime, bool useMotionPlaner, rai::String name) {
   LinTaskSpaceAccLaw* law = new LinTaskSpaceAccLaw(map, this->modelWorld, name);
   law->setRef(ref);
   rai::Array<LinTaskSpaceAccLaw*> laws;

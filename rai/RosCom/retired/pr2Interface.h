@@ -49,7 +49,7 @@ struct PR2Interface : Thread {
   void sendCommand(const arr& u0, const arr& Kp, const arr& Kd, const arr& K_ft, const arr& J_ft_inv, const arr& fRef, const double& gamma);
   void goToPosition(arr pos, rai::String shape, double executionTime = 10.0, bool useMotionPlaner = true, rai::String name = "goToPosition");
   void goToTasks(rai::Array<LinTaskSpaceAccLaw*> laws, double executionTime = 10.0, bool useMotionPlanner = true);
-  void goToTask(TaskMap* map, arr ref, double executionTime = 10.0, bool useMotionPlaner = true, rai::String name = "goToTask");
+  void goToTask(Feature* map, arr ref, double executionTime = 10.0, bool useMotionPlaner = true, rai::String name = "goToTask");
   void goToJointState(arr jointState, double executionTime = 10.0, bool useMotionPlaner = true, rai::String name = "goToJointState");
   void executeTrajectory(double executionTime);
   void moveTorsoLift(arr torsoLiftRef);

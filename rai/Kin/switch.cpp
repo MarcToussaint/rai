@@ -15,7 +15,7 @@
 //===========================================================================
 
 uint conv_time2step(double time, uint stepsPerPhase) {
-  return (floor(time*double(stepsPerPhase) + .500001)); //-1
+  return (floor(time*double(stepsPerPhase) + .500001))-1;
 }
 //#define STEP(t) (floor(t*double(stepsPerPhase) + .500001))-1
 
@@ -158,6 +158,7 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
     } else {
       j->constrainToZeroVel=true;
       j->frame.flags |= (1<<FL_zeroQVel);
+      j->H = 0.;
     }
     j->type = jointType;
     if(false) { //this is so annoying!

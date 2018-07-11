@@ -47,7 +47,7 @@ PathProblem::PathProblem(const rai::KinematicWorld& world_initial,
   
   //-- transitions
   {
-    Task *t;
+    Objective *t;
     t = MP.addTask("transitions", new TM_Transition(world), OT_sos);
     if(microSteps>3) t->map->order=2;
     else t->map->order=1;
@@ -56,7 +56,7 @@ PathProblem::PathProblem(const rai::KinematicWorld& world_initial,
   
   //-- pose damping
   {
-    Task *t;
+    Objective *t;
     t = MP.addTask("pose", new TM_qItself(), OT_sos);
     t->map->order=0;
     t->setCostSpecs(0, MP.T, {0.}, 1e-5);
@@ -64,7 +64,7 @@ PathProblem::PathProblem(const rai::KinematicWorld& world_initial,
   
   //-- tasks
   {
-    Task *t;
+    Objective *t;
     TM_Default *m;
     //pick & place position
     t = MP.addTask("pap_pos", m=new TM_Default(TMT_posDiff), OT_sos);
@@ -153,7 +153,7 @@ PathProblem::PathProblem(const rai::KinematicWorld& world_initial,
   
   //-- collisions
   {
-    Task *t;
+    Objective *t;
     TM_ProxyConstraint *m;
     
     //of the object itself

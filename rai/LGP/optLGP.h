@@ -10,7 +10,7 @@
 //#include <Geo/geoms.h>
 #include <Core/thread.h>
 
-struct OrsPathViewer;
+struct KinPathViewer;
 typedef rai::Array<rai::Transformation> TransformationA;
 
 void initFolStateFromKin(FOL_World& L, const rai::KinematicWorld& K);
@@ -39,7 +39,7 @@ struct OptLGP : GLDrawer {
   
   MNode *root=0, *displayFocus=0;
   
-  rai::Array<std::shared_ptr<OrsPathViewer>> views; //displays for the 3 different levels
+  rai::Array<std::shared_ptr<KinPathViewer>> views; //displays for the 3 different levels
   
   //-- these are lists or queues; I don't maintain them sorted because their evaluation (e.g. f(n)=g(n)+h(n)) changes continuously
   // while new bounds are computed. Therefore, whenever I pop from these lists, I find the minimum w.r.t. a heuristic. The
