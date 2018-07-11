@@ -164,13 +164,14 @@ void KOMO::clearTasks() {
 }
 
 Objective *KOMO::addObjective(double startTime, double endTime, Feature *map, ObjectiveType type, const arr& target, double prec, int order, int deltaStep) {
-  if(startTime<0. && endTime<0.) return NULL;
   if(order>=0) map->order = order;
   CHECK_GE(k_order, map->order, "task requires larger k-order: " <<map->shortTag(world));
   Objective *task = new Objective(map, type);
   task->name = map->shortTag(world);
   objectives.append(task);
-  task->setCostSpecs(startTime, endTime, stepsPerPhase, T, target, prec, deltaStep);
+  if(startTime>=0. || endTime>=0.){
+    task->setCostSpecs(startTime, endTime, stepsPerPhase, T, target, prec, deltaStep);
+  }
   return task;
 }
 
