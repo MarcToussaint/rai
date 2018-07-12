@@ -582,7 +582,18 @@ void rai::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
   
   CHECK_EQ(_q.N, joints.N, "");
   for(uint i=0; i<_q.N; i++) {
-    q(getFrameByName(joints(i))->joint->qIndex) = _q(i);
+    rai::String frameName = joints(i);
+    if(frameName(-2)!=':'){ //1-dim joint
+      rai::Joint *j = getFrameByName(frameName)->joint;
+      CHECK(j, "frame '" <<frameName <<"' is not a joint!");
+      q(j->qIndex) = _q(i);
+    }else{
+      frameName.resize(frameName.N-2, true);
+      rai::Joint *j = getFrameByName(frameName)->joint;
+      CHECK(j, "frame '" <<frameName <<"' is not a joint!");
+      for(uint k=0;k<j->dim;k++) q(j->qIndex+k) = _q(i+k);
+      i += j->dim-1;
+    }
   }
   qdot.clear();
   
@@ -1166,6 +1177,7 @@ rai::Joint* rai::KinematicWorld::getJointByBodyIndices(uint ifrom, uint ito) con
 }
 
 StringA rai::KinematicWorld::getJointNames() const {
+  if(!q.nd)((KinematicWorld*)this)->calc_q();
   StringA names(getJointStateDimension());
   for(Joint *j:fwdActiveJoints) {
     rai::String name=j->frame.name;
@@ -2382,13 +2394,13 @@ void rai::KinematicWorld::useJointGroups(const StringA &groupNames, bool OnlyThe
 }
 
 void rai::KinematicWorld::makeObjectsFree(const StringA &objects){
-    for(auto s:objects){
-        rai::Frame *a = getFrameByName(s, true);
-        CHECK(a, "");
-        if(!a->parent) a->linkFrom(frames.first());
-        if(!a->joint) new rai::Joint(*a);
-        a->joint->makeFree();
-    }
+  for(auto s:objects){
+    rai::Frame *a = getFrameByName(s, true);
+    CHECK(a, "");
+    if(!a->parent) a->linkFrom(frames.first());
+    if(!a->joint) new rai::Joint(*a);
+    a->joint->makeFree();
+  }
 }
 
 void rai::KinematicWorld::addTimeJoint(){

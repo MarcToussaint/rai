@@ -20,6 +20,7 @@
 #  include <sys/inotify.h>
 #  include <sys/stat.h>
 #  include <poll.h>
+#  include <execinfo.h>
 #if defined RAI_X11
 #  include <X11/Xlib.h>
 #  include <X11/Xutil.h>
@@ -770,6 +771,13 @@ rai::LogToken::~LogToken() {
   if(log.logCoutLevel>=log_level) {
     if(log_level>=0) std::cout <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
     if(log_level<0) {
+
+      void *trace_elems[10];
+      int trace_elem_count = backtrace( trace_elems, 10 );
+      char **stack_syms = backtrace_symbols( trace_elems, trace_elem_count );
+      for(int i=trace_elem_count; i--;) std::cout <<"STACK" <<i <<' ' <<stack_syms[i] <<'\n';
+      free( stack_syms );
+
       rai::errString.clear() <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg;
 // #ifdef RAI_ROS
 //       ROS_INFO("RAI-MSG: %s",rai::errString.p);
