@@ -11,6 +11,8 @@
 
 #include <Geo/geo.h>
 #include <Geo/pairCollision.h>
+#include <memory>
+
 namespace rai {
 struct KinematicWorld;
 struct Frame;
@@ -30,13 +32,13 @@ struct Proxy : GLDrawer {
   Vector normal;   ///< contact normal, pointing from B to A (proportional to posA-posB)
   double d;           ///< distance (positive) or penetration (negative) between A and B
   uint colorCode = 0;
-  PairCollision *coll=NULL;
+  std::shared_ptr<PairCollision> coll;
   
   Proxy();
   ~Proxy();
   
   void calc_coll(const KinematicWorld &K);
-  void del_coll() { if(coll) delete coll; coll=NULL; }
+  void del_coll() { coll.reset(); }
   void glDraw(OpenGL&);
 };
 

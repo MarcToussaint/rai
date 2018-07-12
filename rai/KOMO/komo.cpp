@@ -68,9 +68,9 @@ KOMO::~KOMO() {
   listDelete(flags);
   listDelete(switches);
   listDelete(configurations);
-  if(gl) delete gl;
-  if(opt) delete opt;
-  if(fil) delete fil;
+  if(gl) delete gl; gl=0;
+  if(opt) delete opt; opt=0;
+  if(fil) delete fil; fil=0;
 }
 
 void KOMO::setModel(const KinematicWorld& K,

@@ -35,7 +35,9 @@ void rai::Proxy::calc_coll(const KinematicWorld& K) {
   double r2=s2->size(3);
   rai::Mesh *m1 = &s1->sscCore();  if(!m1->V.N) { m1 = &s1->mesh(); r1=0.; }
   rai::Mesh *m2 = &s2->sscCore();  if(!m2->V.N) { m2 = &s2->mesh(); r2=0.; }
-  coll = new PairCollision(*m1, *m2, s1->frame.X, s2->frame.X, r1, r2);
+
+  if(coll) coll.reset();
+  coll = std::make_shared<PairCollision>(*m1, *m2, s1->frame.X, s2->frame.X, r1, r2);
   
   d = coll->distance;
   posA = coll->p1;
