@@ -248,8 +248,9 @@ void rai::KinematicWorld::copy(const rai::KinematicWorld& K, bool referenceSwift
   for(Frame *f:K.frames) new Frame(*this, f);
   for(Frame *f:K.frames) if(f->parent) frames(f->ID)->linkFrom(frames(f->parent->ID));
   //copy proxies; first they point to origin frames; afterwards, let them point to own frames
-  proxies = K.proxies;
-  for(Proxy& p:proxies) { p.a = frames(p.a->ID); p.b = frames(p.b->ID); }
+  copyProxies(K);
+//  proxies = K.proxies;
+//  for(Proxy& p:proxies) { p.a = frames(p.a->ID); p.b = frames(p.b->ID);  p.coll.reset(); }
   //copy contacts
   for(Contact *c:K.contacts) new Contact(*frames(c->a.ID), *frames(c->b.ID), c);
   //copy swift reference
@@ -1437,6 +1438,11 @@ double rai::KinematicWorld::totalContactPenetration() {
         if(d<0.) D -= d;
       }
   return D;
+}
+
+void rai::KinematicWorld::copyProxies(const rai::KinematicWorld& K){
+  proxies.resize(K.proxies.N);
+  for(uint i=0;i<proxies.N;i++) proxies(i).copy(*this, K.proxies(i));
 }
 
 /** @brief prototype for \c operator<< */

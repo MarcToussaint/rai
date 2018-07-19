@@ -639,6 +639,14 @@ template<class T> Mutex Singleton<T>::mutex;
 struct GLDrawer    { virtual void glDraw(struct OpenGL&) = 0; virtual ~GLDrawer() {} };
 
 //===========================================================================
+
+struct NonCopyable {
+  NonCopyable & operator=(const NonCopyable&) = delete;
+  NonCopyable(const NonCopyable&) = delete;
+  NonCopyable() = default;
+};
+
+//===========================================================================
 //
 /// a mutexed cout
 //

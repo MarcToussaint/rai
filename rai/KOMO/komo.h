@@ -30,7 +30,7 @@ typedef rai::Array<SkeletonEntry> Skeleton;
 
 //===========================================================================
 
-struct KOMO {
+struct KOMO : NonCopyable {
 
   //-- the problem definition
   double maxPhase;             ///< number of phases (roughly: actions), but phase is continuous valued

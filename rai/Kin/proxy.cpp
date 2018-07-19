@@ -24,6 +24,17 @@ rai::Proxy::~Proxy() {
   del_coll();
 }
 
+void rai::Proxy::copy(const rai::KinematicWorld& K, const rai::Proxy& p){
+  del_coll();
+  a = K.frames(p.a->ID); CHECK(a, "");
+  b = K.frames(p.b->ID); CHECK(b, "");
+  posA = p.posA;
+  posB = p.posB;
+  normal = p.normal;
+  d = p.d;
+  colorCode = p.colorCode;
+}
+
 void rai::Proxy::calc_coll(const KinematicWorld& K) {
   CHECK_EQ(&a->K, &K, "");
   CHECK_EQ(&b->K, &K, "");
