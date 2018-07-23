@@ -248,8 +248,9 @@ void rai::KinematicWorld::copy(const rai::KinematicWorld& K, bool referenceSwift
   for(Frame *f:K.frames) new Frame(*this, f);
   for(Frame *f:K.frames) if(f->parent) frames(f->ID)->linkFrom(frames(f->parent->ID));
   //copy proxies; first they point to origin frames; afterwards, let them point to own frames
-  proxies = K.proxies;
-  for(Proxy& p:proxies) { p.a = frames(p.a->ID); p.b = frames(p.b->ID); }
+  copyProxies(K);
+//  proxies = K.proxies;
+//  for(Proxy& p:proxies) { p.a = frames(p.a->ID); p.b = frames(p.b->ID);  p.coll.reset(); }
   //copy contacts
   for(Contact *c:K.contacts) new Contact(*frames(c->a.ID), *frames(c->b.ID), c);
   //copy swift reference
@@ -582,7 +583,18 @@ void rai::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
   
   CHECK_EQ(_q.N, joints.N, "");
   for(uint i=0; i<_q.N; i++) {
-    q(getFrameByName(joints(i))->joint->qIndex) = _q(i);
+    rai::String frameName = joints(i);
+    if(frameName(-2)!=':'){ //1-dim joint
+      rai::Joint *j = getFrameByName(frameName)->joint;
+      CHECK(j, "frame '" <<frameName <<"' is not a joint!");
+      q(j->qIndex) = _q(i);
+    }else{
+      frameName.resize(frameName.N-2, true);
+      rai::Joint *j = getFrameByName(frameName)->joint;
+      CHECK(j, "frame '" <<frameName <<"' is not a joint!");
+      for(uint k=0;k<j->dim;k++) q(j->qIndex+k) = _q(i+k);
+      i += j->dim-1;
+    }
   }
   qdot.clear();
   
@@ -602,12 +614,14 @@ void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames,
     if(X.nd==1){
       CHECK_EQ(1, frameNames.N, "X.d0 does not equal #frames");
       rai::Frame *f = getFrameByName(frameNames(0));
+      if(!f) return;
       f->X.set(X);
       f->X.rot.normalize();
     }else{
       CHECK_EQ(X.d0, frameNames.N, "X.d0 does not equal #frames");
       for(uint i=0;i<X.d0;i++){
         rai::Frame *f = getFrameByName(frameNames(i));
+        if(!f) return;
         f->X.set(X[i]);
         f->X.rot.normalize();
       }
@@ -1166,6 +1180,7 @@ rai::Joint* rai::KinematicWorld::getJointByBodyIndices(uint ifrom, uint ito) con
 }
 
 StringA rai::KinematicWorld::getJointNames() const {
+  if(!q.nd)((KinematicWorld*)this)->calc_q();
   StringA names(getJointStateDimension());
   for(Joint *j:fwdActiveJoints) {
     rai::String name=j->frame.name;
@@ -1425,6 +1440,11 @@ double rai::KinematicWorld::totalContactPenetration() {
         if(d<0.) D -= d;
       }
   return D;
+}
+
+void rai::KinematicWorld::copyProxies(const rai::KinematicWorld& K){
+  proxies.resize(K.proxies.N);
+  for(uint i=0;i<proxies.N;i++) proxies(i).copy(*this, K.proxies(i));
 }
 
 /** @brief prototype for \c operator<< */
@@ -2313,6 +2333,7 @@ void rai::KinematicWorld::reconnectLinksToClosestJoints() {
 #else
       rai::Transformation Q;
       Frame *link = f->getUpwardLink(Q);
+      Q.rot.normalize();
 #endif
       if(f->joint && !Q.rot.isZero) continue; //only when rot is zero you can subsume the Q transformation into the Q of the joint
       if(link!=f) { //there is a link's root
@@ -2382,13 +2403,13 @@ void rai::KinematicWorld::useJointGroups(const StringA &groupNames, bool OnlyThe
 }
 
 void rai::KinematicWorld::makeObjectsFree(const StringA &objects){
-    for(auto s:objects){
-        rai::Frame *a = getFrameByName(s, true);
-        CHECK(a, "");
-        if(!a->parent) a->linkFrom(frames.first());
-        if(!a->joint) new rai::Joint(*a);
-        a->joint->makeFree();
-    }
+  for(auto s:objects){
+    rai::Frame *a = getFrameByName(s, true);
+    CHECK(a, "");
+    if(!a->parent) a->linkFrom(frames.first());
+    if(!a->joint) new rai::Joint(*a);
+    a->joint->makeFree();
+  }
 }
 
 void rai::KinematicWorld::addTimeJoint(){
@@ -2435,6 +2456,9 @@ bool rai::KinematicWorld::checkConsistency() {
     if(a->shape) CHECK_EQ(&a->shape->frame, a, "");
     if(a->inertia) CHECK_EQ(&a->inertia->frame, a, "");
     a->ats.checkConsistency();
+
+    CHECK_ZERO(a->X.rot.normalization()-1., 1e-4, "");
+    CHECK_ZERO(a->Q.rot.normalization()-1., 1e-4, "");
   }
   
   Joint *j;
@@ -2446,7 +2470,7 @@ bool rai::KinematicWorld::checkConsistency() {
       CHECK_EQ(j->frame.joint, j,"");
       CHECK_GE(j->type.x, 0, "");
       CHECK_LE(j->type.x, JT_time, "");
-      
+
       if(j->mimic) {
         CHECK_EQ(j->dim, 0, "");
         CHECK(j->mimic>(void*)1, "mimic was not parsed correctly");

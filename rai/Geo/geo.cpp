@@ -487,7 +487,7 @@ void Quaternion::multiply(double f) {
 }
 
 double Quaternion::normalization() const {
-  return sqrt(w*w + x*x + y*y + z*z);
+  return w*w + x*x + y*y + z*z;
 }
 
 bool Quaternion::isNormalized() const {
@@ -1308,6 +1308,7 @@ void Transformation::setAffineMatrix(const double *m) {
 void Transformation::setDifference(const Transformation& from, const Transformation& to) {
   rot = Quaternion_Id / from.rot * to.rot;
   pos = from.rot/(to.pos-from.pos);
+  rot.normalize();
 }
 
 /// get the current position/orientation/scale in an OpenGL format matrix (of type double[16])

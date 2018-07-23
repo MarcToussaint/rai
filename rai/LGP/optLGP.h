@@ -37,7 +37,7 @@ struct OptLGP : GLDrawer {
   struct DisplayThread *dth=NULL;
   rai::String dataPath;
   
-  MNode *root, *displayFocus;
+  MNode *root=0, *displayFocus=0;
   
   rai::Array<std::shared_ptr<KinPathViewer>> views; //displays for the 3 different levels
   
@@ -56,7 +56,9 @@ struct OptLGP : GLDrawer {
   Var<rai::Array<OptLGP_SolutionData*>> solutions;
   
   //high-level
+  OptLGP();
   OptLGP(rai::KinematicWorld& kin, FOL_World& fol);
+  void init(rai::KinematicWorld &kin, FOL_World &fol);
   ~OptLGP();
   
   FOL_World& fol() { return root->fol; }

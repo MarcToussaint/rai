@@ -11,6 +11,8 @@
 
 #include <Geo/geo.h>
 #include <Geo/pairCollision.h>
+#include <memory>
+
 namespace rai {
 struct KinematicWorld;
 struct Frame;
@@ -23,20 +25,21 @@ namespace rai {
 /// a data structure to store proximity information (when two shapes become close) --
 /// as return value from external collision libs
 struct Proxy : GLDrawer {
-  Frame *a;              ///< shape A
-  Frame *b;              ///< shape B
-  Vector posA;  ///< contact or closest point position on surface of shape A (in world coordinates)
-  Vector posB;  ///< contact or closest point position on surface of shape B (in world coordinates)
+  Frame *a=0;      ///< shape A
+  Frame *b=0;      ///< shape B
+  Vector posA;     ///< contact or closest point position on surface of shape A (in world coordinates)
+  Vector posB;     ///< contact or closest point position on surface of shape B (in world coordinates)
   Vector normal;   ///< contact normal, pointing from B to A (proportional to posA-posB)
-  double d;           ///< distance (positive) or penetration (negative) between A and B
+  double d;        ///< distance (positive) or penetration (negative) between A and B
   uint colorCode = 0;
-  PairCollision *coll=NULL;
+  std::shared_ptr<PairCollision> coll;
   
   Proxy();
   ~Proxy();
-  
+
+  void copy(const KinematicWorld& K, const Proxy& p);
   void calc_coll(const KinematicWorld &K);
-  void del_coll() { if(coll) delete coll; coll=NULL; }
+  void del_coll() { coll.reset(); }
   void glDraw(OpenGL&);
 };
 

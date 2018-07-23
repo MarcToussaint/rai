@@ -105,18 +105,28 @@ void initFolStateFromKin(FOL_World& L, const rai::KinematicWorld& K) {
     }
 }
 
-OptLGP::OptLGP(rai::KinematicWorld &kin, FOL_World &fol)
-  : verbose(3), numSteps(0) {
-  dataPath <<"z." <<rai::date2() <<"/";
-  dataPath = rai::getParameter<rai::String>("LGP_dataPath", dataPath);
-  _system(STRING("mkdir -p " <<dataPath));
-  _system(STRING("rm -Rf " <<dataPath <<"vid  &&  rm -f " <<dataPath <<"*"));
-  
-  OptLGPDataPath = dataPath;
-  if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
-  
-  verbose = rai::getParameter<int>("LGP/vebose", 3);
-  if(verbose>0) fil.open(dataPath + "optLGP.dat"); //STRING("z.optLGP." <<rai::date() <<".dat"));
+OptLGP::OptLGP()
+    : verbose(3), numSteps(0),
+      solutions("OptLGPsolutions"){
+    dataPath <<"z." <<rai::date2() <<"/";
+    dataPath = rai::getParameter<rai::String>("LGP_dataPath", dataPath);
+    _system(STRING("mkdir -p " <<dataPath));
+    _system(STRING("rm -Rf " <<dataPath <<"vid  &&  rm -f " <<dataPath <<"*"));
+
+    OptLGPDataPath = dataPath;
+    if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
+
+    verbose = rai::getParameter<int>("LGP/vebose", 3);
+    if(verbose>0) fil.open(dataPath + "optLGP.dat"); //STRING("z.optLGP." <<rai::date() <<".dat"));
+
+}
+
+OptLGP::OptLGP(rai::KinematicWorld &kin, FOL_World &fol) : OptLGP() {
+    init(kin, fol);
+}
+
+void OptLGP::init(rai::KinematicWorld &kin, FOL_World &fol) {
+    CHECK(!root,"");
   root = new MNode(kin, fol, 4);
   displayFocus = root;
   //  threadOpenModules(true);

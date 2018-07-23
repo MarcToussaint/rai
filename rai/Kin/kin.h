@@ -222,7 +222,8 @@ struct KinematicWorld : GLDrawer {
   void filterProxiesToContacts(double margin=.01); ///< proxies are returns from a collision engine; contacts stable constraints
   void proxiesToContacts(double margin=.01); ///< proxies are returns from a collision engine; contacts stable constraints
   double totalContactPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
-  
+  void copyProxies(const KinematicWorld& K);
+
   /// @name I/O
   void write(std::ostream& os) const;
   void writeURDF(std::ostream& os, const char *robotName="myrobot") const;

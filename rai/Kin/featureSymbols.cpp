@@ -9,33 +9,33 @@
 //#include <Kin/proxy.h>
 
 template<> const char* rai::Enum<FeatureSymbol>::names []= {
-  "FS_position",
-  "FS_positionDiff",
-  "FS_positionRel",
-  "FS_quaternion",
-  "FS_quaternionDiff",
-  "FS_quaternionRel",
-  "FS_pose",
-  "FS_poseDiff",
-  "FS_poseRel",
-  "FS_vectorX",
-  "FS_vectorXDiff",
-  "FS_vectorXRel",
-  "FS_vectorY",
-  "FS_vectorYDiff",
-  "FS_vectorYRel",
-  "FS_vectorZ",
-  "FS_vectorZDiff",
-  "FS_vectorZRel",
-  "FS_scalarProductZ",
-  "FS_gazeAt",
-  "FS_accumulatedCollisions",
-  "FS_jointLimits",
-  "FS_distance",
-  "FS_qItself",
-  "FS_aboveBox",
-  "FS_insideBox",
-  "FS_standingAbove",
+  "position",
+  "positionDiff",
+  "positionRel",
+  "quaternion",
+  "quaternionDiff",
+  "quaternionRel",
+  "pose",
+  "poseDiff",
+  "poseRel",
+  "vectorX",
+  "vectorXDiff",
+  "vectorXRel",
+  "vectorY",
+  "vectorYDiff",
+  "vectorYRel",
+  "vectorZ",
+  "vectorZDiff",
+  "vectorZRel",
+  "scalarProductZ",
+  "gazeAt",
+  "accumulatedCollisions",
+  "jointLimits",
+  "distance",
+  "qItself",
+  "aboveBox",
+  "insideBox",
+  "standingAbove",
   NULL
 };
 
@@ -66,6 +66,10 @@ Feature* symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::K
   if(feat==FS_vectorX) {  return new TM_Default(TMT_vec, world, frames(0), Vector_x); }
   if(feat==FS_vectorXDiff) {  return new TM_Default(TMT_vecDiff, world, frames(0), Vector_x, frames(1), Vector_x); }
   if(feat==FS_vectorXRel) {  return new TM_Default(TMT_vec, world, frames(0), Vector_x, frames(1), Vector_x); }
+
+  if(feat==FS_vectorZ) {  return new TM_Default(TMT_vec, world, frames(0), Vector_z); }
+  if(feat==FS_vectorZDiff) {  return new TM_Default(TMT_vecDiff, world, frames(0), Vector_z, frames(1), Vector_z); }
+  if(feat==FS_vectorZRel) {  return new TM_Default(TMT_vec, world, frames(0), Vector_z, frames(1), Vector_z); }
 
   if(feat==FS_quaternion) {  return new TM_Default(TMT_quat, world, frames(0)); }
   if(feat==FS_quaternionDiff) {  return new TM_Default(TMT_quatDiff, world, frames(0), NoVector, frames(1), NoVector); }

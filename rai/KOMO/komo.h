@@ -30,7 +30,7 @@ typedef rai::Array<SkeletonEntry> Skeleton;
 
 //===========================================================================
 
-struct KOMO {
+struct KOMO : NonCopyable {
 
   //-- the problem definition
   double maxPhase;             ///< number of phases (roughly: actions), but phase is continuous valued
@@ -48,7 +48,7 @@ struct KOMO {
   bool useSwift;               ///< whether swift (collisions/proxies) is evaluated whenever new configurations are set (needed if tasks read proxy list)
   
   //-- optimizer
-  OptConstrained *opt;         ///< optimizer; created in run()
+  OptConstrained *opt=0;       ///< optimizer; created in run()
   arr x, dual;                 ///< the primal and dual solution
   arr z, splineB;              ///< when a spline representation is used: z are the nodes; splineB the B-spline matrix; x = splineB * z
   

@@ -68,9 +68,9 @@ KOMO::~KOMO() {
   listDelete(flags);
   listDelete(switches);
   listDelete(configurations);
-  if(gl) delete gl;
-  if(opt) delete opt;
-  if(fil) delete fil;
+  if(gl) delete gl; gl=0;
+  if(opt) delete opt; opt=0;
+  if(fil) delete fil; fil=0;
 }
 
 void KOMO::setModel(const KinematicWorld& K,
@@ -164,17 +164,14 @@ void KOMO::clearTasks() {
 }
 
 Objective *KOMO::addObjective(double startTime, double endTime, Feature *map, ObjectiveType type, const arr& target, double prec, int order, int deltaStep) {
-  if(startTime<0. && endTime<0.){
-    LOG(-1) <<"please don't use both startTime<0 and endTime<0!";
-    return NULL;
-  }
   if(order>=0) map->order = order;
   CHECK_GE(k_order, map->order, "task requires larger k-order: " <<map->shortTag(world));
   Objective *task = new Objective(map, type);
   task->name = map->shortTag(world);
   objectives.append(task);
-  if(startTime<0.) startTime=0.;
-  task->setCostSpecs(startTime, endTime, stepsPerPhase, T, target, prec, deltaStep);
+  if(startTime>=0. || endTime>=0.){
+    task->setCostSpecs(startTime, endTime, stepsPerPhase, T, target, prec, deltaStep);
+  }
   return task;
 }
 
@@ -968,8 +965,8 @@ void KOMO::setIKOpt() {
   tau = 1.;
   k_order = 1;
 //  setTiming(1, 1);
-  setFixEffectiveJoints();
-  setFixSwitchedObjects();
+//  setFixEffectiveJoints();
+//  setFixSwitchedObjects();
   setSquaredQVelocities();
   setSquaredQuaternionNorms();
 }
