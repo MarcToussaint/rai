@@ -33,6 +33,10 @@ enum FeatureSymbol {
   FS_insideBox,
 
   FS_standingAbove,
+
+  FS_physics,
+  FS_contactConstraints,
+  FS_energy,
 };
 
 

@@ -76,8 +76,8 @@ KOMO::~KOMO() {
 void KOMO::setModel(const KinematicWorld& K,
                     bool _useSwift,
                     bool meldFixedJoints, bool makeConvexHulls, bool computeOptimalSSBoxes, bool activateAllContacts) {
-                    
-  world.copy(K);
+
+  if(&K!=&world) world.copy(K);
   
   useSwift = _useSwift;
   
@@ -832,6 +832,8 @@ void KOMO::setSkeleton(const Skeleton &S) {
     if(s.symbols(0)=="dynamic") {   addSwitch_dynamic(s.phase0, s.phase1+1., "base", s.symbols(1));  continue;  }
     if(s.symbols(0)=="dynamicOn") { addSwitch_dynamicOn(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2));  continue;  }
     if(s.symbols(0)=="liftDownUp") {  setLiftDownUp(s.phase0, s.symbols(1));  continue;  }
+
+    if(s.symbols(0)=="contact") {   addContact(s.phase0, s.phase1, s.symbols(1), s.symbols(2), false);  continue;  }
 
 //    if(s.symbols(0)=="magicTouch") {
 //      core_setTouch(s.phase0, s.phase1, s.symbols(1), s.symbols(2));

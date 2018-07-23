@@ -11,6 +11,7 @@
 #include <Kin/TM_default.h>
 
 TM_Energy::TM_Energy() {
+  order=2;
   gravity = rai::getParameter<double>("TM_Physics/gravity", 9.81);
 }
 
