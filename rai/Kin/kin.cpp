@@ -2331,6 +2331,7 @@ void rai::KinematicWorld::reconnectLinksToClosestJoints() {
 #else
       rai::Transformation Q;
       Frame *link = f->getUpwardLink(Q);
+      Q.rot.normalize();
 #endif
       if(f->joint && !Q.rot.isZero) continue; //only when rot is zero you can subsume the Q transformation into the Q of the joint
       if(link!=f) { //there is a link's root
@@ -2453,6 +2454,9 @@ bool rai::KinematicWorld::checkConsistency() {
     if(a->shape) CHECK_EQ(&a->shape->frame, a, "");
     if(a->inertia) CHECK_EQ(&a->inertia->frame, a, "");
     a->ats.checkConsistency();
+
+    CHECK_ZERO(a->X.rot.normalization()-1., 1e-4, "");
+    CHECK_ZERO(a->Q.rot.normalization()-1., 1e-4, "");
   }
   
   Joint *j;
@@ -2464,7 +2468,7 @@ bool rai::KinematicWorld::checkConsistency() {
       CHECK_EQ(j->frame.joint, j,"");
       CHECK_GE(j->type.x, 0, "");
       CHECK_LE(j->type.x, JT_time, "");
-      
+
       if(j->mimic) {
         CHECK_EQ(j->dim, 0, "");
         CHECK(j->mimic>(void*)1, "mimic was not parsed correctly");
