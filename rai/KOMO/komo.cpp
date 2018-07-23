@@ -965,8 +965,8 @@ void KOMO::setIKOpt() {
   tau = 1.;
   k_order = 1;
 //  setTiming(1, 1);
-  setFixEffectiveJoints();
-  setFixSwitchedObjects();
+//  setFixEffectiveJoints();
+//  setFixSwitchedObjects();
   setSquaredQVelocities();
   setSquaredQuaternionNorms();
 }
