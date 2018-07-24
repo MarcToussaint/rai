@@ -99,5 +99,5 @@ public:
   bool execChoice(rai::String cmd);
   bool execRandomChoice();
   
-  void player(StringA cmds= {});
+  void player(StringA cmds={});
 };
