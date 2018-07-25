@@ -74,6 +74,7 @@ struct KOMO : NonCopyable {
   void setPairedTimes();
   void activateCollisions(const char* s1, const char* s2);
   void deactivateCollisions(const char* s1, const char* s2);
+  void setTimeOptimization();
   
   //-- higher-level setup defaults
   void setConfigFromFile();
@@ -96,7 +97,9 @@ struct KOMO : NonCopyable {
   void addSwitch(double time, bool before, rai::KinematicSwitch* sw);
   void addSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const rai::Transformation& jFrom=NoTransformation);
   void addFlag(double time, rai::Flag* fl, int deltaStep=0);
-  void addContact(double startTime, double endTime, const char *from, const char* to, bool soft=false);
+  void addContact(double startTime, double endTime, const char *from, const char* to);
+  void addContact_Complementary(double startTime, double endTime, const char *from, const char* to);
+  void addContact_Relaxed(double startTime, double endTime, const char *from, const char* to);
 
   //===========================================================================
   //

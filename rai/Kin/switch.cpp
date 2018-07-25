@@ -265,10 +265,10 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
     return;
   }
 
-  if(symbol==SW_addContact || symbol==SW_addSoftContact) {
+  if(symbol==SW_addContact || symbol==SW_addComplementaryContact) {
     CHECK_EQ(jointType, JT_none, "");
     auto c = new rai::Contact(*from, *to);
-    if(symbol==SW_addSoftContact) c->soft=true;
+    if(symbol==SW_addComplementaryContact) c->soft=true;
     c->setZero();
     return;
   }

@@ -28,7 +28,7 @@ enum SwitchType {
   SW_fixCurrent,
   SW_delContact,
   SW_addContact,
-  SW_addSoftContact,
+  SW_addComplementaryContact,
 };
 
 struct KinematicSwitch {

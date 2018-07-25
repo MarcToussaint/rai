@@ -31,6 +31,8 @@
 #include <Optim/optimization.h>
 #include <Optim/convert.h>
 #include <Kin/kin_physx.h>
+#include <Kin/TM_time.h>
+#include <Kin/TM_physics.h>
 
 #ifdef RAI_GL
 #  include <GL/gl.h>
@@ -152,6 +154,12 @@ void KOMO::deactivateCollisions(const char* s1, const char* s2) {
   else LOG(-1) <<"not found:" <<s1 <<' ' <<s2;
 }
 
+void KOMO::setTimeOptimization(){
+  world.addTimeJoint();
+  addObjective(0., -1., new TM_Time(), OT_sos, {}, 1e1, 1); //smooth time evolution
+  addObjective(0., -1., new TM_Time(), OT_sos, {tau}, 1e-1, 0); //prior on timing
+}
+
 //===========================================================================
 //
 // task specs
@@ -218,8 +226,13 @@ void KOMO::addSwitch_dynamic(double time, double endTime, const char* from, cons
   addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_trans3, from, to, world));
 //  addFlag(time, new Flag(FL_clear, world[to]->ID, 0, true), +1);
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
+#if 1
   auto *o = addObjective(time, endTime, new TM_Gravity2(world, to), OT_eq, NoArr, 3e1, k_order, +1);
-  o->prec(-1)=0.;
+  if(endTime>=0) o->prec(-1)=0.;
+#else
+  auto *o = addObjective(time, endTime, new TM_Physics(world, to), OT_eq, NoArr, 1e-1, k_order, +1);
+  if(endTime>=0) o->prec(-1)=0.;
+#endif
 //  addFlag(time, new Flag(FL_gravityAcc, world[to]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
 }
 
@@ -236,14 +249,16 @@ void KOMO::addSwitch_dynamicOn(double time, double endTime, const char *from, co
 //  addFlag(time, new Flag(FL_zeroAcc, world[to]->ID, 0, true), +1);
 }
 
-void KOMO::addContact(double startTime, double endTime, const char *from, const char* to, bool soft) {
-  addSwitch(startTime, true,
-                     new rai::KinematicSwitch((soft?rai::SW_addSoftContact:rai::SW_addContact),
-                                              rai::JT_none, from, to, world) );
+void KOMO::addContact(double startTime, double endTime, const char *from, const char* to) {
+  addSwitch(startTime, true, new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world) );
   if(endTime>0.){
-    addSwitch(endTime, false,
-                       new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world) );
+    addSwitch(endTime, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world) );
   }
+}
+
+void KOMO::addContact_Complementary(double startTime, double endTime, const char* from, const char* to)
+{
+  NIY;
 }
 
 Objective* KOMO::addObjective(double startTime, double endTime, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, double scale, const arr& target, int order){
@@ -833,7 +848,8 @@ void KOMO::setSkeleton(const Skeleton &S) {
     if(s.symbols(0)=="dynamicOn") { addSwitch_dynamicOn(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2));  continue;  }
     if(s.symbols(0)=="liftDownUp") {  setLiftDownUp(s.phase0, s.symbols(1));  continue;  }
 
-    if(s.symbols(0)=="contact") {   addContact(s.phase0, s.phase1, s.symbols(1), s.symbols(2), false);  continue;  }
+    if(s.symbols(0)=="contact") {   addContact(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
+    //if(s.symbols(0)=="contactComplementary") {   addContact_Complementary(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
 
 //    if(s.symbols(0)=="magicTouch") {
 //      core_setTouch(s.phase0, s.phase1, s.symbols(1), s.symbols(2));
