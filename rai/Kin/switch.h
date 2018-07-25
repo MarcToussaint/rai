@@ -14,7 +14,7 @@
 namespace rai {
 
 enum SwitchType {
-  none=-1,
+  SW_none=-1,
   deleteJoint=0,
   SW_effJoint,
   addJointAtFrom,
@@ -31,9 +31,16 @@ enum SwitchType {
   SW_addComplementaryContact,
 };
 
+enum SwitchInitializationType {
+  SWInit_zero=0,
+  SWInit_copy,
+  SWInit_random
+};
+
 struct KinematicSwitch {
   Enum<SwitchType> symbol;
   Enum<JointType> jointType;
+  Enum<SwitchInitializationType> init;
   int timeOfApplication;
   uint fromId, toId;
   rai::Transformation jA,jB;

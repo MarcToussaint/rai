@@ -39,31 +39,19 @@ template<> const char* rai::Enum<rai::SwitchType>::names []= {
   NULL
 };
 
-template<> const char* rai::Enum<rai::SwitchInitializationType>::names []= {
-  "zero",
-  "copy",
-  "random",
-  NULL
-};
-
 //===========================================================================
 //
 // Kinematic Switch
 //
 
 rai::KinematicSwitch::KinematicSwitch()
-  : symbol(SW_none), jointType(JT_none), init(SWInit_zero), timeOfApplication(-1), fromId(UINT_MAX), toId(UINT_MAX), jA(0), jB(0) {
+  : symbol(none), jointType(JT_none), timeOfApplication(-1), fromId(UINT_MAX), toId(UINT_MAX), jA(0), jB(0) {
 }
 
 rai::KinematicSwitch::KinematicSwitch(SwitchType op, JointType type, const char* ref1, const char* ref2, const rai::KinematicWorld& K, int _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo)
-  : symbol(op),
-    jointType(type),
-    init(SWInit_zero),
-    timeOfApplication(_timeOfApplication),
-    fromId(UINT_MAX), toId(UINT_MAX),
-    jA(0), jB(0) {
-  if(ref1) fromId = K.getFrameByName(ref1, true)->ID;
-  if(ref2) toId = K.getFrameByName(ref2, true)->ID;
+  : symbol(op), jointType(type), timeOfApplication(_timeOfApplication), fromId(UINT_MAX), toId(UINT_MAX), jA(0), jB(0) {
+  if(ref1) fromId = K.getFrameByName(ref1)->ID;
+  if(ref2) toId = K.getFrameByName(ref2)->ID;
   if(&jFrom) jA = jFrom;
   if(&jTo)   jB = jTo;
 }
@@ -77,57 +65,166 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
   Frame *from=NULL, *to=NULL;
   if(fromId!=UINT_MAX) from=K.frames(fromId);
   if(toId!=UINT_MAX) to=K.frames(toId);
-
-  if(symbol==SW_insertEffJoint || symbol==insertActuated) HALT("deprecated");
-
-  if(symbol==SW_effJoint || symbol==SW_actJoint) {
-
-    //first find link frame above 'to', and make it a root
-    rai::Frame *link = to->getUpwardLink();
-    if(link->parent) link->unLink();
-    K.reconfigureRootOfSubtree(to);
-
-    //create a new joint
-    to->linkFrom(from);
-    Joint *j = new Joint(*to);
-    j->type = jointType;
-
-    if(!jA.isZero()) j->frame.insertPreLink(jA);
-    if(!jB.isZero()) j->frame.insertPostLink(jB);
-
-    //set zeroVel flag
+  
+  if(symbol==deleteJoint) {
+    CHECK_EQ(jointType, JT_none, "");
+    
+#if 1
+    //first search for the joint below frame
+    Frame *f = to;
+    for(;;) {
+      if(!f->parent) break;
+      if(f->joint) break;
+      f = f->parent;
+    }
+    if(!f->joint) {
+      LOG(-1) <<"there were no deletable links below '" <<to->name <<"'! Deleted before?";
+    } else {
+      f->unLink();
+    }
+#else
+    //this deletes ALL links downward from to until a named or shape-attached one!
+    Frame *f = to;
+    uint i=0;
+    for(;;) {
+      if(!f->link) break;
+      Frame *from = f->link->from;
+      delete f->link;
+      i++;
+      if(from->name.N || from->shape || from->inertia) break;
+      f = from;
+    }
+    if(!i) {
+      LOG(-1) <<"there were no deletable links below '" <<to->name <<"'! Deleted before?";
+    }
+#endif
+    K.calc_q();
+    K.checkConsistency();
+    return;
+  }
+  
+  bool newVersion = true;
+  if(symbol==SW_effJoint || symbol==SW_actJoint || symbol==SW_insertEffJoint || symbol==insertActuated) {
+    //first find lowest frame below to
+    if(!newVersion) {
+      rai::Transformation Q = 0;
+#if 1
+      rai::Frame *link = to->getUpwardLink(Q);
+      if(link && link!=to) to = link;
+#else
+      while(to->parent) {
+        if(to->joint) break; //don't jump over joints
+        Q = to->Q * Q;
+        to = to->parent;
+      }
+#endif
+      if(!Q.isZero())
+        jA.appendTransformation(-Q);
+    }
+    
+    Joint *j = NULL;
+    if(symbol!=SW_insertEffJoint && symbol!=insertActuated) {
+      if(newVersion) {
+        rai::Frame *link = to->getUpwardLink();
+        if(link->parent) link->unLink();
+        K.reconfigureRootOfSubtree(to);
+      } else {
+        if(to->parent) to->unLink();
+      }
+      to->linkFrom(from);
+      j = new Joint(*to);
+    } else {
+      CHECK(!from, "from should not be specified");
+      CHECK(to->parent, "to needs to have a link already");
+      Frame *mid = to->insertPreLink(rai::Transformation(0));
+      j = new Joint(*mid);
+    }
+    if(!jA.isZero()) {
+      if(newVersion) {
+        j->frame.insertPreLink(jA);
+      } else { //in the old version: when not reconfiguring the grasped frame to root, you need to insert -Q AFTER the joint to transform back to the old link's root
+        Frame *mid = to->insertPreLink();
+        delete j;
+        j = new rai::Joint(*mid);
+        to->Q = jA;
+      }
+    }
+    if(!jB.isZero()) {
+      j->frame.insertPostLink(jB);
+    }
     if(symbol==SW_actJoint || symbol==insertActuated) {
       j->constrainToZeroVel=false;
+      j->frame.flags &= ~(1<<FL_zeroQVel);
     } else {
       j->constrainToZeroVel=true;
+      j->frame.flags |= (1<<FL_zeroQVel);
       j->H = 0.;
     }
-
-    //initialize to zero, copy, or random
-    if(init==SWInit_zero) { //initialize the joint with zero transform
-      j->frame.Q.setZero();
-    }else if(init==SWInit_copy) { //set Q to the current relative transform, modulo DOFs
+    j->type = jointType;
+    if(false) { //this is so annoying!
       j->frame.Q = j->frame.X / j->frame.parent->X; //that's important for the initialization of x during the very first komo.setupConfigurations !!
       arr q = j->calc_q_from_Q(j->frame.Q);
       j->frame.Q.setZero();
       j->calc_Q_from_q(q, 0);
-    } if(init==SWInit_random) { //random, modulo DOFs
-      j->frame.Q.setRandom();
-      arr q = j->calc_q_from_Q(j->frame.Q);
-      j->frame.Q.setZero();
-      j->calc_Q_from_q(q, 0);
+//      j->frame.Q.pos.setZero();
     }
-
-    K.reset_q();
+    K.calc_q();
+    K.calc_fwdPropagateFrames();
+    K.checkConsistency();
     return;
   }
   
   if(symbol==addSliderMechanism) {
-    HALT("I think it is better if there is fixed  slider mechanisms in the world, that may jump; no dynamic creation of bodies");
+//    HALT("I think it is better if there is fixed  slider mechanisms in the world, that may jump; no dynamic creation of bodies");
+    Frame *slider1 = new Frame(K); //{ type=ST_box size=[.2 .1 .05 0] color=[0 0 0] }
+    Frame *slider2 = new Frame(K); //{ type=ST_box size=[.2 .1 .05 0] color=[1 0 0] }
+    Shape *s1 = new Shape(*slider1); s1->type()=ST_box; s1->size()= {.2,.1,.05}; s1->mesh().C= {0.,0,0};
+    Shape *s2 = new Shape(*slider2); s2->type()=ST_box; s2->size()= {.2,.1,.05}; s2->mesh().C= {1.,0,0};
+    
+    //unlink to
+    if(to->parent) to->unLink();
+    
+    //placement of the slider1 on the table -> fixed
+    slider1->linkFrom(from);
+    Joint *j1 = new Joint(*slider1);
+    j1->type = JT_transXYPhi;
+    j1->constrainToZeroVel=true;
+    //the actual sliding translation -> articulated
+    slider2->linkFrom(slider1);
+    Joint *j2 = new Joint(*slider2);
+    j2->type = JT_transX;
+    j2->constrainToZeroVel=false;
+    //orientation of the object on the slider2 -> fixed
+    to->linkFrom(slider2);
+    Joint *j3 = new Joint(*to);
+    j3->type = JT_hingeZ;
+    j3->constrainToZeroVel=true;
+    
+    //    NIY;//j3->B = jB;
+    if(!jA.isZero()) {
+      slider1->insertPreLink(jA);
+    }
+    
+    K.calc_q();
+    K.calc_fwdPropagateFrames();
+    K.checkConsistency();
+    return;
   }
   
   if(symbol==addJointAtTo) {
-    HALT("deprecated");
+    if(to->parent) to->unLink();
+    to->linkFrom(from, true);
+//    Joint *j = new Joint(*to);
+//    j->constrainToZeroVel=true;
+//    j->type = jointType;
+
+//    jA.setDifference(from->X, to->X);
+//    j->frame.insertPreLink(jA);
+
+    K.calc_q();
+    K.calc_fwdPropagateFrames();
+    K.checkConsistency();
+    return;
   }
   
   if(symbol==SW_fixCurrent) {
@@ -136,7 +233,9 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
     if(to->parent) to->unLink();
     to->linkFrom(from, true);
     
-    K.reset_q();
+    K.calc_q();
+    K.calc_fwdPropagateFrames();
+    K.checkConsistency();
     return;
   }
   
