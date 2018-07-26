@@ -8,17 +8,32 @@
 
 #include "feature.h"
 
+//===========================================================================
+
 struct TM_AngVel : Feature {
   int i;               ///< which shapes does it refer to?
 
-  TM_AngVel(int iShape=-1)
-    : i(iShape) { order=1; }
+  TM_AngVel(int iShape=-1) : i(iShape) { order=1; }
 
-  TM_AngVel(const rai::KinematicWorld& K, const char* iShapeName=NULL)
-    : i(initIdArg(K,iShapeName)) { order=1; }
+  TM_AngVel(const rai::KinematicWorld& K, const char* iShapeName=NULL) : i(initIdArg(K,iShapeName)) { order=1; }
 
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G){ NIY; }
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
   virtual uint dim_phi(const rai::KinematicWorld& G);
-  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("Vel_" <<G.frames(i)->name); }
+  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("AngVel_" <<G.frames(i)->name); }
+};
+
+//===========================================================================
+
+struct TM_LinAngVel : Feature {
+  int i;               ///< which shapes does it refer to?
+
+  TM_LinAngVel(int iShape=-1) : i(iShape) { order=1; }
+
+  TM_LinAngVel(const rai::KinematicWorld& K, const char* iShapeName=NULL) : i(initIdArg(K,iShapeName)) { order=1; }
+
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G){ NIY; }
+  virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
+  virtual uint dim_phi(const rai::KinematicWorld& G);
+  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("LinAngVel_" <<G.frames(i)->name); }
 };

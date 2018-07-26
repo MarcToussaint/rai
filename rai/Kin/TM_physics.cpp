@@ -23,25 +23,28 @@ TM_Physics::TM_Physics(int iShape) : i(iShape) {
 }
 
 void TM_Physics::phi(arr &y, arr &J, const WorldL &Ktuple) {
-
   CHECK_EQ(order, 2, "");
-  
-  rai::KinematicWorld& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
-    
+
+  //this is the direct impuls exchange case, where NewtonEuler is switched off
+  if((Ktuple(-1)->frames(i)->flags & (1<<FL_impulseExchange))){
+    y.resize(6).setZero();
+    if(&J) J.resize(6, getKtupleDim(Ktuple).last()).setZero();
+    return;
+  }
+
+  //get linear and angular accelerations
   arr acc, Jacc, wcc, Jwcc;
-  arr acc_ref = {0.,0.,-gravity};
-
-
   TM_Default pos(TMT_posDiff, i);
   pos.order=2;
   pos.Feature::phi(acc, (&J?Jacc:NoArr), Ktuple);
+  acc(2) += gravity;
 
   TM_AngVel rot(i);
   rot.order=2;
   rot.phi(wcc, (&J?Jwcc:NoArr), Ktuple);
 
-  acc -= acc_ref;
 
+  rai::KinematicWorld& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
   rai::Frame *a = K.frames(i);
   for(rai::Contact *c:a->contacts){
     double sign = +1.;

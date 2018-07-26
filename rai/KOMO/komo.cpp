@@ -33,6 +33,7 @@
 #include <Kin/kin_physx.h>
 #include <Kin/TM_time.h>
 #include <Kin/TM_physics.h>
+#include <Kin/TM_angVel.h>
 
 #ifdef RAI_GL
 #  include <GL/gl.h>
@@ -209,6 +210,7 @@ void KOMO::addSwitch_stable(double time, double endTime, const char* from, const
   auto *o = addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1);
   o->prec(-1)=o->prec(-2)=0.;
 //  addFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
+//  addObjective(time,time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2);
 }
 
 void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, const char* to) {
@@ -220,20 +222,22 @@ void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, con
   auto *o = addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1);
   o->prec(-1)=o->prec(-2)=0.;
 //  addFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
+//  addObjective(time,time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2);
 }
 
 void KOMO::addSwitch_dynamic(double time, double endTime, const char* from, const char* to) {
   addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_trans3, from, to, world));
 //  addFlag(time, new Flag(FL_clear, world[to]->ID, 0, true), +1);
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
-#if 1
+#if 0
   auto *o = addObjective(time, endTime, new TM_Gravity2(world, to), OT_eq, NoArr, 3e1, k_order, +1);
-  if(endTime>=0) o->prec(-1)=0.;
+  if(endTime>=0) o->prec(-1)=o->prec(-2)=0.;
 #else
-  auto *o = addObjective(time, endTime, new TM_Physics(world, to), OT_eq, NoArr, 1e-1, k_order, +1);
-  if(endTime>=0) o->prec(-1)=0.;
+  auto *o = addObjective(time, endTime, new TM_Physics(world, to), OT_eq, NoArr, 3e1, k_order, +1);
+  if(endTime>=0) o->prec(-1)=o->prec(-2)=0.;
 #endif
 //  addFlag(time, new Flag(FL_gravityAcc, world[to]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
+//  addObjective(time,time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2);
 }
 
 void KOMO::addSwitch_dynamicOn(double time, double endTime, const char *from, const char* to) {
@@ -244,9 +248,10 @@ void KOMO::addSwitch_dynamicOn(double time, double endTime, const char *from, co
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true), +1);
   if(k_order>=2){
     auto *o = addObjective(time, endTime, new TM_ZeroAcc(world, to), OT_eq, NoArr, 3e1, k_order, +1);
-    o->prec(-1)=0.;
+    if(endTime>=0) o->prec(-1)=o->prec(-2)=0.;
   }
 //  addFlag(time, new Flag(FL_zeroAcc, world[to]->ID, 0, true), +1);
+//  addObjective(time,time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, 0);
 }
 
 void KOMO::addContact(double startTime, double endTime, const char *from, const char* to) {
@@ -285,6 +290,8 @@ void KOMO::setKS_slider(double time, double endTime, bool before, const char* ob
   o->prec(-1)=0.;
   o = addObjective(time, endTime, new TM_ZeroQVel(world, obj), OT_eq, NoArr, 3e1, 1, +1);
   o->prec(-1)=o->prec(-2)=0.;
+
+  //addObjective(time,time, new TM_LinAngVel(world, obj), OT_eq, NoArr, 1e2, 1);
 
 //  setKinematicSwitch(time, before, "sliderMechanism", table, obj, rel );
 

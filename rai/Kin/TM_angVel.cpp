@@ -1,4 +1,6 @@
 #include "TM_angVel.h"
+#include "TM_default.h"
+#include "flag.h"
 
 void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
   if(order==2){
@@ -54,3 +56,22 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
 }
 
 uint TM_AngVel::dim_phi(const rai::KinematicWorld &G){ return 3; }
+
+//===========================================================================
+
+void TM_LinAngVel::phi(arr& y, arr& J, const WorldL& Ktuple){
+  y.resize(6);
+  if(&J) J.resize(6, getKtupleDim(Ktuple).last()).setZero();
+
+  if(Ktuple.elem(-1)->frames(i)->flags & (1<<FL_impulseExchange)) return;
+
+  TM_Default lin(TMT_pos, i);
+  lin.order=order;
+  lin.Feature::phi(y({0,2})(), (&J?J({0,2})():NoArr), Ktuple);
+
+  TM_AngVel ang(i);
+  ang.order=order;
+  ang.phi(y({3,5})(), (&J?J({3,5})():NoArr), Ktuple);
+}
+
+uint TM_LinAngVel::dim_phi(const rai::KinematicWorld& G){ return 6; }

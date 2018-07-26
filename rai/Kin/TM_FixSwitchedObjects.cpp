@@ -16,14 +16,14 @@
 uint TM_FixSwichedObjects::dim_phi(const WorldL& G) {
   uintA switchedBodies = getSwitchedBodies(*G.elem(-2), *G.elem(-1));
 //  if(order==2) switchedBodies.setAppend( getSwitchedBodies(*G.elem(-3), *G.elem(-2)) );
-  return switchedBodies.N*7;
+  return switchedBodies.N*6;
 }
 
 void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& Ktuple) {
   //TODO: so far this only fixes switched objects to zero pose vel
   //better: constrain to zero relative velocity with BOTH, pre-attached and post-attached
   
-  uint M=7;
+  uint M=6;
   uintA switchedBodies = getSwitchedBodies(*Ktuple.elem(-2), *Ktuple.elem(-1));
 //  if(order==2) switchedBodies.setAppend( getSwitchedBodies(*G.elem(-3), *G.elem(-2)) );
   y.resize(M*switchedBodies.N).setZero();
@@ -81,10 +81,18 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& Ktuple) {
       quat.flipTargetSignOnNegScalarProduct = true;
       quat.order=2;
       quat.Feature::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), Ktuple);
-#else
+#elif 0
       TM_Default pose(TMT_pose, id, NoVector, b0Parent->ID);
       pose.order=2;
       pose.Feature::phi(y({M*i,M*i+6})(), (&J?J({M*i,M*i+6})():NoArr), Ktuple);
+#else
+      TM_Default pos(TMT_pos, id);
+      pos.order=2;
+      pos.Feature::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), Ktuple);
+
+      TM_AngVel rot(id);
+      rot.order=2;
+      rot.phi(y({M*i+3,M*i+5})(), (&J?J({M*i+3,M*i+5})():NoArr), Ktuple);
 #endif
     } else NIY;
   }
