@@ -23,7 +23,7 @@ struct Objective {
   
   void setCostSpecs(int fromStep, int toStep, const arr& _target= {}, double _prec=1.);
   void setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T,
-                    const arr& _target, double _prec, int deltaStep=0);
+                    const arr& _target, double _prec, int deltaFromStep=0, int deltaToStep=0);
   void setCostSpecsDense(intA _vars, const arr& _target, double _prec);
   bool isActive(uint t) { return (prec.N>t && prec(t)); }
   void write(std::ostream& os) const {

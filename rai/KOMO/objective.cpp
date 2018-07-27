@@ -25,7 +25,9 @@ void Objective::setCostSpecs(int fromStep, int toStep, const arr& _target, doubl
 #endif
 }
 
-void Objective::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T, const arr& _target, double _prec, int deltaStep) {
+void Objective::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T,
+                             const arr& _target, double _prec,
+                             int deltaFromStep, int deltaToStep) {
   if(stepsPerPhase<0) stepsPerPhase=T;
 //  if(conv_time2step(toTime, stepsPerPhase)>T-1){
 //    LOG(-1) <<"beyond the time!: endTime=" <<toTime <<" phases=" <<double(T)/stepsPerPhase;
@@ -36,8 +38,9 @@ void Objective::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, 
   if(tTo<0) tTo=0;
   if(tFrom>tTo && tFrom-tTo<=(int)map->order) tFrom=tTo;
   
-  if(deltaStep) { tFrom+=deltaStep; tTo+=deltaStep; }
-  
+  if(deltaFromStep) tFrom+=deltaFromStep;
+  if(deltaToStep) tTo+=deltaToStep;
+
   setCostSpecs(tFrom, tTo, _target, _prec);
 }
 

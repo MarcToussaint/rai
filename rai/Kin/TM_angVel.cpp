@@ -63,7 +63,13 @@ void TM_LinAngVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   y.resize(6);
   if(&J) J.resize(6, getKtupleDim(Ktuple).last()).setZero();
 
-  if(Ktuple.elem(-1)->frames(i)->flags & (1<<FL_impulseExchange)) return;
+  if(Ktuple.elem(-1)->frames(i)->flags & (1<<FL_impulseExchange)){
+    return;
+  }
+
+//  rai::Frame *b0 = Ktuple.elem(-2)->frames(i);    CHECK(&b0->K==Ktuple.elem(-2),"");
+//  rai::Frame *b1 = Ktuple.elem(-1)->frames(i);    CHECK(&b1->K==Ktuple.elem(-1),"");
+//  cout <<"SWITCH " <<b0->parent->name <<'-' <<b0->name <<" => " <<b1->parent->name <<'-' <<b1->name <<endl;
 
   TM_Default lin(TMT_pos, i);
   lin.order=order;

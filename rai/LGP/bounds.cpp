@@ -56,7 +56,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const ra
       if(pathOrder==1) komo.setSquaredQVelocities();
       else komo.setSquaredQAccelerations();
 //      komo.setFixEffectiveJoints(0., -1., 1e2);
-      komo.setFixSwitchedObjects(0., -1., 1e2);
+//      komo.setFixSwitchedObjects(0., -1., 1e2);
       komo.setSquaredQuaternionNorms();
 
       komo.setSkeleton(S);

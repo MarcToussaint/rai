@@ -355,6 +355,7 @@ uintA getSwitchedBodies(const rai::KinematicWorld& G0, const rai::KinematicWorld
     rai::Frame *b0 = G0.frames(id);
     rai::Joint *j0 = b0->joint;
     rai::Joint *j1 = b1->joint;
+    if(!j1) continue; //don't report if j1 did not become an effective DOF
     if(!j0 != !j1) { switchedBodies.append(id); continue; }
     if(j0) {
       if(j0->type!=j1->type

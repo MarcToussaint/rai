@@ -92,7 +92,7 @@ struct KOMO : NonCopyable {
    * they allow the user to add a cost task, or a kinematic switch in the problem definition
    * Typically, the user does not call them directly, but uses the many methods below
    * Think of all of the below as examples for how to set arbirary tasks/switches yourself */
-  struct Objective* addObjective(double startTime, double endTime, Feature* map, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e1, int order=-1, int deltaStep=0);
+  struct Objective* addObjective(double startTime, double endTime, Feature* map, ObjectiveType type=OT_sos, const arr& target=NoArr, double scale=1e1, int order=-1, int deltaFromStep=0, int deltaToStep=0);
   struct Objective* addObjective(double startTime, double endTime, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, double scale=1e1, const arr& target=NoArr, int order=-1);
   void addSwitch(double time, bool before, rai::KinematicSwitch* sw);
   void addSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const rai::Transformation& jFrom=NoTransformation);
@@ -134,6 +134,8 @@ struct KOMO : NonCopyable {
   void addSwitch_stableOn(double time, double endTime, const char* from, const char* to);
   void addSwitch_dynamic(double time, double endTime, const char *from, const char *to);
   void addSwitch_dynamicOn(double time, double endTime, const char *from, const char* to);
+  void addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost);
+
   
   //-- tasks - logic level (used within LGP)
   void setSkeleton(const Skeleton& S);

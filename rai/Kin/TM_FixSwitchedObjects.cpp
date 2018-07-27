@@ -38,16 +38,19 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& Ktuple) {
     rai::Frame *b1 = Ktuple.elem(-1)->frames(id);    CHECK(&b1->K==Ktuple.elem(-1),"");
     CHECK_EQ(b0->ID, b1->ID, "");
     CHECK_EQ(b0->name, b1->name, "");
-    
+//    cout <<"SWITCH " <<b0->parent->name <<'-' <<b0->name <<" => " <<b1->parent->name <<'-' <<b1->name <<endl;
+
     if(b0->name.startsWith("slider")) continue; //warning: this introduces zeros in y and J -- but should be ok
     
     if(b1->flags && (b1->flags & (1<<FL_impulseExchange))) continue;
 
-    rai::Frame *b0Parent = b0->getUpwardLink();
-    if(b0Parent->joint && b0Parent->joint->type!=rai::JT_rigid && !b0Parent->joint->constrainToZeroVel) continue;
+    rai::Frame *b0Link = b0->getUpwardLink();
+    if(b0Link->joint && b0Link->joint->type!=rai::JT_rigid && !b0Link->joint->constrainToZeroVel){
+      continue;
+    }
 
-    b0Parent = b0Parent->parent;
-    CHECK(b0Parent,"");
+    b0Link = b0Link->parent;
+    CHECK(b0Link,"");
 
 //    if(order==2){
 //      rai::Frame *b2 = G.elem(-1)->frames(id);
@@ -66,7 +69,7 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& Ktuple) {
       quat.order=1;
       quat.Feature::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), Ktuple);
 #else
-      TM_Default pose(TMT_pose, id, NoVector, b0Parent->ID);
+      TM_Default pose(TMT_pose, id, NoVector, b0Link->ID);
       pose.order=1;
       pose.Feature::phi(y({M*i,M*i+6})(), (&J?J({M*i,M*i+6})():NoArr), Ktuple);
 #endif

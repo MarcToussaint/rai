@@ -19,13 +19,6 @@
 
 uint displaySize=350;
 
-void _system(const char* cmd) {
-  cout <<"SYSTEM CMD: " <<cmd <<endl;
-  int r = system(cmd);
-  rai::wait(.1);
-  if(r) HALT("system return error " <<r);
-}
-
 bool sortComp(const MNode* a, const MNode* b) {
   if(!a->isInfeasible && b->isInfeasible) return true;
   if(a->isInfeasible && !b->isInfeasible) return false;
@@ -110,8 +103,8 @@ OptLGP::OptLGP()
       solutions("OptLGPsolutions"){
     dataPath <<"z." <<rai::date2() <<"/";
     dataPath = rai::getParameter<rai::String>("LGP_dataPath", dataPath);
-    _system(STRING("mkdir -p " <<dataPath));
-    _system(STRING("rm -Rf " <<dataPath <<"vid  &&  rm -f " <<dataPath <<"*"));
+    rai::system(STRING("mkdir -p " <<dataPath));
+    rai::system(STRING("rm -Rf " <<dataPath <<"vid  &&  rm -f " <<dataPath <<"*"));
 
     OptLGPDataPath = dataPath;
     if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
@@ -147,7 +140,7 @@ void OptLGP::initDisplay() {
     views(2) = make_shared<KinPathViewer>("sequence", 1.2, -1);
     views(3) = make_shared<KinPathViewer>("path", .05, -2);
     if(rai::getParameter<bool>("LGP/displayTree", 1)) {
-      _system("evince z.pdf &");
+      rai::system("evince z.pdf &");
       displayTree = true;
     } else {
       displayTree = false;
@@ -213,7 +206,7 @@ void OptLGP::updateDisplay() {
     
     Graph dot=root->getGraph(true);
     dot.writeDot(FILE("z.dot"));
-    _system("dot -Tpdf z.dot > z.pdf");
+    rai::system("dot -Tpdf z.dot > z.pdf");
   }
 }
 
@@ -322,8 +315,8 @@ void OptLGP::optFixedSequence(const rai::String& seq, int specificLevel, bool co
 void OptLGP::optMultiple(const StringA& seqs) {
   for(const rai::String& seq:seqs) optFixedSequence(seq);
   
-  _system(STRING("mkdir -p " <<OptLGPDataPath <<"vid"));
-  _system(STRING("rm -f " <<OptLGPDataPath <<"vid/*.ppm"));
+  rai::system(STRING("mkdir -p " <<OptLGPDataPath <<"vid"));
+  rai::system(STRING("rm -f " <<OptLGPDataPath <<"vid/*.ppm"));
   dth->resetSteppings();
   dth->saveVideo = true;
   rai::wait(20.);
@@ -581,8 +574,8 @@ void OptLGP::run(uint steps) {
   //this generates the movie!
   if(verbose>2) {
 //    renderToVideo();
-    _system(STRING("mkdir -p " <<OptLGPDataPath <<"vid"));
-    _system(STRING("rm -f " <<OptLGPDataPath <<"vid/*.ppm"));
+    rai::system(STRING("mkdir -p " <<OptLGPDataPath <<"vid"));
+    rai::system(STRING("rm -f " <<OptLGPDataPath <<"vid/*.ppm"));
     dth->resetSteppings();
     dth->saveVideo = true;
     rai::wait(20.);

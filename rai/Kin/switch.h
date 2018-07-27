@@ -47,7 +47,9 @@ struct KinematicSwitch {
   KinematicSwitch();
   KinematicSwitch(SwitchType op, JointType type,
                   const char* ref1, const char* ref2,
-                  const rai::KinematicWorld& K, int _timeOfApplication=0,
+                  const rai::KinematicWorld& K,
+                  SwitchInitializationType _init=SWInit_zero,
+                  int _timeOfApplication=0,
                   const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
   void setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T);
   void apply(KinematicWorld& K);

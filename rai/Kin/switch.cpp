@@ -55,10 +55,10 @@ rai::KinematicSwitch::KinematicSwitch()
   : symbol(SW_none), jointType(JT_none), init(SWInit_zero), timeOfApplication(-1), fromId(UINT_MAX), toId(UINT_MAX), jA(0), jB(0) {
 }
 
-rai::KinematicSwitch::KinematicSwitch(SwitchType op, JointType type, const char* ref1, const char* ref2, const rai::KinematicWorld& K, int _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo)
-  : symbol(op),
-    jointType(type),
-    init(SWInit_zero),
+rai::KinematicSwitch::KinematicSwitch(SwitchType _symbol, JointType _jointType, const char* ref1, const char* ref2, const rai::KinematicWorld& K, SwitchInitializationType _init, int _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo)
+  : symbol(_symbol),
+    jointType(_jointType),
+    init(_init),
     timeOfApplication(_timeOfApplication),
     fromId(UINT_MAX), toId(UINT_MAX),
     jA(0), jB(0) {
@@ -108,6 +108,7 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
       j->frame.Q.setZero();
     }else if(init==SWInit_copy) { //set Q to the current relative transform, modulo DOFs
       j->frame.Q = j->frame.X / j->frame.parent->X; //that's important for the initialization of x during the very first komo.setupConfigurations !!
+      //cout <<j->frame.Q <<' ' <<j->frame.Q.rot.normalization() <<endl;
       arr q = j->calc_q_from_Q(j->frame.Q);
       j->frame.Q.setZero();
       j->calc_Q_from_q(q, 0);

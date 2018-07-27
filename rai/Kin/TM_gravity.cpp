@@ -275,7 +275,7 @@ void TM_ZeroAcc::phi(arr& y, arr& J, const WorldL& Ktuple){
 
 void TM_ZeroQVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   TM_qItself q({(uint)i}, false);
-  q.order=1;
+  q.order=order;
   q.Feature::phi(y, J, Ktuple);
 }
 

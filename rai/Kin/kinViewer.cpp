@@ -163,7 +163,8 @@ void KinPathViewer::step() {
 void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix, int w, int h, rai::Camera *camera) {
   rai::KinematicWorld copy;
   copy.orsDrawMarkers=false;
-  rai::system(STRING("rm " <<filePrefix <<"*.ppm"));
+  rai::system(STRING("mkdir -p " <<filePrefix));
+  rai::system(STRING("rm -f " <<filePrefix <<"*.ppm"));
   for(uint t=0; t<cs.N; t++) {
     copy.copy(*cs(t), true);
 #if 0 //render on screen
