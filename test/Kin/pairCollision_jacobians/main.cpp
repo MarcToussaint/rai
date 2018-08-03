@@ -51,13 +51,8 @@ void TEST(GJK_Jacobians) {
     s1.sscCore().setRandom();      s2.sscCore().setRandom();
     s1.mesh().C = {.5,.8,.5,.4};   s2.mesh().C = {.5,.5,.8,.4};
     s1.size(3) = rnd.uni(.01, .3); s2.size(3) = rnd.uni(.01, .3);
-    if(rnd.uni()<1.2){
-//      s1.sscCore().setBox();
-//      s1.sscCore().scale(.001);
-      s1.sscCore().setDot();
-    }
-
-    if(rnd.uni()<.2)  s2.sscCore().setDot();
+    if(rnd.uni()<.4) s1.sscCore().setDot();
+    if(rnd.uni()<.4) s2.sscCore().setDot();
 
     //randomize poses
     rndGauss(q, .7);
