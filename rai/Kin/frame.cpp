@@ -286,7 +286,7 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
         Q.rot.set(q.p+_qIndex);
         {
           double n=Q.rot.normalization();
-          if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+          if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
         }
         Q.rot.normalize();
         Q.rot.isZero=false; //WHY? (gradient check fails without!)
@@ -297,7 +297,7 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
         Q.rot.set(q.p+_qIndex+3);
         {
           double n=Q.rot.normalization();
-          if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+          if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
         }
         Q.rot.normalize();
         Q.rot.isZero=false;
@@ -311,7 +311,7 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
         Q.rot.set(q.p+_qIndex+1);
         {
           double n=Q.rot.normalization();
-          if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+          if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
         }
         Q.rot.normalize();
         Q.rot.isZero=false;

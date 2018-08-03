@@ -44,6 +44,9 @@ struct PairCollision : GLDrawer {
   void kinVector(arr& y, arr& J,
                  const arr& Jp1, const arr& Jp2,
                  const arr& Jx1, const arr& Jx2);
+  void kinCenter(arr& y, arr& J,
+                 const arr& Jp1, const arr& Jp2,
+                 const arr& Jx1, const arr& Jx2);
   void kinNormal(arr& y, arr& J,
                  const arr& Jp1, const arr& Jp2,
                  const arr& Jx1, const arr& Jx2);

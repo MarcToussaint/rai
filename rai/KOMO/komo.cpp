@@ -227,13 +227,13 @@ void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, con
 }
 
 void KOMO::addSwitch_dynamic(double time, double endTime, const char* from, const char* to) {
-  addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_trans3, from, to, world, SWInit_copy));
+  addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_free, from, to, world, SWInit_copy));
 //  addFlag(time, new Flag(FL_clear, world[to]->ID, 0, true), +1);
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
-#if 1
+#if 0
   addObjective(time, endTime, new TM_Gravity2(world, to), OT_eq, NoArr, 3e1, k_order, +1, -1);
 #else
-  addObjective(time, endTime, new TM_Physics(world, to), OT_eq, NoArr, 1e-1, k_order, +1, -1);
+  addObjective(time, endTime, new TM_NewtonEuler(world, to), OT_eq, NoArr, 1e-1, k_order, +1, -1);
 #endif
 //  addFlag(time, new Flag(FL_gravityAcc, world[to]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
   addObjective(time,time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2);

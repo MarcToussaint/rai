@@ -17,12 +17,12 @@
 void shapeFunction(double &x, double &dx);
 
 
-TM_Physics::TM_Physics(int iShape) : i(iShape) {
+TM_NewtonEuler::TM_NewtonEuler(int iShape) : i(iShape) {
   order=2;
   gravity = rai::getParameter<double>("TM_Physics/gravity", 9.81);
 }
 
-void TM_Physics::phi(arr &y, arr &J, const WorldL &Ktuple) {
+void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   CHECK_EQ(order, 2, "");
 
   //this is the direct impuls exchange case, where NewtonEuler is switched off
@@ -55,16 +55,22 @@ void TM_Physics::phi(arr &y, arr &J, const WorldL &Ktuple) {
     K.kinematicsForce(f, Jf, c);
     if(&J) expandJacobian(Jf, Ktuple, -2);
 
-//        arr cp, Jcp;
-//        K.kinematicsVec(cp, Jcp, a, c->b_rel); //contact point VECTOR only
-//        expandJacobian(Jcp, Ktuple, -2);
+//    arr d, Jd;
+//    TM_PairCollision dist(con->a.ID, con->b.ID, TM_PairCollision::_normal, false);
+//    dist.phi(d, (&J?Jd:NoArr), K);
+//    con->y = d.scalar();
+//    con->setFromPairCollision(*dist.coll);
+
+    arr cp, Jcp;
+    K.kinematicsVec(cp, Jcp, a, c->b_rel); //contact point VECTOR only
+    if(&J) expandJacobian(Jcp, Ktuple, -2);
 
     acc += sign * 20. * c->force;
 //        wcc -= .1 * crossProduct((a->X.rot*c->b_rel).getArr(), c->force);
-//        wcc -= 2. * crossProduct(cp, c->force);
+    wcc -= sign * 2. * crossProduct(cp, c->force);
     if(&J){
       Jacc += sign * 20. * Jf;
-      //          Jwcc -= 2. * (skew(cp) * Jf - skew(c->force) * Jcp);
+      Jwcc -= sign * 2. * (skew(cp) * Jf - skew(c->force) * Jcp);
     }
   }
         

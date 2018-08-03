@@ -94,7 +94,7 @@ Feature* symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::K
 
   if(feat==FS_qItself) { return new TM_qItself(); }
 
-  if(feat==FS_physics) { return new TM_Physics(world, frames(0)); }
+  if(feat==FS_physics) { return new TM_NewtonEuler(world, frames(0)); }
   if(feat==FS_contactConstraints) { return new TM_ContactConstraints(); }
   if(feat==FS_energy) { return new TM_Energy(); }
 

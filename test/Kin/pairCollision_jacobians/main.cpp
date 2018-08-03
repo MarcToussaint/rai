@@ -19,10 +19,10 @@ void TEST(GJK_Jacobians) {
   rai::Frame base(K), b1(K), B1(K), b2(K), B2(K);
   rai::Joint j1(base, b1), J1(b1, B1), j2(B1, b2), J2(b2, B2);
   rai::Shape s1(B1), s2(B2);
-  j1.type = j2.type = rai::JT_rigid; //trans3;
+  j1.type = j2.type = rai::JT_free; //trans3;
   j1.frame.insertPreLink(rai::Transformation(0))->Q.addRelativeTranslation(1,1,1);
   j2.frame.insertPreLink(rai::Transformation(0))->Q.addRelativeTranslation(-1,-1,1);
-  J1.type = J2.type = rai::JT_free; //quatBall;
+  J1.type = J2.type = rai::JT_free;
   s1.type() = s2.type() = rai::ST_ssCvx; //ST_mesh;
   s1.size(3) = s2.size(3) = .2;
   s1.sscCore().setRandom();     s2.sscCore().setRandom();
@@ -43,21 +43,24 @@ void TEST(GJK_Jacobians) {
   TM_PairCollision dist(K, "s1", "s2", TM_PairCollision::_negScalar);
   TM_PairCollision distVec(K, "s1", "s2", TM_PairCollision::_vector);
   TM_PairCollision distNorm(K, "s1", "s2", TM_PairCollision::_normal);
+  TM_PairCollision distCenter(K, "s1", "s2", TM_PairCollision::_center);
 
-  for(uint k=0;k<100;k++){
+  for(uint k=0;k<1000;k++){
     //randomize shapes
     s1.mesh().clear();             s2.mesh().clear();
     s1.sscCore().setRandom();      s2.sscCore().setRandom();
     s1.mesh().C = {.5,.8,.5,.4};   s2.mesh().C = {.5,.5,.8,.4};
     s1.size(3) = rnd.uni(.01, .3); s2.size(3) = rnd.uni(.01, .3);
-    if(rnd.uni()<.2){
-      s1.sscCore().setBox();
-      s1.sscCore().scale(.001);
-      //s1.sscCore().setDot();
+    if(rnd.uni()<1.2){
+//      s1.sscCore().setBox();
+//      s1.sscCore().scale(.001);
+      s1.sscCore().setDot();
     }
 
+    if(rnd.uni()<.2)  s2.sscCore().setDot();
+
     //randomize poses
-    rndGauss(q, 1.);
+    rndGauss(q, .7);
     K.setJointState(q);
 
     bool succ = true;
@@ -74,6 +77,10 @@ void TEST(GJK_Jacobians) {
     distNorm.phi(y3, NoArr, K);
     cout <<k <<" norm  ";
     succ &= checkJacobian(distNorm.vf(K), q, 1e-5);
+
+    distCenter.phi(y3, NoArr, K);
+    cout <<k <<" center  ";
+    succ &= checkJacobian(distCenter.vf(K), q, 1e-5);
 
     PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(3), s2.size(3));
 

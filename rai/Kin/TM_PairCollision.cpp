@@ -80,6 +80,17 @@ void TM_PairCollision::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
     }
     coll->kinNormal(y, J, Jp1, Jp2, Jx1, Jx2);
   }
+
+  if(type==_center) {
+    arr Jp1, Jp2, Jx1, Jx2;
+    if(&J) {
+      K.jacobianPos(Jp1, &s1->frame, coll->p1);
+      K.jacobianPos(Jp2, &s2->frame, coll->p2);
+      K.axesMatrix(Jx1, &s1->frame);
+      K.axesMatrix(Jx2, &s2->frame);
+    }
+    coll->kinCenter(y, J, Jp1, Jp2, Jx1, Jx2);
+  }
 }
 
 rai::String TM_PairCollision::shortTag(const rai::KinematicWorld &G) {
