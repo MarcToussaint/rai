@@ -38,20 +38,34 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
   Ktuple(-2)->kinematicsQuat(a, Ja, f0);
   Ktuple(-1)->kinematicsQuat(b, Jb, f1);
   arr J0, J1;
-  quat_diffVector(y, J0, J1, a, b);
-//  y /= tau;
-  checkNan(y);
+//  quat_diffVector(y, J0, J1, a, b);
+  arr dq = b-a;
+  a(0) *=-1.;
+  quat_concat(y, J0, J1, dq, a);
+  for(uint i=0;i<J1.d0;i++) J1(i,0) *= -1.;
+  y.remove(0);
+  J0.delRows(0);
+  J1.delRows(0);
+
+  //  y /= tau;
+    checkNan(y);
+
+  double s=1e2;
+  y *= s;
 
   if(&J){
     if(Ktuple.N==3){
-      J = catCol(zeros(y.N, Ktuple(-3)->q.N), J0 * Ja, J1 * Jb);
+//      J = catCol(zeros(y.N, Ktuple(-3)->q.N), J0 * Ja, J1 * Jb);
+      J = catCol(zeros(y.N, Ktuple(-3)->q.N), (J1-J0)*Ja, J0*Jb);
     }else{
-      J = catCol(J0 * Ja, J1 * Jb);
+//      J = catCol(J0 * Ja, J1 * Jb);
+      J = catCol((J1-J0)*Ja, J0*Jb);
     }
 //    J /= tau;
 //    J = Jq1;
 //    expandJacobian(J, Ktuple, 2);
     checkNan(J);
+    J *= s;
   }
 }
 

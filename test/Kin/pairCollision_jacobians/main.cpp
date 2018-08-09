@@ -162,13 +162,13 @@ void TEST(GJK_Jacobians2) {
     y_last = y(0);
     K.watch(false, STRING("t=" <<t <<"  movement along negative contact gradient"));
 
-    q -= 1e-3*J + 1e-2*(~y2*J2);
+    q -= 1e-2*J + 1e-2*(~y2*J2);
 
     if(y(0)<1e-10) break;
 
   }
 
-//  K.gl().watch();
+  K.gl().watch();
 }
 
 //===========================================================================
@@ -194,8 +194,7 @@ void TEST(GJK_Jacobians3) {
   s2.size() = {.2, .2, .2, .01 };
   s1.getGeom().createMeshes();
   s1.mesh().C = {.5,.8,.5,.9};
-  s2.mesh().C = {.5,.5,.8,.9
-};
+  s2.mesh().C = {.5,.5,.8,.9};
 
   K.calc_activeSets();
   K.calc_fwdPropagateFrames();
@@ -209,13 +208,12 @@ void TEST(GJK_Jacobians3) {
 
   arr q = K.getJointState();
 
-  double y_last=0.;
   for(uint t=0;t<100;t++){
     K.setJointState(q);
     K.stepSwift();
 //    K.reportProxies(cout, -1., false);
 
-    PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(3), s2.size(3));
+//    PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(3), s2.size(3));
 
     TM_PairCollision gjk(1, 2, TM_PairCollision::_negScalar);
     checkJacobian(gjk.vf(K), q, 1e-4);
@@ -227,8 +225,7 @@ void TEST(GJK_Jacobians3) {
     arr y2, J2;
     qn.phi(y2, J2, K);
 
-    cout <<"contact meassure = " <</*y_last - */y(0) <<endl;
-    y_last = y(0);
+    cout <<"contact meassure = " <<y(0) <<endl;
     K.watch(false, STRING("t=" <<t <<"  movement along negative contact gradient"));
 
     q -= 1e-2*J + 1e-2*(~y2*J2);
@@ -244,9 +241,9 @@ int MAIN(int argc, char** argv){
 
   rnd.clockSeed();
 
-  testGJK_Jacobians();
+//  testGJK_Jacobians();
 //  testGJK_Jacobians2();
-//  testGJK_Jacobians3();
+  testGJK_Jacobians3();
 
   return 0;
 }

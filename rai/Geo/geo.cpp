@@ -1161,7 +1161,7 @@ void quat_getVec(arr& y, arr& J, const arr& A){
     return;
   }
 
-  if(a.w>=0.){
+  if(false && a.w>=0.){
     phi=acos(a.w);
     sinphi = sin(phi);
     s=2.*phi/sinphi;
@@ -1195,10 +1195,10 @@ void quat_getVec(arr& y, arr& J, const arr& A){
 
 void quat_diffVector(arr& y, arr& Ja, arr& Jb, const arr& a, const arr& b){
   arr ab, Jca, Jcb;
-  arr ainv = a;
-  if(a(0)!=1.)  ainv(0) *= -1.;
-  quat_concat(ab, Jca, Jcb, ainv, b);
-  if(a(0)!=1.)  for(uint i=0;i<Jca.d0;i++) Jca(i,0) *= -1.;
+  arr binv = b;
+  binv(0) *= -1.;
+  quat_concat(ab, Jca, Jcb, a, binv);
+  for(uint i=0;i<Jcb.d0;i++) Jcb(i,0) *= -1.;
 
   arr Jvec;
   quat_getVec(y, Jvec, ab);

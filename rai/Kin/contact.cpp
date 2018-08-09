@@ -65,13 +65,14 @@ PairCollision *rai::Contact::coll(){
 }
 
 void rai::Contact::setFromPairCollision(PairCollision &col){
-  a_rel = a.X / rai::Vector(col.p1);
-  b_rel = b.X / rai::Vector(col.p2);
+  a_rel = a.X / rai::Vector(col.p1 - col.rad1 * col.normal);
+  b_rel = b.X / rai::Vector(col.p2 + col.rad2 * col.normal);
   a_norm = a.X.rot / rai::Vector(-col.normal);
   b_norm = b.X.rot / rai::Vector(col.normal);
-  a_type = b_type=1;
-  a_rad = a.shape->size(3);
-  b_rad = b.shape->size(3);
+  a_type = col.simplex1.d0;
+  b_type = col.simplex2.d0;
+  a_rad = col.rad1; //a.shape->size(3);
+  b_rad = col.rad2; //b.shape->size(3);
 }
 
 double rai::Contact::getDistance() const {

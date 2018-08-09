@@ -168,11 +168,13 @@ extern bool useLapack;
 }
 
 void normalizeWithJac(arr& y, arr& J) {
-  double l2 = sumOfSqr(y);
-  double l = sqrt(l2);
+  double l = length(y);
   CHECK(l>1e-10, "can't normalize");
-  if(J.N) J = (J - (y^y)/l2*J)/l;
-  y = y/l;
+  y /= l;
+  if(&J && J.N){
+    J -= y*(~y*J); //same as (y^y)*J;
+    J /= l;
+  }
 }
 
 //===========================================================================

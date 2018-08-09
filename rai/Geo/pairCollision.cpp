@@ -53,7 +53,7 @@ void PairCollision::write(std::ostream &os) const {
   }
   os <<"  closest points: " <<p1 <<"  " <<p2 <<endl;
   os <<"  simplex #: " <<simplex1.d0 <<"  " <<simplex2.d0 <<endl;
-  if(eig1.N || eig2.N) os <<"  EIG #: " <<eig1.d0<<'-' <<eig2.d0 <<endl;
+//  if(eig1.N || eig2.N) os <<"  EIG #: " <<eig1.d0<<'-' <<eig2.d0 <<endl;
 }
 
 void support_mesh(const void *_obj, const ccd_vec3_t *_dir, ccd_vec3_t *v) {
@@ -196,37 +196,26 @@ void PairCollision::glDraw(OpenGL &) {
   if(rad2>0.) P2 += rad2*normal;
   
   glColor(0., 1., 0., 1.);
-  glDrawDiamond(P1(0), P1(1), P1(2), .01, .01, .01);
+  glDrawDiamond(P1(0), P1(1), P1(2), .005, .005, .005);
   for(uint i=0; i<simplex1.d0; i++) simplex1[i] -= rad1*normal;
   glDrawPolygon(simplex1);
   for(uint i=0;i<simplex1.d0;i++) simplex1[i] += rad1*normal;
 
-  //  arr v;
-//    v = simplex1[i];
-//    if(rad1>0.) v -= rad1*normal;
-//    glDrawDiamond(v(0), v(1), v(2), .02, .02, .02);
-//  }
-
   glColor(0., 0., 1., 1.);
-  glDrawDiamond(P2(0), P2(1), P2(2), .01, .01, .01);
+  glDrawDiamond(P2(0), P2(1), P2(2), .005, .005, .005);
   for(uint i=0; i<simplex2.d0; i++) simplex2[i] += rad2*normal;
   glDrawPolygon(simplex2);
   for(uint i=0;i<simplex2.d0;i++) simplex2[i] -= rad2*normal;
 
-//  for(uint i=0;i<simplex2.d0;i++){
-//    v = simplex2[i];
-//    if(rad2>0.) v += rad2*normal;
-//    glDrawDiamond(v(0), v(1), v(2), .02, .02, .02);
-//  }
-
   glColor(1., 0., 0., 1.);
-  glLineWidth(5.f);
-  glDrawProxy(P1, P2, .05);
+  glLineWidth(2.f);
+  glDrawProxy(P1, P2, .02);
   glLineWidth(1.f);
   glLoadIdentity();
   
   if(poly.N) {
-    glColor(0., 0., 1., 1.);
+    glColor(0., 1., 1., 1.);
+    glLineWidth(1.f);
     glDrawPolygon(poly);
     uint n=poly.d0;
     for(uint i=0; i<n; i++) {
@@ -431,70 +420,43 @@ void PairCollision::nearSupportAnalysis(double eps) {
   rai::Mesh M1(*mesh1); t1->applyOnPointArray(M1.V);
   rai::Mesh M2(*mesh2); t2->applyOnPointArray(M2.V);
   
+  //get the set of vertices that are maximal/minimal in normal direction
+  //(these might be more than the simplex: esp 4 points for box)
   uintA pts1, pts2;
   M1.supportMargin(pts1, -normal, eps);
   M2.supportMargin(pts2, normal, eps);
-  //    cout <<"margin analysis: #1=" <<pts1.N <<"  #2=" <<pts2.N <<endl;
-  
-  simplex1.resize(0,3);
-  for(uint i:pts1) simplex1.append(M1.V[i]);
-  dSimplex1.resize(simplex1.d0);
-  for(uint i=0; i<simplex1.d0; i++) {
-    dSimplex1(i) = scalarProduct(simplex1[i]-p2, normal);
-  }
-//  pullPointsIntoHull(simplex1, M2.V);
 
-  simplex2.resize(0,3);
-  for(uint i:pts2) simplex2.append(M2.V[i]);
-  dSimplex2.resize(simplex2.d0);
-  for(uint i=0; i<simplex2.d0; i++) {
-    dSimplex2(i) = -scalarProduct(simplex2[i]-p1, normal);
-  }
-//  pullPointsIntoHull(simplex2, M1.V);
-//  pullPointsIntoHull(simplex2, M2.V);
+  //collect these points in S1 and S2; accounts for radius
+  arr S1, S2;
+  for(uint i:pts1) S1.append(M1.V[i] - rad1*normal);
+  for(uint i:pts2) S2.append(M2.V[i] + rad2*normal);
+  S1.reshape(pts1.N, 3);
+  S2.reshape(pts2.N, 3);
 
-  m1 = mean(simplex1);
-  m2 = mean(simplex2);
+  //centers
+  m1 = mean(S1);
+  m2 = mean(S2);
+  arr cen = .5*(m1 + m2);
   
-#if 1
-  //first get projection
+  //get projection onto the normal plane
   rai::Quaternion R;
   R.setDiff(normal, Vector_z);
   arr P = R.getArr();
   P.delRows(2);
-  
-  arr C = convconv_intersect(simplex1*~P, simplex2*~P);
-//  simplex1 = simplex1*~P*P;
-//  simplex2 = simplex2*~P*P;
 
-  simplex1 = simplex2 = C*P;
-  for(uint i=0; i<simplex1.d0; i++) simplex1[i] += p1 - ~P*P*p1;
-  for(uint i=0; i<simplex2.d0; i++) simplex2[i] += p2 - ~P*P*p2;
-#endif
-  
-  //eigen value analysis
-  //arr p = .5*(m1+m2);
-  
-#if 0
-  arr var1 = covar(simplex1);
-  arr var2 = covar(simplex2);
-  arr sig1, sig2, vec1, vec2;
-  lapack_EigenDecomp(var1, sig1, vec1);
-  lapack_EigenDecomp(var2, sig2, vec2);
-  
-  eig1.resize(0,3);
-  eig2.resize(0,3);
-  for(uint i=0; i<3; i++) {
-    if(sig1(i)>1e-8) eig1.append(sqrt(sig1(i)) * vec1[i]);
-    if(sig2(i)>1e-8) eig2.append(sqrt(sig2(i)) * vec2[i]);
-  }
-#endif
-}
+  //compute the convex intersection polygon of projected points, and unproject back
+  poly = convconv_intersect(S1*~P, S2*~P);
+  poly = poly*P;
+  for(uint i=0; i<poly.d0; i++) poly[i] += cen - ~P*P*cen;
 
-void PairCollision::computeSupportPolygon() {
-  poly = simplex1 + simplex2;
-  poly *= .5;
-  
+//  simplex1 = simplex2 = C*P;
+//  for(uint i=0; i<simplex1.d0; i++) simplex1[i] += p1 - ~P*P*p1;
+//  for(uint i=0; i<simplex2.d0; i++) simplex2[i] += p2 - ~P*P*p2;
+
+//  poly = simplex1 + simplex2;
+//  poly *= .5;
+
+  //for each edge of the polygon, compute an outward pointing normal (to define inequalities)
   polyNorm.resizeAs(poly);
   uint n=polyNorm.d0;
   for(uint i=0; i<n; i++) {

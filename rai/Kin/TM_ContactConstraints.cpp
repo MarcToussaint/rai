@@ -43,9 +43,6 @@ void TM_ContactConstraints::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
       if(d.scalar()>0.) s=0.;
       y.append(s*d.scalar() * ferr);
       if(&J) J.append( (s*d.scalar())*Jferr + (s*ferr) * Jd );
-
-//      y.append(ferr);
-//      if(&J) J.append(Jferr);
     }
 
     //-- non-aligned force
@@ -53,7 +50,6 @@ void TM_ContactConstraints::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
     arr c, Jc;
     TM_PairCollision cvec(con->a.ID, con->b.ID, TM_PairCollision::_normal, true);
     cvec.phi(c, (&J?Jc:NoArr), K);
-    if(length(c)<1e-6) continue;
     //get force
     arr ferr, Jferr;
     K.kinematicsForce(ferr, Jferr, con);
