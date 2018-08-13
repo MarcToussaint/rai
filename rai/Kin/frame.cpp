@@ -820,13 +820,12 @@ void rai::Inertia::defaultInertiaByShape() {
   CHECK(frame.shape, "");
   
   //add inertia to the body
-  Matrix I;
   switch(frame.shape->type()) {
-    case ST_sphere:   inertiaSphere(I.p(), mass, 1000., frame.shape->size(3));  break;
+    case ST_sphere:   inertiaSphere(matrix.p(), mass, 1000., frame.shape->size(3));  break;
     case ST_ssBox:
-    case ST_box:      inertiaBox(I.p(), mass, 1000., frame.shape->size(0), frame.shape->size(1), frame.shape->size(2));  break;
+    case ST_box:      inertiaBox(matrix.p(), mass, 1000., frame.shape->size(0), frame.shape->size(1), frame.shape->size(2));  break;
     case ST_capsule:
-    case ST_cylinder: inertiaCylinder(I.p(), mass, 1000., frame.shape->size(2), frame.shape->size(3));  break;
+    case ST_cylinder: inertiaCylinder(matrix.p(), mass, 1000., frame.shape->size(2), frame.shape->size(3));  break;
     default: HALT("not implemented for this shape type");
   }
 }
@@ -850,6 +849,7 @@ void rai::Inertia::read(const Graph& G) {
     mass=d;
     matrix.setId();
     matrix *= .2*d;
+    defaultInertiaByShape();
   }
   if(G["fixed"])       type=BT_static;
   if(G["static"])      type=BT_static;

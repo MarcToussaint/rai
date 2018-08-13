@@ -32,8 +32,6 @@ rai::Transformation& NoTransformation = *((rai::Transformation*)NULL);
 
 namespace rai {
 
-double quatScalarProduct(const rai::Quaternion& a, const rai::Quaternion& b);
-
 double& Vector::operator()(uint i) {
   CHECK(i<3,"out of range");
   isZero=false;
@@ -325,6 +323,10 @@ bool operator!=(const Vector& lhs, const Vector& rhs) {
   return !(lhs == rhs);
 }
 
+double sqrDistance(const Vector &a, const Vector &b) {
+  return (a-b).lengthSqr();
+}
+
 //==============================================================================
 
 /// reset to zero
@@ -601,7 +603,7 @@ void Quaternion::setRandom() {
 /// sets this to a smooth interpolation between two rotations
 void Quaternion::setInterpolate(double t, const Quaternion& a, const Quaternion b) {
   double sign=1.;
-  if(quatScalarProduct(a, b)<0) sign=-1.;
+  if(quat_scalarProduct(a, b)<0) sign=-1.;
   w=a.w+t*(sign*b.w-a.w);
   x=a.x+t*(sign*b.x-a.x);
   y=a.y+t*(sign*b.y-a.y);
@@ -612,7 +614,7 @@ void Quaternion::setInterpolate(double t, const Quaternion& a, const Quaternion 
 
 /// euclidean addition (with weights) modulated by scalar product -- leaves you with UNNORMALIZED quaternion
 void Quaternion::add(const Quaternion b, double w_b, double w_this) {
-  if(quatScalarProduct(*this, b)<0.) w_b *= -1.;
+  if(quat_scalarProduct(*this, b)<0.) w_b *= -1.;
   if(w_this!=-1.) {
     w *= w_this;
     x *= w_this;
@@ -1109,9 +1111,15 @@ Vector operator/(const Transformation& X, const Vector& c) {
   return a;
 }
 
+/// use as similarity measure (distance = 1 - |scalarprod|)
+double quat_scalarProduct(const Quaternion& a, const Quaternion& b) {
+  return a.w*b.w+a.x*b.x+a.y*b.y+a.z*b.z;
+}
+
 void quat_concat(arr& y, arr& Ja, arr& Jb, const arr& A, const arr& B){
   rai::Quaternion a(A);
   rai::Quaternion b(B);
+  a.isZero=b.isZero=false;
   y = (a * b).getArr4d();
   if(&Ja){
     Ja.resize(4,4);
@@ -1942,11 +1950,6 @@ void Camera::setDefault() {
 
 //==============================================================================
 
-/// use as similarity measure (distance = 1 - |scalarprod|)
-double quatScalarProduct(const Quaternion& a, const Quaternion& b) {
-  return a.w*b.w+a.x*b.x+a.y*b.y+a.z*b.z;
-}
-
 std::istream& operator>>(std::istream& is, Vector& x)    { x.read(is); return is; }
 std::istream& operator>>(std::istream& is, Matrix& x)    { x.read(is); return is; }
 std::istream& operator>>(std::istream& is, Quaternion& x) { x.read(is); return is; }
@@ -1955,10 +1958,6 @@ std::ostream& operator<<(std::ostream& os, const Vector& x)    { x.write(os); re
 std::ostream& operator<<(std::ostream& os, const Matrix& x)    { x.write(os); return os; }
 std::ostream& operator<<(std::ostream& os, const Quaternion& x) { x.write(os); return os; }
 std::ostream& operator<<(std::ostream& os, const Transformation& x)     { x.write(os); return os; }
-
-double sqrDistance(const Vector &a, const Vector &b) {
-  return (a-b).lengthSqr();
-}
 
 } //namespace rai
 

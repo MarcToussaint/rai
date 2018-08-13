@@ -21,7 +21,7 @@ struct TM_NewtonEuler : Feature {
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
   virtual uint dim_phi(const WorldL& Ktuple){ return 6; }
   
-  virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("NewtonEuler-" <<G.frames(i)->name); }
+  virtual rai::String shortTag(const rai::KinematicWorld& K) { return STRING("NewtonEuler-" <<K.frames(i)->name); }
 };
 
 

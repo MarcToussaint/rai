@@ -70,7 +70,7 @@ struct Matrix {
   
   Matrix() {}
   Matrix(int zero) { CHECK_EQ(zero,0,"this is only for initialization with zero"); setZero(); }
-  Matrix(const arr& m) { CHECK_EQ(m.N,9, "");  set(m.p); };
+  Matrix(const arr& m) { CHECK_EQ(m.N,9, "");  set(m.p); }
   Matrix(const Matrix& m) : m00(m.m00), m01(m.m01), m02(m.m02), m10(m.m10), m11(m.m11), m12(m.m12), m20(m.m20), m21(m.m21), m22(m.m22) {}
   double *p() { return &m00; }
   
@@ -300,8 +300,19 @@ struct Camera {
 // operators
 //
 
-// efficient
+// C-style
 void mult(Vector& a, const Quaternion& b, const Vector& c,bool add); //a += b*c (for add=true)
+double sqrDistance(const rai::Vector& a, const rai::Vector& b);
+// quaternion methods
+double quat_scalarProduct(const rai::Quaternion& a, const rai::Quaternion& b);
+// differentiable operations:
+void quat_concat(arr& y, arr& Ja, arr& Jb, const arr& A, const arr& B);
+void quat_normalize(arr& y, arr& J, const arr& a);
+void quat_getVec(arr& y, arr& J, const arr& A);
+/// return the difference of two orientations as a 3D-rotation-vector,
+/// optionally also return the 'Jacobians' w.r.t. q1 and q2, but in terms
+/// of a 'cross-product-matrix'
+void quat_diffVector(arr& y, arr& Ja, arr& Jb, const arr& a, const arr& b);
 
 // VECTOR
 double  operator*(const Vector&, const Vector&);
@@ -337,12 +348,6 @@ bool       operator==(const Quaternion&, const Quaternion&);
 bool       operator!=(const Quaternion&, const Quaternion&);
 Quaternion operator-(const Quaternion&, const Quaternion&);
 
-//differentiable operations:
-void quat_concat(arr& y, arr& Ja, arr& Jb, const arr& A, const arr& B);
-void quat_normalize(arr& y, arr& J, const arr& a);
-void quat_getVec(arr& y, arr& J, const arr& A);
-void quat_diffVector(arr& y, arr& Ja, arr& Jb, const arr& a, const arr& b);
-
 // TRANSFORMATION
 Transformation operator-(const Transformation&);
 Transformation operator*(const Transformation& b, const Transformation& c);
@@ -365,20 +370,6 @@ std::ostream& operator<<(std::ostream&, const Matrix&);
 std::ostream& operator<<(std::ostream&, const Quaternion&);
 std::ostream& operator<<(std::ostream&, const Transformation&);
 
-//===========================================================================
-//
-// more complex operations
-//
-
-/// return the difference of two orientations as a 3D-rotation-vector,
-/// optionally also return the 'Jacobians' w.r.t. q1 and q2, but in terms
-/// of a 'cross-product-matrix'
-void quatDiff(arr& y, arr& J1, arr& J2, const Quaternion& q1, const Quaternion& q2);
-
-double quatScalarProduct(const rai::Quaternion& a, const rai::Quaternion& b);
-
-double sqrDistance(const rai::Vector& a, const rai::Vector& b);
-
 } //END of namespace
 
 //===========================================================================
@@ -388,7 +379,7 @@ double sqrDistance(const rai::Vector& a, const rai::Vector& b);
 
 inline arr conv_vec2arr(const rai::Vector& v) {      return arr(&v.x, 3, false); }
 inline arr conv_quat2arr(const rai::Quaternion& q) { return arr(&q.w, 4, false); }
-inline arr conv_mat2arr(const rai::Matrix& m) {      return arr(&m.m00, 9, false); }
+inline arr conv_mat2arr(const rai::Matrix& m) {      return arr(&m.m00, 9, false).reshape(3,3); }
 
 //===========================================================================
 //

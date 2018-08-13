@@ -11,63 +11,73 @@
 #include "frame.h"
 #include "contact.h"
 
+rai::Contact *getContact(const rai::KinematicWorld &K, int aId, int bId){
+  rai::Frame *a = K.frames(aId);
+  rai::Frame *b = K.frames(bId);
+  for(rai::Contact *c : a->contacts) if(&c->a==a && &c->b==b) return c;
+  HALT("can't retrieve contact " <<a->name <<"--" <<b->name);
+  return NULL;
+}
+
 void TM_ContactConstraints::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
-  y.clear();
-  if(&J) J.clear();
-  for(rai::Frame *f:K.frames) if(f->contacts.N) for(rai::Contact *con:f->contacts) if(&con->a==f) {
+  rai::Contact *con = getContact(K,a,b);
 
-    if(!con->soft){
-      //-- needs to touch!!
-      arr d, Jd;
-      TM_PairCollision dist(con->a.ID, con->b.ID, TM_PairCollision::_negScalar, false);
-      dist.phi(d, (&J?Jd:NoArr), K);
-      con->y = d.scalar();
-      con->setFromPairCollision(*dist.coll);
+  if(!con->soft){
+    y.resize(4).setZero();
+    if(&J) J.resize(4, K.getJointStateDimension()).setZero();
+  }else{
+    y.resize(6).setZero();
+    if(&J) J.resize(6, K.getJointStateDimension()).setZero();
+  }
 
-      y.append(con->y);
-      if(&J) J.append(Jd);
-    }else{
-      arr d, Jd;
-      TM_PairCollision dist(con->a.ID, con->b.ID, TM_PairCollision::_negScalar, false);
-      dist.phi(d, (&J?Jd:NoArr), K);
-      con->y = d.scalar();
-      con->setFromPairCollision(*dist.coll);
+  //-- non-aligned force
+  //get collision normal
+  arr c, Jc;
+  TM_PairCollision cvec(con->a.ID, con->b.ID, TM_PairCollision::_normal, true);
+  cvec.phi(c, (&J?Jc:NoArr), K);
+  //get force
+  arr ferr, Jferr;
+  K.kinematicsForce(ferr, Jferr, con);
+  //subtract c-aligned projection
+  if(&J) Jferr -= (c*~c*Jferr + c*~ferr*Jc + scalarProduct(c,ferr)*Jc);
+  ferr -= c*scalarProduct(c,ferr);
 
-      //soft! complementarity
+  y({0,2}) = ferr;
+  if(&J) J({0,2}) = Jferr;
 
-      //get force
-      arr ferr, Jferr;
-      K.kinematicsForce(ferr, Jferr, con);
+  if(!con->soft){
+    //-- needs to touch!!
+    arr d, Jd;
+    TM_PairCollision dist(con->a.ID, con->b.ID, TM_PairCollision::_negScalar, false);
+    dist.phi(d, (&J?Jd:NoArr), K);
+    con->y = d.scalar();
+    con->setFromPairCollision(*dist.coll);
 
-      double s = 1e-1;
-      if(d.scalar()>0.) s=0.;
-      y.append(s*d.scalar() * ferr);
-      if(&J) J.append( (s*d.scalar())*Jferr + (s*ferr) * Jd );
-    }
+    y(3) = d.scalar();
+    if(&J) J[3] = Jd;
+  }else{
+    arr d, Jd;
+    TM_PairCollision dist(con->a.ID, con->b.ID, TM_PairCollision::_negScalar, false);
+    dist.phi(d, (&J?Jd:NoArr), K);
+    con->y = d.scalar();
+    con->setFromPairCollision(*dist.coll);
 
-    //-- non-aligned force
-    //get collision normal
-    arr c, Jc;
-    TM_PairCollision cvec(con->a.ID, con->b.ID, TM_PairCollision::_normal, true);
-    cvec.phi(c, (&J?Jc:NoArr), K);
+    //soft! complementarity
+
     //get force
     arr ferr, Jferr;
     K.kinematicsForce(ferr, Jferr, con);
-    //subtract c-aligned projection
-    if(&J) Jferr -= (c*~c*Jferr + c*~ferr*Jc + scalarProduct(c,ferr)*Jc);
-    ferr -= c*scalarProduct(c,ferr);
 
-    y.append(ferr);
-    if(&J) J.append(Jferr);
+    double s = 1e-1;
+    if(d.scalar()>0.) s=0.;
+    y({3,5}) = s*d.scalar() * ferr;
+    if(&J) J({3,5}) = (s*d.scalar())*Jferr + (s*ferr) * Jd;
   }
-  if(&J) J.reshape(y.N, K.q.N);
+
 }
 
 uint TM_ContactConstraints::dim_phi(const rai::KinematicWorld &K) {
-  uint C=0;
-  for(rai::Frame *f:K.frames) if(f->contacts.N) for(rai::Contact *c:f->contacts) if(&c->a==f) {
-    if(!c->soft)  C += 4;
-    else C += 6;
-  }
-  return C;
+  rai::Contact *c = getContact(K,a,b);
+  if(!c->soft) return 4;
+  return 6;
 }

@@ -904,15 +904,15 @@ void rai::KinematicWorld::kinematicsVec(arr& y, arr& J, Frame *a, const rai::Vec
 /// Jacobian of the i-th body's z-orientation vector
 void rai::KinematicWorld::kinematicsQuat(arr& y, arr& J, Frame *a) const { //TODO: allow for relative quat
   CHECK_EQ(&a->K, this, "");
-  rai::Quaternion rot_b = a->X.rot;
-  if(&y) y = conv_quat2arr(rot_b); //return the vec
+  rai::Quaternion rot_a = a->X.rot;
+  if(&y) y = conv_quat2arr(rot_a); //return the vec
   if(&J) {
     arr A;
     axesMatrix(A, a);
     J.resize(4, A.d1);
     for(uint i=0; i<J.d1; i++) {
       rai::Quaternion tmp(0., 0.5*A(0,i), 0.5*A(1,i), 0.5*A(2,i));  //this is unnormalized!!
-      tmp = tmp * rot_b;
+      tmp = tmp * rot_a;
       J(0, i) = tmp.w;
       J(1, i) = tmp.x;
       J(2, i) = tmp.y;

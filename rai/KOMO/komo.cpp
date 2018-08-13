@@ -24,6 +24,7 @@
 #include <Kin/TM_StaticStability.h>
 #include <Kin/TM_Max.h>
 #include <Kin/TM_ImpulseExchange.h>
+#include <Kin/TM_ContactConstraints.h>
 #include <Kin/TM_FlagConstraints.h>
 #include <Kin/TM_energy.h>
 #include <Kin/TM_gravity.h>
@@ -32,7 +33,7 @@
 #include <Optim/convert.h>
 #include <Kin/kin_physx.h>
 #include <Kin/TM_time.h>
-#include <Kin/TM_physics.h>
+#include <Kin/TM_NewtonEuler.h>
 #include <Kin/TM_angVel.h>
 
 #ifdef RAI_GL
@@ -220,7 +221,7 @@ void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, con
   addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
 //  addFlag(time, new Flag(FL_clear, world[to]->ID, 0, true));
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true));
-  auto *o = addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
+  addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
 //  o->prec(-1)=o->prec(-2)=0.;
 //  addFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
   addObjective(time,time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2);
@@ -253,13 +254,14 @@ void KOMO::addSwitch_dynamicOn(double time, double endTime, const char *from, co
 void KOMO::addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost) {
   addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_free, from, to, world, SWInit_copy));
   if(sqrAccCost){
-    auto *o = addObjective(time, endTime, new TM_ZeroAcc(world, to), OT_eq, NoArr, sqrAccCost, 2);
+    addObjective(time, endTime, new TM_ZeroAcc(world, to), OT_eq, NoArr, sqrAccCost, 2);
 //    if(endTime>=0) o->prec(-1)=0.;
   }
 }
 
 void KOMO::addContact(double startTime, double endTime, const char *from, const char* to) {
   addSwitch(startTime, true, new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world) );
+  addObjective(startTime, endTime, new TM_ContactConstraints(world, from, to), OT_eq, NoArr, 3e1);
   if(endTime>0.){
     addSwitch(endTime, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world) );
   }
@@ -268,6 +270,7 @@ void KOMO::addContact(double startTime, double endTime, const char *from, const 
 void KOMO::addContact_Complementary(double startTime, double endTime, const char* from, const char* to)
 {
   NIY;
+  //TODO: also contact constraint
 }
 
 Objective* KOMO::addObjective(double startTime, double endTime, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, double scale, const arr& target, int order){

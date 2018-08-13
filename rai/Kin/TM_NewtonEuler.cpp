@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "TM_physics.h"
+#include "TM_NewtonEuler.h"
 #include <Kin/flag.h>
 #include <Kin/frame.h>
 #include <Kin/contact.h>
@@ -43,9 +43,21 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   rot.order=2;
   rot.phi(wcc, (&J?Jwcc:NoArr), Ktuple);
 
-
   rai::KinematicWorld& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
   rai::Frame *a = K.frames(i);
+  double mass=1;
+  arr Imatrix = diag(.1, 3);
+  if(a->inertia){
+    mass = a->inertia->mass;
+    Imatrix = conv_mat2arr(a->inertia->matrix);
+  }
+
+  mass = 1./mass;
+  Imatrix = inverse_SymPosDef(Imatrix);
+  double forceScaling = 1e3;
+//  acc *= mass;
+//  wcc = Imatrix * wcc;
+
   for(rai::Contact *c:a->contacts){
     double sign = +1.;
     CHECK(&c->a==a || &c->b==a, "");
@@ -62,24 +74,29 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
 //    con->setFromPairCollision(*dist.coll);
 
     arr cp, Jcp;
-#if 1
+#if 0
     if(&c->a==a)
       K.kinematicsVec(cp, Jcp, a, c->a_rel); //contact point VECTOR only
     else
       K.kinematicsVec(cp, Jcp, a, c->b_rel); //contact point VECTOR only
 #else
     TM_PairCollision dist(c->a.ID, c->b.ID, TM_PairCollision::_p1, false);
-    if(&c->b==a) dist.type==TM_PairCollision::_p2;
+    if(&c->b==a) dist.type=TM_PairCollision::_p2;
 
     dist.phi(cp, (&J?Jcp:NoArr), K);
+
+    arr p,Jp;
+    K.kinematicsPos(p, Jp, a);
+    cp -= p;
+    if(&J) Jcp -= Jp;
 #endif
     if(&J) expandJacobian(Jcp, Ktuple, -2);
 
-    acc += sign * 20. * c->force;
-    wcc -= sign * 40. * crossProduct(cp, c->force);
+    acc -= sign * forceScaling *mass* c->force;
+    wcc += sign * .1 * forceScaling *Imatrix* crossProduct(cp, c->force);
     if(&J){
-      Jacc += sign * 20. * Jf;
-      Jwcc -= sign * 40. * (skew(cp) * Jf - skew(c->force) * Jcp);
+      Jacc -= sign * forceScaling *mass* Jf;
+      Jwcc += sign * .1 * forceScaling *Imatrix* (skew(cp) * Jf - skew(c->force) * Jcp);
     }
   }
         

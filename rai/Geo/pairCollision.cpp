@@ -434,9 +434,9 @@ void PairCollision::nearSupportAnalysis(double eps) {
   S2.reshape(pts2.N, 3);
 
   //centers
-  m1 = mean(S1);
-  m2 = mean(S2);
-  arr cen = .5*(m1 + m2);
+//  m1 = mean(S1);
+//  m2 = mean(S2);
+  arr cen = .5*(mean(S1) + mean(S2));
   
   //get projection onto the normal plane
   rai::Quaternion R;
