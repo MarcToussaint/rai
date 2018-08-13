@@ -55,8 +55,6 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   mass = 1./mass;
   Imatrix = inverse_SymPosDef(Imatrix);
   double forceScaling = 1e3;
-//  acc *= mass;
-//  wcc = Imatrix * wcc;
 
   for(rai::Contact *c:a->contacts){
     double sign = +1.;
@@ -94,20 +92,22 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
 
     acc -= sign * forceScaling *mass* c->force;
     wcc += sign * .1 * forceScaling *Imatrix* crossProduct(cp, c->force);
+
     if(&J){
       Jacc -= sign * forceScaling *mass* Jf;
       Jwcc += sign * .1 * forceScaling *Imatrix* (skew(cp) * Jf - skew(c->force) * Jcp);
     }
   }
+
         
   y.resize(6).setZero();
   y.setVectorBlock(acc, 0);
-  y.setVectorBlock(wcc, 3);
+  y.setVectorBlock(1.*wcc, 3);
 
   if(&J) {
     J.resize(6, Jacc.d1).setZero();
     J.setMatrixBlock(Jacc, 0, 0);
-    J.setMatrixBlock(Jwcc, 3, 0);
+    J.setMatrixBlock(1.*Jwcc, 3, 0);
   }
 }
 

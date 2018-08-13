@@ -2,41 +2,14 @@
 #include "TM_default.h"
 #include "flag.h"
 
-void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
-  if(order==2){
-    arr y0, y1, J0, J1;
-    order=1;
-    phi(y0, J0, Ktuple({-3,-2}));
-    phi(y1, J1, Ktuple({-2,-1}));
-    order=2;
-
-    y = y1 - y0;
-    if(&J){
-      CHECK_EQ(Ktuple.N, 3,"");
-      uint d0=Ktuple(-3)->q.N;
-      uint d1=Ktuple(-2)->q.N;
-      uint d2=Ktuple(-1)->q.N;
-      J.resize(y.N, d0+d1+d2).setZero();
-      CHECK_EQ(J0.d1, d0+d1, "");
-      CHECK_EQ(J1.d1, d1+d2, "");
-      for(uint i=0;i<y.N;i++){
-        for(uint j=0;j<J0.d1;j++) J(i,j) -= J0(i,j);
-        for(uint j=0;j<J1.d1;j++) J(i,d0+j) += J1(i,j);
-      }
-    }
-    return;
-  }
-
-  CHECK_EQ(order, 1,"");
-
-//  double tau = Ktuple(-1)->frames(0)->time; //- Ktuple(-2)->frames(0)->time;
-  rai::Frame *f0 = Ktuple(-2)->frames(i);
-  rai::Frame *f1 = Ktuple(-1)->frames(i);
+void angVel_base(const rai::KinematicWorld& K0, rai::KinematicWorld& K1, uint i, arr& y, arr& J){
+  rai::Frame *f0 = K0.frames(i);
+  rai::Frame *f1 = K1.frames(i);
 
   y.resize(3);
   arr a,b,Ja,Jb;
-  Ktuple(-2)->kinematicsQuat(a, Ja, f0);
-  Ktuple(-1)->kinematicsQuat(b, Jb, f1);
+  K0.kinematicsQuat(a, Ja, f0);
+  K1.kinematicsQuat(b, Jb, f1);
   arr J0, J1;
 //  quat_diffVector(y, J0, J1, a, b);
   arr dq = b-a;
@@ -89,26 +62,68 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
   J1.setZero();
 #endif
 
-  //  y /= tau;
-    checkNan(y);
-
-  double s=1e2;
-  y *= s;
+  checkNan(y);
 
   if(&J){
-    if(Ktuple.N==3){
-//      J = catCol(zeros(y.N, Ktuple(-3)->q.N), J0 * Ja, J1 * Jb);
-      J = catCol(zeros(y.N, Ktuple(-3)->q.N), (J1-J0)*Ja, J0*Jb);
-    }else{
-//      J = catCol(J0 * Ja, J1 * Jb);
-      J = catCol((J1-J0)*Ja, J0*Jb);
-    }
-//    J /= tau;
-//    J = Jq1;
-//    expandJacobian(J, Ktuple, 2);
+    J = catCol((J1-J0)*Ja, J0*Jb);
     checkNan(J);
-    J *= s;
   }
+}
+
+void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
+  if(order==1){
+    angVel_base(*Ktuple(-2), *Ktuple(-1), i, y, J);
+
+    if(Ktuple.N==3) J = catCol(zeros(y.N, Ktuple(-3)->q.N), J);
+
+#if 1
+    double tau = Ktuple(-1)->frames(0)->time;
+    y /= tau;
+    if(&J){
+      J /=tau;
+      arr Jtau;  Ktuple(-1)->jacobianTime(Jtau, Ktuple(-1)->frames(0));  expandJacobian(Jtau, Ktuple, -1);
+      J += (-1./tau)*y*Jtau;
+    }
+#endif
+    return;
+  }
+
+  if(order==2){
+    arr y0, y1, J0, J1;
+    angVel_base(*Ktuple(-3), *Ktuple(-2), i, y0, J0);
+    angVel_base(*Ktuple(-2), *Ktuple(-1), i, y1, J1);
+
+    y = y1 - y0;
+
+#if 1
+    double tau = Ktuple(-1)->frames(0)->time;
+    double tau2=tau*tau;
+    y /= tau2;
+#endif
+
+    if(&J){
+      CHECK_EQ(Ktuple.N, 3,"");
+      uint d0=Ktuple(-3)->q.N;
+      uint d1=Ktuple(-2)->q.N;
+      uint d2=Ktuple(-1)->q.N;
+      J.resize(y.N, d0+d1+d2).setZero();
+      CHECK_EQ(J0.d1, d0+d1, "");
+      CHECK_EQ(J1.d1, d1+d2, "");
+      for(uint i=0;i<y.N;i++){
+        for(uint j=0;j<J0.d1;j++) J(i,j) -= J0(i,j);
+        for(uint j=0;j<J1.d1;j++) J(i,d0+j) += J1(i,j);
+      }
+
+#if 1
+      J /= tau2;
+      arr Jtau;  Ktuple(-1)->jacobianTime(Jtau, Ktuple(-1)->frames(0));  expandJacobian(Jtau, Ktuple, -1);
+      J += (-2./tau)*y*Jtau;
+#endif
+    }
+    return;
+  }
+
+  HALT("shoudn't be here");
 }
 
 uint TM_AngVel::dim_phi(const rai::KinematicWorld &G){ return 3; }
