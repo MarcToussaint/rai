@@ -341,7 +341,7 @@ includeAll.cxx: force
 inPath_makeLib/extern_%: % $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< libextern_$*.a
 
-inPath_makeLib/Hardware_%: $(BASE)/rai/Hardware/% $(PREOBJS)
+inPath_makeLib/Hardware_%: $(BASE2)/Hardware/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< libHardware_$*.so
 
 inPath_makeLib/%: $(BASE)/rai/% $(PREOBJS)

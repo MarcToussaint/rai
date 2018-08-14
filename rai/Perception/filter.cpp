@@ -182,12 +182,12 @@ void Filter::step() {
     if(p->bodyId>=0) {
       rai::Frame *b = modelWorld->frames(p->bodyId);
       if(p->type==Percept::PT_box) {
-        rai::Shape *s=b->shapes.first();
-        s->size = (static_cast<PercBox*>(p))->size;
-        s->mesh.setSSBox(s->size(0), s->size(1), s->size(2), 0.0001);
-        s->mesh.C = (static_cast<PercBox*>(p))->color;
-        if(s->mesh.C.d0 > 3)
-          s->mesh.C=ARR(0.,0.,0.);
+        rai::Shape *s=b->shape;
+        s->size() = (static_cast<PercBox*>(p))->size;
+        s->mesh().setSSBox(s->size(0), s->size(1), s->size(2), 0.0001);
+        s->mesh().C = (static_cast<PercBox*>(p))->color;
+        if(s->mesh().C.d0 > 3)
+          s->mesh().C=ARR(0.,0.,0.);
       }
 
       CtrlTask *t;

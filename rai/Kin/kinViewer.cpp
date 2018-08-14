@@ -69,7 +69,7 @@ void KinViewer::open() {
   gl = new OpenGL(STRING("KinViewer: "<<world.name));
   gl->add(glStandardScene);
   gl->add(glDrawMeshes, &meshesCopy);
-  gl->add(rai::glDrawProxies, &proxiesCopy);
+//  gl->add(rai::glDrawProxies, &proxiesCopy);
   gl->camera.setDefault();
 }
 
@@ -95,7 +95,7 @@ void KinViewer::step() {
   X.resize(world->frames.N);
   for(rai::Frame *f:world().frames) X(f->ID) = f->X;
   gl->dataLock.writeLock();
-  proxiesCopy = world->proxies;
+//  proxiesCopy = world->proxies;
   gl->dataLock.unlock();
   world.deAccess();
   
@@ -227,7 +227,7 @@ void KinPoseViewer::open() {
 }
 
 void KinPoseViewer::step() {
-  copies.first()->proxies = modelWorld.get()->proxies;
+//  copies.first()->proxies = modelWorld.get()->proxies;
 //  cout <<copy.proxies.N <<endl;
   gl.dataLock.writeLock();
   for(uint i=0; i<copies.N; i++) {

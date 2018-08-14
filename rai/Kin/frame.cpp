@@ -849,7 +849,7 @@ void rai::Inertia::read(const Graph& G) {
     mass=d;
     matrix.setId();
     matrix *= .2*d;
-    defaultInertiaByShape();
+    if(frame.shape) defaultInertiaByShape();
   }
   if(G["fixed"])       type=BT_static;
   if(G["static"])      type=BT_static;
