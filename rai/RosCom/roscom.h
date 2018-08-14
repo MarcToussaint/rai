@@ -312,8 +312,7 @@ struct PublisherConv : Thread {
   void step() {
     if(nh) {
       pub.publish(conv(var.get()));
-      LOG(0) <<"publishing to topic '" <<topic_name <<"' revision " <<var.getRevision() <<" of variable '" <<var.name <<'\'';
-      rai::wait(1.);
+//      LOG(0) <<"publishing to topic '" <<topic_name <<"' revision " <<var.getRevision() <<" of variable '" <<var.name <<'\'';
     }
   }
   void close() {
