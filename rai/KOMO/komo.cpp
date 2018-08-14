@@ -254,7 +254,8 @@ void KOMO::addSwitch_dynamicOn(double time, double endTime, const char *from, co
 void KOMO::addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost) {
   addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_free, from, to, world, SWInit_copy));
   if(sqrAccCost){
-    addObjective(time, endTime, new TM_ZeroAcc(world, to), OT_eq, NoArr, sqrAccCost, 2);
+//    addObjective(time, endTime, new TM_ZeroAcc(world, to), OT_eq, NoArr, sqrAccCost, 2);
+    addObjective(time, endTime, new TM_LinAngVel(world, to), OT_eq, NoArr, sqrAccCost, 2);
 //    if(endTime>=0) o->prec(-1)=0.;
   }
 }

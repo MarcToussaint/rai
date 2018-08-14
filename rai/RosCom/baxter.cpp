@@ -152,6 +152,17 @@ void SendPositionCommandsToBaxter::close() {
 
 #ifdef RAI_ROS
 bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const rai::KinematicWorld& baxterModel) { NICO }
+
+SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const rai::KinematicWorld& kw)
+  : Thread("SendPositionCommandsToBaxter"),
+    ctrl_ref(NULL, "ctrl_ref", true),
+    s(NULL),
+    baxterModel(kw) {
+  NICO;
+}
+void SendPositionCommandsToBaxter::open() { NICO }
+void SendPositionCommandsToBaxter::step() { NICO }
+void SendPositionCommandsToBaxter::close() { NICO }
 #endif
 
 #endif
