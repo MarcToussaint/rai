@@ -6,16 +6,16 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "task.h"
+#include "objective.h"
 #include <Kin/switch.h>
 #include <Core/graph.h>
 
 //===========================================================================
 
-void Task::setCostSpecs(int fromStep, int toStep, const arr& _target, double _prec) {
+void Objective::setCostSpecs(int fromStep, int toStep, const arr& _target, double _prec) {
   if(&_target) target = _target; else target.clear();
-  if(fromStep<0) fromStep=0;
-  CHECK_GE(toStep, fromStep,"");
+  CHECK_GE(fromStep, 0, "");
+  CHECK_GE(toStep, fromStep, "");
   prec.resize(toStep+1).setZero();
   for(uint t=fromStep; t<=(uint)toStep; t++) prec(t) = _prec;
 #if 1
@@ -25,22 +25,26 @@ void Task::setCostSpecs(int fromStep, int toStep, const arr& _target, double _pr
 #endif
 }
 
-void Task::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T, const arr& _target, double _prec, int deltaStep) {
+void Objective::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T,
+                             const arr& _target, double _prec,
+                             int deltaFromStep, int deltaToStep) {
   if(stepsPerPhase<0) stepsPerPhase=T;
 //  if(conv_time2step(toTime, stepsPerPhase)>T-1){
 //    LOG(-1) <<"beyond the time!: endTime=" <<toTime <<" phases=" <<double(T)/stepsPerPhase;
 //  }
   int tFrom = (fromTime<0.?0:conv_time2step(fromTime, stepsPerPhase));
   int tTo = (toTime<0.?T-1:conv_time2step(toTime, stepsPerPhase));
+  if(tFrom<0) tFrom=0;
   if(tTo<0) tTo=0;
-  if(tFrom>tTo && tFrom-tTo<=(int)map->order) tFrom=tTo;
+//  if(tFrom>tTo && tFrom-tTo<=(int)map->order) tFrom=tTo;
   
-  if(deltaStep) { tFrom+=deltaStep; tTo+=deltaStep; }
-  
+  if(fromTime>=0 && deltaFromStep) tFrom+=deltaFromStep;
+  if(toTime>=0 && deltaToStep) tTo+=deltaToStep;
+
   setCostSpecs(tFrom, tTo, _target, _prec);
 }
 
-void Task::setCostSpecsDense(intA _vars, const arr& _target, double _prec) {
+void Objective::setCostSpecsDense(intA _vars, const arr& _target, double _prec) {
   if(&_target) target = _target; else target.clear();
   prec = ARR(_prec);
   vars = _vars;

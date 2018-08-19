@@ -4,7 +4,7 @@
 #include <GL/glut.h>
 
 //implement a drawer
-struct MyDrawer:GLDrawer{
+struct MyDrawer : GLDrawer{
   void glDraw(OpenGL&){
     glStandardLight(NULL);
     glColor(1,0,0);
@@ -17,8 +17,8 @@ struct MyDrawer:GLDrawer{
 void TEST(Mini) {
   OpenGL gl;
   MyDrawer d;
-  gl.reportEvents=true;
-  gl.reportSelects=true;
+//  gl.reportEvents=true;
+//  gl.reportSelects=true;
   gl.addDrawer(&d);
   gl.watch();
 }
@@ -28,6 +28,7 @@ int MAIN(int argc,char **argv){
 
   testMini();
 
+  rai::wait();
   return 0;
 }
 

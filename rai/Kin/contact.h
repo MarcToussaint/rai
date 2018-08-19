@@ -10,7 +10,7 @@
 
 #include <Core/util.h>
 #include "frame.h"
-#include "taskMap.h"
+#include "feature.h"
 
 struct PairCollision;
 
@@ -20,10 +20,15 @@ namespace rai {
 struct Contact : GLDrawer {
   Frame &a, &b;
 
+private:
   PairCollision *__coll=0;
+public:
 
   uint dim=3;
   uint qIndex=UINT_MAX;
+  arr force;  // the DOFs associated with this Contact
+
+  bool soft=false;
 
 //  arr a_pts, b_pts;          // points on the core mesh that define the contact simplices
   rai::Vector a_rel, b_rel;    // contact point RELATIVE to the frames
@@ -31,8 +36,6 @@ struct Contact : GLDrawer {
   double a_rad, b_rad;         // the radii for sphere-swept objects: the contact points are on the cvx CORE, not the surface!
   uint a_type, b_type;
 //  rai::Vector a_line, b_line;  // when of line type, these are the line/axis directions RELATIVE to the frame
-
-  arr force;
 
   double y=0.;                 // place to store the constraint value (typically: neg distance) when the taskmap is called
 //  double lagrangeParameter=0.; // place to store the respective lagrange parameter after an optimization
@@ -58,14 +61,14 @@ struct Contact : GLDrawer {
 //  }
 
   double getDistance() const; // get normal(!) distance (projected onto contact normal), by calling the TM_ContactNegDistance()
-  TaskMap* getTM_Friction() const;
-  TaskMap* getTM_ContactNegDistance() const;
+  Feature* getTM_Friction() const;
+  Feature* getTM_ContactNegDistance() const;
   void glDraw(OpenGL&);
   void write(ostream& os) const;
 };
 stdOutPipe(Contact)
 
-struct TM_ContactNegDistance : TaskMap {
+struct TM_ContactNegDistance : Feature {
   const Contact& C;
   
   TM_ContactNegDistance(const Contact& contact) : C(contact) {}

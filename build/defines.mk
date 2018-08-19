@@ -16,6 +16,7 @@ CXXFLAGS += -fopenmp -DOPENMP
 endif
 
 ifeq ($(PYBIND),1)
+DEPEND_UBUNTU += python3-numpy
 CXXFLAGS += -DRAI_PYBIND `python3-config --cflags`
 LIBS += `python3-config --ldflags`
 CPATH   := $(CPATH):$(BASE)/../pybind11/include::$(BASE)/../../pybind11/include
@@ -266,6 +267,7 @@ LIBS += -lDynamicSimulation -lCollisionDetection -lMath -lLibBulletCollision -lL
 endif
 
 ifeq ($(PCL),1)
+DEPEND_UBUNTU += libpcl-dev
 EIGEN = 1
 #QHULL = 1
 CXXFLAGS  +=  -DRAI_PCL -DEIGEN_USE_NEW_STDVECTOR -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET

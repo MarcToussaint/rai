@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "taskMap.h"
+#include "feature.h"
 
 #include "TM_qItself.h"
 #include "TM_GJK.h"
@@ -26,7 +26,7 @@
 
 //===========================================================================
 
-struct CollisionConstraint:TaskMap {
+struct CollisionConstraint:Feature {
   double margin;
   CollisionConstraint(double _margin=.1):margin(_margin) {}
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
@@ -36,7 +36,7 @@ struct CollisionConstraint:TaskMap {
 
 //===========================================================================
 
-struct PairCollisionConstraint:TaskMap {
+struct PairCollisionConstraint:Feature {
   int i,j;       ///< which shapes does it refer to?
   double margin;
   
@@ -51,7 +51,7 @@ struct PairCollisionConstraint:TaskMap {
 
 //===========================================================================
 
-struct PlaneConstraint:TaskMap {
+struct PlaneConstraint:Feature {
   int i;       ///< which shapes does it refer to?
   arr planeParams;  ///< parameters of the variable (e.g., liner coefficients, limits, etc)
   
@@ -64,9 +64,9 @@ struct PlaneConstraint:TaskMap {
 //===========================================================================
 
 //this is NOT a constraint -- it turns a constraint into stickiness
-struct ConstraintStickiness:TaskMap {
-  TaskMap& map;
-  ConstraintStickiness(TaskMap& _map)
+struct ConstraintStickiness:Feature {
+  Feature& map;
+  ConstraintStickiness(Feature& _map)
     : map(_map) {
   }
   
@@ -76,7 +76,7 @@ struct ConstraintStickiness:TaskMap {
 
 //===========================================================================
 
-struct PointEqualityConstraint:TaskMap {
+struct PointEqualityConstraint:Feature {
   int i, j;               ///< which shapes does it refer to?
   rai::Vector ivec, jvec; ///< additional position or vector
   
@@ -96,7 +96,7 @@ struct PointEqualityConstraint:TaskMap {
 
 //===========================================================================
 
-struct ContactEqualityConstraint:TaskMap {
+struct ContactEqualityConstraint:Feature {
   int i;       ///< which shapes does it refer to?
   int j;       ///< which shapes does it refer to?
   double margin;
@@ -109,7 +109,7 @@ struct ContactEqualityConstraint:TaskMap {
 
 //===========================================================================
 
-struct VelAlignConstraint:TaskMap {
+struct VelAlignConstraint:Feature {
   int i;       ///< which shapes does it refer to?
   int j;       ///< which shapes does it refer to?
   rai::Vector ivec, jvec; ///< additional position or vector
@@ -127,7 +127,7 @@ struct VelAlignConstraint:TaskMap {
 
 //===========================================================================
 
-struct qItselfConstraint:TaskMap {
+struct qItselfConstraint:Feature {
   arr M;
   
   qItselfConstraint(uint singleQ, uint qN) { M=zeros(1,qN); M(0,singleQ)=1.; }

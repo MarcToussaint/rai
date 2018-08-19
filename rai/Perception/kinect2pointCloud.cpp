@@ -58,8 +58,8 @@ void depthData2pointCloud(arr& pts, const uint16A& depth, int depthShift_dx, int
   pts.resize(H*W, 3);
   
   //  float constant = 1.0f / 580; //focal length of kinect in pixels
-  double focal_x = 527;
-  double focal_y = 505;
+  double focal_x = rai::getParameter<int>("focal_x", 530); // focal length x direction in pixels
+  double focal_y = rai::getParameter<int>("focal_y", 510); // focal length y direction in pixels
   int centerX = (W >> 1);
   int centerY = (H >> 1);
   

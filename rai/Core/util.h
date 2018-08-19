@@ -446,6 +446,12 @@ struct Enum {
   operator enum_T() const { return x; }
   void read(std::istream& is) {
     rai::String str(is);
+    operator=(str);
+  }
+  void operator=(const char* str) {
+    operator=(STRING(str));
+  }
+  void operator=(const rai::String& str) {
     bool good=false;
     for(int i=0; names[i]; i++) {
       const char* n = names[i];
@@ -631,6 +637,14 @@ template<class T> Mutex Singleton<T>::mutex;
 //
 
 struct GLDrawer    { virtual void glDraw(struct OpenGL&) = 0; virtual ~GLDrawer() {} };
+
+//===========================================================================
+
+struct NonCopyable {
+  NonCopyable & operator=(const NonCopyable&) = delete;
+  NonCopyable(const NonCopyable&) = delete;
+  NonCopyable() = default;
+};
 
 //===========================================================================
 //

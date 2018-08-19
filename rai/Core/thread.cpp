@@ -228,12 +228,14 @@ void Signaler::waitForStatusNotEq(int i, bool userHasLocked) {
   if(!userHasLocked) statusMutex.unlock();
 }
 
-void Signaler::waitForStatusGreaterThan(int i, bool userHasLocked) {
+int Signaler::waitForStatusGreaterThan(int i, bool userHasLocked) {
   if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
   while(status<=i) {
     int rc = pthread_cond_wait(&cond, &statusMutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
+  int _status=status;
   if(!userHasLocked) statusMutex.unlock();
+  return _status;
 }
 
 void Signaler::waitForStatusSmallerThan(int i, bool userHasLocked) {
@@ -738,7 +740,9 @@ void Thread::main() {
 // controlling threads
 //
 
-Singleton<Signaler> moduleShutdown;
+Signaler _moduleShutdown;
+Signaler* moduleShutdown(){ return &_moduleShutdown; }
+
 
 void signalhandler(int s) {
   int calls = moduleShutdown()->incrementStatus();

@@ -19,7 +19,7 @@ void renderConfigurations(const WorldL& cs, const char* filePrefix="vid/z.", int
 
 //===========================================================================
 
-struct OrsViewer_old : Thread {
+struct KinViewer_old : Thread {
   Var<rai::KinematicWorld> modelWorld;
   //-- outputs
   Var<byteA> modelCameraView;
@@ -28,8 +28,8 @@ struct OrsViewer_old : Thread {
   rai::KinematicWorld copy;
   bool computeCameraView;
   
-  OrsViewer_old(const char* varname="modelWorld", double beatIntervalSec=-1., bool computeCameraView=false);
-  ~OrsViewer_old();
+  KinViewer_old(const char* varname="modelWorld", double beatIntervalSec=-1., bool computeCameraView=false);
+  ~KinViewer_old();
   void open();
   void step();
   void close() {}
@@ -37,13 +37,13 @@ struct OrsViewer_old : Thread {
 
 //===========================================================================
 
-struct OrsViewer : Thread {
+struct KinViewer : Thread {
   Var<rai::KinematicWorld> world;
   MeshA meshesCopy;
   ProxyA proxiesCopy;
   struct OpenGL *gl;
-  OrsViewer(const char* world_name="modelWorld", double beatIntervalSec=-1.);
-  ~OrsViewer();
+  KinViewer(const char* world_name="modelWorld", double beatIntervalSec=-1.);
+  ~KinViewer();
   void open();
   void step();
   void close();
@@ -51,7 +51,7 @@ struct OrsViewer : Thread {
 
 //===========================================================================
 
-struct OrsPathViewer : Thread {
+struct KinPathViewer : Thread {
   Var<WorldL> configurations;
   //-- internal (private)
   rai::KinematicWorld copy;
@@ -63,8 +63,8 @@ struct OrsPathViewer : Thread {
   void setConfigurations(const WorldL& cs);
   void clear();
   
-  OrsPathViewer(const char* varname, double beatIntervalSec=.2, int tprefix=0);
-  ~OrsPathViewer();
+  KinPathViewer(const char* varname, double beatIntervalSec=.2, int tprefix=0);
+  ~KinPathViewer();
   void open();
   void step();
   void close() {}
@@ -72,7 +72,7 @@ struct OrsPathViewer : Thread {
 
 //===========================================================================
 
-struct OrsPoseViewer : Thread {
+struct KinPoseViewer : Thread {
   Var<rai::KinematicWorld> modelWorld;
   rai::Array<Var<arr>*> poses; ///< poses to be watched
   //-- internal (private)
@@ -80,8 +80,8 @@ struct OrsPoseViewer : Thread {
   rai::KinematicWorld copy;
   WorldL copies;
   
-  OrsPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec=-1.);
-  ~OrsPoseViewer();
+  KinPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec=-1.);
+  ~KinPoseViewer();
   
   void recopyKinematics(const rai::KinematicWorld& world=NoWorld);
   

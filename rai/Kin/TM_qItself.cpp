@@ -78,7 +78,7 @@ void TM_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
 void TM_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
   CHECK_GE(Ktuple.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
-  if(k==0) return TaskMap::phi(y, J, Ktuple);
+  if(k==0) return Feature::phi(y, J, Ktuple);
   
   double tau = Ktuple(-1)->frames(0)->time; // - Ktuple(-2)->frames(0)->time;
   double tau2=tau*tau, tau3=tau2*tau;
@@ -287,6 +287,7 @@ rai::Array<rai::Joint*> getMatchingJoints(const WorldL& Ktuple, bool zeroVelJoin
       matchIsGood=true;
       
       for(uint k=0; k<Ktuple.N-1; k++) { //go through other configs
+        if(Ktuple(k)->frames.N<=j->frame.ID){ matchIsGood=false; break; }
         rai::Frame *fmatch = Ktuple(k)->frames(j->frame.ID);
         if(!fmatch){ matchIsGood=false; break; }
         rai::Joint *jmatch = fmatch->joint; //getJointByBodyIndices(j->from()->ID, j->frame.ID);
@@ -354,6 +355,7 @@ uintA getSwitchedBodies(const rai::KinematicWorld& G0, const rai::KinematicWorld
     rai::Frame *b0 = G0.frames(id);
     rai::Joint *j0 = b0->joint;
     rai::Joint *j1 = b1->joint;
+    if(!j1) continue; //don't report if j1 did not become an effective DOF
     if(!j0 != !j1) { switchedBodies.append(id); continue; }
     if(j0) {
       if(j0->type!=j1->type

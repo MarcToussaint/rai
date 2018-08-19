@@ -24,6 +24,17 @@ rai::Proxy::~Proxy() {
   del_coll();
 }
 
+void rai::Proxy::copy(const rai::KinematicWorld& K, const rai::Proxy& p){
+  del_coll();
+  a = K.frames(p.a->ID); CHECK(a, "");
+  b = K.frames(p.b->ID); CHECK(b, "");
+  posA = p.posA;
+  posB = p.posB;
+  normal = p.normal;
+  d = p.d;
+  colorCode = p.colorCode;
+}
+
 void rai::Proxy::calc_coll(const KinematicWorld& K) {
   CHECK_EQ(&a->K, &K, "");
   CHECK_EQ(&b->K, &K, "");
@@ -35,7 +46,9 @@ void rai::Proxy::calc_coll(const KinematicWorld& K) {
   double r2=s2->size(3);
   rai::Mesh *m1 = &s1->sscCore();  if(!m1->V.N) { m1 = &s1->mesh(); r1=0.; }
   rai::Mesh *m2 = &s2->sscCore();  if(!m2->V.N) { m2 = &s2->mesh(); r2=0.; }
-  coll = new PairCollision(*m1, *m2, s1->frame.X, s2->frame.X, r1, r2);
+
+  if(coll) coll.reset();
+  coll = std::make_shared<PairCollision>(*m1, *m2, s1->frame.X, s2->frame.X, r1, r2);
   
   d = coll->distance;
   posA = coll->p1;

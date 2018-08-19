@@ -70,7 +70,7 @@ TaskControlThread::TaskControlThread(const char* _robot, const rai::KinematicWor
       realWorld = modelWorld.get();
     } else {
       if(robot=="pr2") {
-        realWorld.init(rai::raiPath("data/pr2_model/pr2_model.ors").p);
+        realWorld.init(rai::raiPath("../rai-robotModels/pr2/pr2.g").p);
       } else if(robot=="baxter") {
         realWorld.init(rai::raiPath("data/baxter_model/baxter.ors").p);
       } else {

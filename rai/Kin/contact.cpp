@@ -29,6 +29,7 @@ rai::Contact::Contact(rai::Frame &a, rai::Frame &b, rai::Contact *copyContact)
     a_type = copyContact->a_type;
     b_type = copyContact->b_type;
     force = copyContact->force;
+    soft = copyContact->soft;
   }
 }
 
@@ -39,7 +40,10 @@ rai::Contact::~Contact() {
   a.K.contacts.removeValue(this);
 }
 
-void rai::Contact::setZero(){ a_rel.setZero(); b_rel.setZero(); a_norm.setZero(); b_norm.setZero(); a_rad=b_rad=0.; a_type=b_type=1; force=zeros(3); }
+void rai::Contact::setZero(){
+  a_rel.setZero(); b_rel.setZero(); a_norm.setZero(); b_norm.setZero(); a_rad=b_rad=0.; a_type=b_type=1;
+  calc_F_from_q(zeros(3), 0);
+}
 
 void rai::Contact::calc_F_from_q(const arr &q, uint n) {
   force = q({n,n+2});
@@ -61,13 +65,14 @@ PairCollision *rai::Contact::coll(){
 }
 
 void rai::Contact::setFromPairCollision(PairCollision &col){
-  a_rel = a.X / rai::Vector(col.p1);
-  b_rel = b.X / rai::Vector(col.p2);
+  a_rel = a.X / rai::Vector(col.p1 - col.rad1 * col.normal);
+  b_rel = b.X / rai::Vector(col.p2 + col.rad2 * col.normal);
   a_norm = a.X.rot / rai::Vector(-col.normal);
   b_norm = b.X.rot / rai::Vector(col.normal);
-  a_type = b_type=1;
-  a_rad = a.shape->size(3);
-  b_rad = b.shape->size(3);
+  a_type = col.simplex1.d0;
+  b_type = col.simplex2.d0;
+  a_rad = col.rad1; //a.shape->size(3);
+  b_rad = col.rad2; //b.shape->size(3);
 }
 
 double rai::Contact::getDistance() const {
@@ -77,7 +82,7 @@ double rai::Contact::getDistance() const {
   return -y.scalar();
 }
 
-TaskMap *rai::Contact::getTM_ContactNegDistance() const {
+Feature *rai::Contact::getTM_ContactNegDistance() const {
   return new TM_ContactNegDistance(*this);
 }
 
@@ -191,6 +196,6 @@ void rai::Contact::glDraw(OpenGL& gl) {
 
 void rai::Contact::write(std::ostream &os) const {
   os <<a.name <<'-' <<b.name;
-  os <<" f=" <<force;
+  os <<" f=" <<force <<" d=" <<y;
 //  <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() /*<<" pDist=" <<get_pDistance()*/ <<" y=" <<y <<" l=" <<lagrangeParameter;
 }

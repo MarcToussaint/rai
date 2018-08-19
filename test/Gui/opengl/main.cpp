@@ -307,7 +307,7 @@ void TEST(Texture2) {
   rai::Mesh m;
   m.readFile("owl.obj");
   read_png(m.texImg, "owl.png", true);
-  gl.add(glStandardScene);
+  gl.add(glStandardLight);
   gl.add(m);
   gl.watch();
 }
@@ -375,10 +375,6 @@ void TEST(Image) {
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc,argv);
 
-//  glutInit(&argc,argv);
-  testTexture2();
-  return 0;
-
   testTeapot();
   testOfflineRendering();
   testGrab();
@@ -388,6 +384,7 @@ int MAIN(int argc,char **argv){
   testObj();
   testMesh();
   testTexture();
+  testTexture2();
 //  testMenu();
   testImage();
 

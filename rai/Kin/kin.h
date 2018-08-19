@@ -143,7 +143,7 @@ struct KinematicWorld : GLDrawer {
   /// @name set state
   void setJointState(const arr& _q, const arr& _qdot=NoArr);
   void setJointState(const arr& _q, const StringA&);
-  void setFrameState(const arr& X, bool calc_q_from_X=true);
+  void setFrameState(const arr& X, const StringA& frameNames={}, bool calc_q_from_X=true);
   void setTimes(double t);
   
   /// @name kinematics
@@ -162,10 +162,10 @@ struct KinematicWorld : GLDrawer {
   
   void kinematicsPenetrations(arr& y, arr& J=NoArr, bool penetrationsOnly=true, double activeMargin=0.) const; ///< true: if proxy(i).distance>0. => y(i)=0; else y(i)=-proxy(i).distance
   void kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
-  void kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
-  void kinematicsProxyCost(arr& y, arr& J, double margin=.02, bool useCenterDist=true) const;
-  void kinematicsContactCost(arr& y, arr& J, const Contact *p, double margin=.02, bool addValues=false) const;
-  void kinematicsContactCost(arr& y, arr& J, double margin=.02) const;
+  void kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin=.0, bool addValues=false) const;
+  void kinematicsProxyCost(arr& y, arr& J, double margin=.0) const;
+  void kinematicsContactCost(arr& y, arr& J, const Contact *p, double margin=.0, bool addValues=false) const;
+  void kinematicsContactCost(arr& y, arr& J, double margin=.0) const;
   void kinematicsProxyConstraint(arr& g, arr& J, const Proxy& p, double margin=.02) const;
   void kinematicsContactConstraints(arr& y, arr &J) const; //TODO: deprecated?
   void kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const rai::Vector& rel, Frame *s) const;
@@ -222,7 +222,8 @@ struct KinematicWorld : GLDrawer {
   void filterProxiesToContacts(double margin=.01); ///< proxies are returns from a collision engine; contacts stable constraints
   void proxiesToContacts(double margin=.01); ///< proxies are returns from a collision engine; contacts stable constraints
   double totalContactPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
-  
+  void copyProxies(const KinematicWorld& K);
+
   /// @name I/O
   void write(std::ostream& os) const;
   void writeURDF(std::ostream& os, const char *robotName="myrobot") const;
@@ -284,8 +285,8 @@ void displayTrajectory(const arr& x, int steps, rai::KinematicWorld& G, const Ki
 inline void displayTrajectory(const arr& x, int steps, rai::KinematicWorld& G, const char *tag, double delay=0., uint dim_z=0, bool copyG=false) {
   displayTrajectory(x, steps, G, {}, tag, delay, dim_z, copyG);
 }
-void editConfiguration(const char* orsfile, rai::KinematicWorld& G);
-int animateConfiguration(rai::KinematicWorld& G, struct Inotify *ino=NULL);
+void editConfiguration(const char* orsfile, rai::KinematicWorld& G, OpenGL& gl);
+int animateConfiguration(rai::KinematicWorld& G, OpenGL& gl, struct Inotify *ino=NULL);
 
 void kinVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);
 void kinAngVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);

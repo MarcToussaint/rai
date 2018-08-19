@@ -26,7 +26,7 @@ typedef rai::Array<CtrlTask*> CtrlTaskL;
  * A CtrlTask defines a motion in operational space.
  */
 struct CtrlTask { //TODO: rename/refactor to become LinearAccelerationLaw (LAW) in task spaces
-  TaskMap& map;
+  Feature& map;
   rai::String name;
   bool active;
   arr prec; ///< compliance matrix $C$
@@ -51,9 +51,9 @@ struct CtrlTask { //TODO: rename/refactor to become LinearAccelerationLaw (LAW) 
   arr y, v;
   /// @}
   
-  CtrlTask(const char* name, TaskMap* map);
-  CtrlTask(const char* name, TaskMap* map, double decayTime, double dampingRatio, double maxVel, double maxAcc);
-  CtrlTask(const char* name, TaskMap* map, const Graph& params);
+  CtrlTask(const char* name, Feature* map);
+  CtrlTask(const char* name, Feature* map, double decayTime, double dampingRatio, double maxVel, double maxAcc);
+  CtrlTask(const char* name, Feature* map, const Graph& params);
   
   void set(const Graph& params);
   void setTarget(const arr& yref, const arr& vref=NoArr);
@@ -79,14 +79,14 @@ struct CtrlTask { //TODO: rename/refactor to become LinearAccelerationLaw (LAW) 
 //===========================================================================
 
 struct ConstraintForceTask {
-  TaskMap& map;
+  Feature& map;
   rai::String name;
   bool active;
   
   double desiredForce;
   CtrlTask desiredApproach;
   
-  ConstraintForceTask(TaskMap* m):map(*m), active(true), desiredForce(0.), desiredApproach("desiredApproach", m) {}
+  ConstraintForceTask(Feature* m):map(*m), active(true), desiredForce(0.), desiredApproach("desiredApproach", m) {}
   
   void updateConstraintControl(const arr& g, const double& lambda_desired);
 };
@@ -107,13 +107,13 @@ struct TaskControlMethods {
   TaskControlMethods(rai::KinematicWorld& _world, bool _useSwift=true);
   
   /// @{ @name adding tasks
-  CtrlTask* addPDTask(const char* name, double decayTime, double dampingRatio, TaskMap *map);
+  CtrlTask* addPDTask(const char* name, double decayTime, double dampingRatio, Feature *map);
   CtrlTask* addPDTask(const char* name,
                       double decayTime, double dampingRatio,
                       TM_DefaultType type,
                       const char* iShapeName=NULL, const rai::Vector& ivec=NoVector,
                       const char* jShapeName=NULL, const rai::Vector& jvec=NoVector);
-  ConstraintForceTask* addConstraintForceTask(const char* name, TaskMap *map);
+  ConstraintForceTask* addConstraintForceTask(const char* name, Feature *map);
   /// @}
   
   void lockJointGroup(const char *groupname, bool lockThem=true);

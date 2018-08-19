@@ -9,21 +9,21 @@
 #pragma once
 
 #include <Optim/optimization.h>
-#include <Kin/taskMap.h>
+#include <Kin/feature.h>
 
-struct Task {
-  TaskMap *map;
+struct Objective {
+  Feature *map;
   const rai::Enum<ObjectiveType> type;  ///< element of {sumOfSqr, inequality, equality}
   rai::String name;
   arr target, prec;     ///< optional linear, time-dependent, rescaling (with semantics of target & precision)
   intA vars;
   
-  Task(TaskMap *m, const ObjectiveType& type) : map(m), type(type) {}
-  ~Task() { if(map) delete map; map=NULL; }
+  Objective(Feature *m, const ObjectiveType& type) : map(m), type(type) {}
+  ~Objective() { if(map) delete map; map=NULL; }
   
   void setCostSpecs(int fromStep, int toStep, const arr& _target= {}, double _prec=1.);
   void setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T,
-                    const arr& _target, double _prec, int deltaStep=0);
+                    const arr& _target, double _prec, int deltaFromStep=0, int deltaToStep=0);
   void setCostSpecsDense(intA _vars, const arr& _target, double _prec);
   bool isActive(uint t) { return (prec.N>t && prec(t)); }
   void write(std::ostream& os) const {
@@ -36,4 +36,4 @@ struct Task {
     if(prec.N>4) writeConsecutiveConstant(os,prec); else os <<'[' <<prec <<']';
   }
 };
-stdOutPipe(Task)
+stdOutPipe(Objective)

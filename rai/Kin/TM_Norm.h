@@ -7,14 +7,14 @@
     --------------------------------------------------------------  */
 
 #pragma once
-#include "taskMap.h"
+#include "feature.h"
 
 //===========================================================================
 
-struct TM_Norm : TaskMap {
-  TaskMap *map;
+struct TM_Norm : Feature {
+  Feature *map;
   
-  TM_Norm(TaskMap *map) : map(map) {}
+  TM_Norm(Feature *map) : map(map) {}
   
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G);

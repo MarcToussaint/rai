@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "taskMap.h"
+#include "feature.h"
 
-struct TM_Align : TaskMap {
+struct TM_Align : Feature {
   int i, j;               ///< which shapes does it refer to?
   
   TM_Align(const rai::KinematicWorld& G, const char* iName=NULL, const char* jName=NULL);

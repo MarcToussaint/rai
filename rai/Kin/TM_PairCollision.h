@@ -10,8 +10,8 @@
 
 #include "taskMaps.h"
 
-struct TM_PairCollision : TaskMap {
-  enum Type { _none=-1, _negScalar, _vector, _normal };
+struct TM_PairCollision : Feature {
+  enum Type { _none=-1, _negScalar, _vector, _normal, _center, _p1, _p2 };
 
   int i, j;               ///< which shapes does it refer to?
   Type type;

@@ -81,10 +81,11 @@ public:
     CHECK_EQ(glwins(i), gl, "");
     glwins(i)=NULL;
     numWins--;
-    if(!numWins) {
-      OpenGLMutex().unlock();
-      th.threadClose(); //Stop(true); //stop looping (maybe wait here; or even threadClose())
+    if(!numWins){ //stop looping
+       OpenGLMutex().unlock();
+      th.threadClose(true);
       OpenGLMutex().lock();
+      for(uint i=0;i<10;i++) glutMainLoopEvent(); //ensure that all windows are being closed
     }
   }
   OpenGL* getGL(uint i) {
@@ -1281,11 +1282,6 @@ OpenGL* OpenGL::newClone() const {
 }
 
 void OpenGL::init() {
-  camera.setPosition(0., 0., 10.);
-  camera.focus(0, 0, 0);
-  camera.setZRange(.1, 1000.);
-  camera.setHeightAngle(12.);
-  
   drawFocus=false;
   clearR=clearG=clearB=1.; clearA=0.;
   drawers.memMove=true;

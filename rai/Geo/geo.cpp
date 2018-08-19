@@ -32,8 +32,6 @@ rai::Transformation& NoTransformation = *((rai::Transformation*)NULL);
 
 namespace rai {
 
-double quatScalarProduct(const rai::Quaternion& a, const rai::Quaternion& b);
-
 double& Vector::operator()(uint i) {
   CHECK(i<3,"out of range");
   isZero=false;
@@ -44,7 +42,7 @@ double& Vector::operator()(uint i) {
 void Vector::set(double _x, double _y, double _z) { x=_x; y=_y; z=_z; isZero=(x==0. && y==0. && z==0.); }
 
 /// set the vector
-void Vector::set(double* p) { x=p[0]; y=p[1]; z=p[2]; isZero=(x==0. && y==0. && z==0.); }
+void Vector::set(const double* p) { x=p[0]; y=p[1]; z=p[2]; isZero=(x==0. && y==0. && z==0.); }
 
 /// set the vector
 void Vector::setZero() { memset(this, 0, sizeof(Vector)); isZero=true; }
@@ -325,6 +323,10 @@ bool operator!=(const Vector& lhs, const Vector& rhs) {
   return !(lhs == rhs);
 }
 
+double sqrDistance(const Vector &a, const Vector &b) {
+  return (a-b).lengthSqr();
+}
+
 //==============================================================================
 
 /// reset to zero
@@ -487,7 +489,7 @@ void Quaternion::multiply(double f) {
 }
 
 double Quaternion::normalization() const {
-  return sqrt(w*w + x*x + y*y + z*z);
+  return w*w + x*x + y*y + z*z;
 }
 
 bool Quaternion::isNormalized() const {
@@ -496,10 +498,10 @@ bool Quaternion::isNormalized() const {
 }
 
 void Quaternion::normalize() {
+  if(isZero) return;
   double n=w*w + x*x + y*y + z*z;
   n=sqrt(n);
   w/=n; x/=n; y/=n; z/=n;
-  isZero=(w==1. || w==-1.);
 }
 
 /** @brief roughly, removes all ``components'' of the rotation that are not
@@ -601,7 +603,7 @@ void Quaternion::setRandom() {
 /// sets this to a smooth interpolation between two rotations
 void Quaternion::setInterpolate(double t, const Quaternion& a, const Quaternion b) {
   double sign=1.;
-  if(quatScalarProduct(a, b)<0) sign=-1.;
+  if(quat_scalarProduct(a, b)<0) sign=-1.;
   w=a.w+t*(sign*b.w-a.w);
   x=a.x+t*(sign*b.x-a.x);
   y=a.y+t*(sign*b.y-a.y);
@@ -612,7 +614,7 @@ void Quaternion::setInterpolate(double t, const Quaternion& a, const Quaternion 
 
 /// euclidean addition (with weights) modulated by scalar product -- leaves you with UNNORMALIZED quaternion
 void Quaternion::add(const Quaternion b, double w_b, double w_this) {
-  if(quatScalarProduct(*this, b)<0.) w_b *= -1.;
+  if(quat_scalarProduct(*this, b)<0.) w_b *= -1.;
   if(w_this!=-1.) {
     w *= w_this;
     x *= w_this;
@@ -1109,9 +1111,15 @@ Vector operator/(const Transformation& X, const Vector& c) {
   return a;
 }
 
+/// use as similarity measure (distance = 1 - |scalarprod|)
+double quat_scalarProduct(const Quaternion& a, const Quaternion& b) {
+  return a.w*b.w+a.x*b.x+a.y*b.y+a.z*b.z;
+}
+
 void quat_concat(arr& y, arr& Ja, arr& Jb, const arr& A, const arr& B){
   rai::Quaternion a(A);
   rai::Quaternion b(B);
+  a.isZero=b.isZero=false;
   y = (a * b).getArr4d();
   if(&Ja){
     Ja.resize(4,4);
@@ -1161,7 +1169,7 @@ void quat_getVec(arr& y, arr& J, const arr& A){
     return;
   }
 
-  if(a.w>=0.){
+  if(false && a.w>=0.){
     phi=acos(a.w);
     sinphi = sin(phi);
     s=2.*phi/sinphi;
@@ -1195,10 +1203,10 @@ void quat_getVec(arr& y, arr& J, const arr& A){
 
 void quat_diffVector(arr& y, arr& Ja, arr& Jb, const arr& a, const arr& b){
   arr ab, Jca, Jcb;
-  arr ainv = a;
-  if(a(0)!=1.)  ainv(0) *= -1.;
-  quat_concat(ab, Jca, Jcb, ainv, b);
-  if(a(0)!=1.)  for(uint i=0;i<Jca.d0;i++) Jca(i,0) *= -1.;
+  arr binv = b;
+  binv(0) *= -1.;
+  quat_concat(ab, Jca, Jcb, a, binv);
+  for(uint i=0;i<Jcb.d0;i++) Jcb(i,0) *= -1.;
 
   arr Jvec;
   quat_getVec(y, Jvec, ab);
@@ -1308,6 +1316,7 @@ void Transformation::setAffineMatrix(const double *m) {
 void Transformation::setDifference(const Transformation& from, const Transformation& to) {
   rot = Quaternion_Id / from.rot * to.rot;
   pos = from.rot/(to.pos-from.pos);
+  rot.normalize();
 }
 
 /// get the current position/orientation/scale in an OpenGL format matrix (of type double[16])
@@ -1391,17 +1400,17 @@ void Transformation::applyOnPointArray(arr& pts) const {
     LOG(-1) <<"wrong pts dimensions for transformation:" <<pts.dim();
     return;
   }
+  if(!rot.isZero){
+    arr R = ~rot.getArr(); //transposed, only to make it applicable to an n-times-3 array
+    arr t = conv_vec2arr(pos);
+    pts = pts * R;
+  }
   if(!pos.isZero){
     for(double *p=pts.p, *pstop=pts.p+pts.N; p<pstop; p+=3) {
       p[0] += pos.x;
       p[1] += pos.y;
       p[2] += pos.z;
     }
-  }
-  if(!rot.isZero){
-    arr R = ~rot.getArr(); //transposed, only to make it applicable to an n-times-3 array
-    arr t = conv_vec2arr(pos);
-    pts = pts * R;
   }
 }
 
@@ -1679,7 +1688,7 @@ Camera::Camera() {
   
   setPosition(0., 0., 10.);
   focus(0, 0, 0);
-  setHeightAngle(24.);
+  setHeightAngle(45.);
 }
 
 void Camera::setZero() {
@@ -1941,11 +1950,6 @@ void Camera::setDefault() {
 
 //==============================================================================
 
-/// use as similarity measure (distance = 1 - |scalarprod|)
-double quatScalarProduct(const Quaternion& a, const Quaternion& b) {
-  return a.w*b.w+a.x*b.x+a.y*b.y+a.z*b.z;
-}
-
 std::istream& operator>>(std::istream& is, Vector& x)    { x.read(is); return is; }
 std::istream& operator>>(std::istream& is, Matrix& x)    { x.read(is); return is; }
 std::istream& operator>>(std::istream& is, Quaternion& x) { x.read(is); return is; }
@@ -1954,10 +1958,6 @@ std::ostream& operator<<(std::ostream& os, const Vector& x)    { x.write(os); re
 std::ostream& operator<<(std::ostream& os, const Matrix& x)    { x.write(os); return os; }
 std::ostream& operator<<(std::ostream& os, const Quaternion& x) { x.write(os); return os; }
 std::ostream& operator<<(std::ostream& os, const Transformation& x)     { x.write(os); return os; }
-
-double sqrDistance(const Vector &a, const Vector &b) {
-  return (a-b).lengthSqr();
-}
 
 } //namespace rai
 

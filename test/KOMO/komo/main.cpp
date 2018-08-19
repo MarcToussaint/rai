@@ -20,13 +20,13 @@ void TEST(Easy){
   komo.setPathOpt(1., 100, 5.);
 
   //-- set a time optim objective
-  komo.setTask(-1., -1., new TM_Time(), OT_sos, {}, 1e2, 1); //smooth time evolution
-  komo.setTask(-1., -1., new TM_Time(), OT_sos, {komo.tau}, 1e1, 0); //prior on timing
+  komo.addObjective(-1., -1., new TM_Time(), OT_sos, {}, 1e2, 1); //smooth time evolution
+  komo.addObjective(-1., -1., new TM_Time(), OT_sos, {komo.tau}, 1e1, 0); //prior on timing
 
   komo.setPosition(1., 1., "endeff", "target", OT_sos);
   komo.setSlowAround(1., .05);
 //  komo.setTask(.3, .7, new TM_Default(TMT_posDiff, komo.world, "endeff", NoVector, "target"), OT_sos, NoArr, 1e2, 2);
-  komo.setCollisions(false);
+  komo.add_collision(false);
   komo.reportProblem();
 
   komo.reset();
@@ -53,7 +53,7 @@ void TEST(Align){
   komo.setPosition(1., 1., "endeff", "target");
   komo.setOrientation(1., 1., "endeff", "target", OT_eq);
   komo.setSlowAround(1., .02);
-  komo.setCollisions(false);
+  komo.add_collision(false);
 //  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq, NoArr, 1e1);
 
   komo.reset();
@@ -85,7 +85,7 @@ void TEST(PR2){
   komo.setPathOpt(1., 100, 10.);
   komo.setPosition(1., 1., "endeff", "target");
   komo.setSlowAround(1., .02);
-  komo.setCollisions(false);
+  komo.add_collision(false);
 //  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq);
 //  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq, NoArr, 1e2);
 

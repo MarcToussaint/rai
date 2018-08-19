@@ -6,9 +6,9 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "taskMap.h"
+#include "feature.h"
 
-struct TM_Energy : TaskMap {
+struct TM_Energy : Feature {
   double gravity=9.81;
 
   TM_Energy();

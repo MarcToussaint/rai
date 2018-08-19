@@ -56,6 +56,9 @@ YACC = bison -d
 
 LINK	= $(CXX)
 CPATHS	+= $(BASE)/rai $(BASE)/../src
+ifdef BASE2
+CPATHS	+= $(BASE)/rai $(BASE2)/src
+endif
 LPATHS	+= $(BASE_REAL)/lib /usr/local/lib
 LIBS += -lrt
 SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefined
@@ -160,7 +163,7 @@ export MSVC_LPATH
 default: $(OUTPUT)
 all: $(OUTPUT) #this is for qtcreator, which by default uses the 'all' target
 
-clean: cleanLocks cleanLocal generate_Makefile.dep
+clean: cleanLocks cleanLocal
 #	rm -f $(OUTPUT) $(OBJS) $(PREOBJS) callgrind.out.* $(CLEAN)
 #	@rm -f $(MODULE_NAME)_wrap.* $(MODULE_NAME)py.so $(MODULE_NAME)py.py
 #	@find $(BASE) -type d -name 'Make.lock' -delete -print
@@ -199,6 +202,7 @@ info: force
 	@echo ----------------------------------------; echo
 	@echo "  PWD =" "$(PWD)"
 	@echo "  BASE =" "$(BASE)"
+	@echo "  BASE2 =" "$(BASE2)"
 	@echo "  BASE_REAL =" "$(BASE_REAL)"
 	@echo "  NAME =" "$(NAME)"
 	@echo "  LIBPATH =" "$(LIBPATH)"
@@ -337,14 +341,16 @@ includeAll.cxx: force
 inPath_makeLib/extern_%: % $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< libextern_$*.a
 
-inPath_makeLib/Hardware_%: $(BASE)/rai/Hardware/% $(PREOBJS)
+inPath_makeLib/Hardware_%: $(BASE2)/Hardware/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< libHardware_$*.so
 
 inPath_makeLib/%: $(BASE)/rai/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< lib$*.so
 
-inPath_makeLib/%: $(BASE)/../src/% $(PREOBJS)
+ifdef BASE2
+inPath_makeLib/%: $(BASE2)/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< lib$*.so
+endif
 
 inPath_make/%: % $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< x.exe
@@ -365,18 +371,36 @@ inPath_clean/%: $(BASE)/rai/%
 	@-rm -f $</Makefile.dep
 	@-$(MAKE) -C $< -f Makefile clean --no-print-directory
 
-inPath_clean/%: $(BASE)/../src/%
+ifdef BASE2
+inPath_clean/%: $(BASE2)/%
 	@echo "                                                ***** clean " $<
 	@-rm -f $</Makefile.dep
 	@-$(MAKE) -C $< -f Makefile clean --no-print-directory
+endif
+
+inPath_depend/%: %
+	@echo "                                                ***** depend " $<
+	@-$(MAKE) -C $< -f Makefile depend --no-print-directory
 
 inPath_depend/%: $(BASE)/rai/%
 	@echo "                                                ***** depend " $<
 	@-$(MAKE) -C $< -f Makefile depend --no-print-directory
 
+ifdef BASE2
+inPath_depend/%: $(BASE2)/%
+	@echo "                                                ***** depend " $<
+	@-$(MAKE) -C $< -f Makefile depend --no-print-directory
+endif
+
 inPath_installUbuntu/%: $(BASE)/rai/%
 	@echo "                                                ***** init " $*
 	@-$(MAKE) -C $< installUbuntu --no-print-directory
+
+ifdef BASE2
+inPath_installUbuntu/%: $(BASE2)/%
+	@echo "                                                ***** init " $*
+	@-$(MAKE) -C $< installUbuntu --no-print-directory
+endif
 
 inPath_printUbuntuPackages/%: $(BASE)/rai/%
 	@echo "#" $*

@@ -22,7 +22,7 @@
 // defines only a map (task space), not yet the costs in this space
 //
 
-struct TaskMap {
+struct Feature {
   ObjectiveType type; // element of {cost_feature, inequality, equality} MAYBE: move this to Task?
   uint order;       ///< 0=position, 1=vel, etc
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1) = 0; ///< this needs to be overloaded
@@ -36,8 +36,8 @@ struct TaskMap {
     };
   }
   
-  TaskMap():type(OT_sos),order(0) {}
-  virtual ~TaskMap() {};
+  Feature():type(OT_sos),order(0) {}
+  virtual ~Feature() {};
 };
 
 //===========================================================================
@@ -46,8 +46,8 @@ struct TaskMap {
 /// optionally rescaled using 'target' and 'prec'
 //
 
-struct Task {
-  TaskMap& map;
+struct Objective {
+  Feature& map;
   rai::String name;
   bool active;
   arr target, prec;  ///< optional linear, potentially time-dependent, rescaling (with semantics of target & precision)
@@ -56,14 +56,14 @@ struct Task {
     if(!active || prec.N<=t || !prec(t)) return 0; return map.dim_phi(G);
   }
   
-  Task(TaskMap* m):map(*m), active(true) {} //TODO: require type here!!
+  Objective(Feature* m):map(*m), active(true) {} //TODO: require type here!!
   
   void setCostSpecs(uint fromTime, uint toTime,
                     const arr& _target=ARR(0.),
                     double _prec=1.);
 };
 
-Task* newTask(const Node* specs, const rai::KinematicWorld& world, uint Tinterval, uint Tzero=0);
+Objective* newTask(const Node* specs, const rai::KinematicWorld& world, uint Tinterval, uint Tzero=0);
 
 //===========================================================================
 //
@@ -80,7 +80,7 @@ struct KOMO {
   //******* the following three sections are parameters that define the problem
   
   //-- task cost descriptions
-  rai::Array<Task*> tasks;
+  rai::Array<Objective*> tasks;
   
   //-- kinematic switches along the motion
   rai::Array<rai::KinematicSwitch*> switches;
@@ -114,7 +114,7 @@ struct KOMO {
   //-- setting costs in a task space
   bool parseTask(const Node *n, int Tinterval=-1, uint Tzero=0);
   void parseTasks(const Graph& specs, int Tinterval=-1, uint Tzero=0);
-  Task* addTask(const char* name, TaskMap *map);
+  Objective* addTask(const char* name, Feature *map);
   //TODO: the following are deprecated; use Task::setCostSpecs instead
 //  enum TaskCostInterpolationType { constant, finalOnly, final_restConst, early_restConst, final_restLinInterpolated };
 //  void setInterpolatingCosts(Task *c,

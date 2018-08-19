@@ -13,6 +13,8 @@
 #include <Kin/TM_default.h>
 #include <Kin/TM_PairCollision.h>
 
+bool JointDidNotSwitch(const rai::Frame *a1, const WorldL& Ktuple, int order);
+
 void shapeFunction(double &x, double &dx) {
   if(x>0.) { x=0.; dx=0.; return; }
   if(x>1. || x<-1.) { x=1.; dx=0.; return; }
@@ -46,7 +48,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
 //      if(a->inertia && a->inertia->type==rai::BT_dynamic){
         TM_Default pos(TMT_pos, a->ID);
         pos.order=1;
-        pos.TaskMap::phi(p0, (&J?J0:NoArr), Ktuple);
+        pos.Feature::phi(p0, (&J?J0:NoArr), Ktuple);
         
         arr v_ref = {0.,0.,-gravity};
         arr Jv_ref = zeros(3, K.q.N);
@@ -116,7 +118,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
       if(a->flags & (1<<FL_gravityAcc)) {
         TM_Default pos(TMT_posDiff, a->ID);
         pos.order=2;
-        pos.TaskMap::phi(acc, (&J?Jacc:NoArr), Ktuple);
+        pos.Feature::phi(acc, (&J?Jacc:NoArr), Ktuple);
         
         arr err = acc - acc_ref;
         arr Jerr = Jacc;
@@ -216,4 +218,68 @@ uint TM_Gravity::dim_phi(const WorldL &Ktuple) {
       d+=3;
     }
   return d;
+}
+
+TM_Gravity2::TM_Gravity2(int iShape) : i(iShape) {
+  order=2;
+  gravity = rai::getParameter<double>("FlagConstraints/gravity", 1.);
+}
+
+void TM_Gravity2::phi(arr& y, arr& J, const WorldL& Ktuple){
+  CHECK_GE(order, 2, "needs k-order 2");
+
+  rai::Frame *a = Ktuple(-1)->frames(i);
+  if((a->flags & (1<<FL_impulseExchange))){
+    y.resize(3).setZero();
+    if(&J) J.resize(3, getKtupleDim(Ktuple).last()).setZero();
+    return;
+  }
+  TM_Default pos(TMT_pos, i);
+  pos.order=2;
+  pos.Feature::phi(y, J, Ktuple);
+  y(2) += gravity;
+
+//  TM_Default quat(TMT_quat, a->ID); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
+//  // flip the quaternion sign if necessary
+//  quat.flipTargetSignOnNegScalarProduct = true;
+//  quat.order=1;
+//  quat.Feature::phi(y({d+3,d+6})(), (&J?J({d+3,d+6})():NoArr), Ktuple);
+//  if(false) { //rotational friction
+//    double eps = 1e-2;
+//    arr w,Jw;
+//    quat.order=1;
+//    quat.Feature::phi(w, (&J?Jw:NoArr), Ktuple);
+//    y({d+3,d+6}) += eps*w;
+//    if(&J) J({d+3,d+6}) += eps*Jw;
+//  }
+
+}
+
+TM_ZeroAcc::TM_ZeroAcc(int iShape) : i(iShape) {
+  order=2;
+}
+
+void TM_ZeroAcc::phi(arr& y, arr& J, const WorldL& Ktuple){
+  CHECK_GE(order, 2, "needs k-order 2");
+
+  rai::Frame *a = Ktuple(-1)->frames(i);
+  if((a->flags & (1<<FL_impulseExchange))){
+    y.resize(3).setZero();
+    if(&J) J.resize(3, getKtupleDim(Ktuple).last()).setZero();
+    return;
+  }
+  TM_Default pos(TMT_pos, i);
+  pos.order=2;
+  pos.Feature::phi(y, J, Ktuple);
+}
+
+void TM_ZeroQVel::phi(arr& y, arr& J, const WorldL& Ktuple){
+  TM_qItself q({(uint)i}, false);
+  q.order=order;
+  q.Feature::phi(y, J, Ktuple);
+}
+
+uint TM_ZeroQVel::dim_phi(const rai::KinematicWorld& G){
+  rai::Frame *a = G.frames(i);
+  return a->joint->dim;
 }

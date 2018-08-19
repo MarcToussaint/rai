@@ -120,14 +120,14 @@ struct Subscriber : SubscriberType {
   ros::NodeHandle *nh=NULL;
   ros::Subscriber sub;
   uint revision=0;
-  Subscriber(Var<msg_type>& _var)
+  Subscriber(Var<msg_type>& _var, const char* topic_name=NULL)
     : var(_var) {
     if(rai::getParameter<bool>("useRos", true)) {
-      rai::String topic_name = var.name; //STRING("rai/" <<var.name);
+      if(!topic_name) topic_name = var.name;
       registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {var.registryNode}, this);
       LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<"> into var '" <<var.name <<'\'';
       nh = new ros::NodeHandle;
-      sub  = nh->subscribe(topic_name.p, 100, &Subscriber::callback, this);
+      sub  = nh->subscribe(topic_name, 100, &Subscriber::callback, this);
     }
   }
   ~Subscriber() {
@@ -312,8 +312,7 @@ struct PublisherConv : Thread {
   void step() {
     if(nh) {
       pub.publish(conv(var.get()));
-      LOG(0) <<"publishing to topic '" <<topic_name <<"' revision " <<var.getRevision() <<" of variable '" <<var.name <<'\'';
-      rai::wait(1.);
+//      LOG(0) <<"publishing to topic '" <<topic_name <<"' revision " <<var.getRevision() <<" of variable '" <<var.name <<'\'';
     }
   }
   void close() {

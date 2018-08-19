@@ -17,13 +17,15 @@ template<> const char* rai::Enum<FrameFlagType>::names []= {
   "FL_gravityAcc",
   "FL_zeroQVel",
   "FL_zeroQAcc",
-  "FL_noQControlCosts",
+  "FL_normalControlCosts",
   "FL_impulseExchange",
   "FL_qCtrlCostAcc",
+  "FL_qCtrlCostVel",
   "FL_xPosAccCosts",
   "FL_clear",
   "FL_xPosVelCosts",
   "FL_kinematic",
+  "FL_something",
   NULL
 };
 

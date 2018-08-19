@@ -175,11 +175,14 @@ void rai::Frame::write(std::ostream& os) const {
 rai::Frame* rai::Frame::insertPreLink(const rai::Transformation &A) {
   //new frame between: parent -> f -> this
   Frame *f = new Frame(K);
-  if(name) f->name <<'>' <<name;
+
   
   if(parent) {
     f->linkFrom(parent);
     parent->outLinks.removeValue(this);
+    f->name <<parent->name <<'>' <<name;
+  }else{
+    f->name <<"NIL>" <<name;
   }
   parent=f;
   parent->outLinks.append(this);
@@ -283,7 +286,7 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
         Q.rot.set(q.p+_qIndex);
         {
           double n=Q.rot.normalization();
-          if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+          if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
         }
         Q.rot.normalize();
         Q.rot.isZero=false; //WHY? (gradient check fails without!)
@@ -294,7 +297,7 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
         Q.rot.set(q.p+_qIndex+3);
         {
           double n=Q.rot.normalization();
-          if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+          if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
         }
         Q.rot.normalize();
         Q.rot.isZero=false;
@@ -308,7 +311,7 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
         Q.rot.set(q.p+_qIndex+1);
         {
           double n=Q.rot.normalization();
-          if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+          if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
         }
         Q.rot.normalize();
         Q.rot.isZero=false;
@@ -571,11 +574,15 @@ double& rai::Joint::getQ() {
 }
 
 void rai::Joint::makeRigid() {
-  type=JT_rigid; frame.K.reset_q();
+  if(type!=JT_rigid){
+    type=JT_rigid; frame.K.reset_q();
+  }
 }
 
 void rai::Joint::makeFree(){
-  type=JT_free; frame.K.reset_q();
+  if(type!=JT_free){
+    type=JT_free; frame.K.reset_q();
+  }
 }
 
 void rai::Joint::read(const Graph &G) {
@@ -813,13 +820,12 @@ void rai::Inertia::defaultInertiaByShape() {
   CHECK(frame.shape, "");
   
   //add inertia to the body
-  Matrix I;
   switch(frame.shape->type()) {
-    case ST_sphere:   inertiaSphere(I.p(), mass, 1000., frame.shape->size(3));  break;
+    case ST_sphere:   inertiaSphere(matrix.p(), mass, 1000., frame.shape->size(3));  break;
     case ST_ssBox:
-    case ST_box:      inertiaBox(I.p(), mass, 1000., frame.shape->size(0), frame.shape->size(1), frame.shape->size(2));  break;
+    case ST_box:      inertiaBox(matrix.p(), mass, 1000., frame.shape->size(0), frame.shape->size(1), frame.shape->size(2));  break;
     case ST_capsule:
-    case ST_cylinder: inertiaCylinder(I.p(), mass, 1000., frame.shape->size(2), frame.shape->size(3));  break;
+    case ST_cylinder: inertiaCylinder(matrix.p(), mass, 1000., frame.shape->size(2), frame.shape->size(3));  break;
     default: HALT("not implemented for this shape type");
   }
 }
@@ -843,6 +849,7 @@ void rai::Inertia::read(const Graph& G) {
     mass=d;
     matrix.setId();
     matrix *= .2*d;
+    if(frame.shape) defaultInertiaByShape();
   }
   if(G["fixed"])       type=BT_static;
   if(G["static"])      type=BT_static;

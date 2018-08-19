@@ -11,6 +11,7 @@
 #include <Kin/TM_default.h>
 
 TM_Energy::TM_Energy() {
+  order=2;
   gravity = rai::getParameter<double>("TM_Physics/gravity", 9.81);
 }
 
@@ -51,10 +52,10 @@ void TM_Energy::phi(arr &y, arr &J, const WorldL &Ktuple) {
 
       TM_Default pos(TMT_posDiff, a->ID);
       pos.order=0;
-      pos.TaskMap::phi(p, (&J?Jp:NoArr), Ktuple);
+      pos.Feature::phi(p, (&J?Jp:NoArr), Ktuple);
 
       pos.order=1;
-      pos.TaskMap::phi(v, (&J?Jv:NoArr), Ktuple);
+      pos.Feature::phi(v, (&J?Jv:NoArr), Ktuple);
 
 
 //      TM_AngVel rot(a->ID);

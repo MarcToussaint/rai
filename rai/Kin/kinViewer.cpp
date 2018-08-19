@@ -14,8 +14,8 @@
 
 //===========================================================================
 
-OrsViewer_old::OrsViewer_old(const char* varname, double beatIntervalSec, bool computeCameraView)
-  : Thread(STRING("OrsViewer_old_"<<varname), beatIntervalSec),
+KinViewer_old::KinViewer_old(const char* varname, double beatIntervalSec, bool computeCameraView)
+  : Thread(STRING("KinViewer_old_"<<varname), beatIntervalSec),
     modelWorld(this, varname, (beatIntervalSec<0.)),
     modelCameraView(this, "modelCameraView"),
     modelDepthView(this, "modelDepthView"),
@@ -23,13 +23,13 @@ OrsViewer_old::OrsViewer_old(const char* varname, double beatIntervalSec, bool c
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
 
-OrsViewer_old::~OrsViewer_old() { threadClose(); }
+KinViewer_old::~KinViewer_old() { threadClose(); }
 
-void OrsViewer_old::open() {
-  copy.gl(STRING("OrsViewer_old: "<<modelWorld.name));
+void KinViewer_old::open() {
+  copy.gl(STRING("KinViewer_old: "<<modelWorld.name));
 }
 
-void OrsViewer_old::step() {
+void KinViewer_old::step() {
   copy.gl().dataLock.writeLock();
   copy = modelWorld.get();
   copy.gl().dataLock.unlock();
@@ -55,30 +55,30 @@ void OrsViewer_old::step() {
 
 //===========================================================================
 
-OrsViewer::OrsViewer(const char* world_name, double beatIntervalSec)
-  : Thread(STRING("OrsViewer_"<<world_name), beatIntervalSec),
+KinViewer::KinViewer(const char* world_name, double beatIntervalSec)
+  : Thread(STRING("KinViewer_"<<world_name), beatIntervalSec),
     world(this, world_name, (beatIntervalSec<0.)) {
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
 
-OrsViewer::~OrsViewer() {
+KinViewer::~KinViewer() {
   threadClose();
 }
 
-void OrsViewer::open() {
-  gl = new OpenGL(STRING("OrsViewer: "<<world.name));
+void KinViewer::open() {
+  gl = new OpenGL(STRING("KinViewer: "<<world.name));
   gl->add(glStandardScene);
   gl->add(glDrawMeshes, &meshesCopy);
-  gl->add(rai::glDrawProxies, &proxiesCopy);
+//  gl->add(rai::glDrawProxies, &proxiesCopy);
   gl->camera.setDefault();
 }
 
-void OrsViewer::close() {
+void KinViewer::close() {
   proxiesCopy.clear();
   delete gl;
 }
 
-void OrsViewer::step() {
+void KinViewer::step() {
   //-- get transforms, or all shapes if their number changed, and proxies
   rai::Array<rai::Transformation> X;
   world.readAccess();
@@ -95,7 +95,7 @@ void OrsViewer::step() {
   X.resize(world->frames.N);
   for(rai::Frame *f:world().frames) X(f->ID) = f->X;
   gl->dataLock.writeLock();
-  proxiesCopy = world->proxies;
+//  proxiesCopy = world->proxies;
   gl->dataLock.unlock();
   world.deAccess();
   
@@ -110,35 +110,35 @@ void OrsViewer::step() {
 
 //===========================================================================
 
-void OrsPathViewer::setConfigurations(const WorldL& cs) {
+void KinPathViewer::setConfigurations(const WorldL& cs) {
   configurations.writeAccess();
   listResize(configurations(), cs.N);
   for(uint i=0; i<cs.N; i++) configurations()(i)->copy(*cs(i), true);
   configurations.deAccess();
 }
 
-void OrsPathViewer::clear() {
+void KinPathViewer::clear() {
   listDelete(configurations.set()());
   text.clear();
 }
 
-OrsPathViewer::OrsPathViewer(const char* varname, double beatIntervalSec, int tprefix)
-  : Thread(STRING("OrsPathViewer_"<<varname), beatIntervalSec),
+KinPathViewer::KinPathViewer(const char* varname, double beatIntervalSec, int tprefix)
+  : Thread(STRING("KinPathViewer_"<<varname), beatIntervalSec),
     configurations(this, varname, (beatIntervalSec<0.)),
     t(0), tprefix(tprefix), writeToFiles(false) {
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
 
-OrsPathViewer::~OrsPathViewer() {
+KinPathViewer::~KinPathViewer() {
   threadClose();
   clear();
 }
 
-void OrsPathViewer::open() {
-  copy.gl(STRING("OrsPathViewer: "<<configurations.name));
+void KinPathViewer::open() {
+  copy.gl(STRING("KinPathViewer: "<<configurations.name));
 }
 
-void OrsPathViewer::step() {
+void KinPathViewer::step() {
   copy.gl().dataLock.writeLock();
   configurations.readAccess();
   uint T=configurations().N;
@@ -163,7 +163,8 @@ void OrsPathViewer::step() {
 void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix, int w, int h, rai::Camera *camera) {
   rai::KinematicWorld copy;
   copy.orsDrawMarkers=false;
-  rai::system(STRING("rm " <<filePrefix <<"*.ppm"));
+  rai::system(STRING("mkdir -p " <<filePrefix));
+  rai::system(STRING("rm -f " <<filePrefix <<"*.ppm"));
   for(uint t=0; t<cs.N; t++) {
     copy.copy(*cs(t), true);
 #if 0 //render on screen
@@ -186,10 +187,10 @@ void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix,
 
 //===========================================================================
 
-OrsPoseViewer::OrsPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec)
-  : Thread(STRING("OrsPoseViewer_"<<poseVarNames), beatIntervalSec),
+KinPoseViewer::KinPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec)
+  : Thread(STRING("KinPoseViewer_"<<poseVarNames), beatIntervalSec),
     modelWorld(this, modelVarName, false),
-    gl(STRING("OrsPoseViewer: " <<poseVarNames)) {
+    gl(STRING("KinPoseViewer: " <<poseVarNames)) {
   for(const String& varname: poseVarNames) {
     poses.append(new Var<arr>(this, varname, (beatIntervalSec<0.)));   //listen only when beatInterval=1.
     copies.append(new rai::KinematicWorld());
@@ -200,13 +201,13 @@ OrsPoseViewer::OrsPoseViewer(const char* modelVarName, const StringA& poseVarNam
   if(beatIntervalSec>=0.) threadLoop();
 }
 
-OrsPoseViewer::~OrsPoseViewer() {
+KinPoseViewer::~KinPoseViewer() {
   threadClose();
   listDelete(copies);
   listDelete(poses);
 }
 
-void OrsPoseViewer::recopyKinematics(const rai::KinematicWorld& world) {
+void KinPoseViewer::recopyKinematics(const rai::KinematicWorld& world) {
   stepMutex.lock();
   if(&world) copy=world;
   else copy = modelWorld.get();
@@ -215,7 +216,7 @@ void OrsPoseViewer::recopyKinematics(const rai::KinematicWorld& world) {
   stepMutex.unlock();
 }
 
-void OrsPoseViewer::open() {
+void KinPoseViewer::open() {
   gl.add(glStandardScene, 0);
   gl.camera.setDefault();
   
@@ -225,8 +226,8 @@ void OrsPoseViewer::open() {
   //  gl.height = 960;
 }
 
-void OrsPoseViewer::step() {
-  copies.first()->proxies = modelWorld.get()->proxies;
+void KinPoseViewer::step() {
+//  copies.first()->proxies = modelWorld.get()->proxies;
 //  cout <<copy.proxies.N <<endl;
   gl.dataLock.writeLock();
   for(uint i=0; i<copies.N; i++) {
@@ -238,7 +239,7 @@ void OrsPoseViewer::step() {
   gl.update(NULL, false, false, true);
 }
 
-void OrsPoseViewer::close() {
+void KinPoseViewer::close() {
   gl.clear();
 }
 

@@ -20,8 +20,8 @@ Gamepad2Tasks::Gamepad2Tasks(TaskControlMethods& _TC, const rai::KinematicWorld&
   if(true || rai::getParameter<bool>("oldfashinedTaskControl", true)) {
     homing = new CtrlTask("qHoming", new TM_qItself(), .5, 1., .2, 10.);
     homing->PD().setTarget(q0);
-    endeffR = new CtrlTask("endeffR", new TM_Default(TMT_pos, K, "endeffR", NoVector, "base_footprint"), .5, .8, 1., 1.);
-    endeffL = new CtrlTask("endeffL", new TM_Default(TMT_pos, K, "endeffL", NoVector, "base_footprint"), .5, .8, 1., 1.);
+    endeffR = new CtrlTask("pr2R", new TM_Default(TMT_pos, K, "pr2R", NoVector, "base_footprint"), .5, .8, 1., 1.);
+    endeffL = new CtrlTask("pr2L", new TM_Default(TMT_pos, K, "pr2L", NoVector, "base_footprint"), .5, .8, 1., 1.);
     //  base = new CtrlTask("endeffBase", new TM_qItself(MP.world, "worldTranslationRotation"), .2, .8, 1., 1.);
     //  torso = new CtrlTask("torso_lift_link", new TM_Default(TMT_pos, MP.world, "torso_lift_link_1"), .2, .8, 1., 1.);
     head = new CtrlTask("endeffHead", new TM_Default(TMT_gazeAt, K, "endeffHead", Vector_z, "base_footprint"), .5, 1., 1., 1.);
@@ -43,8 +43,8 @@ Gamepad2Tasks::Gamepad2Tasks(TaskControlMethods& _TC, const rai::KinematicWorld&
     homing = new CtrlTask("qHoming", new TM_qItself(), .5, 1., 0., 0.);
 //    homing->PD().setGains(10., 2.);
     homing->PD().setTarget(q0);
-    endeffR = new CtrlTask("endeffR", new TM_Default(TMT_pos, K, "endeffR", NoVector, "base_footprint"), 1., .1, 1., 1.);
-    endeffL = new CtrlTask("endeffL", new TM_Default(TMT_pos, K, "endeffL", NoVector, "base_footprint"), .5, .8, 1., 1.);
+    endeffR = new CtrlTask("pr2R", new TM_Default(TMT_pos, K, "pr2R", NoVector, "base_footprint"), 1., .1, 1., 1.);
+    endeffL = new CtrlTask("pr2L", new TM_Default(TMT_pos, K, "pr2L", NoVector, "base_footprint"), .5, .8, 1., 1.);
     base = new CtrlTask("endeffBase", new TM_qItself(QIP_byJointNames, {"worldTranslationRotation"}, K), .2, .8, 1., 1.);
     torso = new CtrlTask("torso_lift_link", new TM_Default(TMT_pos, K, "torso_lift_link_0"), .2, .8, 1., 1.);
     head = new CtrlTask("endeffHead", new TM_Default(TMT_gazeAt, K, "endeffHead", Vector_z, "base_footprint"), 1., .8, 1., 1.);

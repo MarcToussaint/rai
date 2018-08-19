@@ -99,7 +99,7 @@ struct Signaler {
   bool waitForEvent(std::function<bool()> f, bool userHasLocked=false);
   bool waitForStatusEq(int i, bool userHasLocked=false, double seconds=-1.);    ///< return value is the state after the waiting
   void waitForStatusNotEq(int i, bool userHasLocked=false); ///< return value is the state after the waiting
-  void waitForStatusGreaterThan(int i, bool userHasLocked=false); ///< return value is the state after the waiting
+  int waitForStatusGreaterThan(int i, bool userHasLocked=false); ///< return value is the state after the waiting
   void waitForStatusSmallerThan(int i, bool userHasLocked=false); ///< return value is the state after the waiting
 };
 
@@ -379,7 +379,7 @@ struct Var {
   /// A "copy" of acc: An access to the same variable as acc refers to, but now for '_thred'
   Var(Thread* _thread, VariableBase& var, bool threadListens=false)
     : data(NULL), name(var.name), thread(_thread), last_read_revision(0), registryNode(NULL) {
-    CHECK_EQ(var.type ,  typeid(T), "types don't match!");
+    if(var.type!=typeid(T)) HALT("types don't match!");
     data = shared_ptr<VariableData<T>>(dynamic_cast<VariableData<T>*>(&var));
     if(thread) {
       registryNode = registry()->newNode<Var<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
@@ -403,7 +403,7 @@ struct Var {
   int deAccess() {    return data->deAccess((Thread*)thread); }
   int getRevision() { return data->getStatus(); }
   void waitForNextRevision() { data->waitForStatusGreaterThan(last_read_revision); }
-  void waitForRevisionGreaterThan(int rev) { data->waitForStatusGreaterThan(rev); }
+  int waitForRevisionGreaterThan(int rev) { return data->waitForStatusGreaterThan(rev); }
   void waitForValueEq(const T& x) {
     data->waitForEvent([this, &x]()->bool {
       return this->data->value==x;
@@ -421,13 +421,13 @@ template<class T> std::ostream& operator<<(std::ostream& os, Var<T>& x) { x.writ
 
 #define VAR(type, name) Var<type> name = Var<type>(this, #name);
 #define VARlisten(type, name) Var<type> name = Var<type>(this, #name, true);
-//#define Varname(type, name) Var<type> name = Var<type>(NULL, #name);
+#define VARname(type, name) Var<type> name = Var<type>(NULL, #name);
 
 //===========================================================================
 //
 // high-level methods to control threads
 
-extern Singleton<Signaler> moduleShutdown;
+Signaler* moduleShutdown();
 VariableBase::Ptr getVariable(const char* name);
 template<class T> VariableData<T>& getVariable(const char* name) {
   VariableBase::Ptr v = getVariable(name);

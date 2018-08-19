@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "taskMap.h"
+#include "feature.h"
 #include "TM_qItself.h"
 #include "TM_GJK.h"
 #include "TM_FixSwitchedObjects.h"
@@ -14,7 +14,7 @@
 
 //===========================================================================
 
-void TaskMap::phi(arr& y, arr& J, const WorldL& Ktuple) {
+void Feature::phi(arr& y, arr& J, const WorldL& Ktuple) {
   CHECK_GE(Ktuple.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
   if(k==0) { // basic case: order=0

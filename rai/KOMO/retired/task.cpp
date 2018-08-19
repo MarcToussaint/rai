@@ -20,7 +20,7 @@ Task* Task::newTask(const Node* specs, const rai::KinematicWorld& world, int ste
   else return NULL;
   
   //-- try to crate a map
-  TaskMap *map = TaskMap::newTaskMap(specs, world);
+  Feature *map = Feature::newTaskMap(specs, world);
   if(!map) return NULL;
   
   //-- create a task

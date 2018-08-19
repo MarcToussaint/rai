@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #pragma once
-#include "taskMap.h"
+#include "feature.h"
 
 //===========================================================================
 
@@ -26,20 +26,16 @@ enum PTMtype {
 
 //===========================================================================
 
-/// Proxy task variable
-struct TM_Proxy : TaskMap {
+/// Proxy task variable -> TM_AccumulatedCollision
+struct TM_Proxy : Feature {
   /// @name data fields
   PTMtype type;
   uintA shapes,shapes2;
   double margin;
-  bool useCenterDist;
-  bool useDistNotCost;
   
   TM_Proxy(PTMtype _type,
            uintA _shapes,
-           double _margin=.02,
-           bool _useCenterDist=false,
-           bool _useDistNotCost=false);
+           double _margin=.0);
   virtual ~TM_Proxy() {}
   
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
@@ -50,13 +46,11 @@ struct TM_Proxy : TaskMap {
 
 //===========================================================================
 
-struct TM_ProxyConstraint : TaskMap {
+struct TM_ProxyConstraint : Feature {
   TM_Proxy proxyCosts;
   TM_ProxyConstraint(PTMtype _type,
                      uintA _shapes,
-                     double _margin=.02,
-                     bool _useCenterDist=false,
-                     bool _useDistNotCost=false);
+                     double _margin=.02);
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G) { return 1; }
   virtual rai::String shortTag(const rai::KinematicWorld& G) { return "ProxyConstraint"; }

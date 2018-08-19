@@ -19,13 +19,6 @@
 
 uint displaySize=350;
 
-void _system(const char* cmd) {
-  cout <<"SYSTEM CMD: " <<cmd <<endl;
-  int r = system(cmd);
-  rai::wait(.1);
-  if(r) HALT("system return error " <<r);
-}
-
 bool sortComp(const MNode* a, const MNode* b) {
   if(!a->isInfeasible && b->isInfeasible) return true;
   if(a->isInfeasible && !b->isInfeasible) return false;
@@ -105,18 +98,28 @@ void initFolStateFromKin(FOL_World& L, const rai::KinematicWorld& K) {
     }
 }
 
-OptLGP::OptLGP(rai::KinematicWorld &kin, FOL_World &fol)
-  : verbose(3), numSteps(0) {
-  dataPath <<"z." <<rai::date2() <<"/";
-  dataPath = rai::getParameter<rai::String>("LGP_dataPath", dataPath);
-  _system(STRING("mkdir -p " <<dataPath));
-  _system(STRING("rm -Rf " <<dataPath <<"vid  &&  rm -f " <<dataPath <<"*"));
-  
-  OptLGPDataPath = dataPath;
-  if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
-  
-  verbose = rai::getParameter<int>("LGP/vebose", 3);
-  if(verbose>0) fil.open(dataPath + "optLGP.dat"); //STRING("z.optLGP." <<rai::date() <<".dat"));
+OptLGP::OptLGP()
+    : verbose(3), numSteps(0),
+      solutions("OptLGPsolutions"){
+    dataPath <<"z." <<rai::date2() <<"/";
+    dataPath = rai::getParameter<rai::String>("LGP_dataPath", dataPath);
+    rai::system(STRING("mkdir -p " <<dataPath));
+    rai::system(STRING("rm -Rf " <<dataPath <<"vid  &&  rm -f " <<dataPath <<"*"));
+
+    OptLGPDataPath = dataPath;
+    if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
+
+    verbose = rai::getParameter<int>("LGP/vebose", 3);
+    if(verbose>0) fil.open(dataPath + "optLGP.dat"); //STRING("z.optLGP." <<rai::date() <<".dat"));
+
+}
+
+OptLGP::OptLGP(rai::KinematicWorld &kin, FOL_World &fol) : OptLGP() {
+    init(kin, fol);
+}
+
+void OptLGP::init(rai::KinematicWorld &kin, FOL_World &fol) {
+    CHECK(!root,"");
   root = new MNode(kin, fol, 4);
   displayFocus = root;
   //  threadOpenModules(true);
@@ -133,11 +136,11 @@ OptLGP::~OptLGP() {
 void OptLGP::initDisplay() {
   if(!views.N) {
     views.resize(4);
-    views(1) = make_shared<OrsPathViewer>("pose", .2, -1);
-    views(2) = make_shared<OrsPathViewer>("sequence", .2, -1);
-    views(3) = make_shared<OrsPathViewer>("path", .05, -2);
+    views(1) = make_shared<KinPathViewer>("pose", 1.2, -1);
+    views(2) = make_shared<KinPathViewer>("sequence", 1.2, -1);
+    views(3) = make_shared<KinPathViewer>("path", .05, -2);
     if(rai::getParameter<bool>("LGP/displayTree", 1)) {
-      _system("evince z.pdf &");
+      rai::system("evince z.pdf &");
       displayTree = true;
     } else {
       displayTree = false;
@@ -162,21 +165,12 @@ void OptLGP::updateDisplay() {
       views(i)->text.clear() <<displayFocus->cost <<"|  " <<displayFocus->constraints.last() <<'\n' <<decisions;
     } else views(i)->clear();
   }
-  //  if(node->komoProblem(2) && node->komoProblem(2)->configurations.N)
-  //    seqView.setConfigurations(node->komoProblem(2)->configurations);
-  //  else seqView.clear();
-  //  if(node->komoProblem(3) && node->komoProblem(3)->configurations.N)
-  //    pathView.setConfigurations(node->komoProblem(3)->configurations);
-  //  else pathView.clear();
   
   solutions.writeAccess();
   for(uint i=0; i<solutions().N && i<6; i++) {
-    if(dth->gl.views.N<=i) {
+    if(dth->gl.views.N<=i || !dth->gl.views(i).drawers.N) {
       dth->gl.addSubView(i, glStandardScene, NULL);
       dth->gl.addSubView(i, *solutions()(i));
-//    dth->gl.views(i).drawers.last() = solutions()(i);
-//    dth->gl.addSubView(i, glStandardScene, NULL);
-//    dth->gl.addSubView(i, *solutions()(i));
       dth->gl.views(i).camera.setDefault();
 //      dth->gl.views(i).camera.focus(.9, 0., 1.3);
     }
@@ -212,7 +206,7 @@ void OptLGP::updateDisplay() {
     
     Graph dot=root->getGraph(true);
     dot.writeDot(FILE("z.dot"));
-    _system("dot -Tpdf z.dot > z.pdf");
+    rai::system("dot -Tpdf z.dot > z.pdf");
   }
 }
 
@@ -321,8 +315,8 @@ void OptLGP::optFixedSequence(const rai::String& seq, int specificLevel, bool co
 void OptLGP::optMultiple(const StringA& seqs) {
   for(const rai::String& seq:seqs) optFixedSequence(seq);
   
-  _system(STRING("mkdir -p " <<OptLGPDataPath <<"vid"));
-  _system(STRING("rm -f " <<OptLGPDataPath <<"vid/*.ppm"));
+  rai::system(STRING("mkdir -p " <<OptLGPDataPath <<"vid"));
+  rai::system(STRING("rm -f " <<OptLGPDataPath <<"vid/*.ppm"));
   dth->resetSteppings();
   dth->saveVideo = true;
   rai::wait(20.);
@@ -580,8 +574,8 @@ void OptLGP::run(uint steps) {
   //this generates the movie!
   if(verbose>2) {
 //    renderToVideo();
-    _system(STRING("mkdir -p " <<OptLGPDataPath <<"vid"));
-    _system(STRING("rm -f " <<OptLGPDataPath <<"vid/*.ppm"));
+    rai::system(STRING("mkdir -p " <<OptLGPDataPath <<"vid"));
+    rai::system(STRING("rm -f " <<OptLGPDataPath <<"vid/*.ppm"));
     dth->resetSteppings();
     dth->saveVideo = true;
     rai::wait(20.);

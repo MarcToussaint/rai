@@ -90,9 +90,7 @@ void MotionProfile_PD::setGainsAsNatural(double decayTime, double dampingRatio) 
 CT_Status MotionProfile_PD::update(arr& yRef, arr& vRef, double tau, const arr& y, const arr& ydot) {
   //only on initialization the true state is used; otherwise ignored!
   if(y_ref.N!=y.N) { y_ref=y; v_ref=ydot; }
-//   y_ref=y; v_ref=ydot;//TODO: exactly DONT DO THAT!
-  if(y_target.N!=y_ref.N) y_target = zeros(y_ref.N);
-  if(v_target.N!=v_ref.N) v_target = zeros(v_ref.N);
+  if(y_target.N!=y_ref.N){ y_target=y_ref; v_target=v_ref; }
   
   if(flipTargetSignOnNegScalarProduct && scalarProduct(y_target, y_ref) < 0) {
     y_target = -y_target;
@@ -186,17 +184,17 @@ CT_Status MotionProfile_Path::update(arr& yRef, arr& ydotRef, double tau, const 
 
 //===========================================================================
 
-CtrlTask::CtrlTask(const char* name, TaskMap* map)
+CtrlTask::CtrlTask(const char* name, Feature* map)
   : map(map), name(name), active(true), status(CT_init), ref(NULL), prec(ARR(1.)), hierarchy(1) {
   //  ref = new MotionProfile_PD();
 }
 
-CtrlTask::CtrlTask(const char* name, TaskMap* map, double decayTime, double dampingRatio, double maxVel, double maxAcc)
+CtrlTask::CtrlTask(const char* name, Feature* map, double decayTime, double dampingRatio, double maxVel, double maxAcc)
   : CtrlTask(name, map) {
   ref = new MotionProfile_PD({}, decayTime, dampingRatio, maxVel, maxAcc);
 }
 
-CtrlTask::CtrlTask(const char* name, TaskMap* map, const Graph& params)
+CtrlTask::CtrlTask(const char* name, Feature* map, const Graph& params)
   : CtrlTask(name, map) {
   ref = new MotionProfile_PD(params);
   Node *n;
@@ -305,7 +303,7 @@ void TaskControlMethods::resetCtrlTasksState() {
   for(CtrlTask* t: tasks) t->resetState();
 }
 
-CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, double dampingRatio, TaskMap *map) {
+CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, double dampingRatio, Feature *map) {
   return tasks.append(new CtrlTask(name, map, decayTime, dampingRatio, 1., 1.));
 }
 
@@ -318,7 +316,7 @@ CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, doub
 //                                   decayTime, dampingRatio, 1., 1.));
 //}
 
-//ConstraintForceTask* TaskControlMethods::addConstraintForceTask(const char* name, TaskMap *map){
+//ConstraintForceTask* TaskControlMethods::addConstraintForceTask(const char* name, Feature *map){
 //  ConstraintForceTask *t = new ConstraintForceTask(map);
 //  t->name=name;
 //  t->desiredApproach.name=STRING(name <<"_PD");

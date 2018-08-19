@@ -15,7 +15,7 @@ struct PhysXThread : Thread {
   VAR(rai::KinematicWorld, physxWorld)
   VAR(arr, ctrl_q_ref)
   PhysXInterface *px;
-  OrsViewer *view;
+  KinViewer *view;
   OpenGL *gl;
   
   PhysXThread() : Thread("PhysX", .03), px(NULL), view(NULL), gl(NULL) {
@@ -41,7 +41,7 @@ struct PhysXThread : Thread {
 #endif
     px = new PhysXInterface(physxWorld.set());
     px->setArticulatedBodiesKinematic();
-    view = new OrsViewer("physxWorld", .1);
+    view = new KinViewer("physxWorld", .1);
     view->threadLoop();
   }
   
