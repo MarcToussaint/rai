@@ -85,14 +85,20 @@ Feature* symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::K
   if(feat==FS_poseDiff) {  return new TM_Default(TMT_poseDiff, world, frames(0), NoVector, frames(1), NoVector); }
   if(feat==FS_poseRel)  {  return new TM_Default(TMT_pose, world, frames(0), NoVector, frames(1), NoVector); }
 
-  if(feat==FS_scalarProductZ) {  return new TM_Default(TMT_vecAlign, world, frames(0), Vector_z, frames(1), Vector_z); }
+  if(feat==FS_scalarProductXX) {  return new TM_Default(TMT_vecAlign, world, frames(0), Vector_x, frames(1), Vector_x); }
+  if(feat==FS_scalarProductXY) {  return new TM_Default(TMT_vecAlign, world, frames(0), Vector_x, frames(1), Vector_y); }
+  if(feat==FS_scalarProductXZ) {  return new TM_Default(TMT_vecAlign, world, frames(0), Vector_x, frames(1), Vector_z); }
+  if(feat==FS_scalarProductYX) {  return new TM_Default(TMT_vecAlign, world, frames(0), Vector_y, frames(1), Vector_x); }
+  if(feat==FS_scalarProductYY) {  return new TM_Default(TMT_vecAlign, world, frames(0), Vector_y, frames(1), Vector_y); }
+  if(feat==FS_scalarProductYZ) {  return new TM_Default(TMT_vecAlign, world, frames(0), Vector_y, frames(1), Vector_z); }
+  if(feat==FS_scalarProductZZ) {  return new TM_Default(TMT_vecAlign, world, frames(0), Vector_z, frames(1), Vector_z); }
 
   if(feat==FS_gazeAt) { return new TM_Default(TMT_gazeAt, world, frames(0), NoVector, frames(1)); }
 
   if(feat==FS_accumulatedCollisions) {  return new TM_Proxy(TMT_allP, {}); }
   if(feat==FS_jointLimits) {  return new LimitsConstraint(.05); }
 
-  if(feat==FS_qItself) { return new TM_qItself(); }
+  if(feat==FS_qItself) { if(!frames.N) return new TM_qItself(); else return new TM_qItself(QIP_byJointNames, frames, world); }
 
   if(feat==FS_physics) { return new TM_NewtonEuler(world, frames(0)); }
   if(feat==FS_contactConstraints) { return new TM_ContactConstraints(world, frames(0), frames(1)); }

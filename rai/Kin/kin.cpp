@@ -173,9 +173,26 @@ void rai::KinematicWorld::init(const char* filename) {
   init(G, false);
 }
 
-void rai::KinematicWorld::addModel(const char* filename) {
+void rai::KinematicWorld::addFile(const char* filename) {
   Graph G(FILE(filename));
   init(G, true);
+}
+
+void rai::KinematicWorld::addFrame(const char* name, const char* parent, const char* args){
+  rai::Frame *f = new rai::Frame(*this);
+  f->name = name;
+
+  if(parent){
+    rai::Frame *p = getFrameByName(parent);
+    if(p) f->linkFrom(p);
+  }
+
+  if(args){
+    rai::String(args) >>f->ats;
+    f->read(f->ats);
+  }
+
+  if(f->parent) f->X = f->parent->X * f->Q;
 }
 
 void rai::KinematicWorld::clear() {
@@ -570,7 +587,8 @@ void rai::KinematicWorld::setJointState(const arr& _q, const arr& _qdot) {
   setJointStateCount++; //global counter
   
   uint N=getJointStateDimension();
-  CHECK(_q.N==N && (!(&_qdot) || _qdot.N==N), "wrong joint state dimensionalities");
+  CHECK_EQ(_q.N, N, "wrong joint state dimensionalities");
+  if(&_qdot) CHECK_EQ(_qdot.N, N, "wrong joint velocity dimensionalities");
   q=_q;
   if(&_qdot) qdot=_qdot; else qdot.clear();
   

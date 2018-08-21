@@ -402,7 +402,7 @@ struct Var {
   int writeAccess() { return data->writeAccess((Thread*)thread); }
   int deAccess() {    return data->deAccess((Thread*)thread); }
   int getRevision() { return data->getStatus(); }
-  void waitForNextRevision() { data->waitForStatusGreaterThan(last_read_revision); }
+  void waitForNextRevision(uint multipleRevisions=0) { data->waitForStatusGreaterThan(last_read_revision+multipleRevisions); }
   int waitForRevisionGreaterThan(int rev) { return data->waitForStatusGreaterThan(rev); }
   void waitForValueEq(const T& x) {
     data->waitForEvent([this, &x]()->bool {

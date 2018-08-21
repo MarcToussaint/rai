@@ -48,6 +48,7 @@ struct KOMO : NonCopyable {
   bool useSwift;               ///< whether swift (collisions/proxies) is evaluated whenever new configurations are set (needed if tasks read proxy list)
   
   //-- optimizer
+  bool denseOptimization=false;///< calls optimization with a dense (instead of banded) representation
   OptConstrained *opt=0;       ///< optimizer; created in run()
   arr x, dual;                 ///< the primal and dual solution
   arr z, splineB;              ///< when a spline representation is used: z are the nodes; splineB the B-spline matrix; x = splineB * z
@@ -69,7 +70,7 @@ struct KOMO : NonCopyable {
   //-- setup the problem
   void setModel(const rai::KinematicWorld& K,
                 bool _useSwift=true,  //disabling swift: no collisions, much faster
-                bool meldFixedJoints=false, bool makeConvexHulls=false, bool computeOptimalSSBoxes=false, bool activateAllContacts=false);
+                bool optimizeTree=true);
   void setTiming(double _phases=1., uint _stepsPerPhase=10, double durationPerPhase=5., uint _k_order=2);
   void setPairedTimes();
   void activateCollisions(const char* s1, const char* s2);
@@ -94,6 +95,7 @@ struct KOMO : NonCopyable {
    * Think of all of the below as examples for how to set arbirary tasks/switches yourself */
   struct Objective* addObjective(double startTime, double endTime, Feature* map, ObjectiveType type=OT_sos, const arr& target=NoArr, double scale=1e1, int order=-1, int deltaFromStep=0, int deltaToStep=0);
   struct Objective* addObjective(double startTime, double endTime, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, double scale=1e1, const arr& target=NoArr, int order=-1);
+
   void addSwitch(double time, bool before, rai::KinematicSwitch* sw);
   void addSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const rai::Transformation& jFrom=NoTransformation);
   void addFlag(double time, rai::Flag* fl, int deltaStep=0);
@@ -155,6 +157,7 @@ struct KOMO : NonCopyable {
   void setSpline(uint splineT);   ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
   void reset(double initNoise=.01);      ///< reset the optimizer (initializes x to a default path)
   void run(bool dense=false);            ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
+  void optimize();
 
   rai::KinematicWorld& getConfiguration(double phase);
   arr getPath_decisionVariable();
@@ -165,6 +168,9 @@ struct KOMO : NonCopyable {
 
   void reportProblem(ostream &os=std::cout);
   Graph getReport(bool gnuplt=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot task costs; output detailed cost features per time slice)
+  Graph getProblemGraph(bool includeValues);
+  double getConstraintViolations();
+  double getCosts();
   void reportProxies(ostream& os=std::cout); ///< report the proxies (collisions) for each time slice
   void reportContacts(ostream& os=std::cout); ///< report the contacts
   rai::Array<rai::Transformation> reportEffectiveJoints(ostream& os=std::cout);
@@ -174,7 +180,7 @@ struct KOMO : NonCopyable {
   void plotTrajectory();
   void plotPhaseTrajectory();
   bool displayTrajectory(double delay=1., bool watch=true, bool overlayPaths=true, const char* saveVideoPrefix=NULL); ///< display the trajectory; use "vid/z." as vid prefix
-  bool displayPath(bool watch=true); ///< display the trajectory; use "vid/z." as vid prefix
+  bool displayPath(bool watch=true, bool full=true); ///< display the trajectory; use "vid/z." as vid prefix
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
   
   //===========================================================================
@@ -183,7 +189,7 @@ struct KOMO : NonCopyable {
   //
   
   //-- (not much in use..) specs gives as logic expressions in a Graph (or config file)
-  void clearTasks();
+  void clearObjectives();
 //  Task* addTask(const char* name, Feature *map, const ObjectiveType& termType); ///< manually add a task
   void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
 //  arr getInitialization();      ///< this reads out the initial state trajectory after 'setupConfigurations'

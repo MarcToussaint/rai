@@ -327,4 +327,5 @@ struct RosCom {
   ~RosCom();
   template<class T> std::shared_ptr<Subscriber<T>> subscribe(Var<T>& v) { return std::make_shared<Subscriber<T>>(v); }
   template<class T> std::shared_ptr<Publisher<T>> publish(Var<T>& v) { return std::make_shared<Publisher<T>>(v); }
+  template<class T, class P> void publish(Var<T>& v, std::shared_ptr<P>& pub) { pub = std::make_shared<P>(v); }
 };

@@ -84,8 +84,9 @@ struct KinematicWorld : GLDrawer {
   /// @name initializations
   void init(const char* filename);
   void init(const Graph& G, bool addInsteadOfClear=false);
-  void addModel(const char* filename);
-  
+  void addFile(const char* filename);
+  void addFrame(const char* name, const char* parent=NULL, const char* args=NULL);
+
   /// @name access
   Frame *operator[](const char* name) { return getFrameByName(name, true); }
   Frame *operator()(int i) { return frames(i); }
@@ -114,7 +115,7 @@ struct KinematicWorld : GLDrawer {
   void pruneUselessFrames(bool preserveNamed=true);  ///< delete frames that have no name, joint, and shape
   void optimizeTree(bool preserveNamed=true, bool _pruneRigidJoints=false);        ///< call the three above methods in this order
   void fwdIndexIDs();
-  void useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese, bool deleteInsteadOfLock);
+  void useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese=true, bool deleteInsteadOfLock=true);
   void makeObjectsFree(const StringA& objects);
   void addTimeJoint();
   bool checkConsistency();

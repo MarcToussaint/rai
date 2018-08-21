@@ -79,33 +79,31 @@ KOMO::~KOMO() {
 
 void KOMO::setModel(const KinematicWorld& K,
                     bool _useSwift,
-                    bool meldFixedJoints, bool makeConvexHulls, bool computeOptimalSSBoxes, bool activateAllContacts) {
+                    bool optimizeTree) {
 
   if(&K!=&world) world.copy(K);
   
   useSwift = _useSwift;
   
-  if(meldFixedJoints) {
+  if(optimizeTree) {
     world.optimizeTree();
   }
   
-  if(makeConvexHulls) {
-    ::makeConvexHulls(world.frames);
-  }
-  computeMeshNormals(world.frames);
+//  if(makeConvexHulls) {
+//    ::makeConvexHulls(world.frames);
+//  }
+//  computeMeshNormals(world.frames);
   
-  if(computeOptimalSSBoxes) {
-    NIY;
-    //for(Shape *s: world.shapes) s->mesh.computeOptimalSSBox(s->mesh.V);
-    world.gl().watch();
-  }
+//  if(computeOptimalSSBoxes) {
+//    NIY;
+//    //for(Shape *s: world.shapes) s->mesh.computeOptimalSSBox(s->mesh.V);
+//    world.gl().watch();
+//  }
   
-  if(activateAllContacts) {
-    for(Frame *a : world.frames) if(a->shape) a->shape->cont=true;
-    world.swift().initActivations(world);
-  }
-  
-//  FILE("z.komo.model") <<world;
+//  if(activateAllContacts) {
+//    for(Frame *a : world.frames) if(a->shape) a->shape->cont=true;
+//    world.swift().initActivations(world);
+//  }
 }
 
 void KOMO_ext::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese) {
@@ -167,7 +165,7 @@ void KOMO::setTimeOptimization(){
 // task specs
 //
 
-void KOMO::clearTasks() {
+void KOMO::clearObjectives() {
   listDelete(objectives);
   listDelete(switches);
   listDelete(flags);
@@ -979,10 +977,10 @@ void KOMO::setConfigFromFile() {
   setModel(
     K,
     getParameter<bool>("KOMO/useSwift", true),
-    getParameter<bool>("KOMO/meldFixedJoints", false),
-    getParameter<bool>("KOMO/makeConvexHulls", true),
-    getParameter<bool>("KOMO/computeOptimalSSBoxes", false),
-    getParameter<bool>("KOMO/activateAllContact", false)
+    getParameter<bool>("KOMO/optimizeTree", true)
+//    getParameter<bool>("KOMO/makeConvexHulls", true),
+//    getParameter<bool>("KOMO/computeOptimalSSBoxes", false),
+//    getParameter<bool>("KOMO/activateAllContact", false)
   );
   setTiming(
     getParameter<uint>("KOMO/phases"),
@@ -993,6 +991,7 @@ void KOMO::setConfigFromFile() {
 }
 
 void KOMO::setIKOpt() {
+  denseOptimization=true;
   maxPhase = 1.;
   stepsPerPhase = 1;
   T = 1;
@@ -1001,11 +1000,12 @@ void KOMO::setIKOpt() {
 //  setTiming(1, 1);
 //  setFixEffectiveJoints();
 //  setFixSwitchedObjects();
-  setSquaredQVelocities();
+  setSquaredQVelocities(0.,-1.,1e-1);
   setSquaredQuaternionNorms();
 }
 
 void KOMO::setPoseOpt() {
+  denseOptimization=true;
   setTiming(1., 2, 5., 1);
   setFixEffectiveJoints();
   setFixSwitchedObjects();
@@ -1014,6 +1014,7 @@ void KOMO::setPoseOpt() {
 }
 
 void KOMO::setSequenceOpt(double _phases) {
+  denseOptimization=false;
   setTiming(_phases, 2, 5., 1);
   setFixEffectiveJoints();
   setFixSwitchedObjects();
@@ -1022,6 +1023,7 @@ void KOMO::setSequenceOpt(double _phases) {
 }
 
 void KOMO::setPathOpt(double _phases, uint stepsPerPhase, double timePerPhase) {
+  denseOptimization=false;
   setTiming(_phases, stepsPerPhase, timePerPhase, 2);
   setFixEffectiveJoints();
   setFixSwitchedObjects();
@@ -1159,6 +1161,19 @@ void KOMO::run(bool dense) {
          <<" setJointStateCount=" <<KinematicWorld::setJointStateCount <<endl;
   }
   if(verbose>1) cout <<getReport(false) <<endl;
+}
+
+void KOMO::optimize(){
+  reset();
+  if(verbose>0) reportProblem();
+
+  run(denseOptimization);
+
+  if(verbose>0){
+    Graph specs = getProblemGraph(true);
+    cout <<specs <<endl;
+    cout <<getReport(false) <<endl; // Enables plot
+  }
 }
 
 void KOMO_ext::getPhysicsReference(uint subSteps, int display) {
@@ -1382,7 +1397,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const 
   return false;
 }
 
-bool KOMO::displayPath(bool watch) {
+bool KOMO::displayPath(bool watch, bool full) {
   uintA allFrames;
   allFrames.setStraightPerm(configurations.first()->frames.N);
   arr X = getPath_frames(allFrames);
@@ -1397,8 +1412,12 @@ bool KOMO::displayPath(bool watch) {
   }
   gl->clear();
   gl->add(glStandardScene, 0);
-  gl->addDrawer(configurations.last());
-  gl->add(drawX);
+  if(!full){
+    gl->addDrawer(configurations.last());
+    gl->add(drawX);
+  }else{
+    for(auto* c:configurations) gl->addDrawer(c);
+  }
   if(watch) {
     int key = gl->watch();
     return !(key==27 || key=='q');
@@ -1747,6 +1766,88 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
   return report;
 }
 
+/// output the defined problem as a generic graph, that can also be displayed, saved and loaded
+Graph KOMO::getProblemGraph(bool includeValues){
+  Graph K;
+  //header
+#if 0
+  Graph& g = K.newSubgraph({"KOMO_specs"}) -> graph();
+  g.newNode<uint>({"x_dim"}, {}, x.N);
+  g.newNode<uint>({"T"}, {}, T);
+  g.newNode<uint>({"k_order"}, {}, k_order);
+  g.newNode<double>({"tau"}, {}, tau);
+  //  uintA dims(configurations.N);
+  //  for(uint i=0; i<configurations.N; i++) dims(i)=configurations(i)->q.N;
+  //  g.newNode<uintA>({"q_dims"}, {}, dims);
+  //  arr times(configurations.N);
+  //  for(uint i=0; i<configurations.N; i++) times(i)=configurations(i)->frames.first()->time;
+  //  g.newNode<double>({"times"}, {}, times);
+  g.newNode<bool>({"useSwift"}, {}, useSwift);
+#endif
+
+  //nodes for each configuration
+  //  for(uint s=0;s<configurations.N;s++){
+  //    Graph& g = K.newSubgraph({STRING((int)s-(int)k_order)}) -> graph();
+  //    g.newNode<uint>({"dim"}, {}, configurations(s)->q.N);
+  //    g.newNode<double>({"tau"}, {}, configurations(s)->frames.first()->time);
+  //  }
+
+  //  NodeL configs = K.list();
+  //  configs.remove(0);
+
+  //objectives
+  //  uint t_count=0;
+  for(Objective* task : objectives){
+    CHECK(task->prec.nd==1,"");
+    //        Graph& g = K.newSubgraph({}, configs.sub(i+k_order-t->map->order,i+k_order)) -> graph();
+    //        Graph& g = K.newSubgraph({}, configs.sub(convert<uint>(task->vars[t]+(int)k_order))) -> graph();
+    Graph& g = K.newSubgraph() -> graph();
+    g.isNodeOfGraph->keys.append(task->name);
+    //        g.newNode<
+    g.newNode<rai::String>({"type"}, {}, STRING(task->type));
+    g.newNode<double>({"scale"}, {}, task->prec.last());
+    if(task->target.N) g.newNode<arr>({"target"}, {}, task->target);
+    if(task->vars.N) g.newNode<intA>({"confs"}, {}, task->vars);
+    g.copy(task->map->getSpec(world), true);
+    if(includeValues){
+      arr V;
+      for(uint t=0;t<task->prec.N;t++){
+        if(task->prec(t)){
+          arr y;
+          task->map->phi(y, NoArr, configurations({t,t+k_order}));
+          V.append(y);
+        }
+      }
+      if(task->type==OT_sos){
+        g.newNode<double>({"sos_value"}, {}, sumOfSqr(V));
+      }else if(task->type==OT_eq){
+        g.newNode<double>({"eq_sumOfAbs"}, {}, sumOfAbs(V));
+      }else if(task->type==OT_sos){
+        double c=0.;
+        for(double& v:V) if(v>0) c+=v;
+        g.newNode<double>({"inEq_sumOfPos"}, {}, c);
+      }
+
+    }
+    //    t_count++;
+  }
+
+  if(switches.N) RAI_MSG("not implemented for switches yet");
+  if(flags.N) RAI_MSG("not implemented for flags yet");
+
+  return K;
+}
+
+double KOMO::getConstraintViolations(){
+  Graph R = getReport(false);
+  return R.get<double>("constraints");
+}
+
+double KOMO::getCosts(){
+  Graph R = getReport(false);
+  return R.get<double>("sqrCosts");
+}
+
 void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes) {
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
   if(&variableDimensions) {
@@ -1796,11 +1897,11 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
     for(uint t=0; t<komo.T; t++) {
       KinematicWorld& K = *komo.configurations(t+komo.k_order);
       for(Frame *f:K.frames) for(Contact *c:f->contacts) if(&c->a==f) {
-            c->lagrangeParameter = lambda(dimPhi + C);
-            C++;
-          }
+        c->lagrangeParameter = lambda(dimPhi + C);
+        C++;
+      }
     }
-//    cout <<"ENTER: #" <<C <<" constraints" <<endl;
+    //    cout <<"ENTER: #" <<C <<" constraints" <<endl;
     CHECK_EQ(dimPhi+C, lambda.N, "");
     //cut of the stored lambdas
     lambda.resizeCopy(dimPhi);
@@ -1812,8 +1913,8 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
   komo.set_x(x);
   
   CHECK(dimPhi,"getStructure must be called first");
-//  getStructure(NoUintA, featureTimes, tt);
-//  if(WARN_FIRST_TIME){ LOG(-1)<<"calling inefficient getStructure"; WARN_FIRST_TIME=false; }
+  //  getStructure(NoUintA, featureTimes, tt);
+  //  if(WARN_FIRST_TIME){ LOG(-1)<<"calling inefficient getStructure"; WARN_FIRST_TIME=false; }
   phi.resize(dimPhi);
   if(&tt) tt.resize(dimPhi);
   if(&J) J.resize(dimPhi);
