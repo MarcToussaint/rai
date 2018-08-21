@@ -158,7 +158,6 @@ struct Publisher : Thread {
       nh = new ros::NodeHandle;
       pub = nh->advertise<msg_type>(topic_name.p, 1);
       rai::wait(.1); //I hate this -- no idea why the publisher isn't ready right away..
-//      threadOpen();
     }
   }
   ~Publisher() {
@@ -283,7 +282,8 @@ struct PublisherConv : Thread {
       if(!_topic_name) topic_name = var.name;
       LOG(0) <<"publishing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> from var '" <<var.name <<'\'';
       nh = new ros::NodeHandle;
-      threadOpen();
+      pub = nh->advertise<msg_type>(topic_name.p, 1);
+      rai::wait(.1); //I hate this -- no idea why the publisher isn't ready right away..
     }
   }
   PublisherConv(const char* var_name, const char* _topic_name=NULL, double beatIntervalSec=-1.)
@@ -295,7 +295,8 @@ struct PublisherConv : Thread {
       if(!_topic_name) topic_name = var_name;
       LOG(0) <<"publishing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> from var '" <<var.name <<'\'';
       nh = new ros::NodeHandle;
-      threadOpen();
+      pub = nh->advertise<msg_type>(topic_name.p, 1);
+      rai::wait(.1); //I hate this -- no idea why the publisher isn't ready right away..
     }
   }
   ~PublisherConv() {
@@ -303,20 +304,14 @@ struct PublisherConv : Thread {
     pub.shutdown();
     if(nh) delete nh;
   }
-  void open() {
-    if(nh) {
-      pub = nh->advertise<msg_type>(topic_name.p, 1);
-      rai::wait(.1); //I hate this -- no idea why the publisher isn't ready right away..
-    }
-  }
+  void open() {}
   void step() {
     if(nh) {
       pub.publish(conv(var.get()));
 //      LOG(0) <<"publishing to topic '" <<topic_name <<"' revision " <<var.getRevision() <<" of variable '" <<var.name <<'\'';
     }
   }
-  void close() {
-  }
+  void close() {}
 };
 
 //===========================================================================
@@ -325,7 +320,18 @@ struct RosCom {
   struct RosCom_Spinner* spinner;
   RosCom(const char* node_name="rai_module");
   ~RosCom();
+  template<class T, class P> void publish(std::shared_ptr<P>& pub, Var<T>& v, bool wait=true) {
+    pub = std::make_shared<P>(v);
+    if(wait){
+      while(!pub->pub.getNumSubscribers()) rai::wait(.05);
+    }
+  }
+  template<class T, class S> void subscribe(std::shared_ptr<S>& sub, Var<T>& v, bool wait=true) {
+    sub = std::make_shared<S>(v);
+    if(wait){
+      while(!sub->sub.getNumPublishers()) rai::wait(.05);
+    }
+  }
   template<class T> std::shared_ptr<Subscriber<T>> subscribe(Var<T>& v) { return std::make_shared<Subscriber<T>>(v); }
   template<class T> std::shared_ptr<Publisher<T>> publish(Var<T>& v) { return std::make_shared<Publisher<T>>(v); }
-  template<class T, class P> void publish(Var<T>& v, std::shared_ptr<P>& pub) { pub = std::make_shared<P>(v); }
 };

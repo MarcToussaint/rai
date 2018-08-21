@@ -24,28 +24,28 @@ void addBoxGrasp(KOMO& komo, const char* object, const char* endeff, int axis){
   core_setTouch(0., 0., endeff, object);
 #else
   //perfect central
-  komo.addObjective(0.,0., OT_eq, FS_positionDiff, {endeff, object}, 1e2, {0,0,h-.05});
+  komo.addObjective({}, OT_eq, FS_positionDiff, {endeff, object}, 1e2, {0,0,h-.05});
 #endif
 
   //anti-podal
   switch(axis){
     case 1:
-      komo.addObjective(0.,0., OT_eq, FS_scalarProductXY, {endeff, object}, 1e1);
-      komo.addObjective(0.,0., OT_eq, FS_scalarProductXZ, {endeff, object}, 1e1);
+      komo.addObjective({}, OT_eq, FS_scalarProductXY, {endeff, object}, 1e1);
+      komo.addObjective({}, OT_eq, FS_scalarProductXZ, {endeff, object}, 1e1);
       break;
     case 2:
-      komo.addObjective(0.,0., OT_eq, FS_scalarProductXX, {endeff, object}, 1e1);
-      komo.addObjective(0.,0., OT_eq, FS_scalarProductXZ, {endeff, object}, 1e1);
+      komo.addObjective({}, OT_eq, FS_scalarProductXX, {endeff, object}, 1e1);
+      komo.addObjective({}, OT_eq, FS_scalarProductXZ, {endeff, object}, 1e1);
       break;
     case 3:
-      komo.addObjective(0.,0., OT_eq, FS_scalarProductXX, {endeff, object}, 1e1);
-      komo.addObjective(0.,0., OT_eq, FS_scalarProductXY, {endeff, object}, 1e1);
+      komo.addObjective({}, OT_eq, FS_scalarProductXX, {endeff, object}, 1e1);
+      komo.addObjective({}, OT_eq, FS_scalarProductXY, {endeff, object}, 1e1);
       break;
     default: HALT("axis " <<axis <<" needs to be in {1,2,3}");
   }
 
   //vertical
-  komo.addObjective(0.,0., OT_sos, FS_vectorZ, {endeff}, 3e0, {0.,0.,1.} );
+  komo.addObjective({}, OT_sos, FS_vectorZ, {endeff}, 3e0, {0.,0.,1.} );
 
 }
 

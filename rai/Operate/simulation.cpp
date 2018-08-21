@@ -1,4 +1,5 @@
 #include "simulation.h"
+#include "splineRunner.h"
 
 #include <Algo/spline.h>
 #include <Kin/kin_swift.h>
@@ -23,9 +24,7 @@ struct Simulation_self{
   OpenGL gl;
 
   StringA currentlyUsedJoints; //the joints that the spline refers to
-  rai::Spline refSpline; // reference spline constructed from ref
-  arr refPoints, refTimes; // the knot points and times of the spline
-  double phase=0.; // current phase in the spline
+  SplineRunner spline;
   double dt; // time stepping interval
   uint stepCount=0; // number of simulation steps
 };
@@ -33,7 +32,7 @@ struct Simulation_self{
 Simulation::Simulation(const rai::KinematicWorld& _K, double dt)
   : K(_K){
   self = new Simulation_self;
-  self->currentlyUsedJoints = K.getJointNames();
+  setUsedRobotJoints(K.getJointNames());
   self->dt = dt;
 
   self->gl.title = "Simulation";
@@ -55,16 +54,10 @@ Simulation::~Simulation(){
 void Simulation::stepKin(){
   auto lock = self->threadLock();
 
-  double maxPhase = 0.;
-  if(self->refSpline.points.N){
-    //read out the new reference
-    self->phase += self->dt;
-    maxPhase = self->refSpline.times.last();
-    arr q_ref = self->refSpline.eval(self->phase);
-    if(self->phase>maxPhase){ //clear spline buffer
-      q_ref = self->refPoints[-1];
-      stop(true);
-    }
+  //read out the new reference
+  arr q_ref = self->spline.run(self->dt);
+
+  if(q_ref.N){
 //    self->K_ref.setJointState(q_ref); //for display only
 //    timeToGo.set() = conv_double2Float64(maxPhase-phase);
 
@@ -85,7 +78,7 @@ void Simulation::stepKin(){
   }
 
   if(!(self->stepCount%10))
-    self->gl.update(STRING("step=" <<self->stepCount <<" phase=" <<self->phase <<" timeToGo=" <<maxPhase-self->phase <<" #ref=" <<self->refSpline.points.d0));
+    self->gl.update(STRING("step=" <<self->stepCount <<" phase=" <<self->spline.phase <<" timeToGo=" <<self->spline.timeToGo() <<" #ref=" <<self->spline.refSpline.points.d0));
 
   self->stepCount++;
 
@@ -194,9 +187,9 @@ void Simulation::setUsedRobotJoints(const StringA& joints){
   auto lock = self->threadLock();
 
   if(self->currentlyUsedJoints!=joints){
-    if(self->refPoints.N){
+    if(self->spline.refPoints.N){
       LOG(-1) <<"you changed the robot joints before the spline was done -- killing spline execution";
-      stop(true);
+      self->spline.stop();
     }
     self->currentlyUsedJoints=joints;
   }
@@ -206,8 +199,6 @@ void Simulation::setUsedRobotJoints(const StringA& joints){
 void Simulation::exec(const arr &x, const arr &t, bool append){
   auto lock = self->threadLock();
 
-  if(!self->refTimes.N) append=false;
-
   if(x.d1 != self->currentlyUsedJoints.N){
     LOG(-1) <<"you're sending me a motion reference of wrong dimension!"
           <<"\n  I'm ignoring this"
@@ -216,21 +207,7 @@ void Simulation::exec(const arr &x, const arr &t, bool append){
     return;
   }
 
-  if(append){
-    self->refPoints.append(x);
-    double last = self->refTimes.last();
-    self->refTimes.append(t+last);
-    self->refSpline.set(2, self->refPoints, self->refTimes);
-  }else{
-    self->refPoints = x;
-    self->refTimes = t;
-    if(self->refTimes(0)>0.){ //the given reference does not have a knot for NOW -> copy the current joint state
-      self->refTimes.prepend(0.);
-      self->refPoints.prepend(K.getJointState(self->currentlyUsedJoints));
-    }
-    self->refSpline.set(2, self->refPoints, self->refTimes);
-    self->phase=0.;
-  }
+  self->spline.set(x, t, K.getJointState(self->currentlyUsedJoints), append);
 }
 
 void Simulation::exec(const StringA& command){
@@ -252,18 +229,12 @@ void Simulation::exec(const StringA& command){
 void Simulation::stop(bool hard){
   auto lock = self->threadLock();
 
-  self->phase=0.;
-  self->refPoints.clear();
-  self->refTimes.clear();
-  self->refSpline.clear();
+  self->spline.stop();
 }
 
 double Simulation::getTimeToGo(){
   auto lock = self->threadLock();
-
-  double maxPhase = 0.;
-  if(self->refSpline.points.N) maxPhase = self->refSpline.times.last();
-  return maxPhase - self->phase;
+  return self->spline.timeToGo();
 }
 
 arr Simulation::getJointState(){

@@ -1,4 +1,6 @@
-#include "pathValidate.h"
+#include "path.h"
+
+#include <KOMO/komo-ext.h>
 
 rai::String validatePath(const rai::KinematicWorld& _K, const arr& q_now, const StringA& joints, const arr& q, const arr& tau){
   rai::KinematicWorld K;
@@ -54,3 +56,40 @@ rai::String validatePath(const rai::KinematicWorld& _K, const arr& q_now, const 
 //    }
 //  }
 //}
+
+std::pair<arr, arr> computePath(const rai::KinematicWorld& K, arr target_q, StringA target_joints, const char* endeff, double up, double down){
+    KOMO komo;
+    komo.setModel(K, true, true);
+    komo.setPathOpt(1., 20, 3.);
+
+    addMotionTo(komo, target_q, target_joints, endeff, up, down);
+    komo.optimize();
+
+    arr path = komo.getPath(K.getJointNames());
+    path[path.d0-1] = target_q; //overwrite last config
+    arr tau = komo.getPath_times();
+    cout <<validatePath(K, K.getJointState(), target_joints, path, tau) <<endl;
+    bool go = komo.displayPath(true);//;/komo.display();
+    if(!go){
+        cout <<"ABORT!" <<endl;
+        return {arr(), arr()};
+    }
+    return {path, tau};
+}
+
+void mirrorDuplicate(std::pair<arr, arr>& path){
+    arr& q = path.first;
+    arr& t = path.second;
+
+    if(!q.N) return;
+
+    uint T=q.d0-1;
+    double D=2.*t.last();
+
+    q.resizeCopy(2*T+1, q.d1);
+    t.resizeCopy(2*T+1);
+    for(uint i=1;i<=T;i++){
+        q[T+i] = q[T-i];
+        t(T+i) = D - t(T-i);
+    }
+}

@@ -48,7 +48,7 @@ SimulationThread::SimulationThread(const rai::KinematicWorld& K, double dt, bool
 
     if(pubSubToROS){
         self = new SimulationIO_self();
-        self->ROS.publish(timeToGo, self->pub_timeToGo);
+        self->ROS.publish(self->pub_timeToGo, timeToGo);
     }
 
     threadLoop();

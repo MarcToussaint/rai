@@ -146,7 +146,12 @@ struct KinematicWorld : GLDrawer {
   void setJointState(const arr& _q, const StringA&);
   void setFrameState(const arr& X, const StringA& frameNames={}, bool calc_q_from_X=true);
   void setTimes(double t);
-  
+  void operator=(const arr& X){
+    if(X.d0==frames.N) setFrameState(X);
+    else if(X.d0==getJointStateDimension()) setJointState(X);
+    else HALT("wrong dimension");
+  }
+
   /// @name kinematics
   void kinematicsPos(arr& y, arr& J, Frame *a, const Vector& rel=NoVector) const;  //TODO: make vector& not vector*
   void kinematicsVec(arr& y, arr& J, Frame *a, const Vector& vec=NoVector) const;

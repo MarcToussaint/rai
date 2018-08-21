@@ -82,12 +82,14 @@ void KOMO::setModel(const KinematicWorld& K,
                     bool optimizeTree) {
 
   if(&K!=&world) world.copy(K);
-  
+
   useSwift = _useSwift;
   
   if(optimizeTree) {
     world.optimizeTree();
   }
+
+  world.calc_q();
   
 //  if(makeConvexHulls) {
 //    ::makeConvexHulls(world.frames);
@@ -272,8 +274,33 @@ void KOMO::addContact_Complementary(double startTime, double endTime, const char
   //TODO: also contact constraint
 }
 
-Objective* KOMO::addObjective(double startTime, double endTime, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, double scale, const arr& target, int order){
-  return addObjective(startTime, endTime, symbols2feature(feat, frames, world), type, target, scale, order);
+//Objective* KOMO::addObjective(double startTime, double endTime, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, double scale, const arr& target, int order){
+//  return addObjective(startTime, endTime, symbols2feature(feat, frames, world), type, target, scale, order);
+//}
+
+Objective* KOMO::addObjective(const arr& times, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, double scale, const arr& target, int order){
+  Objective *task = addObjective(-1.,-1., symbols2feature(feat, frames, world), type, target, scale, order);
+  if(!denseOptimization){
+    if(!times.N){
+      task->setCostSpecs(0, T-1, target, scale);
+    }else if(times.N==1){
+      task->setCostSpecs(times(0), times(0), stepsPerPhase, T, target, scale);
+    }else{
+      CHECK_EQ(times.N, 2, "");
+      task->setCostSpecs(times(0), times(1), stepsPerPhase, T, target, scale);
+    }
+  }else{
+    intA vars = convert<int,double>(times);
+    if(!vars.N){
+      task->setCostSpecs(0, T-1, target, scale);
+    }else{
+      uint order = vars.N-1;
+      CHECK_GE(k_order, order, "task requires larger k-order: " <<task->map->shortTag(world));
+      task->map->order = order;
+      task->setCostSpecsDense(vars, target, scale);
+    }
+  }
+  return task;
 }
 
 void KOMO::setKS_slider(double time, double endTime, bool before, const char* obj, const char* slider, const char* table) {
@@ -2121,6 +2148,16 @@ void KOMO::Conv_MotionProblem_DenseProblem::getStructure(uintA& variableDimensio
 rai::KinematicWorld& KOMO::getConfiguration(double phase) {
   uint s = k_order + (uint)(phase*double(stepsPerPhase));
   return *configurations(s);
+}
+
+arr KOMO::getJointState(double phase) {
+  uint s = k_order + (uint)(phase*double(stepsPerPhase));
+  return configurations(s)->getJointState();
+}
+
+arr KOMO::getFrameState(double phase) {
+  uint s = k_order + (uint)(phase*double(stepsPerPhase));
+  return configurations(s)->getFrameState();
 }
 
 arr KOMO::getPath_decisionVariable() {

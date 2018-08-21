@@ -7,8 +7,11 @@
 #include <trajectory_msgs/JointTrajectory.h>
 #include <RosCom/rai_msgs/SendJointTrajectory.h>
 #include <RosCom/rai_msgs/StringString.h>
+#include <RosCom/rai_msgs/WSG_50_command.h>
+#include <RosCom/rai_msgs/WSG_50_state.h>
 
 #include "simulationThread.h"
+#include "robot_pr2.h"
 
 struct RobotAbstraction_KukaWSG : RobotAbstraction{
     RosCom ROS;
@@ -23,7 +26,7 @@ struct RobotAbstraction_KukaWSG : RobotAbstraction{
     std::shared_ptr<Publisher<rai_msgs::WSG_50_command>> pub_gripperCommand; //subscriber
     std::map<String, std::shared_ptr<Subscriber<geometry_msgs::PoseStamped>>> sub_objectStates; //subscribers
 
-
+    arr q0;
     uint gripperCommandCounter=0;
 
     RobotAbstraction_KukaWSG(const rai::KinematicWorld& _K)
@@ -31,26 +34,34 @@ struct RobotAbstraction_KukaWSG : RobotAbstraction{
           tfMessages("/tf"),
           gripperCommand("/schunk_driver/schunk_wsg_command"){
 
+        q0 = _K.getJointState();
         sub_jointState = ROS.subscribe(jointState);
         sub_tfMessages = ROS.subscribe(tfMessages);
         pub_gripperCommand = ROS.publish(gripperCommand);
         sub_jointState = ROS.subscribe(jointState);
         sub_tfMessages = ROS.subscribe(tfMessages);
-
     }
 
+    virtual arr getHomePose(){ return q0; }
     virtual bool executeMotion(const StringA& joints, const arr& path, const arr& times, double timeScale=1., bool append=false);
     virtual void execGripper(const rai::String& gripper, double position, double force=40.);
     virtual arr getJointPositions(const StringA& joints);
     virtual  StringA getJointNames();
-
+    virtual double timeToGo(){
+        return 0.;
+    }
 };
+
+
 
 struct RobotAbstraction_SimulationThread : RobotAbstraction {
     SimulationThread S;
 
+    arr q0;
+
     RobotAbstraction_SimulationThread(const rai::KinematicWorld& _K)
         : S(_K, .01, false){
+        q0 = _K.getJointState();
     }
 
     ~RobotAbstraction_SimulationThread(){}
@@ -77,6 +88,7 @@ struct RobotAbstraction_SimulationThread : RobotAbstraction {
         }
         NIY
     }
+    virtual arr getHomePose(){ return q0; }
     virtual arr getJointPositions(const StringA& joints){
         S.stepMutex.lock();
         S.SIM.setUsedRobotJoints(joints);
@@ -95,15 +107,18 @@ struct RobotAbstraction_SimulationThread : RobotAbstraction {
         S.SIM.exec({"attach", a, b});
         S.stepMutex.unlock();
     }
+    virtual double timeToGo(){
+        return S.SIM.getTimeToGo();
+    }
 };
 
 RobotIO::RobotIO(const rai::KinematicWorld& _K, RobotType _type)
-    : type(_type),
-      timeToGo("timeToGo"){
+    : type(_type){
 
     switch(type){
         case ROB_kukaWSG: self = std::make_shared<RobotAbstraction_KukaWSG>(_K); break;
         case ROB_sim: self = std::make_shared<RobotAbstraction_SimulationThread>(_K); break;
+        case ROB_pr2: self = std::make_shared<Robot_PR2>(_K); break;
         default: NIY;
     }
 }
