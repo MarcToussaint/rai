@@ -51,6 +51,7 @@ struct Mesh : GLDrawer {
   void clear();
   void setBox();
   void setDot(); ///< an awkward mesh: just a single dot, not tris (e.g. cvx core of a sphere...)
+  void setLine(double l); ///< an awkward mesh: just a single line, not tris (e.g. cvx core of a sphere...)
   void setTetrahedron();
   void setOctahedron();
   void setDodecahedron();

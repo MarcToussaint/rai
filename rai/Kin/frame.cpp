@@ -32,6 +32,8 @@ template<> const char* rai::Enum<rai::BodyType>::names []= {
 // Frame
 //
 
+bool rai_Kin_frame_ignoreQuatNormalizationWarning = false;
+
 rai::Frame::Frame(KinematicWorld& _K, const Frame* copyFrame)
   : K(_K) {
   
@@ -60,7 +62,9 @@ rai::Frame::~Frame() {
   if(parent) unLink();
   while(contacts.N) delete contacts.last();
   while(outLinks.N) outLinks.last()->unLink();
-  K.frames.removeValue(this);
+//  K.frames.removeValue(this);
+  CHECK_EQ(this, K.frames(ID), "")
+  K.frames.remove(ID);
   listReindex(K.frames);
 }
 
@@ -176,7 +180,6 @@ rai::Frame* rai::Frame::insertPreLink(const rai::Transformation &A) {
   //new frame between: parent -> f -> this
   Frame *f = new Frame(K);
 
-  
   if(parent) {
     f->linkFrom(parent);
     parent->outLinks.removeValue(this);
@@ -286,7 +289,7 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
         Q.rot.set(q.p+_qIndex);
         {
           double n=Q.rot.normalization();
-          if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
+          if(!rai_Kin_frame_ignoreQuatNormalizationWarning) if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
         }
         Q.rot.normalize();
         Q.rot.isZero=false; //WHY? (gradient check fails without!)
@@ -297,7 +300,7 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
         Q.rot.set(q.p+_qIndex+3);
         {
           double n=Q.rot.normalization();
-          if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
+          if(!rai_Kin_frame_ignoreQuatNormalizationWarning) if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
         }
         Q.rot.normalize();
         Q.rot.isZero=false;

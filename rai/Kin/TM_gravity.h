@@ -44,7 +44,7 @@ struct TM_ZeroAcc : Feature {
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G){ NIY; }
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
   virtual uint dim_phi(const rai::KinematicWorld& G){ return 3; }
-  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("TM_ZeroAcc" <<G.frames(i)->name); }
+  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("ZeroAcc-" <<G.frames(i)->name); }
 };
 
 struct TM_ZeroQVel : Feature {

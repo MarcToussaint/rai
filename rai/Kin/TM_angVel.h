@@ -20,7 +20,7 @@ struct TM_AngVel : Feature {
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G){ NIY; }
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
   virtual uint dim_phi(const rai::KinematicWorld& G);
-  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("AngVel_" <<G.frames(i)->name); }
+  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("AngVel-" <<order <<'-' <<G.frames(i)->name); }
 };
 
 //===========================================================================
@@ -35,5 +35,5 @@ struct TM_LinAngVel : Feature {
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G){ NIY; }
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
   virtual uint dim_phi(const rai::KinematicWorld& G);
-  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("LinAngVel_" <<G.frames(i)->name); }
+  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("LinAngVel-" <<order <<'-' <<G.frames(i)->name); }
 };

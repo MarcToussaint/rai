@@ -31,6 +31,7 @@ void Feature::phi(arr& y, arr& J, const WorldL& Ktuple) {
   arrA y_bar, J_bar;
   
   double tau = Ktuple(-1)->frames(0)->time; // - Ktuple(-2)->frames(0)->time;
+  if(order) CHECK_GE(tau, 1e-10, "");
   double tau2=tau*tau, tau3=tau2*tau;
   y_bar.resize(k+1);
   J_bar.resize(k+1);
@@ -54,10 +55,9 @@ void Feature::phi(arr& y, arr& J, const WorldL& Ktuple) {
   if(k==2)  y = (y_bar(2)-2.*y_bar(1)+y_bar(0))/tau2; //penalize acceleration
   if(k==3)  y = (y_bar(3)-3.*y_bar(2)+3.*y_bar(1)-y_bar(0))/tau3; //penalize jerk
   if(&J) {
-    uintA qidx(Ktuple.N);
-    qidx(0)=0;
-    for(uint i=1; i<Ktuple.N; i++) qidx(i) = qidx(i-1)+Ktuple(i-1)->q.N;
-    J = zeros(y.N, qidx.last()+Ktuple.last()->q.N);
+    uintA qidx = getKtupleDim(Ktuple);
+    qidx.prepend(0);
+    J = zeros(y.N, qidx.last());
     if(k==1) { J.setMatrixBlock(J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau; }
     if(k==2) { J.setMatrixBlock(J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(-2.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(J_bar(0)   , 0, qidx(offset+0));  J/=tau2; }
     if(k==3) { J.setMatrixBlock(J_bar(3), 0, qidx(offset+3));  J.setMatrixBlock(-3.*J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(3.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau3; }
@@ -72,3 +72,20 @@ void Feature::phi(arr& y, arr& J, const WorldL& Ktuple) {
   }
 }
 
+VectorFunction Feature::vf(rai::KinematicWorld& K) { ///< direct conversion to vector function: use to check gradient or evaluate
+    return [this, &K](arr& y, arr& J, const arr& x) -> void {
+        K.setJointState(x);
+        phi(y, J, K);
+    };
+}
+
+
+VectorFunction Feature::vf(WorldL& Ktuple) { ///< direct conversion to vector function: use to check gradient or evaluate
+    return [this, &Ktuple](arr& y, arr& J, const arr& x) -> void {
+        uintA qdim = getKtupleDim(Ktuple);
+        qdim.prepend(0);
+        for(uint i=0;i<Ktuple.N;i++)
+            Ktuple(i)->setJointState(x({qdim(i), qdim(i+1)-1}));
+        phi(y, J, Ktuple);
+    };
+}

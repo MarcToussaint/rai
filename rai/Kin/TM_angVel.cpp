@@ -6,19 +6,20 @@ void angVel_base(const rai::KinematicWorld& K0, rai::KinematicWorld& K1, uint i,
   rai::Frame *f0 = K0.frames(i);
   rai::Frame *f1 = K1.frames(i);
 
-  y.resize(3);
-  arr a,b,Ja,Jb;
+  arr a,b,y_tmp,Ja,Jb;
   K0.kinematicsQuat(a, Ja, f0);
   K1.kinematicsQuat(b, Jb, f1);
   arr J0, J1;
 //  quat_diffVector(y, J0, J1, a, b);
   arr dq = b-a;
   a(0) *=-1.;
-  quat_concat(y, J0, J1, dq, a);
+  quat_concat(y_tmp, J0, J1, dq, a);
   for(uint i=0;i<J1.d0;i++) J1(i,0) *= -1.;
-  y.remove(0);
+  y_tmp.remove(0);
   J0.delRows(0);
   J1.delRows(0);
+
+  y = y_tmp;
 
 #if 0
   y = dq;
@@ -72,12 +73,17 @@ void angVel_base(const rai::KinematicWorld& K0, rai::KinematicWorld& K1, uint i,
 
 void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
   if(order==1){
-    angVel_base(*Ktuple(-2), *Ktuple(-1), i, y, J);
+    arr J_tmp;
+    angVel_base(*Ktuple(-2), *Ktuple(-1), i, y, J_tmp);
 
-    if(Ktuple.N==3) J = catCol(zeros(y.N, Ktuple(-3)->q.N), J);
+    if(&J){
+      if(Ktuple.N==3) J = catCol(zeros(y.N, Ktuple(-3)->q.N), J_tmp);
+      else J=J_tmp;
+    }
 
 #if 1
     double tau = Ktuple(-1)->frames(0)->time;
+    CHECK_GE(tau, 1e-10, "");
     y /= tau;
     if(&J){
       J /=tau;
@@ -97,6 +103,7 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
 
 #if 1
     double tau = Ktuple(-1)->frames(0)->time;
+    CHECK_GE(tau, 1e-10, "");
     double tau2=tau*tau;
     y /= tau2;
 #endif

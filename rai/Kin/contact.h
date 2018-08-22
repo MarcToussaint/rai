@@ -17,7 +17,7 @@ struct PairCollision;
 namespace rai {
 
 ///Description of a Contact
-struct Contact : GLDrawer {
+struct Contact : NonCopyable, GLDrawer {
   Frame &a, &b;
 
 private:

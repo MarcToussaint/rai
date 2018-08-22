@@ -8,7 +8,6 @@
 
 #include "feature.h"
 
-/// this stacks all constacts to one feature vector OF VARIABLE SIZE! (the optimizer has to deal with variable size features; transfering lambdas across steps)
 struct TM_ContactConstraints : Feature {
   int a,b;
   TM_ContactConstraints(int aShape, int bShape) : a(aShape), b(bShape) {}

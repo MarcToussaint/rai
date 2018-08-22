@@ -455,7 +455,7 @@ uint rai::KinematicWorld::analyzeJointStateDimensions() const {
 
 /** @brief returns the joint (actuator) dimensionality */
 uint rai::KinematicWorld::getJointStateDimension() const {
-  if(!q.nd) return analyzeJointStateDimensions();
+  if(!q.nd)((KinematicWorld*)this)->calc_q();
   return q.N;
 }
 
@@ -518,7 +518,8 @@ arr rai::KinematicWorld::getLimits() const {
 }
 
 void rai::KinematicWorld::calc_q_from_Q() {
-  uint N=getJointStateDimension();
+  uint N=q.N;
+  if(!N) N=analyzeJointStateDimensions();
   q.resize(N).setZero();
   qdot.resize(N).setZero();
   

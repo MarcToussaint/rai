@@ -341,10 +341,11 @@ uint TM_Default::dim_phi(const rai::KinematicWorld& G) {
 }
 
 rai::String TM_Default::shortTag(const rai::KinematicWorld& K) {
-  rai::String s="Default";
-  s <<':' <<type;
-  s <<':' <<(i<0?"WORLD":K.frames(i)->name);
-  s <<'/' <<(j<0?"WORLD":K.frames(j)->name);
+  rai::String s="Default-";
+  s <<order;
+  s <<'-' <<type;
+  s <<'-' <<(i<0?"WORLD":K.frames(i)->name);
+  s <<'-' <<(j<0?"WORLD":K.frames(j)->name);
   return s;
 }
 

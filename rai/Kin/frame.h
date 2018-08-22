@@ -48,7 +48,7 @@ namespace rai {
 //===========================================================================
 
 /// a Frame can have a link (also joint), shape (visual or coll), and/or intertia (mass) attached to it
-struct Frame {
+struct Frame : NonCopyable{
   struct KinematicWorld& K;  ///< a Frame is uniquely associated with a KinematicConfiguration
   uint ID;                   ///< unique identifier
   String name;               ///< name
@@ -92,7 +92,7 @@ stdOutPipe(Frame)
 //===========================================================================
 
 /// for a Frame with Joint-Link, the relative transformation 'Q' is articulated
-struct Joint {
+struct Joint : NonCopyable{
   Frame& frame;
   
   // joint information
@@ -142,7 +142,7 @@ stdOutPipe(Joint)
 //===========================================================================
 
 /// a Frame with Inertia has mass and, in physical simulation, has forces associated with it
-struct Inertia {
+struct Inertia : NonCopyable {
   Frame& frame;
   double mass=-1.;
   Matrix matrix=0;
@@ -164,7 +164,7 @@ stdOutPipe(Inertia)
 //===========================================================================
 
 /// a Frame with Shape is a collision or visual object
-struct Shape : GLDrawer {
+struct Shape : NonCopyable, GLDrawer {
   Frame& frame;
   Geom *geom = NULL;
   

@@ -27,20 +27,16 @@ struct Feature {
   //-- helpers
   arr phi(const rai::KinematicWorld& K) { arr y; phi(y,NoArr,K); return y; } ///< evaluate without computing Jacobian
   
-  VectorFunction vf(rai::KinematicWorld& K) { ///< direct conversion to vector function: use to check gradient or evaluate
-    return [this, &K](arr& y, arr& J, const arr& x) -> void {
-      K.setJointState(x);
-      phi(y, J, K);
-    };
-  }
+  VectorFunction vf(rai::KinematicWorld& K);
+  VectorFunction vf(WorldL& Ktuple);
 };
 
 //these are frequently used by implementations of task maps
 
 inline uintA getKtupleDim(const WorldL& Ktuple) {
   uintA dim(Ktuple.N);
-  dim(0)=Ktuple(0)->q.N;
-  for(uint i=1; i<dim.N; i++) dim(i) = dim(i-1)+Ktuple(i)->q.N;
+  dim(0)=Ktuple(0)->getJointStateDimension();
+  for(uint i=1; i<dim.N; i++) dim(i) = dim(i-1)+Ktuple(i)->getJointStateDimension();
   return dim;
 }
 

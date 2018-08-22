@@ -45,23 +45,17 @@ void TM_ContactConstraints::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
   y({0,2}) = ferr;
   if(&J) J({0,2}) = Jferr;
 
+  arr d, Jd;
+  TM_PairCollision dist(con->a.ID, con->b.ID, TM_PairCollision::_negScalar, false);
+  dist.phi(d, (&J?Jd:NoArr), K);
+  con->y = d.scalar();
+  con->setFromPairCollision(*dist.coll);
+
   if(!con->soft){
     //-- needs to touch!!
-    arr d, Jd;
-    TM_PairCollision dist(con->a.ID, con->b.ID, TM_PairCollision::_negScalar, false);
-    dist.phi(d, (&J?Jd:NoArr), K);
-    con->y = d.scalar();
-    con->setFromPairCollision(*dist.coll);
-
     y(3) = d.scalar();
     if(&J) J[3] = Jd;
   }else{
-    arr d, Jd;
-    TM_PairCollision dist(con->a.ID, con->b.ID, TM_PairCollision::_negScalar, false);
-    dist.phi(d, (&J?Jd:NoArr), K);
-    con->y = d.scalar();
-    con->setFromPairCollision(*dist.coll);
-
     //soft! complementarity
 
     //get force
@@ -69,7 +63,6 @@ void TM_ContactConstraints::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
     K.kinematicsForce(ferr, Jferr, con);
 
     double s = 1e-1;
-    if(d.scalar()>0.) s=0.;
     y({3,5}) = s*d.scalar() * ferr;
     if(&J) J({3,5}) = (s*d.scalar())*Jferr + (s*ferr) * Jd;
   }

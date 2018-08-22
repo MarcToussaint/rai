@@ -74,7 +74,7 @@ void TM_PairCollision::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
 }
 
 rai::String TM_PairCollision::shortTag(const rai::KinematicWorld &G) {
-  return STRING("TM_PairCollision_"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
+  return STRING("PairCollision-"<<(i<0?"WORLD":G.frames(i)->name) <<'-' <<(j<0?"WORLD":G.frames(j)->name));
 }
 
 Graph TM_PairCollision::getSpec(const rai::KinematicWorld& K){

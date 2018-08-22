@@ -78,6 +78,14 @@ void rai::Mesh::setDot() {
   T.clear(); Tn.clear();
 }
 
+void rai::Mesh::setLine(double l){
+  V.resize(2,3).setZero();
+  V(0,2) = -.5*l;
+  V(1,2) = +.5*l;
+  Vn.clear();
+  T.clear(); Tn.clear();
+}
+
 void rai::Mesh::setTetrahedron() {
   double s2=RAI_SQRT2/3., s6=sqrt(6.)/3.;
   double verts[12] = { 0., 0., 1. , 2.*s2, 0., -1./3., -s2, s6, -1./3., -s2, -s6, -1./3. };

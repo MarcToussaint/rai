@@ -11,7 +11,7 @@
 #include <Kin/TM_default.h>
 
 TM_Energy::TM_Energy() {
-  order=2;
+  order=1;
   gravity = rai::getParameter<double>("TM_Physics/gravity", 9.81);
 }
 
@@ -48,7 +48,7 @@ void TM_Energy::phi(arr &y, arr &J, const WorldL &Ktuple) {
   if(&J) J = zeros(1, qdim.last());
 
   for(rai::Frame *a:K.frames) {
-    if(a->inertia && a->inertia->type==rai::BT_dynamic){
+    if(a->inertia){
 
       TM_Default pos(TMT_posDiff, a->ID);
       pos.order=0;

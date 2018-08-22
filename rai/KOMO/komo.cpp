@@ -237,7 +237,7 @@ void KOMO::addSwitch_dynamic(double time, double endTime, const char* from, cons
   addObjective(time, endTime, new TM_NewtonEuler(world, to), OT_eq, NoArr, 1e-1, k_order, +1, -1);
 #endif
 //  addFlag(time, new Flag(FL_gravityAcc, world[to]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
-  addObjective(time,time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2);
+  addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2);
 }
 
 void KOMO::addSwitch_dynamicOn(double time, double endTime, const char *from, const char* to) {
@@ -270,8 +270,11 @@ void KOMO::addContact(double startTime, double endTime, const char *from, const 
 
 void KOMO::addContact_Complementary(double startTime, double endTime, const char* from, const char* to)
 {
-  NIY;
-  //TODO: also contact constraint
+  addSwitch(startTime, true, new rai::KinematicSwitch(rai::SW_addComplementaryContact, rai::JT_none, from, to, world) );
+  addObjective(startTime, endTime, new TM_ContactConstraints(world, from, to), OT_eq, NoArr, 3e1);
+  if(endTime>0.){
+    addSwitch(endTime, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world) );
+  }
 }
 
 //Objective* KOMO::addObjective(double startTime, double endTime, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, double scale, const arr& target, int order){
