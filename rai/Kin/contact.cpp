@@ -197,6 +197,6 @@ void rai::Contact::glDraw(OpenGL& gl) {
 
 void rai::Contact::write(std::ostream &os) const {
   os <<a.name <<'-' <<b.name;
-  os <<" f=" <<force <<" d=" <<y;
+  os <<" f=" <<force <<" d=" <<y <<"   compl=" <<sumOfSqr(y * force);
 //  <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() /*<<" pDist=" <<get_pDistance()*/ <<" y=" <<y <<" l=" <<lagrangeParameter;
 }

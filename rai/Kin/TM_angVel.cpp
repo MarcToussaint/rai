@@ -11,6 +11,10 @@ void angVel_base(const rai::KinematicWorld& K0, rai::KinematicWorld& K1, uint i,
   K1.kinematicsQuat(b, Jb, f1);
   arr J0, J1;
 //  quat_diffVector(y, J0, J1, a, b);
+  if(scalarProduct(a,b)<0.){
+    b*=-1.;
+    Jb*=-1.;
+  }
   arr dq = b-a;
   a(0) *=-1.;
   quat_concat(y_tmp, J0, J1, dq, a);
@@ -18,6 +22,10 @@ void angVel_base(const rai::KinematicWorld& K0, rai::KinematicWorld& K1, uint i,
   y_tmp.remove(0);
   J0.delRows(0);
   J1.delRows(0);
+
+  y_tmp *= 2.;
+  J0 *= 2.;
+  J1 *= 2.;
 
   y = y_tmp;
 

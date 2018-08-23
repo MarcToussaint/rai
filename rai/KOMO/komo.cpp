@@ -263,15 +263,16 @@ void KOMO::addSwitch_magic(double time, double endTime, const char* from, const 
 void KOMO::addContact(double startTime, double endTime, const char *from, const char* to) {
   addSwitch(startTime, true, new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world) );
   addObjective(startTime, endTime, new TM_ContactConstraints(world, from, to), OT_eq, NoArr, 3e1);
+  addObjective(startTime, endTime, new TM_PairCollision(world, from, to, TM_PairCollision::_negScalar, false), OT_ineq, NoArr, 1e1);
   if(endTime>0.){
     addSwitch(endTime, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world) );
   }
 }
 
-void KOMO::addContact_Complementary(double startTime, double endTime, const char* from, const char* to)
-{
+void KOMO::addContact_Complementary(double startTime, double endTime, const char* from, const char* to){
   addSwitch(startTime, true, new rai::KinematicSwitch(rai::SW_addComplementaryContact, rai::JT_none, from, to, world) );
   addObjective(startTime, endTime, new TM_ContactConstraints(world, from, to), OT_eq, NoArr, 3e1);
+  addObjective(startTime, endTime, new TM_PairCollision(world, from, to, TM_PairCollision::_negScalar, false), OT_ineq, NoArr, 1e1);
   if(endTime>0.){
     addSwitch(endTime, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world) );
   }
@@ -1314,7 +1315,8 @@ void KOMO::checkGradients(bool dense) {
         JJ[i] >>FILE("z.J_empirical");
         //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
         //HALT("");
-//        return false;
+//        return;
+        rai::wait();
         succ=false;
       }
     }
