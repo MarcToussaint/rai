@@ -24,17 +24,19 @@ private:
   PairCollision *__coll=0;
 public:
 
-  uint dim=3;
+  uint dim=6;
   uint qIndex=UINT_MAX;
-  arr force;  // the DOFs associated with this Contact
+  arr position;
+  arr force;
 
   bool soft=false;
 
+  //TODO: delete all this??
 //  arr a_pts, b_pts;          // points on the core mesh that define the contact simplices
-  rai::Vector a_rel, b_rel;    // contact point RELATIVE to the frames
-  rai::Vector a_norm, b_norm;    // contact point RELATIVE to the frames
-  double a_rad, b_rad;         // the radii for sphere-swept objects: the contact points are on the cvx CORE, not the surface!
-  uint a_type, b_type;
+//  rai::Vector a_rel, b_rel;    // contact point RELATIVE to the frames
+//  rai::Vector a_norm, b_norm;    // contact point RELATIVE to the frames
+//  double a_rad, b_rad;         // the radii for sphere-swept objects: the contact points are on the cvx CORE, not the surface!
+//  uint a_type, b_type;
 //  rai::Vector a_line, b_line;  // when of line type, these are the line/axis directions RELATIVE to the frame
 
   double y=0.;                 // place to store the constraint value (typically: neg distance) when the taskmap is called
@@ -46,7 +48,7 @@ public:
   void setZero();
   uint qDim() { return dim; }
   void calc_F_from_q(const arr& q, uint n);
-  arr calc_q_from_F() const { return force; }
+  arr calc_q_from_F() const;
 
   PairCollision *coll();
 
@@ -60,9 +62,9 @@ public:
 //    return length((eye(3) - (n^n)) * (get_pa()-get_pb()).getArr());
 //  }
 
-  double getDistance() const; // get normal(!) distance (projected onto contact normal), by calling the TM_ContactNegDistance()
-  Feature* getTM_Friction() const;
-  Feature* getTM_ContactNegDistance() const;
+//  double getDistance() const; // get normal(!) distance (projected onto contact normal), by calling the TM_ContactNegDistance()
+//  Feature* getTM_Friction() const;
+//  Feature* getTM_ContactNegDistance() const;
   void glDraw(OpenGL&);
   void write(ostream& os) const;
 };

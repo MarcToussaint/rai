@@ -445,7 +445,7 @@ uint rai::KinematicWorld::analyzeJointStateDimensions() const {
     }
   }
   for(Contact *c: contacts) {
-    CHECK_EQ(c->dim, 3, "");
+    CHECK_EQ(c->dim, 6, "");
 //    c->dim = c->getDimFromType();
     c->qIndex = qdim;
     qdim += c->dim;
@@ -540,6 +540,7 @@ void rai::KinematicWorld::calc_q_from_Q() {
   for(Contact *c: contacts) {
     CHECK_EQ(c->qIndex, n, "joint indexing is inconsistent");
     arr contact_q = c->calc_q_from_F();
+    CHECK_EQ(contact_q.N, c->dim, "");
     q.setVectorBlock(contact_q, c->qIndex);
     n += c->dim;
   }
@@ -1037,11 +1038,19 @@ void rai::KinematicWorld::kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) c
   }
 }
 
-void rai::KinematicWorld::kinematicsForce(arr& y, arr& J, rai::Contact *c) const{
-  y = c->force;
+void rai::KinematicWorld::kinematicsContactPosition(arr& y, arr& J, rai::Contact *c) const{
+  y = c->position;
   if(&J){
     J = zeros(3, q.N);
     for(uint i=0;i<3;i++) J(i, c->qIndex+i) = 1.;
+  }
+}
+
+void rai::KinematicWorld::kinematicsContactForce(arr& y, arr& J, rai::Contact *c) const{
+  y = c->force;
+  if(&J){
+    J = zeros(3, q.N);
+    for(uint i=0;i<3;i++) J(i, c->qIndex+3+i) = 1.;
   }
 }
 
@@ -1367,6 +1376,19 @@ void rai::KinematicWorld::stepDynamics(const arr& Bu_control, double tau, double
   setJointState(x1[0], x1[1]);
 }
 
+void __merge(rai::Contact *c, rai::Proxy *p) {
+  CHECK(&c->a==p->a && &c->b==p->b, "");
+  if(!p->coll) p->calc_coll(c->a.K);
+//  c->a_rel = c->a.X / rai::Vector(p->coll->p1);
+//  c->b_rel = c->b.X / rai::Vector(p->coll->p2);
+//  c->a_norm = c->a.X.rot / rai::Vector(-p->coll->normal);
+//  c->b_norm = c->b.X.rot / rai::Vector(p->coll->normal);
+//  c->a_type = c->b_type=1;
+//  c->a_rad = c->a.shape->size(3);
+//  c->b_rad = c->b.shape->size(3);
+}
+
+#if 0
 double __matchingCost(rai::Contact *c, rai::Proxy *p) {
   double cost=0.;
   if(!p->coll) p->calc_coll(c->a.K);
@@ -1376,24 +1398,11 @@ double __matchingCost(rai::Contact *c, rai::Proxy *p) {
   return cost;
 }
 
-void __merge(rai::Contact *c, rai::Proxy *p) {
-  CHECK(&c->a==p->a && &c->b==p->b, "");
-  if(!p->coll) p->calc_coll(c->a.K);
-  c->a_rel = c->a.X / rai::Vector(p->coll->p1);
-  c->b_rel = c->b.X / rai::Vector(p->coll->p2);
-  c->a_norm = c->a.X.rot / rai::Vector(-p->coll->normal);
-  c->b_norm = c->b.X.rot / rai::Vector(p->coll->normal);
-  c->a_type = c->b_type=1;
-  c->a_rad = c->a.shape->size(3);
-  c->b_rad = c->b.shape->size(3);
-}
-
 void __new(rai::KinematicWorld& K, rai::Proxy *p) {
   rai::Contact *c = new rai::Contact(*p->a, *p->b);
   __merge(c, p);
 }
 
-#if 0
 void rai::KinematicWorld::filterProxiesToContacts(double margin) {
   for(Proxy& p:proxies) {
     if(!p.coll) p.calc_coll(*this);
@@ -1448,21 +1457,23 @@ void rai::KinematicWorld::proxiesToContacts(double margin) {
     }
   }
   //phase 2: cleanup old and distant contacts
-  rai::Array<Contact*> old;
-  for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f) {
-        if(c->getDistance()>2.*margin) {
-          old.append(c);
-        }
-      }
-  for(Contact *c:old) delete c;
+  NIY;
+//  rai::Array<Contact*> old;
+//  for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f) {
+//    if(c->getDistance()>2.*margin) {
+//      old.append(c);
+//    }
+//  }
+//  for(Contact *c:old) delete c;
 }
 
 double rai::KinematicWorld::totalContactPenetration() {
+  NIY;
   double D=0.;
-  for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f) {
-        double d = c->getDistance();
-        if(d<0.) D -= d;
-      }
+//  for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f) {
+//        double d = c->getDistance();
+//        if(d<0.) D -= d;
+//      }
   return D;
 }
 
@@ -2145,19 +2156,20 @@ void rai::KinematicWorld::kinematicsProxyCost(arr &y, arr& J, double margin) con
 }
 
 void rai::KinematicWorld::kinematicsContactCost(arr& y, arr& J, const Contact* c, double margin, bool addValues) const {
-  Feature *map = c->getTM_ContactNegDistance();
-  arr y_dist, J_dist;
-  map->phi(y_dist, (&J?J_dist:NoArr), *this);
-  y_dist *= -1.;
-  if(&J) J_dist *= -1.;
+  NIY;
+//  Feature *map = c->getTM_ContactNegDistance();
+//  arr y_dist, J_dist;
+//  map->phi(y_dist, (&J?J_dist:NoArr), *this);
+//  y_dist *= -1.;
+//  if(&J) J_dist *= -1.;
   
-  y.resize(1);
-  if(&J) J.resize(1, getJointStateDimension());
-  if(!addValues) { y.setZero();  if(&J) J.setZero(); }
+//  y.resize(1);
+//  if(&J) J.resize(1, getJointStateDimension());
+//  if(!addValues) { y.setZero();  if(&J) J.setZero(); }
   
-  if(y_dist.scalar()>margin) return;
-  y += margin-y_dist.scalar();
-  if(&J)  J -= J_dist;
+//  if(y_dist.scalar()>margin) return;
+//  y += margin-y_dist.scalar();
+//  if(&J)  J -= J_dist;
 }
 
 void rai::KinematicWorld::kinematicsContactCost(arr &y, arr& J, double margin) const {
@@ -2465,7 +2477,7 @@ bool rai::KinematicWorld::checkConsistency() {
       }
     }
     for(Contact *c: contacts) {
-      CHECK_EQ(c->dim, 3, "");
+      CHECK_EQ(c->dim, 6, "");
       CHECK_EQ(c->qIndex, myqdim, "joint indexing is inconsistent");
       myqdim += c->dim;
     }

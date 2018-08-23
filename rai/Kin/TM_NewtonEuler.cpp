@@ -62,7 +62,7 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
     if(&c->b==a) sign=-1.;
 
     arr f, Jf;
-    K.kinematicsForce(f, Jf, c);
+    K.kinematicsContactForce(f, Jf, c);
     if(&J) expandJacobian(Jf, Ktuple, -2);
 
 //    arr d, Jd;
@@ -71,6 +71,7 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
 //    con->y = d.scalar();
 //    con->setFromPairCollision(*dist.coll);
 
+
     arr cp, Jcp;
 #if 0
     if(&c->a==a)
@@ -78,10 +79,12 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
     else
       K.kinematicsVec(cp, Jcp, a, c->b_rel); //contact point VECTOR only
 #else
-    TM_PairCollision dist(c->a.ID, c->b.ID, TM_PairCollision::_p1, false);
-    if(&c->b==a) dist.type=TM_PairCollision::_p2;
+//    TM_PairCollision dist(c->a.ID, c->b.ID, TM_PairCollision::_p1, false);
+//    if(&c->b==a) dist.type=TM_PairCollision::_p2;
 
-    dist.phi(cp, (&J?Jcp:NoArr), K);
+//    dist.phi(cp, (&J?Jcp:NoArr), K);
+
+    K.kinematicsContactPosition(cp, Jcp, c);
 
     arr p,Jp;
     K.kinematicsPos(p, Jp, a);
