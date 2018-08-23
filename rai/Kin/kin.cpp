@@ -1309,6 +1309,9 @@ void rai::KinematicWorld::glGetMasks(int w, int h, bool rgbIndices) {
 
 void rai::KinematicWorld::stepSwift() {
   swift().step(*this, false);
+//  reportProxies();
+//  watch(true);
+//  gl().closeWindow();
 }
 
 void rai::KinematicWorld::stepPhysx(double tau) {
@@ -1886,8 +1889,9 @@ void rai::KinematicWorld::reportProxies(std::ostream& os, double belowMargin, bo
   }
   os <<"Contact report:" <<endl;
   for(Frame *a:frames) for(Contact *c:a->contacts) if(&c->a==a) {
-        os <<*c <<endl;
-      }
+    c->setFromPairCollision(*c->coll());
+    os <<*c <<endl;
+  }
       
 }
 
@@ -2051,7 +2055,7 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   CHECK(p.b->shape,"");
   
 #if 1
-  if(!p.coll)((Proxy*)&p)->calc_coll(*this);
+  if(!p.coll) ((Proxy*)&p)->calc_coll(*this);
   
   arr Jp1, Jp2;
   if(&J) {

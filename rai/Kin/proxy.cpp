@@ -50,7 +50,7 @@ void rai::Proxy::calc_coll(const KinematicWorld& K) {
   if(coll) coll.reset();
   coll = std::make_shared<PairCollision>(*m1, *m2, s1->frame.X, s2->frame.X, r1, r2);
   
-  d = coll->distance;
+  d = coll->distance-coll->rad1-coll->rad2;
   posA = coll->p1;
   posB = coll->p2;
   normal = coll->normal;

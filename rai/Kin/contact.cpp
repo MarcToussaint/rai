@@ -73,6 +73,7 @@ void rai::Contact::setFromPairCollision(PairCollision &col){
   b_type = col.simplex2.d0;
   a_rad = col.rad1; //a.shape->size(3);
   b_rad = col.rad2; //b.shape->size(3);
+  y = -(col.distance-col.rad1-col.rad2);
 }
 
 double rai::Contact::getDistance() const {

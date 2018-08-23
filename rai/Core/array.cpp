@@ -1169,30 +1169,11 @@ arr finiteDifferenceJacobian(const VectorFunction& f, const arr& _x, arr& Janaly
 /// numeric (finite difference) check of the gradient of f at x
 bool checkGradient(const ScalarFunction& f,
                    const arr& x, double tolerance, bool verbose) {
-#if 1
   arr J;
   arr JJ = finiteDifferenceGradient(f, x, J);
-#else
-  arr J, dx, JJ;
-  double y, dy;
-  y=f(J, NoArr, x);
-  
-  JJ.resize(x.N);
-  double eps=CHECK_EPS;
-  for(uint i=0; i<x.N; i++) {
-    dx=x;
-    dx.elem(i) += eps;
-    dy = f(NoArr, NoArr, dx);
-    dy = (dy-y)/eps;
-    JJ(i)=dy;
-  }
-  JJ.reshapeAs(J);
-#endif
   uint i;
   double md=maxDiff(J, JJ, &i);
-//   J >>FILE("z.J");
-//   JJ >>FILE("z.JJ");
-  if(md>tolerance) {
+  if(md>tolerance && md>fabs(J.elem(i))*tolerance) {
     RAI_MSG("checkGradient -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
     J >>FILE("z.J_analytical");
     JJ >>FILE("z.J_empirical");
@@ -1239,30 +1220,11 @@ bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance, bool 
 
 bool checkJacobian(const VectorFunction& f,
                    const arr& x, double tolerance, bool verbose) {
-#if 1
   arr J;
   arr JJ = finiteDifferenceJacobian(f, x, J);
-#else
-  arr x_copy=x;
-  arr y, J, dx, dy, JJ;
-  f(y, J, x_copy);
-  if(isRowShifted(J)) J = unpack(J);
-  
-  JJ.resize(y.N, x.N);
-  double eps=CHECK_EPS;
-  uint i, k;
-  for(i=0; i<x.N; i++) {
-    dx=x_copy;
-    dx.elem(i) += eps;
-    f(dy, NoArr, dx);
-    dy = (dy-y)/eps;
-    for(k=0; k<y.N; k++) JJ(k, i)=dy.elem(k);
-  }
-  JJ.reshapeAs(J);
-#endif
   uint i;
   double md=maxDiff(J, JJ, &i);
-  if(md>tolerance) {
+  if(md>tolerance && md>fabs(J.elem(i))*tolerance) {
     RAI_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
     J >>FILE("z.J_analytical");
     JJ >>FILE("z.J_empirical");

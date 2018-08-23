@@ -1304,7 +1304,7 @@ void KOMO::checkGradients(bool dense) {
       uint j;
       double md=maxDiff(J[i], JJ[i], &j);
       if(md>mmd) mmd=md;
-      if(md>tolerance) {
+      if(md>tolerance && md>fabs(J(i,j))*tolerance) {
         if(!dense){
           LOG(-1) <<"FAILURE in line " <<i <<" t=" <<CP_komo.featureTimes(i) <<' ' <<komo_problem.featureNames(i) <<" -- max diff=" <<md <<" |"<<J(i,j)<<'-'<<JJ(i,j)<<"| (stored in files z.J_*)";
         }else{
@@ -1406,6 +1406,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const 
   for(int t=-(int)k_order; t<(int)T; t++) {
     if(saveVideoPrefix) gl->doCaptureImage=true;
     rai::KinematicWorld& K = *configurations(t+k_order);
+//    K.reportProxies();
     gl->clear();
     gl->add(glStandardScene, 0);
     gl->add(K);
@@ -1548,22 +1549,22 @@ void KOMO::set_x(const arr& x) {
 }
 
 void KOMO::reportProxies(std::ostream& os) {
-  int t=0;
+  int s=0;
   for(auto &K:configurations) {
-    os <<" **** KOMO PROXY REPORT t=" <<t-k_order <<endl;
+    os <<" **** KOMO PROXY REPORT t=" <<s-(int)k_order <<endl;
     K->reportProxies(os);
-    t++;
+    s++;
   }
 }
 
 void KOMO::reportContacts(std::ostream& os) {
-  int t=0;
+  int s=0;
   for(auto &K:configurations) {
     if(K->contacts.N){
-      os <<" ** CONTACTS t=" <<t-k_order <<endl;
+      os <<" ** CONTACTS t=" <<s-(int)k_order <<endl;
       for(rai::Contact *con:K->contacts) cout <<"   " <<*con <<endl;
     }
-    t++;
+    s++;
   }
 }
 
