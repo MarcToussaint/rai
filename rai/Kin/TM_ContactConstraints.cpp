@@ -54,8 +54,8 @@ void TM_ContactConstraints::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
 //  if(&J) J[0] = ~normal * (Jpos - Jcen) + ~(pos-cen) * Jnormal;
 
   //-- force needs to align with normal -> project force along normal
-//  y({1,3}) = force - normal*scalarProduct(normal,force);
-//  if(&J) J({1,3}) = Jforce - (normal*~normal*Jforce + normal*~force*Jnormal + scalarProduct(normal,force)*Jnormal);
+  y({1,3}) = force - normal*scalarProduct(normal,force);
+  if(&J) J({1,3}) = Jforce - (normal*~normal*Jforce + normal*~force*Jnormal + scalarProduct(normal,force)*Jnormal);
 
   if(!con->soft){
     //-- needs to touch!!

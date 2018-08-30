@@ -234,7 +234,7 @@ void KOMO::addSwitch_dynamic(double time, double endTime, const char* from, cons
 #if 0
   addObjective(time, endTime, new TM_Gravity2(world, to), OT_eq, NoArr, 3e1, k_order, +1, -1);
 #else
-  addObjective(time, endTime, new TM_NewtonEuler(world, to), OT_eq, NoArr, 1e-1, k_order, +1, -1);
+  addObjective(time, endTime, new TM_NewtonEuler(world, to), OT_eq, NoArr, 1e0, k_order, +1, -1);
 #endif
 //  addFlag(time, new Flag(FL_gravityAcc, world[to]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
   addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2);
@@ -262,10 +262,10 @@ void KOMO::addSwitch_magic(double time, double endTime, const char* from, const 
 
 void KOMO::addContact(double startTime, double endTime, const char *from, const char* to) {
   addSwitch(startTime, true, new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world) );
-  addObjective(startTime, endTime, new TM_ContactConstraints(world, from, to), OT_eq, NoArr, 1e1);
+//  addObjective(startTime, endTime, new TM_ContactConstraints(world, from, to), OT_sos, NoArr, 1e-3);
   addObjective(startTime, endTime, new TM_ContactConstraints_Vel(world, from, to), OT_eq, NoArr, 1e1);
   addObjective(startTime, endTime, new TM_ContactConstraints_InEq(world, from, to), OT_ineq, NoArr, 1e1);
-  addObjective(startTime, endTime, new TM_ContactConstraints_SOS(world, from, to), OT_sos, NoArr, 1e-4);
+  addObjective(startTime, endTime, new TM_ContactConstraints_SOS(world, from, to), OT_sos, NoArr, 1e-3);
   addObjective(startTime, endTime, new TM_PairCollision(world, from, to, TM_PairCollision::_negScalar, false), OT_eq, NoArr, 1e1);
   if(endTime>0.){
     addSwitch(endTime, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world) );
@@ -275,7 +275,7 @@ void KOMO::addContact(double startTime, double endTime, const char *from, const 
 void KOMO::addContact_Complementary(double startTime, double endTime, const char* from, const char* to){
   addSwitch(startTime, true, new rai::KinematicSwitch(rai::SW_addComplementaryContact, rai::JT_none, from, to, world) );
   addObjective(startTime, endTime, new TM_ContactConstraints(world, from, to), OT_eq, NoArr, 1e1);
-  addObjective(startTime, endTime, new TM_ContactConstraints_Vel(world, from, to), OT_eq, NoArr, 1e1);
+//  addObjective(startTime, endTime, new TM_ContactConstraints_Vel(world, from, to), OT_eq, NoArr, 1e1);
   addObjective(startTime, endTime, new TM_ContactConstraints_InEq(world, from, to), OT_ineq, NoArr, 1e1);
   addObjective(startTime, endTime, new TM_ContactConstraints_SOS(world, from, to), OT_sos, NoArr, 1e-4);
   addObjective(startTime, endTime, new TM_PairCollision(world, from, to, TM_PairCollision::_negScalar, false), OT_ineq, NoArr, 1e1);
