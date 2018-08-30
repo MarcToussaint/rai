@@ -29,20 +29,10 @@ void TM_PairCollision::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
   rai::Shape *s1 = i<0?NULL: K.frames(i)->shape;
   rai::Shape *s2 = j<0?NULL: K.frames(j)->shape;
   CHECK(s1 && s2,"");
-#if 1
   double r1=s1->size(3);
   double r2=s2->size(3);
   rai::Mesh *m1 = &s1->sscCore();  if(!m1->V.N) { m1 = &s1->mesh(); r1=0.; }
   rai::Mesh *m2 = &s2->sscCore();  if(!m2->V.N) { m2 = &s2->mesh(); r2=0.; }
-#else
-  CHECK(s1->type()==rai::ST_mesh || s1->type()==rai::ST_ssCvx || s1->type()==rai::ST_ssBox,"");
-  CHECK(s2->type()==rai::ST_mesh || s2->type()==rai::ST_ssCvx || s2->type()==rai::ST_ssBox,"");
-  const rai::Mesh *m1, *m2;
-  if(s1->type()==rai::ST_mesh) m1=&s1->mesh(); else m1=&s1->sscCore();
-  if(s2->type()==rai::ST_mesh) m2=&s2->mesh(); else m2=&s2->sscCore();
-  CHECK(m1->V.N,"");
-  CHECK(m2->V.N,"");
-#endif
   
   if(coll) delete coll;
   coll = new PairCollision(*m1, *m2, s1->frame.X, s2->frame.X, r1, r2);
