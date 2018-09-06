@@ -283,14 +283,19 @@ void CtrlTask::reportState(ostream& os) {
 //===========================================================================
 
 TaskControlMethods::TaskControlMethods(const rai::KinematicWorld& world)
-  : Hmetric(rai::getParameter<double>("Hrate", .1)*world.getHmetric()) {
+  : Hmetric(world.getHmetric()), qNullCostRef("qNullPD", new TM_qItself()) {
+//  qNullCostRef.PD().setGains(0.,1.);
+//  qNullCostRef.prec = ::sqrt(rai::getParameter<double>("Hrate", .1)*Hmetric);
+//  qNullCostRef.PD().setTarget(world.q);
 }
 
 void TaskControlMethods::updateCtrlTasks(double tau, const rai::KinematicWorld& world) {
+  qNullCostRef.update(tau, world);
   for(CtrlTask* t: tasks) t->update(tau, world);
 }
 
 void TaskControlMethods::resetCtrlTasksState() {
+  qNullCostRef.resetState();
   for(CtrlTask* t: tasks) t->resetState();
 }
 
@@ -555,11 +560,14 @@ arr TaskControlMethods::operationalSpaceControl() {
     }
   }
   if(yddot_des.N) J.reshape(yddot_des.N, J.N/yddot_des.N);
-  if(!yddot_des.N) return zeros(J.d1);
+  if(!yddot_des.N && !qNullCostRef.active) return zeros(J.d1);
   
   //regularization: null-cost-behavior
-  arr A = diag(Hmetric);
+  arr A = qNullCostRef.getPrec();
   arr a = zeros(A.d0);
+  if(qNullCostRef.active) {
+    a += qNullCostRef.getPrec() * qNullCostRef.PD().getDesiredAcceleration();
+  }
   //all the tasks
   if(yddot_des.N) {
     A += comp_At_A(J);
@@ -578,10 +586,9 @@ arr TaskControlMethods::operationalSpaceControl() {
 }
 
 arr TaskControlMethods::getDesiredLinAccLaw(arr &Kp, arr &Kd, arr &k, const arr& q, const arr& qdot) {
-  arr Kp_y, Kd_y, k_y, C_y, H;
-  NIY;
-//  qNullCostRef.PD().getDesiredLinAccLaw(Kp_y, Kd_y, k_y);
-//  arr H = qNullCostRef.getPrec();
+  arr Kp_y, Kd_y, k_y, C_y;
+  qNullCostRef.PD().getDesiredLinAccLaw(Kp_y, Kd_y, k_y);
+  arr H = qNullCostRef.getPrec();
   
   Kp = H * Kp_y;
   Kd = H * Kd_y;

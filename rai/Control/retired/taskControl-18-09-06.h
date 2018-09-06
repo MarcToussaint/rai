@@ -101,8 +101,6 @@ struct MotionProfile_Path: MotionProfile {
   double phase;
   MotionProfile_Path(const arr& path, double executionTime);
   virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
-  virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr){ HALT("can't directly set target of a path"); }
-  virtual void setTimeScale(double d){ executionTime = d; }
   virtual void resetState() { NIY }
   virtual bool isDone() { return phase>=1.; }
 };
@@ -164,6 +162,7 @@ void fwdSimulateControlLaw(arr &Kp, arr &Kd, arr &u0, rai::KinematicWorld& world
 struct TaskControlMethods {
   rai::Array<CtrlTask*> tasks;
   arr Hmetric;           ///< defines the metric in q-space (or qddot-space)
+  CtrlTask qNullCostRef; ///< defines the 'desired behavior' in qddot-space (regularization of operational space control)
   boolA lockJoints;
   
   TaskControlMethods(const rai::KinematicWorld& world);

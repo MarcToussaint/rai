@@ -17,7 +17,6 @@
 /// The task controller generates the message send to the RT_Controller
 /// the problem is defined by the list of CtrlTasks
 struct TaskControlThread : Thread {
-  struct sTaskControlThread *s;
   
   //protected access points
   VAR(arr, ctrl_q_real)
@@ -28,7 +27,6 @@ struct TaskControlThread : Thread {
   VAR(rai::Array<CtrlTask*>, ctrlTasks)
   VAR(rai::KinematicWorld, modelWorld)
   VAR(bool, fixBase)
-  VAR(arr, pr2_odom)
   VAR(double, IK_cost)
   
 //private:
@@ -39,24 +37,12 @@ struct TaskControlThread : Thread {
   arr q0; //< homing pose
   arr Kp_base, Kd_base; //< Kp, Kd parameters defined in the model file
   double kp_factor, kd_factor, ki_factor;
-  rai::String robot;
-  arr q_model_lowPass;
-  bool useRos;
   bool useSwift;
   bool requiresInitialSync; //< whether the step() should reinit the state from the ros message
-  bool syncMode;
   bool verbose;
-  bool useDynSim;
-  bool compensateGravity;
-  bool compensateFTSensors;
-  RTControllerSimulation* dynSim;
-  
-  GravityCompensation* gc;
-  
-  arr fRInitialOffset;
   
 public:
-  TaskControlThread(const char* robot="none", const rai::KinematicWorld& world = NoWorld);
+  TaskControlThread(const rai::KinematicWorld& world);
   ~TaskControlThread();
   
   void open();

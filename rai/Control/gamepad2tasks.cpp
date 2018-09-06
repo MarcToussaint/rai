@@ -103,10 +103,11 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::KinematicWorld& K)
   if(stopButtons(gamepadState)) return true;
   
   for(CtrlTask* pdt:TC.tasks) pdt->active=false;
-  
-  TC.qNullCostRef.PD().setGains(0., 10.); //nullspace qitself is not used for homing by default
-  TC.qNullCostRef.active=true;
-  TC.qNullCostRef.PD().setTarget(K.q);
+
+HALT("change code: add a qNull here explicitly");
+//  TC.qNullCostRef.PD().setGains(0., 10.); //nullspace qitself is not used for homing by default
+//  TC.qNullCostRef.active=true;
+//  TC.qNullCostRef.PD().setTarget(K.q);
   
 //  homing->PD().setGains(0., 10.); //nullspace qitself is not used for homing by default
 //  homing->active=true;

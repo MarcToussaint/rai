@@ -7,104 +7,46 @@
     --------------------------------------------------------------  */
 
 #include "TaskControlThread.h"
-#include <Gui/opengl.h>
 #include <RosCom/baxter.h>
 #include <Kin/frame.h>
 
-void lowPassUpdate(arr& lowPass, const arr& signal, double rate=.1) {
-  if(lowPass.N!=signal.N) { lowPass=zeros(signal.N); return; }
-  lowPass = (1.-rate)*lowPass + rate*signal;
-}
-
-#ifdef RAI_ROS
-struct sTaskControlThread {
-  Var<sensor_msgs::JointState> jointState = Var<sensor_msgs::JointState>(NULL, "jointState");
-};
-#else
-struct sTaskControlThread {};
-#endif
-
-TaskControlThread::TaskControlThread(const char* _robot, const rai::KinematicWorld& world)
+TaskControlThread::TaskControlThread(const rai::KinematicWorld& world)
   : Thread("TaskControlThread", .01)
-  , s(NULL)
   , taskController(NULL)
-  , useRos(false)
   , useSwift(true)
   , requiresInitialSync(true)
-  , syncMode(false)
   , verbose(false)
-  , useDynSim(true)
-  , compensateGravity(false)
-  , compensateFTSensors(false) {
+  {
   
-  s = new sTaskControlThread();
-  
-  useSwift = rai::getParameter<bool>("useSwift",true);
-  useRos = rai::getParameter<bool>("useRos",false);
-  if(useRos && rai::checkParameter<bool>("taskControllerNoUseRos"))
-    useRos = false;
-  useDynSim = !useRos; //rai::getParameter<bool>("useDynSim", true);
-  syncMode = rai::getParameter<bool>("controller_syncMode", false);
+  useSwift = rai::getParameter<bool>("useSwift", true);
   kp_factor = rai::getParameter<double>("controller_kp_factor", 1.);
   kd_factor = rai::getParameter<double>("controller_kd_factor", 1.);
   ki_factor = rai::getParameter<double>("controller_ki_factor", .2);
   
   double hyper = rai::getParameter<double>("hyperSpeed", -1.);
-  if(!useRos && hyper>0.) {
-    this->metronome.reset(.01/hyper);
-  }
+  if(hyper>0.) this->metronome.reset(.01/hyper);
+
+  realWorld = world;
+  modelWorld.set()() = realWorld;
   
-  robot = rai::getParameter<rai::String>("robot");
-  
-  //-- deciding on the kinematic model. Priority:
-  // 1) an explicit model is given as argument
-  // 2) modelWorld has been set before
-  // 3) the "robot" flag in cfg file
-  // 4) the "robot" argument here
-  
-  if(&world) {
-    realWorld = world;
-    modelWorld.set()() = realWorld;
-  } else {
-    if(modelWorld.get()->q.N) { //modelWorld has been set before
-      realWorld = modelWorld.get();
-    } else {
-      if(robot=="pr2") {
-        realWorld.init(rai::raiPath("../rai-robotModels/pr2/pr2.g").p);
-      } else if(robot=="baxter") {
-        realWorld.init(rai::raiPath("data/baxter_model/baxter.ors").p);
-      } else {
-        HALT("robot not known!")
-      }
-      modelWorld.set()() = realWorld;
-    }
-  }
-  
-  if(robot!="pr2" && robot!="baxter" && robot!="none") {
-    HALT("robot not known!")
-  }
-  
+  realWorld.calc_q();
   q0 = realWorld.q;
-  
   Kp_base = zeros(realWorld.q.N);
   Kd_base = zeros(realWorld.q.N);
-  rai::Joint *j;
-  for(rai::Frame* f:realWorld.frames) if((j=f->joint) && j->qDim()>0) {
-      arr *gains = f->ats.find<arr>("gains");
-      if(gains) {
-        for(uint i=0; i<j->qDim(); i++) {
-          Kp_base(j->qIndex+i)=gains->elem(0);
-          Kd_base(j->qIndex+i)=gains->elem(1);
-        }
+
+  for(rai::Joint *j:realWorld.fwdActiveJoints) {
+    arr *gains = j->frame.ats.find<arr>("gains");
+    if(gains) {
+      for(uint i=0; i<j->qDim(); i++) {
+        Kp_base(j->qIndex+i)=gains->elem(0);
+        Kd_base(j->qIndex+i)=gains->elem(1);
       }
     }
-    
-  fRInitialOffset = ARR(-0.17119, 0.544316, -1.2, 0.023718, 0.00802182, 0.0095804);
+  }
 }
 
 TaskControlThread::~TaskControlThread() {
   threadClose();
-  if(s) delete s; s=NULL;
 }
 
 void TaskControlThread::open() {
@@ -114,88 +56,21 @@ void TaskControlThread::open() {
   
   taskController = new TaskControlMethods(modelWorld.get());
   
-  if(compensateGravity) {
-    gc->learnGCModel();
-  }
-  if(compensateFTSensors) {
-    gc->learnFTModel();
-  }
-  
-  if(useRos) requiresInitialSync=true;
-  
-//    dynSim = new RTControllerSimulation(realWorld, 0.01, false, 0.);
-//    dynSim->threadLoop();
+  requiresInitialSync=true;
 }
 
 void TaskControlThread::step() {
   rai::Frame *transF = realWorld.getFrameByName("worldTranslationRotation", false);
   rai::Joint *trans = (transF?transF->joint:NULL);
   
-  //-- read real state
-  if(useRos) {
-    bool succ=true;
-    if(robot=="pr2") {
-      ctrl_obs.waitForRevisionGreaterThan(0);
-      pr2_odom.waitForRevisionGreaterThan(0);
-      
-      //update q_read from both, ctrl_obs and pr2_odom
-      q_real = ctrl_obs.get()->q;
-      qdot_real = ctrl_obs.get()->qdot;
-      arr pr2odom = pr2_odom.get();
-      if(q_real.N==realWorld.q.N && pr2odom.N==3) {
-        q_real({trans->qIndex, trans->qIndex+2}) = pr2odom;
-      }
-    }
-    
-    if(robot=="baxter") {
-#ifdef RAI_ROS
-      s->jointState.waitForRevisionGreaterThan(20);
-      q_real = realWorld.q;
-      succ = baxter_update_qReal(q_real, s->jointState.get(), realWorld);
-#endif
-      qdot_real = zeros(q_real.N);
-    }
-    
-    if(robot=="none") {
-      if(requiresInitialSync || syncMode) {
-        q_real = q_model;
-        qdot_real = qdot_model;
-      }
-      requiresInitialSync = false;
-    }
-    
-    ctrl_q_real.set() = q_real;
-    
-    if(succ && q_real.N==realWorld.q.N && qdot_real.N==realWorld.q.N) { //we received a good reading
-      realWorld.setJointState(q_real, qdot_real);
-      
-      if(requiresInitialSync || syncMode) {
-        q_model = q_real;
-        qdot_model = qdot_real;
-        modelWorld.set()->setJointState(q_model, qdot_model);
-      }
-      requiresInitialSync = false;
-    } else {
-      LOG(-1) <<"** Waiting for ROS message on initial configuration.." <<endl;
-      if(step_count>300) {
-        HALT("sync'ing real robot with simulated failed")
-      }
-      return;
-    }
-  }
-  
-  double lowPass=.01;
-  if(!q_model_lowPass.N) q_model_lowPass = q_model;
-  else { q_model_lowPass *= 1.-lowPass; q_model_lowPass += lowPass * q_model; }
-  
   //-- compute the feedback controller step and iterate to compute a forward reference
   arr CompProj;
-//  arr M, F;
   {
     modelWorld.writeAccess();
-//    if(!(step_count%20)) modelWorld().gl().update(); //only for debugging
-
     ctrlTasks.writeAccess();
+
+    //    if(!(step_count%20)) modelWorld().gl().update(); //only for debugging
+
     taskController->tasks = ctrlTasks();
     
     taskController->updateCtrlTasks(.01, modelWorld()); //update with time increment
@@ -203,11 +78,7 @@ void TaskControlThread::step() {
     //-- compute IK step
     double maxQStep = 2e-1;
     arr dq;
-    if(syncMode) {
-      dq = taskController->inverseKinematics(qdot_model, q_model_lowPass - q_model);
-    } else {
-      dq = taskController->inverseKinematics(qdot_model); //don't include a null step
-    }
+    dq = taskController->inverseKinematics(qdot_model); //don't include a null step
     double l = length(dq);
     if(l>maxQStep) dq *= maxQStep/l;
     q_model += dq;

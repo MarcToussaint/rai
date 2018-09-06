@@ -212,9 +212,10 @@ void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float cal
   }
   
   base->PD().setTarget({x_c,y_c,phi_c});
-  fmc.qNullCostRef.PD().y_target(trans->qIndex+0) = base->PD().y_target(trans->qIndex+0);
-  fmc.qNullCostRef.PD().y_target(trans->qIndex+1) = base->PD().y_target(trans->qIndex+1);
-  fmc.qNullCostRef.PD().y_target(trans->qIndex+2) = base->PD().y_target(trans->qIndex+2);
+  HALT("change code: add a qNull here explicitly");
+//  fmc.qNullCostRef.PD().y_target(trans->qIndex+0) = base->PD().y_target(trans->qIndex+0);
+//  fmc.qNullCostRef.PD().y_target(trans->qIndex+1) = base->PD().y_target(trans->qIndex+1);
+//  fmc.qNullCostRef.PD().y_target(trans->qIndex+2) = base->PD().y_target(trans->qIndex+2);
   
 }
 
