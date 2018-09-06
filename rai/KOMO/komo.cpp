@@ -454,7 +454,8 @@ void KOMO_ext::setGrasp(double time, const char* endeffRef, const char* object, 
   setKinematicSwitch(time, true, new KinematicSwitch(SW_insertEffJoint, JT_trans3, NULL, object, world));
   setTask(time, time, new TM_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e1);
 #else
-  addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, endeffRef, object, world));
+//  addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, endeffRef, object, world));
+  addSwitch_stable(time, -1., endeffRef, object);
   addObjective(time, time, new TM_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e1);
 //  setTouch(time, time, endeffRef, object);
 #endif
@@ -1259,9 +1260,11 @@ void KOMO::reportProblem(std::ostream& os) {
   writeConsecutiveConstant(os, dims);
   os <<endl;
   
-  arr times = getPath_times();
-  if(times.N>10) times.resizeCopy(10);
-  os <<"    times:" <<times <<endl;
+  if(configurations.N){
+    arr times = getPath_times();
+    if(times.N>10) times.resizeCopy(10);
+    os <<"    times:" <<times <<endl;
+  }
   
   os <<"  usingSwift:" <<useSwift <<endl;
   for(Objective* t:objectives) os <<"    " <<*t <<endl;

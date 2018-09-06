@@ -1,4 +1,4 @@
-#include <KOMO/komo.h>
+#include <KOMO/komo-ext.h>
 #include <string>
 #include <map>
 #include <Core/graph.h>
@@ -9,7 +9,7 @@ using namespace std;
 
 void TEST(KomoSequence){
   
-  KOMO komo;
+  KOMO_ext komo;
   komo.setConfigFromFile();
 
   //  komo.setHoming(-1., -1., 1e-1);

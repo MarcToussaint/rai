@@ -215,6 +215,7 @@ FrameL rai::KinematicWorld::calc_topSort() {
   boolA done = consts<byte>(false, frames.N);
   
   for(Frame *a:frames) if(!a->parent) fringe.append(a);
+  if(frames.N) CHECK(fringe.N, "none of the frames is a root -- must be loopy!");
   
   while(fringe.N) {
     Frame *a = fringe.popFirst();

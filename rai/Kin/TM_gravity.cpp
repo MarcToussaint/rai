@@ -276,10 +276,15 @@ void TM_ZeroAcc::phi(arr& y, arr& J, const WorldL& Ktuple){
 void TM_ZeroQVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   TM_qItself q({(uint)i}, false);
   q.order=order;
+  if(order==1 && Ktuple(-1)->frames(i)->joint->qDim()!=Ktuple(-2)->frames(i)->joint->qDim()){
+    y.resize(Ktuple(-1)->frames(i)->joint->dim).setZero();
+    if(!!J) J.resize(y.N, getKtupleDim(Ktuple).last()).setZero();
+    return;
+  }
   q.Feature::phi(y, J, Ktuple);
 }
 
-uint TM_ZeroQVel::dim_phi(const rai::KinematicWorld& G){
-  rai::Frame *a = G.frames(i);
+uint TM_ZeroQVel::dim_phi(const rai::KinematicWorld& K){
+  rai::Frame *a = K.frames(i);
   return a->joint->dim;
 }

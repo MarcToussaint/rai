@@ -1,7 +1,7 @@
 #include <Kin/kin.h>
 #include <Kin/frame.h>
 #include <Gui/opengl.h>
-#include <KOMO/komo.h>
+#include <KOMO/komo-ext.h>
 #include <Kin/TM_ContactConstraints.h>
 #include <Kin/TM_time.h>
 #include <Kin/TM_default.h>
@@ -13,9 +13,9 @@ void TEST(Easy){
   cout <<"configuration space dim=" <<K.q.N <<endl;
 
   //-- add time DOFs
-  K.addTimeJoint();
+//  K.addTimeJoint();
 
-  KOMO komo;
+  KOMO_ext komo;
   komo.setModel(K, true);
   komo.setPathOpt(1., 100, 5.);
 
@@ -46,7 +46,7 @@ void TEST(Easy){
 void TEST(Align){
   rai::KinematicWorld K("arm.g");
   cout <<"configuration space dim=" <<K.q.N <<endl;
-  KOMO komo;
+  KOMO_ext komo;
   komo.setModel(K);
   komo.setPathOpt(1., 100, 5.);
 
@@ -80,7 +80,7 @@ void TEST(PR2){
     K.setJointState(K.q);
   }
 
-  KOMO komo;
+  KOMO_ext komo;
   komo.setModel(K);
   komo.setPathOpt(1., 100, 10.);
   komo.setPosition(1., 1., "endeff", "target");

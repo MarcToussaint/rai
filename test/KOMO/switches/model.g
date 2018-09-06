@@ -27,6 +27,7 @@ frame redBall(table1) { Q:<t(0 0 .1) t(.1 .7 .03)> size:[.06 .06 .06 .02] color:
 frame stick (table1){
   shape:ssBox size:[.8 .025 .04 .01] color:[.6 .3 0] contact, logical:{ object }
   Q:<t(0 0 .1) t(.5 -.7 .02) d(90 0 0 1)>
+  joint:rigid
 }
 
 frame stickTip (stick) { Q:<t(.4 .1 0) d(90 0 0 1)> type:ssBox size:[.2 .026 .04 0.01] color:[.6 .3 0], logical:{ object, pusher } }

@@ -44,7 +44,7 @@ struct CoveringSpheresProblem : ConstrainedProblem {
 
     //g
     arr d_ij(x.d0, s), ed_ij(x.d0, s), sed_i(x.d0);
-    if(&g || &Jg){
+    if(!!g || !!Jg){
       for(uint i=0;i<x.d0;i++) for(uint j=0;j<s;j++)
         d_ij(i,j) = length(x[i] - c[j]) - r(j);
       ed_ij = ::exp(alpha*d_ij);
