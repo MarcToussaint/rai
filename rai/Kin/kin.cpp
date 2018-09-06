@@ -569,13 +569,14 @@ void rai::KinematicWorld::calc_Q_from_q() {
 }
 
 /// @name active set selection
-void rai::KinematicWorld::setActiveJointsByName(const StringA& names) {
-  for(Joint *j: fwdActiveJoints) j->active=false;
+void rai::KinematicWorld::setActiveJointsByName(const StringA& names, bool notThose) {
+  for(Frame *f: frames) if(f->joint) f->joint->active = notThose;
   for(const String& s:names) {
     Frame *f = getFrameByName(s);
     CHECK(f, "");
+    f = f->getUpwardLink();
     CHECK(f->joint, "");
-    f->joint->active=true;
+    f->joint->active = !notThose;
   }
   reset_q();
   checkConsistency();

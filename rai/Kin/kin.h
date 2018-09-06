@@ -139,7 +139,7 @@ struct KinematicWorld : GLDrawer {
   arr getLimits() const;
   
   /// @name active set selection
-  void setActiveJointsByName(const StringA&);
+  void setActiveJointsByName(const StringA&, bool notThose=false);
   
   /// @name set state
   void setJointState(const arr& _q, const arr& _qdot=NoArr);

@@ -173,7 +173,8 @@ void Filter::step() {
   
   //-- step 5: sync with modelWorld using inverse kinematics
   modelWorld.writeAccess();
-  modelWorld->setAgent(1);
+  modelWorld->setActiveJointsByName({"S1"});
+
   TaskControlMethods taskController(modelWorld());
   arr q=modelWorld().q;
   
@@ -183,8 +184,8 @@ void Filter::step() {
       rai::Frame *b = modelWorld->frames(p->bodyId);
       if(p->type==Percept::PT_box) {
         rai::Shape *s=b->shape;
-        s->size() = (static_cast<PercBox*>(p))->size;
-        s->mesh().setSSBox(s->size(0), s->size(1), s->size(2), 0.0001);
+//        s->size() = (static_cast<PercBox*>(p))->size;
+//        s->mesh().setSSBox(s->size(0), s->size(1), s->size(2), 0.0001);
         s->mesh().C = (static_cast<PercBox*>(p))->color;
         if(s->mesh().C.d0 > 3)
           s->mesh().C=ARR(0.,0.,0.);
@@ -214,9 +215,8 @@ void Filter::step() {
   
   listDelete(taskController.tasks); //cleanup tasks
   
-  modelWorld->setAgent(1);
   modelWorld->setJointState(q);
-  modelWorld->setAgent(0);
+  modelWorld->setActiveJointsByName({}, true);
   modelWorld.deAccess();
   
   //-- done
