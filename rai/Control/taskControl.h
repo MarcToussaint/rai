@@ -30,6 +30,8 @@ enum CT_Status { CT_init=-1, CT_running, CT_conv, CT_done, CT_stalled };
 struct MotionProfile {
   virtual ~MotionProfile() {}
   virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot) = 0;
+  virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr) = 0;
+  virtual void setTimeScale(double d) = 0;
   virtual void resetState() = 0;
   virtual bool isDone() = 0;
 };
@@ -41,6 +43,8 @@ struct MotionProfile_Const : MotionProfile {
   bool flipTargetSignOnNegScalarProduct;
   MotionProfile_Const(const arr& y_target, bool flip=false) : y_target(y_target), flipTargetSignOnNegScalarProduct(flip) {}
   virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
+  virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr){ y_target = ytarget; }
+  virtual void setTimeScale(double d) {}
   virtual void resetState() {}
   virtual bool isDone() { return false; }
 };
@@ -48,11 +52,13 @@ struct MotionProfile_Const : MotionProfile {
 //===========================================================================
 
 struct MotionProfile_Sine : MotionProfile {
-  arr y_init, y_target, y_err;
+  arr y_start, y_target, y_err;
   double t, T;
   MotionProfile_Sine(const arr& y_target, double duration) : y_target(y_target), t(0.), T(duration) {}
   virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
-  virtual void resetState() { y_init.clear(); t=0.; }
+  virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr){ y_target = ytarget; }
+  virtual void setTimeScale(double d) { T=d; }
+  virtual void resetState() { y_start.clear(); y_err.clear(); t=0.; }
   virtual bool isDone();
 };
 
@@ -70,12 +76,14 @@ struct MotionProfile_PD: MotionProfile {
   MotionProfile_PD(const arr& _y_target, double decayTime, double dampingRatio, double maxVel=0., double maxAcc=0.);
   MotionProfile_PD(const Graph& params);
   
-  void setTarget(const arr& ytarget, const arr& vtarget=NoArr);
+  virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr);
+  virtual void setTimeScale(double d) { setGainsAsNatural(d, .9); }
+  virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
+  virtual void resetState() { y_ref.clear(); v_ref.clear(); }
+
   void setGains(double _kp, double _kd);
   void setGainsAsNatural(double decayTime, double dampingRatio); ///< the decayTime is the to decay to 10% of the initial offset/error
   
-  virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
-  virtual void resetState() { y_ref.clear(); v_ref.clear(); }
   
   arr getDesiredAcceleration();
   void getDesiredLinAccLaw(arr& Kp_y, arr& Kd_y, arr& a0_y);
@@ -138,6 +146,7 @@ struct CtrlTask {
   MotionProfile_PD& PD();
   void setRef(MotionProfile *_ref);
   void setTarget(const arr& y_target);
+  void setTimeScale(double d){ CHECK(ref,""); ref->setTimeScale(d); ref->resetState(); }
   
   void reportState(ostream& os);
 };

@@ -88,7 +88,7 @@ void glDrawProxy(const arr& p1, const arr& p2, double diskSize=.02, int colorCod
 void glDrawCylinder(float radius, float length, bool closed=true);
 void glDrawCappedCylinder(float radius, float length);
 void glDrawAxis(double scale=-1.);
-void glDrawAxes(double scale);
+void glDrawAxes(double scale, bool colored=true);
 void glDrawCamera(const rai::Camera& cam);
 void glDrawGridBox(float x);
 void glDrawGridBox(float x1, float y1, float z1, float x2, float y2, float z2);
@@ -153,8 +153,8 @@ struct OpenGL {
   GLSelect *topSelection;        ///< top selected object
   bool immediateExitLoop;
   bool drawFocus;
-  bool doCaptureImage, doCaptureDepth;
-  byteA background, captureImage;
+  bool computeImage, computeDepth, computeIdImage;
+  byteA background, captureImage, captureIdImage;
   floatA captureDepth;
   double backgroundZoom;
   arr P; //camera projection matrix
@@ -191,16 +191,16 @@ struct OpenGL {
   void addSubView(uint view, void (*call)(void*), void* classP=0);
   void addSubView(uint view, GLDrawer& c);
   void setSubViewTiles(uint cols, uint rows);
-  void setViewPort(uint view, double l, double r, double b, double t);
+  void setSubViewPort(uint view, double l, double r, double b, double t);
   void clearSubView(uint view);
   
   /// @name the core draw routines (actually only for internal use)
   void Draw(int w, int h, rai::Camera *cam=NULL, bool callerHasAlreadyLocked=false);
   void Select(bool callerHasAlreadyLocked=false);
-  void renderInBack(bool doCaptureImage=true, bool captureDepth=false, int w=-1, int h=-1);
+  void renderInBack(bool computeImage=true, bool captureDepth=false, int w=-1, int h=-1);
   
   /// @name showing, updating, and watching
-  int update(const char *text=NULL, bool doCaptureImage=false, bool captureDepth=false, bool waitForCompletedDraw=true);
+  int update(const char *text=NULL, bool computeImage=false, bool captureDepth=false, bool waitForCompletedDraw=true);
   int watch(const char *text=NULL);
   int timedupdate(double sec);
   void resize(int w, int h);

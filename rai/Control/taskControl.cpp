@@ -29,9 +29,9 @@ CT_Status MotionProfile_Const::update(arr& yRef, arr& ydotRef, double tau, const
 CT_Status MotionProfile_Sine::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot) {
   t+=tau;
   if(t>T) t=T;
-  if(y_init.N!=y.N) y_init=y; //initialization
+  if(y_start.N!=y.N) y_start=y; //initialization
   if(y_target.N!=y.N) y_target = zeros(y.N);
-  yRef = y_init + (.5*(1.-cos(RAI_PI*t/T))) * (y_target - y_init);
+  yRef = y_start + (.5*(1.-cos(RAI_PI*t/T))) * (y_target - y_start);
   ydotRef = zeros(y.N);
   y_err = yRef - y;
   if(t>=T-1e-6/* && length(y_err)<1e-3*/) return CT_done;
@@ -237,11 +237,7 @@ void CtrlTask::setRef(MotionProfile *_ref) {
 
 void CtrlTask::setTarget(const arr& y_target) {
   CHECK(ref,"need a ref to set target");
-  if(typeid(*ref)==typeid(MotionProfile_PD))
-    dynamic_cast<MotionProfile_PD*>(ref)->setTarget(y_target);
-  else if(typeid(*ref)==typeid(MotionProfile_Sine))
-    dynamic_cast<MotionProfile_Sine*>(ref)->y_target = y_target;
-  else HALT("can't set target");
+  ref->setTarget(y_target);
   ref->resetState();
 }
 
@@ -432,10 +428,12 @@ arr TaskControlMethods::inverseKinematics(arr& qdot, const arr& nullRef, double*
   
   arr Winv = oneover(Hmetric);
   if(lockJoints.N) {
-    uint n=J.d1;
+    uint n=Winv.N;
     CHECK_EQ(lockJoints.N, n, "");
     for(uint i=0; i<n; i++) if(lockJoints(i)) Winv(i) = 0.;
   }
+
+  if(J.d1 > Winv.N) Winv.append(1e6, Winv.N-J.d1); //append high costs for joints not represented in Hmetric
   
   arr Jinv = pseudoInverse(J, Winv, 1e-1);
   checkNan(Jinv);

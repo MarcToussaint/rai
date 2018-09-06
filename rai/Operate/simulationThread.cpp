@@ -1,8 +1,8 @@
 #include "simulationThread.h"
 #include <RosCom/roscom.h>
-//#include "simulationIO_self.h"
+//#include "SimulationThread_self.h"
 
-struct SimulationIO_self{
+struct SimulationThread_self{
   RosCom ROS;
 
   //inputs (reactive variables / messages)
@@ -21,10 +21,10 @@ struct SimulationIO_self{
   std::shared_ptr<Publisher<rai_msgs::StringA>> pub_objectNames;
   std::shared_ptr<PublisherConv<std_msgs::Float64, double, conv_double2Float64>> pub_timeToGo;
 
-  SimulationIO_self();
+  SimulationThread_self();
 };
 
-SimulationIO_self::SimulationIO_self()
+SimulationThread_self::SimulationThread_self()
     : ROS("simulator"),
       ref("MotionReference"),
       command("command"),
@@ -47,7 +47,7 @@ SimulationThread::SimulationThread(const rai::KinematicWorld& K, double dt, bool
     timeToGo("timeToGo"){
 
     if(pubSubToROS){
-        self = new SimulationIO_self();
+        self = new SimulationThread_self();
         self->ROS.publish(self->pub_timeToGo, timeToGo);
     }
 

@@ -6,7 +6,7 @@ struct SimulationThread : Thread{
   Simulation SIM;
   double dt;
   bool pubSubToROS;
-  struct SimulationIO_self* self=0;
+  struct SimulationThread_self* self=0;
   Var<double> timeToGo;
 
   SimulationThread(const rai::KinematicWorld& K, double dt=.01, bool pubSubToROS=false);

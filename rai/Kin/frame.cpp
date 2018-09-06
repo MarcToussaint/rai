@@ -17,6 +17,8 @@
 #include <Gui/opengl.h>
 #endif
 
+extern bool Geo_mesh_drawColors;
+
 //===========================================================================
 
 template<> const char* rai::Enum<rai::JointType>::names []= {
@@ -781,7 +783,8 @@ void rai::Shape::glDraw(OpenGL& gl) {
     glDrawSphere(.1*scale);
   }
   if(frame.K.orsDrawShapes) {
-    if(geom->type!=ST_marker || frame.K.orsDrawMarkers) {
+    if(geom->type!=ST_marker || (frame.K.orsDrawMarkers)) {
+      if(gl.drawMode_idColor) Geo_mesh_drawColors=false; else Geo_mesh_drawColors=true;
       geom->glDraw(gl);
     }
   }

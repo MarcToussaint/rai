@@ -67,48 +67,49 @@ struct RobotAbstraction_SimulationThread : RobotAbstraction {
     ~RobotAbstraction_SimulationThread(){}
 
     virtual bool executeMotion(const StringA& joints, const arr& path, const arr& times, double timeScale=1., bool append=false){
-        S.stepMutex.lock();
+        auto lock = S.stepMutex();
         S.SIM.setUsedRobotJoints(joints);
         S.SIM.exec(path, times*timeScale, append);
-        S.stepMutex.unlock();
         return true;
     }
     virtual void execGripper(const rai::String& gripper, double position, double force=40.){
+        auto lock = S.stepMutex();
         if(gripper=="pr2R"){
             //  komo->addObjective(0., 0., OT_eq, FS_accumulatedCollisions, {}, 1e0);
             //open gripper
             //  komo->addObjective(0.,0., OT_sos, FS_qItself, {"r_gripper_joint"}, 1e1, {.08} );
             //  komo->addObjective(0.,0., OT_sos, FS_qItself, {"r_gripper_l_finger_joint"}, 1e1, {.8} );
 
-            S.stepMutex.lock();
             S.SIM.setUsedRobotJoints({"r_gripper_joint", "r_gripper_l_finger_joint"});
             S.SIM.exec({1,2, {position, position*10.}}, {1.}, true);
-            S.stepMutex.unlock();
             return;
         }
         NIY
     }
     virtual arr getHomePose(){ return q0; }
     virtual arr getJointPositions(const StringA& joints){
-        S.stepMutex.lock();
+        auto lock = S.stepMutex();
         S.SIM.setUsedRobotJoints(joints);
         arr q = S.SIM.getJointState();
-        S.stepMutex.unlock();
         return q;
     }
     virtual StringA getJointNames(){
-        S.stepMutex.lock();
+        auto lock = S.stepMutex();
         StringA joints = S.SIM.getJointNames();
-        S.stepMutex.unlock();
         return joints;
     }
     virtual void attach(const char *a, const char *b){
-        S.stepMutex.lock();
+        auto lock = S.stepMutex();
         S.SIM.exec({"attach", a, b});
-        S.stepMutex.unlock();
     }
     virtual double timeToGo(){
         return S.SIM.getTimeToGo();
+    }
+    virtual arr getSensor(SensorId sensor){
+        auto lock = S.stepMutex();
+        S.SIM.setCamera("pr2Kinect");
+//        S.SIM.getCamera(depth);
+        NIY;
     }
 };
 

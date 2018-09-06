@@ -237,6 +237,10 @@ double Simulation::getTimeToGo(){
   return self->spline.timeToGo();
 }
 
+void Simulation::setCamera(const char* sensorName){
+    NIY;
+}
+
 arr Simulation::getJointState(){
   auto lock = self->threadLock();
 

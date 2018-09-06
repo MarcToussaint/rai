@@ -4,6 +4,7 @@
 #include <Kin/kin.h>
 
 enum RobotType { ROB_sim=0, ROB_pr2, ROB_baxter, ROB_kukaWSG };
+enum SensorId { SEN_depth };
 
 struct RobotAbstraction{
     virtual ~RobotAbstraction(){}
@@ -13,13 +14,15 @@ struct RobotAbstraction{
     //-- execution
     virtual bool executeMotion(const StringA& joints, const arr& path, const arr& times, double timeScale=1., bool append=false) = 0;
     virtual void execGripper(const rai::String& gripperName, double position, double force=40.) = 0;
+    virtual double timeToGo() = 0;
     virtual void attach(const char *a, const char *b){}
     //-- feedback
     virtual arr getJointPositions(const StringA& joints={}) = 0;
-    virtual double timeToGo() = 0;
+    //-- sensors
+    virtual arr getSensor(SensorId sensor){ return NoArr; }
 };
 
-struct RobotIO{
+struct RobotIO : RobotAbstraction{
     std::shared_ptr<RobotAbstraction> self;
     rai::Enum<RobotType> type;
 
@@ -34,18 +37,13 @@ struct RobotIO{
         }
         return self->executeMotion(joints, path, times, timeScale, append);
     }
-    void execGripper(const rai::String& gripper, double position, double force=40.){
-        return self->execGripper(gripper, position, force); }
-    arr getJointPositions(const StringA& joints={}){
-        return self->getJointPositions(joints); }
-    StringA getJointNames(){
-        return self->getJointNames(); }
-    arr getHomePose(){
-        return self->getHomePose();
-    }
-    void attach(const char *a, const char *b){
-        return self->attach(a,b);
-    }
+    void execGripper(const rai::String& gripper, double position, double force=40.){ return self->execGripper(gripper, position, force); }
+    arr getJointPositions(const StringA& joints={}){ return self->getJointPositions(joints); }
+    StringA getJointNames(){ return self->getJointNames(); }
+    arr getHomePose(){ return self->getHomePose(); }
+    void attach(const char *a, const char *b){ return self->attach(a,b); }
+    virtual double timeToGo(){ return self->timeToGo(); }
+    arr getSensor(SensorId sensor){ self->getSensor(sensor); return arr(); }
 
     void waitForCompletion(){
         while(self->timeToGo()>0.){

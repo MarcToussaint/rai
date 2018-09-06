@@ -627,14 +627,15 @@ void glDrawAxis(double scale) {
 //    glEnable(GL_CULL_FACE);
 }
 
-void glDrawAxes(double scale) {
+void glDrawAxes(double scale, bool colored) {
   for(uint i=0; i<3; i++) {
     glPushMatrix();
     glScalef(scale, scale, scale);
+
     switch(i) {
-      case 0:  glColor(.7, 0, 0);  break;
-      case 1:  glColor(0, .7, 0);  glRotatef(90, 0, 0, 1);  break;
-      case 2:  glColor(0, 0, .7);  glRotatef(90, 0, -1, 0);  break;
+      case 0:  if(colored) glColor(.7, 0, 0);  break;
+      case 1:  if(colored) glColor(0, .7, 0);  glRotatef(90, 0, 0, 1);  break;
+      case 2:  if(colored) glColor(0, 0, .7);  glRotatef(90, 0, -1, 0);  break;
     }
     glDrawAxis();
     glPopMatrix();
@@ -1254,7 +1255,7 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 //
 
 OpenGL::OpenGL(const char* _title, int w, int h, int posx, int posy)
-  : s(NULL), title(_title), width(w), height(h), reportEvents(false), topSelection(NULL), doCaptureImage(false), doCaptureDepth(false), fboId(0), rboColor(0), rboDepth(0) {
+  : s(NULL), title(_title), width(w), height(h), reportEvents(false), topSelection(NULL), computeImage(false), computeDepth(false), fboId(0), rboColor(0), rboDepth(0) {
   //RAI_MSG("creating OpenGL=" <<this);
   Reshape(w,h);
   s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
@@ -1262,7 +1263,7 @@ OpenGL::OpenGL(const char* _title, int w, int h, int posx, int posy)
 }
 
 OpenGL::OpenGL(void *container)
-  : s(NULL), width(0), height(0), reportEvents(false), topSelection(NULL), doCaptureImage(false), doCaptureDepth(false), fboId(0), rboColor(0), rboDepth(0) {
+  : s(NULL), width(0), height(0), reportEvents(false), topSelection(NULL), computeImage(false), computeDepth(false), fboId(0), rboColor(0), rboDepth(0) {
   s=new sOpenGL(this,container); //this might call some callbacks (Reshape/Draw) already!
   init();
 }
@@ -1364,11 +1365,11 @@ void OpenGL::setSubViewTiles(uint cols, uint rows) {
   for(uint i=0; i<cols*rows; i++) {
     double x=i%cols;
     double y=rows - 1 - i/cols;
-    setViewPort(i, x/cols, (x+1)/cols, y/rows, (y+1)/rows);
+    setSubViewPort(i, x/cols, (x+1)/cols, y/rows, (y+1)/rows);
   }
 }
 
-void OpenGL::setViewPort(uint v, double l, double r, double b, double t) {
+void OpenGL::setSubViewPort(uint v, double l, double r, double b, double t) {
   dataLock.writeLock();
   if(v>=views.N) views.resizeCopy(v+1);
   views(v).le=l;  views(v).ri=r;  views(v).bo=b;  views(v).to=t;
@@ -1557,17 +1558,17 @@ void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
   
   //cout <<"UNLOCK draw" <<endl;
   
-  if(doCaptureImage) {
+  if(computeImage) {
     captureImage.resize(h, w, 3);
     glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
 //    flip_image(captureImage);
 //    doCaptureImage=false;
   }
-  if(doCaptureDepth) {
+  if(computeDepth) {
     captureDepth.resize(h, w);
     glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
 //    flip_image(captureDepth);
-    doCaptureDepth=false;
+//    computeDepth=false;
   }
   
   //check matrix stack
@@ -1696,14 +1697,14 @@ int OpenGL::watch(const char *txt) {
 /// update the view (in Qt: also starts displaying the window)
 int OpenGL::update(const char *txt, bool _doCaptureImage, bool _doCaptureDepth, bool waitForCompletedDraw) {
   openWindow();
-  doCaptureImage |= _doCaptureImage;
-  doCaptureDepth |= _doCaptureDepth;
+  computeImage |= _doCaptureImage;
+  computeDepth |= _doCaptureDepth;
   if(txt) text.clear() <<txt;
 #ifdef RAI_GL
   isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
   postRedrawEvent(false);
-  if(doCaptureImage || doCaptureDepth || waitForCompletedDraw) { isUpdating.waitForStatusEq(0); } //{ rai::wait(.01); processEvents(); rai::wait(.01); }
+  if(computeImage || computeDepth || waitForCompletedDraw) { isUpdating.waitForStatusEq(0); } //{ rai::wait(.01); processEvents(); rai::wait(.01); }
 #endif
   return pressedkey;
 }
@@ -1923,12 +1924,12 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
     if(mouseIsDown) { dataLock.unlock(); return; } //the button is already down (another button was pressed...)
     //CHECK(!mouseIsDown, "I thought the mouse is up...");
     mouseIsDown=true;
-    drawFocus=true;
+    drawFocus = true;
   } else {
     if(!mouseIsDown) { dataLock.unlock(); return; } //the button is already up (another button was pressed...)
     //CHECK(mouseIsDown, "mouse-up event although the mouse is not down???");
     mouseIsDown=false;
-    drawFocus=false;
+    drawFocus = false;
   }
   //store where you've clicked
   s->downVec=vec;
@@ -1937,13 +1938,34 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
   s->downFoc=cam->foc;
   
   //check object clicked on
-  if(!downPressed) {
-    if(reportSelects) {
-      auto sgl = singleGLAccess();
-      Select(true);
-//      singleGLAccess()->unlock();
+  int modifiers = glutGetModifiers();
+  if(mouse_button==1 && modifiers&GLUT_ACTIVE_SHIFT) {
+    drawFocus = false;
+    if(!downPressed){
+      drawMode_idColor = true;
+      Draw(w, h, NULL, true);
+      captureIdImage.resize(h, w, 3);
+      glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureIdImage.p);
+      captureDepth.resize(h, w);
+      glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
+      double x=mouseposx, y=mouseposy, d = captureDepth(mouseposy, mouseposx);
+      if(d<.01 || d>.9999) {
+        cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
+      } else {
+        unproject(x, y, d, true, mouseView);
+      }
+      cout <<"SELECTION: ID: " <<color2id(&captureIdImage(mouseposy, mouseposx, 0))
+          <<" point: (" <<x <<' ' <<y <<' ' <<d <<")" <<endl;
     }
+  }else{
+    drawMode_idColor = false;
   }
+//    if(reportSelects) {
+//      auto sgl = singleGLAccess();
+//      Select(true);
+////      singleGLAccess()->unlock();
+//    }
+//  }
   
   //mouse scroll wheel:
   if(mouse_button==4 && !downPressed) cam->X.pos += s->downRot*Vector_z * (.1 * (s->downPos-s->downFoc).length());

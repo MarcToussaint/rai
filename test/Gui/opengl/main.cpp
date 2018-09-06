@@ -42,8 +42,8 @@ void TEST(MultipleViews) {
   gl.add(draw1,0);
   gl.addSubView(0,draw1,0);
   gl.addSubView(1,draw1,0);
-  gl.setViewPort(1,.1,.4,.1,.4);
-  gl.setViewPort(0,.6,.9,.6,.9);
+  gl.setSubViewPort(1,.1,.4,.1,.4);
+  gl.setSubViewPort(0,.6,.9,.6,.9);
   gl.views(0).img=&img;
   gl.views(0).text="little image";
   //gl.views(1).text="2nd teapot";
@@ -363,7 +363,7 @@ void TEST(Image) {
   OpenGL gl;
   byteA img;
   read_ppm(img,"box.ppm",false);
-  gl.doCaptureImage=true;
+  gl.computeImage=true;
   gl.watchImage(img,true,2);
 
   img=gl.captureImage;

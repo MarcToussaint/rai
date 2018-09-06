@@ -9,6 +9,7 @@
 #include "mesh.h"
 #include "qhull.h"
 
+
 #include <limits>
 
 #ifdef RAI_extern_ply
@@ -1663,42 +1664,48 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
   if(V.d0!=Vn.d0 || T.d0!=Tn.d0) computeNormals();
   
   //-- if not yet done, GenTexture
-  if(texImg.N && texture<0) {
-    GLuint texName;
-    glGenTextures(1, &texName);
-    texture = texName;
-    glBindTexture(GL_TEXTURE_2D, texture);
+  if(texImg.N && Geo_mesh_drawColors){
+    if(texture<0) {
+      GLuint texName;
+      glGenTextures(1, &texName);
+      texture = texName;
+      glBindTexture(GL_TEXTURE_2D, texture);
     
-    if(texImg.d2==4) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texImg.d1, texImg.d0, 0, GL_RGBA, GL_UNSIGNED_BYTE, texImg.p);
-    else if(texImg.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texImg.d1, texImg.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, texImg.p);
-    else NIY;
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  } else {
-    glBindTexture(GL_TEXTURE_2D, texture);
+      if(texImg.d2==4) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texImg.d1, texImg.d0, 0, GL_RGBA, GL_UNSIGNED_BYTE, texImg.p);
+      else if(texImg.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texImg.d1, texImg.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, texImg.p);
+      else NIY;
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    } else {
+      glBindTexture(GL_TEXTURE_2D, texture);
+    }
   }
   
   //-- draw the mesh
   if((!C.N || C.nd==1 || C.d0==V.d0)  //we have colors for each vertex
       && (!tex.N || !Tt.N)) { //we have no tex or tex coords for each vertex -> use index arrays
       
-    if(tex.N) CHECK_EQ(tex.d0, V.d0, "this needs tex coords for each vertex; if you have it face wise, render the slow way..");
-    if(tex.N) glEnable(GL_TEXTURE_2D);
-    
     //  glShadeModel(GL_FLAT);
     glShadeModel(GL_SMOOTH);
     glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
-    if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
-    if(C.N==V.N) glDisable(GL_LIGHTING); //because lighting requires ambiance colors to be set..., not just color..
-    if(tex.N) glEnableClientState(GL_TEXTURE_COORD_ARRAY); else glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    if(Geo_mesh_drawColors){
+      if(tex.N) CHECK_EQ(tex.d0, V.d0, "this needs tex coords for each vertex; if you have it face wise, render the slow way..");
+      if(tex.N) glEnable(GL_TEXTURE_2D);
+
+      glEnableClientState(GL_NORMAL_ARRAY);
+      if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
+      if(C.N==V.N) glDisable(GL_LIGHTING); //because lighting requires ambiance colors to be set..., not just color..
+      if(tex.N) glEnableClientState(GL_TEXTURE_COORD_ARRAY); else glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    }
     
     glVertexPointer(3, GL_DOUBLE, 0, V.p);
-    glNormalPointer(GL_DOUBLE, 0, Vn.p);
-    if(C.N==V.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
-    if(tex.N) glTexCoordPointer(2, GL_DOUBLE, 0, tex.p);
+    if(Geo_mesh_drawColors){
+      glNormalPointer(GL_DOUBLE, 0, Vn.p);
+      if(C.N==V.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
+      if(tex.N) glTexCoordPointer(2, GL_DOUBLE, 0, tex.p);
+    }
     
     glDrawElements(GL_TRIANGLES, T.N, GL_UNSIGNED_INT, T.p);
     

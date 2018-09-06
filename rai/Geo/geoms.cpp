@@ -165,7 +165,7 @@ void rai::Geom::glDraw(OpenGL &gl) {
       break;
     case rai::ST_marker:
       //      if(frame.K.orsDrawMarkers){
-      glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.); glDrawAxes(size(0));
+      glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.); glDrawAxes(size(0), !gl.drawMode_idColor);
       //      }
       break;
     case rai::ST_mesh:
