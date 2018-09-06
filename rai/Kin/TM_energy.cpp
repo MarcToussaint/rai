@@ -24,7 +24,7 @@ void TM_Energy::phi(arr &y, arr &J, const WorldL &Ktuple) {
     order=2;
 
     y = y1 - y0;
-    if(&J){
+    if(!!J){
       uintA qdim = getKtupleDim(Ktuple);
       J.resize(y.N, qdim.last()).setZero();
       CHECK_EQ(J0.d1, qdim(1), "");
@@ -45,22 +45,22 @@ void TM_Energy::phi(arr &y, arr &J, const WorldL &Ktuple) {
   arr p, Jp, v, Jv, w, Jw;
 
   uintA qdim = getKtupleDim(Ktuple);
-  if(&J) J = zeros(1, qdim.last());
+  if(!!J) J = zeros(1, qdim.last());
 
   for(rai::Frame *a:K.frames) {
     if(a->inertia){
 
       TM_Default pos(TMT_posDiff, a->ID);
       pos.order=0;
-      pos.Feature::phi(p, (&J?Jp:NoArr), Ktuple);
+      pos.Feature::phi(p, (!!J?Jp:NoArr), Ktuple);
 
       pos.order=1;
-      pos.Feature::phi(v, (&J?Jv:NoArr), Ktuple);
+      pos.Feature::phi(v, (!!J?Jv:NoArr), Ktuple);
 
 
 //      TM_AngVel rot(a->ID);
 //      rot.order=1;
-//      rot.phi(w, (&J?Jw:NoArr), Ktuple);
+//      rot.phi(w, (!!J?Jw:NoArr), Ktuple);
 
       double m=a->inertia->mass;
 //      rai::Quaternion &rot = f->X.rot;
@@ -69,7 +69,7 @@ void TM_Energy::phi(arr &y, arr &J, const WorldL &Ktuple) {
       E += gravity * m * p(2); //p(2)=height //(a->X*a->inertia->com).z;
 //      E += .5*m*sumOfSqr(w); //(w*(I*w));
 
-      if(&J){
+      if(!!J){
         J += (m*~v) * Jv;
         J += (gravity*m) * Jp[2];
       }

@@ -716,7 +716,7 @@ void glDrawProxy(const arr& p1, const arr& p2, double diskSize, int colorCode, c
   glDisable(GL_CULL_FACE);
   rai::Transformation f;
   f.pos=p1;
-  if(&norm) {
+  if(!!norm) {
     f.rot.setDiff(rai::Vector(0, 0, 1), rai::Vector(norm));
   } else {
     f.rot.setDiff(rai::Vector(0, 0, 1), rai::Vector(p1-p2));
@@ -733,12 +733,12 @@ void glDrawProxy(const arr& p1, const arr& p2, double diskSize, int colorCode, c
   glEnable(GL_CULL_FACE);
   
   glLoadIdentity();
-  if(&norm && rad1>0.) {
+  if(!!norm && rad1>0.) {
     arr p = p1 - rad1*norm;
     glColor(0., 1., 0., 1.);
     glDrawDiamond(p(0), p(1), p(2), .01, .01, .01);
   }
-  if(&norm && rad1>0.) {
+  if(!!norm && rad1>0.) {
     arr p = p2 + rad2*norm;
     glColor(0., 0., 1., 1.);
     glDrawDiamond(p(0), p(1), p(2), .01, .01, .01);

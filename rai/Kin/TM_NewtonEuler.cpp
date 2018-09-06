@@ -28,7 +28,7 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   //this is the direct impuls exchange case, where NewtonEuler is switched off
   if((Ktuple(-1)->frames(i)->flags & (1<<FL_impulseExchange))){
     y.resize(6).setZero();
-    if(&J) J.resize(6, getKtupleDim(Ktuple).last()).setZero();
+    if(!!J) J.resize(6, getKtupleDim(Ktuple).last()).setZero();
     return;
   }
 
@@ -36,12 +36,12 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   arr acc, Jacc, wcc, Jwcc;
   TM_Default pos(TMT_posDiff, i);
   pos.order=2;
-  pos.Feature::phi(acc, (&J?Jacc:NoArr), Ktuple);
+  pos.Feature::phi(acc, (!!J?Jacc:NoArr), Ktuple);
   acc(2) += gravity;
 
   TM_AngVel rot(i);
   rot.order=2;
-  rot.phi(wcc, (&J?Jwcc:NoArr), Ktuple);
+  rot.phi(wcc, (!!J?Jwcc:NoArr), Ktuple);
 
   rai::KinematicWorld& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
   rai::Frame *a = K.frames(i);
@@ -63,11 +63,11 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
 
     arr f, Jf;
     K.kinematicsContactForce(f, Jf, c);
-    if(&J) expandJacobian(Jf, Ktuple, -2);
+    if(!!J) expandJacobian(Jf, Ktuple, -2);
 
 //    arr d, Jd;
 //    TM_PairCollision dist(con->a.ID, con->b.ID, TM_PairCollision::_normal, false);
-//    dist.phi(d, (&J?Jd:NoArr), K);
+//    dist.phi(d, (!!J?Jd:NoArr), K);
 //    con->y = d.scalar();
 //    con->setFromPairCollision(*dist.coll);
 
@@ -82,21 +82,21 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
 //    TM_PairCollision dist(c->a.ID, c->b.ID, TM_PairCollision::_p1, false);
 //    if(&c->b==a) dist.type=TM_PairCollision::_p2;
 
-//    dist.phi(cp, (&J?Jcp:NoArr), K);
+//    dist.phi(cp, (!!J?Jcp:NoArr), K);
 
     K.kinematicsContactPosition(cp, Jcp, c);
 
     arr p,Jp;
     K.kinematicsPos(p, Jp, a);
     cp -= p;
-    if(&J) Jcp -= Jp;
+    if(!!J) Jcp -= Jp;
 #endif
-    if(&J) expandJacobian(Jcp, Ktuple, -2);
+    if(!!J) expandJacobian(Jcp, Ktuple, -2);
 
     acc -= sign * forceScaling *mass* c->force;
     wcc += sign * .1 * forceScaling *Imatrix* crossProduct(cp, c->force);
 
-    if(&J){
+    if(!!J){
       Jacc -= sign * forceScaling *mass* Jf;
       Jwcc += sign * .1 * forceScaling *Imatrix* (skew(cp) * Jf - skew(c->force) * Jcp);
     }
@@ -107,7 +107,7 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   y.setVectorBlock(acc, 0);
   y.setVectorBlock(1.*wcc, 3);
 
-  if(&J) {
+  if(!!J) {
     J.resize(6, Jacc.d1).setZero();
     J.setMatrixBlock(Jacc, 0, 0);
     J.setMatrixBlock(1.*Jwcc, 3, 0);

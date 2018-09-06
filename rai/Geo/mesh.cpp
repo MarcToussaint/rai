@@ -1872,12 +1872,12 @@ double GJK_sqrDistance(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
   // convert transformations to affine matrices
   arr T1,T2;
   rai::Array<double*> Thelp1, Thelp2;
-  if(&t1) {  T1=t1.getAffineMatrix();  T1.getCarray(Thelp1);  }
-  if(&t2) {  T2=t2.getAffineMatrix();  T2.getCarray(Thelp2);  }
+  if(!!t1) {  T1=t1.getAffineMatrix();  T1.getCarray(Thelp1);  }
+  if(!!t2) {  T2=t2.getAffineMatrix();  T2.getCarray(Thelp2);  }
   
   // call GJK
   simplex_point simplex;
-  double d2 = gjk_distance(&m1, Thelp1.p, &m2, Thelp2.p, (&p1?p1.p():NULL), (&p2?p2.p():NULL), &simplex, 0);
+  double d2 = gjk_distance(&m1, Thelp1.p, &m2, Thelp2.p, (!p1?NULL:p1.p()), (!p2?NULL:p2.p()), &simplex, 0);
   
 //  cout <<"simplex npts=" <<simplex.npts <<endl;
 //  cout <<"simplex lambda=" <<arr(simplex.lambdas, 4) <<endl;
@@ -1891,7 +1891,7 @@ double GJK_sqrDistance(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
 //  cout <<"P2=" <<P2 <<", " <<p2 <<endl;
 
   // analyze point types
-  if(&e1 && &e2) {
+  if(!!e1 && !!e2) {
     e1.setZero();
     e2.setZero();
     pt1=GJK_vertex;
@@ -2065,8 +2065,8 @@ DistanceFunction_Sphere::DistanceFunction_Sphere(const rai::Transformation& _t, 
 double DistanceFunction_Sphere::f(arr& g, arr& H, const arr& x) {
   arr d = x-conv_vec2arr(t.pos);
   double len = length(d);
-  if(&g) g = d/len;
-  if(&H) H = 1./len * (eye(3) - (d^d)/(len*len));
+  if(!!g) g = d/len;
+  if(!!H) H = 1./len * (eye(3) - (d^d)/(len*len));
   return len-r;
 }
 
@@ -2079,8 +2079,8 @@ double DistanceFunction_Sphere::f(arr& g, arr& H, const arr& x) {
 //  uint i;
 //  double na = length(a);
 
-//  if(&g) g = s*a/na;
-//  if(&H){
+//  if(!!g) g = s*a/na;
+//  if(!!H){
 //    I.setZero();
 //    for(i=0;i<x.d0;++i) I(i,i)=1;
 //    H = s/na * (I - z*(~z) - 1/(na*na) * a*(~a));
@@ -2107,12 +2107,12 @@ double DistanceFunction_Cylinder::f(arr& g, arr& H, const arr& x) {
   
   if(lb < dz/2.) {   // x projection on z is inside cyl
     if(la<r && (dz/2.-lb)<(r-la)) { // x is INSIDE the cyl and closer to the lid than the wall
-      if(&g) g = 1./lb*b; //z is unit: s*z*|z|*sgn(b*z) = s*b/nb
-      if(&H) { I.setZero(); H=I; }
+      if(!!g) g = 1./lb*b; //z is unit: s*z*|z|*sgn(b*z) = s*b/nb
+      if(!!H) { I.setZero(); H=I; }
       return lb-dz/2.;
     } else { // closer to the side than to a lid (inc. cases in- and outside the tube, because (r-na)<0 then)
-      if(&g) g = a/la;
-      if(&H) {
+      if(!!g) g = a/la;
+      if(!!H) {
         I.setId(3);
         H = 1./la * (I - zzT - aaTovasq);
       }
@@ -2120,14 +2120,14 @@ double DistanceFunction_Cylinder::f(arr& g, arr& H, const arr& x) {
     }
   } else { // x projection on z is outside cylinder
     if(la < r) {  // inside the infinite cylinder
-      if(&g) g = b/lb;
-      if(&H) H.resize(3,3).setZero();
+      if(!!g) g = b/lb;
+      if(!!H) H.resize(3,3).setZero();
       return lb-dz/2.;
     } else { // outside the infinite cyl
       arr v =  b/lb * (lb-dz/2.)  + a/la * (la-r); //MT: good! (note: b/nb is the same as z) SD: well, b/nb is z or -z.
       double nv=length(v);
-      if(&g) g = v/nv;
-      if(&H) {
+      if(!!g) g = v/nv;
+      if(!!H) {
         I.setId(3);
         arr dvdx = (la-r)/la*(I - zzT - aaTovasq)
                    + aaTovasq + zzT;
@@ -2188,8 +2188,8 @@ double DistanceFunction_Box::f(arr& g, arr& H, const arr& x) {
   
   arr del = a_rel-closest;
   double d = length(del);
-  if(&g) g = rot*del/d; //transpose(R) rotates the gradient back to world coordinates
-  if(&H) {
+  if(!!g) g = rot*del/d; //transpose(R) rotates the gradient back to world coordinates
+  if(!!H) {
     if(d<0.) { //inside
       H.resize(3,3).setZero();
     } else { //outside
@@ -2225,7 +2225,7 @@ ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> doub
   double d = length(grad);
   grad /= d;
   d -= x(6);
-  if(&g) {
+  if(!!g) {
     g.resize(14);
     g.setZero();
     g({0,2}) = grad;

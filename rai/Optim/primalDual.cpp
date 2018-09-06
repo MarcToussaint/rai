@@ -54,7 +54,7 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
   mu = -.5*dualityMeasure;
   
   //-- equation system
-  if(&r) {
+  if(!!r) {
     // 1st KKT: dL
     r.resize(x_lambda.N).setZero();
     r({0,x.N-1}) = dL;
@@ -70,7 +70,7 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
   }
   
   //-- Jacobian
-  if(&R) {
+  if(!!R) {
     R.resize(r.N, r.N).setZero();
     // top-left: 1st KKT: HL
     R.setMatrixBlock(HL, 0, 0);

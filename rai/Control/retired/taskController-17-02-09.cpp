@@ -45,7 +45,7 @@ void CtrlTask::set(const Graph& params) {
 
 void CtrlTask::setTarget(const arr& yref, const arr& vref) {
   y_ref = yref;
-  if(&vref) v_ref=vref; else v_ref.resizeAs(y_ref).setZero();
+  if(!!vref) v_ref=vref; else v_ref.resizeAs(y_ref).setZero();
 }
 
 void CtrlTask::setTargetToCurrent() {
@@ -298,7 +298,7 @@ void TaskControlMethods::lockJointGroup(const char* groupname, bool lockThem) {
 
 void TaskControlMethods::getTaskCoeffs(arr& yddot_des, arr& J) {
   yddot_des.clear();
-  if(&J) J.clear();
+  if(!!J) J.clear();
   arr J_y, a_des;
   for(CtrlTask* t: tasks) {
     t->map.phi(t->y, J_y, world);
@@ -306,10 +306,10 @@ void TaskControlMethods::getTaskCoeffs(arr& yddot_des, arr& J) {
     if(t->active && !t->f_ref.N) {
       a_des = t->getDesiredAcceleration();
       yddot_des.append(::sqrt(t->prec)%(a_des /*-Jdot*qdot*/));
-      if(&J) J.append(::sqrt(t->prec)%J_y);
+      if(!!J) J.append(::sqrt(t->prec)%J_y);
     }
   }
-  if(&J) J.reshape(yddot_des.N, world.q.N);
+  if(!!J) J.reshape(yddot_des.N, world.q.N);
 }
 
 void TaskControlMethods::reportCurrentState() {

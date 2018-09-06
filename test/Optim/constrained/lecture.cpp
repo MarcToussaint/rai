@@ -37,7 +37,7 @@ void testConstraint(ConstrainedProblem& p, uint dim_x, arr& x_start=NoArr, uint 
 
   //-- initial x
   arr x(dim_x);
-  if(&x_start) x=x_start;
+  if(!!x_start) x=x_start;
   else{
     x.setZero();
     if(options.constrainedMethod==logBarrier){ } //log barrier needs a feasible starting point
@@ -93,5 +93,5 @@ void testConstraint(ConstrainedProblem& p, uint dim_x, arr& x_start=NoArr, uint 
   system("mv z.grad_all z.grad");
   if(x.N==2) gnuplot("load 'plt'", false, true);
 
-  if(&x_start) x_start = x;
+  if(!!x_start) x_start = x;
 }

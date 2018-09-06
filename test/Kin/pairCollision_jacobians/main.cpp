@@ -130,9 +130,9 @@ void TEST(GJK_Jacobians2) {
   VectorFunction f = [&K](arr& y, arr& J, const arr& x) -> void {
     K.setJointState(x);
     K.stepSwift();
-    K.kinematicsProxyCost(y, (&J?J:NoArr), .2);
+    K.kinematicsProxyCost(y, (!!J?J:NoArr), .2);
 //    K.filterProxiesToContacts(.25);
-//    K.kinematicsContactCost(y, (&J?J:NoArr), .2);
+//    K.kinematicsContactCost(y, (!!J?J:NoArr), .2);
   };
 
 //  checkJacobian(f, K.getJointState(), 1e-4);

@@ -19,7 +19,7 @@ TM_InsideBox::TM_InsideBox(const rai::KinematicWorld& G, const char* iShapeName,
   rai::Frame *b = jShapeName ? G.getFrameByName(jShapeName):NULL;
   if(a) i=a->ID;
   if(b) j=b->ID;
-  if(&_ivec) ivec=_ivec; else ivec.setZero();
+  if(!!_ivec) ivec=_ivec; else ivec.setZero();
 }
 
 void TM_InsideBox::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
@@ -41,7 +41,7 @@ void TM_InsideBox::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   y(3) = -pos(1) - range(1);
   y(4) =  pos(2) - range(2);
   y(5) = -pos(2) - range(2);
-  if(&J) {
+  if(!!J) {
     J.resize(6, posJ.d1);
     J[0] =  posJ[0];
     J[1] = -posJ[0];

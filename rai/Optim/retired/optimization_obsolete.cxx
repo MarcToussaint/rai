@@ -142,14 +142,14 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
       arr yij,Ji,Jj;
       f->fv_i(y, J, t, x); (*evals)++;
       if(t>0) {
-        f->fv_ij(yij, (&J?Ji:NoArr), (&J?Jj:NoArr), t-1, t, x_ref[t-1], x);
+        f->fv_ij(yij, (!!J?Ji:NoArr), (!!J?Jj:NoArr), t-1, t, x_ref[t-1], x);
         y.append(yij);
-        if(&J) J.append(Jj);
+        if(!!J) J.append(Jj);
       }
       if(t<f->get_T()) {
-        f->fv_ij(yij, (&J?Ji:NoArr), (&J?Jj:NoArr), t, t+1, x, x_ref[t+1]);
+        f->fv_ij(yij, (!!J?Ji:NoArr), (!!J?Jj:NoArr), t, t+1, x, x_ref[t+1]);
         y.append(yij);
-        if(&J) J.append(Ji);
+        if(!!J) J.append(Ji);
       }
     }
   };
@@ -523,22 +523,22 @@ double sConvert::VectorChainFunction_ScalarFunction::fs(arr& grad, arr& H, const
   
   double cost=0.;
   arr y,J,Ji,Jj;
-  if(&grad) {
+  if(!!grad) {
     grad.resizeAs(x);
     grad.setZero();
   }
-  if(&H) NIY;
+  if(!!H) NIY;
   for(uint t=0; t<=T; t++) { //node potentials
-    f->fv_i(y, (&grad?J:NoArr), t, z[t]);
+    f->fv_i(y, (!!grad?J:NoArr), t, z[t]);
     cost += sumOfSqr(y);
-    if(&grad) {
+    if(!!grad) {
       grad[t]() += 2.*(~y)*J;
     }
   }
   for(uint t=0; t<T; t++) {
-    f->fv_ij(y, (&grad?Ji:NoArr), (&grad?Jj:NoArr), t, t+1, z[t], z[t+1]);
+    f->fv_ij(y, (!!grad?Ji:NoArr), (!!grad?Jj:NoArr), t, t+1, z[t], z[t+1]);
     cost += sumOfSqr(y);
-    if(&grad) {
+    if(!!grad) {
       grad[t]()   += 2.*(~y)*Ji;
       grad[t+1]() += 2.*(~y)*Jj;
     }
@@ -570,18 +570,18 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
   uint t,i,j;
   //first collect all node potentials
   for(t=0; t<=T; t++) {
-    f->fv_i(y_loc, (&J?J_loc:NoArr), t, z[t]);
+    f->fv_i(y_loc, (!!J?J_loc:NoArr), t, z[t]);
     yi[t] = y_loc;
-    if(&J) {
+    if(!!J) {
       for(i=0; i<di; i++) for(j=0; j<z.d1; j++) //copy into the right place...
           Ji.elem(TUP(t,i,t,j)) = J_loc(i,j);
     }
   }
   //then collect all pair potentials
   for(t=0; t<T; t++) {
-    f->fv_ij(y_loc, (&J?Ji_loc:NoArr), (&J?Jj_loc:NoArr), t, t+1, z[t], z[t+1]);
+    f->fv_ij(y_loc, (!!J?Ji_loc:NoArr), (!!J?Jj_loc:NoArr), t, t+1, z[t], z[t+1]);
     yij[t] = y_loc;
-    if(&J) {
+    if(!!J) {
       for(i=0; i<dij; i++) for(j=0; j<z.d1; j++) //copy into the right place...
           Jij.elem(TUP(t,i,t  ,j)) = Ji_loc(i,j);
       for(i=0; i<dij; i++) for(j=0; j<z.d1; j++) //copy into the right place...
@@ -593,13 +593,13 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
   yij.reshape(T*dij);
   Jij.reshape(T*dij, x.N);
   y=yi;  y.append(yij);
-  if(&J) { J=Ji;  J.append(Jij); }
+  if(!!J) { J=Ji;  J.append(Jij); }
 }
 
 //double sConvert::VectorChainFunction_QuadraticChainFunction::fq_i(SqrPotential& S, uint i, const arr& x_i) {
 //  arr y,J;
-//  f->fv_i(y, (&S?J:NoArr), i, x_i);
-//  if(&S) {
+//  f->fv_i(y, (!!S?J:NoArr), i, x_i);
+//  if(!!S) {
 //    S.A=~J * J;
 //    S.a=~J * (J*x_i - y);
 //    S.c=sumOfSqr(J*x_i - y);
@@ -609,8 +609,8 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
 
 //double sConvert::VectorChainFunction_QuadraticChainFunction::fq_ij(PairSqrPotential& S, uint i, uint j, const arr& x_i, const arr& x_j) {
 //  arr y,Ji,Jj;
-//  f->fv_ij(y, (&S?Ji:NoArr), (&S?Jj:NoArr), i, j, x_i, x_j);
-//  if(&S) {
+//  f->fv_ij(y, (!!S?Ji:NoArr), (!!S?Jj:NoArr), i, j, x_i, x_j);
+//  if(!!S) {
 //    S.A=~Ji*Ji;
 //    S.B=~Jj*Jj;
 //    S.C=~Ji*Jj;
@@ -638,7 +638,7 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
 //   //dynamics
 //   arr J0, J1;
 //   getTransitionCostTerms(*sys, true, phi, J0, J1, x0, x1, t);
-//   if(&J){
+//   if(!!J){
 //     J.resize(J0.d0, J0.d1+J1.d1);
 //     J.setMatrixBlock(J0,0,0);
 //     J.setMatrixBlock(J1,0,J0.d1);
@@ -650,13 +650,13 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
 //   _J.insColumns(x0.N, x1.N);
 //   for(uint i=0;i<_J.d0;i++) for(uint j=x0.N;j<_J.d1;j++) _J(i,j) = 0.;
 //   phi.append(_phi);
-//   if(&J) J.append(_J);
+//   if(!!J) J.append(_J);
 
 //   if(t==get_T()-1){ //second task phi w.r.t. x1 in the final factor
 //     sys->setx(x1);
 //     sys->getTaskCosts(_phi, _J, t+1);
 //     phi.append(_phi);
-//     if(&J){
+//     if(!!J){
 //       _J.insColumns(0, x0.N);
 //       for(uint i=0;i<_J.d0;i++) for(uint j=0;j<x1.N;j++) _J(i,j) = 0.;
 //       J.append(_J);
@@ -668,7 +668,7 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
 //     arr sys_x0;
 //     sys->get_x0(sys_x0);
 //     phi.append(prec*(x0-sys_x0));
-//     if(&J){
+//     if(!!J){
 //       _J.setDiag(prec,x0.N);
 //       _J.insColumns(x0.N, x1.N);
 //       for(uint i=0;i<_J.d0;i++) for(uint j=0;j<x1.N;j++) _J(i,x0.N+j) = 0.;
@@ -700,7 +700,7 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
 //   //dynamics
 //   double h=1e-1;
 //   phi = h*_tau2*(q2-2.*q1+q0); //penalize acceleration
-//   if(&J){ //we todoalso need to return the Jacobian
+//   if(!!J){ //we todoalso need to return the Jacobian
 //     J.resize(n,3,n);
 //     J.setZero();
 //     for(uint i=0;i<n;i++){  J(i,2,i) = 1.;  J(i,1,i) = -2.;  J(i,0,i) = 1.; }
@@ -713,7 +713,7 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
 //   sys->setx(x1);
 //   sys->getTaskCosts(_phi, _J, t+1);
 //   phi.append(_phi);
-//   if(&J) {
+//   if(!!J) {
 //     arr Japp(_J.d0,3*n);
 //     Japp.setZero();
 //     Japp.setMatrixBlock(_J.sub(0,-1,0,n-1), 0, 1*n); //w.r.t. q1
@@ -728,7 +728,7 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
 //     sys->get_x0(sys_x0);
 //     phi.append(prec*(x0-sys_x0));
 //     _J = diag(prec,x0.N);
-//     if(&J){
+//     if(!!J){
 //       arr Japp(_J.d0,3*n);
 //       Japp.setZero();
 //       Japp.setMatrixBlock(_J.sub(0,-1,0,n-1) - (1./tau)*_J.sub(0,-1,n,-1), 0, 0); //w.r.t. q0
@@ -741,7 +741,7 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
 //     sys->setx(x0);
 //     sys->getTaskCosts(_phi, _J, 0);
 //     phi.append(_phi);
-//     if(&J) {
+//     if(!!J) {
 //       arr Japp(_J.d0,3*n);
 //       Japp.setZero();
 //       Japp.setMatrixBlock(_J.sub(0,-1,0,n-1) - (1./tau)*_J.sub(0,-1,n,-1), 0, 0); //w.r.t. q0
@@ -755,7 +755,7 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
 //     sys->setx(x2);
 //     sys->getTaskCosts(_phi, _J, T);
 //     phi.append(_phi);
-//     if(&J) {
+//     if(!!J) {
 //       arr Japp(_J.d0,3*n);
 //       Japp.setZero();
 //       Japp.setMatrixBlock(_J.sub(0,-1,0,n-1) + (1./tau)*_J.sub(0,-1,n,-1), 0, 2*n); //w.r.t. q2
@@ -841,19 +841,19 @@ void SlalomProblem::fv_i(arr& y, arr& J, uint i, const arr& x_i) {
   eval_cost++;
   CHECK_EQ(x_i.N,2,"");
   y.resize(1);  y(0)=0.;
-  if(&J) { J.resize(1,2);  J.setZero(); }
+  if(!!J) { J.resize(1,2);  J.setZero(); }
   if(!(i%(T/K))) {
     uint obstacle=i/(T/K);
     if(obstacle&1) { //top obstacle
       double d=(x_i(0)-1.)/margin;
 //       y(0) = tannenbaum((J?&(*J)(0,0):NULL), d, power);
-      y(0) = border((&J?&J(0,0):NULL), d, power);
-      if(&J) J(0,0) /= margin;
+      y(0) = border((!!J?&J(0,0):NULL), d, power);
+      if(!!J) J(0,0) /= margin;
     } else {
       double d=-(x_i(0)+1.)/margin;
 //       y(0) = tannenbaum((J?&J(0,0):NULL), d, power);
-      y(0) = border((&J?&J(0,0):NULL), d, power);
-      if(&J) J(0,0) /= -margin;
+      y(0) = border((!!J?&J(0,0):NULL), d, power);
+      if(!!J) J(0,0) /= -margin;
     }
   }
 }
@@ -864,8 +864,8 @@ void SlalomProblem::fv_ij(arr& y, arr& Ji, arr& Jj, uint i, uint j, const arr& x
   arr A= {1., tau, 0., 1.};  A.reshape(2,2);
   arr M=w*diag({2./(tau*tau), 1./tau});  //penalize variance in position & in velocity (control)
   y=M*(x_j - A*x_i);
-  if(&Ji) { Ji = -M*A; }
-  if(&Jj) { Jj = M; }
+  if(!!Ji) { Ji = -M*A; }
+  if(!!Jj) { Jj = M; }
 }
 
 //===========================================================================

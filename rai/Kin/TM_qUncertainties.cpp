@@ -15,13 +15,13 @@ void TM_qUncertainties::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
   uint n=dim_phi(G);
   
   q.resize(n);
-  if(&J) J.resize(n, G.getJointStateDimension()).setZero();
+  if(!!J) J.resize(n, G.getJointStateDimension()).setZero();
   
   uint i=0;
   for(rai::Joint *j : G.fwdActiveJoints) if(j->uncertainty) {
       for(uint k=j->dim; k<2*j->dim; k++) {
         q(i) = G.q.elem(j->qIndex+k);
-        if(&J) J(i, j->qIndex+k) = 1.;
+        if(!!J) J(i, j->qIndex+k) = 1.;
         i++;
       }
     }

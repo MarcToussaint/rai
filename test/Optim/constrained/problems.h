@@ -33,11 +33,11 @@ struct CoveringSpheresProblem : ConstrainedProblem {
     //f
     double fx = 0.;
     for(uint i=0;i<s;i++) fx += pow(r(i), p);
-    if(&df){
+    if(!!df){
       df=zeros(4*s);
       for(uint i=0;i<s;i++) df(3*s + i) = p * pow(r(i), p-1.);
     }
-    if(&Hf){
+    if(!!Hf){
       Hf=zeros(4*s, 4*s);
       for(uint i=0;i<s;i++) Hf(3*s + i, 3*s + i) = p * (p-1.) * pow(r(i), p-2.);
     }
@@ -50,10 +50,10 @@ struct CoveringSpheresProblem : ConstrainedProblem {
       ed_ij = ::exp(alpha*d_ij);
       sed_i = sum(ed_ij,1);
     }
-    if(&g){
+    if(!!g){
       g = sum((d_ij%ed_ij),1) / sed_i;
     }
-    if(&Jg){
+    if(!!Jg){
       arr Jg_dij = (ed_ij%(1.+alpha*(d_ij - repmat(g,1,s))));
       for(uint i=0;i<x.d0;i++) Jg_dij[i]() /= sed_i(i);
 

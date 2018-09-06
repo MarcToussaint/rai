@@ -19,8 +19,8 @@ void Feature::phi(arr& y, arr& J, const WorldL& Ktuple) {
   uint k=order;
   if(k==0) { // basic case: order=0
     arr J_bar;
-    phi(y, (&J?J_bar:NoArr), *Ktuple.last());
-    if(&J) {
+    phi(y, (!!J?J_bar:NoArr), *Ktuple.last());
+    if(!!J) {
       uint qidx=0;
       for(uint i=0; i<Ktuple.N; i++) qidx+=Ktuple(i)->q.N;
       J.resize(y.N, qidx).setZero();
@@ -38,23 +38,23 @@ void Feature::phi(arr& y, arr& J, const WorldL& Ktuple) {
   //-- read out the task variable from the k+1 configurations
   uint offset = Ktuple.N-1-k; //G.N might contain more configurations than the order of THIS particular task -> the front ones are not used
   for(uint i=0; i<=k; i++)
-    phi(y_bar(i), (&J?J_bar(i):NoArr), *Ktuple(offset+i));
+    phi(y_bar(i), (!!J?J_bar(i):NoArr), *Ktuple(offset+i));
     
   // check for quaternion
   if(k==1 && flipTargetSignOnNegScalarProduct) {
-    if(scalarProduct(y_bar(1), y_bar(0))<-.0) { y_bar(0) *= -1.;  if(&J) J_bar(0) *= -1.; }
+    if(scalarProduct(y_bar(1), y_bar(0))<-.0) { y_bar(0) *= -1.;  if(!!J) J_bar(0) *= -1.; }
   }
   // NIY
   if(k==2 && flipTargetSignOnNegScalarProduct) {
-    if(scalarProduct(y_bar(2), y_bar(0))<-.0) { y_bar(0) *= -1.;  if(&J) J_bar(0) *= -1.; }
-    if(scalarProduct(y_bar(2), y_bar(1))<-.0) { y_bar(1) *= -1.;  if(&J) J_bar(1) *= -1.; }
+    if(scalarProduct(y_bar(2), y_bar(0))<-.0) { y_bar(0) *= -1.;  if(!!J) J_bar(0) *= -1.; }
+    if(scalarProduct(y_bar(2), y_bar(1))<-.0) { y_bar(1) *= -1.;  if(!!J) J_bar(1) *= -1.; }
   }
   if(k==3 && flipTargetSignOnNegScalarProduct) HALT("Quaternion flipping NIY for jerk");
   
   if(k==1)  y = (y_bar(1)-y_bar(0))/tau; //penalize velocity
   if(k==2)  y = (y_bar(2)-2.*y_bar(1)+y_bar(0))/tau2; //penalize acceleration
   if(k==3)  y = (y_bar(3)-3.*y_bar(2)+3.*y_bar(1)-y_bar(0))/tau3; //penalize jerk
-  if(&J) {
+  if(!!J) {
     uintA qidx = getKtupleDim(Ktuple);
     qidx.prepend(0);
     J = zeros(y.N, qidx.last());

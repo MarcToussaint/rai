@@ -15,12 +15,12 @@ void testConstraint(ConstrainedProblem& p, uint dim_x, arr& x_start=NoArr, uint 
 void testConstraint2(ConstrainedProblem& p, uint dim_x, arr& x_start=NoArr){
   //-- initial x
   arr x = zeros(dim_x);
-  if(&x_start) x=x_start;
+  if(!!x_start) x=x_start;
   rnd.seed(0);
 
   optConstrained(x, NoArr, p);
 
-  if(&x_start) x_start = x;
+  if(!!x_start) x_start = x;
 }
 
 //==============================================================================

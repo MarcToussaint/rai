@@ -32,7 +32,9 @@ rai::Transformation& NoTransformation = *((rai::Transformation*)NULL);
 
 namespace rai {
 
-double& Vector::operator()(uint i) {
+  bool Vector::operator!() const { return this==&NoVector; }
+
+  double& Vector::operator()(uint i) {
   CHECK(i<3,"out of range");
   isZero=false;
   return (&x)[i];
@@ -288,7 +290,7 @@ bool operator!=(const Quaternion& lhs, const Quaternion& rhs) {
 }
 
 bool operator==(const Transformation& lhs, const Transformation& rhs) {
-  if(!&rhs) return !&lhs; //if rhs==NoArr
+  if(!rhs) return !lhs; //if rhs==NoArr
   return lhs.pos == rhs.pos && lhs.rot == rhs.rot;
 }
 
@@ -1121,7 +1123,7 @@ void quat_concat(arr& y, arr& Ja, arr& Jb, const arr& A, const arr& B){
   rai::Quaternion b(B);
   a.isZero=b.isZero=false;
   y = (a * b).getArr4d();
-  if(&Ja){
+  if(!!Ja){
     Ja.resize(4,4);
     Ja(0,0) =  b.w;
     Ja(0,1) = -b.x; Ja(0,2) = -b.y; Ja(0,3) = -b.z;
@@ -1131,7 +1133,7 @@ void quat_concat(arr& y, arr& Ja, arr& Jb, const arr& A, const arr& B){
     Ja(2,1) =-b.z; Ja(2,2) = b.w; Ja(2,3) = b.x;
     Ja(3,1) = b.y; Ja(3,2) =-b.x; Ja(3,3) = b.w;
   }
-  if(&Jb){
+  if(!!Jb){
     Jb.resize(4,4);
     Jb(0,0) =  a.w;
     Jb(0,1) = -a.x; Jb(0,2) = -a.y; Jb(0,3) = -a.z;
@@ -1148,7 +1150,7 @@ void quat_normalize(arr& y, arr& J, const arr& a){
   double l2 = sumOfSqr(y);
   double l = sqrt(l2);
   y /= l;
-  if(&J){
+  if(!!J){
     J = eye(4);
     J -= y^y;
     J /= l;
@@ -1162,7 +1164,7 @@ void quat_getVec(arr& y, arr& J, const arr& A){
   double dphi, dsinphi, ds;
   if(a.w>=1. || a.w<=-1. || (a.x==0. && a.y==0. && a.z==0.)) {
     y.setZero();
-    if(&J){
+    if(!!J){
       J.resize(3,4).setZero();
       J(0,1) = J(1,2) = J(2,3) = 2.;
     }
@@ -1173,7 +1175,7 @@ void quat_getVec(arr& y, arr& J, const arr& A){
     phi=acos(a.w);
     sinphi = sin(phi);
     s=2.*phi/sinphi;
-    if(&J){
+    if(!!J){
       dphi = -1./sqrt(1.-a.w*a.w);
       dsinphi = cos(phi) * dphi;
       ds = 2.*( dphi/sinphi - phi/(sinphi*sinphi)*dsinphi );
@@ -1182,7 +1184,7 @@ void quat_getVec(arr& y, arr& J, const arr& A){
     phi=acos(-a.w);
     sinphi = sin(phi);
     s=-2.*phi/sinphi;
-    if(&J){
+    if(!!J){
       dphi = 1./sqrt(1.-a.w*a.w);
       dsinphi = cos(phi) * dphi;
       ds = -2.*( dphi/sinphi - phi/(sinphi*sinphi)*dsinphi );
@@ -1192,7 +1194,7 @@ void quat_getVec(arr& y, arr& J, const arr& A){
   y(0) = s*a.x;
   y(1) = s*a.y;
   y(2) = s*a.z;
-  if(&J){
+  if(!!J){
     J.resize(3,4).setZero();
     J(0,1) = J(1,2) = J(2,3) = s;
     J(0,0) = a.x*ds;
@@ -1218,6 +1220,8 @@ void quat_diffVector(arr& y, arr& Ja, arr& Jb, const arr& a, const arr& b){
 
 /// initialize by reading from the string
 Transformation& Transformation::setText(const char* txt) { read(rai::String(txt).stream()); return *this; }
+
+bool Transformation::operator!() const { return this==&NoTransformation; }
 
 /// resets the position to origin, rotation to identity, velocities to zero, scale to unit
 Transformation& Transformation::setZero() {

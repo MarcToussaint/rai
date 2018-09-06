@@ -72,7 +72,7 @@ MotionProfile_PD::MotionProfile_PD(const Graph& params)
 
 void MotionProfile_PD::setTarget(const arr& ytarget, const arr& vtarget) {
   y_target = ytarget;
-  if(&vtarget) v_target=vtarget; else v_target.resizeAs(y_target).setZero();
+  if(!!vtarget) v_target=vtarget; else v_target.resizeAs(y_target).setZero();
   y_ref.clear(); v_ref.clear(); //resets the current reference
 }
 
@@ -345,23 +345,23 @@ void TaskControlMethods::lockJointGroup(const char* groupname, rai::KinematicWor
 double TaskControlMethods::getIKCosts(const arr& q, const arr& q0, arr& g, arr& H) {
   double c=0.;
   arr y,J;
-  if(&g) { CHECK(&q,""); g = zeros(q.N); }
-  if(&H) { CHECK(&q,""); H = zeros(q.N, q.N); }
+  if(!!g) { CHECK(&q,""); g = zeros(q.N); }
+  if(!!H) { CHECK(&q,""); H = zeros(q.N, q.N); }
   for(CtrlTask* t: tasks) {
     if(t->active && t->ref) {
       y = t->prec%(t->y_ref - t->y);
       J = t->prec%(t->J_y);
       c += sumOfSqr(y);
-      if(&g) g -= 2.*~(~y*J);
-      if(&H) H += 2.*comp_At_A(J);
+      if(!!g) g -= 2.*~(~y*J);
+      if(!!H) H += 2.*comp_At_A(J);
     }
   }
   
-  if(&q && &q0) {
+  if(!!q && !!q0) {
     arr dq = q-q0;
     c += sum(dq%Hmetric%dq);
-    if(&g) g += 2.*dq%Hmetric;
-    if(&H) H += 2.*diag(Hmetric);
+    if(!!g) g += 2.*dq%Hmetric;
+    if(!!H) H += 2.*diag(Hmetric);
   }
   return c;
 }
@@ -420,7 +420,7 @@ arr TaskControlMethods::inverseKinematics(arr& qdot, const arr& nullRef, double*
     if(t->active && t->ref) {
       y.append(t->prec%(t->y_ref - t->y));
       J.append(t->prec%(t->J_y));
-      if(&qdot) v.append(t->prec%(t->v_ref));
+      if(!!qdot) v.append(t->prec%(t->v_ref));
     }
   }
   if(!y.N) return zeros(Hmetric.d0);
@@ -438,12 +438,12 @@ arr TaskControlMethods::inverseKinematics(arr& qdot, const arr& nullRef, double*
   arr Jinv = pseudoInverse(J, Winv, 1e-1);
   checkNan(Jinv);
   checkNan(y);
-  if(&qdot) qdot = Jinv*v;
+  if(!!qdot) qdot = Jinv*v;
   arr dq = Jinv*y;
-  if(&nullRef) dq += nullRef - Jinv*(J*nullRef);
+  if(!!nullRef) dq += nullRef - Jinv*(J*nullRef);
   if(cost) {
     *cost = sumOfSqr(y);
-    if(&nullRef) *cost += sum(nullRef%Hmetric%nullRef);
+    if(!!nullRef) *cost += sum(nullRef%Hmetric%nullRef);
   }
   return dq;
 }

@@ -104,7 +104,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple) {
       }
 #endif
     
-    if(&J) {
+    if(!!J) {
       arr Jtau;  Ktuple(-1)->jacobianTime(Jtau, Ktuple(-1)->frames(0));  expandJacobian(Jtau, Ktuple, -1);
 //      arr Jtau2;  Ktuple(-2)->jacobianTime(Jtau2, Ktuple(-2)->frames(0));  expandJacobian(Jtau2, Ktuple, -2);
 //      arr Jtau = Jtau1 - Jtau2;
@@ -155,7 +155,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple) {
     uintA qidx(Ktuple.N);
     for(uint i=0; i<matchingJoints.d0; i++) ydim += matchingJoints(i,0)->qDim();
     y.resize(ydim).setZero();
-    if(&J) {
+    if(!!J) {
       qidx(0)=0;
       for(uint i=1; i<Ktuple.N; i++) qidx(i) = qidx(i-1)+Ktuple(i-1)->q.N;
       J.resize(ydim, qidx.last()+Ktuple.last()->q.N).setZero();
@@ -176,7 +176,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple) {
         if(order>=0 && posCoeff) y(m) += posCoeff*hj       * (Ktuple.elem(-1)->q(qi1));
         if(order>=1 && velCoeff) y(m) += (velCoeff*hj/tau) * (Ktuple.elem(-1)->q(qi1) -    Ktuple.elem(-2)->q(qi2));
         if(order>=2 && accCoeff) y(m) += (accCoeff*hj/tau2)* (Ktuple.elem(-1)->q(qi1) - 2.*Ktuple.elem(-2)->q(qi2) + Ktuple.elem(-3)->q(qi3));
-        if(&J) {
+        if(!!J) {
           if(order>=0 && posCoeff) { J(m, qidx.elem(-1)+qi1) += posCoeff*hj; }
           if(order>=1 && velCoeff) { J(m, qidx.elem(-1)+qi1) += velCoeff*hj/tau;  J(m, qidx.elem(-2)+qi2) += -velCoeff*hj/tau; }
           if(order>=2 && accCoeff) { J(m, qidx.elem(-1)+qi1) += accCoeff*hj/tau2; J(m, qidx.elem(-2)+qi2) += -2.*accCoeff*hj/tau2; J(m, qidx.elem(-3)+qi3) += accCoeff*hj/tau2; }

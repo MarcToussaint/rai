@@ -78,17 +78,17 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
   if(verbose>2) effKinematics.gl().watch();
   
   phi.clear();
-  if(&phiJ) phiJ.clear();
-  if(&H) H.clear();
-  if(&tt) tt.clear();
+  if(!!phiJ) phiJ.clear();
+  if(!!H) H.clear();
+  if(!!tt) tt.clear();
   
   arr y,J;
   
   //-- regularization
   double prec=1e+0;
   phi.append(prec*(x-x0));
-  if(&phiJ) phiJ.append(prec*eye(x.N));
-  if(&tt) tt.append(OT_sos, x.N);
+  if(!!phiJ) phiJ.append(prec*eye(x.N));
+  if(!!tt) tt.append(OT_sos, x.N);
   
   //-- touch symbols -> constraints of being inside!
   //LATER: This is not yet transferred to the new LGP!
@@ -99,10 +99,10 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
       
       TM_GJK gjk(s1, s2, true);
       
-      gjk.phi(y, (&phiJ?J:NoArr), effKinematics);
+      gjk.phi(y, (!!phiJ?J:NoArr), effKinematics);
       phi.append(y);
-      if(&phiJ) phiJ.append(J);
-      if(&tt) tt.append(OT_eq, y.N);
+      if(!!phiJ) phiJ.append(J);
+      if(!!tt) tt.append(OT_eq, y.N);
     }
     
   //-- support symbols -> constraints of being inside!
@@ -137,13 +137,13 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
       phi.append(prec*(-y(0) - range(0)));
       phi.append(prec*(y(1) - range(1)));
       phi.append(prec*(-y(1) - range(1)));
-      if(&phiJ) {
+      if(!!phiJ) {
         phiJ.append(prec*(J[0]));
         phiJ.append(prec*(-J[0]));
         phiJ.append(prec*(J[1]));
         phiJ.append(prec*(-J[1]));
       }
-      if(&tt) tt.append(OT_ineq, 4);
+      if(!!tt) tt.append(OT_ineq, 4);
     }
     
   //-- supporters below object -> maximize their distances to center
@@ -181,8 +181,8 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
         double d = length(y);
         arr normal = y/d;
         phi.append(prec*(1.-d));
-        if(&phiJ) phiJ.append(prec*(~normal*(-J+cenJ)));
-        if(&tt) tt.append(OT_sos, 1);
+        if(!!phiJ) phiJ.append(prec*(~normal*(-J+cenJ)));
+        if(!!tt) tt.append(OT_sos, 1);
       }
       
       //-- align center with object center
@@ -190,8 +190,8 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
       b=effKinematics.getBodyByName(obj->keys.last());
       effKinematics.kinematicsPos(y, J, b);
       phi.append(prec*(y-cen));
-      if(&phiJ) phiJ.append(prec*(J-cenJ));
-      if(&tt) tt.append(OT_sos, 3);
+      if(!!phiJ) phiJ.append(prec*(J-cenJ));
+      if(!!tt) tt.append(OT_sos, 3);
     }
     
     prec=1e-0;
@@ -205,8 +205,8 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
         effKinematics.kinematicsPos(y1, J1, b1);
         effKinematics.kinematicsPos(y2, J2, b2);
         phi.append(prec*(y1-y2));
-        if(&phiJ) phiJ.append(prec*(J1-J2));
-        if(&tt) tt.append(OT_sos, 3);
+        if(!!phiJ) phiJ.append(prec*(J1-J2));
+        if(!!tt) tt.append(OT_sos, 3);
       }
     }
   }
@@ -245,8 +245,8 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
         double d = length(y);
         arr normal = y/d;
         phi.append(prec*(1.-d));
-        if(&phiJ) phiJ.append(prec*(~normal*(-J+cenJ)));
-        if(&tt) tt.append(OT_sos, 1);
+        if(!!phiJ) phiJ.append(prec*(~normal*(-J+cenJ)));
+        if(!!tt) tt.append(OT_sos, 1);
       }
       
       //-- align center with object center
@@ -254,8 +254,8 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
       b=effKinematics.getBodyByName(obj->keys.last());
       effKinematics.kinematicsPos(y, J, b);
       phi.append(prec*(y-cen));
-      if(&phiJ) phiJ.append(prec*(J-cenJ));
-      if(&tt) tt.append(OT_sos, 3);
+      if(!!phiJ) phiJ.append(prec*(J-cenJ));
+      if(!!tt) tt.append(OT_sos, 3);
     }
     
     prec=1e-0;
@@ -268,13 +268,13 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
         effKinematics.kinematicsPos(y1, J1, b1);
         effKinematics.kinematicsPos(y2, J2, b2);
         phi.append(prec*(y1-y2));
-        if(&phiJ) phiJ.append(prec*(J1-J2));
-        if(&tt) tt.append(OT_sos, 3);
+        if(!!phiJ) phiJ.append(prec*(J1-J2));
+        if(!!tt) tt.append(OT_sos, 3);
       }
     }
   }
   
-  if(&phiJ) phiJ.reshape(phi.N, x.N);
+  if(!!phiJ) phiJ.reshape(phi.N, x.N);
 }
 
 //===========================================================================

@@ -99,8 +99,10 @@ template<class T> struct Array : std::vector<T> {
   Array(uint D0, uint D1, std::initializer_list<T> values);
   Array(uint D0, uint D1, uint D2, std::initializer_list<T> values);
   Array(rai::FileToken&); //read from a file
+  explicit Array(SpecialArray* _special);
   ~Array();
-  
+  bool operator!() const; ///< check if NoArr
+
   Array<T>& operator=(std::initializer_list<T> values);
   Array<T>& operator=(const T& v);
   Array<T>& operator=(const Array<T>& a);
@@ -873,13 +875,15 @@ arr comp_At(const arr& A);
 arr comp_A_x(const arr& A, const arr& x);
 
 struct SpecialArray {
-  enum Type { ST_none, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };
+  enum Type { ST_none, ST_NoArr, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };
   Type type;
+  SpecialArray(Type _type=ST_none) : type(_type) {}
   virtual ~SpecialArray() {}
 };
 
-template<class T> bool isNotSpecial(const rai::Array<T>& X) { return !X.special || X.special->type==SpecialArray::ST_none; }
-template<class T> bool isRowShifted(const rai::Array<T>& X) { return X.special && X.special->type==SpecialArray::RowShiftedST; }
+template<class T> bool isNotSpecial(const rai::Array<T>& X)   { return !X.special || X.special->type==SpecialArray::ST_none; }
+template<class T> bool isNoArr(const rai::Array<T>& X)        { return X.special && X.special->type==SpecialArray::ST_NoArr; }
+template<class T> bool isRowShifted(const rai::Array<T>& X)   { return X.special && X.special->type==SpecialArray::RowShiftedST; }
 template<class T> bool isSparseMatrix(const rai::Array<T>& X) { return X.special && X.special->type==SpecialArray::sparseMatrixST; }
 template<class T> bool isSparseVector(const rai::Array<T>& X) { return X.special && X.special->type==SpecialArray::sparseVectorST; }
 

@@ -22,7 +22,7 @@ void Task::setCostSpecs(int fromTime,
                         int toTime,
                         const arr& _target,
                         double _prec) {
-  if(&_target) target = _target; else target = {0.};
+  if(!!_target) target = _target; else target = {0.};
   if(fromTime<0) fromTime=0;
   CHECK_GE(toTime, fromTime,"");
   prec.resize(toTime+1).setZero();
@@ -277,13 +277,13 @@ bool KOMO::displayTrajectory(int steps, const char* tag, double delay) {
 void KOMO::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t) {
 #if 0
   phi.clear();
-  if(&tt) tt.clear();
-  if(&J) J.clear();
+  if(!!tt) tt.clear();
+  if(!!J) J.clear();
 #endif
   arr y, Jy, Jtmp;
   uint dimPhi_t=0;
   for(Task *task: tasks) if(task->prec.N>t && task->prec(t)) {
-      task->map->phi(y, (&J?Jy:NoArr), configurations({t,t+k_order}), tau, t);
+      task->map->phi(y, (!!J?Jy:NoArr), configurations({t,t+k_order}), tau, t);
       if(!y.N) continue;
       dimPhi_t += y.N;
       if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
@@ -295,14 +295,14 @@ void KOMO::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t) {
       y *= sqrt(task->prec(t));
       phi.append(y);
       
-      if(&J) {
+      if(!!J) {
         Jy *= sqrt(task->prec(t));
         Jtmp.append(Jy);
       }
       
-      if(&tt) for(uint i=0; i<y.N; i++) tt.append(task->type);
+      if(!!tt) for(uint i=0; i<y.N; i++) tt.append(task->type);
     }
-  if(&J && dimPhi_t) {
+  if(!!J && dimPhi_t) {
     Jtmp.reshape(dimPhi_t, Jtmp.N/dimPhi_t);
     if(t<k_order) Jtmp.delColumns(0,(k_order-t)*configurations(0)->q.N); //delete the columns that correspond to the prefix!!
     J.append(Jtmp);
@@ -313,7 +313,7 @@ void KOMO::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t) {
   //memorize for report
   if(!phiMatrix.N) phiMatrix.resize(T);
   phiMatrix(t) = phi;
-  if(&tt) {
+  if(!!tt) {
     if(!ttMatrix.N) ttMatrix.resize(T);
     ttMatrix(t) = tt;
   }
@@ -537,12 +537,12 @@ arr KOMO::getInitialization() {
 void KOMO::inverseKinematics(arr& y, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
   CHECK(!T,"");
   y.clear();
-  if(&J) J.clear();
-  if(&H) H.clear();
-  if(&tt) tt.clear();
+  if(!!J) J.clear();
+  if(!!H) H.clear();
+  if(!!tt) tt.clear();
   arrA Ja, Ha;
-  komo_problem.phi(y, (&J?Ja:NoArrA), NoArrA, tt, x);
-  if(&J) J = Ja.scalar();
+  komo_problem.phi(y, (!!J?Ja:NoArrA), NoArrA, tt, x);
+  if(!!J) J = Ja.scalar();
 //  set_x(x);
 //  phi_t(y, J, tt, 0);
 }
@@ -570,14 +570,14 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, Obje
   
   CHECK(dimPhi,"getStructure must be called first");
   phi.resize(dimPhi);
-  if(&tt) tt.resize(dimPhi);
-  if(&J) J.resize(dimPhi);
+  if(!!tt) tt.resize(dimPhi);
+  if(!!J) J.resize(dimPhi);
   
   arr y, Jy;
   uint M=0;
   for(uint t=0; t<MP.T; t++) {
     for(Task *task: MP.tasks) if(task->prec.N>t && task->prec(t)) {
-        task->map->phi(y, (&J?Jy:NoArr), MP.configurations({t,t+MP.k_order}), MP.tau, t);
+        task->map->phi(y, (!!J?Jy:NoArr), MP.configurations({t,t+MP.k_order}), MP.tau, t);
         if(!y.N) continue;
         if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
         
@@ -589,12 +589,12 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, Obje
         
         //write into phi and J
         phi.setVectorBlock(y, M);
-        if(&J) {
+        if(!!J) {
           Jy *= sqrt(task->prec(t));
           if(t<MP.k_order) Jy.delColumns(0,(MP.k_order-t)*MP.configurations(0)->q.N); //delete the columns that correspond to the prefix!!
           for(uint i=0; i<y.N; i++) J(M+i) = Jy[i]; //copy it to J(M+i); which is the Jacobian of the M+i'th feature w.r.t. its variables
         }
-        if(&tt) for(uint i=0; i<y.N; i++) tt(M+i) = task->type;
+        if(!!tt) for(uint i=0; i<y.N; i++) tt(M+i) = task->type;
         
         //counter for features phi
         M += y.N;
@@ -603,7 +603,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, Obje
   
   CHECK_EQ(M, dimPhi, "");
   MP.featureValues = ARRAY<arr>(phi);
-  if(&tt) MP.featureTypes = ARRAY<ObjectiveTypeA>(tt);
+  if(!!tt) MP.featureTypes = ARRAY<ObjectiveTypeA>(tt);
 }
 
 //===========================================================================

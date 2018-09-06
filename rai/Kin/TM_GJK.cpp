@@ -104,10 +104,10 @@ void TM_GJK::phi(arr& v, arr& J, const rai::KinematicWorld& W) {
     pt1=GJK_vertex; pt2=GJK_face;
   }
   
-  W.kinematicsPos(y1, (&J?J1:NoArr), &s1->frame, s1->frame.X.rot/(p1-s1->frame.X.pos));
-  W.kinematicsPos(y2, (&J?J2:NoArr), &s2->frame, s2->frame.X.rot/(p2-s2->frame.X.pos));
+  W.kinematicsPos(y1, (!!J?J1:NoArr), &s1->frame, s1->frame.X.rot/(p1-s1->frame.X.pos));
+  W.kinematicsPos(y2, (!!J?J2:NoArr), &s2->frame, s2->frame.X.rot/(p2-s2->frame.X.pos));
   v = y1 - y2;
-  if(&J) {
+  if(!!J) {
     J = J1 - J2;
     if(exact) {
       if((pt1==GJK_vertex && pt2==GJK_face) || (pt1==GJK_face && pt2==GJK_vertex)) {
@@ -150,7 +150,7 @@ void TM_GJK::phi(arr& v, arr& J, const rai::KinematicWorld& W) {
   if(s2->type()==rai::ST_ssCvx) rad += s2->size(3);
   double l2=sumOfSqr(v), l=sqrt(l2);
   double fac = (l-rad)/l;
-  if(&J) {
+  if(!!J) {
     arr d_fac = (1.-(l-rad)/l)/l2 *(~v)*J;
     J = J*fac + v*d_fac;
   }
@@ -158,10 +158,10 @@ void TM_GJK::phi(arr& v, arr& J, const rai::KinematicWorld& W) {
   
   if(negScalar) {
     if(penetrating) {
-      if(&J) J = ~(v/l)*J;
+      if(!!J) J = ~(v/l)*J;
       v = ARR(l);
     } else {
-      if(&J) J = ~(v/(-l))*J;
+      if(!!J) J = ~(v/(-l))*J;
       v = ARR(-l);
     }
   }

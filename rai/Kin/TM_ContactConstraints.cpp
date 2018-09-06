@@ -26,7 +26,7 @@ void TM_ContactConstraints::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
 
   if(!con->soft) y.resize(5).setZero();
   else  y.resize(7).setZero();
-  if(&J) J.resize(y.N, K.getJointStateDimension()).setZero();
+  if(!!J) J.resize(y.N, K.getJointStateDimension()).setZero();
 
   //-- from the contact we need POA & force
   arr pos, Jpos;
@@ -38,34 +38,34 @@ void TM_ContactConstraints::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
   //-- from the geometry we need normal and distance
 //  arr cen, Jcen;
 //  TM_PairCollision coll(con->a.ID, con->b.ID, TM_PairCollision::_center, false);
-//  coll.phi(cen, (&J?Jcen:NoArr), K);
+//  coll.phi(cen, (!!J?Jcen:NoArr), K);
 
   arr normal, Jnormal, dist, Jdist;
   TM_PairCollision coll(con->a.ID, con->b.ID, TM_PairCollision::_normal, false);
-  coll.phi(normal, (&J?Jnormal:NoArr), K);
+  coll.phi(normal, (!!J?Jnormal:NoArr), K);
 
   coll.type=TM_PairCollision::_negScalar;
-  coll.phi(dist, (&J?Jdist:NoArr), K);
+  coll.phi(dist, (!!J?Jdist:NoArr), K);
 
   con->setFromPairCollision(*coll.coll);
 
   //-- position needs to be on contact surface
 //  y(0) = scalarProduct(normal, pos - cen);
-//  if(&J) J[0] = ~normal * (Jpos - Jcen) + ~(pos-cen) * Jnormal;
+//  if(!!J) J[0] = ~normal * (Jpos - Jcen) + ~(pos-cen) * Jnormal;
 
   //-- force needs to align with normal -> project force along normal
   y({1,3}) = force - normal*scalarProduct(normal,force);
-  if(&J) J({1,3}) = Jforce - (normal*~normal*Jforce + normal*~force*Jnormal + scalarProduct(normal,force)*Jnormal);
+  if(!!J) J({1,3}) = Jforce - (normal*~normal*Jforce + normal*~force*Jnormal + scalarProduct(normal,force)*Jnormal);
 
   if(!con->soft){
     //-- needs to touch!!
 //    y(4) = dist.scalar();
-//    if(&J) J[4] = Jdist;
+//    if(!!J) J[4] = Jdist;
   }else{
     //-- enforce complementarity
     double s = 1e-0;
     y({4,6}) = s*dist.scalar() * force;
-    if(&J) J({4,6}) = (s*dist.scalar())*Jforce + (s*force) * Jdist;
+    if(!!J) J({4,6}) = (s*dist.scalar())*Jforce + (s*force) * Jdist;
   }
 
 }
@@ -80,7 +80,7 @@ void TM_ContactConstraints_InEq::phi(arr& y, arr& J, const rai::KinematicWorld& 
   rai::Contact *con = getContact(K,a,b);
 
   y.resize(3).setZero();
-  if(&J){ J.resize(3, K.getJointStateDimension()).setZero(); }
+  if(!!J){ J.resize(3, K.getJointStateDimension()).setZero(); }
 
   //-- only pushing forces
   arr force, Jforce;
@@ -88,10 +88,10 @@ void TM_ContactConstraints_InEq::phi(arr& y, arr& J, const rai::KinematicWorld& 
 
   arr normal, Jnormal;
   TM_PairCollision coll(con->a.ID, con->b.ID, TM_PairCollision::_normal, false);
-  coll.phi(normal, (&J?Jnormal:NoArr), K);
+  coll.phi(normal, (!!J?Jnormal:NoArr), K);
 
   y(0) = - scalarProduct(normal, force);
-  if(&J) J[0] = - ~normal * Jforce - ~force * Jnormal;
+  if(!!J) J[0] = - ~normal * Jforce - ~force * Jnormal;
 
   //-- POA inside objects (eventually on surface!)
   rai::Shape *s1 = K.frames(a)->shape;
@@ -116,13 +116,13 @@ void TM_ContactConstraints_InEq::phi(arr& y, arr& J, const rai::KinematicWorld& 
   K.jacobianPos(Jp1, &s1->frame, coll1.p1);
   K.jacobianPos(Jp2, &s2->frame, coll2.p2);
 
-  coll1.kinDistance(y({1,1})(), (&J?J[1]():NoArr), Jpos, Jp1);
-  coll2.kinDistance(y({2,2})(), (&J?J[2]():NoArr), Jpos, Jp2);
+  coll1.kinDistance(y({1,1})(), (!!J?J[1]():NoArr), Jpos, Jp1);
+  coll2.kinDistance(y({2,2})(), (!!J?J[2]():NoArr), Jpos, Jp2);
 
   y(1) -= .001;
   y(2) -= .001;
 
-  if(&J) checkNan(J);
+  if(!!J) checkNan(J);
 }
 
 uint TM_ContactConstraints_InEq::dim_phi(const rai::KinematicWorld& K){
@@ -173,7 +173,7 @@ void TM_ContactConstraints_Vel::phi(arr& y, arr& J, const WorldL& Ktuple){
   arr Jvc2 = Jv2 - skew(w2) * (Jcp - Jp2) + skew(cp-p2) * Jw2;
 
   y = vc1 - vc2;
-  if(&J) J = Jvc1 - Jvc2;
+  if(!!J) J = Jvc1 - Jvc2;
 
   if(con->soft){
     //-- enforce complementarity

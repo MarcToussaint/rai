@@ -30,8 +30,7 @@ int MAIN(int argc,char **argv){
     //some optional manipulations
     K.optimizeTree(false);
     K.calc_q();
-    K.checkConsistency();
-    if(K.fwdActiveSet.N == K.frames.N) K.frames=K.fwdActiveSet; //adopt sorting of forward..
+    if(K.fwdActiveSet.N == K.frames.N) K.fwdIndexIDs();
     K >>FILE("z.g");
 //    makeConvexHulls(G.frames);
 //    computeOptimalSSBoxes(G.shapes);

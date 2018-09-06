@@ -26,11 +26,11 @@ void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& 
   //resizing things:
   phi.resize(dim_phi).setZero();
   RowShifted *Jaux=NULL;
-  if(&J) {
+  if(!!J) {
     Jaux = makeRowShifted(J, dim_phi, (k+1)*dim_xmax, x.N);
     J.setZero();
   }
-  if(&tt) tt.resize(dim_phi).setZero();
+  if(!!tt) tt.resize(dim_phi).setZero();
   
   //loop over time t
   uint Jshift=0;
@@ -42,12 +42,12 @@ void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& 
     //query
     arr phi_t, J_t;
     ObjectiveTypeA tt_t;
-    f.phi_t(phi_t, (&J?J_t:NoArr), tt_t, t);
+    f.phi_t(phi_t, (!!J?J_t:NoArr), tt_t, t);
     //    CHECK_EQ(phi_t.N, f.dim_phi(t), "");
     if(!phi_t.N) continue;
     phi.setVectorBlock(phi_t, M);
-    if(&tt) tt.setVectorBlock(tt_t, M);
-    if(&J) {
+    if(!!tt) tt.setVectorBlock(tt_t, M);
+    if(!!J) {
       CHECK(J_t.nd==2 && J_t.d0==phi_t.N && J_t.d1==dimxbar,"");
       if(t>=k) {
         J.setMatrixBlock(J_t, M, 0);
@@ -63,12 +63,12 @@ void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& 
   }
   
   CHECK_EQ(M, dim_phi,"");
-  if(&J) {
+  if(!!J) {
     Jaux->reshift();
     Jaux->computeColPatches(true);
   }
   
-  if(&H) H.clear();
+  if(!!H) H.clear();
 #else
   
   //probing dimensionality
@@ -88,11 +88,11 @@ void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& 
   //resizing things:
   phi.resize(dim_phi).setZero();
   RowShifted *Jaux;
-  if(&J) {
+  if(!!J) {
     Jaux = makeRowShifted(J, dim_phi, (k+1)*n, _x.N);
     J.setZero();
   }
-  if(&tt) tt.resize(dim_phi).setZero();
+  if(!!tt) tt.resize(dim_phi).setZero();
   
   //loop over time t
   uint M=0;
@@ -120,13 +120,13 @@ void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& 
     //query
     arr phi_t, J_t;
     ObjectiveTypeA tt_t;
-    f.phi_t(phi_t, (&J?J_t:NoArr), tt_t, t, x_bar);
+    f.phi_t(phi_t, (!!J?J_t:NoArr), tt_t, t, x_bar);
     CHECK_EQ(phi_t.N,dimphi_t,"");
     phi.setVectorBlock(phi_t, M);
-    if(&tt) tt.setVectorBlock(tt_t, M);
+    if(!!tt) tt.setVectorBlock(tt_t, M);
   
     //if the jacobian is returned
-    if(&J) {
+    if(!!J) {
       if(J_t.nd==3) J_t.reshape(J_t.d0,J_t.d1*J_t.d2);
       //insert J_t into the large J at index M
       CHECK(J_t.d0==dimphi_t && J_t.d1==(k+1)*n,"");
@@ -144,10 +144,10 @@ void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& 
   }
   
   CHECK_EQ(M, dim_phi,"");
-  if(&J) {
+  if(!!J) {
     Jaux->computeColPatches(true);
   }
   
-  if(&H) H.clear();
+  if(!!H) H.clear();
 #endif
 }

@@ -234,8 +234,8 @@ struct ShapeFitProblem:public ScalarFunction {
     double cost=0.;
     arr weights, dfdpoints;
     generateShapePoints(points, weights, &grad, type, N, x);
-    if(&grad) { dfdpoints.resizeAs(points);  dfdpoints.setZero();  }
-    if(&H) NIY;
+    if(!!grad) { dfdpoints.resizeAs(points);  dfdpoints.setZero();  }
+    if(!!H) NIY;
     for(uint i=0; i<points.d0; i++) { //interpolate...
       uint x=points(i, 0), y=points(i, 1);
       if(x>=distImage.d1-1) x=distImage.d1-2;
@@ -243,19 +243,19 @@ struct ShapeFitProblem:public ScalarFunction {
       double a=fmod(points(i, 0), 1.), b=fmod(points(i, 1), 1.);
       if(a+b<1.) {
         cost += weights(i)*((1.-a-b)*distImage(y, x) + a*distImage(y, x+1) + b*distImage(y+1, x));
-        if(&grad) {
+        if(!!grad) {
           dfdpoints(i, 0) = weights(i)*(distImage(y, x+1) - distImage(y, x));
           dfdpoints(i, 1) = weights(i)*(distImage(y+1, x) - distImage(y, x));
         }
       } else {
         cost += weights(i)*((a+b-1.)*distImage(y+1, x+1) + (1.-a)*distImage(y+1, x) + (1.-b)*distImage(y, x+1));
-        if(&grad) {
+        if(!!grad) {
           dfdpoints(i, 0) = weights(i)*(distImage(y+1, x+1) - distImage(y+1, x));
           dfdpoints(i, 1) = weights(i)*(distImage(y+1, x+1) - distImage(y, x+1));
         }
       }
     }
-    if(&grad) {
+    if(!!grad) {
       dfdpoints.reshape(dfdpoints.N);
       grad.reshape(dfdpoints.N, x.N);
       grad = ~dfdpoints*grad;

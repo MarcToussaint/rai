@@ -27,7 +27,7 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& Ktuple) {
   uintA switchedBodies = getSwitchedBodies(*Ktuple.elem(-2), *Ktuple.elem(-1));
 //  if(order==2) switchedBodies.setAppend( getSwitchedBodies(*G.elem(-3), *G.elem(-2)) );
   y.resize(M*switchedBodies.N).setZero();
-  if(&J) {
+  if(!!J) {
     uint xbarDim=0;
     for(auto& W:Ktuple) xbarDim+=W->q.N;
     J.resize(M*switchedBodies.N, xbarDim).setZero();
@@ -61,41 +61,41 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& Ktuple) {
 #if 0
       TM_Default pos(TMT_pos, id, NoVector, b0Parent->ID);
       pos.order=1;
-      pos.Feature::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), Ktuple);
+      pos.Feature::phi(y({M*i,M*i+2})(), (!!J?J({M*i,M*i+2})():NoArr), Ktuple);
       
       TM_Default quat(TMT_quat, id, NoVector, b0Parent->ID); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
       // flip the quaternion sign if necessary
       quat.flipTargetSignOnNegScalarProduct = true;
       quat.order=1;
-      quat.Feature::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), Ktuple);
+      quat.Feature::phi(y({M*i+3,M*i+6})(), (!!J?J({M*i+3,M*i+6})():NoArr), Ktuple);
 #else
       TM_Default pose(TMT_pose, id, NoVector, b0Link->ID);
       pose.order=1;
-      pose.Feature::phi(y({M*i,M*i+6})(), (&J?J({M*i,M*i+6})():NoArr), Ktuple);
+      pose.Feature::phi(y({M*i,M*i+6})(), (!!J?J({M*i,M*i+6})():NoArr), Ktuple);
 #endif
     } else if(order==2) { //absolute accelerations
 #if 0
       TM_Default pos(TMT_pos, id);
       pos.order=2;
-      pos.Feature::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), Ktuple);
+      pos.Feature::phi(y({M*i,M*i+2})(), (!!J?J({M*i,M*i+2})():NoArr), Ktuple);
       
       TM_Default quat(TMT_quat, id); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
       // flip the quaternion sign if necessary
       quat.flipTargetSignOnNegScalarProduct = true;
       quat.order=2;
-      quat.Feature::phi(y({M*i+3,M*i+6})(), (&J?J({M*i+3,M*i+6})():NoArr), Ktuple);
+      quat.Feature::phi(y({M*i+3,M*i+6})(), (!!J?J({M*i+3,M*i+6})():NoArr), Ktuple);
 #elif 0
       TM_Default pose(TMT_pose, id, NoVector, b0Parent->ID);
       pose.order=2;
-      pose.Feature::phi(y({M*i,M*i+6})(), (&J?J({M*i,M*i+6})():NoArr), Ktuple);
+      pose.Feature::phi(y({M*i,M*i+6})(), (!!J?J({M*i,M*i+6})():NoArr), Ktuple);
 #else
       TM_Default pos(TMT_pos, id);
       pos.order=2;
-      pos.Feature::phi(y({M*i,M*i+2})(), (&J?J({M*i,M*i+2})():NoArr), Ktuple);
+      pos.Feature::phi(y({M*i,M*i+2})(), (!!J?J({M*i,M*i+2})():NoArr), Ktuple);
 
       TM_AngVel rot(id);
       rot.order=2;
-      rot.phi(y({M*i+3,M*i+5})(), (&J?J({M*i+3,M*i+5})():NoArr), Ktuple);
+      rot.phi(y({M*i+3,M*i+5})(), (!!J?J({M*i+3,M*i+5})():NoArr), Ktuple);
 #endif
     } else NIY;
   }

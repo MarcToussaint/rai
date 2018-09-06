@@ -26,8 +26,8 @@ TM_PushConsistent::TM_PushConsistent(const rai::KinematicWorld &G,
 //  CHECK(x1.nd==1 && x2.nd==1, "");
 //  CHECK(x1.N==3 && x2.N==3,"cross product only works for 3D vectors!");
 //  y = crossProduct(x1,x2);
-//  if(&J1) J1 = skew(x2);
-//  if(&J2) J2 = -skew(x1);
+//  if(!!J1) J1 = skew(x2);
+//  if(!!J2) J2 = -skew(x1);
 //}
 
 void TM_PushConsistent::phi(arr& y, arr& J, const WorldL& Ktuple) {
@@ -51,7 +51,7 @@ void TM_PushConsistent::phi(arr& y, arr& J, const WorldL& Ktuple) {
   
   y = crossProduct((yi2-yi1)/tau, yi2-yj2);
 //  cout <<"PC " <<t <<' ' <<(yi2-yi1)/tau <<' ' <<yi2-yj2 <<' ' <<y <<endl;
-  if(&J) {
+  if(!!J) {
     uint qidx=0;
     for(uint i=0; i<Ktuple.N; i++) qidx+=Ktuple(i)->q.N;
     J.resize(y.N, qidx).setZero();
@@ -65,7 +65,7 @@ void TM_PushConsistent::phi(arr& y, arr& J, const WorldL& Ktuple) {
 #else
   arr a = ARR(1.,0,0);
   y = crossProduct(yi2-yi1, a);
-  if(&J) {
+  if(!!J) {
     uint qidx=0;
     for(uint i=0; i<G.N; i++) qidx+=G(i)->q.N;
     J.resize(y.N, qidx).setZero();

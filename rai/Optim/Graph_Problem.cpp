@@ -16,10 +16,10 @@ Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G) :
 void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
   G.phi(phi, J_G, H_G, x, lambda);
   
-  if(&tt) tt = featureTypes;
+  if(!!tt) tt = featureTypes;
   
   //-- construct a row-shifed J from the array of featureJs
-  if(&J) {
+  if(!!J) {
     J.resize(phi.N, x.N).setZero();
     
     for(uint i=0; i<phi.N; i++) { //loop over features

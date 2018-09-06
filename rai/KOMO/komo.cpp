@@ -72,9 +72,9 @@ KOMO::~KOMO() {
   listDelete(flags);
   listDelete(switches);
   listDelete(configurations);
-  if(gl) delete gl; gl=0;
-  if(opt) delete opt; opt=0;
-  if(fil) delete fil; fil=0;
+  if(gl) delete gl;
+  if(opt) delete opt;
+  if(fil) delete fil;
 }
 
 void KOMO::setModel(const KinematicWorld& K,
@@ -1889,13 +1889,13 @@ double KOMO::getCosts(){
 
 void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes) {
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
-  if(&variableDimensions) {
+  if(!!variableDimensions) {
     variableDimensions.resize(komo.T);
     for(uint t=0; t<komo.T; t++) variableDimensions(t) = komo.configurations(t+komo.k_order)->getJointStateDimension();
   }
   
-  if(&featureTimes) featureTimes.clear();
-  if(&featureTypes) featureTypes.clear();
+  if(!!featureTimes) featureTimes.clear();
+  if(!!featureTypes) featureTypes.clear();
   featureNames.clear();
   uint M=0;
   phiIndex.resize(komo.T, komo.objectives.N); phiIndex.setZero();
@@ -1907,8 +1907,8 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
         //      CHECK_LE(task->prec.N, MP.T,"");
         uint m = task->map->dim_phi(komo.configurations({t,t+komo.k_order})); //dimensionality of this task
         
-        if(&featureTimes) featureTimes.append(t, m); //consts<uint>(t, m));
-        if(&featureTypes) featureTypes.append(task->type, m); //consts<ObjectiveType>(task->type, m));
+        if(!!featureTimes) featureTimes.append(t, m); //consts<uint>(t, m));
+        if(!!featureTypes) featureTypes.append(task->type, m); //consts<ObjectiveType>(task->type, m));
         for(uint j=0; j<m; j++)  featureNames.append(STRING(task->name <<'_'<<j));
         
         //store indexing phi <-> tasks
@@ -1926,11 +1926,11 @@ bool WARN_FIRST_TIME=true;
 
 void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
   //==================
-  if(&lambda) prevLambda = lambda;
+  if(!!lambda) prevLambda = lambda;
   const uintA prevPhiIndex=phiIndex, prevPhiDim=phiDim;
   
 #if 0
-  if(&lambda && lambda.N>dimPhi) {
+  if(!!lambda && lambda.N>dimPhi) {
     //store old lambdas directly in the constraints....
     uint C=0;
     for(uint t=0; t<komo.T; t++) {
@@ -1955,9 +1955,9 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
   //  getStructure(NoUintA, featureTimes, tt);
   //  if(WARN_FIRST_TIME){ LOG(-1)<<"calling inefficient getStructure"; WARN_FIRST_TIME=false; }
   phi.resize(dimPhi);
-  if(&tt) tt.resize(dimPhi);
-  if(&J) J.resize(dimPhi);
-  if(&lambda && lambda.N) { lambda.resize(dimPhi); lambda.setZero(); }
+  if(!!tt) tt.resize(dimPhi);
+  if(!!J) J.resize(dimPhi);
+  if(!!lambda && lambda.N) { lambda.resize(dimPhi); lambda.setZero(); }
   
   arr y, Jy;
   uint M=0;
@@ -1970,10 +1970,10 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
       Objective *task = komo.objectives.elem(i);
       if(task->prec.N>t && task->prec(t)) {
         //query the task map and check dimensionalities of returns
-        task->map->phi(y, (&J?Jy:NoArr), Ktuple);
-        if(&J) CHECK_EQ(y.N, Jy.d0, "");
-        if(&J) CHECK_EQ(Jy.nd, 2, "");
-        if(&J) CHECK_EQ(Jy.d1, Ktuple_dim.last(), "");
+        task->map->phi(y, (!!J?Jy:NoArr), Ktuple);
+        if(!!J) CHECK_EQ(y.N, Jy.d0, "");
+        if(!!J) CHECK_EQ(Jy.nd, 2, "");
+        if(!!J) CHECK_EQ(Jy.d1, Ktuple_dim.last(), "");
         if(!y.N) continue;
         if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
         
@@ -1990,16 +1990,16 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
         
         //write into phi and J
         phi.setVectorBlock(y, M);
-        if(&J) {
+        if(!!J) {
           Jy *= task->prec(t);
           if(t<komo.k_order) Jy.delColumns(0, Ktuple_dim(komo.k_order-t-1)); //delete the columns that correspond to the prefix!!
 //          if(t<komo.k_order) Jy.delColumns(0,(komo.k_order-t)*komo.configurations(0)->q.N); //delete the columns that correspond to the prefix!!
           for(uint i=0; i<y.N; i++) J(M+i) = Jy[i]; //copy it to J(M+i); which is the Jacobian of the M+i'th feature w.r.t. its variables
         }
-        if(&tt) for(uint i=0; i<y.N; i++) tt(M+i) = task->type;
+        if(!!tt) for(uint i=0; i<y.N; i++) tt(M+i) = task->type;
         
         //transfer Lambda values
-        if(&lambda && lambda.N && y.N==prevPhiDim(t,i)) {
+        if(!!lambda && lambda.N && y.N==prevPhiDim(t,i)) {
           lambda.setVectorBlock(prevLambda({prevPhiIndex(t,i), prevPhiIndex(t,i)+y.N-1}), M);
         }
         
@@ -2014,9 +2014,9 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
   }
   
   CHECK_EQ(M, dimPhi, "");
-//  if(&lambda) CHECK_EQ(prevLambda, lambda, ""); //this ASSERT only holds is none of the tasks is variable dim!
+//  if(!!lambda) CHECK_EQ(prevLambda, lambda, ""); //this ASSERT only holds is none of the tasks is variable dim!
   komo.featureValues = phi;
-  if(&tt) komo.featureTypes = tt;
+  if(!!tt) komo.featureTypes = tt;
   komo.featureDense=false;
 
   //==================
@@ -2028,16 +2028,16 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
     KinematicWorld& K = *komo.configurations(t+komo.k_order);
     for(Frame *f:K.frames) for(Contact *c:f->contacts) if(&c->a==f) {
           Feature *map = c->getTM_ContactNegDistance();
-          map->phi(y, (&J?Jy:NoArr), Ktuple, komo.tau, t);
+          map->phi(y, (!!J?Jy:NoArr), Ktuple, komo.tau, t);
           c->y = y.scalar();
           phi.append(c->y);
 //      featureTypes.append(OT_ineq);
-          if(&featureTimes) featureTimes.append(t);
-          if(&J) {
+          if(!!featureTimes) featureTimes.append(t);
+          if(!!J) {
             if(t<komo.k_order) Jy.delColumns(0,(komo.k_order-t)*komo.configurations(0)->q.N); //delete the columns that correspond to the prefix!!
             J.append(Jy);   //copy it to J(M+i); which is the Jacobian of the M+i'th feature w.r.t. its variables
           }
-          if(&tt) tt.append(OT_ineq);
+          if(!!tt) tt.append(OT_ineq);
           
           if(updateLambda) {
             lambda.append(c->lagrangeParameter);
@@ -2062,9 +2062,9 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
 //  getStructure(NoUintA, featureTimes, tt);
 //  if(WARN_FIRST_TIME){ LOG(-1)<<"calling inefficient getStructure"; WARN_FIRST_TIME=false; }
   phi.resize(dimPhi);
-  if(&tt) tt.resize(dimPhi);
-  if(&J) J.resize(dimPhi, x.N).setZero();
-  if(&lambda && lambda.N) { lambda.resize(dimPhi); lambda.setZero(); }
+  if(!!tt) tt.resize(dimPhi);
+  if(!!J) J.resize(dimPhi, x.N).setZero();
+  if(!!lambda && lambda.N) { lambda.resize(dimPhi); lambda.setZero(); }
 
   uintA x_index = getKtupleDim(komo.configurations({komo.k_order,-1}));
   x_index.prepend(0);
@@ -2082,10 +2082,10 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
       kdim.prepend(0);
 
       //query the task map and check dimensionalities of returns
-      task->map->phi(y, (&J?Jy:NoArr), Ktuple);
-      if(&J) CHECK_EQ(y.N, Jy.d0, "");
-      if(&J) CHECK_EQ(Jy.nd, 2, "");
-      if(&J) CHECK_EQ(Jy.d1, kdim.last(), "");
+      task->map->phi(y, (!!J?Jy:NoArr), Ktuple);
+      if(!!J) CHECK_EQ(y.N, Jy.d0, "");
+      if(!!J) CHECK_EQ(Jy.nd, 2, "");
+      if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
       if(!y.N) continue;
       if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
 
@@ -2103,7 +2103,7 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
       //write into phi and J
       phi.setVectorBlock(y, M);
 
-      if(&J) {
+      if(!!J) {
         Jy *= task->prec(t);
         for(uint j=0;j<task->vars.d1;j++){
           if(task->vars(t,j)>=0){
@@ -2112,7 +2112,7 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
         }
       }
 
-      if(&tt) for(uint i=0; i<y.N; i++) tt(M+i) = task->type;
+      if(!!tt) for(uint i=0; i<y.N; i++) tt(M+i) = task->type;
 
       //counter for features phi
       M += y.N;
@@ -2120,21 +2120,21 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
   }
 
   CHECK_EQ(M, dimPhi, "");
-//  if(&lambda) CHECK_EQ(prevLambda, lambda, ""); //this ASSERT only holds is none of the tasks is variable dim!
+//  if(!!lambda) CHECK_EQ(prevLambda, lambda, ""); //this ASSERT only holds is none of the tasks is variable dim!
   komo.featureValues = phi;
-  if(&tt) komo.featureTypes = tt;
+  if(!!tt) komo.featureTypes = tt;
   komo.featureDense=true;
 }
 
 void KOMO::Conv_MotionProblem_DenseProblem::getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes) {
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
-  if(&variableDimensions) {
+  if(!!variableDimensions) {
     variableDimensions.resize(komo.T);
     for(uint t=0; t<komo.T; t++) variableDimensions(t) = komo.configurations(t+komo.k_order)->getJointStateDimension();
   }
 
-  if(&featureVariables) featureVariables.clear();
-  if(&featureTypes) featureTypes.clear();
+  if(!!featureVariables) featureVariables.clear();
+  if(!!featureTypes) featureTypes.clear();
   uint M=0;
   for(uint i=0; i<komo.objectives.N; i++) {
     Objective *task = komo.objectives.elem(i);
@@ -2146,8 +2146,8 @@ void KOMO::Conv_MotionProblem_DenseProblem::getStructure(uintA& variableDimensio
 
       uint m = task->map->dim_phi(komo.configurations({t,t+komo.k_order})); //dimensionality of this task
 
-      if(&featureVariables) featureVariables.append(task->vars[t], m); //consts<uint>(t, m));
-      if(&featureTypes) featureTypes.append(task->type, m); //consts<ObjectiveType>(task->type, m));
+      if(!!featureVariables) featureVariables.append(task->vars[t], m); //consts<uint>(t, m));
+      if(!!featureTypes) featureTypes.append(task->type, m); //consts<ObjectiveType>(task->type, m));
 //      for(uint j=0; j<m; j++)  featureNames.append(STRING(task->name <<'_'<<j));
 
         //store indexing phi <-> tasks

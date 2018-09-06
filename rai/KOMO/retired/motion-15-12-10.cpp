@@ -20,8 +20,8 @@ void Feature::phi(arr& y, arr& J, const WorldL& G, double tau, int t) {
   uint k=order;
   if(k==0) { // basic case: order=0
     arr J_bar;
-    phi(y, (&J?J_bar:NoArr), *G.last(), t);
-    if(&J) {
+    phi(y, (!!J?J_bar:NoArr), *G.last(), t);
+    if(!!J) {
       J = zeros(G.N, y.N, J_bar.d1);
       J[G.N-1]() = J_bar;
       arr tmp(J);
@@ -36,11 +36,11 @@ void Feature::phi(arr& y, arr& J, const WorldL& G, double tau, int t) {
   J_bar.resize(k+1);
   //-- read out the task variable from the k+1 configurations
   for(uint i=0; i<=k; i++)
-    phi(y_bar(i), (&J?J_bar(i):NoArr), *G(G.N-1-i), t-i);
+    phi(y_bar(i), (!!J?J_bar(i):NoArr), *G(G.N-1-i), t-i);
   if(k==1)  y = (y_bar(0)-y_bar(1))/tau; //penalize velocity
   if(k==2)  y = (y_bar(0)-2.*y_bar(1)+y_bar(2))/tau2; //penalize acceleration
   if(k==3)  y = (y_bar(0)-3.*y_bar(1)+3.*y_bar(2)-y_bar(3))/tau3; //penalize jerk
-  if(&J) {
+  if(!!J) {
     J = zeros(G.N, y.N, J_bar(0).d1);
     if(k==1) { J[G.N-1-1]() = -J_bar(1);  J[G.N-1-0]() = J_bar(0);  J/=tau; }
     if(k==2) { J[G.N-1-2]() =  J_bar(2);  J[G.N-1-1]() = -2.*J_bar(1);  J[G.N-1-0]() = J_bar(0);  J/=tau2; }
@@ -57,7 +57,7 @@ void Task::setCostSpecs(uint fromTime,
                         uint toTime,
                         const arr& _target,
                         double _prec) {
-  if(&_target) target = _target; else target = {0.};
+  if(!!_target) target = _target; else target = {0.};
   CHECK_GE(toTime, fromTime,"");
   prec.resize(toTime+1).setZero();
   for(uint t=fromTime; t<=toTime; t++) prec(t) = _prec;
@@ -294,8 +294,8 @@ void KOMO::setInterpolatingCosts(
   arr y0;
   c->map.phi(y0, NoArr, world);
   arr midTarget=zeros(m),finTarget=zeros(m);
-  if(&y_finalTarget) { if(y_finalTarget.N==1) finTarget = y_finalTarget(0); else finTarget=y_finalTarget; }
-  if(&y_midTarget) {   if(y_midTarget.N==1)   midTarget = y_midTarget(0);   else midTarget=y_midTarget; }
+  if(!!y_finalTarget) { if(y_finalTarget.N==1) finTarget = y_finalTarget(0); else finTarget=y_finalTarget; }
+  if(!!y_midTarget) {   if(y_midTarget.N==1)   midTarget = y_midTarget(0);   else midTarget=y_midTarget; }
   switch(inType) {
     case constant: {
       c->target = replicate(finTarget, T+1);
@@ -417,12 +417,12 @@ void KOMO::displayTrajectory(int steps, const char* tag, double delay) {
 
 bool KOMO::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const WorldL &G, double tau) {
   phi.clear();
-  if(&tt) tt.clear();
-  if(&J) J.clear();
+  if(!!tt) tt.clear();
+  if(!!J) J.clear();
   arr y, Jy;
   bool ineqHold=true;
   for(Task *c: tasks) if(c->active && c->prec.N>t && c->prec(t)) {
-      c->map.phi(y, (&J?Jy:NoArr), G, tau, t);
+      c->map.phi(y, (!!J?Jy:NoArr), G, tau, t);
       if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
       //linear transform (target shift)
       if(true) {
@@ -430,21 +430,21 @@ bool KOMO::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const WorldL &G,
         else if(c->target.nd==1) y -= c->target;
         else if(c->target.nd==2) y -= c->target[t];
         y *= sqrt(c->prec(t));
-        if(&J) Jy *= sqrt(c->prec(t));
+        if(!!J) Jy *= sqrt(c->prec(t));
       }
       phi.append(y);
-      if(&tt) for(uint i=0; i<y.N; i++) tt.append(c->map.type);
-      if(&J) J.append(Jy);
+      if(!!tt) for(uint i=0; i<y.N; i++) tt.append(c->map.type);
+      if(!!J) J.append(Jy);
       if(c->map.type==OT_ineq && max(y)>0.) ineqHold=false;
     }
-  if(&J) J.reshape(phi.N, G.N*G.last()->getJointStateDimension());
+  if(!!J) J.reshape(phi.N, G.N*G.last()->getJointStateDimension());
   
   CHECK_EQ(phi.N, dim_phi(*G.last(), t), "");
   
   //memorize for report
   if(!phiMatrix.N) phiMatrix.resize(T+1);
   phiMatrix(t) = phi;
-  if(&tt) {
+  if(!!tt) {
     if(!ttMatrix.N) ttMatrix.resize(T+1);
     ttMatrix(t) = tt;
   }
@@ -702,11 +702,11 @@ void KOMO::inverseKinematics(arr& y, arr& J, arr& H, ObjectiveTypeA& tt, const a
 
   setState(x);
   getPhi(y, J, tt, 0, {&world}, tau);
-  if(&H) H.clear();
+  if(!!H) H.clear();
 //  double h=1./sqrt(tau);
 //  y.append(h*(x-x0));
-//  if(&J) J.append(h*eye(x.N));
-//  if(&tt) tt.append(consts(OT_sos, x.N));
+//  if(!!J) J.append(h*eye(x.N));
+//  if(!!tt) tt.append(consts(OT_sos, x.N));
 
 //  phiMatrix(0).append(h*(x-x0));
 //  ttMatrix(0).append(consts(OT_sos, x.N));
@@ -796,22 +796,22 @@ void MotionProblemFunction::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, 
   arr _phi, _J;
   ObjectiveTypeA _tt;
 #ifdef NEWCODE
-  MP.getPhi(_phi, (&J?_J:NoArr), (&tt?_tt:NoTermTypeA), t, MP.configurations({t,t+k}), MP.tau);
+  MP.getPhi(_phi, (!!J?_J:NoArr), (!!tt?_tt:NoTermTypeA), t, MP.configurations({t,t+k}), MP.tau);
 #else
-  MP.getPhi(_phi, (&J?_J:NoArr), (&tt?_tt:NoTermTypeA), t, MP.configurations, MP.tau);
+  MP.getPhi(_phi, (!!J?_J:NoArr), (!!tt?_tt:NoTermTypeA), t, MP.configurations, MP.tau);
 #endif
   phi.append(_phi);
-  if(&tt) tt.append(_tt);
-  if(&J)  J.append(_J);
-//  if(&J_z){
+  if(!!tt) tt.append(_tt);
+  if(!!J)  J.append(_J);
+//  if(!!J_z){
 //    for(auto& c:configurations) c->setAgent(1);
 //    MP.getTaskCosts2(_phi, J_z, t, configurations, MP.tau);
 //    for(auto& c:configurations) c->setAgent(0);
 //  }
 
-  if(&tt) CHECK_EQ(tt.N, phi.N,"");
-  if(&J) CHECK_EQ(J.d0, phi.N,"");
-//  if(&J_z) CHECK_EQ(J.d0,phi.N,"");
+  if(!!tt) CHECK_EQ(tt.N, phi.N,"");
+  if(!!J) CHECK_EQ(J.d0, phi.N,"");
+//  if(!!J_z) CHECK_EQ(J.d0,phi.N,"");
 
 }
 
@@ -834,14 +834,14 @@ void MotionProblem_EndPoseFunction::fv(arr& phi, arr& J, const arr& x) {
 //    h=sqrt(h);
 //  }
 //  phi = h%(x-MP.x0);
-//  if(&J) J.setDiag(h);
+//  if(!!J) J.setDiag(h);
 
   //-- task costs
   arr _phi, J_x;
   MP.setState(x, zeros(x.N));
   MP.getPhi(_phi, J_x, NoTermTypeA, MP.T, LIST(MP.world), MP.tau);
   phi.append(_phi);
-  if(&J && _phi.N) {
+  if(!!J && _phi.N) {
     J.append(J_x);
   }
   
@@ -851,7 +851,7 @@ void MotionProblem_EndPoseFunction::fv(arr& phi, arr& J, const arr& x) {
     MP.getPhi(_phi, J_x, NoTermTypeA, MP.T, LIST(MP.world), MP.tau);
   }
   
-  if(&J) CHECK_EQ(J.d0,phi.N,"");
+  if(!!J) CHECK_EQ(J.d0,phi.N,"");
   
   //store in CostMatrix
   MP.phiMatrix = phi;

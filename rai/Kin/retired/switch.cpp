@@ -52,8 +52,8 @@ rai::KinematicSwitch::KinematicSwitch(SwitchType op, JointType type, const char*
   : symbol(op), jointType(type), timeOfApplication(_timeOfApplication), fromId(UINT_MAX), toId(UINT_MAX), jA(0), jB(0) {
   if(ref1) fromId = K.getFrameByName(ref1)->ID;
   if(ref2) toId = K.getFrameByName(ref2)->ID;
-  if(&jFrom) jA = jFrom;
-  if(&jTo)   jB = jTo;
+  if(!!jFrom) jA = jFrom;
+  if(!!jTo)   jB = jTo;
 }
 
 void rai::KinematicSwitch::setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T) {
@@ -379,7 +379,7 @@ rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const rai::String& type, c
 //  }else{
 
   sw->timeOfApplication = _timeOfApplication;
-  if(&jFrom) sw->jA = jFrom;
-  if(&jTo) sw->jB = jTo;
+  if(!!jFrom) sw->jA = jFrom;
+  if(!!jTo) sw->jB = jTo;
   return sw;
 }

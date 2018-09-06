@@ -15,7 +15,7 @@ struct TM_qLimits:Feature {
   //TODO (danny) allow margin specification
   arr limits;
   
-  TM_qLimits(const arr& _limits=NoArr) { if(&_limits) limits=_limits; } ///< if no limits are provided, they are taken from G's joints' attributes on the first call of phi
+  TM_qLimits(const arr& _limits=NoArr) { if(!!_limits) limits=_limits; } ///< if no limits are provided, they are taken from G's joints' attributes on the first call of phi
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G) { return 1; }
   virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("TM_qLimits"); }

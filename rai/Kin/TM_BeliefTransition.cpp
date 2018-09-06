@@ -28,7 +28,7 @@ double Forsyth(arr& J, const arr& x, double a) {
   double x2 = sumOfSqr(x);
   double x2_a2 = x2 + a*a;
   double f = x2/x2_a2;
-  if(&J) {
+  if(!!J) {
     J = (2.*(1.-f)/x2_a2) * x;
     J.reshape(1, x.N);
   }
@@ -38,7 +38,7 @@ double Forsyth(arr& J, const arr& x, double a) {
 void TM_BeliefTransition::phi(arr &y, arr &J, const WorldL &Ktuple) {
   uint i=0;
   y.resize(dim_phi(*Ktuple.last())).setZero();
-  if(&J) J.resize(y.N, Ktuple.N, Ktuple.elem(-1)->q.N).setZero();
+  if(!!J) J.resize(y.N, Ktuple.N, Ktuple.elem(-1)->q.N).setZero();
   
   double tau = Ktuple(-1)->frames(0)->time; // - Ktuple(-2)->frames(0)->time;
   
@@ -66,7 +66,7 @@ void TM_BeliefTransition::phi(arr &y, arr &J, const WorldL &Ktuple) {
       for(uint d=j0->dim; d<2*j0->dim; d++) {
         y(i) = Ktuple.elem(-1)->q(j1->qIndex+d) - (1.-tau*xi)*Ktuple.elem(-2)->q(j0->qIndex+d) - tau*b0;
 //      if(y(i)<0.) y(i)=0.; //hack: the finite integration may lead to negative values
-        if(&J) {
+        if(!!J) {
           J(i, Ktuple.N-1, j1->qIndex+d) = 1.;
           J(i, Ktuple.N-2, j0->qIndex+d) = -(1.-tau*xi);
           
@@ -76,6 +76,6 @@ void TM_BeliefTransition::phi(arr &y, arr &J, const WorldL &Ktuple) {
       }
     }
     
-  if(&J) J.reshape(y.N, Ktuple.N*Ktuple.elem(-1)->q.N);
+  if(!!J) J.reshape(y.N, Ktuple.N*Ktuple.elem(-1)->q.N);
   CHECK_EQ(i, y.N, "");
 }

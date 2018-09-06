@@ -131,7 +131,7 @@ struct qItselfConstraint:Feature {
   arr M;
   
   qItselfConstraint(uint singleQ, uint qN) { M=zeros(1,qN); M(0,singleQ)=1.; }
-  qItselfConstraint(const arr& _M=NoArr) { if(&_M) M=_M; }
+  qItselfConstraint(const arr& _M=NoArr) { if(!!_M) M=_M; }
   
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual uint dim_phi(const rai::KinematicWorld& G) {

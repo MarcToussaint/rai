@@ -20,23 +20,23 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple) {
   //acceleration (=impulse change) of object 1
   TM_Default pos1(TMT_pos, i);
   pos1.order=2;
-  pos1.Feature::phi(a1, (&J?J1:NoArr), Ktuple);
+  pos1.Feature::phi(a1, (!!J?J1:NoArr), Ktuple);
   
 //  {
 //    rai::KinematicWorld &K = *Ktuple.last();
 //    rai::Frame *a = K(i)->getUpwardLink();
 //    if(a->flags && a->flags & (1<<FL_kinematic)){
 //      pos1.order=1;
-//      pos1.Feature::phi(a1, (&J?J1:NoArr), Ktuple);
+//      pos1.Feature::phi(a1, (!!J?J1:NoArr), Ktuple);
 //      a1 *= -1.;
-//      if(&J) J1 *= -1.;
+//      if(!!J) J1 *= -1.;
 //    }
 //  }
 
   //acceleration (=impulse change) of object 2
   TM_Default pos2(TMT_pos, j);
   pos2.order=2;
-  pos2.Feature::phi(a2, (&J?J2:NoArr), Ktuple);
+  pos2.Feature::phi(a2, (!!J?J2:NoArr), Ktuple);
   
   //projection matrix onto 'table' to which object 2 will be attached
   arr P;
@@ -52,19 +52,19 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple) {
   
   //first constraint: R = m1 dv1 = - m2 dv2
   y = a1+a2;
-  if(&J) J = J1+J2;
+  if(!!J) J = J1+J2;
   
   if(P.N) {
     y = P*y;
-    if(&J) J = P*J;
+    if(!!J) J = P*J;
   }
   
   arr c,Jc;
   TM_PairCollision coll(i, j, TM_PairCollision::_vector, true);
-  coll.phi(c, (&J?Jc:NoArr), *Ktuple(-2));
+  coll.phi(c, (!!J?Jc:NoArr), *Ktuple(-2));
   uintA qdim = getKtupleDim(Ktuple);
   arr Jcc = zeros(3, qdim.last());
-  if(&J) Jcc.setMatrixBlock(Jc, 0, qdim(0));
+  if(!!J) Jcc.setMatrixBlock(Jc, 0, qdim(0));
   
 #if 1
   double z=.5;
@@ -78,25 +78,25 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple) {
     double sign = +1.;
     if(scalarProduct(c,R)>0.) sign = -1.; //HMM is that sign not bad?
     y.append(R - c*sign*scalarProduct(c,R));
-    if(&J) J.append(JR - sign*(c*~c*JR + c*~R*Jcc + scalarProduct(c,R)*Jcc));
+    if(!!J) J.append(JR - sign*(c*~c*JR + c*~R*Jcc + scalarProduct(c,R)*Jcc));
 #else
     normalizeWithJac(c, Jcc);
     normalizeWithJac(R, JR);
     y.append(c + R);
-    if(&J) J.append(Jcc + JR);
+    if(!!J) J.append(Jcc + JR);
 #endif
     
     // R is pointing exactly in the direction of c (redundant with above! But I need the inequality constraint R^T c > 0 here!!)
     //fully inelastic:
 //    y.append(scalarProduct(c, v2-v1));
-//    if(&J) J.append(~c*(Jv2-Jv1) + ~(v2-v1)*Jcc);
+//    if(!!J) J.append(~c*(Jv2-Jv1) + ~(v2-v1)*Jcc);
 
 //    normalizeWithJac(R, JR);
 //    y.append(scalarProduct(c,R) - 1.);
-//    if(&J) J.append(~c*JR + ~R*Jcc);
+//    if(!!J) J.append(~c*JR + ~R*Jcc);
   } else {
     y.append(zeros(3));
-    if(&J) J.append(zeros(3,JR.d1));
+    if(!!J) J.append(zeros(3,JR.d1));
   }
 #else
   arr d=a2-a1;
@@ -105,19 +105,19 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple) {
     normalizeWithJac(d, Jd);
     normalizeWithJac(c, Jcc);
     y.append(d + c);
-    if(&J) J.append(Jd + Jcc);
+    if(!!J) J.append(Jd + Jcc);
   } else {
     d = 1.;
     Jd.setZero();
     y.append(d);
-    if(&J) J.append(Jd);
+    if(!!J) J.append(Jd);
   }
 #endif
   
   checkNan(y);
-  if(&J) checkNan(J);
+  if(!!J) checkNan(J);
   CHECK_EQ(y.N, dim_phi(*Ktuple.last()), "");
-  if(&J) CHECK_EQ(J.d0, y.N, "");
+  if(!!J) CHECK_EQ(J.d0, y.N, "");
 }
 
 void TM_ImpulsExchange_weak::phi(arr &y, arr &J, const WorldL &Ktuple) {
@@ -128,21 +128,21 @@ void TM_ImpulsExchange_weak::phi(arr &y, arr &J, const WorldL &Ktuple) {
   
   TM_Default pos1(TMT_pos, i);
   pos1.order=2;
-  pos1.Feature::phi(a1, (&J?J1:NoArr), Ktuple);
+  pos1.Feature::phi(a1, (!!J?J1:NoArr), Ktuple);
   
   TM_Default pos2(TMT_pos, j);
   pos2.order=2;
-  pos2.Feature::phi(a2, (&J?J2:NoArr), Ktuple);
+  pos2.Feature::phi(a2, (!!J?J2:NoArr), Ktuple);
   
   arr c,Jc;
   TM_PairCollision coll(i, j, TM_PairCollision::_vector, true);
-  coll.phi(c, (&J?Jc:NoArr), *Ktuple(-2));
+  coll.phi(c, (!!J?Jc:NoArr), *Ktuple(-2));
   uintA qdim = getKtupleDim(Ktuple);
   arr Jcc = zeros(3, qdim.last());
-  if(&J) Jcc.setMatrixBlock(Jc, 0, qdim(0));
+  if(!!J) Jcc.setMatrixBlock(Jc, 0, qdim(0));
   
   y = ARR(1., 1., 1.);
-  if(&J) J = zeros(3, J1.d1);
+  if(!!J) J = zeros(3, J1.d1);
   
   arr d=a2-a1;
   arr Jd=J2-J1;
@@ -150,11 +150,11 @@ void TM_ImpulsExchange_weak::phi(arr &y, arr &J, const WorldL &Ktuple) {
     normalizeWithJac(d, Jd);
     normalizeWithJac(c, Jcc);
     y = d + c;
-    if(&J) J = Jd + Jcc;
+    if(!!J) J = Jd + Jcc;
   }
   
   checkNan(y);
-  if(&J) checkNan(J);
+  if(!!J) checkNan(J);
   CHECK_EQ(y.N, dim_phi(*Ktuple.last()), "");
-  if(&J) CHECK_EQ(J.d0, y.N, "");
+  if(!!J) CHECK_EQ(J.d0, y.N, "");
 }

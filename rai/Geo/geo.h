@@ -31,7 +31,8 @@ struct Vector {
   Vector(const arr& x) { CHECK_EQ(x.N,3, "");  set(x.p); }
   Vector(const arrf& x) { CHECK_EQ(x.N,3, "");  set(x(0), x(1), x(2)); }
   double *p() { return &x; }
-  
+  bool operator!() const;
+
   double& operator()(uint i);
   void set(double, double, double);
   void set(const arr& x) { CHECK_EQ(x.N,3, "");  set(x.p); }
@@ -176,7 +177,8 @@ struct Transformation {
   Transformation(const Transformation &t) : pos(t.pos), rot(t.rot) {}
   Transformation(const char* init) { setText(init); }
   void operator=(const Transformation& f) { memcpy(this, &f, sizeof(Transformation)); }
-  
+  bool operator!() const;
+
   Transformation& setZero();
   Transformation& setText(const char* txt);
   void set(double* p);

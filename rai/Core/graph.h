@@ -103,7 +103,8 @@ struct Graph : NodeL {
   Graph(std::initializer_list<const char*> list);
   Graph(const Graph& G);                                 ///< copy constructor
   ~Graph();
-  
+  bool operator!() const { return this==&NoGraph; } ///< check if NoGraph
+
   void clear();
   NodeL& list() { return *this; }
   
@@ -327,23 +328,23 @@ struct Node_typed : Node {
   Node_typed(Graph& container, const T& _value)
     : Node(typeid(T), &this->value, container), value(_value) {
     if(isGraph()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
-    if(&container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_new(this);
+    if(!!container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_new(this);
   }
   
   Node_typed(Graph& container, const StringA& keys, const NodeL& parents)
     : Node(typeid(T), &this->value, container, keys, parents), value() {
     if(isGraph()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
-    if(&container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_new(this);
+    if(!!container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_new(this);
   }
   
   Node_typed(Graph& container, const StringA& keys, const NodeL& parents, const T& _value)
     : Node(typeid(T), &this->value, container, keys, parents), value(_value) {
     if(isGraph()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
-    if(&container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_new(this);
+    if(!!container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_new(this);
   }
   
   virtual ~Node_typed() {
-    if(&container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_delete(this);
+    if(!!container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_delete(this);
   }
   
   virtual void copyValue(Node *it) {

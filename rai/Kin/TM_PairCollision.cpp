@@ -45,11 +45,11 @@ void TM_PairCollision::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
     K.jacobianPos(Jp2, &s2->frame, coll->p2);
     coll->kinDistance(y, J, Jp1, Jp2);
     y *= -1.;
-    if(&J) J *= -1.;
-    if(&J) checkNan(J);
+    if(!!J) J *= -1.;
+    if(!!J) checkNan(J);
   }else{
     arr Jp1, Jp2, Jx1, Jx2;
-    if(&J) {
+    if(!!J) {
       K.jacobianPos(Jp1, &s1->frame, coll->p1);
       K.jacobianPos(Jp2, &s2->frame, coll->p2);
       K.axesMatrix(Jx1, &s1->frame);

@@ -302,20 +302,20 @@ bool applySubstitutedLiteral(Graph& facts, Node* literal, const NodeL& subst, Gr
     if(!matches.N) {
       Node *newNode = createNewSubstitutedLiteral(facts, literal, subst, subst_scope);
       hasEffects=true;
-      if(&changes) newNode->newClone(changes);
+      if(!!changes) newNode->newClone(changes);
     } else {
       for(Node *m:matches) {
 #if 0
         if(m->isOfType<double>()) { //TODO: very special HACK: double add up instead of being assigned
           m->get<double>() += literal->get<double>();
           hasEffects=true;
-          if(&changes) m->newClone(changes);
+          if(!!changes) m->newClone(changes);
         } else
 #endif
           if(!m->hasEqualValue(literal)) {
             m->copyValue(literal);
             hasEffects=true;
-            if(&changes) m->newClone(changes);
+            if(!!changes) m->newClone(changes);
           }
       }
     }
@@ -324,7 +324,7 @@ bool applySubstitutedLiteral(Graph& facts, Node* literal, const NodeL& subst, Gr
     //delete all matching facts!
     for(Node *fact:matches) {
       hasEffects=true;
-      if(&changes) { Node *it=fact->newClone(changes); if(it->isOfType<bool>()) it->get<bool>()=false; }
+      if(!!changes) { Node *it=fact->newClone(changes); if(it->isOfType<bool>()) it->get<bool>()=false; }
       delete fact;
     }
   }
@@ -560,7 +560,7 @@ bool forwardChaining_FOL(Graph& state, NodeL& rules, Node* query, Graph& changes
         if(verbose>1) {
           if(e) {
             cout <<"NEW STATE = " <<state <<endl;
-            if(&changes) cout <<"CHANGES = " <<changes <<endl;
+            if(!!changes) cout <<"CHANGES = " <<changes <<endl;
           } else cout <<"DID NOT CHANGE STATE" <<endl;
         }
         newFacts |= e;

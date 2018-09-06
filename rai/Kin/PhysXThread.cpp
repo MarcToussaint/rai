@@ -54,9 +54,9 @@ struct PhysXThread : Thread {
   }
   
   void close() {
-    if(gl) delete gl; gl=NULL;
-    if(view) delete view; view=NULL;
-    delete px; px=NULL;
+    if(gl) delete gl;
+    if(view) delete view;
+    delete px;
   }
   
   void showInternalOpengl() {

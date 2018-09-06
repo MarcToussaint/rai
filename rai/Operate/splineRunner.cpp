@@ -26,7 +26,7 @@ arr SplineRunner::run(double dt, arr& qref_dot){
         phase += dt;
         double maxPhase = refSpline.times.last();
         arr q_ref = refSpline.eval(phase);
-        if(&qref_dot) qref_dot = refSpline.eval(phase, 1);
+        if(!!qref_dot) qref_dot = refSpline.eval(phase, 1);
         if(phase>maxPhase){ //clear spline buffer
             q_ref = refPoints[-1];
             stop();

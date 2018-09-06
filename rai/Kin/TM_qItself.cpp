@@ -52,12 +52,12 @@ void TM_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
     if(relative_q0) {
       for(rai::Joint* j: G.fwdActiveJoints) if(j->q0.N && j->qDim()==1) q(j->qIndex) -= j->q0.scalar();
     }
-    if(&J) J.setId(q.N);
+    if(!!J) J.setId(q.N);
   } else {
     uint n=dim_phi(G);
     q.resize(n);
     G.getJointState();
-    if(&J) J.resize(n, G.q.N).setZero();
+    if(!!J) J.resize(n, G.q.N).setZero();
     uint m=0;
     uint qIndex=0;
     for(uint b:selectedBodies) {
@@ -67,7 +67,7 @@ void TM_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
       for(uint k=0; k<j->qDim(); k++) {
         q(m) = G.q.elem(qIndex+k);
         if(relative_q0 && j->q0.N) q(m) -= j->q0(k);
-        if(&J) J(m, qIndex+k) = 1.;
+        if(!!J) J(m, qIndex+k) = 1.;
         m++;
       }
     }
@@ -143,7 +143,7 @@ void TM_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
   if(k==1)  y = (q_bar(1)-q_bar(0))/tau; //penalize velocity
   if(k==2)  y = (q_bar(2)-2.*q_bar(1)+q_bar(0))/tau2; //penalize acceleration
   if(k==3)  y = (q_bar(3)-3.*q_bar(2)+3.*q_bar(1)-q_bar(0))/tau3; //penalize jerk
-  if(&J) {
+  if(!!J) {
     uintA qidx(Ktuple.N);
     qidx(0)=0;
     for(uint i=1; i<Ktuple.N; i++) qidx(i) = qidx(i-1)+Ktuple(i-1)->q.N;
@@ -240,14 +240,14 @@ void TM_qZeroVels::phi(arr& y, arr& J, const WorldL& Ktuple) {
         }
       }
     }
-  if(!q_bar(0).N) { y.clear(); if(&J) J.clear(); return; }
+  if(!q_bar(0).N) { y.clear(); if(!!J) J.clear(); return; }
   J_bar(0).reshape(q_bar(0).N, J_bar(0).N/q_bar(0).N);
   J_bar(1).reshape(q_bar(1).N, J_bar(1).N/q_bar(1).N);
   
   if(k==1)  y = (q_bar(1)-q_bar(0))/tau; //penalize velocity
   if(k==2)  y = (q_bar(2)-2.*q_bar(1)+q_bar(0))/tau2; //penalize acceleration
   if(k==3)  y = (q_bar(3)-3.*q_bar(2)+3.*q_bar(1)-q_bar(0))/tau3; //penalize jerk
-  if(&J) {
+  if(!!J) {
     uintA qidx(Ktuple.N);
     qidx(0)=0;
     for(uint i=1; i<Ktuple.N; i++) qidx(i) = qidx(i-1)+Ktuple(i-1)->q.N;

@@ -102,7 +102,7 @@ void RTControlStep(
   //-- F/T sensor error
   //TODO: How to allow multiple Tasks? Upper AND Lower bounds simultaneously?
   //TODO(mt): don't distinguish between L and R -- all is just matrix equations..
-  if(&fL_errIntegral) {
+  if(!!fL_errIntegral) {
     if(!cmd.KiFTL.N) {    // no contact or Ki gain -> don't use the integral term
       fL_errIntegral = fL_errIntegral*0.;              // reset integral error
     } else {
@@ -110,7 +110,7 @@ void RTControlStep(
       u += cmd.KiFTL * fL_errIntegral;
     }
   }
-  if(&fR_errIntegral) {
+  if(!!fR_errIntegral) {
     if(!cmd.KiFTR.N) {    // no contact or Ki gain -> don't use the integral term
       fR_errIntegral = fR_errIntegral*0.;              // reset integral error
     } else {

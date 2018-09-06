@@ -277,7 +277,7 @@ Graph& Graph::newNode(const Nod& ni) {
 Node_typed<Graph>* Graph::newSubgraph(const StringA& keys, const NodeL& parents, const Graph& x) {
   Node_typed<Graph>* n = newNode<Graph>(keys, parents, Graph());
   DEBUG(CHECK(n->value.isNodeOfGraph && &n->value.isNodeOfGraph->container==this,""))
-      if(&x) n->value.copy(x);
+      if(!!x) n->value.copy(x);
   n->value.isDoubleLinked = isDoubleLinked;
   return n;
 }

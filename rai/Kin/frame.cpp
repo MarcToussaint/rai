@@ -101,14 +101,15 @@ void rai::Frame::getRigidSubFrames(FrameL &F) {
 }
 
 rai::Inertia &rai::Frame::getInertia() {
-  if(!inertia) inertia = new Inertia(*this); return *inertia;
+  if(!inertia) inertia = new Inertia(*this);
+  return *inertia;
 }
 
 rai::Frame *rai::Frame::getUpwardLink(rai::Transformation &Qtotal) {
-  if(&Qtotal) Qtotal.setZero();
+  if(!!Qtotal) Qtotal.setZero();
   Frame *p=this;
   while(p->parent && !p->joint) {
-    if(&Qtotal) Qtotal = p->Q*Qtotal;
+    if(!!Qtotal) Qtotal = p->Q*Qtotal;
     p=p->parent;
   }
   return p;
@@ -192,7 +193,7 @@ rai::Frame* rai::Frame::insertPreLink(const rai::Transformation &A) {
   parent=f;
   parent->outLinks.append(this);
   
-  if(&A) f->Q = A;
+  if(!!A) f->Q = A;
   
   return f;
 }

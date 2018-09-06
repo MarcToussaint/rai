@@ -39,7 +39,7 @@ void testJacobianInFile(const char* filename, const char* shape){
   {
     K.setJointState(x);
     K.kinematicsPos(y, J, a, NoVector);
-    if(&J) cout <<"J=" <<J <<endl;
+    if(!!J) cout <<"J=" <<J <<endl;
   } );
 
   checkJacobian(f, K.q, 1e-4);
@@ -72,7 +72,7 @@ void TEST(Kinematics){
           case RelVec: K.kinematicsRelVec(y,J,b,vec,b2); break;
           case RelRot: K.kinematicsRelRot(y,J,b,b2); break;
         }
-        //if(&J) cout <<"\nJ=" <<J <<endl;
+        //if(!!J) cout <<"\nJ=" <<J <<endl;
       } );
     }
     VectorFunction& operator()(){ return *this; }
@@ -248,7 +248,7 @@ void TEST(Contacts){
   VectorFunction f = [&G](arr& y, arr& J, const arr& x) -> void {
     G.setJointState(x);
     G.stepSwift();
-    G.kinematicsProxyCost(y, (&J?J:NoArr), .2);
+    G.kinematicsProxyCost(y, (!!J?J:NoArr), .2);
   };
 
   x = G.q;

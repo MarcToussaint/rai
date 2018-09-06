@@ -99,13 +99,21 @@ template<class T> rai::Array<T>::Array(uint D0, uint D1, std::initializer_list<T
 template<class T> rai::Array<T>::Array(uint D0, uint D1, uint D2, std::initializer_list<T> values):Array() { operator=(values); reshape(D0, D1, D2); }
 
 template<class T> rai::Array<T>::Array(rai::FileToken& f):Array() {
-  read(f.getIs());
+    read(f.getIs());
 }
+
+template<class T> rai::Array<T>::Array(SpecialArray* _special) : Array(){ special=_special; }
 
 template<class T> rai::Array<T>::~Array() {
   if(special) { delete special; special=NULL; }
   freeMEM();
 }
+
+template<class T> bool rai::Array<T>::operator!() const {
+    if(((char*)this)+1==(char*)1) return true;
+    return isNoArr<T>(*this);
+}
+
 
 //***** resize
 
@@ -3554,7 +3562,7 @@ template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x) 
 
 /// equal in size and all elements
 template<class T> bool operator==(const Array<T>& v, const Array<T>& w) {
-  if(!&w) return !&v; //if w==NoArr
+  if(!w) return !v; //if w==NoArr
   if(!samedim(v, w)) return false;
   const T *vp=v.p, *wp=w.p, *vstop=vp+v.N;
   for(; vp!=vstop; vp++, wp++)

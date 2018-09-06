@@ -110,8 +110,8 @@ double distanceToConvexHull(const arr &X, const arr &y, arr& distances, arr &pro
   arr Y;
   Y.referTo(y);
   if(y.nd==1) Y.reshape(1,Y.N);
-  if(&distances) distances.clear();
-  if(&projectedPoints) projectedPoints.clear();
+  if(!!distances) distances.clear();
+  if(!!projectedPoints) projectedPoints.clear();
   
   for(uint i=0; i<Y.d0; i++) {
     bestfacet = qh_findbest(Y[i].p, qh facet_list,
@@ -129,11 +129,11 @@ double distanceToConvexHull(const arr &X, const arr &y, arr& distances, arr &pro
     CHECK(length(y)>1e-10 || fabs(bestdist-bestfacet->offset)<1e-10, "inconsistent!");
     CHECK((isoutside && bestdist>-1e-10) || (!isoutside && bestdist<1e-10), "");
     
-    if(&distances) {
+    if(!!distances) {
       distances.append(bestdist);
     }
     
-    if(&projectedPoints) {
+    if(!!projectedPoints) {
       arr p = Y[i];
       arr n(bestfacet->normal, p.N);
       projectedPoints.append(p - bestdist*n);
@@ -346,7 +346,7 @@ arr getHull(const arr& V, uintA& T) {
     memmove(&Vnew(i, 0), vertex->point,  dim*sizeof(double));
     i++;
   }
-  if(&T) { //retrieve also the triangulation
+  if(!!T) { //retrieve also the triangulation
     T.resize(qh num_facets, dim);
     f=0;
     FORALLfacets {

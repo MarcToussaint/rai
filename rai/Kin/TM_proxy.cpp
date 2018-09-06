@@ -20,7 +20,7 @@ TM_Proxy::TM_Proxy(PTMtype _type,
 
 void TM_Proxy::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   y.resize(1).setZero();
-  if(&J) J.resize(1, G.getJointStateDimension()).setZero();
+  if(!!J) J.resize(1, G.getJointStateDimension()).setZero();
   
   switch(type) {
     case TMT_allP:
@@ -95,7 +95,7 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       //outputs a vector of collision meassures, with entry for each explicit pair
       shapes.reshape(shapes.N/2,2);
       y.resize(shapes.d0, 1);  y.setZero();
-      if(&J) { J.resize(shapes.d0,J.d1);  J.setZero(); }
+      if(!!J) { J.resize(shapes.d0,J.d1);  J.setZero(); }
       uint j;
       for(const rai::Proxy& p: G.proxies) {
         for(j=0; j<shapes.d0; j++) {
@@ -103,7 +103,7 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
             break;
         }
         if(j<shapes.d0) {
-          G.kinematicsProxyCost(y[j](), (&J?J[j]():NoArr), p, margin, true);
+          G.kinematicsProxyCost(y[j](), (!!J?J[j]():NoArr), p, margin, true);
 //          p.colorCode = 5;
         }
       }

@@ -582,25 +582,25 @@ inline SWIFT_Real SWIFT_Triple::Length( ) const
 { return sqrt( val[0] * val[0] + val[1] * val[1] + val[2] * val[2] ); }
 
 # ifndef min
-#define min(a,b) ((a)<(b)?(a):(b))
+#define SWIFT_min(a,b) ((a)<(b)?(a):(b))
 # endif
 
 # ifndef max
-#define max(a,b) ((a)>(b)?(a):(b))
+#define SWIFT_max(a,b) ((a)>(b)?(a):(b))
 # endif
 
 inline void SWIFT_Triple::Min( SWIFT_Triple& mn )
 {
-    mn.Set_X( min( mn.X(), val[0] ) );
-    mn.Set_Y( min( mn.Y(), val[1] ) );
-    mn.Set_Z( min( mn.Z(), val[2] ) );
+    mn.Set_X( SWIFT_min( mn.X(), val[0] ) );
+    mn.Set_Y( SWIFT_min( mn.Y(), val[1] ) );
+    mn.Set_Z( SWIFT_min( mn.Z(), val[2] ) );
 }
 
 inline void SWIFT_Triple::Max( SWIFT_Triple& mx )
 {
-    mx.Set_X( max( mx.X(), val[0] ) );
-    mx.Set_Y( max( mx.Y(), val[1] ) );
-    mx.Set_Z( max( mx.Z(), val[2] ) );
+    mx.Set_X( SWIFT_max( mx.X(), val[0] ) );
+    mx.Set_Y( SWIFT_max( mx.Y(), val[1] ) );
+    mx.Set_Z( SWIFT_max( mx.Z(), val[2] ) );
 }
 
 inline void SWIFT_Triple::Min_Max( SWIFT_Triple& mn, SWIFT_Triple& mx )

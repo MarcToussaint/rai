@@ -158,8 +158,8 @@ double PairCollision::GJK_sqrDistance() {
   // convert transformations to affine matrices
   arr T1,T2;
   rai::Array<double*> Thelp1, Thelp2;
-  if(&t1) {  T1=t1->getAffineMatrix();  T1.getCarray(Thelp1);  }
-  if(&t2) {  T2=t2->getAffineMatrix();  T2.getCarray(Thelp2);  }
+  if(!!t1) {  T1=t1->getAffineMatrix();  T1.getCarray(Thelp1);  }
+  if(!!t2) {  T2=t2->getAffineMatrix();  T2.getCarray(Thelp2);  }
   
   // call GJK
   simplex_point simplex;
@@ -233,7 +233,7 @@ void PairCollision::glDraw(OpenGL &) {
 void PairCollision::kinDistance(arr &y, arr &J,
                                 const arr &Jp1, const arr &Jp2) {
   y = ARR(distance-rad1-rad2);
-  if(&J) {
+  if(!!J) {
     arr Jdiff = Jp1 - Jp2;
     J = ~normal*Jdiff;
   }
@@ -243,7 +243,7 @@ void PairCollision::kinNormal(arr& y, arr& J,
                               const arr &Jp1, const arr &Jp2,
                               const arr &Jx1, const arr &Jx2) {
   y = normal;
-  if(&J) {
+  if(!!J) {
     J.resize(3, Jp1.d1).setZero();
     if(simplexType(1, 3)) {
       J = crossProduct(Jx2, y);
@@ -290,7 +290,7 @@ void PairCollision::kinVector(arr& y, arr& J,
                               const arr &Jp1, const arr &Jp2,
                               const arr &Jx1, const arr &Jx2) {
   y = p1 - p2;
-  if(&J) {
+  if(!!J) {
     J = Jp1 - Jp2;
     if(simplexType(1, 3)) {
       J = normal*(~normal*J);
@@ -329,7 +329,7 @@ void PairCollision::kinVector(arr& y, arr& J,
     double rad=rad1+rad2;
     double eps = 1e-6;
     double fac = (distance-rad)/(distance+eps);
-    if(&J) {
+    if(!!J) {
       arr d_fac = ((1.-fac)/(distance+eps)) *((~normal)*J);
       J = J*fac + y*d_fac;
       checkNan(J);
@@ -341,7 +341,7 @@ void PairCollision::kinVector(arr& y, arr& J,
 
 void PairCollision::kinPointP1(arr& y, arr& J, const arr& Jp1, const arr& Jp2, const arr& Jx1, const arr& Jx2){
   y = p1;
-  if(&J) {
+  if(!!J) {
     J = Jp1;
     if(simplexType(3, 1)) {
       J = Jp2;
@@ -374,7 +374,7 @@ void PairCollision::kinPointP1(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
 
 void PairCollision::kinPointP2(arr& y, arr& J, const arr& Jp1, const arr& Jp2, const arr& Jx1, const arr& Jx2){
   y = p2;
-  if(&J) {
+  if(!!J) {
     J = Jp2;
     if(simplexType(1, 3)) {
       J = Jp1;
@@ -407,7 +407,7 @@ void PairCollision::kinPointP2(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
 
 void PairCollision::kinCenter(arr& y, arr& J, const arr& Jp1, const arr& Jp2, const arr& Jx1, const arr& Jx2){
   y = .5 * (p1 + p2 + (rad2-rad1)*normal);
-  if(&J){
+  if(!!J){
     arr JP1, JP2, Jn, yy;
     kinPointP1(yy, JP1, Jp1, Jp2, Jx1, Jx2);
     kinPointP2(yy, JP2, Jp1, Jp2, Jx1, Jx2);

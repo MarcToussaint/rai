@@ -57,7 +57,8 @@ const char* arrayBrackets="  ";
 //===========================================================================
 }
 
-arr& NoArr = *((arr*)NULL);
+arr __NoArr(new SpecialArray(SpecialArray::ST_NoArr));
+arr& NoArr = *((arr*)&__NoArr);
 arrA& NoArrA = *((arrA*)NULL);
 uintA& NoUintA = *((uintA*)NULL);
 byteA& NoByteA = *((byteA*)NULL);
@@ -171,7 +172,7 @@ void normalizeWithJac(arr& y, arr& J) {
   double l = length(y);
   CHECK(l>1e-10, "can't normalize");
   y /= l;
-  if(&J && J.N){
+  if(!!J && J.N){
     J -= y*(~y*J); //same as (y^y)*J;
     J /= l;
   }
@@ -399,13 +400,13 @@ void inverse_SymPosDef(arr& Ainv, const arr& A) {
 arr pseudoInverse(const arr& A, const arr& Winv, double eps) {
   arr AAt;
   arr At = ~A;
-  if(&Winv) {
+  if(!!Winv) {
     if(Winv.nd==1) AAt = A*(Winv%At); else AAt = A*Winv*At;
   } else AAt = A*At;
   if(eps) for(uint i=0; i<AAt.d0; i++) AAt(i,i) += eps;
   arr AAt_inv = inverse_SymPosDef(AAt);
   arr Ainv = At * AAt_inv;
-  if(&Winv) { if(Winv.nd==1) Ainv = Winv%Ainv; else Ainv = Winv*Ainv; }
+  if(!!Winv) { if(Winv.nd==1) Ainv = Winv%Ainv; else Ainv = Winv*Ainv; }
   return Ainv;
 }
 
@@ -1520,7 +1521,7 @@ void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs) {
   Evals.resize(N);
   work.resize(10*(3*N));
   integer info, wn=work.N;
-  if(&Evecs) {
+  if(!!Evecs) {
     dsyev_((char*)"V", (char*)"L", &N, symmAcopy.p, &N, Evals.p, work.p, &wn, &info);
     Evecs = symmAcopy;
   } else {
@@ -2066,6 +2067,8 @@ Eigen::MatrixXd conv_arr2eigen(const arr& in) {
         out(i, j) = in(i, j);
     return out;
   }
+  NIY;
+  return Eigen::MatrixXd(1,1);
 }
 
 #endif

@@ -37,7 +37,7 @@ void angVel_base(const rai::KinematicWorld& K0, rai::KinematicWorld& K1, uint i,
   J1 = J1 * FLIP;
   cout <<dq <<'\n' <<J0 <<J1 <<endl;
 //  for(uint i=0;i<J1.d0;i++) J1(i,0) *= -1.;
-  if(&J){
+  if(!!J){
     if(Ktuple.N==3){
       J = catCol(zeros(y.N, Ktuple(-3)->q.N), (J1-J0)*Ja, J0*Jb);
     }else{
@@ -52,7 +52,7 @@ void angVel_base(const rai::KinematicWorld& K0, rai::KinematicWorld& K1, uint i,
   if(f1->joint->type==rai::JT_free){
     uint i=f1->joint->qIndex;
     y = Ktuple(-1)->q({i+4, i+6});
-    if(&J){
+    if(!!J){
       J.resize(3, Ktuple(-1)->q.N).setZero();
       for(uint j=0;j<3;j++) J(j,i+4+j) = 1.;
       if(Ktuple.N==3){
@@ -73,7 +73,7 @@ void angVel_base(const rai::KinematicWorld& K0, rai::KinematicWorld& K1, uint i,
 
   checkNan(y);
 
-  if(&J){
+  if(!!J){
     J = catCol((J1-J0)*Ja, J0*Jb);
     checkNan(J);
   }
@@ -84,7 +84,7 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
     arr J_tmp;
     angVel_base(*Ktuple(-2), *Ktuple(-1), i, y, J_tmp);
 
-    if(&J){
+    if(!!J){
       if(Ktuple.N==3) J = catCol(zeros(y.N, Ktuple(-3)->q.N), J_tmp);
       else J=J_tmp;
     }
@@ -93,7 +93,7 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
     double tau = Ktuple(-1)->frames(0)->time;
     CHECK_GE(tau, 1e-10, "");
     y /= tau;
-    if(&J){
+    if(!!J){
       J /=tau;
       arr Jtau;  Ktuple(-1)->jacobianTime(Jtau, Ktuple(-1)->frames(0));  expandJacobian(Jtau, Ktuple, -1);
       J += (-1./tau)*y*Jtau;
@@ -116,7 +116,7 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
     y /= tau2;
 #endif
 
-    if(&J){
+    if(!!J){
       CHECK_EQ(Ktuple.N, 3,"");
       uint d0=Ktuple(-3)->q.N;
       uint d1=Ktuple(-2)->q.N;
@@ -147,7 +147,7 @@ uint TM_AngVel::dim_phi(const rai::KinematicWorld &G){ return 3; }
 
 void TM_LinAngVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   y.resize(6);
-  if(&J) J.resize(6, getKtupleDim(Ktuple).last()).setZero();
+  if(!!J) J.resize(6, getKtupleDim(Ktuple).last()).setZero();
 
   if(Ktuple.elem(-1)->frames(i)->flags & (1<<FL_impulseExchange)){
     return;
@@ -159,11 +159,11 @@ void TM_LinAngVel::phi(arr& y, arr& J, const WorldL& Ktuple){
 
   TM_Default lin(TMT_pos, i);
   lin.order=order;
-  lin.Feature::phi(y({0,2})(), (&J?J({0,2})():NoArr), Ktuple);
+  lin.Feature::phi(y({0,2})(), (!!J?J({0,2})():NoArr), Ktuple);
 
   TM_AngVel ang(i);
   ang.order=order;
-  ang.phi(y({3,5})(), (&J?J({3,5})():NoArr), Ktuple);
+  ang.phi(y({3,5})(), (!!J?J({3,5})():NoArr), Ktuple);
 }
 
 uint TM_LinAngVel::dim_phi(const rai::KinematicWorld& G){ return 6; }

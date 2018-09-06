@@ -13,7 +13,7 @@
 //===========================================================================
 
 void Objective::setCostSpecs(int fromStep, int toStep, const arr& _target, double _prec) {
-  if(&_target) target = _target; else target.clear();
+  if(!!_target) target = _target; else target.clear();
   CHECK_GE(fromStep, 0, "");
   CHECK_GE(toStep, fromStep, "");
   prec.resize(toStep+1).setZero();
@@ -45,7 +45,7 @@ void Objective::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, 
 }
 
 void Objective::setCostSpecsDense(intA _vars, const arr& _target, double _prec) {
-  if(&_target) target = _target; else target.clear();
+  if(!!_target) target = _target; else target.clear();
   prec = ARR(_prec);
   vars = _vars;
   vars.reshape(1, vars.N);

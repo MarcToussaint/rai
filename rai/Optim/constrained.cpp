@@ -23,7 +23,7 @@ void PhaseOneProblem::phi(arr& meta_phi, arr& meta_J, arr& meta_H, ObjectiveType
   // for(uint i=0;i<g.N;i++) meta_g(i) = g(i)-x.last();  //slack constraints
   // meta_g.last() = -x.last();                                  //last constraint
   
-  // if(&meta_Jg){
+  // if(!!meta_Jg){
   //   meta_Jg.resize(meta_g.N, x.N);  meta_Jg.setZero();
   //   meta_Jg(0,x.N-1) = 1.; //cost
   //   for(uint i=0;i<g.N;i++) for(uint j=0;j<x.N-1;j++) meta_Jg(i,j) = Jg(i,j);
@@ -142,7 +142,7 @@ bool OptConstrained::step() {
     case noMethod: HALT("need to set method before");  break;
   }
   
-  if(&dual) dual=L.lambda;
+  if(!!dual) dual=L.lambda;
   
   its++;
   

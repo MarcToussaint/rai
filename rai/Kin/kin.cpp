@@ -282,6 +282,8 @@ void rai::KinematicWorld::copy(const rai::KinematicWorld& K, bool referenceSwift
   calc_activeSets();
 }
 
+bool rai::KinematicWorld::operator!() const { return this==&NoWorld; }
+
 /** @brief KINEMATICS: given the (absolute) frames of root nodes and the relative frames
     on the edges, this calculates the absolute frames of all other nodes (propagating forward
     through trees and testing consistency of loops). */
@@ -462,7 +464,7 @@ uint rai::KinematicWorld::getJointStateDimension() const {
 void rai::KinematicWorld::getJointState(arr &_q, arr& _qdot) const {
   if(!q.nd)((KinematicWorld*)this)->calc_q();
   _q=q;
-  if(&_qdot) {
+  if(!!_qdot) {
     _qdot=qdot;
     if(!_qdot.N) _qdot.resizeAs(q).setZero();
   }
@@ -591,9 +593,9 @@ void rai::KinematicWorld::setJointState(const arr& _q, const arr& _qdot) {
   
   uint N=getJointStateDimension();
   CHECK_EQ(_q.N, N, "wrong joint state dimensionalities");
-  if(&_qdot) CHECK_EQ(_qdot.N, N, "wrong joint velocity dimensionalities");
+  if(!!_qdot) CHECK_EQ(_qdot.N, N, "wrong joint velocity dimensionalities");
   q=_q;
-  if(&_qdot) qdot=_qdot; else qdot.clear();
+  if(!!_qdot) qdot=_qdot; else qdot.clear();
   
   calc_Q_from_q();
   
@@ -672,16 +674,16 @@ void rai::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const rai::Vec
   
   if(!a) {
     RAI_MSG("WARNING: calling kinematics for NULL body");
-    if(&y) y.resize(3).setZero();
-    if(&J) J.resize(3, getJointStateDimension()).setZero();
+    if(!!y) y.resize(3).setZero();
+    if(!!J) J.resize(3, getJointStateDimension()).setZero();
     return;
   }
 
   //get position
   rai::Vector pos_world = a->X.pos;
-  if(&rel && !rel.isZero) pos_world += a->X.rot*rel;
-  if(&y) y = conv_vec2arr(pos_world); //return the output
-  if(!&J) return; //do not return the Jacobian
+  if(!!rel && !rel.isZero) pos_world += a->X.rot*rel;
+  if(!!y) y = conv_vec2arr(pos_world); //return the output
+  if(!J) return; //do not return the Jacobian
   
   jacobianPos(J, a, pos_world);
 }
@@ -807,13 +809,13 @@ void rai::KinematicWorld::jacobianTime(arr& J, rai::Frame *a) const {
   WARNING: this does not check if s is actually in the kinematic chain from root to b.
 */
 void rai::KinematicWorld::kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const rai::Vector& rel, Frame *s) const {
-  if(!b && &J) { J.resize(3, getJointStateDimension()).setZero();  return; }
+  if(!b && !!J) { J.resize(3, getJointStateDimension()).setZero();  return; }
   
   //get position
   rai::Vector pos_world = b->X.pos;
-  if(&rel) pos_world += b->X.rot*rel;
-  if(&y) y = conv_vec2arr(pos_world); //return the output
-  if(!&J) return; //do not return the Jacobian
+  if(!!rel) pos_world += b->X.rot*rel;
+  if(!!y) y = conv_vec2arr(pos_world); //return the output
+  if(!J) return; //do not return the Jacobian
   
   //get Jacobian
   J.resize(3, 6).setZero();
@@ -910,10 +912,10 @@ void rai::KinematicWorld::kinematicsVec(arr& y, arr& J, Frame *a, const rai::Vec
   CHECK_EQ(&a->K, this, "");
   //get the vectoreference frame
   rai::Vector vec_world;
-  if(&vec) vec_world = a->X.rot*vec;
+  if(!!vec) vec_world = a->X.rot*vec;
   else     vec_world = a->X.rot.getZ();
-  if(&y) y = conv_vec2arr(vec_world); //return the vec
-  if(&J) {
+  if(!!y) y = conv_vec2arr(vec_world); //return the vec
+  if(!!J) {
     arr A;
     axesMatrix(A, a);
     J = crossProduct(A, conv_vec2arr(vec_world));
@@ -926,8 +928,8 @@ void rai::KinematicWorld::kinematicsVec(arr& y, arr& J, Frame *a, const rai::Vec
 void rai::KinematicWorld::kinematicsQuat(arr& y, arr& J, Frame *a) const { //TODO: allow for relative quat
   CHECK_EQ(&a->K, this, "");
   rai::Quaternion rot_a = a->X.rot;
-  if(&y) y = conv_quat2arr(rot_a); //return the vec
-  if(&J) {
+  if(!!y) y = conv_quat2arr(rot_a); //return the vec
+  if(!!J) {
     arr A;
     axesMatrix(A, a);
     J.resize(4, A.d1);
@@ -1003,7 +1005,7 @@ void rai::KinematicWorld::kinematicsRelPos(arr& y, arr& J, Frame *a, const rai::
   kinematicsPos(y2, J2, b, vec2);
   arr Rinv = ~(b->X.rot.getArr());
   y = Rinv * (y1 - y2);
-  if(&J) {
+  if(!!J) {
     arr A;
     axesMatrix(A, b);
     J = Rinv * (J1 - J2 - crossProduct(A, y1 - y2));
@@ -1017,7 +1019,7 @@ void rai::KinematicWorld::kinematicsRelVec(arr& y, arr& J, Frame *a, const rai::
 //  kinematicsVec(y2, J2, b2, vec2);
   arr Rinv = ~(b->X.rot.getArr());
   y = Rinv * y1;
-  if(&J) {
+  if(!!J) {
     arr A;
     axesMatrix(A, b);
     J = Rinv * (J1 - crossProduct(A, y1));
@@ -1027,8 +1029,8 @@ void rai::KinematicWorld::kinematicsRelVec(arr& y, arr& J, Frame *a, const rai::
 /// The position vec1, attached to b1, relative to the frame of b2 (plus vec2)
 void rai::KinematicWorld::kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) const {
   rai::Quaternion rot_b = a->X.rot;
-  if(&y) y = conv_vec2arr(rot_b.getVec());
-  if(&J) {
+  if(!!y) y = conv_vec2arr(rot_b.getVec());
+  if(!!J) {
     double phi=acos(rot_b.w);
     double s=2.*phi/sin(phi);
     double ss=-2./(1.-rai::sqr(rot_b.w)) * (1.-phi/tan(phi));
@@ -1041,7 +1043,7 @@ void rai::KinematicWorld::kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) c
 
 void rai::KinematicWorld::kinematicsContactPosition(arr& y, arr& J, rai::Contact *c) const{
   y = c->position;
-  if(&J){
+  if(!!J){
     J = zeros(3, q.N);
     for(uint i=0;i<3;i++) J(i, c->qIndex+i) = 1.;
   }
@@ -1049,7 +1051,7 @@ void rai::KinematicWorld::kinematicsContactPosition(arr& y, arr& J, rai::Contact
 
 void rai::KinematicWorld::kinematicsContactForce(arr& y, arr& J, rai::Contact *c) const{
   y = c->force;
-  if(&J){
+  if(!!J){
     J = zeros(3, q.N);
     for(uint i=0;i<3;i++) J(i, c->qIndex+3+i) = 1.;
   }
@@ -2008,38 +2010,38 @@ void rai::KinematicWorld::contactsToForces(double hook, double damp) {
 
 void rai::KinematicWorld::kinematicsPenetrations(arr& y, arr& J, bool penetrationsOnly, double activeMargin) const {
   y.resize(proxies.N).setZero();
-  if(&J) J.resize(y.N, getJointStateDimension()).setZero();
+  if(!!J) J.resize(y.N, getJointStateDimension()).setZero();
   uint i=0;
   for(const Proxy& p:proxies) {
     if(!p.coll)((Proxy*)&p)->calc_coll(*this);
     
     arr Jp1, Jp2;
-    if(&J) {
+    if(!!J) {
       jacobianPos(Jp1, p.a, p.coll->p1);
       jacobianPos(Jp2, p.b, p.coll->p2);
     }
     
     arr y_dist, J_dist;
-    p.coll->kinDistance(y_dist, (&J?J_dist:NoArr), Jp1, Jp2);
+    p.coll->kinDistance(y_dist, (!!J?J_dist:NoArr), Jp1, Jp2);
     
     if(!penetrationsOnly || y_dist.scalar()<activeMargin) {
       y(i) = -y_dist.scalar();
-      if(&J) J[i] = -J_dist;
+      if(!!J) J[i] = -J_dist;
     }
   }
 }
 
 void rai::KinematicWorld::kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin, bool useCenterDist, bool addValues) const {
   y.resize(1);
-  if(&J) J.resize(1, getJointStateDimension());
-  if(!addValues) { y.setZero();  if(&J) J.setZero(); }
+  if(!!J) J.resize(1, getJointStateDimension());
+  if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
   
 //  //costs
 //  if(a->type==rai::ST_sphere && b->type==rai::ST_sphere){
 //    rai::Vector diff=a->X.pos-b->X.pos;
 //    double d = diff.length() - a->size(3) - b->size(3);
 //    y(0) = d;
-//    if(&J){
+//    if(!!J){
 //      arr Jpos;
 //      arr normal = conv_vec2arr(diff)/diff.length(); normal.reshape(1, 3);
 //      kinematicsPos(NoArr, Jpos, a->body);  J += (normal*Jpos);
@@ -2048,7 +2050,7 @@ void rai::KinematicWorld::kinematicsProxyDist(arr& y, arr& J, const Proxy& p, do
 //    return;
 //  }
   y(0) = p.d;
-  if(&J) {
+  if(!!J) {
     arr Jpos;
     rai::Vector arel, brel;
     if(p.d>0.) { //we have a gradient on pos only when outside
@@ -2070,36 +2072,36 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   if(!p.coll) ((Proxy*)&p)->calc_coll(*this);
   
   arr Jp1, Jp2;
-  if(&J) {
+  if(!!J) {
     jacobianPos(Jp1, p.a, p.coll->p1);
     jacobianPos(Jp2, p.b, p.coll->p2);
   }
   
   arr y_dist, J_dist;
-  p.coll->kinDistance(y_dist, (&J?J_dist:NoArr), Jp1, Jp2);
+  p.coll->kinDistance(y_dist, (!!J?J_dist:NoArr), Jp1, Jp2);
   
   y.resize(1);
-  if(&J) J.resize(1, getJointStateDimension());
-  if(!addValues) { y.setZero();  if(&J) J.setZero(); }
+  if(!!J) J.resize(1, getJointStateDimension());
+  if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
   
   if(y_dist.scalar()>margin) return;
   y += margin-y_dist.scalar();
-  if(&J)  J -= J_dist;
+  if(!!J)  J -= J_dist;
   
 #else
   CHECK(a->shape->mesh_radius>0.,"");
   CHECK(b->shape->mesh_radius>0.,"");
   
   y.resize(1);
-  if(&J) J.resize(1, getJointStateDimension());
-  if(!addValues) { y.setZero();  if(&J) J.setZero(); }
+  if(!!J) J.resize(1, getJointStateDimension());
+  if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
   
   //costs
   if(a->shape->type()==rai::ST_sphere && b->shape->type()==rai::ST_sphere) {
     rai::Vector diff=a->X.pos-b->X.pos;
     double d = diff.length() - a->shape->size(3) - b->shape->size(3);
     y(0) = 1. - d/margin;
-    if(&J) {
+    if(!!J) {
       arr Jpos;
       arr normal = conv_vec2arr(diff)/diff.length(); normal.reshape(1, 3);
       kinematicsPos(NoArr, Jpos, a);  J -= 1./margin*(normal*Jpos);
@@ -2117,7 +2119,7 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   y(0) += d1*d2;
   
   //Jacobian
-  if(&J) {
+  if(!!J) {
     arr Jpos;
     rai::Vector arel, brel;
     if(p->d>0.) { //we have a gradient on pos only when outside
@@ -2150,7 +2152,7 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
 /// measure (=scalar kinematics) for the contact cost summed over all bodies
 void rai::KinematicWorld::kinematicsProxyCost(arr &y, arr& J, double margin) const {
   y.resize(1).setZero();
-  if(&J) J.resize(1, getJointStateDimension()).setZero();
+  if(!!J) J.resize(1, getJointStateDimension()).setZero();
   for(const Proxy& p:proxies) { /*if(p.d<margin)*/
     kinematicsProxyCost(y, J, p, margin, true);
   }
@@ -2160,34 +2162,34 @@ void rai::KinematicWorld::kinematicsContactCost(arr& y, arr& J, const Contact* c
   NIY;
 //  Feature *map = c->getTM_ContactNegDistance();
 //  arr y_dist, J_dist;
-//  map->phi(y_dist, (&J?J_dist:NoArr), *this);
+//  map->phi(y_dist, (!!J?J_dist:NoArr), *this);
 //  y_dist *= -1.;
-//  if(&J) J_dist *= -1.;
+//  if(!!J) J_dist *= -1.;
   
 //  y.resize(1);
-//  if(&J) J.resize(1, getJointStateDimension());
-//  if(!addValues) { y.setZero();  if(&J) J.setZero(); }
+//  if(!!J) J.resize(1, getJointStateDimension());
+//  if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
   
 //  if(y_dist.scalar()>margin) return;
 //  y += margin-y_dist.scalar();
-//  if(&J)  J -= J_dist;
+//  if(!!J)  J -= J_dist;
 }
 
 void rai::KinematicWorld::kinematicsContactCost(arr &y, arr& J, double margin) const {
   y.resize(1).setZero();
-  if(&J) J.resize(1, getJointStateDimension()).setZero();
+  if(!!J) J.resize(1, getJointStateDimension()).setZero();
   for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f) {
         kinematicsContactCost(y, J, c, margin, true);
       }
 }
 
 void rai::KinematicWorld::kinematicsProxyConstraint(arr& g, arr& J, const Proxy& p, double margin) const {
-  if(&J) J.resize(1, getJointStateDimension()).setZero();
+  if(!!J) J.resize(1, getJointStateDimension()).setZero();
   
   g.resize(1) = margin - p.d;
   
   //Jacobian
-  if(&J) {
+  if(!!J) {
     arr Jpos, normal;
     rai::Vector arel,brel;
     if(p.d>0.) { //we have a gradient on pos only when outside
@@ -2217,7 +2219,7 @@ void rai::KinematicWorld::kinematicsContactConstraints(arr& y, arr &J) const {
   y.clear();
   for(const rai::Proxy& p: proxies) y.append(p.d);
   
-  if(!&J) return; //do not return the Jacobian
+  if(!J) return; //do not return the Jacobian
   
   rai::Vector arel, brel;
   for(const rai::Proxy& p: proxies) {
@@ -2237,14 +2239,14 @@ void rai::KinematicWorld::kinematicsContactConstraints(arr& y, arr &J) const {
 
 void rai::KinematicWorld::kinematicsLimitsCost(arr &y, arr &J, const arr& limits, double margin) const {
   y.resize(1).setZero();
-  if(&J) J.resize(1, getJointStateDimension()).setZero();
+  if(!!J) J.resize(1, getJointStateDimension()).setZero();
   double d;
   for(uint i=0; i<limits.d0; i++) if(limits(i,1)>limits(i,0)) { //only consider proper limits (non-zero interval)
       double m = margin*(limits(i,1)-limits(i,0));
       d = limits(i, 0) + m - q(i); //lo
-      if(d>0.) {  y(0) += d/m;  if(&J) J(0, i)-=1./m;  }
+      if(d>0.) {  y(0) += d/m;  if(!!J) J(0, i)-=1./m;  }
       d = q(i) - limits(i, 1) + m; //up
-      if(d>0.) {  y(0) += d/m;  if(&J) J(0, i)+=1./m;  }
+      if(d>0.) {  y(0) += d/m;  if(!!J) J(0, i)+=1./m;  }
     }
 }
 
@@ -3361,6 +3363,8 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
 };
 
 void editConfiguration(const char* filename, rai::KinematicWorld& K, OpenGL &gl) {
+  K.checkConsistency();
+
 //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
   bool exit=false;
 //  gl.addHoverCall(new EditConfigurationHoverCall(K));

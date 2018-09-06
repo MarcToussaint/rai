@@ -13,9 +13,9 @@ TM_Default::TM_Default(TM_DefaultType _type,
                        int jShape, const rai::Vector& _jvec,
                        const arr& _params):type(_type), i(iShape), j(jShape) {
                        
-  if(&_ivec) ivec=_ivec; else ivec.setZero();
-  if(&_jvec) jvec=_jvec; else jvec.setZero();
-  if(&_params) params=_params;
+  if(!!_ivec) ivec=_ivec; else ivec.setZero();
+  if(!!_jvec) jvec=_jvec; else jvec.setZero();
+  if(!!_params) params=_params;
 }
 
 TM_Default::TM_Default(TM_DefaultType _type, const rai::KinematicWorld &G,
@@ -26,9 +26,9 @@ TM_Default::TM_Default(TM_DefaultType _type, const rai::KinematicWorld &G,
   rai::Shape *b = jShapeName ? G.getShapeByName(jShapeName):NULL;
   if(a) i=a->index;
   if(b) j=b->index;
-  if(&_ivec) ivec=_ivec; else ivec.setZero();
-  if(&_jvec) jvec=_jvec; else jvec.setZero();
-  if(&_params) params=_params;
+  if(!!_ivec) ivec=_ivec; else ivec.setZero();
+  if(!!_jvec) jvec=_jvec; else jvec.setZero();
+  if(!!_params) params=_params;
 }
 
 void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
@@ -49,7 +49,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       rai::Vector pj = body_j->X * vec_j;
       rai::Vector c = body_j->X.rot / (pi-pj);
       y = conv_vec2arr(c);
-      if(&J) {
+      if(!!J) {
         arr Ji, Jj, JRj;
         G.kinematicsPos(NoArr, Ji, body_i, &vec_i);
         G.kinematicsPos(NoArr, Jj, body_j, &vec_j);
@@ -90,13 +90,13 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       G.kinematicsVec(zi, Ji, body_i, &vec_i);
       if(body_j==NULL) {
         zj = conv_vec2arr(vec_j);
-        if(&J) { Jj.resizeAs(Ji); Jj.setZero(); }
+        if(!!J) { Jj.resizeAs(Ji); Jj.setZero(); }
       } else {
         G.kinematicsVec(zj, Jj, body_j, &vec_j);
       }
       y.resize(1);
       y(0) = scalarProduct(zi, zj);
-      if(&J) {
+      if(!!J) {
         J = ~zj * Ji + ~zi * Jj;
         J.reshape(1, G.getJointStateDimension());
       }
@@ -110,22 +110,22 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       break;
     case TMT_qItself: {
       G.getJointState(y);
-      if(&J) J.setId(y.N);
+      if(!!J) J.setId(y.N);
     } break;
     case TMT_qLinear: {
       arr q;
       G.getJointState(q);
       if(params.N==q.N) {
-        y=params%q; if(&J) J.setDiag(params);
+        y=params%q; if(!!J) J.setDiag(params);
       } else {
-        y=params*q; if(&J) J=params;
+        y=params*q; if(!!J) J=params;
       }
     } break;
     case TMT_qSquared: {
       arr q;
       G.getJointState(q);
       y.resize(1);  y(0) = scalarProduct(params, q, q);
-      if(&J) {
+      if(!!J) {
         J = params * q;
         J *= (double)2.;
         J.reshape(1, q.N);
@@ -135,14 +135,14 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       arr q;
       G.getJointState(q);
       y.resize(1);  y(0)=q(-i);
-      if(&J) {
+      if(!!J) {
         J.resize(1, G.getJointStateDimension());
         J.setZero();
         J(0, -i) = 1.;
       }
     } break;
     case TMT_qLimits:   if(!params.N) params=G.getLimits();  G.kinematicsLimitsCost(y, J, params);  break;
-    case TMT_com:       G.getCenterOfMass(y);     y.resizeCopy(2); if(&J) { G.getComGradient(J);  J.resizeCopy(2, J.d1); }  break;
+    case TMT_com:       G.getCenterOfMass(y);     y.resizeCopy(2); if(!!J) { G.getComGradient(J);  J.resizeCopy(2, J.d1); }  break;
     case TMT_coll:      G.kinematicsProxyCost(y, J, params(0));  break;
     case TMT_colCon:    G.kinematicsContactConstraints(y, J);  break;
     case TMT_skin: {
@@ -150,7 +150,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       rai::Vector vi;
       y.resize(params.N);
       y.setZero();
-      if(&J) {
+      if(!!J) {
         J.clear();
         for(uint k=0; k<params.N; k++) {
           uint l=(uint)params(k);

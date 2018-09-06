@@ -43,7 +43,7 @@ void TEST(QuaternionJacobian){
 //      double l = length(x);
       rai::Quaternion q(x);
       y = conv_vec2arr(q*z);
-      if(&J){ J = ~(q.getMatrixJacobian() * conv_vec2arr(z)); }
+      if(!!J){ J = ~(q.getMatrixJacobian() * conv_vec2arr(z)); }
     };
 
     arr x = randn(4);

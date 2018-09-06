@@ -24,17 +24,17 @@ arr ridgeRegression(const arr& X, const arr& y, double lambda, arr& bayesSigma, 
   
   CHECK((y.nd==1 || y.nd==2) && X.nd==2 && y.d0==X.d0, "wrong dimensions");
   arr Xt = ~X;
-  if(&weighted) Xt = Xt % weighted;
+  if(!!weighted) Xt = Xt % weighted;
   arr XtX = Xt*X;
   for(uint i=1; i<XtX.d0; i++) XtX(i,i) += lambda;
   XtX(0, 0) += 1e-10; //don't regularize beta_0 !!
   arr beta = lapack_Ainv_b_sym(XtX, Xt*y);
-  if(&bayesSigma) {
+  if(!!bayesSigma) {
     lapack_inverseSymPosDef(bayesSigma, XtX);
     double sigma2 = sqrt(sumOfSqr(X*beta-y)/(X.d0-1));
     bayesSigma *= sigma2;
   }
-  if(&zScores) {
+  if(!!zScores) {
     zScores.resize(beta.N);
     double sigma = sumOfSqr(X*beta-y)/(y.N - X.d1 - 1.);
     arr XtXinv;
@@ -61,7 +61,7 @@ RidgeRegression::RidgeRegression(const arr& X, const arr& y, double lambda, cons
   CHECK((y.nd==1 || y.nd==2) && X.nd==2 && y.d0==X.d0, "wrong dimensions");
   
   arr Xt = ~X;
-  if(&weighted) Xt = Xt % weighted;
+  if(!!weighted) Xt = Xt % weighted;
   XtX_I = Xt*X;
   for(uint i=1; i<XtX_I.d0; i++) XtX_I(i,i) += lambda;
   XtX_I(0, 0) += 1e-10; //don't regularize beta_0 !!
@@ -95,7 +95,7 @@ arr RidgeRegression::getMultiOutputSquaredErrors(const arr& X, const arr& y) {
 }
 
 arr RidgeRegression::evaluate(const arr& X, arr& bayesSigma2) {
-  if(&bayesSigma2) {
+  if(!!bayesSigma2) {
     bayesSigma2.resize(X.d0);
     if(!betaSigmaMatrix.N) getBetaSigmaMatrix();
     for(uint i=0; i<X.d0; i++) bayesSigma2(i) = (~X[i] * betaSigmaMatrix * X[i]).scalar();
@@ -118,8 +118,8 @@ double DefaultKernelFunction::k(const arr& x1, const arr& x2, arr& gx1, arr& Hx1
   }
   double k = hyperParam2.scalar()*::exp(-sqrDistance(x1,x2)/hyperParam1.scalar());
   double a = -2.*k/hyperParam1.scalar();
-  if(&gx1) gx1 = a * (x1-x2);
-  if(&Hx1) Hx1 = (-2.*a/hyperParam1.scalar())*((x1-x2)^(x1-x2)) + a*eye(x1.N);
+  if(!!gx1) gx1 = a * (x1-x2);
+  if(!!Hx1) Hx1 = (-2.*a/hyperParam1.scalar())*((x1-x2)^(x1-x2)) + a*eye(x1.N);
   return k;
 };
 DefaultKernelFunction defaultKernelFunction;
@@ -150,7 +150,7 @@ KernelRidgeRegression::KernelRidgeRegression(const arr& X, const arr& y, KernelF
 arr KernelRidgeRegression::evaluate(const arr& Z, arr& bayesSigma2) {
   arr kappa(Z.d0,X.d0);
   for(uint i=0; i<Z.d0; i++) for(uint j=0; j<X.d0; j++) kappa(i,j) = kernel.k(Z[i],X[j]);
-  if(&bayesSigma2) {
+  if(!!bayesSigma2) {
     if(!invKernelMatrix_lambda.N) invKernelMatrix_lambda = inverse_SymPosDef(kernelMatrix_lambda);
     bayesSigma2.resize(Z.d0);
     for(uint i=0; i<Z.d0; i++) {
@@ -168,20 +168,20 @@ double KernelRidgeRegression::evaluate(const arr& x, arr& g, arr& H, double plus
   for(uint i=0; i<X.d0; i++) kappa(i) = kernel.k(x, X[i], Jkappa[i](), Hkappa[i]());
   
   double fx = 0.;
-  if(&g) g = zeros(x.N);
-  if(&H) H = zeros(x.N, x.N);
+  if(!!g) g = zeros(x.N);
+  if(!!H) H = zeros(x.N, x.N);
   
   if(!onlySigma) {
     fx += mu + scalarProduct(alpha, kappa);
-    if(&g) g += ~alpha * Jkappa;
-    if(&H) H += ~alpha * Hkappa;
+    if(!!g) g += ~alpha * Jkappa;
+    if(!!H) H += ~alpha * Hkappa;
   }
   
   if(plusSigma) {
 //    arr gx, Hx;
 //    fx += plusSigma * ;
-////    if(&g) g += plusSigma*(gx + g2);
-////    if(&H) H += plusSigma*(gx + g2);
+////    if(!!g) g += plusSigma*(gx + g2);
+////    if(!!H) H += plusSigma*(gx + g2);
 
     if(!invKernelMatrix_lambda.N) invKernelMatrix_lambda = inverse_SymPosDef(kernelMatrix_lambda);
     
@@ -189,8 +189,8 @@ double KernelRidgeRegression::evaluate(const arr& x, arr& g, arr& H, double plus
     arr J_Kinv_k = ~Jkappa*Kinv_k;
     double k_Kinv_k = kernel.k(x, x) - scalarProduct(kappa, Kinv_k);
     fx += plusSigma * ::sqrt(k_Kinv_k);
-    if(&g) g -= (plusSigma/sqrt(k_Kinv_k)) * J_Kinv_k;
-    if(&H) H -= (plusSigma/(k_Kinv_k*sqrt(k_Kinv_k))) * (J_Kinv_k^J_Kinv_k) + (plusSigma/sqrt(k_Kinv_k)) * (~Jkappa*invKernelMatrix_lambda*Jkappa + ~Kinv_k*Hkappa);
+    if(!!g) g -= (plusSigma/sqrt(k_Kinv_k)) * J_Kinv_k;
+    if(!!H) H -= (plusSigma/(k_Kinv_k*sqrt(k_Kinv_k))) * (J_Kinv_k^J_Kinv_k) + (plusSigma/sqrt(k_Kinv_k)) * (~Jkappa*invKernelMatrix_lambda*Jkappa + ~Kinv_k*Hkappa);
   }
   
   return fx;
@@ -247,7 +247,7 @@ KernelLogisticRegression::KernelLogisticRegression(const arr& X, const arr& y, K
 arr KernelLogisticRegression::evaluateF(const arr& Z, arr& bayesSigma2) {
   arr kappa(Z.d0,X.d0);
   for(uint i=0; i<Z.d0; i++) for(uint j=0; j<X.d0; j++) kappa(i,j) = kernel.k(Z[i],X[j]);
-  if(&bayesSigma2) {
+  if(!!bayesSigma2) {
     if(!invKernelMatrix_lambda.N) invKernelMatrix_lambda = inverse_SymPosDef(kernelMatrix_lambda);
     bayesSigma2.resize(Z.d0);
     for(uint i=0; i<Z.d0; i++) {
@@ -265,7 +265,7 @@ arr KernelLogisticRegression::evaluate(const arr& Z, arr& p_bayes, arr &p_hi, ar
   for(uint i=0; i<f.N; i++) clip(f.elem(i), -100., 100.);  //constrain the discriminative values to avoid NANs...
   arr p = exp(f); p/=1.+p;
   
-  if(&p_bayes || &p_hi || &p_lo) { //take sigma of discriminative function to estimate p_bayes, p_up and p_lo
+  if(!!p_bayes || !!p_hi || !!p_lo) { //take sigma of discriminative function to estimate p_bayes, p_up and p_lo
     if(!invKernelMatrix_lambda.N) invKernelMatrix_lambda = inverse_SymPosDef(kernelMatrix_lambda);
     arr s(Z.d0);
     for(uint i=0; i<Z.d0; i++) {
@@ -274,10 +274,10 @@ arr KernelLogisticRegression::evaluate(const arr& Z, arr& p_bayes, arr &p_hi, ar
     }
     s /= 2.*lambda; //TODO: why?? why not for KRR?
     for(uint i=0; i<s.N; i++) clip(s.elem(i), -100., 100.);  //constrain the discriminative values to avoid NANs...
-    if(&p_bayes) { p_bayes = exp(f/sqrt(1.+s*RAI_PI/8.)); p_bayes /= 1.+p_bayes; }
+    if(!!p_bayes) { p_bayes = exp(f/sqrt(1.+s*RAI_PI/8.)); p_bayes /= 1.+p_bayes; }
     s = sqrt(s);
-    if(&p_hi) { p_hi = exp(f+s); p_hi /= 1.+p_hi; }
-    if(&p_lo) { p_lo = exp(f-s); p_lo /= 1.+p_lo; }
+    if(!!p_hi) { p_hi = exp(f+s); p_hi /= 1.+p_hi; }
+    if(!!p_lo) { p_lo = exp(f-s); p_lo /= 1.+p_lo; }
   }
   return p;
 }
@@ -333,7 +333,7 @@ arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bay
 
     if(alpha*absMax(beta_update)<1e-5) break;
   }
-  if(&bayesSigma2) {
+  if(!!bayesSigma2) {
     lapack_inverseSymPosDef(bayesSigma2, Xt*(w%X) + 2.*I);
   }
   return beta;
@@ -534,7 +534,8 @@ void piecewiseConstantFeatures(arr& Z, const arr& X) {
   for(uint i=0; i<n; i++) {
     double x=X(i, 0);
     arr z=Z[i];
-    if(x<-2.5) x=-2.5; if(x>2.5) x=2.5;
+    if(x<-2.5) x=-2.5;
+    if(x> 2.5) x= 2.5;
     z(floor(x+3.))=1.;
   }
 }
@@ -573,7 +574,7 @@ arr makeFeatures(const arr& X, FeatureType featureType, const arr& rbfCenters) {
     case linearFT:    linearFeatures(Z, X);  break;
     case quadraticFT: quadraticFeatures(Z, X);  break;
     case cubicFT:     cubicFeatures(Z, X);  break;
-    case rbfFT:       if(&rbfCenters) rbfFeatures(Z, X, rbfCenters); else rbfFeatures(Z, X, X);  break;
+    case rbfFT:       if(!!rbfCenters) rbfFeatures(Z, X, rbfCenters); else rbfFeatures(Z, X, X);  break;
     case piecewiseConstantFT:  piecewiseConstantFeatures(Z, X);  break;
     case piecewiseLinearFT:    piecewiseLinearFeatures(Z, X);  break;
     default: HALT("");

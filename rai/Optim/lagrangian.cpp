@@ -38,7 +38,7 @@ LagrangianProblem::LagrangianProblem(ConstrainedProblem& P, OptOptions opt, arr&
     case noMethod: HALT("need to set method before");  break;
   }
   
-  if(&lambdaInit) lambda = lambdaInit;
+  if(!!lambdaInit) lambda = lambdaInit;
 }
 
 double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
@@ -68,7 +68,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
     if(lambda.N && tt_x.p[i]==OT_eq) L += lambda.p[i] * phi_x.p[i];                       //h-lagrange terms
   }
   
-  if(&dL) { //L gradient
+  if(!!dL) { //L gradient
     arr coeff=zeros(phi_x.N);
     for(uint i=0; i<phi_x.N; i++) {
       if(tt_x.p[i]==OT_f) coeff.p[i] += 1.;                                                  // direct cost term
@@ -83,7 +83,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
     dL.reshape(x.N);
   }
   
-  if(&HL) { //L hessian: Most terms are of the form   "J^T  diag(coeffs)  J"
+  if(!!HL) { //L hessian: Most terms are of the form   "J^T  diag(coeffs)  J"
     arr coeff=zeros(phi_x.N);
     int fterm=-1;
     for(uint i=0; i<phi_x.N; i++) {
@@ -218,7 +218,7 @@ void LagrangianProblem::aulaUpdate(bool anyTimeVariant, double lambdaStepsize, d
   if(muInc>1. && nu<1e6) nu *= muInc;
   
   //-- recompute the Lagrangian with the new parameters (its current value, gradient & hessian)
-  if(L_x || &dL_x || &HL_x) {
+  if(L_x || !!dL_x || !!HL_x) {
     double L = lagrangian(dL_x, HL_x, x); //reevaluate gradients and hessian (using buffered info)
     if(L_x) *L_x = L;
   }

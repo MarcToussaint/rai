@@ -16,21 +16,21 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
     fitSSBoxProblem(const arr& X):X(X) {}
     void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
       phi.resize(5+X.d0);
-      if(&tt) { tt.resize(5+X.d0); tt=OT_ineq; }
-      if(&J) {  J.resize(5+X.d0,11); J.setZero(); }
-      if(&H) {  H.resize(11,11); H.setZero(); }
+      if(!!tt) { tt.resize(5+X.d0); tt=OT_ineq; }
+      if(!!J) {  J.resize(5+X.d0,11); J.setZero(); }
+      if(!!H) {  H.resize(11,11); H.setZero(); }
       
       //-- the scalar objective
       double a=x(0), b=x(1), c=x(2), r=x(3); //these are box-wall-coordinates --- not WIDTH!
       phi(0) = a*b*c + 2.*r*(a*b + a*c +b*c) + 4./3.*r*r*r;
-      if(&tt) tt(0) = OT_f;
-      if(&J) {
+      if(!!tt) tt(0) = OT_f;
+      if(!!J) {
         J(0,0) = b*c + 2.*r*(b+c);
         J(0,1) = a*c + 2.*r*(a+c);
         J(0,2) = a*b + 2.*r*(a+b);
         J(0,3) = 2.*(a*b + a*c +b*c) + 4.*r*r;
       }
-      if(&H) {
+      if(!!H) {
         H(0,1) = H(1,0) = c + 2.*r;
         H(0,2) = H(2,0) = b + 2.*r;
         H(0,3) = H(3,0) = 2.*(b+c);
@@ -49,7 +49,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
       phi(2) = -w*(b-.001);
       phi(3) = -w*(c-.001);
       phi(4) = -w*(r-.001);
-      if(&J) {
+      if(!!J) {
         J(1,0) = -w;
         J(2,1) = -w;
         J(3,2) = -w;
@@ -63,7 +63,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
         y.append(x);
         phi(i+5) = DistanceFunction_SSBox(Jy, NoArr, y);
         //      Jy({3,5})() *= -1.;
-        if(&J) J[i+5] = Jy({3,-1});
+        if(!!J) J[i+5] = Jy({3,-1});
       }
     }
   } F(X);

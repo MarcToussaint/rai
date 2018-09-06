@@ -312,7 +312,8 @@ double approxExp(double x) {
 
 /// ordinary Log, but cutting off for small values
 double Log(double x) {
-  if(x<.001) x=.001; return ::log(x);
+  if(x<.001) x=.001;
+  return ::log(x);
 }
 
 /// integer log2

@@ -80,7 +80,8 @@ struct KinematicWorld : GLDrawer {
   virtual ~KinematicWorld();
   void operator=(const rai::KinematicWorld& K) { copy(K); }
   void copy(const rai::KinematicWorld& K, bool referenceSwiftOnCopy=false);
-  
+  bool operator!() const;
+
   /// @name initializations
   void init(const char* filename);
   void init(const Graph& G, bool addInsteadOfClear=false);

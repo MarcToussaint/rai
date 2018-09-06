@@ -209,7 +209,7 @@ KinPoseViewer::~KinPoseViewer() {
 
 void KinPoseViewer::recopyKinematics(const rai::KinematicWorld& world) {
   stepMutex.lock();
-  if(&world) copy=world;
+  if(!!world) copy=world;
   else copy = modelWorld.get();
   computeMeshNormals(copy.frames);
   for(rai::KinematicWorld *w: copies) w->copy(copy, true);

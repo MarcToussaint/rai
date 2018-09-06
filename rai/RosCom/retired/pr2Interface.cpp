@@ -233,14 +233,14 @@ void PR2Interface::sendCommand(const arr& u0, const arr& Kp, const arr& Kd, cons
   }
   
   arr KiFtRealWorld;
-  if(&K_ft && &J_ft_inv && &fRef) {
+  if(!!K_ft && &J_ft_inv && &fRef) {
     transferKI_ft_BetweenTwoWorlds(KiFtRealWorld, K_ft, *this->realWorld, *this->modelWorld);
     this->ctrlMsg.KiFT = KiFtRealWorld;
     this->ctrlMsg.J_ft_inv = J_ft_inv;
     this->ctrlMsg.fL = fRef;
   }
   
-  if(&gamma) {
+  if(!!gamma) {
     this->ctrlMsg.gamma = gamma;
   } else {
     this->ctrlMsg.gamma = 0.0;

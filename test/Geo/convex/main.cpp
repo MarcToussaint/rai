@@ -99,7 +99,7 @@ void TEST(ConvexHull) {
 
   ScalarFunction f = [&origin, &X](arr& g, arr& H, const arr& x) -> double {
     double d=distanceToConvexHull(X, origin);
-    if(&g) distanceToConvexHullGradient(g, X, origin);
+    if(!!g) distanceToConvexHullGradient(g, X, origin);
     return d;
   };
 
@@ -215,7 +215,7 @@ void sort2Dpoints(arr& A);
 
 void testConvConvIntersect(){
   //box cases
-  uint N=20,D=2;
+//  uint N=20,D=2;
   arr X = {4,2, {-1.,-1.,1.,-1.,-1.,1.,1.,1.}};
 
   arr C1 = .5*X;

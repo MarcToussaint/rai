@@ -58,7 +58,7 @@ void TM_AboveBox::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
   y(1) = -pos(0) - range(0);
   y(2) =  pos(1) - range(1);
   y(3) = -pos(1) - range(1);
-  if(&J) {
+  if(!!J) {
     J.resize(4, posJ.d1);
     J[0] =  posJ[0];
     J[1] = -posJ[0];

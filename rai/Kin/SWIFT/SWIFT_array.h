@@ -245,7 +245,7 @@ class SWIFT_Array {
 #undef max
 	  Grow( std::max(amount,test) );
 #else
-	  Grow( max(amount,test) );
+	  Grow( SWIFT_max(amount,test) );
 #endif
         }
     }
