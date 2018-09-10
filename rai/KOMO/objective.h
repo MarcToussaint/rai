@@ -29,6 +29,7 @@ struct Objective {
   void write(std::ostream& os) const {
     os <<"TASK '" <<name <<"'";
     if(vars.d0==1) os <<" ("<<vars <<')';
+    else os <<" (" <<vars.first() <<".." <<vars.last() <<')';
     os <<"  type=" <<type
        <<"  order=" <<map->order
        <<"  target=[" <<target <<']'

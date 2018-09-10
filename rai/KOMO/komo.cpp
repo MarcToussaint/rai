@@ -31,6 +31,7 @@
 #include <Kin/contact.h>
 #include <Optim/optimization.h>
 #include <Optim/convert.h>
+#include <Optim/primalDual.h>
 #include <Kin/kin_physx.h>
 #include <Kin/TM_time.h>
 #include <Kin/TM_NewtonEuler.h>
@@ -210,7 +211,8 @@ void KOMO::addSwitch_stable(double time, double endTime, const char* from, const
   addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, from, to, world));
 //  addFlag(time, new Flag(FL_clear, world[to]->ID, 0, true));
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true));
-  addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
+  if(stepsPerPhase*endTime>stepsPerPhase*time+1)
+    addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
   addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, 1e2, {}, 1);
 
 //  addFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
@@ -224,7 +226,10 @@ void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, con
   addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
 //  addFlag(time, new Flag(FL_clear, world[to]->ID, 0, true));
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true));
-  addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
+  if(stepsPerPhase*endTime>stepsPerPhase*time+1)
+    addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
+  addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, 1e2, {}, 1);
+
 //  o->prec(-1)=o->prec(-2)=0.;
 //  addFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
   if(k_order>1) addObjective(time,time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, 0, +1);
@@ -1174,16 +1179,17 @@ void KOMO::reset(double initNoise) {
   }
 }
 
-void KOMO::run(bool dense) {
+void KOMO::run() {
   KinematicWorld::setJointStateCount=0;
   timerStart();
   CHECK(T,"");
   if(opt) delete opt;
-  if(dense){
+  if(denseOptimization){
     CHECK(!splineB.N, "NIY");
-    opt = new OptConstrained(x, dual, dense_problem);
-    opt->fil = fil;
-    opt->run();
+//    opt = new OptConstrained(x, dual, dense_problem);
+    OptPrimalDual _opt(x, dual, dense_problem);
+    _opt.fil = fil;
+    _opt.run();
   } else if(!splineB.N) {
     Convert C(komo_problem);
     opt = new OptConstrained(x, dual, C);
@@ -1209,7 +1215,7 @@ void KOMO::optimize(){
   reset();
   if(verbose>0) reportProblem();
 
-  run(denseOptimization);
+  run();
 
   if(verbose>0){
     Graph specs = getProblemGraph(true);
@@ -1725,7 +1731,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
     for(uint i=0; i<objectives.N; i++) {
       Objective *task = objectives.elem(i);
       CHECK_EQ(task->vars.d0, task->prec.N, "");
-      for(uint t=0;t<task->prec.N;t++){
+      for(uint t=0;t<task->prec.N;t++) if(task->prec(t)) {
         WorldL Ktuple = configurations.sub(convert<uint,int>(task->vars[t]+(int)k_order));
         uint d=0;
         uint time=task->vars(t,-1);
@@ -2082,7 +2088,7 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
   for(uint i=0; i<komo.objectives.N; i++) {
     Objective *task = komo.objectives.elem(i);
     CHECK_EQ(task->vars.d0, task->prec.N, "");
-    for(uint t=0;t<task->prec.N;t++){
+    for(uint t=0;t<task->prec.N;t++) if(task->prec(t)) {
       WorldL Ktuple = komo.configurations.sub(convert<uint,int>(task->vars[t]+(int)komo.k_order));
       uintA kdim = getKtupleDim(Ktuple);
       kdim.prepend(0);
@@ -2145,7 +2151,7 @@ void KOMO::Conv_MotionProblem_DenseProblem::getStructure(uintA& variableDimensio
   for(uint i=0; i<komo.objectives.N; i++) {
     Objective *task = komo.objectives.elem(i);
     CHECK_EQ(task->vars.d0, task->prec.N, "");
-    for(uint t=0;t<task->prec.N;t++){
+    for(uint t=0;t<task->prec.N;t++) if(task->prec(t)) {
       WorldL Ktuple = komo.configurations.sub(convert<uint,int>(task->vars[t]+(int)komo.k_order));
       uint Ktuple_dim=0;
       for(KinematicWorld *K:Ktuple) Ktuple_dim += K->q.N;

@@ -115,6 +115,8 @@ void MNode::optLevel(uint level, bool collisions) {
   if(level==1 && parent) CHECK(parent->effKinematics.q.N, "I can't compute a pose when no pose was comp. for parent (I need the effKin)");
   skeleton2Bound(komo, BoundType(level), S, startKinematics, (parent?parent->effKinematics:startKinematics), collisions);
 
+  if(level==2) komo.denseOptimization=true;
+
   //-- optimize
   DEBUG(FILE("z.fol") <<fol;);
   DEBUG(komo.getReport(false, 1, FILE("z.problem")););
@@ -127,7 +129,7 @@ void MNode::optLevel(uint level, bool collisions) {
   } catch(const char* msg) {
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
-  COUNT_evals += komo.opt->newton.evals;
+  if(!komo.denseOptimization) COUNT_evals += komo.opt->newton.evals;
   COUNT_kin += rai::KinematicWorld::setJointStateCount;
   COUNT_opt(level)++;
   COUNT_time += komo.runTime;

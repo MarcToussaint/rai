@@ -154,9 +154,9 @@ struct KOMO : NonCopyable {
   //
   
   //-- optimization macros
-  void setSpline(uint splineT);   ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
-  void reset(double initNoise=.01);      ///< reset the optimizer (initializes x to a default path)
-  void run(bool dense=false);            ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
+  void setSpline(uint splineT);      ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
+  void reset(double initNoise=.01);  ///< reset the optimizer (initializes x to a default path)
+  void run();                        ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
   void optimize();
 
   rai::KinematicWorld& getConfiguration(double phase);

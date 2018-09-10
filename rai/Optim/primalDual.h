@@ -17,6 +17,7 @@ struct PrimalDualProblem : ScalarFunction {
   //duality gap parameter (log barrier parameter) of the primal dual equation system
   double mu;
   
+  uint n_eq=0, n_ineq=0;
   arr x_lambda; //last evaluation
   
   PrimalDualProblem(const arr& x, ConstrainedProblem &P, OptOptions opt=NOOPT, arr& lambdaInit=NoArr);
