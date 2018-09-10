@@ -48,7 +48,7 @@ double shapeSize(const KinematicWorld& K, const char* name, uint i=2) {
   Frame *f = K.getFrameByName(name);
   Shape *s = f->shape;
   if(!s) {
-    for(Frame *b:f->outLinks) if(b->name==name && b->shape) { s=b->shape; break; }
+    for(Frame *b:f->parentOf) if(b->name==name && b->shape) { s=b->shape; break; }
   }
   if(!s) return 0;
   return s->size(i);
@@ -58,7 +58,7 @@ Shape *getShape(const KinematicWorld& K, const char* name) {
   Frame *f = K.getFrameByName(name);
   Shape *s = f->shape;
   if(!s) {
-    for(Frame *b:f->outLinks) if(b->name==name && b->shape) { s=b->shape; break; }
+    for(Frame *b:f->parentOf) if(b->name==name && b->shape) { s=b->shape; break; }
   }
   return s;
 }
@@ -211,8 +211,11 @@ void KOMO::addSwitch_stable(double time, double endTime, const char* from, const
 //  addFlag(time, new Flag(FL_clear, world[to]->ID, 0, true));
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true));
   addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
+  addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, 1e2, {}, 1);
+
 //  addFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
-  addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, 0, +1);
+  if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, 0, +1);
+  else addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
 }
 
 void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, const char* to) {
@@ -224,7 +227,8 @@ void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, con
   addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
 //  o->prec(-1)=o->prec(-2)=0.;
 //  addFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
-  addObjective(time,time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2);
+  if(k_order>1) addObjective(time,time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, 0, +1);
+//  else addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 1, +1, +1);
 }
 
 void KOMO::addSwitch_dynamic(double time, double endTime, const char* from, const char* to) {
@@ -898,7 +902,7 @@ void KOMO::setSkeleton(const Skeleton &S) {
     if(s.symbols(0)=="stableOn") {  addSwitch_stableOn(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2));  continue;  }
     if(s.symbols(0)=="dynamic") {   addSwitch_dynamic(s.phase0, s.phase1+1., "base", s.symbols(1));  continue;  }
     if(s.symbols(0)=="dynamicOn") { addSwitch_dynamicOn(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2));  continue;  }
-    if(s.symbols(0)=="liftDownUp") {  setLiftDownUp(s.phase0, s.symbols(1));  continue;  }
+    if(s.symbols(0)=="liftDownUp") {  setLiftDownUp(s.phase0, s.symbols(1), .4);  continue;  }
 
     if(s.symbols(0)=="contact") {   addContact(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
     //if(s.symbols(0)=="contactComplementary") {   addContact_Complementary(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
@@ -998,9 +1002,9 @@ void KOMO::add_jointLimits(bool hardConstraint, double margin, double prec) {
 
 void KOMO::setLiftDownUp(double time, const char *endeff, double timeToLift) {
   if(stepsPerPhase>2 && timeToLift>0.) { //velocities down and up
-    addObjective(time-timeToLift, time-2.*timeToLift/3, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,-.1}, 1e0, 1); //move down
-    addObjective(time-timeToLift/3,  time+timeToLift/3, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,0.}, 3e0, 1); //move down
-    addObjective(time+2.*timeToLift/3, time+timeToLift, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,.1}, 1e0, 1); // move up
+    addObjective(time-timeToLift, time-.5*timeToLift, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,-.2}, 1e0, 1); //move down
+//    addObjective(time-timeToLift/3,  time+timeToLift/3, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,0.}, 3e0, 1); //move down
+    addObjective(time+.5*timeToLift, time+timeToLift, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,.2}, 1e0, 1); // move up
   }
 }
 
@@ -1479,8 +1483,6 @@ Camera& KOMO::displayCamera() {
 
 //===========================================================================
 
-#define KOMO KOMO
-
 void KOMO::setupConfigurations() {
 
   //IMPORTANT: The configurations need to include the k prefix configurations!
@@ -1559,11 +1561,11 @@ void KOMO::set_x(const arr& x) {
   }
 }
 
-void KOMO::reportProxies(std::ostream& os) {
+void KOMO::reportProxies(std::ostream& os, double belowMargin) {
   int s=0;
   for(auto &K:configurations) {
     os <<" **** KOMO PROXY REPORT t=" <<s-(int)k_order <<endl;
-    K->reportProxies(os);
+    K->reportProxies(os, belowMargin);
     s++;
   }
 }
@@ -1647,12 +1649,13 @@ rai::Array<rai::Transformation> KOMO::reportEffectiveJoints(std::ostream& os) {
   for(Node *n:G) {
     if(!n->parents.N) {
       EffJointInfo& info = n->get<EffJointInfo>();
+#ifndef RAI_NOCHECK
       rai::KinematicSwitch *sw = switches(s);
-      
       CHECK_EQ(info.t_start, sw->timeOfApplication, "");
       CHECK_EQ(info.j->type, sw->jointType, "");
 //      CHECK_EQ(info.j->frame.parent->ID, sw->fromId, "");
 //      CHECK_EQ(info.j->frame.ID, sw->toId, "");
+#endif
 
       Qs(s) = info.Q;
       

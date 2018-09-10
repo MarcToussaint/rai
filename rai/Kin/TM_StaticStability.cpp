@@ -22,7 +22,7 @@ TM_StaticStability::TM_StaticStability(const rai::KinematicWorld& G, const char*
 FrameL getShapesAbove(rai::Frame *a) {
   FrameL aboves;
   if(a->shape) aboves.append(a);
-  for(rai::Frame *b:a->outLinks) aboves.append(getShapesAbove(b));
+  for(rai::Frame *b:a->parentOf) aboves.append(getShapesAbove(b));
   return aboves;
 }
 

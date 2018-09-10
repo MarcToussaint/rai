@@ -173,7 +173,7 @@ struct KOMO : NonCopyable {
   Graph getProblemGraph(bool includeValues);
   double getConstraintViolations();
   double getCosts();
-  void reportProxies(ostream& os=std::cout); ///< report the proxies (collisions) for each time slice
+  void reportProxies(ostream& os=std::cout, double belowMargin=.1); ///< report the proxies (collisions) for each time slice
   void reportContacts(ostream& os=std::cout); ///< report the contacts
   rai::Array<rai::Transformation> reportEffectiveJoints(ostream& os=std::cout);
 

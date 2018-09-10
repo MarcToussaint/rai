@@ -113,7 +113,7 @@ void MNode::optLevel(uint level, bool collisions) {
                             "push", "graspSlide", "liftDownUp"
                            });
   if(level==1 && parent) CHECK(parent->effKinematics.q.N, "I can't compute a pose when no pose was comp. for parent (I need the effKin)");
-  skeleton2Bound(komo, BoundType(level), S, startKinematics, (parent?parent->effKinematics:startKinematics));
+  skeleton2Bound(komo, BoundType(level), S, startKinematics, (parent?parent->effKinematics:startKinematics), collisions);
 
   //-- optimize
   DEBUG(FILE("z.fol") <<fol;);
@@ -135,6 +135,7 @@ void MNode::optLevel(uint level, bool collisions) {
   
   DEBUG(komo.getReport(false, 1, FILE("z.problem")););
 //  cout <<komo.getReport(true) <<endl;
+//  komo.reportProxies(cout, 0.);
 //  komo.checkGradients();
 
   Graph result = komo.getReport((komo.verbose>0 && level>=2));
@@ -382,6 +383,7 @@ void MNode::checkConsistency() {
     fol.setState(folState, step);
     auto actions = fol.get_actions();
     CHECK_EQ(children.N, actions.size(), "");
+#ifndef RAI_NOCHECK
     uint i=0;
     for(FOL_World::Handle& a:actions) {
       //      cout <<"  DECISION: " <<*a <<endl;
@@ -389,6 +391,7 @@ void MNode::checkConsistency() {
       CHECK_EQ(*a, *b, "children do not match decisions");
       i++;
     }
+#endif
   }
   
   for(auto* ch:children) ch->checkConsistency();

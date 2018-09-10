@@ -94,7 +94,7 @@ double Vector::diffZero() const { return fabs(x)+fabs(y)+fabs(z); }
 /// check whether isZero is true
 void Vector::checkZero() const {
   bool iszero = (x==0. && y==0. && z==0.);
-  if(isZero) CHECK(iszero, "you must have set this by hand!");
+  if(isZero) if(!iszero) HALT("you must have set this by hand!");
 }
 
 /// is it normalized?
@@ -749,7 +749,7 @@ double Quaternion::sqrDiffZero() const { return (w>0.?rai::sqr(w-1.):rai::sqr(w+
 /// check whether isZero is true
 void Quaternion::checkZero() const {
   bool iszero = ((w==1. || w==-1.) && x==0. && y==0. && z==0.);
-  if(isZero) CHECK(iszero, "you must have set this by hand!");
+  if(isZero) if(!iszero) HALT("you must have set this by hand!");
 }
 
 /// return the squared-error between two quads, modulo flipping
@@ -1161,7 +1161,7 @@ void quat_getVec(arr& y, arr& J, const arr& A){
   rai::Quaternion a(A);
   y.resize(3);
   double phi,sinphi,s;
-  double dphi, dsinphi, ds;
+  double dphi, dsinphi, ds=0.;
   if(a.w>=1. || a.w<=-1. || (a.x==0. && a.y==0. && a.z==0.)) {
     y.setZero();
     if(!!J){

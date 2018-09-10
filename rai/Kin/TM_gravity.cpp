@@ -277,6 +277,8 @@ void TM_ZeroQVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   TM_qItself q({(uint)i}, false);
   q.order=order;
   if(order==1 && Ktuple(-1)->frames(i)->joint->qDim()!=Ktuple(-2)->frames(i)->joint->qDim()){
+//    rai::Frame *a = Ktuple(-2)->frames(i);
+//    rai::Frame *b = Ktuple(-1)->frames(i);
     y.resize(Ktuple(-1)->frames(i)->joint->dim).setZero();
     if(!!J) J.resize(y.N, getKtupleDim(Ktuple).last()).setZero();
     return;

@@ -53,7 +53,7 @@ struct Frame : NonCopyable{
   uint ID;                   ///< unique identifier
   String name;               ///< name
   Frame *parent=NULL;        ///< parent frame
-  FrameL outLinks;           ///< list of children [TODO: rename]
+  FrameL parentOf;           ///< list of children [TODO: rename]
   Transformation Q=0;        ///< relative transform to parent
   Transformation X=0;        ///< frame's absolute pose
   double time=0.;            ///< frame's absolute time (could be thought as part of the transformation X in space-time)

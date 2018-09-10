@@ -34,6 +34,7 @@ struct OptLGP : GLDrawer {
   uint numSteps;
   ofstream fil;
   bool displayTree=true;
+  bool collisions=false;
   struct DisplayThread *dth=NULL;
   rai::String dataPath;
   
@@ -89,7 +90,7 @@ public:
   void reportEffectiveJoints();
   void initDisplay();
   void updateDisplay();
-  void renderToVideo(uint level=3, const char* filePrefix="vid/z.");
+  void renderToVideo(uint level=3, const char* filePrefix="vid/");
   void writeNodeList(ostream& os=cout);
   void glDraw(struct OpenGL&gl);
   

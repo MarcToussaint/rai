@@ -63,7 +63,7 @@ rai::Frame::~Frame() {
   if(inertia) delete inertia;
   if(parent) unLink();
   while(contacts.N) delete contacts.last();
-  while(outLinks.N) outLinks.last()->unLink();
+  while(parentOf.N) parentOf.last()->unLink();
 //  K.frames.removeValue(this);
   CHECK_EQ(this, K.frames(ID), "")
   K.frames.remove(ID);
@@ -97,7 +97,7 @@ void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
 }
 
 void rai::Frame::getRigidSubFrames(FrameL &F) {
-  for(Frame *f:outLinks) if(!f->joint) { F.append(f); f->getRigidSubFrames(F); }
+  for(Frame *f:parentOf) if(!f->joint) { F.append(f); f->getRigidSubFrames(F); }
 }
 
 rai::Inertia &rai::Frame::getInertia() {
@@ -185,13 +185,13 @@ rai::Frame* rai::Frame::insertPreLink(const rai::Transformation &A) {
 
   if(parent) {
     f->linkFrom(parent);
-    parent->outLinks.removeValue(this);
+    parent->parentOf.removeValue(this);
     f->name <<parent->name <<'>' <<name;
   }else{
     f->name <<"NIL>" <<name;
   }
   parent=f;
-  parent->outLinks.append(this);
+  parent->parentOf.append(this);
   
   if(!!A) f->Q = A;
   
@@ -204,9 +204,9 @@ rai::Frame* rai::Frame::insertPostLink(const rai::Transformation &B) {
   if(name) f->name <<'<' <<name;
   
   //reconnect all outlinks from -> to
-  f->outLinks = outLinks;
-  for(Frame *b:outLinks) b->parent = f;
-  outLinks.clear();
+  f->parentOf = parentOf;
+  for(Frame *b:parentOf) b->parent = f;
+  parentOf.clear();
   f->Q = B;
   f->linkFrom(this);
   
@@ -215,7 +215,7 @@ rai::Frame* rai::Frame::insertPostLink(const rai::Transformation &B) {
 
 void rai::Frame::unLink() {
   CHECK(parent,"");
-  parent->outLinks.removeValue(this);
+  parent->parentOf.removeValue(this);
   parent=NULL;
   Q.setZero();
   if(joint) { delete joint; joint=NULL; }
@@ -226,7 +226,7 @@ void rai::Frame::linkFrom(rai::Frame *_parent, bool adoptRelTransform) {
   CHECK(!parent,"this frame is already linked to a parent");
   if(parent==_parent) return;
   parent=_parent;
-  parent->outLinks.append(this);
+  parent->parentOf.append(this);
   if(adoptRelTransform) Q = X/parent->X;
 }
 
@@ -617,8 +617,8 @@ void rai::Joint::read(const Graph &G) {
   
   if(!B.isZero()) {
     //new frame between: from -> f -> to
-    CHECK_EQ(frame.outLinks.N, 1,"");
-    Frame *follow = frame.outLinks.scalar();
+    CHECK_EQ(frame.parentOf.N, 1,"");
+    Frame *follow = frame.parentOf.scalar();
     
     CHECK(follow->parent, "");
     CHECK(!follow->joint, "");

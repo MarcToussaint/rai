@@ -86,7 +86,7 @@ struct KinematicWorld : GLDrawer {
   void init(const char* filename);
   void init(const Graph& G, bool addInsteadOfClear=false);
   void addFile(const char* filename);
-  void addFrame(const char* name, const char* parent=NULL, const char* args=NULL);
+  Frame* addFrame(const char* name, const char* parent=NULL, const char* args=NULL);
 
   /// @name access
   Frame *operator[](const char* name) { return getFrameByName(name, true); }
@@ -245,7 +245,7 @@ struct KinematicWorld : GLDrawer {
   
   //some info
   void report(std::ostream& os=std::cout) const;
-  void reportProxies(std::ostream& os=std::cout, double belowMargin=-1., bool brief=true) const;
+  void reportProxies(std::ostream& os=std::cout, double belowMargin=1., bool brief=true) const;
   void writePlyFile(const char* filename) const; //TODO: move outside
   
   friend struct KinematicSwitch;

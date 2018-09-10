@@ -178,7 +178,7 @@ void rai::KinematicWorld::addFile(const char* filename) {
   init(G, true);
 }
 
-void rai::KinematicWorld::addFrame(const char* name, const char* parent, const char* args){
+rai::Frame* rai::KinematicWorld::addFrame(const char* name, const char* parent, const char* args){
   rai::Frame *f = new rai::Frame(*this);
   f->name = name;
 
@@ -193,6 +193,8 @@ void rai::KinematicWorld::addFrame(const char* name, const char* parent, const c
   }
 
   if(f->parent) f->X = f->parent->X * f->Q;
+
+  return f;
 }
 
 void rai::KinematicWorld::clear() {
@@ -222,7 +224,7 @@ FrameL rai::KinematicWorld::calc_topSort() {
     order.append(a);
     done(a->ID) = true;
     
-    for(Frame *ch : a->outLinks) fringe.append(ch);
+    for(Frame *ch : a->parentOf) fringe.append(ch);
   }
   
   for(uint i=0; i<done.N; i++) if(!done(i)) LOG(-1) <<"not done: " <<frames(i)->name <<endl;
@@ -386,9 +388,9 @@ arr rai::KinematicWorld::naturalQmetric(double power) const {
   arr BM(frames.N);
   BM=1.;
   for(uint i=BM.N; i--;) {
-    for(uint j=0; j<frames(i)->outLinks.N; j++) {
-      BM(i) = rai::MAX(BM(frames(i)->outLinks(j)->ID)+1., BM(i));
-//      BM(i) += BM(bodies(i)->outLinks(j)->to->index);
+    for(uint j=0; j<frames(i)->parentOf.N; j++) {
+      BM(i) = rai::MAX(BM(frames(i)->parentOf(j)->ID)+1., BM(i));
+//      BM(i) += BM(bodies(i)->parentOf(j)->to->index);
     }
   }
   if(!q.N) getJointStateDimension();
@@ -592,9 +594,12 @@ void rai::KinematicWorld::setActiveJointsByName(const StringA& names, bool notTh
 void rai::KinematicWorld::setJointState(const arr& _q, const arr& _qdot) {
   setJointStateCount++; //global counter
   
+#ifndef RAI_NOCHECK
   uint N=getJointStateDimension();
   CHECK_EQ(_q.N, N, "wrong joint state dimensionalities");
   if(!!_qdot) CHECK_EQ(_qdot.N, N, "wrong joint velocity dimensionalities");
+#endif
+
   q=_q;
   if(!!_qdot) qdot=_qdot; else qdot.clear();
   
@@ -1799,7 +1804,7 @@ void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
     for(Frame *f: frames) if((j=f->joint) && j->mimic) {
         rai::String jointName;
         bool good = f->ats.get(jointName, "mimic");
-        CHECK(good, "something is wrong");
+        if(!good) HALT("something is wrong");
         if(!jointName.N) { j->mimic=NULL; continue; }
         rai::Frame *mimicFrame = getFrameByName(jointName);
         CHECK(mimicFrame, "");
@@ -1887,7 +1892,7 @@ void rai::KinematicWorld::reportProxies(std::ostream& os, double belowMargin, bo
   os <<"Proximity report: #" <<proxies.N <<endl;
   uint i=0;
   for(const Proxy& p: proxies) {
-    if(belowMargin>0. && p.d>belowMargin) continue;
+    if(p.d>belowMargin) continue;
     os  <<i <<" ("
         <<p.a->name <<")-("
         <<p.b->name
@@ -2379,8 +2384,8 @@ void rai::KinematicWorld::reconnectLinksToClosestJoints() {
       if(f->joint && !Q.rot.isZero) continue; //only when rot is zero you can subsume the Q transformation into the Q of the joint
       if(link!=f) { //there is a link's root
         if(link!=f->parent) { //we can rewire to the link's root
-          f->parent->outLinks.removeValue(f);
-          link->outLinks.append(f);
+          f->parent->parentOf.removeValue(f);
+          link->parentOf.append(f);
           f->parent = link;
           f->Q = Q;
         }
@@ -2404,7 +2409,7 @@ void rai::KinematicWorld::reconnectLinksToClosestJoints() {
 void rai::KinematicWorld::pruneUselessFrames(bool preserveNamed) {
   for(uint i=frames.N; i--;) {
     Frame *f=frames.elem(i);
-    if((!preserveNamed || !f->name) && !f->outLinks.N && !f->joint && !f->shape && !f->inertia) {
+    if((!preserveNamed || !f->name) && !f->parentOf.N && !f->joint && !f->shape && !f->inertia) {
       delete f; //that's all there is to do
     }
   }
@@ -2492,7 +2497,7 @@ bool rai::KinematicWorld::checkConsistency() {
     CHECK(&a->K, "");
     CHECK(&a->K==this,"");
     CHECK_EQ(a, frames(a->ID), "");
-    for(Frame *b: a->outLinks) CHECK_EQ(b->parent, a, "");
+    for(Frame *b: a->parentOf) CHECK_EQ(b->parent, a, "");
     if(a->joint) CHECK_EQ(&a->joint->frame, a, "");
     if(a->shape) CHECK_EQ(&a->shape->frame, a, "");
     if(a->inertia) CHECK_EQ(&a->inertia->frame, a, "");
@@ -2506,7 +2511,7 @@ bool rai::KinematicWorld::checkConsistency() {
   for(Frame *f: frames) if((j=f->joint)) {
       if(j->type.x!=JT_time) {
         CHECK(j->from(), "");
-        CHECK(j->from()->outLinks.findValue(&j->frame)>=0,"");
+        CHECK(j->from()->parentOf.findValue(&j->frame)>=0,"");
       }
       CHECK_EQ(j->frame.joint, j,"");
       CHECK_GE(j->type.x, 0, "");
@@ -2570,15 +2575,15 @@ bool rai::KinematicWorld::checkConsistency() {
 //    }
 //    b->shape = NULL;
 //    //joints from b-to-c now become joints a-to-c
-//    for(Frame *f: b->outLinks) {
+//    for(Frame *f: b->parentOf) {
 //      Joint *j = f->joint();
 //      if(j){
 //        j->from = a;
 //        j->A = bridge * j->A;
-//        a->outLinks.append(f);
+//        a->parentOf.append(f);
 //      }
 //    }
-//    b->outLinks.clear();
+//    b->parentOf.clear();
 //    //reassociate mass
 //    a->mass += b->mass;
 //    a->inertia += b->inertia;

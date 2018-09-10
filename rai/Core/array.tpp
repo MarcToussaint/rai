@@ -4005,13 +4005,13 @@ template<class vert, class edge> void graphLayered(rai::Array<vert*>& V, rai::Ar
 
 template<class vert, class edge> void graphMakeLists(rai::Array<vert*>& V, rai::Array<edge*>& E) {
   for_list(vert,  v,  V) {
-    v->outLinks.clear();
+    v->parentOf.clear();
     v-> inLinks.clear();
   }
   for_list(edge,  e,  E) {
     e->from = V(e->ifrom);
     e->to   = V(e->ito);
-    e->from->outLinks.append(e);
+    e->from->parentOf.append(e);
     e->to  -> inLinks.append(e);
   }
 }
@@ -4061,7 +4061,7 @@ template<class vert, class edge> void graphWriteDirected(std::ostream& os, const
     for_list(edge,  e,  v->inLinks) os <<e->ifrom <<' ';
     os <<"-> ";
     os <<v_COUNT <<" -> ";
-    for_list(edge,  e2,  v->outLinks) os <<e2->ito <<' ';
+    for_list(edge,  e2,  v->parentOf) os <<e2->ito <<' ';
     os <<'\n';
   }
   for_list(edge,  e,  E) os <<e->ifrom <<"->" <<e->ito <<'\n';
@@ -4097,7 +4097,7 @@ template<class vert, class edge> bool graphTopsort(rai::Array<vert*>& V, rai::Ar
   while(noInputs.N) {
     v=noInputs.popFirst();
     newIndex(v->index)=count++;
-    for_list(edge,  e,  v->outLinks) {
+    for_list(edge,  e,  v->parentOf) {
       inputs(e->to->index)--;
       if(!inputs(e->to->index)) noInputs.append(e->to);
     }
@@ -4112,7 +4112,7 @@ template<class vert, class edge> bool graphTopsort(rai::Array<vert*>& V, rai::Ar
   //-- reindex edges as well:
   newIndex.resize(E.N);
   count=0;
-  for(vert *v:V) for(edge *e:v->outLinks) newIndex(e->index)=count++;
+  for(vert *v:V) for(edge *e:v->parentOf) newIndex(e->index)=count++;
   E.permuteInv(newIndex);
   for_list(edge, e, E) e->index=e_COUNT;
 #endif
@@ -4136,7 +4136,7 @@ template<class vert> rai::Array<vert*> graphGetTopsortOrder(rai::Array<vert*>& V
     v=fringe.popFirst();
     order.append(v);
     
-    for(vert* to : v->outLinks) {
+    for(vert* to : v->parentOf) {
       inputs(to->ID)--;
       if(!inputs(to->ID)) fringe.append(to);
     }
@@ -4169,7 +4169,7 @@ void maximumSpanningTree(rai::Array<vert*>& V, rai::Array<edge*>& E, const Compa
     m=0;
     for(uint i=0; i<addedNodes.N; i++) {
       n=V(addedNodes(i));
-      for_list(edge,  e,  n->outLinks) if(!nodeAdded(e->to  ->index) && (!m || cmp(e, m))) m=e;
+      for_list(edge,  e,  n->parentOf) if(!nodeAdded(e->to  ->index) && (!m || cmp(e, m))) m=e;
       for(edge *e: n->inLinks) if(!nodeAdded(e->from->index) && (!m || cmp(e, m))) m=e;
     }
     CHECK(m, "graph is not connected!");

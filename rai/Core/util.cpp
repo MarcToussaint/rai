@@ -1464,7 +1464,7 @@ double gaussIntExpectation(double x) {
 std::string getcwd_string() {
   char buff[PATH_MAX];
   char *succ=getcwd(buff, PATH_MAX);
-  CHECK(succ,"could not call getcwd: errno=" <<errno <<' ' <<strerror(errno));
+  if(!succ) HALT("could not call getcwd: errno=" <<errno <<' ' <<strerror(errno));
   return std::string(buff);
 }
 

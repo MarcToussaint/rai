@@ -153,7 +153,7 @@ void KinPathViewer::step() {
     copy.orsDrawMarkers=false;
     copy.gl().computeImage=writeToFiles;
     copy.gl().update(STRING("(time " <<tprefix+int(tt) <<'/' <<tprefix+int(T) <<")\n" <<text).p, false, false, true);
-    if(writeToFiles) write_ppm(copy.gl().captureImage,STRING("vid/z."<<std::setw(3)<<std::setfill('0')<<tprefix+int(tt)<<".ppm"));
+    if(writeToFiles) write_ppm(copy.gl().captureImage,STRING("vid/"<<std::setw(4)<<std::setfill('0')<<tprefix+int(tt)<<".ppm"));
   }
   t++;
 }
@@ -181,7 +181,7 @@ void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix,
     copy.gl().text.clear() <<"time " <<tprefix+int(t) <<'/' <<tprefix+int(cs.N);
     copy.gl().renderInBack(true, false, w, h);
 #endif
-    write_ppm(copy.gl().captureImage, STRING(filePrefix<<std::setw(3)<<std::setfill('0')<<t<<".ppm"));
+    write_ppm(copy.gl().captureImage, STRING(filePrefix<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
   }
 }
 

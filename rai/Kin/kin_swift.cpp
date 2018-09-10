@@ -150,27 +150,33 @@ void SwiftInterface::initActivations(const rai::KinematicWorld& world, uint pare
       }
     }
   //shapes within a body
-//  for(rai::Frame *b: world.frames) deactivate(b->shapes);
+  for(rai::Frame *f: world.frames){
+    FrameL F;
+    rai::Frame* l = f->getUpwardLink();
+    l->getRigidSubFrames(F);
+    deactivate(F);
+  }
   //deactivate along edges...
-  for(rai::Frame *f: world.frames) if(f->parent) {
-//    cout <<"deactivating edge pair " <<f->parent->name <<"--" <<f->name <<endl;
-      deactivate({ f->parent, f });
-    }
+//  for(rai::Frame *f: world.frames) if(f->parent) {
+////    cout <<"deactivating edge pair " <<f->parent->name <<"--" <<f->name <<endl;
+//      deactivate({ f->parent, f });
+//    }
   //deactivate along trees...
   for(rai::Frame *b: world.frames) {
+    if(!b->ats["robot"]) break;
     FrameL group, children;
     group.append(b);
     //all rigid links as well
     for(uint i=0; i<group.N; i++) {
-      for(rai::Frame *b2: group(i)->outLinks) if(!b2->joint) group.setAppend(b2);
+      for(rai::Frame *b2: group(i)->parentOf) if(!b2->joint) group.setAppend(b2);
     }
     for(uint l=0; l<parentLevelsToDeactivate; l++) {
       children.clear();
-      for(rai::Frame *b2: group) for(rai::Frame *b2to: b2->outLinks) children.setAppend(b2to);
+      for(rai::Frame *b2: group) for(rai::Frame *b2to: b2->parentOf) children.setAppend(b2to);
       group.setAppend(children);
       //all rigid links as well
       for(uint i=0; i<group.N; i++) {
-        for(rai::Frame *b2: group(i)->outLinks) if(!b2->joint) group.setAppend(b2);
+        for(rai::Frame *b2: group(i)->parentOf) if(!b2->joint) group.setAppend(b2);
       }
     }
     deactivate(group);

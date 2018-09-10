@@ -428,7 +428,9 @@ Node* Graph::edit(Node *ed) {
     }
     edited++;
   }
-  if(!edited) RAI_MSG("no nodes edited!");
+  if(!edited){
+    RAI_MSG("no nodes edited!");
+  }
   if(&ed->container==this) { delete ed; ed=NULL; }
   return NULL;
 }
@@ -477,7 +479,9 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
   }
   
   //-- the new nodes are not parent of anybody yet
+#ifndef RAI_NOCHECK
   for(Node *n:newNodes) CHECK(n->numChildren==0 && n->parentOf.N==0,"");
+#endif
   
   //-- now copy subgraphs
   for(Node *n:newNodes) if(n->isGraph()) {
@@ -536,10 +540,10 @@ void Graph::read(std::istream& is, bool parseInfo) {
   }
   if(parseInfo) getParseInfo(NULL).end=is.tellg();
   
-  DEBUG(checkConsistency();)
+  DEBUG(checkConsistency());
 
-      //-- merge all Merge keys
-      NodeL edits = getNodes("Edit");
+  //-- merge all Mege keys
+  NodeL edits = getNodes("Edit");
   for(Node *ed:edits) {
     CHECK_EQ(ed->keys.first(), "Edit" , "an edit node needs Edit as first key");
     ed->keys.remove(0);
@@ -1046,8 +1050,10 @@ bool Graph::checkConsistency() const {
     if(isIndexed) CHECK_EQ(node->index, idx, "");
     if(isDoubleLinked) {
       CHECK_EQ(node->numChildren, node->parentOf.N, "");
+#ifndef RAI_NOCHECK
       for(Node *j: node->parents)  CHECK(j->parentOf.findValue(node) != -1,"");
       for(Node *j: node->parentOf) CHECK(j->parents.findValue(node) != -1,"");
+#endif
     }
     for(Node *parent: node->parents) if(&parent->container!=this) {
       //check that parent is contained in a super-graph of this

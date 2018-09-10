@@ -200,7 +200,9 @@ void rai::Geom::glDraw(OpenGL &gl) {
 
 rai::GeomStore::~GeomStore() {
   for(Geom* g:geoms) if(g) delete g;
+#ifndef RAI_NOCHECK
   for(Geom* g:geoms) CHECK(!g, "geom is not deleted");
+#endif
   geoms.clear();
 }
 

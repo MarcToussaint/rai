@@ -109,6 +109,9 @@ OptLGP::OptLGP()
     OptLGPDataPath = dataPath;
     if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
 
+    collisions = rai::getParameter<bool>("LGP/collisions", false);
+    displayTree = rai::getParameter<bool>("LGP/displayTree", true);
+
     verbose = rai::getParameter<int>("LGP/vebose", 3);
     if(verbose>0) fil.open(dataPath + "optLGP.dat"); //STRING("z.optLGP." <<rai::date() <<".dat"));
 
@@ -139,12 +142,7 @@ void OptLGP::initDisplay() {
     views(1) = make_shared<KinPathViewer>("pose", 1.2, -1);
     views(2) = make_shared<KinPathViewer>("sequence", 1.2, -1);
     views(3) = make_shared<KinPathViewer>("path", .05, -2);
-    if(rai::getParameter<bool>("LGP/displayTree", 1)) {
-      rai::system("evince z.pdf &");
-      displayTree = true;
-    } else {
-      displayTree = false;
-    }
+    if(displayTree) rai::system("evince z.pdf &");
     for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
   }
   if(!dth) dth = new DisplayThread(this);
@@ -291,7 +289,7 @@ void OptLGP::optFixedSequence(const rai::String& seq, int specificLevel, bool co
   MNode *node = root;
   
   for(Node *actionLiteral:tmp) {
-    if(specificLevel==-1 || specificLevel==1) node->optLevel(1); //optimize poses along the path
+    if(specificLevel==-1 || specificLevel==1) node->optLevel(1, collisions); //optimize poses along the path
     node->expand();
     MNode *next = node->getChildByAction(actionLiteral);
     if(!next) LOG(-2) <<"action '" <<*actionLiteral <<"' is not a child of '" <<*node <<"'";
@@ -300,8 +298,8 @@ void OptLGP::optFixedSequence(const rai::String& seq, int specificLevel, bool co
     node = next;
   }
   
-  if(specificLevel==-1 || specificLevel==1) node->optLevel(1);
-  if(specificLevel==-1 || specificLevel==2) node->optLevel(2);
+  if(specificLevel==-1 || specificLevel==1) node->optLevel(1, collisions);
+  if(specificLevel==-1 || specificLevel==2) node->optLevel(2, collisions);
   if(specificLevel==-1 || specificLevel==3) node->optLevel(3, collisions);
   
   displayFocus = node;
@@ -342,9 +340,9 @@ bool OptLGP::execChoice(rai::String cmd) {
   if(cmd=="q") return false;
   else if(cmd=="u") { if(displayFocus->parent) displayFocus = displayFocus->parent; }
   else if(cmd=="e") displayFocus->expand();
-  else if(cmd=="p") displayFocus->optLevel(1);
-  else if(cmd=="s") displayFocus->optLevel(2);
-  else if(cmd=="x") displayFocus->optLevel(3);
+  else if(cmd=="p") displayFocus->optLevel(1, collisions);
+  else if(cmd=="s") displayFocus->optLevel(2, collisions);
+  else if(cmd=="x") displayFocus->optLevel(3, collisions);
   //  else if(cmd=="m") node->addMCRollouts(100,10);
   else {
     int choice=-1;
@@ -404,7 +402,7 @@ void OptLGP::optBestOnLevel(int level, MNodeL &fringe, MNodeL *addIfTerminal, MN
   MNode* n = popBest(fringe, level-1);
   if(n && !n->count(level)) {
     try {
-      n->optLevel(level);
+      n->optLevel(level, collisions);
     } catch(const char* err) {
       LOG(-1) <<"opt(level=" <<level <<") has failed for the following node:";
       n->write(cout, false, true);
@@ -424,7 +422,7 @@ void OptLGP::optFirstOnLevel(int level, MNodeL &fringe, MNodeL *addIfTerminal) {
   MNode *n =  fringe.popFirst();
   if(n && !n->count(level)) {
     try {
-      n->optLevel(level);
+      n->optLevel(level, collisions);
     } catch(const char* err) {
       LOG(-1) <<"opt(level=" <<level <<") has failed for the following node:";
       n->write(cout, false, true);
@@ -555,7 +553,7 @@ void OptLGP::run(uint steps) {
   init();
   
   uint stopSol = rai::getParameter<uint>("stopSol", 12);
-  double stopTime = rai::getParameter<double>("stopTime", 400.);
+  double stopTime = rai::getParameter<double>("LGP/stopTime", 400.);
   
   for(uint k=0; k<steps; k++) {
     step();

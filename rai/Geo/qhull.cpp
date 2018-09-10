@@ -190,7 +190,6 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
   
   uint i, j, k, l;
   arr v, f, w, v_f, y_f, dv, subn, wk, W;
-  double dd;
   for(i=0; i<vertices.N; i++) {
     v.referToDim(X, vertices(i)); //v is the vertex in question
     
@@ -220,8 +219,10 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
     double yf_vf=scalarProduct(y_f, v_f);
     double yf_vf_norm=yf_vf/sumOfSqr(v_f);
     // check pythagoras
-    dd = sumOfSqr(y_f) - yf_vf * yf_vf_norm;
+#ifndef RAI_NOCHECK
+    double dd = sumOfSqr(y_f) - yf_vf * yf_vf_norm;
     CHECK(fabs(dd - d*d)<1e-8, "");
+#endif
     
     //compute gradient
     dv.referToDim(dDdX, vertices(i));

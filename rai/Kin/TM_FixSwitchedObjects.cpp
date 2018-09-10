@@ -69,9 +69,13 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& Ktuple) {
       quat.order=1;
       quat.Feature::phi(y({M*i+3,M*i+6})(), (!!J?J({M*i+3,M*i+6})():NoArr), Ktuple);
 #else
-      TM_Default pose(TMT_pose, id, NoVector, b0Link->ID);
-      pose.order=1;
-      pose.Feature::phi(y({M*i,M*i+6})(), (!!J?J({M*i,M*i+6})():NoArr), Ktuple);
+      TM_Default pos(TMT_pos, id);
+      pos.order=1;
+      pos.Feature::phi(y({M*i,M*i+2})(), (!!J?J({M*i,M*i+2})():NoArr), Ktuple);
+
+      TM_AngVel rot(id);
+      rot.order=1;
+      rot.phi(y({M*i+3,M*i+5})(), (!!J?J({M*i+3,M*i+5})():NoArr), Ktuple);
 #endif
     } else if(order==2) { //absolute accelerations
 #if 0

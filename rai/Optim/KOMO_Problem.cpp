@@ -14,16 +14,18 @@ bool KOMO_Problem::checkStructure(const arr& x) {
   arrA J, H;
   ObjectiveTypeA tt, featureTypes;
 //  uint T=get_T();
-  uint k=get_k();
   uintA variableDimensions, featureTimes, phiTimes;
   getStructure(variableDimensions, featureTimes, featureTypes);
   uintA varDimIntegral = integral(variableDimensions);
   
   phi(y, J, H, phiTimes, tt, x, NoArr);
   
+#ifndef RAI_NOCHECK
+  uint m=y.N;
+  uint k=get_k();
+
   CHECK_EQ(tt, featureTypes,"");
   CHECK_EQ(sum(variableDimensions), x.N, "variable dimensions don't match");
-  uint m=y.N;
   CHECK_EQ(featureTimes.N, m, "");
   CHECK_EQ(J.N, m, "");
   CHECK_EQ(tt.N, m, "");
@@ -33,6 +35,7 @@ bool KOMO_Problem::checkStructure(const arr& x) {
     uint d=varDimIntegral(t) - (t>k? varDimIntegral(t-k-1) : 0);
     CHECK_EQ(J(i).N, d, i<<"th Jacobian has wrong dim");
   }
+#endif
   return true;
 }
 

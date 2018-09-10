@@ -175,13 +175,13 @@ rai::KinematicSwitch* newSwitch(const Node *specs, const rai::KinematicWorld& wo
     CHECK_EQ(sw->symbol, rai::deleteJoint, "");
     rai::Body *b = world.shapes(sw->fromId)->body;
     if(b->inLinks.N==1) {
-//      CHECK_EQ(b->outLinks.N, 0, "");
+//      CHECK_EQ(b->parentOf.N, 0, "");
       sw->toId = sw->fromId;
       sw->fromId = b->inLinks(0)->from->shapes.first()->index;
-    } else if(b->outLinks.N==1) {
+    } else if(b->parentOf.N==1) {
       CHECK_EQ(b->inLinks.N, 0, "");
-      sw->toId = b->outLinks(0)->from->shapes.first()->index;
-    } else if(b->inLinks.N==0 && b->outLinks.N==0) {
+      sw->toId = b->parentOf(0)->from->shapes.first()->index;
+    } else if(b->inLinks.N==0 && b->parentOf.N==0) {
       RAI_MSG("No link to delete for shape '" <<ref1 <<"'");
       delete sw;
       return NULL;

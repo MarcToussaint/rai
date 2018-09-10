@@ -619,7 +619,7 @@ void DrawActor(PxRigidActor* actor, rai::Frame *frame) {
     
     // use the color of the first shape of the body for the entire body
     rai::Shape *s = frame->shape;
-    if(!s) s = frame->outLinks.elem(0)->shape;
+    if(!s) s = frame->parentOf.elem(0)->shape;
     if(s) glColor(s->mesh().C);
     
     rai::Transformation f;
