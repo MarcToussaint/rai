@@ -115,7 +115,7 @@ void MNode::optLevel(uint level, bool collisions) {
   if(level==1 && parent) CHECK(parent->effKinematics.q.N, "I can't compute a pose when no pose was comp. for parent (I need the effKin)");
   skeleton2Bound(komo, BoundType(level), S, startKinematics, (parent?parent->effKinematics:startKinematics), collisions);
 
-  if(level==2) komo.denseOptimization=true;
+//  if(level==2) komo.denseOptimization=true;
 
   //-- optimize
   DEBUG(FILE("z.fol") <<fol;);

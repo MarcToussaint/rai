@@ -51,10 +51,11 @@ SwiftInterface::SwiftInterface(const rai::KinematicWorld& world, double _cutoff)
   INDEXswift2frame.resize(world.frames.N);  INDEXswift2frame=-1;
   INDEXshape2swift.resize(world.frames.N);  INDEXshape2swift=-1;
   
-  //cout <<" -- SwiftInterface init";
+  cout <<" -- SwiftInterface init";
   rai::Shape *s;
   for(rai::Frame *f: world.frames) if((s=f->shape) && s->cont) {
-      //cout <<'.' <<flush;
+    //cout <<'.' <<flush;
+    cout <<'.' <<f->name <<flush;
       add=true;
       switch(s->type()) {
         case rai::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
@@ -107,7 +108,7 @@ SwiftInterface::SwiftInterface(const rai::KinematicWorld& world, double _cutoff)
   initActivations(world, 4);
   
   pushToSwift(world);
-  //cout <<"...done" <<endl;
+  cout <<"...done" <<endl;
 }
 
 void SwiftInterface::reinitShape(const rai::Frame *f) {
@@ -162,10 +163,10 @@ void SwiftInterface::initActivations(const rai::KinematicWorld& world, uint pare
 //      deactivate({ f->parent, f });
 //    }
   //deactivate along trees...
-  for(rai::Frame *b: world.frames) {
-    if(!b->ats["robot"]) break;
+  for(rai::Frame *b: world.frames) if(b->shape && b->shape->cont){
+    if(!b->ats["robot"]) continue;
     FrameL group, children;
-    group.append(b);
+    group.append(b->getUpwardLink());
     //all rigid links as well
     for(uint i=0; i<group.N; i++) {
       for(rai::Frame *b2: group(i)->parentOf) if(!b2->joint) group.setAppend(b2);
