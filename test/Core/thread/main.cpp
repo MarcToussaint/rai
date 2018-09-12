@@ -7,26 +7,26 @@ Mutex m;
 
 // Normal Thread struct
 struct MyThread: Thread{
-  VariableData<double>& x;
+  Var<double> x;
   uint n;
-  MyThread(VariableData<double>& x, uint n, double beat):Thread(STRING("MyThread_"<<n), beat), x(x), n(n){
+  MyThread(Var<double>& _x, uint n, double beat):Thread(STRING("MyThread_"<<n), beat), x(this, _x), n(n){
     threadOpen();
   }
   void open(){}
   void close(){}
   void step(){
-    x.set(this)++;
+    x.set()++;
     COUT <<rai::realTime() <<"sec Thread " <<n <<" is counting:" <<x.get() <<endl;
   }
 };
 
 void TEST(Thread){
-  VariableData<double> x;
-  x.value = 0.;
+  Var<double> x;
+  x.set() = 0.;
   MyThread t1(x, 1, .5), t2(x, 2, -1);
 
   t1.threadLoop();
-  t2.listenTo(x); //whenever t1 modifies x, t2 is stepped
+  t2.event.listenTo(x); //whenever t1 modifies x, t2 is stepped
   
   rai::wait(3.);
 
@@ -159,6 +159,9 @@ struct PairSorter:Thread{
       a(this, a_name),
       b(this, b_name){}
   PairSorter():Thread("S"), a(this, "a"), b(this, "b"){}
+  ~PairSorter(){
+    cout <<"deleting -" <<a.name <<' ' <<b.name <<endl;
+  }
   void open(){}
   void close(){}
   void step();
@@ -174,23 +177,30 @@ void TEST(ModuleSorter1){
   for(uint i=0;i<N-1;i++)
     ps.append( new PairSorter(STRING("int"<<i), STRING("int"<<i+1)) );
   cout <<registry() <<endl <<"----------------------------" <<endl;
-  auto vars = getVariablesOfType<int>();
-  CHECK_EQ(vars.N, N, "");
 
-  threadOpenModules(true);
+  {
+    auto vars = getVariablesOfType<int>();
+    CHECK_EQ(vars.N, N, "");
 
-  for(uint i=0;i<N;i++) vars(i)->set() = rnd(100);
+    cout <<registry() <<endl <<"----------------------------" <<endl;
 
-  for(uint k=0;k<20;k++){
-    if(moduleShutdown()->getStatus()) break;
-    for(uint i=0;i<N;i++) cout <<vars(i)->get() <<' ';  cout <<endl;
-    stepModules();
-    rai::wait(.1);
+    threadOpenModules(true);
+
+    for(uint i=0;i<N;i++) vars(i)->set() = rnd(100);
+
+    for(uint k=0;k<20;k++){
+      if(moduleShutdown()->getStatus()) break;
+      for(uint i=0;i<N;i++) cout <<vars(i)->get() <<' ';  cout <<endl;
+      stepModules();
+      rai::wait(.1);
+    }
+
+    threadCloseModules();
   }
 
-  threadCloseModules();
-
   for(auto& x:ps){ delete x; x=NULL; }
+
+  cout <<registry() <<endl <<"----------------------------" <<endl;
 
 }
 
@@ -277,13 +287,14 @@ void TEST(Logging){
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc, argv);
 
-  testThread();
+//  testThread();
+  testModuleSorter1();
+  testModuleSorter2();
+
   testWay0();
   testWay1();
   testWay2();
   testSystemConnect();
-  testModuleSorter1();
-  testModuleSorter2();
   testLogging();
 
   return 0;

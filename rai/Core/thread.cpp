@@ -70,23 +70,23 @@ bool RWLock::isLocked() {
 //
 
 Signaler::Signaler(int initialStatus)
-  : status(initialStatus), registryNode(NULL) {
+  : status(initialStatus) {
   int rc = pthread_cond_init(&cond, NULL);    if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
 Signaler::~Signaler() {
-  for(Signaler *c:listensTo) {
-    c->statusLock();
-    c->listeners.removeValue(this);
-    c->statusUnlock();
-  }
-  for(Signaler *c:listeners) {
-    c->statusLock();
-    c->listensTo.removeValue(this);
-    c->messengers.removeValue(this, false);
-    c->statusUnlock();
-  }
-  listDelete(callbacks);
+//  for(Signaler *c:listensTo) {
+//    c->statusLock();
+//    c->listeners.removeValue(this);
+//    c->statusUnlock();
+//  }
+//  for(Signaler *c:listeners) {
+//    c->statusLock();
+//    c->listensTo.removeValue(this);
+//    c->messengers.removeValue(this, false);
+//    c->statusUnlock();
+//  }
+//  listDelete(callbacks);
   int rc = pthread_cond_destroy(&cond);    if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
@@ -108,48 +108,65 @@ int Signaler::incrementStatus(Signaler* messenger) {
 
 void Signaler::broadcast(Signaler* messenger) {
   //remember the messengers:
-  if(messenger) messengers.setAppend(messenger);
+//  if(messenger) messengers.setAppend(messenger);
   //signal to all waiters:
   int rc = pthread_cond_signal(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   //int rc = pthread_cond_broadcast(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   //setStatus to all listeners:
-  for(Signaler *c:listeners) if(c!=messenger) {
-      Thread *th = dynamic_cast<Thread*>(c);
-      if(th) th->threadStep();
-      else c->setStatus(1, this);
-    }
-  for(auto* c:callbacks) c->call()(this, status);
+//  for(Signaler *c:listeners) if(c!=messenger) {
+//      Thread *th = dynamic_cast<Thread*>(c);
+//      if(th) th->threadStep();
+//      else c->setStatus(1, this);
+//    }
+//  for(auto* c:callbacks) c->call()(this, status);
 }
 
-void Signaler::listenTo(Signaler& c) {
-  statusMutex.lock();
-  c.statusLock();
-  c.listeners.append(this);
-  listensTo.append(&c);
-  c.statusUnlock();
-  statusMutex.unlock();
+void Event::listenTo(Var_base& v) {
+  auto lock = statusMutex();
+  v.readAccess();
+  variableRevisions.append(v.revision);
+  variables.append(&v);
+  v.callbacks.append(new Callback<void(Var_base*,int)>(this, std::bind(&Event::callback, this, std::placeholders::_1, std::placeholders::_2)));
+  v.deAccess();
 }
 
-void Signaler::stopListenTo(Signaler& c) {
-  statusMutex.lock();
-  c.statusLock();
-  c.listeners.removeValue(this);
-  listensTo.removeValue(&c);
-  messengers.removeValue(&c, false);
-  c.statusUnlock();
-  statusMutex.unlock();
+void Event::stopListenTo(Var_base& v) {
+  auto lock = statusMutex();
+  v.readAccess();
+  int i=variables.findValue(&v);
+  CHECK_GE(i,0,"something's wrong");
+  variableRevisions.remove(i);
+  variables.remove(i);
+  v.callbacks.removeCallback(this);
+  v.deAccess();
 }
 
-void Signaler::stopListening() {
-  statusMutex.lock();
-  for(Signaler *c:listensTo) {
-    c->statusLock();
-    c->listeners.removeValue(this);
-    c->statusUnlock();
+void Event::stopListening() {
+  while(variables.N) stopListenTo(*variables.last());
+}
+
+void Event::callback(Var_base *v, int revision){
+  int i = variables.findValue(v);
+  CHECK_GE(i, 0, "signaler " <<v <<" was not registered with this event!");
+  variableRevisions(i) = revision;
+  if(eventFct){
+    int newEventStatus = eventFct(variables, variableRevisions, i);
+    //  cout <<"event callback: BOOL=" <<eventStatus <<' ' <<s <<' ' <<status <<" statuses=" <<statuses <<endl;
+    auto lock = statusMutex();
+    //  if(eventStatus){
+    //    cout <<"event callback: STATUS TRUE" <<endl;
+    if(this->status!=newEventStatus) setStatus(newEventStatus);
+    //  }else{
+    //    if(this->status!=AS_init && this->status!=AS_false) setStatus(AS_false);
+    //  }
+  }else{ //we don't have an eventFct, just increment value
+    incrementStatus();
   }
-  listensTo.clear();
-  messengers.clear();
-  statusMutex.unlock();
+}
+
+
+Event::~Event() {
+  stopListening();
 }
 
 void Signaler::statusLock() {
@@ -220,12 +237,14 @@ bool Signaler::waitForStatusEq(int i, bool userHasLocked, double seconds) {
   return true;
 }
 
-void Signaler::waitForStatusNotEq(int i, bool userHasLocked) {
+int Signaler::waitForStatusNotEq(int i, bool userHasLocked) {
   if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
   while(status==i) {
     int rc = pthread_cond_wait(&cond, &statusMutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
+  int _status=status;
   if(!userHasLocked) statusMutex.unlock();
+  return _status;
 }
 
 int Signaler::waitForStatusGreaterThan(int i, bool userHasLocked) {
@@ -251,42 +270,37 @@ void Signaler::waitForStatusSmallerThan(int i, bool userHasLocked) {
 // VariableBase
 //
 
-//VariableBase::VariableBase(const char *_name):name(_name), revision(0), registryNode(NULL) {
-////  registryNode = registry()->newNode<VariableBase* >({"VariableData", name}, {}, this);
-//}
-
-VariableBase::~VariableBase() {
-//  registry()->delNode(registryNode);
+Var_base::Var_base(const std::type_info& _type, void* _value_ptr, const char* _name) : type(_type), value_ptr(_value_ptr), name(_name) {
+//  registryNode = registry()->newNode<VariableBase* >({"VariableData", name}, {}, this);
+//  registryNode = registry()->newNode<VariableBase::Ptr>({"VariableData", name}, {}, std::dynamic_pointer_cast<VariableBase>(data));
 }
 
-//bool VariableBase::hasNewRevision(){
-//  return revision.getStatus() > last_revision;
-//}
+Var_base::~Var_base() {
+//  CHECK(registryNode,"");
+//  if(registryNode) registry()->delNode(registryNode);
+}
 
-int VariableBase::readAccess(Thread *th) {
-//  engine().acc->queryReadAccess(this, p);
+int Var_base::readAccess(Thread *th) {
   rwlock.readLock();
-//  engine().acc->logReadAccess(this, p);
-  return getStatus();
+  return revision;
 }
 
-int VariableBase::writeAccess(Thread *th) {
-//  engine().acc->queryWriteAccess(this, p);
+int Var_base::writeAccess(Thread *th) {
   rwlock.writeLock();
   write_time = rai::clockTime();
-//  engine().acc->logWriteAccess(this, p);
-  return getStatus()+1;
+  return revision+1;
 }
 
-int VariableBase::deAccess(Thread *th) {
-//  Module_Thread *p = m?(Module_Thread*) m->thread:NULL;
+int Var_base::deAccess(Thread *th) {
   int i;
   if(rwlock.rwCount == -1) { //log a revision after write access
-    i = incrementStatus(th);
-//    engine().acc->logWriteDeAccess(this,p);
+    i = revision++;
+    for(auto* c:callbacks){
+      //don't call a callback-event for a thread that accessed the variable:
+      if(!th || c->id!=&th->event) c->call()(this, i);
+    }
   } else {
-//    engine().acc->logReadDeAccess(this,p);
-    i = getStatus();
+    i = revision;
   }
   rwlock.unlock();
   return i;
@@ -431,7 +445,7 @@ MiniThread::~MiniThread() {
 }
 
 void MiniThread::threadClose(double timeoutForce) {
-  stopListening();
+//  stopListening();
   setStatus(tsToClose);
   if(!thread) { setStatus(tsIsClosed); return; }
   for(;;) {
@@ -452,7 +466,7 @@ void MiniThread::threadClose(double timeoutForce) {
 }
 
 void MiniThread::threadCancel() {
-  stopListening();
+//  stopListening();
   setStatus(tsToClose);
   if(!thread) { setStatus(tsIsClosed); return; }
   int rc;
@@ -512,7 +526,7 @@ protected:
 #endif
 
 Thread::Thread(const char* _name, double beatIntervalSec)
-  : Signaler(tsIsClosed),
+  : event(tsIsClosed),
     name(_name),
     thread(0),
     tid(0),
@@ -533,14 +547,15 @@ Thread::~Thread() {
 }
 
 void Thread::threadOpen(bool wait, int priority) {
-  statusLock();
-  if(thread) { statusUnlock(); return; } //this is already open -- or has just beend opened (parallel call to threadOpen)
+  {
+    auto lock = event.statusMutex();
+    if(thread) return; //this is already open -- or has just beend opened (parallel call to threadOpen)
 #ifndef RAI_QThread
-  int rc;
-  pthread_attr_t atts;
-  rc = pthread_attr_init(&atts); if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  rc = pthread_create(&thread, &atts, Thread_staticMain, this);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  /*if(priority){ //doesn't work - but setpriority does work!!
+    int rc;
+    pthread_attr_t atts;
+    rc = pthread_attr_init(&atts); if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+    rc = pthread_create(&thread, &atts, Thread_staticMain, this);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+    /*if(priority){ //doesn't work - but setpriority does work!!
     rc = pthread_attr_setschedpolicy(&atts, SCHED_RR);  if(rc) HALT("pthread failed with err " <<rc <<strerror(rc));
     sched_param  param;
     rc = pthread_attr_getschedparam(&atts, &param);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
@@ -549,30 +564,32 @@ void Thread::threadOpen(bool wait, int priority) {
     std::cout <<"modified priority = " <<param.sched_priority <<std::endl;
     rc = pthread_attr_setschedparam(&atts, &param);  if(rc) HALT("pthread failed with err " <<rc <<strerror(rc));
   }*/
-  //prctl(PR_SET_NAME, proc->name.p);
-  if(name) pthread_setname_np(thread, name);
+    //prctl(PR_SET_NAME, proc->name.p);
+    if(name) pthread_setname_np(thread, name);
 #else
-  thread = new sThread(this, "hallo");
-  thread->open();
+    thread = new sThread(this, "hallo");
+    thread->open();
 #endif
-  status=tsToOpen;
-  statusUnlock();
-  if(wait) waitForStatusNotEq(tsToOpen);
+    event.status=tsToOpen;
+  }
+
+  if(wait) event.waitForStatusNotEq(tsToOpen);
+
   if(metronome.ticInterval>0.) {
     if(metronome.ticInterval>1e-10) {
-      setStatus(tsBEATING);
+      event.setStatus(tsBEATING);
     } else {
-      setStatus(tsLOOPING);
+      event.setStatus(tsLOOPING);
     }
   }
 }
 
 void Thread::threadClose(double timeoutForce) {
-  stopListening();
-  setStatus(tsToClose);
-  if(!thread) { setStatus(tsIsClosed); return; }
+  event.stopListening();
+  event.setStatus(tsToClose);
+  if(!thread) { event.setStatus(tsIsClosed); return; }
   for(;;) {
-    bool ended = waitForStatusEq(tsIsClosed, false, .2);
+    bool ended = event.waitForStatusEq(tsIsClosed, false, .2);
     if(ended) break;
     LOG(-1) <<"timeout to end Thread::main of '" <<name <<"'";
 //    if(timeoutForce>0.){
@@ -595,8 +612,8 @@ void Thread::threadClose(double timeoutForce) {
 }
 
 void Thread::threadCancel() {
-  stopListening();
-  setStatus(tsToClose);
+  event.stopListening();
+  event.setStatus(tsToClose);
   if(!thread) return;
 #ifndef RAI_QThread
   int rc;
@@ -611,7 +628,7 @@ void Thread::threadCancel() {
 
 void Thread::threadStep() {
   threadOpen();
-  setStatus(tsToStep);
+  event.setStatus(tsToStep);
 }
 
 //void Thread::listenTo(VariableBase& var) {
@@ -637,7 +654,7 @@ void Thread::threadStep() {
 //}
 
 bool Thread::isIdle() {
-  return getStatus()==tsIDLE;
+  return event.getStatus()==tsIDLE;
 }
 
 bool Thread::isClosed() {
@@ -645,26 +662,26 @@ bool Thread::isClosed() {
 }
 
 void Thread::waitForOpened() {
-  waitForStatusNotEq(tsIsClosed);
-  waitForStatusNotEq(tsToOpen);
+  event.waitForStatusNotEq(tsIsClosed);
+  event.waitForStatusNotEq(tsToOpen);
 }
 
 void Thread::waitForIdle() {
-  waitForStatusEq(tsIDLE);
+  event.waitForStatusEq(tsIDLE);
 }
 
 void Thread::threadLoop(bool waitForOpened) {
   threadOpen(waitForOpened);
   if(metronome.ticInterval>1e-10) {
-    setStatus(tsBEATING);
+    event.setStatus(tsBEATING);
   } else {
-    setStatus(tsLOOPING);
+    event.setStatus(tsLOOPING);
   }
 }
 
 void Thread::threadStop(bool wait) {
   if(thread) {
-    setStatus(tsIDLE);
+    event.setStatus(tsIDLE);
     if(wait) waitForIdle();
   }
 }
@@ -681,50 +698,41 @@ void Thread::main() {
     try {
       open(); //virtual open routine
     } catch(const std::exception& ex) {
-      setStatus(tsFAILURE);
+      event.setStatus(tsFAILURE);
       cerr <<"*** open() of Thread'" <<name <<"'failed: " <<ex.what() <<" -- closing it again" <<endl;
     } catch(...) {
-      setStatus(tsFAILURE);
+      event.setStatus(tsFAILURE);
       cerr <<"*** open() of Thread '" <<name <<"' failed! -- closing it again";
       return;
     }
   }
   
-  statusLock();
-  if(status==tsToOpen) {
-    status=tsIDLE;
-    broadcast();
+  event.statusLock();
+  if(event.status==tsToOpen) {
+    event.status=tsIDLE;
+    event.broadcast();
   }
   //if not =tsOPENING anymore -> the state was set on looping or beating already
-  statusUnlock();
+  event.statusUnlock();
   
   timer.reset();
   bool waitForTic=false;
   for(;;) {
     //-- wait for a non-idle state
-    statusLock();
-    waitForStatusNotEq(tsIDLE, true);
-    if(status==tsToClose) { statusUnlock();  break; }
-    if(status==tsBEATING) waitForTic=true; else waitForTic=false;
-    if(status>0) status=tsIDLE; //step command -> reset to idle
-    statusUnlock();
+    int s = event.waitForStatusNotEq(tsIDLE);
+    if(s==tsToClose) break;
+    if(s==tsBEATING) waitForTic=true; else waitForTic=false;
+    if(s>0) event.setStatus(tsIDLE); //step command -> reset to idle
     
     if(waitForTic) metronome.waitForTic();
     
     //-- make a step
-    //engine().acc->logStepBegin(module);
     timer.cycleStart();
     stepMutex.lock();
     step(); //virtual step routine
     stepMutex.unlock();
     step_count++;
     timer.cycleDone();
-    //engine().acc->logStepEnd(module);
-    
-//    //-- broadcast in case somebody was waiting for a finished step
-//    status.lock();
-//    status.broadcast();
-//    status.unlock();
   };
   
   stepMutex.lock();
@@ -732,7 +740,7 @@ void Thread::main() {
   stepMutex.unlock();
   if(verbose>0) cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
   
-  setStatus(tsIsClosed);
+  event.setStatus(tsIsClosed);
 }
 
 //===========================================================================
@@ -781,12 +789,12 @@ void closeModules() {
   for(Node* th:threads) { th->get<Thread*>()->close(); }
 }
 
-VariableBase::Ptr getVariable(const char* name) {
-  return registry()->get<VariableBase::Ptr>({"VariableData", name});
+Var_base::Ptr getVariable(const char* name) {
+  return registry()->get<Var_base::Ptr>({"VariableData", name});
 }
 
 VariableBaseL getVariables() {
-  return registry()->getValuesOfType<VariableBase::Ptr>();
+  return registry()->getValuesOfType<Var_base::Ptr>();
 }
 
 void threadOpenModules(bool waitForOpened, bool setSignalHandler) {
