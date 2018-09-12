@@ -39,7 +39,8 @@ struct SwiftInterface {
   void deactivate(rai::Frame *s);
   void activate(rai::Frame *s1, rai::Frame *s2);
   void deactivate(rai::Frame *s1, rai::Frame *s2);
-  void deactivate(const FrameL& bodies);
+  void deactivate(const FrameL& shapes1, const FrameL& shapes2);
+  void deactivate(const FrameL& shapes);
   
   void initActivations(const rai::KinematicWorld& world, uint parentLevelsToDeactivate=1);
   void swiftQueryExactDistance();

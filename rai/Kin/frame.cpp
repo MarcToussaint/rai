@@ -727,7 +727,11 @@ void rai::Shape::read(const Graph& ats) {
 
   getGeom().read(ats);
   
-  if(ats["contact"])           { cont=true; }
+  if(ats["contact"]){
+    double d;
+    if(ats.get(d, "contact")) cont = (char)d;
+    else cont=1;
+  }
   
   //center the mesh:
   if(type()==rai::ST_mesh && mesh().V.N) {
