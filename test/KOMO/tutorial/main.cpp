@@ -21,8 +21,6 @@ void tutorialBasics(){
   komo.setTiming(2, 20, 5., 2);
 
   //-- default tasks for transition costs
-//  komo.setFixEffectiveJoints(); //only relevant when there are kinematic switches
-//  komo.setFixSwitchedObjects(); //only relevant when there are kinematic switches
   komo.setSquaredQAccelerations();
   komo.setSquaredQuaternionNorms(-1., -1., 1e1); //when the kinematics includes quaternion joints, keep them roughly regularized
 

@@ -211,9 +211,9 @@ void KOMO::addSwitch_stable(double time, double endTime, const char* from, const
   addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, from, to, world));
 //  addFlag(time, new Flag(FL_clear, world[to]->ID, 0, true));
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true));
-  if(stepsPerPhase*endTime>stepsPerPhase*time+1)
+  if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
     addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
-  addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, 1e2, {}, 1);
+  if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, 1e2, {}, 1);
 
 //  addFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
   if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, 0, +1);
@@ -1054,8 +1054,8 @@ void KOMO::setIKOpt() {
 void KOMO::setPoseOpt() {
   denseOptimization=true;
   setTiming(1., 2, 5., 1);
-  setFixEffectiveJoints();
-  setFixSwitchedObjects();
+//  setFixEffectiveJoints();
+//  setFixSwitchedObjects();
   setSquaredQVelocities();
   setSquaredQuaternionNorms();
 }
@@ -1063,8 +1063,8 @@ void KOMO::setPoseOpt() {
 void KOMO::setSequenceOpt(double _phases) {
   denseOptimization=false;
   setTiming(_phases, 2, 5., 1);
-  setFixEffectiveJoints();
-  setFixSwitchedObjects();
+//  setFixEffectiveJoints();
+//  setFixSwitchedObjects();
   setSquaredQVelocities();
   setSquaredQuaternionNorms();
 }
@@ -1072,8 +1072,8 @@ void KOMO::setSequenceOpt(double _phases) {
 void KOMO::setPathOpt(double _phases, uint stepsPerPhase, double timePerPhase) {
   denseOptimization=false;
   setTiming(_phases, stepsPerPhase, timePerPhase, 2);
-  setFixEffectiveJoints();
-  setFixSwitchedObjects();
+//  setFixEffectiveJoints();
+//  setFixSwitchedObjects();
   setSquaredQAccelerations();
   setSquaredQuaternionNorms();
 }
@@ -1186,8 +1186,8 @@ void KOMO::run() {
   if(opt) delete opt;
   if(denseOptimization){
     CHECK(!splineB.N, "NIY");
-//    opt = new OptConstrained(x, dual, dense_problem);
-    OptPrimalDual _opt(x, dual, dense_problem);
+    OptConstrained _opt(x, dual, dense_problem);
+//    OptPrimalDual _opt(x, dual, dense_problem);
     _opt.fil = fil;
     _opt.run();
   } else if(!splineB.N) {

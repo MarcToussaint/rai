@@ -14,13 +14,11 @@ void TEST(KomoSequence){
 
   //  komo.setHoming(-1., -1., 1e-1);
   //  komo.setSquaredQVelocities();
-  komo.setFixEffectiveJoints();
   komo.setFixSwitchedObjects();
   komo.setSquaredQAccelerations();
 
   komo.setGrasp(1., "humanR", "Long1");
   komo.setPlace(1.8, "humanR", "Long1", "tableL");
-  komo.setSlowAround(1., .1, 1e3);
 
   komo.setGrasp(1., "humanL", "Long2");
   komo.setPlace(1.8, "humanL", "Long2", "tableR");
