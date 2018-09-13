@@ -1,13 +1,13 @@
 
 body stem { X=<T t(0 0 1)> type=2 size=[0.1 0.1 2 .1] fixed, }
 
-body arm1 { type=2 size=[0.1 0.1 .4 .1] contact, }
-body arm2 { type=2 size=[0.1 0.1 .4 .1] contact, }
-body arm3 { type=2 size=[0.1 0.1 .4 .1] contact, }
-body arm4 { type=2 size=[0.1 0.1 .4 .1] contact, }
-body arm5 { type=2 size=[0.1 0.1 .4 .1] contact, }
-body arm6 { type=2 size=[0.1 0.1 .4 .1] contact, }
-body arm7 { type=2 size=[0.1 0.1 .4 .1] contact, }
+body arm1 { type=2 size=[0.1 0.1 .4 .1] contact:-1, }
+body arm2 { type=2 size=[0.1 0.1 .4 .1] contact:-1, }
+body arm3 { type=2 size=[0.1 0.1 .4 .1] contact:-1, }
+body arm4 { type=2 size=[0.1 0.1 .4 .1] contact:-1, }
+body arm5 { type=2 size=[0.1 0.1 .4 .1] contact:-1, }
+body arm6 { type=2 size=[0.1 0.1 .4 .1] contact:-1, }
+body arm7 { type=2 size=[0.1 0.1 .4 .1] contact:-1, }
 
 joint (stem arm1) { A=<T t(0 0 1) d(90 1 0 0)> B=<T t(0 0 .2)>  Q=<T d(1 0 0 0)> }
 

@@ -20,8 +20,8 @@ void TEST(Easy){
   komo.setPathOpt(1., 100, 5.);
 
   //-- set a time optim objective
-  komo.addObjective(-1., -1., new TM_Time(), OT_sos, {}, 1e2, 1); //smooth time evolution
-  komo.addObjective(-1., -1., new TM_Time(), OT_sos, {komo.tau}, 1e1, 0); //prior on timing
+//  komo.addObjective(-1., -1., new TM_Time(), OT_sos, {}, 1e2, 1); //smooth time evolution
+//  komo.addObjective(-1., -1., new TM_Time(), OT_sos, {komo.tau}, 1e1, 0); //prior on timing
 
   komo.setPosition(1., 1., "endeff", "target", OT_sos);
   komo.setSlowAround(1., .05);
@@ -50,18 +50,20 @@ void TEST(Align){
   komo.setModel(K);
   komo.setPathOpt(1., 100, 5.);
 
-  komo.setPosition(1., 1., "endeff", "target");
-  komo.setOrientation(1., 1., "endeff", "target", OT_eq);
+//  komo.setPosition(1., 1., "endeff", "target");
+  komo.addObjective({1.}, OT_sos, FS_positionRel, {"target", "endeff"});
+//  komo.setOrientation(1., 1., "endeff", "target", OT_eq);
+//  komo.addObjective({1.}, OT_eq, FS_scalarProductXZ, {"target", "endeff"});
+//  komo.addObjective({1.}, OT_eq, FS_scalarProductYZ, {"target", "endeff"});
+  komo.addObjective({1.}, OT_sos, FS_scalarProductZZ, {"target", "endeff"}, 1e2, {1.});
   komo.setSlowAround(1., .02);
-  komo.add_collision(false);
-//  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq, NoArr, 1e1);
+  komo.add_collision(true);
 
   komo.reset();
   komo.run();
   komo.plotTrajectory();
   komo.getReport(true);
   for(uint i=0;i<2;i++) komo.displayTrajectory();
-//  while(komo.displayTrajectory());
 }
 
 //===========================================================================
@@ -71,7 +73,7 @@ void TEST(PR2){
   rai::KinematicWorld K("model.g");
   K.pruneRigidJoints();
   K.optimizeTree();
-  makeConvexHulls(K.frames);
+//  makeConvexHulls(K.frames);
   cout <<"configuration space dim=" <<K.getJointStateDimension() <<endl;
   double rand = rai::getParameter<double>("KOMO/moveTo/randomizeInitialPose", .0);
   if(rand){
@@ -85,7 +87,7 @@ void TEST(PR2){
   komo.setPathOpt(1., 100, 10.);
   komo.setPosition(1., 1., "endeff", "target");
   komo.setSlowAround(1., .02);
-  komo.add_collision(false);
+  komo.add_collision(true);
 //  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq);
 //  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq, NoArr, 1e2);
 

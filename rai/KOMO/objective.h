@@ -28,8 +28,10 @@ struct Objective {
   bool isActive(uint t) { return (prec.N>t && prec(t)); }
   void write(std::ostream& os) const {
     os <<"TASK '" <<name <<"'";
-    if(vars.d0==1) os <<" ("<<vars <<')';
-    else os <<" (" <<vars.first() <<".." <<vars.last() <<')';
+    if(vars.N){
+      if(vars.d0==1) os <<" ("<<vars <<')';
+      else os <<" (" <<vars.first() <<".." <<vars.last() <<')';
+    }else os <<" ()";
     os <<"  type=" <<type
        <<"  order=" <<map->order
        <<"  target=[" <<target <<']'
