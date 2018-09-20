@@ -118,7 +118,7 @@ struct KOMO : NonCopyable {
   void setHoming(double startTime=0., double endTime=-1., double prec=1e-1, const char *keyword="robot");
   void setHoldStill(double startTime, double endTime, const char* shape, double prec=1e1);
 
-  void add_collision(bool hardConstraint, double margin=.0, double prec=1.);
+  void add_collision(bool hardConstraint, double margin=.0, double prec=1e1);
   void add_jointLimits(bool hardConstraint, double margin=.05, double prec=1.);
   void setLiftDownUp(double time, const char *endeff, double timeToLift=.15);
   void setSlow(double startTime, double endTime, double prec=1e1, bool hardConstrained=false);
