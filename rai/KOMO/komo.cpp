@@ -211,7 +211,7 @@ void KOMO::addSwitch_stable(double time, double endTime, const char* from, const
   addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, from, to, world));
 //  addFlag(time, new Flag(FL_clear, world[to]->ID, 0, true));
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true));
-  if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
+  if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+2)
     addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
   if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, 1e2, {}, 1);
 
@@ -226,9 +226,9 @@ void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, con
   addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
 //  addFlag(time, new Flag(FL_clear, world[to]->ID, 0, true));
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true));
-  if(stepsPerPhase*endTime>stepsPerPhase*time+1)
+  if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+2)
     addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
-  addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, 1e2, {}, 1);
+  if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, 1e2, {}, 1);
 
 //  o->prec(-1)=o->prec(-2)=0.;
 //  addFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
@@ -890,7 +890,7 @@ void KOMO_ext::setAbstractTask(double phase, const Graph& facts, int verbose) {
 
 void KOMO::setSkeleton(const Skeleton &S) {
   for(const SkeletonEntry& s:S) {
-    cout <<"SKELETON->KOMO " <<s <<endl;
+//    cout <<"SKELETON->KOMO " <<s <<endl;
     if(!s.symbols.N) continue;
 #if 1
     if(s.symbols(0)=="touch") {   add_touch(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }

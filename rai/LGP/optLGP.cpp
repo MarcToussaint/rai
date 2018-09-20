@@ -202,7 +202,7 @@ void OptLGP::updateDisplay() {
     for(auto& n:fringe_path)  n->note <<"PATH ";
     for(auto& n:fringe_solved) n->note <<"DONE";
     
-    Graph dot=root->getGraph(true);
+    Graph dot=root->getGraph(false);
     dot.writeDot(FILE("z.dot"));
     rai::system("dot -Tpdf z.dot > z.pdf");
   }
