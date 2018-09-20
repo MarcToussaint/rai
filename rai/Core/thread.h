@@ -203,7 +203,7 @@ struct Var {
   int getRevision() { data->rwlock.readLock(); int r=data->revision; data->rwlock.unlock(); return r; }
   bool hasNewRevision() { return getRevision()>last_read_revision; }
   void waitForNextRevision(uint multipleRevisions=0) { data->waitForStatusGreaterThan(last_read_revision+multipleRevisions); }
-  int waitForRevisionGreaterThan(int rev) { return data->waitForStatusGreaterThan(rev); }
+  int waitForRevisionGreaterThan(int rev);
   void waitForValueEq(const T& x) {
     data->waitForEvent([this, &x]()->bool {
       return this->data->data==x;
@@ -267,7 +267,7 @@ typedef std::function<int(const rai::Array<Var_base*>&, const intA&, int whoChan
 struct Event : Signaler {
   rai::Array<Var_base*> variables;
   EventFunction eventFct;
-  uintA variableRevisions;
+  intA variableRevisions;
 
   Event(int initialState=0) : Signaler(initialState) {}
   Event(const rai::Array<Var_base*>& _variables, const EventFunction& _eventFct, int initialState=0)
@@ -590,6 +590,24 @@ template<class T>
 Var<T>::~Var() {
 //  cout <<data.use_count() <<endl;
   if(registryNode) registry()->delNode(registryNode);
+}
+
+template<class T>
+int Var<T>::waitForRevisionGreaterThan(int rev) {
+#if 0
+  return data->waitForStatusGreaterThan(rev);
+#else
+  EventFunction evFct = [&rev](const rai::Array<Var_base*>& vars, const intA& revs, int whoChanged) -> int {
+    CHECK_EQ(vars.N, 1, ""); //this event only checks the revision for a single var
+    CHECK_EQ(vars.N, revs.N, ""); //this event only checks the revision for a single var
+    if(revs.scalar() > rev) return 1;
+    return 0;
+  };
+
+  Event ev({data.get()}, evFct, 0);
+  ev.waitForStatusEq(1);
+  return data->getRevision();
+#endif
 }
 
 //template<class T> Var<T>& Var<T>::operator=(const Var& v){

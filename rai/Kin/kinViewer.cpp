@@ -61,6 +61,15 @@ KinViewer::KinViewer(const char* world_name, double beatIntervalSec)
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
 
+KinViewer::KinViewer(Var<rai::KinematicWorld>& _kin, double beatIntervalSec, const char* _cameraFrameName)
+  : Thread("KinViewer", beatIntervalSec),
+    world(this, _kin, (beatIntervalSec<0.)){
+  if(_cameraFrameName && strlen(_cameraFrameName)>0){
+    cameraFrameID =  world.get()->getFrameByName(_cameraFrameName, true)->ID;
+  }
+  if(beatIntervalSec>=0.) threadLoop(); else threadStep();
+}
+
 KinViewer::~KinViewer() {
   threadClose();
 }
@@ -71,6 +80,20 @@ void KinViewer::open() {
   gl->add(glDrawMeshes, &meshesCopy);
 //  gl->add(rai::glDrawProxies, &proxiesCopy);
   gl->camera.setDefault();
+  if(cameraFrameID>=0){
+    rai::Frame *frame = world.get()->frames(cameraFrameID);
+    double d;
+    arr z;
+    if(frame->ats.get<double>(d,"focalLength")) gl->camera.setFocalLength(d);
+    if(frame->ats.get<arr>(z,"zrange")) gl->camera.setZRange(z(0), z(1));
+    uint w=0, h=0;
+    if(frame->ats.get<double>(d,"width")) w = (uint)d;
+    if(frame->ats.get<double>(d,"height")) h = (uint)d;
+    if(w && h){
+      gl->resize(w,h);
+      gl->camera.setWHRatio((double)w/h);
+    }
+  }
 }
 
 void KinViewer::close() {
@@ -96,6 +119,9 @@ void KinViewer::step() {
   for(rai::Frame *f:world().frames) X(f->ID) = f->X;
   gl->dataLock.writeLock();
 //  proxiesCopy = world->proxies;
+  if(cameraFrameID>=0){
+    gl->camera.X = world->frames(cameraFrameID)->X;
+  }
   gl->dataLock.unlock();
   world.deAccess();
   

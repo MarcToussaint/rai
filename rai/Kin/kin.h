@@ -11,6 +11,7 @@
 
 #include <Core/array.h>
 #include <Geo/geo.h>
+#include "featureSymbols.h"
 
 struct OpenGL;
 struct PhysXInterface;
@@ -153,7 +154,10 @@ struct KinematicWorld : GLDrawer {
     else HALT("wrong dimension");
   }
 
-  /// @name kinematics
+  /// @name features
+  void evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA &symbols) const;
+
+  /// @name kinematics (low level)
   void kinematicsPos(arr& y, arr& J, Frame *a, const Vector& rel=NoVector) const;  //TODO: make vector& not vector*
   void kinematicsVec(arr& y, arr& J, Frame *a, const Vector& vec=NoVector) const;
   void kinematicsQuat(arr& y, arr& J, Frame *a) const;

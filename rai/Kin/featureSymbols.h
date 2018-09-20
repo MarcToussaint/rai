@@ -1,4 +1,6 @@
-#include "feature.h"
+#pragma once
+
+//#include "feature.h"
 
 enum FeatureSymbol {
   FS_none=-1,
@@ -45,5 +47,8 @@ enum FeatureSymbol {
   FS_energy,
 };
 
+namespace rai{
+  struct KinematicWorld;
+}
 
-Feature *symbols2feature(FeatureSymbol feat, const StringA &symbols, const rai::KinematicWorld& world);
+struct Feature *symbols2feature(FeatureSymbol feat, const StringA &symbols, const rai::KinematicWorld& world);

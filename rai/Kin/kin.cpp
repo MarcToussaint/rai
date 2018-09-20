@@ -670,6 +670,17 @@ void rai::KinematicWorld::setTimes(double t) {
 
 //===========================================================================
 //
+// features
+//
+
+void rai::KinematicWorld::evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& symbols) const{
+  Feature *f = symbols2feature(fs, symbols, *this);
+  f->phi(y, J, *this);
+  delete f;
+}
+
+//===========================================================================
+//
 // core: kinematics and dynamics
 //
 
