@@ -23,6 +23,7 @@ struct Event;
 struct Var_base;
 struct Thread;
 typedef rai::Array<Signaler*> SignalerL;
+typedef rai::Array<Var_base*> VarL;
 typedef rai::Array<Thread*> ThreadL;
 
 #ifndef RAI_MSVC
@@ -95,8 +96,6 @@ struct Var_base : NonCopyable {
   typedef std::shared_ptr<Var_base> Ptr;
 };
 
-typedef rai::Array<Var_base::Ptr*> VariableBaseL;
-
 //===========================================================================
 
 template<class T>
@@ -126,7 +125,7 @@ struct WToken {
     if(getRevision) *getRevision=var->revision+1;
   }
   WToken(const double& dataTime, Var_base& _var, T* _data, Thread* _th=NULL, int* getRevision=NULL)
-    : var(_var), data(_data), th(_th) {
+    : var(&_var), data(_data), th(_th) {
     var->writeAccess(th);
     var->data_time=dataTime;
     if(getRevision) *getRevision=var->revision+1;
@@ -263,7 +262,7 @@ struct Signaler {
 
 //===========================================================================
 
-typedef std::function<int(const rai::Array<Var_base*>&, const uintA&, int whoChanged)> EventFunction;
+typedef std::function<int(const rai::Array<Var_base*>&, const intA&, int whoChanged)> EventFunction;
 
 struct Event : Signaler {
   rai::Array<Var_base*> variables;
@@ -271,6 +270,8 @@ struct Event : Signaler {
   uintA variableRevisions;
 
   Event(int initialState=0) : Signaler(initialState) {}
+  Event(const rai::Array<Var_base*>& _variables, const EventFunction& _eventFct, int initialState=0)
+    : Signaler(initialState), variables(_variables), eventFct(_eventFct) { NIY }
   ~Event();
 
   void listenTo(Var_base& v);
@@ -279,6 +280,8 @@ struct Event : Signaler {
   void stopListenTo(Var_base& c);
 
   void callback(Var_base *v, int revision);
+
+  typedef std::shared_ptr<Event> Ptr;
 };
 
 //===========================================================================
@@ -418,10 +421,12 @@ template<class T> Var_data<T>& getVariable(const char* name) {
   if(!var) HALT("can't convert variable of type '" <<NAME(v->type) <<"' to '" <<NAME(typeid(T)) <<"'");
   return *var;
 }
-VariableBaseL getVariables();
+
+rai::Array<Var_base::Ptr*> getVariables();
+
 template<class T> rai::Array<shared_ptr<Var<T>>> getVariablesOfType() {
   rai::Array<shared_ptr<Var<T>>> ret;
-  VariableBaseL vars = getVariables();
+  rai::Array<Var_base::Ptr*> vars = getVariables();
   for(Var_base::Ptr* v : vars) {
     if((*v)->type==typeid(T)) ret.append(std::make_shared<Var<T>>((Thread*)0, *v));
 //    shared_ptr<VariableData<T>> var = std::dynamic_pointer_cast<VariableData<T>>(*v);
