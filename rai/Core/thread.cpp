@@ -793,7 +793,7 @@ Var_base::Ptr getVariable(const char* name) {
   return registry()->get<Var_base::Ptr>({"VariableData", name});
 }
 
-VariableBaseL getVariables() {
+rai::Array<Var_base::Ptr*> getVariables() {
   return registry()->getValuesOfType<Var_base::Ptr>();
 }
 
@@ -925,7 +925,7 @@ TStream::Register::~Register() {
 }
 
 RUN_ON_INIT_BEGIN(thread)
-VariableBaseL::memMove=true;
+rai::Array<Var_base::Ptr*>::memMove=true;
 ThreadL::memMove=true;
 SignalerL::memMove=true;
 RUN_ON_INIT_END(thread)

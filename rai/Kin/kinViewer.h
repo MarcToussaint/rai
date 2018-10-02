@@ -42,7 +42,9 @@ struct KinViewer : Thread {
   MeshA meshesCopy;
   ProxyA proxiesCopy;
   struct OpenGL *gl;
+  int cameraFrameID=-1;
   KinViewer(const char* world_name="modelWorld", double beatIntervalSec=-1.);
+  KinViewer(Var<rai::KinematicWorld>& _kin, double beatIntervalSec=-1., const char* _cameraFrameName=NULL);
   ~KinViewer();
   void open();
   void step();
