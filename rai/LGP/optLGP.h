@@ -39,6 +39,7 @@ struct OptLGP : GLDrawer {
   rai::String dataPath;
   
   MNode *root=0, *displayFocus=0;
+  FOL_World *selfCreated=NULL;
   
   rai::Array<std::shared_ptr<KinPathViewer>> views; //displays for the 3 different levels
   
@@ -58,6 +59,7 @@ struct OptLGP : GLDrawer {
   
   //high-level
   OptLGP();
+  OptLGP(rai::KinematicWorld& kin, const char *folFileName="fol.g");
   OptLGP(rai::KinematicWorld& kin, FOL_World& fol);
   void init(rai::KinematicWorld &kin, FOL_World &fol);
   ~OptLGP();
@@ -71,8 +73,9 @@ private:
   MNode* popBest(MNodeL& fringe, uint level);
   MNode* getBest() { return getBest(fringe_solved, 3); }
   MNode *expandBest(int stopOnLevel=-1);
-  void optBestOnLevel(int level, MNodeL& fringe, MNodeL* addIfTerminal, MNodeL* addChildren);
-  void optFirstOnLevel(int level, MNodeL& fringe, MNodeL* addIfTerminal);
+
+  void optBestOnLevel(BoundType bound, MNodeL& fringe, MNodeL* addIfTerminal, MNodeL* addChildren);
+  void optFirstOnLevel(BoundType bound, MNodeL& fringe, MNodeL* addIfTerminal);
   void clearFromInfeasibles(MNodeL& fringe);
   
 public:
@@ -81,8 +84,12 @@ public:
   void step();
   void buildTree(uint depth);
   void getSymbolicSolutions(uint depth);
-  void optFixedSequence(const rai::String& seq, int specificLevel=-1, bool collisions=false);
+  void optFixedSequence(const rai::String& seq, BoundType specificBound=BD_all, bool collisions=false);
   void optMultiple(const StringA& seqs);
+
+  //-- work directly on the tree
+  MNode* walkToNode(const rai::String& seq);
+
   
   // output
   uint numFoundSolutions();
@@ -90,7 +97,7 @@ public:
   void reportEffectiveJoints();
   void initDisplay();
   void updateDisplay();
-  void renderToVideo(uint level=3, const char* filePrefix="vid/");
+  void renderToVideo(uint specificBound=3, const char* filePrefix="vid/");
   void writeNodeList(ostream& os=cout);
   void glDraw(struct OpenGL&gl);
   

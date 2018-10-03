@@ -12,6 +12,7 @@
 #include <Logic/fol_mcts_world.h>
 #include <Logic/fol.h>
 #include <KOMO/komo.h>
+#include "bounds.h"
 
 struct MNode;
 typedef rai::Array<MNode*> MNodeL;
@@ -25,8 +26,6 @@ extern double COUNT_time;
 extern rai::String OptLGPDataPath;
 extern ofstream *filNodes;
 extern bool LGP_useHoming;
-
-enum LEVEL { l_symbolic=0, l_pose=1, l_seq=2, l_path=3 };
 
 //===========================================================================
 
@@ -60,7 +59,7 @@ struct MNode {
   boolA feasible;   ///< feasibility for each level
   uintA count;      ///< how often was this level evaluated
   arr computeTime;  ///< computation times for each level
-  double bound=0.;
+  double highestBound=0.;
   
   rai::Array<KOMO*> komoProblem; //komo problems for all levels
   arrA opt; //these are the optima (trajectories) computed
@@ -78,7 +77,7 @@ struct MNode {
   
   //- computations on the node
   void expand(int verbose=0);           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
-  void optLevel(uint level, bool collisions=false);
+  void optBound(BoundType bound, bool collisions=false);
   void resetData();
   
   //-- helpers to get other nodes

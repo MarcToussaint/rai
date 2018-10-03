@@ -92,21 +92,6 @@ void KOMO::setModel(const KinematicWorld& K,
 
   world.calc_q();
   
-//  if(makeConvexHulls) {
-//    ::makeConvexHulls(world.frames);
-//  }
-//  computeMeshNormals(world.frames);
-  
-//  if(computeOptimalSSBoxes) {
-//    NIY;
-//    //for(Shape *s: world.shapes) s->mesh.computeOptimalSSBox(s->mesh.V);
-//    world.gl().watch();
-//  }
-  
-//  if(activateAllContacts) {
-//    for(Frame *a : world.frames) if(a->shape) a->shape->cont=true;
-//    world.swift().initActivations(world);
-//  }
 }
 
 void KOMO_ext::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese) {
@@ -211,7 +196,7 @@ void KOMO::addSwitch_stable(double time, double endTime, const char* from, const
   addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, from, to, world));
 //  addFlag(time, new Flag(FL_clear, world[to]->ID, 0, true));
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true));
-  if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+2)
+  if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
     addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
   if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, 1e2, {}, 1);
 
@@ -226,7 +211,7 @@ void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, con
   addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
 //  addFlag(time, new Flag(FL_clear, world[to]->ID, 0, true));
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true));
-  if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+2)
+  if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
     addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
   if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, 1e2, {}, 1);
 
@@ -890,19 +875,11 @@ void KOMO_ext::setAbstractTask(double phase, const Graph& facts, int verbose) {
 
 void KOMO::setSkeleton(const Skeleton &S) {
   for(const SkeletonEntry& s:S) {
-//    cout <<"SKELETON->KOMO " <<s <<endl;
     if(!s.symbols.N) continue;
-#if 1
     if(s.symbols(0)=="touch") {   add_touch(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
     if(s.symbols(0)=="above") {   add_aboveBox(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
     if(s.symbols(0)=="inside") {   add_aboveBox(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
     if(s.symbols(0)=="impulse") {  add_impulse(s.phase0, s.symbols(1), s.symbols(2));  continue;  }
-#else
-    if(s.symbols(0)=="touch") {   addObjective(s.phase0, s.phase1, OT_eq, FS_distance, s.symbols({1,2}), 1e2);  continue;  }
-    if(s.symbols(0)=="above") {   addObjective(s.phase0, s.phase1, OT_ineq, FS_aboveBox, s.symbols({1,2}), 1e1);  continue;  }
-    if(s.symbols(0)=="inside") {   addObjective(s.phase0, s.phase1, OT_ineq, FS_insideBox, s.symbols({1,2}), 1e1);  continue;  }
-    if(s.symbols(0)=="impulse") {  core_setImpulse(s.phase0, s.symbols(1), s.symbols(2));  continue;  }
-#endif
     if(s.symbols(0)=="stable") {    addSwitch_stable(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2));  continue;  }
     if(s.symbols(0)=="stableOn") {  addSwitch_stableOn(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2));  continue;  }
     if(s.symbols(0)=="dynamic") {   addSwitch_dynamic(s.phase0, s.phase1+1., "base", s.symbols(1));  continue;  }

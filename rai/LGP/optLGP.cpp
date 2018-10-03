@@ -46,18 +46,18 @@ struct DisplayThread : MiniThread {
   }
   
   void main() {
-//    Metronome tic(.1);
+    //    Metronome tic(.1);
     for(;;) {
       if(getStatus()<0) break;
-//      tic.waitForTic();
+      //      tic.waitForTic();
       rai::wait(.1);
       lgp->solutions.writeAccess();
       for(uint i=0; i<lgp->solutions().N; i++) {
         lgp->solutions()(i)->displayStep++;
         if(gl.views.N>i)
           gl.views(i).text.clear() <<i <<':' <<lgp->solutions()(i)->displayStep <<": "
-                                   <<lgp->solutions()(i)->node->cost <<"|  " <<lgp->solutions()(i)->node->constraints.last() <<'\n'
-                                   <<lgp->solutions()(i)->decisions;
+                                  <<lgp->solutions()(i)->node->cost <<"|  " <<lgp->solutions()(i)->node->constraints.last() <<'\n'
+                                 <<lgp->solutions()(i)->decisions;
       }
       lgp->solutions.deAccess();
       if(saveVideo) gl.computeImage=true;
@@ -69,60 +69,67 @@ struct DisplayThread : MiniThread {
 
 void initFolStateFromKin(FOL_World& L, const rai::KinematicWorld& K) {
   for(rai::Frame *a:K.frames) if(a->ats["logical"]) {
-      const Graph& G = a->ats["logical"]->graph();
-      for(Node *n:G) L.addFact({n->keys.last(), a->name});
-    }
+    const Graph& G = a->ats["logical"]->graph();
+    for(Node *n:G) L.addFact({n->keys.last(), a->name});
+  }
   for(rai::Frame *a:K.frames) if(a->shape && a->ats["logical"]) {
-      rai::Frame *p = a->getUpwardLink();
-      if(!p) continue;
-      FrameL F;
-      p->getRigidSubFrames(F);
-      for(rai::Frame *b:F) if(b!=a && b->shape && b->ats["logical"]) {
-          L.addFact({"partOf", a->name, b->name});
-        }
+    rai::Frame *p = a->getUpwardLink();
+    if(!p) continue;
+    FrameL F;
+    p->getRigidSubFrames(F);
+    for(rai::Frame *b:F) if(b!=a && b->shape && b->ats["logical"]) {
+      L.addFact({"partOf", a->name, b->name});
     }
+  }
   for(rai::Frame *a:K.frames) if(a->shape && a->ats["logical"]) {
-      rai::Frame *p = a;
-      while(p && !p->joint) p=p->parent;
-      if(!p) continue;
-      p = p->parent;
-      FrameL F;
-      while(p) {
-        F.append(p);
-        if(p->joint) break;
-        p=p->parent;
-      }
-      for(rai::Frame *b:F) if(b!=a && b->shape && b->ats["logical"]) {
-          L.addFact({"on", a->name, b->name});
-        }
+    rai::Frame *p = a;
+    while(p && !p->joint) p=p->parent;
+    if(!p) continue;
+    p = p->parent;
+    FrameL F;
+    while(p) {
+      F.append(p);
+      if(p->joint) break;
+      p=p->parent;
     }
+    for(rai::Frame *b:F) if(b!=a && b->shape && b->ats["logical"]) {
+      L.addFact({"on", a->name, b->name});
+    }
+  }
 }
 
 OptLGP::OptLGP()
-    : verbose(3), numSteps(0),
-      solutions("OptLGPsolutions"){
-    dataPath <<"z." <<rai::date2() <<"/";
-    dataPath = rai::getParameter<rai::String>("LGP_dataPath", dataPath);
-    rai::system(STRING("mkdir -p " <<dataPath));
-    rai::system(STRING("rm -Rf " <<dataPath <<"vid  &&  rm -f " <<dataPath <<"*"));
+  : verbose(3), numSteps(0),
+    solutions("OptLGPsolutions"){
+  dataPath <<"z." <<rai::date2() <<"/";
+  dataPath = rai::getParameter<rai::String>("LGP_dataPath", dataPath);
+  rai::system(STRING("mkdir -p " <<dataPath));
+  rai::system(STRING("rm -Rf " <<dataPath <<"vid  &&  rm -f " <<dataPath <<"*"));
 
-    OptLGPDataPath = dataPath;
-    if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
+  OptLGPDataPath = dataPath;
+  if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
 
-    collisions = rai::getParameter<bool>("LGP/collisions", false);
-    displayTree = rai::getParameter<bool>("LGP/displayTree", true);
+  collisions = rai::getParameter<bool>("LGP/collisions", false);
+  displayTree = rai::getParameter<bool>("LGP/displayTree", true);
 
-    verbose = rai::getParameter<int>("LGP/vebose", 3);
-    if(verbose>0) fil.open(dataPath + "optLGP.dat"); //STRING("z.optLGP." <<rai::date() <<".dat"));
+  verbose = rai::getParameter<int>("LGP/vebose", 3);
+  if(verbose>0) fil.open(dataPath + "optLGP.dat"); //STRING("z.optLGP." <<rai::date() <<".dat"));
 
+}
+
+OptLGP::OptLGP(rai::KinematicWorld& kin, const char *folFileName) : OptLGP() {
+  selfCreated = new FOL_World(FILE(folFileName));
+  initFolStateFromKin(*selfCreated, kin);
+  if(verbose>0) cout <<"INITIAL LOGIC STATE = " <<*selfCreated->start_state <<endl;
+  init(kin, *selfCreated);
 }
 
 OptLGP::OptLGP(rai::KinematicWorld &kin, FOL_World &fol) : OptLGP() {
-    init(kin, fol);
+  init(kin, fol);
 }
 
 void OptLGP::init(rai::KinematicWorld &kin, FOL_World &fol) {
-    CHECK(!root,"");
+  CHECK(!root,"");
   root = new MNode(kin, fol, 4);
   displayFocus = root;
   //  threadOpenModules(true);
@@ -148,9 +155,9 @@ void OptLGP::initDisplay() {
   if(!dth) dth = new DisplayThread(this);
 }
 
-void OptLGP::renderToVideo(uint level, const char* filePrefix) {
-  CHECK(displayFocus->komoProblem(level) && displayFocus->komoProblem(level)->configurations.N, "level " <<level <<" has not been computed for the current 'displayFocus'");
-  renderConfigurations(displayFocus->komoProblem(level)->configurations, filePrefix, -2, 600, 600, &views(3)->copy.gl().camera);
+void OptLGP::renderToVideo(uint specificBound, const char* filePrefix) {
+  CHECK(displayFocus->komoProblem(specificBound) && displayFocus->komoProblem(specificBound)->configurations.N, "level " <<specificBound <<" has not been computed for the current 'displayFocus'");
+  renderConfigurations(displayFocus->komoProblem(specificBound)->configurations, filePrefix, -2, 600, 600, &views(3)->copy.gl().camera);
 }
 
 void OptLGP::updateDisplay() {
@@ -170,23 +177,23 @@ void OptLGP::updateDisplay() {
       dth->gl.addSubView(i, glStandardScene, NULL);
       dth->gl.addSubView(i, *solutions()(i));
       dth->gl.views(i).camera.setDefault();
-//      dth->gl.views(i).camera.focus(.9, 0., 1.3);
+      //      dth->gl.views(i).camera.focus(.9, 0., 1.3);
     }
     dth->gl.views(i).drawers.last() = solutions()(i);
     dth->gl.views(i).text.clear() <<solutions()(i)->node->cost <<'\n' <<solutions()(i)->decisions;
   }
   dth->gl.setSubViewTiles(3,2);
   solutions.deAccess();
-//  gl->update();
+  //  gl->update();
 
-//  solutions.writeAccess();
-//  if(solutions().N){
-//    cout <<"SOLUTIONS: " <<solutions().N <<endl;
-//    for(uint i=0;i<solutions().N;i++){
-//      solutions()(i)->write(cout);
-//    }
-//  }
-//  solutions.deAccess();
+  //  solutions.writeAccess();
+  //  if(solutions().N){
+  //    cout <<"SOLUTIONS: " <<solutions().N <<endl;
+  //    for(uint i=0;i<solutions().N;i++){
+  //      solutions()(i)->write(cout);
+  //    }
+  //  }
+  //  solutions.deAccess();
 
   if(displayTree) {
     //generate the tree pdf
@@ -277,30 +284,38 @@ void OptLGP::player(StringA cmds) {
   }
 }
 
-void OptLGP::optFixedSequence(const rai::String& seq, int specificLevel, bool collisions) {
+MNode* OptLGP::walkToNode(const rai::String& seq){
   Graph& tmp = root->fol.KB.newSubgraph({"TMP"}, {})->value;
   rai::String tmpseq(seq);
   tmp.read(tmpseq);
-  
-  cout <<"TMP:" <<*tmp.isNodeOfGraph <<endl;
-  
-  initDisplay();
-  
+  cout <<"decision sequence:" <<*tmp.isNodeOfGraph <<endl;
+
+  //first walk to the node that corresponds to seq
   MNode *node = root;
-  
   for(Node *actionLiteral:tmp) {
-    if(specificLevel==-1 || specificLevel==1) node->optLevel(1, collisions); //optimize poses along the path
-    node->expand();
+//    if(specificBound==BD_all || specificBound==BD_pose) node->optBound(BD_pose, collisions); //optimize poses along the path
+    if(!node->isExpanded) node->expand();
     MNode *next = node->getChildByAction(actionLiteral);
     if(!next) LOG(-2) <<"action '" <<*actionLiteral <<"' is not a child of '" <<*node <<"'";
     displayFocus = node;
-    updateDisplay();
     node = next;
   }
-  
-  if(specificLevel==-1 || specificLevel==1) node->optLevel(1, collisions);
-  if(specificLevel==-1 || specificLevel==2) node->optLevel(2, collisions);
-  if(specificLevel==-1 || specificLevel==3) node->optLevel(3, collisions);
+
+  return node;
+}
+
+void OptLGP::optFixedSequence(const rai::String& seq, BoundType specificBound, bool collisions) {
+  initDisplay();
+
+  //parse the string to decision predicates by making it a node of the logic graph
+  MNode *node = walkToNode(seq);
+
+  updateDisplay();
+
+  //then compute the desired bound
+  if(specificBound==BD_all || specificBound==BD_pose) node->optBound(BD_pose, collisions);
+  if(specificBound==BD_all || specificBound==BD_seq)  node->optBound(BD_seq, collisions);
+  if(specificBound==BD_all || specificBound==BD_path) node->optBound(BD_path, collisions);
   
   displayFocus = node;
   
@@ -324,10 +339,10 @@ void OptLGP::writeNodeList(std::ostream &os) {
   os <<"id step cost= C0 C1 C2 C3 constr= R0 R1 R2 R3 fea= F0 F1 F2 F3 time= T0 T1 T2 T3 skeleton" <<endl;
   MNodeL ALL = root->getAll();
   for(MNode *n : ALL) {
-//    if(n->count(l_pose)){
+    //    if(n->count(l_pose)){
     os <<n->id <<' ' <<n->step
-       <<" cost= " <<n->cost <<" constr= " <<n->constraints <<" fea= " <<convert<int>(n->feasible) <<" time= " <<n->computeTime <<" \"" <<n->getTreePathString() <<"\"" <<endl;
-//    }
+      <<" cost= " <<n->cost <<" constr= " <<n->constraints <<" fea= " <<convert<int>(n->feasible) <<" time= " <<n->computeTime <<" \"" <<n->getTreePathString() <<"\"" <<endl;
+    //    }
   }
 }
 
@@ -340,9 +355,9 @@ bool OptLGP::execChoice(rai::String cmd) {
   if(cmd=="q") return false;
   else if(cmd=="u") { if(displayFocus->parent) displayFocus = displayFocus->parent; }
   else if(cmd=="e") displayFocus->expand();
-  else if(cmd=="p") displayFocus->optLevel(1, collisions);
-  else if(cmd=="s") displayFocus->optLevel(2, collisions);
-  else if(cmd=="x") displayFocus->optLevel(3, collisions);
+  else if(cmd=="p") displayFocus->optBound(BD_pose, collisions);
+  else if(cmd=="s") displayFocus->optBound(BD_seq , collisions);
+  else if(cmd=="x") displayFocus->optBound(BD_path, collisions);
   //  else if(cmd=="m") node->addMCRollouts(100,10);
   else {
     int choice=-1;
@@ -397,19 +412,19 @@ MNode *OptLGP::expandBest(int stopOnDepth) { //expand
   return n;
 }
 
-void OptLGP::optBestOnLevel(int level, MNodeL &fringe, MNodeL *addIfTerminal, MNodeL *addChildren) { //optimize a seq
+void OptLGP::optBestOnLevel(BoundType bound, MNodeL &fringe, MNodeL *addIfTerminal, MNodeL *addChildren) { //optimize a seq
   if(!fringe.N) return;
-  MNode* n = popBest(fringe, level-1);
-  if(n && !n->count(level)) {
+  MNode* n = popBest(fringe, bound-1);
+  if(n && !n->count(bound)) {
     try {
-      n->optLevel(level, collisions);
+      n->optBound(bound, collisions);
     } catch(const char* err) {
-      LOG(-1) <<"opt(level=" <<level <<") has failed for the following node:";
+      LOG(-1) <<"opt(level=" <<bound <<") has failed for the following node:";
       n->write(cout, false, true);
       LOG(-3) <<"node optimization failed";
     }
     
-    if(n->feasible(level)) {
+    if(n->feasible(bound)) {
       if(addIfTerminal && n->isTerminal) addIfTerminal->append(n);
       if(addChildren) for(MNode* c:n->children) addChildren->append(c);
     }
@@ -417,19 +432,19 @@ void OptLGP::optBestOnLevel(int level, MNodeL &fringe, MNodeL *addIfTerminal, MN
   }
 }
 
-void OptLGP::optFirstOnLevel(int level, MNodeL &fringe, MNodeL *addIfTerminal) {
+void OptLGP::optFirstOnLevel(BoundType bound, MNodeL &fringe, MNodeL *addIfTerminal) {
   if(!fringe.N) return;
   MNode *n =  fringe.popFirst();
-  if(n && !n->count(level)) {
+  if(n && !n->count(bound)) {
     try {
-      n->optLevel(level, collisions);
+      n->optBound(bound, collisions);
     } catch(const char* err) {
-      LOG(-1) <<"opt(level=" <<level <<") has failed for the following node:";
+      LOG(-1) <<"opt(bound=" <<bound <<") has failed for the following node:";
       n->write(cout, false, true);
       LOG(-3) <<"node optimization failed";
     }
     
-    if(n->feasible(level)) {
+    if(n->feasible(bound)) {
       if(addIfTerminal && n->isTerminal) addIfTerminal->append(n);
     }
     displayFocus = n;
@@ -452,14 +467,14 @@ rai::String OptLGP::report(bool detailed) {
   
   rai::String out;
   out <<"TIME= " <<rai::cpuTime() <<" TIME= " <<COUNT_time <<" KIN= " <<COUNT_kin <<" EVALS= " <<COUNT_evals
-      <<" POSE= " <<COUNT_opt(1) <<" SEQ= " <<COUNT_opt(2) <<" PATH= " <<COUNT_opt(3)
-      <<" bestPose= " <<(bpose?bpose->cost(1):100.)
-      <<" bestSeq= " <<(bseq ?bseq ->cost(2):100.)
-      <<" bestPath= " <<(bpath?bpath->cost(3):100.)
-      <<" #solutions= " <<fringe_solved.N;
-      
-//  if(bseq) displayFocus=bseq;
-//  if(bpath) displayFocus=bpath;
+     <<" POSE= " <<COUNT_opt(1) <<" SEQ= " <<COUNT_opt(2) <<" PATH= " <<COUNT_opt(3)
+    <<" bestPose= " <<(bpose?bpose->cost(1):100.)
+   <<" bestSeq= " <<(bseq ?bseq ->cost(2):100.)
+  <<" bestPath= " <<(bpath?bpath->cost(3):100.)
+  <<" #solutions= " <<fringe_solved.N;
+
+  //  if(bseq) displayFocus=bseq;
+  //  if(bpath) displayFocus=bpath;
 
   if(detailed) {
     out <<"\n*** found solutions:" <<endl;
@@ -470,7 +485,7 @@ rai::String OptLGP::report(bool detailed) {
 }
 
 void OptLGP::reportEffectiveJoints() {
-//  MNode *best = getBest();
+  //  MNode *best = getBest();
   if(!displayFocus->komoProblem.last()) return;
   displayFocus->komoProblem.last()->reportProblem();
   displayFocus->komoProblem.last()->reportEffectiveJoints();
@@ -481,11 +496,11 @@ void OptLGP::step() {
   
   uint numSol = fringe_solved.N;
   
-  if(rnd.uni()<.5) optBestOnLevel(l_pose, fringe_pose, &fringe_seq, &fringe_pose);
-  optFirstOnLevel(l_pose, fringe_pose2, &fringe_seq);
-  optBestOnLevel(l_seq, fringe_seq, &fringe_path, NULL);
+  if(rnd.uni()<.5) optBestOnLevel(BD_pose, fringe_pose, &fringe_seq, &fringe_pose);
+  optFirstOnLevel(BD_pose, fringe_pose2, &fringe_seq);
+  optBestOnLevel(BD_seq, fringe_seq, &fringe_path, NULL);
   if(verbose>0 && fringe_path.N) cout <<"EVALUATING PATH " <<fringe_path.last()->getTreePathString() <<endl;
-  optBestOnLevel(l_path, fringe_path, &fringe_solved, NULL);
+  optBestOnLevel(BD_path, fringe_path, &fringe_solved, NULL);
   
   if(fringe_solved.N>numSol) {
     if(verbose>0) cout <<"NEW SOLUTION FOUND! " <<fringe_solved.last()->getTreePathString() <<endl;
@@ -571,7 +586,7 @@ void OptLGP::run(uint steps) {
   
   //this generates the movie!
   if(verbose>2) {
-//    renderToVideo();
+    //    renderToVideo();
     rai::system(STRING("mkdir -p " <<OptLGPDataPath <<"vid"));
     rai::system(STRING("rm -f " <<OptLGPDataPath <<"vid/*.ppm"));
     dth->resetSteppings();
@@ -604,17 +619,17 @@ OptLGP_SolutionData::OptLGP_SolutionData(MNode *n) : node(n) {
     if(komo && komo->configurations.N) {
       paths(l).resize(komo->configurations.N, frameIDs.N);
       for(uint s=0; s<komo->configurations.N; s++) for(uint i=0; i<frameIDs.N; i++) {
-          paths(l)(s, i) = komo->configurations(s)->frames(frameIDs(i))->X;
-        }
+        paths(l)(s, i) = komo->configurations(s)->frames(frameIDs(i))->X;
+      }
     }
   }
 }
 
 void OptLGP_SolutionData::write(std::ostream &os) const {
   os <<"decisions=" <<decisions
-     <<"\t depth=" <<node->step
-     <<"\t costs=" <<node->cost
-     <<endl;
+    <<"\t depth=" <<node->step
+   <<"\t costs=" <<node->cost
+  <<endl;
 }
 
 void OptLGP_SolutionData::glDraw(OpenGL &gl) {

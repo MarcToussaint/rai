@@ -30,12 +30,12 @@ void MNode::resetData() {
   cost = zeros(L);
   constraints = zeros(L);
   count = consts<uint>(0, L);
-  count(l_symbolic) = 1;
+  count(BD_symbolic) = 1;
   feasible = consts<byte>(true, L);
   komoProblem = consts<KOMO*>(NULL, L);
   opt.resize(L);
   computeTime = zeros(L);
-  bound=0.;
+  highestBound=0.;
 }
 
 MNode::MNode(rai::KinematicWorld& kin, FOL_World& _fol, uint levels)
@@ -70,8 +70,8 @@ MNode::MNode(MNode* parent, MCTS_Environment::Handle& a)
   decision = a;
   
   resetData();
-  cost(l_symbolic) = parent->cost(l_symbolic) - 0.1*ret.reward; //cost-so-far
-  bound = parent->bound - 0.1*ret.reward;
+  cost(BD_symbolic) = parent->cost(BD_symbolic) - 0.1*ret.reward; //cost-so-far
+  highestBound = parent->highestBound - 0.1*ret.reward;
   
   if(filNodes)(*filNodes) <<id <<' ' <<step <<' ' <<time <<' ' <<getTreePathString() <<endl;
 }
@@ -98,58 +98,67 @@ void MNode::expand(int verbose) {
   isExpanded=true;
 }
 
-void MNode::optLevel(uint level, bool collisions) {
-  komoProblem(level) = new KOMO();
-  KOMO& komo(*komoProblem(level));
+void MNode::optBound(BoundType bound, bool collisions) {
+  if(komoProblem(bound)) delete komoProblem(bound);
+  komoProblem(bound) = new KOMO();
+  KOMO& komo(*komoProblem(bound));
 
   if(komo.verbose>0){
-    cout <<"########## OPTIM lev " <<level <<endl;
+    cout <<"########## OPTIM lev " <<bound <<endl;
   }
 
-  komo.fil = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<level));
+  komo.fil = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
   
   Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
                             "stable", "stableOn", "dynamic", "dynamicOn",
                             "push", "graspSlide", "liftDownUp"
                            });
-  if(level==1 && parent) CHECK(parent->effKinematics.q.N, "I can't compute a pose when no pose was comp. for parent (I need the effKin)");
-  skeleton2Bound(komo, BoundType(level), S, startKinematics, (parent?parent->effKinematics:startKinematics), collisions);
 
-//  if(level==2) komo.denseOptimization=true;
+  if(komo.verbose>1)  for(auto& s:S) cout <<"SKELETON " <<s <<endl;
+
+  //ensure the effective kinematics are computed when BD_pose
+  if(bound==BD_pose && step>1){
+    if(!parent->effKinematics.q.N) parent->optBound(BD_pose, collisions);
+    CHECK(parent->effKinematics.q.N, "I can't compute a pose when no pose was comp. for parent (I need the effKin)");
+  }
+
+
+  skeleton2Bound(komo, bound, S, startKinematics, (step>1?parent->effKinematics:startKinematics), collisions);
+
+//  if(level==BD_seq) komo.denseOptimization=true;
 
   //-- optimize
   DEBUG(FILE("z.fol") <<fol;);
   DEBUG(komo.getReport(false, 1, FILE("z.problem")););
-//  komo.reportProblem();
-//  komo.animateOptimization = 1;
+  if(komo.verbose>1) komo.reportProblem();
+  if(komo.verbose>2) komo.animateOptimization = 1;
 
   try {
-    //      komo.verbose=3;
     komo.run();
   } catch(const char* msg) {
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   if(!komo.denseOptimization) COUNT_evals += komo.opt->newton.evals;
   COUNT_kin += rai::KinematicWorld::setJointStateCount;
-  COUNT_opt(level)++;
+  COUNT_opt(bound)++;
   COUNT_time += komo.runTime;
-  count(level)++;
+  count(bound)++;
   
   DEBUG(komo.getReport(false, 1, FILE("z.problem")););
 //  cout <<komo.getReport(true) <<endl;
 //  komo.reportProxies(cout, 0.);
 //  komo.checkGradients();
 
-  Graph result = komo.getReport((komo.verbose>0 && level>=2));
+  Graph result = komo.getReport((komo.verbose>0 && bound>=2));
   DEBUG(FILE("z.problem.cost") <<result;);
   double cost_here = result.get<double>({"total","sqrCosts"});
   double constraints_here = result.get<double>({"total","constraints"});
   bool feas = (constraints_here<1.);
   
   //-- post process komo problem for level==1
-  if(level==1) {
+  if(bound==BD_pose) {
     cost_here -= 0.1*ret.reward; //account for the symbolic costs
-    if(parent) cost_here += parent->cost(level); //this is sequentially additive cost
+    if(parent) cost_here += parent->cost(bound); //this is sequentially additive cost
     
     effKinematics = *komo.configurations.last();
     
@@ -162,24 +171,24 @@ void MNode::optLevel(uint level, bool collisions) {
     effKinematics.calc_q();
     DEBUG(effKinematics.checkConsistency();)
   } else {
-    cost_here += cost(l_symbolic); //account for the symbolic costs
+    cost_here += cost(BD_symbolic); //account for the symbolic costs
   }
   
   //-- read out and update bound
   //update the bound
   if(feas) {
-    if(count(level)==1/*&& count({2,-1})==0 (also no higher levels)*/ || cost_here<bound) bound=cost_here;
+    if(count(bound)==1/*&& count({2,-1})==0 (also no higher levels)*/ || cost_here<highestBound) highestBound=cost_here;
   }
   
-  if(count(level)==1 || cost_here<cost(level)) {
-    cost(level) = cost_here;
-    constraints(level) = constraints_here;
-    feasible(level) = feas;
-    opt(level) = komo.x;
-    computeTime(level) = komo.runTime;
+  if(count(bound)==1 || cost_here<cost(bound)) {
+    cost(bound) = cost_here;
+    constraints(bound) = constraints_here;
+    feasible(bound) = feas;
+    opt(bound) = komo.x;
+    computeTime(bound) = komo.runTime;
   }
   
-  if(!feasible(level))
+  if(!feasible(bound))
     labelInfeasible();
     
 }
@@ -347,7 +356,7 @@ bool MNode::recomputeAllFolStates() {
       time = parent->time + ret.duration;
       isTerminal = fol.successEnd;
       if(fol.deadEnd) {
-        if(!feasible(l_seq) && !feasible(l_path)) //seq or path have already proven it feasible! Despite the logic...
+        if(!feasible(BD_seq) && !feasible(BD_path)) //seq or path have already proven it feasible! Despite the logic...
           isInfeasible=true;
         return false;
       }
@@ -356,7 +365,7 @@ bool MNode::recomputeAllFolStates() {
       if(folAddToState) applyEffectLiterals(*folState, *folAddToState, {}, NULL);
       folDecision = folState->getNode("decision");
     } else {
-      if(!feasible(l_seq) && !feasible(l_path)) //seq or path have already proven it feasible! Despite the logic...
+      if(!feasible(BD_seq) && !feasible(BD_path)) //seq or path have already proven it feasible! Despite the logic...
         isInfeasible=true;
       return false;
     }
@@ -413,9 +422,9 @@ void MNode::write(ostream& os, bool recursive, bool path) const {
     os <<endl;
   }
   os <<"\t depth=" <<step <<endl;
-  os <<"\t poseCost=" <<cost(l_pose) <<endl;
-  os <<"\t seqCost=" <<cost(l_seq) <<endl;
-  os <<"\t pathCost=" <<cost(l_path) <<endl;
+  os <<"\t poseCost=" <<cost(BD_pose) <<endl;
+  os <<"\t seqCost=" <<cost(BD_seq) <<endl;
+  os <<"\t pathCost=" <<cost(BD_path) <<endl;
   if(recursive) for(MNode *n:children) n->write(os);
 }
 
@@ -427,7 +436,7 @@ void MNode::getGraph(Graph& G, Node* n, bool brief) {
   }
   
   if(!brief) {
-    n->keys.append(STRING("s:" <<step <<" t:" <<time <<" bound:" <<bound <<" feas:" <<!isInfeasible <<" term:" <<isTerminal <<' ' <<folState->isNodeOfGraph->keys.scalar()));
+    n->keys.append(STRING("s:" <<step <<" t:" <<time <<" bound:" <<highestBound <<" feas:" <<!isInfeasible <<" term:" <<isTerminal <<' ' <<folState->isNodeOfGraph->keys.scalar()));
     for(uint l=0; l<L; l++)
       n->keys.append(STRING("L" <<l <<" #:" <<count(l) <<" c:" <<cost(l) <<"|" <<constraints(l) <<" " <<(feasible(l)?'1':'0') <<" time:" <<computeTime(l)));
     if(folAddToState) n->keys.append(STRING("symAdd:" <<*folAddToState));
@@ -439,10 +448,10 @@ void MNode::getGraph(Graph& G, Node* n, bool brief) {
     if(isTerminal)  G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=violet";
     else G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=red";
   } else if(isTerminal) {
-    if(count(l_seq) || count(l_path)) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=cyan";
+    if(count(BD_seq) || count(BD_path)) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=cyan";
     else G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=blue";
   } else {
-    if(sum(count) - count(l_symbolic)>0) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=green";
+    if(sum(count) - count(BD_symbolic)>0) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=green";
   }
   //  if(inFringe1) G.getRenderingInfo(n).dotstyle <<" color=green";
   //  if(inFringe1) G.getRenderingInfo(n).dotstyle <<" peripheries=2";
