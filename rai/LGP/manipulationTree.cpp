@@ -98,6 +98,21 @@ void MNode::expand(int verbose) {
   isExpanded=true;
 }
 
+void MNode::computeEndKinematics(){
+  Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
+                            "stable", "stableOn", "dynamic", "dynamicOn",
+                            "push", "graspSlide", "liftDownUp"
+                           });
+
+  effKinematics.copy(startKinematics);
+  KOMO tmp;
+  tmp.setModel(startKinematics, false);
+  tmp.setTiming(1., 1, 10., 1);
+  tmp.setSkeleton(S);
+//  tmp.reportProblem();
+  for(rai::KinematicSwitch *s : tmp.switches) s->apply(effKinematics);
+}
+
 void MNode::optBound(BoundType bound, bool collisions) {
   if(komoProblem(bound)) delete komoProblem(bound);
   komoProblem(bound) = new KOMO();
@@ -117,13 +132,15 @@ void MNode::optBound(BoundType bound, bool collisions) {
   if(komo.verbose>1)  for(auto& s:S) cout <<"SKELETON " <<s <<endl;
 
   //ensure the effective kinematics are computed when BD_pose
-  if(bound==BD_pose && step>1){
-    if(!parent->effKinematics.q.N) parent->optBound(BD_pose, collisions);
-    CHECK(parent->effKinematics.q.N, "I can't compute a pose when no pose was comp. for parent (I need the effKin)");
+//  if(bound==BD_pose && step>1){
+//    if(!parent->effKinematics.q.N) parent->optBound(BD_pose, collisions);
+//    CHECK(parent->effKinematics.q.N, "I can't compute a pose when no pose was comp. for parent (I need the effKin)");
+//  }
+  if(bound==BD_pose && parent){
+    if(!parent->effKinematics.q.N) parent->computeEndKinematics();
   }
 
-
-  skeleton2Bound(komo, bound, S, startKinematics, (step>1?parent->effKinematics:startKinematics), collisions);
+  skeleton2Bound(komo, bound, S, startKinematics, (parent?parent->effKinematics:startKinematics), collisions);
 
 //  if(level==BD_seq) komo.denseOptimization=true;
 

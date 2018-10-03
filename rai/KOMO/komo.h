@@ -33,11 +33,10 @@ typedef rai::Array<SkeletonEntry> Skeleton;
 struct KOMO : NonCopyable {
 
   //-- the problem definition
-  double maxPhase;             ///< number of phases (roughly: actions), but phase is continuous valued
-  uint stepsPerPhase;          ///< time slices per phase
-  uint T;                      ///< total number of time steps
-  double tau;                  ///< real time duration of single step (used when evaluating task space velocities/accelerations)
-  uint k_order;                ///< the (Markov) order of the KOMO problem (default 2)
+  uint stepsPerPhase=0;        ///< time slices per phase
+  uint T=0;                    ///< total number of time steps
+  double tau=0.;               ///< real time duration of single step (used when evaluating task space velocities/accelerations)
+  uint k_order=0;              ///< the (Markov) order of the KOMO problem (default 2)
   rai::Array<Objective*> objectives;     ///< list of tasks
   rai::Array<rai::Flag*> flags;     ///< list of flaggings that are applied to the frames/joints in the configurations and modify tasks
   rai::Array<rai::KinematicSwitch*> switches;  ///< list of kinematic switches along the motion
@@ -58,11 +57,11 @@ struct KOMO : NonCopyable {
   ObjectiveTypeA featureTypes; ///< storage of all feature-types in all time slices
   bool featureDense;
 //  arr dualSolution;            ///< the dual solution computed during constrained optimization
-  struct OpenGL *gl=NULL;      ///< internal only: used in 'displayTrajectory'
+  struct OpenGL *gl=0;      ///< internal only: used in 'displayTrajectory'
   int verbose;                 ///< verbosity level
   int animateOptimization=0;   ///< display the current path for each evaluation during optimization
   double runTime=0.;           ///< measured run time
-  ofstream *fil=NULL;
+  ofstream *fil=0;
   
   KOMO();
   ~KOMO();
@@ -140,7 +139,7 @@ struct KOMO : NonCopyable {
 
   
   //-- tasks - logic level (used within LGP)
-  void setSkeleton(const Skeleton& S);
+  void setSkeleton(const Skeleton& S, bool ignoreSwitches=false);
   
   //dinos... can't get rid of them yet
   void setGraspSlide(double time, const char* stick, const char* object, const char* placeRef, int verbose=0);

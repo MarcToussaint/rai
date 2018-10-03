@@ -1,6 +1,6 @@
 #pragma once
 
-//#include "feature.h"
+#include <Core/array.h>
 
 enum FeatureSymbol {
   FS_none=-1,

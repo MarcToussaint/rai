@@ -112,9 +112,10 @@ OptLGP::OptLGP()
   collisions = rai::getParameter<bool>("LGP/collisions", false);
   displayTree = rai::getParameter<bool>("LGP/displayTree", true);
 
-  verbose = rai::getParameter<int>("LGP/vebose", 3);
+  verbose = rai::getParameter<int>("LGP/verbose", 3);
   if(verbose>0) fil.open(dataPath + "optLGP.dat"); //STRING("z.optLGP." <<rai::date() <<".dat"));
 
+  cameraFocus = rai::getParameter<arr>("LGP/cameraFocus", {});
 }
 
 OptLGP::OptLGP(rai::KinematicWorld& kin, const char *folFileName) : OptLGP() {
@@ -144,14 +145,14 @@ OptLGP::~OptLGP() {
 }
 
 void OptLGP::initDisplay() {
-  if(!views.N) {
-    views.resize(4);
-    views(1) = make_shared<KinPathViewer>("pose", 1.2, -1);
-    views(2) = make_shared<KinPathViewer>("sequence", 1.2, -1);
-    views(3) = make_shared<KinPathViewer>("path", .05, -2);
-    if(displayTree) rai::system("evince z.pdf &");
-    for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
-  }
+//  if(!views.N) {
+//    views.resize(4);
+//    views(1) = make_shared<KinPathViewer>("pose", 1.2, -1);
+//    views(2) = make_shared<KinPathViewer>("sequence", 1.2, -1);
+//    views(3) = make_shared<KinPathViewer>("path", .05, -2);
+//    if(displayTree) rai::system("evince z.pdf &");
+//    for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
+//  }
   if(!dth) dth = new DisplayThread(this);
 }
 
@@ -177,6 +178,7 @@ void OptLGP::updateDisplay() {
       dth->gl.addSubView(i, glStandardScene, NULL);
       dth->gl.addSubView(i, *solutions()(i));
       dth->gl.views(i).camera.setDefault();
+      if(cameraFocus.N) dth->gl.views(i).camera.focus(cameraFocus, true);
       //      dth->gl.views(i).camera.focus(.9, 0., 1.3);
     }
     dth->gl.views(i).drawers.last() = solutions()(i);

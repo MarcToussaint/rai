@@ -64,7 +64,7 @@ Shape *getShape(const KinematicWorld& K, const char* name) {
   return s;
 }
 
-KOMO::KOMO() : T(0), tau(0.), k_order(2), useSwift(true), opt(NULL), gl(NULL), verbose(1), komo_problem(*this), dense_problem(*this) {
+KOMO::KOMO() : useSwift(true), verbose(1), komo_problem(*this), dense_problem(*this) {
   verbose = getParameter<int>("KOMO/verbose",1);
 }
 
@@ -108,7 +108,7 @@ void KOMO_ext::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThes
 }
 
 void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhase, uint _k_order) {
-  maxPhase = _phases;
+  double maxPhase = _phases;
   stepsPerPhase = _stepsPerPhase;
   if(stepsPerPhase>=0) {
     T = ceil(stepsPerPhase*maxPhase);
@@ -873,17 +873,17 @@ void KOMO_ext::setAbstractTask(double phase, const Graph& facts, int verbose) {
   }
 }
 
-void KOMO::setSkeleton(const Skeleton &S) {
+void KOMO::setSkeleton(const Skeleton &S, bool ignoreSwitches) {
   for(const SkeletonEntry& s:S) {
     if(!s.symbols.N) continue;
     if(s.symbols(0)=="touch") {   add_touch(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
     if(s.symbols(0)=="above") {   add_aboveBox(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
     if(s.symbols(0)=="inside") {   add_aboveBox(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
     if(s.symbols(0)=="impulse") {  add_impulse(s.phase0, s.symbols(1), s.symbols(2));  continue;  }
-    if(s.symbols(0)=="stable") {    addSwitch_stable(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2));  continue;  }
-    if(s.symbols(0)=="stableOn") {  addSwitch_stableOn(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2));  continue;  }
-    if(s.symbols(0)=="dynamic") {   addSwitch_dynamic(s.phase0, s.phase1+1., "base", s.symbols(1));  continue;  }
-    if(s.symbols(0)=="dynamicOn") { addSwitch_dynamicOn(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2));  continue;  }
+    if(s.symbols(0)=="stable") {    if(!ignoreSwitches) addSwitch_stable(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2));  continue;  }
+    if(s.symbols(0)=="stableOn") {  if(!ignoreSwitches) addSwitch_stableOn(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2));  continue;  }
+    if(s.symbols(0)=="dynamic") {   if(!ignoreSwitches) addSwitch_dynamic(s.phase0, s.phase1+1., "base", s.symbols(1));  continue;  }
+    if(s.symbols(0)=="dynamicOn") { if(!ignoreSwitches) addSwitch_dynamicOn(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2));  continue;  }
     if(s.symbols(0)=="liftDownUp") {  setLiftDownUp(s.phase0, s.symbols(1), .4);  continue;  }
 
     if(s.symbols(0)=="contact") {   addContact(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
@@ -1016,7 +1016,6 @@ void KOMO::setConfigFromFile() {
 
 void KOMO::setIKOpt() {
   denseOptimization=true;
-  maxPhase = 1.;
   stepsPerPhase = 1;
   T = 1;
   tau = 1.;
@@ -1240,7 +1239,7 @@ void KOMO_ext::playInPhysics(uint subSteps, bool display) {
 void KOMO::reportProblem(std::ostream& os) {
   os <<"KOMO Problem:" <<endl;
   os <<"  x-dim:" <<x.N <<"  dual-dim:" <<dual.N <<endl;
-  os <<"  T:" <<T <<" k:" <<k_order <<" phases:" <<maxPhase <<" stepsPerPhase:" <<stepsPerPhase <<" tau:" <<tau <<endl;
+  os <<"  T:" <<T <<" k:" <<k_order <<" phases:" <<double(T)/stepsPerPhase <<" stepsPerPhase:" <<stepsPerPhase <<" tau:" <<tau <<endl;
   os <<"  #configurations:" <<configurations.N <<" q-dims: ";
   uintA dims(configurations.N);
   for(uint i=0; i<configurations.N; i++) dims(i)=configurations(i)->q.N;

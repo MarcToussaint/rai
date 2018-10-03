@@ -79,6 +79,7 @@ struct MNode {
   void expand(int verbose=0);           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
   void optBound(BoundType bound, bool collisions=false);
   void resetData();
+  void computeEndKinematics();
   
   //-- helpers to get other nodes
   MNodeL getTreePath() const; ///< return the decision path in terms of a list of nodes (just walking to the root)

@@ -1,7 +1,7 @@
 #include "bounds.h"
 //#include <Kin/switch.h>
 
-void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const rai::KinematicWorld& startKinematics, const rai::KinematicWorld& parentKinematics, bool collisions){
+void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const rai::KinematicWorld& startKinematics, const rai::KinematicWorld& effKinematics, bool collisions){
   double maxPhase=0;
   for(const SkeletonEntry& s:S) if(s.phase1>maxPhase) maxPhase=s.phase1;
   //-- prepare the komo problem
@@ -17,20 +17,20 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const ra
 
       //-- grep only the latest entries in the skeleton
       Skeleton finalS;
-      for(const SkeletonEntry& s:S) if(s.phase1>=maxPhase){
+      for(const SkeletonEntry& s:S) if(s.phase0>=maxPhase){
         finalS.append(s);
         finalS.last().phase0 -= maxPhase-1.;
         finalS.last().phase1 -= maxPhase-1.;
       }
 
-      komo.setModel(parentKinematics, collisions);
+      komo.setModel(effKinematics, collisions);
       komo.setTiming(1., 1, 10., 1);
 
       komo.setHoming(0., -1., 1e-2);
       komo.setSquaredQVelocities(1., -1., 1e-1); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
       komo.setSquaredQuaternionNorms();
 
-//      komo.setSkeleton(finalS);
+      komo.setSkeleton(finalS, false);
 
       if(collisions) komo.add_collision(false);
 

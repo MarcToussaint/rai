@@ -1718,9 +1718,9 @@ void Camera::setPosition(float x, float y, float z) { X.pos.set(x, y, z); }
 /// rotate the frame to focus the absolute coordinate origin (0, 0, 0)
 void Camera::focusOrigin() { foc.setZero(); focus(); }
 /// rotate the frame to focus the point (x, y, z)
-void Camera::focus(float x, float y, float z) { foc.set(x, y, z); focus(); }
+void Camera::focus(float x, float y, float z, bool makeUpright) { foc.set(x, y, z); focus(); if(makeUpright) upright(); }
 /// rotate the frame to focus the point given by the vector
-void Camera::focus(const Vector& v) { foc=v; focus(); }
+void Camera::focus(const Vector& v, bool makeUpright) { foc=v; focus(); if(makeUpright) upright(); }
 /// rotate the frame to focus (again) the previously given focus
 void Camera::focus() { watchDirection(foc-X.pos); } //X.Z=X.pos; X.Z-=foc; X.Z.normalize(); upright(); }
 /// rotate the frame to watch in the direction vector D

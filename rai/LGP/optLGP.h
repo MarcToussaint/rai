@@ -37,6 +37,7 @@ struct OptLGP : GLDrawer {
   bool collisions=false;
   struct DisplayThread *dth=NULL;
   rai::String dataPath;
+  arr cameraFocus;
   
   MNode *root=0, *displayFocus=0;
   FOL_World *selfCreated=NULL;
