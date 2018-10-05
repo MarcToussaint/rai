@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "manipulationTree.h"
+#include "LGP_node.h"
 #include "bounds.h"
 
 #include <MCTS/solver_PlainMC.h>
@@ -26,7 +26,7 @@ ofstream *filNodes=NULL;
 
 bool LGP_useHoming = true;
 
-void MNode::resetData() {
+void LGP_Node::resetData() {
   cost = zeros(L);
   constraints = zeros(L);
   count = consts<uint>(0, L);
@@ -38,7 +38,7 @@ void MNode::resetData() {
   highestBound=0.;
 }
 
-MNode::MNode(rai::KinematicWorld& kin, FOL_World& _fol, uint levels)
+LGP_Node::LGP_Node(rai::KinematicWorld& kin, FOL_World& _fol, uint levels)
   : parent(NULL), step(0), time(0.), id(COUNT_node++),
     fol(_fol),
     startKinematics(kin),
@@ -52,7 +52,7 @@ MNode::MNode(rai::KinematicWorld& kin, FOL_World& _fol, uint levels)
   if(filNodes)(*filNodes) <<id <<' ' <<step <<' ' <<time <<' ' <<getTreePathString() <<endl;
 }
 
-MNode::MNode(MNode* parent, MCTS_Environment::Handle& a)
+LGP_Node::LGP_Node(LGP_Node* parent, MCTS_Environment::Handle& a)
   : parent(parent), step(parent->step+1), id(COUNT_node++),
     fol(parent->fol),
     startKinematics(parent->startKinematics),
@@ -76,12 +76,12 @@ MNode::MNode(MNode* parent, MCTS_Environment::Handle& a)
   if(filNodes)(*filNodes) <<id <<' ' <<step <<' ' <<time <<' ' <<getTreePathString() <<endl;
 }
 
-MNode::~MNode() {
-  for(MNode *ch:children) delete ch;
+LGP_Node::~LGP_Node() {
+  for(LGP_Node *ch:children) delete ch;
   for(KOMO* k:komoProblem) if(k) delete k;
 }
 
-void MNode::expand(int verbose) {
+void LGP_Node::expand(int verbose) {
   if(isExpanded) return; //{ LOG(-1) <<"MNode '" <<*this <<"' is already expanded"; return; }
   CHECK(!children.N,"");
   if(isTerminal) return;
@@ -92,13 +92,13 @@ void MNode::expand(int verbose) {
   fol.verbose=tmp;
   for(FOL_World::Handle& a:actions) {
     //    cout <<"  EXPAND DECISION: " <<*a <<endl;
-    new MNode(this, a);
+    new LGP_Node(this, a);
   }
   if(!children.N) isTerminal=true;
   isExpanded=true;
 }
 
-void MNode::computeEndKinematics(){
+void LGP_Node::computeEndKinematics(){
   Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
                             "stable", "stableOn", "dynamic", "dynamicOn",
                             "push", "graspSlide", "liftDownUp"
@@ -113,7 +113,7 @@ void MNode::computeEndKinematics(){
   for(rai::KinematicSwitch *s : tmp.switches) s->apply(effKinematics);
 }
 
-void MNode::optBound(BoundType bound, bool collisions) {
+void LGP_Node::optBound(BoundType bound, bool collisions) {
   if(komoProblem(bound)) delete komoProblem(bound);
   komoProblem(bound) = new KOMO();
   KOMO& komo(*komoProblem(bound));
@@ -216,12 +216,12 @@ void MNode::optBound(BoundType bound, bool collisions) {
     
 }
 
-void MNode::setInfeasible() {
+void LGP_Node::setInfeasible() {
   isInfeasible = true;
-  for(MNode *n:children) n->setInfeasible();
+  for(LGP_Node *n:children) n->setInfeasible();
 }
 
-void MNode::labelInfeasible() {
+void LGP_Node::labelInfeasible() {
   setInfeasible();
   
   //-- remove children
@@ -237,7 +237,7 @@ void MNode::labelInfeasible() {
   //  cout <<"\n *** LABELLING INFEASIBLE: "; listWrite(symbols); cout <<endl;
   
   //-- find the right parent-of-generalization
-  MNode* branchNode = this;
+  LGP_Node* branchNode = this;
   while(branchNode->parent) {
     bool stop=false;
     for(Node *fact:branchNode->folState->list()) {
@@ -265,9 +265,9 @@ void MNode::labelInfeasible() {
   //TODO: resort all queues
 }
 
-MNodeL MNode::getTreePath() const {
+MNodeL LGP_Node::getTreePath() const {
   MNodeL path;
-  MNode *node=(MNode*)this;
+  LGP_Node *node=(LGP_Node*)this;
   for(; node;) {
     path.prepend(node);
     node = node->parent;
@@ -275,21 +275,21 @@ MNodeL MNode::getTreePath() const {
   return path;
 }
 
-rai::String MNode::getTreePathString(char sep) const {
+rai::String LGP_Node::getTreePathString(char sep) const {
   MNodeL path = getTreePath();
   rai::String str;
-  for(MNode *b : path) {
+  for(LGP_Node *b : path) {
     if(b->decision) str <<*b->decision <<sep;
 //    else str <<"ROOT" <<sep;
   }
   return str;
 }
 
-Skeleton MNode::getSkeleton(StringA predicateFilter,  bool finalStateOnly) const {
+Skeleton LGP_Node::getSkeleton(StringA predicateFilter,  bool finalStateOnly) const {
   rai::Array<Graph*> states;
   arr times;
   if(!finalStateOnly){
-    for(MNode *node:getTreePath()) {
+    for(LGP_Node *node:getTreePath()) {
       times.append(node->time);
       states.append(node->folState);
     }
@@ -342,33 +342,33 @@ Skeleton MNode::getSkeleton(StringA predicateFilter,  bool finalStateOnly) const
   return skeleton;
 }
 
-MNode* MNode::getRoot() {
-  MNode* n=this;
+LGP_Node* LGP_Node::getRoot() {
+  LGP_Node* n=this;
   while(n->parent) n=n->parent;
   return n;
 }
 
-MNode *MNode::getChildByAction(Node *folDecision) {
-  for(MNode *ch:children) {
+LGP_Node *LGP_Node::getChildByAction(Node *folDecision) {
+  for(LGP_Node *ch:children) {
     if(tuplesAreEqual(ch->folDecision->parents, folDecision->parents)) return ch;
   }
   LOG(-1) <<"a child with action '" <<*folDecision <<"' does not exist";
   return NULL;
 }
 
-void MNode::getAll(MNodeL& L) {
+void LGP_Node::getAll(MNodeL& L) {
   L.append(this);
-  for(MNode *ch:children) ch->getAll(L);
+  for(LGP_Node *ch:children) ch->getAll(L);
 }
 
-MNode *MNode::treePolicy_random() {
+LGP_Node *LGP_Node::treePolicy_random() {
   if(isInfeasible) return NULL;
   if(isTerminal) return NULL;
   if(children.N) return children.rndElem()->treePolicy_random();
   return this;
 }
 
-bool MNode::recomputeAllFolStates() {
+bool LGP_Node::recomputeAllFolStates() {
   if(!parent) { //this is root
     folState->copy(*fol.start_state);
     if(folAddToState) applyEffectLiterals(*folState, *folAddToState, {}, NULL);
@@ -405,7 +405,7 @@ bool MNode::recomputeAllFolStates() {
     return true;
 }
 
-void MNode::checkConsistency() {
+void LGP_Node::checkConsistency() {
   //-- check that the state->parent points to the parent's state
   if(parent) {
     CHECK_EQ(parent->folState->isNodeOfGraph, folState->isNodeOfGraph->parents.scalar(), "");
@@ -431,7 +431,7 @@ void MNode::checkConsistency() {
   for(auto* ch:children) ch->checkConsistency();
 }
 
-void MNode::write(ostream& os, bool recursive, bool path) const {
+void LGP_Node::write(ostream& os, bool recursive, bool path) const {
   os <<"------- NODE -------\ns=" <<step <<" t=" <<time;
   if(decision) os <<" a=" <<*decision <<endl;
   else os <<" a=<ROOT>"<<endl;
@@ -440,7 +440,7 @@ void MNode::write(ostream& os, bool recursive, bool path) const {
   if(path) {
     os <<"\t decision path:";
     MNodeL _path = getTreePath();
-    for(MNode *nn: _path)
+    for(LGP_Node *nn: _path)
         if(nn->decision) os <<*nn->decision <<' '; else os <<" <ROOT> ";
     os <<endl;
   }
@@ -448,10 +448,10 @@ void MNode::write(ostream& os, bool recursive, bool path) const {
   os <<"\t poseCost=" <<cost(BD_pose) <<endl;
   os <<"\t seqCost=" <<cost(BD_seq) <<endl;
   os <<"\t pathCost=" <<cost(BD_path) <<endl;
-  if(recursive) for(MNode *n:children) n->write(os);
+  if(recursive) for(LGP_Node *n:children) n->write(os);
 }
 
-void MNode::getGraph(Graph& G, Node* n, bool brief) {
+void LGP_Node::getGraph(Graph& G, Node* n, bool brief) {
   if(!n) {
     n = G.newNode<bool>({"a:<ROOT>"}, NodeL(), true);
   } else {
@@ -481,7 +481,7 @@ void MNode::getGraph(Graph& G, Node* n, bool brief) {
   //  if(inFringe2) G.getRenderingInfo(n).dotstyle <<" peripheries=3";
   
   //  n->keys.append(STRING("reward:" <<effPoseReward));
-  for(MNode *ch:children) ch->getGraph(G, n, brief);
+  for(LGP_Node *ch:children) ch->getGraph(G, n, brief);
 }
 
 RUN_ON_INIT_BEGIN(manipulationTree)

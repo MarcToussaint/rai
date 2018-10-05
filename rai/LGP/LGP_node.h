@@ -14,8 +14,8 @@
 #include <KOMO/komo.h>
 #include "bounds.h"
 
-struct MNode;
-typedef rai::Array<MNode*> MNodeL;
+struct LGP_Node;
+typedef rai::Array<LGP_Node*> MNodeL;
 
 //struct SkeletonEntry{ StringL symbols; uint k0,k1; double phase0, phase1; };
 //typedef rai::Array<SkeletonEntry> Skeleton;
@@ -29,9 +29,9 @@ extern bool LGP_useHoming;
 
 //===========================================================================
 
-struct MNode {
-  MNode *parent;
-  rai::Array<MNode*> children;
+struct LGP_Node {
+  LGP_Node *parent;
+  rai::Array<LGP_Node*> children;
   uint step;            ///< decision depth/step of this node
   double time;          ///< real time
   uint id;
@@ -68,12 +68,12 @@ struct MNode {
   rai::String note;
   
   /// root node init
-  MNode(rai::KinematicWorld& kin, FOL_World& fol, uint levels);
+  LGP_Node(rai::KinematicWorld& kin, FOL_World& fol, uint levels);
   
   /// child node creation
-  MNode(MNode *parent, FOL_World::Handle& a);
+  LGP_Node(LGP_Node *parent, FOL_World::Handle& a);
   
-  ~MNode();
+  ~LGP_Node();
   
   //- computations on the node
   void expand(int verbose=0);           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
@@ -84,8 +84,8 @@ struct MNode {
   //-- helpers to get other nodes
   MNodeL getTreePath() const; ///< return the decision path in terms of a list of nodes (just walking to the root)
   rai::String getTreePathString(char sep=' ') const;
-  MNode* getRoot(); ///< return the decision path in terms of a list of nodes (just walking to the root)
-  MNode* getChildByAction(Node  *folDecision); ///<
+  LGP_Node* getRoot(); ///< return the decision path in terms of a list of nodes (just walking to the root)
+  LGP_Node* getChildByAction(Node  *folDecision); ///<
   void getAll(MNodeL& L);
   MNodeL getAll() { MNodeL L; getAll(L); return L; }
   void checkConsistency();
@@ -94,8 +94,8 @@ struct MNode {
 private:
   void setInfeasible(); ///< set this and all children infeasible
   void labelInfeasible(); ///< sets this infeasible AND propagates this label up-down to others
-  MNode *treePolicy_random(); ///< returns leave -- by descending children randomly
-  MNode *treePolicy_softMax(double temperature);
+  LGP_Node *treePolicy_random(); ///< returns leave -- by descending children randomly
+  LGP_Node *treePolicy_softMax(double temperature);
   bool recomputeAllFolStates();
   
 public:
@@ -104,6 +104,6 @@ public:
   Graph getGraph(bool brief=false) { Graph G; getGraph(G, NULL, brief); G.checkConsistency(); return G; }
 };
 
-inline ostream& operator<<(ostream& os, const MNode& n) { n.write(os); return os; }
+inline ostream& operator<<(ostream& os, const LGP_Node& n) { n.write(os); return os; }
 
 //===========================================================================

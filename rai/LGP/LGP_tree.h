@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "manipulationTree.h"
+#include "LGP_node.h"
 //#include <Geo/geoms.h>
 #include <Core/thread.h>
 
@@ -15,21 +15,21 @@ typedef rai::Array<rai::Transformation> TransformationA;
 
 void initFolStateFromKin(FOL_World& L, const rai::KinematicWorld& K);
 
-struct OptLGP_SolutionData : GLDrawer {
-  MNode *node; ///< contains costs, constraints, and solutions for each level
+struct LGP_Tree_SolutionData : GLDrawer {
+  LGP_Node *node; ///< contains costs, constraints, and solutions for each level
   rai::String decisions;
   
   uintA geomIDs; ///< for display
   rai::Array<TransformationA> paths; ///< for display
   uint displayStep=0;
   
-  OptLGP_SolutionData(MNode *n);
+  LGP_Tree_SolutionData(LGP_Node *n);
   
   void write(ostream &os) const;
   void glDraw(struct OpenGL&gl);
 };
 
-struct OptLGP : GLDrawer {
+struct LGP_Tree : GLDrawer {
   int verbose;
   uint numSteps;
   ofstream fil;
@@ -39,7 +39,7 @@ struct OptLGP : GLDrawer {
   rai::String dataPath;
   arr cameraFocus;
   
-  MNode *root=0, *displayFocus=0;
+  LGP_Node *root=0, *displayFocus=0;
   FOL_World *selfCreated=NULL;
   
   rai::Array<std::shared_ptr<KinPathViewer>> views; //displays for the 3 different levels
@@ -56,24 +56,24 @@ struct OptLGP : GLDrawer {
   MNodeL fringe_path;  //list of terminal nodes that have been seq tested
   MNodeL fringe_solved;  //list of terminal nodes that have been path tested
   
-  Var<rai::Array<OptLGP_SolutionData*>> solutions;
+  Var<rai::Array<LGP_Tree_SolutionData*>> solutions;
   
   //high-level
-  OptLGP();
-  OptLGP(rai::KinematicWorld& kin, const char *folFileName="fol.g");
-  OptLGP(rai::KinematicWorld& kin, FOL_World& fol);
+  LGP_Tree();
+  LGP_Tree(rai::KinematicWorld& kin, const char *folFileName="fol.g");
+  LGP_Tree(rai::KinematicWorld& kin, FOL_World& fol);
   void init(rai::KinematicWorld &kin, FOL_World &fol);
-  ~OptLGP();
+  ~LGP_Tree();
   
   FOL_World& fol() { return root->fol; }
   const rai::KinematicWorld& kin() { return root->startKinematics; }
   
   //-- methods called in the run loop
 private:
-  MNode* getBest(MNodeL& fringe, uint level);
-  MNode* popBest(MNodeL& fringe, uint level);
-  MNode* getBest() { return getBest(fringe_solved, 3); }
-  MNode *expandBest(int stopOnLevel=-1);
+  LGP_Node* getBest(MNodeL& fringe, uint level);
+  LGP_Node* popBest(MNodeL& fringe, uint level);
+  LGP_Node* getBest() { return getBest(fringe_solved, 3); }
+  LGP_Node *expandBest(int stopOnLevel=-1);
 
   void optBestOnLevel(BoundType bound, MNodeL& drawFringe, BoundType drawBound, MNodeL* addIfTerminal, MNodeL* addChildren);
   void optFirstOnLevel(BoundType bound, MNodeL& fringe, MNodeL* addIfTerminal);
@@ -89,7 +89,7 @@ public:
   void optMultiple(const StringA& seqs);
 
   //-- work directly on the tree
-  MNode* walkToNode(const rai::String& seq);
+  LGP_Node* walkToNode(const rai::String& seq);
 
   
   // output
