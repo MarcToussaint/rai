@@ -280,5 +280,6 @@ void TM_ZeroQVel::phi(arr& y, arr& J, const WorldL& Ktuple){
 }
 
 uint TM_ZeroQVel::dim_phi(const rai::KinematicWorld& G){
-  return G.frames(i)->joint->dim;
+  rai::Frame *a = G.frames(i);
+  return a->joint->dim;
 }

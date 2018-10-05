@@ -76,8 +76,8 @@ KOMO::~KOMO() {
 void KOMO::setModel(const KinematicWorld& K,
                     bool _useSwift,
                     bool meldFixedJoints, bool makeConvexHulls, bool computeOptimalSSBoxes, bool activateAllContacts) {
-                    
-  world.copy(K);
+
+  if(&K!=&world) world.copy(K);
   
   useSwift = _useSwift;
   

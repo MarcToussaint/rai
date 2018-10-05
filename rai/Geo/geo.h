@@ -375,7 +375,7 @@ std::ostream& operator<<(std::ostream&, const Transformation&);
 /// of a 'cross-product-matrix'
 void quatDiff(arr& y, arr& J1, arr& J2, const Quaternion& q1, const Quaternion& q2);
 
-double quatScalarProduct(const rai::Quaternion& a, const rai::Quaternion& b);
+double quat_scalarProduct(const rai::Quaternion& a, const rai::Quaternion& b);
 
 double sqrDistance(const rai::Vector& a, const rai::Vector& b);
 

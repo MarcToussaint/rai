@@ -242,6 +242,8 @@ void rai::KinematicWorld::calc_q() {
 }
 
 void rai::KinematicWorld::copy(const rai::KinematicWorld& K, bool referenceSwiftOnCopy) {
+  CHECK(this != &K, "never copy K onto itself");
+
   clear();
   orsDrawProxies = K.orsDrawProxies;
   //copy frames; first each Frame/Link/Joint directly, where all links go to the origin K (!!!); then relink to itself
