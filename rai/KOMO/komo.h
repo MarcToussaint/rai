@@ -164,6 +164,7 @@ struct KOMO : NonCopyable {
   arr getPath_decisionVariable();
   arr getPath(const StringA& joints);
   arr getPath_frames(const uintA &frames);
+  arrA getPath_q();
   arr getPath_times();
   arr getPath_energies();
 

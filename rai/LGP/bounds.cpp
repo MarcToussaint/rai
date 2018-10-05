@@ -1,7 +1,7 @@
 #include "bounds.h"
 //#include <Kin/switch.h>
 
-void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const rai::KinematicWorld& startKinematics, const rai::KinematicWorld& effKinematics, bool collisions){
+void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const rai::KinematicWorld& startKinematics, const rai::KinematicWorld& effKinematics, bool collisions, const arrA& waypoints){
   double maxPhase=0;
   for(const SkeletonEntry& s:S) if(s.phase1>maxPhase) maxPhase=s.phase1;
   //-- prepare the komo problem
@@ -39,9 +39,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const ra
     } break;
     case BD_seq: {
       komo.setModel(startKinematics, collisions);
-      maxPhase += 1. ;
-      if(maxPhase>1e-2) komo.setTiming(maxPhase, 1, 5., 1);
-      else  komo.setTiming(1., 1, 10., 1);
+      komo.setTiming(maxPhase+1., 1, 5., 1);
 
       komo.setHoming(0., -1., 1e-2);
       komo.setSquaredQVelocities(0., -1., 1e-2);
@@ -75,6 +73,34 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const ra
       komo.reset();
       //      cout <<komo.getPath_times() <<endl;
     } break;
+    case BD_seqPath: {
+      komo.setModel(startKinematics, collisions);
+      uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
+      uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
+      komo.setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
+
+      komo.setHoming(0., -1., 1e-2);
+      if(pathOrder==1) komo.setSquaredQVelocities();
+      else komo.setSquaredQAccelerations();
+      komo.setSquaredQuaternionNorms();
+
+      CHECK_EQ(waypoints.N-1, floor(maxPhase+.5), "");
+      for(uint i=0;i<waypoints.N-1;i++){
+        komo.addObjective(ARR(double(i+1)), OT_sos, FS_qItself, {}, 1e-1, waypoints(i));
+      }
+
+      uint O = komo.objectives.N;
+      komo.setSkeleton(S);
+      //delete all added objectives! -> only keep switches
+//      for(uint i=O; i<komo.objectives.N; i++) delete komo.objectives(i);
+//      komo.objectives.resizeCopy(O);
+
+      if(collisions) komo.add_collision(true, 0, 1e1);
+
+      komo.reset();
+      //      cout <<komo.getPath_times() <<endl;
+    } break;
+
     default: NIY;
   }
 }

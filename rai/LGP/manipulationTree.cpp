@@ -19,7 +19,7 @@
 uint COUNT_kin=0;
 uint COUNT_evals=0;
 uint COUNT_node=0;
-uintA COUNT_opt=consts<uint>(0, 4);
+uintA COUNT_opt=consts<uint>(0, BD_max);
 double COUNT_time=0.;
 rai::String OptLGPDataPath;
 ofstream *filNodes=NULL;
@@ -139,8 +139,14 @@ void MNode::optBound(BoundType bound, bool collisions) {
   if(bound==BD_pose && parent){
     if(!parent->effKinematics.q.N) parent->computeEndKinematics();
   }
+  arrA waypoints;
+  if(bound==BD_seqPath){
+    CHECK(komoProblem(BD_seq), "BD_seq needs to be computed before");
+    waypoints = komoProblem(BD_seq)->getPath_q();
+  }
 
-  skeleton2Bound(komo, bound, S, startKinematics, (parent?parent->effKinematics:startKinematics), collisions);
+  skeleton2Bound(komo, bound, S, startKinematics, (parent?parent->effKinematics:startKinematics), collisions,
+                 waypoints);
 
 //  if(level==BD_seq) komo.denseOptimization=true;
 
@@ -153,7 +159,7 @@ void MNode::optBound(BoundType bound, bool collisions) {
   try {
     komo.run();
   } catch(const char* msg) {
-    cout <<"KOMO FAILED: " <<msg <<endl;
+    cout <<"KOMO CRASHED: " <<msg <<endl;
   }
   if(!komo.denseOptimization) COUNT_evals += komo.opt->newton.evals;
   COUNT_kin += rai::KinematicWorld::setJointStateCount;

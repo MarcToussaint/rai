@@ -2,6 +2,13 @@
 
 #include <KOMO/komo.h>
 
-enum BoundType{ BD_all=-1, BD_symbolic=0, BD_pose=1, BD_seq=2, BD_path=3 };
+enum BoundType{ BD_all=-1, BD_symbolic=0, BD_pose=1, BD_seq=2, BD_path=3, BD_seqPath, BD_max };
 
-void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const rai::KinematicWorld& startKinematics, const rai::KinematicWorld& parentEffKinematics, bool collisions);
+void skeleton2Bound(KOMO& komo,
+                    BoundType boundType,
+                    const Skeleton& S,
+                    const rai::KinematicWorld& startKinematics,
+                    const rai::KinematicWorld& parentEffKinematics,
+                    bool collisions,
+                    const arrA& waypoints={}
+                    );

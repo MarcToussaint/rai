@@ -2187,6 +2187,15 @@ arr KOMO::getPath_frames(const uintA &frames) {
   return X;
 }
 
+arrA KOMO::getPath_q() {
+  CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
+  arrA q(T);
+  for(uint t=0; t<T; t++) {
+    q(t) = configurations(t+k_order)->getJointState();
+  }
+  return q;
+}
+
 arr KOMO::getPath_times() {
   CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
   arr X(T);

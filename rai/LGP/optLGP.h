@@ -75,7 +75,7 @@ private:
   MNode* getBest() { return getBest(fringe_solved, 3); }
   MNode *expandBest(int stopOnLevel=-1);
 
-  void optBestOnLevel(BoundType bound, MNodeL& fringe, MNodeL* addIfTerminal, MNodeL* addChildren);
+  void optBestOnLevel(BoundType bound, MNodeL& drawFringe, BoundType drawBound, MNodeL* addIfTerminal, MNodeL* addChildren);
   void optFirstOnLevel(BoundType bound, MNodeL& fringe, MNodeL* addIfTerminal);
   void clearFromInfeasibles(MNodeL& fringe);
   

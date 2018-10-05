@@ -131,7 +131,7 @@ OptLGP::OptLGP(rai::KinematicWorld &kin, FOL_World &fol) : OptLGP() {
 
 void OptLGP::init(rai::KinematicWorld &kin, FOL_World &fol) {
   CHECK(!root,"");
-  root = new MNode(kin, fol, 4);
+  root = new MNode(kin, fol, BD_max);
   displayFocus = root;
   //  threadOpenModules(true);
 }
@@ -318,6 +318,7 @@ void OptLGP::optFixedSequence(const rai::String& seq, BoundType specificBound, b
   if(specificBound==BD_all || specificBound==BD_pose) node->optBound(BD_pose, collisions);
   if(specificBound==BD_all || specificBound==BD_seq)  node->optBound(BD_seq, collisions);
   if(specificBound==BD_all || specificBound==BD_path) node->optBound(BD_path, collisions);
+  if(specificBound==BD_all || specificBound==BD_seqPath) node->optBound(BD_seqPath, collisions);
   
   displayFocus = node;
   
@@ -414,9 +415,9 @@ MNode *OptLGP::expandBest(int stopOnDepth) { //expand
   return n;
 }
 
-void OptLGP::optBestOnLevel(BoundType bound, MNodeL &fringe, MNodeL *addIfTerminal, MNodeL *addChildren) { //optimize a seq
-  if(!fringe.N) return;
-  MNode* n = popBest(fringe, bound-1);
+void OptLGP::optBestOnLevel(BoundType bound, MNodeL &drawFringe, BoundType drawFrom, MNodeL *addIfTerminal, MNodeL *addChildren) { //optimize a seq
+  if(!drawFringe.N) return;
+  MNode* n = popBest(drawFringe, drawFrom);
   if(n && !n->count(bound)) {
     try {
       n->optBound(bound, collisions);
@@ -498,11 +499,11 @@ void OptLGP::step() {
   
   uint numSol = fringe_solved.N;
   
-  if(rnd.uni()<.5) optBestOnLevel(BD_pose, fringe_pose, &fringe_seq, &fringe_pose);
+  if(rnd.uni()<.5) optBestOnLevel(BD_pose, fringe_pose, BD_symbolic, &fringe_seq, &fringe_pose);
   optFirstOnLevel(BD_pose, fringe_pose2, &fringe_seq);
-  optBestOnLevel(BD_seq, fringe_seq, &fringe_path, NULL);
+  optBestOnLevel(BD_seq, fringe_seq, BD_pose, &fringe_path, NULL);
   if(verbose>0 && fringe_path.N) cout <<"EVALUATING PATH " <<fringe_path.last()->getTreePathString() <<endl;
-  optBestOnLevel(BD_path, fringe_path, &fringe_solved, NULL);
+  optBestOnLevel(BD_seqPath, fringe_path, BD_seq, &fringe_solved, NULL);
   
   if(fringe_solved.N>numSol) {
     if(verbose>0) cout <<"NEW SOLUTION FOUND! " <<fringe_solved.last()->getTreePathString() <<endl;
@@ -636,7 +637,7 @@ void OptLGP_SolutionData::write(std::ostream &os) const {
 
 void OptLGP_SolutionData::glDraw(OpenGL &gl) {
 #ifdef RAI_GL
-  uint l=3;
+  uint l=BD_seqPath;
   rai::Array<rai::Geom*>& geoms = _GeomStore()->geoms;
   
   if(!paths(l).N) return;
