@@ -154,7 +154,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions) {
   DEBUG(FILE("z.fol") <<fol;);
   DEBUG(komo.getReport(false, 1, FILE("z.problem")););
   if(komo.verbose>1) komo.reportProblem();
-  if(komo.verbose>2) komo.animateOptimization = 1;
+  if(komo.verbose>2) komo.animateOptimization = komo.verbose-2;
 
   try {
     komo.run();

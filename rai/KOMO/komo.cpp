@@ -1149,10 +1149,46 @@ void KOMO::reset(double initNoise) {
   featureTypes.clear();
   komo_problem.clear();
   dense_problem.clear();
-  rndGauss(x, initNoise, true); //don't initialize at a singular config
+  if(initNoise>0.)
+    rndGauss(x, initNoise, true); //don't initialize at a singular config
   if(splineB.N) {
     z = pseudoInverse(splineB) * x;
   }
+}
+
+void KOMO::initWithWaypoints(const arrA& waypoints){
+  uintA steps(waypoints.N);
+  for(uint i=0;i<steps.N;i++){
+    steps(i) = conv_time2step(double(i+1), stepsPerPhase);
+  }
+
+  for(uint i=0;i<steps.N;i++) if(steps(i)<T){
+    configurations(k_order+steps(i))->setJointState(waypoints(i));
+  }
+
+  //interpolate
+//  uintA nonSwitched = getNonSwitchedBodies(configurations);
+//  arr q = getPath(nonSwitched);
+//  for(uint i=0;i<steps.N;i++) {
+//    uint i1=steps(i);
+//    uint i0=0; if(i) i0 = steps(i-1);
+//    arr q0 = q[i0];
+//    //sine motion profile
+//    if(steps(i)<T){
+//      arr q1 = q[i1];
+//      for(uint j=i0+1;j<=i1;j++){
+//        double phase = double(j-i0)/double(i1-i0);
+//        q[j] = q0 + (.5*(1.-cos(RAI_PI*phase))) * (q1-q0);
+//        configurations(k_order+j)->setJointState(q[j], nonSwitched);
+//      }
+//    }else{
+//      for(uint j=i0+1;j<T;j++){
+//        configurations(k_order+j)->setJointState(q0, nonSwitched);
+//      }
+//    }
+//  }
+
+  reset(0.);
 }
 
 void KOMO::run() {
@@ -1537,7 +1573,12 @@ void KOMO::set_x(const arr& x) {
   CHECK_EQ(x_count, x.N, "");
   
   if(animateOptimization>0) {
-    displayPath(animateOptimization>1);
+    if(animateOptimization>1){
+      cout <<getReport(true) <<endl;
+      displayPath(true);
+    }else{
+      displayPath(false);
+    }
 //    komo.plotPhaseTrajectory();
 //    rai::wait();
   }
@@ -2172,6 +2213,16 @@ arr KOMO::getPath(const StringA &joints) {
   arr X(T,joints.N);
   for(uint t=0; t<T; t++) {
     X[t] = configurations(t+k_order)->getJointState(joints);
+  }
+  return X;
+}
+
+arr KOMO::getPath(const uintA &joints) {
+  CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
+  arr X = configurations(k_order)->getJointState(joints);
+  X.resizeCopy(T, X.N);
+  for(uint t=1; t<T; t++) {
+    X[t] = configurations(k_order+t)->getJointState(joints);
   }
   return X;
 }

@@ -346,6 +346,22 @@ rai::Array<rai::Joint*> getSwitchedJoints(const rai::KinematicWorld& G0, const r
 
 //===========================================================================
 
+bool isSwitched(rai::Frame *f0, rai::Frame *f1){
+  rai::Joint *j0 = f0->joint;
+  rai::Joint *j1 = f1->joint;
+  if(!j0 != !j1) return true;
+  if(j0) {
+    if(j0->type!=j1->type
+       || j0->constrainToZeroVel!=j1->constrainToZeroVel
+       || (j0->from() && j0->from()->ID!=j1->from()->ID)) { //different joint type; or attached to different parent
+      return true;
+    }
+  }
+  return false;
+}
+
+//===========================================================================
+
 uintA getSwitchedBodies(const rai::KinematicWorld& G0, const rai::KinematicWorld& G1, int verbose) {
   uintA switchedBodies;
   
@@ -375,4 +391,23 @@ uintA getSwitchedBodies(const rai::KinematicWorld& G0, const rai::KinematicWorld
   }
   
   return switchedBodies;
+}
+
+//===========================================================================
+
+uintA getNonSwitchedBodies(const WorldL& Ktuple) {
+  uintA nonSwitchedBodies;
+
+  rai::KinematicWorld& K0 = *Ktuple(0);
+  for(rai::Frame *f0:K0.frames) {
+    bool succ = true;
+    uint id = f0->ID;
+    for(uint i=1;i<Ktuple.N;i++){
+      rai::KinematicWorld& K1 = *Ktuple(i);
+      if(id>=K1.frames.N){ succ=false; break; }
+      if(isSwitched(f0, K1.frames(id))){ succ=false; break; }
+    }
+    if(succ) nonSwitchedBodies.append(id);
+  }
+  return nonSwitchedBodies;
 }

@@ -492,6 +492,27 @@ arr rai::KinematicWorld::getJointState(const StringA& joints) const {
   return x;
 }
 
+arr rai::KinematicWorld::getJointState(const uintA& joints) const {
+  if(!q.nd)((KinematicWorld*)this)->calc_q();
+  uint nd=0;
+  for(uint i=0; i<joints.N; i++) {
+    rai::Joint *j = frames(joints(i))->joint;
+    if(!j) continue;
+    nd += j->dim;
+  }
+
+  arr x(nd);
+  nd=0;
+  for(uint i=0; i<joints.N; i++) {
+    rai::Joint *j = frames(joints(i))->joint;
+    if(!j) continue;
+    for(uint ii=0;ii<j->dim;ii++) x(nd+ii) = q(j->qIndex+ii);
+    nd += j->dim;
+  }
+  CHECK_EQ(nd, x.N, "");
+  return x;
+}
+
 arr rai::KinematicWorld::getFrameState() const{
   arr X(frames.N, 7);
   for(uint i=0; i<X.d0; i++) {
@@ -631,6 +652,25 @@ void rai::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
   
   calc_Q_from_q();
   
+  calc_fwdPropagateFrames();
+}
+
+void rai::KinematicWorld::setJointState(const arr& _q, const uintA& joints) {
+  setJointStateCount++; //global counter
+  getJointState();
+
+  uint nd=0;
+  for(uint i=0; i<joints.N; i++) {
+    rai::Joint *j = frames(joints(i))->joint;
+    if(!j) continue;
+    for(uint ii=0;ii<j->dim;ii++) q(j->qIndex+ii) = _q(nd+ii);
+    nd += j->dim;
+  }
+  CHECK_EQ(_q.N, nd, "");
+  qdot.clear();
+
+  calc_Q_from_q();
+
   calc_fwdPropagateFrames();
 }
 

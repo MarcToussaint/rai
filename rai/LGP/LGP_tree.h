@@ -51,7 +51,7 @@ struct LGP_Tree : GLDrawer {
   MNodeL terminals;    //list of found terminals
   
   MNodeL fringe_pose;  //list of nodes that can be pose tested (parent has been tested)
-  MNodeL fringe_pose2; //list of nodes towards a terminal -> scheduled for pose testing
+  MNodeL fringe_poseToGoal; //list of nodes towards a terminal -> scheduled for pose testing
   MNodeL fringe_seq;   //list of terminal nodes that have been pose tested
   MNodeL fringe_path;  //list of terminal nodes that have been seq tested
   MNodeL fringe_solved;  //list of terminal nodes that have been path tested
@@ -73,7 +73,7 @@ private:
   LGP_Node* getBest(MNodeL& fringe, uint level);
   LGP_Node* popBest(MNodeL& fringe, uint level);
   LGP_Node* getBest() { return getBest(fringe_solved, 3); }
-  LGP_Node *expandBest(int stopOnLevel=-1);
+  LGP_Node *expandNext(int stopOnLevel=-1, MNodeL* addIfTerminal=NULL);
 
   void optBestOnLevel(BoundType bound, MNodeL& drawFringe, BoundType drawBound, MNodeL* addIfTerminal, MNodeL* addChildren);
   void optFirstOnLevel(BoundType bound, MNodeL& fringe, MNodeL* addIfTerminal);

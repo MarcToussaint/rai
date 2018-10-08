@@ -77,7 +77,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const ra
       komo.setModel(startKinematics, collisions);
       uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
       uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
-      komo.setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
+      komo.setTiming(maxPhase+.1, stepsPerPhase, 10., pathOrder);
 
       komo.setHoming(0., -1., 1e-2);
       if(pathOrder==1) komo.setSquaredQVelocities();
@@ -98,6 +98,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const ra
       if(collisions) komo.add_collision(true, 0, 1e1);
 
       komo.reset();
+      komo.initWithWaypoints(waypoints);
       //      cout <<komo.getPath_times() <<endl;
     } break;
 

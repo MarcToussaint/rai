@@ -150,9 +150,9 @@ void LGP_Tree::initDisplay() {
 //    views(1) = make_shared<KinPathViewer>("pose", 1.2, -1);
 //    views(2) = make_shared<KinPathViewer>("sequence", 1.2, -1);
 //    views(3) = make_shared<KinPathViewer>("path", .05, -2);
-//    if(displayTree) rai::system("evince z.pdf &");
 //    for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
 //  }
+  if(displayTree) rai::system("evince z.pdf &");
   if(!dth) dth = new DisplayThread(this);
 }
 
@@ -206,7 +206,7 @@ void LGP_Tree::updateDisplay() {
     for(auto& n:fringe_expand)      n->note <<"EXPAND ";
     for(auto& n:terminals) n->note <<"TERMINAL ";
     for(auto& n:fringe_pose)  n->note <<"POSE ";
-    for(auto& n:fringe_pose2) n->note <<"POSE2 ";
+    for(auto& n:fringe_poseToGoal) n->note <<"POSE2 ";
     for(auto& n:fringe_seq)  n->note <<"SEQ ";
     for(auto& n:fringe_path)  n->note <<"PATH ";
     for(auto& n:fringe_solved) n->note <<"DONE";
@@ -394,7 +394,7 @@ LGP_Node *LGP_Tree::popBest(MNodeL &fringe, uint level) {
   return best;
 }
 
-LGP_Node *LGP_Tree::expandBest(int stopOnDepth) { //expand
+LGP_Node *LGP_Tree::expandNext(int stopOnDepth, MNodeL *addIfTerminal) { //expand
   //    MNode *n =  popBest(fringe_expand, 0);
   if(!fringe_expand.N) HALT("the tree is dead!");
   LGP_Node *n =  fringe_expand.popFirst();
@@ -406,10 +406,11 @@ LGP_Node *LGP_Tree::expandBest(int stopOnDepth) { //expand
     if(ch->isTerminal) {
       terminals.append(ch);
       MNodeL path = ch->getTreePath();
-      for(LGP_Node *n:path) if(!n->count(1)) fringe_pose2.setAppend(n); //pose2 is a FIFO
+      for(LGP_Node *n:path) if(!n->count(1)) fringe_poseToGoal.setAppend(n); //pose2 is a FIFO
     } else {
       fringe_expand.append(ch);
     }
+    if(addIfTerminal && ch->isTerminal) addIfTerminal->append(ch);
     if(n->count(1)) fringe_pose.append(ch);
   }
   return n;
@@ -495,12 +496,12 @@ void LGP_Tree::reportEffectiveJoints() {
 }
 
 void LGP_Tree::step() {
-  expandBest();
+  expandNext();
   
   uint numSol = fringe_solved.N;
   
-  if(rnd.uni()<.5) optBestOnLevel(BD_pose, fringe_pose, BD_symbolic, &fringe_seq, &fringe_pose);
-  optFirstOnLevel(BD_pose, fringe_pose2, &fringe_seq);
+//  if(rnd.uni()<.5) optBestOnLevel(BD_pose, fringe_pose, BD_symbolic, &fringe_seq, &fringe_pose);
+  optFirstOnLevel(BD_pose, fringe_poseToGoal, &fringe_seq);
   optBestOnLevel(BD_seq, fringe_seq, BD_pose, &fringe_path, NULL);
   if(verbose>0 && fringe_path.N) cout <<"EVALUATING PATH " <<fringe_path.last()->getTreePathString() <<endl;
   optBestOnLevel(BD_seqPath, fringe_path, BD_seq, &fringe_solved, NULL);
@@ -514,7 +515,7 @@ void LGP_Tree::step() {
   //-- update queues (if something got infeasible)
   clearFromInfeasibles(fringe_expand);
   clearFromInfeasibles(fringe_pose);
-  clearFromInfeasibles(fringe_pose2);
+  clearFromInfeasibles(fringe_poseToGoal);
   clearFromInfeasibles(fringe_seq);
   clearFromInfeasibles(fringe_path);
   clearFromInfeasibles(terminals);
@@ -537,7 +538,7 @@ void LGP_Tree::buildTree(uint depth) {
   
   rai::timerRead(true);
   for(uint k=0;; k++) {
-    LGP_Node *b = expandBest(depth);
+    LGP_Node *b = expandNext(depth);
     if(!b) break;
   }
   
@@ -556,6 +557,7 @@ void LGP_Tree::getSymbolicSolutions(uint depth) {
     cout <<"solution " <<i <<": " <<a->getTreePathString() <<endl;
     i++;
   }
+  if(!terminals.N) cout <<"NO SOLUTIONS up to depth " <<depth <<endl;
 }
 
 void LGP_Tree::init() {

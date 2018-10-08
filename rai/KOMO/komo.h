@@ -155,6 +155,7 @@ struct KOMO : NonCopyable {
   //-- optimization macros
   void setSpline(uint splineT);      ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
   void reset(double initNoise=.01);  ///< reset the optimizer (initializes x to a default path)
+  void initWithWaypoints(const arrA& waypoints);
   void run();                        ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
   void optimize();
 
@@ -163,6 +164,7 @@ struct KOMO : NonCopyable {
   arr getFrameState(double phase);
   arr getPath_decisionVariable();
   arr getPath(const StringA& joints);
+  arr getPath(const uintA& joints);
   arr getPath_frames(const uintA &frames);
   arrA getPath_q();
   arr getPath_times();
