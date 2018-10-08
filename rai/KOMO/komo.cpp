@@ -198,10 +198,10 @@ void KOMO::addSwitch_stable(double time, double endTime, const char* from, const
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true));
   if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
     addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
-  if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, 1e2, {}, 1);
+  if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, 3e1, {}, 1);
 
 //  addFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
-  if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, 0, +1);
+  if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e1, 2, 0, +1);
   else addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
 }
 
@@ -213,11 +213,11 @@ void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, con
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true));
   if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
     addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
-  if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, 1e2, {}, 1);
+  if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, 3e1, {}, 1);
 
 //  o->prec(-1)=o->prec(-2)=0.;
 //  addFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
-  if(k_order>1) addObjective(time,time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, 0, +1);
+  if(k_order>1) addObjective(time,time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e1, 2, 0, +1);
 //  else addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 1, +1, +1);
 }
 
@@ -1164,29 +1164,36 @@ void KOMO::initWithWaypoints(const arrA& waypoints){
 
   for(uint i=0;i<steps.N;i++) if(steps(i)<T){
     configurations(k_order+steps(i))->setJointState(waypoints(i));
+    for(uint t=steps(i)+1; t<T; t++){
+      uintA nonSwitched = getNonSwitchedBodies({configurations(k_order+steps(i)), configurations(k_order+t)});
+      arr q = configurations(k_order+steps(i))->getJointState(nonSwitched);
+      configurations(k_order+t)->setJointState(q, nonSwitched);
+    }
   }
 
   //interpolate
-//  uintA nonSwitched = getNonSwitchedBodies(configurations);
-//  arr q = getPath(nonSwitched);
-//  for(uint i=0;i<steps.N;i++) {
-//    uint i1=steps(i);
-//    uint i0=0; if(i) i0 = steps(i-1);
-//    arr q0 = q[i0];
-//    //sine motion profile
-//    if(steps(i)<T){
-//      arr q1 = q[i1];
-//      for(uint j=i0+1;j<=i1;j++){
-//        double phase = double(j-i0)/double(i1-i0);
-//        q[j] = q0 + (.5*(1.-cos(RAI_PI*phase))) * (q1-q0);
-//        configurations(k_order+j)->setJointState(q[j], nonSwitched);
-//      }
-//    }else{
-//      for(uint j=i0+1;j<T;j++){
-//        configurations(k_order+j)->setJointState(q0, nonSwitched);
-//      }
-//    }
-//  }
+#if 1
+  uintA nonSwitched = getNonSwitchedBodies(configurations);
+  arr q = getPath(nonSwitched);
+  for(uint i=0;i<steps.N;i++) {
+    uint i1=steps(i);
+    uint i0=0; if(i) i0 = steps(i-1);
+    arr q0 = q[i0];
+    //sine motion profile
+    if(steps(i)<T){
+      arr q1 = q[i1];
+      for(uint j=i0+1;j<=i1;j++){
+        double phase = double(j-i0)/double(i1-i0);
+        q[j] = q0 + (.5*(1.-cos(RAI_PI*phase))) * (q1-q0);
+        configurations(k_order+j)->setJointState(q[j], nonSwitched);
+      }
+    }else{
+      for(uint j=i0+1;j<T;j++){
+        configurations(k_order+j)->setJointState(q0, nonSwitched);
+      }
+    }
+  }
+#endif
 
   reset(0.);
 }
