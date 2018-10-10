@@ -75,12 +75,15 @@ void rai::Geom::createMeshes() {
       mesh.setBox();
       mesh.scale(size(0), size(1), size(2));
       break;
-    case rai::ST_sphere:
+    case rai::ST_sphere:{
       sscCore.V = arr(1,3, {0.,0.,0.});
-      mesh.setSSCvx(sscCore, size(3));
+      double rad=1;
+      if(size.N==1) rad=size(0);
+      else rad=size(3);
+      mesh.setSSCvx(sscCore, rad);
       //      mesh.setSphere();
       //      mesh.scale(size(3), size(3), size(3));
-      break;
+    } break;
     case rai::ST_cylinder:
       CHECK(size(3)>1e-10,"");
       mesh.setCylinder(size(3), size(2));

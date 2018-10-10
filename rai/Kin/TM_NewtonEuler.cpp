@@ -19,7 +19,7 @@ void shapeFunction(double &x, double &dx);
 
 TM_NewtonEuler::TM_NewtonEuler(int iShape) : i(iShape) {
   order=2;
-  gravity = rai::getParameter<double>("TM_Physics/gravity", 9.81);
+  gravity = rai::getParameter<double>("TM_NewtonEuler/gravity", 9.81);
 }
 
 void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {

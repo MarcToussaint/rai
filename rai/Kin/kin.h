@@ -11,6 +11,7 @@
 
 #include <Core/array.h>
 #include <Geo/geo.h>
+#include <Geo/geoms.h>
 #include "featureSymbols.h"
 
 struct OpenGL;
@@ -88,6 +89,8 @@ struct KinematicWorld : GLDrawer {
   void init(const Graph& G, bool addInsteadOfClear=false);
   void addFile(const char* filename);
   Frame* addFrame(const char* name, const char* parent=NULL, const char* args=NULL);
+  Frame* addObject(rai::ShapeType type, const arr& size={}, const arr& col={});
+
 
   /// @name access
   Frame *operator[](const char* name) { return getFrameByName(name, true); }

@@ -470,7 +470,7 @@ rai::String LGP_Tree::report(bool detailed) {
   LGP_Node *bpath = getBest(fringe_solved, 3);
   
   rai::String out;
-  out <<"TIME= " <<rai::cpuTime() <<" TIME= " <<COUNT_time <<" KIN= " <<COUNT_kin <<" EVALS= " <<COUNT_evals
+  out <<"TIME= " <<rai::cpuTime() <<" TIME= " <<COUNT_time <<" KIN= " <<COUNT_kin <<" EVALS= " <<COUNT_evals << " TREE= " <<COUNT_node
      <<" POSE= " <<COUNT_opt(1) <<" SEQ= " <<COUNT_opt(2) <<" PATH= " <<COUNT_opt(3)
     <<" bestPose= " <<(bpose?bpose->cost(1):100.)
    <<" bestSeq= " <<(bseq ?bseq ->cost(2):100.)

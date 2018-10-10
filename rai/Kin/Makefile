@@ -4,6 +4,7 @@ OUTPUT = lib$(NAME).so
 
 #OPTIM = fast_debug
 
+BULLET = 1
 GL = 1
 PHYSX = 1
 ODE = 0

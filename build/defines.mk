@@ -375,6 +375,14 @@ LIBS += -Wl,--start-group -lpthread -lrt\
 -lSimulationController 
 endif
 
+ifeq ($(BULLET),1)
+BULLET_PATH=$(HOME)/git/bullet3
+LPATH := $(BULLET_PATH)/bin:$(LPATH)
+CPATH := $(CPATH):$(BULLET_PATH)/src
+btLIB = _gmake_x64_release
+LIBS += -lBulletSoftBody$(btLIB) -lBulletDynamics$(btLIB) -lBulletCollision$(btLIB)  -lLinearMath$(btLIB)
+endif
+
 ifeq ($(PORTAUDIO),1)
 CXXFLAGS  += -DRAI_PORTAUDIO
 LPATHS += $(HOME)/opt/portaudio/lib/.libs

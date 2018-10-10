@@ -197,6 +197,16 @@ rai::Frame* rai::KinematicWorld::addFrame(const char* name, const char* parent, 
   return f;
 }
 
+rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType type, const arr& size, const arr& col){
+  rai::Frame *f = new rai::Frame(*this);
+  rai::Shape *s = new rai::Shape(*f);
+  s->type() = type;
+  if(size.N) s->size() = size;
+  if(col.N) s->mesh().C = col;
+  s->getGeom().createMeshes();
+  return f;
+}
+
 void rai::KinematicWorld::clear() {
   reset_q();
   proxies.clear(); //while(proxies.N){ delete proxies.last(); /*checkConsistency();*/ }
