@@ -101,7 +101,7 @@ Feature* symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::K
   if(feat==FS_qItself) { if(!frames.N) return new TM_qItself(); else return new TM_qItself(QIP_byJointNames, frames, world); }
 
   if(feat==FS_physics) { return new TM_NewtonEuler(world, frames(0)); }
-  if(feat==FS_contactConstraints) { return new TM_ContactConstraints(world, frames(0), frames(1)); }
+  if(feat==FS_contactConstraints) { return new TM_Contact_ForceIsNormal(world, frames(0), frames(1)); }
   if(feat==FS_energy) { return new TM_Energy(); }
 
   HALT("can't interpret feature symbols: " <<feat);

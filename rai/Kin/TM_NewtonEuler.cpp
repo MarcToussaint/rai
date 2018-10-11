@@ -94,11 +94,11 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
     if(!!J) expandJacobian(Jcp, Ktuple, -2);
 
     acc -= sign * forceScaling *mass* c->force;
-    wcc += sign * .1 * forceScaling *Imatrix* crossProduct(cp, c->force);
+    wcc += sign * .3 * forceScaling *Imatrix* crossProduct(cp, c->force);
 
     if(!!J){
       Jacc -= sign * forceScaling *mass* Jf;
-      Jwcc += sign * .1 * forceScaling *Imatrix* (skew(cp) * Jf - skew(c->force) * Jcp);
+      Jwcc += sign * .3 * forceScaling *Imatrix* (skew(cp) * Jf - skew(c->force) * Jcp);
     }
   }
 
