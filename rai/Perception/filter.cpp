@@ -173,7 +173,7 @@ void Filter::step() {
   
   //-- step 5: sync with modelWorld using inverse kinematics
   modelWorld.writeAccess();
-  modelWorld->setActiveJointsByName({"S1"});
+  modelWorld->selectJointsByName({"S1"});
 
   TaskControlMethods taskController(modelWorld());
   arr q=modelWorld().q;
@@ -216,7 +216,7 @@ void Filter::step() {
   listDelete(taskController.tasks); //cleanup tasks
   
   modelWorld->setJointState(q);
-  modelWorld->setActiveJointsByName({}, true);
+  modelWorld->selectJointsByName({}, true);
   modelWorld.deAccess();
   
   //-- done

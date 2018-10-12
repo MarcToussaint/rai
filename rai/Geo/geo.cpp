@@ -576,7 +576,7 @@ void Quaternion::append(const Quaternion& q) {
 }
 
 /// set the quad
-void Quaternion::set(double* p) { w=p[0]; x=p[1]; y=p[2]; z=p[3]; isZero=((w==1. || w==-1.) && x==0. && y==0. && z==0.); }
+void Quaternion::set(const double* p) { w=p[0]; x=p[1]; y=p[2]; z=p[3]; isZero=((w==1. || w==-1.) && x==0. && y==0. && z==0.); }
 
 /// set the quad
 void Quaternion::set(const arr& q) { CHECK_EQ(q.N,4, "");  set(q.p); }

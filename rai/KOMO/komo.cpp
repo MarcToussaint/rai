@@ -95,7 +95,7 @@ void KOMO::setModel(const KinematicWorld& K,
 }
 
 void KOMO_ext::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese) {
-  world.useJointGroups(groupNames, OnlyTheseOrNotThese, false);
+  world.selectJointsByGroup(groupNames, OnlyTheseOrNotThese, false);
   
   world.reset_q();
   world.optimizeTree();

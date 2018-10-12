@@ -89,9 +89,9 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const ra
         komo.addObjective(ARR(double(i+1)), OT_sos, FS_qItself, {}, 1e-1, waypoints(i));
       }
 
-      uint O = komo.objectives.N;
       komo.setSkeleton(S);
       //delete all added objectives! -> only keep switches
+//      uint O = komo.objectives.N;
 //      for(uint i=O; i<komo.objectives.N; i++) delete komo.objectives(i);
 //      komo.objectives.resizeCopy(O);
 
