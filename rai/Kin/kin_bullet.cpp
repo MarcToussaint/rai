@@ -1,5 +1,7 @@
 #include "kin_bullet.h"
 
+#ifdef RAI_BULLET
+
 #include <Kin/frame.h>
 #include <btBulletDynamicsCommon.h>
 
@@ -177,3 +179,6 @@ void BulletInterface::syncBack(FrameL& frames){
 
 
 }
+
+#else
+#endif
