@@ -173,6 +173,37 @@ Objective *KOMO::addObjective(double startTime, double endTime,
   return task;
 }
 
+//Objective* KOMO::addObjective(double startTime, double endTime, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, double scale, const arr& target, int order){
+//  return addObjective(startTime, endTime, symbols2feature(feat, frames, world), type, target, scale, order);
+//}
+
+Objective* KOMO::addObjective(const arr& times, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, const arr& _scale, const arr& target, int order){
+  double scale=1e1;
+  if(_scale.N) scale=_scale.scalar();
+  Objective *task = addObjective(-1.,-1., symbols2feature(feat, frames, world), type, target, scale, order);
+  if(!denseOptimization){
+    if(!times.N){
+      task->setCostSpecs(0, T-1, target, scale);
+    }else if(times.N==1){
+      task->setCostSpecs(times(0), times(0), stepsPerPhase, T, target, scale);
+    }else{
+      CHECK_EQ(times.N, 2, "");
+      task->setCostSpecs(times(0), times(1), stepsPerPhase, T, target, scale);
+    }
+  }else{
+    intA vars = convert<int,double>(times);
+    if(!vars.N){
+      task->setCostSpecs(0, T-1, target, scale);
+    }else{
+      uint order = vars.N-1;
+      CHECK_GE(k_order, order, "task requires larger k-order: " <<task->map->shortTag(world));
+      task->map->order = order;
+      task->setCostSpecsDense(vars, target, scale);
+    }
+  }
+  return task;
+}
+
 void KOMO::addFlag(double time, Flag *fl, int deltaStep) {
   if(time<0.) time=0.;
   fl->stepOfApplication = conv_time2step(time, stepsPerPhase) + deltaStep;
@@ -198,7 +229,7 @@ void KOMO::addSwitch_stable(double time, double endTime, const char* from, const
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true));
   if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
     addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
-  if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, 3e1, {}, 1);
+  if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, {3e1}, {}, 1);
 
 //  addFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
   if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e1, 2, 0, +1);
@@ -213,7 +244,7 @@ void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, con
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true));
   if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
     addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
-  if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, 3e1, {}, 1);
+  if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, {3e1}, {}, 1);
 
 //  o->prec(-1)=o->prec(-2)=0.;
 //  addFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
@@ -277,35 +308,6 @@ void KOMO::addContact_Complementary(double startTime, double endTime, const char
   if(endTime>0.){
     addSwitch(endTime, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world) );
   }
-}
-
-//Objective* KOMO::addObjective(double startTime, double endTime, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, double scale, const arr& target, int order){
-//  return addObjective(startTime, endTime, symbols2feature(feat, frames, world), type, target, scale, order);
-//}
-
-Objective* KOMO::addObjective(const arr& times, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, double scale, const arr& target, int order){
-  Objective *task = addObjective(-1.,-1., symbols2feature(feat, frames, world), type, target, scale, order);
-  if(!denseOptimization){
-    if(!times.N){
-      task->setCostSpecs(0, T-1, target, scale);
-    }else if(times.N==1){
-      task->setCostSpecs(times(0), times(0), stepsPerPhase, T, target, scale);
-    }else{
-      CHECK_EQ(times.N, 2, "");
-      task->setCostSpecs(times(0), times(1), stepsPerPhase, T, target, scale);
-    }
-  }else{
-    intA vars = convert<int,double>(times);
-    if(!vars.N){
-      task->setCostSpecs(0, T-1, target, scale);
-    }else{
-      uint order = vars.N-1;
-      CHECK_GE(k_order, order, "task requires larger k-order: " <<task->map->shortTag(world));
-      task->map->order = order;
-      task->setCostSpecsDense(vars, target, scale);
-    }
-  }
-  return task;
 }
 
 void KOMO::setKS_slider(double time, double endTime, bool before, const char* obj, const char* slider, const char* table) {
@@ -1021,10 +1023,16 @@ void KOMO::setIKOpt() {
   T = 1;
   tau = 1.;
   k_order = 1;
-//  setTiming(1, 1);
-//  setFixEffectiveJoints();
-//  setFixSwitchedObjects();
   setSquaredQVelocities(0.,-1.,1e-1);
+  setSquaredQuaternionNorms();
+}
+
+void KOMO::setDiscreteOpt(uint k){
+  denseOptimization=true;
+  stepsPerPhase = 1;
+  T = k;
+  tau = 1.;
+  k_order = 1;
   setSquaredQuaternionNorms();
 }
 
@@ -1887,7 +1895,7 @@ Graph KOMO::getProblemGraph(bool includeValues){
     g.copy(task->map->getSpec(world), true);
     if(includeValues){
       arr V;
-      for(uint t=0;t<task->prec.N;t++){
+      for(uint t=0;t<task->prec.N && t<T;t++){
         if(task->prec(t)){
           arr y;
           task->map->phi(y, NoArr, configurations({t,t+k_order}));

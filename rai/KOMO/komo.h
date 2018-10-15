@@ -18,11 +18,11 @@
 //===========================================================================
 
 struct SkeletonEntry {
-  StringA symbols;
   double phase0=-1.;
   double phase1=-1.;
+  StringA symbols;
   SkeletonEntry() {}
-  SkeletonEntry(StringA symbols,double phase0,double phase1):symbols(symbols), phase0(phase0), phase1(phase1) {}
+  SkeletonEntry(double phase0, double phase1, StringA symbols) : phase0(phase0), phase1(phase1), symbols(symbols){}
   void write(ostream& os) const { symbols.write(os," ",NULL,"()"); os <<" from " <<phase0 <<" to " <<phase1; }
 };
 stdOutPipe(SkeletonEntry)
@@ -79,6 +79,7 @@ struct KOMO : NonCopyable {
   //-- higher-level setup defaults
   void setConfigFromFile();
   void setIKOpt();
+  void setDiscreteOpt(uint k);
   void setPoseOpt();
   void setSequenceOpt(double _phases);
   void setPathOpt(double _phases, uint stepsPerPhase=20, double timePerPhase=5.);
@@ -93,7 +94,7 @@ struct KOMO : NonCopyable {
    * Typically, the user does not call them directly, but uses the many methods below
    * Think of all of the below as examples for how to set arbirary tasks/switches yourself */
   struct Objective* addObjective(double startTime, double endTime, Feature* map, ObjectiveType type=OT_sos, const arr& target=NoArr, double scale=1e1, int order=-1, int deltaFromStep=0, int deltaToStep=0);
-  struct Objective* addObjective(const arr& times, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, double scale=1e1, const arr& target=NoArr, int order=-1);
+  struct Objective* addObjective(const arr& times, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
 
   void addSwitch(double time, bool before, rai::KinematicSwitch* sw);
   void addSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const rai::Transformation& jFrom=NoTransformation);

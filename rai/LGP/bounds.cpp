@@ -4,6 +4,7 @@
 void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const rai::KinematicWorld& startKinematics, const rai::KinematicWorld& effKinematics, bool collisions, const arrA& waypoints){
   double maxPhase=0;
   for(const SkeletonEntry& s:S) if(s.phase1>maxPhase) maxPhase=s.phase1;
+  komo.clearObjectives();
   //-- prepare the komo problem
   switch(boundType) {
     case BD_pose: {
@@ -86,7 +87,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const ra
 
       CHECK_EQ(waypoints.N-1, floor(maxPhase+.5), "");
       for(uint i=0;i<waypoints.N-1;i++){
-        komo.addObjective(ARR(double(i+1)), OT_sos, FS_qItself, {}, 1e-1, waypoints(i));
+        komo.addObjective(ARR(double(i+1)), OT_sos, FS_qItself, {}, {1e-1}, waypoints(i));
       }
 
       komo.setSkeleton(S);

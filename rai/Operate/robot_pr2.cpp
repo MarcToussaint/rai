@@ -1,9 +1,11 @@
+#ifdef RAI_ROS
+
 #include "robot_pr2.h"
 #include <Algo/spline.h>
 #include <Control/ctrlMsg.h>
-#include <RosCom/roscom.h>
 #include <Kin/frame.h>
 #include "splineRunner.h"
+#include <RosCom/roscom.h>
 
 struct Robot_PR2_PathThread : Thread{
   Mutex threadLock;
@@ -213,3 +215,5 @@ double Robot_PR2::timeToGo(){
 arr Robot_PR2::getHomePose(){
     return self->q0;
 }
+
+#endif

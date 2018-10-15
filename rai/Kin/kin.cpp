@@ -222,6 +222,24 @@ rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size
   return f;
 }
 
+rai::Frame*rai::KinematicWorld::addObject(const char* name, rai::ShapeType shape, const arr& size, const arr& col, double radius, const char* parent, const arr& pos, const arr& rot){
+  rai::Frame *f = addObject(shape, size, col, radius);
+  f->name=name;
+
+  if(parent){
+    rai::Frame *p = getFrameByName(parent);
+    if(p) f->linkFrom(p);
+  }
+
+  if(pos.N){ f->Q.pos = pos; }
+  if(rot.N){ f->Q.rot = rot; }
+
+  if(f->parent) f->X = f->parent->X * f->Q;
+  else f->X = f->Q;
+
+  return f;
+}
+
 void rai::KinematicWorld::clear() {
   reset_q();
   proxies.clear(); //while(proxies.N){ delete proxies.last(); /*checkConsistency();*/ }

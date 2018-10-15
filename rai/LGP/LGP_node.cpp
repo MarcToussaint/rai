@@ -329,9 +329,9 @@ Skeleton LGP_Node::getSkeleton(StringA predicateFilter,  bool finalStateOnly) co
         }
         k_end--;
         if(k_end==states.N-1) {
-          skeleton.append(SkeletonEntry({symbols, times(k), times.last()}));
+          skeleton.append(SkeletonEntry({times(k), times.last(), symbols}));
         } else {
-          skeleton.append(SkeletonEntry({symbols, times(k), times(k_end)}));
+          skeleton.append(SkeletonEntry({times(k), times(k_end), symbols}));
         }
       }
     }

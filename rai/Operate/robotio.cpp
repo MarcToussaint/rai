@@ -1,4 +1,7 @@
 #include "robotio.h"
+
+#ifdef RAI_ROS
+
 #include <sensor_msgs/JointState.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <RosCom/roscom.h>
@@ -297,3 +300,14 @@ StringA RobotAbstraction_KukaWSG::getJointNames() {
 //}
 
 
+#else
+
+RobotIO::RobotIO(const rai::KinematicWorld& _K, RobotType _type)
+    : type(_type){
+    NICO
+}
+
+RobotIO::~RobotIO(){
+}
+
+#endif
