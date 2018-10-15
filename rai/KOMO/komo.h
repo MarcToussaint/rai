@@ -64,6 +64,7 @@ struct KOMO : NonCopyable {
   ofstream *fil=0;
   
   KOMO();
+  KOMO(const rai::KinematicWorld& K);
   ~KOMO();
   
   //-- setup the problem

@@ -68,6 +68,13 @@ KOMO::KOMO() : useSwift(true), verbose(1), komo_problem(*this), dense_problem(*t
   verbose = getParameter<int>("KOMO/verbose",1);
 }
 
+KOMO::KOMO(const KinematicWorld& K)
+  : KOMO() {
+  setModel(K, true);
+  world.optimizeTree();
+  world.calc_q();
+}
+
 KOMO::~KOMO() {
   listDelete(objectives);
   listDelete(flags);
