@@ -22,50 +22,37 @@ struct CameraView : GLDrawer {
   rai::KinematicWorld K;       //the configuration
   rai::Array<Sensor> sensors;  //the list of sensors
 
+  enum RenderMode{ all, seg };
   OpenGL gl;
 
   //-- run parameter
+  Sensor *currentSensor=0;
   bool background=true;
-
-  //-- outputs of image analysis/computation
-  byteA image;
-  byteA segmentation;
-  floatA depth;
-  uint16A kinect_depth; // kinect_rgb is same as image
-  arr kinect_pcl;
-  rai::Mesh surfaceMesh;
+  int watchComputations=0;
+  RenderMode renderMode=all;
 
   //-- evaluation outputs
-  CameraView(const rai::KinematicWorld& _K, bool _background=true);
+  CameraView(const rai::KinematicWorld& _K, bool _background=true, int _watchComputations=0);
   ~CameraView(){}
 
   //-- loading the configuration: the meshes, the robot model, the tote, the sensors; all ends up in K
-  Sensor& addSensor(const char* name, const char* frameAttached, uint width, uint height, double focalLength=-1., double orthoAbsHeight=-1., const arr& zRange={}, const char* backgroundImageFile=0){
-    Sensor& sen = sensors.append();
-    sen.name = name;
-    sen.frame = K.getFrameByName(frameAttached);
-    rai::Camera& cam = sen.cam;
-    sen.width=width;
-    sen.height=height;
-
-    cam.setZero();
-    if(zRange.N) cam.setZRange(zRange(0), zRange(1));
-    if(focalLength>0.) cam.setFocalLength(focalLength);
-    if(orthoAbsHeight>0.) cam.setHeightAbs(orthoAbsHeight);
-
-    cam.setWHRatio((double)width/height);
-    return sen;
-  }
+  Sensor& addSensor(const char* name, const char* frameAttached, uint width, uint height, double focalLength=-1., double orthoAbsHeight=-1., const arr& zRange={}, const char* backgroundImageFile=0);
 
   Sensor& selectSensor(const char* sensorName); //set the OpenGL sensor
 
   //-- compute/analyze a camera perspective (stored in classes' output fields)
-  void computeImageAndDepth(byteA& image, floatA& depth);
-  void computeKinectDepth(uint16A& kinect_depth);
-  void computePointCloud(byteA& pcl); // point cloud (rgb of every point is given in image)
+  void computeImageAndDepth(byteA& image, arr& depth);
+  void computeKinectDepth(uint16A& kinect_depth, const arr& depth);
+  void computePointCloud(arr& pts, const arr& depth, bool globalCoordinates=true); // point cloud (rgb of every point is given in image)
   void computeSegmentation(byteA& segmentation);     // -> segmentation
 
+  //-- displays
+  void watch_PCL(const arr& pts, const byteA& rgb);
+
   void glDraw(OpenGL &gl);
+
+private:
+  void done(const char* _code_);
 };
 
 }

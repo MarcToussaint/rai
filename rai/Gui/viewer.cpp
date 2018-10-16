@@ -26,6 +26,12 @@ ImageViewer::ImageViewer(const char* img_name)
   threadOpen();
 }
 
+ImageViewer::ImageViewer(const Var<byteA>& _img, double beatIntervalSec)
+  : Thread("PointCloudViewer", beatIntervalSec),
+    img(this, _img, (beatIntervalSec<0.)){
+  if(beatIntervalSec>=0.) threadLoop(); else threadStep();
+}
+
 ImageViewer::~ImageViewer() {
   threadClose();
 }
@@ -42,7 +48,7 @@ void ImageViewer::step() {
   s->gl.dataLock.writeLock();
   s->gl.background = img.get();
   if(flipImage) flip_image(s->gl.background);
-#if 1 //draw a center
+#if 0 //draw a center
   uint ci = s->gl.background.d0/2;
   uint cj = s->gl.background.d1/2;
   uint skip = s->gl.background.d1*s->gl.background.d2;
@@ -75,7 +81,7 @@ void ImageViewer::step() {
 
 struct sPointCloudViewer {
   OpenGL gl;
-  sPointCloudViewer(const char* tit) : gl(tit,640,480) {}
+  sPointCloudViewer(const char* tit) : gl(tit) {}
   rai::Mesh pc;
 };
 
@@ -88,6 +94,13 @@ PointCloudViewer::PointCloudViewer(const char* pts_name, const char* rgb_name)
     pts(this, pts_name),
     rgb(this, rgb_name) {
   threadLoop();
+}
+
+PointCloudViewer::PointCloudViewer(const Var<arr>& _pts, const Var<byteA>& _rgb, double beatIntervalSec)
+  : Thread("PointCloudViewer", beatIntervalSec),
+    pts(this, _pts, (beatIntervalSec<0.)),
+    rgb(this, _rgb, (beatIntervalSec<0.)){
+  if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
 
 PointCloudViewer::~PointCloudViewer() {
@@ -104,7 +117,7 @@ void PointCloudViewer::open() {
 #else
   s->gl.add(glStandardScene);
   s->gl.add(s->pc);
-  s->gl.camera.setDefault();
+//  s->gl.camera.setDefault();
 #endif
 }
 
@@ -113,9 +126,13 @@ void PointCloudViewer::close() {
 }
 
 void PointCloudViewer::step() {
+  uint W,H;
+
   s->gl.dataLock.writeLock();
   s->pc.V=pts.get();
   copy(s->pc.C, rgb.get()());
+  H=s->pc.C.d0;
+  W=s->pc.C.d1;
   uint n=s->pc.V.N/3;
   if(n!=s->pc.C.N/3) {
     s->gl.dataLock.unlock();
@@ -125,6 +142,9 @@ void PointCloudViewer::step() {
   s->pc.V.reshape(n,3);
   s->pc.C.reshape(n,3);
   s->gl.dataLock.unlock();
+
+  if(W!=s->gl.width || H!=s->gl.height) s->gl.resize(W,H);
+
   
   s->gl.update(NULL, false, false, true);
 }

@@ -18,6 +18,7 @@ struct ImageViewer : Thread {
   Var<byteA> img;
   bool flipImage = false;
   ImageViewer(const char* img_name="rgb");
+  ImageViewer(const Var<byteA>& _img, double beatIntervalSec=-1.);
   ~ImageViewer();
   void open();
   void step();
@@ -29,6 +30,7 @@ struct PointCloudViewer : Thread {
   Var<arr> pts;
   Var<byteA> rgb;
   PointCloudViewer(const char* pts_name="kinect_points", const char* rgb_name="kinect_rgb");
+  PointCloudViewer(const Var<arr>& _pts, const Var<byteA>& _rgb, double beatIntervalSec=-1.);
   ~PointCloudViewer();
   void open();
   void step();
