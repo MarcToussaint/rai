@@ -132,7 +132,7 @@ LGP_Tree::LGP_Tree(rai::KinematicWorld &kin, FOL_World &fol) : LGP_Tree() {
 void LGP_Tree::init(rai::KinematicWorld &kin, FOL_World &fol) {
   CHECK(!root,"");
   root = new LGP_Node(kin, fol, BD_max);
-  displayFocus = root;
+  focusNode = root;
   //  threadOpenModules(true);
 }
 
@@ -157,18 +157,18 @@ void LGP_Tree::initDisplay() {
 }
 
 void LGP_Tree::renderToVideo(uint specificBound, const char* filePrefix) {
-  CHECK(displayFocus->komoProblem(specificBound) && displayFocus->komoProblem(specificBound)->configurations.N, "level " <<specificBound <<" has not been computed for the current 'displayFocus'");
-  renderConfigurations(displayFocus->komoProblem(specificBound)->configurations, filePrefix, -2, 600, 600, &views(3)->copy.gl().camera);
+  CHECK(focusNode->komoProblem(specificBound) && focusNode->komoProblem(specificBound)->configurations.N, "level " <<specificBound <<" has not been computed for the current 'displayFocus'");
+  renderConfigurations(focusNode->komoProblem(specificBound)->configurations, filePrefix, -2, 600, 600, &views(3)->copy.gl().camera);
 }
 
 void LGP_Tree::updateDisplay() {
-  if(fringe_solved.N) displayFocus = fringe_solved.last();
+  if(fringe_solved.N) focusNode = fringe_solved.last();
   
-  rai::String decisions = displayFocus->getTreePathString('\n');
+  rai::String decisions = focusNode->getTreePathString('\n');
   for(uint i=1; i<views.N; i++) {
-    if(displayFocus->komoProblem(i) && displayFocus->komoProblem(i)->configurations.N) {
-      views(i)->setConfigurations(displayFocus->komoProblem(i)->configurations);
-      views(i)->text.clear() <<displayFocus->cost <<"|  " <<displayFocus->constraints.last() <<'\n' <<decisions;
+    if(focusNode->komoProblem(i) && focusNode->komoProblem(i)->configurations.N) {
+      views(i)->setConfigurations(focusNode->komoProblem(i)->configurations);
+      views(i)->text.clear() <<focusNode->cost <<"|  " <<focusNode->constraints.last() <<'\n' <<decisions;
     } else views(i)->clear();
   }
   
@@ -220,7 +220,7 @@ void LGP_Tree::updateDisplay() {
 void LGP_Tree::printChoices() {
   //-- query UI
   cout <<"********************" <<endl;
-  cout <<"NODE:\n" <<*displayFocus <<endl;
+  cout <<"NODE:\n" <<*focusNode <<endl;
   cout <<"--------------------" <<endl;
   cout <<"\nCHOICES:" <<endl;
   cout <<"(q) quit" <<endl;
@@ -231,7 +231,7 @@ void LGP_Tree::printChoices() {
   cout <<"(x) path optim" <<endl;
   cout <<"(m) MC planning" <<endl;
   uint c=0;
-  for(LGP_Node* a:displayFocus->children) {
+  for(LGP_Node* a:focusNode->children) {
     cout <<"(" <<c++ <<") DECISION: " <<*a->decision <<endl;
   }
 }
@@ -255,7 +255,7 @@ bool LGP_Tree::execRandomChoice() {
       case 4: cmd="m"; break;
     }
   } else {
-    cmd <<rnd(displayFocus->children.N);
+    cmd <<rnd(focusNode->children.N);
   }
   return execChoice(cmd);
 }
@@ -299,7 +299,7 @@ LGP_Node* LGP_Tree::walkToNode(const rai::String& seq){
     if(!node->isExpanded) node->expand();
     LGP_Node *next = node->getChildByAction(actionLiteral);
     if(!next) LOG(-2) <<"action '" <<*actionLiteral <<"' is not a child of '" <<*node <<"'";
-    displayFocus = node;
+    focusNode = node;
     node = next;
   }
 
@@ -320,7 +320,7 @@ void LGP_Tree::optFixedSequence(const rai::String& seq, BoundType specificBound,
   if(specificBound==BD_all || specificBound==BD_path) node->optBound(BD_path, collisions);
   if(specificBound==BD_all || specificBound==BD_seqPath) node->optBound(BD_seqPath, collisions);
   
-  displayFocus = node;
+  focusNode = node;
   
   solutions.set()->append(new LGP_Tree_SolutionData(node));
   solutions.set()->sort(sortComp2);
@@ -356,21 +356,21 @@ bool LGP_Tree::execChoice(rai::String cmd) {
   cout <<"COMMAND: '" <<cmd <<"'" <<endl;
   
   if(cmd=="q") return false;
-  else if(cmd=="u") { if(displayFocus->parent) displayFocus = displayFocus->parent; }
-  else if(cmd=="e") displayFocus->expand();
-  else if(cmd=="p") displayFocus->optBound(BD_pose, collisions);
-  else if(cmd=="s") displayFocus->optBound(BD_seq , collisions);
-  else if(cmd=="x") displayFocus->optBound(BD_path, collisions);
+  else if(cmd=="u") { if(focusNode->parent) focusNode = focusNode->parent; }
+  else if(cmd=="e") focusNode->expand();
+  else if(cmd=="p") focusNode->optBound(BD_pose, collisions);
+  else if(cmd=="s") focusNode->optBound(BD_seq , collisions);
+  else if(cmd=="x") focusNode->optBound(BD_path, collisions);
   //  else if(cmd=="m") node->addMCRollouts(100,10);
   else {
     int choice=-1;
     cmd >>choice;
     cout <<"CHOICE=" <<choice <<endl;
-    if(choice<0 || choice>=(int)displayFocus->children.N) {
+    if(choice<0 || choice>=(int)focusNode->children.N) {
       cout <<"--- there is no such choice" <<endl;
     } else {
-      displayFocus = displayFocus->children(choice);
-      if(!displayFocus->isExpanded) displayFocus->expand();
+      focusNode = focusNode->children(choice);
+      if(!focusNode->isExpanded) focusNode->expand();
     }
   }
   return true;
@@ -432,7 +432,7 @@ void LGP_Tree::optBestOnLevel(BoundType bound, MNodeL &drawFringe, BoundType dra
       if(addIfTerminal && n->isTerminal) addIfTerminal->append(n);
       if(addChildren) for(LGP_Node* c:n->children) addChildren->append(c);
     }
-    displayFocus = n;
+    focusNode = n;
   }
 }
 
@@ -451,7 +451,7 @@ void LGP_Tree::optFirstOnLevel(BoundType bound, MNodeL &fringe, MNodeL *addIfTer
     if(n->feasible(bound)) {
       if(addIfTerminal && n->isTerminal) addIfTerminal->append(n);
     }
-    displayFocus = n;
+    focusNode = n;
   }
 }
 
@@ -490,9 +490,9 @@ rai::String LGP_Tree::report(bool detailed) {
 
 void LGP_Tree::reportEffectiveJoints() {
   //  MNode *best = getBest();
-  if(!displayFocus->komoProblem.last()) return;
-  displayFocus->komoProblem.last()->reportProblem();
-  displayFocus->komoProblem.last()->reportEffectiveJoints();
+  if(!focusNode->komoProblem.last()) return;
+  focusNode->komoProblem.last()->reportProblem();
+  focusNode->komoProblem.last()->reportEffectiveJoints();
 }
 
 void LGP_Tree::step() {

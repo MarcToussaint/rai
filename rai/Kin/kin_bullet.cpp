@@ -109,13 +109,16 @@ btRigidBody* BulletInterface::addFrame(const rai::Frame* f){
     case rai::ST_box:{
       colShape =new btBoxShape(btVector3(.5*size(0), .5*size(1), .5*size(2)));
     } break;
+    case rai::ST_ssBox:{
+      colShape =new btBoxShape(btVector3(.5*size(0), .5*size(1), .5*size(2)));
+    } break;
     default: HALT("NIY" <<f->shape->type());
   }
   self->collisionShapes.push_back(colShape);
 
   btTransform pose(btQuaternion(f->X.rot.x, f->X.rot.y, f->X.rot.z, f->X.rot.w),
                    btVector3(f->X.pos.x, f->X.pos.y, f->X.pos.z));
-  btScalar mass(1.0f);
+  btScalar mass(0.0f);
   if(f->inertia) mass = f->inertia->mass;
   btVector3 localInertia(0, 0, 0);
   colShape->calculateLocalInertia(mass, localInertia);
@@ -131,7 +134,9 @@ btRigidBody* BulletInterface::addFrame(const rai::Frame* f){
 }
 
 void BulletInterface::addFrames(const FrameL& frames){
-  for(const rai::Frame *f:frames) addFrame(f);
+  for(const rai::Frame *f:frames){
+    if(f->shape && f->shape->geom) addFrame(f);
+  }
 }
 
 void BulletInterface::defaultInit(const rai::KinematicWorld& K){
@@ -174,6 +179,22 @@ void BulletInterface::syncBack(FrameL& frames){
       f->X.rot.set(q.w(), q.x(), q.y(), q.z());
     }
   }
+}
 
+void BulletInterface::saveBulletFile(const char* filename){
+  //adapted from PhysicsServerCommandProcessor::processSaveBulletCommand
 
+  FILE* f = fopen(filename, "wb");
+  if (f){
+    btDefaultSerializer* ser = new btDefaultSerializer();
+    int currentFlags = ser->getSerializationFlags();
+    ser->setSerializationFlags(currentFlags | BT_SERIALIZE_CONTACT_MANIFOLDS);
+
+    self->dynamicsWorld->serialize(ser);
+    fwrite(ser->getBufferPointer(), ser->getCurrentBufferSize(), 1, f);
+    fclose(f);
+    delete ser;
+  }else{
+    HALT("could not open file '" <<filename <<"' for writing");
+  }
 }

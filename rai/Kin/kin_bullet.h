@@ -17,4 +17,6 @@ struct BulletInterface{
 
   void step(double tau=.01);
   void syncBack(FrameL& frames);
+
+  void saveBulletFile(const char* filename);
 };

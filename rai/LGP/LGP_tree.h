@@ -39,7 +39,7 @@ struct LGP_Tree : GLDrawer {
   rai::String dataPath;
   arr cameraFocus;
   
-  LGP_Node *root=0, *displayFocus=0;
+  LGP_Node *root=0, *focusNode=0;
   FOL_World *selfCreated=NULL;
   
   rai::Array<std::shared_ptr<KinPathViewer>> views; //displays for the 3 different levels
