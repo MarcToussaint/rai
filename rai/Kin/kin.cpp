@@ -293,9 +293,8 @@ void rai::KinematicWorld::calc_activeSets() {
     fwdActiveSet = calc_topSort(); //graphGetTopsortOrder<Frame>(frames);
   }
   fwdActiveJoints.clear();
-  for(Frame *f:fwdActiveSet)
-    if(f->joint && f->joint->active)
-      fwdActiveJoints.append(f->joint);
+  for(Frame *f:fwdActiveSet) if(f->joint && f->joint->active)
+    fwdActiveJoints.append(f->joint);
 }
 
 void rai::KinematicWorld::calc_q() {
@@ -540,7 +539,7 @@ arr rai::KinematicWorld::getJointState(const uintA& joints) const {
   uint nd=0;
   for(uint i=0; i<joints.N; i++) {
     rai::Joint *j = frames(joints(i))->joint;
-    if(!j) continue;
+    if(!j || !j->active) continue;
     nd += j->dim;
   }
 
@@ -548,7 +547,7 @@ arr rai::KinematicWorld::getJointState(const uintA& joints) const {
   nd=0;
   for(uint i=0; i<joints.N; i++) {
     rai::Joint *j = frames(joints(i))->joint;
-    if(!j) continue;
+    if(!j || !j->active) continue;
     for(uint ii=0;ii<j->dim;ii++) x(nd+ii) = q(j->qIndex+ii);
     nd += j->dim;
   }
@@ -730,7 +729,7 @@ void rai::KinematicWorld::setJointState(const arr& _q, const uintA& joints) {
   uint nd=0;
   for(uint i=0; i<joints.N; i++) {
     rai::Joint *j = frames(joints(i))->joint;
-    if(!j) continue;
+    if(!j || !j->active) continue;
     for(uint ii=0;ii<j->dim;ii++) q(j->qIndex+ii) = _q(nd+ii);
     nd += j->dim;
   }

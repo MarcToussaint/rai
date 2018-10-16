@@ -228,7 +228,7 @@ void TM_qZeroVels::phi(arr& y, arr& J, const WorldL& Ktuple) {
   uint offset = Ktuple.N-1-k; //G.N might contain more configurations than the order of THIS particular task -> the front ones are not used
   
   rai::Joint *j;
-  for(rai::Frame *f:Ktuple.last()->frames) if((j=f->joint) && j->constrainToZeroVel) {
+  for(rai::Frame *f:Ktuple.last()->frames) if((j=f->joint) && j->active && j->constrainToZeroVel) {
       rai::Joint *jmatch = Ktuple.last(-2)->getJointByBodyIndices(j->from()->ID, j->frame.ID);
       if(jmatch && j->type!=jmatch->type) jmatch=NULL;
       if(jmatch) {
@@ -281,7 +281,7 @@ rai::Array<rai::Joint*> getMatchingJoints(const WorldL& Ktuple, bool zeroVelJoin
   bool matchIsGood;
   
   rai::Joint *j;
-  for(rai::Frame *f:Ktuple.last()->frames) if((j=f->joint) && (!zeroVelJointsOnly || j->constrainToZeroVel)) {
+  for(rai::Frame *f:Ktuple.last()->frames) if((j=f->joint) && j->active && (!zeroVelJointsOnly || j->constrainToZeroVel)) {
       matches.setZero();
       matches.last() = j;
       matchIsGood=true;
@@ -317,7 +317,7 @@ rai::Array<rai::Joint*> getSwitchedJoints(const rai::KinematicWorld& G0, const r
   rai::Array<rai::Joint*> switchedJoints;
   
   rai::Joint *j1;
-  for(rai::Frame *f: G1.frames) if((j1=f->joint)) {
+  for(rai::Frame *f: G1.frames) if((j1=f->joint) && j1->active) {
       if(j1->from()->ID>=G0.frames.N || j1->frame.ID>=G0.frames.N) {
         switchedJoints.append({NULL,j1});
         continue;
