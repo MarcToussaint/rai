@@ -108,7 +108,8 @@ struct Quaternion {
   double& operator()(uint i) { CHECK(i<4,"out of range"); return (&w)[i]; }
   void set(double w, double x, double y, double z);
   void set(const arr& q);
-  void set(double* p);
+  void set(const std::vector<double>& x) { CHECK_EQ(x.size(), 4, "");  set(x.data()); }
+  void set(const double* p);
   void setZero();
   void setRandom();
   void setDeg(double degree , double axis0, double axis1, double axis2);

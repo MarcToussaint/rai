@@ -1,5 +1,7 @@
 #include "kin_bullet.h"
 
+#ifdef RAI_BULLET
+
 #include <Kin/frame.h>
 #include <btBulletDynamicsCommon.h>
 
@@ -163,7 +165,7 @@ void BulletInterface::step(double tau){
 }
 
 void BulletInterface::syncBack(FrameL& frames){
-  for(int i=0;i<self->frameID_to_btBody.N;i++){
+  for(uint i=0;i<self->frameID_to_btBody.N;i++){
     btRigidBody* b = self->frameID_to_btBody(i);
     rai::Frame *f = frames(i);
     if(f && b){
@@ -198,3 +200,6 @@ void BulletInterface::saveBulletFile(const char* filename){
     HALT("could not open file '" <<filename <<"' for writing");
   }
 }
+
+#else
+#endif

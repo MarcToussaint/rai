@@ -108,7 +108,7 @@ void KinViewer::step() {
   if(world->frames.N!=meshesCopy.N) { //need to copy meshes
     uint n=world->frames.N;
     gl->dataLock.writeLock();
-    meshesCopy.resize(n);
+    meshesCopy.resizeCopy(n);
     for(uint i=0; i<n; i++) {
       if(world->frames.elem(i)->shape) meshesCopy.elem(i) = world->frames.elem(i)->shape->mesh();
       else meshesCopy.elem(i).clear();

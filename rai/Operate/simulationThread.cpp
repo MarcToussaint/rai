@@ -1,3 +1,5 @@
+#ifdef RAI_ROS
+
 #include "simulationThread.h"
 #include <RosCom/roscom.h>
 //#include "SimulationThread_self.h"
@@ -100,3 +102,4 @@ void SimulationThread::loop(){
   }
 }
 
+#endif

@@ -180,7 +180,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       arr y2, J2;
       G.kinematicsVec(y2, J2, body_j, vec_j);
       y -= y2;
-      J -= J2;
+      if(!!J) J -= J2;
     }
     return;
   }

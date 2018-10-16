@@ -89,7 +89,8 @@ struct KinematicWorld : GLDrawer {
   void init(const Graph& G, bool addInsteadOfClear=false);
   void addFile(const char* filename);
   Frame* addFrame(const char* name, const char* parent=NULL, const char* args=NULL);
-  Frame* addObject(rai::ShapeType type, const arr& size={}, const arr& col={});
+  Frame* addObject(rai::ShapeType shape, const arr& size={}, const arr& col={}, double radius=-1.);
+  Frame* addObject(const char* name, rai::ShapeType shape, const arr& size={}, const arr& col={}, double radius=-1., const char* parent=NULL, const arr& pos={}, const arr& rot={});
 
 
   /// @name access
@@ -120,7 +121,6 @@ struct KinematicWorld : GLDrawer {
   void pruneUselessFrames(bool preserveNamed=true);  ///< delete frames that have no name, joint, and shape
   void optimizeTree(bool preserveNamed=true, bool _pruneRigidJoints=false);        ///< call the three above methods in this order
   void fwdIndexIDs();
-  void useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese=true, bool deleteInsteadOfLock=true);
   void makeObjectsFree(const StringA& objects);
   void addTimeJoint();
   bool checkConsistency();
@@ -145,7 +145,8 @@ struct KinematicWorld : GLDrawer {
   arr getLimits() const;
   
   /// @name active set selection
-  void setActiveJointsByName(const StringA&, bool notThose=false);
+  void selectJointsByGroup(const StringA& groupNames, bool OnlyTheseOrNotThese=true, bool deleteInsteadOfLock=true);
+  void selectJointsByName(const StringA&, bool notThose=false);
   
   /// @name set state
   void setJointState(const arr& _q, const arr& _qdot=NoArr);

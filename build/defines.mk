@@ -377,6 +377,7 @@ endif
 
 ifeq ($(BULLET),1)
 BULLET_PATH=$(HOME)/git/bullet3
+CXXFLAGS  += -DRAI_BULLET
 LPATH := $(BULLET_PATH)/bin:$(LPATH)
 CPATH := $(CPATH):$(BULLET_PATH)/src
 btLIB = _gmake_x64_release

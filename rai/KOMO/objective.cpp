@@ -41,6 +41,10 @@ void Objective::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, 
   if(tFrom<0) tFrom=0;
   if(tTo<0) tTo=0;
 
+  if(tTo>=T){
+    LOG(-1) <<"beyond the time!: endTime=" <<toTime <<" phases=" <<double(T)/stepsPerPhase;
+  }
+
   setCostSpecs(tFrom, tTo, _target, _prec);
 }
 

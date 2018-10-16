@@ -13,7 +13,7 @@ PrimalDualProblem::PrimalDualProblem(const arr &x, ConstrainedProblem &P, OptOpt
 
   L.mu = L.nu = L.muLB = 0.;
 
-  double Lval = L.lagrangian(NoArr, NoArr, x);
+//  double Lval = L.lagrangian(NoArr, NoArr, x);
 //  cout <<"x=" <<x <<endl <<"L=" <<Lval <<endl;
   
   n_ineq=0;
@@ -45,7 +45,7 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
   L.nu = L.muLB = 0.;
   
   arr dL, HL;
-  double Lval = L.lagrangian(dL, HL, x);
+//  double Lval = L.lagrangian(dL, HL, x);
 //  cout <<"x=" <<x <<endl <<"lambda=" <<L.lambda <<endl <<"L=" <<Lval <<endl;
   if(!L.lambda.N) L.lambda = zeros(L.phi_x.N);
   

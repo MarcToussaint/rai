@@ -197,13 +197,46 @@ rai::Frame* rai::KinematicWorld::addFrame(const char* name, const char* parent, 
   return f;
 }
 
-rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType type, const arr& size, const arr& col){
+rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size, const arr& col, double radius){
   rai::Frame *f = new rai::Frame(*this);
   rai::Shape *s = new rai::Shape(*f);
-  s->type() = type;
-  if(size.N) s->size() = size;
+  s->type() = shape;
   if(col.N) s->mesh().C = col;
-  s->getGeom().createMeshes();
+  if(radius>0.) s->size() = ARR(radius);
+  if(shape!=ST_mesh && shape!=ST_ssCvx){
+    if(size.N==1) s->size() = ARR(0.,0.,0.,size.scalar());
+    if(size.N>1) s->size() = size;
+    s->getGeom().createMeshes();
+  }else{
+    if(shape==ST_mesh){
+      s->mesh().V = size;
+      s->mesh().V.reshape(size.N/3,3);
+    }
+    if(shape==ST_mesh){
+      s->sscCore().V = size;
+      s->sscCore().V.reshape(size.N/3,3);
+      CHECK(radius>0., "radius must be greater zero");
+      s->size() = ARR(0.,0.,0.,radius);
+    }
+  }
+  return f;
+}
+
+rai::Frame*rai::KinematicWorld::addObject(const char* name, rai::ShapeType shape, const arr& size, const arr& col, double radius, const char* parent, const arr& pos, const arr& rot){
+  rai::Frame *f = addObject(shape, size, col, radius);
+  f->name=name;
+
+  if(parent){
+    rai::Frame *p = getFrameByName(parent);
+    if(p) f->linkFrom(p);
+  }
+
+  if(pos.N){ f->Q.pos = pos; }
+  if(rot.N){ f->Q.rot = rot; }
+
+  if(f->parent) f->X = f->parent->X * f->Q;
+  else f->X = f->Q;
+
   return f;
 }
 
@@ -604,8 +637,33 @@ void rai::KinematicWorld::calc_Q_from_q() {
   CHECK_EQ(n, q.N, "");
 }
 
+void rai::KinematicWorld::selectJointsByGroup(const StringA &groupNames, bool OnlyTheseOrNotThese, bool deleteInsteadOfLock) {
+  Joint *j;
+  for(Frame *f:frames) if((j=f->joint)) {
+    bool select;
+    if(OnlyTheseOrNotThese) { //only these
+      select=false;
+      for(const String& s:groupNames) if(f->ats[s]) { select=true; break; }
+    } else {
+      select=true;
+      for(const String& s:groupNames) if(f->ats[s]) { select=false; break; }
+    }
+    if(select) f->joint->active=true;
+    else  f->joint->active=false;
+//    if(!select) {
+//      if(deleteInsteadOfLock) delete f->joint;
+//      else f->joint->makeRigid();
+//    }
+  }
+  reset_q();
+  checkConsistency();
+  calc_q();
+  checkConsistency();
+}
+
+
 /// @name active set selection
-void rai::KinematicWorld::setActiveJointsByName(const StringA& names, bool notThose) {
+void rai::KinematicWorld::selectJointsByName(const StringA& names, bool notThose) {
   for(Frame *f: frames) if(f->joint) f->joint->active = notThose;
   for(const String& s:names) {
     Frame *f = getFrameByName(s);
@@ -686,8 +744,9 @@ void rai::KinematicWorld::setJointState(const arr& _q, const uintA& joints) {
 
 void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames, bool calc_q_from_X){
   if(!frameNames.N){
-    CHECK_EQ(X.d0, frames.N, "X.d0 does not equal #frames");
-    for(uint i=0;i<frames.N;i++){
+    if(X.d0 > frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is larger than frames.N=" <<frames.N;
+    if(X.d0 < frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is smaller than frames.N=" <<frames.N;
+    for(uint i=0;i<frames.N && i<X.d0;i++){
       frames(i)->X.set(X[i]);
       frames(i)->X.rot.normalize();
     }
@@ -2489,24 +2548,6 @@ void rai::KinematicWorld::fwdIndexIDs() {
   frames = fwdActiveSet;
   uint i=0;
   for(Frame *f: frames) f->ID = i++;
-}
-
-void rai::KinematicWorld::useJointGroups(const StringA &groupNames, bool OnlyTheseOrNotThese, bool deleteInsteadOfLock) {
-  Joint *j;
-  for(Frame *f:frames) if((j=f->joint)) {
-      bool lock;
-      if(OnlyTheseOrNotThese) { //only these
-        lock=true;
-        for(const String& s:groupNames) if(f->ats[s]) { lock=false; break; }
-      } else {
-        lock=false;
-        for(const String& s:groupNames) if(f->ats[s]) { lock=true; break; }
-      }
-      if(lock) {
-        if(deleteInsteadOfLock) delete f->joint;
-        else f->joint->makeRigid();
-      }
-  }
 }
 
 void rai::KinematicWorld::makeObjectsFree(const StringA &objects){

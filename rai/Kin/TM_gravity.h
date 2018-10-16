@@ -32,7 +32,7 @@ struct TM_Gravity2 : Feature {
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G){ NIY; }
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
   virtual uint dim_phi(const rai::KinematicWorld& G){ return 3; }
-  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("Gravity2_" <<G.frames(i)->name); }
+  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("Gravity2-" <<G.frames(i)->name); }
 };
 
 struct TM_ZeroAcc : Feature {
@@ -56,5 +56,5 @@ struct TM_ZeroQVel : Feature {
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G){ NIY; }
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
   virtual uint dim_phi(const rai::KinematicWorld& G);
-  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("TM_ZeroQVel" <<G.frames(i)->name); }
+  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("ZeroQVel-" <<G.frames(i)->name); }
 };

@@ -31,6 +31,7 @@ void Feature::phi(arr& y, arr& J, const WorldL& Ktuple) {
   arrA y_bar, J_bar;
   
   double tau = Ktuple(-1)->frames(0)->time; // - Ktuple(-2)->frames(0)->time;
+  if(tau<=0.) tau=1.;
   if(order) CHECK_GE(tau, 1e-10, "");
   double tau2=tau*tau, tau3=tau2*tau;
   y_bar.resize(k+1);
