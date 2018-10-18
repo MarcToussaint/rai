@@ -222,7 +222,7 @@ rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size
   return f;
 }
 
-rai::Frame*rai::KinematicWorld::addObject(const char* name, rai::ShapeType shape, const arr& size, const arr& col, double radius, const char* parent, const arr& pos, const arr& rot){
+rai::Frame* rai::KinematicWorld::addObject(const char* name, rai::ShapeType shape, const arr& size, const arr& col, double radius, const char* parent, const arr& pos, const arr& rot){
   rai::Frame *f = addObject(shape, size, col, radius);
   f->name=name;
 
@@ -2542,7 +2542,7 @@ void rai::KinematicWorld::optimizeTree(bool preserveNamed, bool _pruneRigidJoint
   checkConsistency();
 }
 
-void rai::KinematicWorld::fwdIndexIDs() {
+void rai::KinematicWorld::sortFrames() {
   CHECK_EQ(fwdActiveSet.N ,frames.N, "you need to calc_activeSets before");
   frames = fwdActiveSet;
   uint i=0;

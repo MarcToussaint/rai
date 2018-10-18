@@ -120,7 +120,7 @@ struct KinematicWorld : GLDrawer {
   void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
   void pruneUselessFrames(bool preserveNamed=true);  ///< delete frames that have no name, joint, and shape
   void optimizeTree(bool preserveNamed=true, bool _pruneRigidJoints=false);        ///< call the three above methods in this order
-  void fwdIndexIDs();
+  void sortFrames();
   void makeObjectsFree(const StringA& objects);
   void addTimeJoint();
   bool checkConsistency();
