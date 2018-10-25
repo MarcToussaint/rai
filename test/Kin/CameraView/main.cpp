@@ -12,7 +12,7 @@ void TEST(CameraView){
   K.addFile("../../../../rai-robotModels/objects/kitchen.g");
   K.optimizeTree();
 
-  rai::CameraView V(K, true, 0);
+  rai::CameraView V(K, true, 2);
 
   V.addSensor("kinect", "endeffKinect", 640, 480, 580./480., -1., {.1, 50.} );
 //  V.selectSensor("kinect");
