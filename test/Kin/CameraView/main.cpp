@@ -1,7 +1,7 @@
 
-#include "cameraview.h"
 
 #include <Kin/frame.h>
+#include <Kin/cameraview.h>
 #include <Gui/viewer.h>
 
 //===========================================================================
@@ -12,7 +12,7 @@ void TEST(CameraView){
   K.addFile("../../../../rai-robotModels/objects/kitchen.g");
   K.optimizeTree();
 
-  rai::CameraView V(K, true, 2);
+  rai::CameraView V(K, true, 0);
 
   V.addSensor("kinect", "endeffKinect", 640, 480, 580./480., -1., {.1, 50.} );
 //  V.selectSensor("kinect");
@@ -22,8 +22,9 @@ void TEST(CameraView){
   Var<byteA> segmentation;
   Var<arr> pts;
 
-  PointCloudViewer v(pts, image);
-  ImageViewer v2(segmentation);
+  PointCloudViewerCallback v(pts, image);
+  ImageViewerCallback v2(image);
+  ImageViewerCallback v3(segmentation);
 
   V.computeImageAndDepth(image.set(), depth.set());
   V.computeSegmentation(segmentation.set());
@@ -40,7 +41,6 @@ void TEST(CameraView){
 //  K.glGetMasks(580, 480);
 //  write_ppm(K.gl().captureImage, "z.rgb.ppm");
 //  write_ppm(convert<byte>(255.f*K.gl().captureDepth), "z.depth.ppm");
-
 
 }
 

@@ -64,6 +64,11 @@ bool RWLock::isLocked() {
   return rwCount!=0;
 }
 
+bool RWLock::isWriteLocked() {
+  return rwCount<0;
+}
+
+
 //===========================================================================
 //
 // Signaler

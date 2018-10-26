@@ -27,7 +27,7 @@ ImageViewer::ImageViewer(const char* img_name)
 }
 
 ImageViewer::ImageViewer(const Var<byteA>& _img, double beatIntervalSec)
-  : Thread("PointCloudViewer", beatIntervalSec),
+  : Thread("ImageViewer", beatIntervalSec),
     img(this, _img, (beatIntervalSec<0.)){
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
@@ -73,6 +73,37 @@ void ImageViewer::step() {
     
   s->gl.update(name, false, false, true);
 }
+
+//===========================================================================
+
+ImageViewerCallback::ImageViewerCallback(const Var<byteA>& _img)
+  : img(_img){
+  img.data->callbacks.append(new Callback<void(Var_base*,int)>(this, std::bind(&ImageViewerCallback::call, this, std::placeholders::_1, std::placeholders::_2)));
+}
+
+ImageViewerCallback::~ImageViewerCallback(){
+  img.data->callbacks.removeCallback(this);
+  if(gl) delete gl;
+}
+
+void ImageViewerCallback::call(Var_base* v, int revision){
+  if(!gl){
+    gl = new OpenGL(STRING("ImageViewer: "<<img.data->name));
+  }
+
+  gl->dataLock.writeLock();
+  img.checkLocked();
+  gl->background = img();
+  if(flipImage) flip_image(gl->background);
+  gl->dataLock.unlock();
+  if(!gl->background.N) return;
+
+  if(gl->height!= gl->background.d0 || gl->width!= gl->background.d1)
+    gl->resize(gl->background.d1, gl->background.d0);
+
+  gl->update(0, false, false, true);
+}
+
 
 //===========================================================================
 //
@@ -148,6 +179,51 @@ void PointCloudViewer::step() {
   
   s->gl.update(NULL, false, false, true);
 }
+
+//===========================================================================
+
+PointCloudViewerCallback::PointCloudViewerCallback(const Var<arr>& _pts, const Var<byteA>& _rgb)
+  : pts(_pts),
+    rgb(_rgb){
+  pts.data->callbacks.append(new Callback<void(Var_base*,int)>(this, std::bind(&PointCloudViewerCallback::call, this, std::placeholders::_1, std::placeholders::_2)));
+}
+
+PointCloudViewerCallback::~PointCloudViewerCallback(){
+  pts.data->callbacks.removeCallback(this);
+  if(s) delete s;
+}
+
+void PointCloudViewerCallback::call(Var_base* v, int revision){
+  if(!s){
+    s = new sPointCloudViewer(STRING("PointCloudViewer: "<<pts.name <<' ' <<rgb.name));
+    s->gl.add(glStandardScene);
+    s->gl.add(s->pc);
+  }
+
+  uint W,H;
+
+  s->gl.dataLock.writeLock();
+  pts.checkLocked();
+  s->pc.V=pts();
+  copy(s->pc.C, rgb.get()());
+  H=s->pc.C.d0;
+  W=s->pc.C.d1;
+  uint n=s->pc.V.N/3;
+  if(n!=s->pc.C.N/3) {
+    s->gl.dataLock.unlock();
+    return;
+  }
+  s->pc.C /= 255.;
+  s->pc.V.reshape(n,3);
+  s->pc.C.reshape(n,3);
+  s->gl.dataLock.unlock();
+
+  if(W!=s->gl.width || H!=s->gl.height) s->gl.resize(W,H);
+
+
+  s->gl.update(NULL, false, false, true);
+}
+
 
 //===========================================================================
 //

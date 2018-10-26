@@ -62,6 +62,7 @@ struct RWLock {
   void writeLock();  ///< only one thread may request 'lock for write'
   void unlock();     ///< thread must unlock when they're done
   bool isLocked();
+  bool isWriteLocked();
 };
 
 //===========================================================================
@@ -190,6 +191,7 @@ struct Var {
 
   Var& operator=(const Var& v) = delete;
 
+  void checkLocked(){ if(!data->rwlock.isLocked()) HALT("direct variable access without locking it before"); }
   T& operator()() { CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return data->data; }
   T& operator*() {  CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return data->data; }
   T* operator->() { CHECK(data->rwlock.isLocked(),"direct variable access without locking it before");  return &(data->data); }

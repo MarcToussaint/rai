@@ -141,6 +141,7 @@ void TM_ContactConstraints_Vel::phi(arr& y, arr& J, const WorldL& Ktuple){
   lin.order=1; lin.i=b;
   lin.Feature::phi(v2, Jv2, Ktuple);
 
+  HALT("should be velocity in the NEXT time slice...?");
   arr w1, w2, Jw1, Jw2;
   TM_AngVel ang(a);
   ang.order=1; ang.i=a;

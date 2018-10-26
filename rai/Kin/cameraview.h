@@ -52,6 +52,7 @@ struct CameraView : GLDrawer {
   void glDraw(OpenGL &gl);
 
 private:
+  void updateCamera();
   void done(const char* _code_);
 };
 

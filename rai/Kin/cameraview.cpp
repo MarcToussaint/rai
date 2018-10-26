@@ -40,6 +40,7 @@ rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName){
 }
 
 void rai::CameraView::computeImageAndDepth(byteA& image, arr& depth){
+  updateCamera();
   renderMode=all;
   if(!background)
     gl.update(NULL, true, true, true);
@@ -67,6 +68,8 @@ void rai::CameraView::computePointCloud(arr& pts, const arr& depth, bool globalC
   uint H=depth.d0, W=depth.d1;
 
   pts.resize(H*W, 3);
+
+  if(currentSensor) gl.camera = currentSensor->cam;
 
   CHECK(gl.camera.focalLength>0, "need a focal length greater zero!(not implemented for ortho yet)");
   int centerX = (W >> 1);
@@ -97,6 +100,7 @@ void rai::CameraView::computePointCloud(arr& pts, const arr& depth, bool globalC
 }
 
 void rai::CameraView::computeSegmentation(byteA& segmentation){
+  updateCamera();
   renderMode=seg;
   if(!background)
     gl.update(NULL, true, true, true);
@@ -111,7 +115,7 @@ void rai::CameraView::watch_PCL(const arr& pts, const byteA& rgb){
 
 }
 
-void rai::CameraView::glDraw(OpenGL& gl) {
+void rai::CameraView::updateCamera(){
   for(Sensor& sen:sensors){
     if(sen.frame) sen.cam.X = sen.frame->X;
   }
@@ -121,7 +125,9 @@ void rai::CameraView::glDraw(OpenGL& gl) {
     gl.backgroundZoom = (double)currentSensor->height/gl.background.d0;
     gl.camera = currentSensor->cam;
   }
+}
 
+void rai::CameraView::glDraw(OpenGL& gl) {
   if(renderMode==all){
     glStandardScene(NULL);
     K.orsDrawMarkers = true;

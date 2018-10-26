@@ -25,6 +25,15 @@ struct ImageViewer : Thread {
   void close();
 };
 
+struct ImageViewerCallback {
+  struct OpenGL *gl=0;
+  Var<byteA> img;
+  bool flipImage = false;
+  ImageViewerCallback(const Var<byteA>& _img);
+  ~ImageViewerCallback();
+  void call(Var_base *v, int revision);
+};
+
 struct PointCloudViewer : Thread {
   struct sPointCloudViewer *s;
   Var<arr> pts;
@@ -35,6 +44,15 @@ struct PointCloudViewer : Thread {
   void open();
   void step();
   void close();
+};
+
+struct PointCloudViewerCallback {
+  struct sPointCloudViewer *s=0;
+  Var<arr> pts;
+  Var<byteA> rgb;
+  PointCloudViewerCallback(const Var<arr>& _pts, const Var<byteA>& _rgb);
+  ~PointCloudViewerCallback();
+  void call(Var_base *v, int revision);
 };
 
 struct MeshAViewer : Thread {
