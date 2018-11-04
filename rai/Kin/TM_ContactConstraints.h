@@ -16,7 +16,7 @@ struct TM_Contact_ForceIsNormal : Feature {
 
   void phi(arr& y, arr& J, const rai::KinematicWorld& K);
   uint dim_phi(const rai::KinematicWorld& K){ return 3; }
-  rai::String shortTag(const rai::KinematicWorld& K) { return STRING("ContactConstraints-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
+  rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_Contact_ForceIsNormal-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
 };
 
 struct TM_Contact_ForceIsComplementary : Feature {
@@ -26,8 +26,20 @@ struct TM_Contact_ForceIsComplementary : Feature {
     : TM_Contact_ForceIsComplementary(initIdArg(K,aShapeName), initIdArg(K,bShapeName)){}
 
   void phi(arr& y, arr& J, const rai::KinematicWorld& K);
+  uint dim_phi(const rai::KinematicWorld& K);
+  rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_Contact_ForceIsComplementary-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
+};
+
+struct TM_Contact_MovesContinuously : Feature {
+  int a,b;
+  TM_Contact_MovesContinuously(int aShape, int bShape) : a(aShape), b(bShape) {}
+  TM_Contact_MovesContinuously(const rai::KinematicWorld& K, const char* aShapeName=NULL, const char* bShapeName=NULL)
+    : TM_Contact_MovesContinuously(initIdArg(K,aShapeName), initIdArg(K,bShapeName)){}
+
+  void phi(arr& y, arr& J, const rai::KinematicWorld& K){ NIY }
+  void phi(arr& y, arr& J, const WorldL& Ktuple);
   uint dim_phi(const rai::KinematicWorld& K){ return 3; }
-  rai::String shortTag(const rai::KinematicWorld& K) { return STRING("ContactConstraints-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
+  rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_Contact_MovesContinuously-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
 };
 
 struct TM_ContactConstraints_Vel : Feature {
@@ -42,6 +54,31 @@ struct TM_ContactConstraints_Vel : Feature {
   rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_ContactConstraints_Vel-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
 };
 
+struct TM_Contact_ZeroVel : Feature {
+  int a,b;
+  TM_Contact_ZeroVel(int aShape, int bShape) : a(aShape), b(bShape) { order=1; }
+  TM_Contact_ZeroVel(const rai::KinematicWorld& K, const char* aShapeName=NULL, const char* bShapeName=NULL)
+    : TM_Contact_ZeroVel(initIdArg(K,aShapeName), initIdArg(K,bShapeName)){}
+
+  void phi(arr& y, arr& J, const rai::KinematicWorld& K){ NIY }
+  void phi(arr& y, arr& J, const WorldL& Ktuple);
+  uint dim_phi(const rai::KinematicWorld& K){ return 3; }
+  rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_Contact_ZeroVel-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
+};
+
+struct TM_Contact_ElasticVel : Feature {
+  int a,b;
+  double beta, alpha;
+  TM_Contact_ElasticVel(int aShape, int bShape, double beta, double alpha) : a(aShape), b(bShape), beta(beta), alpha(alpha) { order=1; }
+  TM_Contact_ElasticVel(const rai::KinematicWorld& K, const char* aShapeName, const char* bShapeName, double beta, double alpha)
+    : TM_Contact_ElasticVel(initIdArg(K,aShapeName), initIdArg(K,bShapeName), beta, alpha){}
+
+  void phi(arr& y, arr& J, const rai::KinematicWorld& K){ NIY }
+  void phi(arr& y, arr& J, const WorldL& Ktuple);
+  uint dim_phi(const rai::KinematicWorld& K){ return 4; }
+  rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_Contact_ElasticVel-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
+};
+
 struct TM_Contact_POAisInIntersection_InEq : Feature {
   int a,b;
   TM_Contact_POAisInIntersection_InEq(int aShape, int bShape) : a(aShape), b(bShape) {}
@@ -50,16 +87,16 @@ struct TM_Contact_POAisInIntersection_InEq : Feature {
 
   void phi(arr& y, arr& J, const rai::KinematicWorld& K);
   uint dim_phi(const rai::KinematicWorld& K);
-  rai::String shortTag(const rai::KinematicWorld& K) { return STRING("ContactConstraints_InEq-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
+  rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_Contact_POAisInIntersection_InEq-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
 };
 
-struct TM_ContactConstraints_SOS : Feature {
+struct TM_Contact_ForceRegularization : Feature {
   int a,b;
-  TM_ContactConstraints_SOS(int aShape, int bShape) : a(aShape), b(bShape) {}
-  TM_ContactConstraints_SOS(const rai::KinematicWorld& K, const char* aShapeName=NULL, const char* bShapeName=NULL)
-    : TM_ContactConstraints_SOS(initIdArg(K,aShapeName), initIdArg(K,bShapeName)){}
+  TM_Contact_ForceRegularization(int aShape, int bShape) : a(aShape), b(bShape) {}
+  TM_Contact_ForceRegularization(const rai::KinematicWorld& K, const char* aShapeName=NULL, const char* bShapeName=NULL)
+    : TM_Contact_ForceRegularization(initIdArg(K,aShapeName), initIdArg(K,bShapeName)){}
 
   void phi(arr& y, arr& J, const rai::KinematicWorld& K);
   uint dim_phi(const rai::KinematicWorld& K);
-  rai::String shortTag(const rai::KinematicWorld& K) { return STRING("ContactConstraints_SOS-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
+  rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_ContactConstraints_SOS-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
 };

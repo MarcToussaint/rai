@@ -14,8 +14,13 @@
 
 //===========================================================================
 
+/* x_{-1} = x_{time=0}
+ * x_{9}: phase=1 (for stepsPerPhase=10 */
 int conv_time2step(double time, uint stepsPerPhase) {
   return (floor(time*double(stepsPerPhase) + .500001))-1;
+}
+double conv_step2time(int step, uint stepsPerPhase) {
+  return double(step+1)/double(stepsPerPhase);
 }
 //#define STEP(t) (floor(t*double(stepsPerPhase) + .500001))-1
 

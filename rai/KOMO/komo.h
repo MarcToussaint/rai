@@ -101,8 +101,10 @@ struct KOMO : NonCopyable {
   void addSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const rai::Transformation& jFrom=NoTransformation);
   void addFlag(double time, rai::Flag* fl, int deltaStep=0);
   void addContact(double startTime, double endTime, const char *from, const char* to);
+  void addContact_stickyElasticBounce(double time, const char *from, const char* to, double beta, double alpha);
   void addContact_Complementary(double startTime, double endTime, const char *from, const char* to);
-  void addContact_Relaxed(double startTime, double endTime, const char *from, const char* to);
+  //  void addContact_Relaxed(double startTime, double endTime, const char *from, const char* to);
+
 
   //===========================================================================
   //
@@ -169,6 +171,7 @@ struct KOMO : NonCopyable {
   arr getPath(const uintA& joints);
   arr getPath_frames(const uintA &frames);
   arrA getPath_q();
+  arr getPath_tau();
   arr getPath_times();
   arr getPath_energies();
 

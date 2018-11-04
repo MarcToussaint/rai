@@ -204,8 +204,7 @@ rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size
   if(col.N) s->mesh().C = col;
   if(radius>0.) s->size() = ARR(radius);
   if(shape!=ST_mesh && shape!=ST_ssCvx){
-    if(size.N==1) s->size() = ARR(0.,0.,0.,size.scalar());
-    if(size.N>1) s->size() = size;
+    if(size.N>=1) s->size() = size;
     s->getGeom().createMeshes();
   }else{
     if(shape==ST_mesh){
@@ -232,7 +231,7 @@ rai::Frame* rai::KinematicWorld::addObject(const char* name, rai::ShapeType shap
   }
 
   if(pos.N){ f->Q.pos = pos; }
-  if(rot.N){ f->Q.rot = rot; }
+  if(rot.N){ f->Q.rot = rot; f->Q.rot.normalize(); }
 
   if(f->parent) f->X = f->parent->X * f->Q;
   else f->X = f->Q;
@@ -773,7 +772,7 @@ void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames,
 }
 
 void rai::KinematicWorld::setTimes(double t) {
-  for(Frame *a:frames) a->time = t;
+  for(Frame *a:frames) a->tau = t;
 }
 
 //===========================================================================
@@ -1166,7 +1165,7 @@ void rai::KinematicWorld::kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) c
   }
 }
 
-void rai::KinematicWorld::kinematicsContactPosition(arr& y, arr& J, rai::Contact *c) const{
+void rai::KinematicWorld::kinematicsContactPOA(arr& y, arr& J, rai::Contact *c) const{
   y = c->position;
   if(!!J){
     J = zeros(3, q.N);

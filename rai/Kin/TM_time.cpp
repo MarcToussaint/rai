@@ -9,7 +9,7 @@
 #include "TM_time.h"
 
 void TM_Time::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
-  y = ARR(K.frames(0)->time);
+  y = ARR(K.frames(0)->tau);
   
   if(!!J) {
     K.jacobianTime(J, K.frames(0));

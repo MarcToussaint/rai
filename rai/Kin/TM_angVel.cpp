@@ -90,11 +90,11 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
     }
 
 #if 1
-    double tau = Ktuple(-1)->frames(0)->time;
+    double tau = Ktuple(-1)->frames(0)->tau;
     CHECK_GE(tau, 1e-10, "");
     y /= tau;
     if(!!J){
-      J /=tau;
+      J /= tau;
       arr Jtau;  Ktuple(-1)->jacobianTime(Jtau, Ktuple(-1)->frames(0));  expandJacobian(Jtau, Ktuple, -1);
       J += (-1./tau)*y*Jtau;
     }
@@ -110,7 +110,7 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
     y = y1 - y0;
 
 #if 1
-    double tau = Ktuple(-1)->frames(0)->time;
+    double tau = Ktuple(-1)->frames(0)->tau;
     CHECK_GE(tau, 1e-10, "");
     double tau2=tau*tau;
     y /= tau2;

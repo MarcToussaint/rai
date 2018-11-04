@@ -25,13 +25,6 @@ TM_NewtonEuler::TM_NewtonEuler(int iShape) : i(iShape) {
 void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   CHECK_EQ(order, 2, "");
 
-  //this is the direct impuls exchange case, where NewtonEuler is switched off
-  if((Ktuple(-1)->frames(i)->flags & (1<<FL_impulseExchange))){
-    y.resize(6).setZero();
-    if(!!J) J.resize(6, getKtupleDim(Ktuple).last()).setZero();
-    return;
-  }
-
   //get linear and angular accelerations
   arr acc, Jacc, wcc, Jwcc;
   TM_Default pos(TMT_posDiff, i);
@@ -49,68 +42,51 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   arr Imatrix = diag(.1, 3);
   if(a->inertia){
     mass = a->inertia->mass;
-    Imatrix = conv_mat2arr(a->inertia->matrix);
+    Imatrix = 10.*conv_mat2arr(a->inertia->matrix);
   }
 
   mass = 1./mass;
   Imatrix = inverse_SymPosDef(Imatrix);
-  double forceScaling = 1e3;
+  double forceScaling = 3e2;
 
-  for(rai::Contact *c:a->contacts){
+  for(rai::Contact *con:a->contacts){
     double sign = +1.;
-    CHECK(&c->a==a || &c->b==a, "");
-    if(&c->b==a) sign=-1.;
+    CHECK(&con->a==a || &con->b==a, "");
+    if(&con->b==a) sign=-1.;
 
+    //get the force
     arr f, Jf;
-    K.kinematicsContactForce(f, Jf, c);
+    K.kinematicsContactForce(f, Jf, con);
     if(!!J) expandJacobian(Jf, Ktuple, -2);
 
-//    arr d, Jd;
-//    TM_PairCollision dist(con->a.ID, con->b.ID, TM_PairCollision::_normal, false);
-//    dist.phi(d, (!!J?Jd:NoArr), K);
-//    con->y = d.scalar();
-//    con->setFromPairCollision(*dist.coll);
-
-
+    //get the POA
     arr cp, Jcp;
-#if 0
-    if(&c->a==a)
-      K.kinematicsVec(cp, Jcp, a, c->a_rel); //contact point VECTOR only
-    else
-      K.kinematicsVec(cp, Jcp, a, c->b_rel); //contact point VECTOR only
-#else
-//    TM_PairCollision dist(c->a.ID, c->b.ID, TM_PairCollision::_p1, false);
-//    if(&c->b==a) dist.type=TM_PairCollision::_p2;
-
-//    dist.phi(cp, (!!J?Jcp:NoArr), K);
-
-    K.kinematicsContactPosition(cp, Jcp, c);
-
-    arr p,Jp;
-    K.kinematicsPos(p, Jp, a);
-    cp -= p;
-    if(!!J) Jcp -= Jp;
-#endif
+    K.kinematicsContactPOA(cp, Jcp, con);
     if(!!J) expandJacobian(Jcp, Ktuple, -2);
 
-    acc -= sign * forceScaling *mass* c->force;
-    wcc += sign * .3 * forceScaling *Imatrix* crossProduct(cp, c->force);
+    //get object center
+    arr p, Jp;
+    K.kinematicsPos(p, Jp, a);
+    if(!!J) expandJacobian(Jp, Ktuple, -2);
+
+    acc -= sign * forceScaling *mass* con->force;
+    wcc += sign * forceScaling *Imatrix* crossProduct(cp-p, con->force);
 
     if(!!J){
       Jacc -= sign * forceScaling *mass* Jf;
-      Jwcc += sign * .3 * forceScaling *Imatrix* (skew(cp) * Jf - skew(c->force) * Jcp);
+      Jwcc += sign * forceScaling *Imatrix* (skew(cp-p) * Jf - skew(con->force) * (Jcp-Jp));
     }
   }
 
         
   y.resize(6).setZero();
   y.setVectorBlock(acc, 0);
-  y.setVectorBlock(1.*wcc, 3);
+  y.setVectorBlock(wcc, 3);
 
   if(!!J) {
     J.resize(6, Jacc.d1).setZero();
     J.setMatrixBlock(Jacc, 0, 0);
-    J.setMatrixBlock(1.*Jwcc, 3, 0);
+    J.setMatrixBlock(Jwcc, 3, 0);
   }
 }
 

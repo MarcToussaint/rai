@@ -80,7 +80,7 @@ void TM_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
   uint k=order;
   if(k==0) return Feature::phi(y, J, Ktuple);
   
-  double tau = Ktuple(-1)->frames(0)->time; // - Ktuple(-2)->frames(0)->time;
+  double tau = Ktuple(-1)->frames(0)->tau; // - Ktuple(-2)->frames(0)->time;
   double tau2=tau*tau, tau3=tau2*tau;
   arrA q_bar(k+1), J_bar(k+1);
   //-- read out the task variable from the k+1 configurations
@@ -221,7 +221,7 @@ void TM_qZeroVels::phi(arr& y, arr& J, const WorldL& Ktuple) {
   CHECK_GE(Ktuple.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
   
-  double tau = Ktuple(-1)->frames(0)->time; // - Ktuple(-2)->frames(0)->time;
+  double tau = Ktuple(-1)->frames(0)->tau; // - Ktuple(-2)->frames(0)->time;
   double tau2=tau*tau, tau3=tau2*tau;
   arrA q_bar(k+1), J_bar(k+1);
   //-- read out the task variable from the k+1 configurations

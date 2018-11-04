@@ -29,8 +29,8 @@ void TM_PairCollision::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
   rai::Shape *s1 = i<0?NULL: K.frames(i)->shape;
   rai::Shape *s2 = j<0?NULL: K.frames(j)->shape;
   CHECK(s1 && s2,"");
-  double r1=s1->size(3);
-  double r2=s2->size(3);
+  double r1=s1->radius();
+  double r2=s2->radius();
   rai::Mesh *m1 = &s1->sscCore();  if(!m1->V.N) { m1 = &s1->mesh(); r1=0.; }
   rai::Mesh *m2 = &s2->sscCore();  if(!m2->V.N) { m2 = &s2->mesh(); r2=0.; }
   

@@ -43,7 +43,7 @@ rai::Frame::Frame(KinematicWorld& _K, const Frame* copyFrame)
   K.frames.append(this);
   if(copyFrame) {
     const Frame& f = *copyFrame;
-    name=f.name; Q=f.Q; X=f.X; time=f.time; ats=f.ats; active=f.active; flags=f.flags;
+    name=f.name; Q=f.Q; X=f.X; tau=f.tau; ats=f.ats; active=f.active; flags=f.flags;
     //we cannot copy link! because we can't know if the frames already exist. KinematicWorld::copy copies the rel's !!
     if(copyFrame->joint) new Joint(*this, copyFrame->joint);
     if(copyFrame->shape) new Shape(*this, copyFrame->shape);
@@ -72,7 +72,7 @@ rai::Frame::~Frame() {
 
 void rai::Frame::calc_X_from_parent() {
   CHECK(parent, "");
-  time = parent->time;
+  tau = parent->tau;
   Transformation &from = parent->X;
   X = from;
   X.appendTransformation(Q);
@@ -357,7 +357,7 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
         break;
         
       case JT_time:
-        frame.time = 1e-1 * q.elem(_qIndex);
+        frame.tau = 1e-1 * q.elem(_qIndex);
         break;
       default: NIY;
     }
@@ -468,7 +468,7 @@ arr rai::Joint::calc_q_from_Q(const rai::Transformation &Q) const {
       break;
     case JT_time:
       q.resize(1);
-      q(0) = 1e1 * frame.time;
+      q(0) = 1e1 * frame.tau;
       break;
     default: NIY;
   }
@@ -832,7 +832,7 @@ void rai::Inertia::defaultInertiaByShape() {
   
   //add inertia to the body
   switch(frame.shape->type()) {
-    case ST_sphere:   inertiaSphere(matrix.p(), mass, 1000., frame.shape->size(3));  break;
+    case ST_sphere:   inertiaSphere(matrix.p(), mass, 1000., frame.shape->radius());  break;
     case ST_ssBox:
     case ST_box:      inertiaBox(matrix.p(), mass, 1000., frame.shape->size(0), frame.shape->size(1), frame.shape->size(2));  break;
     case ST_capsule:

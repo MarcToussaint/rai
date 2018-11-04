@@ -31,6 +31,8 @@ enum FeatureSymbol {
   FS_scalarProductZZ,
   FS_gazeAt,
 
+  FS_angularVel,
+
   FS_accumulatedCollisions,
   FS_jointLimits,
   FS_distance,

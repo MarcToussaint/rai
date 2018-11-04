@@ -54,3 +54,10 @@ inline void expandJacobian(arr& J, const WorldL& Ktuple, int i=-1) {
   tmp.setMatrixBlock(J, 0, qdim.elem(i-1));
   J = tmp;
 }
+
+inline void padJacobian(arr& J, const WorldL& Ktuple) {
+  uintA qdim = getKtupleDim(Ktuple);
+  arr tmp = zeros(J.d0, qdim.last());
+  tmp.setMatrixBlock(J, 0, 0);
+  J = tmp;
+}

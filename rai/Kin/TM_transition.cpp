@@ -53,7 +53,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple) {
   uint qN=Ktuple(0)->q.N;
   for(uint i=0; i<Ktuple.N; i++) if(Ktuple(i)->q.N!=qN) { handleSwitches=true; break; }
   
-  double tau = Ktuple(-1)->frames(0)->time; // - Ktuple(-2)->frames(0)->time;
+  double tau = Ktuple(-1)->frames(0)->tau; // - Ktuple(-2)->frames(0)->time;
   
   if(!handleSwitches) { //simple implementation
     //-- transition costs

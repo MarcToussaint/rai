@@ -56,7 +56,7 @@ struct Frame : NonCopyable{
   FrameL parentOf;           ///< list of children [TODO: rename]
   Transformation Q=0;        ///< relative transform to parent
   Transformation X=0;        ///< frame's absolute pose
-  double time=0.;            ///< frame's absolute time (could be thought as part of the transformation X in space-time)
+  double tau=0.;            ///< frame's absolute time (could be thought as part of the transformation X in space-time)
   Graph ats;                 ///< list of any-type attributes
   bool active=true;          ///< if false, this frame is skipped in computations (e.g. in fwd propagation)
   int flags=0;               ///< various flags that are used by task maps to impose costs/constraints in KOMO
@@ -173,6 +173,7 @@ struct Shape : NonCopyable, GLDrawer {
   Enum<ShapeType>& type() { return getGeom().type; }
   arr& size() { return getGeom().size; }
   double& size(uint i) { return getGeom().size.elem(i); }
+  double radius() { arr &size = getGeom().size; if(size.N==1) return size(0); if(size.N>=4) return size(3); return 0.; }
   Mesh& mesh() { return getGeom().mesh; }
   Mesh& sscCore() { return getGeom().sscCore; }
   double alpha() { arr& C=getGeom().mesh.C; if(C.N==4) return C(3); return 1.; }

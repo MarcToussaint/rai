@@ -16,21 +16,39 @@
 
 void Feature::phi(arr& y, arr& J, const WorldL& Ktuple) {
   CHECK_GE(Ktuple.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
-  uint k=order;
-  if(k==0) { // basic case: order=0
-    arr J_bar;
-    phi(y, (!!J?J_bar:NoArr), *Ktuple.last());
-    if(!!J) {
-      uint qidx=0;
-      for(uint i=0; i<Ktuple.N; i++) qidx+=Ktuple(i)->q.N;
-      J.resize(y.N, qidx).setZero();
-      J.setMatrixBlock(J_bar, 0, qidx-J_bar.d1);
-    }
+  if(order==0) {
+    phi(y, J, *Ktuple(-1));
+    if(!!J) expandJacobian(J, Ktuple, -1);
     return;
   }
+
+#if 1
+  arr y0, y1, Jy0, Jy1;
+  order--;
+  phi(y0, (!!J?Jy0:NoArr), Ktuple({0,-2}));  if(!!J) padJacobian(Jy0, Ktuple);
+  phi(y1, (!!J?Jy1:NoArr), Ktuple);
+  order++;
+
+  if(flipTargetSignOnNegScalarProduct) if(scalarProduct(y0, y1)<-.0) { y0 *= -1.;  if(!!J) Jy0 *= -1.; }
+
+  double tau = Ktuple(-1)->frames(0)->tau;
+  y = (y1-y0)/tau; //penalize velocity
+
+  if(!!J){
+    J = Jy1 - Jy0;
+    J /= tau;
+    arr Jtau;  Ktuple(-1)->jacobianTime(Jtau, Ktuple(-1)->frames(0));
+    expandJacobian(Jtau, Ktuple, -1);
+    J += (-1./tau)*y*Jtau;
+  }
+
+#else
+
+  uint k = order;
   arrA y_bar, J_bar;
   
-  double tau = Ktuple(-1)->frames(0)->time; // - Ktuple(-2)->frames(0)->time;
+  double tau = Ktuple(-1)->frames(0)->tau; // - Ktuple(-2)->frames(0)->time;
+  double tau_1 = Ktuple(-2)->frames(0)->tau; // - Ktuple(-2)->frames(0)->time;
   if(tau<=0.) tau=1.;
   if(order) CHECK_GE(tau, 1e-10, "");
   double tau2=tau*tau, tau3=tau2*tau;
@@ -71,6 +89,7 @@ void Feature::phi(arr& y, arr& J, const WorldL& Ktuple) {
     if(k==2) J += (-2./tau)*y*Jtau;
 #endif
   }
+#endif
 }
 
 VectorFunction Feature::vf(rai::KinematicWorld& K) { ///< direct conversion to vector function: use to check gradient or evaluate

@@ -48,6 +48,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
     P.phi(phi_x, J_x, H_x, tt_x, x, lambda);
   } else { //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
   }
+  CHECK(x.N, "zero-dim optimization variables!");
   CHECK_EQ(phi_x.N, J_x.d0, "Jacobian size inconsistent");
   CHECK_EQ(phi_x.N, tt_x.N, "termType array size inconsistent");
   

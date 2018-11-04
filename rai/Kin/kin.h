@@ -175,7 +175,7 @@ struct KinematicWorld : GLDrawer {
   void kinematicsRelVec(arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b) const;
   void kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) const;
 
-  void kinematicsContactPosition(arr& y, arr& J, Contact *c) const;
+  void kinematicsContactPOA(arr& y, arr& J, Contact *c) const;
   void kinematicsContactForce(arr& y, arr& J, Contact *c) const;
   
   void kinematicsPenetrations(arr& y, arr& J=NoArr, bool penetrationsOnly=true, double activeMargin=0.) const; ///< true: if proxy(i).distance>0. => y(i)=0; else y(i)=-proxy(i).distance

@@ -68,3 +68,4 @@ stdOutPipe(rai::KinematicSwitch)
 #endif
 
 int conv_time2step(double time, uint stepsPerPhase);
+double conv_step2time(int step, uint stepsPerPhase);

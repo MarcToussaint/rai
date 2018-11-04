@@ -80,7 +80,7 @@ void rai::Geom::createMeshes() {
       double rad=1;
       if(size.N==1) rad=size(0);
       else rad=size(3);
-      mesh.setSSCvx(sscCore, rad);
+      mesh.setSSCvx(sscCore, rad, 1);
       //      mesh.setSphere();
       //      mesh.scale(size(3), size(3), size(3));
     } break;
@@ -116,19 +116,21 @@ void rai::Geom::createMeshes() {
       }
       mesh.setSSCvx(sscCore, size(3));
       break;
-    case rai::ST_ssBox:
+    case rai::ST_ssBox: {
       if(size(3)<1e-10) {
         sscCore.setBox();
         sscCore.scale(size(0), size(1), size(2));
         mesh = sscCore;
         break;
       }
-      CHECK(size.N==4 && size(3)>1e-10,"");
+      double r = size(3);
+      CHECK(size.N==4 && r>1e-10,"");
+      for(uint i=0;i<3;i++) if(size(i)<2.*r) size(i) = 2.*r;
       sscCore.setBox();
-      sscCore.scale(size(0)-2.*size(3), size(1)-2.*size(3), size(2)-2.*size(3));
-      mesh.setSSBox(size(0), size(1), size(2), size(3));
-      //      mesh.setSSCvx(sscCore, size(3));
-      break;
+      sscCore.scale(size(0)-2.*r, size(1)-2.*r, size(2)-2.*r);
+      mesh.setSSBox(size(0), size(1), size(2), r);
+      //      mesh.setSSCvx(sscCore, r);
+    } break;
     default: NIY;
   }
 }
