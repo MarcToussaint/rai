@@ -3,12 +3,34 @@
 
 #include <Core/graph.h>
 #include <Kin/frame.h>
+#include <Gui/viewer.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 
 namespace py = pybind11;
+
+namespace ry{
+
+  typedef Var<rai::KinematicWorld> Config;
+
+  struct ConfigViewer { shared_ptr<KinViewer> view; };
+  struct ImageViewer { shared_ptr<::ImageViewer> view; };
+  struct PointCloudViewer { shared_ptr<::PointCloudViewer> view; };
+
+  struct RyKOMO{ shared_ptr<KOMO> komo; };
+
+  struct RyFeature { Feature *feature=0; };
+
+  struct RyCameraView {
+    shared_ptr<rai::CameraView> cam;
+    Var<byteA> image;
+    Var<arr> depth;
+    Var<byteA> segmentation;
+    Var<arr> pts;
+  };
+}
 
 py::dict graph2dict(const Graph& G){
   py::dict dict;
@@ -64,7 +86,7 @@ py::list graph2list(const Graph& G){
   return list;
 }
 
-py::list uintA2tuple(const uintA& tup){
+py::tuple uintA2tuple(const uintA& tup){
   py::tuple tuple;
   for(uint i=0;i<tup.N;i++) tuple[i] = tup(i);
   return tuple;
@@ -239,12 +261,40 @@ PYBIND11_MODULE(libry, m) {
     self.set()->makeObjectsFree(I_conv(objs));
   } )
 
+  .def("computeCollisions", [](ry::Config& self){
+    self.set()->stepSwift();
+  } )
+
+  .def("getCollisions", [](ry::Config& self, double belowMargin){
+    py::list ret;
+    auto Kget = self.get();
+    for(const rai::Proxy& p: Kget->proxies) {
+      if(!p.coll)((rai::Proxy*)&p)->calc_coll(Kget);
+      if(p.d>belowMargin) continue;
+      pybind11::tuple tuple(3);
+      tuple[0] = p.a->name.p;
+      tuple[1] = p.b->name.p;
+      tuple[2] = p.d;
+//      tuple[3] = p.posA;
+//      tuple[4] = p.posB;
+      ret.append( tuple ) ;
+    }
+    return ret;
+  }, "",
+    py::arg("belowMargin") = 1.)
+
   .def("view", [](ry::Config& self, const std::string& frame){
-    ry::ConfigView view;
+    ry::ConfigViewer view;
     view.view = make_shared<KinViewer>(self, -1, rai::String(frame));
     return view;
   }, "",
     py::arg("frame")="")
+
+  .def("cameraView", [](ry::Config& self){
+    ry::RyCameraView view;
+    view.cam = make_shared<rai::CameraView>(self.get(), true, 0);
+    return view;
+   } )
 
   .def("komo_IK", [](ry::Config& self){
     ry::RyKOMO komo;
@@ -283,7 +333,75 @@ PYBIND11_MODULE(libry, m) {
 
   //===========================================================================
 
-  py::class_<ry::ConfigView>(m, "ConfigView")
+  py::class_<ry::ConfigViewer>(m, "ConfigViewer");
+  py::class_<ry::PointCloudViewer>(m, "PointCloudViewer");
+  py::class_<ry::ImageViewer>(m, "ImageViewer");
+
+  //=====================================pybind11::array(X.dim(), X.p);======================================
+
+  py::class_<ry::RyCameraView>(m, "CameraView")
+  .def("addSensor", [](ry::RyCameraView& self, const char* name, const char* frameAttached, uint width, uint height, double focalLength, double orthoAbsHeight, const std::vector<double>& zRange, const std::string& backgroundImageFile){
+    self.cam->addSensor(name, frameAttached, width, height, focalLength, orthoAbsHeight, arr(zRange), backgroundImageFile.c_str());
+  }, "",
+      py::arg("name"),
+      py::arg("frameAttached"),
+      py::arg("width"),
+      py::arg("height"),
+      py::arg("focalLength") = -1.,
+      py::arg("orthoAbsHeight") = -1.,
+      py::arg("zRange") = std::vector<double>(),
+      py::arg("backgroundImageFile") = std::string() )
+
+   .def("selectSensor", [](ry::RyCameraView& self, const char* sensorName){
+        self.cam->selectSensor(sensorName);
+      }, "",
+      py::arg("name") )
+
+   .def("computeImageAndDepth", [](ry::RyCameraView& self){
+      auto imageSet = self.image.set();
+      auto depthSet = self.depth.set();
+      self.cam->computeImageAndDepth(imageSet, depthSet);
+      pybind11::tuple ret(2);
+      ret[0] = pybind11::array(imageSet->dim(), imageSet->p);
+      ret[1] = pybind11::array(depthSet->dim(), depthSet->p);
+      return ret;
+    } )
+
+    .def("computePointCloud", [](ry::RyCameraView& self, const pybind11::array& depth, bool globalCoordinates){
+      arr _depth = numpy2arr(depth);
+      auto ptsSet = self.pts.set();
+      self.cam->computePointCloud(ptsSet, _depth, globalCoordinates);
+      return pybind11::array(ptsSet->dim(), ptsSet->p);
+    }, "",
+      py::arg("depth"),
+      py::arg("globalCoordinates") = true )
+
+   .def("computeSegmentation", [](ry::RyCameraView& self){
+      auto segSet = self.segmentation.set();
+      self.cam->computeSegmentation(segSet);
+      return pybind11::array(segSet->dim(), segSet->p);
+    } )
+
+    .def("pointCloudViewer", [](ry::RyCameraView& self){
+      ry::PointCloudViewer ret;
+      ret.view = make_shared<PointCloudViewer>(self.pts, self.image);
+      return ret;
+    } )
+
+    .def("imageViewer", [](ry::RyCameraView& self){
+      ry::ImageViewer ret;
+      ret.view = make_shared<ImageViewer>(self.image);
+      return ret;
+    } )
+
+    .def("segmentationViewer", [](ry::RyCameraView& self){
+      ry::ImageViewer ret;
+      ret.view = make_shared<ImageViewer>(self.segmentation);
+      return ret;
+    } )
+
+      //-- displays
+//      void watch_PCL(const arr& pts, const byteA& rgb);
       ;
 
   //===========================================================================

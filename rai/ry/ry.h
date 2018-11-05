@@ -10,18 +10,7 @@
 #include <Core/thread.h>
 #include <Kin/kinViewer.h>
 #include <KOMO/komo.h>
-
-namespace ry{
-
-  typedef Var<rai::KinematicWorld> Config;
-
-  struct ConfigView { shared_ptr<KinViewer> view; };
-
-  struct RyKOMO{ shared_ptr<KOMO> komo; };
-
-  struct RyFeature { Feature *feature=0; };
-}
-
+#include <Kin/cameraview.h>
 
 namespace ry{
 

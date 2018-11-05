@@ -7,6 +7,8 @@
 
 namespace ry{
 
+  typedef Var<rai::KinematicWorld> Config;
+
   struct LGPpy_self : LGP_Tree{
     Config& kin;
     rai::KinematicWorld K;
