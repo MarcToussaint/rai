@@ -17,7 +17,7 @@
 void shapeFunction(double &x, double &dx);
 
 
-TM_NewtonEuler::TM_NewtonEuler(int iShape) : i(iShape) {
+TM_NewtonEuler::TM_NewtonEuler(int iShape, bool _transOnly) : i(iShape), transOnly(_transOnly) {
   order=2;
   gravity = rai::getParameter<double>("TM_NewtonEuler/gravity", 9.81);
 }
@@ -34,7 +34,7 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
 
   TM_AngVel rot(i);
   rot.order=2;
-  rot.phi(wcc, (!!J?Jwcc:NoArr), Ktuple);
+  if(!transOnly) rot.phi(wcc, (!!J?Jwcc:NoArr), Ktuple);
 
   rai::KinematicWorld& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
   rai::Frame *a = K.frames(i);
@@ -47,7 +47,7 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
 
   mass = 1./mass;
   Imatrix = inverse_SymPosDef(Imatrix);
-  double forceScaling = 3e2;
+  double forceScaling = 1e2;
 
   for(rai::Contact *con:a->contacts){
     double sign = +1.;
@@ -70,23 +70,28 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
     if(!!J) expandJacobian(Jp, Ktuple, -2);
 
     acc -= sign * forceScaling *mass* con->force;
-    wcc += sign * forceScaling *Imatrix* crossProduct(cp-p, con->force);
+    if(!transOnly) wcc += sign * forceScaling *Imatrix* crossProduct(cp-p, con->force);
 
     if(!!J){
       Jacc -= sign * forceScaling *mass* Jf;
-      Jwcc += sign * forceScaling *Imatrix* (skew(cp-p) * Jf - skew(con->force) * (Jcp-Jp));
+      if(!transOnly) Jwcc += sign * forceScaling *Imatrix* (skew(cp-p) * Jf - skew(con->force) * (Jcp-Jp));
     }
   }
 
-        
-  y.resize(6).setZero();
+  if(!transOnly) y.resize(6).setZero();
+  else y.resize(3).setZero();
   y.setVectorBlock(acc, 0);
-  y.setVectorBlock(wcc, 3);
+  if(!transOnly) y.setVectorBlock(wcc, 3);
 
   if(!!J) {
-    J.resize(6, Jacc.d1).setZero();
+    J.resize(y.N, Jacc.d1).setZero();
     J.setMatrixBlock(Jacc, 0, 0);
-    J.setMatrixBlock(Jwcc, 3, 0);
+    if(!transOnly) J.setMatrixBlock(Jwcc, 3, 0);
   }
+}
+
+uint TM_NewtonEuler::dim_phi(const WorldL& Ktuple){
+  if(transOnly) return 3;
+  return 6;
 }
 

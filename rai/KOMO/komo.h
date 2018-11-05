@@ -100,8 +100,10 @@ struct KOMO : NonCopyable {
   void addSwitch(double time, bool before, rai::KinematicSwitch* sw);
   void addSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const rai::Transformation& jFrom=NoTransformation);
   void addFlag(double time, rai::Flag* fl, int deltaStep=0);
-  void addContact(double startTime, double endTime, const char *from, const char* to);
-  void addContact_stickyElasticBounce(double time, const char *from, const char* to, double beta, double alpha);
+  void addContact_slide(double startTime, double endTime, const char *from, const char* to);
+  void addContact_stick(double startTime, double endTime, const char *from, const char* to);
+  void addContact_elasticBounce(double time, const char *from, const char* to, double elasticity=.8, double stickiness=0.);
+  void addContact_noFriction(double startTime, double endTime, const char *from, const char* to);
   void addContact_Complementary(double startTime, double endTime, const char *from, const char* to);
   //  void addContact_Relaxed(double startTime, double endTime, const char *from, const char* to);
 
@@ -139,6 +141,7 @@ struct KOMO : NonCopyable {
   void addSwitch_stableOn(double time, double endTime, const char* from, const char* to);
   void addSwitch_dynamic(double time, double endTime, const char *from, const char *to);
   void addSwitch_dynamicOn(double time, double endTime, const char *from, const char* to);
+  void addSwitch_dynamicTrans(double time, double endTime, const char *from, const char *to);
   void addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost);
 
   

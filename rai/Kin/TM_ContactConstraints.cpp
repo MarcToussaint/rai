@@ -363,19 +363,21 @@ void TM_Contact_ElasticVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   if(!!J) J.resize(4, Jv1.d1).setZero();
 
   //tangential vel
-  if(alpha>0){
-    y({0,2}) = (v1-alpha*v0) - normal*scalarProduct(normal, v1-alpha*v0);
-    if(!!J) J({0,2}) = (Jv1-alpha*Jv0) - (normal*~normal*(Jv1-alpha*Jv0) + normal*~(v1-alpha*v0)*Jnormal + scalarProduct(normal,(v1-alpha*v0))*Jnormal);
-  }else{
+  if(stickiness==1.){
     y({0,2}) = v1 - normal*scalarProduct(normal,v1);
     if(!!J) J({0,2}) = Jv1 - (normal*~normal*Jv1 + normal*~v1*Jnormal + scalarProduct(normal,v1)*Jnormal);
+  }else if(stickiness>0.){
+    CHECK_LE(stickiness, 1., "");
+    double alpha=1.-stickiness;
+    y({0,2}) = (v1-alpha*v0) - normal*scalarProduct(normal, v1-alpha*v0);
+    if(!!J) J({0,2}) = (Jv1-alpha*Jv0) - (normal*~normal*(Jv1-alpha*Jv0) + normal*~(v1-alpha*v0)*Jnormal + scalarProduct(normal,(v1-alpha*v0))*Jnormal);
   }
 
   //normal vel
-  if(beta>0){
-    y(3) = scalarProduct(normal, v1 + beta*v0);
-    if(!!J) J[3] = ~normal*(Jv1+beta*Jv0) + ~(v1+beta*v0)*Jnormal;
-  }else if(beta==0.){
+  if(elasticity>0.){
+    y(3) = scalarProduct(normal, v1 + elasticity*v0);
+    if(!!J) J[3] = ~normal*(Jv1+elasticity*Jv0) + ~(v1+elasticity*v0)*Jnormal;
+  }else if(elasticity==0.){
     y(3) = scalarProduct(normal, v1);
     if(!!J) J[3] = ~normal*(Jv1) + ~(v1)*Jnormal;
   }

@@ -68,8 +68,8 @@ struct TM_Contact_ZeroVel : Feature {
 
 struct TM_Contact_ElasticVel : Feature {
   int a,b;
-  double beta, alpha;
-  TM_Contact_ElasticVel(int aShape, int bShape, double beta, double alpha) : a(aShape), b(bShape), beta(beta), alpha(alpha) { order=1; }
+  double elasticity, stickiness;
+  TM_Contact_ElasticVel(int aShape, int bShape, double beta, double alpha) : a(aShape), b(bShape), elasticity(beta), stickiness(alpha) { order=1; }
   TM_Contact_ElasticVel(const rai::KinematicWorld& K, const char* aShapeName, const char* bShapeName, double beta, double alpha)
     : TM_Contact_ElasticVel(initIdArg(K,aShapeName), initIdArg(K,bShapeName), beta, alpha){}
 
