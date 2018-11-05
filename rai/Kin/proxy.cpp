@@ -26,8 +26,10 @@ rai::Proxy::~Proxy() {
 
 void rai::Proxy::copy(const rai::KinematicWorld& K, const rai::Proxy& p){
   del_coll();
-  a = K.frames(p.a->ID); CHECK(a, "");
-  b = K.frames(p.b->ID); CHECK(b, "");
+  if(!!K){
+    a = K.frames(p.a->ID); CHECK(a, "");
+    b = K.frames(p.b->ID); CHECK(b, "");
+  }else a=b=0;
   posA = p.posA;
   posB = p.posB;
   normal = p.normal;

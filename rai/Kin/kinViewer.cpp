@@ -118,7 +118,11 @@ void KinViewer::step() {
   X.resize(world->frames.N);
   for(rai::Frame *f:world().frames) X(f->ID) = f->X;
   gl->dataLock.writeLock();
+
+//  proxiesCopy.resize(world->proxies.N);
+//  for(uint i=0;i<proxiesCopy.N;i++) proxiesCopy(i).copy(NoWorld, world->proxies(i));
 //  proxiesCopy = world->proxies;
+
   if(cameraFrameID>=0){
     gl->camera.X = world->frames(cameraFrameID)->X;
   }
