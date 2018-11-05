@@ -788,7 +788,7 @@ template<class T> T& rai::Array<T>::rndElem() const {
 
 /// scalar reference (valid only for a 0-dim or 1-dim array of size 1)
 template<class T> T& rai::Array<T>::scalar() const {
-  CHECK(nd<=2 && N==1, "scalar range error (N=" <<N <<", nd=" <<nd <<")");
+  CHECK(nd<=2 && N==1, "scalar range error (nd=" <<nd <<"), N=" <<N <<")");
   return *p;
 }
 

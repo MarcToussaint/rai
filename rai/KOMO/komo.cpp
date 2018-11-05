@@ -186,8 +186,14 @@ Objective *KOMO::addObjective(double startTime, double endTime,
 
 Objective* KOMO::addObjective(const arr& times, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, const arr& _scale, const arr& target, int order){
   double scale=1e1;
-  if(_scale.N) scale=_scale.scalar();
-  Objective *task = addObjective(-1.,-1., symbols2feature(feat, frames, world), type, target, scale, order);
+  Feature *f = symbols2feature(feat, frames, world);
+  if(_scale.N>1){
+    f = new TM_LinTrans(f, _scale, {});
+    scale=1.;
+  }
+  if(_scale.N==1) scale=_scale.scalar();
+
+  Objective *task = addObjective(-1.,-1., f, type, target, scale, order);
   if(!denseOptimization){
     if(!times.N){
       task->setCostSpecs(0, T-1, target, scale);
@@ -1076,27 +1082,21 @@ void KOMO::setDiscreteOpt(uint k){
 void KOMO::setPoseOpt() {
   denseOptimization=true;
   setTiming(1., 2, 5., 1);
-//  setFixEffectiveJoints();
-//  setFixSwitchedObjects();
-  setSquaredQVelocities();
+//  setSquaredQVelocities();
   setSquaredQuaternionNorms();
 }
 
 void KOMO::setSequenceOpt(double _phases) {
   denseOptimization=false;
   setTiming(_phases, 2, 5., 1);
-//  setFixEffectiveJoints();
-//  setFixSwitchedObjects();
-  setSquaredQVelocities();
+//  setSquaredQVelocities();
   setSquaredQuaternionNorms();
 }
 
 void KOMO::setPathOpt(double _phases, uint stepsPerPhase, double timePerPhase) {
   denseOptimization=false;
   setTiming(_phases, stepsPerPhase, timePerPhase, 2);
-//  setFixEffectiveJoints();
-//  setFixSwitchedObjects();
-  setSquaredQAccelerations();
+//  setSquaredQAccelerations();
   setSquaredQuaternionNorms();
 }
 
@@ -1283,7 +1283,7 @@ void KOMO::optimize(){
   run();
 
   if(verbose>0){
-    Graph specs = getProblemGraph(true);
+    Graph specs = getProblemGraph(false);
     cout <<specs <<endl;
     cout <<getReport(false) <<endl; // Enables plot
   }
