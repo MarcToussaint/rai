@@ -338,7 +338,7 @@ PYBIND11_MODULE(libry, m) {
     }
   } )
 
-  .def("timeOptimization", [](ry::RyKOMO& self){
+  .def("addTimeOptimization", [](ry::RyKOMO& self){
     self.komo->setTimeOptimization();
   } )
 
@@ -346,9 +346,25 @@ PYBIND11_MODULE(libry, m) {
     self.komo->clearObjectives();
   } )
 
-  .def("addObjective", [](ry::RyKOMO& self, const std::vector<double>& timeInterval, const ObjectiveType& type, const FeatureSymbol& feature, const ry::I_StringA& frames, const std::vector<double>& scale, const std::vector<double>& target, int order){
-    self.komo->addObjective(arr(timeInterval), type, feature, I_conv(frames), arr(scale), arr(target), order);
-  },"", py::arg("timeInterval")=std::vector<double>(),
+  .def("addSwitch_magic", [](ry::RyKOMO& self, double time, const char* from, const char* to){
+      self.komo->addSwitch_magic(time, time, from, to, 0.);
+  } )
+
+  .def("addSwitch_dynamicTrans", [](ry::RyKOMO& self, double startTime, double endTime, const char* from, const char* to){
+      self.komo->addSwitch_dynamicTrans(startTime, endTime, from, to, 0.);
+  } )
+
+  .def("addContact_elasticBounce", [](ry::RyKOMO& self, double time, const char* from, const char* to, double elasticity, double stickiness){
+      self.komo->addContact_elasticBounce(time, from, to, elasticity, stickiness);
+  }, "", py::arg("time"),
+       py::arg("from"),
+          py::arg("to"),
+          py::arg("elasticity") = .8,
+          py::arg("stickiness") = 0. )
+
+  .def("addObjective", [](ry::RyKOMO& self, const std::vector<double>& time, const ObjectiveType& type, const FeatureSymbol& feature, const ry::I_StringA& frames, const std::vector<double>& scale, const std::vector<double>& target, int order){
+    self.komo->addObjective(arr(time), type, feature, I_conv(frames), arr(scale), arr(target), order);
+  },"", py::arg("time")=std::vector<double>(),
       py::arg("type"),
       py::arg("feature"),
       py::arg("frames")=ry::I_StringA(),
