@@ -151,7 +151,12 @@ void KOMO::deactivateCollisions(const char* s1, const char* s2) {
 
 void KOMO::setTimeOptimization(){
   world.addTimeJoint();
-  addObjective(0., -1., new TM_Time(), OT_sos, {}, 1e1, 1); //smooth time evolution
+  Objective* o = addObjective(0., -1., new TM_Time(), OT_eq, {}, 1e2, 1); //smooth time evolution
+  //break the constraint at phase switches:
+  CHECK(o->prec.nd==1 && o->prec.N==T, "");
+  CHECK_GE(stepsPerPhase, 10, "NIY")
+  for(uint t=1;t<o->prec.N; t+=stepsPerPhase) o->prec(t)=0.;
+
   addObjective(0., -1., new TM_Time(), OT_sos, {tau}, 1e-1, 0); //prior on timing
 }
 
@@ -186,8 +191,14 @@ Objective *KOMO::addObjective(double startTime, double endTime,
 
 Objective* KOMO::addObjective(const arr& times, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, const arr& _scale, const arr& target, int order){
   double scale=1e1;
-  if(_scale.N) scale=_scale.scalar();
-  Objective *task = addObjective(-1.,-1., symbols2feature(feat, frames, world), type, target, scale, order);
+  Feature *f = symbols2feature(feat, frames, world);
+  if(_scale.N>1){
+    f = new TM_LinTrans(f, _scale, {});
+    scale=1.;
+  }
+  if(_scale.N==1) scale=_scale.scalar();
+
+  Objective *task = addObjective(-1.,-1., f, type, target, scale, order);
   if(!denseOptimization){
     if(!times.N){
       task->setCostSpecs(0, T-1, target, scale);
@@ -1491,9 +1502,9 @@ bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const 
   DrawPaths drawX(X);
   
   for(int t=-(int)k_order; t<(int)T; t++) {
-    timetag.clear() <<tag <<" (config:" <<t <<'/' <<T <<"  s:" <<conv_step2time(t,stepsPerPhase) <<')';
     if(saveVideoPrefix) gl->computeImage=true;
     rai::KinematicWorld& K = *configurations(t+k_order);
+    timetag.clear() <<tag <<" (config:" <<t <<'/' <<T <<"  s:" <<conv_step2time(t,stepsPerPhase) <<" tau:" <<K.frames.first()->tau <<')';
 //    K.reportProxies();
     gl->clear();
     gl->add(glStandardScene, 0);

@@ -79,6 +79,54 @@ void angVel_base(const rai::KinematicWorld& K0, rai::KinematicWorld& K1, uint i,
   }
 }
 
+//===========================================================================
+
+void TM_LinVel::phi(arr& y, arr& J, const WorldL& Ktuple){
+  if(order==1){
+    rai::Frame *f0 = Ktuple(-2)->frames(i);
+    rai::Frame *f1 = Ktuple(-1)->frames(i);
+
+    arr a,b,Ja,Jb;
+    Ktuple(-2)->kinematicsPos(a, Ja, f0);
+    Ktuple(-1)->kinematicsPos(b, Jb, f1);
+
+    y = b-a;
+    if(!!J){
+      expandJacobian(Ja, Ktuple, -2);
+      expandJacobian(Jb, Ktuple, -1);
+      J = Jb-Ja;
+    }
+
+#if 1
+    double tau = Ktuple(-1)->frames(0)->tau;
+    CHECK_GE(tau, 1e-10, "");
+    y /= tau;
+    if(!!J){
+      J /= tau;
+      arr Jtau;
+      Ktuple(-1)->jacobianTime(Jtau, Ktuple(-1)->frames(0));
+      expandJacobian(Jtau, Ktuple, -1);
+      J += (-1./tau)*y*Jtau;
+    }
+#endif
+    return;
+  }
+
+  if(order==2){
+    arr y0, y1, Jy0, Jy1;
+    order--;
+    phi(y0, (!!J?Jy0:NoArr), Ktuple({0,-2}));  if(!!J) padJacobian(Jy0, Ktuple);
+    phi(y1, (!!J?Jy1:NoArr), Ktuple);
+    order++;
+
+    double tau=1.;
+    y = (y1-y0)/tau; //difference!
+    if(!!J) J = (Jy1 - Jy0)/tau;
+  }
+}
+
+//===========================================================================
+
 void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
   if(order==1){
     arr J_tmp;
@@ -90,17 +138,32 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
     }
 
 #if 1
-    double tau = Ktuple(-1)->frames(0)->tau;
+    double tau; arr Jtau;
+    Ktuple(-1)->jacobianTau(tau, Jtau);
     CHECK_GE(tau, 1e-10, "");
     y /= tau;
     if(!!J){
       J /= tau;
-      arr Jtau;  Ktuple(-1)->jacobianTime(Jtau, Ktuple(-1)->frames(0));  expandJacobian(Jtau, Ktuple, -1);
+      expandJacobian(Jtau, Ktuple, -1);
       J += (-1./tau)*y*Jtau;
     }
 #endif
     return;
   }
+
+#if 0
+  if(order==2){
+    arr y0, y1, Jy0, Jy1;
+    order--;
+    phi(y0, (!!J?Jy0:NoArr), Ktuple({0,-2}));  if(!!J) padJacobian(Jy0, Ktuple);
+    phi(y1, (!!J?Jy1:NoArr), Ktuple);
+    order++;
+
+    y = y1-y0; //difference!
+    if(!!J) J = Jy1 - Jy0;
+  }
+
+#else
 
   if(order==2){
     arr y0, y1, J0, J1;
@@ -139,6 +202,8 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
   }
 
   HALT("shoudn't be here");
+#endif
+
 }
 
 uint TM_AngVel::dim_phi(const rai::KinematicWorld &G){ return 3; }
@@ -167,3 +232,4 @@ void TM_LinAngVel::phi(arr& y, arr& J, const WorldL& Ktuple){
 }
 
 uint TM_LinAngVel::dim_phi(const rai::KinematicWorld& G){ return 6; }
+

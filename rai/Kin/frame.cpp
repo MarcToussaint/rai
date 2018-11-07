@@ -358,6 +358,7 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
         
       case JT_time:
         frame.tau = 1e-1 * q.elem(_qIndex);
+        if(frame.tau<1e-10) frame.tau=1e-10;
         break;
       default: NIY;
     }

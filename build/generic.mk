@@ -207,6 +207,7 @@ info: force
 	@echo "  NAME =" "$(NAME)"
 	@echo "  LIBPATH =" "$(LIBPATH)"
 	@echo "  EXTERNALS =" "$(EXTERNALS)"
+	@echo "  DEPEND_UBUNTU =" "$(DEPEND_UBUNTU)"
 	@echo "  CXX =" "$(CXX)"
 	@echo "  OPTIM =" "$(OPTIM)"
 	@echo "  CXXFLAGS =" "$(CXXFLAGS)"

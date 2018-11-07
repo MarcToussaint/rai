@@ -27,10 +27,17 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
 
   //get linear and angular accelerations
   arr acc, Jacc, wcc, Jwcc;
-  TM_Default pos(TMT_posDiff, i);
+  TM_LinVel pos(i);
   pos.order=2;
-  pos.Feature::phi(acc, (!!J?Jacc:NoArr), Ktuple);
-  acc(2) += gravity;
+  pos.phi(acc, (!!J?Jacc:NoArr), Ktuple);
+
+  double tau; arr Jtau;
+  Ktuple(-1)->jacobianTau(tau, Jtau);
+  acc(2) += gravity*tau;
+  if(!!J){
+    expandJacobian(Jtau, Ktuple, -1);
+    Jacc[2] += gravity*Jtau;
+  }
 
   TM_AngVel rot(i);
   rot.order=2;
@@ -47,7 +54,7 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
 
   mass = 1./mass;
   Imatrix = inverse_SymPosDef(Imatrix);
-  double forceScaling = 1e2;
+  double forceScaling = 1e1;
 
   for(rai::Contact *con:a->contacts){
     double sign = +1.;
@@ -69,12 +76,12 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
     K.kinematicsPos(p, Jp, a);
     if(!!J) expandJacobian(Jp, Ktuple, -2);
 
-    acc -= sign * forceScaling *mass* con->force;
-    if(!transOnly) wcc += sign * forceScaling *Imatrix* crossProduct(cp-p, con->force);
+    acc -= sign * forceScaling * mass * con->force;
+    if(!transOnly) wcc += sign * forceScaling * Imatrix * crossProduct(cp-p, con->force);
 
     if(!!J){
       Jacc -= sign * forceScaling *mass* Jf;
-      if(!transOnly) Jwcc += sign * forceScaling *Imatrix* (skew(cp-p) * Jf - skew(con->force) * (Jcp-Jp));
+      if(!transOnly) Jwcc += sign * forceScaling * Imatrix * (skew(cp-p) * Jf - skew(con->force) * (Jcp-Jp));
     }
   }
 
