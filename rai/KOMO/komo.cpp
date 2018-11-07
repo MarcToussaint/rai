@@ -1087,27 +1087,21 @@ void KOMO::setDiscreteOpt(uint k){
 void KOMO::setPoseOpt() {
   denseOptimization=true;
   setTiming(1., 2, 5., 1);
-//  setFixEffectiveJoints();
-//  setFixSwitchedObjects();
-  setSquaredQVelocities();
+//  setSquaredQVelocities();
   setSquaredQuaternionNorms();
 }
 
 void KOMO::setSequenceOpt(double _phases) {
   denseOptimization=false;
   setTiming(_phases, 2, 5., 1);
-//  setFixEffectiveJoints();
-//  setFixSwitchedObjects();
-  setSquaredQVelocities();
+//  setSquaredQVelocities();
   setSquaredQuaternionNorms();
 }
 
 void KOMO::setPathOpt(double _phases, uint stepsPerPhase, double timePerPhase) {
   denseOptimization=false;
   setTiming(_phases, stepsPerPhase, timePerPhase, 2);
-//  setFixEffectiveJoints();
-//  setFixSwitchedObjects();
-  setSquaredQAccelerations();
+//  setSquaredQAccelerations();
   setSquaredQuaternionNorms();
 }
 
@@ -1294,7 +1288,7 @@ void KOMO::optimize(){
   run();
 
   if(verbose>0){
-    Graph specs = getProblemGraph(true);
+    Graph specs = getProblemGraph(false);
     cout <<specs <<endl;
     cout <<getReport(false) <<endl; // Enables plot
   }

@@ -319,39 +319,39 @@ void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 // macros for halting/MSGs etc
 //
 
+
+//----- error handling:
+#define RAI_HERE __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<' ' //":" <<std::setprecision(5) <<rai::realTime() <<"s "
+
 namespace rai {
 extern String errString;
 }
 
-//----- error handling:
-#  define RAI_HERE __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<' ' //":" <<std::setprecision(5) <<rai::realTime() <<"s "
-
 #ifndef HALT
 #  define RAI_MSG(msg){ LOG(-1) <<msg; }
-#  define THROW(msg){ LOG(-1) <<msg; throw(rai::errString.p); }
-#  define HALT(msg){ LOG(-2) <<msg; exit(1); }
+#  define THROW(msg){ LOG(-1) <<msg; throw std::runtime_error(rai::errString.p); }
+#  define HALT(msg){ LOG(-2) <<msg; throw std::runtime_error(rai::errString.p); exit(1); }
 #  define NIY  { LOG(-2) <<"not implemented yet"; exit(1); }
 #  define NICO { LOG(-2) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(1); }
-#  define OPS  { LOG(-2) <<"obsolete"; exit(1); }
 #endif
 
 //----- check macros:
 #ifndef RAI_NOCHECK
 
 #define CHECK(cond, msg) \
-  if(!(cond)){ LOG(-2) <<"CHECK failed: '" <<#cond <<"' " <<msg;  throw rai::errString.p; }\
+  if(!(cond)){ LOG(-2) <<"CHECK failed: '" <<#cond <<"' " <<msg;  throw std::runtime_error(rai::errString.p); }\
 
 #define CHECK_ZERO(expr, tolerance, msg) \
-  if(fabs((double)(expr))>tolerance){ LOG(-2) <<"CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg; throw rai::errString.p; } \
+  if(fabs((double)(expr))>tolerance){ LOG(-2) <<"CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg; throw std::runtime_error(rai::errString.p); } \
 
 #define CHECK_EQ(A, B, msg) \
-  if(!(A==B)){ LOG(-2) <<"CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw rai::errString.p; } \
+  if(!(A==B)){ LOG(-2) <<"CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw std::runtime_error(rai::errString.p); } \
 
 #define CHECK_GE(A, B, msg) \
-  if(!(A>=B)){ LOG(-2) <<"CHECK_GE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw rai::errString.p; } \
+  if(!(A>=B)){ LOG(-2) <<"CHECK_GE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw std::runtime_error(rai::errString.p); } \
 
 #define CHECK_LE(A, B, msg) \
-  if(!(A<=B)){ LOG(-2) <<"CHECK_LE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw rai::errString.p; } \
+  if(!(A<=B)){ LOG(-2) <<"CHECK_LE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw std::runtime_error(rai::errString.p); } \
 
 #else
 #define CHECK(cond, msg)

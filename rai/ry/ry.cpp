@@ -106,6 +106,13 @@ arr numpy2arr(const pybind11::array& X){
   return Y;
 }
 
+arr vecvec2arr(const std::vector<std::vector<double>>& X){
+  CHECK(X.size()>0, "");
+  arr Y(X.size(), X[0].size());
+  for(uint i=0;i<Y.d0;i++) for(uint j=0;j<Y.d1;j++) Y(i,j) = X[i][j];
+  return Y;
+}
+
 #define METHOD_set(method) .def(#method, [](ry::Config& self) { self.set()->method(); } )
 #define METHOD_set1(method, arg1) .def(#method, [](ry::Config& self) { self.set()->method(arg1); } )
 
@@ -469,24 +476,27 @@ PYBIND11_MODULE(libry, m) {
   } )
 
   .def("addSwitch_dynamicTrans", [](ry::RyKOMO& self, double startTime, double endTime, const char* from, const char* to){
-      self.komo->addSwitch_dynamicTrans(startTime, endTime, from, to, 0.);
+      self.komo->addSwitch_dynamicTrans(startTime, endTime, from, to);
   } )
 
-  .def("addContact_elasticBounce", [](ry::RyKOMO& self, double time, const char* from, const char* to, double elasticity, double stickiness){
+  .def("addInteraction_elasticBounce", [](ry::RyKOMO& self, double time, const char* from, const char* to, double elasticity, double stickiness){
       self.komo->addContact_elasticBounce(time, from, to, elasticity, stickiness);
   }, "", py::arg("time"),
-       py::arg("from"),
-          py::arg("to"),
-          py::arg("elasticity") = .8,
-          py::arg("stickiness") = 0. )
+      py::arg("from"),
+      py::arg("to"),
+      py::arg("elasticity") = .8,
+      py::arg("stickiness") = 0. )
 
-  .def("addObjective", [](ry::RyKOMO& self, const std::vector<double>& time, const ObjectiveType& type, const FeatureSymbol& feature, const ry::I_StringA& frames, const std::vector<double>& scale, const std::vector<double>& target, int order){
+  .def("addObjective", [](ry::RyKOMO& self, const std::vector<double>& time, const ObjectiveType& type, const FeatureSymbol& feature, const ry::I_StringA& frames, const std::vector<double> scale, const std::vector<std::vector<double>> scaleTrans, const std::vector<double>& target, int order){
+    arr _scale = arr(scale);
+    if(scaleTrans.size()) _scale=vecvec2arr(scaleTrans);
     self.komo->addObjective(arr(time), type, feature, I_conv(frames), arr(scale), arr(target), order);
   },"", py::arg("time")=std::vector<double>(),
       py::arg("type"),
       py::arg("feature"),
       py::arg("frames")=ry::I_StringA(),
       py::arg("scale")=std::vector<double>(),
+      py::arg("scaleTrans")=std::vector<std::vector<double>>(),
       py::arg("target")=std::vector<double>(),
       py::arg("order")=-1 )
 
