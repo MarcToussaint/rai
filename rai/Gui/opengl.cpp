@@ -1124,7 +1124,7 @@ void glRasterImage(float x, float y, byteA &img, float zoom) {
   };
 }
 
-void OpenGL::watchImage(const floatA &_img, bool wait, float _zoom) {
+int OpenGL::watchImage(const floatA &_img, bool wait, float _zoom) {
   static byteA img;
   resizeAs(img, _img);
   float x;
@@ -1132,14 +1132,15 @@ void OpenGL::watchImage(const floatA &_img, bool wait, float _zoom) {
     x=_img.elem(i);
     img.elem(i) = (x<0.)?0:((x>255.)?255:x);
   }
-  watchImage(img, wait, _zoom);
+  return watchImage(img, wait, _zoom);
 }
 
-void OpenGL::watchImage(const byteA &_img, bool wait, float _zoom) {
+int OpenGL::watchImage(const byteA &_img, bool wait, float _zoom) {
   background=_img;
   backgroundZoom=_zoom;
   //resize(img->d1*zoom,img->d0*zoom);
-  if(wait) watch(); else update();
+  if(wait) return watch();
+  return update();
 }
 
 /*void glWatchImage(const floatA &x, bool wait, float zoom){
@@ -1156,7 +1157,7 @@ void OpenGL::watchImage(const byteA &_img, bool wait, float _zoom) {
   glWatchImage(img, wait, 20);
 }*/
 
-void OpenGL::displayGrey(const arr &x, bool wait, float _zoom) {
+int OpenGL::displayGrey(const arr &x, bool wait, float _zoom) {
   static byteA img;
   resizeAs(img, x);
   double mi=x.min(), ma=x.max();
@@ -1164,10 +1165,10 @@ void OpenGL::displayGrey(const arr &x, bool wait, float _zoom) {
   for(uint i=0; i<x.N; i++) {
     img.elem(i)=(byte)(255.*(x.elem(i)-mi)/(ma-mi));
   }
-  watchImage(img, wait, _zoom);
+  return watchImage(img, wait, _zoom);
 }
 
-void OpenGL::displayRedBlue(const arr &x, bool wait, float _zoom) {
+int OpenGL::displayRedBlue(const arr &x, bool wait, float _zoom) {
   double mi=x.min(), ma=x.max();
   text.clear() <<"max=" <<ma <<"min=" <<mi <<endl;
 //  cout <<"\rdisplay" <<win <<" max=" <<ma <<"min=" <<mi;
@@ -1179,7 +1180,7 @@ void OpenGL::displayRedBlue(const arr &x, bool wait, float _zoom) {
     if(x.elem(i)<0.) img(i, 2)=(byte)(255.*x.elem(i)/mi);
   }
   img.reshape(x.d0, x.d1, 3);
-  watchImage(img, wait, _zoom);
+  return watchImage(img, wait, _zoom);
 }
 
 void glDrawUI(void *p) {
