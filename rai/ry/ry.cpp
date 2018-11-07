@@ -1,3 +1,5 @@
+#ifdef RAI_PYBIND
+
 #include "ry.h"
 #include "lgp-py.h"
 
@@ -652,3 +654,5 @@ PYBIND11_MODULE(libry, m) {
 #undef ENUMVAL
 
 }
+
+#endif

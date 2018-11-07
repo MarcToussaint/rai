@@ -158,17 +158,17 @@ void Event::callback(Var_base *v, int revision){
     int newEventStatus = eventFct(variables, variableRevisions, i);
     //  cout <<"event callback: BOOL=" <<eventStatus <<' ' <<s <<' ' <<status <<" statuses=" <<statuses <<endl;
     auto lock = statusMutex();
-    //  if(eventStatus){
-    //    cout <<"event callback: STATUS TRUE" <<endl;
-    if(this->status!=newEventStatus) setStatus(newEventStatus);
-    //  }else{
-    //    if(this->status!=AS_init && this->status!=AS_false) setStatus(AS_false);
-    //  }
+//    if(this->status!=newEventStatus)
+      setStatus(newEventStatus);
   }else{ //we don't have an eventFct, just increment value
     incrementStatus();
   }
 }
 
+Event::Event(const rai::Array<Var_base*>& _variables, const EventFunction& _eventFct, int initialState)
+  : Signaler(initialState), eventFct(_eventFct) {
+  for(Var_base *v:_variables) listenTo(*v);
+}
 
 Event::~Event() {
   stopListening();
@@ -190,29 +190,31 @@ int Signaler::getStatus(bool userHasLocked) const {
   return i;
 }
 
-void Signaler::waitForSignal(bool userHasLocked) {
+bool Signaler::waitForSignal(bool userHasLocked, double timeout) {
   if(!userHasLocked) statusMutex.lock(); // else CHECK_EQ(mutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
-  int rc = pthread_cond_wait(&cond, &statusMutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  if(!userHasLocked) statusMutex.unlock();
-}
+  if(timeout<0.) {
+    int rc = pthread_cond_wait(&cond, &statusMutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  } else {
+    struct timespec ts_timeout;
+    clock_gettime(CLOCK_REALTIME, &ts_timeout); //CLOCK_MONOTONIC, &timeout);
+    long secs = (long)(floor(timeout));
+    timeout -= secs;
+    ts_timeout.tv_sec  += secs;
+    ts_timeout.tv_nsec += (long)(floor(1e9 * timeout));
+    if(ts_timeout.tv_nsec>1000000000l) {
+      ts_timeout.tv_sec+=1;
+      ts_timeout.tv_nsec-=1000000000l;
+    }
 
-bool Signaler::waitForSignal(double seconds, bool userHasLocked) {
-  struct timespec timeout;
-  clock_gettime(CLOCK_REALTIME, &timeout); //CLOCK_MONOTONIC, &timeout);
-  long secs = (long)(floor(seconds));
-  seconds -= secs;
-  timeout.tv_sec  += secs;
-  timeout.tv_nsec += (long)(floor(1e9 * seconds));
-  if(timeout.tv_nsec>1000000000l) {
-    timeout.tv_sec+=1;
-    timeout.tv_nsec-=1000000000l;
+    int rc = pthread_cond_timedwait(&cond, &statusMutex.mutex, &ts_timeout);
+    if(rc && rc!=ETIMEDOUT) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+    if(rc==ETIMEDOUT) {
+      if(!userHasLocked) statusMutex.unlock();
+      return false;
+    }
   }
-  
-  if(!userHasLocked) statusMutex.lock(); // else CHECK_EQ(mutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
-  int rc = pthread_cond_timedwait(&cond, &statusMutex.mutex, &timeout);
-  if(rc && rc!=ETIMEDOUT) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   if(!userHasLocked) statusMutex.unlock();
-  return rc!=ETIMEDOUT;
+  return true;
 }
 
 bool Signaler::waitForEvent(std::function<bool()> f, bool userHasLocked) {
@@ -225,49 +227,47 @@ bool Signaler::waitForEvent(std::function<bool()> f, bool userHasLocked) {
   
 }
 
-bool Signaler::waitForStatusEq(int i, bool userHasLocked, double seconds) {
+bool Signaler::waitForStatusEq(int i, bool userHasLocked, double timeout) {
   if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
   while(status!=i) {
-    if(seconds<0.) {
-      int rc = pthread_cond_wait(&cond, &statusMutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-    } else {
-      bool succ = waitForSignal(seconds, true);
-      if(!succ) {
-        if(!userHasLocked) statusMutex.unlock();
-        return false;
-      }
-    }
+    bool succ = waitForSignal(true, timeout);
+    if(!succ){ if(!userHasLocked) statusMutex.unlock();  return false; }
   }
   if(!userHasLocked) statusMutex.unlock();
   return true;
 }
 
-int Signaler::waitForStatusNotEq(int i, bool userHasLocked) {
+int Signaler::waitForStatusNotEq(int i, bool userHasLocked, double timeout) {
   if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
   while(status==i) {
-    int rc = pthread_cond_wait(&cond, &statusMutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+    bool succ = waitForSignal(true, timeout);
+    if(!succ){ if(!userHasLocked) statusMutex.unlock();  return false; }
   }
   int _status=status;
   if(!userHasLocked) statusMutex.unlock();
   return _status;
 }
 
-int Signaler::waitForStatusGreaterThan(int i, bool userHasLocked) {
+int Signaler::waitForStatusGreaterThan(int i, bool userHasLocked, double timeout) {
   if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
   while(status<=i) {
-    int rc = pthread_cond_wait(&cond, &statusMutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+    bool succ = waitForSignal(true, timeout);
+    if(!succ){ if(!userHasLocked) statusMutex.unlock();  return false; }
   }
   int _status=status;
   if(!userHasLocked) statusMutex.unlock();
   return _status;
 }
 
-void Signaler::waitForStatusSmallerThan(int i, bool userHasLocked) {
+int Signaler::waitForStatusSmallerThan(int i, bool userHasLocked, double timeout) {
   if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
   while(status>=i) {
-    int rc = pthread_cond_wait(&cond, &statusMutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+    bool succ = waitForSignal(true, timeout);
+    if(!succ){ if(!userHasLocked) statusMutex.unlock();  return false; }
   }
+  int _status=status;
   if(!userHasLocked) statusMutex.unlock();
+  return _status;
 }
 
 //===========================================================================
