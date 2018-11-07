@@ -1281,16 +1281,18 @@ void KOMO::run() {
   if(verbose>1) cout <<getReport(false) <<endl;
 }
 
-void KOMO::optimize(){
-  reset();
+void KOMO::optimize(bool initialize){
+  if(initialize) reset();
+  CHECK_EQ(configurations.N, T+k_order, "");
+
   if(verbose>0) reportProblem();
 
   run();
 
   if(verbose>0){
-    Graph specs = getProblemGraph(false);
+    Graph specs = getProblemGraph(true);
     cout <<specs <<endl;
-    cout <<getReport(false) <<endl; // Enables plot
+    cout <<getReport(true) <<endl; // Enables plot
   }
 }
 
@@ -1935,7 +1937,7 @@ Graph KOMO::getProblemGraph(bool includeValues){
     g.newNode<rai::String>({"type"}, {}, STRING(task->type));
     g.newNode<double>({"scale"}, {}, task->prec.last());
     if(task->target.N) g.newNode<arr>({"target"}, {}, task->target);
-    if(task->vars.N) g.newNode<intA>({"confs"}, {}, task->vars);
+//    if(task->vars.N) g.newNode<intA>({"confs"}, {}, task->vars);
     g.copy(task->map->getSpec(world), true);
     if(includeValues){
       arr V;

@@ -164,7 +164,7 @@ struct KOMO : NonCopyable {
   void reset(double initNoise=.01);  ///< reset the optimizer (initializes x to a default path)
   void initWithWaypoints(const arrA& waypoints);
   void run();                        ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
-  void optimize();
+  void optimize(bool initialize=true);
 
   rai::KinematicWorld& getConfiguration(double phase);
   arr getJointState(double phase);

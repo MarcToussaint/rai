@@ -539,6 +539,10 @@ PYBIND11_MODULE(libry, m) {
     self.komo->optimize();
   } )
 
+  .def("reoptimize", [](ry::RyKOMO& self){
+    self.komo->optimize(false);
+  } )
+
   .def("getT", [](ry::RyKOMO& self){
     return self.komo->T;
   } )
@@ -565,6 +569,10 @@ PYBIND11_MODULE(libry, m) {
 
   .def("display", [](ry::RyKOMO& self){
     self.komo->displayPath(true, true);
+  } )
+
+  .def("displayTrajectory", [](ry::RyKOMO& self){
+    self.komo->displayTrajectory(1., false, true, "z.vid/");
   } )
   ;
 
