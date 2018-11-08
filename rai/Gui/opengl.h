@@ -214,10 +214,10 @@ struct OpenGL {
   void about(std::ostream& os=std::cout);
   
   /// @name to display image data (kind of misuse)
-  void watchImage(const byteA &img, bool wait, float backgroundZoom);
-  void watchImage(const floatA &img, bool wait, float backgroundZoom);
-  void displayGrey(const arr &x, bool wait, float backgroundZoom);
-  void displayRedBlue(const arr &x, bool wait, float backgroundZoom);
+  int watchImage(const byteA &img, bool wait, float backgroundZoom);
+  int watchImage(const floatA &img, bool wait, float backgroundZoom);
+  int displayGrey(const arr &x, bool wait, float backgroundZoom);
+  int displayRedBlue(const arr &x, bool wait, float backgroundZoom);
   
   void drawId(uint id);
   

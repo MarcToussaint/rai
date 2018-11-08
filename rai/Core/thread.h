@@ -147,7 +147,6 @@ struct Var_data : Var_base {
 
   Var_data(const char* name) : Var_base(typeid(T), &data, name), data() {} // default constructor for value always initializes, also primitive types 'bool' or 'int'
   ~Var_data() { CHECK(!rwlock.isLocked(), "can't destroy a variable when it is currently accessed!"); }
-
 };
 
 template<class T> bool operator==(const Var_data<T>&,const Var_data<T>&) { return false; }
@@ -204,7 +203,7 @@ struct Var {
   int deAccess() {    return data->deAccess((Thread*)thread); }
   int getRevision() { data->rwlock.readLock(); int r=data->revision; data->rwlock.unlock(); return r; }
   bool hasNewRevision() { return getRevision()>last_read_revision; }
-  void waitForNextRevision(uint multipleRevisions=0) { data->waitForStatusGreaterThan(last_read_revision+multipleRevisions); }
+  void waitForNextRevision(uint multipleRevisions=0) { waitForRevisionGreaterThan(last_read_revision+multipleRevisions); }
   int waitForRevisionGreaterThan(int rev);
   void waitForValueEq(const T& x) {
     data->waitForEvent([this, &x]()->bool {
@@ -253,13 +252,12 @@ struct Signaler {
   void statusUnlock();
   
   int  getStatus(bool userHasLocked=false) const;
-  void waitForSignal(bool userHasLocked=false);
-  bool waitForSignal(double seconds, bool userHasLocked=false);
+  bool waitForSignal(bool userHasLocked=false, double timeout=-1.);
   bool waitForEvent(std::function<bool()> f, bool userHasLocked=false);
-  bool waitForStatusEq(int i, bool userHasLocked=false, double seconds=-1.);    ///< return value is the state after the waiting
-  int waitForStatusNotEq(int i, bool userHasLocked=false); ///< return value is the state after the waiting
-  int waitForStatusGreaterThan(int i, bool userHasLocked=false); ///< return value is the state after the waiting
-  void waitForStatusSmallerThan(int i, bool userHasLocked=false); ///< return value is the state after the waiting
+  bool waitForStatusEq(int i, bool userHasLocked=false, double timeout=-1.);    ///< return value is the state after the waiting
+  int waitForStatusNotEq(int i, bool userHasLocked=false, double timeout=-1.); ///< return value is the state after the waiting
+  int waitForStatusGreaterThan(int i, bool userHasLocked=false, double timeout=-1.); ///< return value is the state after the waiting
+  int waitForStatusSmallerThan(int i, bool userHasLocked=false, double timeout=-1.); ///< return value is the state after the waiting
 };
 
 //===========================================================================
@@ -272,8 +270,7 @@ struct Event : Signaler {
   intA variableRevisions;
 
   Event(int initialState=0) : Signaler(initialState) {}
-  Event(const rai::Array<Var_base*>& _variables, const EventFunction& _eventFct, int initialState=0)
-    : Signaler(initialState), variables(_variables), eventFct(_eventFct) { NIY }
+  Event(const rai::Array<Var_base*>& _variables, const EventFunction& _eventFct, int initialState=0);
   ~Event();
 
   void listenTo(Var_base& v);
