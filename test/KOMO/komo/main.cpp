@@ -18,6 +18,7 @@ void TEST(Easy){
   KOMO_ext komo;
   komo.setModel(K, true);
   komo.setPathOpt(1., 100, 5.);
+  komo.setSquaredQAccelerations();
 
   //-- set a time optim objective
 //  komo.addObjective(-1., -1., new TM_Time(), OT_sos, {}, 1e2, 1); //smooth time evolution
@@ -49,13 +50,14 @@ void TEST(Align){
   KOMO_ext komo;
   komo.setModel(K);
   komo.setPathOpt(1., 100, 5.);
+  komo.setSquaredQAccelerations();
 
 //  komo.setPosition(1., 1., "endeff", "target");
   komo.addObjective({1.}, OT_sos, FS_positionRel, {"target", "endeff"});
 //  komo.setOrientation(1., 1., "endeff", "target", OT_eq);
 //  komo.addObjective({1.}, OT_eq, FS_scalarProductXZ, {"target", "endeff"});
 //  komo.addObjective({1.}, OT_eq, FS_scalarProductYZ, {"target", "endeff"});
-  komo.addObjective({1.}, OT_sos, FS_scalarProductZZ, {"target", "endeff"}, 1e2, {1.});
+  komo.addObjective({1.}, OT_sos, FS_scalarProductZZ, {"target", "endeff"}, {1e2}, {1.});
   komo.setSlowAround(1., .02);
   komo.add_collision(true);
 
@@ -85,6 +87,7 @@ void TEST(PR2){
   KOMO_ext komo;
   komo.setModel(K);
   komo.setPathOpt(1., 100, 10.);
+  komo.setSquaredQAccelerations();
   komo.setPosition(1., 1., "endeff", "target");
   komo.setSlowAround(1., .02);
   komo.add_collision(true);

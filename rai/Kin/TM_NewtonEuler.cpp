@@ -31,12 +31,16 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   pos.order=2;
   pos.phi(acc, (!!J?Jacc:NoArr), Ktuple);
 
-  double tau; arr Jtau;
-  Ktuple(-1)->kinematicsTau(tau, Jtau);
-  acc(2) += gravity*tau;
-  if(!!J){
-    expandJacobian(Jtau, Ktuple, -1);
-    Jacc[2] += gravity*Jtau;
+  if(Ktuple(-1)->hasTimeJoint()){
+    double tau; arr Jtau;
+    Ktuple(-1)->kinematicsTau(tau, Jtau);
+    acc(2) += gravity*tau;
+    if(!!J){
+      expandJacobian(Jtau, Ktuple, -1);
+      Jacc[2] += gravity*Jtau;
+    }
+  }else{
+    acc(2) += gravity * Ktuple(-1)->frames.first()->tau;
   }
 
   TM_AngVel rot(i);

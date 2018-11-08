@@ -418,7 +418,7 @@ void TEST(FollowRedundantSequence){
 void TEST(Dynamics){
   rai::KinematicWorld G("arm7.g");
   G.optimizeTree();
-  G.fwdIndexIDs();
+  G.sortFrames();
   cout <<G <<endl;
 
   arr u;

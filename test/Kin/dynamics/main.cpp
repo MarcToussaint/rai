@@ -27,7 +27,7 @@ void TEST(Dynamics){
 //  rai::KinematicWorld G("arm7.g");
   rai::KinematicWorld G("mypr2.g");
   G.optimizeTree(false, true);
-  G.fwdIndexIDs();
+  G.sortFrames();
   cout <<G <<endl;
 
   arr u;

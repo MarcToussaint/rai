@@ -22,7 +22,8 @@ void plan(){
   KOMO_ext komo;
   komo.setModel(K, false);
   komo.setPathOpt(3., 20, 1.);
-
+  komo.setSquaredQAccelerations();
+  
   //permanent tasks: no collision, gravity
   komo.addObjective(-1., -1., new TM_PairCollision(K, "ball1", "ball2", TM_PairCollision::_negScalar, false), OT_ineq, {}, 1e2);
 
@@ -52,7 +53,7 @@ void plan(){
   komo.getReport(true);
   komo.checkGradients();
 
-  while(komo.displayTrajectory(-.01, true, "vid/z."));
+  for(uint i=0;i<2;i++) komo.displayTrajectory(-.01, true, "vid/z.");
   //renderConfigurations(komo.configurations, filePrefix, -komo.k_order, 600, 600, &komo.gl->camera);
 }
 

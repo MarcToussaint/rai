@@ -19,6 +19,7 @@ void TEST(Grasp){
   KOMO komo;
   komo.setModel(K);
   komo.setPathOpt(2.5, 10., 5.);
+  komo.setSquaredQAccelerations();
 //  komo.setIKOpt();
 
 //  komo.setPosition(1., -1., "endeff", "stick");
