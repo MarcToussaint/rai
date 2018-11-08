@@ -905,7 +905,7 @@ void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_w
 }
 #endif
 
-void rai::KinematicWorld::jacobianTau(double& tau, arr& J) const {
+void rai::KinematicWorld::kinematicsTau(double& tau, arr& J) const {
   Frame *a = frames.first();
   CHECK(a && a->joint && a->joint->type==JT_time, "this configuration does not have a tau DOF");
 
@@ -2575,6 +2575,11 @@ void rai::KinematicWorld::addTimeJoint(){
   rai::Joint *jt = new rai::Joint(*frames.first());
   jt->type = rai::JT_time;
   jt->H = 0.;
+}
+
+bool rai::KinematicWorld::hasTimeJoint(){
+  Frame *f = frames.first();
+  return f && f->joint && (f->joint->type==JT_time);
 }
 
 bool rai::KinematicWorld::checkConsistency() {

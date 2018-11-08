@@ -98,15 +98,17 @@ void TM_LinVel::phi(arr& y, arr& J, const WorldL& Ktuple){
     }
 
 #if 1
-    double tau = Ktuple(-1)->frames(0)->tau;
-    CHECK_GE(tau, 1e-10, "");
-    y /= tau;
-    if(!!J){
-      J /= tau;
-      arr Jtau;
-      Ktuple(-1)->jacobianTime(Jtau, Ktuple(-1)->frames(0));
-      expandJacobian(Jtau, Ktuple, -1);
-      J += (-1./tau)*y*Jtau;
+    if(Ktuple(-1)->hasTimeJoint()){
+      double tau; arr Jtau;
+      Ktuple(-1)->kinematicsTau(tau, (!!J?Jtau:NoArr));
+      CHECK_GE(tau, 1e-10, "");
+
+      y /= tau;
+      if(!!J){
+        J /= tau;
+        expandJacobian(Jtau, Ktuple, -1);
+        J += (-1./tau)*y*Jtau;
+      }
     }
 #endif
     return;
@@ -138,14 +140,17 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
     }
 
 #if 1
-    double tau; arr Jtau;
-    Ktuple(-1)->jacobianTau(tau, Jtau);
-    CHECK_GE(tau, 1e-10, "");
-    y /= tau;
-    if(!!J){
-      J /= tau;
-      expandJacobian(Jtau, Ktuple, -1);
-      J += (-1./tau)*y*Jtau;
+    if(Ktuple(-1)->hasTimeJoint()){
+      double tau; arr Jtau;
+      Ktuple(-1)->kinematicsTau(tau, (!!J?Jtau:NoArr));
+      CHECK_GE(tau, 1e-10, "");
+
+      y /= tau;
+      if(!!J){
+        J /= tau;
+        expandJacobian(Jtau, Ktuple, -1);
+        J += (-1./tau)*y*Jtau;
+      }
     }
 #endif
     return;
@@ -222,9 +227,9 @@ void TM_LinAngVel::phi(arr& y, arr& J, const WorldL& Ktuple){
 //  rai::Frame *b1 = Ktuple.elem(-1)->frames(i);    CHECK(&b1->K==Ktuple.elem(-1),"");
 //  cout <<"SWITCH " <<b0->parent->name <<'-' <<b0->name <<" => " <<b1->parent->name <<'-' <<b1->name <<endl;
 
-  TM_Default lin(TMT_pos, i);
+  TM_LinVel lin(i);
   lin.order=order;
-  lin.Feature::phi(y({0,2})(), (!!J?J({0,2})():NoArr), Ktuple);
+  lin.phi(y({0,2})(), (!!J?J({0,2})():NoArr), Ktuple);
 
   TM_AngVel ang(i);
   ang.order=order;

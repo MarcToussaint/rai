@@ -32,7 +32,7 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   pos.phi(acc, (!!J?Jacc:NoArr), Ktuple);
 
   double tau; arr Jtau;
-  Ktuple(-1)->jacobianTau(tau, Jtau);
+  Ktuple(-1)->kinematicsTau(tau, Jtau);
   acc(2) += gravity*tau;
   if(!!J){
     expandJacobian(Jtau, Ktuple, -1);

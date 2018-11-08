@@ -564,7 +564,7 @@ PYBIND11_MODULE(libry, m) {
   } )
 
   .def("display", [](ry::RyKOMO& self){
-    self.komo->displayPath(true, true);
+    self.komo->displayPath(false, true);
   } )
 
   .def("displayTrajectory", [](ry::RyKOMO& self){

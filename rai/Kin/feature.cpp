@@ -31,17 +31,21 @@ void Feature::phi(arr& y, arr& J, const WorldL& Ktuple) {
 
   if(flipTargetSignOnNegScalarProduct) if(scalarProduct(y0, y1)<-.0) { y0 *= -1.;  if(!!J) Jy0 *= -1.; }
 
-  double tau = Ktuple(-1)->frames(0)->tau;
-  y = (y1-y0)/tau; //penalize velocity
+  y = y1-y0;
+  if(!!J) J = Jy1 - Jy0;
 
-  if(!!J){
-    J = Jy1 - Jy0;
-    J /= tau;
-    arr Jtau;  Ktuple(-1)->jacobianTime(Jtau, Ktuple(-1)->frames(0));
-    expandJacobian(Jtau, Ktuple, -1);
-    J += (-1./tau)*y*Jtau;
+  if(Ktuple(-1)->hasTimeJoint()){
+    double tau; arr Jtau;
+    Ktuple(-1)->kinematicsTau(tau, (!!J?Jtau:NoArr));
+    CHECK_GE(tau, 1e-10, "");
+
+    y /= tau;
+    if(!!J){
+      J /= tau;
+      expandJacobian(Jtau, Ktuple, -1);
+      J += (-1./tau)*y*Jtau;
+    }
   }
-
 #else
 
   uint k = order;
