@@ -75,15 +75,17 @@ struct KinPathViewer : Thread {
 
 //===========================================================================
 
-struct KinPoseViewer : Thread {
-  Var<rai::KinematicWorld> modelWorld;
-  rai::Array<Var<arr>*> poses; ///< poses to be watched
+struct KinPoseViewer : Thread, GLDrawer {
+  Var<rai::KinematicWorld> model;
+  Var<arr> frameState; ///< poses to be watched
+  uint frameCount=0;
   //-- internal (private)
   OpenGL gl;
   rai::KinematicWorld copy;
   WorldL copies;
   
   KinPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec=-1.);
+  KinPoseViewer(Var<rai::KinematicWorld>& _kin, const Var<arr>& _frameState, double beatIntervalSec=-1.);
   ~KinPoseViewer();
   
   void recopyKinematics(const rai::KinematicWorld& world=NoWorld);
@@ -91,6 +93,8 @@ struct KinPoseViewer : Thread {
   void open();
   void step();
   void close();
+
+  void glDraw(OpenGL &gl);
 };
 
 //===========================================================================

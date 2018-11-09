@@ -217,60 +217,80 @@ void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix,
 
 //===========================================================================
 
-KinPoseViewer::KinPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec)
-  : Thread(STRING("KinPoseViewer_"<<poseVarNames), beatIntervalSec),
-    modelWorld(this, modelVarName, false),
-    gl(STRING("KinPoseViewer: " <<poseVarNames)) {
-  for(const String& varname: poseVarNames) {
-    poses.append(new Var<arr>(this, varname, (beatIntervalSec<0.)));   //listen only when beatInterval=1.
-    copies.append(new rai::KinematicWorld());
-  }
-  copy = modelWorld.get();
-  computeMeshNormals(copy.frames);
-  for(rai::KinematicWorld *w: copies) w->copy(copy, true);
-  if(beatIntervalSec>=0.) threadLoop();
+//KinPoseViewer::KinPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec)
+//  : Thread(STRING("KinPoseViewer_"<<poseVarNames), beatIntervalSec),
+//    model(this, modelVarName, false),
+//    gl(STRING("KinPoseViewer: " <<poseVarNames)) {
+//  for(const String& varname: poseVarNames) {
+//    poses.append(new Var<arr>(this, varname, (beatIntervalSec<0.)));   //listen only when beatInterval=1.
+//    copies.append(new rai::KinematicWorld());
+//  }
+//  copy = model.get();
+//  computeMeshNormals(copy.frames);
+//  for(rai::KinematicWorld *w: copies) w->copy(copy, true);
+//  if(beatIntervalSec>=0.) threadLoop();
+//}
+
+KinPoseViewer::KinPoseViewer(Var<rai::KinematicWorld>& _kin, const Var<arr>& _frameState, double beatIntervalSec)
+  : Thread("KinPoseViewer", beatIntervalSec),
+    model(this, _kin, (beatIntervalSec<0.)),
+    frameState(this, _frameState, (beatIntervalSec<0.)){
+  copy = model.get();
+  if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
 
 KinPoseViewer::~KinPoseViewer() {
   threadClose();
-  listDelete(copies);
-  listDelete(poses);
 }
 
 void KinPoseViewer::recopyKinematics(const rai::KinematicWorld& world) {
   stepMutex.lock();
-  if(!!world) copy=world;
-  else copy = modelWorld.get();
-  computeMeshNormals(copy.frames);
-  for(rai::KinematicWorld *w: copies) w->copy(copy, true);
+  if(!!world) copy = world;
+  else copy = model.get();
   stepMutex.unlock();
 }
 
 void KinPoseViewer::open() {
-  gl.add(glStandardScene, 0);
+  gl.add(*this);
   gl.camera.setDefault();
-  
-  for(uint i=0; i<copies.N; i++) gl.add(*copies(i));
-  //  gl.camera.focus(0.6, -0.1, 0.65);
-  //  gl.width = 1280;
-  //  gl.height = 960;
 }
 
 void KinPoseViewer::step() {
-//  copies.first()->proxies = modelWorld.get()->proxies;
-//  cout <<copy.proxies.N <<endl;
-  gl.dataLock.writeLock();
-  for(uint i=0; i<copies.N; i++) {
-    arr q=poses(i)->get();
-    if(q.N==copies(i)->getJointStateDimension())
-      copies(i)->setJointState(q);
-  }
-  gl.dataLock.unlock();
+  gl.text.clear() <<"step: " <<frameCount <<"\n[temporal profile is not displayed accuratly (tau path ignored)]";
   gl.update(NULL, false, false, true);
 }
 
 void KinPoseViewer::close() {
   gl.clear();
+}
+
+void KinPoseViewer::glDraw(OpenGL &gl) {
+#if 1 //def RAI_GL
+  auto modelGet = model.get();
+  auto frameStateGet = frameState.get();
+
+  if(!modelGet->frames.N) return;
+  if(!frameStateGet->N) return;
+
+  glStandardScene(NULL);
+
+
+  CHECK_EQ(frameStateGet->nd, 3, "");
+  uint n=modelGet->frames.N;
+  if(frameStateGet->d0<n) n=frameStateGet->d0;
+
+  for(uint i=0; i<n; i++) {
+    rai::Shape* sh = modelGet->frames(i)->shape;
+    if(sh && sh->geom){
+      if(frameCount >= frameStateGet->d1) frameCount = 0;
+      rai::Transformation X;
+      X.set(&frameStateGet->operator()(i, frameCount, 0));
+      glTransform(X);
+      sh->geom->glDraw(gl);
+    }
+  }
+  frameCount++;
+#endif
 }
 
 //===========================================================================

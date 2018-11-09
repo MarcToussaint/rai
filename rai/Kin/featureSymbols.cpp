@@ -43,6 +43,8 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
   "physics",
   "contactConstraints",
   "energy",
+  "transAccelerations",
+  "transVelocities",
   NULL
 };
 
@@ -106,6 +108,13 @@ Feature* symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::K
   if(feat==FS_physics) { return new TM_NewtonEuler(world, frames(0)); }
   if(feat==FS_contactConstraints) { return new TM_Contact_ForceIsNormal(world, frames(0), frames(1)); }
   if(feat==FS_energy) { return new TM_Energy(); }
+
+  if(feat==FS_transAccelerations) { return new TM_Transition(world); }
+  if(feat==FS_transVelocities) {
+    auto *map = new TM_Transition(world);
+    map->velCoeff = 1.;
+    map->accCoeff = 0.;
+    return map; }
 
   HALT("can't interpret feature symbols: " <<feat);
   return 0;

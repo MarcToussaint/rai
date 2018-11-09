@@ -11,6 +11,51 @@
 #include <Kin/kinViewer.h>
 #include <KOMO/komo.h>
 #include <Kin/cameraview.h>
+#include <Gui/viewer.h>
+
+namespace ry{
+
+  typedef Var<rai::KinematicWorld> Config;
+
+  struct ConfigViewer { shared_ptr<KinViewer> view; };
+  struct PathViewer { shared_ptr<KinPoseViewer> view; };
+  struct ImageViewer { shared_ptr<::ImageViewer> view; };
+  struct PointCloudViewer { shared_ptr<::PointCloudViewer> view; };
+
+  struct RyKOMO{
+    RyKOMO(){}
+    RyKOMO(ry::Config& self){
+      komo = make_shared<KOMO>(self.get());
+      config.set() = komo->world;
+      komo->setIKOpt();
+    }
+    RyKOMO(ry::Config& self, uint numConfigs){
+      CHECK_GE(numConfigs, 1, "");
+      komo = make_shared<KOMO>(self.get());
+      config.set() = komo->world;
+      komo->setDiscreteOpt(numConfigs);
+    }
+    RyKOMO(ry::Config& self, double phases, uint stepsPerPhase, double timePerPhase){
+      komo = make_shared<KOMO>(self.get());
+      config.set() = komo->world;
+      komo->setPathOpt(phases, stepsPerPhase, timePerPhase);
+    }
+
+    shared_ptr<KOMO> komo;
+    Var<rai::KinematicWorld> config;
+    Var<arr> path;
+  };
+
+  struct RyFeature { Feature *feature=0; };
+
+  struct RyCameraView {
+    shared_ptr<rai::CameraView> cam;
+    Var<byteA> image;
+    Var<arr> depth;
+    Var<byteA> segmentation;
+    Var<arr> pts;
+  };
+}
 
 namespace ry{
 

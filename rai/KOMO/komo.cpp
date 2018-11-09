@@ -935,9 +935,11 @@ void KOMO::setSkeleton(const Skeleton &S, bool ignoreSwitches) {
     if(s.symbols(0)=="stableOn") {  if(!ignoreSwitches) addSwitch_stableOn(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2));  continue;  }
     if(s.symbols(0)=="dynamic") {   if(!ignoreSwitches) addSwitch_dynamic(s.phase0, s.phase1+1., "base", s.symbols(1));  continue;  }
     if(s.symbols(0)=="dynamicOn") { if(!ignoreSwitches) addSwitch_dynamicOn(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2));  continue;  }
+    if(s.symbols(0)=="dynamicTrans") { if(!ignoreSwitches) addSwitch_dynamicTrans(s.phase0, s.phase1+1., "base", s.symbols(1));  continue;  }
     if(s.symbols(0)=="liftDownUp") {  setLiftDownUp(s.phase0, s.symbols(1), .4);  continue;  }
 
     if(s.symbols(0)=="contact") {   addContact_slide(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
+    if(s.symbols(0)=="bounce") {   addContact_elasticBounce(s.phase0, s.symbols(1), s.symbols(2), .8);  continue;  }
     //if(s.symbols(0)=="contactComplementary") {   addContact_Complementary(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
 
 //    if(s.symbols(0)=="magicTouch") {
@@ -1571,7 +1573,7 @@ void KOMO::setupConfigurations() {
 //    listDelete(configurations);
 
   if(useSwift) {
-    makeConvexHulls(world.frames);
+//    makeConvexHulls(world.frames);
     world.swift().setCutoff(2.*getParameter<double>("swiftCutoff", 0.11));
   }
   computeMeshNormals(world.frames, true);
@@ -2295,9 +2297,10 @@ arr KOMO::getPath(const uintA &joints) {
   return X;
 }
 
-arr KOMO::getPath_frames(const StringA &frames) {
+arr KOMO::getPath_frames(const StringA &frame) {
   uintA _frames;
-  for(const rai::String& f:frames) _frames.append( world.getFrameByName(f)->ID );
+  if(frame.N) for(const rai::String& f:frame) _frames.append( world.getFrameByName(f)->ID );
+  else _frames.setStraightPerm(world.frames.N);
   return getPath_frames(_frames);
 }
 

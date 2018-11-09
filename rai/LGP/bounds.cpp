@@ -1,7 +1,10 @@
 #include "bounds.h"
 //#include <Kin/switch.h>
 
-void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S, const rai::KinematicWorld& startKinematics, const rai::KinematicWorld& effKinematics, bool collisions, const arrA& waypoints){
+void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
+                    const rai::KinematicWorld& startKinematics,
+                    const rai::KinematicWorld& effKinematics,
+                    bool collisions, const arrA& waypoints){
   double maxPhase=0;
   for(const SkeletonEntry& s:S) if(s.phase1>maxPhase) maxPhase=s.phase1;
   komo.clearObjectives();

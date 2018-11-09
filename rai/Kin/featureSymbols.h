@@ -47,6 +47,9 @@ enum FeatureSymbol {
   FS_physics,
   FS_contactConstraints,
   FS_energy,
+
+  FS_transAccelerations,
+  FS_transVelocities,
 };
 
 namespace rai{

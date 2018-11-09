@@ -173,7 +173,7 @@ struct KOMO : NonCopyable {
   arr getPath(const uintA& joints);
   arr getPath(const StringA& joints);
   arr getPath_frames(const uintA &frames);
-  arr getPath_frames(const StringA &frames);
+  arr getPath_frames(const StringA &frame={});
   arrA getPath_q();
   arr getPath_tau();
   arr getPath_times();

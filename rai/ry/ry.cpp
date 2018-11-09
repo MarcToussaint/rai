@@ -5,7 +5,6 @@
 
 #include <Core/graph.h>
 #include <Kin/frame.h>
-#include <Gui/viewer.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -13,29 +12,6 @@
 
 namespace py = pybind11;
 
-namespace ry{
-
-  typedef Var<rai::KinematicWorld> Config;
-
-  struct ConfigViewer { shared_ptr<KinViewer> view; };
-  struct ImageViewer { shared_ptr<::ImageViewer> view; };
-  struct PointCloudViewer { shared_ptr<::PointCloudViewer> view; };
-
-  struct RyKOMO{
-    shared_ptr<KOMO> komo;
-    Var<arr> path;
-  };
-
-  struct RyFeature { Feature *feature=0; };
-
-  struct RyCameraView {
-    shared_ptr<rai::CameraView> cam;
-    Var<byteA> image;
-    Var<arr> depth;
-    Var<byteA> segmentation;
-    Var<arr> pts;
-  };
-}
 
 py::dict graph2dict(const Graph& G){
   py::dict dict;
@@ -89,6 +65,16 @@ py::list graph2list(const Graph& G){
 
   }
   return list;
+}
+
+Skeleton list2skeleton(const py::list& L){
+  Skeleton S;
+  for(uint i=0;i<L.size();i+=2){
+    std::vector<double> when = L[i].cast<std::vector<double> >();
+    ry::I_StringA symbols = L[i+1].cast<ry::I_StringA>();
+    S.append(SkeletonEntry(when[0], when[1], I_conv(symbols)));
+  }
+  return S;
 }
 
 py::tuple uintA2tuple(const uintA& tup){
@@ -316,6 +302,7 @@ PYBIND11_MODULE(libry, m) {
   .def("komo_IK", [](ry::Config& self){
     ry::RyKOMO komo;
     komo.komo = make_shared<KOMO>(self.get());
+    komo.config.set() = komo.komo->world;
     komo.komo->setIKOpt();
     return komo;
   } )
@@ -324,6 +311,7 @@ PYBIND11_MODULE(libry, m) {
     CHECK_GE(numConfigs, 1, "");
     ry::RyKOMO komo;
     komo.komo = make_shared<KOMO>(self.get());
+    komo.config.set() = komo.komo->world;
     komo.komo->setDiscreteOpt(numConfigs);
     return komo;
   } )
@@ -331,6 +319,7 @@ PYBIND11_MODULE(libry, m) {
   .def("komo_path",  [](ry::Config& self, double phases, uint stepsPerPhase, double timePerPhase){
     ry::RyKOMO komo;
     komo.komo = make_shared<KOMO>(self.get());
+    komo.config.set() = komo.komo->world;
     komo.komo->setPathOpt(phases, stepsPerPhase, timePerPhase);
     return komo;
   }, "",
@@ -351,10 +340,11 @@ PYBIND11_MODULE(libry, m) {
   //===========================================================================
 
   py::class_<ry::ConfigViewer>(m, "ConfigViewer");
+  py::class_<ry::PathViewer>(m, "PathViewer");
   py::class_<ry::PointCloudViewer>(m, "PointCloudViewer");
   py::class_<ry::ImageViewer>(m, "ImageViewer");
 
-  //=====================================pybind11::array(X.dim(), X.p);======================================
+  //===========================================================================
 
   py::class_<ry::RyCameraView>(m, "CameraView")
   .def("addSensor", [](ry::RyCameraView& self, const char* name, const char* frameAttached, uint width, uint height, double focalLength, double orthoAbsHeight, const std::vector<double>& zRange, const std::string& backgroundImageFile){
@@ -548,8 +538,18 @@ PYBIND11_MODULE(libry, m) {
     self.komo->addObjective(ARR(conf1, conf2), OT_eq, FS_poseDiff, {tableOrGripper, object});
   } )
 
+  .def("addSkeleton", [](ry::RyKOMO& self, const py::list& L){
+    Skeleton S = list2skeleton(L);
+    cout <<"SKELETON: " <<S <<endl;
+    self.komo->setSkeleton(S);
+//    skeleton2Bound(*self.komo, BD_path, S, self.komo->world, self.komo->world, false);
+  } )
+
+  //-- run
+
   .def("optimize", [](ry::RyKOMO& self){
     self.komo->optimize();
+    self.path.set() = self.komo->getPath_frames();
   } )
 
   //-- read out
@@ -591,6 +591,14 @@ PYBIND11_MODULE(libry, m) {
   .def("getCosts", [](ry::RyKOMO& self){
     Graph R = self.komo->getReport(false);
     return R.get<double>("sqrCosts");
+  } )
+
+  //-- display
+
+  .def("view", [](ry::RyKOMO& self){
+    ry::PathViewer view;
+    view.view = make_shared<KinPoseViewer>(self.config, self.path, .1);
+    return view;
   } )
 
   .def("display", [](ry::RyKOMO& self){
@@ -677,6 +685,9 @@ PYBIND11_MODULE(libry, m) {
       ENUMVAL(FS,physics)
       ENUMVAL(FS,contactConstraints)
       ENUMVAL(FS,energy)
+
+      ENUMVAL(FS,transAccelerations)
+      ENUMVAL(FS,transVelocities)
 
       .export_values();
 #undef ENUMVAL
