@@ -1655,15 +1655,21 @@ void KOMO::reportProxies(std::ostream& os, double belowMargin) {
   }
 }
 
-void KOMO::reportContacts(std::ostream& os) {
+Graph KOMO::getContacts(std::ostream& os) {
+  Graph G;
   int s=0;
   for(auto &K:configurations) {
-    if(K->contacts.N){
-      os <<" ** CONTACTS t=" <<s-(int)k_order <<endl;
-      for(rai::Contact *con:K->contacts) cout <<"   " <<*con <<endl;
+    for(rai::Contact *con:K->contacts){
+      Graph& g = G.newSubgraph() -> graph();
+      g.newNode<int>({"at"}, {}, s-(int)k_order);
+      g.newNode<rai::String>({"from"}, {}, con->a.name);
+      g.newNode<rai::String>({"to"}, {}, con->b.name);
+      g.newNode<arr>({"force"}, {}, con->force);
+      g.newNode<arr>({"poa"}, {}, con->position);
     }
     s++;
   }
+  return G;
 }
 
 struct EffJointInfo {
@@ -2287,6 +2293,12 @@ arr KOMO::getPath(const uintA &joints) {
     X[t] = configurations(k_order+t)->getJointState(joints);
   }
   return X;
+}
+
+arr KOMO::getPath_frames(const StringA &frames) {
+  uintA _frames;
+  for(const rai::String& f:frames) _frames.append( world.getFrameByName(f)->ID );
+  return getPath_frames(_frames);
 }
 
 arr KOMO::getPath_frames(const uintA &frames) {

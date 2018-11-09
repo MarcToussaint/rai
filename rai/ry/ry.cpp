@@ -21,7 +21,10 @@ namespace ry{
   struct ImageViewer { shared_ptr<::ImageViewer> view; };
   struct PointCloudViewer { shared_ptr<::PointCloudViewer> view; };
 
-  struct RyKOMO{ shared_ptr<KOMO> komo; };
+  struct RyKOMO{
+    shared_ptr<KOMO> komo;
+    Var<arr> path;
+  };
 
   struct RyFeature { Feature *feature=0; };
 
@@ -122,6 +125,9 @@ arr vecvec2arr(const std::vector<std::vector<double>>& X){
 PYBIND11_MODULE(libry, m) {
 
   //===========================================================================
+  //
+  // Config
+  //
 
   py::class_<ry::Config>(m, "Config")
       .def(py::init<>())
@@ -131,6 +137,8 @@ PYBIND11_MODULE(libry, m) {
   .def("copy", [](ry::Config& self, ry::Config& K2) {
     self.set()->copy(K2.get());
   } )
+
+  //-- setup/edit the configuration
 
   .def("addFile", [](ry::Config& self, const std::string& file) {
     self.set()->addFile(file.c_str());
@@ -447,6 +455,9 @@ PYBIND11_MODULE(libry, m) {
   ;
 
   //===========================================================================
+  //
+  // KOMO
+  //
 
   py::class_<ry::RyKOMO>(m, "KOMOpy")
   .def("makeObjectsFree", [](ry::RyKOMO& self, const ry::I_StringA& objs){
@@ -541,6 +552,8 @@ PYBIND11_MODULE(libry, m) {
     self.komo->optimize();
   } )
 
+  //-- read out
+
   .def("getT", [](ry::RyKOMO& self){
     return self.komo->T;
   } )
@@ -548,6 +561,21 @@ PYBIND11_MODULE(libry, m) {
   .def("getConfiguration", [](ry::RyKOMO& self, int t){
     arr X = self.komo->configurations(t+self.komo->k_order)->getFrameState();
     return pybind11::array(X.dim(), X.p);
+  } )
+
+  .def("getPathFrames", [](ry::RyKOMO& self, const ry::I_StringA& frames){
+    arr X = self.komo->getPath_frames(I_conv(frames));
+    return pybind11::array(X.dim(), X.p);
+  } )
+
+  .def("getPathTau", [](ry::RyKOMO& self){
+    arr X = self.komo->getPath_tau();
+    return pybind11::array(X.dim(), X.p);
+  } )
+
+  .def("getForceInteractions", [](ry::RyKOMO& self){
+    Graph G = self.komo->getContacts();
+    return graph2list(G);
   } )
 
   .def("getReport", [](ry::RyKOMO& self){
