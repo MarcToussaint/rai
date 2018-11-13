@@ -25,8 +25,30 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char
   if(orthoAbsHeight>0.) cam.setHeightAbs(orthoAbsHeight);
 
   cam.setWHRatio((double)width/height);
+
+  if(sen.frame) cam.X = sen.frame->X;
+
   done(__func__);
   return sen;
+}
+
+rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char* frameAttached){
+    rai::Frame *frame = K.getFrameByName(frameAttached);
+
+    CHECK(frame, "frame '" <<frameAttached <<"' is not defined");
+
+  double width=400., height=200.;
+  double focalLength=-1.;
+  double orthoAbsHeight=-1.;
+  arr zRange;
+
+  frame->ats.get<double>(focalLength, "focalLength");
+  frame->ats.get<double>(orthoAbsHeight, "orthoAbsHeight");
+  frame->ats.get<arr>(zRange, "zRange");
+  frame->ats.get<double>(width, "width");
+  frame->ats.get<double>(height, "height");
+
+  return addSensor(name, frameAttached, width, height, focalLength, orthoAbsHeight, zRange);
 }
 
 rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName){
@@ -170,6 +192,10 @@ rai::Sim_CameraView::Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatI
     color(this),
     depth(this),
     C(model.get()()){
+  if(_cameraFrameName){
+      C.addSensor(_cameraFrameName, _cameraFrameName);
+      C.selectSensor(_cameraFrameName);
+  }
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
 

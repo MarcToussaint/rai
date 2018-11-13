@@ -1931,7 +1931,7 @@ void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
   //if the joint is coupled to another:
   {
     Joint *j;
-    for(Frame *f: frames) if((j=f->joint) && j->mimic) {
+    for(Frame *f: frames) if((j=f->joint) && j->mimic==(Joint*)1) {
       Node *mim = f->ats["mimic"];
       rai::String jointName;
       if(mim->isOfType<rai::String>()) jointName = mim->get<rai::String>();
