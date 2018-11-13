@@ -681,9 +681,9 @@ void rai::Joint::read(const Graph &G) {
 void rai::Joint::write(std::ostream& os) const {
   os <<" joint:" <<type;
   if(H) os <<" ctrl_H:"<<H;
-  if(limits.N) os <<" limits=[" <<limits <<"]";
+  if(limits.N) os <<" limits:[" <<limits <<"]";
   if(mimic) {
-    os <<" mimic:" <<mimic->frame.name;
+    os <<" mimic:(" <<mimic->frame.name <<')';
   }
   
   Node *n;

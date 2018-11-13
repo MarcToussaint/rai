@@ -788,7 +788,7 @@ rai::LogToken::~LogToken() {
       if(log_level==-1) { cout <<"** WARNING:" <<rai::errString <<endl; }
       if(log_level==-2) { cerr <<"** ERROR:" <<rai::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
       if(log_level==-3) { cerr <<"** HARD EXIT! " <<rai::errString <<endl; /*rai::logServer().mutex.unlock();*/ exit(1); }
-      if(log_level<=-2) raise(SIGUSR2);
+      if(log_level<=-3) raise(SIGUSR2);
     }
   }
 //  rai::logServer().mutex.unlock();
@@ -838,6 +838,13 @@ char *rai::String::StringBuf::getIpos() { return gptr(); }
 
 //-- direct memory operations
 void rai::String::append(char x) { resize(N+1, true); operator()(N-1)=x; }
+
+void String::prepend(const rai::String& s){
+  uint n=N;
+  resize(n+s.N, true);
+  memmove(p+s.N, p, n);
+  memmove(p, s, s.N);
+}
 
 rai::String& rai::String::setRandom() {
   resize(rnd(2,6), false);

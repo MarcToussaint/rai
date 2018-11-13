@@ -40,7 +40,7 @@ typedef const char* charp;
 
 //----- macros to define the standard <<and >>operatos for most my classes:
 #define stdInPipe(type)\
-  inline std::istream& operator>>(std::istream& is, type& x){ x.read(is);return is; }
+  inline std::istream& operator>>(std::istream& is, type& x){ x.read(is); return is; }
 #define stdOutPipe(type)\
   inline std::ostream& operator<<(std::ostream& os, const type& x){ x.write(os); return os; }
 #define stdPipes(type)\
@@ -236,6 +236,7 @@ public:
   String& printf(const char *format, ...);
   void resize(uint n, bool copy); //low-level resizing the string buffer - with additinal final 0
   void append(char x);
+  void prepend(const String& s);
   String& setRandom();
   
   /// @name resetting

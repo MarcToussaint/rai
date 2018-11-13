@@ -22,7 +22,23 @@ int MAIN(int argc,char **argv){
     if(rai::argc==2 && rai::argv[1][0]!='-') file=rai::argv[1];
     cout <<"opening file `" <<file <<"'" <<endl;
 
-    rai::KinematicWorld K(file);
+    rai::KinematicWorld K;
+    for(;;){
+    Inotify ino(file);
+    try {
+      rai::lineCount=1;
+      K <<FILE(file);
+      K.report();
+      break;
+    } catch(std::runtime_error& err) {
+      cout <<"line " <<rai::lineCount <<": " <<err.what() <<" -- please check the file and press ENTER" <<endl;
+      for(;;) {
+        if(ino.poll(false, true)) break;
+        rai::wait(.02);
+      }
+    }
+    }
+
 
     K.checkConsistency();
     K >>FILE("z.g");

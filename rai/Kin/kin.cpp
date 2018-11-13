@@ -157,7 +157,6 @@ rai::KinematicWorld::KinematicWorld(const rai::KinematicWorld& other) : Kinemati
 
 rai::KinematicWorld::KinematicWorld(const char* filename) : KinematicWorld() {
   init(filename);
-  
 }
 
 rai::KinematicWorld::~KinematicWorld() {
@@ -1933,16 +1932,24 @@ void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
   {
     Joint *j;
     for(Frame *f: frames) if((j=f->joint) && j->mimic) {
-        rai::String jointName;
-        bool good = f->ats.get(jointName, "mimic");
-        if(!good) HALT("something is wrong");
-        if(!jointName.N) { j->mimic=NULL; continue; }
-        rai::Frame *mimicFrame = getFrameByName(jointName);
-        CHECK(mimicFrame, "");
-        j->mimic = mimicFrame->joint;
-        if(!j->mimic) HALT("The joint '" <<*j <<"' is declared coupled to '" <<jointName <<"' -- but that doesn't exist!");
-        j->type = j->mimic->type;
+      Node *mim = f->ats["mimic"];
+      rai::String jointName;
+      if(mim->isOfType<rai::String>()) jointName = mim->get<rai::String>();
+      else if(mim->isOfType<NodeL>()){
+        NodeL nodes = mim->get<NodeL>();
+        jointName = nodes.scalar()->keys.last();
+      }else{
+        HALT("could not retrieve minimick frame for joint '" <<f->name <<"' from ats '" <<f->ats <<"'");
       }
+      rai::Frame *mimicFrame = getFrameByName(jointName);
+      CHECK(mimicFrame, "");
+      j->mimic = mimicFrame->joint;
+      if(!j->mimic) HALT("The joint '" <<*j <<"' is declared coupled to '" <<jointName <<"' -- but that doesn't exist!");
+      j->type = j->mimic->type;
+
+      delete mim;
+      f->ats.index();
+    }
   }
   
   NodeL ucs = G.getNodes("Uncertainty");
@@ -3505,10 +3512,9 @@ void editConfiguration(const char* filename, rai::KinematicWorld& K, OpenGL &gl)
       K = W;
       gl.dataLock.unlock();
       K.report();
-    } catch(const char* msg) {
-      cout <<"line " <<rai::lineCount <<": " <<msg <<" -- please check the file and press ENTER" <<endl;
-      gl.watch();
-      continue;
+    } catch(std::runtime_error& err) {
+      cout <<"line " <<rai::lineCount <<": " <<err.what() <<" -- please check the file and re-save" <<endl;
+//      continue;
     }
     cout <<"watching..." <<endl;
     int key = -1;
