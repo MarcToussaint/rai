@@ -27,33 +27,35 @@ struct SimulationThread_self{
 };
 
 SimulationThread_self::SimulationThread_self()
-    : ROS("simulator"),
-      ref("MotionReference"),
-      command("command"),
-      currentQ("currentQ"),
-      objectPoses("objectPoses"),
-      objectNames("objectNames"){
+  : ROS("simulator"),
+    ref("MotionReference"),
+    command("command"),
+    currentQ("currentQ"),
+    objectPoses("objectPoses"),
+    objectNames("objectNames"){
 
-    //setup ros communication
-    sub_ref = ROS.subscribe(ref);
-    sub_command = ROS.subscribe(command);
+  //setup ros communication
+  sub_ref = ROS.subscribe(ref);
+  sub_command = ROS.subscribe(command);
 
-    pub_objectPoses = ROS.publish(objectPoses);
-    pub_currentQ = ROS.publish(currentQ);
+  pub_objectPoses = ROS.publish(objectPoses);
+  pub_currentQ = ROS.publish(currentQ);
 }
 
-SimulationThread::SimulationThread(const rai::KinematicWorld& K, double dt, bool _pubSubToROS)
+SimulationThread::SimulationThread(const rai::KinematicWorld& _K, double dt, bool _pubSubToROS)
   : Thread("SimulationIO", dt),
-    SIM(K, dt),
-    pubSubToROS(_pubSubToROS),
-    timeToGo("timeToGo"){
+    SIM(_K, dt),
+    pubSubToROS(_pubSubToROS) {
 
-    if(pubSubToROS){
-        self = new SimulationThread_self();
-        self->ROS.publish(self->pub_timeToGo, timeToGo);
-    }
+  K.set() = _K;
+  q0 = _K.getJointState();
 
-    threadLoop();
+  if(pubSubToROS){
+    self = new SimulationThread_self();
+    self->ROS.publish(self->pub_timeToGo, timeToGo);
+  }
+
+  threadLoop();
 }
 
 SimulationThread::~SimulationThread(){
@@ -83,13 +85,16 @@ void SimulationThread::step(){
 
   SIM.stepKin();
 
+  K.set() = SIM.K;
+  frameState.set() = SIM.getFrameState();
+  jointState.set() = SIM.getJointState();
   timeToGo.set() = SIM.getTimeToGo();
 
   //publish:
   if(pubSubToROS){
-      self->currentQ.set() = conv_arr2arr( SIM.getJointState() );
-      self->objectNames.set() = conv_StringA2StringA( SIM.getObjectNames() );
-      self->objectPoses.set() = conv_arr2arr( SIM.getObjectPoses() );
+    self->currentQ.set() = conv_arr2arr( SIM.getJointState() );
+    self->objectNames.set() = conv_StringA2StringA( SIM.getObjectNames() );
+    self->objectPoses.set() = conv_arr2arr( SIM.getObjectPoses() );
   }
 }
 
@@ -100,6 +105,48 @@ void SimulationThread::loop(){
     tictac.waitForTic();
     step();
   }
+}
+
+bool SimulationThread::executeMotion(const StringA& joints, const arr& path, const arr& times, double timeScale, bool append){
+  auto lock = stepMutex();
+  SIM.setUsedRobotJoints(joints);
+  SIM.exec(path, times*timeScale, append);
+  return true;
+}
+
+void SimulationThread::execGripper(const rai::String& gripper, double position, double force){
+  auto lock = stepMutex();
+  if(gripper=="pr2R"){
+    //  komo->addObjective(0., 0., OT_eq, FS_accumulatedCollisions, {}, 1e0);
+    //open gripper
+    //  komo->addObjective(0.,0., OT_sos, FS_qItself, {"r_gripper_joint"}, 1e1, {.08} );
+    //  komo->addObjective(0.,0., OT_sos, FS_qItself, {"r_gripper_l_finger_joint"}, 1e1, {.8} );
+
+    SIM.setUsedRobotJoints({"r_gripper_joint", "r_gripper_l_finger_joint"});
+    SIM.exec({1,2, {position, position*10.}}, {1.}, true);
+    return;
+  }
+  NIY
+}
+
+arr SimulationThread::getHomePose(){ return q0; }
+
+StringA SimulationThread::getJointNames(){
+  auto lock = stepMutex();
+  StringA joints = SIM.getJointNames();
+  return joints;
+}
+
+void SimulationThread::attach(const char *a, const char *b){
+  auto lock = stepMutex();
+  SIM.exec({"attach", a, b});
+}
+
+arr SimulationThread::getJointPositions(const StringA& joints){
+  auto lock = stepMutex();
+  SIM.setUsedRobotJoints(joints);
+  arr q = SIM.getJointState();
+  return q;
 }
 
 #endif

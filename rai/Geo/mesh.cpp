@@ -1018,7 +1018,7 @@ void rai::Mesh::read(std::istream& is, const char* fileExtension, const char* fi
   if(!strcmp(fileExtension, "tri")) { readTriFile(is); loaded=true; }
   if(!strcmp(fileExtension, "arr")) { readArr(is); loaded=true; }
   if(!strcmp(fileExtension, "stl") || !strcmp(fileExtension, "STL")) { loaded = readStlFile(is); }
-  if(!strcmp(fileExtension, "dae") || !strcmp(fileExtension, "DAE")) { *this = mesh_readAssimp(filename); }
+  if(!strcmp(fileExtension, "dae") || !strcmp(fileExtension, "DAE")) { *this = mesh_readAssimp(filename); loaded=true; }
   if(!loaded) HALT("can't read fileExtension '" <<fileExtension <<"' file '" <<filename <<"'");
 }
 

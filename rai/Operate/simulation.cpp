@@ -241,10 +241,18 @@ void Simulation::setCamera(const char* sensorName){
     NIY;
 }
 
+void Simulation::getCamera(byteA& image, arr& realDepth, arr& pointCloud, uint16A& kinectDepth){
+    NIY;
+}
+
 arr Simulation::getJointState(){
   auto lock = self->threadLock();
-
   return K.getJointState(self->currentlyUsedJoints);
+}
+
+arr Simulation::getFrameState(){
+  auto lock = self->threadLock();
+  return K.getFrameState();
 }
 
 arr Simulation::getObjectPoses(const StringA &objects){

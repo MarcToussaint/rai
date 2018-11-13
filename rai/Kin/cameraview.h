@@ -56,4 +56,22 @@ private:
   void done(const char* _code_);
 };
 
+//===========================================================================
+
+struct Sim_CameraView : Thread {
+  Var<rai::KinematicWorld> model;
+  //-- outputs
+  Var<byteA> color;
+  Var<arr> depth;
+
+  //-- internal (private)
+  CameraView C;
+
+  Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatIntervalSec=-1., const char* _cameraFrameName=NULL);
+  ~Sim_CameraView();
+  void open();
+  void step();
+  void close();
+};
+
 }

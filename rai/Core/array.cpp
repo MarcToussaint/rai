@@ -61,6 +61,7 @@ arr __NoArr(new SpecialArray(SpecialArray::ST_NoArr));
 arr& NoArr = *((arr*)&__NoArr);
 arrA& NoArrA = *((arrA*)NULL);
 uintA& NoUintA = *((uintA*)NULL);
+uint16A& NoUint16A = *((uint16A*)NULL);
 byteA& NoByteA = *((byteA*)NULL);
 intAA& NoIntAA = *((intAA*)NULL);
 uintAA& NoUintAA = *((uintAA*)NULL);

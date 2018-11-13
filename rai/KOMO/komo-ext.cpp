@@ -57,13 +57,13 @@ void addMotionTo(KOMO& komo, const arr& target_q, const StringA& target_joints, 
 
     if(up>0.){
       uint t0=up*komo.T+1;
-      for(uint t=0;t<t0;t++) profile[t] = ARR(0.,0., .5*((double(t)/t0)));
+      for(uint t=0;t<t0;t++) profile[t] = ARR(0.,0., .05*((double(t)/t0)));
       komo.addObjective(0., up, new TM_Default(TMT_posDiff, komo.world, endeff), OT_sos, profile, 1e2, 1);
     }
 
     if(down>0.){
       uint t0=down*komo.T-1;
-      for(uint t=t0;t<komo.T;t++) profile[t] = ARR(0.,0., -.5*(1.-double(t-t0)/(komo.T-1-t0)));
+      for(uint t=t0;t<komo.T;t++) profile[t] = ARR(0.,0., -.05*(1.-double(t-t0)/(komo.T-1-t0)));
       komo.addObjective(down, 1., new TM_Default(TMT_posDiff, komo.world, endeff), OT_sos, profile, 1e2, 1);
     }
   }

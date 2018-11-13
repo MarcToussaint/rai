@@ -3521,7 +3521,7 @@ void editConfiguration(const char* filename, rai::KinematicWorld& K, OpenGL &gl)
     }
     if(exit) break;
     gl.pressedkey=0;
-    if(key==32){
+    if(key==13 || key==32){
         cout <<"animating.." <<endl;
         //while(ino.pollForModification());
         key = animateConfiguration(K, gl, &ino);

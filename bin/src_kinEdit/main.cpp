@@ -2,8 +2,6 @@
 #include <Gui/opengl.h>
 #include <Core/graph.h>
 
-void mesh_readAssimp(char const*){}
-
 const char *USAGE=
 "\n\
 Usage:  kinEdit <g-filename>\n\
@@ -13,6 +11,7 @@ viewing the model in the OpenGL window (after pressing ENTER).\n\
 \n\
 Use the number keys 1 2 3 4 5 to toggle display options.\n\
 ";
+
 
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
@@ -30,7 +29,8 @@ int MAIN(int argc,char **argv){
     //some optional manipulations
     K.optimizeTree(false);
     K.calc_q();
-    if(K.fwdActiveSet.N == K.frames.N) K.fwdIndexIDs();
+    K.checkConsistency();
+    if(K.fwdActiveSet.N == K.frames.N) K.sortFrames();
     K >>FILE("z.g");
 //    makeConvexHulls(G.frames);
 //    computeOptimalSSBoxes(G.shapes);

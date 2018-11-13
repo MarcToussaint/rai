@@ -77,6 +77,7 @@ struct Simulation : GLDrawer{
 
   //-- true state info
   arr getJointState();
+  arr getFrameState();
   arr getObjectPoses(const StringA& objects={});
   StringA getJointNames();
   StringA getObjectNames();

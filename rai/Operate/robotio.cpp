@@ -108,11 +108,11 @@ struct RobotAbstraction_SimulationThread : RobotAbstraction {
     virtual double timeToGo(){
         return S.SIM.getTimeToGo();
     }
-    virtual arr getSensor(SensorId sensor){
+    virtual void getSensor(SensorId sensor, arr& data){
         auto lock = S.stepMutex();
         S.SIM.setCamera("pr2Kinect");
-//        S.SIM.getCamera(depth);
-        NIY;
+        S.SIM.getCamera(NoByteA, data, NoArr, NoUint16A);
+//        NIY;
     }
 };
 
@@ -311,3 +311,13 @@ RobotIO::~RobotIO(){
 }
 
 #endif
+
+void RobotAbstraction::waitForCompletion(){
+  timeToGo.waitForNextRevision(10);
+  for(;;){
+    timeToGo.waitForNextRevision();
+    double ttg = timeToGo.get();
+    if(!ttg) break;
+    cout <<"ttg:" <<timeToGo.get() <<endl;
+  }
+}

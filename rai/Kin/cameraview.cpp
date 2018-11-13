@@ -3,13 +3,15 @@
 
 extern bool Geo_mesh_drawColors; //UGLY!!
 
+//===========================================================================
+
 rai::CameraView::CameraView(const rai::KinematicWorld& _K, bool _background, int _watchComputations)
   : K(_K), background(_background), watchComputations(_watchComputations) {
 
   gl.add(*this);
 }
 
-rai::CameraView::Sensor&rai::CameraView::addSensor(const char* name, const char* frameAttached, uint width, uint height, double focalLength, double orthoAbsHeight, const arr& zRange, const char* backgroundImageFile){
+rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char* frameAttached, uint width, uint height, double focalLength, double orthoAbsHeight, const arr& zRange, const char* backgroundImageFile){
   Sensor& sen = sensors.append();
   sen.name = name;
   sen.frame = K.getFrameByName(frameAttached);
@@ -159,3 +161,35 @@ void rai::CameraView::done(const char* _func_){
   }
 }
 
+
+//===========================================================================
+
+rai::Sim_CameraView::Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatIntervalSec, const char* _cameraFrameName)
+  : Thread("Sim_CameraView", beatIntervalSec),
+    model(this, _kin, (beatIntervalSec<0.)),
+    color(this),
+    depth(this),
+    C(model.get()()){
+  if(beatIntervalSec>=0.) threadLoop(); else threadStep();
+}
+
+rai::Sim_CameraView::~Sim_CameraView() {
+  threadClose();
+}
+
+void rai::Sim_CameraView::open() {
+}
+
+void rai::Sim_CameraView::step() {
+  byteA img;
+  arr dep;
+  arr X = model.get()->getFrameState();
+  if(!X.N) return;
+  C.K.setFrameState(X);
+  C.computeImageAndDepth(img, dep);
+  color.set() = img;
+  depth.set() = dep;
+}
+
+void rai::Sim_CameraView::close() {
+}
