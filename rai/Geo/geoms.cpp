@@ -46,7 +46,10 @@ void rai::Geom::read(const Graph &ats) {
   else if(ats.get(d, "type"))    { type=(ShapeType)(int)d;}
   else if(ats.get(str, "type"))  { str>> type; }
   if(ats.get(str, "mesh"))     { mesh.read(FILE(str), str.getLastN(3).p, str); }
-  else if(ats.get(fil, "mesh"))     { mesh.read(fil.getIs(), fil.name.getLastN(3).p, fil.name); }
+  else if(ats.get(fil, "mesh"))     {
+    fil.changeDir();
+    mesh.read(fil.getIs(), fil.name.getLastN(3).p, fil.name);
+  }
   if(ats.get(d, "meshscale"))  { mesh.scale(d); }
   if(ats.get(x, "meshscale"))  { mesh.scale(x(0), x(1), x(2)); }
   

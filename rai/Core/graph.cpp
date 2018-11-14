@@ -678,6 +678,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
         str.read(is, "", "\'", true);
         try {
           node = newNode<rai::FileToken>(keys, parents, rai::FileToken(str, false));
+          node->get<rai::FileToken>().storeCWD();  //creates the ifstream and might throw an error
           node->get<rai::FileToken>().getIs();  //creates the ifstream and might throw an error
         } catch(...) {
           delete node; node=NULL;

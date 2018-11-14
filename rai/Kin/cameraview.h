@@ -22,7 +22,7 @@ struct CameraView : GLDrawer {
   rai::KinematicWorld K;       //the configuration
   rai::Array<Sensor> sensors;  //the list of sensors
 
-  enum RenderMode{ all, seg };
+  enum RenderMode{ all, seg, visuals };
   OpenGL gl;
 
   //-- run parameter
@@ -65,7 +65,7 @@ struct Sim_CameraView : Thread {
   Var<byteA> color;
   Var<arr> depth;
 
-  //-- internal (private)
+  //-- internal
   CameraView C;
 
   Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatIntervalSec=-1., const char* _cameraFrameName=NULL);

@@ -411,6 +411,7 @@ struct FileToken {
   FileToken& operator()() { return *this; }
   
   void decomposeFilename();
+  void storeCWD();
   void changeDir();
   void unchangeDir();
   bool exists();

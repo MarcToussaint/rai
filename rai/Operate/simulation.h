@@ -41,17 +41,12 @@ struct Simulation : GLDrawer{
   Simulation(const rai::KinematicWorld& _K, double dt=.01);
   ~Simulation();
 
-  //-- stepping physics
-  void stepPhysics(uint k=1);
+  //-- stepping forward in time
   void stepKin();
 
   //--
   void setJointState(const StringA& joints, const arr& q_ref);
   void setJointStateSafe(arr q_ref, StringA& jointsInLimit, StringA& collisionPairs);
-
-  //-- store and restore simulator state
-  rai::KinematicWorld getState();
-  void restoreState(rai::KinematicWorld& K);
 
   //-- the narrow action interface
   StringA getRobotJoints(); //info on the joints; the plan needs to have same dimensionality
@@ -65,19 +60,11 @@ struct Simulation : GLDrawer{
   double getTimeToGo();
   double trackingError();
 
-  //-- sensor readouts
-  void setCamera(const char* sensorName);
-  void setVisualObjects(const StringA& visualObjects, bool allButGiven=false);
-  void getCamera(byteA& image=NoByteA,
-                 arr& realDepth=NoArr, // z coordinate in meters, for each pixel
-                 arr& pointCloud=NoArr, // x,y,z coordinates in meters, for each pixel
-                 uint16A& kinectDepth=NoUint16A); // simulated kinect signal; kinectRgb is same as image
-  void getSegmentation(byteA& segmentation); //obj ID, for each pixel
-  arr  getFTsensor(const char* sensorFrameName);
-
   //-- true state info
   arr getJointState();
   arr getFrameState();
+
+  //TO BE REMOVED -> perceptual
   arr getObjectPoses(const StringA& objects={});
   StringA getJointNames();
   StringA getObjectNames();

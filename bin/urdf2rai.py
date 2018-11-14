@@ -15,19 +15,19 @@ def writeShape(link):
 
     elem = link.find("geometry/box")
     if elem is not None:
-        print 'type:ST_box size:[%s 0]' % elem.attrib['size'],
+        print 'type:box size:[%s 0]' % elem.attrib['size'],
 
     elem = link.find("geometry/sphere")
     if elem is not None:
-        print 'type:ST_sphere size:[0 0 0 %s]' % elem.attrib['radius'],
+        print 'type:sphere size:[0 0 0 %s]' % elem.attrib['radius'],
 
     elem = link.find("geometry/cylinder")
     if elem is not None:
-        print 'type:ST_cylinder size:[0 0 %s %s]' % (elem.attrib['length'], elem.attrib['radius']),
+        print 'type:cylinder size:[0 0 %s %s]' % (elem.attrib['length'], elem.attrib['radius']),
 
     elem = link.find("geometry/mesh")
     if elem is not None:
-        print 'type:ST_mesh mesh:\'%s\'' % elem.attrib['filename'],
+        print 'type:mesh mesh:\'%s\'' % elem.attrib['filename'],
         if elem.find("scale") is not None:
             print 'meshscale:[%s]' % elem.attrib['scale'],
 
@@ -66,14 +66,14 @@ for link in links:
     for visual in link.findall("visual"):
         print 'shape visual %s_1 (%s) {\n  ' % (name, name),
         writeShape(visual)
-        print '}\n', # end of shape
+        print ' visual }\n', # end of shape
 
     # collision shape
     for collision in link.findall("collision"):
         print 'shape collision %s_0 (%s) {\n  ' % (name, name),
         print ' color:[.8 .2 .2 .5],',
         writeShape(collision)
-        print ' contact }\n', # end of shape
+        print ' contact:-2 }\n', # end of shape
 
 
 joints = xmlData.findall("/joint")
@@ -87,11 +87,11 @@ for joint in joints:
         # figure out joint type
         att = joint.attrib.get('type')
         if att in ["revolute", "continuous"]:
-            print 'type:JT_hingeX',
+            print 'type:hingeX',
         if att == "prismatic":
-            print 'type:JT_transX',
+            print 'type:transX',
         if att == "fixed":
-            print 'type:JT_rigid',
+            print 'type:rigid',
 
         elem = joint.find("mimic")
         if elem is not None:

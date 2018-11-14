@@ -1076,11 +1076,8 @@ rai::FileToken::FileToken(const char* filename, bool change_dir) {
 
 rai::FileToken::FileToken(const FileToken& ft) {
   name=ft.name;
-  if(ft.path.N) {
-    NIY;
-    path=ft.path;
-    cwd=ft.cwd;
-  }
+  path=ft.path;
+  cwd=ft.cwd;
   is = ft.is;
   os = ft.os;
 }
@@ -1102,15 +1099,21 @@ void rai::FileToken::decomposeFilename() {
   }
 }
 
+void rai::FileToken::storeCWD() {
+  cwd = getcwd_string();
+}
+
 void rai::FileToken::changeDir() {
   if(path.N) {
     HALT("you've changed already?");
   } else {
     decomposeFilename();
     if(path.N && path!=".") {
-      cwd.resize(200, false);
-      if(!getcwd(cwd.p, 200)) HALT("couldn't get current dir");
-      cwd.resize(strlen(cwd.p), true);
+      if(cwd.N){
+        if(chdir(cwd)) HALT("couldn't change to absolute directory '" <<cwd <<"'");
+      }else{
+        storeCWD();
+      }
       LOG(3) <<"entering path `" <<path<<"' from '" <<cwd <<"'" <<std::endl;
       if(chdir(path)) HALT("couldn't change to directory '" <<path <<"' (current dir: '" <<cwd <<"')");
     }
@@ -1143,6 +1146,7 @@ std::ofstream& rai::FileToken::getOs() {
 
 std::ifstream& rai::FileToken::getIs(bool change_dir) {
   if(change_dir) changeDir();
+
   CHECK(!os,"don't use a FileToken both as input and output");
   if(!is) {
     is = std::make_shared<std::ifstream>();

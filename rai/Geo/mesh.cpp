@@ -1185,7 +1185,7 @@ void rai::Mesh::readPLY(const char *fn) {
   };
   
   FILE    *fp  = fopen(fn, "r");
-  CHECK(fp, "coult not open file " <<fn)
+  CHECK(fp, "coult not open file " <<fn <<" from path "<<getcwd_string())
   PlyFile *ply = read_ply(fp);
   
   //-- get the number of faces and vertices
@@ -1196,9 +1196,8 @@ void rai::Mesh::readPLY(const char *fn) {
     if(equal_strings("face",   elem_name)) _ntrigs = elem_count;
   }
   V.resize(_nverts,3);
-  C.resize(_nverts,3);
   T.resize(_ntrigs,3);
-  
+
   //-- examine each element type that is in the file (PlyVertex, PlyFace)
   for(int i = 0; i < ply->num_elem_types; ++i)  {
     int elem_count ;
@@ -1206,22 +1205,28 @@ void rai::Mesh::readPLY(const char *fn) {
     
     if(equal_strings("vertex", elem_name))   {
       /* set up for getting PlyVertex elements */
-      setup_property_ply(ply, &vert_props[0]);
-      setup_property_ply(ply, &vert_props[1]);
-      setup_property_ply(ply, &vert_props[2]);
-      setup_property_ply(ply, &vert_props[3]);
-      setup_property_ply(ply, &vert_props[4]);
-      setup_property_ply(ply, &vert_props[5]);
-      
+      int r=1;
+      r &= setup_property_ply(ply, &vert_props[0]);
+      r &= setup_property_ply(ply, &vert_props[1]);
+      r &= setup_property_ply(ply, &vert_props[2]);
+      if(!r) HALT("no vertices defined??");
+
+      r &= setup_property_ply(ply, &vert_props[3]);
+      r &= setup_property_ply(ply, &vert_props[4]);
+      r &= setup_property_ply(ply, &vert_props[5]);
+      if(r && C.N!=V.N) C.resize(_nverts,3); //has color
+
       Vertex vertex;
       for(uint j = 0; j < _nverts; ++j) {
         get_element_ply(ply, &vertex);
         V(j,0) = vertex.x;
         V(j,1) = vertex.y;
         V(j,2) = vertex.z;
-        C(j,0) = vertex.r;
-        C(j,1) = vertex.g;
-        C(j,2) = vertex.b;
+        if(C.N==V.N){
+          C(j,0) = vertex.r;
+          C(j,1) = vertex.g;
+          C(j,2) = vertex.b;
+        }
       }
     } else if(equal_strings("face", elem_name))  {
       /* set up for getting PlyFace elements */

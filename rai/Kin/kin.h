@@ -70,7 +70,7 @@ struct KinematicWorld : GLDrawer {
   
   //global options
   bool orsDrawJoints=false, orsDrawShapes=true, orsDrawBodies=true, orsDrawProxies=true, orsDrawMarkers=true, orsDrawColors=true, orsDrawIndexColors=false;
-  bool orsDrawMeshes=true, orsDrawCores=false, orsDrawZlines=false;
+  bool orsDrawVisualsOnly=false, orsDrawMeshes=true, orsDrawCores=false, orsDrawZlines=false;
   bool orsDrawBodyNames=false;
   double orsDrawAlpha=1.;
   uint orsDrawLimit=0;

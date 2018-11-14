@@ -34,5 +34,4 @@ struct SimulationThread : Thread, RobotAbstraction {
   virtual void attach(const char *a, const char *b);
   //-- feedback
   virtual arr getJointPositions(const StringA& joints={});
-
 };

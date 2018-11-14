@@ -65,7 +65,7 @@ rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName){
 
 void rai::CameraView::computeImageAndDepth(byteA& image, arr& depth){
   updateCamera();
-  renderMode=all;
+//  renderMode=all;
   if(!background)
     gl.update(NULL, true, true, true);
   else
@@ -152,9 +152,11 @@ void rai::CameraView::updateCamera(){
 }
 
 void rai::CameraView::glDraw(OpenGL& gl) {
-  if(renderMode==all){
+  if(renderMode==all || renderMode==visuals){
     glStandardScene(NULL);
     K.orsDrawMarkers = true;
+    if(renderMode==visuals) K.orsDrawVisualsOnly=true;
+
     K.glDraw(gl);
 
     for(Sensor& sen:sensors){
@@ -212,6 +214,7 @@ void rai::Sim_CameraView::step() {
   arr X = model.get()->getFrameState();
   if(!X.N) return;
   C.K.setFrameState(X);
+  C.renderMode=C.visuals;
   C.computeImageAndDepth(img, dep);
   color.set() = img;
   depth.set() = dep;
