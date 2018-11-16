@@ -505,7 +505,7 @@ PYBIND11_MODULE(libry, m) {
 
   .def("add_StableRelativePose", [](ry::RyKOMO& self, const std::vector<int>& confs, const char* gripper, const char* object){
       for(uint i=1;i<confs.size();i++)
-        self.komo->addObjective(ARR(confs[0], confs[1]), OT_eq, FS_poseDiff, {gripper, object});
+        self.komo->addObjective(ARR(confs[0], confs[i]), OT_eq, FS_poseDiff, {gripper, object});
       //  for(uint i=0;i<confs.size();i++) self.self->configurations(self.self->k_order+confs[i]) -> makeObjectsFree({object});
       self.komo->world.makeObjectsFree({object});
   },"", py::arg("confs"),
@@ -514,7 +514,7 @@ PYBIND11_MODULE(libry, m) {
 
   .def("add_StablePose", [](ry::RyKOMO& self, const std::vector<int>& confs, const char* object){
     for(uint i=1;i<confs.size();i++)
-      self.komo->addObjective(ARR(confs[0], confs[1]), OT_eq, FS_pose, {object});
+      self.komo->addObjective(ARR(confs[0], confs[i]), OT_eq, FS_pose, {object});
     //  for(uint i=0;i<confs.size();i++) self.self->configurations(self.self->k_order+confs[i]) -> makeObjectsFree({object});
     self.komo->world.makeObjectsFree({object});
   },"", py::arg("confs"),
@@ -614,7 +614,7 @@ PYBIND11_MODULE(libry, m) {
 
   .def("displayTrajectory", [](ry::RyKOMO& self){
     rai::system("mkdir -p z.vid");
-    self.komo->displayTrajectory(1., false, true, "z.vid/");
+    self.komo->displayTrajectory(1., false, false, "z.vid/");
   } )
   ;
 

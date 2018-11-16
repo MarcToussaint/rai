@@ -16,7 +16,9 @@ TM_Transition::TM_Transition(const rai::KinematicWorld& G, bool effectiveJointsO
   posCoeff = rai::getParameter<double>("Motion/TaskMapTransition/posCoeff",.0);
   velCoeff = rai::getParameter<double>("Motion/TaskMapTransition/velCoeff",.0);
   accCoeff = rai::getParameter<double>("Motion/TaskMapTransition/accCoeff",1.);
-  
+
+  order = 2;
+
   //transition cost metric
   H_rate = rai::getParameter<double>("Hrate", 1.);
   arr H_diag;
@@ -49,6 +51,9 @@ uint TM_Transition::dim_phi(const WorldL& G) {
 }
 
 void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple) {
+  if(velCoeff) CHECK(order>=1, "a velocity feature needs to have order>=1");
+  if(accCoeff) CHECK(order>=2, "an acceleration feature needs to have order>=2");
+
   bool handleSwitches=effectiveJointsOnly;
   uint qN=Ktuple(0)->q.N;
   for(uint i=0; i<Ktuple.N; i++) if(Ktuple(i)->q.N!=qN) { handleSwitches=true; break; }
