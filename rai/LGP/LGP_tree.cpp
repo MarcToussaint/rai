@@ -145,13 +145,13 @@ LGP_Tree::~LGP_Tree() {
 }
 
 void LGP_Tree::initDisplay() {
-//  if(!views.N) {
-//    views.resize(4);
-//    views(1) = make_shared<KinPathViewer>("pose", 1.2, -1);
-//    views(2) = make_shared<KinPathViewer>("sequence", 1.2, -1);
-//    views(3) = make_shared<KinPathViewer>("path", .05, -2);
-//    for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
-//  }
+  if(!views.N) {
+    views.resize(4);
+    views(1) = make_shared<KinPathViewer>("pose", 1.2, -1);
+    views(2) = make_shared<KinPathViewer>("sequence", 1.2, -1);
+    views(3) = make_shared<KinPathViewer>("path", .05, -2);
+    for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
+  }
   if(displayTree) rai::system("evince z.pdf &");
   if(!dth) dth = new DisplayThread(this);
 }
@@ -639,7 +639,7 @@ void LGP_Tree_SolutionData::write(std::ostream &os) const {
 
 void LGP_Tree_SolutionData::glDraw(OpenGL &gl) {
 #ifdef RAI_GL
-  uint l=BD_seqPath;
+  uint l=BD_path;
   rai::Array<rai::Geom*>& geoms = _GeomStore()->geoms;
   
   if(!paths(l).N) return;

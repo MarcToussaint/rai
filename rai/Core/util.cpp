@@ -116,16 +116,16 @@ void system(const char *cmd) {
 void open(std::ofstream& fs, const char *name, const char *errmsg) {
   fs.clear();
   fs.open(name);
-  LOG(3) <<"opening output file `" <<name <<"'" <<std::endl;
-  if(!fs.good()) RAI_MSG("could not open file `" <<name <<"' for output" <<errmsg);
+  LOG(3) <<"opening output file '" <<name <<"'" <<std::endl;
+  if(!fs.good()) RAI_MSG("could not open file '" <<name <<"' for output" <<errmsg);
 }
 
 /// open an input-file with name '\c name'
 void open(std::ifstream& fs, const char *name, const char *errmsg) {
   fs.clear();
   fs.open(name);
-  LOG(3) <<"opening input file `" <<name <<"'" <<std::endl;
-  if(!fs.good()) HALT("could not open file `" <<name <<"' for input" <<errmsg);
+  LOG(3) <<"opening input file '" <<name <<"'" <<std::endl;
+  if(!fs.good()) HALT("could not open file '" <<name <<"' for input" <<errmsg);
 }
 
 /// returns true if the (0-terminated) string s contains c
@@ -196,7 +196,7 @@ bool skipUntil(std::istream& is, const char *tag) {
 
 /// a global operator to scan (parse) strings from a stream
 bool parse(std::istream& is, const char *str, bool silent) {
-  if(!is.good()) { if(!silent) RAI_MSG("bad stream tag when scanning for `" <<str <<"'"); return false; }  //is.clear(); }
+  if(!is.good()) { if(!silent) RAI_MSG("bad stream tag when scanning for '" <<str <<"'"); return false; }  //is.clear(); }
   uint i, n=strlen(str);
   char buf[n+1]; buf[n]=0;
   rai::skip(is, " \n\r\t");
@@ -204,8 +204,8 @@ bool parse(std::istream& is, const char *str, bool silent) {
   if(!is.good() || strcmp(str, buf)) {
     for(i=n; i--;) is.putback(buf[i]);
     is.setstate(std::ios::failbit);
-    if(!silent)  RAI_MSG("(LINE=" <<rai::lineCount <<") parsing of constant string `" <<str
-                           <<"' failed! (read instead: `" <<buf <<"')");
+    if(!silent)  RAI_MSG("(LINE=" <<rai::lineCount <<") parsing of constant string '" <<str
+                           <<"' failed! (read instead: '" <<buf <<"')");
     return false;
   }
   return true;
@@ -910,7 +910,7 @@ char& rai::String::operator()(int i) const {
   return p[i];
 }
 
-/// return the substring from `start` to (exclusive) `end`.
+/// return the substring from 'start' to (exclusive) 'end'.
 rai::String rai::String::getSubString(int start, int end) const {
   if(start<0) start+=N;
   if(end<0) end+=N;
@@ -924,7 +924,7 @@ rai::String rai::String::getSubString(int start, int end) const {
 }
 
 /**
- * @brief Return the last `n` chars of the string.
+ * @brief Return the last 'n' chars of the string.
  * @param n number of chars to return
  */
 rai::String rai::String::getLastN(uint n) const {
@@ -932,7 +932,7 @@ rai::String rai::String::getLastN(uint n) const {
 }
 
 /**
- * @brief Return the first `n` chars of the string.
+ * @brief Return the first 'n' chars of the string.
  * @param n number of chars to return.
  */
 rai::String rai::String::getFirstN(uint n) const {
@@ -990,21 +990,21 @@ bool rai::String::contains(const String& substring) const {
   return p != NULL;
 }
 
-/// Return true iff the string starts with `substring`.
+/// Return true iff the string starts with 'substring'.
 bool rai::String::startsWith(const String& substring) const {
   return N>=substring.N && this->getFirstN(substring.N) == substring;
 }
 
-/// Return true iff the string starts with `substring`.
+/// Return true iff the string starts with 'substring'.
 bool rai::String::startsWith(const char* substring) const {
   return this->startsWith(rai::String(substring));
 }
 
-/// Return true iff the string ends with `substring`.
+/// Return true iff the string ends with 'substring'.
 bool rai::String::endsWith(const String& substring) const {
   return this->getLastN(substring.N) == substring;
 }
-/// Return true iff the string ends with `substring`.
+/// Return true iff the string ends with 'substring'.
 bool rai::String::endsWith(const char* substring) const {
   return this->endsWith(rai::String(substring));
 }
@@ -1068,9 +1068,14 @@ rai::String rai::getNowString() {
 // FileToken
 //
 
+rai::FileToken::FileToken() {
+  cwd = getcwd_string();
+}
+
 rai::FileToken::FileToken(const char* filename, bool change_dir) {
-  name=filename;
-  if(change_dir) changeDir();
+  cwd = getcwd_string();
+  name = filename;
+  if(change_dir) cd_file();
 //  if(!exists()) HALT("file '" <<filename <<"' does not exist");
 }
 
@@ -1082,9 +1087,7 @@ rai::FileToken::FileToken(const FileToken& ft) {
   os = ft.os;
 }
 
-rai::FileToken::~FileToken() {
-  unchangeDir();
-}
+rai::FileToken::~FileToken() {}
 
 /// change to the directory of the given filename
 void rai::FileToken::decomposeFilename() {
@@ -1099,35 +1102,22 @@ void rai::FileToken::decomposeFilename() {
   }
 }
 
-void rai::FileToken::storeCWD() {
-  cwd = getcwd_string();
+void rai::FileToken::cd_start() {
+  LOG(3) <<"entering path '" <<cwd<<"'" <<std::endl;
+  if(chdir(cwd)) HALT("couldn't change to directory '" <<cwd <<"'");
 }
 
-void rai::FileToken::changeDir() {
-  if(path.N) {
-    HALT("you've changed already?");
-  } else {
-    decomposeFilename();
-    if(path.N && path!=".") {
-      if(cwd.N){
-        if(chdir(cwd)) HALT("couldn't change to absolute directory '" <<cwd <<"'");
-      }else{
-        storeCWD();
-      }
-      LOG(3) <<"entering path `" <<path<<"' from '" <<cwd <<"'" <<std::endl;
-      if(chdir(path)) HALT("couldn't change to directory '" <<path <<"' (current dir: '" <<cwd <<"')");
-    }
-  }
-}
-
-void rai::FileToken::unchangeDir() {
-  if(cwd.N) {
-    LOG(3) <<"leaving path `" <<path<<"' back to '" <<cwd <<"'" <<std::endl;
-    if(chdir(cwd)) HALT("couldn't change back to directory '" <<cwd <<"'");
+void rai::FileToken::cd_file() {
+  cd_start();
+  if(!path.N) decomposeFilename();
+  if(path!=".") {
+    LOG(3) <<"entering path '" <<path<<"' from '" <<cwd <<"'" <<std::endl;
+    if(chdir(path)) HALT("couldn't change to directory '" <<path <<"' from '" <<cwd <<"'");
   }
 }
 
 bool rai::FileToken::exists() {
+  cd_file();
   struct stat sb;
   int r=stat(name, &sb);
   return r==0;
@@ -1136,23 +1126,23 @@ bool rai::FileToken::exists() {
 std::ofstream& rai::FileToken::getOs() {
   CHECK(!is,"don't use a FileToken both as input and output");
   if(!os) {
+    cd_file();
     os = std::make_shared<std::ofstream>();
     os->open(name);
-    LOG(3) <<"opening output file `" <<name <<"'" <<std::endl;
-    if(!os->good()) RAI_MSG("could not open file `" <<name <<"' for output");
+    LOG(3) <<"opening output file '" <<name <<"'" <<std::endl;
+    if(!os->good()) RAI_MSG("could not open file '" <<name <<"' for output from '" <<cwd <<"./" <<path <<"'");
   }
   return *os;
 }
 
 std::ifstream& rai::FileToken::getIs(bool change_dir) {
-  if(change_dir) changeDir();
-
   CHECK(!os,"don't use a FileToken both as input and output");
   if(!is) {
+    if(change_dir) cd_file();
     is = std::make_shared<std::ifstream>();
     is->open(name);
-    LOG(3) <<"opening input file `" <<name <<"'" <<std::endl;
-    if(!is->good()) THROW("could not open file `" <<name <<"' for input");
+    LOG(3) <<"opening input file '" <<name <<"'" <<std::endl;
+    if(!is->good()) THROW("could not open file '" <<name <<"' for input from '" <<cwd <<"./" <<path <<"'");
   }
   return *is;
 }

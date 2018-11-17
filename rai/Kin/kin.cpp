@@ -167,14 +167,18 @@ rai::KinematicWorld::~KinematicWorld() {
 }
 
 void rai::KinematicWorld::init(const char* filename) {
-  Graph G(FILE(filename));
+  rai::FileToken file(filename);
+  Graph G(file);
   G.checkConsistency();
   init(G, false);
+  file.cd_start();
 }
 
 void rai::KinematicWorld::addFile(const char* filename) {
-  Graph G(FILE(filename));
+  rai::FileToken file(filename);
+  Graph G(file);
   init(G, true);
+  file.cd_start();
 }
 
 rai::Frame* rai::KinematicWorld::addFrame(const char* name, const char* parent, const char* args){
