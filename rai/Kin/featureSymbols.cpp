@@ -76,6 +76,10 @@ Feature* symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::K
   if(feat==FS_vectorXDiff) {  return new TM_Default(TMT_vecDiff, world, frames(0), Vector_x, frames(1), Vector_x); }
   if(feat==FS_vectorXRel) {  return new TM_Default(TMT_vec, world, frames(0), Vector_x, frames(1), Vector_x); }
 
+  if(feat==FS_vectorY) {  return new TM_Default(TMT_vec, world, frames(0), Vector_y); }
+  if(feat==FS_vectorYDiff) {  return new TM_Default(TMT_vecDiff, world, frames(0), Vector_y, frames(1), Vector_y); }
+  if(feat==FS_vectorYRel) {  return new TM_Default(TMT_vec, world, frames(0), Vector_y, frames(1), Vector_y); }
+
   if(feat==FS_vectorZ) {  return new TM_Default(TMT_vec, world, frames(0), Vector_z); }
   if(feat==FS_vectorZDiff) {  return new TM_Default(TMT_vecDiff, world, frames(0), Vector_z, frames(1), Vector_z); }
   if(feat==FS_vectorZRel) {  return new TM_Default(TMT_vec, world, frames(0), Vector_z, frames(1), Vector_z); }
