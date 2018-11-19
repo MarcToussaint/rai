@@ -241,11 +241,16 @@ PYBIND11_MODULE(libry, m) {
         py::arg("calc_q_from_X") = true )
 
   .def("feature", [](ry::Config& self, FeatureSymbol fs, const ry::I_StringA& frames) {
-    auto Kget = self.get();
     ry::RyFeature F;
 //    F.feature = make_shared<::Feature>(symbols2feature(fs, I_conv(frames), Kget));
-    F.feature = symbols2feature(fs, I_conv(frames), Kget);
+    F.feature = symbols2feature(fs, I_conv(frames), self.get());
     return F;
+  } )
+
+  .def("evalFeature", [](ry::Config& self, FeatureSymbol fs, const ry::I_StringA& frames) {
+    arr y,J;
+    self.get()->evalFeature(y, J, fs, I_conv(frames));
+    return pybind11::make_tuple(pybind11::array(y.dim(), y.p), pybind11::array(J.dim(), J.p));
   } )
 
   .def("selectJointsByTag", [](ry::Config& self, const ry::I_StringA& jointGroups){
@@ -360,7 +365,7 @@ PYBIND11_MODULE(libry, m) {
     
   .def("setJointState_qdot", [](ry::Config& self, const std::vector<double>& q, const std::vector<double>& qdot){
     arr _q = conv_stdvec2arr(q);
-    arr _qdot = conv_stdvec2arr(q);
+    arr _qdot = conv_stdvec2arr(qdot);
     self.set()->setJointState(_q, _qdot);
   }, "",
     py::arg("q"),
