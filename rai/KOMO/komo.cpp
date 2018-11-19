@@ -245,12 +245,15 @@ void KOMO::addSwitch_stable(double time, double endTime, const char* from, const
   addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, from, to, world));
 //  addFlag(time, new Flag(FL_clear, world[to]->ID, 0, true));
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true));
+  //-- DOF-is-constant constraint
   if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
-    addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 1e1, 1, +1, -1);
-  if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, {3e1}, {}, 1);
+    addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
+  //-- no relative jump at end
+  if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, {1e2}, {}, 1);
 
 //  addFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
-  if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e1, 2, 0, +1);
+  //-- no acceleration at start
+  if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, 0, +1);
   else addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
 }
 
@@ -260,13 +263,16 @@ void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, con
   addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
 //  addFlag(time, new Flag(FL_clear, world[to]->ID, 0, true));
 //  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true));
+  //-- DOF-is-constant constraint
   if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
-    addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 1e1, 1, +1, -1);
-  if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, {3e1}, {}, 1);
+    addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
+  //-- no relative jump at end
+  if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, {1e2}, {}, 1);
 
 //  o->prec(-1)=o->prec(-2)=0.;
 //  addFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
-  if(k_order>1) addObjective(time,time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e1, 2, 0, +1);
+  //-- no acceleration at start
+  if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e1, 2, 0, +1);
 //  else addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 1, +1, +1);
 }
 

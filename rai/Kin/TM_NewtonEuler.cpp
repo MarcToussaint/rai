@@ -25,6 +25,14 @@ TM_NewtonEuler::TM_NewtonEuler(int iShape, bool _transOnly) : i(iShape), transOn
 void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   CHECK_EQ(order, 2, "");
 
+  rai::KinematicWorld& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
+  rai::Frame *a = K.frames(i);
+  if((a->flags & (1<<FL_impulseExchange))){
+    y.resize(3).setZero();
+    if(!!J) J.resize(3, getKtupleDim(Ktuple).last()).setZero();
+    return;
+  }
+
   //get linear and angular accelerations
   arr acc, Jacc, wcc, Jwcc;
   TM_LinVel pos(i);
@@ -48,8 +56,8 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   rot.order=2;
   if(!transOnly) rot.phi(wcc, (!!J?Jwcc:NoArr), Ktuple);
 
-  rai::KinematicWorld& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
-  rai::Frame *a = K.frames(i);
+//  rai::KinematicWorld& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
+//  rai::Frame *a = K.frames(i);
   double mass=1;
   arr Imatrix = diag(.1, 3);
   if(a->inertia){

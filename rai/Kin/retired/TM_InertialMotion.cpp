@@ -34,7 +34,7 @@ void TM_InertialMotion::phi(arr &y, arr &J, const WorldL &Ktuple) {
     J += Jacc;
   }
   
-  if(K.frames(i)->flags & (1<<FL_impulseExchange)) {
+  if(Ktuple(-2)->frames(i)->flags & (1<<FL_impulseExchange)) {
     y.setZero();
     if(!!J) J.setZero();
   }
