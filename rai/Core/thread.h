@@ -177,6 +177,8 @@ struct Var {
 
   Var(const char* name) : Var(NULL, name, false) {}
 
+  Var(Thread* _thread) : Var(_thread, NULL, false) {}
+
   /// searches for globally registrated variable 'name', checks type equivalence, and becomes an access for '_thread'
   Var(Thread* _thread, const char* name, bool threadListens=false);
 

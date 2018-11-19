@@ -3,13 +3,15 @@
 
 extern bool Geo_mesh_drawColors; //UGLY!!
 
+//===========================================================================
+
 rai::CameraView::CameraView(const rai::KinematicWorld& _K, bool _background, int _watchComputations)
   : K(_K), background(_background), watchComputations(_watchComputations) {
 
   gl.add(*this);
 }
 
-rai::CameraView::Sensor&rai::CameraView::addSensor(const char* name, const char* frameAttached, uint width, uint height, double focalLength, double orthoAbsHeight, const arr& zRange, const char* backgroundImageFile){
+rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char* frameAttached, uint width, uint height, double focalLength, double orthoAbsHeight, const arr& zRange, const char* backgroundImageFile){
   Sensor& sen = sensors.append();
   sen.name = name;
   sen.frame = K.getFrameByName(frameAttached);
@@ -23,8 +25,30 @@ rai::CameraView::Sensor&rai::CameraView::addSensor(const char* name, const char*
   if(orthoAbsHeight>0.) cam.setHeightAbs(orthoAbsHeight);
 
   cam.setWHRatio((double)width/height);
+
+  if(sen.frame) cam.X = sen.frame->X;
+
   done(__func__);
   return sen;
+}
+
+rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char* frameAttached){
+    rai::Frame *frame = K.getFrameByName(frameAttached);
+
+    CHECK(frame, "frame '" <<frameAttached <<"' is not defined");
+
+  double width=400., height=200.;
+  double focalLength=-1.;
+  double orthoAbsHeight=-1.;
+  arr zRange;
+
+  frame->ats.get<double>(focalLength, "focalLength");
+  frame->ats.get<double>(orthoAbsHeight, "orthoAbsHeight");
+  frame->ats.get<arr>(zRange, "zRange");
+  frame->ats.get<double>(width, "width");
+  frame->ats.get<double>(height, "height");
+
+  return addSensor(name, frameAttached, width, height, focalLength, orthoAbsHeight, zRange);
 }
 
 rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName){
@@ -41,7 +65,7 @@ rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName){
 
 void rai::CameraView::computeImageAndDepth(byteA& image, arr& depth){
   updateCamera();
-  renderMode=all;
+//  renderMode=all;
   if(!background)
     gl.update(NULL, true, true, true);
   else
@@ -128,9 +152,11 @@ void rai::CameraView::updateCamera(){
 }
 
 void rai::CameraView::glDraw(OpenGL& gl) {
-  if(renderMode==all){
+  if(renderMode==all || renderMode==visuals){
     glStandardScene(NULL);
     K.orsDrawMarkers = true;
+    if(renderMode==visuals) K.orsDrawVisualsOnly=true;
+
     K.glDraw(gl);
 
     for(Sensor& sen:sensors){
@@ -159,3 +185,40 @@ void rai::CameraView::done(const char* _func_){
   }
 }
 
+
+//===========================================================================
+
+rai::Sim_CameraView::Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatIntervalSec, const char* _cameraFrameName)
+  : Thread("Sim_CameraView", beatIntervalSec),
+    model(this, _kin, (beatIntervalSec<0.)),
+    color(this),
+    depth(this),
+    C(model.get()()){
+  if(_cameraFrameName){
+      C.addSensor(_cameraFrameName, _cameraFrameName);
+      C.selectSensor(_cameraFrameName);
+  }
+  if(beatIntervalSec>=0.) threadLoop(); else threadStep();
+}
+
+rai::Sim_CameraView::~Sim_CameraView() {
+  threadClose();
+}
+
+void rai::Sim_CameraView::open() {
+}
+
+void rai::Sim_CameraView::step() {
+  byteA img;
+  arr dep;
+  arr X = model.get()->getFrameState();
+  if(!X.N) return;
+  C.K.setFrameState(X);
+  C.renderMode=C.visuals;
+  C.computeImageAndDepth(img, dep);
+  color.set() = img;
+  depth.set() = dep;
+}
+
+void rai::Sim_CameraView::close() {
+}

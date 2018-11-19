@@ -22,7 +22,7 @@ struct CameraView : GLDrawer {
   rai::KinematicWorld K;       //the configuration
   rai::Array<Sensor> sensors;  //the list of sensors
 
-  enum RenderMode{ all, seg };
+  enum RenderMode{ all, seg, visuals };
   OpenGL gl;
 
   //-- run parameter
@@ -37,6 +37,7 @@ struct CameraView : GLDrawer {
 
   //-- loading the configuration: the meshes, the robot model, the tote, the sensors; all ends up in K
   Sensor& addSensor(const char* name, const char* frameAttached, uint width, uint height, double focalLength=-1., double orthoAbsHeight=-1., const arr& zRange={}, const char* backgroundImageFile=0);
+  Sensor& addSensor(const char* name, const char* frameAttached); //read everything from the frame attributes
 
   Sensor& selectSensor(const char* sensorName); //set the OpenGL sensor
 
@@ -54,6 +55,24 @@ struct CameraView : GLDrawer {
 private:
   void updateCamera();
   void done(const char* _code_);
+};
+
+//===========================================================================
+
+struct Sim_CameraView : Thread {
+  Var<rai::KinematicWorld> model;
+  //-- outputs
+  Var<byteA> color;
+  Var<arr> depth;
+
+  //-- internal
+  CameraView C;
+
+  Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatIntervalSec=-1., const char* _cameraFrameName=NULL);
+  ~Sim_CameraView();
+  void open();
+  void step();
+  void close();
 };
 
 }

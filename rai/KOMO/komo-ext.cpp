@@ -6,11 +6,13 @@
 #include <Kin/TM_linTrans.h>
 #include <Kin/TM_qItself.h>
 
-double shapeSize(const rai::KinematicWorld& K, const char* name, uint i=2);
+double shapeSize(const rai::KinematicWorld& K, const char* name, uint i=1);
 
 void addBoxGrasp(KOMO& komo, const char* object, const char* endeff, int axis){
   //  komo.addObjective(0., 0., OT_eq, FS_accumulatedCollisions, {}, 1e0);
-  komo.addObjective(0., 0., new TM_LinTrans(new TM_Default(TMT_posDiff, komo.world, "endeffWorkspace", NoVector, object), {2,3,{1.,0.,0., 0.,1.,0.}}, {}), OT_sos, {}, 1e2);
+    if(komo.world["endeffWorkspace"]){
+        komo.addObjective(0., 0., new TM_LinTrans(new TM_Default(TMT_posDiff, komo.world, "endeffWorkspace", NoVector, object), {2,3,{1.,0.,0., 0.,1.,0.}}, {}), OT_sos, {}, 1e2);
+    }
 
   //height to grasp
   double h = .5*shapeSize(komo.world, object);
@@ -24,29 +26,28 @@ void addBoxGrasp(KOMO& komo, const char* object, const char* endeff, int axis){
   core_setTouch(0., 0., endeff, object);
 #else
   //perfect central
-  komo.addObjective({}, OT_eq, FS_positionDiff, {endeff, object}, {1e2}, {0,0,h-.05});
+  komo.addObjective({}, OT_eq, FS_positionDiff, {endeff, object}, {1e2}, {0,0,h});
 #endif
 
   //anti-podal
   switch(axis){
-    case 1:
+    case 0:
       komo.addObjective({}, OT_eq, FS_scalarProductXY, {endeff, object}, {1e1});
+      komo.addObjective({}, OT_eq, FS_scalarProductXZ, {endeff, object}, {1e1});
+      break;
+    case 1:
+      komo.addObjective({}, OT_eq, FS_scalarProductXX, {endeff, object}, {1e1});
       komo.addObjective({}, OT_eq, FS_scalarProductXZ, {endeff, object}, {1e1});
       break;
     case 2:
       komo.addObjective({}, OT_eq, FS_scalarProductXX, {endeff, object}, {1e1});
-      komo.addObjective({}, OT_eq, FS_scalarProductXZ, {endeff, object}, {1e1});
-      break;
-    case 3:
-      komo.addObjective({}, OT_eq, FS_scalarProductXX, {endeff, object}, {1e1});
       komo.addObjective({}, OT_eq, FS_scalarProductXY, {endeff, object}, {1e1});
       break;
-    default: HALT("axis " <<axis <<" needs to be in {1,2,3}");
+    default: HALT("axis " <<axis <<" needs to be in {0,1,2}");
   }
 
   //vertical
   komo.addObjective({}, OT_sos, FS_vectorZ, {endeff}, {3e0}, {0.,0.,1.} );
-
 }
 
 void addMotionTo(KOMO& komo, const arr& target_q, const StringA& target_joints, const char* endeff, double up, double down){
@@ -57,13 +58,13 @@ void addMotionTo(KOMO& komo, const arr& target_q, const StringA& target_joints, 
 
     if(up>0.){
       uint t0=up*komo.T+1;
-      for(uint t=0;t<t0;t++) profile[t] = ARR(0.,0., .5*((double(t)/t0)));
+      for(uint t=0;t<t0;t++) profile[t] = ARR(0.,0., .05*((double(t)/t0)));
       komo.addObjective(0., up, new TM_Default(TMT_posDiff, komo.world, endeff), OT_sos, profile, 1e2, 1);
     }
 
     if(down>0.){
       uint t0=down*komo.T-1;
-      for(uint t=t0;t<komo.T;t++) profile[t] = ARR(0.,0., -.5*(1.-double(t-t0)/(komo.T-1-t0)));
+      for(uint t=t0;t<komo.T;t++) profile[t] = ARR(0.,0., -.05*(1.-double(t-t0)/(komo.T-1-t0)));
       komo.addObjective(down, 1., new TM_Default(TMT_posDiff, komo.world, endeff), OT_sos, profile, 1e2, 1);
     }
   }
@@ -88,27 +89,29 @@ void chooseBoxGrasp(rai::KinematicWorld& K, const char* endeff, const char* obje
   //  komo.addObjective(0.,0., OT_sos, FS_qItself, {"r_gripper_joint"}, 1e1, {.08} );
   //  komo.addObjective(0.,0., OT_sos, FS_qItself, {"r_gripper_l_finger_joint"}, 1e1, {.8} );
 
-  addBoxGrasp(komo, object, endeff, 1);
+  addBoxGrasp(komo, object, endeff, 0);
   komo.optimize();
   //  komo.getConfiguration(0);
   auto q1 = komo.x;
   double score1 = 10.*komo.getConstraintViolations() + komo.getCosts();
+  if(shapeSize(komo.world, object, 0)>.1) score1 += 100.;
+
   //    D.update(true);
 
   komo.clearObjectives();
   komo.setIKOpt();
-  addBoxGrasp(komo, object, endeff, 2);
+  addBoxGrasp(komo, object, endeff, 1);
   komo.optimize();
   //  komo.getConfiguration(0);
   auto q2 = komo.x;//K.getJointState();
   double score2 = 10.*komo.getConstraintViolations() + komo.getCosts();
-  //    D.update(true);
+  if(shapeSize(komo.world, object, 1)>.1) score2 += 100.;
 
   if(score1<score2){
-    cout <<"using axis 1" <<endl;
+    cout <<"using axis 0" <<endl;
     K.setJointState(q1);
   }else{
-    cout <<"using axis 2" <<endl;
+    cout <<"using axis 1" <<endl;
     K.setJointState(q2);
   }
 }

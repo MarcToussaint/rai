@@ -7,6 +7,11 @@ enum RobotType { ROB_sim=0, ROB_pr2, ROB_baxter, ROB_kukaWSG };
 enum SensorId { SEN_depth };
 
 struct RobotAbstraction{
+    Var<rai::KinematicWorld> K;
+    Var<arr> frameState;
+    Var<arr> jointState;
+    Var<double> timeToGo;
+
     virtual ~RobotAbstraction(){}
     //-- basic info
     virtual StringA getJointNames() = 0;
@@ -14,12 +19,14 @@ struct RobotAbstraction{
     //-- execution
     virtual bool executeMotion(const StringA& joints, const arr& path, const arr& times, double timeScale=1., bool append=false) = 0;
     virtual void execGripper(const rai::String& gripperName, double position, double force=40.) = 0;
-    virtual double timeToGo() = 0;
     virtual void attach(const char *a, const char *b){}
     //-- feedback
     virtual arr getJointPositions(const StringA& joints={}) = 0;
     //-- sensors
     virtual arr getSensor(SensorId sensor){ return NoArr; }
+    virtual void getSensor(SensorId sensor, arr& data){ NIY; }
+
+    void waitForCompletion();
 };
 
 struct RobotIO : RobotAbstraction{
@@ -44,13 +51,7 @@ struct RobotIO : RobotAbstraction{
     void attach(const char *a, const char *b){ return self->attach(a,b); }
     virtual double timeToGo(){ return self->timeToGo(); }
     arr getSensor(SensorId sensor){ self->getSensor(sensor); return arr(); }
-
-    void waitForCompletion(){
-        while(self->timeToGo()>0.){
-            cout <<"ttg:" <<self->timeToGo() <<endl;
-            rai::wait(.1);
-        }
-    }
+    virtual void getSensor(SensorId sensor, arr& data){ self->getSensor(sensor, data); }
 
 };
 

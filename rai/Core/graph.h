@@ -81,6 +81,7 @@ struct Node {
   virtual Node* newClone(Graph& container) const {NIY}
 };
 stdOutPipe(Node)
+inline std::istream& operator>>(std::istream& is, Node*& x){ HALT("prohibited"); return is; }
 
 //===========================================================================
 
@@ -189,6 +190,7 @@ struct Graph : NodeL {
   //private:
   friend struct Node;
   uint index(bool subKVG=false, uint start=0);
+
 };
 stdPipes(Graph)
 

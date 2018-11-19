@@ -681,9 +681,9 @@ void rai::Joint::read(const Graph &G) {
 void rai::Joint::write(std::ostream& os) const {
   os <<" joint:" <<type;
   if(H) os <<" ctrl_H:"<<H;
-  if(limits.N) os <<" limits=[" <<limits <<"]";
+  if(limits.N) os <<" limits:[" <<limits <<"]";
   if(mimic) {
-    os <<" mimic:" <<mimic->frame.name;
+    os <<" mimic:(" <<mimic->frame.name <<')';
   }
   
   Node *n;
@@ -763,7 +763,7 @@ void rai::Shape::write(std::ostream& os) const {
   if((n=frame.ats["color"])) os <<' ' <<*n;
   if((n=frame.ats["mesh"])) os <<' ' <<*n;
   if((n=frame.ats["meshscale"])) os <<' ' <<*n;
-  if(cont) os <<" contact, ";
+  if(cont) os <<" contact:" <<(int)cont;
 }
 
 void rai::Shape::glDraw(OpenGL& gl) {

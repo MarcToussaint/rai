@@ -40,7 +40,7 @@ typedef const char* charp;
 
 //----- macros to define the standard <<and >>operatos for most my classes:
 #define stdInPipe(type)\
-  inline std::istream& operator>>(std::istream& is, type& x){ x.read(is);return is; }
+  inline std::istream& operator>>(std::istream& is, type& x){ x.read(is); return is; }
 #define stdOutPipe(type)\
   inline std::ostream& operator<<(std::ostream& os, const type& x){ x.write(os); return os; }
 #define stdPipes(type)\
@@ -236,6 +236,7 @@ public:
   String& printf(const char *format, ...);
   void resize(uint n, bool copy); //low-level resizing the string buffer - with additinal final 0
   void append(char x);
+  void prepend(const String& s);
   String& setRandom();
   
   /// @name resetting
@@ -403,15 +404,15 @@ struct FileToken {
   std::shared_ptr<std::ofstream> os;
   std::shared_ptr<std::ifstream> is;
   
-  FileToken() {}
+  FileToken();
   FileToken(const char* _filename, bool change_dir=true);
   FileToken(const FileToken& ft);
   ~FileToken();
   FileToken& operator()() { return *this; }
   
   void decomposeFilename();
-  void changeDir();
-  void unchangeDir();
+  void cd_start();
+  void cd_file();
   bool exists();
   std::ofstream& getOs();
   std::ifstream& getIs(bool change_dir=false);
