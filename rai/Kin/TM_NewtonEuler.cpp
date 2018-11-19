@@ -29,6 +29,7 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   arr acc, Jacc, wcc, Jwcc;
   TM_LinVel pos(i);
   pos.order=2;
+  pos.impulseInsteadOfAcceleration=true;
   pos.phi(acc, (!!J?Jacc:NoArr), Ktuple);
 
   if(Ktuple(-1)->hasTimeJoint()){

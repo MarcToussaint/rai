@@ -110,9 +110,9 @@ struct RobotAbstraction_SimulationThread : RobotAbstraction {
     }
     virtual void getSensor(SensorId sensor, arr& data){
         auto lock = S.stepMutex();
-        S.SIM.setCamera("pr2Kinect");
-        S.SIM.getCamera(NoByteA, data, NoArr, NoUint16A);
-//        NIY;
+	//        S.SIM.setCamera("pr2Kinect");
+	//        S.SIM.getCamera(NoByteA, data, NoArr, NoUint16A);
+        NIY;
     }
 };
 
