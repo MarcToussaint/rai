@@ -5,13 +5,13 @@
 
 #include <Core/graph.h>
 #include <Kin/frame.h>
+#include <Kin/kin.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 
 namespace py = pybind11;
-
 
 py::dict graph2dict(const Graph& G){
   py::dict dict;
@@ -328,9 +328,48 @@ PYBIND11_MODULE(libry, m) {
     py::arg("timePerPhase")=5. )
 
   .def("lgp", [](ry::Config& self, const std::string& folFileName){
-      return ry::LGPpy(self, folFileName);
+    return ry::LGPpy(self, folFileName);
   } )
+    
+  .def("sortFrames", [](ry::Config& self){
+    self.set()->sortFrames();
+  })
+    
+  .def("equationOfMotion", [](ry::Config& self, bool gravity){
+    arr M, F;
+    self.set()->equationOfMotion(M, F, gravity);
+    return pybind11::make_tuple(pybind11::array(M.dim(), M.p), pybind11::array(F.dim(), F.p));
+  }, "",
+    py::arg("gravity"))
 
+  .def("stepDynamics", [](ry::Config& self, pybind11::array& u_control, double tau, double dynamicNoise, bool gravity){
+    arr _u = numpy2arr(u_control);
+    self.set()->stepDynamics(_u, tau, dynamicNoise, gravity);
+  }, "",
+      py::arg("u_control"),
+      py::arg("tau"),
+      py::arg("dynamicNoise"),
+      py::arg("gravity"))
+
+ .def("getJointState_qdot", [](ry::Config& self, const ry::I_StringA& joints) {
+   arr q, qdot;
+   self.get()->getJointState(q, qdot);
+   return pybind11::make_tuple(pybind11::array(q.dim(), q.p), pybind11::array(qdot.dim(), qdot.p));
+  }, "",
+  py::arg("joints") = ry::I_StringA() )
+    
+  .def("setJointState_qdot", [](ry::Config& self, const std::vector<double>& q, const std::vector<double>& qdot){
+    arr _q = conv_stdvec2arr(q);
+    arr _qdot = conv_stdvec2arr(q);
+    self.set()->setJointState(_q, _qdot);
+  }, "",
+    py::arg("q"),
+    py::arg("qdot") )
+    
+  .def("getEnergy", [](ry::Config& self){
+    return self.set()->getEnergy();
+  } )
+    
   ;
 
 //  py::class_<ry::Display>(m, "Display")
