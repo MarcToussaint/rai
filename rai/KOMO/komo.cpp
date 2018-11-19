@@ -240,20 +240,14 @@ void KOMO::addSwitch(double time, bool before, const char* type, const char* ref
 }
 
 void KOMO::addSwitch_stable(double time, double endTime, const char* from, const char* to) {
-//  setKinematicSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_quatBall, from, to, world));
-//  setKinematicSwitch(time, true, new KinematicSwitch(SW_insertEffJoint, JT_trans3, NULL, to, world));
   addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, from, to, world));
-//  addFlag(time, new Flag(FL_clear, world[to]->ID, 0, true));
-//  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true));
   //-- DOF-is-constant constraint
   if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
     addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
   //-- no relative jump at end
   if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, {1e2}, {}, 1);
-
-//  addFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
-  //-- no acceleration at start
-  if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, 0, +1);
+  //-- no acceleration at start: +0 include (x-2, x-1, x0), which enforces a SMOOTH pickup
+  if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, +0, +1);
   else addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
 }
 
@@ -261,18 +255,13 @@ void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, con
   Transformation rel = 0;
   rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
   addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
-//  addFlag(time, new Flag(FL_clear, world[to]->ID, 0, true));
-//  addFlag(time, new Flag(FL_something, world[to]->ID, 0, true));
   //-- DOF-is-constant constraint
   if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
     addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
   //-- no relative jump at end
   if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, {1e2}, {}, 1);
-
-//  o->prec(-1)=o->prec(-2)=0.;
-//  addFlag(time, new Flag(FL_zeroQVel, world[to]->ID, 0, true));
-  //-- no acceleration at start
-  if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e1, 2, 0, +1);
+  //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
+  if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e1, 2, +1, +1);
 //  else addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 1, +1, +1);
 }
 
@@ -284,14 +273,18 @@ void KOMO::addSwitch_dynamic(double time, double endTime, const char* from, cons
 
 void KOMO::addSwitch_dynamicTrans(double time, double endTime, const char* from, const char* to) {
   addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_trans3, from, to, world, SWInit_copy));
-  addObjective(time, endTime, new TM_NewtonEuler(world, to, true), OT_eq, NoArr, 1e0, k_order, +0, -1);
+#if 0
+  addObjective(time, endTime, new TM_Gravity2(world, to), OT_eq, NoArr, 3e1, k_order, +1, -1);
+#else
+  addObjective(time, endTime, new TM_NewtonEuler(world, to, true), OT_eq, NoArr, 3e1, k_order, +0, -1);
+#endif
 }
 
 void KOMO::addSwitch_dynamicOn(double time, double endTime, const char *from, const char* to) {
   Transformation rel = 0;
   rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
   addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
-  if(k_order>=2) addObjective(time, endTime, new TM_ZeroAcc(world, to), OT_eq, NoArr, 3e1, k_order, +1, -1);
+  if(k_order>=2) addObjective(time, endTime, new TM_ZeroAcc(world, to), OT_eq, NoArr, 3e1, k_order, +0, -1);
   addObjective(time,time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2);
 }
 
@@ -867,6 +860,7 @@ void KOMO_ext::setAbstractTask(double phase, const Graph& facts, int verbose) {
       else if(*symbols(0)=="stable")                addSwitch_stable(phase+time, phase+time+1., *symbols(1), *symbols(2));
       else if(*symbols(0)=="stableOn")              addSwitch_stableOn(phase+time, phase+time+1., *symbols(1), *symbols(2));
       else if(*symbols(0)=="dynamic")               addSwitch_dynamic(phase+time, phase+time+1., "base", *symbols(1));
+      else if(*symbols(0)=="dynamicTrans")          addSwitch_dynamicTrans(phase+time, phase+time+1., "base", *symbols(1));
       else if(*symbols(0)=="dynamicOn")             addSwitch_dynamicOn(phase+time, phase+time+1., *symbols(1), *symbols(2));
       
       else if(*symbols(0)=="notAbove") {
@@ -1011,8 +1005,8 @@ void KOMO::add_impulse(double time, const char* shape1, const char* shape2, Obje
 //    setTask(time, time, new TM_ImpulsExchange(world, a, b), OT_sos, {}, 3e1, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
   if(k_order>=2) {
     addObjective(time, time, new TM_ImpulsExchange(world, shape1, shape2), type, {}, prec, 2, +1, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
-    addFlag(time, new Flag(FL_impulseExchange, world[shape1]->ID), +1);
-    addFlag(time, new Flag(FL_impulseExchange, world[shape2]->ID), +1);
+    addFlag(time, new Flag(FL_impulseExchange, world[shape1]->ID), +0);
+    addFlag(time, new Flag(FL_impulseExchange, world[shape2]->ID), +0);
   }
 }
 
