@@ -89,7 +89,10 @@ arr numpy2arr(const pybind11::array& X){
   for(uint i=0;i<dim.N;i++) dim(i)=X.shape()[i];
   Y.resize(dim);
   auto ref = X.unchecked<double>();
-  if(Y.nd==2){
+  if (Y.nd==1) {
+    for(uint i=0;i<Y.d0;i++) Y(i) = ref(i);
+    return Y;
+  } else if(Y.nd==2){
     for(uint i=0;i<Y.d0;i++) for(uint j=0;j<Y.d1;j++) Y(i,j) = ref(i,j);
     return Y;
   }
@@ -347,8 +350,8 @@ PYBIND11_MODULE(libry, m) {
   }, "",
     py::arg("gravity"))
 
-  .def("stepDynamics", [](ry::Config& self, pybind11::array& u_control, double tau, double dynamicNoise, bool gravity){
-    arr _u = numpy2arr(u_control);
+  .def("stepDynamics", [](ry::Config& self, std::vector<double>& u_control, double tau, double dynamicNoise, bool gravity){
+    arr _u = conv_stdvec2arr(u_control);
     self.set()->stepDynamics(_u, tau, dynamicNoise, gravity);
   }, "",
       py::arg("u_control"),
