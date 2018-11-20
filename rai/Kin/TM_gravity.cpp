@@ -12,6 +12,7 @@
 #include <Kin/contact.h>
 #include <Kin/TM_default.h>
 #include <Kin/TM_PairCollision.h>
+#include <Kin/TM_angVel.h>
 
 bool JointDidNotSwitch(const rai::Frame *a1, const WorldL& Ktuple, int order);
 
@@ -228,13 +229,13 @@ TM_Gravity2::TM_Gravity2(int iShape) : i(iShape) {
 void TM_Gravity2::phi(arr& y, arr& J, const WorldL& Ktuple){
   CHECK_GE(order, 2, "needs k-order 2");
 
-  rai::Frame *a = Ktuple(-1)->frames(i);
+  rai::Frame *a = Ktuple(-2)->frames(i);
   if((a->flags & (1<<FL_impulseExchange))){
     y.resize(3).setZero();
     if(!!J) J.resize(3, getKtupleDim(Ktuple).last()).setZero();
     return;
   }
-  TM_Default pos(TMT_pos, i);
+  TM_LinVel pos(i);
   pos.order=2;
   pos.Feature::phi(y, J, Ktuple);
   y(2) += gravity;
@@ -262,7 +263,7 @@ TM_ZeroAcc::TM_ZeroAcc(int iShape) : i(iShape) {
 void TM_ZeroAcc::phi(arr& y, arr& J, const WorldL& Ktuple){
   CHECK_GE(order, 2, "needs k-order 2");
 
-  rai::Frame *a = Ktuple(-1)->frames(i);
+  rai::Frame *a = Ktuple(-2)->frames(i);
   if((a->flags & (1<<FL_impulseExchange))){
     y.resize(3).setZero();
     if(!!J) J.resize(3, getKtupleDim(Ktuple).last()).setZero();

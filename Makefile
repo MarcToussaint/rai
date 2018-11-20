@@ -8,9 +8,9 @@ DEPEND = $(shell find rai -mindepth 1 -maxdepth 1 -printf "%f ")
 
 src_paths =  $(shell find rai -mindepth 1 -maxdepth 1 -type d -not -name 'retired' -printf "%f ")
 
-test_paths = $(shell find test -maxdepth 3 -name 'Makefile' -printf "%h ")
+test_paths = $(shell find test -mindepth 3 -maxdepth 3 -name 'Makefile' -printf "%h ")
 
-bin_paths = $(shell find bin -maxdepth 2 -name 'Makefile' -printf "%h ")
+bin_paths = $(shell find bin -mindepth 2 -maxdepth 2 -name 'Makefile' -printf "%h ")
 
 ################################################################################
 
@@ -26,7 +26,7 @@ bin: $(bin_paths:%=inPath_make/%)
 
 src: $(src_paths:%=inPath_makeLib/%)
 
-depend: $(src_paths:%=inPath_depend/%)
+dependAll: $(src_paths:%=inPath_depend/%)
 
 clean: $(src_paths:%=inPath_clean/%) cleanLocks
 

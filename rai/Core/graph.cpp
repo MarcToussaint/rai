@@ -537,12 +537,13 @@ void Graph::read(std::istream& is, bool parseInfo) {
         for(uint i=Nbefore;i<N;i++) elem(i)->keys.last().prepend(namePrefix);
         namePrefix.clear();
       }
+      n->get<rai::FileToken>().cd_start();
       delete n; n=NULL;
     } else if(n->keys.N==1 && n->keys.last()=="Prefix") {
       namePrefix = n->get<rai::String>();
       delete n; n=NULL;
     } else if(n->keys.N==1 && n->keys.last()=="ChDir") {
-      n->get<rai::FileToken>().changeDir();
+      n->get<rai::FileToken>().cd_file();
     } else if(n->keys.N>0 && n->keys.first()=="Delete") {
       n->keys.remove(0);
       NodeL dels = getNodes(n->keys);
@@ -563,11 +564,11 @@ void Graph::read(std::istream& is, bool parseInfo) {
   
   DEBUG(checkConsistency();)
 
-      //-- delete all ChDir nodes in reverse order
-      for(uint i=N; i--;) {
+  //-- delete all ChDir nodes in reverse order
+  for(uint i=N; i--;) {
     Node *n=elem(i);
     if(n->keys.N==1 && n->keys(0)=="ChDir") {
-      n->get<rai::FileToken>().unchangeDir();
+      n->get<rai::FileToken>().cd_start();
       delete n; n=NULL;
     }
   }
@@ -678,8 +679,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
         str.read(is, "", "\'", true);
         try {
           node = newNode<rai::FileToken>(keys, parents, rai::FileToken(str, false));
-          node->get<rai::FileToken>().storeCWD();  //creates the ifstream and might throw an error
-          node->get<rai::FileToken>().getIs();  //creates the ifstream and might throw an error
+//          node->get<rai::FileToken>().getIs();  //creates the ifstream and might throw an error
         } catch(...) {
           delete node; node=NULL;
           PARSERR("file " <<str <<" does not exist -> converting to string!", pinfo);

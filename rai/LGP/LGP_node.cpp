@@ -100,7 +100,7 @@ void LGP_Node::expand(int verbose) {
 
 void LGP_Node::computeEndKinematics(){
   Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
-                            "stable", "stableOn", "dynamic", "dynamicOn",
+                            "stable", "stableOn", "dynamic", "dynamicTrans", "dynamicOn",
                             "push", "graspSlide", "liftDownUp"
                            });
 
@@ -125,7 +125,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions) {
   komo.fil = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
   
   Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
-                            "stable", "stableOn", "dynamic", "dynamicOn",
+                            "stable", "stableOn", "dynamic", "dynamicTrans", "dynamicOn",
                             "push", "graspSlide", "liftDownUp"
                            });
 

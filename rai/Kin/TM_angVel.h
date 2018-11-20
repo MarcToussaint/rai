@@ -12,6 +12,7 @@
 
 struct TM_LinVel : Feature {
   int i;               ///< which shapes does it refer to?
+  bool impulseInsteadOfAcceleration=false;
 
   TM_LinVel(int iShape=-1) : i(iShape) { order=1; }
   TM_LinVel(const rai::KinematicWorld& K, const char* iShapeName=NULL) : i(initIdArg(K,iShapeName)) { order=1; }

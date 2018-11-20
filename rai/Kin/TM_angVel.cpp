@@ -102,13 +102,17 @@ void TM_LinVel::phi(arr& y, arr& J, const WorldL& Ktuple){
       double tau; arr Jtau;
       Ktuple(-1)->kinematicsTau(tau, (!!J?Jtau:NoArr));
       CHECK_GE(tau, 1e-10, "");
-
       y /= tau;
       if(!!J){
         J /= tau;
         expandJacobian(Jtau, Ktuple, -1);
         J += (-1./tau)*y*Jtau;
       }
+    }else{
+      double tau = Ktuple(-1)->frames(0)->tau;
+      CHECK_GE(tau, 1e-10, "");
+      y /= tau;
+      if(!!J) J /= tau;
     }
 #endif
     return;
@@ -121,7 +125,8 @@ void TM_LinVel::phi(arr& y, arr& J, const WorldL& Ktuple){
     phi(y1, (!!J?Jy1:NoArr), Ktuple);
     order++;
 
-    double tau=1.;
+    double tau = Ktuple(-2)->frames(0)->tau;
+    if(impulseInsteadOfAcceleration) tau=1.;
     y = (y1-y0)/tau; //difference!
     if(!!J) J = (Jy1 - Jy0)/tau;
   }
@@ -151,6 +156,11 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
         expandJacobian(Jtau, Ktuple, -1);
         J += (-1./tau)*y*Jtau;
       }
+    }else{
+      double tau = Ktuple(-1)->frames(0)->tau;
+      CHECK_GE(tau, 1e-10, "");
+      y /= tau;
+      if(!!J) J /= tau;
     }
 #endif
     return;
@@ -219,7 +229,7 @@ void TM_LinAngVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   y.resize(6);
   if(!!J) J.resize(6, getKtupleDim(Ktuple).last()).setZero();
 
-  if(Ktuple.elem(-1)->frames(i)->flags & (1<<FL_impulseExchange)){
+  if(Ktuple.elem(-2)->frames(i)->flags & (1<<FL_impulseExchange)){
     return;
   }
 

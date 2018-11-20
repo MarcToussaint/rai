@@ -230,13 +230,11 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     //         If j is not set, the target shape is WORLD and jvec is a vector in world coordinates
     
     rai::Vector vec_i = ivec;
-    rai::Vector vec_xi = Vector_x;
-    rai::Vector vec_yi = Vector_y;
     rai::Vector vec_j = jvec;
     arr pi,Jpi, xi,Jxi, yi,Jyi, pj,Jpj;
     G.kinematicsPos(pi, Jpi, body_i, vec_i);
-    G.kinematicsVec(xi, Jxi, body_i, vec_xi);
-    G.kinematicsVec(yi, Jyi, body_i, vec_yi);
+    G.kinematicsVec(xi, Jxi, body_i, Vector_x);
+    G.kinematicsVec(yi, Jyi, body_i, Vector_y);
     if(body_j==NULL) { //we look at WORLD
       pj = conv_vec2arr(vec_j);
       if(!!J) { Jpj.resizeAs(Jpi); Jpj.setZero(); }
