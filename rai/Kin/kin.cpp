@@ -252,7 +252,7 @@ void rai::KinematicWorld::reset_q() {
   fwdActiveJoints.clear();
 }
 
-FrameL rai::KinematicWorld::calc_topSort() {
+FrameL rai::KinematicWorld::calc_topSort() const {
   FrameL fringe;
   FrameL order;
   boolA done = consts<byte>(false, frames.N);
@@ -274,7 +274,7 @@ FrameL rai::KinematicWorld::calc_topSort() {
   return order;
 }
 
-bool rai::KinematicWorld::check_topSort() {
+bool rai::KinematicWorld::check_topSort() const {
   if(fwdActiveSet.N != frames.N) return false;
   
   //compute levels
@@ -287,6 +287,7 @@ bool rai::KinematicWorld::check_topSort() {
 }
 
 void rai::KinematicWorld::calc_activeSets() {
+  reset_q();
   if(!check_topSort()) {
     fwdActiveSet = calc_topSort(); //graphGetTopsortOrder<Frame>(frames);
   }
@@ -1852,7 +1853,8 @@ void rai::KinematicWorld::report(std::ostream &os) const {
   <<endl;
 }
 
-void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
+void rai::KinematicWorld::
+init(const Graph& G, bool addInsteadOfClear) {
   if(!addInsteadOfClear) clear();
   
   NodeL bs = G.getNodes("body");
@@ -2628,8 +2630,10 @@ bool rai::KinematicWorld::checkConsistency() {
     if(a->inertia) CHECK_EQ(&a->inertia->frame, a, "");
     a->ats.checkConsistency();
 
-    CHECK_ZERO(a->X.rot.normalization()-1., 1e-4, "");
+    a->Q.checkNan();
+    a->X.checkNan();
     CHECK_ZERO(a->Q.rot.normalization()-1., 1e-4, "");
+    CHECK_ZERO(a->X.rot.normalization()-1., 1e-4, "");
   }
   
   Joint *j;
@@ -2656,7 +2660,7 @@ bool rai::KinematicWorld::checkConsistency() {
     if(f->parent) level(f->ID) = level(f->parent->ID)+1;
   //check levels are strictly increasing across links
   for(Frame *f: fwdActiveSet) if(f->parent) {
-    CHECK(level(f->parent->ID) < level(f->ID), "joint does not go forward");
+    CHECK(level(f->parent->ID) < level(f->ID), "joint from '" <<f->parent->name <<"'[" <<f->parent->ID <<"] to '" <<f->name <<"'[" <<f->ID <<"] does not go forward");
   }
 
   //check active sets

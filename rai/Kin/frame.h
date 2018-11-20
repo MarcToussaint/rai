@@ -113,6 +113,7 @@ struct Joint : NonCopyable{
   //attachments to the joint
   struct Uncertainty *uncertainty=NULL;
   
+  Joint(Frame& f, JointType type);
   Joint(Frame& f, Joint* copyJoint=NULL);
   Joint(Frame& from, Frame& f, Joint* copyJoint=NULL);
   ~Joint();
