@@ -230,8 +230,12 @@ void rai::Frame::linkFrom(rai::Frame *_parent, bool adoptRelTransform) {
   if(adoptRelTransform) Q = X/parent->X;
 }
 
+rai::Joint::Joint(rai::Frame& f, rai::JointType _type) : Joint(f, (Joint*)NULL){
+  type = _type;
+}
+
 rai::Joint::Joint(Frame &f, Joint *copyJoint)
-  : frame(f), qIndex(UINT_MAX), q0(0.) {
+  : frame(f), qIndex(UINT_MAX){
   CHECK(!frame.joint, "the Link already has a Joint");
   frame.joint = this;
   frame.K.reset_q();

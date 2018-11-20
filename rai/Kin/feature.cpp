@@ -23,6 +23,7 @@ void Feature::phi(arr& y, arr& J, const WorldL& Ktuple) {
   }
 
 #if 1
+
   arr y0, y1, Jy0, Jy1;
   order--;
   phi(y0, (!!J?Jy0:NoArr), Ktuple({0,-2}));  if(!!J) padJacobian(Jy0, Ktuple);
@@ -38,14 +39,19 @@ void Feature::phi(arr& y, arr& J, const WorldL& Ktuple) {
     double tau; arr Jtau;
     Ktuple(-1)->kinematicsTau(tau, (!!J?Jtau:NoArr));
     CHECK_GE(tau, 1e-10, "");
-
     y /= tau;
     if(!!J){
       J /= tau;
       expandJacobian(Jtau, Ktuple, -1);
       J += (-1./tau)*y*Jtau;
     }
+  }else{
+    double tau = Ktuple(-1)->frames(0)->tau;
+    CHECK_GE(tau, 1e-10, "");
+    y /= tau;
+    if(!!J) J /= tau;
   }
+
 #else
 
   uint k = order;

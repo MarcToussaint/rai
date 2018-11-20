@@ -24,7 +24,6 @@ struct SimulationThread : Thread, RobotAbstraction {
   void open(){}
 
   //--- RobotIO
-
   //-- basic info
   virtual StringA getJointNames();
   virtual arr getHomePose();
@@ -34,4 +33,7 @@ struct SimulationThread : Thread, RobotAbstraction {
   virtual void attach(const char *a, const char *b);
   //-- feedback
   virtual arr getJointPositions(const StringA& joints={});
+
+  //--- artificial intervention
+  void addFile(const char* filename, const char* parentOfRoot=NULL, const rai::Transformation& relOfRoot=0);
 };

@@ -13,7 +13,7 @@ struct CameraView : GLDrawer {
     rai::Camera cam;     ///< this includes the transformation X
     uint width=640, height=480;
     byteA backgroundImage;
-    rai::Frame *frame=0;
+    int frame=-1;
     Sensor(){}
     rai::Transformation& pose(){ return cam.X; }
   };

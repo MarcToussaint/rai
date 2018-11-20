@@ -14,7 +14,7 @@ rai::CameraView::CameraView(const rai::KinematicWorld& _K, bool _background, int
 rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char* frameAttached, uint width, uint height, double focalLength, double orthoAbsHeight, const arr& zRange, const char* backgroundImageFile){
   Sensor& sen = sensors.append();
   sen.name = name;
-  sen.frame = K.getFrameByName(frameAttached);
+  sen.frame = K.getFrameByName(frameAttached)->ID;
   rai::Camera& cam = sen.cam;
   sen.width=width;
   sen.height=height;
@@ -26,7 +26,7 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char
 
   cam.setWHRatio((double)width/height);
 
-  if(sen.frame) cam.X = sen.frame->X;
+  if(sen.frame>=0) cam.X = K.frames(sen.frame)->X;
 
   done(__func__);
   return sen;
@@ -141,7 +141,7 @@ void rai::CameraView::watch_PCL(const arr& pts, const byteA& rgb){
 
 void rai::CameraView::updateCamera(){
   for(Sensor& sen:sensors){
-    if(sen.frame) sen.cam.X = sen.frame->X;
+    if(sen.frame>=0) sen.cam.X = K.frames(sen.frame)->X;
   }
 
   if(currentSensor){
@@ -213,7 +213,11 @@ void rai::Sim_CameraView::step() {
   arr dep;
   arr X = model.get()->getFrameState();
   if(!X.N) return;
-  C.K.setFrameState(X);
+  if(X.d0==C.K.frames.N){
+    C.K.setFrameState(X);
+  }else{
+    C.K = model.get();
+  }
   C.renderMode=C.visuals;
   C.computeImageAndDepth(img, dep);
   color.set() = img;
