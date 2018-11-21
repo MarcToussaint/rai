@@ -63,7 +63,7 @@ rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName){
   return *sen;
 }
 
-void rai::CameraView::computeImageAndDepth(byteA& image, arr& depth){
+void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth){
   updateCamera();
 //  renderMode=all;
   if(!background)
@@ -71,12 +71,11 @@ void rai::CameraView::computeImageAndDepth(byteA& image, arr& depth){
   else
     gl.renderInBack(true, true, gl.width, gl.height);
   image = gl.captureImage;
-  floatA glDepth = gl.captureDepth;
+  depth = gl.captureDepth;
   flip_image(image);
-  flip_image(glDepth);
-  depth.resize(glDepth.d0, glDepth.d1);
+  flip_image(depth);
   for(uint i=0; i<depth.N; i++){
-    double d=glDepth.elem(i);
+    double d=depth.elem(i);
     if(d==1. || d==0.) depth.elem(i)=-1.;
     else depth.elem(i) = gl.camera.glConvertToTrueDepth(d);
   }
@@ -210,7 +209,7 @@ void rai::Sim_CameraView::open() {
 
 void rai::Sim_CameraView::step() {
   byteA img;
-  arr dep;
+  floatA dep;
   arr X = model.get()->getFrameState();
   if(!X.N) return;
   if(X.d0==C.K.frames.N){
