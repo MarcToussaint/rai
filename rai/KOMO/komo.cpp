@@ -1294,7 +1294,7 @@ void KOMO::optimize(bool initialize){
   if(verbose>0){
     Graph specs = getProblemGraph(true);
     cout <<specs <<endl;
-    cout <<getReport(true) <<endl; // Enables plot
+    cout <<getReport(verbose>1) <<endl; // Enables plot
   }
 }
 

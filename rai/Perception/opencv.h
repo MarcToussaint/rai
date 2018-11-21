@@ -22,6 +22,8 @@
 #undef MIN
 #undef MAX
 
+extern ::Mutex cvMutex;
+
 inline cv::Mat conv_Arr2CvRef(const byteA& img) {
   if(img.nd==2) return cv::Mat(img.d0, img.d1, CV_8UC1, img.p);
   if(img.nd==3) return cv::Mat(img.d0, img.d1, CV_8UC3, img.p);
