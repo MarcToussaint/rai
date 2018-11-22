@@ -191,6 +191,7 @@ struct Transformation {
   
   bool isZero() const;
   double diffZero() const;
+  void checkNan() const;
   
   Transformation& addRelativeTranslation(const Vector& t);
   Transformation& addRelativeTranslation(double x, double y, double z);

@@ -13,7 +13,7 @@ struct CameraView : GLDrawer {
     rai::Camera cam;     ///< this includes the transformation X
     uint width=640, height=480;
     byteA backgroundImage;
-    rai::Frame *frame=0;
+    int frame=-1;
     Sensor(){}
     rai::Transformation& pose(){ return cam.X; }
   };
@@ -42,7 +42,7 @@ struct CameraView : GLDrawer {
   Sensor& selectSensor(const char* sensorName); //set the OpenGL sensor
 
   //-- compute/analyze a camera perspective (stored in classes' output fields)
-  void computeImageAndDepth(byteA& image, arr& depth);
+  void computeImageAndDepth(byteA& image, floatA& depth);
   void computeKinectDepth(uint16A& kinect_depth, const arr& depth);
   void computePointCloud(arr& pts, const arr& depth, bool globalCoordinates=true); // point cloud (rgb of every point is given in image)
   void computeSegmentation(byteA& segmentation);     // -> segmentation
@@ -63,7 +63,7 @@ struct Sim_CameraView : Thread {
   Var<rai::KinematicWorld> model;
   //-- outputs
   Var<byteA> color;
-  Var<arr> depth;
+  Var<floatA> depth;
 
   //-- internal
   CameraView C;

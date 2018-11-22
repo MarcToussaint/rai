@@ -5,13 +5,13 @@
 
 #include <Core/graph.h>
 #include <Kin/frame.h>
+#include <Kin/kin.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 
 namespace py = pybind11;
-
 
 py::dict graph2dict(const Graph& G){
   py::dict dict;
@@ -89,7 +89,10 @@ arr numpy2arr(const pybind11::array& X){
   for(uint i=0;i<dim.N;i++) dim(i)=X.shape()[i];
   Y.resize(dim);
   auto ref = X.unchecked<double>();
-  if(Y.nd==2){
+  if (Y.nd==1) {
+    for(uint i=0;i<Y.d0;i++) Y(i) = ref(i);
+    return Y;
+  } else if(Y.nd==2){
     for(uint i=0;i<Y.d0;i++) for(uint j=0;j<Y.d1;j++) Y(i,j) = ref(i,j);
     return Y;
   }
@@ -241,11 +244,16 @@ PYBIND11_MODULE(libry, m) {
         py::arg("calc_q_from_X") = true )
 
   .def("feature", [](ry::Config& self, FeatureSymbol fs, const ry::I_StringA& frames) {
-    auto Kget = self.get();
     ry::RyFeature F;
 //    F.feature = make_shared<::Feature>(symbols2feature(fs, I_conv(frames), Kget));
-    F.feature = symbols2feature(fs, I_conv(frames), Kget);
+    F.feature = symbols2feature(fs, I_conv(frames), self.get());
     return F;
+  } )
+
+  .def("evalFeature", [](ry::Config& self, FeatureSymbol fs, const ry::I_StringA& frames) {
+    arr y,J;
+    self.get()->evalFeature(y, J, fs, I_conv(frames));
+    return pybind11::make_tuple(pybind11::array(y.dim(), y.p), pybind11::array(J.dim(), J.p));
   } )
 
   .def("selectJointsByTag", [](ry::Config& self, const ry::I_StringA& jointGroups){
@@ -328,9 +336,48 @@ PYBIND11_MODULE(libry, m) {
     py::arg("timePerPhase")=5. )
 
   .def("lgp", [](ry::Config& self, const std::string& folFileName){
-      return ry::LGPpy(self, folFileName);
+    return ry::LGPpy(self, folFileName);
   } )
+    
+  .def("sortFrames", [](ry::Config& self){
+    self.set()->sortFrames();
+  })
+    
+  .def("equationOfMotion", [](ry::Config& self, bool gravity){
+    arr M, F;
+    self.set()->equationOfMotion(M, F, gravity);
+    return pybind11::make_tuple(pybind11::array(M.dim(), M.p), pybind11::array(F.dim(), F.p));
+  }, "",
+    py::arg("gravity"))
 
+  .def("stepDynamics", [](ry::Config& self, std::vector<double>& u_control, double tau, double dynamicNoise, bool gravity){
+    arr _u = conv_stdvec2arr(u_control);
+    self.set()->stepDynamics(_u, tau, dynamicNoise, gravity);
+  }, "",
+      py::arg("u_control"),
+      py::arg("tau"),
+      py::arg("dynamicNoise"),
+      py::arg("gravity"))
+
+ .def("getJointState_qdot", [](ry::Config& self, const ry::I_StringA& joints) {
+   arr q, qdot;
+   self.get()->getJointState(q, qdot);
+   return pybind11::make_tuple(pybind11::array(q.dim(), q.p), pybind11::array(qdot.dim(), qdot.p));
+  }, "",
+  py::arg("joints") = ry::I_StringA() )
+    
+  .def("setJointState_qdot", [](ry::Config& self, const std::vector<double>& q, const std::vector<double>& qdot){
+    arr _q = conv_stdvec2arr(q);
+    arr _qdot = conv_stdvec2arr(qdot);
+    self.set()->setJointState(_q, _qdot);
+  }, "",
+    py::arg("q"),
+    py::arg("qdot") )
+    
+  .def("getEnergy", [](ry::Config& self){
+    return self.set()->getEnergy();
+  } )
+    
   ;
 
 //  py::class_<ry::Display>(m, "Display")

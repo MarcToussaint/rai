@@ -14,7 +14,7 @@ rai::CameraView::CameraView(const rai::KinematicWorld& _K, bool _background, int
 rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char* frameAttached, uint width, uint height, double focalLength, double orthoAbsHeight, const arr& zRange, const char* backgroundImageFile){
   Sensor& sen = sensors.append();
   sen.name = name;
-  sen.frame = K.getFrameByName(frameAttached);
+  sen.frame = K.getFrameByName(frameAttached)->ID;
   rai::Camera& cam = sen.cam;
   sen.width=width;
   sen.height=height;
@@ -26,7 +26,7 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char
 
   cam.setWHRatio((double)width/height);
 
-  if(sen.frame) cam.X = sen.frame->X;
+  if(sen.frame>=0) cam.X = K.frames(sen.frame)->X;
 
   done(__func__);
   return sen;
@@ -63,7 +63,7 @@ rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName){
   return *sen;
 }
 
-void rai::CameraView::computeImageAndDepth(byteA& image, arr& depth){
+void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth){
   updateCamera();
 //  renderMode=all;
   if(!background)
@@ -71,12 +71,11 @@ void rai::CameraView::computeImageAndDepth(byteA& image, arr& depth){
   else
     gl.renderInBack(true, true, gl.width, gl.height);
   image = gl.captureImage;
-  floatA glDepth = gl.captureDepth;
+  depth = gl.captureDepth;
   flip_image(image);
-  flip_image(glDepth);
-  depth.resize(glDepth.d0, glDepth.d1);
+  flip_image(depth);
   for(uint i=0; i<depth.N; i++){
-    double d=glDepth.elem(i);
+    double d=depth.elem(i);
     if(d==1. || d==0.) depth.elem(i)=-1.;
     else depth.elem(i) = gl.camera.glConvertToTrueDepth(d);
   }
@@ -141,7 +140,7 @@ void rai::CameraView::watch_PCL(const arr& pts, const byteA& rgb){
 
 void rai::CameraView::updateCamera(){
   for(Sensor& sen:sensors){
-    if(sen.frame) sen.cam.X = sen.frame->X;
+    if(sen.frame>=0) sen.cam.X = K.frames(sen.frame)->X;
   }
 
   if(currentSensor){
@@ -210,10 +209,14 @@ void rai::Sim_CameraView::open() {
 
 void rai::Sim_CameraView::step() {
   byteA img;
-  arr dep;
+  floatA dep;
   arr X = model.get()->getFrameState();
   if(!X.N) return;
-  C.K.setFrameState(X);
+  if(X.d0==C.K.frames.N){
+    C.K.setFrameState(X);
+  }else{
+    C.K = model.get();
+  }
   C.renderMode=C.visuals;
   C.computeImageAndDepth(img, dep);
   color.set() = img;

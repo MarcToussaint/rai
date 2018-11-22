@@ -47,6 +47,5 @@ struct TM_Default : Feature {
   virtual uint dim_phi(const rai::KinematicWorld& G);
   virtual rai::String shortTag(const rai::KinematicWorld& K);
   virtual Graph getSpec(const rai::KinematicWorld& K);
-
 };
 
