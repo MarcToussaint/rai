@@ -52,7 +52,7 @@ bool checkHessianCP(ConstrainedProblem &P, const arr& x, double tolerance) {
 //
 
 OptOptions::OptOptions() {
-  verbose    = rai::getParameter<uint> ("opt/verbose", 1);
+  verbose    = rai::getParameter<int> ("opt/verbose", 1);
   fmin_return=NULL;
   stopTolerance= rai::getParameter<double>("opt/stopTolerance", 1e-2);
   stopFTolerance= rai::getParameter<double>("opt/stopFTolerance", 1e-1);

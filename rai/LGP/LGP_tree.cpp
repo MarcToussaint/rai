@@ -99,7 +99,7 @@ void initFolStateFromKin(FOL_World& L, const rai::KinematicWorld& K) {
 }
 
 LGP_Tree::LGP_Tree()
-  : verbose(3), numSteps(0),
+  : verbose(2), numSteps(0),
     solutions("OptLGPsolutions"){
   dataPath <<"z." <<rai::date2() <<"/";
   dataPath = rai::getParameter<rai::String>("LGP_dataPath", dataPath);
@@ -109,31 +109,30 @@ LGP_Tree::LGP_Tree()
   OptLGPDataPath = dataPath;
   if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
 
-  collisions = rai::getParameter<bool>("LGP/collisions", false);
-  displayTree = rai::getParameter<bool>("LGP/displayTree", true);
+  collisions = rai::getParameter<bool>("LGP/collisions", true);
+  displayTree = rai::getParameter<bool>("LGP/displayTree", false);
 
-  verbose = rai::getParameter<int>("LGP/verbose", 3);
+  verbose = rai::getParameter<int>("LGP/verbose", 2);
   if(verbose>0) fil.open(dataPath + "optLGP.dat"); //STRING("z.optLGP." <<rai::date() <<".dat"));
 
   cameraFocus = rai::getParameter<arr>("LGP/cameraFocus", {});
 }
 
-LGP_Tree::LGP_Tree(rai::KinematicWorld& kin, const char *folFileName) : LGP_Tree() {
-  selfCreated = new FOL_World(FILE(folFileName));
-  initFolStateFromKin(*selfCreated, kin);
-  if(verbose>0) cout <<"INITIAL LOGIC STATE = " <<*selfCreated->start_state <<endl;
-  init(kin, *selfCreated);
-}
-
-LGP_Tree::LGP_Tree(rai::KinematicWorld &kin, FOL_World &fol) : LGP_Tree() {
-  init(kin, fol);
-}
-
-void LGP_Tree::init(rai::KinematicWorld &kin, FOL_World &fol) {
-  CHECK(!root,"");
+LGP_Tree::LGP_Tree(const rai::KinematicWorld& _kin, const char *folFileName) : LGP_Tree() {
+  kin.copy(_kin);
+  fol.init(folFileName);
+  initFolStateFromKin(fol, kin);
+  if(verbose>0) cout <<"INITIAL LOGIC STATE = " <<*fol.start_state <<endl;
   root = new LGP_Node(kin, fol, BD_max);
   focusNode = root;
-  //  threadOpenModules(true);
+}
+
+LGP_Tree::LGP_Tree(const rai::KinematicWorld& _kin, const FOL_World& _fol) : LGP_Tree() {
+  kin.copy(_kin);
+  fol.copy(_fol);
+  if(verbose>0) cout <<"INITIAL LOGIC STATE = " <<*fol.start_state <<endl;
+  root = new LGP_Node(kin, fol, BD_max);
+  focusNode = root;
 }
 
 LGP_Tree::~LGP_Tree() {
@@ -145,7 +144,7 @@ LGP_Tree::~LGP_Tree() {
 }
 
 void LGP_Tree::initDisplay() {
-  if(!views.N) {
+  if(verbose>2 && !views.N) {
     views.resize(4);
     views(1) = make_shared<KinPathViewer>("pose", 1.2, -1);
     views(2) = make_shared<KinPathViewer>("sequence", 1.2, -1);
@@ -164,14 +163,18 @@ void LGP_Tree::renderToVideo(uint specificBound, const char* filePrefix) {
 void LGP_Tree::updateDisplay() {
   if(fringe_solved.N) focusNode = fringe_solved.last();
   
-  rai::String decisions = focusNode->getTreePathString('\n');
-  for(uint i=1; i<views.N; i++) {
-    if(focusNode->komoProblem(i) && focusNode->komoProblem(i)->configurations.N) {
-      views(i)->setConfigurations(focusNode->komoProblem(i)->configurations);
-      views(i)->text.clear() <<focusNode->cost <<"|  " <<focusNode->constraints.last() <<'\n' <<decisions;
-    } else views(i)->clear();
+  //individual windows to display focusNode
+  if(verbose>2){
+    rai::String decisions = focusNode->getTreePathString('\n');
+    for(uint i=1; i<views.N; i++) {
+      if(focusNode->komoProblem(i) && focusNode->komoProblem(i)->configurations.N) {
+        views(i)->setConfigurations(focusNode->komoProblem(i)->configurations);
+        views(i)->text.clear() <<focusNode->cost <<"|  " <<focusNode->constraints.last() <<'\n' <<decisions;
+      } else views(i)->clear();
+    }
   }
-  
+
+  //big windows to display solution buffer
   solutions.writeAccess();
   for(uint i=0; i<solutions().N && i<6; i++) {
     if(dth->gl.views.N<=i || !dth->gl.views(i).drawers.N) {
@@ -299,10 +302,10 @@ LGP_Node* LGP_Tree::walkToNode(const rai::String& seq){
     if(!node->isExpanded) node->expand();
     LGP_Node *next = node->getChildByAction(actionLiteral);
     if(!next) LOG(-2) <<"action '" <<*actionLiteral <<"' is not a child of '" <<*node <<"'";
-    focusNode = node;
     node = next;
   }
 
+  focusNode = node;
   return node;
 }
 
@@ -315,14 +318,14 @@ void LGP_Tree::optFixedSequence(const rai::String& seq, BoundType specificBound,
   updateDisplay();
 
   //then compute the desired bound
-  if(specificBound==BD_all || specificBound==BD_pose) node->optBound(BD_pose, collisions);
-  if(specificBound==BD_all || specificBound==BD_seq)  node->optBound(BD_seq, collisions);
-  if(specificBound==BD_all || specificBound==BD_path) node->optBound(BD_path, collisions);
-  if(specificBound==BD_all || specificBound==BD_seqPath) node->optBound(BD_seqPath, collisions);
+  if(specificBound==BD_all || specificBound==BD_pose) node->optBound(BD_pose, collisions, verbose-2);
+  if(specificBound==BD_all || specificBound==BD_seq)  node->optBound(BD_seq, collisions, verbose-2);
+  if(specificBound==BD_all || specificBound==BD_path) node->optBound(BD_path, collisions, verbose-2);
+  if(specificBound==BD_all || specificBound==BD_seqPath) node->optBound(BD_seqPath, collisions, verbose-2);
   
   focusNode = node;
   
-  solutions.set()->append(new LGP_Tree_SolutionData(node));
+  solutions.set()->append(new LGP_Tree_SolutionData(*this, node));
   solutions.set()->sort(sortComp2);
   
   updateDisplay();
@@ -358,9 +361,9 @@ bool LGP_Tree::execChoice(rai::String cmd) {
   if(cmd=="q") return false;
   else if(cmd=="u") { if(focusNode->parent) focusNode = focusNode->parent; }
   else if(cmd=="e") focusNode->expand();
-  else if(cmd=="p") focusNode->optBound(BD_pose, collisions);
-  else if(cmd=="s") focusNode->optBound(BD_seq , collisions);
-  else if(cmd=="x") focusNode->optBound(BD_path, collisions);
+  else if(cmd=="p") focusNode->optBound(BD_pose, collisions, verbose-2);
+  else if(cmd=="s") focusNode->optBound(BD_seq , collisions, verbose-2);
+  else if(cmd=="x") focusNode->optBound(BD_path, collisions, verbose-2);
   //  else if(cmd=="m") node->addMCRollouts(100,10);
   else {
     int choice=-1;
@@ -421,7 +424,7 @@ void LGP_Tree::optBestOnLevel(BoundType bound, MNodeL &drawFringe, BoundType dra
   LGP_Node* n = popBest(drawFringe, drawFrom);
   if(n && !n->count(bound)) {
     try {
-      n->optBound(bound, collisions);
+      n->optBound(bound, collisions, verbose-2);
     } catch(const char* err) {
       LOG(-1) <<"opt(level=" <<bound <<") has failed for the following node:";
       n->write(cout, false, true);
@@ -441,7 +444,7 @@ void LGP_Tree::optFirstOnLevel(BoundType bound, MNodeL &fringe, MNodeL *addIfTer
   LGP_Node *n =  fringe.popFirst();
   if(n && !n->count(bound)) {
     try {
-      n->optBound(bound, collisions);
+      n->optBound(bound, collisions, verbose-2);
     } catch(const char* err) {
       LOG(-1) <<"opt(bound=" <<bound <<") has failed for the following node:";
       n->write(cout, false, true);
@@ -471,7 +474,7 @@ rai::String LGP_Tree::report(bool detailed) {
   
   rai::String out;
   out <<"TIME= " <<rai::cpuTime() <<" TIME= " <<COUNT_time <<" KIN= " <<COUNT_kin <<" EVALS= " <<COUNT_evals << " TREE= " <<COUNT_node
-     <<" POSE= " <<COUNT_opt(1) <<" SEQ= " <<COUNT_opt(2) <<" PATH= " <<COUNT_opt(3)
+     <<" POSE= " <<COUNT_opt(BD_pose) <<" SEQ= " <<COUNT_opt(BD_seq) <<" PATH= " <<COUNT_opt(BD_path)+COUNT_opt(BD_seqPath)
     <<" bestPose= " <<(bpose?bpose->cost(1):100.)
    <<" bestSeq= " <<(bseq ?bseq ->cost(2):100.)
   <<" bestPath= " <<(bpath?bpath->cost(3):100.)
@@ -508,7 +511,7 @@ void LGP_Tree::step() {
   
   if(fringe_solved.N>numSol) {
     if(verbose>0) cout <<"NEW SOLUTION FOUND! " <<fringe_solved.last()->getTreePathString() <<endl;
-    solutions.set()->append(new LGP_Tree_SolutionData(fringe_solved.last()));
+    solutions.set()->append(new LGP_Tree_SolutionData(*this, fringe_solved.last()));
     solutions.set()->sort(sortComp2);
   }
   
@@ -523,8 +526,8 @@ void LGP_Tree::step() {
   if(verbose>0) {
     rai::String out=report();
     fil <<out <<endl;
-    if(verbose>1) cout <<out <<endl;
-    if(verbose>2 && !(numSteps%1)) updateDisplay();
+    cout <<out <<endl;
+    if(verbose>1 && !(numSteps%1)) updateDisplay();
   }
   numSteps++;
 }
@@ -545,8 +548,8 @@ void LGP_Tree::buildTree(uint depth) {
   if(verbose>0) {
     rai::String out=report();
     fil <<out <<endl;
-    if(verbose>1) cout <<out <<endl;
-    if(verbose>2) updateDisplay();
+    cout <<out <<endl;
+    if(verbose>1) updateDisplay();
   }
 }
 
@@ -563,7 +566,7 @@ void LGP_Tree::getSymbolicSolutions(uint depth) {
 void LGP_Tree::init() {
   fringe_expand.append(root);
   fringe_pose.append(root);
-  if(verbose>2) {
+  if(verbose>1) {
     initDisplay();
     updateDisplay();
   }
@@ -572,7 +575,7 @@ void LGP_Tree::init() {
 void LGP_Tree::run(uint steps) {
   init();
   
-  uint stopSol = rai::getParameter<uint>("stopSol", 12);
+  uint stopSol = rai::getParameter<uint>("LGP/stopSol", 12);
   double stopTime = rai::getParameter<double>("LGP/stopTime", 400.);
   
   for(uint k=0; k<steps; k++) {
@@ -590,7 +593,7 @@ void LGP_Tree::run(uint steps) {
   output.close();
   
   //this generates the movie!
-  if(verbose>2) {
+  if(verbose>1) {
     //    renderToVideo();
     rai::system(STRING("mkdir -p " <<OptLGPDataPath <<"vid"));
     rai::system(STRING("rm -f " <<OptLGPDataPath <<"vid/*.ppm"));
@@ -599,11 +602,11 @@ void LGP_Tree::run(uint steps) {
     rai::wait(20.);
   }
   
-  if(verbose>2) views.clear();
+  if(verbose>1) views.clear();
 }
 
-LGP_Tree_SolutionData::LGP_Tree_SolutionData(LGP_Node *n) : node(n) {
-  decisions = n->getTreePathString('\n');
+LGP_Tree_SolutionData::LGP_Tree_SolutionData(LGP_Tree& _tree, LGP_Node *_node) : tree(_tree), node(_node) {
+  decisions = node->getTreePathString('\n');
   
   //--init geoms
   const rai::KinematicWorld& K = node->startKinematics;
@@ -639,14 +642,14 @@ void LGP_Tree_SolutionData::write(std::ostream &os) const {
 
 void LGP_Tree_SolutionData::glDraw(OpenGL &gl) {
 #ifdef RAI_GL
-  uint l=BD_path;
+  uint displayBound=tree.displayBound;
   rai::Array<rai::Geom*>& geoms = _GeomStore()->geoms;
   
-  if(!paths(l).N) return;
+  if(!paths(displayBound).N) return;
   
   for(uint i=0; i<geomIDs.N; i++) {
-    if(displayStep >= paths(l).d0) displayStep = 0;
-    rai::Transformation &X = paths(l)(displayStep, i);
+    if(displayStep >= paths(displayBound).d0) displayStep = 0;
+    rai::Transformation &X = paths(displayBound)(displayStep, i);
     double GLmatrix[16];
     X.getAffineMatrixGL(GLmatrix);
     glLoadMatrixd(GLmatrix);

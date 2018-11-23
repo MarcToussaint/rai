@@ -44,14 +44,13 @@ FOL_World::FOL_World()
 }
 
 FOL_World::FOL_World(istream& is) : FOL_World() {
-  init(is);
+  init(Graph(is));
 }
 
-void FOL_World::init(istream& is) {
-  KB.read(is);
-  DEBUG(FILE("z.init") <<KB;)   //write what was read, just for inspection
+void FOL_World::init(const Graph& _KB){
+  KB = _KB;
   KB.checkConsistency();
-  
+
   start_state = &KB.get<Graph>("START_STATE");
   rewardFct = &KB.get<Graph>("REWARD");
   worldRules = KB.getNodes("Rule");
@@ -411,6 +410,18 @@ void FOL_World::addAgent(const char* name) {
 
 void FOL_World::addObject(const char* name) {
   addFact({"object", name});
+}
+
+void FOL_World::addTerminalRule(const char* literals){
+  //first create a new rule
+  Graph& rule = KB.newSubgraph({"Rule"}, {})->value;
+  worldRules.append(rule.isNodeOfGraph);
+  Graph& preconditions = rule.newSubgraph({}, {})->value;
+  Graph& effect = rule.newSubgraph({}, {})->value;
+  effect.newNode<bool>({}, {Quit_keyword}, true); //adds the (QUIT) to the effect
+
+  preconditions.read(STRING(literals));
+  cout <<"CREATED TERMINATION RULE:" <<*rule.isNodeOfGraph <<endl;
 }
 
 void FOL_World::addTerminalRule(const StringAA& literals) {

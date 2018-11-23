@@ -1258,20 +1258,20 @@ void KOMO::run() {
   if(opt) delete opt;
   if(denseOptimization){
     CHECK(!splineB.N, "NIY");
-    OptConstrained _opt(x, dual, dense_problem);
+    OptConstrained _opt(x, dual, dense_problem, rai::MAX(verbose-2, 0));
 //    OptPrimalDual _opt(x, dual, dense_problem);
     _opt.fil = fil;
     _opt.run();
   } else if(!splineB.N) {
     Convert C(komo_problem);
-    opt = new OptConstrained(x, dual, C);
+    opt = new OptConstrained(x, dual, C, rai::MAX(verbose-2, 0));
     opt->fil = fil;
     opt->run();
   } else {
     arr a,b,c,d,e;
     Conv_KOMO_ConstrainedProblem P0(komo_problem);
     Conv_linearlyReparameterize_ConstrainedProblem P(P0, splineB);
-    opt = new OptConstrained(z, dual, P);
+    opt = new OptConstrained(z, dual, P, rai::MAX(verbose-2, 0));
     opt->fil = fil;
     opt->run();
   }

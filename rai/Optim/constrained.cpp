@@ -41,8 +41,11 @@ const char* MethodName[]= { "NoMethod", "SquaredPenalty", "AugmentedLagrangian",
 
 //==============================================================================
 
-OptConstrained::OptConstrained(arr& x, arr &dual, ConstrainedProblem& P, OptOptions opt)
-  : L(P, opt, dual), newton(x, L, opt), dual(dual), opt(opt) {
+OptConstrained::OptConstrained(arr& _x, arr &_dual, ConstrainedProblem& P, int verbose, OptOptions _opt)
+  : L(P, _opt, _dual), newton(_x, L, _opt), dual(_dual), opt(_opt) {
+
+  if(verbose>=0) opt.verbose=verbose;
+  newton.o.verbose = rai::MAX(opt.verbose-2,0);
   
   if(opt.verbose>0) cout <<"***** optConstrained: method=" <<MethodName[opt.constrainedMethod] <<endl;
 }

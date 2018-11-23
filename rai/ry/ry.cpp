@@ -27,6 +27,8 @@ py::dict graph2dict(const Graph& G){
       dict[key.p] = n->get<rai::String>().p;
     } else if(n->isOfType<arr>()) {
       dict[key.p] = conv_arr2stdvec( n->get<arr>() );
+    } else if(n->isOfType<boolA>()) {
+      dict[key.p] = conv_arr2stdvec( n->get<boolA>() );
     } else if(n->isOfType<double>()) {
       dict[key.p] = n->get<double>();
     } else if(n->isOfType<int>()) {
@@ -36,8 +38,8 @@ py::dict graph2dict(const Graph& G){
     } else if(n->isOfType<bool>()) {
       dict[key.p] = n->get<bool>();
     } else {
+      LOG(-1) <<"can't convert node of type " <<n->type.name() <<" to dictionary";
     }
-
   }
   return dict;
 }
@@ -336,7 +338,9 @@ PYBIND11_MODULE(libry, m) {
     py::arg("timePerPhase")=5. )
 
   .def("lgp", [](ry::Config& self, const std::string& folFileName){
-    return ry::LGPpy(self, folFileName);
+    ry::RyLGP_Tree lgp;
+    lgp.lgp = make_shared<LGP_Tree>(self.get(), folFileName.c_str());
+    return lgp;
   } )
     
   .def("sortFrames", [](ry::Config& self){
@@ -667,9 +671,62 @@ PYBIND11_MODULE(libry, m) {
 
   //===========================================================================
 
-  py::class_<ry::LGPpy>(m, "LGPpy")
-      .def("optimizeFixedSequence", &ry::LGPpy::optimizeFixedSequence)
-      ;
+  py::class_<ry::RyLGP_Tree>(m, "LGP_Tree")
+  .def("walkToNode", [](ry::RyLGP_Tree& self, const char* seq){
+    self.lgp->walkToNode(seq);
+  } )
+
+  .def("walkToRoot", [](ry::RyLGP_Tree& self){
+    self.lgp->focusNode = self.lgp->root;
+  } )
+
+  .def("walkToParent", [](ry::RyLGP_Tree& self){
+    self.lgp->focusNode = self.lgp->focusNode->parent;
+  } )
+
+  .def("walkToDecision", [](ry::RyLGP_Tree& self, uint decision){
+    LGP_Node* focusNode = self.lgp->focusNode;
+    if(!focusNode->isExpanded) focusNode->expand();
+    self.lgp->focusNode = focusNode->children(decision);
+  } )
+
+  .def("getDecisions", [](ry::RyLGP_Tree& self, const char* seq){
+    LGP_Node* focusNode = self.lgp->focusNode;
+    if(!focusNode->isExpanded) focusNode->expand();
+    StringA decisions(focusNode->children.N);
+    uint c=0;
+    for(LGP_Node* a:focusNode->children) {
+      decisions(c++) <<*a->decision;
+    }
+    return I_conv(decisions);
+  } )
+
+  .def("nodeInfo", [](ry::RyLGP_Tree& self){
+    Graph G = self.lgp->focusNode->getInfo();
+    LOG(0) <<G;
+    return graph2dict(G);
+  } )
+
+  .def("optBound", [](ry::RyLGP_Tree& self, BoundType bound, bool collisions){
+    self.lgp->focusNode->optBound(bound, collisions);
+    if(bound == BD_seqPath){
+      self.lgp->focusNode->komoProblem(bound)->displayTrajectory(.02, false, false);
+    }else{
+      self.lgp->focusNode->komoProblem(bound)->displayTrajectory(.1, false, false);
+    }
+  } )
+
+  .def("addTerminalRule", [](ry::RyLGP_Tree& self, const char* precondition){
+    self.lgp->fol.addTerminalRule(precondition);
+  } )
+
+  .def("run", [](ry::RyLGP_Tree& self, int verbose){
+    self.lgp->displayBound = BD_seqPath;
+    self.lgp->verbose=verbose;
+    self.lgp->run();
+  } )
+
+  ;
 
   //===========================================================================
 

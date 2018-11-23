@@ -95,6 +95,7 @@ void flip(int& b, uint i);
 double MIN(double a, double b);
 double MAX(double a, double b);
 uint MAX(uint a, uint b);
+int MAX(int a, int b);
 double indicate(bool expr);
 double modMetric(double x, double y, double mod);
 double sign(double x);
