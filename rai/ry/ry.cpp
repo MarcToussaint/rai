@@ -71,10 +71,11 @@ py::list graph2list(const Graph& G){
 
 Skeleton list2skeleton(const py::list& L){
   Skeleton S;
-  for(uint i=0;i<L.size();i+=2){
+  for(uint i=0;i<L.size();i+=3){
     std::vector<double> when = L[i].cast<std::vector<double> >();
-    ry::I_StringA symbols = L[i+1].cast<ry::I_StringA>();
-    S.append(SkeletonEntry(when[0], when[1], I_conv(symbols)));
+    SkeletonSymbol symbol = L[i+1].cast<SkeletonSymbol>();
+    ry::I_StringA frames = L[i+2].cast<ry::I_StringA>();
+    S.append(SkeletonEntry(when[0], when[1], symbol, I_conv(frames)));
   }
   return S;
 }
@@ -761,6 +762,27 @@ PYBIND11_MODULE(libry, m) {
       ENUMVAL(BD,path)
       ENUMVAL(BD,seqPath)
       ENUMVAL(BD,max)
+      .export_values();
+
+  py::enum_<SkeletonSymbol>(m, "SY")
+      ENUMVAL(SY,touch)
+      ENUMVAL(SY,above)
+      ENUMVAL(SY,inside)
+      ENUMVAL(SY,impulse)
+      ENUMVAL(SY,stable)
+      ENUMVAL(SY,stableOn)
+      ENUMVAL(SY,dynamic)
+      ENUMVAL(SY,dynamicOn)
+      ENUMVAL(SY,dynamicTrans)
+      ENUMVAL(SY,liftDownUp)
+
+      ENUMVAL(SY,contact)
+      ENUMVAL(SY,bounce)
+
+      ENUMVAL(SY,magic)
+
+      ENUMVAL(SY,push)
+      ENUMVAL(SY,graspSlide)
       .export_values();
 
   py::enum_<FeatureSymbol>(m, "FS")

@@ -17,13 +17,37 @@
 
 //===========================================================================
 
+enum SkeletonSymbol{
+  SY_none=-1,
+  SY_touch,
+  SY_above,
+  SY_inside,
+  SY_impulse,
+  SY_stable,
+  SY_stableOn,
+  SY_dynamic,
+  SY_dynamicOn,
+  SY_dynamicTrans,
+  SY_liftDownUp,
+
+  SY_contact,
+  SY_bounce,
+
+  SY_magic,
+
+  SY_push,
+  SY_graspSlide
+};
+
+
 struct SkeletonEntry {
   double phase0=-1.;
   double phase1=-1.;
-  StringA symbols;
+  rai::Enum<SkeletonSymbol> symbol;
+  StringA frames;
   SkeletonEntry() {}
-  SkeletonEntry(double phase0, double phase1, StringA symbols) : phase0(phase0), phase1(phase1), symbols(symbols){}
-  void write(ostream& os) const { symbols.write(os," ",NULL,"()"); os <<" from " <<phase0 <<" to " <<phase1; }
+  SkeletonEntry(double phase0, double phase1, SkeletonSymbol symbol, StringA frames) : phase0(phase0), phase1(phase1), symbol(symbol), frames(frames){}
+  void write(ostream& os) const { os <<symbol <<' '; frames.write(os," ",NULL,"()"); os <<" from " <<phase0 <<" to " <<phase1 <<endl; }
 };
 stdOutPipe(SkeletonEntry)
 typedef rai::Array<SkeletonEntry> Skeleton;

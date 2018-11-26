@@ -330,10 +330,12 @@ Skeleton LGP_Node::getSkeleton(StringA predicateFilter,  bool finalStateOnly) co
           done(k_end, persists->index) = true;
         }
         k_end--;
+
+        rai::Enum<SkeletonSymbol> sym(symbols.first());
         if(k_end==states.N-1) {
-          skeleton.append(SkeletonEntry({times(k), times.last(), symbols}));
+          skeleton.append(SkeletonEntry({times(k), times.last(), sym, symbols({1,-1})}));
         } else {
-          skeleton.append(SkeletonEntry({times(k), times(k_end), symbols}));
+          skeleton.append(SkeletonEntry({times(k), times(k_end), sym, symbols({1,-1})}));
         }
       }
     }

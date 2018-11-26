@@ -98,7 +98,7 @@ struct FOL_World : MCTS_Environment {
   virtual ~FOL_World();
   void init(const Graph& _KB);
   void init(const char* filename) { init(Graph(FILE(filename))); }
-  void copy(const FOL_World& fol) { KB = fol.KB; LOG(-1) <<"incomplete"; }
+  void copy(const FOL_World& fol) { init(fol.KB); }
   
   virtual TransitionReturn transition(const Handle& action); //returns (observation, reward)
   virtual const std::vector<Handle> get_actions();

@@ -364,6 +364,7 @@ Graph* FOL_World::getState() {
 }
 
 void FOL_World::setState(Graph *s, int setT_step) {
+  CHECK(s, "can't set state to NULL graph");
   if(state) {
     CHECK(s->isNodeOfGraph != state->isNodeOfGraph,"you are setting the state to itself");
   }
