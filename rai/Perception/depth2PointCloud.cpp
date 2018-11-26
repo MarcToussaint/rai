@@ -8,10 +8,10 @@
 
 #include "depth2PointCloud.h"
 
-Depth2PointCloud::Depth2PointCloud(Var<arr>& _depth, double _forcalLength)
+Depth2PointCloud::Depth2PointCloud(Var<floatA>& _depth, float _fx, float _fy, float _px, float _py)
   : Thread("Depth2PointCloud"),
     depth(this, _depth, true),
-    focalLength(_forcalLength){
+    fx(_fx), fy(_fy), px(_px), py(_py){
   pose.set()->setZero();
   threadOpen();
 }
@@ -23,37 +23,43 @@ Depth2PointCloud::~Depth2PointCloud() {
 void Depth2PointCloud::step() {
   _depth = depth.get();
   
-  depthData2pointCloud(_pts, _depth, focalLength);
+  depthData2pointCloud(_points, _depth, fx, fy, px, py);
 
   rai::Transformation _pose = pose.get(); //this is relative to "/base_link"
-  if(!_pose.isZero()) _pose.applyOnPointArray(_pts);
+  if(!_pose.isZero()) _pose.applyOnPointArray(_points);
   
-  pts.set() = _pts;
+  points.set() = _points;
 }
 
-void depthData2pointCloud(arr& pts, const arr& depth, double focalLength){
+void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, float px, float py){
   uint H=depth.d0, W=depth.d1;
 
+  CHECK(fx>0, "need a focal length greater zero!(not implemented for ortho yet)");
+  if(fy<0.) fy = fx;
+  if(px<0.) px=.5*W;
+  if(py<0.) py=.5*H;
+
   pts.resize(H*W, 3);
+  pts.setZero();
+  double *pt=pts.p;
+  float *de=depth.p;
 
-  CHECK(focalLength>0, "need a focal length greater zero!(not implemented for ortho yet)");
-  int centerX = (W >> 1);
-  int centerY = (H >> 1);
-  double focal_x = 1./(focalLength*H);
-  double focal_y = 1./(focalLength*H);
-
-  uint i=0;
-  for(int y=-centerY+1; y<=centerY; y++) for(int x=-centerX+1; x<=centerX; x++, i++) {
-    double d = depth.elem(i);
-    if(d>=0) {  //2^11-1
-      pts(i, 0) = d*focal_x*x;
-      pts(i, 1) = -d*focal_y*y;
-      pts(i, 2) = -d;
-    } else {
-      pts(i, 0) = 0.;
-      pts(i, 1) = 0.;
-      pts(i, 2) = 1.;
-    }
+  for(uint i=0;i<H;i++) for(uint j=0;j<W;j++){
+      float d = *(de++);
+      if(d>=0.){
+          float x=j, y=i;
+#if 0
+          pts(k, 0) = d * (x - px) / fx;
+          pts(k, 1) = -d * (y - py) / fy;
+          pts(k, 2) = -d;
+#else
+          *(pt++) = d * (x - px) / fx;
+          *(pt++) = -d * (y - py) / fy;
+          *(pt++) = -d;
+#endif
+      }else{
+          pt += 3;
+      }
   }
 
   pts.reshape(H, W, 3);

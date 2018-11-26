@@ -394,7 +394,7 @@ struct Thread {
   
   /** use this to open drivers/devices/files and initialize
    *  parameters; this is called within the thread */
-  virtual void open() = 0;
+  virtual void open(){}
   
   /** The most important method of all of this: step does the actual
    *  computation of the thread. Access
@@ -405,7 +405,7 @@ struct Thread {
   
   /** use this to close drivers/devices/files; this is called within
    *  the thread */
-  virtual void close() = 0;
+  virtual void close(){}
   
   void main(); //this is the thread main - should be private!
 };
