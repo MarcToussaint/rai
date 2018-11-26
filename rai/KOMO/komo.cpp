@@ -248,7 +248,7 @@ void KOMO::addSwitch_stable(double time, double endTime, const char* from, const
   if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, {1e2}, {}, 1);
   //-- no object acceleration at start: +0 include (x-2, x-1, x0), which enforces a SMOOTH pickup
   if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, +0, +1);
-  else addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
+  else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
 }
 
 void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, const char* to) {
