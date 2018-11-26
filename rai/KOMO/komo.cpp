@@ -246,7 +246,7 @@ void KOMO::addSwitch_stable(double time, double endTime, const char* from, const
     addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
   //-- no relative jump at end
   if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, {1e2}, {}, 1);
-  //-- no acceleration at start: +0 include (x-2, x-1, x0), which enforces a SMOOTH pickup
+  //-- no object acceleration at start: +0 include (x-2, x-1, x0), which enforces a SMOOTH pickup
   if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, +0, +1);
   else addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
 }
@@ -285,7 +285,7 @@ void KOMO::addSwitch_dynamicOn(double time, double endTime, const char *from, co
   rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
   addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
   if(k_order>=2) addObjective(time, endTime, new TM_ZeroAcc(world, to), OT_eq, NoArr, 3e1, k_order, +0, -1);
-  addObjective(time,time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2);
+//  if(k_order>1) addObjective(time,time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2);
 }
 
 void KOMO::addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost) {
@@ -669,7 +669,8 @@ void KOMO::setGraspSlide(double time, const char* endeff, const char* object, co
 //  addSwitch_stable(startTime, endTime+1., endeff, object);
   addSwitch(startTime, true, new KinematicSwitch(SW_effJoint, JT_free, endeff, object, world));
   addObjective(time, endTime, new TM_ZeroQVel(world, object), OT_eq, NoArr, 3e1, 1, +1, -1);
-  addObjective(time, time, new TM_LinAngVel(world, object), OT_eq, NoArr, 1e2, 2, 0);
+  if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, object), OT_eq, NoArr, 1e2, 2, 0);
+  else addObjective(time, time, new TM_LinAngVel(world, object), OT_eq, NoArr, 1e2, 1, 0);
   add_touch(startTime, startTime, endeff, object);
   
   //-- place part
@@ -926,51 +927,54 @@ void KOMO_ext::setAbstractTask(double phase, const Graph& facts, int verbose) {
 
 void KOMO::setSkeleton(const Skeleton &S, bool ignoreSwitches) {
   for(const SkeletonEntry& s:S) {
-    if(!s.symbols.N) continue;
-    if(s.symbols(0)=="touch") {   add_touch(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
-    if(s.symbols(0)=="above") {   add_aboveBox(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
-    if(s.symbols(0)=="inside") {   add_aboveBox(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
-    if(s.symbols(0)=="impulse") {  add_impulse(s.phase0, s.symbols(1), s.symbols(2));  continue;  }
-    if(s.symbols(0)=="stable") {    if(!ignoreSwitches) addSwitch_stable(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2));  continue;  }
-    if(s.symbols(0)=="stableOn") {  if(!ignoreSwitches) addSwitch_stableOn(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2));  continue;  }
-    if(s.symbols(0)=="dynamic") {   if(!ignoreSwitches) addSwitch_dynamic(s.phase0, s.phase1+1., "base", s.symbols(1));  continue;  }
-    if(s.symbols(0)=="dynamicOn") { if(!ignoreSwitches) addSwitch_dynamicOn(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2));  continue;  }
-    if(s.symbols(0)=="dynamicTrans") { if(!ignoreSwitches) addSwitch_dynamicTrans(s.phase0, s.phase1+1., "base", s.symbols(1));  continue;  }
-    if(s.symbols(0)=="liftDownUp") {  setLiftDownUp(s.phase0, s.symbols(1), .4);  continue;  }
+    if(s.symbol==SY_touch) {   add_touch(s.phase0, s.phase1, s.frames(0), s.frames(1));  continue;  }
+    if(s.symbol==SY_above) {   add_aboveBox(s.phase0, s.phase1, s.frames(0), s.frames(1));  continue;  }
+    if(s.symbol==SY_inside) {   add_aboveBox(s.phase0, s.phase1, s.frames(0), s.frames(1));  continue;  }
+    if(s.symbol==SY_impulse) {  add_impulse(s.phase0, s.frames(0), s.frames(1));  continue;  }
+    if(s.symbol==SY_stable) {    if(!ignoreSwitches) addSwitch_stable(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  continue;  }
+    if(s.symbol==SY_stableOn) {  if(!ignoreSwitches) addSwitch_stableOn(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  continue;  }
+    if(s.symbol==SY_dynamic) {   if(!ignoreSwitches) addSwitch_dynamic(s.phase0, s.phase1+1., "base", s.frames(0));  continue;  }
+    if(s.symbol==SY_dynamicOn) { if(!ignoreSwitches) addSwitch_dynamicOn(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  continue;  }
+    if(s.symbol==SY_dynamicTrans) { if(!ignoreSwitches) addSwitch_dynamicTrans(s.phase0, s.phase1+1., "base", s.frames(0));  continue;  }
+    if(s.symbol==SY_liftDownUp) {  setLiftDownUp(s.phase0, s.frames(0), .4);  continue;  }
 
-    if(s.symbols(0)=="contact") {   addContact_slide(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
-    if(s.symbols(0)=="bounce") {   addContact_elasticBounce(s.phase0, s.symbols(1), s.symbols(2), .8);  continue;  }
-    //if(s.symbols(0)=="contactComplementary") {   addContact_Complementary(s.phase0, s.phase1, s.symbols(1), s.symbols(2));  continue;  }
+    if(s.symbol==SY_contact) {   addContact_slide(s.phase0, s.phase1, s.frames(0), s.frames(1));  continue;  }
+    if(s.symbol==SY_bounce) {   addContact_elasticBounce(s.phase0, s.frames(0), s.frames(1), .9);  continue;  }
+    //if(s.symbol==SY_contactComplementary) {   addContact_Complementary(s.phase0, s.phase1, s.frames(0), s.frames(1));  continue;  }
 
-//    if(s.symbols(0)=="magicTouch") {
-//      core_setTouch(s.phase0, s.phase1, s.symbols(1), s.symbols(2));
-//      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", s.symbols(2), world));
-//      setFlag(s.phase0, new Flag(FL_clear, world[s.symbols(1)]->ID, 0, true), +0);
-//      setFlag(s.phase0, new Flag(FL_qCtrlCostAcc, world[s.symbols(1)]->ID, 0, true), +0);
+
+    if(s.symbol==SY_magic) {  addSwitch_magic(s.phase0, s.phase1, "base", s.frames(0), 0.); continue; }
+
+
+//    if(s.symbol==SY_magicTouch) {
+//      core_setTouch(s.phase0, s.phase1, s.frames(0), s.frames(1));
+//      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", s.frames(1), world));
+//      setFlag(s.phase0, new Flag(FL_clear, world[s.frames(0)]->ID, 0, true), +0);
+//      setFlag(s.phase0, new Flag(FL_qCtrlCostAcc, world[s.frames(0)]->ID, 0, true), +0);
 //      continue;
 //    }
-//    if(s.symbols(0)=="actFree") {
-//      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", s.symbols(1), world));
-//      setFlag(s.phase0, new Flag(FL_clear, world[s.symbols(1)]->ID, 0, true), +0);
-//      setFlag(s.phase0, new Flag(FL_qCtrlCostVel, world[s.symbols(1)]->ID, 0, true), +0);
-////      setFlag(s.phase0, new Flag(FL_qCtrlCostAcc, world[s.symbols(1)]->ID, 0, true), +0);
+//    if(s.symbol==SY_actFree) {
+//      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", s.frames(0), world));
+//      setFlag(s.phase0, new Flag(FL_clear, world[s.frames(0)]->ID, 0, true), +0);
+//      setFlag(s.phase0, new Flag(FL_qCtrlCostVel, world[s.frames(0)]->ID, 0, true), +0);
+////      setFlag(s.phase0, new Flag(FL_qCtrlCostAcc, world[s.frames(0)]->ID, 0, true), +0);
 //      continue;
 //    }
     
-//    if(s.symbols(0)=="grasp") {
+//    if(s.symbol==SY_grasp) {
 //      setSlow(s.phase0-.05, s.phase0+.05, 3e0, false);
-//      core_setTouch(s.phase0, s.phase1, s.symbols(1), s.symbols(2));
-////      core_setInside(s.phase0, s.phase1, s.symbols(1), s.symbols(2));
-//      addSwitch_stable(s.phase0, s.symbols(1), s.symbols(2));
-////      setLiftDownUp(s.phase0, s.symbols(1));
+//      core_setTouch(s.phase0, s.phase1, s.frames(0), s.frames(1));
+////      core_setInside(s.phase0, s.phase1, s.frames(0), s.frames(1));
+//      addSwitch_stable(s.phase0, s.frames(0), s.frames(1));
+////      setLiftDownUp(s.phase0, s.frames(0));
 //      continue;
 //    }
     
-    if(s.symbols(0)=="push")                       setPush(s.phase0, s.phase1+1., s.symbols(1), s.symbols(2), s.symbols(3), verbose); //TODO: the +1. assumes pushes always have duration 1
-//    else if(s.symbols(0)=="place" && s.symbols.N==3) setPlace(s.phase0, NULL, s.symbols(1), s.symbols(2), verbose);
-//    else if(s.symbols(0)=="place" && s.symbols.N==4) setPlace(s.phase0, s.symbols(1), s.symbols(2), s.symbols(3), verbose);
-    else if(s.symbols(0)=="graspSlide")            setGraspSlide(s.phase0, s.symbols(1), s.symbols(2), s.symbols(3), verbose);
-//    else if(s.symbols(0)=="handover")              setHandover(s.phase0, s.symbols(1), s.symbols(2), s.symbols(3), verbose);
+    if(s.symbol==SY_push)                       setPush(s.phase0, s.phase1+1., s.frames(0), s.frames(1), s.frames(2), verbose); //TODO: the +1. assumes pushes always have duration 1
+//    else if(s.symbol==SY_place" && s.symbols.N==3) setPlace(s.phase0, NULL, s.frames(0), s.frames(1), verbose);
+//    else if(s.symbol==SY_place" && s.symbols.N==4) setPlace(s.phase0, s.frames(0), s.frames(1), s.frames(2), verbose);
+    else if(s.symbol==SY_graspSlide)            setGraspSlide(s.phase0, s.frames(0), s.frames(1), s.frames(2), verbose);
+//    else if(s.symbol==SY_handover)              setHandover(s.phase0, s.frames(0), s.frames(1), s.frames(2), verbose);
     else LOG(-2) <<"UNKNOWN PREDICATE!: " <<s;
   }
 }
@@ -1258,20 +1262,20 @@ void KOMO::run() {
   if(opt) delete opt;
   if(denseOptimization){
     CHECK(!splineB.N, "NIY");
-    OptConstrained _opt(x, dual, dense_problem);
+    OptConstrained _opt(x, dual, dense_problem, rai::MAX(verbose-2, 0));
 //    OptPrimalDual _opt(x, dual, dense_problem);
     _opt.fil = fil;
     _opt.run();
   } else if(!splineB.N) {
     Convert C(komo_problem);
-    opt = new OptConstrained(x, dual, C);
+    opt = new OptConstrained(x, dual, C, rai::MAX(verbose-2, 0));
     opt->fil = fil;
     opt->run();
   } else {
     arr a,b,c,d,e;
     Conv_KOMO_ConstrainedProblem P0(komo_problem);
     Conv_linearlyReparameterize_ConstrainedProblem P(P0, splineB);
-    opt = new OptConstrained(z, dual, P);
+    opt = new OptConstrained(z, dual, P, rai::MAX(verbose-2, 0));
     opt->fil = fil;
     opt->run();
   }
@@ -2355,3 +2359,26 @@ arr KOMO::getPath_energies() {
   }
   return X;
 }
+
+
+template<> const char* rai::Enum<SkeletonSymbol>::names []= {
+  "touch",
+  "above",
+  "inside",
+  "impulse",
+  "stable",
+  "stableOn",
+  "dynamic",
+  "dynamicOn",
+  "dynamicTrans",
+  "liftDownUp",
+
+  "contact",
+  "bounce",
+
+  "magic",
+
+  "push",
+  "graspSlide",
+  NULL
+};

@@ -227,6 +227,7 @@ void flip(int& b, uint i) { b ^= 1 <<(7-(i&7)); }
 double MIN(double a, double b) { return a<b?a:b; }
 double MAX(double a, double b) { return a>b?a:b; }
 uint MAX(uint a, uint b) { return a>b?a:b; }
+int MAX(int a, int b) { return a>b?a:b; }
 
 double indicate(bool expr) { if(expr) return 1.; return 0.; }
 

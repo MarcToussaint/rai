@@ -12,6 +12,7 @@
 #include <KOMO/komo.h>
 #include <Kin/cameraview.h>
 #include <Gui/viewer.h>
+#include <LGP/LGP_tree.h>
 
 namespace ry{
 
@@ -46,12 +47,14 @@ namespace ry{
     Var<arr> path;
   };
 
+  struct RyLGP_Tree { shared_ptr<LGP_Tree> lgp; };
+
   struct RyFeature { Feature *feature=0; };
 
   struct RyCameraView {
     shared_ptr<rai::CameraView> cam;
     Var<byteA> image;
-    Var<arr> depth;
+    Var<floatA> depth;
     Var<byteA> segmentation;
     Var<arr> pts;
   };

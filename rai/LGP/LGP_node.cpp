@@ -113,10 +113,12 @@ void LGP_Node::computeEndKinematics(){
   for(rai::KinematicSwitch *s : tmp.switches) s->apply(effKinematics);
 }
 
-void LGP_Node::optBound(BoundType bound, bool collisions) {
+void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   if(komoProblem(bound)) delete komoProblem(bound);
   komoProblem(bound) = new KOMO();
   KOMO& komo(*komoProblem(bound));
+
+  komo.verbose = rai::MAX(verbose,0);
 
   if(komo.verbose>0){
     cout <<"########## OPTIM lev " <<bound <<endl;
@@ -328,10 +330,12 @@ Skeleton LGP_Node::getSkeleton(StringA predicateFilter,  bool finalStateOnly) co
           done(k_end, persists->index) = true;
         }
         k_end--;
+
+        rai::Enum<SkeletonSymbol> sym(symbols.first());
         if(k_end==states.N-1) {
-          skeleton.append(SkeletonEntry({times(k), times.last(), symbols}));
+          skeleton.append(SkeletonEntry({times(k), times.last(), sym, symbols({1,-1})}));
         } else {
-          skeleton.append(SkeletonEntry({times(k), times(k_end), symbols}));
+          skeleton.append(SkeletonEntry({times(k), times(k_end), sym, symbols({1,-1})}));
         }
       }
     }
@@ -449,6 +453,18 @@ void LGP_Node::write(ostream& os, bool recursive, bool path) const {
   os <<"\t seqCost=" <<cost(BD_seq) <<endl;
   os <<"\t pathCost=" <<cost(BD_path) <<endl;
   if(recursive) for(LGP_Node *n:children) n->write(os);
+}
+
+Graph LGP_Node::getInfo() const {
+  Graph G;
+  if(decision) G.newNode<rai::String>({"decision"}, {}, STRING(*decision));
+  else         G.newNode<rai::String>({"decision"}, {}, "<ROOT>");
+  G.newNode<rai::String>({"state"}, {}, STRING(*folState->isNodeOfGraph));
+  G.newNode<rai::String>({"path"}, {}, getTreePathString());
+  G.newNode<arr>({"boundsCost"}, {}, cost);
+  G.newNode<arr>({"boundsConstraints"}, {}, constraints);
+  G.newNode<boolA>({"boundsFeasible"}, {}, feasible);
+  return G;
 }
 
 void LGP_Node::getGraph(Graph& G, Node* n, bool brief) {

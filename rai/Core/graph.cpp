@@ -572,6 +572,8 @@ void Graph::read(std::istream& is, bool parseInfo) {
       delete n; n=NULL;
     }
   }
+
+  index();
 }
 
 void writeFromStream(std::ostream& os, std::istream& is, istream::pos_type beg, istream::pos_type end) {
