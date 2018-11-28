@@ -255,26 +255,18 @@ void TM_NoJumpFromParent::phi(arr& y, arr& J, const WorldL& Ktuple){
   rai::Frame *link = obj->getUpwardLink();
   rai::Frame *parent = link->parent;
 
-  rai::Frame *newObj = Ktuple.elem(-1)->frames(i);
-  rai::Frame *newLink = newObj->getUpwardLink();
-  rai::Frame *newParent = newObj->parent;
-  rai::Frame *newOldParent = Ktuple.elem(-1)->frames(parent->ID);
-
-
-  if(parent->ID==Ktuple.elem(-1)->frames(i)->getUpwardLink()->parent->ID){
+  if(parent->ID == Ktuple.elem(-1)->frames(i)->getUpwardLink()->parent->ID){
     LOG(-1) <<"this frame isn't switching - are you sure you want to do this?";
   }
 
-  arr yq, Jq;
-  TM_Default tmp(TMT_posDiff, link->ID, NoVector, parent->ID, NoVector);
-  tmp.order = 1;
-  tmp.type = TMT_posDiff;
-  tmp.Feature::phi(y, J, Ktuple);
-  tmp.type = TMT_quatDiff;
-  tmp.flipTargetSignOnNegScalarProduct=true;
-  tmp.Feature::phi(yq, (!!J?Jq:NoArr), Ktuple);
-  y.append(yq);
-  if(!!J) J.append(Jq);
+  if(link->joint && link->joint->type==rai::JT_rigid){
+    TM_Default tmp(TMT_pose, link->ID, NoVector, parent->ID, NoVector);
+    tmp.order = 1;
+    tmp.Feature::phi(y, J, Ktuple);
+  }else{
+    y.resize(7).setZero();
+    if(!!J) J.resize(7,getKtupleDim(Ktuple).last()).setZero();
+  }
 }
 
 uint TM_NoJumpFromParent::dim_phi(const rai::KinematicWorld& G){

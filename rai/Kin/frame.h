@@ -133,7 +133,7 @@ struct Joint : NonCopyable{
   double& getQ();
   
   void makeRigid();
-  void makeFree();
+  void makeFree(double H_cost=0.);
 
   void write(std::ostream& os) const;
   void read(const Graph& G);

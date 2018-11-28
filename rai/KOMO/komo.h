@@ -180,7 +180,7 @@ struct KOMO : NonCopyable {
   //macros for pick-and-place in CGO -- should perhaps not be here.. KOMOext?
   void add_StableRelativePose(const std::vector<int>& confs, const char* gripper, const char* object){
     for(uint i=1;i<confs.size();i++)
-      addObjective(ARR(confs[0], confs[i]), OT_eq, FS_poseDiff, {gripper, object});
+      addObjective(ARR(confs[0], confs[i]), OT_eq, FS_poseRel, {gripper, object});
     world.makeObjectsFree({object});
   }
   void add_StablePose(const std::vector<int>& confs, const char* object){
@@ -200,7 +200,7 @@ struct KOMO : NonCopyable {
     addObjective(ARR(conf1, conf2), OT_eq, FS_pose, {object});
   }
   void add_restingRelative(int conf1, int conf2, const char* object, const char* tableOrGripper){
-    addObjective(ARR(conf1, conf2), OT_eq, FS_poseDiff, {tableOrGripper, object});
+    addObjective(ARR(conf1, conf2), OT_eq, FS_poseRel, {tableOrGripper, object});
   }
 
 

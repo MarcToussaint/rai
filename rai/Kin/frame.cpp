@@ -590,9 +590,10 @@ void rai::Joint::makeRigid() {
   }
 }
 
-void rai::Joint::makeFree(){
+void rai::Joint::makeFree(double H_cost){
   if(type!=JT_free){
     type=JT_free; frame.K.reset_q();
+    H=H_cost;
   }
 }
 
