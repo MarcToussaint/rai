@@ -260,9 +260,16 @@ void TM_NoJumpFromParent::phi(arr& y, arr& J, const WorldL& Ktuple){
   }
 
   if(link->joint && link->joint->type==rai::JT_rigid){
-    TM_Default tmp(TMT_pose, link->ID, NoVector, parent->ID, NoVector);
+    arr yq, Jq;
+    TM_Default tmp(TMT_pos, link->ID, NoVector, parent->ID, NoVector);
     tmp.order = 1;
+    tmp.type = TMT_pos;
     tmp.Feature::phi(y, J, Ktuple);
+    tmp.type = TMT_quat;
+    tmp.flipTargetSignOnNegScalarProduct=true;
+    tmp.Feature::phi(yq, (!!J?Jq:NoArr), Ktuple);
+    y.append(yq);
+    if(!!J) J.append(Jq);
   }else{
     y.resize(7).setZero();
     if(!!J) J.resize(7,getKtupleDim(Ktuple).last()).setZero();
