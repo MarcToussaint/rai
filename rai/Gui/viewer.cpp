@@ -140,10 +140,10 @@ PointCloudViewer::~PointCloudViewer() {
 
 void PointCloudViewer::open() {
   s = new sPointCloudViewer(STRING("PointCloudViewer: "<<pts.name <<' ' <<rgb.name));
-#if 0
+#if 1
   s->gl.add(glDrawAxes);
+  s->gl.add(glStandardLight);
   s->gl.add(s->pc);
-  s->gl.camera.setKinect();
   //  s->gl.reportSelects = true;
 #else
   s->gl.add(glStandardScene);

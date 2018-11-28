@@ -13,15 +13,16 @@
 
 struct Depth2PointCloud : Thread {
   //inputs
-  Var<arr> depth;
+  Var<floatA> depth;
   Var<rai::Transformation> pose;
   //outputs
-  Var<arr> pts;
+  Var<arr> points;
   
-  double focalLength;
-  arr _pts,_depth;
+  float fx,fy,px,py;
+  floatA _depth;
+  arr _points;
 
-  Depth2PointCloud(Var<arr>& _depth, double _forcalLength=1.);
+  Depth2PointCloud(Var<floatA>& _depth, float _fx=-1., float _fy=-1., float _px=-1., float _py=-1.);
   virtual ~Depth2PointCloud();
   
   void open() {}
@@ -29,4 +30,4 @@ struct Depth2PointCloud : Thread {
   void close() {}
 };
 
-void depthData2pointCloud(arr& pts, const arr& depth, double focalLength);
+void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, float px, float py);
