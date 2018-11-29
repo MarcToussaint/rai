@@ -18,7 +18,7 @@ struct PercViewer : Thread {
   MeshA modelCopy;
   struct OpenGL *gl;
   
-  PercViewer(const char* percepts_name="percepts_input");
+  PercViewer(Var<PerceptL>& _percepts, Var<rai::KinematicWorld> _kin);
   ~PercViewer();
   void open();
   void step();

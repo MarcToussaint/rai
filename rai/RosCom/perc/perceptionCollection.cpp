@@ -69,7 +69,7 @@ void Collector::step()
 
         for(auto & marker : msg.markers){
           PercCluster* new_cluster = new PercCluster(conv_ROSMarker2Cluster( marker ));
-          new_cluster->frame = tabletop_srcFrame.get();
+          new_cluster->pose = tabletop_srcFrame.get();
           percepts.append( new_cluster );
         }
       }
@@ -97,7 +97,7 @@ void Collector::step()
 
         for(auto & table : msg.tables){
           PercPlane* new_plane = new PercPlane(conv_ROSTable2Plane( table ));
-          new_plane->frame = tabletop_srcFrame.get(); //tf
+          new_plane->pose = tabletop_srcFrame.get(); //tf
           percepts.append( new_plane );
         }
       }
@@ -146,7 +146,7 @@ void Collector::step()
 #endif
 
         PercAlvar* new_alvar = new PercAlvar( conv_ROSAlvar2Alvar(marker) );
-        new_alvar->frame = alvar_srcFrame.get();
+        new_alvar->pose = alvar_srcFrame.get();
         percepts.append( new_alvar );
       }
     }
@@ -184,7 +184,7 @@ void Collector::step()
           }
 #endif
           OptitrackBody* new_optitrack_body = new OptitrackBody(conv_tf2OptitrackBody( msg ));
-          new_optitrack_body->frame = optitrack_srcFrame.get(); //tf
+          new_optitrack_body->pose = optitrack_srcFrame.get(); //tf
           percepts.append( new_optitrack_body );
         }
     }
@@ -223,7 +223,7 @@ void Collector::step()
           }
 #endif
           OptitrackMarker* new_optitrack_marker = new OptitrackMarker(conv_tf2OptitrackMarker( msg ));
-          new_optitrack_marker->frame = optitrack_srcFrame.get(); //tf;
+          new_optitrack_marker->pose = optitrack_srcFrame.get(); //tf;
           percepts.append( new_optitrack_marker );
         }
     }
@@ -243,8 +243,8 @@ void Collector::step()
     PercCluster* fake_cluster = new PercCluster( ARR(0.6, 0., 0.05),  // mean
                                                  box.V,               // points
                                                  "/base_footprint");  // frame
-    fake_cluster->frame.setZero();
-    fake_cluster->frame.addRelativeTranslation(0.6, 0., 1.05);
+    fake_cluster->pose.setZero();
+    fake_cluster->pose.addRelativeTranslation(0.6, 0., 1.05);
     rai::Quaternion rot;
 
 //    int tick = percepts_input.readAccess();
@@ -253,20 +253,20 @@ void Collector::step()
 //    rot.setDeg(0.01 * tick, rai::Vector(0.1, 0.25, 1));
 
     rot.setDeg(30, rai::Vector(0.1, 0.25, 1));
-    fake_cluster->frame.addRelativeRotation(rot);
+    fake_cluster->pose.addRelativeRotation(rot);
     percepts.append( fake_cluster );
 
     PercAlvar* fake_alvar = new PercAlvar(10, "/base_footprint");
-    fake_alvar->frame.setZero();
+    fake_alvar->pose.setZero();
 
     arr pos = { 0.9, 0.3, 1.5 };
     rndUniform(pos, -0.005, 0.005, true);
-    fake_alvar->frame.addRelativeTranslation(pos(0), pos(1), pos(2));
+    fake_alvar->pose.addRelativeTranslation(pos(0), pos(1), pos(2));
 
     arr alv_rot = { RAI_PI/2, 0, -RAI_PI/2};
     rndUniform(alv_rot, -0.01, 0.01, true);
     rot.setRpy(alv_rot(0), alv_rot(1), alv_rot(2));
-    fake_alvar->frame.addRelativeRotation(rot);
+    fake_alvar->pose.addRelativeRotation(rot);
     fake_alvar->alvarId = 10;
     percepts.append( fake_alvar );
     rai::wait(0.01);
@@ -298,7 +298,7 @@ PercPlane conv_ROSTable2Plane(const object_recognition_msgs::Table& table){
 PercAlvar conv_ROSAlvar2Alvar(const ar::AlvarMarker& marker)
 {
   PercAlvar new_alvar(marker.id, marker.header.frame_id);
-  new_alvar.transform = conv_pose2transformation(marker.pose.pose);
+  new_alvar.pose = conv_pose2transformation(marker.pose.pose);
   return new_alvar;
 }
 
@@ -306,7 +306,7 @@ OptitrackMarker conv_tf2OptitrackMarker(const geometry_msgs::TransformStamped& m
 {
   OptitrackMarker new_optitrackmarker(msg.header.frame_id);
 //  new_optitrackmarker.id = marker.id;
-  new_optitrackmarker.transform = conv_transform2transformation(msg.transform);
+  new_optitrackmarker.pose = conv_transform2transformation(msg.transform);
   return new_optitrackmarker;
 }
 
@@ -314,7 +314,7 @@ OptitrackBody conv_tf2OptitrackBody(const geometry_msgs::TransformStamped& msg)
 {
   OptitrackBody new_optitrackbody(msg.header.frame_id);
 //  new_alvar.id = body.id;
-  new_optitrackbody.transform = conv_transform2transformation(msg.transform);
+  new_optitrackbody.pose = conv_transform2transformation(msg.transform);
   return new_optitrackbody;
 }
 #endif

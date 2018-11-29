@@ -318,6 +318,6 @@ void RobotAbstraction::waitForCompletion(){
     timeToGo.waitForNextRevision();
     double ttg = timeToGo.get();
     if(!ttg) break;
-    cout <<"ttg:" <<timeToGo.get() <<endl;
+//    cout <<"ttg:" <<timeToGo.get() <<endl;
   }
 }

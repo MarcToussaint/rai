@@ -28,7 +28,7 @@ void SyncFiltered::step() {
   uintA existingIDs;
   
   percepts_filtered.writeAccess();
-  for(Percept *p:percepts_filtered()) {
+  for(PerceptPtr& p:percepts_filtered()) {
     p->syncWith(outputWorld.set());
     existingIDs.append(p->id);
   }

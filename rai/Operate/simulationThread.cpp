@@ -134,7 +134,7 @@ void SimulationThread::execGripper(const rai::String& gripper, double position, 
   }
   if(gripper=="pandaL"){
     SIM.setUsedRobotJoints({"L_panda_finger_joint1"});
-    SIM.exec({1,1, {position}}, {1.}, true);
+    SIM.exec(arr(1,1, {position}), {1.}, true);
     return;
   }
   NIY

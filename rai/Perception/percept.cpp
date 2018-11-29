@@ -16,27 +16,27 @@ template<> const char* rai::Enum<Percept::Type>::names []=
 { "PT_cluster", "PT_plane", "PT_box", "PT_mesh", "PT_alvar", "PT_optitrackmarker", "PT_optitrackbody", NULL };
 
 Percept::Percept(Type type)
-  : type(type), transform(0), frame(0) {
+  : type(type), pose(0) {
 }
 
-Percept::Percept(Type type, const rai::Transformation& t)
-  : type(type), transform(t), frame(0) {
+Percept::Percept(Type type, const rai::Transformation& _pose)
+  : type(type), pose(_pose) {
 }
 
 double Percept::idMatchingCost(const Percept& other) {
-  rai::Vector diff = (this->transform.pos - other.transform.pos);
+  rai::Vector diff = (this->pose.pos - other.pose.pos);
   return diff.length();
 }
 
-double Percept::fuse(Percept* other) {
+double Percept::fuse(PerceptPtr& other) {
   precision += other->precision;
-  transform.pos = (1.-alpha)*transform.pos + alpha*other->transform.pos;
-  transform.rot.setInterpolate(alpha, transform.rot, other->transform.rot);
+  pose.pos = (1.-alpha)*pose.pos + alpha*other->pose.pos;
+  pose.rot.setInterpolate(alpha, pose.rot, other->pose.rot);
   return 0.;
 }
 
 void Percept::write(ostream& os) const {
-  os <<type <<'_' <<id <<" (" <<precision <<") <" <<transform <<">:";
+  os <<type <<'_' <<id <<" (" <<precision <<") <" <<pose <<">:";
 //  os <<" trans=" <<transform <<" frame=" <<frame <<" type=" <<type;
 }
 
@@ -63,8 +63,8 @@ PercCluster::PercCluster(arr mean, arr points, std::string _frame_id)
 
 double PercCluster::idMatchingCost(const Percept& other) {
   if(other.type!=PT_cluster) return -1.;
-  rai::Vector diff = (this->frame * rai::Vector(this->mean)) -
-                     (dynamic_cast<const PercCluster*>(&other)->frame * rai::Vector(dynamic_cast<const PercCluster*>(&other)->mean));
+  rai::Vector diff = (this->pose * rai::Vector(this->mean)) -
+                     (dynamic_cast<const PercCluster*>(&other)->pose * rai::Vector(dynamic_cast<const PercCluster*>(&other)->mean));
   return diff.length();
 }
 
@@ -75,9 +75,9 @@ void PercCluster::write(ostream& os) const {
 
 //============================================================================
 
-double PercMesh::fuse(Percept* other) {
+double PercMesh::fuse(PerceptPtr& other) {
   Percept::fuse(other);
-  const PercMesh *x = dynamic_cast<const PercMesh*>(other);
+  const PercMesh *x = dynamic_cast<const PercMesh*>(other.get());
   CHECK(x,"can't fuse " <<type <<" with "<<other->type);
   mesh = x->mesh;
   return 0.;
@@ -93,13 +93,13 @@ double PercPlane::idMatchingCost(const Percept& other) {
   const PercPlane* otherPlane = dynamic_cast<const PercPlane*>(&other);
   if(!otherPlane) { RAI_MSG("WHY?????"); return -1.; }
   CHECK(otherPlane,"");
-  rai::Vector diff = (this->transform.pos - otherPlane->transform.pos);
+  rai::Vector diff = (this->pose.pos - otherPlane->pose.pos);
   return diff.length();
 }
 
-double PercPlane::fuse(Percept* other) {
+double PercPlane::fuse(PerceptPtr& other) {
   Percept::fuse(other);
-  const PercPlane *x = dynamic_cast<const PercPlane*>(other);
+  const PercPlane *x = dynamic_cast<const PercPlane*>(other.get());
   CHECK(x,"can't fuse " <<type <<" with "<<other->type);
   hull = x->hull;
   return 0.;
@@ -126,7 +126,7 @@ void PercPlane::syncWith(rai::KinematicWorld &K) {
 //    shape->size(0) = shape->size(1) = shape->size(2) = shape->size(3) = .2;
 //    stored_planes.append(id);
   }
-  body->X = transform;
+  body->X = pose;
   
   body->shape->mesh() = hull;
 }
@@ -160,26 +160,26 @@ PercBox::PercBox(const rai::Transformation& t, const arr& size, const arr& color
   : Percept(Type::PT_box, t), size(size), color(color) {
 }
 
-double PercBox::fuse(Percept* other) {
+double PercBox::fuse(PerceptPtr& other) {
   //check flip by 180
   rai::Quaternion qdiff;
-  qdiff = (-transform.rot) * other->transform.rot;
+  qdiff = (-pose.rot) * other->pose.rot;
   double score_0 = qdiff.sqrDiffZero();
   qdiff.addZ(+RAI_PI);  double score_1 = qdiff.sqrDiffZero(); //flip by 180
-  if(score_1<score_0) other->transform.rot.addZ(-RAI_PI);
+  if(score_1<score_0) other->pose.rot.addZ(-RAI_PI);
   
   if(size(0)>.8*size(1) && size(0)<1.2*size(1)) { //almost quadratic shape -> check flip by 90
-    qdiff = (-transform.rot) * other->transform.rot;
+    qdiff = (-pose.rot) * other->pose.rot;
     double score_0 = qdiff.sqrDiffZero();
     qdiff.addZ(-0.5*RAI_PI);  double score_1 = qdiff.sqrDiffZero();
     qdiff.addZ(+RAI_PI);  double score_2 = qdiff.sqrDiffZero();
     ////  LOG(0) <<"base=" <<transform.rot <<" in=" <<other->transform.rot;
-    if(score_1<score_0 && score_1<score_2) other->transform.rot.addZ(-0.5*RAI_PI);
-    if(score_2<score_0 && score_2<score_1) other->transform.rot.addZ(+0.5*RAI_PI);
+    if(score_1<score_0 && score_1<score_2) other->pose.rot.addZ(-0.5*RAI_PI);
+    if(score_2<score_0 && score_2<score_1) other->pose.rot.addZ(+0.5*RAI_PI);
   }
   
   Percept::fuse(other);
-  const PercBox *x = dynamic_cast<const PercBox*>(other);
+  const PercBox *x = dynamic_cast<const PercBox*>(other.get());
   CHECK(x,"can't fuse " <<type <<" with "<<other->type);
   if(x->size.N!=size.N) size.N=x->size.N;
   else size = (1.-alpha)*size + alpha*x->size;
@@ -199,7 +199,7 @@ void PercBox::syncWith(rai::KinematicWorld &K) {
     rai::Shape *shape = new rai::Shape(*body);
     shape->type() = rai::ST_box;
   }
-  body->X = transform;
+  body->X = pose;
   body->shape->size() = size;
   body->shape->mesh().C = color;
 }
@@ -230,7 +230,7 @@ PercAlvar::PercAlvar(uint alvarId, std::string _frame_id)
 
 double PercAlvar::idMatchingCost(const Percept& other) {
   if(other.type!=PT_alvar) return -1.;
-  rai::Vector dist = (this->frame * this->transform.pos) - (dynamic_cast<const PercAlvar*>(&other)->frame * dynamic_cast<const PercAlvar*>(&other)->transform.pos);
+  rai::Vector dist = this->pose.pos - dynamic_cast<const PercAlvar*>(&other)->pose.pos;
   return dist.length();
 }
 
@@ -256,9 +256,9 @@ void PercCluster::syncWith(rai::KinematicWorld& K) {
     shape->size() = consts<double>(.2,3);
 //    stored_clusters.append(id);
   }
-  body->X = frame;
+  body->X = pose;
   
-  transform = body->X;
+  pose = body->X;
   //((Cluster*)cluster)->mean = ARR(cen.x, cen.y, cen.z);
   /* If we change the mean, we compare the transformed mean to an untransformed mean later...*/
 }
@@ -279,7 +279,7 @@ void PercAlvar::syncWith(rai::KinematicWorld& K) {
 //    stored_alvars.append(id);
   }
   
-  body->X = frame * transform;
+  body->X = pose;
 }
 
 void OptitrackBody::syncWith(rai::KinematicWorld &K) {
@@ -296,7 +296,7 @@ void OptitrackBody::syncWith(rai::KinematicWorld &K) {
 //    stored_optitrackbodies.append(id);
   }
   
-  body->X = frame * transform;
+  body->X = pose;
 }
 
 void OptitrackMarker::syncWith(rai::KinematicWorld &K) {
@@ -313,6 +313,6 @@ void OptitrackMarker::syncWith(rai::KinematicWorld &K) {
 //    stored_optitrackmarkers.append(id);
   }
   
-  body->X = frame * transform;
+  body->X = pose;
 }
 
