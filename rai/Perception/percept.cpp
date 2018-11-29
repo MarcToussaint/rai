@@ -75,6 +75,21 @@ void PercCluster::write(ostream& os) const {
 
 //============================================================================
 
+void PercMesh::syncWith(rai::KinematicWorld& K) {
+  rai::Frame *f = K.getFrameByName(STRING("perc_" << id), false);
+  if(!f) {
+    f = new rai::Frame(K);
+    f->name <<"perc_" <<id;
+    new rai::Shape(*f);
+    f->shape->type() = rai::ST_mesh;
+    f->shape->visual = false;
+  }
+  f->X = pose;
+  cout <<"POSE=" <<pose <<endl;
+  f->shape->mesh() = mesh;
+  f->shape->mesh().C = ARR(.5, 1., .5);
+}
+
 double PercMesh::fuse(PerceptPtr& other) {
   Percept::fuse(other);
   const PercMesh *x = dynamic_cast<const PercMesh*>(other.get());

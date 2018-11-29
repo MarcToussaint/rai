@@ -744,10 +744,12 @@ void rai::KinematicWorld::setJointState(const arr& _q, const uintA& joints) {
   calc_fwdPropagateFrames();
 }
 
-void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames, bool calc_q_from_X){
+void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames, bool calc_q_from_X, bool warnOnDifferentDim){
   if(!frameNames.N){
-    if(X.d0 > frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is larger than frames.N=" <<frames.N;
-    if(X.d0 < frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is smaller than frames.N=" <<frames.N;
+    if(warnOnDifferentDim){
+      if(X.d0 > frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is larger than frames.N=" <<frames.N;
+      if(X.d0 < frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is smaller than frames.N=" <<frames.N;
+    }
     for(uint i=0;i<frames.N && i<X.d0;i++){
       frames(i)->X.set(X[i]);
       frames(i)->X.rot.normalize();
@@ -2830,11 +2832,17 @@ void rai::KinematicWorld::glDraw_sub(OpenGL& gl) {
   //shapes
   if(orsDrawBodies) {
     //first non-transparent
-    for(Frame *f: frames) if(f->shape && f->shape->alpha()==1. && (!orsDrawVisualsOnly || !f->ats["noVisual"])) {
+    for(Frame *f: frames) if(f->shape && f->shape->alpha()==1. && (f->shape->visual||!orsDrawVisualsOnly)) {
       gl.drawId(f->ID);
-      f->shape->glDraw(gl);
+      if(f->name.startsWith(("perc_"))){
+        glColor(1.,.5,.5);
+        rai::Mesh *m = &f->shape->mesh();
+        cout <<"DRAW MESH:" <<m->getRadius() <<endl;
+      }else{
+        f->shape->glDraw(gl);
+      }
     }
-    for(Frame *f: frames) if(f->shape && f->shape->alpha()<1. && (!orsDrawVisualsOnly || !f->ats["noVisual"])) {
+    for(Frame *f: frames) if(f->shape && f->shape->alpha()<1. && (f->shape->visual||!orsDrawVisualsOnly)) {
       gl.drawId(f->ID);
       f->shape->glDraw(gl);
     }

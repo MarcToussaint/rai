@@ -89,7 +89,7 @@ void SimulationThread::step(){
 
   SIM.stepKin();
 
-  K.set() = SIM.K;
+  K.set()->setFrameState(SIM.getFrameState(), {}, true, false);
   frameState.set() = SIM.getFrameState();
   jointState.set() = SIM.getJointState();
   timeToGo.set() = SIM.getTimeToGo();
@@ -173,4 +173,5 @@ void SimulationThread::addFile(const char* filename, const char* parentOfRoot, c
   }
   SIM.K.calc_fwdPropagateFrames();
   SIM.K.checkConsistency();
+  K.set() = SIM.K;
 }

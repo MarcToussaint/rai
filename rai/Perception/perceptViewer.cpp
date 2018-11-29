@@ -6,18 +6,18 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "percViewer.h"
+#include "perceptViewer.h"
 #include <Gui/opengl.h>
 #include <Kin/frame.h>
 
-PercViewer::PercViewer(Var<PerceptL>& _percepts, Var<rai::KinematicWorld> _kin)
+PerceptViewer::PerceptViewer(Var<PerceptL>& _percepts, Var<rai::KinematicWorld> _kin)
   : Thread(STRING("PercViewer_"<<_percepts.name), -1.),
     percepts(this, _percepts, true),
-    modelWorld(this, _kin, false) {
+    kin(this, _kin, false) {
   threadOpen();
 }
 
-PercViewer::~PercViewer() {
+PerceptViewer::~PerceptViewer() {
   threadClose();
 }
 
@@ -33,7 +33,7 @@ void glDrawPercepts(void *P) {
   }
 }
 
-void PercViewer::open() {
+void PerceptViewer::open() {
   gl = new OpenGL(STRING("PercViewer "<<percepts.name));
   gl->add(glStandardScene);
 //  gl->add(glDrawMeshes, &modelCopy);
@@ -55,11 +55,11 @@ void PercViewer::open() {
 //  modelWorld.deAccess();
 }
 
-void PercViewer::close() {
+void PerceptViewer::close() {
   delete gl;
 }
 
-void PercViewer::step() {
+void PerceptViewer::step() {
   percepts.readAccess();
   if(!percepts().N) { percepts.deAccess(); return; }
   gl->dataLock.writeLock();

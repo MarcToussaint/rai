@@ -66,7 +66,7 @@ struct PercMesh : Percept {
   PercMesh() : Percept(PT_mesh) {}
   PercMesh(const rai::Mesh& mesh) : Percept(PT_mesh), mesh(mesh) {}
   
-  virtual void syncWith(rai::KinematicWorld& K) { }
+  virtual void syncWith(rai::KinematicWorld& K);
 //  virtual double idMatchingCost(const Percept& other){ return 0.; }
   virtual double fuse(PerceptPtr& other);
   virtual void write(ostream& os) const { os <<"#V=" <<mesh.V.N; }

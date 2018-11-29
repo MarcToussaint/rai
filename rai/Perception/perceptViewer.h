@@ -11,15 +11,15 @@
 #include <Core/thread.h>
 #include "percept.h"
 
-struct PercViewer : Thread {
+struct PerceptViewer : Thread {
   Var<PerceptL> percepts;
-  Var<rai::KinematicWorld> modelWorld;
+  Var<rai::KinematicWorld> kin;
   PerceptL copy;
   MeshA modelCopy;
   struct OpenGL *gl;
   
-  PercViewer(Var<PerceptL>& _percepts, Var<rai::KinematicWorld> _kin);
-  ~PercViewer();
+  PerceptViewer(Var<PerceptL>& _percepts, Var<rai::KinematicWorld> _kin);
+  ~PerceptViewer();
   void open();
   void step();
   void close();

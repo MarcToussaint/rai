@@ -710,6 +710,7 @@ rai::Shape::Shape(Frame &f, const Shape *copyShape)
     const Shape& s = *copyShape;
 //    mesh_radius=s.mesh_radius;
     cont=s.cont;
+    visual=s.visual;
     geom = s.geom;
   }
 }
@@ -738,7 +739,10 @@ void rai::Shape::read(const Graph& ats) {
     if(ats.get(d, "contact")) cont = (char)d;
     else cont=1;
   }
-  
+  if(ats["noVisual"]){
+    visual=false;
+  }
+
   //center the mesh:
   if(type()==rai::ST_mesh && mesh().V.N) {
     if(ats["rel_includes_mesh_center"]) {

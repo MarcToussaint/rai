@@ -86,19 +86,11 @@ KOMO::~KOMO() {
 }
 
 void KOMO::setModel(const KinematicWorld& K,
-                    bool _useSwift,
-                    bool optimizeTree) {
+                    bool _useSwift) {
 
   if(&K!=&world) world.copy(K);
-
   useSwift = _useSwift;
-  
-  if(optimizeTree) {
-    world.optimizeTree();
-  }
-
   world.calc_q();
-  
 }
 
 void KOMO_ext::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese) {
@@ -1058,11 +1050,7 @@ void KOMO::setConfigFromFile() {
 //  K.optimizeTree();
   setModel(
     K,
-    getParameter<bool>("KOMO/useSwift", true),
-    getParameter<bool>("KOMO/optimizeTree", true)
-//    getParameter<bool>("KOMO/makeConvexHulls", true),
-//    getParameter<bool>("KOMO/computeOptimalSSBoxes", false),
-//    getParameter<bool>("KOMO/activateAllContact", false)
+    getParameter<bool>("KOMO/useSwift", true)
   );
   setTiming(
     getParameter<uint>("KOMO/phases"),
