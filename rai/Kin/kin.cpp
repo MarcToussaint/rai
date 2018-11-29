@@ -1756,7 +1756,7 @@ Graph rai::KinematicWorld::getGraph() const {
 #if 1
   Graph G;
   //first just create nodes
-  for(Frame *f: frames) G.newNode<bool>({f->name}, {});
+  for(Frame *f: frames) G.newNode<bool>({STRING(f->name <<" [" <<f->ID <<']')}, {});
   for(Frame *f: frames) {
     Node *n = G.elem(f->ID);
     if(f->parent) {
@@ -2574,13 +2574,14 @@ void rai::KinematicWorld::sortFrames() {
   for(Frame *f: frames) f->ID = i++;
 }
 
-void rai::KinematicWorld::makeObjectsFree(const StringA &objects){
+void rai::KinematicWorld::makeObjectsFree(const StringA &objects, double H_cost){
   for(auto s:objects){
     rai::Frame *a = getFrameByName(s, true);
     CHECK(a, "");
+    a = a->getUpwardLink();
     if(!a->parent) a->linkFrom(frames.first());
     if(!a->joint) new rai::Joint(*a);
-    a->joint->makeFree();
+    a->joint->makeFree(H_cost);
   }
 }
 

@@ -597,11 +597,11 @@ PYBIND11_MODULE(libry, m) {
 //    skeleton2Bound(*self.komo, BD_path, S, self.komo->world, self.komo->world, false);
   } )
 
-  .def("addSkeletonBound", [](ry::RyKOMO& self, const py::list& L, BoundType boundType){
+  .def("addSkeletonBound", [](ry::RyKOMO& self, const py::list& L, BoundType boundType, bool collisions){
     Skeleton S = list2skeleton(L);
     cout <<"SKELETON: " <<S <<endl;
 //    self.komo->setSkeleton(S);
-    skeleton2Bound(*self.komo, boundType, S, self.komo->world, self.komo->world, false);
+    skeleton2Bound(*self.komo, boundType, S, self.komo->world, self.komo->world, collisions);
   } )
 
   //-- run

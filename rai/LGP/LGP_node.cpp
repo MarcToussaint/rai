@@ -160,8 +160,11 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 
   try {
     komo.run();
-  } catch(const char* msg) {
-    cout <<"KOMO CRASHED: " <<msg <<endl;
+  } catch(std::runtime_error& err) {
+    cout <<"KOMO CRASHED: " <<err.what() <<endl;
+    delete komoProblem(bound);
+    komoProblem(bound)=0;
+    return;
   }
   if(!komo.denseOptimization) COUNT_evals += komo.opt->newton.evals;
   COUNT_kin += rai::KinematicWorld::setJointStateCount;

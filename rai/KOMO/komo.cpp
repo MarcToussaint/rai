@@ -245,10 +245,10 @@ void KOMO::addSwitch_stable(double time, double endTime, const char* from, const
   if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
     addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
   //-- no relative jump at end
-  if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, {1e2}, {}, 1);
+  if(endTime>0.) addObjective(endTime, endTime, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
   //-- no object acceleration at start: +0 include (x-2, x-1, x0), which enforces a SMOOTH pickup
   if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, +0, +1);
-  else addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
+  else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
 }
 
 void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, const char* to) {
@@ -259,10 +259,10 @@ void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, con
   if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
     addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
   //-- no relative jump at end
-  if(endTime>0.) addObjective({endTime}, OT_eq, FS_poseDiff, {from, to}, {1e2}, {}, 1);
+  if(endTime>0.) addObjective(endTime, endTime, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
   //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
   if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e1, 2, +1, +1);
-//  else addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 1, +1, +1);
+//  else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
 }
 
 void KOMO::addSwitch_dynamic(double time, double endTime, const char* from, const char* to) {
@@ -285,7 +285,7 @@ void KOMO::addSwitch_dynamicOn(double time, double endTime, const char *from, co
   rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
   addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
   if(k_order>=2) addObjective(time, endTime, new TM_ZeroAcc(world, to), OT_eq, NoArr, 3e1, k_order, +0, -1);
-//  if(k_order>1) addObjective(time,time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2);
+//  else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
 }
 
 void KOMO::addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost) {
@@ -670,7 +670,8 @@ void KOMO::setGraspSlide(double time, const char* endeff, const char* object, co
   addSwitch(startTime, true, new KinematicSwitch(SW_effJoint, JT_free, endeff, object, world));
   addObjective(time, endTime, new TM_ZeroQVel(world, object), OT_eq, NoArr, 3e1, 1, +1, -1);
   if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, object), OT_eq, NoArr, 1e2, 2, 0);
-  else addObjective(time, time, new TM_LinAngVel(world, object), OT_eq, NoArr, 1e2, 1, 0);
+  else addObjective(time, time, new TM_NoJumpFromParent(world, object), OT_eq, NoArr, 1e2, 1, 0, 0);
+
   add_touch(startTime, startTime, endeff, object);
   
   //-- place part
@@ -1768,11 +1769,6 @@ rai::Array<rai::Transformation> KOMO::reportEffectiveJoints(std::ostream& os) {
 Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs) {
   bool wasRun = featureValues.N!=0;
   
-  arr phi;
-  ObjectiveTypeA tt;
-  phi.referTo(featureValues);
-  tt.referTo(featureTypes);
-  
   //-- collect all task costs and constraints
   StringA name; name.resize(objectives.N);
   arr err=zeros(T, objectives.N);
@@ -1788,20 +1784,20 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
           uint d=0;
           if(wasRun) {
             d=task->map->dim_phi(configurations({t,t+k_order}));
-            for(uint j=0; j<d; j++) CHECK_EQ(tt(M+j), task->type,"");
+            for(uint j=0; j<d; j++) CHECK_EQ(featureTypes(M+j), task->type,"");
             if(d) {
               if(task->type==OT_sos) {
-                for(uint j=0; j<d; j++) err(t,i) += sqr(phi(M+j)); //sumOfSqr(phi.sub(M,M+d-1));
+                for(uint j=0; j<d; j++) err(t,i) += sqr(featureValues(M+j)); //sumOfSqr(phi.sub(M,M+d-1));
                 if(dual.N) dualSolution(t, i) = dual(M);
                 taskC(i) += err(t,i);
               }
               if(task->type==OT_ineq) {
-                for(uint j=0; j<d; j++) err(t,i) += MAX(0., phi(M+j));
+                for(uint j=0; j<d; j++) err(t,i) += MAX(0., featureValues(M+j));
                 if(dual.N) dualSolution(t, i) = dual(M);
                 taskG(i) += err(t,i);
               }
               if(task->type==OT_eq) {
-                for(uint j=0; j<d; j++) err(t,i) += fabs(phi(M+j));
+                for(uint j=0; j<d; j++) err(t,i) += fabs(featureValues(M+j));
                 if(dual.N) dualSolution(t, i) = dual(M);
                 taskG(i) += err(t,i);
               }
@@ -1828,34 +1824,34 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
         uint time=task->vars(t,-1);
         if(wasRun) {
           d=task->map->dim_phi(Ktuple);
-          for(uint j=0; j<d; j++) CHECK_EQ(tt(M+j), task->type,"");
+          for(uint j=0; j<d; j++) CHECK_EQ(featureTypes(M+j), task->type,"");
           if(d) {
             if(task->type==OT_sos) {
-              for(uint j=0; j<d; j++) err(time,i) += sqr(phi(M+j));
-              taskC(i) += err(t,i);
+              for(uint j=0; j<d; j++) err(time,i) += sqr(featureValues(M+j));
+              taskC(i) += err(time,i);
             }
             if(task->type==OT_ineq) {
-              for(uint j=0; j<d; j++) err(time,i) += MAX(0., phi(M+j));
-              taskG(i) += err(t,i);
+              for(uint j=0; j<d; j++) err(time,i) += MAX(0., featureValues(M+j));
+              taskG(i) += err(time,i);
             }
             if(task->type==OT_eq) {
-              for(uint j=0; j<d; j++) err(time,i) += fabs(phi(M+j));
-              taskG(i) += err(t,i);
+              for(uint j=0; j<d; j++) err(time,i) += fabs(featureValues(M+j));
+              taskG(i) += err(time,i);
             }
             M += d;
           }
         }
         if(reportFeatures==1) {
-          featuresOs <<std::setw(4) <<time <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d
+          featuresOs <<std::setw(4) <<time <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d <<task->vars[t]
                     <<' ' <<std::setw(40) <<task->name
                    <<" k=" <<task->map->order <<" ot=" <<task->type <<" prec=" <<std::setw(4) <<task->prec(t);
           if(task->target.N<5) featuresOs <<" y*=[" <<task->target <<']'; else featuresOs<<"y*=[..]";
-          featuresOs <<" y^2=" <<err(t,i) <<endl;
+          featuresOs <<" y^2=" <<err(time,i) <<endl;
         }
       }
     }
   }
-  CHECK_EQ(M , phi.N, "");
+  CHECK_EQ(M , featureValues.N, "");
   
   //-- generate a report graph
   Graph report;
@@ -1953,12 +1949,15 @@ Graph KOMO::getProblemGraph(bool includeValues){
     g.copy(task->map->getSpec(world), true);
     if(includeValues){
       arr V;
-      for(uint t=0;t<task->prec.N && t<T;t++){
-        if(task->prec(t)){
-          arr y;
+      for(uint t=0;t<task->prec.N && t<T;t++) if(task->prec(t)) {
+        arr y;
+        if(!featureDense){
           task->map->phi(y, NoArr, configurations({t,t+k_order}));
-          V.append(y);
+        }else{
+          WorldL Ktuple = configurations.sub(convert<uint,int>(task->vars[t]+(int)k_order));
+          task->map->phi(y, NoArr, Ktuple);
         }
+        V.append(y);
       }
       if(task->type==OT_sos){
         g.newNode<double>({"sos_value"}, {}, sumOfSqr(V));
@@ -1969,7 +1968,6 @@ Graph KOMO::getProblemGraph(bool includeValues){
         for(double& v:V) if(v>0) c+=v;
         g.newNode<double>({"inEq_sumOfPos"}, {}, c);
       }
-
     }
     //    t_count++;
   }
