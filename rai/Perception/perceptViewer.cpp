@@ -28,6 +28,7 @@ void glDrawPercepts(void *P) {
     glTransform(p->pose);
     glColor3f(0,0,0);
     glDrawText(STRING(p->id),0,0,0, true);
+    glColor3f(0,1,0);
     p->glDraw(NoOpenGL);
     glPopMatrix();
   }
