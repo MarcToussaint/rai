@@ -22,7 +22,7 @@ struct Depth2PointCloud : Thread {
   floatA _depth;
   arr _points;
 
-  Depth2PointCloud(Var<floatA>& _depth, float _fx=-1., float _fy=-1., float _px=-1., float _py=-1.);
+  Depth2PointCloud(Var<floatA>& _depth, float _fx=NAN, float _fy=NAN, float _px=NAN, float _py=NAN);
   virtual ~Depth2PointCloud();
   
   void open() {}

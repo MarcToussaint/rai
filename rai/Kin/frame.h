@@ -184,6 +184,7 @@ struct Shape : NonCopyable, GLDrawer {
 //  Mesh mesh, sscCore;
 //  double mesh_radius=0.;
   char cont=0;           ///< are contacts registered (or filtered in the callback)
+  bool visual=true;
   
   Shape(Frame& f, const Shape *copyShape=NULL); //new Shape, being added to graph and body's shape lists
   virtual ~Shape();

@@ -89,7 +89,7 @@ void SimulationThread::step(){
 
   SIM.stepKin();
 
-  K.set() = SIM.K;
+  K.set()->setFrameState(SIM.getFrameState(), {}, true, false);
   frameState.set() = SIM.getFrameState();
   jointState.set() = SIM.getJointState();
   timeToGo.set() = SIM.getTimeToGo();
@@ -134,7 +134,7 @@ void SimulationThread::execGripper(const rai::String& gripper, double position, 
   }
   if(gripper=="pandaL"){
     SIM.setUsedRobotJoints({"L_panda_finger_joint1"});
-    SIM.exec({1,1, {position}}, {1.}, true);
+    SIM.exec(arr(1,1, {position}), {1.}, true);
     return;
   }
   NIY
@@ -173,4 +173,5 @@ void SimulationThread::addFile(const char* filename, const char* parentOfRoot, c
   }
   SIM.K.calc_fwdPropagateFrames();
   SIM.K.checkConsistency();
+  K.set() = SIM.K;
 }

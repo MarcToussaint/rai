@@ -93,8 +93,7 @@ struct KOMO : NonCopyable {
   
   //-- setup the problem
   void setModel(const rai::KinematicWorld& K,
-                bool _useSwift=true,  //disabling swift: no collisions, much faster
-                bool optimizeTree=true);
+                bool _useSwift=true);
   void setTiming(double _phases=1., uint _stepsPerPhase=10, double durationPerPhase=5., uint _k_order=2);
   void setPairedTimes();
   void activateCollisions(const char* s1, const char* s2);

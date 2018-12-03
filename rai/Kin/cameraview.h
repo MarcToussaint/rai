@@ -30,6 +30,7 @@ struct CameraView : GLDrawer {
   bool background=true;
   int watchComputations=0;
   RenderMode renderMode=all;
+  byteA segmentationRemap;
 
   //-- evaluation outputs
   CameraView(const rai::KinematicWorld& _K, bool _background=true, int _watchComputations=0);
@@ -68,7 +69,7 @@ struct Sim_CameraView : Thread {
   //-- internal
   CameraView C;
 
-  Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatIntervalSec=-1., const char* _cameraFrameName=NULL);
+  Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatIntervalSec=-1., const char* _cameraFrameName=NULL, bool _idColors=false, const byteA& _segmentationRemap=NoByteA);
   ~Sim_CameraView();
   void open();
   void step();

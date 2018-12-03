@@ -86,6 +86,10 @@ struct Var_base : NonCopyable {
   /// @name c'tor/d'tor
   virtual ~Var_base();
 
+  void addCallback(const std::function<void(Var_base*,int)>& call, const void* callbackID){
+    callbacks.append(new Callback<void(Var_base*,int)>(callbackID, call));
+  }
+
   /// @name access control
   /// to be called by a thread before access, returns the revision
   int readAccess(Thread* th=NULL);  //might set the caller to sleep
@@ -215,6 +219,11 @@ struct Var {
     });
   }
   void stopListening();
+
+  void addCallback(const std::function<void(Var_base*,int)>& call, const void* callbackID=0){
+    data->addCallback(call, callbackID);
+  }
+
 
   void write(ostream& os) {
     readAccess();

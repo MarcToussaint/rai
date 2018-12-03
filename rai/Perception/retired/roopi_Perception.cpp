@@ -16,6 +16,6 @@ ThreadL newPerceptionFilter(bool view) {
   ThreadL threads;
   threads.append(new Filter());
 //  if(view) threads.append(new PercViewer("percepts_filtered"));
-  if(view) threads.append(new PercViewer("percepts_input"));
+  if(view) threads.append(new PerceptViewer("percepts_input"));
   return threads;
 }

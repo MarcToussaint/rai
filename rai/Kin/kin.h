@@ -153,7 +153,7 @@ struct KinematicWorld : GLDrawer {
   void setJointState(const arr& _q, const arr& _qdot=NoArr);
   void setJointState(const arr& _q, const StringA&);
   void setJointState(const arr& _q, const uintA&);
-  void setFrameState(const arr& X, const StringA& frameNames={}, bool calc_q_from_X=true);
+  void setFrameState(const arr& X, const StringA& frameNames={}, bool calc_q_from_X=true, bool warnOnDifferentDim=true);
   void setTimes(double t);
   void operator=(const arr& X){
     if(X.d0==frames.N) setFrameState(X);

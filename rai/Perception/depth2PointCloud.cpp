@@ -35,9 +35,9 @@ void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, flo
   uint H=depth.d0, W=depth.d1;
 
   CHECK(fx>0, "need a focal length greater zero!(not implemented for ortho yet)");
-  if(fy<0.) fy = fx;
-  if(px<0.) px=.5*W;
-  if(py<0.) py=.5*H;
+  if(std::isnan(fy)) fy = fx;
+  if(std::isnan(px)) px=.5*W;
+  if(std::isnan(py)) py=.5*H;
 
   pts.resize(H*W, 3);
   pts.setZero();
