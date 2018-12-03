@@ -32,7 +32,7 @@ void LGP_Node::resetData() {
   count = consts<uint>(0, L);
   count(BD_symbolic) = 1;
   feasible = consts<byte>(true, L);
-  komoProblem = consts<KOMO*>(NULL, L);
+  komoProblem.resize(L);
   opt.resize(L);
   computeTime = zeros(L);
   highestBound=0.;
@@ -78,7 +78,6 @@ LGP_Node::LGP_Node(LGP_Node* parent, MCTS_Environment::Handle& a)
 
 LGP_Node::~LGP_Node() {
   for(LGP_Node *ch:children) delete ch;
-  for(KOMO* k:komoProblem) if(k) delete k;
 }
 
 void LGP_Node::expand(int verbose) {
@@ -114,8 +113,8 @@ void LGP_Node::computeEndKinematics(){
 }
 
 void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
-  if(komoProblem(bound)) delete komoProblem(bound);
-  komoProblem(bound) = new KOMO();
+  if(komoProblem(bound)) komoProblem(bound).reset();
+  komoProblem(bound) = std::make_shared<KOMO>();
   KOMO& komo(*komoProblem(bound));
 
   komo.verbose = rai::MAX(verbose,0);
@@ -162,8 +161,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     komo.run();
   } catch(std::runtime_error& err) {
     cout <<"KOMO CRASHED: " <<err.what() <<endl;
-    delete komoProblem(bound);
-    komoProblem(bound)=0;
+    komoProblem(bound).reset();
     return;
   }
   if(!komo.denseOptimization) COUNT_evals += komo.opt->newton.evals;

@@ -61,7 +61,7 @@ struct LGP_Node {
   arr computeTime;  ///< computation times for each level
   double highestBound=0.;
   
-  rai::Array<KOMO*> komoProblem; //komo problems for all levels
+  rai::Array<std::shared_ptr<KOMO>> komoProblem; //komo problems for all levels
   arrA opt; //these are the optima (trajectories) computed
   
   // display helpers

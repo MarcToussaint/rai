@@ -340,7 +340,7 @@ PYBIND11_MODULE(libry, m) {
 
   .def("lgp", [](ry::Config& self, const std::string& folFileName){
     ry::RyLGP_Tree lgp;
-    lgp.lgp = make_shared<LGP_Tree>(self.get(), folFileName.c_str());
+    lgp.lgp = make_shared<LGP_Tree_Thread>(self.get(), folFileName.c_str());
     return lgp;
   } )
     
@@ -723,8 +723,26 @@ PYBIND11_MODULE(libry, m) {
 
   .def("run", [](ry::RyLGP_Tree& self, int verbose){
     self.lgp->displayBound = BD_seqPath;
-    self.lgp->verbose=verbose;
-    self.lgp->run();
+    self.lgp->LGP_Tree::verbose=verbose;
+    self.lgp->threadLoop();
+  } )
+
+  .def("stop", [](ry::RyLGP_Tree& self){
+    self.lgp->threadStop();
+  } )
+
+  .def("numSolutions", [](ry::RyLGP_Tree& self){
+    return self.lgp->numSolutions();
+  } )
+
+  .def("getReport", [](ry::RyLGP_Tree& self, uint solution, BoundType bound){
+    Graph G = self.lgp->getReport(solution, bound);
+    return graph2list(G);
+  } )
+
+  .def("getKOMO", [](ry::RyLGP_Tree& self, uint solution, BoundType bound){
+    const auto& komo = self.lgp->getKOMO(solution, bound);
+    return ry::RyKOMO(komo);
   } )
 
   ;

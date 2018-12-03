@@ -41,13 +41,16 @@ namespace ry{
       config.set() = komo->world;
       komo->setPathOpt(phases, stepsPerPhase, timePerPhase);
     }
+    RyKOMO(const shared_ptr<KOMO>& _komo){
+      komo = _komo;
+    }
 
     shared_ptr<KOMO> komo;
     Var<rai::KinematicWorld> config;
     Var<arr> path;
   };
 
-  struct RyLGP_Tree { shared_ptr<LGP_Tree> lgp; };
+  struct RyLGP_Tree { shared_ptr<LGP_Tree_Thread> lgp; };
 
   struct RyFeature { Feature *feature=0; };
 

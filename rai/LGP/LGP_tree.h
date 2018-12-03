@@ -112,3 +112,28 @@ public:
   
   void player(StringA cmds={});
 };
+
+struct LGP_Tree_Thread : LGP_Tree, Thread{
+  LGP_Tree_Thread(const rai::KinematicWorld& _kin, const char *folFileName="fol.g")
+    : LGP_Tree(_kin, folFileName), Thread("LGP_Tree", -1){}
+
+  void open(){ LGP_Tree::init(); }
+  void step(){ LGP_Tree::step(); }
+  void close(){}
+
+  //convenience to retrieve solution data
+  uint numSolutions(){ return solutions.get()->N; }
+
+  const std::shared_ptr<KOMO>& getKOMO(uint i, BoundType bound){
+    const auto &komo = solutions.get()->elem(i)->node->komoProblem(bound);
+    CHECK(komo, "solution " <<i <<" has not evaluated the bound " <<bound <<" -- returning KOMO reference to nil");
+    return komo;
+  }
+
+  Graph getReport(uint i, BoundType bound){
+    const auto &komo = getKOMO(i, bound);
+    if(!komo) return Graph();
+    return komo->getProblemGraph(true);
+  }
+
+};

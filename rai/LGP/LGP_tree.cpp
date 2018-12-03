@@ -623,7 +623,7 @@ LGP_Tree_SolutionData::LGP_Tree_SolutionData(LGP_Tree& _tree, LGP_Node *_node) :
   uint L = node->komoProblem.N;
   paths.resize(L);
   for(uint l=0; l<L; l++) {
-    KOMO *komo = node->komoProblem(l);
+    std::shared_ptr<KOMO> komo = node->komoProblem(l);
     if(komo && komo->configurations.N) {
       paths(l).resize(komo->configurations.N, frameIDs.N);
       for(uint s=0; s<komo->configurations.N; s++) for(uint i=0; i<frameIDs.N; i++) {
