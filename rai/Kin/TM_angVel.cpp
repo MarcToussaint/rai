@@ -166,7 +166,7 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
     return;
   }
 
-#if 0
+#if 1
   if(order==2){
     arr y0, y1, Jy0, Jy1;
     order--;
@@ -174,8 +174,10 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
     phi(y1, (!!J?Jy1:NoArr), Ktuple);
     order++;
 
-    y = y1-y0; //difference!
-    if(!!J) J = Jy1 - Jy0;
+    double tau = Ktuple(-2)->frames(0)->tau;
+    if(impulseInsteadOfAcceleration) tau=1.;
+    y = (y1-y0)/tau; //difference!
+    if(!!J) J = (Jy1 - Jy0)/tau;
   }
 
 #else

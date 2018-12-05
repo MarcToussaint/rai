@@ -130,7 +130,9 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
                             "push", "graspSlide", "liftDownUp"
                            });
 
-  if(komo.verbose>1)  for(auto& s:S) cout <<"SKELETON " <<s <<endl;
+  if(komo.verbose>1){
+    writeSkeleton(S, getSwitchesFromSkeleton(S));
+  }
 
   //ensure the effective kinematics are computed when BD_pose
 //  if(bound==BD_pose && step>1){
@@ -301,7 +303,7 @@ Skeleton LGP_Node::getSkeleton(StringA predicateFilter,  bool finalStateOnly) co
     states.append(this->folState);
   }
   
-  //setup a done marker array
+  //setup a done marker array: which literal in each state is DONE
   uint maxLen=0;
   for(Graph *s:states) if(s->N>maxLen) maxLen = s->N;
   boolA done(states.N, maxLen);
@@ -321,7 +323,8 @@ Skeleton LGP_Node::getSkeleton(StringA predicateFilter,  bool finalStateOnly) co
         
         //check predicate filter
         if(!symbols.N
-            || (predicateFilter.N && !predicateFilter.contains(symbols.first()))) continue;
+           || !rai::Enum<SkeletonSymbol>::contains(symbols.first())
+           || (predicateFilter.N && !predicateFilter.contains(symbols.first()))) continue;
             
         //trace into the future
         uint k_end=k+1;
@@ -342,8 +345,6 @@ Skeleton LGP_Node::getSkeleton(StringA predicateFilter,  bool finalStateOnly) co
     }
   }
   
-//  for(auto& s:skeleton) cout <<"SKELETON " <<s <<endl;
-
   return skeleton;
 }
 

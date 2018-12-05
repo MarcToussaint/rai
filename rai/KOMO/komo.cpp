@@ -231,6 +231,60 @@ void KOMO::addSwitch(double time, bool before, const char* type, const char* ref
   addSwitch(time, before, sw);
 }
 
+void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, double time, double endTime, const char* prevFrom, const char* from, const char* to){
+  if(newMode==SY_stable || newMode==SY_stableOn){
+    if(newMode==SY_stable){
+      addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, from, to, world));
+    }else{  //SY_stableOn
+      Transformation rel = 0;
+      rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
+      addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
+    }
+
+    //-- DOF-is-constant constraint
+    if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
+      addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
+
+    //-- no relative jump at end
+//    if(endTime>0.) addObjective(endTime, endTime, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
+
+    if(prevMode==SY_stable || prevMode==SY_stableOn){
+      //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
+      if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, +0, +1);
+      else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
+    }else{
+      //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
+      if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, +1, +1);
+      else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
+    }
+
+  }
+
+  if(newMode==SY_dynamic){
+    addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_free, from, to, world, SWInit_copy));
+    addObjective(time, endTime, new TM_NewtonEuler(world, to), OT_eq, NoArr, 1e0, k_order, +0, -1);
+  //  addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2); //this should be implicit in the NE equations!
+  }
+
+  if(newMode==SY_dynamicTrans){
+    addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_trans3, from, to, world, SWInit_copy));
+  #if 0
+    addObjective(time, endTime, new TM_Gravity2(world, to), OT_eq, NoArr, 3e1, k_order, +1, -1);
+  #else
+    addObjective(time, endTime, new TM_NewtonEuler(world, to, true), OT_eq, NoArr, 3e1, k_order, +0, -1);
+  #endif
+  }
+
+  if(newMode==SY_dynamicOn){
+    Transformation rel = 0;
+    rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
+    addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
+    if(k_order>=2) addObjective(time, endTime, new TM_ZeroAcc(world, to), OT_eq, NoArr, 3e1, k_order, +0, -1);
+  //  else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
+  }
+}
+
+
 void KOMO::addSwitch_stable(double time, double endTime, const char* from, const char* to) {
   addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, from, to, world));
   //-- DOF-is-constant constraint
@@ -919,16 +973,35 @@ void KOMO_ext::setAbstractTask(double phase, const Graph& facts, int verbose) {
 }
 
 void KOMO::setSkeleton(const Skeleton &S, bool ignoreSwitches) {
+  //-- add objectives for mode switches
+#if 1
+  intA switches = getSwitchesFromSkeleton(S);
+  if(!ignoreSwitches){
+    for(uint i=0;i<switches.d0;i++) {
+      int j = switches(i,0);
+      int k = switches(i,1);
+      const char* newFrom="base";
+      if(S(k).frames.N==2) newFrom = S(k).frames(0);
+      if(j<0)
+        addSwitch_mode(SY_stable, S(k).symbol, S(k).phase0, S(k).phase1+1., NULL, newFrom, S(k).frames.last());
+      else
+        addSwitch_mode(S(j).symbol, S(k).symbol, S(k).phase0, S(k).phase1+1., S(j).frames(0), newFrom, S(k).frames.last());
+    }
+  }
+#endif
+  //-- add objectives for rest
   for(const SkeletonEntry& s:S) {
     if(s.symbol==SY_touch) {   add_touch(s.phase0, s.phase1, s.frames(0), s.frames(1));  continue;  }
     if(s.symbol==SY_above) {   add_aboveBox(s.phase0, s.phase1, s.frames(0), s.frames(1));  continue;  }
     if(s.symbol==SY_inside) {   add_aboveBox(s.phase0, s.phase1, s.frames(0), s.frames(1));  continue;  }
     if(s.symbol==SY_impulse) {  add_impulse(s.phase0, s.frames(0), s.frames(1));  continue;  }
+#if 0
     if(s.symbol==SY_stable) {    if(!ignoreSwitches) addSwitch_stable(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  continue;  }
     if(s.symbol==SY_stableOn) {  if(!ignoreSwitches) addSwitch_stableOn(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  continue;  }
     if(s.symbol==SY_dynamic) {   if(!ignoreSwitches) addSwitch_dynamic(s.phase0, s.phase1+1., "base", s.frames(0));  continue;  }
     if(s.symbol==SY_dynamicOn) { if(!ignoreSwitches) addSwitch_dynamicOn(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  continue;  }
     if(s.symbol==SY_dynamicTrans) { if(!ignoreSwitches) addSwitch_dynamicTrans(s.phase0, s.phase1+1., "base", s.frames(0));  continue;  }
+#endif
     if(s.symbol==SY_liftDownUp) {  setLiftDownUp(s.phase0, s.frames(0), .4);  continue;  }
 
     if(s.symbol==SY_contact) {   addContact_slide(s.phase0, s.phase1, s.frames(0), s.frames(1));  continue;  }
@@ -968,7 +1041,7 @@ void KOMO::setSkeleton(const Skeleton &S, bool ignoreSwitches) {
 //    else if(s.symbol==SY_place" && s.symbols.N==4) setPlace(s.phase0, s.frames(0), s.frames(1), s.frames(2), verbose);
     else if(s.symbol==SY_graspSlide)            setGraspSlide(s.phase0, s.frames(0), s.frames(1), s.frames(2), verbose);
 //    else if(s.symbol==SY_handover)              setHandover(s.phase0, s.frames(0), s.frames(1), s.frames(2), verbose);
-    else LOG(-2) <<"UNKNOWN PREDICATE!: " <<s;
+//    else LOG(-2) <<"UNKNOWN PREDICATE!: " <<s;
   }
 }
 
@@ -2368,3 +2441,38 @@ template<> const char* rai::Enum<SkeletonSymbol>::names []= {
   "graspSlide",
   NULL
 };
+
+intA getSwitchesFromSkeleton(const Skeleton& S){
+  rai::Array<SkeletonSymbol> modes = { SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans };
+
+  intA ret;
+  for(int i=0;i<(int)S.N;i++){
+    if(modes.contains(S.elem(i).symbol)){
+      int j=i-1;
+      for(;j--;){
+        if(modes.contains(S.elem(j).symbol) && S.elem(j).frames.last()==S.elem(i).frames.last()){
+          break;
+        }
+      }
+      ret.append({j,i});
+    }
+  }
+  ret.reshape(ret.N/2,2);
+
+  return ret;
+}
+
+void writeSkeleton(const Skeleton& S, const intA& switches){
+  cout <<"SKELETON:" <<endl;
+  for(auto &s:S) cout <<"  " <<s <<endl;
+  if(switches.N){
+    cout <<"SWITCHES:" <<endl;
+    for(uint i=0;i<switches.d0;i++){
+      int j = switches(i,0);
+      if(j<0)
+        cout <<"  START  -->  " <<S(switches(i,1)) <<endl;
+      else
+        cout <<"  " <<S(j) <<"  -->  " <<S(switches(i,1)) <<endl;
+    }
+  }
+}

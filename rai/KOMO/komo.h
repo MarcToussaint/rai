@@ -47,10 +47,12 @@ struct SkeletonEntry {
   StringA frames;
   SkeletonEntry() {}
   SkeletonEntry(double phase0, double phase1, SkeletonSymbol symbol, StringA frames) : phase0(phase0), phase1(phase1), symbol(symbol), frames(frames){}
-  void write(ostream& os) const { os <<symbol <<' '; frames.write(os," ",NULL,"()"); os <<" from " <<phase0 <<" to " <<phase1 <<endl; }
+  void write(ostream& os) const { os <<symbol <<' '; frames.write(os," ",NULL,"()"); os <<" from " <<phase0 <<" to " <<phase1; }
 };
 stdOutPipe(SkeletonEntry)
 typedef rai::Array<SkeletonEntry> Skeleton;
+intA getSwitchesFromSkeleton(const Skeleton& S);
+void writeSkeleton(const Skeleton& S, const intA& switches={});
 
 //===========================================================================
 
@@ -160,6 +162,9 @@ struct KOMO : NonCopyable {
   void add_stable(double time,  const char* shape1, const char* shape2, ObjectiveType type=OT_eq, double prec=1e1);
   
   //-- core kinematic switch symbols of skeletons
+  void addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode,
+                      double time, double endTime,
+                      const char *prevFrom, const char *newFrom, const char *obj);
   void addSwitch_stable(double time, double endTime, const char *from, const char *to);
   void addSwitch_stableOn(double time, double endTime, const char* from, const char* to);
   void addSwitch_dynamic(double time, double endTime, const char *from, const char *to);

@@ -28,6 +28,7 @@ struct TM_LinVel : Feature {
 
 struct TM_AngVel : Feature {
   int i;               ///< which shapes does it refer to?
+  bool impulseInsteadOfAcceleration=false;
 
   TM_AngVel(int iShape=-1) : i(iShape) { order=1; }
   TM_AngVel(const rai::KinematicWorld& K, const char* iShapeName=NULL) : i(initIdArg(K,iShapeName)) { order=1; }

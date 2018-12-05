@@ -468,6 +468,12 @@ struct Enum {
     }
     CHECK(!strcmp(names[x], str.p), "");
   }
+  static bool contains(const rai::String& str){
+    for(int i=0; names[i]; i++) {
+      if(str==names[i]) return true;
+    }
+    return false;
+  }
   const char* name() const {
     if(x<0) return "init";
     else return names[x];
