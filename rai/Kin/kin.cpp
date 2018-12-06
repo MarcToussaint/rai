@@ -1870,8 +1870,7 @@ void rai::KinematicWorld::report(std::ostream &os) const {
   <<endl;
 }
 
-void rai::KinematicWorld::
-init(const Graph& G, bool addInsteadOfClear) {
+void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
   if(!addInsteadOfClear) clear();
   
   NodeL bs = G.getNodes("body");

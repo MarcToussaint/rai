@@ -94,10 +94,10 @@ struct FOL_World : MCTS_Environment {
   long count;
   
   FOL_World();
-  FOL_World(istream& fil);
+  FOL_World(const char* filename);
   virtual ~FOL_World();
   void init(const Graph& _KB);
-  void init(const char* filename) { init(Graph(FILE(filename))); }
+  void init(const char* filename);
   void copy(const FOL_World& fol) { init(fol.KB); }
   
   virtual TransitionReturn transition(const Handle& action); //returns (observation, reward)

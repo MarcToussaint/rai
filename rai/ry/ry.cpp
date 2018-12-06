@@ -1,7 +1,6 @@
 #ifdef RAI_PYBIND
 
 #include "ry.h"
-#include "lgp-py.h"
 
 #include <Core/graph.h>
 #include <Kin/frame.h>
@@ -310,6 +309,12 @@ PYBIND11_MODULE(libry, m) {
     return view;
    } )
 
+  .def("edit", [](ry::Config& self, const char* filename){
+    rai::KinematicWorld K;
+    editConfiguration(filename, K, K.gl());
+    self.set() = K;
+  } )
+
   .def("komo_IK", [](ry::Config& self){
     ry::RyKOMO komo;
     komo.komo = make_shared<KOMO>(self.get());
@@ -428,8 +433,9 @@ PYBIND11_MODULE(libry, m) {
 
     .def("computePointCloud", [](ry::RyCameraView& self, const pybind11::array& depth, bool globalCoordinates){
       arr _depth = numpy2arr(depth);
+      floatA __depth; copy(__depth, _depth);
       auto ptsSet = self.pts.set();
-      self.cam->computePointCloud(ptsSet, _depth, globalCoordinates);
+      self.cam->computePointCloud(ptsSet, __depth, globalCoordinates);
       return pybind11::array(ptsSet->dim(), ptsSet->p);
     }, "",
       py::arg("depth"),
@@ -691,7 +697,7 @@ PYBIND11_MODULE(libry, m) {
     self.lgp->focusNode = focusNode->children(decision);
   } )
 
-  .def("getDecisions", [](ry::RyLGP_Tree& self, const char* seq){
+  .def("getDecisions", [](ry::RyLGP_Tree& self){
     LGP_Node* focusNode = self.lgp->focusNode;
     if(!focusNode->isExpanded) focusNode->expand();
     StringA decisions(focusNode->children.N);
@@ -715,6 +721,10 @@ PYBIND11_MODULE(libry, m) {
     }else{
       self.lgp->focusNode->komoProblem(bound)->displayTrajectory(.1, false, false);
     }
+  } )
+
+  .def("getKOMOforBound", [](ry::RyLGP_Tree& self, BoundType bound){
+    return ry::RyKOMO( self.lgp->focusNode->komoProblem(bound) );
   } )
 
   .def("addTerminalRule", [](ry::RyLGP_Tree& self, const char* precondition){

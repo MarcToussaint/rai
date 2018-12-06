@@ -43,8 +43,14 @@ FOL_World::FOL_World()
   KB.isDoubleLinked=false;
 }
 
-FOL_World::FOL_World(istream& is) : FOL_World() {
-  init(Graph(is));
+FOL_World::FOL_World(const char* filename) : FOL_World() {
+  init(filename);
+}
+
+void FOL_World::init(const char* filename) {
+  rai::FileToken file(filename, true);
+  init(Graph(file));
+  file.cd_start();
 }
 
 void FOL_World::init(const Graph& _KB){
