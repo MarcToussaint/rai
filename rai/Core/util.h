@@ -405,7 +405,7 @@ struct FileToken {
   std::shared_ptr<std::ifstream> is;
   
   FileToken();
-  FileToken(const char* _filename, bool change_dir=true);
+  FileToken(const char* _filename, bool change_dir=false);
   FileToken(const FileToken& ft);
   ~FileToken();
   FileToken& operator()() { return *this; }
@@ -425,7 +425,7 @@ inline std::ostream& operator<<(std::ostream& os, const FileToken& fil) { return
 template<class T> FileToken& operator<<(T& x, FileToken& fil) { fil.getIs() >>x; return fil; }
 template<class T> void operator>>(const T& x, FileToken& fil) { fil.getOs() <<x; }
 }
-#define FILE(filename) (rai::FileToken(filename)()) //it needs to return a REFERENCE to a local scope object
+#define FILE(filename) (rai::FileToken(filename, false)()) //it needs to return a REFERENCE to a local scope object
 
 inline bool operator==(const rai::FileToken&, const rai::FileToken&) { return false; }
 

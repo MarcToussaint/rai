@@ -31,7 +31,8 @@ void TEST(MeshTools) {
   rai::Mesh mesh;
   mesh.readFile(file);
 
-  cout <<"#vertices = " <<mesh.V.d0 <<" #triangles=" <<mesh.T.d0 <<endl;
+  cout <<"#vertices = " <<mesh.V.d0 <<" #triangles=" <<mesh.T.d0 <<"bounding box: = " <<max(mesh.V, 0) <<'-' <<min(mesh.V, 0) <<endl;
+//  mesh.C.clear();
 
   file(file.N-4)=0; //replace . by 0
 

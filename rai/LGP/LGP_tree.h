@@ -60,7 +60,7 @@ struct LGP_Tree : GLDrawer {
   
   //high-level
   LGP_Tree();
-  LGP_Tree(rai::KinematicWorld& kin, const char *folFileName="fol.g");
+  LGP_Tree(rai::KinematicWorld& kin, const char *folFileName);
   LGP_Tree(rai::KinematicWorld& kin, FOL_World& fol);
   void init(rai::KinematicWorld &kin, FOL_World &fol);
   ~LGP_Tree();

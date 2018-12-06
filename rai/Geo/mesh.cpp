@@ -8,7 +8,7 @@
 
 #include "mesh.h"
 #include "qhull.h"
-
+#include "mesh_readAssimp.h"
 
 #include <limits>
 
@@ -32,7 +32,6 @@ bool Geo_mesh_drawColors=true;
 
 extern void glColorId(uint id);
 
-extern rai::Mesh mesh_readAssimp(const char* filename);
 
 //==============================================================================
 //
@@ -337,6 +336,7 @@ void rai::Mesh::box() {
 void rai::Mesh::addMesh(const Mesh& mesh2, const rai::Transformation& X) {
   uint n=V.d0, t=T.d0, tt=Tt.d0;
   V.append(mesh2.V);
+  if(V.N==C.N && mesh2.V.N==mesh2.C.N) C.append(mesh2.C); else C.clear();
   tex.append(mesh2.tex);
   T.append(mesh2.T);
   for(; t<T.d0; t++) {  T(t, 0)+=n;  T(t, 1)+=n;  T(t, 2)+=n;  }
@@ -352,6 +352,9 @@ void rai::Mesh::makeConvexHull() {
 #if 1
   V = getHull(V, T);
   if(C.nd==2) C = mean(C);
+  Tt.clear();
+  tex.clear();
+  texImg.clear();
 #else
   uintA H = getHullIndices(V, T);
   intA Hinv = consts<int>(-1, V.d0);
@@ -541,7 +544,7 @@ void permuteVertices(rai::Mesh& m, uintA& p) {
     for(i=0; i<p.N; i++) { x(i, 0)=m.Vn(p(i), 0); x(i, 1)=m.Vn(p(i), 1); x(i, 2)=m.Vn(p(i), 2); }
     m.Vn=x;
   }
-  if(m.C.N) {
+  if(m.C.N==m.V.N) {
     for(i=0; i<p.N; i++) { x(i, 0)=m.C(p(i), 0); x(i, 1)=m.C(p(i), 1); x(i, 2)=m.C(p(i), 2); }
     m.C=x;
   }
@@ -625,6 +628,10 @@ void rai::Mesh::fuseNearVertices(double tol) {
   
   cout <<"#V=" <<V.d0 <<", done" <<endl;
   
+  Tt.clear();
+  tex.clear();
+  texImg.clear();
+
   C.clear();
 }
 
@@ -784,6 +791,10 @@ void rai::Mesh::clean() {
     T=Tnew;
     deleteUnusedVertices();
   }
+
+  Tt.clear();
+  tex.clear();
+  texImg.clear();
   computeNormals();
 }
 
@@ -1006,7 +1017,7 @@ void rai::Mesh::write(std::ostream& os) const {
 void rai::Mesh::readFile(const char* filename) {
   const char* fileExtension = filename+(strlen(filename)-3);
 //  if(!strcmp(fileExtension, "obj")) { *this = mesh_readAssimp(filename); } else
-  if(!strcmp(fileExtension, "dae") || !strcmp(fileExtension, "DAE")) { *this = mesh_readAssimp(filename); }
+  if(!strcmp(fileExtension, "dae") || !strcmp(fileExtension, "DAE")) { *this = AssimpLoader(filename).getSingleMesh(); }
   else read(FILE(filename).getIs(), fileExtension, filename);
 }
 
@@ -1018,7 +1029,7 @@ void rai::Mesh::read(std::istream& is, const char* fileExtension, const char* fi
   if(!strcmp(fileExtension, "tri")) { readTriFile(is); loaded=true; }
   if(!strcmp(fileExtension, "arr")) { readArr(is); loaded=true; }
   if(!strcmp(fileExtension, "stl") || !strcmp(fileExtension, "STL")) { loaded = readStlFile(is); }
-  if(!strcmp(fileExtension, "dae") || !strcmp(fileExtension, "DAE")) { *this = mesh_readAssimp(filename); loaded=true; }
+  if(!strcmp(fileExtension, "dae") || !strcmp(fileExtension, "DAE")) { *this = AssimpLoader(filename).getSingleMesh(); loaded=true; }
   if(!loaded) HALT("can't read fileExtension '" <<fileExtension <<"' file '" <<filename <<"'");
 }
 

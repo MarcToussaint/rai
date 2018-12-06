@@ -29,6 +29,7 @@
 #include "kin_ode.h"
 #include "kin_feather.h"
 #include <Geo/qhull.h>
+#include <Geo/mesh_readAssimp.h>
 #include <GeoOptim/geoOptim.h>
 #include <Gui/opengl.h>
 #include <Algo/algos.h>
@@ -167,7 +168,7 @@ rai::KinematicWorld::~KinematicWorld() {
 }
 
 void rai::KinematicWorld::init(const char* filename) {
-  rai::FileToken file(filename);
+  rai::FileToken file(filename, true);
   Graph G(file);
   G.checkConsistency();
   init(G, false);
@@ -175,10 +176,20 @@ void rai::KinematicWorld::init(const char* filename) {
 }
 
 void rai::KinematicWorld::addFile(const char* filename) {
-  rai::FileToken file(filename);
+  rai::FileToken file(filename, true);
   Graph G(file);
   init(G, true);
   file.cd_start();
+}
+
+void rai::KinematicWorld::addAssimp(const char* filename) {
+  AssimpLoader A(filename);
+  for(rai::Mesh &m:A.meshes){
+    rai::Frame *f = new rai::Frame(*this);
+    rai::Shape *s = new rai::Shape(*f);
+    s->type() = ST_mesh;
+    s->mesh() = m;
+  }
 }
 
 rai::Frame* rai::KinematicWorld::addFrame(const char* name, const char* parent, const char* args){
@@ -214,7 +225,7 @@ rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size
       s->mesh().V = size;
       s->mesh().V.reshape(size.N/3,3);
     }
-    if(shape==ST_mesh){
+    if(shape==ST_ssCvx){
       s->sscCore().V = size;
       s->sscCore().V.reshape(size.N/3,3);
       CHECK(radius>0., "radius must be greater zero");
@@ -3514,7 +3525,7 @@ void editConfiguration(const char* filename, rai::KinematicWorld& K, OpenGL &gl)
     rai::KinematicWorld W;
     try {
       rai::lineCount=1;
-      W <<FILE(filename);
+      W.init(filename);
       gl.dataLock.writeLock();
       K = W;
       gl.dataLock.unlock();

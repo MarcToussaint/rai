@@ -27,7 +27,7 @@ int MAIN(int argc,char **argv){
     Inotify ino(file);
     try {
       rai::lineCount=1;
-      K <<FILE(file);
+      K.init(file);
       K.report();
       break;
     } catch(std::runtime_error& err) {
@@ -38,7 +38,6 @@ int MAIN(int argc,char **argv){
       }
     }
     }
-
 
     K.checkConsistency();
     K >>FILE("z.g");
