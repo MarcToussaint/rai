@@ -116,7 +116,7 @@ void rai::CameraView::computeKinectDepth(uint16A& kinect_depth, const arr& depth
   for(uint i=0; i<depth.N; i++) kinect_depth.elem(i) = (uint16_t) (depth.elem(i) * 1000.);
 }
 
-void rai::CameraView::computePointCloud(arr& pts, const arr& depth, bool globalCoordinates){
+void rai::CameraView::computePointCloud(arr& pts, const floatA& depth, bool globalCoordinates){
   uint H=depth.d0, W=depth.d1;
 
   pts.resize(H*W, 3);

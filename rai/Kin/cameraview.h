@@ -45,7 +45,7 @@ struct CameraView : GLDrawer {
   //-- compute/analyze a camera perspective (stored in classes' output fields)
   void computeImageAndDepth(byteA& image, floatA& depth);
   void computeKinectDepth(uint16A& kinect_depth, const arr& depth);
-  void computePointCloud(arr& pts, const arr& depth, bool globalCoordinates=true); // point cloud (rgb of every point is given in image)
+  void computePointCloud(arr& pts, const floatA& depth, bool globalCoordinates=true); // point cloud (rgb of every point is given in image)
   void computeSegmentation(byteA& segmentation);     // -> segmentation
 
   //-- displays
