@@ -11,9 +11,11 @@
 #include <Core/array.h>
 #include <Kin/kin.h>
 #include <Geo/mesh.h>
+#include <bits/shared_ptr.h>
 
 struct Percept;
-typedef rai::Array<Percept*> PerceptL;
+typedef std::shared_ptr<Percept> PerceptPtr;
+typedef rai::Array<PerceptPtr> PerceptL;
 
 struct Percept : GLDrawer {
   enum Type { PT_cluster, PT_plane, PT_box, PT_mesh, PT_alvar, PT_optitrackmarker, PT_optitrackbody, PT_end };
@@ -21,17 +23,16 @@ struct Percept : GLDrawer {
   uint id = 0;
   int bodyId = -1;
   rai::Enum<Type> type;
-  double precision = 1.; //mt: what is relevance? mt: replace -> timeSincePerceived
-  rai::Transformation transform; //mt: really two different transforms??? don't like that
-  rai::Transformation frame;
+  double precision = 1.;
+  rai::Transformation pose;
   std::string frame_id;
   Percept(Type type);
-  Percept(Type type, const rai::Transformation& t);
+  Percept(Type type, const rai::Transformation& _pose);
   virtual ~Percept() {}
   
   virtual void syncWith(rai::KinematicWorld& K) = 0;
   virtual double idMatchingCost(const Percept& other);
-  virtual double fuse(Percept* other);
+  virtual double fuse(PerceptPtr& other);
   virtual void write(ostream& os) const;
   virtual void glDraw(OpenGL&) { NIY }
   virtual Percept* newClone() const = 0;
@@ -62,11 +63,12 @@ struct PercCluster : Percept {
 struct PercMesh : Percept {
   rai::Mesh mesh;
   
+  PercMesh() : Percept(PT_mesh) {}
   PercMesh(const rai::Mesh& mesh) : Percept(PT_mesh), mesh(mesh) {}
   
-  virtual void syncWith(rai::KinematicWorld& K) { }
+  virtual void syncWith(rai::KinematicWorld& K);
 //  virtual double idMatchingCost(const Percept& other){ return 0.; }
-  virtual double fuse(Percept* other);
+  virtual double fuse(PerceptPtr& other);
   virtual void write(ostream& os) const { os <<"#V=" <<mesh.V.N; }
   virtual void glDraw(OpenGL& gl) { mesh.glDraw(gl); }
   virtual Percept* newClone() const { return new PercMesh(*this); }
@@ -79,7 +81,7 @@ struct PercPlane : Percept {
   
   virtual void syncWith(rai::KinematicWorld& K);
   virtual double idMatchingCost(const Percept& other);
-  virtual double fuse(Percept* other);
+  virtual double fuse(PerceptPtr& other);
   virtual void write(ostream& os) const;
   virtual void glDraw(OpenGL&);
   virtual Percept* newClone() const { return new PercPlane(*this); }
@@ -93,7 +95,7 @@ struct PercBox : Percept {
   
   virtual void syncWith(rai::KinematicWorld& K);
 //  virtual double idMatchingCost(const Percept& other) { return 0.; }
-  virtual double fuse(Percept* other);
+  virtual double fuse(PerceptPtr& other);
   virtual void write(ostream& os) const { Percept::write(os); os <<"size=" <<size; }
   virtual void glDraw(OpenGL&);
   virtual Percept* newClone() const { return new PercBox(*this); }
@@ -122,8 +124,7 @@ struct OptitrackMarker : Percept {
     this->type = obj.type;
     this->precision = obj.precision;
     this->id = obj.id;
-    this->transform = obj.transform;
-    this->frame = obj.frame;
+    this->pose = obj.pose;
   }
   
   virtual void syncWith(rai::KinematicWorld &K);
@@ -146,8 +147,7 @@ struct OptitrackBody : Percept {
     this->frame_id = obj.frame_id;
     this->precision = obj.precision;
     this->id = obj.id;
-    this->transform = obj.transform;
-    this->frame = obj.frame;
+    this->pose = obj.pose;
   }
   
   virtual void syncWith(rai::KinematicWorld& K);

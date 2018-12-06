@@ -214,7 +214,7 @@ void OpencvCamera::step() {
   s->capture.read(img);
   if(!img.empty()) {
     cv::cvtColor(img, imgRGB, CV_BGR2RGB);
-    rgb.set()=cvtMAT(imgRGB);
+    rgb.set()=conv_cvMat2byteA(imgRGB);
   }
 }
 

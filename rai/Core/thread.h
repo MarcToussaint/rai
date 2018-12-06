@@ -86,6 +86,10 @@ struct Var_base : NonCopyable {
   /// @name c'tor/d'tor
   virtual ~Var_base();
 
+  void addCallback(const std::function<void(Var_base*,int)>& call, const void* callbackID){
+    callbacks.append(new Callback<void(Var_base*,int)>(callbackID, call));
+  }
+
   /// @name access control
   /// to be called by a thread before access, returns the revision
   int readAccess(Thread* th=NULL);  //might set the caller to sleep
@@ -215,6 +219,11 @@ struct Var {
     });
   }
   void stopListening();
+
+  void addCallback(const std::function<void(Var_base*,int)>& call, const void* callbackID=0){
+    data->addCallback(call, callbackID);
+  }
+
 
   void write(ostream& os) {
     readAccess();
@@ -394,7 +403,7 @@ struct Thread {
   
   /** use this to open drivers/devices/files and initialize
    *  parameters; this is called within the thread */
-  virtual void open() = 0;
+  virtual void open(){}
   
   /** The most important method of all of this: step does the actual
    *  computation of the thread. Access
@@ -405,7 +414,7 @@ struct Thread {
   
   /** use this to close drivers/devices/files; this is called within
    *  the thread */
-  virtual void close() = 0;
+  virtual void close(){}
   
   void main(); //this is the thread main - should be private!
 };

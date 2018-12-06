@@ -86,7 +86,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
     checkHessianCP(F, x, 1e-4);
   }
   
-  OptConstrained opt(x, NoArr, F, OPT(
+  OptConstrained opt(x, NoArr, F, -1, OPT(
                        stopTolerance = 1e-4,
                        stopFTolerance = 1e-3,
                        damping=1,

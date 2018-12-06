@@ -12,6 +12,7 @@
 #include <KOMO/komo.h>
 #include <Kin/cameraview.h>
 #include <Gui/viewer.h>
+#include <LGP/LGP_tree.h>
 
 namespace ry{
 
@@ -40,18 +41,23 @@ namespace ry{
       config.set() = komo->world;
       komo->setPathOpt(phases, stepsPerPhase, timePerPhase);
     }
+    RyKOMO(const shared_ptr<KOMO>& _komo){
+      komo = _komo;
+    }
 
     shared_ptr<KOMO> komo;
     Var<rai::KinematicWorld> config;
     Var<arr> path;
   };
 
+  struct RyLGP_Tree { shared_ptr<LGP_Tree_Thread> lgp; };
+
   struct RyFeature { Feature *feature=0; };
 
   struct RyCameraView {
     shared_ptr<rai::CameraView> cam;
     Var<byteA> image;
-    Var<arr> depth;
+    Var<floatA> depth;
     Var<byteA> segmentation;
     Var<arr> pts;
   };

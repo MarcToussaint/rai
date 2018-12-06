@@ -111,8 +111,8 @@ struct KinematicWorld : GLDrawer {
   /// @name changes of configuration
   void clear();
   void reset_q();
-  FrameL calc_topSort();
-  bool check_topSort();
+  FrameL calc_topSort() const;
+  bool check_topSort() const;
   void calc_activeSets();
   void calc_q();
   void reconfigureRootOfSubtree(Frame *root);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
@@ -122,7 +122,7 @@ struct KinematicWorld : GLDrawer {
   void pruneUselessFrames(bool preserveNamed=true);  ///< delete frames that have no name, joint, and shape
   void optimizeTree(bool preserveNamed=true, bool _pruneRigidJoints=false);        ///< call the three above methods in this order
   void sortFrames();
-  void makeObjectsFree(const StringA& objects);
+  void makeObjectsFree(const StringA& objects, double H_cost=0.);
   void addTimeJoint();
   bool hasTimeJoint();
   bool checkConsistency();
@@ -154,7 +154,7 @@ struct KinematicWorld : GLDrawer {
   void setJointState(const arr& _q, const arr& _qdot=NoArr);
   void setJointState(const arr& _q, const StringA&);
   void setJointState(const arr& _q, const uintA&);
-  void setFrameState(const arr& X, const StringA& frameNames={}, bool calc_q_from_X=true);
+  void setFrameState(const arr& X, const StringA& frameNames={}, bool calc_q_from_X=true, bool warnOnDifferentDim=true);
   void setTimes(double t);
   void operator=(const arr& X){
     if(X.d0==frames.N) setFrameState(X);

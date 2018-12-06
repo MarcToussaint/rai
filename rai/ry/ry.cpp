@@ -27,6 +27,8 @@ py::dict graph2dict(const Graph& G){
       dict[key.p] = n->get<rai::String>().p;
     } else if(n->isOfType<arr>()) {
       dict[key.p] = conv_arr2stdvec( n->get<arr>() );
+    } else if(n->isOfType<boolA>()) {
+      dict[key.p] = conv_arr2stdvec( n->get<boolA>() );
     } else if(n->isOfType<double>()) {
       dict[key.p] = n->get<double>();
     } else if(n->isOfType<int>()) {
@@ -36,8 +38,8 @@ py::dict graph2dict(const Graph& G){
     } else if(n->isOfType<bool>()) {
       dict[key.p] = n->get<bool>();
     } else {
+      LOG(-1) <<"can't convert node of type " <<n->type.name() <<" to dictionary";
     }
-
   }
   return dict;
 }
@@ -69,10 +71,11 @@ py::list graph2list(const Graph& G){
 
 Skeleton list2skeleton(const py::list& L){
   Skeleton S;
-  for(uint i=0;i<L.size();i+=2){
+  for(uint i=0;i<L.size();i+=3){
     std::vector<double> when = L[i].cast<std::vector<double> >();
-    ry::I_StringA symbols = L[i+1].cast<ry::I_StringA>();
-    S.append(SkeletonEntry(when[0], when[1], I_conv(symbols)));
+    SkeletonSymbol symbol = L[i+1].cast<SkeletonSymbol>();
+    ry::I_StringA frames = L[i+2].cast<ry::I_StringA>();
+    S.append(SkeletonEntry(when[0], when[1], symbol, I_conv(frames)));
   }
   return S;
 }
@@ -89,7 +92,10 @@ arr numpy2arr(const pybind11::array& X){
   for(uint i=0;i<dim.N;i++) dim(i)=X.shape()[i];
   Y.resize(dim);
   auto ref = X.unchecked<double>();
-  if(Y.nd==2){
+  if (Y.nd==1) {
+    for(uint i=0;i<Y.d0;i++) Y(i) = ref(i);
+    return Y;
+  } else if(Y.nd==2){
     for(uint i=0;i<Y.d0;i++) for(uint j=0;j<Y.d1;j++) Y(i,j) = ref(i,j);
     return Y;
   }
@@ -333,7 +339,9 @@ PYBIND11_MODULE(libry, m) {
     py::arg("timePerPhase")=5. )
 
   .def("lgp", [](ry::Config& self, const std::string& folFileName){
-    return ry::LGPpy(self, folFileName);
+    ry::RyLGP_Tree lgp;
+    lgp.lgp = make_shared<LGP_Tree_Thread>(self.get(), folFileName.c_str());
+    return lgp;
   } )
     
   .def("sortFrames", [](ry::Config& self){
@@ -347,8 +355,8 @@ PYBIND11_MODULE(libry, m) {
   }, "",
     py::arg("gravity"))
 
-  .def("stepDynamics", [](ry::Config& self, pybind11::array& u_control, double tau, double dynamicNoise, bool gravity){
-    arr _u = numpy2arr(u_control);
+  .def("stepDynamics", [](ry::Config& self, std::vector<double>& u_control, double tau, double dynamicNoise, bool gravity){
+    arr _u = conv_stdvec2arr(u_control);
     self.set()->stepDynamics(_u, tau, dynamicNoise, gravity);
   }, "",
       py::arg("u_control"),
@@ -549,7 +557,7 @@ PYBIND11_MODULE(libry, m) {
 
   .def("add_StableRelativePose", [](ry::RyKOMO& self, const std::vector<int>& confs, const char* gripper, const char* object){
       for(uint i=1;i<confs.size();i++)
-        self.komo->addObjective(ARR(confs[0], confs[1]), OT_eq, FS_poseDiff, {gripper, object});
+        self.komo->addObjective(ARR(confs[0], confs[i]), OT_eq, FS_poseDiff, {gripper, object});
       //  for(uint i=0;i<confs.size();i++) self.self->configurations(self.self->k_order+confs[i]) -> makeObjectsFree({object});
       self.komo->world.makeObjectsFree({object});
   },"", py::arg("confs"),
@@ -558,7 +566,7 @@ PYBIND11_MODULE(libry, m) {
 
   .def("add_StablePose", [](ry::RyKOMO& self, const std::vector<int>& confs, const char* object){
     for(uint i=1;i<confs.size();i++)
-      self.komo->addObjective(ARR(confs[0], confs[1]), OT_eq, FS_pose, {object});
+      self.komo->addObjective(ARR(confs[0], confs[i]), OT_eq, FS_pose, {object});
     //  for(uint i=0;i<confs.size();i++) self.self->configurations(self.self->k_order+confs[i]) -> makeObjectsFree({object});
     self.komo->world.makeObjectsFree({object});
   },"", py::arg("confs"),
@@ -589,11 +597,11 @@ PYBIND11_MODULE(libry, m) {
 //    skeleton2Bound(*self.komo, BD_path, S, self.komo->world, self.komo->world, false);
   } )
 
-  .def("addSkeletonBound", [](ry::RyKOMO& self, const py::list& L, BoundType boundType){
+  .def("addSkeletonBound", [](ry::RyKOMO& self, const py::list& L, BoundType boundType, bool collisions){
     Skeleton S = list2skeleton(L);
     cout <<"SKELETON: " <<S <<endl;
 //    self.komo->setSkeleton(S);
-    skeleton2Bound(*self.komo, boundType, S, self.komo->world, self.komo->world, false);
+    skeleton2Bound(*self.komo, boundType, S, self.komo->world, self.komo->world, collisions);
   } )
 
   //-- run
@@ -658,15 +666,86 @@ PYBIND11_MODULE(libry, m) {
 
   .def("displayTrajectory", [](ry::RyKOMO& self){
     rai::system("mkdir -p z.vid");
-    self.komo->displayTrajectory(1., false, true, "z.vid/");
+    self.komo->displayTrajectory(1., false, false, "z.vid/");
   } )
   ;
 
   //===========================================================================
 
-  py::class_<ry::LGPpy>(m, "LGPpy")
-      .def("optimizeFixedSequence", &ry::LGPpy::optimizeFixedSequence)
-      ;
+  py::class_<ry::RyLGP_Tree>(m, "LGP_Tree")
+  .def("walkToNode", [](ry::RyLGP_Tree& self, const char* seq){
+    self.lgp->walkToNode(seq);
+  } )
+
+  .def("walkToRoot", [](ry::RyLGP_Tree& self){
+    self.lgp->focusNode = self.lgp->root;
+  } )
+
+  .def("walkToParent", [](ry::RyLGP_Tree& self){
+    self.lgp->focusNode = self.lgp->focusNode->parent;
+  } )
+
+  .def("walkToDecision", [](ry::RyLGP_Tree& self, uint decision){
+    LGP_Node* focusNode = self.lgp->focusNode;
+    if(!focusNode->isExpanded) focusNode->expand();
+    self.lgp->focusNode = focusNode->children(decision);
+  } )
+
+  .def("getDecisions", [](ry::RyLGP_Tree& self, const char* seq){
+    LGP_Node* focusNode = self.lgp->focusNode;
+    if(!focusNode->isExpanded) focusNode->expand();
+    StringA decisions(focusNode->children.N);
+    uint c=0;
+    for(LGP_Node* a:focusNode->children) {
+      decisions(c++) <<*a->decision;
+    }
+    return I_conv(decisions);
+  } )
+
+  .def("nodeInfo", [](ry::RyLGP_Tree& self){
+    Graph G = self.lgp->focusNode->getInfo();
+    LOG(0) <<G;
+    return graph2dict(G);
+  } )
+
+  .def("optBound", [](ry::RyLGP_Tree& self, BoundType bound, bool collisions){
+    self.lgp->focusNode->optBound(bound, collisions);
+    if(bound == BD_seqPath){
+      self.lgp->focusNode->komoProblem(bound)->displayTrajectory(.02, false, false);
+    }else{
+      self.lgp->focusNode->komoProblem(bound)->displayTrajectory(.1, false, false);
+    }
+  } )
+
+  .def("addTerminalRule", [](ry::RyLGP_Tree& self, const char* precondition){
+    self.lgp->fol.addTerminalRule(precondition);
+  } )
+
+  .def("run", [](ry::RyLGP_Tree& self, int verbose){
+    self.lgp->displayBound = BD_seqPath;
+    self.lgp->LGP_Tree::verbose=verbose;
+    self.lgp->threadLoop();
+  } )
+
+  .def("stop", [](ry::RyLGP_Tree& self){
+    self.lgp->threadStop();
+  } )
+
+  .def("numSolutions", [](ry::RyLGP_Tree& self){
+    return self.lgp->numSolutions();
+  } )
+
+  .def("getReport", [](ry::RyLGP_Tree& self, uint solution, BoundType bound){
+    Graph G = self.lgp->getReport(solution, bound);
+    return graph2list(G);
+  } )
+
+  .def("getKOMO", [](ry::RyLGP_Tree& self, uint solution, BoundType bound){
+    const auto& komo = self.lgp->getKOMO(solution, bound);
+    return ry::RyKOMO(komo);
+  } )
+
+  ;
 
   //===========================================================================
 
@@ -701,6 +780,27 @@ PYBIND11_MODULE(libry, m) {
       ENUMVAL(BD,path)
       ENUMVAL(BD,seqPath)
       ENUMVAL(BD,max)
+      .export_values();
+
+  py::enum_<SkeletonSymbol>(m, "SY")
+      ENUMVAL(SY,touch)
+      ENUMVAL(SY,above)
+      ENUMVAL(SY,inside)
+      ENUMVAL(SY,impulse)
+      ENUMVAL(SY,stable)
+      ENUMVAL(SY,stableOn)
+      ENUMVAL(SY,dynamic)
+      ENUMVAL(SY,dynamicOn)
+      ENUMVAL(SY,dynamicTrans)
+      ENUMVAL(SY,liftDownUp)
+
+      ENUMVAL(SY,contact)
+      ENUMVAL(SY,bounce)
+
+      ENUMVAL(SY,magic)
+
+      ENUMVAL(SY,push)
+      ENUMVAL(SY,graspSlide)
       .export_values();
 
   py::enum_<FeatureSymbol>(m, "FS")

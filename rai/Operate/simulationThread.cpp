@@ -89,7 +89,7 @@ void SimulationThread::step(){
 
   SIM.stepKin();
 
-  K.set() = SIM.K;
+  K.set()->setFrameState(SIM.getFrameState(), {}, true, false);
   frameState.set() = SIM.getFrameState();
   jointState.set() = SIM.getJointState();
   timeToGo.set() = SIM.getTimeToGo();
@@ -134,7 +134,7 @@ void SimulationThread::execGripper(const rai::String& gripper, double position, 
   }
   if(gripper=="pandaL"){
     SIM.setUsedRobotJoints({"L_panda_finger_joint1"});
-    SIM.exec({1,1, {position}}, {1.}, true);
+    SIM.exec(arr(1,1, {position}), {1.}, true);
     return;
   }
   NIY
@@ -158,4 +158,20 @@ arr SimulationThread::getJointPositions(const StringA& joints){
   SIM.setUsedRobotJoints(joints);
   arr q = SIM.getJointState();
   return q;
+}
+
+void SimulationThread::addFile(const char* filename, const char* parentOfRoot, const rai::Transformation& relOfRoot){
+  auto lock = stepMutex();
+  uint n = SIM.K.frames.N;
+  SIM.K.addFile(filename);
+  if(parentOfRoot){
+      rai::Frame *f = SIM.K.frames(n);
+      f->linkFrom(SIM.K.getFrameByName(parentOfRoot));
+      new rai::Joint(*f, rai::JT_rigid);
+      f->Q = relOfRoot;
+      SIM.K.calc_activeSets();
+  }
+  SIM.K.calc_fwdPropagateFrames();
+  SIM.K.checkConsistency();
+  K.set() = SIM.K;
 }

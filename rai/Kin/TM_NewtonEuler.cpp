@@ -54,6 +54,7 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
 
   TM_AngVel rot(i);
   rot.order=2;
+  rot.impulseInsteadOfAcceleration=true;
   if(!transOnly) rot.phi(wcc, (!!J?Jwcc:NoArr), Ktuple);
 
 //  rai::KinematicWorld& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
@@ -62,7 +63,7 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   arr Imatrix = diag(.1, 3);
   if(a->inertia){
     mass = a->inertia->mass;
-    Imatrix = 10.*conv_mat2arr(a->inertia->matrix);
+    Imatrix = 2.*conv_mat2arr(a->inertia->matrix);
   }
 
   mass = 1./mass;

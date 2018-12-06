@@ -230,8 +230,12 @@ void rai::Frame::linkFrom(rai::Frame *_parent, bool adoptRelTransform) {
   if(adoptRelTransform) Q = X/parent->X;
 }
 
+rai::Joint::Joint(rai::Frame& f, rai::JointType _type) : Joint(f, (Joint*)NULL){
+  type = _type;
+}
+
 rai::Joint::Joint(Frame &f, Joint *copyJoint)
-  : frame(f), qIndex(UINT_MAX), q0(0.) {
+  : frame(f), qIndex(UINT_MAX){
   CHECK(!frame.joint, "the Link already has a Joint");
   frame.joint = this;
   frame.K.reset_q();
@@ -586,9 +590,10 @@ void rai::Joint::makeRigid() {
   }
 }
 
-void rai::Joint::makeFree(){
+void rai::Joint::makeFree(double H_cost){
   if(type!=JT_free){
     type=JT_free; frame.K.reset_q();
+    H=H_cost;
   }
 }
 
@@ -705,6 +710,7 @@ rai::Shape::Shape(Frame &f, const Shape *copyShape)
     const Shape& s = *copyShape;
 //    mesh_radius=s.mesh_radius;
     cont=s.cont;
+    visual=s.visual;
     geom = s.geom;
   }
 }
@@ -733,7 +739,10 @@ void rai::Shape::read(const Graph& ats) {
     if(ats.get(d, "contact")) cont = (char)d;
     else cont=1;
   }
-  
+  if(ats["noVisual"]){
+    visual=false;
+  }
+
   //center the mesh:
   if(type()==rai::ST_mesh && mesh().V.N) {
     if(ats["rel_includes_mesh_center"]) {

@@ -1427,10 +1427,21 @@ double Transformation::diffZero() const {
   return pos.diffZero() + rot.diffZero();
 }
 
+void Transformation::checkNan() const{
+  CHECK_EQ(pos.x, pos.x, "inconsistent: " <<pos.x);
+  CHECK_EQ(pos.y, pos.y, "inconsistent: " <<pos.y);
+  CHECK_EQ(pos.z, pos.z, "inconsistent: " <<pos.z);
+  CHECK_EQ(rot.x, rot.x, "inconsistent: " <<rot.x);
+  CHECK_EQ(rot.w, rot.w, "inconsistent: " <<rot.w);
+  CHECK_EQ(rot.x, rot.x, "inconsistent: " <<rot.x);
+  CHECK_EQ(rot.y, rot.y, "inconsistent: " <<rot.y);
+  CHECK_EQ(rot.z, rot.z, "inconsistent: " <<rot.z);
+}
+
 /// operator<<
 void Transformation::write(std::ostream& os) const {
   os <<pos.x <<' ' <<pos.y <<' ' <<pos.z <<' '
-     <<rot.w <<' ' <<rot.x <<' ' <<rot.y <<' ' <<rot.z;
+    <<rot.w <<' ' <<rot.x <<' ' <<rot.y <<' ' <<rot.z;
 }
 
 /// operator>>

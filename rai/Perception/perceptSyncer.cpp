@@ -6,13 +6,13 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "syncFiltered.h"
+#include "perceptSyncer.h"
 #include <Kin/frame.h>
 
-SyncFiltered::SyncFiltered(const char* outputWorld_name)
+SyncFiltered::SyncFiltered(Var<PerceptL>& _percepts, Var<rai::KinematicWorld>& _kin)
   : Thread("SyncFiltered", -1.),
-    percepts_filtered(this, "percepts_filtered", true),
-    outputWorld(this, outputWorld_name) {
+    percepts(this, _percepts, true),
+    kin(this, _kin, false) {
   threadOpen();
 }
 
@@ -21,32 +21,32 @@ SyncFiltered::~SyncFiltered() {
 }
 
 void SyncFiltered::open() {
-//  outputWorld.set() = modelWorld.get();
 }
 
 void SyncFiltered::step() {
   uintA existingIDs;
   
-  percepts_filtered.writeAccess();
-  for(Percept *p:percepts_filtered()) {
-    p->syncWith(outputWorld.set());
+  percepts.writeAccess();
+  for(PerceptPtr& p:percepts()) {
+    p->syncWith(kin.set());
     existingIDs.append(p->id);
   }
-  percepts_filtered.deAccess();
+  percepts.deAccess();
   
   // delete non-existing bodies
-  outputWorld.writeAccess();
-  for(rai::Frame *b:outputWorld().frames) {
+  kin.writeAccess();
+  for(rai::Frame *b:kin().frames) {
     if(b->name.startsWith("perc_")) {
       uint id;
       b->name.resetIstream();
       b->name >>PARSE("perc_") >>id;
       if(!existingIDs.contains(id)) {
+          LOG(-1) <<"DELETING" <<*b;
         delete b;
       }
     }
   }
-  outputWorld.deAccess();
+  kin.deAccess();
   
 }
 

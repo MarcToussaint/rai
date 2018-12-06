@@ -27,7 +27,7 @@ struct OptConstrained {
   bool earlyPhase=false;
   ofstream *fil=NULL;
   
-  OptConstrained(arr& x, arr &dual, ConstrainedProblem& P, OptOptions opt=NOOPT);
+  OptConstrained(arr& x, arr &dual, ConstrainedProblem& P, int verbose=-1, OptOptions opt=NOOPT);
   ~OptConstrained();
   bool step();
   uint run();
@@ -35,8 +35,8 @@ struct OptConstrained {
 };
 
 //TODO: remove:
-inline uint optConstrained(arr& x, arr &dual, ConstrainedProblem& P, OptOptions opt=NOOPT) {
-  return OptConstrained(x, dual, P, opt).run();
+inline uint optConstrained(arr& x, arr &dual, ConstrainedProblem& P, int verbose=-1, OptOptions opt=NOOPT) {
+  return OptConstrained(x, dual, P, verbose, opt).run();
 }
 
 //==============================================================================

@@ -267,7 +267,7 @@ void rai::KinematicWorld::reset_q() {
   fwdActiveJoints.clear();
 }
 
-FrameL rai::KinematicWorld::calc_topSort() {
+FrameL rai::KinematicWorld::calc_topSort() const {
   FrameL fringe;
   FrameL order;
   boolA done = consts<byte>(false, frames.N);
@@ -289,7 +289,7 @@ FrameL rai::KinematicWorld::calc_topSort() {
   return order;
 }
 
-bool rai::KinematicWorld::check_topSort() {
+bool rai::KinematicWorld::check_topSort() const {
   if(fwdActiveSet.N != frames.N) return false;
   
   //compute levels
@@ -302,6 +302,7 @@ bool rai::KinematicWorld::check_topSort() {
 }
 
 void rai::KinematicWorld::calc_activeSets() {
+  reset_q();
   if(!check_topSort()) {
     fwdActiveSet = calc_topSort(); //graphGetTopsortOrder<Frame>(frames);
   }
@@ -754,10 +755,12 @@ void rai::KinematicWorld::setJointState(const arr& _q, const uintA& joints) {
   calc_fwdPropagateFrames();
 }
 
-void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames, bool calc_q_from_X){
+void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames, bool calc_q_from_X, bool warnOnDifferentDim){
   if(!frameNames.N){
-    if(X.d0 > frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is larger than frames.N=" <<frames.N;
-    if(X.d0 < frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is smaller than frames.N=" <<frames.N;
+    if(warnOnDifferentDim){
+      if(X.d0 > frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is larger than frames.N=" <<frames.N;
+      if(X.d0 < frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is smaller than frames.N=" <<frames.N;
+    }
     for(uint i=0;i<frames.N && i<X.d0;i++){
       frames(i)->X.set(X[i]);
       frames(i)->X.rot.normalize();
@@ -1766,7 +1769,7 @@ Graph rai::KinematicWorld::getGraph() const {
 #if 1
   Graph G;
   //first just create nodes
-  for(Frame *f: frames) G.newNode<bool>({f->name}, {});
+  for(Frame *f: frames) G.newNode<bool>({STRING(f->name <<" [" <<f->ID <<']')}, {});
   for(Frame *f: frames) {
     Node *n = G.elem(f->ID);
     if(f->parent) {
@@ -1867,7 +1870,8 @@ void rai::KinematicWorld::report(std::ostream &os) const {
   <<endl;
 }
 
-void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
+void rai::KinematicWorld::
+init(const Graph& G, bool addInsteadOfClear) {
   if(!addInsteadOfClear) clear();
   
   NodeL bs = G.getNodes("body");
@@ -2583,13 +2587,14 @@ void rai::KinematicWorld::sortFrames() {
   for(Frame *f: frames) f->ID = i++;
 }
 
-void rai::KinematicWorld::makeObjectsFree(const StringA &objects){
+void rai::KinematicWorld::makeObjectsFree(const StringA &objects, double H_cost){
   for(auto s:objects){
     rai::Frame *a = getFrameByName(s, true);
     CHECK(a, "");
+    a = a->getUpwardLink();
     if(!a->parent) a->linkFrom(frames.first());
     if(!a->joint) new rai::Joint(*a);
-    a->joint->makeFree();
+    a->joint->makeFree(H_cost);
   }
 }
 
@@ -2643,8 +2648,10 @@ bool rai::KinematicWorld::checkConsistency() {
     if(a->inertia) CHECK_EQ(&a->inertia->frame, a, "");
     a->ats.checkConsistency();
 
-    CHECK_ZERO(a->X.rot.normalization()-1., 1e-4, "");
+    a->Q.checkNan();
+    a->X.checkNan();
     CHECK_ZERO(a->Q.rot.normalization()-1., 1e-4, "");
+    CHECK_ZERO(a->X.rot.normalization()-1., 1e-4, "");
   }
   
   Joint *j;
@@ -2671,7 +2678,7 @@ bool rai::KinematicWorld::checkConsistency() {
     if(f->parent) level(f->ID) = level(f->parent->ID)+1;
   //check levels are strictly increasing across links
   for(Frame *f: fwdActiveSet) if(f->parent) {
-    CHECK(level(f->parent->ID) < level(f->ID), "joint does not go forward");
+    CHECK(level(f->parent->ID) < level(f->ID), "joint from '" <<f->parent->name <<"'[" <<f->parent->ID <<"] to '" <<f->name <<"'[" <<f->ID <<"] does not go forward");
   }
 
   //check active sets
@@ -2836,11 +2843,17 @@ void rai::KinematicWorld::glDraw_sub(OpenGL& gl) {
   //shapes
   if(orsDrawBodies) {
     //first non-transparent
-    for(Frame *f: frames) if(f->shape && f->shape->alpha()==1. && (!orsDrawVisualsOnly || !f->ats["noVisual"])) {
+    for(Frame *f: frames) if(f->shape && f->shape->alpha()==1. && (f->shape->visual||!orsDrawVisualsOnly)) {
       gl.drawId(f->ID);
-      f->shape->glDraw(gl);
+      if(f->name.startsWith(("perc_"))){
+        glColor(1.,.5,.5);
+        rai::Mesh *m = &f->shape->mesh();
+        cout <<"DRAW MESH:" <<m->getRadius() <<endl;
+      }else{
+        f->shape->glDraw(gl);
+      }
     }
-    for(Frame *f: frames) if(f->shape && f->shape->alpha()<1. && (!orsDrawVisualsOnly || !f->ats["noVisual"])) {
+    for(Frame *f: frames) if(f->shape && f->shape->alpha()<1. && (f->shape->visual||!orsDrawVisualsOnly)) {
       gl.drawId(f->ID);
       f->shape->glDraw(gl);
     }

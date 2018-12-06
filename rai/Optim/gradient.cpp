@@ -200,7 +200,7 @@ uint Rprop::loop(arr& _x,
                  double stoppingTolerance,
                  double initialStepSize,
                  uint maxEvals,
-                 uint verbose) {
+                 int verbose) {
                  
   if(!s->stepSize.N) init(initialStepSize);
   arr x, J(_x.N), x_min, J_min;

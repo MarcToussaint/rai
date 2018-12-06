@@ -32,7 +32,7 @@ void LGP_Node::resetData() {
   count = consts<uint>(0, L);
   count(BD_symbolic) = 1;
   feasible = consts<byte>(true, L);
-  komoProblem = consts<KOMO*>(NULL, L);
+  komoProblem.resize(L);
   opt.resize(L);
   computeTime = zeros(L);
   highestBound=0.;
@@ -78,7 +78,6 @@ LGP_Node::LGP_Node(LGP_Node* parent, MCTS_Environment::Handle& a)
 
 LGP_Node::~LGP_Node() {
   for(LGP_Node *ch:children) delete ch;
-  for(KOMO* k:komoProblem) if(k) delete k;
 }
 
 void LGP_Node::expand(int verbose) {
@@ -113,10 +112,12 @@ void LGP_Node::computeEndKinematics(){
   for(rai::KinematicSwitch *s : tmp.switches) s->apply(effKinematics);
 }
 
-void LGP_Node::optBound(BoundType bound, bool collisions) {
-  if(komoProblem(bound)) delete komoProblem(bound);
-  komoProblem(bound) = new KOMO();
+void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
+  if(komoProblem(bound)) komoProblem(bound).reset();
+  komoProblem(bound) = std::make_shared<KOMO>();
   KOMO& komo(*komoProblem(bound));
+
+  komo.verbose = rai::MAX(verbose,0);
 
   if(komo.verbose>0){
     cout <<"########## OPTIM lev " <<bound <<endl;
@@ -129,7 +130,9 @@ void LGP_Node::optBound(BoundType bound, bool collisions) {
                             "push", "graspSlide", "liftDownUp"
                            });
 
-  if(komo.verbose>1)  for(auto& s:S) cout <<"SKELETON " <<s <<endl;
+  if(komo.verbose>1){
+    writeSkeleton(S, getSwitchesFromSkeleton(S));
+  }
 
   //ensure the effective kinematics are computed when BD_pose
 //  if(bound==BD_pose && step>1){
@@ -158,8 +161,10 @@ void LGP_Node::optBound(BoundType bound, bool collisions) {
 
   try {
     komo.run();
-  } catch(const char* msg) {
-    cout <<"KOMO CRASHED: " <<msg <<endl;
+  } catch(std::runtime_error& err) {
+    cout <<"KOMO CRASHED: " <<err.what() <<endl;
+    komoProblem(bound).reset();
+    return;
   }
   if(!komo.denseOptimization) COUNT_evals += komo.opt->newton.evals;
   COUNT_kin += rai::KinematicWorld::setJointStateCount;
@@ -298,7 +303,7 @@ Skeleton LGP_Node::getSkeleton(StringA predicateFilter,  bool finalStateOnly) co
     states.append(this->folState);
   }
   
-  //setup a done marker array
+  //setup a done marker array: which literal in each state is DONE
   uint maxLen=0;
   for(Graph *s:states) if(s->N>maxLen) maxLen = s->N;
   boolA done(states.N, maxLen);
@@ -318,7 +323,8 @@ Skeleton LGP_Node::getSkeleton(StringA predicateFilter,  bool finalStateOnly) co
         
         //check predicate filter
         if(!symbols.N
-            || (predicateFilter.N && !predicateFilter.contains(symbols.first()))) continue;
+           || !rai::Enum<SkeletonSymbol>::contains(symbols.first())
+           || (predicateFilter.N && !predicateFilter.contains(symbols.first()))) continue;
             
         //trace into the future
         uint k_end=k+1;
@@ -328,17 +334,17 @@ Skeleton LGP_Node::getSkeleton(StringA predicateFilter,  bool finalStateOnly) co
           done(k_end, persists->index) = true;
         }
         k_end--;
+
+        rai::Enum<SkeletonSymbol> sym(symbols.first());
         if(k_end==states.N-1) {
-          skeleton.append(SkeletonEntry({times(k), times.last(), symbols}));
+          skeleton.append(SkeletonEntry({times(k), times.last(), sym, symbols({1,-1})}));
         } else {
-          skeleton.append(SkeletonEntry({times(k), times(k_end), symbols}));
+          skeleton.append(SkeletonEntry({times(k), times(k_end), sym, symbols({1,-1})}));
         }
       }
     }
   }
   
-//  for(auto& s:skeleton) cout <<"SKELETON " <<s <<endl;
-
   return skeleton;
 }
 
@@ -449,6 +455,18 @@ void LGP_Node::write(ostream& os, bool recursive, bool path) const {
   os <<"\t seqCost=" <<cost(BD_seq) <<endl;
   os <<"\t pathCost=" <<cost(BD_path) <<endl;
   if(recursive) for(LGP_Node *n:children) n->write(os);
+}
+
+Graph LGP_Node::getInfo() const {
+  Graph G;
+  if(decision) G.newNode<rai::String>({"decision"}, {}, STRING(*decision));
+  else         G.newNode<rai::String>({"decision"}, {}, "<ROOT>");
+  G.newNode<rai::String>({"state"}, {}, STRING(*folState->isNodeOfGraph));
+  G.newNode<rai::String>({"path"}, {}, getTreePathString());
+  G.newNode<arr>({"boundsCost"}, {}, cost);
+  G.newNode<arr>({"boundsConstraints"}, {}, constraints);
+  G.newNode<boolA>({"boundsFeasible"}, {}, feasible);
+  return G;
 }
 
 void LGP_Node::getGraph(Graph& G, Node* n, bool brief) {

@@ -113,6 +113,7 @@ struct Joint : NonCopyable{
   //attachments to the joint
   struct Uncertainty *uncertainty=NULL;
   
+  Joint(Frame& f, JointType type);
   Joint(Frame& f, Joint* copyJoint=NULL);
   Joint(Frame& from, Frame& f, Joint* copyJoint=NULL);
   ~Joint();
@@ -132,7 +133,7 @@ struct Joint : NonCopyable{
   double& getQ();
   
   void makeRigid();
-  void makeFree();
+  void makeFree(double H_cost=0.);
 
   void write(std::ostream& os) const;
   void read(const Graph& G);
@@ -183,6 +184,7 @@ struct Shape : NonCopyable, GLDrawer {
 //  Mesh mesh, sscCore;
 //  double mesh_radius=0.;
   char cont=0;           ///< are contacts registered (or filtered in the callback)
+  bool visual=true;
   
   Shape(Frame& f, const Shape *copyShape=NULL); //new Shape, being added to graph and body's shape lists
   virtual ~Shape();

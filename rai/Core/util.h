@@ -95,6 +95,7 @@ void flip(int& b, uint i);
 double MIN(double a, double b);
 double MAX(double a, double b);
 uint MAX(uint a, uint b);
+int MAX(int a, int b);
 double indicate(bool expr);
 double modMetric(double x, double y, double mod);
 double sign(double x);
@@ -441,6 +442,7 @@ struct Enum {
   static const char* names [];
   Enum():x((enum_T)-1) {}
   explicit Enum(const enum_T& y):x(y) {}
+  explicit Enum(const rai::String& str):Enum() { operator=(str); }
   const enum_T& operator=(const enum_T& y) { x=y; return x; }
   bool operator==(const enum_T& y) const { return x==y; }
   bool operator!=(const enum_T& y) const { return x!=y; }
@@ -465,6 +467,12 @@ struct Enum {
       LOG(-2) <<"Enum::read could not find the keyword '" <<str <<"'. Possible Enum keywords: " <<all;
     }
     CHECK(!strcmp(names[x], str.p), "");
+  }
+  static bool contains(const rai::String& str){
+    for(int i=0; names[i]; i++) {
+      if(str==names[i]) return true;
+    }
+    return false;
   }
   const char* name() const {
     if(x<0) return "init";
