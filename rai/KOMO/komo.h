@@ -34,6 +34,7 @@ enum SkeletonSymbol{
   SY_bounce,
 
   SY_magic,
+  SY_magicTrans,
 
   SY_push,
   SY_graspSlide
@@ -171,6 +172,7 @@ struct KOMO : NonCopyable {
   void addSwitch_dynamicOn(double time, double endTime, const char *from, const char* to);
   void addSwitch_dynamicTrans(double time, double endTime, const char *from, const char *to);
   void addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost);
+  void addSwitch_magicTrans(double time, double endTime, const char* from, const char* to, double sqrAccCost);
 
   
   //-- tasks - logic level (used within LGP)

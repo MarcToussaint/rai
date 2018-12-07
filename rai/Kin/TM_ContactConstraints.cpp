@@ -382,3 +382,29 @@ void TM_Contact_ElasticVel::phi(arr& y, arr& J, const WorldL& Ktuple){
     if(!!J) J[3] = ~normal*(Jv1) + ~(v1)*Jnormal;
   }
 }
+
+void TM_Contact_ElasticVelIsComplementary::phi(arr& y, arr& J, const WorldL& Ktuple){
+  TM_Contact_ElasticVel vel(a, b, elasticity, stickiness);
+  arr y_vel, J_vel;
+  vel.phi(y_vel, J_vel, Ktuple);
+
+  //-- from the contact we need force
+  rai::KinematicWorld& K = *Ktuple(-2);
+  rai::Contact *con = getContact(K,a,b);
+  arr force, Jforce;
+  K.kinematicsContactForce(force, Jforce, con);
+  if(!!J) expandJacobian(Jforce, Ktuple, -2);
+
+  y.resize(4,3);
+  for(uint i=0;i<4;i++) y[i] = y_vel(i)*force;
+  y.reshape(12);
+  if(!!J){
+    J.resize(4, 3, Jforce.d1);
+    for(uint i=0;i<4;i++) for(uint j=0;j<3;j++){
+      J(i,j,{}) = y_vel(i)*Jforce[j] + force(j) * J_vel[i];
+    }
+    J.reshape(12,J.d2);
+  }
+
+
+}
