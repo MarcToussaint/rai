@@ -43,7 +43,8 @@ struct LGP_Tree : GLDrawer {
   struct DisplayThread *dth=NULL;
   rai::String dataPath;
   arr cameraFocus;
-  
+  bool firstTimeDisplayTree=true;
+
   LGP_Node *root=0, *focusNode=0;
   FOL_World fol;
   rai::KinematicWorld kin;
@@ -98,6 +99,7 @@ public:
   uint numFoundSolutions();
   rai::String report(bool detailed=false);
   void reportEffectiveJoints();
+  void displayTreeUsingDot();
   void initDisplay();
   void updateDisplay();
   void renderToVideo(uint specificBound=3, const char* filePrefix="vid/");

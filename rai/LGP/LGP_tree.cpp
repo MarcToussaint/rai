@@ -151,13 +151,34 @@ void LGP_Tree::initDisplay() {
     views(3) = make_shared<KinPathViewer>("path", .05, -2);
     for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
   }
-  if(displayTree) rai::system("evince z.pdf &");
   if(!dth) dth = new DisplayThread(this);
 }
 
 void LGP_Tree::renderToVideo(uint specificBound, const char* filePrefix) {
   CHECK(focusNode->komoProblem(specificBound) && focusNode->komoProblem(specificBound)->configurations.N, "level " <<specificBound <<" has not been computed for the current 'displayFocus'");
   renderConfigurations(focusNode->komoProblem(specificBound)->configurations, filePrefix, -2, 600, 600, &views(3)->copy.gl().camera);
+}
+
+void LGP_Tree::displayTreeUsingDot(){
+  MNodeL all = root->getAll();
+  for(auto& n:all) n->note.clear();
+
+  for(auto& n:all) if(n->isInfeasible) n->note <<"INFEASIBLE ";
+  for(auto& n:fringe_expand)      n->note <<"EXPAND ";
+  for(auto& n:terminals) n->note <<"TERMINAL ";
+  for(auto& n:fringe_pose)  n->note <<"POSE ";
+  for(auto& n:fringe_poseToGoal) n->note <<"POSE2 ";
+  for(auto& n:fringe_seq)  n->note <<"SEQ ";
+  for(auto& n:fringe_path)  n->note <<"PATH ";
+  for(auto& n:fringe_solved) n->note <<"DONE";
+
+  Graph dot=root->getGraph(false);
+  dot.writeDot(FILE("z.dot"));
+  rai::system("dot -Tpdf z.dot > z.pdf");
+  if(firstTimeDisplayTree){
+    rai::system("evince z.pdf &");
+    firstTimeDisplayTree=false;
+  }
 }
 
 void LGP_Tree::updateDisplay() {
@@ -202,21 +223,7 @@ void LGP_Tree::updateDisplay() {
 
   if(displayTree) {
     //generate the tree pdf
-    MNodeL all = root->getAll();
-    for(auto& n:all) n->note.clear();
-    
-    for(auto& n:all) if(n->isInfeasible) n->note <<"INFEASIBLE ";
-    for(auto& n:fringe_expand)      n->note <<"EXPAND ";
-    for(auto& n:terminals) n->note <<"TERMINAL ";
-    for(auto& n:fringe_pose)  n->note <<"POSE ";
-    for(auto& n:fringe_poseToGoal) n->note <<"POSE2 ";
-    for(auto& n:fringe_seq)  n->note <<"SEQ ";
-    for(auto& n:fringe_path)  n->note <<"PATH ";
-    for(auto& n:fringe_solved) n->note <<"DONE";
-    
-    Graph dot=root->getGraph(false);
-    dot.writeDot(FILE("z.dot"));
-    rai::system("dot -Tpdf z.dot > z.pdf");
+    displayTreeUsingDot();
   }
 }
 

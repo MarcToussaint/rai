@@ -474,6 +474,9 @@ struct Enum {
     }
     return false;
   }
+  static const char* name(int i){
+    return names[i];
+  }
   const char* name() const {
     if(x<0) return "init";
     else return names[x];

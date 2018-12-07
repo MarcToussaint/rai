@@ -1,6 +1,10 @@
 #include "bounds.h"
 //#include <Kin/switch.h>
 
+template<> const char* rai::Enum<BoundType>::names []= {
+  "symbolic", "pose", "seq", "path", "seqPath", NULL
+};
+
 void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
                     const rai::KinematicWorld& startKinematics,
                     const rai::KinematicWorld& effKinematics,

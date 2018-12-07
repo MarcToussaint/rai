@@ -714,6 +714,10 @@ PYBIND11_MODULE(libry, m) {
     return graph2dict(G);
   } )
 
+  .def("viewTree", [](ry::RyLGP_Tree& self){
+    self.lgp->displayTreeUsingDot();
+  } )
+
   .def("optBound", [](ry::RyLGP_Tree& self, BoundType bound, bool collisions){
     self.lgp->focusNode->optBound(bound, collisions);
     if(bound == BD_seqPath){

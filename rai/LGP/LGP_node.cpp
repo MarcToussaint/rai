@@ -479,7 +479,7 @@ void LGP_Node::getGraph(Graph& G, Node* n, bool brief) {
   if(!brief) {
     n->keys.append(STRING("s:" <<step <<" t:" <<time <<" bound:" <<highestBound <<" feas:" <<!isInfeasible <<" term:" <<isTerminal <<' ' <<folState->isNodeOfGraph->keys.scalar()));
     for(uint l=0; l<L; l++)
-      n->keys.append(STRING("L" <<l <<" #:" <<count(l) <<" c:" <<cost(l) <<"|" <<constraints(l) <<" " <<(feasible(l)?'1':'0') <<" time:" <<computeTime(l)));
+      n->keys.append(STRING(rai::Enum<BoundType>::name(l) <<" #:" <<count(l) <<" c:" <<cost(l) <<"|" <<constraints(l) <<" " <<(feasible(l)?'1':'0') <<" time:" <<computeTime(l)));
     if(folAddToState) n->keys.append(STRING("symAdd:" <<*folAddToState));
     if(note.N) n->keys.append(note);
   }
