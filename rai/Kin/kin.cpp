@@ -1669,6 +1669,11 @@ void rai::KinematicWorld::write(std::ostream& os) const {
   //  }
 }
 
+void rai::KinematicWorld::write(Graph& G) const {
+  for(Frame *f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
+  for(Frame *f: frames) f->write(G);
+}
+
 void rai::KinematicWorld::writeURDF(std::ostream &os, const char* robotName) const {
   os <<"<?xml version=\"1.0\"?>\n";
   os <<"<robot name=\"" <<robotName <<"\">\n";

@@ -85,6 +85,7 @@ struct Frame : NonCopyable{
   Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation); ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   
   void read(const Graph &ats);
+  void write(Graph &G);
   void write(std::ostream& os) const;
 };
 stdOutPipe(Frame)
@@ -135,8 +136,9 @@ struct Joint : NonCopyable{
   void makeRigid();
   void makeFree(double H_cost=0.);
 
-  void write(std::ostream& os) const;
   void read(const Graph& G);
+  void write(Graph &g);
+  void write(std::ostream& os) const;
 };
 stdOutPipe(Joint)
 
@@ -158,6 +160,7 @@ struct Inertia : NonCopyable {
   arr getFrameRelativeWrench();
   
   void write(std::ostream& os) const;
+  void write(Graph &g);
   void read(const Graph& G);
 };
 stdOutPipe(Inertia)
@@ -190,6 +193,7 @@ struct Shape : NonCopyable, GLDrawer {
   virtual ~Shape();
   void read(const Graph &ats);
   void write(std::ostream& os) const;
+  void write(Graph &g);
   void glDraw(OpenGL&);
 };
 
