@@ -143,12 +143,14 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     if(!parent->effKinematics.q.N) parent->computeEndKinematics();
   }
   arrA waypoints;
-  if(bound==BD_seqPath){
+  if(bound==BD_seqPath || bound==BD_seqVelPath){
     CHECK(komoProblem(BD_seq), "BD_seq needs to be computed before");
     waypoints = komoProblem(BD_seq)->getPath_q();
   }
 
-  skeleton2Bound(komo, bound, S, startKinematics, (parent?parent->effKinematics:startKinematics), collisions,
+  skeleton2Bound(komo, bound, S,
+                 startKinematics, (parent?parent->effKinematics:startKinematics),
+                 collisions,
                  waypoints);
 
 //  if(level==BD_seq) komo.denseOptimization=true;
@@ -157,7 +159,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   DEBUG(FILE("z.fol") <<fol;);
   DEBUG(komo.getReport(false, 1, FILE("z.problem")););
   if(komo.verbose>1) komo.reportProblem();
-  if(komo.verbose>2) komo.animateOptimization = komo.verbose-2;
+  if(komo.verbose>5) komo.animateOptimization = komo.verbose-5;
 
   try {
     komo.run();
@@ -260,7 +262,7 @@ void LGP_Node::labelInfeasible() {
   
   //add the infeasible-literal as an 'ADD' command to the branch node
   if(!branchNode->folAddToState) {
-    branchNode->folAddToState = &fol.KB.newSubgraph({"ADD"}, {branchNode->folState->isNodeOfGraph})->value;
+    branchNode->folAddToState = &fol.KB.newSubgraph({"ADD"}, {branchNode->folState->isNodeOfGraph});
   }
   branchNode->folAddToState->newNode<bool>({}, symbols, true);
   

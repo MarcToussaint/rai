@@ -45,7 +45,7 @@ OptConstrained::OptConstrained(arr& _x, arr &_dual, ConstrainedProblem& P, int v
   : L(P, _opt, _dual), newton(_x, L, _opt), dual(_dual), opt(_opt) {
 
   if(verbose>=0) opt.verbose=verbose;
-  newton.o.verbose = rai::MAX(opt.verbose-2,0);
+  newton.o.verbose = rai::MAX(opt.verbose-1,0);
   
   if(opt.verbose>0) cout <<"***** optConstrained: method=" <<MethodName[opt.constrainedMethod] <<endl;
 }

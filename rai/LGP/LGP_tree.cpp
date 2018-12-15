@@ -297,7 +297,7 @@ void LGP_Tree::player(StringA cmds) {
 }
 
 LGP_Node* LGP_Tree::walkToNode(const rai::String& seq){
-  Graph& tmp = root->fol.KB.newSubgraph({"TMP"}, {})->value;
+  Graph& tmp = root->fol.KB.newSubgraph({"TMP"}, {});
   rai::String tmpseq(seq);
   tmp.read(tmpseq);
   cout <<"decision sequence:" <<*tmp.isNodeOfGraph <<endl;
@@ -649,7 +649,7 @@ void LGP_Tree_SolutionData::write(std::ostream &os) const {
 
 void LGP_Tree_SolutionData::glDraw(OpenGL &gl) {
 #ifdef RAI_GL
-  uint displayBound=tree.displayBound;
+  BoundType displayBound=tree.displayBound;
   rai::Array<rai::Geom*>& geoms = _GeomStore()->geoms;
   
   if(!paths(displayBound).N) return;

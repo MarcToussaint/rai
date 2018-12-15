@@ -38,7 +38,7 @@ struct LGP_Tree : GLDrawer {
   uint numSteps;
   ofstream fil;
   bool displayTree=true;
-  BoundType displayBound=BD_path;
+  BoundType displayBound=BD_seqPath;
   bool collisions=false;
   struct DisplayThread *dth=NULL;
   rai::String dataPath;

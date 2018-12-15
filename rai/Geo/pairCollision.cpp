@@ -32,11 +32,17 @@ PairCollision::PairCollision(const rai::Mesh &_mesh1, const rai::Mesh &_mesh2, r
     rai::Mesh M2(*mesh2); t2->applyOnPointArray(M2.V);
     distance = - libccd_MPR(M1, M2);
   }
+
+  if(fabs(distance)<1e-10){ //exact touch: the GJK computed things, let's make them consisten
+    p1 = p2 = .5*(p1+p2);
+  }
   
   //ensure that the normal always points 'against obj1' (along p1-p2 relative to NON-penetration)
   if(rai::sign(distance) * scalarProduct(normal, p1-p2) < 0.)
     normal *= -1.;
-    
+
+  CHECK_ZERO(length(normal) - 1., 1e-5, "");
+
   CHECK_ZERO(scalarProduct(normal, p1-p2) - distance, 1e-5, "");
 
   CHECK_GE(rai::sign(distance) * scalarProduct(normal, p1-p2), -1e-10, "");
@@ -81,7 +87,7 @@ double PairCollision::libccd_MPR(const rai::Mesh& m1,const rai::Mesh& m2) {
   ccd.center1       = center_mesh; // support function for first object
   ccd.center2       = center_mesh; // support function for second object
   
-  ccd_real_t depth;
+  ccd_real_t _depth;
   ccd_vec3_t _dir, _pos;
   ccd_vec3_t simplex[8];
   
@@ -89,14 +95,15 @@ double PairCollision::libccd_MPR(const rai::Mesh& m1,const rai::Mesh& m2) {
   //    int intersect = ccdGJKIntersect(&S.m1, &S.m2, &ccd, &v1, &v2);
   //  int non_intersect = ccdGJKPenetration(&m1, &m2, &ccd, &depth, &_dir, &_pos);
   //    int intersect = ccdMPRIntersect(&S.m1, &S.m2, &ccd);
-  int ret = ccdMPRPenetration(&m1, &m2, &ccd, &depth, &_dir, &_pos, simplex);
+  int ret = ccdMPRPenetration(&m1, &m2, &ccd, &_depth, &_dir, &_pos, simplex);
   
-  normal.setCarray(_dir.v, 3);
   if(ret<0) return 0.; //no intersection
   //res == 1  // Touching contact on portal's v1.
   //res == 2  // Origin lies on v0-v1 segment.
   //res == 0  // penetration
-  
+
+  normal.setCarray(_dir.v, 3);
+
   simplex1.resize(0,3);
   simplex2.resize(0,3);
   arr c1=m1.getMean();
@@ -136,15 +143,17 @@ double PairCollision::libccd_MPR(const rai::Mesh& m1,const rai::Mesh& m2) {
     d=coll_2on2(p1, p2, normal, simplex1, simplex2);
   }
   if(simplexType(2, 3)) {
-    d=coll_2on3(p1, p2, normal, simplex1, simplex2);
+    d=coll_2on3(p1, p2, normal, simplex1, simplex2, arr(_pos.v, 3));
   }
   if(simplexType(3, 2)) {
-    d=coll_2on3(p2, p1, normal, simplex2, simplex1);
+    d=coll_2on3(p2, p1, normal, simplex2, simplex1, arr(_pos.v, 3));
   }
   if(simplexType(3, 3)) {
-    d=coll_3on3(p2, p1, normal, simplex2, simplex1);
+    d=coll_3on3(p2, p1, normal, simplex2, simplex1, arr(_pos.v, 3));
   }
   
+//  CHECK_ZERO(_depth - fabs(d), 1e-4, ""); //compare depth by ccd with ours
+
   return fabs(d);
 }
 
@@ -168,7 +177,10 @@ double PairCollision::GJK_sqrDistance() {
   double d2 = gjk_distance(&m1, Thelp1.p, &m2, Thelp2.p, p1.p, p2.p, &simplex, 0);
   
   normal = p1-p2;
-  normal /= length(normal);
+  double l = length(normal);
+  if(l){
+    normal /= l;
+  }
   
   //grab simplex points
   simplex1.resize(0,3);
@@ -467,7 +479,7 @@ void PairCollision::nearSupportAnalysis(double eps) {
 
 double coll_1on2(arr &p2, arr& normal, const arr &pts1, const arr &pts2) {
   CHECK(pts1.nd==2 && pts1.d0==1 && pts1.d1==3, "I need a set of 1 pts1");
-  CHECK(pts2.nd==2 && pts2.d0==3 && pts2.d1==3, "I need a set of 3 pts2");
+  CHECK(pts2.nd==2 && pts2.d0==2 && pts2.d1==3, "I need a set of 2 pts2");
 
   const arr& p1 = pts1[0];
 
@@ -524,18 +536,26 @@ double coll_2on2(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2
   return d;
 }
 
-double coll_2on3(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2) {
+double coll_2on3(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2, const arr& center) {
   CHECK(pts1.nd==2 && pts1.d0==2 && pts1.d1==3, "I need a set of 2 pts1");
-  p1 = .5*(pts1[0]+pts1[1]); //take center of line segment as single point
+  //collide center on line to get p1:
+  arr cen = center;
+  cen.reshape(1,3);
+  coll_1on2(p1, normal, cen, pts1);
+//  p1 = .5*(pts1[0]+pts1[1]); //take center of line segment as single point
   p1.reshape(1,3);
   double d = coll_1on3(p2, normal, p1, pts2);
   p1.reshape(3);
   return d;
 }
 
-double coll_3on3(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2) {
+double coll_3on3(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2, const arr& center) {
   CHECK(pts1.nd==2 && pts1.d0==3 && pts1.d1==3, "I need a set of 2 pts1");
-  p1 = (1./3.)*(pts1[0]+pts1[1]+pts1[2]); //take center of line tri as single point
+  //collide center on tri1 to get p1:
+  arr cen = center;
+  cen.reshape(1,3);
+  coll_1on3(p1, normal, cen, pts1);
+//  p1 = (1./3.)*(pts1[0]+pts1[1]+pts1[2]); //take center of line tri as single point
   p1.reshape(1,3);
   double d = coll_1on3(p2, normal, p1, pts2);
   p1.reshape(3);

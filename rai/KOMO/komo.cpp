@@ -235,11 +235,11 @@ void KOMO::addSwitch(double time, bool before, const char* type, const char* ref
 void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, double time, double endTime, const char* prevFrom, const char* from, const char* to){
   if(newMode==SY_stable || newMode==SY_stableOn){
     if(newMode==SY_stable){
-      addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, from, to, world));
+      addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, from, to, world, SWInit_copy));
     }else{  //SY_stableOn
       Transformation rel = 0;
       rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
-      addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
+      addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, from, to, world, SWInit_copy, 0, rel));
     }
 
     //-- DOF-is-constant constraint
@@ -258,7 +258,6 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
       if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, +1, +1);
       else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
     }
-
   }
 
   if(newMode==SY_dynamic){
@@ -279,7 +278,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
   if(newMode==SY_dynamicOn){
     Transformation rel = 0;
     rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
-    addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
+    addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, from, to, world, SWInit_copy, 0, rel));
     if(k_order>=2) addObjective(time, endTime, new TM_ZeroAcc(world, to), OT_eq, NoArr, 3e1, k_order, +0, -1);
   //  else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
   }
@@ -1286,19 +1285,28 @@ void KOMO::reset(double initNoise) {
   }
 }
 
-void KOMO::initWithWaypoints(const arrA& waypoints){
+void KOMO::initWithWaypoints(const arrA& waypoints, bool sineProfile){
+  //assume waypoints correspond to phase times 1,2,3... and get steps
   uintA steps(waypoints.N);
   for(uint i=0;i<steps.N;i++){
     steps(i) = conv_time2step(double(i+1), stepsPerPhase);
   }
 
-  for(uint i=0;i<steps.N;i++) if(steps(i)<T){
+  //set the path piece-wise CONSTANT with waypoints (each waypoint may have different dimension!...)
+  for(uint i=0;i<steps.N;i++) {
+#if 1
+    uint Tstop=T;
+    if(i+1<steps.N && steps(i+1)<T) Tstop=steps(i+1);
+    for(uint t=steps(i); t<Tstop; t++)
+      configurations(k_order+t)->setJointState(waypoints(i));
+#else
     configurations(k_order+steps(i))->setJointState(waypoints(i));
     for(uint t=steps(i)+1; t<T; t++){
       uintA nonSwitched = getNonSwitchedBodies({configurations(k_order+steps(i)), configurations(k_order+t)});
       arr q = configurations(k_order+steps(i))->getJointState(nonSwitched);
       configurations(k_order+t)->setJointState(q, nonSwitched);
     }
+#endif
   }
 
   //interpolate
@@ -1309,12 +1317,16 @@ void KOMO::initWithWaypoints(const arrA& waypoints){
     uint i1=steps(i);
     uint i0=0; if(i) i0 = steps(i-1);
     arr q0 = q[i0];
-    //sine motion profile
+    //motion profile
     if(steps(i)<T){
       arr q1 = q[i1];
       for(uint j=i0+1;j<=i1;j++){
         double phase = double(j-i0)/double(i1-i0);
-        q[j] = q0 + (.5*(1.-cos(RAI_PI*phase))) * (q1-q0);
+        if(sineProfile){
+          q[j] = q0 + (.5*(1.-cos(RAI_PI*phase))) * (q1-q0);
+        }else{
+          q[j] = q0 + phase * (q1-q0);
+        }
         configurations(k_order+j)->setJointState(q[j], nonSwitched);
       }
     }else{
@@ -1621,7 +1633,7 @@ bool KOMO::displayPath(bool watch, bool full) {
     gl->addDrawer(configurations.last());
     gl->add(drawX);
   }else{
-    for(auto* c:configurations) gl->addDrawer(c);
+    for(uint t=0;t<T;t++) gl->addDrawer(configurations(k_order+t));
   }
   if(watch) {
     int key = gl->watch();
@@ -1712,18 +1724,7 @@ void KOMO::set_x(const arr& x) {
 //    configurations(s)->checkConsistency();
   }
   CHECK_EQ(x_count, x.N, "");
-  
-  if(animateOptimization>0) {
-    if(animateOptimization>1){
-      cout <<getReport(true) <<endl;
-      displayPath(true);
-    }else{
-      displayPath(false);
-    }
-//    komo.plotPhaseTrajectory();
-//    rai::wait();
   }
-}
 
 void KOMO::reportProxies(std::ostream& os, double belowMargin) {
   int s=0;
@@ -1739,7 +1740,7 @@ Graph KOMO::getContacts(std::ostream& os) {
   int s=0;
   for(auto &K:configurations) {
     for(rai::Contact *con:K->contacts){
-      Graph& g = G.newSubgraph() -> graph();
+      Graph& g = G.newSubgraph();
       g.newNode<int>({"at"}, {}, s-(int)k_order);
       g.newNode<rai::String>({"from"}, {}, con->a.name);
       g.newNode<rai::String>({"to"}, {}, con->b.name);
@@ -1930,11 +1931,11 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
   double totalC=0., totalG=0.;
   for(uint i=0; i<objectives.N; i++) {
     Objective *c = objectives(i);
-    Graph *g = &report.newSubgraph({c->name}, {})->value;
-    g->newNode<double>({"order"}, {}, c->map->order);
-    g->newNode<String>({"type"}, {}, STRING(c->type.name()));
-    g->newNode<double>({"sqrCosts"}, {}, taskC(i));
-    g->newNode<double>({"constraints"}, {}, taskG(i));
+    Graph& g = report.newSubgraph({c->name}, {});
+    g.newNode<double>({"order"}, {}, c->map->order);
+    g.newNode<String>({"type"}, {}, STRING(c->type.name()));
+    g.newNode<double>({"sqrCosts"}, {}, taskC(i));
+    g.newNode<double>({"constraints"}, {}, taskG(i));
     totalC += taskC(i);
     totalG += taskG(i);
   }
@@ -2011,7 +2012,7 @@ Graph KOMO::getProblemGraph(bool includeValues){
     CHECK(task->prec.nd==1,"");
     //        Graph& g = K.newSubgraph({}, configs.sub(i+k_order-t->map->order,i+k_order)) -> graph();
     //        Graph& g = K.newSubgraph({}, configs.sub(convert<uint>(task->vars[t]+(int)k_order))) -> graph();
-    Graph& g = K.newSubgraph() -> graph();
+    Graph& g = K.newSubgraph();
     g.isNodeOfGraph->keys.append(task->name);
     //        g.newNode<
     g.newNode<rai::String>({"type"}, {}, STRING(task->type));
@@ -2192,6 +2193,18 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
   if(!!tt) komo.featureTypes = tt;
   komo.featureDense=false;
 
+  if(komo.animateOptimization>0) {
+    if(komo.animateOptimization>1){
+      if(komo.animateOptimization>2)
+        cout <<komo.getReport(true) <<endl;
+      komo.displayPath(true);
+    }else{
+      komo.displayPath(false);
+    }
+//    komo.plotPhaseTrajectory();
+//    rai::wait();
+  }
+
   //==================
 #if 0
   uint C=0;
@@ -2297,6 +2310,19 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
   komo.featureValues = phi;
   if(!!tt) komo.featureTypes = tt;
   komo.featureDense=true;
+
+  if(komo.animateOptimization>0) {
+    if(komo.animateOptimization>1){
+      if(komo.animateOptimization>2)
+        cout <<komo.getReport(true) <<endl;
+      komo.displayPath(true);
+    }else{
+      komo.displayPath(false);
+    }
+//    komo.plotPhaseTrajectory();
+//    rai::wait();
+  }
+
 }
 
 void KOMO::Conv_MotionProblem_DenseProblem::getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes) {

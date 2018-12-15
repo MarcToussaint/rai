@@ -1,5 +1,6 @@
 #include "bounds.h"
 //#include <Kin/switch.h>
+#include <Kin/TM_transition.h>
 
 template<> const char* rai::Enum<BoundType>::names []= {
   "symbolic", "pose", "seq", "path", "seqPath", NULL
@@ -15,14 +16,6 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
   //-- prepare the komo problem
   switch(boundType) {
     case BD_pose: {
-      //-- make the effective kinematics
-//      KOMO tmp;
-//      tmp.setModel(startKinematics, false);
-//      tmp.setSkeleton(S);
-//      for(rai::KinematicSwitch *s : tmp.switches){
-//        if(s->timeOfApplication<maxPhase) s->apply(tmp.world);
-//      }
-
       //-- grep only the latest entries in the skeleton
       Skeleton finalS;
       for(const SkeletonEntry& s:S) if(s.phase0>=maxPhase){
@@ -39,6 +32,14 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
       komo.setSquaredQuaternionNorms();
 
       komo.setSkeleton(finalS, false);
+
+      //-- deactivate all velocity objectives except for transition
+      for(Objective *o:komo.objectives){
+        if(!dynamic_cast<TM_Transition*>(o->map) && o->map->order>0){
+          o->prec.clear();
+          o->vars.clear();
+        }
+      }
 
       if(collisions) komo.add_collision(false);
 
@@ -107,6 +108,34 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
 
       komo.reset();
       komo.initWithWaypoints(waypoints);
+      //      cout <<komo.getPath_times() <<endl;
+    } break;
+
+    case BD_seqVelPath: {
+      komo.setModel(startKinematics, collisions);
+      uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
+      komo.setTiming(maxPhase+.5, stepsPerPhase, 10., 1);
+
+      komo.setHoming(0., -1., 1e-2);
+      komo.setSquaredQVelocities();
+      komo.setSquaredQuaternionNorms();
+
+      CHECK_EQ(waypoints.N-1, floor(maxPhase+.5), "");
+      for(uint i=0;i<waypoints.N-1;i++){
+        komo.addObjective(ARR(double(i+1)), OT_sos, FS_qItself, {}, {1e-1}, waypoints(i));
+//        komo.addObjective(ARR(double(i+1)), OT_eq, FS_qItself, {}, {1e0}, waypoints(i));
+      }
+      uint O = komo.objectives.N;
+
+      komo.setSkeleton(S);
+      //delete all added objectives! -> only keep switches
+//      for(uint i=O; i<komo.objectives.N; i++) delete komo.objectives(i);
+//      komo.objectives.resizeCopy(O);
+
+      if(collisions) komo.add_collision(true, 0, 1e1);
+
+      komo.reset();
+      komo.initWithWaypoints(waypoints, false);
       //      cout <<komo.getPath_times() <<endl;
     } break;
 

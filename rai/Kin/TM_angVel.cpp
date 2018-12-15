@@ -261,7 +261,8 @@ void TM_NoJumpFromParent::phi(arr& y, arr& J, const WorldL& Ktuple){
     LOG(-1) <<"this frame isn't switching - are you sure you want to do this?";
   }
 
-  if(link->joint && link->joint->type==rai::JT_rigid){
+  {
+//  if(link->joint && link->joint->type==rai::JT_rigid){
     arr yq, Jq;
     TM_Default tmp(TMT_pos, link->ID, NoVector, parent->ID, NoVector);
     tmp.order = 1;
@@ -272,10 +273,11 @@ void TM_NoJumpFromParent::phi(arr& y, arr& J, const WorldL& Ktuple){
     tmp.Feature::phi(yq, (!!J?Jq:NoArr), Ktuple);
     y.append(yq);
     if(!!J) J.append(Jq);
-  }else{
-    y.resize(7).setZero();
-    if(!!J) J.resize(7,getKtupleDim(Ktuple).last()).setZero();
   }
+//  else{
+//    y.resize(7).setZero();
+//    if(!!J) J.resize(7,getKtupleDim(Ktuple).last()).setZero();
+//  }
 }
 
 uint TM_NoJumpFromParent::dim_phi(const rai::KinematicWorld& G){

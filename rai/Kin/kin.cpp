@@ -1413,7 +1413,7 @@ OpenGL& rai::KinematicWorld::gl(const char* window_title) {
 
 /// return a Swift extension
 SwiftInterface& rai::KinematicWorld::swift() {
-  if(!s->swift) s->swift = new SwiftInterface(*this, 2.);
+  if(!s->swift) s->swift = new SwiftInterface(*this, .01);
   return *s->swift;
 }
 
@@ -2234,9 +2234,18 @@ void rai::KinematicWorld::kinematicsProxyDist(arr& y, arr& J, const Proxy& p, do
 void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin, bool addValues) const {
   CHECK(p.a->shape,"");
   CHECK(p.b->shape,"");
+
+  y.resize(1);
+  if(!!J) J.resize(1, getJointStateDimension());
+  if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
+
+  //early check: if swift is way out of collision, don't bother computing it precise
+  if(p.d>.01+margin) return;
   
 #if 1
   if(!p.coll) ((Proxy*)&p)->calc_coll(*this);
+
+  if(p.coll->getDistance()>margin) return;
   
   arr Jp1, Jp2;
   if(!!J) {
@@ -2246,11 +2255,7 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   
   arr y_dist, J_dist;
   p.coll->kinDistance(y_dist, (!!J?J_dist:NoArr), Jp1, Jp2);
-  
-  y.resize(1);
-  if(!!J) J.resize(1, getJointStateDimension());
-  if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
-  
+    
   if(y_dist.scalar()>margin) return;
   y += margin-y_dist.scalar();
   if(!!J)  J -= J_dist;
@@ -2792,7 +2797,7 @@ void rai::KinematicWorld::glDraw_sub(OpenGL& gl) {
 
   //proxies
   if(orsDrawProxies) for(const Proxy& p: proxies)((Proxy*)&p)->glDraw(gl);
-  
+
   //contacts
   if(orsDrawProxies) for(const Frame *fr: frames) for(rai::Contact *c:fr->contacts) if(&c->a==fr) {
     c->glDraw(gl);
@@ -2862,7 +2867,7 @@ void rai::KinematicWorld::glDraw_sub(OpenGL& gl) {
       f->shape->glDraw(gl);
     }
   }
-  
+
   glPopMatrix();
 #endif
 }
