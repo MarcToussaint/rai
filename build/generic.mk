@@ -84,7 +84,7 @@ ifeq ($(OPTIM),penibel)
 CXXFLAGS := -g -Wall -Wextra $(CXXFLAGS)
 endif
 ifeq ($(OPTIM),fast)
-CXXFLAGS := -O3 -Wall -DRAI_NOCHECK $(CXXFLAGS)
+CXXFLAGS := -O3 -Wall $(CXXFLAGS)
 endif
 ifeq ($(OPTIM),prof)
 CXXFLAGS := -O3 -pg -Wall -DRAI_NOCHECK -fno-inline $(CXXFLAGS)
