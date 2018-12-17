@@ -28,7 +28,6 @@ enum SwitchType {
   SW_fixCurrent,
   SW_delContact,
   SW_addContact,
-  SW_addComplementaryContact,
 };
 
 enum SwitchInitializationType {

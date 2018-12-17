@@ -506,10 +506,10 @@ uint rai::KinematicWorld::analyzeJointStateDimensions() const {
     }
   }
   for(Contact *c: contacts) {
-    CHECK_EQ(c->dim, 6, "");
+    CHECK_EQ(c->qDim(), 6, "");
     //    c->dim = c->getDimFromType();
     c->qIndex = qdim;
-    qdim += c->dim;
+    qdim += c->qDim();
   }
   return qdim;
 }
@@ -622,9 +622,9 @@ void rai::KinematicWorld::calc_q_from_Q() {
   for(Contact *c: contacts) {
     CHECK_EQ(c->qIndex, n, "joint indexing is inconsistent");
     arr contact_q = c->calc_q_from_F();
-    CHECK_EQ(contact_q.N, c->dim, "");
+    CHECK_EQ(contact_q.N, c->qDim(), "");
     q.setVectorBlock(contact_q, c->qIndex);
-    n += c->dim;
+    n += c->qDim();
   }
   CHECK_EQ(n,N,"");
 }
@@ -645,7 +645,7 @@ void rai::KinematicWorld::calc_Q_from_q() {
   for(Contact *c: contacts) {
     CHECK_EQ(c->qIndex, n, "joint indexing is inconsistent");
     c->calc_F_from_q(q, c->qIndex);
-    n += c->dim;
+    n += c->qDim();
   }
   CHECK_EQ(n, q.N, "");
 }
@@ -2070,7 +2070,7 @@ void rai::KinematicWorld::reportProxies(std::ostream& os, double belowMargin, bo
   }
   os <<"Contact report:" <<endl;
   for(Frame *a:frames) for(Contact *c:a->contacts) if(&c->a==a) {
-    c->setFromPairCollision(*c->coll());
+    c->coll();
     os <<*c <<endl;
   }
 
@@ -2640,9 +2640,9 @@ bool rai::KinematicWorld::checkConsistency() {
       }
     }
     for(Contact *c: contacts) {
-      CHECK_EQ(c->dim, 6, "");
+      CHECK_EQ(c->qDim(), 6, "");
       CHECK_EQ(c->qIndex, myqdim, "joint indexing is inconsistent");
-      myqdim += c->dim;
+      myqdim += c->qDim();
     }
     CHECK_EQ(myqdim, N, "qdim is wrong");
   }

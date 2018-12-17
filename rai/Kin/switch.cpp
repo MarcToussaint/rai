@@ -40,7 +40,6 @@ template<> const char* rai::Enum<rai::SwitchType>::names []= {
   "SW_fixCurrent",
   "SW_delContact",
   "SW_addContact",
-  "SW_addSoftContact",
   NULL
 };
 
@@ -172,10 +171,9 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
     return;
   }
 
-  if(symbol==SW_addContact || symbol==SW_addComplementaryContact) {
+  if(symbol==SW_addContact) {
     CHECK_EQ(jointType, JT_none, "");
     auto c = new rai::Contact(*from, *to);
-    if(symbol==SW_addComplementaryContact) c->soft=true;
     c->setZero();
     return;
   }

@@ -294,12 +294,6 @@ void TM_ContactConstraints_Vel::phi(arr& y, arr& J, const WorldL& Ktuple){
 
   y = vc1 - vc2;
   if(!!J) J = Jvc1 - Jvc2;
-
-  if(con->soft){
-    //-- enforce complementarity
-    NIY;
-  }
-
 }
 
 uint TM_ContactConstraints_Vel::dim_phi(const rai::KinematicWorld& K)
