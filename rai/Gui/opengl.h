@@ -245,6 +245,7 @@ public:
   void Reshape(int w, int h);
 protected:
   void MouseWheel(int wheel, int direction, int x, int y);
+  void WindowStatus(int status);
   
   friend struct sOpenGL;
   friend bool glClickUI(void *p, OpenGL *gl);

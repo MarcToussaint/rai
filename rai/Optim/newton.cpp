@@ -108,8 +108,9 @@ OptNewton::StopCriterion OptNewton::step() {
   //restrict stepsize
   double maxDelta = absMax(Delta);
   if(o.maxStep>0. && maxDelta>o.maxStep) {  Delta *= o.maxStep/maxDelta; maxDelta = o.maxStep; }
-  double alphaLimit = o.maxStep/maxDelta;
-  
+  double alphaHiLimit = o.maxStep/maxDelta;
+  double alphaLoLimit = 1e-1*o.stopTolerance/maxDelta;
+
   if(o.verbose>1) cout <<" \t|Delta|=" <<std::setw(11) <<maxDelta <<flush;
   
   //lazy stopping criterion: stop without any update
@@ -121,11 +122,11 @@ OptNewton::StopCriterion OptNewton::step() {
   //-- line search along Delta
   for(bool endLineSearch=false; !endLineSearch;) {
     if(!o.allowOverstep) if(alpha>1.) alpha=1.;
-    if(alphaLimit>0. && alpha>alphaLimit) alpha=alphaLimit;
+    if(alphaHiLimit>0. && alpha>alphaHiLimit) alpha=alphaHiLimit;
     y = x + alpha*Delta;
     fy = f(gy, Hy, y);  evals++;
     if(additionalRegularizer) fy += scalarProduct(y,(*additionalRegularizer)*vectorShaped(y));
-    if(o.verbose>2) cout <<" \tprobing y=" <<y;
+    if(o.verbose>5) cout <<" \tprobing y=" <<y;
     if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<flush;
     bool wolfe = (fy <= fx + o.wolfe*alpha*scalarProduct(Delta,gx));
     if(rootFinding) wolfe=true;
@@ -171,6 +172,7 @@ OptNewton::StopCriterion OptNewton::step() {
         if(o.verbose>1) cout <<"\n\t\t\t\t\t(line search)\t" <<flush;
       }
       alpha *= o.stepDec;
+      if(alpha<alphaLoLimit) endLineSearch=true;
     }
   }
   
@@ -183,7 +185,7 @@ OptNewton::StopCriterion OptNewton::step() {
 #define STOPIF(expr, code, ret) if(expr){ if(o.verbose>1) cout <<"\t\t\t\t\t\t--- stopping criterion='" <<#expr <<"'" <<endl; code; return stopCriterion=ret; }
   
   STOPIF(absMax(Delta)<o.stopTolerance, , stopCrit1);
-  STOPIF(numTinySteps>10, numTinySteps=0, stopCrit2);
+  STOPIF(numTinySteps>4, numTinySteps=0, stopCrit2);
 //  STOPIF(alpha*absMax(Delta)<1e-3*o.stopTolerance, stopCrit2);
   STOPIF(evals>=o.stopEvals, , stopCritEvals);
   STOPIF(it>=o.stopIters, , stopCritEvals);

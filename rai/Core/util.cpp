@@ -227,6 +227,7 @@ void flip(int& b, uint i) { b ^= 1 <<(7-(i&7)); }
 double MIN(double a, double b) { return a<b?a:b; }
 double MAX(double a, double b) { return a>b?a:b; }
 uint MAX(uint a, uint b) { return a>b?a:b; }
+int MAX(int a, int b) { return a>b?a:b; }
 
 double indicate(bool expr) { if(expr) return 1.; return 0.; }
 
@@ -524,7 +525,7 @@ void wait(double sec, bool msg_on_fail) {
   timespec ts;
   ts.tv_sec = (long)(floor(sec));
   sec -= (double)ts.tv_sec;
-  ts.tv_nsec = (long)(floor(1e9d*sec));
+  ts.tv_nsec = long(floor(1e9d*sec));
   int rc = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
   if(rc && msg_on_fail) {
     RAI_MSG("clock_nanosleep() failed " <<rc <<" '" <<strerror(rc) <<"' trying select instead");

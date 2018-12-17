@@ -18,7 +18,7 @@ void TEST(CameraView){
 //  V.selectSensor("kinect");
 
   Var<byteA> image;
-  Var<arr> depth;
+  Var<floatA> depth;
   Var<byteA> segmentation;
   Var<arr> pts;
 

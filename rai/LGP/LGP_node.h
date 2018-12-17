@@ -61,7 +61,7 @@ struct LGP_Node {
   arr computeTime;  ///< computation times for each level
   double highestBound=0.;
   
-  rai::Array<KOMO*> komoProblem; //komo problems for all levels
+  rai::Array<std::shared_ptr<KOMO>> komoProblem; //komo problems for all levels
   arrA opt; //these are the optima (trajectories) computed
   
   // display helpers
@@ -77,7 +77,7 @@ struct LGP_Node {
   
   //- computations on the node
   void expand(int verbose=0);           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
-  void optBound(BoundType bound, bool collisions=false);
+  void optBound(BoundType bound, bool collisions=false, int verbose=-1);
   void resetData();
   void computeEndKinematics();
   
@@ -100,6 +100,7 @@ private:
   
 public:
   void write(ostream& os=cout, bool recursive=false, bool path=true) const;
+  Graph getInfo() const;
   void getGraph(Graph& G, Node *n=NULL, bool brief=false);
   Graph getGraph(bool brief=false) { Graph G; getGraph(G, NULL, brief); G.checkConsistency(); return G; }
 };

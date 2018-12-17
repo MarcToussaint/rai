@@ -43,15 +43,20 @@ FOL_World::FOL_World()
   KB.isDoubleLinked=false;
 }
 
-FOL_World::FOL_World(istream& is) : FOL_World() {
-  init(is);
+FOL_World::FOL_World(const char* filename) : FOL_World() {
+  init(filename);
 }
 
-void FOL_World::init(istream& is) {
-  KB.read(is);
-  DEBUG(FILE("z.init") <<KB;)   //write what was read, just for inspection
+void FOL_World::init(const char* filename) {
+  rai::FileToken file(filename, true);
+  init(Graph(file));
+  file.cd_start();
+}
+
+void FOL_World::init(const Graph& _KB){
+  KB = _KB;
   KB.checkConsistency();
-  
+
   start_state = &KB.get<Graph>("START_STATE");
   rewardFct = &KB.get<Graph>("REWARD");
   worldRules = KB.getNodes("Rule");
@@ -275,7 +280,7 @@ bool FOL_World::is_terminal_state() const {
 }
 
 void FOL_World::make_current_state_new_start() {
-  if(!start_state) start_state = &KB.newSubgraph({"START_STATE"}, state->isNodeOfGraph->parents)->value;
+  if(!start_state) start_state = &KB.newSubgraph({"START_STATE"}, state->isNodeOfGraph->parents);
   start_state->copy(*state);
   start_state->isNodeOfGraph->keys(0)="START_STATE";
   start_T_step = T_step;
@@ -365,10 +370,11 @@ Graph* FOL_World::getState() {
 }
 
 void FOL_World::setState(Graph *s, int setT_step) {
+  CHECK(s, "can't set state to NULL graph");
   if(state) {
     CHECK(s->isNodeOfGraph != state->isNodeOfGraph,"you are setting the state to itself");
   }
-  if(!state) state = &KB.newSubgraph({"STATE"}, {s->isNodeOfGraph})->value;
+  if(!state) state = &KB.newSubgraph({"STATE"}, {s->isNodeOfGraph});
   state->copy(*s);
   DEBUG(KB.checkConsistency();) {
     //the old state hat a parent: its predecessor; this was copied to the new state
@@ -383,7 +389,7 @@ void FOL_World::setState(Graph *s, int setT_step) {
 }
 
 Graph* FOL_World::createStateCopy() {
-  Graph* new_state = &KB.newSubgraph({STRING("STATE_"<<count++)}, state->isNodeOfGraph->parents)->value;
+  Graph* new_state = &KB.newSubgraph({STRING("STATE_"<<count++)}, state->isNodeOfGraph->parents);
   state->index();
   new_state->copy(*state);
   return new_state;
@@ -413,12 +419,24 @@ void FOL_World::addObject(const char* name) {
   addFact({"object", name});
 }
 
+void FOL_World::addTerminalRule(const char* literals){
+  //first create a new rule
+  Graph& rule = KB.newSubgraph({"Rule"}, {});
+  worldRules.append(rule.isNodeOfGraph);
+  Graph& preconditions = rule.newSubgraph({}, {});
+  Graph& effect = rule.newSubgraph({}, {});
+  effect.newNode<bool>({}, {Quit_keyword}, true); //adds the (QUIT) to the effect
+
+  preconditions.read(STRING(literals));
+  cout <<"CREATED TERMINATION RULE:" <<*rule.isNodeOfGraph <<endl;
+}
+
 void FOL_World::addTerminalRule(const StringAA& literals) {
   //first create a new rule
-  Graph& rule = KB.newSubgraph({"Rule"}, {})->value;
+  Graph& rule = KB.newSubgraph({"Rule"}, {});
   worldRules.append(rule.isNodeOfGraph);
-  Graph& preconditions = rule.newSubgraph({}, {})->value;
-  Graph& effect = rule.newSubgraph({}, {})->value;
+  Graph& preconditions = rule.newSubgraph({}, {});
+  Graph& effect = rule.newSubgraph({}, {});
   effect.newNode<bool>({}, {Quit_keyword}, true); //adds the (QUIT) to the effect
   
   for(const StringA& lit:literals) {

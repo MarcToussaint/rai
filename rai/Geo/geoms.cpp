@@ -83,7 +83,7 @@ void rai::Geom::createMeshes() {
       double rad=1;
       if(size.N==1) rad=size(0);
       else rad=size(3);
-      mesh.setSSCvx(sscCore, rad, 1);
+      mesh.setSSCvx(sscCore, rad, 3);
       //      mesh.setSphere();
       //      mesh.scale(size(3), size(3), size(3));
     } break;

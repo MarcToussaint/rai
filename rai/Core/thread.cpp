@@ -137,13 +137,13 @@ void Event::listenTo(Var_base& v) {
 
 void Event::stopListenTo(Var_base& v) {
   auto lock = statusMutex();
-  v.readAccess();
+//  v.readAccess();
   int i=variables.findValue(&v);
   CHECK_GE(i,0,"something's wrong");
   variableRevisions.remove(i);
   variables.remove(i);
   v.callbacks.removeCallback(this);
-  v.deAccess();
+//  v.deAccess();
 }
 
 void Event::stopListening() {

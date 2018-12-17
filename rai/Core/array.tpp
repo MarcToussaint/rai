@@ -1821,7 +1821,7 @@ template<class T> void rai::Array<T>::write(std::ostream& os, const char *ELEMSE
       os <<(const T&)scalar();
     }
     if(nd==1) {
-      for(i=0; i<N; i++) os <<ELEMSEP  <<operator()(i);
+      for(i=0; i<N; i++) os <<(i?ELEMSEP:"")  <<operator()(i);
     }
     if(nd==2) for(j=0; j<d0; j++) {
         if(j) os <<LINESEP;
@@ -1829,12 +1829,12 @@ template<class T> void rai::Array<T>::write(std::ostream& os, const char *ELEMSE
           RowShifted *rs = dynamic_cast<RowShifted*>(special);
           cout <<"[row-shift=" <<rs->rowShift(j) <<"] ";
         }
-        for(i=0; i<d1; i++) os <<ELEMSEP <<operator()(j, i);
+        for(i=0; i<d1; i++) os <<(i?ELEMSEP:"") <<operator()(j, i);
       }
     if(nd==3) for(k=0; k<d0; k++) {
         if(k) os <<LINESEP;
         for(j=0; j<d1; j++) {
-          for(i=0; i<d2; i++) os <<ELEMSEP <<operator()(k, j, i);
+          for(i=0; i<d2; i++) os <<(i?ELEMSEP:"") <<operator()(k, j, i);
           os <<LINESEP;
         }
       }
@@ -1843,10 +1843,10 @@ template<class T> void rai::Array<T>::write(std::ostream& os, const char *ELEMSE
       for(i=0; i<N; i++) {
         if(i && !(i%d[nd-1])) os <<LINESEP;
         if(nd>1 && !(i%(d[nd-2]*d[nd-1]))) os <<LINESEP;
-        os <<ELEMSEP <<elem(i);
+        os <<(i?ELEMSEP:"") <<elem(i);
       }
     }
-    if(BRACKETS[1]) os <<ELEMSEP <<BRACKETS[1];
+    if(BRACKETS[1]) os <<BRACKETS[1];
   }
 }
 

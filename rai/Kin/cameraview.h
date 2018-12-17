@@ -30,6 +30,7 @@ struct CameraView : GLDrawer {
   bool background=true;
   int watchComputations=0;
   RenderMode renderMode=all;
+  byteA segmentationRemap;
 
   //-- evaluation outputs
   CameraView(const rai::KinematicWorld& _K, bool _background=true, int _watchComputations=0);
@@ -42,9 +43,9 @@ struct CameraView : GLDrawer {
   Sensor& selectSensor(const char* sensorName); //set the OpenGL sensor
 
   //-- compute/analyze a camera perspective (stored in classes' output fields)
-  void computeImageAndDepth(byteA& image, arr& depth);
+  void computeImageAndDepth(byteA& image, floatA& depth);
   void computeKinectDepth(uint16A& kinect_depth, const arr& depth);
-  void computePointCloud(arr& pts, const arr& depth, bool globalCoordinates=true); // point cloud (rgb of every point is given in image)
+  void computePointCloud(arr& pts, const floatA& depth, bool globalCoordinates=true); // point cloud (rgb of every point is given in image)
   void computeSegmentation(byteA& segmentation);     // -> segmentation
 
   //-- displays
@@ -63,12 +64,12 @@ struct Sim_CameraView : Thread {
   Var<rai::KinematicWorld> model;
   //-- outputs
   Var<byteA> color;
-  Var<arr> depth;
+  Var<floatA> depth;
 
   //-- internal
   CameraView C;
 
-  Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatIntervalSec=-1., const char* _cameraFrameName=NULL);
+  Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatIntervalSec=-1., const char* _cameraFrameName=NULL, bool _idColors=false, const byteA& _segmentationRemap=NoByteA);
   ~Sim_CameraView();
   void open();
   void step();

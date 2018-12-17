@@ -6,16 +6,20 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
+#pragma once
+
 #include "LGP_node.h"
 //#include <Geo/geoms.h>
 #include <Core/thread.h>
 
 struct KinPathViewer;
+struct LGP_Tree;
 typedef rai::Array<rai::Transformation> TransformationA;
 
 void initFolStateFromKin(FOL_World& L, const rai::KinematicWorld& K);
 
 struct LGP_Tree_SolutionData : GLDrawer {
+  LGP_Tree& tree;
   LGP_Node *node; ///< contains costs, constraints, and solutions for each level
   rai::String decisions;
   
@@ -23,7 +27,7 @@ struct LGP_Tree_SolutionData : GLDrawer {
   rai::Array<TransformationA> paths; ///< for display
   uint displayStep=0;
   
-  LGP_Tree_SolutionData(LGP_Node *n);
+  LGP_Tree_SolutionData(LGP_Tree& _tree, LGP_Node *_node);
   
   void write(ostream &os) const;
   void glDraw(struct OpenGL&gl);
@@ -34,13 +38,16 @@ struct LGP_Tree : GLDrawer {
   uint numSteps;
   ofstream fil;
   bool displayTree=true;
+  BoundType displayBound=BD_seqPath;
   bool collisions=false;
   struct DisplayThread *dth=NULL;
   rai::String dataPath;
   arr cameraFocus;
-  
+  bool firstTimeDisplayTree=true;
+
   LGP_Node *root=0, *focusNode=0;
-  FOL_World *selfCreated=NULL;
+  FOL_World fol;
+  rai::KinematicWorld kin;
   
   rai::Array<std::shared_ptr<KinPathViewer>> views; //displays for the 3 different levels
   
@@ -60,13 +67,9 @@ struct LGP_Tree : GLDrawer {
   
   //high-level
   LGP_Tree();
-  LGP_Tree(rai::KinematicWorld& kin, const char *folFileName="fol.g");
-  LGP_Tree(rai::KinematicWorld& kin, FOL_World& fol);
-  void init(rai::KinematicWorld &kin, FOL_World &fol);
+  LGP_Tree(const rai::KinematicWorld& _kin, const char *folFileName="fol.g");
+  LGP_Tree(const rai::KinematicWorld& _kin, const FOL_World& _fol);
   ~LGP_Tree();
-  
-  FOL_World& fol() { return root->fol; }
-  const rai::KinematicWorld& kin() { return root->startKinematics; }
   
   //-- methods called in the run loop
 private:
@@ -96,6 +99,7 @@ public:
   uint numFoundSolutions();
   rai::String report(bool detailed=false);
   void reportEffectiveJoints();
+  void displayTreeUsingDot();
   void initDisplay();
   void updateDisplay();
   void renderToVideo(uint specificBound=3, const char* filePrefix="vid/");
@@ -109,4 +113,29 @@ public:
   bool execRandomChoice();
   
   void player(StringA cmds={});
+};
+
+struct LGP_Tree_Thread : LGP_Tree, Thread{
+  LGP_Tree_Thread(const rai::KinematicWorld& _kin, const char *folFileName="fol.g")
+    : LGP_Tree(_kin, folFileName), Thread("LGP_Tree", -1){}
+
+  void open(){ LGP_Tree::init(); }
+  void step(){ LGP_Tree::step(); }
+  void close(){}
+
+  //convenience to retrieve solution data
+  uint numSolutions(){ return solutions.get()->N; }
+
+  const std::shared_ptr<KOMO>& getKOMO(uint i, BoundType bound){
+    const auto &komo = solutions.get()->elem(i)->node->komoProblem(bound);
+    CHECK(komo, "solution " <<i <<" has not evaluated the bound " <<bound <<" -- returning KOMO reference to nil");
+    return komo;
+  }
+
+  Graph getReport(uint i, BoundType bound){
+    const auto &komo = getKOMO(i, bound);
+    if(!komo) return Graph();
+    return komo->getProblemGraph(true);
+  }
+
 };

@@ -141,11 +141,30 @@ void rai::Frame::read(const Graph& ats) {
   if(ats["mass"]) { inertia = new Inertia(*this); inertia->read(ats); }
 }
 
+void rai::Frame::write(Graph& G){
+  auto& g = G.newSubgraph({name});
+  if(parent) g.newNode<rai::String>({"parent"}, {}, parent->name);
+  if(joint) joint->write(g);
+  if(shape) shape->write(g);
+  if(inertia) inertia->write(g);
+
+  if(parent) {
+    if(!Q.isZero()) g.newNode<arr>({"Q"}, {}, Q.getArr7d());
+  } else {
+    if(!X.isZero()) g.newNode<arr>({"X"}, {}, X.getArr7d());
+  }
+
+  for(Node *n : ats) {
+    StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A"};
+    if(!avoid.contains(n->keys.last())) n->newClone(g);
+  }
+}
+
 void rai::Frame::write(std::ostream& os) const {
-  os <<"frame " <<name;
-  if(parent) os <<'(' <<parent->name <<')';
+  os <<name;
   os <<" \t{ ";
-  
+
+  if(parent) os <<"parent:" <<parent->name;
   if(joint) joint->write(os);
   if(shape) shape->write(os);
   if(inertia) inertia->write(os);
@@ -590,9 +609,10 @@ void rai::Joint::makeRigid() {
   }
 }
 
-void rai::Joint::makeFree(){
+void rai::Joint::makeFree(double H_cost){
   if(type!=JT_free){
     type=JT_free; frame.K.reset_q();
+    H=H_cost;
   }
 }
 
@@ -682,6 +702,13 @@ void rai::Joint::read(const Graph &G) {
   }
 }
 
+void rai::Joint::write(Graph& g){
+  g.newNode<Enum<JointType>>({"joint"}, {}, type);
+  if(H) g.newNode<double>({"ctrl_H"}, {}, H);
+  if(limits.N) g.newNode<arr>({"limits"}, {}, limits);
+  if(mimic) g.newNode<rai::String>({"mimic"}, {}, STRING('(' <<mimic->frame.name <<')'));
+}
+
 void rai::Joint::write(std::ostream& os) const {
   os <<" joint:" <<type;
   if(H) os <<" ctrl_H:"<<H;
@@ -709,6 +736,7 @@ rai::Shape::Shape(Frame &f, const Shape *copyShape)
     const Shape& s = *copyShape;
 //    mesh_radius=s.mesh_radius;
     cont=s.cont;
+    visual=s.visual;
     geom = s.geom;
   }
 }
@@ -737,7 +765,10 @@ void rai::Shape::read(const Graph& ats) {
     if(ats.get(d, "contact")) cont = (char)d;
     else cont=1;
   }
-  
+  if(ats["noVisual"]){
+    visual=false;
+  }
+
   //center the mesh:
   if(type()==rai::ST_mesh && mesh().V.N) {
     if(ats["rel_includes_mesh_center"]) {
@@ -768,6 +799,15 @@ void rai::Shape::write(std::ostream& os) const {
   if((n=frame.ats["mesh"])) os <<' ' <<*n;
   if((n=frame.ats["meshscale"])) os <<' ' <<*n;
   if(cont) os <<" contact:" <<(int)cont;
+}
+
+void rai::Shape::write(Graph& g){
+  if(geom) {
+    g.newNode<rai::Enum<ShapeType>>({"shape"}, {}, geom->type);
+    if(geom->type!=ST_mesh)
+      g.newNode<arr>({"size"}, {}, geom->size);
+  }
+  if(cont) g.newNode<int>({"contact"}, {}, cont);
 }
 
 void rai::Shape::glDraw(OpenGL& gl) {
@@ -857,6 +897,10 @@ arr rai::Inertia::getFrameRelativeWrench() {
 
 void rai::Inertia::write(std::ostream &os) const {
   os <<" mass:" <<mass;
+}
+
+void rai::Inertia::write(Graph& g){
+  g.newNode<double>({"mass"}, {}, mass);
 }
 
 void rai::Inertia::read(const Graph& G) {

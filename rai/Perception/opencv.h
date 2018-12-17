@@ -22,6 +22,8 @@
 #undef MIN
 #undef MAX
 
+extern ::Mutex cvMutex;
+
 inline cv::Mat conv_Arr2CvRef(const byteA& img) {
   if(img.nd==2) return cv::Mat(img.d0, img.d1, CV_8UC1, img.p);
   if(img.nd==3) return cv::Mat(img.d0, img.d1, CV_8UC3, img.p);
@@ -41,12 +43,23 @@ inline cv::Mat conv_Arr2CvRef(const doubleA& img) {
   return cv::Mat();
 }
 
-inline byteA cvtMAT(const cv::Mat& mat) {
+inline byteA conv_cvMat2byteA(const cv::Mat& mat) {
   CHECK_EQ(mat.dims,2,"");
   if(mat.elemSize()==1) return byteA(mat.data, mat.total());
   if(mat.elemSize()==3) return byteA(mat.data, 3*mat.total()).reshape(mat.rows, mat.cols, 3);
   NIY;
   return byteA();
+}
+
+inline floatA conv_cvMat2floatA(const cv::Mat& mat) {
+  CHECK_EQ(mat.dims,2,"");
+  floatA X(mat.rows, mat.cols);
+  if(mat.isContinuous()){
+    X.setCarray((float*)mat.data, X.N);
+  }else{
+    for(int i=0; i<mat.rows; i++) X[i].setCarray((float*)mat.ptr<uchar>(i), mat.cols);
+  }
+  return X;
 }
 
 char cvShow(const byteA& img, const char *window="opencv", bool wait=false);

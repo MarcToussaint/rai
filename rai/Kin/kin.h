@@ -88,6 +88,7 @@ struct KinematicWorld : GLDrawer {
   void init(const char* filename);
   void init(const Graph& G, bool addInsteadOfClear=false);
   void addFile(const char* filename);
+  void addAssimp(const char* filename);
   Frame* addFrame(const char* name, const char* parent=NULL, const char* args=NULL);
   Frame* addObject(rai::ShapeType shape, const arr& size={}, const arr& col={}, double radius=-1.);
   Frame* addObject(const char* name, rai::ShapeType shape, const arr& size={}, const arr& col={}, double radius=-1., const char* parent=NULL, const arr& pos={}, const arr& rot={});
@@ -121,7 +122,7 @@ struct KinematicWorld : GLDrawer {
   void pruneUselessFrames(bool preserveNamed=true);  ///< delete frames that have no name, joint, and shape
   void optimizeTree(bool preserveNamed=true, bool _pruneRigidJoints=false);        ///< call the three above methods in this order
   void sortFrames();
-  void makeObjectsFree(const StringA& objects);
+  void makeObjectsFree(const StringA& objects, double H_cost=0.);
   void addTimeJoint();
   bool hasTimeJoint();
   bool checkConsistency();
@@ -153,7 +154,7 @@ struct KinematicWorld : GLDrawer {
   void setJointState(const arr& _q, const arr& _qdot=NoArr);
   void setJointState(const arr& _q, const StringA&);
   void setJointState(const arr& _q, const uintA&);
-  void setFrameState(const arr& X, const StringA& frameNames={}, bool calc_q_from_X=true);
+  void setFrameState(const arr& X, const StringA& frameNames={}, bool calc_q_from_X=true, bool warnOnDifferentDim=true);
   void setTimes(double t);
   void operator=(const arr& X){
     if(X.d0==frames.N) setFrameState(X);
@@ -246,6 +247,7 @@ struct KinematicWorld : GLDrawer {
 
   /// @name I/O
   void write(std::ostream& os) const;
+  void write(Graph& G) const;
   void writeURDF(std::ostream& os, const char *robotName="myrobot") const;
   void writeMeshes(const char* pathPrefix="meshes/") const;
   void read(std::istream& is);

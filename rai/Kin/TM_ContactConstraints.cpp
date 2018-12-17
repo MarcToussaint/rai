@@ -162,26 +162,6 @@ void TM_Contact_ForceIsNormal::phi(arr &y, arr &J, const rai::KinematicWorld &K)
   if(!!J) J = Jforce - (normal*~normal*Jforce + normal*~force*Jnormal + scalarProduct(normal,force)*Jnormal);
 }
 
-#if 0
-void TM_Contact_ForceIsComplementary::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
-  rai::Contact *con = getContact(K,a,b);
-
-  //-- from the contact we need force
-  arr force, Jforce;
-  K.kinematicsContactForce(force, Jforce, con);
-
-  //-- from the geometry we need distance
-  arr dist, Jdist;
-  TM_PairCollision coll(con->a.ID, con->b.ID, TM_PairCollision::_negScalar, false);
-  coll.phi(dist, (!!J?Jdist:NoArr), K);
-
-  //-- enforce complementarity
-  double s = 1e-0;
-  y = s*dist.scalar() * force;
-  if(!!J) J = (s*dist.scalar())*Jforce + (s*force) * Jdist;
-
-}
-#else
 void TM_Contact_ForceIsComplementary::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
   rai::Contact *con = getContact(K,a,b);
 
@@ -208,7 +188,6 @@ void TM_Contact_ForceIsComplementary::phi(arr &y, arr &J, const rai::KinematicWo
     J.reshape(6,J.d2);
   }
 }
-#endif
 
 uint TM_Contact_ForceIsComplementary::dim_phi(const rai::KinematicWorld& K){ return 6; }
 
@@ -328,7 +307,7 @@ uint TM_ContactConstraints_Vel::dim_phi(const rai::KinematicWorld& K)
   return 3;
 }
 
-void TM_Contact_MovesContinuously::phi(arr& y, arr& J, const WorldL& Ktuple){
+void TM_Contact_POAmovesContinuously::phi(arr& y, arr& J, const WorldL& Ktuple){
   arr cp1, Jcp1;
   arr cp2, Jcp2;
   Ktuple(-2)->kinematicsContactPOA(cp1, Jcp1, getContact(*Ktuple(-2),a,b));
@@ -380,5 +359,28 @@ void TM_Contact_ElasticVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   }else if(elasticity==0.){
     y(3) = scalarProduct(normal, v1);
     if(!!J) J[3] = ~normal*(Jv1) + ~(v1)*Jnormal;
+  }
+}
+
+void TM_Contact_ElasticVelIsComplementary::phi(arr& y, arr& J, const WorldL& Ktuple){
+  rai::KinematicWorld& K = *Ktuple(-2);
+  rai::Contact *con = getContact(K,a,b);
+
+  //-- get the pre and post V:
+  arr v0, Jv0, v1, Jv1;
+  POA_rel_vel(v0, Jv0, Ktuple, con, false);
+  POA_rel_vel(v1, Jv1, Ktuple, con, true);
+
+  //-- get the force
+  arr force, Jforce;
+  K.kinematicsContactForce(force, Jforce, con);
+  if(!!J) expandJacobian(Jforce, Ktuple, -2);
+
+  y.resize(1);
+  y(0) = scalarProduct(force, v1);
+
+  if(!!J){
+    J.resize(y.N, Jforce.d1);
+    J = ~force * Jv1 + ~v1 * Jforce;
   }
 }

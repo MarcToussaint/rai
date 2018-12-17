@@ -133,6 +133,7 @@ struct sOpenGL {
   static void _PassiveMotion(int x, int y) {                 singleFreeglut()->getGL(glutGetWindow())->Motion(x,y); }
   static void _Reshape(int w,int h) {                        singleFreeglut()->getGL(glutGetWindow())->Reshape(w,h); }
   static void _MouseWheel(int wheel, int dir, int x, int y) { singleFreeglut()->getGL(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
+  static void _WindowStatus(int status)                     { singleFreeglut()->getGL(glutGetWindow())->WindowStatus(status); }
   
   void accessWindow() {  //same as above, but also sets gl cocntext (glXMakeCurrent)
     CHECK_GE(windowID, 0,"window is not created");
@@ -172,6 +173,9 @@ void OpenGL::openWindow() {
       glutPassiveMotionFunc(s->_PassiveMotion) ;
       glutReshapeFunc(s->_Reshape);
       glutMouseWheelFunc(s->_MouseWheel) ;
+      glutWindowStatusFunc(s->_WindowStatus);
+
+      glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
     }
   }
 }
@@ -1855,6 +1859,8 @@ void OpenGL::about(std::ostream& os) { RAI_MSG("NICO"); }
 
 #if 1
 #  define CALLBACK_DEBUG(x) if(reportEvents) { cout <<RAI_HERE <<s <<':'; x; }
+#elif 1
+#  define CALLBACK_DEBUG(x) { cout <<RAI_HERE <<s <<':'; x; }
 #else
 #  define CALLBACK_DEBUG(x)
 #endif
@@ -1950,7 +1956,7 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
       captureDepth.resize(h, w);
       glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
       double x=mouseposx, y=mouseposy, d = captureDepth(mouseposy, mouseposx);
-      if(d<.01 || d>.9999) {
+      if(d<.01 || d==1.) {
         cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
       } else {
         unproject(x, y, d, true, mouseView);
@@ -1977,7 +1983,7 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
     captureDepth.resize(h, w);
     glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
     double d = captureDepth(mouseposy, mouseposx);
-    if(d<.01 || d>.9999) {
+    if(d<.01 || d==1.) {
       cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
     } else {
       double x=mouseposx, y=mouseposy;
@@ -2012,6 +2018,12 @@ void OpenGL::MouseWheel(int wheel, int direction, int x, int y) {
   if(direction>0) camera.X.pos += camera.X.rot*Vector_z * (.1 * (camera.X.pos-camera.foc).length());
   else            camera.X.pos -= camera.X.rot*Vector_z * (.1 * (camera.X.pos-camera.foc).length());
   postRedrawEvent(true);
+  dataLock.unlock();
+}
+
+void OpenGL::WindowStatus(int status){
+  dataLock.writeLock();
+  CALLBACK_DEBUG(printf("Window %d WindowStatus Callback:  %d\n", 0, status));
   dataLock.unlock();
 }
 

@@ -64,7 +64,7 @@ object_recognition_msgs::Table conv_Percept2Table(const Percept& object)
 {
   const PercPlane& plane = dynamic_cast<const PercPlane&>(object);
   object_recognition_msgs::Table new_table;
-  new_table.pose = conv_transformation2pose(plane.transform);
+  new_table.pose = conv_transformation2pose(plane.pose);
   new_table.convex_hull = conv_arr2points(plane.hull.V);
   new_table.header.stamp = ros::Time(0.);
   new_table.header.frame_id = plane.frame_id;
@@ -88,7 +88,7 @@ visualization_msgs::Marker conv_Percept2TableMarker(const Percept& object)
   new_marker.color.r = 1.0;
   new_marker.color.g = 0;
   new_marker.color.b = 0;
-  new_marker.pose = conv_transformation2pose(plane.transform * plane.frame);
+  new_marker.pose = conv_transformation2pose(plane.pose * plane.pose);
   return new_marker;
 }
 
@@ -96,7 +96,7 @@ ar::AlvarMarker conv_Percept2Alvar(const Percept& object)
 {
   ar::AlvarMarker new_marker;
   new_marker.header.frame_id = dynamic_cast<const PercAlvar&>(object).frame_id;
-  new_marker.pose.pose = conv_transformation2pose(object.transform);
+  new_marker.pose.pose = conv_transformation2pose(object.pose);
   new_marker.id = dynamic_cast<const PercAlvar&>(object).alvarId;
   return new_marker;
 }
@@ -105,7 +105,7 @@ geometry_msgs::TransformStamped conv_Percept2OptitrackMarker(const Percept& obje
 {
     geometry_msgs::TransformStamped new_marker;
     new_marker.header.frame_id = dynamic_cast<const OptitrackMarker&>(object).frame_id;
-    new_marker.transform = conv_transformation2transform(object.transform);
+    new_marker.transform = conv_transformation2transform(object.pose);
     new_marker.child_frame_id = STRING("optitrackmarker_" << object.id);
     return new_marker;
 }
@@ -114,7 +114,7 @@ geometry_msgs::TransformStamped conv_Percept2OptitrackBody(const Percept& object
 {
     geometry_msgs::TransformStamped new_marker;
     new_marker.header.frame_id = dynamic_cast<const OptitrackBody&>(object).frame_id;
-    new_marker.transform = conv_transformation2transform(object.transform);
+    new_marker.transform = conv_transformation2transform(object.pose);
     new_marker.child_frame_id = STRING("optitrackbody_" << object.id);
     return new_marker;
 }

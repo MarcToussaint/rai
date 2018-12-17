@@ -19,7 +19,7 @@ int MAIN(int argc,char **argv){
     cout <<USAGE <<endl;
 
     rai::String file=rai::getParameter<rai::String>("file",STRING("test.ors"));
-    if(rai::argc==2 && rai::argv[1][0]!='-') file=rai::argv[1];
+    if(rai::argc>=2 && rai::argv[1][0]!='-') file=rai::argv[1];
     cout <<"opening file `" <<file <<"'" <<endl;
 
     rai::KinematicWorld K;
@@ -27,7 +27,7 @@ int MAIN(int argc,char **argv){
     Inotify ino(file);
     try {
       rai::lineCount=1;
-      K <<FILE(file);
+      K.init(file);
       K.report();
       break;
     } catch(std::runtime_error& err) {
@@ -38,7 +38,6 @@ int MAIN(int argc,char **argv){
       }
     }
     }
-
 
     K.checkConsistency();
     K >>FILE("z.g");
@@ -54,6 +53,7 @@ int MAIN(int argc,char **argv){
 //    K.watch(true);
 //    return;
 
+    if(rai::checkParameter<bool>("dot")) K.displayDot();
     K.writeURDF(FILE("z.urdf"));
 
     if(rai::checkParameter<bool>("cleanOnly")) return 0;

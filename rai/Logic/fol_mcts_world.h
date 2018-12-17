@@ -94,10 +94,11 @@ struct FOL_World : MCTS_Environment {
   long count;
   
   FOL_World();
-  FOL_World(istream& fil);
+  FOL_World(const char* filename);
   virtual ~FOL_World();
-  void init(istream& fil);
-  void init(const char* filename) { init(rai::FileToken(filename)); }
+  void init(const Graph& _KB);
+  void init(const char* filename);
+  void copy(const FOL_World& fol) { init(fol.KB); }
   
   virtual TransitionReturn transition(const Handle& action); //returns (observation, reward)
   virtual const std::vector<Handle> get_actions();
@@ -124,6 +125,7 @@ struct FOL_World : MCTS_Environment {
     for(const rai::String& s:symbols) parents.append(KB[s]);
     start_state->newNode<T>({}, parents, x);
   }
+  void addTerminalRule(const char* literals);
   void addTerminalRule(const StringAA& literals);
   
   //-- internal access

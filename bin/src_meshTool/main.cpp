@@ -10,7 +10,7 @@ const char *USAGE=
 "\n\
 Usage:  rai_meshTools file.[tri|obj|off|ply|stl] <tags...>\n\
 \n\
-Tags can be -view, -box, -fuse, -clean, -center, -scale, -swift, -save, -qhull, -flip, -decomp\n";
+Tags can be -view, -box, -fuse, -clean, -center, -scale, -save, -qhull, -flip \n";
 
 void drawInit(void*){
   glStandardLight(NULL);
@@ -22,8 +22,8 @@ void TEST(MeshTools) {
   cout <<USAGE <<endl;
 
   rai::String file;
-  if(rai::argc>=2 && rai::argv[1][0]!='-') file=rai::argv[1];
-  else file="../../Gui/opengl/base-male-nude.obj"; //m494.off
+  if(rai::argc>=2) file=rai::argv[1];
+  else HALT("the first argument needs to be a mesh file");
 
   cout <<"FILE=" <<file <<endl;
   OpenGL *gl=NULL;
@@ -31,7 +31,8 @@ void TEST(MeshTools) {
   rai::Mesh mesh;
   mesh.readFile(file);
 
-  cout <<"#vertices = " <<mesh.V.d0 <<" #triangles=" <<mesh.T.d0 <<endl;
+  cout <<"#vertices = " <<mesh.V.d0 <<" #triangles=" <<mesh.T.d0 <<"bounding box: = " <<max(mesh.V, 0) <<'-' <<min(mesh.V, 0) <<endl;
+//  mesh.C.clear();
 
   file(file.N-4)=0; //replace . by 0
 
@@ -82,26 +83,26 @@ void TEST(MeshTools) {
     cout <<"center" <<endl;
     mesh.center();
   }
-  if(rai::checkCmdLineTag("swift")){
-    mesh.writeTriFile(STRING(file<<"_x.tri"));
-    rai::String cmd;
-    cmd <<"decomposer_c-vs6d.exe -df " <<file <<"_x.dcp -hf " <<file <<"_x.chr " <<file <<"_x.tri";
-    cout <<"swift: " <<cmd <<endl;
-    if(::system(cmd)) RAI_MSG("system call failed");
-  }
-  if(rai::checkCmdLineTag("decomp")){
-    NIY;
-    // cout <<"decomposing..." <<endl;
-    // intA triangleAssignments;
-    // rai::Array<rai::Array<uint> > shapes;
-    // decompose(mesh, STRING(file<<"_x.dcp"), triangleAssignments, shapes);
-    // mesh.C.resize(mesh.T.d0,3);
-    // for(uint t=0;t<mesh.T.d0;t++){
-    //   rai::Color col;
-    //   col.setIndex(triangleAssignments(t));
-    //   mesh.C(t,0) = col.r;  mesh.C(t,1) = col.g;  mesh.C(t,2) = col.b;
-    // }
-  }
+  // if(rai::checkCmdLineTag("swift")){
+  //   mesh.writeTriFile(STRING(file<<"_x.tri"));
+  //   rai::String cmd;
+  //   cmd <<"decomposer_c-vs6d.exe -df " <<file <<"_x.dcp -hf " <<file <<"_x.chr " <<file <<"_x.tri";
+  //   cout <<"swift: " <<cmd <<endl;
+  //   if(::system(cmd)) RAI_MSG("system call failed");
+  // }
+  // if(rai::checkCmdLineTag("decomp")){
+  //   NIY;
+  //   // cout <<"decomposing..." <<endl;
+  //   // intA triangleAssignments;
+  //   // rai::Array<rai::Array<uint> > shapes;
+  //   // decompose(mesh, STRING(file<<"_x.dcp"), triangleAssignments, shapes);
+  //   // mesh.C.resize(mesh.T.d0,3);
+  //   // for(uint t=0;t<mesh.T.d0;t++){
+  //   //   rai::Color col;
+  //   //   col.setIndex(triangleAssignments(t));
+  //   //   mesh.C(t,0) = col.r;  mesh.C(t,1) = col.g;  mesh.C(t,2) = col.b;
+  //   // }
+  // }
   if(rai::checkCmdLineTag("view")){
     cout <<"viewing..." <<endl;
     if(!gl) gl=new OpenGL;

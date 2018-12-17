@@ -132,7 +132,7 @@ void Node::write(std::ostream& os) const {
   if(!container.isIndexed) container.index();
   
   //-- write keys
-  keys.write(os, " ", "", "\0\0");
+  keys.write(os, " ", "", "\"\"");
   
   //-- write parents
   if(parents.N) {
@@ -151,22 +151,25 @@ void Node::write(std::ostream& os) const {
   
   //-- write value
   if(isGraph()) {
-    os <<" {";
-    graph().write(os, " ");
-    os <<" }";
+    os <<':';
+    graph().write(os, ", ", "{}");
   } else if(isOfType<NodeL>()) {
     os <<":(";
     for(Node *it: (*getValue<NodeL>())) os <<' ' <<it->keys.last();
     os <<" )";
   } else if(isOfType<rai::String>()) {
+#if 0
     const rai::String& str = *getValue<rai::String>();
     char c=str(0);
     if((c>='a'&& c<='z') || (c>='A'&& c<='Z') ) os <<":" <<str;
     else os <<":\"" <<str <<'"';
+#else
+    os <<":\"" <<*getValue<rai::String>() <<'"';
+#endif
   } else if(isOfType<rai::FileToken>()) {
     os <<":'" <<getValue<rai::FileToken>()->name <<'\'';
   } else if(isOfType<arr>()) {
-    os <<':'; getValue<arr>()->write(os, NULL, NULL, "[]");
+    os <<':'; getValue<arr>()->write(os, ", ", NULL, "[]");
   } else if(isOfType<double>()) {
     os <<':' <<*getValue<double>();
   } else if(isOfType<int>()) {
@@ -174,17 +177,17 @@ void Node::write(std::ostream& os) const {
   } else if(isOfType<uint>()) {
     os <<':' <<*getValue<uint>();
   } else if(isOfType<bool>()) {
-    if(*getValue<bool>()) os<<','; else os <<'!';
+    if(*getValue<bool>()) os <<":True"; else os <<":False";
   } else if(isOfType<Type*>()) {
-    os <<" = "; get<Type*>()->write(os);
+    os <<":"; get<Type*>()->write(os);
   } else {
     Node *it = reg_findType(type.name());
     if(it && it->keys.N>1) {
-      os <<" = <" <<it->keys(1) <<' ';
+      os <<":<" <<it->keys(1) <<' ';
       writeValue(os);
       os <<'>';
     } else {
-      os <<" = \" ";
+      os <<":\"";
       writeValue(os);
       os <<'"';
     }
@@ -228,8 +231,8 @@ Graph::Graph(std::initializer_list<Nod> list) : Graph() {
 Graph::Graph(std::initializer_list<const char*> list) : Graph(){
   for(const char* s:list){
     rai::String str(s);
-    Node *n=newSubgraph();
-    n->graph().read(str);
+    Graph &g=newSubgraph();
+    g.read(str);
   }
 }
 
@@ -275,12 +278,12 @@ Graph& Graph::newNode(const Nod& ni) {
   return *this;
 }
 
-Node_typed<Graph>* Graph::newSubgraph(const StringA& keys, const NodeL& parents, const Graph& x) {
+Graph& Graph::newSubgraph(const StringA& keys, const NodeL& parents, const Graph& x) {
   Node_typed<Graph>* n = newNode<Graph>(keys, parents, Graph());
   DEBUG(CHECK(n->value.isNodeOfGraph && &n->value.isNodeOfGraph->container==this,""))
       if(!!x) n->value.copy(x);
   n->value.isDoubleLinked = isDoubleLinked;
-  return n;
+  return n->value;
 }
 
 Node_typed<int>* Graph::newNode(const uintA& parentIdxs) {
@@ -473,7 +476,7 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
       // copying the subgraph would require to fully rewire the subgraph (code below)
       // but if the subgraph refers to parents of this graph that are not create yet, requiring will fail
       // therefore we just insert an empty graph here; we then copy the subgraph once all nodes are created
-      newn = this->newSubgraph(n->keys, n->parents);
+      newn = this->newSubgraph(n->keys, n->parents).isNodeOfGraph;
     } else {
       newn = n->newClone(*this); //this appends sequentially clones of all nodes to 'this'
     }
@@ -572,6 +575,8 @@ void Graph::read(std::istream& is, bool parseInfo) {
       delete n; n=NULL;
     }
   }
+
+  index();
 }
 
 void writeFromStream(std::ostream& os, std::istream& is, istream::pos_type beg, istream::pos_type end) {
@@ -750,10 +755,10 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
         node = newNode<NodeL>(keys, parents, par);
       } break;
       case '{': { // sub graph
-        Node_typed<Graph> *subgraph = this->newSubgraph(keys, parents);
-        subgraph->value.read(is);
+        Graph& subgraph = this->newSubgraph(keys, parents);
+        subgraph.read(is);
         rai::parse(is, "}");
-        node = subgraph;
+        node = subgraph.isNodeOfGraph;
       } break;
       default: { //error
         is.putback(c);
@@ -856,7 +861,7 @@ void addJasonValues(Graph& G, const char* key, Json::Value& value) {
       case Json::stringValue: new Node_typed<rai::String>(G, {key}, {}, value.asString().c_str()); break;
       case Json::booleanValue: new Node_typed<bool>(G, {key}, {}, value.asBool()); break;
       case Json::arrayValue: HALT("covered above"); break;
-      case Json::objectValue:  Json2Graph(G.newSubgraph({key}, {})->graph(), value);  break;
+      case Json::objectValue:  Json2Graph(G.newSubgraph({key}, {}), value);  break;
     }
   }
 }
@@ -869,10 +874,10 @@ void Graph::readJson(std::istream &is) {
 
 #undef PARSERR
 
-void Graph::write(std::ostream& os, const char *ELEMSEP, const char *delim) const {
-  if(delim) os <<delim[0];
+void Graph::write(std::ostream& os, const char *ELEMSEP, const char *BRACKETS) const {
+  if(BRACKETS) os <<BRACKETS[0];
   for(uint i=0; i<N; i++) { if(i) os <<ELEMSEP;  if(elem(i)) elem(i)->write(os); else os <<"<NULL>"; }
-  if(delim) os <<delim[1] <<std::flush;
+  if(BRACKETS) os <<BRACKETS[1] <<std::flush;
 }
 
 void Graph::writeParseInfo(std::ostream& os) {

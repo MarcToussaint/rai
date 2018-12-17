@@ -95,6 +95,7 @@ void flip(int& b, uint i);
 double MIN(double a, double b);
 double MAX(double a, double b);
 uint MAX(uint a, uint b);
+int MAX(int a, int b);
 double indicate(bool expr);
 double modMetric(double x, double y, double mod);
 double sign(double x);
@@ -405,7 +406,7 @@ struct FileToken {
   std::shared_ptr<std::ifstream> is;
   
   FileToken();
-  FileToken(const char* _filename, bool change_dir=true);
+  FileToken(const char* _filename, bool change_dir=false);
   FileToken(const FileToken& ft);
   ~FileToken();
   FileToken& operator()() { return *this; }
@@ -425,7 +426,7 @@ inline std::ostream& operator<<(std::ostream& os, const FileToken& fil) { return
 template<class T> FileToken& operator<<(T& x, FileToken& fil) { fil.getIs() >>x; return fil; }
 template<class T> void operator>>(const T& x, FileToken& fil) { fil.getOs() <<x; }
 }
-#define FILE(filename) (rai::FileToken(filename)()) //it needs to return a REFERENCE to a local scope object
+#define FILE(filename) (rai::FileToken(filename, false)()) //it needs to return a REFERENCE to a local scope object
 
 inline bool operator==(const rai::FileToken&, const rai::FileToken&) { return false; }
 
@@ -441,6 +442,7 @@ struct Enum {
   static const char* names [];
   Enum():x((enum_T)-1) {}
   explicit Enum(const enum_T& y):x(y) {}
+  explicit Enum(const rai::String& str):Enum() { operator=(str); }
   const enum_T& operator=(const enum_T& y) { x=y; return x; }
   bool operator==(const enum_T& y) const { return x==y; }
   bool operator!=(const enum_T& y) const { return x!=y; }
@@ -465,6 +467,15 @@ struct Enum {
       LOG(-2) <<"Enum::read could not find the keyword '" <<str <<"'. Possible Enum keywords: " <<all;
     }
     CHECK(!strcmp(names[x], str.p), "");
+  }
+  static bool contains(const rai::String& str){
+    for(int i=0; names[i]; i++) {
+      if(str==names[i]) return true;
+    }
+    return false;
+  }
+  static const char* name(int i){
+    return names[i];
   }
   const char* name() const {
     if(x<0) return "init";

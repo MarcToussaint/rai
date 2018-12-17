@@ -29,6 +29,7 @@
 #include "kin_ode.h"
 #include "kin_feather.h"
 #include <Geo/qhull.h>
+#include <Geo/mesh_readAssimp.h>
 #include <GeoOptim/geoOptim.h>
 #include <Gui/opengl.h>
 #include <Algo/algos.h>
@@ -167,7 +168,7 @@ rai::KinematicWorld::~KinematicWorld() {
 }
 
 void rai::KinematicWorld::init(const char* filename) {
-  rai::FileToken file(filename);
+  rai::FileToken file(filename, true);
   Graph G(file);
   G.checkConsistency();
   init(G, false);
@@ -175,10 +176,20 @@ void rai::KinematicWorld::init(const char* filename) {
 }
 
 void rai::KinematicWorld::addFile(const char* filename) {
-  rai::FileToken file(filename);
+  rai::FileToken file(filename, true);
   Graph G(file);
   init(G, true);
   file.cd_start();
+}
+
+void rai::KinematicWorld::addAssimp(const char* filename) {
+  AssimpLoader A(filename);
+  for(rai::Mesh &m:A.meshes){
+    rai::Frame *f = new rai::Frame(*this);
+    rai::Shape *s = new rai::Shape(*f);
+    s->type() = ST_mesh;
+    s->mesh() = m;
+  }
 }
 
 rai::Frame* rai::KinematicWorld::addFrame(const char* name, const char* parent, const char* args){
@@ -744,10 +755,12 @@ void rai::KinematicWorld::setJointState(const arr& _q, const uintA& joints) {
   calc_fwdPropagateFrames();
 }
 
-void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames, bool calc_q_from_X){
+void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames, bool calc_q_from_X, bool warnOnDifferentDim){
   if(!frameNames.N){
-    if(X.d0 > frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is larger than frames.N=" <<frames.N;
-    if(X.d0 < frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is smaller than frames.N=" <<frames.N;
+    if(warnOnDifferentDim){
+      if(X.d0 > frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is larger than frames.N=" <<frames.N;
+      if(X.d0 < frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is smaller than frames.N=" <<frames.N;
+    }
     for(uint i=0;i<frames.N && i<X.d0;i++){
       frames(i)->X.set(X[i]);
       frames(i)->X.rot.normalize();
@@ -1400,7 +1413,7 @@ OpenGL& rai::KinematicWorld::gl(const char* window_title) {
 
 /// return a Swift extension
 SwiftInterface& rai::KinematicWorld::swift() {
-  if(!s->swift) s->swift = new SwiftInterface(*this, 2.);
+  if(!s->swift) s->swift = new SwiftInterface(*this, .01);
   return *s->swift;
 }
 
@@ -1656,6 +1669,11 @@ void rai::KinematicWorld::write(std::ostream& os) const {
   //  }
 }
 
+void rai::KinematicWorld::write(Graph& G) const {
+  for(Frame *f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
+  for(Frame *f: frames) f->write(G);
+}
+
 void rai::KinematicWorld::writeURDF(std::ostream &os, const char* robotName) const {
   os <<"<?xml version=\"1.0\"?>\n";
   os <<"<robot name=\"" <<robotName <<"\">\n";
@@ -1756,7 +1774,7 @@ Graph rai::KinematicWorld::getGraph() const {
 #if 1
   Graph G;
   //first just create nodes
-  for(Frame *f: frames) G.newNode<bool>({f->name}, {});
+  for(Frame *f: frames) G.newNode<bool>({STRING(f->name <<" [" <<f->ID <<']')}, {});
   for(Frame *f: frames) {
     Node *n = G.elem(f->ID);
     if(f->parent) {
@@ -1857,8 +1875,7 @@ void rai::KinematicWorld::report(std::ostream &os) const {
   <<endl;
 }
 
-void rai::KinematicWorld::
-init(const Graph& G, bool addInsteadOfClear) {
+void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
   if(!addInsteadOfClear) clear();
   
   NodeL bs = G.getNodes("body");
@@ -2217,9 +2234,18 @@ void rai::KinematicWorld::kinematicsProxyDist(arr& y, arr& J, const Proxy& p, do
 void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin, bool addValues) const {
   CHECK(p.a->shape,"");
   CHECK(p.b->shape,"");
+
+  y.resize(1);
+  if(!!J) J.resize(1, getJointStateDimension());
+  if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
+
+  //early check: if swift is way out of collision, don't bother computing it precise
+  if(p.d>.01+margin) return;
   
 #if 1
   if(!p.coll) ((Proxy*)&p)->calc_coll(*this);
+
+  if(p.coll->getDistance()>margin) return;
   
   arr Jp1, Jp2;
   if(!!J) {
@@ -2229,11 +2255,7 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   
   arr y_dist, J_dist;
   p.coll->kinDistance(y_dist, (!!J?J_dist:NoArr), Jp1, Jp2);
-  
-  y.resize(1);
-  if(!!J) J.resize(1, getJointStateDimension());
-  if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
-  
+    
   if(y_dist.scalar()>margin) return;
   y += margin-y_dist.scalar();
   if(!!J)  J -= J_dist;
@@ -2574,13 +2596,14 @@ void rai::KinematicWorld::sortFrames() {
   for(Frame *f: frames) f->ID = i++;
 }
 
-void rai::KinematicWorld::makeObjectsFree(const StringA &objects){
+void rai::KinematicWorld::makeObjectsFree(const StringA &objects, double H_cost){
   for(auto s:objects){
     rai::Frame *a = getFrameByName(s, true);
     CHECK(a, "");
+    a = a->getUpwardLink();
     if(!a->parent) a->linkFrom(frames.first());
     if(!a->joint) new rai::Joint(*a);
-    a->joint->makeFree();
+    a->joint->makeFree(H_cost);
   }
 }
 
@@ -2774,7 +2797,7 @@ void rai::KinematicWorld::glDraw_sub(OpenGL& gl) {
 
   //proxies
   if(orsDrawProxies) for(const Proxy& p: proxies)((Proxy*)&p)->glDraw(gl);
-  
+
   //contacts
   if(orsDrawProxies) for(const Frame *fr: frames) for(rai::Contact *c:fr->contacts) if(&c->a==fr) {
     c->glDraw(gl);
@@ -2829,16 +2852,22 @@ void rai::KinematicWorld::glDraw_sub(OpenGL& gl) {
   //shapes
   if(orsDrawBodies) {
     //first non-transparent
-    for(Frame *f: frames) if(f->shape && f->shape->alpha()==1. && (!orsDrawVisualsOnly || !f->ats["noVisual"])) {
+    for(Frame *f: frames) if(f->shape && f->shape->alpha()==1. && (f->shape->visual||!orsDrawVisualsOnly)) {
       gl.drawId(f->ID);
-      f->shape->glDraw(gl);
+      if(f->name.startsWith(("perc_"))){
+        glColor(1.,.5,.5);
+        rai::Mesh *m = &f->shape->mesh();
+        cout <<"DRAW MESH:" <<m->getRadius() <<endl;
+      }else{
+        f->shape->glDraw(gl);
+      }
     }
-    for(Frame *f: frames) if(f->shape && f->shape->alpha()<1. && (!orsDrawVisualsOnly || !f->ats["noVisual"])) {
+    for(Frame *f: frames) if(f->shape && f->shape->alpha()<1. && (f->shape->visual||!orsDrawVisualsOnly)) {
       gl.drawId(f->ID);
       f->shape->glDraw(gl);
     }
   }
-  
+
   glPopMatrix();
 #endif
 }
@@ -3518,7 +3547,7 @@ void editConfiguration(const char* filename, rai::KinematicWorld& K, OpenGL &gl)
     rai::KinematicWorld W;
     try {
       rai::lineCount=1;
-      W <<FILE(filename);
+      W.init(filename);
       gl.dataLock.writeLock();
       K = W;
       gl.dataLock.unlock();

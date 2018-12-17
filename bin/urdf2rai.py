@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
+import sys
 from lxml import etree
 
-inFile = "z.urdf"
+inFile = sys.argv[1]
 xmlData = etree.parse(inFile)
 
 def writeShape(link):

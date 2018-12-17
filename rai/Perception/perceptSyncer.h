@@ -13,11 +13,10 @@
 
 /// syncs percepts with modelWorld
 struct SyncFiltered : Thread {
-  Var<PerceptL> percepts_filtered;
-  Var<rai::KinematicWorld> outputWorld;
-  VAR(rai::KinematicWorld, modelWorld)
+  Var<PerceptL> percepts;
+  Var<rai::KinematicWorld> kin;
   
-  SyncFiltered(const char* outputWorld_name);
+  SyncFiltered(Var<PerceptL>& _percepts, Var<rai::KinematicWorld>& _kin);
   ~SyncFiltered();
   
   virtual void open();

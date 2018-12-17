@@ -81,7 +81,7 @@ void addMotionTo(KOMO& komo, const arr& target_q, const StringA& target_joints, 
 
 void chooseBoxGrasp(rai::KinematicWorld& K, const char* endeff, const char* object){
   KOMO komo;
-  komo.setModel(K, true, true);
+  komo.setModel(K, true);
   komo.setIKOpt();
 
   //  komo.addObjective(0., 0., OT_eq, FS_accumulatedCollisions, {}, 1e0);
