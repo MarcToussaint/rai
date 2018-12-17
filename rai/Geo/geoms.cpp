@@ -177,7 +177,7 @@ void rai::Geom::glDraw(OpenGL &gl) {
       //      }
       break;
     case rai::ST_mesh:
-      CHECK(mesh.V.N, "mesh needs to be loaded to draw mesh object");
+//      CHECK(mesh.V.N, "mesh needs to be loaded to draw mesh object");
       if(drawCores && sscCore.V.N) sscCore.glDraw(gl);
       else mesh.glDraw(gl);
       break;

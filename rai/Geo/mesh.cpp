@@ -1655,7 +1655,7 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
   }
   
   if(T.d1==2) { //-- draw lines
-    glLineWidth(3.f);
+//    glLineWidth(3.f);
     glBegin(GL_LINES);
     for(uint t=0; t<T.d0; t++) {
       glVertex3dv(&V(T(t, 0), 0));

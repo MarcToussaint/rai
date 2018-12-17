@@ -214,7 +214,7 @@ rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size
       s->mesh().V = size;
       s->mesh().V.reshape(size.N/3,3);
     }
-    if(shape==ST_mesh){
+    if(shape==ST_ssCvx){
       s->sscCore().V = size;
       s->sscCore().V.reshape(size.N/3,3);
       CHECK(radius>0., "radius must be greater zero");
