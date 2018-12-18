@@ -296,6 +296,12 @@ PYBIND11_MODULE(libry, m) {
   }, "",
     py::arg("belowMargin") = 1.)
 
+  .def("frame", [](ry::Config& self, const std::string& framename){
+    ry::RyFrame f;
+    f.frame = self.get()->getFrameByName(framename.c_str(), true);
+    return f;
+  } )
+
   .def("view", [](ry::Config& self, const std::string& frame){
     ry::ConfigViewer view;
     view.view = make_shared<KinViewer>(self, -1, rai::String(frame));
@@ -499,6 +505,25 @@ PYBIND11_MODULE(libry, m) {
   .def("description", [](ry::RyFeature& self, ry::Config& K){
     std::string s = self.feature->shortTag(K.get()).p;
     return s;
+  } )
+  ;
+
+  //===========================================================================
+
+  py::class_<ry::RyFeature>(m, "Frame")
+  .def("setMeshAsLines", [](ry::RyFrame& self, const std::vector<double>& lines){
+      CHECK(self.frame, "this is not a valid frame");
+      CHECK(self.frame->shape, "this frame is not a mesh!");
+      CHECK_EQ(self.frame->shape->type(), rai::ST_mesh, "this frame is not a mesh!");
+      uint n = lines.size()/3;
+      self.frame->shape->mesh().V = lines;
+      self.frame->shape->mesh().V.reshape(n, 3);
+      uintA& T = self.frame->shape->mesh().T;
+      T.resize(n/2, 2);
+      for(uint i=0;i<T.d0;i++){
+	T(i,0) = 2*i;
+	T(i,1) = 2*i+1;
+      }
   } )
   ;
 

@@ -53,6 +53,7 @@ namespace ry{
   struct RyLGP_Tree { shared_ptr<LGP_Tree_Thread> lgp; };
 
   struct RyFeature { Feature *feature=0; };
+  struct RyFrame { rai::Frame *frame=0; };
 
   struct RyCameraView {
     shared_ptr<rai::CameraView> cam;
