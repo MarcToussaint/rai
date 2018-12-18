@@ -510,7 +510,7 @@ PYBIND11_MODULE(libry, m) {
 
   //===========================================================================
 
-  py::class_<ry::RyFeature>(m, "Frame")
+  py::class_<ry::RyFrame>(m, "Frame")
   .def("setMeshAsLines", [](ry::RyFrame& self, const std::vector<double>& lines){
       CHECK(self.frame, "this is not a valid frame");
       CHECK(self.frame->shape, "this frame is not a mesh!");
