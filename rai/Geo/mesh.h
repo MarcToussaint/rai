@@ -94,6 +94,7 @@ struct Mesh : GLDrawer {
   rai::Vector getCenter() const;
   arr getMean() const;
   void getBox(double& dx, double& dy, double& dz) const;
+  arr getBox() const;
   double getRadius() const;
   double getArea() const;
   double getArea(uint tri) const;
@@ -127,6 +128,16 @@ struct Mesh : GLDrawer {
 };
 } //END of namespace
 stdOutPipe(rai::Mesh)
+
+//===========================================================================
+
+namespace rai {
+struct MeshCollection : GLDrawer{
+  Array<Mesh*> M;
+  arr X;
+  void glDraw(struct OpenGL&);
+};
+} //END of namespace
 
 //===========================================================================
 

@@ -1124,10 +1124,10 @@ bool rai::FileToken::exists() {
   return r==0;
 }
 
-std::ofstream& rai::FileToken::getOs() {
+std::ofstream& rai::FileToken::getOs(bool change_dir) {
   CHECK(!is,"don't use a FileToken both as input and output");
   if(!os) {
-    cd_file();
+    if(change_dir) cd_file();
     os = std::make_shared<std::ofstream>();
     os->open(name);
     LOG(3) <<"opening output file '" <<name <<"'" <<std::endl;

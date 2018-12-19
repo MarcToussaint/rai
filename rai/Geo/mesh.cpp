@@ -930,6 +930,16 @@ void rai::Mesh::getBox(double& dx, double& dy, double& dz) const {
   }
 }
 
+arr rai::Mesh::getBox() const {
+  arr a,b;
+  a = b = V[0];
+  for(uint i=0; i<V.d0; i++) {
+    a = elemWiseMin(a, V[i]);
+    b = elemWiseMax(b, V[i]);
+  }
+  return cat(a,b).reshape(2,3);
+}
+
 double rai::Mesh::getRadius() const {
   double r=0.;
   for(uint i=0; i<V.d0; i++) r=rai::MAX(r, sumOfSqr(V[i]));
@@ -1837,6 +1847,22 @@ void glDrawMeshes(void *P) {
 #endif
 }
 
+void rai::MeshCollection::glDraw(OpenGL& gl){
+  CHECK_EQ(X.nd, 2, "");
+  CHECK_EQ(X.d0, M.N, "");
+  CHECK_EQ(X.d1, 7, "");
+
+  double GLmatrix[16];
+  rai::Transformation t;
+  for(uint i=0;i<M.N;i++) {
+    glPushMatrix();
+    t.set(&X(i,0));
+    glLoadMatrixd(t.getAffineMatrixGL(GLmatrix));
+    M(i)->glDraw(gl);
+    glPopMatrix();
+  }
+}
+
 //==============================================================================
 
 void inertiaSphere(double *I, double& mass, double density, double radius) {
@@ -2312,3 +2338,4 @@ void rai::Mesh::supportMargin(uintA &verts, const arr &dir, double margin, int i
     }
   }
 }
+

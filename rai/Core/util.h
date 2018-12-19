@@ -415,7 +415,7 @@ struct FileToken {
   void cd_start();
   void cd_file();
   bool exists();
-  std::ofstream& getOs();
+  std::ofstream& getOs(bool change_dir=false);
   std::ifstream& getIs(bool change_dir=false);
   operator std::istream&() { return getIs(); }
   operator std::ostream&() { return getOs(); }

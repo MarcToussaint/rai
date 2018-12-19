@@ -71,7 +71,7 @@ struct Node {
   bool matches(const char *key); ///< return true, if 'key' is in keys
   bool matches(const StringA &query_keys); ///< return true, if all query_keys are in keys
   
-  void write(std::ostream &os) const;
+  void write(std::ostream &os, bool pythonMode=false) const;
   
   //-- virtuals implemented by Node_typed
   virtual void copyValue(Node*) {NIY}
