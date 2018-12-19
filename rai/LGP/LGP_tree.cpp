@@ -624,8 +624,8 @@ LGP_Tree_SolutionData::LGP_Tree_SolutionData(LGP_Tree& _tree, LGP_Node *_node) :
       frameIDs.append(a->ID);
     }
   }
-  geomIDs.resizeAs(frameIDs);
-  for(uint i=0; i<geomIDs.N; i++) geomIDs(i) = K.frames(frameIDs(i))->shape->geom->ID;
+  geoms.resize(frameIDs.N);
+  for(uint i=0; i<geoms.N; i++) geoms(i) = K.frames(frameIDs(i))->shape->geom;
   
   uint L = node->komoProblem.N;
   paths.resize(L);
@@ -650,18 +650,17 @@ void LGP_Tree_SolutionData::write(std::ostream &os) const {
 void LGP_Tree_SolutionData::glDraw(OpenGL &gl) {
 #ifdef RAI_GL
   BoundType displayBound=tree.displayBound;
-  rai::Array<rai::Geom*>& geoms = _GeomStore()->geoms;
-  
+
   if(!paths(displayBound).N) return;
   
-  for(uint i=0; i<geomIDs.N; i++) {
+  for(uint i=0; i<geoms.N; i++) {
     if(displayStep >= paths(displayBound).d0) displayStep = 0;
     rai::Transformation &X = paths(displayBound)(displayStep, i);
     double GLmatrix[16];
     X.getAffineMatrixGL(GLmatrix);
     glLoadMatrixd(GLmatrix);
     
-    geoms(geomIDs(i))->glDraw(gl);
+    geoms(i)->glDraw(gl);
   }
 #endif
 }
