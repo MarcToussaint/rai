@@ -840,7 +840,7 @@ char *rai::String::StringBuf::getIpos() { return gptr(); }
 //-- direct memory operations
 void rai::String::append(char x) { resize(N+1, true); operator()(N-1)=x; }
 
-void String::prepend(const rai::String& s){
+void rai::String::prepend(const rai::String& s){
   uint n=N;
   resize(n+s.N, true);
   memmove(p+s.N, p, n);
@@ -947,7 +947,7 @@ rai::String& rai::String::operator=(const String& s) {
   return *this;
 }
 
-rai::String& String::operator=(const std::string& s){
+rai::String& rai::String::operator=(const std::string& s){
   return this->operator=(s.c_str());
 }
 

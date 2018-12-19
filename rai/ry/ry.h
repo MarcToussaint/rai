@@ -68,7 +68,6 @@ namespace ry{
 
 typedef std::pair<std::vector<unsigned int>, std::vector<double> > I_arr;
 typedef std::vector<std::string> I_StringA;
-template<class T> using ptr=std::shared_ptr<T>;
 typedef std::map<std::string, std::string> I_dict;
 typedef std::map<std::string, std::vector<double> > I_args;
 

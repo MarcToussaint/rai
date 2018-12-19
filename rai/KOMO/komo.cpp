@@ -1661,10 +1661,6 @@ void KOMO::setupConfigurations() {
   CHECK(!configurations.N,"why setup again?");
 //    listDelete(configurations);
 
-  if(useSwift) {
-//    makeConvexHulls(world.frames);
-    world.swift().setCutoff(2.*getParameter<double>("swiftCutoff", 0.11));
-  }
   computeMeshNormals(world.frames, true);
   
   configurations.append(new KinematicWorld())->copy(world, true);
@@ -1717,6 +1713,7 @@ void KOMO::set_x(const arr& x) {
       else         configurations(s)->setJointState(x[t]);
       if(useSwift) {
         configurations(s)->stepSwift();
+//        configurations(s)->stepFcl();
         //configurations(s)->proxiesToContacts(1.1);
       }
       x_count += x_dim;

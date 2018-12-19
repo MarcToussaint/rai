@@ -28,6 +28,7 @@
 #include "kin_physx.h"
 #include "kin_ode.h"
 #include "kin_feather.h"
+#include <Geo/fclInterface.h>
 #include <Geo/qhull.h>
 #include <Geo/mesh_readAssimp.h>
 #include <GeoOptim/geoOptim.h>
@@ -132,6 +133,7 @@ namespace rai {
   struct sKinematicWorld {
     OpenGL *gl;
     SwiftInterface *swift;
+    ptr<FclInterface> fcl;
     PhysXInterface *physx;
     OdeInterface *ode;
     FeatherstoneInterface *fs = NULL;
@@ -1413,8 +1415,22 @@ OpenGL& rai::KinematicWorld::gl(const char* window_title) {
 
 /// return a Swift extension
 SwiftInterface& rai::KinematicWorld::swift() {
-  if(!s->swift) s->swift = new SwiftInterface(*this, .01);
+  if(!s->swift) s->swift = new SwiftInterface(*this, .1);
   return *s->swift;
+}
+
+rai::FclInterface& rai::KinematicWorld::fcl(){
+  if(!s->fcl){
+    Array<ptr<Geom>> geometries(frames.N);
+    for(Frame *f:frames){
+      if(f->shape && f->shape->cont){
+        if(!f->shape->mesh().V.N) f->shape->getGeom().createMeshes();
+        geometries(f->ID) = f->shape->geom;
+      }
+    }
+    s->fcl = make_shared<rai::FclInterface>(geometries, .0);
+  }
+  return *s->fcl;
 }
 
 void rai::KinematicWorld::swiftDelete() {
@@ -1478,6 +1494,36 @@ void rai::KinematicWorld::stepSwift() {
   //  reportProxies();
   //  watch(true);
   //  gl().closeWindow();
+}
+
+void rai::KinematicWorld::stepFcl(){
+  arr X(frames.N, 7);
+  X.setZero();
+  for(Frame *f:frames){
+    if(f->shape && f->shape->cont) X[f->ID] = f->X.getArr7d();
+  }
+  fcl().step(X);
+  uintA& COL = fcl().collisions;
+  boolA filter(COL.d0);
+  uint n=0;
+  for(uint i=0;i<COL.d0;i++){
+    bool canCollide = frames(COL(i,0))->shape->canCollideWith(frames(COL(i,1)));
+    filter(i) = canCollide;
+    if(canCollide) n++;
+  }
+  proxies.clear();
+  proxies.resize(n);
+  for(uint i=0,j=0;i<COL.d0;i++){
+    if(filter(i)){
+      Proxy& p = proxies(j);
+      p.a = frames(COL(i,0));
+      p.b = frames(COL(i,1));
+      p.d = -0.;
+      p.posA = frames(COL(i,0))->shape->geom->mesh.getCenter();
+      p.posB = frames(COL(i,1))->shape->geom->mesh.getCenter();
+      j++;
+    }
+  }
 }
 
 void rai::KinematicWorld::stepPhysx(double tau) {

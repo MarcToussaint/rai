@@ -11,22 +11,16 @@
 #include <Core/graph.h>
 #include <Gui/opengl.h>
 
-Singleton<rai::GeomStore> _GeomStore;
-
 template<> const char* rai::Enum<rai::ShapeType>::names []= {
   "box", "sphere", "capsule", "mesh", "cylinder", "marker", "SSBox", "pointCloud", "ssCvx", "ssBox", NULL
 };
 
-rai::Geom::Geom(rai::GeomStore &_store) : store(_store), type(ST_none) {
-  ID=store.geoms.N;
-  store.geoms.append(this);
+rai::Geom::Geom() : type(ST_none) {
   size = {1.,1.,1.,.1};
   mesh.C = consts<double>(.8, 3); //color[0]=color[1]=color[2]=.8; color[3]=1.;
-  
 }
 
 rai::Geom::~Geom() {
-  store.geoms(ID) = NULL;
 }
 
 void rai::Geom::read(const Graph &ats) {
@@ -204,18 +198,4 @@ void rai::Geom::glDraw(OpenGL &gl) {
       
     default: HALT("can't draw that geom yet");
   }
-}
-
-rai::GeomStore::~GeomStore() {
-  for(Geom* g:geoms) if(g) delete g;
-#ifndef RAI_NOCHECK
-  for(Geom* g:geoms) CHECK(!g, "geom is not deleted");
-#endif
-  geoms.clear();
-}
-
-rai::Geom &rai::GeomStore::get(uint id) {
-  Geom *g=geoms.elem(id);
-  CHECK(g, "geom does not exist");
-  return *g;
 }

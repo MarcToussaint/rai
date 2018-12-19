@@ -120,11 +120,11 @@ void TEST(FinalPosePR2){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  rnd.clockSeed();
+//  rnd.clockSeed();
 
-  testEasy();
+//  testEasy();
 //  testAlign();
-//  testPR2();
+  testPR2();
 
   return 0;
 }

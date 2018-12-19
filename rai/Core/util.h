@@ -34,9 +34,32 @@
 #define RAI_LnSqrt2Pi -0.9189385332046727417803296
 #define RAI_SQRT2 1.414213562373095049
 #define RAI_SQRTPI 1.772453850905516027
+
+//===========================================================================
+//
+// types
+//
+
 typedef unsigned char byte;            ///< byte
 typedef unsigned int uint;             ///< unsigned integer
 typedef const char* charp;
+
+//===========================================================================
+//
+// using
+//
+
+using std::cout;
+using std::cerr;
+using std::endl;
+using std::flush;
+using std::ostream;
+using std::istream;
+using std::ofstream;
+using std::ifstream;
+template<class T> using ptr=std::shared_ptr<T>;
+using std::make_shared;
+
 
 //----- macros to define the standard <<and >>operatos for most my classes:
 #define stdInPipe(type)\
@@ -723,21 +746,6 @@ template <typename T> T clip(T& x, const T& lower, const T& upper) {
 
 std::string getcwd_string();
 const char* NAME(const std::type_info& type);
-
-//===========================================================================
-//
-// USING's
-//
-
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::flush;
-using std::ostream;
-using std::istream;
-using std::ofstream;
-using std::ifstream;
-using rai::String;
 
 #endif
 

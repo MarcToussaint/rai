@@ -32,6 +32,8 @@ struct Contact;
 struct KinematicWorld;
 struct KinematicSwitch;
 
+struct FclInterface;
+
 } // namespace rai
 
 //===========================================================================
@@ -92,7 +94,6 @@ struct KinematicWorld : GLDrawer {
   Frame* addFrame(const char* name, const char* parent=NULL, const char* args=NULL);
   Frame* addObject(rai::ShapeType shape, const arr& size={}, const arr& col={}, double radius=-1.);
   Frame* addObject(const char* name, rai::ShapeType shape, const arr& size={}, const arr& col={}, double radius=-1., const char* parent=NULL, const arr& pos={}, const arr& rot={});
-
 
   /// @name access
   Frame *operator[](const char* name) { return getFrameByName(name, true); }
@@ -227,6 +228,7 @@ struct KinematicWorld : GLDrawer {
   /// @name extensions on demand
   OpenGL& gl(const char* window_title=NULL);
   SwiftInterface& swift();
+  FclInterface& fcl();
   void swiftDelete();
   PhysXInterface& physx();
   OdeInterface& ode();
@@ -235,6 +237,7 @@ struct KinematicWorld : GLDrawer {
   void glAnimate();
   void glGetMasks(int w=-1, int h=-1, bool rgbIndices=true);
   void stepSwift();
+  void stepFcl();
   void stepPhysx(double tau);
   void stepOde(double tau);
   void stepDynamics(const arr& u_control, double tau, double dynamicNoise = 0.0, bool gravity = true);

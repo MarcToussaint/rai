@@ -105,14 +105,14 @@ rai::Inertia &rai::Frame::getInertia() {
   return *inertia;
 }
 
-rai::Frame *rai::Frame::getUpwardLink(rai::Transformation &Qtotal) {
+rai::Frame *rai::Frame::getUpwardLink(rai::Transformation &Qtotal) const {
   if(!!Qtotal) Qtotal.setZero();
-  Frame *p=this;
+  const Frame *p=this;
   while(p->parent && !p->joint) {
     if(!!Qtotal) Qtotal = p->Q*Qtotal;
-    p=p->parent;
+    p = p->parent;
   }
-  return p;
+  return (Frame*)p;
 }
 
 void rai::Frame::read(const Graph& ats) {
@@ -247,6 +247,17 @@ void rai::Frame::linkFrom(rai::Frame *_parent, bool adoptRelTransform) {
   parent=_parent;
   parent->parentOf.append(this);
   if(adoptRelTransform) Q = X/parent->X;
+}
+
+bool rai::Frame::isChildOf(const rai::Frame* par, int order) const{
+  Frame *p = parent;
+  while(p){
+    if(p->joint) order--;
+    if(order<0) return false;
+    if(p==par) return true;
+    p = p->parent;
+  }
+  return false;
 }
 
 rai::Joint::Joint(rai::Frame& f, rai::JointType _type) : Joint(f, (Joint*)NULL){
@@ -734,10 +745,9 @@ rai::Shape::Shape(Frame &f, const Shape *copyShape)
   frame.shape = this;
   if(copyShape) {
     const Shape& s = *copyShape;
-//    mesh_radius=s.mesh_radius;
-    cont=s.cont;
-    visual=s.visual;
-    geom = s.geom;
+    cont = s.cont;
+    visual = s.visual;
+    geom = s.geom; //shallow shared_ptr copy!
   }
 }
 
@@ -746,7 +756,7 @@ rai::Shape::~Shape() {
 }
 
 rai::Geom &rai::Shape::getGeom() {
-  if(!geom) geom = new Geom(_GeomStore());
+  if(!geom) geom = make_shared<Geom>();
   return *geom;
 }
 

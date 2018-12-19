@@ -258,12 +258,14 @@ void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) 
   SWIFT_Real *dists, *nearest_pts, *normals;
   
   try {
-    scene->Query_Contact_Determination(
-      false, cutoff, np,
-      &oids, &num_contacts,
-      &dists,
-      &nearest_pts,
-      &normals);
+//    scene->Query_Contact_Determination(
+//      false, cutoff, np,
+//      &oids, &num_contacts,
+//      &dists,
+//      &nearest_pts,
+//      &normals);
+    scene->Query_Tolerance_Verification(false, cutoff, np, &oids);
+//    scene->Query_Intersection(false, np, &oids);
   } catch(const char *msg) {
     world.proxies.clear();
     cout <<"... catching error '" <<msg <<"' -- SWIFT failed! .. no proxies for this posture!!..." <<endl;
@@ -285,7 +287,6 @@ void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) 
     }
   }
   
-  
   for(rai::Proxy& p:world.proxies) p.del_coll();
   world.proxies.resize(np);
   
@@ -296,8 +297,11 @@ void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) 
     //CHECK(ids(a)==a && ids(b)==b, "shape index does not coincide with swift index");
     proxy.a = world.frames(INDEXswift2frame(oids[i <<1]));
     proxy.b = world.frames(INDEXswift2frame(oids[(i <<1)+1]));
-    proxy.d = dists[i];
-    
+    proxy.d = -.0; //dists[i];
+    proxy.posA = proxy.a->X.pos;
+    proxy.posB = proxy.b->X.pos;
+
+#if 0
     //non-penetrating pair of objects
     if(num_contacts[i]>0) { //only add one proxy!for(j=0; j<num_contacts[i]; j++, k++) {
       CHECK_EQ(num_contacts[i], 1,"");
@@ -324,6 +328,7 @@ void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) 
     } else if(num_contacts[i]==0) {
       RAI_MSG("what is this?");
     }
+#endif
     
   }
   

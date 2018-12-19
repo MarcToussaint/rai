@@ -133,6 +133,12 @@ CXXFLAGS  += -DRAI_ODE -DdDOUBLE
 LIBS += -lode
 endif
 
+ifeq ($(FCL),1)
+DEPEND_UBUNTU += libfcl-0.5-dev
+CXXFLAGS  += -DRAI_FCL
+LIBS      += -lfcl
+endif
+
 ifeq ($(SWIFT),1)
 CXXFLAGS  += -DRAI_SWIFT
 CPATH	  := $(CPATH):$(LIBPATH)/SWIFT++_1.2/include

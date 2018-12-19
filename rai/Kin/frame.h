@@ -78,11 +78,12 @@ struct Frame : NonCopyable{
   Frame* insertPostLink(const rai::Transformation& B=0);
   void unLink();
   void linkFrom(Frame *_parent, bool adoptRelTransform=false);
+  bool isChildOf(const Frame* par, int order=1) const;
   
   Inertia& getInertia();
   
   void getRigidSubFrames(FrameL& F); ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
-  Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation); ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
+  Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   
   void read(const Graph &ats);
   void write(Graph &G);
@@ -170,7 +171,7 @@ stdOutPipe(Inertia)
 /// a Frame with Shape is a collision or visual object
 struct Shape : NonCopyable, GLDrawer {
   Frame& frame;
-  Geom *geom = NULL;
+  ptr<Geom> geom;
   
   Geom& getGeom(); ///< creates a geom if not yet initialized
   void setGeomMimic(const Frame* f);
@@ -191,6 +192,18 @@ struct Shape : NonCopyable, GLDrawer {
   
   Shape(Frame& f, const Shape *copyShape=NULL); //new Shape, being added to graph and body's shape lists
   virtual ~Shape();
+
+  bool canCollideWith(const Frame *f) const{
+    if(!cont) return false;
+    if(!f->shape || !f->shape->cont) return false;
+    Frame *a = frame.getUpwardLink();
+    Frame *b = f->getUpwardLink();
+    if(a==b) return false;
+    if(cont<0) if(a->isChildOf(b, -cont)) return false;
+    if(f->shape->cont<0)  if(b->isChildOf(a, -f->shape->cont)) return false;
+    return true;
+  }
+
   void read(const Graph &ats);
   void write(std::ostream& os) const;
   void write(Graph &g);

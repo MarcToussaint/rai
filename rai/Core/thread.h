@@ -13,10 +13,6 @@
 #include "array.h"
 #include "graph.h"
 
-#include <bits/shared_ptr.h>
-using std::shared_ptr;
-using std::make_shared;
-
 enum ThreadState { tsIsClosed=-6, tsToOpen=-2, tsLOOPING=-3, tsBEATING=-4, tsIDLE=0, tsToStep=1, tsToClose=-1,  tsFAILURE=-5,  }; //positive states indicate steps-to-go
 struct Signaler;
 struct Event;
@@ -169,7 +165,7 @@ template<class T> void operator<<(ostream& os, const Var_data<T>& v) { os <<"Var
     the variable's content */
 template<class T>
 struct Var {
-  shared_ptr<Var_data<T>> data;
+  ptr<Var_data<T>> data;
   rai::String name; ///< name; by default the RevLock's name; redefine to a variable's name to autoconnect
   Thread *thread;  ///< which thread is this a member of
   int last_read_revision;     ///< last revision that has been accessed (read or write)
@@ -429,19 +425,19 @@ Var_base::Ptr getVariable(const char* name);
 template<class T> Var_data<T>& getVariable(const char* name) {
   Var_base::Ptr v = getVariable(name);
   if(!v) HALT("can't find variable of name '" <<name <<"'");
-  shared_ptr<Var_data<T>> var = std::dynamic_pointer_cast<Var_data<T>>(v);
+  ptr<Var_data<T>> var = std::dynamic_pointer_cast<Var_data<T>>(v);
   if(!var) HALT("can't convert variable of type '" <<NAME(v->type) <<"' to '" <<NAME(typeid(T)) <<"'");
   return *var;
 }
 
 rai::Array<Var_base::Ptr*> getVariables();
 
-template<class T> rai::Array<shared_ptr<Var<T>>> getVariablesOfType() {
-  rai::Array<shared_ptr<Var<T>>> ret;
+template<class T> rai::Array<ptr<Var<T>>> getVariablesOfType() {
+  rai::Array<ptr<Var<T>>> ret;
   rai::Array<Var_base::Ptr*> vars = getVariables();
   for(Var_base::Ptr* v : vars) {
     if((*v)->type==typeid(T)) ret.append(std::make_shared<Var<T>>((Thread*)0, *v));
-//    shared_ptr<VariableData<T>> var = std::dynamic_pointer_cast<VariableData<T>>(*v);
+//    ptr<VariableData<T>> var = std::dynamic_pointer_cast<VariableData<T>>(*v);
 //    if(var) ret.append(Var<T>(NULL, var));
   }
   return ret;

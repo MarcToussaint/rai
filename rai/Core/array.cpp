@@ -1114,7 +1114,7 @@ void scanArrFile(const char* name) {
   ifstream is(name, std::ios::binary);
   CHECK(is.good(), "couldn't open file " <<name);
   arr x;
-  String tag;
+  rai::String tag;
   for(;;) {
     tag.read(is, " \n\r\t", " \n\r\t");
     if(!is.good() || tag.N==0) return;
