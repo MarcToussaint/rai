@@ -77,7 +77,7 @@ void rai::Geom::createMeshes() {
       double rad=1;
       if(size.N==1) rad=size(0);
       else rad=size(3);
-      mesh.setSSCvx(sscCore, rad, 3);
+      mesh.setSSCvx(sscCore, rad);
       //      mesh.setSphere();
       //      mesh.scale(size(3), size(3), size(3));
     } break;
@@ -133,6 +133,9 @@ void rai::Geom::createMeshes() {
 }
 
 void rai::Geom::glDraw(OpenGL &gl) {
+  if(!mesh.V.N) createMeshes();
+  mesh.glDraw(gl);
+  return;
   bool drawCores = false;
   bool drawMeshes = true;
   switch(type) {

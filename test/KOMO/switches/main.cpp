@@ -10,7 +10,7 @@ using namespace std;
 
 void TEST(Grasp){
   rai::KinematicWorld K("model.g");
-  K.optimizeTree(false);
+  K.optimizeTree();
   K.checkConsistency();
   FILE("z.g") <<K;
 

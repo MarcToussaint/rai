@@ -1118,7 +1118,6 @@ void rai::FileToken::cd_file() {
 }
 
 bool rai::FileToken::exists() {
-  cd_file();
   struct stat sb;
   int r=stat(name, &sb);
   return r==0;

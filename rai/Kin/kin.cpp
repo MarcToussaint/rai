@@ -2618,19 +2618,22 @@ void rai::KinematicWorld::reconnectLinksToClosestJoints() {
   }
 }
 
-void rai::KinematicWorld::pruneUselessFrames(bool preserveNamed) {
+void rai::KinematicWorld::pruneUselessFrames(bool pruneNamed, bool pruneNonContactNonMarker) {
   for(uint i=frames.N; i--;) {
     Frame *f=frames.elem(i);
-    if((!preserveNamed || !f->name) && !f->parentOf.N && !f->joint && !f->shape && !f->inertia) {
-      delete f; //that's all there is to do
+    if((pruneNamed || !f->name) && !f->parentOf.N && !f->joint && !f->inertia) {
+      if(!f->shape)
+        delete f; //that's all there is to do
+      else if(pruneNonContactNonMarker && !f->shape->cont && f->shape->type()!=ST_marker)
+        delete f;
     }
   }
 }
 
-void rai::KinematicWorld::optimizeTree(bool preserveNamed, bool _pruneRigidJoints) {
+void rai::KinematicWorld::optimizeTree(bool _pruneRigidJoints, bool pruneNamed, bool pruneNonContactNonMarker) {
   if(_pruneRigidJoints) pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
   reconnectLinksToClosestJoints();
-  pruneUselessFrames(preserveNamed);
+  pruneUselessFrames(pruneNamed, pruneNonContactNonMarker);
   calc_activeSets();
   checkConsistency();
 }

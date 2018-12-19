@@ -71,10 +71,8 @@ void TEST(Align){
 //===========================================================================
 
 void TEST(PR2){
-  //NOTE: this uses a 25-DOF whole-body-motion model of thbe PR2
   rai::KinematicWorld K("model.g");
-  K.pruneRigidJoints();
-  K.optimizeTree();
+  K.optimizeTree(true);
 //  makeConvexHulls(K.frames);
   cout <<"configuration space dim=" <<K.getJointStateDimension() <<endl;
   double rand = rai::getParameter<double>("KOMO/moveTo/randomizeInitialPose", .0);
