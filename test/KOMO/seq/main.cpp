@@ -12,6 +12,8 @@ void TEST(KomoSequence){
   KOMO_ext komo;
   komo.setConfigFromFile();
 
+  makeConvexHulls(komo.world.frames);
+
   //  komo.setHoming(-1., -1., 1e-1);
   //  komo.setSquaredQVelocities();
   komo.setFixSwitchedObjects();
