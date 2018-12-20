@@ -91,7 +91,7 @@ CXXFLAGS := -O3 -pg -Wall -DRAI_NOCHECK -fno-inline $(CXXFLAGS)
 LDFLAGS += -pg
 endif
 ifeq ($(OPTIM),callgrind)
-CXXFLAGS := -O3 -g -Wall -DRAI_NOCHECK $(CXXFLAGS) #-fno-inline
+CXXFLAGS := -O -g -Wall -DRAI_NOCHECK -fno-inline $(CXXFLAGS)
 endif
 
 
