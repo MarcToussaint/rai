@@ -90,6 +90,7 @@ void KOMO::setModel(const KinematicWorld& K,
 
   if(&K!=&world) world.copy(K);
   useSwift = _useSwift;
+  if(useSwift) world.swift();
   world.calc_q();
 }
 
