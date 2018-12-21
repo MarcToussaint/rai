@@ -6,7 +6,6 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "videoEncoder.h"
 #ifdef RAI_OPENCV
 
 #undef COUNT
@@ -14,6 +13,7 @@
 #undef MIN
 #undef MAX
 #include "opencv.h"
+#include "videoEncoder.h"
 
 struct sVideoEncoder_OpenCV {
   CvVideoWriter *video;

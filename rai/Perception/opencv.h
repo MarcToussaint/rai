@@ -11,9 +11,6 @@
 
 //OpenCV (C++) wrappers
 
-#include <Core/array.h>
-#include <Core/util.h>
-
 #ifdef RAI_OPENCV
 
 #undef COUNT
@@ -21,6 +18,9 @@
 #include <opencv2/opencv.hpp>
 #undef MIN
 #undef MAX
+
+#include <Core/array.h>
+#include <Core/util.h>
 
 extern ::Mutex cvMutex;
 

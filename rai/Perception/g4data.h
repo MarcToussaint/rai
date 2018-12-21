@@ -48,9 +48,9 @@ struct G4ID {
   const StringA& limbs();
   const StringA& digits();
   
-  const StringA& digitsof(const String &limb);
-  const StringA& sublimbs(const String &limb);
-  const String& suplimb(const String &limb);
+  const StringA& digitsof(const rai::String &limb);
+  const StringA& sublimbs(const rai::String &limb);
+  const rai::String& suplimb(const rai::String &limb);
   
   uint hsitoi(uint hsi);
   uint itohsi(uint i);
@@ -60,7 +60,7 @@ struct G4ID {
   const char *sensor(uint hsi);
   
   template <class T>
-  rai::Array<T> query(const rai::Array<T> &data, const String &sensor);
+  rai::Array<T> query(const rai::Array<T> &data, const rai::String &sensor);
   template <class T>
   rai::Array<T> query(const rai::Array<T> &data, const StringA &sensors);
   
@@ -78,7 +78,7 @@ stdOutPipe(G4ID);
 //
 
 struct G4Rec {
-  String dir;
+  rai::String dir;
   G4ID g4id;
   Graph kvg, kvgann, params; // TODO ideally, I'd want to use the param class here..
   
@@ -138,13 +138,13 @@ stdOutPipe(G4Rec);
 //
 
 struct G4Data {
-  String basedir;
+  rai::String basedir;
   Graph kvg;
   
   G4Data();
   ~G4Data();
   
-  String &base();
+  rai::String &base();
   void load(const char *recdir, bool interpolate = true);
   G4Rec &rec(const char *recdir);
   
@@ -162,7 +162,7 @@ stdOutPipe(G4Data);
 //
 
 struct G4RawSeq {
-  String sensor1, sensor2;
+  rai::String sensor1, sensor2;
   arr data1, data2;
   uint nframes;
   arr ann;
@@ -183,7 +183,7 @@ stdOutPipe(G4RawSeq);
 //
 
 struct G4FeatSeq { /*: Parametric*/
-  String sensor1, sensor2;
+  rai::String sensor1, sensor2;
   arr data;
   uint nframes, nframes_thin;
   arr ann, ann_thin;

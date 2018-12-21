@@ -22,12 +22,12 @@ struct RobotAbstraction_KukaWSG : RobotAbstraction{
     Var<sensor_msgs::JointState> jointState;
     Var<tf::tfMessage> tfMessages;
     Var<rai_msgs::WSG_50_command> gripperCommand;
-    std::map<String, Var<geometry_msgs::PoseStamped>> objectStates;
+    std::map<rai::String, Var<geometry_msgs::PoseStamped>> objectStates;
 
     std::shared_ptr<Subscriber<sensor_msgs::JointState>> sub_jointState; //subscriber
     std::shared_ptr<Subscriber<tf::tfMessage>> sub_tfMessages; //subscriber
     std::shared_ptr<Publisher<rai_msgs::WSG_50_command>> pub_gripperCommand; //subscriber
-    std::map<String, std::shared_ptr<Subscriber<geometry_msgs::PoseStamped>>> sub_objectStates; //subscribers
+    std::map<rai::String, std::shared_ptr<Subscriber<geometry_msgs::PoseStamped>>> sub_objectStates; //subscribers
 
     arr q0;
     uint gripperCommandCounter=0;

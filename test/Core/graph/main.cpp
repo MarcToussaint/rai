@@ -105,7 +105,7 @@ void TEST(Random){
 
   for(uint k=0;k<10;k++){
     rndModify(rndSubgraph(A));
-    Graph& C = rndSubgraph(A).newSubgraph({}, {})->value;
+    Graph& C = rndSubgraph(A).newSubgraph({}, {});
 
     Graph& D = rndSubgraph(A);
     if(D.N){
