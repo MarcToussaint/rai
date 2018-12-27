@@ -23,6 +23,7 @@ void draw1(void*){
 
 void TEST(Teapot) {
   OpenGL gl;
+  gl.reportEvents = true;
   gl.add(draw1,0);
   gl.watch();
   cout <<"returned from watch - watch again" <<endl;

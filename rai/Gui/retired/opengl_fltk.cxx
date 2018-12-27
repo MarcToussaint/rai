@@ -74,9 +74,9 @@ void sOpenGL::draw() {
 
 int sOpenGL::handle(int event) {
   switch(event) {
-    case FL_PUSH:    gl->Mouse(Fl::event_button()-1, false, Fl::event_x(), Fl::event_y());  break;
-    case FL_DRAG:    gl->Motion(Fl::event_x(), Fl::event_y());  break;
-    case FL_RELEASE: gl->Mouse(Fl::event_button()-1, true, Fl::event_x(), Fl::event_y());  break;
+    case FL_PUSH:    gl->MouseButton(Fl::event_button()-1, false, Fl::event_x(), Fl::event_y());  break;
+    case FL_DRAG:    gl->MouseMotion(Fl::event_x(), Fl::event_y());  break;
+    case FL_RELEASE: gl->MouseButton(Fl::event_button()-1, true, Fl::event_x(), Fl::event_y());  break;
     case FL_MOVE:    gl->PassiveMotion(Fl::event_x(), Fl::event_y());  break;
     case FL_MOUSEWHEEL:  break; // MouseWheel(int wheel, int direction, Fl::event_x(), Fl::event_y());  break;
     

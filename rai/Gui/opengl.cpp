@@ -10,8 +10,12 @@
 #include <Geo/geo.h>
 #ifdef RAI_GL
 #  include <GL/glew.h>
+#  include <GL/glx.h>
 #endif
 #include "opengl.h"
+#ifdef RAI_GLFW
+#  include <GLFW/glfw3.h>
+#endif
 
 #ifdef RAI_PNG
 #  include <png.h>
@@ -28,10 +32,9 @@ Singleton<SingleGLAccess> singleGLAccess;
 #ifdef RAI_FREEGLUT
 
 #include <GL/freeglut.h>
-#include <GL/glx.h>
 //===========================================================================
 //
-// A singleton to ensure once initialization
+// A freeglut singleton to ensure once initialization
 //
 
 Mutex& OpenGLMutex();
@@ -83,7 +86,7 @@ public:
     numWins--;
     if(!numWins){ //stop looping
        OpenGLMutex().unlock();
-      th.threadClose(true);
+      th.threadClose();
       OpenGLMutex().lock();
       for(uint i=0;i<10;i++) glutMainLoopEvent(); //ensure that all windows are being closed
     }
@@ -93,9 +96,9 @@ public:
   }
 };
 
-Singleton<OpenGLProcess> singleFreeglut;
+Singleton<OpenGLProcess> singleGlProcess;
 
-Mutex& OpenGLMutex() { return singleFreeglut.mutex; }
+Mutex& OpenGLMutex() { return singleGlProcess.mutex; }
 
 struct SFG_Display_dummy {
   _XDisplay *Display;
@@ -126,14 +129,14 @@ struct sOpenGL {
   
   //-- callbacks
   static void _Void() { }
-  static void _Draw() { auto fg=singleFreeglut();  OpenGL *gl=fg->getGL(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
-  static void _Key(unsigned char key, int x, int y) {        singleFreeglut()->getGL(glutGetWindow())->Key(key,x,y); }
-  static void _Mouse(int button, int updown, int x, int y) { singleFreeglut()->getGL(glutGetWindow())->Mouse(button,updown,x,y); }
-  static void _Motion(int x, int y) {                        singleFreeglut()->getGL(glutGetWindow())->Motion(x,y); }
-  static void _PassiveMotion(int x, int y) {                 singleFreeglut()->getGL(glutGetWindow())->Motion(x,y); }
-  static void _Reshape(int w,int h) {                        singleFreeglut()->getGL(glutGetWindow())->Reshape(w,h); }
-  static void _MouseWheel(int wheel, int dir, int x, int y) { singleFreeglut()->getGL(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
-  static void _WindowStatus(int status)                     { singleFreeglut()->getGL(glutGetWindow())->WindowStatus(status); }
+  static void _Draw() { auto fg=singleGlProcess();  OpenGL *gl=fg->getGL(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
+  static void _Key(unsigned char key, int x, int y) {        singleGlProcess()->getGL(glutGetWindow())->Key(key,x,y); }
+  static void _Mouse(int button, int updown, int x, int y) { singleGlProcess()->getGL(glutGetWindow())->Mouse(button,updown,x,y); }
+  static void _Motion(int x, int y) {                        singleGlProcess()->getGL(glutGetWindow())->Motion(x,y); }
+  static void _PassiveMotion(int x, int y) {                 singleGlProcess()->getGL(glutGetWindow())->Motion(x,y); }
+  static void _Reshape(int w,int h) {                        singleGlProcess()->getGL(glutGetWindow())->Reshape(w,h); }
+  static void _MouseWheel(int wheel, int dir, int x, int y) { singleGlProcess()->getGL(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
+  static void _WindowStatus(int status)                     { singleGlProcess()->getGL(glutGetWindow())->WindowStatus(status); }
   
   void accessWindow() {  //same as above, but also sets gl cocntext (glXMakeCurrent)
     CHECK_GE(windowID, 0,"window is not created");
@@ -152,13 +155,13 @@ struct sOpenGL {
 //
 
 void OpenGL::forceGlutInit() {
-  singleFreeglut();
+  singleGlProcess();
 }
 
 void OpenGL::openWindow() {
   if(s->windowID==-1) {
     {
-      auto fg = singleFreeglut();
+      auto fg = singleGlProcess();
       glutInitWindowSize(width, height);
       //  glutInitWindowPosition(posx,posy);
       glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
@@ -182,7 +185,7 @@ void OpenGL::openWindow() {
 
 void OpenGL::closeWindow() {
   if(s->windowID!=-1) {
-    auto fg=singleFreeglut();
+    auto fg=singleGlProcess();
     glutDestroyWindow(s->windowID);
     fg->delGL(s->windowID, this);
   }
@@ -190,7 +193,7 @@ void OpenGL::closeWindow() {
 }
 
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {
-  auto fg=singleFreeglut();
+  auto fg=singleGlProcess();
   s->accessWindow();
   glutPostRedisplay();
   s->deaccessWindow();
@@ -201,14 +204,14 @@ void OpenGL::resize(int w,int h) {
   if(s->windowID==-1) {
     Reshape(w, h);
   } else {
-    auto fg=singleFreeglut();
+    auto fg=singleGlProcess();
     s->accessWindow();
     glutReshapeWindow(w,h);
     s->deaccessWindow();
   }
 }
 
-#else
+#elif 0
 
 void OpenGL::openWindow() {}
 void OpenGL::closeWindow() {}
@@ -233,19 +236,204 @@ struct sOpenGL {
   
   //-- callbacks
   // static void _Void() { }
-  // static void _Draw() { auto fg=singleFreeglut();  OpenGL *gl=fg->getGL(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
-  // static void _Key(unsigned char key, int x, int y) {        singleFreeglut()->getGL(glutGetWindow())->Key(key,x,y); }
-  // static void _Mouse(int button, int updown, int x, int y) { singleFreeglut()->getGL(glutGetWindow())->Mouse(button,updown,x,y); }
-  // static void _Motion(int x, int y) {                        singleFreeglut()->getGL(glutGetWindow())->Motion(x,y); }
-  // static void _PassiveMotion(int x, int y) {                 singleFreeglut()->getGL(glutGetWindow())->Motion(x,y); }
-  // static void _Reshape(int w,int h) {                        singleFreeglut()->getGL(glutGetWindow())->Reshape(w,h); }
-  // static void _MouseWheel(int wheel, int dir, int x, int y){ singleFreeglut()->getGL(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
+  // static void _Draw() { auto fg=singleGlProcess();  OpenGL *gl=fg->getGL(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
+  // static void _Key(unsigned char key, int x, int y) {        singleGlProcess()->getGL(glutGetWindow())->Key(key,x,y); }
+  // static void _Mouse(int button, int updown, int x, int y) { singleGlProcess()->getGL(glutGetWindow())->Mouse(button,updown,x,y); }
+  // static void _Motion(int x, int y) {                        singleGlProcess()->getGL(glutGetWindow())->Motion(x,y); }
+  // static void _PassiveMotion(int x, int y) {                 singleGlProcess()->getGL(glutGetWindow())->Motion(x,y); }
+  // static void _Reshape(int w,int h) {                        singleGlProcess()->getGL(glutGetWindow())->Reshape(w,h); }
+  // static void _MouseWheel(int wheel, int dir, int x, int y){ singleGlProcess()->getGL(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
   
   void accessWindow() {  //same as above, but also sets gl cocntext (glXMakeCurrent)
   }
   void deaccessWindow() {
   }
 };
+#endif
+
+#ifdef RAI_GLFW
+Mutex& OpenGLMutex();
+static uint GLProcessCount = 0;
+
+//===========================================================================
+//
+// OpenGL hidden self
+//
+
+struct sOpenGL : NonCopyable {
+  sOpenGL(OpenGL *gl){}
+
+  int needsRedraw=0;
+
+  //-- private OpenGL data
+
+  //-- engine specific data
+  GLFWwindow* window=0;
+};
+
+
+struct GlfwSpinner : Thread {
+  rai::Array<OpenGL*> glwins;
+  GlfwSpinner() : Thread("GlfwSpinnerSpinner", .025) {
+    glfwSetErrorCallback(error_callback);
+    if (!glfwInit()) exit(EXIT_FAILURE);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+
+    int argc=1;
+    char *argv[1]= {(char*)"x"};
+    glutInit(&argc, argv);
+
+    threadLoop();
+  }
+  ~GlfwSpinner() {
+    threadClose();
+    glfwTerminate();
+  }
+  void open() {}
+  void step() {
+    glfwWaitEvents();
+//    glfwPollEvents();
+    static uint count=0;
+    cout <<"HERE" <<count++;
+    OpenGLMutex().lock();
+    for(OpenGL* gl: glwins) if(gl->s->needsRedraw){
+      glfwMakeContextCurrent(gl->s->window);
+      gl->Draw(gl->width,gl->height);
+      glfwSwapBuffers(gl->s->window);
+      gl->isUpdating.setStatus(0);
+      gl->s->needsRedraw--;
+      cout <<"DRAW";
+    }
+    OpenGLMutex().unlock();
+    cout <<endl;
+  }
+  void close() {}
+
+  void addGL(OpenGL* gl) {
+    glwins.append(gl);
+    gl->s->needsRedraw = 10;
+    if(glwins.N==1) threadLoop(); //start looping
+  }
+
+  void delGL(OpenGL* gl) {
+    glwins.removeValue(gl);
+    if(!glwins.N){ //stop looping
+      OpenGLMutex().unlock();
+      glfwPostEmptyEvent();
+      threadClose();
+      OpenGLMutex().lock();
+      for(uint i=0;i<10;i++){
+        glfwPostEmptyEvent();
+        glfwPollEvents(); //ensure that all windows are being closed
+      }
+    }
+  }
+
+  static void error_callback(int error, const char* description){
+      HALT("GLFW error " <<error <<": " <<description);
+  }
+
+  static void _MouseButton(GLFWwindow* window, int button, int action, int mods){
+    OpenGL *gl=(OpenGL*)glfwGetWindowUserPointer(window);
+    double xpos, ypos;
+    glfwGetCursorPos(window, &xpos, &ypos);
+    if(button==GLFW_MOUSE_BUTTON_RIGHT) button = 2;
+    else if(button==GLFW_MOUSE_BUTTON_MIDDLE) button = 1;
+    gl->MouseButton(button, 1-action, xpos, ypos);
+  }
+
+  static void _MouseMotion(GLFWwindow* window, double xpos, double ypos){
+    OpenGL *gl=(OpenGL*)glfwGetWindowUserPointer(window);
+    gl->MouseMotion(xpos, ypos);
+  }
+
+  static void _Key(GLFWwindow* window, int key, int scancode, int action, int mods){
+    if(action == GLFW_PRESS){
+      OpenGL *gl=(OpenGL*)glfwGetWindowUserPointer(window);
+      if(key==256) key=27;
+      if(key==257) key=13;
+      if(key>='A' && key<='Z') key += 'a' - 'A';
+      gl->Key(key);
+    }
+  }
+
+  static void _Resize(GLFWwindow* window, int width, int height){
+    OpenGL *gl=(OpenGL*)glfwGetWindowUserPointer(window);
+    gl->Reshape(width, height);
+  }
+
+  static void _Close(GLFWwindow* window){
+//      if (!time_to_close)
+//          glfwSetWindowShouldClose(window, GLFW_FALSE);
+  }
+
+  static void _Scroll(GLFWwindow* window, double xoffset, double yoffset){
+    OpenGL *gl=(OpenGL*)glfwGetWindowUserPointer(window);
+    gl->Scroll(0, yoffset);
+  }
+
+};
+
+Singleton<GlfwSpinner> singleGlProcess;
+
+Mutex& OpenGLMutex() { return singleGlProcess.mutex; }
+
+
+void OpenGL::openWindow() {
+  if(!s->window) {
+    auto fg = singleGlProcess();
+
+    s->window = glfwCreateWindow(width, height, "Simple example", NULL, NULL);
+    glfwMakeContextCurrent(s->window);
+    glfwSetWindowUserPointer(s->window, this);
+    glfwSetMouseButtonCallback(s->window, GlfwSpinner::_MouseButton);
+    glfwSetCursorPosCallback(s->window, GlfwSpinner::_MouseMotion);
+    glfwSetKeyCallback(s->window, GlfwSpinner::_Key);
+    glfwSetScrollCallback(s->window, GlfwSpinner::_Scroll);
+    glfwSetWindowSizeCallback(s->window, GlfwSpinner::_Resize);
+    glfwSetWindowCloseCallback(s->window, GlfwSpinner::_Close);
+
+    glfwSwapInterval(1);
+
+    fg->addGL(this);
+  }
+}
+
+void OpenGL::closeWindow() {
+  if(s->window) {
+    auto fg = singleGlProcess();
+    fg->delGL(this);
+    glfwDestroyWindow(s->window);
+    s->window=0;
+
+    LOG(-1) <<"??)";
+  }
+}
+
+void OpenGL::postRedrawEvent(bool fromWithinCallback) {
+  if(!s->needsRedraw)
+    s->needsRedraw=1;
+  glfwPostEmptyEvent();
+//  auto fg=singleGlProcess();
+//  s->accessWindow();
+
+//  glutPostRedisplay();
+//  s->deaccessWindow();
+}
+
+void OpenGL::resize(int w,int h) {
+//  openWindow();
+//  if(s->windowID==-1) {
+//    Reshape(w, h);
+//  } else {
+//    auto fg=singleGlProcess();
+//    s->accessWindow();
+//    glutReshapeWindow(w,h);
+//    s->deaccessWindow();
+//  }
+}
+
 #endif
 
 //===========================================================================
@@ -1262,18 +1450,19 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 OpenGL::OpenGL(const char* _title, int w, int h, int posx, int posy)
   : s(NULL), title(_title), width(w), height(h), reportEvents(false), topSelection(NULL), computeImage(false), computeDepth(false), fboId(0), rboColor(0), rboDepth(0) {
   //RAI_MSG("creating OpenGL=" <<this);
-  Reshape(w,h);
   s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
   init();
+  Reshape(w,h);
 }
 
 OpenGL::OpenGL(void *container)
   : s(NULL), width(0), height(0), reportEvents(false), topSelection(NULL), computeImage(false), computeDepth(false), fboId(0), rboColor(0), rboDepth(0) {
-  s=new sOpenGL(this,container); //this might call some callbacks (Reshape/Draw) already!
+  s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
   init();
 }
 
 OpenGL::~OpenGL() {
+  closeWindow();
   clear();
   delete s;
   s=NULL;
@@ -1298,7 +1487,6 @@ void OpenGL::init() {
   
   reportEvents=false;
   reportSelects=false;
-  immediateExitLoop=false;
   exitkeys="";
   
   backgroundZoom=1;
@@ -1600,8 +1788,6 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
 #ifdef RAI_GL
   uint i, j, k;
   
-  s->beginGlContext();
-  
   glSelectBuffer(1000, selectionBuffer);
   glRenderMode(GL_SELECT);
   
@@ -1672,8 +1858,6 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
   }
   
   if(reportSelects) reportSelection();
-  
-  s->endGlContext();
 #endif
   if(!callerHasAlreadyLocked) {
     dataLock.unlock();
@@ -1858,7 +2042,7 @@ void OpenGL::about(std::ostream& os) { RAI_MSG("NICO"); }
 //
 
 #if 1
-#  define CALLBACK_DEBUG(x) if(reportEvents) { cout <<RAI_HERE <<s <<':'; x; }
+#  define CALLBACK_DEBUG(x) if(reportEvents) { LOG(0) <<x; }
 #elif 1
 #  define CALLBACK_DEBUG(x) { cout <<RAI_HERE <<s <<':'; x; }
 #else
@@ -1869,8 +2053,8 @@ void getSphereVector(rai::Vector& vec, int _x, int _y, int le, int ri, int bo, i
   int w=ri-le, h=to-bo;
   int minwh = w<h?w:h;
   double x, y;
-  x=(double)_x;  x=x-le-.5*w;   x*= 2./minwh;
-  y=(double)_y;  y=y-bo-.5*h; y*= 2./minwh;
+  x=(double)_x;  x=x-le-.5*w;  x*= 2./minwh;
+  y=(double)_y;  y=y-bo-.5*h;  y*= 2./minwh;
   vec.x=x;
   vec.y=y;
   vec.z=.5-(x*x+y*y);
@@ -1879,21 +2063,20 @@ void getSphereVector(rai::Vector& vec, int _x, int _y, int le, int ri, int bo, i
 
 void OpenGL::Reshape(int _width, int _height) {
   dataLock.writeLock();
-  CALLBACK_DEBUG(printf("Window %d Reshape Callback:  %d %d\n", 0, _width, _height));
+  CALLBACK_DEBUG("Reshape Callback: " <<_width <<' ' <<_height);
   width=_width;
   height=_height;
   if(width%4) width = 4*(width/4);
   if(height%2) height = 2*(height/2);
   camera.setWHRatio((double)width/height);
   for(uint v=0; v<views.N; v++) views(v).camera.setWHRatio((views(v).ri-views(v).le)*width/((views(v).to-views(v).bo)*height));
+  postRedrawEvent(true);
   dataLock.unlock();
 }
 
-void OpenGL::Key(unsigned char key, int _x, int _y) {
+void OpenGL::Key(unsigned char key) {
   dataLock.writeLock();
-  _y = height-_y;
-  CALLBACK_DEBUG(printf("Window %d Keyboard Callback:  %d (`%c') %d %d\n", 0, key, (char)key, _x, _y));
-  mouseposx=_x; mouseposy=_y;
+  CALLBACK_DEBUG("Keyboard Callback: " <<key <<"('" <<(char)key <<"')");
   pressedkey=key;
   
   bool cont=true;
@@ -1903,11 +2086,11 @@ void OpenGL::Key(unsigned char key, int _x, int _y) {
   dataLock.unlock();
 }
 
-void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
+void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
   dataLock.writeLock();
   int w=width, h=height;
   _y = h-_y;
-  CALLBACK_DEBUG(printf("Window %d Mouse Click Callback:  %d %d %d %d\n", 0, button, downPressed, _x, _y));
+  CALLBACK_DEBUG("Mouse Click Callback: " <<button <<' ' <<downPressed <<' ' <<_x <<' ' <<_y);
   mouse_button=1+button;
   if(downPressed) mouse_button=-1-mouse_button;
   mouseposx=_x; mouseposy=_y;
@@ -1925,7 +2108,7 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
     }
   }
   if(mouseView==-1) getSphereVector(vec, _x, _y, 0, w, 0, h);
-  CALLBACK_DEBUG(cout <<"associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
+  CALLBACK_DEBUG("associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
   
   if(!downPressed) {  //down press
     if(mouseIsDown) { dataLock.unlock(); return; } //the button is already down (another button was pressed...)
@@ -1939,13 +2122,13 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
     drawFocus = false;
   }
   //store where you've clicked
-  s->downVec=vec;
-  s->downRot=cam->X.rot;
-  s->downPos=cam->X.pos;
-  s->downFoc=cam->foc;
+  downVec=vec;
+  downRot=cam->X.rot;
+  downPos=cam->X.pos;
+  downFoc=cam->foc;
   
   //check object clicked on
-  int modifiers = glutGetModifiers();
+  int modifiers = 0; //glutGetModifiers();
   if(mouse_button==1 && modifiers&GLUT_ACTIVE_SHIFT) {
     drawFocus = false;
     if(!downPressed){
@@ -1975,46 +2158,34 @@ void OpenGL::Mouse(int button, int downPressed, int _x, int _y) {
 //  }
   
   //mouse scroll wheel:
-  if(mouse_button==4 && !downPressed) cam->X.pos += s->downRot*Vector_z * (.1 * (s->downPos-s->downFoc).length());
-  if(mouse_button==5 && !downPressed) cam->X.pos -= s->downRot*Vector_z * (.1 * (s->downPos-s->downFoc).length());
+  if(mouse_button==4 && !downPressed) cam->X.pos += downRot*Vector_z * (.1 * (downPos-downFoc).length());
+  if(mouse_button==5 && !downPressed) cam->X.pos -= downRot*Vector_z * (.1 * (downPos-downFoc).length());
   
-  if(mouse_button==3) {  //selection
-#ifdef RAI_GL
+  if(mouse_button==2) {  //selection
     captureDepth.resize(h, w);
     glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
     double d = captureDepth(mouseposy, mouseposx);
-    if(d<.01 || d==1.) {
+    if(d<.001 || d==1.) {
       cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
     } else {
       double x=mouseposx, y=mouseposy;
       unproject(x, y, d, true, mouseView);
       cam->focus(x, y, d);
     }
-#else
-    {
-      auto sgl = singleGLAccess();
-      Select(true);
-    }
-    if(topSelection) {
-      cam->focus(topSelection->x, topSelection->y, topSelection->z);
-    }
-#endif
   }
   
   //step through all callbacks
-  bool cont=true;
   if(!downPressed) {
-    for(uint i=0; i<clickCalls.N; i++) cont=cont && clickCalls(i)->clickCallback(*this);
+    for(uint i=0; i<clickCalls.N; i++) clickCalls(i)->clickCallback(*this);
   }
-  if(!cont) { postRedrawEvent(true); dataLock.unlock(); return; }
   
   postRedrawEvent(true);
   dataLock.unlock();
 }
 
-void OpenGL::MouseWheel(int wheel, int direction, int x, int y) {
+void OpenGL::Scroll(int wheel, int direction) {
   dataLock.writeLock();
-  CALLBACK_DEBUG(printf("Window %d Mouse Wheel Callback:  %d %d %d %d\n", 0, wheel, direction, x, y));
+  CALLBACK_DEBUG("Mouse Wheel Callback: " <<wheel <<' ' <<direction);
   if(direction>0) camera.X.pos += camera.X.rot*Vector_z * (.1 * (camera.X.pos-camera.foc).length());
   else            camera.X.pos -= camera.X.rot*Vector_z * (.1 * (camera.X.pos-camera.foc).length());
   postRedrawEvent(true);
@@ -2023,16 +2194,16 @@ void OpenGL::MouseWheel(int wheel, int direction, int x, int y) {
 
 void OpenGL::WindowStatus(int status){
   dataLock.writeLock();
-  CALLBACK_DEBUG(printf("Window %d WindowStatus Callback:  %d\n", 0, status));
+  CALLBACK_DEBUG("WindowStatus Callback: " <<status);
   dataLock.unlock();
 }
 
-void OpenGL::Motion(int _x, int _y) {
+void OpenGL::MouseMotion(int _x, int _y) {
 #ifdef RAI_GL
   dataLock.writeLock();
   int w=width, h=height;
   _y = h-_y;
-  CALLBACK_DEBUG(printf("Window %d Mouse Motion Callback:  %d %d\n", 0, _x, _y));
+  CALLBACK_DEBUG("Mouse Motion Callback: " <<_x <<' ' <<_y);
   mouseposx=_x; mouseposy=_y;
   rai::Camera *cam;
   rai::Vector vec;
@@ -2043,8 +2214,8 @@ void OpenGL::Motion(int _x, int _y) {
     cam=&views(mouseView).camera;
     getSphereVector(vec, _x, _y, views(mouseView).le*w, views(mouseView).ri*w, views(mouseView).bo*h, views(mouseView).to*h);
   }
-  CALLBACK_DEBUG(cout <<"associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
-  lastEvent.set(mouse_button, -1, _x, _y, vec.x-s->downVec.x, vec.y-s->downVec.y);
+  CALLBACK_DEBUG("associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
+  lastEvent.set(mouse_button, -1, _x, _y, vec.x-downVec.x, vec.y-downVec.y);
   if(!mouseIsDown) {  //passive motion -> hover callbacks
     mouseposx=_x; mouseposy=_y;
     bool ud=false;
@@ -2053,38 +2224,37 @@ void OpenGL::Motion(int _x, int _y) {
     dataLock.unlock();
     return;
   }
-  if(mouse_button==1) {  //rotation // && !(modifiers&GLUT_ACTIVE_SHIFT) && !(modifiers&GLUT_ACTIVE_CTRL)){
+  if(mouse_button==1) {  //rotation
     rai::Quaternion rot;
-    if(s->downVec.z<.1) {
-      rot.setDiff(vec, s->downVec);  //consider imagined sphere rotation of mouse-move
+    if(downVec.z<.1) {
+      //margin:
+      rot.setDiff(vec, downVec);  //consider imagined sphere rotation of mouse-move
     } else {
-      rot.setVec((vec-s->downVec) ^ Vector_z); //consider only xy-mouse-move
+      //inside: use starndard xy to rotate
+      rot.setVec(2.*(vec-downVec) ^ Vector_z); //consider only xy-mouse-move
     }
-#if 0 //rotate about origin
-    cam->X.rot = s->downRot * rot;   //rotate camera's direction
-    rot = s->downRot * rot / s->downRot; //interpret rotation relative to current viewing
-    cam->X.pos = rot * s->downPos;   //rotate camera's position
-#else //rotate about focus
-    cam->X.rot = s->downRot * rot;   //rotate camera's direction
-    rot = s->downRot * rot / s->downRot; //interpret rotation relative to current viewing
-    cam->X.pos = s->downFoc + rot * (s->downPos - s->downFoc);   //rotate camera's position
-    //cam->focus();
-#endif
+    //rotate about focus
+    cam->X.rot = downRot * rot;   //rotate camera's direction
+    rot = downRot * rot / downRot; //interpret rotation relative to current viewing
+    cam->X.pos = downFoc + rot * (downPos - downFoc);   //rotate camera's position
     postRedrawEvent(true);
-    if(immediateExitLoop) watching.setStatus(0);
   }
   if(mouse_button==3) {  //translation || (mouse_button==1 && (modifiers&GLUT_ACTIVE_SHIFT) && !(modifiers&GLUT_ACTIVE_CTRL))){
-    /*    rai::Vector trans = s->downVec - vec;
-        trans.z=0.;
-        trans = s->downRot*trans;
-        cam->X.pos = s->downPos + trans;
-        postRedrawEvent(true);*/
+    rai::Vector trans = vec - downVec;
+    trans.z = 0.;
+    trans *= .5*(downFoc - downPos).length();
+    trans = downRot * trans;
+    cam->X.pos = downPos - trans;
+    postRedrawEvent(true);
   }
   if(mouse_button==2) {  //zooming || (mouse_button==1 && !(modifiers&GLUT_ACTIVE_SHIFT) && (modifiers&GLUT_ACTIVE_CTRL))){
-    double dy = s->downVec.y - vec.y;
+#if 0
+    double dy = downVec.y - vec.y;
     if(dy<-.99) dy = -.99;
-    cam->X.pos = s->downPos + s->downRot*Vector_z * dy * s->downPos.length();
+    cam->X.pos = downPos + downRot*Vector_z * dy * downPos.length();
     postRedrawEvent(true);
+#else
+#endif
   }
   dataLock.unlock();
 #else
@@ -2177,7 +2347,7 @@ void OpenGL::renderInBack(bool _doCaptureImage, bool _doCaptureDepth, int w, int
   if(w<0) w=width;
   if(h<0) h=height;
   
-  singleFreeglut(); //ensure that glut is initialized (if the drawer called glut)
+  singleGlProcess(); //ensure that glut is initialized (if the drawer called glut)
   
   auto mut=singleGLAccess();
   dataLock.readLock();
@@ -2187,8 +2357,6 @@ void OpenGL::renderInBack(bool _doCaptureImage, bool _doCaptureDepth, int w, int
   
   isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
-  
-  s->beginGlContext();
   
   if(!rboColor || !rboDepth) { //need to initialize
     glewInit();

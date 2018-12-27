@@ -9,9 +9,9 @@ void draw1(void*){
 }
 
 struct Proc:public Thread{
-  OpenGL *gl;
+  OpenGL *gl=0;
   Proc(const char* name):Thread(name, 0.05){
-    threadOpen();
+    threadLoop();
   }
   ~Proc(){
     threadClose();
@@ -31,9 +31,10 @@ struct Proc:public Thread{
 
 void TEST(ThreadedOpenGL) {
   Proc gl1("gl1"),gl2("gl2"),gl3("gl3");
-  gl1.threadLoop();
-  gl2.threadLoop();
+//  gl1.threadLoop();
+//  gl2.threadLoop();
   rai::wait(2.);
+  rai::wait();
   gl1.threadClose();
   gl2.threadClose();
 
@@ -43,7 +44,7 @@ void TEST(ThreadedOpenGL) {
   for (int i=0; i<20; ++i){
     names.append(STRING("many_"<<i));
     gli = new Proc(names(i));
-    gli->threadLoop();
+//    gli->threadLoop();
     procs.append(gli);
   }
   rai::wait(5.);

@@ -129,9 +129,9 @@ struct OpenGL {
   struct GLView     { double le, ri, bo, to;  rai::Array<GLDrawer*> drawers;  rai::Camera camera;  byteA *img;  rai::String text;  GLView() { img=NULL; le=bo=0.; ri=to=1.; } };
   
   /// @name data fields
-  rai::Array<GLView> views;            ///< list of draw routines
-  rai::Array<GLDrawer*> drawers;        ///< list of draw routines
-  rai::Array<GLInitCall*> initCalls;    ///< list of initialization routines
+  rai::Array<GLView> views;            ///< list of subviews
+  rai::Array<GLDrawer*> drawers;       ///< list of draw routines
+  rai::Array<GLInitCall*> initCalls;   ///< list of initialization routines
   rai::Array<GLHoverCall*> hoverCalls; ///< list of hover callbacks
   rai::Array<GLClickCall*> clickCalls; ///< list of click callbacks
   rai::Array<GLKeyCall*> keyCalls;     ///< list of click callbacks
@@ -151,7 +151,6 @@ struct OpenGL {
   bool mouseIsDown;
   rai::Array<GLSelect> selection; ///< list of all selected objects
   GLSelect *topSelection;        ///< top selected object
-  bool immediateExitLoop;
   bool drawFocus;
   bool computeImage, computeDepth, computeIdImage;
   byteA background, captureImage, captureIdImage;
@@ -225,29 +224,26 @@ public: //driver dependent methods
   void openWindow();
   void closeWindow();
   void postRedrawEvent(bool fromWithinCallback);
-#if !defined RAI_MSVC && !defined RAI_QTGL
-  //  Display* xdisplay();
-  //  Drawable xdraw();
-#endif
-  void forceGlutInit();
   
-protected:
+public:
   GLEvent lastEvent;
   static uint selectionBuffer[1000];
   
   void init(); //initializes camera etc
   
   //general callbacks (used by all implementations)
-  void Key(unsigned char key, int x, int y);
-  void Mouse(int button, int updown, int x, int y);
-  void Motion(int x, int y);
-public:
-  void Reshape(int w, int h);
 protected:
-  void MouseWheel(int wheel, int direction, int x, int y);
+  rai::Vector downVec,downPos,downFoc;
+  rai::Quaternion downRot;
+  void Key(unsigned char key);
+  void MouseButton(int button, int updown, int x, int y);
+  void MouseMotion(int x, int y);
+  void Reshape(int w, int h);
+  void Scroll(int wheel, int direction);
   void WindowStatus(int status);
   
   friend struct sOpenGL;
+  friend struct GlfwSpinner;
   friend bool glClickUI(void *p, OpenGL *gl);
 };
 
