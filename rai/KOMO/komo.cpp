@@ -1733,7 +1733,7 @@ void KOMO::reportProxies(std::ostream& os, double belowMargin) {
   }
 }
 
-Graph KOMO::getContacts(std::ostream& os) {
+Graph KOMO::getContacts() {
   Graph G;
   int s=0;
   for(auto &K:configurations) {

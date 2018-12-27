@@ -241,7 +241,7 @@ struct KOMO : NonCopyable {
   double getConstraintViolations();
   double getCosts();
   void reportProxies(ostream& os=std::cout, double belowMargin=.1); ///< report the proxies (collisions) for each time slice
-  Graph getContacts(ostream& os=std::cout); ///< report the contacts
+  Graph getContacts(); ///< report the contacts
   rai::Array<rai::Transformation> reportEffectiveJoints(ostream& os=std::cout);
 
   void checkGradients(bool dense=false);          ///< checks all gradients numerically

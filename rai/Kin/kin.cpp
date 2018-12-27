@@ -93,7 +93,8 @@ uintA shapesToShapeIndices(const FrameL& frames) {
 }
 
 void makeConvexHulls(FrameL& frames, bool onlyContactShapes) {
-  for(rai::Frame *f: frames) if(f->shape && (!onlyContactShapes || f->shape->cont)) f->shape->mesh().makeConvexHull();
+  for(rai::Frame *f: frames) if(f->shape && (!onlyContactShapes || f->shape->cont))
+    f->shape->mesh().makeConvexHull();
 }
 
 void computeOptimalSSBoxes(FrameL &frames) {

@@ -235,8 +235,10 @@ void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::Kinemat
   coll1.kinDistance(y({1,1})(), (!!J?J[1]():NoArr), Jpos, Jp1);
   coll2.kinDistance(y({2,2})(), (!!J?J[2]():NoArr), Jpos, Jp2);
 
-//  y(1) -= .001;
-//  y(2) -= .001;
+  if(margin){
+    y(1) -= margin;
+    y(2) -= margin;
+  }
 
   if(!!J) checkNan(J);
 }

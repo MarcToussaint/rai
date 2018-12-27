@@ -94,7 +94,8 @@ struct TM_Contact_ElasticVelIsComplementary : Feature {
 
 struct TM_Contact_POAisInIntersection_InEq : Feature {
   int a,b;
-  TM_Contact_POAisInIntersection_InEq(int aShape, int bShape) : a(aShape), b(bShape) {}
+  double margin=0.;
+  TM_Contact_POAisInIntersection_InEq(int aShape, int bShape, double _margin=0.) : a(aShape), b(bShape), margin(_margin) {}
   TM_Contact_POAisInIntersection_InEq(const rai::KinematicWorld& K, const char* aShapeName=NULL, const char* bShapeName=NULL)
     : TM_Contact_POAisInIntersection_InEq(initIdArg(K,aShapeName), initIdArg(K,bShapeName)){}
 

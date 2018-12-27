@@ -20,14 +20,7 @@ rai::Contact::Contact(rai::Frame &a, rai::Frame &b, rai::Contact *copyContact)
   a.K.contacts.append(this);
   setZero();
   if(copyContact){
-//    a_rel = copyContact->a_rel;
-//    b_rel = copyContact->b_rel;
-//    a_norm = copyContact->a_norm;
-//    b_norm = copyContact->b_norm;
-//    a_rad = copyContact->a_rad;
-//    b_rad = copyContact->b_rad;
-//    a_type = copyContact->a_type;
-//    b_type = copyContact->b_type;
+    position = copyContact->position;
     force = copyContact->force;
   }
 }

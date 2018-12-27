@@ -18,7 +18,6 @@ struct AssimpLoader {
 
   rai::Mesh getSingleMesh();
 
-
 private:
   void loadNode(struct aiNode *node, const struct aiScene *scene, arr T);
   rai::Mesh loadMesh(struct aiMesh *mesh, const struct aiScene *scene);
