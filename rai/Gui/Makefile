@@ -8,10 +8,10 @@ PNG = 1
 GL = 1
 GTK = 0
 #GTKGL = 1
-FREEGLUT = 0
+FREEGLUT = 1
 GRAPHVIZ = 1
 GL2PS = 0
-GLFW = 1
+GLFW = 0
 
 DEPEND = Core Geo
 

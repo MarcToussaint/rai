@@ -31,8 +31,6 @@ struct Proc:public Thread{
 
 void TEST(ThreadedOpenGL) {
   Proc gl1("gl1"),gl2("gl2"),gl3("gl3");
-//  gl1.threadLoop();
-//  gl2.threadLoop();
   rai::wait(2.);
   rai::wait();
   gl1.threadClose();
@@ -44,7 +42,6 @@ void TEST(ThreadedOpenGL) {
   for (int i=0; i<20; ++i){
     names.append(STRING("many_"<<i));
     gli = new Proc(names(i));
-//    gli->threadLoop();
     procs.append(gli);
   }
   rai::wait(5.);

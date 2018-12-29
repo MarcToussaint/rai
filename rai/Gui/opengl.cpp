@@ -38,11 +38,51 @@ Singleton<SingleGLAccess> singleGLAccess;
 //
 
 Mutex& OpenGLMutex();
-static uint GLProcessCount = 0;
 
-struct GLSpinner : Thread {
-  GLSpinner() : Thread("GLSpinner", .01) {}
-  ~GLSpinner() { threadClose(); } //when this is destroyed in deinit, looping had to be stopped (otherwise pthread error)
+class FreeglutSpinner : Thread{
+private:
+  uint numWins;
+  rai::Array<OpenGL*> glwins;
+  
+public:
+  FreeglutSpinner() : Thread("GLSpinner", .01), numWins(0) {
+    CHECK_EQ(GLProcessCount, 0,"");
+    int argc=1;
+    char *argv[1]= {(char*)"x"};
+    glutInit(&argc, argv);
+  }
+  ~FreeglutSpinner() {
+//    uint i=0;  for(OpenGL* gl:glwins){ if(gl) delGL(i, gl); i++; }
+//    th.threadClose();
+    if(numWins) rai::wait(.1);
+    CHECK(!numWins, "there are still OpenGL windows open");
+    glutExit(); //also glut as already shut down during deinit
+    threadClose();
+  }
+  
+  void addGL(uint i, OpenGL* gl) {
+    if(glwins.N<=i) glwins.resizeCopy(i+1);
+    glwins(i) = gl;
+    if(!numWins) threadLoop(); //start looping
+    numWins++;
+  }
+
+  void delGL(uint i, OpenGL* gl) {
+    CHECK_EQ(glwins(i), gl, "");
+    glwins(i)=NULL;
+    numWins--;
+    if(!numWins){ //stop looping
+      OpenGLMutex().unlock();
+      threadClose();
+      OpenGLMutex().lock();
+      for(uint i=0;i<10;i++) glutMainLoopEvent(); //ensure that all windows are being closed
+    }
+  }
+
+  OpenGL* getGL(uint i) {
+    return glwins(i);
+  }
+
   void open() {}
   void step() {
     OpenGLMutex().lock();
@@ -52,111 +92,36 @@ struct GLSpinner : Thread {
   void close() {}
 };
 
-class OpenGLProcess {
-private:
-  uint numWins;
-  rai::Array<OpenGL*> glwins;
-  GLSpinner th;
-  
-public:
-  OpenGLProcess() : numWins(0) {
-    CHECK_EQ(GLProcessCount, 0,"");
-    GLProcessCount++;
-    int argc=1;
-    char *argv[1]= {(char*)"x"};
-    glutInit(&argc, argv);
-  }
-  ~OpenGLProcess() {
-//    uint i=0;  for(OpenGL* gl:glwins){ if(gl) delGL(i, gl); i++; }
-//    th.threadClose();
-    if(numWins) rai::wait(.1);
-    CHECK(!numWins, "there are still OpenGL windows open");
-    glutExit(); //also glut as already shut down during deinit
-  }
-  
-  void addGL(uint i, OpenGL* gl) {
-    if(glwins.N<=i) glwins.resizeCopy(i+1);
-    glwins(i) = gl;
-    if(!numWins) th.threadLoop(); //start looping
-    numWins++;
-  }
-  void delGL(uint i, OpenGL* gl) {
-    CHECK_EQ(glwins(i), gl, "");
-    glwins(i)=NULL;
-    numWins--;
-    if(!numWins){ //stop looping
-       OpenGLMutex().unlock();
-      th.threadClose();
-      OpenGLMutex().lock();
-      for(uint i=0;i<10;i++) glutMainLoopEvent(); //ensure that all windows are being closed
-    }
-  }
-  OpenGL* getGL(uint i) {
-    return glwins(i);
-  }
-};
-
-Singleton<OpenGLProcess> singleGlProcess;
+Singleton<FreeglutSpinner> singleGlProcess;
 
 Mutex& OpenGLMutex() { return singleGlProcess.mutex; }
-
-struct SFG_Display_dummy {
-  _XDisplay *Display;
-};
-
-extern SFG_Display_dummy fgDisplay;
 
 //===========================================================================
 //
 // OpenGL hidden self
 //
 
-struct sOpenGL {
-  sOpenGL(OpenGL *gl): gl(gl), windowID(-1) {}
-  sOpenGL(OpenGL *gl, void *container) { NIY }
-  ~sOpenGL() { gl->closeWindow(); }
+struct sOpenGL : NonCopyable{
+  sOpenGL(OpenGL *gl) {}
   
-  void beginGlContext() {}
-  void endGlContext() {}
-  
-  //-- private OpenGL data
-  OpenGL *gl;
-  rai::Vector downVec,downPos,downFoc;
-  rai::Quaternion downRot;
-  
-  //-- engine specific data
-  int windowID;                        ///< id of this window in the global glwins list
+  int windowID=-1;                        ///< id of this window in the global glwins list
   
   //-- callbacks
   static void _Void() { }
   static void _Draw() { auto fg=singleGlProcess();  OpenGL *gl=fg->getGL(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
-  static void _Key(unsigned char key, int x, int y) {        singleGlProcess()->getGL(glutGetWindow())->Key(key,x,y); }
-  static void _Mouse(int button, int updown, int x, int y) { singleGlProcess()->getGL(glutGetWindow())->Mouse(button,updown,x,y); }
-  static void _Motion(int x, int y) {                        singleGlProcess()->getGL(glutGetWindow())->Motion(x,y); }
-  static void _PassiveMotion(int x, int y) {                 singleGlProcess()->getGL(glutGetWindow())->Motion(x,y); }
+  static void _Key(unsigned char key, int x, int y) {        singleGlProcess()->getGL(glutGetWindow())->Key(key); }
+  static void _Mouse(int button, int updown, int x, int y) { singleGlProcess()->getGL(glutGetWindow())->MouseButton(button,updown,x,y); }
+  static void _Motion(int x, int y) {                        singleGlProcess()->getGL(glutGetWindow())->MouseMotion(x,y); }
+  static void _PassiveMotion(int x, int y) {                 singleGlProcess()->getGL(glutGetWindow())->MouseMotion(x,y); }
   static void _Reshape(int w,int h) {                        singleGlProcess()->getGL(glutGetWindow())->Reshape(w,h); }
-  static void _MouseWheel(int wheel, int dir, int x, int y) { singleGlProcess()->getGL(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
+  static void _MouseWheel(int wheel, int dir, int x, int y) { singleGlProcess()->getGL(glutGetWindow())->Scroll(wheel,dir); }
   static void _WindowStatus(int status)                     { singleGlProcess()->getGL(glutGetWindow())->WindowStatus(status); }
-  
-  void accessWindow() {  //same as above, but also sets gl cocntext (glXMakeCurrent)
-    CHECK_GE(windowID, 0,"window is not created");
-    glutSetWindow(windowID);
-  }
-  void deaccessWindow() {
-#ifndef RAI_MSVC
-    glXMakeCurrent(fgDisplay.Display, None, NULL);
-#endif
-  }
 };
 
 //===========================================================================
 //
 // OpenGL implementations
 //
-
-void OpenGL::forceGlutInit() {
-  singleGlProcess();
-}
 
 void OpenGL::openWindow() {
   if(s->windowID==-1) {
@@ -194,20 +159,19 @@ void OpenGL::closeWindow() {
 
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {
   auto fg=singleGlProcess();
-  s->accessWindow();
+  glutSetWindow(s->windowID);
   glutPostRedisplay();
-  s->deaccessWindow();
+//  glXMakeCurrent(fgDisplay.Display, None, NULL);
 }
 
 void OpenGL::resize(int w,int h) {
-//  openWindow();
   if(s->windowID==-1) {
     Reshape(w, h);
   } else {
     auto fg=singleGlProcess();
-    s->accessWindow();
+    glutSetWindow(s->windowID);
     glutReshapeWindow(w,h);
-    s->deaccessWindow();
+//    glXMakeCurrent(fgDisplay.Display, None, NULL);
   }
 }
 
@@ -406,8 +370,6 @@ void OpenGL::closeWindow() {
     fg->delGL(this);
     glfwDestroyWindow(s->window);
     s->window=0;
-
-    LOG(-1) <<"??)";
   }
 }
 
@@ -1452,7 +1414,7 @@ OpenGL::OpenGL(const char* _title, int w, int h, int posx, int posy)
   //RAI_MSG("creating OpenGL=" <<this);
   s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
   init();
-  Reshape(w,h);
+//  Reshape(w,h);
 }
 
 OpenGL::OpenGL(void *container)
