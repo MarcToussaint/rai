@@ -155,8 +155,8 @@ rai::KinematicWorld::KinematicWorld() : s(NULL) {
   s=new sKinematicWorld;
 }
 
-rai::KinematicWorld::KinematicWorld(const rai::KinematicWorld& other) : KinematicWorld() {
-  copy(other);
+rai::KinematicWorld::KinematicWorld(const rai::KinematicWorld& other, bool referenceSwiftOnCopy) : KinematicWorld() {
+  copy(other, referenceSwiftOnCopy);
 }
 
 rai::KinematicWorld::KinematicWorld(const char* filename) : KinematicWorld() {

@@ -79,7 +79,7 @@ struct KinematicWorld : GLDrawer {
   
   /// @name constructors
   KinematicWorld();
-  KinematicWorld(const rai::KinematicWorld& other);
+  KinematicWorld(const rai::KinematicWorld& other, bool referenceSwiftOnCopy=false);
   KinematicWorld(const char* filename);
   virtual ~KinematicWorld();
   void operator=(const rai::KinematicWorld& K) { copy(K); }

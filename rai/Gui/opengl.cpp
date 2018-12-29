@@ -46,7 +46,6 @@ private:
   
 public:
   FreeglutSpinner() : Thread("GLSpinner", .01), numWins(0) {
-    CHECK_EQ(GLProcessCount, 0,"");
     int argc=1;
     char *argv[1]= {(char*)"x"};
     glutInit(&argc, argv);

@@ -88,7 +88,7 @@ KOMO::~KOMO() {
 void KOMO::setModel(const KinematicWorld& K,
                     bool _useSwift) {
 
-  if(&K!=&world) world.copy(K);
+  if(&K!=&world) world.copy(K, true);
   useSwift = _useSwift;
   if(useSwift) world.swift();
   world.calc_q();
