@@ -43,7 +43,7 @@ SwiftInterface::~SwiftInterface() {
 SwiftInterface::SwiftInterface(const rai::KinematicWorld& world, double _cutoff)
   : scene(NULL), cutoff(_cutoff) {
   bool r, add;
-  
+
   if(scene) delete scene;
   
   scene = new SWIFT_Scene(false, false);
