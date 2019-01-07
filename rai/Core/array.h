@@ -549,11 +549,11 @@ template<class T> rai::Array<T> consts(const T& c, uint d0, uint d1) { return co
 /// return tensor of c's
 template<class T> rai::Array<T> consts(const T& c, uint d0, uint d1, uint d2) { return consts(c, TUP(d0, d1, d2)); }
 
-/// return array with random numbers in [0, 1]
+/// return array with uniform random numbers in [0, 1]
 arr rand(const uintA& d);
-/// return array with random numbers in [0, 1]
+/// return array with uniform random numbers in [0, 1]
 inline arr rand(uint n) { return rand(TUP(n)); }
-/// return array with random numbers in [0, 1]
+/// return array with uniform random numbers in [0, 1]
 inline arr rand(uint d0, uint d1) { return rand(TUP(d0, d1)); }
 
 /// return array with normal (Gaussian) random numbers

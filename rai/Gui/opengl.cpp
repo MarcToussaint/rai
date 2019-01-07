@@ -45,8 +45,7 @@ private:
   rai::Array<OpenGL*> glwins;
   
 public:
-  FreeglutSpinner() : Thread("GLSpinner", .01), numWins(0) {
-    CHECK_EQ(GLProcessCount, 0,"");
+  FreeglutSpinner() : Thread("FreeglutSpinner", .01), numWins(0) {
     int argc=1;
     char *argv[1]= {(char*)"x"};
     glutInit(&argc, argv);
@@ -2112,18 +2111,12 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
   }else{
     drawMode_idColor = false;
   }
-//    if(reportSelects) {
-//      auto sgl = singleGLAccess();
-//      Select(true);
-////      singleGLAccess()->unlock();
-//    }
-//  }
   
   //mouse scroll wheel:
   if(mouse_button==4 && !downPressed) cam->X.pos += downRot*Vector_z * (.1 * (downPos-downFoc).length());
   if(mouse_button==5 && !downPressed) cam->X.pos -= downRot*Vector_z * (.1 * (downPos-downFoc).length());
   
-  if(mouse_button==2) {  //selection
+  if(mouse_button==3) {  //focus on selected point
     captureDepth.resize(h, w);
     glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
     double d = captureDepth(mouseposy, mouseposx);
@@ -2201,15 +2194,15 @@ void OpenGL::MouseMotion(int _x, int _y) {
     cam->X.pos = downFoc + rot * (downPos - downFoc);   //rotate camera's position
     postRedrawEvent(true);
   }
-  if(mouse_button==3) {  //translation || (mouse_button==1 && (modifiers&GLUT_ACTIVE_SHIFT) && !(modifiers&GLUT_ACTIVE_CTRL))){
+  if(mouse_button==2) {  //translation || (mouse_button==1 && (modifiers&GLUT_ACTIVE_SHIFT) && !(modifiers&GLUT_ACTIVE_CTRL))){
     rai::Vector trans = vec - downVec;
     trans.z = 0.;
-    trans *= .5*(downFoc - downPos).length();
+    trans *= .2*(downFoc - downPos).length();
     trans = downRot * trans;
     cam->X.pos = downPos - trans;
     postRedrawEvent(true);
   }
-  if(mouse_button==2) {  //zooming || (mouse_button==1 && !(modifiers&GLUT_ACTIVE_SHIFT) && (modifiers&GLUT_ACTIVE_CTRL))){
+  if(mouse_button==3) {  //zooming || (mouse_button==1 && !(modifiers&GLUT_ACTIVE_SHIFT) && (modifiers&GLUT_ACTIVE_CTRL))){
 #if 0
     double dy = downVec.y - vec.y;
     if(dy<-.99) dy = -.99;

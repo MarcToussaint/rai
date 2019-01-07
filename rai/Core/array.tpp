@@ -415,8 +415,9 @@ template<class T> void rai::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
   if(n==N) return;
   CHECK(!reference, "resize of a reference (e.g. subarray) is not allowed! (only a resize without changing memory size)");
   vec_type::resize(n);
-  p = vec_type::data();
+  p = vec_type::_M_impl._M_start;
   N = n;
+  M = vec_type::_M_impl._M_end_of_storage - p;
 }
 
 /// free all memory and reset all pointers and sizes
@@ -472,6 +473,7 @@ template<class T> T& rai::Array<T>::append() {
 template<class T> T& rai::Array<T>::append(const T& x) {
   if(N<M && nd==1) { //simple and fast
     N++;
+    vec_type::_M_impl._M_finish++;
     d0++;
     p[N-1]=x;
   } else {
@@ -1613,6 +1615,7 @@ template<class T> void rai::Array<T>::takeOver(rai::Array<T>& a) {
 }
 
 template<class T> void rai::Array<T>::swap(Array<T>& a) {
+#if 0
   CHECK(!a.reference, "can't swap with a reference");
   CHECK_EQ(N, a.N, "swap only works for equal sized memories");
 //  if(N!=a.N) resizeAs(a);
@@ -1620,6 +1623,26 @@ template<class T> void rai::Array<T>::swap(Array<T>& a) {
   p=a.p;
   a.p=p_tmp;
   HALT("vec not done yet");
+#else
+    CHECK(!reference && !a.reference, "NIY for references");
+    CHECK(nd<=1 && a.nd<=1, "only for 1D");
+//    CHECK(M==N && a.M==a.N, "");
+    std::swap((vec_type&)*this, (vec_type&)a);
+
+    T* p_tmp = p;
+    p=a.p;
+    a.p=p_tmp;
+
+    uint n = N;
+    d0=N = a.N;
+    a.d0=a.N = n;
+
+    n = nd;
+    nd = a.nd;
+    a.nd = n;
+
+    CHECK_EQ(p, vec_type::_M_impl._M_start, "");
+#endif
 }
 
 /** @brief return a `dim'-dimensional grid with `steps' intervals

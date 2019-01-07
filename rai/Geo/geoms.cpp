@@ -100,7 +100,7 @@ void rai::Geom::createMeshes() {
       break;
     case rai::ST_mesh:
     case rai::ST_pointCloud:
-      CHECK(mesh.V.N, "mesh needs to be loaded");
+      if(!mesh.V.N) LOG(-1) <<"mesh needs to be loaded";
       size(3) = 0.;
 //    sscCore = mesh;
 //    sscCore.makeConvexHull();
