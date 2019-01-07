@@ -129,9 +129,8 @@ void Signaler::broadcast(Signaler* messenger) {
 void Event::listenTo(Var_base& v) {
   auto lock = statusMutex();
   v.readAccess();
-  variableRevisions.append(v.revision);
   variables.append(&v);
-  v.callbacks.append(new Callback<void(Var_base*,int)>(this, std::bind(&Event::callback, this, std::placeholders::_1, std::placeholders::_2)));
+  v.callbacks.append(new Callback<void(Var_base*)>(this, std::bind(&Event::callback, this, std::placeholders::_1)));
   v.deAccess();
 }
 
@@ -140,7 +139,6 @@ void Event::stopListenTo(Var_base& v) {
 //  v.readAccess();
   int i=variables.findValue(&v);
   CHECK_GE(i,0,"something's wrong");
-  variableRevisions.remove(i);
   variables.remove(i);
   v.callbacks.removeCallback(this);
 //  v.deAccess();
@@ -150,12 +148,11 @@ void Event::stopListening() {
   while(variables.N) stopListenTo(*variables.last());
 }
 
-void Event::callback(Var_base *v, int revision){
+void Event::callback(Var_base *v){
   int i = variables.findValue(v);
   CHECK_GE(i, 0, "signaler " <<v <<" was not registered with this event!");
-  variableRevisions(i) = revision;
   if(eventFct){
-    int newEventStatus = eventFct(variables, variableRevisions, i);
+    int newEventStatus = eventFct(variables, i);
     //  cout <<"event callback: BOOL=" <<eventStatus <<' ' <<s <<' ' <<status <<" statuses=" <<statuses <<endl;
     auto lock = statusMutex();
 //    if(this->status!=newEventStatus)
@@ -302,7 +299,7 @@ int Var_base::deAccess(Thread *th) {
     i = revision++;
     for(auto* c:callbacks){
       //don't call a callback-event for a thread that accessed the variable:
-      if(!th || c->id!=&th->event) c->call()(this, i);
+      if(!th || c->id!=&th->event) c->call()(this);
     }
   } else {
     i = revision;

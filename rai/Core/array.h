@@ -295,6 +295,11 @@ template<class T> struct Array : std::vector<T> {
   void freeMEM();
   void resetD();
 //  void init();
+
+  /// @name serialization
+  uint serial_size();
+  void serial_encode(char* data, uint size);
+  void serial_decode(char* data, uint size);
 };
 
 //===========================================================================

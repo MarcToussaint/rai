@@ -2020,6 +2020,44 @@ template<class T> bool rai::Array<T>::readTagged(const char* filename, const cha
   return readTagged(fil, tag);
 }
 
+template<class T> uint rai::Array<T>::serial_size(){
+   return 6+6*sizeof(uint)+N*sizeT;
+}
+
+template<class T> void rai::Array<T>::serial_encode(char* data, uint size){
+    CHECK_EQ(size, serial_size(), "buffer doesn't have right size!");
+    uint intSize = sizeof(uint);
+    uint typeSize = sizeof(T);
+    memcpy(data, "ARRAY", 6);
+    memcpy(data+6+0*intSize, &typeSize, intSize);
+    memcpy(data+6+1*intSize, &N, intSize);
+    memcpy(data+6+2*intSize, &nd, intSize);
+    memcpy(data+6+3*intSize, &d0, intSize);
+    memcpy(data+6+4*intSize, &d1, intSize);
+    memcpy(data+6+5*intSize, &d2, intSize);
+    memcpy(data+6+6*intSize, p, N*typeSize);
+}
+
+template<class T> void rai::Array<T>::serial_decode(char* data, uint size){
+    CHECK_GE(size, 6+6*sizeof(uint), "");
+    CHECK(!memcmp(data, "ARRAY", 6), "");
+    uint typeSize, n;
+    uint intSize = sizeof(uint);
+    memcpy(&typeSize, data+6+0*intSize,  intSize);
+    memcpy(&n,  data+6+1*intSize,  intSize);
+    memcpy(&nd, data+6+2*intSize, intSize);
+    memcpy(&d0, data+6+3*intSize, intSize);
+    memcpy(&d1, data+6+4*intSize, intSize);
+    memcpy(&d2, data+6+5*intSize, intSize);
+    CHECK_EQ(typeSize, (uint)sizeT, "");
+    CHECK_EQ(size, 6+6*sizeof(uint)+n*sizeT, "buffer doesn't have right size!");
+    if(nd==1) CHECK_EQ(n, d0, "");
+    if(nd==2) CHECK_EQ(n, d0*d1, "");
+    if(nd==3) CHECK_EQ(n, d0*d1*d2, "");
+    resizeMEM(n, false);
+    memcpy(p, data+6+6*intSize, N*typeSize);
+}
+
 /// gdb pretty printing
 template<class T> const char* rai::Array<T>::prt() {
   static rai::String tmp;

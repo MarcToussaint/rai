@@ -75,15 +75,15 @@ struct Var_base : NonCopyable {
   rai::String name;            ///< name
   double write_time=0.;        ///< clock time of last write access
   double data_time=0.;         ///< time stamp of the original data source
-  CallbackL<void(Var_base*,int)> callbacks;
+  CallbackL<void(Var_base*)> callbacks;
   struct Node* registryNode=0; ///< every threading object registers itself globally
 
   Var_base(const std::type_info& _type, void *_value_ptr, const char* _name=0);
   /// @name c'tor/d'tor
   virtual ~Var_base();
 
-  void addCallback(const std::function<void(Var_base*,int)>& call, const void* callbackID){
-    callbacks.append(new Callback<void(Var_base*,int)>(callbackID, call));
+  void addCallback(const std::function<void(Var_base*)>& call, const void* callbackID){
+    callbacks.append(new Callback<void(Var_base*)>(callbackID, call));
   }
 
   /// @name access control
@@ -216,7 +216,7 @@ struct Var {
   }
   void stopListening();
 
-  void addCallback(const std::function<void(Var_base*,int)>& call, const void* callbackID=0){
+  void addCallback(const std::function<void(Var_base*)>& call, const void* callbackID=0){
     data->addCallback(call, callbackID);
   }
 
@@ -271,12 +271,11 @@ struct Signaler {
 
 //===========================================================================
 
-typedef std::function<int(const rai::Array<Var_base*>&, const intA&, int whoChanged)> EventFunction;
+typedef std::function<int(const rai::Array<Var_base*>&, int whoChanged)> EventFunction;
 
 struct Event : Signaler {
   rai::Array<Var_base*> variables;
   EventFunction eventFct;
-  intA variableRevisions;
 
   Event(int initialState=0) : Signaler(initialState) {}
   Event(const rai::Array<Var_base*>& _variables, const EventFunction& _eventFct, int initialState=0);
@@ -287,7 +286,7 @@ struct Event : Signaler {
   void stopListening();
   void stopListenTo(Var_base& c);
 
-  void callback(Var_base *v, int revision);
+  void callback(Var_base *v);
 
   typedef std::shared_ptr<Event> Ptr;
 };
@@ -605,10 +604,9 @@ int Var<T>::waitForRevisionGreaterThan(int rev) {
 #if 0
   return data->waitForStatusGreaterThan(rev);
 #else
-  EventFunction evFct = [&rev](const rai::Array<Var_base*>& vars, const intA& revs, int whoChanged) -> int {
+  EventFunction evFct = [&rev](const rai::Array<Var_base*>& vars, int whoChanged) -> int {
     CHECK_EQ(vars.N, 1, ""); //this event only checks the revision for a single var
-    CHECK_EQ(vars.N, revs.N, ""); //this event only checks the revision for a single var
-    if(revs.scalar() > rev) return 1;
+    if(vars.scalar()->revision > (uint)rev) return 1;
     return 0;
   };
 
