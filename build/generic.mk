@@ -55,9 +55,9 @@ UIC = uic
 YACC = bison -d
 
 LINK	= $(CXX)
-CPATHS	+= $(BASE)/rai $(BASE)/../src
+CPATHS	+= $(BASE)/rai
 ifdef BASE2
-CPATHS	+= $(BASE)/rai $(BASE2)/src
+CPATHS	+= $(BASE2)
 endif
 LPATHS	+= $(BASE_REAL)/lib /usr/local/lib
 LIBS += -lrt

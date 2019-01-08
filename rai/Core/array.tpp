@@ -2024,8 +2024,8 @@ template<class T> uint rai::Array<T>::serial_size(){
    return 6+6*sizeof(uint)+N*sizeT;
 }
 
-template<class T> void rai::Array<T>::serial_encode(char* data, uint size){
-    CHECK_EQ(size, serial_size(), "buffer doesn't have right size!");
+template<class T> uint rai::Array<T>::serial_encode(char* data, uint data_size){
+    CHECK_GE(data_size, serial_size(), "buffer doesn't have right size!");
     uint intSize = sizeof(uint);
     uint typeSize = sizeof(T);
     memcpy(data, "ARRAY", 6);
@@ -2036,10 +2036,11 @@ template<class T> void rai::Array<T>::serial_encode(char* data, uint size){
     memcpy(data+6+4*intSize, &d1, intSize);
     memcpy(data+6+5*intSize, &d2, intSize);
     memcpy(data+6+6*intSize, p, N*typeSize);
+    return serial_size();
 }
 
-template<class T> void rai::Array<T>::serial_decode(char* data, uint size){
-    CHECK_GE(size, 6+6*sizeof(uint), "");
+template<class T> uint rai::Array<T>::serial_decode(char* data, uint data_size){
+    CHECK_GE(data_size, 6+6*sizeof(uint), "");
     CHECK(!memcmp(data, "ARRAY", 6), "");
     uint typeSize, n;
     uint intSize = sizeof(uint);
@@ -2050,12 +2051,13 @@ template<class T> void rai::Array<T>::serial_decode(char* data, uint size){
     memcpy(&d1, data+6+4*intSize, intSize);
     memcpy(&d2, data+6+5*intSize, intSize);
     CHECK_EQ(typeSize, (uint)sizeT, "");
-    CHECK_EQ(size, 6+6*sizeof(uint)+n*sizeT, "buffer doesn't have right size!");
+    CHECK_GE(data_size, 6+6*sizeof(uint)+n*sizeT, "buffer doesn't have right size!");
     if(nd==1) CHECK_EQ(n, d0, "");
     if(nd==2) CHECK_EQ(n, d0*d1, "");
     if(nd==3) CHECK_EQ(n, d0*d1*d2, "");
     resizeMEM(n, false);
     memcpy(p, data+6+6*intSize, N*typeSize);
+    return serial_size();
 }
 
 /// gdb pretty printing

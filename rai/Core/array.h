@@ -32,6 +32,12 @@ typedef unsigned char byte;
 typedef unsigned int uint;
 struct SpecialArray;
 
+struct Serializable{
+  virtual uint serial_size() = 0;
+  virtual uint serial_encode(char* data, uint data_size) = 0;
+  virtual uint serial_decode(char* data, uint data_size) = 0;
+};
+
 //-- global memory information and options TODO: hide -> array.cpp
 namespace rai {
 extern bool useLapack;
@@ -68,7 +74,7 @@ template<class T> struct ArrayIterationEnumerated;
   Please see also the reference for the \ref array.h
   header, which contains lots of functions that can be applied on
   Arrays. */
-template<class T> struct Array : std::vector<T> {
+template<class T> struct Array : std::vector<T>, Serializable {
   T *p;     ///< the pointer on the linear memory allocated
   uint N;   ///< number of elements
   uint nd;  ///< number of dimensions
@@ -100,7 +106,7 @@ template<class T> struct Array : std::vector<T> {
   Array(uint D0, uint D1, uint D2, std::initializer_list<T> values);
   Array(rai::FileToken&); //read from a file
   explicit Array(SpecialArray* _special);
-  ~Array();
+  virtual ~Array();
   bool operator!() const; ///< check if NoArr
 
   Array<T>& operator=(std::initializer_list<T> values);
@@ -298,8 +304,8 @@ template<class T> struct Array : std::vector<T> {
 
   /// @name serialization
   uint serial_size();
-  void serial_encode(char* data, uint size);
-  void serial_decode(char* data, uint size);
+  uint serial_encode(char* data, uint data_size);
+  uint serial_decode(char* data, uint data_size);
 };
 
 //===========================================================================
