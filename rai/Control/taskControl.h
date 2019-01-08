@@ -73,7 +73,7 @@ struct MotionProfile_PD: MotionProfile {
   bool makeTargetModulo2PI;
   double tolerance;
   MotionProfile_PD();
-  MotionProfile_PD(const arr& _y_target, double decayTime, double dampingRatio, double maxVel=0., double maxAcc=0.);
+  MotionProfile_PD(const arr& _y_target, double decayTime, double dampingRatio, double maxVel=-1., double maxAcc=-1.);
   MotionProfile_PD(const Graph& params);
   
   virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr);
@@ -112,7 +112,7 @@ struct MotionProfile_Path: MotionProfile {
 /** In the given task space, a task can represent: 1) a pos/vel ctrl task
  *  and/or 2) a compliance and/or 3) a force limit control */
 struct CtrlTask {
-  Feature *map;      ///< this defines the task space
+  ptr<Feature> map;      ///< this defines the task space
   rai::String name;  ///< just for easier reporting
   bool active;       ///< also non-active tasks are updates (states evaluated), but don't enter the TaskControlMethods
   CT_Status status;
@@ -122,7 +122,7 @@ struct CtrlTask {
   arr y, v, J_y;     ///< update() will evaluate these for a given kinematic configuration
   
   //-- pos/vel ctrl task
-  MotionProfile *ref;  ///< non-NULL iff this is a pos/vel task
+  ptr<MotionProfile> ref;  ///< non-NULL iff this is a pos/vel task
   arr y_ref, v_ref;    ///< update() will define compute these references (reference=NOW, target=FUTURE)
   arr prec;            ///< Cholesky(!) of C, not C itself: sumOfSqr(prec*(y-y_ref)) is the error, and prec*J the Jacobian
   uint hierarchy;      ///< hierarchy level in hiearchycal inverse kinematics: higher = higher priority
@@ -134,9 +134,10 @@ struct CtrlTask {
   arr f_ref;           ///< non-empty iff this is a force limit control task; defines the box limits (abs value in all dimensions)
   double f_alpha, f_gamma; ///< TODO
   
-  CtrlTask(const char* name, Feature* map);
-  CtrlTask(const char* name, Feature* map, double decayTime, double dampingRatio, double maxVel, double maxAcc);
-  CtrlTask(const char* name, Feature* map, const Graph& params);
+  CtrlTask(const char* name, ptr<Feature> map);
+  CtrlTask(const char* name, ptr<Feature> map, double decayTime, double dampingRatio, double maxVel=-1., double maxAcc=-1.);
+  CtrlTask(const char* name, FeatureSymbol fs, const StringA& frames, const rai::KinematicWorld& K, double decayTime, double dampingRatio, double maxVel=-1., double maxAcc=-1.);
+  CtrlTask(const char* name, ptr<Feature> map, const Graph& params);
   ~CtrlTask();
   
   CT_Status update(double tau, const rai::KinematicWorld& world);
@@ -146,7 +147,7 @@ struct CtrlTask {
   void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::KinematicWorld& world);
   
   MotionProfile_PD& PD();
-  void setRef(MotionProfile *_ref);
+  void setRef(ptr<MotionProfile> _ref);
   void setTarget(const arr& y_target);
   void setTimeScale(double d){ CHECK(ref,""); ref->setTimeScale(d); ref->resetState(); }
   
@@ -168,7 +169,7 @@ struct TaskControlMethods {
   
   TaskControlMethods(const rai::KinematicWorld& world);
   
-  CtrlTask* addPDTask(const char* name, double decayTime, double dampingRatio, Feature *map);
+  CtrlTask* addPDTask(const char* name, double decayTime, double dampingRatio, ptr<Feature> map);
   
   void updateCtrlTasks(double tau, const rai::KinematicWorld& world);
   void resetCtrlTasksState();

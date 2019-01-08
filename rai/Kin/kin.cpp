@@ -1459,9 +1459,9 @@ FeatherstoneInterface& rai::KinematicWorld::fs() {
   return *s->fs;
 }
 
-void rai::KinematicWorld::watch(bool pause, const char* txt) {
-  if(pause) gl().watch(txt);
-  else gl().update(txt);
+int rai::KinematicWorld::watch(bool pause, const char* txt) {
+  if(pause) return gl().watch(txt);
+  else return gl().update(txt);
 }
 
 void rai::KinematicWorld::glAnimate() {

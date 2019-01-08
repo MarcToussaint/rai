@@ -19,33 +19,41 @@
 struct TaskControlThread : Thread {
   
   //protected access points
-  VAR(arr, ctrl_q_real)
-  VAR(arr, ctrl_q_ref)
+//  VAR(arr, ctrl_q_real)
+//  VAR(arr, ctrl_q_ref)
   
-  VAR(CtrlMsg, ctrl_ref) //< the message send to the RTController
-  VAR(CtrlMsg, ctrl_obs) //< the message received from the RTController
-  VAR(rai::Array<CtrlTask*>, ctrlTasks)
-  VAR(rai::KinematicWorld, modelWorld)
-  VAR(bool, fixBase)
-  VAR(double, IK_cost)
+  Var<CtrlMsg> ctrl_ref;
+  Var<CtrlMsg> ctrl_state;
+  Var<rai::Array<CtrlTask*>> ctrlTasks;
+//  Var<rai::KinematicWorld> model;
+//  VAR(bool, fixBase)
+//  VAR(double, IK_cost)
   
-//private:
-  rai::KinematicWorld realWorld;
-  TaskControlMethods *taskController;
+private:
+  rai::KinematicWorld model_ref;
+  rai::KinematicWorld model_real;
+  ptr<TaskControlMethods> taskController;
   arr q_real, qdot_real; //< real state
   arr q_model, qdot_model; //< model state
   arr q0; //< homing pose
+
   arr Kp_base, Kd_base; //< Kp, Kd parameters defined in the model file
   double kp_factor, kd_factor, ki_factor;
   bool useSwift;
   bool requiresInitialSync; //< whether the step() should reinit the state from the ros message
-  bool verbose;
+  int verbose;
   
 public:
-  TaskControlThread(const rai::KinematicWorld& world);
+  TaskControlThread(const rai::KinematicWorld& _model,
+                    Var<CtrlMsg>& _ctrl_ref,
+                    Var<CtrlMsg>& _ctrl_state);
   ~TaskControlThread();
   
-  void open();
   void step();
-  void close();
+
+  CtrlTask* addCtrlTask(const char* name, FeatureSymbol fs, const StringA& frames,
+                   double decayTime, double dampingRatio, double maxVel=-1., double maxAcc=-1.);
+
+  void removeCtrlTask(CtrlTask *t);
+
 };

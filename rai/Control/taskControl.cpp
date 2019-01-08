@@ -46,7 +46,7 @@ bool MotionProfile_Sine::isDone() {
 //===========================================================================
 
 MotionProfile_PD::MotionProfile_PD()
-  : kp(0.), kd(0.), maxVel(0.), maxAcc(0.), flipTargetSignOnNegScalarProduct(false), makeTargetModulo2PI(false), tolerance(1e-3) {}
+  : kp(0.), kd(0.), maxVel(-1.), maxAcc(-1.), flipTargetSignOnNegScalarProduct(false), makeTargetModulo2PI(false), tolerance(1e-3) {}
 
 MotionProfile_PD::MotionProfile_PD(const arr& _y_target, double decayTime, double dampingRatio, double maxVel, double maxAcc)
   : MotionProfile_PD() {
@@ -184,26 +184,30 @@ CT_Status MotionProfile_Path::update(arr& yRef, arr& ydotRef, double tau, const 
 
 //===========================================================================
 
-CtrlTask::CtrlTask(const char* name, Feature* map)
+CtrlTask::CtrlTask(const char* name, ptr<Feature> map)
   : map(map), name(name), active(true), status(CT_init), ref(NULL), prec(ARR(1.)), hierarchy(1) {
   //  ref = new MotionProfile_PD();
 }
 
-CtrlTask::CtrlTask(const char* name, Feature* map, double decayTime, double dampingRatio, double maxVel, double maxAcc)
+CtrlTask::CtrlTask(const char* name, ptr<Feature> map, double decayTime, double dampingRatio, double maxVel, double maxAcc)
   : CtrlTask(name, map) {
-  ref = new MotionProfile_PD({}, decayTime, dampingRatio, maxVel, maxAcc);
+  ref = make_shared<MotionProfile_PD>(arr(), decayTime, dampingRatio, maxVel, maxAcc);
 }
 
-CtrlTask::CtrlTask(const char* name, Feature* map, const Graph& params)
+CtrlTask::CtrlTask(const char* name, FeatureSymbol fs, const StringA& frames, const rai::KinematicWorld& K, double decayTime, double dampingRatio, double maxVel, double maxAcc)
+  : CtrlTask(name, ptr<Feature>(symbols2feature(fs, frames, K)), decayTime, dampingRatio, maxVel, maxAcc){
+}
+
+CtrlTask::CtrlTask(const char* name, ptr<Feature> map, const Graph& params)
   : CtrlTask(name, map) {
-  ref = new MotionProfile_PD(params);
+  ref = make_shared<MotionProfile_PD>(params);
   Node *n;
   if((n=params["prec"])) prec = n->get<arr>();
 }
 
 CtrlTask::~CtrlTask() {
-  if(map) delete map; map=NULL;
-  if(ref) delete ref; ref=NULL;
+//  if(map) delete map; map=NULL;
+//  if(ref) delete ref; ref=NULL;
 }
 
 CT_Status CtrlTask::update(double tau, const rai::KinematicWorld& world) {
@@ -219,18 +223,17 @@ CT_Status CtrlTask::update(double tau, const rai::KinematicWorld& world) {
 }
 
 MotionProfile_PD& CtrlTask::PD() {
-  if(!ref) ref = new MotionProfile_PD();
-  MotionProfile_PD *pd = dynamic_cast<MotionProfile_PD*>(ref);
+  if(!ref) ref = make_shared<MotionProfile_PD>();
+  ptr<MotionProfile_PD> pd = std::dynamic_pointer_cast<MotionProfile_PD>(ref);
   if(!pd) {
     LOG(-1) <<"you've created a non-PD ref for this before, of type " <<typeid(*ref).name();
-    delete ref;
-    ref = new MotionProfile_PD();
-    pd = dynamic_cast<MotionProfile_PD*>(ref);
+    ref = make_shared<MotionProfile_PD>();
+    pd = std::dynamic_pointer_cast<MotionProfile_PD>(ref);
   }
   return *pd;
 }
 
-void CtrlTask::setRef(MotionProfile *_ref) {
+void CtrlTask::setRef(ptr<MotionProfile> _ref) {
   CHECK(!ref, "ref is already set");
   ref = _ref;
 }
@@ -250,7 +253,7 @@ arr CtrlTask::getPrec() {
 
 void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::KinematicWorld& world) {
   //-- get necessary Jacobians
-  TM_Default *m = dynamic_cast<TM_Default*>(map);
+  ptr<TM_Default> m = std::dynamic_pointer_cast<TM_Default>(map);
   CHECK(m,"this only works for the default position task map");
   CHECK_EQ(m->type, TMT_pos,"this only works for the default positioni task map");
   CHECK_GE(m->i, 0,"this only works for the default position task map");
@@ -294,7 +297,7 @@ void TaskControlMethods::resetCtrlTasksState() {
   for(CtrlTask* t: tasks) t->resetState();
 }
 
-CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, double dampingRatio, Feature *map) {
+CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, double dampingRatio, ptr<Feature> map) {
   return tasks.append(new CtrlTask(name, map, decayTime, dampingRatio, 1., 1.));
 }
 
@@ -685,7 +688,7 @@ void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, d
   uint nForceTasks=0;
   for(CtrlTask* task : this->tasks) if(task->active && task->f_ref.N) {
       nForceTasks++;
-      TM_Default* map = dynamic_cast<TM_Default*>(task->map);
+      ptr<TM_Default> map = std::dynamic_pointer_cast<TM_Default>(task->map);
       rai::Frame* body = world.frames(map->i);
       rai::Frame* lFtSensor = world.getFrameByName("r_ft_sensor");
       arr y, J, J_ft;

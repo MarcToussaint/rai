@@ -233,7 +233,7 @@ struct KinematicWorld : GLDrawer {
   PhysXInterface& physx();
   OdeInterface& ode();
   FeatherstoneInterface& fs();
-  void watch(bool pause=false, const char* txt=NULL);
+  int watch(bool pause=false, const char* txt=NULL);
   void glAnimate();
   void glGetMasks(int w=-1, int h=-1, bool rgbIndices=true);
   void stepSwift();
