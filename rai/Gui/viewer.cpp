@@ -78,7 +78,7 @@ void ImageViewer::step() {
 
 ImageViewerCallback::ImageViewerCallback(const Var<byteA>& _img)
   : img(_img){
-  img.data->callbacks.append(new Callback<void(Var_base*,int)>(this, std::bind(&ImageViewerCallback::call, this, std::placeholders::_1, std::placeholders::_2)));
+  img.data->callbacks.append(new Callback<void(Var_base*)>(this, std::bind(&ImageViewerCallback::call, this, std::placeholders::_1)));
 }
 
 ImageViewerCallback::~ImageViewerCallback(){
@@ -86,7 +86,7 @@ ImageViewerCallback::~ImageViewerCallback(){
   if(gl) delete gl;
 }
 
-void ImageViewerCallback::call(Var_base* v, int revision){
+void ImageViewerCallback::call(Var_base* v){
   if(!gl){
     gl = new OpenGL(STRING("ImageViewer: "<<img.data->name));
   }
@@ -185,7 +185,7 @@ void PointCloudViewer::step() {
 PointCloudViewerCallback::PointCloudViewerCallback(const Var<arr>& _pts, const Var<byteA>& _rgb)
   : pts(_pts),
     rgb(_rgb){
-  pts.data->callbacks.append(new Callback<void(Var_base*,int)>(this, std::bind(&PointCloudViewerCallback::call, this, std::placeholders::_1, std::placeholders::_2)));
+  pts.data->callbacks.append(new Callback<void(Var_base*)>(this, std::bind(&PointCloudViewerCallback::call, this, std::placeholders::_1)));
 }
 
 PointCloudViewerCallback::~PointCloudViewerCallback(){
@@ -193,7 +193,7 @@ PointCloudViewerCallback::~PointCloudViewerCallback(){
   if(s) delete s;
 }
 
-void PointCloudViewerCallback::call(Var_base* v, int revision){
+void PointCloudViewerCallback::call(Var_base* v){
   if(!s){
     s = new sPointCloudViewer(STRING("PointCloudViewer: "<<pts.name <<' ' <<rgb.name));
     s->gl.add(glStandardScene);

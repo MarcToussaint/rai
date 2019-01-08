@@ -473,7 +473,7 @@ template<class T> T& rai::Array<T>::append() {
 template<class T> T& rai::Array<T>::append(const T& x) {
   if(N<M && nd==1) { //simple and fast
     N++;
-    vec_type::_M_impl._M_finish++;
+    vec_type::_M_impl._M_finish = p + N;
     d0++;
     p[N-1]=x;
   } else {

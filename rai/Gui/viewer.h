@@ -31,7 +31,7 @@ struct ImageViewerCallback {
   bool flipImage = false;
   ImageViewerCallback(const Var<byteA>& _img);
   ~ImageViewerCallback();
-  void call(Var_base *v, int revision);
+  void call(Var_base *v);
 };
 
 struct PointCloudViewer : Thread {
@@ -52,7 +52,7 @@ struct PointCloudViewerCallback {
   Var<byteA> rgb;
   PointCloudViewerCallback(const Var<arr>& _pts, const Var<byteA>& _rgb);
   ~PointCloudViewerCallback();
-  void call(Var_base *v, int revision);
+  void call(Var_base *v);
 };
 
 struct MeshAViewer : Thread {
