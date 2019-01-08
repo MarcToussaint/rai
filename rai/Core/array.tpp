@@ -471,14 +471,11 @@ template<class T> T& rai::Array<T>::append() {
 
 /// append an element to the array -- the array becomes 1D!
 template<class T> T& rai::Array<T>::append(const T& x) {
-  if(N<M && nd==1) { //simple and fast
-    N++;
-    vec_type::_M_impl._M_finish = p + N;
-    d0++;
-    p[N-1]=x;
-  } else {
-    append()=x;
-  }
+  reshape(N);
+  vec_type::push_back(x);
+  p = vec_type::_M_impl._M_start;
+  d0 = N = vec_type::size();
+  M = vec_type::_M_impl._M_end_of_storage - p;
   return p[N-1];
 }
 

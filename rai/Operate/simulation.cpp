@@ -12,7 +12,7 @@ struct Sensor{
   rai::Camera cam;
   uint width=640, height=480;
   byteA backgroundImage;
-  Sensor();
+  Sensor(){}
 };
 
 struct Simulation_self{

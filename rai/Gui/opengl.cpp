@@ -158,6 +158,7 @@ void OpenGL::closeWindow() {
 
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {
   auto fg=singleGlProcess();
+  openWindow();
   glutSetWindow(s->windowID);
   glutPostRedisplay();
 //  glXMakeCurrent(fgDisplay.Display, None, NULL);
