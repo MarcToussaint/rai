@@ -75,12 +75,26 @@ void TaskControlThread::step() {
       requiresInitialSync = false;
     }else{
       LOG(0) <<"waiting for ctrl_state messages...";
+      return;
     }
+  }
+
+  //-- read current state
+  {
+    auto state = ctrl_state.get();
+    q_real = state->q;
+    qdot_real = state->qdot;
+  }
+  model_real.setJointState(q_real);
+  if(false){
+    model_ref.setJointState(q_real);
+    q_model = q_real;
+    qdot_model = qdot_real;
   }
 
 
   //-- compute the feedback controller step and iterate to compute a forward reference
-  arr CompProj;
+  arr P_compliance;
   {
     if(!(step_count%20)) model_ref.watch(); //only for debugging
 
@@ -117,9 +131,7 @@ void TaskControlThread::step() {
     if(verbose) taskController->reportCurrentState();
     
     // get compliance projection matrix
-    CompProj = taskController->getComplianceProjection();
-    
-//    modelWorld().equationOfMotion(M,F);
+    P_compliance = taskController->getComplianceProjection();
 
     ctrlTasks.deAccess();
   }
@@ -135,10 +147,10 @@ void TaskControlThread::step() {
 //  Kp = M*Kp; DANGER!!
 //  Kd = M*Kd;
 
-  if(CompProj.N) {
-    Kp = CompProj*Kp*CompProj;
-    Kd = CompProj*Kd*CompProj;
-    Ki = CompProj*diag(Kp_base*ki_factor)*CompProj;
+  if(P_compliance.N) {
+    Kp = P_compliance*Kp*P_compliance;
+    Kd = P_compliance*Kd*P_compliance;
+    Ki = P_compliance*diag(Kp_base*ki_factor)*P_compliance;
   }
   
   //TODO: construct force tasks
@@ -161,6 +173,7 @@ void TaskControlThread::step() {
     CtrlMsg refs;
     refs.q =  q_model;
     refs.qdot = zeros(q_model.N);
+    refs.P_compliance = P_compliance;
     refs.fL_gamma = 1.;
     refs.Kp = Kp; //ARR(1.);
     refs.Kd = Kd; //ARR(1.);
@@ -195,7 +208,14 @@ CtrlTask *TaskControlThread::addCtrlTask(const char* name, FeatureSymbol fs, con
   CtrlTask *t = new CtrlTask(name, fs, frames, model_ref, decayTime,  dampingRatio,  maxVel, maxAcc);
   t->update(0., model_ref);
   stepMutex.unlock();
-  ctrlTasks.set()->append( t );
+  ctrlTasks.set()->append(t);
+  return t;
+}
+
+CtrlTask* TaskControlThread::addCompliance(const char* name, FeatureSymbol fs, const StringA& frames, const arr& compliance){
+  CtrlTask *t = new CtrlTask(name, ptr<Feature>(symbols2feature(fs, frames, model_ref)));
+  t->complianceDirection = compliance;
+  ctrlTasks.set()->append(t);
   return t;
 }
 

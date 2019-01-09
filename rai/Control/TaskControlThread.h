@@ -54,6 +54,9 @@ public:
   CtrlTask* addCtrlTask(const char* name, FeatureSymbol fs, const StringA& frames,
                    double decayTime, double dampingRatio, double maxVel=-1., double maxAcc=-1.);
 
+  CtrlTask* addCompliance(const char* name, FeatureSymbol fs, const StringA& frames,
+                          const arr& compliance);
+
   void removeCtrlTask(CtrlTask *t);
 
 };

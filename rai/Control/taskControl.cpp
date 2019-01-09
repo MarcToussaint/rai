@@ -15,6 +15,15 @@
 
 //===========================================================================
 
+void naturalGains(double& Kp, double& Kd, double decayTime, double dampingRatio) {
+  CHECK(decayTime>0. && dampingRatio>0., "this does not define proper gains!");
+  double lambda = -decayTime*dampingRatio/log(.1);
+  Kp = 1./(lambda*lambda);
+  Kd = 2.*dampingRatio/lambda;
+}
+
+//===========================================================================
+
 CT_Status MotionProfile_Const::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot) {
   if(flipTargetSignOnNegScalarProduct && scalarProduct(y_target, y) < 0) {
     y_target = -y_target;
@@ -82,9 +91,10 @@ void MotionProfile_PD::setGains(double _kp, double _kd) {
 }
 
 void MotionProfile_PD::setGainsAsNatural(double decayTime, double dampingRatio) {
-  CHECK(decayTime>0. && dampingRatio>0., "this does not define proper gains!");
-  double lambda = -decayTime*dampingRatio/log(.1);
-  setGains(rai::sqr(1./lambda), 2.*dampingRatio/lambda);
+  naturalGains(kp, kd, decayTime, dampingRatio);
+//  CHECK(decayTime>0. && dampingRatio>0., "this does not define proper gains!");
+//  double lambda = -decayTime*dampingRatio/log(.1);
+//  setGains(rai::sqr(1./lambda), 2.*dampingRatio/lambda);
 }
 
 CT_Status MotionProfile_PD::update(arr& yRef, arr& vRef, double tau, const arr& y, const arr& ydot) {
@@ -487,7 +497,7 @@ arr TaskControlMethods::getComplianceProjection() {
       CHECK(!count,"only implemented for ONE compliance task yet -> subtract more dimensions?");
       CHECK_EQ(t->complianceDirection.N, t->y.N, "compliance direction has wrong dim");
       double factor = length(t->complianceDirection);
-      CHECK(factor>0 && factor<=1., "compliance direction needs length in (0,1]");
+      CHECK(factor>0 && factor<=1., "compliance direction needs length in (0,1] (1 means full compliance in this direction)");
       
       arr J = t->J_y;
       

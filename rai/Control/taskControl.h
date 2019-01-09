@@ -189,3 +189,5 @@ struct TaskControlMethods {
 };
 
 //===========================================================================
+
+void naturalGains(double& Kp, double& Kd, double decayTime, double dampingRatio);
