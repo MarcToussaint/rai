@@ -175,7 +175,7 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
 
   if(symbol==SW_addContact) {
     CHECK_EQ(jointType, JT_none, "");
-    auto c = new rai::Contact(*from, *to);
+    new rai::Contact(*from, *to);
     return;
   }
 

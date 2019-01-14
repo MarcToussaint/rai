@@ -10,11 +10,6 @@
 #include <Core/array.h>
 #include "geo.h"
 
-#ifndef RAI_NO_REGISTRY
-#include <Core/graph.h>
-REGISTER_TYPE(T, rai::Transformation)
-#endif
-
 #ifdef RAI_GL
 #  include <GL/glu.h>
 #endif

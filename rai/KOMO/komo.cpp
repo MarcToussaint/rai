@@ -335,6 +335,14 @@ void KOMO::addSwitch_dynamicOn(double time, double endTime, const char *from, co
 //  else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
 }
 
+void KOMO::addSwitch_dynamicOnNewton(double time, double endTime, const char *from, const char* to) {
+  Transformation rel = 0;
+  rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
+  addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
+  if(k_order>=2) addObjective(time, endTime, new TM_NewtonEuler(world, to), OT_eq, NoArr, 1e0, k_order, +0, -1);
+}
+
+
 void KOMO::addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost) {
   addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_free, from, to, world, SWInit_copy));
   if(sqrAccCost>0.){
