@@ -13,9 +13,9 @@
 #include <Geo/pairCollision.h>
 #include "TM_angVel.h"
 
-void POA_distance(arr& y, arr& J, rai::Contact* con, bool a_or_b){
+void POA_distance(arr& y, arr& J, rai::Contact* con, bool b_or_a){
   rai::Shape *s = con->a.shape;
-  if(a_or_b) s = con->b.shape;
+  if(b_or_a) s = con->b.shape;
   CHECK(s,"contact object does not have a shape!");
   double r=s->radius();
   rai::Mesh *m = &s->sscCore();  if(!m->V.N) { m = &s->mesh(); r=0.; }
@@ -88,6 +88,7 @@ void POA_rel_vel2(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool 
   }
 }
 
+//3-dim feature: the difference in POA velocities (V)
 void POA_rel_vel(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool after_or_before){
   CHECK_EQ(Ktuple.N, 3, "");
 
@@ -135,6 +136,37 @@ void POA_rel_vel(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool a
 
   y = vc1 - vc2;
   if(!!J) J = Jvc1 - Jvc2;
+}
+
+//3-dim feature: the POA velocities (V)
+void POA_vel(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool b_or_a){
+  CHECK_GE(Ktuple.N, 2, "");
+
+  rai::Frame *f = &con->a;
+  if(b_or_a) f = &con->b;
+
+  //POA
+  arr cp, Jcp;
+  Ktuple(-2)->kinematicsContactPOA(cp, Jcp, con);
+  expandJacobian(Jcp, Ktuple, -2);
+
+  //object center
+  arr p, Jp;
+  TM_Default pos(TMT_pos, f->ID);
+  pos.Feature::phi(p, Jp, Ktuple);
+
+  //object vel
+  arr v, Jv;
+  TM_LinVel vel(f->ID);
+  vel.phi(v, Jv, Ktuple);
+
+  //object ang vel
+  arr w, Jw;
+  TM_AngVel ang(f->ID);
+  ang.phi(w, Jw, Ktuple);
+
+  y = v - crossProduct(w, cp - p);
+  if(!!J) J = Jv - skew(w) * (Jcp - Jp) + skew(cp-p) * Jw;
 }
 
 rai::Contact *getContact(const rai::KinematicWorld &K, int aId, int bId){
@@ -317,9 +349,17 @@ void TM_Contact_POAmovesContinuously::phi(arr& y, arr& J, const WorldL& Ktuple){
   }
 }
 
-void TM_Contact_ZeroVel::phi(arr& y, arr& J, const WorldL& Ktuple){
+void TM_Contact_POAzeroRelVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   rai::Contact *con = getContact(*Ktuple(-2),a,b);
+#if 0
   POA_rel_vel(y, J, Ktuple, con, true);
+#else
+  arr v1, Jv1, v2, Jv2;
+  POA_vel(v1, Jv1, Ktuple, con, false);
+  POA_vel(v2, Jv2, Ktuple, con, true);
+  y = v1 - v2;
+  if(!!J) J = Jv1 - Jv2;
+#endif
 }
 
 void TM_Contact_ElasticVel::phi(arr& y, arr& J, const WorldL& Ktuple){

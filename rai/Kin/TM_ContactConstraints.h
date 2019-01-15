@@ -54,11 +54,11 @@ struct TM_ContactConstraints_Vel : Feature {
   rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_ContactConstraints_Vel-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
 };
 
-struct TM_Contact_ZeroVel : Feature {
+struct TM_Contact_POAzeroRelVel : Feature {
   int a,b;
-  TM_Contact_ZeroVel(int aShape, int bShape) : a(aShape), b(bShape) { order=1; }
-  TM_Contact_ZeroVel(const rai::KinematicWorld& K, const char* aShapeName=NULL, const char* bShapeName=NULL)
-    : TM_Contact_ZeroVel(initIdArg(K,aShapeName), initIdArg(K,bShapeName)){}
+  TM_Contact_POAzeroRelVel(int aShape, int bShape) : a(aShape), b(bShape) { order=1; }
+  TM_Contact_POAzeroRelVel(const rai::KinematicWorld& K, const char* aShapeName=NULL, const char* bShapeName=NULL)
+    : TM_Contact_POAzeroRelVel(initIdArg(K,aShapeName), initIdArg(K,bShapeName)){}
 
   void phi(arr& y, arr& J, const rai::KinematicWorld& K){ NIY }
   void phi(arr& y, arr& J, const WorldL& Ktuple);

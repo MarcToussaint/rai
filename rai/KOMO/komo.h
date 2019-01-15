@@ -132,6 +132,8 @@ struct KOMO : NonCopyable {
   void addContact_noFriction(double startTime, double endTime, const char *from, const char* to);
   void addContact_Complementary(double startTime, double endTime, const char *from, const char* to);
   //  void addContact_Relaxed(double startTime, double endTime, const char *from, const char* to);
+  void addContact_staticPush(double startTime, double endTime, const char *from, const char* to);
+
 
 
   //===========================================================================
@@ -174,6 +176,8 @@ struct KOMO : NonCopyable {
   void addSwitch_dynamicTrans(double time, double endTime, const char *from, const char *to);
   void addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost);
   void addSwitch_magicTrans(double time, double endTime, const char* from, const char* to, double sqrAccCost);
+  void addSwitch_on(double time, const char *from, const char* to);
+
 
   
   //-- tasks - logic level (used within LGP)

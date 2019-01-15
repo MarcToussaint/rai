@@ -10,6 +10,11 @@
 #include <Kin/kin.h>
 #include <Kin/frame.h>
 
+struct Value{
+  arr y,J;
+  Value(const arr& y, const arr& J) : y(y), J(J) {}
+};
+
 /// defines only a map (task space), not yet the costs or constraints in this space
 struct Feature {
   uint order;       ///< 0=position, 1=vel, etc
@@ -26,6 +31,7 @@ struct Feature {
   
   //-- helpers
   arr phi(const rai::KinematicWorld& K) { arr y; phi(y,NoArr,K); return y; } ///< evaluate without computing Jacobian
+  Value operator()(const WorldL& Ktuple){ arr y,J; phi(y, J, Ktuple); return Value(y,J); }
   
   VectorFunction vf(rai::KinematicWorld& K);
   VectorFunction vf(WorldL& Ktuple);
