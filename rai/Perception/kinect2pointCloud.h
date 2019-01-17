@@ -14,12 +14,12 @@
 
 struct Kinect2PointCloud : Thread {
   //inputs
-  VAR(byteA, kinect_rgb)
-  VARlisten(uint16A, kinect_depth)
-  VAR(rai::Transformation, kinect_frame)
-  VAR(arr, pr2_odom)
+  Var<byteA> kinect_rgb;
+  Var<uint16A> kinect_depth;
+  Var<rai::Transformation> kinect_frame;
+  Var<arr> pr2_odom;
   //outputs
-  VAR(arr, kinect_points)
+  Var<arr> kinect_points;
   
   arr pts,cols;
   uint16A depth;

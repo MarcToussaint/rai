@@ -160,7 +160,7 @@ struct PairSorter:Thread{
       b(this, b_name){}
   PairSorter():Thread("S"), a(this, "a"), b(this, "b"){}
   ~PairSorter(){
-    cout <<"deleting -" <<a.name <<' ' <<b.name <<endl;
+    cout <<"deleting -" <<a.name() <<' ' <<b.name() <<endl;
   }
   void open(){}
   void close(){}

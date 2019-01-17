@@ -24,7 +24,7 @@ struct SendPositionCommandsToBaxter : Thread {
   struct sSendPositionCommandsToBaxter *s;
   rai::KinematicWorld baxterModel;
   
-  SendPositionCommandsToBaxter(const rai::KinematicWorld& baxterWorld);
+  SendPositionCommandsToBaxter(const rai::KinematicWorld& baxterWorld, const Var<CtrlMsg>& _ctrl_ref);
   ~SendPositionCommandsToBaxter() {}
   
   void open();

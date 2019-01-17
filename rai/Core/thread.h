@@ -71,14 +71,12 @@ struct Var_base : NonCopyable {
   RWLock rwlock;               ///< rwLock (handled via read/writeAccess)
   uint revision=0;
   const std::type_info& type;  ///< type of the variable
-  const void *value_ptr=0;     ///< pointer to variable data
   rai::String name;            ///< name
   double write_time=0.;        ///< clock time of last write access
   double data_time=0.;         ///< time stamp of the original data source
   CallbackL<void(Var_base*)> callbacks;
-  struct Node* registryNode=0; ///< every threading object registers itself globally
 
-  Var_base(const std::type_info& _type, void *_value_ptr, const char* _name=0);
+  Var_base(const std::type_info& _type, const char* _name=0);
   /// @name c'tor/d'tor
   virtual ~Var_base();
 
@@ -93,8 +91,6 @@ struct Var_base : NonCopyable {
   int deAccess(Thread* th=NULL);
 
   int getRevision() { rwlock.readLock(); int r=revision; rwlock.unlock(); return r; }
-
-  typedef std::shared_ptr<Var_base> Ptr;
 };
 
 //===========================================================================
@@ -145,7 +141,7 @@ template<class T>
 struct Var_data : Var_base {
   T data;
 
-  Var_data(const char* name) : Var_base(typeid(T), &data, name), data() {} // default constructor for value always initializes, also primitive types 'bool' or 'int'
+  Var_data(const char* name=0) : Var_base(typeid(T), name), data() {} // default constructor for value always initializes, also primitive types 'bool' or 'int'
   ~Var_data() { CHECK(!rwlock.isLocked(), "can't destroy a variable when it is currently accessed!"); }
 };
 
@@ -166,27 +162,21 @@ template<class T> void operator<<(ostream& os, const Var_data<T>& v) { os <<"Var
 template<class T>
 struct Var {
   ptr<Var_data<T>> data;
-  rai::String name; ///< name; by default the RevLock's name; redefine to a variable's name to autoconnect
   Thread *thread;  ///< which thread is this a member of
   int last_read_revision;     ///< last revision that has been accessed (read or write)
-  struct Node* registryNode;
 
-  Var() : Var(NULL, NULL, false) {}
+  Var();
 
   Var(const Var<T>& v) : Var(NULL, v, false) {}
 
-  Var(const char* name) : Var(NULL, name, false) {}
-
-  Var(Thread* _thread) : Var(_thread, NULL, false) {}
-
   /// searches for globally registrated variable 'name', checks type equivalence, and becomes an access for '_thread'
-  Var(Thread* _thread, const char* name, bool threadListens=false);
+  Var(Thread* _thread, bool threadListens=false);
 
   /// A "copy" of acc: An access to the same variable as acc refers to, but now for '_thred'
   Var(Thread* _thread, const Var<T>& acc, bool threadListens=false);
 
   /// A "copy" of acc: An access to the same variable as acc refers to, but now for '_thred'
-  Var(Thread* _thread, const Var_base::Ptr& var, bool threadListens=false);
+  Var(Thread* _thread, const ptr<Var_base>& var, bool threadListens=false);
 
   ~Var();
 
@@ -202,6 +192,12 @@ struct Var {
   WToken<T> set() { return WToken<T>(*data, &data->data, thread/*, &last_read_revision*/); } ///< write access to the variable's data
   WToken<T> set(const double& dataTime) { return WToken<T>(dataTime, *data, &data->data, thread/*, &last_read_revision*/); } ///< write access to the variable's data
 
+  void reassignTo(const ptr<Var_data<T>>& _data){
+    data.reset();
+    data = _data;
+  }
+
+  rai::String& name() const{ return data->name; }
   int readAccess() {  return last_read_revision = data->readAccess((Thread*)thread); }
   int writeAccess() { return data->writeAccess((Thread*)thread); }
   int deAccess() {    return data->deAccess((Thread*)thread); }
@@ -223,16 +219,16 @@ struct Var {
 
   void write(ostream& os) {
     readAccess();
-    os <<"VAR " <<name <<" [" <<data->getStatus() <<"] " <<data->data <<endl;
+    os <<"VAR " <<name() <<" [" <<data->getStatus() <<"] " <<data->data <<endl;
     deAccess();
   }
 };
 
 template<class T> std::ostream& operator<<(std::ostream& os, Var<T>& x) { x.write(os); return os; }
 
-#define VAR(type, name) Var<type> name = Var<type>(this, #name);
-#define VARlisten(type, name) Var<type> name = Var<type>(this, #name, true);
-#define VARname(type, name) Var<type> name = Var<type>(NULL, #name);
+//#define VAR(type, name) Var<type> name = Var<type>(this, #name);
+//#define VARlisten(type, name) Var<type> name = Var<type>(this, #name, true);
+//#define VARname(type, name) Var<type> name = Var<type>(NULL, #name);
 
 //===========================================================================
 
@@ -286,8 +282,6 @@ struct Event : Signaler {
   void stopListenTo(Var_base& c);
 
   void callback(Var_base *v);
-
-  typedef std::shared_ptr<Event> Ptr;
 };
 
 //===========================================================================
@@ -334,7 +328,6 @@ struct MiniThread : Signaler {
   rai::String name;
   pthread_t thread = 0;             ///< the underlying pthread; NULL iff not opened
   pid_t tid = 0;                    ///< system thread id
-  struct Node* registryNode=0; ///< every threading object registers itself globally
 
   /// @name c'tor/d'tor
   MiniThread(const char* _name);
@@ -369,7 +362,6 @@ struct Thread {
   Metronome metronome;          ///< used for beat-looping
   CycleTimer timer;             ///< measure how the time spend per cycle, within step, idle
   int verbose;
-  struct Node* registryNode=0; ///< every threading object registers itself globally
 
   /// @name c'tor/d'tor
   /** DON'T open drivers/devices/files or so here in the constructor,
@@ -419,21 +411,21 @@ struct Thread {
 // high-level methods to control threads
 
 Signaler* moduleShutdown();
-Var_base::Ptr getVariable(const char* name);
+ptr<Var_base> getVariable(const char* name);
 template<class T> Var_data<T>& getVariable(const char* name) {
-  Var_base::Ptr v = getVariable(name);
+  ptr<Var_base> v = getVariable(name);
   if(!v) HALT("can't find variable of name '" <<name <<"'");
   ptr<Var_data<T>> var = std::dynamic_pointer_cast<Var_data<T>>(v);
   if(!var) HALT("can't convert variable of type '" <<NAME(v->type) <<"' to '" <<NAME(typeid(T)) <<"'");
   return *var;
 }
 
-rai::Array<Var_base::Ptr*> getVariables();
+rai::Array<ptr<Var_base>*> getVariables();
 
 template<class T> rai::Array<ptr<Var<T>>> getVariablesOfType() {
   rai::Array<ptr<Var<T>>> ret;
-  rai::Array<Var_base::Ptr*> vars = getVariables();
-  for(Var_base::Ptr* v : vars) {
+  rai::Array<ptr<Var_base>*> vars = getVariables();
+  for(ptr<Var_base>* v : vars) {
     if((*v)->type==typeid(T)) ret.append(std::make_shared<Var<T>>((Thread*)0, *v));
 //    ptr<VariableData<T>> var = std::dynamic_pointer_cast<VariableData<T>>(*v);
 //    if(var) ret.append(Var<T>(NULL, var));
@@ -441,15 +433,8 @@ template<class T> rai::Array<ptr<Var<T>>> getVariablesOfType() {
   return ret;
 }
 
-//template <class T> T& getVariable(const char* name){  return registry()->get<T&>({"VariableData",name});  }
-template <class T> T* getThread(const char* name) {  return dynamic_cast<T*>(registry()->get<Thread*>({"Thread",name}));  }
-void openModules();
-void stepModules();
-void closeModules();
-void threadOpenModules(bool waitForOpened, bool setSignalHandler=true);
-void threadCloseModules();
+void threadCloseModules(); //might lead to a hangup of the main loop, but processes should close
 void threadCancelModules();
-void threadReportCycleTimes();
 
 // ================================================
 //
@@ -545,56 +530,33 @@ struct Signaler {
 
 #endif //RAI_MSVC
 
+template<class T>
+Var<T>::Var()
+  : data(make_shared<Var_data<T>>()), thread(0), last_read_revision(0) {}
 
 template<class T>
-Var<T>::Var(Thread* _thread, const char* name, bool threadListens)
-  : name(name), thread(_thread), last_read_revision(0), registryNode(NULL) {
-  Var_base::Ptr *existing = 0;
-  if(name) existing = registry()->find<Var_base::Ptr>({"VariableData", name});
-  if(existing) {
-    data = std::dynamic_pointer_cast<Var_data<T>>(*existing);
-    if(!data) HALT("a previous variable '" <<(*existing)->name <<"' with type '" <<NAME((*existing)->type) <<"' != '" <<NAME(typeid(T)) <<" already existed");
-  } else {
-    //this is the ONLY place where a variable should be created
-    data = make_shared<Var_data<T>>(name);
-    data->registryNode = registry()->newNode<Var_base::Ptr>({"VariableData", name}, {}, std::dynamic_pointer_cast<Var_base>(data));
-  }
-  if(thread) {
-    registryNode = registry()->newNode<Var<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
-    if(threadListens) thread->event.listenTo(*data);
-  } else {
-    registryNode = registry()->newNode<Var<T>* >({"Access", name}, {data->registryNode}, this);
-  }
+Var<T>::Var(Thread* _thread, bool threadListens)
+  : data(make_shared<Var_data<T>>()), thread(_thread), last_read_revision(0) {
+  if(thread && threadListens) thread->event.listenTo(*data);
 }
 
 template<class T>
 Var<T>::Var(Thread* _thread, const Var<T>& acc, bool threadListens)
-  : data(acc.data), name(acc.name), thread(_thread), last_read_revision(0), registryNode(NULL) {
-  if(thread) {
-    registryNode = registry()->newNode<Var<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
-    if(threadListens) thread->event.listenTo(*data);
-  } else {
-    registryNode = registry()->newNode<Var<T>* >({"Access", name}, {data->registryNode}, this);
-  }
+  : data(acc.data), thread(_thread), last_read_revision(0) {
+  if(thread && threadListens) thread->event.listenTo(*data);
 }
 
 template<class T>
-Var<T>::Var(Thread* _thread, const Var_base::Ptr& var, bool threadListens)
-  : data(NULL), name(var->name), thread(_thread), last_read_revision(0), registryNode(NULL) {
+Var<T>::Var(Thread* _thread, const ptr<Var_base>& var, bool threadListens)
+  : data(NULL), thread(_thread), last_read_revision(0) {
   if(var->type!=typeid(T)) HALT("types don't match!");
   data = std::dynamic_pointer_cast<Var_data<T>>(var); //dynamic_cast<VariableData<T>*>(&var));
-  if(thread) {
-    registryNode = registry()->newNode<Var<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
-    if(threadListens) thread->event.listenTo(*data);
-  } else {
-    registryNode = registry()->newNode<Var<T>* >({"Access", name}, {data->registryNode}, this);
-  }
+  if(thread && threadListens) thread->event.listenTo(*data);
 }
 
 template<class T>
 Var<T>::~Var() {
 //  cout <<data.use_count() <<endl;
-  if(registryNode) registry()->delNode(registryNode);
 }
 
 template<class T>
@@ -613,20 +575,6 @@ int Var<T>::waitForRevisionGreaterThan(int rev) {
   return data->getRevision();
 #endif
 }
-
-//template<class T> Var<T>& Var<T>::operator=(const Var& v){
-////  if(data) data.reset();
-//  if(registryNode) registry()->delNode(registryNode);
-//  data = v.data;
-//  name = v.name;
-//  thread = v.thread;
-//  if(thread) {
-//    registryNode = registry()->newNode<Var<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
-//  } else {
-//    registryNode = registry()->newNode<Var<T>* >({"Access", name}, {data->registryNode}, this);
-//  }
-//  return *this;
-//}
 
 template<class T>
 void Var<T>::stopListening() { thread->event.stopListenTo(data); }

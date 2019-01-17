@@ -13,9 +13,9 @@
 
 Filter::Filter()
   : Thread("Filter", -1.),
-    percepts_input(this, "percepts_input", true), //listens!!
-    percepts_filtered(this, "percepts_filtered"),
-    modelWorld(this, "modelWorld") {
+    percepts_input(this, true), //listens!!
+    percepts_filtered(this),
+    modelWorld(this) {
   threadOpen();
 }
 

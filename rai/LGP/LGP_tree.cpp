@@ -99,8 +99,7 @@ void initFolStateFromKin(FOL_World& L, const rai::KinematicWorld& K) {
 }
 
 LGP_Tree::LGP_Tree()
-  : verbose(2), numSteps(0),
-    solutions("OptLGPsolutions"){
+  : verbose(2), numSteps(0){
   dataPath <<"z." <<rai::date2() <<"/";
   dataPath = rai::getParameter<rai::String>("LGP_dataPath", dataPath);
   rai::system(STRING("mkdir -p " <<dataPath));
@@ -147,9 +146,9 @@ LGP_Tree::~LGP_Tree() {
 void LGP_Tree::initDisplay() {
   if(verbose>2 && !views.N) {
     views.resize(4);
-    views(1) = make_shared<KinPathViewer>("pose", 1.2, -1);
-    views(2) = make_shared<KinPathViewer>("sequence", 1.2, -1);
-    views(3) = make_shared<KinPathViewer>("path", .05, -2);
+    views(1) = make_shared<KinPathViewer>(Var<WorldL>(), 1.2, -1);
+    views(2) = make_shared<KinPathViewer>(Var<WorldL>(), 1.2, -1);
+    views(3) = make_shared<KinPathViewer>(Var<WorldL>(), .05, -2);
     for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
   }
   if(!dth) dth = new DisplayThread(this);

@@ -20,14 +20,14 @@ struct sImageViewer {
   sImageViewer(const char* tit) : gl(tit) {}
 };
 
-ImageViewer::ImageViewer(const char* img_name)
-  : Thread(STRING("ImageViewer_"<<img_name), -1),
-    img(this, img_name, true) {
-  threadOpen();
-}
+//ImageViewer::ImageViewer(const char* img_name)
+//  : Thread(STRING("ImageViewer_"<<img_name), -1),
+//    img(this, img_name, true) {
+//  threadOpen();
+//}
 
 ImageViewer::ImageViewer(const Var<byteA>& _img, double beatIntervalSec)
-  : Thread("ImageViewer", beatIntervalSec),
+  : Thread(STRING("ImageViewer_" <<_img.name()), beatIntervalSec),
     img(this, _img, (beatIntervalSec<0.)){
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
@@ -120,15 +120,15 @@ void glDrawAxes(void*) {
   glDrawAxes(1.);
 }
 
-PointCloudViewer::PointCloudViewer(const char* pts_name, const char* rgb_name)
-  : Thread(STRING("PointCloudViewer_"<<pts_name <<'_' <<rgb_name), .1),
-    pts(this, pts_name),
-    rgb(this, rgb_name) {
-  threadLoop();
-}
+//PointCloudViewer::PointCloudViewer(const char* pts_name, const char* rgb_name)
+//  : Thread(STRING("PointCloudViewer_"<<pts_name <<'_' <<rgb_name), .1),
+//    pts(this, pts_name),
+//    rgb(this, rgb_name) {
+//  threadLoop();
+//}
 
 PointCloudViewer::PointCloudViewer(const Var<arr>& _pts, const Var<byteA>& _rgb, double beatIntervalSec)
-  : Thread("PointCloudViewer", beatIntervalSec),
+  : Thread(STRING("PointCloudViewer_"<<_pts.name() <<'_' <<_rgb.name()), beatIntervalSec),
     pts(this, _pts, (beatIntervalSec<0.)),
     rgb(this, _rgb, (beatIntervalSec<0.)){
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
@@ -139,7 +139,7 @@ PointCloudViewer::~PointCloudViewer() {
 }
 
 void PointCloudViewer::open() {
-  s = new sPointCloudViewer(STRING("PointCloudViewer: "<<pts.name <<' ' <<rgb.name));
+  s = new sPointCloudViewer(STRING("PointCloudViewer: "<<pts.name() <<' ' <<rgb.name()));
 #if 1
   s->gl.add(glDrawAxes);
   s->gl.add(glStandardLight);
@@ -195,7 +195,7 @@ PointCloudViewerCallback::~PointCloudViewerCallback(){
 
 void PointCloudViewerCallback::call(Var_base* v){
   if(!s){
-    s = new sPointCloudViewer(STRING("PointCloudViewer: "<<pts.name <<' ' <<rgb.name));
+    s = new sPointCloudViewer(STRING("PointCloudViewer: "<<pts.name() <<' ' <<rgb.name()));
     s->gl.add(glStandardScene);
     s->gl.add(s->pc);
   }
@@ -230,9 +230,9 @@ void PointCloudViewerCallback::call(Var_base* v){
 // MeshAViewer
 //
 
-MeshAViewer::MeshAViewer(const char* meshes_name)
-  : Thread(STRING("MeshAViewer_"<<meshes_name), .1),
-    meshes(this, meshes_name) {
+MeshAViewer::MeshAViewer(const Var<MeshA>& _meshes)
+  : Thread(STRING("MeshAViewer_"<<_meshes.name()), .1),
+    meshes(this, _meshes) {
   threadLoop();
 }
 
@@ -241,7 +241,7 @@ MeshAViewer::~MeshAViewer() {
 }
 
 void MeshAViewer::open() {
-  gl = new OpenGL(STRING("MeshAViewer: "<<meshes.name));
+  gl = new OpenGL(STRING("MeshAViewer: "<<meshes.name()));
   gl->add(glStandardScene);
   gl->add(glDrawMeshes, &copy);
   gl->camera.setDefault();
