@@ -84,7 +84,7 @@ struct KinPoseViewer : Thread, GLDrawer {
   rai::KinematicWorld copy;
   WorldL copies;
   
-  KinPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec=-1.);
+//  KinPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec=-1.);
   KinPoseViewer(Var<rai::KinematicWorld>& _kin, const Var<arr>& _frameState, double beatIntervalSec=-1.);
   ~KinPoseViewer();
   

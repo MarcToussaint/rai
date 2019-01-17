@@ -242,7 +242,6 @@ struct Signaler {
   Mutex statusMutex;
   pthread_cond_t cond;
 
-
 //  SignalerL listeners;   ///< list of other condition variables that are being signaled on a setStatus access
 //  SignalerL listensTo;   ///< ...
 //  SignalerL messengers;  ///< set(!) of condition variables that send signals (via the listen mechanism) - is cleared by the user only
@@ -570,8 +569,7 @@ Var<T>::Var(Thread* _thread, const char* name, bool threadListens)
 
 template<class T>
 Var<T>::Var(Thread* _thread, const Var<T>& acc, bool threadListens)
-  : data(NULL), name(acc.name), thread(_thread), last_read_revision(0), registryNode(NULL) {
-  data = acc.data;
+  : data(acc.data), name(acc.name), thread(_thread), last_read_revision(0), registryNode(NULL) {
   if(thread) {
     registryNode = registry()->newNode<Var<T>* >({"Access", name}, {thread->registryNode, data->registryNode}, this);
     if(threadListens) thread->event.listenTo(*data);

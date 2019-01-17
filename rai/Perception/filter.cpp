@@ -179,12 +179,12 @@ void Filter::step() {
 
       CtrlTask *t;
       
-      t = new CtrlTask(STRING("syncPos_" <<b->name), new TM_Default(TMT_pos, b->ID));
-      t->ref = new MotionProfile_Const(p->pose.pos.getArr());
+      t = new CtrlTask(STRING("syncPos_" <<b->name), make_shared<TM_Default>(TMT_pos, b->ID));
+      t->ref = make_shared<MotionProfile_Const>(p->pose.pos.getArr());
       taskController.tasks.append(t);
       
-      t = new CtrlTask(STRING("syncQuat_" <<b->name), new TM_Default(TMT_quat, b->ID));
-      t->ref = new MotionProfile_Const(p->pose.rot.getArr4d(), true);
+      t = new CtrlTask(STRING("syncQuat_" <<b->name), make_shared<TM_Default>(TMT_quat, b->ID));
+      t->ref = make_shared<MotionProfile_Const>(p->pose.rot.getArr4d(), true);
       taskController.tasks.append(t);
     }
   }
