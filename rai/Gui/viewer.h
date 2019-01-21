@@ -17,7 +17,6 @@ struct ImageViewer : Thread {
   struct sImageViewer *s;
   Var<byteA> img;
   bool flipImage = false;
-  ImageViewer(const char* img_name="rgb");
   ImageViewer(const Var<byteA>& _img, double beatIntervalSec=-1.);
   ~ImageViewer();
   void open();
@@ -59,7 +58,7 @@ struct MeshAViewer : Thread {
   Var<MeshA> meshes;
   MeshA copy;
   struct OpenGL *gl;
-  MeshAViewer(const char* meshes_name="visionDisplay");
+  MeshAViewer(const Var<MeshA>& _meshes);
   ~MeshAViewer();
   void open();
   void step();

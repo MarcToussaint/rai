@@ -883,7 +883,7 @@ rai::String::String() : std::iostream(&buffer) { init(); clearStream(); }
 rai::String::String(const String& s) : std::iostream(&buffer) { init(); this->operator=(s); }
 
 /// copy constructor for an ordinary C-string (needs to be 0-terminated)
-rai::String::String(const char *s) : std::iostream(&buffer) { init(); this->operator=(s); }
+rai::String::String(const char *s) : std::iostream(&buffer) { init(); if(s) this->operator=(s); }
 
 rai::String::String(const std::string& s) : std::iostream(&buffer) { init(); this->operator=(s.c_str()); }
 

@@ -127,6 +127,7 @@ void Signaler::broadcast(Signaler* messenger) {
 }
 
 void Event::listenTo(Var_base& v) {
+  CHECK(&v, "");
   auto lock = statusMutex();
   v.readAccess();
   variables.append(&v);
@@ -272,14 +273,10 @@ int Signaler::waitForStatusSmallerThan(int i, bool userHasLocked, double timeout
 // VariableBase
 //
 
-Var_base::Var_base(const std::type_info& _type, void* _value_ptr, const char* _name) : type(_type), value_ptr(_value_ptr), name(_name) {
-//  registryNode = registry()->newNode<VariableBase* >({"VariableData", name}, {}, this);
-//  registryNode = registry()->newNode<VariableBase::Ptr>({"VariableData", name}, {}, std::dynamic_pointer_cast<VariableBase>(data));
+Var_base::Var_base(const std::type_info& _type, const char* _name) : type(_type), name(_name) {
 }
 
 Var_base::~Var_base() {
-//  CHECK(registryNode,"");
-//  if(registryNode) registry()->delNode(registryNode);
 }
 
 int Var_base::readAccess(Thread *th) {
@@ -421,8 +418,6 @@ void* MiniThread_staticMain(void *_self) {
 }
 
 MiniThread::MiniThread(const char* _name) : Signaler(tsIsClosed), name(_name) {
-
-  registryNode = registry()->newNode<MiniThread*>({"MiniThread", name}, {}, this);
   if(name.N>14) name.resize(14, true);
   
   statusLock();
@@ -443,7 +438,6 @@ MiniThread::~MiniThread() {
            That's because the 'virtual table is destroyed' before calling the destructor ~Thread (google 'call virtual function\
            in destructor') but now the destructor has to call 'threadClose' which triggers a Thread::close(), which is\
            pure virtual while you're trying to call ~Thread.")
-    registry()->delNode(registryNode);
 }
 
 void MiniThread::threadClose(double timeoutForce) {
@@ -535,7 +529,6 @@ Thread::Thread(const char* _name, double beatIntervalSec)
     step_count(0),
     metronome(beatIntervalSec),
     verbose(0) {
-  registryNode = registry()->newNode<Thread*>({"Thread", name}, {}, this);
   if(name.N>14) name.resize(14, true);
 }
 
@@ -545,7 +538,6 @@ Thread::~Thread() {
            That's because the 'virtual table is destroyed' before calling the destructor ~Thread (google 'call virtual function\
            in destructor') but now the destructor has to call 'threadClose' which triggers a Thread::close(), which is\
            pure virtual while you're trying to call ~Thread.")
-    registry()->delNode(registryNode);
 }
 
 void Thread::threadOpen(bool wait, int priority) {
@@ -776,6 +768,7 @@ void signalhandler(int s) {
   }
 }
 
+#if 0
 void openModules() {
   NodeL threads = registry()->getNodesOfType<Thread*>();
   for(Node* th:threads) { th->get<Thread*>()->open(); }
@@ -791,12 +784,12 @@ void closeModules() {
   for(Node* th:threads) { th->get<Thread*>()->close(); }
 }
 
-Var_base::Ptr getVariable(const char* name) {
-  return registry()->get<Var_base::Ptr>({"VariableData", name});
+ptr<Var_base> getVariable(const char* name) {
+  return registry()->get<ptr<Var_base>>({"VariableData", name});
 }
 
-rai::Array<Var_base::Ptr*> getVariables() {
-  return registry()->getValuesOfType<Var_base::Ptr>();
+rai::Array<ptr<Var_base>*> getVariables() {
+  return registry()->getValuesOfType<ptr<Var_base>>();
 }
 
 void threadOpenModules(bool waitForOpened, bool setSignalHandler) {
@@ -829,6 +822,15 @@ void threadReportCycleTimes() {
     Thread *thread=th->get<Thread*>();
     cout <<std::setw(30) <<thread->name <<" : " <<thread->timer.report() <<endl;
   }
+}
+#endif
+
+void threadCloseModules() {
+  NIY
+}
+
+void threadCancelModules() {
+  NIY
 }
 
 //===========================================================================
@@ -939,7 +941,7 @@ int _allPositive(const VarL& signalers, int whoChanged){
 }
 
 RUN_ON_INIT_BEGIN(thread)
-rai::Array<Var_base::Ptr*>::memMove=true;
+rai::Array<ptr<Var_base>*>::memMove=true;
 ThreadL::memMove=true;
 SignalerL::memMove=true;
 RUN_ON_INIT_END(thread)

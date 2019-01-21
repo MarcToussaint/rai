@@ -116,7 +116,7 @@ struct Recorder : Thread {
   Recorder(const char* var_name) : Thread(STRING("Recorder_"<<var_name)), access(this, var_name, true) {}
   
   void open() {
-    rai::open(fil, STRING("z." <<access.name <<'.' <<rai::getNowString() <<".dat"));
+    rai::open(fil, STRING("z." <<access.name() <<'.' <<rai::getNowString() <<".dat"));
   }
   void step() {
     uint rev = access.readAccess();

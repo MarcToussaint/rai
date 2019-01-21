@@ -200,6 +200,10 @@ CtrlTask::CtrlTask(const char* name, ptr<Feature> map)
   //  ref = new MotionProfile_PD();
 }
 
+CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, const ptr<MotionProfile>& _ref)
+  : map(_map), name(name), active(true), status(CT_init), ref(_ref), prec(ARR(1.)), hierarchy(1) {
+}
+
 CtrlTask::CtrlTask(const char* name, ptr<Feature> map, double decayTime, double dampingRatio, double maxVel, double maxAcc)
   : CtrlTask(name, map) {
   if(dampingRatio<0.){

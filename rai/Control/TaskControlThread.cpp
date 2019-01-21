@@ -11,13 +11,13 @@
 #include <Kin/frame.h>
 
 TaskControlThread::TaskControlThread(const rai::KinematicWorld& _model,
-                  Var<CtrlMsg>& _ctrl_ref,
-                  Var<CtrlMsg>& _ctrl_state)
+                  const Var<CtrlMsg>& _ctrl_ref,
+                  const Var<CtrlMsg>& _ctrl_state)
   : Thread("TaskControlThread", .01),
     ctrl_ref(_ctrl_ref),
     ctrl_state(_ctrl_state),
-    model_ref(_model),
-    model_real(_model),
+//    model_ref(_model),
+//    model_real(_model),
     taskController(NULL),
     useSwift(true),
     requiresInitialSync(true),
@@ -33,7 +33,10 @@ TaskControlThread::TaskControlThread(const rai::KinematicWorld& _model,
   if(hyper>0.) this->metronome.reset(.01/hyper);
 
   //memorize the "NULL position", which is the initial model position
+  model_ref.set() = _model;
   q0 = _model.getJointState();
+  q_real = q_model = q0;
+  qdot_real = qdot_model = zeros(q0.N);
 
   //initialize Kp and Kd
   Kp_base = zeros(q0.N);
@@ -48,7 +51,7 @@ TaskControlThread::TaskControlThread(const rai::KinematicWorld& _model,
     }
   }
 
-  taskController = make_shared<TaskControlMethods>(model_ref);
+  taskController = make_shared<TaskControlMethods>(_model);
 
   threadLoop();
 }
@@ -68,8 +71,8 @@ void TaskControlThread::step() {
         q_real = state->q;
         qdot_real = state->qdot;
       }
-      model_ref.setJointState(q_real);
-      model_real.setJointState(q_real);
+      model_ref.set()->setJointState(q_real);
+//      model_real.setJointState(q_real);
       q_model = q_real;
       qdot_model = qdot_real;
       requiresInitialSync = false;
@@ -82,12 +85,14 @@ void TaskControlThread::step() {
   //-- read current state
   {
     auto state = ctrl_state.get();
-    q_real = state->q;
-    qdot_real = state->qdot;
+    if(state->q.N){
+      q_real = state->q;
+      qdot_real = state->qdot;
+    }
   }
-  model_real.setJointState(q_real);
+//  model_real.setJointState(q_real);
   if(false){
-    model_ref.setJointState(q_real);
+    model_ref.set()->setJointState(q_real);
     q_model = q_real;
     qdot_model = qdot_real;
   }
@@ -96,11 +101,13 @@ void TaskControlThread::step() {
   //-- compute the feedback controller step and iterate to compute a forward reference
   arr P_compliance;
   {
-    if(!(step_count%20)) model_ref.watch(); //only for debugging
+    auto K = model_ref.set();
+
+    if(!(step_count%20)) K->watch(false, STRING("TaskControlThread model_ref " <<step_count)); //only for debugging
 
     ctrlTasks.writeAccess();
     taskController->tasks = ctrlTasks();
-    taskController->updateCtrlTasks(.01, model_ref); //update with time increment
+    taskController->updateCtrlTasks(.01, K); //update with time increment
     
     //-- compute IK step
     double maxQStep = 2e-1;
@@ -113,9 +120,9 @@ void TaskControlThread::step() {
     }
     
     //set/test the new configuration
-    model_ref.setJointState(q_model, qdot_model);
-    if(useSwift) model_ref.stepSwift();
-    taskController->updateCtrlTasks(0., model_ref); //update without time increment
+    K->setJointState(q_model, qdot_model);
+    if(useSwift) K->stepSwift();
+    taskController->updateCtrlTasks(0., K); //update without time increment
     double cost = taskController->getIKCosts();
 //    IK_cost.set() = cost;
     
@@ -123,9 +130,9 @@ void TaskControlThread::step() {
     if(cost>1000.) { //reject!
       LOG(-1) <<"HIGH COST IK! " <<cost;
       q_model -= .9*dq;
-      model_ref.setJointState(q_model, qdot_model);
-      if(useSwift) model_ref.stepSwift();
-      taskController->updateCtrlTasks(0., model_ref); //update without time increment
+      K->setJointState(q_model, qdot_model);
+      if(useSwift) K->stepSwift();
+      taskController->updateCtrlTasks(0., K); //update without time increment
     }
     
     if(verbose) taskController->reportCurrentState();
@@ -202,18 +209,23 @@ void TaskControlThread::step() {
   }
 }
 
-ptr<CtrlTask> TaskControlThread::addCtrlTask(const char* name, FeatureSymbol fs, const StringA& frames,
-                                    double decayTime, double dampingRatio, double maxVel, double maxAcc){
-  stepMutex.lock();
-  ptr<CtrlTask> t = make_shared<CtrlTask>(name, fs, frames, model_ref, decayTime,  dampingRatio,  maxVel, maxAcc);
-  t->update(0., model_ref);
-  stepMutex.unlock();
+ptr<CtrlTask> TaskControlThread::addCtrlTask(const char* name, const ptr<Feature>& map, const ptr<MotionProfile>& ref){
+  CtrlTask *t = new CtrlTask(name, map, ref);
+  t->update(0., model_ref.get());
   ctrlTasks.set()->append(t);
   return t;
 }
 
-ptr<CtrlTask> TaskControlThread::addCompliance(const char* name, FeatureSymbol fs, const StringA& frames, const arr& compliance){
-  ptr<CtrlTask> t = make_shared<CtrlTask>(name, ptr<Feature>(symbols2feature(fs, frames, model_ref)));
+CtrlTask *TaskControlThread::addCtrlTask(const char* name, FeatureSymbol fs, const StringA& frames,
+                                    double decayTime, double dampingRatio, double maxVel, double maxAcc){
+  CtrlTask *t = new CtrlTask(name, fs, frames, model_ref.get(), decayTime,  dampingRatio,  maxVel, maxAcc);
+  t->update(0., model_ref.get());
+  ctrlTasks.set()->append(t);
+  return t;
+}
+
+CtrlTask* TaskControlThread::addCompliance(const char* name, FeatureSymbol fs, const StringA& frames, const arr& compliance){
+  CtrlTask *t = new CtrlTask(name, ptr<Feature>(symbols2feature(fs, frames, model_ref.get())));
   t->complianceDirection = compliance;
   ctrlTasks.set()->append(t);
   return t;

@@ -14,11 +14,11 @@
 
 //===========================================================================
 
-KinViewer_old::KinViewer_old(const char* varname, double beatIntervalSec, bool computeCameraView)
-  : Thread(STRING("KinViewer_old_"<<varname), beatIntervalSec),
-    modelWorld(this, varname, (beatIntervalSec<0.)),
-    modelCameraView(this, "modelCameraView"),
-    modelDepthView(this, "modelDepthView"),
+KinViewer_old::KinViewer_old(const Var<rai::KinematicWorld>& _modelWorld, double beatIntervalSec, bool computeCameraView)
+  : Thread(STRING("KinViewer_old_"<<_modelWorld.name()), beatIntervalSec),
+    modelWorld(this, _modelWorld, (beatIntervalSec<0.)),
+    modelCameraView(this),
+    modelDepthView(this),
     computeCameraView(computeCameraView) {
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
@@ -26,7 +26,7 @@ KinViewer_old::KinViewer_old(const char* varname, double beatIntervalSec, bool c
 KinViewer_old::~KinViewer_old() { threadClose(); }
 
 void KinViewer_old::open() {
-  copy.gl(STRING("KinViewer_old: "<<modelWorld.name));
+  copy.gl(STRING("KinViewer_old: "<<modelWorld.name()));
 }
 
 void KinViewer_old::step() {
@@ -55,13 +55,7 @@ void KinViewer_old::step() {
 
 //===========================================================================
 
-KinViewer::KinViewer(const char* world_name, double beatIntervalSec)
-  : Thread(STRING("KinViewer_"<<world_name), beatIntervalSec),
-    world(this, world_name, (beatIntervalSec<0.)) {
-  if(beatIntervalSec>=0.) threadLoop(); else threadStep();
-}
-
-KinViewer::KinViewer(Var<rai::KinematicWorld>& _kin, double beatIntervalSec, const char* _cameraFrameName)
+KinViewer::KinViewer(const Var<rai::KinematicWorld>& _kin, double beatIntervalSec, const char* _cameraFrameName)
   : Thread("KinViewer", beatIntervalSec),
     world(this, _kin, (beatIntervalSec<0.)){
   if(_cameraFrameName && strlen(_cameraFrameName)>0){
@@ -75,7 +69,7 @@ KinViewer::~KinViewer() {
 }
 
 void KinViewer::open() {
-  gl = new OpenGL(STRING("KinViewer: "<<world.name));
+  gl = new OpenGL(STRING("KinViewer: "<<world.name()));
   gl->add(glStandardScene);
   gl->add(glDrawMeshes, &meshesCopy);
 //  gl->add(rai::glDrawProxies, &proxiesCopy);
@@ -152,9 +146,9 @@ void KinPathViewer::clear() {
   text.clear();
 }
 
-KinPathViewer::KinPathViewer(const char* varname, double beatIntervalSec, int tprefix)
-  : Thread(STRING("KinPathViewer_"<<varname), beatIntervalSec),
-    configurations(this, varname, (beatIntervalSec<0.)),
+KinPathViewer::KinPathViewer(const Var<WorldL>& _configurations, double beatIntervalSec, int tprefix)
+  : Thread(STRING("KinPathViewer_"<<_configurations.name()), beatIntervalSec),
+    configurations(this, _configurations, (beatIntervalSec<0.)),
     t(0), tprefix(tprefix), writeToFiles(false) {
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
@@ -165,7 +159,7 @@ KinPathViewer::~KinPathViewer() {
 }
 
 void KinPathViewer::open() {
-  copy.gl(STRING("KinPathViewer: "<<configurations.name));
+  copy.gl(STRING("KinPathViewer: "<<configurations.name()));
 }
 
 void KinPathViewer::step() {
@@ -295,12 +289,12 @@ void KinPoseViewer::glDraw(OpenGL &gl) {
 
 //===========================================================================
 
-ComputeCameraView::ComputeCameraView(double beatIntervalSec, const char* modelWorld_name)
+ComputeCameraView::ComputeCameraView(const Var<rai::KinematicWorld>& _modelWorld, double beatIntervalSec)
   : Thread("ComputeCameraView", beatIntervalSec),
-    modelWorld(this, modelWorld_name, (beatIntervalSec<.0)),
-    cameraView(this, "kinect_rgb"), //"cameraView"),
-    cameraDepth(this, "kinect_depth"), //"cameraDepth"),
-    cameraFrame(this, "kinect_frame"), //"cameraFrame"),
+    modelWorld(this, _modelWorld, (beatIntervalSec<.0)),
+    cameraView(this), //"cameraView"),
+    cameraDepth(this), //"cameraDepth"),
+    cameraFrame(this), //"cameraFrame"),
     getDepth(true) {
   if(beatIntervalSec<0.) threadOpen();
   else threadLoop();

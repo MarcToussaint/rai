@@ -29,9 +29,9 @@ struct TaskControlThread : Thread {
 //  VAR(bool, fixBase)
 //  VAR(double, IK_cost)
   
-private:
-  rai::KinematicWorld model_ref;
-  rai::KinematicWorld model_real;
+//private:
+  Var<rai::KinematicWorld> model_ref;
+//  rai::KinematicWorld model_real;
   ptr<TaskControlMethods> taskController;
   arr q_real, qdot_real; //< real state
   arr q_model, qdot_model; //< model state
@@ -41,18 +41,21 @@ private:
   double kp_factor, kd_factor, ki_factor;
   bool useSwift;
   bool requiresInitialSync; //< whether the step() should reinit the state from the ros message
+public:
   int verbose;
   
 public:
   TaskControlThread(const rai::KinematicWorld& _model,
-                    Var<CtrlMsg>& _ctrl_ref,
-                    Var<CtrlMsg>& _ctrl_state);
+                    const Var<CtrlMsg>& _ctrl_ref,
+                    const Var<CtrlMsg>& _ctrl_state);
   ~TaskControlThread();
   
   void step();
 
-  ptr<CtrlTask> addCtrlTask(const char* name, FeatureSymbol fs, const StringA& frames,
-                            double decayTime, double dampingRatio=-1., double maxVel=-1., double maxAcc=-1.);
+  CtrlTask* addCtrlTask(const char* name, const ptr<Feature>& map, const ptr<MotionProfile>& ref);
+
+  CtrlTask* addCtrlTask(const char* name, FeatureSymbol fs, const StringA& frames,
+                   double decayTime, double dampingRatio=-1., double maxVel=-1., double maxAcc=-1.);
 
   ptr<CtrlTask> addCompliance(const char* name, FeatureSymbol fs, const StringA& frames,
                               const arr& compliance);

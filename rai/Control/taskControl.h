@@ -134,6 +134,7 @@ struct CtrlTask {
   double f_alpha, f_gamma; ///< TODO
   
   CtrlTask(const char* name, ptr<Feature> map);
+  CtrlTask(const char* name, const ptr<Feature>& _map, const ptr<MotionProfile>& _ref);
   CtrlTask(const char* name, ptr<Feature> map, double decayTime, double dampingRatio, double maxVel=-1., double maxAcc=-1.);
   CtrlTask(const char* name, FeatureSymbol fs, const StringA& frames, const rai::KinematicWorld& K, double decayTime, double dampingRatio, double maxVel=-1., double maxAcc=-1.);
   CtrlTask(const char* name, ptr<Feature> map, const Graph& params);
