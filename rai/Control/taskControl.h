@@ -10,6 +10,7 @@
 
 #include <Kin/taskMaps.h>
 #include <Algo/spline.h>
+#include <Core/thread.h>
 
 /**
  * @file
@@ -21,7 +22,6 @@
 
 struct CtrlTask;
 typedef rai::Array<CtrlTask*> CtrlTaskL;
-enum CT_Status { CT_init=-1, CT_running, CT_conv, CT_done, CT_stalled };
 
 //===========================================================================
 
@@ -29,7 +29,7 @@ enum CT_Status { CT_init=-1, CT_running, CT_conv, CT_done, CT_stalled };
 /// [perhaps an adaptive phase, or Peter's adaptation to object motions, could be a modest way to incorporate feedback in the future]
 struct MotionProfile {
   virtual ~MotionProfile() {}
-  virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot) = 0;
+  virtual ActStatus update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot) = 0;
   virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr) = 0;
   virtual void setTimeScale(double d) = 0;
   virtual void resetState() = 0;
@@ -42,7 +42,7 @@ struct MotionProfile_Const : MotionProfile {
   arr y_target;
   bool flipTargetSignOnNegScalarProduct;
   MotionProfile_Const(const arr& y_target, bool flip=false) : y_target(y_target), flipTargetSignOnNegScalarProduct(flip) {}
-  virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
+  virtual ActStatus update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
   virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr){ y_target = ytarget; }
   virtual void setTimeScale(double d) {}
   virtual void resetState() {}
@@ -55,7 +55,7 @@ struct MotionProfile_Sine : MotionProfile {
   arr y_start, y_target, y_err;
   double t, T;
   MotionProfile_Sine(const arr& y_target, double duration) : y_target(y_target), t(0.), T(duration) {}
-  virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
+  virtual ActStatus update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
   virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr){ y_target = ytarget; }
   virtual void setTimeScale(double d) { T=d; }
   virtual void resetState() { y_start.clear(); y_err.clear(); t=0.; }
@@ -78,7 +78,7 @@ struct MotionProfile_PD: MotionProfile {
   
   virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr);
   virtual void setTimeScale(double d) { setGainsAsNatural(d, .9); }
-  virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
+  virtual ActStatus update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
   virtual void resetState() { y_ref.clear(); v_ref.clear(); }
 
   void setGains(double _kp, double _kd);
@@ -100,7 +100,7 @@ struct MotionProfile_Path: MotionProfile {
   double executionTime;
   double phase;
   MotionProfile_Path(const arr& path, double executionTime);
-  virtual CT_Status update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
+  virtual ActStatus update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
   virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr){ HALT("can't directly set target of a path"); }
   virtual void setTimeScale(double d){ executionTime = d; }
   virtual void resetState() { NIY }
@@ -115,8 +115,7 @@ struct CtrlTask {
   ptr<Feature> map;      ///< this defines the task space
   rai::String name;  ///< just for easier reporting
   bool active;       ///< also non-active tasks are updates (states evaluated), but don't enter the TaskControlMethods
-  CT_Status status;
-  rai::Array<std::function<void(CtrlTask*,int)> > callbacks;
+  Var<ActStatus> status;
   
   //-- this is always kept up-to-date (in update)
   arr y, v, J_y;     ///< update() will evaluate these for a given kinematic configuration
@@ -140,8 +139,8 @@ struct CtrlTask {
   CtrlTask(const char* name, ptr<Feature> map, const Graph& params);
   ~CtrlTask();
   
-  CT_Status update(double tau, const rai::KinematicWorld& world);
-  void resetState() { if(ref) ref->resetState(); status=CT_init; }
+  ActStatus update(double tau, const rai::KinematicWorld& world);
+  void resetState() { if(ref) ref->resetState(); status.set()=AS_init; }
   
   arr getPrec();
   void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::KinematicWorld& world);
@@ -163,13 +162,13 @@ void fwdSimulateControlLaw(arr &Kp, arr &Kd, arr &u0, rai::KinematicWorld& world
 
 /// implements a number of basic equations given a set of control tasks
 struct TaskControlMethods {
-  rai::Array<CtrlTask*> tasks;
+  rai::Array<ptr<CtrlTask>> tasks;
   arr Hmetric;           ///< defines the metric in q-space (or qddot-space)
   boolA lockJoints;
   
   TaskControlMethods(const rai::KinematicWorld& world);
   
-  CtrlTask* addPDTask(const char* name, double decayTime, double dampingRatio, ptr<Feature> map);
+  ptr<CtrlTask> addPDTask(const char* name, double decayTime, double dampingRatio, ptr<Feature> map);
   
   void updateCtrlTasks(double tau, const rai::KinematicWorld& world);
   void resetCtrlTasksState();

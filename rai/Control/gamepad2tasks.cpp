@@ -102,7 +102,7 @@ double gamepadSignalMap(double x) {
 bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::KinematicWorld& K) {
   if(stopButtons(gamepadState)) return true;
   
-  for(CtrlTask* pdt:TC.tasks) pdt->active=false;
+  for(ptr<CtrlTask>& pdt:TC.tasks) pdt->active=false;
 
 HALT("change code: add a qNull here explicitly");
 //  TC.qNullCostRef.PD().setGains(0., 10.); //nullspace qitself is not used for homing by default

@@ -24,7 +24,7 @@ struct TaskControlThread : Thread {
   
   Var<CtrlMsg> ctrl_ref;
   Var<CtrlMsg> ctrl_state;
-  Var<rai::Array<CtrlTask*>> ctrlTasks;
+  Var<rai::Array<ptr<CtrlTask>>> ctrlTasks;
 //  Var<rai::KinematicWorld> model;
 //  VAR(bool, fixBase)
 //  VAR(double, IK_cost)
@@ -51,12 +51,12 @@ public:
   
   void step();
 
-  CtrlTask* addCtrlTask(const char* name, FeatureSymbol fs, const StringA& frames,
-                   double decayTime, double dampingRatio, double maxVel=-1., double maxAcc=-1.);
+  ptr<CtrlTask> addCtrlTask(const char* name, FeatureSymbol fs, const StringA& frames,
+                            double decayTime, double dampingRatio=-1., double maxVel=-1., double maxAcc=-1.);
 
-  CtrlTask* addCompliance(const char* name, FeatureSymbol fs, const StringA& frames,
-                          const arr& compliance);
+  ptr<CtrlTask> addCompliance(const char* name, FeatureSymbol fs, const StringA& frames,
+                              const arr& compliance);
 
-  void removeCtrlTask(CtrlTask *t);
+  void removeCtrlTask(const ptr<CtrlTask>& t);
 
 };

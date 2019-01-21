@@ -62,6 +62,7 @@ private:
 
 struct Sim_CameraView : Thread {
   Var<rai::KinematicWorld> model;
+
   //-- outputs
   Var<byteA> color;
   Var<floatA> depth;
@@ -71,9 +72,7 @@ struct Sim_CameraView : Thread {
 
   Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatIntervalSec=-1., const char* _cameraFrameName=NULL, bool _idColors=false, const byteA& _segmentationRemap=NoByteA);
   ~Sim_CameraView();
-  void open();
   void step();
-  void close();
 };
 
 }

@@ -235,9 +235,6 @@ rai::Sim_CameraView::~Sim_CameraView() {
   threadClose();
 }
 
-void rai::Sim_CameraView::open() {
-}
-
 void rai::Sim_CameraView::step() {
   byteA img;
   floatA dep;
@@ -253,5 +250,3 @@ void rai::Sim_CameraView::step() {
   depth.set() = dep;
 }
 
-void rai::Sim_CameraView::close() {
-}

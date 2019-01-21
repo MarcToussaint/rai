@@ -202,23 +202,23 @@ void TaskControlThread::step() {
   }
 }
 
-CtrlTask *TaskControlThread::addCtrlTask(const char* name, FeatureSymbol fs, const StringA& frames,
+ptr<CtrlTask> TaskControlThread::addCtrlTask(const char* name, FeatureSymbol fs, const StringA& frames,
                                     double decayTime, double dampingRatio, double maxVel, double maxAcc){
   stepMutex.lock();
-  CtrlTask *t = new CtrlTask(name, fs, frames, model_ref, decayTime,  dampingRatio,  maxVel, maxAcc);
+  ptr<CtrlTask> t = make_shared<CtrlTask>(name, fs, frames, model_ref, decayTime,  dampingRatio,  maxVel, maxAcc);
   t->update(0., model_ref);
   stepMutex.unlock();
   ctrlTasks.set()->append(t);
   return t;
 }
 
-CtrlTask* TaskControlThread::addCompliance(const char* name, FeatureSymbol fs, const StringA& frames, const arr& compliance){
-  CtrlTask *t = new CtrlTask(name, ptr<Feature>(symbols2feature(fs, frames, model_ref)));
+ptr<CtrlTask> TaskControlThread::addCompliance(const char* name, FeatureSymbol fs, const StringA& frames, const arr& compliance){
+  ptr<CtrlTask> t = make_shared<CtrlTask>(name, ptr<Feature>(symbols2feature(fs, frames, model_ref)));
   t->complianceDirection = compliance;
   ctrlTasks.set()->append(t);
   return t;
 }
 
-void TaskControlThread::removeCtrlTask(CtrlTask* t){
+void TaskControlThread::removeCtrlTask(const ptr<CtrlTask>& t){
   ctrlTasks.set()->removeValue(t);
 }

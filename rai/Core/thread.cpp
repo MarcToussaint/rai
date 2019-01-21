@@ -926,6 +926,18 @@ TStream::Register::~Register() {
   tstream->reg_private(obj, p, true);
 }
 
+int _allPositive(const VarL& signalers, int whoChanged){
+  bool allPositive=true;
+  for(Var_base *s:signalers){
+    Var_data<ActStatus>* a = dynamic_cast<Var_data<ActStatus>*>(s);
+    CHECK(a, "this is not an ActStatus!!");
+    if(a->rwlock.isLocked() && a->data<=0) allPositive=false;
+    if(!a->rwlock.isLocked() && a->data<=0) allPositive=false;
+  }
+  if(allPositive) return AS_true;
+  return AS_false;
+}
+
 RUN_ON_INIT_BEGIN(thread)
 rai::Array<Var_base::Ptr*>::memMove=true;
 ThreadL::memMove=true;
