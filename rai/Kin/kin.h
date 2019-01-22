@@ -90,6 +90,7 @@ struct KinematicWorld : GLDrawer {
   void init(const char* filename);
   void init(const Graph& G, bool addInsteadOfClear=false);
   void addFile(const char* filename);
+  void addFile(const char* filename, const char* parentOfRoot, const rai::Transformation& relOfRoot);
   void addAssimp(const char* filename);
   Frame* addFrame(const char* name, const char* parent=NULL, const char* args=NULL);
   Frame* addObject(rai::ShapeType shape, const arr& size={}, const arr& col={}, double radius=-1.);
@@ -127,7 +128,8 @@ struct KinematicWorld : GLDrawer {
   void addTimeJoint();
   bool hasTimeJoint();
   bool checkConsistency();
-  
+  void attach(const char *a, const char *b);
+
   uint analyzeJointStateDimensions() const; ///< sort of private: count the joint dimensionalities and assign j->q_index
   
   /// @name computations on the graph

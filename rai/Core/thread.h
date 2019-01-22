@@ -589,5 +589,4 @@ int Var<T>::waitForRevisionGreaterThan(int rev) {
 template<class T>
 void Var<T>::stopListening() { thread->event.stopListenTo(data); }
 
-
 #endif

@@ -162,15 +162,8 @@ arr SimulationThread::getJointPositions(const StringA& joints){
 
 void SimulationThread::addFile(const char* filename, const char* parentOfRoot, const rai::Transformation& relOfRoot){
   auto lock = stepMutex();
-  uint n = SIM.K.frames.N;
-  SIM.K.addFile(filename);
-  if(parentOfRoot){
-      rai::Frame *f = SIM.K.frames(n);
-      f->linkFrom(SIM.K.getFrameByName(parentOfRoot));
-      new rai::Joint(*f, rai::JT_rigid);
-      f->Q = relOfRoot;
-      SIM.K.calc_activeSets();
-  }
+  SIM.K.addFile(filename, parentOfRoot, relOfRoot);
+  SIM.K.calc_activeSets();
   SIM.K.calc_fwdPropagateFrames();
   SIM.K.checkConsistency();
   K.set() = SIM.K;

@@ -194,18 +194,20 @@ ActStatus MotionProfile_Path::update(arr& yRef, arr& ydotRef, double tau, const 
 
 //===========================================================================
 
-CtrlTask::CtrlTask(const char* name, ptr<Feature> map)
-  : map(map), name(name), active(true), ref(NULL), prec(ARR(1.)), hierarchy(1) {
+CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map)
+  : name(name), active(true), map(_map), prec(ARR(1.)), hierarchy(1) {
   status.set() = AS_init;
   //  ref = new MotionProfile_PD();
 }
 
 CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, const ptr<MotionProfile>& _ref)
-  : map(_map), name(name), active(true), status(CT_init), ref(_ref), prec(ARR(1.)), hierarchy(1) {
+  : CtrlTask(name, _map) {
+  ref = _ref;
+  status.set() = AS_init;
 }
 
-CtrlTask::CtrlTask(const char* name, ptr<Feature> map, double decayTime, double dampingRatio, double maxVel, double maxAcc)
-  : CtrlTask(name, map) {
+CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, double decayTime, double dampingRatio, double maxVel, double maxAcc)
+  : CtrlTask(name, _map) {
   if(dampingRatio<0.){
     ref = make_shared<MotionProfile_Sine>(arr(), decayTime);
   }else{
@@ -213,20 +215,18 @@ CtrlTask::CtrlTask(const char* name, ptr<Feature> map, double decayTime, double 
   }
 }
 
-CtrlTask::CtrlTask(const char* name, FeatureSymbol fs, const StringA& frames, const rai::KinematicWorld& K, double decayTime, double dampingRatio, double maxVel, double maxAcc)
-  : CtrlTask(name, ptr<Feature>(symbols2feature(fs, frames, K)), decayTime, dampingRatio, maxVel, maxAcc){
-}
-
-CtrlTask::CtrlTask(const char* name, ptr<Feature> map, const Graph& params)
-  : CtrlTask(name, map) {
+CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, const Graph& params)
+  : CtrlTask(name, _map) {
   ref = make_shared<MotionProfile_PD>(params);
   Node *n;
   if((n=params["prec"])) prec = n->get<arr>();
 }
 
 CtrlTask::~CtrlTask() {
-//  if(map) delete map; map=NULL;
-//  if(ref) delete ref; ref=NULL;
+  if(ctrlTasks){
+    ctrlTasks->set()->removeValue(this, true);
+    ctrlTasks=0;
+  }
 }
 
 ActStatus CtrlTask::update(double tau, const rai::KinematicWorld& world) {
@@ -304,20 +304,13 @@ void CtrlTask::reportState(ostream& os) {
 
 //===========================================================================
 
-TaskControlMethods::TaskControlMethods(const rai::KinematicWorld& world)
-  : Hmetric(rai::getParameter<double>("Hrate", .1)*world.getHmetric()) {
+TaskControlMethods::TaskControlMethods(const arr& _Hmetric)
+  : Hmetric(_Hmetric) { //rai::getParameter<double>("Hrate", .1)*world.getHmetric()) {
 }
 
-void TaskControlMethods::updateCtrlTasks(double tau, const rai::KinematicWorld& world) {
-  for(ptr<CtrlTask>& t: tasks) t->update(tau, world);
-}
 
-void TaskControlMethods::resetCtrlTasksState() {
-  for(ptr<CtrlTask>& t: tasks) t->resetState();
-}
-
-ptr<CtrlTask> TaskControlMethods::addPDTask(const char* name, double decayTime, double dampingRatio, ptr<Feature> map) {
-  return tasks.append(make_shared<CtrlTask>(name, map, decayTime, dampingRatio, 1., 1.));
+CtrlTask* TaskControlMethods::addPDTask(CtrlTaskL& tasks, const char* name, double decayTime, double dampingRatio, ptr<Feature> map) {
+  return tasks.append(new CtrlTask(name, map, decayTime, dampingRatio, 1., 1.));
 }
 
 //ptr<CtrlTask> TaskControlMethods::addPDTask(const char* name,
@@ -359,12 +352,12 @@ void TaskControlMethods::lockJointGroup(const char* groupname, rai::KinematicWor
     }
 }
 
-double TaskControlMethods::getIKCosts(const arr& q, const arr& q0, arr& g, arr& H) {
+double TaskControlMethods::getIKCosts(CtrlTaskL& tasks, const arr& q, const arr& q0, arr& g, arr& H) {
   double c=0.;
   arr y,J;
   if(!!g) { CHECK(&q,""); g = zeros(q.N); }
   if(!!H) { CHECK(&q,""); H = zeros(q.N, q.N); }
-  for(ptr<CtrlTask>& t: tasks) {
+  for(CtrlTask* t: tasks) {
     if(t->active && t->ref) {
       y = t->prec%(t->y_ref - t->y);
       J = t->prec%(t->J_y);
@@ -431,9 +424,9 @@ if(true || cost>10.) { //calling an optimizer!
 }
 #endif
 
-arr TaskControlMethods::inverseKinematics(arr& qdot, const arr& nullRef, double* cost) {
+arr TaskControlMethods::inverseKinematics(CtrlTaskL& tasks, arr& qdot, const arr& nullRef, double* cost) {
   arr y,v,J;
-  for(ptr<CtrlTask>& t: tasks) {
+  for(CtrlTask* t: tasks) {
     if(t->active && t->ref) {
       y.append(t->prec%(t->y_ref - t->y));
       J.append(t->prec%(t->J_y));
@@ -465,10 +458,10 @@ arr TaskControlMethods::inverseKinematics(arr& qdot, const arr& nullRef, double*
   return dq;
 }
 
-arr TaskControlMethods::inverseKinematics_hierarchical() {
+arr TaskControlMethods::inverseKinematics_hierarchical(CtrlTaskL& tasks) {
   uint maxHierarchy=0;
   uint n=0;
-  for(ptr<CtrlTask>& t: tasks) if(t->active && t->ref) {
+  for(CtrlTask* t: tasks) if(t->active && t->ref) {
       if(t->hierarchy>maxHierarchy) maxHierarchy=t->hierarchy;
       if(!n) n=t->J_y.d1; else CHECK_EQ(n, t->J_y.d1, "");
     }
@@ -482,7 +475,7 @@ arr TaskControlMethods::inverseKinematics_hierarchical() {
   arr dq = zeros(n);
   for(uint h=0; h<=maxHierarchy; h++) { //start with lowest priorities; end with highest
     arr y,J;
-    for(ptr<CtrlTask>& t: tasks) if(t->active && t->ref && t->hierarchy==h) {
+    for(CtrlTask* t: tasks) if(t->active && t->ref && t->hierarchy==h) {
         y.append(t->prec%(t->y_ref - t->y));
         J.append(t->prec%(t->J_y));
       }
@@ -496,10 +489,10 @@ arr TaskControlMethods::inverseKinematics_hierarchical() {
   return dq;
 }
 
-arr TaskControlMethods::getComplianceProjection() {
+arr TaskControlMethods::getComplianceProjection(CtrlTaskL& tasks) {
   arr P;
   uint count=0;
-  for(ptr<CtrlTask>& t: tasks) {
+  for(CtrlTask* t: tasks) {
     if(t->active && t->complianceDirection.N) {
       if(!P.N) P = eye(t->J_y.d1);
       
@@ -536,9 +529,9 @@ arr TaskControlMethods::getComplianceProjection() {
   return P;
 }
 
-void TaskControlMethods::reportCurrentState() {
+void TaskControlMethods::reportCurrentState(CtrlTaskL& tasks) {
   cout <<"** TaskControlMethods" <<endl;
-  for(ptr<CtrlTask>& t: tasks) t->reportState(cout);
+  for(CtrlTask* t: tasks) t->reportState(cout);
 }
 
 //void TaskControlMethods::updateConstraintControllers(){
@@ -566,10 +559,10 @@ void TaskControlMethods::reportCurrentState() {
 //  return Jl;
 //}
 
-arr TaskControlMethods::operationalSpaceControl() {
+arr TaskControlMethods::operationalSpaceControl(CtrlTaskL& tasks) {
   //-- get the stacked task coefficient ($J_\phi$ and $c$ in the reference (they include C^{1/2}))
   arr yddot_des, J;
-  for(ptr<CtrlTask>& t: tasks) {
+  for(CtrlTask* t: tasks) {
     if(t->active && !t->f_ref.N) {
       arr a_des = t->PD().getDesiredAcceleration();
       yddot_des.append(t->prec%(a_des /*-Jdot*qdot*/));
@@ -599,7 +592,7 @@ arr TaskControlMethods::operationalSpaceControl() {
   return q_ddot;
 }
 
-arr TaskControlMethods::getDesiredLinAccLaw(arr &Kp, arr &Kd, arr &k, const arr& q, const arr& qdot) {
+arr TaskControlMethods::getDesiredLinAccLaw(CtrlTaskL& tasks, arr &Kp, arr &Kd, arr &k, const arr& q, const arr& qdot) {
   arr Kp_y, Kd_y, k_y, C_y, H;
   NIY;
 //  qNullCostRef.PD().getDesiredLinAccLaw(Kp_y, Kd_y, k_y);
@@ -611,7 +604,7 @@ arr TaskControlMethods::getDesiredLinAccLaw(arr &Kp, arr &Kd, arr &k, const arr&
   
   arr JCJ = zeros(q.N, q.N);
   
-  for(ptr<CtrlTask>& task : tasks) if(task->active) {
+  for(CtrlTask* task : tasks) if(task->active) {
       arr J_y;
       task->PD().getDesiredLinAccLaw(Kp_y, Kd_y, k_y);
       C_y = task->getPrec();
@@ -642,7 +635,7 @@ arr TaskControlMethods::getDesiredLinAccLaw(arr &Kp, arr &Kd, arr &k, const arr&
   return k - Kp*q - Kd*qdot;
 }
 
-arr TaskControlMethods::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, const arr& q, const arr& qdot, const arr& M, const arr& F) {
+arr TaskControlMethods::calcOptimalControlProjected(CtrlTaskL& tasks, arr &Kp, arr &Kd, arr &u0, const arr& q, const arr& qdot, const arr& M, const arr& F) {
   uint n=F.N;
   
 //  arr q0, q, qDot;
@@ -663,7 +656,7 @@ arr TaskControlMethods::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, c
 //  if(qitselfPD.active){
 //    a += H_rate_diag % qitselfPD.getDesiredAcceleration(world.q, world.qdot);
 //  }
-  for(ptr<CtrlTask>& law : tasks) if(law->active) {
+  for(CtrlTask* law : tasks) if(law->active) {
       tempJPrec = ~J_y*law->getPrec();
       A += tempJPrec*J_y;
       
@@ -703,9 +696,9 @@ void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, rai::KinematicWorld& world
   }
 }
 
-void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::KinematicWorld& world) {
+void TaskControlMethods::calcForceControl(CtrlTaskL& tasks, arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::KinematicWorld& world) {
   uint nForceTasks=0;
-  for(ptr<CtrlTask>& task : this->tasks) if(task->active && task->f_ref.N) {
+  for(CtrlTask* task : tasks) if(task->active && task->f_ref.N) {
       nForceTasks++;
       ptr<TM_Default> map = std::dynamic_pointer_cast<TM_Default>(task->map);
       rai::Frame* body = world.frames(map->i);

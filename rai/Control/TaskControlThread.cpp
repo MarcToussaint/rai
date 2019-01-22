@@ -18,7 +18,6 @@ TaskControlThread::TaskControlThread(const rai::KinematicWorld& _model,
     ctrl_state(_ctrl_state),
 //    model_ref(_model),
 //    model_real(_model),
-    taskController(NULL),
     useSwift(true),
     requiresInitialSync(true),
     verbose(0)
@@ -51,7 +50,7 @@ TaskControlThread::TaskControlThread(const rai::KinematicWorld& _model,
     }
   }
 
-  taskController = make_shared<TaskControlMethods>(_model);
+  Hmetric = rai::getParameter<double>("Hrate", .1)*_model.getHmetric();
 
   threadLoop();
 }
@@ -103,16 +102,22 @@ void TaskControlThread::step() {
   {
     auto K = model_ref.set();
 
-    if(!(step_count%20)) K->watch(false, STRING("TaskControlThread model_ref " <<step_count)); //only for debugging
+    if(!(step_count%20)){
+      rai::String txt;
+      txt <<"TaskControlThread model_ref " <<step_count;
+      for(CtrlTask *t:ctrlTasks.get()()){ txt <<'\n'; t->reportState(txt); }
+      K->watch(false, txt); //only for debugging
+    }
 
     ctrlTasks.writeAccess();
-    taskController->tasks = ctrlTasks();
-    taskController->updateCtrlTasks(.01, K); //update with time increment
-    
+    for(CtrlTask* t: ctrlTasks()) t->update(.01, K);
+
+    TaskControlMethods taskController(Hmetric);
+
     //-- compute IK step
     double maxQStep = 2e-1;
     arr dq;
-    dq = taskController->inverseKinematics(qdot_model); //don't include a null step
+    dq = taskController.inverseKinematics(ctrlTasks(), qdot_model); //don't include a null step
     if(dq.N){
       double l = length(dq);
       if(l>maxQStep) dq *= maxQStep/l;
@@ -122,8 +127,8 @@ void TaskControlThread::step() {
     //set/test the new configuration
     K->setJointState(q_model, qdot_model);
     if(useSwift) K->stepSwift();
-    taskController->updateCtrlTasks(0., K); //update without time increment
-    double cost = taskController->getIKCosts();
+    for(CtrlTask* t: ctrlTasks()) t->update(.0, K); //update without time increment
+    double cost = taskController.getIKCosts(ctrlTasks());
 //    IK_cost.set() = cost;
     
     //check the costs
@@ -132,13 +137,13 @@ void TaskControlThread::step() {
       q_model -= .9*dq;
       K->setJointState(q_model, qdot_model);
       if(useSwift) K->stepSwift();
-      taskController->updateCtrlTasks(0., K); //update without time increment
+      for(CtrlTask* t: ctrlTasks()) t->update(.0, K); //update without time increment
     }
     
-    if(verbose) taskController->reportCurrentState();
+    if(verbose) taskController.reportCurrentState(ctrlTasks());
     
     // get compliance projection matrix
-    P_compliance = taskController->getComplianceProjection();
+    P_compliance = taskController.getComplianceProjection(ctrlTasks());
 
     ctrlTasks.deAccess();
   }
@@ -164,8 +169,8 @@ void TaskControlThread::step() {
   //    //-- compute the force feedback control coefficients
   //    uint count=0;
   //    ctrlTasks.readAccess();
-  //    taskController->tasks = ctrlTasks();
-  //    for(CtrlTask *t : taskController->tasks) {
+  //    taskController.tasks = ctrlTasks();
+  //    for(CtrlTask *t : taskController.tasks) {
   //      if(t->active && t->f_ref.N){
   //        count++;
   //        if(count!=1) HALT("you have multiple active force control tasks - NIY");
@@ -210,27 +215,34 @@ void TaskControlThread::step() {
 }
 
 ptr<CtrlTask> TaskControlThread::addCtrlTask(const char* name, const ptr<Feature>& map, const ptr<MotionProfile>& ref){
-  CtrlTask *t = new CtrlTask(name, map, ref);
+  ptr<CtrlTask> t = make_shared<CtrlTask>(name, map, ref);
   t->update(0., model_ref.get());
-  ctrlTasks.set()->append(t);
+  t->ctrlTasks = &ctrlTasks;
+  ctrlTasks.set()->append(t.get());
   return t;
 }
 
-CtrlTask *TaskControlThread::addCtrlTask(const char* name, FeatureSymbol fs, const StringA& frames,
+ptr<CtrlTask> TaskControlThread::addCtrlTask(const char* name, FeatureSymbol fs, const StringA& frames, const ptr<MotionProfile>& ref){
+  return addCtrlTask(name, ptr<Feature>(symbols2feature(fs, frames, model_ref.get())), ref);
+}
+
+ptr<CtrlTask> TaskControlThread::addCtrlTask(const char* name, FeatureSymbol fs, const StringA& frames,
                                     double decayTime, double dampingRatio, double maxVel, double maxAcc){
-  CtrlTask *t = new CtrlTask(name, fs, frames, model_ref.get(), decayTime,  dampingRatio,  maxVel, maxAcc);
+  ptr<CtrlTask> t = make_shared<CtrlTask>(name, ptr<Feature>(symbols2feature(fs, frames, model_ref.get())), decayTime,  dampingRatio,  maxVel, maxAcc);
   t->update(0., model_ref.get());
-  ctrlTasks.set()->append(t);
+  t->ctrlTasks = &ctrlTasks;
+  ctrlTasks.set()->append(t.get());
   return t;
 }
 
-CtrlTask* TaskControlThread::addCompliance(const char* name, FeatureSymbol fs, const StringA& frames, const arr& compliance){
-  CtrlTask *t = new CtrlTask(name, ptr<Feature>(symbols2feature(fs, frames, model_ref.get())));
+ptr<CtrlTask> TaskControlThread::addCompliance(const char* name, FeatureSymbol fs, const StringA& frames, const arr& compliance){
+  ptr<CtrlTask> t = make_shared<CtrlTask>(name, ptr<Feature>(symbols2feature(fs, frames, model_ref.get())));
   t->complianceDirection = compliance;
-  ctrlTasks.set()->append(t);
+  t->ctrlTasks = &ctrlTasks;
+  ctrlTasks.set()->append(t.get());
   return t;
 }
 
 void TaskControlThread::removeCtrlTask(const ptr<CtrlTask>& t){
-  ctrlTasks.set()->removeValue(t);
+  ctrlTasks.set()->removeValue(t.get());
 }

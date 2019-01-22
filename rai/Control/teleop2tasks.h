@@ -31,12 +31,13 @@ struct Teleop2Tasks {
   
   bool initialised = false;
   TaskControlMethods& fmc;
-  ptr<CtrlTask> effPosR, gripperR, effOrientationR;
-  ptr<CtrlTask> effPosL, gripperL, effOrientationL;
-  ptr<CtrlTask> base, fc;
+  CtrlTask *effPosR, *gripperR, *effOrientationR;
+  CtrlTask *effPosL, *gripperL, *effOrientationL;
+  CtrlTask *base, *fc;
   Teleop2Tasks(TaskControlMethods& _MP, const rai::KinematicWorld& K);
-  rai::Array<ptr<CtrlTask> > getTasks();
-  void updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effPos, ptr<CtrlTask>& effPos);
+  CtrlTaskL tasks;
+  CtrlTaskL getTasks();
+  void updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effPos, CtrlTask* effPos);
   void deactivateTasks();
   void updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float calibrated_gripper_lh, float calibrated_gripper_rh, arr drive, int button, const rai::KinematicWorld& K);
 };

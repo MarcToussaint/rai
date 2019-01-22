@@ -185,6 +185,19 @@ void rai::KinematicWorld::addFile(const char* filename) {
   file.cd_start();
 }
 
+void rai::KinematicWorld::addFile(const char* filename, const char* parentOfRoot, const rai::Transformation& relOfRoot){
+  uint n=frames.N;
+  addFile(filename);
+  if(parentOfRoot){
+    rai::Frame *f = frames(n);
+    f->linkFrom(getFrameByName(parentOfRoot));
+    new rai::Joint(*f, rai::JT_rigid);
+    f->Q = relOfRoot;
+  }
+  calc_activeSets();
+  calc_fwdPropagateFrames();
+}
+
 void rai::KinematicWorld::addAssimp(const char* filename) {
   AssimpLoader A(filename);
   for(rai::Mesh &m:A.meshes){
@@ -1460,8 +1473,10 @@ FeatherstoneInterface& rai::KinematicWorld::fs() {
 }
 
 int rai::KinematicWorld::watch(bool pause, const char* txt) {
-  if(pause) return gl().watch(txt);
-  else return gl().update(txt);
+  if(pause){
+    if(!txt) txt="Config::watch";
+    return gl().watch(txt);
+  }else return gl().update(txt);
 }
 
 void rai::KinematicWorld::glAnimate() {
@@ -2762,6 +2777,17 @@ bool rai::KinematicWorld::checkConsistency() {
   }
   
   return true;
+}
+
+void rai::KinematicWorld::attach(const char* _a, const char* _b){
+  rai::Frame *a = getFrameByName(_a);
+  rai::Frame *b = getFrameByName(_b);
+  b = b->getUpwardLink();
+
+  if(b->parent) b->unLink();
+  b->linkFrom(a, true);
+  (new rai::Joint(*b)) -> type=rai::JT_rigid;
+  calc_q();
 }
 
 //void rai::KinematicWorld::meldFixedJoints(int verbose) {
