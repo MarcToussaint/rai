@@ -217,7 +217,7 @@ struct sOpenGL {
 
 #ifdef RAI_GLFW
 Mutex& OpenGLMutex();
-static uint GLProcessCount = 0;
+//static uint GLProcessCount = 0;
 
 //===========================================================================
 //
@@ -258,8 +258,8 @@ struct GlfwSpinner : Thread {
   void step() {
     glfwWaitEvents();
 //    glfwPollEvents();
-    static uint count=0;
-    cout <<"HERE" <<count++;
+//    static uint count=0;
+//    cout <<"HERE" <<count++;
     OpenGLMutex().lock();
     for(OpenGL* gl: glwins) if(gl->s->needsRedraw){
       glfwMakeContextCurrent(gl->s->window);
@@ -267,10 +267,10 @@ struct GlfwSpinner : Thread {
       glfwSwapBuffers(gl->s->window);
       gl->isUpdating.setStatus(0);
       gl->s->needsRedraw--;
-      cout <<"DRAW";
+//      cout <<"DRAW";
     }
     OpenGLMutex().unlock();
-    cout <<endl;
+//    cout <<endl;
   }
   void close() {}
 
@@ -348,7 +348,7 @@ void OpenGL::openWindow() {
   if(!s->window) {
     auto fg = singleGlProcess();
 
-    s->window = glfwCreateWindow(width, height, "Simple example", NULL, NULL);
+    s->window = glfwCreateWindow(width, height, title, NULL, NULL);
     glfwMakeContextCurrent(s->window);
     glfwSetWindowUserPointer(s->window, this);
     glfwSetMouseButtonCallback(s->window, GlfwSpinner::_MouseButton);
@@ -385,15 +385,9 @@ void OpenGL::postRedrawEvent(bool fromWithinCallback) {
 }
 
 void OpenGL::resize(int w,int h) {
-//  openWindow();
-//  if(s->windowID==-1) {
-//    Reshape(w, h);
-//  } else {
-//    auto fg=singleGlProcess();
-//    s->accessWindow();
-//    glutReshapeWindow(w,h);
-//    s->deaccessWindow();
-//  }
+  openWindow();
+  glfwSetWindowSize(s->window, w, h);
+  width=w; height=h;
 }
 
 #endif

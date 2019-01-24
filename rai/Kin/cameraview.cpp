@@ -33,9 +33,9 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char
 }
 
 rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char* frameAttached){
-    rai::Frame *frame = K.getFrameByName(frameAttached);
+  rai::Frame *frame = K.getFrameByName(frameAttached);
 
-    CHECK(frame, "frame '" <<frameAttached <<"' is not defined");
+  CHECK(frame, "frame '" <<frameAttached <<"' is not defined");
 
   double width=400., height=200.;
   double focalLength=-1.;
@@ -69,16 +69,16 @@ void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth){
   if(!background)
     gl.update(NULL, true, true, true);
   else
-    gl.renderInBack(true, true, gl.width, gl.height);
+    gl.renderInBack(true, true, -1, -1);
   image = gl.captureImage;
   flip_image(image);
-  if(renderMode==seg && segmentationRemap.N){
+  if(renderMode==seg && frameIDmap.N){
     byteA seg(image.d0*image.d1);
     image.reshape(image.d0*image.d1, 3);
     for(uint i=0; i<image.d0; i++){
         uint id = color2id(image.p+3*i);
-        if(id<segmentationRemap.N){
-            seg(i) = segmentationRemap(id);
+        if(id<frameIDmap.N){
+            seg(i) = frameIDmap(id);
         }else
             seg(i) = 0;
     }
@@ -211,7 +211,7 @@ void rai::CameraView::done(const char* _func_){
 
 //===========================================================================
 
-rai::Sim_CameraView::Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatIntervalSec, const char* _cameraFrameName, bool _idColors, const byteA& _segmentationRemap)
+rai::Sim_CameraView::Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatIntervalSec, const char* _cameraFrameName, bool _idColors, const byteA& _frameIDmap)
   : Thread("Sim_CameraView", beatIntervalSec),
     model(this, _kin, (beatIntervalSec<0.)),
     color(this),
@@ -223,8 +223,8 @@ rai::Sim_CameraView::Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatI
   }
   if(_idColors){
     C.renderMode = C.seg;
-    if(!!_segmentationRemap)
-        C.segmentationRemap = _segmentationRemap;
+    if(!!_frameIDmap)
+        C.frameIDmap = _frameIDmap;
   }else{
     C.renderMode = C.visuals;
   }

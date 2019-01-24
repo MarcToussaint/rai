@@ -68,7 +68,7 @@ void PerceptViewer::step() {
 //  listClone(copy, percepts.get()());
   gl->dataLock.unlock();
   percepts.deAccess();
-  
+
 //  rai::Array<rai::Transformation> X;
 //  modelWorld.readAccess();
 //  X.resize(modelWorld().frames.N);
@@ -79,6 +79,6 @@ void PerceptViewer::step() {
 //  if(X.N==modelCopy.N) for(uint i=0; i<X.N; i++) modelCopy(i).glX = X(i);
 //  gl->dataLock.unlock();
   
-  gl->update(NULL, false, false, true);
+  gl->update(); //NULL, false, false, true);
 }
 

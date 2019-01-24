@@ -33,7 +33,7 @@ void KinViewer_old::step() {
   copy.gl().dataLock.writeLock();
   copy = modelWorld.get();
   copy.gl().dataLock.unlock();
-  copy.gl().update(NULL, false, false, true);
+  copy.gl().update(); //NULL, false, false, true);
   if(computeCameraView) {
     rai::Frame *kinectShape = copy.getFrameByName("endeffKinect");
     if(kinectShape) { //otherwise 'copy' is not up-to-date yet
@@ -129,7 +129,7 @@ void KinViewer::step() {
   for(uint i=0; i<X.N; i++) meshesCopy(i).glX = X(i);
   gl->dataLock.unlock();
   
-  gl->update(NULL, false, false, true);
+  gl->update(); //NULL, false, false, true);
 }
 
 //===========================================================================
@@ -176,7 +176,7 @@ void KinPathViewer::step() {
   if(T) {
     copy.orsDrawMarkers=false;
     copy.gl().computeImage=writeToFiles;
-    copy.gl().update(STRING("(time " <<tprefix+int(tt) <<'/' <<tprefix+int(T) <<")\n" <<text).p, false, false, true);
+    copy.gl().update(STRING("(time " <<tprefix+int(tt) <<'/' <<tprefix+int(T) <<")\n" <<text).p); //, false, false, true);
     if(writeToFiles) write_ppm(copy.gl().captureImage,STRING("vid/"<<std::setw(4)<<std::setfill('0')<<tprefix+int(tt)<<".ppm"));
   }
   t++;
@@ -194,7 +194,7 @@ void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix,
 #if 0 //render on screen
     copy.gl().resize(w,h);
     copy.gl().doCaptureImage=true;
-    copy.gl().update(STRING(" (time " <<tprefix+int(t) <<'/' <<tprefix+int(cs.N) <<')').p, false, false, true);
+    copy.gl().update(STRING(" (time " <<tprefix+int(t) <<'/' <<tprefix+int(cs.N) <<')').p); //, false, false, true);
 #else
     if(camera) {
       copy.gl().camera = *camera;
@@ -251,7 +251,7 @@ void KinPoseViewer::open() {
 
 void KinPoseViewer::step() {
   gl.text.clear() <<"step: " <<frameCount <<"\n[temporal profile is not displayed accuratly (tau path ignored)]";
-  gl.update(NULL, false, false, true);
+  gl.update(); //NULL, false, false, true);
 }
 
 void KinPoseViewer::close() {

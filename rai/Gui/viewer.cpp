@@ -71,7 +71,7 @@ void ImageViewer::step() {
   if(s->gl.height!= s->gl.background.d0 || s->gl.width!= s->gl.background.d1)
     s->gl.resize(s->gl.background.d1, s->gl.background.d0);
     
-  s->gl.update(name, false, false, true);
+  s->gl.update(name); //, false, false, true);
 }
 
 //===========================================================================
@@ -101,7 +101,7 @@ void ImageViewerCallback::call(Var_base* v){
   if(gl->height!= gl->background.d0 || gl->width!= gl->background.d1)
     gl->resize(gl->background.d1, gl->background.d0);
 
-  gl->update(0, false, false, true);
+  gl->update(); //0, false, false, true);
 }
 
 
@@ -177,7 +177,7 @@ void PointCloudViewer::step() {
   if(W!=s->gl.width || H!=s->gl.height) s->gl.resize(W,H);
 
   
-  s->gl.update(NULL, false, false, true);
+  s->gl.update(); //NULL, false, false, true);
 }
 
 //===========================================================================
@@ -221,7 +221,7 @@ void PointCloudViewerCallback::call(Var_base* v){
   if(W!=s->gl.width || H!=s->gl.height) s->gl.resize(W,H);
 
 
-  s->gl.update(NULL, false, false, true);
+  s->gl.update(); //NULL, false, false, true);
 }
 
 
@@ -256,6 +256,6 @@ void MeshAViewer::step() {
   copy = meshes.get();
   gl->dataLock.unlock();
   
-  gl->update(NULL, false, false, true);
+  gl->update(); //NULL, false, false, true);
 }
 
