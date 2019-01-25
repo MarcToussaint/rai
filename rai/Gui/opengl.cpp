@@ -261,7 +261,7 @@ struct GlfwSpinner : Thread {
 //    static uint count=0;
 //    cout <<"HERE" <<count++;
     OpenGLMutex().lock();
-    for(OpenGL* gl: glwins) if(gl->s->needsRedraw){
+    for(OpenGL* gl: glwins) if(gl->s && gl->s->needsRedraw){
       glfwMakeContextCurrent(gl->s->window);
       gl->Draw(gl->width,gl->height);
       glfwSwapBuffers(gl->s->window);
@@ -282,6 +282,8 @@ struct GlfwSpinner : Thread {
 
   void delGL(OpenGL* gl) {
     glwins.removeValue(gl);
+    glfwDestroyWindow(gl->s->window);
+    gl->s->window=0;
     if(!glwins.N){ //stop looping
       OpenGLMutex().unlock();
       glfwPostEmptyEvent();
@@ -348,6 +350,11 @@ void OpenGL::openWindow() {
   if(!s->window) {
     auto fg = singleGlProcess();
 
+    if(offscreen){
+      glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
+    }else{
+      glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
+    }
     s->window = glfwCreateWindow(width, height, title, NULL, NULL);
     glfwMakeContextCurrent(s->window);
     glfwSetWindowUserPointer(s->window, this);
@@ -366,10 +373,7 @@ void OpenGL::openWindow() {
 
 void OpenGL::closeWindow() {
   if(s->window) {
-    auto fg = singleGlProcess();
-    fg->delGL(this);
-    glfwDestroyWindow(s->window);
-    s->window=0;
+    singleGlProcess()->delGL(this);
   }
 }
 
@@ -387,7 +391,7 @@ void OpenGL::postRedrawEvent(bool fromWithinCallback) {
 void OpenGL::resize(int w,int h) {
   openWindow();
   glfwSetWindowSize(s->window, w, h);
-  width=w; height=h;
+  Reshape(w, h);
 }
 
 #endif
@@ -1403,16 +1407,15 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 // OpenGL implementations
 //
 
-OpenGL::OpenGL(const char* _title, int w, int h, int posx, int posy)
-  : s(NULL), title(_title), width(w), height(h), reportEvents(false), topSelection(NULL), computeImage(false), computeDepth(false), fboId(0), rboColor(0), rboDepth(0) {
+OpenGL::OpenGL(const char* _title, int w, int h, bool _offscreen)
+  : s(NULL), title(_title), width(w), height(h), offscreen(_offscreen), reportEvents(false), topSelection(NULL), fboId(0), rboColor(0), rboDepth(0) {
   //RAI_MSG("creating OpenGL=" <<this);
   s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
   init();
-//  Reshape(w,h);
 }
 
 OpenGL::OpenGL(void *container)
-  : s(NULL), width(0), height(0), reportEvents(false), topSelection(NULL), computeImage(false), computeDepth(false), fboId(0), rboColor(0), rboDepth(0) {
+  : s(NULL), width(0), height(0), reportEvents(false), topSelection(NULL), fboId(0), rboColor(0), rboDepth(0) {
   s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
   init();
 }
@@ -1441,6 +1444,10 @@ void OpenGL::init() {
   mouseIsDown=false;
   mouseView=-1;
   
+  if(width%4) width = 4*(width/4);
+  if(height%2) height = 2*(height/2);
+  camera.setWHRatio((double)width/height);
+
   reportEvents=false;
   reportSelects=false;
   exitkeys="";
@@ -1707,18 +1714,11 @@ void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
   
   //cout <<"UNLOCK draw" <<endl;
   
-  if(computeImage) {
-    captureImage.resize(h, w, 3);
-    glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
-//    flip_image(captureImage);
-//    doCaptureImage=false;
-  }
-  if(computeDepth) {
-    captureDepth.resize(h, w);
-    glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
-//    flip_image(captureDepth);
-//    computeDepth=false;
-  }
+  captureImage.resize(h, w, 3);
+  glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
+
+  captureDepth.resize(h, w);
+  glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
   
   //check matrix stack
   GLint s;
@@ -1825,6 +1825,10 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
 /** @brief watch in interactive mode and wait for an exiting event
   (key pressed or right mouse) */
 int OpenGL::watch(const char *txt) {
+  if(offscreen){
+    LOG(0) <<"can't watch an offscreen context";
+    return 'q';
+  }
   update(STRING(txt<<" - press ENTER to continue"));
   if(rai::getInteractivity()) {
     watching.setStatus(1);
@@ -1840,16 +1844,14 @@ int OpenGL::watch(const char *txt) {
 }
 
 /// update the view (in Qt: also starts displaying the window)
-int OpenGL::update(const char *txt, bool _doCaptureImage, bool _doCaptureDepth, bool waitForCompletedDraw) {
+int OpenGL::update(const char *txt, bool waitForCompletedDraw) {
   openWindow();
-  computeImage |= _doCaptureImage;
-  computeDepth |= _doCaptureDepth;
   if(txt) text.clear() <<txt;
 #ifdef RAI_GL
   isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
   postRedrawEvent(false);
-  if(computeImage || computeDepth || waitForCompletedDraw) { isUpdating.waitForStatusEq(0); } //{ rai::wait(.01); processEvents(); rai::wait(.01); }
+  if(waitForCompletedDraw) isUpdating.waitForStatusEq(0); //{ rai::wait(.01); processEvents(); rai::wait(.01); }
 #endif
   return pressedkey;
 }
@@ -2090,17 +2092,13 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
     if(!downPressed){
       drawMode_idColor = true;
       Draw(w, h, NULL, true);
-      captureIdImage.resize(h, w, 3);
-      glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureIdImage.p);
-      captureDepth.resize(h, w);
-      glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
       double x=mouseposx, y=mouseposy, d = captureDepth(mouseposy, mouseposx);
       if(d<.01 || d==1.) {
         cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
       } else {
         unproject(x, y, d, true, mouseView);
       }
-      cout <<"SELECTION: ID: " <<color2id(&captureIdImage(mouseposy, mouseposx, 0))
+      cout <<"SELECTION: ID: " <<color2id(&captureImage(mouseposy, mouseposx, 0))
           <<" point: (" <<x <<' ' <<y <<' ' <<d <<")" <<endl;
     }
   }else{
@@ -2112,8 +2110,6 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
   if(mouse_button==5 && !downPressed) cam->X.pos -= downRot*Vector_z * (.1 * (downPos-downFoc).length());
   
   if(mouse_button==3) {  //focus on selected point
-    captureDepth.resize(h, w);
-    glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
     double d = captureDepth(mouseposy, mouseposx);
     if(d<.001 || d==1.) {
       cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
@@ -2292,7 +2288,7 @@ struct XBackgroundContext {
 
 Singleton<XBackgroundContext> xBackgroundContext;
 
-void OpenGL::renderInBack(bool _doCaptureImage, bool _doCaptureDepth, int w, int h) {
+void OpenGL::renderInBack(int w, int h) {
 #ifdef RAI_GL
   if(w<0) w=width;
   if(h<0) h=height;
@@ -2386,19 +2382,13 @@ void OpenGL::renderInBack(bool _doCaptureImage, bool _doCaptureDepth, int w, int
   glFlush();
   
   //-- read
-  if(_doCaptureImage) {
-    captureImage.resize(h, w, 3);
-    //  glReadBuffer(GL_BACK);
-    glReadBuffer(GL_COLOR_ATTACHMENT0);
-    glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
-//    flip_image(captureImage);
-  }
-  if(_doCaptureDepth) {
-    captureDepth.resize(h, w);
-    glReadBuffer(GL_DEPTH_ATTACHMENT);
-    glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
-//    flip_image(captureDepth);
-  }
+  captureImage.resize(h, w, 3);
+  glReadBuffer(GL_COLOR_ATTACHMENT0);
+  glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
+
+  captureDepth.resize(h, w);
+  glReadBuffer(GL_DEPTH_ATTACHMENT);
+  glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
   
   // Return to onscreen rendering:
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);

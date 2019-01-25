@@ -139,6 +139,7 @@ struct OpenGL {
   
   rai::String title;     ///< the window title
   uint width, height;
+  bool offscreen;
   rai::Camera camera;     ///< the camera used for projection
   rai::String text;        ///< the text to be drawn as title within the opengl frame
   float clearR, clearG, clearB, clearA;  ///< colors of the beackground (called in glClearColor(...))
@@ -152,8 +153,7 @@ struct OpenGL {
   rai::Array<GLSelect> selection; ///< list of all selected objects
   GLSelect *topSelection;        ///< top selected object
   bool drawFocus;
-  bool computeImage, computeDepth, computeIdImage;
-  byteA background, captureImage, captureIdImage;
+  byteA background, captureImage;
   floatA captureDepth;
   double backgroundZoom;
   arr P; //camera projection matrix
@@ -167,7 +167,7 @@ struct OpenGL {
   bool drawMode_idColor=false;
   
   /// @name constructors & destructors
-  OpenGL(const char* title="rai::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
+  OpenGL(const char* title="rai::OpenGL", int w=400, int h=400, bool _offscreen=false);
   //OpenGL(void *parent, const char* title="rai::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
   OpenGL(void *container); //special constructor: used when the underlying system-dependent class exists already
   
@@ -196,10 +196,10 @@ struct OpenGL {
   /// @name the core draw routines (actually only for internal use)
   void Draw(int w, int h, rai::Camera *cam=NULL, bool callerHasAlreadyLocked=false);
   void Select(bool callerHasAlreadyLocked=false);
-  void renderInBack(bool computeImage=true, bool captureDepth=false, int w=-1, int h=-1);
+  void renderInBack(int w=-1, int h=-1);
   
   /// @name showing, updating, and watching
-  int update(const char *text=NULL, bool computeImage=false, bool captureDepth=false, bool waitForCompletedDraw=true);
+  int update(const char *text=NULL, bool waitForCompletedDraw=true);
   int watch(const char *text=NULL);
   int timedupdate(double sec);
   void resize(int w, int h);
