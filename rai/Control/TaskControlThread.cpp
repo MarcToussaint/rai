@@ -90,7 +90,7 @@ void TaskControlThread::step() {
     }
   }
 //  model_real.setJointState(q_real);
-  if(false){
+  if(true){
     model_ref.set()->setJointState(q_real);
     q_model = q_real;
     qdot_model = qdot_real;

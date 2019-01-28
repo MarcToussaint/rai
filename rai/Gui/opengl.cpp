@@ -257,8 +257,8 @@ struct GlfwSpinner : Thread {
   void open() {}
   void step() {
 //    glfwWaitEvents();
-    glfwWaitEventsTimeout(.1);
-//    glfwPollEvents();
+//    glfwWaitEventsTimeout(.1);
+    glfwPollEvents();
 //    static uint count=0;
 //    cout <<"HERE" <<count++;
     OpenGLMutex().lock();
